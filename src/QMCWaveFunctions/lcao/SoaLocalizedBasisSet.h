@@ -91,22 +91,13 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
   }
   /** set Number of periodic Images to evaluate the orbitals. 
       Set to 0 for non-PBC, and set manually in the input.
+      Passes the pre-computed phase factor for evaluation of complex wavefunction. If WF is real Phase_factor is real and equals 1.  
   */
-  void setPBCImages(const TinyVector<int, 3>& PBCImages)
+  void setPBCParams(const TinyVector<int, 3>& PBCImages,const std::vector<QMCTraits::ValueType>& phase_factor)
   {
     for (int i = 0; i < LOBasisSet.size(); ++i)
-      LOBasisSet[i]->setPBCImages(PBCImages);
+      LOBasisSet[i]->setPBCParams(PBCImages,phase_factor);
   }
-
-  /** Set Supertwist in PBC to value in Input. 
-      Set to 0 for non-PBC.
-  */
-  void setStwist(const TinyVector<double, 3>& Stwist)
-  {
-    for (int i = 0; i < LOBasisSet.size(); ++i)
-      LOBasisSet[i]->setStwist(Stwist);
-  }
-
 
 
   /** set BasisSetSize and allocate mVGL container

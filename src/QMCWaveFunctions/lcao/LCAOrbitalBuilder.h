@@ -58,8 +58,9 @@ private:
   std::string h5_path;
   ///Number of periodic Images for Orbital evaluation
   TinyVector<int, 3> PBCImages;
-  ///Coordinates of Supertwist (for phase Factor purpose
-  TinyVector<double, 3> Stwist;
+  ///Phase Factor. Computed only once.
+  std::vector<ValueType> PhaseFactor;
+  
 
   /// Enable cusp correction
   bool doCuspCorrection;
@@ -85,6 +86,7 @@ private:
   bool putPBCFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr);
   bool LoadCMatrix_cplx(LCAOrbitalSet& spo,hdf_archive hin, int neigs,int setVal,int norbs);
   bool LoadCMatrix(LCAOrbitalSet& spo,hdf_archive hin, int neigs,int setVal,int norbs);
+  void EvalPhaseFactor(PosType twist);
 };
 } // namespace qmcplusplus
 #endif

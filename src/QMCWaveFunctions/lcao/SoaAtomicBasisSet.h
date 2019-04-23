@@ -34,8 +34,8 @@ struct SoaAtomicBasisSet
   int BasisSetSize;
   ///Number of Cell images for the evaluation of the orbital with PBC. If No PBC, should be 0;
   TinyVector<int, 3> PBCImages;
-  ///Coordinates of Super twist to compute phase factor. If No PBC, should be 0;
-  TinyVector<double, 3> Stwist;
+  ///Phase Factor array
+  std::vector<QMCTraits::ValueType> phase_factor;
   ///maximum radius of this center
   RealType Rmax;
   ///spherical harmonics
@@ -93,12 +93,9 @@ struct SoaAtomicBasisSet
     return BasisSetSize;
   }
 
-  /// Set the number of periodic image for the evaluation of the orbitals.
-  void setPBCImages(const TinyVector<int, 3>& pbc_images) { PBCImages = pbc_images; }
+  /// Set the number of periodic image for the evaluation of the orbitals and the phase factor. In the case of Non-PBC, PBCImages=(1,1,1) and the PhaseFactor=1.
+  void setPBCParams(const TinyVector<int, 3>& pbc_images, const std::vector<QMCTraits::ValueType>& PhaseFactor) { PBCImages = pbc_images; phase_factor=PhaseFactor;} 
 
-
-  /// Set the number of periodic image for the evaluation of the orbitals.
-  void setStwist(const TinyVector<double, 3>& stwist) { Stwist = stwist; }
 
   /** implement a BasisSetBase virtual function
        *
@@ -140,7 +137,7 @@ struct SoaAtomicBasisSet
   template<typename LAT, typename T, typename PosType, typename VGL>
   inline void evaluateVGL(const LAT& lattice, const T r, const PosType& dr, const size_t offset, VGL& vgl)
   {
-    int TransX, TransY, TransZ;
+    int TransX, TransY, TransZ, phase_idx;
 
     PosType dr_new;
     T r_new;
@@ -148,6 +145,8 @@ struct SoaAtomicBasisSet
 
     constexpr T cone(1);
     constexpr T ctwo(2);
+    //Phase_idx needs to be initialized at -1 as it has to be incremented first to comply with the if statement (r_new >=Rmax) 
+    phase_idx=-1;
 
     //one can assert the alignment
     RealType* restrict phi   = tempS.data(0);
@@ -191,6 +190,7 @@ struct SoaAtomicBasisSet
           dr_new[1] = dr[1] + TransX * lattice.R(0, 1) + TransY * lattice.R(1, 1) + TransZ * lattice.R(2, 1);
           dr_new[2] = dr[2] + TransX * lattice.R(0, 2) + TransY * lattice.R(1, 2) + TransZ * lattice.R(2, 2);
           r_new     = std::sqrt(dot(dr_new, dr_new));
+          phase_idx++;
 
           //const size_t ib_max=NL.size();
           if (r_new >= Rmax)
@@ -218,12 +218,12 @@ struct SoaAtomicBasisSet
             const T ang_z     = ylm_z[lm];
             const T vr        = phi[nl];
 
-            psi[ib] += ang * vr;
-            dpsi_x[ib] += ang * gr_x + vr * ang_x;
-            dpsi_y[ib] += ang * gr_y + vr * ang_y;
-            dpsi_z[ib] += ang * gr_z + vr * ang_z;
-            d2psi[ib] += ang * (ctwo * drnloverr + d2phi[nl]) + ctwo * (gr_x * ang_x + gr_y * ang_y + gr_z * ang_z) +
-                vr * ylm_l[lm];
+            psi[ib] += ang * vr*phase_factor[phase_idx];
+            dpsi_x[ib] += (ang * gr_x + vr * ang_x)*phase_factor[phase_idx];
+            dpsi_y[ib] += (ang * gr_y + vr * ang_y)*phase_factor[phase_idx];
+            dpsi_z[ib] += (ang * gr_z + vr * ang_z)*phase_factor[phase_idx];
+            d2psi[ib] += (ang * (ctwo * drnloverr + d2phi[nl]) + ctwo * (gr_x * ang_x + gr_y * ang_y + gr_z * ang_z) +
+                vr * ylm_l[lm])*phase_factor[phase_idx];
           }
         }
       }
@@ -233,13 +233,15 @@ struct SoaAtomicBasisSet
   template<typename LAT, typename T, typename PosType, typename VT>
   inline void evaluateV(const LAT& lattice, const T r, const PosType& dr, VT* restrict psi)
   {
-    int TransX, TransY, TransZ;
+    int TransX, TransY, TransZ, phase_idx;
 
     PosType dr_new;
     T r_new;
     //T psi_new;
     RealType* restrict ylm_v = tempS.data(0);
     RealType* restrict phi_r = tempS.data(1);
+    //Phase_idx needs to be initialized at -1 as it has to be incremented first to comply with the if statement (r_new >=Rmax) 
+    phase_idx=-1;
     for (size_t ib = 0; ib < BasisSetSize; ++ib)
       psi[ib] = 0;
     for (int i = 0; i <= PBCImages[0]; i++) //loop Translation over X
@@ -259,7 +261,7 @@ struct SoaAtomicBasisSet
           dr_new[2] = dr[2] + TransX * lattice.R(0, 2) + TransY * lattice.R(1, 2) + TransZ * lattice.R(2, 2);
 
           r_new = std::sqrt(dot(dr_new, dr_new));
-
+          phase_idx++;
           if (r_new >= Rmax)
             continue;
 
@@ -267,7 +269,9 @@ struct SoaAtomicBasisSet
           MultiRnl->evaluate(r_new, phi_r);
 
           for (size_t ib = 0; ib < BasisSetSize; ++ib)
-            psi[ib] += ylm_v[LM[ib]] * phi_r[NL[ib]];
+            psi[ib] += ylm_v[LM[ib]] * phi_r[NL[ib]]*phase_factor[phase_idx];
+         
+
         }
       }
     }

@@ -113,6 +113,7 @@ LCAOrbitalBuilder::LCAOrbitalBuilder(ParticleSet& els, ParticleSet& ions, Commun
   std::string keyOpt("NMO");       // Numerical Molecular Orbital
   std::string transformOpt("yes"); // Numerical Molecular Orbital
   std::string cuspC("no");         // cusp correction
+  PosType twist(0.0);              // Supertwist coordinates
   cuspInfo = "";                   // file with precalculated cusp correction info
   OhmmsAttributeSet aAttrib;
   aAttrib.add(keyOpt, "keyword");
@@ -121,8 +122,8 @@ LCAOrbitalBuilder::LCAOrbitalBuilder(ParticleSet& els, ParticleSet& ions, Commun
   aAttrib.add(cuspC, "cuspCorrection");
   aAttrib.add(cuspInfo, "cuspInfo");
   aAttrib.add(h5_path, "href");
-  aAttrib.add(Stwist, "twist");
   aAttrib.add(PBCImages, "PBCimages");
+  aAttrib.add(twist, "twist");
   aAttrib.put(cur);
 
   if (cur != NULL)
@@ -144,7 +145,8 @@ LCAOrbitalBuilder::LCAOrbitalBuilder(ParticleSet& els, ParticleSet& ions, Commun
 
   if (cuspC == "yes")
     doCuspCorrection = true;
-
+  //Evaluate the Phase factor. Equals 1 for OBC. 
+  EvalPhaseFactor(twist); 
   // no need to wait but load the basis set
   if (h5_path != "")
     loadBasisSetFromH5();
@@ -329,10 +331,8 @@ LCAOrbitalBuilder::BasisSet_t* LCAOrbitalBuilder::createBasisSet(xmlNodePtr cur)
     }
     cur = cur->next;
   } // done with basis set
-
   mBasisSet->setBasisSetSize(-1);
-  mBasisSet->setPBCImages(PBCImages);
-  mBasisSet->setStwist(Stwist);
+  mBasisSet->setPBCParams(PBCImages,PhaseFactor);
   return mBasisSet;
 }
 
@@ -416,7 +416,7 @@ LCAOrbitalBuilder::BasisSet_t* LCAOrbitalBuilder::createBasisSetH5()
   }
 
   mBasisSet->setBasisSetSize(-1);
-  mBasisSet->setPBCImages(PBCImages);
+  mBasisSet->setPBCParams(PBCImages,PhaseFactor);
   return mBasisSet;
 }
 
@@ -697,6 +697,7 @@ bool LCAOrbitalBuilder::putPBCFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
   aAttrib.add(twist, "twist");
   aAttrib.put(curtemp);
 
+
   if (myComm->rank() == 0)
   {
     if (!hin.open(h5_path, H5F_ACC_RDONLY))
@@ -714,7 +715,7 @@ bool LCAOrbitalBuilder::putPBCFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
       setname="/Super_Twist/Coord";
       //setname = name;
       hin.read(twistH5, setname);
-      if (std::abs(twistH5[0] - twist[0]) > 1e-6 || std::abs(twistH5[1] - twist[1]) > 1e-6 ||
+/*      if (std::abs(twistH5[0] - twist[0]) > 1e-6 || std::abs(twistH5[1] - twist[1]) > 1e-6 ||
           std::abs(twistH5[2] - twist[2]) > 1e-6)
       {
          app_log()<<"Super Twist in XML : "<<twist[0]<<"    In H5:"<<twistH5[0]<<std::endl;
@@ -724,13 +725,14 @@ bool LCAOrbitalBuilder::putPBCFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
          app_log()<<"                  y :"<<std::abs(twistH5[1] - twist[1])<<std::endl;
          app_log()<<"                  z :"<<std::abs(twistH5[2] - twist[2])<<std::endl;
          APP_ABORT("Requested Super Twist in XML and Super Twist in HDF5 do not Match!!! Aborting."); 
-      }
-   if(IsComplex)
-       LoadCMatrix_cplx(spo,hin,neigs,setVal,norbs);
-   else
-       LoadCMatrix(spo,hin,neigs,setVal,norbs);
+      }*/
+#if not defined(QMC_COMPLEX)
+      LoadCMatrix(spo,hin,neigs,setVal,norbs);
+#else
+      LoadCMatrix_cplx(spo,hin,neigs,setVal,norbs);
+#endif
 
-    hin.close();
+      hin.close();
   }
 #ifdef HAVE_MPI
   myComm->comm.broadcast_n(spo.C->data(), spo.C->size());
@@ -785,6 +787,8 @@ bool LCAOrbitalBuilder::putOccupation(LCAOrbitalSet& spo, xmlNodePtr occ_ptr)
   return true;
 }
 ///////SHOULD BE TEMPLATED I GUESS//// 
+
+#if defined(QMC_COMPLEX)
 bool LCAOrbitalBuilder::LoadCMatrix_cplx(LCAOrbitalSet& spo,hdf_archive hin, int neigs,int setVal,int norbs)
 {
     bool success=false;
@@ -830,7 +834,7 @@ bool LCAOrbitalBuilder::LoadCMatrix_cplx(LCAOrbitalSet& spo,hdf_archive hin, int
     }
     return success;
 }
-
+#endif
 
 bool LCAOrbitalBuilder::LoadCMatrix(LCAOrbitalSet& spo,hdf_archive hin, int neigs,int setVal,int norbs)
 {
@@ -863,5 +867,31 @@ bool LCAOrbitalBuilder::LoadCMatrix(LCAOrbitalSet& spo,hdf_archive hin, int neig
       n++;
     }
     return success;
+}
+
+
+void LCAOrbitalBuilder::EvalPhaseFactor(PosType twist)
+{
+
+//NEED Specialization
+#if not defined(QMC_COMPLEX)
+    PhaseFactor.resize(3);
+    PhaseFactor[0]=1.0;
+    PhaseFactor[1]=1.0;
+    PhaseFactor[2]=1.0;
+#else
+    ///Exp(ik.g) where i is imaginary, k is the supertwist and g is the translation vector PBCImage.
+    int phase_idx=0;
+    for (int i = 0; i <= PBCImages[0]; i++) //loop Translation over X
+      for (int j = 0; j <= PBCImages[1]; j++) //loop Translation over Y
+        for (int k = 0; k <= PBCImages[2]; k++) //loop Translation over Z
+        {
+           RealType s,c;
+           RealType vec_scalar;
+           vec_scalar=i*twist[0]+j*twist[1]+k*twist[2];
+           sincos(vec_scalar, &s,&c);
+           PhaseFactor.emplace_back(c,s);
+        }
+#endif
 }
 } // namespace qmcplusplus
