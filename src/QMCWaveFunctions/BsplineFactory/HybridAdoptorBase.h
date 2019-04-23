@@ -20,6 +20,7 @@
 #include <Particle/DistanceTableData.h>
 #include <QMCWaveFunctions/lcao/SoaSphericalTensor.h>
 #include <spline2/MultiBspline1D.hpp>
+#include <Numerics/SmoothFunctions.hpp>
 
 namespace qmcplusplus
 {
@@ -93,7 +94,7 @@ struct AtomicOrbitalSoA
                        const VT& cutoff_buffer_in,
                        const VT& spline_radius_in,
                        const VT& non_overlapping_radius_in,
-                       const int& spline_npoints_in)
+                       const int spline_npoints_in)
   {
     pos[0]                 = R[0];
     pos[1]                 = R[1];
@@ -392,6 +393,7 @@ struct AtomicOrbitalSoA
     //Needed to do tensor product here
     APP_ABORT("AtomicOrbitalSoA::evaluate_vgh");
   }
+
 };
 
 /** adoptor class to match
@@ -416,7 +418,16 @@ struct HybridAdoptorBase
   // for APBC
   PointType r_image;
   // smooth function derivatives
-  RealType df_dr, d2f_dr2;
+  RealType f, df_dr, d2f_dr2;
+  /// smoothing schemes
+  enum class smoothing_schemes
+  {
+    CONSISTENT = 0,
+    SMOOTHALL,
+    SMOOTHPARTIAL
+  } smooth_scheme;
+  /// smoothing function
+  smoothing_functions smooth_func_id;
 
   HybridAdoptorBase() {}
 
@@ -630,18 +641,61 @@ struct HybridAdoptorBase
     return RealType(-1);
   }
 
-  inline RealType smooth_function(const ST& cutoff_buffer, const ST& cutoff, RealType r)
+  // interpolate buffer region, value only
+  template<typename VV>
+  inline void interpolate_buffer_v(VV& psi, const VV& psi_AO) const
   {
-    const RealType cone(1), ctwo(2), chalf(0.5);
+    const RealType cone(1), ctwo(2);
+    for (size_t i = 0; i < psi.size(); i++)
+      psi[i] = psi_AO[i] * f + psi[i] * (cone - f);
+  }
+
+  // interpolate buffer region, value, gradients and laplacian
+  template<typename VV, typename GV>
+  inline void interpolate_buffer_vgl(VV& psi, GV& dpsi, VV& d2psi, const VV& psi_AO, const GV& dpsi_AO, const VV& d2psi_AO) const
+  {
+    const RealType cone(1), ctwo(2);
+    const RealType rinv(1.0 / dist_r);
+    if(smooth_scheme == smoothing_schemes::CONSISTENT)
+      for (size_t i = 0; i < psi.size(); i++)
+      { // psi, dpsi, d2psi are all consistent
+        d2psi[i] = d2psi_AO[i] * f + d2psi[i] * (cone - f) +
+            df_dr * rinv * ctwo * dot(dpsi[i] - dpsi_AO[i], dist_dr) +
+            (psi_AO[i] - psi[i]) * (d2f_dr2 + ctwo * rinv * df_dr);
+        dpsi[i] = dpsi_AO[i] * f + dpsi[i] * (cone - f) +
+            df_dr * rinv * dist_dr * (psi[i] - psi_AO[i]);
+        psi[i] = psi_AO[i] * f + psi[i] * (cone - f);
+      }
+    else if(smooth_scheme == smoothing_schemes::SMOOTHALL)
+      for (size_t i = 0; i < psi.size(); i++)
+      {
+        d2psi[i] = d2psi_AO[i] * f + d2psi[i] * (cone - f);
+        dpsi[i] = dpsi_AO[i] * f + dpsi[i] * (cone - f);
+        psi[i] = psi_AO[i] * f + psi[i] * (cone - f);
+      }
+    else if(smooth_scheme == smoothing_schemes::SMOOTHPARTIAL)
+      for (size_t i = 0; i < psi.size(); i++)
+      { // dpsi, d2psi are consistent but psi is not.
+        d2psi[i] = d2psi_AO[i] * f + d2psi[i] * (cone - f) +
+            df_dr * rinv * ctwo * dot(dpsi[i] - dpsi_AO[i], dist_dr);
+        dpsi[i] = dpsi_AO[i] * f + dpsi[i] * (cone - f);
+        psi[i] = psi_AO[i] * f + psi[i] * (cone - f);
+      }
+    else
+      throw std::runtime_error("Unknown smooth scheme!");
+  }
+
+  inline RealType smooth_function(const ST& cutoff_buffer, const ST& cutoff, const RealType r)
+  {
+    const RealType cone(1);
     if (r < cutoff_buffer)
       return cone;
-    const RealType scale  = ctwo / (cutoff - cutoff_buffer);
-    const RealType x      = (r - cutoff_buffer) * scale - cone;
-    const RealType cosh_x = std::cosh(x);
-    const RealType tanh_x = std::tanh(x);
-    df_dr                 = -chalf / (cosh_x * cosh_x) * scale;
-    d2f_dr2               = -ctwo * tanh_x * df_dr * scale;
-    return chalf * (cone - tanh_x);
+    const RealType scale  = cone / (cutoff - cutoff_buffer);
+    const RealType x      = (r - cutoff_buffer) * scale;
+    f = smoothing(smooth_func_id, x, df_dr, d2f_dr2);
+    df_dr   *= scale;
+    d2f_dr2 *= scale*scale;
+    return f;
   }
 };
 
