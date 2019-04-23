@@ -11,22 +11,12 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 #include <stdexcept>
+
+#include "config/stdlib/math.h"
 #include "Numerics/SmoothFunctions.hpp"
 
 namespace qmcplusplus
 {
-
-/** wraps untemplated cmath function
- *  unless wall clock is actually effected considering dropping cmath dependence 
- */
-template<typename T>
-void sincosT(T x, T* y, T* z);
-
-template<>
-void sincosT(float x, float* y, float* z) { return sincosf(x, y , z); }
-template<>
-void sincosT(double x, double* y, double* z) { return sincos(x, y ,z); }
-    
 
 template<typename T>
 T smoothing(smoothing_functions func_id, T x, T& dx, T& d2x)
@@ -57,8 +47,8 @@ T smoothing(smoothing_functions func_id, T x, T& dx, T& d2x)
     /// (1+cos(PI*(1-cos(PI*x))/2))/2
     const T chalf(0.5), cone(1), pihalf(M_PI * chalf), pipihalf(M_PI * M_PI * chalf);
     T s, c, scos, ccos;
-    sincosT(T(M_PI) * x, &s, &c);
-    sincosT(pihalf * (cone - c), &scos, &ccos);
+    sincos(T(M_PI) * x, &s, &c);
+    sincos(pihalf * (cone - c), &scos, &ccos);
 
     dx  = -chalf * pipihalf * scos * s;
     d2x = -pihalf * pipihalf * (ccos * pihalf * s * s + scos * c);

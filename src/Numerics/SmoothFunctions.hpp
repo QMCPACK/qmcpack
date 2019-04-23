@@ -13,8 +13,6 @@
 #ifndef QMCPLUSPLUS_SMOOTH_FUNCTIONS_H
 #define QMCPLUSPLUS_SMOOTH_FUNCTIONS_H
 
-#include <cmath>
-
 namespace qmcplusplus
 {
 
