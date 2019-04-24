@@ -97,7 +97,7 @@ IF (ENABLE_GCOV)
 ENDIF(ENABLE_GCOV)
 
 SET(XRAY_PROFILE FALSE CACHE BOOL "Use llvm xray profiling")
-SET(XRAY_INSTRUCTION_THRESHOLD 200 CACHE INT "Instruction threshold for xray instrumentation")
+SET(XRAY_INSTRUCTION_THRESHOLD 200 CACHE STRING "Instruction threshold for xray instrumentation")
 
 IF(XRAY_PROFILE)
   set(XRAY_FLAGS "-fxray-instrument -fxray-instruction-threshold=${XRAY_INSTRUCTION_THRESHOLD}")
