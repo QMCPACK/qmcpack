@@ -314,8 +314,14 @@ typename DiracDeterminant<DU_TYPE>::GradType DiracDeterminant<DU_TYPE>::evalGrad
                                                                                        ParticleSet& source,
                                                                                        int iat)
 {
-  Phi->evaluateGradSource(P, FirstIndex, LastIndex, source, iat, grad_source_psiM);
-  return simd::dot(psiM.data(), grad_source_psiM.data(), psiM.size());
+  GradType g(0.0);
+  if(Phi->hasIonDerivs())
+  {
+    Phi->evaluateGradSource(P, FirstIndex, LastIndex, source, iat, grad_source_psiM);
+    g=simd::dot(psiM.data(), grad_source_psiM.data(), psiM.size());
+  }
+
+  return g;
 }
 
 template<typename DU_TYPE>
@@ -326,100 +332,105 @@ typename DiracDeterminant<DU_TYPE>::GradType DiracDeterminant<DU_TYPE>::evalGrad
     TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM>& grad_grad,
     TinyVector<ParticleSet::ParticleLaplacian_t, OHMMS_DIM>& lapl_grad)
 {
-  Phi->evaluateGradSource(P,
-                          FirstIndex,
-                          LastIndex,
-                          source,
-                          iat,
-                          grad_source_psiM,
-                          grad_grad_source_psiM,
-                          grad_lapl_source_psiM);
-  Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM_temp, dpsiM, d2psiM);
-
-  invertPsiM(psiM_temp, psiM);
-
-  GradMatrix_t& Phi_alpha(grad_source_psiM);
-  GradMatrix_t& Grad_phi(dpsiM);
-  ValueMatrix_t& Grad2_phi(d2psiM);
-  HessMatrix_t& Grad_phi_alpha(grad_grad_source_psiM);
-  GradMatrix_t& Grad2_phi_alpha(grad_lapl_source_psiM);
-  GradType Psi_alpha_over_psi;
-  Psi_alpha_over_psi = evalGradSource(P, source, iat);
-  std::ofstream outfile;
-  outfile.open("grad_psi_alpha_over_psi", std::ios::app);
-  ValueMatrix_t toDet;
-  ValueMatrix_t toDet_l;
-  toDet.resize(2, 2);
-  toDet_l.resize(2, 2);
-  for (int ptcl = 0; ptcl < NumPtcls; ptcl++)
+  GradType g(0.0);
+  if(Phi->hasIonDerivs())
   {
-    ValueType Grad2_psi_over_psi(0.0);
-    GradType Grad_psi_over_psi(0.0);
-    HessType Grad_psi_alpha_over_psi(0.0);
-    HessType one_row_change(0.0);
-    HessType two_row_change(0.0);
-    GradType one_row_change_l(0.0);
-    GradType two_row_change_l(0.0);
-    for (int el_dim = 0; el_dim < OHMMS_DIM; el_dim++)
+    Phi->evaluateGradSource(P,
+			    FirstIndex,
+			    LastIndex,
+			    source,
+			    iat,
+			    grad_source_psiM,
+			    grad_grad_source_psiM,
+			    grad_lapl_source_psiM);
+    Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM_temp, dpsiM, d2psiM);
+
+    invertPsiM(psiM_temp, psiM);
+
+    GradMatrix_t& Phi_alpha(grad_source_psiM);
+    GradMatrix_t& Grad_phi(dpsiM);
+    ValueMatrix_t& Grad2_phi(d2psiM);
+    HessMatrix_t& Grad_phi_alpha(grad_grad_source_psiM);
+    GradMatrix_t& Grad2_phi_alpha(grad_lapl_source_psiM);
+    GradType Psi_alpha_over_psi;
+    Psi_alpha_over_psi = evalGradSource(P, source, iat);
+    std::ofstream outfile;
+    outfile.open("grad_psi_alpha_over_psi", std::ios::app);
+    ValueMatrix_t toDet;
+    ValueMatrix_t toDet_l;
+    toDet.resize(2, 2);
+    toDet_l.resize(2, 2);
+    for (int ptcl = 0; ptcl < NumPtcls; ptcl++)
     {
-      for (int orbital = 0; orbital < NumOrbitals; orbital++)
+      ValueType Grad2_psi_over_psi(0.0);
+      GradType Grad_psi_over_psi(0.0);
+      HessType Grad_psi_alpha_over_psi(0.0);
+      HessType one_row_change(0.0);
+      HessType two_row_change(0.0);
+      GradType one_row_change_l(0.0);
+      GradType two_row_change_l(0.0);
+      for (int el_dim = 0; el_dim < OHMMS_DIM; el_dim++)
       {
-        Grad_psi_over_psi[el_dim] += Grad_phi(ptcl, orbital)[el_dim] * psiM(ptcl, orbital);
-        if (el_dim == 0)
-          Grad2_psi_over_psi += Grad2_phi(ptcl, orbital) * psiM(ptcl, orbital);
+	for (int orbital = 0; orbital < NumOrbitals; orbital++)
+	{
+	  Grad_psi_over_psi[el_dim] += Grad_phi(ptcl, orbital)[el_dim] * psiM(ptcl, orbital);
+	  if (el_dim == 0)
+	    Grad2_psi_over_psi += Grad2_phi(ptcl, orbital) * psiM(ptcl, orbital);
+	}
+	for (int dim = 0; dim < OHMMS_DIM; dim++)
+	{
+	  one_row_change(dim, el_dim) = 0.0;
+	  for (int orbital = 0; orbital < NumOrbitals; orbital++)
+	  {
+	    one_row_change(dim, el_dim) += Grad_phi_alpha(ptcl, orbital)(dim, el_dim) * psiM(ptcl, orbital);
+	    if (el_dim == 0)
+	      one_row_change_l[dim] += Grad2_phi_alpha(ptcl, orbital)[dim] * psiM(ptcl, orbital);
+	  }
+	  for (int ptcl2 = 0; ptcl2 < NumPtcls; ptcl2++)
+	  {
+	    if (ptcl != ptcl2)
+	    {
+	      toDet   = 0.0;
+	      toDet_l = 0.0;
+	      for (int orbital = 0; orbital < NumOrbitals; orbital++)
+	      {
+		toDet(0, 0) += Grad_phi(ptcl, orbital)[el_dim] * psiM(ptcl, orbital);
+		toDet_l(0, 0) += Grad2_phi(ptcl, orbital) * psiM(ptcl, orbital);
+		toDet(0, 1) += Grad_phi(ptcl, orbital)[el_dim] * psiM(ptcl2, orbital);
+		toDet_l(0, 1) += Grad2_phi(ptcl, orbital) * psiM(ptcl2, orbital);
+		toDet(1, 0) += Phi_alpha(ptcl2, orbital)[dim] * psiM(ptcl, orbital);
+		toDet_l(1, 0) += Phi_alpha(ptcl2, orbital)[dim] * psiM(ptcl, orbital);
+		toDet(1, 1) += Phi_alpha(ptcl2, orbital)[dim] * psiM(ptcl2, orbital);
+		toDet_l(1, 1) += Phi_alpha(ptcl2, orbital)[dim] * psiM(ptcl2, orbital);
+	      }
+	      two_row_change(dim, el_dim) += toDet(0, 0) * toDet(1, 1) - toDet(1, 0) * toDet(0, 1);
+	      if (el_dim == 0)
+		two_row_change_l[dim] += toDet_l(0, 0) * toDet_l(1, 1) - toDet_l(1, 0) * toDet_l(0, 1);
+	    }
+	  }
+	  Grad_psi_alpha_over_psi(dim, el_dim) = one_row_change(dim, el_dim) + two_row_change(dim, el_dim);
+	  outfile << Grad_psi_alpha_over_psi(dim, el_dim) << std::endl;
+	  grad_grad[dim][ptcl][el_dim] = one_row_change(dim, el_dim) + two_row_change(dim, el_dim) -
+	      Grad_psi_over_psi[el_dim] * Psi_alpha_over_psi[dim];
+	}
       }
       for (int dim = 0; dim < OHMMS_DIM; dim++)
       {
-        one_row_change(dim, el_dim) = 0.0;
-        for (int orbital = 0; orbital < NumOrbitals; orbital++)
-        {
-          one_row_change(dim, el_dim) += Grad_phi_alpha(ptcl, orbital)(dim, el_dim) * psiM(ptcl, orbital);
-          if (el_dim == 0)
-            one_row_change_l[dim] += Grad2_phi_alpha(ptcl, orbital)[dim] * psiM(ptcl, orbital);
-        }
-        for (int ptcl2 = 0; ptcl2 < NumPtcls; ptcl2++)
-        {
-          if (ptcl != ptcl2)
-          {
-            toDet   = 0.0;
-            toDet_l = 0.0;
-            for (int orbital = 0; orbital < NumOrbitals; orbital++)
-            {
-              toDet(0, 0) += Grad_phi(ptcl, orbital)[el_dim] * psiM(ptcl, orbital);
-              toDet_l(0, 0) += Grad2_phi(ptcl, orbital) * psiM(ptcl, orbital);
-              toDet(0, 1) += Grad_phi(ptcl, orbital)[el_dim] * psiM(ptcl2, orbital);
-              toDet_l(0, 1) += Grad2_phi(ptcl, orbital) * psiM(ptcl2, orbital);
-              toDet(1, 0) += Phi_alpha(ptcl2, orbital)[dim] * psiM(ptcl, orbital);
-              toDet_l(1, 0) += Phi_alpha(ptcl2, orbital)[dim] * psiM(ptcl, orbital);
-              toDet(1, 1) += Phi_alpha(ptcl2, orbital)[dim] * psiM(ptcl2, orbital);
-              toDet_l(1, 1) += Phi_alpha(ptcl2, orbital)[dim] * psiM(ptcl2, orbital);
-            }
-            two_row_change(dim, el_dim) += toDet(0, 0) * toDet(1, 1) - toDet(1, 0) * toDet(0, 1);
-            if (el_dim == 0)
-              two_row_change_l[dim] += toDet_l(0, 0) * toDet_l(1, 1) - toDet_l(1, 0) * toDet_l(0, 1);
-          }
-        }
-        Grad_psi_alpha_over_psi(dim, el_dim) = one_row_change(dim, el_dim) + two_row_change(dim, el_dim);
-        outfile << Grad_psi_alpha_over_psi(dim, el_dim) << std::endl;
-        grad_grad[dim][ptcl][el_dim] = one_row_change(dim, el_dim) + two_row_change(dim, el_dim) -
-            Grad_psi_over_psi[el_dim] * Psi_alpha_over_psi[dim];
+	lapl_grad[dim][ptcl] = 0.0;
+	lapl_grad[dim][ptcl] +=
+	    one_row_change_l[dim] + two_row_change_l[dim] - Psi_alpha_over_psi[dim] * Grad2_psi_over_psi;
+	for (int el_dim = 0; el_dim < OHMMS_DIM; el_dim++)
+	{
+	  lapl_grad[dim][ptcl] -= (RealType)2.0 * Grad_psi_alpha_over_psi(dim, el_dim) * Grad_psi_over_psi[el_dim];
+	  lapl_grad[dim][ptcl] +=
+	      (RealType)2.0 * Psi_alpha_over_psi[dim] * (Grad_psi_over_psi[el_dim] * Grad_psi_over_psi[el_dim]);
+	}
       }
     }
-    for (int dim = 0; dim < OHMMS_DIM; dim++)
-    {
-      lapl_grad[dim][ptcl] = 0.0;
-      lapl_grad[dim][ptcl] +=
-          one_row_change_l[dim] + two_row_change_l[dim] - Psi_alpha_over_psi[dim] * Grad2_psi_over_psi;
-      for (int el_dim = 0; el_dim < OHMMS_DIM; el_dim++)
-      {
-        lapl_grad[dim][ptcl] -= (RealType)2.0 * Grad_psi_alpha_over_psi(dim, el_dim) * Grad_psi_over_psi[el_dim];
-        lapl_grad[dim][ptcl] +=
-            (RealType)2.0 * Psi_alpha_over_psi[dim] * (Grad_psi_over_psi[el_dim] * Grad_psi_over_psi[el_dim]);
-      }
-    }
+    outfile.close();
+    g=Psi_alpha_over_psi;
   }
-  outfile.close();
-  return Psi_alpha_over_psi;
+  return g;
 }
 
 template<typename DU_TYPE>
@@ -456,93 +467,96 @@ typename DiracDeterminant<DU_TYPE>::GradType DiracDeterminant<DU_TYPE>::evalGrad
     TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM>& grad_grad,
     TinyVector<ParticleSet::ParticleLaplacian_t, OHMMS_DIM>& lapl_grad)
 {
-  Phi->evaluateGradSource(P,
-                          FirstIndex,
-                          LastIndex,
-                          source,
-                          iat,
-                          grad_source_psiM,
-                          grad_grad_source_psiM,
-                          grad_lapl_source_psiM);
-  // HACK HACK HACK
-  // Phi->evaluate(P, FirstIndex, LastIndex, psiM, dpsiM, d2psiM);
-  // psiM_temp = psiM;
-  // LogValue=InvertWithLog(psiM.data(),NumPtcls,NumOrbitals,
-  // 			   WorkSpace.data(),Pivot.data(),PhaseValue);
-  // for (int i=0; i<NumPtcls; i++)
-  //   for (int j=0; j<NumPtcls; j++) {
-  // 	double val = 0.0;
-  // 	for (int k=0; k<NumPtcls; k++)
-  // 	  val += psiM(i,k) * psiM_temp(k,j);
-  // 	val -= (i == j) ? 1.0 : 0.0;
-  // 	if (std::abs(val) > 1.0e-12)
-  // 	  std::cerr << "Error in inverse.\n";
-  //   }
-  // for (int i=0; i<NumPtcls; i++) {
-  //   P.G[FirstIndex+i] = GradType();
-  //   for (int j=0; j<NumOrbitals; j++)
-  // 	P.G[FirstIndex+i] += psiM(i,j)*dpsiM(i,j);
-  // }
-  // Compute matrices
-  phi_alpha_Minv      = 0.0;
-  grad_phi_Minv       = 0.0;
-  lapl_phi_Minv       = 0.0;
-  grad_phi_alpha_Minv = 0.0;
-  for (int i = 0; i < NumPtcls; i++)
-    for (int j = 0; j < NumOrbitals; j++)
-    {
-      lapl_phi_Minv(i, j) = 0.0;
-      for (int k = 0; k < NumOrbitals; k++)
-        lapl_phi_Minv(i, j) += d2psiM(i, k) * psiM(j, k);
-    }
-  for (int dim = 0; dim < OHMMS_DIM; dim++)
+  GradType gradPsi(0.0);
+  if(Phi->hasIonDerivs())
   {
+    Phi->evaluateGradSource(P,
+			    FirstIndex,
+			    LastIndex,
+			    source,
+			    iat,
+			    grad_source_psiM,
+			    grad_grad_source_psiM,
+			    grad_lapl_source_psiM);
+    // HACK HACK HACK
+    // Phi->evaluate(P, FirstIndex, LastIndex, psiM, dpsiM, d2psiM);
+    // psiM_temp = psiM;
+    // LogValue=InvertWithLog(psiM.data(),NumPtcls,NumOrbitals,
+    // 			   WorkSpace.data(),Pivot.data(),PhaseValue);
+    // for (int i=0; i<NumPtcls; i++)
+    //   for (int j=0; j<NumPtcls; j++) {
+    // 	double val = 0.0;
+    // 	for (int k=0; k<NumPtcls; k++)
+    // 	  val += psiM(i,k) * psiM_temp(k,j);
+    // 	val -= (i == j) ? 1.0 : 0.0;
+    // 	if (std::abs(val) > 1.0e-12)
+    // 	  std::cerr << "Error in inverse.\n";
+    //   }
+    // for (int i=0; i<NumPtcls; i++) {
+    //   P.G[FirstIndex+i] = GradType();
+    //   for (int j=0; j<NumOrbitals; j++)
+    // 	P.G[FirstIndex+i] += psiM(i,j)*dpsiM(i,j);
+    // }
+    // Compute matrices
+    phi_alpha_Minv      = 0.0;
+    grad_phi_Minv       = 0.0;
+    lapl_phi_Minv       = 0.0;
+    grad_phi_alpha_Minv = 0.0;
     for (int i = 0; i < NumPtcls; i++)
       for (int j = 0; j < NumOrbitals; j++)
       {
-        for (int k = 0; k < NumOrbitals; k++)
-        {
-          phi_alpha_Minv(i, j)[dim] += grad_source_psiM(i, k)[dim] * psiM(j, k);
-          grad_phi_Minv(i, j)[dim] += dpsiM(i, k)[dim] * psiM(j, k);
-          for (int dim_el = 0; dim_el < OHMMS_DIM; dim_el++)
-            grad_phi_alpha_Minv(i, j)(dim, dim_el) += grad_grad_source_psiM(i, k)(dim, dim_el) * psiM(j, k);
-        }
+	lapl_phi_Minv(i, j) = 0.0;
+	for (int k = 0; k < NumOrbitals; k++)
+	  lapl_phi_Minv(i, j) += d2psiM(i, k) * psiM(j, k);
       }
-  }
-  GradType gradPsi;
-  for (int i = 0, iel = FirstIndex; i < NumPtcls; i++, iel++)
-  {
-    HessType dval(0.0);
-    GradType d2val(0.0);
     for (int dim = 0; dim < OHMMS_DIM; dim++)
-      for (int dim_el = 0; dim_el < OHMMS_DIM; dim_el++)
-        dval(dim, dim_el) = grad_phi_alpha_Minv(i, i)(dim, dim_el);
-    for (int j = 0; j < NumOrbitals; j++)
     {
-      gradPsi += grad_source_psiM(i, j) * psiM(i, j);
-      for (int dim = 0; dim < OHMMS_DIM; dim++)
-        for (int k = 0; k < OHMMS_DIM; k++)
-          dval(dim, k) -= phi_alpha_Minv(j, i)[dim] * grad_phi_Minv(i, j)[k];
+      for (int i = 0; i < NumPtcls; i++)
+	for (int j = 0; j < NumOrbitals; j++)
+	{
+	  for (int k = 0; k < NumOrbitals; k++)
+	  {
+	    phi_alpha_Minv(i, j)[dim] += grad_source_psiM(i, k)[dim] * psiM(j, k);
+	    grad_phi_Minv(i, j)[dim] += dpsiM(i, k)[dim] * psiM(j, k);
+	    for (int dim_el = 0; dim_el < OHMMS_DIM; dim_el++)
+	      grad_phi_alpha_Minv(i, j)(dim, dim_el) += grad_grad_source_psiM(i, k)(dim, dim_el) * psiM(j, k);
+	  }
+	}
     }
-    for (int dim = 0; dim < OHMMS_DIM; dim++)
+    for (int i = 0, iel = FirstIndex; i < NumPtcls; i++, iel++)
     {
-      for (int k = 0; k < OHMMS_DIM; k++)
-        grad_grad[dim][iel][k] += dval(dim, k);
+      HessType dval(0.0);
+      GradType d2val(0.0);
+      for (int dim = 0; dim < OHMMS_DIM; dim++)
+	for (int dim_el = 0; dim_el < OHMMS_DIM; dim_el++)
+	  dval(dim, dim_el) = grad_phi_alpha_Minv(i, i)(dim, dim_el);
       for (int j = 0; j < NumOrbitals; j++)
       {
-        // First term, eq 9
-        lapl_grad[dim][iel] += grad_lapl_source_psiM(i, j)[dim] * psiM(i, j);
-        // Second term, eq 9
-        if (j == i)
-          for (int dim_el = 0; dim_el < OHMMS_DIM; dim_el++)
-            lapl_grad[dim][iel] -= (RealType)2.0 * grad_phi_alpha_Minv(j, i)(dim, dim_el) * grad_phi_Minv(i, j)[dim_el];
-        // Third term, eq 9
-        // First term, eq 10
-        lapl_grad[dim][iel] -= phi_alpha_Minv(j, i)[dim] * lapl_phi_Minv(i, j);
-        // Second term, eq 11
-        for (int dim_el = 0; dim_el < OHMMS_DIM; dim_el++)
-          lapl_grad[dim][iel] +=
-              (RealType)2.0 * phi_alpha_Minv(j, i)[dim] * grad_phi_Minv(i, i)[dim_el] * grad_phi_Minv(i, j)[dim_el];
+	gradPsi += grad_source_psiM(i, j) * psiM(i, j);
+	for (int dim = 0; dim < OHMMS_DIM; dim++)
+	  for (int k = 0; k < OHMMS_DIM; k++)
+	    dval(dim, k) -= phi_alpha_Minv(j, i)[dim] * grad_phi_Minv(i, j)[k];
+      }
+      for (int dim = 0; dim < OHMMS_DIM; dim++)
+      {
+	for (int k = 0; k < OHMMS_DIM; k++)
+	  grad_grad[dim][iel][k] += dval(dim, k);
+	for (int j = 0; j < NumOrbitals; j++)
+	{
+	  // First term, eq 9
+	  lapl_grad[dim][iel] += grad_lapl_source_psiM(i, j)[dim] * psiM(i, j);
+	  // Second term, eq 9
+	  if (j == i)
+	    for (int dim_el = 0; dim_el < OHMMS_DIM; dim_el++)
+	      lapl_grad[dim][iel] -= (RealType)2.0 * grad_phi_alpha_Minv(j, i)(dim, dim_el) * grad_phi_Minv(i, j)[dim_el];
+	  // Third term, eq 9
+	  // First term, eq 10
+	  lapl_grad[dim][iel] -= phi_alpha_Minv(j, i)[dim] * lapl_phi_Minv(i, j);
+	  // Second term, eq 11
+	  for (int dim_el = 0; dim_el < OHMMS_DIM; dim_el++)
+	    lapl_grad[dim][iel] +=
+		(RealType)2.0 * phi_alpha_Minv(j, i)[dim] * grad_phi_Minv(i, i)[dim_el] * grad_phi_Minv(i, j)[dim_el];
+	}
       }
     }
   }
