@@ -1457,6 +1457,7 @@ void WaveFunctionTester::runGradSourceTest()
   // GRAD TEST COMPUTATION
   int nions = source.getTotalNum();
   ParticleSet::ParticleGradient_t grad_ion(nions), grad_ion_FD(nions);
+  Psi.prepareIonDerivs();
   for (int iat = 0; iat < nions; iat++)
   {
     grad_ion[iat] = Psi.evalGradSource(W, source, iat);
@@ -1500,6 +1501,7 @@ void WaveFunctionTester::runGradSourceTest()
       lapl_grad_FD[dim].resize(nat);
     }
     Psi.evaluateLog(W);
+    Psi.prepareIonDerivs();
     GradType grad_log = Psi.evalGradSource(W, source, isrc, grad_grad, lapl_grad);
     ValueType log     = Psi.evaluateLog(W);
     //grad_log = Psi.evalGradSource (W, source, isrc);
@@ -1513,10 +1515,12 @@ void WaveFunctionTester::runGradSourceTest()
         W.R[iat][eldim] = r0[eldim] + delta;
         W.update();
         ValueType log_p       = Psi.evaluateLog(W);
+        Psi.prepareIonDerivs();
         GradType gradlogpsi_p = Psi.evalGradSource(W, source, isrc);
         W.R[iat][eldim]       = r0[eldim] - delta;
         W.update();
         ValueType log_m       = Psi.evaluateLog(W);
+        Psi.prepareIonDerivs();
         GradType gradlogpsi_m = Psi.evalGradSource(W, source, isrc);
         lapFD += gradlogpsi_m + gradlogpsi_p;
         gFD[eldim] = gradlogpsi_p - gradlogpsi_m;
