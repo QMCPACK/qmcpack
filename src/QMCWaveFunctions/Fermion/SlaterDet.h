@@ -103,6 +103,11 @@ public:
     return Dets[getDetID(iat)]->ratioGrad(P, iat, grad_iat);
   }
 
+  virtual void prepareIonDerivs()
+  {
+    for(int iz=0; iz < size(); iz++)
+      Dets[iz]->prepareIonDerivs();
+  }
   virtual GradType evalGrad(ParticleSet& P, int iat) { return Dets[getDetID(iat)]->evalGrad(P, iat); }
 
   virtual GradType evalGradSource(ParticleSet& P, ParticleSet& src, int iat)

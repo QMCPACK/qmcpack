@@ -341,6 +341,14 @@ TrialWaveFunction::GradType TrialWaveFunction::evalGrad(ParticleSet& P,int iat)
   return grad_iat;
 }
 
+//Initializes temporary data structures for current particle set configuration for 
+//fast force evaluation.
+void TrialWaveFunction::prepareIonDerivs()
+{
+  for (int i=0; i<Z.size(); ++i)
+    Z[i]->prepareIonDerivs();
+}
+
 // Evaluates the gradient w.r.t. to the source of the Laplacian
 // w.r.t. to the electrons of the wave function.
 TrialWaveFunction::GradType TrialWaveFunction::evalGradSource(ParticleSet& P

@@ -250,6 +250,11 @@ struct WaveFunctionComponent: public QMCTraits
     return GradType();
   }
 
+  /** For given particle set configuration, initialize whatever intermediate objects are required
+  * for force evaluation (preferably fast).  Default does nothing.*/ 
+  virtual void prepareIonDerivs()
+  {
+  }
   /** return the logarithmic gradient for the iat-th particle
    * of the source particleset
    * @param Pquantum particle set
