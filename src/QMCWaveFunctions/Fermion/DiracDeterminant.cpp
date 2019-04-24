@@ -79,16 +79,6 @@ void DiracDeterminant<DU_TYPE>::resize(int nel, int morb)
   FirstAddressOfdV = &(dpsiM(0, 0)[0]); //(*dpsiM.begin())[0]);
   LastAddressOfdV  = FirstAddressOfdV + NumPtcls * NumOrbitals * DIM;
 
-  if (ionDerivs)
-  {
-    grad_source_psiM.resize(nel, norb);
-    grad_lapl_source_psiM.resize(nel, norb);
-    grad_grad_source_psiM.resize(nel, norb);
-    phi_alpha_Minv.resize(nel, norb);
-    grad_phi_Minv.resize(nel, norb);
-    lapl_phi_Minv.resize(nel, norb);
-    grad_phi_alpha_Minv.resize(nel, norb);
-  }
 }
 
 template<typename DU_TYPE>
@@ -306,14 +296,24 @@ void DiracDeterminant<DU_TYPE>::evaluateRatiosAlltoOne(ParticleSet& P, std::vect
   MatrixOperators::product(psiM, psiV.data(), &ratios[FirstIndex]);
 }
 
+
+template<typename DU_TYPE>
+void DiracDeterminant<DU_TYPE>::prepareIonDerivs()
+{
+  grad_source_psiM.resize(NumPtcls, NumOrbitals);
+  grad_lapl_source_psiM.resize(NumPtcls, NumOrbitals);
+  grad_grad_source_psiM.resize(NumPtcls, NumOrbitals);
+  phi_alpha_Minv.resize(NumPtcls, NumOrbitals);
+  grad_phi_Minv.resize(NumPtcls, NumOrbitals);
+  lapl_phi_Minv.resize(NumPtcls, NumOrbitals);
+  grad_phi_alpha_Minv.resize(NumPtcls, NumOrbitals);
+}
+
 template<typename DU_TYPE>
 typename DiracDeterminant<DU_TYPE>::GradType DiracDeterminant<DU_TYPE>::evalGradSource(ParticleSet& P,
                                                                                        ParticleSet& source,
                                                                                        int iat)
 {
-  if (!ionDerivs)
-    APP_ABORT("template<typename DU_TYPE>DiracDeterminant<DU_TYPE>::evalGradSource.  Determinant not initialized for "
-              "force computations.");
   Phi->evaluateGradSource(P, FirstIndex, LastIndex, source, iat, grad_source_psiM);
   return simd::dot(psiM.data(), grad_source_psiM.data(), psiM.size());
 }
@@ -326,9 +326,6 @@ typename DiracDeterminant<DU_TYPE>::GradType DiracDeterminant<DU_TYPE>::evalGrad
     TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM>& grad_grad,
     TinyVector<ParticleSet::ParticleLaplacian_t, OHMMS_DIM>& lapl_grad)
 {
-  if (!ionDerivs)
-    APP_ABORT("template<typename DU_TYPE>DiracDeterminant<DU_TYPE>::evalGradSourcep.  Determinant not initialized for "
-              "force computations.");
   Phi->evaluateGradSource(P,
                           FirstIndex,
                           LastIndex,
@@ -459,9 +456,6 @@ typename DiracDeterminant<DU_TYPE>::GradType DiracDeterminant<DU_TYPE>::evalGrad
     TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM>& grad_grad,
     TinyVector<ParticleSet::ParticleLaplacian_t, OHMMS_DIM>& lapl_grad)
 {
-  if (!ionDerivs)
-    APP_ABORT("template<typename DU_TYPE>DiracDeterminant<DU_TYPE>::evalGradSource.  Determinant not initialized for "
-              "force computations.");
   Phi->evaluateGradSource(P,
                           FirstIndex,
                           LastIndex,
