@@ -139,7 +139,10 @@ public:
     return OrbitalSetSize;
   }
 
-
+  inline bool hasIonDerivs() const
+  {
+    return ionDerivs;
+  }
 #if !defined(ENABLE_SOA)
   int getBasisSetSize() const { return BasisSetSize; }
 
