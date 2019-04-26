@@ -226,10 +226,6 @@ public:
   void printGL(ParticleSet::ParticleGradient_t& G,
                ParticleSet::ParticleLaplacian_t& L, std::string tag = "GL");
  
-
-  /** Initializes auxiliary data for fast force evaluation. */
-  void prepareIonDerivs();
-
   /** Returns the logarithmic gradient of the trial wave function
    *  with respect to the iat^th atom of the source ParticleSet. */
   GradType evalGradSource(ParticleSet& P, ParticleSet &source, int iat);
