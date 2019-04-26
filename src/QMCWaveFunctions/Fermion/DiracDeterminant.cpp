@@ -298,7 +298,7 @@ void DiracDeterminant<DU_TYPE>::evaluateRatiosAlltoOne(ParticleSet& P, std::vect
 
 
 template<typename DU_TYPE>
-void DiracDeterminant<DU_TYPE>::prepareIonDerivs()
+void DiracDeterminant<DU_TYPE>::resizeScratchObjectsForIonDerivs()
 {
   grad_source_psiM.resize(NumPtcls, NumOrbitals);
   grad_lapl_source_psiM.resize(NumPtcls, NumOrbitals);
@@ -317,6 +317,7 @@ typename DiracDeterminant<DU_TYPE>::GradType DiracDeterminant<DU_TYPE>::evalGrad
   GradType g(0.0);
   if(Phi->hasIonDerivs())
   {
+    resizeScratchObjectsForIonDerivs();
     Phi->evaluateGradSource(P, FirstIndex, LastIndex, source, iat, grad_source_psiM);
     g=simd::dot(psiM.data(), grad_source_psiM.data(), psiM.size());
   }
@@ -335,6 +336,7 @@ typename DiracDeterminant<DU_TYPE>::GradType DiracDeterminant<DU_TYPE>::evalGrad
   GradType g(0.0);
   if(Phi->hasIonDerivs())
   {
+    resizeScratchObjectsForIonDerivs();
     Phi->evaluateGradSource(P,
 			    FirstIndex,
 			    LastIndex,
@@ -470,6 +472,7 @@ typename DiracDeterminant<DU_TYPE>::GradType DiracDeterminant<DU_TYPE>::evalGrad
   GradType gradPsi(0.0);
   if(Phi->hasIonDerivs())
   {
+    resizeScratchObjectsForIonDerivs();
     Phi->evaluateGradSource(P,
 			    FirstIndex,
 			    LastIndex,

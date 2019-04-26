@@ -98,8 +98,6 @@ public:
   ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
   GradType evalGrad(ParticleSet& P, int iat);
 
-  void prepareIonDerivs();
-
   GradType evalGradSource(ParticleSet& P, ParticleSet& source, int iat);
 
   GradType evalGradSource(ParticleSet& P,
@@ -185,6 +183,9 @@ public:
   ValueType curRatio;
   ValueType* FirstAddressOfdV;
   ValueType* LastAddressOfdV;
+  
+private:
+  void resizeScratchObjectsForIonDerivs();
 };
 
 
