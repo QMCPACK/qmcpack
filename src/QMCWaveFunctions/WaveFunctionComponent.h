@@ -122,9 +122,6 @@ struct WaveFunctionComponent: public QMCTraits
   /** define the level of storage in derivative buffer **/
   int DerivStorageType;
 
-  /** flag to calculate and return ionic derivatives */
-  bool ionDerivs;
-
   int parameterType;
   /** current update mode */
   int UpdateMode;
