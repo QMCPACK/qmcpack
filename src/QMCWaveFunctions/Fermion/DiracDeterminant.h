@@ -106,12 +106,6 @@ public:
                           TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM>& grad_grad,
                           TinyVector<ParticleSet::ParticleLaplacian_t, OHMMS_DIM>& lapl_grad);
 
-  GradType evalGradSourcep(ParticleSet& P,
-                           ParticleSet& source,
-                           int iat,
-                           TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM>& grad_grad,
-                           TinyVector<ParticleSet::ParticleLaplacian_t, OHMMS_DIM>& lapl_grad);
-
   /** move was accepted, update the real container
    */
   void acceptMove(ParticleSet& P, int iat);
