@@ -185,6 +185,8 @@ public:
   ValueType* LastAddressOfdV;
   
 private:
+  /** Resize all temporary arrays required for force computation.
+  */ 
   void resizeScratchObjectsForIonDerivs();
 };
 
