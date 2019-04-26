@@ -67,8 +67,6 @@ public:
   int builder_index;
   ///true if SPO is optimizable
   bool Optimizable;
-  ///flag to calculate ionic derivatives
-  bool ionDerivs;
   ///number of Single-particle orbitals
   IndexType OrbitalSetSize;
   /// Optimizable variables
@@ -429,6 +427,8 @@ protected:
   bool putFromXML(xmlNodePtr coeff_ptr);
   bool putFromH5(const char* fname, xmlNodePtr coeff_ptr);
 #endif
+  ///flag to calculate ionic derivatives
+  bool ionDerivs;
 
 };
 
