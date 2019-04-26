@@ -165,11 +165,6 @@ struct WaveFunctionComponent: public QMCTraits
     Optimizable = optimizeit;
   }
 
-  inline void setIonDerivs(bool calcionderiv)
-  {
-    ionDerivs=calcionderiv;
-  }
-
   virtual void resetPhaseDiff() {}
 
   ///assign a differential orbital
