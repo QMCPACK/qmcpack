@@ -616,10 +616,6 @@ QMCHamiltonian::Return_t QMCHamiltonian::evaluateIonDerivs(ParticleSet& P,
                                                            ParticleSet::ParticlePos_t& pulay_terms,
                                                            ParticleSet::ParticlePos_t& wf_grad)
 {
-  //For the current particle set configuration P, build all temporary data structures
-  // (read auxilary matrices) or fast evaluation of all 3N force components.  
-  psi.prepareIonDerivs();
-
   ParticleSet::ParticleGradient_t wfgradraw_(ions.getTotalNum());
   wfgradraw_           = 0.0;
   RealType localEnergy = 0.0;
