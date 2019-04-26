@@ -19,6 +19,8 @@ namespace qmcplusplus
 LCAOrbitalSet::LCAOrbitalSet(basis_type* bs)
     : myBasisSet(nullptr), C(nullptr), params_supplied(false), BasisSetSize(0), Identity(true), IsCloned(false)
 {
+  //This SPOSet has an explicit ion dependence, so set this flag.
+  ionDerivs=true;
   if (bs != nullptr)
     setBasisSet(bs);
 }
