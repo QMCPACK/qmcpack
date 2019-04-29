@@ -227,10 +227,11 @@ bool DriverFactory::executeAFQMCDriver(std::string title, int m_series, xmlNodeP
     wset.resize(nWalkers,initial_guess[0],
                          initial_guess[1]({0,NMO},{0,NAEB}));
     wfn0.Energy(wset);
-    app_log()<<" Energy of starting determinant - E1, EJ, EXX: "
-             <<std::setprecision(12) <<*wset[0].E1() <<" "
-             <<*wset[0].EJ() <<" "
-             <<*wset[0].EXX() <<std::endl;
+    app_log()<<" Energy of starting determinant: \n"
+             <<"  - Total energy    : " << std::setprecision(12) << wset[0].energy() << "\n"
+             <<"  - One-body energy : " << *wset[0].E1() <<"\n"
+             <<"  - Coulomb energy  : " << *wset[0].EJ() <<"\n"
+             <<"  - Exchange energy : " << *wset[0].EXX() <<"\n";
     if(hybrid)
       Eshift=0.0;
     else
