@@ -65,7 +65,8 @@ def main(args):
     chol = modified_cholesky_direct(eri.reshape(norb**2,norb**2),
                                     options.thresh, options.verbose).T
     write_qmcpack_cholesky(hcore, scipy.sparse.csr_matrix(chol),
-                           nelec, norb, e0=ecore, real_chol=(not options.complex_chol),
+                           nelec, norb, e0=ecore,
+                           real_chol=(not options.complex_chol),
                            filename=options.output_file)
 
 if __name__ == '__main__':
