@@ -20,8 +20,8 @@ After building the project, the individual unit test executables can be found in
 For example, the tests in \ishell{src/QMCWavefunctions/tests} are compiled into \ishell{build/tests/bin/test\_wavefunction}.
 \end{sloppypar}
 
-All the unit test executables are collected under ctest with the \ishell{unit} label.
-When checking the whole code, it's useful to run through cmake (\ishell{cmake -L unit}).
+All the unit test executables are collected under CTest with the \ishell{unit} label.
+When checking the whole code, it's useful to run through CMake (\ishell{cmake -L unit}).
 When working on an individual directory, it's useful to run the individual executable.
 
 Some of the tests reference input files. The unit test CMake setup places those input files in particular locations under the \ishell{tests} directory (e.g. \ishell{tests/xml\_test}).  The individual test needs to be run from that directory to find the expected input files.

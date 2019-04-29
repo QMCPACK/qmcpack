@@ -1332,7 +1332,7 @@ for the LiH dime.
 
 QMCPACK also includes tests for developmental features and features
 that are unsupported on certain platforms. To indicate these, tests
-that are unstable are labeled with the ctest label
+that are unstable are labeled with the CTest label
 ``unstable.'' For example, they are unreliable, unsupported, or known to fail
 from partial implementation or bugs.
 
@@ -1391,7 +1391,7 @@ standard, complex, and GPU compilations. These tests should pass with three sigm
 The  full set of tests consist of significantly longer versions of the short
 tests, as well as tests of the conversion utilities. The runs require
 several hours each for improved statistics and a much more
-stringent test of the code. To run all the tests, simply run ctest in the build
+stringent test of the code. To run all the tests, simply run CTest in the build
 directory:
 
 \begin{shade}
@@ -1496,7 +1496,7 @@ counts are too small to be representative. Care is still needed to
 remove initialization, I/O, and compute a representative performance
 measure.
 
-The ctest integration is sufficient to run the benchmarks and measure
+The CTest integration is sufficient to run the benchmarks and measure
 relative performance from version to version of QMCPACK and to assess
 proposed code changes. Performance tests are prefixed with
 ``performance.'' To obtain the highest performance on a particular
@@ -1561,8 +1561,8 @@ performance-NiO-cpu-a1024-e12288& S256 & 1024 & 12288 & 6144 \\
 \end{table}
 
 \subsection{Troubleshooting tests}
-Ctest reports briefly pass or fail of tests in printout and also collects all the standard outputs to help investigating how tests fail.
-If the ctest execution is completed, look at \ishell{Testing/Temporary/LastTest.log}.
+CTest reports briefly pass or fail of tests in printout and also collects all the standard outputs to help investigating how tests fail.
+If the CTest execution is completed, look at \ishell{Testing/Temporary/LastTest.log}.
 If you manually stop the testing (ctrl+c), look at \ishell{Testing/Temporary/LastTest.log.tmp}.
 You can locate the failing tests by searching for the key word ``Fail.''
 
