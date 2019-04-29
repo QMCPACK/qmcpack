@@ -122,32 +122,25 @@ def generate_hamiltonian(scf_data, chol_cut=1e-5, verbose=False, cas=None,
     return h1e, chol_vecs, nelec, enuc
 
 
-def freeze_core(h1e, chol, ecore, nc, ncas, verbose=True, ne=None):
+def freeze_core(h1e, chol, ecore, nc, ncas, verbose=True):
     # 1. Construct one-body hamiltonian
     nbasis = h1e.shape[-1]
     chol = chol.reshape((-1,nbasis,nbasis))
     psi = numpy.identity(nbasis)[:,:nc]
     Gcore = gab(psi,psi)
-    psi = numpy.identity(nbasis)[:,:ne]
-    Gvirt = gab(psi,psi)
-    ehf = local_energy_generic_cholesky(h1e, chol, [Gvirt,Gvirt], ecore)[0]
-    efzc = local_energy_generic_cholesky(h1e, chol, [Gcore,Gcore], ecore)[0]
+    efzc = local_energy_generic_cholesky(h1e, chol, [Gcore,Gcore], ecore)
+    efzc = efzc[0]
     (hc_a, hc_b) = core_contribution_cholesky(chol, [Gcore,Gcore])
     h1e = numpy.array([h1e,h1e])
     h1e[0] = h1e[0] + 2*hc_a
     h1e[1] = h1e[1] + 2*hc_b
     h1e = h1e[:,nc:nc+ncas,nc:nc+ncas]
     nchol = chol.shape[0]
-    psi = numpy.identity(nbasis-nc)[:,:ne-nc]
-    Gvirt = gab(psi,psi)
     chol = chol[:,nc:nc+ncas,nc:nc+ncas]
-    ehf2 = local_energy_generic_cholesky(h1e[0], chol, [Gvirt,Gvirt], efzc)[0]
     chol = chol.reshape((nchol,-1))
     # 4. Subtract one-body term from writing H2 as sum of squares.
     if verbose:
         print(" # Number of active orbitals: %d"%ncas)
-        print(" # Hartree--Fock energy: %13.8e"%ehf)
-        print(" # Hartree--Fock energy: %13.8e"%ehf2)
         print(" # Freezing %d core electrons and %d virtuals."
               %(2*nc, nbasis-nc-ncas))
         print(" # Frozen core energy: %13.8e"%efzc)
@@ -557,3 +550,48 @@ def read_ascii_integrals(filename, verbose=True):
             # (jl|ki)
             h2e[j-1,l-1,k-1,i-1] = integral
     return h1e, h2e, ecore, nelec
+
+def from_qmcpack_cholesky(filename):
+    with h5py.File(filename, 'r') as fh5:
+        real_ints = False
+        try:
+            enuc = fh5['Hamiltonian/Energies'][:].view(numpy.complex128).ravel()[0]
+        except ValueError:
+            enuc = fh5['Hamiltonian/Energies'][:][0]
+            real_ints = True
+        dims = fh5['Hamiltonian/dims'][:]
+        nmo = dims[3]
+        try:
+            hcore = fh5['Hamiltonian/hcore'][:]
+            hcore = hcore.view(numpy.complex128).reshape(nmo,nmo)
+        except KeyError:
+            # Old sparse format.
+            hcore = fh5['Hamiltonian/H1'][:].view(numpy.complex128).ravel()
+            idx = fh5['Hamiltonian/H1_indx'][:]
+            row_ix = idx[::2]
+            col_ix = idx[1::2]
+            hcore = scipy.sparse.csr_matrix((hcore, (row_ix, col_ix))).toarray()
+            hcore = numpy.tril(hcore, -1) + numpy.tril(hcore, 0).conj().T
+        except ValueError:
+            # Real format.
+            hcore = fh5['Hamiltonian/hcore'][:]
+            real_ints = True
+        chunks = dims[2]
+        idx = []
+        h2 = []
+        for ic in range(chunks):
+            idx.append(fh5['Hamiltonian/Factorized/index_%i'%ic][:])
+            if real_ints:
+                h2.append(fh5['Hamiltonian/Factorized/vals_%i'%ic][:].ravel())
+            else:
+                h2.append(fh5['Hamiltonian/Factorized/vals_%i'%ic][:].view(numpy.complex128).ravel())
+        idx = numpy.array([i for sub in idx for i in sub])
+        h2 = numpy.array([v for sub in h2 for v in sub])
+        nalpha = dims[4]
+        nbeta = dims[5]
+        nchol = dims[7]
+        row_ix = idx[::2]
+        col_ix = idx[1::2]
+        chol_vecs = scipy.sparse.csr_matrix((h2, (row_ix, col_ix)),
+                                            shape=(nmo*nmo,nchol))
+        return (hcore, chol_vecs, enuc, int(nmo), (int(nalpha), int(nbeta)))
