@@ -64,7 +64,7 @@ class TestKpoint(unittest.TestCase):
         # Fake some data
         qk = numpy.zeros((8,8))
         km = numpy.ones((8,))
-        h5file = kp.FileHandler(comm, 'test.h5')
+        h5file = kp.FileHandler(comm, 'ham.h5')
         kp.write_basic(comm, cell, kpts, hcore, h5file,
                        X, nmo_pk, qk, km)
         hcore_k3 = h5file.grp['H1_kp3'][:]
