@@ -10,9 +10,9 @@ other software packages should be straightforward.
 In addition to the library there are two useful scripts to automate the generation of
 simulation input:
 
-1. afqmctools/bin/pyscf_to_qmcpack.py which will generate the necessary AFQMC QMCPACK
+1. afqmctools/bin/pyscf_to_afqmc.py which will generate the necessary AFQMC QMCPACK
    input from a pyscf scf calculation.
-2. afqmctools/bin/fcidump_to_qmcpack.py which will generate an AFQMC QMCPACK Hamiltonian
+2. afqmctools/bin/fcidump_to_afqmc.py which will generate an AFQMC QMCPACK Hamiltonian
    from a plain text FCIDUMP. The integrals are assumed to be real and 8-fold symmetric.
 
 See the examples in qmcpack/examples/afqmc for more details on using these scripts or pass
