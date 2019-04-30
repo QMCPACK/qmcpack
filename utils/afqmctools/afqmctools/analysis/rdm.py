@@ -1,7 +1,6 @@
 """Simple extraction of afqmc rdms."""
 import h5py
 import numpy
-import pandas as pd
 import scipy.stats
 
 def extract_qmc_dm(filename, dm_name='Mixed'):
