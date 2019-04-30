@@ -311,7 +311,7 @@ WaveFunctionComponent::ValueType MultiSlaterDeterminantWithBackflow::ratio(Parti
     }
     Ratio1Timer.stop();
     std::vector<size_t>::iterator upC(C2node_up.begin()), dnC(C2node_dn.begin());
-    std::vector<RealType>::iterator it(C.begin()), last(C.end());
+    std::vector<ValueType>::iterator it(C.begin()), last(C.end());
     ValueType psiOld = 0.0, psiNew = 0.0;
     while (it != last)
     {
@@ -338,7 +338,7 @@ WaveFunctionComponent::ValueType MultiSlaterDeterminantWithBackflow::ratio(Parti
     }
     Ratio1Timer.stop();
     std::vector<size_t>::iterator upC(C2node_up.begin()), dnC(C2node_dn.begin());
-    std::vector<RealType>::iterator it(C.begin()), last(C.end());
+    std::vector<ValueType>::iterator it(C.begin()), last(C.end());
     ValueType psiOld = 0.0, psiNew = 0.0;
     while (it != last)
     {

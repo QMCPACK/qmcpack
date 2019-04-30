@@ -30,6 +30,7 @@
 #include "Estimators/EstimatorManagerBase.h"
 #include "Estimators/TraceManager.h"
 #include "QMCDrivers/DMC/DMCUpdatePbyP.h"
+#include "QMCDrivers/GreenFunctionModifiers/DriftModifierUNR.h"
 
 
 #include <stdio.h>
@@ -105,7 +106,8 @@ TEST_CASE("DMC Particle-by-Particle advanceWalkers ConstantOrbital", "[drivers][
   double tau = 0.1;
   SimpleFixedNodeBranch branch(tau, 1);
   TraceManager TM;
-  dmc.resetRun(&branch, &EM, &TM);
+  DriftModifierUNR DM;
+  dmc.resetRun(&branch, &EM, &TM, &DM);
   dmc.startBlock(1);
 
   DMCUpdatePbyPWithRejectionFast::WalkerIter_t begin = elec.begin();
@@ -208,7 +210,8 @@ TEST_CASE("DMC Particle-by-Particle advanceWalkers LinearOrbital", "[drivers][dm
   double tau = 0.1;
   SimpleFixedNodeBranch branch(tau, 1);
   TraceManager TM;
-  dmc.resetRun(&branch, &EM, &TM);
+  DriftModifierUNR DM;
+  dmc.resetRun(&branch, &EM, &TM, &DM);
   dmc.startBlock(1);
 
   DMCUpdatePbyPWithRejectionFast::WalkerIter_t begin = elec.begin();

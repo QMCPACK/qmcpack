@@ -23,14 +23,13 @@
 #include<cstdlib>
 #include<iostream>
 #include<stdexcept>
+#include<vector>
 #include <cuda_runtime.h>
 #include "cublas_v2.h"
 //#include "cublasXt.h"
 #include "cusparse.h"
 #include "cusolverDn.h"
 #include "curand.h"
-#include "mpi3/communicator.hpp"
-#include "mpi3/shared_communicator.hpp"
 
 namespace qmc_cuda {
 
@@ -53,8 +52,6 @@ namespace qmc_cuda {
   void cusolver_check(cusolverStatus_t sucess, std::string message="");
   cublasOperation_t cublasOperation(char A); 
   cusparseOperation_t cusparseOperation(char A); 
-
-  void CUDA_INIT(boost::mpi3::shared_communicator& node, unsigned long long int iseed = 911ULL);
 
   struct gpu_handles {
     cublasHandle_t* cublas_handle;

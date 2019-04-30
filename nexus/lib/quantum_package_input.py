@@ -93,125 +93,99 @@ def write_qp_value(value_filepath,value):
 #   The spec below was obtained by using the extract_input_specification
 #   function.  Run this function again with ezfio directory paths as 
 #   arguments to further augment the specification over time.
+#
+#   An ezfio directory containing all possible variables can be created
+#   in the following way:
+#     qp_create_ezfio -b cc-pvtz h2o.xyz
+#     qp_edit -c h2o.ezfio
+#
 input_specification = obj({
     'ao_basis/ao_basis' : str,
     'ao_basis/ao_cartesian' : bool,
     'ao_basis/ao_md5' : str,
     'ao_basis/ao_num' : int,
-    'bitmasks/bit_kind' : int,
-    'bitmasks/n_int' : int,
-    'bitmasks/n_mask_cas' : int,
-    'bitmasks/n_mask_gen' : int,
+    'ao_one_e_ints/io_ao_integrals_e_n' : str,
+    'ao_one_e_ints/io_ao_integrals_kinetic' : str,
+    'ao_one_e_ints/io_ao_integrals_overlap' : str,
+    'ao_one_e_ints/io_ao_integrals_pseudo' : str,
+    'ao_one_e_ints/io_ao_one_e_integrals' : str,
+    'ao_two_e_erf_ints/io_ao_two_e_integrals_erf' : str,
+    'ao_two_e_erf_ints/mu_erf' : float,
+    'ao_two_e_ints/direct' : bool,
+    'ao_two_e_ints/io_ao_two_e_integrals' : str,
+    'ao_two_e_ints/threshold_ao' : float,
+    'becke_numerical_grid/grid_type_sgn' : int,
     'davidson/davidson_sze_max' : int,
     'davidson/disk_based_davidson' : bool,
     'davidson/distributed_davidson' : bool,
+    'davidson/n_det_max_full' : int,
     'davidson/n_states_diag' : int,
+    'davidson/only_expected_s2' : bool,
     'davidson/state_following' : bool,
     'davidson/threshold_davidson' : float,
-    'determinants/bit_kind' : int,
-    'determinants/expected_s2' : float,
-    'determinants/mo_label' : str,
+    'density_for_dft/damping_for_rs_dft' : float,
+    'density_for_dft/density_for_dft' : str,
+    'density_for_dft/no_core_density' : str,
     'determinants/n_det' : int,
     'determinants/n_det_max' : int,
-    'determinants/n_det_max_jacobi' : int,
-    'determinants/n_det_max_property' : int,
-    'determinants/n_det_max_stored' : int,
-    'determinants/n_int' : int,
+    'determinants/n_det_print_wf' : int,
     'determinants/n_states' : int,
-    'determinants/only_single_double_dm' : bool,
     'determinants/read_wf' : bool,
     'determinants/s2_eig' : bool,
-    'determinants/store_full_h_mat' : bool,
     'determinants/target_energy' : float,
     'determinants/threshold_generators' : float,
-    'determinants/threshold_selectors' : float,
-    'determinants/use_l3_weight' : bool,
     'determinants/used_weight' : int,
-    'dft_keywords/basis_set_hf_potential' : bool,
     'dft_keywords/correlation_functional' : str,
     'dft_keywords/exchange_functional' : str,
     'dft_keywords/hf_exchange' : float,
-    'dft_keywords/md_correlation_functional' : str,
-    'dft_keywords/mu_erf' : float,
-    'dft_keywords/ontop_approx' : bool,
-    'dft_keywords/projected_wft_for_dft' : bool,
-    'dft_keywords/read_density_from_input' : bool,
-    'dft_keywords/thr_ontop_approx' : float,
-    'dft_keywords/threshold_grid_dft' : float,
+    'dressing/dress_relative_error' : float,
+    'dressing/n_it_max_dressed_ci' : int,
+    'dressing/thresh_dressed_ci' : float,
     'electrons/elec_alpha_num' : int,
     'electrons/elec_beta_num' : int,
     'ezfio/creation' : str,
     'ezfio/library' : str,
     'ezfio/user' : str,
-    'full_ci_zmq/energy' : float,
-    'full_ci_zmq/energy_pt2' : float,
-    'full_ci_zmq/iterative_save' : int,
-    'full_ci_zmq/n_iter' : int,
-    'full_ci_zmq/store_one_body_dm' : bool,
-    'hartree_fock/energy' : float,
-    'hartree_fock/level_shift' : float,
-    'hartree_fock/max_dim_diis' : int,
-    'hartree_fock/mo_guess_type' : str,
-    'hartree_fock/n_it_scf_max' : int,
-    'hartree_fock/no_oa_or_av_opt' : bool,
-    'hartree_fock/scf_algorithm' : str,
-    'hartree_fock/thresh_scf' : float,
-    'hartree_fock/threshold_diis' : float,
-    'integrals_bielec/direct' : bool,
-    'integrals_bielec/disk_access_ao_integrals' : str,
-    'integrals_bielec/disk_access_mo_integrals' : str,
-    'integrals_bielec/no_ivvv_integrals' : bool,
-    'integrals_bielec/no_vvv_integrals' : bool,
-    'integrals_bielec/no_vvvv_integrals' : bool,
-    'integrals_bielec/threshold_ao' : float,
-    'integrals_bielec/threshold_mo' : float,
-    'integrals_erf/disk_access_ao_integrals_erf' : str,
-    'integrals_erf/disk_access_ao_integrals_sr' : str,
-    'integrals_erf/disk_access_mo_integrals_erf' : str,
-    'integrals_erf/disk_access_mo_integrals_sr' : str,
-    'integrals_ijkl_in_r3/disk_access_ao_ijkl_r3' : str,
-    'integrals_ijkl_in_r3/disk_access_mo_ijkl_r3' : str,
-    'integrals_monoelec/disk_access_ao_one_integrals' : str,
-    'integrals_monoelec/disk_access_mo_one_integrals' : str,
-    'integrals_monoelec/disk_access_only_mo_one_integrals' : str,
-    'mo_basis/ao_md5' : str,
-    'mo_basis/mo_label' : str,
-    'mo_basis/mo_tot_num' : int,
-    'mrpt_utils/do_third_order_1h1p' : bool,
-    'mrpt_utils/orbital_ordered' : bool,
-    'mu_of_r_ints/disk_access_ao_integrals_mu_of_r' : str,
-    'mu_of_r_ints/disk_access_ao_integrals_sr_mu_of_r' : str,
-    'mu_of_r_ints/disk_access_mo_integrals_mu_of_r' : str,
-    'mu_of_r_ints/disk_access_mo_integrals_sr_mu_of_r' : str,
+    'ijkl_ints_in_r3/disk_access_ao_ijkl_r3' : str,
+    'ijkl_ints_in_r3/disk_access_mo_ijkl_r3' : str,
+    'mo_one_e_ints/io_mo_integrals_e_n' : str,
+    'mo_one_e_ints/io_mo_integrals_kinetic' : str,
+    'mo_one_e_ints/io_mo_integrals_pseudo' : str,
+    'mo_one_e_ints/io_mo_one_e_integrals' : str,
+    'mo_two_e_erf_ints/io_mo_two_e_integrals_erf' : str,
+    'mo_two_e_ints/io_mo_two_e_integrals' : str,
+    'mo_two_e_ints/no_ivvv_integrals' : bool,
+    'mo_two_e_ints/no_vvv_integrals' : bool,
+    'mo_two_e_ints/no_vvvv_integrals' : bool,
+    'mo_two_e_ints/threshold_mo' : float,
     'nuclei/disk_access_nuclear_repulsion' : str,
     'nuclei/nucl_num' : int,
     'perturbation/correlation_energy_ratio_max' : float,
     'perturbation/do_pt2' : bool,
     'perturbation/h0_type' : str,
-    'perturbation/pt2_absolute_error' : float,
     'perturbation/pt2_max' : float,
     'perturbation/pt2_relative_error' : float,
-    'perturbation/threshold_generators_pt2' : float,
-    'perturbation/threshold_selectors_pt2' : float,
-    'properties/threshld_two_bod_dm' : float,
-    'properties/z_one_point' : float,
+    'perturbation/variance_max' : float,
     'pseudo/do_pseudo' : bool,
     'pseudo/pseudo_grid_rmax' : float,
     'pseudo/pseudo_grid_size' : int,
     'pseudo/pseudo_klocmax' : int,
     'pseudo/pseudo_kmax' : int,
     'pseudo/pseudo_lmax' : int,
-    'qmc/ci_threshold' : float,
+    'qmcpack/ci_threshold' : float,
+    'rsdft_ecmd/ecmd_functional' : str,
+    'scf_utils/frozen_orb_scf' : bool,
     'scf_utils/level_shift' : float,
     'scf_utils/max_dim_diis' : int,
     'scf_utils/mo_guess_type' : str,
     'scf_utils/n_it_scf_max' : int,
-    'scf_utils/no_oa_or_av_opt' : bool,
     'scf_utils/scf_algorithm' : str,
     'scf_utils/thresh_scf' : float,
     'scf_utils/threshold_diis' : float,
-    'work/empty' : bool,
-    'work/qp_run_address' : str,
+    'two_body_dm/ci_threshold' : float,
+    'two_body_dm/mat_mul_svd_vectors' : bool,
+    'two_body_dm/ontop_approx' : bool,
+    'two_body_dm/thr_ontop_approx' : float,
     })
 
 
@@ -315,90 +289,48 @@ class QuantumPackageInput(SimulationInput):
         run_control
         '''.split()
 
+    # get these by running
+    #   qp_run -h
     run_types = set('''
-        Gen_Ezfio_from_integral.sh
-        H_CORE_guess
-        Huckel_guess
-        SCF
-        SCF_old
-        analyze_wf
-        check_orthonormality
         cis
-        create_ezfio.py
-        davidson_slave
-        densify_coefmatrix
-        diagonalize_restart_and_save_all_states
-        diagonalize_restart_and_save_lowest_state
-        diagonalize_restart_and_save_one_state
-        diagonalize_restart_and_save_two_states
-        dump_nto
-        dump_one_body_mos
-        fci_zmq
-        fci_zmq_nos
+        cisd
+        diagonalize_h
+        fci
+        fcidump
         four_idx_transform
-        guess_doublet
-        guess_lowest_state
-        guess_singlet
-        guess_triplet
-        localize_mos
-        mo_permutation
-        overwrite_with_cas
-        print_H_matrix_restart
-        print_aos
-        print_bitmask
-        print_energy
-        print_hcc
-        print_holes_particles
-        print_integrals_ao
-        print_integrals_mo
-        print_mo_in_space
-        print_mulliken
-        print_spin_density
+        install
+        ks_scf
+        molden
+        print_ci_vectors
+        print_e_conv
+        print_ecmd_pbe_ontop
+        print_h0j
+        print_pgm
+        print_rsdft_variational_energy
         print_wf
-        provide_deltarho
-        pt2_slave
-        pt2_stoch
-        pyscf.main
+        pt2
         qmc_create_wf
         qmc_e_curve
-        qp_ao_ints
+        qp_ao_ijkl_r3_ints
+        qp_cipsi_rsh
         qp_convert_qmcpack_to_ezfio.py
-        read_ao_eri_chunk
-        read_integrals_achocol
-        read_integrals_achocol2
-        read_integrals_ao
-        read_integrals_mo
-        read_integrals_mo_chocol
-        save_HF_determinant
-        save_for_qmcchem
+        reorder_dets
+        rs_ks_scf
         save_for_qmcpack
         save_natorb
-        save_only_singles
+        save_one_e_dm
         save_ortho_mos
-        selection_davidson_slave
-        selection_slave
-        super_ci
-        swap_mos
+        scf
         target_pt2_qmc
-        target_pt2_ratio_zmq
-        target_pt2_zmq
-        test_integrals
-        test_two_body_dm
-        truncate_wf
         truncate_wf_spin
-        write_integrals_restart_dft_no_ecmd
-        '''.split())
-
-    slave_allowed = set('''
-        SCF
-        cis
-        fci_zmq
-        '''.split())
-
-    integral_write_allowed = set('''
-        SCF
-        cis
-        fci_zmq
+        truncate_wf_spin_no_H
+        two_body_dm.main
+        uninstall
+        write_2_body_dm_fci_dump
+        write_effective_rsdft_hamiltonian
+        write_erf_and_regular_ints
+        write_integrals_erf
+        write_rsdft_h_read_ints
         '''.split())
 
 
@@ -413,7 +345,7 @@ class QuantumPackageInput(SimulationInput):
 
     def present(self,name):
         if name not in known_variables:
-            self.error('attempted to check presence of unknown variable "{0}"valid options are: {1}'.format(name,sorted(known_variables)))
+            self.error('attempted to check presence of unknown variable "{0}"\nvalid options are: {1}'.format(name,sorted(known_variables)))
         #end if
         secname = variable_section[name]
         return secname in self and name in self[secname]
@@ -532,7 +464,7 @@ class QuantumPackageInput(SimulationInput):
             prefix = edir.rsplit('.',1)[0]
             struct_file = prefix+'.xyz'
             self.structure.write_xyz(struct_file)
-            command = 'qp_create_ezfio_from_xyz'
+            command = 'qp_create_ezfio'
             if self.path_exists('ao_basis/ao_basis'):
                 command += ' -b '+self.ao_basis.ao_basis
             #end if
@@ -565,7 +497,7 @@ class QuantumPackageInput(SimulationInput):
             if 'frozen_core' in rc and rc.frozen_core:
                 cwd = os.getcwd()
                 os.chdir(path)
-                execute('qp_set_frozen_core.py '+edir)
+                execute('qp_set_frozen_core '+edir)
                 os.chdir(cwd)
             #end if
         #end if
@@ -589,7 +521,7 @@ class QuantumPackageInput(SimulationInput):
     #end def incorporate_system
 
 
-    def check_valid(self,sections=True,variables=True,types=True,exit=True):
+    def check_valid(self,sections=True,variables=True,types=True,run_type=True,exit=True):
         msg = ''
 
         extra = self.extract_added_keys()
@@ -634,12 +566,22 @@ class QuantumPackageInput(SimulationInput):
                 #end if
             #end for
         #end if
+        self.restore_added_keys(extra)
+        if run_type:
+            if 'run_control' not in self:
+                msg = 'input is invalid\ninput must have section "run_control"'
+            else:
+                rc = self.run_control
+                if 'run_type' not in rc:
+                    msg = 'input is invalid\nsection "run_control" must have variable "run_type"'
+                elif rc.run_type not in QuantumPackageInput.run_types:
+                    msg = 'input is invalid\nvariable "run_type" in section "run_control" has an invalid value\nvalue provided: {}\nvalid options are: {}'.format(rc.run_type,sorted(QuantumPackageInput.run_types))
+                #end if
+            #end if
         is_valid = len(msg)==0
         if not is_valid and exit:
             self.error(msg)
         #end if
-
-        self.restore_added_keys(extra)
 
         return is_valid
     #end check_valid
@@ -662,14 +604,13 @@ run_inputs = set('''
     sleep
     slave
     postprocess
+    save_natorb
+    four_idx_transform
+    save_for_qmcpack
     '''.split())
 gen_inputs = set('''
     system
     defaults
-    save_ao_one_integrals
-    save_mo_one_integrals
-    save_ao_integrals
-    save_mo_integrals
     validate
     '''.split())
 added_inputs = run_inputs | gen_inputs
@@ -683,13 +624,12 @@ added_types = obj(
     sleep                 = (int,float),
     slave                 = str,
     postprocess           = (tuple,list),
+    four_idx_transform    = bool,
+    save_natorb           = bool,
+    save_for_qmcpack      = bool,
     # gen inputs
     system                = PhysicalSystem,
     defaults              = str,
-    save_ao_one_integrals = bool,
-    save_mo_one_integrals = bool,
-    save_ao_integrals     = bool,
-    save_mo_integrals     = bool,
     validate              = bool,
     )
 added_required = set('''
@@ -702,11 +642,10 @@ qp_defaults_version = 'v1'
 shared_defaults = obj(
     # run inputs
     postprocess           = [],
+    four_idx_transform    = False,
+    save_natorb           = False,
+    save_for_qmcpack      = False,
     # gen inputs
-    save_ao_one_integrals = False,
-    save_mo_one_integrals = False,
-    save_ao_integrals     = False,
-    save_mo_integrals     = False,
     validate              = True,
     )
 qp_defaults = obj(
@@ -720,18 +659,6 @@ qp_defaults = obj(
         n_det_max      = 5000,
         **shared_defaults
         ),
-    )
-save_ints_map = obj(
-    save_ao_one_integrals = 'disk_access_ao_one_integrals',
-    save_mo_one_integrals = 'disk_access_mo_one_integrals',
-    save_ao_integrals     = 'disk_access_ao_integrals'    ,
-    save_mo_integrals     = 'disk_access_mo_integrals'    ,
-    )
-save_ints_defaults = obj(
-    disk_access_ao_one_integrals = 'Write',
-    disk_access_mo_one_integrals = 'Write',
-    disk_access_ao_integrals     = 'Write',
-    disk_access_mo_integrals     = 'Write',
     )
 
 def generate_quantum_package_input(**kwargs):
@@ -772,13 +699,6 @@ def generate_quantum_package_input(**kwargs):
 
     # separate generation inputs from input file variables
     gen_kw = kw.extract_optional(gen_inputs)
-
-    # save integrals, if requested
-    for gk,qk in save_ints_map.iteritems():
-        if gen_kw[gk] and qk not in kw:
-            kw[qk] = 'Write'
-        #end if
-    #end for
 
     # partition inputs into sections and variables
     sections = obj()

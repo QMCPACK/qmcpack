@@ -59,7 +59,7 @@ void CSVMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
       for (int iat = W.first(ig); iat < W.last(ig); ++iat)
       {
         W.setActive(iat);
-        mPosType dr = sqrttau * deltaR[iat];
+        PosType dr = sqrttau * deltaR[iat];
         //The move proposal for particle iat.
         if (W.makeMoveAndCheck(iat, dr))
         {

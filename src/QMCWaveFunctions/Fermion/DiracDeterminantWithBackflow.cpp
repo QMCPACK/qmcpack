@@ -266,18 +266,6 @@ DiracDeterminantWithBackflow::GradType DiracDeterminantWithBackflow::evalGradSou
   return GradType();
 }
 
-DiracDeterminantWithBackflow::GradType DiracDeterminantWithBackflow::evalGradSourcep(
-    ParticleSet& P,
-    ParticleSet& source,
-    int iat,
-    TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM>& grad_grad,
-    TinyVector<ParticleSet::ParticleLaplacian_t, OHMMS_DIM>& lapl_grad)
-{
-  APP_ABORT(" Need to implement DiracDeterminantWithBackflow::evalGradSourcep() \n");
-  return GradType();
-}
-
-
 DiracDeterminantWithBackflow::GradType DiracDeterminantWithBackflow::evalGradSource(
     ParticleSet& P,
     ParticleSet& source,

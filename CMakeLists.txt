@@ -61,7 +61,7 @@ MESSAGE(STATUS "QMC_SYMLINK_TEST_FILES = ${QMC_SYMLINK_TEST_FILES}.  ${SYMLINK_M
 # Build level
 ######################################################################
 
-SET(QMC_BUILD_SANDBOX_ONLY OFF CACHE BOOLEAN "Build only applications in Sandbox directory")
+SET(QMC_BUILD_SANDBOX_ONLY OFF CACHE BOOL "Build only applications in Sandbox directory")
 IF ( NOT CMAKE_BUILD_TYPE AND NOT CMAKE_TOOLCHAIN_FILE)
   SET( CMAKE_BUILD_TYPE Release )
 ENDIF()
@@ -99,7 +99,7 @@ SET (EXECUTABLE_OUTPUT_PATH ${qmcpack_BINARY_DIR}/bin CACHE PATH "Single output 
 # QMC_MPI =  enable MPI
 # QMC_OMP = enable OMP
 ######################################################################
-SET(OHMMS_DIM 3 CACHE INTEGER "Select physical dimension")
+SET(OHMMS_DIM 3 CACHE STRING "Select physical dimension")
 SET(OHMMS_INDEXTYPE int)
 MESSAGE(STATUS "defining the float point precision")
 SET(OHMMS_PRECISION_FULL double)
@@ -137,7 +137,7 @@ SET(ENABLE_GCOV FALSE CACHE BOOL "Enable code coverage")
 ######################################################################
 SET(QMC_MPI 1 CACHE BOOL "Enable/disable MPI")
 SET(QMC_OMP 1 CACHE BOOL "Enable/disable OpenMP")
-SET(QMC_COMPLEX 0 CACHE INTEGER "Build for complex binary")
+SET(QMC_COMPLEX 0 CACHE BOOL "Build for complex binary")
 SET(PRINT_DEBUG 0 CACHE BOOL "Enable/disable debug printing")
 SET(QMC_CUDA 0 CACHE BOOL "Build with GPU support through CUDA")
 SET(ENABLE_CUDA 0 CACHE BOOL "Build with the second generation of GPU support through CUDA (production quality for AFQMC, experimental for real space)")
@@ -426,11 +426,9 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
     GET_FILENAME_COMPONENT(BASE_CXX_COMPILER_NAME ${CMAKE_CXX_COMPILER} NAME)
     if(${BASE_CXX_COMPILER_NAME} MATCHES "^mp")
       SET(HAVE_MPI 1)
-      SET(HAVE_OOMPI 1)
       SET(MPI_FOUND TRUE)
     elseif($ENV{CRAYPE_VERSION} MATCHES ".")
       SET(HAVE_MPI 1)
-      SET(HAVE_OOMPI 1)
       SET(MPI_FOUND TRUE)
     else()
       include(FindMPI)
@@ -454,12 +452,10 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
         IF(MPI_WORKS)
           MESSAGE(STATUS "MPI is enabled")
           SET(HAVE_MPI 1)
-          SET(HAVE_OOMPI 1)
           LINK_LIBRARIES(${MPI_CXX_LIBRARIES})
         ELSE(MPI_WORKS)
           MESSAGE(STATUS "MPI is disabled")
           SET(HAVE_MPI 0)
-          SET(HAVE_OOMPI 0)
           SET(MPI_LIBRARY "")
         ENDIF(MPI_WORKS)
       ELSE(MPI_FOUND)
@@ -551,7 +547,6 @@ IF ( HAVE_MPI )
   MESSAGE(STATUS "MPI runner is ${MPIEXEC}")
 ENDIF(HAVE_MPI)
 
-SET(HAVE_OOMPI ${HAVE_MPI})
 INCLUDE(${CMAKE_ROOT}/Modules/FindThreads.cmake)
 
 ####################################################################

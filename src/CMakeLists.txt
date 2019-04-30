@@ -124,20 +124,6 @@ if (HAVE_LIBBOOST)
     INCLUDE_DIRECTORIES("${qmcpack_SOURCE_DIR}/external_codes/boost_multi")
 endif()
 
-####################################
-# create liboompi
-####################################
-IF(HAVE_OOMPI)
-  CONFIGURE_FILE(${qmcpack_SOURCE_DIR}/src/oompi-config.h.cmake.in 
-    ${qmcpack_BINARY_DIR}/src/oompi-config.h)
-  INCLUDE_DIRECTORIES(${qmcpack_SOURCE_DIR}/src/OOMPI)
-  SUBDIRS(OOMPI)
-  IF ( MPI_LIBRARY )
-     SET(MPI_LIBRARY oompi ${MPI_LIBRARY})
-  ELSE()
-     SET(MPI_LIBRARY oompi )
-  ENDIF()
-ENDIF(HAVE_OOMPI)
 
   ####################################
   # create libqmcutil
@@ -159,6 +145,7 @@ ENDIF(HAVE_OOMPI)
     OhmmsApp/RandomNumberControl.cpp
     Numerics/OhmmsBlas.cpp
     Numerics/OptimizableFunctorBase.cpp
+    Numerics/SmoothFunctions.cpp
     Platforms/sysutil.cpp
     Platforms/accelerators.cpp
     QMCFactory/OneDimGridFactory.cpp
@@ -356,6 +343,7 @@ ENDIF()
     SUBDIRS(QMCApp/tests)
     SUBDIRS(Message/tests)
     SUBDIRS(OpenMP/tests)
+    SUBDIRS(Optimize/tests)
   endif() #}
 
 endif() #}}}

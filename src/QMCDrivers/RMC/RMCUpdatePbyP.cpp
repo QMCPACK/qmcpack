@@ -153,7 +153,7 @@ void RMCUpdatePbyPWithDrift::advanceWalkersVMC()
       //get the displacement
       GradType grad_iat = Psi.evalGrad(W, iat);
       PosType dr;
-      getScaledDrift(tauovermass, grad_iat, dr);
+      DriftModifier->getDrift(tauovermass, grad_iat, dr);
       dr += sqrttau * deltaR[iat];
       RealType rr = tauovermass * dot(deltaR[iat], deltaR[iat]);
       rr_proposed += rr;
@@ -177,7 +177,7 @@ void RMCUpdatePbyPWithDrift::advanceWalkersVMC()
       {
         RealType logGf = -0.5 * dot(deltaR[iat], deltaR[iat]);
         //Use the force of the particle iat
-        getScaledDrift(tauovermass, grad_iat, dr);
+        DriftModifier->getDrift(tauovermass, grad_iat, dr);
         dr             = W.R[iat] - W.activePos - dr;
         RealType logGb = -oneover2tau * dot(dr, dr);
         RealType prob  = ratio * ratio * std::exp(logGb - logGf);
@@ -284,7 +284,7 @@ void RMCUpdatePbyPWithDrift::advanceWalkersRMC()
       //get the displacement
       GradType grad_iat = Psi.evalGrad(W, iat);
       PosType dr;
-      getScaledDrift(tauovermass, grad_iat, dr);
+      DriftModifier->getDrift(tauovermass, grad_iat, dr);
       dr += sqrttau * deltaR[iat];
       //RealType rr=dot(dr,dr);
       RealType rr = tauovermass * dot(deltaR[iat], deltaR[iat]);
@@ -309,7 +309,7 @@ void RMCUpdatePbyPWithDrift::advanceWalkersRMC()
       {
         RealType logGf = -0.5 * dot(deltaR[iat], deltaR[iat]);
         //Use the force of the particle iat
-        getScaledDrift(tauovermass, grad_iat, dr);
+        DriftModifier->getDrift(tauovermass, grad_iat, dr);
         dr             = W.R[iat] - W.activePos - dr;
         RealType logGb = -oneover2tau * dot(dr, dr);
         RealType prob  = ratio * ratio * std::exp(logGb - logGf);
