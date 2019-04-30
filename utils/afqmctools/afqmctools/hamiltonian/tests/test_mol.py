@@ -73,12 +73,21 @@ class TestMol(unittest.TestCase):
         scf_data = {'mo_coeff': C, 'mol': atom, 'hcore': mf.get_hcore(),
                     'isUHF': False}
         h1e, chol, nelec, enuc = mol.generate_hamiltonian(scf_data)
-        mol.write_hamil_mol(scf_data, 'fcidump.h5', 1e-5, verbose=False)
-        h1e_f, chol_f, enuc_f, nmo, ne = mol.from_qmcpack_cholesky('fcidump.h5')
+        mol.write_hamil_mol(scf_data, 'ham.h5', 1e-5, verbose=False)
+        h1e_f, chol_f, enuc_f, nmo, ne = mol.from_qmcpack_cholesky('ham.h5')
         self.assertTrue(numpy.allclose(h1e_f, h1e, atol=1e-12, rtol=1e-8))
         chol_f = chol_f.toarray().real.T
         self.assertTrue(numpy.allclose(chol_f, chol, atol=1e-12, rtol=1e-8))
         self.assertAlmostEqual(enuc, enuc_f)
+
+    def tearDown(self):
+        cwd = os.getcwd()
+        files = ['ham.h5']
+        for f in files:
+            try:
+                os.remove(cwd+'/'+f)
+            except OSError:
+                pass
 
 if __name__ == "__main__":
     unittest.main()

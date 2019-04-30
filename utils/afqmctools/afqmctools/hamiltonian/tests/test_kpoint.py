@@ -46,7 +46,7 @@ class TestKpoint(unittest.TestCase):
     @unittest.skipIf(no_mpi, "MPI4PY not found")
     def test_file_handler(self):
         comm = MPI.COMM_WORLD
-        handler = kp.FileHandler(comm, 'test.h5')
+        handler = kp.FileHandler(comm, 'ham.h5')
         self.assertFalse(handler.error)
         handler.close()
 
@@ -107,6 +107,14 @@ class TestKPCholesky(unittest.TestCase):
         # h5file = kp.FileHandler(self.comm, 'test.h5')
         # self.chol.run(self.comm, self.X, h5file)
         # h5file.close()
+    def tearDown(self):
+        cwd = os.getcwd()
+        files = ['ham.h5']
+        for f in files:
+            try:
+                os.remove(cwd+'/'+f)
+            except OSError:
+                pass
 
 
 

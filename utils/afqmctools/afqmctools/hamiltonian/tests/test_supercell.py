@@ -127,6 +127,15 @@ class TestSupercell(unittest.TestCase):
         self.assertAlmostEqual(numpy.max(chol).real, 0.646291241063, places=8)
         self.assertEqual(len(chol[abs(chol)>1e-10]), 156323)
 
+    def tearDown(self):
+        cwd = os.getcwd()
+        files = ['ham.h5']
+        for f in files:
+            try:
+                os.remove(cwd+'/'+f)
+            except OSError:
+                pass
+
 
 if __name__ == "__main__":
     unittest.main()

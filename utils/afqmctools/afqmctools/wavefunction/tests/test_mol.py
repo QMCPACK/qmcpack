@@ -1,5 +1,6 @@
 import h5py
 import numpy
+import os
 import unittest
 from pyscf import gto, scf
 from afqmctools.wavefunction import mol
@@ -24,6 +25,16 @@ class TestMolWavefunction(unittest.TestCase):
         self.assertEqual(wlk_type, 'CLOSED')
         self.assertTrue(numpy.allclose(dims, [1,5,10]))
         self.assertAlmostEqual(numpy.max(orbs), 1.0)
+
+    def tearDown(self):
+        cwd = os.getcwd()
+        files = ['wfn.dat', 'wfn.h5', 'scf.dump']
+        for f in files:
+            try:
+                os.remove(cwd+'/'+f)
+            except OSError:
+                pass
+
 
 if __name__ == "__main__":
     unittest.main()

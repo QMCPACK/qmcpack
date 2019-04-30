@@ -51,5 +51,14 @@ class TestMolWavefunction(unittest.TestCase):
         self.assertTrue(numpy.allclose(dims, [1,64,64]))
         self.assertAlmostEqual(numpy.max(orbs), 1.0)
 
+    def tearDown(self):
+        cwd = os.getcwd()
+        files = ['wfn.dat', 'wfn.h5', 'scf.dump']
+        for f in files:
+            try:
+                os.remove(cwd+'/'+f)
+            except OSError:
+                pass
+
 if __name__ == "__main__":
     unittest.main()
