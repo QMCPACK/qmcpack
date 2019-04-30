@@ -18,6 +18,8 @@ simulation input:
 See the examples in qmcpack/examples/afqmc for more details on using these scripts or pass
 -h/--help to the scripts themselves.
 
+You will have to add afqmctools to your PYTHONPATH.
+
 # Requirements
 
 The tools work with the following:
@@ -27,7 +29,6 @@ The tools work with the following:
 * scipy >= 0.18.1
 * numpy >= 1.11.2
 * h5py >= 2.6.0 with parallel hdf5 support for k-point symmetric integral generation.
-* pandas >= 0.18.0 (optional)
 * mpi4py >= 2.0.0
 
 # Tests
