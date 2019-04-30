@@ -1,5 +1,6 @@
 import h5py
 import numpy
+import os
 import scipy.linalg
 import scipy.sparse
 import unittest
@@ -94,16 +95,15 @@ class TestSupercell(unittest.TestCase):
         part = sc.Partition(comm, maxvecs, nmo_tot,
                             self.nmo_max, self.nkpts)
         gmap, Qi, ngs = sc.generate_grid_shifts(self.cell)
-        X, nm = get_ortho_ao(cell, self.kpts)
+        X = [numpy.identity(C.shape[0]) for C in self.mf.mo_coeff]
         xik, xlj = sc.gen_orbital_products(cell, mydf, X,
                                            self.nmo_pk, ngs, part, self.kpts,
                                            self.nmo_max)
         self.assertEqual(xik.shape,(8,15625,32))
-        sumx = numpy.sum(xik)
-        self.assertAlmostEqual(sumx.real, -0.00634989944579, places=6)
-        self.assertAlmostEqual(sumx.imag, 5.28315812625e-05, places=6)
-        sumx = numpy.sum(xlj)
-        self.assertAlmostEqual(sumx.real, 1228.83728714, places=6)
+        self.assertAlmostEqual(numpy.max(numpy.abs(xik)),
+                               0.001370512034013767, places=8)
+        self.assertAlmostEqual(numpy.max(numpy.abs(xlj)),
+                               458.73660628806044, places=8)
 
     @unittest.skipIf(no_mpi, "MPI4PY not found")
     def test_modified_cholesky(self):
@@ -115,7 +115,7 @@ class TestSupercell(unittest.TestCase):
         part = sc.Partition(comm, maxvecs, nmo_tot,
                             self.nmo_max, self.nkpts)
         gmap, Qi, ngs = sc.generate_grid_shifts(self.cell)
-        X, nm = get_ortho_ao(cell, self.kpts)
+        X = [numpy.identity(C.shape[0]) for C in self.mf.mo_coeff]
         xik, xlj = sc.gen_orbital_products(cell, mydf, X,
                                            self.nmo_pk, ngs, part, self.kpts,
                                            self.nmo_max)
@@ -123,13 +123,14 @@ class TestSupercell(unittest.TestCase):
         solver = sc.Cholesky(part, kconserv, 1e-3, verbose=False)
         chol = solver.run(comm, xik, xlj, part, self.kpts,
                           self.nmo_pk, self.nmo_max, Qi, gmap)
-        self.assertEqual(chol.shape, (64,64,330))
-        self.assertAlmostEqual(numpy.max(chol).real, 0.646291241063, places=8)
-        self.assertEqual(len(chol[abs(chol)>1e-10]), 156323)
+        self.assertEqual(chol.shape, (64,64,250))
+        self.assertAlmostEqual(numpy.max(numpy.abs(chol)),
+                               0.807795378238119, places=8)
+        self.assertEqual(len(chol[abs(chol)>1e-10]), 101015)
 
     def tearDown(self):
         cwd = os.getcwd()
-        files = ['ham.h5']
+        files = ['ham.h5', 'scf.dump']
         for f in files:
             try:
                 os.remove(cwd+'/'+f)

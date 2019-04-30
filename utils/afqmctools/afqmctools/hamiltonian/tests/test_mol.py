@@ -1,4 +1,5 @@
 import numpy
+import os
 import unittest
 from pyscf import gto, ao2mo, scf, mcscf
 from afqmctools.hamiltonian import mol

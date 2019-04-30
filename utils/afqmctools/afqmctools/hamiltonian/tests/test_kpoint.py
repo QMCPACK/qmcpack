@@ -1,5 +1,6 @@
 import h5py
 import numpy
+import os
 import unittest
 from pyscf.pbc import gto, dft, df, tools
 import afqmctools.hamiltonian.kpoint as kp
@@ -9,6 +10,11 @@ try:
     no_mpi = False
 except ImportError:
     no_mpi = True
+try:
+    test_phdf = h5py.h5p.PropFAID.set_fapl_mpio
+    phdf = True
+except AttributeError:
+    phdf = False
 
 cell = gto.Cell()
 alat0 = 3.6
@@ -43,14 +49,14 @@ class TestKpoint(unittest.TestCase):
         self.assertEqual(qk[6,3], 5)
         self.assertEqual(km[3], 3)
 
-    @unittest.skipIf(no_mpi, "MPI4PY not found")
+    @unittest.skipIf(not phdf, "Parallel hdf5 not found.")
     def test_file_handler(self):
         comm = MPI.COMM_WORLD
         handler = kp.FileHandler(comm, 'ham.h5')
         self.assertFalse(handler.error)
         handler.close()
 
-    @unittest.skipIf(no_mpi, "MPI4PY not found")
+    @unittest.skipIf(not phdf, "Parallel hdf5 not found.")
     def test_write_basic(self):
         comm = MPI.COMM_WORLD
         hcore = mf.get_hcore()
@@ -69,12 +75,13 @@ class TestKpoint(unittest.TestCase):
 
 class TestKPCholesky(unittest.TestCase):
 
+    @unittest.skipIf(no_mpi, "MPI4PY not found")
     def setUp(self):
         qk, km = kp.construct_qk_maps(cell, kpts)
-        self.X, nmo_pk = get_ortho_ao(cell, kpts)
+        self.X = [numpy.identity(C.shape[0]) for C in mf.mo_coeff]
         self.comm = MPI.COMM_WORLD
         self.chol = kp.KPCholesky(self.comm, cell, kpts, 20, nmo_pk, qk, km,
-                                  verbose=True, gtol_chol=1e-4)
+                                  verbose=False, gtol_chol=1e-4)
 
     @unittest.skipIf(no_mpi, "MPI4PY not found")
     def test_kpchol_constructor(self):
@@ -88,6 +95,7 @@ class TestKPCholesky(unittest.TestCase):
         self.assertTrue(numpy.allclose(self.chol.Qi[4], qtest))
         self.assertEqual(self.chol.maxres_buff.shape, (5,))
 
+    @unittest.skipIf(no_mpi, "MPI4PY not found")
     def test_orbital_products(self):
         part = self.chol.part
         ngs = self.chol.ngs
@@ -97,12 +105,13 @@ class TestKPCholesky(unittest.TestCase):
                             dtype=numpy.complex128)
         self.chol.generate_orbital_products(3, self.X, Xaoik, Xaolj)
         self.assertAlmostEqual(numpy.max(numpy.abs(Xaoik)),
-                               0.000650818995454, places=8)
+                               0.001189761073068490, places=8)
         self.assertAlmostEqual(numpy.max(numpy.abs(Xaolj)),
-                               152.282976753, places=8)
+                               250.497175057856, places=8)
 
     # TODO isolate writing. This is extremely slow through unittest for some
     # reason.
+    # @unittest.skipIf(not phdf, "MPI4PY not found")
     # def test_kpchol_solution(self):
         # h5file = kp.FileHandler(self.comm, 'test.h5')
         # self.chol.run(self.comm, self.X, h5file)
