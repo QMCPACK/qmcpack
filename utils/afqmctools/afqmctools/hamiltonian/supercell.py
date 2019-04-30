@@ -62,7 +62,7 @@ def write_hamil_supercell(comm, scf_data, hamil_file, chol_cut,
     comm.barrier()
     numv = 0
 
-    if rank == 0:
+    if rank == 0 and verbose:
         print(" # Time to reach cholesky: {:.2e} s".format(time.clock()-tstart))
         sys.stdout.flush()
     tstart = time.clock()
@@ -70,21 +70,29 @@ def write_hamil_supercell(comm, scf_data, hamil_file, chol_cut,
     # Setup parallel partition of work.
     maxvecs = maxvecs * nmo_tot
     part = Partition(comm, maxvecs, nmo_tot, nmo_max, nkpts)
+    if comm.rank == 0 and verbose:
+        print(" # Each kpoint is distributed accross {} mpi tasks."
+              .format(part.nproc_pk))
+        sys.stdout.flush()
     maxvecs = part.maxvecs
     # Set up mapping for shifted FFT grid.
     gmap, Qi, ngs = generate_grid_shifts(cell)
-    if rank == 0:
+    if rank == 0 and verbose:
         app_mem = (nkpts*nkpts*nmo_max*nmo_max*2*ngs*16) / 1024.0**3
         print(" # Approx. total memory required: {:.2e} GB.".format(app_mem))
         sys.stdout.flush()
 
-    if rank == 0:
+    if rank == 0 and verbose:
         print(" # Generating orbital products.")
         sys.stdout.flush()
 
     # Left and right pair densities. Only left contains Coulomb kernel.
+    t0 = time.clock()
     Xaoik, Xaolj = gen_orbital_products(cell, mydf, X, nmo_pk, ngs,
                                         part, kpts, nmo_max)
+    if part.rank == 0 and verbose:
+        print(" # Time to generate orbital products: {:.2e} s".format(t1-t0))
+        sys.stdout.flush()
     # Finally perform Cholesky decomposition.
     solver = Cholesky(part, kconserv, gtol_chol=chol_cut)
     cholvecs = solver.run(comm, Xaoik, Xaolj, part, kpts,
@@ -131,7 +139,7 @@ def setup_basis_map(Xocc, nmo_max, nkpts, nmo_pk, ortho_ao):
     return ik2n, nmo_tot
 
 
-def write_one_body(hcore, X, nkpts, nmo_pk, nmo_max, ik2n, h5grp):
+def write_one_body(hcore, X, nkpts, nmo_pk, nmo_max, ik2n, h5grp, gtol=1e-8):
     h1e_X = numpy.zeros((nkpts,nmo_max*(nmo_max+1)//2),dtype=numpy.complex128)
     for ki in range(nkpts):
         h1 = numpy.dot(X[ki][:,0:nmo_pk[ki]].T.conj(),
@@ -142,7 +150,7 @@ def write_one_body(hcore, X, nkpts, nmo_pk, nmo_max, ik2n, h5grp):
                 h1e_X[ki,ij] = h1[i,j]
                 ij += 1
         h1 = None
-    h1size = write_h1(h5grp, h1e_X, nmo_pk, ik2n, 1e-8)
+    h1size = write_h1(h5grp, h1e_X, nmo_pk, ik2n, gtol)
     return h1size
 
 
@@ -298,10 +306,6 @@ class Partition(object):
                       "  k-points.")
                 sys.exit()
             self.nproc_pk = comm.size // nkpts
-            if comm.rank == 0:
-                print(" # Each kpoint is distributed accross {} mpi tasks."
-                      .format(self.nproc_pk))
-                sys.stdout.flush()
             if kp_sym:
                 self.kk0 = comm.rank // self.nproc_pk
                 self.kkN = self.kk0 + 1
@@ -368,9 +372,8 @@ class PartitionOld(object):
             self.n2k2[cnt] = k % nkpts
             cnt += 1
 
-def gen_orbital_products(cell, df, X, nmo_pk, ngs, part, kpts, nmo_max):
+def gen_orbital_products(cell, mydf, X, nmo_pk, ngs, part, kpts, nmo_max):
     # left (includes v(G)) and right pair densities
-    t0 = time.clock()
     nkpts = len(kpts)
     try:
         Xaoik = numpy.zeros((part.nkk,ngs,part.nij),
@@ -395,24 +398,21 @@ def gen_orbital_products(cell, df, X, nmo_pk, ngs, part, kpts, nmo_max):
         pij = part.ij0 % nmo_pk[k2]
         n_ = min(part.ijN, nmo_pk[k1]*nmo_pk[k2]) - part.ij0
         X_t = X[k1][:,i0:iN].copy()
-        Xaoik[k,:,0:n_] = df.get_mo_pairs_G((X_t,X[k2]),
+        Xaoik[k,:,0:n_] = mydf.get_mo_pairs_G((X_t,X[k2]),
                                             (kpts[k1],kpts[k2]),
                                             kpts[k2]-kpts[k1],
                                             compact=False)[:,pij:pij+n_]
         X_t = None
         Xaolj[k,:,:] = Xaoik[k,:,:]
-        coulG = tools.get_coulG(cell, kpts[k2]-kpts[k1], mesh=df.mesh)
+        coulG = tools.get_coulG(cell, kpts[k2]-kpts[k1], mesh=mydf.mesh)
         Xaoik[k,:,:] *= (coulG*cell.vol/ngs**2).reshape(-1,1)
     t1 = time.clock()
-    if part.rank == 0:
-        print(" # Time to generate orbital products: {:.2e} s".format(t1-t0))
-        sys.stdout.flush()
     return Xaoik, Xaolj
 
 
 class Cholesky(object):
 
-    def __init__(self, part, kconserv, gtol_chol=1e-5):
+    def __init__(self, part, kconserv, gtol_chol=1e-5, verbose=True):
         try:
             self.maxres_buff = numpy.zeros(5*part.size, dtype=numpy.float64)
         except MemoryError:
@@ -421,6 +421,7 @@ class Cholesky(object):
             sys.exit()
         self.kconserv = kconserv
         self.gtol_chol = gtol_chol
+        self.verbose = verbose
 
     def find_k3k4(self, nproc):
         vmax = 0
@@ -434,7 +435,6 @@ class Cholesky(object):
         return k3, k4, i3, i4, vmax
 
     def generate_diagonal(self, Xaoik, Xaolj, part, nmo_pk):
-        t0 = time.clock()
         maxv = 0
         try:
             residual = numpy.zeros((part.nkk,part.nij), dtype=numpy.float64)
@@ -461,20 +461,21 @@ class Cholesky(object):
                     i1max = (ij+part.ij0) // nmo_pk[k2]
                     i2max = (ij+part.ij0) % nmo_pk[k2]
 
-        t1 = time.clock()
-        if part.rank == 0:
-            print(" # Time to generate diagonal (initial residual):"
-                  " {:.2e}".format(t1-t0))
-            sys.stdout.flush()
         return residual, k1max, k2max, i1max, i2max, maxv
 
     def run(self, comm, Xaoik, Xaolj, part, kpts, nmo_pk, nmo_max, Qi, gmap):
         # Setup residual matrix.
         ngs = Xaoik.shape[1]
         nkpts = len(kpts)
+        t0 = time.clock()
         residual, k1max, k2max, i1max, i2max, maxv = (
                 self.generate_diagonal(Xaoik, Xaolj, part, nmo_pk)
                 )
+        t1 = time.clock()
+        if part.rank == 0 and self.verbose:
+            print(" # Time to generate diagonal (initial residual):"
+                  " {:.2e}".format(t1-t0))
+            sys.stdout.flush()
         comm.Allgather(numpy.array([k1max,k2max,i1max,i2max,maxv],
                        dtype=numpy.float64),self.maxres_buff)
         vmax = 0
@@ -501,7 +502,8 @@ class Cholesky(object):
         if comm.rank == 0:
             header = ["iteration", "max_residual", "total_time",
                       "time_k3k4", "time_comp_cholv", "time_buff"]
-            print(format_fixed_width_strings(header))
+            if self.verbose:
+                print(format_fixed_width_strings(header))
         while more:
             t0 = time.clock()
             # stop condition
@@ -608,7 +610,8 @@ class Cholesky(object):
 
                 # print and evaluate stop condition
                 output = [vmax, t4-t0, t3-t2, t2-t1, t1-t0]
-                print("{:17d} ".format(numv)+format_fixed_width_floats(output))
+                if self.verbose:
+                    print("{:17d} ".format(numv)+format_fixed_width_floats(output))
                 # print("{:8d}  {:13.8e}".format(numv, vmax))
                 tstart = time.clock()
 
@@ -751,6 +754,7 @@ def write_cholMat_singleWriter(h5grp, h5nblk, CV, nopk, n2k1, n2k2, ij0, ik2n,
                                                          chunks=True,
                                                          maxshape=(None,),
                                                          compression="gzip")
+                                    )
                             vcnt[ngrp]=cnt
                             cnt=0
                             ngrp+=1
@@ -783,6 +787,7 @@ def write_cholMat_singleWriter(h5grp, h5nblk, CV, nopk, n2k1, n2k2, ij0, ik2n,
                                                      chunks=True,
                                                      maxshape=(None,),
                                                      compression="gzip")
+                                )
                             vcnt[ngrp]=cnt
                             cnt=0
                             ngrp+=1

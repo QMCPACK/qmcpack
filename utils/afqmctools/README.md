@@ -26,3 +26,4 @@ The tools work with the following:
 * numpy >= 1.11.2
 * h5py >= 2.6.0 with parallel hdf5 support for k-point symmetric integral generation.
 * pandas >= 0.18.0 (optional)
+* mpi4py

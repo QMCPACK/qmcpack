@@ -37,6 +37,8 @@ def write_hamil_kpoints(comm, scf_data, hamil_file, chol_cut,
 
 
     h5file = FileHandler(comm,hamil_file)
+    if h5file.error:
+        sys.exit()
     write_basic(comm, cell, kpts, hcore, h5file, X, nmo_pk, qk_to_k2, kminus)
 
     if comm.rank == 0:
@@ -58,11 +60,11 @@ class FileHandler:
             self.h5f = h5py.File(filename, "w",
                                driver='mpio', comm=comm)
             self.h5f.atomic = False
+            self.error = 0 
         except:
             if comm.rank == 0:
                 print("Parallel hdf5 required.")
-            # TODO: handle this properly.
-            sys.exit()
+            self.error= 1 
         self.grp = self.h5f.create_group("Hamiltonian")
         self.grp_v2 = self.h5f.create_group("Hamiltonian/KPFactorized")
 
@@ -117,12 +119,13 @@ def write_basic(comm, cell, kpts, hcore, h5file, X, nmo_pk, qk_to_k2, kminus, ex
 
 class KPCholesky(object):
 
-    def __init__(self, comm, cell, kpts, maxvecs, nmo_pk, QKToK2, kminus, gtol_chol=1e-5):
+    def __init__(self, comm, cell, kpts, maxvecs, nmo_pk, QKToK2, kminus,
+                 gtol_chol=1e-5, verbose=True):
         self.QKToK2 = QKToK2
         self.kminus = kminus
         nmo_max = numpy.max(nmo_pk)
         nmo_tot = numpy.sum(nmo_pk)
-        if comm.rank == 0:
+        if comm.rank == 0 and verbose:
             print(" # Total number of orbitals: {}".format(nmo_tot))
             sys.stdout.flush()
         assert(nmo_max is not None)
@@ -146,6 +149,7 @@ class KPCholesky(object):
 
         self.nmo_pk = nmo_pk
         self.gtol_chol = gtol_chol
+        self.verbose = verbose
 
     def find_k3k4(self, nproc):
         vmax = 0
@@ -253,7 +257,7 @@ class KPCholesky(object):
             t0 = time.clock()
             if Q > self.kminus[Q]:
                 continue
-            if comm.rank == 0:
+            if comm.rank == 0 and self.verbose:
                 print(" # Calculating factorization for momentum: {}".format(Q))
                 print(" # Generating orbital products")
                 sys.stdout.flush()
@@ -286,7 +290,7 @@ class KPCholesky(object):
 
                 t0 = time.clock()
                 # stop condition
-                if comm.rank == 0:
+                if comm.rank == 0 and self.verbose:
                     if numv == 0:
                         print(format_fixed_width_strings(header))
                 if numv >= self.maxvecs:
@@ -400,7 +404,8 @@ class KPCholesky(object):
                     maxresidual[numv] = abs(vmax)
                     # print and evaluate stop condition
                     output = [vmax, t4-t0, t3-t2, t2-t1, t1-t0]
-                    print("{:17d} ".format(numv)+format_fixed_width_floats(output))
+                    if self.verbose:
+                        print("{:17d} ".format(numv)+format_fixed_width_floats(output))
                     tstart = time.clock()
 
                     if numv%100 == 0:
@@ -435,6 +440,7 @@ class KPCholesky(object):
                 LQ[kk+part.kk0,part.ij0*numv:part.ijN*numv,1] = T_
             comm.barrier()
 
+        print("HERE")
         h5file.grp.create_dataset("NCholPerKP", data=num_cholvecs)
         comm.barrier()
 

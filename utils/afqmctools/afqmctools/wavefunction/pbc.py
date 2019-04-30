@@ -2,6 +2,7 @@
 import numpy
 import h5py
 import time
+import sys
 from afqmctools.wavefunction.mol import write_qmcpack_wfn_ascii
 
 def write_wfn_pbc(scf_data, ortho_ao, filename, rediag=True, verbose=False,
