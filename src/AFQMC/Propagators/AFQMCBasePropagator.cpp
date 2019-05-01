@@ -87,6 +87,7 @@ void AFQMCBasePropagator::parse(xmlNodePtr cur)
     app_log()<<" Using batched orthogonalization in back propagation with a batch size: " <<nbatched_qr <<"\n";
   else
     app_log()<<" Using sequential orthogonalization in back propagation. \n";
+  app_log()<<" vbias_bound: " <<vbias_bound <<std::endl;
 
   if(free_projection) {
 

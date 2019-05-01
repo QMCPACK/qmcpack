@@ -347,10 +347,12 @@ void AFQMCBasePropagator::BackPropagate(int nbpsteps, int nStabalize, WlkSet& ws
     // 1. Get X(nCV,nwalk) from wset
     copy_n(Fields[ni][cv0].origin(),nwalk*(cvN-cv0),X[cv0].origin());
     TG.TG_local().barrier();    
+//std::cout<<" X0: " <<TG.Global().rank() <<" " <<ma::dot(X(X.extension(0),0),X(X.extension(0),0)) <<"\n\n" <<std::endl;
 
     // 2. Calculate vHS(M*M,nwalk)/vHS(nwalk,M*M) 
     //  X has been scaled by sqrtdt to avoid needing it here 
     wfn.vHS(X,vHS);
+//std::cout<<" vHS: " <<TG.Global().rank() <<" " <<ma::dot(vHS[0],vHS[0]) <<"\n\n" <<std::endl;
 
     for(int nr=0; nr<nrefs; ++nr) {   
       

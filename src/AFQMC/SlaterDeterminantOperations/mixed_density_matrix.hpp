@@ -330,18 +330,27 @@ inline void MixedDensityMatrix_noHerm_wSVD(const MatA& A, const MatB& B, MatC&& 
 
   using ma::T;
   using ma::H;
+  using ma::term_by_term_matrix_vector;
+  using ma::determinant_from_geqrf;
+  using ma::real;
 
   int N(U.size(0));
 
   // T1 = H(A)*B
-  ma::product(H(A),B,std::forward<Mat1>(U));  
+  ma::product(H(A),B,U);  
 
   // keep a copy of U in UA temporarily
   using std::copy_n; 
   copy_n(U.origin(),U.num_elements(),UA.origin());  
 
   // get determinant, since you can't get the phase trivially from SVD
-  ma::determinant(U,IWORK,WORK,LogOverlapFactor,ovlp);
+  //ma::determinant(U,IWORK,WORK,LogOverlapFactor,ovlp);
+  ma::geqrf(U,VT[0],WORK);
+  determinant_from_geqrf(N,U.origin(),U.stride(0),VT[1].origin(),LogOverlapFactor,ovlp);
+//  if you want the correct phase of the determinant
+//  ma::gqr(U,S.sliced(0,N),WORK);
+//  ComplexType ovQ = ma::determinant(U,IWORK,WORK,0.0);  
+//  *ovlp *= ovQ;
 
   // restore U
   copy_n(UA.origin(),U.num_elements(),U.origin());  
@@ -355,8 +364,14 @@ inline void MixedDensityMatrix_noHerm_wSVD(const MatA& A, const MatB& B, MatC&& 
   double ov_(0.0);
   for(int i=0; i<N; i++)
     ov_ += std::log(Sh[i]);
-  ov_ = std::exp(ov_ - std::abs(LogOverlapFactor));
-  double ov0(std::abs(ComplexType(*ovlp)));
+  ov_ = std::exp(ov_ - real(LogOverlapFactor));
+#ifdef QMC_CUDA
+  Tp v_;
+  cudaMemcpy(&v_,ovlp,sizeof(Tp),cudaMemcpyDeviceToHost);
+  double ov0(std::abs(v_));
+#else
+  double ov0(std::abs(*ovlp));
+#endif
   std::cout<<" SVD: " <<ov0 <<" " <<ov_ <<" " <<ov0/ov_ <<" " <<Sh[0] <<" " <<Sh[N-1] <<" " <<Sh[0]/Sh[N-1] <<std::endl;
 
   // mod Sh
@@ -370,7 +385,7 @@ inline void MixedDensityMatrix_noHerm_wSVD(const MatA& A, const MatB& B, MatC&& 
 
 
     // VT = VT * inv(S), which works since S is diagonal and real
-    ma::term_by_term_matrix_vector(ma::TOp_DIV,0,VT.size(0),VT.size(1),ma::pointer_dispatch(VT.origin()),
+    term_by_term_matrix_vector(ma::TOp_DIV,0,VT.size(0),VT.size(1),ma::pointer_dispatch(VT.origin()),
                 VT.stride(0),ma::pointer_dispatch(S.origin()),1);
 
     // BV = H(VT) * H(U)
@@ -390,7 +405,7 @@ inline void MixedDensityMatrix_noHerm_wSVD(const MatA& A, const MatB& B, MatC&& 
     ma::product(B,H(VT),BV);
 
     // BV = BV * inv(S), which works since S is diagonal and real
-    ma::term_by_term_matrix_vector(ma::TOp_DIV,1,BV.size(0),BV.size(1),ma::pointer_dispatch(BV.origin()),
+    term_by_term_matrix_vector(ma::TOp_DIV,1,BV.size(0),BV.size(1),ma::pointer_dispatch(BV.origin()),
                 BV.stride(0),ma::pointer_dispatch(S.origin()),1);
 
     // UA = H(U) * H(A)

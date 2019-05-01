@@ -462,6 +462,7 @@ void AFQMCDistributedPropagatorDistCV::BackPropagate(int nbpsteps, int nStabaliz
         MPI_Request_free(&req_bpvrecv);
     if(req_bpvsend!=MPI_REQUEST_NULL)
         MPI_Request_free(&req_bpvsend);
+// MAM: should be sent as ComplexType, so get larger message upper bound size
     MPI_Send_init(to_address(Xsend.origin())+X0,(XN-X0)*sizeof(ComplexType),MPI_CHAR,
                   TG.prev_core(),2345,&TG.TG(),&req_Xsend);
     MPI_Recv_init(to_address(Xrecv.origin())+X0,(XN-X0)*sizeof(ComplexType),MPI_CHAR,
@@ -472,8 +473,6 @@ void AFQMCDistributedPropagatorDistCV::BackPropagate(int nbpsteps, int nStabaliz
                   TG.next_core(),6789,&TG.TG(),&req_bpvrecv);
     buffer_reallocated_bp=false;
   }
-
-  fill_n(vsend.origin()+vak0,(vakN-vak0),zero);
   TG.local_barrier();
 
   auto&& Fields(wset.getFields());
@@ -530,10 +529,12 @@ void AFQMCDistributedPropagatorDistCV::BackPropagate(int nbpsteps, int nStabaliz
   for(int ni=nbpsteps-1; ni>=0; --ni) {
 
     // 1. Get X(nCV,nwalk) from wset
-    copy_n(Fields[ni].origin()+X0,(XN-X0),Xsend.origin()+XN);
+    fill_n(vsend.origin()+vak0,(vakN-vak0),zero);
+    copy_n(Fields[ni].origin()+X0,(XN-X0),Xsend.origin()+X0);
     TG.TG_local().barrier();
     copy_n(Xsend[global_origin+cv0].origin(),nwalk*(cvN-cv0),X[cv0].origin());
     TG.TG_local().barrier();
+//std::cout<<" X0: " <<TG.Global().rank() <<" " <<ma::dot(Xsend(Xsend.extension(0),0),Xsend(Xsend.extension(0),0)) <<" " <<ma::dot(X(X.extension(0),0),X(X.extension(0),0)) <<"\n\n" <<std::endl;
     // 2. Calculate vHS(M*M,nwalk)/vHS(nwalk,M*M) using distributed algorithm 
     for(int k=0; k<nnodes; ++k) {
 
@@ -554,7 +555,9 @@ void AFQMCDistributedPropagatorDistCV::BackPropagate(int nbpsteps, int nStabaliz
       }
 
       // 2.3 Calculate vHS
+//std::cout<<" k, X: " <<TG.Global().rank() <<" " <<k <<" " <<ma::dot(X(X.extension(0),0),X(X.extension(0),0)) <<"\n\n" <<std::endl;
       wfn.vHS(X,vHS);
+//std::cout<<" k, vHS: " <<TG.Global().rank() <<" " <<k <<" " <<ma::dot(vHS[0],vHS[0]) <<"\n\n" <<std::endl;
 
       // 2.4 receive v 
       if(k > 0) {
@@ -567,6 +570,7 @@ void AFQMCDistributedPropagatorDistCV::BackPropagate(int nbpsteps, int nStabaliz
       // 2.5 add local contribution to vsend
       using ma::axpy;
       axpy(vakN-vak0,one,vHS.origin()+vak0,1,vsend.origin()+vak0,1);
+//std::cout<<" k vsend: " <<TG.Global().rank() <<" " <<k <<" " <<ma::dot(vsend[0],vsend[0]) <<"\n\n" <<std::endl;
 
       // 2.6 start v communication
       MPI_Start(&req_bpvsend);
@@ -577,6 +581,7 @@ void AFQMCDistributedPropagatorDistCV::BackPropagate(int nbpsteps, int nStabaliz
     MPI_Wait(&req_bpvrecv,&st);
     MPI_Wait(&req_bpvsend,&st);
     TG.local_barrier();
+//std::cout<<" vrecv: " <<TG.Global().rank() <<" " <<ma::dot(vrecv[0],vrecv[0]) <<"\n\n" <<std::endl;
 
 /**/
     for(int nr=0; nr<nrefs; ++nr) {

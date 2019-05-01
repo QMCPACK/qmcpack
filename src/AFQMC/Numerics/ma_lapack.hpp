@@ -228,7 +228,7 @@ MultiArray2D gesvd(char jobU, char jobVT, MultiArray2D&& A, Array1D&& S, MultiAr
         // so I need to switch U <--> VT when calling fortran interface 
         int status = -1;
         gesvd(
-                jobU, jobVT, A.size(1), A.size(0),  
+                jobVT, jobU, A.size(1), A.size(0),  
                 pointer_dispatch(A.origin()), A.stride(0), 
                 pointer_dispatch(S.origin()),
                 pointer_dispatch(VT.origin()), VT.stride(0),    // !!! 

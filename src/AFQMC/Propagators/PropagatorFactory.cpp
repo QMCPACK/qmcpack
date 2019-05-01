@@ -55,6 +55,7 @@ Propagator PropagatorFactory::buildAFQMCPropagator(TaskGroup_& TG, xmlNodePtr cu
   m_param.add(sub,"substractMF","std::string");
   m_param.add(printP1eV,"printP1eigval","std::string");
   m_param.add(vbias_bound,"vbias_bound","double");
+  m_param.put(cur);
 
   bool substractMF=true;
   std::transform(sub.begin(),sub.end(),sub.begin(),(int (*)(int)) tolower);
@@ -76,7 +77,6 @@ Propagator PropagatorFactory::buildAFQMCPropagator(TaskGroup_& TG, xmlNodePtr cu
       TG.TG().all_reduce_in_place_n(to_address(vMF.origin()),vMF.num_elements(),std::plus<>());  
     }
   }
-
 
   boost::multi::array<ComplexType,1> vMF_(vMF.extensions()); 
   using std::copy_n;
