@@ -103,7 +103,8 @@ class FileHandler:
     def close(self):
         self.h5f.close()
 
-def write_basic(comm, cell, kpts, hcore, h5file, X, nmo_pk, qk_to_k2, kminus, exxdiv='ewald'):
+def write_basic(comm, cell, kpts, hcore, h5file, X, nmo_pk, qk_to_k2, kminus,
+                exxdiv='ewald', verbose=False):
     """Write basic system information including one-body Hamiltonian to file.
     """
     nkpts = len(kpts)
