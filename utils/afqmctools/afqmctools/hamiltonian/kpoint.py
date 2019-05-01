@@ -92,11 +92,11 @@ class FileHandler:
             self.h5f = h5py.File(filename, "w",
                                driver='mpio', comm=comm)
             self.h5f.atomic = False
-            self.error = 0 
+            self.error = 0
         except:
             if comm.rank == 0:
                 print("Parallel hdf5 required.")
-            self.error= 1 
+            self.error= 1
         self.grp = self.h5f.create_group("Hamiltonian")
         self.grp_v2 = self.h5f.create_group("Hamiltonian/KPFactorized")
 
