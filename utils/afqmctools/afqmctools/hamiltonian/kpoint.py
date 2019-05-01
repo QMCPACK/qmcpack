@@ -219,7 +219,7 @@ class KPCholesky(object):
             pij = self.part.ij0 % self.nmo_pk[k2]
             n_ = min(self.part.ijN,self.nmo_pk[k1]*self.nmo_pk[k2]) - self.part.ij0
             X_t = X[k1][:,i0:iN].copy()
-            Xaoik[K,:,0:n_] = self.df.get_mo_pairs_G((X_t,X[k2]),
+            Xaoik[K,:,0:n_] = self.df.get_mo_pairs_G((X_t,X[k2].copy()),
                                                   (kpts[k1],kpts[k2]),
                                                   (kpts[k2]-kpts[k1]),
                                                    compact=False)[:,pij:pij+n_]
@@ -228,7 +228,6 @@ class KPCholesky(object):
             Xaoik[K,:,:] *= (coulG*cell.vol/ngs**2).reshape(-1,1)
 
     def generate_diagonal(self, Q, Xaoik, Xaolj):
-        t0 = time.clock()
         maxv = 0
         residual = numpy.zeros((self.part.nkk,self.part.nij),dtype=numpy.float64)
         k1max = -1
