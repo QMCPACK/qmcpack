@@ -167,11 +167,16 @@ class KPCholesky(object):
         self.nkpts = nkpts
         self.kpts = kpts
         self.cell = cell
+        self.part = Partition(comm, maxvecs, nmo_tot, nmo_max, nkpts,
+                              kp_sym=True)
         maxvecs = maxvecs*nmo_max
         self.maxvecs = maxvecs
         self.nmo_max = nmo_max
         self.gmap, self.Qi, self.ngs = generate_grid_shifts(cell)
-        self.part = Partition(comm, maxvecs, nmo_tot, nmo_max, nkpts, kp_sym=True)
+        if comm.rank == 0 and verbose:
+            print(" # Each kpoint is distributed accross {} mpi tasks."
+                  .format(self.part.nproc_pk))
+            sys.stdout.flush()
         try:
             self.maxres_buff = numpy.zeros(5*comm.size, dtype=numpy.float64)
         except MemoryError:
