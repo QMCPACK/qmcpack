@@ -13,6 +13,35 @@ from afqmctools.utils.io import (
         )
 from afqmctools.utils.pyscf_utils import load_from_pyscf_chk
 
+def alloc_helper(shape, dtype=numpy.float64, name='array', verbose=False):
+    """Numpy array allocator helper.
+
+    Parameters
+    ----------
+    shape : tuple
+        Array shape.
+    dtype : numpy data type
+        Array dtype. Default: numpy.float64
+    name : string
+        Array name. Default: array.
+    verbose : bool
+        Print array information. Default: False.
+
+    Returns
+    -------
+    array : :class:`numpy.ndarray`
+        Array.
+    """
+    mem = numpy.prod(shape)*numpy.dtype(dtype).itemsize / (1024.0**3)
+    if verbose:
+        print(" # Allocating array: {:s} with size {:.2e} GB".format(name, mem))
+        print(" # Shape {}.".format(shape))
+    try:
+        return numpy.zeros(shape, dtype=dtype)
+    except MemoryError:
+        print(" # Problems allocating array: {:s} with size {:.2e}".format(name, mem))
+        sys.exit()
+
 
 def write_hamil_kpoints(comm, scf_data, hamil_file, chol_cut,
                         verbose=True, cas=None, max_vecs=20,
