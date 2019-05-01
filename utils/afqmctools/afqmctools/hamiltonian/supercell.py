@@ -90,6 +90,7 @@ def write_hamil_supercell(comm, scf_data, hamil_file, chol_cut,
     t0 = time.clock()
     Xaoik, Xaolj = gen_orbital_products(cell, mydf, X, nmo_pk, ngs,
                                         part, kpts, nmo_max)
+    t1 = time.clock()
     if part.rank == 0 and verbose:
         print(" # Time to generate orbital products: {:.2e} s".format(t1-t0))
         sys.stdout.flush()
