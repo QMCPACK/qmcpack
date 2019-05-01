@@ -68,16 +68,19 @@ def write_hamil_kpoints(comm, scf_data, hamil_file, chol_cut,
     h5file = FileHandler(comm,hamil_file)
     if h5file.error:
         sys.exit()
-    write_basic(comm, cell, kpts, hcore, h5file, X, nmo_pk, qk_to_k2, kminus)
+    write_basic(comm, cell, kpts, hcore, h5file, X, nmo_pk,
+                qk_to_k2, kminus, verbose=verbose)
 
-    if comm.rank == 0:
+    if comm.rank == 0 and verbose:
         print(" # Time to reach Cholesky: {:13.8e} s.".format(time.clock()-tstart))
         sys.stdout.flush()
     tstart = time.clock()
 
-    solver = KPCholesky(comm, cell, kpts, max_vecs, nmo_pk, qk_to_k2, kminus, chol_cut)
+    solver = KPCholesky(comm, cell, kpts, max_vecs, nmo_pk,
+                        qk_to_k2, kminus, gtol_chol=chol_cut,
+                        verbose=verbose)
     solver.run(comm, X, h5file)
-    if comm.rank == 0:
+    if comm.rank == 0 and verbose:
         print(" # Time to perform Cholesky: {:13.8e} s.".format(time.clock()-tstart))
         sys.stdout.flush()
     h5file.close()
@@ -115,7 +118,8 @@ def write_basic(comm, cell, kpts, hcore, h5file, X, nmo_pk, qk_to_k2, kminus, ex
             madelung = tools.pbc.madelung(cell, kpts)
             emad = -0.5*cell.nelectron*madelung
             e0 += emad
-            print(" # Adding ewald correction to the energy: {}".format(emad))
+            if verbose:
+                print(" # Adding ewald correction to the energy: {}".format(emad))
         sys.stdout.flush()
 
     comm.barrier()
@@ -258,27 +262,31 @@ class KPCholesky(object):
         QKToK2 = self.QKToK2
         kpts = self.kpts
         # Setup residual matrix.
-        try:
-            Xaoik = numpy.zeros((part.nkk,ngs,part.nij),
-                                 dtype=numpy.complex128)
-            Xaolj = numpy.zeros((part.nkk,ngs,part.nij),
-                                dtype=numpy.complex128)
-        except MemoryError:
-            mem = part.nkk*ngs*part.nij*16*2 / 1024.0**3
-            print(" Problems allocating memory for orbital products.\n"
-                  " Trying to allocate: {:2e} GB".format(mem))
-        try:
-            done = numpy.zeros((nkpts,nmo_max,nmo_max), numpy.int32)
-            maxresidual = numpy.zeros(part.maxvecs, dtype=numpy.float64)
-            cholvecs = numpy.zeros((part.nkk,part.nij,part.maxvecs),
-                                        dtype=numpy.complex128)
-            Xkl = numpy.zeros(ngs, dtype=numpy.complex128)
-            Xkl0 = numpy.zeros(ngs+part.maxvecs, dtype=numpy.complex128)
-            Vbuff = numpy.zeros(part.maxvecs, dtype=numpy.complex128)
-            num_cholvecs = numpy.zeros(nkpts, dtype=numpy.int32)
-        except MemoryError:
-            print(" # Problems allocating memory for auxiliary structures for "
-                  "Cholesky solver.")
+        mem = 2*16*nkpts*ngs*nmo_max**2 / 1024**3
+        if self.verbose and comm.rank == 0:
+            print(" # Approx total memory required for orbital products: "
+                  "{:.2e} GB.".format(mem))
+        mem_verbose = comm.rank == 0 and self.verbose > 1
+        if mem_verbose:
+            print(" # Approx memory per MPI task for auxiliary structures.")
+        Xaoik = alloc_helper((part.nkk,ngs,part.nij), dtype=numpy.complex128,
+                             name='Xaoik', verbose=mem_verbose)
+        Xaolj = alloc_helper((part.nkk,ngs,part.nij), dtype=numpy.complex128,
+                             name='Xaolj', verbose=mem_verbose)
+        done = alloc_helper((nkpts,nmo_max,nmo_max), numpy.int32,
+                            name='done', verbose=mem_verbose)
+        maxresidual = alloc_helper((part.maxvecs,), dtype=numpy.float64,
+                                   name='maxresidual', verbose=mem_verbose)
+        cholvecs = alloc_helper((part.nkk,part.nij,part.maxvecs), dtype=numpy.complex128,
+                                  name='cholvecs', verbose=mem_verbose)
+        Xkl = alloc_helper((ngs,), dtype=numpy.complex128,
+                           name='xkl', verbose=mem_verbose)
+        Xkl0 = alloc_helper((ngs+part.maxvecs,), dtype=numpy.complex128,
+                            name='xkl0', verbose=mem_verbose)
+        Vbuff = alloc_helper((part.maxvecs,), dtype=numpy.complex128,
+                             name='Vbuff', verbose=mem_verbose)
+        num_cholvecs = alloc_helper((nkpts,), dtype=numpy.int32,
+                                    name='num_cholvecs', verbose=mem_verbose)
         header = ["iteration", "max_residual", "total_time",
                   "time_k3k4", "time_comp_cholv", "time_buff"]
 
@@ -296,7 +304,11 @@ class KPCholesky(object):
             maxresidual[:] = 0
             done[:,:,:] = 0
             cholvecs[:,:,:] = 0
+            start = time.time()
             self.generate_orbital_products(Q, X, Xaoik, Xaolj)
+            if self.verbose and comm.rank == 0:
+                print(" # Time to generate orbital products: "
+                      "{:13.8e}".format(time.time()-start))
             residual, k1max, k2max, i1max, i2max, maxv = (
                     self.generate_diagonal(Q, Xaoik, Xaolj)
                     )
