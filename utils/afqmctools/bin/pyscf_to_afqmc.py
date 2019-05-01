@@ -53,8 +53,7 @@ def parse_args(args, comm):
                             help='Specify a CAS in the form of N,M.',
                             type=lambda s: [int(item) for item in s.split(',')],
                             default=None)
-        parser.add_argument('-v', '--verbose', dest='verbose',
-                            action='store_true', default=False,
+        parser.add_argument('-v', '--verbose', action='count', default=0,
                             help='Verbose output.')
 
         options = parser.parse_args(args)
