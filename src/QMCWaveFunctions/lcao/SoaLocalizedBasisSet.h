@@ -173,6 +173,20 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
     {
       LOBasisSet[IonID[c]]->evaluateVGL(P.Lattice, dist[c], displ[c], BasisOffset[c], vgl);
     }
+    std::vector<double> K {0.333,0.333,0.333};
+    RealType s,c;
+    RealType vec_scalar;
+    vec_scalar=(((P.activePtcl == iat) ? P.activePos : P.R[iat])[0]*K[0]+((P.activePtcl == iat) ? P.activePos : P.R[iat])[1]*K[1]+((P.activePtcl == iat) ? P.activePos : P.R[iat])[2]*K[2]);  
+    sincos(-2*M_PI*vec_scalar, &s,&c);
+    QMCTraits::ValueType PhaseFactor(c,s);
+    for (int i =0; i<BasisSetSize;i++)
+    {
+      vgl.data(0)[i]*=PhaseFactor;
+      vgl.data(1)[i]*=PhaseFactor;
+      vgl.data(2)[i]*=PhaseFactor;
+      vgl.data(3)[i]*=PhaseFactor;
+      vgl.data(4)[i]*=PhaseFactor;
+    }
   }
 
   /** compute values for the iat-paricle move
@@ -188,6 +202,16 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
     {
       LOBasisSet[IonID[c]]->evaluateV(P.Lattice, dist[c], displ[c], vals + BasisOffset[c]);
     }
+    std::vector<double> K {0.333,0.333,0.333};
+    RealType s,c;
+    RealType vec_scalar;
+    vec_scalar=(((P.activePtcl == iat) ? P.activePos : P.R[iat])[0]*K[0]+((P.activePtcl == iat) ? P.activePos : P.R[iat])[1]*K[1]+((P.activePtcl == iat) ? P.activePos : P.R[iat])[2]*K[2]);  
+    sincos(-2*M_PI*vec_scalar, &s,&c);
+    QMCTraits::ValueType PhaseFactor(c,s);
+    for (int i =0; i<BasisSetSize;i++)
+      vals[i]*=PhaseFactor;
+
+    
   }
 
   /** add a new set of Centered Atomic Orbitals

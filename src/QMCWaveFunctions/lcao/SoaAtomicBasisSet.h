@@ -237,7 +237,6 @@ struct SoaAtomicBasisSet
 
     PosType dr_new;
     T r_new;
-    //T psi_new;
     RealType* restrict ylm_v = tempS.data(0);
     RealType* restrict phi_r = tempS.data(1);
     //Phase_idx needs to be initialized at -1 as it has to be incremented first to comply with the if statement (r_new >=Rmax) 
@@ -267,7 +266,6 @@ struct SoaAtomicBasisSet
 
           Ylm.evaluateV(-dr_new[0], -dr_new[1], -dr_new[2], ylm_v);
           MultiRnl->evaluate(r_new, phi_r);
-
           for (size_t ib = 0; ib < BasisSetSize; ++ib)
             psi[ib] += ylm_v[LM[ib]] * phi_r[NL[ib]]*phase_factor[phase_idx];
          

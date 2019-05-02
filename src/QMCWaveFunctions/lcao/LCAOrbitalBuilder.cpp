@@ -715,7 +715,7 @@ bool LCAOrbitalBuilder::putPBCFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
       setname="/Super_Twist/Coord";
       //setname = name;
       hin.read(twistH5, setname);
-/*      if (std::abs(twistH5[0] - twist[0]) > 1e-6 || std::abs(twistH5[1] - twist[1]) > 1e-6 ||
+      if (std::abs(twistH5[0] - twist[0]) > 1e-6 || std::abs(twistH5[1] - twist[1]) > 1e-6 ||
           std::abs(twistH5[2] - twist[2]) > 1e-6)
       {
          app_log()<<"Super Twist in XML : "<<twist[0]<<"    In H5:"<<twistH5[0]<<std::endl;
@@ -725,7 +725,7 @@ bool LCAOrbitalBuilder::putPBCFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
          app_log()<<"                  y :"<<std::abs(twistH5[1] - twist[1])<<std::endl;
          app_log()<<"                  z :"<<std::abs(twistH5[2] - twist[2])<<std::endl;
          APP_ABORT("Requested Super Twist in XML and Super Twist in HDF5 do not Match!!! Aborting."); 
-      }*/
+      }
 #if not defined(QMC_COMPLEX)
       LoadCMatrix(spo,hin,neigs,setVal,norbs);
 #else
@@ -882,16 +882,25 @@ void LCAOrbitalBuilder::EvalPhaseFactor(PosType twist)
 #else
     ///Exp(ik.g) where i is imaginary, k is the supertwist and g is the translation vector PBCImage.
     int phase_idx=0;
+    int TransX, TransY, TransZ;
     for (int i = 0; i <= PBCImages[0]; i++) //loop Translation over X
+    {
+      TransX = ((i % 2) * 2 - 1) * ((i + 1) / 2);
       for (int j = 0; j <= PBCImages[1]; j++) //loop Translation over Y
+      {
+        TransY = ((j % 2) * 2 - 1) * ((j + 1) / 2);
         for (int k = 0; k <= PBCImages[2]; k++) //loop Translation over Z
         {
+          TransZ    = ((k % 2) * 2 - 1) * ((k + 1) / 2);
            RealType s,c;
            RealType vec_scalar;
-           vec_scalar=i*twist[0]+j*twist[1]+k*twist[2];
-           sincos(vec_scalar, &s,&c);
+           vec_scalar=(TransX*twist[0]+TransY*twist[1]+TransZ*twist[2]);
+           sincos(-2*M_PI*vec_scalar, &s,&c);
            PhaseFactor.emplace_back(c,s);
         }
+      }
+     }
 #endif
+        
 }
 } // namespace qmcplusplus
