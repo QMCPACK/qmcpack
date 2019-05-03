@@ -709,10 +709,6 @@ bool LCAOrbitalBuilder::putPBCFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
     hin.read(IsComplex, "IsComplex");
     hin.pop();
 
-#if not defined(QMC_COMPLEX)
-    //  if(IsComplex)
-       //  APP_ABORT("HDF5 contains a complex Wavefunction. You are not running QMCPACK with Complex capabilities. Please run QMCPACK compiled with QMC_COMPLEX=1");
-#endif
 
       char name[72];
       setname="/Super_Twist/Coord";
@@ -729,6 +725,7 @@ bool LCAOrbitalBuilder::putPBCFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
          app_log()<<"                  z :"<<std::abs(twistH5[2] - twist[2])<<std::endl;
          APP_ABORT("Requested Super Twist in XML and Super Twist in HDF5 do not Match!!! Aborting."); 
       }
+
 #if not defined(QMC_COMPLEX)
       LoadCMatrix(spo,hin,neigs,setVal,norbs);
 #else
@@ -807,7 +804,7 @@ bool LCAOrbitalBuilder::LoadCMatrix_cplx(LCAOrbitalSet& spo,hdf_archive hin, int
     setname = name;
     if (!hin.readEntry(Creal, setname))
     {
-        setname = "LCAOrbitalBuilder::putFromH5 Missing " + setname + " from HDF5 File.";
+        setname = "LCAOrbitalBuilder::LoadCMatrix_cplx Missing " + setname + " from HDF5 File.";
             APP_ABORT(setname.c_str());
         
     }
@@ -830,7 +827,7 @@ bool LCAOrbitalBuilder::LoadCMatrix_cplx(LCAOrbitalSet& spo,hdf_archive hin, int
        setname = name;
        if (!hin.readEntry(Ccmplx, setname))
        {
-           setname = "LCAOrbitalBuilder::putFromH5 Missing " + setname + " from HDF5 File.";
+           setname = "LCAOrbitalBuilder::LoadCMatrix_cplx  Missing " + setname + " from HDF5 File.";
            APP_ABORT(setname.c_str());
        } 
     }
@@ -857,10 +854,26 @@ bool LCAOrbitalBuilder::LoadCMatrix_cplx(LCAOrbitalSet& spo,hdf_archive hin, int
 bool LCAOrbitalBuilder::LoadCMatrix(LCAOrbitalSet& spo,hdf_archive hin, int neigs,int setVal,int norbs)
 {
     bool success=false;
+    bool IsComplex=false;
     char name[72];
     std::string setname;
     Matrix<ValueType> Ctemp(neigs, spo.getBasisSetSize());
+    PosType twist(0.0);
+    setname="/Super_Twist/Coord";
+    hin.read(twist, setname);
+
+    setname="/Super_Twist/Coord";
+    hin.read(IsComplex, setname);
     
+    if (IsComplex && std::abs(twist[0]-0.0) > 1e-6 && std::abs(twist[1]-0.0) > 1e-6 &&
+          std::abs(twist[2]-0.0) > 1e-6)
+    {
+           setname = "This Wavefunction is Complex and you are using the real version of QMCPACK. Please re-run this job with the Complex build of QMCPACK.";
+           APP_ABORT(setname.c_str());
+
+    }
+
+
     sprintf(name, "%s%d", "/Super_Twist/eigenset_", setVal);
     setname = name;
     if (!hin.readEntry(Ctemp, setname))
@@ -887,7 +900,7 @@ bool LCAOrbitalBuilder::LoadCMatrix(LCAOrbitalSet& spo,hdf_archive hin, int neig
     return success;
 }
 
-
+///Function Not yet called. Phase Factor computation to be determined
 void LCAOrbitalBuilder::EvalPhaseFactor(PosType twist)
 {
 
