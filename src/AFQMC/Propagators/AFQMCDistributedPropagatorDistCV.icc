@@ -82,7 +82,9 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
     if(TG.TG_local().root()) fill_n(buffer.origin(),buffer.num_elements(),ComplexType(0.0));
     buffer_reallocated=true;
     buffer_reallocated_bp=true;
-  }  
+  } else  
+    if(TG.TG_local().root()) fill_n(buffer.origin(),buffer.num_elements(),ComplexType(0.0));
+  TG.local_barrier();
 
   // convert array to a basic_array<element,1,pointer>. This generates a view of buffer 
   // with type basic_array<ComplexType,1,pointer> which eliminates the need to cast origin()  
@@ -421,7 +423,9 @@ void AFQMCDistributedPropagatorDistCV::BackPropagate(int nbpsteps, int nStabaliz
     fill_n(buffer.origin(),buffer.num_elements(),ComplexType(0.0));
     buffer_reallocated=true;
     buffer_reallocated_bp=true;
-  }
+  }  else
+    if(TG.TG_local().root()) fill_n(buffer.origin(),buffer.num_elements(),ComplexType(0.0));
+  TG.local_barrier();
 
   // convert array to a basic_array<element,1,pointer>. This generates a view of buffer 
   // with type basic_array<ComplexType,1,pointer> which eliminates the need to cast origin()  

@@ -344,9 +344,9 @@ inline void MixedDensityMatrix_noHerm_wSVD(const MatA& A, const MatB& B, MatC&& 
   copy_n(U.origin(),U.num_elements(),UA.origin());  
 
   // get determinant, since you can't get the phase trivially from SVD
-  //ma::determinant(U,IWORK,WORK,LogOverlapFactor,ovlp);
-  ma::geqrf(U,VT[0],WORK);
-  determinant_from_geqrf(N,U.origin(),U.stride(0),VT[1].origin(),LogOverlapFactor,ovlp);
+  ma::determinant(U,IWORK,WORK,LogOverlapFactor,ovlp);
+//  ma::geqrf(U,VT[0],WORK);
+//  determinant_from_geqrf(N,U.origin(),U.stride(0),VT[1].origin(),LogOverlapFactor,ovlp);
 //  if you want the correct phase of the determinant
 //  ma::gqr(U,S.sliced(0,N),WORK);
 //  ComplexType ovQ = ma::determinant(U,IWORK,WORK,0.0);  
@@ -372,7 +372,7 @@ inline void MixedDensityMatrix_noHerm_wSVD(const MatA& A, const MatB& B, MatC&& 
 #else
   double ov0(std::abs(*ovlp));
 #endif
-  std::cout<<" SVD: " <<ov0 <<" " <<ov_ <<" " <<ov0/ov_ <<" " <<Sh[0] <<" " <<Sh[N-1] <<" " <<Sh[0]/Sh[N-1] <<std::endl;
+//  std::cout<<" SVD: " <<ov0 <<" " <<ov_ <<" " <<ov0/ov_ <<" " <<Sh[0] <<" " <<Sh[N-1] <<" " <<Sh[0]/Sh[N-1] <<std::endl;
 
   // mod Sh
   // S = Sh;

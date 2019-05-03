@@ -1265,7 +1265,7 @@ namespace afqmc
     if(G.size(1) != G.stride(0))
       APP_ABORT(" Error: FIX FIX FIX need strided fill_n\n");
     using std::fill_n;
-    if(TG.TG_local().root())
+    if(TG.TG_local().root()) 
       fill_n(G.origin(),G.num_elements(),ComplexType(0.0));
     TG.TG_local().barrier();
     if(Refs!=nullptr) {
@@ -1291,6 +1291,7 @@ namespace afqmc
         if( iw%TG.TG_local().size() != TG.TG_local().rank() ) continue;
         if( std::abs(wgt[iw]) < 1e-10 ) continue;
         ComplexType overlap = ComplexType(1.0,0.0);
+        fill_n(G1D_.origin(),G1D_.num_elements(),ComplexType(0.0));
 
         // Mixed density matrix.
         if(Refs!=nullptr) {
@@ -1339,6 +1340,8 @@ namespace afqmc
         if( iw%TG.TG_local().size() != TG.TG_local().rank() ) continue;
         if( std::abs(wgt[iw]) < 1e-10 ) continue;
         ComplexType overlap = ComplexType(1.0,0.0);
+        fill_n(GA1D_.origin(),GA1D_.num_elements(),ComplexType(0.0));
+        fill_n(GB1D_.origin(),GB1D_.num_elements(),ComplexType(0.0));
 
         // Mixed density matrix.
         if(Refs!=nullptr) {
@@ -1384,6 +1387,12 @@ namespace afqmc
         if( not ( std::isfinite(real(DMsum[iw][0])) && std::isfinite(imag(DMsum[iw][0])) &&
                   std::isfinite(real(DMsum[iw][1])) && std::isfinite(imag(DMsum[iw][1]))
                                      ) ) continue;
+        if( std::isnan(real(DMsum[iw][0])) || std::isnan(imag(DMsum[iw][0]))||
+                  std::isnan(real(DMsum[iw][1])) || std::isnan(imag(DMsum[iw][1]))
+                                     )  continue;
+        if( std::isinf(real(DMsum[iw][0])) || std::isinf(imag(DMsum[iw][0]))||
+                  std::isinf(real(DMsum[iw][1])) || std::isinf(imag(DMsum[iw][1]))
+                                     )  continue;
 
         ComplexType ov_denom;
         if(free_projection) {

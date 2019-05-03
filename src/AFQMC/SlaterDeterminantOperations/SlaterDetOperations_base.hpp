@@ -308,8 +308,10 @@ class SlaterDetOperations_base
     TVector TBuff;
 
     void set_buffer(size_t N) {
-      if(TBuff.num_elements() < N)
+      if(TBuff.num_elements() < N) 
         TBuff = std::move(TVector(iextensions<1u>{N}));
+      using std::fill_n;
+      fill_n(TBuff.origin(),N,T(0.0));
     }
 
 };
