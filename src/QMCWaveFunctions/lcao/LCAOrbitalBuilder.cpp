@@ -926,7 +926,7 @@ void LCAOrbitalBuilder::EvalPhaseFactor(PosType twist)
            RealType s,c;
            RealType vec_scalar;
            vec_scalar=(TransX*twist[0]+TransY*twist[1]+TransZ*twist[2]);
-           sincos(-2*M_PI*vec_scalar, &s,&c);
+           sincos(-2*RealType(M_PI)*vec_scalar, &s,&c);
            PhaseFactor.emplace_back(c,s);
         }
       }
