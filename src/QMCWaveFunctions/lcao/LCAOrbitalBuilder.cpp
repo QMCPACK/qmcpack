@@ -790,7 +790,7 @@ bool LCAOrbitalBuilder::putOccupation(LCAOrbitalSet& spo, xmlNodePtr occ_ptr)
   }
   return true;
 }
-///////SHOULD BE TEMPLATED I GUESS//// 
+///////SHOULD BE TEMPLATED//// 
 
 #if defined(QMC_COMPLEX)
 bool LCAOrbitalBuilder::LoadCMatrix_cplx(LCAOrbitalSet& spo,hdf_archive hin, int neigs,int setVal,int norbs)
@@ -798,7 +798,7 @@ bool LCAOrbitalBuilder::LoadCMatrix_cplx(LCAOrbitalSet& spo,hdf_archive hin, int
     bool success=false;
     char name[72];
     std::string setname;
-    PosType twistH5(0.0);
+    PosType twist(0.0);
     Matrix<ValueType> Ctemp(neigs, spo.getBasisSetSize());
     Matrix<RealType> Creal(neigs, spo.getBasisSetSize());
     Matrix<RealType> Ccmplx(neigs, spo.getBasisSetSize());
@@ -815,13 +815,13 @@ bool LCAOrbitalBuilder::LoadCMatrix_cplx(LCAOrbitalSet& spo,hdf_archive hin, int
     
     setname="/Super_Twist/Coord";
     //setname = name;
-    hin.read(twistH5, setname);
+    hin.read(twist, setname);
 
     if (std::abs(twist[0]-0.0) < 1e-6 && std::abs(twist[1]-0.0) < 1e-6 &&
           std::abs(twist[2]-0.0) < 1e-6)
     {
        for (int i=0; i<neigs; i++)
-          for (int j=0; j<spo.getBasisSetSize(); j++){
+          for (int j=0; j<spo.getBasisSetSize(); j++)
              Ccmplx[i][j]=0.0;
     }
     else
