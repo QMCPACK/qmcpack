@@ -201,9 +201,10 @@ const char *xml_block =
   REQUIRE(wset.GlobalPopulation() == nwalkers*TG.getNumberOfTGs());
   REQUIRE(wset.GlobalPopulation() == wset.get_global_target_population());
   REQUIRE(wset.GlobalWeight() == Approx(static_cast<RealType>(wset.get_global_target_population())));
+  double nx = (wset.getWalkerType()==NONCOLLINEAR?1.0:2.0);  
   for(int i=0; i<wset.size(); i++) {
     auto w = wset[i];
-    myREQUIRE( std::exp(wset.getLogOverlapFactor())*ComplexType(*w.overlap()), ComplexType(*w.E1()));
+    myREQUIRE( std::exp(nx*wset.getLogOverlapFactor())*ComplexType(*w.overlap()), ComplexType(*w.E1()));
     REQUIRE( *w.EXX() == *w.E1());
     REQUIRE( *w.EJ() == *w.E1());
   }

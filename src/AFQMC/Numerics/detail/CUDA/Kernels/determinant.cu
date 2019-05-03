@@ -32,9 +32,42 @@ template<class T>
 __global__ void kernel_determinant_from_getrf(int N, T const* m, int lda, int const* piv, T LogOverlapFactor, T *det) {
 
    __shared__ T tmp[256];
+   __shared__ T sg[256];
    int t = threadIdx.x;
 
    tmp[t]=T(0.0);
+   sg[t]=T(1.0);
+
+   for(int ip=threadIdx.x; ip<N; ip+=blockDim.x) {
+    if(m[ip*lda+ip] < 0.0) {
+      tmp[t] += log(-m[ip*lda+ip]);
+      sg[t] *= T(-1.0);
+    } else
+      tmp[t] += log(m[ip*lda+ip]);
+    if(piv[ip]!=(ip+1))
+      sg[t] *= T(-1.0);
+   }
+   __syncthreads();
+
+   // not optimal but ok for now
+   if (threadIdx.x == 0) {
+     int imax = (N > blockDim.x)?blockDim.x:N;
+     for(int i=1; i<imax; i++) { 
+       tmp[0] += tmp[i];
+       sg[0] *= sg[i]; 
+      }
+     *det = sg[0]*exp(tmp[0]-LogOverlapFactor);
+   }
+   __syncthreads();
+}
+
+template<class T>
+__global__ void kernel_determinant_from_getrf(int N, thrust::complex<T> const* m, int lda, int const* piv, thrust::complex<T> LogOverlapFactor, thrust::complex<T> *det) {
+
+   __shared__ thrust::complex<T> tmp[256];
+   int t = threadIdx.x;
+
+   tmp[t]=thrust::complex<T>(0.0);
 
    for(int ip=threadIdx.x; ip<N; ip+=blockDim.x)
     if(piv[ip]==(ip+1)){
@@ -47,7 +80,7 @@ __global__ void kernel_determinant_from_getrf(int N, T const* m, int lda, int co
    // not optimal but ok for now
    if (threadIdx.x == 0) {
      int imax = (N > blockDim.x)?blockDim.x:N;
-     for(int i=1; i<imax; i++) 
+     for(int i=1; i<imax; i++)
        tmp[0] += tmp[i];
      *det = exp(tmp[0]-LogOverlapFactor);
    }

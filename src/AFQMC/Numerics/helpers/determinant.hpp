@@ -27,28 +27,34 @@ namespace ma
   inline T determinant_from_getrf(int n, T* M, int lda, int* pivot, T LogOverlapFactor)
   {
     T res(0.0);
+    T sg(1.0);
     for(int i=0, ip=1; i != n; i++, ip++){
-      if(pivot[i]==ip){
-        res += std::log(+static_cast<T>(M[i*lda+i]));
-      }else{
+      if(real(M[i*lda+i]) < 0.0) {
         res += std::log(-static_cast<T>(M[i*lda+i]));
-      }
+        sg *= -1.0;
+      } else   
+        res += std::log(static_cast<T>(M[i*lda+i]));
+      if(pivot[i]!=ip)
+        sg *= -1.0;
     }
-    return std::exp(res-LogOverlapFactor);
+    return sg*std::exp(res-LogOverlapFactor);
   } 
 
   template<class T>
   inline void determinant_from_getrf(int n, T* M, int lda, int* pivot, T LogOverlapFactor, T* res)
   {
     *res = T(0.0);
+    T sg(1.0);
     for(int i=0, ip=1; i != n; i++, ip++){
-      if(pivot[i]==ip){
-        *res += std::log(+static_cast<T>(M[i*lda+i]));
-      }else{
+      if(real(M[i*lda+i]) < 0.0) {
         *res += std::log(-static_cast<T>(M[i*lda+i]));
-      }
+        sg *= -1.0;
+      } else
+        *res += std::log(static_cast<T>(M[i*lda+i]));
+      if(pivot[i]!=ip)
+        sg *= -1.0;
     }
-    *res = std::exp(*res-LogOverlapFactor);
+    *res = sg*std::exp(*res-LogOverlapFactor);
   }
 
   template<class T>
@@ -56,11 +62,40 @@ namespace ma
   {
     *res = T(0.0); 
     for (int i = 0; i < n; i++) { 
-      if (real(M[i*lda+i]) < 0) 
+      if(real(M[i*lda+i]) < 0.0) 
         buff[i]=T(-1.0); 
       else 
         buff[i]=T(1.0); 
       *res += std::log(buff[i]*M[i*lda+i]);
+    }
+    *res = std::exp(*res-LogOverlapFactor);
+  }
+
+  // specializations for complex
+  template<class T>
+  inline std::complex<T> determinant_from_getrf(int n, std::complex<T>* M, int lda, int* pivot, std::complex<T> LogOverlapFactor)
+  {
+    std::complex<T> res(0.0,0.0);
+    for(int i=0, ip=1; i != n; i++, ip++){
+      if(pivot[i]==ip){
+        res += std::log(+static_cast<std::complex<T>>(M[i*lda+i]));
+      }else{
+        res += std::log(-static_cast<std::complex<T>>(M[i*lda+i]));
+      }
+    }
+    return std::exp(res-LogOverlapFactor);
+  }
+
+  template<class T>
+  inline void determinant_from_getrf(int n, std::complex<T>* M, int lda, int* pivot, std::complex<T> LogOverlapFactor, std::complex<T>* res)
+  {
+    *res = std::complex<T>(0.0,0.0);
+    for(int i=0, ip=1; i != n; i++, ip++){
+      if(pivot[i]==ip){
+        *res += std::log(+static_cast<std::complex<T>>(M[i*lda+i]));
+      }else{
+        *res += std::log(-static_cast<std::complex<T>>(M[i*lda+i]));
+      }
     }
     *res = std::exp(*res-LogOverlapFactor);
   }
