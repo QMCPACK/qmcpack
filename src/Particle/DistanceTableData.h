@@ -398,6 +398,7 @@ struct DistanceTableData
       Temp.resize(N[SourceIndex]);
     }
   }
+
 };
 } // namespace qmcplusplus
 #endif

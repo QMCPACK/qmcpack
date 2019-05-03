@@ -28,52 +28,41 @@
 #define BZ_RANDREF_H
 
 #ifndef BZ_RANDOM_H
- #error <blitz/randref.h> must be included via <blitz/random.h>
+#error <blitz/randref.h> must be included via <blitz/random.h>
 #endif // BZ_RANDOM_H
 
 BZ_NAMESPACE(blitz)
 
 template<typename P_distribution>
-class _bz_VecExprRandom {
-
+class _bz_VecExprRandom
+{
 public:
-    typedef _bz_typename Random<P_distribution>::T_numtype T_numtype;
+  typedef _bz_typename Random<P_distribution>::T_numtype T_numtype;
 
-    _bz_VecExprRandom(Random<P_distribution>& random)
-        : random_(random)
-    { }
+  _bz_VecExprRandom(Random<P_distribution>& random) : random_(random) {}
 
 #ifdef BZ_MANUAL_VECEXPR_COPY_CONSTRUCTOR
-    _bz_VecExprRandom(_bz_VecExprRandom<P_distribution>& x)
-        : random_(x.random_)
-    { }
+  _bz_VecExprRandom(_bz_VecExprRandom<P_distribution>& x) : random_(x.random_) {}
 #endif
 
-    T_numtype operator[](unsigned) const
-    { return random_.random(); }
+  T_numtype operator[](unsigned) const { return random_.random(); }
 
-    T_numtype operator()(unsigned) const
-    { return random_.random(); }
+  T_numtype operator()(unsigned) const { return random_.random(); }
 
-    unsigned length(unsigned recommendedLength) const
-    { return recommendedLength; }
+  unsigned length(unsigned recommendedLength) const { return recommendedLength; }
 
-    unsigned _bz_suggestLength() const
-    { return 0; }
+  unsigned _bz_suggestLength() const { return 0; }
 
-    bool _bz_hasFastAccess() const
-    { return 1; }
+  bool _bz_hasFastAccess() const { return 1; }
 
-    T_numtype _bz_fastAccess(unsigned) const
-    { return random_.random(); }
+  T_numtype _bz_fastAccess(unsigned) const { return random_.random(); }
 
 private:
-    _bz_VecExprRandom() : random_( Random<P_distribution>() ) { }
+  _bz_VecExprRandom() : random_(Random<P_distribution>()) {}
 
-    Random<P_distribution>& random_;
+  Random<P_distribution>& random_;
 };
 
 BZ_NAMESPACE_END
 
 #endif // BZ_RANDREF_H
-

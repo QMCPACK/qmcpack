@@ -8,8 +8,8 @@
 //
 // File created by: Paul R. C. Kent, kentpr@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 //           http://pathintegrals.info                     //
 /////////////////////////////////////////////////////////////
 
@@ -25,27 +25,27 @@ public:
   // Optional member functions -- if you're not a pseudoHamiltonian,
   // you do not need to define these
   virtual bool IsPH();
-  virtual bool IsNonlocal()        { return false; }
+  virtual bool IsNonlocal() { return false; }
   // Nonlocal version of functions
-  virtual double V     (int l, double r);
-  virtual double dVdr  (int l, double r);
+  virtual double V(int l, double r);
+  virtual double dVdr(int l, double r);
   virtual double d2Vdr2(int l, double r);
-  virtual bool NeedsRel(); 
-  virtual double GetCoreRadius()   { return 0.0; }
-  virtual double A      (double r) { return 1.0; }
-  virtual double B      (double r) { return 1.0; }
-  virtual double dAdr   (double r) { return 0.0; }
-  virtual double d2Adr2 (double r) { return 0.0; }
+  virtual bool NeedsRel();
+  virtual double GetCoreRadius() { return 0.0; }
+  virtual double A(double r) { return 1.0; }
+  virtual double B(double r) { return 1.0; }
+  virtual double dAdr(double r) { return 0.0; }
+  virtual double d2Adr2(double r) { return 0.0; }
 
   // Required member functions
-  virtual double V(double r) = 0;
-  virtual double dVdr(double r) = 0;
-  virtual double d2Vdr2(double r) = 0;
-  virtual void Write(IOSectionClass &out) = 0;
-  virtual void Read(IOSectionClass &in) = 0;
-  virtual double X_k (double rcut, double k) { return 0.0; }
+  virtual double V(double r)              = 0;
+  virtual double dVdr(double r)           = 0;
+  virtual double d2Vdr2(double r)         = 0;
+  virtual void Write(IOSectionClass& out) = 0;
+  virtual void Read(IOSectionClass& in)   = 0;
+  virtual double X_k(double rcut, double k) { return 0.0; }
 };
 
-Potential* ReadPotential (IOSectionClass &in);
+Potential* ReadPotential(IOSectionClass& in);
 
 #endif

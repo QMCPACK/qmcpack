@@ -21,7 +21,6 @@
 
 namespace qmcplusplus
 {
-
 /** lattice deviation estimator
  *
  * Compute deviation of species="tgroup" in target particle set from species="sgroup" in source particle set. The motivation is to observe the deviation of protons from their crystal sites in an all electron-proton simulation of hydrogen i.e. two-component system
@@ -39,12 +38,11 @@ namespace qmcplusplus
 particles, whereas the stat.h5 entries are particle-resolved. The two sets of outputs can be compared
 as a consistency check for the estimator.
  */
-class LatticeDeviationEstimator: public QMCHamiltonianBase
+class LatticeDeviationEstimator : public QMCHamiltonianBase
 {
 public:
-
   LatticeDeviationEstimator(ParticleSet& P, ParticleSet& sP, const std::string& tgroup, const std::string& sgroup);
-  ~LatticeDeviationEstimator() { }
+  ~LatticeDeviationEstimator() {}
 
   bool put(xmlNodePtr cur);         // read input xml node, required
   bool get(std::ostream& os) const; // class description, required
@@ -65,18 +63,18 @@ public:
   QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi); // required
 
 private:
-  SpeciesSet&       tspecies; // species table of target particle set
-  SpeciesSet&       sspecies; // species table of source particle set
-  std::string  tgroup,sgroup; // name of species to track
+  SpeciesSet& tspecies;       // species table of target particle set
+  SpeciesSet& sspecies;       // species table of source particle set
+  std::string tgroup, sgroup; // name of species to track
   DistanceTableData* d_table; // distance table between target and source particle sets
-  ParticleSet&   tpset,spset; // save references to source and target particle sets
-  int num_sites; // number of lattice sites (i.e. number of source particles)
-  bool hdf5_out; // use .h5 file for data (follow SkEstimator)
-  int  h5_index; // track the starting memory location in P.Collectables
-  bool per_xyz;  // track deviation in each of x,y,z directions
+  ParticleSet &tpset, spset;  // save references to source and target particle sets
+  int num_sites;              // number of lattice sites (i.e. number of source particles)
+  bool hdf5_out;              // use .h5 file for data (follow SkEstimator)
+  int h5_index;               // track the starting memory location in P.Collectables
+  bool per_xyz;               // track deviation in each of x,y,z directions
   std::vector<RealType> xyz2; // temporary storage for deviation in each of x,y,z directions
-  xmlNodePtr input_xml; // original xml
-}; // LatticeDeviationEstimator
+  xmlNodePtr input_xml;       // original xml
+};                            // LatticeDeviationEstimator
 
 } // namespace qmcplusplus
 #endif

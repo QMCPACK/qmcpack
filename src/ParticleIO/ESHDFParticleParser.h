@@ -10,8 +10,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
 
 
 #ifndef ESHDF_PARTICLE_PARSER_H
@@ -24,11 +22,9 @@ class Communicate;
 
 namespace qmcplusplus
 {
-
 struct ESHDFElectronsParser
 {
-
-  ESHDFElectronsParser(ParticleSet& aptcl, hid_t h=-1, Communicate* c=0);
+  ESHDFElectronsParser(ParticleSet& aptcl, hid_t h = -1, Communicate* c = 0);
 
   bool put(xmlNodePtr cur);
 
@@ -39,13 +35,12 @@ struct ESHDFElectronsParser
 
 struct ESHDFIonsParser
 {
-
-  ESHDFIonsParser(ParticleSet& aptcl, hid_t h=-1, Communicate* c=0);
+  ESHDFIonsParser(ParticleSet& aptcl, hid_t h = -1, Communicate* c = 0);
 
   bool put(xmlNodePtr cur);
   void readESHDF();
   //expand the ionic systems
-  void expand(Tensor<int,3>& tilematrix);
+  void expand(Tensor<int, 3>& tilematrix);
 
   ParticleSet& ref_;
   hid_t hfile_id;
@@ -55,7 +50,6 @@ struct ESHDFIonsParser
   std::string mass_tag;
 };
 
-}
+} // namespace qmcplusplus
 
 #endif
-

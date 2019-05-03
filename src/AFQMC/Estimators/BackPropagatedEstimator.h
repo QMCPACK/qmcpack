@@ -271,7 +271,7 @@ class BackPropagatedEstimator: public EstimatorBase
         dump.pop();
         write_metadata = false;
       }
-#ifdef QMC_CUDA
+#ifdef ENABLE_CUDA
       stdCMatrix buff(DMBuffer);
 #else
       CMatrix& buff(DMBuffer);

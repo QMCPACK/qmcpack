@@ -110,7 +110,7 @@ public:
                            std::vector<RealType>& dhpsioverpsi,
                            const MultiDiracDeterminant& pseudo_dn,
                            const ValueType& psiCurrent,
-                           const std::vector<RealType>& Coeff,
+                           const std::vector<ValueType>& Coeff,
                            const std::vector<size_t>& C2node_up,
                            const std::vector<size_t>& C2node_dn)
   {

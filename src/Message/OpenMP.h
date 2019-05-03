@@ -9,10 +9,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
-
-
 
 
 #ifndef OHMMS_OPENMP_H
@@ -26,33 +22,21 @@
 #include <omp.h>
 #else
 typedef int omp_int_t;
-inline omp_int_t omp_get_thread_num()
-{
-  return 0;
-}
-inline omp_int_t omp_get_max_threads()
-{
-  return 1;
-}
-inline omp_int_t omp_get_num_threads()
-{
-  return 1;
-}
-inline bool omp_get_nested()
-{
-  return false;
-}
+inline omp_int_t omp_get_thread_num() { return 0; }
+inline omp_int_t omp_get_max_threads() { return 1; }
+inline omp_int_t omp_get_num_threads() { return 1; }
+inline bool omp_get_nested() { return false; }
 #endif
 
 /// get the number of threads at the next nested level
 inline int getNumThreadsNested()
 {
   int num_threads = 1;
-  if(omp_get_nested())
+  if (omp_get_nested())
   {
-    #pragma omp parallel
+#pragma omp parallel
     {
-      #pragma omp master
+#pragma omp master
       num_threads = omp_get_num_threads();
     }
   }

@@ -39,4 +39,26 @@ void applyW_stageV_cuda(const int *delay_list_gpu, const int delay_count,
                         std::complex<double>* V_gpu, const std::complex<double>* Ainv,
                         cudaStream_t& hstream);
 
+/** create identity matrix on the device
+ */
+void make_identity_matrix_cuda(const int nrows, double* mat, const int lda, cudaStream_t& hstream);
+
+void make_identity_matrix_cuda(const int nrows, std::complex<double>* mat, const int lda, cudaStream_t& hstream);
+
+/** extract matrix diagonal
+ */
+void extract_matrix_diagonal_cuda(const int nrows, const double* mat, const int lda, double* diag, cudaStream_t& hstream);
+
+void extract_matrix_diagonal_cuda(const int nrows, const std::complex<double>* mat, const int lda, std::complex<double>* diag, cudaStream_t& hstream);
+
+/** copy matrix with precision difference
+ */
+void copy_matrix_cuda(const int nrows, const int ncols, const double* mat_in, const int lda, float* mat_out, const int ldb, cudaStream_t& hstream);
+
+void copy_matrix_cuda(const int nrows, const int ncols, const float* mat_in, const int lda, double* mat_out, const int ldb, cudaStream_t& hstream);
+
+void copy_matrix_cuda(const int nrows, const int ncols, const std::complex<double>* mat_in, const int lda, std::complex<float>* mat_out, const int ldb, cudaStream_t& hstream);
+
+void copy_matrix_cuda(const int nrows, const int ncols, const std::complex<float>* mat_in, const int lda, std::complex<double>* mat_out, const int ldb, cudaStream_t& hstream);
+
 #endif

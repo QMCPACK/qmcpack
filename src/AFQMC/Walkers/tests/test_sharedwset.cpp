@@ -88,7 +88,7 @@ void test_basic_walker_features(bool serial)
   auto world = boost::mpi3::environment::get_world_instance();
   auto node = world.split_shared(world.rank());
 
-#ifdef QMC_CUDA
+#ifdef ENABLE_CUDA
   qmc_cuda::CUDA_INIT(node);
 #endif
 
@@ -221,7 +221,7 @@ void test_hyperslab()
   auto world = boost::mpi3::environment::get_world_instance();
   auto node = world.split_shared(world.rank());
 
-#ifdef QMC_CUDA
+#ifdef ENABLE_CUDA
   qmc_cuda::CUDA_INIT(node);
 #endif
 
@@ -369,7 +369,7 @@ void test_walker_io()
 
   using Type = std::complex<double>;
 
-#ifdef QMC_CUDA
+#ifdef ENABLE_CUDA
   qmc_cuda::CUDA_INIT(node);
 #endif
 

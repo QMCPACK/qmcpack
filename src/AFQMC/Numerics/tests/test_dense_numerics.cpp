@@ -41,7 +41,7 @@
 #include "multi/array.hpp"
 #include "multi/array_ref.hpp"
 
-#if defined(QMC_CUDA)
+#if defined(ENABLE_CUDA)
 #include "mpi3/communicator.hpp"
 #include "mpi3/shared_communicator.hpp"
 #include "AFQMC/Memory/custom_pointers.hpp"
@@ -391,7 +391,7 @@ TEST_CASE("dense_ma_operations", "[matrix_operations]")
   test_dense_matrix_mult();
 }
 
-#if defined(QMC_CUDA)
+#if defined(ENABLE_CUDA)
 template<class Allocator>
 void test_dense_matrix_mult_device(Allocator alloc)
 {

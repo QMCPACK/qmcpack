@@ -122,9 +122,6 @@ struct WaveFunctionComponent: public QMCTraits
   /** define the level of storage in derivative buffer **/
   int DerivStorageType;
 
-  /** flag to calculate and return ionic derivatives */
-  bool ionDerivs;
-
   int parameterType;
   /** current update mode */
   int UpdateMode;
@@ -163,11 +160,6 @@ struct WaveFunctionComponent: public QMCTraits
   inline void setOptimizable(bool optimizeit)
   {
     Optimizable = optimizeit;
-  }
-
-  inline void setIonDerivs(bool calcionderiv)
-  {
-    ionDerivs=calcionderiv;
   }
 
   virtual void resetPhaseDiff() {}

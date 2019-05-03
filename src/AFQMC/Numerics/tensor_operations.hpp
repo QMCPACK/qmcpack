@@ -17,7 +17,7 @@
 
 #include<cassert>
 #include "AFQMC/Numerics/detail/utilities.hpp"
-#if defined(QMC_CUDA)
+#if defined(ENABLE_CUDA)
 #include "AFQMC/Memory/CUDA/cuda_gpu_pointer.hpp"
 #include "AFQMC/Numerics/detail/CUDA/Kernels/KaKjw_to_KKwaj.cuh"
 #include "AFQMC/Numerics/detail/CUDA/Kernels/KaKjw_to_QKajw.cuh"
@@ -203,7 +203,7 @@ void term_by_term_matrix_vector(TENSOR_OPERATIONS op, int dim, int nrow, int nco
 
 } //namespace ma
 
-#ifdef QMC_CUDA
+#ifdef ENABLE_CUDA
 namespace qmc_cuda{
 
 template<typename T, typename Q>

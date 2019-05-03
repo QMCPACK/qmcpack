@@ -10,8 +10,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
 
 
 #ifndef GPU_MISC_H
@@ -27,7 +25,6 @@
 
 namespace gpu
 {
-
 extern cudaStream_t kernelStream;
 extern cudaStream_t memoryStream;
 
@@ -63,6 +60,5 @@ void synchronize();
 
 void streamsSynchronize();
 
-}
+} // namespace gpu
 #endif
-

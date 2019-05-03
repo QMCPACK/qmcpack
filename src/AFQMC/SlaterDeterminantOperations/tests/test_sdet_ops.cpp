@@ -906,7 +906,7 @@ TEST_CASE("SDetOps_complex_serial", "[sdet_ops]")
   auto node = world.split_shared(world.rank());
 
 
-#ifdef QMC_CUDA
+#ifdef ENABLE_CUDA
   qmc_cuda::CUDA_INIT(node);
   using Alloc = qmc_cuda::cuda_gpu_allocator<ComplexType>;
 #else

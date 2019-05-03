@@ -11,8 +11,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
 
 
 #ifndef QMCPLUSPLUS_GLOBAL_OBJECTS_H
@@ -22,7 +20,6 @@
 
 namespace qmcplusplus
 {
-
 /** class to definte global variables to keep track a run
  */
 struct QMCState
@@ -51,7 +48,7 @@ struct QMCState
   ///constructor
   QMCState();
   ///initialize options from the command-line
-  void initialize(int argc, char **argv);
+  void initialize(int argc, char** argv);
   ///print command-line options
   void print_options(std::ostream& os);
   /** print memory increase
@@ -66,6 +63,6 @@ struct QMCState
 
 ///a unique QMCState during a run
 extern QMCState qmc_common;
-}
+} // namespace qmcplusplus
 
 #endif

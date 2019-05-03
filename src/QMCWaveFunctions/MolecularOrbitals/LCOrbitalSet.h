@@ -44,6 +44,7 @@ public:
    */
   LCOrbitalSet(BS* bs = 0, int rl = 0) : myBasisSet(0), ReportLevel(rl)
   {
+    className = "LCOrbitalSet<BS,true>";
     if (bs)
       setBasisSet(bs);
   }
@@ -191,6 +192,7 @@ public:
    */
   LCOrbitalSet(BS* bs = 0, int rl = 0, std::string algorithm = "") : myBasisSet(0), ReportLevel(rl)
   {
+    className="LCOrbitalSet<BS,false>";
     if (algorithm == "legacy_gemv")
     {
       Algo = 0;

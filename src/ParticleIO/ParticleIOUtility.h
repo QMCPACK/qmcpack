@@ -10,8 +10,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
 
 
 #ifndef OHMMS_PARTICLE_INPUTOUTPUT_UTILITY_H
@@ -22,7 +20,6 @@
 
 namespace qmcplusplus
 {
-
 //class LatticeParser {
 //  ParticleSet::ParticleLayout_t& ref_;
 //  public:
@@ -53,7 +50,6 @@ namespace qmcplusplus
 //};
 
 
-
 template<class GI>
 void PartitionGrid(ParticleSet::ParticleLayout_t& lattice, GI& grid)
 {
@@ -61,24 +57,23 @@ void PartitionGrid(ParticleSet::ParticleLayout_t& lattice, GI& grid)
   ////////////////////////////////////////////////////////////////
   // grid partitions are created
   ////////////////////////////////////////////////////////////////
-  int mppgrid_id = lattice.makeGrid(&grid[0][0],-1);
-  int ompgrid_id = lattice.makeGrid(&grid[1][0],mppgrid_id);
-  for(int idim=0; idim<ndim; idim++)
+  int mppgrid_id = lattice.makeGrid(&grid[0][0], -1);
+  int ompgrid_id = lattice.makeGrid(&grid[1][0], mppgrid_id);
+  for (int idim = 0; idim < ndim; idim++)
   {
-    if(grid[1][idim] > grid[2][idim])
+    if (grid[1][idim] > grid[2][idim])
       grid[1][idim] = grid[2][idim];
     grid[2][idim] /= grid[1][idim];
   }
-  lattice.makeGrid(&grid[2][0],ompgrid_id);
-  for(int idim=0; idim<ndim; idim++)
+  lattice.makeGrid(&grid[2][0], ompgrid_id);
+  for (int idim = 0; idim < ndim; idim++)
   {
-    lattice.Grid[idim] = grid[2][idim]*grid[1][idim];
+    lattice.Grid[idim] = grid[2][idim] * grid[1][idim];
   }
 }
 
 /** expand a particleset including lattice */
-void expandSuperCell(ParticleSet& ref, Tensor<int,OHMMS_DIM>& tmat);
+void expandSuperCell(ParticleSet& ref, Tensor<int, OHMMS_DIM>& tmat);
 
-}
+} // namespace qmcplusplus
 #endif
-

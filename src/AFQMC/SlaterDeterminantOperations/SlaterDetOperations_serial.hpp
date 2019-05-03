@@ -82,7 +82,7 @@ class SlaterDetOperations_serial : public SlaterDetOperations_base<AllocType>
     // C must live in shared memory for this routine to work as expected
     template<class MatA, class MatB, class MatC>
     void MixedDensityMatrix(const MatA& hermA, const MatB& B, MatC&& C, T LogOverlapFactor, T* res, communicator& comm, bool compact=false) {
-#ifdef QMC_CUDA
+#ifdef ENABLE_CUDA
       APP_ABORT(" Error: SlaterDetOperations_serial should not be here. \n");
 #endif
       Base::MixedDensityMatrix(hermA,B,C,LogOverlapFactor,res,compact);
@@ -91,7 +91,7 @@ class SlaterDetOperations_serial : public SlaterDetOperations_base<AllocType>
     template<class integer, class MatA, class MatB, class MatC, class MatQ>
     void MixedDensityMatrixForWoodbury(const MatA& hermA, const MatB& B, MatC&& C, T LogOverlapFactor, T* res,
                                     integer* ref, MatQ&& QQ0, communicator& comm, bool compact=false) {
-#ifdef QMC_CUDA
+#ifdef ENABLE_CUDA
       APP_ABORT(" Error: SlaterDetOperations_serial should not be here. \n");
 #endif
       Base::MixedDensityMatrixForWoodbury(hermA,B,std::forward<MatC>(C),LogOverlapFactor,res,ref,std::forward<MatQ>(QQ0),
@@ -100,7 +100,7 @@ class SlaterDetOperations_serial : public SlaterDetOperations_base<AllocType>
 
     template<class MatA, class MatB>
     void Overlap(const MatA& hermA, const MatB& B, T LogOverlapFactor, T* res, communicator& comm) { 
-#ifdef QMC_CUDA
+#ifdef ENABLE_CUDA
       APP_ABORT(" Error: SlaterDetOperations_serial should not be here. \n");
 #endif
       Base::Overlap(hermA,B,LogOverlapFactor,res);
@@ -108,7 +108,7 @@ class SlaterDetOperations_serial : public SlaterDetOperations_base<AllocType>
 
     template<typename integer, class MatA, class MatB, class MatC>
     void OverlapForWoodbury(const MatA& hermA, const MatB& B, T LogOverlapFactor, T* res, integer* ref, MatC&& QQ0, communicator& comm) {
-#ifdef QMC_CUDA
+#ifdef ENABLE_CUDA
       APP_ABORT(" Error: SlaterDetOperations_serial should not be here. \n");
 #endif
       Base::OverlapForWoodbury(hermA,B,LogOverlapFactor,res,ref,std::forward<MatC>(QQ0));
@@ -116,7 +116,7 @@ class SlaterDetOperations_serial : public SlaterDetOperations_base<AllocType>
 
     template<class Mat, class MatP1, class MatV>
     void Propagate(Mat&& A, const MatP1& P1, const MatV& V, communicator& comm, int order=6, char TA='N') {
-#ifdef QMC_CUDA
+#ifdef ENABLE_CUDA
       APP_ABORT(" Error: SlaterDetOperations_serial should not be here. \n");
 #endif
       Base::Propagate(std::forward<Mat>(A),P1,V,order,TA);
@@ -215,7 +215,7 @@ class SlaterDetOperations_serial : public SlaterDetOperations_base<AllocType>
           Orthogonalize(Ai[i],detR+i);
       return;
 */
-#ifdef QMC_CUDA
+#ifdef ENABLE_CUDA
       // QR on the transpose
       if(Ai.size()==0) return;
       int NMO = Ai[0].size(0);

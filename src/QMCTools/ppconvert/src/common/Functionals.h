@@ -8,28 +8,24 @@
 //
 // File created by: Paul R. C. Kent, kentpr@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 //           http://pathintegrals.info                     //
 /////////////////////////////////////////////////////////////
 
 #ifndef FUNCTIONALS_H
 #define FUNCTIONALS_H
 
-void ExchangePotential (double nup, double ndown,
-			double &Vup, double &Vdown);
-void CorrelationPotential(double  nup, double ndown,
-			  double &Vup, double &Vdown);
+void ExchangePotential(double nup, double ndown, double& Vup, double& Vdown);
+void CorrelationPotential(double nup, double ndown, double& Vup, double& Vdown);
 
-void CPPExCorr(double nup, double ndown,
-	       double &Vup, double &Vdown);
+void CPPExCorr(double nup, double ndown, double& Vup, double& Vdown);
 
-void FortranExCorr(double  nup, double  ndown,
-		   double &Vup, double &Vdown);
+void FortranExCorr(double nup, double ndown, double& Vup, double& Vdown);
 
-void FortranExCorr(double n, double &Exc, double &Vxc);
+void FortranExCorr(double n, double& Exc, double& Vxc);
 
 
-double FortranXCE (double nup, double ndown);
+double FortranXCE(double nup, double ndown);
 
 #endif

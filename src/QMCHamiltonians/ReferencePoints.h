@@ -9,8 +9,8 @@
 //
 // File created by: Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 #ifndef QMCPLUSPLUS_REFERENCE_POINTS_H
 #define QMCPLUSPLUS_REFERENCE_POINTS_H
 
@@ -22,15 +22,13 @@
 
 namespace qmcplusplus
 {
-
-
-class ReferencePoints: public QMCTraits
+class ReferencePoints : public QMCTraits
 {
 public:
-  typedef TinyVector<RealType,DIM> Point;
-  typedef Tensor<RealType,DIM>     Tensor_t;
+  typedef TinyVector<RealType, DIM> Point;
+  typedef Tensor<RealType, DIM> Tensor_t;
 
-  std::map<std::string,Point> points;
+  std::map<std::string, Point> points;
   Tensor_t axes;
 
   bool put(xmlNodePtr cur, ParticleSet& P, std::vector<ParticleSet*>& Pref);
@@ -39,13 +37,18 @@ public:
   void save(std::vector<observable_helper*>& h5desc, hid_t gid) const;
 
 private:
-  enum Coordinate {cellC=0,cartesianC,ndirections,nodir};
+  enum Coordinate
+  {
+    cellC = 0,
+    cartesianC,
+    ndirections,
+    nodir
+  };
   Coordinate coordinate;
 };
 
 
-
-}
+} // namespace qmcplusplus
 
 
 #endif

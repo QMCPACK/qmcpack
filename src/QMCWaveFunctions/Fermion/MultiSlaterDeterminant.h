@@ -135,7 +135,7 @@ public:
   std::vector<size_t> C2node_up;
   std::vector<size_t> C2node_dn;
 
-  std::vector<RealType> C;
+  std::vector<ValueType> C;
 
   // lap(#uniqueDet,part#)
   ValueVector_t detValues_up;
@@ -171,7 +171,7 @@ public:
   // CSFs
   bool usingCSF;
   // coefficients of csfs, these are only used during optm
-  std::vector<RealType> CSFcoeff;
+  std::vector<ValueType> CSFcoeff;
   // number of dets per csf
   std::vector<size_t> DetsPerCSF;
   // coefficiesize_tof csf expansion (smaller dimension)

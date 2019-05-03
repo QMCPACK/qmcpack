@@ -561,13 +561,13 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
     else if (useGPU == "yes")
     {
       app_log() << "Using DiracDeterminant with DelayedUpdateCUDA engine" << std::endl;
-      adet = new DiracDeterminant<DelayedUpdateCUDA<ValueType>>(psi,firstIndex);
+      adet = new DiracDeterminant<DelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>>(psi,firstIndex);
     }
 #endif
     else
     {
       app_log() << "Using DiracDeterminant with DelayedUpdate engine" << std::endl;
-      adet = new DiracDeterminant<DelayedUpdate<ValueType>>(psi, firstIndex);
+      adet = new DiracDeterminant<>(psi, firstIndex);
     }
 #endif
   }
@@ -627,6 +627,7 @@ bool SlaterDetBuilder::createMSDFast(MultiSlaterDeterminantFast* multiSD, xmlNod
   if (HDF5Path != "")
   {
     app_log() << "Found Multideterminants in H5 File" << std::endl;
+    #ifndef QMC_COMPLEX
     success = readDetListH5(cur,
                             uniqueConfg_up,
                             uniqueConfg_dn,
@@ -637,6 +638,9 @@ bool SlaterDetBuilder::createMSDFast(MultiSlaterDeterminantFast* multiSD, xmlNod
                             optimizeCI,
                             nels_up,
                             nels_dn);
+     #else
+      APP_ABORT("Build Multideterminant in H5 File is not implemented for complex CI coefficients");
+     #endif
   }
   else
     success = readDetList(cur,
@@ -717,7 +721,12 @@ bool SlaterDetBuilder::createMSDFast(MultiSlaterDeterminantFast* multiSD, xmlNod
       {
         //std::stringstream sstr;
         //sstr << "CIcoeff" << "_" << i;
-        multiSD->myVars->insert(CItags[i], (*(multiSD->CSFcoeff))[i], true, optimize::LINEAR_P);
+        #ifdef QMC_COMPLEX
+          // TODO: to be fixed by the complex VariableSet.
+          multiSD->myVars->insert(CItags[i], std::real((*(multiSD->CSFcoeff))[i]), true, optimize::LINEAR_P);
+        #else
+          multiSD->myVars->insert(CItags[i], (*(multiSD->CSFcoeff))[i], true, optimize::LINEAR_P);
+        #endif
       }
     }
     else
@@ -727,7 +736,12 @@ bool SlaterDetBuilder::createMSDFast(MultiSlaterDeterminantFast* multiSD, xmlNod
       {
         //std::stringstream sstr;
         //sstr << "CIcoeff" << "_" << i;
-        multiSD->myVars->insert(CItags[i], (*(multiSD->C))[i], true, optimize::LINEAR_P);
+        #ifdef QMC_COMPLEX
+          // TODO: to be fixed by the complex VariableSet.
+          multiSD->myVars->insert(CItags[i], std::real( (*(multiSD->C))[i] ), true, optimize::LINEAR_P);
+        #else
+          multiSD->myVars->insert(CItags[i], (*(multiSD->C))[i], true, optimize::LINEAR_P);         
+        #endif
       }
     }
   }
@@ -869,7 +883,7 @@ bool SlaterDetBuilder::createMSD(MultiSlaterDeterminant* multiSD, xmlNodePtr cur
     }
     else
     {
-      adet = new DiracDeterminant<DelayedUpdate<ValueType>>((SPOSetPtr)spo, 0);
+      adet = new DiracDeterminant<>((SPOSetPtr)spo, 0);
     }
     adet->set(multiSD->FirstIndex_up, multiSD->nels_up);
     multiSD->dets_up.push_back(adet);
@@ -894,7 +908,7 @@ bool SlaterDetBuilder::createMSD(MultiSlaterDeterminant* multiSD, xmlNodePtr cur
     }
     else
     {
-      adet = new DiracDeterminant<DelayedUpdate<ValueType>>((SPOSetPtr)spo, 0);
+      adet = new DiracDeterminant<>((SPOSetPtr)spo, 0);
     }
     adet->set(multiSD->FirstIndex_dn, multiSD->nels_dn);
     multiSD->dets_dn.push_back(adet);
@@ -926,7 +940,8 @@ bool SlaterDetBuilder::createMSD(MultiSlaterDeterminant* multiSD, xmlNodePtr cur
       {
         //std::stringstream sstr;
         //sstr << "CIcoeff" << "_" << i;
-        multiSD->myVars.insert(CItags[i], multiSD->CSFcoeff[i], true, optimize::LINEAR_P);
+        // TODO: to be fixed by the complex VariableSet.
+        multiSD->myVars.insert(CItags[i], std::real(multiSD->CSFcoeff[i]), true, optimize::LINEAR_P);
       }
     }
     else
@@ -936,7 +951,8 @@ bool SlaterDetBuilder::createMSD(MultiSlaterDeterminant* multiSD, xmlNodePtr cur
       {
         //std::stringstream sstr;
         //sstr << "CIcoeff" << "_" << i;
-        multiSD->myVars.insert(CItags[i], multiSD->C[i], true, optimize::LINEAR_P);
+        // TODO: to be fixed by the complex VariableSet.
+        multiSD->myVars.insert(CItags[i], std::real(multiSD->C[i]), true, optimize::LINEAR_P);
       }
     }
   }
@@ -955,11 +971,11 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
                                    std::vector<size_t>& C2node_up,
                                    std::vector<size_t>& C2node_dn,
                                    std::vector<std::string>& CItags,
-                                   std::vector<RealType>& coeff,
+                                   std::vector<ValueType>& coeff,
                                    bool& optimizeCI,
                                    int nels_up,
                                    int nels_dn,
-                                   std::vector<RealType>& CSFcoeff,
+                                   std::vector<ValueType>& CSFcoeff,
                                    std::vector<size_t>& DetsPerCSF,
                                    std::vector<RealType>& CSFexpansion,
                                    bool& usingCSF)
@@ -1052,17 +1068,31 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
       getNodeName(cname, cur);
       if (cname == "csf")
       {
-        RealType exctLvl, ci = 0.0, qc_ci = 0.0;
+        RealType exctLvl, ci_real = 0.0, ci_imag = 0.0, qc_ci = 0.0;
         OhmmsAttributeSet confAttrib;
         std::string tag, OccString;
-        confAttrib.add(ci, "coeff");
+        #ifdef QMC_COMPLEX
+          confAttrib.add(ci_real,"coeff_real");
+          confAttrib.add(ci_imag,"coeff_imag");
+        #else
+          RealType ci = 0.0;
+          confAttrib.add(ci, "coeff");
+        #endif
         confAttrib.add(qc_ci, "qchem_coeff");
         confAttrib.add(tag, "id");
         confAttrib.add(OccString, "occ");
         confAttrib.add(exctLvl, "exctLvl");
         confAttrib.put(cur);
         if (qc_ci == 0.0)
-          qc_ci = ci;
+          #ifdef QMC_COMPLEX
+            qc_ci = ci_real;
+          #else
+            qc_ci = ci;
+          #endif
+
+          #ifdef QMC_COMPLEX
+            ValueType ci(ci_real, ci_imag);
+          #endif
         //Can discriminate based on any of 3 criterion
         if (((std::abs(qc_ci) < cutoff) && (CSFChoice == "qchem_coeff")) ||
             ((CSFChoice == "exctLvl") && (exctLvl > cutoff)) || ((CSFChoice == "coeff") && (std::abs(ci) < cutoff)))
@@ -1073,7 +1103,11 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
         }
         cnt0++;
         if (std::abs(qc_ci) < zero_cutoff)
-          ci = 0.0;
+          #ifdef QMC_COMPLEX
+            ci_real = 0.0;
+          #else
+            ci = 0.0;
+          #endif
         CSFcoeff.push_back(ci);
         sumsq_qc += qc_ci * qc_ci;
         DetsPerCSF.push_back(0);
@@ -1174,7 +1208,7 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
     app_log() << "Found " << coeff.size() << " terms in the MSD expansion.\n";
     RealType sumsq = 0.0;
     for (size_t i = 0; i < coeff.size(); i++)
-      sumsq += coeff[i] * coeff[i];
+      sumsq += std::abs(coeff[i] * coeff[i]);
     app_log() << "Norm of ci vector (sum of ci^2): " << sumsq << std::endl;
     app_log() << "Norm of qchem ci vector (sum of qchem_ci^2): " << sumsq_qc << std::endl;
     for (size_t i = 0; i < confgList_up.size(); i++)
@@ -1237,10 +1271,17 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
       getNodeName(cname, cur);
       if (cname == "configuration" || cname == "ci")
       {
-        RealType ci = 0.0, qc_ci = 0.0;
+        RealType ci_real = 0.0, ci_imag = 0.0, qc_ci = 0.0;
         std::string alpha, beta, tag;
         OhmmsAttributeSet confAttrib;
+        #ifdef QMC_COMPLEX
+        confAttrib.add(ci_real, "coeff_real");
+        confAttrib.add(ci_imag, "coeff_imag");
+        ValueType ci(ci_real, ci_imag);
+        #else
+        RealType ci = 0.0;
         confAttrib.add(ci, "coeff");
+        #endif
         confAttrib.add(qc_ci, "qchem_coeff");
         confAttrib.add(alpha, "alpha");
         confAttrib.add(beta, "beta");
@@ -1314,12 +1355,12 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
           C2node_dn.push_back(gotdn->second);
         }
 
-        if (qc_ci == 0.0)
-          qc_ci = ci;
+        //if (qc_ci == 0.0)
+        //  qc_ci = ci;
 
         cnt0++;
         sumsq_qc += qc_ci * qc_ci;
-        sumsq += ci * ci;
+        sumsq += std::abs(ci * ci);
       }
       cur = cur->next;
     }

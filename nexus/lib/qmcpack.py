@@ -283,8 +283,13 @@ class Qmcpack(Simulation):
                     dset.cuspcorrection = True
                 #end if
                 if 'orbfile' in result:
-                    h5file = result.orbfile
-                    dset.href = os.path.relpath(h5file,self.locdir)
+                    orb_h5file = result.orbfile
+                    orb_path = os.path.relpath(orb_h5file,self.locdir)
+                    dset.href = orb_path
+                    detlist = dset.get('detlist')
+                    if detlist is not None and 'href' in detlist:
+                        detlist.href = orb_path
+                    #end if
                 #end if
                 qs.wavefunction = newwfn
 
@@ -531,10 +536,8 @@ class Qmcpack(Simulation):
 def generate_qmcpack(**kwargs):
     sim_args,inp_args = Qmcpack.separate_inputs(kwargs)
 
-    if not 'input' in sim_args:
-        input_type = inp_args.input_type
-        del inp_args.input_type
-        sim_args.input = generate_qmcpack_input(input_type,**inp_args)
+    if 'input' not in sim_args:
+        sim_args.input = generate_qmcpack_input(**inp_args)
     #end if
     qmcpack = Qmcpack(**sim_args)
 
@@ -551,9 +554,7 @@ def generate_cusp_correction(**kwargs):
 
     sim_args,inp_args = Simulation.separate_inputs(kwargs)
 
-    input_type = inp_args.input_type
-    del inp_args.input_type
-    input = generate_qmcpack_input(input_type,**inp_args)
+    input = generate_qmcpack_input(**inp_args)
 
     wf = input.get('wavefunction')
     if not 'determinantset' in wf:

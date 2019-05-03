@@ -16,7 +16,7 @@
 #include <complex>
 #include <type_traits>
 #include <thrust/complex.h>
-#define QMC_CUDA 1
+#define ENABLE_CUDA 1
 #include "AFQMC/Memory/CUDA/cuda_utilities.h"
 //#include "AFQMC/Numerics/detail/CUDA/Kernels/strided_range.hpp"
 

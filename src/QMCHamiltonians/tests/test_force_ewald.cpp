@@ -32,19 +32,17 @@ using std::string;
 
 namespace qmcplusplus
 {
-
 // PBC case
 TEST_CASE("Chiesa Force BCC H Ewald3D", "[hamiltonian]")
 {
-
-  Communicate *c;
+  Communicate* c;
   OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
   Uniform3DGridLayout grid;
   grid.BoxBConds = true; // periodic
   grid.R.diagonal(3.77945227);
-  grid.LR_dim_cutoff=40;
+  grid.LR_dim_cutoff = 40;
   grid.reset();
 
 
@@ -61,9 +59,9 @@ TEST_CASE("Chiesa Force BCC H Ewald3D", "[hamiltonian]")
   ions.R[1][2] = 1.88972614;
 
 
-  SpeciesSet &ion_species =  ions.getSpeciesSet();
-  int pIdx = ion_species.addSpecies("H");
-  int pChargeIdx = ion_species.addAttribute("charge");
+  SpeciesSet& ion_species       = ions.getSpeciesSet();
+  int pIdx                      = ion_species.addSpecies("H");
+  int pChargeIdx                = ion_species.addAttribute("charge");
   ion_species(pChargeIdx, pIdx) = 1;
   ions.Lattice.copy(grid);
   ions.createSK();
@@ -80,15 +78,15 @@ TEST_CASE("Chiesa Force BCC H Ewald3D", "[hamiltonian]")
   elec.R[1][2] = 0.0;
 
 
-  SpeciesSet &tspecies =  elec.getSpeciesSet();
-  int upIdx = tspecies.addSpecies("u");
-  int downIdx = tspecies.addSpecies("d");
-  int chargeIdx = tspecies.addAttribute("charge");
-  int massIdx = tspecies.addAttribute("mass");
-  tspecies(chargeIdx, upIdx) = -1;
+  SpeciesSet& tspecies         = elec.getSpeciesSet();
+  int upIdx                    = tspecies.addSpecies("u");
+  int downIdx                  = tspecies.addSpecies("d");
+  int chargeIdx                = tspecies.addAttribute("charge");
+  int massIdx                  = tspecies.addAttribute("mass");
+  tspecies(chargeIdx, upIdx)   = -1;
   tspecies(chargeIdx, downIdx) = -1;
-  tspecies(massIdx, upIdx) = 1.0;
-  tspecies(massIdx, downIdx) = 1.0;
+  tspecies(massIdx, upIdx)     = 1.0;
+  tspecies(massIdx, downIdx)   = 1.0;
 
   elec.createSK();
 
@@ -101,11 +99,11 @@ TEST_CASE("Chiesa Force BCC H Ewald3D", "[hamiltonian]")
   elec.resetGroups();
 
 #ifdef ENABLE_SOA
-  elec.addTable(ions,DT_SOA);
-  ions.addTable(ions,DT_SOA);
+  elec.addTable(ions, DT_SOA);
+  ions.addTable(ions, DT_SOA);
 #else
-  elec.addTable(ions,DT_AOS);
-  ions.addTable(ions,DT_AOS);
+  elec.addTable(ions, DT_AOS);
+  ions.addTable(ions, DT_AOS);
 #endif
 
   elec.update();
@@ -123,30 +121,27 @@ TEST_CASE("Chiesa Force BCC H Ewald3D", "[hamiltonian]")
   force.evaluate(elec);
 
   //Ion-Ion forces are validated against Quantum Espresso's ewald method:
-  REQUIRE( force.forces_IonIon[0][0] == Approx(-0.0228366 ));  
-  REQUIRE( force.forces_IonIon[0][1] == Approx(-0.0228366 ));
-  REQUIRE( force.forces_IonIon[0][2] == Approx( 0.0000000 ));
-  REQUIRE( force.forces_IonIon[1][0] == Approx( 0.0228366 ));
-  REQUIRE( force.forces_IonIon[1][1] == Approx( 0.0228366 ));
-  REQUIRE( force.forces_IonIon[1][2] == Approx( 0.0000000 ));
-  
-  //Electron-Ion forces are unvalidated externally: 
-  REQUIRE( force.forces[0][0] == Approx( 3.959178977 ));  
-  REQUIRE( force.forces[0][1] == Approx( 3.959178977 ));
-  REQUIRE( force.forces[0][2] == Approx( 0.000000000 ));
-  REQUIRE( force.forces[1][0] == Approx(-0.078308730 ));
-  REQUIRE( force.forces[1][1] == Approx(-0.078308730 ));
-  REQUIRE( force.forces[1][2] == Approx( 0.000000000 ));
+  REQUIRE(force.forces_IonIon[0][0] == Approx(-0.0228366));
+  REQUIRE(force.forces_IonIon[0][1] == Approx(-0.0228366));
+  REQUIRE(force.forces_IonIon[0][2] == Approx(0.0000000));
+  REQUIRE(force.forces_IonIon[1][0] == Approx(0.0228366));
+  REQUIRE(force.forces_IonIon[1][1] == Approx(0.0228366));
+  REQUIRE(force.forces_IonIon[1][2] == Approx(0.0000000));
 
-  
+  //Electron-Ion forces are unvalidated externally:
+  REQUIRE(force.forces[0][0] == Approx(3.959178977));
+  REQUIRE(force.forces[0][1] == Approx(3.959178977));
+  REQUIRE(force.forces[0][2] == Approx(0.000000000));
+  REQUIRE(force.forces[1][0] == Approx(-0.078308730));
+  REQUIRE(force.forces[1][1] == Approx(-0.078308730));
+  REQUIRE(force.forces[1][2] == Approx(0.000000000));
+
+
   delete LRCoulombSingleton::CoulombHandler;
-  LRCoulombSingleton::CoulombHandler=0;
- 
+  LRCoulombSingleton::CoulombHandler = 0;
+
   delete LRCoulombSingleton::CoulombDerivHandler;
-  LRCoulombSingleton::CoulombDerivHandler=0;
- 
-  
+  LRCoulombSingleton::CoulombDerivHandler = 0;
 }
 
-}
-
+} // namespace qmcplusplus

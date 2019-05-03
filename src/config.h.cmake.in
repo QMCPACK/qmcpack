@@ -74,9 +74,6 @@
 /* Define to 1 if you have MPI library */
 #cmakedefine HAVE_MPI @HAVE_MPI@
 
-/* Define to 1 if you have OOMPI library */
-#cmakedefine HAVE_OOMPI @HAVE_OOMPI@
-
 /* Define the physical dimension of appliation. */
 #cmakedefine OHMMS_DIM @OHMMS_DIM@
 

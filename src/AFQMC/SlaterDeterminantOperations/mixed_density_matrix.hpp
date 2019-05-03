@@ -365,7 +365,7 @@ inline void MixedDensityMatrix_noHerm_wSVD(const MatA& A, const MatB& B, MatC&& 
   for(int i=0; i<N; i++)
     ov_ += std::log(Sh[i]);
   ov_ = std::exp(ov_ - real(LogOverlapFactor));
-#ifdef QMC_CUDA
+#ifdef ENABLE_CUDA
   Tp v_;
   cudaMemcpy(&v_,ovlp,sizeof(Tp),cudaMemcpyDeviceToHost);
   double ov0(std::abs(v_));

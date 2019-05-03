@@ -372,7 +372,7 @@ class KP3IndexFactorization_batched
       long mem_needs(nwalk*nkpts*nkpts*nspin*nocca_max*nmo_max);   // for GKK
       size_t cnt(0);  
       if(addEJ) { 
-#if AFQMC_MIXED_PRECISION
+#if MIXED_PRECISION
         mem_needs += 2*nwalk*local_nCV;
 #else
         if(not getKr) mem_needs += nwalk*local_nCV;                  // for Kr 
@@ -404,7 +404,7 @@ class KP3IndexFactorization_batched
         Knr=nwalk;
         Knc=local_nCV;
         cnt=0;
-#if AFQMC_MIXED_PRECISION
+#if MIXED_PRECISION
         if(getKr) {
           assert(KEright->size(0) == nwalk && KEright->size(1) == local_nCV);
           assert(KEright->stride(0) == KEright->size(1));
@@ -420,7 +420,7 @@ class KP3IndexFactorization_batched
           Krptr = BTMats.origin(); 
           cnt += nwalk*local_nCV;
         }
-#if AFQMC_MIXED_PRECISION
+#if MIXED_PRECISION
         if(getKl) {
           assert(KEleft->size(0) == nwalk && KEleft->size(1) == local_nCV);
           assert(KEleft->stride(0) == KEleft->size(1));
@@ -471,7 +471,7 @@ class KP3IndexFactorization_batched
         // must use Gc since GKK is is SP
         int na=0, nk=0, nb=0;
         for(int K=0; K<nkpts; ++K) {
-#if defined(AFQMC_MIXED_PRECISION) 
+#if defined(MIXED_PRECISION) 
           CMatrix_ref haj_K(make_device_ptr(haj[nd*nkpts+K].origin()),{nocc_max,nmo_max}); 
           for(int a=0; a<nelpk[nd][K]; ++a) 
             ma::product(ComplexType(1.),ma::T(G3Da[na+a].sliced(nk,nk+nopk[K])),
@@ -685,7 +685,7 @@ class KP3IndexFactorization_batched
       size_t mem_needs(nwalk*nkpts*nkpts*nspin*nocca_max*nmo_max);
       size_t cnt(0);  
       if(addEJ) { 
-#if AFQMC_MIXED_PRECISION
+#if MIXED_PRECISION
         mem_needs += 2*nwalk*local_nCV;
 #else
         if(not getKr) mem_needs += nwalk*local_nCV;
@@ -701,7 +701,7 @@ class KP3IndexFactorization_batched
         Knr=nwalk;
         Knc=local_nCV;
         cnt=0;
-#if AFQMC_MIXED_PRECISION
+#if MIXED_PRECISION
         if(getKr) {
           assert(KEright->size(0) == nwalk && KEright->size(1) == local_nCV);
           assert(KEright->stride(0) == KEright->size(1));
@@ -717,7 +717,7 @@ class KP3IndexFactorization_batched
           Krptr = BTMats.origin();
           cnt += nwalk*local_nCV;
         }
-#if AFQMC_MIXED_PRECISION
+#if MIXED_PRECISION
         if(getKl) {
           assert(KEleft->size(0) == nwalk && KEleft->size(1) == local_nCV);
           assert(KEleft->stride(0) == KEleft->size(1));
@@ -767,7 +767,7 @@ class KP3IndexFactorization_batched
         for(int n=0; n<nwalk; n++)
           E[n][0] = E0;  
         for(int K=0; K<nkpts; ++K) {
-#if defined(AFQMC_MIXED_PRECISION) 
+#if defined(MIXED_PRECISION) 
           CMatrix_ref haj_K(make_device_ptr(haj[nd*nkpts+K].origin()),{nocc_max,nmo_max});
           for(int a=0; a<nelpk[nd][K]; ++a)
             ma::product(ComplexType(1.),ma::T(G3Da[na+a].sliced(nk,nk+nopk[K])),
@@ -1078,7 +1078,7 @@ class KP3IndexFactorization_batched
       // wasting some memory right now in vKK and XQnw, since I only need to store 
       // for the Q assign to this node. If necessary, optimize later
       size_t mem_needs((nkpts+number_of_symmetric_Q)*nkpts*nwalk*nmo_max*nmo_max + nwalk*2*nkpts*nchol_max);
-#if AFQMC_MIXED_PRECISION
+#if MIXED_PRECISION
       mem_needs += X.num_elements();
 #endif
       if(BTMats.num_elements() < mem_needs) { 
@@ -1093,7 +1093,7 @@ class KP3IndexFactorization_batched
 
       // "rotate" X  
       //  XIJ = 0.5*a*(Xn+ -i*Xn-), XJI = 0.5*a*(Xn+ +i*Xn-)  
-#if AFQMC_MIXED_PRECISION
+#if MIXED_PRECISION
       SpMatrix_ref Xdev(XQnw.origin()+XQnw.num_elements(),X.extensions());
       copy_n_cast(make_device_ptr(X.origin()),X.num_elements(),Xdev.origin());
 #else

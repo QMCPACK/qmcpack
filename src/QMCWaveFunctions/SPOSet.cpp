@@ -370,6 +370,25 @@ void SPOSet::basic_report(const std::string& pad)
   app_log().flush();
 }
 
+void SPOSet::evaluate(const ParticleSet& P, 
+                      int iat,
+                      ValueVector_t& psi, 
+                      GradVector_t& dpsi, 
+                      HessVector_t& grad_grad_psi)
+{
+  APP_ABORT("Need specialization of "+className+"::evaluate(P,iat,psi,dpsi,dhpsi) (vector quantities)\n");
+}
+
+void SPOSet::evaluate(const ParticleSet& P, 
+                      int iat,
+                      ValueVector_t& psi, 
+                      GradVector_t& dpsi, 
+                      HessVector_t& grad_grad_psi, 
+                      GGGVector_t& grad_grad_grad_psi)
+{
+  APP_ABORT("Need specialization of "+className+"::evaluate(P,iat,psi,dpsi,dhpsi,dghpsi) (vector quantities)\n");
+}
+
 void SPOSet::evaluateGradSource (const ParticleSet &P
                                      , int first, int last, const ParticleSet &source
                                      , int iat_src, GradMatrix_t &gradphi)

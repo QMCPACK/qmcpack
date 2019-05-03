@@ -10,8 +10,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
 
 
 #ifndef OHMMS_PARTICLELAYOUT_INPUTOUTPUT_UTILITY_H
@@ -22,33 +20,28 @@
 
 namespace qmcplusplus
 {
-
 class LatticeParser
 {
-
   typedef PtclOnLatticeTraits::ParticleLayout_t ParticleLayout_t;
   ParticleLayout_t& ref_;
 
 public:
-
-  LatticeParser(ParticleLayout_t& lat): ref_(lat) { }
+  LatticeParser(ParticleLayout_t& lat) : ref_(lat) {}
   bool put(xmlNodePtr cur);
 };
 
 
 class LatticeXMLWriter
 {
-
   typedef PtclOnLatticeTraits::ParticleLayout_t ParticleLayout_t;
   ParticleLayout_t& ref_;
-public:
 
-  LatticeXMLWriter(ParticleLayout_t& lat): ref_(lat) { }
-  bool get(std::ostream& ) const;
+public:
+  LatticeXMLWriter(ParticleLayout_t& lat) : ref_(lat) {}
+  bool get(std::ostream&) const;
   xmlNodePtr createNode();
 };
 
 
-}
+} // namespace qmcplusplus
 #endif
-

@@ -36,7 +36,7 @@ template<typename T1, typename T2>
 SparseTensor<T1,T2> loadSparseTensor(hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA, int NAEB, std::vector<PsiT_Matrix>& PsiT, TaskGroup_& TGprop, TaskGroup_& TGwfn, RealType cutvn, RealType cutv2)
 {
 
-#if defined(AFQMC_MIXED_PRECISION)
+#if defined(MIXED_PRECISION)
   using SpT1 = typename to_single_precision<T1>::value_type;
   using SpT2 = typename to_single_precision<T2>::value_type;
 #else
@@ -177,7 +177,7 @@ SparseTensor<T1,T2> loadSparseTensor(hdf_archive& dump, WALKER_TYPES type, int N
     //std::vector<SpCType_shm_csr_matrix> SpvnT;
     using matrix_view = typename T2_shm_csr_matrix::template matrix_view<int>;
     std::vector<matrix_view> SpvnTview;
-#if AFQMC_MIXED_PRECISION
+#if MIXED_PRECISION
     auto PsiTsp(csr::shm::CSRvector_to_single_precision<PsiT_Matrix_t<SPComplexType>>(PsiT));
 #else
     auto& PsiTsp(PsiT);

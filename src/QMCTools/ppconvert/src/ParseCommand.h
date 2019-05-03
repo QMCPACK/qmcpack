@@ -9,9 +9,6 @@
 //
 // File created by: Paul R. C. Kent, kentpr@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
-
 
 
 #ifndef PARSE_COMMAND_H
@@ -40,66 +37,61 @@ public:
   ///////////////
   // Accessors //
   ///////////////
-  std::string GetName () { return Name; }
+  std::string GetName() { return Name; }
 
-  std::string GetArg  () 
-  { 
-    assert (NumArgsNeeded==1); 
+  std::string GetArg()
+  {
+    assert(NumArgsNeeded == 1);
     return Args[0];
   }
 
-  std::string GetArg (int arg)
-  {
-    return Args[arg];
-  }
+  std::string GetArg(int arg) { return Args[arg]; }
 
-  void SetArg ( std::string arg) {
-    assert (Args.size() < NumArgsNeeded);
+  void SetArg(std::string arg)
+  {
+    assert(Args.size() < NumArgsNeeded);
     Args.push_back(arg);
   }
-  
+
   //////////////////
   // Constructors //
   //////////////////
-  ParamClass ( std::string name, int numArgs) {
-    Name = name;
+  ParamClass(std::string name, int numArgs)
+  {
+    Name          = name;
     NumArgsNeeded = numArgs;
-    Found = false;
+    Found         = false;
   }
 
-  ParamClass ( std::string name, bool needsArg) {
-    Name     = name;
+  ParamClass(std::string name, bool needsArg)
+  {
+    Name          = name;
     NumArgsNeeded = needsArg ? 1 : 0;
-    Found    = false;
+    Found         = false;
   }
 
-  ParamClass() {
+  ParamClass()
+  {
     NumArgsNeeded = 0;
-    Found    = false;
+    Found         = false;
   }
 };
 
-class
-CommandLineParserClass
+class CommandLineParserClass
 {
 private:
   std::map<std::string, ParamClass> ArgMap;
   std::vector<std::string> Files;
+
 public:
-  bool Parse (int argc, char **argv);
-  inline bool Found ( std::string name) {
-    return ArgMap[name].Found;
-  }
-  inline std::string GetArg ( std::string name) {
-    return ArgMap[name].GetArg();
-  }
-  inline std::string GetArg ( std::string name, int num) {
-    return ArgMap[name].GetArg(num);
-  }
+  bool Parse(int argc, char** argv);
+  inline bool Found(std::string name) { return ArgMap[name].Found; }
+  inline std::string GetArg(std::string name) { return ArgMap[name].GetArg(); }
+  inline std::string GetArg(std::string name, int num) { return ArgMap[name].GetArg(num); }
   inline int NumFiles() { return Files.size(); }
   std::string GetFile(int i) { return Files[i]; }
 
-  CommandLineParserClass (std::list<ParamClass> &argList);
+  CommandLineParserClass(std::list<ParamClass>& argList);
 };
 
 

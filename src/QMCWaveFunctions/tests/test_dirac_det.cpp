@@ -27,11 +27,13 @@ using std::string;
 
 namespace qmcplusplus
 {
+
+typedef QMCTraits::RealType RealType;
 typedef QMCTraits::ValueType ValueType;
 #ifdef ENABLE_CUDA
-typedef DiracDeterminant<DelayedUpdateCUDA<ValueType>> DetType;
+typedef DiracDeterminant<DelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>> DetType;
 #else
-typedef DiracDeterminant<DelayedUpdate<ValueType>> DetType;
+typedef DiracDeterminant<> DetType;
 #endif
 
 template<typename T1, typename T2>
@@ -67,12 +69,6 @@ public:
 
   virtual void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi);
 
-  virtual void evaluate(const ParticleSet& P,
-                        int iat,
-                        ValueVector_t& psi,
-                        GradVector_t& dpsi,
-                        HessVector_t& grad_grad_psi);
-
   virtual void evaluate_notranspose(const ParticleSet& P,
                                     int first,
                                     int last,
@@ -83,6 +79,7 @@ public:
 
 FakeSPO::FakeSPO()
 {
+  className = "FakeSPO";
   a.resize(3, 3);
 
   a(0, 0) = 2.3;
@@ -155,17 +152,6 @@ void FakeSPO::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
   }
 }
 
-void FakeSPO::evaluate(const ParticleSet& P,
-                       int iat,
-                       ValueVector_t& psi,
-                       GradVector_t& dpsi,
-                       HessVector_t& grad_grad_psi)
-{
-  for (int i = 0; i < 3; i++)
-  {
-    psi[i] = a(iat, i);
-  }
-}
 void FakeSPO::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
 {
   if (OrbitalSetSize == 3)
@@ -305,8 +291,9 @@ TEST_CASE("DiracDeterminant_second", "[wavefunction][fermion]")
   //check_matrix(ddb.psiM, b);
   DiracMatrix<ValueType> dm;
 
-  Matrix<ValueType> a_update1;
+  Matrix<ValueType> a_update1, scratchT;
   a_update1.resize(4, 4);
+  scratchT.resize(4, 4);
   a_update1 = spo->a2;
   for (int j = 0; j < norb; j++)
   {
@@ -332,12 +319,12 @@ TEST_CASE("DiracDeterminant_second", "[wavefunction][fermion]")
     a_update3(j, 2) = spo->v2(2, j);
   }
 
-
   ParticleSet::GradType grad;
   ValueType det_ratio = ddb.ratioGrad(elec, 0, grad);
 
-  dm.invert(a_update1, true);
-  ValueType det_update1 = dm.LogDet;
+  simd::transpose(a_update1.data(), a_update1.rows(), a_update1.cols(), scratchT.data(), scratchT.rows(), scratchT.cols());
+  RealType det_update1, phase;
+  dm.invert_transpose(scratchT, a_update1, det_update1, phase);
   ValueType log_ratio1  = det_update1 - ddb.LogValue;
   ValueType det_ratio1  = std::exp(log_ratio1);
 #ifdef DUMP_INFO
@@ -353,8 +340,9 @@ TEST_CASE("DiracDeterminant_second", "[wavefunction][fermion]")
 
 
   ValueType det_ratio2 = ddb.ratioGrad(elec, 1, grad);
-  dm.invert(a_update2, true);
-  ValueType det_update2    = dm.LogDet;
+  RealType det_update2;
+  simd::transpose(a_update2.data(), a_update2.rows(), a_update2.cols(), scratchT.data(), scratchT.rows(), scratchT.cols());
+  dm.invert_transpose(scratchT, a_update2, det_update2, phase);
   ValueType log_ratio2     = det_update2 - det_update1;
   ValueType det_ratio2_val = std::exp(log_ratio2);
 #ifdef DUMP_INFO
@@ -369,8 +357,9 @@ TEST_CASE("DiracDeterminant_second", "[wavefunction][fermion]")
   ddb.acceptMove(elec, 1);
 
   ValueType det_ratio3 = ddb.ratioGrad(elec, 2, grad);
-  dm.invert(a_update3, true);
-  ValueType det_update3    = dm.LogDet;
+  RealType det_update3;
+  simd::transpose(a_update3.data(), a_update3.rows(), a_update3.cols(), scratchT.data(), scratchT.rows(), scratchT.cols());
+  dm.invert_transpose(scratchT, a_update3, det_update3, phase);
   ValueType log_ratio3     = det_update3 - det_update2;
   ValueType det_ratio3_val = std::exp(log_ratio3);
 #ifdef DUMP_INFO
@@ -384,7 +373,8 @@ TEST_CASE("DiracDeterminant_second", "[wavefunction][fermion]")
   ddb.acceptMove(elec, 2);
   ddb.completeUpdates();
 
-  dm.invert(orig_a, false);
+  simd::transpose(orig_a.data(), orig_a.rows(), orig_a.cols(), scratchT.data(), scratchT.rows(), scratchT.cols());
+  dm.invert_transpose(scratchT, orig_a, det_update3, phase);
 
 #ifdef DUMP_INFO
   std::cout << "original " << std::endl;
@@ -431,7 +421,8 @@ TEST_CASE("DiracDeterminant_delayed_update", "[wavefunction][fermion]")
   //check_matrix(ddc.psiM, b);
   DiracMatrix<ValueType> dm;
 
-  Matrix<ValueType> a_update1;
+  Matrix<ValueType> a_update1, scratchT;
+  scratchT.resize(4, 4);
   a_update1.resize(4, 4);
   a_update1 = spo->a2;
   for (int j = 0; j < norb; j++)
@@ -462,8 +453,9 @@ TEST_CASE("DiracDeterminant_delayed_update", "[wavefunction][fermion]")
   ParticleSet::GradType grad;
   ValueType det_ratio = ddc.ratioGrad(elec, 0, grad);
 
-  dm.invert(a_update1, true);
-  ValueType det_update1 = dm.LogDet;
+  simd::transpose(a_update1.data(), a_update1.rows(), a_update1.cols(), scratchT.data(), scratchT.rows(), scratchT.cols());
+  RealType det_update1, phase;
+  dm.invert_transpose(scratchT, a_update1, det_update1, phase);
   ValueType log_ratio1  = det_update1 - ddc.LogValue;
   ValueType det_ratio1  = std::exp(log_ratio1);
 #ifdef DUMP_INFO
@@ -482,8 +474,9 @@ TEST_CASE("DiracDeterminant_delayed_update", "[wavefunction][fermion]")
 
   grad                 = ddc.evalGrad(elec, 1);
   ValueType det_ratio2 = ddc.ratioGrad(elec, 1, grad);
-  dm.invert(a_update2, true);
-  ValueType det_update2    = dm.LogDet;
+  simd::transpose(a_update2.data(), a_update2.rows(), a_update2.cols(), scratchT.data(), scratchT.rows(), scratchT.cols());
+  RealType det_update2;
+  dm.invert_transpose(scratchT, a_update2, det_update2, phase);
   ValueType log_ratio2     = det_update2 - det_update1;
   ValueType det_ratio2_val = std::exp(log_ratio2);
 #ifdef DUMP_INFO
@@ -500,8 +493,9 @@ TEST_CASE("DiracDeterminant_delayed_update", "[wavefunction][fermion]")
 
   grad                 = ddc.evalGrad(elec, 2);
   ValueType det_ratio3 = ddc.ratioGrad(elec, 2, grad);
-  dm.invert(a_update3, true);
-  ValueType det_update3    = dm.LogDet;
+  simd::transpose(a_update3.data(), a_update3.rows(), a_update3.cols(), scratchT.data(), scratchT.rows(), scratchT.cols());
+  RealType det_update3;
+  dm.invert_transpose(scratchT, a_update3, det_update3, phase);
   ValueType log_ratio3     = det_update3 - det_update2;
   ValueType det_ratio3_val = std::exp(log_ratio3);
 #ifdef DUMP_INFO
@@ -518,7 +512,8 @@ TEST_CASE("DiracDeterminant_delayed_update", "[wavefunction][fermion]")
   ddc.completeUpdates();
 
   // fresh invert orig_a
-  dm.invert(orig_a, false);
+  simd::transpose(orig_a.data(), orig_a.rows(), orig_a.cols(), scratchT.data(), scratchT.rows(), scratchT.cols());
+  dm.invert_transpose(scratchT, orig_a, det_update3, phase);
 
 #ifdef DUMP_INFO
   std::cout << "original " << std::endl;

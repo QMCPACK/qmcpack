@@ -373,9 +373,9 @@ inline void evaluate_vgh_impl(const typename qmcplusplus::bspline_traits<T, 3>::
 
   for (int n = 0; n < num_splines; n++)
   {
-    gx[n] *= dxInv;
-    gy[n] *= dyInv;
-    gz[n] *= dzInv;
+    gx[n]  *= dxInv;
+    gy[n]  *= dyInv;
+    gz[n]  *= dzInv;
     hxx[n] *= dxx;
     hyy[n] *= dyy;
     hzz[n] *= dzz;
