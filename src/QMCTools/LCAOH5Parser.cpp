@@ -63,7 +63,7 @@ void LCAOParser::parse(const std::string& fname)
   hin.read(PBC, "PBC");
   hin.pop();
 
-  std::cout << "Periodic Boundary Comditions: " << (PBC ? ("yes") : ("no")) << std::endl;
+  std::cout << "Periodic Boundary Conditions: " << (PBC ? ("yes") : ("no")) << std::endl;
   std::cout.flush();
 
 
@@ -150,7 +150,7 @@ void LCAOParser::parse(const std::string& fname)
   if (PBC)
   {
     getCell(fname);
-    getKpts(fname);
+    getSTwist(fname);
     if (debug)
     {
       getGaussianCenters(fname);
@@ -337,7 +337,7 @@ void LCAOParser::getGeometry(const std::string& fname)
   hin.close();
 }
 
-void LCAOParser::getKpts(const std::string& fname)
+void LCAOParser::getSTwist(const std::string& fname)
 {
   Matrix<double> MyVec(1, 3);
   hdf_archive hin;
@@ -348,28 +348,20 @@ void LCAOParser::getKpts(const std::string& fname)
     abort();
   }
 
-  hin.push("Nb_KPTS");
-  hin.read(NbKpts, "Nbkpts");
-  hin.pop();
-  Kpoints_Coord.resize(NbKpts);
-
-  for (int i = 0; i < NbKpts; i++)
+  if(!hin.push("Super_Twist"))
   {
-    Kpoints_Coord[i].resize(3);
-    std::stringstream ss;
-    ss << "KPTS_" << i;
-    if (!hin.push(ss.str()))
-    {
-      std::cerr << "Could not find coordinates for Kpoint Nb" << i << std::endl;
-      abort();
-    }
-    hin.read(MyVec, "Coord");
-    hin.pop();
-    std::cout << "MyCoord=" << MyVec[0][0] << "  " << MyVec[0][1] << "  " << MyVec[0][2] << std::endl;
-    Kpoints_Coord[i][0] = MyVec[0][0];
-    Kpoints_Coord[i][1] = MyVec[0][1];
-    Kpoints_Coord[i][2] = MyVec[0][2];
+    std::cerr << "Could not find Super Twist" << std::endl;
+    abort();
   }
+  STwist_Coord.resize(3);
+
+  hin.read(MyVec,"Coord");
+
+  hin.pop();
+  STwist_Coord[0]=MyVec[0][0];
+  STwist_Coord[1]=MyVec[0][1];
+  STwist_Coord[2]=MyVec[0][2];
+  
   hin.close();
 }
 

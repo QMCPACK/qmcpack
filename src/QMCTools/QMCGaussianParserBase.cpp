@@ -1747,7 +1747,7 @@ void QMCGaussianParserBase::dump(const std::string& psi_tag, const std::string& 
       std::cout << "Consider using HDF5 via -hdf5 for higher performance and smaller wavefunction files" << std::endl;
 }
 
-void QMCGaussianParserBase::dumpPBC(const std::string& psi_tag, const std::string& ion_tag, const int KptsNum)
+void QMCGaussianParserBase::dumpPBC(const std::string& psi_tag, const std::string& ion_tag)
 {
   std::cout << " QMCGaussianParserBase::dumpPBC " << std::endl;
   if (!Structure)
@@ -1779,7 +1779,7 @@ void QMCGaussianParserBase::dumpPBC(const std::string& psi_tag, const std::strin
       xmlNewProp(detPtr, (const xmlChar*)"transform", (const xmlChar*)"yes");
 
       std::stringstream ss;
-      ss << Kpoints_Coord[KptsNum][0] << "  " << Kpoints_Coord[KptsNum][1] << "  " << Kpoints_Coord[KptsNum][2];
+      ss << STwist_Coord[0] << "  " <<  STwist_Coord[1] << "  " <<  STwist_Coord[2];
       xmlNewProp(detPtr, (const xmlChar*)"twist", (const xmlChar*)(ss.str()).c_str());
 
       if (DoCusp == true)
