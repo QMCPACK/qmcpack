@@ -2,7 +2,9 @@ import ast
 import h5py
 import numpy
 import scipy.linalg
+import sys
 from pyscf import fci
+from afqmctools.utils.io import to_qmcpack_complex
 
 def write_wfn_mol(scf_data, ortho_ao, filename, wfn=None):
     """Generate QMCPACK trial wavefunction.
@@ -25,7 +27,8 @@ def write_wfn_mol(scf_data, ortho_ao, filename, wfn=None):
     """
     ghf = False
     mol = scf_data['mol']
-    nalpha, nbeta = mol.nelec
+    nelec = mol.nelec
+    nalpha, nbeta = nelec
     C = scf_data['mo_coeff']
     X = scf_data['X']
     uhf = scf_data['isUHF']
@@ -35,53 +38,106 @@ def write_wfn_mol(scf_data, ortho_ao, filename, wfn=None):
     else:
         norb = C.shape[0]
     if wfn is None:
-        wfn = numpy.zeros((norb,nalpha+nbeta), dtype=numpy.float64)
+        wfn = numpy.zeros((1,norb,nalpha+nbeta), dtype=numpy.complex128)
         wfn_type = 'NOMSD'
+        coeffs = numpy.array([1.0+0j])
         if ortho_ao:
             Xinv = scipy.linalg.inv(X)
             if uhf:
                 # We are assuming C matrix is energy ordered.
-                wfn[:,:nalpha] = numpy.dot(Xinv, C[0])[:,:nalpha]
-                wfn[:,nalpha:] = numpy.dot(Xinv, C[1])[:,:nbeta]
+                wfn[0,:,:nalpha] = numpy.dot(Xinv, C[0])[:,:nalpha]
+                wfn[0,:,nalpha:] = numpy.dot(Xinv, C[1])[:,:nbeta]
             else:
-                wfn[:,:nalpha] = numpy.dot(Xinv, C)[:,:nalpha]
+                wfn[0,:,:nalpha] = numpy.dot(Xinv, C)[:,:nalpha]
         else:
             # Assuming we are working in MO basis, only works for RHF, ROHF trials.
             I = numpy.identity(C.shape[-1], dtype=numpy.float64)
-            wfn[:,:nalpha] = I[:,:nalpha]
+            wfn[0,:,:nalpha] = I[:,:nalpha]
             if uhf:
                 print(" # Warning: UHF trial wavefunction can only be used of "
                       "working in ortho AO basis.")
     else:
-        # Multi determinant style trial wavefunction.
-        coeffs, cis = wfn
-        wfn_type = 'PHMSD'
+        # User defined wavefunction.
+        if len(wfn) == 3:
+            coeffs, occa, occb = wfn
+            wfn_type = 'PHMSD'
+        elif len(wnf) == 2:
+            coeffs, wfn = wfn
+            wfn_type = 'NOMSD'
+        else:
+            print("Unknown wavefunction type passed.")
+            sys.exit()
     with h5py.File(filename, 'r+') as fh5:
         # TODO: FIX for GHF eventually.
         if ghf:
-            walker_type = 'NONCOLLINEAR'
+            walker_type = 3
         elif uhf:
-            walker_type = 'COLLINEAR'
+            walker_type = 2
         else:
-            walker_type = 'CLOSED'
+            walker_type = 1
         if wfn_type == 'PHMSD':
-            walker_type = 'COLLINEAR'
-        fh5['Wavefunction/type'] = wfn_type
-        fh5['Wavefunction/walker_type'] = walker_type
-        # TODO: Fix for multideterminant case.
+            walker_type = 2
+        wfn_group = fh5.create_group('Wavefunction/NOMSD')
+        wfn_group['CICOEFFICIENTS'] = to_qmcpack_complex(coeffs)
+        dims = [norb, nalpha, nbeta, walker_type, len(coeffs)]
+        wfn_group['dims'] = numpy.array(dims, dtype=numpy.int32)
         if wfn_type == 'PHMSD':
-            fh5['Wavefunction/occ_a'] = cis[0]
-            fh5['Wavefunction/occ_b'] = cis[1]
-            fh5['Wavefunction/coeffs'] = coeffs
-            nci = len(cis)
-            dims = [nci, 0, len(cis[0])]
+            write_phmsd(coeffs, occa, occb, nelec)
         else:
-            fh5['Wavefunction/orbs'] = wfn
-            write_qmcpack_wfn_ascii('wfn.dat', wfn, nalpha, uhf)
-            dims = [1, wfn.shape[0], wfn.shape[1]]
-        fh5['Wavefunction/dims'] = numpy.array(dims, dtype=numpy.int32)
+            write_nomsd(wfn_group, wfn, uhf, nelec)
+            write_qmcpack_wfn_ascii('wfn.dat', wfn[0], nalpha, uhf)
 
-    return wfn
+    if wfn_type != 'PHMSD':
+        return coeffs, wfn
+
+
+def write_nomsd(fh5, wfn, uhf, nelec, thresh=1e-8):
+    """Write NOMSD to HDF.
+
+    Parameters
+    ----------
+    fh5 : h5py group
+        Wavefunction group to write to file.
+    wfn : :class:`numpy.ndarray`
+        NOMSD trial wavefunctions.
+    uhf : bool
+        UHF style wavefunction.
+    nelec : tuple
+        Number of alpha and beta electrons.
+    thresh : float
+        Threshold for writing wavefunction elements.
+    """
+    nalpha, nbeta = nelec
+    wfn[abs(wfn) < thresh] = 0.0
+    for idet, w in enumerate(wfn):
+        # QMCPACK stores this internally as a csr matrix, so first convert.
+        ix = 2*idet if uhf else idet
+        psia = scipy.sparse.csr_matrix(w[:,:nalpha].T)
+        write_nomsd_single(fh5, psia, ix)
+        if uhf:
+            ix = 2*idet + 1
+            psib = scipy.sparse.csr_matrix(w[:,nalpha:].T)
+            write_nomsd_single(fh5, psib, ix)
+
+def write_nomsd_single(fh5, psi, idet):
+    """Write single component of NOMSD to hdf.
+
+    Parameters
+    ----------
+    fh5 : h5py group
+        Wavefunction group to write to file.
+    psi : :class:`scipy.sparse.csr_matrix`
+        Sparse representation of trial wavefunction.
+    idet : int
+        Determinant number.
+    """
+    base = 'PsiT_{:d}/'.format(idet)
+    dims = [psi.shape[0], psi.shape[1], psi.nnz]
+    fh5[base+'dims'] = numpy.array(dims, dtype=numpy.int32)
+    fh5[base+'data_'] = to_qmcpack_complex(psi.data)
+    fh5[base+'jdata_'] = psi.indices
+    fh5[base+'pointers_begin_'] = psi.indptr[:-1]
+    fh5[base+'pointers_end_'] = psi.indptr[1:]
 
 #
 # Graveyard. Old QMCPACK wavefunction plain text format.
