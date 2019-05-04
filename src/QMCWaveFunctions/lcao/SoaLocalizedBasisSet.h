@@ -93,7 +93,7 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
   }
   /** set Number of periodic Images to evaluate the orbitals. 
       Set to 0 for non-PBC, and set manually in the input.
-      Passes the pre-computed phase factor for evaluation of complex wavefunction. If WF is real Phase_factor is real and equals 1.  
+      Passes the pre-computed phase factor for evaluation of complex wavefunction. If WF is real Phase_factor is real and equals 1 if gamma or -1 if non-Gamma.  
   */
   void setPBCParams(const TinyVector<int, 3>& PBCImages,const std::vector<QMCTraits::ValueType>& phase_factor)
   {

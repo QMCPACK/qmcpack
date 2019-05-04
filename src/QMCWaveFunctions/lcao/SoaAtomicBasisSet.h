@@ -35,7 +35,7 @@ struct SoaAtomicBasisSet
   ///Number of Cell images for the evaluation of the orbital with PBC. If No PBC, should be 0;
   TinyVector<int, 3> PBCImages;
   ///Phase Factor array
-  std::vector<QMCTraits::ValueType> phase_factor;
+  std::vector<QMCTraits::ValueType> periodic_image_phase_factors; 
   ///maximum radius of this center
   RealType Rmax;
   ///spherical harmonics
@@ -94,7 +94,7 @@ struct SoaAtomicBasisSet
   }
 
   /// Set the number of periodic image for the evaluation of the orbitals and the phase factor. In the case of Non-PBC, PBCImages=(1,1,1) and the PhaseFactor=1.
-  void setPBCParams(const TinyVector<int, 3>& pbc_images, const std::vector<QMCTraits::ValueType>& PhaseFactor) { PBCImages = pbc_images; phase_factor=PhaseFactor;} 
+  void setPBCParams(const TinyVector<int, 3>& pbc_images, const std::vector<QMCTraits::ValueType>& PeriodicImagePhaseFactors) { PBCImages = pbc_images; periodic_image_phase_factors=PeriodicImagePhaseFactors;} 
 
 
   /** implement a BasisSetBase virtual function

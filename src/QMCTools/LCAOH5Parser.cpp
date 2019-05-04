@@ -150,7 +150,7 @@ void LCAOParser::parse(const std::string& fname)
   if (PBC)
   {
     getCell(fname);
-    getSTwist(fname);
+    getSuperTwist(fname);
     if (debug)
     {
       getGaussianCenters(fname);
@@ -337,7 +337,7 @@ void LCAOParser::getGeometry(const std::string& fname)
   hin.close();
 }
 
-void LCAOParser::getSTwist(const std::string& fname)
+void LCAOParser::getSuperTwist(const std::string& fname)
 {
   Matrix<double> MyVec(1, 3);
   hdf_archive hin;
