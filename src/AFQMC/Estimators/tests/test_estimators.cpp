@@ -169,6 +169,7 @@ const char *propg_xml_block =
     dump.create("estimates.h5");
     dump.open("estimates.h5");
     for (int iblock = 0; iblock < 10; iblock++) {
+      wset.advanceBPPos();
       estimators[0]->accumulate_block(wset);
       estimators[0]->print(out,dump,wset);
     }
