@@ -59,11 +59,9 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop, TaskGroup_& TGwf
   }
 
   RealType cutv2(0.);   
-  int initialDet(1);
   int ndets_to_read(-1); // if not set, read the entire file
   int initial_configuration=0;  
   double randomize_guess(0.0);
-  std::string starting_det("");
   std::string str("false");
   std::string filename("");
   std::string restart_file("");
@@ -73,8 +71,6 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop, TaskGroup_& TGwf
   m_param.add(restart_file,"restart_file","std::string");
   m_param.add(write_trial_density_matrix,"trial_density_matrix","std::string");
   m_param.add(cutv2,"cutoff","double");
-  m_param.add(initialDet,"initialDetType","int");
-  m_param.add(starting_det,"starting_det","std:string");
   m_param.add(ndets_to_read,"ndet","int");
   m_param.add(initial_configuration,"initial_configuration","int");
   m_param.add(randomize_guess,"randomize_guess","double");
@@ -611,9 +607,7 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop, TaskGroup_& TGwfn
   }
 
   RealType cutv2(0.);
-  int initialDet(1);
   int ndets_to_read(-1); // if not set, read the entire file
-  std::string starting_det("");
   std::string str("false");
   std::string filename("");
   std::string restart_file("");
@@ -622,8 +616,6 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop, TaskGroup_& TGwfn
   m_param.add(filename,"filename","std::string");
   m_param.add(write_trial_density_matrix,"trial_density_matrix","std::string");
   m_param.add(cutv2,"cutoff","double");
-  m_param.add(initialDet,"initialDetType","int");
-  m_param.add(starting_det,"starting_det","std:string");
   m_param.add(ndets_to_read,"ndet","int");
   m_param.put(cur);
 
