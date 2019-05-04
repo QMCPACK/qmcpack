@@ -133,7 +133,7 @@ class WavefunctionFactory
       assert(h!=nullptr);
       return fromASCII(TGprop,TGwfn,cur,walker_type,*h,cutvn,targetNW);
     } else if(type == "hdf5")
-      return fromHDF5(TGprop,TGwfn,cur,walker_type,cutvn,targetNW);
+      return fromHDF5(TGprop,TGwfn,cur,walker_type,*h,cutvn,targetNW);
     else {
       app_error()<<"Unknown Wavefunction filetype in WavefunctionFactory::buildWavefunction(): " <<type <<std::endl;
       APP_ABORT(" Error: Unknown Wavefunction filetype in WavefunctionFactory::buildWavefunction(). \n");
@@ -144,7 +144,10 @@ class WavefunctionFactory
                             Hamiltonian& h, RealType cutvn, int targetNW);
 
   Wavefunction fromHDF5(TaskGroup_& TGprop, TaskGroup_& TGwfn, xmlNodePtr cur, WALKER_TYPES walker_type, 
-                            RealType cutvn, int targetNW);
+                        Hamiltonian& h, RealType cutvn, int targetNW);
+  HamiltonianOperations getHamOps(bool read, hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA, int NAEB,
+                                  std::vector<PsiT_Matrix>& PsiT, TaskGroup_& TGprop, TaskGroup_& TGwfn, RealType cutvn, RealType cutv2,
+                                  int ndets_to_read, Hamiltonian& h);
 
   // MAM: should I store a copy rather than a pointer???
   std::map<std::string,xmlNodePtr> xmlBlocks;

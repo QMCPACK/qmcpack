@@ -594,7 +594,7 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop, TaskGroup_& TGwf
 
 Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop, TaskGroup_& TGwfn, 
                                            xmlNodePtr cur, WALKER_TYPES walker_type,  
-                                            RealType cutvn, int targetNW)
+                                           Hamiltonian& h, RealType cutvn, int targetNW)
 {
   if(cur == NULL)
     APP_ABORT("Error: NULL xml pointer in HamiltonianFactory::parse(). \n");
@@ -761,8 +761,10 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop, TaskGroup_& TGwfn
       }
     } else
       APP_ABORT(" Error: Problems adding new initial guess, already exists. \n");
-
-    HamiltonianOperations HOps(loadHamOps(dump,walker_type,NMO,NAEA,NAEB,PsiT,TGprop,TGwfn,cutvn,cutv2));
+    bool read_ham_op = dump.is_group("HamiltonianOperations");
+    if (!read_ham_op)
+      dump.close();
+    auto HOps(getHamOps(read_ham_op,dump,walker_type,NMO,NAEA,NAEB,PsiT,TGprop,TGwfn,cutvn,cutv2,ndets_to_read,h));
 
     if(TGwfn.TG_local().size() > 1) {
       SlaterDetOperations SDetOp( SlaterDetOperations_shared<ComplexType>(
@@ -843,6 +845,20 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop, TaskGroup_& TGwfn
     app_error()<<" Error: Unknown wave-function type: " <<type <<std::endl;
     APP_ABORT(" Error: Unknown wave-function type. \n");
     return Wavefunction{};
+  }
+
+
+}
+
+// Helper function to create Hamiltonian operations object from file or from scratch.
+HamiltonianOperations WavefunctionFactory::getHamOps(bool read, hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA, int NAEB,
+                                                      std::vector<PsiT_Matrix>& PsiT, TaskGroup_& TGprop, TaskGroup_& TGwfn,
+                                                      RealType cutvn, RealType cutv2, int ndets_to_read, Hamiltonian& h)
+{
+  if (read) {
+    return loadHamOps(dump,type,NMO,NAEA,NAEB,PsiT,TGprop,TGwfn,cutvn,cutv2);
+  } else {
+    return h.getHamiltonianOperations(false, ndets_to_read>1,type,PsiT, cutvn,cutv2,TGprop,TGwfn,dump);
   }
 }
 
