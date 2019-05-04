@@ -60,6 +60,9 @@ void reduced_density_matrix(boost::mpi3::communicator & world)
     app_log()<<" Run unit test with --hamil /path/to/hamil.h5 and --wfn /path/to/wfn.dat.\n";
   } else {
 
+    TimerManager.set_timer_threshold(timer_level_coarse);
+    setup_timers(AFQMCTimers, AFQMCTimerNames,timer_level_coarse);
+
     // Global Task Group
     afqmc::GlobalTaskGroup gTG(world);
 
@@ -154,7 +157,7 @@ const char *propg_xml_block =
 "<Estimator name=\"back_propagation\"> \
       <parameter name=\"nsteps\">1</parameter> \
       <parameter name=\"block_size\">2</parameter> \
-      <parameter name=\"path_restoration\">true</parameter> \
+      <parameter name=\"path_restoration\">false</parameter> \
   </Estimator> \
 ";
     Libxml2Document doc4;
@@ -165,6 +168,10 @@ const char *propg_xml_block =
                     std::make_shared<BackPropagatedEstimator>(
                             TG,InfoMap["info0"],"none",doc4.getRoot(),type,
                             wset,wfn,prop,impsamp)));
+
+    // generate P1 with dt=0
+    prop.generateP1(0.0,wset.getWalkerType());
+
     hdf_archive dump;
     std::ofstream out;
     dump.create("estimates.h5");
@@ -175,7 +182,7 @@ const char *propg_xml_block =
       estimators[0]->print(out,dump,wset);
     }
     dump.close();
-    boost::multi::array<ComplexType,1,Allocator> read_data(boost::multi::iextensions<1u>{2*NMO*NMO},alloc_);
+    boost::multi::array<ComplexType,1> read_data(boost::multi::iextensions<1u>{2*NMO*NMO});
     
     ComplexType denom;
     hdf_archive reader;
@@ -184,8 +191,8 @@ const char *propg_xml_block =
       app_error()<<" Error opening estimates.h5. \n";
       APP_ABORT("");
     }
-    reader.read(read_data, "BackPropagated/one_rdm_000000004");
-    reader.read(denom, "BackPropagated/one_rdm_denom_000000004");
+    reader.read(read_data, "BackPropagated/NumBackProp_1/one_rdm_000000004");
+    reader.read(denom, "BackPropagated/NumBackProp_1/one_rdm_denom_000000004");
     // Test EstimatorHandler eventually.
     //int NAEA_READ, NAEB_READ, NMO_READ, WALKER_TYPE_READ;
     //reader.read(NAEA_READ, "Metadata/NAEA");
@@ -200,7 +207,7 @@ const char *propg_xml_block =
     // Test the RDM. Since no back propagation has been performed the RDM should be
     // identical to the mixed estimate.
     if(type == CLOSED) {
-      boost::multi::array_ref<ComplexType,2,pointer> BPRDM(read_data.origin(), {NMO,NMO});
+      boost::multi::array_ref<ComplexType,2> BPRDM(read_data.origin(), {NMO,NMO});
       ma::scal(1.0/denom, BPRDM);
       ComplexType trace = ComplexType(0.0);
       for(int i = 0; i < NMO; i++) trace += BPRDM[i][i];
@@ -208,9 +215,9 @@ const char *propg_xml_block =
       boost::multi::array<ComplexType,2,Allocator> Gw({1,NMO*NMO},alloc_);
       wfn.MixedDensityMatrix(wset, Gw, false, true);
       boost::multi::array_ref<ComplexType,2,pointer> G(Gw.origin(), {NMO,NMO});
-      //verify_approx(G, BPRDM);
+      verify_approx(G, BPRDM);
     } else if(type == COLLINEAR) {
-      boost::multi::array_ref<ComplexType,3,pointer> BPRDM(read_data.origin(), {2,NMO,NMO});
+      boost::multi::array_ref<ComplexType,3> BPRDM(read_data.origin(), {2,NMO,NMO});
       ma::scal(1.0/denom, BPRDM[0]);
       ma::scal(1.0/denom, BPRDM[1]);
       ComplexType trace = ComplexType(0.0);
@@ -220,7 +227,7 @@ const char *propg_xml_block =
       boost::multi::array<ComplexType,2,Allocator> Gw({1,2*NMO*NMO},alloc_);
       wfn.MixedDensityMatrix(wset, Gw, false, true);
       boost::multi::array_ref<ComplexType,3,pointer> G(Gw.origin(), {2,NMO,NMO});
-      //verify_approx(G, BPRDM);
+      verify_approx(G, BPRDM);
     } else {
       APP_ABORT(" NONCOLLINEAR Wavefunction found.\n");
     }

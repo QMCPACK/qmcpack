@@ -29,6 +29,7 @@
 #include "AFQMC/config.h"
 #include "AFQMC/Utilities/taskgroup.h"
 #include "AFQMC/SlaterDeterminantOperations/SlaterDetOperations.hpp"
+#include "AFQMC/Propagators/generate1BodyPropagator.hpp"
 
 #include "AFQMC/Wavefunctions/Wavefunction.hpp"
 
@@ -131,6 +132,23 @@ class AFQMCBasePropagator: public AFQMCInfo
 
     int global_number_of_cholesky_vectors() const{
       return wfn.global_number_of_cholesky_vectors(); 
+    }
+
+    // in case P1 needs to exist before call to Propagate is executed
+    void generateP1(double dt, WALKER_TYPES walker_type) {
+      old_dt = dt;
+      // generate1BodyPropagator currently expects a shared_allocator, fix later
+      using P1shm = ma::sparse::csr_matrix<ComplexType,int,int,
+                                shared_allocator<ComplexType>,
+                                ma::sparse::is_root>;
+      if(spin_dependent_P1) {
+        if(walker_type!=COLLINEAR)
+           APP_ABORT(" Error: Spin dependent P1 being used with CLOSED walker.\n");
+        P1[0] = std::move(generate1BodyPropagator<P1shm>(TG,1e-8,dt,H1,H1ext[0],printP1eV));
+        P1[1] = std::move(generate1BodyPropagator<P1shm>(TG,1e-8,dt,H1,H1ext[1],printP1eV));
+      } else {
+        P1[0] = std::move(generate1BodyPropagator<P1shm>(TG,1e-8,dt,H1,printP1eV));
+      } 
     }
 
   protected: 
