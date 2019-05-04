@@ -629,6 +629,7 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop, TaskGroup_& TGwfn
   std::string write_trial_density_matrix("");
   ParameterSet m_param;
   m_param.add(filename,"filename","std::string");
+  m_param.add(restart_file,"restart_file","std::string");
   m_param.add(write_trial_density_matrix,"trial_density_matrix","std::string");
   m_param.add(cutv2,"cutoff","double");
   m_param.add(initialDet,"initialDetType","int");
@@ -656,8 +657,13 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop, TaskGroup_& TGwfn
 
   using Alloc = shared_allocator<ComplexType>;
   // HOps, ci, PsiT, NCE
+  std::string h5file;
+  if(restart_file != "")
+    h5file = restart_file;
+  else
+    h5file = filename;
   hdf_archive dump(TGwfn.Global());
-  if(!dump.open(filename,H5F_ACC_RDONLY)) {
+  if(!dump.open(h5file,H5F_ACC_RDONLY)) {
     app_error()<<" Error hdf5 file in WavefunctionFactory. \n";
     APP_ABORT("");
   }
@@ -704,11 +710,16 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop, TaskGroup_& TGwfn
     }
     ci.resize(ndets_to_read);
     std::vector<ValueType> dum;  
-    if(!dump.readEntry(dum,"NCE")) {
-      app_error()<<" Error in WavefunctionFactory::fromHDF5(): Problems reading NCE. \n";
-      APP_ABORT("");
+    if(restart_file == "") {
+      ValueType enuc = h.getNuclearCoulombEnergy();
+      dum.push_back(enuc);
+    } else {
+      if(!dump.readEntry(dum,"NCE")) {
+        app_error()<<" Error in WavefunctionFactory::fromHDF5(): Problems reading NCE. \n";
+        APP_ABORT("");
+      }
     }
-    NCE = dum[0];  
+    NCE = dum[0];
   }
   TGwfn.Global().broadcast_n(dims.data(),dims.size());
   if(ndets_to_read < 1) ndets_to_read=dims[4];  
@@ -719,7 +730,7 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop, TaskGroup_& TGwfn
   if(type=="msd" || type=="nomsd") {
 
     int nd = (walker_type==COLLINEAR?2*ndets_to_read:ndets_to_read);
-    PsiT.reserve(nd); 
+    PsiT.reserve(nd);
     using Alloc = shared_allocator<ComplexType>;
     for(int i=0; i<nd; ++i) {
       if(!dump.push(std::string("PsiT_")+std::to_string(i),false)) {
@@ -762,8 +773,9 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop, TaskGroup_& TGwfn
     } else
       APP_ABORT(" Error: Problems adding new initial guess, already exists. \n");
     bool read_ham_op = dump.is_group("HamiltonianOperations");
-    if (!read_ham_op)
+    if (!read_ham_op) {
       dump.close();
+    }
     auto HOps(getHamOps(read_ham_op,dump,walker_type,NMO,NAEA,NAEB,PsiT,TGprop,TGwfn,cutvn,cutv2,ndets_to_read,h));
 
     if(TGwfn.TG_local().size() > 1) {
