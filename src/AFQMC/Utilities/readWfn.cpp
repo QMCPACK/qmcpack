@@ -545,6 +545,225 @@ ph_excitations<int,ComplexType> read_ph_wavefunction(std::ifstream& in, int& nde
   return ph_struct;
 }
 
+ph_excitations<int,ComplexType> read_ph_wavefunction_hdf(hdf_archive& dump, int& ndets, WALKER_TYPES walker_type,
+        boost::mpi3::shared_communicator& comm, int NMO, int NAEA, int NAEB,
+        std::vector<PsiT_Matrix>& PsiT, std::string& type)
+{
+
+  using Alloc = shared_allocator<ComplexType>;
+  assert(walker_type!=UNDEFINED_WALKER_TYPE);
+  bool fullMOMat = false;
+  bool Cstyle = true;
+  int wfn_type=0;
+  int ndet_in_file=-1;
+  int NEL = NAEA;
+  bool mixed=false;
+  if(walker_type!=CLOSED) NEL+=NAEB;
+
+  /*
+   * Expected order of inputs and tags:
+   * Reference:
+   * Configurations:
+   */
+
+  /*
+   * type:
+   *   - occ: All determinants are specified with occupation numbers
+   *
+   * wfn_type:
+   *   - 0: excitations out of a RHF reference
+   *          NOTE: Does not mean perfect pairing, means excitations from a single reference
+   *   - 1: excitations out of a UHF reference
+   */
+  if(comm.root()) {
+    std::vector<size_type> dims(5);
+    if(!dump.readEntry(dims,"dims"))
+      APP_ABORT("Problems reading dims in read_ph_wavefunction_hdf.\n");
+    if(!dump.readEntry(fullMO,"fullmo"))
+      APP_ABORT("Problems reading fullMO in read_ph_wavefunction_hdf.\n");
+    if(!dump.readEntry(type,"type"))
+      APP_ABORT("Problems reading type in read_ph_wavefunction_hdf.\n");
+    ndet_in_file = dims[4];
+    if(dims[0] != NMO)
+      APP_ABORT("Problems NMO differs in file.\n");
+    if(dims[1] != NAEA)
+      APP_ABORT("Problems NAEA differs in file.\n");
+    if(dims[2] != NAEB)
+      APP_ABORT("Problems NAEB differs in file.\n");
+    if(dims[3] != walker_type)
+      APP_ABORT("Problems walker_type differs in file.\n");
+
+    if(walker_type != COLLINEAR)
+      APP_ABORT(" Error: walker_type!=COLLINEAR not yet implemented in read_ph_wavefunction.\n");
+
+    if(ndet_in_file < ndets)
+      APP_ABORT("Error: Requesting too many determinants from wfn file.\n");
+    if(wfn_type == 1 && walker_type == CLOSED)
+      APP_ABORT("Error in read_wavefunction: walker_type < wfn_type.\n");
+    if(wfn_type == 2 && (walker_type == CLOSED || walker_type == COLLINEAR))
+      APP_ABORT("Error in read_wavefunction: walker_type < wfn_type. \n");
+
+    if(type == "mixed" ) mixed = true;
+
+    comm.broadcast_n(&mixed,1,0);
+    comm.broadcast_n(&ndet_in_file,1,0);
+    comm.broadcast_n(&wfn_type,1,0);
+    comm.broadcast_n(&fullMOMat,1,0);
+  } else {
+    comm.broadcast_n(&mixed,1,0);
+    comm.broadcast_n(&ndet_in_file,1,0);
+    comm.broadcast_n(&wfn_type,1,0);
+    comm.broadcast_n(&fullMOMat,1,0);
+  }
+
+  if(ndets <= 0) ndets = ndet_in_file;
+
+  if(mixed) { // read reference
+    int nmo_ = (walker_type==NONCOLLINEAR?2*NMO:NMO);
+    if(not comm.root()) nmo_=0; // only root reads matrices
+    if(not fullMOMat)
+      APP_ABORT("Error: Wavefunction type mixed requires fullMOMat=true.\n");
+    PsiT.reserve((wfn_type!=1)?1:2);
+
+    if(!dump.push(std::string("PsiT_")+std::to_string(0),false)) {
+      app_error()<<" Error in WavefunctionFactory: Group PsiT not found. \n";
+      APP_ABORT("");
+    }
+    PsiT.emplace_back(csr_hdf5::HDF2CSR<PsiT_Matrix,Alloc>(dump,comm));
+    dump.pop();
+    if(wfn_type == 1) {
+      if(!dump.push(std::string("PsiT_")+std::to_string(1),false)) {
+        app_error()<<" Error in WavefunctionFactory: Group PsiT not found. \n";
+        APP_ABORT("");
+      }
+      PsiT.emplace_back(csr_hdf5::HDF2CSR<PsiT_Matrix,Alloc>(dump,comm));
+      dump.pop();
+    }
+  }
+
+  ComplexType ci;
+  std::vector<ComplexType> ci_coeff(ndets);
+  // count number of k-particle excitations
+  // counts[0] has special meaning, it must be equal to NAEA+NAEB.
+  std::vector<size_t> counts_alpha(NAEA+1);
+  std::vector<size_t> counts_beta(NAEB+1);
+  // ugly but need dynamic memory allocation
+  std::vector<std::vector<int>> unique_alpha(NAEA+1);
+  std::vector<std::vector<int>> unique_beta(NAEB+1);
+  // reference configuration, taken as the first one right now
+  std::vector<int> refa;
+  std::vector<int> refb;
+  // space to read configurations
+  std::vector<int> confg;
+  // space for excitation string identifying the current configuration
+  std::vector<int> exct;
+  // record file position to come back
+  std::vector<int> Iwork; // work arrays for permutation calculation
+  std::streampos start;
+  boost::multi::array<int,2> occs;
+  occs.reextent({nci, NAEA+NAEB})
+  if(comm.root()) {
+    if(!dump.read(occs, "occs"))
+      APP_ABORT("Error reading occs array.\n");
+    if(!dump.read(ci_coeff, "CICOEFFICIENTS"))
+      APP_ABORT("Error reading CICOEFFICIENTS array.\n");
+    confg.reserve(NAEA);
+    Iwork.resize(2*NAEA);
+    exct.reserve(2*NAEA);
+    for(int i=0; i<ndets; i++) {
+      // alpha
+      confg.clear();
+      for(int k=0, q=0; k<NAEA; k++) {
+        q = occs[i][k];
+        if(q < 0 || q > NMO)
+          APP_ABORT("Error: Bad occupation number in wavefunction file. \n");
+        confg.emplace_back(q);
+        ci = ci_coeff[i]
+      }
+      if(i == 0) {
+        refa = confg;
+      } else {
+        int np = get_excitation_number(true,refa,confg,exct,ci,Iwork);
+        push_excitation(exct,unique_alpha[np]);
+      }
+      // beta
+      confg.clear();
+      for(int k=0, q=0; k<NAEB; k++) {
+        q = occs[i][NAEA+k];
+        if(q < 0 || q > NMO)
+          APP_ABORT("Error: Bad occupation number in wavefunction file. \n");
+        confg.emplace_back(q);
+        ci = ci_coeff[i]
+      }
+      if(i == 0) {
+        refb = confg;
+      } else {
+        int np = get_excitation_number(true,refb,confg,exct,ci,Iwork);
+        push_excitation(exct,unique_beta[np]);
+      }
+    }
+    // now that we have all unique configurations, count
+    for(int i=1; i<=NAEA; i++) counts_alpha[i] = unique_alpha[i].size();
+    for(int i=1; i<=NAEB; i++) counts_beta[i] = unique_beta[i].size();
+  }
+  comm.broadcast_n(counts_alpha.begin(),counts_alpha.size());
+  comm.broadcast_n(counts_beta.begin(),counts_beta.size());
+  // using int for now, but should move to short later when everything works well
+  // ph_struct stores the reference configuration on the index [0]
+  ph_excitations<int,ComplexType> ph_struct(ndets,NAEA,NAEB,counts_alpha,counts_beta,
+                                            shared_allocator<int>(comm));
+
+  if(comm.root()) {
+    std::map<int,int> refa2loc;
+    for(int i=0; i<NAEA; i++) refa2loc[refa[i]] = i;
+    std::map<int,int> refb2loc;
+    for(int i=0; i<NAEB; i++) refb2loc[refb[i]] = i;
+    // add reference
+    ph_struct.add_reference(refa,refb);
+    // add unique configurations
+    // alpha
+    for(int n=1; n<unique_alpha.size(); n++)
+      for(std::vector<int>::iterator it=unique_alpha[n].begin(); it<unique_alpha[n].end(); it+=(2*n) )
+        ph_struct.add_alpha(n,it);
+    // beta
+    for(int n=1; n<unique_beta.size(); n++)
+      for(std::vector<int>::iterator it=unique_beta[n].begin(); it<unique_beta[n].end(); it+=(2*n) )
+        ph_struct.add_beta(n,it);
+    // read configurations
+    int alpha_index;
+    int beta_index;
+    int np;
+    for(int i=0; i<ndets; i++) {
+      in>>ci; if(in.fail()) APP_ABORT(" Error: Reading wfn file.\n");
+      confg.clear();
+      for(int k=0, q=0; k<NAEA; k++) {
+        q = occs[i][k];
+        if(q < 0 || q > NMO)
+          APP_ABORT("Error: Bad occupation number in wavefunction file. \n");
+        confg.emplace_back(q);
+        ci = ci_coeff[i]
+      }
+      np = get_excitation_number(true,refa,confg,exct,ci,Iwork);
+      alpha_index = ((np==0)?(0):(find_excitation(exct,unique_alpha[np]) +
+                                  ph_struct.number_of_unique_smaller_than(np)[0]));
+      confg.clear();
+      for(int k=0, q=0; k<NAEB; k++) {
+        q = occs[i][k];
+        if(q < 0 || q > NMO)
+          APP_ABORT("Error: Bad occupation number in wavefunction file. \n");
+        confg.emplace_back(q);
+        ci = ci_coeff[i]
+      }
+      np = get_excitation_number(true,refb,confg,exct,ci,Iwork);
+      beta_index = ((np==0)?(0):(find_excitation(exct,unique_beta[np]) +
+                                  ph_struct.number_of_unique_smaller_than(np)[1]));
+      ph_struct.add_configuration(alpha_index,beta_index,ci);
+    }
+  }
+  comm.barrier();
+  return ph_struct;
+}
+
 // modify for multideterminant case based on type
 int readWfn( std::string fileName, boost::multi::array<ComplexType,3>& OrbMat, int NMO, int NAEA, int NAEB, int det)
 {
