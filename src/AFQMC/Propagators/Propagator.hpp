@@ -67,6 +67,10 @@ class dummy_Propagator
     return 0;
   }
 
+  void generateP1(int,WALKER_TYPES) {
+    throw std::runtime_error("calling visitor on dummy_Propagator object");
+  }
+
 };
 }
 
@@ -106,6 +110,14 @@ class Propagator: public boost::variant<dummy::dummy_Propagator,AFQMCBasePropaga
     void BackPropagate(Args&&... args) {
         boost::apply_visitor(
             [&](auto&& a){a.BackPropagate(std::forward<Args>(args)...);},
+            *this
+        );
+    }
+
+    template<class... Args>
+    void generateP1(Args&&... args) {
+        boost::apply_visitor(
+            [&](auto&& a){a.generateP1(std::forward<Args>(args)...);},
             *this
         );
     }
