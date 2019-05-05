@@ -528,7 +528,7 @@ void getLank_from_Lkin(MultiArray2DA&& Aai, MultiArray3DB&& Lkin,
   int ni = Aai.size(1);
   int nk = Lkin.size(0);
   int nchol = Lkin.size(2);
-  assert(Lkin.size(0)==ni);
+  assert(Lkin.size(1)==ni);
   assert(Lank.size(0)==na);
   assert(Lank.size(1)==nchol);
   assert(Lank.size(2)==nk);
