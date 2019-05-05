@@ -3,7 +3,7 @@ import numpy
 import h5py
 import time
 import sys
-from afqmctools.wavefunction.mol import write_qmcpack_wfn_ascii
+from afqmctools.wavefunction.mol import write_nomsd_wfn
 
 def write_wfn_pbc(scf_data, ortho_ao, filename, rediag=True, verbose=False,
                   energy_sort=False):
@@ -152,7 +152,7 @@ def write_wfn_pbc(scf_data, ortho_ao, filename, rediag=True, verbose=False,
         except RuntimeError:
             print(" # Already found wavefunction in {}.".format(filename))
             pass
-    write_qmcpack_wfn_ascii('wfn.dat', wfn, nalpha, uhf)
+    write_nomsd_wfn('wfn.dat', wfn, nalpha, uhf)
     return wfn
 
 

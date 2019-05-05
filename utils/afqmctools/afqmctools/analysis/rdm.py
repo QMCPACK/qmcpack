@@ -75,7 +75,9 @@ def get_metadata(filename):
         md['nalpha'] = fh5['Metadata/NAEA'][:][0]
         md['nbeta'] = fh5['Metadata/NAEB'][:][0]
         try:
-            md['num_bp'] = fh5['Metadata/NumBackProp'][:][0]
+            md['num_bp']= fh5['Metadata/NumBackProp'][:][0]
+            md['num_av'] = fh5['Metadata/NumAverages'][:][0]
+            md['num_ref'] = fh5['Metadata/NumReferences'][:][0]
         except KeyError:
             md['num_bp'] = None
         md['dt'] = fh5['Metadata/Timestep'][:][0]
