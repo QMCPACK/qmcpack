@@ -132,8 +132,8 @@ LCAOrbitalBuilder::LCAOrbitalBuilder(ParticleSet& els, ParticleSet& ions, Commun
   if (std::abs(SuperTwist[0] - 0.0) >= 1e-6 || std::abs(SuperTwist[1] - 0.0) >= 1e-6 ||
       std::abs(SuperTwist[2] - 0.0) >= 1e-6)
   {
-    std::string error_msg("You are attempting to use a Super Twist other than Gamma. " +
-                          "This feature is being implemented but not supported yet. " +
+    std::string error_msg("You are attempting to use a Super Twist other than Gamma. "
+                          "This feature is being implemented but not supported yet. "
                           "Please contact developers for more details !!! Aborting.");
     APP_ABORT(error_msg.c_str());
   }
@@ -846,8 +846,8 @@ void LCAOrbitalBuilder::LoadFullCoefsFromH5(hdf_archive& hin, int setVal, PosTyp
   if (IsComplex && std::abs(SuperTwist[0]) >= 1e-6 || std::abs(SuperTwist[1]) >= 1e-6 ||
       std::abs(SuperTwist[2]) >= 1e-6)
   {
-    std::string setname = "This Wavefunction is Complex and you are using the real version of QMCPACK. Please re-run "
-                          "this job with the Complex build of QMCPACK.";
+    std::string setname("This Wavefunction is Complex and you are using the real version of QMCPACK. "
+                        "Please re-run this job with the Complex build of QMCPACK.");
     APP_ABORT(setname.c_str());
   }
 
