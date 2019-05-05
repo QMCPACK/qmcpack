@@ -58,8 +58,8 @@ private:
   ///Number of periodic Images for Orbital evaluation
   TinyVector<int, 3> PBCImages;
   ///Periodic Image Phase Factors. Correspond to the phase from the PBCImages. Computed only once.
-  std::vector<ValueType> PeriodicImagePhaseFactors; 
-  
+  std::vector<ValueType> PeriodicImagePhaseFactors;
+
 
   /// Enable cusp correction
   bool doCuspCorrection;
