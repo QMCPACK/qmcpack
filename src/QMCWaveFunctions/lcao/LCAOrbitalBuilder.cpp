@@ -113,7 +113,7 @@ LCAOrbitalBuilder::LCAOrbitalBuilder(ParticleSet& els, ParticleSet& ions, Commun
   std::string keyOpt("NMO");       // Numerical Molecular Orbital
   std::string transformOpt("yes"); // Numerical Molecular Orbital
   std::string cuspC("no");         // cusp correction
-  PosType SuperTwist(0.0);              // Supertwist coordinates
+  PosType SuperTwist(0.0);         // Supertwist coordinates
   cuspInfo = "";                   // file with precalculated cusp correction info
   OhmmsAttributeSet aAttrib;
   aAttrib.add(keyOpt, "keyword");
@@ -688,7 +688,6 @@ bool LCAOrbitalBuilder::putPBCFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
   bool IsComplex = false;
   PosType SuperTwist(0.0);
   PosType SuperTwistH5(0.0);
-  std::string setname;
   OhmmsAttributeSet aAttrib;
   aAttrib.add(setVal, "spindataset");
   aAttrib.add(neigs, "size");
@@ -709,13 +708,10 @@ bool LCAOrbitalBuilder::putPBCFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
     hin.read(IsComplex, "IsComplex");
     hin.pop();
 
-
-      char name[72];
-      setname="/Super_Twist/Coord";
-      //setname = name;
+      std::string setname("/Super_Twist/Coord");
       hin.read(SuperTwistH5, setname);
-      if (std::abs(SuperTwistH5[0] - SuperTwist[0]) > 1e-6 || std::abs(SuperTwistH5[1] - SuperTwist[1]) > 1e-6 ||
-          std::abs(SuperTwistH5[2] - SuperTwist[2]) > 1e-6)
+      if (std::abs(SuperTwistH5[0] - SuperTwist[0]) >= 1e-6 || std::abs(SuperTwistH5[1] - SuperTwist[1]) >= 1e-6 ||
+          std::abs(SuperTwistH5[2] - SuperTwist[2]) >= 1e-6)
       {
          app_log()<<"Super Twist in XML : "<<SuperTwist[0]<<"    In H5:"<<SuperTwistH5[0]<<std::endl;
          app_log()<<"                     "<<SuperTwist[1]<<"          "<<SuperTwistH5[1]<<std::endl;
@@ -726,11 +722,19 @@ bool LCAOrbitalBuilder::putPBCFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
          APP_ABORT("Requested Super Twist in XML and Super Twist in HDF5 do not Match!!! Aborting."); 
       }
 
-#if not defined(QMC_COMPLEX)
-      LoadCMatrix(spo,hin,neigs,setVal,norbs);
-#else
-      LoadCMatrix_cplx(spo,hin,neigs,setVal,norbs);
-#endif
+    Matrix<ValueType> Ctemp(neigs, spo.getBasisSetSize());
+    LoadFullCoefsFromH5(hin, setVal, SuperTwist, Ctemp);
+
+    int n = 0, i = 0;
+    while (i < norbs)
+    {
+      if (Occ[n] > 0.0)
+      {
+        std::copy(Ctemp[n], Ctemp[n + 1], (*spo.C)[i]);
+        i++;
+      }
+      n++;
+    }
 
       hin.close();
   }
@@ -787,117 +791,61 @@ bool LCAOrbitalBuilder::putOccupation(LCAOrbitalSet& spo, xmlNodePtr occ_ptr)
   }
   return true;
 }
-///////SHOULD BE TEMPLATED//// 
 
-#if defined(QMC_COMPLEX)
-bool LCAOrbitalBuilder::LoadCMatrix_cplx(LCAOrbitalSet& spo,hdf_archive hin, int neigs,int setVal,int norbs)
+void readRealMatrixFromH5(hdf_archive& hin, const std::string& setname, Matrix<LCAOrbitalBuilder::RealType>& Creal)
 {
-    bool success=false;
+  if (!hin.readEntry(Creal, setname))
+  {
+    std::string error_msg = "LCAOrbitalBuilder::readRealMatrixFromH5 Missing " + setname + " from HDF5 File.";
+    APP_ABORT(error_msg.c_str());
+  }
+}
+
+void LCAOrbitalBuilder::LoadFullCoefsFromH5(hdf_archive& hin, int setVal, PosType& SuperTwist, Matrix<std::complex<RealType>>& Ctemp)
+{
+    Matrix<RealType> Creal(Ctemp.rows(), Ctemp.cols());
+    Matrix<RealType> Ccmplx(Ctemp.rows(), Ctemp.cols());
+
     char name[72];
     std::string setname;
-    PosType SuperTwist(0.0);
-    Matrix<ValueType> Ctemp(neigs, spo.getBasisSetSize());
-    Matrix<RealType> Creal(neigs, spo.getBasisSetSize());
-    Matrix<RealType> Ccmplx(neigs, spo.getBasisSetSize());
-    
     sprintf(name, "%s%d", "/Super_Twist/eigenset_", setVal);
     setname = name;
-    if (!hin.readEntry(Creal, setname))
-    {
-        setname = "LCAOrbitalBuilder::LoadCMatrix_cplx Missing " + setname + " from HDF5 File.";
-            APP_ABORT(setname.c_str());
-        
-    }
-     
-    
-    setname="/Super_Twist/Coord";
-    //setname = name;
-    hin.read(SuperTwist, setname);
+    readRealMatrixFromH5(hin, setname, Creal);
 
     if (std::abs(SuperTwist[0]-0.0) < 1e-6 && std::abs(SuperTwist[1]-0.0) < 1e-6 &&
           std::abs(SuperTwist[2]-0.0) < 1e-6)
     {
-       for (int i=0; i<neigs; i++)
-          for (int j=0; j<spo.getBasisSetSize(); j++)
+       for (int i=0; i<Ccmplx.rows(); i++)
+          for (int j=0; j<Ccmplx.cols(); j++)
              Ccmplx[i][j]=0.0;
     }
     else
     {
-       sprintf(name, "%s%d%s", "/Super_Twist/eigenset_", setVal,"_imag");
-       setname = name;
-       if (!hin.readEntry(Ccmplx, setname))
-       {
-           setname = "LCAOrbitalBuilder::LoadCMatrix_cplx  Missing " + setname + " from HDF5 File.";
-           APP_ABORT(setname.c_str());
-       } 
+       setname = std::string(name) + "_imag";
+       readRealMatrixFromH5(hin, setname, Ccmplx);
     }
-    for (int i=0; i<neigs; i++)
-       for (int j=0; j<spo.getBasisSetSize(); j++){
-          ValueType temp(Creal[i][j],Ccmplx[i][j]);
-          Ctemp[i][j]=temp;
-       }
 
-    int n = 0, i = 0;
-    while (i < norbs)
-    {
-      if (Occ[n] > 0.0)
-      {
-        std::copy(Ctemp[n], Ctemp[n + 1], (*spo.C)[i]);
-        i++;
-      }
-      n++;
-    }
-    return success;
+    for (int i=0; i<Ctemp.rows(); i++)
+       for (int j=0; j<Ctemp.cols(); j++)
+          Ctemp[i][j]=std::complex<RealType>(Creal[i][j],Ccmplx[i][j]);
 }
-#endif
 
-bool LCAOrbitalBuilder::LoadCMatrix(LCAOrbitalSet& spo,hdf_archive hin, int neigs,int setVal,int norbs)
+void LCAOrbitalBuilder::LoadFullCoefsFromH5(hdf_archive& hin, int setVal, PosType& SuperTwist, Matrix<RealType>& Creal)
 {
-    bool success=false;
     bool IsComplex=false;
+    //FIXME: need to check the path to IsComplex in h5
+    hin.read(IsComplex, "IsComplex");
+    if (IsComplex && std::abs(SuperTwist[0]) >= 1e-6 || std::abs(SuperTwist[1]) >= 1e-6 ||
+          std::abs(SuperTwist[2]) >= 1e-6)
+    {
+           std::string setname = "This Wavefunction is Complex and you are using the real version of QMCPACK. Please re-run this job with the Complex build of QMCPACK.";
+           APP_ABORT(setname.c_str());
+
+    }
+
     char name[72];
-    std::string setname;
-    Matrix<ValueType> Ctemp(neigs, spo.getBasisSetSize());
-    PosType SuperTwist(0.0);
-    setname="/Super_Twist/Coord";
-    hin.read(SuperTwist, setname);
-
-    setname="/Super_Twist/Coord";
-    hin.read(IsComplex, setname);
-    
-    if (IsComplex && std::abs(SuperTwist[0]-0.0) > 1e-6 && std::abs(SuperTwist[1]-0.0) > 1e-6 &&
-          std::abs(SuperTwist[2]-0.0) > 1e-6)
-    {
-           setname = "This Wavefunction is Complex and you are using the real version of QMCPACK. Please re-run this job with the Complex build of QMCPACK.";
-           APP_ABORT(setname.c_str());
-
-    }
-
-
     sprintf(name, "%s%d", "/Super_Twist/eigenset_", setVal);
-    setname = name;
-    if (!hin.readEntry(Ctemp, setname))
-    {
-        sprintf(name, "%s%d", "/KPTS_0/eigenset_", setVal);
-        setname = name;
-        if (!hin.readEntry(Ctemp, setname))
-        {
-           setname = "LCAOrbitalBuilder::putFromH5 Missing " + setname + " from HDF5 File.";
-           APP_ABORT(setname.c_str());
-        }
-    }
-     
-    int n = 0, i = 0;
-    while (i < norbs)
-    {
-      if (Occ[n] > 0.0)
-      {
-        std::copy(Ctemp[n], Ctemp[n + 1], (*spo.C)[i]);
-        i++;
-      }
-      n++;
-    }
-    return success;
+    readRealMatrixFromH5(hin, name, Creal);
 }
 
 ///Function Not yet called. Periodic Image Phase Factors computation to be determined
