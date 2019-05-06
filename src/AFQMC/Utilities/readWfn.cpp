@@ -13,6 +13,7 @@
 
 #include "AFQMC/config.h"
 #include "AFQMC/Matrix/csr_matrix.hpp"
+#include "AFQMC/Matrix/csr_hdf5_readers.hpp"
 #include "AFQMC/Matrix/csr_matrix_construct.hpp"
 
 namespace qmcplusplus
@@ -337,13 +338,13 @@ ph_excitations<int,ComplexType> read_ph_wavefunction(std::ifstream& in, int& nde
   }
 
   assert(walker_type!=UNDEFINED_WALKER_TYPE);
-  std::string type;
   bool fullMOMat = false;
   bool Cstyle = true;
   int wfn_type=0;
   int ndet_in_file=-1;
   int NEL = NAEA;
   bool mixed=false;
+  std::string type;
   if(walker_type!=CLOSED) NEL+=NAEB;
 
   /*
@@ -576,10 +577,10 @@ ph_excitations<int,ComplexType> read_ph_wavefunction_hdf(hdf_archive& dump, int&
    *   - 1: excitations out of a UHF reference
    */
   if(comm.root()) {
-    std::vector<size_type> dims(5);
+    std::vector<int> dims(5);
     if(!dump.readEntry(dims,"dims"))
       APP_ABORT("Problems reading dims in read_ph_wavefunction_hdf.\n");
-    if(!dump.readEntry(fullMO,"fullmo"))
+    if(!dump.readEntry(fullMOMat,"fullmo"))
       APP_ABORT("Problems reading fullMO in read_ph_wavefunction_hdf.\n");
     if(!dump.readEntry(type,"type"))
       APP_ABORT("Problems reading type in read_ph_wavefunction_hdf.\n");
@@ -660,12 +661,12 @@ ph_excitations<int,ComplexType> read_ph_wavefunction_hdf(hdf_archive& dump, int&
   // record file position to come back
   std::vector<int> Iwork; // work arrays for permutation calculation
   std::streampos start;
-  boost::multi::array<int,2> occs;
-  occs.reextent({nci, NAEA+NAEB})
+  std::vector<int> buff(ndets*(NAEA+NAEB));
+  boost::multi::array_ref<int,2> occs(to_address(buff.data()), {ndets, NAEA+NAEB});
   if(comm.root()) {
-    if(!dump.read(occs, "occs"))
+    if(!dump.readEntry(buff, "occs"))
       APP_ABORT("Error reading occs array.\n");
-    if(!dump.read(ci_coeff, "CICOEFFICIENTS"))
+    if(!dump.readEntry(ci_coeff, "CICOEFFICIENTS"))
       APP_ABORT("Error reading CICOEFFICIENTS array.\n");
     confg.reserve(NAEA);
     Iwork.resize(2*NAEA);
@@ -678,7 +679,7 @@ ph_excitations<int,ComplexType> read_ph_wavefunction_hdf(hdf_archive& dump, int&
         if(q < 0 || q > NMO)
           APP_ABORT("Error: Bad occupation number in wavefunction file. \n");
         confg.emplace_back(q);
-        ci = ci_coeff[i]
+        ci = ci_coeff[i];
       }
       if(i == 0) {
         refa = confg;
@@ -693,7 +694,7 @@ ph_excitations<int,ComplexType> read_ph_wavefunction_hdf(hdf_archive& dump, int&
         if(q < 0 || q > NMO)
           APP_ABORT("Error: Bad occupation number in wavefunction file. \n");
         confg.emplace_back(q);
-        ci = ci_coeff[i]
+        ci = ci_coeff[i];
       }
       if(i == 0) {
         refb = confg;
@@ -734,14 +735,13 @@ ph_excitations<int,ComplexType> read_ph_wavefunction_hdf(hdf_archive& dump, int&
     int beta_index;
     int np;
     for(int i=0; i<ndets; i++) {
-      in>>ci; if(in.fail()) APP_ABORT(" Error: Reading wfn file.\n");
       confg.clear();
       for(int k=0, q=0; k<NAEA; k++) {
         q = occs[i][k];
         if(q < 0 || q > NMO)
           APP_ABORT("Error: Bad occupation number in wavefunction file. \n");
         confg.emplace_back(q);
-        ci = ci_coeff[i]
+        ci = ci_coeff[i];
       }
       np = get_excitation_number(true,refa,confg,exct,ci,Iwork);
       alpha_index = ((np==0)?(0):(find_excitation(exct,unique_alpha[np]) +
@@ -752,7 +752,7 @@ ph_excitations<int,ComplexType> read_ph_wavefunction_hdf(hdf_archive& dump, int&
         if(q < 0 || q > NMO)
           APP_ABORT("Error: Bad occupation number in wavefunction file. \n");
         confg.emplace_back(q);
-        ci = ci_coeff[i]
+        ci = ci_coeff[i];
       }
       np = get_excitation_number(true,refb,confg,exct,ci,Iwork);
       beta_index = ((np==0)?(0):(find_excitation(exct,unique_beta[np]) +
