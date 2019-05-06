@@ -1911,7 +1911,7 @@ class multideterminant(QIxml):
 #end class multideterminant
 
 class detlist(QIxml):
-    attributes = ['size','type','nca','ncb','nea','neb','nstates','cutoff']
+    attributes = ['size','type','nca','ncb','nea','neb','nstates','cutoff','href']
     elements   = ['ci','csf']
 #end class detlist
 

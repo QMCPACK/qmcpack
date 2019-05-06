@@ -94,11 +94,9 @@ class HamiltonianFactory
   // generates a new Hamiltonian and returns the pointer to the base class
   Hamiltonian buildHamiltonian(GlobalTaskGroup& gTG, xmlNodePtr cur)
   {
-    std::string type;
-    std::string version("new");
+    std::string type("hdf5");
     ParameterSet m_param;
     m_param.add(type,"filetype","std::string");
-    m_param.add(version,"version","std::string");
     m_param.put(cur);
 
     app_log()<<"\n****************************************************\n"

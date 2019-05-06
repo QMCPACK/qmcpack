@@ -244,7 +244,7 @@ void test_dense_matrix_mult()
 		array_ref<double, 2> A(a.data(), {3,3});
 		REQUIRE(A.num_elements() == a.size());
 		array<double, 2> B = A;
-		ma::invert(B);
+		ma::invert(B,0.0);
 
 		array<double, 2> Id({3,3});
 		ma::set_identity(Id);
@@ -604,7 +604,7 @@ void test_dense_matrix_mult_device(Allocator alloc)
 
     array<T,2,Allocator> I({3,3},alloc);
 
-    ma::invert(B);
+    ma::invert(B,0.0);
 
     ma::product(A, B, I);
 

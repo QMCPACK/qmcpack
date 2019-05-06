@@ -67,8 +67,6 @@ public:
   int builder_index;
   ///true if SPO is optimizable
   bool Optimizable;
-  ///flag to calculate ionic derivatives
-  bool ionDerivs;
   ///number of Single-particle orbitals
   IndexType OrbitalSetSize;
   /// Optimizable variables
@@ -138,8 +136,12 @@ public:
   {
     return OrbitalSetSize;
   }
-
-
+  /** Query if this SPOSet has an explicit ion dependence. returns true if it does.
+  */
+  inline bool hasIonDerivs() const
+  {
+    return ionDerivs;
+  }
 #if !defined(ENABLE_SOA)
   int getBasisSetSize() const { return BasisSetSize; }
 
@@ -175,7 +177,7 @@ public:
                                    std::vector<RealType>& dlogpsi, 
                                    std::vector<RealType>& dhpsioverpsi,
                                    const ValueType& psiCurrent,
-                                   const std::vector<RealType>& Coeff,
+                                   const std::vector<ValueType>& Coeff,
                                    const std::vector<size_t>& C2node_up,
                                    const std::vector<size_t>& C2node_dn,
                                    const ValueVector_t& detValues_up, 
@@ -426,6 +428,8 @@ protected:
   bool putFromXML(xmlNodePtr coeff_ptr);
   bool putFromH5(const char* fname, xmlNodePtr coeff_ptr);
 #endif
+  ///true, if the derived class has non-zero ionic derivatives.
+  bool ionDerivs;
 
 };
 

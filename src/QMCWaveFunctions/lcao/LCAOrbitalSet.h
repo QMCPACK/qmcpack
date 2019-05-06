@@ -93,7 +93,7 @@ public:
                            std::vector<RealType>& dlogpsi,
                            std::vector<RealType>& dhpsioverpsi,
                            const ValueType& psiCurrent,
-                           const std::vector<RealType>& Coeff,
+                           const std::vector<ValueType>& Coeff,
                            const std::vector<size_t>& C2node_up,
                            const std::vector<size_t>& C2node_dn,
                            const ValueVector_t& detValues_up,
@@ -223,6 +223,71 @@ public:
                             HessMatrix_t& grad_grad_logdet,
                             GGGMatrix_t& grad_grad_grad_logdet);
 
+ //NOTE:  The data types get complicated here, so here's an overview of the 
+ //       data types associated with ionic derivatives, and how to get their data.
+ //
+ //NOTE:  These data structures hold the data for one particular ion, and so the ID is implicit.
+ //       It's up to the user to keep track of which ion these derivatives refer to.   
+ //
+ // 1.) GradMatrix_t grad_phi:  Holds the ionic derivatives of each SPO for each electron.  
+ //            Example:  grad_phi[iel][iorb][idim].  iel  -- electron index.
+ //                                                iorb -- orbital index.
+ //                                                idim  -- cartesian index of ionic derivative.  
+ //                                                        X=0, Y=1, Z=2.
+ //                                                        
+ // 2.) HessMatrix_t grad_grad_phi:  Holds the ionic derivatives of the electron gradient components 
+ //                                   for each SPO and each electron.  
+ //            Example:  grad_grad_phi[iel][iorb](idim,edim)  iel  -- electron index.
+ //                                                           iorb -- orbital index. 
+ //                                                           idim -- ionic derivative's cartesian index.
+ //                                                              X=0, Y=1, Z=2
+ //                                                           edim -- electron derivative's cartesian index.
+ //                                                              x=0, y=1, z=2.
+ //
+ // 3.) GradMatrix_t grad_lapl_phi:  Holds the ionic derivatives of the electron laplacian for each SPO and each electron.                                                
+ //            Example:  grad_lapl_phi[iel][iorb][idim].  iel  -- electron index.
+ //                                                       iorb -- orbital index.
+ //                                                       idim -- cartesian index of ionic derivative.  
+ //                                                           X=0, Y=1, Z=2.
+
+ /**
+ * \brief Calculate ion derivatives of SPO's.
+ *  
+ *  @param P Electron particle set.
+ *  @param first index of first electron 
+ *  @@param last index of last electron
+ *  @param source Ion particle set.
+ *  @param iat_src  Index of ion.
+ *  @param gradphi Container storing ion gradients for all particles and all orbitals.
+ */
+  void evaluateGradSource(const ParticleSet& P,
+                          int first,
+                          int last,
+                          const ParticleSet& source,
+                          int iat_src,
+                          GradMatrix_t& grad_phi);
+
+ /**
+ * \brief Calculate ion derivatives of SPO's, their gradients, and their laplacians.
+ *  
+ *  @param P Electron particle set.
+ *  @param first index of first electron.
+ *  @@param last index of last electron
+ *  @param source Ion particle set.
+ *  @param iat_src  Index of ion.
+ *  @param grad_phi Container storing ion gradients for all particles and all orbitals.
+ *  @param grad_grad_phi Container storing ion gradients of electron gradients for all particles and all orbitals.
+ *  @param grad_lapl_phi Container storing ion gradients of SPO laplacians for all particles and all orbitals.
+ */
+  void evaluateGradSource(const ParticleSet& P,
+                          int first,
+                          int last,
+                          const ParticleSet& source,
+                          int iat_src,
+                          GradMatrix_t& grad_phi,
+                          HessMatrix_t& grad_grad_phi,
+                          GradMatrix_t& grad_lapl_phi);
+
   void evaluateThirdDeriv(const ParticleSet& P, int first, int last, GGGMatrix_t& grad_grad_grad_logdet);
 
 private:
@@ -258,6 +323,20 @@ private:
                          GradMatrix_t& dlogdet,
                          HessMatrix_t& dhlogdet,
                          GGGMatrix_t& dghlogdet) const;
+
+
+  //Unpacks data in vgl object and calculates/places ionic gradient result into dlogdet.   
+  void evaluate_ionderiv_v_impl(const vgl_type& temp,
+                         int i,
+                         GradMatrix_t& dlogdet) const;
+  
+  //Unpacks data in vgl object and calculates/places ionic gradient of value, 
+  //  electron gradient, and electron laplacian result into dlogdet, dglogdet, and dllogdet respectively.   
+  void evaluate_ionderiv_vgl_impl(const vghgh_type& temp,
+                         int i,
+                         GradMatrix_t& dlogdet,
+                         HessMatrix_t& dglogdet,
+                         GradMatrix_t& dllogdet) const;
   
 
 #if !defined(QMC_COMPLEX)

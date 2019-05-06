@@ -156,7 +156,7 @@ public:
   // map determinant in linear combination to unique det list
   std::vector<size_t>* C2node_up;
   std::vector<size_t>* C2node_dn;
-  std::vector<RealType>* C;
+  std::vector<ValueType>* C;
 
   ParticleSet::ParticleGradient_t myG, myG_temp;
   ParticleSet::ParticleLaplacian_t myL, myL_temp;
@@ -166,7 +166,7 @@ public:
   //optimizable variable is shared with the clones
   opt_variables_type* myVars;
   // coefficients of csfs, these are only used during optm
-  std::vector<RealType>* CSFcoeff;
+  std::vector<ValueType>* CSFcoeff;
   // number of dets per csf
   std::vector<size_t>* DetsPerCSF;
   // coefficient of csf expansion (smaller dimension)

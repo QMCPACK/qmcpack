@@ -50,9 +50,12 @@ Propagator PropagatorFactory::buildAFQMCPropagator(TaskGroup_& TG, xmlNodePtr cu
 
   RealType vbias_bound=50.0;
   std::string sub("yes");
+  std::string printP1eV("no");
   ParameterSet m_param;
   m_param.add(sub,"substractMF","std::string");
+  m_param.add(printP1eV,"printP1eigval","std::string");
   m_param.add(vbias_bound,"vbias_bound","double");
+  m_param.put(cur);
 
   bool substractMF=true;
   std::transform(sub.begin(),sub.end(),sub.begin(),(int (*)(int)) tolower);
@@ -75,7 +78,6 @@ Propagator PropagatorFactory::buildAFQMCPropagator(TaskGroup_& TG, xmlNodePtr cu
     }
   }
 
-
   boost::multi::array<ComplexType,1> vMF_(vMF.extensions()); 
   using std::copy_n;
   copy_n(vMF.origin(),vMF.num_elements(),vMF_.origin());
@@ -90,8 +92,7 @@ Propagator PropagatorFactory::buildAFQMCPropagator(TaskGroup_& TG, xmlNodePtr cu
              <<vmax <<" " <<vbias_bound <<std::endl;
 
   // assemble H1(i,j) = h(i,j) + vn0(i,j) + sum_n vMF[n]*Spvn(i,j,n) 
-  // Note: H1 matrix is being copied to the device if necessary
-  CMatrix H1(wfn.getOneBodyPropagatorMatrix(TG,vMF_));
+  auto H1(wfn.getOneBodyPropagatorMatrix(TG,vMF_));
   // assemble H1(i,j) = h(i,j) + vn0(i,j) + sum_n vMF[n]*Spvn(i,j,n) 
 
   if(TG.getNGroupsPerTG() == 1) 

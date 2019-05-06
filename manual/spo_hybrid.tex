@@ -6,11 +6,26 @@ Figure~\ref{fig:hybridrep} illustrates how the regions are assigned. Orbitals wi
 \[
   \phi^A_n({\bf r})=R_{n,l,m}(r)Y_{l,m}(\hat{r})
 \]
-Orbitals in region C are computed as the regular B-spline basis described in subsection~\ref{sec:spo_spline} above. The region B interpolates between A and C as
+Orbitals in region C are computed as the regular B-spline basis described in subsection~\ref{sec:spo_spline} above. The region B interpolates between A and C based on smoothing schemes Consistent(default), SmoothPartial or SmoothAll.
 \begin{align}
-  \phi^B_n({\bf r}) &= S(r) \phi^A_n({\bf r}) + (1-S(r))\phi^C_n({\bf r}) \\
-                S(r) &= \frac{1}{2}-\frac{1}{2}\tanh\left[\alpha\left(\frac{r-r_{\rm A/B}}{r_{\rm B/C}-r_{\rm A/B}}-\frac{1}{2}\right)\right]
+  \phi^B_n({\bf r}) & = S(r) \phi^A_n({\bf r}) + (1-S(r))\phi^C_n({\bf r}) & \texttt{Consistent} \\
+  {\phi^B_n}'({\bf r}) & = \nabla\phi^B_n({\bf r}) \nonumber \\
+  {\phi^B_n}''({\bf r}) & = \nabla^2\phi^B_n({\bf r}) \nonumber \\
+  \phi^B_n({\bf r}) & = S(r) \phi^A_n({\bf r}) + (1-S(r))\phi^C_n({\bf r}) & \texttt{SmoothPartial} \\
+  {\phi^B_n}'({\bf r}) & = S(r) {\phi^A_n}'({\bf r}) + (1-S(r)){\phi^C_n}'({\bf r}) \nonumber \\
+  {\phi^B_n}''({\bf r}) & = \nabla{\phi^B_n}'({\bf r}) \nonumber \\
+  \phi^B_n({\bf r}) & = S(r) \phi^A_n({\bf r}) + (1-S(r))\phi^C_n({\bf r}) & \texttt{SmoothAll} \\
+  {\phi^B_n}'({\bf r}) & = S(r) {\phi^A_n}'({\bf r}) + (1-S(r)){\phi^C_n}'({\bf r}) \nonumber \\
+  {\phi^B_n}''({\bf r}) & = S(r) {\phi^A_n}''({\bf r}) + (1-S(r)){\phi^C_n}''({\bf r}) \nonumber
 \end{align}
+The available smoothing functions $S(r)$ are LEKS2018(default), coscos and linear.
+\begin{align}
+                   x &= \frac{r-r_{\rm A/B}}{r_{\rm B/C}-r_{\rm A/B}} & \\
+                S(x) &= \frac{1}{2}-\frac{1}{2}\tanh\left[2.0\left(x-\frac{1}{2}\right)\right] & \texttt{LEKS2018} \\
+                S(x) &= \frac{1+\cos\{\pi [1-\cos(\pi x)]/2\}}{2} & \texttt{coscos} \\
+                S(x) &= 1-x & \texttt{linear}
+\end{align}
+Smoothing schemes and functions other than the default ones must be tested before use.
 
 \begin{figure}
 \centering
@@ -21,11 +36,14 @@ Orbitals in region C are computed as the regular B-spline basis described in sub
 \label{fig:hybridrep}
 \end{figure}
 
-To enable hybrid orbital representation, the input XML needs to see the tag \ixml{hybridrep="yes"} shown below.
-\begin{lstlisting}[caption=Hybrid orbital representation input example.\label{listing:hybridrep}]
+To enable hybrid orbital representation, the input XML requires the tag \ixml{hybridrep="yes"} shown below.
+\ixml{smoothing_scheme="Consistent"} and \ixml{smoothing_function="LEKS2018"} are optional.
+\begin{lstlisting}[style=QMCPXML,caption=Hybrid orbital representation input example.\label{listing:hybridrep}]
 <determinantset type="bspline" source="i" href="pwscf.h5"
-                tilematrix="1 1 3 1 2 -1 -2 1 0" twistnum="-1" gpu="yes" meshfactor="0.8"
-                twist="0  0  0" precision="single" hybridrep="yes">
+                tilematrix="1 1 3 1 2 -1 -2 1 0" twistnum="-1" gpu="yes"
+                meshfactor="0.8" twist="0  0  0"
+                precision="single" hybridrep="yes"
+                smoothing_scheme="Consistent" smoothing_function="LEKS2018">
   ...
 </determinantset>
 \end{lstlisting}

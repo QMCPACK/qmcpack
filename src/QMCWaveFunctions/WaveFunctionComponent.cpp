@@ -25,7 +25,7 @@ WaveFunctionComponent::WaveFunctionComponent():
   LogValue(1.0),PhaseValue(0.0),ClassName("WaveFunctionComponent"),
   derivsDone(false), parameterType(0), Bytes_in_WFBuffer(0)
 #if !defined(ENABLE_SMARTPOINTER)
-  ,dPsi(0), ionDerivs(false)
+  ,dPsi(0)
 #endif
 { 
   ///store instead of computing

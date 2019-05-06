@@ -1,0 +1,16 @@
+
+md_rc_vmc_LiH-gamma  series 1 
+  LocalEnergy           =          -8.49046 +/-          0.00056 
+  Variance              =           0.36673 +/-          0.00093 
+  Kinetic               =             7.658 +/-            0.014 
+  LocalPotential        =           -16.148 +/-            0.013 
+  ElecElec              =           -0.5410 +/-           0.0020 
+  LocalECP              =           -11.918 +/-            0.014 
+  IonIon                =             -3.69 +/-             0.00 
+  LocalEnergy_sq        =           72.4546 +/-           0.0091 
+  BlockWeight           =          25600.00 +/-             0.00 
+  BlockCPU              =            0.5735 +/-           0.0017 
+  AcceptRatio           =          0.366789 +/-         0.000066 
+  Efficiency            =           3868.26 +/-             0.00 
+  TotalTime             =            114.71 +/-             0.00 
+  TotalSamples          =           5120000 +/-                0 

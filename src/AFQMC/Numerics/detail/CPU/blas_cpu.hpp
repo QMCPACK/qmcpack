@@ -879,6 +879,22 @@ namespace ma
     return res;
   }
 
+  // assume Fortran ordering like all blas calls
+  template<typename T>
+  void set_identity(int m, int n, T* A, int lda)
+  {
+    for(int i=0; i<n; i++) 
+      for(int j=0; j<m; j++)
+        A[i*lda+j] = ((i==j)?1:0);
+  }
+
+  template<typename T>
+  void set_identity_strided(int nbatch, int stride, int m, int n, T* A, int lda)
+  {
+    for(int b=0, b0=0; b<nbatch; b++, b0+=stride) 
+      set_identity(m,n,A+b0,lda);  
+  }
+
 #ifdef HAVE_MKL
   
   inline static void gemm_batch (const CBLAS_LAYOUT Layout, 
