@@ -456,7 +456,7 @@ struct TrinaryReturn
   typedef typename BinaryReturn<T2, T3, Op>::Type_t Type_t;
 };
 
-}
+} // namespace qmcplusplus
 
 #endif // PETE_PETE_TYPE_COMPUTATIONS_H
 
