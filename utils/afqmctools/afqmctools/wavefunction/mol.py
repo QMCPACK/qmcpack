@@ -77,15 +77,16 @@ def write_wfn_mol(scf_data, ortho_ao, filename, wfn=None):
             walker_type = 1
         if wfn_type == 'PHMSD':
             walker_type = 2
-        wfn_group = fh5.create_group('Wavefunction/NOMSD')
+        if wfn_type == 'NOMSD':
+            wfn_group = fh5.create_group('Wavefunction/NOMSD')
+            write_nomsd(wfn_group, wfn, uhf, nelec)
+            write_qmcpack_wfn_ascii('wfn.dat', wfn[0], nalpha, uhf)
+        else:
+            wfn_group = fh5.create_group('Wavefunction/PHMSD')
+            write_phmsd(occa, occb, nelec)
         wfn_group['CICOEFFICIENTS'] = to_qmcpack_complex(coeffs)
         dims = [norb, nalpha, nbeta, walker_type, len(coeffs)]
         wfn_group['dims'] = numpy.array(dims, dtype=numpy.int32)
-        if wfn_type == 'PHMSD':
-            write_phmsd(coeffs, occa, occb, nelec)
-        else:
-            write_nomsd(wfn_group, wfn, uhf, nelec)
-            write_qmcpack_wfn_ascii('wfn.dat', wfn[0], nalpha, uhf)
 
     if wfn_type != 'PHMSD':
         return coeffs, wfn
@@ -138,6 +139,34 @@ def write_nomsd_single(fh5, psi, idet):
     fh5[base+'jdata_'] = psi.indices
     fh5[base+'pointers_begin_'] = psi.indptr[:-1]
     fh5[base+'pointers_end_'] = psi.indptr[1:]
+
+def write_phmsd(fh5, wfn, uhf, nelec, thresh=1e-8):
+    """Write NOMSD to HDF.
+
+    Parameters
+    ----------
+    fh5 : h5py group
+        Wavefunction group to write to file.
+    wfn : :class:`numpy.ndarray`
+        NOMSD trial wavefunctions.
+    uhf : bool
+        UHF style wavefunction.
+    nelec : tuple
+        Number of alpha and beta electrons.
+    thresh : float
+        Threshold for writing wavefunction elements.
+    """
+    nalpha, nbeta = nelec
+    wfn[abs(wfn) < thresh] = 0.0
+    for idet, w in enumerate(wfn):
+        # QMCPACK stores this internally as a csr matrix, so first convert.
+        ix = 2*idet if uhf else idet
+        psia = scipy.sparse.csr_matrix(w[:,:nalpha].T)
+        write_nomsd_single(fh5, psia, ix)
+        if uhf:
+            ix = 2*idet + 1
+            psib = scipy.sparse.csr_matrix(w[:,nalpha:].T)
+            write_nomsd_single(fh5, psib, ix)
 
 #
 # Graveyard. Old QMCPACK wavefunction plain text format.
