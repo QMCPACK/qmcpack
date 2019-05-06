@@ -165,7 +165,8 @@ QMCDriver::QMCDriver(MCWalkerConfiguration& w,
 QMCDriver::~QMCDriver()
 {
   delete_iter(Rng.begin(), Rng.end());
-  if (DriftModifier) delete DriftModifier;
+  if (DriftModifier)
+    delete DriftModifier;
 }
 
 void QMCDriver::add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi)
@@ -216,7 +217,8 @@ void QMCDriver::process(xmlNodePtr cur)
     branchEngine->setEstimatorManager(Estimators);
     branchEngine->read(h5FileRoot);
   }
-  if (DriftModifier != 0) delete DriftModifier;
+  if (DriftModifier != 0)
+    delete DriftModifier;
   DriftModifier = createDriftModifier(cur, myComm);
 #if !defined(REMOVE_TRACEMANAGER)
   //create and initialize traces
