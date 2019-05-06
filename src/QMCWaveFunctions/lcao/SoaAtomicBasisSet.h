@@ -34,6 +34,8 @@ struct SoaAtomicBasisSet
   int BasisSetSize;
   ///Number of Cell images for the evaluation of the orbital with PBC. If No PBC, should be 0;
   TinyVector<int, 3> PBCImages;
+  ///Phase Factor array
+  std::vector<QMCTraits::ValueType> periodic_image_phase_factors; 
   ///maximum radius of this center
   RealType Rmax;
   ///spherical harmonics
@@ -91,8 +93,9 @@ struct SoaAtomicBasisSet
     return BasisSetSize;
   }
 
-  // Set the number of periodic image for the evaluation of the orbitals.
-  void setPBCImages(const TinyVector<int, 3>& pbc_images) { PBCImages = pbc_images; }
+  /// Set the number of periodic image for the evaluation of the orbitals and the phase factor. In the case of Non-PBC, PBCImages=(1,1,1) and the PhaseFactor=1.
+  void setPBCParams(const TinyVector<int, 3>& pbc_images, const std::vector<QMCTraits::ValueType>& PeriodicImagePhaseFactors) { PBCImages = pbc_images; periodic_image_phase_factors=PeriodicImagePhaseFactors;} 
+
 
   /** implement a BasisSetBase virtual function
        *
@@ -142,6 +145,7 @@ struct SoaAtomicBasisSet
 
     constexpr T cone(1);
     constexpr T ctwo(2);
+    //Phase_idx needs to be initialized at -1 as it has to be incremented first to comply with the if statement (r_new >=Rmax) 
 
     //one can assert the alignment
     RealType* restrict phi   = tempS.data(0);
@@ -213,11 +217,11 @@ struct SoaAtomicBasisSet
             const T vr        = phi[nl];
 
             psi[ib] += ang * vr;
-            dpsi_x[ib] += ang * gr_x + vr * ang_x;
-            dpsi_y[ib] += ang * gr_y + vr * ang_y;
-            dpsi_z[ib] += ang * gr_z + vr * ang_z;
-            d2psi[ib] += ang * (ctwo * drnloverr + d2phi[nl]) + ctwo * (gr_x * ang_x + gr_y * ang_y + gr_z * ang_z) +
-                vr * ylm_l[lm];
+            dpsi_x[ib] += (ang * gr_x + vr * ang_x);
+            dpsi_y[ib] += (ang * gr_y + vr * ang_y);
+            dpsi_z[ib] += (ang * gr_z + vr * ang_z);
+            d2psi[ib] += (ang * (ctwo * drnloverr + d2phi[nl]) + ctwo * (gr_x * ang_x + gr_y * ang_y + gr_z * ang_z) +
+                vr * ylm_l[lm]);
           }
         }
       }
@@ -590,9 +594,9 @@ struct SoaAtomicBasisSet
 
     PosType dr_new;
     T r_new;
-    //T psi_new;
     RealType* restrict ylm_v = tempS.data(0);
     RealType* restrict phi_r = tempS.data(1);
+    //Phase_idx needs to be initialized at -1 as it has to be incremented first to comply with the if statement (r_new >=Rmax) 
     for (size_t ib = 0; ib < BasisSetSize; ++ib)
       psi[ib] = 0;
     for (int i = 0; i <= PBCImages[0]; i++) //loop Translation over X
@@ -612,15 +616,14 @@ struct SoaAtomicBasisSet
           dr_new[2] = dr[2] + TransX * lattice.R(0, 2) + TransY * lattice.R(1, 2) + TransZ * lattice.R(2, 2);
 
           r_new = std::sqrt(dot(dr_new, dr_new));
-
           if (r_new >= Rmax)
             continue;
 
           Ylm.evaluateV(-dr_new[0], -dr_new[1], -dr_new[2], ylm_v);
           MultiRnl->evaluate(r_new, phi_r);
-
           for (size_t ib = 0; ib < BasisSetSize; ++ib)
             psi[ib] += ylm_v[LM[ib]] * phi_r[NL[ib]];
+
         }
       }
     }

@@ -28,6 +28,7 @@
 
 #include "AFQMC/config.h"
 #include "AFQMC/Utilities/Utils.hpp"
+#include "AFQMC/Utilities/afqmc_TTI.hpp"
 #include "AFQMC/Matrix/array_partition.hpp"
 #include "AFQMC/Hamiltonians/createHamiltonian_Helper.hpp"
 

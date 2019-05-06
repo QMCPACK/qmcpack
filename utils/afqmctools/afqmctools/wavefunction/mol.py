@@ -172,17 +172,20 @@ def write_phmsd(fh5, wfn, uhf, nelec, thresh=1e-8):
 # Graveyard. Old QMCPACK wavefunction plain text format.
 # Keep around for backwards compatability.
 #
-def write_qmcpack_wfn_ascii(filename, wfn, nalpha, uhf):
-    namelist = qmcpack_wfn_namelist(1, uhf)
+def write_nomsd_wfn(filename, wfn, nalpha, uhf, coeffs=[1.0]):
+    if len(wfn.shape) == 2:
+        wfn = wfn.reshape((1,wfn.shape[0],wfn.shape[1]))
+    namelist = qmcpack_wfn_namelist(wfn.shape[0], uhf)
     with open(filename, 'w') as f:
         f.write(namelist)
-        f.write('Coefficients: 1.0\n')
-        f.write('Determinant: 1\n')
-        if uhf:
-            write_single(f, wfn[:,:nalpha])
-            write_single(f, wfn[:,nalpha:])
-        else:
-            write_single(f, wfn[:,:nalpha])
+        f.write('Coefficients: ' + ' '.join(str(c) for c in coeffs) +'\n')
+        for (i,d) in enumerate(wfn):
+            f.write('Determinant: {}\n'.format(i+1))
+            if uhf:
+                write_single(f, d[:,:nalpha])
+                write_single(f, d[:,nalpha:])
+            else:
+                write_single(f, d[:,:nalpha])
 
 
 def qmcpack_wfn_namelist(nci, uhf):
@@ -270,3 +273,18 @@ def read_qmcpack_wfn(filename, nskip=9):
     tuples = [ast.literal_eval(u) for u in useable]
     orbs = [complex(t[0], t[1]) for t in tuples]
     return numpy.array(orbs)
+
+def write_phmsd_wfn(filename, occs, nmo, ncore=0):
+    output = open(filename, 'w')
+    namelist = "&FCI\n UHF = 0\n NCI = %d\n TYPE = occ\n&END" % len(occs)
+    output.write(namelist+'\n')
+    output.write("Configurations:"+'\n')
+    corea = [i + 1 for i in range(ncore)]
+    coreb = [i + nmo + 1 for i in range(ncore)]
+    for c, da, db in occs:
+        occup = corea + [ncore + oa + 1 for oa in da.tolist()]
+        occdn = coreb + [ncore + nmo + ob + 1 for ob in db.tolist()]
+        # print(occup, occdn)
+        occstra = ' '.join('{:d} '.format(x) for x in occup)
+        occstrb = ' '.join('{:d}'.format(x) for x in occdn)
+        output.write('%13.8e '%c + occstra + occstrb + '\n')

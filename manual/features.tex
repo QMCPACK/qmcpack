@@ -107,6 +107,9 @@ The orbital-space Auxiliary-Field Quantum Monte Carlo (AFMQC) method is now avai
     \item Distributed propagation algorithms for large systems. Enables calculations where data structures do not fit on a single node.
     \item Complex implementation for PBC calculations with complex integrals.
     \item Sparse representation of large matrices for reduced memory usage.
+    \item Mixed and back-propagated estimators.   
+    \item Specialized implementation for solids with k-point symmetry (e.g. primitive unit cells with kpoints).
+    \item Efficient GPU implementation (currently limited to solids with k-point symmetry).
 \end{itemize}
 
 \subsection{Sharing of spline data across multiple GPUs}

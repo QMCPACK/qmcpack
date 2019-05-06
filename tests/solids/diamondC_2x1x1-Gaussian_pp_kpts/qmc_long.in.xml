@@ -2,7 +2,7 @@
 <simulation>
   <project id="qmc_long" series="0"/>
   <include href="C_Diamond-211.structure.xml"/>
-  <include href="C_Diamond-211.wfj-Twist0.xml"/>
+  <include href="C_Diamond-211.wfnoj.xml"/>
   <hamiltonian name="h0" type="generic" target="e">
     <pairpot name="ElecElec" type="coulomb" source="e" target="e" physical="true"/>
     <pairpot name="IonIon" type="coulomb" source="ion0" target="ion0"/>

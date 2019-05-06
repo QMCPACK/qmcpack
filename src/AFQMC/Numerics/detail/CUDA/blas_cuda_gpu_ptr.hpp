@@ -23,6 +23,7 @@
 //#include "AFQMC/Numerics/detail/CUDA/cublasXt_wrapper.hpp"
 // hand coded kernels for blas extensions
 #include "AFQMC/Numerics/detail/CUDA/Kernels/adotpby.cuh"
+#include "AFQMC/Numerics/detail/CUDA/Kernels/setIdentity.cuh"
 #include "AFQMC/Numerics/detail/CUDA/Kernels/axty.cuh"
 #include "AFQMC/Numerics/detail/CUDA/Kernels/sum.cuh"
 #include "AFQMC/Numerics/detail/CUDA/Kernels/adiagApy.cuh"
@@ -226,6 +227,18 @@ namespace qmc_cuda
   inline static auto sum(int m, int n, cuda_gpu_ptr<T> A, int lda)
   {
     return kernels::sum(m,n,to_address(A),lda);
+  }
+
+  template<typename T>
+  void set_identity(int m, int n, cuda_gpu_ptr<T> A, int lda)
+  {
+    kernels::set_identity(m,n,to_address(A),lda);
+  }
+
+  template<typename T>
+  void set_identity_strided(int nbatch, int stride, int m, int n, cuda_gpu_ptr<T> A, int lda)
+  {
+    kernels::set_identity_strided(nbatch,stride,m,n,to_address(A),lda);
   }
 
   template<typename T, typename Q1, typename Q2>

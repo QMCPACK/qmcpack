@@ -56,11 +56,7 @@ std::vector<std::vector<QMCHamiltonian*>> CloneManager::HPoolClones;
 void CloneManager::clear_for_unit_tests() { wClones.clear(); }
 
 /// Constructor.
-CloneManager::CloneManager()
-  : NumThreads(omp_get_max_threads())
-{
-  wPerNode.resize(NumThreads+1,0);
-}
+CloneManager::CloneManager() : NumThreads(omp_get_max_threads()) { wPerNode.resize(NumThreads + 1, 0); }
 
 ///cleanup non-static data members
 CloneManager::~CloneManager()
@@ -93,12 +89,12 @@ void CloneManager::makeClones(MCWalkerConfiguration& w, TrialWaveFunction& psi, 
   app_log() << "  Cloning methods for both Psi and H are used" << std::endl;
   print_mem("Memory Usage before cloning", app_log());
   outputManager.pause();
-
+  // clang-format off
   #pragma omp parallel
   {
     // check sizes
     #pragma omp master
-    if(NumThreads!=omp_get_num_threads())
+    if (NumThreads != omp_get_num_threads())
       throw std::runtime_error("CloneManager::makeClones Inconsist NumThreads and omp_get_num_threads()!\n");
 
     const int ip = omp_get_thread_num();
@@ -106,14 +102,15 @@ void CloneManager::makeClones(MCWalkerConfiguration& w, TrialWaveFunction& psi, 
     if (ip > 0)
     {
 #if defined(USE_PARTCILESET_CLONE)
-      wClones[ip]=dynamic_cast<MCWalkerConfiguration*>(w.get_clone(ip));
+      wClones[ip] = dynamic_cast<MCWalkerConfiguration*>(w.get_clone(ip));
 #else
-      wClones[ip]=new MCWalkerConfiguration(w);
+      wClones[ip] = new MCWalkerConfiguration(w);
 #endif
-      psiClones[ip]=psi.makeClone(*wClones[ip]);
-      hClones[ip]=ham.makeClone(*wClones[ip],*psiClones[ip]);
+      psiClones[ip] = psi.makeClone(*wClones[ip]);
+      hClones[ip]   = ham.makeClone(*wClones[ip], *psiClones[ip]);
     }
   }
+  // clang-format on
   infoLog.resume();
   infoSummary.resume();
   print_mem("Memory Usage after cloning", app_log());

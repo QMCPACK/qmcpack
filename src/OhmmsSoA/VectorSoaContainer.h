@@ -16,9 +16,11 @@
  */
 #ifndef QMCPLUSPLUS_VECTOR_SOA_H
 #define QMCPLUSPLUS_VECTOR_SOA_H
-#include <simd/allocator.hpp>
-#include <simd/algorithm.hpp>
-#include <ParticleBase/ParticleAttrib.h>
+
+#include <type_traits>
+#include "simd/allocator.hpp"
+#include "simd/algorithm.hpp"
+#include "ParticleBase/ParticleAttrib.h"
 
 namespace qmcplusplus
 {
@@ -132,6 +134,7 @@ struct VectorSoaContainer
        */
   __forceinline void resize(size_t n)
   {
+    static_assert(std::is_same<Element_t, typename Alloc::value_type>::value, "VectorSoaContainer and Alloc data types must agree!");
     if (nAllocated)
       myAlloc.deallocate(myData, nAllocated);
     nLocal     = n;

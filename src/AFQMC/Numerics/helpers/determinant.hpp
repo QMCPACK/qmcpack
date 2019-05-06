@@ -24,43 +24,80 @@
 namespace ma 
 {
   template<class T>
-  inline T determinant_from_getrf(int n, T* M, int lda, int* pivot)
+  inline T determinant_from_getrf(int n, T* M, int lda, int* pivot, T LogOverlapFactor)
   {
-    T res(1.0);
+    T res(0.0);
+    T sg(1.0);
     for(int i=0, ip=1; i != n; i++, ip++){
-      if(pivot[i]==ip){
-        res *= +static_cast<T>(M[i*lda+i]);
-      }else{
-        res *= -static_cast<T>(M[i*lda+i]);
-      }
+      if(real(M[i*lda+i]) < 0.0) {
+        res += std::log(-static_cast<T>(M[i*lda+i]));
+        sg *= -1.0;
+      } else   
+        res += std::log(static_cast<T>(M[i*lda+i]));
+      if(pivot[i]!=ip)
+        sg *= -1.0;
     }
-    return res;
+    return sg*std::exp(res-LogOverlapFactor);
   } 
 
   template<class T>
-  inline void determinant_from_getrf(int n, T* M, int lda, int* pivot, T* res)
+  inline void determinant_from_getrf(int n, T* M, int lda, int* pivot, T LogOverlapFactor, T* res)
   {
-    *res = T(1.0);
+    *res = T(0.0);
+    T sg(1.0);
     for(int i=0, ip=1; i != n; i++, ip++){
-      if(pivot[i]==ip){
-        *res *= +static_cast<T>(M[i*lda+i]);
-      }else{
-        *res *= -static_cast<T>(M[i*lda+i]);
-      }
+      if(real(M[i*lda+i]) < 0.0) {
+        *res += std::log(-static_cast<T>(M[i*lda+i]));
+        sg *= -1.0;
+      } else
+        *res += std::log(static_cast<T>(M[i*lda+i]));
+      if(pivot[i]!=ip)
+        sg *= -1.0;
     }
+    *res = sg*std::exp(*res-LogOverlapFactor);
   }
 
   template<class T>
-  inline void determinant_from_geqrf(int n, T* M, int lda, T* buff, T* res)
+  inline void determinant_from_geqrf(int n, T* M, int lda, T* buff, T LogOverlapFactor, T* res)
   {
-    *res = T(1.0); 
+    *res = T(0.0); 
     for (int i = 0; i < n; i++) { 
-      if (real(M[i*lda+i]) < 0) 
+      if(real(M[i*lda+i]) < 0.0) 
         buff[i]=T(-1.0); 
       else 
         buff[i]=T(1.0); 
-      *res *= buff[i]*M[i*lda+i];
+      *res += std::log(buff[i]*M[i*lda+i]);
     }
+    *res = std::exp(*res-LogOverlapFactor);
+  }
+
+  // specializations for complex
+  template<class T>
+  inline std::complex<T> determinant_from_getrf(int n, std::complex<T>* M, int lda, int* pivot, std::complex<T> LogOverlapFactor)
+  {
+    std::complex<T> res(0.0,0.0);
+    for(int i=0, ip=1; i != n; i++, ip++){
+      if(pivot[i]==ip){
+        res += std::log(+static_cast<std::complex<T>>(M[i*lda+i]));
+      }else{
+        res += std::log(-static_cast<std::complex<T>>(M[i*lda+i]));
+      }
+    }
+    return std::exp(res-LogOverlapFactor);
+  }
+
+  template<class T>
+  inline void determinant_from_getrf(int n, std::complex<T>* M, int lda, int* pivot, std::complex<T> LogOverlapFactor, std::complex<T>* res)
+  {
+    *res = std::complex<T>(0.0,0.0);
+    for(int i=0, ip=1; i != n; i++, ip++){
+      if(pivot[i]==ip){
+        *res += std::log(+static_cast<std::complex<T>>(M[i*lda+i]));
+      }else{
+        *res += std::log(-static_cast<std::complex<T>>(M[i*lda+i]));
+      }
+    }
+    *res = std::exp(*res-LogOverlapFactor);
   }
 
   template<class T>
@@ -88,21 +125,21 @@ namespace ma
 namespace qmc_cuda{
   // using thrust for now to avoid kernels!!!
   template<class T>
-  inline void determinant_from_getrf(int n, cuda_gpu_ptr<T> A, int lda, cuda_gpu_ptr<int> piv, T* res)
+  inline void determinant_from_getrf(int n, cuda_gpu_ptr<T> A, int lda, cuda_gpu_ptr<int> piv, T LogOverlapFactor, T* res)
   {
-    kernels::determinant_from_getrf_gpu(n,to_address(A),lda,to_address(piv),res);
+    kernels::determinant_from_getrf_gpu(n,to_address(A),lda,to_address(piv),LogOverlapFactor,res);
   }
 
   template<class T>
-  inline T determinant_from_getrf(int n, cuda_gpu_ptr<T> A, int lda, cuda_gpu_ptr<int> piv)
+  inline T determinant_from_getrf(int n, cuda_gpu_ptr<T> A, int lda, cuda_gpu_ptr<int> piv, T LogOverlapFactor)
   {
-    return kernels::determinant_from_getrf_gpu(n,to_address(A),lda,to_address(piv));
+    return kernels::determinant_from_getrf_gpu(n,to_address(A),lda,to_address(piv),LogOverlapFactor);
   }
 
   template<class T>
-  inline void determinant_from_geqrf(int n, cuda_gpu_ptr<T> M, int lda, cuda_gpu_ptr<T> buff, T* res)
+  inline void determinant_from_geqrf(int n, cuda_gpu_ptr<T> M, int lda, cuda_gpu_ptr<T> buff, T LogOverlapFactor, T* res)
   {
-    return kernels::determinant_from_geqrf_gpu(n,to_address(M),lda,to_address(buff),res);
+    return kernels::determinant_from_geqrf_gpu(n,to_address(M),lda,to_address(buff),LogOverlapFactor,res);
   }
 
   template<class T>
