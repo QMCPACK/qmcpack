@@ -789,6 +789,10 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop, TaskGroup_& TGwfn
       APP_ABORT("Error: PHMSD requires a COLLINEAR calculation.\n");
     std::vector<PsiT_Matrix> PsiT_MO;
     std::string wfn_type;
+    if(!dump.push("PHMSD",false)) {
+      app_error()<<" Error in WavefunctionFactory: Group PHMSD not found. \n";
+      APP_ABORT("");
+    }
     ph_excitations<int,ComplexType> abij = read_ph_wavefunction_hdf(dump,ndets_to_read,walker_type,
                                                                     TGwfn.Node(),NMO,NAEA,NAEB,PsiT_MO,wfn_type);
     int NEL = (walker_type==NONCOLLINEAR)?(NAEA+NAEB):NAEA;
