@@ -486,7 +486,6 @@ class KPCholesky(object):
                 LQ[kk+part.kk0,part.ij0*numv:part.ijN*numv,1] = T_
             comm.barrier()
 
-        print("HERE")
         h5file.grp.create_dataset("NCholPerKP", data=num_cholvecs)
         comm.barrier()
 

@@ -20,14 +20,14 @@ def write_skeleton_input(qmc_in, hamil_file, wfn_file=None, series=0,
             wfn_type = fh5['Wavefunction/type'][()]
         except KeyError:
             if wfn_file is not None:
-                msq = nmo*nmo
-                wfn = read_qmcpack_wfn(wfn_file)
-                if len(wfn) == msq:
-                    wfn_type = 'NOMSD'
-                    walker_type = 'CLOSED'
-                else:
-                    wfn_type = 'NOMSD'
-                    walker_type = 'COLLINEAR'
+                with open(wfn_file) as f:
+                    header = [next(f) for i in range(5)]
+                    uhf = len([s for s in header if 'UHF = 1' in s]) == 1
+                    phmsd = len([s for s in header if 'TYPE = occ' in s]) == 1
+                    walker_type = 'COLLINEAR' if uhf else 'CLOSED'
+                    wfn_type = 'PHMSD' if phmsd else 'NOMSD'
+                    if wfn_type == 'PHMSD':
+                        walker_type = 'COLLINEAR'
     # TODO: Fix if GHF every comes back.
 
     xml_string = """<?xml version="1.0"?>

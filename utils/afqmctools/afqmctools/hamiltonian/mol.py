@@ -34,7 +34,7 @@ def write_hamil_mol(scf_data, hamil_file, chol_cut,
                " tensor: %d"%chol_vecs.nnz)
         nelem = chol_vecs.shape[0]*chol_vecs.shape[1]
         print(" # Sparsity of ERI Cholesky tensor: "
-               "%f"%(1-float(chol_vecs.nnz/nelem)))
+               "%f"%(1-float(chol_vecs.nnz)/nelem))
         print(" # Total memory required for ERI tensor: %13.8e GB"%(mem))
     write_qmcpack_cholesky(hcore, chol_vecs, nelec, nbasis, enuc,
                            filename=hamil_file)
