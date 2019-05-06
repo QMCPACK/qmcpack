@@ -101,6 +101,12 @@ class dummy_HOps
     return 0;
   }
 
+  int global_origin_cholesky_vector() const
+  {
+    throw std::runtime_error("calling visitor on dummy_HOps object");
+    return 0;
+  }
+
   int global_number_of_cholesky_vectors() const
   {
     throw std::runtime_error("calling visitor on dummy_HOps object");
@@ -260,6 +266,13 @@ class HamiltonianOperations:
     int local_number_of_cholesky_vectors() const{
         return boost::apply_visitor(
             [&](auto&& a){return a.local_number_of_cholesky_vectors();},
+            *this
+        );
+    }
+
+    int global_origin_cholesky_vector() const{
+        return boost::apply_visitor(
+            [&](auto&& a){return a.global_origin_cholesky_vector();},
             *this
         );
     }

@@ -20,6 +20,7 @@
 #include <tuple>
 #include <complex>
 #include <Utilities/FairDivide.h>
+#include "AFQMC/Numerics/detail/utilities.hpp"
 #include "AFQMC/Matrix/csr_matrix.hpp"
 
 #include<type_traits> // enable_if
@@ -167,6 +168,8 @@ void CSR2MA(char TA, CSR const& A, MultiArray2D& M)
     M.reextent({A.size(0),A.size(1)});
   else if(TA=='T' || TA=='H')
     M.reextent({A.size(1),A.size(0)});
+  else
+    throw std::runtime_error(" Error: Unknown operation in CSR2MA.\n");
   using std::fill_n;
   fill_n(M.origin(),M.num_elements(),Type(0));
   auto pbegin = A.pointers_begin();
@@ -177,6 +180,50 @@ void CSR2MA(char TA, CSR const& A, MultiArray2D& M)
 #ifdef ENABLE_CUDA
 qmcplusplus::app_log()<<" /**********************************\n";
 qmcplusplus::app_log()<<" Warning: write kernel in CSR2MA. \n";
+qmcplusplus::app_log()<<" /**********************************\n";
+#endif
+  if(TA=='N') {
+    for(int i=0; i<A.size(0); i++)
+      for(int_type ip=pbegin[i], ipend=pend[i]; ip<ipend; ip++)
+        M[i][c0[ip-p0]] = Type(v0[ip-p0]);
+  } else if(TA=='Z') {
+    for(int i=0; i<A.size(0); i++)
+      for(int_type ip=pbegin[i], ipend=pend[i]; ip<ipend; ip++)
+        M[i][c0[ip-p0]] = conj(Type(v0[ip-p0]));
+  } else if(TA=='T') {
+    for(int i=0; i<A.size(0); i++)
+      for(int_type ip=pbegin[i], ipend=pend[i]; ip<ipend; ip++)
+        M[c0[ip-p0]][i] = Type(v0[ip-p0]);
+  } else if(TA=='H') {
+    for(int i=0; i<A.size(0); i++)
+      for(int_type ip=pbegin[i], ipend=pend[i]; ip<ipend; ip++)
+        M[c0[ip-p0]][i] = conj(Type(v0[ip-p0]));
+  }
+}
+
+template<class CSR,
+         class MultiArray2D,
+         typename = typename std::enable_if_t<(MultiArray2D::dimensionality==2)>
+        >
+void CSR2MAREF(char TA, CSR const& A, MultiArray2D& M)
+{
+  using Type = typename MultiArray2D::element;
+  using int_type = typename CSR::int_type;
+  assert(TA=='N' || TA=='H' || TA=='T' || TA=='Z');
+  if( (TA=='N' || TA=='Z') && ( (M.size(0)!=A.size(0)) || (M.size(1)!=A.size(1)) ) )
+    throw std::runtime_error(" Error: Wrong dimensions in CSR2MAREF.\n");
+  else if( (TA=='T' || TA=='H') && ( (M.size(0)!=A.size(1)) || (M.size(1)!=A.size(0)) ) )
+    throw std::runtime_error(" Error: Wrong dimensions in CSR2MAREF.\n");
+  using std::fill_n;
+  fill_n(M.origin(),M.num_elements(),Type(0));
+  auto pbegin = A.pointers_begin();
+  auto pend = A.pointers_end();
+  int_type p0(pbegin[0]);
+  auto v0 = A.non_zero_values_data();
+  auto c0 = A.non_zero_indices2_data();
+#ifdef ENABLE_CUDA
+qmcplusplus::app_log()<<" /**********************************\n";
+qmcplusplus::app_log()<<" Warning: write kernel in CSR2MAREF. \n";
 qmcplusplus::app_log()<<" /**********************************\n";
 #endif
   if(TA=='N') {
@@ -211,12 +258,14 @@ void CSR2MA(char TA, CSR const& A, MultiArray2D& M, Vector const& occups)
   assert(occups.size() <= A.size(0));
   int nrows = occups.size();
   assert(TA=='N' || TA=='H' || TA=='T' || TA=='Z');
-  if(TA=='N' || TA=='Z')
+  if(TA=='N' || TA=='Z') {
     if(M.size(0) != nrows || M.size(1) != A.size(1))
       M.reextent({nrows,A.size(1)});
-  else if(TA=='T' || TA=='H')
+  } else if(TA=='T' || TA=='H') {
     if(M.size(1) != nrows || M.size(0) != A.size(1))
       M.reextent({A.size(1),nrows});
+  } else
+    throw std::runtime_error(" Error: Unknown operation in CSR2MA.\n");
   std::fill_n(M.origin(),M.num_elements(),Type(0));
   auto pbegin = A.pointers_begin();
   auto pend = A.pointers_end();
