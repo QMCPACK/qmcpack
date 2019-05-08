@@ -27,7 +27,6 @@ DriftModifierBase* createDriftModifier(xmlNodePtr cur, const Communicate* myComm
     DriftModifier = new DriftModifierUNR;
   else
     myComm->barrier_and_abort("createDriftModifier unknown drift_modifier " + ModifierName);
-  DriftModifier->parseXML(cur);
   return DriftModifier;
 }
 
