@@ -14,6 +14,7 @@
 
 #include "OpenMP/OMPstd.hpp"
 #include "spline2/MultiBsplineData.hpp"
+#include <spline2/MultiBsplineEvalHelper.hpp>
 
 namespace spline2offload
 {
