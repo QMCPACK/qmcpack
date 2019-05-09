@@ -414,9 +414,9 @@ void invert(MultiArray2D&& m, MultiArray1D&& pivot, Buffer&& WORK, T LogOverlapF
         getrf(std::forward<MultiArray2D>(m), pivot, WORK);
         determinant_from_getrf<T>(m.size(0), pointer_dispatch(m.origin()), m.stride(0), 
             pointer_dispatch(pivot.data()), LogOverlapFactor, detvalue);
-//        if( std::abs(T(*detvalue)) == 0.0 )
-//          fill2D(m.size(0),m.size(1),pointer_dispatch(m.origin()),m.stride(0),element(0.0));
-//        else
+        if( std::abs(T(*detvalue)) == 0.0 )
+          fill2D(m.size(0),m.size(1),pointer_dispatch(m.origin()),m.stride(0),element(0.0));
+        else
           getri(std::forward<MultiArray2D>(m), pivot, WORK);
 }
 /*
