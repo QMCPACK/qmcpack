@@ -202,7 +202,9 @@ class PyscfInput(SimulationInputTemplateDev):
                 sys_inputs.dimension = len(s.axes)
                 sys_inputs.a         = s.write_axes()
                 if len(s.kpoints)>0:
-                    sys_kpoints = s.kpoints.copy()
+                    skp = s.copy()
+                    skp.change_units('B')
+                    sys_kpoints = skp.kpoints.copy()
                 #end if
             #end if
         #end if
