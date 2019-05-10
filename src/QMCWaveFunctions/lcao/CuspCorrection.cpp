@@ -398,7 +398,7 @@ RealType minimizeForPhiAtZero(CuspCorrection& cusp,
   }
   catch (const std::runtime_error& e)
   {
-    APP_ABORT("Bracketing minimum failed for finding rc. \n");
+    APP_ABORT("Bracketing minimum failed for finding phi0. \n");
   }
 
   auto min_res = find_minimum(
