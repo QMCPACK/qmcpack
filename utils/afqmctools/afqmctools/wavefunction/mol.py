@@ -154,8 +154,8 @@ def write_phmsd(fh5, occa, occb, nelec):
     """
     # TODO: Update if we ever wanted "mixed" phmsd type wavefunctions.
     na, nb = nelec
-    fh5['fullmo'] = 0
-    fh5['type'] = 'occ'
+    fh5['fullmo'] = numpy.array([0], dtype=numpy.int32)
+    fh5['type'] = numpy.array(['occ'])
     occs = numpy.zeros((len(occa), na+nb), dtype=numpy.int32)
     occs[:,:na] = numpy.array(occa)
     occs[:,na:] = numpy.array(occb)
