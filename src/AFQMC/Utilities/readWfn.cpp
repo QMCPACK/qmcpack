@@ -666,7 +666,6 @@ ph_excitations<int,ComplexType> read_ph_wavefunction_hdf(hdf_archive& dump, int&
   if(comm.root()) {
     if(!dump.readEntry(buff, "occs"))
       APP_ABORT("Error reading occs array.\n");
-    dump.pop();
     if(!dump.readEntry(ci_coeff, "CICOEFFICIENTS"))
       APP_ABORT("Error reading CICOEFFICIENTS array.\n");
     confg.reserve(NAEA);
@@ -677,8 +676,8 @@ ph_excitations<int,ComplexType> read_ph_wavefunction_hdf(hdf_archive& dump, int&
       confg.clear();
       for(int k=0, q=0; k<NAEA; k++) {
         q = occs[i][k];
-        if(q < 0 || q > NMO)
-          APP_ABORT("Error: Bad occupation number in wavefunction file. \n");
+        if(q < 0 || q >= NMO)
+          APP_ABORT("Error: Bad occupation number " << q << " in determinant " << i << " in wavefunction file \n");
         confg.emplace_back(q);
         ci = ci_coeff[i];
       }
@@ -692,8 +691,8 @@ ph_excitations<int,ComplexType> read_ph_wavefunction_hdf(hdf_archive& dump, int&
       confg.clear();
       for(int k=0, q=0; k<NAEB; k++) {
         q = occs[i][NAEA+k];
-        if(q <= NMO || q > 2*NMO)
-          APP_ABORT("Error: Bad occupation number in wavefunction file. \n");
+        if(q < NMO || q >= 2*NMO)
+          APP_ABORT("Error: Bad occupation number " << q << " in determinant " << i << " in wavefunction file \n");
         confg.emplace_back(q);
         ci = ci_coeff[i];
       }
@@ -739,8 +738,8 @@ ph_excitations<int,ComplexType> read_ph_wavefunction_hdf(hdf_archive& dump, int&
       confg.clear();
       for(int k=0, q=0; k<NAEA; k++) {
         q = occs[i][k];
-        if(q < 0 || q > NMO)
-          APP_ABORT("Error: Bad occupation number in wavefunction file. \n");
+        if(q < 0 || q >= NMO)
+          APP_ABORT("Error: Bad occupation number " << q << " in determinant " << i << " in wavefunction file \n");
         confg.emplace_back(q);
         ci = ci_coeff[i];
       }
@@ -750,8 +749,8 @@ ph_excitations<int,ComplexType> read_ph_wavefunction_hdf(hdf_archive& dump, int&
       confg.clear();
       for(int k=0, q=0; k<NAEB; k++) {
         q = occs[i][NAEA+k];
-        if(q <= NMO || q > 2*NMO)
-          APP_ABORT("Error: Bad occupation number in wavefunction file. \n");
+        if(q < NMO || q >= 2*NMO)
+          APP_ABORT("Error: Bad occupation number " << q << " in determinant " << i << " in wavefunction file \n");
         confg.emplace_back(q);
         ci = ci_coeff[i];
       }
