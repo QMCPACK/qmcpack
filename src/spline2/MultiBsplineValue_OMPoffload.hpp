@@ -69,27 +69,12 @@ inline void evaluate_v_impl(const typename qmcplusplus::bspline_traits<T, 3>::Sp
 
 template<typename T>
 inline void evaluate_v_impl_v2(const typename qmcplusplus::bspline_traits<T, 3>::SplineType* restrict spline_m,
-                               T x,
-                               T y,
-                               T z,
+                               int ix, int iy, int iz,
+                               const T a[4], const T b[4], const T c[4],
                                T* restrict vals,
                                int first,
                                int last)
 {
-  x -= spline_m->x_grid.start;
-  y -= spline_m->y_grid.start;
-  z -= spline_m->z_grid.start;
-  T tx, ty, tz;
-  int ix, iy, iz;
-  spline2::getSplineBound(x * spline_m->x_grid.delta_inv, tx, ix, spline_m->x_grid.num - 1);
-  spline2::getSplineBound(y * spline_m->y_grid.delta_inv, ty, iy, spline_m->y_grid.num - 1);
-  spline2::getSplineBound(z * spline_m->z_grid.delta_inv, tz, iz, spline_m->z_grid.num - 1);
-  T a[4], b[4], c[4];
-
-  spline2::MultiBsplineData<T>::compute_prefactors(a, tx);
-  spline2::MultiBsplineData<T>::compute_prefactors(b, ty);
-  spline2::MultiBsplineData<T>::compute_prefactors(c, tz);
-
   const intptr_t xs = spline_m->x_stride;
   const intptr_t ys = spline_m->y_stride;
   const intptr_t zs = spline_m->z_stride;
