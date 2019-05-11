@@ -72,20 +72,19 @@ inline void evaluate_v_impl_v2(const typename qmcplusplus::bspline_traits<T, 3>:
                                int ix, int iy, int iz,
                                const T a[4], const T b[4], const T c[4],
                                T* restrict vals,
-                               int first,
-                               int last)
+                               const int first,
+                               const int last)
 {
   const intptr_t xs = spline_m->x_stride;
   const intptr_t ys = spline_m->y_stride;
   const intptr_t zs = spline_m->z_stride;
 
-  const int num_splines = last - first;
 #ifdef ENABLE_OFFLOAD
 #pragma omp for
 #else
 #pragma omp simd aligned(vals)
 #endif
-  for (int n = 0; n < num_splines; n++)
+  for (int n = 0; n < last - first; n++)
   {
     T val = T();
     for (int i = 0; i < 4; i++)

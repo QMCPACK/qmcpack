@@ -37,7 +37,7 @@ inline void assign_v(ST x,
                      TT* restrict results_scratch_ptr,
                      size_t orb_size,
                      const ST* restrict offload_scratch_ptr,
-                     const ST* myKcart_ptr,
+                     const ST* restrict myKcart_ptr,
                      size_t myKcart_padded_size,
                      size_t first_spo,
                      int nComplexBands,
@@ -94,8 +94,8 @@ inline void assign_vgl(ST x,
                        size_t orb_size,
                        const ST* restrict offload_scratch_ptr,
                        size_t spline_padded_size,
-                       const ST* GGt_ptr,
-                       const ST* PrimLattice_G_ptr,
+                       const ST symGGt[6],
+                       const ST G[9],
                        const ST* myKcart_ptr,
                        size_t myKcart_padded_size,
                        size_t first_spo,
@@ -108,11 +108,9 @@ inline void assign_vgl(ST x,
     last = orb_size;
 
   constexpr ST two(2);
-  const ST g00 = PrimLattice_G_ptr[0], g01 = PrimLattice_G_ptr[1], g02 = PrimLattice_G_ptr[2],
-           g10 = PrimLattice_G_ptr[3], g11 = PrimLattice_G_ptr[4], g12 = PrimLattice_G_ptr[5],
-           g20 = PrimLattice_G_ptr[6], g21 = PrimLattice_G_ptr[7], g22 = PrimLattice_G_ptr[8];
-  const ST symGG[6] = {GGt_ptr[0], GGt_ptr[1] + GGt_ptr[3], GGt_ptr[2] + GGt_ptr[6],
-                       GGt_ptr[4], GGt_ptr[5] + GGt_ptr[7], GGt_ptr[8]};
+  const ST &g00 = G[0], &g01 = G[1], &g02 = G[2],
+           &g10 = G[3], &g11 = G[4], &g12 = G[5],
+           &g20 = G[6], &g21 = G[7], &g22 = G[8];
 
   const ST* restrict k0 = myKcart_ptr;
   const ST* restrict k1 = myKcart_ptr + myKcart_padded_size;
@@ -175,8 +173,8 @@ inline void assign_vgl(ST x,
     const ST gY_i = dY_i - val_r * kY;
     const ST gZ_i = dZ_i - val_r * kZ;
 
-    const ST lcart_r = SymTrace(h00[jr], h01[jr], h02[jr], h11[jr], h12[jr], h22[jr], symGG);
-    const ST lcart_i = SymTrace(h00[ji], h01[ji], h02[ji], h11[ji], h12[ji], h22[ji], symGG);
+    const ST lcart_r = SymTrace(h00[jr], h01[jr], h02[jr], h11[jr], h12[jr], h22[jr], symGGt);
+    const ST lcart_i = SymTrace(h00[ji], h01[ji], h02[ji], h11[ji], h12[ji], h22[ji], symGGt);
     const ST lap_r   = lcart_r + mKK_ptr[j] * val_r + two * (kX * dX_i + kY * dY_i + kZ * dZ_i);
     const ST lap_i   = lcart_i + mKK_ptr[j] * val_i - two * (kX * dX_r + kY * dY_r + kZ * dZ_r);
 
@@ -780,6 +778,12 @@ struct SplineC2ROMP : public SplineAdoptorBase<ST, 3>
       ST a[4], b[4], c[4], da[4], db[4], dc[4], d2a[4], d2b[4], d2c[4];
       spline2::computeLocationAndFractional(spline_ptr, rux, ruy, ruz, ix, iy, iz, a, b, c, da, db, dc, d2a, d2b, d2c);
 
+      const ST G[9] = {PrimLattice_G_ptr[0], PrimLattice_G_ptr[1], PrimLattice_G_ptr[2],
+                       PrimLattice_G_ptr[3], PrimLattice_G_ptr[4], PrimLattice_G_ptr[5],
+                       PrimLattice_G_ptr[6], PrimLattice_G_ptr[7], PrimLattice_G_ptr[8]};
+      const ST symGGt[6] = {GGt_ptr[0], GGt_ptr[1] + GGt_ptr[3], GGt_ptr[2] + GGt_ptr[6],
+                            GGt_ptr[4], GGt_ptr[5] + GGt_ptr[7], GGt_ptr[8]};
+
       PRAGMA_OFFLOAD("omp parallel")
       {
         spline2offload::evaluate_vgh_impl_v2(spline_ptr,
@@ -790,8 +794,8 @@ struct SplineC2ROMP : public SplineAdoptorBase<ST, 3>
                                              offload_scratch_ptr + first,
                                              offload_scratch_ptr + padded_size + first,
                                              offload_scratch_ptr + padded_size * 4 + first, padded_size, first, last);
-        C2R::assign_vgl(x, y, z, results_scratch_ptr, mKK_ptr, orb_size, offload_scratch_ptr, padded_size, GGt_ptr,
-                        PrimLattice_G_ptr, myKcart_ptr, myKcart_padded_size, first_spo_local, nComplexBands_local,
+        C2R::assign_vgl(x, y, z, results_scratch_ptr, mKK_ptr, orb_size, offload_scratch_ptr, padded_size, symGGt,
+                        G, myKcart_ptr, myKcart_padded_size, first_spo_local, nComplexBands_local,
                         first / 2, last / 2);
       }
     }

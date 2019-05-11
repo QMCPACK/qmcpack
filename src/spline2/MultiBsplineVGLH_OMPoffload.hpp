@@ -277,42 +277,19 @@ inline void evaluate_vgh_impl_v2(const typename qmcplusplus::bspline_traits<T, 3
                                  T* restrict grads,
                                  T* restrict hess,
                                  size_t out_offset,
-                                 int first,
-                                 int last)
+                                 const int first,
+                                 const int last)
 {
   const intptr_t xs = spline_m->x_stride;
   const intptr_t ys = spline_m->y_stride;
   const intptr_t zs = spline_m->z_stride;
-
-  const int num_splines = last - first;
-
-  T* restrict gxs = grads;
-  T* restrict gys = grads + out_offset;
-  T* restrict gzs = grads + 2 * out_offset;
-
-  T* restrict hxxs = hess;
-  T* restrict hxys = hess + out_offset;
-  T* restrict hxzs = hess + 2 * out_offset;
-  T* restrict hyys = hess + 3 * out_offset;
-  T* restrict hyzs = hess + 4 * out_offset;
-  T* restrict hzzs = hess + 5 * out_offset;
-
-  const T dxInv = spline_m->x_grid.delta_inv;
-  const T dyInv = spline_m->y_grid.delta_inv;
-  const T dzInv = spline_m->z_grid.delta_inv;
-  const T dxx   = dxInv * dxInv;
-  const T dyy   = dyInv * dyInv;
-  const T dzz   = dzInv * dzInv;
-  const T dxy   = dxInv * dyInv;
-  const T dxz   = dxInv * dzInv;
-  const T dyz   = dyInv * dzInv;
 
 #ifdef ENABLE_OFFLOAD
 #pragma omp for
 #else
 #pragma omp simd aligned(vals, gxs, gys, gzs, hxxs, hyys, hzzs, hxys, hxzs, hyzs)
 #endif
-  for (int n = 0; n < num_splines; n++)
+  for (int n = 0; n < last - first; n++)
   {
     T val = T();
     T gx  = T();
@@ -363,15 +340,20 @@ inline void evaluate_vgh_impl_v2(const typename qmcplusplus::bspline_traits<T, 3
 
     // put data back to the result vector
     vals[n] = val;
-    gxs[n]  = gx * dxInv;
-    gys[n]  = gy * dyInv;
-    gzs[n]  = gz * dzInv;
-    hxxs[n] = hxx * dxx;
-    hyys[n] = hyy * dyy;
-    hzzs[n] = hzz * dzz;
-    hxys[n] = hxy * dxy;
-    hxzs[n] = hxz * dxz;
-    hyzs[n] = hyz * dyz;
+
+    const T dxInv = spline_m->x_grid.delta_inv;
+    const T dyInv = spline_m->y_grid.delta_inv;
+    const T dzInv = spline_m->z_grid.delta_inv;
+
+    grads[n]                  = gx * dxInv;
+    grads[n + out_offset]     = gy * dyInv;
+    grads[n + 2 * out_offset] = gz * dzInv;
+    hess[n]                   = hxx * dxInv * dxInv;
+    hess[n + out_offset]      = hxy * dxInv * dyInv;
+    hess[n + 2 * out_offset]  = hxz * dxInv * dzInv;
+    hess[n + 3 * out_offset]  = hyy * dyInv * dyInv;
+    hess[n + 4 * out_offset]  = hyz * dyInv * dzInv;
+    hess[n + 5 * out_offset]  = hzz * dzInv * dzInv;
   }
 }
 
