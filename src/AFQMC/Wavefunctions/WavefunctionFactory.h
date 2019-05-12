@@ -148,6 +148,9 @@ class WavefunctionFactory
   HamiltonianOperations getHamOps(bool read, hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA, int NAEB,
                                   std::vector<PsiT_Matrix>& PsiT, TaskGroup_& TGprop, TaskGroup_& TGwfn, RealType cutvn, RealType cutv2,
                                   int ndets_to_read, Hamiltonian& h);
+  void getCommonInput(hdf_archive& dump, int NMO, int NAEA, int NAEB, int ndets_to_read,
+                                          std::vector<ComplexType>& ci, WALKER_TYPES walker_type, Hamiltonian& h, bool root);
+  void getInitialGuess(hdf_archive& dump, std::string& name, int NMO, int NAEA, int NAEB, WALKER_TYPES walker_type);
 
   // MAM: should I store a copy rather than a pointer???
   std::map<std::string,xmlNodePtr> xmlBlocks;
@@ -155,6 +158,11 @@ class WavefunctionFactory
   std::map<std::string,Wavefunction> wavefunctions;
 
   std::map<std::string,boost::multi::array<ComplexType,3>> initial_guess; 
+
+  ph_excitations<int,ComplexType> read_ph_wavefunction_hdf(hdf_archive& dump, int& ndets, 
+          WALKER_TYPES walker_type,
+          boost::mpi3::shared_communicator& comm, int NMO, int NAEA, int NAEB,
+          std::vector<PsiT_Matrix>& PsiT, std::string& type);
 
 };
 }
