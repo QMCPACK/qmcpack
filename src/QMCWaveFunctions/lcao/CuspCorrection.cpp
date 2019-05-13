@@ -310,10 +310,13 @@ void getCurrentLocalEnergy(const ValueVector_t& pos,
   for (int i = 0; i < pos.size(); i++)
   {
     RealType r = pos[i];
+    // prevent NaN's if phiBar is zero
+    RealType offset = 1e-12;
     if (r <= Rc)
     {
       RealType dp = cusp.dpr(r);
-      ELcurr[i]   = -0.5 * cusp.Rr(r) * (2.0 * dp / r + cusp.d2pr(r) + dp * dp) / cusp.phiBar(r, phiMO) - Zeff / r + dE;
+      ELcurr[i]   = -0.5 * cusp.Rr(r) * (2.0 * dp / r + cusp.d2pr(r) + dp * dp) / (offset + cusp.phiBar(r, phiMO)) -
+          Zeff / r + dE;
     }
     else
     {
@@ -411,12 +414,20 @@ RealType minimizeForPhiAtZero(CuspCorrection& cusp,
   getIdealLocalEnergy(pos, Z, cusp.cparam.Rc, ELorigAtRc, ELideal);
   phiMO.phi_vgl(cusp.cparam.Rc, vglAtRc.val, vglAtRc.grad, vglAtRc.lap);
 
-  RealType start_phi0             = phiMO.phi(0.0);
-  Bracket_min_t<RealType> bracket = bracket_minimum(
-      [&](RealType x) -> RealType {
-        return evaluateForPhi0Body(x, pos, ELcurr, ELideal, cusp, phiMO, vglAtRc, eta0, ELorigAtRc, Z);
-      },
-      start_phi0);
+  RealType start_phi0 = phiMO.phi(0.0);
+  Bracket_min_t<RealType> bracket(start_phi0, 0.0, 0.0, false);
+  try
+  {
+    bracket = bracket_minimum(
+        [&](RealType x) -> RealType {
+          return evaluateForPhi0Body(x, pos, ELcurr, ELideal, cusp, phiMO, vglAtRc, eta0, ELorigAtRc, Z);
+        },
+        start_phi0);
+  }
+  catch (const std::runtime_error& e)
+  {
+    APP_ABORT("Bracketing minimum failed for finding phi0. \n");
+  }
 
   auto min_res = find_minimum(
       [&](RealType x) -> RealType {
@@ -440,13 +451,22 @@ void minimizeForRc(CuspCorrection& cusp,
                    ValueVector_t& ELcurr,
                    ValueVector_t& ELideal)
 {
-  RealType Rc                     = Rc_init;
-  Bracket_min_t<RealType> bracket = bracket_minimum(
-      [&](RealType x) -> RealType {
-        cusp.cparam.Rc = x;
-        return minimizeForPhiAtZero(cusp, phiMO, Z, eta0, pos, ELcurr, ELideal);
-      },
-      Rc_init, Rc_max);
+  RealType Rc = Rc_init;
+  Bracket_min_t<RealType> bracket(Rc_init, 0.0, 0.0, false);
+  try
+  {
+    bracket = bracket_minimum(
+        [&](RealType x) -> RealType {
+          cusp.cparam.Rc = x;
+          return minimizeForPhiAtZero(cusp, phiMO, Z, eta0, pos, ELcurr, ELideal);
+        },
+        Rc_init, Rc_max);
+  }
+  catch (const std::runtime_error& e)
+  {
+    APP_ABORT("Bracketing minimum failed for finding rc. \n");
+  }
+
 
   if (bracket.success)
   {
