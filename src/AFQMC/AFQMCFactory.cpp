@@ -47,6 +47,7 @@ TimerNameList_t<AFQMCTimerIDs> AFQMCTimerNames =
   {vbias_timer, "vbias"},
   {G_for_vbias_timer,"G_for_vbias"},
   {propagate_timer, "Propagate"},
+  {back_propagate_timer, "BackPropagate"},
   {E_comm_overhead_timer, "Energy_comm_overhead"},
   {vHS_comm_overhead_timer, "vHS_comm_overhead"},
   {popcont_timer, "population_control"},

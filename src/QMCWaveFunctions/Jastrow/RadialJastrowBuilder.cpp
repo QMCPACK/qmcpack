@@ -55,7 +55,6 @@ RadialJastrowBuilder::RadialJastrowBuilder(ParticleSet& target, TrialWaveFunctio
   NameOpt      = "0";
   TypeOpt      = "unknown";
   Jastfunction = "unknown";
-  SourceOpt    = targetPtcl.getName();
   SpinOpt      = "no";
 }
 
@@ -66,7 +65,6 @@ RadialJastrowBuilder::RadialJastrowBuilder(ParticleSet& target, TrialWaveFunctio
   NameOpt      = "0";
   TypeOpt      = "unknown";
   Jastfunction = "unknown";
-  SourceOpt    = targetPtcl.getName();
   SpinOpt      = "no";
 }
 
@@ -490,13 +488,11 @@ bool RadialJastrowBuilder::put(xmlNodePtr cur)
   aAttrib.add(NameOpt, "name");
   aAttrib.add(TypeOpt, "type");
   aAttrib.add(Jastfunction, "function");
-  aAttrib.add(SourceOpt, "source");
   aAttrib.add(SpinOpt, "spin");
   aAttrib.put(cur);
   tolower(NameOpt);
   tolower(TypeOpt);
   tolower(Jastfunction);
-  tolower(SourceOpt);
   tolower(SpinOpt);
 
   bool success = false;

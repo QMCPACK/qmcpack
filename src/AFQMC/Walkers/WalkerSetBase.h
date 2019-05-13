@@ -40,7 +40,7 @@ namespace afqmc
  * Implements communication, load balancing, and I/O operations.   
  * Walkers are always accessed through the handler.
  */
-template<class Alloc, typename Ptr>
+template<class Alloc, class Ptr> //, class BPAlloc, class BPPtr>
 class WalkerSetBase: public AFQMCInfo 
 {
   protected:
@@ -53,7 +53,21 @@ class WalkerSetBase: public AFQMCInfo
   using const_pointer = const Ptr; 
   using Allocator = Alloc;
 
+  using bp_element = ComplexType; //typename std::pointer_traits<BPPtr>::element_type;
+  using bp_pointer = ComplexType*; //BPPtr;
+  using const_bp_element = const bp_element;
+  using const_bp_pointer = const bp_pointer; 
+  using BPAllocator = shared_allocator<bp_element>;//BPAlloc;
+
   using CMatrix = boost::multi::array<element,2,Allocator>;
+  using BPCMatrix = boost::multi::array<bp_element,2,BPAllocator>;
+  using BPCVector_ref = boost::multi::array_ref<bp_element,1,bp_pointer>;
+  using BPCMatrix_ref = boost::multi::array_ref<bp_element,2,bp_pointer>;
+  using BPCTensor_ref = boost::multi::array_ref<bp_element,3,bp_pointer>;
+
+  using stdCVector_ref = boost::multi::array_ref<bp_element,1>;
+  using stdCMatrix_ref = boost::multi::array_ref<bp_element,2>;
+  using stdCTensor_ref = boost::multi::array_ref<bp_element,3>;
 
   public:
 
@@ -72,13 +86,15 @@ class WalkerSetBase: public AFQMCInfo
 
   /// constructor
   WalkerSetBase(afqmc::TaskGroup_& tg_, xmlNodePtr cur, AFQMCInfo& info, 
-        RandomGenerator_t* r, Allocator alloc_ = {}):
+        RandomGenerator_t* r, Allocator alloc_ = {}, BPAllocator bpalloc_ = {}):
                 TG(tg_),AFQMCInfo(info),rng(r),
-                walker_memory_usage(0),tot_num_walkers(0),
+                walker_memory_usage(0),tot_num_walkers(0),bp_pos(-1),
+                bp_walker_memory_usage(0),bp_walker_size(0),walker_size(1),
 		walker_buffer({0,1},alloc_),
+		bp_buffer({0,0},bpalloc_),
                 load_balance(UNDEFINED_LOAD_BALANCE),
                 pop_control(UNDEFINED_BRANCHING),min_weight(0.05),max_weight(4.0),
-                walkerType(UNDEFINED_WALKER_TYPE),nback_prop(0)
+                walkerType(UNDEFINED_WALKER_TYPE)
   {
     parse(cur);
     setup(); 
@@ -107,11 +123,38 @@ class WalkerSetBase: public AFQMCInfo
   } 
 
   /*
+   * Returns the maximum number of fields in the set that can be stored without reallocation. 
+   */	
+  int NumBackProp() const {
+    return wlk_desc[3];
+  }
+  /*
+   * Returns the maximum number of cholesky vectors in the set that can be stored without reallocation. 
+   */	
+  int NumCholVecs() const {
+    return wlk_desc[4];
+  }
+  /*
+   * Returns the position of the insertion point in the BP stack. 
+   */
+  int getBPPos() const {
+    return bp_pos; 
+  }
+  int setBPPos(int p) {
+    bp_pos=p; 
+  }
+  int advanceBPPos() {
+    bp_pos++; 
+  }
+
+
+  /*
    * Returns iterator to the first walker in the set
    */
   iterator begin() {
     assert(walker_buffer.size(1) == walker_size);
-    return iterator(0,boost::multi::static_array_cast<element, pointer>(walker_buffer),data_displ,wlk_desc);
+    return iterator(0,boost::multi::static_array_cast<element, pointer>(walker_buffer),
+                      data_displ,wlk_desc);
   }
 
   /*
@@ -119,7 +162,8 @@ class WalkerSetBase: public AFQMCInfo
    */
   const_iterator begin() const{
     assert(walker_buffer.size(1) == walker_size);
-    return const_iterator(0,boost::multi::static_array_cast<element, pointer>(walker_buffer),data_displ,wlk_desc);
+    return const_iterator(0,boost::multi::static_array_cast<element, pointer>(walker_buffer),
+                            data_displ,wlk_desc);
   }
 
 
@@ -128,7 +172,8 @@ class WalkerSetBase: public AFQMCInfo
    */
   iterator end() {
     assert(walker_buffer.size(1) == walker_size);
-    return iterator(tot_num_walkers,boost::multi::static_array_cast<element, pointer>(walker_buffer),data_displ,wlk_desc);
+    return iterator(tot_num_walkers,boost::multi::static_array_cast<element, pointer>(walker_buffer),
+                    data_displ,wlk_desc);
   }
 
   /*
@@ -138,7 +183,8 @@ class WalkerSetBase: public AFQMCInfo
     if(i<0 || i>tot_num_walkers)
       APP_ABORT("error: index out of bounds.\n");
     assert(walker_buffer.size(1) == walker_size);
-    return reference(boost::multi::static_array_cast<element, pointer>(walker_buffer)[i],data_displ,wlk_desc);
+    return reference(boost::multi::static_array_cast<element, pointer>(walker_buffer)[i],
+                     data_displ,wlk_desc);
   }
 
   /*
@@ -148,7 +194,8 @@ class WalkerSetBase: public AFQMCInfo
     if(i<0 || i>tot_num_walkers)
       APP_ABORT("error: index out of bounds.\n");
     assert(walker_buffer.size(1) == walker_size);
-    return const_reference(boost::multi::static_array_cast<element, pointer>(walker_buffer)[i],data_displ,wlk_desc);
+    return const_reference(boost::multi::static_array_cast<element, pointer>(walker_buffer)[i],
+                           data_displ,wlk_desc);
   }
 
   // cleans state of object. 
@@ -195,15 +242,16 @@ class WalkerSetBase: public AFQMCInfo
         auto pos = tot_num_walkers; 
         // careful here!!!
         while(pos < n) {
-          using std::fill;
+          using std::fill_n;
           fill_n(W[pos].origin(),W[pos].size(0),ComplexType(0,0));
           reference w0(W[pos],data_displ,wlk_desc);
-          w0.SlaterMatrix(Alpha) = A;
-          if(walkerType == COLLINEAR)
-            w0.SlaterMatrix(Beta) = B; 
-          if(nback_prop > 0) {
-            // Initialise back propagation data.
-            w0.resetForBackPropagation();
+          //w0.SlaterMatrix(Alpha) = A;
+          auto&& SM_(w0.SlaterMatrix(Alpha));
+          SM_ = A;
+          if(walkerType == COLLINEAR) {
+            //w0.SlaterMatrix(Beta) = B; 
+            auto&& SMB_(w0.SlaterMatrix(Beta));
+            SMB_ = B; 
           }
           pos++;
         }
@@ -226,13 +274,50 @@ class WalkerSetBase: public AFQMCInfo
     }
   }
 
+  void resize_bp(int nbp, int nCV, int nref) {
+    assert(walker_buffer.size(1) == walker_size);
+    assert(bp_buffer.size(0) == bp_walker_size);
+    assert(walker_buffer.size(0) == bp_buffer.size(1));
+    // wlk_descriptor: {nmo, naea, naeb, nback_prop, nCV, nRefs} 
+    wlk_desc[3]=nbp;
+    wlk_desc[4]=nCV;
+    wlk_desc[5]=nref;
+    int ncol=NAEA;
+    int nrow=NMO;
+    if(walkerType != CLOSED) {
+      if (walkerType == COLLINEAR) {
+        ncol += NAEB;
+      } else if(walkerType == NONCOLLINEAR) {
+        nrow += NMO;
+        ncol += NAEB;
+      } else {
+        app_error()<<" Error: Incorrect walker_type on WalkerSetBase::setup \n";
+        APP_ABORT("");
+      }
+    }
+    int cnt=0;
+    data_displ[FIELDS] = cnt;          cnt+=nbp*nCV;
+    data_displ[WEIGHT_FAC] = cnt;      cnt+=nbp;
+    data_displ[WEIGHT_HISTORY] = cnt;  cnt+=nbp;
+    bp_walker_size = cnt;  
+    if(bp_buffer.size(0) != bp_walker_size)
+      bp_buffer.reextent({bp_walker_size,walker_buffer.size(0)});
+    if(nbp > 0 && (data_displ[SMN]<0 || data_displ[SM_AUX]<0) ) {
+      auto sz(walker_size);
+      data_displ[SMN] = walker_size;  walker_size+=nrow*ncol;
+      data_displ[SM_AUX] = walker_size;  walker_size+=nrow*ncol;
+      CMatrix wb({walker_buffer.size(0),walker_size},walker_buffer.get_allocator());
+      wb( wb.extension(0), {0,sz} ) = walker_buffer; 
+      walker_buffer = std::move(wb);
+    }
+  }
+
   // perform and report tests/timings
   void benchmark(std::string& blist,int maxnW,int delnW,int repeat);
 
   int get_TG_target_population() const{ return targetN_per_TG; }
   int get_global_target_population() const{ return targetN; }
 
-  int getNBackProp() const { return nback_prop; }
   std::pair<int,int> walker_dims() const {
     return std::pair<int,int> {wlk_desc[0], wlk_desc[1]};
   }
@@ -266,7 +351,7 @@ class WalkerSetBase: public AFQMCInfo
     static_assert(std::decay<Mat>::type::dimensionality == 2, "Wrong dimensionality");
     if(tot_num_walkers+M.size(0) > capacity())
       APP_ABORT("Insufficient capacity");
-    if(walker_size != M.size(1))
+    if(single_walker_size()+single_walker_bp_size() != M.size(1))
       APP_ABORT("Incorrect dimensions.");
     if(M.stride(1) != 1)
       APP_ABORT("Incorrect strides.");
@@ -275,8 +360,13 @@ class WalkerSetBase: public AFQMCInfo
       return;
     }  
     auto W( boost::multi::static_array_cast<element, pointer>(walker_buffer) );
-    for(int i=0; i<M.size(0); i++)
-      W[tot_num_walkers++] = M[i];
+    auto BPW( boost::multi::static_array_cast<bp_element, bp_pointer>(bp_buffer) );
+    for(int i=0; i<M.size(0); i++) {
+      W[tot_num_walkers] = M[i].sliced(0,walker_size);
+      if(wlk_desc[3]>0)
+        BPW(BPW.extension(0),tot_num_walkers) = M[i].sliced(walker_size,walker_size+bp_walker_size);
+      tot_num_walkers++;
+    }
   }
 
   template<class Mat>
@@ -285,8 +375,13 @@ class WalkerSetBase: public AFQMCInfo
     static_assert(std::decay<Mat>::type::dimensionality == 2, "Wrong dimensionality");
     if(tot_num_walkers < int(M.size(0)))
       APP_ABORT("Insufficient walkers");
-    if (walker_size != int(M.size(1)))
-      APP_ABORT("Incorrect dimensions.");
+    if(wlk_desc[3] > 0) {
+      if (walker_size+bp_walker_size != int(M.size(1)))
+        APP_ABORT("Incorrect dimensions.");
+    } else {
+      if (walker_size != int(M.size(1)))
+        APP_ABORT("Incorrect dimensions.");
+    }
     if(M.stride(1) != 1)
       APP_ABORT("Incorrect strides.");
 
@@ -295,8 +390,14 @@ class WalkerSetBase: public AFQMCInfo
       return;
     }  
     auto W( boost::multi::static_array_cast<element, pointer>(walker_buffer) );
-    for(int i=0; i<M.size(0); i++)
-      M[i] = W[--tot_num_walkers];  
+    auto BPW( boost::multi::static_array_cast<bp_element, bp_pointer>(bp_buffer) );
+    for(int i=0; i<M.size(0); i++) {
+      M[i].sliced(0,walker_size) = W[tot_num_walkers-1];  
+      if(wlk_desc[3] > 0)
+        M[i].sliced(walker_size,walker_size+bp_walker_size) = 
+                                        BPW(BPW.extension(0),tot_num_walkers-1);
+      tot_num_walkers--;
+    }
   }
 
   // given a list of new weights and counts, add/remove walkers and reassign weight accordingly
@@ -318,7 +419,7 @@ class WalkerSetBase: public AFQMCInfo
                <<M.size(0) <<" " <<nW <<" " <<targetN_per_TG <<std::endl; 
       APP_ABORT("Error in WalkerSetBase::branch(): Not enough space in excess matrix.\n");
     }
-    if(int(M.size(1)) < walker_size) 
+    if(int(M.size(1)) < walker_size+((wlk_desc[3]>0)?bp_walker_size:0)) 
       APP_ABORT("Error in WalkerSetBase::branch(): Wrong dimensions in excess matrix.\n"); 
 
     // if all walkers are dead, don't bother with routine, reset tot_num_walkers and return
@@ -328,6 +429,7 @@ class WalkerSetBase: public AFQMCInfo
     } 
 
     auto W( boost::multi::static_array_cast<element, pointer>(walker_buffer) );
+    auto BPW( boost::multi::static_array_cast<bp_element, bp_pointer>(bp_buffer) );
 
     //1. push/swap all dead walkers to the end and adjust tot_num_walkers 
     {
@@ -350,7 +452,11 @@ class WalkerSetBase: public AFQMCInfo
 
         // 3. swap
         std::swap(*kill,*keep); 
-        W[std::distance(itbegin,kill)] = W[--tot_num_walkers]; 
+        W[std::distance(itbegin,kill)] = W[tot_num_walkers-1]; 
+        if(wlk_desc[3]>0)
+          BPW(BPW.extension(0),std::distance(itbegin,kill)) = 
+                                        BPW(BPW.extension(0),tot_num_walkers-1);  
+        --tot_num_walkers;
         --keep;  
 
       }
@@ -378,6 +484,9 @@ class WalkerSetBase: public AFQMCInfo
         // need synthetic references to make this easier!!!
         using std::fill_n;
         fill_n(W[pos].origin()+data_displ[WEIGHT],1,ComplexType(itbegin->first,0.0));
+        if(bp_pos-1 >= 0 && bp_pos-1 < wlk_desc[3]) 
+          fill_n(BPW[data_displ[WEIGHT_HISTORY]+bp_pos-1].origin()+pos,1,
+                 ComplexType(itbegin->first,0.0));
       } else {
         // if there is space, branch within walker set
         // otherwise send excess to M
@@ -386,21 +495,36 @@ class WalkerSetBase: public AFQMCInfo
         // need synthetic references to make this easier!!!
         using std::fill_n;
         fill_n(W[pos].origin()+data_displ[WEIGHT],1,ComplexType(itbegin->first,0.0));
-        for(int i=0; i<n; i++) 
-          W[tot_num_walkers++] = W[pos];
-        for(int i=0, in=itbegin->second-1-n; i<in; i++, cnt++) 
-          M[cnt] = W[pos];  
+        if(bp_pos-1 >= 0 && bp_pos-1 < wlk_desc[3]) 
+          fill_n(BPW[data_displ[WEIGHT_HISTORY]+bp_pos-1].origin()+pos,1,
+                 ComplexType(itbegin->first,0.0));
+        for(int i=0; i<n; i++) { 
+          W[tot_num_walkers] = W[pos];
+          if(wlk_desc[3]>0)
+            BPW(BPW.extension(0),tot_num_walkers) = BPW(BPW.extension(0),pos);  
+          tot_num_walkers++;
+        }
+        for(int i=0, in=itbegin->second-1-n; i<in; i++, cnt++) { 
+          M[cnt].sliced(0,walker_size) = W[pos];  
+          if(wlk_desc[3]>0)
+            M[cnt].sliced(walker_size,walker_size+bp_walker_size) = BPW(BPW.extension(0),pos);  
+        }
       }
     }
 
   }
 
   template<class T>
-  void scaleWeight(const T& w0) {
+  void scaleWeight(const T& w0, bool scale_last_history=false) {
     if(!TG.TG_local().root()) return;
     assert(walker_buffer.size(1) == walker_size);
     auto W( boost::multi::static_array_cast<element, pointer>(walker_buffer) );
     ma::scal(ComplexType(w0),W({0,tot_num_walkers},data_displ[WEIGHT]));
+    if(scale_last_history) 
+      if(bp_pos-1 >= 0 && bp_pos-1 < wlk_desc[3]) { 
+        auto BPW( boost::multi::static_array_cast<bp_element, bp_pointer>(bp_buffer) );
+        ma::scal(ComplexType(w0),BPW[data_displ[WEIGHT_HISTORY]+bp_pos-1]);
+      }
   } 
 
   void scaleWeightsByOverlap() {
@@ -422,6 +546,8 @@ class WalkerSetBase: public AFQMCInfo
 
   int single_walker_memory_usage() const{ return walker_memory_usage; } 
   int single_walker_size() const{ return walker_size; }  
+  int single_walker_bp_memory_usage() const{ return (wlk_desc[3]>0)?bp_walker_memory_usage:0; } 
+  int single_walker_bp_size() const{ return (wlk_desc[3]>0)?bp_walker_size:0; }  
  
   WALKER_TYPES getWalkerType() { return walkerType; } 
 
@@ -484,14 +610,71 @@ class WalkerSetBase: public AFQMCInfo
     TG.TG_local().barrier();
   }
 
+  // Careful!!! This matrix returns an array_ref, NOT a copy!!!
+  stdCMatrix_ref getFields(int ip)
+  {
+    if(ip < 0 || ip > wlk_desc[3])
+      APP_ABORT(" Error: index out of bounds in getFields. \n");
+    int skip = (data_displ[FIELDS] + ip*wlk_desc[4])*bp_buffer.size(1); 
+    return stdCMatrix_ref(to_address(bp_buffer.origin())+skip,{wlk_desc[4],bp_buffer.size(1)});
+  } 
+
+  stdCTensor_ref getFields()
+  {
+    return stdCTensor_ref(to_address(bp_buffer.origin())+data_displ[FIELDS]*bp_buffer.size(1),
+                            {wlk_desc[3],wlk_desc[4],bp_buffer.size(1)});
+  }
+
+  template<class Mat>  
+  void storeFields(int ip, Mat&& V)
+  {
+    static_assert(std::decay<Mat>::type::dimensionality == 2, "Wrong dimensionality");
+    auto&& F(getFields(ip));
+    if(V.stride(0) == V.size(1)) {
+      using std::copy_n;
+      copy_n(V.origin(),F.num_elements(),F.origin());
+    } else 
+      F = V;
+  }
+
+  stdCMatrix_ref getWeightFactors()
+  {
+    return stdCMatrix_ref(to_address(bp_buffer.origin())+data_displ[WEIGHT_FAC]*bp_buffer.size(1),
+                                {wlk_desc[3],bp_buffer.size(1)});
+  }
+
+  stdCMatrix_ref getWeightHistory()
+  {
+    return stdCMatrix_ref(to_address(bp_buffer.origin())+data_displ[WEIGHT_HISTORY]*bp_buffer.size(1),
+                                {wlk_desc[3],bp_buffer.size(1)});
+  }
+
+  double getLogOverlapFactor() const { return LogOverlapFactor; }
+  // nx= {2:CLOSED&&COLLINEAR, 1:NONCOLLINEAR }  
+  // before: OV_full = exp( nx*LogOverlapFactor ) * OVold
+  // after: OV_full = exp( nx*LogOverlapFactor+f ) * OVnew
+  // OVnew = OVold * exp( -f ) 
+  // LogOverlapFactor_new = LogOverlapFactor + f/nx  
+  void adjustLogOverlapFactor(const double f) { 
+    assert(walker_buffer.size(1) == walker_size);
+    double nx = (walkerType==NONCOLLINEAR?1.0:2.0);
+    if(TG.TG_local().root()) {
+      auto W( boost::multi::static_array_cast<element, pointer>(walker_buffer) );
+      ma::scal(ComplexType(std::exp(-f)),W({0,tot_num_walkers},data_displ[OVLP]));
+    }
+    LogOverlapFactor+=f/nx; 
+    TG.TG_local().barrier();
+  }
+
   protected:
 
   RandomGenerator_t* rng;
 
-  int nback_prop;
   int walker_size, walker_memory_usage;
+  int bp_walker_size, bp_walker_memory_usage;
+  int bp_pos;
 
-  // wlk_descriptor: {nmo, naea, naeb, nback_prop} 
+  // wlk_descriptor: {nmo, naea, naeb, nback_prop, nCV, nRefs} 
   wlk_descriptor wlk_desc; 
   wlk_indices data_displ; 
 
@@ -501,11 +684,25 @@ class WalkerSetBase: public AFQMCInfo
   int targetN;
   int tot_num_walkers;
 
+  // Stores an overall scaling factor for walker weights (assumed to be 
+  // consistent over all walker groups). 
+  // The actual overlap of a walker is exp(OverlapFactor)*wset[i].weight()  
+  // Notice that overlap ratios (which are always what matters) are
+  // independent of this value.
+  // If this value is changed, the overlaps of the walkers must be adjusted 
+  // This is needed for stability reasons in large systems
+  // Note that this is stored on a "per spin" capacity
+  double LogOverlapFactor = 0.0;
+
   TimerList_t Timers;
 
   afqmc::TaskGroup_& TG;  
 
+  // Contains main walker data needed for propagation
   CMatrix walker_buffer;
+ 
+  // Contains stack of fields and slater matrix references for back propagation
+  BPCMatrix bp_buffer;
 
   // reads xml and performs setup
   void parse(xmlNodePtr cur); 

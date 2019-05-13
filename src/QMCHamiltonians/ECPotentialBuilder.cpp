@@ -274,8 +274,8 @@ void ECPotentialBuilder::useXmlFormat(xmlNodePtr cur)
       }
       if (!success)
       {
-        app_error() << " Failed to add pseudopotential for element " << ionName << std::endl;
-        APP_ABORT("ECPotentialBuilder::useXmlFormat failed!");
+        app_error() << "  Failed to add pseudopotential for element " << ionName << std::endl;
+        myComm->barrier_and_abort("ECPotentialBuilder::useXmlFormat failed!");
       }
     }
     cur = cur->next;

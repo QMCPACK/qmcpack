@@ -206,9 +206,6 @@ void ParticleSet::resetGroups()
   IsGrouped = true;
   for (int iat = 0; iat < ID.size(); ++iat)
     IsGrouped &= (IndirectID[iat] == ID[iat]);
-  if (!IsGrouped)
-    app_warning() << "  Particles are not grouped by species in the input file.  Algorithms may not be optimal. "
-                  << std::endl;
 }
 
 void ParticleSet::randomizeFromSource(ParticleSet& src)
@@ -292,10 +289,15 @@ void ParticleSet::randomizeFromSource(ParticleSet& src)
 ///write to a std::ostream
 bool ParticleSet::get(std::ostream& os) const
 {
-  os << "  ParticleSet " << getName() << " : ";
-  for (int i = 0; i < SubPtcl.size(); i++)
-    os << SubPtcl[i] << " ";
-  os << "\n\n    " << TotalNum << "\n\n";
+  os << "  ParticleSet '" << getName() << "' contains " << TotalNum << " particles : ";
+  if (SubPtcl.size() > 0)
+    for (int i = 0; i < SubPtcl.size() - 1; i++)
+      os << " " << mySpecies.speciesName[i] << "(" << SubPtcl[i + 1] - SubPtcl[i] << ")";
+  os << std::endl;
+  if (!IsGrouped)
+    os << "    Particles are not grouped by species in the input file. Algorithms may not be optimal!" << std::endl;
+  os << std::endl;
+
   const int maxParticlesToPrint = 10;
   int numToPrint                = std::min(TotalNum, maxParticlesToPrint);
 
@@ -303,18 +305,15 @@ bool ParticleSet::get(std::ostream& os) const
   {
     os << "    " << mySpecies.speciesName[GroupID[i]] << R[i] << std::endl;
   }
-
   if (numToPrint < TotalNum)
   {
     os << "    (... and " << (TotalNum - numToPrint) << " more particle positions ...)" << std::endl;
   }
+  os << std::endl;
 
   for (const std::string& description : distTableDescriptions)
-  {
-    os << std::endl;
     os << description;
-  }
-
+  os << std::endl;
   return true;
 }
 

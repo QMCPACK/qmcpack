@@ -720,7 +720,7 @@ class Simulation(NexusCore):
                     rn.append(result_name)
                 else:
                     unrecognized_names = True
-                    self.error(name+' is not known to be a result of '+sim.generic_identifier,exit=False)
+                    self.error(name+' is not known to be a result of '+sim.__class__.__name__,exit=False)
                 #end if
             #end for
             if unrecognized_names:

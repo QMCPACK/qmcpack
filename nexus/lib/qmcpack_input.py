@@ -1840,7 +1840,7 @@ class wavefunction(QIxml):
 #end class wavefunction
 
 class determinantset(QIxml):
-    attributes = ['type','href','sort','tilematrix','twistnum','twist','source','version','meshfactor','gpu','transform','precision','truncate','lr_dim_cutoff','shell','randomize','key','rmax_core','dilation','name','cuspcorrection','tiling','usegrid','meshspacing','shell2','src','buffer','bconds','keyword','hybridrep']
+    attributes = ['type','href','sort','tilematrix','twistnum','twist','source','version','meshfactor','gpu','transform','precision','truncate','lr_dim_cutoff','shell','randomize','key','rmax_core','dilation','name','cuspcorrection','tiling','usegrid','meshspacing','shell2','src','buffer','bconds','keyword','hybridrep','pbcimages']
     elements   = ['basisset','sposet','slaterdeterminant','multideterminant','spline','backflow','cubicgrid']
     h5tags     = ['twistindex','twistangle','rcut']
     write_types = obj(gpu=yesno,sort=onezero,transform=yesno,truncate=yesno,randomize=truefalse,cuspcorrection=yesno,usegrid=yesno)
@@ -1911,7 +1911,7 @@ class multideterminant(QIxml):
 #end class multideterminant
 
 class detlist(QIxml):
-    attributes = ['size','type','nca','ncb','nea','neb','nstates','cutoff']
+    attributes = ['size','type','nca','ncb','nea','neb','nstates','cutoff','href']
     elements   = ['ci','csf']
 #end class detlist
 
@@ -2596,6 +2596,7 @@ Names.set_expanded_names(
     printeloc        = 'printEloc',
     spindependent    = 'spinDependent',
     l_local          = 'l-local',
+    pbcimages        = 'PBCimages',
    )
 for c in classes:
     c.init_class()
