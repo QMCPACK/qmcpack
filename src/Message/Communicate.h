@@ -95,7 +95,7 @@ public:
   Communicate(const mpi3::environment& env);
 
   ///constructor with communicator
-  Communicate(const mpi3::communicator &in_comm);
+  Communicate(const mpi3::communicator& in_comm);
 #endif
 
   ///constructor with communicator

@@ -125,6 +125,34 @@ bool readCuspInfo(const std::string& cuspInfoFile,
   return success;
 }
 
+void broadcastCuspInfo(CuspCorrectionParameters& param, Communicate& Comm, int root)
+{
+#ifdef HAVE_MPI
+  std::vector<double> buffer(9);
+  buffer[0] = param.Rc;
+  buffer[1] = param.C;
+  buffer[2] = param.sg;
+  buffer[3] = param.alpha[0];
+  buffer[4] = param.alpha[1];
+  buffer[5] = param.alpha[2];
+  buffer[6] = param.alpha[3];
+  buffer[7] = param.alpha[4];
+  buffer[8] = param.redo;
+
+  Comm.comm.broadcast(buffer.begin(), buffer.end(), root);
+
+  param.Rc       = buffer[0];
+  param.C        = buffer[1];
+  param.sg       = buffer[2];
+  param.alpha[0] = buffer[3];
+  param.alpha[1] = buffer[4];
+  param.alpha[2] = buffer[5];
+  param.alpha[3] = buffer[6];
+  param.alpha[4] = buffer[7];
+  param.redo     = buffer[8] == 0.0 ? 0 : 1;
+#endif
+}
+
 void splitPhiEta(int center, const std::vector<bool>& corrCenter, LCAOrbitalSet& Phi, LCAOrbitalSet& Eta)
 {
   typedef QMCTraits::RealType RealType;
