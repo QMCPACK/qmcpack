@@ -53,10 +53,7 @@ Communicate::Communicate()
 {}
 
 #ifdef HAVE_MPI
-Communicate::Communicate(const mpi3::environment& env) : GroupLeaderComm(nullptr)
-{
-  initialize(env);
-}
+Communicate::Communicate(const mpi3::environment& env) : GroupLeaderComm(nullptr) { initialize(env); }
 #endif
 
 Communicate::~Communicate()
@@ -68,11 +65,10 @@ Communicate::~Communicate()
 //exclusive:  MPI or Serial
 #ifdef HAVE_MPI
 
-Communicate::Communicate(const mpi3::communicator &in_comm)
-    : d_groupid(0), d_ngroups(1), GroupLeaderComm(nullptr)
+Communicate::Communicate(const mpi3::communicator& in_comm) : d_groupid(0), d_ngroups(1), GroupLeaderComm(nullptr)
 {
-  comm = mpi3::communicator(in_comm);
-  myMPI = &comm;
+  comm        = mpi3::communicator(in_comm);
+  myMPI       = &comm;
   d_mycontext = comm.rank();
   d_ncontexts = comm.size();
 }
@@ -82,7 +78,7 @@ Communicate::Communicate(const Communicate& in_comm, int nparts)
 {
   std::vector<int> nplist(nparts + 1);
   int p = FairDivideLow(in_comm.rank(), in_comm.size(), nparts, nplist); //group
-  comm = in_comm.comm.split(p, in_comm.rank());
+  comm  = in_comm.comm.split(p, in_comm.rank());
   myMPI = &comm;
   // TODO: mpi3 needs to define comm
   d_mycontext = comm.rank();
@@ -102,8 +98,8 @@ Communicate::Communicate(const Communicate& in_comm, int nparts)
 
 void Communicate::initialize(const mpi3::environment& env)
 {
-  comm = env.world();
-  myMPI = &comm;
+  comm        = env.world();
+  myMPI       = &comm;
   d_mycontext = comm.rank();
   d_ncontexts = comm.size();
   d_groupid   = 0;
@@ -127,8 +123,8 @@ void Communicate::initialize(int argc, char** argv) {}
 
 void Communicate::initializeAsNodeComm(const Communicate& parent)
 {
-  comm = parent.comm.split_shared();
-  myMPI = &comm;
+  comm        = parent.comm.split_shared();
+  myMPI       = &comm;
   d_mycontext = comm.rank();
   d_ncontexts = comm.size();
 }
@@ -180,7 +176,8 @@ Communicate::Communicate(const Communicate& in_comm, int nparts)
 
 void Communicate::barrier_and_abort(const std::string& msg) const
 {
-  if(!rank()) std::cerr << "Fatal Error. Aborting at " << msg << std::endl;
+  if (!rank())
+    std::cerr << "Fatal Error. Aborting at " << msg << std::endl;
   Communicate::barrier();
   Communicate::abort();
 }

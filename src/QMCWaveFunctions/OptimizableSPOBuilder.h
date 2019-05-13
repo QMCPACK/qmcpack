@@ -11,8 +11,7 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
 
 #ifndef OPTIMIZABLE_SPO_BUILDER_H
 #define OPTIMIZABLE_SPO_BUILDER_H
@@ -26,21 +25,19 @@ namespace qmcplusplus
 class OptimizableSPOBuilder : public SPOSetBuilder
 {
 protected:
-  typedef std::map<std::string,ParticleSet*> PtclPoolType;
-  typedef std::map<std::string,SPOSet*>  SPOPoolType;
-  ParticleSet *targetPtcl;
+  typedef std::map<std::string, ParticleSet*> PtclPoolType;
+  typedef std::map<std::string, SPOSet*> SPOPoolType;
+  ParticleSet* targetPtcl;
+
 public:
-  OptimizableSPOBuilder(ParticleSet& p, PtclPoolType& psets,
-                        Communicate *comm,
-                        xmlNodePtr cur);
+  OptimizableSPOBuilder(ParticleSet& p, PtclPoolType& psets, Communicate* comm, xmlNodePtr cur);
 
   /** initialize the Antisymmetric wave function for electrons
    *@param cur the current xml node
    */
   SPOSet* createSPOSetFromXML(xmlNodePtr cur);
   //    SPOSet* createSPOSetFromXML(xmlNodePtr cur, SPOPool_t& spo_pool);
-
 };
-}
+} // namespace qmcplusplus
 
 #endif
