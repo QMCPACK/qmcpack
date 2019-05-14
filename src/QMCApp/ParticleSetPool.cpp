@@ -199,7 +199,7 @@ void ParticleSetPool::randomize()
     xmlFreeNode(randomize_nodes[i]);
   }
   randomize_nodes.clear();
-  if(!success)
+  if (!success)
     APP_ABORT("ParticleSePool::randomize failed to randomize some Particlesets!");
 }
 
