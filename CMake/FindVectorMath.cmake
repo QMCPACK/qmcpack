@@ -34,18 +34,6 @@ ELSE()
   ENDIF()
 ENDIF()
 
-IF ( NOT HAVE_MKL_VML )
-  FILE( WRITE "${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/src_glibc.cxx"
-      "#include <iostream>\n#if __GLIBC__ == 2 && ( __GLIBC_MINOR__ == 22 || __GLIBC_MINOR__ == 23 )\n#error buggy glibc version\n#endif\n int main() { return 0; }\n" )
-  try_compile(PASS_GLIBC ${CMAKE_BINARY_DIR}
-        ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/src_glibc.cxx
-        CMAKE_FLAGS "${CMAKE_CXX_FLAGS}" )
-
-  IF ( NOT PASS_GLIBC )
-    MESSAGE(WARNING "Using glibc 2.22 or 2.23 which contains a buggy libmvec crashing QMCPACK. Workaround needed for this issue.")
-  ENDIF()
-ENDIF()
-
 IF ( NOT HAVE_VECTOR_MATH )
   MESSAGE(STATUS "No usable vector math library detected.")
 ENDIF()

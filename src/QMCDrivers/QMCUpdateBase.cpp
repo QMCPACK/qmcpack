@@ -35,14 +35,32 @@ QMCUpdateBase::QMCUpdateBase(MCWalkerConfiguration& w,
                              TrialWaveFunction& guide,
                              QMCHamiltonian& h,
                              RandomGenerator_t& rg)
-    : W(w), Psi(psi), Guide(guide), H(h), RandomGen(rg), DriftModifier(0), branchEngine(0), Estimators(0), Traces(0), csoffset(0)
+    : W(w),
+      Psi(psi),
+      Guide(guide),
+      H(h),
+      RandomGen(rg),
+      DriftModifier(0),
+      branchEngine(0),
+      Estimators(0),
+      Traces(0),
+      csoffset(0)
 {
   setDefaults();
 }
 
 /// Constructor.
 QMCUpdateBase::QMCUpdateBase(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator_t& rg)
-    : W(w), Psi(psi), H(h), Guide(psi), RandomGen(rg), DriftModifier(0), branchEngine(0), Estimators(0), Traces(0), csoffset(0)
+    : W(w),
+      Psi(psi),
+      H(h),
+      Guide(psi),
+      RandomGen(rg),
+      DriftModifier(0),
+      branchEngine(0),
+      Estimators(0),
+      Traces(0),
+      csoffset(0)
 {
   setDefaults();
 }
@@ -82,14 +100,17 @@ bool QMCUpdateBase::put(xmlNodePtr cur)
   return s;
 }
 
-void QMCUpdateBase::resetRun(BranchEngineType* brancher, EstimatorManagerBase* est, TraceManager* traces, const DriftModifierBase* driftmodifer)
+void QMCUpdateBase::resetRun(BranchEngineType* brancher,
+                             EstimatorManagerBase* est,
+                             TraceManager* traces,
+                             const DriftModifierBase* driftmodifer)
 {
-  Estimators   = est;
-  branchEngine = brancher;
+  Estimators    = est;
+  branchEngine  = brancher;
   DriftModifier = driftmodifer;
-  Traces = traces;
+  Traces        = traces;
 
-  NumPtcl      = W.getTotalNum();
+  NumPtcl = W.getTotalNum();
   deltaR.resize(NumPtcl);
   drift.resize(NumPtcl);
   G.resize(NumPtcl);

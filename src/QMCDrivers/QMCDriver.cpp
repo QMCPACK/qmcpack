@@ -165,7 +165,8 @@ QMCDriver::QMCDriver(MCWalkerConfiguration& w,
 QMCDriver::~QMCDriver()
 {
   delete_iter(Rng.begin(), Rng.end());
-  if (DriftModifier) delete DriftModifier;
+  if (DriftModifier)
+    delete DriftModifier;
 }
 
 void QMCDriver::add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi)
