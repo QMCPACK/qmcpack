@@ -656,7 +656,7 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop, TaskGroup_& TGwfn
 
     // Read common trial wavefunction input options.
     getCommonInput(dump, NMO, NAEA, NAEB, ndets_to_read, ci,
-                   walker_type, h, TGwfn.Global().root());
+                   walker_type, TGwfn.Global().root());
     if(restart_file == "") {
       NCE = h.getNuclearCoulombEnergy();
     } else {
@@ -734,7 +734,8 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop, TaskGroup_& TGwfn
       APP_ABORT("");
     }
     ph_excitations<int,ComplexType> abij = read_ph_wavefunction_hdf(dump,ndets_to_read,walker_type,
-                                                                    TGwfn.Node(),NMO,NAEA,NAEB,PsiT_MO,wfn_type);
+                                                                    TGwfn.Node(),NMO,NAEA,NAEB,PsiT_MO,
+                                                                    wfn_type);
     int NEL = (walker_type==NONCOLLINEAR)?(NAEA+NAEB):NAEA;
     int N_ = (walker_type==NONCOLLINEAR)?2*NMO:NMO;
     if(wfn_type == "occ") {
@@ -855,72 +856,9 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop, TaskGroup_& TGwfn
                                          CLOSED,PsiT,cutvn,cutv2,TGprop,TGwfn,dump));
     TGwfn.node_barrier();
     // add initial_guess
-    // when propagating Nact states, change this here
-    auto guess = initial_guess.find(name);
-    if( guess == initial_guess.end() ) {
-      auto newg = initial_guess.insert(
-                std::make_pair(name,boost::multi::array<ComplexType,3>({2,NMO,NAEA})));
-      if(!newg.second)
-        APP_ABORT(" Error: Problems adding new initial guess. \n");
-      auto& Psi0((newg.first)->second);
-      randomize_guess = std::abs(randomize_guess);
-      if(randomize_guess > 1e-12)
-        app_log()<<" Randomizing initial guess with uniform distribution: " <<randomize_guess <<std::endl;
-      std::default_random_engine generator(777);
-      std::uniform_real_distribution<double> distribution(-randomize_guess,randomize_guess);
-      int iC = initial_configuration;
-      if( iC >= abij.number_of_configurations() )
-        APP_ABORT(" Error: initial_configuration > ndets \n");
-      using ma::conj;
-      std::fill_n((newg.first)->second.origin(),2*NMO*NAEA,ComplexType(0.0,0.0));
-      //auto refc = abij.reference_configuration();
-      {
-        std::vector<int> alphaC(NAEA);
-        abij.get_alpha_configuration(std::get<0>(*(abij.configurations_begin()+iC)),alphaC);
-        auto pbegin = PsiT[0].pointers_begin();
-        auto pend = PsiT[0].pointers_end();
-        auto p0 = pbegin[0];
-        auto v0 = PsiT[0].non_zero_values_data();
-        auto c0 = PsiT[0].non_zero_indices2_data();
-        // only takinf NAEA states, increase later if super SM is needed
-        for(int i=0; i<NAEA; i++) {
-          //int ik = *(refc+i);
-          int ik = alphaC[i];
-          for(int ip=pbegin[ik]; ip<pend[ik]; ip++)
-            Psi0[0][c0[ip-p0]][i] = conj(v0[ip-p0]);
-        }
-        if(randomize_guess > 1e-12)
-          for(int i=0; i<NMO; i++)
-            for(int a=0; a<NAEA; a++)
-              Psi0[0][i][a] += distribution(generator);
-      }
-      if(walker_type==COLLINEAR) {
-        std::vector<int> betaC(NAEB);
-        abij.get_beta_configuration(std::get<1>(*(abij.configurations_begin()+iC)),betaC);
-        auto pbegin = PsiT.back().pointers_begin();
-        auto pend = PsiT.back().pointers_end();
-        auto p0 = pbegin[0];
-        auto v0 = PsiT.back().non_zero_values_data();
-        auto c0 = PsiT.back().non_zero_indices2_data();
-        // only takinf NAEB states, increase later if super SM is needed
-        for(int i=0; i<NAEB; i++) {
-          //int ik = *(refc+NAEA+i);
-          int ik = betaC[i];
-          for(int ip=pbegin[ik]; ip<pend[ik]; ip++)
-            Psi0[1][c0[ip-p0]][i] = conj(v0[ip-p0]);
-        }
-        if(randomize_guess > 1e-12)
-          for(int i=0; i<NMO; i++)
-            for(int a=0; a<NAEB; a++)
-              Psi0[1][i][a] += distribution(generator);
-      }
-    } else
-      APP_ABORT(" Error: Problems adding new initial guess, already exists. \n");
-
+    getInitialGuess(dump, name, NMO, NAEA, NAEB, walker_type);
     // setup configuration couplings
-    using index_aos = ma::sparse::array_of_sequences<int,int,
-                                                   shared_allocator<int>,
-                                                   ma::sparse::is_root>;
+    using index_aos = ma::sparse::array_of_sequences<int,int,shared_allocator<int>,ma::sparse::is_root>;
     shared_allocator<int> alloc_{TGwfn.Node()};
 
     // alpha
@@ -965,93 +903,7 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop, TaskGroup_& TGwfn
 
 }
 
-/*
- * Read trial wavefunction information from file.
-*/
-void WavefunctionFactory::getCommonInput(hdf_archive& dump, int NMO, int NAEA, int NAEB, int ndets_to_read,
-                                        std::vector<ComplexType>& ci, WALKER_TYPES walker_type, Hamiltonian& h, bool root)
-{
-  // check for consistency in parameters
-  std::vector<int> dims(5);
-  if(!dump.readEntry(dims,"dims")) {
-    app_error()<<" Error in WavefunctionFactory::fromHDF5(): Problems reading dims. \n";
-    APP_ABORT("");
-  }
-  if(NMO != dims[0]) {
-    app_error()<<" Error in WavefunctionFactory::fromHDF5(): Inconsistent NMO . \n";
-    APP_ABORT("");
-  }
-  if(NAEA != dims[1]) {
-    app_error()<<" Error in WavefunctionFactory::fromHDF5(): Inconsistent  NAEA. \n";
-    APP_ABORT("");
-  }
-  if(NAEB != dims[2]) {
-    app_error()<<" Error in WavefunctionFactory::fromHDF5(): Inconsistent  NAEB. \n";
-    APP_ABORT("");
-  }
-  if(walker_type != dims[3]) {
-    app_error()<<" Error in WavefunctionFactory::fromHDF5(): Inconsistent  walker_type. \n";
-    APP_ABORT("");
-  }
-  if(ndets_to_read < 1) ndets_to_read = dims[4];
-  if(ndets_to_read > dims[4]) {
-    app_error()<<" Error in WavefunctionFactory::fromHDF5(): Inconsistent  ndets_to_read. \n";
-    APP_ABORT("");
-  }
-  if(!dump.readEntry(ci, "CICOEFFICIENTS")) {
-    app_error()<<" Error in WavefunctionFactory::fromHDF5(): Problems reading CICOEFFICIENTS. \n";
-    APP_ABORT("");
-  }
-  ci.resize(ndets_to_read);
-}
-
-/*
- * Read Initial walker from file.
-*/
-void WavefunctionFactory::getInitialGuess(hdf_archive& dump, std::string& name, int NMO, int NAEA, int NAEB, WALKER_TYPES walker_type)
-{
-  auto guess = initial_guess.find(name);
-  if( guess == initial_guess.end() ) {
-    auto newg = initial_guess.insert(
-              std::make_pair(name,boost::multi::array<ComplexType,3>({2,NMO,NAEA})));
-    if(!newg.second)
-      APP_ABORT(" Error: Problems adding new initial guess. \n");
-    using ma::conj;
-    std::fill_n((newg.first)->second.origin(),2*NMO*NAEA,ComplexType(0.0,0.0));
-    {
-      boost::multi::array_ref<ComplexType,2> psi0((newg.first)->second.origin(),{NMO,NAEA});
-      if(!dump.readEntry(psi0, "Psi0_alpha")) {
-        app_error()<<" Error in WavefunctionFactory: Initial wavefunction Psi0_0 not found. \n";
-        APP_ABORT("");
-      }
-    }
-    if(walker_type==COLLINEAR) {
-      boost::multi::array_ref<ComplexType,2> psi0((newg.first)->second.origin()+NMO*NAEA,{NMO,NAEB});
-      if(!dump.readEntry(psi0, "Psi0_beta")) {
-        app_error()<<" Error in WavefunctionFactory: Initial wavefunction Psi0_0 not found. \n";
-        APP_ABORT("");
-      }
-    }
-  } else
-    APP_ABORT(" Error: Problems adding new initial guess, already exists. \n");
-}
-
-
-/*
- * Helper function to get HamOps object from file or from scratch.
-*/
-HamiltonianOperations WavefunctionFactory::getHamOps(bool read, hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA, int NAEB,
-                                                      std::vector<PsiT_Matrix>& PsiT, TaskGroup_& TGprop, TaskGroup_& TGwfn,
-                                                      RealType cutvn, RealType cutv2, int ndets_to_read, Hamiltonian& h)
-{
-  if(read) {
-    return loadHamOps(dump,type,NMO,NAEA,NAEB,PsiT,TGprop,TGwfn,cutvn,cutv2);
-  } else {
-    return h.getHamiltonianOperations(false, ndets_to_read>1,type,PsiT, cutvn,cutv2,TGprop,TGwfn,dump);
-  }
-}
-
-ph_excitations<int,ComplexType> read_ph_wavefunction_hdf(hdf_archive& dump, int& ndets, WALKER_TYPES walker_type,
+ph_excitations<int,ComplexType> WavefunctionFactory::read_ph_wavefunction_hdf(hdf_archive& dump, int& ndets, WALKER_TYPES walker_type,
         boost::mpi3::shared_communicator& comm, int NMO, int NAEA, int NAEB,
         std::vector<PsiT_Matrix>& PsiT, std::string& type)
 {
@@ -1060,8 +912,8 @@ ph_excitations<int,ComplexType> read_ph_wavefunction_hdf(hdf_archive& dump, int&
   assert(walker_type!=UNDEFINED_WALKER_TYPE);
   bool fullMOMat = false;
   bool Cstyle = true;
-  int wfn_type=0;
-  int ndet_in_file=-1;
+  int wfn_type = 0;
+  int ndet_in_file = -1;
   int NEL = NAEA;
   bool mixed=false;
   if(walker_type!=CLOSED) NEL+=NAEB;
@@ -1081,22 +933,20 @@ ph_excitations<int,ComplexType> read_ph_wavefunction_hdf(hdf_archive& dump, int&
    *          NOTE: Does not mean perfect pairing, means excitations from a single reference
    *   - 1: excitations out of a UHF reference
    */
+  std::vector<ComplexType> ci_coeff;
   if(comm.root()) {
-    std::vector<int> dims(5);
-    getCommonInput(dump, NMO, NAEA, NAEB, ndets_to_read, ci,
-                   walker_type, h, true);
+    getCommonInput(dump, NMO, NAEA, NAEB, ndets, ci_coeff, walker_type, comm.root());
     if(walker_type != COLLINEAR)
       APP_ABORT(" Error: walker_type!=COLLINEAR not yet implemented in read_ph_wavefunction.\n");
 
-    if(ndet_in_file < ndets)
-      APP_ABORT("Error: Requesting too many determinants from wfn file.\n");
-    if(wfn_type == 1 && walker_type == CLOSED)
-      APP_ABORT("Error in read_wavefunction: walker_type < wfn_type.\n");
-    if(wfn_type == 2 && (walker_type == CLOSED || walker_type == COLLINEAR))
-      APP_ABORT("Error in read_wavefunction: walker_type < wfn_type. \n");
-
-    if(type == "mixed" ) mixed = true;
-
+    if(!dump.readEntry(mixed,"wfn_type")) {
+      app_error()<<" Error in WavefunctionFactory::fromHDF5(): Problems reading wfn_type. \n";
+      APP_ABORT("");
+    }
+    if(!dump.readEntry(fullMOMat,"fullMOMat")) {
+      APP_ABORT("Problems reading fullMO in read_ph_wavefunction_hdf.\n");
+    }
+    if(type == "mixed") mixed = true;
     comm.broadcast_n(&mixed,1,0);
     comm.broadcast_n(&ndet_in_file,1,0);
     comm.broadcast_n(&wfn_type,1,0);
@@ -1107,10 +957,6 @@ ph_excitations<int,ComplexType> read_ph_wavefunction_hdf(hdf_archive& dump, int&
     comm.broadcast_n(&wfn_type,1,0);
     comm.broadcast_n(&fullMOMat,1,0);
   }
-  if(!dump.readEntry(fullMOMat,"fullmo"))
-    APP_ABORT("Problems reading fullMO in read_ph_wavefunction_hdf.\n");
-  if(!dump.readEntry(type,"type"))
-    APP_ABORT("Problems reading type in read_ph_wavefunction_hdf.\n");
 
   if(ndets <= 0) ndets = ndet_in_file;
 
@@ -1138,7 +984,6 @@ ph_excitations<int,ComplexType> read_ph_wavefunction_hdf(hdf_archive& dump, int&
   }
 
   ComplexType ci;
-  std::vector<ComplexType> ci_coeff(ndets);
   // count number of k-particle excitations
   // counts[0] has special meaning, it must be equal to NAEA+NAEB.
   std::vector<size_t> counts_alpha(NAEA+1);
@@ -1161,8 +1006,6 @@ ph_excitations<int,ComplexType> read_ph_wavefunction_hdf(hdf_archive& dump, int&
   if(comm.root()) {
     if(!dump.readEntry(buff, "occs"))
       APP_ABORT("Error reading occs array.\n");
-    if(!dump.readEntry(ci_coeff, "CICOEFFICIENTS"))
-      APP_ABORT("Error reading CICOEFFICIENTS array.\n");
     confg.reserve(NAEA);
     Iwork.resize(2*NAEA);
     exct.reserve(2*NAEA);
@@ -1258,6 +1101,93 @@ ph_excitations<int,ComplexType> read_ph_wavefunction_hdf(hdf_archive& dump, int&
   comm.barrier();
   return ph_struct;
 }
+
+/*
+ * Read trial wavefunction information from file.
+*/
+void WavefunctionFactory::getCommonInput(hdf_archive& dump, int NMO, int NAEA, int NAEB, int& ndets_to_read,
+                                         std::vector<ComplexType>& ci, WALKER_TYPES walker_type, bool root)
+{
+  // check for consistency in parameters
+  std::vector<int> dims(5);
+  if(!dump.readEntry(dims,"dims")) {
+    app_error()<<" Error in WavefunctionFactory::fromHDF5(): Problems reading dims. \n";
+    APP_ABORT("");
+  }
+  if(NMO != dims[0]) {
+    app_error()<<" Error in WavefunctionFactory::fromHDF5(): Inconsistent NMO . \n";
+    APP_ABORT("");
+  }
+  if(NAEA != dims[1]) {
+    app_error()<<" Error in WavefunctionFactory::fromHDF5(): Inconsistent  NAEA. \n";
+    APP_ABORT("");
+  }
+  if(NAEB != dims[2]) {
+    app_error()<<" Error in WavefunctionFactory::fromHDF5(): Inconsistent  NAEB. \n";
+    APP_ABORT("");
+  }
+  if(walker_type != dims[3]) {
+    app_error()<<" Error in WavefunctionFactory::fromHDF5(): Inconsistent  walker_type. \n";
+    APP_ABORT("");
+  }
+  if(ndets_to_read < 1) ndets_to_read = dims[4];
+  if(ndets_to_read > dims[4]) {
+    app_error()<<" Error in WavefunctionFactory::fromHDF5(): Inconsistent  ndets_to_read. \n";
+    APP_ABORT("");
+  }
+  ci.resize(ndets_to_read);
+  if(!dump.readEntry(ci, "CICOEFFICIENTS")) {
+    app_error()<<" Error in WavefunctionFactory::fromHDF5(): Problems reading CICOEFFICIENTS. \n";
+    APP_ABORT("");
+  }
+}
+
+/*
+ * Read Initial walker from file.
+*/
+void WavefunctionFactory::getInitialGuess(hdf_archive& dump, std::string& name, int NMO, int NAEA, int NAEB, WALKER_TYPES walker_type)
+{
+  auto guess = initial_guess.find(name);
+  if( guess == initial_guess.end() ) {
+    auto newg = initial_guess.insert(
+              std::make_pair(name,boost::multi::array<ComplexType,3>({2,NMO,NAEA})));
+    if(!newg.second)
+      APP_ABORT(" Error: Problems adding new initial guess. \n");
+    using ma::conj;
+    std::fill_n((newg.first)->second.origin(),2*NMO*NAEA,ComplexType(0.0,0.0));
+    {
+      boost::multi::array_ref<ComplexType,2> psi0((newg.first)->second.origin(),{NMO,NAEA});
+      if(!dump.readEntry(psi0, "Psi0_alpha")) {
+        app_error()<<" Error in WavefunctionFactory: Initial wavefunction Psi0_0 not found. \n";
+        APP_ABORT("");
+      }
+    }
+    if(walker_type==COLLINEAR) {
+      boost::multi::array_ref<ComplexType,2> psi0((newg.first)->second.origin()+NMO*NAEA,{NMO,NAEB});
+      if(!dump.readEntry(psi0, "Psi0_beta")) {
+        app_error()<<" Error in WavefunctionFactory: Initial wavefunction Psi0_0 not found. \n";
+        APP_ABORT("");
+      }
+    }
+  } else
+    APP_ABORT(" Error: Problems adding new initial guess, already exists. \n");
+}
+
+
+/*
+ * Helper function to get HamOps object from file or from scratch.
+*/
+HamiltonianOperations WavefunctionFactory::getHamOps(bool read, hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA, int NAEB,
+                                                      std::vector<PsiT_Matrix>& PsiT, TaskGroup_& TGprop, TaskGroup_& TGwfn,
+                                                      RealType cutvn, RealType cutv2, int ndets_to_read, Hamiltonian& h)
+{
+  if(read) {
+    return loadHamOps(dump,type,NMO,NAEA,NAEB,PsiT,TGprop,TGwfn,cutvn,cutv2);
+  } else {
+    return h.getHamiltonianOperations(false, ndets_to_read>1,type,PsiT, cutvn,cutv2,TGprop,TGwfn,dump);
+  }
+}
+
 
 
 }
