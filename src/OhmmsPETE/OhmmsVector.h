@@ -19,13 +19,13 @@
 
 #ifndef OHMMS_NEW_VECTOR_H
 #define OHMMS_NEW_VECTOR_H
-#include "PETE/PETE.h"
 #include <algorithm>
 #include <vector>
 #include <iostream>
 #include <type_traits>
 #include <stdexcept>
-#include <simd/MemorySpace.hpp>
+#include "PETE/PETE.h"
+#include "simd/MemorySpace.hpp"
 
 namespace qmcplusplus
 {
@@ -34,6 +34,7 @@ class Vector
 {
 public:
   typedef T Type_t;
+  typedef T value_type;
   typedef T* iterator;
   typedef const T* const_iterator;
   typedef typename Alloc::size_type size_type;
@@ -124,6 +125,7 @@ public:
   ///resize
   inline void resize(size_t n, Type_t val = Type_t())
   {
+    static_assert(std::is_same<value_type, typename Alloc::value_type>::value, "Vector and Alloc data types must agree!");
     if (nLocal > nAllocated)
       throw std::runtime_error("Resize not allowed on Vector constructed by initialized memory.");
     if (n > nAllocated)
