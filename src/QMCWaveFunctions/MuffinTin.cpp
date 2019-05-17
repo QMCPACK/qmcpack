@@ -127,7 +127,7 @@ MuffinTinClass::evalYlm (TinyVector<double,3> rhat)
   double dl = 0.0;
   for (int l=0; l<=lMax; l++)
   {
-    double XlmVec[2*l+1], dXlmVec[2*l+1];
+    std::vector<double> XlmVec(2*l+1), dXlmVec(2*l+1);
     XlmVec[2*l]  = lsign;
     dXlmVec[2*l] = dl * cottheta * XlmVec[2*l];
     XlmVec[0]    = lsign*XlmVec[2*l];
