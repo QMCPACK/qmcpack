@@ -258,6 +258,7 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
   bool okay2 = ecp.read_pp_file("Na.BFD.xml");
 
   NonLocalECPComponent* nlpp = ecp.pp_nonloc;
+  nlpp->resize_warrays(nlpp->sgridxyz_m.size(), ecp.NumNonLocal, ecp.Lmax);
 
   //This line is required because the randomized quadrature grid is set by
   //random number generator in NonLocalECPotential.  We take the unrotated
