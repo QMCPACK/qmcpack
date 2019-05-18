@@ -95,10 +95,10 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
       Set to 0 for non-PBC, and set manually in the input.
       Passes the pre-computed phase factor for evaluation of complex wavefunction. If WF is real Phase_factor is real and equals 1 if gamma or -1 if non-Gamma.  
   */
-  void setPBCParams(const TinyVector<int, 3>& PBCImages,const std::vector<QMCTraits::ValueType>& phase_factor)
+  void setPBCParams(const TinyVector<int, 3>& PBCImages,const TinyVector <double,3> SuperTwist , const std::vector<QMCTraits::ValueType>& phase_factor)
   {
     for (int i = 0; i < LOBasisSet.size(); ++i)
-      LOBasisSet[i]->setPBCParams(PBCImages,phase_factor);
+      LOBasisSet[i]->setPBCParams(PBCImages,SuperTwist, phase_factor);
   }
   /** set BasisSetSize and allocate mVGL container
    */

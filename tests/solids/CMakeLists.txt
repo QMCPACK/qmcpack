@@ -17,6 +17,7 @@ SUBDIRS("hcpBe_1x1x1_pp")
 SUBDIRS("monoO_1x1x1_pp")
 SUBDIRS("NiO_a4_e48_pp")
 IF (BUILD_AFQMC AND QMC_COMPLEX)
+   SUBDIRS("diamondC_1x1x1-Gaussian_pp_ShiftedTwist")
    SUBDIRS("diamondC_afqmc_1x1x1_complex")
 ENDIF()
 

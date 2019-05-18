@@ -34,6 +34,8 @@ struct SoaAtomicBasisSet
   int BasisSetSize;
   ///Number of Cell images for the evaluation of the orbital with PBC. If No PBC, should be 0;
   TinyVector<int, 3> PBCImages;
+  ///Coordinates of SuperTwist
+  TinyVector <double,3> SuperTwist; 
   ///Phase Factor array
   std::vector<QMCTraits::ValueType> periodic_image_phase_factors; 
   ///maximum radius of this center
@@ -93,8 +95,8 @@ struct SoaAtomicBasisSet
     return BasisSetSize;
   }
 
-  /// Set the number of periodic image for the evaluation of the orbitals and the phase factor. In the case of Non-PBC, PBCImages=(1,1,1) and the PhaseFactor=1.
-  void setPBCParams(const TinyVector<int, 3>& pbc_images, const std::vector<QMCTraits::ValueType>& PeriodicImagePhaseFactors) { PBCImages = pbc_images; periodic_image_phase_factors=PeriodicImagePhaseFactors;} 
+  /// Set the number of periodic image for the evaluation of the orbitals and the phase factor. In the case of Non-PBC, PBCImages=(1,1,1), SuperTwist(0,0,0) and the PhaseFactor=1.
+  void setPBCParams(const TinyVector<int, 3>& pbc_images, const TinyVector<double, 3> supertwist, const std::vector<QMCTraits::ValueType>& PeriodicImagePhaseFactors) { PBCImages = pbc_images; periodic_image_phase_factors=PeriodicImagePhaseFactors; SuperTwist=supertwist;} 
 
 
   /** implement a BasisSetBase virtual function
@@ -141,7 +143,9 @@ struct SoaAtomicBasisSet
 
     PosType dr_new;
     T r_new;
-    // T psi_new, dpsi_x_new, dpsi_y_new, dpsi_z_new,d2psi_new;
+
+
+
 
     constexpr T cone(1);
     constexpr T ctwo(2);
@@ -173,6 +177,10 @@ struct SoaAtomicBasisSet
       d2psi[ib]  = 0;
     }
 
+    double k= std::sqrt(dot( SuperTwist, SuperTwist));
+    double s, c,phase;
+
+
     for (int i = 0; i <= PBCImages[0]; i++) //loop Translation over X
     {
       //Allows to increment cells from 0,1,-1,2,-2,3,-3 etc...
@@ -202,6 +210,22 @@ struct SoaAtomicBasisSet
 
           const T rinv = cone / r_new;
 
+
+          phase = -dot(dr_new,SuperTwist);
+          sincos(phase, &s, &c);
+
+#if defined (QMC_COMPLEX)
+          std::complex<double> i(0.0,1.0);
+          std::complex<double> e_mikr(c, s);
+          std::complex<double> de_mikr_x, de_mikr_y, de_mikr_z;
+    
+          de_mikr_x=-i*SuperTwist[0]*e_mikr;
+          de_mikr_y=-i*SuperTwist[1]*e_mikr;
+          de_mikr_z=-i*SuperTwist[2]*e_mikr;
+#else
+          double e_mikr=1:
+          double de_mikr_x=de_mikr_y=de_mikr_z=0.0;
+#endif 
           for (size_t ib = 0; ib < BasisSetSize; ++ib)
           {
             const int nl(NL[ib]);
@@ -216,12 +240,20 @@ struct SoaAtomicBasisSet
             const T ang_z     = ylm_z[lm];
             const T vr        = phi[nl];
 
-            psi[ib] += ang * vr;
-            dpsi_x[ib] += (ang * gr_x + vr * ang_x);
-            dpsi_y[ib] += (ang * gr_y + vr * ang_y);
-            dpsi_z[ib] += (ang * gr_z + vr * ang_z);
-            d2psi[ib] += (ang * (ctwo * drnloverr + d2phi[nl]) + ctwo * (gr_x * ang_x + gr_y * ang_y + gr_z * ang_z) +
-                vr * ylm_l[lm]);
+            psi[ib] += ang * vr*e_mikr;
+            ///ORIGINAL VALUES:
+            //dpsi_x[ib] += (ang * gr_x  + vr * ang_x );
+            //dpsi_y[ib] += (ang * gr_y  + vr * ang_y );
+            //dpsi_z[ib] += (ang * gr_z  + vr * ang_z );
+
+           ///GRADIENT WITH PHASE
+           dpsi_x[ib] +=de_mikr_x * ( ang * vr ) + (ang * gr_x  + vr * ang_x ) * e_mikr; 
+           dpsi_y[ib] +=de_mikr_y * ( ang * vr ) + (ang * gr_y  + vr * ang_y ) * e_mikr; 
+           dpsi_z[ib] +=de_mikr_z * ( ang * vr ) + (ang * gr_z  + vr * ang_z ) * e_mikr; 
+         
+           ///CANNOT WRITE LAPLACIAN
+           d2psi[ib] += (ang * (ctwo * drnloverr + d2phi[nl]) + ctwo * (gr_x * ang_x + gr_y * ang_y + gr_z * ang_z) + vr * ylm_l[lm]);
+           
           }
         }
       }
@@ -596,6 +628,11 @@ struct SoaAtomicBasisSet
     T r_new;
     RealType* restrict ylm_v = tempS.data(0);
     RealType* restrict phi_r = tempS.data(1);
+
+    double s, c,phase;
+
+
+
     //Phase_idx needs to be initialized at -1 as it has to be incremented first to comply with the if statement (r_new >=Rmax) 
     for (size_t ib = 0; ib < BasisSetSize; ++ib)
       psi[ib] = 0;
@@ -619,10 +656,18 @@ struct SoaAtomicBasisSet
           if (r_new >= Rmax)
             continue;
 
+          
+          phase = -dot(dr_new,SuperTwist);
+          sincos(phase, &s, &c);
+#if defined (QMC_COMPLEX)
+          std::complex<double> e_mikr(c, s);
+#else
+          double e_mikr=1:
+#endif            
           Ylm.evaluateV(-dr_new[0], -dr_new[1], -dr_new[2], ylm_v);
           MultiRnl->evaluate(r_new, phi_r);
           for (size_t ib = 0; ib < BasisSetSize; ++ib)
-            psi[ib] += ylm_v[LM[ib]] * phi_r[NL[ib]];
+            psi[ib] += ylm_v[LM[ib]] * phi_r[NL[ib]]*e_mikr;
 
         }
       }

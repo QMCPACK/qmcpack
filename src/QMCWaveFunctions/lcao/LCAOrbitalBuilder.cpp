@@ -113,7 +113,9 @@ LCAOrbitalBuilder::LCAOrbitalBuilder(ParticleSet& els, ParticleSet& ions, Commun
   std::string keyOpt("NMO");       // Numerical Molecular Orbital
   std::string transformOpt("yes"); // Numerical Molecular Orbital
   std::string cuspC("no");         // cusp correction
-  PosType SuperTwist(0.0);         // Supertwist coordinates
+  SuperTwist[0]=0.0;
+  SuperTwist[1]=0.0;
+  SuperTwist[2]=0.0;
   cuspInfo = "";                   // file with precalculated cusp correction info
   OhmmsAttributeSet aAttrib;
   aAttrib.add(keyOpt, "keyword");
@@ -129,14 +131,14 @@ LCAOrbitalBuilder::LCAOrbitalBuilder(ParticleSet& els, ParticleSet& ions, Commun
   if (cur != NULL)
     aAttrib.put(cur);
 
-  if (std::abs(SuperTwist[0] - 0.0) >= 1e-6 || std::abs(SuperTwist[1] - 0.0) >= 1e-6 ||
-      std::abs(SuperTwist[2] - 0.0) >= 1e-6)
-  {
-    std::string error_msg("You are attempting to use a Super Twist other than Gamma. "
-                          "This feature is being implemented but not supported yet. "
-                          "Please contact developers for more details !!! Aborting.");
-    APP_ABORT(error_msg.c_str());
-  }
+ // if (std::abs(SuperTwist[0] - 0.0) >= 1e-6 || std::abs(SuperTwist[1] - 0.0) >= 1e-6 ||
+ //     std::abs(SuperTwist[2] - 0.0) >= 1e-6)
+ // {
+ //   std::string error_msg("You are attempting to use a Super Twist other than Gamma. "
+ //                         "This feature is being implemented but not supported yet. "
+ //                         "Please contact developers for more details !!! Aborting.");
+ //   APP_ABORT(error_msg.c_str());
+ // }
 
   radialOrbType = -1;
   if (transformOpt == "yes")
@@ -341,7 +343,7 @@ LCAOrbitalBuilder::BasisSet_t* LCAOrbitalBuilder::createBasisSet(xmlNodePtr cur)
     cur = cur->next;
   } // done with basis set
   mBasisSet->setBasisSetSize(-1);
-  mBasisSet->setPBCParams(PBCImages, PeriodicImagePhaseFactors);
+  mBasisSet->setPBCParams(PBCImages, SuperTwist, PeriodicImagePhaseFactors);
   return mBasisSet;
 }
 
@@ -425,7 +427,7 @@ LCAOrbitalBuilder::BasisSet_t* LCAOrbitalBuilder::createBasisSetH5()
   }
 
   mBasisSet->setBasisSetSize(-1);
-  mBasisSet->setPBCParams(PBCImages, PeriodicImagePhaseFactors);
+  mBasisSet->setPBCParams(PBCImages, SuperTwist, PeriodicImagePhaseFactors);
   return mBasisSet;
 }
 
