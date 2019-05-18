@@ -14,10 +14,11 @@
 #ifndef OHMMS_PETE_MATRIX_H
 #define OHMMS_PETE_MATRIX_H
 
-#include "PETE/PETE.h"
 #include <cstdlib>
-#include "OhmmsPETE/OhmmsVector.h"
+#include <type_traits>
 #include <iostream>
+#include "PETE/PETE.h"
+#include "OhmmsPETE/OhmmsVector.h"
 
 namespace qmcplusplus
 {
@@ -85,6 +86,7 @@ public:
 
   inline void resize(size_type n, size_type m)
   {
+    static_assert(std::is_same<value_type, typename Alloc::value_type>::value, "Matrix and Alloc data types must agree!");
     D1      = n;
     D2      = m;
     TotSize = n * m;
