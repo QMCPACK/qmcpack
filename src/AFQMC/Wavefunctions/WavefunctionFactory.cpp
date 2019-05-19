@@ -226,18 +226,18 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop, TaskGroup_& TGwf
         dump.push("Wavefunction");
         dump.push("NOMSD");
         std::vector<int> dims{NMO,NAEA,NAEB,walker_type,ndets_to_read};
-        dump.write(dims,"dims"); 
-        std::vector<ValueType> et{NCE}; 
-        dump.write(et,"NCE"); 
-        dump.write(ci,"CICOEFFICIENTS"); 
-        for(int i=0; i<PsiT.size(); ++i) { 
+        dump.write(dims,"dims");
+        std::vector<ValueType> et{NCE};
+        dump.write(et,"NCE");
+        dump.write(ci,"ci_coeffs");
+        for(int i=0; i<PsiT.size(); ++i) {
           dump.push(std::string("PsiT_")+std::to_string(i));
           csr_hdf5::CSR2HDF(dump,PsiT[i]);
-          dump.pop();  
+          dump.pop();
         }
-      }  
+      }
     }
-    // multideterminant NOMSD needs 
+    // multideterminant NOMSD needs
     auto HOps(h.getHamiltonianOperations(wfn_type == "occ" && walker_type==CLOSED,
 			ndets_to_read>1,walker_type,PsiT,cutvn,cutv2,TGprop,TGwfn,dump));  
     if(restart_file != "") 
@@ -305,13 +305,13 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop, TaskGroup_& TGwf
 
     app_log()<<" Wavefunction type: PHMSD\n";
 
-    /* Implementation notes: 
-     *  - PsiT: [Nact, NMO] where Nact is the number of active space orbitals, 
+    /* Implementation notes:
+     *  - PsiT: [Nact, NMO] where Nact is the number of active space orbitals,
      *                     those that participate in the ci expansion
      *  - The half rotation is done with respect to the supermatrix PsiT
      *  - Need to calculate Nact and create a mapping from orbital index to actice space index.
      *    Those orbitals in the corresponding virtual space (not in active) map to -1 as a precaution.
-     */   
+     */
 
     // assuming walker_type==COLLINEAR for now, specialize a type for perfect pairing PHMSD
     if(walker_type!=COLLINEAR)
@@ -629,13 +629,8 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop, TaskGroup_& TGwfn
 
   using Alloc = shared_allocator<ComplexType>;
   // HOps, ci, PsiT, NCE
-  std::string h5file;
-  if(restart_file != "")
-    h5file = restart_file;
-  else
-    h5file = filename;
   hdf_archive dump(TGwfn.Global());
-  if(!dump.open(h5file,H5F_ACC_RDONLY)) {
+  if(!dump.open(filename,H5F_ACC_RDONLY)) {
     app_error()<<" Error hdf5 file in WavefunctionFactory. \n";
     APP_ABORT("");
   }
@@ -643,12 +638,23 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop, TaskGroup_& TGwfn
     app_error()<<" Error in WavefunctionFactory: Group Wavefunction not found. \n";
     APP_ABORT("");
   }
+  hdf_archive restart(TGwfn.Global());
+  if(restart_file != "") {
+    if(type == "phmsd") {
+      app_log() << " Restarting from PHMSD trial wavefunction not implemented. \n";
+    } else {
+      if(!restart.create(restart_file,H5F_ACC_EXCL)) {
+        app_error()<<" Error opening restart file in WavefunctionFactory. \n";
+        APP_ABORT("");
+      }
+    }
+  }
 
   if(type=="msd" || type=="nomsd") {
 
     app_log()<<" Wavefunction type: NOMSD\n";
     if(!dump.push("NOMSD",false)) {
-      app_error()<<" Error in WavefunctionFactory: Group NOMSD not found. \n";
+      app_error()<<" Error in WavefunctionFactory: Group NOMSD not found.\n";
       APP_ABORT("");
     }
     std::vector<ComplexType> ci;
@@ -662,7 +668,7 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop, TaskGroup_& TGwfn
     } else {
       std::vector<ValueType> tmp;
       if(!dump.readEntry(tmp, "NCE")) {
-        app_error()<<" Error in WavefunctionFactory::fromHDF5(): Problems reading NCE. \n";
+        app_error()<<" Error in WavefunctionFactory::fromHDF5(): Problems reading NCE.\n";
         APP_ABORT("");
       }
       NCE = tmp[0];
@@ -689,11 +695,8 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop, TaskGroup_& TGwfn
     getInitialGuess(dump, name, NMO, NAEA, NAEB, walker_type);
 
     // Restore Hamiltonian Operations Object from file if it exists.
-    bool read_ham_op = dump.is_group("HamiltonianOperations");
-    if (!read_ham_op) {
-      dump.close();
-    }
-    auto HOps(getHamOps(read_ham_op,dump,walker_type,NMO,NAEA,NAEB,PsiT,TGprop,TGwfn,cutvn,cutv2,ndets_to_read,h));
+    bool read_ham_op = restart.is_group("HamiltonianOperations");
+    auto HOps(getHamOps(read_ham_op,restart,walker_type,NMO,NAEA,NAEB,PsiT,TGprop,TGwfn,cutvn,cutv2,ndets_to_read,h));
 
     if(TGwfn.TG_local().size() > 1) {
       SlaterDetOperations SDetOp( SlaterDetOperations_shared<ComplexType>(
@@ -851,12 +854,10 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop, TaskGroup_& TGwfn
     //        CLOSED walker type. This way you can treat alpha/beta sectors independently in
     //        HOps through the index corresponding 0/1.
     // never add coulomb to half rotated v2 tensor in PHMSD
-    //auto HOps(h.getHamiltonianOperations(wfn_type == "occ",false,
+    getInitialGuess(dump, name, NMO, NAEA, NAEB, walker_type);
     auto HOps(h.getHamiltonianOperations(false,false,
                                          CLOSED,PsiT,cutvn,cutv2,TGprop,TGwfn,dump));
     TGwfn.node_barrier();
-    // add initial_guess
-    getInitialGuess(dump, name, NMO, NAEA, NAEB, walker_type);
     // setup configuration couplings
     using index_aos = ma::sparse::array_of_sequences<int,int,shared_allocator<int>,ma::sparse::is_root>;
     shared_allocator<int> alloc_{TGwfn.Node()};
@@ -913,7 +914,6 @@ ph_excitations<int,ComplexType> WavefunctionFactory::read_ph_wavefunction_hdf(hd
   bool fullMOMat = false;
   bool Cstyle = true;
   int wfn_type = 0;
-  int ndet_in_file = -1;
   int NEL = NAEA;
   bool mixed=false;
   if(walker_type!=CLOSED) NEL+=NAEB;
@@ -934,31 +934,18 @@ ph_excitations<int,ComplexType> WavefunctionFactory::read_ph_wavefunction_hdf(hd
    *   - 1: excitations out of a UHF reference
    */
   std::vector<ComplexType> ci_coeff;
-  if(comm.root()) {
-    getCommonInput(dump, NMO, NAEA, NAEB, ndets, ci_coeff, walker_type, comm.root());
-    if(walker_type != COLLINEAR)
-      APP_ABORT(" Error: walker_type!=COLLINEAR not yet implemented in read_ph_wavefunction.\n");
+  getCommonInput(dump, NMO, NAEA, NAEB, ndets, ci_coeff, walker_type, comm.root());
+  if(walker_type != COLLINEAR)
+    APP_ABORT(" Error: walker_type!=COLLINEAR not yet implemented in read_ph_wavefunction.\n");
 
-    if(!dump.readEntry(mixed,"wfn_type")) {
-      app_error()<<" Error in WavefunctionFactory::fromHDF5(): Problems reading wfn_type. \n";
-      APP_ABORT("");
-    }
-    if(!dump.readEntry(fullMOMat,"fullMOMat")) {
-      APP_ABORT("Problems reading fullMO in read_ph_wavefunction_hdf.\n");
-    }
-    if(type == "mixed") mixed = true;
-    comm.broadcast_n(&mixed,1,0);
-    comm.broadcast_n(&ndet_in_file,1,0);
-    comm.broadcast_n(&wfn_type,1,0);
-    comm.broadcast_n(&fullMOMat,1,0);
-  } else {
-    comm.broadcast_n(&mixed,1,0);
-    comm.broadcast_n(&ndet_in_file,1,0);
-    comm.broadcast_n(&wfn_type,1,0);
-    comm.broadcast_n(&fullMOMat,1,0);
+  if(!dump.readEntry(type,"type")) {
+    app_error()<<" Error in WavefunctionFactory::fromHDF5(): Problems reading type. \n";
+    APP_ABORT("");
   }
-
-  if(ndets <= 0) ndets = ndet_in_file;
+  if(!dump.readEntry(fullMOMat,"fullmo")) {
+    APP_ABORT("Problems reading fullmo in read_ph_wavefunction_hdf.\n");
+  }
+  if(type == "mixed") mixed = true;
 
   if(mixed) { // read reference
     int nmo_ = (walker_type==NONCOLLINEAR?2*NMO:NMO);
@@ -1010,17 +997,17 @@ ph_excitations<int,ComplexType> WavefunctionFactory::read_ph_wavefunction_hdf(hd
     Iwork.resize(2*NAEA);
     exct.reserve(2*NAEA);
     for(int i=0; i<ndets; i++) {
+      ci = ci_coeff[i];
       // alpha
       confg.clear();
       for(int k=0, q=0; k<NAEA; k++) {
         q = occs[i][k];
         if(q < 0 || q >= NMO)
-          APP_ABORT("Error: Bad occupation number " << q << " in determinant " << i << " in wavefunction file \n");
+          APP_ABORT("Error: Bad occupation number " << q << " in determinant " << i << " in wavefunction file. \n");
         confg.emplace_back(q);
-        ci = ci_coeff[i];
       }
-      if(i == 0) {
-        refa = confg;
+      if(i==0) {
+        refa=confg;
       } else {
         int np = get_excitation_number(true,refa,confg,exct,ci,Iwork);
         push_excitation(exct,unique_alpha[np]);
@@ -1030,12 +1017,11 @@ ph_excitations<int,ComplexType> WavefunctionFactory::read_ph_wavefunction_hdf(hd
       for(int k=0, q=0; k<NAEB; k++) {
         q = occs[i][NAEA+k];
         if(q < NMO || q >= 2*NMO)
-          APP_ABORT("Error: Bad occupation number " << q << " in determinant " << i << " in wavefunction file \n");
+          APP_ABORT("Error: Bad occupation number " << q << " in determinant " << i << " in wavefunction file. \n");
         confg.emplace_back(q);
-        ci = ci_coeff[i];
       }
-      if(i == 0) {
-        refb = confg;
+      if(i==0) {
+        refb=confg;
       } else {
         int np = get_excitation_number(true,refb,confg,exct,ci,Iwork);
         push_excitation(exct,unique_beta[np]);
@@ -1073,13 +1059,13 @@ ph_excitations<int,ComplexType> WavefunctionFactory::read_ph_wavefunction_hdf(hd
     int beta_index;
     int np;
     for(int i=0; i<ndets; i++) {
+      ci = ci_coeff[i];
       confg.clear();
       for(int k=0, q=0; k<NAEA; k++) {
         q = occs[i][k];
         if(q < 0 || q >= NMO)
-          APP_ABORT("Error: Bad occupation number " << q << " in determinant " << i << " in wavefunction file \n");
+          APP_ABORT("Error: Bad occupation number " << q << " in determinant " << i << " in wavefunction file. \n");
         confg.emplace_back(q);
-        ci = ci_coeff[i];
       }
       np = get_excitation_number(true,refa,confg,exct,ci,Iwork);
       alpha_index = ((np==0)?(0):(find_excitation(exct,unique_alpha[np]) +
@@ -1088,9 +1074,8 @@ ph_excitations<int,ComplexType> WavefunctionFactory::read_ph_wavefunction_hdf(hd
       for(int k=0, q=0; k<NAEB; k++) {
         q = occs[i][NAEA+k];
         if(q < NMO || q >= 2*NMO)
-          APP_ABORT("Error: Bad occupation number " << q << " in determinant " << i << " in wavefunction file \n");
+          APP_ABORT("Error: Bad occupation number " << q << " in determinant " << i << " in wavefunction file. \n");
         confg.emplace_back(q);
-        ci = ci_coeff[i];
       }
       np = get_excitation_number(true,refb,confg,exct,ci,Iwork);
       beta_index = ((np==0)?(0):(find_excitation(exct,unique_beta[np]) +
@@ -1111,35 +1096,37 @@ void WavefunctionFactory::getCommonInput(hdf_archive& dump, int NMO, int NAEA, i
   // check for consistency in parameters
   std::vector<int> dims(5);
   if(!dump.readEntry(dims,"dims")) {
-    app_error()<<" Error in WavefunctionFactory::fromHDF5(): Problems reading dims. \n";
+    app_error()<<" Error in WavefunctionFactory::getCommonInput(): Problems reading dims. \n";
     APP_ABORT("");
   }
   if(NMO != dims[0]) {
-    app_error()<<" Error in WavefunctionFactory::fromHDF5(): Inconsistent NMO . \n";
+    app_error()<<" Error in WavefunctionFactory::getCommonInput(): Inconsistent NMO . \n";
     APP_ABORT("");
   }
   if(NAEA != dims[1]) {
-    app_error()<<" Error in WavefunctionFactory::fromHDF5(): Inconsistent  NAEA. \n";
+    app_error()<<" Error in WavefunctionFactory::getCommonInput(): Inconsistent  NAEA. \n";
     APP_ABORT("");
   }
   if(NAEB != dims[2]) {
-    app_error()<<" Error in WavefunctionFactory::fromHDF5(): Inconsistent  NAEB. \n";
+    app_error()<<" Error in WavefunctionFactory::getCommonInput(): Inconsistent  NAEB. \n";
     APP_ABORT("");
   }
   if(walker_type != dims[3]) {
-    app_error()<<" Error in WavefunctionFactory::fromHDF5(): Inconsistent  walker_type. \n";
+    app_error()<<" Error in WavefunctionFactory::getCommonInput(): Inconsistent  walker_type. \n";
     APP_ABORT("");
   }
   if(ndets_to_read < 1) ndets_to_read = dims[4];
+  app_log() << " - Number of determinants in trial wavefunction : " << ndets_to_read << "\n";
   if(ndets_to_read > dims[4]) {
-    app_error()<<" Error in WavefunctionFactory::fromHDF5(): Inconsistent  ndets_to_read. \n";
+    app_error()<<" Error in WavefunctionFactory::getCommonInput(): Inconsistent  ndets_to_read. \n";
     APP_ABORT("");
   }
   ci.resize(ndets_to_read);
-  if(!dump.readEntry(ci, "CICOEFFICIENTS")) {
-    app_error()<<" Error in WavefunctionFactory::fromHDF5(): Problems reading CICOEFFICIENTS. \n";
+  if(!dump.readEntry(ci, "ci_coeffs")) {
+    app_error()<<" Error in WavefunctionFactory::getCommonInput(): Problems reading ci_coeffs. \n";
     APP_ABORT("");
   }
+  app_log() << " - Coefficient of first determinant: " << ci[0] << "\n";
 }
 
 /*
@@ -1158,14 +1145,14 @@ void WavefunctionFactory::getInitialGuess(hdf_archive& dump, std::string& name, 
     {
       boost::multi::array_ref<ComplexType,2> psi0((newg.first)->second.origin(),{NMO,NAEA});
       if(!dump.readEntry(psi0, "Psi0_alpha")) {
-        app_error()<<" Error in WavefunctionFactory: Initial wavefunction Psi0_0 not found. \n";
+        app_error()<<" Error in WavefunctionFactory: Initial wavefunction Psi0_alpha not found. \n";
         APP_ABORT("");
       }
     }
     if(walker_type==COLLINEAR) {
       boost::multi::array_ref<ComplexType,2> psi0((newg.first)->second.origin()+NMO*NAEA,{NMO,NAEB});
       if(!dump.readEntry(psi0, "Psi0_beta")) {
-        app_error()<<" Error in WavefunctionFactory: Initial wavefunction Psi0_0 not found. \n";
+        app_error()<<" Error in WavefunctionFactory: Initial wavefunction Psi0_beta not found. \n";
         APP_ABORT("");
       }
     }
@@ -1184,7 +1171,7 @@ HamiltonianOperations WavefunctionFactory::getHamOps(bool read, hdf_archive& dum
   if(read) {
     return loadHamOps(dump,type,NMO,NAEA,NAEB,PsiT,TGprop,TGwfn,cutvn,cutv2);
   } else {
-    return h.getHamiltonianOperations(false, ndets_to_read>1,type,PsiT, cutvn,cutv2,TGprop,TGwfn,dump);
+    return h.getHamiltonianOperations(false,ndets_to_read>1,type,PsiT, cutvn,cutv2,TGprop,TGwfn,dump);
   }
 }
 
