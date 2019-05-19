@@ -6,7 +6,7 @@ import sys
 from pyscf import fci
 from afqmctools.utils.io import to_qmcpack_complex
 
-def write_wfn_mol(scf_data, ortho_ao, filename, wfn=None):
+def write_wfn_mol(scf_data, ortho_ao, filename, wfn=None, init=None):
     """Generate QMCPACK trial wavefunction.
 
     Parameters
@@ -56,7 +56,7 @@ def write_wfn_mol(scf_data, ortho_ao, filename, wfn=None):
             if uhf:
                 print(" # Warning: UHF trial wavefunction can only be used of "
                       "working in ortho AO basis.")
-    else:
+    else:t 
         # User defined wavefunction.
         # PHMSD is a list of tuples [(ci, occa, occb)...].
         # NOMSD is a tuple of (list, numpy.ndarray).
@@ -69,32 +69,36 @@ def write_wfn_mol(scf_data, ortho_ao, filename, wfn=None):
         else:
             print("Unknown wavefunction type passed.")
             sys.exit()
-    with h5py.File(filename, 'r+') as fh5:
-        # TODO: FIX for GHF eventually.
-        if ghf:
-            walker_type = 3
-        elif uhf:
-            walker_type = 2
-        else:
-            walker_type = 1
-        if wfn_type == 'PHMSD':
-            walker_type = 2
-        if wfn_type == 'NOMSD':
-            wfn_group = fh5.create_group('Wavefunction/NOMSD')
-            write_nomsd(wfn_group, wfn, uhf, nelec)
-            write_qmcpack_wfn_ascii('wfn.dat', wfn[0], nalpha, uhf)
-        else:
-            wfn_group = fh5.create_group('Wavefunction/PHMSD')
-            write_phmsd(wfn_group, occa, occb, nelec)
-        wfn_group['CICOEFFICIENTS'] = to_qmcpack_complex(coeffs)
-        dims = [norb, nalpha, nbeta, walker_type, len(coeffs)]
-        wfn_group['dims'] = numpy.array(dims, dtype=numpy.int32)
+    try:
+        fh5 = h5py.File(filename, 'r+')
+    except IOError:
+        fh5 = h5py.File(filename, 'w')
+    # TODO: FIX for GHF eventually.
+    if ghf:
+        walker_type = 3
+    elif uhf:
+        walker_type = 2
+    else:
+        walker_type = 1
+    if wfn_type == 'PHMSD':
+        walker_type = 2
+    if wfn_type == 'NOMSD':
+        wfn_group = fh5.create_group('Wavefunction/NOMSD')
+        write_nomsd(wfn_group, wfn, uhf, nelec, init=init)
+        write_nomsd_wfn('wfn.dat', wfn[0], nalpha, uhf)
+    else:
+        wfn_group = fh5.create_group('Wavefunction/PHMSD')
+        write_phmsd(wfn_group, occa, occb, nelec, norb, init=init)
+    wfn_group['ci_coeffs'] = to_qmcpack_complex(coeffs)
+    dims = [norb, nalpha, nbeta, walker_type, len(coeffs)]
+    wfn_group['dims'] = numpy.array(dims, dtype=numpy.int32)
+    fh5.close()
 
     if wfn_type != 'PHMSD':
         return coeffs, wfn
 
 
-def write_nomsd(fh5, wfn, uhf, nelec, thresh=1e-8):
+def write_nomsd(fh5, wfn, uhf, nelec, thresh=1e-8, init=None):
     """Write NOMSD to HDF.
 
     Parameters
@@ -112,14 +116,21 @@ def write_nomsd(fh5, wfn, uhf, nelec, thresh=1e-8):
     """
     nalpha, nbeta = nelec
     wfn[abs(wfn) < thresh] = 0.0
+    if init is not None:
+        fh5['Psi0_alpha'] = init[0]
+        fh5['Psi0_beta'] = init[1]
+    else:
+        fh5['Psi0_alpha'] = wfn[0,:,:nalpha]
+        if uhf:
+            fh5['Psi0_beta'] = wfn[0,:,nalpha:]
     for idet, w in enumerate(wfn):
         # QMCPACK stores this internally as a csr matrix, so first convert.
         ix = 2*idet if uhf else idet
-        psia = scipy.sparse.csr_matrix(w[:,:nalpha].T)
+        psia = scipy.sparse.csr_matrix(w[:,:nalpha].conj().T)
         write_nomsd_single(fh5, psia, ix)
         if uhf:
             ix = 2*idet + 1
-            psib = scipy.sparse.csr_matrix(w[:,nalpha:].T)
+            psib = scipy.sparse.csr_matrix(w[:,nalpha:].conj().T)
             write_nomsd_single(fh5, psib, ix)
 
 def write_nomsd_single(fh5, psi, idet):
@@ -142,7 +153,7 @@ def write_nomsd_single(fh5, psi, idet):
     fh5[base+'pointers_begin_'] = psi.indptr[:-1]
     fh5[base+'pointers_end_'] = psi.indptr[1:]
 
-def write_phmsd(fh5, occa, occb, nelec):
+def write_phmsd(fh5, occa, occb, nelec, norb, init=None):
     """Write NOMSD to HDF.
 
     Parameters
@@ -154,6 +165,13 @@ def write_phmsd(fh5, occa, occb, nelec):
     """
     # TODO: Update if we ever wanted "mixed" phmsd type wavefunctions.
     na, nb = nelec
+    if init is not None:
+        fh5['Psi0_alpha'] = init[0]
+        fh5['Psi0_beta'] = init[1]
+    else:
+        init = numpy.eye(norb, dtype=numpy.complex128)
+        fh5['Psi0_alpha'] = to_qmcpack_complex(init[:,occa[0]].copy())
+        fh5['Psi0_beta'] = to_qmcpack_complex(init[:,occb[0]-norb].copy())
     fh5['fullmo'] = numpy.array([0], dtype=numpy.int32)
     fh5['type'] = numpy.array(['occ'])
     occs = numpy.zeros((len(occa), na+nb), dtype=numpy.int32)
