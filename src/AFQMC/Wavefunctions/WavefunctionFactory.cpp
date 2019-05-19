@@ -1116,7 +1116,7 @@ void WavefunctionFactory::getCommonInput(hdf_archive& dump, int NMO, int NAEA, i
     APP_ABORT("");
   }
   if(ndets_to_read < 1) ndets_to_read = dims[4];
-  app_log() << " - Number of determinants in trial wavefunction : " << ndets_to_read << "\n";
+  app_log() << " - Number of determinants in trial wavefunction: " << ndets_to_read << "\n";
   if(ndets_to_read > dims[4]) {
     app_error()<<" Error in WavefunctionFactory::getCommonInput(): Inconsistent  ndets_to_read. \n";
     APP_ABORT("");
