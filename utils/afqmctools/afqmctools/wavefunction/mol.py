@@ -56,36 +56,38 @@ def write_wfn_mol(scf_data, ortho_ao, filename, wfn=None, init=None):
             if uhf:
                 print(" # Warning: UHF trial wavefunction can only be used of "
                       "working in ortho AO basis.")
-    else:t 
-        # User defined wavefunction.
-        # PHMSD is a list of tuples [(ci, occa, occb)...].
-        # NOMSD is a tuple of (list, numpy.ndarray).
-        if len(wfn) == 3:
-            coeffs, occa, occb = wfn
-            wfn_type = 'PHMSD'
-        elif len(wfn) == 2:
-            coeffs, wfn = wfn
-            wfn_type = 'NOMSD'
-        else:
-            print("Unknown wavefunction type passed.")
-            sys.exit()
-    try:
-        fh5 = h5py.File(filename, 'r+')
-    except IOError:
-        fh5 = h5py.File(filename, 'w')
+    write_qmcpack_wfn(filename, wfn, uhf, nelec)
+
+def write_qmcpack_wfn(filename, wfn, walker_type, nelec, norb, init=None):
+    # User defined wavefunction.
+    # PHMSD is a list of tuple of (ci, occa, occb).
+    # NOMSD is a tuple of (list, numpy.ndarray).
+    if len(wfn) == 3:
+        coeffs, occa, occb = wfn
+        wfn_type = 'PHMSD'
+    elif len(wfn) == 2:
+        coeffs, wfn = wfn
+        wfn_type = 'NOMSD'
+    else:
+        print("Unknown wavefunction type passed.")
+        sys.exit()
+
+    fh5 = h5py.File(filename, 'w')
+    nalpha, nbeta = nelec
     # TODO: FIX for GHF eventually.
-    if ghf:
+    if walker_type == 'ghf':
         walker_type = 3
-    elif uhf:
+    elif walker_type == 'uhf':
         walker_type = 2
+        uhf = True
     else:
         walker_type = 1
+        uhf = False
     if wfn_type == 'PHMSD':
         walker_type = 2
     if wfn_type == 'NOMSD':
         wfn_group = fh5.create_group('Wavefunction/NOMSD')
         write_nomsd(wfn_group, wfn, uhf, nelec, init=init)
-        write_nomsd_wfn('wfn.dat', wfn[0], nalpha, uhf)
     else:
         wfn_group = fh5.create_group('Wavefunction/PHMSD')
         write_phmsd(wfn_group, occa, occb, nelec, norb, init=init)
@@ -93,10 +95,6 @@ def write_wfn_mol(scf_data, ortho_ao, filename, wfn=None, init=None):
     dims = [norb, nalpha, nbeta, walker_type, len(coeffs)]
     wfn_group['dims'] = numpy.array(dims, dtype=numpy.int32)
     fh5.close()
-
-    if wfn_type != 'PHMSD':
-        return coeffs, wfn
-
 
 def write_nomsd(fh5, wfn, uhf, nelec, thresh=1e-8, init=None):
     """Write NOMSD to HDF.
@@ -117,12 +115,12 @@ def write_nomsd(fh5, wfn, uhf, nelec, thresh=1e-8, init=None):
     nalpha, nbeta = nelec
     wfn[abs(wfn) < thresh] = 0.0
     if init is not None:
-        fh5['Psi0_alpha'] = init[0]
-        fh5['Psi0_beta'] = init[1]
+        fh5['Psi0_alpha'] = to_qmcpack_complex(init[0])
+        fh5['Psi0_beta'] = to_qmcpack_complex(init[1])
     else:
-        fh5['Psi0_alpha'] = wfn[0,:,:nalpha]
+        fh5['Psi0_alpha'] = to_qmcpack_complex(wfn[0,:,:nalpha].copy())
         if uhf:
-            fh5['Psi0_beta'] = wfn[0,:,nalpha:]
+            fh5['Psi0_beta'] = to_qmcpack_complex(wfn[0,:,nalpha:].copy())
     for idet, w in enumerate(wfn):
         # QMCPACK stores this internally as a csr matrix, so first convert.
         ix = 2*idet if uhf else idet
@@ -293,10 +291,10 @@ def write_phmsd_wfn(filename, occs, nmo, ncore=0):
     output.write("Configurations:"+'\n')
     corea = [i + 1 for i in range(ncore)]
     coreb = [i + nmo + 1 for i in range(ncore)]
-    for c, da, db in occs:
-        occup = corea + [ncore + oa + 1 for oa in da.tolist()]
-        occdn = coreb + [ncore + nmo + ob + 1 for ob in db.tolist()]
+    for c, occup, occdn in occs:
+        # occup = corea + [ncore + oa + 1 for oa in da.tolist()]
+        # occdn = coreb + [ncore + nmo + ob + 1 for ob in db.tolist()]
         # print(occup, occdn)
-        occstra = ' '.join('{:d} '.format(x) for x in occup)
-        occstrb = ' '.join('{:d}'.format(x) for x in occdn)
+        occstra = ' '.join('{:d} '.format(x+1) for x in occup)
+        occstrb = ' '.join('{:d}'.format(x+1) for x in occdn)
         output.write('%13.8e '%c + occstra + occstrb + '\n')

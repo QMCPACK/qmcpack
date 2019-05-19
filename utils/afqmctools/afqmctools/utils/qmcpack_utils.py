@@ -2,33 +2,30 @@ import h5py
 from afqmctools.wavefunction.mol import read_qmcpack_wfn
 
 def write_skeleton_input(qmc_in, hamil_file, wfn_file=None, series=0,
-                         blocks=10000):
+                         blocks=10000, nelec=None):
+    walker_types = ['NONE', 'CLOSED', 'COLLINEAR', 'NONCOLLINEAR']
     if wfn_file is None:
-        wfn_file = 'wfn.dat'
+        wfn_file = hamil_file
     with h5py.File(hamil_file, 'r') as  fh5:
         dims = fh5['Hamiltonian/dims'][:]
         nmo = dims[3]
         nalpha = dims[4]
         nbeta = dims[5]
+        if nelec is not None:
+            nalpha, nbeta = nelec
         try:
             dset = fh5['Hamiltonian/KPFactorized']
             hamil_type = 'KPFactorized'
         except KeyError:
             hamil_type = 'Factorized'
+    with h5py.File(wfn_file, 'r') as  fh5:
         try:
-            walker_type = fh5['Wavefunction/walker_type'][()]
-            wfn_type = fh5['Wavefunction/type'][()]
+            dims = fh5['Wavefunction/PHMSD/dims'][:]
+            wfn_type = 'PHMSD'
         except KeyError:
-            if wfn_file is not None:
-                with open(wfn_file) as f:
-                    header = [next(f) for i in range(5)]
-                    uhf = len([s for s in header if 'UHF = 1' in s]) == 1
-                    phmsd = len([s for s in header if 'TYPE = occ' in s]) == 1
-                    walker_type = 'COLLINEAR' if uhf else 'CLOSED'
-                    wfn_type = 'PHMSD' if phmsd else 'NOMSD'
-                    if wfn_type == 'PHMSD':
-                        walker_type = 'COLLINEAR'
-    # TODO: Fix if GHF every comes back.
+            dims = fh5['Wavefunction/NOMSD/dims'][:]
+            wfn_type = 'NOMSD'
+        walker_type = walker_types[dims[3]]
 
     xml_string = """<?xml version="1.0"?>
 <simulation method="afqmc">
@@ -46,7 +43,7 @@ def write_skeleton_input(qmc_in, hamil_file, wfn_file=None, series=0,
     </Hamiltonian>
 
     <Wavefunction name="wfn0" type="{:s}" info="info0">
-      <parameter name="filetype">ascii</parameter>
+      <parameter name="filetype">hdf5</parameter>
       <parameter name="filename">{:s}</parameter>
       <parameter name="cutoff">1e-8</parameter>
     </Wavefunction>

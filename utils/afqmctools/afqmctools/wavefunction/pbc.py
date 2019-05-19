@@ -3,7 +3,7 @@ import numpy
 import h5py
 import time
 import sys
-from afqmctools.wavefunction.mol import write_nomsd_wfn
+from afqmctools.wavefunction.mol import write_qmcpack_wfn
 
 def write_wfn_pbc(scf_data, ortho_ao, filename, rediag=True, verbose=False,
                   energy_sort=False):
@@ -55,7 +55,7 @@ def write_wfn_pbc(scf_data, ortho_ao, filename, rediag=True, verbose=False,
         else:
             print(" # RHF-like trial wavefunction.")
     # For RHF only nalpha entries will be filled.
-    wfn = numpy.zeros((nmo_tot,nalpha+nbeta), dtype=numpy.complex128)
+    wfn = numpy.zeros((1,nmo_tot,nalpha+nbeta), dtype=numpy.complex128)
     eigs_a = []
     eigs_b = []
     occ_b = numpy.zeros(1, dtype=numpy.int64)
@@ -102,10 +102,10 @@ def write_wfn_pbc(scf_data, ortho_ao, filename, rediag=True, verbose=False,
                     # wfn_a = numpy.dot(Xinv, C[k])[:,occ_a]
             row_end = row + nmo_pk[k]
             col_end = col + sum(occ_a)
-            wfn[row:row_end,col:col_end] = wfn_a
+            wfn[0,row:row_end,col:col_end] = wfn_a
             if uhf:
                 col_end = col_b + sum(occ_b)
-                wfn[row:row_end,col:col_end] = wfn_b
+                wfn[0,row:row_end,col:col_end] = wfn_b
                 col_b += sum(occ_b)
             row += nmo_pk[k]
             col += sum(occ_a)
@@ -122,38 +122,19 @@ def write_wfn_pbc(scf_data, ortho_ao, filename, rediag=True, verbose=False,
             eigs_b = numpy.array(eigs_b).ravel()
             col_sort_b = list(nalpha + numpy.argsort(eigs_b))
         if energy_sort:
-            wfn = wfn[:,col_sort]
+            wfn = wfn[0,:,col_sort]
     else:
         # Assuming we are working in MO basis, only works for RHF, ROHF trials.
         print("Not correct.")
         sys.exit()
         I = numpy.identity(C.shape[-1], dtype=numpy.float64)
-        wfn[:,:nalpha] = I[:,:nalpha]
+        wfn[0,:,:nalpha] = I[:,:nalpha]
         if uhf:
             print(" # Warning: UHF trial wavefunction can only be used of "
                   "working in ortho AO basis.")
             sys.exit()
-    with h5py.File(filename, 'r+') as fh5:
-        # TODO: FIX for GHF eventually.
-        if ghf:
-            walker_type = 'NONCOLLINEAR'
-        elif uhf:
-            walker_type = 'COLLINEAR'
-        else:
-            walker_type = 'CLOSED'
-        try:
-            fh5['Wavefunction/type'] = 'NOMSD'
-            fh5['Wavefunction/walker_type'] = walker_type
-            # TODO: Fix for multideterminant case.
-            nci = 1
-            dims = [nci, wfn.shape[0], wfn.shape[1]]
-            fh5['Wavefunction/dims'] = numpy.array(dims, dtype=numpy.int32)
-            fh5['Wavefunction/orbs'] = wfn
-        except RuntimeError:
-            print(" # Already found wavefunction in {}.".format(filename))
-            pass
-    write_nomsd_wfn('wfn.dat', wfn, nalpha, uhf)
-    return wfn
+    coeff = numpy.array([1.0+0j])
+    write_qmcpack_wfn(filename, (coeff,wfn), uhf, (nalpha, nbeta), nmo_tot)
 
 
 def rediag_fock(fock, X, occ):
