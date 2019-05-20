@@ -177,8 +177,8 @@ struct SoaAtomicBasisSet
       d2psi[ib]  = 0;
     }
 
-    double k= std::sqrt(dot( SuperTwist, SuperTwist));
-    double s, c,phase;
+    RealType k= std::sqrt(dot( SuperTwist, SuperTwist));
+    RealType s, c,phase;
 
 
     for (int i = 0; i <= PBCImages[0]; i++) //loop Translation over X
@@ -215,16 +215,17 @@ struct SoaAtomicBasisSet
           sincos(phase, &s, &c);
 
 #if defined (QMC_COMPLEX)
-          std::complex<double> i(0.0,1.0);
-          std::complex<double> e_mikr(c, s);
-          std::complex<double> de_mikr_x, de_mikr_y, de_mikr_z;
+          std::complex<RealType> i(0.0,1.0);
+          std::complex<RealType> e_mikr(c, s);
+          std::complex<RealType> de_mikr_x, de_mikr_y, de_mikr_z;
     
           de_mikr_x=-i*SuperTwist[0]*e_mikr;
           de_mikr_y=-i*SuperTwist[1]*e_mikr;
           de_mikr_z=-i*SuperTwist[2]*e_mikr;
 #else
-          double e_mikr=1:
-          double de_mikr_x=de_mikr_y=de_mikr_z=0.0;
+          RealType e_mikr=1;
+          RealType de_mikr_x, de_mikr_y, de_mikr_z;
+          de_mikr_x=de_mikr_y=de_mikr_z=0.0;
 #endif 
           for (size_t ib = 0; ib < BasisSetSize; ++ib)
           {
@@ -629,7 +630,7 @@ struct SoaAtomicBasisSet
     RealType* restrict ylm_v = tempS.data(0);
     RealType* restrict phi_r = tempS.data(1);
 
-    double s, c,phase;
+    RealType s, c,phase;
 
 
 
@@ -660,9 +661,9 @@ struct SoaAtomicBasisSet
           phase = -dot(dr_new,SuperTwist);
           sincos(phase, &s, &c);
 #if defined (QMC_COMPLEX)
-          std::complex<double> e_mikr(c, s);
+          std::complex<RealType> e_mikr(c, s);
 #else
-          double e_mikr=1:
+          RealType e_mikr=1.0;
 #endif            
           Ylm.evaluateV(-dr_new[0], -dr_new[1], -dr_new[2], ylm_v);
           MultiRnl->evaluate(r_new, phi_r);
