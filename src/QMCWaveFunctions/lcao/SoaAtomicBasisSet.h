@@ -29,6 +29,7 @@ struct SoaAtomicBasisSet
   typedef ROT RadialOrbital_t;
   using RealType = typename ROT::RealType;
   using GridType = typename ROT::GridType;
+  using ValueType = typename QMCTraits::ValueType;
 
   ///size of the basis set
   int BasisSetSize;
@@ -215,13 +216,13 @@ struct SoaAtomicBasisSet
           sincos(phase, &s, &c);
 
 #if defined (QMC_COMPLEX)
-          std::complex<RealType> i(0.0,1.0);
+          std::complex<double> i(0.0,1.0);
           std::complex<RealType> e_mikr(c, s);
           std::complex<RealType> de_mikr_x, de_mikr_y, de_mikr_z;
     
-          de_mikr_x=-i*SuperTwist[0]*e_mikr;
-          de_mikr_y=-i*SuperTwist[1]*e_mikr;
-          de_mikr_z=-i*SuperTwist[2]*e_mikr;
+          de_mikr_x=ValueType(-i*SuperTwist[0])*e_mikr;
+          de_mikr_y=ValueType(-i*SuperTwist[1])*e_mikr;
+          de_mikr_z=ValueType(-i*SuperTwist[2])*e_mikr;
 #else
           RealType e_mikr=1;
           RealType de_mikr_x, de_mikr_y, de_mikr_z;
