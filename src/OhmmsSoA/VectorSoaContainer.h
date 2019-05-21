@@ -246,18 +246,8 @@ struct VectorSoaContainer
   ///return the end
   __forceinline const T* end() const { return myData + D * nGhosts; }
 
-  /** serialization function */
-  template<class Archive>
-  void serialize(Archive& ar, const unsigned int version)
-  {
-    //ar & m_data;
-    ar& nLocal& nGhosts& myData;
-  }
 };
 
-//Incorrect: provide wrapper class
-//BOOST_CLASS_TRACKING(Pos3DSoA<double,3>, boost::serialization::track_never)
-//BOOST_CLASS_TRACKING(Pos3DSoA<float,3>, boost::serialization::track_never)
 } // namespace qmcplusplus
 
 #endif
