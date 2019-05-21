@@ -530,8 +530,8 @@ class Job(NexusCore):
 
 
     def run_command(self,launcher=None,redirect=False):
+        machine = self.get_machine()
         if launcher is None:
-            machine = self.get_machine()
             launcher = machine.app_launcher
         #end if
         c = ''
@@ -553,7 +553,7 @@ class Job(NexusCore):
                     c = launcher + self.run_options.write() + separator
                 #end if
                 c+=self.app_command+self.app_options.write()
-                if redirect:
+                if redirect or (machine.redirect_output and self.outfile is not None):
                     c+=' >'+self.outfile+' 2>'+self.errfile+'&'
                 #end if
             #end if
@@ -704,6 +704,7 @@ class Machine(NexusCore):
     batch_capable      = False
     requires_account   = False
     executable_subfile = False
+    redirect_output    = False
 
     prefixed_output    = False
     outfile_extension  = None
@@ -3155,6 +3156,35 @@ class Summit(Supercomputer):
 #end class Summit
 
 
+class Tomcat3(Supercomputer):
+    name             = 'tomcat3'
+    requires_account = False
+    batch_capable    = True
+    redirect_output  = True
+
+    def write_job_header(self,job):
+        if job.queue is None:
+            job.queue = 'tomcat'
+        #end if
+        if job.email is None:
+            job.email = 'r.cohen@lmu.de'
+        #end if
+        c = '#!/bin/bash -l\n'
+        c+='#SBATCH -J {}\n'.format(job.name)         
+        c+='#SBATCH -N {}\n'.format(job.nodes)
+        c+='#SBATCH -t {}\n'.format(job.sbatch_walltime())
+        c+='#SBATCH -p {}\n'.format(job.queue)   
+        c+='#SBATCH --mail-user {}\n'.format(job.email)
+        c+='#SBATCH --mail-type ALL\n'
+        c+='#. /home/rcohen/.bashrc\n'
+        if len(job.presub)==0:
+            c+='unalias cd; source /mnt/beegfs/intel/parallel_studio_xe_2019.3.062/bin/psxevars.sh\n'
+            c+='ulimit -a\n'
+        #end if
+        return c
+    #end def write_job_header
+#end class Tomcat3
+
 
 #Known machines
 #  workstations
@@ -3193,6 +3223,8 @@ SuperMUC(      205,   4,    10,  256,    8,'mpiexec', 'llsubmit',     'llq','llc
 Stampede2(    4200,   1,    68,   96,   50,  'ibrun',   'sbatch',  'squeue', 'scancel')
 Cades(         156,   2,    18,  128,  100, 'mpirun',     'qsub',   'qstat',    'qdel')
 Summit(       4608,   2,    21,  512,  100,  'jsrun',     'bsub',   'bjobs',   'bkill')
+Tomcat3(         8,   1,    64,  192, 1000, 'mpirun',   'sbatch',   'sacct', 'scancel')
+
 
 #machine accessor functions
 get_machine_name = Machine.get_hostname
