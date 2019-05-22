@@ -554,8 +554,10 @@ class Job(NexusCore):
                     c = launcher + self.run_options.write() + separator
                 #end if
                 c+=self.app_command+self.app_options.write()
-                if redirect or (machine.redirect_output and self.outfile is not None):
+                if redirect:
                     c+=' >'+self.outfile+' 2>'+self.errfile+'&'
+                elif machine.redirect_output and self.outfile is not None:
+                    c+=' >'+self.outfile+' 2>'+self.errfile
                 #end if
             #end if
         elif self.relative:
