@@ -3231,7 +3231,7 @@ class Tomcat3(Supercomputer):
             job.queue = 'tomcat'
         #end if
         c = '#!/bin/bash -l\n'
-        c+='#SBATCH -J {}\n'.format(job.name)         
+        c+='#SBATCH -J {}\n'.format(job.name) 
         c+='#SBATCH -N {}\n'.format(job.nodes)
         c+='#SBATCH -t {}\n'.format(job.sbatch_walltime())
         c+='#SBATCH -p {}\n'.format(job.queue)
