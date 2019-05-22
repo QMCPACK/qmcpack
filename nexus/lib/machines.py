@@ -176,6 +176,7 @@ job_defaults = obj(
     email              = None,
     constraint         = None, # slurm specific, Cori
     core_spec          = None, # slurm specific, Cori
+    switches           = None, # slurm specific, SuperMUC-NG
     alloc_flags        = None, # lsf specific, Summit
     qos                = None,
     group_list         = None,
@@ -3156,6 +3157,7 @@ class Summit(Supercomputer):
 #end class Summit
 
 
+
 class Tomcat3(Supercomputer):
     name             = 'tomcat3'
     requires_account = False
@@ -3166,16 +3168,15 @@ class Tomcat3(Supercomputer):
         if job.queue is None:
             job.queue = 'tomcat'
         #end if
-        if job.email is None:
-            job.email = 'r.cohen@lmu.de'
-        #end if
         c = '#!/bin/bash -l\n'
         c+='#SBATCH -J {}\n'.format(job.name)         
         c+='#SBATCH -N {}\n'.format(job.nodes)
         c+='#SBATCH -t {}\n'.format(job.sbatch_walltime())
-        c+='#SBATCH -p {}\n'.format(job.queue)   
-        c+='#SBATCH --mail-user {}\n'.format(job.email)
-        c+='#SBATCH --mail-type ALL\n'
+        c+='#SBATCH -p {}\n'.format(job.queue)
+        if job.email is not None:
+            c+='#SBATCH --mail-user {}\n'.format(job.email)
+            c+='#SBATCH --mail-type ALL\n'
+        #end if
         c+='#. /home/rcohen/.bashrc\n'
         if len(job.presub)==0:
             c+='unalias cd; source /mnt/beegfs/intel/parallel_studio_xe_2019.3.062/bin/psxevars.sh\n'
@@ -3186,6 +3187,58 @@ class Tomcat3(Supercomputer):
 #end class Tomcat3
 
 
+
+class SuperMUC_NG(Supercomputer):
+    name             = 'supermucng'
+    requires_account = True
+    batch_capable    = True
+
+    def write_job_header(self,job):
+        if job.hyperthreads is None:
+            job.hyperthreads = job.processes_per_node/48
+            if job.hyperthreads==0:
+                job.hyperthreads=None
+            #end if
+        #end if
+        if job.constraint is None:
+            job.contraint = 'scratch&work'
+        #end if
+        c ='#!/bin/bash\n'
+        c+='#SBATCH --account={}\n'.format(job.account)
+        c+='#SBATCH --partition={}\n'.format(job.queue)
+        c+='#SBATCH -J {}\n'.format(job.name)
+        c+='#SBATCH --time={}\n'.format(job.sbatch_walltime())
+        c+='#SBATCH -o ./{}\n'.format(job.outfile)
+        c+='#SBATCH -e ./{}\n'.format(job.errfile)
+        if job.switches is not None:
+            c+='#SBATCH --switches={}\n'.format(job.switches)
+        #end if
+        c+='#SBATCH --nodes={}\n'.format(job.nodes)
+        c+='#SBATCH --ntasks-per-node={}\n'.format(job.processes_per_node)
+        c+='#SBATCH --cpus-per-task={}\n'.format(job.threads)
+        if job.hyperthreads is not None:
+            c+='#SBATCH --ntasks-per-core={}\n'.format(job.hyperthreads)
+        #end if
+        c+='#SBATCH -D ./\n'
+        c+='#SBATCH --no-requeue\n'
+        if job.constraint is not None:
+            c+='#--constraint="{}"\n'.format(job.constraint)
+        #end if
+        if job.email is not None:
+            c+='#SBATCH --mail-type=ALL\n'
+            c+='#SBATCH --mail-user={}\n'.format(job.email)
+        #end if
+        c+='#SBATCH --export=NONE\n'
+        if job.user_env:
+            c+='#SBATCH --get-user-env\n'
+        #end if
+        return c
+    #end def write_job_header
+#end class SuperMUC_NG
+
+
+
+
 #Known machines
 #  workstations
 for cores in range(1,128+1):
@@ -3193,7 +3246,7 @@ for cores in range(1,128+1):
     Workstation('node'+str(cores),cores,'mpirun'),
 #end for
 #  supercomputers and clusters
-#            nodes sockets cores ram qslots  qlaunch  qsubmit     qstatus   qdelete
+#            nodes sockets cores ram qslots  qlaunch  qsubmit     qstatus    qdelete
 Jaguar(      18688,   2,     8,   32,  100,  'aprun',     'qsub',   'qstat',    'qdel')
 Kraken(       9408,   2,     6,   16,  100,  'aprun',     'qsub',   'qstat',    'qdel')
 Taub(          400,   2,     6,   24,   50, 'mpirun',     'qsub',   'qstat',    'qdel')
@@ -3224,6 +3277,7 @@ Stampede2(    4200,   1,    68,   96,   50,  'ibrun',   'sbatch',  'squeue', 'sc
 Cades(         156,   2,    18,  128,  100, 'mpirun',     'qsub',   'qstat',    'qdel')
 Summit(       4608,   2,    21,  512,  100,  'jsrun',     'bsub',   'bjobs',   'bkill')
 Tomcat3(         8,   1,    64,  192, 1000, 'mpirun',   'sbatch',   'sacct', 'scancel')
+SuperMUC_NG(  6336,   1,    48,   96, 1000,'mpiexec',   'sbatch',   'sacct', 'scancel')
 
 
 #machine accessor functions

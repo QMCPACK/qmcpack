@@ -82,7 +82,7 @@ class Settings(NexusCore):
 
     machine_vars = set('''
         machine         account         machine_info    interactive_cores
-        machine_mode
+        machine_mode    
         '''.split())
 
     core_assign_vars = set('''
