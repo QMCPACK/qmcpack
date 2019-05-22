@@ -702,10 +702,11 @@ class Machine(NexusCore):
         )
     mode = modes.none
 
-    batch_capable      = False
-    requires_account   = False
-    executable_subfile = False
-    redirect_output    = False
+    batch_capable       = False
+    requires_account    = False
+    executable_subfile  = False
+    redirect_output     = False
+    query_with_username = False
 
     prefixed_output    = False
     outfile_extension  = None
@@ -832,6 +833,7 @@ class Machine(NexusCore):
 
         #user defined variables
         self.account         = None
+        self.user            = None
         self.local_directory = None
         self.app_directory   = None
         self.app_directories = None
@@ -1517,6 +1519,9 @@ class Supercomputer(Machine):
 
     def query_queue(self,out=None):
         self.system_queue.clear()
+        if self.query_with_username and self.user is None:
+            self.error('querying queue on machine "{}" requires user name\nplease provide username via the "user" keyword in settings'.format(self.name))
+        #end if
         if self.queue_querier=='qstat':
             if out is None:
                 out,err = Popen('qstat -a',shell=True,stdout=PIPE,stderr=PIPE,close_fds=True).communicate()
@@ -1563,7 +1568,11 @@ class Supercomputer(Machine):
             #end for
         elif self.queue_querier=='squeue': # contributed by Ryan McAvoy
             if out is None:
-                out,err = Popen('squeue',shell=True,stdout=PIPE,stderr=PIPE,close_fds=True).communicate()
+                extra = ''
+                if self.query_with_username:
+                    extra = ' -u {}'.format(self.user)
+                #end if
+                out,err = Popen('squeue'+extra,shell=True,stdout=PIPE,stderr=PIPE,close_fds=True).communicate()
             #end if
             lines = out.splitlines()
             for line in lines:
@@ -3189,9 +3198,10 @@ class Tomcat3(Supercomputer):
 
 
 class SuperMUC_NG(Supercomputer):
-    name             = 'supermucng'
-    requires_account = True
-    batch_capable    = True
+    name                = 'supermucng'
+    requires_account    = True
+    batch_capable       = True
+    query_with_username = True
 
     def write_job_header(self,job):
         if job.hyperthreads is None:
