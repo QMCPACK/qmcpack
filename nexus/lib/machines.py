@@ -2956,6 +2956,57 @@ class SuperMUC(Supercomputer):
 
 
 
+class SuperMUC_NG(Supercomputer):
+    name                = 'supermucng'
+    requires_account    = True
+    batch_capable       = True
+    query_with_username = True
+
+    def write_job_header(self,job):
+        if job.hyperthreads is None:
+            job.hyperthreads = job.processes_per_node/48
+            if job.hyperthreads==0:
+                job.hyperthreads=None
+            #end if
+        #end if
+        if job.constraint is None:
+            job.contraint = 'scratch&work'
+        #end if
+        c ='#!/bin/bash\n'
+        c+='#SBATCH --account={}\n'.format(job.account)
+        c+='#SBATCH --partition={}\n'.format(job.queue)
+        c+='#SBATCH -J {}\n'.format(job.name)
+        c+='#SBATCH --time={}\n'.format(job.sbatch_walltime())
+        c+='#SBATCH -o ./{}\n'.format(job.outfile)
+        c+='#SBATCH -e ./{}\n'.format(job.errfile)
+        if job.switches is not None:
+            c+='#SBATCH --switches={}\n'.format(job.switches)
+        #end if
+        c+='#SBATCH --nodes={}\n'.format(job.nodes)
+        c+='#SBATCH --ntasks-per-node={}\n'.format(job.processes_per_node)
+        c+='#SBATCH --cpus-per-task={}\n'.format(job.threads)
+        if job.hyperthreads is not None:
+            c+='#SBATCH --ntasks-per-core={}\n'.format(job.hyperthreads)
+        #end if
+        c+='#SBATCH -D ./\n'
+        c+='#SBATCH --no-requeue\n'
+        if job.constraint is not None:
+            c+='#--constraint="{}"\n'.format(job.constraint)
+        #end if
+        if job.email is not None:
+            c+='#SBATCH --mail-type=ALL\n'
+            c+='#SBATCH --mail-user={}\n'.format(job.email)
+        #end if
+        c+='#SBATCH --export=NONE\n'
+        if job.user_env:
+            c+='#SBATCH --get-user-env\n'
+        #end if
+        return c
+    #end def write_job_header
+#end class SuperMUC_NG
+
+
+
 class Stampede2(Supercomputer):
     name = 'stampede2'
 
@@ -3194,57 +3245,6 @@ class Tomcat3(Supercomputer):
         return c
     #end def write_job_header
 #end class Tomcat3
-
-
-
-class SuperMUC_NG(Supercomputer):
-    name                = 'supermucng'
-    requires_account    = True
-    batch_capable       = True
-    query_with_username = True
-
-    def write_job_header(self,job):
-        if job.hyperthreads is None:
-            job.hyperthreads = job.processes_per_node/48
-            if job.hyperthreads==0:
-                job.hyperthreads=None
-            #end if
-        #end if
-        if job.constraint is None:
-            job.contraint = 'scratch&work'
-        #end if
-        c ='#!/bin/bash\n'
-        c+='#SBATCH --account={}\n'.format(job.account)
-        c+='#SBATCH --partition={}\n'.format(job.queue)
-        c+='#SBATCH -J {}\n'.format(job.name)
-        c+='#SBATCH --time={}\n'.format(job.sbatch_walltime())
-        c+='#SBATCH -o ./{}\n'.format(job.outfile)
-        c+='#SBATCH -e ./{}\n'.format(job.errfile)
-        if job.switches is not None:
-            c+='#SBATCH --switches={}\n'.format(job.switches)
-        #end if
-        c+='#SBATCH --nodes={}\n'.format(job.nodes)
-        c+='#SBATCH --ntasks-per-node={}\n'.format(job.processes_per_node)
-        c+='#SBATCH --cpus-per-task={}\n'.format(job.threads)
-        if job.hyperthreads is not None:
-            c+='#SBATCH --ntasks-per-core={}\n'.format(job.hyperthreads)
-        #end if
-        c+='#SBATCH -D ./\n'
-        c+='#SBATCH --no-requeue\n'
-        if job.constraint is not None:
-            c+='#--constraint="{}"\n'.format(job.constraint)
-        #end if
-        if job.email is not None:
-            c+='#SBATCH --mail-type=ALL\n'
-            c+='#SBATCH --mail-user={}\n'.format(job.email)
-        #end if
-        c+='#SBATCH --export=NONE\n'
-        if job.user_env:
-            c+='#SBATCH --get-user-env\n'
-        #end if
-        return c
-    #end def write_job_header
-#end class SuperMUC_NG
 
 
 
