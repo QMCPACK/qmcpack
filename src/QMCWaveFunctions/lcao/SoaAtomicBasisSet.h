@@ -198,6 +198,7 @@ struct SoaAtomicBasisSet
           dr_new[1] = dr[1] + TransX * lattice.R(0, 1) + TransY * lattice.R(1, 1) + TransZ * lattice.R(2, 1);
           dr_new[2] = dr[2] + TransX * lattice.R(0, 2) + TransY * lattice.R(1, 2) + TransZ * lattice.R(2, 2);
           r_new     = std::sqrt(dot(dr_new, dr_new));
+          RealType SupTwist= std::sqrt(dot(SuperTwist,SuperTwist));
 
           //const size_t ib_max=NL.size();
           if (r_new >= Rmax)
@@ -212,10 +213,11 @@ struct SoaAtomicBasisSet
           const T rinv = cone / r_new;
 
 
-          phase = -dot(dr_new,SuperTwist);
-          sincos(phase, &s, &c);
+
 
 #if defined (QMC_COMPLEX)
+          phase = -dot(dr_new,SuperTwist);
+          sincos(phase, &s, &c);
           std::complex<double> i(0.0,1.0);
           std::complex<RealType> e_mikr(c, s);
           std::complex<RealType> de_mikr_x, de_mikr_y, de_mikr_z;
@@ -243,18 +245,19 @@ struct SoaAtomicBasisSet
             const T vr        = phi[nl];
 
             psi[ib] += ang * vr*e_mikr;
-            ///ORIGINAL VALUES:
+            ///ORIGINAL :
             //dpsi_x[ib] += (ang * gr_x  + vr * ang_x );
             //dpsi_y[ib] += (ang * gr_y  + vr * ang_y );
             //dpsi_z[ib] += (ang * gr_z  + vr * ang_z );
+           //d2psi[ib] += (ang * (ctwo * drnloverr + d2phi[nl]) + ctwo * (gr_x * ang_x + gr_y * ang_y + gr_z * ang_z) + vr * ylm_l[lm]);
 
            ///GRADIENT WITH PHASE
-           dpsi_x[ib] +=de_mikr_x * ( ang * vr ) + (ang * gr_x  + vr * ang_x ) * e_mikr; 
-           dpsi_y[ib] +=de_mikr_y * ( ang * vr ) + (ang * gr_y  + vr * ang_y ) * e_mikr; 
-           dpsi_z[ib] +=de_mikr_z * ( ang * vr ) + (ang * gr_z  + vr * ang_z ) * e_mikr; 
-         
-           ///CANNOT WRITE LAPLACIAN
-           d2psi[ib] += (ang * (ctwo * drnloverr + d2phi[nl]) + ctwo * (gr_x * ang_x + gr_y * ang_y + gr_z * ang_z) + vr * ylm_l[lm]);
+           dpsi_x[ib] += de_mikr_x * ( ang * vr ) + (ang * gr_x  + vr * ang_x ) * e_mikr; 
+           dpsi_y[ib] += de_mikr_y * ( ang * vr ) + (ang * gr_y  + vr * ang_y ) * e_mikr; 
+           dpsi_z[ib] += de_mikr_z * ( ang * vr ) + (ang * gr_z  + vr * ang_z ) * e_mikr; 
+           ///LAPLACIAN WITH PHASE
+           d2psi[ib]  += (e_mikr*(-ang * vr *  SupTwist*SupTwist + vr * ylm_l[lm] + ctwo * (gr_x * ang_x + gr_y * ang_y + gr_z * ang_z) +  ang * (ctwo * drnloverr + d2phi[nl]) ) 
+          + ctwo * ( de_mikr_x * (ang_x * vr + ang * gr_x) + de_mikr_y * (ang_y * vr + ang * gr_y) + de_mikr_z * (ang_z * vr + ang * gr_z) ) ); 
            
           }
         }
@@ -659,9 +662,10 @@ struct SoaAtomicBasisSet
             continue;
 
           
+
+#if defined (QMC_COMPLEX)
           phase = -dot(dr_new,SuperTwist);
           sincos(phase, &s, &c);
-#if defined (QMC_COMPLEX)
           std::complex<RealType> e_mikr(c, s);
 #else
           RealType e_mikr=1.0;
