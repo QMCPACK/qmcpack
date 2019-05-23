@@ -2965,6 +2965,9 @@ class SuperMUC_NG(Supercomputer):
     query_with_username = True
 
     def write_job_header(self,job):
+        if job.queue is None:
+            job.queue = 'general'
+        #end if
         if job.hyperthreads is None:
             job.hyperthreads = job.processes_per_node/48
             if job.hyperthreads==0:
