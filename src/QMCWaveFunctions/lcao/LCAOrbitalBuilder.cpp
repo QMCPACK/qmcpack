@@ -860,8 +860,8 @@ void LCAOrbitalBuilder::LoadFullCoefsFromH5(hdf_archive& hin, int setVal, PosTyp
   bool IsComplex = false;
   //FIXME: need to check the path to IsComplex in h5
   hin.read(IsComplex, "IsComplex");
-  if (IsComplex && (std::abs(SuperTwist[0]) >= 1e-6 || std::abs(SuperTwist[1]) >= 1e-6 ||
-		    std::abs(SuperTwist[2]) >= 1e-6 ))
+  if (IsComplex &&
+      (std::abs(SuperTwist[0]) >= 1e-6 || std::abs(SuperTwist[1]) >= 1e-6 || std::abs(SuperTwist[2]) >= 1e-6))
   {
     std::string setname("This Wavefunction is Complex and you are using the real version of QMCPACK. "
                         "Please re-run this job with the Complex build of QMCPACK.");
