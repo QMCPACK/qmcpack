@@ -112,7 +112,7 @@ def generate_hamiltonian(scf_data, chol_cut=1e-5, verbose=False, cas=None,
         ncas = cas[1]
         nfzv = nbasis - ncas - nfzc
         h1e, chol_vecs, enuc = freeze_core(h1e, chol_vecs, enuc, nfzc, ncas,
-                                           verbose, ne=nelec[0])
+                                           verbose)
         h1e = h1e[0]
         nelec = (mol.nelec[0]-nfzc, mol.nelec[1]-nfzc)
         mol.nelec = nelec

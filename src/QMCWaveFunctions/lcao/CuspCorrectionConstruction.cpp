@@ -12,6 +12,7 @@
 
 
 #include "QMCWaveFunctions/lcao/CuspCorrectionConstruction.h"
+#include "Message/Communicate.h"
 
 namespace qmcplusplus
 {
@@ -182,7 +183,8 @@ void generateCuspInfo(int orbital_set_size,
                       ParticleSet& targetPtcl,
                       ParticleSet& sourcePtcl,
                       LCAOrbitalSetWithCorrection& lcwc,
-                      std::string id)
+                      std::string id,
+                      Communicate& Comm)
 {
   typedef QMCTraits::RealType RealType;
 
@@ -202,16 +204,22 @@ void generateCuspInfo(int orbital_set_size,
   typedef OneDimGridBase<RealType> GridType;
   int npts = 500;
 
+  // Parallelize correction of MO's across MPI ranks
+  std::vector<int> offset;
+  FairDivideLow(orbital_set_size, Comm.size(), offset);
 
-  for (int center_idx = 0; center_idx < num_centers; center_idx++)
+  int start_mo = offset[Comm.rank()];
+  int end_mo   = offset[Comm.rank() + 1];
+  app_log() << "  Number of molecular orbitals to compute correction on this rank: " << end_mo - start_mo << std::endl;
+  for (int mo_idx = start_mo; mo_idx < end_mo; mo_idx++)
   {
-    std::cout << "Working on Center " << center_idx << std::endl;
-    *(eta.C) = *(lcwc.C);
-    *(phi.C) = *(lcwc.C);
-
-    splitPhiEta(center_idx, corrCenter, phi, eta);
-    for (int mo_idx = 0; mo_idx < orbital_set_size; mo_idx++)
+    app_log() << "   Working on MO: " << mo_idx << std::endl;
+    for (int center_idx = 0; center_idx < num_centers; center_idx++)
     {
+      *(eta.C) = *(lcwc.C);
+      *(phi.C) = *(lcwc.C);
+      splitPhiEta(center_idx, corrCenter, phi, eta);
+
       bool corrO = false;
       auto& cref(*(phi.C));
       for (int ip = 0; ip < cref.cols(); ip++)
@@ -225,7 +233,6 @@ void generateCuspInfo(int orbital_set_size,
 
       if (corrO)
       {
-        std::cout << "Working on Mo " << mo_idx << std::endl;
         OneMolecularOrbital etaMO(&targetPtcl, &sourcePtcl, &eta);
         etaMO.changeOrbital(center_idx, mo_idx);
 
@@ -256,7 +263,24 @@ void generateCuspInfo(int orbital_set_size,
       }
     }
   }
-  saveCusp(orbital_set_size, num_centers, info, id);
+
+  for (int root = 0; root < Comm.size(); root++)
+  {
+    int start_mo = offset[root];
+    int end_mo   = offset[root + 1];
+    for (int mo_idx = start_mo; mo_idx < end_mo; mo_idx++)
+    {
+      for (int center_idx = 0; center_idx < num_centers; center_idx++)
+      {
+        broadcastCuspInfo(info(center_idx, mo_idx), Comm, root);
+      }
+    }
+  }
+
+  if (Comm.rank() == 0)
+  {
+    saveCusp(orbital_set_size, num_centers, info, id);
+  }
 }
 
 } // namespace qmcplusplus

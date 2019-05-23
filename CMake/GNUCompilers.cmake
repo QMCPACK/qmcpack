@@ -72,6 +72,16 @@ ELSEIF(CMAKE_SYSTEM_PROCESSOR MATCHES "ppc64" OR CMAKE_SYSTEM_PROCESSOR MATCHES 
   endif() #(CMAKE_CXX_FLAGS MATCHES "-mcpu=" OR CMAKE_C_FLAGS MATCHES "-mcpu=")
 ENDIF()
 
+# protect buggy libmvec
+FILE( WRITE "${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/src_glibc.cxx"
+    "#include <iostream>\n#if __GLIBC__ == 2 && ( __GLIBC_MINOR__ == 22 || __GLIBC_MINOR__ == 23 )\n#error buggy glibc version\n#endif\n int main() { return 0; }\n" )
+try_compile(PASS_GLIBC ${CMAKE_BINARY_DIR}
+      ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/src_glibc.cxx
+      CMAKE_FLAGS "${CMAKE_CXX_FLAGS}" )
+IF ( NOT PASS_GLIBC )
+  MESSAGE(FATAL_ERROR "Your system and GNU compiler are using glibc 2.22 or 2.23 which contains a buggy libmvec. This results in crashes. Workaround needed. Alternatively upgrade or use another compiler.")
+ENDIF()
+
 # Add static flags if necessary
 IF(QMC_BUILD_STATIC)
 SET(CMAKE_CXX_LINK_FLAGS " -static")
