@@ -1009,7 +1009,7 @@ ph_excitations<int,ComplexType> WavefunctionFactory::read_ph_wavefunction_hdf(hd
       // beta
       confg.clear();
       for(int k=0, q=0; k<NAEB; k++) {
-        q = occs[i][NAEA+k];
+        q = occs[i][NAEA+k] + NMO;
         if(q < NMO || q >= 2*NMO)
           APP_ABORT("Error: Bad occupation number " << q << " in determinant " << i << " in wavefunction file. \n");
         confg.emplace_back(q);
@@ -1066,7 +1066,7 @@ ph_excitations<int,ComplexType> WavefunctionFactory::read_ph_wavefunction_hdf(hd
                                   ph_struct.number_of_unique_smaller_than(np)[0]));
       confg.clear();
       for(int k=0, q=0; k<NAEB; k++) {
-        q = occs[i][NAEA+k];
+        q = occs[i][NAEA+k] + NMO;
         if(q < NMO || q >= 2*NMO)
           APP_ABORT("Error: Bad occupation number " << q << " in determinant " << i << " in wavefunction file. \n");
         confg.emplace_back(q);
