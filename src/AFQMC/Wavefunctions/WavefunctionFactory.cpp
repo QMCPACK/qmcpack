@@ -911,7 +911,6 @@ ph_excitations<int,ComplexType> WavefunctionFactory::read_ph_wavefunction_hdf(hd
 
   using Alloc = shared_allocator<ComplexType>;
   assert(walker_type!=UNDEFINED_WALKER_TYPE);
-  bool fullMOMat = false;
   bool Cstyle = true;
   int wfn_type = 0;
   int NEL = NAEA;
@@ -942,16 +941,11 @@ ph_excitations<int,ComplexType> WavefunctionFactory::read_ph_wavefunction_hdf(hd
     app_error()<<" Error in WavefunctionFactory::fromHDF5(): Problems reading type. \n";
     APP_ABORT("");
   }
-  if(!dump.readEntry(fullMOMat,"fullmo")) {
-    APP_ABORT("Problems reading fullmo in read_ph_wavefunction_hdf.\n");
-  }
   if(type == "mixed") mixed = true;
 
   if(mixed) { // read reference
     int nmo_ = (walker_type==NONCOLLINEAR?2*NMO:NMO);
     if(not comm.root()) nmo_=0; // only root reads matrices
-    if(not fullMOMat)
-      APP_ABORT("Error: Wavefunction type mixed requires fullMOMat=true.\n");
     PsiT.reserve((wfn_type!=1)?1:2);
 
     if(!dump.push(std::string("PsiT_")+std::to_string(0),false)) {

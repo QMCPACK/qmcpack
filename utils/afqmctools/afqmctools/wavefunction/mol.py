@@ -59,7 +59,8 @@ def write_wfn_mol(scf_data, ortho_ao, filename, wfn=None, init=None):
     write_qmcpack_wfn(filename, (numpy.array([1.0+0j]),wfn), uhf, nelec, norb)
     return nelec
 
-def write_qmcpack_wfn(filename, wfn, walker_type, nelec, norb, init=None):
+def write_qmcpack_wfn(filename, wfn, walker_type, nelec, norb, init=None,
+                      orbmat=None):
     # User defined wavefunction.
     # PHMSD is a list of tuple of (ci, occa, occb).
     # NOMSD is a tuple of (list, numpy.ndarray).
@@ -102,6 +103,7 @@ def write_qmcpack_wfn(filename, wfn, walker_type, nelec, norb, init=None):
             del fh5['Wavefunction/PHMSD']
             wfn_group = fh5.create_group('Wavefunction/PHMSD')
         write_phmsd(wfn_group, occa, occb, nelec, norb, init=init)
+        write_phmsd(wfn_group, occa, occb, nelec, norb, init=init, orbmat=orbmat)
     wfn_group['ci_coeffs'] = to_qmcpack_complex(coeffs)
     dims = [norb, nalpha, nbeta, walker_type, len(coeffs)]
     wfn_group['dims'] = numpy.array(dims, dtype=numpy.int32)
@@ -162,7 +164,7 @@ def write_nomsd_single(fh5, psi, idet):
     fh5[base+'pointers_begin_'] = psi.indptr[:-1]
     fh5[base+'pointers_end_'] = psi.indptr[1:]
 
-def write_phmsd(fh5, occa, occb, nelec, norb, init=None):
+def write_phmsd(fh5, occa, occb, nelec, norb, init=None, orbmat=None):
     """Write NOMSD to HDF.
 
     Parameters
@@ -181,8 +183,15 @@ def write_phmsd(fh5, occa, occb, nelec, norb, init=None):
         init = numpy.eye(norb, dtype=numpy.complex128)
         fh5['Psi0_alpha'] = to_qmcpack_complex(init[:,occa[0]].copy())
         fh5['Psi0_beta'] = to_qmcpack_complex(init[:,occb[0]-norb].copy())
-    fh5['fullmo'] = numpy.array([0], dtype=numpy.int32)
-    fh5['type'] = numpy.array(['occ'])
+    if orbmat is not None:
+        fh5['type'] = numpy.string_(['mixed'])
+        # Expects conjugate transpose.
+        oa = scipy.sparse.csr_matrix(orbmat[0].conj().T)
+        write_nomsd_single(fh5, oa, 0)
+        ob = scipy.sparse.csr_matrix(orbmat[1].conj().T)
+        write_nomsd_single(fh5, ob, 1)
+    else:
+        fh5['type'] = numpy.string_(['occ'])
     occs = numpy.zeros((len(occa), na+nb), dtype=numpy.int32)
     occs[:,:na] = numpy.array(occa)
     occs[:,na:] = numpy.array(occb)
