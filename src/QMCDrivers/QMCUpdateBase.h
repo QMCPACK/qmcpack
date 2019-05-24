@@ -85,7 +85,10 @@ public:
    *
    * Update time-step variables to move walkers
    */
-  void resetRun(BranchEngineType* brancher, EstimatorManagerBase* est, TraceManager* traces, const DriftModifierBase* driftmodifer);
+  void resetRun(BranchEngineType* brancher,
+                EstimatorManagerBase* est,
+                TraceManager* traces,
+                const DriftModifierBase* driftmodifer);
 
   inline RealType getTau()
   {

@@ -86,7 +86,7 @@ class WalkerSetBase: public AFQMCInfo
 
   /// constructor
   WalkerSetBase(afqmc::TaskGroup_& tg_, xmlNodePtr cur, AFQMCInfo& info, 
-        RandomGenerator_t* r, Allocator alloc_ = {}, BPAllocator bpalloc_ = {}):
+        RandomGenerator_t* r, Allocator alloc_, BPAllocator bpalloc_):
                 TG(tg_),AFQMCInfo(info),rng(r),
                 walker_memory_usage(0),tot_num_walkers(0),bp_pos(-1),
                 bp_walker_memory_usage(0),bp_walker_size(0),walker_size(1),
@@ -140,10 +140,10 @@ class WalkerSetBase: public AFQMCInfo
   int getBPPos() const {
     return bp_pos; 
   }
-  int setBPPos(int p) {
+  void setBPPos(int p) {
     bp_pos=p; 
   }
-  int advanceBPPos() {
+  void advanceBPPos() {
     bp_pos++; 
   }
 

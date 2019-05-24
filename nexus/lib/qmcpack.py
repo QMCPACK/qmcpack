@@ -284,6 +284,12 @@ class Qmcpack(Simulation):
                 #end if
                 if 'orbfile' in result:
                     orb_h5file = result.orbfile
+                    if not os.path.exists(orb_h5file) and 'href' in dset:
+                        orb_h5file = os.path.join(sim.locdir,dset.href)
+                    #end if
+                    if not os.path.exists(orb_h5file):
+                        self.error('orbital h5 file from convert4qmc does not exist\nlocation checked: {}'.format(orb_h5file))
+                    #end if
                     orb_path = os.path.relpath(orb_h5file,self.locdir)
                     dset.href = orb_path
                     detlist = dset.get('detlist')
