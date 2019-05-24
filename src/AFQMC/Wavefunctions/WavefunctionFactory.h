@@ -97,8 +97,8 @@ class WavefunctionFactory
     auto mat = initial_guess.find(ID);
     if(mat == initial_guess.end()) { 
       APP_ABORT(" Error: Missing initial guess in WavefunctionFactory. \n");
-    } else 
-      return mat->second;
+    }
+    return mat->second;
   }
 
   // adds a xml block from which a Wavefunction can be built
@@ -138,6 +138,7 @@ class WavefunctionFactory
       app_error()<<"Unknown Wavefunction filetype in WavefunctionFactory::buildWavefunction(): " <<type <<std::endl;
       APP_ABORT(" Error: Unknown Wavefunction filetype in WavefunctionFactory::buildWavefunction(). \n");
     }
+    return Wavefunction{};
   }
 
   Wavefunction fromASCII(TaskGroup_& TGprop, TaskGroup_& TGwfn, xmlNodePtr cur, WALKER_TYPES walker_type,
