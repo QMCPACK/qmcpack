@@ -7,8 +7,7 @@ import sys
 import scipy.linalg
 from afqmctools.wavefunction.mol import write_qmcpack_wfn, write_nomsd_wfn
 
-def write_wfn_pbc(scf_data, ortho_ao, filename, rediag=True, verbose=False,
-                  energy_sort=False):
+def write_wfn_pbc(scf_data, ortho_ao, filename, rediag=True, verbose=False):
     """Generate QMCPACK trial wavefunction for PBC simulation.
 
     Parameters
@@ -24,9 +23,6 @@ def write_wfn_pbc(scf_data, ortho_ao, filename, rediag=True, verbose=False,
         orthoagonlised AO basis. Default: True.
     verbose : bool
         Print additional information. Default: False.
-    energy_sort : bool
-        Whether to sort MOs globally by energy. Default: Wavefunction will be
-        block diagonal in k-space.
 
     Returns
     -------
@@ -34,7 +30,6 @@ def write_wfn_pbc(scf_data, ortho_ao, filename, rediag=True, verbose=False,
         Wavefunction as numpy array. Format depends on wavefunction.
     """
     # Single determinant for the moment.
-    ghf = False
     cell = scf_data['cell']
     C = scf_data['mo_coeff']
     X = scf_data['X']
@@ -45,79 +40,72 @@ def write_wfn_pbc(scf_data, ortho_ao, filename, rediag=True, verbose=False,
     nmo_tot = numpy.sum(nmo_pk)
     kpts = scf_data['kpts']
     nkpts = len(kpts)
-    nalpha = cell.nelec[0] * nkpts
-    nbeta = cell.nelec[1] * nkpts
-    nelec = nalpha + nbeta
     uhf = scf_data['isUHF']
-    # For metallic / system with partial occupancies.
-    re_occ, trial, ndeg, srt, isrt = reoccupy(mo_occ, mo_energy, verbose, uhf)
-    if uhf:
-        nalpha = int(numpy.sum(re_occ[0]))
-        nbeta = int(numpy.sum(re_occ[1]))
-    else:
-        nalpha = nbeta = numpy.sum(re_occ)
+    if len(fock.shape) == 3:
+        fock = fock.reshape((1,)+fock.shape)
     if verbose:
         print(" # Generating QMCPACK trial wavefunction.")
-        print(" # Shape of supercell wavefunction "
-              "({:d},{:d})".format(nmo_tot, nelec if uhf else nalpha))
-        print(" # Number of electrons (nalpha, nbeta) = ({}, {})".format(nalpha, nbeta))
         if uhf:
             print(" # UHF-like trial wavefunction.")
         else:
             print(" # RHF-like trial wavefunction.")
+        print(" # k-points: ")
+        for (i,k) in enumerate(kpts):
+            print(" # {:d} {}".format(i,k))
+    (eigs, orbs, ks, bands) = generate_orbitals(fock, X, nmo_pk, rediag, ortho_ao,
+                                                mo_energy, uhf, verbose=verbose)
+    re_occ, trial, ndeg, srt, isrt = reoccupy(mo_occ, eigs, uhf, verbose)
+    nalpha = int(numpy.sum(re_occ[0]))
+    nbeta = int(numpy.sum(re_occ[1]))
+    nelec = (nalpha, nbeta)
+    if ndeg == 1:
+        wfn = create_wavefunction(orbs, re_occ, nmo_pk, nelec, uhf, verbose)
+        coeff = numpy.array([1.0+0j])
+        trial = (coeff, wfn)
     # For RHF only nalpha entries will be filled.
-    wfn = numpy.zeros((1,nmo_tot,nalpha+nbeta), dtype=numpy.complex128)
+    orb_mat_a = scipy.linalg.block_diag(*orbs[0])
+    print_eigenvalues(ks, bands, eigs, uhf, srt, nelec, verbose)
+    if uhf:
+        orb_mat_b = scipy.linalg.block_diag(*orbs[1])
+    else:
+        orb_mat_b = None
+    write_qmcpack_wfn(filename, trial, uhf, (nalpha, nbeta), nmo_tot,
+                      orbmat=(orb_mat_a, orb_mat_b))
+    return nelec
+
+def generate_orbitals(fock, X, nmo_pk, rediag, ortho_ao,
+                      mo_energy, uhf, verbose=False):
     eigs_a = []
-    eigs_a_occ = []
     eigs_b = []
-    eigs_b_occ = []
-    occ_b = numpy.zeros(1, dtype=numpy.int64)
     ks = []
     bands = []
-    row = 0
-    col = 0
-    col_b = nalpha
     full_mo_a = []
     full_mo_b = []
-    for k in range(nkpts):
+    for k in range(fock.shape[1]):
         if verbose:
-            print(" # Generating trial wavefunction for momentum: "
+            print(" # Generating trial wavefunction for kpoint: "
                   "{:d}".format(k))
         if rediag and ortho_ao:
             start = time.time()
+            ea, orb_a = rediag_fock(fock[0,k], X[k][:,:nmo_pk[k]])
+            full_mo_a.append(orb_a)
+            eigs_a += list(ea)
             if uhf:
-                occ_a = re_occ[0][k] > 0
-                ea, orb_a = rediag_fock(fock[0,k], X[k][:,:nmo_pk[k]], occ_a)
-                full_mo_a.append(orb_a)
-                eigs_a += list(ea)
-                eigs_a_occ +=  list(ea[occ_a])
-                occ_b = re_occ[1][k] > 0
-                eb, orb_b = rediag_fock(fock[1,k], X[k][:,:nmo_pk[k]], occ_b)
+                eb, orb_b = rediag_fock(fock[1,k], X[k][:,:nmo_pk[k]])
                 full_mo_b.append(orb_b)
                 eigs_b += list(eb)
-                eigs_b_occ += list(eb[occ_b])
-                ks.append([k]*len(ea))
-                bands.append([i for i in range(len(ea))])
-            else:
-                occ_a = re_occ[k] > 0
-                ea, orb_a = rediag_fock(fock[k], X[k][:,:nmo_pk[k]], occ_a)
-                full_mo_a.append(orb_a)
-                eigs_a.append(ea)
-                eigs_a_occ.append(ea[occ_a])
-                ks.append([k]*len(ea))
-                bands.append([i for i in range(len(ea))])
-                if verbose:
-                    print(" # Time to rediagonalise fock: "
-                          "  {:13.8e} s".format(time.time()-start))
+            ks.append([k]*len(ea))
+            bands.append([i for i in range(len(ea))])
+            if verbose:
+                print(" # Time to rediagonalise fock: "
+                      "  {:13.8e} s".format(time.time()-start))
         elif not rediag and not ortho_ao:
             if uhf:
                 print("WARNING: UHF wavefunction with ortho_ao = False not "
                       "allowed.")
                 sys.exit()
-            occ_a = re_occ[k] > 0
             ea = mo_energy[k]
             eigs_a.append(ea)
-            eigs_a_occ.append(ea[occ_a])
             orb_a = numpy.eye(len(ea), dtype=numpy.complex128)
             full_mo_a.append(orb_a)
             ks.append([k]*len(ea))
@@ -125,76 +113,74 @@ def write_wfn_pbc(scf_data, ortho_ao, filename, rediag=True, verbose=False,
         elif ortho_ao and not rediag:
             print("WARNING: ortho_ao = True and rediag = False not implemented.")
             sys.exit()
+    return ((eigs_a,eigs_b), (full_mo_a,full_mo_b), ks, bands)
+
+def create_wavefunction(orbs, occs, nmo_pk, nelec, uhf, verbose):
+    nalpha, nbeta = nelec
+    orb_a, orb_b = orbs
+    occ_a, occ_b = occs
+    nmo_tot = sum(nmo_pk)
+    if verbose:
+        print(" # Shape of supercell wavefunction "
+              "({:d},{:d})".format(nmo_tot, nelec if uhf else nalpha))
+        print(" # Number of electrons (nalpha, nbeta) = ({}, {})".format(nalpha, nbeta))
+    wfn = numpy.zeros((1,nmo_tot, nalpha+nbeta), dtype=numpy.complex128)
+    row = 0
+    col = 0
+    col_b = nalpha
+    for k in range(len(nmo_pk)):
         row_end = row + nmo_pk[k]
-        col_end = col + sum(occ_a)
-        wfn[0,row:row_end,col:col_end] = orb_a[:,occ_a].copy()
+        col_end = col + sum(occ_a[k])
+        wfn[0,row:row_end,col:col_end] = orb_a[k][:,occ_a[k]].copy()
         if uhf:
             col_end = col_b + sum(occ_b)
-            wfn[0,row:row_end,col_b:col_end] = orb_b[:,occ_b].copy()
-            col_b += sum(occ_b)
+            wfn[0,row:row_end,col_b:col_end] = orb_b[k][:,occ_b[k]].copy()
+            col_b += sum(occ_b[k])
         row += nmo_pk[k]
-        col += sum(occ_a)
-    # print(wfn[0,:26,:4])
-    # Sort columns by energy.
-    eigs_a = numpy.array(eigs_a).ravel()
-    eigs_a_occ = numpy.array(eigs_a_occ).ravel()
+        col += sum(occ_a[k])
+    return wfn
+
+def print_eigenvalues(ks, bands, eigs, uhf, srt, nelec, verbose):
     ks = numpy.array(ks).ravel()
     bands = numpy.array(bands).ravel()
     # TODO: Dangerous should subselect from already sorted array.
-    col_sort_occ = numpy.argsort(eigs_a_occ)
-    ihomo_a = len(eigs_a_occ[col_sort_occ]) - 1
+    print(" # Recomputed MO energies.")
     if uhf:
+        eigs_a, eigs_b = eigs
+        eigs_a = numpy.array(eigs_a).ravel()
         eigs_b = numpy.array(eigs_b).ravel()
-        eigs_b_occ = numpy.array(eigs_b_occ).ravel()
-        col_sort_b = numpy.argsort(eigs_b)
-        col_sort_occ_b = numpy.argsort(eigs_b_occ)
-        ihomo_b = len(eigs_b_occ[col_sort_occ_b]) - 1
-    if verbose > 1:
-        print(" # Recomputed MO energies.")
-        if uhf:
-            header = ("index", "kpoint", "band", "e_mo(alpha)", "e_mo(beta)")
-            fmt = " # {:5s}  {:5s}    {:5s}  {:>17s}  {:>17s}"
-            print(fmt.format(*header))
-            zipped = zip(ks[srt[0]], bands[srt[0]],
-                         eigs_a[srt[0]], eigs_b[srt[1]])
-            fmt = " {:5d}   {:5d}     {: 13.8e}    {: 13.8e}"
-            for i, t in enumerate(zipped):
-                tag = ''
-                if i == ihomo_a:
-                    tag = ' <--- HOMO(alpha) '
-                elif i == ihomo_b:
-                    tag += ' <--- HOMO(beta) '
-                print(" # {:5d}  ".format(i)+fmt.format(*t)+tag)
-        else:
-            header = ("index", "kpoint", "band", "e_mo")
-            fmt = " # {:5s}  {:5s}    {:5s}  {:>17s}"
-            print(fmt.format(*header))
-            zipped = zip(ks[srt], bands[srt], eigs_a[isrt])
-            fmt = " {:5d}   {:5d}     {: 13.8e}"
-            for i, t in enumerate(zipped):
-                tag = ''
-                if i == ihomo_a:
-                    tag = ' <--- HOMO(alpha) '
-                print(" # {:5d}  ".format(i)+fmt.format(*t)+tag)
-    if energy_sort:
-        print("Sorting orbitals by energy.")
-        col_sort = list(col_sort_occ)
-        if uhf:
-            print(" # Warning: UHF trial wavefunction can only be used of "
-                  "working in ortho AO basis.")
-            sys.exit()
-    orb_mat_a = scipy.linalg.block_diag(*full_mo_a)
-    orb_mat_b = scipy.linalg.block_diag(*full_mo_b)
-    if ndeg > 1:
-        trial = trial
+        header = ("index", "kpoint", "band", "e_mo(alpha)", "e_mo(beta)")
+        fmt = " # {:5s}  {:5s}    {:5s}  {:>17s}  {:>17s}"
+        print(fmt.format(*header))
+        zipped = zip(ks[srt[0]], bands[srt[0]],
+                     eigs_a[srt[0]], eigs_b[srt[1]])
+        fmt = " {:5d}   {:5d}     {: 13.8e}    {: 13.8e}"
+        for i, t in enumerate(zipped):
+            tag = ''
+            if i == nelec[0]-1:
+                tag = ' <--- HOMO(alpha) '
+            elif i == nelec[1]-1:
+                tag += ' <--- HOMO(beta) '
+            print(" # {:5d}  ".format(i)+fmt.format(*t)+tag)
+            if verbose < 2 and i >= max(nelec[0]-1,nelec[1]-1):
+                break
     else:
-        coeff = numpy.array([1.0+0j])
-        trial = (coeff, wfn)
-    write_qmcpack_wfn(filename, trial, uhf, (nalpha, nbeta), nmo_tot,
-                      orbmat=(orb_mat_a, orb_mat_b))
-    return nelec
+        eigs_a, eigs_b = eigs
+        eigs_a = numpy.array(eigs_a).ravel()
+        header = ("index", "kpoint", "band", "e_mo")
+        fmt = " # {:5s}  {:5s}    {:5s}  {:>17s}"
+        print(fmt.format(*header))
+        zipped = zip(ks[srt], bands[srt], eigs_a[srt])
+        fmt = " {:5d}   {:5d}     {: 13.8e}"
+        for i, t in enumerate(zipped):
+            tag = ''
+            if i == nelec[0]-1:
+                tag = ' <--- HOMO(alpha) '
+            print(" # {:5d}  ".format(i)+fmt.format(*t)+tag)
+            if verbose < 2 and i >= nelec[1]-1:
+                break
 
-def rediag_fock(fock, X, occ):
+def rediag_fock(fock, X):
     """Rediagonalise Fock matrix.
 
     Parameters
@@ -203,8 +189,6 @@ def rediag_fock(fock, X, occ):
         Fock matrix for given kpoint.
     X : :class:`numpy.ndarray'
         Transformation matrix.
-    occ : :class:`numpy.ndarray`
-        Boolean array specifying which MOs to occupy.
 
     Returns
     -------
@@ -217,7 +201,7 @@ def rediag_fock(fock, X, occ):
     e, c = numpy.linalg.eigh(fock_oao)
     return e, c
 
-def reoccupy(mo_occ, mo_energy, verbose, uhf):
+def reoccupy(mo_occ, mo_energy, uhf, verbose):
     if uhf:
         if verbose:
             print(" # Determining occupancies for alpha electrons.")
@@ -250,11 +234,12 @@ def reoccupy(mo_occ, mo_energy, verbose, uhf):
         isrt = (isrt_a,isrt_b)
         trial = (msd_coeff, occs_a, occs_b)
     else:
-        re_occ = mo_occ
+        re_occ = [mo_occ>1.0, mo_occ>1.0]
         ndeg = 1
-        srt = numpy.ravel(mo_energy).argsort()
+        srt = numpy.ravel(mo_energy[0]).argsort()
         isrt = srt.argsort()
         trial = None
+    # For metallic / system with partial occupancies.
 
     return re_occ, trial, ndeg, srt, isrt
 
@@ -272,13 +257,13 @@ def determine_occupancies(mo_occ, mo_energy, low=0.25,
         nocc += sum(occ)
     if abs(nelec-nocc) < 1e-12:
         if verbose:
-            print(" # Found closed shell system.")
+            print(" # All occupancies are one or zero.")
         ndeg = 0
         msd = None
-        return (mo_occ, ndeg, msd, col_sort,col_sort_inv)
+        return (mo_occ, ndeg, msd, col_sort, col_sort_inv)
     else:
         if verbose:
-            print(" # Found orbital occupancies < 0.25.")
+            print(" # Found partially occupied bands.")
             print(" # Constructing multi determinant trial wavefunction from "
                   "degenerate orbitals.")
         nleft = int(round(nelec-nocc))
@@ -297,8 +282,8 @@ def determine_occupancies(mo_occ, mo_energy, low=0.25,
         # Remap to primitive cell (kpt,band) indexing.
         reordered = []
         for i, d in enumerate(msd):
-            mo_occ_new = numpy.zeros(len(mo_order))
-            mo_occ_new[d] = 1.0
+            mo_occ_new = numpy.zeros(len(mo_order), dtype=numpy.int32)
+            mo_occ_new[d] = 1
             if i == refdet:
                 ref = mo_occ_new[col_sort_inv]
             reordered.append(numpy.where(mo_occ_new[col_sort_inv])[0])
