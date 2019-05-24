@@ -22,10 +22,7 @@
 #include "einspline/multi_bspline_eval_s.h"
 
 #include <stdio.h>
-#include <string>
 #include <vector>
-
-using std::string;
 
 TEST_CASE("double_1d_natural", "[einspline]")
 {
@@ -120,7 +117,7 @@ TEST_CASE("double_1d_periodic", "[einspline]")
   x_grid.start = 0.0;
   x_grid.end = 1.0;
   //Enough grid points are required to do the micro evaluation test.
-  int N = 12;
+  constexpr int N = 12;
   x_grid.num = N;
   double delta = (x_grid.end - x_grid.start)/x_grid.num;
 
