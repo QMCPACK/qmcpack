@@ -64,11 +64,11 @@ void NonLocalECPComponent::resize_warrays(int n, int m, int l)
   psiratio.resize(n);
   gradpsiratio.resize(n);
   deltaV.resize(n);
+  cosgrad.resize(n);
+  wfngrad.resize(n);
   vrad.resize(m);
   dvrad.resize(m);
   vgrad.resize(m);
-  cosgrad.resize(m);
-  wfngrad.resize(m);
   wvec.resize(m);
   Amat.resize(n * m);
   dAmat.resize(n * m);
