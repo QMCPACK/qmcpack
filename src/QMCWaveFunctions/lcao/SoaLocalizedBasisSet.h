@@ -169,24 +169,49 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
     const DistanceTableData* d_table = P.DistTables[myTableIndex];
     const RealType* restrict dist    = (P.activePtcl == iat) ? d_table->Temp_r.data() : d_table->Distances[iat];
     const auto& displ                = (P.activePtcl == iat) ? d_table->Temp_dr : d_table->Displacements[iat];
+    const std::vector <double> coordR {((P.activePtcl == iat) ? P.activePos : P.R[iat])[0],((P.activePtcl == iat) ? P.activePos : P.R[iat])[1],((P.activePtcl == iat) ? P.activePos : P.R[iat])[2]};
+    const std::vector<double> R {0.,0.,0.};
     for (int c = 0; c < NumCenters; c++)
     {
-      LOBasisSet[IonID[c]]->evaluateVGL(P.Lattice, dist[c], displ[c], BasisOffset[c], vgl);
+      LOBasisSet[IonID[c]]->evaluateVGL(P.Lattice, dist[c], displ[c], BasisOffset[c], vgl, R);
     }
-    /*std::vector<double> K {0.333,0.333,0.333};
+
+    //Applying Phase higher
+    std::vector<double> K {0.333,0.333,0.333};
     RealType s,c;
     RealType vec_scalar;
-    vec_scalar=(((P.activePtcl == iat) ? P.activePos : P.R[iat])[0]*K[0]+((P.activePtcl == iat) ? P.activePos : P.R[iat])[1]*K[1]+((P.activePtcl == iat) ? P.activePos : P.R[iat])[2]*K[2]);  
-    sincos(-2*M_PI*vec_scalar, &s,&c);
-    QMCTraits::ValueType PhaseFactor(c,s);
+    vec_scalar=coordR[0]*K[0]+coordR[1]*K[1]+coordR[2]*K[2];  
+#if defined (QMC_COMPLEX)
+    sincos(vec_scalar, &s, &c);                                                                                              
+    std::complex<double> i(0.0,1.0);
+    std::complex<RealType> PhaseFactor(c, s);                                                                                
+    std::complex<RealType> dPhaseFactor_x, dPhaseFactor_y, dPhaseFactor_z, d2PhaseFactor;
+                                                                                                                              
+     dPhaseFactor_x=QMCTraits::ValueType(i*K[0])*PhaseFactor;
+     dPhaseFactor_y=QMCTraits::ValueType(i*K[1])*PhaseFactor;
+     dPhaseFactor_z=QMCTraits::ValueType(i*K[2])*PhaseFactor;
+     d2PhaseFactor=-PhaseFactor*(K[0]*K[0]+K[1]*K[1]+K[2]*K[2]);
+     
+#else
+     RealType PhaseFactor=1;                                                                                                  
+     RealType dPhaseFactor_x,dPhaseFactor_y,dPhaseFactor_z;                                                                           
+     dPhaseFactor_x=dPhaseFactor_y=dPhaseFactor_z=0.0;                                                                                  
+#endif 
+
+    QMCTraits::ValueType temp0,temp1,temp2,temp3,temp4;
     for (int i =0; i<BasisSetSize;i++)
     {
-      vgl.data(0)[i]*=PhaseFactor;
-      vgl.data(1)[i]*=PhaseFactor;
-      vgl.data(2)[i]*=PhaseFactor;
-      vgl.data(3)[i]*=PhaseFactor;
-      vgl.data(4)[i]*=PhaseFactor;
-    }*/
+      temp0=vgl.data(0)[i];
+      temp1=vgl.data(1)[i];
+      temp2=vgl.data(2)[i];
+      temp3=vgl.data(3)[i];
+      temp4=vgl.data(4)[i];
+      vgl.data(0)[i]= temp0 * PhaseFactor;
+      vgl.data(1)[i]= temp1 * PhaseFactor + dPhaseFactor_x * temp0; // dpsi_x*eikr+psi*deikr_x
+      vgl.data(2)[i]= temp2 * PhaseFactor + dPhaseFactor_y * temp0; // dpsi_y*eikr+psi*deikr_y
+      vgl.data(3)[i]= temp3 * PhaseFactor + dPhaseFactor_z * temp0; // dpsi_z*eikr+psi*deikr_z
+      vgl.data(4)[i]=PhaseFactor*temp4 + temp0 * d2PhaseFactor +2*(temp1*dPhaseFactor_x+temp2*dPhaseFactor_y+temp3*dPhaseFactor_z);
+    }
   }
 
 
@@ -237,19 +262,27 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
     const DistanceTableData* d_table = P.DistTables[myTableIndex];
     const RealType* restrict dist    = (P.activePtcl == iat) ? d_table->Temp_r.data() : d_table->Distances[iat];
     const auto& displ                = (P.activePtcl == iat) ? d_table->Temp_dr : d_table->Displacements[iat];
+    const std::vector <double> coordR {((P.activePtcl == iat) ? P.activePos : P.R[iat])[0],((P.activePtcl == iat) ? P.activePos : P.R[iat])[1],((P.activePtcl == iat) ? P.activePos : P.R[iat])[2]};
+    const std::vector<double> R {0.,0.,0.};
     for (int c = 0; c < NumCenters; c++)
     {
-      LOBasisSet[IonID[c]]->evaluateV(P.Lattice, dist[c], displ[c], vals + BasisOffset[c]);
+      LOBasisSet[IonID[c]]->evaluateV(P.Lattice, dist[c], displ[c], vals + BasisOffset[c],R);
     }
-    /*std::vector<double> K {0.333,0.333,0.333};
+
+    //Applying Phase higher
+    std::vector<double> K {0.333,0.333,0.333};
     RealType s,c;
     RealType vec_scalar;
-    vec_scalar=(((P.activePtcl == iat) ? P.activePos : P.R[iat])[0]*K[0]+((P.activePtcl == iat) ? P.activePos : P.R[iat])[1]*K[1]+((P.activePtcl == iat) ? P.activePos : P.R[iat])[2]*K[2]);  
-    sincos(-2*M_PI*vec_scalar, &s,&c);
-    QMCTraits::ValueType PhaseFactor(c,s);
+    vec_scalar=coordR[0]*K[0]+coordR[1]*K[1]+coordR[2]*K[2];  
+#if defined (QMC_COMPLEX)
+    sincos(vec_scalar, &s, &c);                                                                                              
+    std::complex<RealType> PhaseFactor(c, s);                                                                                
+#else
+    RealType PhaseFactor=1;                                                                                                  
+#endif 
     for (int i =0; i<BasisSetSize;i++)
       vals[i]*=PhaseFactor;
-    */
+    
   }
   inline void evaluateGradSourceV(const ParticleSet& P, int iat, const ParticleSet& ions, int jion, vgl_type& vgl)
   {
@@ -257,6 +290,8 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
     auto* restrict gx  = vgl.data(1);
     auto* restrict gy  = vgl.data(2);
     auto* restrict gz  = vgl.data(3);
+    const std::vector<double> R {0.,0.,0.};
+    const std::vector <double> coordR {((P.activePtcl == iat) ? P.activePos : P.R[iat])[0],((P.activePtcl == iat) ? P.activePos : P.R[iat])[1],((P.activePtcl == iat) ? P.activePos : P.R[iat])[2]};
 
     for(int ib=0; ib<BasisSetSize; ib++)
     {
@@ -264,7 +299,6 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
       gy[ib]=0;
       gz[ib]=0;
     }
-
     const DistanceTableData* d_table = P.DistTables[myTableIndex];
     const RealType* restrict dist    = (P.activePtcl == iat) ? d_table->Temp_r.data() : d_table->Distances[iat];
     const auto& displ                = (P.activePtcl == iat) ? d_table->Temp_dr : d_table->Displacements[iat];
@@ -272,7 +306,7 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
     //Since LCAO's are written only in terms of (r-R), ionic derivatives only exist for the atomic center
     //that we wish to take derivatives of.  Moreover, we can obtain an ion derivative by multiplying an electron
     //derivative by -1.0.  Handling this sign is left to LCAOrbitalSet.  For now, just note this is the electron VGL function.
-    LOBasisSet[IonID[jion]]->evaluateVGL(P.Lattice, dist[jion], displ[jion], BasisOffset[jion], vgl);
+    LOBasisSet[IonID[jion]]->evaluateVGL(P.Lattice, dist[jion], displ[jion], BasisOffset[jion], vgl, R);
 
   }
 
