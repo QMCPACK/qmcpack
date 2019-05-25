@@ -25,11 +25,11 @@
 #include <type_traits>
 #include <stdexcept>
 #include "PETE/PETE.h"
-#include "simd/MemorySpace.hpp"
+#include "simd/allocator_traits.hpp"
 
 namespace qmcplusplus
 {
-template<class T, typename Alloc = std::allocator<T>, unsigned MemType = MemorySpace::HOST>
+template<class T, typename Alloc = std::allocator<T>>
 class Vector
 {
 public:
@@ -48,7 +48,7 @@ public:
     if (n)
     {
       resize_impl(n);
-      if (MemType == MemorySpace::HOST)
+      if (allocator_traits<Alloc>::is_host_accessible)
         std::fill_n(X, n, val);
     }
   }
@@ -60,14 +60,14 @@ public:
   Vector(const Vector& rhs) : nLocal(rhs.nLocal), nAllocated(0), X(nullptr)
   {
     resize_impl(rhs.nLocal);
-    if (MemType == MemorySpace::HOST)
+    if (allocator_traits<Alloc>::is_host_accessible)
       std::copy_n(rhs.data(), nLocal, X);
   }
 
   // default assignment operator
+  template<typename Allocator = Alloc, typename = IsHostSafe<Allocator>>
   inline Vector& operator=(const Vector& rhs)
   {
-    static_assert(MemType == MemorySpace::HOST, "Vector::operator= MemType must be MemorySpace::HOST");
     if (this == &rhs)
       return *this;
     if (nLocal != rhs.nLocal)
@@ -77,11 +77,9 @@ public:
   }
 
   // assignment operator from anther Vector class
-  template<typename T1, typename C1>
+  template<typename T1, typename C1, typename Allocator = Alloc, typename = IsHostSafe<Allocator>>
   inline Vector& operator=(const Vector<T1, C1>& rhs)
   {
-    static_assert(MemType == MemorySpace::HOST,
-                  "Vector::operator= the MemType of both sides must be MemorySpace::HOST");
     if (std::is_convertible<T1, T>::value)
     {
       if (nLocal != rhs.nLocal)
@@ -92,10 +90,9 @@ public:
   }
 
   // assigment operator to enable PETE
-  template<class RHS>
+  template<class RHS, typename Allocator = Alloc, typename = IsHostSafe<Allocator>>
   inline Vector& operator=(const RHS& rhs)
   {
-    static_assert(MemType == MemorySpace::HOST, "Vector::operator= MemType must be MemorySpace::HOST");
     assign(*this, rhs);
     return *this;
   }
@@ -131,12 +128,12 @@ public:
     if (n > nAllocated)
     {
       resize_impl(n);
-      if (MemType == MemorySpace::HOST)
+      if (allocator_traits<Alloc>::is_host_accessible)
         std::fill_n(X, n, val);
     }
     else if (n > nLocal)
     {
-      if (MemType == MemorySpace::HOST)
+      if (allocator_traits<Alloc>::is_host_accessible)
         std::fill_n(X + nLocal, n - nLocal, val);
       nLocal = n;
     }
@@ -161,15 +158,15 @@ public:
   }
 
   // Get and Set Operations
+  template<typename Allocator = Alloc, typename = IsHostSafe<Allocator>>
   inline Type_t& operator[](size_t i)
   {
-    static_assert(MemType == MemorySpace::HOST, "Vector::operator[] MemType must be MemorySpace::HOST");
     return X[i];
   }
 
+  template<typename Allocator = Alloc, typename = IsHostSafe<Allocator>>
   inline const Type_t& operator[](size_t i) const
   {
-    static_assert(MemType == MemorySpace::HOST, "Vector::operator[] MemType must be MemorySpace::HOST");
     return X[i];
   }
 
