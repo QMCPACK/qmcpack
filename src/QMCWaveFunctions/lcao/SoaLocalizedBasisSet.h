@@ -194,8 +194,8 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
      
 #else
      RealType PhaseFactor=1;                                                                                                  
-     RealType dPhaseFactor_x,dPhaseFactor_y,dPhaseFactor_z;                                                                           
-     dPhaseFactor_x=dPhaseFactor_y=dPhaseFactor_z=0.0;                                                                                  
+     RealType d2PhaseFactor, dPhaseFactor_x,dPhaseFactor_y,dPhaseFactor_z;                                                                           
+     d2PhaseFactor=dPhaseFactor_x=dPhaseFactor_y=dPhaseFactor_z=0.0;                                                                                  
 #endif 
 
     QMCTraits::ValueType temp0,temp1,temp2,temp3,temp4;
