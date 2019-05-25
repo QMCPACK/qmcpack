@@ -65,14 +65,14 @@ public:
   }
 
   // default assignment operator
-  template<typename Allocator = Alloc, typename = IsHostSafe<Allocator>>
   inline Vector& operator=(const Vector& rhs)
   {
     if (this == &rhs)
       return *this;
     if (nLocal != rhs.nLocal)
       resize(rhs.nLocal);
-    std::copy_n(rhs.data(), nLocal, X);
+    if (allocator_traits<Alloc>::is_host_accessible)
+      std::copy_n(rhs.data(), nLocal, X);
     return *this;
   }
 
