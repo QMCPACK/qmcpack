@@ -122,17 +122,12 @@ public:
   }
 
   // Assignment Operators
-  template<typename Allocator = Alloc, typename = IsHostSafe<Allocator>>
   inline This_t& operator=(const This_t& rhs)
   {
     resize(rhs.D1, rhs.D2);
-    return assign(*this, rhs);
-  }
-
-  template<typename Allocator = Alloc, typename = IsHostSafe<Allocator>>
-  inline const This_t& operator=(const This_t& rhs) const
-  {
-    return assign(*this, rhs);
+    if (allocator_traits<Alloc>::is_host_accessible)
+      assign(*this, rhs);
+    return *this;
   }
 
   template<class RHS, typename Allocator = Alloc, typename = IsHostSafe<Allocator>>
