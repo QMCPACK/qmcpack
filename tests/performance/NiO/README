@@ -142,6 +142,7 @@ their speed.
 
    a) On a standalone workstation
    Directly enter dmc-xxx folders and run individual benchmarks.
+   YOUR_BUILD_FOLDER/bin/qmcpack NiO-fcc-SX-dmc.xml
 
    b) On a cluster with a job queue sytem
    Prepare one job script for each dmc-xxx folder. We provide two samples for CPU
@@ -154,6 +155,7 @@ their speed.
    d) Customize the mpirun based on the job dispatcher on your system
       and pick the MPI/THREADS as well as other controls you would like
       to add.
+   e) Submit your job
 
 5) Collect performance results
 
@@ -161,7 +163,7 @@ their speed.
    reflects how fast walkers are advancing.
    
    It can be measured with qmca, an analysis tool shipped with
-   QMCPACK.
+   QMCPACK. Add YOUR_QMCPACK_REPO/nexus/bin to environment variable PATH.
    
    In your WDIR, use
    qmca -q bc -e 0 dmc*/*.scalar.dat to collect the timing for all the runs.
