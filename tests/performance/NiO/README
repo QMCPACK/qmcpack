@@ -140,11 +140,11 @@ their speed.
 
 4) Run benchmarks
 
-   a) On a standalone workstation
+   I) On a standalone workstation
    Directly enter dmc-xxx folders and run individual benchmarks.
    YOUR_BUILD_FOLDER/bin/qmcpack NiO-fcc-SX-dmc.xml
 
-   b) On a cluster with a job queue sytem
+   II) On a cluster with a job queue sytem
    Prepare one job script for each dmc-xxx folder. We provide two samples for CPU
    (qmcpack-cpu-cetus.sub) and GPU (qmcpack-gpu-cooley.sub) runs at
    ALCF Cetus and Cooley to give you basic ideas how to run QMCPACK manually.
