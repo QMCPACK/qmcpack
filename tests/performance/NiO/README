@@ -12,8 +12,8 @@ measure.
 The ctest integration is sufficient to run the benchmarks and measure
 relative performance from version to version of QMCPACK and assess
 proposed code changes. To obtain highest performance on a particular
-platform, you must run the benchmarks in a standalone manner and tune
-thread counts, placement, walker count (etc.)
+platform, you will have to run the benchmarks in a standalone manner
+and tune thread counts, placement, walker count (etc.)
 
 2. Simulated system and QMC methods tested
 
@@ -40,7 +40,7 @@ These different runs vary the ratio between value, gradient, and
 laplacian evaluations of the wavefunction. The most important
 performance is for DMC, which dominates supercomputer time usage. For
 a large enough supercell, the runs scale cubically in cost with the
-"electrons per spin".
+number of "electrons per spin".
 
 Two sets of wavefunction are tested: splined orbitals with a one and
 two body Jastrow functions, and a more complex form with an additional
@@ -130,7 +130,8 @@ their speed.
 
 6. Running the benchmarks manually
 
-1) Finish step 5 and allow cmake generating all input cases and adjust parameters.
+1) Complete step 5 (above), which will cause cmake to generate all
+   input cases and adjust parameters.
 
 2) Copy all the files in YOUR_BUILD_FOLDER/tests/performance/NiO
    (not YOUR_QMCPACK_REPO/tests/performance/NiO) to a work directory (WDIR)
@@ -140,30 +141,24 @@ their speed.
 
 4) Run benchmarks
 
-   I) On a standalone workstation
-   Directly enter dmc-xxx folders and run individual benchmarks.
+   (i) On a standalone workstation
+
+   Directly enter the dmc-xxx folders and run individual benchmarks.
    YOUR_BUILD_FOLDER/bin/qmcpack NiO-fcc-SX-dmc.xml
 
-   II) On a cluster with a job queue sytem
-   Prepare one job script for each dmc-xxx folder. We provide two samples for CPU
-   (qmcpack-cpu-cetus.sub) and GPU (qmcpack-gpu-cooley.sub) runs at
-   ALCF Cetus and Cooley to give you basic ideas how to run QMCPACK manually.
-   
-   a) Customize the header based on your machine.
-   b) You always need to point the variable "exe" to the binary that you would like to benchmark.
-   c) Update SXX in "file_prefix" based on the problem size to run.
-   d) Customize the mpirun based on the job dispatcher on your system
-      and pick the MPI/THREADS as well as other controls you would like
-      to add.
-   e) Submit your job
+   (ii) On a cluster with a job queue sytem
+
+   You will have to prepare a job script for each dmc-xxx folder.
+
+   Customize the mpirun based on the job dispatcher on your system and
+   pick the MPI/THREADS as well as other controls you would like.
 
 5) Collect performance results
 
-   A simple performance metric can be the time per block which
-   reflects how fast walkers are advancing.
-   
-   It can be measured with qmca, an analysis tool shipped with
-   QMCPACK. Add YOUR_QMCPACK_REPO/nexus/bin to environment variable PATH.
+   A simple performance metric is the time per block which indicates
+   how fast walkers are advancing. This metric can be measured with
+   qmca, an analysis tool shipped with QMCPACK. Add
+   YOUR_QMCPACK_REPO/nexus/bin to environment variable PATH.
    
    In your WDIR, use
    qmca -q bc -e 0 dmc*/*.scalar.dat to collect the timing for all the runs.
@@ -177,7 +172,7 @@ their speed.
     II) VMC + drift
    III) DMC with constant population
    
-   So three timings are given per run.  Timing information is also
+   i.e. three timings are given per run. Timing information is also
    included in the standard output of QMCPACK and a *.info.xml produced
    by each run. In the standard output, "QMC Execution time" is the
    time per run section, e.g. all blocks of VMC with drift, while the
