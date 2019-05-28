@@ -125,20 +125,26 @@ public:
     static_assert(std::is_same<value_type, typename Alloc::value_type>::value, "Vector and Alloc data types must agree!");
     if (nLocal > nAllocated)
       throw std::runtime_error("Resize not allowed on Vector constructed by initialized memory.");
-    if (n > nAllocated)
+    if(allocator_traits<Alloc>::is_host_accessible)
     {
-      resize_impl(n);
-      if (allocator_traits<Alloc>::is_host_accessible)
+      if (n > nAllocated)
+      {
+        resize_impl(n);
         std::fill_n(X, n, val);
-    }
-    else if (n > nLocal)
-    {
-      if (allocator_traits<Alloc>::is_host_accessible)
-        std::fill_n(X + nLocal, n - nLocal, val);
-      nLocal = n;
+      }
+      else
+      {
+        if (n > nLocal) std::fill_n(X + nLocal, n - nLocal, val);
+        nLocal = n;
+      }
     }
     else
-      nLocal = n;
+    {
+      if (n > nAllocated)
+        resize_impl(n);
+      else
+        nLocal = n;
+    }
     return;
   }
 
