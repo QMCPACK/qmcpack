@@ -148,14 +148,26 @@ their speed.
 
    (ii) On a cluster with a job queue sytem
 
-   You will have to prepare a job script for each dmc-xxx folder.
+   Prepare one job script for each dmc-xxx folder. We provide two samples for CPU
+   (qmcpack-cpu-cetus.sub) and GPU (qmcpack-gpu-cooley.sub) runs at
+   ALCF Cetus and Cooley to give you basic ideas how to run QMCPACK manually.
+   
+   a) Customize the header based on your machine.
 
-   Customize the mpirun based on the job dispatcher on your system and
-   pick the MPI/THREADS as well as other controls you would like.
+   b) You always need to point the variable "exe" to the binary that
+      you would like to benchmark.
+
+   c) Update SXX in "file_prefix" based on the problem size to run.
+
+   d) Customize the mpirun command based on the job dispatcher on your
+      system and pick the number of MPI tasks and OMP threads as well
+      as any other controls you would like to add.
+
+   e) Submit your job.
 
 5) Collect performance results
 
-   A simple performance metric is the time per block which indicates
+   One simple performance metric is the time per block which indicates
    how fast walkers are advancing. This metric can be measured with
    qmca, an analysis tool shipped with QMCPACK. Add
    YOUR_QMCPACK_REPO/nexus/bin to environment variable PATH.
