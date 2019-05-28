@@ -180,7 +180,9 @@ job_defaults = obj(
     alloc_flags        = None, # lsf specific, Summit
     qos                = None,
     group_list         = None,
-    default_cpus_per_task = False,
+    default_cpus_per_task = False, # optionally bypass typical nexus processing for supermucng
+    ntasks_per_core    = None,
+    cpus_per_task      = None,
     # these are not assigned directly
     fake               = False,
     app                = None, # name of/path to application
@@ -2990,11 +2992,17 @@ class SuperMUC_NG(Supercomputer):
         #end if
         c+='#SBATCH --nodes={}\n'.format(job.nodes)
         c+='#SBATCH --ntasks-per-node={}\n'.format(job.processes_per_node)
-        if not job.default_cpus_per_task:
-            c+='#SBATCH --cpus-per-task={}\n'.format(job.threads)
-        #end if
-        if job.hyperthreads is not None:
+        if job.ntasks_per_core is not None:
+            c+='#SBATCH --ntasks-per-core={}\n'.format(job.ntasks_per_core)
+        elif job.hyperthreads is not None:
             c+='#SBATCH --ntasks-per-core={}\n'.format(job.hyperthreads)
+        #end if
+        if not job.default_cpus_per_task:
+            if job.cpus_per_task is None:
+                c+='#SBATCH --cpus-per-task={}\n'.format(job.threads)
+            else:
+                c+='#SBATCH --cpus-per-task={}\n'.format(job.cpus_per_task)
+            #end if
         #end if
         c+='#SBATCH -D ./\n'
         c+='#SBATCH --no-requeue\n'
