@@ -281,6 +281,7 @@ class Pwscf(Simulation):
         #end if        
     #end def incorporate_result
 
+
     def check_sim_status(self):
         outfile = os.path.join(self.locdir,self.outfile)
         fobj = open(outfile,'r')
@@ -297,15 +298,20 @@ class Pwscf(Simulation):
             self.input.control.restart_mode = 'restart'
             self.reset_indicators()
         else:
+            error_in_routine = 'Error in routine' in output
+            failed = not_converged or time_exceeded or user_stop
+            failed |= error_in_routine
             self.finished = run_finished
-            self.failed   = restartable
+            self.failed   = failed
         #end if
     #end def check_sim_status
+
 
     def get_output_files(self):
         output_files = []
         return output_files
     #end def get_output_files
+
 
     def app_command(self):
         return self.app_name+' -input '+self.infile
