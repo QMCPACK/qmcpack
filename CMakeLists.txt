@@ -309,9 +309,6 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
   SET(HAVE_MKL 0)
   SET(HAVE_MKL_VML 0)
   SET(HAVE_ACML 0)
-  SET(USE_PREFETCH 0)
-  SET(PREFETCH_AHEAD 12)
-  SET(HAVE_C_VARARRAYS 1)
 
   ######################################################
   # Try to identify CPU identity

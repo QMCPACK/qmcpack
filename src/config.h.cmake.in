@@ -145,18 +145,6 @@
 /* Define if unistd.h exists */
 #cmakedefine HAVE_UNISTD_H @HAVE_UNISTD_H@
 
-/* Define if c variable array support exists */
-#cmakedefine HAVE_C_VARARRAYS @HAVE_C_VARARRAYS@
-
-/* Prefetch loop lead distance  */
-#cmakedefine PREFETCH_AHEAD @PREFETCH_AHEAD@
-
-/* Use SSE prefetch  */
-#cmakedefine USE_PREFETCH @USE_PREFETCH@
-
-/* Define the alignment of SIMD in byte*/
-#cmakedefine SIMD_ALIGNMENT @SIMD_ALIGNMENT@
-
 #endif /* HAVE_EINSPLINE_EXT */
 
 /* Find mkl library */
