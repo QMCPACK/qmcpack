@@ -57,7 +57,7 @@ void OneBodyJastrowOrbitalBsplineAoS::addLog(MCWalkerConfiguration& W, std::vect
     GradLaplGPU.resize(numGL);
     GradLaplHost.resize(numGL);
   }
-  CTS::RealType RHost[OHMMS_DIM * N * Nr];
+  std::vector<CTS::RealType> RHost(OHMMS_DIM * N * Nr);
   for (int iw = 0; iw < Nr; iw++)
   {
     Walker_t& walker = *(walkers[iw]);

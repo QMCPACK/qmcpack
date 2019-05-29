@@ -536,7 +536,7 @@ inline void AtomicOrbital<StorageType>::CalcYlm(PosType rhat,
   std::complex<double> e2iphi(cosphi, sinphi);
   double lsign = 1.0;
   double dl    = 0.0;
-  double XlmVec[2 * lMax + 1], dXlmVec[2 * lMax + 1];
+  std::vector<double> XlmVec(2 * lMax + 1), dXlmVec(2 * lMax + 1);
   for (int l = 0; l <= lMax; l++)
   {
     XlmVec[2 * l]  = lsign;
@@ -604,7 +604,7 @@ inline void AtomicOrbital<StorageType>::CalcYlm(PosType rhat,
   std::complex<double> e2iphi(cosphi, sinphi);
   double lsign = 1.0;
   double dl    = 0.0;
-  double XlmVec[2 * lMax + 1], dXlmVec[2 * lMax + 1];
+  std::vector<double> XlmVec(2 * lMax + 1), dXlmVec(2 * lMax + 1);
   for (int l = 0; l <= lMax; l++)
   {
     XlmVec[2 * l]  = lsign;

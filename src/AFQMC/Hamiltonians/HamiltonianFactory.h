@@ -110,6 +110,7 @@ class HamiltonianFactory
       app_error()<<"Unknown Hamiltonian filetype in HamiltonianFactory::buildHamiltonian(): " <<type <<std::endl;
       APP_ABORT(" Error: Unknown Hamiltonian filetype in HamiltonianFactory::buildHamiltonian(). \n");
     }
+    return Hamiltonian{};
   }
 
   Hamiltonian fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur);
