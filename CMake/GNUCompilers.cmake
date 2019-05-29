@@ -25,6 +25,7 @@ SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated")
 
 # treat VLA as error
 SET(CMAKE_C_FLAGS     "${CMAKE_C_FLAGS} -Werror=vla")
+SET(CMAKE_C_FLAGS   "${CMAKE_CXX_FLAGS} -Wvla")
 
 # Set extra optimization specific flags
 SET( CMAKE_C_FLAGS_RELEASE     "${CMAKE_C_FLAGS_RELEASE} -ffast-math" )

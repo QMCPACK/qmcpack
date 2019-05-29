@@ -23,6 +23,7 @@
 #include <stdexcept>
 #include <cuda_runtime_api.h>
 #include "CUDA/cudaError.h"
+#include "simd/allocator_traits.hpp"
 
 namespace qmcplusplus
 {
@@ -107,6 +108,12 @@ bool operator!=(const CUDAAllocator<T1>&, const CUDAAllocator<T2>&)
 {
   return false;
 }
+
+template<typename T>
+struct allocator_traits<CUDAAllocator<T>>
+{
+  const static bool is_host_accessible = false;
+};
 
 /// allocator for CUDA host pinned memory
 template<typename T>

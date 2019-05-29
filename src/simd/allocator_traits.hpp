@@ -8,22 +8,27 @@
 //
 // File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-// -*- C++ -*-
-/** @file MemorySpace.hpp
- */
-#ifndef QMCPLUSPLUS_MEMORYSPACE_H
-#define QMCPLUSPLUS_MEMORYSPACE_H
+
+
+#ifndef QMCPLUSPLUS_ACCESS_TRAITS_H
+#define QMCPLUSPLUS_ACCESS_TRAITS_H
 
 namespace qmcplusplus
 {
-struct MemorySpace
+/** template class defines whether the memory allocated by the allocator is host accessible
+ */
+template<class Allocator>
+struct allocator_traits
 {
-  enum
-  {
-    HOST = 0,
-    CUDA
-  };
+  const static bool is_host_accessible = true;
 };
+
+template<class Allocator>
+using IsHostSafe = std::enable_if_t<allocator_traits<Allocator>::is_host_accessible>;
+
+template<class Allocator>
+using IsNotHostSafe = std::enable_if_t<!allocator_traits<Allocator>::is_host_accessible>;
+
 } // namespace qmcplusplus
 
-#endif
+#endif // QMCPLUSPLUS_ACCESS_TRAITS_H
