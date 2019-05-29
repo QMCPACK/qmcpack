@@ -61,9 +61,30 @@ struct NonLocalECPComponent : public QMCTraits
   ///weight of the spherical grid
   std::vector<RealType> sgridweight_m;
   ///Working arrays
-  std::vector<RealType> psiratio, vrad, dvrad, wvec, Amat, dAmat;
-  std::vector<PosType> psigrad, psigrad_source;
-  std::vector<RealType> lpol, dlpol;
+  std::vector<RealType> wvec, Amat, dAmat;
+
+  //^^^ "Why not GradType?" you ask.  Because GradType can be complex.
+  std::vector<PosType> deltaV;
+  //Array for P_l[cos(theta)].
+  std::vector<RealType> lpol;
+  //Array for P'_l[cos(theta)]
+  std::vector<RealType> dlpol;
+  //Array for v_l(r).
+  std::vector<RealType> vrad;
+  //Array for (2l+1)*v'_l(r)/r.
+  std::vector<RealType> dvrad;
+  //$\Psi(...q...)/\Psi(...r...)$ for all quadrature points q.
+  std::vector<RealType> psiratio;
+  //$\nabla \Psi(...q...)/\Psi(...r...)$ for all quadrature points q.
+  //  $\nabla$ is w.r.t. the electron coordinates involved in the quadrature.
+  std::vector<PosType> gradpsiratio;
+  //This stores gradient of v(r):
+  std::vector<PosType> vgrad;
+  //This stores the gradient of the cos(theta) term in force expression.
+  std::vector<PosType> cosgrad;
+  //This stores grad psi/psi - dot(u,grad psi)
+  std::vector<PosType> wfngrad;
+
 
   // For Pulay correction to the force
   std::vector<RealType> WarpNorm;
@@ -131,7 +152,7 @@ struct NonLocalECPComponent : public QMCTraits
                        RealType r,
                        const PosType& dr,
                        bool Tmove,
-                       std::vector<NonLocalData>& Txy) const;
+                       std::vector<NonLocalData>& Txy);
 
   /** @brief Evaluate the nonlocal pp contribution via randomized quadrature grid 
  *           to total energy from ion "iat" and electron "iel". 
@@ -156,7 +177,7 @@ struct NonLocalECPComponent : public QMCTraits
                                  const PosType& dr,
                                  PosType& force_iat,
                                  bool Tmove,
-                                 std::vector<NonLocalData>& Txy) const;
+                                 std::vector<NonLocalData>& Txy);
 
   /** @brief Evaluate the nonlocal pp energy, Hellman-Feynman force, and "Pulay" force contribution 
  *          via randomized quadrature grid from ion "iat" and electron "iel". 
@@ -185,7 +206,7 @@ struct NonLocalECPComponent : public QMCTraits
                                  PosType& force_iat,
                                  ParticleSet::ParticlePos_t& pulay_terms,
                                  bool Tmove,
-                                 std::vector<NonLocalData>& Txy) const;
+                                 std::vector<NonLocalData>& Txy);
 
   RealType evaluateValueAndDerivatives(ParticleSet& P,
                                        int iat,
