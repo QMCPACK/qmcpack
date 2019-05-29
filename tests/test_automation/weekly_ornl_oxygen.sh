@@ -392,11 +392,11 @@ case $sys in
         spack load openmpi@3.1.3~cuda%gcc@8.2.0
         export OMPI_CC=gcc
         export OMPI_CXX=g++
-	spack load boost@1.70.0
+	spack load boost@1.61.0
 	export QMCPACK_TEST_SUBMIT_NAME=GCC5-MKL-Release
 	export CTCFG="-DENABLE_SOA=0 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBLA_VENDOR=Intel10_64lp_seq -DCMAKE_PREFIX_PATH=$MKLROOT/lib -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
  	ctest ${CTCFG} ${DONLY}
-	spack unload boost@1.70.0
+	spack unload boost@1.61.0
         spack unload openmpi@3.1.3~cuda%gcc@8.2.0
         else
         echo "Did not find expected gcc 5.5.0"
@@ -425,11 +425,11 @@ case $sys in
         spack load openmpi@3.1.3~cuda%gcc@8.2.0
         export OMPI_CC=gcc
         export OMPI_CXX=g++
-	spack load boost@1.70.0
+	spack load boost@1.61.0
 	export QMCPACK_TEST_SUBMIT_NAME=GCC5-MKL-Complex-Release
 	export CTCFG="-DENABLE_SOA=0 -DQMC_COMPLEX=1 -DBUILD_AFQMC-1 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBLA_VENDOR=Intel10_64lp_seq -DCMAKE_PREFIX_PATH=$MKLROOT/lib -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
  	ctest ${CTCFG} ${DONLY}
-	spack unload boost@1.70.0
+	spack unload boost@1.61.0
         spack unload openmpi@3.1.3~cuda%gcc@8.2.0
         else
         echo "Did not find expected gcc 5.5.0"
@@ -458,11 +458,11 @@ case $sys in
         spack load openmpi@3.1.3~cuda%gcc@8.2.0
         export OMPI_CC=gcc
         export OMPI_CXX=g++
-	spack load boost@1.70.0
+	spack load boost@1.61.0
 	export QMCPACK_TEST_SUBMIT_NAME=GCC5-MKL-SoA-Release
 	export CTCFG="-DENABLE_SOA=1 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBLA_VENDOR=Intel10_64lp_seq -DCMAKE_PREFIX_PATH=$MKLROOT/lib -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
  	ctest ${CTCFG} ${DONLY}
-	spack unload boost@1.70.0
+	spack unload boost@1.61.0
         spack unload openmpi@3.1.3~cuda%gcc@8.2.0
         else
         echo "Did not find expected gcc 5.5.0"
@@ -491,11 +491,11 @@ case $sys in
         spack load openmpi@3.1.3~cuda%gcc@8.2.0
         export OMPI_CC=gcc
         export OMPI_CXX=g++
-	spack load boost@1.70.0
+	spack load boost@1.61.0
 	export QMCPACK_TEST_SUBMIT_NAME=GCC5-MKL-Complex-SoA-Release
 	export CTCFG="-DENABLE_SOA=1 -DQMC_COMPLEX=1 -DBUILD_AFQMC-1 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBLA_VENDOR=Intel10_64lp_seq -DCMAKE_PREFIX_PATH=$MKLROOT/lib -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
  	ctest ${CTCFG} ${DONLY}
-	spack unload boost@1.70.0
+	spack unload boost@1.61.0
         spack unload openmpi@3.1.3~cuda%gcc@8.2.0
         else
         echo "Did not find expected gcc 5.5.0"
