@@ -58,17 +58,17 @@ namespace ma
   }
 
   template<class T>
-  inline void determinant_from_geqrf(int n, T* M, int lda, T* buff, T LogOverlapFactor, T* res)
+  T determinant_from_geqrf(int n, T* M, int lda, T* buff, T LogOverlapFactor)
   {
-    *res = T(0.0); 
+    T res(0.0); 
     for (int i = 0; i < n; i++) { 
       if(real(M[i*lda+i]) < 0.0) 
         buff[i]=T(-1.0); 
       else 
         buff[i]=T(1.0); 
-      *res += std::log(buff[i]*M[i*lda+i]);
+      res += std::log(buff[i]*M[i*lda+i]);
     }
-    *res = std::exp(*res-LogOverlapFactor);
+    return std::exp(res-LogOverlapFactor);
   }
 
   // specializations for complex
@@ -137,21 +137,21 @@ namespace qmc_cuda{
   }
 
   template<class T>
-  inline void determinant_from_geqrf(int n, cuda_gpu_ptr<T> M, int lda, cuda_gpu_ptr<T> buff, T LogOverlapFactor, T* res)
+  T determinant_from_geqrf(int n, cuda_gpu_ptr<T> M, int lda, cuda_gpu_ptr<T> buff, T LogOverlapFactor)
   {
-    return kernels::determinant_from_geqrf_gpu(n,to_address(M),lda,to_address(buff),LogOverlapFactor,res);
+    return kernels::determinant_from_geqrf_gpu(n,to_address(M),lda,to_address(buff),LogOverlapFactor);
   }
 
   template<class T>
   inline void determinant_from_geqrf(int n, cuda_gpu_ptr<T> M, int lda, cuda_gpu_ptr<T> buff)
   {
-    return kernels::determinant_from_geqrf_gpu(n,to_address(M),lda,to_address(buff));
+    kernels::determinant_from_geqrf_gpu(n,to_address(M),lda,to_address(buff));
   }
 
   template<class T>
   inline void scale_columns(int n, int m, cuda_gpu_ptr<T> A, int lda, cuda_gpu_ptr<T> scl)
   {
-    return kernels::scale_columns(n,m,to_address(A),lda,to_address(scl));
+    kernels::scale_columns(n,m,to_address(A),lda,to_address(scl));
   }
 
   template<class ptrA, class ptrB>

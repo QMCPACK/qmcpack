@@ -379,7 +379,6 @@ T invert(MultiArray2D&& m, T LogOverlapFactor){
 
         getrf(std::forward<MultiArray2D>(m), pivot, WORK);
         T detvalue = determinant_from_getrf<T>(m.size(0), pointer_dispatch(m.origin()), m.stride(0), pointer_dispatch(pivot.data()),LogOverlapFactor);
-std::cout<<" detvalue: " <<detvalue <<std::endl;
         if( std::abs(detvalue) == 0.0 ) 
           fill2D(m.size(0),m.size(1),pointer_dispatch(m.origin()),m.stride(0),element(0.0));    
         else 
@@ -404,21 +403,6 @@ T invert(MultiArray2D&& m, MultiArray1D&& pivot, Buffer&& WORK, T LogOverlapFact
         return detvalue;
 }
 
-template<class MultiArray2D, class MultiArray1D, class Buffer, class T = typename std::decay<MultiArray2D>::type::element>
-void invert(MultiArray2D&& m, MultiArray1D&& pivot, Buffer&& WORK, T LogOverlapFactor, T* detvalue){
-        assert(m.size(0) == m.size(1));
-        assert(pivot.size() >= m.size(0)+1);
-        using element = typename std::decay<MultiArray2D>::type::element;
-        using qmcplusplus::afqmc::fill2D;
-
-        getrf(std::forward<MultiArray2D>(m), pivot, WORK);
-        determinant_from_getrf<T>(m.size(0), pointer_dispatch(m.origin()), m.stride(0), 
-            pointer_dispatch(pivot.data()), LogOverlapFactor, detvalue);
-        if( std::abs(T(*detvalue)) == 0.0 )
-          fill2D(m.size(0),m.size(1),pointer_dispatch(m.origin()),m.stride(0),element(0.0));
-        else
-          getri(std::forward<MultiArray2D>(m), pivot, WORK);
-}
 /*
 template<class MultiArray2D, 
          class MultiArray1DS, 
@@ -453,15 +437,6 @@ T determinant(MultiArray2D&& m, MultiArray1D&& pivot, Buffer&& WORK, T LogOverla
         getrf(std::forward<MultiArray2D>(m), std::forward<MultiArray1D>(pivot), WORK);
         return determinant_from_getrf<T>(m.size(0), pointer_dispatch(m.origin()), m.stride(0), 
                 pointer_dispatch(pivot.data()),LogOverlapFactor);
-}
-
-template<class MultiArray2D, class MultiArray1D, class Buffer, class T = typename std::decay<MultiArray2D>::type::element>
-void determinant(MultiArray2D&& m, MultiArray1D&& pivot, Buffer&& WORK, T LogOverlapFactor, T* detvalue){
-        assert(m.size(0) == m.size(1));
-        assert(pivot.size() >= m.size(0));
-
-        getrf(std::forward<MultiArray2D>(m), std::forward<MultiArray1D>(pivot), WORK);
-        determinant_from_getrf<T>(m.size(0), pointer_dispatch(m.origin()), m.stride(0), pointer_dispatch(pivot.data()), LogOverlapFactor, detvalue);
 }
 
 template<class MultiArray2D,

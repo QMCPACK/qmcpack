@@ -370,7 +370,7 @@ namespace afqmc
 
       for(int iw=0; iw<nw; ++iw) {
         if(iw%TG.TG_local().size() != TG.TG_local().rank()) continue;
-        SDetOp.MixedDensityMatrix(OrbMats[nd],A[iw],G2D_,LogOverlapFactor,to_address(Ov.origin())+iw,true);
+        Ov[iw] = SDetOp.MixedDensityMatrix(OrbMats[nd],A[iw],G2D_,LogOverlapFactor,true);
         if(walker_type==CLOSED) Ov[iw] *= ComplexType(Ov[iw]);
         if(transposed_G_for_E_) 
           G[iw] = G1D_; 
@@ -397,7 +397,7 @@ namespace afqmc
         if(iw%2==0) {
           // notice interchange of dimensions
           CMatrix_cref M(SM[iw/2].origin(),{GAdims.second,GAdims.first});
-          SDetOp.MixedDensityMatrix(OrbMats[2*nd],M,GA2D_,LogOverlapFactor,to_address(ovlp2.origin())+iw,true);
+          ovlp2[iw] = SDetOp.MixedDensityMatrix(OrbMats[2*nd],M,GA2D_,LogOverlapFactor,true);
           if(transposed_G_for_E_) 
             G[iw/2].sliced(0,GAdims.first*GAdims.second) = GA1D_;
           else
@@ -406,7 +406,7 @@ namespace afqmc
           // notice interchange of dimensions
           CMatrix_cref M(SM[iw/2].origin()+GAdims.first*GAdims.second,
                                                {GBdims.second,GBdims.first});
-          SDetOp.MixedDensityMatrix(OrbMats[2*nd+1],M,GB2D_,LogOverlapFactor,to_address(ovlp2.origin())+iw,true);
+          ovlp2[iw] = SDetOp.MixedDensityMatrix(OrbMats[2*nd+1],M,GB2D_,LogOverlapFactor,true);
           if(transposed_G_for_E_) 
             G[iw/2].sliced(GAdims.first*GAdims.second,G.size(1)) = GB1D_;
           else
@@ -419,7 +419,6 @@ namespace afqmc
         TG.TG_local().all_reduce_in_place_n(to_address(ovlp2.origin()),2*nw,std::plus<>());  
       if(TG.TG_local().root())
         for(int iw=0; iw<nw; ++iw)
-// to GPU
           Ov[iw] = ovlp2[2*iw]*ovlp2[2*iw+1];
     }
     TG.local_barrier();
@@ -461,8 +460,8 @@ namespace afqmc
 
       for(int iw=0; iw<nw; ++iw) {
         if(iw%TG.TG_local().size() != TG.TG_local().rank()) continue;
-        SDetOp.MixedDensityMatrix(OrbMats[nd],wset[iw].SlaterMatrix(Alpha),G2D_,
-                                             LogOverlapFactor,to_address(Ov.origin())+iw,true);
+        Ov[iw] = SDetOp.MixedDensityMatrix(OrbMats[nd],wset[iw].SlaterMatrix(Alpha),G2D_,
+                                             LogOverlapFactor,true);
         if(walker_type==CLOSED) Ov[iw] *= ComplexType(Ov[iw]);
         if(transposed_G_for_E_) 
           G[iw] = G1D_; 
@@ -487,15 +486,15 @@ namespace afqmc
         if(iw%TG.TG_local().size() != TG.TG_local().rank()) continue;
         
         if(iw%2==0) {
-          SDetOp.MixedDensityMatrix(OrbMats[2*nd],wset[iw/2].SlaterMatrix(Alpha),
-                                 GA2D_,LogOverlapFactor,to_address(ovlp2.origin())+iw,true);
+          ovlp2[iw] = SDetOp.MixedDensityMatrix(OrbMats[2*nd],wset[iw/2].SlaterMatrix(Alpha),
+                                 GA2D_,LogOverlapFactor,true);
           if(transposed_G_for_E_) 
             G[iw/2].sliced(0,GAdims.first*GAdims.second) = GA1D_;
           else  
             G({0,GAdims.first*GAdims.second},iw/2) = GA1D_;
         } else {
-          SDetOp.MixedDensityMatrix(OrbMats[2*nd+1],wset[iw/2].SlaterMatrix(Beta),
-                                 GB2D_,LogOverlapFactor,to_address(ovlp2.origin())+iw,true);
+          ovlp2[iw] = SDetOp.MixedDensityMatrix(OrbMats[2*nd+1],wset[iw/2].SlaterMatrix(Beta),
+                                 GB2D_,LogOverlapFactor,true);
           if(transposed_G_for_E_) 
             G[iw/2].sliced(GAdims.first*GAdims.second,G.size(1)) = GB1D_;
           else  
@@ -555,7 +554,6 @@ namespace afqmc
     auto Gsize = size_t(dm_size(not compact));
     if(localGbuff.size() < Gsize+1)
       localGbuff.reextent(iextensions<1u>{Gsize+1});
-    pointer ov_(localGbuff.origin()+Gsize);  
     auto wlk_dims = wset.walker_dims();
     if(walker_type != COLLINEAR) {
 
@@ -575,10 +573,8 @@ namespace afqmc
       for(int tk=tk0; tk<tkN; ++tk) {
         int iw = tk/ndet;
         int nd = tk%ndet;
-        SDetOp.MixedDensityMatrix(OrbMats[nd],wset[iw].SlaterMatrix(Alpha),
-                                       G2D_,LogOverlapFactor,to_address(ov_),compact);
-// to GPU???
-        ComplexType ov(*ov_);
+        ComplexType ov = SDetOp.MixedDensityMatrix(OrbMats[nd],wset[iw].SlaterMatrix(Alpha),
+                                       G2D_,LogOverlapFactor,compact);
         if(walker_type==CLOSED) ov *= ov;
         ov *= ma::conj(ci[nd]);
         // if the overhead of the mutex is too much, invert the loop order (make iw the fast index)
@@ -620,9 +616,8 @@ namespace afqmc
           boost::multi::array_ref<ComplexType,1> G1D_2(to_address(shmbuff_for_G->origin()),iextensions<1u>{Gsize});
           int iw = (last_task_index+ntasks_total_serial)/ndet;
           int nd = (last_task_index+ntasks_total_serial)%ndet;
-          ComplexType ov;
-          SDetOp.MixedDensityMatrix(OrbMats[nd],wset[iw].SlaterMatrix(Alpha),
-                                G2D_2,LogOverlapFactor,std::addressof(ov),local_group_comm,compact);
+          ComplexType ov = SDetOp.MixedDensityMatrix(OrbMats[nd],wset[iw].SlaterMatrix(Alpha),
+                                G2D_2,LogOverlapFactor,local_group_comm,compact);
           if(walker_type==CLOSED) ov *= ov;
           ov *= ma::conj(ci[nd]);
 
@@ -662,13 +657,11 @@ namespace afqmc
       for(int tk=tk0; tk<tkN; ++tk) {
         int iw = tk/ndet;
         int nd = tk%ndet;
-        ComplexType ov;
-        SDetOp.MixedDensityMatrix(OrbMats[2*nd],wset[iw].SlaterMatrix(Alpha),
-                                        GA2D_,LogOverlapFactor,to_address(ov_),compact);
-        ov = ComplexType(*ov_);
-        SDetOp.MixedDensityMatrix(OrbMats[2*nd+1],wset[iw].SlaterMatrix(Beta),
-                                         GB2D_,LogOverlapFactor,to_address(ov_),compact);
-        ov *= ComplexType(*ov_)*ma::conj(ci[nd]);
+        ComplexType ov = SDetOp.MixedDensityMatrix(OrbMats[2*nd],wset[iw].SlaterMatrix(Alpha),
+                                        GA2D_,LogOverlapFactor,compact);
+        ov *= SDetOp.MixedDensityMatrix(OrbMats[2*nd+1],wset[iw].SlaterMatrix(Beta),
+                                         GB2D_,LogOverlapFactor,compact);
+        ov *= ma::conj(ci[nd]);
         if(transpose) {
           std::lock_guard<shared_mutex> guard(*mutex);
           ma::axpy(ov,GA1D_,G[iw].sliced(0,GAdims.first*GAdims.second));
@@ -715,13 +708,11 @@ namespace afqmc
           int task = (last_task_index+ntasks_total_serial);
           int iw = task/ndet;
           int nd = task%ndet;
-          ComplexType ov, ov2_;
-          SDetOp.MixedDensityMatrix(OrbMats[2*nd],wset[iw].SlaterMatrix(Alpha),
-                             GA2D_2,LogOverlapFactor,to_address(ov_),local_group_comm,compact);
-          ov = ComplexType(*ov_);
-          SDetOp.MixedDensityMatrix(OrbMats[2*nd+1],wset[iw].SlaterMatrix(Beta),
-                             GB2D_2,LogOverlapFactor,to_address(ov_),local_group_comm,compact);
-          ov *= ComplexType(*ov_)*ma::conj(ci[nd]);
+          ComplexType ov = SDetOp.MixedDensityMatrix(OrbMats[2*nd],wset[iw].SlaterMatrix(Alpha),
+                             GA2D_2,LogOverlapFactor,local_group_comm,compact);
+          ov *= SDetOp.MixedDensityMatrix(OrbMats[2*nd+1],wset[iw].SlaterMatrix(Beta),
+                             GB2D_2,LogOverlapFactor,local_group_comm,compact);
+          ov *= ma::conj(ci[nd]);
           if(local_group_comm.root()) {
             if(transpose) {
               std::lock_guard<shared_mutex> guard(*mutex);
@@ -796,7 +787,6 @@ namespace afqmc
     auto Gsize = size_t(dm_size(not compact));
     if(localGbuff.size() < nbatch__*Gsize+1)
       localGbuff.reextent(iextensions<1u>{nbatch__*Gsize+1});
-    pointer ov_(localGbuff.origin()+nbatch__*Gsize);  
     std::vector<CMatrix_ref> Ai;
     Ai.reserve(nbatch__);
 
@@ -957,7 +947,6 @@ namespace afqmc
     fill_n(Ov.origin(),nw,0);
     if(localGbuff.size() < 1)
       localGbuff.reextent(iextensions<1u>{1});
-    pointer ov_(localGbuff.origin());
     if(walker_type != COLLINEAR) {
 
       const int ntasks_percore = (nw*ndet)/TG.getNCoresPerTG();
@@ -972,8 +961,7 @@ namespace afqmc
       for(int tk=tk0; tk<tkN; ++tk) {
         int iw = tk/ndet;
         int nd = tk%ndet;
-        SDetOp.Overlap(OrbMats[nd],wset[iw].SlaterMatrix(Alpha),LogOverlapFactor,to_address(ov_));
-        ComplexType ov(*ov_);
+        ComplexType ov = SDetOp.Overlap(OrbMats[nd],wset[iw].SlaterMatrix(Alpha),LogOverlapFactor);
         Ov[iw] += ma::conj(ci[nd])*ov*((walker_type==CLOSED)?(ov):(ComplexType(1.0,0.0)));
       }
 
@@ -1001,11 +989,9 @@ namespace afqmc
         {
           int iw = (last_task_index+ntasks_total_serial)/ndet;
           int nd = (last_task_index+ntasks_total_serial)%ndet;
-          ComplexType ov;
-          SDetOp.Overlap(OrbMats[nd],wset[iw].SlaterMatrix(Alpha),LogOverlapFactor,std::addressof(ov),local_group_comm);
+          ComplexType ov = SDetOp.Overlap(OrbMats[nd],wset[iw].SlaterMatrix(Alpha),LogOverlapFactor,local_group_comm);
           if(local_group_comm.rank()==0)
             Ov[iw] += ma::conj(ci[nd])*ov*((walker_type==CLOSED)?(ov):(ComplexType(1.0,0.0)));
-  
         }
       }
 
@@ -1023,10 +1009,9 @@ namespace afqmc
       for(int tk=tk0; tk<tkN; ++tk) {
         int iw = tk/ndet;
         int nd = tk%ndet;
-        SDetOp.Overlap(OrbMats[2*nd],wset[iw].SlaterMatrix(Alpha),LogOverlapFactor,to_address(ov_));
-        ComplexType ov(*ov_);
-        SDetOp.Overlap(OrbMats[2*nd+1],wset[iw].SlaterMatrix(Beta),LogOverlapFactor,to_address(ov_));
-        Ov[iw] += ma::conj(ci[nd])*ov*ComplexType(*ov_); 
+        ComplexType ov = SDetOp.Overlap(OrbMats[2*nd],wset[iw].SlaterMatrix(Alpha),LogOverlapFactor);
+        ov *= SDetOp.Overlap(OrbMats[2*nd+1],wset[iw].SlaterMatrix(Beta),LogOverlapFactor);
+        Ov[iw] += ma::conj(ci[nd])*ov; 
       }
 
       // all remaining overlaps are performed in parallel with blocks of cores
@@ -1054,14 +1039,10 @@ namespace afqmc
           int task = (last_task_index+ntasks_total_serial);
           int iw = task/ndet;
           int nd = task%ndet;
-          ComplexType ov_, ov2_;
-          SDetOp.Overlap(OrbMats[2*nd],wset[iw].SlaterMatrix(Alpha),LogOverlapFactor,
-                                          std::addressof(ov_),local_group_comm);
-          SDetOp.Overlap(OrbMats[2*nd+1],wset[iw].SlaterMatrix(Beta),LogOverlapFactor,
-                                          std::addressof(ov2_),local_group_comm);
-          ov_ *= ov2_;
+          ComplexType ov = SDetOp.Overlap(OrbMats[2*nd],wset[iw].SlaterMatrix(Alpha),LogOverlapFactor,local_group_comm);
+          ov *= SDetOp.Overlap(OrbMats[2*nd+1],wset[iw].SlaterMatrix(Beta),LogOverlapFactor,local_group_comm);
           if(local_group_comm.root())
-            Ov[iw] += ma::conj(ci[nd])*ov_; 
+            Ov[iw] += ma::conj(ci[nd])*ov; 
         }
       }
     }
@@ -1093,7 +1074,6 @@ namespace afqmc
     assert(wgt.size(0) >= nwalk);
     if(localGbuff.size() < 2*Gsize+1)
       localGbuff.reextent(iextensions<1u>{2*Gsize+1});
-    pointer ov_(localGbuff.origin()+2*Gsize);
     double LogOverlapFactor(wset.getLogOverlapFactor());
     auto wlk_dims = wset.walker_dims();
     // Transposed temporaries for back propagation.
@@ -1134,13 +1114,12 @@ namespace afqmc
             auto&& SM(wset[iw].SlaterMatrixAux(Alpha));
             using std::copy_n; 
             copy_n(Orb.origin(),Orb.num_elements(),SM.origin());
-            SDetOp.MixedDensityMatrix_noHerm(SM,wset[iw].SlaterMatrixN(Alpha),
-                                      G2D_,LogOverlapFactor,to_address(ov_),compact,useSVD_in_Gfull);
-            ov *= ComplexType(*ov_) * ((*detR)[iw][id]);
+            ComplexType ov_ = SDetOp.MixedDensityMatrix_noHerm(SM,wset[iw].SlaterMatrixN(Alpha),
+                                      G2D_,LogOverlapFactor,compact,useSVD_in_Gfull);
+            ov *= ov_ * ((*detR)[iw][id]);
           } else {
-            SDetOp.MixedDensityMatrix(OrbMats[id],wset[iw].SlaterMatrix(Alpha),
-                                      G2D_,LogOverlapFactor,to_address(ov_),compact);
-            ov *= ComplexType(*ov_);
+            ov *= SDetOp.MixedDensityMatrix(OrbMats[id],wset[iw].SlaterMatrix(Alpha),
+                                      G2D_,LogOverlapFactor,compact);
           }  
           if(walker_type==CLOSED) 
             ov *= ov;
@@ -1195,20 +1174,18 @@ namespace afqmc
             using std::copy_n;
             copy_n(OrbA.origin(),OrbA.num_elements(),SMA.origin());
             copy_n(OrbB.origin(),OrbB.num_elements(),SMB.origin());
-            SDetOp.MixedDensityMatrix_noHerm(SMA,wset[iw].SlaterMatrixN(Alpha),
-                                      GA2D_,LogOverlapFactor,to_address(ov_),compact,useSVD_in_Gfull);
-            ov *= ComplexType(*ov_) * ((*detR)[iw][2*id]);
-            SDetOp.MixedDensityMatrix_noHerm(SMB,wset[iw].SlaterMatrixN(Beta),
-                                      GB2D_,LogOverlapFactor,to_address(ov_),compact,useSVD_in_Gfull);
-            ov *= ComplexType(*ov_) * ((*detR)[iw][2*id+1]);
+            ComplexType ov_ = SDetOp.MixedDensityMatrix_noHerm(SMA,wset[iw].SlaterMatrixN(Alpha),
+                                      GA2D_,LogOverlapFactor,compact,useSVD_in_Gfull);
+            ov *= ov_ * ((*detR)[iw][2*id]);
+            ov_ = SDetOp.MixedDensityMatrix_noHerm(SMB,wset[iw].SlaterMatrixN(Beta),
+                                      GB2D_,LogOverlapFactor,compact,useSVD_in_Gfull);
+            ov *= ov_ * ((*detR)[iw][2*id+1]);
           } else {
-            SDetOp.MixedDensityMatrix(OrbMats[2*id],wset[iw].SlaterMatrix(Alpha),
-                                             GA2D_,LogOverlapFactor,to_address(ov_),compact);
-            ov *= ComplexType(*ov_);
+            ov *= SDetOp.MixedDensityMatrix(OrbMats[2*id],wset[iw].SlaterMatrix(Alpha),
+                                             GA2D_,LogOverlapFactor,compact);
   
-            SDetOp.MixedDensityMatrix(OrbMats[2*id+1],wset[iw].SlaterMatrix(Beta),
-                                             GB2D_,LogOverlapFactor,to_address(ov_),compact);
-            ov *= ComplexType(*ov_);
+            ov *= SDetOp.MixedDensityMatrix(OrbMats[2*id+1],wset[iw].SlaterMatrix(Beta),
+                                             GB2D_,LogOverlapFactor,compact);
           }
           ov *= ma::conj(ci[id]);
           overlap += ov;
@@ -1257,7 +1234,6 @@ namespace afqmc
     assert(wgt.size(0) >= nwalk);
     if(localGbuff.size() < Gsize+1)
       localGbuff.reextent(iextensions<1u>{Gsize+1});
-    pointer ov_(localGbuff.origin()+Gsize);
     auto wlk_dims = wset.walker_dims();
     double LogOverlapFactor(wset.getLogOverlapFactor());
     // Transposed temporaries for back propagation.
@@ -1299,13 +1275,12 @@ namespace afqmc
           auto&& SM(wset[iw].SlaterMatrixAux(Alpha));
           using std::copy_n; 
           copy_n(Orb.origin(),Orb.num_elements(),SM.origin());
-          SDetOp.MixedDensityMatrix_noHerm(SM,wset[iw].SlaterMatrixN(Alpha),
-                                    G2D_,LogOverlapFactor,to_address(ov_),compact,useSVD_in_Gfull);
-          overlap *= ComplexType(*ov_) * ((*detR)[iw][0]);
+          ComplexType ov_ = SDetOp.MixedDensityMatrix_noHerm(SM,wset[iw].SlaterMatrixN(Alpha),
+                                    G2D_,LogOverlapFactor,compact,useSVD_in_Gfull);
+          overlap *= ov_ * ((*detR)[iw][0]);
         } else {
-          SDetOp.MixedDensityMatrix(OrbMats[0],wset[iw].SlaterMatrix(Alpha),
-                                     G2D_,LogOverlapFactor,to_address(ov_),compact);
-           overlap *= ComplexType(*ov_);
+          overlap *= SDetOp.MixedDensityMatrix(OrbMats[0],wset[iw].SlaterMatrix(Alpha),
+                                     G2D_,LogOverlapFactor,compact);
         }  
         if(walker_type==CLOSED) 
           overlap *= overlap;
@@ -1352,30 +1327,26 @@ namespace afqmc
           using std::copy_n;
           copy_n(OrbA.origin(),OrbA.num_elements(),SMA.origin());
           copy_n(OrbB.origin(),OrbB.num_elements(),SMB.origin());
-          SDetOp.MixedDensityMatrix_noHerm(SMA,wset[iw].SlaterMatrixN(Alpha),
-                                    GA2D_,LogOverlapFactor,to_address(ov_),compact,useSVD_in_Gfull);
-          ComplexType ov1(*ov_);
+          ComplexType ov1 = SDetOp.MixedDensityMatrix_noHerm(SMA,wset[iw].SlaterMatrixN(Alpha),
+                                    GA2D_,LogOverlapFactor,compact,useSVD_in_Gfull);
           Ovlp[iw][0] = ov1; 
           DMsum[iw][0] = ma::sum(GA1D_);
           overlap *= ov1 * ((*detR)[iw][0]);
-          SDetOp.MixedDensityMatrix_noHerm(SMB,wset[iw].SlaterMatrixN(Beta),
-                                    GB2D_,LogOverlapFactor,to_address(ov_),compact,useSVD_in_Gfull);
-          ComplexType ov2(*ov_);
+          ComplexType ov2 = SDetOp.MixedDensityMatrix_noHerm(SMB,wset[iw].SlaterMatrixN(Beta),
+                                    GB2D_,LogOverlapFactor,compact,useSVD_in_Gfull);
           Ovlp[iw][1] = ov2; 
           DMsum[iw][1] = ma::sum(GB1D_);
           overlap *= ov2 * ((*detR)[iw][1]);
         } else {
-          SDetOp.MixedDensityMatrix(OrbMats[0],wset[iw].SlaterMatrix(Alpha),
-                                         GA2D_,LogOverlapFactor,to_address(ov_),compact);
-          ComplexType ov1(*ov_);
+          ComplexType ov1 = SDetOp.MixedDensityMatrix(OrbMats[0],wset[iw].SlaterMatrix(Alpha),
+                                         GA2D_,LogOverlapFactor,compact);
           Ovlp[iw][0] = ov1; 
           DMsum[iw][0] = ma::sum(GA1D_);
           overlap *= ov1; 
 
-          SDetOp.MixedDensityMatrix(OrbMats[1],wset[iw].SlaterMatrix(Beta),
-                                           GB2D_,LogOverlapFactor,to_address(ov_),compact);
+          ComplexType ov2 = SDetOp.MixedDensityMatrix(OrbMats[1],wset[iw].SlaterMatrix(Beta),
+                                           GB2D_,LogOverlapFactor,compact);
 
-          ComplexType ov2(*ov_);
           Ovlp[iw][1] = ov2; 
           DMsum[iw][1] = ma::sum(GB1D_);
           overlap *= ov2; 
@@ -1541,9 +1512,8 @@ namespace afqmc
   void NOMSD::Orthogonalize_shared(WlkSet& wset, bool impSamp) {
     if(localGbuff.size() < 1)
       localGbuff.reextent(iextensions<1u>{1});
-    pointer d_(localGbuff.origin());
-    ComplexType detR(1.0,0.0);
     double LogOverlapFactor(wset.getLogOverlapFactor());
+    ComplexType detR(1.0,0.0);
     if(walker_type != COLLINEAR) {
       int cnt=0;
       for(typename WlkSet::iterator it=wset.begin(); it!=wset.end(); ++it) {
@@ -1551,8 +1521,7 @@ namespace afqmc
           if(excitedState && numExcitations.first>0)
             OrthogonalizeExcited(it->SlaterMatrix(Alpha),Alpha,LogOverlapFactor);
           else { 
-            SDetOp.Orthogonalize(it->SlaterMatrix(Alpha),LogOverlapFactor,to_address(d_));
-            if(!impSamp) detR = ComplexType(*d_);
+            detR = SDetOp.Orthogonalize(it->SlaterMatrix(Alpha),LogOverlapFactor);
           }
           if(!impSamp) {
             if(walker_type==CLOSED)
@@ -1569,8 +1538,7 @@ namespace afqmc
           if(excitedState && numExcitations.first>0)
             OrthogonalizeExcited(it->SlaterMatrix(Alpha),Alpha,LogOverlapFactor);
           else {
-            SDetOp.Orthogonalize(it->SlaterMatrix(Alpha),LogOverlapFactor,to_address(d_));
-            if(!impSamp) detR = ComplexType(*d_);
+            detR = SDetOp.Orthogonalize(it->SlaterMatrix(Alpha),LogOverlapFactor);
           }
           if(!impSamp) {
             std::lock_guard<shared_mutex> guard(*mutex);
@@ -1581,8 +1549,7 @@ namespace afqmc
           if(excitedState && numExcitations.second>0)
             OrthogonalizeExcited(it->SlaterMatrix(Beta),Beta,LogOverlapFactor);
           else {
-            SDetOp.Orthogonalize(it->SlaterMatrix(Beta),LogOverlapFactor,to_address(d_));
-            if(!impSamp) detR = ComplexType(*d_);
+            detR = SDetOp.Orthogonalize(it->SlaterMatrix(Beta),LogOverlapFactor);
           }
           if(!impSamp) {
             std::lock_guard<shared_mutex> guard(*mutex);
@@ -1627,7 +1594,7 @@ namespace afqmc
         if(impSamp) {
           SDetOp.BatchedOrthogonalize(Ai,LogOverlapFactor);
         } else {
-          SDetOp.BatchedOrthogonalize(Ai,LogOverlapFactor,to_address(localGbuff.origin()));
+          SDetOp.BatchedOrthogonalize(Ai,LogOverlapFactor,localGbuff.origin());
           using std::copy_n;
           copy_n(localGbuff.origin(),nb,detR.origin()+iw);
         }
@@ -1640,7 +1607,7 @@ namespace afqmc
         if(impSamp) {
           SDetOp.BatchedOrthogonalize(Ai,LogOverlapFactor);
         } else {
-          SDetOp.BatchedOrthogonalize(Ai,LogOverlapFactor,to_address(localGbuff.origin()));
+          SDetOp.BatchedOrthogonalize(Ai,LogOverlapFactor,localGbuff.origin());
           using std::copy_n;
           copy_n(localGbuff.origin(),nb,detR.origin()+iw);
         }
@@ -1649,7 +1616,7 @@ namespace afqmc
         if(impSamp) {
           SDetOp.BatchedOrthogonalize(Ai,LogOverlapFactor);
         } else {
-          SDetOp.BatchedOrthogonalize(Ai,LogOverlapFactor,to_address(localGbuff.origin()));
+          SDetOp.BatchedOrthogonalize(Ai,LogOverlapFactor,localGbuff.origin());
           using std::copy_n;
           copy_n(localGbuff.origin(),nb,detR.origin()+nw+iw);
         }
@@ -1696,9 +1663,7 @@ namespace afqmc
           extendedMatAlpha(extendedMatAlpha.extension(0),i.second) = extendedMatAlpha(extendedMatAlpha.extension(0),i.first);
           extendedMatAlpha(extendedMatAlpha.extension(0),i.first) = excitedOrbMat[0](excitedOrbMat.extension(1),i.first);
         }
-      ComplexType detR;
-      //SDetOp.Orthogonalize(extendedMatAlpha,std::addressof(detR));
-      SDetOp.Orthogonalize(extendedMatAlpha,LogOverlapFactor,to_address(d_));
+      ComplexType detR = SDetOp.Orthogonalize(extendedMatAlpha,LogOverlapFactor);
       A(A.extension(0),{0,NAEA}) = extendedMatAlpha(extendedMatAlpha.extension(0),{0,NAEA});  
       for(auto& i:excitations) 
         if(i.first < NMO && i.second < NMO ) 
@@ -1715,9 +1680,7 @@ namespace afqmc
           extendedMatBeta(extendedMatBeta.extension(0),i.second) = extendedMatBeta(extendedMatBeta.extension(0),i.first);
           extendedMatBeta(extendedMatBeta.extension(0),i.first) = excitedOrbMat[1](excitedOrbMat.extension(1),i.first);
         }
-      ComplexType detR;
-      //SDetOp.Orthogonalize(extendedMatBeta,std::addressof(detR));
-      SDetOp.Orthogonalize(extendedMatBeta,LogOverlapFactor,to_address(d_));
+      ComplexType detR = SDetOp.Orthogonalize(extendedMatBeta,LogOverlapFactor);
       A(A.extension(0),{0,NAEB}) = extendedMatBeta(extendedMatBeta.extension(0),{0,NAEB});
       for(auto& i:excitations) 
         if(i.first >= NMO && i.second >= NMO ) 
@@ -1744,7 +1707,6 @@ namespace afqmc
     CMatrix PsiT,PsiTB;
     if(localGbuff.size() < 1)
       localGbuff.reextent(iextensions<1u>{1});
-    pointer ov_(localGbuff.origin());
  
     bool found=false;
     using ma::conj;
@@ -1755,15 +1717,15 @@ namespace afqmc
         auto Gdims = dm_dims(false,Alpha);
         G.reextent({Gdims.first,Gdims.second});
         csr::CSR2MA('H',OrbMats[0],PsiT); 
-        SDetOp.MixedDensityMatrix(OrbMats[0],PsiT,G,0.0,to_address(ov_),true);
+        SDetOp.MixedDensityMatrix(OrbMats[0],PsiT,G,0.0,true);
       } else {
         G.reextent({NAEA+NAEB,NMO});
         csr::CSR2MA('H',OrbMats[0],PsiT);
         SDetOp.MixedDensityMatrix(OrbMats[0],PsiT,
-                                       G.sliced(0,NAEA),0.0,to_address(ov_),true);
+                                       G.sliced(0,NAEA),0.0,true);
         csr::CSR2MA('H',OrbMats[1],PsiT);
         SDetOp.MixedDensityMatrix(OrbMats[1],PsiT,
-                                       G.sliced(NAEA,NAEA+NAEB),0.0,to_address(ov_),true);
+                                       G.sliced(NAEA,NAEA+NAEB),0.0,true);
       }    
       CVector_ref G1D(G.origin(),iextensions<1u>{G.num_elements()});
       HamOp.vbias(G1D,std::forward<Vec>(v));
@@ -1788,8 +1750,7 @@ namespace afqmc
               last_p=p;
               csr::CSR2MA('H',OrbMats[p],PsiT);
             }
-            SDetOp.MixedDensityMatrix(OrbMats[q],PsiT,G_,0.0,to_address(ov_),false);
-            ComplexType ov1 = ComplexType(*ov_);
+            ComplexType ov1 = SDetOp.MixedDensityMatrix(OrbMats[q],PsiT,G_,0.0,false);
             if(walker_type==CLOSED) ov1 *= ov1;
             ov += real(conj(ci[q])*ci[p]*ov1);
 // !!! GPU !!!
@@ -1813,18 +1774,16 @@ namespace afqmc
               csr::CSR2MA('H',OrbMats[2*p],PsiT);
               csr::CSR2MA('H',OrbMats[2*p+1],PsiTB);
             }
-            SDetOp.MixedDensityMatrix(OrbMats[2*q],PsiT,
-                                G_.sliced(0,NMO),0.0,to_address(ov_),false);
-            ComplexType ov1 = ComplexType(*ov_);
+            ComplexType ov1 = SDetOp.MixedDensityMatrix(OrbMats[2*q],PsiT,
+                                G_.sliced(0,NMO),0.0,false);
             if(std::abs(ov1) == ComplexType(0.0) && not found) {
               found=true;
               app_warning()<<" WARNING: Found orthogonal determinants in trial wave function of NOMSD. The mean-field substraction potential is potentially wrong. ! \n";   
 //              SDetOp.OrthogonalUnnormalizedMixedDensityMatrix(OrbMats[2*q],PsiT,
 //                                G_.sliced(0,NMO),false); 
             }
-            SDetOp.MixedDensityMatrix(OrbMats[2*q+1],PsiTB,
-                                G_.sliced(NMO,2*NMO),0.0,to_address(ov_),false);
-            ComplexType ov2 = ComplexType(*ov_);
+            ComplexType ov2 = SDetOp.MixedDensityMatrix(OrbMats[2*q+1],PsiTB,
+                                G_.sliced(NMO,2*NMO),0.0,false);
             if(std::abs(ov2) == ComplexType(0.0) && not found) {
               found=true;
               app_warning()<<" WARNING: Found orthogonal determinants in trial wave function of NOMSD. The mean-field substraction potential is potentially wrong. ! \n";   
