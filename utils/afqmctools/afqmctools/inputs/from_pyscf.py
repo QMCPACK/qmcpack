@@ -19,7 +19,7 @@ from afqmctools.wavefunction.pbc import write_wfn_pbc
 
 def write_qmcpack(comm, chkfile, hamil_file, threshold,
                   ortho_ao=False, gdf=False, kpoint=False, verbose=False,
-                  cas=None, qmc_input=None):
+                  cas=None, qmc_input=None, wfn_file=None):
     """Dispatching routine dependent on options.
     """
     try:
@@ -40,7 +40,7 @@ def write_qmcpack(comm, chkfile, hamil_file, threshold,
             write_hamil_supercell(comm, scf_data, hamil_file, threshold,
                                   verbose=verbose, cas=cas, ortho_ao=ortho_ao)
         if comm.rank == 0:
-            write_wfn_pbc(scf_data, ortho_ao, hamil_file, verbose=verbose)
+            write_wfn_pbc(scf_data, ortho_ao, wfn_file, verbose=verbose)
     else:
         if comm.rank == 0 and verbose:
             print(" # Generating Hamiltonian and wavefunction from pysc mol"
@@ -53,7 +53,7 @@ def write_qmcpack(comm, chkfile, hamil_file, threshold,
         scf_data = load_from_pyscf_chk_mol(chkfile)
         write_hamil_mol(scf_data, hamil_file, threshold,
                         verbose=verbose, cas=cas, ortho_ao=ortho_ao)
-        write_wfn_mol(scf_data, ortho_ao, hamil_file)
+        write_wfn_mol(scf_data, ortho_ao, wfn_file)
 
     if comm.rank == 0 and qmc_input is not None:
-        write_skeleton_input(qmc_input, hamil_file)
+        write_skeleton_input(qmc_input, hamil_file, wfn_file=wfn_file)

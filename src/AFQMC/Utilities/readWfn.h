@@ -10,6 +10,7 @@
 
 #include "Utilities/SimpleParser.h"
 
+#include "io/hdf_archive.h"
 #include "AFQMC/config.h"
 #include "AFQMC/Matrix/csr_matrix.hpp"
 #include "AFQMC/Matrix/csr_matrix_construct.hpp"
@@ -33,6 +34,11 @@ ph_excitations<int,ComplexType> read_ph_wavefunction(std::ifstream& in, int& nde
         WALKER_TYPES walker_type,
         boost::mpi3::shared_communicator& comm, int NMO, int NAEA, int NAEB,
         std::vector<PsiT_Matrix>& PsiT);
+
+ph_excitations<int,ComplexType> read_ph_wavefunction_hdf(hdf_archive& dump, int& ndets, 
+        WALKER_TYPES walker_type,
+        boost::mpi3::shared_communicator& comm, int NMO, int NAEA, int NAEB,
+        std::vector<PsiT_Matrix>& PsiT, std::string& type);
 
 
 WALKER_TYPES getWalkerType(std::string filename);

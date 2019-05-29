@@ -33,6 +33,9 @@ def parse_args(args, comm):
         parser.add_argument('-o', '--output', dest='hamil_file',
                             type=str, default='hamiltonian.h5',
                             help='Output file name for QMCPACK hamiltonian.')
+        parser.add_argument('-w', '--wavefunction', dest='wfn_file',
+                            type=str, default='hamiltonian.h5',
+                            help='Output file name for QMCPACK hamiltonian.')
         parser.add_argument('-q', '--qmcpack-input', dest='qmc_input',
                             type=str, default=None,
                             help='Generate skeleton QMCPACK input file.')
@@ -99,7 +102,8 @@ def main(args):
                   options.thresh, ortho_ao=options.ortho_ao,
                   kpoint=options.kpoint_sym, gdf=options.gdf,
                   verbose=options.verbose, cas=options.cas,
-                  qmc_input=options.qmc_input)
+                  qmc_input=options.qmc_input,
+                  wfn_file=options.wfn_file)
     if comm.rank == 0:
         write_metadata(options, sha1, cwd, date_time)
 

@@ -186,6 +186,15 @@ MultiArray3D set_identity(MultiArray3D&& m){
         return std::forward<MultiArray3D>(m);
 }
 
+template<class T, class MultiArray2D,
+        typename = typename std::enable_if< std::decay<MultiArray2D>::type::dimensionality == 2 >
+>
+MultiArray2D fill(MultiArray2D&& m, T const& value){
+        using qmcplusplus::afqmc::fill2D;
+        fill2D(m.size(0),m.size(1),pointer_dispatch(m.origin()),m.stride(0),value);
+        return std::forward<MultiArray2D>(m);
+}
+
 }
 
 #endif

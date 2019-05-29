@@ -69,7 +69,9 @@ struct cuda_gpu_reference {
 
   operator value_type() const { return this->val(); }
 
-  operator value_type&() {
+  // try getting rid of this
+  operator value_type&() 
+  {
     if(cudaSuccess != cudaMemcpy(std::addressof(host_impl_),impl_,sizeof(T),cudaMemcpyDefault))
      throw std::runtime_error("Error: cudaMemcpy returned error code.");
     return host_impl_;
