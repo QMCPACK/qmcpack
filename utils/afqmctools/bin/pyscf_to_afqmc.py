@@ -34,7 +34,7 @@ def parse_args(args, comm):
                             type=str, default='hamiltonian.h5',
                             help='Output file name for QMCPACK hamiltonian.')
         parser.add_argument('-w', '--wavefunction', dest='wfn_file',
-                            type=str, default='hamiltonian.h5',
+                            type=str, default=None,
                             help='Output file name for QMCPACK hamiltonian.')
         parser.add_argument('-q', '--qmcpack-input', dest='qmc_input',
                             type=str, default=None,
@@ -98,6 +98,8 @@ def main(args):
         print(" # Date/Time: {}".format(date_time))
         print(" # Working directory: {}".format(cwd))
 
+    if options.wfn_file is None:
+        options.wfn_file = options.hamil_file
     write_qmcpack(comm, options.chk_file, options.hamil_file,
                   options.thresh, ortho_ao=options.ortho_ao,
                   kpoint=options.kpoint_sym, gdf=options.gdf,
