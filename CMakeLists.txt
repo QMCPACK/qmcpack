@@ -34,6 +34,26 @@ SET(QMCPACK_VERSION_MINOR 7)
 SET(QMCPACK_VERSION_PATCH 9)
 SET(QMCPACK_VERSION "${QMCPACK_VERSION_MAJOR}.${QMCPACK_VERSION_MINOR}.${QMCPACK_VERSION_PATCH}")
 
+
+######################################################################
+# Verify QE executables present if QE_BIN specified
+######################################################################
+IF ( DEFINED QE_BIN )
+ IF ( EXISTS "${QE_BIN}/pw.x" )
+  MESSAGE( STATUS "Found pw.x at ${QE_BIN}/pw.x")
+ ELSE()
+  MESSAGE( "QE_BIN was specified but could not find ${QE_BIN}/pw.x" )
+  MESSAGE( FATAL_ERROR "QE should be built ahead of QMCPACK. See qmcpack/external_codes/quantum_espresso/README for details on building patched version." ) 
+ ENDIF()
+ IF ( EXISTS "${QE_BIN}/pw2qmcpack.x" )
+  MESSAGE( STATUS "Found pw2qmcpack.x at ${QE_BIN}/pw.x")
+ ELSE()
+  MESSAGE( "QE_BIN was specified but could not find ${QE_BIN}/pw2qmcpack.x" )
+  MESSAGE( FATAL_ERROR "See qmcpack/external_codes/quantum_espresso/README for details on building patched version" ) 
+ ENDIF()
+ENDIF()
+
+
 ######################################################################
 # CTest
 ######################################################################
