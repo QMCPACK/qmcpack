@@ -19,7 +19,8 @@ from afqmctools.wavefunction.pbc import write_wfn_pbc
 
 def write_qmcpack(comm, chkfile, hamil_file, threshold,
                   ortho_ao=False, gdf=False, kpoint=False, verbose=False,
-                  cas=None, qmc_input=None, wfn_file=None):
+                  cas=None, qmc_input=None, wfn_file=None,
+                  write_hamil=True):
     """Dispatching routine dependent on options.
     """
     try:
@@ -33,12 +34,15 @@ def write_qmcpack(comm, chkfile, hamil_file, threshold,
             print(" # Generating Hamiltonian and wavefunction from pyscf cell"
                   " object.")
         scf_data = load_from_pyscf_chk(chkfile, orthoAO=ortho_ao)
-        if kpoint:
-            write_hamil_kpoints(comm, scf_data, hamil_file, threshold,
-                                verbose=verbose, cas=cas, ortho_ao=ortho_ao)
-        else:
-            write_hamil_supercell(comm, scf_data, hamil_file, threshold,
-                                  verbose=verbose, cas=cas, ortho_ao=ortho_ao)
+        if write_hamil:
+            if kpoint:
+                write_hamil_kpoints(comm, scf_data, hamil_file, threshold,
+                                    verbose=verbose, cas=cas,
+                                    ortho_ao=ortho_ao)
+            else:
+                write_hamil_supercell(comm, scf_data, hamil_file, threshold,
+                                      verbose=verbose, cas=cas,
+                                      ortho_ao=ortho_ao)
         if comm.rank == 0:
             write_wfn_pbc(scf_data, ortho_ao, wfn_file, verbose=verbose)
     else:
@@ -51,8 +55,9 @@ def write_qmcpack(comm, chkfile, hamil_file, threshold,
                       "in serial.")
             sys.exit()
         scf_data = load_from_pyscf_chk_mol(chkfile)
-        write_hamil_mol(scf_data, hamil_file, threshold,
-                        verbose=verbose, cas=cas, ortho_ao=ortho_ao)
+        if write_hamil:
+            write_hamil_mol(scf_data, hamil_file, threshold,
+                            verbose=verbose, cas=cas, ortho_ao=ortho_ao)
         write_wfn_mol(scf_data, ortho_ao, wfn_file)
 
     if comm.rank == 0 and qmc_input is not None:

@@ -56,6 +56,9 @@ def parse_args(args, comm):
                             help='Specify a CAS in the form of N,M.',
                             type=lambda s: [int(item) for item in s.split(',')],
                             default=None)
+        parser.add_argument('-d', '--disable-ham', dest='disable_ham',
+                            action='store_true', default=False,
+                            help='Disable hamiltonian generation.')
         parser.add_argument('-v', '--verbose', action='count', default=0,
                             help='Verbose output.')
 
@@ -76,8 +79,16 @@ def write_metadata(options, sha1, cwd, date_time):
     op_dict['git_hash'] = sha1
     op_dict['working_directory'] = os.getcwd()
     op_dict['date_time'] = date_time
-    with h5py.File(options.hamil_file, 'r+') as fh5:
-        fh5['metadata'] = json.dumps(op_dict)
+    if options.wfn_file != options.hamil_file:
+        with h5py.File(options.wfn_file, 'a') as fh5:
+            try:
+                fh5['metadata'] = json.dumps(op_dict)
+            except ValueError:
+                del fh5['metadata']
+                fh5['metadata'] = json.dumps(op_dict)
+    if not options.disable_ham:
+        with h5py.File(options.hamil_file, 'a') as fh5:
+            fh5['metadata'] = json.dumps(op_dict)
 
 def main(args):
     """Generate QMCPACK input from pyscf checkpoint file.
@@ -99,13 +110,17 @@ def main(args):
         print(" # Working directory: {}".format(cwd))
 
     if options.wfn_file is None:
-        options.wfn_file = options.hamil_file
+        if options.disable_ham:
+            options.wfn_file = 'wfn.dat'
+        else:
+            options.wfn_file = options.hamil_file
     write_qmcpack(comm, options.chk_file, options.hamil_file,
                   options.thresh, ortho_ao=options.ortho_ao,
                   kpoint=options.kpoint_sym, gdf=options.gdf,
                   verbose=options.verbose, cas=options.cas,
                   qmc_input=options.qmc_input,
-                  wfn_file=options.wfn_file)
+                  wfn_file=options.wfn_file,
+                  write_hamil=(not options.disable_ham))
     if comm.rank == 0:
         write_metadata(options, sha1, cwd, date_time)
 
