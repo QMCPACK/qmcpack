@@ -23,6 +23,7 @@
 #include "QMCWaveFunctions/Jastrow/JastrowBuilder.h"
 #include "QMCWaveFunctions/Fermion/SlaterDetBuilder.h"
 #include "QMCWaveFunctions/IonOrbitalBuilder.h"
+#include "QMCWaveFunctions/ExampleHeBuilder.h"
 
 #if !defined(QMC_COMPLEX)
 #include "QMCWaveFunctions/FDLRWfn.h"
@@ -143,6 +144,14 @@ bool WaveFunctionFactory::build(xmlNodePtr cur, bool buildtree)
     else if ((cname == "Molecular") || (cname == "molecular"))
     {
       APP_ABORT("  Removed Helium Molecular terms from qmcpack ");
+    }
+    else if (cname == "example_he")
+    {
+      if (targetPtcl->Lattice.SuperCellEnum == SUPERCELL_OPEN)
+        targetPtcl->setBoundBox(false);
+      WaveFunctionComponentBuilder* exampleHe_builder = new ExampleHeBuilder(*targetPtcl, *targetPsi, ptclPool);
+      success                                         = exampleHe_builder->put(cur);
+      addNode(exampleHe_builder, cur);
     }
 #if !defined(QMC_COMPLEX) && OHMMS_DIM == 3
     else if (cname == "agp")
