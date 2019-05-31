@@ -4,7 +4,7 @@ import numpy
 import scipy.linalg
 import sys
 from pyscf import fci
-from afqmctools.utils.io import to_qmcpack_complex
+from afqmctools.utils.io import to_qmcpack_complex, add_group, add_dataset
 
 def write_wfn_mol(scf_data, ortho_ao, filename, wfn=None,
                   init=None, verbose=False):
@@ -94,22 +94,12 @@ def write_qmcpack_wfn(filename, wfn, walker_type, nelec, norb, init=None,
     if wfn_type == 'PHMSD':
         walker_type = 2
     if wfn_type == 'NOMSD':
-        try:
-            wfn_group = fh5.create_group('Wavefunction/NOMSD')
-        except ValueError:
-            print(" # Warning: Found existing wavefunction group. Removing.")
-            del fh5['Wavefunction/NOMSD']
-            wfn_group = fh5.create_group('Wavefunction/NOMSD')
+        wfn_group = add_group(fh5, 'Wavefunction/NOMSD')
         write_nomsd(wfn_group, wfn, uhf, nelec, init=init)
     else:
-        try:
-            wfn_group = fh5.create_group('Wavefunction/PHMSD')
-        except ValueError:
-            print(" # Warning: Found existing wavefunction group. Removing.")
-            del fh5['Wavefunction/PHMSD']
-            wfn_group = fh5.create_group('Wavefunction/PHMSD')
-        write_phmsd(wfn_group, occa, occb, nelec, norb, init=init)
-        write_phmsd(wfn_group, occa, occb, nelec, norb, init=init, orbmat=orbmat)
+        wfn_group = add_group(fh5, 'Wavefunction/PHMSD')
+        write_phmsd(wfn_group, occa, occb, nelec, norb,
+                    init=init, orbmat=orbmat)
     if coeffs.dtype == float:
         if verbose:
             print(" # Found real MSD coefficients. Converting to complex.")
@@ -138,12 +128,14 @@ def write_nomsd(fh5, wfn, uhf, nelec, thresh=1e-8, init=None):
     nalpha, nbeta = nelec
     wfn[abs(wfn) < thresh] = 0.0
     if init is not None:
-        fh5['Psi0_alpha'] = to_qmcpack_complex(init[0])
-        fh5['Psi0_beta'] = to_qmcpack_complex(init[1])
+        add_dataset(fh5, 'Psi0_alpha', to_qmcpack_complex(init[0]))
+        add_dataset(fh5, 'Psi0_beta', to_qmcpack_complex(init[1]))
     else:
-        fh5['Psi0_alpha'] = to_qmcpack_complex(wfn[0,:,:nalpha].copy())
+        add_dataset(fh5, 'Psi0_alpha',
+                    to_qmcpack_complex(wfn[0,:,:nalpha].copy()))
         if uhf:
-            fh5['Psi0_beta'] = to_qmcpack_complex(wfn[0,:,nalpha:].copy())
+            add_dataset(fh5, 'Psi0_beta',
+                        to_qmcpack_complex(wfn[0,:,nalpha:].copy()))
     for idet, w in enumerate(wfn):
         # QMCPACK stores this internally as a csr matrix, so first convert.
         ix = 2*idet if uhf else idet
@@ -187,12 +179,14 @@ def write_phmsd(fh5, occa, occb, nelec, norb, init=None, orbmat=None):
     # TODO: Update if we ever wanted "mixed" phmsd type wavefunctions.
     na, nb = nelec
     if init is not None:
-        fh5['Psi0_alpha'] = init[0]
-        fh5['Psi0_beta'] = init[1]
+        add_dataset(fh5, 'Psi0_alpha', to_qmcpack_complex(init[0]))
+        add_dataset(fh5, 'Psi0_beta', to_qmcpack_complex(init[1]))
     else:
         init = numpy.eye(norb, dtype=numpy.complex128)
-        fh5['Psi0_alpha'] = to_qmcpack_complex(init[:,occa[0]].copy())
-        fh5['Psi0_beta'] = to_qmcpack_complex(init[:,occb[0]-norb].copy())
+        add_dataset(fh5, 'Psi0_alpha',
+                    to_qmcpack_complex(init[:,occa[0]].copy()))
+        add_dataset(fh5, 'Psi0_beta',
+                    to_qmcpack_complex(init[:,occb[0]-norb].copy()))
     if orbmat is not None:
         fh5['type'] = numpy.string_(['mixed'])
         # Expects conjugate transpose.
