@@ -244,7 +244,7 @@ def reoccupy(mo_occ, mo_energy, uhf, verbose, low=0.25,
         else:
             trial = (msd_coeff, occs_a, occs_b)
     else:
-        re_occ, ndeg, msd, srt, isrt = (
+        re_occ, ndeg, msd, srt, isrt, p = (
                 determine_occupancies(mo_occ,
                                       mo_energy[0],
                                       True,
