@@ -57,6 +57,7 @@ def write_wfn_mol(scf_data, ortho_ao, filename, wfn=None, init=None):
                 print(" # Warning: UHF trial wavefunction can only be used of "
                       "working in ortho AO basis.")
     write_qmcpack_wfn(filename, (numpy.array([1.0+0j]),wfn), uhf, nelec, norb)
+    return nelec
 
 def write_qmcpack_wfn(filename, wfn, walker_type, nelec, norb, init=None):
     # User defined wavefunction.

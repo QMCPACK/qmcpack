@@ -135,6 +135,7 @@ def write_wfn_pbc(scf_data, ortho_ao, filename, rediag=True, verbose=False,
             sys.exit()
     coeff = numpy.array([1.0+0j])
     write_qmcpack_wfn(filename, (coeff,wfn), uhf, (nalpha, nbeta), nmo_tot)
+    return nelec
 
 
 def rediag_fock(fock, X, occ):

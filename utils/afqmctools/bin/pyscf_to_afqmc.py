@@ -83,7 +83,7 @@ def write_metadata(options, sha1, cwd, date_time):
         with h5py.File(options.wfn_file, 'a') as fh5:
             try:
                 fh5['metadata'] = json.dumps(op_dict)
-            except ValueError:
+            except RuntimeError:
                 del fh5['metadata']
                 fh5['metadata'] = json.dumps(op_dict)
     if not options.disable_ham:

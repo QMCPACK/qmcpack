@@ -34,6 +34,8 @@ def write_qmcpack(comm, chkfile, hamil_file, threshold,
             print(" # Generating Hamiltonian and wavefunction from pyscf cell"
                   " object.")
         scf_data = load_from_pyscf_chk(chkfile, orthoAO=ortho_ao)
+        if comm.rank == 0:
+            nelec = write_wfn_pbc(scf_data, ortho_ao, wfn_file, verbose=verbose)
         if write_hamil:
             if kpoint:
                 write_hamil_kpoints(comm, scf_data, hamil_file, threshold,
@@ -43,8 +45,6 @@ def write_qmcpack(comm, chkfile, hamil_file, threshold,
                 write_hamil_supercell(comm, scf_data, hamil_file, threshold,
                                       verbose=verbose, cas=cas,
                                       ortho_ao=ortho_ao)
-        if comm.rank == 0:
-            write_wfn_pbc(scf_data, ortho_ao, wfn_file, verbose=verbose)
     else:
         if comm.rank == 0 and verbose:
             print(" # Generating Hamiltonian and wavefunction from pysc mol"

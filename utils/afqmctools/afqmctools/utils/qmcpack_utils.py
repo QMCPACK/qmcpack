@@ -6,18 +6,6 @@ def write_skeleton_input(qmc_in, hamil_file, wfn_file=None, series=0,
     walker_types = ['NONE', 'CLOSED', 'COLLINEAR', 'NONCOLLINEAR']
     if wfn_file is None:
         wfn_file = hamil_file
-    with h5py.File(hamil_file, 'r') as  fh5:
-        dims = fh5['Hamiltonian/dims'][:]
-        nmo = dims[3]
-        nalpha = dims[4]
-        nbeta = dims[5]
-        if nelec is not None:
-            nalpha, nbeta = nelec
-        try:
-            dset = fh5['Hamiltonian/KPFactorized']
-            hamil_type = 'KPFactorized'
-        except KeyError:
-            hamil_type = 'Factorized'
     with h5py.File(wfn_file, 'r') as  fh5:
         try:
             dims = fh5['Wavefunction/PHMSD/dims'][:]
@@ -25,6 +13,11 @@ def write_skeleton_input(qmc_in, hamil_file, wfn_file=None, series=0,
         except KeyError:
             dims = fh5['Wavefunction/NOMSD/dims'][:]
             wfn_type = 'NOMSD'
+        nalpha = dims[1]
+        nbeta = dims[2]
+        nmo = dims[0]
+        if nelec is not None:
+            nalpha, nbeta = nelec
         walker_type = walker_types[dims[3]]
 
     xml_string = """<?xml version="1.0"?>
@@ -37,7 +30,7 @@ def write_skeleton_input(qmc_in, hamil_file, wfn_file=None, series=0,
         <parameter name="NAEB">{:d}</parameter>
     </AFQMCInfo>
 
-    <Hamiltonian name="ham0" type="{:s}" info="info0">
+    <Hamiltonian name="ham0" info="info0">
       <parameter name="filetype">hdf5</parameter>
       <parameter name="filename">{:s}</parameter>
     </Hamiltonian>
@@ -66,7 +59,7 @@ def write_skeleton_input(qmc_in, hamil_file, wfn_file=None, series=0,
           <parameter name="print_components">true</parameter>
       </Estimator>
    </execute>
-</simulation>""".format(series, nmo, nalpha, nbeta, hamil_type,
+</simulation>""".format(series, nmo, nalpha, nbeta,
                         hamil_file, wfn_type, wfn_file,
                         walker_type, blocks)
     with open(qmc_in, 'w') as f:

@@ -21,7 +21,7 @@ from afqmctools.utils.io import (
 
 def write_hamil_supercell(comm, scf_data, hamil_file, chol_cut,
                           verbose=True, cas=None, ortho_ao=False,
-                          maxvecs=20, exxdiv='ewald'):
+                          maxvecs=20, exxdiv='ewald', nelec=None):
 
     nproc = comm.size
     rank = comm.rank
@@ -109,7 +109,7 @@ def write_hamil_supercell(comm, scf_data, hamil_file, chol_cut,
         # Write remaining descriptor arrays to file.
         write_info(h5grp, cell, v2cnts, h1size, nmo_tot,
                    num_chol, kpts, ortho_ao, Xocc, nmo_pk,
-                   ik2n, exxdiv)
+                   ik2n, exxdiv, nelec=nelec)
         h5file.close()
 
 
@@ -203,10 +203,15 @@ def write_cholesky(h5file, comm, cholvecs, part, ik2n, nmo_pk, gtol, max_ints):
     return v2cnts
 
 def write_info(h5grp, cell, v2cnts, h1size, nmo_tot, numv,
-               kpts, ortho_ao, Xocc, nmo_pk, ik2n, exxdiv):
+               kpts, ortho_ao, Xocc, nmo_pk, ik2n, exxdiv, nelec=None):
     nkpts = len(kpts)
-    nup = nkpts*(cell.nelectron+cell.spin)//2
-    ndown = nkpts*cell.nelectron-nup
+    if nelec is not None:
+        nup, ndown = nelec
+    else:
+        nup = nkpts*(cell.nelectron+cell.spin)//2
+        ndown = nkpts*cell.nelectron-nup
+    nelectron = nup + ndown
+
     h2size = numpy.sum(v2cnts)
     dims = numpy.array([h1size, h2size, v2cnts.size,
                         nmo_tot, nup, ndown, 0, numv])
@@ -243,9 +248,9 @@ def write_info(h5grp, cell, v2cnts, h1size, nmo_tot, numv,
     e0 = cell.energy_nuc()
     if exxdiv=='ewald':
         madelung = tools.pbc.madelung(cell, kpts)
-        e0 += madelung*cell.nelectron * -.5
+        e0 += madelung*nelectron * -.5
         print(" # Adding ewald correction to the energy: "
-              "{:13.8e}".format(-0.5*madelung*cell.nelectron))
+              "{:13.8e}".format(-0.5*madelung*nelectron))
     h5grp.create_dataset("Energies", data=numpy.array([e0*nkpts, 0]))
 
 
