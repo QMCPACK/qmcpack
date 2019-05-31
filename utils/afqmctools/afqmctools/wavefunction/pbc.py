@@ -7,7 +7,8 @@ import sys
 import scipy.linalg
 from afqmctools.wavefunction.mol import write_qmcpack_wfn, write_nomsd_wfn
 
-def write_wfn_pbc(scf_data, ortho_ao, filename, rediag=True, verbose=False):
+def write_wfn_pbc(scf_data, ortho_ao, filename, rediag=True,
+                  verbose=False, ndet_max=None):
     """Generate QMCPACK trial wavefunction for PBC simulation.
 
     Parameters
@@ -54,7 +55,8 @@ def write_wfn_pbc(scf_data, ortho_ao, filename, rediag=True, verbose=False):
             print(" # {:d} {}".format(i,k))
     (eigs, orbs, ks, bands) = generate_orbitals(fock, X, nmo_pk, rediag, ortho_ao,
                                                 mo_energy, uhf, verbose=verbose)
-    re_occ, trial, ndeg, srt, isrt = reoccupy(mo_occ, eigs, uhf, verbose)
+    re_occ, trial, ndeg, srt, isrt = reoccupy(mo_occ, eigs, uhf, verbose,
+                                              ndet_max=ndet_max)
     nalpha = int(round(numpy.sum(re_occ[0])))
     nbeta = int(round(numpy.sum(re_occ[1])))
     nelec = (nalpha, nbeta)
@@ -204,11 +206,11 @@ def rediag_fock(fock, X):
     return e, c
 
 def reoccupy(mo_occ, mo_energy, uhf, verbose, low=0.25,
-                          high=0.95):
+             high=0.95, ndet_max=None):
     if uhf:
         if verbose:
             print(" # Determining occupancies for alpha electrons.")
-        re_occ_a, ndeg_a, msd_a, srt_a, isrt_a = (
+        re_occ_a, ndeg_a, msd_a, srt_a, isrt_a, p_a = (
                 determine_occupancies(mo_occ[0],
                                       mo_energy[0],
                                       False,
@@ -216,23 +218,31 @@ def reoccupy(mo_occ, mo_energy, uhf, verbose, low=0.25,
                 )
         if verbose:
             print(" # Determining occupancies for beta electrons.")
-        re_occ_b, ndeg_b, msd_b, srt_b, isrt_b = (
+        re_occ_b, ndeg_b, msd_b, srt_b, isrt_b, p_b = (
                 determine_occupancies(mo_occ[1],
                                       mo_energy[1],
                                       False,
                                       verbose=verbose>=1)
                 )
-        ndeg = max(ndeg_a, ndeg_b)
+        ndeg = max(ndeg_a,ndeg_b)
         nalpha = int(round(numpy.sum(re_occ_a)))
         nbeta = int(round(numpy.sum(re_occ_b)))
         re_occ = [re_occ_a, re_occ_b]
         occs_a, occs_b = zip(*itertools.product(msd_a,msd_b))
-        ndet = len(occs_a)
-        msd_coeff = numpy.array([1.0/ndet**0.5]*ndet,
-                            dtype=numpy.complex128)
+        pdets = p_a * p_b
+        srt_det = pdets.argsort()
         srt = (srt_a,srt_b)
         isrt = (isrt_a,isrt_b)
-        trial = (msd_coeff, occs_a, occs_b)
+        msd_coeff = (pdets/sum(pdets))**0.5
+        if ndet_max is not None:
+            if verbose:
+                print(" # Truncating MSD expansion at {}"
+                      " determinants.".format(ndet_max))
+            nd = min(len(occs_a),ndet_max)
+            sd = srt_det[:nd]
+            trial = (msd_coeff[sd], numpy.array(occs_a)[sd], numpy.array(occs_b)[sd])
+        else:
+            trial = (msd_coeff, occs_a, occs_b)
     else:
         re_occ, ndeg, msd, srt, isrt = (
                 determine_occupancies(mo_occ,
@@ -246,7 +256,7 @@ def reoccupy(mo_occ, mo_energy, uhf, verbose, low=0.25,
 
     return re_occ, trial, ndeg, srt, isrt
 
-def determine_occupancies(mo_occ, mo_energy, rhf, low=0.25,
+def determine_occupancies(mo_occ, mo_energy, rhf, low=0.1,
                           high=0.95, verbose=False, refdet=0,
                           offset=0):
     nocc = 0
@@ -266,7 +276,8 @@ def determine_occupancies(mo_occ, mo_energy, rhf, low=0.25,
             print(" # All occupancies are one or zero.")
         ndeg = 1
         msd = [numpy.where(numpy.ravel(mo_occ) > high)[0]]
-        return (mo_occ, ndeg, msd, col_sort, col_sort_inv)
+        pcomb = numpy.ones(len(msd))
+        return (mo_occ, ndeg, msd, col_sort, col_sort_inv, pcomb)
     else:
         if verbose:
             print(" # Found partially occupied bands.")
@@ -274,10 +285,12 @@ def determine_occupancies(mo_occ, mo_energy, rhf, low=0.25,
                   "degenerate orbitals.")
         mo_order = numpy.array(mo_occ).ravel()[col_sort]
         deg = (mo_order < high) & (mo_order > low)
+        poccs = mo_order[deg]
         ndeg = sum(deg)
         # Supercell indexed.
         deg_orb = numpy.where(deg)[0]
         combs = [c for c in itertools.combinations(deg_orb, int(nleft))]
+        pcomb = numpy.array([numpy.prod(poccs[numpy.array(c)-nocc]) for c in combs])
         if verbose:
             print(" # Distributing {} electrons in {} orbitals.".format(nleft,ndeg))
             print(" # Number of determinants: {}.".format(len(combs)))
@@ -302,4 +315,4 @@ def determine_occupancies(mo_occ, mo_energy, rhf, low=0.25,
                 e += nmo_pk[ik+1]
             except IndexError:
                 e = -1
-        return (locc, ndeg, reordered, col_sort, col_sort_inv)
+        return (locc, ndeg, reordered, col_sort, col_sort_inv, pcomb)
