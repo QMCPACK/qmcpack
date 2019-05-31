@@ -14,6 +14,8 @@ patch -p1 -i ../add_pw2qmcpack_to_qe-6.4.diff
 
 from within the top level quantum espresso directory.
 
+Due to internal changes in quantum espresso, generally the patch and
+pw2qmcpack files only work for one specific version.
 
 Notes for maintainers:
 
