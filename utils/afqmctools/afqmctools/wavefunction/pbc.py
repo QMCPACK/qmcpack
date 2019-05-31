@@ -70,7 +70,7 @@ def write_wfn_pbc(scf_data, ortho_ao, filename, rediag=True, verbose=False):
     else:
         orb_mat_b = None
     write_qmcpack_wfn(filename, trial, uhf, (nalpha, nbeta), nmo_tot,
-                      orbmat=(orb_mat_a, orb_mat_b))
+                      orbmat=(orb_mat_a, orb_mat_b), verbose=verbose)
     return nelec
 
 def generate_orbitals(fock, X, nmo_pk, rediag, ortho_ao,

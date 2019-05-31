@@ -6,7 +6,8 @@ import sys
 from pyscf import fci
 from afqmctools.utils.io import to_qmcpack_complex
 
-def write_wfn_mol(scf_data, ortho_ao, filename, wfn=None, init=None):
+def write_wfn_mol(scf_data, ortho_ao, filename, wfn=None,
+                  init=None, verbose=False):
     """Generate QMCPACK trial wavefunction.
 
     Parameters
@@ -32,6 +33,10 @@ def write_wfn_mol(scf_data, ortho_ao, filename, wfn=None, init=None):
     C = scf_data['mo_coeff']
     X = scf_data['X']
     uhf = scf_data['isUHF']
+    if uhf:
+        walker_type = 'uhf'
+    else:
+        walker_type = 'rhf'
     # For RHF only nalpha entries will be filled.
     if uhf:
         norb = C[0].shape[0]
@@ -56,11 +61,12 @@ def write_wfn_mol(scf_data, ortho_ao, filename, wfn=None, init=None):
             if uhf:
                 print(" # Warning: UHF trial wavefunction can only be used of "
                       "working in ortho AO basis.")
-    write_qmcpack_wfn(filename, (numpy.array([1.0+0j]),wfn), uhf, nelec, norb)
+    write_qmcpack_wfn(filename, (numpy.array([1.0+0j]),wfn), walker_type,
+                      nelec, verbose=verbose)
     return nelec
 
 def write_qmcpack_wfn(filename, wfn, walker_type, nelec, norb, init=None,
-                      orbmat=None):
+                      orbmat=None, verbose=False):
     # User defined wavefunction.
     # PHMSD is a list of tuple of (ci, occa, occb).
     # NOMSD is a tuple of (list, numpy.ndarray).
@@ -104,6 +110,10 @@ def write_qmcpack_wfn(filename, wfn, walker_type, nelec, norb, init=None,
             wfn_group = fh5.create_group('Wavefunction/PHMSD')
         write_phmsd(wfn_group, occa, occb, nelec, norb, init=init)
         write_phmsd(wfn_group, occa, occb, nelec, norb, init=init, orbmat=orbmat)
+    if coeffs.dtype == float:
+        if verbose:
+            print(" # Found real MSD coefficients. Converting to complex.")
+        coeffs = numpy.array(coeffs, dtype=numpy.complex128)
     wfn_group['ci_coeffs'] = to_qmcpack_complex(coeffs)
     dims = [norb, nalpha, nbeta, walker_type, len(coeffs)]
     wfn_group['dims'] = numpy.array(dims, dtype=numpy.int32)
