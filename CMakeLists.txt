@@ -34,6 +34,15 @@ SET(QMCPACK_VERSION_MINOR 7)
 SET(QMCPACK_VERSION_PATCH 9)
 SET(QMCPACK_VERSION "${QMCPACK_VERSION_MAJOR}.${QMCPACK_VERSION_MINOR}.${QMCPACK_VERSION_PATCH}")
 
+
+######################################################################
+# Verify QE executables present if QE_BIN specified
+######################################################################
+IF ( DEFINED QE_BIN )
+  INCLUDE(CMake/run_qe.cmake)
+  VERIFY_QE_PRESENT( ${QE_BIN} )
+ENDIF()
+
 ######################################################################
 # CTest
 ######################################################################
