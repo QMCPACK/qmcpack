@@ -56,7 +56,8 @@ def write_wfn_mol(scf_data, ortho_ao, filename, wfn=None, init=None):
             if uhf:
                 print(" # Warning: UHF trial wavefunction can only be used of "
                       "working in ortho AO basis.")
-    write_qmcpack_wfn(filename, wfn, uhf, nelec)
+    write_qmcpack_wfn(filename, (numpy.array([1.0+0j]),wfn), uhf, nelec, norb)
+    return nelec
 
 def write_qmcpack_wfn(filename, wfn, walker_type, nelec, norb, init=None):
     # User defined wavefunction.
@@ -72,7 +73,7 @@ def write_qmcpack_wfn(filename, wfn, walker_type, nelec, norb, init=None):
         print("Unknown wavefunction type passed.")
         sys.exit()
 
-    fh5 = h5py.File(filename, 'w')
+    fh5 = h5py.File(filename, 'a')
     nalpha, nbeta = nelec
     # TODO: FIX for GHF eventually.
     if walker_type == 'ghf':
@@ -86,10 +87,20 @@ def write_qmcpack_wfn(filename, wfn, walker_type, nelec, norb, init=None):
     if wfn_type == 'PHMSD':
         walker_type = 2
     if wfn_type == 'NOMSD':
-        wfn_group = fh5.create_group('Wavefunction/NOMSD')
+        try:
+            wfn_group = fh5.create_group('Wavefunction/NOMSD')
+        except ValueError:
+            print(" # Warning: Found existing wavefunction group. Removing.")
+            del fh5['Wavefunction/NOMSD']
+            wfn_group = fh5.create_group('Wavefunction/NOMSD')
         write_nomsd(wfn_group, wfn, uhf, nelec, init=init)
     else:
-        wfn_group = fh5.create_group('Wavefunction/PHMSD')
+        try:
+            wfn_group = fh5.create_group('Wavefunction/PHMSD')
+        except ValueError:
+            print(" # Warning: Found existing wavefunction group. Removing.")
+            del fh5['Wavefunction/PHMSD']
+            wfn_group = fh5.create_group('Wavefunction/PHMSD')
         write_phmsd(wfn_group, occa, occb, nelec, norb, init=init)
     wfn_group['ci_coeffs'] = to_qmcpack_complex(coeffs)
     dims = [norb, nalpha, nbeta, walker_type, len(coeffs)]
@@ -186,7 +197,7 @@ def write_nomsd_wfn(filename, wfn, nalpha, uhf, coeffs=[1.0]):
     if len(wfn.shape) == 2:
         wfn = wfn.reshape((1,wfn.shape[0],wfn.shape[1]))
     namelist = qmcpack_wfn_namelist(wfn.shape[0], uhf)
-    with open(filename, 'w') as f:
+    with open(filename, 'a') as f:
         f.write(namelist)
         f.write('Coefficients: ' + ' '.join(str(c) for c in coeffs) +'\n')
         for (i,d) in enumerate(wfn):

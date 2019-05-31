@@ -13,14 +13,15 @@ from afqmctools.utils.pyscf_utils import load_from_pyscf_chk_mol
 
 
 def write_hamil_mol(scf_data, hamil_file, chol_cut,
-                    verbose=True, cas=None, ortho_ao=False):
+                    verbose=True, cas=None, ortho_ao=False, nelec=None):
     """Write QMCPACK hamiltonian from pyscf scf calculation on mol object.
     """
     hcore, chol_vecs, nelec, enuc = generate_hamiltonian(scf_data,
                                                          verbose=verbose,
                                                          chol_cut=chol_cut,
                                                          cas=cas,
-                                                         ortho_ao=ortho_ao)
+                                                         ortho_ao=ortho_ao,
+                                                         nelec=nelec)
     nbasis = hcore.shape[-1]
     msq = nbasis * nbasis
     # Why did I transpose everything?
@@ -73,7 +74,7 @@ def write_qmcpack_cholesky(hcore, chol, nelec, nmo, e0=0.0,
         fh5['Hamiltonian/occups'] = numpy.array(occups)
 
 def generate_hamiltonian(scf_data, chol_cut=1e-5, verbose=False, cas=None,
-                         ortho_ao=False):
+                         ortho_ao=False, nelec=None):
     # Unpack SCF data.
     # 1. core (1-body) Hamiltonian.
     hcore = scf_data['hcore']

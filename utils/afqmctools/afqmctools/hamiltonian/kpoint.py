@@ -45,7 +45,7 @@ def alloc_helper(shape, dtype=numpy.float64, name='array', verbose=False):
 
 def write_hamil_kpoints(comm, scf_data, hamil_file, chol_cut,
                         verbose=True, cas=None, max_vecs=20,
-                        ortho_ao=False, exxdiv='ewald'):
+                        ortho_ao=False, exxdiv='ewald', nelec=None):
     tstart = time.clock()
 
     # Unpack pyscf data.
@@ -69,7 +69,7 @@ def write_hamil_kpoints(comm, scf_data, hamil_file, chol_cut,
     if h5file.error:
         sys.exit()
     write_basic(comm, cell, kpts, hcore, h5file, X, nmo_pk,
-                qk_to_k2, kminus, verbose=verbose)
+                qk_to_k2, kminus, verbose=verbose, nelec=nelec)
 
     if comm.rank == 0 and verbose:
         print(" # Time to reach Cholesky: {:13.8e} s.".format(time.clock()-tstart))
@@ -104,20 +104,24 @@ class FileHandler:
         self.h5f.close()
 
 def write_basic(comm, cell, kpts, hcore, h5file, X, nmo_pk, qk_to_k2, kminus,
-                exxdiv='ewald', verbose=False):
+                exxdiv='ewald', verbose=False, nelec=None):
     """Write basic system information including one-body Hamiltonian to file.
     """
     nkpts = len(kpts)
     nmo_tot = numpy.sum(nmo_pk)
-    nup = nkpts * (cell.nelectron+cell.spin) // 2
-    ndown = nkpts*cell.nelectron - nup
+    if nelec is not None:
+        nup, ndown = nelec
+    else:
+        nup = nkpts * (cell.nelectron+cell.spin) // 2
+        ndown = nkpts*cell.nelectron - nup
+    nelectron = nup + ndown
 
     # zero electron energies, including madelung term
     if comm.rank == 0:
         e0 = cell.energy_nuc()
         if exxdiv == 'ewald':
             madelung = tools.pbc.madelung(cell, kpts)
-            emad = -0.5*cell.nelectron*madelung
+            emad = -0.5*nelectron*madelung
             e0 += emad
             if verbose:
                 print(" # Adding ewald correction to the energy: {}".format(emad))
