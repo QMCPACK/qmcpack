@@ -55,8 +55,8 @@ def write_wfn_pbc(scf_data, ortho_ao, filename, rediag=True, verbose=False):
     (eigs, orbs, ks, bands) = generate_orbitals(fock, X, nmo_pk, rediag, ortho_ao,
                                                 mo_energy, uhf, verbose=verbose)
     re_occ, trial, ndeg, srt, isrt = reoccupy(mo_occ, eigs, uhf, verbose)
-    nalpha = int(numpy.sum(re_occ[0]))
-    nbeta = int(numpy.sum(re_occ[1]))
+    nalpha = int(round(numpy.sum(re_occ[0])))
+    nbeta = int(round(numpy.sum(re_occ[1])))
     nelec = (nalpha, nbeta)
     if ndeg == 1:
         wfn = create_wavefunction(orbs, re_occ, nmo_pk, nelec, uhf, verbose)
@@ -122,7 +122,7 @@ def create_wavefunction(orbs, occs, nmo_pk, nelec, uhf, verbose):
     nmo_tot = sum(nmo_pk)
     if verbose:
         print(" # Shape of supercell wavefunction "
-              "({:d},{:d})".format(nmo_tot, nelec if uhf else nalpha))
+              "({:d},{:d})".format(nmo_tot, (nalpha+nbeta) if uhf else nalpha))
         print(" # Number of electrons (nalpha, nbeta) = ({}, {})".format(nalpha, nbeta))
     wfn = numpy.zeros((1,nmo_tot, nalpha+nbeta), dtype=numpy.complex128)
     row = 0
@@ -130,14 +130,16 @@ def create_wavefunction(orbs, occs, nmo_pk, nelec, uhf, verbose):
     col_b = nalpha
     for k in range(len(nmo_pk)):
         row_end = row + nmo_pk[k]
-        col_end = col + sum(occ_a[k])
-        wfn[0,row:row_end,col:col_end] = orb_a[k][:,occ_a[k]].copy()
+        nocca = int(round(sum(occ_a[k])))
+        col_end = col + nocca
+        wfn[0,row:row_end,col:col_end] = orb_a[k][:,:nocca].copy()
         if uhf:
-            col_end = col_b + sum(occ_b)
-            wfn[0,row:row_end,col_b:col_end] = orb_b[k][:,occ_b[k]].copy()
-            col_b += sum(occ_b[k])
+            noccb = int(round(sum(occ_b[k])))
+            col_end = col_b + noccb
+            wfn[0,row:row_end,col_b:col_end] = orb_b[k][:,:noccb].copy()
+            col_b += noccb
         row += nmo_pk[k]
-        col += sum(occ_a[k])
+        col += nocca
     return wfn
 
 def print_eigenvalues(ks, bands, eigs, uhf, srt, nelec, verbose):
@@ -158,7 +160,7 @@ def print_eigenvalues(ks, bands, eigs, uhf, srt, nelec, verbose):
         for i, t in enumerate(zipped):
             tag = ''
             if i == nelec[0]-1:
-                tag = ' <--- HOMO(alpha) '
+                tag = ' <--- HOMO(alpha)'
             elif i == nelec[1]-1:
                 tag += ' <--- HOMO(beta) '
             print(" # {:5d}  ".format(i)+fmt.format(*t)+tag)
@@ -175,9 +177,9 @@ def print_eigenvalues(ks, bands, eigs, uhf, srt, nelec, verbose):
         for i, t in enumerate(zipped):
             tag = ''
             if i == nelec[0]-1:
-                tag = ' <--- HOMO(alpha) '
+                tag = ' <--- HOMO(alpha)'
             print(" # {:5d}  ".format(i)+fmt.format(*t)+tag)
-            if verbose < 2 and i >= nelec[1]-1:
+            if verbose < 2 and i >= nelec[0]-1:
                 break
 
 def rediag_fock(fock, X):
@@ -201,13 +203,15 @@ def rediag_fock(fock, X):
     e, c = numpy.linalg.eigh(fock_oao)
     return e, c
 
-def reoccupy(mo_occ, mo_energy, uhf, verbose):
+def reoccupy(mo_occ, mo_energy, uhf, verbose, low=0.25,
+                          high=0.95):
     if uhf:
         if verbose:
             print(" # Determining occupancies for alpha electrons.")
         re_occ_a, ndeg_a, msd_a, srt_a, isrt_a = (
                 determine_occupancies(mo_occ[0],
                                       mo_energy[0],
+                                      False,
                                       verbose=verbose>=1)
                 )
         if verbose:
@@ -215,18 +219,14 @@ def reoccupy(mo_occ, mo_energy, uhf, verbose):
         re_occ_b, ndeg_b, msd_b, srt_b, isrt_b = (
                 determine_occupancies(mo_occ[1],
                                       mo_energy[1],
+                                      False,
                                       verbose=verbose>=1)
                 )
         ndeg = max(ndeg_a, ndeg_b)
-        nalpha = int(numpy.sum(re_occ_a))
-        nbeta = int(numpy.sum(re_occ_b))
+        nalpha = int(round(numpy.sum(re_occ_a)))
+        nbeta = int(round(numpy.sum(re_occ_b)))
         re_occ = [re_occ_a, re_occ_b]
-        if ndeg_a > 1:
-            occs_a = msd_a
-            occs_b = [numpy.where(numpy.ravel(re_occ_b) > 0)[0]]*len(occs_a)
-        else:
-            occs_a = msd_b
-            occs_b = [numpy.where(numpy.ravel(re_occ_a) > 0)[0]]*len(occs_b)
+        occs_a, occs_b = zip(*itertools.product(msd_a,msd_b))
         ndet = len(occs_a)
         msd_coeff = numpy.array([1.0/ndet**0.5]*ndet,
                             dtype=numpy.complex128)
@@ -234,16 +234,19 @@ def reoccupy(mo_occ, mo_energy, uhf, verbose):
         isrt = (isrt_a,isrt_b)
         trial = (msd_coeff, occs_a, occs_b)
     else:
-        re_occ = [mo_occ>1.0, mo_occ>1.0]
-        ndeg = 1
-        srt = numpy.ravel(mo_energy[0]).argsort()
-        isrt = srt.argsort()
+        re_occ, ndeg, msd, srt, isrt = (
+                determine_occupancies(mo_occ,
+                                      mo_energy[0],
+                                      True,
+                                      verbose=verbose>=1)
+                )
         trial = None
+        re_occ = [re_occ/2.0, re_occ/2.0]
     # For metallic / system with partial occupancies.
 
     return re_occ, trial, ndeg, srt, isrt
 
-def determine_occupancies(mo_occ, mo_energy, low=0.25,
+def determine_occupancies(mo_occ, mo_energy, rhf, low=0.25,
                           high=0.95, verbose=False, refdet=0,
                           offset=0):
     nocc = 0
@@ -255,18 +258,20 @@ def determine_occupancies(mo_occ, mo_energy, low=0.25,
         occ = occ > high
         nmo_pk.append(len(occ))
         nocc += sum(occ)
-    if abs(nelec-nocc) < 1e-12:
+    if rhf:
+        nocc = 2*nocc
+    nleft = int(round(nelec-nocc))
+    if nleft == 0:
         if verbose:
             print(" # All occupancies are one or zero.")
-        ndeg = 0
-        msd = None
+        ndeg = 1
+        msd = [numpy.where(numpy.ravel(mo_occ) > high)[0]]
         return (mo_occ, ndeg, msd, col_sort, col_sort_inv)
     else:
         if verbose:
             print(" # Found partially occupied bands.")
             print(" # Constructing multi determinant trial wavefunction from "
                   "degenerate orbitals.")
-        nleft = int(round(nelec-nocc))
         mo_order = numpy.array(mo_occ).ravel()[col_sort]
         deg = (mo_order < high) & (mo_order > low)
         ndeg = sum(deg)
