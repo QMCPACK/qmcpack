@@ -60,7 +60,9 @@ def write_wfn_pbc(scf_data, ortho_ao, filename, rediag=True,
     nalpha = int(round(numpy.sum(re_occ[0])))
     nbeta = int(round(numpy.sum(re_occ[1])))
     nelec = (nalpha, nbeta)
-    if ndeg == 1:
+    if ndeg == 1 or ndet_max == 1:
+        if verbose:
+            print(" # Writing NOMSD single Slater determinant Trial.")
         wfn = create_wavefunction(orbs, re_occ, nmo_pk, nelec, uhf, verbose)
         coeff = numpy.array([1.0+0j])
         trial = (coeff, wfn)
