@@ -20,7 +20,7 @@ from afqmctools.wavefunction.pbc import write_wfn_pbc
 def write_qmcpack(comm, chkfile, hamil_file, threshold,
                   ortho_ao=False, gdf=False, kpoint=False, verbose=False,
                   cas=None, qmc_input=None, wfn_file=None,
-                  write_hamil=True):
+                  write_hamil=True, ndet_max=None):
     """Dispatching routine dependent on options.
     """
     try:
@@ -35,7 +35,8 @@ def write_qmcpack(comm, chkfile, hamil_file, threshold,
                   " object.")
         scf_data = load_from_pyscf_chk(chkfile, orthoAO=ortho_ao)
         if comm.rank == 0:
-            nelec = write_wfn_pbc(scf_data, ortho_ao, wfn_file, verbose=verbose)
+            nelec = write_wfn_pbc(scf_data, ortho_ao, wfn_file, verbose=verbose,
+                                  ndet_max=ndet_max)
         if write_hamil:
             if kpoint:
                 write_hamil_kpoints(comm, scf_data, hamil_file, threshold,
