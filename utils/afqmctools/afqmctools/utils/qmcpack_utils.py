@@ -2,7 +2,7 @@ import h5py
 import xml.etree.ElementTree as et
 from afqmctools.wavefunction.mol import read_qmcpack_wfn
 
-def write_skeleton_input(qmc_in, hamil_file, wfn_file, series=0, options=None):
+def write_xml_input(qmc_in, hamil_file, wfn_file, series=0, options=None):
     """Generate template input file from hamiltonian and wavefunction.
 
     Parameters

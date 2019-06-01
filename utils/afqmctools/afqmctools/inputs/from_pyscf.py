@@ -8,7 +8,7 @@ except ImportError:
 from afqmctools.hamiltonian.supercell import write_hamil_supercell
 from afqmctools.hamiltonian.kpoint import write_hamil_kpoints
 from afqmctools.hamiltonian.mol import write_hamil_mol
-from afqmctools.utils.qmcpack_utils import write_skeleton_input
+from afqmctools.utils.qmcpack_utils import write_xml_input
 from afqmctools.utils.pyscf_utils import (
         load_from_pyscf_chk,
         load_from_pyscf_chk_mol
@@ -62,4 +62,4 @@ def write_qmcpack(comm, chkfile, hamil_file, threshold,
         write_wfn_mol(scf_data, ortho_ao, wfn_file)
 
     if comm.rank == 0 and qmc_input is not None:
-        write_skeleton_input(qmc_input, hamil_file, wfn_file=wfn_file)
+        write_xml_input(qmc_input, hamil_file, wfn_file=wfn_file)
