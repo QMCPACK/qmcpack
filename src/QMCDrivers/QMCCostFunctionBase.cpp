@@ -57,7 +57,8 @@ QMCCostFunctionBase::QMCCostFunctionBase(MCWalkerConfiguration& w,
       vmc_or_dmc(2.0),
       targetExcitedStr("no"),
       targetExcited(false),
-      omega_shift(0.0)
+      omega_shift(0.0),
+      reportH5(false)
 {
   GEVType = "mixed";
   //paramList.resize(10);
@@ -241,6 +242,31 @@ void QMCCostFunctionBase::reportParameters()
     *msg_stream << "  <optVariables href=\"" << newxml << "\">" << std::endl;
     OptVariables.print(*msg_stream);
     *msg_stream << "  </optVariables>" << std::endl;
+    if (reportH5)
+    {
+          int ci_size=0;
+          std::vector<double> CIcoeff; 
+          sprintf(newh5, "%s.opt.h5", RootName.c_str());
+          *msg_stream << "  <optVariables href=\"" << newh5 << "\">" << std::endl;
+          hdf_archive hout;
+          hout.create(newh5, H5F_ACC_TRUNC);
+          hout.push("MultiDet", true);
+          for (int i=0; i<OptVariables.size(); i++)
+          {
+               char Coeff[128];
+               sprintf(Coeff,"CIcoeff_%d", i+1);
+               if(Coeff!=OptVariables.name(i))
+               {
+                   ci_size=i;
+                   break;
+               }
+               CIcoeff.push_back(OptVariables[i]); 
+          }
+          
+          hout.write(ci_size, "NbDet");
+          hout.write(CIcoeff, "Coeff");
+          hout.close();
+    } 
     updateXmlNodes();
     xmlSaveFormatFile(newxml, m_doc_out, 1);
   }
@@ -477,8 +503,11 @@ void QMCCostFunctionBase::updateXmlNodes()
     m_doc_out          = xmlNewDoc((const xmlChar*)"1.0");
     xmlNodePtr qm_root = xmlNewNode(NULL, BAD_CAST "qmcsystem");
     xmlAddChild(qm_root, m_wfPtr);
+
+    //exit(0);
     xmlDocSetRootElement(m_doc_out, qm_root);
     xmlXPathContextPtr acontext = xmlXPathNewContext(m_doc_out);
+
     //check var
     xmlXPathObjectPtr result = xmlXPathEvalExpression((const xmlChar*)"//var", acontext);
     for (int iparam = 0; iparam < result->nodesetval->nodeNr; iparam++)
@@ -554,9 +583,22 @@ void QMCCostFunctionBase::updateXmlNodes()
       }
     }
     xmlXPathFreeObject(result);
+    if (reportH5)
+    {
+      //check multidet
+      result = xmlXPathEvalExpression((const xmlChar*)"//detlist", acontext);
+      for (int iparam = 0; iparam < result->nodesetval->nodeNr; iparam++)
+      {
+        xmlNodePtr cur      = result->nodesetval->nodeTab[iparam];
+        xmlNewProp(cur, (const xmlChar*)"opt_coeffs", (const xmlChar*)newh5);
+      } 
+      xmlXPathFreeObject(result);
+    }
+
     addCoefficients(acontext, "//coefficient");
     addCoefficients(acontext, "//coefficients");
     xmlXPathFreeContext(acontext);
+
   }
   //     Psi.reportStatus(app_log());
   std::map<std::string, xmlNodePtr>::iterator pit(paramNodes.begin()), pit_end(paramNodes.end());
@@ -581,6 +623,7 @@ void QMCCostFunctionBase::updateXmlNodes()
   std::map<std::string, xmlNodePtr>::iterator cit(coeffNodes.begin()), cit_end(coeffNodes.end());
   while (cit != cit_end)
   {
+
     std::string rname((*cit).first);
     OhmmsAttributeSet cAttrib;
     std::string datatype("none");

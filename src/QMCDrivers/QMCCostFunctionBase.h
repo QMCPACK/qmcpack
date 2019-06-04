@@ -77,6 +77,9 @@ public:
   ///process xml node
   bool put(xmlNodePtr cur);
   void resetCostFunction(std::vector<xmlNodePtr>& cset);
+  ///Save opt parameters to HDF5
+  bool reportH5;  
+  char newh5[128];
   ///assign optimization parameter i
   Return_t& Params(int i) { return OptVariables[i]; }
   ///return optimization parameter i
