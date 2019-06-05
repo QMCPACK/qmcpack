@@ -68,6 +68,8 @@
 #define cgetri cgetri_
 #define dgesvd dgesvd_
 #define sgesvd sgesvd_
+#define zgesvd zgesvd_
+#define cgesvd cgesvd_
 #define dgeev dgeev_
 #define sgeev sgeev_
 #define dggev dggev_
@@ -310,13 +312,87 @@ void zgetri(const int &n, std::complex<double> *a, const int &n0, int  const*piv
 void cgetri(const int &n, std::complex<float> *a, const int &n0, int  const*piv,
             std::complex<float> *work, const int &, int &st);
 
-void dgesvd(char *JOBU, char *JOBVT, int *M, int *N, double *A, int *LDA,
-            double *S, double *U, int *LDU, double *VT, int *LDVT, double *work,
-            int *LWORK, int *INFO);
+// MAM: Right now the src/Numerics/Blasf.h still collides with the AFQMC code when QMCMain.cpp
+// is compiled. Need consistent definitions until you fix this issue.
+//void dgesvd(char &JOBU, char &JOBVT, int &M, int &N, double *A, int &LDA,
+//            double *S, double *U, int &LDU, double *VT, int &LDVT, double *work,
+//            int &LWORK, int &INFO);
 
-void sgesvd(char *JOBU, char *JOBVT, int *M, int *N, float *A, int *LDA,
-            float *S, float *U, int *LDU, float *VT, int *LDVT, float *work,
-            int *LWORK, int *INFO);
+//void sgesvd(char &JOBU, char &JOBVT, int &M, int &N, float *A, int &LDA,
+//            float *S, float *U, int &LDU, float *VT, int &LDVT, float *work,
+//            int &LWORK, int &INFO);
+
+//void zgesvd(char &JOBU, char &JOBVT, int &M, int &N, std::complex<double> *A, int &LDA,
+//            double *S, std::complex<double> *U, int &LDU, 
+//            std::complex<double> *VT, int &LDVT, std::complex<double> *work,
+//            int &LWORK, double* RWORK, int &INFO);
+
+//void cgesvd(char &JOBU, char &JOBVT, int &M, int &N, std::complex<float> *A, int &LDA,
+//            float *S, std::complex<float> *U, int &LDU, 
+//            std::complex<float> *VT, int &LDVT, std::complex<float> *work,
+//            int &LWORK, float* RWORK, int &INFO);
+
+  void dgesvd(char* JOBU,
+              char* JOBVT,
+              int* M,
+              int* N,
+              double* A,
+              int* LDA,
+              double* S,
+              double* U,
+              int* LDU,
+              double* VT,
+              int* LDVT,
+              double* work,
+              int* LWORK,
+              int* INFO);
+
+  void sgesvd(char* JOBU,
+              char* JOBVT,
+              int* M,
+              int* N,
+              float* A,
+              int* LDA,
+              float* S,
+              float* U,
+              int* LDU,
+              float* VT,
+              int* LDVT,
+              float* work,
+              int* LWORK,
+              int* INFO);
+
+  void zgesvd(char* JOBU,
+              char* JOBVT,
+              int* M,
+              int* N,
+              std::complex<double>* A,
+              int* LDA,
+              double* S,
+              std::complex<double>* U,
+              int* LDU,
+              std::complex<double>* VT,
+              int* LDVT,
+              std::complex<double>* work,
+              int* LWORK,
+              double* RWORK,
+              int* INFO);
+
+  void cgesvd(char* JOBU,
+              char* JOBVT,
+              int* M,
+              int* N,
+              std::complex<float>* A,
+              int* LDA,
+              float* S,
+              std::complex<float>* U,
+              int* LDU,
+              std::complex<float>* VT,
+              int* LDVT,
+              std::complex<float>* work,
+              int* LWORK,
+              float* RWORK,
+              int* INFO);
 
 void dgeev(char *JOBVL, char *JOBVR, int *N, double *A, int *LDA,
            double *ALPHAR, double *ALPHAI, double *VL, int *LDVL, double *VR,

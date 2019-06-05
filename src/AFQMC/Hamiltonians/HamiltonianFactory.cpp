@@ -73,44 +73,17 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
     xmlNodePtr curRoot=cur;
 
     // defaults
-    double cutoff1body = 1e-8;
     double cutoff1bar = 1e-8;
-    double cutoff_cholesky = 1e-6;
-    std::string hdf_write_type="";
-    std::string filetype = "undefined";
     std::string fileName = "";
-    std::string ascii_write_file = "";
-    std::string hdf_write_file = "";
     int number_of_TGs = 1;
     int n_reading_cores = -1;
-    bool orderStates=false;
 
-    std::string order("no");
-    std::string str("no");
     ParameterSet m_param;
-    m_param.add(order,"orderStates","std::string");
-    m_param.add(cutoff1body,"cutoff_1body","double");
     m_param.add(cutoff1bar,"cutoff_1bar","double");
-    m_param.add(cutoff_cholesky,"cutoff_decomp","double");
-    m_param.add(cutoff_cholesky,"cutoff_decomposition","double");
-    m_param.add(cutoff_cholesky,"cutoff_factorization","double");
-    m_param.add(cutoff_cholesky,"cutoff_cholesky","double");
-    m_param.add(filetype,"filetype","std::string");
     m_param.add(fileName,"filename","std::string");
-    m_param.add(hdf_write_file,"hdf_write_file","std::string");
-    m_param.add(hdf_write_type,"hdf_write_type","std::string");
-    m_param.add(ascii_write_file,"ascii_write_file","std::string");
     m_param.add(number_of_TGs,"nblocks","int");
     m_param.add(n_reading_cores,"num_io_cores","int");
     m_param.put(cur);
-
-    orderStates=false;
-    std::transform(order.begin(),order.end(),order.begin(),(int (*)(int))tolower);
-    std::transform(filetype.begin(),filetype.end(),filetype.begin(),(int (*)(int))tolower);
-    std::transform(hdf_write_type.begin(),hdf_write_type.end(),hdf_write_type.begin(),(int (*)(int))tolower);
-    std::transform(str.begin(),str.end(),str.begin(),(int (*)(int))tolower);
-
-    orderStates = (order == "yes" || order == "true");
 
     // make or get TG
     number_of_TGs = std::max(1, std::min(number_of_TGs,gTG.getTotalNodes()));

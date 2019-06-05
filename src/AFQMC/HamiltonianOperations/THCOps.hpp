@@ -733,6 +733,9 @@ std::cout<<"\n";
         return Luv.size(1);
     }
 #endif
+    int global_origin_cholesky_vector() const{
+        return 0;
+    }
 
     // transpose=true means G[nwalk][ik], false means G[ik][nwalk]
     bool transposed_G_for_vbias() const {return true;}

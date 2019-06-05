@@ -347,7 +347,7 @@ bool dumpToHDF5(WalkerSet& wset, hdf_archive& dump)
     int nblks = (nWtot-1)/nwlk_per_block + 1;
     std::vector<int> wlk_per_blk;
 
-    boost::multi::array<ComplexType,2> SendBuff, RecvBuff;
+    boost::multi::array<ComplexType,2> RecvBuff;
     boost::multi::array<int,1> counts, displ;
 
     if(TG.TG_heads().root()) {
@@ -390,6 +390,7 @@ bool dumpToHDF5(WalkerSet& wset, hdf_archive& dump)
     // ready to send walkers to head in blocks
     for(int i=0, ndone=0; i<nblks; i++, ndone+=nwlk_per_block) {
 
+      boost::multi::array<ComplexType,2> SendBuff;
       int nwlk_tot = std::min(nwlk_per_block,nWtot-ndone);
       int nw_to_send=0;
       if( w0+nsent >= ndone && w0+nsent < ndone + nwlk_tot)

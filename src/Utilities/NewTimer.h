@@ -258,7 +258,10 @@ public:
       __itt_task_begin(manager->task_domain, __itt_null, parent_task, task_name);
 #endif
 
-#pragma omp master
+      bool is_true_master(true);
+      for(int level = omp_get_level(); level>0; level--)
+        if(omp_get_ancestor_thread_num(level)!=0) is_true_master = false;
+      if(is_true_master)
       {
         if (manager)
         {
@@ -300,7 +303,10 @@ public:
       __itt_task_end(manager->task_domain);
 #endif
 
-#pragma omp master
+      bool is_true_master(true);
+      for(int level = omp_get_level(); level>0; level--)
+        if(omp_get_ancestor_thread_num(level)!=0) is_true_master = false;
+      if(is_true_master)
 #endif
       {
         double elapsed = cpu_clock() - start_time;

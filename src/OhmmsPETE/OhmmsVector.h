@@ -19,21 +19,22 @@
 
 #ifndef OHMMS_NEW_VECTOR_H
 #define OHMMS_NEW_VECTOR_H
-#include "PETE/PETE.h"
 #include <algorithm>
 #include <vector>
 #include <iostream>
 #include <type_traits>
 #include <stdexcept>
-#include <simd/MemorySpace.hpp>
+#include "PETE/PETE.h"
+#include "simd/allocator_traits.hpp"
 
 namespace qmcplusplus
 {
-template<class T, typename Alloc = std::allocator<T>, unsigned MemType = MemorySpace::HOST>
+template<class T, typename Alloc = std::allocator<T>>
 class Vector
 {
 public:
   typedef T Type_t;
+  typedef T value_type;
   typedef T* iterator;
   typedef const T* const_iterator;
   typedef typename Alloc::size_type size_type;
@@ -47,7 +48,7 @@ public:
     if (n)
     {
       resize_impl(n);
-      if (MemType == MemorySpace::HOST)
+      if (allocator_traits<Alloc>::is_host_accessible)
         std::fill_n(X, n, val);
     }
   }
@@ -59,28 +60,26 @@ public:
   Vector(const Vector& rhs) : nLocal(rhs.nLocal), nAllocated(0), X(nullptr)
   {
     resize_impl(rhs.nLocal);
-    if (MemType == MemorySpace::HOST)
+    if (allocator_traits<Alloc>::is_host_accessible)
       std::copy_n(rhs.data(), nLocal, X);
   }
 
   // default assignment operator
   inline Vector& operator=(const Vector& rhs)
   {
-    static_assert(MemType == MemorySpace::HOST, "Vector::operator= MemType must be MemorySpace::HOST");
     if (this == &rhs)
       return *this;
     if (nLocal != rhs.nLocal)
       resize(rhs.nLocal);
-    std::copy_n(rhs.data(), nLocal, X);
+    if (allocator_traits<Alloc>::is_host_accessible)
+      std::copy_n(rhs.data(), nLocal, X);
     return *this;
   }
 
   // assignment operator from anther Vector class
-  template<typename T1, typename C1>
+  template<typename T1, typename C1, typename Allocator = Alloc, typename = IsHostSafe<Allocator>>
   inline Vector& operator=(const Vector<T1, C1>& rhs)
   {
-    static_assert(MemType == MemorySpace::HOST,
-                  "Vector::operator= the MemType of both sides must be MemorySpace::HOST");
     if (std::is_convertible<T1, T>::value)
     {
       if (nLocal != rhs.nLocal)
@@ -91,10 +90,9 @@ public:
   }
 
   // assigment operator to enable PETE
-  template<class RHS>
+  template<class RHS, typename Allocator = Alloc, typename = IsHostSafe<Allocator>>
   inline Vector& operator=(const RHS& rhs)
   {
-    static_assert(MemType == MemorySpace::HOST, "Vector::operator= MemType must be MemorySpace::HOST");
     assign(*this, rhs);
     return *this;
   }
@@ -124,22 +122,29 @@ public:
   ///resize
   inline void resize(size_t n, Type_t val = Type_t())
   {
+    static_assert(std::is_same<value_type, typename Alloc::value_type>::value, "Vector and Alloc data types must agree!");
     if (nLocal > nAllocated)
       throw std::runtime_error("Resize not allowed on Vector constructed by initialized memory.");
-    if (n > nAllocated)
+    if(allocator_traits<Alloc>::is_host_accessible)
     {
-      resize_impl(n);
-      if (MemType == MemorySpace::HOST)
+      if (n > nAllocated)
+      {
+        resize_impl(n);
         std::fill_n(X, n, val);
-    }
-    else if (n > nLocal)
-    {
-      if (MemType == MemorySpace::HOST)
-        std::fill_n(X + nLocal, n - nLocal, val);
-      nLocal = n;
+      }
+      else
+      {
+        if (n > nLocal) std::fill_n(X + nLocal, n - nLocal, val);
+        nLocal = n;
+      }
     }
     else
-      nLocal = n;
+    {
+      if (n > nAllocated)
+        resize_impl(n);
+      else
+        nLocal = n;
+    }
     return;
   }
 
@@ -159,15 +164,15 @@ public:
   }
 
   // Get and Set Operations
+  template<typename Allocator = Alloc, typename = IsHostSafe<Allocator>>
   inline Type_t& operator[](size_t i)
   {
-    static_assert(MemType == MemorySpace::HOST, "Vector::operator[] MemType must be MemorySpace::HOST");
     return X[i];
   }
 
+  template<typename Allocator = Alloc, typename = IsHostSafe<Allocator>>
   inline const Type_t& operator[](size_t i) const
   {
-    static_assert(MemType == MemorySpace::HOST, "Vector::operator[] MemType must be MemorySpace::HOST");
     return X[i];
   }
 

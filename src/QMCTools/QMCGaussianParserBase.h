@@ -78,7 +78,7 @@ struct QMCGaussianParserBase
   int FMOIndexI, FMOIndexJ, FMOIndexK;
   bool FMO, FMO1, FMO2, FMO3, DoCusp, FixValence, QP;
 
-  std::vector<std::vector<double>> Kpoints_Coord; //Kpoints Coordinates
+  std::vector<double> STwist_Coord; //Super Twist Coordinates
   int NbKpts;
 
   std::string Title;
@@ -160,7 +160,7 @@ struct QMCGaussianParserBase
 
   virtual void parse(const std::string& fname) = 0;
 
-  virtual void dumpPBC(const std::string& psi_tag, const std::string& ion_tag, const int KptsNum);
+  virtual void dumpPBC(const std::string& psi_tag, const std::string& ion_tag);
 
   virtual void dump(const std::string& psi_tag, const std::string& ion_tag);
 

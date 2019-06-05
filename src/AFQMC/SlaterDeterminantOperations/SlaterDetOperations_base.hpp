@@ -15,6 +15,7 @@
 #include<fstream>
 
 #include "AFQMC/config.h"
+#include "AFQMC/Utilities/type_conversion.hpp"
 #include "AFQMC/Numerics/ma_operations.hpp"
 #include "AFQMC/Numerics/csr_blas.hpp"
 #include "AFQMC/SlaterDeterminantOperations/mixed_density_matrix.hpp"
@@ -35,12 +36,16 @@ class SlaterDetOperations_base
 
     using Alloc = AllocType;
     using T = typename Alloc::value_type;
+    using R = typename remove_complex<T>::value_type; 
     using pointer = typename Alloc::pointer;
     using const_pointer = typename Alloc::const_pointer;
-    using IAlloc = typename Alloc::template rebind<int>::other;;
+    using IAlloc = typename Alloc::template rebind<int>::other;
+    using RAlloc = typename Alloc::template rebind<R>::other;
+    using Rpointer = typename RAlloc::pointer;
 
     using IVector = boost::multi::array<int,1,IAlloc>;  
     using TVector = boost::multi::array<T,1,Alloc>;  
+    using RVector = boost::multi::array<R,1,RAlloc>;  
     using TVector_ref = boost::multi::array_ref<T,1,pointer>;  
     using TMatrix = boost::multi::array<T,2,Alloc>;  
     using TMatrix_ref = boost::multi::array_ref<T,2,pointer>;  
@@ -59,8 +64,10 @@ class SlaterDetOperations_base
     SlaterDetOperations_base(int NMO, int NAEA, Alloc alloc_={}):
       allocator_(alloc_),
       iallocator_(alloc_),
+      rallocator_(alloc_),
       WORK(iextensions<1u>{0},allocator_),  
       IWORK(iextensions<1u>{NMO+1},iallocator_),  
+      RWORK(iextensions<1u>{NMO+1},rallocator_),  
       TAU(iextensions<1u>{NMO},allocator_),  
       TBuff(iextensions<1u>{NMO*NMO},allocator_)
     {
@@ -84,6 +91,9 @@ class SlaterDetOperations_base
       mem_needs = std::max(mem_needs, ma::glq_optimal_workspace_size(TMN) ); 
       //  6. trf( TNN )
       mem_needs = std::max(mem_needs, ma::getrf_optimal_workspace_size(TNN) ); 
+      //  7. svd( TNN )
+      mem_needs = std::max(mem_needs, ma::gesvd_optimal_workspace_size(TNN) ); 
+      mem_needs = std::max(mem_needs, NMO); 
       WORK.reextent( iextensions<1u>{mem_needs} );   
     }
 
@@ -95,37 +105,47 @@ class SlaterDetOperations_base
     SlaterDetOperations_base& operator=(SlaterDetOperations_base&& other) = default;
 
     template<class MatA, class MatB, class MatC>
-    void MixedDensityMatrix(const MatA& hermA, const MatB& B, MatC&& C, T* res, bool compact=false) {
+    T MixedDensityMatrix(const MatA& hermA, const MatB& B, MatC&& C, T LogOverlapFactor, bool compact) {
       int NMO = hermA.size(1);
       int NAEA = hermA.size(0);
       set_buffer(NAEA*NAEA + NAEA*NMO);
       TMatrix_ref TNN(TBuff.data(), {NAEA,NAEA});
       TMatrix_ref TNM(TBuff.data()+TNN.num_elements(), {NAEA,NMO});
-      SlaterDeterminantOperations::base::MixedDensityMatrix<T>(hermA,B,std::forward<MatC>(C),res,TNN,TNM,IWORK,WORK,compact);
+      return SlaterDeterminantOperations::base::MixedDensityMatrix<T>(hermA,B,std::forward<MatC>(C),LogOverlapFactor,TNN,TNM,IWORK,WORK,compact);
     }
 
     template<class MatA, class MatC>
-    void MixedDensityMatrix(const MatA& A, MatC&& C, T* res, bool compact=false) {
+    T MixedDensityMatrix(const MatA& A, MatC&& C, T LogOverlapFactor, bool compact=false) {
       int NMO = A.size(0);
       int NAEA = A.size(1);
       set_buffer(NAEA*NAEA + NAEA*NMO);
       TMatrix_ref TNN(TBuff.data(), {NAEA,NAEA});
       TMatrix_ref TNM(TBuff.data()+TNN.num_elements(), {NAEA,NMO});
-      SlaterDeterminantOperations::base::MixedDensityMatrix_noHerm<T>(A,A,std::forward<MatC>(C),res,TNN,TNM,IWORK,WORK,compact);
+      return SlaterDeterminantOperations::base::MixedDensityMatrix_noHerm<T>(A,A,std::forward<MatC>(C),LogOverlapFactor,TNN,TNM,IWORK,WORK,compact);
     }
 
     template<class MatA, class MatB, class MatC>
-    void MixedDensityMatrix_noHerm(const MatA& A, const MatB& B, MatC&& C, T* res, bool compact=false) {
+    T MixedDensityMatrix_noHerm(const MatA& A, const MatB& B, MatC&& C, T LogOverlapFactor, bool compact=false, bool useSVD = false) {
       int NMO = A.size(0);
       int NAEA = A.size(1);
-      set_buffer(NAEA*NAEA + NAEA*NMO);
-      TMatrix_ref TNN(TBuff.data(), {NAEA,NAEA});
-      TMatrix_ref TNM(TBuff.data()+TNN.num_elements(), {NAEA,NMO});
-      SlaterDeterminantOperations::base::MixedDensityMatrix_noHerm<T>(A,B,std::forward<MatC>(C),res,TNN,TNM,IWORK,WORK,compact);
+      if(useSVD) {
+        if( RWORK.num_elements() < 6*NAEA+1 ) RWORK.reextent(iextensions<1u>{6*NAEA+1});
+        set_buffer(2*NAEA*NAEA + 2*NAEA*NMO);
+        TMatrix_ref TNN1(TBuff.data(), {NAEA,NAEA});
+        TMatrix_ref TNN2(TNN1.origin()+TNN1.num_elements(), {NAEA,NAEA});
+        TMatrix_ref TNM(TNN2.origin()+TNN2.num_elements(), {NAEA,NMO});
+        TMatrix_ref TMN(TNM.origin()+TNM.num_elements(), {NMO,NAEA});
+        return SlaterDeterminantOperations::base::MixedDensityMatrix_noHerm_wSVD<T>(A,B,std::forward<MatC>(C),LogOverlapFactor,RWORK,TNN1,TNN2,TMN,TNM,IWORK,WORK,compact);
+      } else {
+        set_buffer(NAEA*NAEA + NAEA*NMO);
+        TMatrix_ref TNN(TBuff.data(), {NAEA,NAEA});
+        TMatrix_ref TNM(TBuff.data()+TNN.num_elements(), {NAEA,NMO});
+        return SlaterDeterminantOperations::base::MixedDensityMatrix_noHerm<T>(A,B,std::forward<MatC>(C),LogOverlapFactor,TNN,TNM,IWORK,WORK,compact);
+      }
     }
 
     template<class integer, class MatA, class MatB, class MatC, class MatQ>
-    void MixedDensityMatrixForWoodbury(const MatA& hermA, const MatB& B, MatC&& C, T* res, 
+    T MixedDensityMatrixForWoodbury(const MatA& hermA, const MatB& B, MatC&& C, T LogOverlapFactor,  
                                     integer* ref, MatQ&& QQ0, bool compact=false) {
       int Nact = hermA.size(0);
       int NEL = B.size(1);
@@ -137,11 +157,11 @@ class SlaterDetOperations_base
       TMatrix_ref TNN(TBuff.data(), {NEL,NEL});
       TMatrix_ref TAB(TNN.data()+TNN.num_elements(), {Nact,NEL});
       TMatrix_ref TNM(TAB.data()+TAB.num_elements(), {NEL,NMO});
-      SlaterDeterminantOperations::base::MixedDensityMatrixForWoodbury<T>(hermA,B,std::forward<MatC>(C),res,std::forward<MatQ>(QQ0),ref,TNN,TAB,TNM,IWORK,WORK,compact);
+      return SlaterDeterminantOperations::base::MixedDensityMatrixForWoodbury<T>(hermA,B,std::forward<MatC>(C),LogOverlapFactor,std::forward<MatQ>(QQ0),ref,TNN,TAB,TNM,IWORK,WORK,compact);
     }
 
     template<class integer, class MatA, class MatB, class MatC>
-    void MixedDensityMatrixFromConfiguration(const MatA& hermA, const MatB& B, MatC&& C, T* res,
+    T MixedDensityMatrixFromConfiguration(const MatA& hermA, const MatB& B, MatC&& C, T LogOverlapFactor, 
                                     integer* ref, bool compact=false) {
       int Nact = hermA.size(0);
       int NEL = B.size(1);
@@ -151,39 +171,39 @@ class SlaterDetOperations_base
       TMatrix_ref TNN(TBuff.data(), {NEL,NEL});
       TMatrix_ref TAB(TNN.data()+TNN.num_elements(), {Nact,NEL});
       TMatrix_ref TNM(TAB.data()+TAB.num_elements(), {NEL,NMO});
-      SlaterDeterminantOperations::base::MixedDensityMatrixFromConfiguration<T>(hermA,B,std::forward<MatC>(C),res,ref,TNN,TAB,TNM,IWORK,WORK,compact);
+      return SlaterDeterminantOperations::base::MixedDensityMatrixFromConfiguration<T>(hermA,B,std::forward<MatC>(C),LogOverlapFactor,ref,TNN,TAB,TNM,IWORK,WORK,compact);
     }
 
     template<class MatA>
-    void Overlap(const MatA& A, T* res) {
+    T Overlap(const MatA& A, T LogOverlapFactor) {
       int NAEA = A.size(1);
       set_buffer(2*NAEA*NAEA);
       TMatrix_ref TNN(TBuff.data(), {NAEA,NAEA});
       TMatrix_ref TNN2(TBuff.data()+TNN.num_elements(), {NAEA,NAEA});
-      SlaterDeterminantOperations::base::Overlap_noHerm<T>(A,A,res,TNN,IWORK,TNN2);
+      return SlaterDeterminantOperations::base::Overlap_noHerm<T>(A,A,LogOverlapFactor,TNN,IWORK,TNN2);
     }
 
     template<class MatA, class MatB>
-    void Overlap(const MatA& hermA, const MatB& B, T* res) {
+    T Overlap(const MatA& hermA, const MatB& B, T LogOverlapFactor) {
       int NAEA = hermA.size(0);
       set_buffer(2*NAEA*NAEA);
       TMatrix_ref TNN(TBuff.data(), {NAEA,NAEA});
       TMatrix_ref TNN2(TBuff.data()+TNN.num_elements(), {NAEA,NAEA});
-      SlaterDeterminantOperations::base::Overlap<T>(hermA,B,res,TNN,IWORK,TNN2);
+      return SlaterDeterminantOperations::base::Overlap<T>(hermA,B,LogOverlapFactor,TNN,IWORK,TNN2);
     } 
 
     template<class MatA, class MatB>
-    void Overlap_noHerm(const MatA& A, const MatB& B, T* res) {
+    T Overlap_noHerm(const MatA& A, const MatB& B, T LogOverlapFactor) {
       int NAEA = A.size(1);
       set_buffer(2*NAEA*NAEA);
       TMatrix_ref TNN(TBuff.data(), {NAEA,NAEA});
       TMatrix_ref TNN2(TBuff.data()+TNN.num_elements(), {NAEA,NAEA});
-      SlaterDeterminantOperations::base::Overlap_noHerm<T>(A,B,res,TNN,IWORK,TNN2);
+      return SlaterDeterminantOperations::base::Overlap_noHerm<T>(A,B,LogOverlapFactor,TNN,IWORK,TNN2);
     }
 
     // routines for PHMSD
     template<typename integer, class MatA, class MatB, class MatC>
-    void OverlapForWoodbury(const MatA& hermA, const MatB& B, T* res, integer* ref, MatC&& QQ0) {
+    T OverlapForWoodbury(const MatA& hermA, const MatB& B, T LogOverlapFactor, integer* ref, MatC&& QQ0) {
       int Nact = hermA.size(0);
       int NEL = B.size(1);
       assert(hermA.size(1)==B.size(0));
@@ -192,20 +212,32 @@ class SlaterDetOperations_base
       set_buffer(NEL*NEL + Nact+NEL);
       TMatrix_ref TNN(TBuff.data(), {NEL,NEL});
       TMatrix_ref TMN(TBuff.data()+TNN.num_elements(), {Nact,NEL});
-      SlaterDeterminantOperations::base::OverlapForWoodbury<T>(hermA,B,res,std::forward<MatC>(QQ0),ref,TNN,TMN,IWORK,WORK);
+      return SlaterDeterminantOperations::base::OverlapForWoodbury<T>(hermA,B,LogOverlapFactor,std::forward<MatC>(QQ0),ref,TNN,TMN,IWORK,WORK);
     }    
 
     template<class Mat, class MatP1, class MatV>
-    void Propagate(Mat&& A, const MatP1& P1, const MatV& V, int order=6) {
+    void Propagate(Mat&& A, const MatP1& P1, const MatV& V, int order=6, char TA='N') {
       int NMO = A.size(0);
       int NAEA = A.size(1);
       set_buffer(3*NMO*NAEA);
       TMatrix_ref TMN(TBuff.data(), {NMO,NAEA});
       TMatrix_ref T1(TMN.data()+TMN.num_elements(), {NMO,NAEA});
       TMatrix_ref T2(T1.data()+T1.num_elements(), {NMO,NAEA});
-      ma::product(P1,std::forward<Mat>(A),TMN);
-      SlaterDeterminantOperations::base::apply_expM(V,TMN,T1,T2,order);
-      ma::product(P1,TMN,std::forward<Mat>(A));
+      using ma::T;
+      using ma::H;
+      if(TA=='H' || TA=='h') {
+        ma::product(ma::H(P1),std::forward<Mat>(A),TMN);
+        SlaterDeterminantOperations::base::apply_expM(V,TMN,T1,T2,order,TA);
+        ma::product(ma::H(P1),TMN,std::forward<Mat>(A));
+      } else if(TA=='T' || TA=='t') {
+        ma::product(ma::T(P1),std::forward<Mat>(A),TMN);
+        SlaterDeterminantOperations::base::apply_expM(V,TMN,T1,T2,order,TA);
+        ma::product(ma::T(P1),TMN,std::forward<Mat>(A));
+      } else {
+        ma::product(P1,std::forward<Mat>(A),TMN);
+        SlaterDeterminantOperations::base::apply_expM(V,TMN,T1,T2,order);
+        ma::product(P1,TMN,std::forward<Mat>(A));
+      }  
     }
 
 // NOTE: Move to a single buffer for all TNXs, to be able to reuse buffers 
@@ -213,7 +245,7 @@ class SlaterDetOperations_base
 
     // need to check if this is equivalent to QR!!!
     template<class Mat>
-    void Orthogonalize(Mat&& A, T* res=nullptr) {
+    T Orthogonalize(Mat&& A, T LogOverlapFactor) {
 #ifdef ENABLE_CUDA
       // QR on the transpose
       int NMO = A.size(0);
@@ -225,47 +257,38 @@ class SlaterDetOperations_base
       ma::geqrf(AT,TAU,WORK);
       using ma::determinant_from_geqrf;
       using ma::scale_columns;  
-      if(res != nullptr)
-        determinant_from_geqrf(AT.size(0),AT.origin(),AT.stride(0),scl.origin(),res);
-      else {
-        determinant_from_geqrf(AT.size(0),AT.origin(),AT.stride(0),scl.origin());
-      }
+      T res = determinant_from_geqrf(AT.size(0),AT.origin(),AT.stride(0),scl.origin(),LogOverlapFactor);
       ma::gqr(AT,TAU,WORK);
       ma::transpose(AT,A);   
       scale_columns(A.size(0),A.size(1),A.origin(),A.stride(0),scl.origin());
 #else
       ma::gelqf(std::forward<Mat>(A),TAU,WORK);
-      if(res != nullptr) {
-        *res = T(1.0); 
-        for (int i = 0; i < A.size(1); i++) { 
-          if (real(A[i][i]) < 0) 
-            IWORK[i]=-1; 
-          else 
-            IWORK[i]=1; 
-          *res *= T(IWORK[i])*A[i][i];
-        }
-      } else {
-        for (int i = 0; i < A.size(1); i++) { 
-          if (real(A[i][i]) < 0) 
-            IWORK[i]=-1; 
-          else 
-            IWORK[i]=1; 
-        }
+      T res(0.0); 
+       for (int i = 0; i < A.size(1); i++) { 
+        if (real(A[i][i]) < 0) 
+          IWORK[i]=-1; 
+        else 
+          IWORK[i]=1; 
+        res += std::log(T(IWORK[i])*A[i][i]);
       }
+      res = std::exp(res - LogOverlapFactor);
       ma::glq(std::forward<Mat>(A),TAU,WORK);
       for(int i=0; i<A.size(0); ++i)
         for(int j=0; j<A.size(1); ++j)
           A[i][j] *= T(IWORK[j]);
 #endif
+      return res;
     }
 
   protected:
 
     Alloc allocator_;
     IAlloc iallocator_;
+    RAlloc rallocator_;
 
     TVector WORK;
     IVector IWORK;
+    RVector RWORK;
 
     // Vector used in QR routines 
     TVector TAU;
@@ -273,8 +296,10 @@ class SlaterDetOperations_base
     TVector TBuff;
 
     void set_buffer(size_t N) {
-      if(TBuff.num_elements() < N)
+      if(TBuff.num_elements() < N) 
         TBuff = std::move(TVector(iextensions<1u>{N}));
+      using std::fill_n;
+      fill_n(TBuff.origin(),N,T(0.0));
     }
 
 };

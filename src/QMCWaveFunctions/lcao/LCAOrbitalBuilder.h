@@ -57,6 +57,9 @@ private:
   std::string h5_path;
   ///Number of periodic Images for Orbital evaluation
   TinyVector<int, 3> PBCImages;
+  ///Periodic Image Phase Factors. Correspond to the phase from the PBCImages. Computed only once.
+  std::vector<ValueType> PeriodicImagePhaseFactors;
+
 
   /// Enable cusp correction
   bool doCuspCorrection;
@@ -80,6 +83,9 @@ private:
   bool putFromXML(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr);
   bool putFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr);
   bool putPBCFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr);
+  void LoadFullCoefsFromH5(hdf_archive& hin, int setVal, PosType& SuperTwist, Matrix<std::complex<RealType>>& Ctemp);
+  void LoadFullCoefsFromH5(hdf_archive& hin, int setVal, PosType& SuperTwist, Matrix<RealType>& Creal);
+  void EvalPeriodicImagePhaseFactors(PosType SuperTwist);
 };
 } // namespace qmcplusplus
 #endif

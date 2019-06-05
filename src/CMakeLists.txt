@@ -145,6 +145,7 @@ endif()
     OhmmsApp/RandomNumberControl.cpp
     Numerics/OhmmsBlas.cpp
     Numerics/OptimizableFunctorBase.cpp
+    Numerics/SmoothFunctions.cpp
     Platforms/sysutil.cpp
     Platforms/accelerators.cpp
     QMCFactory/OneDimGridFactory.cpp

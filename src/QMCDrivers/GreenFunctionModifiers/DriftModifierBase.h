@@ -33,11 +33,11 @@ public:
    * @param qf quantum force
    * @param drift output
    */
-  virtual void getDrift(RealType tau,
-                              const GradType& qf,
-                              PosType& drift) const = 0;
+  virtual void getDrift(RealType tau, const GradType& qf, PosType& drift) const = 0;
 
-  virtual bool parseXML(xmlNodePtr cur){}
+  virtual bool parseXML(xmlNodePtr cur) { return true; }
+
+  virtual ~DriftModifierBase() {}
 
 protected:
   // modifer name

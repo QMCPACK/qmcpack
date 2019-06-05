@@ -264,9 +264,9 @@ struct BareKineticEnergy : public QMCHamiltonianBase
     int Nions = ions.getTotalNum();
     int Nelec = P.getTotalNum();
 
-    //These are intermediate arrays or potentially complex math.
-    ParticleLaplacian_t term2_(Nions);
-    ParticleGradient_t term4_(Nions);
+    //These are intermediate arrays for potentially complex math.
+    ParticleLaplacian_t term2_(Nelec);
+    ParticleGradient_t term4_(Nelec);
 
     //Potentially complex temporary array for \partial \psi/\psi and \nabla^2 \partial \psi / \psi
     ParticleGradient_t iongradpsi_(Nions), pulaytmp_(Nions);
