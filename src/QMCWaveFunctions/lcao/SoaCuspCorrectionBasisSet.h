@@ -40,8 +40,6 @@ class CuspCorrectionAtomicBasis
   RadialSetType AOs;
   aligned_vector<size_t> ID;
 
-  std::vector<T> phi, dphi, d2phi;
-
 public:
   CuspCorrectionAtomicBasis(){};
 
@@ -67,7 +65,7 @@ public:
       return;
 
     size_t nr = AOs.getNumSplines();
-    phi.resize(nr);
+    std::vector<T> phi(nr);
 
     AOs.evaluate(r, phi.data());
     for (size_t i = 0; i < nr; ++i)
@@ -88,9 +86,9 @@ public:
       return;
 
     size_t nr = AOs.getNumSplines();
-    phi.resize(nr);
-    dphi.resize(nr);
-    d2phi.resize(nr);
+    std::vector<T> phi(nr);
+    std::vector<T> dphi(nr);
+    std::vector<T> d2phi(nr);
 
     AOs.evaluate(r, phi.data(), dphi.data(), d2phi.data());
     for (size_t i = 0; i < nr; ++i)
