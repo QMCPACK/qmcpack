@@ -58,7 +58,8 @@ QMCCostFunctionBase::QMCCostFunctionBase(MCWalkerConfiguration& w,
       targetExcitedStr("no"),
       targetExcited(false),
       omega_shift(0.0),
-      reportH5(false)
+      reportH5(false),
+      CI_Opt(false)
 {
   GEVType = "mixed";
   //paramList.resize(10);
@@ -242,36 +243,54 @@ void QMCCostFunctionBase::reportParameters()
     *msg_stream << "  <optVariables href=\"" << newxml << "\">" << std::endl;
     OptVariables.print(*msg_stream);
     *msg_stream << "  </optVariables>" << std::endl;
-    if (reportH5)
-    {
-          int ci_size=0;
-          std::vector<double> CIcoeff; 
-          sprintf(newh5, "%s.opt.h5", RootName.c_str());
-          *msg_stream << "  <optVariables href=\"" << newh5 << "\">" << std::endl;
-          hdf_archive hout;
-          hout.create(newh5, H5F_ACC_TRUNC);
-          hout.push("MultiDet", true);
-          for (int i=0; i<OptVariables.size(); i++)
-          {
-               char Coeff[128];
-               sprintf(Coeff,"CIcoeff_%d", i+1);
-               if(Coeff!=OptVariables.name(i))
-               {
-                   ci_size=i;
-                   break;
-               }
-               CIcoeff.push_back(OptVariables[i]); 
-          }
-          
-          hout.write(ci_size, "NbDet");
-          hout.write(CIcoeff, "Coeff");
-          hout.close();
-    } 
     updateXmlNodes();
     xmlSaveFormatFile(newxml, m_doc_out, 1);
   }
 }
+///THIS FUNCTION STORES Optimized CI COEFFS BUT CAN STORE 
+///ALL OTHER OPTIMIZED PARAMETERS (Jastors, orbitals) 
+///DEPENDING ON THEIR NAMES. 
+///This function should be called before reportParameters()
+/// Since it is needed to call updateXmlNodes() and xmlSaveFormatFile()
+/// Wile it is possible to call updateXmlNodes() from QMCLinearOptimize.cpp 
+/// It is not clean to call xmlSaveFormatFile() from QMCLinearOptimize.cpp 
+void QMCCostFunctionBase::reportParametersH5()
+{
+  if (!myComm->rank())
+  {
+     int ci_size=0;
+     std::vector<double> CIcoeff; 
+     for (int i=0; i<OptVariables.size(); i++)
+     {
+          char Coeff[128];
+          sprintf(Coeff,"CIcoeff_%d", ci_size+1);
+          ///By default, first optimized parameters are the
+          ///CI coeffs. However, just in case they are not
+          ///the if statement with break, continue should catch it
+          if(Coeff!=OptVariables.name(i))
+              if(ci_size>0)
+                 break;
+              else
+                 continue;
 
+          CIcoeff.push_back(OptVariables[i]); 
+          ci_size++;
+     }
+     if (ci_size>0)
+     {
+         CI_Opt=true;
+         sprintf(newh5, "%s.opt.h5", RootName.c_str());
+         *msg_stream << "  <Ci Coeffs saved in opt_coeffs=\"" << newh5 << "\">" << std::endl;
+         hdf_archive hout;
+         hout.create(newh5, H5F_ACC_TRUNC);
+         hout.push("MultiDet", true);
+         hout.write(ci_size, "NbDet");
+         hout.write(CIcoeff, "Coeff");
+         hout.close();
+      }
+  }
+
+}
 /** Apply constraints on the optimizables.
  *
  * Here is where constraints should go
@@ -503,8 +522,6 @@ void QMCCostFunctionBase::updateXmlNodes()
     m_doc_out          = xmlNewDoc((const xmlChar*)"1.0");
     xmlNodePtr qm_root = xmlNewNode(NULL, BAD_CAST "qmcsystem");
     xmlAddChild(qm_root, m_wfPtr);
-
-    //exit(0);
     xmlDocSetRootElement(m_doc_out, qm_root);
     xmlXPathContextPtr acontext = xmlXPathNewContext(m_doc_out);
 
@@ -583,7 +600,7 @@ void QMCCostFunctionBase::updateXmlNodes()
       }
     }
     xmlXPathFreeObject(result);
-    if (reportH5)
+    if (CI_Opt)
     {
       //check multidet
       result = xmlXPathEvalExpression((const xmlChar*)"//detlist", acontext);
