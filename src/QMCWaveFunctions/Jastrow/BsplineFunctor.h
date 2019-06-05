@@ -489,7 +489,7 @@ struct BsplineFunctor : public OptimizableFunctorBase
         {
           std::stringstream sstr;
           sstr << id << "_" << i;
-          myVars.insert(sstr.str(), Parameters[i], !notOpt, optimize::LOGLINEAR_P);
+          myVars.insert(sstr.str(), (value_type)Parameters[i], !notOpt, optimize::LOGLINEAR_P);
         }
         int left_pad_space = 5;
         app_log() << std::endl;
@@ -552,7 +552,7 @@ struct BsplineFunctor : public OptimizableFunctorBase
       {
         std::stringstream sstr;
         sstr << id << "_" << i;
-        myVars.insert(sstr.str(), Parameters[i], true, optimize::LOGLINEAR_P);
+        myVars.insert(sstr.str(), (value_type)Parameters[i], true, optimize::LOGLINEAR_P);
       }
       myVars.print(app_log());
     }
@@ -593,8 +593,11 @@ struct BsplineFunctor : public OptimizableFunctorBase
     for (int i = 0; i < Parameters.size(); ++i)
     {
       int loc = myVars.where(i);
-      if (loc >= 0)
-        Parameters[i] = myVars[i] = active[loc];
+      if (loc >= 0) {
+        myVars[i] = active[loc];
+        Parameters[i] = std::real(myVars[i]);
+        //Parameters[i] = std::real(myVars[i]) = std::real(active[loc]);
+      }
     }
     //         if (ResetCount++ == 100)
     //         {

@@ -90,8 +90,8 @@ public:
 
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& optvars,
-                           std::vector<RealType>& dlogpsi,
-                           std::vector<RealType>& dhpsioverpsi,
+                           std::vector<ValueType>& dlogpsi,
+                           std::vector<ValueType>& dhpsioverpsi,
                            const ValueType& psiCurrent,
                            const std::vector<ValueType>& Coeff,
                            const std::vector<size_t>& C2node_up,
@@ -269,8 +269,8 @@ private:
 
 
   //helper function to evaluatederivative; evaluate orbital rotation parameter derivative using table method
-  void table_method_eval(std::vector<RealType>& dlogpsi,
-                         std::vector<RealType>& dhpsioverpsi,
+  void table_method_eval(std::vector<ValueType>& dlogpsi,
+                         std::vector<ValueType>& dhpsioverpsi,
                          const ParticleSet::ParticleLaplacian_t& myL_J,
                          const ParticleSet::ParticleGradient_t& myG_J,
                          const size_t nel,

@@ -159,8 +159,8 @@ public:
 
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& active,
-                           std::vector<RealType>& dlogpsi,
-                           std::vector<RealType>& dhpsioverpsi)
+                           std::vector<ValueType>& dlogpsi,
+                           std::vector<ValueType>& dhpsioverpsi)
   {
     if (myVars.size() == 0)
       return;
@@ -277,7 +277,7 @@ public:
         if (rcsingles[k])
         {
           dlogpsi[kk]      = dLogPsi[k];
-          dhpsioverpsi[kk] = -0.5 * Sum(*lapLogPsi[k]) - Dot(P.G, *gradLogPsi[k]);
+          dhpsioverpsi[kk] = -0.5 * (ValueType)Sum(*lapLogPsi[k]) - (ValueType)Dot(P.G, *gradLogPsi[k]);
         }
         //optVars.setDeriv(p,dLogPsi[ip],-0.5*Sum(*lapLogPsi[ip])-Dot(P.G,*gradLogPsi[ip]));
       }

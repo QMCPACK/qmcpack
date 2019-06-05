@@ -78,9 +78,9 @@ public:
   bool put(xmlNodePtr cur);
   void resetCostFunction(std::vector<xmlNodePtr>& cset);
   ///assign optimization parameter i
-  Return_t& Params(int i) { return OptVariables[i]; }
+  Return_ct& Params(int i) { return OptVariables[i]; }
   ///return optimization parameter i
-  Return_t Params(int i) const { return OptVariables[i]; }
+  Return_ct Params(int i) const { return OptVariables[i]; }
   int getType(int i) { return OptVariables.getType(i); }
   ///return the cost value for CGMinimization
   Return_t Cost(bool needGrad = true);

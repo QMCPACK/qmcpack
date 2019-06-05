@@ -342,8 +342,10 @@ OptimizableSPOSet::resetParameters(const opt_variables_type& active)
   {
     int loc=myVars.where(i);
     if (loc>=0)
-      if(std::abs(active[loc])>thr)
-        *(ParamPointers[i])=myVars[i]=active[loc];
+      if(std::abs(active[loc])>thr) {
+        myVars[i]=active[loc];
+        *(ParamPointers[i]) = std::real( myVars[i] );
+      }
   }
 }
 

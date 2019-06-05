@@ -179,13 +179,22 @@ TEST_CASE("PolynomialFunctor3D Jastrow", "[wavefunction]")
   std::vector<WaveFunctionComponent::RealType> dlogpsi;
   std::vector<WaveFunctionComponent::RealType> dhpsioverpsi;
 
+  std::vector<WaveFunctionComponent::ValueType> cdlogpsi;
+  std::vector<WaveFunctionComponent::ValueType> cdhpsioverpsi;
+
   psi.checkInVariables(optvars);
   optvars.resetIndex();
   const int NumOptimizables(optvars.size());
   psi.checkOutVariables(optvars);
   dlogpsi.resize(NumOptimizables);
   dhpsioverpsi.resize(NumOptimizables);
-  psi.evaluateDerivatives(elec_, optvars, dlogpsi, dhpsioverpsi);
+  cdlogpsi.resize(NumOptimizables);
+  cdhpsioverpsi.resize(NumOptimizables);
+  psi.evaluateDerivatives(elec_, optvars, cdlogpsi, cdhpsioverpsi);
+  for (int i = 0; i < dlogpsi.size(); i++) {
+    dlogpsi[i] = std::real(cdlogpsi[i]);
+    dhpsioverpsi[i] = std::real(cdhpsioverpsi[i]);
+  }
 
   std::cout << std::endl << "reporting dlogpsi and dhpsioverpsi" << std::scientific << std::endl;
   for (int iparam = 0; iparam < NumOptimizables; iparam++)

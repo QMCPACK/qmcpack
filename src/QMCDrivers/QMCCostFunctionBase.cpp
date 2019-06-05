@@ -562,7 +562,7 @@ void QMCCostFunctionBase::updateXmlNodes()
   std::map<std::string, xmlNodePtr>::iterator pit(paramNodes.begin()), pit_end(paramNodes.end());
   while (pit != pit_end)
   {
-    Return_t v = OptVariablesForPsi[(*pit).first];
+    Return_t v = std::real( OptVariablesForPsi[(*pit).first] );
     getContent(v, (*pit).second);
     //         vout <<(*pit).second<< std::endl;
     ++pit;
@@ -598,7 +598,7 @@ void QMCCostFunctionBase::updateXmlNodes()
       {
         if ((*vit).first.find(aname) == 0)
         {
-          c.push_back((*vit).second);
+          c.push_back(std::real((*vit).second));
         }
         ++vit;
       }

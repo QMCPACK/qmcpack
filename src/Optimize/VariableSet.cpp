@@ -80,7 +80,7 @@ void VariableSet::insertFrom(const VariableSet& input)
 
 void VariableSet::insertFromSum(const VariableSet& input_1, const VariableSet& input_2)
 {
-  real_type sum_val;
+  value_type sum_val;
   std::string vname;
 
   // Check that objects to be summed together have the same number of active
@@ -120,7 +120,7 @@ void VariableSet::insertFromSum(const VariableSet& input_1, const VariableSet& i
 
 void VariableSet::insertFromDiff(const VariableSet& input_1, const VariableSet& input_2)
 {
-  real_type diff_val;
+  value_type diff_val;
   std::string vname;
 
   // Check that objects to be subtracted have the same number of active
@@ -254,12 +254,14 @@ void VariableSet::print(std::ostream& os, int leftPadSpaces, bool printHeader)
     max_recompute_len = 9;
     max_index_len     = 5;
     os << pad_str << setw(max_name_len) << "Name"
-       << " " << setw(max_value_len) << "Value"
+       << " " << setw(max_value_len) << "Value Real"
+       << " " << setw(max_value_len) << "Value Imag"
        << " " << setw(max_type_len) << "Type"
        << " " << setw(max_recompute_len) << "Recompute"
        << " " << setw(max_use_len) << "Use"
        << " " << setw(max_index_len) << "Index" << std::endl;
     os << pad_str << std::setfill('-') << setw(max_name_len) << ""
+       << " " << setw(max_value_len) << ""
        << " " << setw(max_value_len) << ""
        << " " << setw(max_type_len) << ""
        << " " << setw(max_recompute_len) << ""
@@ -271,7 +273,8 @@ void VariableSet::print(std::ostream& os, int leftPadSpaces, bool printHeader)
   for (int i = 0; i < NameAndValue.size(); ++i)
   {
     os << pad_str << setw(max_name_len) << NameAndValue[i].first << " " << std::setprecision(6) << std::scientific
-       << setw(max_value_len) << NameAndValue[i].second << " " << setw(max_type_len) << ParameterType[i].second << " "
+       << setw(max_value_len) << std::real(NameAndValue[i].second) << " " << setw(max_value_len) << std::imag(NameAndValue[i].second) << " "
+       << setw(max_type_len) << ParameterType[i].second << " "
        << setw(max_recompute_len) << Recompute[i].second << " ";
 
     os << std::defaultfloat;

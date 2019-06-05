@@ -55,7 +55,7 @@ void WaveFunctionComponent::setDiffOrbital(DiffWaveFunctionComponentPtr d)
 
 void WaveFunctionComponent::evaluateDerivatives(ParticleSet& P,
                                       const opt_variables_type& active,
-                                      std::vector<RealType>& dlogpsi, std::vector<RealType>& dhpsioverpsi)
+                                      std::vector<ValueType>& dlogpsi, std::vector<ValueType>& dhpsioverpsi)
 {
 #if defined(ENABLE_SMARTPOINTER)
   if (dPsi.get())

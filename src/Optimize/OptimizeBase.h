@@ -28,6 +28,12 @@ class CostFunctionBase
 public:
   typedef T Return_t;
 
+  #ifdef QMC_COMPLEX
+  typedef std::complex<T> Return_ct;
+  #else
+  typedef T Return_ct;
+  #endif
+
   /** boolean to indicate if the cost function is valid.
    *
    * Can be used by optimizers to stop optimization.
@@ -40,9 +46,9 @@ public:
 
   virtual int NumParams() = 0;
 
-  virtual Return_t& Params(int i) = 0;
+  virtual Return_ct& Params(int i) = 0;
 
-  virtual Return_t Params(int i) const = 0;
+  virtual Return_ct Params(int i) const = 0;
 
   virtual Return_t Cost(bool needGrad = true) = 0;
 

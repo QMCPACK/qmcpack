@@ -721,12 +721,12 @@ bool SlaterDetBuilder::createMSDFast(MultiSlaterDeterminantFast* multiSD, xmlNod
       {
         //std::stringstream sstr;
         //sstr << "CIcoeff" << "_" << i;
-        #ifdef QMC_COMPLEX
+        //#ifdef QMC_COMPLEX
           // TODO: to be fixed by the complex VariableSet.
-          multiSD->myVars->insert(CItags[i], std::real((*(multiSD->CSFcoeff))[i]), true, optimize::LINEAR_P);
-        #else
-          multiSD->myVars->insert(CItags[i], (*(multiSD->CSFcoeff))[i], true, optimize::LINEAR_P);
-        #endif
+          //multiSD->myVars->insert(CItags[i], std::real((*(multiSD->CSFcoeff))[i]), true, optimize::LINEAR_P);
+        //#else
+        multiSD->myVars->insert(CItags[i], (*(multiSD->CSFcoeff))[i], true, optimize::LINEAR_P);
+        //#endif
       }
     }
     else
@@ -736,12 +736,12 @@ bool SlaterDetBuilder::createMSDFast(MultiSlaterDeterminantFast* multiSD, xmlNod
       {
         //std::stringstream sstr;
         //sstr << "CIcoeff" << "_" << i;
-        #ifdef QMC_COMPLEX
+        //#ifdef QMC_COMPLEX
           // TODO: to be fixed by the complex VariableSet.
-          multiSD->myVars->insert(CItags[i], std::real( (*(multiSD->C))[i] ), true, optimize::LINEAR_P);
-        #else
-          multiSD->myVars->insert(CItags[i], (*(multiSD->C))[i], true, optimize::LINEAR_P);         
-        #endif
+          //multiSD->myVars->insert(CItags[i], std::real( (*(multiSD->C))[i] ), true, optimize::LINEAR_P);
+        //#else
+        multiSD->myVars->insert(CItags[i], (*(multiSD->C))[i], true, optimize::LINEAR_P);         
+        //#endif
       }
     }
   }
@@ -941,7 +941,7 @@ bool SlaterDetBuilder::createMSD(MultiSlaterDeterminant* multiSD, xmlNodePtr cur
         //std::stringstream sstr;
         //sstr << "CIcoeff" << "_" << i;
         // TODO: to be fixed by the complex VariableSet.
-        multiSD->myVars.insert(CItags[i], std::real(multiSD->CSFcoeff[i]), true, optimize::LINEAR_P);
+        multiSD->myVars.insert(CItags[i], multiSD->CSFcoeff[i], true, optimize::LINEAR_P);
       }
     }
     else
@@ -952,7 +952,7 @@ bool SlaterDetBuilder::createMSD(MultiSlaterDeterminant* multiSD, xmlNodePtr cur
         //std::stringstream sstr;
         //sstr << "CIcoeff" << "_" << i;
         // TODO: to be fixed by the complex VariableSet.
-        multiSD->myVars.insert(CItags[i], std::real(multiSD->C[i]), true, optimize::LINEAR_P);
+        multiSD->myVars.insert(CItags[i], multiSD->C[i], true, optimize::LINEAR_P);
       }
     }
   }

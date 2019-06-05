@@ -290,7 +290,19 @@ void QMCCostFunction::checkConfigurations()
         //allocate vector
         std::vector<Return_t> Dsaved(NumOptimizables, 0.0);
         std::vector<Return_t> HDsaved(NumOptimizables, 0.0);
+
+        std::vector<Return_ct> cDsaved(NumOptimizables, 0.0);
+        std::vector<Return_ct> cHDsaved(NumOptimizables, 0.0);
+
+        #ifndef QMC_COMPLEX
         psiClones[ip]->evaluateDerivatives(wRef, OptVariablesForPsi, Dsaved, HDsaved);
+        #else
+        psiClones[ip]->evaluateDerivatives(wRef, OptVariablesForPsi, cDsaved, cHDsaved);
+        for (int i=0; i < NumOptimizables; i++) {
+          Dsaved[i] = std::real(cDsaved[i]);
+          HDsaved[i] = std::real(cHDsaved[i]);
+        }
+        #endif
         etmp = hClones[ip]->evaluateValueAndDerivatives(wRef, OptVariablesForPsi, Dsaved, HDsaved, compute_nlpp);
         copy(Dsaved.begin(), Dsaved.end(), (*DerivRecords[ip])[iw]);
         copy(HDsaved.begin(), HDsaved.end(), (*HDerivRecords[ip])[iw]);
@@ -393,7 +405,19 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine* Engine
         //allocate vector
         std::vector<Return_t> Dsaved(NumOptimizables, 0.0);
         std::vector<Return_t> HDsaved(NumOptimizables, 0.0);
+
+        std::vector<Return_ct> cDsaved(NumOptimizables, 0.0);
+        std::vector<Return_ct> cHDsaved(NumOptimizables, 0.0);
+
+        #ifndef QMC_COMPLEX
         psiClones[ip]->evaluateDerivatives(wRef, OptVariablesForPsi, Dsaved, HDsaved);
+        #else
+        psiClones[ip]->evaluateDerivatives(wRef, OptVariablesForPsi, cDsaved, cHDsaved);
+        for (int i=0; i < NumOptimizables; i++) {
+          Dsaved[i] = std::real(cDsaved[i]);
+          HDsaved[i] = std::real(cHDsaved[i]);
+        }
+        #endif
         etmp = hClones[ip]->evaluateValueAndDerivatives(wRef, OptVariablesForPsi, Dsaved, HDsaved, compute_nlpp);
         //std::copy(Dsaved.begin(),Dsaved.end(),(*DerivRecords[ip])[iw]);
         //std::copy(HDsaved.begin(),HDsaved.end(),(*HDerivRecords[ip])[iw]);
@@ -525,7 +549,15 @@ QMCCostFunction::Return_t QMCCostFunction::correlatedSampling(bool needGrad)
       {
         std::vector<Return_t> Dsaved(NumOptimizables, 0);
         std::vector<Return_t> HDsaved(NumOptimizables, 0);
-        psiClones[ip]->evaluateDerivatives(wRef, OptVariablesForPsi, Dsaved, HDsaved);
+
+        std::vector<Return_ct> cDsaved(NumOptimizables, 0);
+        std::vector<Return_ct> cHDsaved(NumOptimizables, 0);
+        psiClones[ip]->evaluateDerivatives(wRef, OptVariablesForPsi, cDsaved, cHDsaved);
+
+        for (int i = 0; i < NumOptimizables; i++) {
+          Dsaved[i] = std::real(cDsaved[i]);
+          HDsaved[i] = std::real(cHDsaved[i]);
+        }
         saved[ENERGY_NEW] =
             H_KE_Node[ip]->evaluateValueAndDerivatives(wRef, OptVariablesForPsi, Dsaved, HDsaved, compute_nlpp) +
             saved[ENERGY_FIXED];

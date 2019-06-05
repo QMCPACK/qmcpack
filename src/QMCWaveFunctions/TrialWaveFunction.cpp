@@ -584,7 +584,7 @@ void TrialWaveFunction::evaluateRatios(VirtualParticleSet& VP, std::vector<RealT
 }
 
 void TrialWaveFunction::evaluateDerivRatios(VirtualParticleSet& VP, const opt_variables_type& optvars,
-    std::vector<RealType>& ratios, Matrix<RealType>& dratio)
+    std::vector<ValueType>& ratios, Matrix<ValueType>& dratio)
 {
 #if defined(QMC_COMPLEX)
   APP_ABORT("TrialWaveFunction::evaluateDerivRatios not available for complex wavefunctions");
@@ -634,8 +634,8 @@ TrialWaveFunction* TrialWaveFunction::makeClone(ParticleSet& tqp)  const
  */
 void TrialWaveFunction::evaluateDerivatives(ParticleSet& P,
     const opt_variables_type& optvars,
-    std::vector<RealType>& dlogpsi,
-    std::vector<RealType>& dhpsioverpsi,
+    std::vector<ValueType>& dlogpsi,
+    std::vector<ValueType>& dhpsioverpsi,
     bool project)
 {
   //     // First, zero out derivatives
@@ -669,7 +669,7 @@ void TrialWaveFunction::evaluateDerivatives(ParticleSet& P,
 }
 
 void TrialWaveFunction::evaluateGradDerivatives(const ParticleSet::ParticleGradient_t& G_in,
-                                                std::vector<RealType>& dgradlogpsi) {
+                                                std::vector<ValueType>& dgradlogpsi) {
   for (int i=0; i<Z.size(); i++) {
     Z[i]->evaluateGradDerivatives(G_in, dgradlogpsi);
   }
