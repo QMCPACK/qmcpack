@@ -607,7 +607,7 @@ void QMCCostFunctionBase::updateXmlNodes()
       for (int iparam = 0; iparam < result->nodesetval->nodeNr; iparam++)
       {
         xmlNodePtr cur      = result->nodesetval->nodeTab[iparam];
-        xmlNewProp(cur, (const xmlChar*)"opt_coeffs", (const xmlChar*)newh5);
+        xmlSetProp(cur, (const xmlChar*)"opt_coeffs", (const xmlChar*)newh5);
       } 
       xmlXPathFreeObject(result);
     }
