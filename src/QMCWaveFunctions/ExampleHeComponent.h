@@ -15,6 +15,11 @@
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 
 /**@file ExampleHeComponent.h
+ *
+ * An example wavefunction component for a simple wavefunction for a helium atom.
+ * It uses STO orbitals and a Pade Jastrow.  This wavefunction can be created using
+ * the input file in examples/molecules/He/he_example_wf.xml.
+ * There is more detail in the manual in the Development chapter, in the "Adding a wavefunction" section.
  */
 namespace qmcplusplus
 {
@@ -30,13 +35,13 @@ public:
   }
 
 
-  typedef optimize::VariableSet opt_variables_type;
+  using OptVariablesType = optimize::VariableSet;
 
-  opt_variables_type myVars;
+  OptVariablesType myVars;
 
-  void checkInVariables(opt_variables_type& active) override { active.insertFrom(myVars); }
-  void checkOutVariables(const opt_variables_type& active) override { myVars.getIndex(active); }
-  void resetParameters(const opt_variables_type& active) override;
+  void checkInVariables(OptVariablesType& active) override { active.insertFrom(myVars); }
+  void checkOutVariables(const OptVariablesType& active) override { myVars.getIndex(active); }
+  void resetParameters(const OptVariablesType& active) override;
 
 
   void reportStatus(std::ostream& os) override {}
@@ -58,7 +63,7 @@ public:
   ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
 
   void evaluateDerivatives(ParticleSet& P,
-                           const opt_variables_type& optvars,
+                           const OptVariablesType& optvars,
                            std::vector<RealType>& dlogpsi,
                            std::vector<RealType>& dhpsioverpsi) override;
 

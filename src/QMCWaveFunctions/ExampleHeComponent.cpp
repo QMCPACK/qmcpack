@@ -201,7 +201,7 @@ ExampleHeComponent::RealType ExampleHeComponent::updateBuffer(ParticleSet& P, WF
 
 WaveFunctionComponentPtr ExampleHeComponent::makeClone(ParticleSet& tpq) const { return new ExampleHeComponent(*this); }
 
-void ExampleHeComponent::resetParameters(const opt_variables_type& active)
+void ExampleHeComponent::resetParameters(const OptVariablesType& active)
 {
   if (myVars.size())
   {
@@ -218,7 +218,7 @@ void ExampleHeComponent::resetParameters(const opt_variables_type& active)
 }
 
 void ExampleHeComponent::evaluateDerivatives(ParticleSet& P,
-                                             const opt_variables_type& optvars,
+                                             const OptVariablesType& optvars,
                                              std::vector<RealType>& dlogpsi,
                                              std::vector<RealType>& dhpsioverpsi)
 {
