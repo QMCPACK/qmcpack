@@ -43,9 +43,9 @@ LIST(APPEND LiH_ae_MSD_SHORT_SCALARS "ionion" "0.995380119260 0.001000000000")
 
 
 #
-# VMC short run with Jastrows and Optimized 184 determinants read from previously saved coefficients 
+# VMC short run with Jastrows and optimized 184 determinants read from previously saved coefficients 
 # Purpose: Reading and Replacing optimized Coeffs from previously optimized run. 
-#Data generated using utils/make_ref_data.sh make_ref_data.sh LiH_ae_MSD_OPT_CI_SHORT  qmc-ref/vmc_short_Opt_CI.s000.scalar.dat  qmc-ref/qmc-ref-vmc-long-Opt-CI.s000.scalar.dat 
+#Data generated using utils/make_ref_data.sh make_ref_data.sh LiH_ae_MSD_OPT_CI_SHORT  qmc-ref/vmc_short_opt_CI.s000.scalar.dat  qmc-ref/qmc-ref-vmc-long-opt-CI.s000.scalar.dat 
 LIST(APPEND LiH_ae_MSD_OPT_CI_SHORT_SCALARS "totenergy" "-8.065033555875 0.000853294542")
 LIST(APPEND LiH_ae_MSD_OPT_CI_SHORT_SCALARS "variance" "0.053562868983 0.003478707706")
 LIST(APPEND LiH_ae_MSD_OPT_CI_SHORT_SCALARS "kinetic" "8.099258390791 0.045167286002")
@@ -54,8 +54,8 @@ LIST(APPEND LiH_ae_MSD_OPT_CI_SHORT_SCALARS "eeenergy" "3.346222009202 0.0023973
 LIST(APPEND LiH_ae_MSD_OPT_CI_SHORT_SCALARS "ionion" "0.995380119260 0.001000000000")
   QMC_RUN_AND_CHECK(short-LiH_ae-vmc_msdj_optCI
                     "${CMAKE_SOURCE_DIR}/tests/molecules/LiH_ae_MSD"
-                    vmc_short_Opt_CI
-                    vmc_short_Opt_CI.in.xml
+                    vmc_short_opt_CI
+                    vmc_short_opt_CI.in.xml
                     1 16
                     TRUE
                     0 LiH_ae_MSD_OPT_CI_SHORT_SCALARS # VMC
@@ -103,9 +103,9 @@ LIST(APPEND LiH_ae_MSD_NOJ_SCALARS "ionion" "0.995380119260 0.001000000000")
                     0 LiH_ae_MSD_NOJ_SCALARS # VMC
                     )
 #
-# VMC Long run with Jastrows and Optimized 184 determinants read from previously saved coefficients 
+# VMC Long run with Jastrows and optimized 184 determinants read from previously saved coefficients 
 # Purpose: Reading and Replacing optimized Coeffs from previously optimized run. 
-#Data generated using utils/make_ref_data.sh make_ref_data.sh LiH_ae_MSD_OPT_CI  qmc-ref/vmc_long_Opt_CI.s000.scalar.dat  qmc-ref/qmc-ref-vmc-long-Opt-CI.s000.scalar.dat 
+#Data generated using utils/make_ref_data.sh make_ref_data.sh LiH_ae_MSD_OPT_CI  qmc-ref/vmc_long_opt_CI.s000.scalar.dat  qmc-ref/qmc-ref-vmc-long-opt-CI.s000.scalar.dat 
 LIST(APPEND LiH_ae_MSD_OPT_CI_SCALARS "totenergy" "-8.065033555875 0.000289417316")
 LIST(APPEND LiH_ae_MSD_OPT_CI_SCALARS "variance" "0.053562868983 0.000909787243")
 LIST(APPEND LiH_ae_MSD_OPT_CI_SCALARS "kinetic" "8.099258390791 0.012893891746")
@@ -114,8 +114,8 @@ LIST(APPEND LiH_ae_MSD_OPT_CI_SCALARS "eeenergy" "3.346222009202 0.000692976585"
 LIST(APPEND LiH_ae_MSD_OPT_CI_SCALARS "ionion" "0.995380119260 0.001000000000")
   QMC_RUN_AND_CHECK(long-LiH_ae-vmc_msdj_optCI
                     "${CMAKE_SOURCE_DIR}/tests/molecules/LiH_ae_MSD"
-                    vmc_long_Opt_CI
-                    vmc_long_Opt_CI.in.xml
+                    vmc_long_opt_CI
+                    vmc_long_opt_CI.in.xml
                     1 16
                     TRUE
                     0 LiH_ae_MSD_OPT_CI_SCALARS # VMC

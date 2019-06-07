@@ -247,13 +247,19 @@ void QMCCostFunctionBase::reportParameters()
     xmlSaveFormatFile(newxml, m_doc_out, 1);
   }
 }
-///THIS FUNCTION STORES Optimized CI COEFFS BUT CAN STORE 
-///ALL OTHER OPTIMIZED PARAMETERS (Jastors, orbitals) 
-///DEPENDING ON THEIR NAMES. 
-///This function should be called before reportParameters()
-/// Since it is needed to call updateXmlNodes() and xmlSaveFormatFile()
-/// Wile it is possible to call updateXmlNodes() from QMCLinearOptimize.cpp 
-/// It is not clean to call xmlSaveFormatFile() from QMCLinearOptimize.cpp 
+/** This function stores optimized CI coefficients in HDF5 
+  * Other parameters (Jastors, orbitals), can also be stored to H5 from this function
+  * This function should be called before reportParameters()
+  * Since it is needed to call updateXmlNodes() and xmlSaveFormatFile()
+  * While it is possible to call updateXmlNodes() from QMCLinearOptimize.cpp 
+  * It is not clean to call xmlSaveFormatFile() from QMCLinearOptimize.cpp 
+  *
+  * @param OptVariables.size() OptVariables.name(i) OptVariables[i]
+  * 
+  * OptVariables.size(): contains the total number of Optimized variables (not Only CI coeff)
+  * OptVariables.name(i): the tag of the optimized variable. To store we use the name of the variable 
+  * OptVariables[i]: The new value of the optimized variable 
+*/
 void QMCCostFunctionBase::reportParametersH5()
 {
   if (!myComm->rank())
@@ -264,9 +270,6 @@ void QMCCostFunctionBase::reportParametersH5()
      {
           char Coeff[128];
           sprintf(Coeff,"CIcoeff_%d", ci_size+1);
-          ///By default, first optimized parameters are the
-          ///CI coeffs. However, just in case they are not
-          ///the if statement with break, continue should catch it
           if(Coeff!=OptVariables.name(i))
               if(ci_size>0)
                  break;

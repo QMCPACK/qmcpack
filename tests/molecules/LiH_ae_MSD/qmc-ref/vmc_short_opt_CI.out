@@ -1,4 +1,4 @@
-  Input file(s): vmc_short_Opt_CI.in.xml 
+  Input file(s): vmc_short_opt_CI.in.xml 
 
 =====================================================
                     QMCPACK 3.7.9
@@ -30,9 +30,9 @@
 
   Structure-of-arrays (SoA) optimization enabled
 
-  Input XML = vmc_short_Opt_CI.in.xml
+  Input XML = vmc_short_opt_CI.in.xml
 
-  Project = vmc_short_Opt_CI
+  Project = vmc_short_opt_CI
   date    = 2019-06-06 18:40:42 CDT
   host    = abenali
 
@@ -391,7 +391,7 @@ ParticleSetPool has:
 
 =========================================================
   Start VMC
-  File Root vmc_short_Opt_CI.s000 append = no 
+  File Root vmc_short_opt_CI.s000 append = no 
 =========================================================
   Adding 16 walkers to 0 existing sets
   Total number of walkers: 1.6000000000e+01
@@ -475,4 +475,4 @@ MEMORY increase 0 MB VMC::resetRun
   Total Execution time = 5.0647e+01 secs
 
 =========================================================
-  A new xml input file : vmc_short_Opt_CI.s000.cont.xml
+  A new xml input file : vmc_short_opt_CI.s000.cont.xml
