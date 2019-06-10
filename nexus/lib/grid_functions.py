@@ -256,6 +256,7 @@ class PlotHandler(DevBase):
     def get_cur_ax(self):
         return PlotHandler.ax
     #end def get_cur_ax
+
 #end class PlotHandler
 PlotHandler.reset()
 
@@ -409,8 +410,30 @@ class Grid(GBase):
                 #end if
             #end if
         #end for
+        if len(msgs)==0:
+            self.local_validity_checks(msgs)
+        #end if
         return msgs
     #end def validity_checks
+
+
+    def local_validity_checks(self,msgs):
+        shape = self.points.shape
+        if len(shape)!=2:
+            msgs.append('points array must have two shape entries (number of points, dimension of points)\nnumber of shape entries present: {}\npoints shape: {}'.format(len(shape),shape))
+        else:
+            if shape[0]!=self.npoints:
+                msgs.append('unexpected number of points present\npoints expected: {}\npoints encountered: {}'.format(self.npoints,shape[0]))
+            #end if
+            if shape[1]!=self.space_dim:
+                msgs.append('unexpected number of spatial dimensions encountered\nspatial dimensions expected: {}\nspatial dimensions encountered: {}'.format(self.space_dim,shape[1]))
+            #end if
+        #end if
+        if id(self.r)!=id(self.points):
+            msgs.append('property function "r" has been overridden\nthis is a developer error')
+        #end if
+        return msgs
+    #end def local_validity_checks
 
 
     def check_valid(self,exit=True):
@@ -477,11 +500,6 @@ class StructuredGrid(Grid):
         return len(self.shape)
     #end def grid_dim
 
-    @property
-    def grid_shape(self):
-        return self.shape
-    #end def grid_shape
-
     valid_bconds = set(['o','p'])
 
 
@@ -511,6 +529,9 @@ class StructuredGrid(Grid):
 
 
     def set_bconds(self,bconds):
+        if not isinstance(bconds,(tuple,list,np.ndarray)):
+            self.error('cannot set bconds from data with type "{}"\nplease use tuple, list, or array for inputted bconds'.format(bconds.__class__.__name__))
+        #end if
         bconds = np.array(bconds,dtype=object)
         for bc in bconds:
             if bc not in StructuredGrid.valid_bconds:
@@ -519,6 +540,22 @@ class StructuredGrid(Grid):
         #end for
         self.bconds = bconds
     #end def set_bconds
+
+
+    def local_validity_checks(self,msgs):
+        msgs = Grid.local_validity_checks(self,msgs)
+        if np.prod(self.shape)!=self.npoints:
+            msgs.append('grid shape does not match number of points\nnumber of points: {}\nproduct of shape: {}\nshape: {}'.format(self.npoints,np.prod(self.shape),self.shape))
+        #end if
+        if len(self.shape)!=self.grid_dim:
+            msgs.append('number of entries in grid shape does not match grid dimension\nnumber of entries in grid shape: {}\ngrid dimension: {}'.format(len(self.shape),self.grid_dim))
+        #end if
+        if len(set(self.bconds)-StructuredGrid.valid_bconds)>0:
+            msgs.append('boundary conditions are invalid\nboundary conditions in each dimension must be one of: {}\nboundary conditions provided: {}'.format(sorted(StructuredGrid.valid_bconds),self.bconds))
+            #end if
+        #end for
+        return msgs
+    #end def local_validity_checks
 
 
     def unit_points(self,points=None):
@@ -666,6 +703,29 @@ class StructuredGridWithAxes(StructuredGrid):
         self.origin = origin
         self.translate(shift)
     #end def set_origin
+
+
+    def local_validity_checks(self,msgs):
+        msgs = StructuredGrid.local_validity_checks(self,msgs)
+        shape = self.axes.shape
+        if len(shape)!=2:
+            msgs.append('axes must be a 2 dimensional array\nnumber of dimensions present: {}\naxes present: {}'.format(len(shape),self.axes))
+        else:
+            if shape[0]!=self.grid_dim:
+                msgs.append('number of axes must be equal to the embedded grid dimension\nembedded grid dimension: {}\nnumber of axes present: {}'.format(self.grid_dim,shape[0]))
+            #end if
+            if shape[1]!=self.space_dim:
+                msgs.append('axis dimension must be equal to the dimension of the space\nspace dimension: {}\naxis dimension: {}\naxes present: {}'.format(self.space_dim,shape[1],self.axes))
+            #end if
+        #end if
+        shape = self.origin.shape
+        if len(shape)!=1:
+            msgs.append('origin must be a 1 dimensional array (single point)\nnumber of dimensions present: {}\norigin present: {}'.format(len(shape),self.origin))
+        elif shape[0]!=self.space_dim:
+            msgs.append('origin dimension must be equal to the dimension of the space\nspace dimension: {}\naxis dimension: {}\norigin present: {}'.format(self.space_dim,shape[0],self.origin))
+        #end if
+        return msgs
+    #end def local_validity_checks
 #end class StructuredGridWithAxes
 
 
