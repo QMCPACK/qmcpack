@@ -5,7 +5,7 @@ import sys
 import shutil
 import traceback
 from optparse import OptionParser
-from numpy import ndarray,array,abs
+from numpy import ndarray,array,abs,bool_
 
 # find the path to the nxs-test executable and its parent directory
 scriptpath=os.path.realpath(__file__)
@@ -92,8 +92,13 @@ def value_diff(v1,v2,tol=1e-6,int_as_float=False):
     elif isinstance(v1,float):
         diff = abs(v1-v2)>tol
     elif isinstance(v1,(list,tuple)):
-        v1 = array(v1,dtype=object).ravel()
-        v2 = array(v2,dtype=object).ravel()
+        try:
+            v1 = array(v1).ravel() # fix for length 1 tuples
+            v2 = array(v2).ravel()
+        except:
+            v1 = array(v1,dtype=object).ravel()
+            v2 = array(v2,dtype=object).ravel()
+        #end try
         for vv1,vv2 in zip(v1,v2):
             diff |= value_diff(vv1,vv2,tol,int_as_float)
         #end for
@@ -418,7 +423,7 @@ def nfail(msg=''):
 
 # check an assertion
 def nassert(result):
-    if not isinstance(result,bool):
+    if not isinstance(result,(bool,bool_)):
         raise NexusTestMisconstructed
     elif not result:
         nfail()
@@ -3045,6 +3050,166 @@ def pwscf_input():
 
 
 
+def grid_functions():
+    
+    nlabel('imports')
+    from grid_functions import np
+    from grid_functions import polar_to_cartesian,cartesian_to_polar
+    from grid_functions import spherical_to_cartesian,cartesian_to_spherical
+    from grid_functions import Grid,StructuredGrid,ParallelotopeGrid,SpheroidGrid
+
+
+    nlabel('coord conversion')
+    def test_coord_conversion():
+        pi = np.pi
+        sqrt = np.sqrt
+
+        th_cos_sin = [
+                 0 , sqrt(4.)/2 , sqrt(0.)/2  ,
+              pi/6 , sqrt(3.)/2 , sqrt(1.)/2  ,
+              pi/4 , sqrt(2.)/2 , sqrt(2.)/2  ,
+              pi/3 , sqrt(1.)/2 , sqrt(3.)/2  ,
+              pi/2 , sqrt(0.)/2 , sqrt(4.)/2  ,
+            2*pi/3 ,-sqrt(1.)/2 , sqrt(3.)/2 ,
+            3*pi/4 ,-sqrt(2.)/2 , sqrt(2.)/2 ,
+            5*pi/6 ,-sqrt(3.)/2 , sqrt(1.)/2 ,
+                pi ,-sqrt(4.)/2 , sqrt(0.)/2 ,
+            7*pi/6 ,-sqrt(3.)/2 ,-sqrt(1.)/2 ,
+            5*pi/4 ,-sqrt(2.)/2 ,-sqrt(2.)/2 ,
+            4*pi/3 ,-sqrt(1.)/2 ,-sqrt(3.)/2 ,
+            3*pi/2 , sqrt(0.)/2 ,-sqrt(4.)/2 ,
+            5*pi/3 , sqrt(1.)/2 ,-sqrt(3.)/2 ,
+            7*pi/4 , sqrt(2.)/2 ,-sqrt(2.)/2 ,
+           11*pi/6 , sqrt(3.)/2 ,-sqrt(1.)/2 ,
+                 0 , sqrt(4.)/2 , sqrt(0.)/2 ,
+            ]
+
+        th_cos_sin = np.array(th_cos_sin)
+        th_cos_sin.shape = len(th_cos_sin)/3,3
+        th  = th_cos_sin[:,0]
+        cos = th_cos_sin[:,1]
+        sin = th_cos_sin[:,2]
+
+        x = cos
+        y = sin
+
+        polar_ref = np.empty((len(th),2),dtype=float)
+        polar_ref[:,0] = 1.0
+        polar_ref[:,1] = th
+
+        cart_ref = np.empty((len(th),2),dtype=float)
+        cart_ref[:,0] = cos
+        cart_ref[:,1] = sin
+
+        cart_from_polar = polar_to_cartesian(polar_ref)
+        for i in range(len(cart_ref)):
+            pr = cart_ref[i]
+            pc = cart_from_polar[i]
+        #end for
+        diff = np.abs(cart_ref-cart_from_polar).max()
+        p2c_works = bool(diff<1e-12)
+        nassert(p2c_works)
+
+        polar_from_cart = cartesian_to_polar(cart_ref)
+        for i in range(len(polar_ref)):
+            pr = polar_ref[i]
+            pc = polar_from_cart[i]
+        #end for
+        diff =  np.abs(polar_ref-polar_from_cart).max()
+        c2p_works = bool(diff<1e-12)
+        nassert(c2p_works)
+
+    #end def test_coord_conversion
+
+    test_coord_conversion()
+
+
+    nlabel('initialization')
+    def test_initialization():
+        grids = []
+
+        grid_types = [
+            Grid,
+            StructuredGrid,
+            ParallelotopeGrid,
+            SpheroidGrid,
+            ]
+        for gt in grid_types:
+            g = gt()
+            nassert(not g.valid())
+        #end for
+
+        p1 = ParallelotopeGrid(
+            shape = (5,),
+            axes  = [[1]],
+            )
+        grids.append(p1)
+
+        p2 = ParallelotopeGrid(
+            dr    = (0.2,),
+            axes  = [[1]],
+            )
+        grids.append(p2)
+
+        nassert(object_eq(p1,p2))
+
+        for g in grids:
+            nassert(g.valid())
+        #end for
+    #end def test_initialization
+
+    test_initialization()
+
+
+    nlabel('unit_indices_2d')
+    def test_unit_indices_2d():
+        p = ParallelotopeGrid(
+            shape = (10,10),
+            axes = [[1,0,0],[1,1,1]],
+            )
+        ps = ParallelotopeGrid(
+            shape = (10,10),
+            axes = [[1,0,0],[1,1,1]],
+            shifted = True
+            )
+
+        s = SpheroidGrid(
+            shape = (10,10),
+            axes = [[1,0,0],[1,1,1]],
+            )
+        ss = SpheroidGrid(
+            shape = (10,10),
+            axes = [[1,0,0],[1,1,1]],
+            shifted = True,
+            )
+
+        axes = np.array([[1,0,0],[1,1,1]],dtype=float)
+
+        tol = 1e-6
+        pp = np.dot(( tol, tol),axes)
+        pm = np.dot(( tol,-tol),axes)
+        mp = np.dot((-tol, tol),axes)
+        mm = np.dot((-tol,-tol),axes)
+
+        imap = np.arange(100,dtype=int)
+        imap2 = imap.copy()
+        imap2[0:10] = 0
+
+        nassert((p.unit_indices()==imap).all())
+        nassert((ps.unit_indices()==imap).all())
+        nassert((s.unit_indices()==imap2).all())
+        nassert((ss.unit_indices()==imap).all())
+        nassert((p.unit_indices(ps.r+mm)==imap).all())
+        nassert((ps.unit_indices(p.r+pp)==imap).all())
+    #end def test_unit_indices_2d
+
+    test_unit_indices_2d()
+
+
+#end def grid_functions
+
+
+
 example_information = dict(
     pwscf_relax_Ge_T = dict(
         path = 'quantum_espresso/relax_Ge_T_vs_kpoints', 
@@ -3305,6 +3470,7 @@ NexusTest( settings_operation , 'settings' )
 NexusTest( machines           )
 NexusTest( structure          )
 NexusTest( pwscf_input        )
+NexusTest( grid_functions     )
 
 for label in example_information.keys():
     NexusTest(
