@@ -3170,7 +3170,7 @@ def grid_functions():
         ps = ParallelotopeGrid(
             shape = (10,10),
             axes = [[1,0,0],[1,1,1]],
-            shifted = True
+            centered = True
             )
 
         s = SpheroidGrid(
@@ -3180,7 +3180,7 @@ def grid_functions():
         ss = SpheroidGrid(
             shape = (10,10),
             axes = [[1,0,0],[1,1,1]],
-            shifted = True,
+            centered = True,
             )
 
         axes = np.array([[1,0,0],[1,1,1]],dtype=float)

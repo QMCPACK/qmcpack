@@ -121,7 +121,7 @@ def cartesian_to_spherical(points):
 
 
 
-def linear_grid_1d(rmin=0.0,rmax=1.0,n=None,dr=None,shifted=False):
+def linear_grid_1d(rmin=0.0,rmax=1.0,n=None,dr=None,centered=False):
     if n is not None and dr is not None:
         error('provide only one of "dr" and "n", not both','linear_grid_1d')
     elif dr is not None:
@@ -130,7 +130,7 @@ def linear_grid_1d(rmin=0.0,rmax=1.0,n=None,dr=None,shifted=False):
         error('either "n" or "dr" must be provided','linear_grid_1d')
     #end if
     r = np.linspace(rmin,rmax,n,endpoint=False)
-    if shifted:
+    if centered:
         r += 0.5/n
     #end if
     return r
@@ -138,11 +138,11 @@ def linear_grid_1d(rmin=0.0,rmax=1.0,n=None,dr=None,shifted=False):
 
 
 
-def unit_grid_points(shape,shifted=False):
+def unit_grid_points(shape,centered=False):
     linear_grids = []
     for n in shape:
         lin_grid = np.linspace(0.0,1.0,n,endpoint=False)
-        if shifted:
+        if centered:
             lin_grid += 0.5/n
         #end for
         linear_grids.append(lin_grid)
@@ -159,7 +159,7 @@ def unit_grid_points(shape,shifted=False):
 
 
 
-def parallelotope_grid_points(axes,shape=None,dr=None,shifted=False,return_shape=False):
+def parallelotope_grid_points(axes,shape=None,dr=None,centered=False,return_shape=False):
     if not isinstance(axes,np.ndarray):
         axes = np.array(axes)
     #end if
@@ -173,7 +173,7 @@ def parallelotope_grid_points(axes,shape=None,dr=None,shifted=False,return_shape
     elif shape is None:
         error('either "shape" or "dr" must be provided','parallelotope_grid_points')
     #end if
-    ugrid = unit_grid_points(shape,shifted=shifted)
+    ugrid = unit_grid_points(shape,centered=centered)
     pgrid = np.dot(ugrid,axes)
     if not return_shape:
         return pgrid
@@ -184,7 +184,7 @@ def parallelotope_grid_points(axes,shape=None,dr=None,shifted=False,return_shape
 
 
 
-def spheroid_grid_points(axes,shape,shifted=False):
+def spheroid_grid_points(axes,shape,centered=False):
     if not isinstance(axes,np.ndarray):
         axes = np.array(axes)
     #end if
@@ -192,7 +192,7 @@ def spheroid_grid_points(axes,shape,shifted=False):
     if grid_dim not in (2,3):
         error('spheroid grid generation only supported in 2 or 3 dimensions','spheriod_grid_points')
     #end if
-    ugrid = unit_grid_points(shape,shifted=shifted)
+    ugrid = unit_grid_points(shape,centered=centered)
     if grid_dim==2:
         ugrid[:,1] *= 2*np.pi
         sgrid = polar_to_cartesian(ugrid)
@@ -434,19 +434,19 @@ class Grid(GBase):
 class StructuredGrid(Grid):
 
     persistent_data_types = obj(
-        shape   = tuple,
-        shifted = bool,
+        shape    = tuple,
+        centered = bool,
         bconds  = np.ndarray,
         **Grid.persistent_data_types
         )
 
     def __init__(self,*args,**kwargs):
-        shape   = kwargs.pop('shape',None)
-        shifted = kwargs.pop('shifted',False)
-        bconds  = kwargs.pop('bconds',None)
-        self.shape   = None
-        self.bconds  = None
-        self.shifted = shifted
+        shape    = kwargs.pop('shape',None)
+        centered = kwargs.pop('centered',False)
+        bconds   = kwargs.pop('bconds',None)
+        self.shape    = None
+        self.bconds   = None
+        self.centered = centered
         Grid.__init__(self,*args,**kwargs)
         if shape is not None:
             self.set_shape(shape)
@@ -499,7 +499,7 @@ class StructuredGrid(Grid):
         upoints = self.unit_points(points)
         shape = np.array(self.shape,dtype=int)
         ipoints = upoints*shape
-        if not self.shifted:
+        if not self.centered:
             ipoints += 0.5
         #end if
         ipoints = np.array(np.floor(ipoints),dtype=int)
@@ -592,29 +592,29 @@ class ParallelotopeGrid(StructuredGrid):
         )
 
     def __init__(self,
-                 axes    = None,
-                 shape   = None,
-                 dr      = None,
-                 corner  = None,
-                 center  = None,
-                 shifted = False,
+                 axes     = None,
+                 shape    = None,
+                 dr       = None,
+                 corner   = None,
+                 center   = None,
+                 centered = False,
                  **kwargs
                  ):
         self.axes   = None
         self.origin = None # only access indirectly via corner or center
         if shape is not None:
             kwargs['shape']   = shape
-            kwargs['shifted'] = shifted
+            kwargs['centered'] = centered
         #end if
         StructuredGrid.__init__(self,**kwargs)
         if not all_none(axes,shape,dr,corner,center):
             self.initialize_and_check(
-                axes    = axes,
-                shape   = shape,
-                dr      = dr,
-                corner  = corner,
-                center  = center,
-                shifted = shifted,
+                axes     = axes,
+                shape    = shape,
+                dr       = dr,
+                corner   = corner,
+                center   = center,
+                centered = centered,
                 )
         #end if
     #end def __init__
@@ -632,12 +632,12 @@ class ParallelotopeGrid(StructuredGrid):
 
 
     def initialize(self,
-                   axes    = None,
-                   shape   = None,
-                   dr      = None,
-                   corner  = None,
-                   center  = None,
-                   shifted = False,
+                   axes     = None,
+                   shape    = None,
+                   dr       = None,
+                   corner   = None,
+                   center   = None,
+                   centered = False,
                    ):
         if axes is None:
             self.error('cannot initialize grid, "axes" is required')
@@ -646,7 +646,7 @@ class ParallelotopeGrid(StructuredGrid):
             self.error('cannot initialize grid, either "shape" or "dr" is required')
         #end if
 
-        points,shape = parallelotope_grid_points(axes,shape=shape,dr=dr,shifted=shifted,return_shape=True)
+        points,shape = parallelotope_grid_points(axes,shape=shape,dr=dr,centered=centered,return_shape=True)
 
         self.set_points(points)
         self.set_shape(shape)
@@ -698,25 +698,25 @@ class SpheroidGrid(StructuredGrid):
         )
 
     def __init__(self,
-                 axes    = None,
-                 shape   = None,
-                 center  = None,
-                 shifted = False,
+                 axes     = None,
+                 shape    = None,
+                 center   = None,
+                 centered = False,
                  **kwargs
                  ):
         self.axes   = None
         self.origin = None # access only through "center"
         if shape is not None:
-            kwargs['shape']   = shape
-            kwargs['shifted'] = shifted
+            kwargs['shape']    = shape
+            kwargs['centered'] = centered
         #end if
         StructuredGrid.__init__(self,**kwargs)
         if not all_none(axes,shape,center):
             self.initialize_and_check(
-                axes    = axes,
-                shape   = shape,
-                center  = center,
-                shifted = shifted,
+                axes     = axes,
+                shape    = shape,
+                center   = center,
+                centered = centered,
                 )
         #end if
     #end def __init__
@@ -728,10 +728,10 @@ class SpheroidGrid(StructuredGrid):
 
 
     def initialize(self,
-                   axes    = None,
-                   shape   = None,
-                   center  = None,
-                   shifted = False,
+                   axes     = None,
+                   shape    = None,
+                   center   = None,
+                   centered = False,
                    ):
         if axes is None:
             self.error('cannot initialize grid, "axes" is required')
@@ -740,7 +740,7 @@ class SpheroidGrid(StructuredGrid):
             self.error('cannot initialize grid, "shape" is required')
         #end if
 
-        points = spheroid_grid_points(axes,shape=shape,shifted=shifted)
+        points = spheroid_grid_points(axes,shape=shape,centered=centered)
 
         self.set_points(points)
         self.set_shape(shape)
