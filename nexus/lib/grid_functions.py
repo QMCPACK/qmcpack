@@ -159,7 +159,7 @@ def unit_grid_points(shape,centered=False):
 
 
 
-def parallelotope_grid_points(axes,shape=None,dr=None,centered=False,return_shape=False):
+def parallelotope_grid_points(axes,shape=None,dr=None,centered=False,return_shape=False,return_axes=False):
     if not isinstance(axes,np.ndarray):
         axes = np.array(axes)
     #end if
@@ -167,7 +167,7 @@ def parallelotope_grid_points(axes,shape=None,dr=None,centered=False,return_shap
         error('provide only one of "dr" and "shape", not both','parallelotope_grid_points')
     elif dr is not None:
         if not isinstance(dr,np.ndarray):
-            dr = np.array(dr)
+            dr = np.array(dr,dtype=float)
         #end if
         shape = np.array(np.around(np.linalg.norm(axes,axis=1)/dr),dtype=int)
     elif shape is None:
@@ -175,10 +175,17 @@ def parallelotope_grid_points(axes,shape=None,dr=None,centered=False,return_shap
     #end if
     ugrid = unit_grid_points(shape,centered=centered)
     pgrid = np.dot(ugrid,axes)
-    if not return_shape:
+    if not return_shape and not return_axes:
         return pgrid
     else:
-        return pgrid,shape
+        res = [pgrid]
+        if return_shape:
+            res.append(shape)
+        #end if
+        if return_axes:
+            res.append(axes)
+        #end if
+        return res
     #end if
 #end def parallelotope_grid_points
 
@@ -263,15 +270,9 @@ class GBase(PlotHandler):
 class Grid(GBase):
 
     persistent_data_types = obj(
-        points = np.ndarray,
+        points      = (np.ndarray,None ),
+        initialized = (bool      ,False),
         )
-
-    def __init__(self,points=None,dtype=None,copy=True):
-        self.points = None
-        if points is not None:
-            self.set_points(points,dtype=dtype,copy=copy)
-        #end if
-    #end def __init__
 
     @property
     def r(self): # points must be accessed this way
@@ -294,16 +295,47 @@ class Grid(GBase):
     #end def dtype
 
 
-    def has_space_dim(self):
-        present = True
-        try:
-            dim = self.space_dim
-            present &= isinstance(dim,int)
-        except:
-            present = False
-        #end try
-        return present
-    #end def has_space_dim
+    def __init__(self,**kwargs):
+
+        self.reset()
+
+        if len(kwargs)>0:
+            self.initialize(**kwargs)
+        #end if
+    #end def __init__
+
+
+    def reset(self):
+        cls = self.__class__
+        for name,(dtype,default) in cls.persistent_data_types.items():
+            self[name] = default
+        #end for
+    #end def reset
+
+
+    def initialize(self,**kwargs):
+        # remove check argument
+        check = kwargs.pop('check',True)
+
+        # call derived initialize
+        self.initialize_local(**kwargs)
+
+        # record initialization action
+        self.initialized = True
+
+        # check validity of grid
+        if check:
+            self.check_valid()
+        #end if
+    #end def initialize
+
+
+    def initialize_local(self,points=None,dtype=None,copy=True):
+        if points is None:
+            self.error('cannot initialize grid, "points" is required')
+        #end if
+        self.set_points(points,dtype=dtype,copy=copy)
+    #end def initialize_local
 
 
     def set_points(self,points,dtype=None,copy=True):
@@ -325,17 +357,6 @@ class Grid(GBase):
     #end def set_points
 
 
-    def initialize_and_check(self,*args,**kwargs):
-        self.initialize(*args,**kwargs)
-        #self.check_valid()
-    #end def initialize_and_check
-
-
-    def initialize(self,*args,**kwargs):
-        self.not_implemented()
-    #end def initialize
-
-
     def copy(self,shallow=False):
         if not shallow:
             c = DevBase.copy(self)
@@ -350,9 +371,19 @@ class Grid(GBase):
     #end def copy
 
 
+    def translate(self,shift):
+        self.points += shift
+    #end def translate
+
+
     def validity_checks(self):
         cls = self.__class__
         msgs = []
+        # check that the grid has been initialized
+        if not self.initialized:
+            msgs.append('grid has not been initialized')
+            return msgs
+        #end if
         valid_key_list = list(cls.persistent_data_types.keys())
         valid_key_set  = set(valid_key_list)
         key_set = set(self.keys())
@@ -434,32 +465,12 @@ class Grid(GBase):
 class StructuredGrid(Grid):
 
     persistent_data_types = obj(
-        shape    = tuple,
-        centered = bool,
-        bconds  = np.ndarray,
+        shape    = (tuple     ,None),
+        centered = (bool      ,None),
+        bconds   = (np.ndarray,None),
         **Grid.persistent_data_types
         )
 
-    def __init__(self,*args,**kwargs):
-        shape    = kwargs.pop('shape',None)
-        centered = kwargs.pop('centered',False)
-        bconds   = kwargs.pop('bconds',None)
-        self.shape    = None
-        self.bconds   = None
-        self.centered = centered
-        Grid.__init__(self,*args,**kwargs)
-        if shape is not None:
-            self.set_shape(shape)
-        #end if
-        if bconds is None:
-            if self.has_space_dim():
-                bconds = self.space_dim*['o']
-            else:
-                bconds = tuple()
-            #end if
-        #end if
-        self.set_bconds(bconds)
-    #end def __init__
 
     @property
     def grid_dim(self):
@@ -471,6 +482,25 @@ class StructuredGrid(Grid):
         return self.shape
     #end def grid_shape
 
+    valid_bconds = set(['o','p'])
+
+
+    def initialize_local(self,**kwargs):
+        shape    = kwargs.pop('shape'   ,None)
+        centered = kwargs.pop('centered',False)
+        bconds   = kwargs.pop('bconds'  ,None)
+        Grid.initialize_local(self,**kwargs)
+        self.centered = centered
+        if shape is None:
+            self.error('cannot initialize grid, "shape" is required')
+        #end if
+        self.set_shape(shape)
+        if bconds is None:
+            bconds = len(self.shape)*['o']
+        #end if
+        self.set_bconds(bconds)
+    #end def initialize_local
+
 
     def set_shape(self,shape):
         if not isinstance(shape,(tuple,list,np.ndarray)):
@@ -481,7 +511,12 @@ class StructuredGrid(Grid):
 
 
     def set_bconds(self,bconds):
-        bconds = np.array(bconds,dtype=str)
+        bconds = np.array(bconds,dtype=object)
+        for bc in bconds:
+            if bc not in StructuredGrid.valid_bconds:
+                self.error('boundary conditions are invalid\nboundary conditions in each dimension must be one of: {}\nboundary conditions provided: {}'.format(sorted(StructuredGrid.valid_bconds),bconds))
+            #end if
+        #end for
         self.bconds = bconds
     #end def set_bconds
 
@@ -583,42 +618,59 @@ class StructuredGrid(Grid):
 
 
 
-class ParallelotopeGrid(StructuredGrid):
+class StructuredGridWithAxes(StructuredGrid):
 
     persistent_data_types = obj(
-        axes   = np.ndarray,
-        origin = np.ndarray,
+        axes   = (np.ndarray,None),
+        origin = (np.ndarray,None),
         **StructuredGrid.persistent_data_types
         )
-
-    def __init__(self,
-                 axes     = None,
-                 shape    = None,
-                 dr       = None,
-                 corner   = None,
-                 center   = None,
-                 centered = False,
-                 **kwargs
-                 ):
-        self.axes   = None
-        self.origin = None # only access indirectly via corner or center
-        if shape is not None:
-            kwargs['shape']   = shape
-            kwargs['centered'] = centered
+    
+    def initialize_local(self,
+                         axes   = None,
+                         origin = None,
+                         **kwargs
+                         ):
+        if axes is None:
+            self.error('cannot initialize grid, "axes" is required')
         #end if
-        StructuredGrid.__init__(self,**kwargs)
-        if not all_none(axes,shape,dr,corner,center):
-            self.initialize_and_check(
-                axes     = axes,
-                shape    = shape,
-                dr       = dr,
-                corner   = corner,
-                center   = center,
-                centered = centered,
-                )
-        #end if
-    #end def __init__
 
+        StructuredGrid.initialize_local(self,**kwargs)
+
+        if origin is None:
+            origin = self.space_dim*[0]
+        #end if
+        self.set_axes(axes)
+        self.set_origin(origin)
+    #end def initialize_local
+
+
+    def set_axes(self,axes,shift_points=False):
+        if not isinstance(axes,(tuple,list,np.ndarray)):
+            self.error('cannot set axes from data with type "{}"\nplease use tuple, list, or array for inputted axes'.format(axes.__class__.__name__))
+        #end if
+        self.axes = np.array(axes,dtype=self.dtype)
+    #end def set_axes
+
+
+    def set_origin(self,origin):
+        if not isinstance(origin,(tuple,list,np.ndarray)):
+            self.error('cannot set origin from data with type "{}"\nplease use tuple, list, or array for inputted origin'.format(origin.__class__.__name__))
+        #end if
+        origin = np.array(origin,dtype=self.dtype)
+        if self.origin is not None:
+            shift = origin-self.origin
+        else:
+            shift = origin
+        #end if
+        self.origin = origin
+        self.translate(shift)
+    #end def set_origin
+#end class StructuredGridWithAxes
+
+
+
+class ParallelotopeGrid(StructuredGridWithAxes):
 
     @property
     def corner(self):
@@ -631,43 +683,34 @@ class ParallelotopeGrid(StructuredGrid):
     #end def center
 
 
-    def initialize(self,
-                   axes     = None,
-                   shape    = None,
-                   dr       = None,
-                   corner   = None,
-                   center   = None,
-                   centered = False,
-                   ):
-        if axes is None:
-            self.error('cannot initialize grid, "axes" is required')
-        #end if
+    def initialize_local(self,
+                 axes     = None,
+                 shape    = None,
+                 dr       = None,
+                 corner   = None,
+                 center   = None,
+                 centered = False,
+                 **kwargs
+                 ):
         if shape is None and dr is None:
             self.error('cannot initialize grid, either "shape" or "dr" is required')
         #end if
 
-        points,shape = parallelotope_grid_points(axes,shape=shape,dr=dr,centered=centered,return_shape=True)
+        points,shape,axes = parallelotope_grid_points(axes,shape=shape,dr=dr,centered=centered,return_shape=True,return_axes=True)
 
-        self.set_points(points)
-        self.set_shape(shape)
-
-        self.axes = np.array(axes,dtype=self.dtype)
-
-        if corner is None and center is None:
-            corner = np.array(self.space_dim*[0],dtype=self.dtype)
-        elif corner is None:
-            center = np.array(center,dtype=self.dtype)
-            corner = center - self.axes.sum(axis=0)/2
-        else:
-            corner = np.array(corner,dtype=self.dtype)
+        if center is not None:
+            center = np.array(center)
+            corner = center - axes.sum(axis=0)/2
         #end if
 
-        self.origin = corner
+        kwargs['axes']     = axes
+        kwargs['origin']   = corner
+        kwargs['shape']    = shape
+        kwargs['centered'] = centered
+        kwargs['points']   = points
+        StructuredGridWithAxes.initialize_local(self,**kwargs)
 
-        for d in range(self.space_dim):
-            self.points[:,d] += corner[d]
-        #end for
-    #end def initialize
+    #end def initialize_local
 
 
     def unit_points_bare(self,points):
@@ -689,75 +732,33 @@ class ParallelotopeGrid(StructuredGrid):
 
 
 
-class SpheroidGrid(StructuredGrid):
-
-    persistent_data_types = obj(
-        axes   = np.ndarray,
-        origin = np.ndarray,
-        **StructuredGrid.persistent_data_types
-        )
-
-    def __init__(self,
-                 axes     = None,
-                 shape    = None,
-                 center   = None,
-                 centered = False,
-                 **kwargs
-                 ):
-        self.axes   = None
-        self.origin = None # access only through "center"
-        if shape is not None:
-            kwargs['shape']    = shape
-            kwargs['centered'] = centered
-        #end if
-        StructuredGrid.__init__(self,**kwargs)
-        if not all_none(axes,shape,center):
-            self.initialize_and_check(
-                axes     = axes,
-                shape    = shape,
-                center   = center,
-                centered = centered,
-                )
-        #end if
-    #end def __init__
+class SpheroidGrid(StructuredGridWithAxes):
 
     @property
     def center(self):
         return self.origin
     #end def center
 
-
-    def initialize(self,
-                   axes     = None,
-                   shape    = None,
-                   center   = None,
-                   centered = False,
-                   ):
-        if axes is None:
-            self.error('cannot initialize grid, "axes" is required')
-        #end if
+    def initialize_local(self,
+                         axes     = None,
+                         shape    = None,
+                         center   = None,
+                         centered = False,
+                         **kwargs
+                         ):
         if shape is None:
             self.error('cannot initialize grid, "shape" is required')
         #end if
 
         points = spheroid_grid_points(axes,shape=shape,centered=centered)
 
-        self.set_points(points)
-        self.set_shape(shape)
-
-        self.axes = np.array(axes,dtype=self.dtype)
-
-        if center is None:
-            center = self.space_dim*[0]
-        #end if
-        center = np.array(center,dtype=self.dtype)
-
-        self.origin = center
-
-        for d in range(self.space_dim):
-            self.points[:,d] += center[d]
-        #end for
-    #end def initialize
+        kwargs['axes']     = axes
+        kwargs['origin']   = center
+        kwargs['shape']    = shape
+        kwargs['centered'] = centered
+        kwargs['points']   = points
+        StructuredGridWithAxes.initialize_local(self,**kwargs)
+    #end def initialize_local
 
 
     def unit_points_bare(self,points):
@@ -801,3 +802,40 @@ class SpheroidGrid(StructuredGrid):
 #end class SpheroidGrid
 
 
+
+
+if __name__=='__main__':
+
+    #p = ParallelotopeGrid(
+    #    shape = (10,10),
+    #    axes  = [[1,0,0],[1,1,1]],
+    #    )
+
+    pe = ParallelotopeGrid()
+
+    pc = ParallelotopeGrid(
+        shape    = (10,10),
+        axes     = [[1,0,0],[1,1,1]],
+        centered = True
+        )
+
+    se = SpheroidGrid()
+
+    s = SpheroidGrid(
+        shape = (10,10),
+        axes  = [[1,0,0],[1,1,1]],
+        )
+    #sc = SpheroidGrid(
+    #    shape    = (10,10),
+    #    axes     = [[1,0,0],[1,1,1]],
+    #    centered = True,
+    #    )
+
+    o = obj(s)
+    del o.points
+    print repr(o)
+    print o
+    print s.valid()
+
+    ci()
+#end if 
