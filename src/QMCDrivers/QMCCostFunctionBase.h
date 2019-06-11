@@ -80,7 +80,8 @@ public:
   ///Save opt parameters to HDF5
   bool reportH5;  
   bool CI_Opt;  
-  char newh5[128];
+  ///Path and name of the HDF5 prefix where CI coeffs are saved
+  std::string newh5;
   ///assign optimization parameter i
   Return_t& Params(int i) { return OptVariables[i]; }
   ///return optimization parameter i

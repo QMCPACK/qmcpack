@@ -282,7 +282,8 @@ void QMCCostFunctionBase::reportParametersH5()
      if (ci_size>0)
      {
          CI_Opt=true;
-         sprintf(newh5, "%s.opt.h5", RootName.c_str());
+//         sprintf(newh5, "%s.opt.h5", RootName.c_str());
+         newh5=RootName+".opt.h5";
          *msg_stream << "  <Ci Coeffs saved in opt_coeffs=\"" << newh5 << "\">" << std::endl;
          hdf_archive hout;
          hout.create(newh5, H5F_ACC_TRUNC);
@@ -610,7 +611,7 @@ void QMCCostFunctionBase::updateXmlNodes()
       for (int iparam = 0; iparam < result->nodesetval->nodeNr; iparam++)
       {
         xmlNodePtr cur      = result->nodesetval->nodeTab[iparam];
-        xmlSetProp(cur, (const xmlChar*)"opt_coeffs", (const xmlChar*)newh5);
+        xmlSetProp(cur, (const xmlChar*)"opt_coeffs", (const xmlChar*)newh5.c_str());
       } 
       xmlXPathFreeObject(result);
     }
