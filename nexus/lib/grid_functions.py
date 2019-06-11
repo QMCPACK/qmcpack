@@ -860,6 +860,15 @@ class SpheroidGrid(StructuredGridWithAxes):
         kwargs['centered'] = centered
         kwargs['points']   = points
         StructuredGridWithAxes.initialize_local(self,**kwargs)
+
+        # reassign bconds to match sphere constraints
+        if self.grid_dim==3:
+            self.set_bconds(tuple('oop'))
+        elif self.grid_dim==2:
+            self.set_bconds(tuple('op'))
+        else:
+            self.error('one dimensional spheroid is not supported')
+        #end if
     #end def initialize_local
 
 
@@ -910,7 +919,7 @@ if __name__=='__main__':
 
 
     demos = obj(
-        plot_grids = 1,
+        plot_grids = 0,
         )
 
     shapes = {
@@ -934,10 +943,11 @@ if __name__=='__main__':
         (3,3) : [[1,0,0],[1,1,0],[1,1,1]],
         }
 
-    inp2 = obj(
-        shape    = (10,10),
-        axes     = [[1,0,0],[1,1,1]],
-        )
+    bconds = {
+        1 : 'o p'.split(),
+        2 : 'oo op po pp'.split(),
+        3 : 'ooo oop opo poo opp pop opp ppp'.split(),
+        }
 
     grid_types = obj(
         parallelotope = ParallelotopeGrid,
@@ -959,16 +969,36 @@ if __name__=='__main__':
             if (grid_dim,space_dim) in supported[grid_name].dims:
                 for centered in (False,True):
                     label = gdict[grid_name]+str(grid_dim)+str(space_dim)+cdict[centered]
-                    grids[label] = grid_types[grid_name](
+                    grid_inputs = obj(
                         shape    = shapes[grid_dim],
                         axes     = axes[grid_dim,space_dim],
                         centered = centered,
                         )
+
+                    if grid_name!='parallelotope':
+                        g = grid_types[grid_name](**grid_inputs)
+                        grids[label] = g
+                    else:
+                        for bc in bconds[grid_dim]:
+                            label_bc = label+'_'+bc
+                            grid_inputs_bc = obj(
+                                bconds = tuple(bc),
+                                **grid_inputs
+                                )
+                            g = grid_types[grid_name](**grid_inputs_bc)
+                            grids[label_bc] = g
+                        #end for
+                    #end if
+
                 #end for
             #end if
         #end for
     #end for
 
+    for label in sorted(grids.keys()):
+        g = grids[label]
+        print ' {:<16}  {}'.format(label,g.bconds)
+    #end for
 
     if demos.plot_grids:
         grids_plot = 'p11 p12 p13 p23 p23c p33 p33c'.split()
