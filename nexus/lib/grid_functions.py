@@ -895,53 +895,98 @@ class SpheroidGrid(StructuredGridWithAxes):
 if __name__=='__main__':
 
 
+    demos = obj(
+        plot_grids = 1,
+        )
+
+    shapes = {
+        1 : (10,),
+        2 : (10,10),
+        3 : (10,10,10),
+        }
+
+    axes = {
+        #(1,1) : [[1]],
+        #(1,2) : [[1,1]],
+        (2,2) : [[1,0],[1,1]],
+        (2,3) : [[1,0,0],[1,1,1]],
+        (3,3) : [[1,0,0],[1,1,0],[1,1,1]],
+        }
+
     inp2 = obj(
         shape    = (10,10),
         axes     = [[1,0,0],[1,1,1]],
         )
 
-    inp2c = inp2.copy()
-    inp2c.centered = True
-
-    inp3 = obj(
-        shape    = (10,10,10),
-        axes     = [[1,0,0],[1,1,0],[1,1,1]],
+    grid_types = obj(
+        parallelotope = ParallelotopeGrid,
+        spheroid      = SpheroidGrid,
         )
 
-    inp3c = inp3.copy()
-    inp3c.centered = True
-
-    grids = obj(
-        pe  = ParallelotopeGrid(),
-        p2  = ParallelotopeGrid(**inp2),
-        p2c = ParallelotopeGrid(**inp2c),
-        p3  = ParallelotopeGrid(**inp3),
-        p3c = ParallelotopeGrid(**inp3c),
-        se  = SpheroidGrid(),
-        s2  = SpheroidGrid(**inp2),
-        s2c = SpheroidGrid(**inp2c),
-        s3  = SpheroidGrid(**inp3),
-        s3c = SpheroidGrid(**inp3c),
-        )
-
-    grids_plot = 'p2 p2c p3 p3c'.split()
-    #grids_plot = 's2 s2c s3 s3c'.split()
-
-    unit = True
-
-    for name in grids_plot:
-        grid = grids[name]
-        if not unit:
-            grid.plot_points(show=0)
-            grid.plot_boundary(fig=0,show=0)
-        else:
-            grid.plot_unit_points(show=0)
-            grid.plot_unit_boundary(fig=0,show=0)
-        #end if
-        ax = grid.get_cur_ax()
-        #ax.set_aspect('equal','box')
-        plt.title(name)
+    grids = obj()
+    gdict = dict(parallelotope='p',spheroid='s')
+    cdict = {False:'',True:'c'}
+    for grid_name in sorted(grid_types.keys()):
+        label = gdict[grid_name]+'e'
+        grids[label] = grid_types[grid_name]()
+        for grid_dim,space_dim in sorted(axes.keys()):
+            for centered in (False,True):
+                label = gdict[grid_name]+str(grid_dim)+str(space_dim)+cdict[centered]
+                grids[label] = grid_types[grid_name](
+                    shape    = shapes[grid_dim],
+                    axes     = axes[grid_dim,space_dim],
+                    centered = centered,
+                    )
+            #end for
+        #end for
     #end for
-    plt.show()
+
+    #inp2c = inp2.copy()
+    #inp2c.centered = True
+    #
+    #inp3 = obj(
+    #    shape    = (10,10,10),
+    #    axes     = [[1,0,0],[1,1,0],[1,1,1]],
+    #    )
+    #
+    #inp3c = inp3.copy()
+    #inp3c.centered = True
+    #
+    #grids = obj(
+    #    pe  = ParallelotopeGrid(),
+    #    p2  = ParallelotopeGrid(**inp2),
+    #    p2c = ParallelotopeGrid(**inp2c),
+    #    p3  = ParallelotopeGrid(**inp3),
+    #    p3c = ParallelotopeGrid(**inp3c),
+    #    se  = SpheroidGrid(),
+    #    s2  = SpheroidGrid(**inp2),
+    #    s2c = SpheroidGrid(**inp2c),
+    #    s3  = SpheroidGrid(**inp3),
+    #    s3c = SpheroidGrid(**inp3c),
+    #    )
+
+    if demos.plot_grids:
+        grids_plot = 'p23 p23c p33 p33c'.split()
+        #grids_plot = 's23 s23c s33 s33c'.split()
+
+        unit = True
+
+        for name in grids_plot:
+            grid = grids[name]
+            if not unit:
+                grid.plot_points(show=0)
+                grid.plot_boundary(fig=0,show=0)
+            else:
+                grid.plot_unit_points(show=0)
+                grid.plot_unit_boundary(fig=0,show=0)
+            #end if
+            ax = grid.get_cur_ax()
+            #ax.set_aspect('equal','box')
+            plt.title(name)
+        #end for
+        plt.show()
+    #end if
+
+    print grids.p2
 
 #end if 
