@@ -17,6 +17,7 @@
 
 #include "OhmmsData/OhmmsElementBase.h"
 #include "Optimize/LeastSquaredFit.h"
+#include "Configuration.h"
 
 /** Base class for any cost function
  *
@@ -26,13 +27,17 @@ template<class T = double>
 class CostFunctionBase
 {
 public:
-  typedef T Return_t;
+  //typedef T Return_t;
 
-  #ifdef QMC_COMPLEX
-  typedef std::complex<T> Return_ct;
-  #else
-  typedef T Return_ct;
-  #endif
+  //#ifdef QMC_COMPLEX
+  //typedef std::complex<T> Return_ct;
+  //#else
+  //typedef T Return_ct;
+  //#endif
+
+  typedef qmcplusplus::QMCTraits::ValueType Return_ct;
+  typedef qmcplusplus::QMCTraits::RealType Return_t;
+
 
   /** boolean to indicate if the cost function is valid.
    *
