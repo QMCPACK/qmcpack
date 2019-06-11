@@ -273,7 +273,7 @@ class PlotHandler(DevBase):
                 ax.set_xlabel(ax1)
                 ax.set_ylabel(ax2)
                 ax.set_zlabel(ax3)
-            elif dim==2:
+            elif dim==2 or dim==1:
                 ax = fig.add_subplot(111)
                 ax.set_xlabel(ax1)
                 ax.set_ylabel(ax2)
@@ -486,7 +486,12 @@ class Grid(GBase):
 
     def plot_points(self,fig=True,show=True):
         fig,ax = self.setup_mpl_fig(fig=fig,dim=self.space_dim)
-        ax.scatter(*self.r.T,marker='.')
+        r = self.r.T
+        if self.space_dim!=1:
+            ax.scatter(*r,marker='.')
+        else:
+            ax.scatter(r,0*r,marker='.')
+        #end if
         ax.set_aspect('equal','box')
         if show:
             plt.show()
@@ -634,10 +639,12 @@ class StructuredGrid(Grid):
 
     def plot_boundary(self,n=200,fig=True,show=True):
         fig,ax = self.setup_mpl_fig(fig=fig,dim=self.space_dim)
-        bpoints = self.get_boundary_lines(n=n)
-        for bp in bpoints:
-            ax.plot(*bp.T,color='k')
-        #end for
+        if self.grid_dim!=1:
+            bpoints = self.get_boundary_lines(n=n)
+            for bp in bpoints:
+                ax.plot(*bp.T,color='k')
+            #end for
+        #end if
         ax.set_aspect('equal','box')
         if show:
             plt.show()
@@ -648,7 +655,12 @@ class StructuredGrid(Grid):
     def plot_unit_points(self,fig=True,show=True):
         fig,ax = self.setup_mpl_fig(fig=fig,dim=self.grid_dim,
                                     ax1='a1',ax2='a2',ax3='a3')
-        ax.scatter(*self.unit_points().T,marker='.')
+        u = self.unit_points().T
+        if self.grid_dim!=1:
+            ax.scatter(*u,marker='.')
+        else:
+            ax.scatter(u,0*u,marker='.')
+        #end if
         ax.set_aspect('equal','box')
         if show:
             plt.show()
@@ -659,10 +671,12 @@ class StructuredGrid(Grid):
     def plot_unit_boundary(self,n=200,fig=True,show=True):
         fig,ax = self.setup_mpl_fig(fig=fig,dim=self.grid_dim,
                                     ax1='a1',ax2='a2',ax3='a3')
-        bpoints = self.get_boundary_lines(n=n,unit=True)
-        for bp in bpoints:
-            ax.plot(*bp.T,color='k')
-        #end for
+        if self.grid_dim!=1:
+            bpoints = self.get_boundary_lines(n=n,unit=True)
+            for bp in bpoints:
+                ax.plot(*bp.T,color='k')
+            #end for
+        #end if
         ax.set_aspect('equal','box')
         if show:
             plt.show()
@@ -906,10 +920,17 @@ if __name__=='__main__':
         }
 
     axes = {
-        #(1,1) : [[1]],
-        #(1,2) : [[1,1]],
+        # 1d grid in 1d space
+        (1,1) : [[1]],
+        # 1d grid in 2d space
+        (1,2) : [[1,1]],
+        # 1d grid in 3d space
+        (1,3) : [[1,1,1]],
+        # 2d grid in 2d space
         (2,2) : [[1,0],[1,1]],
+        # 2d grid in 3d space
         (2,3) : [[1,0,0],[1,1,1]],
+        # 3d grid in 3d space
         (3,3) : [[1,0,0],[1,1,0],[1,1,1]],
         }
 
@@ -923,6 +944,11 @@ if __name__=='__main__':
         spheroid      = SpheroidGrid,
         )
 
+    supported = obj(
+        parallelotope = obj(dims=set(axes.keys())),
+        spheroid      = obj(dims=set([(2,2),(2,3),(3,3)])),
+        )
+
     grids = obj()
     gdict = dict(parallelotope='p',spheroid='s')
     cdict = {False:'',True:'c'}
@@ -930,46 +956,25 @@ if __name__=='__main__':
         label = gdict[grid_name]+'e'
         grids[label] = grid_types[grid_name]()
         for grid_dim,space_dim in sorted(axes.keys()):
-            for centered in (False,True):
-                label = gdict[grid_name]+str(grid_dim)+str(space_dim)+cdict[centered]
-                grids[label] = grid_types[grid_name](
-                    shape    = shapes[grid_dim],
-                    axes     = axes[grid_dim,space_dim],
-                    centered = centered,
-                    )
-            #end for
+            if (grid_dim,space_dim) in supported[grid_name].dims:
+                for centered in (False,True):
+                    label = gdict[grid_name]+str(grid_dim)+str(space_dim)+cdict[centered]
+                    grids[label] = grid_types[grid_name](
+                        shape    = shapes[grid_dim],
+                        axes     = axes[grid_dim,space_dim],
+                        centered = centered,
+                        )
+                #end for
+            #end if
         #end for
     #end for
 
-    #inp2c = inp2.copy()
-    #inp2c.centered = True
-    #
-    #inp3 = obj(
-    #    shape    = (10,10,10),
-    #    axes     = [[1,0,0],[1,1,0],[1,1,1]],
-    #    )
-    #
-    #inp3c = inp3.copy()
-    #inp3c.centered = True
-    #
-    #grids = obj(
-    #    pe  = ParallelotopeGrid(),
-    #    p2  = ParallelotopeGrid(**inp2),
-    #    p2c = ParallelotopeGrid(**inp2c),
-    #    p3  = ParallelotopeGrid(**inp3),
-    #    p3c = ParallelotopeGrid(**inp3c),
-    #    se  = SpheroidGrid(),
-    #    s2  = SpheroidGrid(**inp2),
-    #    s2c = SpheroidGrid(**inp2c),
-    #    s3  = SpheroidGrid(**inp3),
-    #    s3c = SpheroidGrid(**inp3c),
-    #    )
 
     if demos.plot_grids:
-        grids_plot = 'p23 p23c p33 p33c'.split()
+        grids_plot = 'p11 p12 p13 p23 p23c p33 p33c'.split()
         #grids_plot = 's23 s23c s33 s33c'.split()
 
-        unit = True
+        unit = False
 
         for name in grids_plot:
             grid = grids[name]
@@ -987,6 +992,6 @@ if __name__=='__main__':
         plt.show()
     #end if
 
-    print grids.p2
+    #print grids.p22
 
 #end if 
