@@ -257,6 +257,35 @@ class PlotHandler(DevBase):
         return PlotHandler.ax
     #end def get_cur_ax
 
+
+    def setup_mpl_fig(self,fig=True,dim=None,ax1='x',ax2='y',ax3='z'):
+        if dim is None:
+            self.error('cannot setup mpl figure, "dim" must be provided')
+        #end if
+        if not fig:
+            fig = self.get_cur_fig()
+            ax  = self.get_cur_ax()
+        else:
+            fig = plt.figure()
+            if dim==3:
+                from mpl_toolkits.mplot3d import Axes3D
+                ax = fig.add_subplot(111, projection='3d')
+                ax.set_xlabel(ax1)
+                ax.set_ylabel(ax2)
+                ax.set_zlabel(ax3)
+            elif dim==2:
+                ax = fig.add_subplot(111)
+                ax.set_xlabel(ax1)
+                ax.set_ylabel(ax2)
+            else:
+                self.not_implemented()
+            #end if
+            self.set_cur_fig(fig)
+            self.set_cur_ax(ax)
+        #end if
+        return fig,ax
+    #end def setup_mpl_fig
+
 #end class PlotHandler
 PlotHandler.reset()
 
@@ -456,27 +485,9 @@ class Grid(GBase):
 
 
     def plot_points(self,fig=True,show=True):
-        if fig:
-            fig = plt.figure()
-            self.set_cur_fig(fig)
-        #end if
-        r = self.r.T
-        if self.space_dim==3:
-            from mpl_toolkits.mplot3d import Axes3D
-            if fig:
-                ax = fig.add_subplot(111, projection='3d')
-                ax.set_xlabel('x')
-                ax.set_ylabel('y')
-                ax.set_zlabel('z')
-                self.set_cur_ax(ax)
-            else:
-                ax = self.get_cur_ax()
-            #end if
-            ax.scatter(*r,marker='.')
-
-        else:
-            self.not_implemented()
-        #end if
+        fig,ax = self.setup_mpl_fig(fig=fig,dim=self.space_dim)
+        ax.scatter(*self.r.T,marker='.')
+        ax.set_aspect('equal','box')
         if show:
             plt.show()
         #end if
@@ -586,15 +597,10 @@ class StructuredGrid(Grid):
     #end def unit_indices
 
 
-    def plot_boundary(self,n=200,fig=True,show=True):
-        if fig:
-            fig = plt.figure()
-            self.set_cur_fig(fig)
-        #end if
+    def get_boundary_lines(self,n=200,unit=False):
         u = np.linspace(0.,1.,n)
         nlines = self.grid_dim*2**(self.grid_dim-1)
         upoints = np.empty((n*nlines,self.grid_dim),dtype=self.dtype)
-                
         if self.grid_dim==3:
             bitset = [[0,0],[0,1],[1,0],[1,1]]
         elif self.grid_dim==2:
@@ -615,31 +621,53 @@ class StructuredGrid(Grid):
                 ni+=1
             #end for
         #end for
-        bpoints = self.points_from_unit(upoints)
-        bpoints.shape = nlines,n,self.space_dim
-        if self.space_dim==3:
-            from mpl_toolkits.mplot3d import Axes3D
-            if fig:
-                ax = fig.add_subplot(111, projection='3d')
-                ax.set_xlabel('x')
-                ax.set_ylabel('y')
-                ax.set_zlabel('z')
-                self.set_cur_ax(ax)
-            else:
-                ax = self.get_cur_ax()
-            #end if
-
-            for bp in bpoints:
-                ax.plot(*bp.T,color='k')
-            #end for
-
+        if not unit:
+            bpoints = self.points_from_unit(upoints)
+            bpoints.shape = nlines,n,self.space_dim
         else:
-            self.not_implemented()
+            bpoints = upoints
+            bpoints.shape = nlines,n,self.grid_dim
         #end if
+        return bpoints
+    #end def get_boundary_lines
+
+
+    def plot_boundary(self,n=200,fig=True,show=True):
+        fig,ax = self.setup_mpl_fig(fig=fig,dim=self.space_dim)
+        bpoints = self.get_boundary_lines(n=n)
+        for bp in bpoints:
+            ax.plot(*bp.T,color='k')
+        #end for
+        ax.set_aspect('equal','box')
         if show:
             plt.show()
         #end if
     #end def plot_boundary
+
+
+    def plot_unit_points(self,fig=True,show=True):
+        fig,ax = self.setup_mpl_fig(fig=fig,dim=self.grid_dim,
+                                    ax1='a1',ax2='a2',ax3='a3')
+        ax.scatter(*self.unit_points().T,marker='.')
+        ax.set_aspect('equal','box')
+        if show:
+            plt.show()
+        #end if
+    #end def plot_unit_points
+
+
+    def plot_unit_boundary(self,n=200,fig=True,show=True):
+        fig,ax = self.setup_mpl_fig(fig=fig,dim=self.grid_dim,
+                                    ax1='a1',ax2='a2',ax3='a3')
+        bpoints = self.get_boundary_lines(n=n,unit=True)
+        for bp in bpoints:
+            ax.plot(*bp.T,color='k')
+        #end for
+        ax.set_aspect('equal','box')
+        if show:
+            plt.show()
+        #end if
+    #end def plot_unit_boundary
 
 
     def unit_points_bare(self,points=None):
@@ -866,36 +894,54 @@ class SpheroidGrid(StructuredGridWithAxes):
 
 if __name__=='__main__':
 
-    #p = ParallelotopeGrid(
-    #    shape = (10,10),
-    #    axes  = [[1,0,0],[1,1,1]],
-    #    )
 
-    pe = ParallelotopeGrid()
-
-    pc = ParallelotopeGrid(
+    inp2 = obj(
         shape    = (10,10),
         axes     = [[1,0,0],[1,1,1]],
-        centered = True
         )
 
-    se = SpheroidGrid()
+    inp2c = inp2.copy()
+    inp2c.centered = True
 
-    s = SpheroidGrid(
-        shape = (10,10),
-        axes  = [[1,0,0],[1,1,1]],
+    inp3 = obj(
+        shape    = (10,10,10),
+        axes     = [[1,0,0],[1,1,0],[1,1,1]],
         )
-    #sc = SpheroidGrid(
-    #    shape    = (10,10),
-    #    axes     = [[1,0,0],[1,1,1]],
-    #    centered = True,
-    #    )
 
-    o = obj(s)
-    del o.points
-    print repr(o)
-    print o
-    print s.valid()
+    inp3c = inp3.copy()
+    inp3c.centered = True
 
-    ci()
+    grids = obj(
+        pe  = ParallelotopeGrid(),
+        p2  = ParallelotopeGrid(**inp2),
+        p2c = ParallelotopeGrid(**inp2c),
+        p3  = ParallelotopeGrid(**inp3),
+        p3c = ParallelotopeGrid(**inp3c),
+        se  = SpheroidGrid(),
+        s2  = SpheroidGrid(**inp2),
+        s2c = SpheroidGrid(**inp2c),
+        s3  = SpheroidGrid(**inp3),
+        s3c = SpheroidGrid(**inp3c),
+        )
+
+    grids_plot = 'p2 p2c p3 p3c'.split()
+    #grids_plot = 's2 s2c s3 s3c'.split()
+
+    unit = True
+
+    for name in grids_plot:
+        grid = grids[name]
+        if not unit:
+            grid.plot_points(show=0)
+            grid.plot_boundary(fig=0,show=0)
+        else:
+            grid.plot_unit_points(show=0)
+            grid.plot_unit_boundary(fig=0,show=0)
+        #end if
+        ax = grid.get_cur_ax()
+        #ax.set_aspect('equal','box')
+        plt.title(name)
+    #end for
+    plt.show()
+
 #end if 
