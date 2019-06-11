@@ -65,7 +65,8 @@ def write_wfn_mol(scf_data, ortho_ao, filename, wfn=None,
                       nelec, norb, verbose=verbose)
     return nelec
 
-def write_qmcpack_wfn(filename, wfn, walker_type, nelec, norb, init=None,
+#def write_qmcpack_wfn(filename, wfn, walker_type, nelec, norb, init=None,
+def write_qmcpack_wfn(filename, wfn, uhf, nelec, norb, init=None,
                       orbmat=None, verbose=False):
     # User defined wavefunction.
     # PHMSD is a list of tuple of (ci, occa, occb).
@@ -83,14 +84,18 @@ def write_qmcpack_wfn(filename, wfn, walker_type, nelec, norb, init=None,
     fh5 = h5py.File(filename, 'a')
     nalpha, nbeta = nelec
     # TODO: FIX for GHF eventually.
-    if walker_type == 'ghf':
-        walker_type = 3
-    elif walker_type == 'uhf':
+#    if walker_type == 'ghf':
+#        walker_type = 3
+#    elif walker_type == 'uhf':
+#        walker_type = 2
+#        uhf = True
+#    else:
+#        walker_type = 1
+#        uhf = False
+    if uhf:
         walker_type = 2
-        uhf = True
     else:
         walker_type = 1
-        uhf = False
     if wfn_type == 'PHMSD':
         walker_type = 2
     if wfn_type == 'NOMSD':

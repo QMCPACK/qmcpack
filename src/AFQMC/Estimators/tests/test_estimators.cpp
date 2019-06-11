@@ -33,7 +33,7 @@
 #include "AFQMC/Estimators/EstimatorBase.h"
 #include "AFQMC/Propagators/PropagatorFactory.h"
 #include "AFQMC/Propagators/Propagator.hpp"
-#include "AFQMC/Estimators/BackPropagatedEstimator.h"
+#include "AFQMC/Estimators/BackPropagatedEstimator.hpp"
 #include "AFQMC/Utilities/test_utils.hpp"
 
 using std::string;

@@ -10,7 +10,7 @@
 #include "AFQMC/Estimators/EnergyEstimator.h"
 #include "AFQMC/Estimators/BasicEstimator.h"
 #include "AFQMC/Estimators/MixedRDMEstimator.h"
-#include "AFQMC/Estimators/BackPropagatedEstimator.h"
+#include "AFQMC/Estimators/BackPropagatedEstimator.hpp"
 //#include "AFQMC/Estimators/WalkerDMEstimator.h"
 
 #include "AFQMC/Walkers/WalkerSet.hpp"
