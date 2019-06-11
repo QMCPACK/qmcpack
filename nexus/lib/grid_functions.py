@@ -48,7 +48,7 @@ def polar_to_cartesian(points):
     #end if
     npoints,dim = points.shape
     if dim!=2:
-        error('dimension of points must be 2','polar_to_cartesian')
+        error('dimension of points must be 2\ndimension of provided points: {}'.format(dim),'polar_to_cartesian')
     #end if
     r   = points[:,0]
     phi = points[:,1] # range is [0,2*pi)
@@ -65,7 +65,7 @@ def cartesian_to_polar(points):
     #end if
     npoints,dim = points.shape
     if dim!=2:
-        error('dimension of points must be 2','cartesian_to_polar')
+        error('dimension of points must be 2\ndimension of provided points: {}'.format(dim),'cartesian_to_polar')
     #end if
     x = points[:,0]
     y = points[:,1]
@@ -484,13 +484,36 @@ class Grid(GBase):
     #end def valid
 
 
-    def plot_points(self,fig=True,show=True):
+    def check_valid_points(self,points,dim,loc):
+        if isinstance(points,(tuple,list)):
+            points = np.array(points,dtype=self.dtype)
+        elif not isinstance(points,np.ndarray):
+            self.error('invalid points provided to function "{}"\nprovided points must be an array\ntype provided: {}'.format(loc,points.__class__.__name__))
+        #end if
+        if len(points.shape)!=2:
+            self.error('invalid points provided to function "{}"\npoints must be a 2D array\nnumber of dimensions in provided points array: {}'.format(loc,len(points.shape)))
+        elif points.shape[1]!=dim:
+            self.error('invalid points provided to function "{}"\npoints must reside in a {}-dimensional space\nspatial dimensions present: {}'.format(loc,dim,points.shape[1]))
+        #end if
+        return points
+    #end def check_valid_points
+
+
+    def plot_points(self,points=None,fig=True,show=True,default_marker='.',**kwargs):
         fig,ax = self.setup_mpl_fig(fig=fig,dim=self.space_dim)
-        r = self.r.T
-        if self.space_dim!=1:
-            ax.scatter(*r,marker='.')
+        if points is None:
+            r = self.r.T
         else:
-            ax.scatter(r,0*r,marker='.')
+            points = self.check_valid_points(points,self.space_dim,'plot_points')
+            r = points.T
+        #end if
+        if default_marker is not None and 'marker' not in kwargs:
+            kwargs['marker'] = default_marker
+        #end if
+        if self.space_dim!=1:
+            ax.scatter(*r,**kwargs)
+        else:
+            ax.scatter(r,0*r,**kwargs)
         #end if
         ax.set_aspect('equal','box')
         if show:
@@ -517,6 +540,11 @@ class StructuredGrid(Grid):
     #end def grid_dim
 
     valid_bconds = set(['o','p'])
+
+    bcond_types = obj(
+        open     = 'o',
+        periodic = 'p',
+        )
 
 
     def initialize_local(self,**kwargs):
@@ -602,6 +630,32 @@ class StructuredGrid(Grid):
     #end def unit_indices
 
 
+    def inside(self,points,tol=1e-12):
+        points = self.check_valid_points(points,self.space_dim,'inside')
+        upoints = self.unit_points(points)
+        inside = np.ones((len(points),),dtype=bool)
+        for d in range(self.grid_dim):
+            if self.bconds[d]!=self.bcond_types.periodic:
+                u = upoints[:,d]
+                inside &= ( (u > -tol) & (u < 1.+tol))
+            #end if
+        #end for
+        return inside
+    #end def inside
+
+
+    def project(self,points):
+        points = self.check_valid_points(points,self.space_dim,'project')
+        upoints = self.unit_points(points)
+        for d in range(self.grid_dim):
+            if self.bconds[d]==self.bcond_types.periodic:
+                upoints[:,d] -= np.floor(upoints[:,d])
+            #end if
+        #end for
+        return self.points_from_unit(upoints)
+    #end def project
+
+
     def get_boundary_lines(self,n=200,unit=False):
         u = np.linspace(0.,1.,n)
         nlines = self.grid_dim*2**(self.grid_dim-1)
@@ -652,14 +706,22 @@ class StructuredGrid(Grid):
     #end def plot_boundary
 
 
-    def plot_unit_points(self,fig=True,show=True):
+    def plot_unit_points(self,points=None,fig=True,show=True,default_marker='.',**kwargs):
         fig,ax = self.setup_mpl_fig(fig=fig,dim=self.grid_dim,
                                     ax1='a1',ax2='a2',ax3='a3')
-        u = self.unit_points().T
-        if self.grid_dim!=1:
-            ax.scatter(*u,marker='.')
+        if points is None:
+            u = self.unit_points().T
         else:
-            ax.scatter(u,0*u,marker='.')
+            points = self.check_valid_points(points,self.space_dim,'plot_unit_points')
+            u = self.unit_points(points=points).T
+        #end if
+        if default_marker is not None and 'marker' not in kwargs:
+            kwargs['marker'] = default_marker
+        #end if
+        if self.grid_dim!=1:
+            ax.scatter(*u,**kwargs)
+        else:
+            ax.scatter(u,0*u,**kwargs)
         #end if
         ax.set_aspect('equal','box')
         if show:
@@ -919,7 +981,9 @@ if __name__=='__main__':
 
 
     demos = obj(
-        plot_grids = 0,
+        plot_grids      = 0,
+        plot_inside     = 0,
+        plot_projection = 1,
         )
 
     shapes = {
@@ -946,7 +1010,7 @@ if __name__=='__main__':
     bconds = {
         1 : 'o p'.split(),
         2 : 'oo op po pp'.split(),
-        3 : 'ooo oop opo poo opp pop opp ppp'.split(),
+        3 : 'ooo oop opo poo opp pop ppo ppp'.split(),
         }
 
     grid_types = obj(
@@ -987,6 +1051,9 @@ if __name__=='__main__':
                                 )
                             g = grid_types[grid_name](**grid_inputs_bc)
                             grids[label_bc] = g
+                            if 'p' not in bc:
+                                grids[label] = g
+                            #end if
                         #end for
                     #end if
 
@@ -1016,12 +1083,78 @@ if __name__=='__main__':
                 grid.plot_unit_boundary(fig=0,show=0)
             #end if
             ax = grid.get_cur_ax()
-            #ax.set_aspect('equal','box')
             plt.title(name)
         #end for
         plt.show()
     #end if
 
-    #print grids.p22
+
+    if demos.plot_inside:
+        #grids_plot = 'p22_oo p22_op p22_pp'.split()
+        grids_plot = 's22 s23'.split()
+
+        n = 100
+
+        unit = False
+
+        upoints = dict()
+        for d in range(1,3+1):
+            upoints[d] = 0.75*np.random.randn(n,d)+0.75
+        #end for
+
+        for name in grids_plot:
+            g = grids[name]
+            dim = int(name[1])
+            points = g.points_from_unit(upoints[dim])
+            inside = g.inside(points)
+            if not unit:
+                g.plot_points(points[inside],color='b',show=0)
+                g.plot_points(points[~inside],color='r',fig=0,show=0)
+                g.plot_boundary(fig=0,show=0)
+            else:
+                g.plot_unit_points(points[inside],color='b',show=0)
+                g.plot_unit_points(points[~inside],color='r',fig=0,show=0)
+                g.plot_unit_boundary(fig=0,show=0)
+            #end if
+            ax = g.get_cur_ax()
+            plt.title(name)
+        #end for
+        plt.show()
+    #end if
+
+
+    if demos.plot_projection:
+        grids_plot = 'p22_oo p22_op p22_pp'.split()
+
+        n = 100
+
+        unit = False
+
+        upoints = dict()
+        for d in range(1,3+1):
+            upoints[d] = 0.75*np.random.randn(n,d)+0.75
+        #end for
+
+        for name in grids_plot:
+            g = grids[name]
+            dim = int(name[1])
+            points = g.points_from_unit(upoints[dim])
+            proj_points = g.project(points)
+            
+            inside = g.inside(points)
+            if not unit:
+                g.plot_points(points,color='r',marker='o',facecolors='none',show=0)
+                g.plot_points(proj_points,color='b',fig=0,show=0)
+                g.plot_boundary(fig=0,show=0)
+            else:
+                g.plot_unit_points(points,color='r',marker='o',facecolors='none',show=0)
+                g.plot_unit_points(proj_points,color='b',fig=0,show=0)
+                g.plot_unit_boundary(fig=0,show=0)
+            #end if
+            ax = g.get_cur_ax()
+            plt.title(name)
+        #end for
+        plt.show()
+    #end if
 
 #end if 
