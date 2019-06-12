@@ -77,6 +77,11 @@ public:
   ///process xml node
   bool put(xmlNodePtr cur);
   void resetCostFunction(std::vector<xmlNodePtr>& cset);
+  ///Save opt parameters to HDF5
+  bool reportH5;  
+  bool CI_Opt;  
+  ///Path and name of the HDF5 prefix where CI coeffs are saved
+  std::string newh5;
   ///assign optimization parameter i
   Return_t& Params(int i) { return OptVariables[i]; }
   ///return optimization parameter i
@@ -105,6 +110,8 @@ public:
   ///report  parameters at the end
   void reportParameters();
 
+  ///report  parameters in HDF5 at the end
+  void reportParametersH5();
   ///return the counter which keeps track of optimization steps
   inline int getReportCounter() const { return ReportCounter; }
 
