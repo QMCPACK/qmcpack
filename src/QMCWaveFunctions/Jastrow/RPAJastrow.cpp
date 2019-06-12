@@ -155,8 +155,27 @@ void RPAJastrow::buildOrbital(const std::string& name,
 
 void RPAJastrow::makeLongRange()
 {
-  LongRangeRPA = new LRTwoBodyJastrow(targetPtcl);
-  LongRangeRPA->resetByHandler(myHandler);
+  // create two-body kSpaceJastrow
+  kSpaceJastrow::SymmetryType oneBodySymm, twoBodySymm;
+  bool oneBodySpin, twoBodySpin;
+  oneBodySymm = kSpaceJastrow::ISOTROPIC;
+  twoBodySymm = kSpaceJastrow::ISOTROPIC;
+  oneBodySpin = false;
+  twoBodySpin = false;
+  LongRangeRPA = new kSpaceJastrow(targetPtcl, targetPtcl,
+    oneBodySymm, -1, "cG1", oneBodySpin,  // no one-body part
+    twoBodySymm, Kc, "cG2", twoBodySpin
+  );
+  // fill in CG2 coefficients
+  std::vector<RealType> oneBodyCoefs, twoBodyCoefs;
+  twoBodyCoefs.resize(myHandler->MaxKshell);
+  //  need to cancel prefactor in kSpaceJastrow
+  RealType prefactorInv = -targetPtcl.Lattice.Volume;
+  for (size_t is=0; is<myHandler->MaxKshell; is++)
+  {
+    twoBodyCoefs[is] = prefactorInv*myHandler->Fk_symm[is];
+  }
+  LongRangeRPA->setCoefficients(oneBodyCoefs, twoBodyCoefs);
   Psi.push_back(LongRangeRPA);
 }
 
