@@ -11,6 +11,7 @@
 #include "AFQMC/Estimators/BasicEstimator.h"
 #include "AFQMC/Estimators/MixedRDMEstimator.h"
 #include "AFQMC/Estimators/BackPropagatedEstimator.hpp"
+#include "AFQMC/Estimators/newBackPropagatedEstimator.hpp"
 //#include "AFQMC/Estimators/WalkerDMEstimator.h"
 
 #include "AFQMC/Walkers/WalkerSet.hpp"
@@ -135,6 +136,9 @@ class EstimatorHandler: public AFQMCInfo
             hdf_output = true;
           } else if (name == "back_propagation") {
             estimators.emplace_back(static_cast<EstimPtr>(std::make_shared<BackPropagatedEstimator>(TGgen.getTG(1),info,title,cur,walker_type,wset,*wfn,prop0,impsamp)));
+            hdf_output = true;
+          } else if (name == "new_back_propagation") {
+            estimators.emplace_back(static_cast<EstimPtr>(std::make_shared<BackPropagatedEstimator_>(TGgen.getTG(1),info,title,cur,walker_type,wset,*wfn,prop0,impsamp)));
             hdf_output = true;
           } else if (name == "energy") {
             estimators.emplace_back(static_cast<EstimPtr>(std::make_shared<EnergyEstimator>(TGgen.getTG(1),info,cur,*wfn,impsamp)));

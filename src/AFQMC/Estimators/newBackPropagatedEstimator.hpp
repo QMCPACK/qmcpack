@@ -15,6 +15,8 @@
 #include "Utilities/NewTimer.h"
 #include "Utilities/Timer.h"
 
+#include "AFQMC/Estimators/Observables_config.h"
+#include "AFQMC/Estimators/FullObservables.hpp"
 #include "AFQMC/SlaterDeterminantOperations/SlaterDetOperations.hpp"
 #include "AFQMC/Wavefunctions/Wavefunction.hpp"
 #include "AFQMC/Propagators/Propagator.hpp"
@@ -50,17 +52,15 @@ class BackPropagatedEstimator_: public EstimatorBase
 
   BackPropagatedEstimator_(afqmc::TaskGroup_& tg_, AFQMCInfo& info,
         std::string title, xmlNodePtr cur, WALKER_TYPES wlk, WalkerSet& wset, 
+        FullObservables&& obs_,
         Wavefunction& wfn, Propagator& prop, bool impsamp_=true) :
                                           EstimatorBase(info),TG(tg_), walker_type(wlk),
                                           Refs({0,0,0},shared_allocator<ComplexType>{TG.TG_local()}),
-                                          wfn0(wfn), prop0(prop),
+                                          observ0(std::move(obs_)), wfn0(wfn), prop0(prop),
                                           max_nback_prop(10),
                                           nStabalize(10), path_restoration(false), block_size(1),
                                           writer(false), importanceSampling(impsamp_)
   {
-
-    std::fill(measure.begin(),measure.end(),false);
-
     int nave(1);
     if(cur != NULL) {
       ParameterSet m_param;
@@ -102,34 +102,11 @@ class BackPropagatedEstimator_: public EstimatorBase
       for(auto it=wset.begin(); it<wset.end(); ++it)
         it->setSlaterMatrixN(); 
 
-    ncores_per_TG = TG.getNCoresPerTG();
-    if(ncores_per_TG > 1)
+    if(TG.getNCoresPerTG() > 1)
       APP_ABORT("ncores > 1 is broken with back propagation. Fix this.");
-    core_rank = TG.getLocalTGRank();
     writer = (TG.getGlobalRank()==0);
-    int dm_size;
-    if(walker_type == CLOSED) {
-      dm_size = NMO*NMO;
-      dm_dims = {NMO,NMO};
-    } else if(walker_type == COLLINEAR) {
-      dm_size = 2*NMO*NMO;
-      dm_dims = {2*NMO,NMO};
-    } else if(walker_type == NONCOLLINEAR) {
-      dm_size = 4*NMO*NMO;
-      dm_dims = {2*NMO,2*NMO};
-    }
-    if(DMBuffer.size(0) != nave || DMBuffer.size(1) != dm_size) 
-      DMBuffer.reextent({nave,dm_size});
-    if(DMAverage.size(0) != nave || DMAverage.size(1) != dm_size) 
-      DMAverage.reextent({nave,dm_size});
-    using std::fill_n;
-    fill_n(DMBuffer.origin(), DMBuffer.num_elements(), ComplexType(0.0,0.0));
-    fill_n(DMAverage.origin(), DMAverage.num_elements(), ComplexType(0.0,0.0));
-    denom.reextent({nave,1});
-    denom_average.reextent({nave,1});
-    fill_n(denom_average.origin(), nave, ComplexType(0.0)); 
   }
-
+  
   ~BackPropagatedEstimator_() {}
 
   void accumulate_step(WalkerSet& wset, std::vector<ComplexType>& curData) {}
@@ -182,14 +159,10 @@ class BackPropagatedEstimator_: public EstimatorBase
     int wpop = wset.GlobalPopulation();
     int nw = wset.size();  // assuming all groups have the same size
     int iw0 = wset.getTG().getTGNumber()*nw;
-    if(wdetR.size(0) != nback_prop_steps.size() ||  wdetR.size(1) !=  wpop || wdetR.size(2) != nx*nrefs)
-      wdetR.reextent({nback_prop_steps.size(),wpop,nrefs*nx}); 
 
     int n0,n1;
     std::tie(n0,n1) = FairDivideBoundary(TG.getLocalTGRank(),int(Refs.size(2)),TG.getNCoresPerTG());
     boost::multi::array_ref<ComplexType,3> Refs_(to_address(Refs.origin()),Refs.extensions());
-    fill_n(denom[iav].origin(),denom[iav].num_elements(),ComplexType(0.0,0.0));
-    fill_n(DMBuffer[iav].origin(), DMBuffer[iav].num_elements(), ComplexType(0.0,0.0));
 
     // 2. setup back propagated references
     wfn0.getReferencesForBackPropagation(Refs_[0]);
@@ -200,10 +173,6 @@ class BackPropagatedEstimator_: public EstimatorBase
 
     //3. propagate backwards the references
     prop0.BackPropagate(bp_step,nStabalize,wset,Refs_,detR);
-
-    // MAM:
-    using std::copy_n;
-    copy_n(detR.origin(),detR.num_elements(),wdetR[iav][iw0].origin());
 
     //4. calculate properties, only rdm now but make a list or properties later
     // adjust weights here is path restoration
@@ -219,13 +188,7 @@ class BackPropagatedEstimator_: public EstimatorBase
       wset.getProperty(PHASE,phase);
       for(int i=0; i<wgt.size(); i++) wgt[i] *= phase[i];
     }
-    CMatrix_ref BackPropDM(DMBuffer[iav].origin(), {dm_dims.first,dm_dims.second});
-    stdCVector_ref denom_(denom[iav].origin(), iextensions<1u>{denom.size(1)});
-    
-    accumulate_observables(wset, wgt, iav);
-//    wfn0.WalkerAveragedDensityMatrix(wset, wgt, BackPropDM, denom_, 
-//                                   !importanceSampling, std::addressof(Refs_),
-//                                   std::addressof(detR));
+    observ0.accumulate(iav, wset, Refs_, wgt, detR, !importanceSampling);
 
     if(bp_step == max_nback_prop) {
       // 5. setup for next block 
@@ -254,10 +217,6 @@ class BackPropagatedEstimator_: public EstimatorBase
                     <<AFQMCTimers[back_propagate_timer]->get_total() <<" ";
       AFQMCTimers[back_propagate_timer]->reset();  
     }
-    if(accumulated_in_last_block) {
-      // not correct with ncores>1  
-      TG.Global().reduce_in_place_n(wdetR.origin(),wdetR.num_elements(),std::plus<>());
-    }
     if(writer && accumulated_in_last_block) {
       int nave(nback_prop_steps.size());
       int nref(detR.size(1));
@@ -269,87 +228,23 @@ class BackPropagatedEstimator_: public EstimatorBase
         dump.pop();
         write_metadata = false;
       }
-#ifdef ENABLE_CUDA
-      stdCMatrix buff(DMBuffer);
-#else
-      CMatrix& buff(DMBuffer);
-#endif
-      ma::axpy(ComplexType(1.0),buff,DMAverage);
-      for(int i=0; i<nave; ++i)  
-        denom_average[i][0] += denom[i][0];
-      if(iblock%block_size == 0) {
-//        for(int i = 0; i < DMAverage.size(); i++)
-//          DMAverage[i] /= block_size;
-//        denom_average[0] /= block_size;
-        ma::scal(ComplexType(1.0/block_size),DMAverage);
-        ma::scal(ComplexType(1.0/block_size),denom_average);
-        dump.push("BackPropagated");
-        for(int i=0; i<nave; ++i) {
-          dump.push(std::string("NumBackProp_")+std::to_string(nback_prop_steps[i]));
-          std::string padded_iblock = std::string(n_zero-std::to_string(iblock).length(),'0')+std::to_string(iblock);
-          stdCVector_ref DMAverage_( DMAverage[i].origin(), {DMAverage.size(1)}); 
-          stdCVector_ref denom_average_( denom_average[i].origin(), {denom_average.size(1)}); 
-          stdCVector_ref wdetR_( wdetR[i].origin(), {wdetR.size(1)*wdetR.size(2)}); 
-          dump.write(DMAverage_, "one_rdm_"+padded_iblock);
-          dump.write(denom_average_, "one_rdm_denom_"+padded_iblock);
-          dump.write(wdetR_, "one_rdm_detR_"+padded_iblock);
-          dump.pop();
-        }
-        dump.pop();
-        using std::fill_n;  
-        fill_n(DMAverage.origin(), DMAverage.num_elements(), ComplexType(0.0,0.0));
-        fill_n(denom_average.origin(), denom_average.num_elements(), ComplexType(0.0,0.0));
-        fill_n(wdetR.origin(),wdetR.num_elements(),ComplexType(0.0));
-      }
+      observ0.print();
     }
   }
 
   private:
 
-  enum BP_observables {
-        GFockOpa,     // numerator of Extended Koopman's Theorem approach
-        GFockOpb,     // numerator of Extended Koopman's Theorem approach
-        OneRDMFull,
-        TwoRDMFull,
-        OneRDMc,
-        TwoRDMc,
-        OneRSDMFull,
-        TwoRSDMFull,
-        OneRSDMc,
-        TwoRSDMc,
-        energy,
-        force
-  }; // 10 observables
-  std::array<bool,10> measure;
-  std::array<std::string,10> hdf_ids = { "GFockOpa_",
-        "GFockOpb_", 
-        "one_rdm_",
-        "two_rdm_",
-        "contracted_one_rdm_",
-        "contracted_two_rdm_",
-        "one_rsdm_",
-        "two_rsdm_",
-        "contracted_one_rsdm_",
-        "contracted_two_rsdm_",
-        "bp_energy_",
-        "bp_force_"
-  };  // will probably change  
-
   TaskGroup_& TG;
 
   WALKER_TYPES walker_type;
-
-  std_stack_alloc   // implement this class with the stack allocator!!!
-                    // use it for all temporary storage, e.g. detR, Refs, DMBuffer, G, etc.
-                    // very little should be allocated permanently at the device, 
-                    // only accumulators should persist and always on the host!
-  device_stack_alloc
 
   bool writer;
   bool accumulated_in_last_block;
 
   int max_nback_prop;
   std::vector<int> nback_prop_steps;  
+
+  FullObservables observ0; 
 
   Wavefunction& wfn0;
 
@@ -358,16 +253,11 @@ class BackPropagatedEstimator_: public EstimatorBase
   // The first element of data stores the denominator of the estimator (i.e., the total
   // walker weight including rescaling factors etc.). The rest of the elements store the
   // averages of the various elements of the green's function.
-  CMatrix DMBuffer;
-  stdCMatrix DMAverage;
   mpi3CTensor Refs;
   boost::multi::array<ComplexType,2> detR;
-  boost::multi::array<ComplexType,3> wdetR;
 
   RealType weight, weight_sub;
   RealType targetW = 1;
-  int core_rank;
-  int ncores_per_TG;
   int iblock = 0;
   int nblocks_skip = 0;
   ComplexType zero = ComplexType(0.0, 0.0);
@@ -381,9 +271,6 @@ class BackPropagatedEstimator_: public EstimatorBase
   // along back propagation path.
   bool path_restoration, importanceSampling;
 
-  std::pair<int,int> dm_dims;
-  stdCMatrix denom;
-  stdCMatrix denom_average;
   bool write_metadata = true;
 
 };
