@@ -576,6 +576,35 @@ class StructuredGrid(Grid):
         return len(self.shape)
     #end def grid_dim
 
+    @property
+    def grid_shape(self):
+        return self.shape
+    #end def grid_shape
+
+    @property
+    def cell_grid_shape(self):
+        shape = np.array(self.shape,dtype=int)
+        if not self.centered:
+            shape -= np.array(self.has_endpoints(),dtype=int)
+        #end if
+        return tuple(shape)
+    #end def cell_grid_shape
+
+    @property
+    def flat_points_shape(self):
+        space_dim = self.r.shape[-1]
+        npoints = np.prod(self.shape)
+        return (npoints,space_dim)
+    #end def flat_points_shape
+
+    @property
+    def full_points_shape(self):
+        space_dim = self.r.shape[-1]
+        return self.shape+(space_dim,)
+    #end def flat_points_shape
+
+
+
     valid_bconds = set(['o','p'])
 
     bcond_types = obj(
@@ -627,7 +656,7 @@ class StructuredGrid(Grid):
     #end def set_bconds
 
 
-    def have_endpoint(self,bconds=None,grid_dim=None):
+    def has_endpoints(self,bconds=None,grid_dim=None):
         if grid_dim is not None:
             if bconds is None:
                 bconds = grid_dim*[self.bcond_types.open]
@@ -638,7 +667,7 @@ class StructuredGrid(Grid):
             bconds = self.bconds
         #end if
         return bconds==self.bcond_types.open
-    #end def have_endpoint
+    #end def has_endpoints
 
 
     def local_validity_checks(self,msgs):
@@ -655,6 +684,16 @@ class StructuredGrid(Grid):
         #end for
         return msgs
     #end def local_validity_checks
+
+
+    def reshape_full(self):
+        self.r.shape = self.full_points_shape
+    #end def reshape_full
+
+
+    def reshape_flat(self):
+        self.r.shape = self.flat_points_shape
+    #end def reshape_flat
 
 
     def unit_points(self,points=None):
@@ -923,7 +962,7 @@ class ParallelotopeGrid(StructuredGridWithAxes):
         #end if
         bconds = kwargs.get('bconds',None)
 
-        endpoint = self.have_endpoint(bconds=bconds,grid_dim=grid_dim)
+        endpoint = self.has_endpoints(bconds=bconds,grid_dim=grid_dim)
 
         points,shape,axes = parallelotope_grid_points(axes,shape=shape,cells=cells,dr=dr,centered=centered,endpoint=endpoint,return_shape=True,return_axes=True)
 
@@ -993,7 +1032,7 @@ class SpheroidGrid(StructuredGridWithAxes):
             self.error('one dimensional spheroid is not supported')
         #end if
 
-        endpoint = self.have_endpoint(bconds=bconds,grid_dim=grid_dim)
+        endpoint = self.has_endpoints(bconds=bconds,grid_dim=grid_dim)
 
         points,shape = spheroid_grid_points(axes,shape=shape,cells=cells,centered=centered,endpoint=endpoint,return_shape=True)
 
@@ -1055,7 +1094,7 @@ if __name__=='__main__':
 
 
     demos = obj(
-        plot_grids      = 1,
+        plot_grids      = 0,
         plot_inside     = 0,
         plot_projection = 0,
         )
