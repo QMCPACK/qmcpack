@@ -29,7 +29,7 @@ public:
 
   ExampleHeComponent(const ParticleSet& ions, ParticleSet& els) : ions_(ions)
   {
-    my_table_ID_ = els.addTable(ions_, DT_SOA);
+    my_table_idx_ = els.addTable(ions_, DT_SOA);
   }
 
 
@@ -84,7 +84,7 @@ public:
 
 private:
   const ParticleSet& ions_;
-  int my_table_ID_;
+  int my_table_idx_;
 
   OptVariablesType my_vars_;
 };

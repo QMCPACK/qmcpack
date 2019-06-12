@@ -70,7 +70,7 @@ ExampleHeComponent::RealType ExampleHeComponent::evaluateLog(ParticleSet& P,
   double r12  = ee_table->Distances[1][0];
   auto rhat12 = ee_table->Displacements[1][0] / r12;
 
-  const DistanceTableData* ei_table = P.DistTables[my_table_ID_];
+  const DistanceTableData* ei_table = P.DistTables[my_table_idx_];
 
   // First index is ions, second index is electrons
   double r1 = ei_table->Distances[0][0];
@@ -116,7 +116,7 @@ ExampleHeComponent::ValueType ExampleHeComponent::ratio(ParticleSet& P, int iat)
   double r12_old = ee_table->Distances[1][0];
   double r12_new = ee_table->Temp_r[jat];
 
-  const DistanceTableData* ei_table = P.DistTables[my_table_ID_];
+  const DistanceTableData* ei_table = P.DistTables[my_table_idx_];
 
   double r_old = ei_table->Distances[iat][0];
   double r_new = ei_table->Temp_r[0];
@@ -132,7 +132,7 @@ ExampleHeComponent::ValueType ExampleHeComponent::ratio(ParticleSet& P, int iat)
 
 ExampleHeComponent::GradType ExampleHeComponent::evalGrad(ParticleSet& P, int iat)
 {
-  const DistanceTableData* ei_table = P.DistTables[my_table_ID_];
+  const DistanceTableData* ei_table = P.DistTables[my_table_idx_];
 
   double r1 = ei_table->Distances[0][0];
   double r2 = ei_table->Distances[1][0];
@@ -173,7 +173,7 @@ ExampleHeComponent::ValueType ExampleHeComponent::ratioGrad(ParticleSet& P, int 
 
   auto rhat12 = ee_table->Temp_dr[jat] / r12_new;
 
-  const DistanceTableData* ei_table = P.DistTables[my_table_ID_];
+  const DistanceTableData* ei_table = P.DistTables[my_table_idx_];
 
   double r_old = ei_table->Distances[iat][0];
   double r_new = ei_table->Temp_r[0];
@@ -231,7 +231,7 @@ void ExampleHeComponent::evaluateDerivatives(ParticleSet& P,
   double r12                        = ee_table->Distances[1][0];
   auto rhat12                       = ee_table->Displacements[1][0] / r12;
 
-  const DistanceTableData* ei_table = P.DistTables[my_table_ID_];
+  const DistanceTableData* ei_table = P.DistTables[my_table_idx_];
 
   double r1 = ei_table->Distances[0][0];
   double r2 = ei_table->Distances[1][0];
