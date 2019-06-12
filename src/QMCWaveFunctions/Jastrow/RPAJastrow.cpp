@@ -164,7 +164,8 @@ void RPAJastrow::makeShortRange()
 {
   app_log() << "  Adding Short Range part of RPA function" << std::endl;
   //short-range uses realHandler
-  Rcut = myHandler->get_rc() - 0.1;
+  RealType tiny = 1e-6;
+  Rcut = myHandler->get_rc() - tiny;
   //create numerical functor of type BsplineFunctor<RealType>.
   nfunc = new FuncType;
   SRA   = new ShortRangePartAdapter<RealType>(myHandler);
@@ -173,7 +174,9 @@ void RPAJastrow::makeShortRange()
   // J2OrbitalSoA<BsplineFunctor<RealType> > *j2 = new J2OrbitalSoA<BsplineFunctor<RealType> >(targetPtcl,IsManager);
   TwoBodyJastrowOrbital<BsplineFunctor<RealType>>* j2 =
       new TwoBodyJastrowOrbital<BsplineFunctor<RealType>>(targetPtcl, IsManager);
-  size_t npts    = 12;
+  size_t nparam  = 12; // number of Bspline parameters
+  size_t npts    = 100; // number of 1D grid points for basis functions
+  RealType cusp = -SRA->df(0);
   RealType delta = Rcut / static_cast<double>(npts);
   std::vector<RealType> X(npts + 1), Y(npts + 1);
   for (size_t i = 0; i < npts; ++i)
@@ -185,7 +188,7 @@ void RPAJastrow::makeShortRange()
   Y[npts]              = 0.0;
   std::string functype = "rpa";
   std::string useit    = "no";
-  nfunc->initialize(npts, X, Y, SRA->df(0), Rcut, functype, useit);
+  nfunc->initialize(nparam, X, Y, cusp, Rcut+tiny, functype, useit);
   for (size_t i = 0; i < npts; ++i)
   {
     X[i] = i * delta;

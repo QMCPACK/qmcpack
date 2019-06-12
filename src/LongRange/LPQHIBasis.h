@@ -88,7 +88,6 @@ public:
   }
   inline mRealType df(int n, mRealType r) const
   {
-    APP_ABORT("LPQHIBasis::df.  Function slated for deprecation.  Contact a developer");
     int i        = n / 3;
     int alpha    = n - 3 * i;
     mRealType ra = delta * (i - 1);
