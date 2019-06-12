@@ -345,6 +345,8 @@ WaveFunctionComponent* RPAJastrow::makeClone(ParticleSet& tpq) const
   }
 
   RPAJastrow* myClone = new RPAJastrow(tpq, IsManager);
+  myClone->Rcut = Rcut;
+  myClone->Kc = Kc;
   myClone->setHandler(tempHandler);
   if (!DropLongRange)
     myClone->makeLongRange();
