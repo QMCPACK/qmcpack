@@ -26,21 +26,18 @@ namespace qmcplusplus
 class ExampleHeComponent : public WaveFunctionComponent
 {
 public:
-  const ParticleSet& ions;
-  int myTableID;
 
-  ExampleHeComponent(const ParticleSet& ions_, ParticleSet& els) : ions(ions_)
+  ExampleHeComponent(const ParticleSet& ions, ParticleSet& els) : ions_(ions)
   {
-    myTableID = els.addTable(ions, DT_SOA);
+    my_table_ID_ = els.addTable(ions_, DT_SOA);
   }
 
 
   using OptVariablesType = optimize::VariableSet;
 
-  OptVariablesType myVars;
 
-  void checkInVariables(OptVariablesType& active) override { active.insertFrom(myVars); }
-  void checkOutVariables(const OptVariablesType& active) override { myVars.getIndex(active); }
+  void checkInVariables(OptVariablesType& active) override { active.insertFrom(my_vars_); }
+  void checkOutVariables(const OptVariablesType& active) override { my_vars_.getIndex(active); }
   void resetParameters(const OptVariablesType& active) override;
 
 
@@ -78,13 +75,18 @@ public:
 
   bool put(xmlNodePtr cur);
 
-
-  bool Opt_B;
+  bool opt_B;
   RealType B;
   std::string ID_B;
 
   RealType A;
   RealType Z;
+
+private:
+  const ParticleSet& ions_;
+  int my_table_ID_;
+
+  OptVariablesType my_vars_;
 };
 
 } // namespace qmcplusplus

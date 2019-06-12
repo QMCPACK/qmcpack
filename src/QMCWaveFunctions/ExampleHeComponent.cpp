@@ -38,16 +38,16 @@ bool ExampleHeComponent::put(xmlNodePtr cur)
       {
         ID_B = id_in;
         putContent(B, cur);
-        Opt_B = true;
+        opt_B = true;
       }
     }
     cur = cur->next;
   }
 
-  myVars.clear();
+  my_vars_.clear();
 
-  if (Opt_B)
-    myVars.insert(ID_B, B, Opt_B, optimize::OTHER_P);
+  if (opt_B)
+    my_vars_.insert(ID_B, B, opt_B, optimize::OTHER_P);
 
 
   // Electron-nucleus cusp
@@ -70,7 +70,7 @@ ExampleHeComponent::RealType ExampleHeComponent::evaluateLog(ParticleSet& P,
   double r12  = ee_table->Distances[1][0];
   auto rhat12 = ee_table->Displacements[1][0] / r12;
 
-  const DistanceTableData* ei_table = P.DistTables[myTableID];
+  const DistanceTableData* ei_table = P.DistTables[my_table_ID_];
 
   // First index is ions, second index is electrons
   double r1 = ei_table->Distances[0][0];
@@ -116,7 +116,7 @@ ExampleHeComponent::ValueType ExampleHeComponent::ratio(ParticleSet& P, int iat)
   double r12_old = ee_table->Distances[1][0];
   double r12_new = ee_table->Temp_r[jat];
 
-  const DistanceTableData* ei_table = P.DistTables[myTableID];
+  const DistanceTableData* ei_table = P.DistTables[my_table_ID_];
 
   double r_old = ei_table->Distances[iat][0];
   double r_new = ei_table->Temp_r[0];
@@ -132,7 +132,7 @@ ExampleHeComponent::ValueType ExampleHeComponent::ratio(ParticleSet& P, int iat)
 
 ExampleHeComponent::GradType ExampleHeComponent::evalGrad(ParticleSet& P, int iat)
 {
-  const DistanceTableData* ei_table = P.DistTables[myTableID];
+  const DistanceTableData* ei_table = P.DistTables[my_table_ID_];
 
   double r1 = ei_table->Distances[0][0];
   double r2 = ei_table->Distances[1][0];
@@ -173,7 +173,7 @@ ExampleHeComponent::ValueType ExampleHeComponent::ratioGrad(ParticleSet& P, int 
 
   auto rhat12 = ee_table->Temp_dr[jat] / r12_new;
 
-  const DistanceTableData* ei_table = P.DistTables[myTableID];
+  const DistanceTableData* ei_table = P.DistTables[my_table_ID_];
 
   double r_old = ei_table->Distances[iat][0];
   double r_new = ei_table->Temp_r[0];
@@ -203,15 +203,15 @@ WaveFunctionComponentPtr ExampleHeComponent::makeClone(ParticleSet& tpq) const {
 
 void ExampleHeComponent::resetParameters(const OptVariablesType& active)
 {
-  if (myVars.size())
+  if (my_vars_.size())
   {
-    int ia = myVars.where(0);
+    int ia = my_vars_.where(0);
     if (ia > -1)
     {
       int i = 0;
-      if (Opt_B)
+      if (opt_B)
       {
-        B = myVars[i++] = active[ia++];
+        B = my_vars_[i++] = active[ia++];
       }
     }
   }
@@ -231,7 +231,7 @@ void ExampleHeComponent::evaluateDerivatives(ParticleSet& P,
   double r12                        = ee_table->Distances[1][0];
   auto rhat12                       = ee_table->Displacements[1][0] / r12;
 
-  const DistanceTableData* ei_table = P.DistTables[myTableID];
+  const DistanceTableData* ei_table = P.DistTables[my_table_ID_];
 
   double r1 = ei_table->Distances[0][0];
   double r2 = ei_table->Distances[1][0];
