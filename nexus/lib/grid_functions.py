@@ -138,10 +138,14 @@ def linear_grid_1d(rmin=0.0,rmax=1.0,n=None,dr=None,centered=False):
 
 
 
-def unit_grid_points(shape,centered=False):
+def unit_grid_points(shape,centered=False,endpoint=None):
     linear_grids = []
-    for n in shape:
-        lin_grid = np.linspace(0.0,1.0,n,endpoint=False)
+    if endpoint is None:
+        endpoint = len(shape)*[False]
+    #end if
+    for n,ep in zip(shape,endpoint):
+        ep &= not centered
+        lin_grid = np.linspace(0.0,1.0,n,endpoint=ep)
         if centered:
             lin_grid += 0.5/n
         #end for
@@ -159,21 +163,34 @@ def unit_grid_points(shape,centered=False):
 
 
 
-def parallelotope_grid_points(axes,shape=None,dr=None,centered=False,return_shape=False,return_axes=False):
+def parallelotope_grid_points(axes,shape=None,cells=None,dr=None,centered=False,endpoint=None,return_shape=False,return_axes=False):
     if not isinstance(axes,np.ndarray):
         axes = np.array(axes)
     #end if
-    if shape is not None and dr is not None:
-        error('provide only one of "dr" and "shape", not both','parallelotope_grid_points')
-    elif dr is not None:
-        if not isinstance(dr,np.ndarray):
-            dr = np.array(dr,dtype=float)
-        #end if
-        shape = np.array(np.around(np.linalg.norm(axes,axis=1)/dr),dtype=int)
-    elif shape is None:
-        error('either "shape" or "dr" must be provided','parallelotope_grid_points')
+    shape_specifiers = (shape,cells,dr)
+    specifier_count = 0
+    for s in shape_specifiers:
+        specifier_count += int(s is not None)
+    #end for
+    if specifier_count>1:
+        error('provide only one of "shape", "cells" or "dr"','parallelotope_grid_points')
+    elif specifier_count==0:
+        error('either "shape", "cells" or "dr" must be provided','parallelotope_grid_points')
     #end if
-    ugrid = unit_grid_points(shape,centered=centered)
+    if shape is None:
+        if cells is not None:
+            shape = np.array(cells,dtype=int)
+        elif dr is not None:
+            if not isinstance(dr,np.ndarray):
+                dr = np.array(dr,dtype=float)
+            #end if
+            shape = np.array(np.around(np.linalg.norm(axes,axis=1)/dr),dtype=int)
+        #end if
+        if not centered and endpoint is not None:
+            shape += np.array(endpoint,dtype=int)
+        #end if
+    #end if
+    ugrid = unit_grid_points(shape,centered=centered,endpoint=endpoint)
     pgrid = np.dot(ugrid,axes)
     if not return_shape and not return_axes:
         return pgrid
@@ -191,15 +208,31 @@ def parallelotope_grid_points(axes,shape=None,dr=None,centered=False,return_shap
 
 
 
-def spheroid_grid_points(axes,shape,centered=False):
+def spheroid_grid_points(axes,shape=None,cells=None,centered=False,endpoint=None,return_shape=False):
     if not isinstance(axes,np.ndarray):
         axes = np.array(axes)
+    #end if
+    shape_specifiers = (shape,cells)
+    specifier_count = 0
+    for s in shape_specifiers:
+        specifier_count += int(s is not None)
+    #end for
+    if specifier_count>1:
+        error('provide only one of "shape" or "cells", not both','spheroid_grid_points')
+    elif specifier_count==0:
+        error('either "shape" or "cells" must be provided','spheroid_grid_points')
+    #end if
+    if cells is not None:
+        shape = np.array(cells,dtype=int)
+        if not centered and endpoint is not None:
+            shape += np.array(endpoint,dtype=int)
+        #end if
     #end if
     grid_dim,space_dim = axes.shape
     if grid_dim not in (2,3):
         error('spheroid grid generation only supported in 2 or 3 dimensions','spheriod_grid_points')
     #end if
-    ugrid = unit_grid_points(shape,centered=centered)
+    ugrid = unit_grid_points(shape,centered=centered,endpoint=endpoint)
     if grid_dim==2:
         ugrid[:,1] *= 2*np.pi
         sgrid = polar_to_cartesian(ugrid)
@@ -209,7 +242,11 @@ def spheroid_grid_points(axes,shape,centered=False):
         sgrid = spherical_to_cartesian(ugrid)
     #end if
     sgrid = np.dot(sgrid,axes) # adds radial range and skew
-    return sgrid
+    if not return_shape:
+        return sgrid
+    else:
+        return sgrid,shape
+    #end if
 #end def spheroid_grid_points
 
 
@@ -556,11 +593,15 @@ class StructuredGrid(Grid):
         if shape is None:
             self.error('cannot initialize grid, "shape" is required')
         #end if
-        self.set_shape(shape)
+        if not isinstance(shape,(tuple,list,np.ndarray)):
+            self.error('cannot set shape from data with type "{}"\nplease use tuple, list, or array for inputted shape'.format(shape.__class__.__name__))
+        #end if
+        shape = np.array(shape,dtype=int)
         if bconds is None:
-            bconds = len(self.shape)*['o']
+            bconds = len(shape)*[self.bcond_types.open]
         #end if
         self.set_bconds(bconds)
+        self.set_shape(shape)
     #end def initialize_local
 
 
@@ -584,6 +625,20 @@ class StructuredGrid(Grid):
         #end for
         self.bconds = bconds
     #end def set_bconds
+
+
+    def have_endpoint(self,bconds=None,grid_dim=None):
+        if grid_dim is not None:
+            if bconds is None:
+                bconds = grid_dim*[self.bcond_types.open]
+            #end if
+            bconds = np.array(bconds,dtype=object)
+        #end if
+        if bconds is None:
+            bconds = self.bconds
+        #end if
+        return bconds==self.bcond_types.open
+    #end def have_endpoint
 
 
     def local_validity_checks(self,msgs):
@@ -786,7 +841,7 @@ class StructuredGridWithAxes(StructuredGrid):
     #end def initialize_local
 
 
-    def set_axes(self,axes,shift_points=False):
+    def set_axes(self,axes):
         if not isinstance(axes,(tuple,list,np.ndarray)):
             self.error('cannot set axes from data with type "{}"\nplease use tuple, list, or array for inputted axes'.format(axes.__class__.__name__))
         #end if
@@ -848,19 +903,29 @@ class ParallelotopeGrid(StructuredGridWithAxes):
 
 
     def initialize_local(self,
-                 axes     = None,
-                 shape    = None,
-                 dr       = None,
-                 corner   = None,
-                 center   = None,
-                 centered = False,
-                 **kwargs
-                 ):
-        if shape is None and dr is None:
-            self.error('cannot initialize grid, either "shape" or "dr" is required')
+                         axes     = None,
+                         shape    = None,
+                         cells    = None,
+                         dr       = None,
+                         corner   = None,
+                         center   = None,
+                         centered = False,
+                         **kwargs
+                         ):
+        if shape is None and cells is None and dr is None:
+            self.error('cannot initialize grid, either "shape", "cells", or "dr" is required')
+        elif shape is not None:
+            grid_dim = len(shape)
+        elif cells is not None:
+            grid_dim = len(cells)
+        elif dr is not None:
+            grid_dim = len(dr)
         #end if
+        bconds = kwargs.get('bconds',None)
 
-        points,shape,axes = parallelotope_grid_points(axes,shape=shape,dr=dr,centered=centered,return_shape=True,return_axes=True)
+        endpoint = self.have_endpoint(bconds=bconds,grid_dim=grid_dim)
+
+        points,shape,axes = parallelotope_grid_points(axes,shape=shape,cells=cells,dr=dr,centered=centered,endpoint=endpoint,return_shape=True,return_axes=True)
 
         if center is not None:
             center = np.array(center)
@@ -906,31 +971,40 @@ class SpheroidGrid(StructuredGridWithAxes):
     def initialize_local(self,
                          axes     = None,
                          shape    = None,
+                         cells    = None,
                          center   = None,
                          centered = False,
                          **kwargs
                          ):
-        if shape is None:
-            self.error('cannot initialize grid, "shape" is required')
+        if shape is None and cells is None:
+            self.error('cannot initialize grid, either "shape" or "cells" is required')
+        elif shape is not None:
+            grid_dim = len(shape)
+        elif cells is not None:
+            grid_dim = len(cells)
         #end if
 
-        points = spheroid_grid_points(axes,shape=shape,centered=centered)
+        # force bconds to match sphere constraints
+        if grid_dim==3:
+            bconds = tuple('oop')
+        elif grid_dim==2:
+            bconds = tuple('op')
+        else:
+            self.error('one dimensional spheroid is not supported')
+        #end if
+
+        endpoint = self.have_endpoint(bconds=bconds,grid_dim=grid_dim)
+
+        points,shape = spheroid_grid_points(axes,shape=shape,cells=cells,centered=centered,endpoint=endpoint,return_shape=True)
 
         kwargs['axes']     = axes
         kwargs['origin']   = center
         kwargs['shape']    = shape
         kwargs['centered'] = centered
+        kwargs['bconds']   = bconds
         kwargs['points']   = points
         StructuredGridWithAxes.initialize_local(self,**kwargs)
 
-        # reassign bconds to match sphere constraints
-        if self.grid_dim==3:
-            self.set_bconds(tuple('oop'))
-        elif self.grid_dim==2:
-            self.set_bconds(tuple('op'))
-        else:
-            self.error('one dimensional spheroid is not supported')
-        #end if
     #end def initialize_local
 
 
@@ -981,9 +1055,9 @@ if __name__=='__main__':
 
 
     demos = obj(
-        plot_grids      = 0,
+        plot_grids      = 1,
         plot_inside     = 0,
-        plot_projection = 1,
+        plot_projection = 0,
         )
 
     shapes = {
@@ -1034,7 +1108,8 @@ if __name__=='__main__':
                 for centered in (False,True):
                     label = gdict[grid_name]+str(grid_dim)+str(space_dim)+cdict[centered]
                     grid_inputs = obj(
-                        shape    = shapes[grid_dim],
+                        #shape    = shapes[grid_dim],
+                        cells    = shapes[grid_dim],
                         axes     = axes[grid_dim,space_dim],
                         centered = centered,
                         )
@@ -1064,14 +1139,15 @@ if __name__=='__main__':
 
     for label in sorted(grids.keys()):
         g = grids[label]
-        print ' {:<16}  {}'.format(label,g.bconds)
+        print ' {:<16}  {}  {}'.format(label,g.bconds,g.shape)
     #end for
 
     if demos.plot_grids:
-        grids_plot = 'p11 p12 p13 p23 p23c p33 p33c'.split()
+        grids_plot = 'p23c p23_oo p23_op p23_pp s23c s23'.split()
+        #grids_plot = 'p11 p12 p13 p23 p23c p33 p33c'.split()
         #grids_plot = 's23 s23c s33 s33c'.split()
 
-        unit = False
+        unit = True
 
         for name in grids_plot:
             grid = grids[name]

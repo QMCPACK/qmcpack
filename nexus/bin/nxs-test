@@ -3140,18 +3140,49 @@ def grid_functions():
         #end for
 
         p1 = ParallelotopeGrid(
-            shape = (5,),
+            shape = (6,),
             axes  = [[1]],
             )
         grids.append(p1)
 
         p2 = ParallelotopeGrid(
+            cells = (5,),
+            axes  = [[1]],
+            )
+        grids.append(p2)
+
+        p3 = ParallelotopeGrid(
             dr    = (0.2,),
             axes  = [[1]],
             )
         grids.append(p2)
 
+        p4 = ParallelotopeGrid(
+            shape = (5,),
+            axes  = [[1]],
+            centered = True,
+            )
+        grids.append(p4)
+
+        p5 = ParallelotopeGrid(
+            cells = (5,),
+            axes  = [[1]],
+            centered = True,
+            )
+        grids.append(p5)
+
+        p6 = ParallelotopeGrid(
+            dr    = (0.2,),
+            axes  = [[1]],
+            centered = True,
+            )
+        grids.append(p6)
+
         nassert(object_eq(p1,p2))
+        nassert(object_eq(p1,p3))
+
+        nassert(object_eq(p4,p5))
+        nassert(object_eq(p4,p6))
 
         for g in grids:
             nassert(g.valid())
@@ -3203,7 +3234,7 @@ def grid_functions():
         nassert((ps.unit_indices(p.r+pp)==imap).all())
     #end def test_unit_indices_2d
 
-    test_unit_indices_2d()
+    #test_unit_indices_2d()
 
 
 #end def grid_functions
