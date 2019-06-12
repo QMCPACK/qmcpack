@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2018 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2019 Jeongnim Kim and QMCPACK developers.
 //
 // File developed by: Mark Dewing, mdewing@anl.gov, Argonne National Laboratory
 //
@@ -16,6 +16,7 @@
 #include "Message/Communicate.h"
 #include "OhmmsData/Libxml2Doc.h"
 #include "QMCWaveFunctions/WaveFunctionFactory.h"
+#include "QMCWaveFunctions/ExampleHeComponent.h"
 
 namespace qmcplusplus
 {
@@ -83,7 +84,10 @@ TEST_CASE("ExampleHe", "[wavefunction]")
   REQUIRE(wff.targetPsi != NULL);
   REQUIRE(wff.targetPsi->size() == 1);
 
-  WaveFunctionComponent* example_he = wff.targetPsi->getOrbitals()[0];
+  WaveFunctionComponent* base_example_he = wff.targetPsi->getOrbitals()[0];
+  REQUIRE(base_example_he != NULL);
+
+  ExampleHeComponent* example_he = dynamic_cast<ExampleHeComponent*>(base_example_he);
   REQUIRE(example_he != NULL);
 
   ions->update();
@@ -97,6 +101,8 @@ TEST_CASE("ExampleHe", "[wavefunction]")
   // Set the base expectations for wavefunction value and derivatives
   RealType logpsi = example_he->evaluateLog(*elec, all_grad, all_lap);
 
+
+  // Comparisons are performed at a single set of electron coordinates.  This should be expanded.
 
   // Compare with evalGrad
 
@@ -148,6 +154,7 @@ TEST_CASE("ExampleHe", "[wavefunction]")
   REQUIRE(grad1[2] == ComplexApprox(all_grad[1][2]));
 
   // Compare ratio and ratioGrad with a non-zero displacement
+  // Should compare more displacements
   ParticleSet::SingleParticlePos_t oldpos = elec->R[0];
   ParticleSet::SingleParticlePos_t displ(0.15, 0.10, 0.21);
   elec->R[0] = oldpos + displ;
@@ -175,5 +182,47 @@ TEST_CASE("ExampleHe", "[wavefunction]")
   REQUIRE(grad0[0] == ComplexApprox(new_grad[0][0]));
   REQUIRE(grad0[1] == ComplexApprox(new_grad[0][1]));
   REQUIRE(grad0[2] == ComplexApprox(new_grad[0][2]));
+
+  // Compare parameter derivatives
+
+  const int nparam = 1;
+  optimize::VariableSet var_param;
+  example_he->checkInVariables(var_param);
+  REQUIRE(var_param.size_of_active() == nparam);
+
+  example_he->checkOutVariables(var_param);
+
+  RealType old_B = example_he->B;
+  // Interval size for finite-difference approximation to parameter derivative
+  RealType h     = 0.001;
+  RealType new_B = old_B + h;
+
+  var_param["B"] = new_B;
+  example_he->resetParameters(var_param);
+  REQUIRE(example_he->B == Approx(new_B));
+
+  ParticleSet::ParticleGradient_t grad_plus_h;
+  ParticleSet::ParticleLaplacian_t lap_plus_h;
+  grad_plus_h.resize(nelec);
+  lap_plus_h.resize(nelec);
+
+  RealType logpsi_plus_h = example_he->evaluateLog(*elec, grad_plus_h, lap_plus_h);
+
+
+  // Finite difference derivative approximation
+  RealType fd_logpsi = (logpsi_plus_h - logpsi) / h;
+
+  std::vector<RealType> dlogpsi(nparam);
+  std::vector<RealType> dhpsioverpsi(nparam);
+  example_he->evaluateDerivatives(*elec, var_param, dlogpsi, dhpsioverpsi);
+
+  REQUIRE(dlogpsi[0] == Approx(fd_logpsi).epsilon(h));
+
+  ValueType eloc   = -0.5 * (Sum(all_lap) + Dot(all_grad, all_grad));
+  ValueType eloc_h = -0.5 * (Sum(lap_plus_h) + Dot(grad_plus_h, grad_plus_h));
+
+  ValueType fd_eloc = (eloc_h - eloc) / h;
+
+  REQUIRE(dhpsioverpsi[0] == Approx(fd_eloc).epsilon(h));
 }
 } // namespace qmcplusplus
