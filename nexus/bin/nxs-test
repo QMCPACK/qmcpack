@@ -3192,49 +3192,37 @@ def grid_functions():
     test_initialization()
 
 
-    nlabel('unit_indices_2d')
-    def test_unit_indices_2d():
+    nlabel('cell_indices_2d')
+    def test_cell_indices_2d():
         p = ParallelotopeGrid(
-            shape = (10,10),
-            axes = [[1,0,0],[1,1,1]],
+            cells = (10,10),
+            axes  = [[1,0,0],[1,1,1]],
             )
-        ps = ParallelotopeGrid(
-            shape = (10,10),
-            axes = [[1,0,0],[1,1,1]],
+        pc = ParallelotopeGrid(
+            cells = (10,10),
+            axes  = [[1,0,0],[1,1,1]],
             centered = True
             )
 
         s = SpheroidGrid(
-            shape = (10,10),
-            axes = [[1,0,0],[1,1,1]],
+            cells = (10,10),
+            axes  = [[1,0,0],[1,1,1]],
             )
-        ss = SpheroidGrid(
-            shape = (10,10),
-            axes = [[1,0,0],[1,1,1]],
+        sc = SpheroidGrid(
+            cells = (10,10),
+            axes  = [[1,0,0],[1,1,1]],
             centered = True,
             )
 
-        axes = np.array([[1,0,0],[1,1,1]],dtype=float)
-
-        tol = 1e-6
-        pp = np.dot(( tol, tol),axes)
-        pm = np.dot(( tol,-tol),axes)
-        mp = np.dot((-tol, tol),axes)
-        mm = np.dot((-tol,-tol),axes)
-
         imap = np.arange(100,dtype=int)
-        imap2 = imap.copy()
-        imap2[0:10] = 0
 
-        nassert((p.unit_indices()==imap).all())
-        nassert((ps.unit_indices()==imap).all())
-        nassert((s.unit_indices()==imap2).all())
-        nassert((ss.unit_indices()==imap).all())
-        nassert((p.unit_indices(ps.r+mm)==imap).all())
-        nassert((ps.unit_indices(p.r+pp)==imap).all())
-    #end def test_unit_indices_2d
+        nassert((pc.cell_indices()==imap).all())
+        nassert((sc.cell_indices()==imap).all())
+        nassert((p.cell_indices(pc.r)==imap).all())
+        nassert((s.cell_indices(sc.r)==imap).all())
+    #end def test_cell_indices_2d
 
-    #test_unit_indices_2d()
+    test_cell_indices_2d()
 
 
 #end def grid_functions

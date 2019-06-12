@@ -705,13 +705,10 @@ class StructuredGrid(Grid):
     #end def unit_points
 
 
-    def unit_indices(self,points=None):
+    def cell_indices(self,points=None):
         upoints = self.unit_points(points)
-        shape = np.array(self.shape,dtype=int)
+        shape = np.array(self.cell_grid_shape,dtype=int)
         ipoints = upoints*shape
-        if not self.centered:
-            ipoints += 0.5
-        #end if
         ipoints = np.array(np.floor(ipoints),dtype=int)
         dim = self.grid_dim
         cum_shape = np.empty((dim,),dtype=int)
@@ -721,7 +718,7 @@ class StructuredGrid(Grid):
         #end for
         ipoints = np.dot(ipoints,cum_shape)
         return ipoints
-    #end def unit_indices
+    #end def cell_indices
 
 
     def inside(self,points,tol=1e-12):
