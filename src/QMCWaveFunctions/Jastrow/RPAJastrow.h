@@ -22,7 +22,6 @@
 #include "QMCWaveFunctions/Jastrow/SplineFunctors.h"
 #include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbital.h"
 #include "QMCWaveFunctions/Jastrow/LRBreakupUtilities.h"
-#include "QMCWaveFunctions/Jastrow/LRTwoBodyJastrow.h"
 #include "QMCWaveFunctions/Jastrow/kSpaceJastrow.h"
 
 namespace qmcplusplus

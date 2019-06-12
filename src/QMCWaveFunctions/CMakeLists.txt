@@ -46,7 +46,6 @@ ENDIF(NOT QMC_COMPLEX)
 ########################
 #common jastrows
 SET(JASTROW_SRCS
-  Jastrow/LRTwoBodyJastrow.cpp
   Jastrow/JastrowBuilder.cpp
   Jastrow/kSpaceJastrow.cpp
   Jastrow/kSpaceJastrowBuilder.cpp
