@@ -1,6 +1,6 @@
 
 from generic import obj
-from developer import DevBase,ci,error,unavailable
+from developer import DevBase,ci,message,error,unavailable
 
 try:
     import numpy as np
@@ -42,16 +42,23 @@ except:
 ##end def spherical_to_cartesian
 
 
-def polar_to_cartesian(points):
+def polar_to_cartesian(points,surface=False):
     if not isinstance(points,np.ndarray):
         points = np.array(points)
     #end if
     npoints,dim = points.shape
-    if dim!=2:
-        error('dimension of points must be 2\ndimension of provided points: {}'.format(dim),'polar_to_cartesian')
+    if surface:
+        req_dim = 1
+        r   = 1.0
+        phi = points[:,0]
+    else:
+        req_dim = 2
+        r   = points[:,0]
+        phi = points[:,1] # range is [0,2*pi)
     #end if
-    r   = points[:,0]
-    phi = points[:,1] # range is [0,2*pi)
+    if dim!=req_dim:
+        error('dimension of points must be {}\ndimension of provided points: {}'.format(req_dim,dim),'polar_to_cartesian')
+    #end if
     x = r*np.cos(phi)
     y = r*np.sin(phi)
     cart_points = np.array((x,y),dtype=points.dtype).T
@@ -59,7 +66,7 @@ def polar_to_cartesian(points):
 #end def polar_to_cartesian
 
 
-def cartesian_to_polar(points):
+def cartesian_to_polar(points,surface=False):
     if not isinstance(points,np.ndarray):
         points = np.array(points)
     #end if
@@ -73,22 +80,33 @@ def cartesian_to_polar(points):
     phi = np.arctan2(y,x)
     phi[np.abs(phi)<1e-12] = 0.0
     phi[phi<0] += 2*np.pi
-    pol_points = np.array((r,phi),dtype=points.dtype).T
+    if surface:
+        pol_points = np.array((phi,),dtype=points.dtype).T
+    else:
+        pol_points = np.array((r,phi),dtype=points.dtype).T
+    #end if
     return pol_points
 #end def cartesian_to_polar
 
 
-def spherical_to_cartesian(points):
+def spherical_to_cartesian(points,surface=False):
     if not isinstance(points,np.ndarray):
         points = np.array(points)
     #end if
     npoints,dim = points.shape
-    if dim!=3:
-        error('dimension of points must be 3','spherical_to_cartesian')
+    if surface:
+        req_dim = 2
+        r     = 1.0
+        theta = points[:,0] # range is [0,pi)
+        phi   = points[:,1] # range is [0,2*pi)
+    else:
+        req_dim = 3
+        r     = points[:,0]
+        theta = points[:,1] # range is [0,pi)
+        phi   = points[:,2] # range is [0,2*pi)
+    if dim!=req_dim:
+        error('dimension of points must be {}\ndimension of provided points: '.format(req_dim,dim),'spherical_to_cartesian')
     #end if
-    r     = points[:,0]
-    theta = points[:,1] # range is [0,pi)
-    phi   = points[:,2] # range is [0,2*pi)
     s = np.sin(theta)
     x = r*s*np.cos(phi)
     y = r*s*np.sin(phi)
@@ -98,13 +116,13 @@ def spherical_to_cartesian(points):
 #end def spherical_to_cartesian
 
 
-def cartesian_to_spherical(points):
+def cartesian_to_spherical(points,surface=False):
     if not isinstance(points,np.ndarray):
         points = np.array(points)
     #end if
     npoints,dim = points.shape
     if dim!=3:
-        error('dimension of points must be 3','cartesian_to_spherical')
+        error('dimension of points must be 3\ndimension of provided points: {}'.format(dim),'cartesian_to_spherical')
     #end if
     x = points[:,0]
     y = points[:,1]
@@ -114,7 +132,11 @@ def cartesian_to_spherical(points):
     phi   = np.arctan2(y,x)
     phi[np.abs(phi)<1e-12] = 0.0
     phi[phi<0] += 2*np.pi
-    sphere_points = np.array((r,theta,phi),dtype=points.dtype).T
+    if surface:
+        sphere_points = np.array((theta,phi),dtype=points.dtype).T
+    else:
+        sphere_points = np.array((r,theta,phi),dtype=points.dtype).T
+    #end if
     return sphere_points
 #end def cartesian_to_spherical
 
@@ -248,6 +270,50 @@ def spheroid_grid_points(axes,shape=None,cells=None,centered=False,endpoint=None
         return sgrid,shape
     #end if
 #end def spheroid_grid_points
+
+
+
+def spheroid_surface_grid_points(axes,shape=None,cells=None,centered=False,endpoint=None,return_shape=False):
+    if not isinstance(axes,np.ndarray):
+        axes = np.array(axes)
+    #end if
+    shape_specifiers = (shape,cells)
+    specifier_count = 0
+    for s in shape_specifiers:
+        specifier_count += int(s is not None)
+    #end for
+    if specifier_count>1:
+        error('provide only one of "shape" or "cells", not both','spheroid_grid_points')
+    elif specifier_count==0:
+        error('either "shape" or "cells" must be provided','spheroid_grid_points')
+    #end if
+    if cells is not None:
+        shape = np.array(cells,dtype=int)
+        if not centered and endpoint is not None:
+            shape += np.array(endpoint,dtype=int)
+        #end if
+    #end if
+    grid_dim,space_dim = axes.shape
+    grid_dim-=1
+    if grid_dim not in (1,2):
+        error('spheroid surface grid generation only supported in 1 or 2 dimensions','spheriod_grid_points')
+    #end if
+    ugrid = unit_grid_points(shape,centered=centered,endpoint=endpoint)
+    if grid_dim==1:
+        ugrid[:,0] *= 2*np.pi
+        sgrid = polar_to_cartesian(ugrid,surface=True)
+    elif grid_dim==2:
+        ugrid[:,0] *=   np.pi
+        ugrid[:,1] *= 2*np.pi
+        sgrid = spherical_to_cartesian(ugrid,surface=True)
+    #end if
+    sgrid = np.dot(sgrid,axes) # adds radial range and skew
+    if not return_shape:
+        return sgrid
+    else:
+        return sgrid,shape
+    #end if
+#end def spheroid_surface_grid_points
 
 
 
@@ -506,11 +572,10 @@ class Grid(GBase):
         msgs = self.validity_checks()
         valid = len(msgs)==0
         if not valid and exit:
-            self.log('\n')
             for msg in msgs:
-                self.log('  '+msg)
+                self.error(msg,exit=False,trace=False)
             #end for
-            self.error('grid is not valid, see messages above')
+            self.error('grid is not valid, see error messages above')
         #end if
         return valid
     #end def check_valid
@@ -567,6 +632,7 @@ class StructuredGrid(Grid):
         shape    = (tuple     ,None),
         centered = (bool      ,None),
         bconds   = (np.ndarray,None),
+        surface  = (bool      ,None),
         **Grid.persistent_data_types
         )
 
@@ -619,6 +685,7 @@ class StructuredGrid(Grid):
         bconds   = kwargs.pop('bconds'  ,None)
         Grid.initialize_local(self,**kwargs)
         self.centered = centered
+        self.surface  = False
         if shape is None:
             self.error('cannot initialize grid, "shape" is required')
         #end if
@@ -755,6 +822,8 @@ class StructuredGrid(Grid):
             bitset = [[0,0],[0,1],[1,0],[1,1]]
         elif self.grid_dim==2:
             bitset = [[0],[1]]
+        elif self.grid_dim==1:
+            bitset = [[0]]
         #end if
         ni = 0
         for d in range(self.grid_dim):
@@ -784,7 +853,7 @@ class StructuredGrid(Grid):
 
     def plot_boundary(self,n=200,fig=True,show=True):
         fig,ax = self.setup_mpl_fig(fig=fig,dim=self.space_dim)
-        if self.grid_dim!=1:
+        if self.grid_dim!=1 or self.surface:
             bpoints = self.get_boundary_lines(n=n)
             for bp in bpoints:
                 ax.plot(*bp.T,color='k')
@@ -824,7 +893,7 @@ class StructuredGrid(Grid):
     def plot_unit_boundary(self,n=200,fig=True,show=True):
         fig,ax = self.setup_mpl_fig(fig=fig,dim=self.grid_dim,
                                     ax1='a1',ax2='a2',ax3='a3')
-        if self.grid_dim!=1:
+        if self.grid_dim!=1 or self.surface:
             bpoints = self.get_boundary_lines(n=n,unit=True)
             for bp in bpoints:
                 ax.plot(*bp.T,color='k')
@@ -906,8 +975,14 @@ class StructuredGridWithAxes(StructuredGrid):
         if len(shape)!=2:
             msgs.append('axes must be a 2 dimensional array\nnumber of dimensions present: {}\naxes present: {}'.format(len(shape),self.axes))
         else:
-            if shape[0]!=self.grid_dim:
-                msgs.append('number of axes must be equal to the embedded grid dimension\nembedded grid dimension: {}\nnumber of axes present: {}'.format(self.grid_dim,shape[0]))
+            if not self.surface:
+                if shape[0]!=self.grid_dim:
+                    msgs.append('number of axes must be equal to the embedded grid dimension\nembedded grid dimension: {}\nnumber of axes present: {}'.format(self.grid_dim,shape[0]))
+                #end if
+            else:
+                if shape[0]!=self.grid_dim+1:
+                    msgs.append('number of axes must be equal to the embedded grid dimension + 1 for a surface\nembedded grid dimension + 1: {}\nnumber of axes present: {}'.format(self.grid_dim+1,shape[0]))
+                #end if
             #end if
             if shape[1]!=self.space_dim:
                 msgs.append('axis dimension must be equal to the dimension of the space\nspace dimension: {}\naxis dimension: {}\naxes present: {}'.format(self.space_dim,shape[1],self.axes))
@@ -1086,14 +1161,106 @@ class SpheroidGrid(StructuredGridWithAxes):
 
 
 
+class SpheroidSurfaceGrid(StructuredGridWithAxes):
+
+    @property
+    def center(self):
+        return self.origin
+    #end def center
+
+    def initialize_local(self,
+                         axes     = None,
+                         shape    = None,
+                         cells    = None,
+                         center   = None,
+                         centered = False,
+                         **kwargs
+                         ):
+
+        if shape is None and cells is None:
+            self.error('cannot initialize grid, either "shape" or "cells" is required')
+        elif shape is not None:
+            grid_dim = len(shape)
+        elif cells is not None:
+            grid_dim = len(cells)
+        #end if
+
+        # force bconds to match sphere surface constraints
+        if grid_dim==2:
+            bconds = tuple('op')
+        elif grid_dim==1:
+            bconds = tuple('p')
+        else:
+            self.error('only 1 and 2 dimensional spheroid surfaces are supported\nrequested dimension: {}'.format(grid_dim))
+        #end if
+
+        endpoint = self.has_endpoints(bconds=bconds,grid_dim=grid_dim)
+
+        points,shape = spheroid_surface_grid_points(axes,shape=shape,cells=cells,centered=centered,endpoint=endpoint,return_shape=True)
+
+        kwargs['axes']     = axes
+        kwargs['origin']   = center
+        kwargs['shape']    = shape
+        kwargs['centered'] = centered
+        kwargs['bconds']   = bconds
+        kwargs['points']   = points
+        StructuredGridWithAxes.initialize_local(self,**kwargs)
+
+        self.surface = True
+
+    #end def initialize_local
+
+
+    def unit_points_bare(self,points):
+        center = self.center
+        # invert using pseudo-inverse
+        #   this is important for grids embedded in higher dim spaces
+        axinv  = np.linalg.pinv(self.axes)
+        upoints = np.dot(points-center,axinv)
+        # map from unit cartesian to unit spherical
+        dim = self.grid_dim
+        if dim==1:
+            upoints = cartesian_to_polar(upoints,surface=True)
+            upoints[:,0] /= 2*np.pi
+        elif dim==2:
+            upoints = cartesian_to_spherical(upoints,surface=True)
+            upoints[:,0] /=   np.pi
+            upoints[:,1] /= 2*np.pi
+        else:
+            self.error('unit_points not supported for dim={}'.format(dim))
+        #end if
+        return upoints
+    #end def unit_points_bare
+
+
+    def points_from_unit(self,upoints):
+        dim = self.grid_dim
+        upoints = np.array(upoints,dtype=self.dtype)
+        if dim==1:
+            upoints[:,0] *= 2*np.pi
+            upoints = polar_to_cartesian(upoints,surface=True)
+        elif dim==2:
+            upoints[:,0] *=   np.pi
+            upoints[:,1] *= 2*np.pi
+            upoints = spherical_to_cartesian(upoints,surface=True)
+        else:
+            self.error('points_from_unit not supported for dim={}'.format(dim))
+        #end if
+        points = np.dot(upoints,self.axes)+self.center
+        return points
+    #end def points_from_unit
+#end class SpheroidSurfaceGrid
+
+
+
 
 if __name__=='__main__':
 
 
     demos = obj(
-        plot_grids      = 0,
-        plot_inside     = 0,
-        plot_projection = 0,
+        plot_grids         = 0,
+        plot_inside        = 1,
+        plot_projection    = 0,
         )
 
     shapes = {
@@ -1124,17 +1291,24 @@ if __name__=='__main__':
         }
 
     grid_types = obj(
-        parallelotope = ParallelotopeGrid,
-        spheroid      = SpheroidGrid,
+        parallelotope    = ParallelotopeGrid,
+        spheroid         = SpheroidGrid,
+        spheroid_surface = SpheroidSurfaceGrid,
         )
 
     supported = obj(
-        parallelotope = obj(dims=set(axes.keys())),
-        spheroid      = obj(dims=set([(2,2),(2,3),(3,3)])),
+        parallelotope    = obj(dims=set(axes.keys())),
+        spheroid         = obj(dims=set([(2,2),(2,3),(3,3)])),
+        spheroid_surface = obj(dims=set([(1,2),(1,3),(2,3)])),
+        )
+
+    gdict = dict(
+        parallelotope    = 'p',
+        spheroid         = 's',
+        spheroid_surface = 'c',
         )
 
     grids = obj()
-    gdict = dict(parallelotope='p',spheroid='s')
     cdict = {False:'',True:'c'}
     for grid_name in sorted(grid_types.keys()):
         label = gdict[grid_name]+'e'
@@ -1143,10 +1317,15 @@ if __name__=='__main__':
             if (grid_dim,space_dim) in supported[grid_name].dims:
                 for centered in (False,True):
                     label = gdict[grid_name]+str(grid_dim)+str(space_dim)+cdict[centered]
+                    cell_grid_dim = grid_dim
+                    axes_grid_dim = grid_dim
+                    if grid_name=='spheroid_surface':
+                        axes_grid_dim += 1
+                    #end if
                     grid_inputs = obj(
                         #shape    = shapes[grid_dim],
-                        cells    = shapes[grid_dim],
-                        axes     = axes[grid_dim,space_dim],
+                        cells    = shapes[cell_grid_dim],
+                        axes     = axes[axes_grid_dim,space_dim],
                         centered = centered,
                         )
 
@@ -1175,17 +1354,22 @@ if __name__=='__main__':
 
     for label in sorted(grids.keys()):
         g = grids[label]
-        print ' {:<16}  {}  {}'.format(label,g.bconds,g.shape)
+        if not g.initialized:
+            continue
+        #end if
+        print ' {:<16}  {} {}  {}  {}  {}'.format(label,g.grid_dim,g.space_dim,len(g.axes),g.bconds,g.shape)
     #end for
 
     if demos.plot_grids:
-        grids_plot = 'p23c p23_oo p23_op p23_pp s23c s23'.split()
+        #grids_plot = 'p23c p23_oo p23_op p23_pp s23c s23'.split()
         #grids_plot = 'p11 p12 p13 p23 p23c p33 p33c'.split()
         #grids_plot = 's23 s23c s33 s33c'.split()
+        grids_plot = 'c12 c12c c13 c13c c23 c23c'.split()
 
         unit = True
 
         for name in grids_plot:
+            print name
             grid = grids[name]
             if not unit:
                 grid.plot_points(show=0)
@@ -1203,7 +1387,8 @@ if __name__=='__main__':
 
     if demos.plot_inside:
         #grids_plot = 'p22_oo p22_op p22_pp'.split()
-        grids_plot = 's22 s23'.split()
+        #grids_plot = 's22 s23'.split()
+        grids_plot = 'c23'.split()
 
         n = 100
 
@@ -1216,7 +1401,8 @@ if __name__=='__main__':
 
         for name in grids_plot:
             g = grids[name]
-            dim = int(name[1])
+            #dim = int(name[1])
+            dim = g.grid_dim
             points = g.points_from_unit(upoints[dim])
             inside = g.inside(points)
             if not unit:

@@ -3056,7 +3056,7 @@ def grid_functions():
     from grid_functions import np
     from grid_functions import polar_to_cartesian,cartesian_to_polar
     from grid_functions import spherical_to_cartesian,cartesian_to_spherical
-    from grid_functions import Grid,StructuredGrid,ParallelotopeGrid,SpheroidGrid
+    from grid_functions import Grid,StructuredGrid,ParallelotopeGrid,SpheroidGrid,SpheroidSurfaceGrid
 
 
     nlabel('coord conversion')
@@ -3133,6 +3133,7 @@ def grid_functions():
             StructuredGrid,
             ParallelotopeGrid,
             SpheroidGrid,
+            SpheroidSurfaceGrid,
             ]
         for gt in grid_types:
             g = gt()
@@ -3214,12 +3215,24 @@ def grid_functions():
             centered = True,
             )
 
+        c = SpheroidSurfaceGrid(
+            cells = (10,10),
+            axes  = [[1,0,0],[1,1,0],[1,1,1]],
+            )
+        cc = SpheroidSurfaceGrid(
+            cells = (10,10),
+            axes  = [[1,0,0],[1,1,0],[1,1,1]],
+            centered = True,
+            )
+
         imap = np.arange(100,dtype=int)
 
         nassert((pc.cell_indices()==imap).all())
-        nassert((sc.cell_indices()==imap).all())
         nassert((p.cell_indices(pc.r)==imap).all())
+        nassert((sc.cell_indices()==imap).all())
         nassert((s.cell_indices(sc.r)==imap).all())
+        nassert((cc.cell_indices()==imap).all())
+        nassert((c.cell_indices(cc.r)==imap).all())
     #end def test_cell_indices_2d
 
     test_cell_indices_2d()
