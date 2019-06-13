@@ -25,16 +25,13 @@ using std::string;
 
 namespace qmcplusplus
 {
-
 TEST_CASE("read_particle_mass_same_xml", "[particle_io][xml]")
 {
   // test that particle masses are properly read in
 
   OHMMS::Controller->initialize(0, NULL);
-  Communicate *c = OHMMS::Controller;
 
-const char *particles =
-"<tmp> \
+  const char* particles = "<tmp> \
 <particleset name=\"e\" random=\"yes\"> \
    <group name=\"u\" size=\"4\" mass=\"1.0\">\
       <parameter name=\"charge\"              >    -1                    </parameter>\
@@ -75,9 +72,9 @@ const char *particles =
   xmlNodePtr part2 = xmlNextElementSibling(part1);
 
   Tensor<int, 3> tmat; // assuming OHMMSDIM==3
-  tmat(0,0) = 1;
-  tmat(1,1) = 1;
-  tmat(2,2) = 1;
+  tmat(0, 0) = 1;
+  tmat(1, 1) = 1;
+  tmat(2, 2) = 1;
 
   ParticleSet ions, electrons;
 
@@ -89,29 +86,31 @@ const char *particles =
   parse_ions.put(part2);
   REQUIRE(ions.getName() == "ion0");
 
-  REQUIRE( ions.SameMass );
-  REQUIRE( electrons.SameMass );
+  REQUIRE(ions.SameMass);
+  REQUIRE(electrons.SameMass);
 
   // test electrons
-  SpeciesSet& tspecies( electrons.getSpeciesSet() );
-  int massind=tspecies.addAttribute("mass");
-  char order[]="uuuudddd";
-  for (int iat=0;iat<electrons.getTotalNum(); iat++){
-    int species_id = electrons.GroupID[iat];
+  SpeciesSet& tspecies(electrons.getSpeciesSet());
+  int massind  = tspecies.addAttribute("mass");
+  char order[] = "uuuudddd";
+  for (int iat = 0; iat < electrons.getTotalNum(); iat++)
+  {
+    int species_id           = electrons.GroupID[iat];
     std::string species_name = tspecies.speciesName[species_id];
     REQUIRE(*species_name.c_str() == order[iat]);
-    REQUIRE(tspecies(massind,species_id) == Approx(1.0));
+    REQUIRE(tspecies(massind, species_id) == Approx(1.0));
   }
 
   // test ions
-  SpeciesSet& pspecies( ions.getSpeciesSet() );
-  int pmassind=pspecies.addAttribute("mass");
-  char porder[]="HHHHHHHH";
-  for (int iat=0;iat<ions.getTotalNum(); iat++){
-    int species_id = ions.GroupID[iat];
+  SpeciesSet& pspecies(ions.getSpeciesSet());
+  int pmassind  = pspecies.addAttribute("mass");
+  char porder[] = "HHHHHHHH";
+  for (int iat = 0; iat < ions.getTotalNum(); iat++)
+  {
+    int species_id           = ions.GroupID[iat];
     std::string species_name = pspecies.speciesName[species_id];
     REQUIRE(*species_name.c_str() == porder[iat]);
-    REQUIRE(pspecies(pmassind,species_id) == Approx(1836.15));
+    REQUIRE(pspecies(pmassind, species_id) == Approx(1836.15));
   }
 } // TEST_CASE read_particle_mass_same_xml
 

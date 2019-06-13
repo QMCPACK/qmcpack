@@ -193,6 +193,7 @@ def read_command_line():
 #AFQMC quantities
             eloc    = 'Eloc',
             elocest = 'ElocEstim',
+            enum_real = 'EnergyEstim__nume_real',
             )
 
         for qshort in sorted(quantities.keys()):
@@ -382,7 +383,7 @@ if __name__=='__main__':
     # Compute means of desired quantities from scalar.dat files.
     values = process_scalar_files(options,quants_check)
 
-    # Check computed means agains reference solutions.
+    # Check computed means against reference solutions.
     success,msg = check_values(options,quants_check,values)
 
     # Pass success/failure exit codes and strings to the OS.

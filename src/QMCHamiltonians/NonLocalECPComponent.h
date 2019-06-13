@@ -12,8 +12,8 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 #ifndef QMCPLUSPLUS_NONLOCAL_ECPOTENTIAL_COMPONENT_H
 #define QMCPLUSPLUS_NONLOCAL_ECPOTENTIAL_COMPONENT_H
 #include "QMCHamiltonians/QMCHamiltonianBase.h"
@@ -26,13 +26,11 @@
 
 namespace qmcplusplus
 {
-
 /** Contains a set of radial grid potentials around a center.
 */
-struct NonLocalECPComponent: public QMCTraits
+struct NonLocalECPComponent : public QMCTraits
 {
-
-  typedef std::vector<PosType>  SpherGridType;
+  typedef std::vector<PosType> SpherGridType;
   typedef OneDimGridBase<RealType> GridType;
   typedef OneDimCubicSpline<RealType> RadialPotentialType;
 
@@ -63,9 +61,30 @@ struct NonLocalECPComponent: public QMCTraits
   ///weight of the spherical grid
   std::vector<RealType> sgridweight_m;
   ///Working arrays
-  std::vector<RealType> psiratio,vrad,dvrad,wvec,Amat,dAmat;
-  std::vector<PosType> psigrad, psigrad_source;
-  std::vector<RealType> lpol, dlpol;
+  std::vector<RealType> wvec, Amat, dAmat;
+
+  //^^^ "Why not GradType?" you ask.  Because GradType can be complex.
+  std::vector<PosType> deltaV;
+  //Array for P_l[cos(theta)].
+  std::vector<RealType> lpol;
+  //Array for P'_l[cos(theta)]
+  std::vector<RealType> dlpol;
+  //Array for v_l(r).
+  std::vector<RealType> vrad;
+  //Array for (2l+1)*v'_l(r)/r.
+  std::vector<RealType> dvrad;
+  //$\Psi(...q...)/\Psi(...r...)$ for all quadrature points q.
+  std::vector<RealType> psiratio;
+  //$\nabla \Psi(...q...)/\Psi(...r...)$ for all quadrature points q.
+  //  $\nabla$ is w.r.t. the electron coordinates involved in the quadrature.
+  std::vector<PosType> gradpsiratio;
+  //This stores gradient of v(r):
+  std::vector<PosType> vgrad;
+  //This stores the gradient of the cos(theta) term in force expression.
+  std::vector<PosType> cosgrad;
+  //This stores grad psi/psi - dot(u,grad psi)
+  std::vector<PosType> wfngrad;
+
 
   // For Pulay correction to the force
   std::vector<RealType> WarpNorm;
@@ -83,8 +102,8 @@ struct NonLocalECPComponent: public QMCTraits
 
 #if !defined(REMOVE_TRACEMANAGER)
   ///pointers to trace data of containing NonLocalECPotential object
-  Array<TraceReal,1>* Ve_sample;
-  Array<TraceReal,1>* Vi_sample;
+  Array<TraceReal, 1>* Ve_sample;
+  Array<TraceReal, 1>* Vi_sample;
   bool streaming_particles;
 #endif
 
@@ -94,7 +113,7 @@ struct NonLocalECPComponent: public QMCTraits
   ///destructor
   ~NonLocalECPComponent();
 
-  NonLocalECPComponent* makeClone(const ParticleSet &qp);
+  NonLocalECPComponent* makeClone(const ParticleSet& qp);
 
   ///add a new Non Local component
   void add(int l, RadialPotentialType* pp);
@@ -106,25 +125,95 @@ struct NonLocalECPComponent: public QMCTraits
     sgridweight_m.push_back(weight);
   }
 
-  void resize_warrays(int n,int m,int l);
+  void resize_warrays(int n, int m, int l);
 
   void randomize_grid(RandomGenerator_t& myRNG);
-  template<typename T> void randomize_grid(std::vector<T> &sphere, RandomGenerator_t& myRNG);
+  template<typename T>
+  void randomize_grid(std::vector<T>& sphere, RandomGenerator_t& myRNG);
 
-  RealType evaluateOne(ParticleSet& W, int iat, TrialWaveFunction& Psi, 
-      int iel, RealType r, const PosType& dr, bool Tmove, std::vector<NonLocalData>& Txy) const;
+  /** @brief Evaluate the nonlocal pp contribution via randomized quadrature grid 
+ *           to total energy from ion "iat" and electron "iel".  
+ *
+ *    @param W electron particle set.
+ *    @param iat index of ion.
+ *    @param Psi trial wave function object
+ *    @param iel index of electron
+ *    @param r the distance between ion iat and electron iel.
+ *    @param dr displacement from ion iat to electron iel.
+ *    @param Tmove flag to compute tmove contributions.
+ *    @param Txy nonlocal move data.
+ *
+ *    @return RealType Contribution to $\frac{V\Psi_T}{\Psi_T}$ from ion iat and electron iel.
+ */
+  RealType evaluateOne(ParticleSet& W,
+                       int iat,
+                       TrialWaveFunction& Psi,
+                       int iel,
+                       RealType r,
+                       const PosType& dr,
+                       bool Tmove,
+                       std::vector<NonLocalData>& Txy);
 
-  ///Computes the nonlocal PP energy and Hellman-Feynman force contribution coming from
-  /// ion "iat" and electron "iel".  
-  RealType evaluateOneWithForces(ParticleSet& W, int iat, TrialWaveFunction& Psi, 
-      int iel, RealType r, const PosType& dr, PosType &force_iat, bool Tmove, std::vector<NonLocalData>& Txy) const;
+  /** @brief Evaluate the nonlocal pp contribution via randomized quadrature grid 
+ *           to total energy from ion "iat" and electron "iel". 
+ *
+ *    @param W electron particle set.
+ *    @param iat index of ion.
+ *    @param Psi trial wave function object
+ *    @param iel index of electron
+ *    @param r the distance between ion iat and electron iel.
+ *    @param dr displacement from ion iat to electron iel.
+ *    @param Tmove flag to compute tmove contributions.
+ *    @param force_iat 3d vector for Hellman-Feynman contribution.  This gets modified.
+ *    @param Txy nonlocal move data.
+ *
+ *    @return RealType Contribution to $\frac{V\Psi_T}{\Psi_T}$ from ion iat and electron iel.
+ */
+  RealType evaluateOneWithForces(ParticleSet& W,
+                                 int iat,
+                                 TrialWaveFunction& Psi,
+                                 int iel,
+                                 RealType r,
+                                 const PosType& dr,
+                                 PosType& force_iat,
+                                 bool Tmove,
+                                 std::vector<NonLocalData>& Txy);
 
-  RealType
-  evaluateValueAndDerivatives(ParticleSet& P,
-      int iat, TrialWaveFunction& psi,
-      const opt_variables_type& optvars,
-      const std::vector<RealType>& dlogpsi,
-      std::vector<RealType>& dhpsioverpsi);
+  /** @brief Evaluate the nonlocal pp energy, Hellman-Feynman force, and "Pulay" force contribution 
+ *          via randomized quadrature grid from ion "iat" and electron "iel". 
+ *
+ *    @param W electron particle set.
+ *    @param ions ion particle set.
+ *    @param iat index of ion.
+ *    @param Psi trial wave function object
+ *    @param iel index of electron
+ *    @param r the distance between ion iat and electron iel.
+ *    @param dr displacement from ion iat to electron iel.
+ *    @param force_iat 3d vector for Hellman-Feynman contribution.  This gets modified.
+ *    @param pulay_terms Nion x 3 object, holding a contribution for each ionic gradient from \Psi_T. 
+ *    @param Tmove flag to compute tmove contributions.
+ *    @param Txy nonlocal move data.
+ *
+ *    @return RealType Contribution to $\frac{V\Psi_T}{\Psi_T}$ from ion iat and electron iel.
+ */
+  RealType evaluateOneWithForces(ParticleSet& W,
+                                 ParticleSet& ions,
+                                 int iat,
+                                 TrialWaveFunction& Psi,
+                                 int iel,
+                                 RealType r,
+                                 const PosType& dr,
+                                 PosType& force_iat,
+                                 ParticleSet::ParticlePos_t& pulay_terms,
+                                 bool Tmove,
+                                 std::vector<NonLocalData>& Txy);
+
+  RealType evaluateValueAndDerivatives(ParticleSet& P,
+                                       int iat,
+                                       TrialWaveFunction& psi,
+                                       const opt_variables_type& optvars,
+                                       const std::vector<RealType>& dlogpsi,
+                                       std::vector<RealType>& dhpsioverpsi);
 
   void print(std::ostream& os);
 
@@ -133,7 +222,5 @@ struct NonLocalECPComponent: public QMCTraits
 
 }; //end of RadialPotentialSet
 
-}
+} // namespace qmcplusplus
 #endif
-
-

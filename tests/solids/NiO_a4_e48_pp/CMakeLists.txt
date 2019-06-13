@@ -9,10 +9,8 @@ SET(H5_FULL_PATH "${QMC_DATA}/NiO/${H5_FILE}")
 
 IF (EXISTS ${H5_FULL_PATH})
   #symlink h5 file
-  MAYBE_SYMLINK(${H5_FULL_PATH} ${CMAKE_CURRENT_BINARY_DIR}/${H5_FILE})
-  #symlink pp files
-  MAYBE_SYMLINK(${CMAKE_SOURCE_DIR}/tests/performance/NiO/O.xml ${CMAKE_CURRENT_BINARY_DIR}/O.xml)
-  MAYBE_SYMLINK(${CMAKE_SOURCE_DIR}/tests/performance/NiO/Ni.opt.xml ${CMAKE_CURRENT_BINARY_DIR}/Ni.opt.xml)
+  MAYBE_SYMLINK(${H5_FULL_PATH} ${CMAKE_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp/${H5_FILE})
+
 
 #  LocalEnergy           =         -370.7944 +/-           0.0011
 #  Variance              =            12.836 +/-            0.052
@@ -35,6 +33,59 @@ IF (EXISTS ${H5_FULL_PATH})
                     1 NIO_A4_E48_SCALARS # VMC
                     )
 
+#  LocalEnergy           =  -371.320817 +/- 0.000430   13.153990 +/- 0.007166
+#  LocalEnergy           =  -371.288648 +/- 0.000530   13.352353 +/- 0.006475
+#  LocalEnergy           =  -371.283531 +/- 0.000519   13.590739 +/- 0.008039
+#  LocalEnergy           =  -371.283912 +/- 0.000493   13.588468 +/- 0.007902
+  LIST(APPEND NIO_A4_E48_DMC_SCALARS    "totenergy" "-371.320817 0.023")
+  LIST(APPEND NIO_A4_E48_DMC_V0_SCALARS "totenergy" "-371.288648 0.018")
+  LIST(APPEND NIO_A4_E48_DMC_V1_SCALARS "totenergy" "-371.283531 0.018")
+  LIST(APPEND NIO_A4_E48_DMC_V3_SCALARS "totenergy" "-371.283912 0.018")
+
+  QMC_RUN_AND_CHECK(short-NiO_a4_e48_pp-dmc_sdj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
+                    NiO-fcc-S1-vmc-dmc
+                    NiO-vmc-dmc-short.in.xml
+                    1 16
+                    TRUE
+                    2 NIO_A4_E48_DMC_SCALARS # DMC no Tmove
+                    3 NIO_A4_E48_DMC_V0_SCALARS # DMC Tmove v0
+                    )
+
+  QMC_RUN_AND_CHECK(short-NiO_a4_e48_pp-delayed_update-dmc_sdj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
+                    NiO-fcc-S1-vmc-dmc
+                    NiO-delayedupdate-vmc-dmc-short.in.xml
+                    1 16
+                    TRUE
+                    2 NIO_A4_E48_DMC_SCALARS # DMC no Tmove
+                    3 NIO_A4_E48_DMC_V0_SCALARS # DMC Tmove v0
+                    )
+
+IF(NOT QMC_CUDA)
+  QMC_RUN_AND_CHECK(short-NiO_a4_e48_pp-dmc-TMv1v3_sdj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
+                    NiO-fcc-S1-vmc-dmc
+                    NiO-vmc-dmc-TMv1v3-short.in.xml
+                    1 16
+                    TRUE
+                    2 NIO_A4_E48_DMC_V1_SCALARS # DMC Tmove v1
+                    3 NIO_A4_E48_DMC_V3_SCALARS # DMC Tmove v3
+                    )
+
+  QMC_RUN_AND_CHECK(short-NiO_a4_e48_pp-delayed_update-dmc-TMv1v3_sdj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
+                    NiO-fcc-S1-vmc-dmc
+                    NiO-delayedupdate-vmc-dmc-TMv1v3-short.in.xml
+                    1 16
+                    TRUE
+                    2 NIO_A4_E48_DMC_V1_SCALARS # DMC Tmove v1
+                    3 NIO_A4_E48_DMC_V3_SCALARS # DMC Tmove v3
+                    )
+ELSE()
+  MESSAGE("Skipping NiO_a4_e48 Tmove v1/v3 tests on GPU")
+ENDIF()
+
 #  LocalEnergy           =        -370.88498 +/-          0.00088
 #  Variance              =            11.118 +/-            0.031
 #  Kinetic               =           230.555 +/-            0.020
@@ -47,6 +98,7 @@ IF (EXISTS ${H5_FULL_PATH})
   LIST(APPEND NIO_A4_E48_J3_SCALARS "kinetic" "230.555 0.46")
   LIST(APPEND NIO_A4_E48_J3_SCALARS "samples" "32000 0.0")
 
+IF(NOT QMC_CUDA)
   QMC_RUN_AND_CHECK(short-NiO_a4_e48_pp-vmc_sdj3
                     "${CMAKE_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
                     NiO-fcc-S1-vmc
@@ -66,6 +118,37 @@ IF (EXISTS ${H5_FULL_PATH})
                     TRUE
                     1 NIO_A4_E48_J3_SCALARS # VMC
                     )
+
+ELSE()
+  MESSAGE("Skipping NiO_a4_e48 J3 tests on GPU")
+ENDIF()
+
+
+IF(NOT QMC_CUDA)
+  LIST(APPEND NIO_A4_E48_L2_SCALARS "totenergy" "-371.119855 0.019547")
+  LIST(APPEND NIO_A4_E48_L2_SCALARS "samples" "128000 0.0")
+
+  QMC_RUN_AND_CHECK(short-NiO_a4_e48_pp-vmc_sdj_L2
+                    "${CMAKE_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
+                    NiO-L2-short
+                    NiO-L2-short.in.xml
+                    16 1
+                    TRUE
+                    1 NIO_A4_E48_L2_SCALARS # VMC
+                    )
+
+  QMC_RUN_AND_CHECK(short-NiO_a4_e48_pp-vmc_sdj_L2
+                    "${CMAKE_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
+                    NiO-L2-short
+                    NiO-L2-short.in.xml
+                    4 4
+                    TRUE
+                    1 NIO_A4_E48_L2_SCALARS # VMC
+                    )
+ELSE()
+  MESSAGE("Skipping NiO_a4_e48 L2 tests on GPU")
+ENDIF()
+
 
 IF(ENABLE_SOA OR QMC_CUDA)
   QMC_RUN_AND_CHECK(short-NiO_a4_e48-hybridrep-pp-vmc_sdj3
@@ -87,6 +170,8 @@ IF(ENABLE_SOA OR QMC_CUDA)
                     TRUE
                     1 NIO_A4_E48_J3_SCALARS # VMC
                     )
+
+
 ELSE()
   MESSAGE("Skipping NiO_a4_e48-hybridrep tests because neither SOA nor CUDA is enabled")
 ENDIF()
@@ -118,6 +203,33 @@ ENDIF()
                     TRUE
                     1 LONG_NIO_A4_E48_J3_SCALARS # VMC
                     )
+
+
+IF(NOT QMC_CUDA)
+  LIST(APPEND LONG_NIO_A4_E48_L2_SCALARS "totenergy" "-371.119855 0.006451")
+  LIST(APPEND LONG_NIO_A4_E48_L2_SCALARS "samples" "1280000 0.0")
+
+  QMC_RUN_AND_CHECK(long-NiO_a4_e48_pp-vmc_sdj_L2
+                    "${CMAKE_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
+                    NiO-L2-long
+                    NiO-L2-long.in.xml
+                    16 1
+                    TRUE
+                    1 LONG_NIO_A4_E48_L2_SCALARS # VMC
+                    )
+
+  QMC_RUN_AND_CHECK(long-NiO_a4_e48_pp-vmc_sdj_L2
+                    "${CMAKE_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
+                    NiO-L2-long
+                    NiO-L2-long.in.xml
+                    4 4
+                    TRUE
+                    1 LONG_NIO_A4_E48_L2_SCALARS # VMC
+                    )
+ELSE()
+  MESSAGE("Skipping NiO_a4_e48 L2 tests on GPU")
+ENDIF()
+
 
 ELSE()
   MESSAGE("NiO_a4_e48_pp not added because the corresponding h5 file not found: ${H5_FULL_PATH}")

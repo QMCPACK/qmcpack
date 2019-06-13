@@ -1,6 +1,6 @@
 #!/bin/bash
 
-Compiler=Clang++11
+Compiler=Clang
 
 for name in real_SoA real_SoA_MP cplx_SoA cplx_SoA_MP \
             real real_MP cplx cplx_MP
@@ -14,6 +14,8 @@ fi
 
 if [[ $name == *"_SoA"* ]]; then
   CMAKE_FLAGS="$CMAKE_FLAGS -D ENABLE_SOA=1"
+else
+  CMAKE_FLAGS="$CMAKE_FLAGS -D ENABLE_SOA=0"
 fi
 
 if [[ $name == *"_MP"* ]]; then

@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<simulation xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.mcc.uiuc.edu/qmc/schema/molecu.xsd">
+    <jastrow name="J2" type="Two-Body" function="Bspline" print="yes">
+      <correlation speciesA="u" speciesB="u" size="10" rcut="2.786390">
+        <coefficients id="uu" type="Array"> 0.226253461 0.1760552612 0.1342401737 0.1003801595 0.07491166114 0.05513141705 0.03882837081 0.02522500085 0.01334090035 0.005606571209</coefficients>
+      </correlation>
+      <correlation speciesA="u" speciesB="d" size="10" rcut="2.786390">
+        <coefficients id="ud" type="Array"> 0.3505168431 0.2452619047 0.1717802432 0.12174802 0.08772669385 0.063486873 0.04428468338 0.02858446207 0.01504756848 0.006252612954</coefficients>
+      </correlation>
+    </jastrow>
+    <jastrow name="J1" type="One-Body" function="Bspline" print="yes" source="i">
+      <correlation elementType="O" cusp="0.0" size="10" rcut="2.786390">
+        <coefficients id="O" type="Array"> -0.5435987065 -0.4903954334 -0.4476606199 -0.3790881485 -0.271960513 -0.1627021771 -0.1384619357 -0.09609099402 -0.06055307111 -0.03017902095</coefficients>
+      </correlation>
+      <correlation elementType="Ni" cusp="0.0" size="10" rcut="2.786390">
+        <coefficients id="Ni" type="Array"> -1.985141792 -1.914228986 -1.760935175 -1.483049391 -1.109581486 -0.6541814478 -0.4817882925 -0.2986331326 -0.1665786235 -0.07566102238</coefficients>
+      </correlation>
+    </jastrow>
+    <jastrow name="J3" type="eeI" function="polynomial" source="i" print="yes">
+      <correlation ispecies="Ni" especies="u" isize="3" esize="3" rcut="2.786390">
+        <coefficients id="uuNi" type="Array" optimize="yes"> 0.06586853324 0.005938091297 -0.2134097014 0.08222250297 0.3216568711 0.03161516497 -0.1381723374 0.04382122411 0.1622480091 0.0157662015 0.03035465548 0.2031598043 -0.4779667364 -0.2270672399 -0.222686741 0.5357098082 0.1032958 0.1941606281 0.1194310121 -0.1868297565 0.357756 0.07961548056 0.04316262355 0.1797983729 -0.09182466506 0.05374990921</coefficients>
+      </correlation>
+      <correlation ispecies="Ni" especies1="u" especies2="d" isize="3" esize="3" rcut="2.786390">
+        <coefficients id="udNi" type="Array" optimize="yes"> 0.02527115298 -0.03865685308 -0.08138996561 0.2727248908 0.3541154788 -0.007441781914 -0.03494047499 -0.101814978 0.04232410502 0.08872074089 0.3281261729 0.2603399638 -0.8021792777 -0.5842045625 0.1396294294 0.6111421851 0.106896092 0.2345154332 0.1492448422 -0.4676314972 0.1817765029 0.3692775849 -0.02160094403 0.05641908962 0.1310696879 0.2287017066</coefficients>
+      </correlation>
+      <correlation ispecies="O" especies="u" isize="3" esize="3" rcut="2.786390">
+        <coefficients id="uuO" type="Array" optimize="yes"> 0.148512 0.009578155012 -0.137595352 -0.02464375285 0.2639241385 0.05834672541 -0.07926714949 -0.007618837669 0.0005301850042 -0.1298953981 -0.001903045785 -0.04439958419 -0.2745592896 0.1709092455 0.05511244013 0.325695707 0.1488743427 -0.02997312704 -0.04029789605 -0.1504362085 0.5389739812 0.07715410181 -0.04359502134 0.351722378 0.08630929707 0.04583645128</coefficients>
+      </correlation>
+      <correlation ispecies="O" especies1="u" especies2="d" isize="3" esize="3" rcut="2.786390">
+        <coefficients id="udO" type="Array" optimize="yes"> 0.2550265692 0.00871374939 -0.4773772003 0.2012841527 0.3625239093 0.05916700251 0.1085700429 0.008614207718 -0.01108654303 -0.3935559005 -0.008099392182 -0.174183403 -0.4742881483 0.2441640503 -0.04131979157 0.6438893089 0.2281236364 0.01614960388 -0.07168819243 -0.2321019508 1.093823228 0.09112975804 -0.07927016487 0.7690258618 0.1088049037 0.04009791334</coefficients>
+      </correlation>
+    </jastrow>
+</simulation>

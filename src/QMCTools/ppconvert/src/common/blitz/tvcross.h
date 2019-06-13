@@ -27,7 +27,7 @@
 #define BZ_TVCROSS_H
 
 #ifndef BZ_TINYVEC_H
- #error <blitz/tvcross.h> must be included via <blitz/tinyvec.h>
+#error <blitz/tvcross.h> must be included via <blitz/tinyvec.h>
 #endif
 
 BZ_NAMESPACE(blitz)
@@ -40,11 +40,9 @@ BZ_NAMESPACE(blitz)
  */
 
 template<typename T_numtype>
-TinyVector<T_numtype,3> cross(const TinyVector<T_numtype,3>& x, 
-    const TinyVector<T_numtype,3>& y)
+TinyVector<T_numtype, 3> cross(const TinyVector<T_numtype, 3>& x, const TinyVector<T_numtype, 3>& y)
 {
-    return TinyVector<T_numtype,3>(x[1]*y[2] - y[1]*x[2],
-        y[0]*x[2] - x[0]*y[2], x[0]*y[1] - y[0]*x[1]);
+  return TinyVector<T_numtype, 3>(x[1] * y[2] - y[1] * x[2], y[0] * x[2] - x[0] * y[2], x[0] * y[1] - y[0] * x[1]);
 }
 
 

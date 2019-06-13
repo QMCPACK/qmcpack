@@ -320,7 +320,9 @@ int main(int argc, char** argv)
   double global_t[]={tInit*omp_fac,t0*omp_fac,t_diffusion*omp_fac,t_pseudo*omp_fac};
   double global_t_max[]={0.0,0.0,0.0,0.0};
 
+#ifdef HAVE_MPI
   MPI_Allreduce(global_t,global_t_max,4,MPI_DOUBLE,MPI_MAX,*mycomm);
+#endif
 
   if(ionode)
   {

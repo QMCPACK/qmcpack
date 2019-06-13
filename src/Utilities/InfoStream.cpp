@@ -15,16 +15,19 @@
 
 InfoStream::~InfoStream()
 {
-  if (currStream != nullStream) {
+  if (currStream != nullStream)
+  {
     delete nullStream;
   }
 
-  if (ownStream && currStream) {
-    delete(currStream);
+  if (ownStream && currStream)
+  {
+    delete (currStream);
   }
 }
 
-void InfoStream::pause() {
+void InfoStream::pause()
+{
   if (currStream != nullStream)
   {
     prevStream = currStream;
@@ -32,26 +35,29 @@ void InfoStream::pause() {
   }
 }
 
-void InfoStream::resume() {
-  if (prevStream) {
+void InfoStream::resume()
+{
+  if (prevStream)
+  {
     currStream = prevStream;
     prevStream = NULL;
-   }
+  }
 }
 
-void InfoStream::shutOff() {
+void InfoStream::shutOff()
+{
   prevStream = NULL;
   currStream = nullStream;
 }
 
-void InfoStream::redirectToFile(const std::string &fname) {
+void InfoStream::redirectToFile(const std::string& fname)
+{
   currStream = new std::ofstream(fname);
-  ownStream = true;
+  ownStream  = true;
 }
 
-void InfoStream::redirectToSameStream(InfoStream &info)
+void InfoStream::redirectToSameStream(InfoStream& info)
 {
   currStream = &info.getStream();
-  ownStream = false;
+  ownStream  = false;
 }
-

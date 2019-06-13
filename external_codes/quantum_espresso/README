@@ -1,7 +1,7 @@
 The files in this directory support making a modified version of
 quantum espresso that includes the pw2qmcpack converter.
 
-The download_and_patch_qe6.3.sh script will automatically download
+The download_and_patch_qe6.4.sh script will automatically download
 and patch quantum espresso. Similarly named scripts are provided for
 earlier versions. After patching you can move the espresso directory
 anywhere convenient. There is no need to keep it within the QMCPACK
@@ -10,10 +10,12 @@ PATH so that the correct executables are found.
 
 If you have already downloaded quantum espresso you can, e.g.,
 
-patch -p1 -i ../add_pw2qmcpack_to_qe-6.3.diff
+patch -p1 -i ../add_pw2qmcpack_to_qe-6.4.diff
 
 from within the top level quantum espresso directory.
 
+Due to internal changes in quantum espresso, generally the patch and
+pw2qmcpack files only work for one specific version.
 
 Notes for maintainers:
 
@@ -23,7 +25,7 @@ updated, be sure to run autoconf to generate a new install/configure.
 
 2. Create a new patch.
 
-diff -urN qe-6.3_original qe-6.3_updated >add_pw2qmcpack_to_qe-6.3.diff
+diff -urN qe-x.y_original qe-x.y_updated >add_pw2qmcpack_to_qe-x.y.diff
 
 3. Update the download_and_patch script. Change the version number and
 directory location on QE Forge. The latter varies with no clear logic.

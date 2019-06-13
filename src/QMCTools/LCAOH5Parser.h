@@ -5,13 +5,10 @@
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
 // File developed by: Anouar Benali, benali@anl.gov, Argonne National Laboratory
-//  
+//
 //
 // File created by: Anouar Benali, benali@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
-
 
 
 //#ifndef QMCPLUSPLUS_TOOLS_GAMESS_OUT_H
@@ -24,12 +21,9 @@
 #include "OhmmsPETE/TinyVector.h"
 #include "OhmmsData/OhmmsElementBase.h"
 
-class LCAOParser: public QMCGaussianParserBase,
-  public OhmmsAsciiParser
+class LCAOParser : public QMCGaussianParserBase, public OhmmsAsciiParser
 {
-
 public:
-
   LCAOParser();
 
   LCAOParser(int argc, char** argv);
@@ -44,9 +38,8 @@ public:
 
   void getGeometry(const std::string& fname);
   void getCell(const std::string& fname);
-  void getKpts(const std::string& fname);
+  void getSuperTwist(const std::string& fname);
   void getMO(const std::string& fname);
   void getGaussianCenters(const std::string fname);
-
 };
 //#endif

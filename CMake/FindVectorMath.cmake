@@ -10,9 +10,7 @@ IF ( HAVE_MKL_VML )
 # We arrive here if MKL was detected earlier by FindMKL
   SET ( HAVE_VECTOR_MATH 1 )
   MESSAGE(STATUS "Using MKL Vector Math functions")
-ENDIF ()
-
-IF ( NOT HAVE_VECTOR_MATH )
+ELSE()
   #MESSAGE(STATUS "Trying MKL VML")
   # Check for mkl_vml_functions.h
   FILE( WRITE "${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/src_mkl_vml.cxx"

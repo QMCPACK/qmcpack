@@ -10,8 +10,8 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 /** @file SPOSetProxy.h
  * @brief declare a proxy class to a SPOSet for multi determinants
  */
@@ -20,15 +20,13 @@
 #include "QMCWaveFunctions/SPOSet.h"
 namespace qmcplusplus
 {
-
 /** proxy SPOSet
  *
  * This class owns a SPOSet for all the states to be evaluated
- * and will be owned by a DiracDeterminantBase object.
+ * and will be owned by a DiracDeterminant object.
  */
-struct SPOSetProxy: public SPOSet
+struct SPOSetProxy : public SPOSet
 {
-
   ///pointer to the SPOSet which evaluate the single-particle states
   SPOSetPtr refPhi;
   ///container for the values
@@ -54,30 +52,52 @@ struct SPOSetProxy: public SPOSet
   void resetTargetParticleSet(ParticleSet& P);
   void setOrbitalSetSize(int norbs);
   void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi);
-  void evaluate(const ParticleSet& P, int iat,
-                ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi);
-  inline void
-  evaluate(const ParticleSet& P, int iat,
-           ValueVector_t& psi, GradVector_t& dpsi, HessVector_t& d2psi)
+  void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi);
+  inline void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, HessVector_t& d2psi)
   {
     APP_ABORT("Need specialization of evaluate(HessVector_t&) for grad_grad_grad_logdet. \n");
   }
-  void evaluate(const ParticleSet& P, int first, int last
-                , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet);
-  void evaluate_notranspose(const ParticleSet& P, int first, int last
-                            , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet);
-  void evaluate(const ParticleSet& P, int first, int last
-                , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet);
+  void evaluate(const ParticleSet& P,
+                int first,
+                int last,
+                ValueMatrix_t& logdet,
+                GradMatrix_t& dlogdet,
+                ValueMatrix_t& d2logdet);
+  void evaluate_notranspose(const ParticleSet& P,
+                            int first,
+                            int last,
+                            ValueMatrix_t& logdet,
+                            GradMatrix_t& dlogdet,
+                            ValueMatrix_t& d2logdet);
+  void evaluate(const ParticleSet& P,
+                int first,
+                int last,
+                ValueMatrix_t& logdet,
+                GradMatrix_t& dlogdet,
+                HessMatrix_t& grad_grad_logdet);
 
-  void evaluate(const ParticleSet& P, int first, int last
-                , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet, GGGMatrix_t& grad_grad_grad_logdet);
+  void evaluate(const ParticleSet& P,
+                int first,
+                int last,
+                ValueMatrix_t& logdet,
+                GradMatrix_t& dlogdet,
+                HessMatrix_t& grad_grad_logdet,
+                GGGMatrix_t& grad_grad_grad_logdet);
 
-  void evaluate_notranspose(const ParticleSet& P, int first, int last
-                            , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet);
+  void evaluate_notranspose(const ParticleSet& P,
+                            int first,
+                            int last,
+                            ValueMatrix_t& logdet,
+                            GradMatrix_t& dlogdet,
+                            HessMatrix_t& grad_grad_logdet);
 
-  void evaluate_notranspose(const ParticleSet& P, int first, int last
-                            , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet, GGGMatrix_t& grad_grad_grad_logdet);
-
+  void evaluate_notranspose(const ParticleSet& P,
+                            int first,
+                            int last,
+                            ValueMatrix_t& logdet,
+                            GradMatrix_t& dlogdet,
+                            HessMatrix_t& grad_grad_logdet,
+                            GGGMatrix_t& grad_grad_grad_logdet);
 };
-}
+} // namespace qmcplusplus
 #endif

@@ -574,6 +574,40 @@ TEST_CASE("Ethanol MO with cusp", "[wavefunction]")
   REQUIRE(all_grad[0][11][1] == Approx(0.9883840215));
   REQUIRE(all_grad[0][11][2] == Approx(1.7863218842));
   REQUIRE(all_lap[0][11] == Approx(-33.5202249813));
+
+  SPOSetBuilderFactory::clear();
+}
+
+
+TEST_CASE("broadcastCuspInfo", "[wavefunction]")
+{
+  Communicate* c = OHMMS::Controller;
+  CuspCorrectionParameters cp;
+  int root = 0;
+  if (c->rank() == root)
+  {
+    cp.Rc       = 2.0;
+    cp.C        = 3.0;
+    cp.sg       = -1.0;
+    cp.alpha[0] = 1.1;
+    cp.alpha[1] = 1.2;
+    cp.alpha[2] = 1.3;
+    cp.alpha[3] = 1.4;
+    cp.alpha[4] = 1.5;
+    cp.redo     = 1;
+  }
+
+  broadcastCuspInfo(cp, *c, root);
+
+  REQUIRE(cp.Rc == Approx(2.0));
+  REQUIRE(cp.C == Approx(3.0));
+  REQUIRE(cp.sg == Approx(-1.0));
+  REQUIRE(cp.alpha[0] == Approx(1.1));
+  REQUIRE(cp.alpha[1] == Approx(1.2));
+  REQUIRE(cp.alpha[2] == Approx(1.3));
+  REQUIRE(cp.alpha[3] == Approx(1.4));
+  REQUIRE(cp.alpha[4] == Approx(1.5));
+  REQUIRE(cp.redo == 1);
 }
 
 

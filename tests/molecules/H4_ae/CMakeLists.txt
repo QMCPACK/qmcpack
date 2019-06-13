@@ -61,7 +61,6 @@ IF (NOT QMC_CUDA)
                     7 H4_OPT_SCALARS # OPT step 7
                     )
 
-
   IF(BUILD_LMYENGINE_INTERFACE)
     QMC_RUN_AND_CHECK(short-H4-opt-adaptive
                       "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
@@ -118,7 +117,7 @@ IF (NOT QMC_CUDA)
                       3 H4_ORB_OPT_DMC_SCALARS # Test the DMC results
                       TRUE)
     #
-    # H4 starting from unoptimized CIS coefficients, targetting the first excited state, and using the adaptive linear method
+    # H4 starting from unoptimized CIS coefficients, targeting the first excited state, and using the adaptive linear method
     #
     LIST(APPEND H4_FDLR_SCALARS "totenergy" "-1.82507816 0.001") # total energy
 
@@ -130,6 +129,18 @@ IF (NOT QMC_CUDA)
                       ${MP_SUCCESS}
                       8 H4_FDLR_SCALARS # Final VMC step
                       TRUE)
+
+    LIST(APPEND H4_CJS_SCALARS "totenergy" "-2.0438 0.0045") # total energy
+
+    QMC_RUN_AND_CHECK(short-H4-cjs
+                      "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
+                      H4
+                      H4_cjs_vmc.xml
+                      16 1
+                      ${MP_SUCCESS}
+                      0 H4_CJS_SCALARS
+                      TRUE)
+
 
   ELSE()
    MESSAGE("Skipping H4_ae adaptive optimizer tests because lmyengine interface was not built (BUILD_LMYENGINE_INTERFACE=0)")

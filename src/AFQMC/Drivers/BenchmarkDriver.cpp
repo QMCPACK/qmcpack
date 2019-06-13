@@ -24,11 +24,11 @@ bool BenchmarkDriver::run()
   app_log()<<"***********************************************************\n"
            <<"************ Starting Benchmark/Tests/Timings *************\n"
            <<"***********************************************************\n";
- 
+
   prop0->benchmark(benchmark_list,maxnW,delnW,nrepeat,wlkBucket);
 
   wlkBucket->benchmark(benchmark_list,maxnW,delnW,nrepeat);
-  
+
   return true;
 }
 
@@ -38,7 +38,7 @@ bool BenchmarkDriver::parse(xmlNodePtr cur)
 
   std::string str,str1;
 
-  ncores_per_TG=1; 
+  ncores_per_TG=1;
   ParameterSet m_param;
   m_param.add(benchmark_list,"list","string");
   m_param.add(maxnW,"maxnw","int");
@@ -63,30 +63,30 @@ bool BenchmarkDriver::setup(HamPtr h0, WSetPtr w0, PropPtr p0, WfnPtr wf0)
   wfn0=wf0;
   restarted=false;
 
-  app_log()<<"\n****************************************************\n"   
-           <<"****************************************************\n"   
-           <<"****************************************************\n"   
-           <<"          Beginning Driver initialization.\n" 
-           <<"****************************************************\n"   
-           <<"****************************************************\n"   
-           <<"****************************************************\n"   
+  app_log()<<"\n****************************************************\n"
+           <<"****************************************************\n"
+           <<"****************************************************\n"
+           <<"          Beginning Driver initialization.\n"
+           <<"****************************************************\n"
+           <<"****************************************************\n"
+           <<"****************************************************\n"
            <<std::endl;
 
   app_log()<<" Using " <<ncores_per_TG <<" cores per node in a TaskGroup. \n";
-  // right now this TG is not used. It is needed for setup purposes and to  
+  // right now this TG is not used. It is needed for setup purposes and to
   // get a unique TG number for every group of cores on a node (used in the WalkerSet)
-  TG.setup(ncores_per_TG,1,false);  
+  TG.setup(ncores_per_TG,1,false);
   std::vector<int> TGdata(5);
-  TG.getSetupInfo(TGdata); 
-   
+  TG.getSetupInfo(TGdata);
+
   // setup local-to-node MPI Comm
   // TGdata[0]: node_number
   myComm->split_comm(TGdata[0],MPI_COMM_NODE_LOCAL);
   TG.setNodeCommLocal(MPI_COMM_NODE_LOCAL);
-  int key = TG.getTGNumber(); // This works because the TG used has nnodes_per_TG=1 
+  int key = TG.getTGNumber(); // This works because the TG used has nnodes_per_TG=1
   myComm->split_comm(key,MPI_COMM_TG_LOCAL);
   TG.setTGCommLocal(MPI_COMM_TG_LOCAL);
-  key = TG.getCoreRank();  
+  key = TG.getCoreRank();
   myComm->split_comm(key,MPI_COMM_TG_LOCAL_HEADS);
 
   key = TG.getCoreID();
@@ -97,66 +97,66 @@ bool BenchmarkDriver::setup(HamPtr h0, WSetPtr w0, PropPtr p0, WfnPtr wf0)
   TG.setBuffer(&CommBuffer);
 
   app_log()<<"\n****************************************************\n"
-           <<"               Initializating Hamiltonian \n"
+           <<"               Initializing Hamiltonian \n"
            <<"****************************************************\n"
            <<std::endl;
 
   // hamiltonian
   if(!ham0->init(TGdata,&CommBuffer,MPI_COMM_TG_LOCAL,MPI_COMM_NODE_LOCAL,MPI_COMM_HEAD_OF_NODES)) {
-    app_error()<<"Error initializing Hamiltonian in BenchmarkDriver::setup" <<std::endl; 
-    return false; 
-  }   
+    app_error()<<"Error initializing Hamiltonian in BenchmarkDriver::setup" <<std::endl;
+    return false;
+  }
 
   app_log()<<"\n****************************************************\n"
-           <<"               Initializating Wavefunction \n"
+           <<"               Initializing Wavefunction \n"
            <<"****************************************************\n"
            <<std::endl;
 
   hdf_archive read(myComm);
   if(!wfn0->init(TGdata,&CommBuffer,read,std::string(""),MPI_COMM_TG_LOCAL,MPI_COMM_NODE_LOCAL,MPI_COMM_HEAD_OF_NODES)) {
-    app_error()<<"Error initializing Wavefunction in BenchmarkDriver::setup" <<std::endl; 
-    return false; 
-  }   
+    app_error()<<"Error initializing Wavefunction in BenchmarkDriver::setup" <<std::endl;
+    return false;
+  }
   if(!wfn0->setup(ham0)) {
-    app_error()<<"Error in WavefunctionHandler::setup in BenchmarkDriver::setup" <<std::endl; 
-    return false; 
-  }   
+    app_error()<<"Error in WavefunctionHandler::setup in BenchmarkDriver::setup" <<std::endl;
+    return false;
+  }
 
   app_log()<<"\n****************************************************\n"
-           <<"              Initializating Propagator \n"
+           <<"              Initializing Propagator \n"
            <<"****************************************************\n"
            <<std::endl;
 
   // propagator
-  if(!prop0->setup(TGdata,&CommBuffer,ham0,wfn0,dt,read,std::string(""),MPI_COMM_TG_LOCAL,MPI_COMM_NODE_LOCAL,MPI_COMM_HEAD_OF_NODES)) { 
-    app_error()<<"Error in PropagatorBase::setup in BenchmarkDriver::setup" <<std::endl; 
-    return false; 
-  }   
+  if(!prop0->setup(TGdata,&CommBuffer,ham0,wfn0,dt,read,std::string(""),MPI_COMM_TG_LOCAL,MPI_COMM_NODE_LOCAL,MPI_COMM_HEAD_OF_NODES)) {
+    app_error()<<"Error in PropagatorBase::setup in BenchmarkDriver::setup" <<std::endl;
+    return false;
+  }
 
-  // you will also need the Propagator's TG to handle the distibuted case 
+  // you will also need the Propagator's TG to handle the distibuted case
   wfn0->setupFactorizedHamiltonian(prop0->is_vn_sparse(),prop0->getSpvn(),prop0->getDvn(),dt,prop0->getTG());
 
   app_log()<<"\n****************************************************\n"
-           <<"             Initializating Walker Handler \n"
+           <<"             Initializing Walker Handler \n"
            <<"****************************************************\n"
            <<std::endl;
 
   // walker set
-  wlkBucket->setup(TG.getCoreRank(),ncores_per_TG,TG.getTGNumber(),MPI_COMM_TG_LOCAL_HEADS,MPI_COMM_TG_LOCAL,MPI_COMM_NODE_LOCAL,&LocalTimer);
+  wlkBucket->setup(TG.getCoreRank(),ncores_per_TG,TG.getTGNumber(),prop0->getNBackProp(),MPI_COMM_TG_LOCAL_HEADS,MPI_COMM_TG_LOCAL,MPI_COMM_NODE_LOCAL,&LocalTimer);
   wlkBucket->setHF(wfn0->getHF());
   wlkBucket->initWalkers(maxnW);
-  wfn0->evaluateLocalEnergyAndOverlap("ImportanceSampling",-1,wlkBucket);
+  wfn0->evaluateLocalEnergy(wlkBucket);
 
-  app_log()<<"\n****************************************************\n"   
-           <<"****************************************************\n"   
-           <<"****************************************************\n"   
-           <<"          Finished Driver initialization.\n" 
-           <<"****************************************************\n"   
-           <<"****************************************************\n"   
-           <<"****************************************************\n"   
+  app_log()<<"\n****************************************************\n"
+           <<"****************************************************\n"
+           <<"****************************************************\n"
+           <<"          Finished Driver initialization.\n"
+           <<"****************************************************\n"
+           <<"****************************************************\n"
+           <<"****************************************************\n"
            <<std::endl;
 
-  myComm->barrier(); 
+  myComm->barrier();
 
   return true;
 }

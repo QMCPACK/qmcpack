@@ -12,25 +12,28 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 #ifndef QMCPLUSPLUS_NONLOCAL_ECPOTENTIAL_H
 #define QMCPLUSPLUS_NONLOCAL_ECPOTENTIAL_H
 #include "QMCHamiltonians/NonLocalTOperator.h"
 #include "QMCHamiltonians/NonLocalECPComponent.h"
 #include "QMCHamiltonians/ForceBase.h"
+#include "Particle/NeighborLists.h"
 
 namespace qmcplusplus
 {
-
 /** @ingroup hamiltonian
  * \brief Evaluate the semi local potentials
  */
-class NonLocalECPotential: public QMCHamiltonianBase, public ForceBase
+class NonLocalECPotential : public QMCHamiltonianBase, public ForceBase
 {
-  public:
-  NonLocalECPotential(ParticleSet& ions, ParticleSet& els,
-                      TrialWaveFunction& psi, bool computeForces=false, bool useVP=false);
+public:
+  NonLocalECPotential(ParticleSet& ions,
+                      ParticleSet& els,
+                      TrialWaveFunction& psi,
+                      bool computeForces = false,
+                      bool useVP         = false);
 
   ~NonLocalECPotential();
 
@@ -43,6 +46,12 @@ class NonLocalECPotential: public QMCHamiltonianBase, public ForceBase
 #endif
 
   Return_t evaluate(ParticleSet& P);
+
+  Return_t evaluateWithIonDerivs(ParticleSet& P,
+                                 ParticleSet& ions,
+                                 TrialWaveFunction& psi,
+                                 ParticleSet::ParticlePos_t& hf_terms,
+                                 ParticleSet::ParticlePos_t& pulay_terms);
 
   Return_t evaluateWithToperator(ParticleSet& P);
 
@@ -58,15 +67,12 @@ class NonLocalECPotential: public QMCHamiltonianBase, public ForceBase
   int makeNonLocalMovesPbyP(ParticleSet& P);
 
   Return_t evaluateValueAndDerivatives(ParticleSet& P,
-      const opt_variables_type& optvars,
-      const std::vector<RealType>& dlogpsi,
-      std::vector<RealType>& dhpsioverpsi);
+                                       const opt_variables_type& optvars,
+                                       const std::vector<RealType>& dlogpsi,
+                                       std::vector<RealType>& dhpsioverpsi);
 
   /** Do nothing */
-  bool put(xmlNodePtr cur)
-  {
-    return true;
-  }
+  bool put(xmlNodePtr cur) { return true; }
 
   bool get(std::ostream& os) const
   {
@@ -89,10 +95,9 @@ class NonLocalECPotential: public QMCHamiltonianBase, public ForceBase
 
   void setParticlePropertyList(PropertySetType& plist, int offset);
 
-  void registerObservables(std::vector<observable_helper*>& h5list,
-                           hid_t gid) const;
+  void registerObservables(std::vector<observable_helper*>& h5list, hid_t gid) const;
 
-  protected:
+protected:
   ///random number generator
   RandomGenerator_t* myRNG;
   ///the set of local-potentials (one for each ion)
@@ -104,15 +109,21 @@ class NonLocalECPotential: public QMCHamiltonianBase, public ForceBase
   ///target TrialWaveFunction
   TrialWaveFunction& Psi;
 
-  private:
+private:
   ///number of ions
   int NumIons;
   ///index of distance table for the ion-el pair
   int myTableIndex;
   ///reference to the electrons
   ParticleSet& Peln;
+  ///neighborlist of electrons
+  NeighborLists ElecNeighborIons;
+  ///neighborlist of ions
+  NeighborLists IonNeighborElecs;
   ///use T-moves
   int UseTMove;
+  ///ture if an electron is affected by other electrons moved by T-moves
+  std::vector<bool> elecTMAffected;
   ///non local operator
   NonLocalTOperator nonLocalOps;
   ///true if we should compute forces
@@ -123,8 +134,8 @@ class NonLocalECPotential: public QMCHamiltonianBase, public ForceBase
   ParticleSet::ParticlePos_t PulayTerm;
 #if !defined(REMOVE_TRACEMANAGER)
   ///single particle trace samples
-  Array<TraceReal,1>* Ve_sample;
-  Array<TraceReal,1>* Vi_sample;
+  Array<TraceReal, 1>* Ve_sample;
+  Array<TraceReal, 1>* Vi_sample;
 #endif
 
   /** the actual implementation, used by evaluate and evaluateWithToperator
@@ -133,6 +144,7 @@ class NonLocalECPotential: public QMCHamiltonianBase, public ForceBase
    */
   void evaluate(ParticleSet& P, bool Tmove);
 
+
   /** compute the T move transition probability for a given electron
    * member variable nonLocalOps.Txy is updated
    * @param P particle set
@@ -140,8 +152,11 @@ class NonLocalECPotential: public QMCHamiltonianBase, public ForceBase
    */
   void computeOneElectronTxy(ParticleSet& P, const int ref_elec);
 
+  /** mark all the electrons affected by Tmoves
+   * @param myTable electron ion distance table
+   * @param iel reference electron
+   */
+  void markAffectedElecs(const DistanceTableData* myTable, int iel);
 };
-}
+} // namespace qmcplusplus
 #endif
-
-

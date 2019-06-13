@@ -14,9 +14,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
-
 
 
 #ifndef QMCPLUSPLUS_PARTICLESET_H
@@ -33,7 +30,6 @@
 
 namespace qmcplusplus
 {
-
 ///forward declaration of DistanceTableData
 class DistanceTableData;
 
@@ -70,20 +66,22 @@ struct MCDataType
  * conditions. The ParticleLayout class also takes care of spatial decompositions
  * for efficient evaluations for the interactions with a finite cutoff.
  */
-class ParticleSet
-  :  public QMCTraits
-  , public OhmmsElementBase
-  , public PtclOnLatticeTraits
+class ParticleSet : public QMCTraits, public OhmmsElementBase, public PtclOnLatticeTraits
 {
 public:
   ///@typedef walker type
-  typedef Walker<QMCTraits,PtclOnLatticeTraits>  Walker_t;
+  typedef Walker<QMCTraits, PtclOnLatticeTraits> Walker_t;
   ///@typedef container type to store the property
-  typedef Walker_t::PropertyContainer_t          PropertyContainer_t;
+  typedef Walker_t::PropertyContainer_t PropertyContainer_t;
   ///@typedef buffer type for a serialized buffer
-  typedef PooledData<RealType>                   Buffer_t;
+  typedef PooledData<RealType> Buffer_t;
 
-  enum quantum_domains {no_quantum_domain=0,classical,quantum};
+  enum quantum_domains
+  {
+    no_quantum_domain = 0,
+    classical,
+    quantum
+  };
 
   ///quantum_domain of the particles, default = classical
   quantum_domains quantum_domain;
@@ -111,7 +109,7 @@ public:
   ///Position
   ParticlePos_t R;
   ///SoA copy of R
-  VectorSoaContainer<RealType,DIM> RSoA;
+  VectorSoaContainer<RealType, DIM> RSoA;
   ///gradients of the particles
   ParticleGradient_t G;
   ///laplacians of the particles
@@ -157,20 +155,23 @@ public:
   SpeciesSet mySpecies;
 
   ///Structure factor
-  StructFact *SK;
+  StructFact* SK;
 
   ///distance tables that need to be updated by moving this ParticleSet
   std::vector<DistanceTableData*> DistTables;
 
+  /// Descriptions from distance table creation.  Same order as DistTables.
+  std::vector<std::string> distTableDescriptions;
+
   ///Particle density in G-space for MPC interaction
-  std::vector<TinyVector<int,OHMMS_DIM> > DensityReducedGvecs;
-  std::vector<ComplexType>   Density_G;
-  Array<RealType,OHMMS_DIM> Density_r;
+  std::vector<TinyVector<int, OHMMS_DIM>> DensityReducedGvecs;
+  std::vector<ComplexType> Density_G;
+  Array<RealType, OHMMS_DIM> Density_r;
 
   /// DFT potential
-  std::vector<TinyVector<int,OHMMS_DIM> > VHXCReducedGvecs;
-  std::vector<ComplexType>   VHXC_G[2];
-  Array<RealType,OHMMS_DIM> VHXC_r[2];
+  std::vector<TinyVector<int, OHMMS_DIM>> VHXCReducedGvecs;
+  std::vector<ComplexType> VHXC_G[2];
+  Array<RealType, OHMMS_DIM> VHXC_r[2];
 
   /** name-value map of Walker Properties
    *
@@ -185,7 +186,7 @@ public:
    * The internal order is identical to PropertyList, which holds
    * the matching names.
    */
-  PropertyContainer_t  Properties;
+  PropertyContainer_t Properties;
 
   /** observables in addition to those registered in Properties/PropertyList
    *
@@ -198,7 +199,7 @@ public:
   std::vector<ParticleSet*> myClones;
 
   ///Property history vector
-  std::vector<std::vector<EstimatorRealType> >  PropertyHistory;
+  std::vector<std::vector<EstimatorRealType>> PropertyHistory;
   std::vector<int> PHindex;
   ///@}
 
@@ -224,10 +225,10 @@ public:
   void create(const std::vector<int>& agroup);
 
   ///write to a std::ostream
-  bool get(std::ostream& ) const;
+  bool get(std::ostream&) const;
 
   ///read from std::istream
-  bool put( std::istream& );
+  bool put(std::istream&);
 
   ///reset member data
   void reset();
@@ -238,32 +239,17 @@ public:
   ///specify quantum_domain of particles
   void set_quantum_domain(quantum_domains qdomain);
 
-  void set_quantum()
-  {
-    quantum_domain=quantum;
-  }
+  void set_quantum() { quantum_domain = quantum; }
 
-  inline bool is_classical() const
-  {
-    return quantum_domain==classical;
-  }
+  inline bool is_classical() const { return quantum_domain == classical; }
 
-  inline bool is_quantum() const
-  {
-    return quantum_domain==quantum;
-  }
+  inline bool is_quantum() const { return quantum_domain == quantum; }
 
   ///check whether quantum domain is valid for particles
-  inline bool quantum_domain_valid(quantum_domains qdomain) const
-  {
-    return qdomain!=no_quantum_domain;
-  }
+  inline bool quantum_domain_valid(quantum_domains qdomain) const { return qdomain != no_quantum_domain; }
 
   ///check whether quantum domain is valid for particles
-  inline bool quantum_domain_valid() const
-  {
-    return quantum_domain_valid(quantum_domain);
-  }
+  inline bool quantum_domain_valid() const { return quantum_domain_valid(quantum_domain); }
 
   ///set UseBoundBox
   void setBoundBox(bool yes);
@@ -287,15 +273,12 @@ public:
 
   /** reset all the collectable quantities during a MC iteration
    */
-  inline void resetCollectables()
-  {
-    std::fill(Collectables.begin(),Collectables.end(),0.0);
-  }
+  inline void resetCollectables() { std::fill(Collectables.begin(), Collectables.end(), 0.0); }
 
   /** update the internal data
    *@param skip SK update if skipSK is true
    */
-  void update(bool skipSK=false);
+  void update(bool skipSK = false);
 
   /**update the internal data with new position
    *@param pos position vector assigned to R
@@ -311,34 +294,22 @@ public:
   void turnOnPerParticleSK();
 
   ///retrun the SpeciesSet of this particle set
-  inline SpeciesSet& getSpeciesSet()
-  {
-    return mySpecies;
-  }
+  inline SpeciesSet& getSpeciesSet() { return mySpecies; }
   ///retrun the const SpeciesSet of this particle set
-  inline const SpeciesSet& getSpeciesSet() const
-  {
-    return mySpecies;
-  }
+  inline const SpeciesSet& getSpeciesSet() const { return mySpecies; }
 
   ///return parent's name
-  inline const std::string& parentName() const
-  {
-    return ParentName;
-  }
+  inline const std::string& parentName() const { return ParentName; }
   inline void setName(const std::string& aname)
   {
-    myName     = aname;
-    if(ParentName=="0")
+    myName = aname;
+    if (ParentName == "0")
     {
       ParentName = aname;
     }
   }
 
-  inline RealType getTotalWeight() const
-  {
-    return EnsembleProperty.Weight;
-  }
+  inline RealType getTotalWeight() const { return EnsembleProperty.Weight; }
 
   void resetGroups();
 
@@ -350,15 +321,12 @@ public:
    */
   void setActive(int iat);
 
-  /** return the position of the active partice
+  /** return the position of the active particle
    *
    * activePtcl=-1 is used to flag non-physical moves
    */
-  inline const PosType& activeR(int iat) const
-  {
-    return (activePtcl == iat)? activePos:R[iat];
-  }
-  
+  inline const PosType& activeR(int iat) const { return (activePtcl == iat) ? activePos : R[iat]; }
+
   /**move a particle
    *@param iat the index of the particle to be moved
    *@param displ random displacement of the iat-th particle
@@ -390,11 +358,12 @@ public:
    *
    * Otherwise, everything is the same as makeMove for a walker
    */
-  bool makeMoveWithDrift(const Walker_t& awalker
-                         , const ParticlePos_t& drift, const ParticlePos_t& deltaR, RealType dt);
+  bool makeMoveWithDrift(const Walker_t& awalker, const ParticlePos_t& drift, const ParticlePos_t& deltaR, RealType dt);
 
-  bool makeMoveWithDrift(const Walker_t& awalker
-                         , const ParticlePos_t& drift, const ParticlePos_t& deltaR, const std::vector<RealType>& dt);
+  bool makeMoveWithDrift(const Walker_t& awalker,
+                         const ParticlePos_t& drift,
+                         const ParticlePos_t& deltaR,
+                         const std::vector<RealType>& dt);
 
   void makeMoveOnSphere(Index_t iat, const SingleParticlePos_t& displ);
 
@@ -417,10 +386,7 @@ public:
   void rejectMove(Index_t iat);
 
   void initPropertyList();
-  inline int addProperty(const std::string& pname)
-  {
-    return PropertyList.add(pname.c_str());
-  }
+  inline int addProperty(const std::string& pname) { return PropertyList.add(pname.c_str()); }
 
   int addPropertyHistory(int leng);
   //        void rejectedMove();
@@ -463,42 +429,24 @@ public:
   void donePbyP();
 
   ///return the address of the values of Hamiltonian terms
-  inline EstimatorRealType* restrict getPropertyBase()
-  {
-    return Properties.data();
-  }
+  inline EstimatorRealType* restrict getPropertyBase() { return Properties.data(); }
 
   ///return the address of the values of Hamiltonian terms
-  inline const EstimatorRealType* restrict getPropertyBase() const
-  {
-    return Properties.data();
-  }
+  inline const EstimatorRealType* restrict getPropertyBase() const { return Properties.data(); }
 
   ///return the address of the i-th properties
-  inline EstimatorRealType* restrict getPropertyBase(int i)
-  {
-    return Properties[i];
-  }
+  inline EstimatorRealType* restrict getPropertyBase(int i) { return Properties[i]; }
 
   ///return the address of the i-th properties
-  inline const EstimatorRealType* restrict getPropertyBase(int i) const
-  {
-    return Properties[i];
-  }
+  inline const EstimatorRealType* restrict getPropertyBase(int i) const { return Properties[i]; }
 
-  inline void setTwist(SingleParticlePos_t& t)
-  {
-    myTwist=t;
-  }
-  inline SingleParticlePos_t getTwist() const
-  {
-    return myTwist;
-  }
+  inline void setTwist(SingleParticlePos_t& t) { myTwist = t; }
+  inline SingleParticlePos_t getTwist() const { return myTwist; }
 
   /** Initialize particles around another ParticleSet
    * Used to initialize an electron ParticleSet by an ion ParticleSet
    */
-  void randomizeFromSource (ParticleSet &src);
+  void randomizeFromSource(ParticleSet& src);
 
   /** return the ip-th clone
    * @param ip thread number
@@ -507,22 +455,19 @@ public:
    */
   inline ParticleSet* get_clone(int ip)
   {
-    if(ip >= myClones.size())
+    if (ip >= myClones.size())
       return 0;
-    return (ip)? myClones[ip]:this;
+    return (ip) ? myClones[ip] : this;
   }
 
   inline const ParticleSet* get_clone(int ip) const
   {
-    if(ip >= myClones.size())
+    if (ip >= myClones.size())
       return 0;
-    return (ip)? myClones[ip]:this;
+    return (ip) ? myClones[ip] : this;
   }
 
-  inline int clones_size() const
-  {
-    return myClones.size();
-  }
+  inline int clones_size() const { return myClones.size(); }
 
   /** update R of its own and its clones
    * @param rnew new position array of N
@@ -530,28 +475,22 @@ public:
   template<typename PAT>
   inline void update_clones(const PAT& rnew)
   {
-    if(R.size() != rnew.size())
+    if (R.size() != rnew.size())
       APP_ABORT("ParticleSet::updateR failed due to different sizes");
-    R=rnew;
-    for(int ip=1; ip<myClones.size(); ++ip)
-      myClones[ip]->R=rnew;
+    R = rnew;
+    for (int ip = 1; ip < myClones.size(); ++ip)
+      myClones[ip]->R = rnew;
   }
 
   /** reset internal data of clones including itself
    */
   void reset_clones();
-      
+
   /** get species name of particle i
    */
-  inline const std::string& species_from_index(int i)
-  {
-    return mySpecies.speciesName[GroupID[i]];
-  }
+  inline const std::string& species_from_index(int i) { return mySpecies.speciesName[GroupID[i]]; }
 
-  inline int getTotalNum() const
-  {
-    return TotalNum;
-  }
+  inline int getTotalNum() const { return TotalNum; }
 
   inline void resize(int numPtcl)
   {
@@ -594,36 +533,29 @@ public:
   inline void assign(const ParticleSet& ptclin)
   {
     resize(ptclin.getTotalNum());
-    Lattice = ptclin.Lattice;
+    Lattice          = ptclin.Lattice;
     PrimitiveLattice = ptclin.PrimitiveLattice;
-    R.InUnit = ptclin.R.InUnit;
-    R = ptclin.R;
-    ID = ptclin.ID;
-    GroupID = ptclin.GroupID;
-    if(ptclin.SubPtcl.size())
+    R.InUnit         = ptclin.R.InUnit;
+    R                = ptclin.R;
+    ID               = ptclin.ID;
+    GroupID          = ptclin.GroupID;
+    if (ptclin.SubPtcl.size())
     {
       SubPtcl.resize(ptclin.SubPtcl.size());
-      SubPtcl =ptclin.SubPtcl;
+      SubPtcl = ptclin.SubPtcl;
     }
   }
 
   ///return the number of groups
-  inline int groups() const
-  {
-    return SubPtcl.size()-1;
-  }
+  inline int groups() const { return SubPtcl.size() - 1; }
 
   ///return the first index of a group i
-  inline int first(int igroup) const
-  {
-    return SubPtcl[igroup];
-  }
+  inline int first(int igroup) const { return SubPtcl[igroup]; }
 
   ///return the last index of a group i
-  inline int last(int igroup) const
-  {
-    return SubPtcl[igroup+1];
-  }
+  inline int last(int igroup) const { return SubPtcl[igroup + 1]; }
+
+  inline int groupsize(int igroup) const { return SubPtcl[igroup + 1] - SubPtcl[igroup]; }
 
   ///add attributes to list for IO
   template<typename ATList>
@@ -679,7 +611,7 @@ protected:
    * myDistTableMap[source-particle-tag]= locator in the distance table
    * myDistTableMap[ObjectTag] === 0
    */
-  std::map<std::string,int> myDistTableMap;
+  std::map<std::string, int> myDistTableMap;
 
   std::vector<NewTimer*> myTimers;
   SingleParticlePos_t myTwist;
@@ -692,5 +624,5 @@ protected:
   ///array to handle a group of distinct particles per species
   ParticleIndex_t SubPtcl;
 };
-}
+} // namespace qmcplusplus
 #endif

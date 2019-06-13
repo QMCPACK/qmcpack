@@ -60,7 +60,7 @@ echo ""
 echo "building qmcpack for cpu AoS real for eos"
 mkdir -p build_eos_cpu_real
 cd build_eos_cpu_real
-cmake $CMAKE_FLAGS .. 
+cmake -DENABLE_SOA=0 $CMAKE_FLAGS .. 
 make -j 32
 cd ..
 ln -sf ./build_eos_cpu_real/bin/qmcpack ./qmcpack_eos_cpu_real
@@ -72,7 +72,7 @@ echo ""
 echo "building qmcpack for cpu AoS complex for eos"
 mkdir -p build_eos_cpu_comp
 cd build_eos_cpu_comp
-cmake -DQMC_COMPLEX=1 $CMAKE_FLAGS .. 
+cmake -DENABLE_SOA=0 -DQMC_COMPLEX=1 $CMAKE_FLAGS .. 
 make -j 32
 cd ..
 ln -sf ./build_eos_cpu_comp/bin/qmcpack ./qmcpack_eos_cpu_comp

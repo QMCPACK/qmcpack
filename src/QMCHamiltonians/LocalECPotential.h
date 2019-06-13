@@ -12,8 +12,8 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 #ifndef QMCPLUSPLUS_LOCALECPPOTENTIAL_H
 #define QMCPLUSPLUS_LOCALECPPOTENTIAL_H
 #include "Particle/ParticleSet.h"
@@ -22,19 +22,21 @@
 #include "Numerics/OneDimGridFunctor.h"
 #include "Numerics/OneDimLinearSpline.h"
 #include "Numerics/OneDimCubicSpline.h"
+#include "Particle/DistanceTableData.h"
 
 namespace qmcplusplus
 {
-
 /** @ingroup hamiltonian
  * \brief Evaluate the local potentials (either pseudo or full core) around each ion.
  */
 
-struct LocalECPotential: public QMCHamiltonianBase
+struct LocalECPotential : public QMCHamiltonianBase
 {
-
   typedef OneDimGridBase<RealType> GridType;
   typedef OneDimCubicSpline<RealType> RadialPotentialType;
+
+
+  typedef DistanceTableData::RowContainer RowContainerType;
 
   ///reference to the ionic configuration
   const ParticleSet& IonConfig;
@@ -56,8 +58,8 @@ struct LocalECPotential: public QMCHamiltonianBase
   Vector<RealType> PPart;
 #if !defined(REMOVE_TRACEMANAGER)
   ///single particle trace samples
-  Array<TraceReal,1>* Ve_sample;
-  Array<TraceReal,1>* Vi_sample;
+  Array<TraceReal, 1>* Ve_sample;
+  Array<TraceReal, 1>* Vi_sample;
 #endif
   const ParticleSet& Peln;
   const ParticleSet& Pion;
@@ -77,12 +79,16 @@ struct LocalECPotential: public QMCHamiltonianBase
 
   Return_t evaluate(ParticleSet& P);
 
+  Return_t evaluateWithIonDerivs(ParticleSet& P,
+                                 ParticleSet& ions,
+                                 TrialWaveFunction& psi,
+                                 ParticleSet::ParticlePos_t& hf_terms,
+                                 ParticleSet::ParticlePos_t& pulay_terms);
+
+
   Return_t evaluate_orig(ParticleSet& P);
 
-  bool put(xmlNodePtr cur)
-  {
-    return true;
-  }
+  bool put(xmlNodePtr cur) { return true; }
 
   bool get(std::ostream& os) const
   {
@@ -99,7 +105,5 @@ struct LocalECPotential: public QMCHamiltonianBase
    */
   void add(int groupID, RadialPotentialType* ppot, RealType z);
 };
-}
+} // namespace qmcplusplus
 #endif
-
-

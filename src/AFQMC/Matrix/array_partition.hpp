@@ -9,6 +9,9 @@
 ////// File created by: Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory 
 //////////////////////////////////////////////////////////////////////////////////////////
 
+#ifndef QMCPLUSPLUS_AFQMC_ARRAY_PARTITION_HPP
+#define QMCPLUSPLUS_AFQMC_ARRAY_PARTITION_HPP
+
 #include<cassert>
 #include<complex>
 #include<cstdlib>
@@ -25,7 +28,7 @@
 #include "io/hdf_archive.h"
 #include "Message/CommOperators.h"
 
-#include "AFQMC/Utilities/Utils.h"
+#include "AFQMC/Utilities/Utils.hpp"
 #include<AFQMC/config.0.h>
 
 namespace qmcplusplus
@@ -33,6 +36,96 @@ namespace qmcplusplus
 
 namespace afqmc
 {
+
+/*
+ * Object used to count number of non-zero elements in a stored (e.g. hdf5) sparse matrix.
+ * Given a subset of the global matrix, the class implements a map from {i,j}->k,
+ * where k is an integer between 0:counter_range used to count elements.
+ * Either row or column reductions are implemented.
+ */
+struct sparse_matrix_element_counter
+{
+    using IType = std::size_t;
+    using DType = double; 
+  public:
+    sparse_matrix_element_counter(bool row_, IType ngr_, IType ngc_, 
+                                  IType r0_, IType r1_,         
+                                  IType c0_, IType c1_, DType cut_):
+            byrow_(row_),ngr(ngr_),ngc(ngc_),r0(r0_),r1(r1_),c0(c0_),c1(c1_),cut(std::abs(cut_))  
+    {
+        assert(ngr > 0);
+        assert(ngc > 0);
+        assert(r0 >= 0);
+        assert(c0 >= 0);
+        assert(r1 > r0);
+        assert(c1 > c0);
+        assert(r1 <= ngr);
+        assert(c1 <= ngc);
+    }
+
+    auto range() const { return ((byrow_)?(r1-r0):(c1-c0)); } 
+
+    template<class integer_,
+             class double_>
+    int map(integer_ i, integer_ j, double_ v) const {
+        if ( std::abs(v) <= cut || 
+             IType(i) < r0 || IType(i) >= r1 || 
+             IType(j) < c0 || IType(j) >= c1 )
+            return -1;
+        else 
+            return (byrow_)?(IType(i)-r0):(IType(j)-c0); 
+    } 
+
+  private:
+    bool byrow_;
+    IType ngr, ngc, r0, r1, c0, c1;
+    DType cut; 
+};
+
+struct matrix_map
+{
+    using IType = std::size_t;
+    using DType = double;
+  public:
+    matrix_map(bool row_, bool col_, IType ngr_, IType ngc_,
+                                  IType r0_, IType r1_,
+                                  IType c0_, IType c1_, DType cut_):
+            shiftrow_(row_),shiftcol_(col_),ngr(ngr_),ngc(ngc_),
+            r0(r0_),r1(r1_),c0(c0_),c1(c1_),cut(std::abs(cut_))
+    {
+        assert(ngr > 0);
+        assert(ngc > 0);
+        assert(r0 >= 0);
+        assert(c0 >= 0);
+        assert(r1 > r0);
+        assert(c1 > c0);
+        assert(r1 <= ngr);
+        assert(c1 <= ngc);
+    }
+
+    auto range() const { return std::array<IType,2>{r1-r0,c1-c0 }; } 
+
+    template<class integer_,
+             class double_=double>
+    bool operator()(integer_ i, integer_ j, double_ v=double_(0.0)) const {
+        if ( std::abs(v) <= cut ||
+             IType(i) < r0 || IType(i) >= r1 ||
+             IType(j) < c0 || IType(j) >= c1 )
+            return false;
+        return true;
+    }
+
+    template<class integer_>
+    std::array<integer_, 2> map(integer_ i, integer_ j) const {
+        return { (shiftrow_?integer_(IType(i)-r0):i),
+                 (shiftcol_?integer_(IType(j)-c0):j) };
+    }
+
+  private:
+    bool shiftrow_, shiftcol_;
+    IType ngr, ngc, r0, r1, c0, c1;
+    DType cut;
+};
 
 /*
  * object that encapsulates the partitioning of a 2-D array (matrix) 
@@ -57,7 +150,7 @@ struct simple_matrix_partition
   // this breaks a matrix dimension over TG.nnodes, assuming homogeneous blocks 
   inline void partition(const task_group& TG, bool byRow, std::vector<IType>& sets)
   {
-    int nnodes = TG.getNNodesPerTG();
+    int nnodes = TG.getNGroupsPerTG();
     IType cnt=0;
     int nblk; 
     if(byRow)
@@ -69,7 +162,7 @@ struct simple_matrix_partition
     sets[0] = 0;
     if(nnodes > 1) {
       FairDivide(nblk,nnodes,sets);
-      int node_number = TG.getLocalNodeNumber(); 
+      int node_number = TG.getLocalGroupNumber(); 
       if(byRow) {
         r0=sets[node_number];
         r1=sets[node_number+1];
@@ -93,7 +186,7 @@ struct simple_matrix_partition
   // this breaks a matrix dimension over TG.nnodes 
   inline void partition(const task_group& TG, bool byRow, const std::vector<IType>& counts, std::vector<IType>& sets)
   {
-    int nnodes = TG.getNNodesPerTG();
+    int nnodes = TG.getNGroupsPerTG();
     int nblk = counts.size();
     IType cnt=0;
     assert(nblk >= nnodes);
@@ -112,7 +205,7 @@ struct simple_matrix_partition
         (*itn)=cnt;
       }
       balance_partition_ordered_set(counts.size(),nv.data(),sets);
-      int node_number = TG.getLocalNodeNumber(); 
+      int node_number = TG.getLocalGroupNumber(); 
       if(byRow) {
         r0=sets[node_number];
         r1=sets[node_number+1];
@@ -288,3 +381,4 @@ struct simple_matrix_partition
 
 }
 
+#endif

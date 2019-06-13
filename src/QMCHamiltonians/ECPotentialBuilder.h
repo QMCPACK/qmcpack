@@ -10,48 +10,45 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 #ifndef QMCPLUSPLUS_ECPPOTENTIAL_BUILDER_H
 #define QMCPLUSPLUS_ECPPOTENTIAL_BUILDER_H
 #include "Configuration.h"
 #include "Particle/DistanceTableData.h"
 #include "QMCHamiltonians/LocalECPotential.h"
 #include "QMCHamiltonians/NonLocalECPotential.h"
+#include "QMCHamiltonians/L2Potential.h"
 namespace qmcplusplus
 {
-
 class QMCHamiltonian;
 class ParticleSet;
 class TrialWaveFunction;
 
-struct ECPotentialBuilder: public MPIObjectBase, public QMCTraits
+struct ECPotentialBuilder : public MPIObjectBase, public QMCTraits
 {
-
   typedef LocalECPotential::RadialPotentialType RadialPotentialType;
   typedef LocalECPotential::GridType GridType;
   bool hasLocalPot;
   bool hasNonLocalPot;
+  bool hasL2Pot;
 
-  QMCHamiltonian&  targetH;
+  QMCHamiltonian& targetH;
   ParticleSet& IonConfig;
   ParticleSet& targetPtcl;
   TrialWaveFunction& targetPsi;
 
-  std::vector<RealType>  localZeff;
-  std::vector<RadialPotentialType*>  localPot;
-  std::vector<NonLocalECPComponent*>  nonLocalPot;
+  std::vector<RealType> localZeff;
+  std::vector<RadialPotentialType*> localPot;
+  std::vector<NonLocalECPComponent*> nonLocalPot;
+  std::vector<L2RadialPotential*> L2Pot;
 
-  ECPotentialBuilder(QMCHamiltonian& h,
-                     ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi,
-                     Communicate* c);
+  ECPotentialBuilder(QMCHamiltonian& h, ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi, Communicate* c);
 
   bool put(xmlNodePtr cur);
 
   void useSimpleTableFormat();
   void useXmlFormat(xmlNodePtr cur);
 };
-}
+} // namespace qmcplusplus
 #endif
-
-

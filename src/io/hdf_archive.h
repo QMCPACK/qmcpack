@@ -4,9 +4,9 @@
 //
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
-// File developed by: Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign   
+// File developed by: Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //
-// File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign 
+// File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -21,26 +21,30 @@
 #include <io/hdf_pete.h>
 #include <io/hdf_stl.h>
 #include <io/hdf_hyperslab.h>
-#if defined(HAVE_LIBBOOST)
-#if !defined(__bgq__)
-#include <io/hdf_boost_smvector.h>
-#endif
-#endif
+//#include <io/hdf_double_hyperslab.h>
 #endif
 #include <stack>
 #include <bitset>
+#ifdef HAVE_MPI
+#include "mpi3/communicator.hpp"
+#endif
 
 class Communicate;
 
 namespace qmcplusplus
 {
-
 /** class to handle hdf file
  */
-struct hdf_archive
+class hdf_archive
 {
-  enum {IS_PARALLEL=0, IS_MASTER, NOIO};
-  static const hid_t is_closed=-1;
+private:
+  enum
+  {
+    IS_PARALLEL = 0,
+    IS_MASTER,
+    NOIO
+  };
+  static const hid_t is_closed = -1;
   /** bitset of the io mode
    * Mode[IS_PARALLEL] : true, if parallel
    * Mode[IS_MASTER] : true, if the node is master
@@ -56,11 +60,13 @@ struct hdf_archive
   ///error type
   H5E_auto_t err_func;
   ///error handling
-  void *client_data;
-  ///Pointer to communicator
-  Communicate* myComm;
+  void* client_data;
   ///FILO to handle H5Group
   std::stack<hid_t> group_id;
+
+public:
+  ///Public pointer to communicator. Ugly. Relation between  MPI, hdf_archive, and other classed to be rethought.
+  Communicate* myComm;
   /** constructor
    * @param c communicator
    * @param request_pio turns on parallel I/O,
@@ -68,32 +74,48 @@ struct hdf_archive
    *        if true and PHDF5 is not available, hdf_archive is in master-only IO mode
    *        if false, hdf_archive is in independent IO mode
    */
-  hdf_archive(Communicate* c=nullptr, bool request_pio=false);
+  template<class Comm = Communicate*>
+  hdf_archive(Comm c, bool request_pio = false) : file_id(is_closed), access_id(H5P_DEFAULT), xfer_plist(H5P_DEFAULT)
+  {
+    H5Eget_auto(&err_func, &client_data);
+    H5Eset_auto(NULL, NULL);
+    set_access_plist(request_pio, c);
+  }
+  hdf_archive() : file_id(is_closed), access_id(H5P_DEFAULT), xfer_plist(H5P_DEFAULT)
+  {
+    H5Eget_auto(&err_func, &client_data);
+    H5Eset_auto(NULL, NULL);
+    set_access_plist();
+  }
   ///destructor
   ~hdf_archive();
 
   ///set the access property
   void set_access_plist(bool request_pio, Communicate* comm);
+#ifdef HAVE_MPI
+  void set_access_plist(bool request_pio, boost::mpi3::communicator& comm);
+#endif
+  void set_access_plist();
 
   ///return true if parallel i/o
-  inline bool is_parallel() const
-  {
-    return Mode[IS_PARALLEL];
-  }
+  inline bool is_parallel() const { return Mode[IS_PARALLEL]; }
+
+  ///return true if master in parallel i/o
+  inline bool is_master() const { return Mode[IS_MASTER]; }
 
   /** create a file
    * @param fname name of hdf5 file
    * @param flags i/o mode
    * @return true, if creation is successful
    */
-  bool create(const std::string& fname, unsigned flags=H5F_ACC_TRUNC);
+  bool create(const std::string& fname, unsigned flags = H5F_ACC_TRUNC);
 
   /** open a file
    * @param fname name of hdf5 file
    * @param flags i/o mode
    * @return file_id, if open is successful
    */
-  bool open(const std::string& fname,unsigned flags=H5F_ACC_RDWR);
+  bool open(const std::string& fname, unsigned flags = H5F_ACC_RDWR);
 
   ///close all the open groups and file
   void close();
@@ -101,9 +123,12 @@ struct hdf_archive
   ///flush a file
   inline void flush()
   {
-    if(file_id!=is_closed)
-      H5Fflush(file_id,H5F_SCOPE_LOCAL);
+    if (file_id != is_closed)
+      H5Fflush(file_id, H5F_SCOPE_LOCAL);
   }
+
+  ///return true if the file is closed
+  inline bool closed() { return file_id == is_closed; }
 
   /** check if aname is a group
    * @param aname group's name
@@ -113,49 +138,92 @@ struct hdf_archive
 
   /** return the top of the group stack
    */
-  inline hid_t top() const
-  {
-    return group_id.empty()?is_closed:group_id.top();
-  }
+  inline hid_t top() const { return group_id.empty() ? is_closed : group_id.top(); }
+
+  /** check if any groups are open
+      group stack will have entries if so
+      @return true if any groups are open
+   */
+  inline bool open_groups() { return group_id.empty(); }
 
   /** push a group to the group stack
    * @param gname name of the group
    * @param createit if true, group is create when missing
    */
-  hid_t push(const std::string& gname, bool createit=true);
+  hid_t push(const std::string& gname, bool createit = true);
 
   inline void pop()
   {
-    if(file_id==is_closed || group_id.empty())
+    if (file_id == is_closed || group_id.empty())
       return;
-    hid_t g=group_id.top();
+    hid_t g = group_id.top();
     group_id.pop();
     H5Gclose(g);
   }
 
-  template<typename T> bool write(T& data, const std::string& aname)
+  /* write the data to the group aname and return status
+     use write() for inbuilt error checking
+     @return true if successful
+   */
+  template<typename T>
+  bool writeEntry(T& data, const std::string& aname)
   {
-    if(Mode[NOIO]) return true;
-    if(!(Mode[IS_PARALLEL]||Mode[IS_MASTER])) std::runtime_error("Only write data in parallel or by master but not every rank!");
-    hid_t p=group_id.empty()? file_id:group_id.top();
+    if (Mode[NOIO])
+      return true;
+    if (!(Mode[IS_PARALLEL] || Mode[IS_MASTER]))
+      std::runtime_error("Only write data in parallel or by master but not every rank!");
+    hid_t p = group_id.empty() ? file_id : group_id.top();
     h5data_proxy<T> e(data);
-    return e.write(p,aname,xfer_plist);
+    return e.write(p, aname, xfer_plist);
   }
 
-  template<typename T> bool read(T& data, const std::string& aname)
+  /* write the data to the group aname and check status
+     runtime error is issued on I/O error
+   */
+  template<typename T>
+  void write(T& data, const std::string& aname)
   {
-    if(Mode[NOIO]) return true;
-    hid_t p=group_id.empty()? file_id:group_id.top();
-    h5data_proxy<T> e(data);
-    return e.read(p,aname,xfer_plist);
+    if (!writeEntry(data, aname))
+    {
+      std::runtime_error("HDF5 write failure in hdf_archive::write " + aname);
+    }
   }
+
+  /* read the data from the group aname and return status
+     use read() for inbuilt error checking
+     @return true if successful
+   */
+  template<typename T>
+  bool readEntry(T& data, const std::string& aname)
+  {
+    if (Mode[NOIO])
+      return true;
+    hid_t p = group_id.empty() ? file_id : group_id.top();
+    h5data_proxy<T> e(data);
+    return e.read(p, aname, xfer_plist);
+  }
+
+  /* read the data from the group aname and check status
+     runtime error is issued on I/O error
+   */
+  template<typename T>
+  void read(T& data, const std::string& aname)
+  {
+    if (!readEntry(data, aname))
+    {
+      std::runtime_error("HDF5 read failure in hdf_archive::read " + aname);
+    }
+  }
+
 
   inline void unlink(const std::string& aname)
   {
-    if(Mode[NOIO]) return;
-    hid_t p=group_id.empty()? file_id:group_id.top();
-    herr_t status=H5Gunlink(p,aname.c_str());
+    if (Mode[NOIO])
+      return;
+    hid_t p       = group_id.empty() ? file_id : group_id.top();
+    herr_t status = H5Gunlink(p, aname.c_str());
   }
 };
-}
+
+} // namespace qmcplusplus
 #endif

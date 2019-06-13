@@ -2,15 +2,24 @@ PROJECT(qmcpack)
 
 
 #####################################################
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8.10)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.6.0)
 IF(COMMAND cmake_policy)
   cmake_policy(SET CMP0003 NEW)
-  IF(CMAKE_VERSION VERSION_GREATER 3.1.3 AND NOT $ENV{CRAYPE_VERSION} MATCHES ".")
+  IF (COMPILING_ON_BGQ)
+    # On BG/Q, the HDF libraries variable includes some supporting shared libraries
+    # such as libm.so.  With the old behavior of CMP0060, these were converted
+    # to -lm for the linker, which then correctly selects the static version.
+    # With the new behavior of CMP0060, the form of the libraries are left alone
+    # on the link line (eg. /usr/lib64/libm.so), and this causes a linker error
+    # because shared libraries are not allowed with static linking.
+    cmake_policy(SET CMP0060 OLD)
+  ENDIF()
+  IF(NOT $ENV{CRAYPE_VERSION} MATCHES ".")
     cmake_policy(SET CMP0056 NEW)
     # This policy insures that the CMAKE_EXE_LINKER_FLAGS of the calling project
     # are used in try_compile test cmake projects.
     # CHECK_CXX_SOURCE_COMPILES and others depend on try_compile
-  endif(CMAKE_VERSION VERSION_GREATER 3.1.3 AND NOT $ENV{CRAYPE_VERSION} MATCHES ".")
+  endif(NOT $ENV{CRAYPE_VERSION} MATCHES ".")
   IF(CMAKE_GENERATOR MATCHES "Ninja")
     cmake_policy(SET CMP0058 NEW)
   ENDIF(CMAKE_GENERATOR MATCHES "Ninja")
@@ -21,9 +30,18 @@ ENDIF(COMMAND cmake_policy)
 # Version
 ######################################################################
 SET(QMCPACK_VERSION_MAJOR 3)
-SET(QMCPACK_VERSION_MINOR 5)
-SET(QMCPACK_VERSION_PATCH 0)
+SET(QMCPACK_VERSION_MINOR 7)
+SET(QMCPACK_VERSION_PATCH 9)
 SET(QMCPACK_VERSION "${QMCPACK_VERSION_MAJOR}.${QMCPACK_VERSION_MINOR}.${QMCPACK_VERSION_PATCH}")
+
+
+######################################################################
+# Verify QE executables present if QE_BIN specified
+######################################################################
+IF ( DEFINED QE_BIN )
+  INCLUDE(CMake/run_qe.cmake)
+  VERIFY_QE_PRESENT( ${QE_BIN} )
+ENDIF()
 
 ######################################################################
 # CTest
@@ -51,8 +69,8 @@ MESSAGE(STATUS "QMC_SYMLINK_TEST_FILES = ${QMC_SYMLINK_TEST_FILES}.  ${SYMLINK_M
 ######################################################################
 # Build level
 ######################################################################
-SET(QMC_BUILD_LEVEL 3 CACHE INTEGER
-  "QMC Build Level: 1=bare, 2=developer, 3=experimental, 4=minimal")
+
+SET(QMC_BUILD_SANDBOX_ONLY OFF CACHE BOOL "Build only applications in Sandbox directory")
 IF ( NOT CMAKE_BUILD_TYPE AND NOT CMAKE_TOOLCHAIN_FILE)
   SET( CMAKE_BUILD_TYPE Release )
 ENDIF()
@@ -90,7 +108,7 @@ SET (EXECUTABLE_OUTPUT_PATH ${qmcpack_BINARY_DIR}/bin CACHE PATH "Single output 
 # QMC_MPI =  enable MPI
 # QMC_OMP = enable OMP
 ######################################################################
-SET(OHMMS_DIM 3 CACHE INTEGER "Select physical dimension")
+SET(OHMMS_DIM 3 CACHE STRING "Select physical dimension")
 SET(OHMMS_INDEXTYPE int)
 MESSAGE(STATUS "defining the float point precision")
 SET(OHMMS_PRECISION_FULL double)
@@ -128,10 +146,16 @@ SET(ENABLE_GCOV FALSE CACHE BOOL "Enable code coverage")
 ######################################################################
 SET(QMC_MPI 1 CACHE BOOL "Enable/disable MPI")
 SET(QMC_OMP 1 CACHE BOOL "Enable/disable OpenMP")
-SET(QMC_COMPLEX 0 CACHE INTEGER "Build for complex binary")
+SET(QMC_COMPLEX 0 CACHE BOOL "Build for complex binary")
 SET(PRINT_DEBUG 0 CACHE BOOL "Enable/disable debug printing")
 SET(QMC_CUDA 0 CACHE BOOL "Build with GPU support through CUDA")
-SET(ENABLE_SOA 0 CACHE BOOL "Enable/disable SoA optimization")
+SET(ENABLE_CUDA 0 CACHE BOOL "Build with the second generation of GPU support through CUDA (production quality for AFQMC, experimental for real space)")
+SET(ENABLE_SOA 1 CACHE BOOL "Enable/disable SoA optimization")
+SET(ENABLE_OFFLOAD 0 CACHE BOOL "Enable OpenMP offload")
+
+IF(ENABLE_CUDA AND QMC_CUDA)
+  MESSAGE(FATAL_ERROR "ENABLE_CUDA=1 and QMC_CUDA=1 can not be set together!")
+ENDIF(ENABLE_CUDA AND QMC_CUDA)
 
 ######################################################################
 # set debug printout
@@ -171,22 +195,27 @@ CHECK_INCLUDE_FILE(unistd.h HAVE_UNISTD_H)
 # Build options
 # QMC_BUILD_STATIC build static/dynamic  libraries
 # BUILD_QMCTOOLS   build utility programs
-# BUILD_SANDBOX    build test programs and miniapps
 # MPIP_PROFILE     profile mpi performance
 ######################################################################
 SET(QMC_ADIOS 0 CACHE BOOL "Build with ADIOS")
 SET(BUILD_UNIT_TESTS 1 CACHE BOOL "Build unit tests")
-SET(BUILD_SANDBOX 1 CACHE BOOL "Build sandbox tests and miniapps")
 SET(BUILD_LMYENGINE_INTERFACE 1 CACHE BOOL "Build LMY engine")
 IF (QMC_CUDA AND BUILD_LMYENGINE_INTERFACE)
-  MESSAGE(STATUS "LMY engine is not compatiable with CUDA build! Disabling LMY engine")
+  MESSAGE(STATUS "LMY engine is not compatible with CUDA build! Disabling LMY engine")
   SET(BUILD_LMYENGINE_INTERFACE 0)
 ENDIF()
 IF(MIXED_PRECISION AND BUILD_LMYENGINE_INTERFACE)
-  MESSAGE(STATUS "LMY engine is not compatiable with CPU mixed precision build! Disabling LMY engine")
+  MESSAGE(STATUS "LMY engine is not compatible with CPU mixed precision build! Disabling LMY engine")
   SET(BUILD_LMYENGINE_INTERFACE 0)
 ENDIF()
 SET(BUILD_AFQMC 0 CACHE BOOL "Build with AFQMC")
+# AFQMC requires MPI.
+If (BUILD_AFQMC AND NOT QMC_MPI)
+  MESSAGE(FATAL_ERROR "AFQMC requires building with MPI (QMC_MPI=1). Set BUILD_AFQMC=0 or configure MPI.")
+ENDIF()
+If (BUILD_AFQMC AND ENABLE_CUDA AND NOT QMC_COMPLEX)
+  MESSAGE(FATAL_ERROR "AFQMC only works on GPUs if QMC_COMPLEX=1.")
+ENDIF()
 SET(BUILD_FCIQMC 0 CACHE BOOL "Build with FCIQMC")
 #SET(BUILD_QMCTOOLS 1 CACHE BOOL "Build tools for QMCPACK")
 #SET(MPIP_PROFILE 0 CACHE BOOL "Build with mpip for mpi profile")
@@ -194,6 +223,12 @@ SET(BUILD_FCIQMC 0 CACHE BOOL "Build with FCIQMC")
 #SET(MPIP_PROFILE 0)
 SET(QMC_BUILD_STATIC 0 CACHE BOOL "Link to static libraries")
 SET(ENABLE_TIMERS 0 CACHE BOOL "Enable internal timers")
+
+######################################################################
+# Install options
+# INSTALL_NEXUS install Nexus alongside QMCPACK
+######################################################################
+SET(INSTALL_NEXUS 1 CACHE BOOL "Install Nexus alongside QMCPACK")
 
 ######################################################################
 # FIXED PARAMETERS for test and legacy reasons
@@ -217,8 +252,6 @@ SET(HAVE_LIBSPRNG 0)
 SET(HAVE_LIBBLITZ 0)
 SET(HAVE_LIBGSL 0)
 SET(MAC_VECLIB 0)
-set(ENABLE_TAU_PROFILE 0 CACHE BOOL "Enable tau for profiling")
-set(TAU_HOME $ENV{TAU_HOME})
 
 ######################################################
 # Directory where customize cmake files reside
@@ -285,9 +318,6 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
   SET(HAVE_MKL 0)
   SET(HAVE_MKL_VML 0)
   SET(HAVE_ACML 0)
-  SET(USE_PREFETCH 0)
-  SET(PREFETCH_AHEAD 12)
-  SET(HAVE_C_VARARRAYS 1)
 
   ######################################################
   # Try to identify CPU identity
@@ -333,6 +363,13 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
     ENDIF(QMC_CUDA)
   ENDIF($ENV{CRAYPE_VERSION} MATCHES ".")
 
+  #--------------------------------
+  #  C++ 14 is the minimum standard
+  #--------------------------------
+  set(CMAKE_CXX_STANDARD 14)
+  set(CMAKE_CXX_STANDARD_REQUIRED ON)
+  set(CMAKE_CXX_EXTENSIONS OFF)
+
   #------------------------------------
   # Identify the compiler -- This serves only to deal with case where only C or CXX is set, refactor? 
   #------------------------------------
@@ -370,37 +407,22 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
     INCLUDE(${PROJECT_CMAKE}/GNUCompilers.cmake)
   ELSEIF( ${COMPILER} MATCHES "Clang" )
     INCLUDE(${PROJECT_CMAKE}/ClangCompilers.cmake)
+  ELSEIF( ${COMPILER} MATCHES "PGI" )
+    INCLUDE(${PROJECT_CMAKE}/PGICompilers.cmake)
   ELSE()
     MESSAGE(WARNING "No default file for compiler (${COMPILER})")
   ENDIF()
 
-  # Check for the compiler C++11 flag, if we go to requiring >= cmake 3.1.3 we could drop this
-  # and just write
-  # set(CMAKE_CXX_STANDARD_REQUIRED 11 CACHE INTEGER "C++ stangard must be at least 11")
-  SET(CXX11_FLAG "-std=c++11")
-  #check if the CXX compiler supports -std=c++11 option
-  include(CheckCXXCompilerFlag) # works with clean load paths and non system compilers with CMP0056
-  CHECK_CXX_COMPILER_FLAG(${CXX11_FLAG} CXX_COMPILER_SUPPORT_CXX11)
 
-  # Force the flag on Cray with Intel compiler, because the Cray wrapper
-  #  prints an warning that interferes with the flag detection code
-  #  with older versions of CMake.
-  IF($ENV{CRAYPE_VERSION} MATCHES ".")
-    IF( ${COMPILER} MATCHES "Intel" AND NOT CXX_COMPILER_SUPPORT_CXX11)
-      SET(CXX_COMPILER_SUPPORT_CXX11 TRUE)
-      MESSAGE(STATUS "Forcing C++11 support on Cray with Intel")
-    ENDIF()
-  ENDIF()
+  #--------------------------------------------------------------------------
+  # Check that a C++ compiler is compatiable with the underlying libstdc++
+  #--------------------------------------------------------------------------
+  include(CMake/Testlibstdc++.cmake)
 
-  IF (CXX_COMPILER_SUPPORT_CXX11)
-    # avoid repeated -std=c++11 flag
-    STRING(REPLACE "++" "\\+\\+" CXX11_FLAG_MATCH ${CXX11_FLAG})
-    IF(NOT CMAKE_CXX_FLAGS MATCHES ${CXX11_FLAG_MATCH})
-      SET (CMAKE_CXX_FLAGS "${CXX11_FLAG} ${CMAKE_CXX_FLAGS}")
-    ENDIF()
-  ELSE()
-    MESSAGE(FATAL_ERROR "A compiler supporting C++11 is required. Use a newer C++ compiler.")
-  ENDIF()
+  #---------------------------------------------------
+  # Check that a C++ 14 standard library is configured
+  #---------------------------------------------------
+  include(CMake/TestCxx14Library.cmake)
 
   #-------------------------------------------------------------------
   #  check MPI installation
@@ -410,11 +432,9 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
     GET_FILENAME_COMPONENT(BASE_CXX_COMPILER_NAME ${CMAKE_CXX_COMPILER} NAME)
     if(${BASE_CXX_COMPILER_NAME} MATCHES "^mp")
       SET(HAVE_MPI 1)
-      SET(HAVE_OOMPI 1)
       SET(MPI_FOUND TRUE)
     elseif($ENV{CRAYPE_VERSION} MATCHES ".")
       SET(HAVE_MPI 1)
-      SET(HAVE_OOMPI 1)
       SET(MPI_FOUND TRUE)
     else()
       include(FindMPI)
@@ -438,12 +458,10 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
         IF(MPI_WORKS)
           MESSAGE(STATUS "MPI is enabled")
           SET(HAVE_MPI 1)
-          SET(HAVE_OOMPI 1)
           LINK_LIBRARIES(${MPI_CXX_LIBRARIES})
         ELSE(MPI_WORKS)
           MESSAGE(STATUS "MPI is disabled")
           SET(HAVE_MPI 0)
-          SET(HAVE_OOMPI 0)
           SET(MPI_LIBRARY "")
         ENDIF(MPI_WORKS)
       ELSE(MPI_FOUND)
@@ -513,11 +531,6 @@ IF (BUILD_AFQMC AND NOT MKL_FOUND)
   MESSAGE(WARNING "AFQMC - MKL not found, using simple sparse matrix routines.  Link with MKL sparse libraries for better performance.")
 ENDIF()
 
-# AFQMC requires MPI
-If (BUILD_AFQMC AND NOT QMC_MPI)
-  MESSAGE(FATAL_ERROR "AFQMC requires building with MPI (QMC_MPI=1). Set BUILD_AFQMC=0 or configure MPI.")
-ENDIF()
-
 IF (BUILD_AFQMC AND NOT APPLE)
   LINK_LIBRARIES("rt")
 ENDIF()
@@ -540,7 +553,6 @@ IF ( HAVE_MPI )
   MESSAGE(STATUS "MPI runner is ${MPIEXEC}")
 ENDIF(HAVE_MPI)
 
-SET(HAVE_OOMPI ${HAVE_MPI})
 INCLUDE(${CMAKE_ROOT}/Modules/FindThreads.cmake)
 
 ####################################################################
@@ -628,25 +640,22 @@ IF(HDF5_FOUND)
     ENDIF(ENABLE_PHDF5)
   ENDIF(HDF5_IS_PARALLEL)
 ELSE(HDF5_FOUND)
-  if(NOT QMC_PHI)
-    MESSAGE(FATAL_ERROR "Require hdf5 1.6.4 or higher. Set HDF5_ROOT")
-  endif()
+  MESSAGE(FATAL_ERROR "Require hdf5 1.6.4 or higher. Set HDF5_ROOT")
 ENDIF(HDF5_FOUND)
 
 #make sure we can find boost if it's not in /usr
 set(Boost_NO_BOOST_CMAKE on)
-find_package(Boost REQUIRED)
+find_package(Boost 1.61.0 REQUIRED)
 IF(Boost_FOUND)
   SET(HAVE_LIBBOOST 1)
   INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
   MESSAGE(STATUS "Setting Boost_INCLUDE_DIRS=${Boost_INCLUDE_DIRS}")
 ELSE()
-  MESSAGE(STATUS "Using MT engine in Utilities/MersenneTwister.h")
-  #MESSAGE(FATAL_ERROR "Require boost 1.33.x or higher. Set BOOST_ROOT")
+  MESSAGE(FATAL_ERROR "Need boost 1.61.0 or higher.  Set BOOST_ROOT")
 ENDIF()
 
 SET(HAVE_CUDA 0)
-IF(QMC_CUDA)
+IF(QMC_CUDA OR ENABLE_CUDA)
   IF(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     set(CUDA_PROPAGATE_HOST_FLAGS ON)
   ELSE(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
@@ -674,11 +683,12 @@ IF(QMC_CUDA)
     SET( CUDA_ARCH sm_35 CACHE STRING "CUDA architecture sm_XX")
     SET(CUDA_NVCC_FLAGS "-arch=${CUDA_ARCH};${CUDA_NVCC_FLAGS}")
   endif(CUDA_NVCC_FLAGS MATCHES "arch")
+  INCLUDE_DIRECTORIES(${CUDA_INCLUDE_DIRS})
   set(HAVE_CUDA 1)
   MESSAGE("   CUDA_NVCC_FLAGS=${CUDA_NVCC_FLAGS}")
-ELSE(QMC_CUDA)
+ELSE(QMC_CUDA OR ENABLE_CUDA)
   MESSAGE(STATUS "Disabling CUDA")
-ENDIF(QMC_CUDA)
+ENDIF(QMC_CUDA OR ENABLE_CUDA)
 
 SET(USE_NVTX_API 0 CACHE BOOL "Enable/disable NVTX regions in CUDA code.")
 IF(USE_NVTX_API)
@@ -694,48 +704,6 @@ IF(USE_NVTX_API)
     LINK_LIBRARIES(${NVTX_API_LIB})
   ENDIF(HAVE_CUDA)
 ENDIF(USE_NVTX_API)
-
-#INCLUDE(${PROJECT_CMAKE}/FindPkgConfig.cmake)
-##################################################################
-# TODO:use profile tools
-##################################################################
-#IF(MPIP_PROFILE)
-#  LINK_LIBRARIES("/usr/apps/tools/mpip/lib/cmpi/libmpiP.a")
-#  LINK_LIBRARIES("/usr/lib/libbfd.a")
-#  LINK_LIBRARIES("/usr/lib/libiberty.a")
-#ENDIF(MPIP_PROFILE)
-#if(ENABLE_TAU_PROFILE)
-#  INCLUDE(${PROJECT_CMAKE}/FindTau.cmake)
-#endif(ENABLE_TAU_PROFILE)
-#    #add tau stuff
-#    IF(FOUND_TAU)
-#      ADD_DEFINITIONS(
-#        -DTAU_MPI
-#        -DTAU_MPI_THREADED
-#        -DTAU_MPIGREQUEST
-#        -DTAU_MPIDATAREP
-#        -DTAU_MPIERRHANDLER
-#        -DTAU_MPIATTRFUNCTION
-#        -DTAU_MPITYPEEX
-#        -DTAU_MPIADDERROR
-#      )
-#      #build libtau
-#      subdirs(src/tau)
-#      LINK_LIBRARIES(tau)
-#    ENDIF(FOUND_TAU)
-#IF(FOUND_TAU)
-#  INCLUDE_DIRECTORIES(${TAU_INCLUDE_DIR})
-#  ADD_DEFINITIONS (-DPROFILING_ON
-#      -DTAU_STDCXXLIB
-#      -DTAU_DOT_H_LESS_HEADERS
-#      -DTAU_CALLPATH
-#      -DTAU_LARGEFILE64_SOURCE
-#      -DTAU_BFD
-#      )
-#  if(ENABLE_OPENMP)
-#    ADD_DEFINITIONS(-DTAU_OPENMP)
-#  endif(ENABLE_OPENMP)
-#ENDIF(FOUND_TAU)
 
 ######################################################
 # Add optional macros
@@ -888,6 +856,10 @@ endif()
 
 EXECUTE_PROCESS(COMMAND hostname OUTPUT_VARIABLE QMC_HOSTNAME OUTPUT_STRIP_TRAILING_WHITESPACE)
 CONFIGURE_FILE(${qmcpack_SOURCE_DIR}/src/qmcpack.settings ${qmcpack_BINARY_DIR}/bin/qmcpack.settings)
+INSTALL(FILES ${qmcpack_BINARY_DIR}/bin/qmcpack.settings DESTINATION bin)
+IF(INSTALL_NEXUS)
+  INSTALL(CODE "EXECUTE_PROCESS(COMMAND ${qmcpack_SOURCE_DIR}/nexus/install --leave_paths ${CMAKE_INSTALL_PREFIX}/bin)")
+ENDIF()
 
 #########################
 # add definitions for adios profile
@@ -901,7 +873,7 @@ ENDIF(QMC_ADIOS)
 
 SUBDIRS(src)
 
-IF(NOT(QMC_BUILD_LEVEL GREATER 4))
+IF(NOT QMC_BUILD_SANDBOX_ONLY)
   SUBDIRS(tests)
   SUBDIRS(examples)
   IF(IS_DIRECTORY "${PROJECT_SOURCE_DIR}/nexus")

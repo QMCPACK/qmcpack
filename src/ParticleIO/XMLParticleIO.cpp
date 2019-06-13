@@ -11,8 +11,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
 
 
 #include <string>
@@ -31,7 +29,6 @@
 #include "Utilities/ProgressReportEngine.h"
 namespace qmcplusplus
 {
-
 /** set the property of a SpeciesSet
  * @param tspecies SpeciesSet
  * @param sid id of the species whose properties to be set
@@ -48,41 +45,40 @@ namespace qmcplusplus
  */
 void setSpeciesProperty(SpeciesSet& tspecies, int sid, xmlNodePtr cur)
 {
-  const double proton_mass=1822.888530063;
-  cur = cur->xmlChildrenNode;
-  while(cur != NULL)
+  const double proton_mass = 1822.888530063;
+  cur                      = cur->xmlChildrenNode;
+  while (cur != NULL)
   {
     std::string cname((const char*)cur->name);
-    if(cname == "parameter")
+    if (cname == "parameter")
     {
       std::string pname;
-      std::string unit_name("au");//hartree, bohr & me=1
+      std::string unit_name("au"); //hartree, bohr & me=1
       OhmmsAttributeSet pAttrib;
-      pAttrib.add(pname,"name");
-      pAttrib.add(unit_name,"unit");
+      pAttrib.add(pname, "name");
+      pAttrib.add(unit_name, "unit");
       pAttrib.put(cur);
-      if(pname.size())
+      if (pname.size())
       {
-        int iproperty=tspecies.addAttribute(pname);
-        double ap=0.0;
-        double unit_conv=1.0;
-        putContent(ap,cur);
-        if(pname == "mass")
+        int iproperty    = tspecies.addAttribute(pname);
+        double ap        = 0.0;
+        double unit_conv = 1.0;
+        putContent(ap, cur);
+        if (pname == "mass")
         {
-          if(unit_name=="amu")
-            unit_conv=proton_mass;
+          if (unit_name == "amu")
+            unit_conv = proton_mass;
         }
-        tspecies(iproperty,sid) = ap*unit_conv;
+        tspecies(iproperty, sid) = ap * unit_conv;
       }
     }
-    cur=cur->next;
+    cur = cur->next;
   }
 }
 
 
-XMLParticleParser::XMLParticleParser(Particle_t& aptcl, Tensor<int,OHMMS_DIM>& tmat
-                                     , bool donotresize):
-  AssignmentOnly(donotresize),ref_(aptcl),TileMatrix(tmat)
+XMLParticleParser::XMLParticleParser(Particle_t& aptcl, Tensor<int, OHMMS_DIM>& tmat, bool donotresize)
+    : AssignmentOnly(donotresize), ref_(aptcl), TileMatrix(tmat)
 {
   //add ref particle attributes
   ref_.createAttributeList(ref_AttribList);
@@ -96,11 +92,9 @@ XMLParticleParser::XMLParticleParser(Particle_t& aptcl, Tensor<int,OHMMS_DIM>& t
  *Check the type of the external source to work on.
  *The external source itself can be an xml file.
  */
-bool XMLParticleParser::put(const std::string& fname_in,
-                            const std::string& fext_in)
+bool XMLParticleParser::put(const std::string& fname_in, const std::string& fext_in)
 {
-  xmlDocPtr doc=NULL;
-  xmlNsPtr ns;
+  xmlDocPtr doc = NULL;
   // build an XML tree from a the file;
   doc = xmlParseFile(fname_in.c_str());
   if (doc == NULL)
@@ -112,23 +106,23 @@ bool XMLParticleParser::put(const std::string& fname_in,
   xmlXPathContextPtr context;
   xmlXPathObjectPtr result;
   context = xmlXPathNewContext(doc);
-  result = xmlXPathEvalExpression((const xmlChar*)"//particleset",context);
-  if(xmlXPathNodeSetIsEmpty(result->nodesetval))
+  result  = xmlXPathEvalExpression((const xmlChar*)"//particleset", context);
+  if (xmlXPathNodeSetIsEmpty(result->nodesetval))
   {
     app_error() << fname_in << " does not contain any ParticleSet" << std::endl;
   }
   else
   {
-    xmlNodePtr cur=result->nodesetval->nodeTab[0];
+    xmlNodePtr cur = result->nodesetval->nodeTab[0];
     std::string fname, pformat;
     OhmmsAttributeSet pAttrib;
-    pAttrib.add(fname,"src");
-    pAttrib.add(fname,"href");
-    pAttrib.add(pformat,"srctype");
+    pAttrib.add(fname, "src");
+    pAttrib.add(fname, "href");
+    pAttrib.add(pformat, "srctype");
     pAttrib.put(cur);
-    if(fname.size())
-      pformat=getExtension(fname);
-    if(pformat.empty())
+    if (fname.size())
+      pformat = getExtension(fname);
+    if (pformat.empty())
       putSpecial(cur);
     //else
     //{
@@ -157,17 +151,17 @@ bool XMLParticleParser::put(xmlNodePtr cur)
   ///process attributes: type or format
   std::string fname, pformat("xml");
   OhmmsAttributeSet pAttrib;
-  pAttrib.add(fname,"src");
-  pAttrib.add(fname,"href");
-  pAttrib.add(pformat,"srctype");
+  pAttrib.add(fname, "src");
+  pAttrib.add(fname, "href");
+  pAttrib.add(pformat, "srctype");
   pAttrib.put(cur);
-  if(fname.empty())
+  if (fname.empty())
     return putSpecial(cur);
   else
   {
     //overwrite the format
     pformat = getExtension(fname);
-    return put(fname,pformat);
+    return put(fname, pformat);
   }
 }
 
@@ -178,56 +172,56 @@ bool XMLParticleParser::put(xmlNodePtr cur)
  */
 bool XMLParticleParser::putSpecial(xmlNodePtr cur)
 {
-  ReportEngine PRE("XMLParticleParser","putSpecial");
+  ReportEngine PRE("XMLParticleParser", "putSpecial");
   std::string pname("none");
   //xmlDocPtr doc = cur->doc;
   //the number of particles that are initialized by <attrib/>
   int nat = 0;
   std::string randomizeR("no");
   OhmmsAttributeSet pAttrib;
-  pAttrib.add(randomizeR,"random");
-  pAttrib.add(nat,"size");
-  pAttrib.add(pname,"name");
+  pAttrib.add(randomizeR, "random");
+  pAttrib.add(nat, "size");
+  pAttrib.add(pname, "name");
   pAttrib.put(cur);
   ///count the number of atom added one by one
   xmlNodePtr cur0 = cur->xmlChildrenNode;
   //total count of the particles to be created
   int ntot = 0;
-  int ng = 0, ng_in=0;
+  int ng = 0, ng_in = 0;
   std::vector<int> nat_group;
   std::vector<xmlNodePtr> atom_ptr;
   //pre-process the nodes to count the number of particles to be added
-  while(cur0 != NULL)
+  while (cur0 != NULL)
   {
     std::string cname((const char*)cur0->name);
-    if(cname == "atom")
+    if (cname == "atom")
     {
       ntot++;
       atom_ptr.push_back(cur0);
     }
-    else if(cname == "group")
+    else if (cname == "group")
     {
-      int nat_per_group=0;
+      int nat_per_group = 0;
       OhmmsAttributeSet gAttrib;
-      gAttrib.add(nat_per_group,"size");
+      gAttrib.add(nat_per_group, "size");
       gAttrib.put(cur0);
       nat_group.push_back(nat_per_group);
       ng_in += nat_per_group;
-      ntot += nat_per_group;
+      ntot  += nat_per_group;
       ng++;
     }
-    else if(cname == attrib_tag)
+    else if (cname == attrib_tag)
     {
       int size_att = 0;
       OhmmsAttributeSet aAttrib;
-      aAttrib.add(size_att,"size");
+      aAttrib.add(size_att, "size");
       aAttrib.put(cur0);
-      if(size_att)
+      if (size_att)
       {
-        if(size_att != nat)
+        if (size_att != nat)
         {
-          app_warning() << "\tOverwriting the size of the particle by //particleset/attrib/@size="
-            << size_att << std::endl;
+          app_warning() << "\tOverwriting the size of the particle by //particleset/attrib/@size=" << size_att
+                        << std::endl;
           nat = size_att;
         }
       }
@@ -238,16 +232,16 @@ bool XMLParticleParser::putSpecial(xmlNodePtr cur)
   ref_.setName(pname.c_str());
   int nloc = ref_.getTotalNum();
   //treat assignment only differently
-  if(AssignmentOnly)
+  if (AssignmentOnly)
   {
     ntot = 0;
     nloc = 0;
-    for(int iat=0; iat<ref_.getTotalNum(); iat++)
-      ref_.ID[iat]=iat;
+    for (int iat = 0; iat < ref_.getTotalNum(); iat++)
+      ref_.ID[iat] = iat;
   }
-  if(ntot)
+  if (ntot)
   {
-    if(ng_in)
+    if (ng_in)
     {
       ref_.create(nat_group);
     }
@@ -256,9 +250,9 @@ bool XMLParticleParser::putSpecial(xmlNodePtr cur)
       ref_.create(ntot);
     }
     //assign default ID
-    int nloci=nloc;
-    for(int iat=0; iat<ntot; iat++,nloci++)
-      ref_.ID[iat]=nloci;
+    int nloci = nloc;
+    for (int iat = 0; iat < ntot; iat++, nloci++)
+      ref_.ID[iat] = nloci;
   }
   //TinyVector<int,OHMMS_DIM> uc_grid(1);
   SpeciesSet& tspecies(ref_.getSpeciesSet()); //SpeciesCollection::getSpecies();
@@ -268,7 +262,7 @@ bool XMLParticleParser::putSpecial(xmlNodePtr cur)
   while (cur != NULL)
   {
     std::string cname((const char*)(cur->name));
-    if(cname.find("ell")< cname.size())//accept UnitCell, unitcell, supercell
+    if (cname.find("ell") < cname.size()) //accept UnitCell, unitcell, supercell
     {
       //if(cname == "UnitCell" || cname == "unitcell") {
       LatticeParser lat(ref_.Lattice);
@@ -279,30 +273,30 @@ bool XMLParticleParser::putSpecial(xmlNodePtr cur)
     }
     else if (cname == attrib_tag)
     {
-      getPtclAttrib(cur,nat,nloc);
+      getPtclAttrib(cur, nat, nloc);
     }
     else if (cname == "group")
-      //found group
+    //found group
     {
       std::string sname;
       OhmmsAttributeSet gAttrib;
-      gAttrib.add(sname,"name");
+      gAttrib.add(sname, "name");
       gAttrib.put(cur);
-      if(sname.size()) //only if name is found
+      if (sname.size()) //only if name is found
       {
-        int sid=tspecies.addSpecies(sname);
-        setSpeciesProperty(tspecies,sid,cur);
+        int sid = tspecies.addSpecies(sname);
+        setSpeciesProperty(tspecies, sid, cur);
         xmlNodePtr tcur = cur->xmlChildrenNode;
-        while(tcur != NULL)
+        while (tcur != NULL)
         {
           std::string tcname((const char*)tcur->name);
-          if(nat_group[ng] && tcname == attrib_tag)
+          if (nat_group[ng] && tcname == attrib_tag)
           {
-            getPtclAttrib(tcur,nat_group[ng],nloc);
+            getPtclAttrib(tcur, nat_group[ng], nloc);
           }
           tcur = tcur->next;
         }
-        for(int iat=0; iat<nat_group[ng]; iat++, nloc++)
+        for (int iat = 0; iat < nat_group[ng]; iat++, nloc++)
           ref_.GroupID[nloc] = sid;
         ng++;
       }
@@ -310,21 +304,21 @@ bool XMLParticleParser::putSpecial(xmlNodePtr cur)
     cur = cur->next;
   }
 
-    //copy ID -> PCID
-    ref_.PCID=ref_.ID;
+  //copy ID -> PCID
+  ref_.PCID = ref_.ID;
 
-  expandSuperCell(ref_,TileMatrix);
-  if(ref_.Lattice.SuperCellEnum)
+  expandSuperCell(ref_, TileMatrix);
+  if (ref_.Lattice.SuperCellEnum)
   {
-    if(randomizeR == "yes")
+    if (randomizeR == "yes")
     {
       makeUniformRandom(ref_.R);
       ref_.R.setUnit(PosUnit::LatticeUnit);
       ref_.convert2Cart(ref_.R);
     }
-    else  // put them [0,1) in the cell 
+    else // put them [0,1) in the cell
       ref_.applyBC(ref_.R);
-  } 
+  }
 
   //this sets Mass, Z
   ref_.resetGroups();
@@ -342,35 +336,35 @@ bool XMLParticleParser::putSpecial(xmlNodePtr cur)
  */
 bool XMLParticleParser::reset(xmlNodePtr cur)
 {
-  ReportEngine PRE("XMLParticleParser","reset");
+  ReportEngine PRE("XMLParticleParser", "reset");
   SpeciesSet& tspecies(ref_.getSpeciesSet());
   cur = cur->xmlChildrenNode;
-  while(cur != NULL)
+  while (cur != NULL)
   {
     std::string cname((const char*)cur->name);
-    if(cname == "group")
+    if (cname == "group")
     {
       std::string sname;
       OhmmsAttributeSet gAttrib;
-      gAttrib.add(sname,"name");
+      gAttrib.add(sname, "name");
       gAttrib.put(cur);
-      if(sname.size())
+      if (sname.size())
       {
-        int sid=tspecies.addSpecies(sname);
-        setSpeciesProperty(tspecies,sid,cur);
+        int sid = tspecies.addSpecies(sname);
+        setSpeciesProperty(tspecies, sid, cur);
       }
     }
     cur = cur->next;
   }
-//  //@todo Will add a member function to ParticleSet to handle these
-//  int massind=tspecies.addAttribute("mass");
-//  for(int iat=0; iat<ref_.getTotalNum(); iat++)
-//    ref_.Mass[iat]=tspecies(massind,ref_.GroupID[iat]);
-//
-//  int qind=tspecies.addAttribute("charge");
-//  for(int iat=0; iat<ref_.getTotalNum(); iat++)
-//    ref_.Z[iat]=tspecies(qind,ref_.GroupID[iat]);
-//
+  //  //@todo Will add a member function to ParticleSet to handle these
+  //  int massind=tspecies.addAttribute("mass");
+  //  for(int iat=0; iat<ref_.getTotalNum(); iat++)
+  //    ref_.Mass[iat]=tspecies(massind,ref_.GroupID[iat]);
+  //
+  //  int qind=tspecies.addAttribute("charge");
+  //  for(int iat=0; iat<ref_.getTotalNum(); iat++)
+  //    ref_.Z[iat]=tspecies(qind,ref_.GroupID[iat]);
+  //
   return true;
 }
 
@@ -379,17 +373,14 @@ struct ParticleAttribXmlNode
 {
   PAT& ref_;
 
-  inline ParticleAttribXmlNode(PAT& a, int utype):ref_(a)
-  {
-    ref_.InUnit=utype;
-  }
+  inline ParticleAttribXmlNode(PAT& a, int utype) : ref_(a) { ref_.InUnit = utype; }
 
   inline bool put(xmlNodePtr cur, int n_in, int start)
   {
     typedef typename PAT::Type_t data_type;
     std::vector<data_type> data_in(n_in);
-    putContent(data_in,cur);
-    copy(data_in.begin(),data_in.end(),ref_.begin()+start);
+    putContent(data_in, cur);
+    copy(data_in.begin(), data_in.end(), ref_.begin() + start);
     return true;
   }
 };
@@ -397,15 +388,15 @@ struct ParticleAttribXmlNode
 void XMLParticleParser::getPtclAttrib(xmlNodePtr cur, int nat, int nloc)
 {
   std::string oname, otype;
-  int utype=0;
-  int size_in=0;
+  int utype   = 0;
+  int size_in = 0;
   OhmmsAttributeSet pAttrib;
-  pAttrib.add(otype,datatype_tag);//datatype
-  pAttrib.add(oname,"name");//name
-  pAttrib.add(utype,condition_tag);//condition
-  pAttrib.add(size_in,"size");//size
+  pAttrib.add(otype, datatype_tag);  //datatype
+  pAttrib.add(oname, "name");        //name
+  pAttrib.add(utype, condition_tag); //condition
+  pAttrib.add(size_in, "size");      //size
   pAttrib.put(cur);
-  if(oname.empty() || otype.empty())
+  if (oname.empty() || otype.empty())
   {
     app_error() << "   Missing attrib/@name or attrib/@datatype " << std::endl;
     app_error() << "     <attrib name=\"aname\"  datatype=\"atype\"/>" << std::endl;
@@ -413,65 +404,63 @@ void XMLParticleParser::getPtclAttrib(xmlNodePtr cur, int nat, int nloc)
   }
   int t_id = ref_AttribList.getAttribType(otype);
 
-  if(oname == ionid_tag)
+  if (oname == ionid_tag)
   {
-    if(otype == stringtype_tag)
+    if (otype == stringtype_tag)
     {
       int nloci = nloc;
       std::vector<std::string> d_in(nat);
-      putContent(d_in,cur);
-      for(int iat=0; iat<d_in.size(); iat++,nloci++)
+      putContent(d_in, cur);
+      for (int iat = 0; iat < d_in.size(); iat++, nloci++)
       {
         ref_.GroupID[nloci] = ref_.getSpeciesSet().addSpecies(d_in[iat]);
       }
     }
     else
     {
-      ParticleAttribXmlNode<ParticleIndex_t> a(ref_.GroupID,utype);
-      a.put(cur,nat,nloc);
+      ParticleAttribXmlNode<ParticleIndex_t> a(ref_.GroupID, utype);
+      a.put(cur, nat, nloc);
     }
   }
   else
   {
     //very permissive in that a unregistered attribute will be created and stored by ParticleSet
     //cloning is not going to work
-    if(t_id == PA_IndexType)
+    if (t_id == PA_IndexType)
     {
-      ParticleIndex_t* obj=nullptr;
-      obj=ref_AttribList.getAttribute(otype,oname,obj);
-      ParticleAttribXmlNode<ParticleIndex_t> a(*obj,utype);
-      a.put(cur,nat,nloc);
+      ParticleIndex_t* obj = nullptr;
+      obj                  = ref_AttribList.getAttribute(otype, oname, obj);
+      ParticleAttribXmlNode<ParticleIndex_t> a(*obj, utype);
+      a.put(cur, nat, nloc);
     }
-    else if(t_id == PA_ScalarType)
+    else if (t_id == PA_ScalarType)
     {
-      ParticleScalar_t* obj=nullptr;
-      obj=ref_AttribList.getAttribute(otype,oname,obj);
-      ParticleAttribXmlNode<ParticleScalar_t> a(*obj,utype);
-      a.put(cur,nat,nloc);
+      ParticleScalar_t* obj = nullptr;
+      obj                   = ref_AttribList.getAttribute(otype, oname, obj);
+      ParticleAttribXmlNode<ParticleScalar_t> a(*obj, utype);
+      a.put(cur, nat, nloc);
     }
-    else if(t_id == PA_PositionType)
+    else if (t_id == PA_PositionType)
     {
-      ParticlePos_t* obj=nullptr;
-      obj=ref_AttribList.getAttribute(otype,oname,obj);
-      ParticleAttribXmlNode<ParticlePos_t> a(*obj,utype);
-      a.put(cur,nat,nloc);
+      ParticlePos_t* obj = nullptr;
+      obj                = ref_AttribList.getAttribute(otype, oname, obj);
+      ParticleAttribXmlNode<ParticlePos_t> a(*obj, utype);
+      a.put(cur, nat, nloc);
     }
-    else if(t_id == PA_TensorType)
+    else if (t_id == PA_TensorType)
     {
-      ParticleTensor_t* obj=nullptr;
-      obj=ref_AttribList.getAttribute(otype,oname,obj);
-      ParticleAttribXmlNode<ParticleTensor_t> a(*obj,utype);
-      a.put(cur,nat,nloc);
+      ParticleTensor_t* obj = nullptr;
+      obj                   = ref_AttribList.getAttribute(otype, oname, obj);
+      ParticleAttribXmlNode<ParticleTensor_t> a(*obj, utype);
+      a.put(cur, nat, nloc);
     }
   }
 }
 
 
-XMLSaveParticle::XMLSaveParticle(Particle_t& pin): ref_(pin) { }
+XMLSaveParticle::XMLSaveParticle(Particle_t& pin) : ref_(pin) {}
 
-XMLSaveParticle::~XMLSaveParticle()
-{
-}
+XMLSaveParticle::~XMLSaveParticle() {}
 
 void XMLSaveParticle::reset(const char* fileroot, bool append)
 {
@@ -487,7 +476,7 @@ void XMLSaveParticle::report(int iter)
   // writing a meta file
   std::ofstream fxml(FileName.c_str()); // always overwrite
   fxml << "<?xml version=\"1.0\"?>" << std::endl;
-  get(fxml,1);
+  get(fxml, 1);
   fxml.close();
 }
 
@@ -498,13 +487,13 @@ void XMLSaveParticle::get(std::ostream& fxml, int olevel) const
   fxml.precision(15);
   LatticeXMLWriter latticeout(ref_.Lattice);
   latticeout.get(fxml);
-  for(int i=0; i<SpeciesName.size(); i++)
+  for (int i = 0; i < SpeciesName.size(); i++)
   {
     fxml << "<group name=\"" << SpeciesName[i] << "\"/>" << std::endl;
   }
   //only write the local particles
   int nloc = ref_.getTotalNum();
-  if(olevel)
+  if (olevel)
   {
     /*
     Particle_t::PAListIterator it = ref_.first_attrib();
@@ -572,121 +561,112 @@ void XMLSaveParticle::get(std::ostream& fxml, int olevel) const
   else
   {
     ref_.R.begin_node(fxml);
-    for(int iat=0; iat<nloc; iat++)
+    for (int iat = 0; iat < nloc; iat++)
       fxml << ref_.R[iat] << std::endl;
     ref_.R.end_node(fxml);
     ref_.GroupID.begin_node(fxml);
-    for(int iat=0; iat<nloc; iat++)
+    for (int iat = 0; iat < nloc; iat++)
     {
       fxml << ref_.GroupID[iat] << " ";
-      if(iat%20 == 19)
+      if (iat % 20 == 19)
         fxml << std::endl;
     }
-    if(nloc%20 != 19)
+    if (nloc % 20 != 19)
       fxml << std::endl;
     ref_.GroupID.end_node(fxml);
   }
   ref_.end_node(fxml);
 }
 
-bool XMLSaveParticle::put(xmlNodePtr cur)
-{
-  return true;
-}
+bool XMLSaveParticle::put(xmlNodePtr cur) { return true; }
 
 /** create particleset node
  * @param addlattice if true, add unitcell
  */
 xmlNodePtr XMLSaveParticle::createNode(bool addlattice)
 {
-  if(SpeciesName.size()!=ref_.getSpeciesSet().getTotalNum())
+  if (SpeciesName.size() != ref_.getSpeciesSet().getTotalNum())
   {
     SpeciesName = ref_.getSpeciesSet().speciesName;
   }
   //if(addlattice) {
   //  ref_.Lattice.print(std::cout);
   //}
-  xmlNodePtr cur = xmlNewNode(NULL,(const xmlChar*)"particleset");
-  xmlNewProp(cur,(const xmlChar*)"name",(const xmlChar*)ref_.getName().c_str());
-  if(ref_.groups()>1)
+  xmlNodePtr cur = xmlNewNode(NULL, (const xmlChar*)"particleset");
+  xmlNewProp(cur, (const xmlChar*)"name", (const xmlChar*)ref_.getName().c_str());
+  if (ref_.groups() > 1)
   {
     const SpeciesSet& mySpecies(ref_.getSpeciesSet());
     int nitem(mySpecies.numAttributes());
     int nspecies(mySpecies.getTotalNum());
-    for(int is=0; is<nspecies; is++)
+    for (int is = 0; is < nspecies; is++)
     {
       std::ostringstream ng;
-      ng << ref_.last(is)-ref_.first(is);
-      xmlNodePtr g=xmlNewNode(NULL,(const xmlChar*)"group");
-      xmlNewProp(g,(const xmlChar*)"name",(const xmlChar*)SpeciesName[is].c_str());
-      xmlNewProp(g,(const xmlChar*)"size",(const xmlChar*)ng.str().c_str());
-      for(int item=0; item<nitem; item++)
+      ng << ref_.last(is) - ref_.first(is);
+      xmlNodePtr g = xmlNewNode(NULL, (const xmlChar*)"group");
+      xmlNewProp(g, (const xmlChar*)"name", (const xmlChar*)SpeciesName[is].c_str());
+      xmlNewProp(g, (const xmlChar*)"size", (const xmlChar*)ng.str().c_str());
+      for (int item = 0; item < nitem; item++)
       {
         std::ostringstream prop;
-        prop<<mySpecies(item,is);
-        xmlNodePtr p=xmlNewTextChild(g,NULL,
-                                     (const xmlChar*)"parameter", (const xmlChar*)prop.str().c_str());
-        xmlNewProp(p,(const xmlChar*)"name",(const xmlChar*)mySpecies.attribName[item].c_str());
+        prop << mySpecies(item, is);
+        xmlNodePtr p = xmlNewTextChild(g, NULL, (const xmlChar*)"parameter", (const xmlChar*)prop.str().c_str());
+        xmlNewProp(p, (const xmlChar*)"name", (const xmlChar*)mySpecies.attribName[item].c_str());
       }
       std::ostringstream pos;
       pos.setf(std::ios_base::scientific);
-      pos <<"\n";
-      for(int iat=ref_.first(is); iat<ref_.last(is); iat++)
+      pos << "\n";
+      for (int iat = ref_.first(is); iat < ref_.last(is); iat++)
       {
-        pos <<  ref_.R[iat] << std::endl;
+        pos << ref_.R[iat] << std::endl;
       }
-      xmlNodePtr posPtr=xmlNewTextChild(g,NULL,
-                                        (const xmlChar*)"attrib", (const xmlChar*)pos.str().c_str());
-      xmlNewProp(posPtr,(const xmlChar*)"name",(const xmlChar*)"position");
-      xmlNewProp(posPtr,(const xmlChar*)"datatype",(const xmlChar*)"posArray");
-      xmlAddChild(cur,g);
+      xmlNodePtr posPtr = xmlNewTextChild(g, NULL, (const xmlChar*)"attrib", (const xmlChar*)pos.str().c_str());
+      xmlNewProp(posPtr, (const xmlChar*)"name", (const xmlChar*)"position");
+      xmlNewProp(posPtr, (const xmlChar*)"datatype", (const xmlChar*)"posArray");
+      xmlAddChild(cur, g);
     }
   }
   else
   {
     std::ostringstream nat;
-    nat<<ref_.getTotalNum();
-    xmlNewProp(cur,(const xmlChar*)"size",(const xmlChar*)nat.str().c_str());
+    nat << ref_.getTotalNum();
+    xmlNewProp(cur, (const xmlChar*)"size", (const xmlChar*)nat.str().c_str());
     const SpeciesSet& mySpecies(ref_.getSpeciesSet());
     int nitem(mySpecies.numAttributes());
     int nspecies(mySpecies.getTotalNum());
-    for(int is=0; is<nspecies; is++)
+    for (int is = 0; is < nspecies; is++)
     {
-      xmlNodePtr g=xmlNewNode(NULL,(const xmlChar*)"group");
-      xmlNewProp(g,(const xmlChar*)"name",(const xmlChar*)SpeciesName[is].c_str());
-      for(int item=0; item<nitem; item++)
+      xmlNodePtr g = xmlNewNode(NULL, (const xmlChar*)"group");
+      xmlNewProp(g, (const xmlChar*)"name", (const xmlChar*)SpeciesName[is].c_str());
+      for (int item = 0; item < nitem; item++)
       {
         std::ostringstream prop;
-        prop<<mySpecies(item,is);
-        xmlNodePtr p=xmlNewTextChild(g,NULL,
-                                     (const xmlChar*)"parameter", (const xmlChar*)prop.str().c_str());
-        xmlNewProp(p,(const xmlChar*)"name",(const xmlChar*)mySpecies.attribName[item].c_str());
+        prop << mySpecies(item, is);
+        xmlNodePtr p = xmlNewTextChild(g, NULL, (const xmlChar*)"parameter", (const xmlChar*)prop.str().c_str());
+        xmlNewProp(p, (const xmlChar*)"name", (const xmlChar*)mySpecies.attribName[item].c_str());
       }
-      xmlAddChild(cur,g);
+      xmlAddChild(cur, g);
     }
-    std::ostringstream pos,gid;
+    std::ostringstream pos, gid;
     pos.setf(std::ios_base::scientific);
-    pos <<"\n";
-    for(int iat=0; iat<ref_.getTotalNum(); iat++)
+    pos << "\n";
+    for (int iat = 0; iat < ref_.getTotalNum(); iat++)
     {
       pos << ref_.R[iat] << std::endl;
     }
-    xmlNodePtr posPtr=xmlNewTextChild(cur,NULL,
-                                      (const xmlChar*)"attrib", (const xmlChar*)pos.str().c_str());
-    xmlNewProp(posPtr,(const xmlChar*)"name",(const xmlChar*)"position");
-    xmlNewProp(posPtr,(const xmlChar*)"datatype",(const xmlChar*)"posArray");
-    gid <<"\n ";
-    for(int iat=0; iat<ref_.getTotalNum(); iat++)
+    xmlNodePtr posPtr = xmlNewTextChild(cur, NULL, (const xmlChar*)"attrib", (const xmlChar*)pos.str().c_str());
+    xmlNewProp(posPtr, (const xmlChar*)"name", (const xmlChar*)"position");
+    xmlNewProp(posPtr, (const xmlChar*)"datatype", (const xmlChar*)"posArray");
+    gid << "\n ";
+    for (int iat = 0; iat < ref_.getTotalNum(); iat++)
     {
       gid << SpeciesName[ref_.GroupID[iat]] << " ";
     }
     gid << std::endl;
-    xmlNodePtr gPtr=xmlNewTextChild(cur,NULL,
-                                    (const xmlChar*)"attrib", (const xmlChar*)gid.str().c_str());
-    xmlNewProp(gPtr,(const xmlChar*)"name",(const xmlChar*)"ionid");
-    xmlNewProp(gPtr,(const xmlChar*)"datatype",(const xmlChar*)"stringArray");
+    xmlNodePtr gPtr = xmlNewTextChild(cur, NULL, (const xmlChar*)"attrib", (const xmlChar*)gid.str().c_str());
+    xmlNewProp(gPtr, (const xmlChar*)"name", (const xmlChar*)"ionid");
+    xmlNewProp(gPtr, (const xmlChar*)"datatype", (const xmlChar*)"stringArray");
   }
   return cur;
 }
-}
-
+} // namespace qmcplusplus

@@ -4,7 +4,7 @@
 //
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
-// File developed by: 
+// File developed by:
 //
 // File created by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Corp.
 //////////////////////////////////////////////////////////////////////////////////////
@@ -19,6 +19,8 @@
 
 namespace spline2
 {
+// clang-format off
+PRAGMA_OFFLOAD("omp declare target")
   /** initialization of static data for MultiBsplineData<float> */
   template<>
   QMC_ALIGNAS const float MultiBsplineData<float>::A44[16] =
@@ -41,6 +43,13 @@ namespace spline2
      0.0f, 0.0f, -3.0f,  1.0f,
      0.0f, 0.0f,  1.0f,  0.0f };
 
+  template<>
+  QMC_ALIGNAS const float MultiBsplineData<float>::d3A44[16] =
+  {  0.0f, 0.0f,  0.0f, -1.0f,
+     0.0f, 0.0f,  0.0f,  3.0f,
+     0.0f, 0.0f,  0.0f, -3.0f,
+     0.0f, 0.0f,  0.0f,  1.0f };
+
   /** initialization of static data for MultiBsplineData<double> */
   template<>
   QMC_ALIGNAS const double MultiBsplineData<double>::A44[16] =
@@ -62,5 +71,13 @@ namespace spline2
      0.0, 0.0,  3.0, -2.0,
      0.0, 0.0, -3.0,  1.0,
      0.0, 0.0,  1.0,  0.0 };
-}
 
+  template<>
+  QMC_ALIGNAS const double MultiBsplineData<double>::d3A44[16] =
+  {  0.0, 0.0,  0.0, -1.0,
+     0.0, 0.0,  0.0,  3.0,
+     0.0, 0.0,  0.0, -3.0,
+     0.0, 0.0,  0.0,  1.0 };
+PRAGMA_OFFLOAD("omp end declare target")
+// clang-format on
+} // namespace spline2

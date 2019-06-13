@@ -10,7 +10,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-
 #include "Message/catch_mpi_main.hpp"
 
 
@@ -28,13 +27,9 @@ namespace qmcplusplus
 {
 TEST_CASE("read_particleset_xml", "[particle_io][xml]")
 {
-
   OHMMS::Controller->initialize(0, NULL);
-  Communicate *c = OHMMS::Controller;
 
-
-const char *particles = \
-"<tmp> \
+  const char* particles = "<tmp> \
 <particleset name=\"ion0\" size=\"1\"> \
   <group name=\"He\"> \
     <parameter name=\"charge\">2</parameter> \
@@ -66,9 +61,9 @@ const char *particles = \
   xmlNodePtr root = doc.getRoot();
 
   Tensor<int, 3> tmat; // assuming OHMMSDIM==3
-  tmat(0,0) = 1;
-  tmat(1,1) = 1;
-  tmat(2,2) = 1;
+  tmat(0, 0) = 1;
+  tmat(1, 1) = 1;
+  tmat(2, 2) = 1;
 
   ParticleSet ions, electrons;
   XMLParticleParser parse_ions(ions, tmat);
@@ -96,8 +91,5 @@ const char *particles = \
   REQUIRE(electrons.R[1][1] == Approx(1.9679));
   REQUIRE(electrons.R[1][2] == Approx(-0.0128914));
   REQUIRE(electrons.getName() == "e");
-
 }
-}
-
-
+} // namespace qmcplusplus

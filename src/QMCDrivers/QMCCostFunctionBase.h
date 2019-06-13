@@ -12,8 +12,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
 
 
 #ifndef QMCPLUSPLUS_COSTFUNCTIONBASE_H
@@ -35,7 +33,6 @@
 
 namespace qmcplusplus
 {
-
 class MCWalkerConfiguration;
 
 /** @ingroup QMCDrivers
@@ -45,15 +42,30 @@ class MCWalkerConfiguration;
  * generated from VMC.
  */
 
-class QMCCostFunctionBase: public CostFunctionBase<QMCTraits::RealType>, public MPIObjectBase
+class QMCCostFunctionBase : public CostFunctionBase<QMCTraits::RealType>, public MPIObjectBase
 {
 public:
-
-  enum FieldIndex_OPT {LOGPSI_FIXED=0, LOGPSI_FREE=1, ENERGY_TOT=2, ENERGY_FIXED=3, ENERGY_NEW=4, REWEIGHT=5};
-  enum SumIndex_OPT {SUM_E_BARE=0, SUM_ESQ_BARE, SUM_ABSE_BARE,
-                     SUM_E_WGT, SUM_ESQ_WGT, SUM_ABSE_WGT, SUM_WGT, SUM_WGTSQ,
-                     SUM_INDEX_SIZE
-                    };
+  enum FieldIndex_OPT
+  {
+    LOGPSI_FIXED = 0,
+    LOGPSI_FREE  = 1,
+    ENERGY_TOT   = 2,
+    ENERGY_FIXED = 3,
+    ENERGY_NEW   = 4,
+    REWEIGHT     = 5
+  };
+  enum SumIndex_OPT
+  {
+    SUM_E_BARE = 0,
+    SUM_ESQ_BARE,
+    SUM_ABSE_BARE,
+    SUM_E_WGT,
+    SUM_ESQ_WGT,
+    SUM_ABSE_WGT,
+    SUM_WGT,
+    SUM_WGTSQ,
+    SUM_INDEX_SIZE
+  };
 
 
   ///Constructor.
@@ -65,87 +77,55 @@ public:
   ///process xml node
   bool put(xmlNodePtr cur);
   void resetCostFunction(std::vector<xmlNodePtr>& cset);
+  ///Save opt parameters to HDF5
+  bool reportH5;  
+  bool CI_Opt;  
+  ///Path and name of the HDF5 prefix where CI coeffs are saved
+  std::string newh5;
   ///assign optimization parameter i
-  Return_t& Params(int i)
-  {
-    return OptVariables[i];
-  }
+  Return_t& Params(int i) { return OptVariables[i]; }
   ///return optimization parameter i
-  Return_t Params(int i) const
-  {
-    return OptVariables[i];
-  }
-  int getType(int i)
-  {
-    return OptVariables.getType(i);
-  }
+  Return_t Params(int i) const { return OptVariables[i]; }
+  int getType(int i) { return OptVariables.getType(i); }
   ///return the cost value for CGMinimization
-  Return_t Cost(bool needGrad=true);
+  Return_t Cost(bool needGrad = true);
 
   ///return the cost value for CGMinimization
   Return_t computedCost();
   void printEstimates();
   ///return the gradient of cost value for CGMinimization
-  virtual void GradCost(std::vector<Return_t>& PGradient, const std::vector<Return_t>& PM, Return_t FiniteDiff=0) {};
+  virtual void GradCost(std::vector<Return_t>& PGradient, const std::vector<Return_t>& PM, Return_t FiniteDiff = 0){};
   ///return the number of optimizable parameters
-  inline int NumParams()
-  {
-    return OptVariables.size();
-  }
+  inline int NumParams() { return OptVariables.size(); }
   ///return the number of optimizable parameters
-  inline int getNumSamples()
-  {
-    return NumSamples;
-  }
-  inline void setNumSamples(int newNumSamples)
-  {  
-    NumSamples = newNumSamples;     
-  }
+  inline int getNumSamples() { return NumSamples; }
+  inline void setNumSamples(int newNumSamples) { NumSamples = newNumSamples; }
   ///reset the wavefunction
-  virtual void resetPsi(bool final_reset=false)=0;
+  virtual void resetPsi(bool final_reset = false) = 0;
 
-  inline void getParameterTypes(std::vector<int>& types)
-  {
-    return OptVariablesForPsi.getParameterTypeList(types);
-  }
+  inline void getParameterTypes(std::vector<int>& types) { return OptVariablesForPsi.getParameterTypeList(types); }
 
   ///dump the current parameters and other report
   void Report();
   ///report  parameters at the end
   void reportParameters();
 
+  ///report  parameters in HDF5 at the end
+  void reportParametersH5();
   ///return the counter which keeps track of optimization steps
-  inline int getReportCounter() const
-  {
-    return ReportCounter;
-  }
+  inline int getReportCounter() const { return ReportCounter; }
 
-  void setWaveFunctionNode(xmlNodePtr cur)
-  {
-    m_wfPtr=cur;
-  }
+  void setWaveFunctionNode(xmlNodePtr cur) { m_wfPtr = cur; }
 
-  void recordParametersToPsi(Return_t e, Return_t v)
-  {
-    Psi.coefficientHistory.addParams(OptVariables,e,v);
-  }
-  void getAvgParameters(int N)
-  {
-    OptVariables=Psi.coefficientHistory.getAvgCoefficients(N);
-  }
+  void recordParametersToPsi(Return_t e, Return_t v) { Psi.coefficientHistory.addParams(OptVariables, e, v); }
+  void getAvgParameters(int N) { OptVariables = Psi.coefficientHistory.getAvgCoefficients(N); }
   //void getConfigurations(std::vector<std::string>& ConfigFile, int partid, int nparts);
 
   void setTargetEnergy(Return_t et);
 
-  void setRootName(const std::string& aroot)
-  {
-    RootName=aroot;
-  }
+  void setRootName(const std::string& aroot) { RootName = aroot; }
 
-  void setStream(std::ostream* os)
-  {
-    msg_stream = os;
-  }
+  void setStream(std::ostream* os) { msg_stream = os; }
 
   void addCoefficients(xmlXPathContextPtr acontext, const char* cname);
 
@@ -158,41 +138,35 @@ public:
    * If successful, any optimization object updates the parameters by x0 + dl*gr
    * and proceeds with a new step.
    */
-  bool lineoptimization(const std::vector<Return_t>& x0, const std::vector<Return_t>& gr, Return_t val0,
-                        Return_t& dl, Return_t& val_proj, Return_t& lambda_max);
+  bool lineoptimization(const std::vector<Return_t>& x0,
+                        const std::vector<Return_t>& gr,
+                        Return_t val0,
+                        Return_t& dl,
+                        Return_t& val_proj,
+                        Return_t& lambda_max);
 
-  virtual Return_t fillOverlapHamiltonianMatrices(Matrix<Return_t>& Left, Matrix<Return_t>& Right)=0;
+  virtual Return_t fillOverlapHamiltonianMatrices(Matrix<Return_t>& Left, Matrix<Return_t>& Right) = 0;
 
 #ifdef HAVE_LMY_ENGINE
-  Return_t LMYEngineCost(const bool needDeriv, cqmc::engine::LMYEngine * EngineObj);
+  Return_t LMYEngineCost(const bool needDeriv, cqmc::engine::LMYEngine* EngineObj);
 #endif
 
-  virtual void getConfigurations(const std::string& aroot)=0;
+  virtual void getConfigurations(const std::string& aroot) = 0;
 
-  virtual void checkConfigurations()=0;
+  virtual void checkConfigurations() = 0;
 
 #ifdef HAVE_LMY_ENGINE
-  virtual void engine_checkConfigurations(cqmc::engine::LMYEngine * EngineObj)=0;
+  virtual void engine_checkConfigurations(cqmc::engine::LMYEngine* EngineObj) = 0;
 #endif
 
   void setRng(std::vector<RandomGenerator_t*>& r);
 
-  inline bool getneedGrads() const
-  {
-    return needGrads;
-  }
+  inline bool getneedGrads() const { return needGrads; }
 
-  inline void setneedGrads(bool tf)
-  {
-    needGrads=tf;
-  }
-  inline void setDMC()
-  {
-    vmc_or_dmc=1.0;
-  }
+  inline void setneedGrads(bool tf) { needGrads = tf; }
+  inline void setDMC() { vmc_or_dmc = 1.0; }
 
 protected:
-
   ///walker ensemble
   MCWalkerConfiguration& W;
 
@@ -281,14 +255,14 @@ protected:
    * - equalVarMap[i][0] : index in OptVariablesForPsi
    * - equalVarMap[i][1] : index in OptVariables
    */
-  std::vector<TinyVector<int,2> > equalVarMap;
+  std::vector<TinyVector<int, 2>> equalVarMap;
   /** index mapping for <negate> constraints
    *
    * - negateVarMap[i][0] : index in OptVariablesForPsi
    * - negateVarMap[i][1] : index in OptVariables
    */
   ///index mapping for <negative> constraints
-  std::vector<TinyVector<int,2> > negateVarMap;
+  std::vector<TinyVector<int, 2>> negateVarMap;
   ///stream to which progress is sent
   std::ostream* msg_stream;
   ///xml node to be dumped
@@ -296,18 +270,18 @@ protected:
   ///document node to be dumped
   xmlDocPtr m_doc_out;
   ///parameters to be updated
-  std::map<std::string,xmlNodePtr> paramNodes;
+  std::map<std::string, xmlNodePtr> paramNodes;
   ///coefficients to be updated
-  std::map<std::string,xmlNodePtr> coeffNodes;
+  std::map<std::string, xmlNodePtr> coeffNodes;
   ///attributes to be updated
-  std::map<std::string,std::pair<xmlNodePtr,std::string> > attribNodes;
+  std::map<std::string, std::pair<xmlNodePtr, std::string>> attribNodes;
   ///string for the file root
   std::string RootName;
   ///Hamiltonians that depend on the optimization: KE
   QMCHamiltonian H_KE;
 
   ///Random number generators
-  std::vector<RandomGenerator_t*> RngSaved,MoverRng;
+  std::vector<RandomGenerator_t*> RngSaved, MoverRng;
   std::string includeNonlocalH;
 
 
@@ -340,16 +314,15 @@ protected:
   void updateXmlNodes();
 
 
-  virtual Return_t correlatedSampling(bool needGrad=true)=0;
+  virtual Return_t correlatedSampling(bool needGrad = true) = 0;
 
-  #ifdef HAVE_LMY_ENGINE
-  virtual Return_t LMYEngineCost_detail(cqmc::engine::LMYEngine * EngineObj)
+#ifdef HAVE_LMY_ENGINE
+  virtual Return_t LMYEngineCost_detail(cqmc::engine::LMYEngine* EngineObj)
   {
     APP_ABORT("NOT IMPLEMENTED");
     return 0;
   }
-  #endif
-
+#endif
 };
-}
+} // namespace qmcplusplus
 #endif

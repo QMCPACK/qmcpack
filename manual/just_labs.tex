@@ -1,0 +1,109 @@
+\documentclass[11pt,usletter]{report}
+\usepackage{qmcpack_manual}
+\usepackage{bibtopic}
+\bibliographystyle{ieeetr}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{delarray}
+\usepackage{algorithmic}
+\usepackage{algorithm}
+\usepackage{makeidx}
+\usepackage{fancyhdr}
+\usepackage{hyperref} %for urls
+\usepackage{tabularx}
+\usepackage{placeins}
+% environment for shaded verbatim
+%\usepackage{verbatim}
+\usepackage{caption}
+\usepackage{graphicx}
+
+% making listing behave properly
+%   with setting below, listings now render correctly
+%   copy/paste from pdf is still messed up (is this even possible to fix?)
+%     -indentation whitespace is not preserved (needed for Python)
+%     -copy/paste can result in mangled text
+%     -mangling depends on pdf viewer (it is different for acroread and evince)
+%     -verbatim suffers from this also
+
+\usepackage{upquote}  % render ' properly
+\usepackage{qmcpack_listings}
+
+% set margins for whole document, lots of wasted space at top and bottom originally
+\usepackage[left=1.0in,right=1.0in,top=1.0in,bottom=1.0in]{geometry}
+
+\newcommand{\HRule}{\rule{\linewidth}{0.5mm}}
+%% \newcommand{\courier}[1]{{\fontfamily{pcr}\selectfont #1}}
+
+% for markup, as needed
+\newcommand{\red}[1]{{\color{red} #1}}
+\newcommand{\blue}[1]{{\color{blue} #1}}
+
+% hide or show text relevant to developers
+\newcommand{\dev}[1]{#1}
+%\newcommand{\dev}[1]{}
+
+% efficiently comment out/hide blocks of text for any purpose
+\newcommand{\hide}[1]{}
+
+
+% control display of instructions in the labs
+%   normally one only wants to show the 'workstation' way of running the labs
+\newif\ifws
+\wstrue
+%   for the pdf used during the labs, one wants to show the host supercomputer way
+%\wsfalse
+%  command for switching inline text (do not wrap verbatim environments with this!)
+\ifws
+\newcommand{\labsw}[2]{#1}
+\else
+\newcommand{\labsw}[2]{#2}
+\fi
+
+
+\oddsidemargin 0cm
+\evensidemargin 0cm
+\textwidth 6.5in
+
+
+% proper rendering of qmcpack
+\newcommand{\qmcpack}{{QMCPACK} } % apparently the trailing whitespace is significant
+
+% mathematics convenience commands
+\newcommand{\abs}[1]{\lvert #1 \rvert}
+\newcommand{\norm}[1]{\lVert #1 \rVert}
+\newcommand{\pnorm}[2]{\lVert #1 \rVert_{#2}}
+\newcommand{\mean}[1]{\langle #1 \rangle}
+\newcommand{\ket}[1]{\lvert #1 \rangle}
+\newcommand{\bra}[1]{\langle #1 \rvert}
+\newcommand{\expval}[3]{\bra{#1}#2\ket{#3}}
+\newcommand{\expvalh}[3]{\bra{#1}\hat{#2}\ket{#3}}
+\newcommand{\overlap}[2]{\langle #1 \lvert #2 \rangle}
+\newcommand{\operator}[3]{\ket{#1} #2 \bra{#3}}
+\newcommand{\idop}{\hat{\mathbb{1}}}
+\newcommand{\bs}{\boldsymbol}
+\newcommand{\tr}{\text{tr}} % trace
+
+
+\begin{document}
+
+\begin{btUnit}
+\input{lab_qmc_statistics}
+\input{lab_qmc_basics}
+\input{lab_advanced_molecules}
+\input{lab_condensed_matter}
+\input{lab_excited}
+
+%% \renewcommand{\chaptername}{}
+%% \renewcommand{\thechapter}{}
+\chapter*{References}
+\addcontentsline{toc}{chapter}{References}
+\begin{btSect}{bibliography}
+\btPrintCited
+\end{btSect}
+\end{btUnit}
+\end{document}
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: t
+%%% End:

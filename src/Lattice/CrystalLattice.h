@@ -14,9 +14,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
-
 
 
 /**@file CrystalLattice.h
@@ -30,21 +27,20 @@
 #include <OhmmsPETE/Tensor.h>
 #include <Lattice/LatticeOperations.h>
 
-#define USE_BOXBCONDS
-
 namespace qmcplusplus
 {
-
 /** enumeration to classify a CrystalLattice
  *
  * Use std::bitset<3> for all the dimension
  */
-enum {SUPERCELL_OPEN=0, /*!< nnn */
-      SUPERCELL_WIRE=1, /*!< nnp */
-      SUPERCELL_SLAB=3, /*!< npp */
-      SUPERCELL_BULK=7, /*!< ppp */
-      SOA_OFFSET=32     /*!< const to differentiate AoS and SoA */
-     };
+enum
+{
+  SUPERCELL_OPEN = 0, /*!< nnn */
+  SUPERCELL_WIRE = 1, /*!< nnp */
+  SUPERCELL_SLAB = 3, /*!< npp */
+  SUPERCELL_BULK = 7, /*!< ppp */
+  SOA_OFFSET     = 32 /*!< const to differentiate AoS and SoA */
+};
 
 /** class to assist copy and unit conversion operations on position vectors
 */
@@ -52,9 +48,11 @@ struct PosUnit
 {
   /** enumeraton for the unit of position types.
   */
-  enum {CartesianUnit=0,/*!< indicates that the values are in Cartesian units*/
-        LatticeUnit/*!< indicates that the values are in Lattice units*/
-       };
+  enum
+  {
+    CartesianUnit = 0, /*!< indicates that the values are in Cartesian units*/
+    LatticeUnit        /*!< indicates that the values are in Lattice units*/
+  };
 };
 
 
@@ -70,21 +68,23 @@ struct PosUnit
  *expression template operations with variable-cell algorithms.
  *
  */
-template<class T, unsigned D, bool ORTHO=false>
+template<class T, unsigned D, bool ORTHO = false>
 struct CrystalLattice
 {
-
   ///enumeration for the dimension of the lattice
-  enum {DIM = D};
+  enum
+  {
+    DIM = D
+  };
   //@{
   ///the type of scalar
-  typedef T                            Scalar_t;
+  typedef T Scalar_t;
   ///the type of a D-dimensional position vector
-  typedef TinyVector<T,D>              SingleParticlePos_t;
+  typedef TinyVector<T, D> SingleParticlePos_t;
   ///the type of a D-dimensional index vector
-  typedef TinyVector<int,D>            SingleParticleIndex_t;
+  typedef TinyVector<int, D> SingleParticleIndex_t;
   ///the type of a D-dimensional Tensor
-  typedef Tensor<T,D>                  Tensor_t;
+  typedef Tensor<T, D> Tensor_t;
   //@}
 
   ///true, if off-diagonal elements are zero so that other classes can take advantage of this
@@ -92,11 +92,11 @@ struct CrystalLattice
   ///supercell enumeration
   int SuperCellEnum;
   ///The boundary condition in each direction.
-  TinyVector<int,D> BoxBConds;
+  TinyVector<int, D> BoxBConds;
   ///The scale factor for adding vacuum.
   T VacuumScale;
   //@{
-  /**@brief Physcial properties of a supercell*/
+  /**@brief Physical properties of a supercell*/
   /// Volume of a supercell
   Scalar_t Volume;
   /// Wigner-Seitz cell radius
@@ -128,13 +128,13 @@ struct CrystalLattice
    *Introduced to efficiently return one vector at a time.
    *Rv[i] is D-dim vector of the ith direction.
    */
-  TinyVector<SingleParticlePos_t,D> Rv;
+  TinyVector<SingleParticlePos_t, D> Rv;
   /**@brief Reciprocal unit vectors.
    *
    *Introduced to efficiently return one vector at a time.
    *Gv[i] is D-dim vector of the ith direction.
    */
-  TinyVector<SingleParticlePos_t,D> Gv;
+  TinyVector<SingleParticlePos_t, D> Gv;
   //@}
   //angles between the two lattice vectors
   SingleParticlePos_t ABC;
@@ -149,25 +149,19 @@ struct CrystalLattice
   //CrystalLattice(const CrystalLattice<T,D>& rhs);
 
   ///destructor
-  virtual ~CrystalLattice() { }
+  virtual ~CrystalLattice() {}
 
   /**@param i the index of the directional vector, \f$i\in [0,D)\f$
    *@return The lattice vector of the ith direction
    *@brief Provide interfaces familiar to fotran users
    */
-  inline SingleParticlePos_t a(int i) const
-  {
-    return Rv[i];
-  }
+  inline SingleParticlePos_t a(int i) const { return Rv[i]; }
 
   /**@param i the index of the directional vector, \f$i\in [0,D)\f$
    *@return The reciprocal vector of the ith direction
    *@brief Provide interfaces familiar to fotran users
    */
-  inline SingleParticlePos_t b(int i) const
-  {
-    return Gv[i];
-  }
+  inline SingleParticlePos_t b(int i) const { return Gv[i]; }
 
   //inline T calcWignerSeitzRadius(TinyVector<SingleParticlePos_t,2> a) const
   //{
@@ -203,25 +197,25 @@ struct CrystalLattice
    * Boundary conditions are not applied.
    */
   template<class T1>
-  inline SingleParticlePos_t toUnit(const TinyVector<T1,D> &r) const
+  inline SingleParticlePos_t toUnit(const TinyVector<T1, D>& r) const
   {
 #ifdef OHMMS_LATTICEOPERATORS_H
-    return DotProduct<TinyVector<T1,D>,Tensor<T,D>,ORTHO>::apply(r,G);
+    return DotProduct<TinyVector<T1, D>, Tensor<T, D>, ORTHO>::apply(r, G);
 #else
-    return dot(r,G);
+    return dot(r, G);
 #endif
   }
 
   template<class T1>
-  inline SingleParticlePos_t toUnit_floor(const TinyVector<T1,D> &r) const
+  inline SingleParticlePos_t toUnit_floor(const TinyVector<T1, D>& r) const
   {
     SingleParticlePos_t val_dot;
     val_dot = toUnit(r);
-    for (int i=0; i<D; i++)
-      if( -std::numeric_limits<T1>::epsilon() < val_dot[i] && val_dot[i] < 0 )
+    for (int i = 0; i < D; i++)
+      if (-std::numeric_limits<T1>::epsilon() < val_dot[i] && val_dot[i] < 0)
         val_dot[i] = T1(0.0);
       else
-        val_dot[i] -= std::floor (val_dot[i]);
+        val_dot[i] -= std::floor(val_dot[i]);
     return val_dot;
   }
 
@@ -229,51 +223,38 @@ struct CrystalLattice
    * Boundary conditions are not applied.
    */
   template<class T1>
-  inline SingleParticlePos_t toCart(const TinyVector<T1,D> &c) const
+  inline SingleParticlePos_t toCart(const TinyVector<T1, D>& c) const
   {
 #ifdef OHMMS_LATTICEOPERATORS_H
-    return DotProduct<TinyVector<T1,D>,Tensor<T,D>,ORTHO>::apply(c,R);
+    return DotProduct<TinyVector<T1, D>, Tensor<T, D>, ORTHO>::apply(c, R);
 #else
-    return dot(c,R);
+    return dot(c, R);
 #endif
   }
 
-  inline bool isValid(const TinyVector<T,D>& u) const
+  /// return true if all the open direction of reduced coordinates u are in the range [0,1)
+  inline bool isValid(const TinyVector<T, D>& u) const
   {
-#if defined(USE_BOXBCONDS)
-    return CheckBoxConds<T,D>::inside(u,BoxBConds);
-#else
-    if(SuperCellEnum)
-      return true;
-    else
-      return CheckBoxConds<T,D>::inside(u);
-#endif
+    bool inside = true;
+    for (int dim = 0; dim < D; dim++)
+      inside &= (BoxBConds[dim] || (u[dim] >= T(0) && u[dim] < T(1)));
+    return inside;
   }
 
-//  inline bool isValid(const TinyVector<T,D>& u, TinyVector<T,D>& ubox) const
-//  {
-//    if(SuperCellEnum)
-//      return CheckBoxConds<T,D>::inside(u,ubox);
-//    else
-//    {
-//      ubox=u;
-//      return CheckBoxConds<T,D>::inside(u);
-//    }
-//  }
-
-  inline bool outOfBound(const TinyVector<T,D>& u) const
+  /// return true if any direction of reduced coordinates u goes larger than 0.5
+  inline bool outOfBound(const TinyVector<T, D>& u) const
   {
-    for(int i=0; i<D; ++i)
-      if(std::abs(u[i])>0.5)
+    for (int i = 0; i < D; ++i)
+      if (std::abs(u[i]) > 0.5)
         return true;
     return false;
   }
 
 
-  inline void applyMinimumImage(TinyVector<T,D>& c) const
+  inline void applyMinimumImage(TinyVector<T, D>& c) const
   {
-    if(SuperCellEnum)
-      MinimumImageBConds<T,D>::apply(R,G,c);
+    if (SuperCellEnum)
+      MinimumImageBConds<T, D>::apply(R, G, c);
   }
 
   /** evaluate the cartesian distance
@@ -284,13 +265,12 @@ struct CrystalLattice
    @note The distance between two cartesian vectors are handled
    *by dot function defined in OhmmsPETE/TinyVector.h
    */
-  inline T Dot(const SingleParticlePos_t &ra,
-               const SingleParticlePos_t &rb) const
+  inline T Dot(const SingleParticlePos_t& ra, const SingleParticlePos_t& rb) const
   {
 #ifdef OHMMS_LATTICEOPERATORS_H
-    return CartesianNorm2<TinyVector<T,D>,Tensor<T,D>,ORTHO>::apply(ra,M,rb);
+    return CartesianNorm2<TinyVector<T, D>, Tensor<T, D>, ORTHO>::apply(ra, M, rb);
 #else
-    return dot(ra,dot(M,rb));
+    return dot(ra, dot(M, rb));
 #endif
   }
 
@@ -301,9 +281,9 @@ struct CrystalLattice
   inline SingleParticlePos_t k_cart(const SingleParticlePos_t& kin) const
   {
 #ifdef OHMMS_LATTICEOPERATORS_H
-    return TWOPI*DotProduct<SingleParticlePos_t,Tensor_t,ORTHO>::apply(G,kin);
+    return TWOPI * DotProduct<SingleParticlePos_t, Tensor_t, ORTHO>::apply(G, kin);
 #else
-    return TWOPI*dot(G,kin);
+    return TWOPI * dot(G, kin);
 #endif
   }
 
@@ -314,9 +294,9 @@ struct CrystalLattice
   inline SingleParticlePos_t k_unit(const SingleParticlePos_t& kin) const
   {
 #ifdef OHMMS_LATTICEOPERATORS_H
-    return DotProduct<SingleParticlePos_t,Tensor_t,ORTHO>::apply(R,kin)/TWOPI;
+    return DotProduct<SingleParticlePos_t, Tensor_t, ORTHO>::apply(R, kin) / TWOPI;
 #else
-    return dot(R,kin)/TWOPI;
+    return dot(R, kin) / TWOPI;
 #endif
   }
 
@@ -328,18 +308,18 @@ struct CrystalLattice
   inline T ksq(const SingleParticlePos_t& kin) const
   {
 #ifdef OHMMS_LATTICEOPERATORS_H
-    return CartesianNorm2<TinyVector<T,D>,Tensor<T,D>,ORTHO>::apply(kin,Mg,kin);
+    return CartesianNorm2<TinyVector<T, D>, Tensor<T, D>, ORTHO>::apply(kin, Mg, kin);
 #else
-    return dot(kin,dot(Mg,kin));
+    return dot(kin, dot(Mg, kin));
 #endif
   }
 
   ///assignment operator
   template<typename T1>
-  CrystalLattice<T,D,ORTHO>& operator=(const CrystalLattice<T1,D,ORTHO>& rhs)
+  CrystalLattice<T, D, ORTHO>& operator=(const CrystalLattice<T1, D, ORTHO>& rhs)
   {
     BoxBConds = rhs.BoxBConds;
-    R = rhs.R;
+    R         = rhs.R;
     reset();
     return *this;
   }
@@ -348,9 +328,9 @@ struct CrystalLattice
    *@param rhs a tensor representing a unit cell
    */
   template<typename T1>
-  CrystalLattice<T,D,ORTHO>& operator=(const Tensor<T1,D>& rhs)
+  CrystalLattice<T, D, ORTHO>& operator=(const Tensor<T1, D>& rhs)
   {
-    R=rhs;
+    R = rhs;
     reset();
     return *this;
   }
@@ -359,7 +339,7 @@ struct CrystalLattice
    *@param sc the scaling value
    *@return a new CrystalLattice
    */
-  CrystalLattice<T,D,ORTHO>& operator*=(T sc);
+  CrystalLattice<T, D, ORTHO>& operator*=(T sc);
 
   /** set the lattice vector from the command-line options
    *@param argc the number of arguments
@@ -367,7 +347,7 @@ struct CrystalLattice
    *
    *This function is to provide a simple interface for testing.
    */
-  void set(int argc, char **argv);
+  void set(int argc, char** argv);
 
   /** set the lattice vector from the command-line options stored in a vector
    *@param argv the argument lists
@@ -380,46 +360,43 @@ struct CrystalLattice
    *@param sc a scalar to scale the input lattice parameters
    *@param lat the starting address of DxD T-elements representing a supercell
    */
-  void set(T sc, T* lat= 0);
+  void set(T sc, T* lat = 0);
 
   /** set the lattice vector by a CrystalLattice and expand it by integers
    *@param oldlat An input supercell to be copied.
    *@param uc An array to expand a supercell.
    */
-  void set(const CrystalLattice<T,D,ORTHO>& oldlat, int* uc= 0);
+  void set(const CrystalLattice<T, D, ORTHO>& oldlat, int* uc = 0);
 
   /** set the lattice vector from the command-line options
    *@param lat a tensor representing a supercell
    */
   template<class TT>
-  void set(const Tensor<TT,D>& lat);
+  void set(const Tensor<TT, D>& lat);
 
   /** Evaluate the reciprocal vectors, volume and metric tensor
    */
   void reset();
 
-//  //@{
-//  /* Copy functions with unit conversion*/
-//  template<class PA> void convert(const PA& pin, PA& pout) const;
-//  template<class PA> void convert2Unit(const PA& pin, PA& pout) const;
-//  template<class PA> void convert2Cart(const PA& pin, PA& pout) const;
-//  template<class PA> void convert2Unit(PA& pout) const;
-//  template<class PA> void convert2Cart(PA& pout) const;
-//  //@}
-//
-//  template<class PA> void applyBC(const PA& pin, PA& pout) const;
-//  template<class PA> void applyBC(PA& pos) const;
-//  template<class PA> void applyBC(const PA& pin, PA& pout, int first, int last) const;
+  //  //@{
+  //  /* Copy functions with unit conversion*/
+  //  template<class PA> void convert(const PA& pin, PA& pout) const;
+  //  template<class PA> void convert2Unit(const PA& pin, PA& pout) const;
+  //  template<class PA> void convert2Cart(const PA& pin, PA& pout) const;
+  //  template<class PA> void convert2Unit(PA& pout) const;
+  //  template<class PA> void convert2Cart(PA& pout) const;
+  //  //@}
+  //
+  //  template<class PA> void applyBC(const PA& pin, PA& pout) const;
+  //  template<class PA> void applyBC(PA& pos) const;
+  //  template<class PA> void applyBC(const PA& pin, PA& pout, int first, int last) const;
 
   //! Print out CrystalLattice Data
-  void print(std::ostream& , int level=2) const;
+  void print(std::ostream&, int level = 2) const;
 };
 
-}
+} // namespace qmcplusplus
 //including the definitions of the member functions
 #include "Lattice/CrystalLattice.cpp"
 
 #endif
-
-
-

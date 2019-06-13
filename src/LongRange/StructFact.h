@@ -9,9 +9,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
-
 
 
 #ifndef QMCPLUSPLUS_STRUCTFACT_H
@@ -25,7 +22,6 @@
 
 namespace qmcplusplus
 {
-
 /** @ingroup longrange
  *\brief Calculates the structure-factor for a particle set
  *
@@ -34,11 +30,10 @@ namespace qmcplusplus
  * Structure factor per particle
  *   eikr[i][k]
  */
-class StructFact: public QMCTraits
+class StructFact : public QMCTraits
 {
-
 public:
-  typedef PooledData<RealType>  BufferType;
+  typedef PooledData<RealType> BufferType;
 
   /** false, if the structure factor is not actively updated
    *
@@ -75,7 +70,7 @@ public:
    * @param kc cutoff for k
    */
   StructFact(ParticleSet& P, RealType kc);
-  /// desructor 
+  /// desructor
   ~StructFact();
 
   /** Recompute Rhok if lattice changed
@@ -116,13 +111,13 @@ public:
   inline void registerData(BufferType& buf)
   {
 #if defined(USE_REAL_STRUCT_FACTOR)
-    buf.add(rhok_r.first_address(),rhok_r.last_address());
-    buf.add(rhok_i.first_address(),rhok_i.last_address());
-    buf.add(eikr_r.first_address(),eikr_r.last_address());
-    buf.add(eikr_i.first_address(),eikr_i.last_address());
+    buf.add(rhok_r.first_address(), rhok_r.last_address());
+    buf.add(rhok_i.first_address(), rhok_i.last_address());
+    buf.add(eikr_r.first_address(), eikr_r.last_address());
+    buf.add(eikr_i.first_address(), eikr_i.last_address());
 #else
-    buf.add(rhok.first_address(),rhok.last_address());
-    buf.add(eikr.first_address(),eikr.last_address());
+    buf.add(rhok.first_address(), rhok.last_address());
+    buf.add(eikr.first_address(), eikr.last_address());
 #endif
   }
 
@@ -133,13 +128,13 @@ public:
   inline void updateBuffer(BufferType& buf)
   {
 #if defined(USE_REAL_STRUCT_FACTOR)
-    buf.put(rhok_r.first_address(),rhok_r.last_address());
-    buf.put(rhok_i.first_address(),rhok_i.last_address());
-    buf.put(eikr_r.first_address(),eikr_r.last_address());
-    buf.put(eikr_i.first_address(),eikr_i.last_address());
+    buf.put(rhok_r.first_address(), rhok_r.last_address());
+    buf.put(rhok_i.first_address(), rhok_i.last_address());
+    buf.put(eikr_r.first_address(), eikr_r.last_address());
+    buf.put(eikr_i.first_address(), eikr_i.last_address());
 #else
-    buf.put(rhok.first_address(),rhok.last_address());
-    buf.put(eikr.first_address(),eikr.last_address());
+    buf.put(rhok.first_address(), rhok.last_address());
+    buf.put(eikr.first_address(), eikr.last_address());
 #endif
   }
 
@@ -150,13 +145,13 @@ public:
   inline void copyFromBuffer(BufferType& buf)
   {
 #if defined(USE_REAL_STRUCT_FACTOR)
-    buf.get(rhok_r.first_address(),rhok_r.last_address());
-    buf.get(rhok_i.first_address(),rhok_i.last_address());
-    buf.get(eikr_r.first_address(),eikr_r.last_address());
-    buf.get(eikr_i.first_address(),eikr_i.last_address());
+    buf.get(rhok_r.first_address(), rhok_r.last_address());
+    buf.get(rhok_i.first_address(), rhok_i.last_address());
+    buf.get(eikr_r.first_address(), eikr_r.last_address());
+    buf.get(eikr_i.first_address(), eikr_i.last_address());
 #else
-    buf.get(rhok.first_address(),rhok.last_address());
-    buf.get(eikr.first_address(),eikr.last_address());
+    buf.get(rhok.first_address(), rhok.last_address());
+    buf.get(eikr.first_address(), eikr.last_address());
 #endif
   }
 
@@ -176,6 +171,6 @@ private:
    */
   void resize(int ns, int nptcl, int nkpts);
 };
-}
+} // namespace qmcplusplus
 
 #endif

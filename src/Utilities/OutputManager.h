@@ -19,7 +19,12 @@
 #include <Utilities/InfoStream.h>
 
 
-enum class Verbosity {LOW, HIGH, DEBUG};
+enum class Verbosity
+{
+  LOW,
+  HIGH,
+  DEBUG
+};
 
 extern InfoStream infoSummary;
 extern InfoStream infoLog;
@@ -31,21 +36,15 @@ class OutputManagerClass
   Verbosity global_verbosity_level;
 
 public:
-  OutputManagerClass(Verbosity level=Verbosity::LOW) { setVerbosity(level); }
+  OutputManagerClass(Verbosity level = Verbosity::LOW) { setVerbosity(level); }
 
   void setVerbosity(Verbosity level);
 
   bool isActive(Verbosity level);
 
-  bool isDebugActive()
-  {
-    return isActive(Verbosity::DEBUG);
-  }
+  bool isDebugActive() { return isActive(Verbosity::DEBUG); }
 
-  bool isHighActive()
-  {
-    return isActive(Verbosity::HIGH);
-  }
+  bool isHighActive() { return isActive(Verbosity::HIGH); }
 
   /// Pause the summary and log streams
   void pause();
@@ -59,51 +58,50 @@ public:
 
 extern OutputManagerClass outputManager;
 
-namespace qmcplusplus {
-
-inline std::ostream& app_summary()
+namespace qmcplusplus
 {
-  return infoSummary.getStream();
-}
+inline std::ostream& app_summary() { return infoSummary.getStream(); }
 
-inline std::ostream& app_log()
-{
-  return infoLog.getStream();
-}
+inline std::ostream& app_log() { return infoLog.getStream(); }
 
-inline std::ostream& app_error()
-{
-  return infoError.getStream() << "ERROR ";
-}
+inline std::ostream& app_error() { return infoError.getStream() << "ERROR "; }
 
-inline std::ostream& app_warning()
-{
-  return infoError.getStream() << "WARNING ";
-}
+inline std::ostream& app_warning() { return infoError.getStream() << "WARNING "; }
 
-inline std::ostream& app_debug_stream()
-{
-  return infoDebug.getStream();
-}
+inline std::ostream& app_debug_stream() { return infoDebug.getStream(); }
 
 // From https://stackoverflow.com/questions/11826554/standard-no-op-output-stream
 // If debugging is not active, this skips evaluation of the arguments
-#define app_debug if (!outputManager.isDebugActive()) {} else app_debug_stream
-
+#define app_debug                        \
+  if (!outputManager.isDebugActive()) {} \
+  else                                   \
+    app_debug_stream
 
 
 // Keep these macros temporarily until all output uses streams
-#define LOGMSG(msg) {qmcplusplus::app_log() << msg << std::endl;}
-#define ERRORMSG(msg) {app_error() << msg << std::endl;}
-#define WARNMSG(msg) {app_warning() << msg << std::endl;}
+#define LOGMSG(msg)                             \
+  {                                             \
+    qmcplusplus::app_log() << msg << std::endl; \
+  }
+#define ERRORMSG(msg)                \
+  {                                  \
+    app_error() << msg << std::endl; \
+  }
+#define WARNMSG(msg)                   \
+  {                                    \
+    app_warning() << msg << std::endl; \
+  }
 #ifdef PRINT_DEBUG
-#define DEBUGMSG(msg) {app_debug() << msg << std::endl;}
+#define DEBUGMSG(msg)                \
+  {                                  \
+    app_debug() << msg << std::endl; \
+  }
 #else
 #define DEBUGMSG(msg)
 #endif
 
 #define XMLReport(msg)
 
-};
+}; // namespace qmcplusplus
 
 #endif

@@ -61,7 +61,7 @@ class LMBlocker {
     // function that returns the number of blocks
     int nb() const { return m_hdata.nb(); }
 
-    // function that returns the begining index of ith block
+    // function that returns the beginning index of ith block
     int bb(const int i) const { return m_hdata.bb(i); }
 
     // function that returns the end index of ith block

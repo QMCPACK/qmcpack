@@ -2,6 +2,7 @@
 #define QMCPLUSPLUS_AFQMC_DRIVER_H
 
 #include<Message/MPIObjectBase.h>
+#include "io/hdf_multi.h"
 #include "io/hdf_archive.h"
 
 #include "AFQMC/config.h"
@@ -44,22 +45,22 @@ class Driver: public MPIObjectBase, public AFQMCInfo
       m_series=cnt;
     }
 
-    virtual bool parse(xmlNodePtr)=0; 
+    virtual bool parse(xmlNodePtr)=0;
 
     virtual bool setup(HamPtr,WSetPtr,PropPtr,WfnPtr)=0;
 
     virtual bool checkpoint(int,int)=0;
 
-    virtual bool restart(hdf_archive&)=0; 
+    virtual bool restart(hdf_archive&)=0;
 
     virtual bool clear()=0;
 
     std::string name;
 
-  protected:  
+  protected:
 
     int m_series;
-    std::string project_title;  
+    std::string project_title;
 
     myTimer LocalTimer;
 
@@ -85,9 +86,9 @@ class Driver: public MPIObjectBase, public AFQMCInfo
     int nPopulationControl;
     int nloadBalance;
     RealType dt;
-    int block0, step0; 
+    int block0, step0;
 
-    HamPtr ham0; 
+    HamPtr ham0;
 
     WfnPtr wfn0;
 
@@ -96,8 +97,8 @@ class Driver: public MPIObjectBase, public AFQMCInfo
     PropPtr prop0;
 
     EstimatorHandler* estim0;
-   
-    SPComplexSMVector CommBuffer; 
+
+    SPComplexSMVector CommBuffer;
 
     MPI_Comm MPI_COMM_HEAD_OF_NODES;
     MPI_Comm MPI_COMM_NODE_LOCAL;

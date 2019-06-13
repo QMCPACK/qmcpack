@@ -1,34 +1,52 @@
 #ifndef AFQMC_CONFIG_0_H 
 #define AFQMC_CONFIG_0_H 
 
-#include <string>
-#include <algorithm>
-#include<cstdlib>
-#include<ctype.h>
-#include <vector>
-#include <map>
-#include <complex>
-#include <tuple>
-#include <fstream>
+#define BOOST_NO_AUTO_PTR
 
-#include <boost/interprocess/managed_shared_memory.hpp>
-#include <boost/interprocess/containers/vector.hpp>
-#include <boost/interprocess/allocators/allocator.hpp>
+#define ADD_TESTS_TIMERS
+
+#define AFQMC_DEBUG 3 
+#define AFQMC_TIMER 
+
+#define MAXIMUM_EMPLACE_BUFFER_SIZE 102400 
+
+// maximum size in Bytes for a dataset with walker data on WalkerIO
+#define WALKER_HDF_BLOCK_SIZE 100000000 
+
+// maximum size in Bytes for a block of data in CSR matrix HDF IO 
+#define CSR_HDF_BLOCK_SIZE 2000000 
+
+// careful here that RealType is consistent with this!!!
+#define MKL_INT         int
+#define MKL_Complex8    std::complex<float> 
+#define MKL_Complex16   std::complex<double> 
+
+#define byRows   999
+#define byCols   111
+
+#define PsiT_IN_SHM
+
+// guard with directive that checks if boost version is >=1.65
+#include <boost/version.hpp>
+#if BOOST_VERSION >= 106500
+#include <boost/stacktrace.hpp>
+#define print_stacktrace std::cout << boost::stacktrace::stacktrace();
+#else
+#define print_stacktrace std::cout << "stacktrace not enabled.\n"; 
+#endif
 
 namespace qmcplusplus
 {
+namespace afqmc
+{
 
-  typedef uint32_t                   IndexType;  
-  typedef uint32_t                    OrbitalType;  
-//  typedef uint16_t                    OrbitalType; 
-  typedef double                         RealType;
-#if defined(AFQMC_SP)
-  typedef float                          SPRealType;
-#else
-  typedef double                         SPRealType;
-#endif
+  typedef OHMMS_INDEXTYPE                 IndexType;
+  typedef OHMMS_INDEXTYPE                 OrbitalType;
+  typedef OHMMS_PRECISION_FULL            RealType;
+  typedef OHMMS_PRECISION                 SPRealType;
+
 #if defined(QMC_COMPLEX)
-  typedef std::complex<RealType>  ValueType;
+  typedef std::complex<RealType>         ValueType;
   typedef std::complex<SPRealType>       SPValueType;
 #else
   typedef RealType                       ValueType;
@@ -37,179 +55,8 @@ namespace qmcplusplus
   typedef std::complex<RealType>         ComplexType;
   typedef std::complex<SPRealType>       SPComplexType;
 
-
-  template<typename T> using s1D = std::tuple<IndexType,T>;
-  template<typename T> using s2D = std::tuple<IndexType,IndexType,T>;
-  template<typename T> using s3D = std::tuple<IndexType,IndexType,IndexType,T>;
-  template<typename T> using s4D = std::tuple<IndexType,IndexType,IndexType,IndexType,T>;
-
-template<typename T>
-inline bool isComplex(const T& a) 
-{
-  return std::is_same<T,std::complex<RealType>>::value; 
-}
-
-template<typename T>
-inline ComplexType toComplex(const T& a);
-
-template<>
-inline ComplexType toComplex(const RealType& a) 
-{
-  return ComplexType(a,0.0); 
-}
-
-template<>
-inline ComplexType toComplex(const std::complex<RealType>& a) 
-{
-  return a; 
-}
-
-template<typename T>
-inline void setImag(T& a, RealType b);
-
-template<>
-inline void setImag(RealType& a, RealType b)
-{
-}
-
-template<>
-inline void setImag(std::complex<RealType>& a, RealType b)
-{
-  a.imag(b);
-}
-
-template<typename T>
-inline T myconj(const T& a) 
-{
-  return a;
-}
-
-template<typename T>
-inline std::complex<T> myconj(const std::complex<T>& a) 
-{
-  return std::conj(a);
-}
-
-template<typename T>
-inline RealType mynorm(const T& a)
-{
-  return a*a;
-}
-
-template<typename T>
-inline RealType mynorm(const std::complex<T> &a)
-{
-  return std::norm(a);
-}
-
-template<typename T>
-inline std::complex<T> operator*(const int &lhs, const std::complex<T> &rhs)
-{
-  return T(lhs) * rhs;
-}
-
-template<typename T>
-inline std::complex<T> operator*(const std::complex<T> &lhs, const int &rhs)
-{
-  return lhs * T(rhs);
-}
-
-inline bool sortDecreasing (int i,int j) { return (i>j); }
-
-struct _mySort_snD_ {
-  bool operator() (const s1D<RealType>& lhs, const s1D<RealType>& rhs)
-  { return (bool)(std::get<0>(lhs) < std::get<0>(rhs)); 
-  } 
-  bool operator() (const s2D<RealType>& lhs, const s2D<RealType>& rhs)
-  { return (bool)(std::get<0>(lhs) < std::get<0>(rhs)) || 
-           ( !(bool)(std::get<0>(rhs) < std::get<0>(lhs)) && 
-              (bool)(std::get<1>(lhs) < std::get<1>(rhs)) );  
-  } 
-  bool operator() (const s4D<RealType>& lhs, const s4D<RealType>& rhs)
-  {
-    return std::forward_as_tuple(std::get<0>(lhs),std::get<1>(lhs),std::get<2>(lhs),std::get<3>(lhs)) < std::forward_as_tuple(std::get<0>(rhs),std::get<1>(rhs),std::get<2>(rhs),std::get<3>(rhs));
-  }
-/* I'm having issues with this stupid function. What's wrong???
-  { return    (bool)(std::get<0>(lhs) < std::get<0>(rhs)) || 
-         (   !(bool)(std::get<0>(rhs) < std::get<0>(lhs)) && 
-              (bool)(std::get<1>(lhs) < std::get<1>(rhs)) ||
-          (  !(bool)(std::get<1>(rhs) < std::get<1>(lhs)) &&
-              (bool)(std::get<2>(lhs) < std::get<2>(rhs)) ||
-           ( !(bool)(std::get<2>(rhs) < std::get<2>(lhs)) &&
-              (bool)(std::get<3>(lhs) < std::get<3>(rhs))))); 
-  }
-*/
-  bool operator() (const s1D<std::complex<RealType> >& lhs, const s1D<std::complex<RealType> >& rhs)
-  { return (bool)(std::get<0>(lhs) < std::get<0>(rhs)); 
-  } 
-  bool operator() (const s2D<std::complex<RealType> >& lhs, const s2D<std::complex<RealType> >& rhs)
-  { return (bool)(std::get<0>(lhs) < std::get<0>(rhs)) || 
-           ( !(bool)(std::get<0>(rhs) < std::get<0>(lhs)) && 
-              (bool)(std::get<1>(lhs) < std::get<1>(rhs)) );  
-  } 
-  bool operator() (const s4D<std::complex<RealType> >& lhs, const s4D<std::complex<RealType> >& rhs)
-  {
-    return std::forward_as_tuple(std::get<0>(lhs),std::get<1>(lhs),std::get<2>(lhs),std::get<3>(lhs)) < std::forward_as_tuple(std::get<0>(rhs),std::get<1>(rhs),std::get<2>(rhs),std::get<3>(rhs));
-  }
-/*
-  { return    (bool)(std::get<0>(lhs) < std::get<0>(rhs)) || 
-         (   !(bool)(std::get<0>(rhs) < std::get<0>(lhs)) && 
-              (bool)(std::get<1>(lhs) < std::get<1>(rhs)) ||
-          (  !(bool)(std::get<1>(rhs) < std::get<1>(lhs)) &&
-              (bool)(std::get<2>(lhs) < std::get<2>(rhs)) ||
-           ( !(bool)(std::get<2>(rhs) < std::get<2>(lhs)) &&
-              (bool)(std::get<3>(lhs) < std::get<3>(rhs))))); 
-  }
-*/
-};
-
-struct _myEqv_snD_ {
-  // equivalence
-  bool operator() (const s1D<RealType>& lhs, const s1D<RealType>& rhs)
-  { return (bool)(std::get<0>(lhs) == std::get<0>(rhs));
-  }
-  bool operator() (const s2D<RealType>& lhs, const s2D<RealType>& rhs)
-  { return (bool)(std::get<0>(lhs) == std::get<0>(rhs))
-        && (bool)(std::get<1>(lhs) == std::get<1>(rhs));
-  }
-  bool operator() (const s4D<RealType>& lhs, const s4D<RealType>& rhs)
-  { return (bool)(std::get<0>(lhs) == std::get<0>(rhs))
-        && (bool)(std::get<1>(lhs) == std::get<1>(rhs))
-        && (bool)(std::get<2>(lhs) == std::get<2>(rhs))
-        && (bool)(std::get<3>(lhs) == std::get<3>(rhs));
-  }
-  bool operator() (const s1D<std::complex<RealType> >& lhs, const s1D<std::complex<RealType> >& rhs)
-  { return (bool)(std::get<0>(lhs) == std::get<0>(rhs));
-  }
-  bool operator() (const s2D<std::complex<RealType> >& lhs, const s2D<std::complex<RealType> >& rhs)
-  { return (bool)(std::get<0>(lhs) == std::get<0>(rhs))
-        && (bool)(std::get<1>(lhs) == std::get<1>(rhs));
-  }
-  bool operator() (const s4D<std::complex<RealType> >& lhs, const s4D<std::complex<RealType> >& rhs)
-  { return (bool)(std::get<0>(lhs) == std::get<0>(rhs))
-        && (bool)(std::get<1>(lhs) == std::get<1>(rhs))
-        && (bool)(std::get<2>(lhs) == std::get<2>(rhs))
-        && (bool)(std::get<3>(lhs) == std::get<3>(rhs));
-  }
-}; 
-
-
-}
-
-
-namespace std {
-template<typename T>
-inline bool operator<(const std::complex<T> &lhs, const std::complex<T> &rhs)
-{
-/*
-  if (lhs.real() != rhs.real())
-  {
-    return lhs.real() < rhs.real();
-  }
-  return lhs.imag() < rhs.imag();
-*/
-  return std::abs(lhs) < std::abs(rhs);
 }
 }
+
 
 #endif

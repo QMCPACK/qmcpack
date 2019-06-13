@@ -32,7 +32,6 @@ SET(MOSRCS
   BParser.cpp
   BMakeFunc.cpp
   GamesFMOParser.cpp
-  VSVBParser.cpp
   QPParser.cpp
   LCAOH5Parser.cpp
 )
@@ -40,22 +39,25 @@ SET(MOSRCS
 # create libmocommon 
 ADD_LIBRARY(mocommon ${MOSRCS})
 
-set(QTOOLS convert4qmc extract-eshdf-kvectors)
-ADD_EXECUTABLE(getSupercell getSupercell.cpp)
-ADD_EXECUTABLE(checkAffinity checkAffinity.cpp)
+set(QTOOLS convert4qmc qmc-extract-eshdf-kvectors)
+ADD_EXECUTABLE(qmc-get-supercell getSupercell.cpp)
+INSTALL(TARGETS qmc-get-supercell
+        RUNTIME DESTINATION bin)
+ADD_EXECUTABLE(qmc-check-affinity check-affinity.cpp)
+INSTALL(TARGETS qmc-check-affinity
+        RUNTIME DESTINATION bin)
 
 FOREACH(p ${QTOOLS})
 
   ADD_EXECUTABLE(${p} ${p}.cpp)
   TARGET_LINK_LIBRARIES(${p} mocommon qmcbase qmcutil)
 
+  INSTALL(TARGETS ${p}
+          RUNTIME DESTINATION bin)
+
   FOREACH(l ${QMC_UTIL_LIBS})
     TARGET_LINK_LIBRARIES(${p} ${l})
   ENDFOREACH(l ${QMC_UTIL_LIBS})
-
-  if(ENABLE_TAU_PROFILE)
-    TARGET_LINK_LIBRARIES(${p} tau)
-  endif(ENABLE_TAU_PROFILE)
 
   IF(MPI_LIBRARY)
     TARGET_LINK_LIBRARIES(${p} ${MPI_LIBRARY})

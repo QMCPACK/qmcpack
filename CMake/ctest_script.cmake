@@ -2,8 +2,8 @@
 # Usage:  ctest -s script,build
 #   build = debug / optimized / valgrind / coverage
 # Note: this test will use use the number of processors defined in the variable N_PROCS,
-#   the enviornmental variables
-#   N_PROCS, or the number of processors availible (if not specified)
+#   the environment variables
+#   N_PROCS, or the number of processors available (if not specified)
 #   N_PROCS_BUILD, or N_PROCS (if not specified)
 #   N_CONCURRENT_TESTS, or N_PROCS (if not specified)
 #   TEST_SITE_NAME, or HOSTNAME (if not specified)
@@ -153,10 +153,16 @@ ENDIF()
 
 MESSAGE("Testing with ${N_PROCS} processors")
 
-# Set the number of processors
+# Set the number of processors for compilation and running tests
 IF( NOT DEFINED N_PROCS_BUILD )
     SET( N_PROCS_BUILD $ENV{N_PROCS_BUILD} )
-ENDIF()	
+ENDIF()
+IF( NOT DEFINED N_PROCS_BUILD )
+    SET( N_PROCS_BUILD ${N_PROCS} )
+ENDIF()
+IF( NOT DEFINED ENV{N_CONCURRENT_TESTS} )
+    SET( N_CONCURRENT_TESTS ${N_PROCS} )
+ENDIF()
 
 # Set basic variables
 SET( CTEST_PROJECT_NAME "QMCPACK" )
@@ -173,13 +179,10 @@ SET( CTEST_NIGHTLY_START_TIME "22:00:00 EST" )
 SET( CTEST_COMMAND "\"${CTEST_EXECUTABLE_NAME}\" -D ${CTEST_DASHBOARD}" )
 IF ( BUILD_SERIAL )
     SET( CTEST_BUILD_COMMAND "${MAKE_CMD} -i" )
-ELSEIF ( DEFINED N_PROCS_BUILD )
+ELSE ( BUILD_SERIAL )
     SET( CTEST_BUILD_COMMAND "${MAKE_CMD} -i -j ${N_PROCS_BUILD}" )
     MESSAGE("Building with ${N_PROCS_BUILD} processors")
-ELSE()
-    SET( CTEST_BUILD_COMMAND "${MAKE_CMD} -i -j ${N_PROCS}" )
-    MESSAGE("Building with ${N_PROCS} processors")
-ENDIF()
+ENDIF( BUILD_SERIAL )
 
 # Set valgrind options
 SET( VALGRIND_COMMAND_OPTIONS  "--tool=memcheck --leak-check=yes --track-fds=yes --num-callers=50 --show-reachable=yes --suppressions=${QMC_SOURCE_DIR}/src/ValgrindSuppresionFile" )
@@ -203,13 +206,32 @@ IF ( NOT DEFINED CMAKE_TOOLCHAIN_FILE )
   SET( CTEST_OPTIONS )
   SET( CTEST_OPTIONS "-DCMAKE_C_COMPILER=${CC};-DCMAKE_CXX_COMPILER=${CXX}" )
   SET( CTEST_OPTIONS "${CTEST_OPTIONS};-DCMAKE_C_FLAGS='${C_FLAGS}';-DCMAKE_CXX_FLAGS='${CXX_FLAGS}'" )
-  SET( CTEST_OPTIONS "${CTEST_OPTIONS};-DENABLE_GCOV:BOOL=${ENABLE_GCOV}" )
-  SET( CTEST_OPTIONS "${CTEST_OPTIONS};-DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}" )
-  SET( CTEST_OPTIONS "${CTEST_OPTIONS};-DQMC_DATA='${QMC_DATA}'" )
-  SET( CTEST_OPTIONS "${CTEST_OPTIONS};-DQMC_CUDA='${QMC_CUDA}'" )
-  SET( CTEST_OPTIONS "${CTEST_OPTIONS};-DQE_BIN='${QE_BIN}'" )
 ELSE()
   SET( CTEST_OPTIONS "${CTEST_OPTIONS};-DCMAKE_TOOLCHAIN_FILE='${CMAKE_TOOLCHAIN_FILE}'" )
+ENDIF()
+
+IF (ENABLE_GCOV)
+  SET( CTEST_OPTIONS "${CTEST_OPTIONS};-DENABLE_GCOV:BOOL=${ENABLE_GCOV}" )
+ENDIF()
+
+IF ( CMAKE_BUILD_TYPE )
+  SET( CTEST_OPTIONS "${CTEST_OPTIONS};-DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}" )
+ENDIF()
+
+IF ( QMC_DATA )
+  SET( CTEST_OPTIONS "${CTEST_OPTIONS};-DQMC_DATA='${QMC_DATA}'" )
+ENDIF()
+
+IF ( QE_BIN )
+  SET( CTEST_OPTIONS "${CTEST_OPTIONS};-DQE_BIN='${QE_BIN}'" )
+ENDIF()
+
+IF ( QMC_CUDA )
+  SET( CTEST_OPTIONS "${CTEST_OPTIONS};-DQMC_CUDA='${QMC_CUDA}'" )
+ENDIF()
+
+IF ( ENABLE_CUDA )
+  SET( CTEST_OPTIONS "${CTEST_OPTIONS};-DENABLE_CUDA='${ENABLE_CUDA}'" )
 ENDIF()
 
 IF ( QMC_COMPLEX )
@@ -282,19 +304,6 @@ CTEST_CONFIGURE(
 
 # Run the configure, build and tests
 CTEST_BUILD()
-IF ( USE_VALGRIND )
-    CTEST_MEMCHECK( EXCLUDE procs   PARALLEL_LEVEL ${N_PROCS} )
-ELSEIF (CTEST_COVERAGE_COMMAND)
-  # Skip the normal tests when doing coverage
-ELSE()
-#    CTEST_TEST( INCLUDE short PARALLEL_LEVEL ${N_PROCS} )
-    IF( DEFINED ENV{N_CONCURRENT_TESTS} )
-         CTEST_TEST( PARALLEL_LEVEL ${TEST_PARALLEL_LEVEL} )
-    ELSE()
-         CTEST_TEST( PARALLEL_LEVEL ${N_PROCS} )
-    ENDIF()
-ENDIF()
-
 
 # Submit the results to oblivion
 SET( CTEST_DROP_METHOD "https" )
@@ -302,7 +311,34 @@ SET( CTEST_DROP_SITE "cdash.qmcpack.org" )
 SET( CTEST_DROP_LOCATION "/CDash/submit.php?project=QMCPACK" )
 SET( CTEST_DROP_SITE_CDASH TRUE )
 SET( DROP_SITE_CDASH TRUE )
-CTEST_SUBMIT()
+CTEST_SUBMIT( PARTS Configure Build )
+
+IF ( USE_VALGRIND )
+    CTEST_MEMCHECK( EXCLUDE procs   PARALLEL_LEVEL ${N_PROCS} )
+    CTEST_SUBMIT( PARTS MemCheck )
+ELSEIF (CTEST_COVERAGE_COMMAND)
+  # Skip the normal tests when doing coverage
+ELSE()
+#    CTEST_TEST( INCLUDE short PARALLEL_LEVEL ${N_PROCS} )
+    # run and submit the classified tests to their corresponding track
+    CTEST_START( "${CTEST_DASHBOARD}" TRACK "Deterministic" APPEND)
+    CTEST_TEST( INCLUDE_LABEL "deterministic" PARALLEL_LEVEL ${N_CONCURRENT_TESTS} )
+    CTEST_SUBMIT( PARTS Test )
+    CTEST_START( "${CTEST_DASHBOARD}" TRACK "Converter" APPEND)
+    CTEST_TEST( INCLUDE_LABEL "converter" PARALLEL_LEVEL ${N_CONCURRENT_TESTS} )
+    CTEST_SUBMIT( PARTS Test )
+    CTEST_START( "${CTEST_DASHBOARD}" TRACK "Performance" APPEND)
+    CTEST_TEST( INCLUDE_LABEL "performance" PARALLEL_LEVEL 16 )
+    CTEST_SUBMIT( PARTS Test )
+    CTEST_START( "${CTEST_DASHBOARD}" TRACK "Unstable" APPEND)
+    CTEST_TEST( INCLUDE_LABEL "unstable" PARALLEL_LEVEL ${N_CONCURRENT_TESTS} )
+    CTEST_SUBMIT( PARTS Test )
+    # run and submit unclassified tests to the default track
+    CTEST_START( "${CTEST_DASHBOARD}" TRACK "${CTEST_DASHBOARD}" APPEND)
+    CTEST_TEST( EXCLUDE_LABEL "deterministic|performance|converter|unstable" PARALLEL_LEVEL ${N_CONCURRENT_TESTS} )
+    CTEST_SUBMIT( PARTS Test )
+ENDIF()
+
 
 IF( CTEST_COVERAGE_COMMAND )
 

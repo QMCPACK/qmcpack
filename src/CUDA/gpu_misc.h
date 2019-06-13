@@ -10,8 +10,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
 
 
 #ifndef GPU_MISC_H
@@ -27,7 +25,6 @@
 
 namespace gpu
 {
-
 extern cudaStream_t kernelStream;
 extern cudaStream_t memoryStream;
 
@@ -45,6 +42,11 @@ extern cublasHandle_t cublasHandle;
 
 extern size_t MaxGPUSpineSizeMB;
 extern int rank;
+extern int relative_rank;
+extern int device_group_size;
+extern bool cudamps;
+extern std::vector<int> device_group_numbers;
+extern std::vector<int> device_rank_numbers;
 
 void initCUDAStreams();
 void initCUDAEvents();
@@ -58,6 +60,5 @@ void synchronize();
 
 void streamsSynchronize();
 
-}
+} // namespace gpu
 #endif
-

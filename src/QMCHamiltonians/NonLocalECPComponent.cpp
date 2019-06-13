@@ -12,16 +12,14 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 #include "Particle/DistanceTableData.h"
 #include "QMCHamiltonians/NonLocalECPComponent.h"
 
 namespace qmcplusplus
 {
-
-NonLocalECPComponent::NonLocalECPComponent():
-  lmax(0), nchannel(0), nknot(0), Rmax(-1), VP(0)
+NonLocalECPComponent::NonLocalECPComponent() : lmax(0), nchannel(0), nknot(0), Rmax(-1), VP(0)
 {
 #if !defined(REMOVE_TRACEMANAGER)
   streaming_particles = false;
@@ -30,116 +28,122 @@ NonLocalECPComponent::NonLocalECPComponent():
 
 NonLocalECPComponent::~NonLocalECPComponent()
 {
-  for(int ip=0; ip<nlpp_m.size(); ip++)
+  for (int ip = 0; ip < nlpp_m.size(); ip++)
     delete nlpp_m[ip];
-  if(VP) delete VP;
+  if (VP)
+    delete VP;
 }
 
-NonLocalECPComponent* NonLocalECPComponent::makeClone(const ParticleSet &qp)
+NonLocalECPComponent* NonLocalECPComponent::makeClone(const ParticleSet& qp)
 {
-  NonLocalECPComponent* myclone=new NonLocalECPComponent(*this);
-  for(int i=0; i<nlpp_m.size(); ++i)
-    myclone->nlpp_m[i]=nlpp_m[i]->makeClone();
-  if(VP) myclone->VP=new VirtualParticleSet(qp,nknot);
+  NonLocalECPComponent* myclone = new NonLocalECPComponent(*this);
+  for (int i = 0; i < nlpp_m.size(); ++i)
+    myclone->nlpp_m[i] = nlpp_m[i]->makeClone();
+  if (VP)
+    myclone->VP = new VirtualParticleSet(qp, nknot);
   return myclone;
 }
 
-void NonLocalECPComponent::initVirtualParticle(const ParticleSet &qp)
+void NonLocalECPComponent::initVirtualParticle(const ParticleSet& qp)
 {
-  assert(VP==0);
-  VP=new VirtualParticleSet(qp,nknot);
+  assert(VP == 0);
+  outputManager.pause();
+  VP = new VirtualParticleSet(qp, nknot);
+  outputManager.resume();
 }
 
 void NonLocalECPComponent::add(int l, RadialPotentialType* pp)
 {
   angpp_m.push_back(l);
-  wgt_angpp_m.push_back(static_cast<RealType>(2*l+1));
+  wgt_angpp_m.push_back(static_cast<RealType>(2 * l + 1));
   nlpp_m.push_back(pp);
 }
 
-void NonLocalECPComponent::resize_warrays(int n,int m,int l)
+void NonLocalECPComponent::resize_warrays(int n, int m, int l)
 {
   psiratio.resize(n);
-  psigrad.resize(n);
-  psigrad_source.resize(n);
+  gradpsiratio.resize(n);
+  deltaV.resize(n);
+  cosgrad.resize(n);
+  wfngrad.resize(n);
   vrad.resize(m);
   dvrad.resize(m);
+  vgrad.resize(m);
   wvec.resize(m);
-  Amat.resize(n*m);
-  dAmat.resize(n*m);
-  lpol.resize(l+1,1.0);
-  dlpol.resize(l+1,0.0);
+  Amat.resize(n * m);
+  dAmat.resize(n * m);
+  lpol.resize(l + 1, 1.0);
+  dlpol.resize(l + 1, 0.0);
   rrotsgrid_m.resize(n);
-  nchannel=nlpp_m.size();
-  nknot=sgridxyz_m.size();
+  nchannel = nlpp_m.size();
+  nknot    = sgridxyz_m.size();
   //This is just to check
   //for(int nl=1; nl<nlpp_m.size(); nl++) nlpp_m[nl]->setGridManager(false);
-  if(lmax)
+  if (lmax)
   {
-    if(lmax>7) 
+    if (lmax > 7)
     {
       APP_ABORT("Increase the maximum angular momentum implemented.");
     }
     //Lfactor1.resize(lmax);
     //Lfactor2.resize(lmax);
-    for(int nl=0; nl<lmax; nl++)
+    for (int nl = 0; nl < lmax; nl++)
     {
-      Lfactor1[nl]=static_cast<RealType>(2*nl+1);
-      Lfactor2[nl]=1.0e0/static_cast<RealType>(nl+1);
+      Lfactor1[nl] = static_cast<RealType>(2 * nl + 1);
+      Lfactor2[nl] = 1.0e0 / static_cast<RealType>(nl + 1);
     }
   }
 }
 
 void NonLocalECPComponent::print(std::ostream& os)
 {
-  os << "    Maximum angular mementum = "<<  lmax << std::endl;
+  os << "    Maximum angular mementum = " << lmax << std::endl;
   os << "    Number of non-local channels = " << nchannel << std::endl;
-  for(int l=0; l <nchannel; l++)
+  for (int l = 0; l < nchannel; l++)
     os << "       l(" << l << ")=" << angpp_m[l] << std::endl;
   os << "    Cutoff radius = " << Rmax << std::endl;
   os << "    Spherical grids and weights: " << std::endl;
-  for(int ik=0; ik<nknot; ik++)
+  for (int ik = 0; ik < nknot; ik++)
     os << "       " << sgridxyz_m[ik] << std::setw(20) << sgridweight_m[ik] << std::endl;
 }
 
-NonLocalECPComponent::RealType
-NonLocalECPComponent::evaluateOne(ParticleSet& W, int iat, TrialWaveFunction& psi, 
-    int iel, RealType r, const PosType& dr, 
-    bool Tmove, std::vector<NonLocalData>& Txy) const
+NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOne(ParticleSet& W,
+                                                                 int iat,
+                                                                 TrialWaveFunction& psi,
+                                                                 int iel,
+                                                                 RealType r,
+                                                                 const PosType& dr,
+                                                                 bool Tmove,
+                                                                 std::vector<NonLocalData>& Txy)
 {
-  CONSTEXPR RealType czero(0);
-  CONSTEXPR RealType cone(1);
+  constexpr RealType czero(0);
+  constexpr RealType cone(1);
 
-  RealType lpol_[lmax+1];
-  RealType vrad_[nchannel];
-  std::vector<RealType> psiratio_(nknot);
-  PosType deltaV[nknot];
-
-  if(VP)
+  if (VP)
   {
     // Compute ratios with VP
     ParticleSet::ParticlePos_t VPos(nknot);
-    for (int j=0; j<nknot; j++)
+    for (int j = 0; j < nknot; j++)
     {
-      deltaV[j]=r*rrotsgrid_m[j]-dr;
-      VPos[j]=deltaV[j]+W.R[iel];
+      deltaV[j] = r * rrotsgrid_m[j] - dr;
+      VPos[j]   = deltaV[j] + W.R[iel];
     }
-    VP->makeMoves(iel,VPos,true,iat);
-    psi.evaluateRatios(*VP,psiratio_);
-    for (int j=0; j<nknot; j++)
-      psiratio_[j]*=sgridweight_m[j];
+    VP->makeMoves(iel, VPos, true, iat);
+    psi.evaluateRatios(*VP, psiratio);
+    for (int j = 0; j < nknot; j++)
+      psiratio[j] *= sgridweight_m[j];
   }
   else
   {
     // Compute ratio of wave functions
-    for (int j=0; j<nknot; j++)
+    for (int j = 0; j < nknot; j++)
     {
-      deltaV[j]=r*rrotsgrid_m[j]-dr;
-      W.makeMoveOnSphere(iel,deltaV[j]);
+      deltaV[j] = r * rrotsgrid_m[j] - dr;
+      W.makeMoveOnSphere(iel, deltaV[j]);
 #if defined(QMC_COMPLEX)
-      psiratio_[j]=psi.ratio(W,iel)*sgridweight_m[j]*std::cos(psi.getPhaseDiff());
+      psiratio[j] = psi.ratio(W, iel) * sgridweight_m[j] * std::cos(psi.getPhaseDiff());
 #else
-      psiratio_[j]=psi.ratio(W,iel)*sgridweight_m[j];
+      psiratio[j] = psi.ratio(W, iel) * sgridweight_m[j];
 #endif
       W.rejectMove(iel);
       psi.resetPhaseDiff();
@@ -148,79 +152,59 @@ NonLocalECPComponent::evaluateOne(ParticleSet& W, int iat, TrialWaveFunction& ps
   }
 
   // Compute radial potential, multiplied by (2l+1) factor.
-  for(int ip=0; ip< nchannel; ip++)
-    vrad_[ip]=nlpp_m[ip]->splint(r)*wgt_angpp_m[ip];
+  for (int ip = 0; ip < nchannel; ip++)
+    vrad[ip] = nlpp_m[ip]->splint(r) * wgt_angpp_m[ip];
 
-  const RealType rinv=cone/r;
-  RealType pairpot=0; 
+  const RealType rinv = cone / r;
+  RealType pairpot    = 0;
   // Compute spherical harmonics on grid
-  for (int j=0, jl=0; j<nknot ; j++)
+  for (int j = 0; j < nknot; j++)
   {
-    RealType zz=dot(dr,rrotsgrid_m[j])*rinv;
+    RealType zz = dot(dr, rrotsgrid_m[j]) * rinv;
     // Forming the Legendre polynomials
-    lpol_[0]=cone;
-    RealType lpolprev=czero;
-    for (int l=0 ; l< lmax ; l++)
+    lpol[0]          = cone;
+    RealType lpolprev = czero;
+    for (int l = 0; l < lmax; l++)
     {
       //Not a big difference
       //lpol[l+1]=(2*l+1)*zz*lpol[l]-l*lpolprev;
       //lpol[l+1]/=(l+1);
-      lpol_[l+1]=Lfactor1[l]*zz*lpol_[l]-l*lpolprev;
-      lpol_[l+1]*=Lfactor2[l];
-      lpolprev=lpol_[l];
+      lpol[l + 1] = Lfactor1[l] * zz * lpol[l] - l * lpolprev;
+      lpol[l + 1] *= Lfactor2[l];
+      lpolprev = lpol[l];
     }
 
-    RealType lsum=czero;
-    for(int l=0; l <nchannel; l++)
-      lsum += vrad_[l]*lpol_[ angpp_m[l] ];
-    lsum *= psiratio_[j];
-    if(Tmove) Txy.push_back(NonLocalData(iel,lsum,deltaV[j]));
-    pairpot+=lsum;
+    RealType lsum = czero;
+    for (int l = 0; l < nchannel; l++)
+      lsum += vrad[l] * lpol[angpp_m[l]];
+    lsum *= psiratio[j];
+    if (Tmove)
+      Txy.push_back(NonLocalData(iel, lsum, deltaV[j]));
+    pairpot += lsum;
   }
 
 #if !defined(REMOVE_TRACEMANAGER)
-  if( streaming_particles)
+  if (streaming_particles)
   {
-    (*Vi_sample)(iat) += .5*pairpot;
-    (*Ve_sample)(iel) += .5*pairpot;
+    (*Vi_sample)(iat) += .5 * pairpot;
+    (*Ve_sample)(iel) += .5 * pairpot;
   }
 #endif
   return pairpot;
 }
 
-NonLocalECPComponent::RealType
-NonLocalECPComponent::evaluateOneWithForces(ParticleSet& W, int iat, TrialWaveFunction& psi, 
-    int iel, RealType r, const PosType& dr, 
-    PosType & force_iat, bool Tmove, std::vector<NonLocalData>& Txy) const
+NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(ParticleSet& W,
+                                                                           int iat,
+                                                                           TrialWaveFunction& psi,
+                                                                           int iel,
+                                                                           RealType r,
+                                                                           const PosType& dr,
+                                                                           PosType& force_iat,
+                                                                           bool Tmove,
+                                                                           std::vector<NonLocalData>& Txy)
 {
-  CONSTEXPR RealType czero(0);
-  CONSTEXPR RealType cone(1);
-
-  //Array for P_l[cos(theta)].
-  RealType lpol_[lmax+1];
-  //Array for P'_l[cos(theta)]
-  RealType dlpol_[lmax+1];
-
-  //Array for v_l(r).
-  RealType vrad_[nchannel];
-  //Array for (2l+1)*v'_l(r)/r.
-  RealType dvrad_[nchannel];
-
-  //$\Psi(...q...)/\Psi(...r...)$ for all quadrature points q.
-  std::vector<RealType> psiratio_(nknot);
-  //$\nabla \Psi(...q...)/\Psi(...r...)$ for all quadrature points q.
-  //  $\nabla$ is w.r.t. the electron coordinates involved in the quadrature.
-  std::vector<PosType> gradpsiratio_(nknot);
-
-  //This stores gradient of v(r):
-  std::vector<PosType> vgrad_(nchannel);  
-  //This stores the gradient of the cos(theta) term in force expression.
-  std::vector<PosType> cosgrad_(nknot);
-  //This stores grad psi/psi - dot(u,grad psi)
-  std::vector<PosType> wfngrad_(nknot);
-
-  //^^^ "Why not GradType?" you ask.  Because GradType can be complex.
-  PosType deltaV[nknot];
+  constexpr RealType czero(0);
+  constexpr RealType cone(1);
 
   GradType gradtmp_(0);
   PosType realgradtmp_(0);
@@ -233,65 +217,63 @@ NonLocalECPComponent::evaluateOneWithForces(ParticleSet& W, int iat, TrialWaveFu
   // term coming from dependence of quadrature grid on ion position.
   PosType gradwfnterm_(0);
 
-  if(VP)
+  if (VP)
   {
     APP_ABORT("NonLocalECPComponent::evaluateOneWithForces(...): Forces not implemented with virtual particle moves\n");
     // Compute ratios with VP
     ParticleSet::ParticlePos_t VPos(nknot);
-    for (int j=0; j<nknot; j++)
+    for (int j = 0; j < nknot; j++)
     {
-      deltaV[j]=r*rrotsgrid_m[j]-dr;
-      VPos[j]=deltaV[j]+W.R[iel];
+      deltaV[j] = r * rrotsgrid_m[j] - dr;
+      VPos[j]   = deltaV[j] + W.R[iel];
     }
-    VP->makeMoves(iel,VPos,true,iat);
-    psi.evaluateRatios(*VP,psiratio_);
-    for (int j=0; j<nknot; j++)
-      psiratio_[j]*=sgridweight_m[j];
+    VP->makeMoves(iel, VPos, true, iat);
+    psi.evaluateRatios(*VP, psiratio);
+    for (int j = 0; j < nknot; j++)
+      psiratio[j] *= sgridweight_m[j];
   }
   else
-  { 
+  {
     ValueType ratio(0);
-    RealType ratio_mag(0);
-    RealType ratio_r(0),ratio_i(0);
     // Compute ratio of wave functions
-    for (int j=0; j<nknot; j++)
+    for (int j = 0; j < nknot; j++)
     {
-      deltaV[j]=r*rrotsgrid_m[j]-dr;
-      W.makeMoveOnSphere(iel,deltaV[j]);
+      deltaV[j] = r * rrotsgrid_m[j] - dr;
+      W.makeMoveOnSphere(iel, deltaV[j]);
 #if defined(QMC_COMPLEX)
-      gradtmp_=0;
+      gradtmp_ = 0;
 
-      ratio_mag=psi.ratioGrad(W,iel,gradtmp_);
-      ratio_r=ratio_mag*std::cos(psi.getPhaseDiff());
-      ratio_i=ratio_mag*std::sin(psi.getPhaseDiff());
+      RealType ratio_mag = psi.ratioGrad(W, iel, gradtmp_);
+      RealType ratio_r   = ratio_mag * std::cos(psi.getPhaseDiff());
+      RealType ratio_i   = ratio_mag * std::sin(psi.getPhaseDiff());
 
-      ratio=ValueType(ratio_r,ratio_i);
-     
+      ratio = ValueType(ratio_r, ratio_i);
+
       //Only need the real part.
-      psiratio_[j]=ratio_r*sgridweight_m[j]; 
-     
-      //QMCPACK spits out $\nabla\Psi(q)/\Psi(q)$.
-      //Multiply times $\Psi(q)/\Psi(r)$ to get 
-      // $\nabla\Psi(q)/\Psi(r)
-      gradtmp_*=ratio;
+      psiratio[j] = ratio_r * sgridweight_m[j];
 
-      //And now we take the real part and save it.  
-      convert(gradtmp_,gradpsiratio_[j]);
-     
-    
+      //QMCPACK spits out $\nabla\Psi(q)/\Psi(q)$.
+      //Multiply times $\Psi(q)/\Psi(r)$ to get
+      // $\nabla\Psi(q)/\Psi(r)
+      gradtmp_ *= ratio;
+
+      //And now we take the real part and save it.
+      convert(gradtmp_, gradpsiratio[j]);
+
+
 #else
       //Real nonlocalpp forces seem to differ from those in the complex build.  Since
       //complex build has been validated against QE, that indicates there's a bug for the real build.
-      
-      APP_ABORT("NonLocalECPComponent::evaluateOneWithForces(...): Forces not implemented for real wavefunctions yet.");
 
-      gradtmp_=0;
-      ratio=psi.ratioGrad(W,iel,gradtmp_);
-      
-      gradtmp_*=ratio;
-      psiratio_[j]=ratio*sgridweight_m[j]; 
-     
-      gradpsiratio_[j]=gradtmp_;
+      //      APP_ABORT("NonLocalECPComponent::evaluateOneWithForces(...): Forces not implemented for real wavefunctions yet.");
+
+      gradtmp_ = 0;
+      ratio    = psi.ratioGrad(W, iel, gradtmp_);
+
+      gradtmp_ *= ratio;
+      psiratio[j] = ratio * sgridweight_m[j];
+
+      gradpsiratio[j] = gradtmp_;
 #endif
       W.rejectMove(iel);
       psi.resetPhaseDiff();
@@ -302,122 +284,332 @@ NonLocalECPComponent::evaluateOneWithForces(ParticleSet& W, int iat, TrialWaveFu
   // This is just a temporary variable to dump d2/dr2 into for spline evaluation.
   RealType secondderiv(0);
 
-  const RealType rinv=cone/r;
+  const RealType rinv = cone / r;
 
   // Compute radial potential and its derivative times (2l+1)
-  for(int ip=0; ip< nchannel; ip++)
+  for (int ip = 0; ip < nchannel; ip++)
   {
-    //fun fact.  NLPComponent stores v(r) as v(r), and not as r*v(r) like in other places.  
-    vrad_[ip]=nlpp_m[ip]->splint(r,dvrad_[ip],secondderiv)*wgt_angpp_m[ip];
-    vgrad_[ip]=dvrad_[ip]*dr*wgt_angpp_m[ip]*rinv;
+    //fun fact.  NLPComponent stores v(r) as v(r), and not as r*v(r) like in other places.
+    vrad[ip]  = nlpp_m[ip]->splint(r, dvrad[ip], secondderiv) * wgt_angpp_m[ip];
+    vgrad[ip] = dvrad[ip] * dr * wgt_angpp_m[ip] * rinv;
   }
 
-  RealType pairpot=0; 
+  RealType pairpot = 0;
   // Compute spherical harmonics on grid
-  for (int j=0, jl=0; j<nknot ; j++)
+  for (int j = 0; j < nknot; j++)
   {
-    RealType zz=dot(dr,rrotsgrid_m[j])*rinv;
-    PosType uminusrvec=rrotsgrid_m[j]-zz*dr*rinv;
-    
-    cosgrad_[j]=rinv*uminusrvec;
+    RealType zz        = dot(dr, rrotsgrid_m[j]) * rinv;
+    PosType uminusrvec = rrotsgrid_m[j] - zz * dr * rinv;
 
-    RealType udotgradpsi=dot(gradpsiratio_[j],rrotsgrid_m[j]);
-    wfngrad_[j]=gradpsiratio_[j] - dr*(udotgradpsi*rinv);
-    wfngrad_[j]*=sgridweight_m[j];
+    cosgrad[j] = rinv * uminusrvec;
+
+    RealType udotgradpsi = dot(gradpsiratio[j], rrotsgrid_m[j]);
+    wfngrad[j]          = gradpsiratio[j] - dr * (udotgradpsi * rinv);
+    wfngrad[j] *= sgridweight_m[j];
 
     // Forming the Legendre polynomials
     //P_0(x)=1; P'_0(x)=0.
-    lpol_[0]=cone;
-    dlpol_[0]=czero;
+    lpol[0]  = cone;
+    dlpol[0] = czero;
 
-    RealType lpolprev=czero;
-    RealType dlpolprev=czero;
+    RealType lpolprev  = czero;
+    RealType dlpolprev = czero;
 
-    for (int l=0 ; l< lmax ; l++)
+    for (int l = 0; l < lmax; l++)
     {
       //Legendre polynomial recursion formula.
-      lpol_[l+1]=Lfactor1[l]*zz*lpol_[l]-l*lpolprev;
-      lpol_[l+1]*=Lfactor2[l];
-       
+      lpol[l + 1] = Lfactor1[l] * zz * lpol[l] - l * lpolprev;
+      lpol[l + 1] *= Lfactor2[l];
+
       //and for the derivative...
-      dlpol_[l+1]=Lfactor1[l]*(zz*dlpol_[l]+lpol_[l])-l*dlpolprev;
-      dlpol_[l+1]*=Lfactor2[l];
+      dlpol[l + 1] = Lfactor1[l] * (zz * dlpol[l] + lpol[l]) - l * dlpolprev;
+      dlpol[l + 1] *= Lfactor2[l];
 
-      lpolprev=lpol_[l];
-      dlpolprev=dlpol_[l];
+      lpolprev  = lpol[l];
+      dlpolprev = dlpol[l];
     }
 
-    RealType lsum=czero;
-   // Now to compute the forces:
-    gradpotterm_  =0;
-    gradlpolyterm_=0;
-    gradwfnterm_  =0;
-    
-    for(int l=0; l<nchannel; l++)
+    RealType lsum = czero;
+    // Now to compute the forces:
+    gradpotterm_   = 0;
+    gradlpolyterm_ = 0;
+    gradwfnterm_   = 0;
+
+    for (int l = 0; l < nchannel; l++)
     {
-      lsum          += vrad_[l] * lpol_[ angpp_m[l] ] * psiratio_[j];
-      gradpotterm_  += vgrad_[l] * lpol_[ angpp_m[l] ] * psiratio_[j];
-      gradlpolyterm_ += vrad_[l] * dlpol_[ angpp_m[l] ] * cosgrad_[j] * psiratio_[j];
-      gradwfnterm_  += vrad_[l] * lpol_[ angpp_m[l] ] * wfngrad_[j]; 
+      lsum           += vrad[l] * lpol[angpp_m[l]] * psiratio[j];
+      gradpotterm_   += vgrad[l] * lpol[angpp_m[l]] * psiratio[j];
+      gradlpolyterm_ += vrad[l] * dlpol[angpp_m[l]] * cosgrad[j] * psiratio[j];
+      gradwfnterm_   += vrad[l] * lpol[angpp_m[l]] * wfngrad[j];
     }
-    
-    if(Tmove) Txy.push_back(NonLocalData(iel,lsum,deltaV[j]));
-    pairpot+=lsum;
-    force_iat+=  gradpotterm_ + gradlpolyterm_ - gradwfnterm_;
-    
+
+    if (Tmove)
+      Txy.push_back(NonLocalData(iel, lsum, deltaV[j]));
+    pairpot   += lsum;
+    force_iat += gradpotterm_ + gradlpolyterm_ - gradwfnterm_;
   }
 
 #if !defined(REMOVE_TRACEMANAGER)
-  if( streaming_particles)
+  if (streaming_particles)
   {
-    (*Vi_sample)(iat) += .5*pairpot;
-    (*Ve_sample)(iel) += .5*pairpot;
+    (*Vi_sample)(iat) += .5 * pairpot;
+    (*Ve_sample)(iel) += .5 * pairpot;
   }
 #endif
   return pairpot;
 }
 
+NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(ParticleSet& W,
+                                                                           ParticleSet& ions,
+                                                                           int iat,
+                                                                           TrialWaveFunction& psi,
+                                                                           int iel,
+                                                                           RealType r,
+                                                                           const PosType& dr,
+                                                                           PosType& force_iat,
+                                                                           ParticleSet::ParticlePos_t& pulay_terms,
+                                                                           bool Tmove,
+                                                                           std::vector<NonLocalData>& Txy)
+{
+  constexpr RealType czero(0);
+  constexpr RealType cone(1);
+
+  GradType gradtmp_(0);
+  PosType realgradtmp_(0);
+
+  //Pseudopotential derivative w.r.t. ions can be split up into 3 contributions:
+  // term coming from the gradient of the radial potential
+  PosType gradpotterm_(0);
+  // term coming from gradient of legendre polynomial
+  PosType gradlpolyterm_(0);
+  // term coming from dependence of quadrature grid on ion position.
+  PosType gradwfnterm_(0);
+
+  //Now for the Pulay specific stuff...
+  //Full (potentiall complex) $\Psi(...q...)/\Psi(...r...)$ for all quadrature points q.
+  std::vector<ValueType> psiratiofull_(nknot);
+  // $\nabla_I \Psi(...r...)/\Psi(...r...)$
+  ParticleSet::ParticlePos_t pulay_ref;
+  ParticleSet::ParticlePos_t pulaytmp_;
+  // $\nabla_I \Psi(...q...)/\Psi(...r...)$ for each quadrature point.
+  std::vector<ParticleSet::ParticlePos_t> pulay_quad(nknot);
+
+  //A working array for pulay stuff.
+  GradType iongradtmp_(0);
+  //resize everything.
+  pulay_ref.resize(ions.getTotalNum());
+  pulaytmp_.resize(ions.getTotalNum());
+  for (unsigned int j = 0; j < nknot; j++)
+    pulay_quad[j].resize(ions.getTotalNum());
+
+  if (VP)
+  {
+    APP_ABORT("NonLocalECPComponent::evaluateOneWithForces(...): Forces not implemented with virtual particle moves\n");
+    // Compute ratios with VP
+    ParticleSet::ParticlePos_t VPos(nknot);
+    for (int j = 0; j < nknot; j++)
+    {
+      deltaV[j] = r * rrotsgrid_m[j] - dr;
+      VPos[j]   = deltaV[j] + W.R[iel];
+    }
+    VP->makeMoves(iel, VPos, true, iat);
+    psi.evaluateRatios(*VP, psiratio);
+    for (int j = 0; j < nknot; j++)
+      psiratio[j] *= sgridweight_m[j];
+  }
+  else
+  {
+    ValueType ratio(0);
+    // Compute ratio of wave functions
+    for (int j = 0; j < nknot; j++)
+    {
+      deltaV[j] = r * rrotsgrid_m[j] - dr;
+      W.makeMoveOnSphere(iel, deltaV[j]);
+#if defined(QMC_COMPLEX)
+      gradtmp_ = 0;
+
+      RealType ratio_mag = psi.ratioGrad(W, iel, gradtmp_);
+      RealType ratio_r   = ratio_mag * std::cos(psi.getPhaseDiff());
+      RealType ratio_i   = ratio_mag * std::sin(psi.getPhaseDiff());
+
+      ratio            = ValueType(ratio_r, ratio_i);
+      psiratiofull_[j] = ratio;
+      //Only need the real part.
+      psiratio[j] = ratio_r * sgridweight_m[j];
+
+      //QMCPACK spits out $\nabla\Psi(q)/\Psi(q)$.
+      //Multiply times $\Psi(q)/\Psi(r)$ to get
+      // $\nabla\Psi(q)/\Psi(r)
+      gradtmp_ *= ratio;
+
+      //And now we take the real part and save it.
+      convert(gradtmp_, gradpsiratio[j]);
+
+
+#else
+      //Real nonlocalpp forces seem to differ from those in the complex build.  Since
+      //complex build has been validated against QE, that indicates there's a bug for the real build.
+
+      gradtmp_ = 0;
+      ratio    = psi.ratioGrad(W, iel, gradtmp_);
+
+      psiratiofull_[j] = ratio;
+      gradtmp_ *= ratio;
+      psiratio[j] = ratio * sgridweight_m[j];
+
+      gradpsiratio[j] = gradtmp_;
+#endif
+      W.rejectMove(iel);
+      psi.resetPhaseDiff();
+      //psi.rejectMove(iel);
+    }
+  }
+
+  // This is just a temporary variable to dump d2/dr2 into for spline evaluation.
+  RealType secondderiv(0);
+
+  const RealType rinv = cone / r;
+
+  // Compute radial potential and its derivative times (2l+1)
+  for (int ip = 0; ip < nchannel; ip++)
+  {
+    //fun fact.  NLPComponent stores v(r) as v(r), and not as r*v(r) like in other places.
+    vrad[ip]  = nlpp_m[ip]->splint(r, dvrad[ip], secondderiv) * wgt_angpp_m[ip];
+    vgrad[ip] = dvrad[ip] * dr * wgt_angpp_m[ip] * rinv;
+  }
+
+  //Now to construct the 3N dimensional ionic wfn derivatives for pulay terms.
+  //This is going to be slow an painful for now.
+  for (unsigned int jat = 0; jat < ions.getTotalNum(); jat++)
+  {
+    pulay_ref[jat] = psi.evalGradSource(W, ions, jat);
+    gradpotterm_   = 0;
+    for (unsigned int j = 0; j < nknot; j++)
+    {
+      deltaV[j] = r * rrotsgrid_m[j] - dr;
+      W.makeMoveOnSphere(iel, deltaV[j]);
+      //"Accepting" moves is necessary because evalGradSource needs full distance tables
+      //for now.
+      W.acceptMove(iel);
+      iongradtmp_ = psi.evalGradSource(W, ions, jat);
+      iongradtmp_ *= psiratiofull_[j] * sgridweight_m[j];
+#ifdef QMC_COMPLEX
+      convert(iongradtmp_, pulay_quad[j][jat]);
+#endif
+      pulay_quad[j][jat] = iongradtmp_;
+      //And move the particle back.
+      deltaV[j] = dr - r * rrotsgrid_m[j];
+      W.makeMoveOnSphere(iel, deltaV[j]);
+      W.acceptMove(iel);
+    }
+  }
+
+  RealType pairpot = 0;
+  // Compute spherical harmonics on grid
+  for (int j = 0; j < nknot; j++)
+  {
+    RealType zz        = dot(dr, rrotsgrid_m[j]) * rinv;
+    PosType uminusrvec = rrotsgrid_m[j] - zz * dr * rinv;
+
+    cosgrad[j] = rinv * uminusrvec;
+
+    RealType udotgradpsi = dot(gradpsiratio[j], rrotsgrid_m[j]);
+    wfngrad[j]          = gradpsiratio[j] - dr * (udotgradpsi * rinv);
+    wfngrad[j] *= sgridweight_m[j];
+
+    // Forming the Legendre polynomials
+    //P_0(x)=1; P'_0(x)=0.
+    lpol[0]  = cone;
+    dlpol[0] = czero;
+
+    RealType lpolprev  = czero;
+    RealType dlpolprev = czero;
+
+    for (int l = 0; l < lmax; l++)
+    {
+      //Legendre polynomial recursion formula.
+      lpol[l + 1] = Lfactor1[l] * zz * lpol[l] - l * lpolprev;
+      lpol[l + 1] *= Lfactor2[l];
+
+      //and for the derivative...
+      dlpol[l + 1] = Lfactor1[l] * (zz * dlpol[l] + lpol[l]) - l * dlpolprev;
+      dlpol[l + 1] *= Lfactor2[l];
+
+      lpolprev  = lpol[l];
+      dlpolprev = dlpol[l];
+    }
+
+    RealType lsum = czero;
+    // Now to compute the forces:
+    gradpotterm_   = 0;
+    gradlpolyterm_ = 0;
+    gradwfnterm_   = 0;
+    pulaytmp_      = 0;
+
+    for (int l = 0; l < nchannel; l++)
+    {
+      //Note.  Because we are computing "forces", there's a -1 difference between this and
+      //direct finite difference calculations.
+      lsum           += vrad[l] * lpol[angpp_m[l]] * psiratio[j];
+      gradpotterm_   += vgrad[l] * lpol[angpp_m[l]] * psiratio[j];
+      gradlpolyterm_ += vrad[l] * dlpol[angpp_m[l]] * cosgrad[j] * psiratio[j];
+      gradwfnterm_   += vrad[l] * lpol[angpp_m[l]] * wfngrad[j];
+      pulaytmp_ -= vrad[l] * lpol[angpp_m[l]] * pulay_quad[j];
+    }
+    pulaytmp_ += lsum * pulay_ref;
+    if (Tmove)
+      Txy.push_back(NonLocalData(iel, lsum, deltaV[j]));
+    pairpot     += lsum;
+    force_iat   += gradpotterm_ + gradlpolyterm_ - gradwfnterm_;
+    pulay_terms += pulaytmp_;
+  }
+
+#if !defined(REMOVE_TRACEMANAGER)
+  if (streaming_particles)
+  {
+    (*Vi_sample)(iat) += .5 * pairpot;
+    (*Ve_sample)(iel) += .5 * pairpot;
+  }
+#endif
+  return pairpot;
+}
 ///Randomly rotate sgrid_m
 void NonLocalECPComponent::randomize_grid(RandomGenerator_t& myRNG)
 {
-  RealType phi(TWOPI*myRNG()), psi(TWOPI*myRNG()), cth(myRNG()-0.5);
-  RealType sph(std::sin(phi)),cph(std::cos(phi)),
-           sth(std::sqrt(1.0-cth*cth)),sps(std::sin(psi)),
-           cps(std::cos(psi));
-  TensorType rmat( cph*cth*cps-sph*sps, sph*cth*cps+cph*sps,-sth*cps,
-                   -cph*cth*sps-sph*cps,-sph*cth*sps+cph*cps, sth*sps,
-                   cph*sth,             sph*sth,             cth     );
-  for(int i=0; i<sgridxyz_m.size(); i++)
-    rrotsgrid_m[i] = dot(rmat,sgridxyz_m[i]);
+  RealType phi(TWOPI * myRNG()), psi(TWOPI * myRNG()), cth(myRNG() - 0.5);
+  RealType sph(std::sin(phi)), cph(std::cos(phi)), sth(std::sqrt(1.0 - cth * cth)), sps(std::sin(psi)),
+      cps(std::cos(psi));
+  TensorType rmat(cph * cth * cps - sph * sps, sph * cth * cps + cph * sps, -sth * cps, -cph * cth * sps - sph * cps,
+                  -sph * cth * sps + cph * cps, sth * sps, cph * sth, sph * sth, cth);
+  for (int i = 0; i < sgridxyz_m.size(); i++)
+    rrotsgrid_m[i] = dot(rmat, sgridxyz_m[i]);
 }
 
 template<typename T>
-void NonLocalECPComponent::randomize_grid(std::vector<T> &sphere, RandomGenerator_t& myRNG)
+void NonLocalECPComponent::randomize_grid(std::vector<T>& sphere, RandomGenerator_t& myRNG)
 {
-  RealType phi(TWOPI*myRNG()), psi(TWOPI*myRNG()), cth(myRNG()-0.5);
-  RealType sph(std::sin(phi)),cph(std::cos(phi)),
-           sth(std::sqrt(1.0-cth*cth)),sps(std::sin(psi)),
-           cps(std::cos(psi));
-  TensorType rmat( cph*cth*cps-sph*sps, sph*cth*cps+cph*sps,-sth*cps,
-                   -cph*cth*sps-sph*cps,-sph*cth*sps+cph*cps, sth*sps,
-                   cph*sth,             sph*sth,             cth     );
+  RealType phi(TWOPI * myRNG()), psi(TWOPI * myRNG()), cth(myRNG() - 0.5);
+  RealType sph(std::sin(phi)), cph(std::cos(phi)), sth(std::sqrt(1.0 - cth * cth)), sps(std::sin(psi)),
+      cps(std::cos(psi));
+  TensorType rmat(cph * cth * cps - sph * sps, sph * cth * cps + cph * sps, -sth * cps, -cph * cth * sps - sph * cps,
+                  -sph * cth * sps + cph * cps, sth * sps, cph * sth, sph * sth, cth);
   SpherGridType::iterator it(sgridxyz_m.begin());
   SpherGridType::iterator it_end(sgridxyz_m.end());
   SpherGridType::iterator jt(rrotsgrid_m.begin());
-  while(it != it_end)
+  while (it != it_end)
   {
-    *jt = dot(rmat,*it);
+    *jt = dot(rmat, *it);
     ++it;
     ++jt;
   }
   //copy the randomized grid to sphere
-  for (int i=0; i<rrotsgrid_m.size(); i++)
-    for (int j=0; j<OHMMS_DIM; j++)
-      sphere[OHMMS_DIM*i+j] = rrotsgrid_m[i][j];
+  for (int i = 0; i < rrotsgrid_m.size(); i++)
+    for (int j = 0; j < OHMMS_DIM; j++)
+      sphere[OHMMS_DIM * i + j] = rrotsgrid_m[i][j];
 }
 
-template void NonLocalECPComponent::randomize_grid(std::vector<float> &sphere, RandomGenerator_t& myRNG);
-template void NonLocalECPComponent::randomize_grid(std::vector<double> &sphere, RandomGenerator_t& myRNG);
+template void NonLocalECPComponent::randomize_grid(std::vector<float>& sphere, RandomGenerator_t& myRNG);
+template void NonLocalECPComponent::randomize_grid(std::vector<double>& sphere, RandomGenerator_t& myRNG);
 
 
-}
+} // namespace qmcplusplus

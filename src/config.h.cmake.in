@@ -26,14 +26,23 @@
 /* building from Git repository or not */
 #cmakedefine IS_GIT_PROJECT  @IS_GIT_PROJECT@
 
-/* define QMC_BUILD_LEVEL */
-#cmakedefine QMC_BUILD_LEVEL @QMC_BUILD_LEVEL@
+/* define QMC_BUILD_SANDBOX_ONLY */
+#cmakedefine QMC_BUILD_SANDBOX_ONLY @QMC_BUILD_SANDBOX_ONLY@
 
 /* define PRINT_DEBUG */
 #cmakedefine PRINT_DEBUG @PRINT_DEBUG@
 
 /* Enable OpenMP parallelization. */
 #cmakedefine ENABLE_OPENMP @ENABLE_OPENMP@
+
+/* Enable OpenMP offload. */
+#cmakedefine ENABLE_OFFLOAD @ENABLE_OFFLOAD@
+
+#ifdef ENABLE_OFFLOAD
+  #define PRAGMA_OFFLOAD(x) _Pragma(x)
+#else
+  #define PRAGMA_OFFLOAD(x)
+#endif
 
 /* Define to 1 if you have the `hdf5' library (-lhdf5). */
 #cmakedefine HAVE_LIBHDF5 @HAVE_LIBHDF5@
@@ -65,9 +74,6 @@
 /* Define to 1 if you have MPI library */
 #cmakedefine HAVE_MPI @HAVE_MPI@
 
-/* Define to 1 if you have OOMPI library */
-#cmakedefine HAVE_OOMPI @HAVE_OOMPI@
-
 /* Define the physical dimension of appliation. */
 #cmakedefine OHMMS_DIM @OHMMS_DIM@
 
@@ -82,6 +88,9 @@
 
 /* Define to 1 if precision is mixed, only for the CPU code */
 #cmakedefine MIXED_PRECISION @MIXED_PRECISION@
+
+/* Define to 1 if precision is mixed, only for AFQMC code */
+#cmakedefine AFQMC_MIXED_PRECISION @AFQMC_MIXED_PRECISION@
 
 /* Define to 1 if complex wavefunctions are used */
 #cmakedefine QMC_COMPLEX @QMC_COMPLEX@
@@ -136,18 +145,6 @@
 /* Define if unistd.h exists */
 #cmakedefine HAVE_UNISTD_H @HAVE_UNISTD_H@
 
-/* Define if c variable array support exists */
-#cmakedefine HAVE_C_VARARRAYS @HAVE_C_VARARRAYS@
-
-/* Prefetch loop lead distance  */
-#cmakedefine PREFETCH_AHEAD @PREFETCH_AHEAD@
-
-/* Use SSE prefetch  */
-#cmakedefine USE_PREFETCH @USE_PREFETCH@
-
-/* Define the alignment of SIMD in byte*/
-#cmakedefine SIMD_ALIGNMENT @SIMD_ALIGNMENT@
-
 #endif /* HAVE_EINSPLINE_EXT */
 
 /* Find mkl library */
@@ -164,6 +161,9 @@
 
 /* Using CUDA for GPU execution */
 #cmakedefine QMC_CUDA @QMC_CUDA@
+
+/* Using CUDA for GPU execution, next generation */
+#cmakedefine ENABLE_CUDA @ENABLE_CUDA@
 
 /* Setting base precision for CUDA kernels */
 #cmakedefine CUDA_PRECISION @CUDA_PRECISION@
@@ -188,9 +188,9 @@
 /* Use SOA version of AA distance table */
 #cmakedefine ENABLE_SOA  @ENABLE_SOA@
 
-#if (__cplusplus >= 201103L)
+#if defined(__cplusplus)
   #if defined(__INTEL_COMPILER)
-    #if defined(__KNC__) || defined(__AVX512F__)
+    #if defined(__AVX512F__)
       #define QMC_CLINE 64
       #define QMC_ALIGNAS alignas(64)
       #define ASSUME_ALIGNED(x) __assume_aligned(x,64)
@@ -210,21 +210,19 @@
       #define ASSUME_ALIGNED(x) (x) = (__typeof__(x)) __builtin_assume_aligned(x,32)
     #endif
   #else
-   #define QMC_CLINE 32
-   #define QMC_ALIGNAS
-   #define ASSUME_ALIGNED(x)
+    #define QMC_CLINE 32
+    #define QMC_ALIGNAS alignas(32)
+    #define ASSUME_ALIGNED(x)
   #endif
 
-  #define CONSTEXPR constexpr
-#else //capture both C or non-c++11
-  #if defined(__KNC__) || defined(__AVX512F__)
+#else //capture C
+  #if defined(__AVX512F__)
     #define QMC_CLINE 64
   #else
     #define QMC_CLINE 32
   #endif
   #define QMC_ALIGNAS
   #define ASSUME_ALIGNED(x)
-  #define CONSTEXPR const
   #ifndef nullptr
   #define nullptr NULL
   #endif

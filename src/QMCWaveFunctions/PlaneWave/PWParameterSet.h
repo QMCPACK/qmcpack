@@ -10,8 +10,8 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 /** @file PWParameterSet.cpp
  * @brief Utility class to handle hdf5
  */
@@ -26,12 +26,12 @@ namespace qmcplusplus
 {
 /** class to handle various name conventions for hdf5 file
  */
-struct PWParameterSet: public MPIObjectBase
+struct PWParameterSet : public MPIObjectBase
 {
   ///true if spin channel exists
   bool hasSpin;
   ///version
-  TinyVector<int,2> version;
+  TinyVector<int, 2> version;
   ///index of the twist angle
   int twistIndex;
   ///number of input bands
@@ -43,7 +43,7 @@ struct PWParameterSet: public MPIObjectBase
   ///radius of buffer layer for truncated orbitals
   double BufferRadius;
   ///cell multiplications
-  TinyVector<int,OHMMS_DIM> BoxDup;
+  TinyVector<int, OHMMS_DIM> BoxDup;
   ///tag for the parameters
   std::string paramTag;
   ///tag for the basis
@@ -65,12 +65,9 @@ struct PWParameterSet: public MPIObjectBase
   ///xml processor
   ParameterSet m_param;
 
-  PWParameterSet(Communicate *comm);
+  PWParameterSet(Communicate* comm);
 
-  bool put(xmlNodePtr cur)
-  {
-    return m_param.put(cur);
-  }
+  bool put(xmlNodePtr cur) { return m_param.put(cur); }
 
   void checkVersion(hid_t h);
 
@@ -98,11 +95,10 @@ struct PWParameterSet: public MPIObjectBase
 
   std::string getEigVectorName(const std::string& hg, int ib, int ispin);
   std::string getEigVectorName(int ib, int ispin);
-  std::string getCenterName(const std::string& hg,int ib);
-  std::string getOriginName(const std::string& hg,int ib);
+  std::string getCenterName(const std::string& hg, int ib);
+  std::string getOriginName(const std::string& hg, int ib);
 
   void writeParameters(hid_t gid);
-
 };
-}
+} // namespace qmcplusplus
 #endif

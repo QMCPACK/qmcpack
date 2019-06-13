@@ -10,8 +10,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
 
 
 #ifndef QMCPLUSPLUS_VMC_UPDATEALL_H
@@ -20,16 +18,14 @@
 
 namespace qmcplusplus
 {
-
 /** @ingroup QMCDrivers  ParticleByParticle
  *@brief Implements the VMC algorithm using particle-by-particle move.
  */
-class VMCUpdateAll: public QMCUpdateBase
+class VMCUpdateAll : public QMCUpdateBase
 {
 public:
   /// Constructor.
-  VMCUpdateAll(MCWalkerConfiguration& w, TrialWaveFunction& psi,
-               QMCHamiltonian& h, RandomGenerator_t& rg);
+  VMCUpdateAll(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator_t& rg);
 
   ~VMCUpdateAll();
 
@@ -37,11 +33,11 @@ public:
 
 private:
   /// Copy Constructor (disabled)
-  VMCUpdateAll(const VMCUpdateAll &) = delete;
+  VMCUpdateAll(const VMCUpdateAll&) = delete;
   /// Copy operator (disabled).
-  VMCUpdateAll & operator=(const VMCUpdateAll &) = delete;
+  VMCUpdateAll& operator=(const VMCUpdateAll&) = delete;
 };
 
-}
+} // namespace qmcplusplus
 
 #endif
