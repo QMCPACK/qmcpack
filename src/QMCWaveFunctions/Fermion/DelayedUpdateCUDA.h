@@ -59,26 +59,37 @@ class DelayedUpdateCUDA
   using real_type = typename scalar_traits<T>::real_type;
   using real_type_fp = typename scalar_traits<T_FP>::real_type;
   // Data staged during for delayed acceptRows
-  Matrix<T, CUDAHostAllocator<T>> U, Binv;
+  Matrix<T, CUDAHostAllocator<T>> U;
+  Matrix<T, CUDAHostAllocator<T>> Binv;
   Matrix<T> V;
   //Matrix<T> tempMat; // for debugging only
-  Matrix<T, CUDAAllocator<T>, MemorySpace::CUDA> U_gpu, V_gpu, Binv_gpu, temp_gpu, Ainv_gpu;
+  Matrix<T, CUDAAllocator<T>> temp_gpu;
+  /// GPU copy of U, V, Binv, Ainv
+  Matrix<T, CUDAAllocator<T>> U_gpu;
+  Matrix<T, CUDAAllocator<T>> V_gpu;
+  Matrix<T, CUDAAllocator<T>> Binv_gpu;
+  Matrix<T, CUDAAllocator<T>> Ainv_gpu;
   // auxiliary arrays for B
   Vector<T> p;
   Vector<int, CUDAHostAllocator<int>> delay_list;
-  Vector<int, CUDAAllocator<int>, MemorySpace::CUDA> delay_list_gpu;
+  Vector<int, CUDAAllocator<int>> delay_list_gpu;
   /// current number of delays, increase one for each acceptance, reset to 0 after updating Ainv
   int delay_count;
   /// scratch memory for cusolverDN
-  Matrix<T_FP, CUDAAllocator<T_FP>, MemorySpace::CUDA> Mat1_gpu, Mat2_gpu;
+  Matrix<T_FP, CUDAAllocator<T_FP>> Mat1_gpu;
+  /** scratch memory for cusolverDN and shared storage with Ainv_gpu.
+   * The full precision build has Mat2_gpu = Ainv_gpu
+   * The mixed precision build has the first half of Mat2_gpu containing Ainv_gpu
+   */
+  Matrix<T_FP, CUDAAllocator<T_FP>> Mat2_gpu;
   /// pivot array + info
   Vector<int, CUDAHostAllocator<int>> ipiv;
-  Vector<int, CUDAAllocator<int>, MemorySpace::CUDA> ipiv_gpu;
+  Vector<int, CUDAAllocator<int>> ipiv_gpu;
   /// workspace
-  Vector<T_FP, CUDAAllocator<T_FP>, MemorySpace::CUDA> work_gpu;
+  Vector<T_FP, CUDAAllocator<T_FP>> work_gpu;
   /// diagonal terms of LU matrix
   Vector<T_FP, CUDAHostAllocator<T_FP>> LU_diag;
-  Vector<T_FP, CUDAAllocator<T_FP>, MemorySpace::CUDA> LU_diag_gpu;
+  Vector<T_FP, CUDAAllocator<T_FP>> LU_diag_gpu;
 
   // the range of prefetched_Ainv_rows
   Range prefetched_range;

@@ -34,6 +34,15 @@ SET(QMCPACK_VERSION_MINOR 7)
 SET(QMCPACK_VERSION_PATCH 9)
 SET(QMCPACK_VERSION "${QMCPACK_VERSION_MAJOR}.${QMCPACK_VERSION_MINOR}.${QMCPACK_VERSION_PATCH}")
 
+
+######################################################################
+# Verify QE executables present if QE_BIN specified
+######################################################################
+IF ( DEFINED QE_BIN )
+  INCLUDE(CMake/run_qe.cmake)
+  VERIFY_QE_PRESENT( ${QE_BIN} )
+ENDIF()
+
 ######################################################################
 # CTest
 ######################################################################
@@ -309,9 +318,6 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
   SET(HAVE_MKL 0)
   SET(HAVE_MKL_VML 0)
   SET(HAVE_ACML 0)
-  SET(USE_PREFETCH 0)
-  SET(PREFETCH_AHEAD 12)
-  SET(HAVE_C_VARARRAYS 1)
 
   ######################################################
   # Try to identify CPU identity

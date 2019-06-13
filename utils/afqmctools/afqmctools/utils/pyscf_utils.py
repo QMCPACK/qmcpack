@@ -29,6 +29,7 @@ def load_from_pyscf_chk(chkfile,hcore=None,orthoAO=False):
     nao_tot = nao*nkpts
 
     Xocc = lib.chkfile.load(chkfile, 'scf/mo_occ')
+    mo_energy = lib.chkfile.load(chkfile, 'scf/mo_energy')
     mo_coeff = lib.chkfile.load(chkfile, 'scf/mo_coeff')
     fock = numpy.asarray(lib.chkfile.load(chkfile, 'scf/fock'))
     assert(fock is not None)
@@ -95,7 +96,8 @@ def load_from_pyscf_chk(chkfile,hcore=None,orthoAO=False):
                 'Xocc': Xocc, 'isUHF': isUHF,
                 'hcore': hcore, 'X': X, 'nmo_pk': nmo_pk,
                 'mo_coeff': mo_coeff,
-                'nao': nao, 'fock': fock}
+                'nao': nao, 'fock': fock,
+                'mo_energy': mo_energy}
     return scf_data
 
 def load_from_pyscf_chk_mol(chkfile, base='scf'):

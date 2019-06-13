@@ -16,9 +16,11 @@
  */
 #ifndef QMCPLUSPLUS_VECTOR_SOA_H
 #define QMCPLUSPLUS_VECTOR_SOA_H
-#include <simd/allocator.hpp>
-#include <simd/algorithm.hpp>
-#include <ParticleBase/ParticleAttrib.h>
+
+#include <type_traits>
+#include "simd/allocator.hpp"
+#include "simd/algorithm.hpp"
+#include "ParticleBase/ParticleAttrib.h"
 
 namespace qmcplusplus
 {
@@ -132,6 +134,7 @@ struct VectorSoaContainer
        */
   __forceinline void resize(size_t n)
   {
+    static_assert(std::is_same<Element_t, typename Alloc::value_type>::value, "VectorSoaContainer and Alloc data types must agree!");
     if (nAllocated)
       myAlloc.deallocate(myData, nAllocated);
     nLocal     = n;
@@ -243,18 +246,8 @@ struct VectorSoaContainer
   ///return the end
   __forceinline const T* end() const { return myData + D * nGhosts; }
 
-  /** serialization function */
-  template<class Archive>
-  void serialize(Archive& ar, const unsigned int version)
-  {
-    //ar & m_data;
-    ar& nLocal& nGhosts& myData;
-  }
 };
 
-//Incorrect: provide wrapper class
-//BOOST_CLASS_TRACKING(Pos3DSoA<double,3>, boost::serialization::track_never)
-//BOOST_CLASS_TRACKING(Pos3DSoA<float,3>, boost::serialization::track_never)
 } // namespace qmcplusplus
 
 #endif

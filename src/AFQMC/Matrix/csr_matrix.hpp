@@ -489,27 +489,30 @@ class ucsr_matrix:
 //                r.barrier();
         }
         ucsr_matrix& operator=(this_t const& other) {
-                base::reset();
-                base::size1_ = other.size1_;
-                base::size2_ = other.size2_;
-                base::local_origin1_ = other.local_origin1_;
-                base::local_origin2_ = other.local_origin2_;
-                base::global_origin1_ = other.global_origin1_;
-                base::global_origin2_ = other.global_origin2_;
-                base::capacity_ = other.capacity_;
-                base::data_ = Valloc_.allocate(base::capacity_);
-                base::jdata_ = Ialloc_.allocate(base::capacity_);
-                base::pointers_begin_ = Palloc_.allocate(base::size1_+1);
-                base::pointers_end_ = Palloc_.allocate(base::size1_);
-//                IsRoot r(Valloc_);
-//                if(r.root()){
-                        using std::copy_n;
-                        copy_n(other.data_,base::capacity_,base::data_);
-                        copy_n(other.jdata_,base::capacity_,base::jdata_);
-                        copy_n(other.pointers_begin_,base::size1_+1,base::pointers_begin_);
-                        copy_n(other.pointers_end_,base::size1_,base::pointers_end_);
-//                }
-//                r.barrier();
+                if(this != std::addressof(other)) {
+                    base::reset();
+                    base::size1_ = other.size1_;
+                    base::size2_ = other.size2_;
+                    base::local_origin1_ = other.local_origin1_;
+                    base::local_origin2_ = other.local_origin2_;
+                    base::global_origin1_ = other.global_origin1_;
+                    base::global_origin2_ = other.global_origin2_;
+                    base::capacity_ = other.capacity_;
+                    base::data_ = Valloc_.allocate(base::capacity_);
+                    base::jdata_ = Ialloc_.allocate(base::capacity_);
+                    base::pointers_begin_ = Palloc_.allocate(base::size1_+1);
+                    base::pointers_end_ = Palloc_.allocate(base::size1_);
+//                    IsRoot r(Valloc_);
+//                    if(r.root()){
+                            using std::copy_n;
+                            copy_n(other.data_,base::capacity_,base::data_);
+                            copy_n(other.jdata_,base::capacity_,base::jdata_);
+                            copy_n(other.pointers_begin_,base::size1_+1,base::pointers_begin_);
+                            copy_n(other.pointers_end_,base::size1_,base::pointers_end_);
+//                    }
+//                    r.barrier();
+                }
+                return *this;
         }
 	ucsr_matrix(this_t&& other):ucsr_matrix(tp_ul_ul{0,0},tp_ul_ul{0,0},0,other.Valloc_)
 	{ *this = std::move(other); } 
@@ -757,27 +760,30 @@ class csr_matrix: public ucsr_matrix<ValType,IndxType,IntType,ValType_alloc,IsRo
         }
         
 	csr_matrix& operator=(this_t const& csr) {
-                base::reset();                
-                base::size1_ = csr.size1_;
-                base::size2_ = csr.size2_;
-                base::local_origin1_ = csr.local_origin1_;
-                base::local_origin2_ = csr.local_origin2_;
-                base::global_origin1_ = csr.global_origin1_;
-                base::global_origin2_ = csr.global_origin2_;
-                base::capacity_ = csr.capacity_;
-                base::data_ = base::Valloc_.allocate(base::capacity_);
-                base::jdata_ = base::Ialloc_.allocate(base::capacity_);
-                base::pointers_begin_ = base::Palloc_.allocate(base::size1_+1);
-                base::pointers_end_ = base::Palloc_.allocate(base::size1_);
-//                IsRoot r(base::Valloc_);
-//                if(r.root()){
-                        using std::copy_n;
-                        copy_n(csr.data_,base::capacity_,base::data_);
-                        copy_n(csr.jdata_,base::capacity_,base::jdata_);
-                        copy_n(csr.pointers_begin_,base::size1_+1,base::pointers_begin_);
-                        copy_n(csr.pointers_end_,base::size1_,base::pointers_end_);
-//                }
-//                r.barrier();
+                if(this != std::addressof(csr)) {
+                    base::reset();                
+                    base::size1_ = csr.size1_;
+                    base::size2_ = csr.size2_;
+                    base::local_origin1_ = csr.local_origin1_;
+                    base::local_origin2_ = csr.local_origin2_;
+                    base::global_origin1_ = csr.global_origin1_;
+                    base::global_origin2_ = csr.global_origin2_;
+                    base::capacity_ = csr.capacity_;
+                    base::data_ = base::Valloc_.allocate(base::capacity_);
+                    base::jdata_ = base::Ialloc_.allocate(base::capacity_);
+                    base::pointers_begin_ = base::Palloc_.allocate(base::size1_+1);
+                    base::pointers_end_ = base::Palloc_.allocate(base::size1_);
+//                    IsRoot r(base::Valloc_);
+//                    if(r.root()){
+                            using std::copy_n;
+                            copy_n(csr.data_,base::capacity_,base::data_);
+                            copy_n(csr.jdata_,base::capacity_,base::jdata_);
+                            copy_n(csr.pointers_begin_,base::size1_+1,base::pointers_begin_);
+                            copy_n(csr.pointers_end_,base::size1_,base::pointers_end_);
+//                    }
+//                    r.barrier();
+                }
+                return *this;
         }
         template<class ValType_alloc_,
                  class IsRoot_,
@@ -815,6 +821,7 @@ class csr_matrix: public ucsr_matrix<ValType,IndxType,IntType,ValType_alloc,IsRo
                                base::pointers_end_);
 //                }
 //                r.barrier();
+                return *this;
         }
 
         csr_matrix& operator=(ucsr_matrix<ValType,IndxType,IntType,ValType_alloc,IsRoot> const& other) {

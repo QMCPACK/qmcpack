@@ -15,6 +15,7 @@
 #define QMCPLUSPLUS_OPENMP_ALLOCATOR_H
 
 #include <memory>
+#include <type_traits>
 #include "config.h"
 
 namespace qmcplusplus
@@ -39,6 +40,7 @@ struct OMPallocator : public HostAllocator
 
   value_type* allocate(std::size_t n)
   {
+    static_assert(std::is_same<T, value_type>::value, "OMPallocator and HostAllocator data types must agree!");
     value_type* pt = HostAllocator::allocate(n);
     PRAGMA_OFFLOAD("omp target enter data map(alloc:pt[0:n])")
     return pt;
