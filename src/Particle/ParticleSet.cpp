@@ -90,7 +90,6 @@ ParticleSet::ParticleSet(const ParticleSet& p)
   //construct the distance tables with the same order
   if (p.DistTables.size())
   {
-    app_log() << "  Cloning distance tables. It has " << p.DistTables.size() << std::endl;
     addTable(*this, p.DistTables[0]->DTType); //first is always for this-this pair
     for (int i = 1; i < p.DistTables.size(); ++i)
       addTable(p.DistTables[i]->origin(), p.DistTables[i]->DTType);

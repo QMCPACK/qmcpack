@@ -89,7 +89,7 @@ __global__ void kernel_determinant_from_getrf(int N, thrust::complex<T> const* m
 }
 
 template<typename T>
-__global__ void kernel_determinant_from_geqrf(int N, T *m, int lda, T* buff, T LogOverlapFactor, T *det) {
+__global__ void kernel_determinant_from_geqrf(int N, T *m, int lda, T* buff, T LogOverlapFactor, thrust::complex<T> *det) {
 
    __shared__ T tmp[256];
    int t = threadIdx.x;
@@ -111,7 +111,7 @@ __global__ void kernel_determinant_from_geqrf(int N, T *m, int lda, T* buff, T L
      int imax = (N > blockDim.x)?blockDim.x:N;
      for(int i=1; i<imax; i++)
        tmp[0] += tmp[i];
-     *det = exp(tmp[0]-LogOverlapFactor);
+     *det = thrust::complex<T>(exp(tmp[0]-LogOverlapFactor),0.0);
    }
    __syncthreads();
 }
@@ -193,22 +193,35 @@ void determinant_from_getrf_gpu(int N, std::complex<double> *m, int lda, int *pi
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 
-void determinant_from_geqrf_gpu(int N, double *m, int lda, double *buff, double LogOverlapFactor, double* res)
+std::complex<double> determinant_from_geqrf_gpu(int N, double *m, int lda, double *buff, double LogOverlapFactor)
 {
-  kernel_determinant_from_geqrf<<<1,256>>>(N,m,lda,buff,LogOverlapFactor,res);
+  thrust::device_ptr<thrust::complex<double>> d_ptr = thrust::device_malloc<thrust::complex<double>>(1);
+  kernel_determinant_from_geqrf<<<1,256>>>(N,m,lda,buff,LogOverlapFactor,
+                                    thrust::raw_pointer_cast(d_ptr));
   qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
+  std::complex<double> res;
+  qmc_cuda::cuda_check(cudaMemcpy(std::addressof(res),thrust::raw_pointer_cast(d_ptr),
+                sizeof(std::complex<double>),cudaMemcpyDeviceToHost));
+  thrust::device_free(d_ptr);
+  return res;
 }
 
-void determinant_from_geqrf_gpu(int N, std::complex<double> *m, int lda, std::complex<double> *buff, std::complex<double> LogOverlapFactor, std::complex<double>* res)
+std::complex<double> determinant_from_geqrf_gpu(int N, std::complex<double> *m, int lda, std::complex<double> *buff, std::complex<double> LogOverlapFactor)
 {
+  thrust::device_ptr<thrust::complex<double>> d_ptr = thrust::device_malloc<thrust::complex<double>>(1);
   kernel_determinant_from_geqrf<<<1,256>>>(N,
                                     reinterpret_cast<thrust::complex<double> *>(m),lda,
                                     reinterpret_cast<thrust::complex<double> *>(buff), 
                                     static_cast<thrust::complex<double>>(LogOverlapFactor),
-                                    reinterpret_cast<thrust::complex<double> *>(res) );
+                                    thrust::raw_pointer_cast(d_ptr));
   qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
+  std::complex<double> res;
+  qmc_cuda::cuda_check(cudaMemcpy(std::addressof(res),thrust::raw_pointer_cast(d_ptr),
+                sizeof(std::complex<double>),cudaMemcpyDeviceToHost));
+  thrust::device_free(d_ptr);
+  return res;
 }
 
 void determinant_from_geqrf_gpu(int N, double *m, int lda, double *buff)

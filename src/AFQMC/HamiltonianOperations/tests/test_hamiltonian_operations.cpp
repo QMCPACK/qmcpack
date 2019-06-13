@@ -134,18 +134,14 @@ void ham_ops_basic_serial(boost::mpi3::communicator & world)
     std::vector<devPsiT_Matrix> devPsiT(move_vector<devPsiT_Matrix>(std::move(PsiT)));
 
     CMatrix G({NEL,NMO},alloc_);
-    typename Alloc::pointer Ovlp = alloc_.allocate(1);
-    SDet.MixedDensityMatrix(devPsiT[0],devOrbMat[0],
-        G.sliced(0,NAEA),0.0,to_address(Ovlp),true);
+    ComplexType Ovlp = SDet.MixedDensityMatrix(devPsiT[0],devOrbMat[0],
+        G.sliced(0,NAEA),0.0,true);
     if(WTYPE==COLLINEAR) {
-      typename Alloc::pointer Ovlp_ = alloc_.allocate(1);
-      SDet.MixedDensityMatrix(devPsiT[1],devOrbMat[1](devOrbMat.extension(1),{0,NAEB}),
-        G.sliced(NAEA,NAEA+NAEB),0.0,to_address(Ovlp_),true);
-      (*Ovlp) *= (*Ovlp_); 
-      alloc_.deallocate(Ovlp_,1);
+      Ovlp *= SDet.MixedDensityMatrix(devPsiT[1],devOrbMat[1](devOrbMat.extension(1),{0,NAEB}),
+        G.sliced(NAEA,NAEA+NAEB),0.0,true);
     }
-    REQUIRE( real(*Ovlp) == Approx(1.0) );
-    REQUIRE( imag(*Ovlp) == Approx(0.0) );
+    REQUIRE( real(Ovlp) == Approx(1.0) );
+    REQUIRE( imag(Ovlp) == Approx(0.0) );
 
     boost::multi::array<ComplexType,2,Alloc> Eloc({1,3},alloc_);
     boost::multi::array_ref<ComplexType,2,pointer> Gw(make_device_ptr(G.origin()),{NEL*NMO,1});
@@ -203,7 +199,6 @@ void ham_ops_basic_serial(boost::mpi3::communicator & world)
     } else {
       app_log()<<" Vsum: " <<setprecision(12) <<Vsum <<std::endl;
     }
-    alloc_.deallocate(Ovlp,1);
   }
 }
 

@@ -22,7 +22,7 @@
 
 namespace qmcplusplus
 {
-template<class T, typename Alloc = std::allocator<T>, unsigned MemType = MemorySpace::HOST>
+template<class T, typename Alloc = std::allocator<T>>
 class Matrix
 {
 public:
@@ -30,10 +30,10 @@ public:
   typedef T value_type;
   typedef T* pointer;
   typedef const T* const_pointer;
-  typedef Vector<T, Alloc, MemType> Container_t;
+  typedef Vector<T, Alloc> Container_t;
   typedef typename Container_t::size_type size_type;
   typedef typename Container_t::iterator iterator;
-  typedef Matrix<T, Alloc, MemType> This_t;
+  typedef Matrix<T, Alloc> This_t;
 
   Matrix() : D1(0), D2(0), TotSize(0) {} // Default Constructor initializes to zero.
 
@@ -56,7 +56,7 @@ public:
   Matrix(const This_t& rhs)
   {
     resize(rhs.D1, rhs.D2);
-    if (MemType == MemorySpace::HOST)
+    if (allocator_traits<Alloc>::is_host_accessible)
       assign(*this, rhs);
   }
 
@@ -107,16 +107,16 @@ public:
     X.attachReference(ref, TotSize);
   }
 
+  template<typename Allocator = Alloc, typename = IsHostSafe<Allocator>>
   inline void add(size_type n) // you can add rows: adding columns are forbidden
   {
-    static_assert(MemType == MemorySpace::HOST, "Matrix::add MemType must be MemorySpace::HOST");
     X.insert(X.end(), n * D2, T());
     D1 += n;
   }
 
+  template<typename Allocator = Alloc, typename = IsHostSafe<Allocator>>
   inline void copy(const This_t& rhs)
   {
-    static_assert(MemType == MemorySpace::HOST, "Matrix::copy MemType must be MemorySpace::HOST");
     resize(rhs.D1, rhs.D2);
     assign(*this, rhs);
   }
@@ -124,21 +124,15 @@ public:
   // Assignment Operators
   inline This_t& operator=(const This_t& rhs)
   {
-    static_assert(MemType == MemorySpace::HOST, "Matrix::operator= MemType must be MemorySpace::HOST");
     resize(rhs.D1, rhs.D2);
-    return assign(*this, rhs);
+    if (allocator_traits<Alloc>::is_host_accessible)
+      assign(*this, rhs);
+    return *this;
   }
 
-  inline const This_t& operator=(const This_t& rhs) const
-  {
-    static_assert(MemType == MemorySpace::HOST, "Matrix::operator= MemType must be MemorySpace::HOST");
-    return assign(*this, rhs);
-  }
-
-  template<class RHS>
+  template<class RHS, typename Allocator = Alloc, typename = IsHostSafe<Allocator>>
   This_t& operator=(const RHS& rhs)
   {
-    static_assert(MemType == MemorySpace::HOST, "Matrix::operator= MemType must be MemorySpace::HOST");
     return assign(*this, rhs);
   }
 
@@ -172,35 +166,36 @@ public:
   /// returns a pointer of i-th row, g++ iterator problem
   inline Type_t* operator[](size_type i) { return X.data() + i * D2; }
 
+  template<typename Allocator = Alloc, typename = IsHostSafe<Allocator>>
   inline Type_t& operator()(size_type i)
   {
-    static_assert(MemType == MemorySpace::HOST, "Matrix::operator() MemType must be MemorySpace::HOST");
     return X[i];
   }
+
   // returns the i-th value in D1*D2 vector
+  template<typename Allocator = Alloc, typename = IsHostSafe<Allocator>>
   inline Type_t operator()(size_type i) const
   {
-    static_assert(MemType == MemorySpace::HOST, "Matrix::operator() MemType must be MemorySpace::HOST");
     return X[i];
   }
 
   // returns val(i,j)
+  template<typename Allocator = Alloc, typename = IsHostSafe<Allocator>>
   inline Type_t& operator()(size_type i, size_type j)
   {
-    static_assert(MemType == MemorySpace::HOST, "Matrix::operator() MemType must be MemorySpace::HOST");
     return X[i * D2 + j];
   }
 
   // returns val(i,j)
+  template<typename Allocator = Alloc, typename = IsHostSafe<Allocator>>
   inline const Type_t& operator()(size_type i, size_type j) const
   {
-    static_assert(MemType == MemorySpace::HOST, "Matrix::operator() MemType must be MemorySpace::HOST");
     return X[i * D2 + j];
   }
 
+  template<typename Allocator = Alloc, typename = IsHostSafe<Allocator>>
   inline void swap_rows(int r1, int r2)
   {
-    static_assert(MemType == MemorySpace::HOST, "Matrix::operator() MemType must be MemorySpace::HOST");
     for (int col = 0; col < D2; col++)
     {
       Type_t tmp       = (*this)(r1, col);
@@ -209,9 +204,9 @@ public:
     }
   }
 
+  template<typename Allocator = Alloc, typename = IsHostSafe<Allocator>>
   inline void swap_cols(int c1, int c2)
   {
-    static_assert(MemType == MemorySpace::HOST, "Matrix::operator() MemType must be MemorySpace::HOST");
     for (int row = 0; row < D1; row++)
     {
       Type_t tmp       = (*this)(row, c1);
@@ -220,27 +215,23 @@ public:
     }
   }
 
-
-  template<class IT>
+  template<class IT, typename Allocator = Alloc, typename = IsHostSafe<Allocator>>
   inline void replaceRow(IT first, size_type i)
   {
-    static_assert(MemType == MemorySpace::HOST, "Matrix::operator() MemType must be MemorySpace::HOST");
     std::copy(first, first + D2, X.begin() + i * D2);
   }
 
-  template<class IT>
+  template<class IT, typename Allocator = Alloc, typename = IsHostSafe<Allocator>>
   inline void replaceColumn(IT first, size_type j)
   {
-    static_assert(MemType == MemorySpace::HOST, "Matrix::operator() MemType must be MemorySpace::HOST");
     typename Container_t::iterator ii(X.begin() + j);
     for (int i = 0; i < D1; i++, ii += D2)
       *ii = *first++;
   }
 
-  template<class IT>
+  template<class IT, typename Allocator = Alloc, typename = IsHostSafe<Allocator>>
   inline void add2Column(IT first, size_type j)
   {
-    static_assert(MemType == MemorySpace::HOST, "Matrix::operator() MemType must be MemorySpace::HOST");
     typename Container_t::iterator ii(X.begin() + j);
     for (int i = 0; i < D1; i++, ii += D2)
       *ii += *first++;
@@ -253,10 +244,9 @@ public:
    * \param i0  starting row where the copying is done
    * \param j0  starting column where the copying is done
    */
-  template<class T1>
+  template<class T1, typename Allocator = Alloc, typename = IsHostSafe<Allocator>>
   inline void add(const T1* sub, size_type d1, size_type d2, size_type i0, size_type j0)
   {
-    static_assert(MemType == MemorySpace::HOST, "Matrix::operator() MemType must be MemorySpace::HOST");
     int ii = 0;
     for (int i = 0; i < d1; i++)
     {
@@ -268,10 +258,9 @@ public:
     }
   }
 
-  template<class T1>
+  template<class T1, typename Allocator = Alloc, typename = IsHostSafe<Allocator>>
   inline void add(const T1* sub, size_type d1, size_type d2, size_type i0, size_type j0, const T& phi)
   {
-    static_assert(MemType == MemorySpace::HOST, "Matrix::operator() MemType must be MemorySpace::HOST");
     size_type ii = 0;
     for (size_type i = 0; i < d1; i++)
     {
@@ -283,10 +272,9 @@ public:
     }
   }
 
-  template<class SubMat_t>
+  template<class SubMat_t, typename Allocator = Alloc, typename = IsHostSafe<Allocator>>
   inline void add(const SubMat_t& sub, unsigned int i0, unsigned int j0)
   {
-    static_assert(MemType == MemorySpace::HOST, "Matrix::operator() MemType must be MemorySpace::HOST");
     size_type ii = 0;
     for (size_type i = 0; i < sub.rows(); i++)
     {
@@ -298,9 +286,9 @@ public:
     }
   }
 
+  template<typename Allocator = Alloc, typename = IsHostSafe<Allocator>>
   inline void add(const This_t& sub, unsigned int i0, unsigned int j0)
   {
-    static_assert(MemType == MemorySpace::HOST, "Matrix::operator() MemType must be MemorySpace::HOST");
     size_type ii = 0;
     for (size_type i = 0; i < sub.rows(); i++)
     {
@@ -312,18 +300,16 @@ public:
     }
   }
 
-  template<class Msg>
+  template<class Msg, typename Allocator = Alloc, typename = IsHostSafe<Allocator>>
   inline Msg& putMessage(Msg& m)
   {
-    static_assert(MemType == MemorySpace::HOST, "Matrix::operator() MemType must be MemorySpace::HOST");
     m.Pack(X.data(), D1 * D2);
     return m;
   }
 
-  template<class Msg>
+  template<class Msg, typename Allocator = Alloc, typename = IsHostSafe<Allocator>>
   inline Msg& getMessage(Msg& m)
   {
-    static_assert(MemType == MemorySpace::HOST, "Matrix::operator() MemType must be MemorySpace::HOST");
     m.Unpack(X.data(), D1 * D2);
     return m;
   }

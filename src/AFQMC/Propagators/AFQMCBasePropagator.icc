@@ -393,7 +393,6 @@ void AFQMCBasePropagator::BackPropagate(int nbpsteps, int nStabalize, WlkSet& ws
   }
   TG.TG_local().barrier();
 
-
 }
 
 
@@ -555,7 +554,6 @@ void AFQMCBasePropagator::apply_propagators_batched(char TA, WSet& wset, int ni,
   void AFQMCBasePropagator::Orthogonalize_shared(WlkSet& wset, CMat&& detR) {
     if(new_overlaps.size() < 1)
       new_overlaps.reextent(iextensions<1u>{1});
-    pointer d_(new_overlaps.origin());
     int nwalk = wset.size();
     auto walker_type = wset.getWalkerType();
     double LogOverlapFactor(wset.getLogOverlapFactor());
@@ -563,8 +561,7 @@ void AFQMCBasePropagator::apply_propagators_batched(char TA, WSet& wset, int ni,
       int iw=0;
       for(typename WlkSet::iterator it=wset.begin(); it!=wset.end(); ++it, ++iw) {
         if( iw%TG.getNCoresPerTG() == TG.getLocalTGRank() ) {
-          SDetOp->Orthogonalize(it->SlaterMatrix(Alpha),LogOverlapFactor,to_address(d_));
-          detR[iw][0] *= ComplexType(*d_);
+          detR[iw][0] *= SDetOp->Orthogonalize(it->SlaterMatrix(Alpha),LogOverlapFactor);
         }
       }
     } else {
@@ -572,12 +569,10 @@ void AFQMCBasePropagator::apply_propagators_batched(char TA, WSet& wset, int ni,
       int iw=0;
       for(typename WlkSet::iterator it=wset.begin(); it!=wset.end(); ++it, ++iw) {
         if( (cnt++)%TG.getNCoresPerTG() == TG.getLocalTGRank() ) {
-          SDetOp->Orthogonalize(it->SlaterMatrix(Alpha),LogOverlapFactor,to_address(d_));
-          detR[iw][0] *= ComplexType(*d_);
+          detR[iw][0] *= SDetOp->Orthogonalize(it->SlaterMatrix(Alpha),LogOverlapFactor);
         }
         if( (cnt++)%TG.getNCoresPerTG() == TG.getLocalTGRank() ) {
-          SDetOp->Orthogonalize(it->SlaterMatrix(Beta),LogOverlapFactor,to_address(d_));
-          detR[iw][1] *= ComplexType(*d_);
+          detR[iw][1] *= SDetOp->Orthogonalize(it->SlaterMatrix(Beta),LogOverlapFactor);
         }
       }
     }
@@ -611,7 +606,7 @@ void AFQMCBasePropagator::apply_propagators_batched(char TA, WSet& wset, int ni,
         int nb = std::min(nbatch,nw-iw);
         Ai.clear();
         for(int ni=0; ni<nb; ni++) Ai.emplace_back(wset[iw+ni].SlaterMatrix(Alpha));
-        SDetOp->BatchedOrthogonalize(Ai,LogOverlapFactor,to_address(local_vHS.origin()));
+        SDetOp->BatchedOrthogonalize(Ai,LogOverlapFactor,local_vHS.origin());
         // GPU trickery,to make sure detR_ is in CPU, since detR is in CPU
         copy_n(local_vHS.origin(),nb,detR_.origin());
         for(int ni=0; ni<nb; ni++) detR[iw+ni][0] *= detR_[ni]; 
@@ -623,13 +618,13 @@ void AFQMCBasePropagator::apply_propagators_batched(char TA, WSet& wset, int ni,
         // Alpha 
         Ai.clear();
         for(int ni=0; ni<nb; ni++) Ai.emplace_back(wset[iw+ni].SlaterMatrix(Alpha));
-        SDetOp->BatchedOrthogonalize(Ai,LogOverlapFactor,to_address(local_vHS.origin()));
+        SDetOp->BatchedOrthogonalize(Ai,LogOverlapFactor,local_vHS.origin());
         copy_n(local_vHS.origin(),nb,detR_.origin());
         for(int ni=0; ni<nb; ni++) detR[iw+ni][0] *= detR_[ni]; 
         // Beta
         Ai.clear();
         for(int ni=0; ni<nb; ni++) Ai.emplace_back(wset[iw+ni].SlaterMatrix(Beta));
-        SDetOp->BatchedOrthogonalize(Ai,LogOverlapFactor,to_address(local_vHS.origin()));
+        SDetOp->BatchedOrthogonalize(Ai,LogOverlapFactor,local_vHS.origin());
         copy_n(local_vHS.origin(),nb,detR_.origin());
         for(int ni=0; ni<nb; ni++) detR[iw+ni][1] *= detR_[ni]; 
       }

@@ -290,7 +290,7 @@ inline bool h5d_append(hid_t grp,
   hid_t dataspace;
   hid_t memspace;
   hid_t dataset = H5Dopen(grp, aname.c_str());
-  hsize_t max_dims[ndims];
+  std::vector<hsize_t> max_dims(ndims);
   max_dims[0] = H5S_UNLIMITED;
   for (int d = 1; d < ndims; ++d)
     max_dims[d] = dims[d];
@@ -300,18 +300,18 @@ inline bool h5d_append(hid_t grp,
     //set file pointer
     current = 0;
     // set max and chunk dims
-    hsize_t chunk_dims[ndims];
+    std::vector<hsize_t> chunk_dims(ndims);
     chunk_dims[0] = chunk_size;
     for (int d = 1; d < ndims; ++d)
       chunk_dims[d] = dims[d];
     // create a dataspace sized to the current buffer
-    dataspace = H5Screate_simple(ndims, dims, max_dims);
+    dataspace = H5Screate_simple(ndims, dims, max_dims.data());
     // create dataset property list
     hid_t p = H5Pcreate(H5P_DATASET_CREATE);
     // set layout (chunked, contiguous)
     hid_t sl = H5Pset_layout(p, H5D_CHUNKED);
     // set chunk size
-    hid_t cs = H5Pset_chunk(p, ndims, chunk_dims);
+    hid_t cs = H5Pset_chunk(p, ndims, chunk_dims.data());
     // create the dataset
     dataset = H5Dcreate2(grp, aname.c_str(), h5d_type_id, dataspace, H5P_DEFAULT, p, H5P_DEFAULT);
     // create memory dataspace, size of current buffer
@@ -344,8 +344,8 @@ inline bool h5d_append(hid_t grp,
   else
   {
     // new end of file
-    hsize_t start[ndims];
-    hsize_t end[ndims];
+    std::vector<hsize_t> start(ndims);
+    std::vector<hsize_t> end(ndims);
     for (int d = 1; d < ndims; ++d)
     {
       start[d] = 0;
@@ -354,13 +354,13 @@ inline bool h5d_append(hid_t grp,
     start[0] = current;
     end[0]   = start[0] + dims[0];
     //extend the dataset (file)
-    herr_t he = H5Dextend(dataset, end);
+    herr_t he = H5Dextend(dataset, end.data());
     //get the corresponding dataspace (filespace)
     dataspace = H5Dget_space(dataset);
     //set the extent
-    herr_t hse = H5Sset_extent_simple(dataspace, ndims, end, max_dims);
+    herr_t hse = H5Sset_extent_simple(dataspace, ndims, end.data(), max_dims.data());
     //select hyperslab/slice of multidimensional data for appended write
-    herr_t hsh = H5Sselect_hyperslab(dataspace, H5S_SELECT_SET, start, NULL, dims, NULL);
+    herr_t hsh = H5Sselect_hyperslab(dataspace, H5S_SELECT_SET, start.data(), NULL, dims, NULL);
     //create memory space describing current data block
     memspace = H5Screate_simple(ndims, dims, NULL);
     //append the datablock to the dataset

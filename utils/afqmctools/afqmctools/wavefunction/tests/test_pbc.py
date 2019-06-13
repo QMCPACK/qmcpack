@@ -38,19 +38,14 @@ class TestMolWavefunction(unittest.TestCase):
                     'isUHF': False,
                     'hcore': hcore,
                     'nmo_pk': nmo_pk,
+                    'mo_energy': mf.mo_energy,
                     'kpts': kpts}
         with h5py.File('wfn.h5', 'w') as fh5:
             pass
         pbc.write_wfn_pbc(scf_data, True, 'wfn.h5', rediag=True)
         with h5py.File('wfn.h5', 'r') as fh5:
-            dims = fh5['Wavefunction/dims'][:]
-            orbs = fh5['Wavefunction/orbs'][:]
-            wfn_type = fh5['Wavefunction/type'][()]
-            wlk_type = fh5['Wavefunction/walker_type'][()]
-        self.assertEqual(wfn_type, 'NOMSD')
-        self.assertEqual(wlk_type, 'CLOSED')
-        self.assertTrue(numpy.allclose(dims, [1,64,64]))
-        self.assertAlmostEqual(numpy.max(orbs), 1.0)
+            dims = fh5['Wavefunction/NOMSD/dims'][:]
+        self.assertTrue(numpy.allclose(dims, [64,32,32,1,1]))
 
     def tearDown(self):
         cwd = os.getcwd()
