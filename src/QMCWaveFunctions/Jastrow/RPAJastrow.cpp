@@ -194,7 +194,7 @@ void RPAJastrow::makeShortRange()
       new TwoBodyJastrowOrbital<BsplineFunctor<RealType>>(targetPtcl, IsManager);
   size_t nparam  = 12; // number of Bspline parameters
   size_t npts    = 100; // number of 1D grid points for basis functions
-  RealType cusp = -SRA->df(0);
+  RealType cusp = SRA->df(0);
   RealType delta = Rcut / static_cast<double>(npts);
   std::vector<RealType> X(npts + 1), Y(npts + 1);
   for (size_t i = 0; i < npts; ++i)

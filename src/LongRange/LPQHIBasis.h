@@ -86,28 +86,6 @@ public:
       return Sa[0] + x * (Sa[1] + x * (Sa[2] + x * (Sa[3] + x * (Sa[4] + x * Sa[5]))));
     }
   }
-  inline mRealType df(int n, mRealType r) const
-  {
-    int i        = n / 3;
-    int alpha    = n - 3 * i;
-    mRealType ra = delta * (i - 1);
-    mRealType rb = delta * i;
-    mRealType rc = delta * (i + 1);
-    rc           = std::min(m_rc, rc);
-    const mRealType* restrict Sa(S1[alpha]);
-    if (r < ra || r > rc)
-      return 0.0;
-    if (r <= rb)
-    {
-      mRealType x = (rb - r) * deltainv;
-      return Mfactor[alpha] * (Sa[0] + x * (Sa[1] + x * (Sa[2] + x * (Sa[3] + x * Sa[4]))));
-    }
-    else
-    {
-      mRealType x = (r - rb) * deltainv;
-      return Sa[0] + x * (Sa[1] + x * (Sa[2] + x * (Sa[3] + x * Sa[4])));
-    }
-  }
   inline mRealType dh_dr(int n, mRealType r) const
   {
     int i        = n / 3;
