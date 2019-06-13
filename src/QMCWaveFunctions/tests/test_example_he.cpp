@@ -194,7 +194,7 @@ TEST_CASE("ExampleHe", "[wavefunction]")
 
   RealType old_B = example_he->B;
   // Interval size for finite-difference approximation to parameter derivative
-  RealType h     = 0.001;
+  RealType h     = 0.01;
   RealType new_B = old_B + h;
 
   var_param["B"] = new_B;
