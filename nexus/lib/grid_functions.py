@@ -657,6 +657,11 @@ class StructuredGrid(Grid):
     #end def cell_grid_shape
 
     @property
+    def ncells(self):
+        return np.prod(self.cell_grid_shape)
+    #end def ncells
+
+    @property
     def flat_points_shape(self):
         space_dim = self.r.shape[-1]
         npoints = np.prod(self.shape)
