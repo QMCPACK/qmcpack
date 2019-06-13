@@ -143,9 +143,9 @@ void vKKwij_to_vwKiKj( int nwalk, int nkpts, int nmo_max, int nmo_tot,
  * A[i,j] = A[i,j] op x[...], 
  *   where op is {+,-,*,/} and x[...] depends on dim (0:i, 1:j, ...}
  */
-template<typename T>
+template<typename T, typename T2>
 void term_by_term_matrix_vector(TENSOR_OPERATIONS op, int dim, int nrow, int ncol, T* A, int lda, 
-                                  T const* x, int incx)
+                                  T2 const* x, int incx)
 {
   assert(dim==0 || dim==1);  
   if(op==TOp_PLUS) {
@@ -237,10 +237,10 @@ void vKKwij_to_vwKiKj( int nwalk, int nkpts, int nmo_max, int nmo_tot,
  * A[i,j] = A[i,j] op x[...], 
  *   where op is {+,-,*,/} and x[...] depends on dim (0:i, 1:j, ...}
  */
-template<typename T>
+template<typename T, typename T2>
 void term_by_term_matrix_vector(ma::TENSOR_OPERATIONS op, int dim, int nrow, int ncol, 
                                   cuda_gpu_ptr<T> A, int lda,
-                                  cuda_gpu_ptr<T> x, int incx)
+                                  cuda_gpu_ptr<T2> x, int incx)
 {
   assert(dim==0 || dim==1);
   if(op==ma::TOp_PLUS) 

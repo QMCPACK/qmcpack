@@ -27,8 +27,6 @@
 #include <OhmmsPETE/Tensor.h>
 #include <Lattice/LatticeOperations.h>
 
-#define USE_BOXBCONDS
-
 namespace qmcplusplus
 {
 /** enumeration to classify a CrystalLattice
@@ -234,29 +232,16 @@ struct CrystalLattice
 #endif
   }
 
+  /// return true if all the open direction of reduced coordinates u are in the range [0,1)
   inline bool isValid(const TinyVector<T, D>& u) const
   {
-#if defined(USE_BOXBCONDS)
-    return CheckBoxConds<T, D>::inside(u, BoxBConds);
-#else
-    if (SuperCellEnum)
-      return true;
-    else
-      return CheckBoxConds<T, D>::inside(u);
-#endif
+    bool inside = true;
+    for (int dim = 0; dim < D; dim++)
+      inside &= (BoxBConds[dim] || (u[dim] >= T(0) && u[dim] < T(1)));
+    return inside;
   }
 
-  //  inline bool isValid(const TinyVector<T,D>& u, TinyVector<T,D>& ubox) const
-  //  {
-  //    if(SuperCellEnum)
-  //      return CheckBoxConds<T,D>::inside(u,ubox);
-  //    else
-  //    {
-  //      ubox=u;
-  //      return CheckBoxConds<T,D>::inside(u);
-  //    }
-  //  }
-
+  /// return true if any direction of reduced coordinates u goes larger than 0.5
   inline bool outOfBound(const TinyVector<T, D>& u) const
   {
     for (int i = 0; i < D; ++i)

@@ -334,64 +334,44 @@ int main(int argc, char** argv)
     if (prod)
     {
       parser->addJastrow = addJastrow;
+      parser->WFS_name = jastrow;
       if (parser->PBC)
       {
-        for (int i = 0; i < parser->NbKpts; i++)
-        {
-          std::cout << "Generating Inputs for twist Nb:" << i << " with coordinate:" << parser->Kpoints_Coord[i][0]
-                    << "  " << parser->Kpoints_Coord[i][1] << "  " << parser->Kpoints_Coord[i][2] << std::endl;
-          std::stringstream ss;
-          ss << jastrow << "-Twist" << i;
-          parser->WFS_name = ss.str();
-          parser->dumpPBC(psi_tag, ion_tag, i);
-          parser->dumpStdInputProd(psi_tag, ion_tag);
-        }
+        std::cout << "Generating Inputs for Supertwist  with coordinates:" << parser->STwist_Coord[0]
+                  << "  " << parser->STwist_Coord[1] << "  " << parser->STwist_Coord[2] << std::endl;
+        parser->dumpPBC(psi_tag, ion_tag);
       }
       else
-      {
-        parser->WFS_name = jastrow;
         parser->dump(psi_tag, ion_tag);
-        parser->dumpStdInputProd(psi_tag, ion_tag);
-      }
+      parser->dumpStdInputProd(psi_tag, ion_tag);
     }
     else
     {
       parser->addJastrow = false;
+      jastrow = "noj";
+      parser->WFS_name = jastrow;
       if (parser->PBC)
       {
-        for (int i = 0; i < parser->NbKpts; i++)
-        {
-          std::cout << "Generating Inputs for twist Nb:" << i << " with coordinate:" << parser->Kpoints_Coord[i][0]
-                    << "  " << parser->Kpoints_Coord[i][1] << "  " << parser->Kpoints_Coord[i][2] << std::endl;
-          jastrow = "noj";
-          std::stringstream ss;
-          ss << jastrow << "-Twist" << i;
-          parser->WFS_name = ss.str();
-          parser->dumpPBC(psi_tag, ion_tag, i);
-          parser->dumpStdInput(psi_tag, ion_tag);
-
-          std::stringstream sss;
-          parser->addJastrow = true;
-          jastrow            = "j";
-          sss << jastrow << "-Twist" << i;
-          parser->WFS_name = sss.str();
-          parser->dumpPBC(psi_tag, ion_tag, i);
-          parser->dumpStdInput(psi_tag, ion_tag);
-        }
+        std::cout << "Generating Inputs for Supertwist  with coordinates:" << parser->STwist_Coord[0]
+                  << "  " << parser->STwist_Coord[1] << "  " << parser->STwist_Coord[2] << std::endl;
+        parser->dumpPBC(psi_tag, ion_tag);
       }
       else
-      {
-        jastrow          = "noj";
-        parser->WFS_name = jastrow;
         parser->dump(psi_tag, ion_tag);
-        parser->dumpStdInput(psi_tag, ion_tag);
+      parser->dumpStdInput(psi_tag, ion_tag);
 
-        parser->addJastrow = true;
-        jastrow            = "j";
-        parser->WFS_name   = jastrow;
-        parser->dump(psi_tag, ion_tag);
-        parser->dumpStdInput(psi_tag, ion_tag);
+      parser->addJastrow = true;
+      jastrow            = "j";
+      parser->WFS_name = jastrow;
+      if (parser->PBC)
+      {
+        std::cout << "Generating Inputs for Supertwist  with coordinates:" << parser->STwist_Coord[0]
+                  << "  " << parser->STwist_Coord[1] << "  " << parser->STwist_Coord[2] << std::endl;
+        parser->dumpPBC(psi_tag, ion_tag);
       }
+      else
+        parser->dump(psi_tag, ion_tag);
+      parser->dumpStdInput(psi_tag, ion_tag);
     }
 
 

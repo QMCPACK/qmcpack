@@ -23,6 +23,10 @@ SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fomit-frame-pointer -finline-limit=1000
 SET(CMAKE_C_FLAGS     "${CMAKE_C_FLAGS} -Wno-deprecated")
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated")
 
+# treat VLA as error
+SET(CMAKE_C_FLAGS     "${CMAKE_C_FLAGS} -Werror=vla")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wvla")
+
 # Set extra optimization specific flags
 SET( CMAKE_C_FLAGS_RELEASE     "${CMAKE_C_FLAGS_RELEASE} -ffast-math" )
 SET( CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -ffast-math" )
@@ -50,7 +54,7 @@ ELSEIF(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64")
     endif() #(CMAKE_CXX_FLAGS MATCHES "-march=" AND CMAKE_C_FLAGS MATCHES "-march=")
   else() #(CMAKE_CXX_FLAGS MATCHES "-march=" OR CMAKE_C_FLAGS MATCHES "-march=")
     # use -march=native
-    SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -march=native")
+    SET(CMAKE_C_FLAGS     "${CMAKE_C_FLAGS} -march=native")
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
   endif()  #(CMAKE_CXX_FLAGS MATCHES "-march=" OR CMAKE_C_FLAGS MATCHES "-march=")
 ELSEIF(CMAKE_SYSTEM_PROCESSOR MATCHES "ppc64" OR CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64")
@@ -64,9 +68,19 @@ ELSEIF(CMAKE_SYSTEM_PROCESSOR MATCHES "ppc64" OR CMAKE_SYSTEM_PROCESSOR MATCHES 
     endif() #(CMAKE_CXX_FLAGS MATCHES "-mcpu=" AND CMAKE_C_FLAGS MATCHES "-mcpu=")
   else() #(CMAKE_CXX_FLAGS MATCHES "-mcpu=" OR CMAKE_C_FLAGS MATCHES "-mcpu=")
     # use -mcpu=native
-    SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -mcpu=native")
+    SET(CMAKE_C_FLAGS     "${CMAKE_C_FLAGS} -mcpu=native")
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mcpu=native")
   endif() #(CMAKE_CXX_FLAGS MATCHES "-mcpu=" OR CMAKE_C_FLAGS MATCHES "-mcpu=")
+ENDIF()
+
+# protect buggy libmvec
+FILE( WRITE "${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/src_glibc.cxx"
+    "#include <iostream>\n#if __GLIBC__ == 2 && ( __GLIBC_MINOR__ == 22 || __GLIBC_MINOR__ == 23 )\n#error buggy glibc version\n#endif\n int main() { return 0; }\n" )
+try_compile(PASS_GLIBC ${CMAKE_BINARY_DIR}
+      ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/src_glibc.cxx
+      CMAKE_FLAGS "${CMAKE_CXX_FLAGS}" )
+IF ( NOT PASS_GLIBC )
+  MESSAGE(FATAL_ERROR "Your system and GNU compiler are using glibc 2.22 or 2.23 which contains a buggy libmvec. This results in crashes. Workaround needed. Alternatively upgrade or use another compiler.")
 ENDIF()
 
 # Add static flags if necessary

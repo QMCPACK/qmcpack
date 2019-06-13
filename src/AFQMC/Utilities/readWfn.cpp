@@ -13,6 +13,7 @@
 
 #include "AFQMC/config.h"
 #include "AFQMC/Matrix/csr_matrix.hpp"
+#include "AFQMC/Matrix/csr_hdf5_readers.hpp"
 #include "AFQMC/Matrix/csr_matrix_construct.hpp"
 
 namespace qmcplusplus
@@ -337,13 +338,13 @@ ph_excitations<int,ComplexType> read_ph_wavefunction(std::ifstream& in, int& nde
   }
 
   assert(walker_type!=UNDEFINED_WALKER_TYPE);
-  std::string type;
   bool fullMOMat = false;
   bool Cstyle = true;
   int wfn_type=0;
   int ndet_in_file=-1;
   int NEL = NAEA;
   bool mixed=false;
+  std::string type;
   if(walker_type!=CLOSED) NEL+=NAEB;
 
   /*

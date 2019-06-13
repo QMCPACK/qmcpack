@@ -18,10 +18,11 @@
  */
 #ifndef QMCPLUSPLUS_MULTIEINSPLINE_COMMON_HPP
 #define QMCPLUSPLUS_MULTIEINSPLINE_COMMON_HPP
-#include "config.h"
 #include <iostream>
-#include <spline2/BsplineAllocator.hpp>
-#include <stdlib.h>
+#include <cstdlib>
+#include <type_traits>
+#include "config.h"
+#include "spline2/BsplineAllocator.hpp"
 
 namespace qmcplusplus
 {
@@ -57,6 +58,7 @@ struct MultiBspline
   template<typename GT, typename BCT>
   void create(GT& grid, BCT& bc, int num_splines)
   {
+    static_assert(std::is_same<T, typename ALLOC::value_type>::value, "MultiBspline and ALLOC data types must agree!");
     if (getAlignedSize<T, ALIGN>(num_splines) != num_splines)
       throw std::runtime_error("When creating the data space of MultiBspline, num_splines must be padded!\n");
     if (spline_m == nullptr)

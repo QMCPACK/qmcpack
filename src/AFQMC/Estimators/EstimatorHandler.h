@@ -18,6 +18,7 @@
 #include "AFQMC/Wavefunctions/WavefunctionFactory.h"
 #include "AFQMC/Wavefunctions/Wavefunction.hpp"
 #include "AFQMC/Hamiltonians/Hamiltonian.hpp"
+#include "AFQMC/Propagators/Propagator.hpp"
 
 #include "mpi3/communicator.hpp"
 
@@ -36,8 +37,10 @@ class EstimatorHandler: public AFQMCInfo
   public:
 
   EstimatorHandler(afqmc::TaskGroupHandler& TGgen, AFQMCInfo info, std::string title, xmlNodePtr cur,
+        WalkerSet& wset,
         WavefunctionFactory& WfnFac,
         Wavefunction& wfn0,
+        Propagator& prop0,
         WALKER_TYPES walker_type,
         HamiltonianFactory& HamFac,
         std::string ham0,
@@ -131,7 +134,7 @@ class EstimatorHandler: public AFQMCInfo
             estimators.emplace_back(static_cast<EstimPtr>(std::make_shared<MixedRDMEstimator>(TGgen.getTG(1),info,title,cur,walker_type,*wfn,impsamp)));
             hdf_output = true;
           } else if (name == "back_propagation") {
-            estimators.emplace_back(static_cast<EstimPtr>(std::make_shared<BackPropagatedEstimator>(TGgen.getTG(1),info,title,cur,walker_type,*wfn,impsamp)));
+            estimators.emplace_back(static_cast<EstimPtr>(std::make_shared<BackPropagatedEstimator>(TGgen.getTG(1),info,title,cur,walker_type,wset,*wfn,prop0,impsamp)));
             hdf_output = true;
           } else if (name == "energy") {
             estimators.emplace_back(static_cast<EstimPtr>(std::make_shared<EnergyEstimator>(TGgen.getTG(1),info,cur,*wfn,impsamp)));

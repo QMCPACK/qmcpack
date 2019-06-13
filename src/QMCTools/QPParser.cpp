@@ -600,7 +600,7 @@ void QPParser::getQPCI(std::istream& is)
       ci_neb++;
   if (CIalpha[0].size() != CIbeta[0].size())
   {
-    std::cerr << "QMCPack can't handle different number of active orbitals in alpha and beta channels right now. "
+    std::cerr << "QMCPACK can't handle different number of active orbitals in alpha and beta channels right now. "
                  "Contact developers for help (Miguel).\n";
     abort();
   }
