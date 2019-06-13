@@ -23,6 +23,7 @@
 #include <spline2/MultiBsplineEval_OMPoffload.hpp>
 #include "QMCWaveFunctions/BsplineFactory/SplineAdoptorBase.h"
 #include "OpenMP/OMPallocator.hpp"
+#include "Platforms/PinnedAllocator.h"
 #include "QMCWaveFunctions/BsplineFactory/contraction_helper.hpp"
 #include "Utilities/FairDivide.h"
 
@@ -211,8 +212,9 @@ template<typename ST, typename TT>
 struct SplineC2ROMP : public SplineAdoptorBase<ST, 3>
 {
   static const int ALIGN   = QMC_CLINE;
-  using OffloadAllocatorST = OMPallocator<ST, Mallocator<ST, QMC_CLINE>>;
-  using OffloadAllocatorTT = OMPallocator<TT, Mallocator<TT, QMC_CLINE>>;
+  using OffloadAllocatorST = OMPallocator<ST, aligned_allocator<ST>>;
+  using OffloadAlignedAllocatorST = OMPallocator<ST, PinnedAlignedAllocator<ST>>;
+  using OffloadAlignedAllocatorTT = OMPallocator<TT, PinnedAlignedAllocator<TT>>;
 
   static const int D     = 3;
   using BaseType         = SplineAdoptorBase<ST, 3>;
@@ -253,13 +255,13 @@ struct SplineC2ROMP : public SplineAdoptorBase<ST, 3>
   ghContainer_type mygH;
 
   ///thread private ratios for reduction when using nested threading, numVP x numThread
-  Matrix<TT, OffloadAllocatorTT> ratios_private;
+  Matrix<TT, OffloadAlignedAllocatorTT> ratios_private;
   ///offload scratch space, dynamically resized to the maximal need
-  Vector<ST, OffloadAllocatorST> offload_scratch;
+  Vector<ST, OffloadAlignedAllocatorST> offload_scratch;
   ///result scratch space, dynamically resized to the maximal need
-  Vector<TT, OffloadAllocatorTT> results_scratch;
+  Vector<TT, OffloadAlignedAllocatorTT> results_scratch;
   ///particle position scratch, dynamically resized to the maximal need
-  Vector<ST, OffloadAllocatorST> pos_scratch;
+  Vector<ST, OffloadAlignedAllocatorST> pos_scratch;
   ///the following pointers are used for keep and access the data on device
   ///cloned objects copy the pointer by value without the need of mapping to the device
   ///Thus master_PrimLattice_G_ptr is different from PrimLattice.G.data() in cloned objects

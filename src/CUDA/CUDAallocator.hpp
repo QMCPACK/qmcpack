@@ -154,6 +154,41 @@ bool operator!=(const CUDAHostAllocator<T1>&, const CUDAHostAllocator<T2>&)
 {
   return false;
 }
+
+/// allocator locks memory pages allocated by HostAllocator
+template<typename T, class HostAllocator = std::allocator<T>>
+struct CUDALockedPageAllocator : public HostAllocator
+{
+  using value_type    = typename HostAllocator::value_type;
+  using size_type     = typename HostAllocator::size_type;
+  using pointer       = typename HostAllocator::pointer;
+  using const_pointer = typename HostAllocator::const_pointer;
+
+  CUDALockedPageAllocator() = default;
+  template<class U, class V>
+  CUDALockedPageAllocator(const CUDALockedPageAllocator<U, V>&)
+  {}
+  template<class U, class V>
+  struct rebind
+  {
+    typedef CUDALockedPageAllocator<U, V> other;
+  };
+
+  value_type* allocate(std::size_t n)
+  {
+    static_assert(std::is_same<T, value_type>::value, "CUDALockedPageAllocator and HostAllocator data types must agree!");
+    value_type* pt = HostAllocator::allocate(n);
+    cudaErrorCheck(cudaHostRegister(pt, n*sizeof(T), cudaHostRegisterDefault), "cudaHostRegister failed in CUDALockedPageAllocator!");
+    return pt;
+  }
+
+  void deallocate(value_type* pt, std::size_t n)
+  {
+    cudaErrorCheck(cudaHostUnregister(pt), "cudaHostUnregister failed in CUDALockedPageAllocator!");
+    HostAllocator::deallocate(pt, n);
+  }
+};
+
 } // namespace qmcplusplus
 
 #endif
