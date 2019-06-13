@@ -180,6 +180,10 @@ void RPAJastrow::makeLongRange()
 
 void RPAJastrow::makeShortRange()
 {
+  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  // !!!  WARNING: tiny, nparam, npts should be input parameters  !!!
+  // !!!                    fix in a future PR!                   !!!
+  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   app_log() << "  Adding Short Range part of RPA function" << std::endl;
   //short-range uses realHandler
   RealType tiny = 1e-6;
