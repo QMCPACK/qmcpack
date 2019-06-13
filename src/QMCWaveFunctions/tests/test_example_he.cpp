@@ -216,13 +216,13 @@ TEST_CASE("ExampleHe", "[wavefunction]")
   std::vector<RealType> dhpsioverpsi(nparam);
   example_he->evaluateDerivatives(*elec, var_param, dlogpsi, dhpsioverpsi);
 
-  REQUIRE(dlogpsi[0] == Approx(fd_logpsi).epsilon(h));
+  REQUIRE(dlogpsi[0] == ComplexApprox(fd_logpsi).epsilon(h));
 
   ValueType eloc   = -0.5 * (Sum(all_lap) + Dot(all_grad, all_grad));
   ValueType eloc_h = -0.5 * (Sum(lap_plus_h) + Dot(grad_plus_h, grad_plus_h));
 
   ValueType fd_eloc = (eloc_h - eloc) / h;
 
-  REQUIRE(dhpsioverpsi[0] == Approx(fd_eloc).epsilon(h));
+  REQUIRE(dhpsioverpsi[0] == ComplexApprox(fd_eloc).epsilon(h));
 }
 } // namespace qmcplusplus
