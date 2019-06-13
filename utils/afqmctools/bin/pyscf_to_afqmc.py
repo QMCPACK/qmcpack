@@ -59,6 +59,10 @@ def parse_args(args, comm):
         parser.add_argument('-d', '--disable-ham', dest='disable_ham',
                             action='store_true', default=False,
                             help='Disable hamiltonian generation.')
+        parser.add_argument('-n', '--num-dets', dest='ndet_max',
+                            type=int, default=None,
+                            help='Set upper limit on number of determinants to '
+                            'generate.')
         parser.add_argument('-v', '--verbose', action='count', default=0,
                             help='Verbose output.')
 
@@ -120,7 +124,8 @@ def main(args):
                   verbose=options.verbose, cas=options.cas,
                   qmc_input=options.qmc_input,
                   wfn_file=options.wfn_file,
-                  write_hamil=(not options.disable_ham))
+                  write_hamil=(not options.disable_ham),
+                  ndet_max=options.ndet_max)
     if comm.rank == 0:
         write_metadata(options, sha1, cwd, date_time)
 
