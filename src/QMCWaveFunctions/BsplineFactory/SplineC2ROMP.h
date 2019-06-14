@@ -212,9 +212,10 @@ template<typename ST, typename TT>
 struct SplineC2ROMP : public SplineAdoptorBase<ST, 3>
 {
   static const int ALIGN   = QMC_CLINE;
-  using OffloadAllocatorST = OMPallocator<ST, aligned_allocator<ST>>;
-  using OffloadPinnedAllocatorST = OMPallocator<ST, PinnedAlignedAllocator<ST>>;
-  using OffloadPinnedAllocatorTT = OMPallocator<TT, PinnedAlignedAllocator<TT>>;
+  template<typename DT>
+  using OffloadAllocator = OMPallocator<DT, aligned_allocator<DT>>;
+  template<typename DT>
+  using OffloadPinnedAllocator = OMPallocator<DT, PinnedAlignedAllocator<DT>>;
 
   static const int D     = 3;
   using BaseType         = SplineAdoptorBase<ST, 3>;
@@ -240,7 +241,7 @@ struct SplineC2ROMP : public SplineAdoptorBase<ST, 3>
   ///number of complex bands
   int nComplexBands;
   ///multi bspline set
-  MultiBspline<ST, ALIGN, OffloadAllocatorST>* SplineInst;
+  MultiBspline<ST, ALIGN, OffloadAllocator<ST>>* SplineInst;
   ///expose the pointer to reuse the reader and only assigned with create_spline
   ///also used as identifier of shallow copy
   SplineType* MultiSpline;
@@ -255,13 +256,15 @@ struct SplineC2ROMP : public SplineAdoptorBase<ST, 3>
   ghContainer_type mygH;
 
   ///thread private ratios for reduction when using nested threading, numVP x numThread
-  Matrix<TT, OffloadPinnedAllocatorTT> ratios_private;
+  Matrix<TT, OffloadPinnedAllocator<TT>> ratios_private;
   ///offload scratch space, dynamically resized to the maximal need
-  Vector<ST, OffloadPinnedAllocatorST> offload_scratch;
+  Vector<ST, OffloadPinnedAllocator<ST>> offload_scratch;
   ///result scratch space, dynamically resized to the maximal need
-  Vector<TT, OffloadPinnedAllocatorTT> results_scratch;
+  Vector<TT, OffloadPinnedAllocator<TT>> results_scratch;
   ///particle position scratch, dynamically resized to the maximal need
-  Vector<ST, OffloadPinnedAllocatorST> pos_scratch;
+  Vector<ST, OffloadPinnedAllocator<ST>> pos_scratch;
+  ///psiinv scratch space, used to avoid allocation on the fly and faster transfer
+  Vector<TT, OffloadPinnedAllocator<TT>> psiinv_copy;
   ///the following pointers are used for keep and access the data on device
   ///cloned objects copy the pointer by value without the need of mapping to the device
   ///Thus master_PrimLattice_G_ptr is different from PrimLattice.G.data() in cloned objects
@@ -346,7 +349,7 @@ struct SplineC2ROMP : public SplineAdoptorBase<ST, 3>
   void create_spline(GT& xyz_g, BCT& xyz_bc)
   {
     resize_kpoints();
-    SplineInst = new MultiBspline<ST, ALIGN, OffloadAllocatorST>();
+    SplineInst = new MultiBspline<ST, ALIGN, OffloadAllocator<ST>>();
     SplineInst->create(xyz_g, xyz_bc, myV.size());
     MultiSpline = SplineInst->spline_m;
 
@@ -531,6 +534,10 @@ struct SplineC2ROMP : public SplineAdoptorBase<ST, 3>
   template<typename VV, typename RT>
   inline void evaluateDetRatios(const VirtualParticleSet& VP, VV& psi, const VV& psiinv, std::vector<RT>& ratios)
   {
+    // stage psiinv to psiinv_copy
+    psiinv_copy.resize(psiinv.size());
+    std::copy_n(psiinv.data(), psiinv.size(), psiinv_copy.data());
+
     // pack particle positions
     const int nVP = VP.getTotalNum();
     if (pos_scratch.size() < nVP * 6)
@@ -565,7 +572,7 @@ struct SplineC2ROMP : public SplineAdoptorBase<ST, 3>
     auto* results_scratch_ptr      = results_scratch.data();
     const auto myKcart_padded_size = myKcart.capacity();
     auto* myKcart_ptr              = master_myKcart_ptr;
-    auto* psiinv_ptr               = psiinv.data();
+    auto* psiinv_ptr               = psiinv_copy.data();
     auto* ratios_private_ptr       = ratios_private.data();
     size_t first_spo_local         = first_spo;
     int nComplexBands_local        = nComplexBands;
