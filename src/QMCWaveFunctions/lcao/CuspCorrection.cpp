@@ -403,7 +403,8 @@ RealType minimizeForPhiAtZero(CuspCorrection& cusp,
                               RealType eta0,
                               ValueVector_t& pos,
                               ValueVector_t& ELcurr,
-                              ValueVector_t& ELideal)
+                              ValueVector_t& ELideal,
+                              RealType start_phi0)
 {
   ValGradLap vglAtRc;
   ValueVector_t tmp_pos(0);
@@ -414,7 +415,6 @@ RealType minimizeForPhiAtZero(CuspCorrection& cusp,
   getIdealLocalEnergy(pos, Z, cusp.cparam.Rc, ELorigAtRc, ELideal);
   phiMO.phi_vgl(cusp.cparam.Rc, vglAtRc.val, vglAtRc.grad, vglAtRc.lap);
 
-  RealType start_phi0 = phiMO.phi(0.0);
   Bracket_min_t<RealType> bracket(start_phi0, 0.0, 0.0, false);
   try
   {
@@ -434,6 +434,9 @@ RealType minimizeForPhiAtZero(CuspCorrection& cusp,
         return evaluateForPhi0Body(x, pos, ELcurr, ELideal, cusp, phiMO, vglAtRc, eta0, ELorigAtRc, Z);
       },
       bracket);
+
+  start_phi0 = min_res.first;
+
   return min_res.second;
 }
 
@@ -453,12 +456,13 @@ void minimizeForRc(CuspCorrection& cusp,
 {
   RealType Rc = Rc_init;
   Bracket_min_t<RealType> bracket(Rc_init, 0.0, 0.0, false);
+  RealType start_phi0 = phiMO.phi(0.0);
   try
   {
     bracket = bracket_minimum(
         [&](RealType x) -> RealType {
           cusp.cparam.Rc = x;
-          return minimizeForPhiAtZero(cusp, phiMO, Z, eta0, pos, ELcurr, ELideal);
+          return minimizeForPhiAtZero(cusp, phiMO, Z, eta0, pos, ELcurr, ELideal, start_phi0);
         },
         Rc_init, Rc_max);
   }
@@ -473,14 +477,14 @@ void minimizeForRc(CuspCorrection& cusp,
     auto min_res = find_minimum(
         [&](RealType x) -> RealType {
           cusp.cparam.Rc = x;
-          return minimizeForPhiAtZero(cusp, phiMO, Z, eta0, pos, ELcurr, ELideal);
+          return minimizeForPhiAtZero(cusp, phiMO, Z, eta0, pos, ELcurr, ELideal, start_phi0);
         },
         bracket);
   }
   else
   {
     cusp.cparam.Rc = bracket.a;
-    minimizeForPhiAtZero(cusp, phiMO, Z, eta0, pos, ELcurr, ELideal);
+    minimizeForPhiAtZero(cusp, phiMO, Z, eta0, pos, ELcurr, ELideal, start_phi0);
   }
 }
 

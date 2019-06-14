@@ -324,7 +324,8 @@ RealType minimizeForPhiAtZero(CuspCorrection& cusp,
                               RealType eta0,
                               ValueVector_t& pos,
                               ValueVector_t& ELcurr,
-                              ValueVector_t& ELideal);
+                              ValueVector_t& ELideal,
+                              RealType start_phi0);
 
 
 /** Minimize chi2 with respect to Rc and phi at zero.
