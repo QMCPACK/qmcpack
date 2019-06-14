@@ -1,5 +1,6 @@
-import numpy
 import ast
+import h5py
+import numpy
 
 def read_qmcpack_ascii_wavefunction(filename, nmo, nelec):
     na, nb = nelec
@@ -107,39 +108,33 @@ def read_orbitals():
     orbs = [complex(t[0], t[1]) for t in tuples]
     return numpy.array(orbs)
 
-def read_phfmol_wfn(filename, nmo):
-    with open(filename) as f:
-        content = f.read().split()
-    start = False
-    idet = 0
-    data = []
-    for (i,f) in enumerate(content):
-        if 'NCI' in f:
-            try:
-                ndets = int(content[i+1])
-            except ValueError:
-                ndets = int(content[i+2])
-            dets = numpy.zeros((ndets,nmo,nmo), dtype=numpy.complex128)
-        # print(f,start,data)
-        # print(len(data),f)
-        if 'Coefficients' in f:
-            string_coeffs = content[i+1:i+1+ndets]
-        if 'Determinant' in f:
+def get_occupied(det, nel, nmo):
+    nset = 0
+    pos = 0
+    occs = []
+    while pos < nmo:
+        if det & (1<<pos):
+            nset += 1
+            occs.append(pos)
+        if nset == nel:
             break
-    start = i + 2
-    coeffs = []
-    for c in string_coeffs:
-        v = ast.literal_eval(c)
-        coeffs.append(complex(v[0],v[1]))
+        pos += 1
+    return occs
 
-    for idet in range(ndets):
-        end = start+nmo*nmo
-        data = []
-        for line in content[start:end]:
-            v = ast.literal_eval(line)
-            data.append(complex(v[0],v[1]))
-        C = numpy.copy(numpy.array(data).reshape(nmo,nmo).T)
-        dets[idet] = C
-        dets[idet] = C
-        start = end + 2
-    return numpy.array(coeffs), dets
+def read_qmcpack_ci_wavefunction(input_file, ndets=None):
+    if ndets is None:
+        ndets = -1
+    with h5py.File(input_file) as fh5:
+        nmo = fh5['parameters/numMO'][:][0]
+        na = fh5['parameters/NbAlpha'][:][0]
+        nb = fh5['parameters/NbBeta'][:][0]
+        ci_a = fh5['MultiDet/CI_Alpha'][:]
+        ci_b = fh5['MultiDet/CI_Beta'][:]
+        coeffs = fh5['MultiDet/Coeff'][:][:ndets]
+        occa = []
+        occb = []
+        for ca, cb in zip(ci_a[:ndets], ci_b[:ndets]):
+            occa.append(get_occupied(ca[0], na, nmo))
+            occb.append(get_occupied(cb[0], nb, nmo))
+    wfn = (coeffs, numpy.array(occa), numpy.array(occb))
+    return wfn, 'uhf', nmo, (na,nb)

@@ -5,7 +5,10 @@ import scipy.sparse
 import sys
 import time
 from afqmctools.wavefunction.mol import write_qmcpack_wfn
-from afqmctools.wavefunction.converter import read_qmcpack_ascii_wavefunction
+from afqmctools.wavefunction.converter import (
+        read_qmcpack_ascii_wavefunction,
+        read_qmcpack_ci_wavefunction
+        )
 
 
 def parse_args(args):
@@ -31,9 +34,17 @@ def parse_args(args):
     parser.add_argument('-v', '--verbose', dest='verbose',
                         action='store_true', default=False,
                         help='Verbose output.')
-    parser.add_argument('--nmo', dest='nmo', type=int, default=None)
-    parser.add_argument('--nalpha', dest='nalpha', type=int, default=None)
-    parser.add_argument('--nbeta', dest='nbeta', type=int, default=None)
+    parser.add_argument('--qmcpack', dest='qmcpack',
+                        action='store_true', default=False,
+                        help='Convert from DMC CI wavefunction.')
+    parser.add_argument('--nmo', dest='nmo', type=int, default=None,
+                        help='Number of orbitals.')
+    parser.add_argument('--nalpha', dest='nalpha', type=int,
+                        default=None, help='Number of alpha electrons.')
+    parser.add_argument('--nbeta', dest='nbeta', type=int,
+                        default=None, help='Number of alpha electrons.')
+    parser.add_argument('--ndets', dest='ndets', type=int,
+                        default=None, help='Number of determinants to write.')
 
     options = parser.parse_args(args)
 
@@ -57,8 +68,14 @@ def main(args):
     nmo = options.nmo
     nalpha = options.nalpha
     nbeta = options.nbeta
+    ndets = options.ndets
     nelec = (nalpha, nbeta)
-    wfn, walker_type = read_qmcpack_ascii_wavefunction(input_file, nmo, nelec)
+    if options.qmcpack:
+        wfn, walker_type, nmo, nelec = (
+                read_qmcpack_ci_wavefunction(input_file, options.ndets)
+                )
+    else:
+        wfn, walker_type = read_qmcpack_ascii_wavefunction(input_file, nmo, nelec)
     write_qmcpack_wfn(output_file, wfn, walker_type, nelec, nmo)
 
 if __name__ == '__main__':
