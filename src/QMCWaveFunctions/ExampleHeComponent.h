@@ -57,7 +57,7 @@ public:
 
   GradType evalGrad(ParticleSet& P, int iat) override;
 
-  ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
+  ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
 
   void evaluateDerivatives(ParticleSet& P,
                            const OptVariablesType& optvars,
@@ -67,7 +67,7 @@ public:
 
   void registerData(ParticleSet& P, WFBufferType& buf) override {}
 
-  RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false);
+  RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override;
 
   void copyFromBuffer(ParticleSet& P, WFBufferType& buf) override {}
 
