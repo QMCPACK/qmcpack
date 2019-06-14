@@ -532,7 +532,7 @@ class Grid(GBase):
         #end if
         # check that all data members are of the correct type
         for name in valid_key_list:
-            type = cls.persistent_data_types[name]
+            type,default = cls.persistent_data_types[name]
             if name in self:
                 val = self[name]
                 if val is None:
@@ -920,6 +920,16 @@ class StructuredGrid(Grid):
         self.not_implemented()
     #end def points_from_unit
 
+
+    def volume(self):
+        self.not_implemented()
+    #end def volume
+
+
+    def cell_volumes(self):
+        self.not_implemented()
+    #end def cell_volumes
+
 #end class StructuredGrid
 
 
@@ -1001,6 +1011,11 @@ class StructuredGridWithAxes(StructuredGrid):
         #end if
         return msgs
     #end def local_validity_checks
+
+
+    def axes_volume(self):
+        return np.abs(np.prod(np.linalg.svd(self.axes,compute_uv=False)))
+    #end def axes_volume
 #end class StructuredGridWithAxes
 
 
@@ -1072,6 +1087,19 @@ class ParallelotopeGrid(StructuredGridWithAxes):
         points = np.dot(upoints,self.axes)+self.corner
         return points
     #end def points_from_unit
+
+
+    def volume(self):
+        return self.axes_volume()
+    #end def volume
+
+
+    def cell_volumes(self):
+        ncells = self.ncells
+        cell_vols = np.zeros((ncells,),dtype=self.dtype)
+        cell_vols += self.volume()/ncells
+        return cell_vols
+    #end def cell_volumes
 
 #end class ParallelotopeGrid
 
@@ -1162,11 +1190,62 @@ class SpheroidGrid(StructuredGridWithAxes):
         points = np.dot(upoints,self.axes)+self.center
         return points
     #end def points_from_unit
+
+
+    def volume(self):
+        vol_axes = self.axes_volume()
+        if self.grid_dim==2:
+            vol_spheroid = np.pi # circle of radius 1
+        elif self.grid_dim==3:
+            vol_spheroid = 4*np.pi/3 # sphere of radius 1
+        else:
+            self.error('volume not supported for dim={}'.format(self.grid_dim))
+        #end if
+        return vol_axes*vol_spheroid
+    #end def volume
+
+
+    def cell_volumes(self):
+        vol_axes = self.axes_volume()
+        dim = self.grid_dim
+        shape = self.cell_grid_shape
+        ncells = self.ncells
+        ugrid = unit_grid_points(shape,centered=True)
+        du = np.ones((dim,),dtype=self.dtype)/shape
+        cell_vols = np.zeros((ncells,),dtype=self.dtype)
+        if dim==2:
+            ugrid[:,1] *= 2*np.pi
+            du[1] *= 2*np.pi
+            for i,uc in enumerate(ugrid):
+                cv  = uc[0]*du[0]*du[1]
+                cell_vols[i] =  cv*vol_axes
+            #end for
+        elif dim==3:
+            ugrid[:,1] *=   np.pi
+            ugrid[:,2] *= 2*np.pi
+            du[1] *=   np.pi
+            du[2] *= 2*np.pi
+            for i,uc in enumerate(ugrid):
+                cv  = (uc[0]*uc[0]+du[0]*du[0]/12.0)*du[0] # r
+                cv *= 2.0*np.sin(uc[1])*np.sin(.5*du[1])   # theta
+                cv *= du[2]                                # phi
+                cell_vols[i] =  cv*vol_axes
+            #end for
+        else:
+            self.error('cell_volumes not supported for dim={}'.format(dim))
+        #end if
+        return cell_vols
+    #end def cell_volumes
 #end class SpheroidGrid
 
 
 
 class SpheroidSurfaceGrid(StructuredGridWithAxes):
+
+    persistent_data_types = obj(
+        isotropic = (bool,None),
+        **StructuredGridWithAxes.persistent_data_types
+        )
 
     @property
     def center(self):
@@ -1216,6 +1295,31 @@ class SpheroidSurfaceGrid(StructuredGridWithAxes):
     #end def initialize_local
 
 
+    def set_axes(self,axes):
+        StructuredGridWithAxes.set_axes(self,axes)
+        self.set_isotropic()
+    #end def set_axes
+
+
+    def set_isotropic(self,tol=1e-6):
+        isotropic = True
+        tol = 1e-6
+        ax_norm = np.linalg.norm(self.axes[0])
+        for i,ax1 in enumerate(self.axes):
+            axn1 = np.linalg.norm(ax1)
+            for j,ax2 in enumerate(self.axes):
+                axn2 = np.linalg.norm(ax2)
+                if i==j:
+                    isotropic &= np.abs(axn1-ax_norm)/ax_norm < tol
+                else:
+                    isotropic &= np.abs(np.dot(ax1,ax2))/(axn1*axn2) < tol
+                #end if
+            #end for
+        #end for
+        self.isotropic = bool(isotropic)
+    #end def set_isotropic
+
+
     def unit_points_bare(self,points):
         center = self.center
         # invert using pseudo-inverse
@@ -1254,6 +1358,62 @@ class SpheroidSurfaceGrid(StructuredGridWithAxes):
         points = np.dot(upoints,self.axes)+self.center
         return points
     #end def points_from_unit
+
+
+    def radius(self):
+        if not self.isotropic:
+            self.error('radius is not supported for anisotropic spheroid surface grids')
+        #end if
+        return np.linalg.norm(self.axes[0])
+    #end def radius
+
+
+    def volume(self):
+        if not self.isotropic:
+            self.error('volume is not supported for anisotropic spheroid surface grids')
+        #end if
+        dim = self.grid_dim
+        r = self.radius()
+        if dim==1:
+            vol = 2*np.pi*r
+        elif dim==2:
+            vol = 4*np.pi*r**2
+        else:
+            self.error('volume is not supported for dim={}'.format(dim))
+        #end if
+        return vol
+    #end def volume
+
+
+    def cell_volumes(self):
+        if not self.isotropic:
+            self.error('volume is not supported for anisotropic spheroid surface grids')
+        #end if
+        dim = self.grid_dim
+        ncells = self.ncells
+        cell_vols = np.zeros((ncells,),dtype=self.dtype)
+        if dim==1:
+            cell_vols += self.volume()/ncells
+        elif dim==2:
+            r = self.radius()
+            shape = self.cell_grid_shape
+            ugrid = unit_grid_points(shape,centered=True)
+            du = np.ones((dim,),dtype=self.dtype)/shape
+            ugrid[:,0] *=   np.pi
+            ugrid[:,1] *= 2*np.pi
+            du[0] *=   np.pi
+            du[1] *= 2*np.pi
+            for i,uc in enumerate(ugrid):
+                cv  = r**2                                # r
+                cv *= 2.0*np.sin(uc[0])*np.sin(.5*du[0])  # theta
+                cv *= du[1]                               # phi
+                cell_vols[i] =  cv
+            #end for
+        else:
+            self.error('cell_volumes is not supported for dim={}'.format(dim))
+        #end if
+        return cell_vols
+    #end def cell_volumes
 #end class SpheroidSurfaceGrid
 
 
@@ -1264,8 +1424,9 @@ if __name__=='__main__':
 
     demos = obj(
         plot_grids         = 0,
-        plot_inside        = 1,
+        plot_inside        = 0,
         plot_projection    = 0,
+        cell_volumes       = 1,
         )
 
     shapes = {
@@ -1282,11 +1443,14 @@ if __name__=='__main__':
         # 1d grid in 3d space
         (1,3) : [[1,1,1]],
         # 2d grid in 2d space
-        (2,2) : [[1,0],[1,1]],
+        #(2,2) : [[1,0],[1,1]],
+        (2,2) : [[1,0],[0,1]],
         # 2d grid in 3d space
-        (2,3) : [[1,0,0],[1,1,1]],
+        #(2,3) : [[1,0,0],[1,1,1]],
+        (2,3) : [[1,0,0],[0,1,0]],
         # 3d grid in 3d space
-        (3,3) : [[1,0,0],[1,1,0],[1,1,1]],
+        #(3,3) : [[1,0,0],[1,1,0],[1,1,1]],
+        (3,3) : [[1,0,0],[0,1,0],[0,0,1]],
         }
 
     bconds = {
@@ -1369,9 +1533,10 @@ if __name__=='__main__':
         #grids_plot = 'p23c p23_oo p23_op p23_pp s23c s23'.split()
         #grids_plot = 'p11 p12 p13 p23 p23c p33 p33c'.split()
         #grids_plot = 's23 s23c s33 s33c'.split()
-        grids_plot = 'c12 c12c c13 c13c c23 c23c'.split()
+        #grids_plot = 'c12 c12c c13 c13c c23 c23c'.split()
+        grids_plot = 'p33 s33'.split()
 
-        unit = True
+        unit = False
 
         for name in grids_plot:
             print name
@@ -1458,6 +1623,18 @@ if __name__=='__main__':
             plt.title(name)
         #end for
         plt.show()
+    #end if
+
+
+    if demos.cell_volumes:
+        #grids_check = 'p22 p33'.split()
+        #grids_check = 's22 s23 s33'.split()
+        #grids_check = 'p11 p12 p13 p22 p23 p33 s22 s23 s33'.split()
+        grids_check = 'c12 c13 c23'.split()
+        for name in grids_check:
+            g = grids[name]
+            print name,g.volume(),g.cell_volumes().sum()
+        #end for
     #end if
 
 #end if 
