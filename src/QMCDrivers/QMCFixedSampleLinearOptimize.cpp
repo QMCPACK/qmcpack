@@ -641,29 +641,58 @@ void QMCFixedSampleLinearOptimize::print_cost_summary(const double si,
 ///
 /// \param[in]      ii             index of the proposed best cost
 /// \param[in]      cv             vector of new costs
+/// \param[in]      sh             vector of identity shifts
 /// \param[in]      ic             the initial cost
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-bool QMCFixedSampleLinearOptimize::is_best_cost(const int ii, const std::vector<RealType>& cv, const RealType ic) const
+bool QMCFixedSampleLinearOptimize::is_best_cost(const int ii, const std::vector<RealType>& cv, const std::vector<double>& sh, const RealType ic) const
 {
+  const RealType cost_diff_tolerance = 0.001;
+  const RealType target_shift = 0.003;
+
   // initialize return value
   bool retval = true;
 
   //app_log() << "retval = " << retval << std::endl;
 
-  // new cost is only best if it is less than or equal to the other new costs
+  // compare to other costs
   for (int i = 0; i < cv.size(); i++)
   {
-    // we only worry about being less than the other value if the other value is within the maximum relative change threshold
-    const bool other_is_valid = ((ic == 0.0 ? 0.0 : std::abs((cv.at(i) - ic) / ic)) < max_relative_cost_change);
-    retval                    = (retval && (cv.at(ii) <= cv.at(i) || !other_is_valid));
+
+    // don't compare to yourself
+    if ( i == ii )
+      continue;
+
+    // we only worry about the other value if it is within the maximum relative change threshold and not too high
+    const bool other_is_valid = (    (ic == 0.0 ? 0.0 : std::abs((cv.at(i) - ic) / ic)) < max_relative_cost_change
+                                  && cv.at(i) < ic + cost_diff_tolerance
+                                );
+    if ( other_is_valid ) {
+
+      // if we are using a target shift and the cost is not too much higher, then prefer this cost if its shift is closer to the target shift
+      if ( target_shift > 0.0 ) {
+        const bool closer_to_target = ( std::abs(sh.at(ii) - target_shift) < std::abs(sh.at(i) - target_shift) );
+        const bool cost_is_similar = ( std::abs( cv.at(ii) - cv.at(i) ) < cost_diff_tolerance );
+        const bool cost_is_much_lower = ( !cost_is_similar && cv.at(ii) < cv.at(i) - cost_diff_tolerance );
+        if ( cost_is_much_lower || ( closer_to_target && cost_is_similar ) )
+          retval = ( retval && true );
+        else
+          retval = false;
+
+      // if we are not using a target shift, then prefer this cost if it is lower
+      } else {
+        retval = ( retval && cv.at(ii) <= cv.at(i) );
+      }
+
+    }
+
     //app_log() << "cv.at(ii)   = " << std::fixed << std::right << std::setw(20) << std::setprecision(12) << cv.at(ii) << " <= "
     //          << "cv.at(i)    = " << std::fixed << std::right << std::setw(20) << std::setprecision(12) << cv.at(i)  << " ?" << std::endl;
     //app_log() << "retval = " << retval << std::endl;
   }
 
   // new cost is only best if it is less than the initial cost
-  retval = (retval && cv.at(ii) < ic);
+  retval = (retval && cv.at(ii) < ic + cost_diff_tolerance);
   //app_log() << "cv.at(ii)   = " << std::fixed << std::right << std::setw(20) << std::setprecision(12) << cv.at(ii) << " <= "
   //          << "ic          = " << std::fixed << std::right << std::setw(20) << std::setprecision(12) << ic        << " ?" << std::endl;
   //app_log() << "retval = " << retval << std::endl;
@@ -1037,7 +1066,7 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
   const std::vector<RealType>* bestDirection = 0;
   int best_shift                             = -1;
   for (int k = 0; k < costValues.size() && std::abs((initCost - initCost) / initCost) < max_relative_cost_change; k++)
-    if (is_best_cost(k, costValues, initCost) && good_update.at(k))
+    if (is_best_cost(k, costValues, shifts_i, initCost) && good_update.at(k))
     {
       best_shift    = k;
       bestDirection = &parameterDirections.at(k);
