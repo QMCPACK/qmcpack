@@ -19,6 +19,7 @@
 #include "QMCWaveFunctions/Jastrow/RPAJastrow.h"
 #include "QMCWaveFunctions/WaveFunctionComponentBuilder.h"
 #include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbital.h"
+#include "QMCWaveFunctions/Jastrow/J2OrbitalSoA.h"
 #include "QMCWaveFunctions/Jastrow/LRBreakupUtilities.h"
 #include "QMCWaveFunctions/Jastrow/SplineFunctors.h"
 #include "QMCWaveFunctions/Jastrow/BsplineFunctor.h"
@@ -192,10 +193,12 @@ void RPAJastrow::makeShortRange()
   nfunc = new FuncType;
   SRA   = new ShortRangePartAdapter<RealType>(myHandler);
   SRA->setRmax(Rcut);
-  //This line is for the SoA branch, for whenever we eventually merge this code.
-  // J2OrbitalSoA<BsplineFunctor<RealType> > *j2 = new J2OrbitalSoA<BsplineFunctor<RealType> >(targetPtcl,IsManager);
+#ifdef ENABLE_SOA
+  J2OrbitalSoA<BsplineFunctor<RealType> > *j2 = new J2OrbitalSoA<BsplineFunctor<RealType> >(targetPtcl,IsManager);
+#else
   TwoBodyJastrowOrbital<BsplineFunctor<RealType>>* j2 =
       new TwoBodyJastrowOrbital<BsplineFunctor<RealType>>(targetPtcl, IsManager);
+#endif
   size_t nparam  = 12; // number of Bspline parameters
   size_t npts    = 100; // number of 1D grid points for basis functions
   RealType cusp = SRA->df(0);
