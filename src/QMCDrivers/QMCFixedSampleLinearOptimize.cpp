@@ -862,8 +862,8 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
 
   // have the cost function prepare derivative vectors
   EngineObj->energy_target_compute();
-  const Return_t starting_cost = EngineObj->target_value();
-  const Return_t init_energy   = EngineObj->energy_mean();
+  const RealType starting_cost = EngineObj->target_value();
+  const RealType init_energy   = EngineObj->energy_mean();
 
   // print out the initial energy
   app_log() << std::endl

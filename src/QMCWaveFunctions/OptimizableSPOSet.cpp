@@ -322,6 +322,7 @@ void OptimizableSPOSet::resetParameters(const opt_variables_type& active)
     if (loc>=0)
       if(std::abs(active[loc])>thr) {
         myVars[i]=active[loc];
+        //FIXME the use of "std::real" needs to be removed after the orbital optimization code is made compatible with complex parameters
         *(ParamPointers[i]) = std::real( myVars[i] );
       }
   }

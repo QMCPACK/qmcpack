@@ -36,11 +36,12 @@ TEST_CASE("VariableSet empty", "[optimize]")
 TEST_CASE("VariableSet one", "[optimize]")
 {
   VariableSet vs;
-  #ifdef QMC_COMPLEX
-  std::complex<double> first_val(1.123456789, 0.0);
-  #else
-  double first_val=1.123456789;
-  #endif
+  //#ifdef QMC_COMPLEX
+  //std::complex<double> first_val(1.123456789, 0.0);
+  //#else
+  //double first_val=1.123456789;
+  //#endif
+  VariableSet::value_type first_val(1.123456789);
   vs.insert("first", first_val);
   std::vector<std::string> names{"first"};
   vs.activate(names.begin(), names.end(), true);
@@ -49,11 +50,13 @@ TEST_CASE("VariableSet one", "[optimize]")
   REQUIRE(vs.size_of_active() == 1);
   REQUIRE(vs.getIndex("first") == 0);
   REQUIRE(vs.name(0) == "first");
-  #ifdef QMC_COMPLEX
-  REQUIRE(vs[0] == ComplexApprox(first_val));
-  #else
-  REQUIRE(vs[0] == Approx(first_val));
-  #endif
+  double first_val_real = 1.123456789;
+  REQUIRE(vs[0] == ComplexApprox(first_val_real).compare_real_only());
+  //#ifdef QMC_COMPLEX
+  //REQUIRE(vs[0] == ComplexApprox(first_val));
+  //#else
+  //REQUIRE(vs[0] == Approx(first_val));
+  //#endif
 
   std::ostringstream o;
   vs.print(o, 0, false);

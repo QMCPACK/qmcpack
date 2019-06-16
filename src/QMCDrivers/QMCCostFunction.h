@@ -42,24 +42,24 @@ public:
   void engine_checkConfigurations(cqmc::engine::LMYEngine* EngineObj);
 #endif
   void resetPsi(bool final_reset = false);
-  void GradCost(std::vector<Return_t>& PGradient, const std::vector<Return_t>& PM, Return_t FiniteDiff = 0);
-  Return_t fillOverlapHamiltonianMatrices(Matrix<Return_t>& Left, Matrix<Return_t>& Right);
+  void GradCost(std::vector<Return_t>& PGradient, const std::vector<Return_t>& PM, Return_rt FiniteDiff = 0);
+  Return_rt fillOverlapHamiltonianMatrices(Matrix<Return_rt>& Left, Matrix<Return_rt>& Right);
 
 protected:
   std::vector<QMCHamiltonian*> H_KE_Node;
-  std::vector<Matrix<Return_t>*> RecordsOnNode;
+  std::vector<Matrix<Return_rt>*> RecordsOnNode;
 
   /** Temp derivative properties and Hderivative properties of all the walkers
   */
-  std::vector<Matrix<Return_t>*> DerivRecords;
-  std::vector<Matrix<Return_t>*> HDerivRecords;
-  Return_t CSWeight;
+  std::vector<Matrix<Return_rt>*> DerivRecords;
+  std::vector<Matrix<Return_rt>*> HDerivRecords;
+  Return_rt CSWeight;
 
-  Return_t correlatedSampling(bool needGrad = true);
+  Return_rt correlatedSampling(bool needGrad = true);
 
 #ifdef HAVE_LMY_ENGINE
   int total_samples();
-  Return_t LMYEngineCost_detail(cqmc::engine::LMYEngine* EngineObj);
+  Return_rt LMYEngineCost_detail(cqmc::engine::LMYEngine* EngineObj);
 #endif
 };
 } // namespace qmcplusplus
