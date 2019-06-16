@@ -504,8 +504,8 @@ struct ph_excitations
     if(index==0) return;
     // could use lower bound 
     for(int i=1; i<unique_beta.size(); i++) {
-      if(index >= sum_of_exct[i][0] && index < sum_of_exct[i+1][0]) {
-        size_t dn = index-sum_of_exct[i][0];
+      if(index >= sum_of_exct[i][1] && index < sum_of_exct[i+1][1]) {
+        size_t dn = index-sum_of_exct[i][1];
         auto exct = unique_beta.values(i) + 2*i*dn;
         for(int n=0; n<i; n++)
           confg[ exct[n] ] = exct[n+i];
