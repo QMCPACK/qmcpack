@@ -1000,9 +1000,7 @@ struct PolynomialFunctor3D : public OptimizableFunctorBase
     {
       int loc = myVars.where(i);
       if (loc >= 0) {
-        myVars[i] = active[loc];
-        Parameters[i] = std::real(myVars[i]);
-        //Parameters[i] = myVars[i] = active[loc];
+        Parameters[i] = std::real( myVars[i] = active[loc] );
       }
     }
     if (ResetCount++ == 100)

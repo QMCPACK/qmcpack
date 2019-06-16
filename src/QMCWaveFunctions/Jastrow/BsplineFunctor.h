@@ -594,9 +594,7 @@ struct BsplineFunctor : public OptimizableFunctorBase
     {
       int loc = myVars.where(i);
       if (loc >= 0) {
-        myVars[i] = active[loc];
-        Parameters[i] = std::real(myVars[i]);
-        //Parameters[i] = std::real(myVars[i]) = std::real(active[loc]);
+        Parameters[i] = std::real( myVars[i] = active[loc] );
       }
     }
     //         if (ResetCount++ == 100)

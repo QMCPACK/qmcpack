@@ -176,11 +176,11 @@ TEST_CASE("PolynomialFunctor3D Jastrow", "[wavefunction]")
   REQUIRE(ratio_3 == ComplexApprox(0.7987703724).compare_real_only());
 
   opt_variables_type optvars;
-  std::vector<WaveFunctionComponent::RealType> dlogpsi;
-  std::vector<WaveFunctionComponent::RealType> dhpsioverpsi;
+  std::vector<WaveFunctionComponent::ValueType> dlogpsi;
+  std::vector<WaveFunctionComponent::ValueType> dhpsioverpsi;
 
-  std::vector<WaveFunctionComponent::ValueType> cdlogpsi;
-  std::vector<WaveFunctionComponent::ValueType> cdhpsioverpsi;
+  //std::vector<WaveFunctionComponent::RealType> rdlogpsi;
+  //std::vector<WaveFunctionComponent::RealType> rdhpsioverpsi;
 
   psi.checkInVariables(optvars);
   optvars.resetIndex();
@@ -188,21 +188,21 @@ TEST_CASE("PolynomialFunctor3D Jastrow", "[wavefunction]")
   psi.checkOutVariables(optvars);
   dlogpsi.resize(NumOptimizables);
   dhpsioverpsi.resize(NumOptimizables);
-  cdlogpsi.resize(NumOptimizables);
-  cdhpsioverpsi.resize(NumOptimizables);
-  psi.evaluateDerivatives(elec_, optvars, cdlogpsi, cdhpsioverpsi);
-  for (int i = 0; i < dlogpsi.size(); i++) {
-    dlogpsi[i] = std::real(cdlogpsi[i]);
-    dhpsioverpsi[i] = std::real(cdhpsioverpsi[i]);
-  }
+  //rdlogpsi.resize(NumOptimizables);
+  //rdhpsioverpsi.resize(NumOptimizables);
+  psi.evaluateDerivatives(elec_, optvars, dlogpsi, dhpsioverpsi);
+  //for (int i = 0; i < dlogpsi.size(); i++) {
+  //  dlogpsi[i] = std::real(cdlogpsi[i]);
+  //  dhpsioverpsi[i] = std::real(cdhpsioverpsi[i]);
+  //}
 
   std::cout << std::endl << "reporting dlogpsi and dhpsioverpsi" << std::scientific << std::endl;
   for (int iparam = 0; iparam < NumOptimizables; iparam++)
     std::cout << "param=" << iparam << " : " << dlogpsi[iparam] << "  " << dhpsioverpsi[iparam] << std::endl;
   std::cout << std::endl;
 
-  REQUIRE(dlogpsi[43] == Approx(1.3358726814e+05));
-  REQUIRE(dhpsioverpsi[43] == Approx(-2.3246270644e+05));
+  REQUIRE(dlogpsi[43] == ComplexApprox(1.3358726814e+05).compare_real_only());
+  REQUIRE(dhpsioverpsi[43] == ComplexApprox(-2.3246270644e+05).compare_real_only());
 
   VirtualParticleSet VP(elec_, 2);
   ParticleSet::ParticlePos_t newpos2(2);

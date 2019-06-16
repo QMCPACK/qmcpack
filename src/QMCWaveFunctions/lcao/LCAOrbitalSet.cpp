@@ -858,7 +858,7 @@ void LCAOrbitalSet::exponentiate_antisym_matrix(ValueMatrix_t& mat)
     app_log() << msg.str() << std::endl;
     APP_ABORT(msg.str());
   }
-  // ierate through diagonal matrix, exponentiate terms
+  // iterate through diagonal matrix, exponentiate terms
   for (int i = 0; i < n; ++i)
   {
     for (int j = 0; j < n; ++j)

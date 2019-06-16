@@ -36,11 +36,6 @@ TEST_CASE("VariableSet empty", "[optimize]")
 TEST_CASE("VariableSet one", "[optimize]")
 {
   VariableSet vs;
-  //#ifdef QMC_COMPLEX
-  //std::complex<double> first_val(1.123456789, 0.0);
-  //#else
-  //double first_val=1.123456789;
-  //#endif
   VariableSet::value_type first_val(1.123456789);
   vs.insert("first", first_val);
   std::vector<std::string> names{"first"};
@@ -52,27 +47,35 @@ TEST_CASE("VariableSet one", "[optimize]")
   REQUIRE(vs.name(0) == "first");
   double first_val_real = 1.123456789;
   REQUIRE(vs[0] == ComplexApprox(first_val_real).compare_real_only());
-  //#ifdef QMC_COMPLEX
-  //REQUIRE(vs[0] == ComplexApprox(first_val));
-  //#else
-  //REQUIRE(vs[0] == Approx(first_val));
-  //#endif
 
   std::ostringstream o;
   vs.print(o, 0, false);
   //std::cout << o.str() << std::endl;
-  REQUIRE(o.str() == "first  1.123457e+00  0.000000e+00 0 1  ON 0\n");
+  #ifdef QMC_COMPLEX
+  REQUIRE(o.str() == "first  (1.123457e+00,0.000000e+00) 0 1  ON 0\n");
+  #else
+  REQUIRE(o.str() == "first                 1.123457e+00 0 1  ON 0\n");
+  #endif
 
   std::ostringstream o2;
   vs.print(o2, 1, true);
   //std::cout << o2.str() << std::endl;
 
-  char formatted_output[] = "  Name    Value Real    Value Imag Type Recompute Use Index\n"
-                            " ----- ------------- ------------- ---- --------- --- -----\n"
-                            " first  1.123457e+00  0.000000e+00    0         1  ON     0\n";
+  #ifdef QMC_COMPLEX
+  char formatted_output[] = "  Name                        Value Type Recompute Use Index\n"
+                            " ----- ---------------------------- ---- --------- --- -----\n"
+                            " first  (1.123457e+00,0.000000e+00)    0         1  ON     0\n";
 
 
   REQUIRE(o2.str() == formatted_output);
+  #else
+  char formatted_output[] = "  Name                        Value Type Recompute Use Index\n"
+                            " ----- ---------------------------- ---- --------- --- -----\n"
+                            " first                 1.123457e+00    0         1  ON     0\n";
+
+
+  REQUIRE(o2.str() == formatted_output);
+  #endif
 }
 
 TEST_CASE("VariableSet output", "[optimize]")
@@ -81,15 +84,6 @@ TEST_CASE("VariableSet output", "[optimize]")
   VariableSet::value_type first_val(11234.56789);
   VariableSet::value_type second_val(0.000256789);
   VariableSet::value_type third_val(-1.2);
-  //#ifdef QMC_COMPLEX
-  //std::complex<double> first_val(11234.56789, 0.0);
-  //std::complex<double> second_val(0.000256789, 0.0);
-  //std::complex<double> third_val(-1.2, 0.0);
-  //#else
-  //double first_val=11234.56789;
-  //double second_val=0.000256789;
-  //double third_val=-1.2;
-  //#endif
   vs.insert("s", first_val);
   vs.insert("second", second_val);
   vs.insert("really_long_name", third_val);
@@ -100,12 +94,19 @@ TEST_CASE("VariableSet output", "[optimize]")
   vs.print(o, 0, true);
   //std::cout << o.str() << std::endl;
 
-  char formatted_output[] = "            Name    Value Real    Value Imag Type Recompute Use Index\n"
-                            "---------------- ------------- ------------- ---- --------- --- -----\n"
-                            "               s  1.123457e+04  0.000000e+00    0         1  ON     0\n"
-                            "          second  2.567890e-04  0.000000e+00    0         1  ON     1\n"
-                            "really_long_name -1.200000e+00  0.000000e+00    0         1  ON     2\n";
-
+  #ifdef QMC_COMPLEX
+  char formatted_output[] = "            Name                        Value Type Recompute Use Index\n"
+                            "---------------- ---------------------------- ---- --------- --- -----\n"
+                            "               s  (1.123457e+04,0.000000e+00)    0         1  ON     0\n"
+                            "          second  (2.567890e-04,0.000000e+00)    0         1  ON     1\n"
+                            "really_long_name (-1.200000e+00,0.000000e+00)    0         1  ON     2\n";
+  #else
+  char formatted_output[] = "            Name                        Value Type Recompute Use Index\n"
+                            "---------------- ---------------------------- ---- --------- --- -----\n"
+                            "               s                 1.123457e+04    0         1  ON     0\n"
+                            "          second                 2.567890e-04    0         1  ON     1\n"
+                            "really_long_name                -1.200000e+00    0         1  ON     2\n";
+  #endif
 
   REQUIRE(o.str() == formatted_output);
 }

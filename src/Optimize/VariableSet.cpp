@@ -242,7 +242,7 @@ void VariableSet::print(std::ostream& os, int leftPadSpaces, bool printHeader)
                        [](const pair_type& e1, const pair_type& e2) { return e1.first.length() < e2.first.length(); })
           ->first.length();
 
-  int max_value_len     = 13; // 6 for the precision and 7 for minus sign, leading value, period, and exponent.
+  int max_value_len     = 28; // 6 for the precision and 7 for minus sign, leading value, period, and exponent.
   int max_type_len      = 1;
   int max_recompute_len = 1;
   int max_use_len       = 3;
@@ -254,14 +254,12 @@ void VariableSet::print(std::ostream& os, int leftPadSpaces, bool printHeader)
     max_recompute_len = 9;
     max_index_len     = 5;
     os << pad_str << setw(max_name_len) << "Name"
-       << " " << setw(max_value_len) << "Value Real"
-       << " " << setw(max_value_len) << "Value Imag"
+       << " " << setw(max_value_len) << "Value"
        << " " << setw(max_type_len) << "Type"
        << " " << setw(max_recompute_len) << "Recompute"
        << " " << setw(max_use_len) << "Use"
        << " " << setw(max_index_len) << "Index" << std::endl;
     os << pad_str << std::setfill('-') << setw(max_name_len) << ""
-       << " " << setw(max_value_len) << ""
        << " " << setw(max_value_len) << ""
        << " " << setw(max_type_len) << ""
        << " " << setw(max_recompute_len) << ""
@@ -273,8 +271,7 @@ void VariableSet::print(std::ostream& os, int leftPadSpaces, bool printHeader)
   for (int i = 0; i < NameAndValue.size(); ++i)
   {
     os << pad_str << setw(max_name_len) << NameAndValue[i].first << " " << std::setprecision(6) << std::scientific
-       << setw(max_value_len) << std::real(NameAndValue[i].second) << " " << setw(max_value_len) << std::imag(NameAndValue[i].second) << " "
-       << setw(max_type_len) << ParameterType[i].second << " "
+       << setw(max_value_len) << NameAndValue[i].second << " " << setw(max_type_len) << ParameterType[i].second << " "
        << setw(max_recompute_len) << Recompute[i].second << " ";
 
     os << std::defaultfloat;

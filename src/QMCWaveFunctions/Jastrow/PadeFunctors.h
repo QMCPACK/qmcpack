@@ -241,16 +241,10 @@ struct PadeFunctor : public OptimizableFunctorBase
       {
         int i = 0;
         if (Opt_A) {
-          //A = myVars[i++] = active[ia++];
-          myVars[i]=active[ia];
-          A = std::real( myVars[i] );
-          i++;
-          ia++;
+          A = std::real( myVars[i++] = active[ia++] );
         }
         if (Opt_B) {
-          //B0 = myVars[i] = active[ia];
-          myVars[i] = active[ia];
-          B0 = std::real( myVars[i] );
+          B0 = std::real( myVars[i] = active[ia] );
         }
       }
       reset();
