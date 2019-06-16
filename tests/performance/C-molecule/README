@@ -22,16 +22,19 @@ and tune thread counts, placement, walker count (etc.)
 2. Simulated system and QMC methods tested
 
 The simulated systems are various sizes of a carbon ring (C12,C18,C24,
-and C30) and C60 buckyball. All-electron tests (ae) with the cusp
-correction and tests with a pseudopotential (pp) are included in 
-carbon ring tests. 
- 
-Name  Atoms    Electrons      Electrons per spin
- C12    12   48(pp), 72(ae)     24(pp),36(ae)   
- C18    18   72(pp),108(ae)     36(pp),54(ae)
- C24    24   96(pp),144(ae)     48(pp),72(ae)
- C30    30  120(pp),180(ae)     60(pp),90(ae)
- C60    60      240(pp)            120(pp)           
+and C30) and C60 buckyball. All-electron tests (ae) using the cusp
+correction and pseudopotential tests (pp) are included.
+
+Name  Atoms Type  Electrons  Electrons per spin
+ C12    12   AE       72         36
+ C12    12   PP       48         24
+ C18    18   AE      108         54
+ C18    18   PP       72         36
+ C24    24   AE      144         72
+ C24    24   PP       96         48
+ C30    30   AE      180         90
+ C30    30   PP      120         60
+ C60    60   PP      240        120
 
 Runs consist of a number of short blocks of (i) VMC without drift (ii)
 VMC with drift term included (iii) DMC with constant population.
@@ -40,8 +43,7 @@ Two sets of wavefunction are tested: LCAO with a one and
 two body Jastrow functions, and a more complex form with an additional
 three body Jastrow function. 
 
-These LCAO tests run normally from QMCPACK 3.6.0. 3.5.0 version is also
-available but all-electron tests in SoA build will be crashed.
+The tests require at least QMCPACK 3.6.0.
 
 3. Requirements
 
