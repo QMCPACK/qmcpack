@@ -239,8 +239,8 @@ public:
           continue;
         if (rcsingles[k])
         {
-          dlogpsi[kk]      = (ValueType)dLogPsi[k];
-          dhpsioverpsi[kk] = -0.5 * (ValueType)Sum(*lapLogPsi[k]) - (ValueType)Dot(P.G, *gradLogPsi[k]);
+          dlogpsi[kk]      = ValueType(dLogPsi[k]);
+          dhpsioverpsi[kk] = - RealType(0.5) * ValueType(Sum(*lapLogPsi[k])) - ValueType(Dot(P.G, *gradLogPsi[k]));
         }
       }
     }
