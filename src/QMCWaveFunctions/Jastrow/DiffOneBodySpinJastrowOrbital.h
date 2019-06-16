@@ -222,8 +222,8 @@ public:
       int kk = myVars.where(k);
       if (kk < 0)
         continue;
-      dlogpsi[kk]      = (ValueType)dLogPsi[k];
-      dhpsioverpsi[kk] = -0.5 * (ValueType)Sum(*lapLogPsi[k]) - (ValueType)Dot(P.G, *gradLogPsi[k]);
+      dlogpsi[kk]      = ValueType(dLogPsi[k]);
+      dhpsioverpsi[kk] = - RealType(0.5) * ValueType(Sum(*lapLogPsi[k])) - ValueType(Dot(P.G, *gradLogPsi[k]));
     }
   }
 

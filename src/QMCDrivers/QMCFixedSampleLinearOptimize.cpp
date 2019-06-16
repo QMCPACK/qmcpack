@@ -437,9 +437,12 @@ bool QMCFixedSampleLinearOptimize::put(xmlNodePtr q)
 {
   std::string useGPU("yes");
   std::string vmcMove("pbyp");
+  std::string ReportToH5("no");
   OhmmsAttributeSet oAttrib;
   oAttrib.add(useGPU, "gpu");
   oAttrib.add(vmcMove, "move");
+  oAttrib.add(ReportToH5, "hdf5");
+
   oAttrib.put(q);
   m_param.put(q);
 
@@ -528,8 +531,12 @@ bool QMCFixedSampleLinearOptimize::put(xmlNodePtr q)
 #endif
       optTarget = new QMCCostFunction(W, Psi, H, myComm);
     optTarget->setStream(&app_log());
+    if (ReportToH5=="yes")
+       optTarget->reportH5=true;
     success = optTarget->put(q);
   }
+  if (ReportToH5=="yes")
+     optTarget->reportH5=true;
   return success;
 }
 
