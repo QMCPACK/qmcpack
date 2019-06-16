@@ -78,15 +78,18 @@ TEST_CASE("VariableSet one", "[optimize]")
 TEST_CASE("VariableSet output", "[optimize]")
 {
   VariableSet vs;
-  #ifdef QMC_COMPLEX
-  std::complex<double> first_val(11234.56789, 0.0);
-  std::complex<double> second_val(0.000256789, 0.0);
-  std::complex<double> third_val(-1.2, 0.0);
-  #else
-  double first_val=11234.56789;
-  double second_val=0.000256789;
-  double third_val=-1.2;
-  #endif
+  VariableSet::value_type first_val(11234.56789);
+  VariableSet::value_type second_val(0.000256789);
+  VariableSet::value_type third_val(-1.2);
+  //#ifdef QMC_COMPLEX
+  //std::complex<double> first_val(11234.56789, 0.0);
+  //std::complex<double> second_val(0.000256789, 0.0);
+  //std::complex<double> third_val(-1.2, 0.0);
+  //#else
+  //double first_val=11234.56789;
+  //double second_val=0.000256789;
+  //double third_val=-1.2;
+  //#endif
   vs.insert("s", first_val);
   vs.insert("second", second_val);
   vs.insert("really_long_name", third_val);
