@@ -33,15 +33,16 @@ VirtualParticleSet::VirtualParticleSet(const ParticleSet& p, int nptcl) : refPS(
   RSoA.resize(nptcl);
 
   //create distancetables
-  if (refPS.DistTables.size())
+  const int numDT = refPS.getNumDistTables();
+  if (numDT)
   {
-    DistTables.resize(refPS.DistTables.size());
-    distTableDescriptions.resize(refPS.DistTables.size());
-    for (int i = 0; i < DistTables.size(); ++i)
+    DistTables.resize(numDT);
+    distTableDescriptions.resize(numDT);
+    for (int i = 0; i < numDT; ++i)
     {
       std::ostringstream description;
       DistTables[i] =
-          createDistanceTable(refPS.DistTables[i]->origin(), *this, refPS.DistTables[0]->DTType, description);
+          createDistanceTable(refPS.getDistTable(i).origin(), *this, refPS.getDistTable(0).DTType, description);
       distTableDescriptions[i] = description.str();
       DistTables[i]->ID        = i;
     }

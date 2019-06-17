@@ -157,12 +157,6 @@ public:
   ///Structure factor
   StructFact* SK;
 
-  ///distance tables that need to be updated by moving this ParticleSet
-  std::vector<DistanceTableData*> DistTables;
-
-  /// Descriptions from distance table creation.  Same order as DistTables.
-  std::vector<std::string> distTableDescriptions;
-
   ///Particle density in G-space for MPC interaction
   std::vector<TinyVector<int, OHMMS_DIM>> DensityReducedGvecs;
   std::vector<ComplexType> Density_G;
@@ -605,6 +599,10 @@ public:
     AttribList.add(IndirectID);
   }
 
+  inline int getNumDistTables() const { return DistTables.size(); }
+
+  inline const DistanceTableData& getDistTable(int table_ID) const { return *DistTables[table_ID]; }
+
 protected:
   /** map to handle distance tables
    *
@@ -612,6 +610,13 @@ protected:
    * myDistTableMap[ObjectTag] === 0
    */
   std::map<std::string, int> myDistTableMap;
+
+  /// distance tables that need to be updated by moving this ParticleSet
+  std::vector<DistanceTableData*> DistTables;
+
+  /// Descriptions from distance table creation.  Same order as DistTables.
+  std::vector<std::string> distTableDescriptions;
+
 
   std::vector<NewTimer*> myTimers;
   SingleParticlePos_t myTwist;
