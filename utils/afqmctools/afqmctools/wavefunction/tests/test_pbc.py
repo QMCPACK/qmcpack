@@ -38,6 +38,7 @@ class TestMolWavefunction(unittest.TestCase):
                     'isUHF': False,
                     'hcore': hcore,
                     'nmo_pk': nmo_pk,
+                    'mo_energy': mf.mo_energy,
                     'kpts': kpts}
         with h5py.File('wfn.h5', 'w') as fh5:
             pass
