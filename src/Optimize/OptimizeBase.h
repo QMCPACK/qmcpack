@@ -27,13 +27,6 @@ template<class T = double>
 class CostFunctionBase
 {
 public:
-  //typedef T Return_t;
-
-  //#ifdef QMC_COMPLEX
-  //typedef std::complex<T> Return_ct;
-  //#else
-  //typedef T Return_ct;
-  //#endif
 
   typedef qmcplusplus::QMCTraits::ValueType Return_t;
   typedef qmcplusplus::QMCTraits::RealType Return_rt;

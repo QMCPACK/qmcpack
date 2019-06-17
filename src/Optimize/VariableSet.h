@@ -43,13 +43,6 @@ enum
  */
 struct VariableSet
 {
-  //#ifdef QMC_COMPLEX
-  //  typedef std::complex<OHMMS_PRECISION> value_type;
-  //  typedef OHMMS_PRECISION real_type;
-  //#else
-  //  typedef OHMMS_PRECISION value_type;
-  //  typedef OHMMS_PRECISION real_type;
-  //#endif
 
   typedef qmcplusplus::QMCTraits::ValueType value_type;
   typedef qmcplusplus::QMCTraits::RealType  real_type;

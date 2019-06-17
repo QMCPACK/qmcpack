@@ -778,11 +778,9 @@ void MultiSlaterDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
           v1 += tmp * static_cast<ValueType>(Dot(gmP, grads_up[upC]) + Dot(gmP, grads_dn[dnC]));
           cnt++;
         }
-        //convert(cdet, dlogpsi[kk]);
         dlogpsi[kk] = cdet;
         ValueType dhpsi = (RealType)-0.5 * (q0 - cdet * lapl_sum) - cdet * gg + v1;
         dhpsioverpsi[kk] = dhpsi;
-        //convert(dhpsi, dhpsioverpsi[kk]);
       }
       if (optmBF)
       {
@@ -832,17 +830,14 @@ void MultiSlaterDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
           int kk = myVars.where(i);
           if (kk < 0)
             continue;
-          //dlogpsi[kk] = cdet;
           int upC        = C2node_up[ip];
           int dnC        = C2node_dn[ip];
           ValueType cdet = detValues_up[upC] * detValues_dn[dnC] * psiinv;
-          //convert(cdet, dlogpsi[kk]);
           dlogpsi[kk] = cdet;
           ValueType dhpsi = ((RealType)-0.5 * cdet) *
               (tempstorage_up[upC] + tempstorage_dn[dnC] - lapl_sum +
                static_cast<ValueType>(2.0 * Dot(grads_up[upC], grads_dn[dnC])) +
                (RealType)2.0 * (ggP - static_cast<ValueType>(Dot(gmP, grads_up[upC]) + Dot(gmP, grads_dn[dnC]))));
-          //convert(dhpsi, dhpsioverpsi[kk]);
           dhpsioverpsi[kk] = dhpsi;
         }
       }
@@ -906,9 +901,7 @@ void MultiSlaterDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
                  static_cast<ValueType>(2.0 * dot1));
           } // i
           dhpsi = (RealType)-0.5 * (dhpsi + dlog * ((RealType)2.0 * ggP - lapl_sum));
-          //convert(dlog, dlogpsi[kk]);
           dlogpsi[kk] = dlog;
-          //convert(dhpsi, dhpsioverpsi[kk]);
           dhpsioverpsi[kk] = dhpsi;
         } // pa
       }

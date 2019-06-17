@@ -744,7 +744,6 @@ void MultiSlaterDeterminantFast::evaluateDerivatives(ParticleSet& P,
           ValueType tmp1   = detValues_dn[dnC] * psiinv;
           ValueType tmp2   = detValues_up[upC] * psiinv;
           dlogpsi[kk] = cdet;
-          //convert(cdet, dlogpsi[kk]);
           ValueType v1 = 0.0, v2 = 0.0;
           for (size_t k = 0, j = N1; k < NP1; k++, j++)
             v1 += (dot(P.G[j], grads_up(upC, k)) - dot(myG_temp[j], grads_up(upC, k)));
@@ -753,7 +752,6 @@ void MultiSlaterDeterminantFast::evaluateDerivatives(ParticleSet& P,
           ValueType dhpsi = (RealType)-0.5 * (tmp1 * laplSum_up[upC] + tmp2 * laplSum_dn[dnC] - cdet * lapl_sum) -
               cdet * gg - (tmp1 * v1 + tmp2 * v2);
           dhpsioverpsi[kk] = dhpsi;
-          //convert(dhpsi, dhpsioverpsi[kk]);
         }
       }
     }
