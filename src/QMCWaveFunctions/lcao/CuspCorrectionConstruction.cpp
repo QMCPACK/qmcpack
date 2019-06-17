@@ -224,8 +224,6 @@ void generateCuspInfo(int orbital_set_size,
   int end_mo   = offset[Comm.rank() + 1];
   app_log() << "  Number of molecular orbitals to compute correction on this rank: " << end_mo - start_mo << std::endl;
 
-  int num_mo_this_node = end_mo - start_mo;
-  int total_size       = num_mo_this_node * num_centers;
 #pragma omp parallel
   {
     ParticleSet localTargetPtcl(targetPtcl);
