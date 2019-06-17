@@ -139,7 +139,6 @@ struct UserFunctor : public OptimizableFunctorBase
       valArray[iat] = gradArray[iat] = laplArray[iat] = T(0);
   }
 
-#if 1
   inline real_type f(real_type r) { return evaluate(r); }
 
   inline real_type df(real_type r)
@@ -148,7 +147,6 @@ struct UserFunctor : public OptimizableFunctorBase
     real_type res = evaluate(r, dudr, d2udr2);
     return dudr;
   }
-#endif
 
 
   inline bool evaluateDerivatives(real_type r, std::vector<TinyVector<real_type, 3>>& derivs)
