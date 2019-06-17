@@ -335,74 +335,36 @@ void ParticleSet::checkBoundBox(RealType rb)
                   << "\n Using SLOW method for the sphere update. " << std::endl;
   }
 }
-//void ParticleSet::setUpdateMode(int updatemode) {
-//  if(DistTables.empty()) {
-//    DistanceTable::getTables(ObjectTag,DistTables);
-//    DistanceTable::create(1);
-//    LOGMSG("ParticleSet::setUpdateMode to create distance tables.")
-//    LOGMSG("\t the number of distance tables for " << getName() << " " << DistTables.size())
-//  }
-//}
 
-///** add a distance table to DistTables list
-// * @param d_table pointer to a DistanceTableData to be added
-// *
-// * DistTables is a list of DistanceTables which are updated by MC moves.
-// */
-//void ParticleSet::addTable(DistanceTableData* d_table) {
-//  int oid=d_table->origin().tag();
-//  int i=0;
-//  int dsize=DistTables.size();
-//  while(i<dsize) {
-//    if(oid == DistTables[i]->origin().tag()) //table already exists
-//      return;
-//    ++i;
-//  }
-//  DistTables.push_back(d_table);
-//}
 int ParticleSet::addTable(const ParticleSet& psrc, int dt_type)
 {
   if (myName == "none")
     APP_ABORT("ParticleSet::addTable needs a proper name for this particle set.");
-  if (DistTables.empty())
-  {
-    DistTables.reserve(4);
-    std::ostringstream description;
-#if defined(ENABLE_SOA)
-    DistTables.push_back(createDistanceTable(*this, DT_SOA, description));
-#else
-    //if(dt_type==DT_SOA_PREFERRED) dt_type=DT_AOS; //safety
-    DistTables.push_back(createDistanceTable(*this, dt_type, description));
-#endif
-    distTableDescriptions.push_back(description.str());
-    //add  this-this pair
-    myDistTableMap.clear();
-    myDistTableMap[myName] = 0;
-    app_debug() << "  ParticleSet::addTable create table #0 " << DistTables[0]->Name << std::endl;
-    DistTables[0]->ID = 0;
-    if (psrc.getName() == myName)
-      return 0;
-  }
-  if (psrc.getName() == myName)
-  {
-    app_debug() << "  ParticleSet::addTable reuse table #" << 0 << " " << DistTables[0]->Name << std::endl;
-    //if(!DistTables[0]->is_same_type(dt_type))
-    //{//itself is special, cannot mix them: some of the users do not check the index
-    //  APP_ABORT("ParticleSet::addTable for itself Cannot mix AoS and SoA distance tables.\n");
-    //}
-    return 0;
-  }
+
   int tid;
   std::map<std::string, int>::iterator tit(myDistTableMap.find(psrc.getName()));
   if (tit == myDistTableMap.end())
   {
     std::ostringstream description;
     tid = DistTables.size();
-    DistTables.push_back(createDistanceTable(psrc, *this, dt_type, description));
+    if (this == &psrc)
+    {
+      DistTables.push_back(createDistanceTable(*this, dt_type, description));
+      if (tid != 0)
+        throw std::runtime_error("ParticleSet::addTable AA table is not DistTables[0]\n");
+    }
+    else
+    {
+      DistTables.push_back(createDistanceTable(psrc, *this, dt_type, description));
+      if (tid == 0)
+        throw std::runtime_error("ParticleSet::addTable non AA table should not be DistTables[0]\n");
+    }
     distTableDescriptions.push_back(description.str());
     myDistTableMap[psrc.getName()] = tid;
     DistTables[tid]->ID            = tid;
     app_debug() << "  ... ParticleSet::addTable Create Table #" << tid << " " << DistTables[tid]->Name << std::endl;
+    if (DistTables[tid]->DTType != DistTables[0]->DTType)
+      APP_ABORT("ParticleSet::addTable Cannot mix AoS and SoA distance tables.\n");
   }
   else
   {
@@ -412,13 +374,7 @@ int ParticleSet::addTable(const ParticleSet& psrc, int dt_type)
       app_debug() << "  ... ParticleSet::addTable Reuse Table #" << tid << " " << DistTables[tid]->Name << std::endl;
     }
     else
-    {
       APP_ABORT("ParticleSet::addTable Cannot mix AoS and SoA distance tables.\n");
-    }
-    //if(dt_type == DT_SOA || dt_type == DT_AOS) //not compatible
-    //{
-    //}
-    //for DT_SOA_PREFERRED or DT_AOS_PREFERRED, return the existing table
   }
   app_log().flush();
   return tid;
