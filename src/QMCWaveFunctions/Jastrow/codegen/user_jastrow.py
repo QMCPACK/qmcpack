@@ -4,7 +4,9 @@ from sympy import *
 from sympy.printing.cxxcode import CXX11CodePrinter
 import sys
 
-# Generate a radial functor for Jastrow factors from a symbolic expression
+# Generate code for a radial function for Jastrow factors from a symbolic expression.
+# This script creates ../UserFunctor.h from UserFunctor.h.in.
+# It also prints the expression, derivatives, and a sample XML input block.
 
 r = Symbol('r')
 A = Symbol('A')
@@ -22,6 +24,8 @@ input_parameters = []
 
 # For now, assume the cusp value is one of the parameters (or None)
 cusp_param = None
+
+# Define the functional form below.
 
 # Simple Pade
 if True:
