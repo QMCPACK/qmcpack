@@ -1527,7 +1527,7 @@ class PwscfInput(SimulationInput):
         if not 'cell_parameters' in self:
             self.cell_parameters = self.element_types['cell_parameters']()
         #end if
-        self.cell_parameters.specifier = 'cubic'
+        self.cell_parameters.specifier = 'alat'
         self.cell_parameters.vectors   = s.axes.copy()
 
         self.k_points.clear()
@@ -1627,7 +1627,7 @@ class PwscfInput(SimulationInput):
         if not 'cell_parameters' in self:
             self.cell_parameters = self.element_types['cell_parameters']()
         #end if
-        self.cell_parameters.specifier = 'cubic'
+        self.cell_parameters.specifier = 'alat'
         self.cell_parameters.vectors   = s.axes.copy()
 
         self.k_points.clear()
