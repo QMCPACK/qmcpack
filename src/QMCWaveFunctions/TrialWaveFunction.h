@@ -200,10 +200,8 @@ public:
    */
   void evaluateRatios(VirtualParticleSet& P, std::vector<RealType>& ratios);
   /** compute both ratios and deriatives of ratio with respect to the optimizables*/
-  void evaluateDerivRatios(VirtualParticleSet& P,
-                           const opt_variables_type& optvars,
-                           std::vector<RealType>& ratios,
-                           Matrix<RealType>& dratio);
+  void evaluateDerivRatios(VirtualParticleSet& P, const opt_variables_type& optvars,
+      std::vector<ValueType>& ratios, Matrix<ValueType>& dratio);
 
   void printGL(ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L, std::string tag = "GL");
 
@@ -241,11 +239,11 @@ public:
 
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& optvars,
-                           std::vector<RealType>& dlogpsi,
-                           std::vector<RealType>& dhpsioverpsi,
-                           bool project = false);
+                           std::vector<ValueType>& dlogpsi,
+                           std::vector<ValueType>& dhpsioverpsi,
+                           bool project=false);
 
-  void evaluateGradDerivatives(const ParticleSet::ParticleGradient_t& G_in, std::vector<RealType>& dgradlogpsi);
+  void evaluateGradDerivatives(const ParticleSet::ParticleGradient_t& G_in, std::vector<ValueType>& dgradlogpsi);
 
   /** evaluate the hessian w.r.t. electronic coordinates of particle iat **/
   // void evaluateHessian(ParticleSet & P, int iat, HessType& grad_grad_psi);

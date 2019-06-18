@@ -92,7 +92,7 @@ public:
     NumParams  = TargetFunc->NumParams();
     resizeAllArray(NumParams);
     for (int i = 0; i < NumParams; i++)
-      Parms[i] = TargetFunc->Params(i);
+      Parms[i] = std::real(TargetFunc->Params(i));
     //max CG steps is the dimensionality of the problem
     CG_ortho = std::min(CG_ortho, NumParams);
     //if CG=0 we are using steepest descent. if <0 set to pure CG

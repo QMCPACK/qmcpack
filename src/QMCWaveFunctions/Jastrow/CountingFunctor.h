@@ -142,25 +142,25 @@ public:
     }
     // set local variables from myVars
     if (opt_A[XX])
-      A(0, 0) = myVars[id + "_A_xx"];
+      A(0, 0) = std::real(myVars[id + "_A_xx"]);
     if (opt_A[YY])
-      A(1, 1) = myVars[id + "_A_yy"];
+      A(1, 1) = std::real(myVars[id + "_A_yy"]);
     if (opt_A[ZZ])
-      A(2, 2) = myVars[id + "_A_zz"];
+      A(2, 2) = std::real(myVars[id + "_A_zz"]);
     if (opt_A[XY])
-      A(1, 0) = A(0, 1) = myVars[id + "_A_xy"];
+      A(1, 0) = A(0, 1) = std::real(myVars[id + "_A_xy"]);
     if (opt_A[XZ])
-      A(2, 0) = A(0, 2) = myVars[id + "_A_xz"];
+      A(2, 0) = A(0, 2) = std::real(myVars[id + "_A_xz"]);
     if (opt_A[YZ])
-      A(2, 1) = A(1, 2) = myVars[id + "_A_yz"];
+      A(2, 1) = A(1, 2) = std::real(myVars[id + "_A_yz"]);
     if (opt_B[X])
-      B[X] = myVars[id + "_B_x"];
+      B[X] = std::real(myVars[id + "_B_x"]);
     if (opt_B[Y])
-      B[Y] = myVars[id + "_B_y"];
+      B[Y] = std::real(myVars[id + "_B_y"]);
     if (opt_B[Z])
-      B[Z] = myVars[id + "_B_z"];
+      B[Z] = std::real(myVars[id + "_B_z"]);
     if (opt_C)
-      C = myVars[id + "_C"];
+      C = std::real(myVars[id + "_C"]);
   }
 
   void reportStatus(std::ostream& os)

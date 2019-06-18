@@ -217,7 +217,7 @@ bool QMCFixedSampleLinearOptimize::run()
   std::vector<RealType> currentParameters(numParams, 0);
   std::vector<RealType> bestParameters(numParams, 0);
   for (int i = 0; i < numParams; i++)
-    bestParameters[i] = currentParameters[i] = optTarget->Params(i);
+    bestParameters[i] = currentParameters[i] = std::real(optTarget->Params(i));
   //   proposed direction and new parameters
   optdir.resize(numParams, 0);
   optparm.resize(numParams, 0);
@@ -385,7 +385,7 @@ bool QMCFixedSampleLinearOptimize::run()
         {
           //Move was acceptable
           for (int i = 0; i < numParams; i++)
-            bestParameters[i] = optTarget->Params(i);
+            bestParameters[i] = std::real(optTarget->Params(i));
           lastCost        = newCost;
           acceptedOneMove = true;
           if (std::abs(newCost - lastCost) < 1e-4)
@@ -869,8 +869,8 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
 
   // have the cost function prepare derivative vectors
   EngineObj->energy_target_compute();
-  const Return_t starting_cost = EngineObj->target_value();
-  const Return_t init_energy   = EngineObj->energy_mean();
+  const RealType starting_cost = EngineObj->target_value();
+  const RealType init_energy   = EngineObj->energy_mean();
 
   // print out the initial energy
   app_log() << std::endl
@@ -944,7 +944,7 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
 
   // initialize the initial and current parameter vectors
   for (int i = 0; i < numParams; i++)
-    currParams.at(i) = optTarget->Params(i);
+    currParams.at(i) = std::real( optTarget->Params(i) );
 
   // create a vector telling which updates are within our constraints
   std::vector<bool> good_update(parameterDirections.size(), true);
@@ -999,7 +999,7 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
 
   // update the current parameters to those of the new guiding function
   for (int i = 0; i < numParams; i++)
-    currParams.at(i) = optTarget->Params(i);
+    currParams.at(i) = std::real( optTarget->Params(i) );
 
   // compute cost function for the initial parameters (by subtracting the middle shift's update back off)
   for (int i = 0; i < numParams; i++)
@@ -1137,7 +1137,7 @@ bool QMCFixedSampleLinearOptimize::one_shift_run()
 
   // initialize the initial and current parameter vectors
   for (int i = 0; i < numParams; i++)
-    currentParameters.at(i) = optTarget->Params(i);
+    currentParameters.at(i) = std::real( optTarget->Params(i) );
 
   // prepare vectors to hold the parameter update directions for each shift
   std::vector<RealType> parameterDirections;

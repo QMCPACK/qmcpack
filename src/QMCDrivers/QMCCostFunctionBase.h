@@ -88,13 +88,13 @@ public:
   Return_t Params(int i) const { return OptVariables[i]; }
   int getType(int i) { return OptVariables.getType(i); }
   ///return the cost value for CGMinimization
-  Return_t Cost(bool needGrad = true);
+  Return_rt Cost(bool needGrad = true);
 
   ///return the cost value for CGMinimization
-  Return_t computedCost();
+  Return_rt computedCost();
   void printEstimates();
   ///return the gradient of cost value for CGMinimization
-  virtual void GradCost(std::vector<Return_t>& PGradient, const std::vector<Return_t>& PM, Return_t FiniteDiff = 0){};
+  virtual void GradCost(std::vector<Return_rt>& PGradient, const std::vector<Return_rt>& PM, Return_rt FiniteDiff = 0){};
   ///return the number of optimizable parameters
   inline int NumParams() { return OptVariables.size(); }
   ///return the number of optimizable parameters
@@ -117,11 +117,11 @@ public:
 
   void setWaveFunctionNode(xmlNodePtr cur) { m_wfPtr = cur; }
 
-  void recordParametersToPsi(Return_t e, Return_t v) { Psi.coefficientHistory.addParams(OptVariables, e, v); }
+  void recordParametersToPsi(Return_rt e, Return_rt v) { Psi.coefficientHistory.addParams(OptVariables, e, v); }
   void getAvgParameters(int N) { OptVariables = Psi.coefficientHistory.getAvgCoefficients(N); }
   //void getConfigurations(std::vector<std::string>& ConfigFile, int partid, int nparts);
 
-  void setTargetEnergy(Return_t et);
+  void setTargetEnergy(Return_rt et);
 
   void setRootName(const std::string& aroot) { RootName = aroot; }
 
@@ -138,17 +138,17 @@ public:
    * If successful, any optimization object updates the parameters by x0 + dl*gr
    * and proceeds with a new step.
    */
-  bool lineoptimization(const std::vector<Return_t>& x0,
-                        const std::vector<Return_t>& gr,
-                        Return_t val0,
-                        Return_t& dl,
-                        Return_t& val_proj,
-                        Return_t& lambda_max);
+  bool lineoptimization(const std::vector<Return_rt>& x0,
+                        const std::vector<Return_rt>& gr,
+                        Return_rt val0,
+                        Return_rt& dl,
+                        Return_rt& val_proj,
+                        Return_rt& lambda_max);
 
-  virtual Return_t fillOverlapHamiltonianMatrices(Matrix<Return_t>& Left, Matrix<Return_t>& Right) = 0;
+  virtual Return_rt fillOverlapHamiltonianMatrices(Matrix<Return_rt>& Left, Matrix<Return_rt>& Right) = 0;
 
 #ifdef HAVE_LMY_ENGINE
-  Return_t LMYEngineCost(const bool needDeriv, cqmc::engine::LMYEngine* EngineObj);
+  Return_rt LMYEngineCost(const bool needDeriv, cqmc::engine::LMYEngine* EngineObj);
 #endif
 
   virtual void getConfigurations(const std::string& aroot) = 0;
@@ -200,34 +200,34 @@ protected:
   ///counter for output
   int ReportCounter;
   ///weights for energy and variance in the cost function
-  Return_t w_en, w_var, w_abs, w_w;
+  Return_rt w_en, w_var, w_abs, w_w;
   ///value of the cost function
-  Return_t CostValue;
+  Return_rt CostValue;
   ///target energy
-  Return_t Etarget;
+  Return_rt Etarget;
   ///real target energy with the Correlation Factor
-  Return_t EtargetEff;
+  Return_rt EtargetEff;
   ///effective number of walkers
-  Return_t NumWalkersEff;
+  Return_rt NumWalkersEff;
   ///fraction of the number of walkers below which the costfunction becomes invalid
-  Return_t MinNumWalkers;
+  Return_rt MinNumWalkers;
   ///maximum weight beyond which the weight is set to 1
-  Return_t MaxWeight;
+  Return_rt MaxWeight;
   ///current Average
-  Return_t curAvg;
+  Return_rt curAvg;
   ///current Variance
-  Return_t curVar;
+  Return_rt curVar;
   ///current weighted average (correlated sampling)
-  Return_t curAvg_w;
+  Return_rt curAvg_w;
   ///current weighted variance (correlated sampling)
-  Return_t curVar_w;
+  Return_rt curVar_w;
   ///current variance of SUM_ABSE_WGT/SUM_WGT
-  Return_t curVar_abs;
+  Return_rt curVar_abs;
   ///threshold to remove configurations from sample with |Psi_old| < SmallWeight
-  Return_t SmallWeight;
-  Return_t w_beta;
+  Return_rt SmallWeight;
+  Return_rt w_beta;
   std::string GEVType;
-  Return_t vmc_or_dmc;
+  Return_rt vmc_or_dmc;
   bool needGrads;
   ///whether we are targeting an excited state
   std::string targetExcitedStr;
@@ -239,7 +239,7 @@ protected:
    *
    * default CorrelationFactor=0.0;
    */
-  Return_t CorrelationFactor;
+  Return_rt CorrelationFactor;
   ///list of optimizables
   opt_variables_type OptVariables;
   /** full list of optimizables
@@ -289,13 +289,13 @@ protected:
    *
    * SumValues[k] where k is one of SumIndex_opt
    */
-  std::vector<Return_t> SumValue;
+  std::vector<Return_rt> SumValue;
   /** Saved properties of all the walkers
    *
    * Records(iw,field_id) returns the field_id value of the iw-th walker
    * field_id is one of FieldIndex_opt
    */
-  Matrix<Return_t> Records;
+  Matrix<Return_rt> Records;
   ///** Saved derivative properties and Hderivative properties of all the walkers
   //*/
   //vector<std::vector<vector<Return_t> >* > DerivRecords;
@@ -314,10 +314,10 @@ protected:
   void updateXmlNodes();
 
 
-  virtual Return_t correlatedSampling(bool needGrad = true) = 0;
+  virtual Return_rt correlatedSampling(bool needGrad = true) = 0;
 
 #ifdef HAVE_LMY_ENGINE
-  virtual Return_t LMYEngineCost_detail(cqmc::engine::LMYEngine* EngineObj)
+  virtual Return_rt LMYEngineCost_detail(cqmc::engine::LMYEngine* EngineObj)
   {
     APP_ABORT("NOT IMPLEMENTED");
     return 0;
