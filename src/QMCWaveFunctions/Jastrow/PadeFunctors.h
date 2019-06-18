@@ -240,10 +240,12 @@ struct PadeFunctor : public OptimizableFunctorBase
       if (ia > -1)
       {
         int i = 0;
-        if (Opt_A)
-          A = myVars[i++] = active[ia++];
-        if (Opt_B)
-          B0 = myVars[i] = active[ia];
+        if (Opt_A) {
+          A = std::real( myVars[i++] = active[ia++] );
+        }
+        if (Opt_B) {
+          B0 = std::real( myVars[i] = active[ia] );
+        }
       }
       reset();
     }
