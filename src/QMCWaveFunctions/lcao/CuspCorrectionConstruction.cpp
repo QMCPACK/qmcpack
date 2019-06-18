@@ -224,87 +224,84 @@ void generateCuspInfo(int orbital_set_size,
   int end_mo   = offset[Comm.rank() + 1];
   app_log() << "  Number of molecular orbitals to compute correction on this rank: " << end_mo - start_mo << std::endl;
 
-#pragma omp parallel
-  {
-    ParticleSet localTargetPtcl(targetPtcl);
-    ParticleSet localSourcePtcl(sourcePtcl);
-
-    LCAOrbitalSet local_phi(phi);
-    local_phi.myBasisSet = phi.myBasisSet->makeClone();
-    local_phi.IsCloned   = true;
-    local_phi.C          = nullptr;
-    local_phi.setIdentity(false);
-
-    LCAOrbitalSet local_eta(eta);
-    local_eta.myBasisSet = eta.myBasisSet->makeClone();
-    local_eta.IsCloned   = true;
-    local_eta.C          = nullptr;
-    local_eta.setIdentity(false);
-
 // Specify dynamic scheduling explicitly for load balancing.   Each iteration should take enough
 // time that scheduling overhead is not an issue.
-#pragma omp for schedule(dynamic) collapse(2)
-    for (int center_idx = 0; center_idx < num_centers; center_idx++)
+#pragma omp parallel for schedule(dynamic) collapse(2)
+  for (int center_idx = 0; center_idx < num_centers; center_idx++)
+  {
+    for (int mo_idx = start_mo; mo_idx < end_mo; mo_idx++)
     {
-      for (int mo_idx = start_mo; mo_idx < end_mo; mo_idx++)
+      ParticleSet localTargetPtcl(targetPtcl);
+      ParticleSet localSourcePtcl(sourcePtcl);
+
+      LCAOrbitalSet local_phi(phi);
+      local_phi.myBasisSet = phi.myBasisSet->makeClone();
+      local_phi.IsCloned   = true;
+      local_phi.C          = nullptr;
+      local_phi.setIdentity(false);
+
+      LCAOrbitalSet local_eta(eta);
+      local_eta.myBasisSet = eta.myBasisSet->makeClone();
+      local_eta.IsCloned   = true;
+      local_eta.C          = nullptr;
+      local_eta.setIdentity(false);
+
+      #pragma omp critical
+      app_log() << "   Working on MO: " << mo_idx << " Center: " << center_idx << std::endl;
+
+      splitPhiEtaTimer->start();
+
+      *(local_eta.C) = *(lcwc.C);
+      *(local_phi.C) = *(lcwc.C);
+      splitPhiEta(center_idx, corrCenter, local_phi, local_eta);
+
+      splitPhiEtaTimer->stop();
+
+      bool corrO = false;
+      auto& cref(*(local_phi.C));
+      for (int ip = 0; ip < cref.cols(); ip++)
       {
-        #pragma omp critical
-        app_log() << "   Working on MO: " << mo_idx << " Center: " << center_idx << std::endl;
-
-        splitPhiEtaTimer->start();
-
-        *(local_eta.C) = *(lcwc.C);
-        *(local_phi.C) = *(lcwc.C);
-        splitPhiEta(center_idx, corrCenter, local_phi, local_eta);
-
-        splitPhiEtaTimer->stop();
-
-        bool corrO = false;
-        auto& cref(*(local_phi.C));
-        for (int ip = 0; ip < cref.cols(); ip++)
+        if (std::abs(cref(mo_idx, ip)) > 0)
         {
-          if (std::abs(cref(mo_idx, ip)) > 0)
-          {
-            corrO = true;
-            break;
-          }
+          corrO = true;
+          break;
+        }
+      }
+
+      if (corrO)
+      {
+        OneMolecularOrbital etaMO(&localTargetPtcl, &localSourcePtcl, &local_eta);
+        etaMO.changeOrbital(center_idx, mo_idx);
+
+        OneMolecularOrbital phiMO(&localTargetPtcl, &localSourcePtcl, &local_phi);
+        phiMO.changeOrbital(center_idx, mo_idx);
+
+        SpeciesSet& tspecies(localSourcePtcl.getSpeciesSet());
+        int iz     = tspecies.addAttribute("charge");
+        RealType Z = tspecies(iz, localSourcePtcl.GroupID[center_idx]);
+
+        RealType Rc_max = 0.2;
+        RealType rc     = 0.1;
+
+        RealType dx = rc * 1.2 / npts;
+        ValueVector_t pos(npts);
+        ValueVector_t ELideal(npts);
+        ValueVector_t ELcurr(npts);
+        for (int i = 0; i < npts; i++)
+        {
+          pos[i] = (i + 1.0) * dx;
         }
 
-        if (corrO)
-        {
-          OneMolecularOrbital etaMO(&localTargetPtcl, &localSourcePtcl, &local_eta);
-          etaMO.changeOrbital(center_idx, mo_idx);
-
-          OneMolecularOrbital phiMO(&localTargetPtcl, &localSourcePtcl, &local_phi);
-          phiMO.changeOrbital(center_idx, mo_idx);
-
-          SpeciesSet& tspecies(localSourcePtcl.getSpeciesSet());
-          int iz     = tspecies.addAttribute("charge");
-          RealType Z = tspecies(iz, localSourcePtcl.GroupID[center_idx]);
-
-          RealType Rc_max = 0.2;
-          RealType rc     = 0.1;
-
-          RealType dx = rc * 1.2 / npts;
-          ValueVector_t pos(npts);
-          ValueVector_t ELideal(npts);
-          ValueVector_t ELcurr(npts);
-          for (int i = 0; i < npts; i++)
-          {
-            pos[i] = (i + 1.0) * dx;
-          }
-
-          RealType eta0 = etaMO.phi(0.0);
-          ValueVector_t ELorig(npts);
-          CuspCorrection cusp(info(center_idx, mo_idx));
-          computeTimer->start();
-          minimizeForRc(cusp, phiMO, Z, rc, Rc_max, eta0, pos, ELcurr, ELideal);
-          computeTimer->stop();
-          // Update shared object.  Each iteration accesses a different element and
-          // this is an array (no bookkeeping data to update), so no synchronization
-          // is necessary.
-          info(center_idx, mo_idx) = cusp.cparam;
-        }
+        RealType eta0 = etaMO.phi(0.0);
+        ValueVector_t ELorig(npts);
+        CuspCorrection cusp(info(center_idx, mo_idx));
+        computeTimer->start();
+        minimizeForRc(cusp, phiMO, Z, rc, Rc_max, eta0, pos, ELcurr, ELideal);
+        computeTimer->stop();
+        // Update shared object.  Each iteration accesses a different element and
+        // this is an array (no bookkeeping data to update), so no synchronization
+        // is necessary.
+        info(center_idx, mo_idx) = cusp.cparam;
       }
     }
   }
