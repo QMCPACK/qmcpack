@@ -248,6 +248,7 @@ void generateCuspInfo(int orbital_set_size,
     {
       for (int mo_idx = start_mo; mo_idx < end_mo; mo_idx++)
       {
+        #pragma omp critical
         app_log() << "   Working on MO: " << mo_idx << " Center: " << center_idx << std::endl;
 
         splitPhiEtaTimer->start();
@@ -299,6 +300,9 @@ void generateCuspInfo(int orbital_set_size,
           computeTimer->start();
           minimizeForRc(cusp, phiMO, Z, rc, Rc_max, eta0, pos, ELcurr, ELideal);
           computeTimer->stop();
+          // Update shared object.  Each iteration accesses a different element and
+          // this is an array (no bookkeeping data to update), so no synchronization
+          // is necessary.
           info(center_idx, mo_idx) = cusp.cparam;
         }
       }
