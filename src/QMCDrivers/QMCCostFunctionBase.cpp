@@ -103,7 +103,7 @@ void QMCCostFunctionBase::setRng(std::vector<RandomGenerator_t*>& r)
     RngSaved[ip] = new RandomGenerator_t(*MoverRng[ip]);
 }
 
-void QMCCostFunctionBase::setTargetEnergy(Return_t et)
+void QMCCostFunctionBase::setTargetEnergy(Return_rt et)
 {
   //evaluate effective target energy
   EtargetEff = Etarget = et;
@@ -127,7 +127,7 @@ void QMCCostFunctionBase::setTargetEnergy(Return_t et)
   //       }
 }
 
-QMCCostFunctionBase::Return_t QMCCostFunctionBase::Cost(bool needGrad)
+QMCCostFunctionBase::Return_rt QMCCostFunctionBase::Cost(bool needGrad)
 {
   NumCostCalls++;
   //reset the wave function
@@ -145,13 +145,13 @@ void QMCCostFunctionBase::printEstimates()
   app_log() << "      Current var_urw: " << curVar << std::endl;
 }
 
-QMCCostFunctionBase::Return_t QMCCostFunctionBase::computedCost()
+QMCCostFunctionBase::Return_rt QMCCostFunctionBase::computedCost()
 {
   //   Assumes the Sums have been computed all ready
   //Estimators::accumulate has been called by correlatedSampling
   curAvg_w        = SumValue[SUM_E_WGT] / SumValue[SUM_WGT];
   curVar_w        = SumValue[SUM_ESQ_WGT] / SumValue[SUM_WGT] - curAvg_w * curAvg_w;
-  Return_t wgtinv = 1.0 / static_cast<Return_t>(NumSamples);
+  Return_rt wgtinv = 1.0 / static_cast<Return_rt>(NumSamples);
   // app_log() << "wgtinv = " << wgtinv << std::endl;
   curAvg     = SumValue[SUM_E_BARE] * wgtinv;
   curVar     = SumValue[SUM_ESQ_BARE] * wgtinv - curAvg * curAvg;
@@ -164,10 +164,10 @@ QMCCostFunctionBase::Return_t QMCCostFunctionBase::computedCost()
   // app_log() << "SumValue[SUM_ABSE_WGT] = " << SumValue[SUM_ABSE_WGT] << std::endl;
   // app_log() << "SumValue[SUM_E_WGT] = " << SumValue[SUM_E_WGT] << std::endl;
   // app_log() << "SumValue[SUM_ESQ_WGT] = " << SumValue[SUM_ESQ_WGT] << std::endl;
-  Return_t wgt_var = SumValue[SUM_WGTSQ] - SumValue[SUM_WGT] * SumValue[SUM_WGT];
+  Return_rt wgt_var = SumValue[SUM_WGTSQ] - SumValue[SUM_WGT] * SumValue[SUM_WGT];
   wgt_var *= wgtinv;
   CostValue            = 0.0;
-  const Return_t small = 1.0e-10;
+  const Return_rt small = 1.0e-10;
   if (std::abs(w_abs) > small)
     CostValue += w_abs * curVar_abs;
   if (std::abs(w_var) > small)
@@ -265,7 +265,7 @@ void QMCCostFunctionBase::reportParametersH5()
   if (!myComm->rank())
   {
      int ci_size=0;
-     std::vector<double> CIcoeff; 
+     std::vector<opt_variables_type::value_type> CIcoeff;
      for (int i=0; i<OptVariables.size(); i++)
      {
           char Coeff[128];
@@ -625,7 +625,8 @@ void QMCCostFunctionBase::updateXmlNodes()
   std::map<std::string, xmlNodePtr>::iterator pit(paramNodes.begin()), pit_end(paramNodes.end());
   while (pit != pit_end)
   {
-    Return_t v = OptVariablesForPsi[(*pit).first];
+    //FIXME real value is forced here to makde sure that the code builds
+    Return_rt v = std::real( OptVariablesForPsi[(*pit).first] );
     getContent(v, (*pit).second);
     //         vout <<(*pit).second<< std::endl;
     ++pit;
@@ -657,12 +658,13 @@ void QMCCostFunctionBase::updateXmlNodes()
       //
       aname.append("_");
       opt_variables_type::iterator vit(OptVariablesForPsi.begin());
-      std::vector<Return_t> c;
+      std::vector<Return_rt> c;
       while (vit != OptVariablesForPsi.end())
       {
         if ((*vit).first.find(aname) == 0)
         {
-          c.push_back((*vit).second);
+          //FIXME real value is forced here to makde sure that the code builds
+          c.push_back(std::real((*vit).second));
         }
         ++vit;
       }
@@ -753,12 +755,12 @@ void QMCCostFunctionBase::addCoefficients(xmlXPathContextPtr acontext, const cha
   xmlXPathFreeObject(result);
 }
 
-bool QMCCostFunctionBase::lineoptimization(const std::vector<Return_t>& x0,
-                                           const std::vector<Return_t>& gr,
-                                           Return_t val0,
-                                           Return_t& dl,
-                                           Return_t& val_proj,
-                                           Return_t& lambda_max)
+bool QMCCostFunctionBase::lineoptimization(const std::vector<Return_rt>& x0,
+                                           const std::vector<Return_rt>& gr,
+                                           Return_rt val0,
+                                           Return_rt& dl,
+                                           Return_rt& val_proj,
+                                           Return_rt& lambda_max)
 {
   return false;
   // PK: Commented out inaccessible code after return false, but why was return added?
@@ -841,11 +843,11 @@ bool QMCCostFunctionBase::lineoptimization(const std::vector<Return_t>& x0,
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 #ifdef HAVE_LMY_ENGINE
-QMCCostFunctionBase::Return_t QMCCostFunctionBase::LMYEngineCost(const bool needDeriv,
+QMCCostFunctionBase::Return_rt QMCCostFunctionBase::LMYEngineCost(const bool needDeriv,
                                                                  cqmc::engine::LMYEngine* EngineObj)
 {
   // prepare local energies, weights, and possibly derivative vectors, and compute standard cost
-  const Return_t standardCost = this->Cost(needDeriv);
+  const Return_rt standardCost = this->Cost(needDeriv);
 
   // since we are using the LMYEngine, compute and return it's cost function value
   return this->LMYEngineCost_detail(EngineObj);
