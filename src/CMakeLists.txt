@@ -221,8 +221,8 @@ ENDIF()
     Particle/VirtualParticleSet.cpp
     Particle/ParticleSet.BC.cpp 
     Particle/MCWalkerConfiguration.cpp 
-    Particle/DistanceTableAA.cpp
-    Particle/DistanceTableAB.cpp
+    Particle/createDistanceTableAA.cpp
+    Particle/createDistanceTableAB.cpp
     Particle/HDFWalkerInputManager.cpp
     LongRange/KContainer.cpp
     LongRange/StructFact.cpp
