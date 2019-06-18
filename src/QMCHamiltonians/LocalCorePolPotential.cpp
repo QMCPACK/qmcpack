@@ -12,7 +12,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "Particle/DistanceTable.h"
 #include "Particle/DistanceTableData.h"
 #include "QMCHamiltonians/LocalCorePolPotential.h"
 #include "Utilities/IteratorUtility.h"

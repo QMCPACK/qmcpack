@@ -23,7 +23,6 @@
 #include <numeric>
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "Particle/DistanceTableData.h"
-#include "Particle/DistanceTable.h"
 #include "LongRange/StructFact.h"
 #include "ParticleBase/ParticleAttribOps.h"
 #include <cmath>

@@ -13,7 +13,6 @@
 
 #include <QMCHamiltonians/LocalMomentEstimator.h>
 #include <Particle/DistanceTableData.h>
-#include <Particle/DistanceTable.h>
 #include <OhmmsData/AttributeSet.h>
 #include <Utilities/SimpleParser.h>
 #include <set>

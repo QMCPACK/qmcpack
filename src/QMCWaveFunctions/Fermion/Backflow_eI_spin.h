@@ -16,7 +16,6 @@
 #define QMCPLUSPLUS_BACKFLOW_ELEC_ION_SPINH
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
 #include "QMCWaveFunctions/Fermion/BackflowFunctionBase.h"
-#include "Particle/DistanceTable.h"
 #include <cmath>
 #include <vector>
 

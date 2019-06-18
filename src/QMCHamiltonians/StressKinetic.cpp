@@ -11,7 +11,6 @@
 
 
 #include "QMCHamiltonians/StressKinetic.h"
-#include "Particle/DistanceTable.h"
 #include "Particle/DistanceTableData.h"
 #include "Utilities/ProgressReportEngine.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"

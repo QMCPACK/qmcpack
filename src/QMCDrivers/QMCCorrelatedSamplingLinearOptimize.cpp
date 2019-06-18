@@ -16,7 +16,6 @@
 
 #include "QMCDrivers/QMCCorrelatedSamplingLinearOptimize.h"
 #include "Particle/HDFWalkerIO.h"
-#include "Particle/DistanceTable.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Message/CommOperators.h"
 #include "QMCDrivers/QMCCostFunctionBase.h"

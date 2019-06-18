@@ -17,7 +17,6 @@
 #define QMCPLUSPLUS_BACKFLOW_FUNCTIONBASE_H
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
 #include "Configuration.h"
-#include "Particle/DistanceTable.h"
 #include "OhmmsPETE/OhmmsArray.h"
 
 namespace qmcplusplus

@@ -14,7 +14,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "Particle/DistanceTable.h"
+#include "Particle/createDistanceTable.h"
 #include "Particle/DistanceTableData.h"
 #include "Lattice/ParticleBConds.h"
 #include "Particle/AsymmetricDistanceTableData.h"

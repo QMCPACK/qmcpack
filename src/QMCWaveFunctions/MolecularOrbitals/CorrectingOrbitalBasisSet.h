@@ -23,7 +23,6 @@
 #define QMCPLUSPLUS_CORRECTINGORBITALBASISSET_H
 
 #include "QMCWaveFunctions/BasisSetBase.h"
-#include "Particle/DistanceTable.h"
 
 namespace qmcplusplus
 {

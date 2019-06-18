@@ -19,7 +19,6 @@
 
 #include "Configuration.h"
 #include "QMCWaveFunctions/BasisSetBase.h"
-#include "Particle/DistanceTable.h"
 #include "Particle/DistanceTableData.h"
 #include <QMCWaveFunctions/lcao/MultiQuinticSpline1D.h>
 
