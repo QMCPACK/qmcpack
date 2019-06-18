@@ -89,6 +89,8 @@ public:
     delay_count = 0;
   }
 
+  inline int getDelayCount() const { return delay_count; }
+
   /** compute the row of up-to-date Ainv
    * @param Ainv inverse matrix
    * @param rowchanged the row id corresponding to the proposed electron

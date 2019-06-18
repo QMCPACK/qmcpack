@@ -22,8 +22,8 @@ namespace qmcplusplus
     ions.RSoA=ions.R;
     els.RSoA=els.R;
 
-    d_ee=DistanceTable::add(els,DT_SOA);
-    d_ie=DistanceTable::add(ions,els,DT_SOA);
+    d_ee = els.DistTables[els.addTable(els, DT_SOA)];
+    d_ie = els.DistTables[els.addTable(ions, DT_SOA)];
 
     double r2_cut=std::min(6.4,double(els.Lattice.WignerSeitzRadius));
 

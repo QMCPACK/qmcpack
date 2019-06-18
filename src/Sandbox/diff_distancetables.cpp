@@ -117,13 +117,13 @@ int main(int argc, char** argv)
 
   ParticleSet::ParticlePos_t Rcopy(els.R);
 
-  DistanceTableData* d_ee=DistanceTable::add(els,DT_SOA);
-  DistanceTableData* d_ie=DistanceTable::add(ions,els,DT_SOA);
+  DistanceTableData* d_ee = els.DistTables[els.addTable(els, DT_SOA)];
+  DistanceTableData* d_ie = els.DistTables[els.addTable(ions, DT_SOA)];
 
   RealType Rsim=els.Lattice.WignerSeitzRadius;
 
-  DistanceTableData* d_ee_aos=DistanceTable::add(els_aos,DT_AOS);
-  DistanceTableData* d_ie_aos=DistanceTable::add(ions_aos,els_aos,DT_AOS);
+  DistanceTableData* d_ee_aos = els_aos.DistTables[els_aos.addTable(els_aos, DT_SOA)];
+  DistanceTableData* d_ie_aos = els_aos.DistTables[els_aos.addTable(ions_aos, DT_SOA)];
 
   //SoA version does not need update if PbyP
   els.update();

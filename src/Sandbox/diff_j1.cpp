@@ -125,9 +125,8 @@ int main(int argc, char** argv)
     ParticleSet els_aos(els);
 
     //create tables
-    DistanceTableData* d_ee=DistanceTable::add(els,DT_SOA);
-
-    DistanceTableData* d_ee_aos=DistanceTable::add(els_aos,DT_AOS);
+    DistanceTableData* d_ee = els.DistTables[els.addTable(els, DT_SOA)];
+    DistanceTableData* d_ee_aos = els_aos.DistTables[els_aos.addTable(els_aos, DT_AOS)];
 
     ParticlePos_t delta(nels);
 
@@ -140,7 +139,7 @@ int main(int argc, char** argv)
     J1OrbitalSoA<BsplineFunctor<RealType> > J(ions,els);
     OneBodyJastrowOrbital<BsplineFunctor<RealType> > J_aos(ions,els_aos);
 
-    DistanceTableData* d_ie=DistanceTable::add(ions,els,DT_SOA);
+    DistanceTableData* d_ie = els.DistTables[els.addTable(ions, DT_SOA)];
 
     RealType r1_cut=std::min(RealType(6.4),els.Lattice.WignerSeitzRadius);
 
