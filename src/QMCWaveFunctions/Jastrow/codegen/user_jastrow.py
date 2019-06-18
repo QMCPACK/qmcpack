@@ -8,7 +8,12 @@ import sys
 # This script creates ../UserFunctor.h from UserFunctor.h.in.
 # It also prints the expression, derivatives, and a sample XML input block.
 
+
+# The radial function is a function of r
 r = Symbol('r')
+
+
+# Possible symbols for variational parameters or fixed values
 A = Symbol('A')
 B = Symbol('B')
 C = Symbol('C')
