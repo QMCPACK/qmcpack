@@ -60,8 +60,6 @@ public:
     WalkerIndex  = DistanceTableData::WalkerIndex
   };
 
-  DistanceTableData* myTable;
-
   /** enum for a update mode */
   enum
   {
@@ -104,17 +102,11 @@ public:
   opt_variables_type myVars;
 
   BackflowFunctionBase(ParticleSet& ions, ParticleSet& els)
-      : CenterSys(ions), myTable(0), numParams(0), indexOfFirstParam(-1), uniqueFunctions(false)
+      : CenterSys(ions), numParams(0), indexOfFirstParam(-1), uniqueFunctions(false)
   {
     NumCenters = CenterSys.getTotalNum(); // in case
     NumTargets = els.getTotalNum();
   }
-
-  //BackflowFunctionBase(BackflowFunctionBase &fn):
-  // CenterSys(fn.CenterSys), myTable(fn.myTable),NumTargets(fn.NumTargets),NumCenters(fn.NumCenters),numParams(fn.numParams),indexOfFirstParam(fn.indexOfFirstParam)//,uniqueFunctions(fn.uniqueFunctions)
-  //{
-  //  derivs.resize(fn.derivs.size());
-  //}
 
   void resize(int NT, int NC)
   {
