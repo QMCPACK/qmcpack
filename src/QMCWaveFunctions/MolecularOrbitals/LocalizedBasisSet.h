@@ -67,7 +67,7 @@ struct LocalizedBasisSet : public BasisSetBase<typename COT::value_type>
   ///number of quantum particles
   int NumTargets;
   ///number of quantum particles
-  int myTableIndex;
+  const int myTableIndex;
 
   /** container to store the offsets of the basis functions
    *
@@ -99,10 +99,9 @@ struct LocalizedBasisSet : public BasisSetBase<typename COT::value_type>
    * @param ions ionic system
    * @param els electronic system
    */
-  LocalizedBasisSet(ParticleSet& ions, ParticleSet& els) : CenterSys(ions), myTable(0)
+  LocalizedBasisSet(ParticleSet& ions, ParticleSet& els) : CenterSys(ions), myTableIndex(els.addTable(ions, DT_AOS))
   {
-    myTable      = DistanceTable::add(ions, els, DT_AOS);
-    myTableIndex = myTable->ID;
+    myTable      = els.DistTables[myTableIndex];
     NumCenters   = CenterSys.getTotalNum();
     NumTargets   = els.getTotalNum();
     LOBasis.resize(NumCenters, 0);
@@ -161,7 +160,7 @@ struct LocalizedBasisSet : public BasisSetBase<typename COT::value_type>
    */
   void resetTargetParticleSet(ParticleSet& P)
   {
-    myTable = DistanceTable::add(CenterSys, P, DT_AOS);
+    myTable = P.DistTables[myTableIndex];
     for (int i = 0; i < LOBasisSet.size(); i++)
       LOBasisSet[i]->setTable(myTable);
   }
