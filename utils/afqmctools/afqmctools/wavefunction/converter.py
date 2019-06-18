@@ -29,7 +29,7 @@ def read_qmcpack_ascii_wavefunction(filename, nmo, nelec):
             uhf = True
             wfn = read_phmsd(f, na, nb, nmo)
         else:
-            wfn = read_nomsd(f, nmo, na, nb, nci, uhf, fullmo)
+            wfn = read_nomsd(f, nmo, na, nb, nci, uhf, fullmo, cmajor)
 
     return wfn, 'uhf' if uhf else 'rhf'
 
@@ -47,20 +47,28 @@ def read_phmsd(f, na, nb, nmo):
 
     return numpy.array(coeffs), numpy.array(occa), numpy.array(occb)
 
-def read_nomsd(f, nmo, na, nb, nci, uhf, fullmo):
+def read_nomsd(f, nmo, na, nb, nci, uhf, fullmo, cmajor):
     wfn = numpy.zeros((nci,nmo,na+nb), dtype=numpy.complex128)
-    line = f.readline().split()
-    coeffs = [convert_string(s) for s in line[1:]]
-    line = f.readline().split()
+    cnt = 0
+    coeffs = []
+    while True:
+        line = f.readline().split()
+        if len(line) == 1 and line[0] == 'Coefficients:':
+            continue
+        elif len(line) > 1 and line[0] == 'Coefficients:':
+            coeffs = [convert_string(s) for s in line[1:]]
+        elif 'Determinant' in line[0]:
+            break
+        else:
+            coeffs.append(convert_string(line[0]))
     data = []
     while True:
         line = f.readline().split()
         if len(line) > 0:
+            if 'Determinant' in line[0]:
+                continue
             for v in line:
-                try:
-                    val = convert_string(v)
-                except SyntaxError:
-                    pass
+                val = convert_string(v)
                 data.append(val)
         else:
             break
@@ -83,12 +91,14 @@ def read_nomsd(f, nmo, na, nb, nci, uhf, fullmo):
         nob = nmo*nb
         shapea = (nmo,na)
         shapeb = (nmo,nb)
+    assert len(data)==nvals*nci
+    order = 'C' if cmajor else 'F'
     for i in range(nci):
         orbs = data[i*noa:(i+1)*noa]
-        wfn[i,:,:na] = numpy.array(orbs).reshape(shapea)[:,:na]
+        wfn[i,:,:na] = numpy.array(orbs).reshape(shapea, order=order)[:,:na]
         if uhf:
             orbs = data[(i+1)*noa:(i+2)*noa]
-            wfn[i,:,na:] = numpy.array(orbs).reshape(shapeb)[:,:nb]
+            wfn[i,:,na:] = numpy.array(orbs).reshape(shapeb, order=order)[:,:nb]
 
     return (numpy.array(coeffs), wfn)
 
