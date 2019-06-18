@@ -123,13 +123,20 @@ bool VMCLinearOpt::run()
 #pragma omp parallel for
     for (int ip = 0; ip < NumThreads; ++ip)
     {
-      std::vector<RealType> Dsaved(NumOptimizables);
-      std::vector<RealType> HDsaved(NumOptimizables);
+      std::vector<ValueType> Dsaved(NumOptimizables);
+      std::vector<ValueType> HDsaved(NumOptimizables);
+      std::vector<RealType> rDsaved(NumOptimizables);
+      std::vector<RealType> rHDsaved(NumOptimizables);
       psiClones[ip]->evaluateDerivatives(*wClones[ip], dummyOptVars[ip], Dsaved, HDsaved);
+
+      for (int i = 0; i < NumOptimizables; i++) {
+        rDsaved[i] = std::real(Dsaved[i]);
+        rHDsaved[i] = std::real(HDsaved[i]);
+      }
 #pragma omp critical
       {
-        copy(Dsaved.begin(), Dsaved.end(), &DerivRecords(ip, 0));
-        copy(HDsaved.begin(), HDsaved.end(), &HDerivRecords(ip, 0));
+        copy(rDsaved.begin(), rDsaved.end(), &DerivRecords(ip, 0));
+        copy(rHDsaved.begin(), rHDsaved.end(), &HDerivRecords(ip, 0));
       }
     }
     fillComponentMatrices();

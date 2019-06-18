@@ -19,8 +19,8 @@
 #include "QMCWaveFunctions/Jastrow/RPAJastrow.h"
 #include "QMCWaveFunctions/WaveFunctionComponentBuilder.h"
 #include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbital.h"
+#include "QMCWaveFunctions/Jastrow/J2OrbitalSoA.h"
 #include "QMCWaveFunctions/Jastrow/LRBreakupUtilities.h"
-#include "QMCWaveFunctions/Jastrow/LRTwoBodyJastrow.h"
 #include "QMCWaveFunctions/Jastrow/SplineFunctors.h"
 #include "QMCWaveFunctions/Jastrow/BsplineFunctor.h"
 #include "LongRange/LRHandlerTemp.h"
@@ -155,25 +155,53 @@ void RPAJastrow::buildOrbital(const std::string& name,
 
 void RPAJastrow::makeLongRange()
 {
-  LongRangeRPA = new LRTwoBodyJastrow(targetPtcl);
-  LongRangeRPA->resetByHandler(myHandler);
+  // create two-body kSpaceJastrow
+  kSpaceJastrow::SymmetryType oneBodySymm, twoBodySymm;
+  bool oneBodySpin, twoBodySpin;
+  oneBodySymm = kSpaceJastrow::ISOTROPIC;
+  twoBodySymm = kSpaceJastrow::ISOTROPIC;
+  oneBodySpin = false;
+  twoBodySpin = false;
+  LongRangeRPA = new kSpaceJastrow(targetPtcl, targetPtcl,
+    oneBodySymm, -1, "cG1", oneBodySpin,  // no one-body part
+    twoBodySymm, Kc, "cG2", twoBodySpin
+  );
+  // fill in CG2 coefficients
+  std::vector<RealType> oneBodyCoefs, twoBodyCoefs;
+  twoBodyCoefs.resize(myHandler->MaxKshell);
+  //  need to cancel prefactor in kSpaceJastrow
+  RealType prefactorInv = -targetPtcl.Lattice.Volume;
+  for (size_t is=0; is<myHandler->MaxKshell; is++)
+  {
+    twoBodyCoefs[is] = prefactorInv*myHandler->Fk_symm[is];
+  }
+  LongRangeRPA->setCoefficients(oneBodyCoefs, twoBodyCoefs);
   Psi.push_back(LongRangeRPA);
 }
 
 void RPAJastrow::makeShortRange()
 {
+  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  // !!!  WARNING: tiny, nparam, npts should be input parameters  !!!
+  // !!!                    fix in a future PR!                   !!!
+  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   app_log() << "  Adding Short Range part of RPA function" << std::endl;
   //short-range uses realHandler
-  Rcut = myHandler->get_rc() - 0.1;
+  RealType tiny = 1e-6;
+  Rcut = myHandler->get_rc() - tiny;
   //create numerical functor of type BsplineFunctor<RealType>.
   nfunc = new FuncType;
   SRA   = new ShortRangePartAdapter<RealType>(myHandler);
   SRA->setRmax(Rcut);
-  //This line is for the SoA branch, for whenever we eventually merge this code.
-  // J2OrbitalSoA<BsplineFunctor<RealType> > *j2 = new J2OrbitalSoA<BsplineFunctor<RealType> >(targetPtcl,IsManager);
+#ifdef ENABLE_SOA
+  J2OrbitalSoA<BsplineFunctor<RealType> > *j2 = new J2OrbitalSoA<BsplineFunctor<RealType> >(targetPtcl,IsManager);
+#else
   TwoBodyJastrowOrbital<BsplineFunctor<RealType>>* j2 =
       new TwoBodyJastrowOrbital<BsplineFunctor<RealType>>(targetPtcl, IsManager);
-  size_t npts    = 12;
+#endif
+  size_t nparam  = 12; // number of Bspline parameters
+  size_t npts    = 100; // number of 1D grid points for basis functions
+  RealType cusp = SRA->df(0);
   RealType delta = Rcut / static_cast<double>(npts);
   std::vector<RealType> X(npts + 1), Y(npts + 1);
   for (size_t i = 0; i < npts; ++i)
@@ -185,7 +213,7 @@ void RPAJastrow::makeShortRange()
   Y[npts]              = 0.0;
   std::string functype = "rpa";
   std::string useit    = "no";
-  nfunc->initialize(npts, X, Y, SRA->df(0), Rcut, functype, useit);
+  nfunc->initialize(nparam, X, Y, cusp, Rcut+tiny, functype, useit);
   for (size_t i = 0; i < npts; ++i)
   {
     X[i] = i * delta;
@@ -323,6 +351,8 @@ WaveFunctionComponent* RPAJastrow::makeClone(ParticleSet& tpq) const
   }
 
   RPAJastrow* myClone = new RPAJastrow(tpq, IsManager);
+  myClone->Rcut = Rcut;
+  myClone->Kc = Kc;
   myClone->setHandler(tempHandler);
   if (!DropLongRange)
     myClone->makeLongRange();

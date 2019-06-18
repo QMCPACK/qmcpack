@@ -623,8 +623,8 @@ void DiracDeterminantWithBackflow::restore(int iat) { curRatio = 1.0; }
 
 void DiracDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
                                                        const opt_variables_type& active,
-                                                       std::vector<RealType>& dlogpsi,
-                                                       std::vector<RealType>& dhpsioverpsi)
+                                                       std::vector<ValueType>& dlogpsi,
+                                                       std::vector<ValueType>& dhpsioverpsi)
 {
   /*  Note:
    *    Since evaluateDerivatives seems to always be called after
@@ -751,8 +751,10 @@ void DiracDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
     //int kk = pa; //BFTrans->optIndexMap[pa];
     int kk = BFTrans->optIndexMap[pa];
 #if defined(QMC_COMPLEX)
-    dlogpsi[kk] += real(dpsia);
-    dhpsioverpsi[kk] -= real(0.5 * static_cast<ParticleSet::SingleParticleValue_t>(dLa) + Dot(P.G, Gtemp));
+    //dlogpsi[kk] += real(dpsia);
+    dlogpsi[kk] += dpsia;
+    //dhpsioverpsi[kk] -= real(0.5 * static_cast<ParticleSet::SingleParticleValue_t>(dLa) + Dot(P.G, Gtemp));
+    dhpsioverpsi[kk] -= 0.5 * static_cast<ParticleSet::SingleParticleValue_t>(dLa) + Dot(P.G, Gtemp);
 #else
     dlogpsi[kk] += dpsia;
     dhpsioverpsi[kk] -= (0.5 * static_cast<ParticleSet::SingleParticleValue_t>(dLa) + Dot(P.G, Gtemp));
