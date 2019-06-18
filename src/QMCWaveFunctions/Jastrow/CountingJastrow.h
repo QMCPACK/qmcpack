@@ -127,15 +127,15 @@ public:
       IJ    = opt_index[OPT_F][oi];
       JI    = num_regions * (IJ % num_regions) + IJ / num_regions;
       id    = opt_id[OPT_F][oi];
-      F(IJ) = myVars[id];
-      F(JI) = myVars[id];
+      F(IJ) = std::real(myVars[id]);
+      F(JI) = std::real(myVars[id]);
     }
     // set G parameters from myVars
     for (int oi = 0; oi < opt_index[OPT_G].size(); ++oi)
     {
       I    = opt_index[OPT_G][oi];
       id   = opt_id[OPT_G][oi];
-      G[I] = myVars[id];
+      G[I] = std::real(myVars[id]);
     }
     // reset parameters for counting regions
     C->resetParameters(active);
@@ -519,8 +519,8 @@ public:
 
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& active,
-                           std::vector<RealType>& dlogpsi,
-                           std::vector<RealType>& dhpsioverpsi)
+                           std::vector<ValueType>& dlogpsi,
+                           std::vector<ValueType>& dhpsioverpsi)
   {
 #ifdef QMC_COMPLEX
     APP_ABORT("CountingJastrow::evaluateDerivatives is not available on complex builds.");

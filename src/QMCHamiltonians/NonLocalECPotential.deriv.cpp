@@ -113,6 +113,9 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateValueAndDerivatives
   std::vector<RealType> dlogpsi_t(dlogpsi.size(), 0.0);
   std::vector<RealType> dhlogpsi_t(dlogpsi.size(), 0.0);
 
+  std::vector<ValueType> dlogpsi_ct(dlogpsi.size(), 0.0);
+  std::vector<ValueType> dhlogpsi_ct(dlogpsi.size(), 0.0);
+
   DistanceTableData* myTable = W.DistTables[myTableIndex];
   RealType esum              = 0.0;
   RealType pairpot;
@@ -145,9 +148,10 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateValueAndDerivatives
       W.acceptMove(iel);
 
       std::fill(dlogpsi_t.begin(), dlogpsi_t.end(), 0.0);
-      psi.evaluateDerivatives(W, optvars, dlogpsi_t, dhlogpsi_t);
+      std::fill(dlogpsi_ct.begin(), dlogpsi_ct.end(), 0.0);
+      psi.evaluateDerivatives(W, optvars, dlogpsi_ct, dhlogpsi_ct);
       for (int v = 0; v < dlogpsi_t.size(); ++v)
-        dratio(v, j) = dlogpsi_t[v];
+        dratio(v, j) = std::real(dlogpsi_t[v]);
 
       PosType md = -1.0 * deltarV[j];
       W.makeMoveAndCheck(iel, md);

@@ -139,7 +139,7 @@ void CGOptimization<T>::setTarget(ObjectFuncType* fn)
   cgY.resize(NumParams, 0);
   for (int i = 0; i < NumParams; i++)
   {
-    Y[i] = TargetFunc->Params(i);
+    Y[i] = std::real(TargetFunc->Params(i));
   }
 }
 
