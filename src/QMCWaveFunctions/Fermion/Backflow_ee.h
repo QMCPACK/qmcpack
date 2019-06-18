@@ -54,8 +54,6 @@ public:
 
   ~Backflow_ee(){};
 
-  void resetTargetParticleSet(ParticleSet& P) { }
-
   BackflowFunctionBase* makeClone(ParticleSet& tqp)
   {
     Backflow_ee<FT>* clone = new Backflow_ee<FT>(tqp, tqp);

@@ -79,8 +79,6 @@ public:
 
   ~Backflow_ee_kSpace(){};
 
-  void resetTargetParticleSet(ParticleSet& P) {}
-
   BackflowFunctionBase* makeClone(ParticleSet& tqp)
   {
     Backflow_ee_kSpace* clone = new Backflow_ee_kSpace(CenterSys, tqp);

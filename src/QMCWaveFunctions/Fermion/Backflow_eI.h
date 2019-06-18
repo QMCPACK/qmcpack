@@ -53,8 +53,6 @@ public:
 
   ~Backflow_eI(){};
 
-  void resetTargetParticleSet(ParticleSet& P) { }
-
   BackflowFunctionBase* makeClone(ParticleSet& tqp)
   {
     Backflow_eI<FT>* clone = new Backflow_eI<FT>(CenterSys, tqp);

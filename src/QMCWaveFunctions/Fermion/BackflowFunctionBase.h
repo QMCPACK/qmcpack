@@ -130,10 +130,6 @@ public:
 
   virtual ~BackflowFunctionBase(){};
 
-  /** reset the distance table with a new target P
-   */
-  virtual void resetTargetParticleSet(ParticleSet& P) = 0;
-
   virtual void acceptMove(int iat, int UpdateType) = 0;
 
   virtual void restore(int iat, int UpdateType) = 0;

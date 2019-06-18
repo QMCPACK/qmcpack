@@ -100,8 +100,6 @@ public:
     }
   }
 
-  void resetTargetParticleSet(ParticleSet& P) { }
-
   BackflowFunctionBase* makeClone(ParticleSet& tqp)
   {
     Backflow_eI_spin<FT>* clone = new Backflow_eI_spin<FT>(CenterSys, tqp);
