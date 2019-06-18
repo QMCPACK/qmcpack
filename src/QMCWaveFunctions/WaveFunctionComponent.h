@@ -355,10 +355,10 @@ struct WaveFunctionComponent : public QMCTraits
    */
   virtual void evaluateDerivatives(ParticleSet& P,
                                    const opt_variables_type& optvars,
-                                   std::vector<RealType>& dlogpsi,
-                                   std::vector<RealType>& dhpsioverpsi);
+                                   std::vector<ValueType>& dlogpsi,
+                                   std::vector<ValueType>& dhpsioverpsi);
 
-  virtual void multiplyDerivsByOrbR(std::vector<RealType>& dlogpsi)
+  virtual void multiplyDerivsByOrbR(std::vector<ValueType>& dlogpsi)
   {
     RealType myrat = std::exp(LogValue) * std::cos(PhaseValue);
     for (int j = 0; j < myVars.size(); j++)
@@ -373,7 +373,8 @@ struct WaveFunctionComponent : public QMCTraits
       performed with the passed-in G_in gradient vector. This object is then
       returned as dgradlogpsi.
    */
-  virtual void evaluateGradDerivatives(const ParticleSet::ParticleGradient_t& G_in, std::vector<RealType>& dgradlogpsi)
+
+  virtual void evaluateGradDerivatives(const ParticleSet::ParticleGradient_t& G_in, std::vector<ValueType>& dgradlogpsi)
   {
     APP_ABORT("Need specialization of WaveFunctionComponent::evaluateGradDerivatives in " + ClassName + " class.\n");
   }

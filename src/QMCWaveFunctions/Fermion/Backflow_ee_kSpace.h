@@ -148,8 +148,11 @@ public:
       for (int i = 0; i < Fk.size(); ++i)
       {
         int loc = myVars.where(i);
-        if (loc >= 0)
-          Fk[i] = myVars[i] = active[loc];
+        if (loc >= 0) {
+          myVars[i] = active[loc];
+          Fk[i] = std::real(myVars[i]);
+          //Fk[i] = myVars[i] = active[loc];
+        }
       }
     }
   }
