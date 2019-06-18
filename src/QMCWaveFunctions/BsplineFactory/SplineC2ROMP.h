@@ -505,8 +505,8 @@ struct SplineC2ROMP : public SplineAdoptorBase<ST, 3>
       const auto rux = ru[0], ruy = ru[1], ruz = ru[2];
       const auto myKcart_padded_size = myKcart.capacity();
       auto* myKcart_ptr              = master_myKcart_ptr;
-      size_t first_spo_local         = first_spo;
-      int nComplexBands_local        = nComplexBands;
+      const size_t first_spo_local   = first_spo;
+      const int nComplexBands_local  = nComplexBands;
 
       PRAGMA_OFFLOAD("omp target teams distribute num_teams(NumTeams) thread_limit(ChunkSizePerTeam) \
                   map(always, from: psi_ptr[0:orb_size])")
@@ -572,8 +572,8 @@ struct SplineC2ROMP : public SplineAdoptorBase<ST, 3>
     auto* myKcart_ptr              = master_myKcart_ptr;
     auto* psiinv_ptr               = psiinv_pos_copy.data();
     auto* ratios_private_ptr       = ratios_private.data();
-    size_t first_spo_local         = first_spo;
-    int nComplexBands_local        = nComplexBands;
+    const size_t first_spo_local   = first_spo;
+    const int nComplexBands_local  = nComplexBands;
 
     PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(NumTeams*nVP) thread_limit(ChunkSizePerTeam) \
                 map(always, to: psiinv_ptr[0:psiinv_pos_copy.size()]) \
@@ -772,8 +772,8 @@ struct SplineC2ROMP : public SplineAdoptorBase<ST, 3>
     auto* GGt_ptr                  = master_GGt_ptr;
     auto* PrimLattice_G_ptr        = master_PrimLattice_G_ptr;
     auto* myKcart_ptr              = master_myKcart_ptr;
-    size_t first_spo_local         = first_spo;
-    int nComplexBands_local        = nComplexBands;
+    const size_t first_spo_local   = first_spo;
+    const int nComplexBands_local  = nComplexBands;
 
     PRAGMA_OFFLOAD("omp target teams distribute num_teams(NumTeams) thread_limit(ChunkSizePerTeam) \
                 map(always, from: results_scratch_ptr[0:orb_size*5])")
