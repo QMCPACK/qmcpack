@@ -900,7 +900,7 @@ def simplestats(x,dim=None):
     #end if
     osqrtN = 1.0/sqrt(1.0*x.shape[dim])
     mean   = x.mean(dim)
-    error  = x.var(dim)*osqrtN
+    error  = x.std(dim)*osqrtN
     return (mean,error)
 #end def simplestats
 
