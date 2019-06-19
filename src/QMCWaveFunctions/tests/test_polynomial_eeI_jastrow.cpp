@@ -175,8 +175,8 @@ TEST_CASE("PolynomialFunctor3D Jastrow", "[wavefunction]")
   REQUIRE(ratio_3 == ComplexApprox(0.7987703724).compare_real_only());
 
   opt_variables_type optvars;
-  std::vector<WaveFunctionComponent::RealType> dlogpsi;
-  std::vector<WaveFunctionComponent::RealType> dhpsioverpsi;
+  std::vector<WaveFunctionComponent::ValueType> dlogpsi;
+  std::vector<WaveFunctionComponent::ValueType> dhpsioverpsi;
 
   psi.checkInVariables(optvars);
   optvars.resetIndex();
@@ -191,8 +191,8 @@ TEST_CASE("PolynomialFunctor3D Jastrow", "[wavefunction]")
     std::cout << "param=" << iparam << " : " << dlogpsi[iparam] << "  " << dhpsioverpsi[iparam] << std::endl;
   std::cout << std::endl;
 
-  REQUIRE(dlogpsi[43] == Approx(1.3358726814e+05));
-  REQUIRE(dhpsioverpsi[43] == Approx(-2.3246270644e+05));
+  REQUIRE(dlogpsi[43] == ComplexApprox(1.3358726814e+05).compare_real_only());
+  REQUIRE(dhpsioverpsi[43] == ComplexApprox(-2.3246270644e+05).compare_real_only());
 
   VirtualParticleSet VP(elec_, 2);
   ParticleSet::ParticlePos_t newpos2(2);

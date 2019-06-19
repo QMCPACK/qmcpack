@@ -59,7 +59,7 @@ ATOMIC_POSITIONS alat
 K_POINTS automatic
    6 6 6  0 0 0 
 
-CELL_PARAMETERS cubic
+CELL_PARAMETERS alat
         10.86970472       0.00000000       0.00000000 
         -0.00000000       8.57519925       0.00000000 
         -5.48695844       0.00000000       8.56456075 
