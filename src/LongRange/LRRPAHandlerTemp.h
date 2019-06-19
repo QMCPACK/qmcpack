@@ -117,7 +117,7 @@ struct LRRPAHandlerTemp : public LRHandlerBase
     mRealType df = 0.0;
     //mRealType df = myFunc.df(r, rinv);
     for (int n = 0; n < coefs.size(); n++)
-      df += coefs[n] * Basis.df(n, r);
+      df += coefs[n] * Basis.dh_dr(n, r);
     return df;
   }
 

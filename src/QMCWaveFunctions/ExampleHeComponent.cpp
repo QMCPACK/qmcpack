@@ -211,7 +211,7 @@ void ExampleHeComponent::resetParameters(const OptVariablesType& active)
       int i = 0;
       if (opt_B)
       {
-        B = my_vars_[i++] = active[ia++];
+        B = std::real(my_vars_[i++] = active[ia++]);
       }
     }
   }
@@ -219,13 +219,13 @@ void ExampleHeComponent::resetParameters(const OptVariablesType& active)
 
 void ExampleHeComponent::evaluateDerivatives(ParticleSet& P,
                                              const OptVariablesType& optvars,
-                                             std::vector<RealType>& dlogpsi,
-                                             std::vector<RealType>& dhpsioverpsi)
+                                             std::vector<ValueType>& dlogpsi,
+                                             std::vector<ValueType>& dhpsioverpsi)
 {
   typedef TinyVector<RealType, 3> RealGradType;
 
 
-  double tmpB = optvars[0];
+  double tmpB = std::real(optvars[0]);
 
   const DistanceTableData* ee_table = P.DistTables[0];
   double r12                        = ee_table->Distances[1][0];
