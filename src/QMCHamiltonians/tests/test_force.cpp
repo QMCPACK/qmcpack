@@ -128,7 +128,7 @@ void check_force_copy(ForceChiesaPBCAA& force, ForceChiesaPBCAA& force2)
     REQUIRE(force2.c[i] == Approx(force.c[i]));
   }
 
-  REQUIRE(force2.myTableIndex == force.myTableIndex);
+  REQUIRE(force2.getDistanceTableAAID() == force.getDistanceTableAAID());
   REQUIRE(force2.NumSpeciesA == force.NumSpeciesA);
   REQUIRE(force2.NumSpeciesB == force.NumSpeciesB);
   REQUIRE(force2.NptclA == force.NptclA);
@@ -215,12 +215,12 @@ TEST_CASE("Chiesa Force", "[hamiltonian]")
   ions.addTable(ions, DT_AOS);
 #endif
 
-  elec.update();
-  ions.update();
-
   ForceChiesaPBCAA force(ions, elec);
   force.addionion = false;
   force.InitMatrix();
+
+  elec.update();
+  ions.update();
 
   force.evaluate(elec);
   std::cout << " Force = " << force.forces << std::endl;

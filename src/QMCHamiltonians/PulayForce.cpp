@@ -30,7 +30,7 @@ PulayForce::PulayForce(ParticleSet& ions, ParticleSet& elns, TrialWaveFunction& 
 void PulayForce::resetTargetParticleSet(ParticleSet& P)
 {
   int tid = P.addTable(Ions, DT_AOS);
-  if (tid != myTableIndex)
+  if (tid != d_ei_ID)
     APP_ABORT("PulayForce::resetTargetParticleSet found inconsistent table index");
 }
 
@@ -100,7 +100,7 @@ void PulayForce::setParticlePropertyList(QMCTraits::PropertySetType& plist, int 
 
 PulayForce::Return_t PulayForce::evaluate(ParticleSet& P)
 {
-  const DistanceTableData& d_ab = *P.DistTables[myTableIndex];
+  const DistanceTableData& d_ab = P.getDistTable(d_ei_ID);
   for (int ion = 0; ion < Nnuc; ion++)
   {
     GradLogPsi[ion] = Psi.evalGradSource(P, Ions, ion);

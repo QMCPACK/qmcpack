@@ -255,10 +255,12 @@ public:
 
   /**  add a distance table
    * @param psrc source particle set
+   * @param dt_type distance table type
+   * @param need_full_table_loadWalker if ture, fully computed in loadWalker()
    *
    * Ensure that the distance for this-this is always created first.
    */
-  int addTable(const ParticleSet& psrc, int dt_type);
+  int addTable(const ParticleSet& psrc, int dt_type, bool need_full_table_loadWalker = false);
 
   /** returns index of a distance table, -1 if not present
    * @param psrc source particle set

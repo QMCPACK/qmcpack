@@ -202,10 +202,6 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
   ions.addTable(ions, DT_AOS);
 #endif
 
-  ions.update();
-  elec.update();
-
-
   //Cool.  Now to construct a wavefunction with 1 and 2 body jastrow (no determinant)
   TrialWaveFunction psi = TrialWaveFunction(c);
 
@@ -268,7 +264,11 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
   NonLocalTOperator nonLocalOps(elec.getTotalNum());
   std::vector<NonLocalData>& Txy(nonLocalOps.Txy);
 
-  const auto myTable = elec.DistTables[myTableIndex];
+  const auto& myTable = elec.getDistTable(myTableIndex);
+
+  // update all distance tables
+  ions.update();
+  elec.update();
 
   //Need to set up temporary data for this configuration in trial wavefunction.  Needed for ratios.
   double logpsi = psi.evaluateLog(elec);
@@ -288,8 +288,8 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
 
   for (int jel = 0; jel < elec.getTotalNum(); jel++)
   {
-    const auto& dist  = myTable->Distances[jel];
-    const auto& displ = myTable->Displacements[jel];
+    const auto& dist  = myTable.Distances[jel];
+    const auto& displ = myTable.Displacements[jel];
     for (int iat = 0; iat < ions.getTotalNum(); iat++)
       if (nlpp != nullptr && dist[iat] < nlpp->Rmax)
       {
@@ -357,12 +357,12 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
   {
     if (nlpp == nullptr)
       continue;
-    for (int nn = myTable->M[iat], iel = 0; nn < myTable->M[iat + 1]; nn++, iel++)
+    for (int nn = myTable.M[iat], iel = 0; nn < myTable.M[iat + 1]; nn++, iel++)
     {
-      const RealType r(myTable->r(nn));
+      const RealType r(myTable.r(nn));
       if (r > nlpp->Rmax)
         continue;
-      Value1 += nlpp->evaluateOne(elec, iat, psi, iel, r, myTable->dr(nn), 0, Txy);
+      Value1 += nlpp->evaluateOne(elec, iat, psi, iel, r, myTable.dr(nn), 0, Txy);
     }
   }
   REQUIRE(Value1 == Approx(6.9015710211e-02));

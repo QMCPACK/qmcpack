@@ -74,6 +74,8 @@ private:
   Matrix<RealType> norm_factor;
   int num_species, N_e;
   std::vector<RealType> n_vec;
+  // AA table ID
+  const int d_aa_ID_;
   /////data
   //Matrix<RealType> gof_r;
   ///prefix of each gof_r

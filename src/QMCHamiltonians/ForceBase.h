@@ -27,7 +27,7 @@ struct ForceBase
   typedef QMCTraits::RealType real_type;
 
   int FirstForceIndex;
-  int myTableIndex;
+  const int d_ei_ID;
   int Nnuc;
   int Nel;
   int tries;

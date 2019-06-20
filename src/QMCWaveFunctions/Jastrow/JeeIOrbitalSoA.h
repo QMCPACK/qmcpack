@@ -40,8 +40,10 @@ class JeeIOrbitalSoA : public WaveFunctionComponent
   using posT = TinyVector<valT, OHMMS_DIM>;
   ///use the same container
   using RowContainer = DistanceTableData::RowContainer;
-  ///table index for i-el, el-el is always zero
-  int myTableID;
+  ///table index for el-el
+  const int ee_Table_ID_;
+  ///table index for i-el
+  const int ei_Table_ID_;
   //nuber of particles
   int Nelec, Nion;
   ///number of particles + padded
@@ -107,11 +109,10 @@ public:
   ///alias FuncType
   using FuncType = FT;
 
-  JeeIOrbitalSoA(const ParticleSet& ions, ParticleSet& elecs, bool is_master = false) : Ions(ions), NumVars(0)
+  JeeIOrbitalSoA(const ParticleSet& ions, ParticleSet& elecs, bool is_master = false)
+    : Ions(ions), NumVars(0), ei_Table_ID_(elecs.addTable(ions, DT_SOA, true)), ee_Table_ID_(elecs.addTable(elecs, DT_SOA))
   {
-    ClassName                                               = "JeeIOrbitalSoA";
-    myTableID                                               = elecs.addTable(Ions, DT_SOA);
-    elecs.DistTables[myTableID]->Need_full_table_loadWalker = true;
+    ClassName = "JeeIOrbitalSoA";
     init(elecs);
   }
 
@@ -381,7 +382,7 @@ public:
 
   void build_compact_list(ParticleSet& P)
   {
-    const DistanceTableData& eI_table = (*P.DistTables[myTableID]);
+    const DistanceTableData& eI_table = P.getDistTable(ei_Table_ID_);
 
     for (int iat = 0; iat < Nion; ++iat)
       for (int jg = 0; jg < eGroups; ++jg)
@@ -412,8 +413,8 @@ public:
   {
     UpdateMode = ORB_PBYP_RATIO;
 
-    const DistanceTableData& eI_table = (*P.DistTables[myTableID]);
-    const DistanceTableData& ee_table = (*P.DistTables[0]);
+    const DistanceTableData& eI_table = P.getDistTable(ei_Table_ID_);
+    const DistanceTableData& ee_table = P.getDistTable(ee_Table_ID_);
     cur_Uat = computeU(P, iat, P.GroupID[iat], eI_table.Temp_r.data(), ee_table.Temp_r.data(), ions_nearby_new);
     DiffVal = Uat[iat] - cur_Uat;
     return std::exp(DiffVal);
@@ -426,16 +427,15 @@ public:
                            computeU(VP.refPS,
                                     VP.refPtcl,
                                     VP.refPS.GroupID[VP.refPtcl],
-                                    VP.DistTables[myTableID]->Distances[k],
-                                    VP.DistTables[0]->Distances[k],
+                                    VP.getDistTable(ei_Table_ID_).Distances[k],
+                                    VP.getDistTable(ee_Table_ID_).Distances[k],
                                     ions_nearby_old));
   }
 
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
   {
-    const DistanceTableData* d_table  = P.DistTables[0];
-    const DistanceTableData& eI_table = (*P.DistTables[myTableID]);
-    const DistanceTableData& ee_table = (*P.DistTables[0]);
+    const DistanceTableData& eI_table = P.getDistTable(ei_Table_ID_);
+    const DistanceTableData& ee_table = P.getDistTable(ee_Table_ID_);
 
     for (int jg = 0; jg < eGroups; ++jg)
     {
@@ -466,8 +466,8 @@ public:
   {
     UpdateMode = ORB_PBYP_PARTIAL;
 
-    const DistanceTableData& eI_table = (*P.DistTables[myTableID]);
-    const DistanceTableData& ee_table = (*P.DistTables[0]);
+    const DistanceTableData& eI_table = P.getDistTable(ei_Table_ID_);
+    const DistanceTableData& ee_table = P.getDistTable(ee_Table_ID_);
     computeU3(P,
               iat,
               eI_table.Temp_r.data(),
@@ -490,8 +490,8 @@ public:
 
   void acceptMove(ParticleSet& P, int iat)
   {
-    const DistanceTableData& eI_table = (*P.DistTables[myTableID]);
-    const DistanceTableData& ee_table = (*P.DistTables[0]);
+    const DistanceTableData& eI_table = P.getDistTable(ei_Table_ID_);
+    const DistanceTableData& ee_table = P.getDistTable(ee_Table_ID_);
     // get the old value, grad, lapl
     computeU3(P,
               iat,
@@ -585,8 +585,8 @@ public:
 
   inline void recompute(ParticleSet& P)
   {
-    const DistanceTableData& eI_table = (*P.DistTables[myTableID]);
-    const DistanceTableData& ee_table = (*P.DistTables[0]);
+    const DistanceTableData& eI_table = P.getDistTable(ei_Table_ID_);
+    const DistanceTableData& ee_table = P.getDistTable(ee_Table_ID_);
 
     build_compact_list(P);
 
@@ -632,7 +632,7 @@ public:
                        const RealType* distjk,
                        std::vector<int>& ions_nearby)
   {
-    const DistanceTableData& eI_table = (*P.DistTables[myTableID]);
+    const DistanceTableData& eI_table = P.getDistTable(ei_Table_ID_);
 
     ions_nearby.clear();
     for (int iat = 0; iat < Nion; ++iat)
@@ -690,7 +690,7 @@ public:
                                gContainer_type& dUk,
                                Vector<valT>& d2Uk)
   {
-    const DistanceTableData& eI_table = (*P.DistTables[myTableID]);
+    const DistanceTableData& eI_table = P.getDistTable(ei_Table_ID_);
 
     constexpr valT czero(0);
     constexpr valT cone(1);
@@ -934,8 +934,8 @@ public:
       constexpr valT ctwo(2);
       constexpr valT lapfac = OHMMS_DIM - cone;
 
-      const DistanceTableData& ee_table = (*P.DistTables[0]);
-      const DistanceTableData& eI_table = (*P.DistTables[myTableID]);
+      const DistanceTableData& ee_table = P.getDistTable(ee_Table_ID_);
+      const DistanceTableData& eI_table = P.getDistTable(ei_Table_ID_);
 
       build_compact_list(P);
 

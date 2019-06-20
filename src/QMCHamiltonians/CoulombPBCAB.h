@@ -48,7 +48,7 @@ struct CoulombPBCAB : public QMCHamiltonianBase, public ForceBase
   ///long-range derivative handler
   LRHandlerType* dAB;
   ///locator of the distance table
-  int myTableIndex;
+  const int myTableIndex;
   ///number of species of A particle set
   int NumSpeciesA;
   ///number of species of B particle set

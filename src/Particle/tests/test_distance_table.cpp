@@ -93,13 +93,12 @@ TEST_CASE("distance_open_z", "[distance_table][xml]")
   REQUIRE(electrons.SameMass);
 
   // calculate particle distances
-  electrons.addTable(ions, DT_AOS);
+  const int tid = electrons.addTable(ions, DT_AOS);
   electrons.update();
 
   // get target particle set's distance table data
-  int tid                   = electrons.getTable(ions); //this is bad
-  DistanceTableData* dtable = electrons.DistTables[tid];
-  REQUIRE(dtable->getName() == "ion0_e");
+  const auto& dtable = electrons.getDistTable(tid);
+  REQUIRE(dtable.getName() == "ion0_e");
 
   double expect[] = {0.2, 0.2, 0.3, 0.7};
   int idx(0);
@@ -110,8 +109,8 @@ TEST_CASE("distance_open_z", "[distance_table][xml]")
       // note: target particle set is special (electrons in this case)
       // int tid = target_pset.getTable(source_pset)
       // DistanceTableData* dtable = target_pset.DistTables[tid]
-      // dtable->loc(source_ptcl_idx,target_ptcl_idx) !! source first target second !?
-      double dist = dtable->r(dtable->loc(iat, jat));
+      // dtable.loc(source_ptcl_idx,target_ptcl_idx) !! source first target second !?
+      double dist = dtable.r(dtable.loc(iat, jat));
       REQUIRE(dist == Approx(expect[idx]));
     }
   }
@@ -185,13 +184,12 @@ TEST_CASE("distance_open_xy", "[distance_table][xml]")
   REQUIRE(electrons.SameMass);
 
   // calculate particle distances
-  electrons.addTable(ions, DT_AOS);
+  const int tid = electrons.addTable(ions, DT_AOS);
   electrons.update();
 
   // get distance table attached to target particle set (electrons)
-  int tid                   = electrons.getTable(ions);
-  DistanceTableData* dtable = electrons.DistTables[tid];
-  REQUIRE(dtable->getName() == "ion0_e");
+  const auto& dtable = electrons.getDistTable(tid);
+  REQUIRE(dtable.getName() == "ion0_e");
 
   // calculate distance, one source particle at a time i.e.
   // H0 - e0: 0.7
@@ -205,7 +203,7 @@ TEST_CASE("distance_open_xy", "[distance_table][xml]")
   {
     for (int jat = 0; jat < electrons.getTotalNum(); jat++, idx++)
     {
-      double dist = dtable->r(dtable->loc(iat, jat));
+      double dist = dtable.r(dtable.loc(iat, jat));
       REQUIRE(dist == Approx(expect[idx]));
     }
   }
@@ -279,13 +277,12 @@ TEST_CASE("distance_open_species_deviation", "[distance_table][xml]")
   REQUIRE(electrons.SameMass);
 
   // calculate particle distances
-  electrons.addTable(ions, DT_AOS);
+  const int tid = electrons.addTable(ions, DT_AOS);
   electrons.update();
 
   // get distance table attached to target particle set (electrons)
-  int tid                   = electrons.getTable(ions);
-  DistanceTableData* dtable = electrons.DistTables[tid];
-  REQUIRE(dtable->getName() == "ion0_e");
+  const auto& dtable = electrons.getDistTable(tid);
+  REQUIRE(dtable.getName() == "ion0_e");
 
   // get the electron species set
   SpeciesSet& especies(electrons.getSpeciesSet());
@@ -306,7 +303,7 @@ TEST_CASE("distance_open_species_deviation", "[distance_table][xml]")
         continue;
 
       // calculate distance from lattice site iat
-      double dist = dtable->r(dtable->loc(iat, jat));
+      double dist = dtable.r(dtable.loc(iat, jat));
       latdev2 += std::pow(dist, 2); // !? pow(x,2) does what?
       REQUIRE(dist == Approx(expect[idx]));
       cur_jat = jat;
@@ -416,13 +413,12 @@ TEST_CASE("distance_pbc_z", "[distance_table][xml]")
   electrons.Lattice.copy(*SimulationCell);
   ions.Lattice.copy(*SimulationCell); // is this applied in qmcpack executable?
   // better be, electron-proton distances used in PairCorrelation estimator
-  electrons.addTable(ions, DT_AOS);
+  const int tid = electrons.addTable(ions, DT_AOS);
   electrons.update();
 
   // get target particle set's distance table data
-  int tid                   = electrons.getTable(ions);
-  DistanceTableData* dtable = electrons.DistTables[tid];
-  REQUIRE(dtable->getName() == "ion0_e");
+  const auto& dtable = electrons.getDistTable(tid);
+  REQUIRE(dtable.getName() == "ion0_e");
 
   int num_src = ions.getTotalNum();
   int num_tar = electrons.getTotalNum();
@@ -433,7 +429,7 @@ TEST_CASE("distance_pbc_z", "[distance_table][xml]")
   {
     for (int jat = 0; jat < num_tar; jat++, idx++)
     {
-      double dist = dtable->r(dtable->loc(iat, jat));
+      double dist = dtable.r(dtable.loc(iat, jat));
       expect[idx] = dist;
     }
   }
@@ -458,7 +454,7 @@ TEST_CASE("distance_pbc_z", "[distance_table][xml]")
   {
     for (int jat = 0; jat < num_tar; jat++, idx++)
     {
-      double dist = dtable->r(dtable->loc(iat, jat));
+      double dist = dtable.r(dtable.loc(iat, jat));
       REQUIRE(expect[idx] == Approx(dist));
     }
   }

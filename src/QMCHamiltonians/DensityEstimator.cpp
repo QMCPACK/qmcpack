@@ -28,7 +28,8 @@ typedef LRCoulombSingleton::LRHandlerType LRHandlerType;
 typedef LRCoulombSingleton::GridType GridType;
 typedef LRCoulombSingleton::RadFunctorType RadFunctorType;
 
-DensityEstimator::DensityEstimator(ParticleSet& elns) : rVs(0)
+DensityEstimator::DensityEstimator(ParticleSet& elns)
+  : rVs(0), d_aa_ID_(elns.addTable(elns, DT_AOS))
 {
   UpdateMode.set(COLLECTABLE, 1);
   Periodic = (elns.Lattice.SuperCellEnum != SUPERCELL_OPEN);
@@ -170,14 +171,14 @@ void DensityEstimator::InitPotential(ParticleSet& P)
 
 DensityEstimator::RealType DensityEstimator::evalSR(ParticleSet& P, int ipart)
 {
-  const DistanceTableData* d_aa = P.DistTables[0];
+  const auto& d_aa = P.getDistTable(d_aa_ID_);
   RealType SR                   = 0.0;
   //     for(int ipart=0; ipart<NumCenters; ipart++)
   {
     RealType esum = 0.0;
-    for (int nn = d_aa->M[ipart], jpart = ipart + 1; nn < d_aa->M[ipart + 1]; nn++, jpart++)
+    for (int nn = d_aa.M[ipart], jpart = ipart + 1; nn < d_aa.M[ipart + 1]; nn++, jpart++)
     {
-      esum += Zat[jpart] * d_aa->rinv(nn) * rVs->splint(d_aa->r(nn));
+      esum += Zat[jpart] * d_aa.rinv(nn) * rVs->splint(d_aa.r(nn));
     }
     //Accumulate pair sums...species charge for atom i.
     SR += Zat[ipart] * esum;

@@ -26,10 +26,10 @@
 
 namespace qmcplusplus
 {
-ForceBase::ForceBase(ParticleSet& ions, ParticleSet& elns) : FirstForceIndex(-1), tries(0), Ions(ions), addionion(true)
+ForceBase::ForceBase(ParticleSet& ions, ParticleSet& elns)
+  : FirstForceIndex(-1), tries(0), Ions(ions), addionion(true), d_ei_ID(elns.addTable(ions, DT_SOA_PREFERRED))
 {
   ReportEngine PRE("ForceBase", "ForceBase");
-  myTableIndex = elns.addTable(ions, DT_SOA_PREFERRED);
   FirstTime    = true;
   Nnuc         = ions.getTotalNum();
   Nel          = elns.getTotalNum();
@@ -154,17 +154,17 @@ void BareForce::addObservables(PropertySetType& plist, BufferType& collectables)
 BareForce::Return_t BareForce::evaluate(ParticleSet& P)
 {
   forces                                    = forces_IonIon;
-  const DistanceTableData* d_ab             = P.DistTables[myTableIndex];
+  const auto& d_ab             = P.getDistTable(d_ei_ID);
   const ParticleSet::Scalar_t* restrict Zat = Ions.Z.first_address();
   const ParticleSet::Scalar_t* restrict Qat = P.Z.first_address();
   //Loop over distinct eln-ion pairs
   for (int iat = 0; iat < Nnuc; iat++)
   {
-    for (int nn = d_ab->M[iat], jat = 0; nn < d_ab->M[iat + 1]; nn++, jat++)
+    for (int nn = d_ab.M[iat], jat = 0; nn < d_ab.M[iat + 1]; nn++, jat++)
     {
-      real_type rinv = d_ab->rinv(nn);
+      real_type rinv = d_ab.rinv(nn);
       real_type r3zz = Qat[jat] * Zat[iat] * rinv * rinv * rinv;
-      forces[iat] -= r3zz * d_ab->dr(nn);
+      forces[iat] -= r3zz * d_ab.dr(nn);
     }
   }
   tries++;

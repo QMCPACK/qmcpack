@@ -190,10 +190,6 @@ TEST_CASE("Bare KE Pulay PBC", "[hamiltonian]")
   ions.addTable(ions, DT_AOS);
 #endif
 
-  ions.update();
-  elec.update();
-
-
   //Cool.  Now to construct a wavefunction with 1 and 2 body jastrow (no determinant)
   TrialWaveFunction psi = TrialWaveFunction(c);
 
@@ -249,6 +245,10 @@ TEST_CASE("Bare KE Pulay PBC", "[hamiltonian]")
 
   BareKineticEnergy<double> bare_ke(elec);
   bare_ke.put(h1);
+
+  // update all distance tables
+  ions.update();
+  elec.update();
 
   RealType logpsi = psi.evaluateLog(elec);
 

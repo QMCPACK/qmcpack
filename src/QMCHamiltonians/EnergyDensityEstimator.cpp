@@ -297,7 +297,7 @@ EnergyDensityEstimator::Return_t EnergyDensityEstimator::evaluate(ParticleSet& P
       }
     }
     //Accumulate energy density in spacegrids
-    const DistanceTableData& dtab(*P.DistTables[dtable_index]);
+    const DistanceTableData& dtab(P.getDistTable(dtable_index));
     fill(particles_outside.begin(), particles_outside.end(), true);
     for (int i = 0; i < spacegrids.size(); i++)
     {

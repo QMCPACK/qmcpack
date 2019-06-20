@@ -195,7 +195,8 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF()
           // set non_overlapping_radius for each ion in primitive cell
           RealType r(0);
           PosType dr;
-          SourcePtcl->DistTables[0]->get_first_neighbor(j, r, dr, false);
+          const int table_id = SourcePtcl->addTable(*SourcePtcl, DT_SOA);
+          SourcePtcl->getDistTable(table_id).get_first_neighbor(j, r, dr, false);
           if (r < 1e-3)
             APP_ABORT("EinsplineSetBuilder::ReadOrbitalInfo_ESHDF too close ions <1e-3 bohr!");
           AtomicCentersInfo.non_overlapping_radius[i] = 0.5 * r;

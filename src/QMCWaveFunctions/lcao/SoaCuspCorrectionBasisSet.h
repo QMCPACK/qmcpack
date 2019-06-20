@@ -125,7 +125,7 @@ struct SoaCuspCorrection
   ///number of quantum particles
   size_t NumTargets;
   ///number of quantum particles
-  int myTableIndex;
+  const int myTableIndex;
   ///size of the basis set
   int BasisSetSize;
 
@@ -146,8 +146,8 @@ struct SoaCuspCorrection
    * @param els electronic system
    */
   SoaCuspCorrection(ParticleSet& ions, ParticleSet& els)
+    : myTableIndex(els.addTable(ions, DT_SOA))
   {
-    myTableIndex = els.addTable(ions, DT_SOA);
     NumCenters   = ions.getTotalNum();
     NumTargets   = els.getTotalNum();
     LOBasisSet.resize(NumCenters, 0);
@@ -176,9 +176,9 @@ struct SoaCuspCorrection
   {
     myVGL = 0.0;
 
-    const DistanceTableData* d_table = P.DistTables[myTableIndex];
-    const auto dist                  = (P.activePtcl == iat) ? d_table->Temp_r.data() : d_table->Distances[iat];
-    const auto displ                 = (P.activePtcl == iat) ? d_table->Temp_dr : d_table->Displacements[iat];
+    const auto& d_table = P.getDistTable(myTableIndex);
+    const auto dist                  = (P.activePtcl == iat) ? d_table.Temp_r.data() : d_table.Distances[iat];
+    const auto displ                 = (P.activePtcl == iat) ? d_table.Temp_dr : d_table.Displacements[iat];
     for (int c = 0; c < NumCenters; c++)
     {
       if (LOBasisSet[c])
@@ -213,9 +213,9 @@ struct SoaCuspCorrection
   {
     myVGL = 0.0;
 
-    const DistanceTableData* d_table = P.DistTables[myTableIndex];
-    const auto dist                  = (P.activePtcl == iat) ? d_table->Temp_r.data() : d_table->Distances[iat];
-    const auto displ                 = (P.activePtcl == iat) ? d_table->Temp_dr : d_table->Displacements[iat];
+    const auto& d_table = P.getDistTable(myTableIndex);
+    const auto dist                  = (P.activePtcl == iat) ? d_table.Temp_r.data() : d_table.Distances[iat];
+    const auto displ                 = (P.activePtcl == iat) ? d_table.Temp_dr : d_table.Displacements[iat];
     for (int c = 0; c < NumCenters; c++)
     {
       if (LOBasisSet[c])
@@ -248,9 +248,9 @@ struct SoaCuspCorrection
   {
     myVGL = 0.0;
 
-    const DistanceTableData* d_table = P.DistTables[myTableIndex];
-    const auto dist                  = (P.activePtcl == iat) ? d_table->Temp_r.data() : d_table->Distances[iat];
-    const auto displ                 = (P.activePtcl == iat) ? d_table->Temp_dr : d_table->Displacements[iat];
+    const auto& d_table = P.getDistTable(myTableIndex);
+    const auto dist                  = (P.activePtcl == iat) ? d_table.Temp_r.data() : d_table.Distances[iat];
+    const auto displ                 = (P.activePtcl == iat) ? d_table.Temp_dr : d_table.Displacements[iat];
     for (int c = 0; c < NumCenters; c++)
     {
       if (LOBasisSet[c])
@@ -284,8 +284,8 @@ struct SoaCuspCorrection
 
     std::fill_n(tmp_vals, myVGL.size(), 0.0);
 
-    const DistanceTableData* d_table = P.DistTables[myTableIndex];
-    const auto dist                  = (P.activePtcl == iat) ? d_table->Temp_r.data() : d_table->Distances[iat];
+    const auto& d_table = P.getDistTable(myTableIndex);
+    const auto dist                  = (P.activePtcl == iat) ? d_table.Temp_r.data() : d_table.Distances[iat];
 
     //THIS IS SERIAL, only way to avoid this is to use myVGL
     for (int c = 0; c < NumCenters; c++)

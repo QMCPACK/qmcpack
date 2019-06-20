@@ -82,6 +82,8 @@ private:
   TinyVector<RealType, OHMMS_DIM> density_max;
   ///name of the density data
   std::string prefix;
+  // AA table ID
+  const int d_aa_ID_;
   ///density
   //Array<RealType,OHMMS_DIM> density, Vavg;
   /** resize the internal data
