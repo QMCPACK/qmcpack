@@ -23,7 +23,6 @@
 #define QMCPLUSPLUS_CORRECTINGORBITALBASISSET_H
 
 #include "QMCWaveFunctions/BasisSetBase.h"
-#include "Particle/DistanceTable.h"
 
 namespace qmcplusplus
 {
@@ -148,7 +147,7 @@ struct CorrectingOrbitalBasisSet : public BasisSetBase<typename COT::value_type>
    */
   void resetTargetParticleSet(ParticleSet& P)
   {
-    myTable = DistanceTable::add(CenterSys, P, DT_AOS);
+    myTable = P.DistTables[P.addTable(CenterSys, DT_AOS)];
     for (int i = 0; i < LOBasis.size(); i++)
       LOBasis[i]->setTable(myTable);
   }

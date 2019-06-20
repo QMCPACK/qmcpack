@@ -20,7 +20,6 @@
 #define QMCPLUSPLUS_SOA_LOCALIZEDBASISSET_H
 
 #include "QMCWaveFunctions/BasisSetBase.h"
-#include "Particle/DistanceTable.h"
 #include "Particle/DistanceTableData.h"
 
 namespace qmcplusplus

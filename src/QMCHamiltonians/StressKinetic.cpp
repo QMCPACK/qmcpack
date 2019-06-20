@@ -11,7 +11,6 @@
 
 
 #include "QMCHamiltonians/StressKinetic.h"
-#include "Particle/DistanceTable.h"
 #include "Particle/DistanceTableData.h"
 #include "Utilities/ProgressReportEngine.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
@@ -26,7 +25,7 @@ StressKinetic::StressKinetic(ParticleSet& ref, TrialWaveFunction& Psi0) : ForceB
   //save source tag
   SourceID = ref.tag();
   //create a distance table: just to get the table name
-  // DistanceTableData *d_aa = DistanceTable::add(ref);
+  // DistanceTableData *d_aa = ref.DistanceTables[ref.addTable(ref, DT_AOS)];
   // PtclRefName=d_aa->Name;
   prefix = "S_kin";
 }

@@ -18,7 +18,6 @@
 #include "Lattice/ParticleBConds.h"
 #include "Particle/ParticleSet.h"
 #include "Particle/DistanceTableData.h"
-#include "Particle/DistanceTable.h"
 #include "Particle/SymmetricDistanceTableData.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "QMCApp/ParticleSetPool.h"

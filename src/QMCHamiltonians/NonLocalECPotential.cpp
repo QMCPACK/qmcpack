@@ -15,7 +15,6 @@
 
 
 #include "Particle/DistanceTableData.h"
-#include "Particle/DistanceTable.h"
 #include "QMCHamiltonians/NonLocalECPotential.h"
 #include "Utilities/IteratorUtility.h"
 

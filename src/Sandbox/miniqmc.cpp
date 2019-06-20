@@ -17,7 +17,6 @@
  */
 #include <Configuration.h>
 #include <Particle/ParticleSet.h>
-#include <Particle/DistanceTable.h>
 #include <Utilities/PrimeNumberSet.h>
 #include <Utilities/Timer.h>
 #include <random/random.hpp>
