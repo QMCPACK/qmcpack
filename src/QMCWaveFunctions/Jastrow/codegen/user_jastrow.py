@@ -1,6 +1,6 @@
 from __future__ import print_function
 
-from sympy import *
+from sympy import Symbol, diff, exp, Piecewise
 from sympy.printing.cxxcode import CXX11CodePrinter
 import sys
 
