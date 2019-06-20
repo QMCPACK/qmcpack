@@ -137,7 +137,7 @@ def get_var_names(var_name):
 
 # String representation of the function, for the comments
 def gen_func_str(f):
-  return ' *  f = ' + str(f) + '\n'
+  return ' *  f = %s\n'%f
 
 
 # Parameter declarations in the class
