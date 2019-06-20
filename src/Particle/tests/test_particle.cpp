@@ -18,7 +18,6 @@
 #include "Lattice/ParticleBConds.h"
 #include "Particle/ParticleSet.h"
 #include "Particle/DistanceTableData.h"
-#include "Particle/SymmetricDistanceTableData.h"
 
 
 #include <stdio.h>
@@ -28,6 +27,50 @@ using std::string;
 
 namespace qmcplusplus
 {
+
+TEST_CASE("ParticleSet distance table management", "[particle]")
+{
+  OHMMS::Controller->initialize(0, NULL);
+
+  ParticleSet ions;
+  ParticleSet elecs;
+
+  ions.setName("ions");
+  elecs.setName("electrons");
+
+  const int ii_table_id = ions.addTable(ions, DT_SOA);
+  const int ie_table_id = ions.addTable(elecs, DT_SOA);
+  const int ei_table_id = elecs.addTable(ions, DT_SOA, true);
+  const int ee_table_id = elecs.addTable(elecs, DT_SOA, false);
+
+  REQUIRE(ii_table_id == 0);
+  REQUIRE(ie_table_id == 1);
+  REQUIRE(ei_table_id == 0);
+  REQUIRE(ee_table_id == 1);
+
+  // second query
+  const int ii_table_id2 = ions.addTable(ions, DT_SOA);
+  const int ie_table_id2 = ions.addTable(elecs, DT_SOA);
+  const int ei_table_id2 = elecs.addTable(ions, DT_SOA, false);
+  const int ee_table_id2 = elecs.addTable(elecs, DT_SOA, true);
+
+  REQUIRE(ii_table_id2 == 0);
+  REQUIRE(ie_table_id2 == 1);
+  REQUIRE(ei_table_id2 == 0);
+  REQUIRE(ee_table_id2 == 1);
+
+  REQUIRE(&(ions.getDistTable(ii_table_id2).origin()) == &ions);
+  REQUIRE(&(ions.getDistTable(ie_table_id2).origin()) == &elecs);
+  REQUIRE(&(elecs.getDistTable(ei_table_id2).origin()) == &ions);
+  REQUIRE(&(elecs.getDistTable(ee_table_id2).origin()) == &elecs);
+
+  ParticleSet elecs_copy(elecs);
+  REQUIRE(elecs_copy.getDistTable(ei_table_id2).origin().getName() == "ions");
+  REQUIRE(elecs_copy.getDistTable(ee_table_id2).origin().getName() == "electrons");
+  REQUIRE(elecs_copy.getDistTable(ei_table_id2).Need_full_table_loadWalker == true);
+  REQUIRE(elecs_copy.getDistTable(ee_table_id2).Need_full_table_loadWalker == true);
+}
+
 TEST_CASE("symmetric_distance_table OpenBC", "[particle]")
 {
   OHMMS::Controller->initialize(0, NULL);
@@ -97,7 +140,6 @@ TEST_CASE("particle set lattice with vacuum", "[particle]")
 {
   OHMMS::Controller->initialize(0, NULL);
 
-  typedef SymmetricDTD<double, 3, SUPERCELL_BULK> sym_dtd_t;
   ParticleSet source;
 
   Uniform3DGridLayout grid;

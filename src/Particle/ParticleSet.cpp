@@ -370,7 +370,7 @@ int ParticleSet::addTable(const ParticleSet& psrc, int dt_type, bool need_full_t
     tid = (*tit).second;
     app_debug() << "  ... ParticleSet::addTable Reuse Table #" << tid << " " << DistTables[tid]->Name << std::endl;
   }
-  DistTables[tid]->Need_full_table_loadWalker = need_full_table_loadWalker;
+  DistTables[tid]->Need_full_table_loadWalker = (DistTables[tid]->Need_full_table_loadWalker || need_full_table_loadWalker);
   app_log().flush();
   return tid;
 }
