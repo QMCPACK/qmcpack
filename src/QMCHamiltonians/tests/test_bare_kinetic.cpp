@@ -181,15 +181,6 @@ TEST_CASE("Bare KE Pulay PBC", "[hamiltonian]")
   // settings to the ParticleSet
   elec.resetGroups();
 
-  int myTableIndex = -1;
-#ifdef ENABLE_SOA
-  myTableIndex = elec.addTable(ions, DT_SOA);
-  ions.addTable(ions, DT_SOA);
-#else
-  myTableIndex = elec.addTable(ions, DT_AOS);
-  ions.addTable(ions, DT_AOS);
-#endif
-
   //Cool.  Now to construct a wavefunction with 1 and 2 body jastrow (no determinant)
   TrialWaveFunction psi = TrialWaveFunction(c);
 

@@ -135,7 +135,7 @@ NonLocalECPotential::Return_t NonLocalECPotential::evaluateWithIonDerivs(Particl
     if (PPset[ipp])
       PPset[ipp]->randomize_grid(*myRNG);
   //loop over all the ions
-  const auto myTable = P.getDistTable(myTableIndex);
+  const auto& myTable = P.getDistTable(myTableIndex);
   // clear all the electron and ion neighbor lists
   for (int iat = 0; iat < NumIons; iat++)
     IonNeighborElecs.getNeighborList(iat).clear();
@@ -195,7 +195,7 @@ void NonLocalECPotential::evaluate(ParticleSet& P, bool Tmove)
     if (PPset[ipp])
       PPset[ipp]->randomize_grid(*myRNG);
   //loop over all the ions
-  const auto myTable = P.getDistTable(myTableIndex);
+  const auto& myTable = P.getDistTable(myTableIndex);
   // clear all the electron and ion neighbor lists
   for (int iat = 0; iat < NumIons; iat++)
     IonNeighborElecs.getNeighborList(iat).clear();
@@ -293,7 +293,7 @@ void NonLocalECPotential::computeOneElectronTxy(ParticleSet& P, const int ref_el
 {
   nonLocalOps.reset();
   std::vector<NonLocalData>& Txy(nonLocalOps.Txy);
-  const auto myTable                   = P.getDistTable(myTableIndex);
+  const auto& myTable                  = P.getDistTable(myTableIndex);
   const std::vector<int>& NeighborIons = ElecNeighborIons.getNeighborList(ref_elec);
 
   if (myTable.DTType == DT_SOA)

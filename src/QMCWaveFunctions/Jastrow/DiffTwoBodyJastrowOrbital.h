@@ -203,7 +203,7 @@ public:
       for (int p = 0; p < NumVars; ++p)
         (*lapLogPsi[p]) = 0.0;
       std::vector<TinyVector<RealType, 3>> derivs(NumVars);
-      const auto d_table = P.getDistTable(my_table_ID_);
+      const auto& d_table = P.getDistTable(my_table_ID_);
       if (d_table.DTType == DT_SOA)
       {
         constexpr RealType cone(1);

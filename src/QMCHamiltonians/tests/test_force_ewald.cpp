@@ -97,17 +97,6 @@ TEST_CASE("Chiesa Force BCC H Ewald3D", "[hamiltonian]")
   // settings to the ParticleSet
   elec.resetGroups();
 
-#ifdef ENABLE_SOA
-  elec.addTable(ions, DT_SOA);
-  ions.addTable(ions, DT_SOA);
-#else
-  elec.addTable(ions, DT_AOS);
-  ions.addTable(ions, DT_AOS);
-#endif
-
-  elec.update();
-  ions.update();
-
   LRCoulombSingleton::CoulombHandler = new EwaldHandler3D(ions);
   LRCoulombSingleton::CoulombHandler->initBreakup(ions);
   LRCoulombSingleton::CoulombDerivHandler = new EwaldHandler3D(ions);
@@ -117,6 +106,7 @@ TEST_CASE("Chiesa Force BCC H Ewald3D", "[hamiltonian]")
   force.addionion = false;
   force.InitMatrix();
 
+  elec.update();
   force.evaluate(elec);
 
   //Ion-Ion forces are validated against Quantum Espresso's ewald method:

@@ -23,7 +23,7 @@
 namespace qmcplusplus
 {
 ForceChiesaPBCAA::ForceChiesaPBCAA(ParticleSet& ions, ParticleSet& elns, bool firsttime)
-    : ForceBase(ions, elns), PtclA(ions), first_time(firsttime), d_aa_ID(elns.addTable(elns, DT_SOA_PREFERRED))
+    : ForceBase(ions, elns), PtclA(ions), first_time(firsttime), d_aa_ID(ions.addTable(ions, DT_SOA_PREFERRED))
 {
   ReportEngine PRE("ForceChiesaPBCAA", "ForceChiesaPBCAA");
   myName = "Chiesa_Force_Base_PBCAB";
@@ -44,6 +44,7 @@ ForceChiesaPBCAA::ForceChiesaPBCAA(ParticleSet& ions, ParticleSet& elns, bool fi
   // app_log()<<forces_IonIon<< std::endl;
   if (first_time == true)
   {
+    ions.update();
     evaluateLR_AA();
     // app_log()<< "IonIon Force" << std::endl;
     // app_log()<<forces_IonIon<< std::endl;

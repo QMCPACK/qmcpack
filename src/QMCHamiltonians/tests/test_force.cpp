@@ -207,21 +207,11 @@ TEST_CASE("Chiesa Force", "[hamiltonian]")
   // settings to the ParticleSet
   elec.resetGroups();
 
-#ifdef ENABLE_SOA
-  elec.addTable(ions, DT_SOA);
-  ions.addTable(ions, DT_SOA);
-#else
-  elec.addTable(ions, DT_AOS);
-  ions.addTable(ions, DT_AOS);
-#endif
-
   ForceChiesaPBCAA force(ions, elec);
   force.addionion = false;
   force.InitMatrix();
 
   elec.update();
-  ions.update();
-
   force.evaluate(elec);
   std::cout << " Force = " << force.forces << std::endl;
 
@@ -307,17 +297,6 @@ TEST_CASE("Ceperley Force", "[hamiltonian]")
   // settings to the ParticleSet
   elec.resetGroups();
 
-#ifdef ENABLE_SOA
-  elec.addTable(ions, DT_SOA);
-  ions.addTable(ions, DT_SOA);
-#else
-  elec.addTable(ions, DT_AOS);
-  ions.addTable(ions, DT_AOS);
-#endif
-
-  ions.update();
-  elec.update();
-
   ForceCeperley force(ions, elec);
   force.InitMatrix();
 
@@ -328,6 +307,8 @@ TEST_CASE("Ceperley Force", "[hamiltonian]")
   {
     REQUIRE(force.c[i] == Approx(coeff[i]));
   }
+
+  elec.update();
 
   force.evaluate(elec);
   std::cout << " Force = " << force.forces << std::endl;
