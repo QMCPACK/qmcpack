@@ -282,6 +282,10 @@ protected:
   ///target population
   RealType nTargetPopulation;
 
+  std::string MinMethod;
+  int descent_len;
+  int blm_len;
+
   ///timestep
   RealType Tau;
 

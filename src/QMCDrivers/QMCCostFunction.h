@@ -41,6 +41,9 @@ public:
 #ifdef HAVE_LMY_ENGINE
   void engine_checkConfigurations(cqmc::engine::LMYEngine* EngineObj);
 #endif
+
+  void descent_checkConfigurations(std::vector<Return_t>& LDerivs,int& stepNum, double& oldMu, bool& targetExcited,double& omega);
+
   void resetPsi(bool final_reset = false);
   void GradCost(std::vector<Return_t>& PGradient, const std::vector<Return_t>& PM, Return_t FiniteDiff = 0);
   Return_t fillOverlapHamiltonianMatrices(Matrix<Return_t>& Left, Matrix<Return_t>& Right);

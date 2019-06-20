@@ -120,8 +120,37 @@ QMCDriver::QMCDriver(MCWalkerConfiguration& w,
   nSamplesPerThread = 0;
   m_param.add(nSamplesPerThread, "samplesperthread", "real");
   m_param.add(nSamplesPerThread, "dmcwalkersperthread", "real");
+ 
   nTargetPopulation = 0;
-  m_param.add(nTargetPopulation, "samples", "real");
+  MinMethod = "";
+  descent_len = 0;
+  blm_len = 0;
+  m_param.add(MinMethod, "MinMethod","string");
+  m_param.add(descent_len,"descent_length","int");
+  m_param.add(blm_len,"BLM_length","int");
+
+  app_log() << "This is MinMethod: " << MinMethod << std::endl;
+  app_log() << "This is descent_len: " << descent_len << std::endl;
+  app_log() << "This is blm_len: " << blm_len << std::endl;
+
+  if(MinMethod == "hybrid")
+  {
+      bool on_hybrid_descent = (CurrentStep - blm_len) % descent_len < descent_len;
+      if(on_hybrid_descent)
+      {
+          app_log() << "Using samples for descent" << std::endl;
+          m_param.add(nTargetPopulation, "Hybrid_Descent_Samples", "real");
+      }
+      else
+      {
+          m_param.add(nTargetPopulation, "samples", "real");
+      }
+  }
+  else
+  {
+    m_param.add(nTargetPopulation, "samples", "real");
+  }
+
   Tau = 0.1;
   //m_param.add(Tau,"timeStep","AU");
   m_param.add(Tau, "timestep", "AU");

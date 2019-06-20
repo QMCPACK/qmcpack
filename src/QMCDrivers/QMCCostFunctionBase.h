@@ -157,7 +157,10 @@ public:
 
 #ifdef HAVE_LMY_ENGINE
   virtual void engine_checkConfigurations(cqmc::engine::LMYEngine* EngineObj) = 0;
+
+  virtual void descent_checkConfigurations(std::vector<Return_t>& LDerivs,int& stepNum, double& oldMu, bool& targetExcited,double& omega) = 0;
 #endif
+
 
   void setRng(std::vector<RandomGenerator_t*>& r);
 
