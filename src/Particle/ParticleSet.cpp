@@ -88,14 +88,11 @@ ParticleSet::ParticleSet(const ParticleSet& p)
   PropertyHistory     = p.PropertyHistory;
   Collectables        = p.Collectables;
   //construct the distance tables with the same order
-  if (p.DistTables.size())
-  {
-    addTable(*this, p.DistTables[0]->DTType); //first is always for this-this pair
-    for (int i = 1; i < p.DistTables.size(); ++i)
-      addTable(p.DistTables[i]->origin(), p.DistTables[i]->DTType);
-  }
   for (int i = 0; i < p.DistTables.size(); ++i)
+  {
+    addTable(p.DistTables[i]->origin(), p.DistTables[i]->DTType);
     DistTables[i]->Need_full_table_loadWalker = p.DistTables[i]->Need_full_table_loadWalker;
+  }
   if (p.SK)
   {
     LRBox = p.LRBox;               //copy LRBox
