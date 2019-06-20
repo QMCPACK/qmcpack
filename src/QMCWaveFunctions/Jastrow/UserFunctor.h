@@ -22,6 +22,7 @@
  To make changes, edit UserFunctor.h.in and rerun user_jastrow.py.
 */
 
+
 /** @file UserFunctor.h
  * @brief User-defined functor
  */
@@ -38,6 +39,7 @@ namespace qmcplusplus
 {
 /** Implements the function
  *  f = A*r/(B*r + 1) - A/B
+
  *
  */
 template<class T>
@@ -61,9 +63,11 @@ struct UserFunctor : public OptimizableFunctorBase
   std::string ID_B;
   
 
+
   ///default constructor
   UserFunctor() { reset(); }
 
+// void setCusp(real_type cusp)
 
   void setCusp(real_type cusp)
   {
@@ -72,6 +76,7 @@ struct UserFunctor : public OptimizableFunctorBase
     reset();
   }
   
+
   OptimizableFunctorBase* makeClone() const { return new UserFunctor(*this); }
 
   void reset()
@@ -80,11 +85,14 @@ struct UserFunctor : public OptimizableFunctorBase
 
 
 
+// inline real_type evaluate(real_type r) const
 
   inline real_type evaluate(real_type r) const {
    return A*r/(B*r + 1) - A/B;
   }
   
+
+// const inline real_type evaluate(real_type r, real_type& dudr, real_type& d2udr2) const
 
   inline real_type evaluate(real_type r, real_type& dudr, real_type& d2udr2) const
   {
@@ -95,6 +103,8 @@ struct UserFunctor : public OptimizableFunctorBase
 
 
 
+// inline real_type evaluate(real_type r, real_type& dudr, real_type& d2udr2, real_type& d3udr3) const
+
   inline real_type evaluate(real_type r, real_type& dudr, real_type& d2udr2, real_type& d3udr3) const
   {
     dudr        = -A*B*r/((B*r + 1)*(B*r + 1)) + A/(B*r + 1);
@@ -102,6 +112,7 @@ struct UserFunctor : public OptimizableFunctorBase
     d3udr3      = 6*A*((B)*(B))*(-B*r/(B*r + 1) + 1)/std::pow(B*r + 1, 3);
     return A*r/(B*r + 1) - A/B;
   }
+
 
 
 
@@ -148,6 +159,7 @@ struct UserFunctor : public OptimizableFunctorBase
     return dudr;
   }
 
+// inline bool evaluateDerivatives(real_type r, std::vector<TinyVector<real_type, 3>>& derivs)
 
   inline bool evaluateDerivatives(real_type r, std::vector<TinyVector<real_type, 3>>& derivs)
   {
@@ -173,6 +185,8 @@ struct UserFunctor : public OptimizableFunctorBase
   }
   
 
+// inline bool evaluateDerivatives(real_type r, std::vector<real_type>& derivs)
+
   /// compute derivatives with respect to variational parameters
   inline bool evaluateDerivatives(real_type r, std::vector<real_type>& derivs)
   {
@@ -194,6 +208,8 @@ struct UserFunctor : public OptimizableFunctorBase
     return true;
   }
   
+
+//  bool put(xmlNodePtr cur)
 
   bool put(xmlNodePtr cur)
   {
@@ -239,6 +255,7 @@ struct UserFunctor : public OptimizableFunctorBase
     return true;
   }
 
+
   void checkInVariables(opt_variables_type& active)
   {
     active.insertFrom(myVars);
@@ -251,6 +268,7 @@ struct UserFunctor : public OptimizableFunctorBase
     //myVars.print(std::cout);
   }
 
+//void resetParameters(const opt_variables_type& active)
 
   void resetParameters(const opt_variables_type& active)
   {
@@ -271,7 +289,8 @@ struct UserFunctor : public OptimizableFunctorBase
       reset();
     }
   }
-  };
+  
+};
 
 
 

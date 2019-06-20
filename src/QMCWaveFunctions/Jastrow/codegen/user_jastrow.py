@@ -479,23 +479,17 @@ dire_codegen_text = """
 */
 """
 
-# A simple template replacement engine.
-# Template items to be replaced start on a line with '%'.
 def run_template(fname_in, fname_out, bodies):
+  from string import Template
   out = ''
   with open(fname_in, 'r') as f:
-    for line in f:
-      if line.startswith('%'):
-        key = line.split('//')[0].strip()[1:]
-        if key in bodies:
-          line = bodies[key]
-        else:
-          print('Error, template item not found, key:',key, ' line = ',line)
-      out += line
-
-  with open(fname_out, 'w') as f:
-    f.write(out)
-
+    s = Template(f.read())
+    try:
+      out = s.substitute(bodies)
+    except KeyError as e:
+      print('Error, template item not found: ',e)
+    with open(fname_out, 'w') as fout:
+      fout.write(out)
 
 bodies = {
   'dire_codegen_warning' : dire_codegen_text,

@@ -14,7 +14,7 @@
 // File created by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
 
-%dire_codegen_warning
+$dire_codegen_warning
 
 /** @file UserFunctor.h
  * @brief User-defined functor
@@ -31,19 +31,20 @@
 namespace qmcplusplus
 {
 /** Implements the function
-%func_str
+$func_str
  *
  */
 template<class T>
 struct UserFunctor : public OptimizableFunctorBase
 {
 
-%param_defs
+$param_defs
 
   ///default constructor
   UserFunctor() { reset(); }
 
-%set_cusp // void setCusp(real_type cusp)
+// void setCusp(real_type cusp)
+$set_cusp
 
   OptimizableFunctorBase* makeClone() const { return new UserFunctor(*this); }
 
@@ -53,11 +54,14 @@ struct UserFunctor : public OptimizableFunctorBase
 
 
 
-%evaluate_func   // inline real_type evaluate(real_type r) const
+// inline real_type evaluate(real_type r) const
+$evaluate_func
 
-%evaluate_func_2nd_derivative   // const inline real_type evaluate(real_type r, real_type& dudr, real_type& d2udr2) const
+// const inline real_type evaluate(real_type r, real_type& dudr, real_type& d2udr2) const
+$evaluate_func_2nd_derivative
 
-%evaluate_func_3rd_derivative  // inline real_type evaluate(real_type r, real_type& dudr, real_type& d2udr2, real_type& d3udr3) const
+// inline real_type evaluate(real_type r, real_type& dudr, real_type& d2udr2, real_type& d3udr3) const
+$evaluate_func_3rd_derivative
 
 
   inline real_type evaluateV(const int iat,
@@ -103,11 +107,14 @@ struct UserFunctor : public OptimizableFunctorBase
     return dudr;
   }
 
-%evaluate_all_parameter_derivatives // inline bool evaluateDerivatives(real_type r, std::vector<TinyVector<real_type, 3>>& derivs)
+// inline bool evaluateDerivatives(real_type r, std::vector<TinyVector<real_type, 3>>& derivs)
+$evaluate_all_parameter_derivatives
 
-%evaluate_parameter_derivative  // inline bool evaluateDerivatives(real_type r, std::vector<real_type>& derivs)
+// inline bool evaluateDerivatives(real_type r, std::vector<real_type>& derivs)
+$evaluate_parameter_derivative
 
-%xml_input //  bool put(xmlNodePtr cur)
+//  bool put(xmlNodePtr cur)
+$xml_input
 
   void checkInVariables(opt_variables_type& active)
   {
@@ -121,7 +128,8 @@ struct UserFunctor : public OptimizableFunctorBase
     //myVars.print(std::cout);
   }
 
-%reset_parameters  //void resetParameters(const opt_variables_type& active)
+//void resetParameters(const opt_variables_type& active)
+$reset_parameters
 };
 
 
