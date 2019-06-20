@@ -497,18 +497,19 @@ def run_template(fname_in, fname_out, bodies):
     f.write(out)
 
 
-bodies = dict()
-bodies['dire_codegen_warning'] = dire_codegen_text
-bodies['func_str'] = gen_func_str(f)
-bodies['param_defs'] = gen_param_defs(variational_parameters, input_parameters)
-bodies['set_cusp'] = gen_set_cusp(cusp_param)
-bodies['evaluate_func'] = gen_evaluate(f)
-bodies['evaluate_func_2nd_derivative'] = gen_evaluate_2nd_deriv(f, df, ddf)
-bodies['evaluate_func_3rd_derivative'] = gen_evaluate_3rd_deriv(f, df, ddf, d3f)
-bodies['evaluate_parameter_derivative'] = gen_evaluate_parameter_derivatives(variational_parameters, param_derivs)
-bodies['evaluate_all_parameter_derivatives'] = gen_evaluate_all_parameter_derivatives(variational_parameters, param_derivs)
-bodies['xml_input'] = gen_xml_input(variational_parameters, input_parameters)
-bodies['reset_parameters'] = gen_reset_parameters(variational_parameters)
+bodies = {
+  'dire_codegen_warning' : dire_codegen_text,
+  'func_str' : gen_func_str(f),
+  'param_defs' : gen_param_defs(variational_parameters, input_parameters),
+  'set_cusp' : gen_set_cusp(cusp_param),
+  'evaluate_func' : gen_evaluate(f),
+  'evaluate_func_2nd_derivative' : gen_evaluate_2nd_deriv(f, df, ddf),
+  'evaluate_func_3rd_derivative' : gen_evaluate_3rd_deriv(f, df, ddf, d3f),
+  'evaluate_parameter_derivative' : gen_evaluate_parameter_derivatives(variational_parameters, param_derivs),
+  'evaluate_all_parameter_derivatives' : gen_evaluate_all_parameter_derivatives(variational_parameters, param_derivs),
+  'xml_input' : gen_xml_input(variational_parameters, input_parameters),
+  'reset_parameters' : gen_reset_parameters(variational_parameters)
+}
 
 run_template('UserFunctor.h.in', '../UserFunctor.h', bodies)
 
