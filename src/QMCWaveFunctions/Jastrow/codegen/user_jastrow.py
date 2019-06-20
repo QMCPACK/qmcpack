@@ -71,41 +71,22 @@ if False:
 # End of user input area
 #------------------------
 
-print("Input for radial Jastrow:")
-print(f)
 
-# Check all free symbols are accounted for in the parameter lists
-free_sym = f.free_symbols
-all_sym = set(variational_parameters + input_parameters + [r])
-missing_in_params = free_sym - all_sym
-if missing_in_params:
-  print('Symbols are missing from variational or input parameter lists: ',missing_in_params)
-  sys.exit(1)
+def check_free_symbols(f, variational_parameters, input_parameters):
+  # Check all free symbols are accounted for in the parameter lists
+  free_sym = f.free_symbols
+  all_sym = set(variational_parameters + input_parameters + [r])
+  missing_in_params = free_sym - all_sym
+  if missing_in_params:
+    print('Symbols are missing from variational or input parameter lists: ',missing_in_params)
+    sys.exit(1)
 
-extra_in_params = all_sym - free_sym
-if extra_in_params:
-  print('Extra symbols in variational or input parameter lists: ',extra_in_params)
-  sys.exit(1)
-
-
-# Compute radial derivatives
-
-df = diff(f, r)
-ddf = diff(f, r, 2)
-d3f = diff(f, r, 3)
-
-print()
-print("Cusp (df/dr at r = 0) = ",df.subs(r,0))
-print()
+  extra_in_params = all_sym - free_sym
+  if extra_in_params:
+    print('Extra symbols in variational or input parameter lists: ',extra_in_params)
+    sys.exit(1)
 
 
-
-param_derivs = dict()
-for vp in variational_parameters:
-  pd_f = diff(f, vp)
-  pd_df = diff(df, vp)
-  pd_ddf = diff(ddf, vp)
-  param_derivs[vp] = (pd_f, pd_df, pd_ddf)
 
 
 
@@ -491,20 +472,47 @@ def run_template(fname_in, fname_out, bodies):
     with open(fname_out, 'w') as fout:
       fout.write(out)
 
-bodies = {
-  'dire_codegen_warning' : dire_codegen_text,
-  'func_str' : gen_func_str(f),
-  'param_defs' : gen_param_defs(variational_parameters, input_parameters),
-  'set_cusp' : gen_set_cusp(cusp_param),
-  'evaluate_func' : gen_evaluate(f),
-  'evaluate_func_2nd_derivative' : gen_evaluate_2nd_deriv(f, df, ddf),
-  'evaluate_func_3rd_derivative' : gen_evaluate_3rd_deriv(f, df, ddf, d3f),
-  'evaluate_parameter_derivative' : gen_evaluate_parameter_derivatives(variational_parameters, param_derivs),
-  'evaluate_all_parameter_derivatives' : gen_evaluate_all_parameter_derivatives(variational_parameters, param_derivs),
-  'xml_input' : gen_xml_input(variational_parameters, input_parameters),
-  'reset_parameters' : gen_reset_parameters(variational_parameters)
-}
+def run_all(f, variational_parameters, input_parameters, cusp_param):
+  print("Input for radial Jastrow:")
+  print(f)
 
-run_template('UserFunctor.h.in', '../UserFunctor.h', bodies)
+  check_free_symbols(f, variational_parameters, input_parameters)
 
-gen_example_xml_input(variational_parameters, input_parameters, cusp_param)
+  # Compute radial derivatives
+
+  df = diff(f, r)
+  ddf = diff(f, r, 2)
+  d3f = diff(f, r, 3)
+
+  print()
+  print("Cusp (df/dr at r = 0) = ",df.subs(r,0))
+  print()
+
+  param_derivs = dict()
+  for vp in variational_parameters:
+    pd_f = diff(f, vp)
+    pd_df = diff(df, vp)
+    pd_ddf = diff(ddf, vp)
+    param_derivs[vp] = (pd_f, pd_df, pd_ddf)
+
+  bodies = {
+    'dire_codegen_warning' : dire_codegen_text,
+    'func_str' : gen_func_str(f),
+    'param_defs' : gen_param_defs(variational_parameters, input_parameters),
+    'set_cusp' : gen_set_cusp(cusp_param),
+    'evaluate_func' : gen_evaluate(f),
+    'evaluate_func_2nd_derivative' : gen_evaluate_2nd_deriv(f, df, ddf),
+    'evaluate_func_3rd_derivative' : gen_evaluate_3rd_deriv(f, df, ddf, d3f),
+    'evaluate_parameter_derivative' : gen_evaluate_parameter_derivatives(variational_parameters, param_derivs),
+    'evaluate_all_parameter_derivatives' : gen_evaluate_all_parameter_derivatives(variational_parameters, param_derivs),
+    'xml_input' : gen_xml_input(variational_parameters, input_parameters),
+    'reset_parameters' : gen_reset_parameters(variational_parameters)
+  }
+
+  run_template('UserFunctor.h.in', '../UserFunctor.h', bodies)
+
+  gen_example_xml_input(variational_parameters, input_parameters, cusp_param)
+
+
+if __name__ == '__main__':
+  run_all(f, variational_parameters, input_parameters, cusp_param)
