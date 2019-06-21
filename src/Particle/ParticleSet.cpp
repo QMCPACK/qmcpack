@@ -349,17 +349,9 @@ int ParticleSet::addTable(const ParticleSet& psrc, int dt_type, bool need_full_t
     tid = DistTables.size();
     int dt_type_in_use = (tid == 0 ? dt_type : DistTables[0]->DTType);
     if (myName == psrc.getName())
-    {
       DistTables.push_back(createDistanceTable(*this, dt_type_in_use, description));
-      //if (tid != 0)
-      //  throw std::runtime_error("ParticleSet::addTable AA table is not DistTables[0]\n");
-    }
     else
-    {
       DistTables.push_back(createDistanceTable(psrc, *this, dt_type_in_use, description));
-      //if (tid == 0)
-      //  throw std::runtime_error("ParticleSet::addTable non AA table should not be DistTables[0]\n");
-    }
     distTableDescriptions.push_back(description.str());
     myDistTableMap[psrc.getName()] = tid;
     DistTables[tid]->ID            = tid;
@@ -372,24 +364,6 @@ int ParticleSet::addTable(const ParticleSet& psrc, int dt_type, bool need_full_t
   }
   DistTables[tid]->Need_full_table_loadWalker = (DistTables[tid]->Need_full_table_loadWalker || need_full_table_loadWalker);
   app_log().flush();
-  return tid;
-}
-
-int ParticleSet::getTable(const ParticleSet& psrc)
-{
-  int tid;
-  if (DistTables.empty())
-    tid = -1;
-  else if (psrc.getName() == myName)
-    tid = 0;
-  else
-  {
-    std::map<std::string, int>::iterator tit(myDistTableMap.find(psrc.getName()));
-    if (tit == myDistTableMap.end())
-      tid = -1;
-    else
-      tid = (*tit).second;
-  }
   return tid;
 }
 

@@ -107,8 +107,8 @@ TEST_CASE("distance_open_z", "[distance_table][xml]")
     for (int jat = 0; jat < electrons.getTotalNum(); jat++, idx++)
     {
       // note: target particle set is special (electrons in this case)
-      // int tid = target_pset.getTable(source_pset)
-      // DistanceTableData* dtable = target_pset.DistTables[tid]
+      // int tid = target_pset.addTable(source_pset, DT_AOS);
+      // const auto& dtable = target_pset.getDistTable(tid);
       // dtable.loc(source_ptcl_idx,target_ptcl_idx) !! source first target second !?
       double dist = dtable.r(dtable.loc(iat, jat));
       REQUIRE(dist == Approx(expect[idx]));

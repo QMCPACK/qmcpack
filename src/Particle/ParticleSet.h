@@ -253,19 +253,18 @@ public:
    */
   void checkBoundBox(RealType rb);
 
-  /**  add a distance table
+  /** add a distance table
    * @param psrc source particle set
    * @param dt_type distance table type
    * @param need_full_table_loadWalker if ture, fully computed in loadWalker()
    *
-   * Ensure that the distance for this-this is always created first.
+   * if this->myName == psrc.getName(), AA type. Otherwise, AB type.
    */
   int addTable(const ParticleSet& psrc, int dt_type, bool need_full_table_loadWalker = false);
 
-  /** returns index of a distance table, -1 if not present
-   * @param psrc source particle set
+  /** get a distance table by table_ID
    */
-  int getTable(const ParticleSet& psrc);
+  inline const DistanceTableData& getDistTable(int table_ID) const { return *DistTables[table_ID]; }
 
   /** reset all the collectable quantities during a MC iteration
    */
@@ -602,8 +601,6 @@ public:
   }
 
   inline int getNumDistTables() const { return DistTables.size(); }
-
-  inline const DistanceTableData& getDistTable(int table_ID) const { return *DistTables[table_ID]; }
 
 protected:
   /** map to handle distance tables

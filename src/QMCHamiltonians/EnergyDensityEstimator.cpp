@@ -78,7 +78,7 @@ bool EnergyDensityEstimator::put(xmlNodePtr cur)
   else
   {
     Pstatic      = get_particleset(stat);
-    dtable_index = Pdynamic->getTable(*Pstatic);
+    dtable_index = Pdynamic->addTable(*Pstatic, DT_AOS);
     Pref.resize(1);
     Pref[0] = Pstatic;
     nparticles += Pstatic->getTotalNum();
