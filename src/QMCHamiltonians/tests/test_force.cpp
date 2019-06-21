@@ -308,6 +308,7 @@ TEST_CASE("Ceperley Force", "[hamiltonian]")
     REQUIRE(force.c[i] == Approx(coeff[i]));
   }
 
+  ions.update();
   elec.update();
 
   force.evaluate(elec);
