@@ -47,9 +47,7 @@ void VirtualParticleSet::makeMoves(int jel, const ParticlePos_t& vitualPos, bool
   refPtcl       = jel;
   refSourcePtcl = iat;
   R             = vitualPos;
-  RSoA.copyIn(R);
-  for (int i = 0; i < DistTables.size(); i++)
-    DistTables[i]->evaluate(*this);
+  update();
   myTimers[1]->stop();
 }
 

@@ -44,6 +44,7 @@ void add_p_timer(std::vector<NewTimer*>& timers)
   timers.push_back(TimerManager.createTimer("ParticleSet::makeMoveOnSphere", timer_level_fine)); // timer for NLPP moves
   timers.push_back(TimerManager.createTimer("ParticleSet::donePbyP", timer_level_fine));         // timer for donePbyP
   timers.push_back(TimerManager.createTimer("ParticleSet::setActive", timer_level_fine));        // timer for setActive
+  timers.push_back(TimerManager.createTimer("ParticleSet::update", timer_level_fine));           // timer for update
 }
 
 ParticleSet::ParticleSet()
@@ -368,11 +369,13 @@ int ParticleSet::addTable(const ParticleSet& psrc, int dt_type, bool need_full_t
 
 void ParticleSet::update(bool skipSK)
 {
+  myTimers[4]->start();
   RSoA.copyIn(R);
   for (int i = 0; i < DistTables.size(); i++)
     DistTables[i]->evaluate(*this);
   if (!skipSK && SK)
     SK->UpdateAllPart(*this);
+  myTimers[4]->stop();
 
   activePtcl = -1;
 }
