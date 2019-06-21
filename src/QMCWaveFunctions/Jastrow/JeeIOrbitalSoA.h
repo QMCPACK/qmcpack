@@ -110,7 +110,7 @@ public:
   using FuncType = FT;
 
   JeeIOrbitalSoA(const ParticleSet& ions, ParticleSet& elecs, bool is_master = false)
-    : Ions(ions), NumVars(0), ei_Table_ID_(elecs.addTable(ions, DT_SOA, true)), ee_Table_ID_(elecs.addTable(elecs, DT_SOA))
+    : Ions(ions), NumVars(0), ee_Table_ID_(elecs.addTable(elecs, DT_SOA)), ei_Table_ID_(elecs.addTable(ions, DT_SOA, true))
   {
     ClassName = "JeeIOrbitalSoA";
     init(elecs);
