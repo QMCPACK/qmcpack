@@ -290,7 +290,6 @@ TEST_CASE("Ceperley Force", "[hamiltonian]")
   ion_species(pMembersizeIdx, pIdx) = 1;
   //ions.Lattice.copy(grid);
   //ions.createSK();
-
   ions.resetGroups();
 
   // The call to resetGroups is needed transfer the SpeciesSet

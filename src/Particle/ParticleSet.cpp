@@ -368,10 +368,7 @@ int ParticleSet::addTable(const ParticleSet& psrc, int dt_type, bool need_full_t
 
 void ParticleSet::update(bool skipSK)
 {
-#if !defined(ENABLE_SOA)
-  if (DistTables.size() && DistTables[0]->DTType == DT_SOA)
-#endif
-    RSoA.copyIn(R);
+  RSoA.copyIn(R);
   for (int i = 0; i < DistTables.size(); i++)
     DistTables[i]->evaluate(*this);
   if (!skipSK && SK)
