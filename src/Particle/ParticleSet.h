@@ -275,11 +275,6 @@ public:
    */
   void update(bool skipSK = false);
 
-  /**update the internal data with new position
-   *@param pos position vector assigned to R
-   */
-  void update(const ParticlePos_t& pos);
-
   /** create Structure Factor with PBCs
    */
   void createSK();
@@ -378,7 +373,7 @@ public:
 
   /** reject the move
    */
-  void rejectMove(Index_t iat);
+  void rejectMove(Index_t iat) { activePtcl = -1; }
 
   void initPropertyList();
   inline int addProperty(const std::string& pname) { return PropertyList.add(pname.c_str()); }
