@@ -18,7 +18,6 @@
 #include "Lattice/Uniform3DGridLayout.h"
 #include "Particle/ParticleSet.h"
 #include "Particle/DistanceTableData.h"
-#include "Particle/DistanceTable.h"
 #include "Particle/SymmetricDistanceTableData.h"
 #include "QMCApp/ParticleSetPool.h"
 #include "QMCHamiltonians/CoulombPBCAB.h"

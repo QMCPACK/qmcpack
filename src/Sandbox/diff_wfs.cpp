@@ -14,7 +14,6 @@
  */
 #include <Configuration.h>
 #include <Particle/ParticleSet.h>
-#include <Particle/DistanceTable.h>
 #include <OhmmsSoA/VectorSoaContainer.h>
 #include <Utilities/PrimeNumberSet.h>
 #include <random/random.hpp>
@@ -123,9 +122,8 @@ int main(int argc, char** argv)
     ParticleSet els_aos(els);
 
     //create tables
-    DistanceTableData* d_ee=DistanceTable::add(els,DT_SOA);
-
-    DistanceTableData* d_ee_aos=DistanceTable::add(els_aos,DT_AOS);
+    DistanceTableData* d_ee = els.DistTables[els.addTable(els, DT_SOA)];
+    DistanceTableData* d_ee_aos = els_aos.DistTables[els_aos.addTable(els_aos, DT_AOS)];
 
     ParticlePos_t delta(nels);
 
@@ -138,7 +136,7 @@ int main(int argc, char** argv)
     SoAWaveFunction J(ions,els);
     AoSWaveFunction J_aos(ions,els_aos);
 
-    DistanceTableData* d_ie=DistanceTable::add(ions,els,DT_SOA);
+    DistanceTableData* d_ie = els.DistTables[els.addTable(ions, DT_SOA)];
 
     constexpr RealType czero(0);
 

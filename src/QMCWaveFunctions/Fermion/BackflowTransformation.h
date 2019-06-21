@@ -70,7 +70,7 @@ public:
   ParticleSet QP;
 
   /// Distance Table
-  DistanceTableData* myTable;
+  const int myTableIndex_;
 
   // number of variational parameters
   int numParams;
@@ -150,23 +150,9 @@ public:
 
   opt_variables_type myVars;
 
-  //    BackflowTransformation(ParticleSet& els, PtclPoolType& pool):
-  //      targetPtcl(els),QP(els),/*ptclPool(pool),*/cutOff(0.0) {
-  //      myTable = DistanceTable::add(els,els);
-  //      NumTargets=els.getTotalNum();
-  //      Bmat.resize(NumTargets);
-  //      Bmat_full.resize(NumTargets,NumTargets);
-  //      Amat.resize(NumTargets,NumTargets);
-  //      newQP.resize(NumTargets);
-  //      oldQP.resize(NumTargets);
-  //      indexQP.resize(NumTargets);
-  //      HESS_ID.diagonal(1.0);
-  //      DummyHess=0.0;
-  //      numVarBefore=0;
-  //    }
-  BackflowTransformation(ParticleSet& els) : targetPtcl(els), QP(els), cutOff(0.0)
+  BackflowTransformation(ParticleSet& els)
+    : targetPtcl(els), QP(els), cutOff(0.0), myTableIndex_(els.addTable(els, DT_AOS))
   {
-    myTable    = DistanceTable::add(els, DT_AOS);
     NumTargets = els.getTotalNum();
     Bmat.resize(NumTargets);
     Bmat_full.resize(NumTargets, NumTargets);
@@ -274,9 +260,6 @@ public:
   void resetTargetParticleSet(ParticleSet& P)
   {
     targetPtcl = P;
-    myTable    = DistanceTable::add(P, DT_AOS);
-    for (int i = 0; i < bfFuns.size(); i++)
-      bfFuns[i]->resetTargetParticleSet(P);
   }
 
 
@@ -364,10 +347,11 @@ public:
     activeParticle = iat;
     for (int i = 0; i < NumTargets; i++)
       oldQP[i] = newQP[i] = QP.R[i];
+    const auto& myTable = *P.DistTables[myTableIndex_];
 #ifdef ENABLE_SOA
-    newQP[iat] -= myTable->Temp_dr[iat];
+    newQP[iat] -= myTable.Temp_dr[iat];
 #else
-    newQP[iat] += myTable->Temp[iat].dr1;
+    newQP[iat] += myTable.Temp[iat].dr1;
 #endif
     indexQP.clear();
     for (int i = 0; i < bfFuns.size(); i++)
@@ -397,7 +381,7 @@ public:
     indexQP.clear();
     indexQP.push_back(iat); // set in the beginning by default
     for(int jat=0; jat<NumTargets; jat++) {
-      if(jat!=iat) // && myTable->Temp[jat].r1 < cutOff )
+      if(jat!=iat) // && myTable.Temp[jat].r1 < cutOff )
         indexQP.push_back(jat);
     }
     */
@@ -414,10 +398,11 @@ public:
     activeParticle = iat;
     for (int i = 0; i < NumTargets; i++)
       oldQP[i] = newQP[i] = QP.R[i];
+    const auto& myTable = *P.DistTables[myTableIndex_];
 #ifdef ENABLE_SOA
-    newQP[iat] -= myTable->Temp_dr[iat];
+    newQP[iat] -= myTable.Temp_dr[iat];
 #else
-    newQP[iat] += myTable->Temp[iat].dr1;
+    newQP[iat] += myTable.Temp[iat].dr1;
 #endif
     indexQP.clear();
     std::copy(FirstOfA, LastOfA, FirstOfA_temp);
@@ -442,7 +427,8 @@ public:
     activeParticle = iat;
     for (int i = 0; i < NumTargets; i++)
       oldQP[i] = newQP[i] = QP.R[i];
-    newQP[iat] += myTable->Temp[iat].dr1;
+    const auto& myTable = *P.DistTables[myTableIndex_];
+    newQP[iat] += myTable.Temp[iat].dr1;
     indexQP.clear();
     std::copy(FirstOfA, LastOfA, FirstOfA_temp);
     std::copy(FirstOfB, LastOfB, FirstOfB_temp);
@@ -747,10 +733,11 @@ public:
       dr[1] = 0.05;
       dr[2] = -0.3;
       P.makeMove(iat, dr);
-      app_log() << "Move: " << myTable->Temp[iat].dr1 << std::endl;
+      const auto& myTable = *P.DistTables[myTableIndex_];
+      app_log() << "Move: " << myTable.Temp[iat].dr1 << std::endl;
       app_log() << "cutOff: " << cutOff << std::endl;
       for (int jat = 0; jat < NumTargets; jat++)
-        app_log() << jat << "  " << myTable->Temp[jat].r1 << std::endl;
+        app_log() << jat << "  " << myTable.Temp[jat].r1 << std::endl;
       //evaluatePbyP(P,iat);
       evaluatePbyPWithGrad(P, iat);
       app_log() << "Moving: ";

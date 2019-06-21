@@ -18,7 +18,7 @@
 #include <Configuration.h>
 #include <Particle/VirtualParticleSet.h>
 #include <Particle/DistanceTableData.h>
-#include <Particle/DistanceTable.h>
+#include <Particle/createDistanceTable.h>
 
 namespace qmcplusplus
 {
