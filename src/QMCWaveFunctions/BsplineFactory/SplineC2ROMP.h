@@ -67,13 +67,7 @@ inline void assign_v(ST x,
     const size_t ji = jr + 1;
     //phase
     ST s, c, p = -(x * kx[j] + y * ky[j] + z * kz[j]);
-#ifdef __ibmxl__
-    // this is a workaround for IBM XL due to the lack of sincos in target region
-    s = std::sin(p);
-    c = std::cos(p);
-#else
     sincos(p, &s, &c);
-#endif
 
     const ST val_r        = val[jr];
     const ST val_i        = val[ji];
@@ -149,13 +143,7 @@ inline void assign_vgl(ST x,
 
     //phase
     ST s, c, p = -(x * kX + y * kY + z * kZ);
-#ifdef __ibmxl__
-    // this is a workaround for IBM XL due to the lack of sincos in target region
-    s = std::sin(p);
-    c = std::cos(p);
-#else
     sincos(p, &s, &c);
-#endif
 
     //dot(PrimLattice.G,myG[j])
     const ST dX_r = g00 * g0[jr] + g01 * g1[jr] + g02 * g2[jr];
