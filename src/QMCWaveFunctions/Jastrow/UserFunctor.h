@@ -280,10 +280,10 @@ struct UserFunctor : public OptimizableFunctorBase
         int i = 0;
         
         if (Opt_A)
-          A = myVars[i++] = active[ia++];
+          A = std::real(myVars[i++] = active[ia++]);
   
         if (Opt_B)
-          B = myVars[i++] = active[ia++];
+          B = std::real(myVars[i++] = active[ia++]);
   
       }
       reset();

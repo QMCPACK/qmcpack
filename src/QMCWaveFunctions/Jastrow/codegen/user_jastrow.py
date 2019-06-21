@@ -404,7 +404,7 @@ def gen_reset_parameters(param_list):
 
   set_param = """
         if (%(opt_var_name)s)
-          %(var_name)s = myVars[i++] = active[ia++];
+          %(var_name)s = std::real(myVars[i++] = active[ia++]);
   """
 
   set_param_str = ""
