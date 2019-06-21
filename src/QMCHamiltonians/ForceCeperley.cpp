@@ -25,7 +25,8 @@
 
 namespace qmcplusplus
 {
-ForceCeperley::ForceCeperley(ParticleSet& ions, ParticleSet& elns) : ForceBase(ions, elns)
+ForceCeperley::ForceCeperley(ParticleSet& ions, ParticleSet& elns)
+  : ForceBase(ions, elns), d_ei_ID(elns.addTable(ions, DT_SOA_PREFERRED))
 {
   ReportEngine PRE("ForceCeperley", "ForceCeperley");
   myName = "Ceperley_Force_Base";

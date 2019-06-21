@@ -20,7 +20,7 @@
 namespace qmcplusplus
 {
 PulayForce::PulayForce(ParticleSet& ions, ParticleSet& elns, TrialWaveFunction& psi)
-    : ForceBase(ions, elns), Ions(ions), Electrons(elns), Psi(psi)
+    : ForceBase(ions, elns), Ions(ions), Electrons(elns), Psi(psi), d_ei_ID(elns.addTable(ions, DT_AOS))
 {
   GradLogPsi.resize(Nnuc);
   EGradLogPsi.resize(Nnuc);

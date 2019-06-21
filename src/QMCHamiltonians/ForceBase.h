@@ -27,7 +27,6 @@ struct ForceBase
   typedef QMCTraits::RealType real_type;
 
   int FirstForceIndex;
-  const int d_ei_ID;
   int Nnuc;
   int Nel;
   int tries;
@@ -84,6 +83,10 @@ struct ForceBase
 
 struct BareForce : public QMCHamiltonianBase, public ForceBase
 {
+private:
+  const int d_ei_ID;
+
+public:
   BareForce(ParticleSet& ions, ParticleSet& elns);
   void resetTargetParticleSet(ParticleSet& P);
 

@@ -27,7 +27,7 @@
 namespace qmcplusplus
 {
 ForceBase::ForceBase(ParticleSet& ions, ParticleSet& elns)
-  : FirstForceIndex(-1), tries(0), Ions(ions), addionion(true), d_ei_ID(elns.addTable(ions, DT_SOA_PREFERRED))
+  : FirstForceIndex(-1), tries(0), Ions(ions), addionion(true)
 {
   ReportEngine PRE("ForceBase", "ForceBase");
   FirstTime    = true;
@@ -135,7 +135,8 @@ void ForceBase::setParticleSetStress(QMCTraits::PropertySetType& plist, int offs
   }
 }
 
-BareForce::BareForce(ParticleSet& ions, ParticleSet& elns) : ForceBase(ions, elns)
+BareForce::BareForce(ParticleSet& ions, ParticleSet& elns)
+  : ForceBase(ions, elns), d_ei_ID(elns.addTable(ions, DT_AOS))
 {
   myName = "HF_Force_Base";
   prefix = "HFBase";

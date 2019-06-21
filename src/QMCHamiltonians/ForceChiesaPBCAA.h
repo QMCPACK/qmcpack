@@ -134,6 +134,7 @@ struct ForceChiesaPBCAA : public QMCHamiltonianBase, public ForceBase
 private:
   // AA table ID
   const int d_aa_ID;
+  const int d_ei_ID;
 };
 
 } // namespace qmcplusplus
