@@ -431,7 +431,7 @@ template<typename FT>
 inline void J2OrbitalSoA<FT>::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
 {
   const auto& d_table = P.getDistTable(my_table_ID_);
-  const auto dist                  = d_table.Temp_r.data();
+  const auto* restrict dist = d_table.Temp_r.data();
 
   for (int ig = 0; ig < NumGroups; ++ig)
   {
@@ -480,7 +480,7 @@ void J2OrbitalSoA<FT>::acceptMove(ParticleSet& P, int iat)
   computeU3(P, iat, d_table.Distances[iat], old_u.data(), old_du.data(), old_d2u.data());
   if (UpdateMode == ORB_PBYP_RATIO)
   { //ratio-only during the move; need to compute derivatives
-    const auto dist = d_table.Temp_r.data();
+    const auto* restrict dist = d_table.Temp_r.data();
     computeU3(P, iat, dist, cur_u.data(), cur_du.data(), cur_d2u.data());
   }
 
