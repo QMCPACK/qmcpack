@@ -9,22 +9,26 @@
 // File created by: Brett Van Der Goetz, bvdg@berkeley.edu, University of California at Berkeley
 //////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef QMCPLUSPLUS_COUNTING_FUNCTOR_H
-#define QMCPLUSPLUS_COUNTING_FUNCTOR_H
+#ifndef QMCPLUSPLUS_GAUSSIAN_FUNCTOR_H
+#define QMCPLUSPLUS_GAUSSIAN_FUNCTOR_H
 
 #include "OhmmsData/AttributeSet.h"
 #include <array>
 
 namespace qmcplusplus
 {
-// doesn't inherit from OptimizableFunctorBase since this is a function of the entire position vector
-template<class T>
-class GaussianFunctor : public QMCTraits
-{
-  typedef optimize::VariableSet::real_type real_type;
-  typedef optimize::VariableSet opt_variables_type;
 
-  // enumerations for axes and T parameters
+class GaussianFunctor 
+{
+  using RealType = QMCTraits::RealType;
+  using PosType = QMCTraits::PosType;
+  using GradType = QMCTraits::GradType;
+  using TensorType = QMCTraits::TensorType;
+
+  using real_type = optimize::VariableSet::real_type;
+  using opt_variables_type = optimize::VariableSet;
+
+  // enumerations for axis parameters
   enum A_vars
   {
     XX,
@@ -163,7 +167,7 @@ public:
 
   void reportStatus(std::ostream& os)
   {
-    os << "GaussianCountingFunctor::reportStatus begin" << std::endl;
+    os << "GaussianFunctor::reportStatus begin" << std::endl;
     os << "id: " << id << std::endl;
     os << "  A: ";
     for (int I = 0; I < 3; ++I)
@@ -183,13 +187,13 @@ public:
     os << "  opt_C: " << opt_C << std::endl;
     os << "  registered optimizable variables:" << std::endl;
     myVars.print(os);
-    os << "GaussianCountingFunctor::reportStatus end" << std::endl;
+    os << "GaussianFunctor::reportStatus end" << std::endl;
   }
 
-  GaussianFunctor<T>* makeClone(std::string fid) const
+  GaussianFunctor* makeClone(std::string fid) const
   {
-    app_log() << "  GaussianCountingFunctor::makeClone" << std::endl;
-    GaussianFunctor<T>* rptr = new GaussianFunctor<T>(fid);
+    app_log() << "  GaussianFunctor::makeClone" << std::endl;
+    GaussianFunctor* rptr = new GaussianFunctor(fid);
     for (int i = 0; i < A.size(); ++i)
       rptr->A[i] = A[i];
     for (int i = 0; i < B.size(); ++i)
@@ -224,7 +228,7 @@ public:
 
   bool put(xmlNodePtr cur)
   {
-    app_log() << "GaussianCountingFunctor::put" << std::endl;
+    app_log() << "GaussianFunctor::put" << std::endl;
     bool put_A = false, put_B = false, put_C = false, put_D = false, put_K = false;
     // alternate inputs
     std::array<RealType, 6> A_euler;
@@ -294,9 +298,9 @@ public:
     }
     // convert B <=> D
     if (put_B && put_D)
-      APP_ABORT("GaussianCountingFunctor::put: overdetermined: both B and D are specified");
+      APP_ABORT("GaussianFunctor::put: overdetermined: both B and D are specified");
     if (put_C && put_K)
-      APP_ABORT("GaussianCountingFunctor::put: overdetermined: both C and K are specified");
+      APP_ABORT("GaussianFunctor::put: overdetermined: both C and K are specified");
     // convert D,B using A
     if (put_D)
       d_to_b(D, A, B);
@@ -306,7 +310,7 @@ public:
     if (!(put_A && (put_B || put_D) && (put_C || put_K)))
     {
       std::ostringstream err;
-      err << "GaussianCountingFunctor::put:  required variable unspecified: ";
+      err << "GaussianFunctor::put:  required variable unspecified: ";
       err << "put_A: " << put_A << ", put_B: " << put_B << ", put_C: " << put_C << ", put_D: " << put_D
           << ", put_K: " << put_K << std::endl;
       //      APP_ABORT(err.str());
@@ -653,7 +657,7 @@ public:
       fgrad_vec.push_back(fgrad);
       flap_vec.push_back(flap);
     }
-    os << "CountingFunctor::evaluate_print: id: " << id << std::endl;
+    os << "GaussianFunctor::evaluate_print: id: " << id << std::endl;
     os << "r: ";
     std::copy(r_vec.begin(), r_vec.end(), std::ostream_iterator<PosType>(os, ", "));
     os << std::endl << "Ar: ";

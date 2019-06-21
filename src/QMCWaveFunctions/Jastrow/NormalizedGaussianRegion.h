@@ -13,26 +13,29 @@
 #define QMC_PLUS_PLUS_COUNTING_FUNCTOR_H
 
 #include "Configuration.h"
-#include "QMCWaveFunctions/Jastrow/CountingFunctor.h"
+#include "QMCWaveFunctions/Jastrow/GaussianFunctor.h"
 #include "Particle/ParticleSet.h"
 
 namespace qmcplusplus
 {
-// T is precision
 
-template<class T>
-class NormalizedGaussianRegion : public QMCTraits
+class NormalizedGaussianRegion
 {
 public:
-  typedef GaussianFunctor<T> FunctorType;
+
+  using RealType = QMCTraits::RealType;
+  using ValueType = QMCTraits::ValueType;
+  using GradType = QMCTraits::GradType;
+  using TensorType = QMCTraits::TensorType;
+
   // counting function pointers
-  std::vector<FunctorType*> C;
+  std::vector<GaussianFunctor*> C;
 
   RealType Nval_t;
 
   // reference gaussian id, pointer
   std::string Cref_id;
-  FunctorType* Cref;
+  GaussianFunctor* Cref;
 
   // number of electrons
   int num_els;
@@ -44,25 +47,25 @@ public:
   // value arrays
   Matrix<RealType> val;
   std::vector<RealType> sum;
-  Matrix<PosType> grad;
+  Matrix<GradType> grad;
   Matrix<RealType> lap;
   std::vector<RealType> Nval;
 
   // log values arrays
   Matrix<RealType> Lval;
-  Matrix<PosType> Lgrad;
+  Matrix<GradType> Lgrad;
   Matrix<RealType> Llap;
   std::vector<RealType> Lmax;
 
   // temporary value arrays
   std::vector<RealType> val_t;
   std::vector<RealType> sum_t;
-  std::vector<PosType> grad_t;
+  std::vector<GradType> grad_t;
   std::vector<RealType> lap_t;
 
   //memory for temporary log value arrays
   std::vector<RealType> Lval_t;
-  std::vector<PosType> Lgrad_t;
+  std::vector<GradType> Lgrad_t;
   std::vector<RealType> Llap_t;
   RealType Lmax_t;
 
@@ -71,14 +74,15 @@ public:
 
 public:
   NormalizedGaussianRegion(ParticleSet& P) { num_els = P.getTotalNum(); }
+  NormalizedGaussianRegion(int n) : num_els(n) { }
 
   const bool normalized = true; // flag for normalized regions
   int size() const { return num_regions; }
   const opt_variables_type& getVars(int I) { return C[I]->myVars; }
   int max_num_derivs() const
   {
-    auto comp         = [](FunctorType* a, FunctorType* b) { return a->myVars.size() < b->myVars.size(); };
-    FunctorType* Cmax = *(std::max_element(C.begin(), C.end(), comp));
+    auto comp         = [](GaussianFunctor* a, GaussianFunctor* b) { return a->myVars.size() < b->myVars.size(); };
+    GaussianFunctor* Cmax = *(std::max_element(C.begin(), C.end(), comp));
     return Cmax->myVars.size();
   }
 
@@ -87,7 +91,7 @@ public:
     return _dLval_saved[I * max_num_derivs() * num_els + p * num_els + i];
   }
 
-  void addFunc(FunctorType* func, std::string fid)
+  void addFunc(GaussianFunctor* func, std::string fid)
   {
     C_id.push_back(fid);
     C.push_back(func);
@@ -178,7 +182,7 @@ public:
     NormalizedGaussianRegion* cr = new NormalizedGaussianRegion(num_els);
     for (int i = 0; i < C.size(); ++i)
     {
-      FunctorType* Ci = C[i]->makeClone(C_id[i]);
+      GaussianFunctor* Ci = C[i]->makeClone(C_id[i]);
       cr->addFunc(Ci, C_id[i]);
     }
     cr->initialize();
@@ -239,7 +243,7 @@ public:
         val(I, i) = std::exp(Lval(I, i) - Lmax[i]);
         Nval[i] += val(I, i);
       }
-      PosType gLN_sum  = 0; // \sum\limits_I \nabla L_{Ii} N_{Ii}
+      GradType gLN_sum  = 0; // \sum\limits_I \nabla L_{Ii} N_{Ii}
       RealType lLN_sum = 0; // \sum\limits_I \nabla^2 L_{Ii} N_{Ii}
       // build normalized counting function value, intermediate values for gradient
       for (int I = 0; I < num_regions; ++I)
@@ -274,7 +278,7 @@ public:
     os << std::endl << "sum: ";
     std::copy(sum.begin(), sum.end(), std::ostream_iterator<RealType>(os, ", "));
     os << std::endl << "grad: ";
-    std::copy(grad.begin(), grad.end(), std::ostream_iterator<PosType>(os, ", "));
+    std::copy(grad.begin(), grad.end(), std::ostream_iterator<GradType>(os, ", "));
     os << std::endl << "lap: ";
     std::copy(lap.begin(), lap.end(), std::ostream_iterator<RealType>(os, ", "));
     os << std::endl << "Nval: ";
@@ -311,7 +315,7 @@ public:
       val_t[I] = std::exp(Lval_t[I] - Lmax_t);
       Nval_t += val_t[I];
     }
-    PosType gLN_sum_t  = 0; // \sum\limits_I \nabla L_{Ii} N_{Ii}
+    GradType gLN_sum_t  = 0; // \sum\limits_I \nabla L_{Ii} N_{Ii}
     RealType lLN_sum_t = 0; // \sum\limits_I \nabla^2 L_{Ii} N_{Ii}
     // build normalized counting function value, intermediate values for gradient
     for (int I = 0; I < num_regions; ++I)
@@ -343,7 +347,7 @@ public:
     os << std::endl << "sum_t: ";
     std::copy(sum_t.begin(), sum_t.end(), std::ostream_iterator<RealType>(os, ", "));
     os << std::endl << "grad_t: ";
-    std::copy(grad_t.begin(), grad_t.end(), std::ostream_iterator<PosType>(os, ", "));
+    std::copy(grad_t.begin(), grad_t.end(), std::ostream_iterator<GradType>(os, ", "));
     os << std::endl << "lap_t: ";
     std::copy(lap_t.begin(), lap_t.end(), std::ostream_iterator<RealType>(os, ", "));
     os << std::endl << "Nval_t: " << Nval_t;
@@ -379,7 +383,7 @@ public:
 
   void evaluateDerivatives(ParticleSet& P,
                            int I,
-                           Matrix<PosType>& FCgrad,
+                           Matrix<GradType>& FCgrad,
                            Matrix<RealType>& dNsum,
                            Matrix<ValueType>& dNggsum,
                            Matrix<RealType>& dNlapsum,
@@ -387,7 +391,7 @@ public:
   {
     evaluate(P);
     static std::vector<RealType> dLval;
-    static std::vector<PosType> dLgrad;
+    static std::vector<GradType> dLgrad;
     static std::vector<RealType> dLlap;
     static int mnd = max_num_derivs();
     dLval.resize(mnd);
@@ -406,7 +410,7 @@ public:
           RealType val_Ii = (I == J) - val(I, i);
 
           RealType dNval = val(J, i) * dLval[p] * val_Ii;
-          PosType dNgrad =
+          GradType dNgrad =
               grad(J, i) * dLval[p] * val_Ii + val(J, i) * dLgrad[p] * val_Ii - val(J, i) * dLval[p] * grad(I, i);
 
           RealType dNlap = lap(J, i) * dLval[p] * val_Ii + 2 * dot(grad(J, i), dLgrad[p]) * val_Ii -

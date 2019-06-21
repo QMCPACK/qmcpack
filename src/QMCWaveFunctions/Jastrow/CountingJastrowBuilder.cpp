@@ -30,8 +30,8 @@ CountingJastrowBuilder::CountingJastrowBuilder(ParticleSet& target, TrialWaveFun
 bool CountingJastrowBuilder::createCJ(xmlNodePtr cur)
 {
   ReportEngine PRE(ClassName, "createCJ(xmlNodePtr)");
-  using RegionType    = NormalizedGaussianRegion<RealType>;
-  using FunctorType   = typename RegionType::FunctorType;
+  using RegionType    = NormalizedGaussianRegion;
+  using FunctorType   = GaussianFunctor;
   using CJOrbitalType = CountingJastrow<RegionType>;
 
   SpeciesSet& species(targetPtcl.getSpeciesSet());
