@@ -17,7 +17,6 @@
 #define TWO_BODY_JASTROW_ORBITAL_BSPLINE_AOS_H
 
 #include "Particle/DistanceTableData.h"
-#include "Particle/DistanceTable.h"
 #include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbital.h"
 #include "QMCWaveFunctions/Jastrow/BsplineFunctor.h"
 #include "Configuration.h"

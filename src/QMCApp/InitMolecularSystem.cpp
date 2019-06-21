@@ -22,7 +22,6 @@
 #include "QMCApp/InitMolecularSystem.h"
 #include "QMCApp/ParticleSetPool.h"
 #include "OhmmsData/AttributeSet.h"
-#include "Particle/DistanceTable.h"
 #include "Particle/DistanceTableData.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 
@@ -95,9 +94,9 @@ void InitMolecularSystem::initMolecule(ParticleSet* ions, ParticleSet* els)
   if (ions->getTotalNum() == 1)
     return initAtom(ions, els);
 
-  DistanceTableData* d_ii = DistanceTable::add(*ions, DT_SOA_PREFERRED);
-  //d_ii->create(1);
-  d_ii->evaluate(*ions);
+  const int d_ii_ID = ions->addTable(*ions, DT_SOA_PREFERRED);
+  ions->update();
+  const auto& d_ii = *ions->DistTables[d_ii_ID];
   const ParticleSet::ParticleIndex_t& grID(ions->GroupID);
   SpeciesSet& Species(ions->getSpeciesSet());
   int Centers = ions->getTotalNum();
@@ -120,12 +119,12 @@ void InitMolecularSystem::initMolecule(ParticleSet* ions, ParticleSet* els)
   RealType rmin = cutoff;
   ParticleSet::SingleParticlePos_t cm;
 
-  if (d_ii->DTType == DT_SOA)
+  if (d_ii.DTType == DT_SOA)
   {
     for (size_t iat = 0; iat < Centers; iat++)
     {
       cm += ions->R[iat];
-      const RealType* restrict dist = d_ii->Distances[iat];
+      const RealType* restrict dist = d_ii.Distances[iat];
       for (size_t jat = iat + 1; jat < Centers; ++jat)
       {
         rmin = std::min(rmin, dist[jat]);
@@ -151,9 +150,9 @@ void InitMolecularSystem::initMolecule(ParticleSet* ions, ParticleSet* els)
     for (int iat = 0; iat < Centers; iat++)
     {
       cm += ions->R[iat];
-      for (int nn = d_ii->M[iat]; nn < d_ii->M[iat + 1]; nn++)
+      for (int nn = d_ii.M[iat]; nn < d_ii.M[iat + 1]; nn++)
       {
-        rmin = std::min(rmin, d_ii->r(nn));
+        rmin = std::min(rmin, d_ii.r(nn));
       }
       //use 40% of the minimum bond
       RealType sep = rmin * 0.4;
