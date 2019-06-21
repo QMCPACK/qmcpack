@@ -34,11 +34,7 @@ ZeroVarianceForce::ZeroVarianceForce(ParticleSet& ions, ParticleSet& elns, Trial
 }
 
 void ZeroVarianceForce::resetTargetParticleSet(ParticleSet& P)
-{
-  int tid = P.addTable(Ions, DT_AOS);
-  if (tid != d_ei_ID)
-    APP_ABORT("ZeroVarianceForce::resetTargetParticleSet found inconsistent table index");
-}
+{ }
 
 void ZeroVarianceForce::addObservables(PropertySetType& plist, BufferType& collectables)
 {

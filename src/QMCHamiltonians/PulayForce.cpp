@@ -28,11 +28,7 @@ PulayForce::PulayForce(ParticleSet& ions, ParticleSet& elns, TrialWaveFunction& 
 }
 
 void PulayForce::resetTargetParticleSet(ParticleSet& P)
-{
-  int tid = P.addTable(Ions, DT_AOS);
-  if (tid != d_ei_ID)
-    APP_ABORT("PulayForce::resetTargetParticleSet found inconsistent table index");
-}
+{ }
 
 void PulayForce::addObservables(PropertySetType& plist, BufferType& collectables)
 {

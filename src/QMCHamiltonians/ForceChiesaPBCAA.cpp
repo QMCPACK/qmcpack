@@ -343,11 +343,6 @@ bool ForceChiesaPBCAA::put(xmlNodePtr cur)
 
 void ForceChiesaPBCAA::resetTargetParticleSet(ParticleSet& P)
 {
-  int tid = P.addTable(PtclA, DT_AOS);
-  if (tid != d_ei_ID)
-  {
-    APP_ABORT("ForceChiesaPBCAA::resetTargetParticleSet found inconsistent table index");
-  }
   AB->resetTargetParticleSet(P);
 }
 
