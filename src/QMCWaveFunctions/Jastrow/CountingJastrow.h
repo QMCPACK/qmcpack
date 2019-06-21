@@ -258,10 +258,10 @@ public:
       os << "  debug_period: " << debug_period << std::endl;
     }
     os << "  Optimizable variables:" << std::endl;
-    myVars.print(os);
+//    myVars.print(os);
     os << std::endl;
     // print counting region status
-    C->reportStatus(os);
+//    C->reportStatus(os);
     app_log() << "CountingJastrow::reportStatus end" << std::endl;
   }
 
