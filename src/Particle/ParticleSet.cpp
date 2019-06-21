@@ -336,7 +336,7 @@ void ParticleSet::checkBoundBox(RealType rb)
 int ParticleSet::addTable(const ParticleSet& psrc, int dt_type, bool need_full_table_loadWalker)
 {
   if (myName == "none" || psrc.getName() == "none")
-    APP_ABORT("ParticleSet::addTable needs a proper name for this particle set.");
+    APP_ABORT("ParticleSet::addTable needs proper names for both source and target particle sets.");
 
   if (DistTables.size() > 0 && dt_type != DT_SOA_PREFERRED && !DistTables[0]->is_same_type(dt_type))
     APP_ABORT("ParticleSet::addTable Cannot mix AoS and SoA distance tables.\n");
