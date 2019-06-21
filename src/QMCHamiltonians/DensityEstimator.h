@@ -32,17 +32,6 @@ public:
   int potentialIndex;
   void resetTargetParticleSet(ParticleSet& P);
 
-  ///For Potential
-  RealType evalSR(ParticleSet& P, int ipart);
-  RealType evalLR(ParticleSet& P, int iat);
-  void InitPotential(ParticleSet& P);
-  std::vector<RealType> Zat, Zspec;
-  RadFunctorType* rVs;
-  int NumSpecies;
-  int NumCenters;
-  LRHandlerType* AA;
-  ///done for potential
-
   Return_t evaluate(ParticleSet& P);
   void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy);
 
@@ -82,8 +71,6 @@ private:
   TinyVector<RealType, OHMMS_DIM> density_max;
   ///name of the density data
   std::string prefix;
-  // AA table ID
-  const int d_aa_ID_;
   ///density
   //Array<RealType,OHMMS_DIM> density, Vavg;
   /** resize the internal data
