@@ -37,7 +37,7 @@ class DiffOneBodySpinJastrowOrbital : public DiffWaveFunctionComponent
   ///starting index
   int VarOffset;
   ///index of the table
-  int myTableIndex;
+  const int myTableIndex;
   ///reference to the ions
   const ParticleSet& CenterRef;
   ///variables handled by this orbital
@@ -55,9 +55,8 @@ class DiffOneBodySpinJastrowOrbital : public DiffWaveFunctionComponent
 public:
   ///constructor
   DiffOneBodySpinJastrowOrbital(const ParticleSet& centers, ParticleSet& els)
-      : Spin(false), CenterRef(centers), NumVars(0), VarOffset(0)
+      : Spin(false), CenterRef(centers), myTableIndex(els.addTable(ions, DT_SOA_PREFERRED)), NumVars(0), VarOffset(0)
   {
-    myTableIndex = els.addTable(CenterRef, DT_SOA_PREFERRED);
     NumPtcls     = els.getTotalNum();
     F.resize(CenterRef.groups(), els.groups());
     for (int i = 0; i < F.size(); ++i)
