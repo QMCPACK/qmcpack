@@ -151,7 +151,12 @@ public:
   opt_variables_type myVars;
 
   BackflowTransformation(ParticleSet& els)
-    : targetPtcl(els), QP(els), cutOff(0.0), myTableIndex_(els.addTable(els, DT_AOS))
+    : targetPtcl(els), QP(els), cutOff(0.0),
+#ifdef ENABLE_SOA
+      myTableIndex_(els.addTable(els, DT_SOA))
+#else
+      myTableIndex_(els.addTable(els, DT_AOS))
+#endif
   {
     NumTargets = els.getTotalNum();
     Bmat.resize(NumTargets);
