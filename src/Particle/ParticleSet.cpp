@@ -354,7 +354,6 @@ int ParticleSet::addTable(const ParticleSet& psrc, int dt_type, bool need_full_t
       DistTables.push_back(createDistanceTable(psrc, *this, dt_type_in_use, description));
     distTableDescriptions.push_back(description.str());
     myDistTableMap[psrc.getName()] = tid;
-    DistTables[tid]->ID            = tid;
     app_debug() << "  ... ParticleSet::addTable Create Table #" << tid << " " << DistTables[tid]->Name << std::endl;
   }
   else
