@@ -14,6 +14,12 @@ Once the functional form and parameters are specified in the script, run the scr
 The main output of the script is the file \texttt{src/QMCWaveFunctions/Jastrow/UserFunctor.h}.
 The script also prints information to the screen, and one section is a sample XML input block containing all the parameters.
 
+There is a unit test in \texttt{src/QMCWaveFunctions/test/test\_user\_jastrow.cpp} to perform
+some minimal testing of the Jastrow factor.   The unit test will need updating to properly test
+new functional forms.   Most of the changes relate to the number and name of variational 
+parameters.
+
+
 \begin{table}[h]
 \begin{center}
 \begin{tabular}{l c c c l }
