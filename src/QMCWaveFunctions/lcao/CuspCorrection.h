@@ -89,7 +89,7 @@ public:
     TinyVector<RealType, 3> dr = 0;
     dr[0]                      = r;
 
-    targetPtcl->R[0]             = sourcePtcl->R[curCenter];
+    targetPtcl->R[0] = sourcePtcl->R[curCenter];
     targetPtcl->makeMove(0, dr);
     Psi1->evaluate(*targetPtcl, 0, val1);
 
@@ -101,7 +101,7 @@ public:
     TinyVector<RealType, 3> dr = 0;
     dr[0]                      = r;
 
-    targetPtcl->R[0]             = sourcePtcl->R[curCenter];
+    targetPtcl->R[0] = sourcePtcl->R[curCenter];
     targetPtcl->makeMove(0, dr);
     Psi1->evaluate(*targetPtcl, 0, val1, grad1, lap1);
 
