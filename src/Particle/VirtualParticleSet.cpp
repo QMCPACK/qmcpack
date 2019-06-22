@@ -43,12 +43,10 @@ void VirtualParticleSet::makeMoves(int jel, const ParticlePos_t& vitualPos, bool
   if (sphere && iat < 0)
     APP_ABORT("VirtualParticleSet::makeMoves is invoked incorrectly, the flag sphere=true requires iat specified!");
   onSphere = sphere;
-  myTimers[1]->start();
   refPtcl       = jel;
   refSourcePtcl = iat;
   R             = vitualPos;
   update();
-  myTimers[1]->stop();
 }
 
 } // namespace qmcplusplus
