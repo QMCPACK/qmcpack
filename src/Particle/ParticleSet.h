@@ -317,30 +317,30 @@ public:
    */
   inline const PosType& activeR(int iat) const { return (activePtcl == iat) ? activePos : R[iat]; }
 
-  /**move a particle
-   *@param iat the index of the particle to be moved
-   *@param displ random displacement of the iat-th particle
+  /** move the iat-th particle to activePos
+   * @param iat the index of the particle to be moved
+   * @param displ the displacement of the iat-th particle position
    *
-   * Update activePos  by  R[iat]+displ
+   * Update activePtcl index and activePos position (R[iat]+displ) for a proposed move.
+   * Evaluate the related distance table data DistanceTableData::Temp.
    */
-  SingleParticlePos_t makeMove(Index_t iat, const SingleParticlePos_t& displ);
+  void makeMove(Index_t iat, const SingleParticlePos_t& displ);
 
-  /** move a particle
+  /** move the iat-th particle to activePos
    * @param iat the index of the particle to be moved
    * @param displ random displacement of the iat-th particle
    * @return true, if the move is valid
+   *
+   * Update activePtcl index and activePos position (R[iat]+displ) for a proposed move.
+   * Evaluate the related distance table data DistanceTableData::Temp.
    */
   bool makeMoveAndCheck(Index_t iat, const SingleParticlePos_t& displ);
 
-
-  void makeMoveOnSphere(Index_t iat, const SingleParticlePos_t& displ);
-
-  /** Handles a virtual move for all the particles to ru.
-   * @param ru position in the reduced cordinate
+  /** Handles virtual moves for all the particles to a single newpos.
    *
-   * The data of the 0-th particle is overwritten by the new position
-   * and the rejectMove should be called for correct use.
-   * See QMCHamiltonians::MomentumEstimator
+   * The state activePtcl remains -1 and rejectMove is not needed.
+   * acceptMove can not be used.
+   * See QMCHamiltonians::MomentumEstimator as an example
    */
   void makeVirtualMoves(const SingleParticlePos_t& newpos);
 
@@ -611,8 +611,18 @@ protected:
   /// Descriptions from distance table creation.  Same order as DistTables.
   std::vector<std::string> distTableDescriptions;
 
+  enum PSTimers
+  {
+    PS_newpos,
+    PS_donePbyP,
+    PS_setActive,
+    PS_update
+  };
 
-  std::vector<NewTimer*> myTimers;
+  static const TimerNameList_t<PSTimers> PSTimerNames;
+
+  TimerList_t myTimers;
+
   SingleParticlePos_t myTwist;
 
   std::string ParentName;
@@ -622,6 +632,14 @@ protected:
 
   ///array to handle a group of distinct particles per species
   ParticleIndex_t SubPtcl;
+
+  /** compute temporal DistTables and SK for a new particle position
+   *
+   * @param iat the particle that is moved on a sphere
+   * @param newpos a new particle position
+   */
+  void computeNewPosDistTablesAndSK(Index_t iat, const SingleParticlePos_t& newpos);
+
 };
 } // namespace qmcplusplus
 #endif

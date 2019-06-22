@@ -90,7 +90,7 @@ public:
     dr[0]                      = r;
 
     targetPtcl->R[0]             = sourcePtcl->R[curCenter];
-    TinyVector<RealType, 3> ddr2 = targetPtcl->makeMove(0, dr);
+    targetPtcl->makeMove(0, dr);
     Psi1->evaluate(*targetPtcl, 0, val1);
 
     return val1[curOrb];
@@ -102,7 +102,7 @@ public:
     dr[0]                      = r;
 
     targetPtcl->R[0]             = sourcePtcl->R[curCenter];
-    TinyVector<RealType, 3> ddr2 = targetPtcl->makeMove(0, dr);
+    targetPtcl->makeMove(0, dr);
     Psi1->evaluate(*targetPtcl, 0, val1, grad1, lap1);
 
     val  = val1[curOrb];
