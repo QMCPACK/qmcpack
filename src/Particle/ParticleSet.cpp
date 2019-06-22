@@ -457,7 +457,24 @@ bool ParticleSet::makeMoveAndCheck(Index_t iat, const SingleParticlePos_t& displ
   }
 }
 
-bool ParticleSet::makeMove(const Walker_t& awalker, const ParticlePos_t& deltaR, RealType dt)
+/** move the iat-th particle by displ
+ *
+ * @param iat the particle that is moved on a sphere
+ * @param displ displacement from the current position
+ */
+void ParticleSet::makeMoveOnSphere(Index_t iat, const SingleParticlePos_t& displ)
+{
+  myTimers[1]->start();
+  activePtcl = iat;
+  activePos  = R[iat] + displ;
+  for (int i = 0; i < DistTables.size(); ++i)
+    DistTables[i]->moveOnSphere(*this, activePos);
+  if (SK && SK->DoUpdate)
+    SK->makeMove(iat, R[iat]);
+  myTimers[1]->stop();
+}
+
+bool ParticleSet::makeMoveAllParticles(const Walker_t& awalker, const ParticlePos_t& deltaR, RealType dt)
 {
   activePtcl = -1;
   if (UseBoundBox)
@@ -489,7 +506,7 @@ bool ParticleSet::makeMove(const Walker_t& awalker, const ParticlePos_t& deltaR,
   return true;
 }
 
-bool ParticleSet::makeMove(const Walker_t& awalker, const ParticlePos_t& deltaR, const std::vector<RealType>& dt)
+bool ParticleSet::makeMoveAllParticles(const Walker_t& awalker, const ParticlePos_t& deltaR, const std::vector<RealType>& dt)
 {
   activePtcl = -1;
   if (UseBoundBox)
@@ -528,7 +545,7 @@ bool ParticleSet::makeMove(const Walker_t& awalker, const ParticlePos_t& deltaR,
  * @param dt timestep
  * @return true, if all the particle moves are legal under the boundary conditions
  */
-bool ParticleSet::makeMoveWithDrift(const Walker_t& awalker,
+bool ParticleSet::makeMoveAllParticlesWithDrift(const Walker_t& awalker,
                                     const ParticlePos_t& drift,
                                     const ParticlePos_t& deltaR,
                                     RealType dt)
@@ -563,7 +580,7 @@ bool ParticleSet::makeMoveWithDrift(const Walker_t& awalker,
   return true;
 }
 
-bool ParticleSet::makeMoveWithDrift(const Walker_t& awalker,
+bool ParticleSet::makeMoveAllParticlesWithDrift(const Walker_t& awalker,
                                     const ParticlePos_t& drift,
                                     const ParticlePos_t& deltaR,
                                     const std::vector<RealType>& dt)
@@ -598,24 +615,6 @@ bool ParticleSet::makeMoveWithDrift(const Walker_t& awalker,
     SK->UpdateAllPart(*this);
   //every move is valid
   return true;
-}
-
-
-/** move the iat-th particle by displ
- *
- * @param iat the particle that is moved on a sphere
- * @param displ displacement from the current position
- */
-void ParticleSet::makeMoveOnSphere(Index_t iat, const SingleParticlePos_t& displ)
-{
-  myTimers[1]->start();
-  activePtcl = iat;
-  activePos  = R[iat] + displ;
-  for (int i = 0; i < DistTables.size(); ++i)
-    DistTables[i]->moveOnSphere(*this, activePos);
-  if (SK && SK->DoUpdate)
-    SK->makeMove(iat, R[iat]);
-  myTimers[1]->stop();
 }
 
 /** update the particle attribute by the proposed move
