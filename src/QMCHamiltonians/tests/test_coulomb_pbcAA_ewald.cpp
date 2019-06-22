@@ -35,7 +35,7 @@ TEST_CASE("Coulomb PBC A-A Ewald3D", "[hamiltonian]")
   OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
-  PtclOnLatticeTraits::ParticleLayout_t Lattice;
+  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM, OHMMS_ORTHO> Lattice;
   Lattice.BoxBConds = true; // periodic
   Lattice.R.diagonal(1.0);
   Lattice.reset();
@@ -82,7 +82,7 @@ TEST_CASE("Coulomb PBC A-A BCC H Ewald3D", "[hamiltonian]")
   OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
-  PtclOnLatticeTraits::ParticleLayout_t Lattice;
+  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM, OHMMS_ORTHO> Lattice;
   Lattice.BoxBConds = true; // periodic
   Lattice.R.diagonal(3.77945227);
   Lattice.reset();
@@ -132,7 +132,7 @@ TEST_CASE("Coulomb PBC A-A elec Ewald3D", "[hamiltonian]")
   OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
-  PtclOnLatticeTraits::ParticleLayout_t Lattice;
+  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM, OHMMS_ORTHO> Lattice;
   Lattice.BoxBConds = true; // periodic
   Lattice.R.diagonal(1.0);
   Lattice.reset();

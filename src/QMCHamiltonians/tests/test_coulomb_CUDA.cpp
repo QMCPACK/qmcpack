@@ -39,7 +39,7 @@ TEST_CASE("Coulomb PBC A-B CUDA", "[hamiltonian][CUDA]")
   OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
-  PtclOnLatticeTraits::ParticleLayout_t Lattice;
+  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM, OHMMS_ORTHO> Lattice;
   Lattice.BoxBConds = true; // periodic
   Lattice.R.diagonal(1.0);
   Lattice.reset();
@@ -107,7 +107,7 @@ TEST_CASE("Coulomb PBC AB CUDA BCC H", "[hamiltonian][CUDA]")
   OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
-  PtclOnLatticeTraits::ParticleLayout_t Lattice;
+  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM, OHMMS_ORTHO> Lattice;
   Lattice.BoxBConds = true; // periodic
   Lattice.R.diagonal(3.77945227);
   Lattice.reset();
@@ -197,7 +197,7 @@ TEST_CASE("Coulomb PBC A-A CUDA BCC H", "[hamiltonian][CUDA]")
   OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
-  PtclOnLatticeTraits::ParticleLayout_t Lattice;
+  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM, OHMMS_ORTHO> Lattice;
   Lattice.BoxBConds = true; // periodic
   Lattice.R.diagonal(3.77945227);
   Lattice.reset();

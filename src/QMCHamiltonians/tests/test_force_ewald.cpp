@@ -38,7 +38,7 @@ TEST_CASE("Chiesa Force BCC H Ewald3D", "[hamiltonian]")
   OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
-  PtclOnLatticeTraits::ParticleLayout_t Lattice;
+  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM, OHMMS_ORTHO> Lattice;
   Lattice.BoxBConds = true; // periodic
   Lattice.R.diagonal(3.77945227);
   Lattice.LR_dim_cutoff = 40;

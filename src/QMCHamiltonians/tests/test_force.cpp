@@ -152,7 +152,7 @@ TEST_CASE("Chiesa Force", "[hamiltonian]")
   OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
-  PtclOnLatticeTraits::ParticleLayout_t Lattice;
+  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM, OHMMS_ORTHO> Lattice;
   Lattice.BoxBConds = true; // periodic
   Lattice.R.diagonal(5.0);
   Lattice.reset();
@@ -252,7 +252,7 @@ TEST_CASE("Ceperley Force", "[hamiltonian]")
   OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
-  //PtclOnLatticeTraits::ParticleLayout_t Lattice;
+  //CrystalLattice<OHMMS_PRECISION, OHMMS_DIM, OHMMS_ORTHO> Lattice;
   //Lattice.BoxBConds = false; // periodic
   //Lattice.R.diagonal(5.0);
   //Lattice.reset();

@@ -132,7 +132,7 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
 
   //Cell definition:
 
-  PtclOnLatticeTraits::ParticleLayout_t Lattice;
+  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM, OHMMS_ORTHO> Lattice;
   Lattice.BoxBConds = true; // periodic
   Lattice.R.diagonal(20);
   Lattice.LR_dim_cutoff = 15;

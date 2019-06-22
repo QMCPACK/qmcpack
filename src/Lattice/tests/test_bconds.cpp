@@ -98,7 +98,7 @@ TEST_CASE("periodic_bulk_bconds", "[lattice]")
 
 TEST_CASE("uniform 3D Lattice layout", "[lattice]")
 {
-  PtclOnLatticeTraits::ParticleLayout_t Lattice;
+  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM, OHMMS_ORTHO> Lattice;
   Lattice.BoxBConds = true; // periodic
 
   Lattice.R.diagonal(1.0);
