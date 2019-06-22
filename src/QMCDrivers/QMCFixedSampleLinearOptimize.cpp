@@ -69,7 +69,7 @@ QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(MCWalkerConfiguration
       stabilizerScale(2.0),
       bigChange(50),
       w_beta(0.0),
-      MinMethod("OneShiftOnly"),
+      //MinMethod("OneShiftOnly"),
       GEVtype("mixed"),
       StabilizerMethod("best"),
       GEVSplit("no"),
@@ -152,9 +152,9 @@ QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(MCWalkerConfiguration
   m_param.add(Orb_num,"Orb_num","int");
 
 
-  m_param.add(descent_len,"descent_length","int");
-  m_param.add(blm_len,"BLM_length","int");
-  m_param.add(hybrid_descent_samples,"Hybrid_Descent_samples","int");
+  //m_param.add(descent_len,"descent_length","int");
+  //m_param.add(blm_len,"BLM_length","int");
+  //m_param.add(hybrid_descent_samples,"Hybrid_Descent_samples","int");
 
   m_param.add(on_reset,"reset","string");
   m_param.add(retainMem,"retain_mem","string");
@@ -512,6 +512,10 @@ bool QMCFixedSampleLinearOptimize::put(xmlNodePtr q)
   tolower(block_lmStr);
   block_lm = (block_lmStr == "yes");
 
+  app_log() << "This is MinMethod inside FixedSampleLinearOptimize: " << MinMethod << std::endl;
+ app_log() << "This is descent_len inside FixedSampleLinearOptimize: " << descent_len << std::endl;
+ app_log() << "This is blm_len inside FixedSampleLinearOptimize: " << blm_len << std::endl;
+
   // get whether to use the adaptive three-shift version of the update
   doAdaptiveThreeShift = (MinMethod == "adaptive");
   doOneShiftOnly       = (MinMethod == "OneShiftOnly");
@@ -547,7 +551,7 @@ bool QMCFixedSampleLinearOptimize::put(xmlNodePtr q)
     throw std::runtime_error("shift_s must be positive in QMCFixedSampleLinearOptimize::put");
 
   // if this is the first time this function has been called, set the initial shifts
-  if (bestShift_i < 0.0 && doAdaptiveThreeShift)
+  if (bestShift_i < 0.0 && (doAdaptiveThreeShift || doHybrid))
     bestShift_i = shift_i_input;
   if (doOneShiftOnly)
     bestShift_i = shift_i_input;
@@ -869,21 +873,14 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
   // remember what the cost function grads flag was
   const bool saved_grads_flag = optTarget->getneedGrads();
 
-  /*
-  int init_num_samp;
-  if(doHybrid)
-  {
-   init_num_samp = hybrid_blm_samples;
-  optTarget->setNumSamples(hybrid_blm_samples);
-  }
-  else
-  {
-  // remember the initial number of samples
-  init_num_samp = optTarget->getNumSamples();
-  }
-  */
+  
 
   const int init_num_samp = optTarget->getNumSamples();
+
+  app_log() << "This is input s shift: " << shift_s_input << std::endl;
+  app_log() << "This is input i shift: " << shift_i_input << std::endl;
+  app_log() << "This is initial best s shift: " << bestShift_s << std::endl;
+  app_log() << "This is initial best i shift: " << bestShift_i << std::endl;
 
   // the index of central shift
   const int central_index = num_shifts / 2;
@@ -900,6 +897,9 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
 
   // ensure the cost function is set to compute derivative vectors
   optTarget->setneedGrads(true);
+
+  app_log() << "This is s shift: " << bestShift_s << std::endl;
+  app_log() << "This is i shift: " << bestShift_i << std::endl;
 
   // prepare previous updates
   int count = 0;
@@ -2098,21 +2098,24 @@ bool QMCFixedSampleLinearOptimize::hybrid_run()
         descentCount++;
         totalCount++;
         app_log() << "Should be on descent step# " << descentCount -1  << " of macro-iteration. Total steps: " << totalCount << std::endl;
+        optTarget->setNumSamples(hybrid_descent_samples);
         return descent_run();
     }
     else
     {
-        descentCount = 0;
+        //descentCount = 0;
         if(blmCount < blm_len)
         {
             blmCount++;
             totalCount++;
             app_log() << "Should be on blm step# " << blmCount -1  << " of macro-iteration. Total steps: " << totalCount << std::endl;
+            optTarget->setNumSamples(10^6);
             return adaptive_three_shift_run();
         
         }
         else
         {
+            descentCount = 0;
             blmCount = 0;
             descentCount++;
             totalCount++;

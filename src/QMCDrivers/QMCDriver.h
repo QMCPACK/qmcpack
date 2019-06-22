@@ -282,9 +282,14 @@ protected:
   ///target population
   RealType nTargetPopulation;
 
+  RealType otherTargetPopulation;
   std::string MinMethod;
   int descent_len;
   int blm_len;
+  int stepCounter;
+
+  bool just_changed;
+  bool on_hybrid_descent;
 
   ///timestep
   RealType Tau;

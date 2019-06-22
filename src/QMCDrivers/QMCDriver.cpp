@@ -133,23 +133,15 @@ QMCDriver::QMCDriver(MCWalkerConfiguration& w,
   app_log() << "This is descent_len: " << descent_len << std::endl;
   app_log() << "This is blm_len: " << blm_len << std::endl;
 
-  if(MinMethod == "hybrid")
-  {
-      bool on_hybrid_descent = (CurrentStep - blm_len) % descent_len < descent_len;
-      if(on_hybrid_descent)
-      {
-          app_log() << "Using samples for descent" << std::endl;
-          m_param.add(nTargetPopulation, "Hybrid_Descent_Samples", "real");
-      }
-      else
-      {
-          m_param.add(nTargetPopulation, "samples", "real");
-      }
-  }
-  else
-  {
-    m_param.add(nTargetPopulation, "samples", "real");
-  }
+  m_param.add(nTargetPopulation, "samples", "real");
+
+  stepCounter = 0;
+
+  m_param.add(otherTargetPopulation, "Hybrid_Descent_Samples", "real");
+  // m_param.add(nTargetPopulation, "Hybrid_Descent_Samples", "real");
+
+  app_log() << "This is nTargetPopulation inside QMCDriver: " << nTargetPopulation << std::endl;
+ 
 
   Tau = 0.1;
   //m_param.add(Tau,"timeStep","AU");
@@ -221,6 +213,8 @@ void QMCDriver::add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi)
  */
 void QMCDriver::process(xmlNodePtr cur)
 {
+    app_log() << "This is nTargetPopulation inside QMCDriver process: " << nTargetPopulation << std::endl;
+
   deltaR.resize(W.getTotalNum());
   drift.resize(W.getTotalNum());
   qmcNode = cur;
@@ -537,6 +531,8 @@ bool QMCDriver::finalize(int block, bool dumpwalkers)
  */
 void QMCDriver::addWalkers(int nwalkers)
 {
+
+  app_log() << "This is nTargetPopulation at start of QMCDriver addWalkers: " << nTargetPopulation << std::endl;
   if (nwalkers > 0)
   {
     //add nwalkers walkers to the end of the ensemble
@@ -561,6 +557,8 @@ void QMCDriver::addWalkers(int nwalkers)
     app_log() << "  Using the current " << W.getActiveWalkers() << " walkers." << std::endl;
   }
   setWalkerOffsets();
+
+  app_log() << "This is nTargetPopulation at end of QMCDriver addWalkers: " << nTargetPopulation << std::endl;
   ////update the global number of walkers
   ////int nw=W.getActiveWalkers();
   ////myComm->allreduce(nw);
@@ -598,6 +596,11 @@ void QMCDriver::setWalkerOffsets()
  */
 bool QMCDriver::putQMCInfo(xmlNodePtr cur)
 {
+    app_log() << "This is nTargetPopulation at start of QMCDriver putQMCInfo: " << nTargetPopulation << std::endl;
+app_log() << "This is MinMethod at start of QMCDriver putQMCInfo: " << MinMethod << std::endl;
+  app_log() << "This is descent_len at start of QMCDriver putQMCInfo: " << descent_len << std::endl;
+  app_log() << "This is blm_len at start of QMCDriver putQMCInfo: " << blm_len << std::endl;
+
   if (!IsQMCDriver)
   {
     app_log() << getName() << "  Skip QMCDriver::putQMCInfo " << std::endl;
@@ -675,13 +678,58 @@ bool QMCDriver::putQMCInfo(xmlNodePtr cur)
   if (!AppendRun)
     CurrentStep = 0;
 
+ 
+  //nTargetSamples = nTargetPopulation;
+  app_log() << "This is nTargetPopulation at end of putQMCInfo: " << nTargetPopulation << std::endl;
+  app_log() << "This is nTargetSamples at end of putQMCInfo: " << nTargetSamples << std::endl;
+app_log() << "This is MinMethod at end of QMCDriver putQMCInfo: " << MinMethod << std::endl;
+  app_log() << "This is descent_len at end of QMCDriver putQMCInfo: " << descent_len << std::endl;
+  app_log() << "This is blm_len at end of QMCDriver putQMCInfo: " << blm_len << std::endl;
+
+  if(MinMethod == "hybrid")
+  {
+      app_log() << "This is current step: " << stepCounter << std::endl;
+     int lhs = stepCounter  % (descent_len +blm_len);
+    app_log() << "This is lhs: " << lhs << std::endl; 
+      on_hybrid_descent = lhs + blm_len < (descent_len+blm_len);
+     if (lhs == 100 || lhs == 0)
+     {
+        just_changed = true;
+        app_log() << "Just changed to different method" << std::endl;
+     } 
+     else
+     {
+        just_changed = false;
+     }
+      if(on_hybrid_descent)
+      {
+          app_log() << "Using samples for descent" << std::endl;
+          nTargetPopulation = otherTargetPopulation;
+          nTargetSamples = nTargetPopulation;
+          app_log() << "This is overwritten nTargetPopulation at end of putQMCInfo: " << nTargetPopulation << std::endl;
+          app_log() << "This is overwritten nTargetSamples at end of putQMCInfo: " << nTargetSamples << std::endl;
+      }
+/*      else
+      {
+          m_param.add(nTargetPopulation, "samples", "real");
+      }
+      */
+  }
+
+ ++stepCounter;
+
+
+ 
+  app_log() << "This is on_hybrid_descent before reset walkers check: " << on_hybrid_descent << std::endl;
   //if walkers are initialized via <mcwalkerset/>, use the existing one
-  if (qmc_common.qmc_counter || qmc_common.is_restart)
+  if ((qmc_common.qmc_counter || qmc_common.is_restart )&& (on_hybrid_descent))
   {
     app_log() << "Using existing walkers " << std::endl;
   }
   else
-  { //always reset the walkers
+  { 
+      app_log() << "Resetting walkers" << std::endl;
+      //always reset the walkers
 #ifdef QMC_CUDA
     int nths(1);
 #else
@@ -699,10 +747,11 @@ bool QMCDriver::putQMCInfo(xmlNodePtr cur)
     {
       ndiff = (nTargetWalkers) ? nTargetWalkers : defaultw;
     }
+   app_log() << "This is nTargetPopulation just before QMCDriver addWalkers: " << nTargetPopulation << std::endl; 
     addWalkers(ndiff);
   }
 
-  return (W.getActiveWalkers() > 0);
+   return (W.getActiveWalkers() > 0);
 }
 
 xmlNodePtr QMCDriver::getQMCNode()

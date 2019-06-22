@@ -115,7 +115,7 @@ private:
   int Max_iterations;
   int nstabilizers;
   RealType stabilizerScale, bigChange, exp0, exp1, stepsize, savedQuadstep;
-  std::string MinMethod, GEVtype, StabilizerMethod, GEVSplit;
+  std::string GEVtype, StabilizerMethod, GEVSplit;
   RealType w_beta;
   /// number of previous steps to orthogonalize to.
   int eigCG;
@@ -229,8 +229,8 @@ private:
   double Orb_eta;
   int Orb_num;
 
-  int descent_len;
-  int blm_len;
+  //int descent_len;
+  //int blm_len;
   int totalCount;
   int descentCount;
   int blmCount;
