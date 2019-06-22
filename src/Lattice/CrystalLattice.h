@@ -25,7 +25,6 @@
 #include <config/stdlib/math.h>
 #include <OhmmsPETE/TinyVector.h>
 #include <OhmmsPETE/Tensor.h>
-#include <Lattice/LatticeOperations.h>
 #include <Lattice/LRBreakupParameters.h>
 
 namespace qmcplusplus
@@ -167,11 +166,7 @@ struct CrystalLattice: public LRBreakupParameters<T, D, ORTHO>
   template<class T1>
   inline SingleParticlePos_t toUnit(const TinyVector<T1, D>& r) const
   {
-#ifdef OHMMS_LATTICEOPERATORS_H
-    return DotProduct<TinyVector<T1, D>, Tensor<T, D>, ORTHO>::apply(r, G);
-#else
     return dot(r, G);
-#endif
   }
 
   template<class T1>
@@ -193,11 +188,7 @@ struct CrystalLattice: public LRBreakupParameters<T, D, ORTHO>
   template<class T1>
   inline SingleParticlePos_t toCart(const TinyVector<T1, D>& c) const
   {
-#ifdef OHMMS_LATTICEOPERATORS_H
-    return DotProduct<TinyVector<T1, D>, Tensor<T, D>, ORTHO>::apply(c, R);
-#else
     return dot(c, R);
-#endif
   }
 
   /// return true if all the open direction of reduced coordinates u are in the range [0,1)
@@ -221,7 +212,12 @@ struct CrystalLattice: public LRBreakupParameters<T, D, ORTHO>
   inline void applyMinimumImage(TinyVector<T, D>& c) const
   {
     if (SuperCellEnum)
-      MinimumImageBConds<T, D>::apply(R, G, c);
+    {
+      TinyVector<T, D>  u = dot(c, G);
+      for (int i = 0; i < D; ++i)
+        u[i] = u[i] - round(u[i]);
+      c = dot(u, R);
+    }
   }
 
   /** evaluate the cartesian distance
@@ -234,11 +230,7 @@ struct CrystalLattice: public LRBreakupParameters<T, D, ORTHO>
    */
   inline T Dot(const SingleParticlePos_t& ra, const SingleParticlePos_t& rb) const
   {
-#ifdef OHMMS_LATTICEOPERATORS_H
-    return CartesianNorm2<TinyVector<T, D>, Tensor<T, D>, ORTHO>::apply(ra, M, rb);
-#else
     return dot(ra, dot(M, rb));
-#endif
   }
 
   /** conversion of a reciprocal-vector
@@ -247,11 +239,7 @@ struct CrystalLattice: public LRBreakupParameters<T, D, ORTHO>
   */
   inline SingleParticlePos_t k_cart(const SingleParticlePos_t& kin) const
   {
-#ifdef OHMMS_LATTICEOPERATORS_H
-    return TWOPI * DotProduct<SingleParticlePos_t, Tensor_t, ORTHO>::apply(G, kin);
-#else
     return TWOPI * dot(G, kin);
-#endif
   }
 
   /** conversion of a caresian reciprocal-vector to unit k-vector
@@ -260,11 +248,7 @@ struct CrystalLattice: public LRBreakupParameters<T, D, ORTHO>
   */
   inline SingleParticlePos_t k_unit(const SingleParticlePos_t& kin) const
   {
-#ifdef OHMMS_LATTICEOPERATORS_H
-    return DotProduct<SingleParticlePos_t, Tensor_t, ORTHO>::apply(R, kin) / TWOPI;
-#else
     return dot(R, kin) / TWOPI;
-#endif
   }
 
   /** evaluate \f$k^2\f$
@@ -274,11 +258,7 @@ struct CrystalLattice: public LRBreakupParameters<T, D, ORTHO>
    */
   inline T ksq(const SingleParticlePos_t& kin) const
   {
-#ifdef OHMMS_LATTICEOPERATORS_H
-    return CartesianNorm2<TinyVector<T, D>, Tensor<T, D>, ORTHO>::apply(kin, Mg, kin);
-#else
     return dot(kin, dot(Mg, kin));
-#endif
   }
 
   ///assignment operator

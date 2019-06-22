@@ -241,7 +241,7 @@ void ParticleSet::applyMinimumImage(ParticlePos_t& pinout)
   if (Lattice.SuperCellEnum == SUPERCELL_OPEN)
     return;
   for (int i = 0; i < pinout.size(); ++i)
-    MinimumImageBConds<RealType, DIM>::apply(Lattice.R, Lattice.G, pinout[i]);
+    Lattice.applyMinimumImage(pinout[i]);
 }
 
 void ParticleSet::convert2UnitInBox(const ParticlePos_t& pin, ParticlePos_t& pout)
