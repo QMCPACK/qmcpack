@@ -15,7 +15,6 @@
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/Tensor.h"
-#include "Lattice/Uniform3DGridLayout.h"
 #include "Particle/ParticleSet.h"
 #include "ParticleIO/ParticleLayoutIO.h"
 
@@ -48,14 +47,14 @@ TEST_CASE("read_lattice_xml", "[particle_io][xml]")
 
   xmlNodePtr root = doc.getRoot();
 
-  Uniform3DGridLayout ugrid;
-  LatticeParser lp(ugrid);
+  PtclOnLatticeTraits::ParticleLayout_t uLattice;
+  LatticeParser lp(uLattice);
   lp.put(root);
 
 
-  REQUIRE(ugrid.R[0] == Approx(3.8));
-  REQUIRE(ugrid.Volume == Approx(3.8 * 3.8 * 3.8));
+  REQUIRE(uLattice.R[0] == Approx(3.8));
+  REQUIRE(uLattice.Volume == Approx(3.8 * 3.8 * 3.8));
 
-  REQUIRE(ugrid.LR_dim_cutoff == Approx(20));
+  REQUIRE(uLattice.LR_dim_cutoff == Approx(20));
 }
 } // namespace qmcplusplus

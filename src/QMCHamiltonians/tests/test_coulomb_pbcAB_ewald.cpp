@@ -15,7 +15,6 @@
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "Lattice/ParticleBConds.h"
-#include "Lattice/Uniform3DGridLayout.h"
 #include "Particle/ParticleSet.h"
 #include "Particle/DistanceTableData.h"
 #include "Particle/SymmetricDistanceTableData.h"
@@ -37,10 +36,10 @@ TEST_CASE("Coulomb PBC A-B Ewald3D", "[hamiltonian]")
   OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
-  Uniform3DGridLayout grid;
-  grid.BoxBConds = true; // periodic
-  grid.R.diagonal(1.0);
-  grid.reset();
+  PtclOnLatticeTraits::ParticleLayout_t Lattice;
+  Lattice.BoxBConds = true; // periodic
+  Lattice.R.diagonal(1.0);
+  Lattice.reset();
 
 
   ParticleSet ions;
@@ -58,11 +57,11 @@ TEST_CASE("Coulomb PBC A-B Ewald3D", "[hamiltonian]")
   int pIdx                      = ion_species.addSpecies("H");
   int pChargeIdx                = ion_species.addAttribute("charge");
   ion_species(pChargeIdx, pIdx) = 1;
-  ions.Lattice.copy(grid);
+  ions.Lattice.copy(Lattice);
   ions.createSK();
 
 
-  elec.Lattice.copy(grid);
+  elec.Lattice.copy(Lattice);
   elec.setName("elec");
   elec.create(1);
   elec.R[0][0] = 0.5;
@@ -123,10 +122,10 @@ TEST_CASE("Coulomb PBC A-B BCC H Ewald3D", "[hamiltonian]")
   OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
-  Uniform3DGridLayout grid;
-  grid.BoxBConds = true; // periodic
-  grid.R.diagonal(3.77945227);
-  grid.reset();
+  PtclOnLatticeTraits::ParticleLayout_t Lattice;
+  Lattice.BoxBConds = true; // periodic
+  Lattice.R.diagonal(3.77945227);
+  Lattice.reset();
 
 
   ParticleSet ions;
@@ -146,11 +145,11 @@ TEST_CASE("Coulomb PBC A-B BCC H Ewald3D", "[hamiltonian]")
   int pIdx                      = ion_species.addSpecies("H");
   int pChargeIdx                = ion_species.addAttribute("charge");
   ion_species(pChargeIdx, pIdx) = 1;
-  ions.Lattice.copy(grid);
+  ions.Lattice.copy(Lattice);
   ions.createSK();
 
 
-  elec.Lattice.copy(grid);
+  elec.Lattice.copy(Lattice);
   elec.setName("elec");
   elec.create(2);
   elec.R[0][0] = 0.5;

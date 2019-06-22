@@ -13,14 +13,14 @@
 #define CATCH_CONFIG_MAIN
 #include "catch.hpp"
 
+#include <stdio.h>
+#include <string>
+
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "OhmmsPETE/TinyVector.h"
 #include "Lattice/CrystalLattice.h"
 #include "Lattice/ParticleBConds.h"
-#include "Lattice/Uniform3DGridLayout.h"
-
-#include <stdio.h>
-#include <string>
+#include "Configuration.h"
 
 using std::string;
 
@@ -96,13 +96,13 @@ TEST_CASE("periodic_bulk_bconds", "[lattice]")
   REQUIRE(cl->outOfBound(v4) == false);
 }
 
-TEST_CASE("uniform 3D grid layout", "[lattice]")
+TEST_CASE("uniform 3D Lattice layout", "[lattice]")
 {
-  Uniform3DGridLayout grid;
-  grid.BoxBConds = true; // periodic
+  PtclOnLatticeTraits::ParticleLayout_t Lattice;
+  Lattice.BoxBConds = true; // periodic
 
-  grid.R.diagonal(1.0);
-  grid.reset();
+  Lattice.R.diagonal(1.0);
+  Lattice.reset();
 }
 
 } // namespace qmcplusplus
