@@ -396,20 +396,19 @@ bool ParticleSet::makeMoveAndCheck(Index_t iat, const SingleParticlePos_t& displ
 {
   activePtcl = iat;
   activePos  = R[iat] + displ;
-  bool is_good = true;
-  //SingleParticlePos_t red_displ(Lattice.toUnit(displ));
+  bool is_valid = true;
   if (UseBoundBox)
   {
     if (Lattice.outOfBound(Lattice.toUnit(displ)))
-      is_good = false;
+      is_valid = false;
     else
     {
       newRedPos = Lattice.toUnit(activePos);
-      if (!Lattice.isValid(newRedPos)) is_good = false;
+      if (!Lattice.isValid(newRedPos)) is_valid = false;
     }
   }
   computeNewPosDistTablesAndSK(iat, activePos);
-  return is_good;
+  return is_valid;
 }
 
 void ParticleSet::computeNewPosDistTablesAndSK(Index_t iat, const SingleParticlePos_t& newpos)
