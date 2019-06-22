@@ -22,13 +22,7 @@
 #include <type_traits/QMCTypes.h>
 #include <OhmmsData/OhmmsElementBase.h>
 #include <OhmmsData/RecordProperty.h>
-#if OHMMS_DIM == 3
-#include <Lattice/Uniform3DGridLayout.h>
-#elif OHMMS_DIM == 2
-#include <Lattice/Uniform2DGridLayout.h>
-#else
-#error "Only 2D and 3D are implemented.\n"
-#endif
+#include <Lattice/CrystalLattice.h>
 #include <ParticleBase/ParticleAttrib.h>
 #include <Utilities/OutputManager.h>
 #include <Message/Communicate.h>
@@ -77,14 +71,7 @@ struct QMCTraits
  */
 struct PtclOnLatticeTraits
 {
-#if OHMMS_DIM == 3
-  typedef Uniform3DGridLayout ParticleLayout_t;
-#elif OHMMS_DIM == 2
-  typedef Uniform2DGridLayout ParticleLayout_t;
-#else
-  typedef UniformGridLayout<OHMMS_PRECISION, OHMMS_DIM> ParticleLayout_t;
-#endif
-
+  using ParticleLayout_t = CrystalLattice<OHMMS_PRECISION, OHMMS_DIM, OHMMS_ORTHO>;
   using QTFull = QMCTraits::QTFull;
 
   typedef int Index_t;

@@ -71,7 +71,7 @@ void ParticleSet::createSK()
 
   if (Lattice.SuperCellEnum != SUPERCELL_OPEN)
   {
-    Lattice.SetLRCutoffs();
+    Lattice.SetLRCutoffs(Lattice.Rv);
     LRBox        = Lattice;
     bool changed = false;
     if (Lattice.SuperCellEnum == SUPERCELL_SLAB && Lattice.VacuumScale != 1.0)
@@ -92,8 +92,8 @@ void ParticleSet::createSK()
       changed = true;
     }
     LRBox.reset();
-    LRBox.SetLRCutoffs();
-    LRBox.printCutoffs();
+    LRBox.SetLRCutoffs(LRBox.Rv);
+    LRBox.printCutoffs(app_log());
 
     if (changed)
     {

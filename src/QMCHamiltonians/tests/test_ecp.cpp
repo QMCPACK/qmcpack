@@ -132,11 +132,11 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
 
   //Cell definition:
 
-  Uniform3DGridLayout grid;
-  grid.BoxBConds = true; // periodic
-  grid.R.diagonal(20);
-  grid.LR_dim_cutoff = 15;
-  grid.reset();
+  PtclOnLatticeTraits::ParticleLayout_t Lattice;
+  Lattice.BoxBConds = true; // periodic
+  Lattice.R.diagonal(20);
+  Lattice.LR_dim_cutoff = 15;
+  Lattice.reset();
 
 
   ParticleSet ions;
@@ -158,11 +158,11 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
   int iatnumber                 = ion_species.addAttribute("atomic_number");
   ion_species(pChargeIdx, pIdx) = 1;
   ion_species(iatnumber, pIdx)  = 11;
-  ions.Lattice.copy(grid);
+  ions.Lattice.copy(Lattice);
   ions.createSK();
 
 
-  elec.Lattice.copy(grid);
+  elec.Lattice.copy(Lattice);
   elec.setName("e");
   elec.create(2);
   elec.R[0][0] = 2.0;
@@ -258,9 +258,9 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
 
   NonLocalECPComponent* nlpp = ecp.pp_nonloc;
 
-  //This line is required because the randomized quadrature grid is set by
+  //This line is required because the randomized quadrature Lattice is set by
   //random number generator in NonLocalECPotential.  We take the unrotated
-  //quadrature grid instead...
+  //quadrature Lattice instead...
   nlpp->rrotsgrid_m = nlpp->sgridxyz_m;
 
 

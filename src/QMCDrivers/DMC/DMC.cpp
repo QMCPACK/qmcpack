@@ -30,6 +30,7 @@
 #include "Utilities/ProgressReportEngine.h"
 #include <qmc_common.h>
 #include "ADIOS/ADIOS_profile.h"
+#include "Utilities/FairDivide.h"
 #if !defined(REMOVE_TRACEMANAGER)
 #include "Estimators/TraceManager.h"
 #else

@@ -26,6 +26,7 @@
 #include <OhmmsPETE/TinyVector.h>
 #include <OhmmsPETE/Tensor.h>
 #include <Lattice/LatticeOperations.h>
+#include <Lattice/LRBreakupParameters.h>
 
 namespace qmcplusplus
 {
@@ -69,7 +70,7 @@ struct PosUnit
  *
  */
 template<class T, unsigned D, bool ORTHO = false>
-struct CrystalLattice
+struct CrystalLattice: public LRBreakupParameters<T, D, ORTHO>
 {
   ///enumeration for the dimension of the lattice
   enum
@@ -138,15 +139,12 @@ struct CrystalLattice
   //@}
   //angles between the two lattice vectors
   SingleParticlePos_t ABC;
-  //save the lattice constant of neighbor cells
-  std::vector<SingleParticlePos_t> NextUnitCells;
 
   ///default constructor, assign a huge supercell
   CrystalLattice();
-  ///** copy constructor
-  //    @param rhs An existing SC object is copied to this SC.
-  //*/
-  //CrystalLattice(const CrystalLattice<T,D>& rhs);
+
+  ///copy constructor
+  CrystalLattice(const CrystalLattice&) = default;
 
   ///destructor
   virtual ~CrystalLattice() {}
@@ -162,36 +160,6 @@ struct CrystalLattice
    *@brief Provide interfaces familiar to fotran users
    */
   inline SingleParticlePos_t b(int i) const { return Gv[i]; }
-
-  //inline T calcWignerSeitzRadius(TinyVector<SingleParticlePos_t,2> a) const
-  //{
-  //  T rMin = 1.0e50;
-  //  for (int i=-1; i<=1; i++)
-  //    for (int j=-1; j<=1; j++)
-  //      if ((i!=0) || (j!=0)) {
-  //        SingleParticlePos_t L = ((double)i * a[0] +
-  //      			   (double)j * a[1]);
-  //        double dist = 0.5*std::abs(dot(L,L));
-  //        rMin = std::min(rMin, dist);
-  //      }
-  //  return rMin;
-  //}
-  //inline T calcWignerSeitzRadius(TinyVector<SingleParticlePos_t,3> a) const
-  //{
-  //  T rMin = 1.0e50;
-  //  for (int i=-1; i<=1; i++)
-  //    for (int j=-1; j<=1; j++)
-  //      for (int k=-1; k<=1; k++)
-  //        if ((i!=0) || (j!=0) || (k!=0)) {
-  //          SingleParticlePos_t L = ((double)i * a[0] +
-  //      			     (double)j * a[1] +
-  //      			     (double)k * a[2]);
-  //          double dist = 0.5*std::sqrt(dot(L,L));
-  //          rMin = std::min(rMin, dist);
-  //        }
-  //  return rMin;
-  //}
-
 
   /** Convert a cartesian vector to a unit vector.
    * Boundary conditions are not applied.
@@ -249,7 +217,6 @@ struct CrystalLattice
         return true;
     return false;
   }
-
 
   inline void applyMinimumImage(TinyVector<T, D>& c) const
   {
@@ -377,6 +344,15 @@ struct CrystalLattice
   /** Evaluate the reciprocal vectors, volume and metric tensor
    */
   void reset();
+
+  void copy(const CrystalLattice<T, D, ORTHO>& pl)
+  {
+    using base_t = LRBreakupParameters<T, D, ORTHO>;
+    base_t::LR_dim_cutoff  = pl.LR_dim_cutoff;
+    base_t::LR_kc          = pl.LR_kc;
+    base_t::LR_rc          = pl.LR_rc;
+    set(pl);
+  }
 
   //  //@{
   //  /* Copy functions with unit conversion*/

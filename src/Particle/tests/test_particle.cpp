@@ -63,14 +63,14 @@ TEST_CASE("symmetric_distance_table PBC", "[particle]")
 
   ParticleSet source;
 
-  Uniform3DGridLayout grid;
-  grid.BoxBConds = true; // periodic
-  grid.R = ParticleSet::Tensor_t(6.74632230, 6.74632230, 0.00000000, 0.00000000, 3.37316115, 3.37316115, 3.37316115,
+  PtclOnLatticeTraits::ParticleLayout_t Lattice;
+  Lattice.BoxBConds = true; // periodic
+  Lattice.R = ParticleSet::Tensor_t(6.74632230, 6.74632230, 0.00000000, 0.00000000, 3.37316115, 3.37316115, 3.37316115,
                                  0.00000000, 3.37316115);
-  grid.reset();
+  Lattice.reset();
 
   source.setName("electrons");
-  source.Lattice.copy(grid);
+  source.Lattice.copy(Lattice);
 
   source.create(4);
   source.R[0] = ParticleSet::PosType(0.00000000, 0.00000000, 0.00000000);
@@ -98,26 +98,26 @@ TEST_CASE("particle set lattice with vacuum", "[particle]")
   typedef SymmetricDTD<double, 3, SUPERCELL_BULK> sym_dtd_t;
   ParticleSet source;
 
-  Uniform3DGridLayout grid;
+  PtclOnLatticeTraits::ParticleLayout_t Lattice;
   // PPP case
-  grid.BoxBConds = true;
-  grid.R(0)      = 1.0;
-  grid.R(1)      = 2.0;
-  grid.R(2)      = 3.0;
+  Lattice.BoxBConds = true;
+  Lattice.R(0)      = 1.0;
+  Lattice.R(1)      = 2.0;
+  Lattice.R(2)      = 3.0;
 
-  grid.R(3) = 0.0;
-  grid.R(4) = 1.0;
-  grid.R(5) = 0.0;
+  Lattice.R(3) = 0.0;
+  Lattice.R(4) = 1.0;
+  Lattice.R(5) = 0.0;
 
-  grid.R(6) = 0.0;
-  grid.R(7) = 0.0;
-  grid.R(8) = 1.0;
+  Lattice.R(6) = 0.0;
+  Lattice.R(7) = 0.0;
+  Lattice.R(8) = 1.0;
 
-  grid.VacuumScale = 2.0;
-  grid.reset();
+  Lattice.VacuumScale = 2.0;
+  Lattice.reset();
 
   source.setName("electrons");
-  source.Lattice.copy(grid);
+  source.Lattice.copy(Lattice);
   source.createSK();
 
   REQUIRE(source.LRBox.R(0, 0) == 1.0);
@@ -125,9 +125,9 @@ TEST_CASE("particle set lattice with vacuum", "[particle]")
   REQUIRE(source.LRBox.R(0, 2) == 3.0);
 
   // PPN case
-  grid.BoxBConds[2] = false;
-  grid.reset();
-  source.Lattice.copy(grid);
+  Lattice.BoxBConds[2] = false;
+  Lattice.reset();
+  source.Lattice.copy(Lattice);
   source.createSK();
 
   REQUIRE(source.LRBox.R(2, 0) == 0.0);
@@ -135,9 +135,9 @@ TEST_CASE("particle set lattice with vacuum", "[particle]")
   REQUIRE(source.LRBox.R(2, 2) == 2.0);
 
   // PNN case
-  grid.BoxBConds[1] = false;
-  grid.reset();
-  source.Lattice.copy(grid);
+  Lattice.BoxBConds[1] = false;
+  Lattice.reset();
+  source.Lattice.copy(Lattice);
   source.createSK();
 
   REQUIRE(source.LRBox.R(0, 0) == 1.0);
