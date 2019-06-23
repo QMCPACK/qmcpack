@@ -295,11 +295,6 @@ struct CrystalLattice: public LRBreakupParameters<T, D>
    */
   void reset();
 
-  void copy(const CrystalLattice<T, D>& pl)
-  {
-    *this = pl;
-  }
-
   //  //@{
   //  /* Copy functions with unit conversion*/
   //  template<class PA> void convert(const PA& pin, PA& pout) const;

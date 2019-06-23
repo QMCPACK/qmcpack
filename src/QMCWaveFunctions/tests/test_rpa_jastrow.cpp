@@ -104,7 +104,7 @@ TEST_CASE("RPA Jastrow", "[wavefunction]")
   LatticeParser lp(*SimulationCell);
   lp.put(part1);
   SimulationCell->print(app_log(), 0);
-  elec_.Lattice.copy(*SimulationCell);
+  elec_.Lattice = *SimulationCell;
   // initialize SK
   elec_.createSK();
 

@@ -413,8 +413,8 @@ TEST_CASE("distance_pbc_z", "[distance_table][xml]")
   REQUIRE(electrons.SameMass);
 
   // calculate particle distances
-  electrons.Lattice.copy(*SimulationCell);
-  ions.Lattice.copy(*SimulationCell); // is this applied in qmcpack executable?
+  electrons.Lattice = *SimulationCell;
+  ions.Lattice = *SimulationCell; // is this applied in qmcpack executable?
   // better be, electron-proton distances used in PairCorrelation estimator
   electrons.addTable(ions, DT_AOS);
   electrons.update();

@@ -70,7 +70,7 @@ TEST_CASE("symmetric_distance_table PBC", "[particle]")
   Lattice.reset();
 
   source.setName("electrons");
-  source.Lattice.copy(Lattice);
+  source.Lattice = Lattice;
 
   source.create(4);
   source.R[0] = ParticleSet::PosType(0.00000000, 0.00000000, 0.00000000);
@@ -117,7 +117,7 @@ TEST_CASE("particle set lattice with vacuum", "[particle]")
   Lattice.reset();
 
   source.setName("electrons");
-  source.Lattice.copy(Lattice);
+  source.Lattice = Lattice;
   source.createSK();
 
   REQUIRE(source.LRBox.R(0, 0) == 1.0);
@@ -127,7 +127,7 @@ TEST_CASE("particle set lattice with vacuum", "[particle]")
   // PPN case
   Lattice.BoxBConds[2] = false;
   Lattice.reset();
-  source.Lattice.copy(Lattice);
+  source.Lattice = Lattice;
   source.createSK();
 
   REQUIRE(source.LRBox.R(2, 0) == 0.0);
@@ -137,7 +137,7 @@ TEST_CASE("particle set lattice with vacuum", "[particle]")
   // PNN case
   Lattice.BoxBConds[1] = false;
   Lattice.reset();
-  source.Lattice.copy(Lattice);
+  source.Lattice = Lattice;
   source.createSK();
 
   REQUIRE(source.LRBox.R(0, 0) == 1.0);

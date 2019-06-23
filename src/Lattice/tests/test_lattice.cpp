@@ -29,7 +29,7 @@ typedef TinyVector<double, 3> vec_t;
 
 /** Lattice is defined but Open BC is also used.
  */
-TEST_CASE("periodic_bulk_bconds", "[lattice]")
+TEST_CASE("Crystal_lattice_periodic_bulk", "[lattice]")
 {
   CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
   Lattice.BoxBConds = false; // Open BC
