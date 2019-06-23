@@ -63,7 +63,7 @@ TEST_CASE("symmetric_distance_table PBC", "[particle]")
 
   ParticleSet source;
 
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM, OHMMS_ORTHO> Lattice;
+  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
   Lattice.BoxBConds = true; // periodic
   Lattice.R = ParticleSet::Tensor_t(6.74632230, 6.74632230, 0.00000000, 0.00000000, 3.37316115, 3.37316115, 3.37316115,
                                  0.00000000, 3.37316115);
@@ -98,7 +98,7 @@ TEST_CASE("particle set lattice with vacuum", "[particle]")
   typedef SymmetricDTD<double, 3, SUPERCELL_BULK> sym_dtd_t;
   ParticleSet source;
 
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM, OHMMS_ORTHO> Lattice;
+  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
   // PPP case
   Lattice.BoxBConds = true;
   Lattice.R(0)      = 1.0;

@@ -47,7 +47,7 @@ TEST_CASE("read_lattice_xml", "[particle_io][xml]")
 
   xmlNodePtr root = doc.getRoot();
 
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM, OHMMS_ORTHO> uLattice;
+  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> uLattice;
   LatticeParser lp(uLattice);
   lp.put(root);
 

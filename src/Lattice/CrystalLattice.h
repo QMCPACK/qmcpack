@@ -68,8 +68,8 @@ struct PosUnit
  *expression template operations with variable-cell algorithms.
  *
  */
-template<class T, unsigned D, bool ORTHO = false>
-struct CrystalLattice: public LRBreakupParameters<T, D, ORTHO>
+template<class T, unsigned D>
+struct CrystalLattice: public LRBreakupParameters<T, D>
 {
   ///enumeration for the dimension of the lattice
   enum
@@ -263,7 +263,7 @@ struct CrystalLattice: public LRBreakupParameters<T, D, ORTHO>
 
   ///assignment operator
   template<typename T1>
-  CrystalLattice<T, D, ORTHO>& operator=(const CrystalLattice<T1, D, ORTHO>& rhs)
+  CrystalLattice<T, D>& operator=(const CrystalLattice<T1, D>& rhs)
   {
     BoxBConds = rhs.BoxBConds;
     R         = rhs.R;
@@ -275,7 +275,7 @@ struct CrystalLattice: public LRBreakupParameters<T, D, ORTHO>
    *@param rhs a tensor representing a unit cell
    */
   template<typename T1>
-  CrystalLattice<T, D, ORTHO>& operator=(const Tensor<T1, D>& rhs)
+  CrystalLattice<T, D>& operator=(const Tensor<T1, D>& rhs)
   {
     R = rhs;
     reset();
@@ -286,7 +286,7 @@ struct CrystalLattice: public LRBreakupParameters<T, D, ORTHO>
    *@param sc the scaling value
    *@return a new CrystalLattice
    */
-  CrystalLattice<T, D, ORTHO>& operator*=(T sc);
+  CrystalLattice<T, D>& operator*=(T sc);
 
   /** set the lattice vector from the command-line options
    *@param argc the number of arguments
@@ -313,7 +313,7 @@ struct CrystalLattice: public LRBreakupParameters<T, D, ORTHO>
    *@param oldlat An input supercell to be copied.
    *@param uc An array to expand a supercell.
    */
-  void set(const CrystalLattice<T, D, ORTHO>& oldlat, int* uc = 0);
+  void set(const CrystalLattice<T, D>& oldlat, int* uc = 0);
 
   /** set the lattice vector from the command-line options
    *@param lat a tensor representing a supercell
@@ -325,9 +325,9 @@ struct CrystalLattice: public LRBreakupParameters<T, D, ORTHO>
    */
   void reset();
 
-  void copy(const CrystalLattice<T, D, ORTHO>& pl)
+  void copy(const CrystalLattice<T, D>& pl)
   {
-    using base_t = LRBreakupParameters<T, D, ORTHO>;
+    using base_t = LRBreakupParameters<T, D>;
     base_t::LR_dim_cutoff  = pl.LR_dim_cutoff;
     base_t::LR_kc          = pl.LR_kc;
     base_t::LR_rc          = pl.LR_rc;

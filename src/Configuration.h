@@ -71,7 +71,7 @@ struct QMCTraits
  */
 struct PtclOnLatticeTraits
 {
-  using ParticleLayout_t = CrystalLattice<OHMMS_PRECISION, OHMMS_DIM, OHMMS_ORTHO>;
+  using ParticleLayout_t = CrystalLattice<OHMMS_PRECISION, OHMMS_DIM>;
   using QTFull = QMCTraits::QTFull;
 
   typedef int Index_t;

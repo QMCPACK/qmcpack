@@ -20,18 +20,13 @@
 namespace qmcplusplus
 {
 
-template<typename T, unsigned D, bool ORTHO = false>
+template<typename T, unsigned D>
 class LRBreakupParameters;
 
-template<typename T, bool ORTHO>
-class LRBreakupParameters<T, 3, ORTHO>
+template<typename T>
+class LRBreakupParameters<T, 3>
 {
 public:
-  enum
-  {
-    IsOrthogonal = ORTHO
-  };
-
   ///Dimensionless cutoff radius for G/R breakups
   T LR_dim_cutoff;
   T LR_rc;
