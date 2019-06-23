@@ -69,7 +69,7 @@ struct PosUnit
  *
  */
 template<class T, unsigned D>
-struct CrystalLattice: public LRBreakupParameters<T, D>
+struct CrystalLattice : public LRBreakupParameters<T, D>
 {
   ///enumeration for the dimension of the lattice
   enum
@@ -215,7 +215,7 @@ struct CrystalLattice: public LRBreakupParameters<T, D>
   {
     if (SuperCellEnum)
     {
-      TinyVector<T, D>  u = dot(c, G);
+      TinyVector<T, D> u = dot(c, G);
       for (int i = 0; i < D; ++i)
         u[i] = u[i] - round(u[i]);
       c = dot(u, R);
@@ -230,51 +230,40 @@ struct CrystalLattice: public LRBreakupParameters<T, D>
    @note The distance between two cartesian vectors are handled
    *by dot function defined in OhmmsPETE/TinyVector.h
    */
-  inline T Dot(const SingleParticlePos_t& ra, const SingleParticlePos_t& rb) const
-  {
-    return dot(ra, dot(M, rb));
-  }
+  inline T Dot(const SingleParticlePos_t& ra, const SingleParticlePos_t& rb) const { return dot(ra, dot(M, rb)); }
 
   /** conversion of a reciprocal-vector
    *@param kin an input reciprocal vector in the Reciprocal-vector unit
    *@return k(reciprocal vector) in cartesian unit
   */
-  inline SingleParticlePos_t k_cart(const SingleParticlePos_t& kin) const
-  {
-    return TWOPI * dot(G, kin);
-  }
+  inline SingleParticlePos_t k_cart(const SingleParticlePos_t& kin) const { return TWOPI * dot(G, kin); }
 
   /** conversion of a caresian reciprocal-vector to unit k-vector
    *@param kin an input reciprocal vector in cartesian form
    *@return k(reciprocal vector) as unit vector
   */
-  inline SingleParticlePos_t k_unit(const SingleParticlePos_t& kin) const
-  {
-    return dot(R, kin) / TWOPI;
-  }
+  inline SingleParticlePos_t k_unit(const SingleParticlePos_t& kin) const { return dot(R, kin) / TWOPI; }
 
   /** evaluate \f$k^2\f$
    *
    *@param kin an input reciprocal vector in reciprocal-vector unit
    *@return \f$k_{in}^2\f$
    */
-  inline T ksq(const SingleParticlePos_t& kin) const
-  {
-    return dot(kin, dot(Mg, kin));
-  }
+  inline T ksq(const SingleParticlePos_t& kin) const { return dot(kin, dot(Mg, kin)); }
 
   ///assignment operator
   template<typename T1>
   CrystalLattice<T, D>& operator=(const CrystalLattice<T1, D>& rhs)
   {
-    using base_t = LRBreakupParameters<T, D>;
-    base_t::LR_dim_cutoff  = rhs.LR_dim_cutoff;
-    base_t::LR_kc          = rhs.LR_kc;
-    base_t::LR_rc          = rhs.LR_rc;
+    using base_t          = LRBreakupParameters<T, D>;
+    base_t::LR_dim_cutoff = rhs.LR_dim_cutoff;
+    base_t::LR_kc         = rhs.LR_kc;
+    base_t::LR_rc         = rhs.LR_rc;
 
     is_from_input = rhs.is_from_input;
-    BoxBConds = rhs.BoxBConds;
-    R         = rhs.R;
+    BoxBConds     = rhs.BoxBConds;
+    VacuumScale   = rhs.VacuumScale;
+    R             = rhs.R;
     reset();
     return *this;
   }
