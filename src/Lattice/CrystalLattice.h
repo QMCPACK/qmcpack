@@ -267,6 +267,11 @@ struct CrystalLattice: public LRBreakupParameters<T, D>
   template<typename T1>
   CrystalLattice<T, D>& operator=(const CrystalLattice<T1, D>& rhs)
   {
+    using base_t = LRBreakupParameters<T, D>;
+    base_t::LR_dim_cutoff  = rhs.LR_dim_cutoff;
+    base_t::LR_kc          = rhs.LR_kc;
+    base_t::LR_rc          = rhs.LR_rc;
+
     is_from_input = rhs.is_from_input;
     BoxBConds = rhs.BoxBConds;
     R         = rhs.R;
@@ -280,18 +285,6 @@ struct CrystalLattice: public LRBreakupParameters<T, D>
    */
   CrystalLattice<T, D>& operator*=(T sc);
 
-  /** set the lattice vector by an array containing DxD T
-   *@param sc a scalar to scale the input lattice parameters
-   *@param lat the starting address of DxD T-elements representing a supercell
-   */
-  void set(T sc, T* lat = 0);
-
-  /** set the lattice vector by a CrystalLattice and expand it by integers
-   *@param oldlat An input supercell to be copied.
-   *@param uc An array to expand a supercell.
-   */
-  void set(const CrystalLattice<T, D>& oldlat, int* uc = 0);
-
   /** set the lattice vector from the command-line options
    *@param lat a tensor representing a supercell
    */
@@ -304,11 +297,7 @@ struct CrystalLattice: public LRBreakupParameters<T, D>
 
   void copy(const CrystalLattice<T, D>& pl)
   {
-    using base_t = LRBreakupParameters<T, D>;
-    base_t::LR_dim_cutoff  = pl.LR_dim_cutoff;
-    base_t::LR_kc          = pl.LR_kc;
-    base_t::LR_rc          = pl.LR_rc;
-    set(pl);
+    *this = pl;
   }
 
   //  //@{

@@ -49,41 +49,6 @@ void CrystalLattice<T, D>::set(const Tensor<TT, D>& lat)
 }
 
 template<class T, unsigned D>
-void CrystalLattice<T, D>::set(T sc, T* lat)
-{
-  if (lat)
-  {
-    is_from_input = true;
-    for (int i = 0; i < D; ++i)
-      for (int j = 0; j < D; ++j)
-        R(i, j) = *lat++;
-    R *= sc;
-  }
-  else
-  {
-    R = 0.0e0;
-    R.diagonal(sc);
-  }
-  reset();
-}
-
-template<class T, unsigned D>
-void CrystalLattice<T, D>::set(const CrystalLattice<T, D>& oldlat, int* uc)
-{
-  is_from_input = true;
-  BoxBConds   = oldlat.BoxBConds;
-  VacuumScale = oldlat.VacuumScale;
-  R           = oldlat.R;
-  if (uc)
-  {
-    for (int i = 0; i < D; ++i)
-      for (int j = 0; j < D; ++j)
-        R(i, j) *= static_cast<T>(uc[i]);
-  }
-  reset();
-}
-
-template<class T, unsigned D>
 void CrystalLattice<T, D>::reset()
 {
   G      = inverse(R); //G = transpose(Inverse(R));
