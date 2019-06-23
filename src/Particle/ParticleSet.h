@@ -123,8 +123,6 @@ public:
   ///charge of each particle
   ParticleScalar_t Z;
 
-  ///true, if a physical or local bounding box is used
-  bool UseBoundBox;
   ///true if the particles are grouped
   bool IsGrouped;
   ///true if the particles have the same mass
@@ -250,14 +248,6 @@ public:
 
   ///check whether quantum domain is valid for particles
   inline bool quantum_domain_valid() const { return quantum_domain_valid(quantum_domain); }
-
-  ///set UseBoundBox
-  void setBoundBox(bool yes);
-
-  /** check bounding box
-   * @param rb cutoff radius to check the condition
-   */
-  void checkBoundBox(RealType rb);
 
   /**  add a distance table
    * @param psrc source particle set

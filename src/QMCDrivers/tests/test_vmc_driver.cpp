@@ -57,7 +57,6 @@ TEST_CASE("VMC", "[drivers][vmc]")
   ions.R[0][2] = 0.0;
 
   elec.setName("elec");
-  elec.setBoundBox(false);
   std::vector<int> agroup(1);
   agroup[0] = 2;
   elec.create(agroup);

@@ -131,7 +131,9 @@ bool LatticeParser::put(xmlNodePtr cur)
     }
   }
   else
-    if (boxsum != 0)
+    if (boxsum == 0)
+      app_log() << "  Lattice is not specified for the Open BC. Add a huge box." << std::endl;
+    else
       APP_ABORT(" LatticeParser::put \n   Mixed boundary is supported only when a lattice is specified!");
   //special heg processing
   if (rs > 0.0)
