@@ -138,6 +138,8 @@ struct CrystalLattice: public LRBreakupParameters<T, D>
   //@}
   //angles between the two lattice vectors
   SingleParticlePos_t ABC;
+  ///true, the lattice is defined by the input instead of an artificial default
+  bool is_from_input;
 
   ///default constructor, assign a huge supercell
   CrystalLattice();
@@ -265,19 +267,9 @@ struct CrystalLattice: public LRBreakupParameters<T, D>
   template<typename T1>
   CrystalLattice<T, D>& operator=(const CrystalLattice<T1, D>& rhs)
   {
+    is_from_input = rhs.is_from_input;
     BoxBConds = rhs.BoxBConds;
     R         = rhs.R;
-    reset();
-    return *this;
-  }
-
-  /** assignment operator
-   *@param rhs a tensor representing a unit cell
-   */
-  template<typename T1>
-  CrystalLattice<T, D>& operator=(const Tensor<T1, D>& rhs)
-  {
-    R = rhs;
     reset();
     return *this;
   }
@@ -287,21 +279,6 @@ struct CrystalLattice: public LRBreakupParameters<T, D>
    *@return a new CrystalLattice
    */
   CrystalLattice<T, D>& operator*=(T sc);
-
-  /** set the lattice vector from the command-line options
-   *@param argc the number of arguments
-   *@param argv the argument lists
-   *
-   *This function is to provide a simple interface for testing.
-   */
-  void set(int argc, char** argv);
-
-  /** set the lattice vector from the command-line options stored in a vector
-   *@param argv the argument lists
-   *
-   *This function is to provide a simple interface for testing.
-   */
-  void set(std::vector<std::string>& argv);
 
   /** set the lattice vector by an array containing DxD T
    *@param sc a scalar to scale the input lattice parameters
