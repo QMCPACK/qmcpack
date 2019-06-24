@@ -15,7 +15,6 @@
 
 
 #include "QMCHamiltonians/ZeroVarianceForce.h"
-#include "Particle/DistanceTable.h"
 #include "Particle/DistanceTableData.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "ParticleBase/ParticleAttribOps.h"

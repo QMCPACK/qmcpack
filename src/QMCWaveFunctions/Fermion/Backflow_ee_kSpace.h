@@ -17,7 +17,6 @@
 #define QMCPLUSPLUS_BACKFLOW_EE_KSPACE_H
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
 #include "QMCWaveFunctions/Fermion/BackflowFunctionBase.h"
-#include "Particle/DistanceTable.h"
 #include <LongRange/StructFact.h>
 #include "Message/Communicate.h"
 #include <cmath>
@@ -78,8 +77,6 @@ public:
   void resize(int NT) { NumTargets = NT; }
 
   ~Backflow_ee_kSpace(){};
-
-  void resetTargetParticleSet(ParticleSet& P) {}
 
   BackflowFunctionBase* makeClone(ParticleSet& tqp)
   {

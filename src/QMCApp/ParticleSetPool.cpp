@@ -16,7 +16,6 @@
 /**@file ParticleSetPool.cpp
  * @brief Implements ParticleSetPool operators.
  */
-//#include "Particle/DistanceTable.h"
 #include "QMCApp/ParticleSetPool.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "ParticleIO/XMLParticleIO.h"

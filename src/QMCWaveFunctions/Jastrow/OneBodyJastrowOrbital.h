@@ -22,7 +22,6 @@
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/Jastrow/DiffOneBodyJastrowOrbital.h"
 #include "Particle/DistanceTableData.h"
-#include "Particle/DistanceTable.h"
 
 namespace qmcplusplus
 {
