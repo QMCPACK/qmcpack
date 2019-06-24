@@ -19,7 +19,6 @@
 #include <QMCHamiltonians/DensityEstimator.h>
 #include <OhmmsData/AttributeSet.h>
 #include "LongRange/LRCoulombSingleton.h"
-#include "Particle/DistanceTable.h"
 #include "Particle/DistanceTableData.h"
 #include "Particle/MCWalkerConfiguration.h"
 

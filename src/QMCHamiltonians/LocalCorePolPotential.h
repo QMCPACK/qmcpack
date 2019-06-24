@@ -87,9 +87,9 @@ struct LocalCorePolPotential : public QMCHamiltonianBase
   ///reference to the ionic system
   ParticleSet& IonConfig;
   ///the ion-electron DistanceTable
-  DistanceTableData* d_ie;
+  const int d_ie_ID;
   ///the ion-ion DistanceTable
-  DistanceTableData* d_ii;
+  const int d_ii_ID;
 
   ///input CPP_Param whose size is the number of species
   std::vector<CPP_Param*> InpCPP;

@@ -16,7 +16,6 @@
 #include "Particle/WalkerSetRef.h"
 #include "QMCHamiltonians/QMCHamiltonianBase.h"
 #include "ParticleBase/ParticleAttribOps.h"
-#include <Particle/DistanceTable.h>
 #include <Particle/DistanceTableData.h>
 
 namespace qmcplusplus

@@ -38,16 +38,6 @@ namespace qmcplusplus
  * Lattice/CrystalLattice.h and Lattice/CrystalLattice.cpp can be owned by DistanceTable
  * to generically control the crystalline structure.
  */
-//struct DistanceTable
-namespace DistanceTable
-{
-///add a named DistanceTableData_t of Symmectric type
-DistanceTableData* add(ParticleSet& s, int dt_type);
-
-///add a named DistanceTableData_t of Asymmectric type
-DistanceTableData* add(const ParticleSet& s, ParticleSet& t, int dt_type);
-
-} // namespace DistanceTable
 
 ///free function to create a distable table of s-s
 DistanceTableData* createDistanceTable(ParticleSet& s, int dt_type, std::ostream& description);

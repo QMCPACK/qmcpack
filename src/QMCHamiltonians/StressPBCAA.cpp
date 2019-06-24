@@ -12,7 +12,6 @@
 
 
 #include "QMCHamiltonians/StressPBCAA.h"
-#include "Particle/DistanceTable.h"
 #include "Particle/DistanceTableData.h"
 #include "Utilities/ProgressReportEngine.h"
 #include <numeric>
@@ -26,7 +25,7 @@ StressPBCAA::StressPBCAA(ParticleSet& ref, bool active)
   //save source tag
   SourceID = ref.tag();
   //create a distance table: just to get the table name
-  DistanceTableData* d_aa = DistanceTable::add(ref);
+  DistanceTableData* d_aa = ref.DistanceTables[ref.addTable(ref, DT_AOS)];
   PtclRefName             = d_aa->Name;
   initBreakup(ref);
   prefix = "S_" + PtclRefName;
