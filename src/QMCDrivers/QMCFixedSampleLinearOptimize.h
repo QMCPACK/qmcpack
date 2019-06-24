@@ -129,6 +129,10 @@ private:
   RealType max_relative_cost_change;
   ///max amount a parameter may change relative to current wave function weight
   RealType max_param_change;
+  /// the tolerance to cost function increases when choosing the best shift in the adaptive shift method
+  RealType cost_increase_tol;
+  /// the shift_i value that the adaptive shift method should aim for
+  RealType target_shift;
   ///whether we are targeting an excited state
   std::string targetExcitedStr;
   ///whether we are targeting an excited state
