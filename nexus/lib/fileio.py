@@ -29,6 +29,7 @@ from developer import DevBase,error
 from periodic_table import pt as ptable,is_element
 from unit_converter import convert
 from debug import *
+from physical_system import Matter
 
 
 class TextFile(DevBase):
@@ -783,7 +784,11 @@ class XsfFile(StandardFile):
                     e = e[0:2]
                 #end if
             #end if
-            elem.append(ptable.elements[e].atomic_number)
+            if is_element(e):
+                elem.append(ptable.elements[e].atomic_number)
+            else:
+                elem.append(Matter.particle_collection.get_particle(e)["protons"])
+            #end if
         #end for
         self.filetype    = 'xsf'
         self.periodicity = 'crystal' # assumed
