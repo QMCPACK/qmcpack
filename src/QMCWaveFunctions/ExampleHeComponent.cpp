@@ -127,6 +127,11 @@ ExampleHeComponent::ValueType ExampleHeComponent::ratio(ParticleSet& P, int iat)
   double log_v_old = -Z * (r_old)-u_old;
   double log_v_new = -Z * (r_new)-u_new;
 
+  std::cout << "Checking" << std::endl;
+  std::cout << "r12 old and new = " << r12_old << " " << r12_new << std::endl;
+  std::cout << "r old and new = " << r_old << " " << r_new << std::endl;
+  std::cout << "u old and new = " << u_old << " " << u_new << std::endl;
+  std::cout << "log_v old and new = " << log_v_old << " " << log_v_new << std::endl;
   return std::exp((log_v_new - log_v_old));
 }
 
