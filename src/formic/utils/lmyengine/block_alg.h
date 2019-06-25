@@ -53,6 +53,15 @@ class LMBlocker {
     // whether to solve the eigenvalue problem iteratively
     bool _iterative;
 
+//whether hybrid optimization method is being used
+    bool hybrid;
+        
+//number of parameters being optimized
+    int numParams;
+
+    //Vector for storing the input vectors to the BLM steps of hybrid method
+    std::vector< std::vector<double> > hybridBLM_Input;
+
   public:
     
     // default constructor
@@ -106,6 +115,13 @@ class LMBlocker {
                               std::vector<std::vector<formic::Matrix<double> > > & block_ups,
                               std::ostream & output,
                               const double omega=0.0);
+
+    void setHybrid(bool h);
+    void setNumParams(int n);
+
+    std::vector< std::vector<double> > getInputVector() {return hybridBLM_Input;}
+    void overwriteOldUpates(formic::Matrix<double>& m_ou);
+
   };
 }
 }

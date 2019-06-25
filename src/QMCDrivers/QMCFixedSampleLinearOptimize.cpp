@@ -105,7 +105,10 @@ QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(MCWalkerConfiguration
       F_eta(.001),
       Gauss_eta(.001),
       CI_eta(.01),
-      Orb_eta(.001)
+      Orb_eta(.001),
+
+    startStepNum(0),
+    on_reset("no")
 {
   IsQMCDriver = false;
   //set the optimization flag
@@ -250,6 +253,7 @@ bool QMCFixedSampleLinearOptimize::run()
   }
 if(doHybrid)
 {
+    EngineObj->setHybrid("yes",optTarget->NumParams());
     app_log() << "Going to hybrid_run()" << std::endl;
 
       return hybrid_run();
@@ -1994,13 +1998,13 @@ void QMCFixedSampleLinearOptimize::updateParameters(std::vector< std::vector<Ret
 */
 
    // std::cout << "At hybrid storage check" << std::endl;
-   if(hybrid.compare("yes") == 0 && ( (startStepNum+stepNum+1)%(descent_len/5)==0 ))
+   if(doHybrid && ( (startStepNum+stepNum+1)%(descent_len/5)==0 ))
    {
        if(process_rank==0)
        {
         std::cout << "Step number is " << startStepNum+stepNum << " out of expected total of "  << descent_len << " descent steps."<< std::endl;
        } 
-       //storeVectors(paramsForDiff);
+       storeVectors(paramsForDiff);
    }
 
   // std::cout << "At the swap check" << std::endl;
@@ -2050,29 +2054,16 @@ void QMCFixedSampleLinearOptimize::updateParameters(std::vector< std::vector<Ret
   */
 
 }
-/*
-void QMCAcceleratedGradientDescent::storeVectors(std::vector< Return_t >& paramsForDiff)
+
+void QMCFixedSampleLinearOptimize::storeVectors(std::vector< Return_t >& paramsForDiff)
 {
     int process_rank;
      MPI_Comm_rank(MPI_COMM_WORLD, &process_rank);
      
-     //All processes have the same set of parameter values so we can have only one process write the information to a file.
-     if(process_rank==0)
-     {
 
         std::cout << "Inside storing vectors function" << std::endl;
-        std::string filename = "vecsForLM.csv";
-        std::ofstream paramFileWriter;
-        //If on first step, clear anything that was in file
-        if(startStepNum+stepNum+1==descent_len/5)
-        {
-            paramFileWriter.open(filename,std::ios_base::trunc);
-        }
-        else
-        {
-            paramFileWriter.open(filename,std::ios_base::app);
-        }
-        std::ostream_iterator<double> output_iterator(paramFileWriter,",");
+        
+        
         std::vector<Return_t> rowVec(paramsForDiff.size());
         std::fill(rowVec.begin(),rowVec.end(),0.0);
 
@@ -2084,13 +2075,20 @@ void QMCAcceleratedGradientDescent::storeVectors(std::vector< Return_t >& params
             rowVec[i] = (optTarget->Params(i)-paramsForDiff[i]);
             paramsForDiff[i] = optTarget->Params(i);
         } 
-        std::copy(rowVec.begin(),rowVec.end(),output_iterator);
-        paramFileWriter << "\n";
-        paramFileWriter.close();
-     }
+     
+    //If on first step, clear anything that was in vector
+        if(startStepNum+stepNum+1==descent_len/5)
+        {
+            hybridBLM_Input.clear();
+            hybridBLM_Input.push_back(rowVec);        
+        }
+        else
+        {
+            hybridBLM_Input.push_back(rowVec);
+        }
      
 }
-*/
+
 bool QMCFixedSampleLinearOptimize::hybrid_run()
 {
     if(descentCount < descent_len)
@@ -2109,7 +2107,8 @@ bool QMCFixedSampleLinearOptimize::hybrid_run()
             blmCount++;
             totalCount++;
             app_log() << "Should be on blm step# " << blmCount -1  << " of macro-iteration. Total steps: " << totalCount << std::endl;
-            optTarget->setNumSamples(10^6);
+            EngineObj->setHybridBLM_Input(hybridBLM_Input);
+            //optTarget->setNumSamples(10^6);
             return adaptive_three_shift_run();
         
         }

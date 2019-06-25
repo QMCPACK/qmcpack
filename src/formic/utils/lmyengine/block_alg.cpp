@@ -296,3 +296,20 @@ void cqmc::engine::LMBlocker::solve_for_block_dirs(const formic::VarDeps * dep_p
   }
 }
 
+
+void cqmc::engine::LMBlocker::setHybrid(bool h)
+{
+hybrid = h;
+}
+
+void cqmc::engine::LMBlocker::setNumParams(int n)
+{
+numParams = n;
+}
+
+
+
+
+
+
+

@@ -192,6 +192,9 @@ private:
   //Vector for storing numerator values from previous optimization step
   std::vector<double> numerRecords;
 
+  //Vector for storing the input vectors to the BLM steps of hybrid method
+  std::vector< std::vector<double> > hybridBLM_Input;
+
   //Parameter for accelerated descent recursion relation
   double lambda;
 
