@@ -566,13 +566,18 @@ void QMCDriver::addWalkers(int nwalkers)
 
 void QMCDriver::setWalkerOffsets()
 {
+    app_log() << "Inside setWalkerOffsets" << std::endl; 
   std::vector<int> nw(myComm->size(), 0), nwoff(myComm->size() + 1, 0);
+  app_log() << "Before getActiveWalkers" << std::endl;
   nw[myComm->rank()] = W.getActiveWalkers();
+  app_log() << "Before allreduce call" << std::endl;
   myComm->allreduce(nw);
+  app_log() << "After allreduce call" << std::endl;
   for (int ip = 0; ip < myComm->size(); ip++)
     nwoff[ip + 1] = nwoff[ip] + nw[ip];
   W.setGlobalNumWalkers(nwoff[myComm->size()]);
   W.setWalkerOffsets(nwoff);
+  app_log() << "After inner setWalkerOffsets call" << std::endl;
   long id = nwoff[myComm->rank()];
   for (int iw = 0; iw < nw[myComm->rank()]; ++iw, ++id)
   {
@@ -686,6 +691,7 @@ app_log() << "This is MinMethod at end of QMCDriver putQMCInfo: " << MinMethod <
   app_log() << "This is descent_len at end of QMCDriver putQMCInfo: " << descent_len << std::endl;
   app_log() << "This is blm_len at end of QMCDriver putQMCInfo: " << blm_len << std::endl;
 
+  /*
   if(MinMethod == "hybrid")
   {
       app_log() << "This is current step: " << stepCounter << std::endl;
@@ -709,12 +715,15 @@ app_log() << "This is MinMethod at end of QMCDriver putQMCInfo: " << MinMethod <
           app_log() << "This is overwritten nTargetPopulation at end of putQMCInfo: " << nTargetPopulation << std::endl;
           app_log() << "This is overwritten nTargetSamples at end of putQMCInfo: " << nTargetSamples << std::endl;
       }
-/*      else
-      {
-          m_param.add(nTargetPopulation, "samples", "real");
-      }
-      */
+    
+
+//      else
+  //    {
+    //      m_param.add(nTargetPopulation, "samples", "real");
+     // }
+      
   }
+*/
 
  ++stepCounter;
 
@@ -722,7 +731,8 @@ app_log() << "This is MinMethod at end of QMCDriver putQMCInfo: " << MinMethod <
  
   app_log() << "This is on_hybrid_descent before reset walkers check: " << on_hybrid_descent << std::endl;
   //if walkers are initialized via <mcwalkerset/>, use the existing one
-  if ((qmc_common.qmc_counter || qmc_common.is_restart )&& (on_hybrid_descent))
+  //if ((qmc_common.qmc_counter || qmc_common.is_restart )&& (on_hybrid_descent))
+  if ((qmc_common.qmc_counter || qmc_common.is_restart ))
   {
     app_log() << "Using existing walkers " << std::endl;
   }
