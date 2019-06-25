@@ -656,7 +656,7 @@ void QMCFixedSampleLinearOptimize::print_cost_summary(const double si,
 bool QMCFixedSampleLinearOptimize::is_best_cost(const int ii, const std::vector<RealType>& cv, const std::vector<double>& sh, const RealType ic) const
 {
 
-  app_log() << "determining best cost with cost_increase_tol = " << cost_increase_tol << " and target_shift = " << target_shift << std::endl;
+  //app_log() << "determining best cost with cost_increase_tol = " << cost_increase_tol << " and target_shift = " << target_shift << std::endl;
 
   // initialize return value
   bool retval = true;
