@@ -2,26 +2,22 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2019 and QMCPACK developers.
 //
-// File developed by:  Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
+// File developed by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //
-// File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
+// File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
-
-#include "catch.hpp"
 
 #include <stdio.h>
 #include <string>
 
-#include "OhmmsPETE/OhmmsMatrix.h"
+#include "catch.hpp"
+
+#include "Configuration.h"
 #include "OhmmsPETE/TinyVector.h"
 #include "Lattice/CrystalLattice.h"
-#include "Lattice/ParticleBConds.h"
-#include "Configuration.h"
-
-using std::string;
 
 namespace qmcplusplus
 {
