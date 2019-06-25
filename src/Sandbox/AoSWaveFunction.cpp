@@ -21,9 +21,6 @@ namespace qmcplusplus
   {
     FirstTime=true;
 
-    d_ee = els.DistTables[els.addTable(els, DT_SOA)];
-    d_ie = els.DistTables[els.addTable(ions, DT_SOA)];
-
     int ip=omp_get_thread_num();
     double r2_cut=std::min(6.4,double(els.Lattice.WignerSeitzRadius));
     J2=new J2OrbType(els,ip);

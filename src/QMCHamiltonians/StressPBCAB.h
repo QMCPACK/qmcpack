@@ -29,6 +29,12 @@ namespace qmcplusplus
  */
 struct StressPBCAB : public QMCHamiltonianBase, public ForceBase
 {
+private:
+  ///locator of the distance table
+  const int d_ei_ID_;
+
+public:
+
   typedef LRCoulombSingleton::LRHandlerType LRHandlerType;
   typedef LRCoulombSingleton::GridType GridType;
   typedef LRCoulombSingleton::RadFunctorType RadFunctorType;
@@ -39,8 +45,6 @@ struct StressPBCAB : public QMCHamiltonianBase, public ForceBase
   ParticleSet& PtclA;
   ///long-range Handler
   LRHandlerType* AB;
-  ///locator of the distance table
-  int myTableIndex;
   ///number of species of A particle set
   int NumSpeciesA;
   ///number of species of B particle set
