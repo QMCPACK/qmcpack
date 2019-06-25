@@ -103,6 +103,16 @@ TEST_CASE("uniform 3D Lattice layout", "[lattice]")
 
   Lattice.R.diagonal(1.0);
   Lattice.reset();
+
+  REQUIRE(Lattice.R(0, 0) == 1.0);
+  REQUIRE(Lattice.R(0, 1) == 0.0);
+  REQUIRE(Lattice.R(0, 2) == 0.0);
+  REQUIRE(Lattice.R(1, 0) == 0.0);
+  REQUIRE(Lattice.R(1, 1) == 1.0);
+  REQUIRE(Lattice.R(1, 2) == 0.0);
+  REQUIRE(Lattice.R(2, 0) == 0.0);
+  REQUIRE(Lattice.R(2, 1) == 0.0);
+  REQUIRE(Lattice.R(2, 2) == 1.0);
 }
 
 } // namespace qmcplusplus
