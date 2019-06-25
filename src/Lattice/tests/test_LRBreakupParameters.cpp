@@ -24,7 +24,7 @@ namespace qmcplusplus
 
 /** Lattice is defined but Open BC is also used.
  */
-TEST_CASE("Crystal_lattice_periodic_bulk", "[lattice]")
+TEST_CASE("LRBreakupParameters", "[lattice]")
 {
   LRBreakupParameters<double, 3> myLR;
 
