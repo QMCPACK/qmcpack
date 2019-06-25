@@ -63,10 +63,6 @@ struct PosUnit
  *interfaces to access the lattice properties and convert units of
  *position vectors or a single-particle position from Cartesian to
  *Lattice Unit vice versa.
- *
- *The indices for R, G and D are chosen to perform
- *expression template operations with variable-cell algorithms.
- *
  */
 template<class T, unsigned D>
 struct CrystalLattice: public LRBreakupParameters<T, D>
