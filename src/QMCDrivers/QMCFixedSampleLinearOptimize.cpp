@@ -483,6 +483,10 @@ bool QMCFixedSampleLinearOptimize::put(xmlNodePtr q)
   if (shift_s_input <= 0.0)
     throw std::runtime_error("shift_s must be positive in QMCFixedSampleLinearOptimize::put");
 
+  // check cost increase tolerance sanity
+  if (cost_increase_tol < 0.0)
+    throw std::runtime_error("cost_increase_tol must be non-negative in QMCFixedSampleLinearOptimize::put");
+
   // if this is the first time this function has been called, set the initial shifts
   if (bestShift_i < 0.0 && doAdaptiveThreeShift)
     bestShift_i = shift_i_input;
