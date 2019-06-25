@@ -29,6 +29,7 @@
 #include "AFQMC/Utilities/taskgroup.h"
 
 #include "AFQMC/HamiltonianOperations/sparse_matrix_energy.hpp"
+#include "Utilities/FairDivide.h"
 
 namespace qmcplusplus
 {
