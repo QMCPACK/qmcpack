@@ -43,6 +43,7 @@
 #include "QMCWaveFunctions/Jastrow/LRBreakupUtilities.h"
 #include "QMCWaveFunctions/Jastrow/BsplineFunctor.h"
 #include "QMCWaveFunctions/Jastrow/PadeFunctors.h"
+#include "QMCWaveFunctions/Jastrow/UserFunctor.h"
 #include <iostream>
 
 
@@ -512,6 +513,10 @@ bool RadialJastrowBuilder::put(xmlNodePtr cur)
       guardAgainstPBC();
       success = createJ1<PadeFunctor<RealType>>(cur);
     }
+    else if (Jastfunction == "user")
+    {
+      success = createJ1<UserFunctor<RealType>>(cur);
+    }
     else if (Jastfunction == "rpa")
     {
 #if !(OHMMS_DIM == 3)
@@ -541,6 +546,10 @@ bool RadialJastrowBuilder::put(xmlNodePtr cur)
     {
       guardAgainstPBC();
       success = createJ2<PadeFunctor<RealType>>(cur);
+    }
+    else if (Jastfunction == "user")
+    {
+      success = createJ2<UserFunctor<RealType>>(cur);
     }
     else if (Jastfunction == "rpa" || Jastfunction == "yukawa")
     {
