@@ -56,10 +56,7 @@ struct SplineR2RSoA : public SplineAdoptorBase<ST, 3>
   using BaseType::PrimLattice;
 
   ///multi bspline set
-  MultiBspline<ST>* SplineInst;
-  ///expose the pointer to reuse the reader and only assigned with create_spline
-  ///also used as identifier of shallow copy
-  SplineType* MultiSpline;
+  std::shared_ptr<MultiBspline<ST>> SplineInst;
 
   vContainer_type myV;
   vContainer_type myL;
@@ -70,28 +67,12 @@ struct SplineR2RSoA : public SplineAdoptorBase<ST, 3>
   ///thread private ratios for reduction when using nested threading, numVP x numThread
   Matrix<TT> ratios_private;
 
-  SplineR2RSoA() : BaseType(), SplineInst(nullptr), MultiSpline(nullptr)
+  SplineR2RSoA() : BaseType()
   {
     this->is_complex   = false;
     this->is_soa_ready = true;
     this->AdoptorName  = "SplineR2RSoAAdoptor";
     this->KeyWord      = "SplineR2RSoA";
-  }
-
-  SplineR2RSoA(const SplineR2RSoA& a) : SplineAdoptorBase<ST, 3>(a), SplineInst(a.SplineInst), MultiSpline(nullptr)
-  {
-    const size_t n = a.myV.size();
-    myV.resize(n);
-    myG.resize(n);
-    myL.resize(n);
-    myH.resize(n);
-    mygH.resize(n);
-  }
-
-  ~SplineR2RSoA()
-  {
-    if (MultiSpline != nullptr)
-      delete SplineInst;
   }
 
   inline void resizeStorage(size_t n, size_t nvals)
@@ -107,7 +88,7 @@ struct SplineR2RSoA : public SplineAdoptorBase<ST, 3>
     IsGamma = ((HalfG[0] == 0) && (HalfG[1] == 0) && (HalfG[2] == 0));
   }
 
-  void bcast_tables(Communicate* comm) { chunked_bcast(comm, MultiSpline); }
+  void bcast_tables(Communicate* comm) { chunked_bcast(comm, SplineInst->spline_m); }
 
   void gather_tables(Communicate* comm)
   {
@@ -117,16 +98,15 @@ struct SplineR2RSoA : public SplineAdoptorBase<ST, 3>
     const int Nbandgroups = comm->size();
     offset.resize(Nbandgroups + 1, 0);
     FairDivideLow(Nbands, Nbandgroups, offset);
-    gatherv(comm, MultiSpline, MultiSpline->z_stride, offset);
+    gatherv(comm, SplineInst->spline_m, SplineInst->spline_m->z_stride, offset);
   }
 
   template<typename GT, typename BCT>
   void create_spline(GT& xyz_g, BCT& xyz_bc)
   {
     GGt        = dot(transpose(PrimLattice.G), PrimLattice.G);
-    SplineInst = new MultiBspline<ST>();
+    SplineInst = std::make_shared<MultiBspline<ST>>();
     SplineInst->create(xyz_g, xyz_bc, myV.size());
-    MultiSpline = SplineInst->spline_m;
 
     app_log() << "MEMORY " << SplineInst->sizeInByte() / (1 << 20) << " MB allocated "
               << "for the coefficients in 3D spline orbital representation" << std::endl;

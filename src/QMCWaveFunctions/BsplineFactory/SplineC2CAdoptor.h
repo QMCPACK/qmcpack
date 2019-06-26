@@ -60,10 +60,7 @@ struct SplineC2CSoA : public SplineAdoptorBase<ST, 3>
   using BaseType::PrimLattice;
 
   ///multi bspline set
-  MultiBspline<ST>* SplineInst;
-  ///expose the pointer to reuse the reader and only assigned with create_spline
-  ///also used as identifier of shallow copy
-  SplineType* MultiSpline;
+  std::shared_ptr<MultiBspline<ST>> SplineInst;
 
   vContainer_type mKK;
   VectorSoaContainer<ST, 3> myKcart;
@@ -77,28 +74,12 @@ struct SplineC2CSoA : public SplineAdoptorBase<ST, 3>
   ///thread private ratios for reduction when using nested threading, numVP x numThread
   Matrix<ComplexT> ratios_private;
 
-  SplineC2CSoA() : BaseType(), SplineInst(nullptr), MultiSpline(nullptr)
+  SplineC2CSoA() : BaseType()
   {
     this->is_complex   = true;
     this->is_soa_ready = true;
     this->AdoptorName  = "SplineC2CSoAAdoptor";
     this->KeyWord      = "SplineC2CSoA";
-  }
-
-  SplineC2CSoA(const SplineC2CSoA& a)
-      : SplineAdoptorBase<ST, 3>(a), SplineInst(a.SplineInst), MultiSpline(nullptr), mKK(a.mKK), myKcart(a.myKcart)
-  {
-    const size_t n = a.myL.size();
-    myV.resize(n);
-    myG.resize(n);
-    myL.resize(n);
-    myH.resize(n), mygH.resize(n);
-  }
-
-  ~SplineC2CSoA()
-  {
-    if (MultiSpline != nullptr)
-      delete SplineInst;
   }
 
   inline void resizeStorage(size_t n, size_t nvals)
@@ -112,7 +93,7 @@ struct SplineC2CSoA : public SplineAdoptorBase<ST, 3>
     mygH.resize(npad);
   }
 
-  void bcast_tables(Communicate* comm) { chunked_bcast(comm, MultiSpline); }
+  void bcast_tables(Communicate* comm) { chunked_bcast(comm, SplineInst->spline_m); }
 
   void gather_tables(Communicate* comm)
   {
@@ -124,16 +105,15 @@ struct SplineC2CSoA : public SplineAdoptorBase<ST, 3>
     FairDivideLow(Nbands, Nbandgroups, offset);
     for (size_t ib = 0; ib < offset.size(); ib++)
       offset[ib] *= 2;
-    gatherv(comm, MultiSpline, MultiSpline->z_stride, offset);
+    gatherv(comm, SplineInst->spline_m, SplineInst->spline_m->z_stride, offset);
   }
 
   template<typename GT, typename BCT>
   void create_spline(GT& xyz_g, BCT& xyz_bc)
   {
     resize_kpoints();
-    SplineInst = new MultiBspline<ST>();
+    SplineInst = std::make_shared<MultiBspline<ST>>();
     SplineInst->create(xyz_g, xyz_bc, myV.size());
-    MultiSpline = SplineInst->spline_m;
     app_log() << "MEMORY " << SplineInst->sizeInByte() / (1 << 20) << " MB allocated "
               << "for the coefficients in 3D spline orbital representation" << std::endl;
   }
