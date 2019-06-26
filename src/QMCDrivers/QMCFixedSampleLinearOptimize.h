@@ -132,7 +132,7 @@ private:
   /// the tolerance to cost function increases when choosing the best shift in the adaptive shift method
   RealType cost_increase_tol;
   /// the shift_i value that the adaptive shift method should aim for
-  RealType target_shift;
+  RealType target_shift_i;
   ///whether we are targeting an excited state
   std::string targetExcitedStr;
   ///whether we are targeting an excited state

@@ -88,7 +88,7 @@ QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(MCWalkerConfiguration
       accept_history(3),
       num_shifts(3),
       cost_increase_tol(0.0),
-      target_shift(-1.0),
+      target_shift_i(-1.0),
       nblocks(1),
       nolds(1),
       nkept(1),
@@ -126,7 +126,7 @@ QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(MCWalkerConfiguration
   m_param.add(shift_s_input, "shift_s", "double");
   m_param.add(num_shifts, "num_shifts", "int");
   m_param.add(cost_increase_tol, "cost_increase_tol", "double");
-  m_param.add(target_shift, "target_shift", "double");
+  m_param.add(target_shift_i, "target_shift_i", "double");
 
 #ifdef HAVE_LMY_ENGINE
   //app_log() << "construct QMCFixedSampleLinearOptimize" << endl;
@@ -656,7 +656,7 @@ void QMCFixedSampleLinearOptimize::print_cost_summary(const double si,
 bool QMCFixedSampleLinearOptimize::is_best_cost(const int ii, const std::vector<RealType>& cv, const std::vector<double>& sh, const RealType ic) const
 {
 
-  //app_log() << "determining best cost with cost_increase_tol = " << cost_increase_tol << " and target_shift = " << target_shift << std::endl;
+  //app_log() << "determining best cost with cost_increase_tol = " << cost_increase_tol << " and target_shift_i = " << target_shift_i << std::endl;
 
   // initialize return value
   bool retval = true;
@@ -678,8 +678,8 @@ bool QMCFixedSampleLinearOptimize::is_best_cost(const int ii, const std::vector<
     if ( other_is_valid ) {
 
       // if we are using a target shift and the cost is not too much higher, then prefer this cost if its shift is closer to the target shift
-      if ( target_shift > 0.0 ) {
-        const bool closer_to_target = ( std::abs(sh.at(ii) - target_shift) < std::abs(sh.at(i) - target_shift) );
+      if ( target_shift_i > 0.0 ) {
+        const bool closer_to_target = ( std::abs(sh.at(ii) - target_shift_i) < std::abs(sh.at(i) - target_shift_i) );
         const bool cost_is_similar = ( std::abs( cv.at(ii) - cv.at(i) ) < cost_increase_tol );
         const bool cost_is_much_lower = ( !cost_is_similar && cv.at(ii) < cv.at(i) - cost_increase_tol );
         if ( cost_is_much_lower || ( closer_to_target && cost_is_similar ) )
