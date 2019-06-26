@@ -96,7 +96,8 @@ void VMCUpdateAll::advanceWalker(Walker_t& thisWalker, bool recompute)
 
   if (!updated)
   {                                  // W.G and W.L have to be computed because the last move was rejected
-    W.update(thisWalker.R);          // move W back to last accepted configuration; W.DistTables, SK are updated
+    W.loadWalker(thisWalker, false); // move W back to last accepted configuration
+    W.update();                      // update W.DistTables and SK
     logpsi_old = Psi.evaluateLog(W); // update W.G,L
   }                                  // W and logpsi_old are up-to-date at this point
 

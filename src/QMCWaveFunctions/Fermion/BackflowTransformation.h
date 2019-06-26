@@ -151,7 +151,12 @@ public:
   opt_variables_type myVars;
 
   BackflowTransformation(ParticleSet& els)
-    : targetPtcl(els), QP(els), cutOff(0.0), myTableIndex_(els.addTable(els, DT_AOS))
+    : targetPtcl(els), QP(els), cutOff(0.0),
+#ifdef ENABLE_SOA
+      myTableIndex_(els.addTable(els, DT_SOA))
+#else
+      myTableIndex_(els.addTable(els, DT_AOS))
+#endif
   {
     NumTargets = els.getTotalNum();
     Bmat.resize(NumTargets);
@@ -347,7 +352,7 @@ public:
     activeParticle = iat;
     for (int i = 0; i < NumTargets; i++)
       oldQP[i] = newQP[i] = QP.R[i];
-    const auto& myTable = *P.DistTables[myTableIndex_];
+    const auto& myTable = P.getDistTable(myTableIndex_);
 #ifdef ENABLE_SOA
     newQP[iat] -= myTable.Temp_dr[iat];
 #else
@@ -398,7 +403,7 @@ public:
     activeParticle = iat;
     for (int i = 0; i < NumTargets; i++)
       oldQP[i] = newQP[i] = QP.R[i];
-    const auto& myTable = *P.DistTables[myTableIndex_];
+    const auto& myTable = P.getDistTable(myTableIndex_);
 #ifdef ENABLE_SOA
     newQP[iat] -= myTable.Temp_dr[iat];
 #else
@@ -427,7 +432,7 @@ public:
     activeParticle = iat;
     for (int i = 0; i < NumTargets; i++)
       oldQP[i] = newQP[i] = QP.R[i];
-    const auto& myTable = *P.DistTables[myTableIndex_];
+    const auto& myTable = P.getDistTable(myTableIndex_);
     newQP[iat] += myTable.Temp[iat].dr1;
     indexQP.clear();
     std::copy(FirstOfA, LastOfA, FirstOfA_temp);
@@ -733,7 +738,7 @@ public:
       dr[1] = 0.05;
       dr[2] = -0.3;
       P.makeMove(iat, dr);
-      const auto& myTable = *P.DistTables[myTableIndex_];
+      const auto& myTable = P.getDistTable(myTableIndex_);
       app_log() << "Move: " << myTable.Temp[iat].dr1 << std::endl;
       app_log() << "cutOff: " << cutOff << std::endl;
       for (int jat = 0; jat < NumTargets; jat++)

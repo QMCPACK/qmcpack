@@ -100,7 +100,7 @@ struct LocalizedBasisSet : public BasisSetBase<typename COT::value_type>
    */
   LocalizedBasisSet(ParticleSet& ions, ParticleSet& els) : CenterSys(ions), myTableIndex(els.addTable(ions, DT_AOS))
   {
-    myTable      = els.DistTables[myTableIndex];
+    myTable      = &els.getDistTable(myTableIndex);
     NumCenters   = CenterSys.getTotalNum();
     NumTargets   = els.getTotalNum();
     LOBasis.resize(NumCenters, 0);
@@ -159,7 +159,7 @@ struct LocalizedBasisSet : public BasisSetBase<typename COT::value_type>
    */
   void resetTargetParticleSet(ParticleSet& P)
   {
-    myTable = P.DistTables[myTableIndex];
+    myTable = &P.getDistTable(myTableIndex);
     for (int i = 0; i < LOBasisSet.size(); i++)
       LOBasisSet[i]->setTable(myTable);
   }
@@ -227,7 +227,7 @@ struct LocalizedBasisSet : public BasisSetBase<typename COT::value_type>
 
   inline void evaluateValues(const ParticleSet& P, ValueMatrix_t& phiM)
   {
-    const DistanceTableData* dt = P.DistTables[myTableIndex];
+    const DistanceTableData* dt = &P.getDistTable(myTableIndex);
     for (int c = 0; c < NumCenters; c++)
       LOBasis[c]->evaluateValues(dt, c, BasisOffset[c], phiM);
   }

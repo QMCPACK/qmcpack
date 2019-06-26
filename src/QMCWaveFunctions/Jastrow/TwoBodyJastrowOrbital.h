@@ -49,6 +49,8 @@ protected:
   int NumGroups;
   ///task id
   int TaskID;
+  /// e-e table ID
+  const int my_table_ID_;
   RealType DiffVal, DiffValSum;
   ParticleAttrib<RealType> U, d2U, curLap, curVal;
   ParticleAttrib<PosType> dU, curGrad;
@@ -69,7 +71,8 @@ public:
   ///container for the Jastrow functions
   std::vector<FT*> F;
 
-  TwoBodyJastrowOrbital(ParticleSet& p, int tid) : TaskID(tid), KEcorr(0.0)
+  TwoBodyJastrowOrbital(ParticleSet& p, int tid)
+    : TaskID(tid), KEcorr(0.0), my_table_ID_(p.addTable(p, DT_AOS))
   {
     PtclRef = &p;
     init(p);
@@ -254,22 +257,22 @@ public:
       ChiesaKEcorrection();
     }
     LogValue                         = 0.0;
-    const DistanceTableData* d_table = P.DistTables[0];
+    const auto& d_table = P.getDistTable(my_table_ID_);
     RealType dudr, d2udr2;
     PosType gr;
-    for (int i = 0; i < d_table->size(SourceIndex); i++)
+    for (int i = 0; i < d_table.size(SourceIndex); i++)
     {
-      for (int nn = d_table->M[i]; nn < d_table->M[i + 1]; nn++)
+      for (int nn = d_table.M[i]; nn < d_table.M[i + 1]; nn++)
       {
-        int j = d_table->J[nn];
-        //LogValue -= F[d_table->PairID[nn]]->evaluate(d_table->r(nn), dudr, d2udr2);
-        RealType uij = F[d_table->PairID[nn]]->evaluate(d_table->r(nn), dudr, d2udr2);
+        int j = d_table.J[nn];
+        //LogValue -= F[d_table.PairID[nn]]->evaluate(d_table.r(nn), dudr, d2udr2);
+        RealType uij = F[d_table.PairID[nn]]->evaluate(d_table.r(nn), dudr, d2udr2);
         LogValue -= uij;
         U[i * N + j] = uij;
         U[j * N + i] = uij; //save for the ratio
         //multiply 1/r
-        dudr *= d_table->rinv(nn);
-        gr = dudr * d_table->dr(nn);
+        dudr *= d_table.rinv(nn);
+        gr = dudr * d_table.dr(nn);
         //(d^2 u \over dr^2) + (2.0\over r)(du\over\dr)
         RealType lap(d2udr2 + (OHMMS_DIM - 1.0) * dudr);
         //multiply -1
@@ -289,7 +292,7 @@ public:
   void evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi)
   {
     LogValue                         = 0.0;
-    const DistanceTableData* d_table = P.DistTables[0];
+    const auto& d_table = P.getDistTable(my_table_ID_);
     RealType dudr, d2udr2;
     PosType gr;
 
@@ -297,23 +300,23 @@ public:
     grad_grad_psi = 0.0;
     ident.diagonal(1.0);
 
-    for (int i = 0; i < d_table->size(SourceIndex); i++)
+    for (int i = 0; i < d_table.size(SourceIndex); i++)
     {
-      for (int nn = d_table->M[i]; nn < d_table->M[i + 1]; nn++)
+      for (int nn = d_table.M[i]; nn < d_table.M[i + 1]; nn++)
       {
-        int j = d_table->J[nn];
-        //LogValue -= F[d_table->PairID[nn]]->evaluate(d_table->r(nn), dudr, d2udr2);
-        RealType uij = F[d_table->PairID[nn]]->evaluate(d_table->r(nn), dudr, d2udr2);
+        int j = d_table.J[nn];
+        //LogValue -= F[d_table.PairID[nn]]->evaluate(d_table.r(nn), dudr, d2udr2);
+        RealType uij = F[d_table.PairID[nn]]->evaluate(d_table.r(nn), dudr, d2udr2);
         LogValue -= uij;
         //      U[i*N+j]=uij;
         //     U[j*N+i]=uij; //save for the ratio
         //multiply 1/r
-        // dudr *= d_table->rinv(nn);
-        //  gr = dudr*d_table->dr(nn);
+        // dudr *= d_table.rinv(nn);
+        //  gr = dudr*d_table.dr(nn);
         //(d^2 u \over dr^2) + (2.0\over r)(du\over\dr)
-        RealType rinv = d_table->rinv(nn);
+        RealType rinv = d_table.rinv(nn);
         Tensor<RealType, OHMMS_DIM> hess =
-            rinv * rinv * outerProduct(d_table->dr(nn), d_table->dr(nn)) * (d2udr2 - dudr * rinv) + ident * dudr * rinv;
+            rinv * rinv * outerProduct(d_table.dr(nn), d_table.dr(nn)) * (d2udr2 - dudr * rinv) + ident * dudr * rinv;
 
         grad_grad_psi[i] -= hess;
         grad_grad_psi[j] -= hess;
@@ -323,7 +326,7 @@ public:
 
   ValueType ratio(ParticleSet& P, int iat)
   {
-    const DistanceTableData* d_table = P.DistTables[0];
+    const auto& d_table = P.getDistTable(my_table_ID_);
     DiffVal                          = 0.0;
     const int* pairid(PairID[iat]);
     for (int jat = 0, ij = iat * N; jat < N; jat++, ij++)
@@ -334,9 +337,9 @@ public:
       }
       else
       {
-        curVal[jat] = F[pairid[jat]]->evaluate(d_table->Temp[jat].r1);
+        curVal[jat] = F[pairid[jat]]->evaluate(d_table.Temp[jat].r1);
         DiffVal += U[ij] - curVal[jat];
-        //DiffVal += U[ij]-F[pairid[jat]]->evaluate(d_table->Temp[jat].r1);
+        //DiffVal += U[ij]-F[pairid[jat]]->evaluate(d_table.Temp[jat].r1);
       }
     }
     return std::exp(DiffVal);
@@ -351,15 +354,15 @@ public:
     std::vector<RealType> myr(ratios.size(), x);
     //vector<RealType> myr(ratios.size(),Uptcl[iat]);
 
-    const DistanceTableData* d_table = VP.DistTables[0];
+    const auto& d_table = VP.getDistTable(my_table_ID_);
     const int* pairid(PairID[iat]);
-    for (int i = 0; i < d_table->size(SourceIndex); ++i)
+    for (int i = 0; i < d_table.size(SourceIndex); ++i)
     {
       if (i != iat)
       {
         FuncType* func = F[pairid[i]];
-        for (int nn = d_table->M[i], j = 0; nn < d_table->M[i + 1]; ++nn, ++j)
-          myr[j] -= func->evaluate(d_table->r(nn));
+        for (int nn = d_table.M[i], j = 0; nn < d_table.M[i + 1]; ++nn, ++j)
+          myr[j] -= func->evaluate(d_table.r(nn));
       }
     }
 
@@ -378,7 +381,7 @@ public:
 
   ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
   {
-    const DistanceTableData* d_table = P.DistTables[0];
+    const auto& d_table = P.getDistTable(my_table_ID_);
     RealType dudr, d2udr2;
     PosType gr;
     const int* pairid = PairID[iat];
@@ -393,9 +396,9 @@ public:
       }
       else
       {
-        curVal[jat] = F[pairid[jat]]->evaluate(d_table->Temp[jat].r1, dudr, d2udr2);
-        dudr *= d_table->Temp[jat].rinv1;
-        gr += curGrad[jat] = -dudr * d_table->Temp[jat].dr1;
+        curVal[jat] = F[pairid[jat]]->evaluate(d_table.Temp[jat].r1, dudr, d2udr2);
+        dudr *= d_table.Temp[jat].rinv1;
+        gr += curGrad[jat] = -dudr * d_table.Temp[jat].dr1;
         curLap[jat]        = -(d2udr2 + (OHMMS_DIM - 1.0) * dudr);
         DiffVal += (U[ij] - curVal[jat]);
       }
@@ -441,19 +444,19 @@ public:
       FirstTime = false;
       ChiesaKEcorrection();
     }
-    const DistanceTableData* d_table = P.DistTables[0];
+    const auto& d_table = P.getDistTable(my_table_ID_);
     RealType dudr, d2udr2, u;
     LogValue = 0.0;
     GradType gr;
-    for (int i = 0; i < d_table->size(SourceIndex); i++)
+    for (int i = 0; i < d_table.size(SourceIndex); i++)
     {
-      for (int nn = d_table->M[i]; nn < d_table->M[i + 1]; nn++)
+      for (int nn = d_table.M[i]; nn < d_table.M[i + 1]; nn++)
       {
-        int j = d_table->J[nn];
-        u     = F[d_table->PairID[nn]]->evaluate(d_table->r(nn), dudr, d2udr2);
+        int j = d_table.J[nn];
+        u     = F[d_table.PairID[nn]]->evaluate(d_table.r(nn), dudr, d2udr2);
         LogValue -= u;
-        dudr *= d_table->rinv(nn);
-        gr = dudr * d_table->dr(nn);
+        dudr *= d_table.rinv(nn);
+        gr = dudr * d_table.dr(nn);
         //(d^2 u \over dr^2) + (2.0\over r)(du\over\dr)\f$
         RealType lap = d2udr2 + (OHMMS_DIM - 1.0) * dudr;
         int ij = i * N + j, ji = j * N + i;
