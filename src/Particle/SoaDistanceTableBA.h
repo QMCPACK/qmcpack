@@ -13,6 +13,8 @@
 #ifndef QMCPLUSPLUS_DTDIMPL_BA_H
 #define QMCPLUSPLUS_DTDIMPL_BA_H
 
+#include "Utilities/FairDivide.h"
+
 namespace qmcplusplus
 {
 /**@ingroup nnlist

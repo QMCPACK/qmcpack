@@ -24,7 +24,6 @@
 #include "ParticleIO/ParticleLayoutIO.h"
 #include "ParticleIO/XMLParticleIO.h"
 #include "ParticleIO/ParticleIOUtility.h"
-#include "ParticleBase/ParticleFunctions.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "Utilities/ProgressReportEngine.h"
 namespace qmcplusplus
