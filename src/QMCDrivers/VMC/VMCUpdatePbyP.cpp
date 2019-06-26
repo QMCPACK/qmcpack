@@ -115,7 +115,6 @@ void VMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
   }
   W.donePbyP();
   myTimers[1]->stop();
-  #pragma omp barrier
   myTimers[0]->start();
   RealType logpsi = Psi.updateBuffer(W, w_buffer, recompute);
   W.saveWalker(thisWalker);
