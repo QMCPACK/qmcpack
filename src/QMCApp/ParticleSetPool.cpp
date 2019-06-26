@@ -321,7 +321,6 @@ ParticleSet* ParticleSetPool::createESParticleSet(xmlNodePtr cur, const std::str
     typedef ParticleSet::SingleParticleIndex_t SingleParticleIndex_t;
     std::vector<SingleParticleIndex_t> grid(OHMMS_DIM, SingleParticleIndex_t(1));
     ions->Lattice.reset();
-    ions->Lattice.makeGrid(grid);
 
     myPool[source] = ions;
   }

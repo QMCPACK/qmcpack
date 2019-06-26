@@ -152,10 +152,10 @@ TEST_CASE("Chiesa Force", "[hamiltonian]")
   OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
-  Uniform3DGridLayout grid;
-  grid.BoxBConds = true; // periodic
-  grid.R.diagonal(5.0);
-  grid.reset();
+  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
+  Lattice.BoxBConds = true; // periodic
+  Lattice.R.diagonal(5.0);
+  Lattice.reset();
 
 
   ParticleSet ions;
@@ -189,7 +189,7 @@ TEST_CASE("Chiesa Force", "[hamiltonian]")
   tspecies(massIdx, upIdx)   = 1.0;
   tspecies(massIdx, downIdx) = 1.0;
 
-  elec.Lattice.copy(grid);
+  elec.Lattice.copy(Lattice);
   elec.createSK();
 
   SpeciesSet& ion_species           = ions.getSpeciesSet();
@@ -198,7 +198,7 @@ TEST_CASE("Chiesa Force", "[hamiltonian]")
   int pMembersizeIdx                = ion_species.addAttribute("membersize");
   ion_species(pChargeIdx, pIdx)     = 1;
   ion_species(pMembersizeIdx, pIdx) = 1;
-  ions.Lattice.copy(grid);
+  ions.Lattice.copy(Lattice);
   ions.createSK();
 
   ions.resetGroups();
@@ -242,10 +242,10 @@ TEST_CASE("Ceperley Force", "[hamiltonian]")
   OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
-  //Uniform3DGridLayout grid;
-  //grid.BoxBConds = false; // periodic
-  //grid.R.diagonal(5.0);
-  //grid.reset();
+  //CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
+  //Lattice.BoxBConds = false; // periodic
+  //Lattice.R.diagonal(5.0);
+  //Lattice.reset();
 
 
   ParticleSet ions;
@@ -279,7 +279,7 @@ TEST_CASE("Ceperley Force", "[hamiltonian]")
   tspecies(massIdx, upIdx)   = 1.0;
   tspecies(massIdx, downIdx) = 1.0;
 
-  //elec.Lattice.copy(grid);
+  //elec.Lattice.copy(Lattice);
   //elec.createSK();
 
   SpeciesSet& ion_species           = ions.getSpeciesSet();
@@ -288,7 +288,7 @@ TEST_CASE("Ceperley Force", "[hamiltonian]")
   int pMembersizeIdx                = ion_species.addAttribute("membersize");
   ion_species(pChargeIdx, pIdx)     = 1;
   ion_species(pMembersizeIdx, pIdx) = 1;
-  //ions.Lattice.copy(grid);
+  //ions.Lattice.copy(Lattice);
   //ions.createSK();
   ions.resetGroups();
 

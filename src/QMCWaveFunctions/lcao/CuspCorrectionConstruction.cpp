@@ -13,6 +13,7 @@
 
 #include "QMCWaveFunctions/lcao/CuspCorrectionConstruction.h"
 #include "Message/Communicate.h"
+#include "Utilities/FairDivide.h"
 
 namespace qmcplusplus
 {
