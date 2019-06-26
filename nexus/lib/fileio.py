@@ -783,7 +783,11 @@ class XsfFile(StandardFile):
                     e = e[0:2]
                 #end if
             #end if
-            elem.append(ptable.elements[e].atomic_number)
+            if is_element(e):
+                elem.append(ptable.elements[e].atomic_number)
+            else:
+                elem.append(0)
+            #end if
         #end for
         self.filetype    = 'xsf'
         self.periodicity = 'crystal' # assumed
