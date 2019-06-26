@@ -96,7 +96,8 @@ const auto& ei_table = elecs.getDistTable(ei_id); // when consuming a distance t
 The lower triangle for the electron-electron table should be used.
 It is the only part of the distance table valid throughout the run.
 During particle-by-particle move, there are extra restrictions.
-When a move of electron id is proposed, only parts of the table [0,iat)[0,iat) and [iat][0:Nelec] are valid.
+When a move of electron id is proposed, only the lower triangle parts [0,iat)[0,iat) [iat, Nelec)[iat, Nelec) and the row [iat][0:Nelec] are valid.
+In fact, the current implementation of distance based two and three body Jastrow factors in QMCPACK only needs the row [iat][0:Nelec].
 
 In \texttt{ratioGrad}, the new distances are stored in the \texttt{Temp\_r} and \texttt{Temp\_dr}
 members of the distance tables.
