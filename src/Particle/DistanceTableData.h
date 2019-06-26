@@ -98,8 +98,6 @@ struct DistanceTableData
 
   ///type of cell
   int CellType;
-  ///ID of this table among many
-  int ID;
   ///Type of DT
   int DTType;
   ///size of indicies

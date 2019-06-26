@@ -24,9 +24,6 @@ StressKinetic::StressKinetic(ParticleSet& ref, TrialWaveFunction& Psi0) : ForceB
   ReportEngine PRE("StressKinetic", "StressKinetic");
   //save source tag
   SourceID = ref.tag();
-  //create a distance table: just to get the table name
-  // DistanceTableData *d_aa = ref.DistanceTables[ref.addTable(ref, DT_AOS)];
-  // PtclRefName=d_aa->Name;
   prefix = "S_kin";
 }
 

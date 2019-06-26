@@ -60,8 +60,6 @@ struct J2OrbitalSoA : public WaveFunctionComponent
   size_t N_padded;
   ///number of groups of the target particleset
   size_t NumGroups;
-  ///task id
-  int TaskID;
   ///Used to compute correction
   bool FirstTime;
   ///diff value
@@ -84,6 +82,8 @@ struct J2OrbitalSoA : public WaveFunctionComponent
   std::vector<FT*> F;
   ///Uniquue J2 set for cleanup
   std::map<std::string, FT*> J2Unique;
+  /// e-e table ID
+  const int my_table_ID_;
 
   J2OrbitalSoA(ParticleSet& p, int tid);
   J2OrbitalSoA(const J2OrbitalSoA& rhs) = delete;
@@ -181,7 +181,7 @@ struct J2OrbitalSoA : public WaveFunctionComponent
   void evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios)
   {
     for (int k = 0; k < ratios.size(); ++k)
-      ratios[k] = std::exp(Uat[VP.refPtcl] - computeU(VP.refPS, VP.refPtcl, VP.DistTables[0]->Distances[k]));
+      ratios[k] = std::exp(Uat[VP.refPtcl] - computeU(VP.refPS, VP.refPtcl, VP.getDistTable(my_table_ID_).Distances[k]));
   }
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios);
 
@@ -275,7 +275,8 @@ struct J2OrbitalSoA : public WaveFunctionComponent
 };
 
 template<typename FT>
-J2OrbitalSoA<FT>::J2OrbitalSoA(ParticleSet& p, int tid) : TaskID(tid)
+J2OrbitalSoA<FT>::J2OrbitalSoA(ParticleSet& p, int tid)
+ : my_table_ID_(p.addTable(p, DT_SOA))
 {
   init(p);
   FirstTime = true;
@@ -422,15 +423,15 @@ typename J2OrbitalSoA<FT>::ValueType J2OrbitalSoA<FT>::ratio(ParticleSet& P, int
 {
   //only ratio, ready to compute it again
   UpdateMode = ORB_PBYP_RATIO;
-  cur_Uat    = computeU(P, iat, P.DistTables[0]->Temp_r.data());
+  cur_Uat    = computeU(P, iat, P.getDistTable(my_table_ID_).Temp_r.data());
   return std::exp(Uat[iat] - cur_Uat);
 }
 
 template<typename FT>
 inline void J2OrbitalSoA<FT>::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
 {
-  const DistanceTableData* d_table = P.DistTables[0];
-  const auto dist                  = d_table->Temp_r.data();
+  const auto& d_table = P.getDistTable(my_table_ID_);
+  const auto* restrict dist = d_table.Temp_r.data();
 
   for (int ig = 0; ig < NumGroups; ++ig)
   {
@@ -464,10 +465,10 @@ typename J2OrbitalSoA<FT>::ValueType J2OrbitalSoA<FT>::ratioGrad(ParticleSet& P,
 {
   UpdateMode = ORB_PBYP_PARTIAL;
 
-  computeU3(P, iat, P.DistTables[0]->Temp_r.data(), cur_u.data(), cur_du.data(), cur_d2u.data());
+  computeU3(P, iat, P.getDistTable(my_table_ID_).Temp_r.data(), cur_u.data(), cur_du.data(), cur_d2u.data());
   cur_Uat = simd::accumulate_n(cur_u.data(), N, valT());
   DiffVal = Uat[iat] - cur_Uat;
-  grad_iat += accumulateG(cur_du.data(), P.DistTables[0]->Temp_dr);
+  grad_iat += accumulateG(cur_du.data(), P.getDistTable(my_table_ID_).Temp_dr);
   return std::exp(DiffVal);
 }
 
@@ -475,17 +476,17 @@ template<typename FT>
 void J2OrbitalSoA<FT>::acceptMove(ParticleSet& P, int iat)
 {
   // get the old u, du, d2u
-  const DistanceTableData* d_table = P.DistTables[0];
-  computeU3(P, iat, d_table->Distances[iat], old_u.data(), old_du.data(), old_d2u.data());
+  const auto& d_table = P.getDistTable(my_table_ID_);
+  computeU3(P, iat, d_table.Distances[iat], old_u.data(), old_du.data(), old_d2u.data());
   if (UpdateMode == ORB_PBYP_RATIO)
   { //ratio-only during the move; need to compute derivatives
-    const auto dist = d_table->Temp_r.data();
+    const auto* restrict dist = d_table.Temp_r.data();
     computeU3(P, iat, dist, cur_u.data(), cur_du.data(), cur_d2u.data());
   }
 
   valT cur_d2Uat(0);
-  const auto& new_dr    = d_table->Temp_dr;
-  const auto& old_dr    = d_table->Displacements[iat];
+  const auto& new_dr    = d_table.Temp_dr;
+  const auto& old_dr    = d_table.Displacements[iat];
   constexpr valT lapfac = OHMMS_DIM - RealType(1);
 #pragma omp simd reduction(+ : cur_d2Uat)
   for (int jat = 0; jat < N; jat++)
@@ -525,20 +526,20 @@ void J2OrbitalSoA<FT>::acceptMove(ParticleSet& P, int iat)
 template<typename FT>
 void J2OrbitalSoA<FT>::recompute(ParticleSet& P)
 {
-  const DistanceTableData* d_table = P.DistTables[0];
+  const auto& d_table = P.getDistTable(my_table_ID_);
   for (int ig = 0; ig < NumGroups; ++ig)
   {
     const int igt = ig * NumGroups;
     for (int iat = P.first(ig), last = P.last(ig); iat < last; ++iat)
     {
-      computeU3(P, iat, d_table->Distances[iat], cur_u.data(), cur_du.data(), cur_d2u.data(), true);
+      computeU3(P, iat, d_table.Distances[iat], cur_u.data(), cur_du.data(), cur_d2u.data(), true);
       Uat[iat] = simd::accumulate_n(cur_u.data(), iat, valT());
       posT grad;
       valT lap(0);
       const valT* restrict u    = cur_u.data();
       const valT* restrict du   = cur_du.data();
       const valT* restrict d2u  = cur_d2u.data();
-      const RowContainer& displ = d_table->Displacements[iat];
+      const RowContainer& displ = d_table.Displacements[iat];
       constexpr valT lapfac     = OHMMS_DIM - RealType(1);
 #pragma omp simd reduction(+ : lap) aligned(du, d2u)
       for (int jat = 0; jat < iat; ++jat)
@@ -607,7 +608,7 @@ void J2OrbitalSoA<FT>::evaluateHessian(ParticleSet& P,
                                        HessVector_t& grad_grad_psi)
 {
   LogValue = 0.0;
-  const DistanceTableData& d_ee(*(P.DistTables[0]));
+  const DistanceTableData& d_ee(P.getDistTable(my_table_ID_));
   valT dudr, d2udr2;
 
   Tensor<valT, DIM> ident;
