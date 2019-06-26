@@ -236,7 +236,7 @@ public:
 #ifdef ENABLE_SOA
     APP_ABORT("Backflow_ee.h::evaluate(P,QP) not implemented for SoA\n");
 #else
-    const auto& myTable = *P.DistTables[myTableIndex_];
+    const auto& myTable = P.getDistTable(myTableIndex_);
     for (int i = 0; i < myTable.size(SourceIndex); i++)
     {
       for (int nn = myTable.M[i]; nn < myTable.M[i + 1]; nn++)
@@ -260,7 +260,7 @@ public:
 #ifdef ENABLE_SOA
     APP_ABORT("Backflow_ee.h::evaluate(P,QP,Bmat_vec,Amat) not implemented for SoA\n");
 #else
-    const auto& myTable = *P.DistTables[myTableIndex_];
+    const auto& myTable = P.getDistTable(myTableIndex_);
     for (int i = 0; i < myTable.size(SourceIndex); i++)
     {
       for (int nn = myTable.M[i]; nn < myTable.M[i + 1]; nn++)
@@ -301,7 +301,7 @@ public:
   inline void evaluate(const ParticleSet& P, ParticleSet& QP, GradMatrix_t& Bmat_full, HessMatrix_t& Amat)
   {
     RealType du, d2u;
-    const auto& myTable = *P.DistTables[myTableIndex_];
+    const auto& myTable = P.getDistTable(myTableIndex_);
 #ifdef ENABLE_SOA
     for (int ig = 0; ig < NumGroups; ++ig)
     {
@@ -395,7 +395,7 @@ public:
 #ifdef ENABLE_SOA
     APP_ABORT("Backflow_ee.h::evaluatePbyP(P,QP,index_vec) not implemented for SoA\n");
 #else
-    const auto& myTable = *P.DistTables[myTableIndex_];
+    const auto& myTable = P.getDistTable(myTableIndex_);
     int maxI = index.size();
     int iat  = index[0];
     for (int i = 1; i < maxI; i++)
@@ -414,7 +414,7 @@ public:
   inline void evaluatePbyP(const ParticleSet& P, int iat, ParticleSet::ParticlePos_t& newQP)
   {
     RealType du, d2u;
-    const auto& myTable = *P.DistTables[myTableIndex_];
+    const auto& myTable = P.getDistTable(myTableIndex_);
 #ifdef ENABLE_SOA
     for (int i = 0; i < iat; i++)
     {
@@ -463,7 +463,7 @@ public:
 #ifdef ENABLE_SOA
     APP_ABORT("Backflow_ee.h::evaluatePbyP(P,QP,index_vec,Amat) not implemented for SoA\n");
 #else
-    const auto& myTable = *P.DistTables[myTableIndex_];
+    const auto& myTable = P.getDistTable(myTableIndex_);
     int maxI = index.size();
     int iat  = index[0];
     for (int i = 1; i < maxI; i++)
@@ -497,7 +497,7 @@ public:
   inline void evaluatePbyP(const ParticleSet& P, int iat, ParticleSet::ParticlePos_t& newQP, HessMatrix_t& Amat)
   {
     RealType du, d2u;
-    const auto& myTable = *P.DistTables[myTableIndex_];
+    const auto& myTable = P.getDistTable(myTableIndex_);
 #ifdef ENABLE_SOA
     for (int j = 0; j < iat; j++)
     {
@@ -609,7 +609,7 @@ public:
 #ifdef ENABLE_SOA
     APP_ABORT("Backflow_ee.h::evaluatePbyP(P,QP,index_vec,Bmat,Amat) not implemented for SoA\n");
 #else
-    const auto& myTable = *P.DistTables[myTableIndex_];
+    const auto& myTable = P.getDistTable(myTableIndex_);
     int maxI                                                = index.size();
     int iat                                                 = index[0];
     const std::vector<DistanceTableData::TempDistType>& TMP = myTable.Temp;
@@ -659,7 +659,7 @@ public:
 #ifdef ENABLE_SOA
     APP_ABORT("Backflow_ee.h::evaluatePbyP(P,iat,QP,Bmat,Amat) not implemented for SoA\n");
 #else
-    const auto& myTable = *P.DistTables[myTableIndex_];
+    const auto& myTable = P.getDistTable(myTableIndex_);
     const std::vector<DistanceTableData::TempDistType>& TMP = myTable.Temp;
     for (int j = 0; j < iat; j++)
     {
@@ -733,7 +733,7 @@ public:
 #ifdef ENABLE_SOA
     APP_ABORT("Backflow_ee.h::evaluateBmatOnly(P,QP,Bmat_full) not implemented for SoA\n");
 #else
-    const auto& myTable = *P.DistTables[myTableIndex_];
+    const auto& myTable = P.getDistTable(myTableIndex_);
     for (int i = 0; i < myTable.size(SourceIndex); i++)
     {
       for (int nn = myTable.M[i]; nn < myTable.M[i + 1]; nn++)
@@ -762,7 +762,7 @@ public:
                                       HessArray_t& Xmat)
   {
     RealType du, d2u;
-    const auto& myTable = *P.DistTables[myTableIndex_];
+    const auto& myTable = P.getDistTable(myTableIndex_);
 #ifdef ENABLE_SOA
     for (int ig = 0; ig < NumGroups; ++ig)
     {

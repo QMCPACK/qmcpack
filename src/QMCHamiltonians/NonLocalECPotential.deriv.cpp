@@ -116,18 +116,18 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateValueAndDerivatives
   std::vector<ValueType> dlogpsi_ct(dlogpsi.size(), 0.0);
   std::vector<ValueType> dhlogpsi_ct(dlogpsi.size(), 0.0);
 
-  DistanceTableData* myTable = W.DistTables[myTableIndex];
+  const auto& myTable = W.getDistTable(myTableIndex);
   RealType esum              = 0.0;
   RealType pairpot;
   ParticleSet::ParticlePos_t deltarV(nknot);
-  for (int nn = myTable->M[iat], iel = 0; nn < myTable->M[iat + 1]; nn++, iel++)
+  for (int nn = myTable.M[iat], iel = 0; nn < myTable.M[iat + 1]; nn++, iel++)
   {
-    register RealType r(myTable->r(nn));
+    register RealType r(myTable.r(nn));
     if (r > Rmax)
       continue;
 
-    register RealType rinv(myTable->rinv(nn));
-    register PosType dr(myTable->dr(nn));
+    register RealType rinv(myTable.rinv(nn));
+    register PosType dr(myTable.dr(nn));
 
     //displacements wrt W.R[iel]
     for (int j = 0; j < nknot; j++)

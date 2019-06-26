@@ -126,10 +126,6 @@ int main(int argc, char** argv)
 
     ParticleSet els_aos(els);
 
-    //create tables
-    DistanceTableData* d_ee = els.DistTables[els.addTable(els, DT_SOA)];
-    DistanceTableData* d_ee_aos = els_aos.DistTables[els_aos.addTable(els_aos, DT_AOS)];
-
     ParticlePos_t delta(nels);
 
     RealType sqrttau=2.0;

@@ -27,6 +27,11 @@ namespace qmcplusplus
  */
 struct StressPBCAA : public QMCHamiltonianBase, public ForceBase
 {
+private:
+  ///locator of the distance table
+  const int d_ee_ID_;
+
+public:
   typedef LRCoulombSingleton::LRHandlerType LRHandlerType;
   typedef LRCoulombSingleton::GridType GridType;
   typedef LRCoulombSingleton::RadFunctorType RadFunctorType;

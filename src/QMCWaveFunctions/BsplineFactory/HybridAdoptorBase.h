@@ -531,8 +531,8 @@ struct HybridAdoptorBase
   template<typename VV>
   inline RealType evaluate_v(const ParticleSet& P, const int iat, VV& myV)
   {
-    const auto* ei_dist  = P.DistTables[myTableID];
-    const int center_idx = ei_dist->get_first_neighbor(iat, dist_r, dist_dr, P.activePtcl == iat);
+    const auto& ei_dist  = P.getDistTable(myTableID);
+    const int center_idx = ei_dist.get_first_neighbor(iat, dist_r, dist_dr, P.activePtcl == iat);
     if (center_idx < 0)
       abort();
     auto& myCenter = AtomicCenters[Super2Prim[center_idx]];
@@ -559,7 +559,7 @@ struct HybridAdoptorBase
   {
     const int center_idx = VP.refSourcePtcl;
     auto& myCenter       = AtomicCenters[Super2Prim[center_idx]];
-    return VP.refPS.DistTables[myTableID]->Distances[VP.refPtcl][center_idx] < myCenter.non_overlapping_radius;
+    return VP.refPS.getDistTable(myTableID).Distances[VP.refPtcl][center_idx] < myCenter.non_overlapping_radius;
   }
 
   // C2C, C2R cases
@@ -567,11 +567,11 @@ struct HybridAdoptorBase
   inline RealType evaluateValuesC2X(const VirtualParticleSet& VP, VM& multi_myV)
   {
     const int center_idx = VP.refSourcePtcl;
-    dist_r               = VP.refPS.DistTables[myTableID]->Distances[VP.refPtcl][center_idx];
+    dist_r               = VP.refPS.getDistTable(myTableID).Distances[VP.refPtcl][center_idx];
     auto& myCenter       = AtomicCenters[Super2Prim[center_idx]];
     if (dist_r < myCenter.cutoff)
     {
-      myCenter.evaluateValues(VP.DistTables[myTableID]->Displacements, center_idx, dist_r, multi_myV);
+      myCenter.evaluateValues(VP.getDistTable(myTableID).Displacements, center_idx, dist_r, multi_myV);
       return smooth_function(myCenter.cutoff_buffer, myCenter.cutoff, dist_r);
     }
     return RealType(-1);
@@ -586,11 +586,11 @@ struct HybridAdoptorBase
                                     SV& bc_signs)
   {
     const int center_idx = VP.refSourcePtcl;
-    dist_r               = VP.refPS.DistTables[myTableID]->Distances[VP.refPtcl][center_idx];
+    dist_r               = VP.refPS.getDistTable(myTableID).Distances[VP.refPtcl][center_idx];
     auto& myCenter       = AtomicCenters[Super2Prim[center_idx]];
     if (dist_r < myCenter.cutoff)
     {
-      const auto& displ = VP.DistTables[myTableID]->Displacements;
+      const auto& displ = VP.getDistTable(myTableID).Displacements;
       for (int ivp = 0; ivp < VP.getTotalNum(); ivp++)
       {
         r_image       = myCenter.pos - displ[ivp][center_idx];
@@ -607,8 +607,8 @@ struct HybridAdoptorBase
   template<typename VV, typename GV>
   inline RealType evaluate_vgl(const ParticleSet& P, const int iat, VV& myV, GV& myG, VV& myL)
   {
-    const auto* ei_dist  = P.DistTables[myTableID];
-    const int center_idx = ei_dist->get_first_neighbor(iat, dist_r, dist_dr, P.activePtcl == iat);
+    const auto& ei_dist  = P.getDistTable(myTableID);
+    const int center_idx = ei_dist.get_first_neighbor(iat, dist_r, dist_dr, P.activePtcl == iat);
     if (center_idx < 0)
       abort();
     auto& myCenter = AtomicCenters[Super2Prim[center_idx]];
@@ -626,8 +626,8 @@ struct HybridAdoptorBase
   template<typename VV, typename GV, typename HT>
   inline RealType evaluate_vgh(const ParticleSet& P, const int iat, VV& myV, GV& myG, HT& myH)
   {
-    const auto* ei_dist  = P.DistTables[myTableID];
-    const int center_idx = ei_dist->get_first_neighbor(iat, dist_r, dist_dr, P.activePtcl == iat);
+    const auto& ei_dist  = P.getDistTable(myTableID);
+    const int center_idx = ei_dist.get_first_neighbor(iat, dist_r, dist_dr, P.activePtcl == iat);
     if (center_idx < 0)
       abort();
     auto& myCenter = AtomicCenters[Super2Prim[center_idx]];
