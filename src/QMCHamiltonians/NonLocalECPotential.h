@@ -156,7 +156,7 @@ private:
    * @param myTable electron ion distance table
    * @param iel reference electron
    */
-  void markAffectedElecs(const DistanceTableData* myTable, int iel);
+  void markAffectedElecs(const DistanceTableData& myTable, int iel);
 };
 } // namespace qmcplusplus
 #endif

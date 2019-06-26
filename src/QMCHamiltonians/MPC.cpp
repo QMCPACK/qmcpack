@@ -30,9 +30,9 @@ namespace qmcplusplus
 void MPC::resetTargetParticleSet(ParticleSet& ptcl) {}
 
 MPC::MPC(ParticleSet& ptcl, double cutoff)
-    : PtclRef(&ptcl), Ecut(cutoff), FirstTime(true), VlongSpline(0), DensitySpline(0)
+    : PtclRef(&ptcl), Ecut(cutoff), FirstTime(true), VlongSpline(0), DensitySpline(0),
+      d_aa_ID(ptcl.addTable(ptcl, DT_SOA_PREFERRED))
 {
-  int it = ptcl.addTable(ptcl, DT_AOS);
   initBreakup();
 }
 
@@ -337,7 +337,7 @@ QMCHamiltonianBase* MPC::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 
 MPC::Return_t MPC::evalSR(ParticleSet& P) const
 {
-  const DistanceTableData& d_aa = (*P.DistTables[0]);
+  const DistanceTableData& d_aa = P.getDistTable(d_aa_ID);
   RealType SR                   = 0.0;
   if (d_aa.DTType == DT_SOA)
   {

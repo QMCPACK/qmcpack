@@ -34,47 +34,50 @@ struct CoulombPotential : public QMCHamiltonianBase
 {
   ///true, if CoulombAA for quantum particleset
   bool is_active;
-  ///distance table index, 0 indicate AA type
-  int myTableIndex;
+  ///distance table index
+  const int myTableIndex;
   ///number of centers
   int nCenters;
   ///source particle set
-  ParticleSet* Pa;
+  ParticleSet& Pa;
+  ///true if the table is AA
+  const bool is_AA;
 #if !defined(REMOVE_TRACEMANAGER)
   ///single particle trace samples
   Array<TraceReal, 1>* Va_sample;
   Array<TraceReal, 1>* Vb_sample;
 #endif
-  ParticleSet* Pb;
 
-  /** constructor
+  /** constructor for AA
    * @param s source particleset
-   * @param t target particleset
    * @param active if true, new Value is computed whenver evaluate is used.
-   *
-   * if t==0, t=s and AA interaction is used.
    */
-  inline CoulombPotential(ParticleSet* s, ParticleSet* t, bool active, bool copy = false)
-      : Pa(s), Pb(t), is_active(active)
+  inline CoulombPotential(ParticleSet& s, bool active, bool copy = false)
+      : Pa(s), myTableIndex(s.addTable(s, DT_SOA_PREFERRED)), is_AA(true), is_active(active)
   {
     set_energy_domain(potential);
-    if (t)
-      two_body_quantum_domain(*s, *t);
-    else
-      two_body_quantum_domain(*s, *s);
-    nCenters = s->getTotalNum();
-
-    if (t) // add source particle to target distance table
-      myTableIndex = t->addTable(*s, DT_SOA_PREFERRED);
-    else // a-a
-      myTableIndex = s->addTable(*s, DT_SOA_PREFERRED);
+    two_body_quantum_domain(s, s);
+    nCenters = s.getTotalNum();
 
     if (!is_active) //precompute the value
     {
       if (!copy)
-        s->DistTables[0]->evaluate(*s);
-      Value = evaluateAA(s->DistTables[0], s->Z.first_address());
+        s.update();
+      Value = evaluateAA(s.getDistTable(myTableIndex), s.Z.first_address());
     }
+  }
+
+  /** constructor for AB
+   * @param s source particleset
+   * @param t target particleset
+   * @param active if true, new Value is computed whenver evaluate is used.
+   */
+  inline CoulombPotential(ParticleSet& s, ParticleSet& t, bool active, bool copy = false)
+      : Pa(s), myTableIndex(t.addTable(s, DT_SOA_PREFERRED)), is_AA(false), is_active(active)
+  {
+    set_energy_domain(potential);
+    two_body_quantum_domain(s, t);
+    nCenters = s.getTotalNum();
   }
 
 #if !defined(REMOVE_TRACEMANAGER)
@@ -85,11 +88,15 @@ struct CoulombPotential : public QMCHamiltonianBase
     streaming_particles = request.streaming_array(myName);
     if (streaming_particles)
     {
-      Va_sample = tm.checkout_real<1>(myName, *Pa);
-      if (Pb)
-        Vb_sample = tm.checkout_real<1>(myName, *Pb);
+      Va_sample = tm.checkout_real<1>(myName, Pa);
+      if (!is_AA)
+      {
+        // Ye: the following line is intentionally made broken
+        //Vb_sample = tm.checkout_real<1>(myName, *Pb);
+        throw std::runtime_error("checkout_particle_quantities AB case need a fix");
+      }
       else if (!is_active)
-        evaluate_spAA(Pa->DistTables[0], Pa->Z.first_address());
+        evaluate_spAA(Pa.getDistTable(myTableIndex), Pa.Z.first_address());
     }
   }
 
@@ -98,14 +105,14 @@ struct CoulombPotential : public QMCHamiltonianBase
     if (streaming_particles)
     {
       delete Va_sample;
-      if (Pb)
+      if (!is_AA)
         delete Vb_sample;
     }
   }
 #endif
 
   /** evaluate AA-type interactions */
-  inline T evaluateAA(const DistanceTableData* d, const ParticleScalar_t* restrict Z)
+  inline T evaluateAA(const DistanceTableData& d, const ParticleScalar_t* restrict Z)
   {
     T res = 0.0;
 #if !defined(REMOVE_TRACEMANAGER)
@@ -114,11 +121,11 @@ struct CoulombPotential : public QMCHamiltonianBase
     else
 #endif
     {
-      if (d->DTType == DT_SOA)
+      if (d.DTType == DT_SOA)
       {
         for (size_t iat = 1; iat < nCenters; ++iat)
         {
-          const RealType* restrict dist = d->Distances[iat];
+          const RealType* restrict dist = d.Distances[iat];
           T q                           = Z[iat];
           for (size_t j = 0; j < iat; ++j)
             res += q * Z[j] / dist[j];
@@ -126,13 +133,13 @@ struct CoulombPotential : public QMCHamiltonianBase
       }
       else
       {
-        const int* restrict M = d->M.data();
-        const int* restrict J = d->J.data();
+        const int* restrict M = d.M.data();
+        const int* restrict J = d.J.data();
         for (int iat = 0; iat < nCenters; ++iat)
         {
           T q = Z[iat];
           for (int nn = M[iat]; nn < M[iat + 1]; ++nn)
-            res += q * Z[J[nn]] * d->rinv(nn);
+            res += q * Z[J[nn]] * d.rinv(nn);
         }
       }
     }
@@ -141,7 +148,7 @@ struct CoulombPotential : public QMCHamiltonianBase
 
 
   /** JNKIM: Need to check the precision */
-  inline T evaluateAB(const DistanceTableData* d,
+  inline T evaluateAB(const DistanceTableData& d,
                       const ParticleScalar_t* restrict Za,
                       const ParticleScalar_t* restrict Zb)
   {
@@ -153,12 +160,12 @@ struct CoulombPotential : public QMCHamiltonianBase
     else
 #endif
     {
-      if (d->DTType == DT_SOA)
+      if (d.DTType == DT_SOA)
       { //SoA
-        const size_t nTargets = d->targets();
+        const size_t nTargets = d.targets();
         for (size_t b = 0; b < nTargets; ++b)
         {
-          const RealType* restrict dist = d->Distances[b];
+          const RealType* restrict dist = d.Distances[b];
           T e                           = czero;
           for (size_t a = 0; a < nCenters; ++a)
             e += Za[a] / dist[a];
@@ -167,13 +174,13 @@ struct CoulombPotential : public QMCHamiltonianBase
       }
       else
       {
-        const int* restrict M = d->M.data();
-        const int* restrict J = d->J.data();
+        const int* restrict M = d.M.data();
+        const int* restrict J = d.J.data();
         for (int iat = 0; iat < nCenters; ++iat)
         {
           T q = Za[iat];
           for (int nn = M[iat]; nn < M[iat + 1]; ++nn)
-            res += q * Zb[J[nn]] * d->rinv(nn);
+            res += q * Zb[J[nn]] * d.rinv(nn);
         }
       }
     }
@@ -183,10 +190,10 @@ struct CoulombPotential : public QMCHamiltonianBase
 
 #if !defined(REMOVE_TRACEMANAGER)
   /** evaluate AA-type interactions */
-  inline T evaluate_spAA(const DistanceTableData* d, const ParticleScalar_t* restrict Z)
+  inline T evaluate_spAA(const DistanceTableData& d, const ParticleScalar_t* restrict Z)
   {
-    const int* restrict M = d->M.data();
-    const int* restrict J = d->J.data();
+    const int* restrict M = d.M.data();
+    const int* restrict J = d.J.data();
     T res                 = 0.0;
     T pairpot;
     Array<RealType, 1>& Va_samp = *Va_sample;
@@ -196,7 +203,7 @@ struct CoulombPotential : public QMCHamiltonianBase
       T q = Z[iat];
       for (int nn = M[iat], it = 0; nn < M[iat + 1]; ++nn, it++)
       {
-        pairpot = .5 * q * Z[J[nn]] * d->rinv(nn);
+        pairpot = .5 * q * Z[J[nn]] * d.rinv(nn);
         Va_samp(iat) += pairpot;
         Va_samp(it)  += pairpot;
         res          += 2.0 * pairpot;
@@ -225,12 +232,12 @@ struct CoulombPotential : public QMCHamiltonianBase
   }
 
 
-  inline T evaluate_spAB(const DistanceTableData* d,
+  inline T evaluate_spAB(const DistanceTableData& d,
                          const ParticleScalar_t* restrict Za,
                          const ParticleScalar_t* restrict Zb)
   {
-    const int* restrict M = d->M.data();
-    const int* restrict J = d->J.data();
+    const int* restrict M = d.M.data();
+    const int* restrict J = d.J.data();
     T res                 = 0.0;
     T pairpot;
     Array<RealType, 1>& Va_samp = *Va_sample;
@@ -242,7 +249,7 @@ struct CoulombPotential : public QMCHamiltonianBase
       T q = Za[iat];
       for (int nn = M[iat], it = 0; nn < M[iat + 1]; ++nn, it++)
       {
-        pairpot = .5 * q * Zb[J[nn]] * d->rinv(nn);
+        pairpot = .5 * q * Zb[J[nn]] * d.rinv(nn);
         Va_samp(iat) += pairpot;
         Vb_samp(it)  += pairpot;
         res          += 2.0 * pairpot;
@@ -282,33 +289,33 @@ struct CoulombPotential : public QMCHamiltonianBase
 
 
   /** evaluate AA-type interactions */
-  inline T evaluateAA_orig(const DistanceTableData* d, const ParticleScalar_t* restrict Z)
+  inline T evaluateAA_orig(const DistanceTableData& d, const ParticleScalar_t* restrict Z)
   {
     T res                 = 0.0;
-    const int* restrict M = d->M.data();
-    const int* restrict J = d->J.data();
+    const int* restrict M = d.M.data();
+    const int* restrict J = d.J.data();
     for (int iat = 0; iat < nCenters; ++iat)
     {
       T q = Z[iat];
       for (int nn = M[iat]; nn < M[iat + 1]; ++nn)
-        res += q * Z[J[nn]] * d->rinv(nn);
+        res += q * Z[J[nn]] * d.rinv(nn);
     }
     return res;
   }
 
 
-  inline T evaluateAB_orig(const DistanceTableData* d,
+  inline T evaluateAB_orig(const DistanceTableData& d,
                            const ParticleScalar_t* restrict Za,
                            const ParticleScalar_t* restrict Zb)
   {
     T res                 = 0.0;
-    const int* restrict M = d->M.data();
-    const int* restrict J = d->J.data();
+    const int* restrict M = d.M.data();
+    const int* restrict J = d.J.data();
     for (int iat = 0; iat < nCenters; ++iat)
     {
       T q = Za[iat];
       for (int nn = M[iat]; nn < M[iat + 1]; ++nn)
-        res += q * Zb[J[nn]] * d->rinv(nn);
+        res += q * Zb[J[nn]] * d.rinv(nn);
     }
     return res;
   }
@@ -323,9 +330,9 @@ struct CoulombPotential : public QMCHamiltonianBase
 
   void update_source(ParticleSet& s)
   {
-    if (myTableIndex == 0)
+    if (is_AA)
     {
-      Value = evaluateAA(s.DistTables[myTableIndex], s.Z.first_address());
+      Value = evaluateAA(s.getDistTable(myTableIndex), s.Z.first_address());
     }
   }
 
@@ -333,10 +340,10 @@ struct CoulombPotential : public QMCHamiltonianBase
   {
     if (is_active)
     {
-      if (myTableIndex)
-        Value = evaluateAB(P.DistTables[myTableIndex], Pa->Z.first_address(), P.Z.first_address());
+      if (is_AA)
+        Value = evaluateAA(P.getDistTable(myTableIndex), P.Z.first_address());
       else
-        Value = evaluateAA(P.DistTables[myTableIndex], P.Z.first_address());
+        Value = evaluateAB(P.getDistTable(myTableIndex), Pa.Z.first_address(), P.Z.first_address());
     }
     return Value;
   }
@@ -346,25 +353,25 @@ struct CoulombPotential : public QMCHamiltonianBase
   bool get(std::ostream& os) const
   {
     if (myTableIndex)
-      os << "CoulombAB source=" << Pa->getName() << std::endl;
+      os << "CoulombAB source=" << Pa.getName() << std::endl;
     else
-      os << "CoulombAA source/target " << Pa->getName() << std::endl;
+      os << "CoulombAA source/target " << Pa.getName() << std::endl;
     return true;
   }
 
   QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi)
   {
-    if (myTableIndex)
-      return new CoulombPotential(Pa, &qp, true);
-    else
+    if (is_AA)
     {
       if (is_active)
-        return new CoulombPotential(&qp, 0, true);
+        return new CoulombPotential(qp, true);
       else
         // Ye Luo April 16th, 2015
         // avoid recomputing ion-ion DistanceTable when reusing ParticleSet
-        return new CoulombPotential(Pa, 0, false, true);
+        return new CoulombPotential(Pa, false, true);
     }
+    else
+      return new CoulombPotential(Pa, qp, true);
   }
 };
 

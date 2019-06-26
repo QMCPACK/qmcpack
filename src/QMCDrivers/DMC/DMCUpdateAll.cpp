@@ -80,7 +80,8 @@ void DMCUpdateAllWithRejection::advanceWalker(Walker_t& thisWalker, bool recompu
   // recompute Psi if the move is rejected
   if (!accepted)
   {
-    W.update(thisWalker.R);
+    W.loadWalker(thisWalker, false);
+    W.update();
     logpsi = Psi.evaluateLog(W);
   }
 

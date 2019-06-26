@@ -19,21 +19,21 @@
 namespace qmcplusplus
 {
 StressPBCAA::StressPBCAA(ParticleSet& ref, bool active)
-    : AA(0), myGrid(0), rVs(0), FirstTime(true), myConst(0.0), ForceBase(ref, ref), Ps(ref), is_active(active)
+    : AA(0), myGrid(0), rVs(0), FirstTime(true), myConst(0.0), ForceBase(ref, ref),
+      Ps(ref), is_active(active), d_ee_ID_(ref.addTable(ref, DT_AOS))
 {
   ReportEngine PRE("StressPBCAA", "StressPBCAA");
   //save source tag
   SourceID = ref.tag();
   //create a distance table: just to get the table name
-  DistanceTableData* d_aa = ref.DistanceTables[ref.addTable(ref, DT_AOS)];
-  PtclRefName             = d_aa->Name;
+  PtclRefName             = ref.getDistTable(d_ee_ID_).Name;
   initBreakup(ref);
   prefix = "S_" + PtclRefName;
   app_log() << "  Maximum K shell " << AA->MaxKshell << std::endl;
   app_log() << "  Number of k vectors " << AA->Fk.size() << std::endl;
   if (!is_active)
   {
-    d_aa->evaluate(ref);
+    d_aa.evaluate(ref);
     update_source(ref);
     app_log() << "Evaluating Stress SymTensor::Long Range\n";
     sLR = evalLR(ref);
@@ -96,7 +96,7 @@ void StressPBCAA::resetTargetParticleSet(ParticleSet& P)
 {
   if (is_active)
   {
-    PtclRefName = P.DistTables[0]->Name;
+    PtclRefName = P.getDistTable(d_aa_ID_)->Name;
     AA->resetTargetParticleSet(P);
   }
 }
@@ -138,7 +138,7 @@ StressPBCAA::spevaluate(ParticleSet& P)
  // V_samp = 0.0;
   {
     //SR
-    const DistanceTableData &d_aa(*P.DistTables[0]);
+    const DistanceTableData &d_aa(P.getDistTable(d_ee_ID_));
     RealType pairpot; //energy for single pair
     RealType z;
     for(int ipart=0; ipart<NumCenters; ipart++)
@@ -294,19 +294,19 @@ StressPBCAA::evalLRwithForces(ParticleSet& P)
 /*StressPBCAA::Return_t
 StressPBCAA::evalSRwithForces(ParticleSet& P)
 {
-  const DistanceTableData *d_aa = P.DistTables[0];
+  const auto& d_aa = P.getDistTable(d_aa_ID_);
   RealType SR=0.0;
   for(int ipart=0; ipart<NumCenters; ipart++)
   {
     RealType esum = 0.0;
-    for(int nn=d_aa->M[ipart],jpart=ipart+1; nn<d_aa->M[ipart+1]; nn++,jpart++)
+    for(int nn=d_aa.M[ipart],jpart=ipart+1; nn<d_aa.M[ipart+1]; nn++,jpart++)
     {
       RealType rV, d_rV_dr, d2_rV_dr2;
-      rV = rVs->splint(d_aa->r(nn), d_rV_dr, d2_rV_dr2);
-      RealType V = rV *d_aa->rinv(nn);
-      esum += Zat[jpart]*d_aa->rinv(nn)*rV;
+      rV = rVs->splint(d_aa.r(nn), d_rV_dr, d2_rV_dr2);
+      RealType V = rV *d_aa.rinv(nn);
+      esum += Zat[jpart]*d_aa.rinv(nn)*rV;
       PosType grad = Zat[jpart]*Zat[ipart]*
-                     (d_rV_dr - V)*d_aa->rinv(nn)*d_aa->rinv(nn)*d_aa->dr(nn);
+                     (d_rV_dr - V)*d_aa.rinv(nn)*d_aa.rinv(nn)*d_aa.dr(nn);
       forces[ipart] += grad;
       forces[jpart] -= grad;
     }
@@ -374,7 +374,7 @@ SymTensor<StressPBCAA::RealType, OHMMS_DIM> StressPBCAA::evalConsts(bool report)
 
 SymTensor<StressPBCAA::RealType, OHMMS_DIM> StressPBCAA::evalSR(ParticleSet& P)
 {
-  const DistanceTableData& d_aa(*P.DistTables[0]);
+  const DistanceTableData& d_aa(P.getDistTable(d_ee_ID_));
   SymTensor<RealType, OHMMS_DIM> SR = 0.0;
   for (int ipart = 0; ipart < NumCenters; ipart++)
   {

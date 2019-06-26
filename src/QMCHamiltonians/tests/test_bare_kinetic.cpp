@@ -120,11 +120,11 @@ TEST_CASE("Bare KE Pulay PBC", "[hamiltonian]")
 
   //Cell definition:
 
-  Uniform3DGridLayout grid;
-  grid.BoxBConds = true; // periodic
-  grid.R.diagonal(20);
-  grid.LR_dim_cutoff = 15;
-  grid.reset();
+  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
+  Lattice.BoxBConds = true; // periodic
+  Lattice.R.diagonal(20);
+  Lattice.LR_dim_cutoff = 15;
+  Lattice.reset();
 
 
   ParticleSet ions;
@@ -146,11 +146,11 @@ TEST_CASE("Bare KE Pulay PBC", "[hamiltonian]")
   int iatnumber                 = ion_species.addAttribute("atomic_number");
   ion_species(pChargeIdx, pIdx) = 1;
   ion_species(iatnumber, pIdx)  = 11;
-  ions.Lattice.copy(grid);
+  ions.Lattice.copy(Lattice);
   ions.createSK();
 
 
-  elec.Lattice.copy(grid);
+  elec.Lattice.copy(Lattice);
   elec.setName("e");
   elec.create(2);
   elec.R[0][0] = 2.0;
@@ -180,19 +180,6 @@ TEST_CASE("Bare KE Pulay PBC", "[hamiltonian]")
   // The call to resetGroups is needed transfer the SpeciesSet
   // settings to the ParticleSet
   elec.resetGroups();
-
-  int myTableIndex = -1;
-#ifdef ENABLE_SOA
-  myTableIndex = elec.addTable(ions, DT_SOA);
-  ions.addTable(ions, DT_SOA);
-#else
-  myTableIndex = elec.addTable(ions, DT_AOS);
-  ions.addTable(ions, DT_AOS);
-#endif
-
-  ions.update();
-  elec.update();
-
 
   //Cool.  Now to construct a wavefunction with 1 and 2 body jastrow (no determinant)
   TrialWaveFunction psi = TrialWaveFunction(c);
@@ -249,6 +236,10 @@ TEST_CASE("Bare KE Pulay PBC", "[hamiltonian]")
 
   BareKineticEnergy<double> bare_ke(elec);
   bare_ke.put(h1);
+
+  // update all distance tables
+  ions.update();
+  elec.update();
 
   RealType logpsi = psi.evaluateLog(elec);
 

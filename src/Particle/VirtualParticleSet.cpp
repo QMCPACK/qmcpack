@@ -33,19 +33,8 @@ VirtualParticleSet::VirtualParticleSet(const ParticleSet& p, int nptcl) : refPS(
   RSoA.resize(nptcl);
 
   //create distancetables
-  if (refPS.DistTables.size())
-  {
-    DistTables.resize(refPS.DistTables.size());
-    distTableDescriptions.resize(refPS.DistTables.size());
-    for (int i = 0; i < DistTables.size(); ++i)
-    {
-      std::ostringstream description;
-      DistTables[i] =
-          createDistanceTable(refPS.DistTables[i]->origin(), *this, refPS.DistTables[0]->DTType, description);
-      distTableDescriptions[i] = description.str();
-      DistTables[i]->ID        = i;
-    }
-  }
+  for (int i = 0; i < refPS.getNumDistTables(); ++i)
+    addTable(refPS.getDistTable(i).origin(), refPS.getDistTable(0).DTType);
 }
 
 /// move virtual particles to new postions and update distance tables
@@ -54,14 +43,10 @@ void VirtualParticleSet::makeMoves(int jel, const ParticlePos_t& vitualPos, bool
   if (sphere && iat < 0)
     APP_ABORT("VirtualParticleSet::makeMoves is invoked incorrectly, the flag sphere=true requires iat specified!");
   onSphere = sphere;
-  myTimers[1]->start();
   refPtcl       = jel;
   refSourcePtcl = iat;
   R             = vitualPos;
-  RSoA.copyIn(R);
-  for (int i = 0; i < DistTables.size(); i++)
-    DistTables[i]->evaluate(*this);
-  myTimers[1]->stop();
+  update();
 }
 
 } // namespace qmcplusplus
