@@ -204,15 +204,6 @@ ENDIF()
   #  ADD_LIBRARY(qmcutil SHARED ${UTILITIES})
   #ENDIF(QMC_BUILD_STATIC)
 
-
-  IF(OHMMS_DIM MATCHES 3)
-    SET(PARTICLE Lattice/Uniform3DGridLayout.cpp)
-  ENDIF(OHMMS_DIM MATCHES 3)
-
-  IF(OHMMS_DIM MATCHES 2)
-    SET(PARTICLE Lattice/Uniform2DGridLayout.cpp)
-  ENDIF(OHMMS_DIM MATCHES 2)
-
   ####################################
   # create libqmcbase 
   ####################################

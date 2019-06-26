@@ -22,6 +22,7 @@
 #include "Optimize/VarList.h"
 #include "Numerics/LinearFit.h"
 //#define ENABLE_VMC__MASTER
+#include "Utilities/FairDivide.h"
 #if !defined(REMOVE_TRACEMANAGER)
 #include "Estimators/TraceManager.h"
 #else

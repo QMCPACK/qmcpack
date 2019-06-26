@@ -25,54 +25,13 @@ namespace qmcplusplus
    *
    * - T1 the datatype to be transformed
    * - D dimension
-   * - ORTHO true, if only Diagonal Elements are used
    */
-  template<class T1, unsigned D, bool ORTHO> struct PosTransformer { };
+  template<class T1, unsigned D> struct PosTransformer { };
 
   /** Specialized PosTransformer<T,3,true> using only the diagonal elements
   */
   template<class T>
-    struct PosTransformer<T,3,true>
-    {
-      using Array_t=VectorSoaContainer<T,3>;
-      using Transformer_t=Tensor<T,3>;
-
-      //index for the tensor
-      enum {iXX=0, iXY=1, iXZ=2, iYX=3, iYY=4, iYZ=5, iZX=6, iZY=7, iZZ=8};
-
-      inline static void
-        apply(const Array_t& pin, const Transformer_t& X, Array_t& pout, int first, int last)
-        {
-          const int n=last-first;
-          blas::axpy(X[iXX],pin.data(0),pout.data(0),n);
-          blas::axpy(X[iYY],pin.data(1),pout.data(1),n);
-          blas::axpy(X[iZZ],pin.data(2),pout.data(2),n);
-        }
-
-      inline static void
-        apply(const Transformer_t& X, const Array_t& pin,  Array_t& pout, int first, int last)
-        {
-          ::apply(pin,X,pout,first,last);
-        }
-
-      inline static void
-        apply(Array_t& pinout, const Transformer_t& X,int first, int last)
-        {
-          const int n=last-first;
-          blas::scal(X[iXX],pinout.data(0),n);
-          blas::scal(X[iYY],pinout.data(1),n);
-          blas::scal(X[iZZ],pinout.data(2),n);
-        }
-
-      inline static void
-        apply(const Transformer_t& X, Array_t& pinout, int first, int last)
-        {
-          ::apply(pinout,X,first,last);
-        }
-    };
-
-  template<class T>
-    struct PosTransformer<T,3,false>
+    struct PosTransformer<T,3>
     {
       using Array_t=VectorSoaContainer<T,3>;
       using Transformer_t=Tensor<T,3>;
