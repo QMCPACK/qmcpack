@@ -26,22 +26,22 @@ using std::string;
 
 namespace qmcplusplus
 {
-typedef TinyVector<double, 3> vec_t;
+using vec_t = TinyVector<OHMMS_PRECISION, 3>;
 
 TEST_CASE("open_bconds", "[lattice]")
 {
   CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
-  DTD_BConds<double, 3, SUPERCELL_OPEN> bcond(Lattice);
+  DTD_BConds<OHMMS_PRECISION, 3, SUPERCELL_OPEN> bcond(Lattice);
 
   vec_t v(3.0, 4.0, 5.0);
 
-  double r2 = bcond.apply_bc(v);
+  OHMMS_PRECISION r2 = bcond.apply_bc(v);
   REQUIRE(Approx(r2) == 50.0);
 
 
   std::vector<vec_t> disps(1);
   disps[0] = v;
-  std::vector<double> r(1), rinv(1), rr(1);
+  std::vector<OHMMS_PRECISION> r(1), rinv(1), rr(1);
 
   bcond.apply_bc(disps, r, rinv);
 
@@ -67,11 +67,11 @@ TEST_CASE("periodic_bulk_bconds", "[lattice]")
 
   REQUIRE(Lattice.Volume == Approx(0.4 * 0.4 * 0.4));
 
-  DTD_BConds<double, 3, SUPERCELL_BULK> bcond(Lattice);
+  DTD_BConds<OHMMS_PRECISION, 3, SUPERCELL_BULK> bcond(Lattice);
 
   vec_t v1(0.0, 0.0, 0.0);
 
-  double r2 = bcond.apply_bc(v1);
+  OHMMS_PRECISION r2 = bcond.apply_bc(v1);
   REQUIRE(r2 == 0.0);
 
   vec_t v2(0.5, 0.0, 0.0);
