@@ -155,12 +155,6 @@ public:
   ///Structure factor
   StructFact* SK;
 
-  ///distance tables that need to be updated by moving this ParticleSet
-  std::vector<DistanceTableData*> DistTables;
-
-  /// Descriptions from distance table creation.  Same order as DistTables.
-  std::vector<std::string> distTableDescriptions;
-
   ///Particle density in G-space for MPC interaction
   std::vector<TinyVector<int, OHMMS_DIM>> DensityReducedGvecs;
   std::vector<ComplexType> Density_G;
@@ -249,17 +243,18 @@ public:
   ///check whether quantum domain is valid for particles
   inline bool quantum_domain_valid() const { return quantum_domain_valid(quantum_domain); }
 
-  /**  add a distance table
+  /** add a distance table
    * @param psrc source particle set
+   * @param dt_type distance table type
+   * @param need_full_table_loadWalker if ture, fully computed in loadWalker()
    *
-   * Ensure that the distance for this-this is always created first.
+   * if this->myName == psrc.getName(), AA type. Otherwise, AB type.
    */
-  int addTable(const ParticleSet& psrc, int dt_type);
+  int addTable(const ParticleSet& psrc, int dt_type, bool need_full_table_loadWalker = false);
 
-  /** returns index of a distance table, -1 if not present
-   * @param psrc source particle set
+  /** get a distance table by table_ID
    */
-  int getTable(const ParticleSet& psrc);
+  inline const DistanceTableData& getDistTable(int table_ID) const { return *DistTables[table_ID]; }
 
   /** reset all the collectable quantities during a MC iteration
    */
@@ -269,11 +264,6 @@ public:
    *@param skip SK update if skipSK is true
    */
   void update(bool skipSK = false);
-
-  /**update the internal data with new position
-   *@param pos position vector assigned to R
-   */
-  void update(const ParticlePos_t& pos);
 
   /** create Structure Factor with PBCs
    */
@@ -373,7 +363,7 @@ public:
 
   /** reject the move
    */
-  void rejectMove(Index_t iat);
+  void rejectMove(Index_t iat) { activePtcl = -1; }
 
   void initPropertyList();
   inline int addProperty(const std::string& pname) { return PropertyList.add(pname.c_str()); }
@@ -595,6 +585,8 @@ public:
     AttribList.add(IndirectID);
   }
 
+  inline int getNumDistTables() const { return DistTables.size(); }
+
 protected:
   /** map to handle distance tables
    *
@@ -602,6 +594,13 @@ protected:
    * myDistTableMap[ObjectTag] === 0
    */
   std::map<std::string, int> myDistTableMap;
+
+  /// distance tables that need to be updated by moving this ParticleSet
+  std::vector<DistanceTableData*> DistTables;
+
+  /// Descriptions from distance table creation.  Same order as DistTables.
+  std::vector<std::string> distTableDescriptions;
+
 
   std::vector<NewTimer*> myTimers;
   SingleParticlePos_t myTwist;

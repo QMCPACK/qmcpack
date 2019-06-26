@@ -113,7 +113,7 @@ LocalCorePolPotential::Return_t LocalCorePolPotential::evaluate(ParticleSet& P)
     //index for attribute charge
     SpeciesSet& Species(IonConfig.getSpeciesSet());
     int iz = Species.addAttribute("charge");
-    const auto& d_ii = *IonConfig.DistTables[d_ii_ID];
+    const auto& d_ii = IonConfig.getDistTable(d_ii_ID);
     //calculate the Core-Core Dipole matrix
     for (int iat = 0; iat < nCenters; iat++)
     {
@@ -140,7 +140,7 @@ LocalCorePolPotential::Return_t LocalCorePolPotential::evaluate(ParticleSet& P)
   //calculate the Electron-Core Dipole matrix
   //CoreElDipole=0.0;
   RealType e = 0.0;
-  const auto& d_ie = *P.DistTables[d_ie_ID];
+  const auto& d_ie = P.getDistTable(d_ie_ID);
   for (int iat = 0; iat < nCenters; iat++)
   {
     if (Centers[iat])

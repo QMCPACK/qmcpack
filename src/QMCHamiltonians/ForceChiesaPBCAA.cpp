@@ -23,7 +23,7 @@
 namespace qmcplusplus
 {
 ForceChiesaPBCAA::ForceChiesaPBCAA(ParticleSet& ions, ParticleSet& elns, bool firsttime)
-    : ForceBase(ions, elns), PtclA(ions), first_time(firsttime)
+    : ForceBase(ions, elns), PtclA(ions), first_time(firsttime), d_aa_ID(ions.addTable(ions, DT_SOA_PREFERRED)), d_ei_ID(elns.addTable(ions, DT_SOA_PREFERRED))
 {
   ReportEngine PRE("ForceChiesaPBCAA", "ForceChiesaPBCAA");
   myName = "Chiesa_Force_Base_PBCAB";
@@ -39,12 +39,12 @@ ForceChiesaPBCAA::ForceChiesaPBCAA(ParticleSet& ions, ParticleSet& elns, bool fi
   ions.turnOnPerParticleSK();
   //This sets up the long range breakups.
   kcdifferent  = false;
-  myTableIndex = elns.addTable(ions, DT_SOA_PREFERRED);
   initBreakup(elns);
   // app_log()<< "IonIon Force" << std::endl;
   // app_log()<<forces_IonIon<< std::endl;
   if (first_time == true)
   {
+    ions.update();
     evaluateLR_AA();
     // app_log()<< "IonIon Force" << std::endl;
     // app_log()<<forces_IonIon<< std::endl;
@@ -172,7 +172,7 @@ void ForceChiesaPBCAA::evaluateLR(ParticleSet& P)
 
 void ForceChiesaPBCAA::evaluateSR(ParticleSet& P)
 {
-  const DistanceTableData& d_ab(*P.DistTables[myTableIndex]);
+  const DistanceTableData& d_ab(P.getDistTable(d_ei_ID));
   if (d_ab.DTType == DT_SOA)
   {
     for (size_t jat = 0; jat < NptclB; ++jat)
@@ -223,7 +223,7 @@ void ForceChiesaPBCAA::evaluateSR(ParticleSet& P)
 
 void ForceChiesaPBCAA::evaluateSR_AA()
 {
-  const DistanceTableData& d_aa(*PtclA.DistTables[0]);
+  const DistanceTableData& d_aa(PtclA.getDistTable(d_aa_ID));
   if (d_aa.DTType == DT_SOA)
   {
     for (size_t ipart = 1; ipart < NptclA; ipart++)
@@ -343,11 +343,6 @@ bool ForceChiesaPBCAA::put(xmlNodePtr cur)
 
 void ForceChiesaPBCAA::resetTargetParticleSet(ParticleSet& P)
 {
-  int tid = P.addTable(PtclA, DT_AOS);
-  if (tid != myTableIndex)
-  {
-    APP_ABORT("ForceChiesaPBCAA::resetTargetParticleSet found inconsistent table index");
-  }
   AB->resetTargetParticleSet(P);
 }
 

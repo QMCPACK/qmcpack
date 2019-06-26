@@ -169,15 +169,6 @@ SPOSet* EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   {
     APP_ABORT("Einspline needs the source particleset");
   }
-  else
-  { //keep the one-body distance table index
-#if defined(ENABLE_SOA)
-    myTableIndex = TargetPtcl.addTable(*SourcePtcl, DT_SOA_PREFERRED);
-#else
-    myTableIndex = TargetPtcl.addTable(*SourcePtcl, DT_AOS);
-#endif
-    SourcePtcl->addTable(*SourcePtcl, DT_SOA);
-  }
 
   ///////////////////////////////////////////////
   // Read occupation information from XML file //

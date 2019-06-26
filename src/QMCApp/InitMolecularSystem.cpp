@@ -96,7 +96,7 @@ void InitMolecularSystem::initMolecule(ParticleSet* ions, ParticleSet* els)
 
   const int d_ii_ID = ions->addTable(*ions, DT_SOA_PREFERRED);
   ions->update();
-  const auto& d_ii = *ions->DistTables[d_ii_ID];
+  const auto& d_ii = ions->getDistTable(d_ii_ID);
   const ParticleSet::ParticleIndex_t& grID(ions->GroupID);
   SpeciesSet& Species(ions->getSpeciesSet());
   int Centers = ions->getTotalNum();

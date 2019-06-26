@@ -116,13 +116,13 @@ int main(int argc, char** argv)
 
   ParticleSet::ParticlePos_t Rcopy(els.R);
 
-  DistanceTableData* d_ee = els.DistTables[els.addTable(els, DT_SOA)];
-  DistanceTableData* d_ie = els.DistTables[els.addTable(ions, DT_SOA)];
+  const auto& d_ee = els.getDistTable(els.addTable(els, DT_SOA));
+  const auto& d_ie = els.getDistTable(els.addTable(ions, DT_SOA));
 
   RealType Rsim=els.Lattice.WignerSeitzRadius;
 
-  DistanceTableData* d_ee_aos = els_aos.DistTables[els_aos.addTable(els_aos, DT_SOA)];
-  DistanceTableData* d_ie_aos = els_aos.DistTables[els_aos.addTable(ions_aos, DT_SOA)];
+  const auto& d_ee_aos = els_aos.getDistTable(els_aos.addTable(els_aos, DT_AOS));
+  const auto& d_ie_aos = els_aos.getDistTable(els_aos.addTable(ions_aos, DT_AOS));
 
   //SoA version does not need update if PbyP
   els.update();
@@ -137,9 +137,9 @@ int main(int argc, char** argv)
   for(int iel=0; iel<nels; ++iel)
     for(int jel=iel+1; jel<nels; ++jel)
     {
-      RealType dref=d_ee_aos->r(nn);
-      RealType dsym=std::abs(d_ee->Distances[jel][iel]-d_ee->Distances[iel][jel]);
-      PosType dr= d_ee->Displacements[jel][iel]+d_ee->Displacements[iel][jel];
+      RealType dref=d_ee_aos.r(nn);
+      RealType dsym=std::abs(d_ee.Distances[jel][iel]-d_ee.Distances[iel][jel]);
+      PosType dr= d_ee.Displacements[jel][iel]+d_ee.Displacements[iel][jel];
       RealType d2=sqrt(dot(dr,dr));
       sym_all_err += dsym;
       sym_disp_all_err+=d2;
@@ -220,9 +220,9 @@ int main(int argc, char** argv)
     for(int iel=0; iel<nels; ++iel)
       for(int jel=iel+1; jel<nels; ++jel)
       {
-        RealType dref=d_ee_aos->r(nn);
-        RealType d= std::abs(d_ee->Distances[jel][iel]-dref);
-        PosType dr= (d_ee->Displacements[jel][iel]+d_ee_aos->dr(nn));
+        RealType dref=d_ee_aos.r(nn);
+        RealType d= std::abs(d_ee.Distances[jel][iel]-dref);
+        PosType dr= (d_ee.Displacements[jel][iel]+d_ee_aos.dr(nn));
         RealType d2=sqrt(dot(dr,dr));
         dist_all_err+=d;
         disp_all_err += d2;
@@ -250,9 +250,9 @@ int main(int argc, char** argv)
     for(int i=0; i<nions; ++i)
       for(int j=0; j<nels; ++j)
       {
-        RealType dref=d_ie_aos->r(nn);
-        RealType d= std::abs(d_ie->Distances[j][i]-dref);
-        PosType dr= (d_ie->Displacements[j][i]+d_ie_aos->dr(nn));
+        RealType dref=d_ie_aos.r(nn);
+        RealType d= std::abs(d_ie.Distances[j][i]-dref);
+        PosType dr= (d_ie.Displacements[j][i]+d_ie_aos.dr(nn));
         RealType d2=sqrt(dot(dr,dr));
         dist_all_err += d;
         disp_all_err += d2;

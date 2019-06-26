@@ -108,13 +108,6 @@ TEST_CASE("RPA Jastrow", "[wavefunction]")
   // initialize SK
   elec_.createSK();
 
-#ifdef ENABLE_SOA
-  elec_.addTable(ions_, DT_SOA);
-#else
-  elec_.addTable(ions_, DT_AOS);
-#endif
-  elec_.update();
-
   TrialWaveFunction psi = TrialWaveFunction(c);
 
   xmltext = "<tmp> \
@@ -131,6 +124,10 @@ TEST_CASE("RPA Jastrow", "[wavefunction]")
   jas->put(root);
 
   psi.addOrbital(jas, "Jee", false);
+
+  // update all distance tables
+  elec_.update();
+
   double logpsi = psi.evaluateLog(elec_);
   REQUIRE(logpsi == Approx(-1.3327837613)); // note: number not validated
 }
