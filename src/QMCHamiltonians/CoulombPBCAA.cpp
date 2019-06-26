@@ -35,7 +35,7 @@ CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces)
   ReportEngine PRE("CoulombPBCAA", "CoulombPBCAA");
   set_energy_domain(potential);
   two_body_quantum_domain(ref);
-  PtclRefName = ref.DistTables[d_aa_ID]->Name;
+  PtclRefName = ref.getDistTable(d_aa_ID).Name;
   initBreakup(ref);
 
   if (ComputeForces)
@@ -82,7 +82,7 @@ void CoulombPBCAA::resetTargetParticleSet(ParticleSet& P)
 {
   if (is_active)
   {
-    PtclRefName = P.DistTables[d_aa_ID]->Name;
+    PtclRefName = P.getDistTable(d_aa_ID).Name;
     AA->resetTargetParticleSet(P);
   }
 }
@@ -145,7 +145,7 @@ CoulombPBCAA::Return_t CoulombPBCAA::evaluate_sp(ParticleSet& P)
   V_samp                     = 0.0;
   {
     //SR
-    const DistanceTableData& d_aa(*P.DistTables[d_aa_ID]);
+    const DistanceTableData& d_aa(P.getDistTable(d_aa_ID));
     RealType pairpot; //energy for single pair
     RealType z;
     if (d_aa.DTType == DT_SOA)
@@ -302,7 +302,7 @@ void CoulombPBCAA::initBreakup(ParticleSet& P)
     rVs = LRCoulombSingleton::createSpline4RbyVs(AA, myRcut, myGrid);
   }
 
-  P.DistTables[d_aa_ID]->evaluate(P);
+  P.update();
 }
 
 
@@ -325,7 +325,7 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalLRwithForces(ParticleSet& P)
 
 CoulombPBCAA::Return_t CoulombPBCAA::evalSRwithForces(ParticleSet& P)
 {
-  const DistanceTableData& d_aa(*P.DistTables[d_aa_ID]);
+  const DistanceTableData& d_aa(P.getDistTable(d_aa_ID));
   mRealType SR = 0.0;
   if (d_aa.DTType == DT_SOA)
   {
@@ -447,7 +447,7 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalConsts(bool report)
 
 CoulombPBCAA::Return_t CoulombPBCAA::evalSR(ParticleSet& P)
 {
-  const DistanceTableData& d_aa(*P.DistTables[d_aa_ID]);
+  const DistanceTableData& d_aa(P.getDistTable(d_aa_ID));
   mRealType SR = 0.0;
   if (d_aa.DTType == DT_SOA)
   {
@@ -498,7 +498,7 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalLR(ParticleSet& P)
   const StructFact& PtclRhoK(*(P.SK));
   if (PtclRhoK.SuperCellEnum == SUPERCELL_SLAB)
   {
-    const DistanceTableData& d_aa(*P.DistTables[d_aa_ID]);
+    const DistanceTableData& d_aa(P.getDistTable(d_aa_ID));
     if (d_aa.DTType == DT_SOA)
     {
       //distance table handles jat<iat
@@ -597,7 +597,7 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalConsts_orig(bool report)
 
 CoulombPBCAA::Return_t CoulombPBCAA::evalSR_old(ParticleSet& P)
 {
-  const auto& d_aa = *P.DistTables[d_aa_ID];
+  const auto& d_aa = P.getDistTable(d_aa_ID);
   RealType SR                   = 0.0;
   for (int ipart = 0; ipart < NumCenters; ipart++)
   {

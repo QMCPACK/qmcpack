@@ -79,14 +79,6 @@ TEST_CASE("Pade Jastrow", "[wavefunction]")
   tspecies(chargeIdx, upIdx)   = -1;
   tspecies(chargeIdx, downIdx) = -1;
 
-#ifdef ENABLE_SOA
-  elec_.addTable(ions_, DT_SOA);
-#else
-  elec_.addTable(ions_, DT_AOS);
-#endif
-  elec_.update();
-
-
   TrialWaveFunction psi = TrialWaveFunction(c);
   // Need 1 electron and 1 proton, somehow
   //ParticleSet target = ParticleSet();
@@ -113,7 +105,9 @@ TEST_CASE("Pade Jastrow", "[wavefunction]")
   RadialJastrowBuilder jastrow(elec_, psi);
   jastrow.put(jas1);
 
-  //target->update();
+  // update all distance tables
+  elec_.update();
+
   double logpsi = psi.evaluateLog(elec_);
   REQUIRE(logpsi == Approx(-1.862821769493147));
 }

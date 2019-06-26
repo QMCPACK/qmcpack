@@ -1,0 +1,45 @@
+\subsection{User defined functional form}
+\label{sec:jastrowuserform}
+
+To aid in implementing different forms for $u_{ab}(r)$, there is a script that uses a symbolic expression to generate the appropriate code (with spatial and parameter derivatives).
+The script is located in \texttt{src/QMCWaveFunctions/Jastrow/codegen/user\_jastrow.py}.
+The script requires Sympy (\url{www.sympy.org}) for symbolic mathematics and code generation.
+
+To use the script, modify it to specify the functional form and a list of variational parameters.
+Optionally, there may be fixed parameters - ones that are specified in the input file, but are not part of the variational optimization.
+Also one symbol may be specified that accepts a cusp value in order to satisfy the cusp condition.
+There are several example forms in the script.  The default form is the simple Pad\'e.
+
+Once the functional form and parameters are specified in the script, run the script from the \texttt{codegen} directory and recompile QMCPACK.
+The main output of the script is the file \texttt{src/QMCWaveFunctions/Jastrow/UserFunctor.h}.
+The script also prints information to the screen, and one section is a sample XML input block containing all the parameters.
+
+There is a unit test in \texttt{src/QMCWaveFunctions/test/test\_user\_jastrow.cpp} to perform
+some minimal testing of the Jastrow factor.   The unit test will need updating to properly test
+new functional forms.   Most of the changes relate to the number and name of variational 
+parameters.
+
+
+\begin{table}[h]
+\begin{center}
+\begin{tabular}{l c c c l }
+\hline
+\multicolumn{5}{l}{Jastrow element} \\
+\hline
+\bfseries name & \bfseries datatype & \bfseries values & \bfseries defaults  & \bfseries description \\
+\hline
+name & text &    & (required) & Unique name for this Jastrow function \\
+type & text & One-body & (required) & Define a one-body function \\
+     &      & Two-body & (required) & Define a two-body function \\
+function & text & user & (required) & User-defined functor \\
+\multicolumn{5}{l}{See other parameters as approriate for one or two-body functions} \\
+  \hline
+\multicolumn{5}{l}{elements}\\ \hline
+& Correlation & & & \\ \hline
+\multicolumn{5}{l}{Contents}\\ \hline
+& (None)  & & &  \\ \hline
+\end{tabular}
+%\end{tabular*}
+\end{center}
+\end{table}
+

@@ -48,7 +48,7 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
   ///number of quantum particles
   size_t NumTargets;
   ///number of quantum particles
-  int myTableIndex;
+  const int myTableIndex;
   ///Reference to the center
   const ParticleSet::ParticleIndex_t& IonID;
 
@@ -68,9 +68,9 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
    * @param ions ionic system
    * @param els electronic system
    */
-  SoaLocalizedBasisSet(ParticleSet& ions, ParticleSet& els) : IonID(ions.GroupID)
+  SoaLocalizedBasisSet(ParticleSet& ions, ParticleSet& els)
+    : IonID(ions.GroupID), myTableIndex(els.addTable(ions, DT_SOA))
   {
-    myTableIndex = els.addTable(ions, DT_SOA);
     NumCenters   = ions.getTotalNum();
     NumTargets   = els.getTotalNum();
     LOBasisSet.resize(ions.getSpeciesSet().getTotalNum(), 0);
@@ -165,9 +165,9 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
    */
   inline void evaluateVGL(const ParticleSet& P, int iat, vgl_type& vgl)
   {
-    const DistanceTableData* d_table = P.DistTables[myTableIndex];
-    const RealType* restrict dist    = (P.activePtcl == iat) ? d_table->Temp_r.data() : d_table->Distances[iat];
-    const auto& displ                = (P.activePtcl == iat) ? d_table->Temp_dr : d_table->Displacements[iat];
+    const auto& d_table = P.getDistTable(myTableIndex);
+    const RealType* restrict dist    = (P.activePtcl == iat) ? d_table.Temp_r.data() : d_table.Distances[iat];
+    const auto& displ                = (P.activePtcl == iat) ? d_table.Temp_dr : d_table.Displacements[iat];
     for (int c = 0; c < NumCenters; c++)
     {
       LOBasisSet[IonID[c]]->evaluateVGL(P.Lattice, dist[c], displ[c], BasisOffset[c], vgl);
@@ -197,9 +197,9 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
    */
   inline void evaluateVGH(const ParticleSet& P, int iat, vgh_type& vgh)
 {
-    const DistanceTableData* d_table = P.DistTables[myTableIndex];
-    const RealType* restrict dist    = (P.activePtcl == iat) ? d_table->Temp_r.data() : d_table->Distances[iat];
-    const auto& displ                = (P.activePtcl == iat) ? d_table->Temp_dr : d_table->Displacements[iat];
+    const auto& d_table = P.getDistTable(myTableIndex);
+    const RealType* restrict dist    = (P.activePtcl == iat) ? d_table.Temp_r.data() : d_table.Distances[iat];
+    const auto& displ                = (P.activePtcl == iat) ? d_table.Temp_dr : d_table.Displacements[iat];
     for (int c = 0; c < NumCenters; c++)
     {
       LOBasisSet[IonID[c]]->evaluateVGH(P.Lattice, dist[c], displ[c], BasisOffset[c], vgh);
@@ -217,9 +217,9 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
   {
    // APP_ABORT("SoaLocalizedBasisSet::evaluateVGH() not implemented\n");
     
-    const DistanceTableData* d_table = P.DistTables[myTableIndex];
-    const RealType* restrict dist    = (P.activePtcl == iat) ? d_table->Temp_r.data() : d_table->Distances[iat];
-    const auto& displ                = (P.activePtcl == iat) ? d_table->Temp_dr : d_table->Displacements[iat];
+    const auto& d_table = P.getDistTable(myTableIndex);
+    const RealType* restrict dist    = (P.activePtcl == iat) ? d_table.Temp_r.data() : d_table.Distances[iat];
+    const auto& displ                = (P.activePtcl == iat) ? d_table.Temp_dr : d_table.Displacements[iat];
     for (int c = 0; c < NumCenters; c++)
     {
       LOBasisSet[IonID[c]]->evaluateVGHGH(P.Lattice, dist[c], displ[c], BasisOffset[c], vghgh);
@@ -233,9 +233,9 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
    */
   inline void evaluateV(const ParticleSet& P, int iat, ORBT* restrict vals)
   {
-    const DistanceTableData* d_table = P.DistTables[myTableIndex];
-    const RealType* restrict dist    = (P.activePtcl == iat) ? d_table->Temp_r.data() : d_table->Distances[iat];
-    const auto& displ                = (P.activePtcl == iat) ? d_table->Temp_dr : d_table->Displacements[iat];
+    const auto& d_table = P.getDistTable(myTableIndex);
+    const RealType* restrict dist    = (P.activePtcl == iat) ? d_table.Temp_r.data() : d_table.Distances[iat];
+    const auto& displ                = (P.activePtcl == iat) ? d_table.Temp_dr : d_table.Displacements[iat];
     for (int c = 0; c < NumCenters; c++)
     {
       LOBasisSet[IonID[c]]->evaluateV(P.Lattice, dist[c], displ[c], vals + BasisOffset[c]);
@@ -264,9 +264,9 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
       gz[ib]=0;
     }
 
-    const DistanceTableData* d_table = P.DistTables[myTableIndex];
-    const RealType* restrict dist    = (P.activePtcl == iat) ? d_table->Temp_r.data() : d_table->Distances[iat];
-    const auto& displ                = (P.activePtcl == iat) ? d_table->Temp_dr : d_table->Displacements[iat];
+    const auto& d_table = P.getDistTable(myTableIndex);
+    const RealType* restrict dist    = (P.activePtcl == iat) ? d_table.Temp_r.data() : d_table.Distances[iat];
+    const auto& displ                = (P.activePtcl == iat) ? d_table.Temp_dr : d_table.Displacements[iat];
   
     //Since LCAO's are written only in terms of (r-R), ionic derivatives only exist for the atomic center
     //that we wish to take derivatives of.  Moreover, we can obtain an ion derivative by multiplying an electron
@@ -326,9 +326,9 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
       gzzz[ib]=0;
     }
 
-    const DistanceTableData* d_table = P.DistTables[myTableIndex];
-    const RealType* restrict dist    = (P.activePtcl == iat) ? d_table->Temp_r.data() : d_table->Distances[iat];
-    const auto& displ                = (P.activePtcl == iat) ? d_table->Temp_dr : d_table->Displacements[iat];
+    const auto& d_table = P.getDistTable(myTableIndex);
+    const RealType* restrict dist    = (P.activePtcl == iat) ? d_table.Temp_r.data() : d_table.Distances[iat];
+    const auto& displ                = (P.activePtcl == iat) ? d_table.Temp_dr : d_table.Displacements[iat];
     
     //Since LCAO's are written only in terms of (r-R), ionic derivatives only exist for the atomic center
     //that we wish to take derivatives of.  Moreover, we can obtain an ion derivative by multiplying an electron

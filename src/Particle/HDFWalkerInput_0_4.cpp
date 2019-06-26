@@ -18,6 +18,7 @@
 #include <io/hdf_archive.h>
 #include <mpi/mpi_datatype.h>
 #include <mpi/collectives.h>
+#include "Utilities/FairDivide.h"
 #ifdef HAVE_ADIOS
 #include "ADIOS/ADIOS_config.h"
 #endif

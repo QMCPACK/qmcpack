@@ -30,7 +30,7 @@ class MCWalkerConfiguration;
 struct CoulombPotentialAA_CUDA : public CoulombPotential<OHMMS_PRECISION>
 {
   int NumElecs;
-  CoulombPotentialAA_CUDA(ParticleSet* s, bool quantum);
+  CoulombPotentialAA_CUDA(ParticleSet& s, bool quantum);
 
   gpu::device_vector<CUDA_PRECISION> SumGPU;
   gpu::host_vector<CUDA_PRECISION> SumHost;
@@ -49,7 +49,7 @@ struct CoulombPotentialAB_CUDA : public CoulombPotential<OHMMS_PRECISION>
   std::vector<int> IonFirst, IonLast;
   std::vector<PosType> SortedIons;
 
-  CoulombPotentialAB_CUDA(ParticleSet* s, ParticleSet* t);
+  CoulombPotentialAB_CUDA(ParticleSet& s, ParticleSet& t);
 
   gpu::host_vector<CUDA_PRECISION> SumHost;
   gpu::device_vector<CUDA_PRECISION> SumGPU;

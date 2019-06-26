@@ -63,7 +63,7 @@ void LocalMomentEstimator::resetTargetParticleSet(ParticleSet& P) { }
 
 LocalMomentEstimator::Return_t LocalMomentEstimator::evaluate(ParticleSet& P)
 {
-  const auto& d_table = *P.DistTables[d_table_ID];
+  const auto& d_table = P.getDistTable(d_table_ID);
   lm = 0;
   for (int iat = 0; iat < nag; ++iat)
   {

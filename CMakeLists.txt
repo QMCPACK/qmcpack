@@ -231,15 +231,6 @@ SET(ENABLE_TIMERS 0 CACHE BOOL "Enable internal timers")
 SET(INSTALL_NEXUS 1 CACHE BOOL "Install Nexus alongside QMCPACK")
 
 ######################################################################
-# FIXED PARAMETERS for test and legacy reasons
-# DO NOT TOUCH THESE
-# QMC_ORTHO  = 0 for general unit cell, 1 for orthogonal cells
-# QMC_FASTWALKER  = true, when operation is faster for each walker
-######################################################################
-SET(QMC_FASTWALKER 1)
-SET(OHMMS_ORTHO 0)
-
-######################################################################
 #list of options to determine libraries. First, try to use libraries available
 #FindXYZ.cmake will set the values if successful
 ######################################################################

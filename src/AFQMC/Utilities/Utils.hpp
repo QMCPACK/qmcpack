@@ -15,9 +15,10 @@
 
 #include <numeric>
 #include <stack>
-#include<iostream>
-#include<fstream>
-#include<complex>
+#include <iostream>
+#include <fstream>
+#include <complex>
+#include <list>
 
 #include "Platforms/sysutil.h"
 #include "OhmmsData/libxmldefs.h"
