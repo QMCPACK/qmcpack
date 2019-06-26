@@ -204,6 +204,7 @@ class PwscfInputBase(DevBase):
         'esm_efield','fcp_mu','london_c6','london_rvdw','xdm_a1','xdm_a2',
         # 6.3 additions
         'block_1','block_2','block_height','zgate','ts_vdw_econv_thr',
+        'starting_charge',
         ]
     strs=[
         # pre 5.4
@@ -239,7 +240,6 @@ class PwscfInputBase(DevBase):
         'hubbard_j0', 'hubbard_beta', 'hubbard_j',
         'starting_ns_eigenvalue', 'angle1', 'angle2', 'fixed_magnetization',
         'fe_step', 'efield_cart', 'london_c6', 'london_rvdw',
-        'starting_charge',
         ]
 
     species_arrays = [
@@ -1518,7 +1518,7 @@ class PwscfInput(SimulationInput):
         ndn = p.down_electron.count
 
         self.system.ibrav        = 0
-        self.system['celldm(1)'] = 1.0e0
+#        self.system['celldm(1)'] = 1.0e0
         nions,nspecies = p.count_ions(species=True)
         self.system.nat          = nions
         self.system.ntyp         = nspecies
@@ -1527,7 +1527,7 @@ class PwscfInput(SimulationInput):
         if not 'cell_parameters' in self:
             self.cell_parameters = self.element_types['cell_parameters']()
         #end if
-        self.cell_parameters.specifier = 'alat'
+        self.cell_parameters.specifier = 'bohr' 
         self.cell_parameters.vectors   = s.axes.copy()
 
         self.k_points.clear()
@@ -1612,7 +1612,7 @@ class PwscfInput(SimulationInput):
         ndn = p.down_electron.count
 
         self.system.ibrav        = 0
-        self.system['celldm(1)'] = 1.0e0
+#        self.system['celldm(1)'] = 1.0e0
         nions,nspecies = p.count_ions(species=True)
         self.system.nat          = nions
         self.system.ntyp         = nspecies
@@ -1627,7 +1627,7 @@ class PwscfInput(SimulationInput):
         if not 'cell_parameters' in self:
             self.cell_parameters = self.element_types['cell_parameters']()
         #end if
-        self.cell_parameters.specifier = 'alat'
+        self.cell_parameters.specifier = 'bohr'
         self.cell_parameters.vectors   = s.axes.copy()
 
         self.k_points.clear()

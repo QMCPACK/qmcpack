@@ -333,7 +333,7 @@ class Job(NexusCore):
         self.batch_mode = machine.in_batch_mode()
 
         if self.bundled_jobs is not None and not machine.batch_capable:
-            self.error('running batched/bundled jobs on {0} is either not possible or not yet implemented, sorry.'.format(machine.name))
+            self.error('running batched/bundled jobs on {0} is either not possible or not yet implemented, sorry. {1},{2}'.format(machine.name,self.bundled_jobs, machine.batch_capable))
         #end if
 
         self.normalize_time()
@@ -2892,13 +2892,16 @@ class Solo(Supercomputer):
 # machines at LRZ  https://www.lrz.de/english/
 class SuperMUC(Supercomputer):
     name = 'supermuc'
+    requires_account    = False
+    batch_capable       = True
+    query_with_username = False
 
     def write_job_header(self,job):
         if job.queue is None:
             job.queue = 'general'
         #end if
         if job.type is None:
-            job.type = 'parallel'
+            job.type = 'MPICH'
         else:
             job.type = job.type.lower()
             if job.type=='mpich':
@@ -2916,7 +2919,7 @@ class SuperMUC(Supercomputer):
         c+='#@ job_type         = {0}\n'.format(job.type)
         c+='#@ class            = {0}\n'.format(job.queue)
         c+='#@ node             = {0}\n'.format(job.nodes)
-        if job.nodes<400:
+        if job.nodes<512:
             icmin = 1
             icmax = 1
         else:
@@ -2934,6 +2937,8 @@ class SuperMUC(Supercomputer):
         c+='#@ initialdir       = {0}\n'.format(job.abs_dir)
         c+='#@ output           = {0}\n'.format(job.outfile)
         c+='#@ error            = {0}\n'.format(job.errfile)
+        c+='#@ energy_policy_tag = my_energy_tag\n'
+        c+='#@ minimize_time_to_solution = yes\n'
         if job.email is None:
             c+='#@ notification     = never\n'
         else:
@@ -2952,7 +2957,7 @@ class SuperMUC(Supercomputer):
         elif intel and omp:
             c+='module unload mpi.ibm\n'
             c+='module load mpi.intel\n'
-            #c+='export OMP_NUM_THREADS={0}\n'.format(job.threads)
+            c+='export OMP_NUM_THREADS={0}\n'.format(job.threads)
             #c+='module load mpi_pinning/hybrid_blocked\n'
         #end if
         return c
@@ -3298,7 +3303,7 @@ Serrano(      1122,   2,    18,  128, 1000,   'srun',   'sbatch',  'squeue', 'sc
 Skybridge(    1848,   2,    16,   64, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
 Redsky(       2302,   2,     8,   12, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
 Solo(          187,   2,    18,  128, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
-SuperMUC(      205,   4,    10,  256,    8,'mpiexec', 'llsubmit',     'llq','llcancel')
+SuperMUC(      512,   1,    28,  256,    8,'mpiexec', 'llsubmit',     'llq','llcancel')
 Stampede2(    4200,   1,    68,   96,   50,  'ibrun',   'sbatch',  'squeue', 'scancel')
 Cades(         156,   2,    18,  128,  100, 'mpirun',     'qsub',   'qstat',    'qdel')
 Summit(       4608,   2,    21,  512,  100,  'jsrun',     'bsub',   'bjobs',   'bkill')
