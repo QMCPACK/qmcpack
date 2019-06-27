@@ -258,7 +258,15 @@ if(doHybrid)
 
       return hybrid_run();
 }
-    // if requested, perform the update via the adaptive three-shift or single-shift method
+
+if(doSR)
+{
+    app_log() << "Going to sr_run()" << std::endl;
+    return sr_run();
+
+}
+
+// if requested, perform the update via the adaptive three-shift or single-shift method
 #ifdef HAVE_LMY_ENGINE
   if (doAdaptiveThreeShift)
   {
@@ -524,9 +532,10 @@ bool QMCFixedSampleLinearOptimize::put(xmlNodePtr q)
   doAdaptiveThreeShift = (MinMethod == "adaptive");
   doOneShiftOnly       = (MinMethod == "OneShiftOnly");
 
-  //get whether to use descent or hybrid
+  //get whether to use descent, hybrid, or sr
   doDescent = (MinMethod == "descent");
   doHybrid = (MinMethod == "hybrid");
+  doSR = (MinMethod == "sr");
 
   // sanity check
   if (targetExcited && !doAdaptiveThreeShift)
@@ -2061,7 +2070,7 @@ void QMCFixedSampleLinearOptimize::storeVectors(std::vector< Return_t >& paramsF
      MPI_Comm_rank(MPI_COMM_WORLD, &process_rank);
      
 
-        std::cout << "Inside storing vectors function" << std::endl;
+        //std::cout << "Inside storing vectors function" << std::endl;
         
         
         std::vector<Return_t> rowVec(paramsForDiff.size());
@@ -2086,7 +2095,18 @@ void QMCFixedSampleLinearOptimize::storeVectors(std::vector< Return_t >& paramsF
         {
             hybridBLM_Input.push_back(rowVec);
         }
-     
+
+   for(int i = 0; i < hybridBLM_Input.size(); i++)
+   {
+    std::string entry = "";
+    for(int j = 0; j < hybridBLM_Input.at(i).size(); j++)
+    {
+        entry = entry + std::to_string(hybridBLM_Input.at(i).at(j))+",";
+    
+    }
+    app_log() << "Stored Vector: " << entry << std::endl;
+
+   }     
 }
 
 bool QMCFixedSampleLinearOptimize::hybrid_run()
@@ -2124,5 +2144,11 @@ bool QMCFixedSampleLinearOptimize::hybrid_run()
     }
 
 }
+
+bool QMCFixedSampleLinearOptimize::sr_run()
+{
+
+}
+
 
 } // namespace qmcplusplus

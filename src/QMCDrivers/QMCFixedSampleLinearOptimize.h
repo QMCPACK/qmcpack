@@ -78,6 +78,9 @@ private:
   // use hybrid approach
   bool hybrid_run();
 
+  // perform update using stochastic reconfiguration
+  bool sr_run();
+
   // helper method for updating parameter values with descent
   void updateParameters(std::vector< std::vector<Return_t> >& Lderivs, double& prevLambda, std::vector<double>& prevTaus,std::vector<Return_t>& derivsSquared, int stepNum);
 
@@ -166,13 +169,16 @@ private:
   ///whether to do the third part of block lm
   bool block_third;
 
-//Variables for accelerated descent
+//Variables for alternatives to linear method
 
   //whether to use accelerated descent
   bool doDescent;
 
   //whether to use hybrid method
   bool doHybrid;
+
+  //whether to use stochastic reconfiguration
+  bool doSR;
 
   //Vector for storing parameter values from previous optimization step
   std::vector<double> paramsCopy;

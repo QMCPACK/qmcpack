@@ -152,13 +152,13 @@ void VMC::resetRun()
   app_log() << "This is nTargetPopulation inside VMC resetRun: " << nTargetPopulation << std::endl;
   app_log() << "This is nTargetSamples inside VMC resetRun: " << nTargetSamples << std::endl;
 
-  /*
-if(on_hybrid_descent)
+  
+if((MinMethod == "hybrid") && on_hybrid_descent)
 {
 nTargetPopulation = otherTargetPopulation;
 app_log() << "This is overwritten nTargetPopulation in VMC resetRun: " << nTargetPopulation << std::endl;
 }
-*/
+
 
    
     ////only VMC can overwrite this
@@ -369,7 +369,10 @@ bool VMC::put(xmlNodePtr q)
  app_log() << "This is value of just_changed in VMC put" << just_changed << std::endl; 
   //Need to change to control for non-hybrid cases
   //if (qmc_common.qmc_counter && MyCounter && (! just_changed))
-  if (qmc_common.qmc_counter && MyCounter)
+  
+ bool onHybridAndChanged = (MinMethod == "hybrid") && just_changed;
+
+ if (qmc_common.qmc_counter && MyCounter && (! onHybridAndChanged))
   {
     nSteps               = prevSteps;
     nStepsBetweenSamples = prevStepsBetweenSamples;
@@ -384,8 +387,11 @@ bool VMC::put(xmlNodePtr q)
     
    app_log() << "This is initial nSamplesPerThread in VMC put: " << nSamplesPerThread << std::endl;
   //Also overwrite nSamplesPerThread so you can switch back to lower samples on AD after BLM
-  //nSamplesPerThread = nTargetSamples / Nprocs / Nthreads;
-  app_log() << "This is overwritten nSamplesPerThread in VMC put: " << nSamplesPerThread << std::endl;
+  if((MinMethod == "hybrid") && on_hybrid_descent)
+  {
+   nSamplesPerThread = nTargetSamples / Nprocs / Nthreads;
+  }
+   app_log() << "This is overwritten nSamplesPerThread in VMC put: " << nSamplesPerThread << std::endl;
  
 
     //target samples set by samples or samplesperthread/dmcwalkersperthread

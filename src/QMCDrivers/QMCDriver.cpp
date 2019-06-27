@@ -691,14 +691,14 @@ app_log() << "This is MinMethod at end of QMCDriver putQMCInfo: " << MinMethod <
   app_log() << "This is descent_len at end of QMCDriver putQMCInfo: " << descent_len << std::endl;
   app_log() << "This is blm_len at end of QMCDriver putQMCInfo: " << blm_len << std::endl;
 
-  /*
+  
   if(MinMethod == "hybrid")
   {
       app_log() << "This is current step: " << stepCounter << std::endl;
      int lhs = stepCounter  % (descent_len +blm_len);
     app_log() << "This is lhs: " << lhs << std::endl; 
       on_hybrid_descent = lhs + blm_len < (descent_len+blm_len);
-     if (lhs == 100 || lhs == 0)
+  if (lhs == 100 || lhs == 0)
      {
         just_changed = true;
         app_log() << "Just changed to different method" << std::endl;
@@ -723,7 +723,7 @@ app_log() << "This is MinMethod at end of QMCDriver putQMCInfo: " << MinMethod <
      // }
       
   }
-*/
+
 
  ++stepCounter;
 
@@ -732,7 +732,12 @@ app_log() << "This is MinMethod at end of QMCDriver putQMCInfo: " << MinMethod <
   app_log() << "This is on_hybrid_descent before reset walkers check: " << on_hybrid_descent << std::endl;
   //if walkers are initialized via <mcwalkerset/>, use the existing one
   //if ((qmc_common.qmc_counter || qmc_common.is_restart )&& (on_hybrid_descent))
-  if ((qmc_common.qmc_counter || qmc_common.is_restart ))
+
+  bool useHybridAndOnDescent = (MinMethod == "hybrid") && on_hybrid_descent;
+  app_log() << "This is useHybridAndOnDescent: " << useHybridAndOnDescent << std::endl;
+
+  //if (qmc_common.qmc_counter || qmc_common.is_restart )
+  if (qmc_common.qmc_counter || qmc_common.is_restart  || useHybridAndOnDescent)
   {
     app_log() << "Using existing walkers " << std::endl;
   }
