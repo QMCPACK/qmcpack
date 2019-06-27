@@ -71,6 +71,7 @@ public:
   bool warmed_up;
   std::vector<PosType> rsamples;
   Vector<RealType> sample_weights;
+  std::vector<ValueType> psi_ratios;
   RealType dens;
   PosType drift;
   int nindex;

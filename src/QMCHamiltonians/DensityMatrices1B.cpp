@@ -312,6 +312,7 @@ void DensityMatrices1B::initialize()
 
   rsamples.resize(samples);
   sample_weights.resize(samples);
+  psi_ratios.resize(nparticles);
 
   if (evaluator == matrix)
   {
@@ -1140,19 +1141,20 @@ void DensityMatrices1B::generate_sample_basis(Matrix_t& Phi_mb)
 
 void DensityMatrices1B::generate_sample_ratios(std::vector<Matrix_t*> Psi_nm)
 {
-  int p = 0;
-  for (int s = 0; s < nspecies; ++s)
+  for (int m = 0; m < samples; ++m)
   {
-    int nm         = 0;
-    Matrix_t& P_nm = *Psi_nm[s];
-    for (int n = 0; n < species_size[s]; ++n, ++p)
+    // get N ratios for the current sample point
+    Pq.makeVirtualMoves(rsamples[m]);
+    Psi.evaluateRatiosAlltoOne(Pq, psi_ratios);
+
+    // collect ratios into per-species matrices
+    int p = 0;
+    for (int s = 0; s < nspecies; ++s)
     {
-      PosType& Rp = Pq.R[p];
-      for (int m = 0; m < samples; ++m, ++nm)
+      Matrix_t& P_nm = *Psi_nm[s];
+      for (int n = 0; n < species_size[s]; ++n, ++p)
       {
-        Pq.makeMove(p, rsamples[m] - Rp);
-        P_nm(nm) = qmcplusplus::conj(Psi.full_ratio(Pq, p));
-        Pq.rejectMove(p);
+        P_nm(n,m) = qmcplusplus::conj(psi_ratios[p]);
       }
     }
   }
