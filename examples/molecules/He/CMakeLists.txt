@@ -34,8 +34,17 @@ IF(NOT QMC_CUDA AND NOT QMC_COMPLEX)
 
   QMC_RUN_AND_CHECK(example_He_simple_opt
                     "${CMAKE_SOURCE_DIR}/examples/molecules/He"
-                    He 
+                    He
                     he_simple_opt.xml
+                    1 1
+                    ${MP_SUCCESS}
+                    10 HE_SIMPLE_OPT_SCALARS # final optimized series
+                    )
+
+  QMC_RUN_AND_CHECK(example_He_example_wf
+                    "${CMAKE_SOURCE_DIR}/examples/molecules/He"
+                    He 
+                    he_example_wf.xml
                     1 1
                     ${MP_SUCCESS}
                     10 HE_SIMPLE_OPT_SCALARS # final optimized series

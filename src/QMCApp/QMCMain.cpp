@@ -32,7 +32,6 @@
 #include "Utilities/NewTimer.h"
 #include "Particle/HDFWalkerIO.h"
 #include "QMCApp/InitMolecularSystem.h"
-#include "Particle/DistanceTable.h"
 #include "QMCDrivers/QMCDriver.h"
 #include "Message/Communicate.h"
 #include "Message/OpenMP.h"

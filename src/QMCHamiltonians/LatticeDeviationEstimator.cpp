@@ -24,14 +24,10 @@ LatticeDeviationEstimator::LatticeDeviationEstimator(ParticleSet& P,
       tpset(P),
       tgroup(tgroup_in),
       sgroup(sgroup_in),
+      myTableID_(P.addTable(sP, DT_AOS)),
       hdf5_out(false),
       per_xyz(false)
 {
-  // get the distance table from quantum particle set
-  // !!!! YY: use addTable instead of getTable b/c cloned ParticleSet may not have initialized distance table with source particle set ( this is true even for the master thread, why? )
-  int tid = P.addTable(sP, DT_SOA_PREFERRED); // getTable(sP) does not work with threads
-  d_table = P.DistTables[tid];
-
   // calculate number of source particles to use as lattice sites
   int src_species_id = sspecies.findSpecies(sgroup);
   num_sites          = spset.last(src_species_id) - spset.first(src_species_id);
@@ -103,6 +99,7 @@ LatticeDeviationEstimator::Return_t LatticeDeviationEstimator::evaluate(Particle
   std::fill(xyz2.begin(), xyz2.end(), 0.0);
 
   RealType wgt = tWalker->Weight;
+  const auto& d_table = P.getDistTable(myTableID_);
 
   // temp variables
   RealType r2;
@@ -119,8 +116,8 @@ LatticeDeviationEstimator::Return_t LatticeDeviationEstimator::evaluate(Particle
         if (tspecies.speciesName[tpset.GroupID[jat]] == tgroup)
         {
           // distance between particle iat in source pset, and jat in target pset
-          int nn = d_table->loc(iat, jat); // location where distance is stored
-          r2     = std::pow(d_table->r(nn), 2);
+          int nn = d_table.loc(iat, jat); // location where distance is stored
+          r2     = std::pow(d_table.r(nn), 2);
           Value += r2;
 
           if (hdf5_out & !per_xyz)
@@ -130,7 +127,7 @@ LatticeDeviationEstimator::Return_t LatticeDeviationEstimator::evaluate(Particle
 
           if (per_xyz)
           {
-            dr = d_table->dr(nn);
+            dr = d_table.dr(nn);
             for (int idir = 0; idir < OHMMS_DIM; idir++)
             {
               RealType dir2 = dr[idir] * dr[idir];

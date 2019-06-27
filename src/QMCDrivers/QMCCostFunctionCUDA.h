@@ -42,30 +42,30 @@ public:
 
   void getConfigurations(const std::string& aroot);
   void checkConfigurations();
-  void GradCost(std::vector<Return_t>& PGradient, const std::vector<Return_t>& PM, Return_t FiniteDiff = 0);
-  Return_t fillOverlapHamiltonianMatrices(Matrix<Return_t>& Left, Matrix<Return_t>& Right);
+  void GradCost(std::vector<Return_rt>& PGradient, const std::vector<Return_rt>& PM, Return_rt FiniteDiff = 0);
+  Return_rt fillOverlapHamiltonianMatrices(Matrix<Return_rt>& Left, Matrix<Return_rt>& Right);
 
 protected:
   using CTS = CUDAGlobalTypes;
-  Matrix<Return_t> Records;
+  Matrix<Return_rt> Records;
   typedef TrialWaveFunction::RealMatrix_t RealMatrix_t;
   typedef TrialWaveFunction::ValueMatrix_t ValueMatrix_t;
   typedef TrialWaveFunction::GradMatrix_t GradMatrix_t;
   /** Temp derivative properties and Hderivative properties of all the walkers
   */
-  std::vector<std::vector<Return_t>> TempDerivRecords;
-  std::vector<std::vector<Return_t>> TempHDerivRecords;
+  std::vector<std::vector<Return_rt>> TempDerivRecords;
+  std::vector<std::vector<Return_rt>> TempHDerivRecords;
   RealMatrix_t LogPsi_Derivs, LocE_Derivs;
   ValueMatrix_t d2logPsi_opt, d2logPsi_fixed;
   GradMatrix_t dlogPsi_opt, dlogPsi_fixed;
 
-  std::vector<Matrix<Return_t>*> RecordsOnNode;
-  std::vector<Matrix<Return_t>*> DerivRecords;
-  std::vector<Matrix<Return_t>*> HDerivRecords;
+  std::vector<Matrix<Return_rt>*> RecordsOnNode;
+  std::vector<Matrix<Return_rt>*> DerivRecords;
+  std::vector<Matrix<Return_rt>*> HDerivRecords;
 
-  Return_t CSWeight;
+  Return_rt CSWeight;
   void resetPsi(bool final_reset = false);
-  Return_t correlatedSampling(bool needDerivs);
+  Return_rt correlatedSampling(bool needDerivs);
 };
 } // namespace qmcplusplus
 #endif

@@ -17,7 +17,6 @@
 #define QMCPLUSPLUS_BACKFLOW_FUNCTIONBASE_H
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
 #include "Configuration.h"
-#include "Particle/DistanceTable.h"
 #include "OhmmsPETE/OhmmsArray.h"
 
 namespace qmcplusplus
@@ -59,8 +58,6 @@ public:
     VisitorIndex = DistanceTableData::VisitorIndex,
     WalkerIndex  = DistanceTableData::WalkerIndex
   };
-
-  DistanceTableData* myTable;
 
   /** enum for a update mode */
   enum
@@ -104,17 +101,11 @@ public:
   opt_variables_type myVars;
 
   BackflowFunctionBase(ParticleSet& ions, ParticleSet& els)
-      : CenterSys(ions), myTable(0), numParams(0), indexOfFirstParam(-1), uniqueFunctions(false)
+      : CenterSys(ions), numParams(0), indexOfFirstParam(-1), uniqueFunctions(false)
   {
     NumCenters = CenterSys.getTotalNum(); // in case
     NumTargets = els.getTotalNum();
   }
-
-  //BackflowFunctionBase(BackflowFunctionBase &fn):
-  // CenterSys(fn.CenterSys), myTable(fn.myTable),NumTargets(fn.NumTargets),NumCenters(fn.NumCenters),numParams(fn.numParams),indexOfFirstParam(fn.indexOfFirstParam)//,uniqueFunctions(fn.uniqueFunctions)
-  //{
-  //  derivs.resize(fn.derivs.size());
-  //}
 
   void resize(int NT, int NC)
   {
@@ -137,10 +128,6 @@ public:
   virtual BackflowFunctionBase* makeClone(ParticleSet& tqp) = 0;
 
   virtual ~BackflowFunctionBase(){};
-
-  /** reset the distance table with a new target P
-   */
-  virtual void resetTargetParticleSet(ParticleSet& P) = 0;
 
   virtual void acceptMove(int iat, int UpdateType) = 0;
 

@@ -113,18 +113,21 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateValueAndDerivatives
   std::vector<RealType> dlogpsi_t(dlogpsi.size(), 0.0);
   std::vector<RealType> dhlogpsi_t(dlogpsi.size(), 0.0);
 
-  DistanceTableData* myTable = W.DistTables[myTableIndex];
+  std::vector<ValueType> dlogpsi_ct(dlogpsi.size(), 0.0);
+  std::vector<ValueType> dhlogpsi_ct(dlogpsi.size(), 0.0);
+
+  const auto& myTable = W.getDistTable(myTableIndex);
   RealType esum              = 0.0;
   RealType pairpot;
   ParticleSet::ParticlePos_t deltarV(nknot);
-  for (int nn = myTable->M[iat], iel = 0; nn < myTable->M[iat + 1]; nn++, iel++)
+  for (int nn = myTable.M[iat], iel = 0; nn < myTable.M[iat + 1]; nn++, iel++)
   {
-    register RealType r(myTable->r(nn));
+    register RealType r(myTable.r(nn));
     if (r > Rmax)
       continue;
 
-    register RealType rinv(myTable->rinv(nn));
-    register PosType dr(myTable->dr(nn));
+    register RealType rinv(myTable.rinv(nn));
+    register PosType dr(myTable.dr(nn));
 
     //displacements wrt W.R[iel]
     for (int j = 0; j < nknot; j++)
@@ -145,9 +148,10 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateValueAndDerivatives
       W.acceptMove(iel);
 
       std::fill(dlogpsi_t.begin(), dlogpsi_t.end(), 0.0);
-      psi.evaluateDerivatives(W, optvars, dlogpsi_t, dhlogpsi_t);
+      std::fill(dlogpsi_ct.begin(), dlogpsi_ct.end(), 0.0);
+      psi.evaluateDerivatives(W, optvars, dlogpsi_ct, dhlogpsi_ct);
       for (int v = 0; v < dlogpsi_t.size(); ++v)
-        dratio(v, j) = dlogpsi_t[v];
+        dratio(v, j) = std::real(dlogpsi_t[v]);
 
       PosType md = -1.0 * deltarV[j];
       W.makeMoveAndCheck(iel, md);

@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<qmcsystem>
+  <wavefunction name="psi0" target="e">
+    <determinantset type="MolecularOrbital" name="LCAOBSet" source="ion0" transform="yes" cuspCorrection="yes" href="LiH.orbs.h5">
+      <sposet basisset="LCAOBSet" name="spo-up" size="85" cuspInfo="spo-up.cuspInfo.xml">
+        <occupation mode="ground"/>
+        <coefficient size="85" spindataset="0"/>
+      </sposet>
+      <sposet basisset="LCAOBSet" name="spo-dn" size="85" cuspInfo="spo-dn.cuspInfo.xml">
+        <occupation mode="ground"/>
+        <coefficient size="85" spindataset="0"/>
+      </sposet>
+      <multideterminant optimize="yes" spo_up="spo-up" spo_dn="spo-dn">
+        <detlist size="1487" type="DETS" nca="0" ncb="0" nea="2" neb="2" nstates="85" cutoff="1e-20" href="LiH.orbs.h5"/>
+      </multideterminant>
+    </determinantset>
+  </wavefunction>
+</qmcsystem>

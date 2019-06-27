@@ -32,6 +32,8 @@ SET(WFBASE_SRCS
   CompositeSPOSet.cpp
   HarmonicOscillator/SHOSet.cpp
   HarmonicOscillator/SHOSetBuilder.cpp
+  ExampleHeBuilder.cpp
+  ExampleHeComponent.cpp
   )
 
 IF(NOT QMC_COMPLEX)
@@ -46,7 +48,6 @@ ENDIF(NOT QMC_COMPLEX)
 ########################
 #common jastrows
 SET(JASTROW_SRCS
-  Jastrow/LRTwoBodyJastrow.cpp
   Jastrow/JastrowBuilder.cpp
   Jastrow/kSpaceJastrow.cpp
   Jastrow/kSpaceJastrowBuilder.cpp

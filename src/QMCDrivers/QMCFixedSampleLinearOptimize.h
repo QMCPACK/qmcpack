@@ -51,7 +51,7 @@ public:
   bool run();
   ///process xml node
   bool put(xmlNodePtr cur);
-  RealType Func(Return_t dl);
+  RealType Func(RealType dl);
 
 private:
   inline bool ValidCostFunction(bool valid)

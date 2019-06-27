@@ -478,7 +478,7 @@ def modified_cholesky_direct(M, kappa, verbose=False, cmax=10):
     return numpy.array(chol_vecs[:nchol])
 
 
-def read_ascii_integrals(filename, verbose=True):
+def read_ascii_integrals(filename, symmetry=8, verbose=True):
     """Read in integrals from file.
 
     Returns
@@ -492,6 +492,7 @@ def read_ascii_integrals(filename, verbose=True):
     nelec : int
         Number of electrons.
     """
+    assert(symmetry==1 or symmetry==4 or symmetry==8)
     if verbose:
         print ("# Reading integrals in plain text FCIDUMP format.")
     f = open(filename)
@@ -536,12 +537,16 @@ def read_ascii_integrals(filename, verbose=True):
             # <kj|il> = <li|jk> = <il|kj> = <jk|li>
             # (ik|jl)
             h2e[i-1,k-1,j-1,l-1] = integral
+            if symmetry == 1: 
+                continue
             # (jl|ik)
             h2e[j-1,l-1,i-1,k-1] = integral
             # (ki|lj)
             h2e[k-1,i-1,l-1,j-1] = integral
             # (lj|ki)
             h2e[l-1,j-1,k-1,i-1] = integral
+            if symmetry == 4: 
+                continue
             # (ki|jl)
             h2e[k-1,i-1,j-1,l-1] = integral
             # (lj|ik)

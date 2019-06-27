@@ -17,7 +17,6 @@
  */
 #include <Configuration.h>
 #include <Particle/ParticleSet.h>
-#include <Particle/DistanceTable.h>
 #include <Utilities/PrimeNumberSet.h>
 #include <Utilities/Timer.h>
 #include <random/random.hpp>
@@ -207,6 +206,8 @@ int main(int argc, char** argv)
     else
       Jastrow=new AoSWaveFunction(ions,els);
 
+    const auto& d_ie = els.getDistTable(els.addTable(ions, DT_SOA));
+
     //create pseudopp
     NonLocalPP<OHMMS_PRECISION> ecp(random_th);
 
@@ -282,13 +283,12 @@ int main(int argc, char** argv)
       Jastrow->evaluateGL(els);
 
       ecp.randomize(rOnSphere); // pick random sphere
-      const DistanceTableData* d_ie=Jastrow->d_ie;
 
       clock_mc.restart();
       for(int jel=0; jel<nels; ++jel)
       {
-        const auto &dist  = d_ie->Distances[jel];
-        const auto &displ = d_ie->Displacements[jel];
+        const auto* restrict dist = d_ie.Distances[jel];
+        const auto& displ = d_ie.Displacements[jel];
         for(int iat=0; iat<nions; ++iat)
           if(dist[iat]<Rmax)
           {

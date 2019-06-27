@@ -32,7 +32,7 @@ int QMCCostFunction::total_samples()
 /// \brief  Computes the cost function using the LMYEngine
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-QMCCostFunction::Return_t QMCCostFunction::LMYEngineCost_detail(cqmc::engine::LMYEngine* EngineObj)
+QMCCostFunction::Return_rt QMCCostFunction::LMYEngineCost_detail(cqmc::engine::LMYEngine* EngineObj)
 {
   // get total number of samples
   const int m = this->total_samples();
@@ -52,7 +52,7 @@ QMCCostFunction::Return_t QMCCostFunction::LMYEngineCost_detail(cqmc::engine::LM
     for (int iw = 0; iw < nw; iw++)
     {
       // get a pointer to the record for this sample
-      const Return_t* restrict saved = (*RecordsOnNode[ip])[iw];
+      const Return_rt* restrict saved = (*RecordsOnNode[ip])[iw];
 
       // record this sample's weight (normalized by division by the sum of weights I think...)
       //wgt_vec.at(j) = saved[REWEIGHT] / SumValue[SUM_WGT];

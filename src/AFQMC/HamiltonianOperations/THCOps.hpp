@@ -21,6 +21,7 @@
 #include "AFQMC/config.h"
 #include "AFQMC/Numerics/ma_operations.hpp"
 
+#include "Utilities/FairDivide.h"
 #include "AFQMC/Utilities/taskgroup.h"
 #include "mpi3/shared_communicator.hpp"
 #include "AFQMC/Matrix/mpi3_shared_ma_proxy.hpp"

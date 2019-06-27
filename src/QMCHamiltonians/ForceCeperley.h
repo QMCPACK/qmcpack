@@ -26,6 +26,10 @@ namespace qmcplusplus
 {
 struct ForceCeperley : public QMCHamiltonianBase, public ForceBase
 {
+private:
+  const int d_ei_ID;
+
+public:
   double Rcut;                    // parameter: radial distance within which estimator is used
   int m_exp;                      // parameter: exponent in polynomial fit
   int N_basis;                    // parameter: size of polynomial basis set

@@ -546,8 +546,8 @@ void MultiSlaterDeterminantFast::reportStatus(std::ostream& os) {}
 
 void MultiSlaterDeterminantFast::evaluateDerivatives(ParticleSet& P,
                                                      const opt_variables_type& optvars,
-                                                     std::vector<RealType>& dlogpsi,
-                                                     std::vector<RealType>& dhpsioverpsi)
+                                                     std::vector<ValueType>& dlogpsi,
+                                                     std::vector<ValueType>& dhpsioverpsi)
 {
   if (CI_Optimizable)
   {
@@ -659,12 +659,14 @@ void MultiSlaterDeterminantFast::evaluateDerivatives(ParticleSet& P,
               v2 += tmp2 * static_cast<ValueType>(dot(P.G[j], grads_dn(dnC, l)) - dot(myG_temp[j], grads_dn(dnC, l)));
             cnt++;
           }
-          convert(cdet, dlogpsi[kk]);
+          dlogpsi[kk] = cdet;
+          //convert(cdet, dlogpsi[kk]);
           ValueType dhpsi = (RealType)-0.5 * (q0 - cdet * lapl_sum) - cdet * gg - v1 - v2;
           //ValueType dhpsi =  -0.5*(tmp1*laplSum_up[upC]+tmp2*laplSum_dn[dnC]
           //                         -cdet*lapl_sum)
           //                   -cdet*gg-(tmp1*v1+tmp2*v2);
-          convert(dhpsi, dhpsioverpsi[kk]);
+          //convert(dhpsi, dhpsioverpsi[kk]);
+          dhpsioverpsi[kk] = dhpsi;
         }
       }
       else
@@ -741,7 +743,7 @@ void MultiSlaterDeterminantFast::evaluateDerivatives(ParticleSet& P,
           ValueType cdet   = detValues_up[upC] * detValues_dn[dnC] * psiinv;
           ValueType tmp1   = detValues_dn[dnC] * psiinv;
           ValueType tmp2   = detValues_up[upC] * psiinv;
-          convert(cdet, dlogpsi[kk]);
+          dlogpsi[kk] = cdet;
           ValueType v1 = 0.0, v2 = 0.0;
           for (size_t k = 0, j = N1; k < NP1; k++, j++)
             v1 += (dot(P.G[j], grads_up(upC, k)) - dot(myG_temp[j], grads_up(upC, k)));
@@ -749,7 +751,7 @@ void MultiSlaterDeterminantFast::evaluateDerivatives(ParticleSet& P,
             v2 += (dot(P.G[j], grads_dn(dnC, k)) - dot(myG_temp[j], grads_dn(dnC, k)));
           ValueType dhpsi = (RealType)-0.5 * (tmp1 * laplSum_up[upC] + tmp2 * laplSum_dn[dnC] - cdet * lapl_sum) -
               cdet * gg - (tmp1 * v1 + tmp2 * v2);
-          convert(dhpsi, dhpsioverpsi[kk]);
+          dhpsioverpsi[kk] = dhpsi;
         }
       }
     }

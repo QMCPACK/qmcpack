@@ -516,8 +516,8 @@ void DiracDeterminant<DU_TYPE>::recompute(ParticleSet& P)
 template<typename DU_TYPE>
 void DiracDeterminant<DU_TYPE>::evaluateDerivatives(ParticleSet& P,
                                                     const opt_variables_type& active,
-                                                    std::vector<RealType>& dlogpsi,
-                                                    std::vector<RealType>& dhpsioverpsi)
+                                                    std::vector<ValueType>& dlogpsi,
+                                                    std::vector<ValueType>& dhpsioverpsi)
 {}
 
 template<typename DU_TYPE>
