@@ -200,17 +200,6 @@ struct AsymmetricDTD : public DTD_BConds<T, D, SC>, public DistanceTableData
     }
   }
 
-  ///evaluate the temporary pair relations
-  inline void moveOnSphere(const ParticleSet& P, const PosType& rnew)
-  {
-    for (int iat = 0; iat < N[SourceIndex]; iat++)
-    {
-      PosType drij(rnew - Origin->R[iat]);
-      Temp[iat].r1  = std::sqrt(DTD_BConds<T, D, SC>::apply_bc(drij));
-      Temp[iat].dr1 = drij;
-    }
-  }
-
   inline void update(IndexType jat)
   {
     for (int iat = 0, loc = jat; iat < N[SourceIndex]; iat++, loc += N[VisitorIndex])

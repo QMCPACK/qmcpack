@@ -415,7 +415,7 @@ void ParticleSet::computeNewPosDistTablesAndSK(Index_t iat, const SingleParticle
 {
   myTimers[PS_newpos]->start();
   for (int i = 0; i < DistTables.size(); ++i)
-    DistTables[i]->moveOnSphere(*this, newpos);
+    DistTables[i]->move(*this, newpos);
   //Do not change SK: 2007-05-18
   //Change SK only if DoUpdate is true: 2008-09-12
   if (SK && SK->DoUpdate)

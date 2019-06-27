@@ -149,16 +149,6 @@ struct SymmetricDTD : public DTD_BConds<T, D, SC>, public DistanceTableData
     }
   }
 
-  inline void moveOnSphere(const ParticleSet& P, const PosType& rnew)
-  {
-    for (int iat = 0; iat < N[SourceIndex]; ++iat)
-    {
-      PosType drij(rnew - P.R[iat]);
-      Temp[iat].r1  = std::sqrt(DTD_BConds<T, D, SC>::apply_bc(drij));
-      Temp[iat].dr1 = drij;
-    }
-  }
-
   ///update the stripe for jat-th particle
   inline void update(IndexType jat)
   {
