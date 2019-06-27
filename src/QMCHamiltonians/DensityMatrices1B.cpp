@@ -359,6 +359,17 @@ void DensityMatrices1B::initialize()
     normalize();
   }
 
+  // jtk timer
+  // add timers
+  eval_timer = TimerManager.createTimer("DensityMatrices1B::evaluate", timer_level_medium);
+  gen_samples_timer = TimerManager.createTimer("DensityMatrices1B::generate_samples", timer_level_fine);
+  gen_sample_basis_timer = TimerManager.createTimer("DensityMatrices1B::generate_sample_basis", timer_level_fine);
+  gen_sample_ratios_timer = TimerManager.createTimer("DensityMatrices1B::generate_sample_ratios", timer_level_fine);
+  gen_particle_basis_timer = TimerManager.createTimer("DensityMatrices1B::generate_particle_basis", timer_level_fine);
+  matrix_products_timer = TimerManager.createTimer("DensityMatrices1B::evaluate_matrix_products", timer_level_fine);
+  accumulate_timer = TimerManager.createTimer("DensityMatrices1B::evaluate_matrix_accum", timer_level_fine);
+   // end jtk timer
+
   initialized = true;
 }
 
@@ -576,6 +587,10 @@ void DensityMatrices1B::warmup_sampling()
 
 DensityMatrices1B::Return_t DensityMatrices1B::evaluate(ParticleSet& P)
 {
+  // jtk timer
+  eval_timer->start();
+  // end jtk timer
+
   if (have_required_traces || !energy_mat)
   {
     if (check_derivatives)
@@ -587,6 +602,11 @@ DensityMatrices1B::Return_t DensityMatrices1B::evaluate(ParticleSet& P)
     else
       APP_ABORT("DensityMatrices1B::evaluate  invalid evaluator");
   }
+
+  // jtk timer
+  eval_timer->stop();
+  // end jtk timer
+
   return 0.0;
 }
 
@@ -612,6 +632,9 @@ DensityMatrices1B::Return_t DensityMatrices1B::evaluate_matrix(ParticleSet& P)
   generate_sample_ratios(Psi_NM);     // conj(Psi ratio) : particles x samples
   generate_particle_basis(P, Phi_NB); // conj(basis)     : particles x basis_size
   // perform integration via matrix products
+  // jtk timer
+  matrix_products_timer->start();
+  // end jtk timer
   for (int s = 0; s < nspecies; ++s)
   {
     Matrix_t& Psi_nm     = *Psi_NM[s];
@@ -627,7 +650,13 @@ DensityMatrices1B::Return_t DensityMatrices1B::evaluate_matrix(ParticleSet& P)
       product_AtB(Phi_nb, Phi_Psi_nb, *E_BB[s]); // (energies*conj(basis))^T*ratio*basis
     }
   }
+  // jtk timer
+  matrix_products_timer->stop();
+  // end jtk timer
   // accumulate data into collectables
+  // jtk timer
+  accumulate_timer->start();
+  // end jtk timer
   const int basis_size2 = basis_size * basis_size;
   int ij                = nindex;
   for (int s = 0; s < nspecies; ++s)
@@ -664,6 +693,9 @@ DensityMatrices1B::Return_t DensityMatrices1B::evaluate_matrix(ParticleSet& P)
       }
     }
   }
+  // jtk timer
+  accumulate_timer->stop();
+  // end jtk timer
 
 
   // jtk come back to this
@@ -874,6 +906,9 @@ DensityMatrices1B::Return_t DensityMatrices1B::evaluate_loop(ParticleSet& P)
 
 inline void DensityMatrices1B::generate_samples(RealType weight, int steps)
 {
+  // jtk timer
+  gen_samples_timer->start();
+  // end jtk timer
   RandomGenerator_t& rng = *uniform_random;
   bool save              = false;
   if (steps == 0)
@@ -927,6 +962,9 @@ inline void DensityMatrices1B::generate_samples(RealType weight, int steps)
     app_log() << "  rmean = " << rmean << std::endl;
     app_log() << "  rstd  = " << rstd << std::endl;
   }
+  // jtk timer
+  gen_samples_timer->stop();
+  // end jtk timer
 }
 
 
@@ -1128,6 +1166,9 @@ void DensityMatrices1B::get_energies(std::vector<Vector_t*>& E_n)
 
 void DensityMatrices1B::generate_sample_basis(Matrix_t& Phi_mb)
 {
+  // jtk timer
+  gen_sample_basis_timer->start();
+  // end jtk timer
   int mb = 0;
   for (int m = 0; m < samples; ++m)
   {
@@ -1135,11 +1176,17 @@ void DensityMatrices1B::generate_sample_basis(Matrix_t& Phi_mb)
     for (int b = 0; b < basis_size; ++b, ++mb)
       Phi_mb(mb) = basis_values[b];
   }
+  // jtk timer
+  gen_sample_basis_timer->stop();
+  // end jtk timer
 }
 
 
 void DensityMatrices1B::generate_sample_ratios(std::vector<Matrix_t*> Psi_nm)
 {
+  // jtk timer
+  gen_sample_ratios_timer->start();
+  // end jtk timer
   int p = 0;
   for (int s = 0; s < nspecies; ++s)
   {
@@ -1156,11 +1203,17 @@ void DensityMatrices1B::generate_sample_ratios(std::vector<Matrix_t*> Psi_nm)
       }
     }
   }
+  // jtk timer
+  gen_sample_ratios_timer->stop();
+  // end jtk timer
 }
 
 
 void DensityMatrices1B::generate_particle_basis(ParticleSet& P, std::vector<Matrix_t*>& Phi_nb)
 {
+  // jtk timer
+  gen_particle_basis_timer->start();
+  // end jtk timer
   int p = 0;
   for (int s = 0; s < nspecies; ++s)
   {
@@ -1173,6 +1226,9 @@ void DensityMatrices1B::generate_particle_basis(ParticleSet& P, std::vector<Matr
         P_nb(nb) = qmcplusplus::conj(basis_values[b]);
     }
   }
+  // jtk timer
+  gen_particle_basis_timer->stop();
+  // end jtk timer
 }
 
 
