@@ -333,7 +333,7 @@ class Job(NexusCore):
         self.batch_mode = machine.in_batch_mode()
 
         if self.bundled_jobs is not None and not machine.batch_capable:
-            self.error('running batched/bundled jobs on {0} is either not possible or not yet implemented, sorry. {1},{2}'.format(machine.name,self.bundled_jobs, machine.batch_capable))
+            self.error('running batched/bundled jobs on {0} is either not possible or not yet implemented, sorry.'.format(machine.name)
         #end if
 
         self.normalize_time()
