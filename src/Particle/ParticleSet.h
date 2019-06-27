@@ -333,6 +333,11 @@ public:
    *
    * Update activePtcl index and activePos position (R[iat]+displ) for a proposed move.
    * Evaluate the related distance table data DistanceTableData::Temp.
+   *
+   * When a Lattice is defined, passing two checks makes a move valid.
+   * outOfBound(displ): invalid move, if displ is larger than half, currently, of the box in any direction
+   * isValid(Lattice.toUnit(activePos)): invalid move, if activePos goes out of the Lattice in any direction marked with open BC.
+   * Note: activePos and distances tables are always evaluated no matter the move is valid or not.
    */
   bool makeMoveAndCheck(Index_t iat, const SingleParticlePos_t& displ);
 
