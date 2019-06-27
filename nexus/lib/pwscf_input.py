@@ -240,7 +240,8 @@ class PwscfInputBase(DevBase):
         'hubbard_j0', 'hubbard_beta', 'hubbard_j',
         'starting_ns_eigenvalue', 'angle1', 'angle2', 'fixed_magnetization',
         'fe_step', 'efield_cart', 'london_c6', 'london_rvdw',
-        ]
+        starting_charge,
+         ]
 
     species_arrays = [
         'starting_magnetization', 'hubbard_alpha', 'hubbard_u', 'hubbard_j0', 
