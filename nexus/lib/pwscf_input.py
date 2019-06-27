@@ -204,7 +204,6 @@ class PwscfInputBase(DevBase):
         'esm_efield','fcp_mu','london_c6','london_rvdw','xdm_a1','xdm_a2',
         # 6.3 additions
         'block_1','block_2','block_height','zgate','ts_vdw_econv_thr',
-        'starting_charge',
         ]
     strs=[
         # pre 5.4
