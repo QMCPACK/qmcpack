@@ -18,6 +18,7 @@
 #include "QMCDrivers/QMCCostFunctionBase.h"
 #include "QMCDrivers/CloneManager.h"
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
+#include "formic/utils/matrix.h"
 
 namespace qmcplusplus
 {
@@ -41,6 +42,11 @@ public:
 #ifdef HAVE_LMY_ENGINE
   void engine_checkConfigurations(cqmc::engine::LMYEngine* EngineObj);
 #endif
+
+  void descent_checkConfigurations(std::vector<Return_t>& LDerivs, double& oldMu, bool& targetExcited,double& omega);
+  
+  void sr_checkConfigurations(formic::Matrix<Return_t>& lhsMatrix, std::vector<Return_t>& rhsVector, double& tau, bool& targetExcited,double& omega);
+
   void resetPsi(bool final_reset = false);
   void GradCost(std::vector<Return_t>& PGradient, const std::vector<Return_t>& PM, Return_rt FiniteDiff = 0);
   Return_rt fillOverlapHamiltonianMatrices(Matrix<Return_rt>& Left, Matrix<Return_rt>& Right);

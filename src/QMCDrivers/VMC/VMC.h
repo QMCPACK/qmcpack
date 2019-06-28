@@ -33,6 +33,12 @@ private:
   int prevSteps;
   int prevStepsBetweenSamples;
 
+ /*
+  std::string MinMethod;
+  int descent_len;
+  int blm_len;
+*/
+
   ///Ways to set rn constant
   RealType logoffset, logepsilon;
   ///option to enable/disable drift equation or RN for VMC

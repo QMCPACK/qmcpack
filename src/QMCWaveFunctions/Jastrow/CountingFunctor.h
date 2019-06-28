@@ -182,7 +182,7 @@ public:
     os << std::endl << "  C: " << C << std::endl;
     os << "  opt_C: " << opt_C << std::endl;
     os << "  registered optimizable variables:" << std::endl;
-    myVars.print(os);
+    //myVars.print(os);
     os << "GaussianCountingFunctor::reportStatus end" << std::endl;
   }
 

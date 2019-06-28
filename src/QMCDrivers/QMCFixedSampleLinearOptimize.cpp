@@ -68,7 +68,7 @@ QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(MCWalkerConfiguration
       stabilizerScale(2.0),
       bigChange(50),
       w_beta(0.0),
-      MinMethod("OneShiftOnly"),
+      //MinMethod("OneShiftOnly"),
       GEVtype("mixed"),
       StabilizerMethod("best"),
       GEVSplit("no"),
@@ -97,7 +97,19 @@ QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(MCWalkerConfiguration
       max_relative_cost_change(10.0),
       block_first(true),
       block_second(false),
-      block_third(false)
+      block_third(false),
+
+    //Defaults for descent parameters
+      flavor("RMSprop"),
+      TJF_2Body_eta(.01),
+      TJF_1Body_eta(.01),
+      F_eta(.001),
+      Gauss_eta(.001),
+      CI_eta(.01),
+      Orb_eta(.001),
+
+    startStepNum(0),
+    on_reset("no")
 {
   IsQMCDriver = false;
   //set the optimization flag
@@ -126,6 +138,34 @@ QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(MCWalkerConfiguration
   m_param.add(num_shifts, "num_shifts", "int");
   m_param.add(cost_increase_tol, "cost_increase_tol", "double");
   m_param.add(target_shift_i, "target_shift_i", "double");
+
+
+//Parameters for descent and hybrid methods
+  m_param.add(flavor,"flavor","string");
+  m_param.add(useAvgParams,"useAvgParams","string");
+  //Parameters for setting step sizes for variables of different types
+  m_param.add(TJF_2Body_eta,"TJF_2Body_eta","double");
+  m_param.add(TJF_2Body_num,"TJF_2Body_num","int");
+  m_param.add(TJF_1Body_eta,"TJF_1Body_eta","double");
+  m_param.add(TJF_1Body_num,"TJF_1Body_num","int");
+  m_param.add(F_eta,"F_eta","double");
+  m_param.add(F_num,"F_num","int");
+  m_param.add(Gauss_eta,"Gauss_eta","double");
+  m_param.add(Gauss_num,"Gauss_num","int");
+  m_param.add(CI_eta,"CI_eta","double");
+  m_param.add(CI_num,"CI_num","int");
+  m_param.add(Orb_eta,"Orb_eta","double");
+  m_param.add(Orb_num,"Orb_num","int");
+
+
+  //m_param.add(descent_len,"descent_length","int");
+  //m_param.add(blm_len,"BLM_length","int");
+  //m_param.add(hybrid_descent_samples,"Hybrid_Descent_samples","int");
+
+  m_param.add(on_reset,"reset","string");
+  m_param.add(retainMem,"retain_mem","string");
+  m_param.add(startStepNum,"starting_step","int");
+
 
 #ifdef HAVE_LMY_ENGINE
   //app_log() << "construct QMCFixedSampleLinearOptimize" << endl;
@@ -165,6 +205,13 @@ QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(MCWalkerConfiguration
                                           0.3,  // max parameter change
                                           shift_scales, app_log());
 #endif
+lambda = 0;
+stepNum = 0;
+
+totalCount = 0;
+descentCount = 0;
+blmCount = 0;
+
   //   stale parameters
   //   m_param.add(eigCG,"eigcg","int");
   //   m_param.add(TotalCGSteps,"cgsteps","int");
@@ -201,10 +248,35 @@ QMCFixedSampleLinearOptimize::RealType QMCFixedSampleLinearOptimize::Func(RealTy
 
 bool QMCFixedSampleLinearOptimize::run()
 {
-  // if requested, perform the update via the adaptive three-shift or single-shift method
+
+  if(doDescent)
+  {
+      app_log() << "Going to descent_run()" << std::endl;
+      return descent_run();
+  }
+if(doHybrid)
+{
+    EngineObj->setHybrid("yes",optTarget->NumParams());
+    app_log() << "Going to hybrid_run()" << std::endl;
+
+      return hybrid_run();
+}
+
+if(doSR)
+{
+    app_log() << "Going to sr_run()" << std::endl;
+    return sr_run();
+
+}
+
+// if requested, perform the update via the adaptive three-shift or single-shift method
 #ifdef HAVE_LMY_ENGINE
   if (doAdaptiveThreeShift)
+  {
+      app_log() << "Going to adaptive_three_shift_run()" << std::endl;
     return adaptive_three_shift_run();
+    app_log() << "Returned from call to adaptive_three_shift_run()" << std::endl;
+  }
 #endif
   if (doOneShiftOnly)
     return one_shift_run();
@@ -455,9 +527,18 @@ bool QMCFixedSampleLinearOptimize::put(xmlNodePtr q)
   tolower(block_lmStr);
   block_lm = (block_lmStr == "yes");
 
+  app_log() << "This is MinMethod inside FixedSampleLinearOptimize: " << MinMethod << std::endl;
+ app_log() << "This is descent_len inside FixedSampleLinearOptimize: " << descent_len << std::endl;
+ app_log() << "This is blm_len inside FixedSampleLinearOptimize: " << blm_len << std::endl;
+
   // get whether to use the adaptive three-shift version of the update
   doAdaptiveThreeShift = (MinMethod == "adaptive");
   doOneShiftOnly       = (MinMethod == "OneShiftOnly");
+
+  //get whether to use descent, hybrid, or sr
+  doDescent = (MinMethod == "descent");
+  doHybrid = (MinMethod == "hybrid");
+  doSR = (MinMethod == "sr");
 
   // sanity check
   if (targetExcited && !doAdaptiveThreeShift)
@@ -490,7 +571,7 @@ bool QMCFixedSampleLinearOptimize::put(xmlNodePtr q)
     throw std::runtime_error("cost_increase_tol must be non-negative in QMCFixedSampleLinearOptimize::put");
 
   // if this is the first time this function has been called, set the initial shifts
-  if (bestShift_i < 0.0 && doAdaptiveThreeShift)
+  if (bestShift_i < 0.0 && (doAdaptiveThreeShift || doHybrid))
     bestShift_i = shift_i_input;
   if (doOneShiftOnly)
     bestShift_i = shift_i_input;
@@ -841,8 +922,14 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
   // remember what the cost function grads flag was
   const bool saved_grads_flag = optTarget->getneedGrads();
 
-  // remember the initial number of samples
+  
+
   const int init_num_samp = optTarget->getNumSamples();
+
+  app_log() << "This is input s shift: " << shift_s_input << std::endl;
+  app_log() << "This is input i shift: " << shift_i_input << std::endl;
+  app_log() << "This is initial best s shift: " << bestShift_s << std::endl;
+  app_log() << "This is initial best i shift: " << bestShift_i << std::endl;
 
   // the index of central shift
   const int central_index = num_shifts / 2;
@@ -859,6 +946,9 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
 
   // ensure the cost function is set to compute derivative vectors
   optTarget->setneedGrads(true);
+
+  app_log() << "This is s shift: " << bestShift_s << std::endl;
+  app_log() << "This is i shift: " << bestShift_i << std::endl;
 
   // prepare previous updates
   int count = 0;
@@ -1309,5 +1399,813 @@ bool QMCFixedSampleLinearOptimize::one_shift_run()
   // return whether the cost function's report counter is positive
   return (optTarget->getReportCounter() > 0);
 }
+
+
+bool QMCFixedSampleLinearOptimize::descent_run()
+{
+
+  app_log() << "First Check number of samples: " << optTarget->getNumSamples() << std::endl;
+/* 
+  int init_num_samp;
+  if(doHybrid)
+  {
+   init_num_samp = hybrid_descent_samples;
+  optTarget->setNumSamples(hybrid_descent_samples);
+  }
+
+  app_log() << "Second Check number of samples: " << optTarget->getNumSamples() << std::endl;
+  */
+  /*
+  else
+  {
+  // remember the initial number of samples
+  init_num_samp = optTarget->getNumSamples();
+  }*/
+
+  start();
+  bool Valid(true);
+  int Total_iterations(0);
+//size of matrix
+  numParams = optTarget->NumParams();
+  N = numParams + 1;
+
+  
+    int process_rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &process_rank); 
+  std::ofstream paramFileWriter;
+
+ /* 
+if(on_reset.compare("yes") == 0 && stepNum==0)
+{
+    std::string line;
+    std::ifstream paramFileReader("finalParameterList.txt");
+
+    if(paramFileReader.is_open())
+    {
+        int i = 0;
+        while (getline (paramFileReader,line))
+        {
+            double paramValue = std::stod(line);
+            app_log() << "This is value of parameter #" << i << " stored in file: " << paramValue << std::endl;
+            optTarget->Params(i) = paramValue;
+            i++;
+        }
+
+    }
+    
+}
+if(retainMem.compare("yes")==0 && stepNum==0)
+    {
+        //Readers for the files recording values at end of previous descent section
+        std::ifstream derivFileReader("derivRecords.txt");
+        std::ifstream derivSquaredFileReader("derivSquaredRecords.txt");
+        std::ifstream tauFileReader("tauRecords.txt");
+
+        
+        std::string line;
+        std::vector<RealType> restoredDerivs(numParams);
+        //std::vector<RealType> restoredSquares(numParams);
+        if(derivFileReader.is_open())
+        {
+
+            while(getline(derivFileReader,line))
+            {
+                double derivValue = std::stod(line);
+                restoredDerivs.push_back(derivValue);
+            }
+        }
+        derivRecords.push_back(restoredDerivs);
+    
+        if(derivSquaredFileReader.is_open())
+        {
+        
+            while(getline(derivSquaredFileReader,line))
+            {
+                double squareValue = std::stod(line);
+                //restoredSquares.push_back(squareValue);
+                derivsSquared.push_back(squareValue);
+            }
+        }
+        if(tauFileReader.is_open())
+        {
+        
+            while(getline(tauFileReader,line))
+            {
+                double tauValue = std::stod(line);
+                //restoredSquares.push_back(squareValue);
+                taus.push_back(tauValue);
+            }
+        }
+        //derivsSquared.push_back(restoredSquares);
+    }
+    */
+  for(int i = 0; i<numParams;i++)
+  {
+      if(stepNum==0)
+      {
+        paramsCopy.push_back(optTarget->Params(i));
+
+        paramsRunAvg.push_back(optTarget->Params(i));
+
+//        app_log() << "This initial value of parameter #" << i << " before optimization: " << optTarget->Params(i) << std::endl;
+        }
+      
+     
+  }
+  
+
+//    std::cout << "Copied over parameters" << std::endl;
+
+  //   where we are and where we are pointing
+  std::vector<RealType> currentParameterDirections(N,0);
+  std::vector<RealType> currentParameters(numParams,0);
+  std::vector<RealType> bestParameters(numParams,0);
+  for (int i=0; i<numParams; i++)
+    bestParameters[i] = currentParameters[i] = optTarget->Params(i);
+//   proposed direction and new parameters
+  optdir.resize(numParams,0);
+  optparm.resize(numParams,0);
+
+  while (Total_iterations < Max_iterations)
+  {
+    Total_iterations+=1;
+    app_log()<<"Iteration: "<<Total_iterations<<"/"<<Max_iterations<< std::endl;
+
+
+/*  
+    if (!ValidCostFunction(Valid))
+      continue;
+//     reset params if necessary
+    for (int i=0; i<numParams; i++)
+      optTarget->Params(i) = currentParameters[i];
+    myTimers[4]->start();
+    RealType lastCost(optTarget->Cost(true));
+    myTimers[4]->stop();
+    // if cost function is currently invalid continue
+    Valid=optTarget->IsValid;
+    if (!ValidCostFunction(Valid))
+      continue;
+*/
+   
+    std::vector<RealType> LDerivs(numParams); 
+
+   // std::cout << "Going to gradient_checkConfigurations" << std::endl;
+//  optTarget->gradient_checkConfigurations(LDerivs,stepNum,mu,targetExcited,omega_shift);
+  
+optTarget->descent_checkConfigurations(LDerivs,mu,targetExcited,omega_shift);
+ // optTarget->engine_checkConfigurations(EngineObj);
+
+ derivRecords.push_back(LDerivs);
+    
+   // std::cout << "What my code thinks is the iteration number: " << stepNum << std::endl;
+    updateParameters(derivRecords,lambda,taus,derivsSquared,stepNum);
+    stepNum = stepNum+1;
+
+ 
+  }
+
+
+  finish();
+  return (optTarget->getReportCounter() > 0);
+
+}
+
+void QMCFixedSampleLinearOptimize::updateParameters(std::vector< std::vector<Return_t> >& derivRecords,double& prevLambda, std::vector<double>& prevTaus, std::vector<Return_t>& derivsSquared, int stepNum)
+{
+    app_log() << "Inside updateParameters" << std::endl; 
+    numParams = optTarget->NumParams();
+    app_log() << "Number of Parameters: "<< numParams << std::endl;
+    //std::cout << "Optimization Step Number: "<< stepNum << std::endl;
+
+
+    app_log() << "Parameter Type step sizes: " << " TJF_2Body_eta=" << TJF_2Body_eta << " TJF_1Body_eta=" << TJF_1Body_eta << " F_eta=" << F_eta << " CI_eta=" << CI_eta << " Orb_eta=" << Orb_eta << std::endl;
+    //Update parameters according to specified flavor of gradient descent method
+    
+
+    if(flavor.compare("RMSprop")==0)
+    {
+    
+    
+    }
+    else if(flavor.compare("Random")==0)
+    {
+    
+    
+    }
+
+    else
+    {
+    
+        if(flavor.compare("ADAM")==0)
+        {
+        
+        }
+        else if(flavor.compare("AMSGrad")==0)
+        {
+        
+        
+        }
+    
+    }
+    //To match up with Booth group paper notation, prevLambda is lambda_k-1, curLambda is lambda_k, nextLambda is lambda_k+1
+    double curLambda = .5 + .5*std::sqrt(1+4*pow(prevLambda,2));
+    double nextLambda = .5 + .5*std::sqrt(1+4*pow(curLambda,2));
+    double gamma = (1-curLambda)/nextLambda;
+     
+    //Define damping factor that turns off acceleration of the algorithm
+    //small value of d corresponds to quick damping and effectively using steepest descent
+    //double d = .00000001;
+    double d = 100;
+  //  double d = 100000000;
+    //std::cout << "Gamma pre decay: " << gamma << std::endl;
+    double decayFactor = std::exp(-(1/d)*(stepNum)); 
+    //std::cout << "Decay Factor: " <<decayFactor <<std::endl;
+    gamma = gamma*decayFactor;
+    //std::cout << "Gamma value: " << gamma <<std::endl; 
+
+    //std::cout << "derivRecords size is: " << derivRecords.size() << std::endl;
+    //Get set of derivatives for current (kth) optimization step
+    std::vector<Return_t> curDerivSet = derivRecords.at(derivRecords.size()-1);
+    std::vector<Return_t> prevDerivSet;
+    
+
+    //std::cout << prevTaus.empty() << std::endl;
+    if(!prevTaus.empty())
+    {
+	//Get set of derivatives for previous (k-1th) optimization step
+	prevDerivSet = derivRecords.at(derivRecords.size()-2);
+
+    }
+
+   
+    int process_rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &process_rank); 
+    //std::cout << "Process rank: " << process_rank << std::endl;
+   /*
+      if(process_rank==0)
+    {       
+	std::cout << std::endl << "PARAMETER LIST STARTS HERE" << std::endl << std::endl;
+    }*/
+    
+    for(int i = 0; i<numParams; i++)
+    {
+
+	
+//        app_log() << "Parameter #" + std::to_string(i) + " Derivative value: " << curDerivSet[i] << std::endl;
+	    //app_log() << "Parameter #" + std::to_string(i) +" Current value: " << optTarget->Params(i) << std::endl;
+
+        if(stepNum==0)
+        {
+            paramsForDiff.push_back(optTarget->Params(i));
+
+        }
+	//Placeholder values for step size parameters
+	double tau;
+ 
+
+	double rho = .9;
+	double epsilon = 1e-8;
+	double curSquare = std::pow(curDerivSet.at(i),2);
+
+	//Need to calculate tau for each parameter inside loop
+	if(derivsSquared.size() < numParams)
+	{
+	    curSquare = std::pow(curDerivSet.at(i),2);
+	}
+	else if(derivsSquared.size() >= numParams && flavor.compare("RMSprop")==0)
+	{
+	    curSquare = rho*derivsSquared.at(i)+(1-rho)*std::pow(curDerivSet.at(i),2);
+	}
+	
+	double denom = std::sqrt(curSquare + epsilon);
+    double numer;
+    double v;
+    double corNumer;
+    double corV;
+    if(flavor.compare("AMSGrad")== 0)
+    {
+        double beta1=.9;
+        double beta2=.99;
+        if(stepNum == 0)
+        {
+            numerRecords.push_back(0);
+            denomRecords.push_back(0);
+        }
+        
+        numer = beta1*numerRecords[i] + (1-beta1)*curDerivSet[i];
+        v = beta2*denomRecords[i] + (1-beta2)*curSquare;
+        v = std::max(denomRecords[i],v);
+        
+       // std::cout << "This is n: " << n << " for parameter #" << i << std::endl;
+        if(process_rank==0)
+        {
+           // std::cout << "This is current squared derivative: " << curSquare << " for parameter #" << i << std::endl;
+        
+        }
+        denom = std::sqrt(v)+epsilon;
+    }
+
+    else if(flavor.compare("ADAM")== 0)
+    {
+        double beta1=.9;
+        double beta2=.99;
+        if(stepNum == 0)
+        {
+            numerRecords.push_back(0);
+            denomRecords.push_back(0);
+        }
+        //beta1 = beta1*decayFactor;        
+        numer = beta1*numerRecords[i] + (1-beta1)*curDerivSet[i];
+        v = beta2*denomRecords[i] + (1-beta2)*curSquare;
+       
+        corNumer = numer/(1-std::pow(beta1,stepNum+1));
+        corV = v/(1- std::pow(beta2,stepNum+1));
+       
+
+       // std::cout << "This is n: " << n << " for parameter #" << i << std::endl;
+        if(process_rank==0)
+        {
+            //std::cout << "This is current squared derivative: " << curSquare << " for parameter #" << i << std::endl;
+        
+        }
+        denom = std::sqrt(corV)+epsilon;
+    }
+    else if(flavor.compare("Random")==0)
+    {
+      
+        denom=1;
+    
+    
+    }
+   
+    double type_Eta;
+
+    if(i < TJF_2Body_num)
+    {
+        type_Eta = TJF_2Body_eta;
+        //tau = TJF_2Body_eta/denom;
+    }
+    else if(i < TJF_2Body_num+TJF_1Body_num && TJF_1Body_num > 0)
+    {
+        type_Eta = TJF_1Body_eta;
+       // tau = TJF_1Body_eta/denom;
+    }
+    else if(i < TJF_2Body_num+TJF_1Body_num+F_num && F_num > 0)
+    {
+        type_Eta = F_eta;
+       // tau = F_eta/denom;
+    }
+    else if(i < TJF_2Body_num+TJF_1Body_num+F_num+Gauss_num && Gauss_num > 0)
+    {
+        type_Eta = Gauss_eta;
+       // tau = Gauss_eta/denom;
+    }
+    else if(i < TJF_2Body_num+TJF_1Body_num+F_num+Gauss_num+CI_num && CI_num > 0)
+    {
+        type_Eta = CI_eta;
+       // tau = CI_eta/denom;
+    }
+    else if (i < TJF_2Body_num+TJF_1Body_num+F_num+Gauss_num+CI_num+Orb_num && Orb_num > 0)
+    {
+        type_Eta = Orb_eta;
+       // tau = Orb_eta/denom;
+    }
+
+    //If retaining memory of past section of descent, use old step size as current one regardless of input on new section of descent
+    if(retainMem.compare("yes")==0)
+    {
+        type_Eta = prevTaus.at(i);
+    
+    }
+
+    tau = type_Eta/denom;
+    
+    
+    if(flavor.compare("AMSGrad")==0)
+    {
+        optTarget->Params(i) = optTarget->Params(i) - tau*numer;
+    }
+    else if(flavor.compare("ADAM")==0)
+    {
+    
+        optTarget->Params(i) = optTarget->Params(i) - tau*corNumer;
+    }
+    else if(flavor.compare("Random")==0)
+    {
+    
+        double alpha = ((double) rand()/RAND_MAX);
+        double sign = std::abs(curDerivSet[i])/curDerivSet[i];
+        if (std::isnan(sign))
+        {
+            if(process_rank==0)
+            {
+                std::cout << "Got a nan, choosing sign randomly with 50-50 probability" << std::endl;
+            }
+            double t = ((double) rand()/RAND_MAX);
+            if(t > .5)
+            {
+                sign = 1;
+            }
+            else
+            {
+                sign = -1;
+            }
+        
+        }
+        if(process_rank==0)
+        {
+            std::cout <<"This is random alpha: " << alpha <<std::endl;
+            std::cout << "This is sign: " << sign << std::endl;
+        }
+        optTarget->Params(i) = optTarget->Params(i)-tau*alpha*sign;
+    
+    }
+	if(flavor.compare("RMSprop")==0)
+    {
+    //Include a factor to cause step size to decrease to 0 as number of steps taken increases
+    double stepLambda = .1;
+
+//	double stepLambda = 1;
+    double stepDecayDenom = 1 + stepLambda*stepNum;
+    tau = tau/stepDecayDenom;
+
+
+
+	//Comment out this section when doing steepest descent by hand with no acceleration
+
+
+     if(retainMem.compare("yes")==0)
+    {
+        tau = prevTaus.at(i);
+    
+    }
+  
+        
+
+	if(prevTaus.size() >=numParams || retainMem.compare("yes")==0)
+	{
+//	    std::cout <<"Each parameter has been updated once"<<std::endl;
+	//   app_log() << "Should print on new AD section on first iteration" << std::endl; 
+	    //std::cout << "Accessing entry #" << i << std::endl;
+	    double oldTau = prevTaus.at(i);
+	    //std::cout <<"Accessed tau"<<std::endl;
+
+       
+        optTarget->Params(i) = (1-gamma)*(optTarget->Params(i)-tau*curDerivSet.at(i))+gamma*(paramsCopy.at(i) - oldTau*prevDerivSet.at(i));
+	}
+	else
+	{
+//	    std::cout<<"Haven't taken a first step for each parameter"<<std::endl;
+        tau = type_Eta;
+        
+        optTarget->Params(i) = optTarget->Params(i) - tau*curDerivSet.at(i);	    
+        //optTarget->Params(i) = optTarget->Params(i) - type_Eta*curDerivSet[i];	    
+	
+	}
+
+
+
+    }
+	
+//	tau = .1;
+	
+    //optTarget->Params(i) = optTarget->Params(i)-type_Eta*curDerivSet[i];  
+//    optTarget->Params(i) = optTarget->Params(i)-.1*curDerivSet[i];  
+
+   /* 
+    if(process_rank==0)
+    {
+//        std::cout << "Denominator Value: " << denom << std::endl;
+	    std::cout << "Step size: " << tau << std::endl;
+	    std::cout << "Derivative value: " << curDerivSet[i] << std::endl;
+	    
+        std::cout << "Updated value: " << optTarget->Params(i) << std::endl;
+    }
+*/
+
+  //  app_log() << "This is taus size: " << taus.size() << std::endl;
+	//Store the current tau value and the derivative squared for this parameter, overwriting the previous one
+	if(prevTaus.size() < numParams)
+	{
+//         app_log() << "On the first step" << std::endl;
+	    //For the first optimization step, need to add to the vectors
+        prevTaus.push_back(tau);
+	    derivsSquared.push_back(curSquare);
+        if(flavor.compare("AMSGrad")==0 || flavor.compare("ADAM")==0)
+        {
+            denomRecords[i] = v;
+            numerRecords[i] = numer;
+        }
+	}
+	else
+	{
+//	    app_log() << "Not on first step" << std::endl;
+	    //When not on the first step, can overwrite the previous stored values
+        prevTaus[i] = tau;
+	    derivsSquared[i] = curSquare;
+        if(flavor.compare("AMSGrad")==0 || flavor.compare("ADAM")==0)
+        {
+        denomRecords[i] = v;
+        numerRecords[i] = numer;
+        }
+	}
+
+    }
+
+        //Copy over parameter values for use in next optimization step
+     
+
+    double paramWeight = .9;
+    for(int i = 0; i <numParams; i++)
+    {
+    //Keep a running average of parameter values after a certain point in the optimization
+        if (stepNum >= 50 && hybrid.compare("yes") == 0)
+        {
+            paramsRunAvg[i] = paramWeight*paramsCopy[i] + (1-paramWeight)*optTarget->Params(i);   
+        }
+        else
+        {
+            //If that point isn't reached yet, paramsRunAvg should have identical contents to paramsCopy
+            paramsRunAvg[i] = optTarget->Params(i);
+        }
+        //The running average is kept separate in order to not affect the optimization
+        paramsCopy[i] = optTarget->Params(i);
+           
+    }
+    //Store latest lambda value for next optimization step
+    prevLambda = curLambda;
+    //std::cout << "Copied Lambda" << std::endl;
+
+    //app_log() << "Writing to files, sizes: " << curDerivSet.size() << "," << derivsSquared.size() << "," << taus.size() << std::endl;
+/*
+    if(process_rank==0)
+    {
+
+
+    std::ofstream memFileWriter;
+    std::string filename1 = "derivRecords.txt";
+    std::string filename2 = "derivSquaredRecords.txt";
+    std::string filename3 = "tauRecords.txt";
+    memFileWriter.open(filename1, std::ios_base::trunc);
+
+    for(int i = 0;i<numParams;i++)
+    {
+        memFileWriter << curDerivSet[i] << std::endl;
+
+    }
+    memFileWriter.close();
+
+    memFileWriter.open(filename2, std::ios_base::trunc);
+     for(int i = 0;i<numParams;i++)
+    {
+        memFileWriter << derivsSquared[i] << std::endl;
+
+    }
+    memFileWriter.close();
+
+     memFileWriter.open(filename3, std::ios_base::trunc);
+     for(int i = 0;i<numParams;i++)
+    {
+        memFileWriter << taus.at(i) << std::endl;
+
+    }
+    memFileWriter.close();
+    }
+    
+  */  
+    std::ofstream paramFileWriter;
+    //Code for keeping a running average of parameter values
+   
+   /* 
+
+    if(process_rank==0)
+    {
+        std::string filename = "runAvgParams.txt";
+        //std::cout << "paramsRunAvg size: " << paramsRunAvg.size() << std::endl;
+        //std::cout << "paramsCopy size: " << paramsCopy.size() << std::endl;
+        if(stepNum == 499)
+        {
+            std::string filename2 = "runAvgParamsAt499.txt";
+            paramFileWriter.open(filename2,std::ios_base::trunc);
+            for(int i=0;i<paramsRunAvg.size();i++)
+            {
+                paramFileWriter << paramsRunAvg[i] << std::endl;
+                optTarget->Params(i) = paramsRunAvg[i];
+            }
+            std::cout << "At end of iteration 499, compare txt file values to opt.xml file" << std::endl;
+            
+        }
+
+        paramFileWriter.open(filename,std::ios_base::trunc);
+        for(int i=0;i< paramsRunAvg.size();i++)
+        {
+            paramFileWriter << paramsRunAvg[i] << std::endl;
+        }
+        paramFileWriter.close();
+    }
+   */
+
+    /*
+    double gradMagnitude = 0;
+    for(int i =0;i<numParams;i++)
+    {
+        gradMagnitude = gradMagnitude + std::pow(curDerivSet[i],2);
+    }
+
+    gradMagnitude = std::sqrt(gradMagnitude);
+//gradMagnitude = curDerivSet[30];
+
+    if(process_rank==0)
+    {
+        std::string filename = "gradientVals.txt";
+        if(stepNum == 0)
+        {
+            paramFileWriter.open(filename,std::ios_base::trunc);
+        }
+        else
+        {
+            paramFileWriter.open(filename,std::ios_base::app);
+        }
+        paramFileWriter << gradMagnitude << std::endl;
+    
+    }
+*/
+
+    /*
+    int interval = descent_len/5;
+    std::vector<int> storeStepNums;
+    int n = 0;
+    while(n <=descent_len)
+    {
+        n+=interval;
+        storeStepNums.push_back(n);
+    }
+*/
+
+   // std::cout << "At hybrid storage check" << std::endl;
+   if(doHybrid && ( (startStepNum+stepNum+1)%(descent_len/5)==0 ))
+   {
+       if(process_rank==0)
+       {
+        std::cout << "Step number is " << startStepNum+stepNum << " out of expected total of "  << descent_len << " descent steps."<< std::endl;
+       } 
+       storeVectors(paramsForDiff);
+   }
+
+  // std::cout << "At the swap check" << std::endl;
+
+   /*
+   if(stepNum==99 && hybrid.compare("yes") == 0 && useAvgParams.compare("yes")==0)
+  {
+    if(process_rank==0)
+    {
+        std::cout << "Swapping out parameter values for running average of the last 50" << std::endl;
+    }
+  
+    for(int i = 0;i<numParams;i++)
+    {
+        if(process_rank==0)
+        {
+            std::cout << "Parameter #" << i << " value: " << optTarget->Params(i) << std::endl;
+            std::cout << "Parameter #" << i << " averaged replacement value: " << paramsRunAvg[i] << std::endl;
+        
+        }
+        optTarget->Params(i) = paramsRunAvg[i];
+    
+    }
+  } 
+
+  std::string filename = "fullParameterList.txt";
+  for(int i =0;i<numParams;i++)
+  {
+    if(process_rank==0)
+    {
+      if(i ==0)
+        {
+            paramFileWriter.open(filename,std::ios_base::trunc);
+
+           // paramFileWriter.open(filename,std::ios_base::app);
+        }
+        else
+        {
+            paramFileWriter.open(filename,std::ios_base::app);
+        }
+        paramFileWriter << optTarget->Params(i) << std::endl;
+        paramFileWriter.close();
+   
+    }
+  
+  }
+  */
+
+}
+
+void QMCFixedSampleLinearOptimize::storeVectors(std::vector< Return_t >& paramsForDiff)
+{
+    int process_rank;
+     MPI_Comm_rank(MPI_COMM_WORLD, &process_rank);
+     
+
+        //std::cout << "Inside storing vectors function" << std::endl;
+        
+        
+        std::vector<Return_t> rowVec(paramsForDiff.size());
+        std::fill(rowVec.begin(),rowVec.end(),0.0);
+
+
+        //Take difference between current parameter values and the values from 20 iterations before to be written to file
+        //The current parameter values are then copied to paramsForDiff to be used another 20 iterations later
+        for(int i=0;i<numParams;i++)
+        {
+            rowVec[i] = (optTarget->Params(i)-paramsForDiff[i]);
+            paramsForDiff[i] = optTarget->Params(i);
+        } 
+     
+    //If on first step, clear anything that was in vector
+        if(startStepNum+stepNum+1==descent_len/5)
+        {
+            hybridBLM_Input.clear();
+            hybridBLM_Input.push_back(rowVec);        
+        }
+        else
+        {
+            hybridBLM_Input.push_back(rowVec);
+        }
+
+   for(int i = 0; i < hybridBLM_Input.size(); i++)
+   {
+    std::string entry = "";
+    for(int j = 0; j < hybridBLM_Input.at(i).size(); j++)
+    {
+        entry = entry + std::to_string(hybridBLM_Input.at(i).at(j))+",";
+    
+    }
+    app_log() << "Stored Vector: " << entry << std::endl;
+
+   }     
+}
+
+bool QMCFixedSampleLinearOptimize::hybrid_run()
+{
+    if(descentCount < descent_len)
+    {
+        descentCount++;
+        totalCount++;
+        app_log() << "Should be on descent step# " << descentCount -1  << " of macro-iteration. Total steps: " << totalCount << std::endl;
+        optTarget->setNumSamples(hybrid_descent_samples);
+        return descent_run();
+    }
+    else
+    {
+        //descentCount = 0;
+        if(blmCount < blm_len)
+        {
+            blmCount++;
+            totalCount++;
+            app_log() << "Should be on blm step# " << blmCount -1  << " of macro-iteration. Total steps: " << totalCount << std::endl;
+            EngineObj->setHybridBLM_Input(hybridBLM_Input);
+            //optTarget->setNumSamples(10^6);
+            return adaptive_three_shift_run();
+        
+        }
+        else
+        {
+            descentCount = 0;
+            blmCount = 0;
+            descentCount++;
+            totalCount++;
+            app_log() << "Should be on descent step# " << descentCount -1  << " of macro-iteration. Total steps: " << totalCount << std::endl;
+            return descent_run();
+        }
+    }
+
+}
+
+bool QMCFixedSampleLinearOptimize::sr_run()
+{
+    numParams = optTarget->NumParams();
+    formic::Matrix<Return_t> lhsMatrix(numParams,numParams);
+    std::vector<Return_t> rhsVector;
+
+    optTarget->sr_checkConfigurations(lhsMatrix,rhsVector,sr_tau,targetExcited,omega_shift);
+
+    double lapackLHS[numParams][numParams];
+    double lapackRHS[numParams];
+    for(int i = 0; i <numParams;i++)
+    {
+        lapackRHS[i] = rhsVector[i];
+        for(int j = 0; j < numParams;j++)
+        {
+            lapackLHS[i][j] = lhsMatrix.at(i,j);
+        }
+    
+    }
+    //Then use LAPACK to solve Ax=b and get updates in x.
+
+    //Then apply updates
+
+
+}
+
 
 } // namespace qmcplusplus

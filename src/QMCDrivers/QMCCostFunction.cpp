@@ -21,7 +21,7 @@
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "Message/CommOperators.h"
 //#define QMCCOSTFUNCTION_DEBUG
-
+#include "formic/utils/matrix.h"
 
 namespace qmcplusplus
 {
@@ -390,9 +390,14 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine* Engine
     (*MoverRng[ip]) = (*RngSaved[ip]);
     hClones[ip]->setRandomGenerator(MoverRng[ip]);
     //int nat = wRef.getTotalNum();
-    Return_rt e0 = 0.0;
+    Return_t e0 = 0.0;
     //       Return_t ef=0.0;
-    Return_rt e2 = 0.0;
+    //Return_rt e2 = 0.0;
+    Return_t e2 = 0.0;
+  
+    //app_log() << "Actual number of samples?: " << wRef.numSamples() << std::endl;
+    //app_log() << "Also related to number of samples?: " << wPerNode[ip] << std::endl;
+
     for (int iw = 0, iwg = wPerNode[ip]; iw < wRef.numSamples(); ++iw, ++iwg)
     {
       wRef.loadSample(wRef.R, iw);
@@ -493,6 +498,419 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine* Engine
   ReportCounter = 0;
 }
 #endif
+
+void QMCCostFunction::descent_checkConfigurations(std::vector<Return_t>& LDerivs, double& oldMu, bool& targetExcited, double& omega)
+{
+
+    //int process_rank;
+    //MPI_Comm_rank(MPI_COMM_WORLD, &process_rank);
+
+    //Need this line to get non-zero derivatives for traditional Jastrow parameters.
+    OptVariablesForPsi.setRecompute();
+
+    //std::vector<Return_t> param_der_samp(NumOptimizables, 0.0);
+
+    std::vector<Return_t> avg_le_der_samp(NumOptimizables, 0.0);
+    std::vector<Return_t> avg_der_rat_samp(NumOptimizables, 0.0);
+
+    std::vector<Return_t> numerTerm1(NumOptimizables+1,0.0);
+    std::vector<Return_t> numerTerm2(NumOptimizables+1,0.0);
+    std::vector<Return_t> denom(NumOptimizables+1,0.0);
+
+
+
+  RealType et_tot = 0.0;
+  RealType e2_tot = 0.0;
+#pragma omp parallel reduction(+ : et_tot, e2_tot)
+  {
+    int ip = omp_get_thread_num();
+    MCWalkerConfiguration& wRef(*wClones[ip]);
+    if (RecordsOnNode[ip] == 0)
+    {
+      RecordsOnNode[ip] = new Matrix<Return_t>;
+      RecordsOnNode[ip]->resize(wRef.numSamples(), SUM_INDEX_SIZE);
+      if (needGrads)
+      {
+        DerivRecords[ip] = new Matrix<Return_t>;
+        //DerivRecords[ip]->resize(wRef.numSamples(),NumOptimizables);
+        HDerivRecords[ip] = new Matrix<Return_t>;
+        //HDerivRecords[ip]->resize(wRef.numSamples(),NumOptimizables);
+      }
+    }
+    else if (RecordsOnNode[ip]->size1() != wRef.numSamples())
+    {
+      RecordsOnNode[ip]->resize(wRef.numSamples(), SUM_INDEX_SIZE);
+      if (needGrads)
+      {
+        //DerivRecords[ip]->resize(wRef.numSamples(),NumOptimizables);
+        //HDerivRecords[ip]->resize(wRef.numSamples(),NumOptimizables);
+      }
+    }
+    QMCHamiltonianBase* nlpp = (includeNonlocalH == "no") ? 0 : hClones[ip]->getHamiltonian(includeNonlocalH.c_str());
+    bool compute_nlpp        = useNLPPDeriv && nlpp;
+    //set the optimization mode for the trial wavefunction
+    psiClones[ip]->startOptimization();
+    //    synchronize the random number generator with the node
+    (*MoverRng[ip]) = (*RngSaved[ip]);
+    hClones[ip]->setRandomGenerator(MoverRng[ip]);
+    //int nat = wRef.getTotalNum();
+    Return_t e0 = 0.0;
+    //       Return_t ef=0.0;
+    Return_t e2 = 0.0;
+
+double eSum = 0;
+
+    for (int iw = 0, iwg = wPerNode[ip]; iw < wRef.numSamples(); ++iw, ++iwg)
+    {
+      wRef.loadSample(wRef.R, iw);
+      wRef.update();
+      Return_t* restrict saved = (*RecordsOnNode[ip])[iw];
+      psiClones[ip]->evaluateDeltaLog(wRef, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], *dLogPsi[iwg], *d2LogPsi[iwg]);
+      saved[REWEIGHT] = 1.0;
+      Return_t etmp;
+      if (needGrads)
+      {
+        //allocate vector
+        std::vector<Return_t> Dsaved(NumOptimizables, 0.0);
+        std::vector<Return_t> HDsaved(NumOptimizables, 0.0);
+        psiClones[ip]->evaluateDerivatives(wRef, OptVariablesForPsi, Dsaved, HDsaved);
+        etmp = hClones[ip]->evaluateValueAndDerivatives(wRef, OptVariablesForPsi, Dsaved, HDsaved, compute_nlpp);
+        //std::copy(Dsaved.begin(),Dsaved.end(),(*DerivRecords[ip])[iw]);
+        //std::copy(HDsaved.begin(),HDsaved.end(),(*HDerivRecords[ip])[iw]);
+
+        // add non-differentiated derivative vector
+        std::vector<Return_t> der_rat_samp(NumOptimizables + 1, 0.0);
+        std::vector<Return_t> le_der_samp(NumOptimizables + 1, 0.0);
+
+        // dervative vectors
+        der_rat_samp.at(0) = 1.0;
+        for (int i = 0; i < Dsaved.size(); i++)
+          der_rat_samp.at(i + 1) = Dsaved.at(i);
+
+        // evaluate local energy
+        etmp = hClones[ip]->evaluate(wRef);
+
+        // energy dervivatives
+        le_der_samp.at(0) = etmp;
+        for (int i = 0; i < HDsaved.size(); i++)
+          le_der_samp.at(i + 1) = HDsaved.at(i) + etmp * Dsaved.at(i);
+
+     
+     for (int i = 0; i < NumOptimizables; i++)
+     {
+     
+     //param_der_samp.at(i) = 2*(le_der_samp.at(i+1)) - etmp*(2*der_rat_samp.at(i+1));
+     eSum += etmp;
+     avg_le_der_samp.at(i) += le_der_samp.at(i+1);
+     avg_der_rat_samp.at(i) +=der_rat_samp.at(i+1);
+
+     }   
+#ifdef HAVE_LMY_ENGINE
+        // pass into engine
+//        EngineObj->take_sample(der_rat_samp, le_der_samp, le_der_samp, 1.0, saved[REWEIGHT]);
+#endif
+
+        //etmp= hClones[ip]->evaluate(wRef);
+      }
+      else
+        etmp = hClones[ip]->evaluate(wRef);
+
+      e0 += saved[ENERGY_TOT] = etmp;
+      e2 += etmp * etmp;
+      saved[ENERGY_FIXED] = hClones[ip]->getLocalPotential();
+      if (nlpp)
+        saved[ENERGY_FIXED] -= nlpp->Value;
+    }
+
+    //add them all using reduction
+    et_tot += e0;
+    e2_tot += e2;
+    // #pragma omp atomic
+    //       eft_tot+=ef;
+  }
+#ifdef HAVE_LMY_ENGINE
+  // engine finish taking samples
+  //EngineObj->sample_finish();
+#endif
+/*
+  if (EngineObj->block_first())
+  {
+    OptVariablesForPsi.setComputed();
+    app_log() << "calling setComputed function" << std::endl;
+  }
+  //     app_log() << "  VMC Efavg = " << eft_tot/static_cast<Return_t>(wPerNode[NumThreads]) << endl;
+*/
+  //Need to sum over the processors
+  std::vector<Return_t> etemp(3);
+  etemp[0] = et_tot;
+  etemp[1] = static_cast<Return_t>(wPerNode[NumThreads]);
+  etemp[2] = e2_tot;
+  myComm->allreduce(etemp);
+  Etarget    = static_cast<Return_t>(etemp[0] / etemp[1]);
+  NumSamples = static_cast<int>(etemp[1]);
+  app_log() << "  VMC Eavg = " << Etarget << std::endl;
+  app_log() << "  VMC Evar = " << etemp[2] / etemp[1] - Etarget * Etarget << std::endl;
+  app_log() << "  Total weights = " << etemp[1] << std::endl;
+
+
+  myComm->allreduce(avg_le_der_samp); 
+  myComm->allreduce(avg_der_rat_samp);
+
+double newE = etemp[0];
+newE = newE/etemp[1];
+for (int i = 0; i < LDerivs.size();i++)
+{
+
+avg_le_der_samp.at(i) = avg_le_der_samp.at(i)/etemp[1];
+avg_der_rat_samp.at(i) = avg_der_rat_samp.at(i)/etemp[1];
+
+
+
+if(!targetExcited)
+{
+
+LDerivs.at(i) = 2*avg_le_der_samp.at(i) - newE*(2*avg_der_rat_samp.at(i));
+
+}
+
+else
+{
+//LDerivs.at(i) = omega*omega*(2*avg_le_der_samp.at(i)) -2*omega*(2*avg_le_der_samp.at(i)) + 2*avg_le_der_samp.at(0)*avg_le_der_samp.at(i);
+
+numerTerm1.at(i) = (omega*2*avg_der_rat_samp.at(i) - 2*avg_le_der_samp.at(i))*(omega*omega*avg_der_rat_samp.at(0) - 2*omega*avg_le_der_samp.at(0) + avg_le_der_samp.at(0)*avg_le_der_samp.at(0));
+numerTerm2.at(i) = (omega* avg_der_rat_samp.at(0) - avg_le_der_samp.at(0))*(omega*omega*(2*avg_der_rat_samp.at(i)) - 2*omega*2*avg_le_der_samp.at(i) + 2* avg_le_der_samp.at(0)*avg_le_der_samp.at(i));
+
+denom.at(i) = (omega*omega*avg_der_rat_samp.at(0) - 2*omega*avg_le_der_samp.at(0) + avg_le_der_samp.at(0)*avg_le_der_samp.at(0))*(omega*omega*avg_der_rat_samp.at(0)-2*omega*avg_le_der_samp.at(0) + avg_le_der_samp.at(0)*avg_le_der_samp.at(0));
+LDerivs.at(i) = (numerTerm1.at(i) - numerTerm2.at(i))/denom.at(i);
+
+}
+
+}
+ app_log().flush();
+
+  setTargetEnergy(Etarget);
+  ReportCounter = 0;
+
+
+}
+void QMCCostFunction::sr_checkConfigurations(formic::Matrix<Return_t>&  lhsMatrix, std::vector<Return_t>& rhsVector, double& tau, bool& targetExcited,double& omega)
+{
+
+    //int process_rank;
+    //MPI_Comm_rank(MPI_COMM_WORLD, &process_rank);
+
+    //Need this line to get non-zero derivatives for traditional Jastrow parameters.
+    OptVariablesForPsi.setRecompute();
+
+    //std::vector<Return_t> param_der_samp(NumOptimizables, 0.0);
+
+    std::vector<Return_t> avg_le_der_samp(NumOptimizables, 0.0);
+    std::vector<Return_t> avg_der_rat_samp(NumOptimizables, 0.0);
+
+    formic::Matrix<Return_t> avg_overlap_samp(NumOptimizables,NumOptimizables,0.0);
+
+    std::vector<Return_t> numerTerm1(NumOptimizables+1,0.0);
+    std::vector<Return_t> numerTerm2(NumOptimizables+1,0.0);
+    std::vector<Return_t> denom(NumOptimizables+1,0.0);
+
+
+
+  RealType et_tot = 0.0;
+  RealType e2_tot = 0.0;
+#pragma omp parallel reduction(+ : et_tot, e2_tot)
+  {
+    int ip = omp_get_thread_num();
+    MCWalkerConfiguration& wRef(*wClones[ip]);
+    if (RecordsOnNode[ip] == 0)
+    {
+      RecordsOnNode[ip] = new Matrix<Return_t>;
+      RecordsOnNode[ip]->resize(wRef.numSamples(), SUM_INDEX_SIZE);
+      if (needGrads)
+      {
+        DerivRecords[ip] = new Matrix<Return_t>;
+        //DerivRecords[ip]->resize(wRef.numSamples(),NumOptimizables);
+        HDerivRecords[ip] = new Matrix<Return_t>;
+        //HDerivRecords[ip]->resize(wRef.numSamples(),NumOptimizables);
+      }
+    }
+    else if (RecordsOnNode[ip]->size1() != wRef.numSamples())
+    {
+      RecordsOnNode[ip]->resize(wRef.numSamples(), SUM_INDEX_SIZE);
+      if (needGrads)
+      {
+        //DerivRecords[ip]->resize(wRef.numSamples(),NumOptimizables);
+        //HDerivRecords[ip]->resize(wRef.numSamples(),NumOptimizables);
+      }
+    }
+    QMCHamiltonianBase* nlpp = (includeNonlocalH == "no") ? 0 : hClones[ip]->getHamiltonian(includeNonlocalH.c_str());
+    bool compute_nlpp        = useNLPPDeriv && nlpp;
+    //set the optimization mode for the trial wavefunction
+    psiClones[ip]->startOptimization();
+    //    synchronize the random number generator with the node
+    (*MoverRng[ip]) = (*RngSaved[ip]);
+    hClones[ip]->setRandomGenerator(MoverRng[ip]);
+    //int nat = wRef.getTotalNum();
+    Return_t e0 = 0.0;
+    //       Return_t ef=0.0;
+    Return_t e2 = 0.0;
+
+double eSum = 0;
+
+    for (int iw = 0, iwg = wPerNode[ip]; iw < wRef.numSamples(); ++iw, ++iwg)
+    {
+      wRef.loadSample(wRef.R, iw);
+      wRef.update();
+      Return_t* restrict saved = (*RecordsOnNode[ip])[iw];
+      psiClones[ip]->evaluateDeltaLog(wRef, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], *dLogPsi[iwg], *d2LogPsi[iwg]);
+      saved[REWEIGHT] = 1.0;
+      Return_t etmp;
+      if (needGrads)
+      {
+        //allocate vector
+        std::vector<Return_t> Dsaved(NumOptimizables, 0.0);
+        std::vector<Return_t> HDsaved(NumOptimizables, 0.0);
+        psiClones[ip]->evaluateDerivatives(wRef, OptVariablesForPsi, Dsaved, HDsaved);
+        etmp = hClones[ip]->evaluateValueAndDerivatives(wRef, OptVariablesForPsi, Dsaved, HDsaved, compute_nlpp);
+        //std::copy(Dsaved.begin(),Dsaved.end(),(*DerivRecords[ip])[iw]);
+        //std::copy(HDsaved.begin(),HDsaved.end(),(*HDerivRecords[ip])[iw]);
+
+        // add non-differentiated derivative vector
+        std::vector<Return_t> der_rat_samp(NumOptimizables + 1, 0.0);
+        std::vector<Return_t> le_der_samp(NumOptimizables + 1, 0.0);
+
+        // dervative vectors
+        der_rat_samp.at(0) = 1.0;
+        for (int i = 0; i < Dsaved.size(); i++)
+          der_rat_samp.at(i + 1) = Dsaved.at(i);
+
+        // evaluate local energy
+        etmp = hClones[ip]->evaluate(wRef);
+
+        // energy dervivatives
+        le_der_samp.at(0) = etmp;
+        for (int i = 0; i < HDsaved.size(); i++)
+          le_der_samp.at(i + 1) = HDsaved.at(i) + etmp * Dsaved.at(i);
+
+     
+     for (int i = 0; i < NumOptimizables; i++)
+     {
+     
+     //param_der_samp.at(i) = 2*(le_der_samp.at(i+1)) - etmp*(2*der_rat_samp.at(i+1));
+     eSum += etmp;
+     avg_le_der_samp.at(i) += le_der_samp.at(i+1);
+     avg_der_rat_samp.at(i) +=der_rat_samp.at(i+1);
+
+     for(int j = 0; j < NumOptimizables; j++)
+     {
+         double entry_samp = der_rat_samp.at(i+1)*der_rat_samp.at(j+1);
+         avg_overlap_samp.at(i,j) += entry_samp;
+     }
+
+     }   
+#ifdef HAVE_LMY_ENGINE
+        // pass into engine
+//        EngineObj->take_sample(der_rat_samp, le_der_samp, le_der_samp, 1.0, saved[REWEIGHT]);
+#endif
+
+        //etmp= hClones[ip]->evaluate(wRef);
+      }
+      else
+        etmp = hClones[ip]->evaluate(wRef);
+
+      e0 += saved[ENERGY_TOT] = etmp;
+      e2 += etmp * etmp;
+      saved[ENERGY_FIXED] = hClones[ip]->getLocalPotential();
+      if (nlpp)
+        saved[ENERGY_FIXED] -= nlpp->Value;
+    }
+
+    //add them all using reduction
+    et_tot += e0;
+    e2_tot += e2;
+    // #pragma omp atomic
+    //       eft_tot+=ef;
+  }
+#ifdef HAVE_LMY_ENGINE
+  // engine finish taking samples
+  //EngineObj->sample_finish();
+#endif
+/*
+  if (EngineObj->block_first())
+  {
+    OptVariablesForPsi.setComputed();
+    app_log() << "calling setComputed function" << std::endl;
+  }
+  //     app_log() << "  VMC Efavg = " << eft_tot/static_cast<Return_t>(wPerNode[NumThreads]) << endl;
+*/
+  //Need to sum over the processors
+  std::vector<Return_t> etemp(3);
+  etemp[0] = et_tot;
+  etemp[1] = static_cast<Return_t>(wPerNode[NumThreads]);
+  etemp[2] = e2_tot;
+  myComm->allreduce(etemp);
+  Etarget    = static_cast<Return_t>(etemp[0] / etemp[1]);
+  NumSamples = static_cast<int>(etemp[1]);
+  app_log() << "  VMC Eavg = " << Etarget << std::endl;
+  app_log() << "  VMC Evar = " << etemp[2] / etemp[1] - Etarget * Etarget << std::endl;
+  app_log() << "  Total weights = " << etemp[1] << std::endl;
+
+
+  myComm->allreduce(avg_le_der_samp); 
+  myComm->allreduce(avg_der_rat_samp);
+  myComm->allreduce(avg_overlap_samp);
+
+double newE = etemp[0];
+newE = newE/etemp[1];
+
+
+for (int i = 0; i <NumOptimizables;i++)
+{
+
+avg_le_der_samp.at(i) = avg_le_der_samp.at(i)/etemp[1];
+avg_der_rat_samp.at(i) = avg_der_rat_samp.at(i)/etemp[1];
+
+
+
+if(!targetExcited)
+{
+
+rhsVector.at(i) = avg_der_rat_samp.at(i) - tau*avg_le_der_samp.at(i);
+
+for(int j = 0; j < NumOptimizables; j++)
+{
+lhsMatrix.at(i,j) = avg_overlap_samp.at(i,j); 
+}
+
+//LDerivs.at(i) = 2*avg_le_der_samp.at(i) - newE*(2*avg_der_rat_samp.at(i));
+
+}
+
+else
+{
+
+    //Will need something different for SR for excited states if we end up getting to that point.
+
+//LDerivs.at(i) = omega*omega*(2*avg_le_der_samp.at(i)) -2*omega*(2*avg_le_der_samp.at(i)) + 2*avg_le_der_samp.at(0)*avg_le_der_samp.at(i);
+
+//numerTerm1.at(i) = (omega*2*avg_der_rat_samp.at(i) - 2*avg_le_der_samp.at(i))*(omega*omega*avg_der_rat_samp.at(0) - 2*omega*avg_le_der_samp.at(0) + avg_le_der_samp.at(0)*avg_le_der_samp.at(0));
+//numerTerm2.at(i) = (omega* avg_der_rat_samp.at(0) - avg_le_der_samp.at(0))*(omega*omega*(2*avg_der_rat_samp.at(i)) - 2*omega*2*avg_le_der_samp.at(i) + 2* avg_le_der_samp.at(0)*avg_le_der_samp.at(i));
+
+//denom.at(i) = (omega*omega*avg_der_rat_samp.at(0) - 2*omega*avg_le_der_samp.at(0) + avg_le_der_samp.at(0)*avg_le_der_samp.at(0))*(omega*omega*avg_der_rat_samp.at(0)-2*omega*avg_le_der_samp.at(0) + avg_le_der_samp.at(0)*avg_le_der_samp.at(0));
+//LDerivs.at(i) = (numerTerm1.at(i) - numerTerm2.at(i))/denom.at(i);
+
+}
+
+}
+
+
+ app_log().flush();
+
+  setTargetEnergy(Etarget);
+  ReportCounter = 0;
+
+
+}
+
 
 void QMCCostFunction::resetPsi(bool final_reset)
 {

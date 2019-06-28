@@ -766,6 +766,8 @@ QMCLinearOptimize::RealType QMCLinearOptimize::getSplitEigenvectors(int first,
 */
 bool QMCLinearOptimize::put(xmlNodePtr q)
 {
+
+    app_log() << "At start of QMCLinearOptimize put" << std::endl;
   std::string useGPU("no");
   std::string vmcMove("pbyp");
   OhmmsAttributeSet oAttrib;

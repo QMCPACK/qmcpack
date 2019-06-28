@@ -72,6 +72,21 @@ private:
   // perform the single-shift update, no sample regeneration
   bool one_shift_run();
 
+  // perform update using accelerated descent
+  bool descent_run();
+
+  // use hybrid approach
+  bool hybrid_run();
+
+  // perform update using stochastic reconfiguration
+  bool sr_run();
+
+  // helper method for updating parameter values with descent
+  void updateParameters(std::vector< std::vector<Return_t> >& Lderivs, double& prevLambda, std::vector<double>& prevTaus,std::vector<Return_t>& derivsSquared, int stepNum);
+
+  //helper method for writing vectors for BLM steps in hybrid method
+  void storeVectors(std::vector< Return_t >& paramsForDiff);
+
   void solveShiftsWithoutLMYEngine(const std::vector<double>& shifts_i,
                                    const std::vector<double>& shiffts_s,
                                    std::vector<std::vector<RealType>>& parameterDirections);
@@ -103,7 +118,7 @@ private:
   int Max_iterations;
   int nstabilizers;
   RealType stabilizerScale, bigChange, exp0, exp1, stepsize, savedQuadstep;
-  std::string MinMethod, GEVtype, StabilizerMethod, GEVSplit;
+  std::string GEVtype, StabilizerMethod, GEVSplit;
   RealType w_beta;
   /// number of previous steps to orthogonalize to.
   int eigCG;
@@ -155,8 +170,95 @@ private:
   bool block_first;
   ///whether to do the second part of block lm
   bool block_second;
-  ///whethe to do the third part of blocl lm
+  ///whether to do the third part of block lm
   bool block_third;
+
+//Variables for alternatives to linear method
+
+  //whether to use accelerated descent
+  bool doDescent;
+
+  //whether to use hybrid method
+  bool doHybrid;
+
+  //whether to use stochastic reconfiguration
+  bool doSR;
+
+  //Small number in SR's first order expansion
+  double sr_tau;
+
+  
+  //Vector for storing parameter values from previous optimization step
+  std::vector<double> paramsCopy;
+
+//Vector for storing a running average of parameter values
+  std::vector<double > paramsRunAvg;
+
+  //Vector for storing parameter values for calcualting differences to be written to a file 
+  std::vector<double> paramsForDiff;
+
+  //Vector for storing Lagrangian derivatives from previous optimization steps
+  std::vector< std::vector<Return_t> > derivRecords; 
+
+  //Vector for storing denominator values from previous optimization step
+  std::vector<double>  denomRecords;
+
+  //Vector for storing numerator values from previous optimization step
+  std::vector<double> numerRecords;
+
+  //Vector for storing the input vectors to the BLM steps of hybrid method
+  std::vector< std::vector<double> > hybridBLM_Input;
+
+  //Parameter for accelerated descent recursion relation
+  double lambda;
+
+  //Vector for storing step sizes from previous optimization step.
+  std::vector<double> taus;
+
+  //Running average of local energy
+  double mu;
+
+  //Vector for storing running average of squares of the derivatives
+  std::vector<Return_t> derivsSquared;
+
+  //Integer for keeping track of the iteration number
+  int stepNum;
+
+  //Whether hybrid accelerated descent and linear method will be used
+  std::string hybrid;
+
+  //What variety of gradient descent will be used
+  std::string flavor;
+
+  //Whether to substitute in a running average of parameters
+  std::string useAvgParams;
+
+  double TJF_2Body_eta;
+  int TJF_2Body_num;
+  double TJF_1Body_eta;
+  int TJF_1Body_num;
+  double F_eta;
+  int F_num;
+  double Gauss_eta;
+  int Gauss_num;
+  double CI_eta;
+  int CI_num;
+  double Orb_eta;
+  int Orb_num;
+
+  //int descent_len;
+  //int blm_len;
+  int totalCount;
+  int descentCount;
+  int blmCount;
+
+  int hybrid_descent_samples;
+  std::string on_reset;
+  std::string retainMem;
+  int startStepNum;
+
+
+
 };
 } // namespace qmcplusplus
 #endif
