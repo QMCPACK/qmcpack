@@ -67,6 +67,9 @@ struct PosUnit
 template<class T, unsigned D>
 struct CrystalLattice : public LRBreakupParameters<T, D>
 {
+  /// alias to the base class
+  using Base = LRBreakupParameters<T, D>;
+
   ///enumeration for the dimension of the lattice
   enum
   {
@@ -251,10 +254,9 @@ struct CrystalLattice : public LRBreakupParameters<T, D>
   template<typename T1>
   CrystalLattice<T, D>& operator=(const CrystalLattice<T1, D>& rhs)
   {
-    using base_t          = LRBreakupParameters<T, D>;
-    base_t::LR_dim_cutoff = rhs.LR_dim_cutoff;
-    base_t::LR_kc         = rhs.LR_kc;
-    base_t::LR_rc         = rhs.LR_rc;
+    Base::LR_dim_cutoff = rhs.LR_dim_cutoff;
+    Base::LR_kc         = rhs.LR_kc;
+    Base::LR_rc         = rhs.LR_rc;
 
     is_from_input = rhs.is_from_input;
     BoxBConds     = rhs.BoxBConds;
