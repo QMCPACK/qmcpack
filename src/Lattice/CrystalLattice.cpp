@@ -29,9 +29,9 @@ namespace qmcplusplus
 template<class T, unsigned D>
 CrystalLattice<T, D>::CrystalLattice()
 {
-  is_from_input = false;
-  BoxBConds     = 0;
-  VacuumScale   = 1.0;
+  explicitly_defined = false;
+  BoxBConds          = 0;
+  VacuumScale        = 1.0;
   R.diagonal(1e10);
   G      = R;
   M      = R;
@@ -43,8 +43,8 @@ template<class T, unsigned D>
 template<class TT>
 void CrystalLattice<T, D>::set(const Tensor<TT, D>& lat)
 {
-  is_from_input = true;
-  R             = lat;
+  explicitly_defined = true;
+  R                  = lat;
   reset();
 }
 

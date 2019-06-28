@@ -412,7 +412,7 @@ bool ParticleSet::makeMoveAndCheck(Index_t iat, const SingleParticlePos_t& displ
   activePtcl = iat;
   activePos  = R[iat] + displ;
   //SingleParticlePos_t red_displ(Lattice.toUnit(displ));
-  if (Lattice.is_from_input)
+  if (Lattice.explicitly_defined)
   {
     if (Lattice.outOfBound(Lattice.toUnit(displ)))
     {
@@ -447,7 +447,7 @@ bool ParticleSet::makeMoveAndCheck(Index_t iat, const SingleParticlePos_t& displ
 bool ParticleSet::makeMove(const Walker_t& awalker, const ParticlePos_t& deltaR, RealType dt)
 {
   activePtcl = -1;
-  if (Lattice.is_from_input)
+  if (Lattice.explicitly_defined)
   {
     for (int iat = 0; iat < deltaR.size(); ++iat)
     {
@@ -479,7 +479,7 @@ bool ParticleSet::makeMove(const Walker_t& awalker, const ParticlePos_t& deltaR,
 bool ParticleSet::makeMove(const Walker_t& awalker, const ParticlePos_t& deltaR, const std::vector<RealType>& dt)
 {
   activePtcl = -1;
-  if (Lattice.is_from_input)
+  if (Lattice.explicitly_defined)
   {
     for (int iat = 0; iat < deltaR.size(); ++iat)
     {
@@ -521,7 +521,7 @@ bool ParticleSet::makeMoveWithDrift(const Walker_t& awalker,
                                     RealType dt)
 {
   activePtcl = -1;
-  if (Lattice.is_from_input)
+  if (Lattice.explicitly_defined)
   {
     for (int iat = 0; iat < deltaR.size(); ++iat)
     {
@@ -556,7 +556,7 @@ bool ParticleSet::makeMoveWithDrift(const Walker_t& awalker,
                                     const std::vector<RealType>& dt)
 {
   activePtcl = -1;
-  if (Lattice.is_from_input)
+  if (Lattice.explicitly_defined)
   {
     for (int iat = 0; iat < deltaR.size(); ++iat)
     {

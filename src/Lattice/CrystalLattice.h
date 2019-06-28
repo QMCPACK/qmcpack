@@ -138,7 +138,7 @@ struct CrystalLattice : public LRBreakupParameters<T, D>
   //angles between the two lattice vectors
   SingleParticlePos_t ABC;
   ///true, the lattice is defined by the input instead of an artificial default
-  bool is_from_input;
+  bool explicitly_defined;
 
   ///default constructor, assign a huge supercell
   CrystalLattice();
@@ -258,10 +258,10 @@ struct CrystalLattice : public LRBreakupParameters<T, D>
     Base::LR_kc         = rhs.LR_kc;
     Base::LR_rc         = rhs.LR_rc;
 
-    is_from_input = rhs.is_from_input;
-    BoxBConds     = rhs.BoxBConds;
-    VacuumScale   = rhs.VacuumScale;
-    R             = rhs.R;
+    explicitly_defined = rhs.explicitly_defined;
+    BoxBConds          = rhs.BoxBConds;
+    VacuumScale        = rhs.VacuumScale;
+    R                  = rhs.R;
     reset();
     return *this;
   }
