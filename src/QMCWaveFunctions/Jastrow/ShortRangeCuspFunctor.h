@@ -28,14 +28,38 @@ namespace qmcplusplus
 
 /*********************************************************************************************************
 *
-*  Class description goes here.
+*  A functor intended for helping with the electron-nuclear (en) cusp at short range.
 *
+*  In QMCPACK, an en radial Jastrow is parameterized as exp(-U(r)), in which U(r) is the functor.
+*  This class implements the functor
 *
+*    U(r) = -1.0 * exp(-r/R0) * ( A * R0 + sum_{k=0}^{N-1} B_k * (r/R0)^{k+2} / ( 1.0 + (r/R0)^{k+2} ) )
+*
+*  in which A, R0, and B_k are the variational parameters, although A is likely to be held fixed
+*  as it enforces the en cusp condition ( dU/dr -> A as r -> 0 ).
+*
+*  The exp(-r/R0) keeps the functor very short range.  For example, initial testing on the LiH molecule
+*  suggests that in that case, an R0 value of about 0.03 Bohr is desirable.  With this R0 value, r values
+*  beyond just 0.5 Bohr already incur an exponential factor smaller than 10^{-7} and so the functor is
+*  quite short ranged.
+*
+*  The B_k variables add structure to how the functor decays to zero with increasing r by expanding
+*  in a set of sigmoidal functions.  The sigmoidal form (as opposed to a bare polynomial expansion)
+*
+*                          (r/R0)^{k+2} / ( 1.0 + (r/R0)^{k+2} )
+*
+*  was chosen so that they do not compete with the exponential decay and so help keep things short ranged.
+*  Note that the lowest power of (r/R0) in this expansion is 2, so they do not affect the cusp condition.
 *
 **********************************************************************************************************/
 template<class T>
 struct ShortRangeCuspFunctor : public OptimizableFunctorBase
 {
+
+  //*****************************************************************************//
+  //*******************************  Member Data ********************************//
+  //*****************************************************************************//
+
   ///true, if A is optimizable
   bool Opt_A;
   ///true, if R0 is optimizable
@@ -44,9 +68,9 @@ struct ShortRangeCuspFunctor : public OptimizableFunctorBase
   bool Opt_B;
   ///variable that controls the cusp
   real_type A;
-  ///variable that controls how short ranged the functor is
+  ///the soft cutoff distance that controls how short ranged the functor is
   real_type R0;
-  ///variables that add detail through an expansion in scaled distance power fractions
+  ///variables that add detail through an expansion in sigmoidal functions
   std::vector<real_type> B;
   ///id of A
   std::string ID_A;
@@ -55,9 +79,14 @@ struct ShortRangeCuspFunctor : public OptimizableFunctorBase
   ///id of B
   std::string ID_B;
 
-  ///default constructor
-  ShortRangeCuspFunctor() : Opt_A(true), Opt_R0(true), Opt_B(true), A(1.0), R0(0.2), ID_A("A"), ID_R0("R0"), ID_B("B") { reset(); }
+  //*****************************************************************************//
+  //*****************************  Member Functions *****************************//
+  //*****************************************************************************//
 
+  ///default constructor
+  ShortRangeCuspFunctor() : Opt_A(true), Opt_R0(true), Opt_B(true), A(1.0), R0(0.1), ID_A("A"), ID_R0("R0"), ID_B("B") { reset(); }
+
+  ///default constructor
   void setCusp(real_type cusp)
   {
     //throw std::runtime_error("ShortRangeCuspFunctor::setCusp was called");
@@ -66,67 +95,82 @@ struct ShortRangeCuspFunctor : public OptimizableFunctorBase
     reset();
   }
 
+  ///clone the functor
   OptimizableFunctorBase* makeClone() const { return new ShortRangeCuspFunctor(*this); }
 
+  ///Implement the reset function, which was pure virtual in OptimizableFunctorBase, even though we don't need it
   void reset()
   {
     //cutoff_radius = 1.0e4; //some big range
-    ////A=a; B0=b; Scale=s;
-    //B      = B0 * Scale;
-    //AB     = A * B;
-    //B2     = 2.0 * B;
-    //AoverB = A / B;
   }
 
+  ///compute U(r) at a particular value of r
   inline real_type evaluate(real_type r) const
   {
+
+    // get the ratio of the distance and the soft cutoff distance
     const real_type s = r / R0;
-    const real_type ex = std::exp(-s);
-    const real_type apart = A * R0;
-    real_type bpart = 0.0;
+
+    // sum up the sigmoidal function expansion
+    real_type sig_sum = 0.0;
     real_type n = 2.0;
-    real_type sn = s * s;
+    real_type sn = s * s; // s^n
     for (int i = 0; i < B.size(); i++) {
-      const real_type d = 1.0 + sn;
-      bpart += B[i] * sn / d;
-      sn *= s;
-      n += 1.0;
+      sig_sum += B[i] * sn / ( 1.0 + sn );
+      sn *= s;  // update s^n
+      n += 1.0; // update n
     }
-    return -1.0 * ex * ( apart + bpart );
+
+    // return the functor's value
+    return -1.0 * std::exp(-s) * ( A * R0 + sig_sum );
+
   }
 
+  ///compute U(r), dU/dr, and d^2U/dr^2 at a particular value of r
   inline real_type evaluate(real_type r, real_type& dudr, real_type& d2udr2) const
   {
+
+    // get the ratio of the distance and the soft cutoff distance
     const real_type s = r / R0;
+
+    // get the exponential factor
     const real_type ex = std::exp(-s);
-    const real_type apart_0 = A * R0;
-    const real_type apart_1 = A * ex;
-    const real_type apart_2 = -apart_1 / R0;
-    real_type bpart_0 = 0.0; // contributes to U(r)
-    real_type bpart_1 = 0.0; // contributes to dU/dr
-    real_type bpart_2 = 0.0; // contributes to d2U/dr2
+
+    // sum the terms related to the sigmoidal functions that are needed for U, dU, and d^2U
+    real_type sig_sum_0 = 0.0; // contributes to U(r)
+    real_type sig_sum_1 = 0.0; // contributes to dU/dr
+    real_type sig_sum_2 = 0.0; // contributes to d2U/dr2
     real_type n = 2.0;
-    real_type sn = s * s;
-    real_type snm1 = s;
-    real_type snm2 = 1.0;
+    real_type sn = s * s; // s^{n  }
+    real_type snm1 = s;   // s^{n-1}
+    real_type snm2 = 1.0; // s^{n-2}
     for (int i = 0; i < B.size(); i++) {
       const real_type d = 1.0 + sn;
       const real_type d2 = d * d;
       const real_type soverd = s / d;
       const real_type noverd2 = n / d2;
-      bpart_0 += B[i] * sn / d;
-      bpart_1 += B[i] * ( sn * sn + sn - n * snm1 ) / d2;
-      bpart_2 += B[i] * snm2 * ( d * noverd2 * noverd2 * ( sn - 1.0 ) + noverd2 * ( 1.0 + 2.0 * s ) - soverd * s );
-      snm2 = snm1;
-      snm1 = sn;
-      sn *= s;
-      n += 1.0;
+      sig_sum_0 += B[i] * sn / d;
+      sig_sum_1 += B[i] * ( sn * sn + sn - n * snm1 ) / d2;
+      sig_sum_2 += B[i] * snm2 * ( d * noverd2 * noverd2 * ( sn - 1.0 ) + noverd2 * ( 1.0 + 2.0 * s ) - soverd * s );
+      snm2 = snm1; // update s^{n-2}
+      snm1 = sn;   // update s^{n-1}
+      sn *= s;     // update s^{n  }
+      n += 1.0;    // update n
     }
-    const real_type exoverR0 = ex / R0;
+
+    // get some useful ratios ( ex / R0 and ex / R0^2 )
+    const real_type exoverR0  = ex / R0;
     const real_type exoverR02 = exoverR0 / R0;
-    dudr   = apart_1 + exoverR0  * bpart_1;
-    d2udr2 = apart_2 + exoverR02 * bpart_2;
-    return -1.0 * ex * ( apart_0 + bpart_0 );
+
+    // evaluate dU/dr
+    dudr = A * ex + exoverR0 * sig_sum_1;
+
+    // evaluate d^2U/dr^2
+    d2udr2 = -A * exoverR0 + exoverR02 * sig_sum_2;
+
+    // return U(r)
+    return -1.0 * ex * ( A * R0 + sig_sum_0 );
+
   }
 
   inline real_type evaluate(real_type r, real_type& dudr, real_type& d2udr2, real_type& d3udr3) const
