@@ -38,7 +38,7 @@ template<>
 int ParticleSet::Walker_t::cuda_DataSize = 0;
 #endif
 
-const TimerNameList_t<ParticleSet::PSTimers> ParticleSet::PSTimerNames = {{PS_newpos, "ParticleSet::computeNewPosDistTablesAndSK"},
+const TimerNameList_t<ParticleSet::PSTimers> ParticleSet::PSTimerNames = {{PS_newpos, "ParticleSet::computeNewPosDT"},
                                                                           {PS_donePbyP, "ParticleSet::donePbyP"},
                                                                           {PS_setActive, "ParticleSet::setActive"},
                                                                           {PS_update, "ParticleSet::update"}};
@@ -365,24 +365,24 @@ int ParticleSet::addTable(const ParticleSet& psrc, int dt_type, bool need_full_t
 
 void ParticleSet::update(bool skipSK)
 {
-  myTimers[PS_update]->start();
+  ScopedTimer update_scope(myTimers[PS_update]);
+
   RSoA.copyIn(R);
   for (int i = 0; i < DistTables.size(); i++)
     DistTables[i]->evaluate(*this);
   if (!skipSK && SK)
     SK->UpdateAllPart(*this);
-  myTimers[PS_update]->stop();
 
   activePtcl = -1;
 }
 
 void ParticleSet::setActive(int iat)
 {
-  myTimers[PS_setActive]->start();
+  ScopedTimer set_active_scope(myTimers[PS_setActive]);
+
   for (size_t i = 0; i < DistTables.size(); i++)
     if (DistTables[i]->DTType == DT_SOA)
       DistTables[i]->evaluate(*this, iat);
-  myTimers[PS_setActive]->stop();
 }
 
 void ParticleSet::makeMove(Index_t iat, const SingleParticlePos_t& displ)
@@ -413,14 +413,14 @@ bool ParticleSet::makeMoveAndCheck(Index_t iat, const SingleParticlePos_t& displ
 
 void ParticleSet::computeNewPosDistTablesAndSK(Index_t iat, const SingleParticlePos_t& newpos)
 {
-  myTimers[PS_newpos]->start();
+  ScopedTimer compute_newpos_scope(myTimers[PS_newpos]);
+
   for (int i = 0; i < DistTables.size(); ++i)
     DistTables[i]->move(*this, newpos);
   //Do not change SK: 2007-05-18
   //Change SK only if DoUpdate is true: 2008-09-12
   if (SK && SK->DoUpdate)
     SK->makeMove(iat, newpos);
-  myTimers[PS_newpos]->stop();
 }
 
 bool ParticleSet::makeMoveAllParticles(const Walker_t& awalker, const ParticlePos_t& deltaR, RealType dt)
@@ -598,11 +598,10 @@ void ParticleSet::acceptMove(Index_t iat)
 
 void ParticleSet::donePbyP()
 {
-  myTimers[PS_donePbyP]->start();
+  ScopedTimer donePbyP_scope(myTimers[PS_donePbyP]);
   if (SK && !SK->DoUpdate)
     SK->UpdateAllPart(*this);
   activePtcl = -1;
-  myTimers[PS_donePbyP]->stop();
 }
 
 void ParticleSet::makeVirtualMoves(const SingleParticlePos_t& newpos)
