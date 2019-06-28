@@ -22,6 +22,20 @@ namespace qmcplusplus
 {
 class DensityMatrices1B : public QMCHamiltonianBase
 {
+protected:
+  enum DMTimers
+  {
+    DM_eval,
+    DM_gen_samples,
+    DM_gen_sample_basis,
+    DM_gen_sample_ratios,
+    DM_gen_particle_basis,
+    DM_matrix_products,
+    DM_accumulate,
+  };
+
+  TimerList_t timers;
+
 public:
   enum
   {
