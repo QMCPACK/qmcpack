@@ -158,7 +158,9 @@ public:
 #ifdef HAVE_LMY_ENGINE
   virtual void engine_checkConfigurations(cqmc::engine::LMYEngine* EngineObj) = 0;
 
-  virtual void descent_checkConfigurations(std::vector<Return_t>& LDerivs,int& stepNum, double& oldMu, bool& targetExcited,double& omega) = 0;
+  virtual void descent_checkConfigurations(std::vector<Return_t>& LDerivs, double& oldMu, bool& targetExcited,double& omega) = 0;
+
+  virtual void sr_checkConfigurations(formic::Matrix<Return_t>& lhsMatrix, std::vector<Return_t>& rhsVector, double& tau, bool& targetExcited,double& omega) = 0;
 #endif
 
 

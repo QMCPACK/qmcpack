@@ -180,6 +180,10 @@ private:
   //whether to use stochastic reconfiguration
   bool doSR;
 
+  //Small number in SR's first order expansion
+  double sr_tau;
+
+  
   //Vector for storing parameter values from previous optimization step
   std::vector<double> paramsCopy;
 

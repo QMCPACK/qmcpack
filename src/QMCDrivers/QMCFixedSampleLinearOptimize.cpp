@@ -1516,7 +1516,7 @@ if(retainMem.compare("yes")==0 && stepNum==0)
    // std::cout << "Going to gradient_checkConfigurations" << std::endl;
 //  optTarget->gradient_checkConfigurations(LDerivs,stepNum,mu,targetExcited,omega_shift);
   
-optTarget->descent_checkConfigurations(LDerivs,stepNum,mu,targetExcited,omega_shift);
+optTarget->descent_checkConfigurations(LDerivs,mu,targetExcited,omega_shift);
  // optTarget->engine_checkConfigurations(EngineObj);
 
  derivRecords.push_back(LDerivs);
@@ -2147,6 +2147,27 @@ bool QMCFixedSampleLinearOptimize::hybrid_run()
 
 bool QMCFixedSampleLinearOptimize::sr_run()
 {
+    numParams = optTarget->NumParams();
+    formic::Matrix<Return_t> lhsMatrix(numParams,numParams);
+    std::vector<Return_t> rhsVector;
+
+    optTarget->sr_checkConfigurations(lhsMatrix,rhsVector,sr_tau,targetExcited,omega_shift);
+
+    double lapackLHS[numParams][numParams];
+    double lapackRHS[numParams];
+    for(int i = 0; i <numParams;i++)
+    {
+        lapackRHS[i] = rhsVector[i];
+        for(int j = 0; j < numParams;j++)
+        {
+            lapackLHS[i][j] = lhsMatrix.at(i,j);
+        }
+    
+    }
+    //Then use LAPACK to solve Ax=b and get updates in x.
+
+    //Then apply updates
+
 
 }
 
