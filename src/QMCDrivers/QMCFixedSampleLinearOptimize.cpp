@@ -275,7 +275,7 @@ if(doSR)
   {
       app_log() << "Going to adaptive_three_shift_run()" << std::endl;
     return adaptive_three_shift_run();
-    app_log() << "Returned from call to adaptive_three_shift_run()" << std::endl;
+//    app_log() << "Returned from call to adaptive_three_shift_run()" << std::endl;
   }
 #endif
   if (doOneShiftOnly)
@@ -492,7 +492,7 @@ if(doSR)
     }
     else
     {
-      app_log() << "Revertting to old Parameters" << std::endl;
+      app_log() << "Reverting to old Parameters" << std::endl;
       for (int i = 0; i < numParams; i++)
         optTarget->Params(i) = currentParameters[i];
     }
@@ -527,9 +527,9 @@ bool QMCFixedSampleLinearOptimize::put(xmlNodePtr q)
   tolower(block_lmStr);
   block_lm = (block_lmStr == "yes");
 
-  app_log() << "This is MinMethod inside FixedSampleLinearOptimize: " << MinMethod << std::endl;
- app_log() << "This is descent_len inside FixedSampleLinearOptimize: " << descent_len << std::endl;
- app_log() << "This is blm_len inside FixedSampleLinearOptimize: " << blm_len << std::endl;
+ // app_log() << "This is MinMethod inside FixedSampleLinearOptimize: " << MinMethod << std::endl;
+// app_log() << "This is descent_len inside FixedSampleLinearOptimize: " << descent_len << std::endl;
+// app_log() << "This is blm_len inside FixedSampleLinearOptimize: " << blm_len << std::endl;
 
   // get whether to use the adaptive three-shift version of the update
   doAdaptiveThreeShift = (MinMethod == "adaptive");
