@@ -386,10 +386,10 @@ TEST_CASE("distance_pbc_z", "[distance_table][xml]")
   xmlNodePtr part3 = xmlNextElementSibling(part2);
 
   // read lattice
-  ParticleSet::ParticleLayout_t* SimulationCell = new ParticleSet::ParticleLayout_t;
-  LatticeParser lp(*SimulationCell);
+  ParticleSet::ParticleLayout_t SimulationCell;
+  LatticeParser lp(SimulationCell);
   lp.put(part1);
-  SimulationCell->print(app_log(), 0);
+  SimulationCell.print(app_log(), 0);
 
   // read particle set
   ParticleSet ions, electrons;
@@ -397,6 +397,10 @@ TEST_CASE("distance_pbc_z", "[distance_table][xml]")
   tmat(0, 0) = 1;
   tmat(1, 1) = 1;
   tmat(2, 2) = 1;
+
+  // enforce global Lattice on ions and electrons
+  ions.Lattice = SimulationCell;
+  electrons.Lattice = SimulationCell;
 
   XMLParticleParser parse_electrons(electrons, tmat);
   parse_electrons.put(part2);
@@ -410,11 +414,9 @@ TEST_CASE("distance_pbc_z", "[distance_table][xml]")
   REQUIRE(electrons.SameMass);
 
   // calculate particle distances
-  electrons.Lattice = *SimulationCell;
-  ions.Lattice = *SimulationCell; // is this applied in qmcpack executable?
-  // better be, electron-proton distances used in PairCorrelation estimator
   const int tid = electrons.addTable(ions, DT_AOS);
   electrons.update();
+  ions.update();
 
   // get target particle set's distance table data
   const auto& dtable = electrons.getDistTable(tid);
