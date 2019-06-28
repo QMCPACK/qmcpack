@@ -46,13 +46,10 @@ MPC::~MPC()
 
 void MPC::init_gvecs()
 {
-  TinyVector<int, OHMMS_DIM> maxIndex;
+  TinyVector<int, OHMMS_DIM> maxIndex(0);
   PosType b[OHMMS_DIM];
   for (int j = 0; j < OHMMS_DIM; j++)
-  {
-    maxIndex[j] = 0;
-    b[j]        = 2.0 * M_PI * PtclRef->Lattice.b(j);
-  }
+    b[j] = static_cast<RealType>(2.0 * M_PI) * PtclRef->Lattice.b(j);
   int numG1 = PtclRef->Density_G.size();
   int numG2 = PtclRef->DensityReducedGvecs.size();
   assert(PtclRef->Density_G.size() == PtclRef->DensityReducedGvecs.size());
