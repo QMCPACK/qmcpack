@@ -226,9 +226,12 @@ struct ShortRangeCuspFunctor : public OptimizableFunctorBase
       const real_type exoverR0 = ex / R0;
       const real_type exoverR02 = exoverR0 / R0;
       const real_type exoverR03 = exoverR02 / R0;
-      derivs[i][0] = exoverR0  * bpart_0;
-      derivs[i][1] = exoverR02 * bpart_1;
-      derivs[i][2] = exoverR03 * bpart_2;
+      const real_type apart_0 = -A * ex        * ( s + 1.0 );
+      const real_type apart_1 =  A * exoverR0  * s;
+      const real_type apart_2 = -A * exoverR02 * ( s - 1.0 );
+      derivs[i][0] = apart_0 + exoverR0  * bpart_0;
+      derivs[i][1] = apart_1 + exoverR02 * bpart_1;
+      derivs[i][2] = apart_2 + exoverR03 * bpart_2;
       ++i;
     }
 
@@ -300,9 +303,12 @@ struct ShortRangeCuspFunctor : public OptimizableFunctorBase
       const real_type exoverR0 = ex / R0;
       //const real_type exoverR02 = exoverR0 / R0;
       //const real_type exoverR03 = exoverR02 / R0;
-      derivs[i] = exoverR0  * bpart_0;
-      //derivs[i][1] = exoverR02 * bpart_1;
-      //derivs[i][2] = exoverR03 * bpart_2;
+      const real_type apart_0 = -A * ex        * ( s + 1.0 );
+      //const real_type apart_1 =  A * exoverR0  * s;
+      //const real_type apart_2 = -A * exoverR02 * ( s - 1.0 );
+      derivs[i] = apart_0 + exoverR0  * bpart_0;
+      //derivs[i][1] = apart_1 + exoverR02 * bpart_1;
+      //derivs[i][2] = apart_2 + exoverR03 * bpart_2;
       ++i;
     }
 
