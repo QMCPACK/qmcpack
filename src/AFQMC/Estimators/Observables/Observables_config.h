@@ -19,8 +19,8 @@ namespace afqmc
         TwoRSDMc,
         energy,
         force
-  }; // 10 observables
-  std::array<std::string,10> hdf_ids = { "GFockOpa_",
+  }; // 12 observables
+  std::array<std::string,12> hdf_ids = { "GFockOpa_",
         "GFockOpb_",
         "one_rdm_",
         "two_rdm_",

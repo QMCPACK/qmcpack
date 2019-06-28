@@ -1,4 +1,4 @@
-i//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
 // This file is distributed under the University of Illinois/NCSA Open Source
 // License.  See LICENSE file in top directory for details.
 //
@@ -13,13 +13,13 @@ i//////////////////////////////////////////////////////////////////////
 //    Lawrence Livermore National Laboratory 
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef QMCPLUSPLUS_AFQMC_FULLOBSERVABLES_HPP
-#define QMCPLUSPLUS_AFQMC_FULLOBSERVABLES_HPP
+#ifndef QMCPLUSPLUS_AFQMC_OBSERVABLE_HPP
+#define QMCPLUSPLUS_AFQMC_OBSERVABLE_HPP
 
 #include "AFQMC/config.h"
 #include "boost/variant.hpp"
 
-#include "AFQMC/Estimators/FullObservables_shared.hpp"
+#include "AFQMC/Estimators/Observables/full1rdm.hpp"
 
 namespace qmcplusplus
 {
@@ -56,26 +56,29 @@ class dummy_obs
 // this class also handles all the hdf5 I/O (given a hdf archive).
 // This also eliminates the need to move references to arrays between this class
 // and the BackPropagated object
-class FullObservables: public boost::variant<dummy::dummy_obs,FullObservables_shared> //, FullObservables_batched>
+class Observable: public boost::variant<dummy::dummy_obs,full1rdm> 
+                                        //,full2rdm,contract1rdm,contract2rdm>
 {
 
   public:
 
-    FullObservables() {
-      APP_ABORT(" Error: Reached default constructor of FullObservables().");
+    Observable() {
+      APP_ABORT(" Error: Reached default constructor of Observable().");
     }
 
-    explicit FullObservables(FullObservables_shared&& other) : variant(std::move(other)) {}
-    explicit FullObservables(FullObservables_shared const& other) = delete;
+    explicit Observable(full1rdm && other) : variant(std::move(other)) {}
+    explicit Observable(full1rdm const& other) = delete;
 
-    explicit FullObservables(FullObservables_batched&& other) : variant(std::move(other)) {}
-    explicit FullObservables(FullObservables_batched const& other) = delete;
+/*
+    explicit Observable( && other) : variant(std::move(other)) {}
+    explicit Observable( const& other) = delete;
+*/
 
-    FullObservables(FullObservables const& other) = delete;
-    FullObservables(FullObservables&& other) = default;
+    Observable(Observable const& other) = delete;
+    Observable(Observable&& other) = default;
 
-    FullObservables& operator=(FullObservables const& other) = delete;
-    FullObservables& operator=(FullObservables&& other) = default;
+    Observable& operator=(Observable const& other) = delete;
+    Observable& operator=(Observable&& other) = default;
 
     template<class... Args>
     void accumulate(Args&&... args) {

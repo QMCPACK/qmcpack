@@ -9,8 +9,8 @@
 // File created by: Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory 
 //////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef QMCPLUSPLUS_AFQMC_FULLOBSERVABLE_SHARED_HPP
-#define QMCPLUSPLUS_AFQMC_FULLOBSERVABLE_SHARED_HPP
+#ifndef QMCPLUSPLUS_AFQMC_FULLOBSHANDLER_HPP
+#define QMCPLUSPLUS_AFQMC_FULLOBSHANDLER_HPP
 
 #include <vector>
 #include <string>
@@ -20,7 +20,7 @@
 #include "io/hdf_archive.h"
 #include "OhmmsData/libxmldefs.h"
 
-#include "AFQMC/Estimators/Observables_config.h"
+#include "AFQMC/Estimators/Observables/Observable.hpp"
 #include "AFQMC/config.h"
 #include "AFQMC/Utilities/type_conversion.hpp"
 #include "AFQMC/Numerics/ma_operations.hpp"
@@ -34,7 +34,7 @@ namespace qmcplusplus
 namespace afqmc
 {
 
-class FullObservables_shared: public AFQMCInfo
+class FullObsHandler: public AFQMCInfo
 {
 
   // allocators
@@ -58,14 +58,14 @@ class FullObservables_shared: public AFQMCInfo
 
   public:
 
-  FullObservables_shared(afqmc::TaskGroup_& tg_, AFQMCInfo& info,
+  FullObsHandler(afqmc::TaskGroup_& tg_, AFQMCInfo& info,
         std::string name_, xmlNodePtr cur, WALKER_TYPES wlk, 
         Wavefunction& wfn):
                                     AFQMCInfo(info),TG(tg_),name(name_),walker_type(wlk),
                                     wfn0(wfn), writer(false)
   {
-    std::fill(measure.begin(),measure.end(),false);
 
+    int nave=0;
     std::string obs("");
     if(cur != NULL) {
       ParameterSet m_param;
@@ -77,105 +77,75 @@ class FullObservables_shared: public AFQMCInfo
     if(nave <= 0)
       APP_ABORT("naverages <= 0 is not allowed.\n");
 
+    counters.resize(nave);
+
     if(obs == std::string(""))
       APP_ABORT("empty observables list is not allowed.\n");
 
-    if(obs.find("_1rdm_") != std::string::npos) measure[OneRDMFull]=true; 
+    if(obs.find("_1rdm_") != std::string::npos) 
+      properties.emplace_back(Observable(std::move(full1rdm(TG,info,cur,walker_type))));
+/*
     if(obs.find("_2rdm_") != std::string::npos) measure[TwoRDMFull]=true; 
     if(obs.find("_ekt_") != std::string::npos) measure[GFockOpa]=true; 
     if(obs.find("_ekt_") != std::string::npos) measure[GFockOpb]=true; 
     // need to read rotation matrix
     if(obs.find("_1rdmc_") != std::string::npos) measure[OneRDMc]=true; 
     if(obs.find("_2rdmc_") != std::string::npos) measure[TwoRDMc]=true; 
+*/
 
-    if(std::find(measure.begin(),measure.end(),true) == measure.end())
+    if(properties.size() == 0)
       APP_ABORT("empty observables list is not allowed.\n");
 
     writer = (TG.getGlobalRank()==0);
-    std::pair<int,int> dm_dims;
-    int nspin=1;
-    if(walker_type == CLOSED) {
-      dm_dims = {NMO,NMO};
-    } else if(walker_type == COLLINEAR) {
-      dm_dims = {2*NMO,NMO};
-      nspin=2;
-    } else if(walker_type == NONCOLLINEAR) {
-      dm_dims = {2*NMO,2*NMO};
-    }
 
-    denominator = = std::move(stdCMatrix({nave,1})); 
+    denominator = = std::move(stdCVector(iextensions<1u>{nave})); 
     std::fill_n(denominator.begin(),denominator.num_elements(),ComplexType(0.0,0.0));  
-
-    // Full 1-RDM
-    if(measure[OneRDMFull]) {
-      if(writer) { 
-        RDM1Full = std::move(std4CTensor({nave,nspin,dm_dims.first,dm_dims.second})); 
-        std::fill_n(RDM1Full.begin(),RDM1Full.num_elements(),ComplexType(0.0,0.0));  
-      }
-    }
-
-    // ...
 
   }
 
-  void print(hdf_archive& dump)
+  void print(int iblock, hdf_archive& dump)
   {
-    if(!writer) return;
+    const int n_zero = 9;
 
-    
-
-    ma::scal(ComplexType(1.0/block_size),denom_average);
-
-    if(measure[OneRDMFull]) {
-      ma::axpy(ComplexType(1.0),buff,DMAverage);
-
-    } 
-      if(iblock%block_size == 0) {
-//        for(int i = 0; i < DMAverage.size(); i++)
-//          DMAverage[i] /= block_size;
-//        denom_average[0] /= block_size;
-        ma::scal(ComplexType(1.0/block_size),DMAverage);
-        dump.push("BackPropagated");
-        for(int i=0; i<nave; ++i) {
-          dump.push(std::string("NumBackProp_")+std::to_string(nback_prop_steps[i]));
-          std::string padded_iblock = std::string(n_zero-std::to_string(iblock).length(),'0')+std::to_string(iblock);
-          stdCVector_ref DMAverage_( DMAverage[i].origin(), {DMAverage.size(1)});
-          stdCVector_ref denom_average_( denom_average[i].origin(), {denom_average.size(1)});
-          stdCVector_ref wOvlp_( wOvlp[i].origin(), {wOvlp.size(1)*wOvlp.size(2)});
-          stdCVector_ref wDMsum_( wDMsum[i].origin(), {wDMsum.size(1)*wDMsum.size(2)});
-          stdCVector_ref wdetR_( wdetR[i].origin(), {wdetR.size(1)*wdetR.size(2)});
-          dump.write(DMAverage_, "one_rdm_"+padded_iblock);
-          dump.write(denom_average_, "one_rdm_denom_"+padded_iblock);
-          dump.write(wOvlp_, "one_rdm_walker_overlaps_"+padded_iblock);
-          dump.write(wDMsum_, "one_rdm_walker_dm_sums_"+padded_iblock);
-          dump.write(wdetR_, "one_rdm_detR_"+padded_iblock);
-          dump.pop();
-        }
-        dump.pop();
-        using std::fill_n;
-        fill_n(DMAverage.origin(), DMAverage.num_elements(), ComplexType(0.0,0.0));
-        fill_n(denom_average.origin(), denom_average.num_elements(), ComplexType(0.0,0.0));
-        fill_n(wdetR.origin(),wdetR.num_elements(),ComplexType(0.0));
-        fill_n(wOvlp.origin(),wOvlp.num_elements(),ComplexType(0.0));
-        fill_n(wDMsum.origin(),wDMsum.num_elements(),ComplexType(0.0));
+    if(writer) {
+      for(int i=0; i<counters.size(); i++) {
+        if(counters[i] > 0)
+          denominator[i] /= counters[i];
       }
+      for(int i=0; i<counters.size(); ++i) {
+        dump.push(std::string("BackProp_")+std::to_string(i));
+        std::string padded_iblock = std::string(n_zero-std::to_string(iblock).length(),'0')+std::to_string(iblock);
+        stdCVector_ref denom( denominator[i].origin(), {1});
+        dump.write(denom, "denominator_"+padded_iblock);
+        dump.pop();
+      }
+    }
+
+    for(auto& v: properties) v.print(iblock,dump);
+
+    using std::fill_n;
+    fill_n(denominator.origin(), denominator.num_elements(), ComplexType(0.0,0.0));
+    fill_n(counters.begin(),counters.end(),0);
   }
 
   template<class WlkSet, class MatR, class CVec, class MatD>
   void accumulate(int iav, WlkSet& wset, MatR && Refs, CVec && wgt, MatD && detR, bool impsamp)
   {
+    if(iav < 0 || iav >= counters.size())
+      APP_ABORT("Runtime Error: iav out of range in full1rdm::accumulate. \n\n\n");
+    counters[iav]++;
+
+    //1. Calculate Green functions
+
+    //2. accumulate observables
 
   }
 
-
-
   private:
 
-  int nave;
+  std::vector<int> counters;
 
   std::string name;
-
-  std::array<bool,10> measure;
 
   TaskGroup_& TG;
 
@@ -183,21 +153,12 @@ class FullObservables_shared: public AFQMCInfo
 
   Wavefunction& wfn0;
 
+  std::vector<Observable> properties;
+
   bool writer;
 
   // denominator (nave, ...)  
-  stdCMatrix denominator;    
-
-  /**************************************************
-   *                 Accumulators                   * 
-   **************************************************/
-
-  // OneRDMFull (nave, spin, x*NMO, x*NMO), x=(1:CLOSED/COLLINEAR, 2:NONCOLLINEAR)
-  std4CTensor RDM1Full; 
-
-
-
-  /**************************************************/
+  stdCVector denominator;    
 
   // buffer space
   CVector Buff;

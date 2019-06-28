@@ -15,8 +15,7 @@
 #include "Utilities/NewTimer.h"
 #include "Utilities/Timer.h"
 
-#include "AFQMC/Estimators/Observables_config.h"
-#include "AFQMC/Estimators/FullObservables.hpp"
+#include "AFQMC/Estimators/FullObsHandler.hpp"
 #include "AFQMC/SlaterDeterminantOperations/SlaterDetOperations.hpp"
 #include "AFQMC/Wavefunctions/Wavefunction.hpp"
 #include "AFQMC/Propagators/Propagator.hpp"
@@ -51,15 +50,14 @@ class BackPropagatedEstimator_: public EstimatorBase
   public:
 
   BackPropagatedEstimator_(afqmc::TaskGroup_& tg_, AFQMCInfo& info,
-        std::string title, xmlNodePtr cur, WALKER_TYPES wlk, WalkerSet& wset, 
-        FullObservables&& obs_,
+        std::string name, xmlNodePtr cur, WALKER_TYPES wlk, WalkerSet& wset, 
         Wavefunction& wfn, Propagator& prop, bool impsamp_=true) :
-                                          EstimatorBase(info),TG(tg_), walker_type(wlk),
-                                          Refs({0,0,0},shared_allocator<ComplexType>{TG.TG_local()}),
-                                          observ0(std::move(obs_)), wfn0(wfn), prop0(prop),
-                                          max_nback_prop(10),
-                                          nStabalize(10), path_restoration(false), block_size(1),
-                                          writer(false), importanceSampling(impsamp_)
+                                      EstimatorBase(info),TG(tg_), walker_type(wlk),
+                                      Refs({0,0,0},shared_allocator<ComplexType>{TG.TG_local()}),
+                                      observ0(TG,info,name,cur,wlk,wfn), wfn0(wfn), prop0(prop),
+                                      max_nback_prop(10),
+                                      nStabalize(10), path_restoration(false), block_size(1),
+                                      writer(false), importanceSampling(impsamp_)
   {
     int nave(1);
     if(cur != NULL) {
@@ -228,7 +226,7 @@ class BackPropagatedEstimator_: public EstimatorBase
         dump.pop();
         write_metadata = false;
       }
-      observ0.print();
+      observ0.print(dump,wset);
     }
   }
 
@@ -244,7 +242,7 @@ class BackPropagatedEstimator_: public EstimatorBase
   int max_nback_prop;
   std::vector<int> nback_prop_steps;  
 
-  FullObservables observ0; 
+  FullObsHandler observ0; 
 
   Wavefunction& wfn0;
 
