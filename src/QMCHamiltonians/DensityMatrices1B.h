@@ -139,6 +139,17 @@ public:
 
   RandomGenerator_t* uniform_random;
 
+  // jtk timer
+  NewTimer* eval_timer;
+  NewTimer* gen_samples_timer;
+  NewTimer* gen_sample_basis_timer;
+  NewTimer* gen_sample_ratios_timer;
+  NewTimer* gen_particle_basis_timer;
+  NewTimer* matrix_products_timer;
+  NewTimer* accumulate_timer;
+  // end jtk timer
+
+
   //constructor/destructor
   DensityMatrices1B(ParticleSet& P, TrialWaveFunction& psi, ParticleSet* Pcl);
   DensityMatrices1B(DensityMatrices1B& master, ParticleSet& P, TrialWaveFunction& psi);
