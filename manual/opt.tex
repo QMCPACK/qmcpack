@@ -232,6 +232,8 @@ eigenproblem in the basis of these supposedly important block-wise directions.
    &   \texttt{max\_param\_change} &  real     & $>0$ & 0.3 & Allowed change in wave function parameter\\
    &   \texttt{shift\_i} &  real     & $>0$ & 0.01 & Initial diagonal      stabilizer added to the Hamiltonian matrix\\
    &   \texttt{shift\_s} &  real     & $>0$ & 1.00 & Initial overlap-based stabilizer added to the Hamiltonian matrix\\
+   &   \texttt{target\_shift\_i} &  real     & any & -1.0 & Diagonal stabilizer value aimed for during adaptive method (disabled if $\leq$ 0)\\
+   &   \texttt{cost\_increase\_tol} &  real     & $\geq 0$ & 0.0 & Tolerance for cost function increases\\
    &   \texttt{chase\_lowest} &  text   & yes, no & yes & Chase the lowest eigenvector in iterative solver\\
    &   \texttt{chase\_closest} &  text   & yes, no & no & Chase the eigenvector closest to initial guess\\
    &   \texttt{block\_lm} &  text   & yes, no & no & Use block linear method\\
@@ -251,6 +253,10 @@ Additional information:
   \item \ixml{shift_s}.  This is the initial coefficient used to scale the overlap-based stabilizer.
                             More stable but slower optimization is expected with a large value.
                             The adaptive method will automatically adjust this value after each linear method iteration.
+  \item \ixml{target_shift_i}.  If set greater than zero, the adaptive method will choose the update whose shift_i value is closest to
+                              this target value so long as the associated cost is within cost_increase_tol of the lowest cost.
+                              Disable this behavior by setting target_shift_i to a negative number.
+  \item \ixml{cost_increase_tol}.  Tolerance for cost function increases when selecting the best shift.
   \item \ixml{nblocks}.   This is the number of blocks used in block LM. The amount of memory required to store LM matrices decreases
                             with increased number of blocks. But the error introduced by BLM would increase with number of blocks.  
   \item \ixml{nolds}.     In BLM, the inter-block correlation is accounted for by including a small number of wave function update vectors
@@ -399,24 +405,24 @@ Here are a few recommendations to make wavefunction optimization easier.
 \subsubsection{Optimization of CI coefficients}
 When storing a CI wavefunction in HDF5 format, the CI coefficients and the $\alpha$ and $\beta$ components of each CI are not in the XML input file. When optimizing the CI coefficients, they will be stored in HDF5 format. 
 The optimization header block will have to specify that the new CI coefficients will be saved to HDF5 format. If the tag is not added coefficients will not be saved. 
-begin{lstlisting}[style=QMCPXML]
+\begin{lstlisting}[style=QMCPXML]
   <qmc method="linear" move="pbyp" gpu="no" hdf5="yes">
 \end{lstlisting}
 
 The rest of the optimization block remains the same. 
 
 When running the optimization, the new coefficients will be stored in a *.sXXX.opt.h5 file,  where XXX coressponds to the series number. The H5 file contains only the optimized coefficients. The corresponding *.sXXX.opt.xml  will be updated for each optimization block as follow: 
-begin{lstlisting}[style=QMCPXML]
+\begin{lstlisting}[style=QMCPXML]
 <detlist size="1487" type="DETS" nca="0" ncb="0" nea="2" neb="2" nstates="85" cutoff="1e-2" href="../LiH.orbs.h5" opt_coeffs="LiH.s001.opt.h5"/>
 \end{lstlisting}
 
-the opt_coeffs tag will then reference where the new CI coefficients are stored.\\
+The opt\_coeffs tag will then reference where the new CI coefficients are stored.\\
 
-When restarting the run with the new optimized coeffs, you need to specify the previous hdf5 containing the basis set, orbitals, and MSD, as well as the new optimized coefficients. The code willread the previous data but will rewrite the coefficient that were optimized with the values found in the *.sXXX.opt.h5 file. 
+When restarting the run with the new optimized coeffs, you need to specify the previous hdf5 containing the basis set, orbitals, and MSD, as well as the new optimized coefficients. The code will read the previous data but will rewrite the coefficients that were optimized with the values found in the *.sXXX.opt.h5 file. 
 \subsection{General recommendations}
 Here are a few recommendations to avoid bad calculations
 \begin{itemize}
-\item When optimizing CI coefficients, they are optimized with a set of Jastrows. Make sure you maintaining the pair (Jastrows, CI-coefficients) as computed. 
+\item CI coefficients are optimized with a set of Jastrows. Make sure you maintain the pair (Jastrows, CI-coefficients) as computed. 
 \end{itemize}
 
 

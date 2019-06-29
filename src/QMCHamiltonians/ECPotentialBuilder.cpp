@@ -145,8 +145,6 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
     if (NLPP_algo == "batched")
       app_log() << "    Using batched ratio computing in NonLocalECP" << std::endl;
 
-    targetPtcl.checkBoundBox(2 * rc2);
-
     targetH.addOperator(apot, "NonLocalECP");
   }
   if (hasL2Pot)

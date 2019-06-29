@@ -99,7 +99,7 @@ void EinsplineSetBuilder::set_metadata(int numOrbs, int TwistNum_inp)
   SuperCell.set(SuperLattice);
   GGt = dot(transpose(PrimCell.G), PrimCell.G);
   for (int iat = 0; iat < AtomicOrbitals.size(); iat++)
-    AtomicOrbitals[iat].Lattice = Lattice;
+    AtomicOrbitals[iat].Lattice.set(Lattice);
 
   // Now, analyze the k-point mesh to figure out the what k-points  are needed
   TwistNum = TwistNum_inp;
@@ -168,15 +168,6 @@ SPOSet* EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   if (SourcePtcl == 0)
   {
     APP_ABORT("Einspline needs the source particleset");
-  }
-  else
-  { //keep the one-body distance table index
-#if defined(ENABLE_SOA)
-    myTableIndex = TargetPtcl.addTable(*SourcePtcl, DT_SOA_PREFERRED);
-#else
-    myTableIndex = TargetPtcl.addTable(*SourcePtcl, DT_AOS);
-#endif
-    SourcePtcl->addTable(*SourcePtcl, DT_SOA);
   }
 
   ///////////////////////////////////////////////

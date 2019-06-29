@@ -27,6 +27,7 @@
 #define QMCPLUSPLUS_EINSPLINE_ADOPTOR_READERP_H
 #include <mpi/collectives.h>
 #include <mpi/point2point.h>
+#include "Utilities/FairDivide.h"
 
 namespace qmcplusplus
 {

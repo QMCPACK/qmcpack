@@ -359,8 +359,8 @@ class WalkerSetBase: public AFQMCInfo
       tot_num_walkers += M.size(0);
       return;
     }  
-    auto W( boost::multi::static_array_cast<element, pointer>(walker_buffer) );
-    auto BPW( boost::multi::static_array_cast<bp_element, bp_pointer>(bp_buffer) );
+    auto&& W( boost::multi::static_array_cast<element, pointer>(walker_buffer) );
+    auto&& BPW( boost::multi::static_array_cast<bp_element, bp_pointer>(bp_buffer) );
     for(int i=0; i<M.size(0); i++) {
       W[tot_num_walkers] = M[i].sliced(0,walker_size);
       if(wlk_desc[3]>0)

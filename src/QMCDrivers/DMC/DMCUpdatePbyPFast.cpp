@@ -15,7 +15,6 @@
 
 #include "QMCDrivers/DMC/DMCUpdatePbyP.h"
 #include "Particle/MCWalkerConfiguration.h"
-#include "Particle/DistanceTable.h"
 #include "Particle/HDFWalkerIO.h"
 #include "ParticleBase/ParticleUtility.h"
 #include "ParticleBase/RandomSeqGenerator.h"

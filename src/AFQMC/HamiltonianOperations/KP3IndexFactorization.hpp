@@ -184,6 +184,8 @@ class KP3IndexFactorization
         TG.TG().all_reduce_in_place_n(P1D.origin(),P1D.num_elements(),std::plus<>());
 
       // add H1 + vn0 and symmetrize
+      // MAM: intel 19 doesn't accept this using statement, I'm forced to
+      //      call ma::conj explicitly even though I should not need to
       using ma::conj;
 
       for(int K=0, nk0=0; K<nkpts; ++K) {
@@ -194,9 +196,9 @@ class KP3IndexFactorization
             P1[J][I] += H1[K][j][i] + vn0[K][j][i];
             // This is really cutoff dependent!!!
 #if AFQMC_MIXED_PRECISION
-            if( std::abs(P1[I][J]-conj(P1[J][I]))*2.0 > 1e-5 ) {
+            if( std::abs(P1[I][J]-ma::conj(P1[J][I]))*2.0 > 1e-5 ) {
 #else
-            if( std::abs(P1[I][J]-conj(P1[J][I]))*2.0 > 1e-6 ) {
+            if( std::abs(P1[I][J]-ma::conj(P1[J][I]))*2.0 > 1e-6 ) {
 #endif
               app_error()<<" WARNING in getOneBodyPropagatorMatrix. H1 is not hermitian. \n";
               app_error()<<I <<" " <<J <<" " <<P1[I][J] <<" " <<P1[J][I] <<" "
@@ -204,8 +206,8 @@ class KP3IndexFactorization
                          <<vn0[K][i][j] <<" " <<vn0[K][j][i] <<std::endl;
               //APP_ABORT("Error in getOneBodyPropagatorMatrix. H1 is not hermitian. \n");
             }
-            P1[I][J] = 0.5*(P1[I][J]+conj(P1[J][I]));
-            P1[J][I] = conj(P1[I][J]);
+            P1[I][J] = 0.5*(P1[I][J]+ma::conj(P1[J][I]));
+            P1[J][I] = ma::conj(P1[I][J]);
           }
         }
         nk0 += nopk[K];

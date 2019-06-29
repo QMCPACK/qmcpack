@@ -16,7 +16,6 @@
 
 #include "QMCDrivers/QMCLinearOptimize.h"
 #include "Particle/HDFWalkerIO.h"
-#include "Particle/DistanceTable.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Message/CommOperators.h"
 //#if defined(ENABLE_OPENMP)

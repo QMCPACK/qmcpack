@@ -4,6 +4,7 @@ import argparse
 import scipy.sparse
 import sys
 import time
+import numpy
 from afqmctools.hamiltonian.mol import (
         read_ascii_integrals,
         modified_cholesky_direct,
@@ -37,6 +38,9 @@ def parse_args(args):
     parser.add_argument('-t', '--cholesky-threshold', dest='thresh',
                         type=float, default=1e-5,
                         help='Cholesky convergence threshold.')
+    parser.add_argument('-s', '--symmetry', dest='symm',
+                        type=int, default=8,
+                        help='Symmetry of integral file (1,4,8).')
     parser.add_argument('-v', '--verbose', dest='verbose',
                         action='store_true', default=False,
                         help='Verbose output.')
@@ -59,9 +63,14 @@ def main(args):
     """
     options = parse_args(args)
     (hcore, eri, ecore, nelec) = read_ascii_integrals(options.input_file,
+                                                      symmetry=options.symm,  
                                                       verbose=options.verbose)
     nelec = (nelec//2,nelec//2)
     norb = hcore.shape[-1]
+    
+    if options.symm == 4: # assuming complex
+        eri = numpy.transpose(eri,(0,1,3,2))
+
     chol = modified_cholesky_direct(eri.reshape(norb**2,norb**2),
                                     options.thresh, options.verbose).T
     write_qmcpack_cholesky(hcore, scipy.sparse.csr_matrix(chol),

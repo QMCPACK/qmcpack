@@ -43,8 +43,6 @@ struct ForceChiesaPBCAA : public QMCHamiltonianBase, public ForceBase
   ParticleSet& PtclA;
   ///long-range Handler
   LRHandlerType* AB;
-  ///locator of the distance table
-  int myTableIndex;
   ///number of species of A particle set
   int NumSpeciesA;
   ///number of species of B particle set
@@ -129,6 +127,14 @@ struct ForceChiesaPBCAA : public QMCHamiltonianBase, public ForceBase
     os << "Ceperley Force Estimator Hamiltonian: " << pairName;
     return true;
   }
+
+  // for testing only
+  int getDistanceTableAAID() const { return d_aa_ID; }
+
+private:
+  // AA table ID
+  const int d_aa_ID;
+  const int d_ei_ID;
 };
 
 } // namespace qmcplusplus
