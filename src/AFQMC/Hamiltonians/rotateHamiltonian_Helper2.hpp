@@ -217,12 +217,13 @@ inline void Qk_x_Rl(WALKER_TYPES walker_type, SPComplexType EJX, TaskGroup_& TG,
           int kb = (k-k0)*NAEA+b;
           Type qkalb = Ta[ka][lb];  // Ta(ka,lb)
           Type qlakb = Ta[kb][la];  // Ta(kb,la)
-          if(std::abs( EJX*four*qkalb - two*qlakb ) > cut)
+          if(std::abs( EJX*four*qkalb - two*qlakb ) > cut) {
             if(a!=b || k<l) {
               emplace(Vijkl,std::forward_as_tuple(a*NMO+k, b*NMO+l, two*(EJX*four*qkalb - two*qlakb)));
             } else if(k==l) {
               emplace(Vijkl,std::forward_as_tuple(a*NMO+k, b*NMO+l, (EJX*four*qkalb - two*qlakb)));
             }
+          }
         }
       }
     }
@@ -249,11 +250,13 @@ inline void Qk_x_Rl(WALKER_TYPES walker_type, SPComplexType EJX, TaskGroup_& TG,
               int kb = (k-k0)*NAEA+b;
               Type qkalb = Ta[ka][lb];  // Ta(ka,lb)
               Type qlakb = Ta[kb][la];  // Ta(kb,la)
-              if(std::abs( EJX*qkalb - qlakb ) > cut)
-                if(a!=b || k<l)
+              if(std::abs( EJX*qkalb - qlakb ) > cut) {
+                if(a!=b || k<l) {
                   emplace(Vijkl, std::forward_as_tuple(a*NMO+k, b*NMO+l, two*(EJX*qkalb - qlakb)) );
-                else if(k==l)
+                } else if(k==l) {
                   emplace(Vijkl, std::forward_as_tuple(a*NMO+k, b*NMO+l, EJX*qkalb - qlakb) );
+                }
+              }
             }
           }
         }
@@ -294,11 +297,13 @@ inline void Qk_x_Rl(WALKER_TYPES walker_type, SPComplexType EJX, TaskGroup_& TG,
               int kb = (k-k0)*NAEB+b;
               Type qkalb = Ta[ka][lb];  // Ta(ka,lb)
               Type qlakb = Ta[kb][la];  // Ta(kb,la)
-              if(std::abs( EJX*qkalb - qlakb ) > cut)
-                if(a!=b || k<l)
+              if(std::abs( EJX*qkalb - qlakb ) > cut) {
+                if(a!=b || k<l) {
                   emplace(Vijkl, std::forward_as_tuple(NMO*NAEA+a*NMO+k-NMO, NMO*NAEA+b*NMO+l-NMO, two*(EJX*qkalb - qlakb)) );
-                else if(k==l)
+                } else if(k==l) {
                   emplace(Vijkl, std::forward_as_tuple(NMO*NAEA+a*NMO+k-NMO, NMO*NAEA+b*NMO+l-NMO, EJX*qkalb - qlakb) );
+                }
+              }
             }
           }
         }

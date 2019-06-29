@@ -4,7 +4,8 @@
 #ifndef BOOST_MULTI_DETAIL_OPERATORS_HPP
 #define BOOST_MULTI_DETAIL_OPERATORS_HPP
 
-#include "layout.hpp"
+//#include "layout.hpp"
+#include<type_traits>
 
 namespace boost{
 namespace multi{
@@ -15,10 +16,10 @@ template<class T, class V, class B = empty_base> struct equality_comparable2;
 
 template <class T, class B>
 struct equality_comparable2<T, void, B> : B{
-	template<class U, typename = std::enable_if_t<not std::is_same<U, T>{}> >
-	friend bool operator==(const U& y, const T& x){return x == y;}
-	template<class U, typename = std::enable_if_t<not std::is_same<U, T>{}> >
-	friend bool operator!=(const U& y, const T& x){return not (x == y);}
+//	template<class U, typename = std::enable_if_t<not std::is_same<U, T>{}> >
+//	friend bool operator==(const U& y, const T& x){return x == y;}
+//	template<class U, typename = std::enable_if_t<not std::is_same<U, T>{}> >
+//	friend bool operator!=(const U& y, const T& x){return not (x == y);}
 	template<class U>
 	friend bool operator!=(const T& y, const U& x){return not (y == x);}
 };
@@ -41,18 +42,45 @@ struct partially_ordered2<T, void, B> : B{
 	friend bool operator>=(const U& x, const T& y){return (y < x) or (y == x);}
 };
 
+template<class T, class V, class B = empty_base> struct totally_ordered2;
+
+template<class T, class B>
+struct totally_ordered2<T, void, B> : B{
+	template<class U>
+	friend auto operator<=(const T& x, const U& y){return (x < y) or (x == y);}
+	template<class U>
+	friend auto operator>=(const T& x, const U& y){return (y < x) or (x == y);}
+	template<class U>
+	friend auto operator>(const T& x, const U& y){return y < x;}
+};
+
 template<class T, class B = empty_base>
 struct random_iterable : B{
 //	using iterator = Iterator;
-	auto cbegin() const{return typename T::const_iterator{static_cast<T const&>(*this).begin()};}
-	auto cend()   const{return typename T::const_iterator{static_cast<T const*>(this)->end()};}
-	friend auto cbegin(T const& s){return static_cast<random_iterable const&>(s).cbegin();}
-	friend auto cend  (T const& s){return static_cast<random_iterable const&>(s).cend  ();}
+///	template<typename U = T>
+//	typename U::const_iterator
+//	 cbegin() const{return typename T::const_iterator{static_cast<T const&>(*this).begin()};}
+//	template<typename U = T>
+//	typename U::const_iterator
+//	 cend() const{return typename T::const_iterator{static_cast<T const&>(*this).end()};}
+//	template<typename U = T>
+//	friend typename U::const_iterator cbegin(U const& s, T* = 0, ...){
+//		return static_cast<random_iterable const&>(s).cbegin();}
+//	template<typename U = T>
+//	friend typename U::const_iterator cend  (U const& s, T* = 0, ...){
+//		return static_cast<random_iterable const&>(s).cend  ();}
+//	auto cend()   const{return typename T::const_iterator{static_cast<T const*>(this)->end()};}
+//	template<class TT, typename = std::enable_if_t<std::is_base_of<T, TT>{}> >
+//	friend auto cbegin(TT const& s)->typename TT::const_iterator
+//	{return typename TT::const_iterator{static_cast<T const&>(s).begin()};}
+//	template<class TT, typename = std::enable_if_t<std::is_base_of<T, TT>{}> >
+//	friend auto cend  (TT const& s)->typename TT::const_iterator
+//	{return typename TT::const_iterator{static_cast<T const&>(s)->end()};}
 
-	auto crbegin() const{return typename T::const_reverse_iterator{cend  ()};}
-	auto crend  () const{return typename T::const_reverse_iterator{cbegin()};}
-	friend auto crbegin(T const& s){return static_cast<random_iterable const&>(s).cbegin();}
-	friend auto crend  (T const& s){return static_cast<random_iterable const&>(s).cend  ();}
+//	auto crbegin() const{return typename T::const_reverse_iterator{cend  ()};}
+//	auto crend  () const{return typename T::const_reverse_iterator{cbegin()};}
+//	friend auto crbegin(T const& s){return static_cast<random_iterable const&>(s).cbegin();}
+//	friend auto crend  (T const& s){return static_cast<random_iterable const&>(s).cend  ();}
 
 	friend auto begin(T const& t){return t.begin();}
 	friend auto end  (T const& t){return t.end();}
@@ -70,6 +98,11 @@ struct random_iterable : B{
 	friend auto cfront(T const& s){return s.cfront();}
 	friend auto cback (T const& s){return s.cback() ;}
 };
+
+//template<class T, class B>
+//typename T::const_iterator cbegin(random_iterable<T, B> const& c){return c.cbegin();}
+//template<class T, class B>
+//typename T::const_iterator cend(random_iterable<T, B> const& c){return c.cend();}
 
 }}
 
