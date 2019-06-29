@@ -1,0 +1,23 @@
+\subsubsection{Short Range Cusp form}
+\label{sec:onebodyjastrowsrcusp}
+
+This is a recent addition to \qmcpack and so has not been as heavily tested as other forms.
+For now, an example input.
+This section will need fleshing out.
+
+\begin{lstlisting}[style=QMCPXML]
+<jastrow name="J1Cusps" type="One-Body" function="shortrangecusp" source="ion0" print="yes">
+  <correlation rcut="6" cusp="3" elementType="Li">
+    <var id="LiCuspR0" name="R0" optimize="yes"> 0.06 </var>
+    <coefficients id="LiCuspB" type="Array" optimize="yes">
+      0 0 0 0 0 0 0 0 0 0
+    </coefficients>
+  </correlation>
+  <correlation rcut="6" cusp="1" elementType="H">
+    <var id="HCuspR0" name="R0" optimize="yes"> 0.2 </var>
+    <coefficients id="HCuspB" type="Array" optimize="yes">
+      0 0 0 0 0 0 0 0 0 0
+    </coefficients>
+  </correlation>
+</jastrow>
+\end{lstlisting}

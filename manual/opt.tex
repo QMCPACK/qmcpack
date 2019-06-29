@@ -247,16 +247,16 @@ eigenproblem in the basis of these supposedly important block-wise directions.
 
 Additional information:
 \begin{itemize}
-  \item \ixml{shift_i}.  This is the initial coefficient used to scale the diagonal stabilizer.
+  \item \ixml{shift\_i}.  This is the initial coefficient used to scale the diagonal stabilizer.
                             More stable but slower optimization is expected with a large value.
                             The adaptive method will automatically adjust this value after each linear method iteration.
-  \item \ixml{shift_s}.  This is the initial coefficient used to scale the overlap-based stabilizer.
+  \item \ixml{shift\_s}.  This is the initial coefficient used to scale the overlap-based stabilizer.
                             More stable but slower optimization is expected with a large value.
                             The adaptive method will automatically adjust this value after each linear method iteration.
-  \item \ixml{target_shift_i}.  If set greater than zero, the adaptive method will choose the update whose shift_i value is closest to
-                              this target value so long as the associated cost is within cost_increase_tol of the lowest cost.
-                              Disable this behavior by setting target_shift_i to a negative number.
-  \item \ixml{cost_increase_tol}.  Tolerance for cost function increases when selecting the best shift.
+  \item \ixml{target\_shift\_i}.  If set greater than zero, the adaptive method will choose the update whose shift\_i value is closest to
+                              this target value so long as the associated cost is within cost\_increase\_tol of the lowest cost.
+                              Disable this behavior by setting target\_shift\_i to a negative number.
+  \item \ixml{cost\_increase\_tol}.  Tolerance for cost function increases when selecting the best shift.
   \item \ixml{nblocks}.   This is the number of blocks used in block LM. The amount of memory required to store LM matrices decreases
                             with increased number of blocks. But the error introduced by BLM would increase with number of blocks.  
   \item \ixml{nolds}.     In BLM, the inter-block correlation is accounted for by including a small number of wave function update vectors
@@ -268,7 +268,7 @@ Additional information:
 
 Recommendations:
 \begin{itemize}
-  \item Default \ixml{shift_i}, \ixml{shift_s} should be fine. 
+  \item Default \ixml{shift\_i}, \ixml{shift\_s} should be fine. 
   \item When there are fewer than about 5,000 variables being optimized, the traditional LM is preferred as it has a lower overhead than the BLM when the number of variables is small.
   \item Initial experience with the BLM suggests that a few hundred blocks and a handful of \ixml{nolds} and \ixml{nkept}
         often provide a good balance between memory use and accuracy.  In general, using fewer blocks should be more accurate but will require more memory.
