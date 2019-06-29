@@ -25,7 +25,7 @@
 #include <config/stdlib/math.h>
 #include <OhmmsPETE/TinyVector.h>
 #include <OhmmsPETE/Tensor.h>
-#include <Lattice/LatticeOperations.h>
+#include <Lattice/LRBreakupParameters.h>
 
 namespace qmcplusplus
 {
@@ -63,13 +63,9 @@ struct PosUnit
  *interfaces to access the lattice properties and convert units of
  *position vectors or a single-particle position from Cartesian to
  *Lattice Unit vice versa.
- *
- *The indices for R, G and D are chosen to perform
- *expression template operations with variable-cell algorithms.
- *
  */
-template<class T, unsigned D, bool ORTHO = false>
-struct CrystalLattice
+template<class T, unsigned D>
+struct CrystalLattice: public LRBreakupParameters<T, D>
 {
   ///enumeration for the dimension of the lattice
   enum
@@ -138,15 +134,12 @@ struct CrystalLattice
   //@}
   //angles between the two lattice vectors
   SingleParticlePos_t ABC;
-  //save the lattice constant of neighbor cells
-  std::vector<SingleParticlePos_t> NextUnitCells;
 
   ///default constructor, assign a huge supercell
   CrystalLattice();
-  ///** copy constructor
-  //    @param rhs An existing SC object is copied to this SC.
-  //*/
-  //CrystalLattice(const CrystalLattice<T,D>& rhs);
+
+  ///copy constructor
+  CrystalLattice(const CrystalLattice&) = default;
 
   ///destructor
   virtual ~CrystalLattice() {}
@@ -163,47 +156,13 @@ struct CrystalLattice
    */
   inline SingleParticlePos_t b(int i) const { return Gv[i]; }
 
-  //inline T calcWignerSeitzRadius(TinyVector<SingleParticlePos_t,2> a) const
-  //{
-  //  T rMin = 1.0e50;
-  //  for (int i=-1; i<=1; i++)
-  //    for (int j=-1; j<=1; j++)
-  //      if ((i!=0) || (j!=0)) {
-  //        SingleParticlePos_t L = ((double)i * a[0] +
-  //      			   (double)j * a[1]);
-  //        double dist = 0.5*std::abs(dot(L,L));
-  //        rMin = std::min(rMin, dist);
-  //      }
-  //  return rMin;
-  //}
-  //inline T calcWignerSeitzRadius(TinyVector<SingleParticlePos_t,3> a) const
-  //{
-  //  T rMin = 1.0e50;
-  //  for (int i=-1; i<=1; i++)
-  //    for (int j=-1; j<=1; j++)
-  //      for (int k=-1; k<=1; k++)
-  //        if ((i!=0) || (j!=0) || (k!=0)) {
-  //          SingleParticlePos_t L = ((double)i * a[0] +
-  //      			     (double)j * a[1] +
-  //      			     (double)k * a[2]);
-  //          double dist = 0.5*std::sqrt(dot(L,L));
-  //          rMin = std::min(rMin, dist);
-  //        }
-  //  return rMin;
-  //}
-
-
   /** Convert a cartesian vector to a unit vector.
    * Boundary conditions are not applied.
    */
   template<class T1>
   inline SingleParticlePos_t toUnit(const TinyVector<T1, D>& r) const
   {
-#ifdef OHMMS_LATTICEOPERATORS_H
-    return DotProduct<TinyVector<T1, D>, Tensor<T, D>, ORTHO>::apply(r, G);
-#else
     return dot(r, G);
-#endif
   }
 
   template<class T1>
@@ -225,11 +184,7 @@ struct CrystalLattice
   template<class T1>
   inline SingleParticlePos_t toCart(const TinyVector<T1, D>& c) const
   {
-#ifdef OHMMS_LATTICEOPERATORS_H
-    return DotProduct<TinyVector<T1, D>, Tensor<T, D>, ORTHO>::apply(c, R);
-#else
     return dot(c, R);
-#endif
   }
 
   /// return true if all the open direction of reduced coordinates u are in the range [0,1)
@@ -250,11 +205,15 @@ struct CrystalLattice
     return false;
   }
 
-
   inline void applyMinimumImage(TinyVector<T, D>& c) const
   {
     if (SuperCellEnum)
-      MinimumImageBConds<T, D>::apply(R, G, c);
+    {
+      TinyVector<T, D>  u = dot(c, G);
+      for (int i = 0; i < D; ++i)
+        u[i] = u[i] - round(u[i]);
+      c = dot(u, R);
+    }
   }
 
   /** evaluate the cartesian distance
@@ -267,11 +226,7 @@ struct CrystalLattice
    */
   inline T Dot(const SingleParticlePos_t& ra, const SingleParticlePos_t& rb) const
   {
-#ifdef OHMMS_LATTICEOPERATORS_H
-    return CartesianNorm2<TinyVector<T, D>, Tensor<T, D>, ORTHO>::apply(ra, M, rb);
-#else
     return dot(ra, dot(M, rb));
-#endif
   }
 
   /** conversion of a reciprocal-vector
@@ -280,11 +235,7 @@ struct CrystalLattice
   */
   inline SingleParticlePos_t k_cart(const SingleParticlePos_t& kin) const
   {
-#ifdef OHMMS_LATTICEOPERATORS_H
-    return TWOPI * DotProduct<SingleParticlePos_t, Tensor_t, ORTHO>::apply(G, kin);
-#else
     return TWOPI * dot(G, kin);
-#endif
   }
 
   /** conversion of a caresian reciprocal-vector to unit k-vector
@@ -293,11 +244,7 @@ struct CrystalLattice
   */
   inline SingleParticlePos_t k_unit(const SingleParticlePos_t& kin) const
   {
-#ifdef OHMMS_LATTICEOPERATORS_H
-    return DotProduct<SingleParticlePos_t, Tensor_t, ORTHO>::apply(R, kin) / TWOPI;
-#else
     return dot(R, kin) / TWOPI;
-#endif
   }
 
   /** evaluate \f$k^2\f$
@@ -307,16 +254,12 @@ struct CrystalLattice
    */
   inline T ksq(const SingleParticlePos_t& kin) const
   {
-#ifdef OHMMS_LATTICEOPERATORS_H
-    return CartesianNorm2<TinyVector<T, D>, Tensor<T, D>, ORTHO>::apply(kin, Mg, kin);
-#else
     return dot(kin, dot(Mg, kin));
-#endif
   }
 
   ///assignment operator
   template<typename T1>
-  CrystalLattice<T, D, ORTHO>& operator=(const CrystalLattice<T1, D, ORTHO>& rhs)
+  CrystalLattice<T, D>& operator=(const CrystalLattice<T1, D>& rhs)
   {
     BoxBConds = rhs.BoxBConds;
     R         = rhs.R;
@@ -328,7 +271,7 @@ struct CrystalLattice
    *@param rhs a tensor representing a unit cell
    */
   template<typename T1>
-  CrystalLattice<T, D, ORTHO>& operator=(const Tensor<T1, D>& rhs)
+  CrystalLattice<T, D>& operator=(const Tensor<T1, D>& rhs)
   {
     R = rhs;
     reset();
@@ -339,7 +282,7 @@ struct CrystalLattice
    *@param sc the scaling value
    *@return a new CrystalLattice
    */
-  CrystalLattice<T, D, ORTHO>& operator*=(T sc);
+  CrystalLattice<T, D>& operator*=(T sc);
 
   /** set the lattice vector from the command-line options
    *@param argc the number of arguments
@@ -366,7 +309,7 @@ struct CrystalLattice
    *@param oldlat An input supercell to be copied.
    *@param uc An array to expand a supercell.
    */
-  void set(const CrystalLattice<T, D, ORTHO>& oldlat, int* uc = 0);
+  void set(const CrystalLattice<T, D>& oldlat, int* uc = 0);
 
   /** set the lattice vector from the command-line options
    *@param lat a tensor representing a supercell
@@ -377,6 +320,15 @@ struct CrystalLattice
   /** Evaluate the reciprocal vectors, volume and metric tensor
    */
   void reset();
+
+  void copy(const CrystalLattice<T, D>& pl)
+  {
+    using base_t = LRBreakupParameters<T, D>;
+    base_t::LR_dim_cutoff  = pl.LR_dim_cutoff;
+    base_t::LR_kc          = pl.LR_kc;
+    base_t::LR_rc          = pl.LR_rc;
+    set(pl);
+  }
 
   //  //@{
   //  /* Copy functions with unit conversion*/

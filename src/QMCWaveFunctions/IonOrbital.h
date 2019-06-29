@@ -19,7 +19,6 @@
 #define QMCPLUSPLUS_ION_ORBITAL
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "Particle/DistanceTableData.h"
-#include "Particle/DistanceTable.h"
 
 namespace qmcplusplus
 {

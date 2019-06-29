@@ -17,7 +17,6 @@
 #include "Lattice/ParticleBConds.h"
 #include "Particle/ParticleSet.h"
 #include "Particle/DistanceTableData.h"
-#include "Particle/DistanceTable.h"
 #include "Particle/SymmetricDistanceTableData.h"
 #include "QMCApp/ParticleSetPool.h"
 #include "QMCHamiltonians/ForceChiesaPBCAA.h"
@@ -129,7 +128,7 @@ void check_force_copy(ForceChiesaPBCAA& force, ForceChiesaPBCAA& force2)
     REQUIRE(force2.c[i] == Approx(force.c[i]));
   }
 
-  REQUIRE(force2.myTableIndex == force.myTableIndex);
+  REQUIRE(force2.getDistanceTableAAID() == force.getDistanceTableAAID());
   REQUIRE(force2.NumSpeciesA == force.NumSpeciesA);
   REQUIRE(force2.NumSpeciesB == force.NumSpeciesB);
   REQUIRE(force2.NptclA == force.NptclA);
@@ -153,10 +152,10 @@ TEST_CASE("Chiesa Force", "[hamiltonian]")
   OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
-  Uniform3DGridLayout grid;
-  grid.BoxBConds = true; // periodic
-  grid.R.diagonal(5.0);
-  grid.reset();
+  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
+  Lattice.BoxBConds = true; // periodic
+  Lattice.R.diagonal(5.0);
+  Lattice.reset();
 
 
   ParticleSet ions;
@@ -190,7 +189,7 @@ TEST_CASE("Chiesa Force", "[hamiltonian]")
   tspecies(massIdx, upIdx)   = 1.0;
   tspecies(massIdx, downIdx) = 1.0;
 
-  elec.Lattice.copy(grid);
+  elec.Lattice.copy(Lattice);
   elec.createSK();
 
   SpeciesSet& ion_species           = ions.getSpeciesSet();
@@ -199,7 +198,7 @@ TEST_CASE("Chiesa Force", "[hamiltonian]")
   int pMembersizeIdx                = ion_species.addAttribute("membersize");
   ion_species(pChargeIdx, pIdx)     = 1;
   ion_species(pMembersizeIdx, pIdx) = 1;
-  ions.Lattice.copy(grid);
+  ions.Lattice.copy(Lattice);
   ions.createSK();
 
   ions.resetGroups();
@@ -208,21 +207,11 @@ TEST_CASE("Chiesa Force", "[hamiltonian]")
   // settings to the ParticleSet
   elec.resetGroups();
 
-#ifdef ENABLE_SOA
-  elec.addTable(ions, DT_SOA);
-  ions.addTable(ions, DT_SOA);
-#else
-  elec.addTable(ions, DT_AOS);
-  ions.addTable(ions, DT_AOS);
-#endif
-
-  elec.update();
-  ions.update();
-
   ForceChiesaPBCAA force(ions, elec);
   force.addionion = false;
   force.InitMatrix();
 
+  elec.update();
   force.evaluate(elec);
   std::cout << " Force = " << force.forces << std::endl;
 
@@ -253,10 +242,10 @@ TEST_CASE("Ceperley Force", "[hamiltonian]")
   OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
-  //Uniform3DGridLayout grid;
-  //grid.BoxBConds = false; // periodic
-  //grid.R.diagonal(5.0);
-  //grid.reset();
+  //CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
+  //Lattice.BoxBConds = false; // periodic
+  //Lattice.R.diagonal(5.0);
+  //Lattice.reset();
 
 
   ParticleSet ions;
@@ -290,7 +279,7 @@ TEST_CASE("Ceperley Force", "[hamiltonian]")
   tspecies(massIdx, upIdx)   = 1.0;
   tspecies(massIdx, downIdx) = 1.0;
 
-  //elec.Lattice.copy(grid);
+  //elec.Lattice.copy(Lattice);
   //elec.createSK();
 
   SpeciesSet& ion_species           = ions.getSpeciesSet();
@@ -299,25 +288,13 @@ TEST_CASE("Ceperley Force", "[hamiltonian]")
   int pMembersizeIdx                = ion_species.addAttribute("membersize");
   ion_species(pChargeIdx, pIdx)     = 1;
   ion_species(pMembersizeIdx, pIdx) = 1;
-  //ions.Lattice.copy(grid);
+  //ions.Lattice.copy(Lattice);
   //ions.createSK();
-
   ions.resetGroups();
 
   // The call to resetGroups is needed transfer the SpeciesSet
   // settings to the ParticleSet
   elec.resetGroups();
-
-#ifdef ENABLE_SOA
-  elec.addTable(ions, DT_SOA);
-  ions.addTable(ions, DT_SOA);
-#else
-  elec.addTable(ions, DT_AOS);
-  ions.addTable(ions, DT_AOS);
-#endif
-
-  ions.update();
-  elec.update();
 
   ForceCeperley force(ions, elec);
   force.InitMatrix();
@@ -329,6 +306,9 @@ TEST_CASE("Ceperley Force", "[hamiltonian]")
   {
     REQUIRE(force.c[i] == Approx(coeff[i]));
   }
+
+  ions.update();
+  elec.update();
 
   force.evaluate(elec);
   std::cout << " Force = " << force.forces << std::endl;

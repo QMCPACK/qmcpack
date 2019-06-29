@@ -17,7 +17,6 @@
 #include "Lattice/ParticleBConds.h"
 #include "Particle/ParticleSet.h"
 #include "Particle/DistanceTableData.h"
-#include "Particle/DistanceTable.h"
 #include "Particle/SymmetricDistanceTableData.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
@@ -94,15 +93,7 @@ TEST_CASE("BSpline builder Jastrow J2", "[wavefunction]")
   int chargeIdx                = tspecies.addAttribute("charge");
   tspecies(chargeIdx, upIdx)   = -1;
   tspecies(chargeIdx, downIdx) = -1;
-
-#ifdef ENABLE_SOA
-  elec_.addTable(ions_, DT_SOA);
-#else
-  elec_.addTable(ions_, DT_AOS);
-#endif
   elec_.resetGroups();
-  elec_.update();
-
 
   TrialWaveFunction psi = TrialWaveFunction(c);
 
@@ -135,6 +126,9 @@ TEST_CASE("BSpline builder Jastrow J2", "[wavefunction]")
 #endif
   J2Type* j2 = dynamic_cast<J2Type*>(orb);
   REQUIRE(j2 != NULL);
+
+  // update all distance tables
+  elec_.update();
 
   double logpsi = psi.evaluateLog(elec_);
   REQUIRE(logpsi == Approx(0.1012632641)); // note: number not validated
@@ -330,15 +324,7 @@ TEST_CASE("BSpline builder Jastrow J1", "[wavefunction]")
   int chargeIdx                = tspecies.addAttribute("charge");
   tspecies(chargeIdx, upIdx)   = -1;
   tspecies(chargeIdx, downIdx) = -1;
-
-#ifdef ENABLE_SOA
-  elec_.addTable(ions_, DT_SOA);
-#else
-  elec_.addTable(ions_, DT_AOS);
-#endif
   elec_.resetGroups();
-  elec_.update();
-
 
   TrialWaveFunction psi = TrialWaveFunction(c);
 
@@ -374,6 +360,9 @@ TEST_CASE("BSpline builder Jastrow J1", "[wavefunction]")
 #endif
   J1Type* j1 = dynamic_cast<J1Type*>(orb);
   REQUIRE(j1 != NULL);
+
+  // update all distance tables
+  elec_.update();
 
   double logpsi = psi.evaluateLog(elec_);
   REQUIRE(logpsi == Approx(0.3160552244)); // note: number not validated

@@ -16,7 +16,6 @@
 /**@file ParticleSetPool.cpp
  * @brief Implements ParticleSetPool operators.
  */
-//#include "Particle/DistanceTable.h"
 #include "QMCApp/ParticleSetPool.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "ParticleIO/XMLParticleIO.h"
@@ -322,7 +321,6 @@ ParticleSet* ParticleSetPool::createESParticleSet(xmlNodePtr cur, const std::str
     typedef ParticleSet::SingleParticleIndex_t SingleParticleIndex_t;
     std::vector<SingleParticleIndex_t> grid(OHMMS_DIM, SingleParticleIndex_t(1));
     ions->Lattice.reset();
-    ions->Lattice.makeGrid(grid);
 
     myPool[source] = ions;
   }
