@@ -1,12 +1,14 @@
 #ifdef COMPILATION_INSTRUCTIONS
 (echo "#include\""$0"\"" > $0x.cpp) && c++ `#-DNDEBUG` -std=c++17 -Wall -Wextra `#-Wfatal-errors` -D_TEST_BOOST_MULTI_ARRAY $0x.cpp -o $0x.x && time $0x.x $@ && rm -f $0x.x $0x.cpp; exit
 #endif
-#ifndef BOOST_MULTI_ARRAY_HPP
+//  (C) Copyright Alfredo A. Correa 2018.
+#ifndef BOOST_MULTI_ARRAY_HPP 
 #define BOOST_MULTI_ARRAY_HPP
 
 #include "./array_ref.hpp"
 
 #include "detail/memory.hpp"
+#include "detail/generic_allocator.hpp"
 
 #include "utility.hpp"
 
@@ -38,8 +40,9 @@ struct array :
 	boost::multi::random_iterable<array<T, D, Alloc> >
 {
 	using allocator_type = typename std::allocator_traits<Alloc>::template rebind_alloc<T>;
-	using alloc_traits = std::allocator_traits<allocator_type>;
+	using alloc_traits = typename std::allocator_traits<allocator_type>;
 	using ref = array_ref<T, D, typename alloc_traits::pointer>;
+	using difference_type = typename ref::difference_type;
 	static_assert(std::is_same<typename alloc_traits::value_type, T>{} or std::is_same<typename alloc_traits::value_type, void>{}, "!");
 private:
 	using typename ref::reference;
@@ -65,38 +68,63 @@ public:
 	: 	array(typename array::index_extension(n), v, a){}
 	array(typename array::index n, value_type const& v)
 	: 	array(typename array::index_extension(n), v){}
-	explicit array(typename array::extensions_type x, allocator_type const& a={}) //3
+	array(typename array::extensions_type const& x, allocator_type const& a = {}) //3
 	:	allocator_type{a}, ref{allocate(typename array::layout_t{x}.num_elements()), x}{
 		uninitialized_value_construct();
 	}
+//	array(typename array::extensions_type const& x) //3
+//	:	allocator_type{}, ref{allocate(typename array::layout_t{x}.num_elements()), x}{
+//		uninitialized_value_construct();
+//	}
+//	template<class Extension, typename = decltype(array(std::array<Extension, D>{}, allocator_type{}, std::make_index_sequence<D>{}))>
+//	array(std::array<Extension, D> const& x, allocator_type const& a = {}) : array(x, a, std::make_index_sequence<D>{}){}
+//	array(multi::iextensions<D> const& ie) : array(typename array::extensions_type{ie}){}
+private:
+	template<class Extension, size_t... Is>//, typename = decltype(typename array::extensions_type{std::array<Extension, D>{}})>
+	array(std::array<Extension, D> const& x, allocator_type const& a, std::index_sequence<Is...>) : array(typename array::extensions_type{std::get<Is>(x)...}, a){}
+public:
 	template<class It> static auto distance(It a, It b){using std::distance; return distance(a, b);}
 	template<class It, typename=decltype(std::distance(std::declval<It>(), std::declval<It>()), *std::declval<It>())>      
 	array(It first, It last, allocator_type const& a = {}) :                    //4
 		allocator_type{a}, ref{}
 	{
+	//	if(first == last) return;
 		auto const& f = *first;
 		auto xx = extensions(f);
-		layout_t<D>::operator=(typename array::layout_t{tuple_cat(std::make_tuple(index_extension{std::distance(first, last)}), xx)});
-		this->base_ = allocate(typename array::layout_t{std::tuple_cat(std::make_tuple(index_extension{std::distance(first, last)}), multi::extensions(*first))}.num_elements());
+	//	assert(0); 
+		layout_t<D>::operator=(typename array::layout_t{tuple_cat(std::make_tuple(index_extension{std::distance(first, last)}), base(xx))});
+		this->base_ = allocate(typename array::layout_t{std::tuple_cat(std::make_tuple(index_extension{std::distance(first, last)}), base(multi::extensions(*first)))}.num_elements());
 		using std::next;
 		using std::all_of;
 		if(first!=last) assert( all_of(next(first), last, [x=multi::extensions(*first)](auto& e){return extensions(e)==x;}) );
-		recursive_uninitialized_copy<D>(alloc(), first, last, ref::begin());
+	//	recursive_uninitialized_copy<D>(alloc(), first, last, ref::begin());
+		uninitialized_copy(alloc(), first, last, ref::begin());
 	}
-	template<class Array, typename=std::enable_if_t<multi::rank<std::remove_reference_t<Array>>{}()>=1 > >
+	typename array::element_ptr allocate(typename alloc_traits::size_type n){return alloc_traits::allocate(alloc(), n);}
+	auto allocate(){return allocate(this->num_elements());}
+	template<
+		class Array, 
+		typename=std::enable_if_t<not std::is_constructible<typename array::extensions_type, std::decay_t<Array>>{}>,//, 
+	//	typename=std::enable_if_t<not std::is_base_of<array, Array>{}>,
+		typename=std::enable_if_t<multi::rank<std::remove_reference_t<Array>>{}()>=1>//, 
+	//	typename = decltype(ref{typename alloc_traits::allocate(num_elements(std::declval<Array&&>())), extensions(std::declval<Array&&>())}) 
+	>
 	array(Array&& o, allocator_type const& a = {})
-	:	allocator_type{a}, ref{allocate(num_elements(o)), extensions(o)}{
+	:	allocator_type{a}, ref{allocate(static_cast<typename alloc_traits::size_type>(num_elements(o))), extensions(o)}{
 		using std::begin; using std::end;
-		recursive_uninitialized_copy<D>(alloc(), begin(o), end(o), ref::begin());
+	//	recursive_uninitialized_copy<D>(alloc(), begin(o), end(o), ref::begin());
+		uninitialized_copy(alloc(), begin(o), end(o), ref::begin());
 	}
-	array(array const& other)                                                   // 5a
+	explicit	
+	array(array const& other)                                              // 5a
 	:	allocator_type{other}, ref{allocate(other.num_elements()), extensions(other)}{
-		uninitialized_copy(other.data());
+		uninitialized_copy_(other.data());
 	}
 	array(array const& other, allocator_type const& a)                      //5b
 	:	allocator_type{a}, ref{allocate(other.num_elements()), extensions(other)}{
-		uninitialized_copy(other.data());
+		uninitialized_copy_(other.data());
 	}
+	explicit
 	array(array&& other) noexcept                                           //6a
 	:	allocator_type{other.get_allocator()},
 		ref{std::exchange(other.base_, nullptr), other.extensions()}
@@ -111,8 +139,19 @@ public:
 		other.ref::layout_t::operator=({});
 	}
 #if (not defined(__INTEL_COMPILER)) or (__GNUC >= 6)
+//	template<class TT, typename = std::enable_if_t<std::is_same<TT, value_type>{}> >
 	array(std::initializer_list<value_type> il, allocator_type const& a={}) 
 	:	array(il.begin(), il.end(), a){}
+//	template<class TT, typename std::enable_if_t<TT, >>
+//	array(std::initializer_list<typename array::size_type> il, allocator_type const& a={}) 
+//	:	array(il.begin(), il.end(), a){
+//		assert(0);
+//	}
+
+//	template<class T>//, typename = std::enable_if_t<std::is_same<T, int>>
+//	array(std::sinitializer_list<int> il, allocator_type const& a={}) 
+//	:	array(il.size()!=D?il.begin():throw std::runtime_error{"warning"}, il.end(), a){}
+//	array(std::tuple<int>){assert(0);}
 #endif
 	template<class A, typename = std::enable_if_t<not std::is_base_of<array, std::decay_t<A>>{}> >
 	array& operator=(A&& a){
@@ -120,17 +159,14 @@ public:
 		if(ext==array::extensions()){
 			const_cast<array const&>(*this).ref::operator=(std::forward<A>(a));
 		}else{
-			clear();
-			this->ref::layout_t::operator=(layout_t<D>{extensions(a)});
-			this->base_ = allocate(this->num_elements());
-		//	multi::uninitialized_copy<D>(maybestd_begin(std::forward<A>(a)), maybestd_end(std::forward<A>(a)), array::begin());
+			clear(); //	this->ref::layout_t::operator=(layout_t<D>{extensions(a)}); //			this->base_ = allocate(this->num_elements());
+			this->base_ = allocate(static_cast<typename alloc_traits::size_type>(this->ref::layout_t::operator=(layout_t<D>{extensions(a)}).num_elements()));
 			using std::begin; using std::end;
-			recursive_uninitialized_copy<D>(alloc(), begin(std::forward<A>(a)), end(std::forward<A>(a)), array::begin());
+		//	uninitialized_copy(alloc(), begin(std::forward<A>(a)), end(std::forward<A>(a)), array::begin()); //	recursive_uninitialized_copy<D>(alloc(), begin(std::forward<A>(a)), end(std::forward<A>(a)), array::begin());
 		}
 		return *this;
 	}
 	array& operator=(array const& other){
-	//	if(this == std::addressof(other)) return *this;
 		if(extensions(other)==array::extensions()){
 			using std::copy_n;
 			copy_n(other.data(), other.num_elements(), this->data());
@@ -142,25 +178,39 @@ public:
 		}
 		return *this;
 	}
+	array& operator=(array&& other){
+	//	if(this!=std::addressof(other)) clear(); 
+	//	swap(other); 
+	//	return *this;
+		using std::exchange;
+		this->base_ = exchange(other.base_, nullptr);
+		alloc() = std::move(other.alloc());
+		static_cast<typename array::layout_t&>(*this) = exchange(static_cast<typename array::layout_t&>(other), {});
+	//	swap(
+	//		static_cast<typename array::layout_t&>(*this), 
+	//		static_cast<typename array::layout_t&>(other)
+	//	);
+		return *this;
+	}
 	void swap(array& other) noexcept{
 		using std::swap;
+		swap(alloc(), other.alloc());
 		swap(this->base_, other.base_);
-		swap(static_cast<Alloc&>(*this), static_cast<Alloc&>(other));
 		swap(
-			static_cast<typename array_ref<T, D, typename std::allocator_traits<allocator_type>::pointer>::layout_t&>(*this), 
-			static_cast<typename array_ref<T, D, typename std::allocator_traits<allocator_type>::pointer>::layout_t&>(other)
+			static_cast<typename array::layout_t&>(*this), 
+			static_cast<typename array::layout_t&>(other)
 		);
 	}
 	friend void swap(array& a, array& b){a.swap(b);}
-	array& operator=(array&& other){if(this!=std::addressof(other)) clear(); swap(other); return *this;}
 	void assign(typename array::extensions_type x, typename array::element const& e){
 		if(array::extensions()==x){
-			recursive_fill<D>(alloc(), begin(), end(), e);
+			fill_n(this->base_, this->num_elements(), e);
 		}else{
 			clear();
 			this->layout_t<D>::operator=(layout_t<D>{x});
 			this->base_ = allocate();
-			recursive_uninitialized_fill<dimensionality>(alloc(), begin(), end(), e);
+			uninitialized_fill_n(e);
+		//	recursive_uninitialized_fill<dimensionality>(alloc(), begin(), end(), e);
 		}
 	}
 	template<class It>
@@ -217,6 +267,8 @@ public:
 
 	typename array::const_iterator begin() const{return ref::begin();}
 	typename array::const_iterator end()   const{return ref::end();}
+	const_iterator cbegin() const{return begin();}
+	const_iterator cend() const{return end();}
 
 	void clear() noexcept{destroy(); deallocate(); layout_t<D>::operator=({});}
 	friend void clear(array& self) noexcept{self.clear();}
@@ -225,14 +277,14 @@ private:
 	allocator_type& alloc(){return static_cast<allocator_type&>(*this);}
 	void destroy(){destroy_n(alloc(), this->data(), this->num_elements());}
 	template<typename It>
-	auto uninitialized_copy(It first){return uninitialized_copy_n(alloc(), first, this->num_elements(), this->data());}
+	auto uninitialized_copy_(It first){return uninitialized_copy(alloc(), first, first + this->num_elements(), this->data());}
 	auto uninitialized_default_construct(){return uninitialized_default_construct_n(alloc(), this->base_, this->num_elements());}
 	auto uninitialized_value_construct(){return uninitialized_value_construct_n(alloc(), this->base_, this->num_elements());}
 	auto uninitialized_fill(typename array::element const& el){return uninitialized_fill_n(alloc(), this->base_, this->num_elements(), el);}
-	typename array::element_ptr allocate(typename array::index n){return alloc_traits::allocate(alloc(), n);}
-	auto allocate(){return allocate(this->num_elements());}
+//	typename array::element_ptr allocate(typename array::index n){return alloc_traits::allocate(alloc(), n);}
+//	auto allocate(){return allocate(this->num_elements());}
 	void deallocate(){
-		alloc_traits::deallocate(alloc(), this->base_, this->num_elements());
+		alloc_traits::deallocate(alloc(), this->base_, static_cast<typename alloc_traits::size_type>(this->num_elements()));
 		this->base_ = nullptr;
 	}
 };
@@ -244,8 +296,26 @@ template<class T, class A=std::allocator<T>> array(IL<T>                , A={})-
 template<class T, class A=std::allocator<T>> array(IL<IL<T>>            , A={})->array<T,2,A>;
 template<class T, class A=std::allocator<T>> array(IL<IL<IL<T>>>        , A={})->array<T,3,A>; 
 template<class T, class A=std::allocator<T>> array(IL<IL<IL<IL<T>>>>    , A={})->array<T,4,A>; 
-template<class T, class A=std::allocator<T>> array(IL<IL<IL<IL<IL<T>>>>>, A={})->array<T,5,A>; 
+template<class T, class A=std::allocator<T>> array(IL<IL<IL<IL<IL<T>>>>>, A={})->array<T,5,A>;
 #undef IL
+
+template<class T, class A=std::allocator<T>> array(iextensions<1>, T)->array<T,1,A>;
+template<class T, class A=std::allocator<T>> array(iextensions<2>, T)->array<T,2,A>;
+template<class T, class A=std::allocator<T>> array(iextensions<3>, T)->array<T,3,A>;
+template<class T, class A=std::allocator<T>> array(iextensions<4>, T)->array<T,4,A>;
+template<class T, class A=std::allocator<T>> array(iextensions<5>, T)->array<T,5,A>;
+
+template<class A> array(iextensions<1>, A)->array<typename std::allocator_traits<A>::value_type,1,A>;
+template<class A> array(iextensions<2>, A)->array<typename std::allocator_traits<A>::value_type,2,A>;
+template<class A> array(iextensions<3>, A)->array<typename std::allocator_traits<A>::value_type,3,A>;
+template<class A> array(iextensions<4>, A)->array<typename std::allocator_traits<A>::value_type,4,A>;
+template<class A> array(iextensions<5>, A)->array<typename std::allocator_traits<A>::value_type,5,A>;
+
+template<class T, class MR, class A=generic_allocator<T, MR>> array(iextensions<1>, T, MR*)->array<T,1,A>;
+template<class T, class MR, class A=generic_allocator<T, MR>> array(iextensions<2>, T, MR*)->array<T,2,A>;
+template<class T, class MR, class A=generic_allocator<T, MR>> array(iextensions<3>, T, MR*)->array<T,3,A>;
+template<class T, class MR, class A=generic_allocator<T, MR>> array(iextensions<4>, T, MR*)->array<T,4,A>;
+template<class T, class MR, class A=generic_allocator<T, MR>> array(iextensions<5>, T, MR*)->array<T,5,A>;
 #endif
 
 }}

@@ -136,7 +136,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateValueAndDerivatives
     for (int j = 0; j < nknot; j++)
     {
       PosType pos_now = W.R[iel];
-      W.makeMoveAndCheck(iel, deltarV[j]);
+      W.makeMove(iel, deltarV[j]);
 #if defined(QMC_COMPLEX)
       psiratio[j] = psi.ratio(W, iel) * std::cos(psi.getPhaseDiff());
 #else
@@ -154,7 +154,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateValueAndDerivatives
         dratio(v, j) = std::real(dlogpsi_t[v]);
 
       PosType md = -1.0 * deltarV[j];
-      W.makeMoveAndCheck(iel, md);
+      W.makeMove(iel, md);
       W.acceptMove(iel);
     }
 

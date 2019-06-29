@@ -117,7 +117,7 @@ void RMCUpdateAllWithDrift::advanceWalkersVMC()
   RealType r2accept   = 0.0;
   //      W.reptile->r2prop += r2proposed;
   //      W.reptile->r2samp++;
-  if (!W.makeMoveWithDrift(curhead, drift, deltaR, m_sqrttau))
+  if (!W.makeMoveAllParticlesWithDrift(curhead, drift, deltaR, m_sqrttau))
   {
     ++nReject;
     H.rejectedMove(W, curhead);
@@ -343,7 +343,7 @@ void RMCUpdateAllWithDrift::advanceWalkersRMC()
   RealType r2accept   = 0.0;
   //  W.reptile->r2prop += r2proposed;
   //  W.reptile->r2samp++;
-  if (!W.makeMoveWithDrift(curhead, drift, deltaR, m_sqrttau))
+  if (!W.makeMoveAllParticlesWithDrift(curhead, drift, deltaR, m_sqrttau))
   {
     ++nReject;
     H.rejectedMove(W, curhead);
