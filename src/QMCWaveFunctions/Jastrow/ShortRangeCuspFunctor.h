@@ -82,7 +82,12 @@ struct ShortRangeCuspFunctor : public OptimizableFunctorBase
   //*****************************************************************************//
 
   ///default constructor
-  ShortRangeCuspFunctor() : Opt_A(true), Opt_R0(true), Opt_B(true), A(1.0), R0(0.1), ID_A("A"), ID_R0("R0"), ID_B("B") { reset(); }
+  ShortRangeCuspFunctor() : Opt_A(false), Opt_R0(true), Opt_B(true), A(1.0), R0(0.06),
+                            ID_A("string_not_set"), ID_R0("string_not_set"), ID_B("string_not_set")
+  {
+    cutoff_radius = 1.0e4; //some big range
+    reset();
+  }
 
   ///sets the cusp condition and disables optimization of the cusp-determining parameter
   void setCusp(real_type cusp)
@@ -106,6 +111,10 @@ struct ShortRangeCuspFunctor : public OptimizableFunctorBase
   inline real_type evaluate(real_type r) const
   {
 
+    // the functor will be almost exactly zero at long range, so just return that if r is beyond the hard cutoff
+    if (r >= cutoff_radius)
+      return 0.0;
+
     // get the ratio of the distance and the soft cutoff distance
     const real_type s = r / R0;
 
@@ -127,6 +136,13 @@ struct ShortRangeCuspFunctor : public OptimizableFunctorBase
   ///compute U(r), dU/dr, and d^2U/dr^2 at a particular value of r
   inline real_type evaluate(real_type r, real_type& dudr, real_type& d2udr2) const
   {
+
+    // the functor will be almost exactly zero at long range, so just return that if r is beyond the hard cutoff
+    if (r >= cutoff_radius) {
+      dudr = 0.0;
+      d2udr2 = 0.0;
+      return 0.0;
+    }
 
     // get the ratio of the distance and the soft cutoff distance
     const real_type s = r / R0;
@@ -408,6 +424,43 @@ struct ShortRangeCuspFunctor : public OptimizableFunctorBase
     return true;
   }
 
+  /// set up a variational parameter using the supplied xml node
+  template <class U>
+  void set_variable_from_xml(ReportEngine & PRE, xmlNodePtr cur, U & variable_to_set, std::string & id_to_set, bool & opt_to_set)
+  {
+
+    // get id, name, and optimize info
+    std::string       id("string_not_set");
+    std::string     name("string_not_set");
+    std::string optimize("string_not_set");
+    OhmmsAttributeSet rAttrib;
+    rAttrib.add(      id,       "id");
+    rAttrib.add(    name,     "name");
+    rAttrib.add(optimize, "optimize");
+    rAttrib.put(cur);
+
+    // read in the variable
+    putContent(variable_to_set, cur);
+
+    // set the id if we have it
+    if ( id != "string_not_set" )
+      id_to_set = id;
+
+    // if we are to optimize the variable, add it to the optimizable variable set
+    tolower(optimize);
+    if ( optimize == "yes" ) {
+      if ( id == "string_not_set" )
+        PRE.error("\"id\" must be set if we are going to optimize variable " + name, true);
+      opt_to_set = true;
+      myVars.insert(id, variable_to_set, opt_to_set, optimize::OTHER_P);
+    } else if ( optimize == "no" ) {
+      opt_to_set = false;
+    } else if ( optimize != "string_not_set" ) {
+      PRE.error("Unrecognized value for \"optimize\". Should be either yes or no", true);
+    }
+
+  }
+
   ///read in information about the functor from an xml node
   bool put(xmlNodePtr cur)
   {
@@ -416,115 +469,115 @@ struct ShortRangeCuspFunctor : public OptimizableFunctorBase
     ReportEngine PRE("ShortRangeCuspFunctor", "put(xmlNodePtr)");
 
     // create some variables to read information in to
-    int nB = -1;                // number of terms in the expansion over sigmoidal functions
     real_type radius = -1.0;    // hard cutoff radius
-    std::string name("0");      // a name used in naming the variational parameters
-    std::string optA("no");     // whether to optimize the cusp condition (off by default)
-    std::string optR0("yes");   // whether to optimize the soft cutoff radius (on by default)
+    real_type cusp_in = -1.0;   // cusp condition
 
     // read from the xml node
     OhmmsAttributeSet rAttrib;
-    rAttrib.add(nB, "size");
     rAttrib.add(radius, "rcut");
     rAttrib.add(radius, "cutoff");
-    rAttrib.add(A, "cusp");
-    rAttrib.add(R0, "r0");
-    rAttrib.add(optA, "optA");
-    rAttrib.add(optR0, "optR0");
-    rAttrib.add(name, "elementType");
+    rAttrib.add(cusp_in, "cusp");
     rAttrib.put(cur);
 
-    // set the hard cutoff radius
+    // set the hard cutoff radius if we have it
     if (radius > 0.0)
       cutoff_radius = radius;
 
-    // sanity check for the length of the sigmoidal expansion
-    if (nB < 0)
-      PRE.error("Number of sigmoidal expansion terms must be non-negative.  Did you forget to specify \"size\"?", true);
+    // set the cusp if we have it
+    if (cusp_in > 0.0)
+      setCusp(cusp_in);
 
-    // sanity check for whether we found a name
-    if (name == "0")
-      PRE.error("ShortRangeCuspFunctor did not find an acceptable name.", true);
-
-    // set the strings that act as IDs for the different variational parameters
-    ID_A  = name + "_SRC_A";
-    ID_B  = name + "_SRC_B";
-    ID_R0 = name + "_SRC_R0";
-
-    // set which of A and R0 are optimizable and add whichever are to the variable set
-    tolower(optA);
-    tolower(optR0);
-    Opt_A  = ( optA  == "yes" );
-    Opt_R0 = ( optR0 == "yes" );
-    if ( Opt_A )
-      myVars.insert(ID_A, A, Opt_A, optimize::OTHER_P);
-    if ( Opt_R0 )
-      myVars.insert(ID_R0, R0, Opt_R0, optimize::OTHER_P);
-
-    // loop over this node's children to find the the B coefficents for the sigmoidal expansion
-    xmlNodePtr xmlCoefs = cur->xmlChildrenNode;
-    while (xmlCoefs != NULL)
+    // loop over this node's children to read in variational parameter information
+    xmlNodePtr childPtr = cur->xmlChildrenNode;
+    while (childPtr != NULL)
     {
 
-      // read from the node named "coefficients"
-      std::string cname((const char*)xmlCoefs->name);
-      if (cname == "coefficients")
+      // get the name of the child node
+      std::string cname((const char*)childPtr->name);
+      tolower(cname);
+
+      // read in a variable
+      if (cname == "var")
       {
 
-        // strings to read in to
-        std::string type("0");
-        std::string optB("yes");
+        // read in the name of the variable
+        std::string v_name("string_not_set");
+        OhmmsAttributeSet att;
+        att.add(v_name, "name");
+        att.put(childPtr);
 
-        // read attributes of this node
-        OhmmsAttributeSet cAttrib;
-        cAttrib.add(type, "type");
-        cAttrib.add(optB, "optimize");
-        cAttrib.put(xmlCoefs);
+        // read in the variable's info
+        if (v_name == "A")
+          set_variable_from_xml(PRE, childPtr, A, ID_A, Opt_A);
+        else if (v_name == "R0")
+          set_variable_from_xml(PRE, childPtr, R0, ID_R0, Opt_R0);
+        else if (v_name == "string_not_set")
+          PRE.error("variable name not set", true);
+        else
+          PRE.error("unrecognized variable name: " + v_name, true);
+
+      }
+
+      // read in the B coefficients
+      else if (cname == "coefficients")
+      {
+
+        // read in the id, whether to optimize, and the node type
+        std::string       id("string_not_set");
+        std::string     type("string_not_set");
+        std::string optimize("string_not_set");
+        OhmmsAttributeSet att;
+        att.add(      id,       "id");
+        att.add(    type,     "type");
+        att.add(optimize, "optimize");
+        att.put(childPtr);
 
         // sanity check that this node has been specified as an array type
         if (type != "Array")
-          PRE.error("ShortRangeCuspFunctor expected B paramter array type to be \"Array\"", true);
+          PRE.error("ShortRangeCuspFunctor expected coefficients paramter array type to be \"Array\"", true);
 
         // read in the vector of coefficients
-        std::vector<real_type> params;
-        putContent(params, xmlCoefs);
+        putContent(B, childPtr);
 
-        // sanity check that the vector was the expected length
-        if (params.size() != nB)
-          PRE.error("ShortRangeCuspFunctor encountered a B parameter array that is the wrong length.", true);
+        // set the id if we have it
+        if ( id != "string_not_set" )
+          ID_B = id;
 
-        // store the coefficients, and, if they are to be optimized, add them to the variable set
-        B = params;
-        tolower(optB);
-        Opt_B = ( optB == "yes" );
-        if ( Opt_B ) {
-          for (int i = 0; i < B.size(); i++)
-          {
+        // if the coefficients are to be optimized, add them to the variable set
+        tolower(optimize);
+        if ( optimize == "yes" ) {
+          if ( id == "string_not_set" )
+            PRE.error("\"id\" must be set if we are going to optimize B coefficients", true);
+          Opt_B = true;
+          for (int i = 0; i < B.size(); i++) {
             std::stringstream sstr;
             sstr << ID_B << "_" << i;
             myVars.insert(sstr.str(), B.at(i), Opt_B, optimize::OTHER_P);
           }
+        } else if ( optimize == "no" ) {
+          Opt_B = false;
+        } else if ( optimize != "string_not_set" ) {
+          PRE.error("Unrecognized value for \"optimize\". Should be either yes or no", true);
         }
 
-        // stop looping if we've found the coefficients
-        break;
       }
 
       // go to the next node
-      xmlCoefs = xmlCoefs->next;
+      childPtr = childPtr->next;
     }
 
     // summarize what was read in
-    app_summary() << "                   cusp variable A: " << A << std::endl;
-    app_summary() << "                    soft cutoff R0: " << R0 << std::endl;
-    app_summary() << "sigmoidal expansion coefficients B:";
+    app_summary() << "    ---------------------------------------------------------" << std::endl;
+    app_summary() << "                       cusp variable A: " << A << std::endl;
+    app_summary() << "                        soft cutoff R0: " << R0 << std::endl;
+    app_summary() << "    sigmoidal expansion coefficients B:";
     for (int i = 0; i < B.size(); i++)
       app_summary() << " " << B.at(i);
     app_summary() << std::endl;
-    app_summary() << "                hard cutoff radius: " << cutoff_radius << std::endl;
-    app_summary() << "                             Opt_A: " << ( Opt_A  ? "yes" : "no" ) << std::endl;
-    app_summary() << "                            Opt_R0: " << ( Opt_R0 ? "yes" : "no" ) << std::endl;
-    app_summary() << "                             Opt_B: " << ( Opt_B  ? "yes" : "no" ) << std::endl;
+    app_summary() << "                    hard cutoff radius: " << cutoff_radius << std::endl;
+    app_summary() << "                                 Opt_A: " << ( Opt_A  ? "yes" : "no" ) << std::endl;
+    app_summary() << "                                Opt_R0: " << ( Opt_R0 ? "yes" : "no" ) << std::endl;
+    app_summary() << "                                 Opt_B: " << ( Opt_B  ? "yes" : "no" ) << std::endl;
 
     // reset the functor now that we've read its info in (currently does nothing)
     reset();
