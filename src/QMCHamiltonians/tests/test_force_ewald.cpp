@@ -62,11 +62,11 @@ TEST_CASE("Chiesa Force BCC H Ewald3D", "[hamiltonian]")
   int pIdx                      = ion_species.addSpecies("H");
   int pChargeIdx                = ion_species.addAttribute("charge");
   ion_species(pChargeIdx, pIdx) = 1;
-  ions.Lattice.copy(Lattice);
+  ions.Lattice = Lattice;
   ions.createSK();
 
 
-  elec.Lattice.copy(Lattice);
+  elec.Lattice = Lattice;
   elec.setName("elec");
   elec.create(2);
   elec.R[0][0] = 0.5;

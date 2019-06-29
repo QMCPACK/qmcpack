@@ -28,7 +28,6 @@ TEST_CASE("drift pbyp and node correction real", "[drivers][drift]")
   MCWalkerConfiguration elec;
 
   elec.setName("elec");
-  elec.setBoundBox(false);
   std::vector<int> agroup(1);
   agroup[0] = 1;
   elec.create(agroup);
@@ -70,7 +69,6 @@ TEST_CASE("drift pbyp and node correction complex", "[drivers][drift]")
   MCWalkerConfiguration elec;
 
   elec.setName("elec");
-  elec.setBoundBox(false);
   std::vector<int> agroup(1);
   agroup[0] = 1;
   elec.create(agroup);
@@ -111,7 +109,6 @@ TEST_CASE("get scaled drift real", "[drivers][drift]")
   MCWalkerConfiguration elec;
 
   elec.setName("elec");
-  elec.setBoundBox(false);
   std::vector<int> agroup(1);
   agroup[0] = 1;
   elec.create(agroup);
@@ -151,7 +148,6 @@ TEST_CASE("get scaled drift complex", "[drivers][drift]")
   MCWalkerConfiguration elec;
 
   elec.setName("elec");
-  elec.setBoundBox(false);
   std::vector<int> agroup(1);
   agroup[0] = 1;
   elec.create(agroup);

@@ -44,8 +44,7 @@ const TimerNameList_t<ParticleSet::PSTimers> ParticleSet::PSTimerNames = {{PS_ne
                                                                           {PS_update, "ParticleSet::update"}};
 
 ParticleSet::ParticleSet()
-    : UseBoundBox(true),
-      IsGrouped(true),
+    : IsGrouped(true),
       ThreadID(0),
       SK(0),
       ParentName("0"),
@@ -60,8 +59,7 @@ ParticleSet::ParticleSet()
 }
 
 ParticleSet::ParticleSet(const ParticleSet& p)
-    : UseBoundBox(p.UseBoundBox),
-      IsGrouped(p.IsGrouped),
+    : IsGrouped(p.IsGrouped),
       ThreadID(0),
       mySpecies(p.getSpeciesSet()),
       SK(0),
@@ -319,17 +317,6 @@ void ParticleSet::reset() { app_log() << "<<<< going to set properties >>>> " <<
 ///read the particleset
 bool ParticleSet::put(xmlNodePtr cur) { return true; }
 
-void ParticleSet::setBoundBox(bool yes) { UseBoundBox = yes; }
-
-void ParticleSet::checkBoundBox(RealType rb)
-{
-  if (UseBoundBox && rb > Lattice.SimulationCellRadius)
-  {
-    app_warning() << "ParticleSet::checkBoundBox " << rb << "> SimulationCellRadius=" << Lattice.SimulationCellRadius
-                  << "\n Using SLOW method for the sphere update. " << std::endl;
-  }
-}
-
 int ParticleSet::addTable(const ParticleSet& psrc, int dt_type, bool need_full_table_loadWalker)
 {
   if (myName == "none" || psrc.getName() == "none")
@@ -397,7 +384,7 @@ bool ParticleSet::makeMoveAndCheck(Index_t iat, const SingleParticlePos_t& displ
   activePtcl = iat;
   activePos  = R[iat] + displ;
   bool is_valid = true;
-  if (UseBoundBox)
+  if (Lattice.explicitly_defined)
   {
     if (Lattice.outOfBound(Lattice.toUnit(displ)))
       is_valid = false;
@@ -426,7 +413,7 @@ void ParticleSet::computeNewPosDistTablesAndSK(Index_t iat, const SingleParticle
 bool ParticleSet::makeMoveAllParticles(const Walker_t& awalker, const ParticlePos_t& deltaR, RealType dt)
 {
   activePtcl = -1;
-  if (UseBoundBox)
+  if (Lattice.explicitly_defined)
   {
     for (int iat = 0; iat < deltaR.size(); ++iat)
     {
@@ -458,7 +445,7 @@ bool ParticleSet::makeMoveAllParticles(const Walker_t& awalker, const ParticlePo
 bool ParticleSet::makeMoveAllParticles(const Walker_t& awalker, const ParticlePos_t& deltaR, const std::vector<RealType>& dt)
 {
   activePtcl = -1;
-  if (UseBoundBox)
+  if (Lattice.explicitly_defined)
   {
     for (int iat = 0; iat < deltaR.size(); ++iat)
     {
@@ -500,7 +487,7 @@ bool ParticleSet::makeMoveAllParticlesWithDrift(const Walker_t& awalker,
                                     RealType dt)
 {
   activePtcl = -1;
-  if (UseBoundBox)
+  if (Lattice.explicitly_defined)
   {
     for (int iat = 0; iat < deltaR.size(); ++iat)
     {
@@ -535,7 +522,7 @@ bool ParticleSet::makeMoveAllParticlesWithDrift(const Walker_t& awalker,
                                     const std::vector<RealType>& dt)
 {
   activePtcl = -1;
-  if (UseBoundBox)
+  if (Lattice.explicitly_defined)
   {
     for (int iat = 0; iat < deltaR.size(); ++iat)
     {
