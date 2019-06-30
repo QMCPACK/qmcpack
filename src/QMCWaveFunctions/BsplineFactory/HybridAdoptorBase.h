@@ -76,9 +76,9 @@ struct AtomicOrbitalSoA
     create_spline();
   }
 
-  void bcast_tables(Communicate* comm) { chunked_bcast(comm, &(SplineInst->spline_m)); }
+  void bcast_tables(Communicate* comm) { chunked_bcast(comm, SplineInst->spline_m); }
 
-  void gather_tables(Communicate* comm, std::vector<int>& offset) { gatherv(comm, &(SplineInst->spline_m), Npad, offset); }
+  void gather_tables(Communicate* comm, std::vector<int>& offset) { gatherv(comm, SplineInst->spline_m, Npad, offset); }
 
   template<typename PT, typename VT>
   inline void set_info(const PT& R,
@@ -121,7 +121,7 @@ struct AtomicOrbitalSoA
 
   bool read_splines(hdf_archive& h5f)
   {
-    einspline_engine<AtomicSplineType> bigtable(&(SplineInst->spline_m));
+    einspline_engine<AtomicSplineType> bigtable(SplineInst->spline_m);
     int lmax_in, spline_npoints_in;
     ST spline_radius_in;
     bool success = true;
@@ -144,7 +144,7 @@ struct AtomicOrbitalSoA
     success      = success && h5f.writeEntry(spline_npoints, "spline_npoints");
     success      = success && h5f.writeEntry(lmax, "l_max");
     success      = success && h5f.writeEntry(pos, "position");
-    einspline_engine<AtomicSplineType> bigtable(&(SplineInst->spline_m));
+    einspline_engine<AtomicSplineType> bigtable(SplineInst->spline_m);
     success = success && h5f.writeEntry(bigtable, "radial_spline");
     return success;
   }

@@ -78,6 +78,8 @@ struct MultiBspline
       zBC.rVal  = static_cast<T>(bc[2].rVal);
       spline_m  = myAllocator.allocateMultiBspline(grid[0], grid[1], grid[2], xBC, yBC, zBC, num_splines);
     }
+    else
+      throw std::runtime_error("MultiBspline::spline_m cannot be created twice!\n");
   }
 
   void flush_zero() const
