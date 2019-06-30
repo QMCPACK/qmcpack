@@ -38,12 +38,12 @@ template<typename ST, typename TT>
 struct SplineC2CSoA : public SplineAdoptorBase<ST, 3>
 {
   static const int D     = 3;
-  using BaseType         = SplineAdoptorBase<ST, 3>;
+  using Base             = SplineAdoptorBase<ST, 3>;
   using SplineType       = typename bspline_traits<ST, 3>::SplineType;
   using BCType           = typename bspline_traits<ST, 3>::BCType;
   using DataType         = ST;
-  using PointType        = typename BaseType::PointType;
-  using SingleSplineType = typename BaseType::SingleSplineType;
+  using PointType        = typename Base::PointType;
+  using SingleSplineType = typename Base::SingleSplineType;
   using ComplexT         = typename std::complex<TT>;
 
   using vContainer_type  = Vector<ST, aligned_allocator<ST>>;
@@ -51,13 +51,13 @@ struct SplineC2CSoA : public SplineAdoptorBase<ST, 3>
   using hContainer_type  = VectorSoaContainer<ST, 6>;
   using ghContainer_type = VectorSoaContainer<ST, 10>;
 
-  using BaseType::first_spo;
-  using BaseType::GGt;
-  using BaseType::kPoints;
-  using BaseType::last_spo;
-  using BaseType::MakeTwoCopies;
-  using BaseType::offset;
-  using BaseType::PrimLattice;
+  using Base::first_spo;
+  using Base::GGt;
+  using Base::kPoints;
+  using Base::last_spo;
+  using Base::MakeTwoCopies;
+  using Base::offset;
+  using Base::PrimLattice;
 
   ///multi bspline set
   std::shared_ptr<MultiBspline<ST>> SplineInst;
@@ -74,7 +74,7 @@ struct SplineC2CSoA : public SplineAdoptorBase<ST, 3>
   ///thread private ratios for reduction when using nested threading, numVP x numThread
   Matrix<ComplexT> ratios_private;
 
-  SplineC2CSoA() : BaseType()
+  SplineC2CSoA() : Base()
   {
     this->is_complex   = true;
     this->is_soa_ready = true;
@@ -84,7 +84,7 @@ struct SplineC2CSoA : public SplineAdoptorBase<ST, 3>
 
   inline void resizeStorage(size_t n, size_t nvals)
   {
-    BaseType::init_base(n);
+    Base::init_base(n);
     size_t npad = getAlignedSize<ST>(2 * n);
     myV.resize(npad);
     myG.resize(npad);

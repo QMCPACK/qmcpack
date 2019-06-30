@@ -36,24 +36,24 @@ struct SplineR2RSoA : public SplineAdoptorBase<ST, 3>
 {
   static const int D = 3;
   bool IsGamma;
-  using BaseType         = SplineAdoptorBase<ST, 3>;
+  using Base             = SplineAdoptorBase<ST, 3>;
   using SplineType       = typename bspline_traits<ST, 3>::SplineType;
   using BCType           = typename bspline_traits<ST, 3>::BCType;
-  using PointType        = typename BaseType::PointType;
-  using SingleSplineType = typename BaseType::SingleSplineType;
+  using PointType        = typename Base::PointType;
+  using SingleSplineType = typename Base::SingleSplineType;
 
   using vContainer_type  = Vector<ST, aligned_allocator<ST>>;
   using gContainer_type  = VectorSoaContainer<ST, 3>;
   using hContainer_type  = VectorSoaContainer<ST, 6>;
   using ghContainer_type = VectorSoaContainer<ST, 10>;
 
-  using BaseType::first_spo;
-  using BaseType::last_spo;
+  using Base::first_spo;
+  using Base::last_spo;
   using SplineAdoptorBase<ST, D>::HalfG;
-  using BaseType::GGt;
-  using BaseType::kPoints;
-  using BaseType::offset;
-  using BaseType::PrimLattice;
+  using Base::GGt;
+  using Base::kPoints;
+  using Base::offset;
+  using Base::PrimLattice;
 
   ///multi bspline set
   std::shared_ptr<MultiBspline<ST>> SplineInst;
@@ -67,7 +67,7 @@ struct SplineR2RSoA : public SplineAdoptorBase<ST, 3>
   ///thread private ratios for reduction when using nested threading, numVP x numThread
   Matrix<TT> ratios_private;
 
-  SplineR2RSoA() : BaseType()
+  SplineR2RSoA() : Base()
   {
     this->is_complex   = false;
     this->is_soa_ready = true;
@@ -77,7 +77,7 @@ struct SplineR2RSoA : public SplineAdoptorBase<ST, 3>
 
   inline void resizeStorage(size_t n, size_t nvals)
   {
-    BaseType::init_base(n);
+    Base::init_base(n);
     const size_t npad = getAlignedSize<ST>(n);
     myV.resize(npad);
     myG.resize(npad);
