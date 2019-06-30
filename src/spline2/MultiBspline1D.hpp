@@ -20,8 +20,10 @@
 namespace qmcplusplus
 {
 /** container class to hold a 1D multi spline structure
-   * @tparam T the precision of splines
-   */
+ * @tparam T the precision of splines
+ *
+ * This class contains a pointer to a C object, copy and assign of this class is forbidden.
+ */
 template<typename T>
 struct MultiBspline1D
 {
@@ -43,7 +45,14 @@ struct MultiBspline1D
   }
 
   /** create the einspline as used in the builder
-       */
+   * @tparam GT grid type
+   * @tparam BCT boundary type
+   * @param grid grid parameters
+   * @param bc boundary parameters
+   * @param bc num_splines number of splines
+   *
+   * num_splines must be padded to the aligned size. The caller must be aware of padding and pad all result arrays.
+   */
   template<typename GT, typename BCT>
   void create(GT& grid, BCT& bc, int num_splines)
   {
@@ -66,11 +75,12 @@ struct MultiBspline1D
   size_t sizeInByte() const { return (spline_m == nullptr) ? 0 : spline_m->coefs_size * sizeof(T); }
 
   /** copy a single spline to the big table
-       * @param aSpline UBspline_3d_(d,s)
-       * @param int index of aSpline
-       * @param offset_ starting index for the case of multiple domains
-       * @param base_ number of bases
-       */
+   * @tparam SingleSpline single spline type
+   * @param aSpline UBspline_3d_(d,s)
+   * @param int index of aSpline
+   * @param offset_ starting index for the case of multiple domains
+   * @param base_ number of bases
+   */
   template<typename SingleSpline>
   void copy_spline(SingleSpline* aSpline, int i, const int offset_, const int base_)
   {
