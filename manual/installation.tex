@@ -299,7 +299,7 @@ MKL_ROOT            Path to MKL libraries (only necessary for non intel compiler
 %
 \begin{shade}
 LIBXML2_INCLUDE_DIR   Include directory for libxml2
-LIBXML2_LIBRARY       Library location for libxml2
+LIBXML2_LIBRARY       Libxml2 library
 \end{shade}
 
 \item HDF5 related
@@ -458,7 +458,7 @@ rm -rf CMake*
 cmake                                                \
   -D CMAKE_BUILD_TYPE=Debug                         \
   -D LIBXML2_INCLUDE_DIR=/usr/include/libxml2      \
-  -D LIBXML2_LIBRARY=/usr/lib/x86_64-linux-gnu \
+  -D LIBXML2_LIBRARY=/usr/lib/x86_64-linux-gnu/libxml2.so \
   -D FFTW_INCLUDE_DIRS=/usr/include                 \
   -D FFTW_LIBRARY_DIRS=/usr/lib/x86_64-linux-gnu    \
   -D QMC_EXTRA_LIBS="-ldl ${ACML_HOME}/lib/libacml.a -lgfortran" \

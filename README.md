@@ -143,7 +143,7 @@ make -j 8
 
 ```
      LIBXML2_INCLUDE_DIR Include directory for libxml2
-     LIBXML2_LIBRARY     Library location for libxml2
+     LIBXML2_LIBRARY     Libxml2 library
 ```
 
 * HDF5 related
