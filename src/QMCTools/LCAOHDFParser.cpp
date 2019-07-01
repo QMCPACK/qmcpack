@@ -10,7 +10,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCTools/LCAOH5Parser.h"
+#include "QMCTools/LCAOHDFParser.h"
 #include <fstream>
 #include <iterator>
 #include <algorithm>
@@ -19,7 +19,7 @@
 #include <sstream>
 
 
-LCAOParser::LCAOParser()
+LCAOHDFParser::LCAOHDFParser()
 {
   basisName    = "Gaussian";
   Normalized   = "no";
@@ -31,7 +31,7 @@ LCAOParser::LCAOParser()
   NFZC         = 0;
 }
 
-LCAOParser::LCAOParser(int argc, char** argv) : QMCGaussianParserBase(argc, argv)
+LCAOHDFParser::LCAOHDFParser(int argc, char** argv) : QMCGaussianParserBase(argc, argv)
 {
   basisName      = "Gaussian";
   Normalized     = "no";
@@ -44,7 +44,7 @@ LCAOParser::LCAOParser(int argc, char** argv) : QMCGaussianParserBase(argc, argv
   NFZC           = 0;
 }
 
-void LCAOParser::parse(const std::string& fname)
+void LCAOHDFParser::parse(const std::string& fname)
 {
   hdf_archive hin;
 
@@ -247,7 +247,7 @@ void LCAOParser::parse(const std::string& fname)
   }
 }
 
-void LCAOParser::getCell(const std::string& fname)
+void LCAOHDFParser::getCell(const std::string& fname)
 {
   X.resize(3);
   Y.resize(3);
@@ -278,7 +278,7 @@ void LCAOParser::getCell(const std::string& fname)
   std::cout << Y[0] << "  " << Y[1] << "  " << Y[2] << std::endl;
   std::cout << Z[0] << "  " << Z[1] << "  " << Z[2] << std::endl;
 }
-void LCAOParser::getGeometry(const std::string& fname)
+void LCAOHDFParser::getGeometry(const std::string& fname)
 {
   hdf_archive hin;
 
@@ -337,7 +337,7 @@ void LCAOParser::getGeometry(const std::string& fname)
   hin.close();
 }
 
-void LCAOParser::getSuperTwist(const std::string& fname)
+void LCAOHDFParser::getSuperTwist(const std::string& fname)
 {
   Matrix<double> MyVec(1, 3);
   hdf_archive hin;
@@ -365,7 +365,7 @@ void LCAOParser::getSuperTwist(const std::string& fname)
   hin.close();
 }
 
-void LCAOParser::getMO(const std::string& fname)
+void LCAOHDFParser::getMO(const std::string& fname)
 {
   EigVal_alpha.resize(numMO);
   EigVal_beta.resize(numMO);
@@ -418,4 +418,4 @@ void LCAOParser::getMO(const std::string& fname)
   hin.close();
 }
 
-void LCAOParser::getGaussianCenters(const std::string fname) {}
+void LCAOHDFParser::getGaussianCenters(const std::string fname) {}
