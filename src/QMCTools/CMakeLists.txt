@@ -33,7 +33,7 @@ SET(MOSRCS
   BMakeFunc.cpp
   GamesFMOParser.cpp
   QPParser.cpp
-  LCAOH5Parser.cpp
+  LCAOHDFParser.cpp
 )
 
 # create libmocommon 
