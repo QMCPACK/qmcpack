@@ -253,9 +253,9 @@ Additional information:
   \item \ixml{shift_s}.  This is the initial coefficient used to scale the overlap-based stabilizer.
                             More stable but slower optimization is expected with a large value.
                             The adaptive method will automatically adjust this value after each linear method iteration.
-  \item \ixml{target_shift_i}.  If set greater than zero, the adaptive method will choose the update whose shift_i value is closest to
-                              this target value so long as the associated cost is within cost_increase_tol of the lowest cost.
-                              Disable this behavior by setting target_shift_i to a negative number.
+  \item \ixml{target_shift_i}.  If set greater than zero, the adaptive method will choose the update whose shift\_i value is closest to
+                              this target value so long as the associated cost is within cost\_increase\_tol of the lowest cost.
+                              Disable this behavior by setting target\_shift\_i to a negative number.
   \item \ixml{cost_increase_tol}.  Tolerance for cost function increases when selecting the best shift.
   \item \ixml{nblocks}.   This is the number of blocks used in block LM. The amount of memory required to store LM matrices decreases
                             with increased number of blocks. But the error introduced by BLM would increase with number of blocks.  
