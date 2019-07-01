@@ -20,7 +20,7 @@
 namespace qmcplusplus
 {
 LocalMomentEstimator::LocalMomentEstimator(ParticleSet& elns, ParticleSet& srcs)
-  : ions(srcs), d_table_ID(elns.addTable(ions, DT_AOS))
+  : ions(srcs), d_table_ID(elns.addTable(srcs, DT_AOS))
 {
   int num_species = elns.groups();
   const SpeciesSet& e_species(elns.getSpeciesSet());
