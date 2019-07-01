@@ -40,8 +40,11 @@ ph_excitations<int,ComplexType> read_ph_wavefunction_hdf(hdf_archive& dump, int&
         boost::mpi3::shared_communicator& comm, int NMO, int NAEA, int NAEB,
         std::vector<PsiT_Matrix>& PsiT, std::string& type);
 
+void getCommonInput(hdf_archive& dump, int NMO, int NAEA, int NAEB, int& ndets_to_read,
+                    std::vector<ComplexType>& ci, WALKER_TYPES walker_type, bool root);
 
 WALKER_TYPES getWalkerType(std::string filename);
+WALKER_TYPES getWalkerTypeHDF5(std::string filename, std::string type);
 
 std::string getWfnType(std::ifstream& in);
 
