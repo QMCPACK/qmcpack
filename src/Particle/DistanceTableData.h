@@ -268,9 +268,6 @@ struct DistanceTableData
   ///evaluate the temporary pair relations
   virtual void move(const ParticleSet& P, const PosType& rnew) = 0;
 
-  ///evaluate the distance tables with a sphere move
-  virtual void moveOnSphere(const ParticleSet& P, const PosType& rnew) = 0;
-
   ///update the distance table by the pair relations
   virtual void update(IndexType jat) = 0;
 

@@ -161,7 +161,7 @@ bool ParticleSetPool::put(xmlNodePtr cur)
     if (SimulationCell)
     {
       app_log() << "  Initializing the lattice by the global supercell" << std::endl;
-      pTemp->Lattice.copy(*SimulationCell);
+      pTemp->Lattice = *SimulationCell;
     }
     myPool[id] = pTemp;
     XMLParticleParser pread(*pTemp, TileMatrix);
@@ -335,7 +335,7 @@ ParticleSet* ParticleSetPool::createESParticleSet(xmlNodePtr cur, const std::str
     //create the electrons
     qp = new MCWalkerConfiguration;
     qp->setName(target);
-    qp->Lattice.copy(ions->Lattice);
+    qp->Lattice = ions->Lattice;
 
     app_log() << "  Simulation cell radius = " << qp->Lattice.SimulationCellRadius << std::endl;
     app_log() << "  Wigner-Seitz cell radius = " << qp->Lattice.WignerSeitzRadius << std::endl;

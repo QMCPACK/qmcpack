@@ -219,7 +219,7 @@ DiracDeterminantWithBackflow::ValueType DiracDeterminantWithBackflow::ratio(Part
     }
     int jat    = *it - FirstIndex;
     PosType dr = BFTrans->newQP[*it] - BFTrans->QP.R[*it];
-    BFTrans->QP.makeMoveAndCheck(*it, dr);
+    BFTrans->QP.makeMove(*it, dr);
     Phi->evaluate(BFTrans->QP, *it, psiV);
     for (int orb = 0; orb < psiV.size(); orb++)
       psiM_temp(orb, jat) = psiV[orb];
@@ -297,7 +297,7 @@ DiracDeterminantWithBackflow::ValueType DiracDeterminantWithBackflow::ratioGrad(
     }
     int jat    = *it - FirstIndex;
     PosType dr = BFTrans->newQP[*it] - BFTrans->QP.R[*it];
-    BFTrans->QP.makeMoveAndCheck(*it, dr);
+    BFTrans->QP.makeMove(*it, dr);
     Phi->evaluate(BFTrans->QP, *it, psiV, dpsiV, d2psiV);
     for (int orb = 0; orb < psiV.size(); orb++)
       psiM_temp(orb, jat) = psiV[orb];

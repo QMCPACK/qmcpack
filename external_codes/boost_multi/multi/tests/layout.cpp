@@ -1,12 +1,12 @@
 #ifdef COMPILATION_INSTRUCTIONS
-$CXX -O3 -std=c++14 -Wall -Wextra -Wpedantic -Wfatal-errors $0 -o $0.x && time $0.x $@ && rm -f $0.x; exit
+$CXX -O3 -std=c++14 -Wall -Wextra -Wpedantic -Wfatal-errors $0 -o $0.x && $0.x $@ && rm -f $0.x; exit
 #endif
 //  (C) Copyright Alfredo A. Correa 2018.
 #include "../array_ref.hpp"
 #include "../array.hpp"
 #include "../utility.hpp"
 
-#include<boost/multi_array.hpp>
+//#include<boost/multi_array.hpp>
 #include<iostream>
 #include<tuple>
 

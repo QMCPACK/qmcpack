@@ -49,7 +49,7 @@ TEST_CASE("Coulomb PBC A-A Ewald3D", "[hamiltonian]")
   ions.R[0][0] = 0.0;
   ions.R[0][1] = 0.0;
   ions.R[0][2] = 0.0;
-  ions.Lattice.copy(Lattice);
+  ions.Lattice = Lattice;
 
   SpeciesSet& ion_species           = ions.getSpeciesSet();
   int pIdx                          = ion_species.addSpecies("H");
@@ -57,7 +57,7 @@ TEST_CASE("Coulomb PBC A-A Ewald3D", "[hamiltonian]")
   int pMembersizeIdx                = ion_species.addAttribute("membersize");
   ion_species(pChargeIdx, pIdx)     = 1;
   ion_species(pMembersizeIdx, pIdx) = 1;
-  ions.Lattice.copy(Lattice);
+  ions.Lattice = Lattice;
   ions.createSK();
 
   LRCoulombSingleton::CoulombHandler = new EwaldHandler3D(ions);
@@ -99,7 +99,7 @@ TEST_CASE("Coulomb PBC A-A BCC H Ewald3D", "[hamiltonian]")
   ions.R[1][0] = 1.88972614;
   ions.R[1][1] = 1.88972614;
   ions.R[1][2] = 1.88972614;
-  ions.Lattice.copy(Lattice);
+  ions.Lattice = Lattice;
 
   SpeciesSet& ion_species           = ions.getSpeciesSet();
   int pIdx                          = ion_species.addSpecies("H");
@@ -107,7 +107,7 @@ TEST_CASE("Coulomb PBC A-A BCC H Ewald3D", "[hamiltonian]")
   int pMembersizeIdx                = ion_species.addAttribute("membersize");
   ion_species(pChargeIdx, pIdx)     = 1;
   ion_species(pMembersizeIdx, pIdx) = 2;
-  ions.Lattice.copy(Lattice);
+  ions.Lattice = Lattice;
   ions.createSK();
 
   LRCoulombSingleton::CoulombHandler = new EwaldHandler3D(ions);
@@ -139,7 +139,7 @@ TEST_CASE("Coulomb PBC A-A elec Ewald3D", "[hamiltonian]")
 
   ParticleSet elec;
 
-  elec.Lattice.copy(Lattice);
+  elec.Lattice = Lattice;
   elec.setName("elec");
   elec.create(1);
   elec.R[0][0] = 0.0;

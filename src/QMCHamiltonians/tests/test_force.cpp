@@ -189,7 +189,7 @@ TEST_CASE("Chiesa Force", "[hamiltonian]")
   tspecies(massIdx, upIdx)   = 1.0;
   tspecies(massIdx, downIdx) = 1.0;
 
-  elec.Lattice.copy(Lattice);
+  elec.Lattice = Lattice;
   elec.createSK();
 
   SpeciesSet& ion_species           = ions.getSpeciesSet();
@@ -198,7 +198,7 @@ TEST_CASE("Chiesa Force", "[hamiltonian]")
   int pMembersizeIdx                = ion_species.addAttribute("membersize");
   ion_species(pChargeIdx, pIdx)     = 1;
   ion_species(pMembersizeIdx, pIdx) = 1;
-  ions.Lattice.copy(Lattice);
+  ions.Lattice = Lattice;
   ions.createSK();
 
   ions.resetGroups();
@@ -279,7 +279,7 @@ TEST_CASE("Ceperley Force", "[hamiltonian]")
   tspecies(massIdx, upIdx)   = 1.0;
   tspecies(massIdx, downIdx) = 1.0;
 
-  //elec.Lattice.copy(Lattice);
+  //elec.Lattice = Lattice;
   //elec.createSK();
 
   SpeciesSet& ion_species           = ions.getSpeciesSet();
@@ -288,7 +288,7 @@ TEST_CASE("Ceperley Force", "[hamiltonian]")
   int pMembersizeIdx                = ion_species.addAttribute("membersize");
   ion_species(pChargeIdx, pIdx)     = 1;
   ion_species(pMembersizeIdx, pIdx) = 1;
-  //ions.Lattice.copy(Lattice);
+  //ions.Lattice = Lattice;
   //ions.createSK();
   ions.resetGroups();
 

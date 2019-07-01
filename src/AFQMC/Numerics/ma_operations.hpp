@@ -40,11 +40,10 @@ using qmcplusplus::afqmc::to_address;
 template<class MultiArray2D, typename = typename std::enable_if<(MultiArray2D::dimensionality > 1)>::type>
 bool is_hermitian(MultiArray2D const& A){
 	using ma::conj;
-	using ma::conj;
 	if(A.size(0) != A.size(1)) return false;
 	for(int i = 0; i != A.size(0); ++i)
 		for(int j = i + 1; j != A.size(1); ++j)
-			if( std::abs(A[i][j] - conj(A[j][i])) > 1e-12 ) return false;
+			if( std::abs(A[i][j] - ma::conj(A[j][i])) > 1e-12 ) return false;
 	return true;
 }
 
