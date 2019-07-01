@@ -21,12 +21,12 @@
 #include "OhmmsPETE/TinyVector.h"
 #include "OhmmsData/OhmmsElementBase.h"
 
-class LCAOParser : public QMCGaussianParserBase, public OhmmsAsciiParser
+class LCAOHDFParser : public QMCGaussianParserBase, public OhmmsAsciiParser
 {
 public:
-  LCAOParser();
+  LCAOHDFParser();
 
-  LCAOParser(int argc, char** argv);
+  LCAOHDFParser(int argc, char** argv);
 
   std::streampos pivot_begin;
   std::vector<std::string> tags;
