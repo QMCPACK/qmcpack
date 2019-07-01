@@ -35,11 +35,7 @@ bool LatticeParser::put(xmlNodePtr cur)
   int nsh       = 0; //for backwards compatibility w/ odd heg initialization style
   int pol       = 0;
   typedef ParticleLayout_t::SingleParticleIndex_t SingleParticleIndex_t;
-  std::vector<SingleParticleIndex_t> grid(DIM, SingleParticleIndex_t(1));
   TinyVector<std::string, DIM> bconds("p");
-  std::size_t finegrid = ParticleLayout_t::SPATIAL_GRID;
-  std::size_t ompgrid  = ParticleLayout_t::OMP_GRID;
-  std::size_t mpigrid  = ParticleLayout_t::MPI_GRID;
 
   Tensor<OHMMS_PRECISION_FULL, DIM> lattice_in;
   bool lattice_defined = false;
@@ -71,18 +67,6 @@ bool LatticeParser::put(xmlNodePtr cur)
         putContent(lattice_in, cur);
         lattice_defined = true;
         //putContent(ref_.R,cur);
-      }
-      else if (aname == "grid")
-      {
-        putContent(grid[finegrid], cur);
-      }
-      else if (aname == "ompgrid")
-      {
-        putContent(ref_.Grid[ompgrid], cur);
-      }
-      else if (aname == "mpigrid")
-      {
-        putContent(ref_.Grid[mpigrid], cur);
       }
       else if (aname == "bconds")
       {
@@ -147,19 +131,10 @@ bool LatticeParser::put(xmlNodePtr cur)
     }
   }
   else
-  {
     if (boxsum == 0)
-    {
       app_log() << "  Lattice is not specified for the Open BC. Add a huge box." << std::endl;
-      lattice_in = 0;
-      for (int idir = 0; idir < DIM; idir++)
-        lattice_in(idir, idir) = 1e5;
-    }
     else
-    {
       APP_ABORT(" LatticeParser::put \n   Mixed boundary is supported only when a lattice is specified!");
-    }
-  }
   //special heg processing
   if (rs > 0.0)
   {
@@ -197,9 +172,11 @@ bool LatticeParser::put(xmlNodePtr cur)
     a0 = 1.0;
   }
 
-  lattice_in *= a0;
-  ref_.set(lattice_in);
-  ref_.makeGrid(grid);
+  if(lattice_defined)
+  {
+    lattice_in *= a0;
+    ref_.set(lattice_in);
+  }
   if (ref_.SuperCellEnum == SUPERCELL_OPEN)
     ref_.WignerSeitzRadius = ref_.SimulationCellRadius;
   std::string unit_name = "bohr";
@@ -227,15 +204,6 @@ bool LatticeXMLWriter::get(std::ostream& os) const
       os << "n ";
   }
   os << "</parameter>" << std::endl;
-  ///only write the spatial grid but may choose to write mpi and openmp
-  std::size_t finegrid = ParticleLayout_t::SPATIAL_GRID;
-  os << "<parameter name=\"grid\">";
-  for (int idir = 0; idir < DIM; idir++)
-  {
-    os << ref_.getGrid(finegrid)->size(idir) << " ";
-  }
-  os << "</parameter>" << std::endl;
-  //os << "<parameter name=\"omega\">" << ref_.ABC << "</parameter>" << std::endl;
   os << "</unitcell>" << std::endl;
   return true;
 }

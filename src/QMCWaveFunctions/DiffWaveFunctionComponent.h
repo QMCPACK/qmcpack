@@ -81,17 +81,22 @@ struct DiffWaveFunctionComponent
    */
   virtual void evaluateDerivatives(ParticleSet& P,
                                    const opt_variables_type& optvars,
-                                   std::vector<RealType>& dlogpsi,
-                                   std::vector<RealType>& dhpsioverpsi) = 0;
+                                   std::vector<ValueType>& dlogpsi,
+                                   std::vector<ValueType>& dhpsioverpsi)=0;
 
   virtual void evaluateDerivRatios(ParticleSet& VP, const opt_variables_type& optvars, Matrix<ValueType>& dratios);
 
-  virtual void multiplyDerivsByOrbR(std::vector<RealType>& dlogpsi)
+  virtual void multiplyDerivsByOrbR(std::vector<ValueType>& dlogpsi)
   {
     for (int i = 0; i < refOrbital.size(); ++i)
     {
+      #ifdef QMC_COMPLEX
+      std::complex<RealType> eit(std::cos(refOrbital[i]->PhaseValue), std::sin(refOrbital[i]->PhaseValue));
+      ValueType myrat = std::exp(refOrbital[i]->LogValue) * eit;
+      #else
       RealType myrat = std::exp(refOrbital[i]->LogValue) * std::cos(refOrbital[i]->PhaseValue);
-      for (int j = 0; j < refOrbital[i]->myVars.size(); j++)
+      #endif
+      for(int j=0; j<refOrbital[i]->myVars.size(); j++)
       {
         int loc = refOrbital[j]->myVars.where(j);
         dlogpsi[loc] *= myrat;

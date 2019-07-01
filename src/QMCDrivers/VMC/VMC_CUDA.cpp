@@ -135,8 +135,7 @@ void VMCcuda::advanceWalkers()
         for (int iw = 0; iw < nw; ++iw)
           newpos[iw] = W.Rnew_host[iw + k * nw];
         std::vector<bool> acc(nw, true);
-        if (W.UseBoundBox)
-          checkBounds(newpos, acc);
+        checkBounds(newpos, acc);
 #ifdef SPLIT_SPLINE_DEBUG
         if (gpu::rank == 1)
           std::cerr << "iat = " << iat << "\n";
@@ -375,8 +374,7 @@ void VMCcuda::advanceWalkersWithDrift()
       update_now = W.update_now(iat);
       Psi.calcRatio(W, iat, ratios, newG, newL);
       accepted.clear();
-      if (W.UseBoundBox)
-        checkBounds(newpos, acc);
+      checkBounds(newpos, acc);
       if (kDelay)
         Psi.det_lookahead(W, ratios, newG, newL, iat, k, W.getkblocksize(), nw);
       std::vector<RealType> logGf_v(nw);

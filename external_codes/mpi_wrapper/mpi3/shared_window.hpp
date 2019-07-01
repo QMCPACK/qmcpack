@@ -278,14 +278,20 @@ template<class T = void> struct allocator{
 	array_ptr<T> allocate(size_type n, const void* /*hint*/ = 0){
 		array_ptr<T> ret = 0;
 		if(n == 0){
-			ret.wSP_ = std::make_shared<shared_window<T>>(
-				comm_.make_shared_window<T>(0)
-			);
+			//ret.wSP_ = std::make_shared<shared_window<T>>(
+			//	comm_.make_shared_window<T>(0)
+			//);
+                        ret.wSP_.reset(new shared_window<T>{
+                                comm_.make_shared_window<T>(comm_.root()?n:0)
+                        });
 			return ret;
 		}
-		ret.wSP_ = std::make_shared<shared_window<T>>(
-			comm_.make_shared_window<T>(comm_.root()?n:0)
-		);
+		//ret.wSP_ = std::make_shared<shared_window<T>>(
+		//	comm_.make_shared_window<T>(comm_.root()?n:0)
+		//);
+                ret.wSP_.reset(new shared_window<T>{
+                        comm_.make_shared_window<T>(comm_.root()?n:0)
+                        });
 		return ret;
 	}
 	void deallocate(array_ptr<T> ptr, size_type){ptr.wSP_.reset();}

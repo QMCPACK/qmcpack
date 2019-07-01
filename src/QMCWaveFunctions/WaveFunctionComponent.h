@@ -343,11 +343,22 @@ struct WaveFunctionComponent : public QMCTraits
    */
   virtual RealType KECorrection();
 
+  /** Compute derivatives of the wavefunction with respect to the optimizable
+   *  parameters.
+   *  @param P particle set
+   *  @param optvars optimizable parameters
+   *  @param dlogpsi array of derivatives of the log of the wavefunction
+   *  @param dhpsioverpsi array of derivatives of the Laplacian of the wavefunction divided by the wavefunction.
+   *          Note that this does not use the Laplacian of the log of the wavefunction, as in evaluateLog.
+   *          Also the factor of -1/2 from the kinetic energy must be included here.  The 1/m
+   *          factor is applied in TrialWaveFunction.
+   */
   virtual void evaluateDerivatives(ParticleSet& P,
                                    const opt_variables_type& optvars,
-                                   std::vector<RealType>& dlogpsi,
-                                   std::vector<RealType>& dhpsioverpsi);
-  virtual void multiplyDerivsByOrbR(std::vector<RealType>& dlogpsi)
+                                   std::vector<ValueType>& dlogpsi,
+                                   std::vector<ValueType>& dhpsioverpsi);
+
+  virtual void multiplyDerivsByOrbR(std::vector<ValueType>& dlogpsi)
   {
     RealType myrat = std::exp(LogValue) * std::cos(PhaseValue);
     for (int j = 0; j < myVars.size(); j++)
@@ -362,7 +373,8 @@ struct WaveFunctionComponent : public QMCTraits
       performed with the passed-in G_in gradient vector. This object is then
       returned as dgradlogpsi.
    */
-  virtual void evaluateGradDerivatives(const ParticleSet::ParticleGradient_t& G_in, std::vector<RealType>& dgradlogpsi)
+
+  virtual void evaluateGradDerivatives(const ParticleSet::ParticleGradient_t& G_in, std::vector<ValueType>& dgradlogpsi)
   {
     APP_ABORT("Need specialization of WaveFunctionComponent::evaluateGradDerivatives in " + ClassName + " class.\n");
   }

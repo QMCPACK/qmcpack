@@ -35,6 +35,7 @@ from generic import obj
 from developer import unavailable
 from xmlreader import XMLreader
 from plotting import *
+from physical_system import ghost_atoms
 #QmcpackAnalyzer classes imports
 from qmcpack_analyzer_base import QAobject,QAanalyzer,QAanalyzerCollection
 from qmcpack_property_analyzers \
@@ -211,6 +212,11 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
         if 'analyze' in kwargs:
             analyze=kwargs['analyze']
             del kwargs['analyze']
+        #end if
+
+        if 'ghost_atoms' in kwargs:
+            ghosts = kwargs.pop('ghost_atoms')
+            ghost_atoms(*ghosts)
         #end if
 
         if isinstance(arg0,Simulation):

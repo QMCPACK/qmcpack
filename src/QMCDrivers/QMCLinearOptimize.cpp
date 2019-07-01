@@ -16,7 +16,6 @@
 
 #include "QMCDrivers/QMCLinearOptimize.h"
 #include "Particle/HDFWalkerIO.h"
-#include "Particle/DistanceTable.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Message/CommOperators.h"
 //#if defined(ENABLE_OPENMP)
@@ -166,7 +165,12 @@ void QMCLinearOptimize::finish()
   MyCounter++;
   app_log() << "  Execution time = " << std::setprecision(4) << t1.elapsed() << std::endl;
   app_log() << "  </log>" << std::endl;
+
+  if(optTarget->reportH5)
+    optTarget->reportParametersH5();
   optTarget->reportParameters();
+
+  
   int nw_removed = W.getActiveWalkers() - NumOfVMCWalkers;
   app_log() << "   Restore the number of walkers to " << NumOfVMCWalkers << ", removing " << nw_removed << " walkers."
             << std::endl;

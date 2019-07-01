@@ -144,15 +144,9 @@ template<class T = void> struct allocator_shm_ptr_with_raw_ptr_dispatch{
 
         shm_ptr_with_raw_ptr_dispatch<T> allocate(size_type n, const void* /*hint*/ = 0){
                 shm_ptr_with_raw_ptr_dispatch<T> ret = 0;
-                if(n == 0){
-                        ret.wSP_ = std::make_shared<mpi3::shared_window<T>>(
-                                comm_.make_shared_window<T>(0)
-                        );
-                        return ret;
-                }
-                ret.wSP_ = std::make_shared<mpi3::shared_window<T>>(
+                ret.wSP_.reset(new mpi3::shared_window<T>{
                         comm_.make_shared_window<T>(comm_.root()?n:0)
-                );
+                });
                 return ret;
         }
         void deallocate(shm_ptr_with_raw_ptr_dispatch<T> ptr, size_type){ptr.wSP_.reset();}

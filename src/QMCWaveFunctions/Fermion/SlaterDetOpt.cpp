@@ -833,8 +833,8 @@ void SlaterDetOpt::add_grad_derivatives(const int nl,
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 void SlaterDetOpt::evaluateDerivatives(ParticleSet& P,
                                        const opt_variables_type& optvars,
-                                       std::vector<RealType>& dlogpsi,
-                                       std::vector<RealType>& dhpsioverpsi)
+                                       std::vector<ValueType>& dlogpsi,
+                                       std::vector<ValueType>& dhpsioverpsi)
 {
   // Evaluate orbital data for all orbitals (not just those in this determinant).
   // Prepares:  m_orb_val_mat_all, m_orb_der_mat_all, m_orb_lap_mat_all, m_orb_val_mat, m_orb_der_mat, m_orb_lap_mat, and m_orb_inv_mat
@@ -1042,8 +1042,8 @@ void SlaterDetOpt::evaluateDerivatives(ParticleSet& P,
   {
     const int p = m_act_rot_inds.at(i).first;
     const int q = m_act_rot_inds.at(i).second;
-    dlogpsi.at(m_first_var_pos + i) += m_pder_mat.at(p + q * m_nlc) - m_pder_mat.at(q + p * m_nlc);
-    dhpsioverpsi.at(m_first_var_pos + i) += m_hder_mat.at(p + q * m_nlc) - m_hder_mat.at(q + p * m_nlc);
+    dlogpsi.at(m_first_var_pos + i) += ValueType( m_pder_mat.at(p + q * m_nlc) - m_pder_mat.at(q + p * m_nlc) );
+    dhpsioverpsi.at(m_first_var_pos + i) += ValueType( m_hder_mat.at(p + q * m_nlc) - m_hder_mat.at(q + p * m_nlc) );
     if (false)
     {
       std::vector<char> buff(1000, ' ');
@@ -1078,7 +1078,7 @@ void SlaterDetOpt::evaluateDerivatives(ParticleSet& P,
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 void SlaterDetOpt::evaluateGradDerivatives(const ParticleSet::ParticleGradient_t& G_in,
-                                           std::vector<RealType>& dgradlogpsi)
+                                           std::vector<ValueType>& dgradlogpsi)
 {
   // construct temporary Y matrix
   RealType* const Ymat = &m_work.at(0);
@@ -1167,7 +1167,7 @@ void SlaterDetOpt::evaluateGradDerivatives(const ParticleSet::ParticleGradient_t
   {
     const int p = m_act_rot_inds.at(i).first;
     const int q = m_act_rot_inds.at(i).second;
-    dgradlogpsi.at(m_first_var_pos + i) += m_hder_mat.at(p + q * m_nlc) - m_hder_mat.at(q + p * m_nlc);
+    dgradlogpsi.at(m_first_var_pos + i) += ValueType( m_hder_mat.at(p + q * m_nlc) - m_hder_mat.at(q + p * m_nlc) );
   }
 
   // reset the internally stored derivatives to zero in preparation for the next sample

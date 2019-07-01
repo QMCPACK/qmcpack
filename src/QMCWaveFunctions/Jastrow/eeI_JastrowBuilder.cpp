@@ -15,7 +15,6 @@
 
 
 #include "Particle/DistanceTableData.h"
-#include "Particle/DistanceTable.h"
 #include "QMCWaveFunctions/Jastrow/eeI_JastrowBuilder.h"
 #include "QMCWaveFunctions/Jastrow/eeI_JastrowOrbital.h"
 #include "QMCWaveFunctions/Jastrow/JeeIOrbitalSoA.h"

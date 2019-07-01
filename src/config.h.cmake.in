@@ -95,12 +95,6 @@
 /* Define to 1 if complex wavefunctions are used */
 #cmakedefine QMC_COMPLEX @QMC_COMPLEX@
 
-/* Define if the code is specialized for orthorhombic supercell */
-#define OHMMS_ORTHO @OHMMS_ORTHO@
-
-/* Define the index of the walker iterator. NOT USED */
-#cmakedefine QMC_FASTWALKER @QMC_FASTWALKER@
-
 /* Define if sincos function exists */
 #cmakedefine HAVE_SINCOS @HAVE_SINCOS@
 

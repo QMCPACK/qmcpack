@@ -1,5 +1,5 @@
 #ifdef COMPILATION_INSTRUCTIONS
-${CXX} -O3 -std=c++14 -Wall -Wextra -Wpedantic `#-Wfatal-errors` $0 -o $0.x && time $0.x $@ && rm -f $0.x; exit
+$CXX -O3 -std=c++17 -Wall -Wextra -Wpedantic `#-Wfatal-errors` $0 -o $0.x && $0.x $@ && rm -f $0.x; exit
 #endif
 
 #include "../array_ref.hpp"
@@ -19,7 +19,7 @@ namespace multi = boost::multi;
 double f(){return 5.;}
 
 int main(){
-
+//	using multi::size;
 	{
 		double a[4][5] {
 			{ 0,  1,  2,  3,  4}, 
@@ -53,8 +53,8 @@ int main(){
 	assert( d2Dv.size() == std::size_t(num_elements(d2Dv_cref)) );
 	assert(d2Dv_cref[1][1] == 6);
 
-	assert( d2D_cref.data() == data(d2D_cref) );
-	assert( data(d2D_cref) == &d2D[0][0] );
+	assert( d2D_cref.data_elements() == data_elements(d2D_cref) );
+	assert( data_elements(d2D_cref) == &d2D[0][0] );
 	assert( d2D_cref.num_elements() == num_elements(d2D_cref) );
 	assert( num_elements(d2D_cref) == 4*5 );
 	assert( d2D_cref.size() == size(d2D_cref) );
@@ -67,8 +67,8 @@ int main(){
 	assert( std::get<1>(strides(d2D_cref)) == 1 );
 	assert( strides(d2D_cref) == d2D_cref.strides() );	
 	assert( std::get<0>(extensions(d2D_cref)) == extension(d2D_cref) );
-	assert( &data(d2D_cref)[2] == &d2D_cref[0][2] );
-	assert( &data(d2D_cref)[6] == &d2D_cref[1][1] );
+	assert( &data_elements(d2D_cref)[2] == &d2D_cref[0][2] );
+	assert( &data_elements(d2D_cref)[6] == &d2D_cref[1][1] );
 
 	assert( d2D_cref.begin() == begin(d2D_cref) );
 	assert( d2D_cref.end() == end(d2D_cref) );
@@ -89,11 +89,12 @@ int main(){
 			
 	{
 		auto ext = extensions(d2D_cref);
-		for(auto i : std::get<0>(ext)){
-			for(auto j : std::get<1>(ext)) cout << d2D_cref[i][j] << ' ';
-			cout << '\n';
+		using std::get;
+		for(auto i : get<0>(ext)){
+			for(auto j : get<1>(ext)) cout<< d2D_cref[i][j] <<' ';
+			cout<<'\n';
 		}
-		cout << '\n';
+		cout<<'\n';
 	}
 
 	auto const& d2D_cref_sliced = d2D_cref.sliced(1, 3);
@@ -111,7 +112,8 @@ int main(){
 		for(auto it2 = it1->begin()   ; it2 != it1->end()   ||!endl(cout); ++it2)
 			cout << *it2 << ' ';
 
-	multi::array_ref<double, 2, double const*> d2D_crefref(data(d2D_cref), extensions(d2D_cref));
+	multi::array_ref<double, 2, double const*> d2D_crefref(data_elements(d2D_cref), extensions(d2D_cref));
+	multi::array_cref<double, 2> d2D_crefcref(data_elements(d2D_cref), extensions(d2D_cref));
 
 	using std::for_each;
 	using std::begin;
@@ -164,6 +166,7 @@ int main(){
 		{10, 11, 12, 13, 14}, 
 		{15, 16, 17, 18, 19}
 	};
+
 	multi::array_cref<double, 2> d2D_prime_cref(&d2D_prime[0][0], {4, 5});
 	assert( d2D_cref == d2D_prime_cref ); // deep comparison
 	assert( d2D_cref[1][2] == d2D_prime_cref[1][2] );
@@ -173,6 +176,8 @@ int main(){
 	assert( not(d2D_cref > d2D_cref) );
 	assert( d2D_cref <= d2D_cref );
 	assert( d2D_cref >= d2D_cref );
+
+	assert(( d2D_prime_cref[std::array<int, 2>{2, 3}] == 13 ));
 
 	double const d2D_null[4][5] {
 		{ 0,  0,  0,  0,  0}, 
