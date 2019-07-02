@@ -745,6 +745,11 @@ std::cout<<"\n";
 
     bool fast_ph_energy() const { return true; }
 
+    boost::multi::array<ComplexType,2> getHSPotentials()
+    {
+      return boost::multi::array<ComplexType,2>{};
+    }
+
   protected:
 
     // Guu[nu][nwalk]

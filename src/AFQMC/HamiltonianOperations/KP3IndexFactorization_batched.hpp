@@ -1321,6 +1321,11 @@ class KP3IndexFactorization_batched
 
     bool fast_ph_energy() const { return false; }
 
+    boost::multi::array<ComplexType,2> getHSPotentials()
+    {
+      return boost::multi::array<ComplexType,2>{};
+    }
+
   private:
 
     int nocc_max;
