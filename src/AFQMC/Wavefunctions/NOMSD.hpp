@@ -30,6 +30,7 @@
 #include "AFQMC/Walkers/WalkerConfig.hpp"
 
 #include "AFQMC/HamiltonianOperations/HamiltonianOperations.hpp"
+#include "AFQMC/Hamiltonians/Hamiltonian.hpp"
 #include "AFQMC/SlaterDeterminantOperations/SlaterDetOperations.hpp"
 
 
@@ -361,6 +362,7 @@ class NOMSD: public AFQMCInfo
       MixedDensityMatrix(wset,std::forward<MatG>(G),ovlp,compact_G_for_vbias,transposed_G_for_vbias_);
     }
 
+
     /*
      * Calculates the overlaps of all walkers in the set. Returns values in arrays. 
      */
@@ -465,6 +467,8 @@ class NOMSD: public AFQMCInfo
         copy_n(RefOrbMats_[i].origin()+n0,n1-n0,A_[i].origin()+n0);
       TG.TG_local().barrier();
     }
+
+    void computeVariationalEnergy(Hamiltonian& ham) {}
 
   protected: 
 

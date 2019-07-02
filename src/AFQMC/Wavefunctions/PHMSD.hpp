@@ -29,8 +29,10 @@
 #include "multi/array_ref.hpp"
 #include "AFQMC/Utilities/taskgroup.h"
 #include "AFQMC/Matrix/array_of_sequences.hpp"
+#include "AFQMC/Numerics/ma_lapack.hpp"
 
 #include "AFQMC/HamiltonianOperations/HamiltonianOperations.hpp"
+#include "AFQMC/Hamiltonians/Hamiltonian.hpp"
 #include "AFQMC/SlaterDeterminantOperations/SlaterDetOperations.hpp"
 
 #include "AFQMC/Wavefunctions/phmsd_helpers.hpp"
@@ -72,6 +74,7 @@ class PHMSD: public AFQMCInfo
   using const_pointer_shared = typename Allocator_shared::const_pointer;
 
   using CVector = boost::multi::array<ComplexType,1,Allocator>;
+  using RVector = boost::multi::array<RealType,1,Allocator>;
   using CMatrix = boost::multi::array<ComplexType,2,Allocator>;
   using CTensor = boost::multi::array<ComplexType,3,Allocator>;
   using CVector_ref = boost::multi::array_ref<ComplexType,1,pointer>;
@@ -168,12 +171,17 @@ class PHMSD: public AFQMCInfo
       excitedState = false;  
       std::string excited_file("");  
       int i_=-1,a_=-1;  
+      std::string recompute_ci("");
+      recomputeCI = false;
       ParameterSet m_param;
       m_param.add(excited_file,"excited","std::string");
       // generalize this to multi-particle excitations, how do I read a list of integers???
       m_param.add(i_,"i","int");
       m_param.add(a_,"a","int");
+      m_param.add(recompute_ci,"rediag","std::string");
       m_param.put(cur);
+      std::transform(recompute_ci.begin(),recompute_ci.end(),recompute_ci.begin(),(int (*)(int)) tolower);
+      if(recompute_ci=="yes" || recompute_ci=="true") recomputeCI=true;
 
       if(excited_file != "" && 
          i_ >= 0 &&
@@ -415,6 +423,56 @@ class PHMSD: public AFQMCInfo
       APP_ABORT(" Error: getReferencesForBackPropagation not implemented with PHMSD wavefunctions.\n"); 
     }
 
+    void computeVariationalEnergy(Hamiltonian& ham)
+    {
+      int ndets = abij.number_of_configurations();
+      CMatrix H({ndets,ndets});
+      ComplexType numer = ComplexType(0.0);
+      ComplexType denom = ComplexType(0.0);
+      using std::get;
+      auto cnfg_it = abij.configurations_begin();
+      for(int idet = 0; idet < ndets; idet++) {
+        std::vector<int> deti;
+        createDeterminant(idet, deti);
+        ComplexType cidet = get<2>(*(cnfg_it+idet));
+        for(int jdet = 0; jdet < ndets; jdet++) {
+          std::vector<int> detj;
+          ComplexType cjdet = get<2>(*(cnfg_it+jdet));
+          createDeterminant(jdet, detj);
+          int perm = 1;
+          std::vector<int> excit;
+          int nexcit = getExcitation(deti, detj, excit, perm);
+          // Compute <Di|H|Dj>
+          if(nexcit == 0) {
+            H[idet][jdet] = ComplexType(perm)*slaterCondon0(ham, detj);
+          } else if(nexcit == 1) {
+            H[idet][jdet] = ComplexType(perm)*slaterCondon1(ham, excit, detj);
+          } else if(nexcit == 2) {
+            H[idet][jdet] = ComplexType(perm)*slaterCondon2(ham, excit);
+          } else {
+            H[idet][jdet] = ComplexType(0.0);
+          }
+          numer += ma::conj(cidet)*cjdet*H[idet][jdet];
+        }
+        denom += ma::conj(cidet)*cidet;
+      }
+      app_log() << " Variational energy of trial wavefunction: " << numer / denom << "\n";
+      if(recomputeCI) {
+        app_log() << " Recomputing CI coefficients.\n";
+        std::pair<RVector,CMatrix> Sol = ma::symEig<RVector,CMatrix>(H);
+        using std::get;
+        app_log() << " Resetting CI coefficients. \n";
+        auto cnfg_it = abij.configurations_begin();
+        for(int idet=0; idet < ndets; idet++) {
+          ComplexType ci = Sol.second[idet][0];
+          abij.set_ci_coefficient(idet, ci);
+          ComplexType cidet = get<2>(*(cnfg_it+idet));
+        }
+        app_log() << " Recomputed variational energy of trial wavefunction: " << Sol.first[0] << "\n";
+      }
+
+    }
+
   protected: 
 
     TaskGroup_& TG;
@@ -500,6 +558,10 @@ class PHMSD: public AFQMCInfo
     std::pair<int,int> maxOccupExtendedMat;
     std::pair<int,int> numExcitations; 
 
+    // Controls whether we recalculate the CI coefficients of the trial wavefunction
+    // expansion.
+    bool recomputeCI;
+
     // buffers and work arrays, careful here!!!
     CVector ovlp, localGbuff, ovlp2;
     CMatrix eloc, eloc2, eloc3;
@@ -520,42 +582,6 @@ class PHMSD: public AFQMCInfo
      */
     template<class WlkSet, class Mat, class TVec>
     void Energy_distributed(const WlkSet& wset, Mat&& E, TVec&& Ov); 
-
-    int getExcitation(std::vector<int>& deti, std::vector<int>& detj, std::vector<int>& excit, int& perm)
-    {
-      std::vector<int> from_orb, to_orb;
-      // Work out which orbitals are excited from / to.
-      std::set_difference(detj.begin(), detj.end(),
-                          deti.begin(), deti.end(),
-                          std::inserter(from_orb, from_orb.begin()));
-      std::set_difference(deti.begin(), deti.end(),
-                          detj.begin(), detj.end(),
-                          std::inserter(to_orb, to_orb.begin()));
-      int nexcit = from_orb.size();
-      if(nexcit <= 2) {
-        for(int i = 0; i < from_orb.size(); i++)
-          excit.push_back(from_orb[i]);
-        for(int i = 0; i < to_orb.size(); i++)
-          excit.push_back(to_orb[i]);
-        int nperm = 0;
-        int nmove = 0;
-        for(auto o : from_orb) {
-          auto it = std::find(detj.begin(), detj.end(), o);
-          int loc = std::distance(detj.begin(), it);
-          nperm += detj.size() - loc - 1 + nmove;
-          nmove += 1;
-        }
-        nmove = 0;
-        for(auto o : to_orb) {
-          auto it = std::find(deti.begin(), deti.end(), o);
-          int loc = std::distance(deti.begin(), it);
-          nperm += deti.size() - loc - 1 + nmove;
-          nmove += 1;
-        }
-        perm = nperm%2 == 1 ? -1 : 1;
-      }
-      return nexcit;
-    }
 
     int dm_size(bool full) const {
       switch(walker_type) {
@@ -607,6 +633,137 @@ class PHMSD: public AFQMCInfo
           APP_ABORT(" Error: Unknown walker_type in dm_size. \n");
           return arr{-1,-1};
       }
+    }
+
+    /**
+     * Compute the excitation level between two determinants.
+     */
+    inline int getExcitation(std::vector<int>& deti, std::vector<int>& detj, std::vector<int>& excit, int& perm)
+    {
+      std::vector<int> from_orb, to_orb;
+      // Work out which orbitals are excited from / to.
+      std::set_difference(detj.begin(), detj.end(),
+                          deti.begin(), deti.end(),
+                          std::inserter(from_orb, from_orb.begin()));
+      std::set_difference(deti.begin(), deti.end(),
+                          detj.begin(), detj.end(),
+                          std::inserter(to_orb, to_orb.begin()));
+      int nexcit = from_orb.size();
+      if(nexcit <= 2) {
+        for(int i = 0; i < from_orb.size(); i++)
+          excit.push_back(from_orb[i]);
+        for(int i = 0; i < to_orb.size(); i++)
+          excit.push_back(to_orb[i]);
+        int nperm = 0;
+        int nmove = 0;
+        for(auto o : from_orb) {
+          auto it = std::find(detj.begin(), detj.end(), o);
+          int loc = std::distance(detj.begin(), it);
+          nperm += detj.size() - loc - 1 + nmove;
+          nmove += 1;
+        }
+        nmove = 0;
+        for(auto o : to_orb) {
+          auto it = std::find(deti.begin(), deti.end(), o);
+          int loc = std::distance(deti.begin(), it);
+          nperm += deti.size() - loc - 1 + nmove;
+          nmove += 1;
+        }
+        perm = nperm%2 == 1 ? -1 : 1;
+      }
+      return nexcit;
+    }
+
+    inline int decodeSpinOrbital(int spinOrb, int& spin)
+    {
+      spin = spinOrb%2==0 ? 0 : 1;
+      return spin ? (spinOrb-1) / 2 : spinOrb / 2;
+    }
+
+    inline ComplexType slaterCondon0(Hamiltonian& ham, std::vector<int>& det)
+    {
+      ComplexType oneBody = ComplexType(0.0), twoBody = ComplexType(0.0);
+      auto H1 = ham.getH1();
+      int spini, spinj;
+      for(auto i : det) {
+        int oi = decodeSpinOrbital(i, spini);
+        oneBody += H1[oi][oi];
+        for(auto j : det) {
+          int oj = decodeSpinOrbital(j, spinj);
+          twoBody += ham.H(oi,oj,oi,oj);
+          if(spini == spinj) twoBody -= ham.H(oi,oj,oj,oi);
+        }
+      }
+      return oneBody + 0.5 * twoBody;
+    }
+
+    inline ComplexType slaterCondon1(Hamiltonian& ham, std::vector<int>& excit, std::vector<int>& det)
+    {
+      int spini, spina;
+      int oi = decodeSpinOrbital(excit[0], spini);
+      int oa = decodeSpinOrbital(excit[1], spina);
+      auto H1 = ham.getH1();
+      ComplexType oneBody = H1[oi][oa];
+      ComplexType twoBody = ComplexType(0.0);
+      for(auto j : det) {
+        int spinj;
+        int oj = decodeSpinOrbital(j, spinj);
+        if(j != excit[0]) {
+          twoBody += ham.H(oi,oj,oa,oj);
+          if(spini == spinj)
+            twoBody -= ham.H(oi,oj,oj,oa);
+        }
+      }
+      return oneBody + twoBody;
+    }
+
+    inline ComplexType slaterCondon2(Hamiltonian& ham, std::vector<int>& excit)
+    {
+      ComplexType twoBody = ComplexType(0.0);
+      int spini, spinj, spina, spinb;
+      int oi = decodeSpinOrbital(excit[0], spini);
+      int oj = decodeSpinOrbital(excit[1], spinj);
+      int oa = decodeSpinOrbital(excit[2], spina);
+      int ob = decodeSpinOrbital(excit[3], spinb);
+      if(spini == spina)
+        twoBody = ham.H(oi,oj,oa,ob);
+      if(spini == spinb)
+        twoBody -= ham.H(oi,oj,ob,oa);
+      return twoBody;
+    }
+
+    inline void createDeterminant(int idet, std::vector<int>& det)
+    {
+      using std::get;
+      auto cit = abij.configurations_begin() + idet;
+      int alpha_ix = get<0>(*cit);
+      int beta_ix = get<1>(*cit);
+      auto ci = get<2>(*cit);
+      std::vector<int> occa(NAEA), occb(NAEB);
+      abij.get_configuration(0, alpha_ix, occa);
+      abij.get_configuration(1, beta_ix, occb);
+      for(auto i : occa)
+        det.push_back(2*i);
+      for(auto i : occb)
+        det.push_back(2*i+1);
+      std::sort(det.begin(), det.end());
+    }
+
+    ComplexType contractOneBody(std::vector<int>& det, std::vector<int>& excit, CMatrix_ref& HSPot)
+    {
+      ComplexType oneBody = ComplexType(0.0);
+      int spini, spina;
+      if(excit.size()==0) {
+        for(auto i : det) {
+          int oi = decodeSpinOrbital(i, spini);
+          oneBody += HSPot[oi][oi];
+        }
+      } else {
+        int oi = decodeSpinOrbital(excit[0], spini);
+        int oa = decodeSpinOrbital(excit[1], spina);
+        oneBody = HSPot[oi][oa];
+      }
+      return oneBody;
     }
 
 };
