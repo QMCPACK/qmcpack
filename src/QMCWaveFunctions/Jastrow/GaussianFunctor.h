@@ -71,6 +71,25 @@ public:
 
   GaussianFunctor(std::string fid) { id = fid; }
 
+  // constructor for voronoi region
+  GaussianFunctor(std::string fid, RealType alpha, PosType r, bool opt)
+  { 
+    id = fid;
+    // set opt flags
+    for(auto it = opt_A.begin(); it != opt_A.end(); ++it)
+      *it = opt;
+    for(auto it = opt_B.begin(); it != opt_B.end(); ++it)
+      *it = opt;
+    opt_C = opt;
+    // set A
+    A(0,0) = A(1,1) = A(2,2) = -alpha;
+    A(0,1) = A(1,0) = A(0,2) = A(2,0) = A(1,2) = A(2,1) = 0;
+    // set B
+    d_to_b(r, A, B);
+    // set C
+    k_to_c(0, A, r, C);
+  }
+
   void initialize()
   {
     // register and update optimizable variables to current values

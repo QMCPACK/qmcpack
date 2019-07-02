@@ -197,13 +197,13 @@ public:
   {
     // get the reference function
     OhmmsAttributeSet rAttrib;
-    Cref_id = "none";
+    Cref_id = "g0";
     rAttrib.add(Cref_id, "reference_id");
     rAttrib.put(cur);
     // loop through array, find where Cref is
     auto C_id_it  = std::find(C_id.begin(), C_id.end(), Cref_id);
     int ref_index = std::distance(C_id.begin(), C_id_it);
-    if (Cref_id == "none" || C_id_it == C_id.end())
+    if (C_id_it == C_id.end())
       APP_ABORT("NormalizedGaussianRegion::put: reference function not found:" +
                 (Cref_id == "none" ? " Cref not specified" : "\"" + Cref_id + "\""));
     // make a copy of the reference gaussian
@@ -212,9 +212,7 @@ public:
 
     // divide all gaussians by the reference
     for (auto it = C.begin(); it != C.end(); ++it)
-    {
       (*it)->divide_eq(Cref);
-    }
     initialize();
     return true;
   }

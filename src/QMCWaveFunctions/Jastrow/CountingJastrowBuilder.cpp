@@ -17,14 +17,25 @@
 
 namespace qmcplusplus
 {
-CountingJastrowBuilder::CountingJastrowBuilder(ParticleSet& target, TrialWaveFunction& psi)
-    : WaveFunctionComponentBuilder(target, psi)
+CountingJastrowBuilder::CountingJastrowBuilder(ParticleSet& target, TrialWaveFunction& psi, ParticleSet& source)
+    : WaveFunctionComponentBuilder(target, psi), SourcePtcl(&source)
 {
   ClassName = "CountingJastrowBuilder";
   NameOpt   = "0";
-  TypeOpt   = "unknown";
+  TypeOpt   = "Counting";
+  RegionOpt = "voronoi";
+  SourceOpt = SourcePtcl.getName();
+}
+
+CountingJastrowBuilder::CountingJastrowBuilder(ParticleSet& target, TrialWaveFunction& psi, ParticleSet& source)
+    : WaveFunctionComponentBuilder(target, psi), SourcePtcl(&source)
+{
+  ClassName = "CountingJastrowBuilder";
+  NameOpt   = "0";
+  TypeOpt   = "Counting";
   RegionOpt = "normalized_gaussian";
-  SourceOpt = targetPtcl.getName();
+  SourceOpt = "none";
+  SourcePtcl = NULL;
 }
 
 bool CountingJastrowBuilder::createCJ(xmlNodePtr cur)
@@ -36,7 +47,7 @@ bool CountingJastrowBuilder::createCJ(xmlNodePtr cur)
 
   SpeciesSet& species(targetPtcl.getSpeciesSet());
 
-  auto* C = new RegionType(targetPtcl);
+  auto* C = new RegionType(targetPtcl, );
 
   Matrix<RealType> F;
   std::vector<RealType> G;
@@ -55,29 +66,73 @@ bool CountingJastrowBuilder::createCJ(xmlNodePtr cur)
       // read in opt_C option
       OhmmsAttributeSet oAttrib;
       std::string opt = "true";
-      oAttrib.add(opt, "opt");
+      std::string type = RegionOpt;
+      oAttrib.add(opt,  "opt");
+      oAttrib.add(type, "type");
       oAttrib.put(cur);
+      opt_C = (opt == "true" || opt == "yes");
       // add functions
       xmlNodePtr cur2 = cur->xmlChildrenNode;
-      while (cur2 != NULL)
+      if(type == "normalized_gaussian")
       {
-        std::string cname2((const char*)cur2->name);
-        if (cname2 == "function")
+        while (cur2 != NULL)
         {
-          // read id
-          std::string fid;
-          OhmmsAttributeSet oAttrib2;
-          oAttrib2.add(fid, "id");
-          oAttrib2.put(cur2);
-          // get functor, add to function
-          FunctorType* func = new FunctorType(fid);
-          func->put(cur2);
-          C->addFunc(func, fid);
+          std::string cname2((const char*)cur2->name);
+          if (cname2 == "function")
+          {
+            // read id
+            std::string fid;
+            OhmmsAttributeSet oAttrib2;
+            oAttrib2.add(fid, "id");
+            oAttrib2.put(cur2);
+            // get functor, add to function
+            FunctorType* func = new FunctorType(fid);
+            func->put(cur2);
+            C->addFunc(func, fid);
+          }
+          cur2 = cur2->next;
         }
-        cur2 = cur2->next;
       }
-      // call RegionType->put
-      opt_C = (opt == "true" || opt == "yes");
+      else if (type == "voronoi")
+      {
+        RealType alpha = 1.0;
+        while (cur2 != NULL)
+        {
+          std::string cname2((const char*)cur2->name);
+          if (cname2 == "var")
+          {
+            // read id
+            std::string vname;
+            OhmmsAttributeSet oAttrib2;
+            oAttrib2.add(vname, "name");
+            oAttrib2.put(cur2);
+            if(vname == "alpha")
+            {
+              putContent(alpha, cur2);
+            }
+          }
+          cur2 = cur2->next;
+        }
+        // read in source
+        if(SourcePtcl == NULL)
+        {
+          // quit with error - need a valid source
+        }
+        int i = 0;
+        std::ostringstream os;
+        // add a function for each source particle
+        for(auto it = SourcePtcl->R.begin(); it != SourcePtcl->R.end(); ++it )
+        {
+          bool opt_g = opt_C && (i != 0);
+          os.str("");
+          os << "g" << i;
+          std::string fid = os.str();
+          FunctorType* func = new FunctorType(fid, alpha, *it, opt_g);
+          C->addFunc(func, fid);
+          ++i;
+        }
+      }
+      // read in the counting region
       C->put(cur);
     }
     if (cname == "var")
@@ -107,7 +162,7 @@ bool CountingJastrowBuilder::createCJ(xmlNodePtr cur)
           if (!(F_utri.size() == Fdim * (Fdim + 1) / 2))
           {
             std::ostringstream err;
-            err << "CountingJastrow::put: F cannot be the upper-triangular component of a square matrix: "
+            err << "CountingJastrow::put: F needs to be the upper-triangular component of a square matrix: "
                 << F_utri.size() << " != " << Fdim * (Fdim + 1) / 2 << std::endl;
             APP_ABORT(err.str());
           }
@@ -168,7 +223,6 @@ bool CountingJastrowBuilder::put(xmlNodePtr cur)
   {
     createCJ(cur);
   }
-  app_log() << "end CountingRegionOrbital::put" << std::endl;
 
   return true;
 }

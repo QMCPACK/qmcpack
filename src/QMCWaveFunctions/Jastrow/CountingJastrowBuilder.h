@@ -18,6 +18,10 @@ namespace qmcplusplus
 {
 struct CountingJastrowBuilder : public WaveFunctionComponentBuilder
 {
+public:
+  // voronoi constructor
+  CountingJastrowBuilder(ParticleSet& target, TrialWaveFunction& psi, ParticleSet& source);
+  // normalized gaussian constructor
   CountingJastrowBuilder(ParticleSet& target, TrialWaveFunction& psi);
   bool put(xmlNodePtr cur);
 
@@ -26,10 +30,10 @@ private:
   std::string NameOpt;
   ///jastrow/@type
   std::string TypeOpt;
-  ///jastrow/@source
-  std::string SourceOpt;
   ///jastrow/@region
   std::string RegionOpt;
+
+  ParticleSet* SourcePtcl;
 
   bool createCJ(xmlNodePtr cur);
 };
