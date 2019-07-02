@@ -229,10 +229,7 @@ struct SplineC2ROMP : public SplineAdoptorBase<ST, 3>
   ///number of complex bands
   int nComplexBands;
   ///multi bspline set
-  MultiBspline<ST, ALIGN, OffloadAllocator<ST>>* SplineInst;
-  ///expose the pointer to reuse the reader and only assigned with create_spline
-  ///also used as identifier of shallow copy
-  SplineType* MultiSpline;
+  std::shared_ptr<MultiBspline<ST, ALIGN, OffloadAllocator<ST>>> SplineInst;
 
   vContainer_type mKK;
   VectorSoaContainer<ST, 3> myKcart;
@@ -263,7 +260,7 @@ struct SplineC2ROMP : public SplineAdoptorBase<ST, 3>
   ///GGt data pointer
   const ST* master_GGt_ptr;
 
-  SplineC2ROMP() : Base(), nComplexBands(0), SplineInst(nullptr), MultiSpline(nullptr)
+  SplineC2ROMP() : Base(), nComplexBands(0)
   {
     this->is_complex   = true;
     this->is_soa_ready = true;
@@ -271,31 +268,12 @@ struct SplineC2ROMP : public SplineAdoptorBase<ST, 3>
     this->KeyWord      = "SplineC2ROMP";
   }
 
-  SplineC2ROMP(const SplineC2ROMP& a)
-      : SplineAdoptorBase<ST, 3>(a),
-        SplineInst(a.SplineInst),
-        MultiSpline(nullptr),
-        nComplexBands(a.nComplexBands),
-        mKK(a.mKK),
-        myKcart(a.myKcart),
-        master_mKK_ptr(a.master_mKK_ptr),
-        master_myKcart_ptr(a.master_myKcart_ptr),
-        master_PrimLattice_G_ptr(a.master_PrimLattice_G_ptr),
-        master_GGt_ptr(a.master_GGt_ptr)
-  {
-    const size_t n = a.myL.size();
-    myV.resize(n);
-    myG.resize(n);
-    myL.resize(n);
-    myH.resize(n);
-    mygH.resize(n);
-  }
-
   ~SplineC2ROMP()
   {
-    if (MultiSpline != nullptr)
+    if (SplineInst.use_count() == 1)
     {
-      delete SplineInst;
+      // clean up mapping by the last owner
+      const auto* MultiSpline =  SplineInst->spline_m;
       PRAGMA_OFFLOAD("omp target exit data map(delete:MultiSpline[0:1])")
       PRAGMA_OFFLOAD("omp target exit data map(delete:master_mKK_ptr[0:mKK.size()])")
       PRAGMA_OFFLOAD("omp target exit data map(delete:master_myKcart_ptr[0:myKcart.capacity()*3])")
@@ -315,7 +293,7 @@ struct SplineC2ROMP : public SplineAdoptorBase<ST, 3>
     mygH.resize(npad);
   }
 
-  void bcast_tables(Communicate* comm) { chunked_bcast(comm, MultiSpline); }
+  void bcast_tables(Communicate* comm) { chunked_bcast(comm, SplineInst->spline_m); }
 
   void gather_tables(Communicate* comm)
   {
@@ -328,16 +306,15 @@ struct SplineC2ROMP : public SplineAdoptorBase<ST, 3>
 
     for (size_t ib = 0; ib < offset.size(); ib++)
       offset[ib] = offset[ib] * 2;
-    gatherv(comm, MultiSpline, MultiSpline->z_stride, offset);
+    gatherv(comm, SplineInst->spline_m, SplineInst->spline_m->z_stride, offset);
   }
 
   template<typename GT, typename BCT>
   void create_spline(GT& xyz_g, BCT& xyz_bc)
   {
     resize_kpoints();
-    SplineInst = new MultiBspline<ST, ALIGN, OffloadAllocator<ST>>();
+    SplineInst = std::make_shared<MultiBspline<ST, ALIGN, OffloadAllocator<ST>>>();
     SplineInst->create(xyz_g, xyz_bc, myV.size());
-    MultiSpline = SplineInst->spline_m;
 
     app_log() << "MEMORY " << SplineInst->sizeInByte() / (1 << 20) << " MB allocated "
               << "for the coefficients in 3D spline orbital representation" << std::endl;
@@ -347,6 +324,7 @@ struct SplineC2ROMP : public SplineAdoptorBase<ST, 3>
   void finalizeConstruction()
   {
     // map the SplineInst->spline_m structure to GPU
+    auto* MultiSpline = SplineInst->spline_m;
     PRAGMA_OFFLOAD("omp target enter data map(alloc:MultiSpline[0:1])")
     auto* restrict coefs = MultiSpline->coefs;
     // attach pointers on the device to achieve deep copy
