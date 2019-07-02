@@ -25,8 +25,9 @@ namespace qmcplusplus
  * This class contains a pointer to a C object, copy and assign of this class is forbidden.
  */
 template<typename T>
-struct MultiBspline1D
+class MultiBspline1D
 {
+private:
   ///define the einsplie object type
   using SplineType = typename bspline_traits<T, 1>::SplineType;
   ///define the real type
@@ -34,6 +35,7 @@ struct MultiBspline1D
   ///actual einspline multi-bspline object
   SplineType *spline_m;
 
+public:
   MultiBspline1D() : spline_m(nullptr) {}
   MultiBspline1D(const MultiBspline1D& in) = delete;
   MultiBspline1D& operator=(const MultiBspline1D& in) = delete;
@@ -43,6 +45,8 @@ struct MultiBspline1D
     if (spline_m != nullptr)
       einspline::destroy(spline_m);
   }
+
+  SplineType* getSplinePtr() { return spline_m; }
 
   /** create the einspline as used in the builder
    * @tparam GT grid type

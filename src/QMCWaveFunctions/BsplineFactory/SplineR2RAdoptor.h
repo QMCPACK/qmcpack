@@ -89,7 +89,7 @@ struct SplineR2RSoA : public SplineAdoptorBase<ST, 3>
     IsGamma = ((HalfG[0] == 0) && (HalfG[1] == 0) && (HalfG[2] == 0));
   }
 
-  void bcast_tables(Communicate* comm) { chunked_bcast(comm, SplineInst->spline_m); }
+  void bcast_tables(Communicate* comm) { chunked_bcast(comm, SplineInst->getSplinePtr()); }
 
   void gather_tables(Communicate* comm)
   {
@@ -99,7 +99,7 @@ struct SplineR2RSoA : public SplineAdoptorBase<ST, 3>
     const int Nbandgroups = comm->size();
     offset.resize(Nbandgroups + 1, 0);
     FairDivideLow(Nbands, Nbandgroups, offset);
-    gatherv(comm, SplineInst->spline_m, SplineInst->spline_m->z_stride, offset);
+    gatherv(comm, SplineInst->getSplinePtr(), SplineInst->getSplinePtr()->z_stride, offset);
   }
 
   template<typename GT, typename BCT>
@@ -124,7 +124,7 @@ struct SplineR2RSoA : public SplineAdoptorBase<ST, 3>
   {
     std::ostringstream o;
     o << "spline_" << SplineAdoptorBase<ST, D>::MyIndex;
-    einspline_engine<SplineType> bigtable(SplineInst->spline_m);
+    einspline_engine<SplineType> bigtable(SplineInst->getSplinePtr());
     return h5f.readEntry(bigtable, o.str().c_str()); //"spline_0");
   }
 
@@ -132,7 +132,7 @@ struct SplineR2RSoA : public SplineAdoptorBase<ST, 3>
   {
     std::ostringstream o;
     o << "spline_" << SplineAdoptorBase<ST, D>::MyIndex;
-    einspline_engine<SplineType> bigtable(SplineInst->spline_m);
+    einspline_engine<SplineType> bigtable(SplineInst->getSplinePtr());
     return h5f.writeEntry(bigtable, o.str().c_str()); //"spline_0");
   }
 
@@ -177,7 +177,7 @@ struct SplineR2RSoA : public SplineAdoptorBase<ST, 3>
       int first, last;
       FairDivideAligned(myV.size(), getAlignment<ST>(), omp_get_num_threads(), omp_get_thread_num(), first, last);
 
-      spline2::evaluate3d(SplineInst->spline_m, ru, myV, first, last);
+      spline2::evaluate3d(SplineInst->getSplinePtr(), ru, myV, first, last);
       assign_v(bc_sign, myV, psi, first, last);
     }
   }
@@ -207,7 +207,7 @@ struct SplineR2RSoA : public SplineAdoptorBase<ST, 3>
         PointType ru;
         int bc_sign = convertPos(r, ru);
 
-        spline2::evaluate3d(SplineInst->spline_m, ru, myV, first, last);
+        spline2::evaluate3d(SplineInst->getSplinePtr(), ru, myV, first, last);
         assign_v(bc_sign, myV, psi, first, last_real);
         ratios_private[iat][tid] = simd::dot(psi.data() + first, psiinv.data() + first, last_real - first);
       }
@@ -290,7 +290,7 @@ struct SplineR2RSoA : public SplineAdoptorBase<ST, 3>
       int first, last;
       FairDivideAligned(myV.size(), getAlignment<ST>(), omp_get_num_threads(), omp_get_thread_num(), first, last);
 
-      spline2::evaluate3d_vgh(SplineInst->spline_m, ru, myV, myG, myH, first, last);
+      spline2::evaluate3d_vgh(SplineInst->getSplinePtr(), ru, myV, myG, myH, first, last);
       assign_vgl(bc_sign, psi, dpsi, d2psi, first, last);
     }
   }
@@ -520,7 +520,7 @@ struct SplineR2RSoA : public SplineAdoptorBase<ST, 3>
       int first, last;
       FairDivideAligned(myV.size(), getAlignment<ST>(), omp_get_num_threads(), omp_get_thread_num(), first, last);
 
-      spline2::evaluate3d_vgh(SplineInst->spline_m, ru, myV, myG, myH, first, last);
+      spline2::evaluate3d_vgh(SplineInst->getSplinePtr(), ru, myV, myG, myH, first, last);
       assign_vgh(bc_sign, psi, dpsi, grad_grad_psi, first, last);
     }
   }
@@ -541,7 +541,7 @@ struct SplineR2RSoA : public SplineAdoptorBase<ST, 3>
       int first, last;
       FairDivideAligned(myV.size(), getAlignment<ST>(), omp_get_num_threads(), omp_get_thread_num(), first, last);
 
-      spline2::evaluate3d_vghgh(SplineInst->spline_m, ru, myV, myG, myH, mygH, first, last);
+      spline2::evaluate3d_vghgh(SplineInst->getSplinePtr(), ru, myV, myG, myH, mygH, first, last);
       assign_vghgh(bc_sign, psi, dpsi, grad_grad_psi, grad_grad_grad_psi, first, last);
     }
   }

@@ -273,7 +273,7 @@ struct SplineC2ROMP : public SplineAdoptorBase<ST, 3>
     if (SplineInst.use_count() == 1)
     {
       // clean up mapping by the last owner
-      const auto* MultiSpline =  SplineInst->spline_m;
+      const auto* MultiSpline =  SplineInst->getSplinePtr();
       PRAGMA_OFFLOAD("omp target exit data map(delete:MultiSpline[0:1])")
       PRAGMA_OFFLOAD("omp target exit data map(delete:master_mKK_ptr[0:mKK.size()])")
       PRAGMA_OFFLOAD("omp target exit data map(delete:master_myKcart_ptr[0:myKcart.capacity()*3])")
@@ -293,7 +293,7 @@ struct SplineC2ROMP : public SplineAdoptorBase<ST, 3>
     mygH.resize(npad);
   }
 
-  void bcast_tables(Communicate* comm) { chunked_bcast(comm, SplineInst->spline_m); }
+  void bcast_tables(Communicate* comm) { chunked_bcast(comm, SplineInst->getSplinePtr()); }
 
   void gather_tables(Communicate* comm)
   {
@@ -306,7 +306,7 @@ struct SplineC2ROMP : public SplineAdoptorBase<ST, 3>
 
     for (size_t ib = 0; ib < offset.size(); ib++)
       offset[ib] = offset[ib] * 2;
-    gatherv(comm, SplineInst->spline_m, SplineInst->spline_m->z_stride, offset);
+    gatherv(comm, SplineInst->getSplinePtr(), SplineInst->getSplinePtr()->z_stride, offset);
   }
 
   template<typename GT, typename BCT>
@@ -323,8 +323,8 @@ struct SplineC2ROMP : public SplineAdoptorBase<ST, 3>
   /// this routine can not be called from threaded region
   void finalizeConstruction()
   {
-    // map the SplineInst->spline_m structure to GPU
-    auto* MultiSpline = SplineInst->spline_m;
+    // map the SplineInst->getSplinePtr() structure to GPU
+    auto* MultiSpline = SplineInst->getSplinePtr();
     PRAGMA_OFFLOAD("omp target enter data map(alloc:MultiSpline[0:1])")
     auto* restrict coefs = MultiSpline->coefs;
     // attach pointers on the device to achieve deep copy
@@ -387,7 +387,7 @@ struct SplineC2ROMP : public SplineAdoptorBase<ST, 3>
   {
     std::ostringstream o;
     o << "spline_" << SplineAdoptorBase<ST, D>::MyIndex;
-    einspline_engine<SplineType> bigtable(SplineInst->spline_m);
+    einspline_engine<SplineType> bigtable(SplineInst->getSplinePtr());
     return h5f.readEntry(bigtable, o.str().c_str()); //"spline_0");
   }
 
@@ -395,7 +395,7 @@ struct SplineC2ROMP : public SplineAdoptorBase<ST, 3>
   {
     std::ostringstream o;
     o << "spline_" << SplineAdoptorBase<ST, D>::MyIndex;
-    einspline_engine<SplineType> bigtable(SplineInst->spline_m);
+    einspline_engine<SplineType> bigtable(SplineInst->getSplinePtr());
     return h5f.writeEntry(bigtable, o.str().c_str()); //"spline_0");
   }
 
@@ -449,7 +449,7 @@ struct SplineC2ROMP : public SplineAdoptorBase<ST, 3>
         int first, last;
         FairDivideAligned(myV.size(), getAlignment<ST>(), omp_get_num_threads(), omp_get_thread_num(), first, last);
 
-        spline2::evaluate3d(SplineInst->spline_m, ru, myV, first, last);
+        spline2::evaluate3d(SplineInst->getSplinePtr(), ru, myV, first, last);
         assign_v(r, myV, psi, first / 2, last / 2);
       }
     }
@@ -464,7 +464,7 @@ struct SplineC2ROMP : public SplineAdoptorBase<ST, 3>
 
       // Ye: need to extract sizes and pointers before entering target region
       const auto orb_size       = psi.size();
-      const auto* spline_ptr    = SplineInst->spline_m;
+      const auto* spline_ptr    = SplineInst->getSplinePtr();
       auto* offload_scratch_ptr = offload_scratch.data();
       auto* psi_ptr             = psi.data();
       const auto x = r[0], y = r[1], z = r[2];
@@ -531,7 +531,7 @@ struct SplineC2ROMP : public SplineAdoptorBase<ST, 3>
       results_scratch.resize(orb_size * nVP);
 
     // Ye: need to extract sizes and pointers before entering target region
-    const auto* spline_ptr         = SplineInst->spline_m;
+    const auto* spline_ptr         = SplineInst->getSplinePtr();
     auto* offload_scratch_ptr      = offload_scratch.data();
     auto* results_scratch_ptr      = results_scratch.data();
     const auto myKcart_padded_size = myKcart.capacity();
@@ -728,7 +728,7 @@ struct SplineC2ROMP : public SplineAdoptorBase<ST, 3>
       results_scratch.resize(orb_size * 5);
 
     // Ye: need to extract sizes and pointers before entering target region
-    const auto* spline_ptr    = SplineInst->spline_m;
+    const auto* spline_ptr    = SplineInst->getSplinePtr();
     auto* offload_scratch_ptr = offload_scratch.data();
     auto* results_scratch_ptr = results_scratch.data();
     const auto x = r[0], y = r[1], z = r[2];
@@ -1013,7 +1013,7 @@ struct SplineC2ROMP : public SplineAdoptorBase<ST, 3>
       int first, last;
       FairDivideAligned(myV.size(), getAlignment<ST>(), omp_get_num_threads(), omp_get_thread_num(), first, last);
 
-      spline2::evaluate3d_vgh(SplineInst->spline_m, ru, myV, myG, myH, first, last);
+      spline2::evaluate3d_vgh(SplineInst->getSplinePtr(), ru, myV, myG, myH, first, last);
       assign_vgh(r, psi, dpsi, grad_grad_psi, first / 2, last / 2);
     }
   }
@@ -1501,7 +1501,7 @@ struct SplineC2ROMP : public SplineAdoptorBase<ST, 3>
       int first, last;
       FairDivideAligned(myV.size(), getAlignment<ST>(), omp_get_num_threads(), omp_get_thread_num(), first, last);
 
-      spline2::evaluate3d_vghgh(SplineInst->spline_m, ru, myV, myG, myH, mygH, first, last);
+      spline2::evaluate3d_vghgh(SplineInst->getSplinePtr(), ru, myV, myG, myH, mygH, first, last);
       assign_vghgh(r, psi, dpsi, grad_grad_psi, grad_grad_grad_psi, first / 2, last / 2);
     }
   }

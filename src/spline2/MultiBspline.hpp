@@ -34,8 +34,9 @@ namespace qmcplusplus
  * This class contains a pointer to a C object, copy and assign of this class is forbidden.
  */
 template<typename T, size_t ALIGN = QMC_CLINE, typename ALLOC = Mallocator<T, ALIGN>>
-struct MultiBspline
+class MultiBspline
 {
+private:
   ///define the einsplie object type
   using SplineType = typename bspline_traits<T, 3>::SplineType;
   ///define the real type
@@ -45,6 +46,7 @@ struct MultiBspline
   ///use allocator
   BsplineAllocator<T, ALIGN, ALLOC> myAllocator;
 
+public:
   MultiBspline() : spline_m(nullptr) {}
   MultiBspline(const MultiBspline& in) = delete;
   MultiBspline& operator=(const MultiBspline& in) = delete;
@@ -54,6 +56,8 @@ struct MultiBspline
     if (spline_m != nullptr)
       myAllocator.destroy(spline_m);
   }
+
+  SplineType* getSplinePtr() { return spline_m; }
 
   /** create the einspline as used in the builder
    * @tparam GT grid type

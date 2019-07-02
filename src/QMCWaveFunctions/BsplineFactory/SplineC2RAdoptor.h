@@ -98,7 +98,7 @@ struct SplineC2RSoA : public SplineAdoptorBase<ST, 3>
     mygH.resize(npad);
   }
 
-  void bcast_tables(Communicate* comm) { chunked_bcast(comm, SplineInst->spline_m); }
+  void bcast_tables(Communicate* comm) { chunked_bcast(comm, SplineInst->getSplinePtr()); }
 
   void gather_tables(Communicate* comm)
   {
@@ -111,7 +111,7 @@ struct SplineC2RSoA : public SplineAdoptorBase<ST, 3>
 
     for (size_t ib = 0; ib < offset.size(); ib++)
       offset[ib] = offset[ib] * 2;
-    gatherv(comm, SplineInst->spline_m, SplineInst->spline_m->z_stride, offset);
+    gatherv(comm, SplineInst->getSplinePtr(), SplineInst->getSplinePtr()->z_stride, offset);
   }
 
   template<typename GT, typename BCT>
@@ -154,7 +154,7 @@ struct SplineC2RSoA : public SplineAdoptorBase<ST, 3>
   {
     std::ostringstream o;
     o << "spline_" << SplineAdoptorBase<ST, D>::MyIndex;
-    einspline_engine<SplineType> bigtable(SplineInst->spline_m);
+    einspline_engine<SplineType> bigtable(SplineInst->getSplinePtr());
     return h5f.readEntry(bigtable, o.str().c_str()); //"spline_0");
   }
 
@@ -162,7 +162,7 @@ struct SplineC2RSoA : public SplineAdoptorBase<ST, 3>
   {
     std::ostringstream o;
     o << "spline_" << SplineAdoptorBase<ST, D>::MyIndex;
-    einspline_engine<SplineType> bigtable(SplineInst->spline_m);
+    einspline_engine<SplineType> bigtable(SplineInst->getSplinePtr());
     return h5f.writeEntry(bigtable, o.str().c_str()); //"spline_0");
   }
 
@@ -214,7 +214,7 @@ struct SplineC2RSoA : public SplineAdoptorBase<ST, 3>
       int first, last;
       FairDivideAligned(myV.size(), getAlignment<ST>(), omp_get_num_threads(), omp_get_thread_num(), first, last);
 
-      spline2::evaluate3d(SplineInst->spline_m, ru, myV, first, last);
+      spline2::evaluate3d(SplineInst->getSplinePtr(), ru, myV, first, last);
       assign_v(r, myV, psi, first / 2, last / 2);
     }
   }
@@ -244,7 +244,7 @@ struct SplineC2RSoA : public SplineAdoptorBase<ST, 3>
         const PointType& r = VP.activeR(iat);
         PointType ru(PrimLattice.toUnit_floor(r));
 
-        spline2::evaluate3d(SplineInst->spline_m, ru, myV, first, last);
+        spline2::evaluate3d(SplineInst->getSplinePtr(), ru, myV, first, last);
         assign_v(r, myV, psi, first_cplx, last_cplx);
 
         const int first_real = first_cplx + std::min(nComplexBands, first_cplx);
@@ -536,7 +536,7 @@ struct SplineC2RSoA : public SplineAdoptorBase<ST, 3>
       int first, last;
       FairDivideAligned(myV.size(), getAlignment<ST>(), omp_get_num_threads(), omp_get_thread_num(), first, last);
 
-      spline2::evaluate3d_vgh(SplineInst->spline_m, ru, myV, myG, myH, first, last);
+      spline2::evaluate3d_vgh(SplineInst->getSplinePtr(), ru, myV, myG, myH, first, last);
       assign_vgl(r, psi, dpsi, d2psi, first / 2, last / 2);
     }
   }
@@ -770,7 +770,7 @@ struct SplineC2RSoA : public SplineAdoptorBase<ST, 3>
       int first, last;
       FairDivideAligned(myV.size(), getAlignment<ST>(), omp_get_num_threads(), omp_get_thread_num(), first, last);
 
-      spline2::evaluate3d_vgh(SplineInst->spline_m, ru, myV, myG, myH, first, last);
+      spline2::evaluate3d_vgh(SplineInst->getSplinePtr(), ru, myV, myG, myH, first, last);
       assign_vgh(r, psi, dpsi, grad_grad_psi, first / 2, last / 2);
     }
   }
@@ -1258,7 +1258,7 @@ struct SplineC2RSoA : public SplineAdoptorBase<ST, 3>
       int first, last;
       FairDivideAligned(myV.size(), getAlignment<ST>(), omp_get_num_threads(), omp_get_thread_num(), first, last);
 
-      spline2::evaluate3d_vghgh(SplineInst->spline_m, ru, myV, myG, myH, mygH, first, last);
+      spline2::evaluate3d_vghgh(SplineInst->getSplinePtr(), ru, myV, myG, myH, mygH, first, last);
       assign_vghgh(r, psi, dpsi, grad_grad_psi, grad_grad_grad_psi, first / 2, last / 2);
     }
   }
