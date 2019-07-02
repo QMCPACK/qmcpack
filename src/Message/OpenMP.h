@@ -30,17 +30,14 @@ inline omp_int_t omp_get_ancestor_thread_num(int level) { return 0; }
 inline bool omp_get_nested() { return false; }
 #endif
 
-/// get the number of threads at the next nested level
-inline int getNumThreadsNested()
+/// get the number of threads at the next parallel level
+inline int getNextLevelNumThreads()
 {
   int num_threads = 1;
-  if (omp_get_nested())
-  {
 #pragma omp parallel
-    {
+  {
 #pragma omp master
-      num_threads = omp_get_num_threads();
-    }
+    num_threads = omp_get_num_threads();
   }
   return num_threads;
 }
