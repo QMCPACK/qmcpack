@@ -212,7 +212,6 @@ compilers, etc.  The list of environment variables is given below:
 CXX              C++ compiler
 CC               C Compiler
 MKL_ROOT         Path for MKL
-LIBXML2_HOME     Path for libxml2
 HDF5_ROOT        Path for HDF5
 BOOST_ROOT       Path for Boost
 FFTW_HOME        Path for FFTW
@@ -299,8 +298,8 @@ MKL_ROOT            Path to MKL libraries (only necessary for non intel compiler
 \item libxml2 related
 %
 \begin{shade}
-Libxml2_INCLUDE_DIRS   Specify include directories for libxml2
-Libxml2_LIBRARY_DIRS   Specify library directories for libxml2
+LIBXML2_INCLUDE_DIR   Include directory for libxml2
+LIBXML2_LIBRARY       Libxml2 library
 \end{shade}
 
 \item HDF5 related
@@ -411,7 +410,6 @@ directory locations.
 \begin{shade}
 export CXX=icpc
 export CC=icc
-export LIBXML2_HOME=/usr/local
 export MKL_ROOT=/usr/local/intel/mkl/10.0.3.020
 export HDF5_ROOT=/usr/local
 export BOOST_ROOT=/usr/local/boost
@@ -459,8 +457,8 @@ rm -rf CMake*
 
 cmake                                                \
   -D CMAKE_BUILD_TYPE=Debug                         \
-  -D Libxml2_INCLUDE_DIRS=/usr/include/libxml2      \
-  -D Libxml2_LIBRARY_DIRS=/usr/lib/x86_64-linux-gnu \
+  -D LIBXML2_INCLUDE_DIR=/usr/include/libxml2      \
+  -D LIBXML2_LIBRARY=/usr/lib/x86_64-linux-gnu/libxml2.so \
   -D FFTW_INCLUDE_DIRS=/usr/include                 \
   -D FFTW_LIBRARY_DIRS=/usr/lib/x86_64-linux-gnu    \
   -D QMC_EXTRA_LIBS="-ldl ${ACML_HOME}/lib/libacml.a -lgfortran" \

@@ -75,7 +75,6 @@ make -j 8
 |   CXX          |    C++ compiler |
 |   CC           |    C Compiler |
 |   MKL_ROOT     |    Path for MKL |
-|   LIBXML2_HOME |    Path for libxml2 |
 |   HDF5_ROOT    |    Path for HDF5 |
 |   BOOST_ROOT   |    Path for Boost |
 |   FFTW_HOME    |    Path for FFTW |
@@ -143,8 +142,8 @@ make -j 8
   * libxml2 related
 
 ```
-     Libxml2_INCLUDE_DIRS  Specify include directories for libxml2
-     Libxml2_LIBRARY_DIRS  Specify library directories for libxml2
+     LIBXML2_INCLUDE_DIR Include directory for libxml2
+     LIBXML2_LIBRARY     Libxml2 library
 ```
 
 * HDF5 related
