@@ -9,7 +9,7 @@
 // File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 ////////////////////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-/**@file MultiBsplineEvalHelper.hpp
+/**@file MultiBsplineEval_helper.hpp
  *
  * header file for helper functions
  */
