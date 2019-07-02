@@ -61,8 +61,6 @@ DMCcuda::DMCcuda(MCWalkerConfiguration& w,
 
 bool DMCcuda::checkBounds(const PosType& newpos)
 {
-  if (!W.UseBoundBox)
-    return true;
   PosType red = W.Lattice.toUnit(newpos);
   return W.Lattice.isValid(red);
 }
@@ -178,8 +176,7 @@ bool DMCcuda::run()
         Psi.calcRatio(W, iat, ratios, newG, newL);
         accepted.clear();
         std::vector<bool> acc(nw, true);
-        if (W.UseBoundBox)
-          checkBounds(newpos, acc);
+        checkBounds(newpos, acc);
         if (kDelay)
           Psi.det_lookahead(W, ratios, newG, newL, iat, k, W.getkblocksize(), nw);
         std::vector<RealType> logGf_v(nw);

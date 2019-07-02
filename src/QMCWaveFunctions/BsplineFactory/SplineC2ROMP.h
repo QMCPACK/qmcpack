@@ -23,6 +23,7 @@
 #include <spline2/MultiBsplineEval_OMPoffload.hpp>
 #include "QMCWaveFunctions/BsplineFactory/SplineAdoptorBase.h"
 #include "OpenMP/OMPallocator.hpp"
+#include "Platforms/PinnedAllocator.h"
 #include "QMCWaveFunctions/BsplineFactory/contraction_helper.hpp"
 #include "Utilities/FairDivide.h"
 
@@ -37,7 +38,7 @@ inline void assign_v(ST x,
                      TT* restrict results_scratch_ptr,
                      size_t orb_size,
                      const ST* restrict offload_scratch_ptr,
-                     const ST* myKcart_ptr,
+                     const ST* restrict myKcart_ptr,
                      size_t myKcart_padded_size,
                      size_t first_spo,
                      int nComplexBands,
@@ -66,13 +67,7 @@ inline void assign_v(ST x,
     const size_t ji = jr + 1;
     //phase
     ST s, c, p = -(x * kx[j] + y * ky[j] + z * kz[j]);
-#ifdef __ibmxl__
-    // this is a workaround for IBM XL due to the lack of sincos in target region
-    s = std::sin(p);
-    c = std::cos(p);
-#else
     sincos(p, &s, &c);
-#endif
 
     const ST val_r        = val[jr];
     const ST val_i        = val[ji];
@@ -94,8 +89,8 @@ inline void assign_vgl(ST x,
                        size_t orb_size,
                        const ST* restrict offload_scratch_ptr,
                        size_t spline_padded_size,
-                       const ST* GGt_ptr,
-                       const ST* PrimLattice_G_ptr,
+                       const ST symGGt[6],
+                       const ST G[9],
                        const ST* myKcart_ptr,
                        size_t myKcart_padded_size,
                        size_t first_spo,
@@ -108,11 +103,9 @@ inline void assign_vgl(ST x,
     last = orb_size;
 
   constexpr ST two(2);
-  const ST g00 = PrimLattice_G_ptr[0], g01 = PrimLattice_G_ptr[1], g02 = PrimLattice_G_ptr[2],
-           g10 = PrimLattice_G_ptr[3], g11 = PrimLattice_G_ptr[4], g12 = PrimLattice_G_ptr[5],
-           g20 = PrimLattice_G_ptr[6], g21 = PrimLattice_G_ptr[7], g22 = PrimLattice_G_ptr[8];
-  const ST symGG[6] = {GGt_ptr[0], GGt_ptr[1] + GGt_ptr[3], GGt_ptr[2] + GGt_ptr[6],
-                       GGt_ptr[4], GGt_ptr[5] + GGt_ptr[7], GGt_ptr[8]};
+  const ST &g00 = G[0], &g01 = G[1], &g02 = G[2],
+           &g10 = G[3], &g11 = G[4], &g12 = G[5],
+           &g20 = G[6], &g21 = G[7], &g22 = G[8];
 
   const ST* restrict k0 = myKcart_ptr;
   const ST* restrict k1 = myKcart_ptr + myKcart_padded_size;
@@ -150,13 +143,7 @@ inline void assign_vgl(ST x,
 
     //phase
     ST s, c, p = -(x * kX + y * kY + z * kZ);
-#ifdef __ibmxl__
-    // this is a workaround for IBM XL due to the lack of sincos in target region
-    s = std::sin(p);
-    c = std::cos(p);
-#else
     sincos(p, &s, &c);
-#endif
 
     //dot(PrimLattice.G,myG[j])
     const ST dX_r = g00 * g0[jr] + g01 * g1[jr] + g02 * g2[jr];
@@ -175,8 +162,8 @@ inline void assign_vgl(ST x,
     const ST gY_i = dY_i - val_r * kY;
     const ST gZ_i = dZ_i - val_r * kZ;
 
-    const ST lcart_r = SymTrace(h00[jr], h01[jr], h02[jr], h11[jr], h12[jr], h22[jr], symGG);
-    const ST lcart_i = SymTrace(h00[ji], h01[ji], h02[ji], h11[ji], h12[ji], h22[ji], symGG);
+    const ST lcart_r = SymTrace(h00[jr], h01[jr], h02[jr], h11[jr], h12[jr], h22[jr], symGGt);
+    const ST lcart_i = SymTrace(h00[ji], h01[ji], h02[ji], h11[ji], h12[ji], h22[ji], symGGt);
     const ST lap_r   = lcart_r + mKK_ptr[j] * val_r + two * (kX * dX_i + kY * dY_i + kZ * dZ_i);
     const ST lap_i   = lcart_i + mKK_ptr[j] * val_i - two * (kX * dX_r + kY * dY_r + kZ * dZ_r);
 
@@ -213,8 +200,10 @@ template<typename ST, typename TT>
 struct SplineC2ROMP : public SplineAdoptorBase<ST, 3>
 {
   static const int ALIGN   = QMC_CLINE;
-  using OffloadAllocatorST = OMPallocator<ST, Mallocator<ST, QMC_CLINE>>;
-  using OffloadAllocatorTT = OMPallocator<TT, Mallocator<TT, QMC_CLINE>>;
+  template<typename DT>
+  using OffloadAllocator = OMPallocator<DT, aligned_allocator<DT>>;
+  template<typename DT>
+  using OffloadPinnedAllocator = OMPallocator<DT, PinnedAlignedAllocator<DT>>;
 
   static const int D     = 3;
   using Base             = SplineAdoptorBase<ST, 3>;
@@ -240,7 +229,7 @@ struct SplineC2ROMP : public SplineAdoptorBase<ST, 3>
   ///number of complex bands
   int nComplexBands;
   ///multi bspline set
-  MultiBspline<ST, ALIGN, OffloadAllocatorST>* SplineInst;
+  MultiBspline<ST, ALIGN, OffloadAllocator<ST>>* SplineInst;
   ///expose the pointer to reuse the reader and only assigned with create_spline
   ///also used as identifier of shallow copy
   SplineType* MultiSpline;
@@ -255,13 +244,13 @@ struct SplineC2ROMP : public SplineAdoptorBase<ST, 3>
   ghContainer_type mygH;
 
   ///thread private ratios for reduction when using nested threading, numVP x numThread
-  Matrix<TT, OffloadAllocatorTT> ratios_private;
+  Matrix<TT, OffloadPinnedAllocator<TT>> ratios_private;
   ///offload scratch space, dynamically resized to the maximal need
-  Vector<ST, OffloadAllocatorST> offload_scratch;
+  Vector<ST, OffloadPinnedAllocator<ST>> offload_scratch;
   ///result scratch space, dynamically resized to the maximal need
-  Vector<TT, OffloadAllocatorTT> results_scratch;
-  ///particle position scratch, dynamically resized to the maximal need
-  Vector<ST, OffloadAllocatorST> pos_scratch;
+  Vector<TT, OffloadPinnedAllocator<TT>> results_scratch;
+  ///psiinv and position scratch space, used to avoid allocation on the fly and faster transfer
+  Vector<TT, OffloadPinnedAllocator<TT>> psiinv_pos_copy;
   ///the following pointers are used for keep and access the data on device
   ///cloned objects copy the pointer by value without the need of mapping to the device
   ///Thus master_PrimLattice_G_ptr is different from PrimLattice.G.data() in cloned objects
@@ -346,7 +335,7 @@ struct SplineC2ROMP : public SplineAdoptorBase<ST, 3>
   void create_spline(GT& xyz_g, BCT& xyz_bc)
   {
     resize_kpoints();
-    SplineInst = new MultiBspline<ST, ALIGN, OffloadAllocatorST>();
+    SplineInst = new MultiBspline<ST, ALIGN, OffloadAllocator<ST>>();
     SplineInst->create(xyz_g, xyz_bc, myV.size());
     MultiSpline = SplineInst->spline_m;
 
@@ -504,8 +493,8 @@ struct SplineC2ROMP : public SplineAdoptorBase<ST, 3>
       const auto rux = ru[0], ruy = ru[1], ruz = ru[2];
       const auto myKcart_padded_size = myKcart.capacity();
       auto* myKcart_ptr              = master_myKcart_ptr;
-      size_t first_spo_local         = first_spo;
-      int nComplexBands_local        = nComplexBands;
+      const size_t first_spo_local   = first_spo;
+      const int nComplexBands_local  = nComplexBands;
 
       PRAGMA_OFFLOAD("omp target teams distribute num_teams(NumTeams) thread_limit(ChunkSizePerTeam) \
                   map(always, from: psi_ptr[0:orb_size])")
@@ -513,9 +502,14 @@ struct SplineC2ROMP : public SplineAdoptorBase<ST, 3>
       {
         const int first = ChunkSizePerTeam * team_id;
         const int last  = (first + ChunkSizePerTeam) > padded_size ? padded_size : first + ChunkSizePerTeam;
+
+        int ix, iy, iz;
+        ST a[4], b[4], c[4];
+        spline2::computeLocationAndFractional(spline_ptr, rux, ruy, ruz, ix, iy, iz, a, b, c);
+
         PRAGMA_OFFLOAD("omp parallel")
         {
-          spline2offload::evaluate_v_impl_v2(spline_ptr, rux, ruy, ruz, offload_scratch_ptr + first, first, last);
+          spline2offload::evaluate_v_impl_v2(spline_ptr, ix, iy, iz, a, b, c, offload_scratch_ptr + first, first, last);
           C2R::assign_v(x, y, z, psi_ptr, orb_size, offload_scratch_ptr, myKcart_ptr, myKcart_padded_size,
                         first_spo_local, nComplexBands_local, first / 2, last / 2);
         }
@@ -526,10 +520,15 @@ struct SplineC2ROMP : public SplineAdoptorBase<ST, 3>
   template<typename VV, typename RT>
   inline void evaluateDetRatios(const VirtualParticleSet& VP, VV& psi, const VV& psiinv, std::vector<RT>& ratios)
   {
-    // pack particle positions
     const int nVP = VP.getTotalNum();
-    if (pos_scratch.size() < nVP * 6)
-      pos_scratch.resize(nVP * 6);
+    if(psiinv_pos_copy.size() < psiinv.size() + nVP * 6)
+      psiinv_pos_copy.resize(psiinv.size() + nVP * 6);
+
+    // stage psiinv to psiinv_pos_copy
+    std::copy_n(psiinv.data(), psiinv.size(), psiinv_pos_copy.data());
+
+    // pack particle positions
+    auto* restrict pos_scratch = psiinv_pos_copy.data() + psiinv.size();
     for (int iat = 0; iat < nVP; ++iat)
     {
       const PointType& r = VP.activeR(iat);
@@ -549,24 +548,23 @@ struct SplineC2ROMP : public SplineAdoptorBase<ST, 3>
     const auto padded_size = myV.size();
     if (offload_scratch.size() < padded_size * nVP)
       offload_scratch.resize(padded_size * nVP);
-    const auto orb_size = psi.size();
+    const auto orb_size = psiinv.size();
     if (results_scratch.size() < orb_size * nVP)
       results_scratch.resize(orb_size * nVP);
 
     // Ye: need to extract sizes and pointers before entering target region
     const auto* spline_ptr         = SplineInst->spline_m;
-    auto* pos_scratch_ptr          = pos_scratch.data();
     auto* offload_scratch_ptr      = offload_scratch.data();
     auto* results_scratch_ptr      = results_scratch.data();
     const auto myKcart_padded_size = myKcart.capacity();
     auto* myKcart_ptr              = master_myKcart_ptr;
-    auto* psiinv_ptr               = psiinv.data();
+    auto* psiinv_ptr               = psiinv_pos_copy.data();
     auto* ratios_private_ptr       = ratios_private.data();
-    size_t first_spo_local         = first_spo;
-    int nComplexBands_local        = nComplexBands;
+    const size_t first_spo_local   = first_spo;
+    const int nComplexBands_local  = nComplexBands;
 
     PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(NumTeams*nVP) thread_limit(ChunkSizePerTeam) \
-                map(always, to: pos_scratch_ptr[0:nVP*6], psiinv_ptr[0:orb_size]) \
+                map(always, to: psiinv_ptr[0:psiinv_pos_copy.size()]) \
                 map(always, from: ratios_private_ptr[0:NumTeams*nVP])")
     for (int iat = 0; iat < nVP; iat++)
       for (int team_id = 0; team_id < NumTeams; team_id++)
@@ -579,13 +577,23 @@ struct SplineC2ROMP : public SplineAdoptorBase<ST, 3>
         const int last_real  = last_cplx + std::min(nComplexBands_local, last_cplx);
         auto* restrict offload_scratch_iat_ptr = offload_scratch_ptr + padded_size * iat;
         auto* restrict psi_iat_ptr             = results_scratch_ptr + orb_size * iat;
+        auto* restrict pos_scratch             = psiinv_ptr + orb_size;
+
+        int ix, iy, iz;
+        ST a[4], b[4], c[4];
+        spline2::computeLocationAndFractional(spline_ptr,
+                                              ST(pos_scratch[iat * 6 + 3]),
+                                              ST(pos_scratch[iat * 6 + 4]),
+                                              ST(pos_scratch[iat * 6 + 5]),
+                                              ix, iy, iz, a, b, c);
+
         TT sum(0);
         PRAGMA_OFFLOAD("omp parallel")
         {
-          spline2offload::evaluate_v_impl_v2(spline_ptr, pos_scratch_ptr[iat * 6 + 3], pos_scratch_ptr[iat * 6 + 4],
-                                             pos_scratch_ptr[iat * 6 + 5], offload_scratch_iat_ptr + first, first,
+          spline2offload::evaluate_v_impl_v2(spline_ptr, ix, iy, iz, a, b, c,
+                                             offload_scratch_iat_ptr + first, first,
                                              last);
-          C2R::assign_v(pos_scratch_ptr[iat * 6], pos_scratch_ptr[iat * 6 + 1], pos_scratch_ptr[iat * 6 + 2],
+          C2R::assign_v(ST(pos_scratch[iat * 6]), ST(pos_scratch[iat * 6 + 1]), ST(pos_scratch[iat * 6 + 2]),
                         psi_iat_ptr, orb_size, offload_scratch_iat_ptr, myKcart_ptr, myKcart_padded_size,
                         first_spo_local, nComplexBands_local, first / 2, last / 2);
 
@@ -752,8 +760,8 @@ struct SplineC2ROMP : public SplineAdoptorBase<ST, 3>
     auto* GGt_ptr                  = master_GGt_ptr;
     auto* PrimLattice_G_ptr        = master_PrimLattice_G_ptr;
     auto* myKcart_ptr              = master_myKcart_ptr;
-    size_t first_spo_local         = first_spo;
-    int nComplexBands_local        = nComplexBands;
+    const size_t first_spo_local   = first_spo;
+    const int nComplexBands_local  = nComplexBands;
 
     PRAGMA_OFFLOAD("omp target teams distribute num_teams(NumTeams) thread_limit(ChunkSizePerTeam) \
                 map(always, from: results_scratch_ptr[0:orb_size*5])")
@@ -761,13 +769,29 @@ struct SplineC2ROMP : public SplineAdoptorBase<ST, 3>
     {
       const int first = ChunkSizePerTeam * team_id;
       const int last  = (first + ChunkSizePerTeam) > padded_size ? padded_size : first + ChunkSizePerTeam;
+
+      int ix, iy, iz;
+      ST a[4], b[4], c[4], da[4], db[4], dc[4], d2a[4], d2b[4], d2c[4];
+      spline2::computeLocationAndFractional(spline_ptr, rux, ruy, ruz, ix, iy, iz, a, b, c, da, db, dc, d2a, d2b, d2c);
+
+      const ST G[9] = {PrimLattice_G_ptr[0], PrimLattice_G_ptr[1], PrimLattice_G_ptr[2],
+                       PrimLattice_G_ptr[3], PrimLattice_G_ptr[4], PrimLattice_G_ptr[5],
+                       PrimLattice_G_ptr[6], PrimLattice_G_ptr[7], PrimLattice_G_ptr[8]};
+      const ST symGGt[6] = {GGt_ptr[0], GGt_ptr[1] + GGt_ptr[3], GGt_ptr[2] + GGt_ptr[6],
+                            GGt_ptr[4], GGt_ptr[5] + GGt_ptr[7], GGt_ptr[8]};
+
       PRAGMA_OFFLOAD("omp parallel")
       {
-        spline2offload::evaluate_vgh_impl_v2(spline_ptr, rux, ruy, ruz, offload_scratch_ptr + first,
+        spline2offload::evaluate_vgh_impl_v2(spline_ptr,
+                                             ix, iy, iz,
+                                             a, b, c,
+                                             da, db, dc,
+                                             d2a, d2b, d2c,
+                                             offload_scratch_ptr + first,
                                              offload_scratch_ptr + padded_size + first,
                                              offload_scratch_ptr + padded_size * 4 + first, padded_size, first, last);
-        C2R::assign_vgl(x, y, z, results_scratch_ptr, mKK_ptr, orb_size, offload_scratch_ptr, padded_size, GGt_ptr,
-                        PrimLattice_G_ptr, myKcart_ptr, myKcart_padded_size, first_spo_local, nComplexBands_local,
+        C2R::assign_vgl(x, y, z, results_scratch_ptr, mKK_ptr, orb_size, offload_scratch_ptr, padded_size, symGGt,
+                        G, myKcart_ptr, myKcart_padded_size, first_spo_local, nComplexBands_local,
                         first / 2, last / 2);
       }
     }

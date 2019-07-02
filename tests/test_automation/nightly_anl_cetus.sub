@@ -86,7 +86,7 @@ fi
 
 export QMCPACK_TEST_SUBMIT_NAME=${compiler}-${sys}-Release
 
-ctest $CTEST_FLAGS -S $PWD/../CMake/ctest_script.cmake,release --stop-time `date --date=now+55mins +%H:%M:%S` -R "short" -E "dmc|opt|csvmc|heg" -VV &> $place/log/$entry/$mydate/${QMCPACK_TEST_SUBMIT_NAME}.log
+ctest $CTEST_FLAGS -S $PWD/../CMake/ctest_script.cmake,release --stop-time `date --date=now+55mins +%H:%M:%S` -R "deterministic" -VV &> $place/log/$entry/$mydate/${QMCPACK_TEST_SUBMIT_NAME}.log
 
 cd ..
 echo --- Finished $sys `date`

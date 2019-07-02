@@ -231,15 +231,6 @@ SET(ENABLE_TIMERS 0 CACHE BOOL "Enable internal timers")
 SET(INSTALL_NEXUS 1 CACHE BOOL "Install Nexus alongside QMCPACK")
 
 ######################################################################
-# FIXED PARAMETERS for test and legacy reasons
-# DO NOT TOUCH THESE
-# QMC_ORTHO  = 0 for general unit cell, 1 for orthogonal cells
-# QMC_FASTWALKER  = true, when operation is faster for each walker
-######################################################################
-SET(QMC_FASTWALKER 1)
-SET(OHMMS_ORTHO 0)
-
-######################################################################
 #list of options to determine libraries. First, try to use libraries available
 #FindXYZ.cmake will set the values if successful
 ######################################################################
@@ -587,8 +578,7 @@ ENDIF(FFTW_FOUND)
 SET(QMC_UTIL_LIBS ${QMC_UTIL_LIBS} ${FORTRAN_LIBRARIES})
 
 find_package(ZLIB)
-#find_package(LibXml2)
-INCLUDE(CMake/FindLibxml2QMC.cmake)
+find_package(LibXml2)
 
 IF(LIBXML2_FOUND)
   INCLUDE_DIRECTORIES(${LIBXML2_INCLUDE_DIR})

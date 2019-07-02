@@ -343,7 +343,7 @@ inline void rotateHijkl(std::string& type, WALKER_TYPES walker_type, bool addCou
 
   MPI_Bcast(Qknum.data(),comm.size(),MPI_INT,0,&TG.Node());
   int ntt = std::accumulate(Qknum.begin(),Qknum.end(),0);
-  if(!coreid==0)
+  if(coreid!=0)
     Qksizes.resize(2*ntt);
   MPI_Bcast(Qksizes.data(),Qksizes.size(),MPI_INT,0,&TG.Node());
 

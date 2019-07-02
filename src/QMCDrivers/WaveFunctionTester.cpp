@@ -1316,11 +1316,11 @@ void WaveFunctionTester::runRatioTest2()
         for (int sds = 0; sds < 3; sds++)
           fout << realGrad[iat][sds] - grad_now[sds] << " ";
         PosType dr(Tau * deltaR[iat]);
-        PosType newpos(W.makeMove(iat, dr));
+        W.makeMove(iat, dr);
         RealType ratio2 = Psi.ratioGrad(W, iat, grad_new);
         W.rejectMove(iat);
         Psi.rejectMove(iat);
-        newpos          = W.makeMove(iat, dr);
+        W.makeMove(iat, dr);
         RealType ratio1 = Psi.ratio(W, iat);
         //Psi.rejectMove(iat);
         W.rejectMove(iat);

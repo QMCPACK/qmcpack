@@ -38,11 +38,11 @@ TEST_CASE("Chiesa Force BCC H Ewald3D", "[hamiltonian]")
   OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
-  Uniform3DGridLayout grid;
-  grid.BoxBConds = true; // periodic
-  grid.R.diagonal(3.77945227);
-  grid.LR_dim_cutoff = 40;
-  grid.reset();
+  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
+  Lattice.BoxBConds = true; // periodic
+  Lattice.R.diagonal(3.77945227);
+  Lattice.LR_dim_cutoff = 40;
+  Lattice.reset();
 
 
   ParticleSet ions;
@@ -62,11 +62,11 @@ TEST_CASE("Chiesa Force BCC H Ewald3D", "[hamiltonian]")
   int pIdx                      = ion_species.addSpecies("H");
   int pChargeIdx                = ion_species.addAttribute("charge");
   ion_species(pChargeIdx, pIdx) = 1;
-  ions.Lattice.copy(grid);
+  ions.Lattice = Lattice;
   ions.createSK();
 
 
-  elec.Lattice.copy(grid);
+  elec.Lattice = Lattice;
   elec.setName("elec");
   elec.create(2);
   elec.R[0][0] = 0.5;
