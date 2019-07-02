@@ -27,7 +27,9 @@
 
 namespace qmcplusplus
 {
-/// allocator for CUDA unified memory
+/** allocator for CUDA unified memory
+ * @tparm T data type
+ */
 template<typename T>
 struct CUDAManagedAllocator
 {
@@ -69,7 +71,9 @@ bool operator!=(const CUDAManagedAllocator<T1>&, const CUDAManagedAllocator<T2>&
   return false;
 }
 
-/// allocator for CUDA device memory
+/** allocator for CUDA device memory
+ * @tparm T data type
+ */
 template<typename T>
 struct CUDAAllocator
 {
@@ -115,7 +119,9 @@ struct allocator_traits<CUDAAllocator<T>>
   const static bool is_host_accessible = false;
 };
 
-/// allocator for CUDA host pinned memory
+/** allocator for CUDA host pinned memory
+ * @tparm T data type
+ */
 template<typename T>
 struct CUDAHostAllocator
 {
@@ -155,14 +161,19 @@ bool operator!=(const CUDAHostAllocator<T1>&, const CUDAHostAllocator<T2>&)
   return false;
 }
 
-/// allocator locks memory pages allocated by HostAllocator
-template<typename T, class HostAllocator = std::allocator<T>>
-struct CUDALockedPageAllocator : public HostAllocator
+/** allocator locks memory pages allocated by ULPHA
+ * @tparm T data type
+ * @tparm ULPHA host memory allocator using unlocked page
+ *
+ * ULPHA cannot be CUDAHostAllocator
+ */
+template<typename T, class ULPHA = std::allocator<T>>
+struct CUDALockedPageAllocator : public ULPHA
 {
-  using value_type    = typename HostAllocator::value_type;
-  using size_type     = typename HostAllocator::size_type;
-  using pointer       = typename HostAllocator::pointer;
-  using const_pointer = typename HostAllocator::const_pointer;
+  using value_type    = typename ULPHA::value_type;
+  using size_type     = typename ULPHA::size_type;
+  using pointer       = typename ULPHA::pointer;
+  using const_pointer = typename ULPHA::const_pointer;
 
   CUDALockedPageAllocator() = default;
   template<class U, class V>
@@ -176,8 +187,8 @@ struct CUDALockedPageAllocator : public HostAllocator
 
   value_type* allocate(std::size_t n)
   {
-    static_assert(std::is_same<T, value_type>::value, "CUDALockedPageAllocator and HostAllocator data types must agree!");
-    value_type* pt = HostAllocator::allocate(n);
+    static_assert(std::is_same<T, value_type>::value, "CUDALockedPageAllocator and ULPHA data types must agree!");
+    value_type* pt = ULPHA::allocate(n);
     cudaErrorCheck(cudaHostRegister(pt, n*sizeof(T), cudaHostRegisterDefault), "cudaHostRegister failed in CUDALockedPageAllocator!");
     return pt;
   }
@@ -185,7 +196,7 @@ struct CUDALockedPageAllocator : public HostAllocator
   void deallocate(value_type* pt, std::size_t n)
   {
     cudaErrorCheck(cudaHostUnregister(pt), "cudaHostUnregister failed in CUDALockedPageAllocator!");
-    HostAllocator::deallocate(pt, n);
+    ULPHA::deallocate(pt, n);
   }
 };
 
