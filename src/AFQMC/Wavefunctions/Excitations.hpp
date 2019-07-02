@@ -381,6 +381,13 @@ struct ph_excitations
     configurations.emplace_back(0,configuration_type{alpha_indx,beta_index,ci});
   }
 
+  template<typename integer, typename value>
+  void set_ci_coefficient(integer idet, value ci) {
+    configuration_type* cit = configurations.values(0) + idet;
+    using std::get;
+    get<2>(*cit) = ci;
+  }
+
   typename Excitation_Iterator::const_reference reference_configuration(int spin=0) const{
     return to_address(reference.values(0)) + (spin==0?0:NAEA);
   }
