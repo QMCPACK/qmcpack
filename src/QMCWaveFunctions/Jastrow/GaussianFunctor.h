@@ -13,6 +13,7 @@
 #define QMCPLUSPLUS_GAUSSIAN_FUNCTOR_H
 
 #include "OhmmsData/AttributeSet.h"
+#include "Optimize/VariableSet.h"
 #include <array>
 
 namespace qmcplusplus
@@ -61,7 +62,7 @@ class GaussianFunctor
 
   // most recent evaluations
   RealType Fval;
-  PosType Fgrad;
+  GradType Fgrad;
   RealType Flap;
 
 public:
@@ -73,56 +74,56 @@ public:
   void initialize()
   {
     // register and update optimizable variables to current values
-    if (opt_A[XX])
-    {
+//    if (opt_A[XX])
+//    {
       myVars.insert(id + "_A_xx", A(X, X), opt_A[XX], optimize::OTHER_P);
       myVars[id + "_A_xx"] = A(X, X);
-    }
-    if (opt_A[XY])
-    {
+//    }
+//    if (opt_A[XY])
+//    {
       myVars.insert(id + "_A_xy", A(X, Y), opt_A[XY], optimize::OTHER_P);
       myVars[id + "_A_xy"] = A(X, Y);
-    }
-    if (opt_A[XZ])
-    {
+//    }
+//    if (opt_A[XZ])
+//    {
       myVars.insert(id + "_A_xz", A(X, Z), opt_A[XZ], optimize::OTHER_P);
       myVars[id + "_A_xz"] = A(X, Z);
-    }
-    if (opt_A[YY])
-    {
+//    }
+//    if (opt_A[YY])
+//    {
       myVars.insert(id + "_A_yy", A(Y, Y), opt_A[YY], optimize::OTHER_P);
       myVars[id + "_A_yy"] = A(Y, Y);
-    }
-    if (opt_A[YZ])
-    {
+//    }
+//    if (opt_A[YZ])
+//    {
       myVars.insert(id + "_A_yz", A(Y, Z), opt_A[YZ], optimize::OTHER_P);
       myVars[id + "_A_yz"] = A(Y, Z);
-    }
-    if (opt_A[ZZ])
-    {
+//    }
+//    if (opt_A[ZZ])
+//    {
       myVars.insert(id + "_A_zz", A(Z, Z), opt_A[ZZ], optimize::OTHER_P);
       myVars[id + "_A_zz"] = A(Z, Z);
-    }
-    if (opt_B[X])
-    {
+//    }
+//    if (opt_B[X])
+//    {
       myVars.insert(id + "_B_x", B[X], opt_B[X], optimize::OTHER_P);
       myVars[id + "_B_x"] = B[X];
-    }
-    if (opt_B[Y])
-    {
+//    }
+//    if (opt_B[Y])
+//    {
       myVars.insert(id + "_B_y", B[Y], opt_B[Y], optimize::OTHER_P);
       myVars[id + "_B_y"] = B[Y];
-    }
-    if (opt_B[Z])
-    {
+//    }
+//    if (opt_B[Z])
+//    {
       myVars.insert(id + "_B_z", B[Z], opt_B[Z], optimize::OTHER_P);
       myVars[id + "_B_z"] = B[Z];
-    }
-    if (opt_C)
-    {
+//    }
+//    if (opt_C)
+//    {
       myVars.insert(id + "_C", C, opt_C, optimize::OTHER_P);
       myVars[id + "_C"] = C;
-    }
+//    }
   }
 
   void restore(int iat) {}
@@ -321,13 +322,13 @@ public:
   }
 
 
-  void multiply_eq(const GaussianFunctor* rhs)
-  {
-    A = A + rhs->A;
-    B = B + rhs->B;
-    C = C + rhs->C;
-    initialize();
-  }
+//  void multiply_eq(const GaussianFunctor* rhs)
+//  {
+//    A = A + rhs->A;
+//    B = B + rhs->B;
+//    C = C + rhs->C;
+//    initialize();
+//  }
 
 
   void divide_eq(const GaussianFunctor* rhs)
@@ -342,7 +343,7 @@ public:
 
 
   // f = std::exp(x^T A x - 2B^T x + C)
-  void evaluate(PosType r, RealType& fval, PosType& fgrad, RealType& flap)
+  void evaluate(PosType r, RealType& fval, GradType& fgrad, RealType& flap)
   {
     PosType Ar = dot(A, r);
     RealType x = dot(Ar - 2 * B, r) + C;
@@ -351,7 +352,7 @@ public:
     flap       = 4 * dot(Ar - B, Ar - B) * fval + 2 * trace(A) * fval;
   }
 
-  void evaluateLog(PosType r, RealType& lval, PosType& lgrad, RealType& llap)
+  void evaluateLog(PosType r, RealType& lval, GradType& lgrad, RealType& llap)
   {
     PosType Ar = dot(A, r);
     lval       = dot(Ar - 2 * B, r) + C;
@@ -359,47 +360,47 @@ public:
     llap       = 2 * trace(A);
   }
 
-  void evaluateDerivative_A(A_vars q, PosType r, RealType& dfval, PosType& dfgrad, RealType& dflap)
+  void evaluateDerivative_A(A_vars q, PosType r, RealType& dfval, GradType& dfgrad, RealType& dflap)
   {
     // Fval, Fgrad, Flap are up-to-date function values
     // x correponds to the exponent value: x = ln f; dx are param derivs
     RealType dxval = 0, dxlap = 0;
-    PosType dxgrad = 0;
+    GradType dxgrad = 0;
     if (q == XX)
     {
       dxval  = r[X] * r[X];
-      dxgrad = PosType(2 * r[X], 0, 0);
+      dxgrad = GradType(2 * r[X], 0, 0);
       dxlap  = 2;
     }
     if (q == YY)
     {
       dxval  = r[Y] * r[Y];
-      dxgrad = PosType(0, 2 * r[Y], 0);
+      dxgrad = GradType(0, 2 * r[Y], 0);
       dxlap  = 2;
     }
     if (q == ZZ)
     {
       dxval  = r[Z] * r[Z];
-      dxgrad = PosType(0, 0, 2 * r[Z]);
+      dxgrad = GradType(0, 0, 2 * r[Z]);
       dxlap  = 2;
     }
     // off-diagonal terms: factor of two is since A is symmetric
     if (q == XY)
     {
       dxval  = 2 * r[X] * r[Y];
-      dxgrad = 2 * PosType(r[Y], r[X], 0);
+      dxgrad = 2 * GradType(r[Y], r[X], 0);
       dxlap  = 0;
     }
     if (q == XZ)
     {
       dxval  = 2 * r[X] * r[Z];
-      dxgrad = 2 * PosType(r[Z], 0, r[X]);
+      dxgrad = 2 * GradType(r[Z], 0, r[X]);
       dxlap  = 0;
     }
     if (q == YZ)
     {
       dxval  = 2 * r[Y] * r[Z];
-      dxgrad = 2 * PosType(0, r[Z], r[Y]);
+      dxgrad = 2 * GradType(0, r[Z], r[Y]);
       dxlap  = 0;
     }
     dfval  = Fval * dxval;
@@ -407,26 +408,26 @@ public:
     dflap  = Flap * dxval + 2 * dot(Fgrad, dxgrad) + dxlap * Fval;
   }
 
-  void evaluateDerivative_B(B_vars q, PosType r, RealType& dfval, PosType& dfgrad, RealType& dflap)
+  void evaluateDerivative_B(B_vars q, PosType r, RealType& dfval, GradType& dfgrad, RealType& dflap)
   {
     RealType dxval = 0, dxlap = 0;
-    PosType dxgrad = 0;
+    GradType dxgrad = 0;
     if (q == X)
     {
       dxval  = -2 * r[X];
-      dxgrad = -2 * PosType(1, 0, 0);
+      dxgrad = -2 * GradType(1, 0, 0);
       dxlap  = 0;
     }
     if (q == Y)
     {
       dxval  = -2 * r[Y];
-      dxgrad = -2 * PosType(0, 1, 0);
+      dxgrad = -2 * GradType(0, 1, 0);
       dxlap  = 0;
     }
     if (q == Z)
     {
       dxval  = -2 * r[Z];
-      dxgrad = -2 * PosType(0, 0, 1);
+      dxgrad = -2 * GradType(0, 0, 1);
       dxlap  = 0;
     }
     dfval  = Fval * dxval;
@@ -436,7 +437,7 @@ public:
 
   void evaluateDerivatives(PosType r,
                            std::vector<RealType>& dfval,
-                           std::vector<PosType>& dfgrad,
+                           std::vector<GradType>& dfgrad,
                            std::vector<RealType>& dflap)
   {
     evaluate(r, Fval, Fgrad, Flap);
@@ -498,70 +499,70 @@ public:
   // evaluate parameter derivatives of log of the wavefunction
   void evaluateLogDerivatives(PosType r,
                               std::vector<RealType>& dlval,
-                              std::vector<PosType>& dlgrad,
+                              std::vector<GradType>& dlgrad,
                               std::vector<RealType>& dllap)
   {
     int p = 0;
     if (opt_A[XX])
     {
       dlval[p]  = r[X] * r[X];
-      dlgrad[p] = 2 * PosType(r[X], 0, 0);
+      dlgrad[p] = 2 * GradType(r[X], 0, 0);
       dllap[p]  = 2;
       ++p;
     }
     if (opt_A[XY])
     {
       dlval[p]  = 2 * r[X] * r[Y];
-      dlgrad[p] = 2 * PosType(r[Y], r[X], 0);
+      dlgrad[p] = 2 * GradType(r[Y], r[X], 0);
       dllap[p]  = 0;
       ++p;
     }
     if (opt_A[XZ])
     {
       dlval[p]  = 2 * r[X] * r[Z];
-      dlgrad[p] = 2 * PosType(r[Z], 0, r[X]);
+      dlgrad[p] = 2 * GradType(r[Z], 0, r[X]);
       dllap[p]  = 0;
       ++p;
     }
     if (opt_A[YY])
     {
       dlval[p]  = r[Y] * r[Y];
-      dlgrad[p] = 2 * PosType(0, r[Y], 0);
+      dlgrad[p] = 2 * GradType(0, r[Y], 0);
       dllap[p]  = 2;
       ++p;
     }
     if (opt_A[YZ])
     {
       dlval[p]  = 2 * r[Y] * r[Z];
-      dlgrad[p] = 2 * PosType(0, r[Z], r[Y]);
+      dlgrad[p] = 2 * GradType(0, r[Z], r[Y]);
       dllap[p]  = 0;
       ++p;
     }
     if (opt_A[ZZ])
     {
       dlval[p]  = r[Z] * r[Z];
-      dlgrad[p] = 2 * PosType(0, 0, r[Z]);
+      dlgrad[p] = 2 * GradType(0, 0, r[Z]);
       dllap[p]  = 2;
       ++p;
     }
     if (opt_B[X])
     {
       dlval[p]  = -2 * r[X];
-      dlgrad[p] = -2 * PosType(1, 0, 0);
+      dlgrad[p] = -2 * GradType(1, 0, 0);
       dllap[p]  = 0;
       ++p;
     }
     if (opt_B[Y])
     {
       dlval[p]  = -2 * r[Y];
-      dlgrad[p] = -2 * PosType(0, 1, 0);
+      dlgrad[p] = -2 * GradType(0, 1, 0);
       dllap[p]  = 0;
       ++p;
     }
     if (opt_B[Z])
     {
       dlval[p]  = -2 * r[Z];
-      dlgrad[p] = -2 * PosType(0, 0, 1);
+      dlgrad[p] = -2 * GradType(0, 0, 1);
       dllap[p]  = 0;
       ++p;
     }
@@ -636,11 +637,11 @@ public:
     std::vector<PosType> Ar_vec;
     std::vector<RealType> x_vec;
     std::vector<RealType> fval_vec;
-    std::vector<PosType> fgrad_vec;
+    std::vector<GradType> fgrad_vec;
     std::vector<RealType> flap_vec;
     RealType x, fval, flap;
     PosType Ar, r;
-    PosType fgrad;
+    GradType fgrad;
     for (auto it = P.R.begin(); it != P.R.end(); ++it)
     {
       r     = *it;
@@ -667,7 +668,7 @@ public:
     os << std::endl << "fval: ";
     std::copy(fval_vec.begin(), fval_vec.end(), std::ostream_iterator<RealType>(os, ", "));
     os << std::endl << "fgrad: ";
-    std::copy(fgrad_vec.begin(), fgrad_vec.end(), std::ostream_iterator<PosType>(os, ", "));
+    std::copy(fgrad_vec.begin(), fgrad_vec.end(), std::ostream_iterator<GradType>(os, ", "));
     os << std::endl << "flap: ";
     std::copy(flap_vec.begin(), flap_vec.end(), std::ostream_iterator<RealType>(os, ", "));
     os << std::endl;

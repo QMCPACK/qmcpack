@@ -40,7 +40,7 @@ bool CountingJastrowBuilder::createCJ(xmlNodePtr cur)
 
   Matrix<RealType> F;
   std::vector<RealType> G;
-  bool opt_C = true, opt_F = true, opt_G = true;
+  bool opt_C = true, opt_F = true, opt_G = false;
   bool debug_flag = false;
   int period = 0, seqlen = 0;
 

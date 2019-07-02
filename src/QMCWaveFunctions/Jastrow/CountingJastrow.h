@@ -196,8 +196,8 @@ public:
     // register optimizable parameters
     std::ostringstream os;
     std::string id_F, id_G;
-    if (opt_F)
-    {
+//    if (opt_F)
+//    {
       for (int I = 0; I < num_regions; ++I)
         for (int J = I, IJ = I * num_regions + I; J < num_regions; ++J, ++IJ)
         {
@@ -212,11 +212,11 @@ public:
             opt_id[OPT_F].push_back(id_F);
           }
         }
-    }
+//    }
 
     // only use G when regions aren't normalized
-    if (opt_G && !C->normalized)
-    {
+//    if (opt_G && !C->normalized)
+//    {
       for (int I = 0; I < num_regions; ++I)
       {
         os.str("");
@@ -226,7 +226,7 @@ public:
         opt_index[OPT_G].push_back(I);
         opt_id[OPT_G].push_back(id_G);
       }
-    }
+//    }
     reportStatus(app_log());
   }
 
@@ -258,10 +258,10 @@ public:
       os << "  debug_period: " << debug_period << std::endl;
     }
     os << "  Optimizable variables:" << std::endl;
-//    myVars.print(os);
+    myVars.print(os);
     os << std::endl;
     // print counting region status
-//    C->reportStatus(os);
+    C->reportStatus(os);
     app_log() << "CountingJastrow::reportStatus end" << std::endl;
   }
 
@@ -282,7 +282,11 @@ public:
   }
 
 
-  void recompute(ParticleSet& P) { evaluateExponents(P); }
+  void recompute(ParticleSet& P)
+  { 
+    evaluateExponents(P); 
+    LogValue = Jval;
+  }
 
   void evaluateExponents(ParticleSet& P)
   {
@@ -426,6 +430,7 @@ public:
   GradType evalGrad(ParticleSet& P, int iat)
   {
     evaluateExponents(P);
+    LogValue = Jval;
     return Jgrad[iat];
   }
 
@@ -449,6 +454,7 @@ public:
     }
     // update exponent values to that at proposed position
     Jval = Jval_t;
+    LogValue = Jval;
     for (int i = 0; i < num_els; ++i)
     {
       Jgrad[i] = Jgrad_t[i];
@@ -509,12 +515,12 @@ public:
 
   WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const
   {
-    CountingJastrow* cjo = new CountingJastrow(tqp, C, F, G);
-    cjo->setOptimizable(opt_C || opt_G || opt_F);
-    cjo->addOpt(opt_C, opt_G, opt_F);
-    cjo->addDebug(debug, debug_seqlen, debug_period);
-    cjo->initialize();
-    return cjo;
+    CountingJastrow* cjc = new CountingJastrow(tqp, C, F, G);
+    cjc->setOptimizable(opt_C || opt_G || opt_F);
+    cjc->addOpt(opt_C, opt_G, opt_F);
+    cjc->addDebug(debug, debug_seqlen, debug_period);
+    cjc->initialize();
+    return cjc;
   }
 
   void evaluateDerivatives(ParticleSet& P,
@@ -527,6 +533,7 @@ public:
 #else
     evaluateExponents(P);
     // evaluate derivatives of F
+    static int deriv_print_index = 0;
     if (opt_F)
     {
       for (int oi = 0; oi < opt_index[OPT_F].size(); ++oi)
@@ -549,6 +556,10 @@ public:
         }
         dlogpsi[ia]      += dJF_val;
         dhpsioverpsi[ia] += -0.5 * dJF_lap - dJF_gg;
+        if(debug && deriv_print_index < debug_seqlen)
+        {
+          app_log() << "  dJ/dF["<< I << "]["<< J << "]; ia: " << ia << ",  dlogpsi: "  << dlogpsi[ia] << ", dhpsioverpsi: "<< dhpsioverpsi[ia] << std::endl;
+        }
       }
     }
 
@@ -574,8 +585,8 @@ public:
         dhpsioverpsi[ia] += -0.5 * dJG_lap - dJG_gg;
       }
     }
+
     //  // evaluate partial derivatives of C
-    static int deriv_print_index = 0;
     if (opt_C)
     {
       // containers for CountingRegions' evaluateDerivatives calculations
@@ -705,6 +716,32 @@ public:
     // increment and modulo deriv_print_index
     if (debug)
     {
+      app_log() << "Final derivatives: " << std::endl;
+      app_log() << "  F derivatives: " << std::endl;
+      for (int oi = 0; oi < opt_index[OPT_F].size(); ++oi)
+      {
+        std::string id = opt_id[OPT_F][oi];
+        int ia         = myVars.getIndex(id);
+        if (ia == -1)
+          continue; // ignore inactive parameters
+        app_log() << "    ia: " << ia << ",  dlogpsi: "  << dlogpsi[ia] << ", dhpsioverpsi: "<< dhpsioverpsi[ia] << std::endl;
+      }
+      app_log() << "  C derivatives: " << std::endl;
+      for (int I = 0; I < num_regions; ++I)
+      {
+        app_log() << "    C[" << I << "] derivs: " << std::endl;
+        // get the number of active parameters for the Ith counting region
+        opt_variables_type I_vars = C->getVars(I);
+        int I_num_derivs          = I_vars.size();
+        for (int pI = 0; pI < I_num_derivs; ++pI)
+        {
+          // index for active optimizable variables
+          int ia = I_vars.Index[pI];
+          if (ia == -1)
+            continue; // ignore inactive
+          app_log() << "      ia: " << ia << ",  dlogpsi: "  << dlogpsi[ia] << ", dhpsioverpsi: "<< dhpsioverpsi[ia] << std::endl;
+        }
+      }
       deriv_print_index = deriv_print_index % debug_period;
       deriv_print_index++;
     }

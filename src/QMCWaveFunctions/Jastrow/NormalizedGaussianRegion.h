@@ -9,11 +9,12 @@
 // File created by: Brett Van Der Goetz, bvdg@berkeley.edu, University of California at Berkeley
 //////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef QMC_PLUS_PLUS_COUNTING_FUNCTOR_H
-#define QMC_PLUS_PLUS_COUNTING_FUNCTOR_H
+#ifndef QMCPLUSPLUS_NORMALIZED_GAUSSIAN_REGION_H
+#define QMCPLUSPLUS_NORMALIZED_GAUSSIAN_REGION_H
 
 #include "Configuration.h"
 #include "QMCWaveFunctions/Jastrow/GaussianFunctor.h"
+#include "Optimize/VariableSet.h"
 #include "Particle/ParticleSet.h"
 
 namespace qmcplusplus
@@ -27,6 +28,9 @@ public:
   using ValueType = QMCTraits::ValueType;
   using GradType = QMCTraits::GradType;
   using TensorType = QMCTraits::TensorType;
+
+  using real_type = optimize::VariableSet::real_type;
+  using opt_variables_type = optimize::VariableSet;
 
   // counting function pointers
   std::vector<GaussianFunctor*> C;
