@@ -172,176 +172,204 @@ void getSlaterMatrix(boost::multi::array<ComplexType,2>& SM, boost::multi::array
 }
 
 // Very dumb.
-int getExcitation(std::vector<int>& occi, std::vector<int> occj, std::vector<int>& excitation, int& perm, bool print=false)
-{
-  std::vector<int> from_orb, to_orb;
-  // Work out which orbitals are excited from / to.
-  std::set_difference(occj.begin(), occj.end(),
-                      occi.begin(), occi.end(),
-                      std::inserter(from_orb, from_orb.begin()));
-  std::set_difference(occi.begin(), occi.end(),
-                      occj.begin(), occj.end(),
-                      std::inserter(to_orb, to_orb.begin()));
-  int nexcit = from_orb.size();
-  if(nexcit <= 2) {
-    for(int i = 0; i < from_orb.size(); i++)
-      excitation.push_back(from_orb[i]);
-    for(int i = 0; i < to_orb.size(); i++)
-      excitation.push_back(to_orb[i]);
-    int nperm = 0;
-    int nmove = 0;
-    for(auto o : from_orb) {
-      auto it = std::find(occj.begin(), occj.end(), o);
-      int loc = std::distance(occj.begin(), it);
-      nperm += occj.size() - loc - 1 + nmove;
-      nmove += 1;
-    }
-    nmove = 0;
-    for(auto o : to_orb) {
-      auto it = std::find(occi.begin(), occi.end(), o);
-      int loc = std::distance(occi.begin(), it);
-      nperm += occi.size() - loc - 1 + nmove;
-      nmove += 1;
-    }
-    if(nperm % 2 == 1)
-      perm = -1;
-  }
-  return nexcit;
-}
+//int getExcitation(std::vector<int>& occi, std::vector<int>& occj, std::vector<int>& excitation, int& perm)
+//{
+  //std::vector<int> from_orb, to_orb;
+  //// Work out which orbitals are excited from / to.
+  //std::set_difference(occj.begin(), occj.end(),
+                      //occi.begin(), occi.end(),
+                      //std::inserter(from_orb, from_orb.begin()));
+  //std::set_difference(occi.begin(), occi.end(),
+                      //occj.begin(), occj.end(),
+                      //std::inserter(to_orb, to_orb.begin()));
+  //int nexcit = from_orb.size();
+  //if(nexcit <= 2) {
+    //for(int i = 0; i < from_orb.size(); i++)
+      //excitation.push_back(from_orb[i]);
+    //for(int i = 0; i < to_orb.size(); i++)
+      //excitation.push_back(to_orb[i]);
+    //int nperm = 0;
+    //int nmove = 0;
+    //for(auto o : from_orb) {
+      //auto it = std::find(occj.begin(), occj.end(), o);
+      //int loc = std::distance(occj.begin(), it);
+      //nperm += occj.size() - loc - 1 + nmove;
+      //nmove += 1;
+    //}
+    //nmove = 0;
+    //for(auto o : to_orb) {
+      //auto it = std::find(occi.begin(), occi.end(), o);
+      //int loc = std::distance(occi.begin(), it);
+      //nperm += occi.size() - loc - 1 + nmove;
+      //nmove += 1;
+    //}
+    //perm = nperm%2 == 1 ? -1 : 1;
+  //}
+  //return nexcit;
+//}
 
-int decodeSpinOrbital(int spinOrb, int& spin)
-{
-  spin = spinOrb%2==0 ? 0 : 1;
-  return spin ? (spinOrb-1) / 2 : spinOrb / 2;
-}
+//int decodeSpinOrbital(int spinOrb, int& spin)
+//{
+  //spin = spinOrb%2==0 ? 0 : 1;
+  //return spin ? (spinOrb-1) / 2 : spinOrb / 2;
+//}
 
-ComplexType slaterCondon0(Hamiltonian& ham, std::vector<int>& det)
-{
-  ComplexType oneBody = ComplexType(0.0), twoBody = ComplexType(0.0);
-  auto H1 = ham.getH1();
-  int spini, spinj;
-  for(auto i : det) {
-    int oi = decodeSpinOrbital(i, spini);
-    oneBody += H1[oi][oi];
-    for(auto j : det) {
-      int oj = decodeSpinOrbital(j, spinj);
-      twoBody += ham.H(oi,oj,oi,oj);
-      if(spini == spinj) twoBody -= ham.H(oi,oj,oj,oi);
-    }
-  }
-  return oneBody + 0.5 * twoBody;
-}
+//ComplexType slaterCondon0(Hamiltonian& ham, std::vector<int>& det)
+//{
+  //ComplexType oneBody = ComplexType(0.0), twoBody = ComplexType(0.0);
+  //auto H1 = ham.getH1();
+  //int spini, spinj;
+  //for(auto i : det) {
+    //int oi = decodeSpinOrbital(i, spini);
+    //oneBody += H1[oi][oi];
+    //for(auto j : det) {
+      //int oj = decodeSpinOrbital(j, spinj);
+      //twoBody += ham.H(oi,oj,oi,oj);
+      //if(spini == spinj) twoBody -= ham.H(oi,oj,oj,oi);
+    //}
+  //}
+  //return oneBody + 0.5 * twoBody;
+//}
 
-ComplexType slaterCondon1(Hamiltonian& ham, std::vector<int>& excit, std::vector<int>& det)
-{
-  int spini, spina;
-  int oi = decodeSpinOrbital(excit[0], spini);
-  int oa = decodeSpinOrbital(excit[1], spina);
-  auto H1 = ham.getH1();
-  ComplexType oneBody = H1[oi][oa];
-  ComplexType twoBody = ComplexType(0.0);
-  for(auto j : det) {
-    int spinj;
-    int oj = decodeSpinOrbital(j, spinj);
-    if(j != excit[0]) {
-      twoBody += ham.H(oi,oj,oa,oj);
-      if(spini == spinj)
-        twoBody -= ham.H(oi,oj,oj,oa);
-    }
-  }
-  return oneBody + twoBody;
-}
+//ComplexType slaterCondon1(Hamiltonian& ham, std::vector<int>& excit, std::vector<int>& det)
+//{
+  //int spini, spina;
+  //int oi = decodeSpinOrbital(excit[0], spini);
+  //int oa = decodeSpinOrbital(excit[1], spina);
+  //auto H1 = ham.getH1();
+  //ComplexType oneBody = H1[oi][oa];
+  //ComplexType twoBody = ComplexType(0.0);
+  //for(auto j : det) {
+    //int spinj;
+    //int oj = decodeSpinOrbital(j, spinj);
+    //if(j != excit[0]) {
+      //twoBody += ham.H(oi,oj,oa,oj);
+      //if(spini == spinj)
+        //twoBody -= ham.H(oi,oj,oj,oa);
+    //}
+  //}
+  //return oneBody + twoBody;
+//}
 
-ComplexType slaterCondon2(Hamiltonian& ham, std::vector<int>& excit)
-{
-  ComplexType twoBody = ComplexType(0.0);
-  int spini, spinj, spina, spinb;
-  int oi = decodeSpinOrbital(excit[0], spini);
-  int oj = decodeSpinOrbital(excit[1], spinj);
-  int oa = decodeSpinOrbital(excit[2], spina);
-  int ob = decodeSpinOrbital(excit[3], spinb);
-  if(spini == spina)
-    twoBody = ham.H(oi,oj,oa,ob);
-  if(spini == spinb)
-    twoBody -= ham.H(oi,oj,ob,oa);
-  return twoBody;
-}
+//ComplexType slaterCondon2(Hamiltonian& ham, std::vector<int>& excit)
+//{
+  //ComplexType twoBody = ComplexType(0.0);
+  //int spini, spinj, spina, spinb;
+  //int oi = decodeSpinOrbital(excit[0], spini);
+  //int oj = decodeSpinOrbital(excit[1], spinj);
+  //int oa = decodeSpinOrbital(excit[2], spina);
+  //int ob = decodeSpinOrbital(excit[3], spinb);
+  //if(spini == spina)
+    //twoBody = ham.H(oi,oj,oa,ob);
+  //if(spini == spinb)
+    //twoBody -= ham.H(oi,oj,ob,oa);
+  //return twoBody;
+//}
 
-void createDeterminant(boost::multi::array_ref<int,1>& occa, boost::multi::array_ref<int,1>& occb, std::vector<int>& det)
-{
-  for(auto i : occa)
-    det.push_back(2*i);
-  for(auto i : occb)
-    det.push_back(2*i+1);
-  std::sort(det.begin(), det.end());
-}
+//void createDeterminant(boost::multi::array_ref<int,1>& occa, boost::multi::array_ref<int,1>& occb, std::vector<int>& det)
+//{
+  //for(auto i : occa)
+    //det.push_back(2*i);
+  //for(auto i : occb)
+    //det.push_back(2*i+1);
+  //std::sort(det.begin(), det.end());
+//}
 
-void computeVariationalEnergy(Wavefunction& wfn, boost::multi::array_ref<int,2>& occs, Hamiltonian& ham, int NAEA, int NAEB)
-{
-  int ndets = occs.size(0);
-  boost::multi::array<ComplexType,2> H({ndets,ndets});
-  for(int idet = 0; idet < ndets; idet++) {
-    boost::multi::array_ref<int,1> occi_a(occs[idet].origin(), {NAEA});
-    boost::multi::array_ref<int,1> occi_b(occs[idet].origin()+NAEA, {NAEB});
-    std::vector<int> deti;
-    createDeterminant(occi_a, occi_b, deti);
-    for(int jdet = 0; jdet < ndets; jdet++) {
-      boost::multi::array_ref<int,1> occj_a(occs[jdet].origin(), {NAEA});
-      boost::multi::array_ref<int,1> occj_b(occs[jdet].origin()+NAEA, {NAEB});
-      std::vector<int> detj;
-      createDeterminant(occj_a, occj_b, detj);
-      int perm = 1;
-      std::vector<int> excit;
-      int nexcit = getExcitation(deti, detj, excit, perm);
-      // Compute <Di|H|Dj>
-      if(nexcit == 0) {
-        H[idet][jdet] = ComplexType(perm)*slaterCondon0(ham, detj);
-      } else if(nexcit == 1) {
-        H[idet][jdet] = ComplexType(perm)*slaterCondon1(ham, excit, detj);
-      } else if(nexcit == 2) {
-        H[idet][jdet] = ComplexType(perm)*slaterCondon2(ham, excit);
-      } else {
-        H[idet][jdet] = ComplexType(0.0);
-      }
-    }
-  }
-  using TVec = boost::multi::array<RealType,1>;
-  using TMat = boost::multi::array<ComplexType,2>;
-  using eigSys = std::pair<TVec,TMat>;
-  eigSys Sol = ma::symEig<TVec,TMat>(H);
-  std::cout << "Variational Energy: " << Sol.first[0] << std::endl;
-}
+//void computeVariationalEnergy(Wavefunction& wfn, boost::multi::array_ref<int,2>& occs, Hamiltonian& ham, int NAEA, int NAEB)
+//{
+  //int ndets = occs.size(0);
+  //boost::multi::array<ComplexType,2> H({ndets,ndets});
+  //for(int idet = 0; idet < ndets; idet++) {
+    //boost::multi::array_ref<int,1> occi_a(occs[idet].origin(), {NAEA});
+    //boost::multi::array_ref<int,1> occi_b(occs[idet].origin()+NAEA, {NAEB});
+    //std::vector<int> deti;
+    //createDeterminant(occi_a, occi_b, deti);
+    //for(int jdet = 0; jdet < ndets; jdet++) {
+      //boost::multi::array_ref<int,1> occj_a(occs[jdet].origin(), {NAEA});
+      //boost::multi::array_ref<int,1> occj_b(occs[jdet].origin()+NAEA, {NAEB});
+      //std::vector<int> detj;
+      //createDeterminant(occj_a, occj_b, detj);
+      //int perm = 1;
+      //std::vector<int> excit;
+      //int nexcit = getExcitation(deti, detj, excit, perm);
+      //// Compute <Di|H|Dj>
+      //if(nexcit == 0) {
+        //H[idet][jdet] = ComplexType(perm)*slaterCondon0(ham, detj);
+      //} else if(nexcit == 1) {
+        //H[idet][jdet] = ComplexType(perm)*slaterCondon1(ham, excit, detj);
+      //} else if(nexcit == 2) {
+        //H[idet][jdet] = ComplexType(perm)*slaterCondon2(ham, excit);
+      //} else {
+        //H[idet][jdet] = ComplexType(0.0);
+      //}
+    //}
+  //}
+  //using TVec = boost::multi::array<RealType,1>;
+  //using TMat = boost::multi::array<ComplexType,2>;
+  //using eigSys = std::pair<TVec,TMat>;
+  //eigSys Sol = ma::symEig<TVec,TMat>(H);
+  //std::cout << "Variational Energy: " << Sol.first[0] << std::endl;
+//}
 
-ComplexType contractOneBody(std::vector<int>& deti, std::vector<int>& detj, std::vector<int>& excit, int perm, boost::multi::array_ref<ComplexType,2>)
-{
-}
+//ComplexType contractOneBody(std::vector<int>& det, std::vector<int>& excit, boost::multi::array_ref<ComplexType,2>& HSPot)
+//{
+  //ComplexType oneBody = ComplexType(0.0);
+  //int spini, spina;
+  //if(excit.size()==0) {
+    //for(auto i : det) {
+      //int oi = decodeSpinOrbital(i, spini);
+      //oneBody += HSPot[oi][oi];
+    //}
+  //} else {
+    //int oi = decodeSpinOrbital(excit[0], spini);
+    //int oa = decodeSpinOrbital(excit[1], spina);
+    //oneBody = HSPot[oi][oa];
+  //}
+  //return oneBody;
+//}
+//ComplexType computeMeanFieldShiftComponent(boost::multi::array_ref<ComplexType,2>& HSn, boost::multi::array_ref<int,2>& occs, std::vector<ComplexType>& coeffs, int NAEA, int NAEB)
+//{
+  //int ndets = occs.size(0);
+  //ComplexType numer = ComplexType(0.0);
+  //ComplexType denom = ComplexType(0.0);
+  //for(int idet = 0; idet < ndets; idet++) {
+    //boost::multi::array_ref<int,1> occi_a(occs[idet].origin(), {NAEA});
+    //boost::multi::array_ref<int,1> occi_b(occs[idet].origin()+NAEA, {NAEB});
+    //std::vector<int> deti;
+    //createDeterminant(occi_a, occi_b, deti);
+    //for(int jdet = 0; jdet < ndets; jdet++) {
+      //boost::multi::array_ref<int,1> occj_a(occs[jdet].origin(), {NAEA});
+      //boost::multi::array_ref<int,1> occj_b(occs[jdet].origin()+NAEA, {NAEB});
+      //std::vector<int> detj;
+      //createDeterminant(occj_a, occj_b, detj);
+      //int perm = 1;
+      //std::vector<int> excit;
+      //int nexcit = getExcitation(deti, detj, excit, perm);
+      //ComplexType matel = ComplexType(0.0);
+      //if(nexcit <= 1)
+        //matel = ComplexType(perm)*contractOneBody(detj, excit, HSn);
+      //numer += coeffs[idet]*coeffs[jdet] * matel;
+    //}
+    //denom += ma::conj(coeffs[idet])*coeffs[idet];
+  //}
+  //return numer / denom;
+//}
 
-void computeMeanFieldShift(Wavefunction& wfn, boost::multi::array_ref<int,2>& occs, Hamiltonian& ham, int NAEA, int NAEB)
-{
-  int ndets = occs.size(0);
-  boost::multi::array<ComplexType,2> H({ndets,ndets});
-  ComplexType numer = ComplexType(0.0);
-  ComplexType denom = ComplexType(0.0);
-  for(int idet = 0; idet < ndets; idet++) {
-    boost::multi::array_ref<int,1> occi_a(occs[idet].origin(), {NAEA});
-    boost::multi::array_ref<int,1> occi_b(occs[idet].origin()+NAEA, {NAEB});
-    std::vector<int> deti;
-    createDeterminant(occi_a, occi_b, deti);
-    for(int jdet = 0; jdet < ndets; jdet++) {
-      boost::multi::array_ref<int,1> occj_a(occs[jdet].origin(), {NAEA});
-      boost::multi::array_ref<int,1> occj_b(occs[jdet].origin()+NAEA, {NAEB});
-      std::vector<int> detj;
-      createDeterminant(occj_a, occj_b, detj);
-      int perm = 1;
-      std::vector<int> excit;
-      int nexcit = getExcitation(deti, detj, excit, perm);
-    }
-  }
-}
+//std::vector<ComplexType> computeMeanFieldShift(Wavefunction& wfn, boost::multi::array_ref<int,2>& occs,
+                                               //std::vector<ComplexType>& coeffs, int NAEA, int NAEB)
+//{
+  //int nCV = wfn.local_number_of_cholesky_vectors();
+  //boost::multi::array<ComplexType,2> HSPot({nCV,25});
+  //wfn.getHS(HSPot);
+  //std::vector<ComplexType> vmf;
+  //for(int i = 0; i < nCV; i++) {
+    //boost::multi::array_ref<ComplexType,2> HSn(HSPot.origin()+i*25,{5,5});
+    //ComplexType shift = computeMeanFieldShiftComponent(HSn, occs, coeffs, NAEA, NAEB);
+    //vmf.push_back(shift);
+  //}
+//}
 
-//template<class Allocator, class SDet_Type>
 template<class Allocator>
-//void test_phmsd(boost::mpi3::communicator & world, Allocator alloc)
 void test_phmsd(boost::mpi3::communicator& world)
 {
 
@@ -450,13 +478,15 @@ void test_phmsd(boost::mpi3::communicator& world)
       REQUIRE(imag(*it->overlap()) == Approx(imag(ovlp_sum)));
     }
     auto nCV = wfn.local_number_of_cholesky_vectors();
-    boost::multi::array<ComplexType,1> vMF(iextensions<1u>{nCV});
-    wfn.vMF(vMF);
-    wfn.Energy(wset);
-    computeVariationalEnergy(wfn, occs, ham, NAEA, NAEB);
-    for(int i=0; i < vMF.size(); i++) {
-      std::cout << vMF[i] << std::endl;
-    }
+    //boost::multi::array<ComplexType,1> vMF(iextensions<1u>{nCV});
+    //std::cout << "NCHOL : " << nCV << " " << NMO*NMO << std::endl;
+    //wfn.vMF(vMF);
+    //wfn.Energy(wset);
+    //computeVariationalEnergy(wfn, occs, ham, NAEA, NAEB);
+    //std::vector<ComplexType> vMF_sc = computeMeanFieldShift(wfn, occs, coeffs, NAEA, NAEB);
+    //for(int i=0; i < vMF.size(); i++) {
+      //std::cout << vMF[i] << std::endl;
+    //}
     std::cout << wset[0].energy() << std::endl;
   }
 }

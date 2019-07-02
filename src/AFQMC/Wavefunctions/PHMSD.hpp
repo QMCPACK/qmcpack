@@ -521,6 +521,42 @@ class PHMSD: public AFQMCInfo
     template<class WlkSet, class Mat, class TVec>
     void Energy_distributed(const WlkSet& wset, Mat&& E, TVec&& Ov); 
 
+    int getExcitation(std::vector<int>& deti, std::vector<int>& detj, std::vector<int>& excit, int& perm)
+    {
+      std::vector<int> from_orb, to_orb;
+      // Work out which orbitals are excited from / to.
+      std::set_difference(detj.begin(), detj.end(),
+                          deti.begin(), deti.end(),
+                          std::inserter(from_orb, from_orb.begin()));
+      std::set_difference(deti.begin(), deti.end(),
+                          detj.begin(), detj.end(),
+                          std::inserter(to_orb, to_orb.begin()));
+      int nexcit = from_orb.size();
+      if(nexcit <= 2) {
+        for(int i = 0; i < from_orb.size(); i++)
+          excit.push_back(from_orb[i]);
+        for(int i = 0; i < to_orb.size(); i++)
+          excit.push_back(to_orb[i]);
+        int nperm = 0;
+        int nmove = 0;
+        for(auto o : from_orb) {
+          auto it = std::find(detj.begin(), detj.end(), o);
+          int loc = std::distance(detj.begin(), it);
+          nperm += detj.size() - loc - 1 + nmove;
+          nmove += 1;
+        }
+        nmove = 0;
+        for(auto o : to_orb) {
+          auto it = std::find(deti.begin(), deti.end(), o);
+          int loc = std::distance(deti.begin(), it);
+          nperm += deti.size() - loc - 1 + nmove;
+          nmove += 1;
+        }
+        perm = nperm%2 == 1 ? -1 : 1;
+      }
+      return nexcit;
+    }
+
     int dm_size(bool full) const {
       switch(walker_type) {
         case CLOSED: // closed-shell RHF
