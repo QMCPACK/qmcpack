@@ -80,9 +80,18 @@ public:
   NormalizedGaussianRegion(ParticleSet& P) { num_els = P.getTotalNum(); }
   NormalizedGaussianRegion(int n) : num_els(n) { }
 
-  const bool normalized = true; // flag for normalized regions
   int size() const { return num_regions; }
+
   const opt_variables_type& getVars(int I) { return C[I]->myVars; }
+
+  int total_num_derivs()
+  {
+    int tnd = 0;
+    for(int I = 0; I < C.size(); ++I)
+      tnd += getVars(I).size();
+    return tnd;
+  }
+
   int max_num_derivs() const
   {
     auto comp         = [](GaussianFunctor* a, GaussianFunctor* b) { return a->myVars.size() < b->myVars.size(); };
@@ -105,6 +114,8 @@ public:
   {
     //app_log() << "NormalizedGaussianRegion::initialize" << std::endl;
     num_regions = C.size();
+
+
     // resize arrays
     val.resize(num_regions, num_els);
     sum.resize(num_regions);
@@ -172,10 +183,10 @@ public:
   void reportStatus(std::ostream& os)
   {
     // print some class variables:
-    os << "  Region type: NormalizedGaussianRegion" << std::endl;
-    os << "    num_els: " << num_els << ", num_regions: " << num_regions << std::endl;
-    os << "    Normalized: " << (normalized ? "true" : "false") << std::endl;
-    os << "  Counting Functions: " << std::endl;
+    os << "    Region type: NormalizedGaussianRegion" << std::endl;
+    os << "    Region parameters: " << total_num_derivs()  << std::endl;
+    os << "    Counting Functions: " << std::endl;
+    //os << "    Counting Functions: " << std::endl;
     for (int I = 0; I < C.size(); ++I)
       C[I]->reportStatus(os);
   }

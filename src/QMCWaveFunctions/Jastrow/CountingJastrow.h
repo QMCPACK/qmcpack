@@ -181,24 +181,20 @@ public:
     for (int I = 0; I < num_regions; ++I)
       for (int J = I, IJ = I * num_regions + I; J < num_regions; ++J, ++IJ)
       {
-        // don't optimize bottom-right corner
-        //if (!C->normalized || I < (num_regions - 1))
-        //{
-          os.str("");
-          os << "F_" << I << "_" << J;
-          id_F = os.str();
-          myVars.insert(id_F, F(IJ), (opt_F && I < (num_regions-1)) );
-          opt_index[OPT_F].push_back(IJ);
-          opt_id[OPT_F].push_back(id_F);
+        os.str("");
+        os << "F_" << I << "_" << J;
+        id_F = os.str();
+        myVars.insert(id_F, F(IJ), (opt_F && I < (num_regions-1)) );
+        opt_index[OPT_F].push_back(IJ);
+        opt_id[OPT_F].push_back(id_F);
       }
-    
-    reportStatus(app_log());
+    //reportStatus(app_log());
   }
 
 
   void reportStatus(std::ostream& os)
   {
-    os << std::endl << " --- CountingJastrow ---" << std::endl;
+    //os << std::endl << " --- CountingJastrow ---" << std::endl;
     // print F matrix
     //   << ", opt_F: " << (opt_F ? "true" : "false");
     //for (int I = 0; I < num_regions; ++I)
@@ -208,15 +204,16 @@ public:
     //  os << std::endl;
     //}
     // print additional information
-    os << "  num_regions: " << num_regions << ", num_els: " << num_els << std::endl;
+    os << "    Number of counting regions: " << num_regions << std::endl;
+    os << "    Total optimizable parameters: " << C->total_num_derivs() + opt_index[OPT_F].size() << std::endl;
+    os << "      F matrix optimizable parameters: " << opt_index[OPT_F].size() << std::endl;
     if (debug)
     {
-      os << "  debug_seqlen: " << debug_seqlen << std::endl;
-      os << "  debug_period: " << debug_period << std::endl;
+      os << "      Debug sample sequence length: " << debug_seqlen << std::endl;
+      os << "      Debug sample periodicity: " << debug_period << std::endl;
     }
     // print counting region status
-    os << "  F matrix: " << std::endl;
-    myVars.print(os, 4, false);
+    myVars.print(os, 6, true);
     C->reportStatus(os);
   }
 
