@@ -858,6 +858,53 @@ void QMCCostFunctionBase::addCJParams(xmlXPathContextPtr acontext, const char* c
       // iterate through children
       xmlNodePtr cur2 = cur->xmlChildrenNode;
       int Fnum = 0;
+      bool Ftag_found = false;
+      // find the <var name="F" /> tag, save the location
+      while(cur2 != NULL)
+      {
+        //app_log() << "  in Counting tag" << std::endl;
+        std::string tname2((const char*)cur2->name);
+        OhmmsAttributeSet cAttrib2;
+        std::string aname2("none");
+        std::string aopt2("yes");
+        std::string ref_id("g0");
+        cAttrib2.add(aname2, "name");
+        cAttrib2.add(aopt2, "opt");
+        cAttrib2.add(ref_id, "reference_id");
+        cAttrib2.put(cur2);
+        // find the <var name="F" /> tags and register the tag location first
+        if(tname2 == "var" && aname2 == "F" && (aopt2 == "yes" || aopt2 == "true" ))
+        {
+          coeffNodes["cj_F"] = cur2;
+          Ftag_found = true;
+        }
+        cur2 = cur2->next;
+      }
+      
+      // count the total number of registered F matrix variables
+      opt_variables_type::iterator oit(OptVariables.begin()), oit_end(OptVariables.end());
+      for(oit; oit != oit_end; ++oit)
+      {
+        const std::string& oname((*oit).first);
+        if(oname.find("F_") == 0)
+          ++Fnum;
+      }
+      ++Fnum;
+
+      // F variable tag isn't found; build the tag.
+      if(!Ftag_found)
+      {
+        xmlNodeAddContent(cur, (const xmlChar*)"\n        ");
+        xmlNodePtr F_tag = xmlNewChild(cur, NULL, (const xmlChar*)"var", NULL);
+        xmlSetProp(F_tag, (const xmlChar*) "name", (const xmlChar*)"F");
+        xmlSetProp(F_tag, (const xmlChar*) "opt", (const xmlChar*)"true");
+        xmlNodeSetContent(F_tag, (const xmlChar*)" ");
+        xmlNodeAddContent(F_tag, (const xmlChar*)"\n        ");
+        coeffNodes["cj_F"] = F_tag;
+        xmlNodeAddContent(cur, (const xmlChar*)"\n      ");
+      }
+
+      cur2 = cur->xmlChildrenNode;
       while(cur2 != NULL)
       {
         //app_log() << "  in Counting tag" << std::endl;
@@ -872,33 +919,16 @@ void QMCCostFunctionBase::addCJParams(xmlXPathContextPtr acontext, const char* c
         cAttrib2.add(aopt2, "opt");
         cAttrib2.add(ref_id, "reference_id");
         cAttrib2.put(cur2);
-        // find the <var name="F" /> tags and register the tag location first
-        if(tname2 == "var" && aname2 == "F" && (aopt2 == "yes" || aopt2 == "true" ) && Fnum == 0)
-        {
-          bool listed = false;
-          opt_variables_type::iterator oit(OptVariables.begin()), oit_end(OptVariables.end());
-          //app_log() << "  found <var name=\"F\" />" << std::endl;
-          for(oit; oit != oit_end; ++oit)
-          {
-            const std::string& oname((*oit).first);
-            listed = (oname.find("F_") == 0);
-            if(listed)
-              ++Fnum;
-          }
-          if(listed)
-            coeffNodes["cj_F"] = cur2;
-          // restart loop with Fnum > 0
-          Fnum++;
-          cur2 = cur->xmlChildrenNode;
-        }
         // find <region /> tag
         if(tname2 == "region" && (aopt2 == "true" || aopt2 == "yes") && Fnum != 0)
         {
           // if type is voronoi, reconstruct the tag structure
           if(atype2 == "voronoi")
           {
-            // set property to normalized_gaussian
+            // set property to normalized_gaussian, add reference, remove source
+            xmlUnsetProp(cur, (const xmlChar*)"source");
             xmlSetProp(cur2, (const xmlChar*)"type" , (const xmlChar*)"normalized_gaussian");
+            xmlSetProp(cur2, (const xmlChar*)"reference_id", (const xmlChar*)ref_id.c_str());
             // remove existing children
             xmlNodePtr child = cur2->xmlChildrenNode;
             while(child != NULL)
@@ -926,8 +956,8 @@ void QMCCostFunctionBase::addCJParams(xmlXPathContextPtr acontext, const char* c
               xmlNodePtr A_tag = xmlNewChild(function_tag, NULL, (const xmlChar*)"var", NULL);
               //xmlNewTextChild(function_tag, NULL, (const xmlChar*)"", (const xmlChar*)"\n  ");
               xmlNodeAddContent(function_tag, (const xmlChar*)"\n          ");
-              xmlNewProp(A_tag, (const xmlChar*)"opt", (const xmlChar*)opt.c_str());
               xmlNewProp(A_tag, (const xmlChar*)"name", (const xmlChar*)"A");
+              xmlNewProp(A_tag, (const xmlChar*)"opt", (const xmlChar*)opt.c_str());
               os.str("");
               if(gid == ref_id)
               {
@@ -944,8 +974,8 @@ void QMCCostFunctionBase::addCJParams(xmlXPathContextPtr acontext, const char* c
               xmlNodePtr B_tag = xmlNewChild(function_tag, NULL, (const xmlChar*)"var", NULL);
               //xmlNewTextChild(function_tag, NULL, (const xmlChar*)"", (const xmlChar*)"\n  ");
               xmlNodeAddContent(function_tag, (const xmlChar*)"\n          ");
-              xmlNewProp(B_tag, (const xmlChar*)"opt", (const xmlChar*)opt.c_str());
               xmlNewProp(B_tag, (const xmlChar*)"name", (const xmlChar*)"B");
+              xmlNewProp(B_tag, (const xmlChar*)"opt", (const xmlChar*)opt.c_str());
               os.str("");
               if(gid == ref_id)
               {
@@ -961,8 +991,8 @@ void QMCCostFunctionBase::addCJParams(xmlXPathContextPtr acontext, const char* c
               xmlNodePtr C_tag = xmlNewChild(function_tag, NULL, (const xmlChar*)"var", NULL);
               //xmlNewTextChild(function_tag, NULL, (const xmlChar*)"", (const xmlChar*)"\n  ");
               xmlNodeAddContent(function_tag, (const xmlChar*)"\n        ");
-              xmlNewProp(C_tag, (const xmlChar*)"opt", (const xmlChar*)opt.c_str());
               xmlNewProp(C_tag, (const xmlChar*)"name", (const xmlChar*)"C");
+              xmlNewProp(C_tag, (const xmlChar*)"opt", (const xmlChar*)opt.c_str());
               os.str("");
               if(gid == ref_id)
               {
@@ -974,7 +1004,7 @@ void QMCCostFunctionBase::addCJParams(xmlXPathContextPtr acontext, const char* c
               xmlNodeSetContent(C_tag, (const xmlChar*)(os.str().c_str()));
 
             }
-            xmlNodeAddContent(cur2, (const xmlChar*)"\n     ");
+            xmlNodeAddContent(cur2, (const xmlChar*)"\n      ");
           }
           
           // register the optimizable variables for each function

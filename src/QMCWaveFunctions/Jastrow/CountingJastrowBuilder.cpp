@@ -133,6 +133,15 @@ bool CountingJastrowBuilder::createCJ(xmlNodePtr cur)
           FunctorType* func = new FunctorType(fid, alpha, gr, opt_g);
           C->addFunc(func, fid);
         }
+        // set default F value to all zeroes with appropriate dimension
+        if(F.size() == 0)
+        {
+          int Fdim = SourcePtcl->R.size();
+          F.resize(Fdim, Fdim);
+          for(int I = 0; I < Fdim; ++I)
+            for(int J = 0; J < Fdim; ++J)
+              F(I,J) = 0;
+        }
       }
       // read in the counting region
       C->put(cur);
