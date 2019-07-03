@@ -91,8 +91,8 @@ protected:
 
 public:
   // constructor
-  CountingJastrow(ParticleSet& P, RegionType* c, const Matrix<RealType>& f) //, const std::vector<RealType>& g)
-      : F(f), C(c) //, G(g)
+  CountingJastrow(ParticleSet& P, RegionType* c, const Matrix<RealType>& f) 
+      : F(f), C(c) 
   {
     num_els = P.getTotalNum();
   }
@@ -129,18 +129,10 @@ public:
       JI    = num_regions * (IJ % num_regions) + IJ / num_regions;
       id    = opt_id[OPT_F][oi];
       ia    = active.getLoc(id);
-      //myVars[id] = active.find(id);
       myVars[id] = active[ia];
       F(IJ) = std::real(myVars[id]);
       F(JI) = std::real(myVars[id]);
     }
-    //// set G parameters from myVars
-    //for (int oi = 0; oi < opt_index[OPT_G].size(); ++oi)
-    //{
-    //  I    = opt_index[OPT_G][oi];
-    //  id   = opt_id[OPT_G][oi];
-    //  G[I] = std::real(myVars[id]);
-    //}
     // reset parameters for counting regions
     C->resetParameters(active);
   }
@@ -168,12 +160,6 @@ public:
     Jgrad_t.resize(num_els);
     Jlap_t.resize(num_els);
 
-    //// set G = 0 if using normalized counting functions
-    //if (C->normalized)
-    //{
-    //  G.resize(num_regions);
-    //  //std::fill(G.begin(),G.end(),0);
-    //}
     // check that F, C dimensions match
     if (F.size() != num_regions * num_regions)
     {
@@ -182,14 +168,6 @@ public:
           << std::endl;
       APP_ABORT(err.str());
     }
-    // check that G, C dimensions match
-    //if (G.size() != num_regions)
-    //{
-    //  std::ostringstream err;
-    //  err << "CountingJastrow::initialize: G, C dimension mismatch: G: " << G.size() << ", C: " << num_regions
-    //      << std::endl;
-    //  APP_ABORT(err.str());
-    //}
 
     // for CountingRegion optimization: don't allocate every evalDeriv call
     int max_num_derivs = C->max_num_derivs();
@@ -199,61 +177,37 @@ public:
     dCFCggsum.resize(max_num_derivs);
     // register optimizable parameters
     std::ostringstream os;
-    std::string id_F; //, id_G;
-//    if (opt_F)
-//    {
-      for (int I = 0; I < num_regions; ++I)
-        for (int J = I, IJ = I * num_regions + I; J < num_regions; ++J, ++IJ)
-        {
-          // don't optimize bottom-right corner
-          //if (!C->normalized || I < (num_regions - 1))
-          //{
-            os.str("");
-            os << "F_" << I << "_" << J;
-            id_F = os.str();
-            myVars.insert(id_F, F(IJ), (opt_F && I < (num_regions-1)) );
-            opt_index[OPT_F].push_back(IJ);
-            opt_id[OPT_F].push_back(id_F);
-          //}
-        }
-//    }
-
-    // only use G when regions aren't normalized
-//    if (opt_G && !C->normalized)
-//    {
-//      for (int I = 0; I < num_regions; ++I)
-//      {
-//        os.str("");
-//        os << "G_" << I;
-//        id_G = os.str();
-//        myVars.insert(id_G, G[I], opt_G);
-//        opt_index[OPT_G].push_back(I);
-//        opt_id[OPT_G].push_back(id_G);
-//      }
-////    }
+    std::string id_F;
+    for (int I = 0; I < num_regions; ++I)
+      for (int J = I, IJ = I * num_regions + I; J < num_regions; ++J, ++IJ)
+      {
+        // don't optimize bottom-right corner
+        //if (!C->normalized || I < (num_regions - 1))
+        //{
+          os.str("");
+          os << "F_" << I << "_" << J;
+          id_F = os.str();
+          myVars.insert(id_F, F(IJ), (opt_F && I < (num_regions-1)) );
+          opt_index[OPT_F].push_back(IJ);
+          opt_id[OPT_F].push_back(id_F);
+      }
+    
     reportStatus(app_log());
   }
 
 
   void reportStatus(std::ostream& os)
   {
-    os << std::endl << "CountingJastrow::reportStatus begin" << std::endl;
+    os << std::endl << " --- CountingJastrow ---" << std::endl;
     // print F matrix
     os << "  F matrix:"
-       << ", opt_F: " << (opt_F ? "true" : "false");
-    for (int I = 0; I < num_regions; ++I)
-    {
-      for (int J = 0, IJ = num_regions * I; J < num_regions; ++J, ++IJ)
-        os << "  " << F(IJ);
-      os << std::endl;
-    }
-//    // print G vector
-//    if (!C->normalized)
-//    {
-//      os << "  G vector:" << std::endl << ", opt_G: " << (opt_G ? "true" : "false");
-//      for (int I = 0; I < num_regions; ++I)
-//        os << "  " << G[I] << std::endl;
-//    }
+    //   << ", opt_F: " << (opt_F ? "true" : "false");
+    //for (int I = 0; I < num_regions; ++I)
+    //{
+    //  for (int J = 0, IJ = num_regions * I; J < num_regions; ++J, ++IJ)
+    //    os << "  " << F(IJ);
+    //  os << std::endl;
+    //}
     // print additional information
     os << "  num_regions: " << num_regions << ", num_els: " << num_els << std::endl;
     if (debug)
@@ -261,10 +215,9 @@ public:
       os << "  debug_seqlen: " << debug_seqlen << std::endl;
       os << "  debug_period: " << debug_period << std::endl;
     }
-    myVars.print(os, 0, true);
     // print counting region status
+    myVars.print(os, 4, false);
     C->reportStatus(os);
-    //app_log() << "CountingJastrow::reportStatus end" << std::endl;
   }
 
 
@@ -317,12 +270,9 @@ public:
     // evaluate components of J
     for (int I = 0; I < num_regions; ++I)
     {
-//      Jval += (FCsum[I] + G[I]) * C->sum[I]; // VV
       Jval += FCsum[I] * C->sum[I]; // VV
       for (int i = 0; i < num_els; ++i)
       {
-        //Jgrad[i] += (2 * FCsum[I] + G[I]) * C->grad(I, i);                                       // 3*nels*VV
-        //Jlap[i]  += (2 * FCsum[I] + G[I]) * C->lap(I, i) + 2 * dot(FCgrad(I, i), C->grad(I, i)); // nels*VV
         Jgrad[i] += 2 * FCsum[I] * C->grad(I, i);                                       // 3*nels*VV
         Jlap[i]  += 2 * FCsum[I] * C->lap(I, i) + 2 * dot(FCgrad(I, i), C->grad(I, i)); // nels*VV
       }
@@ -385,7 +335,6 @@ public:
     // evaluate components of the exponent
     for (int I = 0; I < num_regions; ++I)
     {
-//      Jval_t += C->sum_t[I] * (FCsum_t[I] + G[I]);
       Jval_t += C->sum_t[I] * FCsum_t[I];
       for (int i = 0; i < num_els; ++i)
       {
@@ -393,13 +342,9 @@ public:
         {
           Jgrad_t[i] += C->grad_t[I] * 2 * FCsum_t[I];
           Jlap_t[i]  += C->lap_t[I] * 2 * FCsum_t[I] + 2 * dot(C->grad_t[I], FCgrad_t[I]);
-//          Jgrad_t[i] += C->grad_t[I] * (2 * FCsum_t[I] + G[I]);
-//          Jlap_t[i]  += C->lap_t[I] * (2 * FCsum_t[I] + G[I]) + 2 * dot(C->grad_t[I], FCgrad_t[I]);
         }
         else
         {
-          //Jgrad_t[i] += C->grad(I, i) * (2 * FCsum_t[I] + G[I]);
-          //Jlap_t[i]  += C->lap(I, i) * (2 * FCsum_t[I] + G[I]) + 2 * dot(C->grad(I, i), FCgrad(I, i));
           Jgrad_t[i] += C->grad(I, i) * 2 * FCsum_t[I];
           Jlap_t[i]  += C->lap(I, i) * 2 * FCsum_t[I] + 2 * dot(C->grad(I, i), FCgrad(I, i));
         }
@@ -527,9 +472,7 @@ public:
   {
     //CountingJastrow* cjc = new CountingJastrow(tqp, C, F, G);
     CountingJastrow* cjc = new CountingJastrow(tqp, C, F);
-    //cjc->setOptimizable(opt_C || opt_G || opt_F);
     cjc->setOptimizable(opt_C || opt_F);
-    //cjc->addOpt(opt_C, opt_G, opt_F);
     cjc->addOpt(opt_C, opt_F);
     cjc->addDebug(debug, debug_seqlen, debug_period);
     cjc->initialize();
@@ -575,29 +518,6 @@ public:
         }
       }
     }
-
-    //// evaluate Derivatives of G
-    //if (opt_G && !C->normalized)
-    //{
-    //  RealType dJG_val, dJG_gg, dJG_lap;
-    //  for (int oi = 0; oi < opt_index[OPT_G].size(); ++oi)
-    //  {
-    //    std::string id = opt_id[OPT_G][oi];
-    //    int ia         = myVars.getIndex(id);
-    //    if (ia == -1)
-    //      continue; // ignore inactive params
-    //    int I            = opt_index[OPT_G][oi];
-    //    RealType dJG_val = C->sum[I];
-    //    RealType dJG_gg = dJG_lap = 0;
-    //    for (int i = 0; i < num_els; ++i)
-    //    {
-    //      dJG_gg  += dot(C->grad(I, i), P.G[i]);
-    //      dJG_lap += C->lap(I, i);
-    //    }
-    //    dlogpsi[ia]      += dJG_val;
-    //    dhpsioverpsi[ia] += -0.5 * dJG_lap - dJG_gg;
-    //  }
-    //}
 
     //  // evaluate partial derivatives of C
     if (opt_C)
@@ -705,25 +625,19 @@ public:
           }
           for (int J = 0; J < num_regions; ++J)
           {
-            //dlogpsi[ia] += dCsum(J, pI) * (2 * FCsum[J] + G[J]);
             dlogpsi[ia] += dCsum(J, pI) * (2 * FCsum[J]);
             // grad dot grad terms
-            //dhpsioverpsi[ia] += -1.0 * (dCggsum(J, pI) * (2.0 * FCsum[J] + G[J]) + dCsum(J, pI) * 2.0 * FCggsum[J]);
             dhpsioverpsi[ia] += -1.0 * (dCggsum(J, pI) * (2.0 * FCsum[J]) + dCsum(J, pI) * 2.0 * FCggsum[J]);
             // outer laplacian terms
-            //dhpsioverpsi[ia] += -0.5 * (2.0 * dCsum(J, pI) * FClapsum[J] + dClapsum(J, pI) * (2.0 * FCsum[J] + G[J]));
             dhpsioverpsi[ia] += -0.5 * (2.0 * dCsum(J, pI) * FClapsum[J] + dClapsum(J, pI) * (2.0 * FCsum[J]));
             if (debug && deriv_print_index < debug_seqlen)
             {
               app_log() << "      J: " << J << std::endl;
-              //app_log() << "      dlogpsi term          : " << dCsum(J, pI) * (2 * FCsum[J] + G[J]) << std::endl;
               app_log() << "      dlogpsi term          : " << dCsum(J, pI) * (2 * FCsum[J]) << std::endl;
               app_log() << "      dhpsi/psi, graddotgrad: "
-//                        << -1.0 * (dCggsum(J, pI) * (2.0 * FCsum[J] + G[J]) + dCsum(J, pI) * 2.0 * FCggsum[J])
                         << -1.0 * (dCggsum(J, pI) * (2.0 * FCsum[J]) + dCsum(J, pI) * 2.0 * FCggsum[J])
                         << std::endl;
               app_log() << "      dhpsi/psi, laplacian  : "
-//                        << -0.5 * (2.0 * dCsum(J, pI) * FClapsum[J] + dClapsum(J, pI) * (2.0 * FCsum[J] + G[J]))
                         << -0.5 * (2.0 * dCsum(J, pI) * FClapsum[J] + dClapsum(J, pI) * (2.0 * FCsum[J]))
                         << std::endl;
             }
@@ -767,10 +681,9 @@ public:
 #endif
   }
 
-  void addOpt(bool opt_C_flag, bool opt_F_flag) //bool opt_G_flag, bool opt_F_flag)
+  void addOpt(bool opt_C_flag, bool opt_F_flag)
   {
     opt_F = opt_F_flag;
-    //opt_G = opt_G_flag;
     opt_C = opt_C_flag;
   }
 

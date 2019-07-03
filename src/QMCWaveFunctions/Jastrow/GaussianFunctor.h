@@ -135,15 +135,6 @@ public:
 
   void resetParameters(const opt_variables_type& active)
   {
-    //myVars.getIndex(active);
-    //// set myVars from active
-    //for (int i = 0; i < myVars.size(); ++i)
-    //{
-    //  int ia = myVars.where(i);
-    //  if (ia != -1)
-    //    myVars[i] = active[ia];
-    //}
-    // set local variables from myVars
     int ia;
     std::string vid;
     if (opt_A[XX])
@@ -219,38 +210,33 @@ public:
     // transform according to reference
     if(gref != NULL)
       this->divide_eq(gref);
-    //app_log() << "resetParameters: " << std::endl;
-    //this->reportStatus(app_log());
   }
 
   void reportStatus(std::ostream& os)
   {
-    os << "GaussianFunctor::reportStatus begin" << std::endl;
-    os << "id: " << id << std::endl;
-    os << "  A: ";
-    for (int I = 0; I < 3; ++I)
-    {
-      os << std::endl;
-      for (int J = 0, IJ = I * 3; J < 3; ++J, ++IJ)
-        os << "  " << A[IJ];
-    }
-    os << std::endl << "  opt_A: ";
-    std::copy(opt_A.begin(), opt_A.end(), std::ostream_iterator<bool>(os, ", "));
-    os << std::endl << "  B: ";
-    for (auto it = B.begin(); it != B.end(); ++it)
-      os << "  " << *it;
-    os << std::endl << "  opt_B: ";
-    std::copy(opt_B.begin(), opt_B.end(), std::ostream_iterator<bool>(os, ", "));
-    os << std::endl << "  C: " << C << std::endl;
-    os << "  opt_C: " << opt_C << std::endl;
-    os << "  registered optimizable variables:" << std::endl;
-    myVars.print(os);
-    os << "GaussianFunctor::reportStatus end" << std::endl;
+    os << "    GaussianFunctor, id: " << id << std::endl;
+    //os << "  A: ";
+    //for (int I = 0; I < 3; ++I)
+    //{
+    //  os << std::endl;
+    //  for (int J = 0, IJ = I * 3; J < 3; ++J, ++IJ)
+    //    os << "  " << A[IJ];
+    //}
+    //os << std::endl << "  opt_A: ";
+    //std::copy(opt_A.begin(), opt_A.end(), std::ostream_iterator<bool>(os, ", "));
+    //os << std::endl << "  B: ";
+    //for (auto it = B.begin(); it != B.end(); ++it)
+    //  os << "  " << *it;
+    //os << std::endl << "  opt_B: ";
+    //std::copy(opt_B.begin(), opt_B.end(), std::ostream_iterator<bool>(os, ", "));
+    //os << std::endl << "  C: " << C << std::endl;
+    //os << "  opt_C: " << opt_C << std::endl;
+    //os << "  registered optimizable variables:" << std::endl;
+    myVars.print(os, 4, false);
   }
 
   GaussianFunctor* makeClone(std::string fid) const
   {
-    //app_log() << "  GaussianFunctor::makeClone" << std::endl;
     GaussianFunctor* rptr = new GaussianFunctor(fid);
     for (int i = 0; i < A.size(); ++i)
       rptr->A[i] = A[i];
@@ -286,7 +272,7 @@ public:
 
   bool put(xmlNodePtr cur)
   {
-    app_log() << "GaussianFunctor::put" << std::endl;
+    //app_log() << "GaussianFunctor::put" << std::endl;
     bool put_A = false, put_B = false, put_C = false, put_D = false, put_K = false;
     // alternate inputs
     std::array<RealType, 6> A_euler;
@@ -377,21 +363,8 @@ public:
     return true;
   }
 
-
-//  void multiply_eq(const GaussianFunctor* rhs)
-//  {
-//    A = A + rhs->A;
-//    B = B + rhs->B;
-//    C = C + rhs->C;
-////    initialize();
-//  }
-
-
-
   void divide_eq(const GaussianFunctor* rhs)
   {
-    // check that conversion succeeded
-    // calculate product
     A = A - rhs->A;
     B = B - rhs->B;
     C = C - rhs->C;

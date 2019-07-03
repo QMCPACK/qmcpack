@@ -103,7 +103,7 @@ public:
 
   void initialize()
   {
-    app_log() << "NormalizedGaussianRegion::initialize" << std::endl;
+    //app_log() << "NormalizedGaussianRegion::initialize" << std::endl;
     num_regions = C.size();
     // resize arrays
     val.resize(num_regions, num_els);
@@ -172,13 +172,12 @@ public:
   void reportStatus(std::ostream& os)
   {
     // print some class variables:
-    os << "NormalizedGaussianRegion::reportStatus begin" << std::endl;
-    os << "num_els: " << num_els << ", num_regions: " << num_regions << std::endl;
-    os << "Normalized: " << (normalized ? "true" : "false") << std::endl;
-    os << "Counting Functions: " << std::endl;
+    os << "  Region type: NormalizedGaussianRegion" << std::endl;
+    os << "    num_els: " << num_els << ", num_regions: " << num_regions << std::endl;
+    os << "    Normalized: " << (normalized ? "true" : "false") << std::endl;
+    os << "  Counting Functions: " << std::endl;
     for (int I = 0; I < C.size(); ++I)
       C[I]->reportStatus(os);
-    os << "NormalizedGaussianRegion::reportStatus end" << std::endl;
   }
 
   NormalizedGaussianRegion* makeClone()
