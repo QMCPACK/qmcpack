@@ -221,10 +221,10 @@ TEST_CASE("CountingJastrow","[wavefunction]")
   for(int i = 0; i < num_els; ++i)
   {
     for(int k = 0; k < 3; ++k)
-      CHECK( Jgrad_exact[i][k] == Approx(elec.G[i][k]) );
-    CHECK( Jlap_exact[i] == Approx(elec.L[i]) );
+      REQUIRE( Jgrad_exact[i][k] == Approx(elec.G[i][k]) );
+    REQUIRE( Jlap_exact[i] == Approx(elec.L[i]) );
   }
-  CHECK( Jval_exact == Approx(logval) );
+  REQUIRE( Jval_exact == Approx(logval) );
   
   // test automatic/minimal voronoi generator
   const char * cj_voronoi_xml = "<jastrow name=\"ncjf_voronoi\" type=\"Counting\" source=\"ion0\">\
@@ -262,17 +262,17 @@ TEST_CASE("CountingJastrow","[wavefunction]")
   for(int i = 0; i < num_els; ++i)
   {
     for(int k = 0; k < 3; ++k)
-      CHECK( Jgrad_exact[i][k] == Approx(elec.G[i][k]) );
-    CHECK( Jlap_exact[i] == Approx(elec.L[i]) );
+      REQUIRE( Jgrad_exact[i][k] == Approx(elec.G[i][k]) );
+    REQUIRE( Jlap_exact[i] == Approx(elec.L[i]) );
   }
-  CHECK( Jval_exact == Approx(logval) );
+  REQUIRE( Jval_exact == Approx(logval) );
   
   // test evalGrad
   for(int iat = 0; iat < num_els; ++iat)
   {
     GradType Jgrad_iat = cj->evalGrad(elec, iat);
     for(int k = 0; k < 3; ++k)
-      CHECK( Jgrad_exact[iat][k] == Approx(Jgrad_iat[k]) );
+      REQUIRE( Jgrad_exact[iat][k] == Approx(Jgrad_iat[k]) );
   }
 
   // reference for ratio, ratioGrad, acceptMove
@@ -295,13 +295,13 @@ TEST_CASE("CountingJastrow","[wavefunction]")
     elec.makeMoveAndCheck(iat,dr[iat]);
   
     ValueType ratioval = cj->ratio(elec, iat);
-    CHECK( ratioval_exact[iat] == Approx(ratioval));
+    REQUIRE( ratioval_exact[iat] == Approx(ratioval));
 
     GradType grad_iat(0,0,0);
     ValueType gradratioval = cj->ratioGrad(elec, iat, grad_iat);
-    CHECK( ratioval_exact[iat] == Approx(gradratioval));
+    REQUIRE( ratioval_exact[iat] == Approx(gradratioval));
     for(int k = 0; k < 3; ++k)
-      CHECK(Jgrad_t_exact[iat][k] == Approx(grad_iat[k]));
+      REQUIRE(Jgrad_t_exact[iat][k] == Approx(grad_iat[k]));
 
     cj->acceptMove(elec, iat);
   }
@@ -361,8 +361,8 @@ TEST_CASE("CountingJastrow","[wavefunction]")
   cj->evaluateDerivatives(elec, optVars, dlogpsi, dhpsioverpsi);
   for(int p = 0; p < num_derivs; ++p)
   {
-    CHECK ( dlogpsi_exact[p] == Approx(dlogpsi[p]) );
-    CHECK ( dhpsioverpsi_exact[p] == Approx(dhpsioverpsi[p]) );
+    REQUIRE ( dlogpsi_exact[p] == Approx(dlogpsi[p]) );
+    REQUIRE ( dhpsioverpsi_exact[p] == Approx(dhpsioverpsi[p]) );
   }
   
   // test makeClone
@@ -372,8 +372,8 @@ TEST_CASE("CountingJastrow","[wavefunction]")
   cj2->evaluateDerivatives(elec, optVars, dlogpsi, dhpsioverpsi);
   for(int p = 0; p < num_derivs; ++p)
   {
-    CHECK ( dlogpsi_exact[p] == Approx(dlogpsi[p]) );
-    CHECK ( dhpsioverpsi_exact[p] == Approx(dhpsioverpsi[p]) );
+    REQUIRE ( dlogpsi_exact[p] == Approx(dlogpsi[p]) );
+    REQUIRE ( dhpsioverpsi_exact[p] == Approx(dhpsioverpsi[p]) );
   }
 
   // test resetParameters, recompute
@@ -381,7 +381,7 @@ TEST_CASE("CountingJastrow","[wavefunction]")
     optVars[p] = 0;
   cj->resetParameters(optVars);
   cj->recompute(elec);
-  CHECK( cj->LogValue == 0 );
+  REQUIRE( cj->LogValue == 0 );
 
 }
 
