@@ -46,6 +46,11 @@ TEST_CASE("CUDA_allocators", "[CUDA]")
     cudaPointerAttributes attr;
     cudaErrorCheck(cudaPointerGetAttributes(&attr, vec.data()) , "cudaPointerGetAttributes failed!");
     REQUIRE(attr.type == cudaMemoryTypeHost);
+    Vector<double, CUDALockedPageAllocator<double>> vecb(vec);
+  }
+  { // CUDALockedPageAllocator zero size and copy constructor
+    Vector<double, CUDALockedPageAllocator<double>> vec;
+    Vector<double, CUDALockedPageAllocator<double>> vecb(vec);
   }
 }
 
