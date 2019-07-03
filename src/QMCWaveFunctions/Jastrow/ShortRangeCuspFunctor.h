@@ -494,7 +494,7 @@ struct ShortRangeCuspFunctor : public OptimizableFunctorBase
 
       // get the name of the child node
       std::string cname((const char*)childPtr->name);
-      tolower(cname);
+      tolower(cname); // make it case insensitive
 
       // read in a variable
       if (cname == "var")
@@ -560,6 +560,11 @@ struct ShortRangeCuspFunctor : public OptimizableFunctorBase
           PRE.error("Unrecognized value for \"optimize\". Should be either yes or no", true);
         }
 
+      }
+
+      // error if cname is not recognized
+      else {
+        PRE.error("Unrecognized value for \"cname\". Allowed values are \"var\" and \"coefficients\"", true);
       }
 
       // go to the next node
