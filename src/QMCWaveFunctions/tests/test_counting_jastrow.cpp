@@ -226,14 +226,8 @@ TEST_CASE("CountingJastrow","[wavefunction]")
   }
   CHECK( Jval_exact == Approx(logval) );
   
-  // test automatic voronoi generator
+  // test automatic/minimal voronoi generator
   const char * cj_voronoi_xml = "<jastrow name=\"ncjf_voronoi\" type=\"Counting\" source=\"ion0\">\
-      <var name=\"F\" opt=\"true\">\
-        4.4903e-01 5.3502e-01 5.2550e-01 6.8081e-01\
-                   5.1408e-01 4.8658e-01 6.2182e-01\
-                              2.7189e-01 9.4951e-01\
-                                         0.0000e+00\
-      </var>\
       <region type=\"voronoi\" opt=\"true\">\
         <var name=\"alpha\">1.0</var>\
       </region>\

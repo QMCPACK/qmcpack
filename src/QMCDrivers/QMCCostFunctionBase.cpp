@@ -721,7 +721,7 @@ void QMCCostFunctionBase::updateXmlNodes()
         // assign to tag
         xmlNodePtr cur = cit->second->children;
         xmlNodeSetContent(cur, (const xmlChar*)(os.str().c_str()));
-
+        xmlNodeAddContent(cur, (const xmlChar*)"\n      ");
       }
       // gaussian function parameters A, B, C
       else
@@ -894,14 +894,13 @@ void QMCCostFunctionBase::addCJParams(xmlXPathContextPtr acontext, const char* c
       // F variable tag isn't found; build the tag.
       if(!Ftag_found)
       {
-        xmlNodeAddContent(cur, (const xmlChar*)"\n        ");
+        xmlNodeAddContent(cur, (const xmlChar*)"\n      ");
         xmlNodePtr F_tag = xmlNewChild(cur, NULL, (const xmlChar*)"var", NULL);
         xmlSetProp(F_tag, (const xmlChar*) "name", (const xmlChar*)"F");
         xmlSetProp(F_tag, (const xmlChar*) "opt", (const xmlChar*)"true");
         xmlNodeSetContent(F_tag, (const xmlChar*)" ");
-        xmlNodeAddContent(F_tag, (const xmlChar*)"\n        ");
         coeffNodes["cj_F"] = F_tag;
-        xmlNodeAddContent(cur, (const xmlChar*)"\n      ");
+        xmlNodeAddContent(cur, (const xmlChar*)"\n    ");
       }
 
       cur2 = cur->xmlChildrenNode;
