@@ -122,7 +122,6 @@ public:
     // transform according to reference
     if(gref != NULL)
       this->divide_eq(gref);
-    this->reportStatus(app_log());
   }
 
   void restore(int iat) {}

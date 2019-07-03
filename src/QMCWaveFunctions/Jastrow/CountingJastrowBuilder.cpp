@@ -122,7 +122,6 @@ bool CountingJastrowBuilder::createCJ(xmlNodePtr cur)
         //int i = 0;
         std::ostringstream os;
         // add a function for each source particle
-        //for(auto it = SourcePtcl->R.begin(); it != SourcePtcl->R.end(); ++it )
         for(int i = 0; i < SourcePtcl->R.size(); ++i)
         {
           PosType gr = SourcePtcl->R[i];
@@ -194,17 +193,6 @@ bool CountingJastrowBuilder::createCJ(xmlNodePtr cur)
           for(int J = 0; J < F.cols(); ++J)
             F(I,J) -= x;
       }
-//      if (namestr == "G")
-//      {
-//        // read in opt_G
-//        OhmmsAttributeSet rAttrib2;
-//        std::string opt = "true";
-//        rAttrib2.add(opt, "opt");
-//        rAttrib2.put(cur);
-//        opt = (opt == "yes" || opt == "true");
-//        // read in G vector
-//        putContent(G, cur);
-//      }
       if (namestr == "debug")
       {
         // read in debug options

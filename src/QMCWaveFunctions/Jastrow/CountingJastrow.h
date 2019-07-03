@@ -200,7 +200,6 @@ public:
   {
     os << std::endl << " --- CountingJastrow ---" << std::endl;
     // print F matrix
-    os << "  F matrix:"
     //   << ", opt_F: " << (opt_F ? "true" : "false");
     //for (int I = 0; I < num_regions; ++I)
     //{
@@ -216,6 +215,7 @@ public:
       os << "  debug_period: " << debug_period << std::endl;
     }
     // print counting region status
+    os << "  F matrix: " << std::endl;
     myVars.print(os, 4, false);
     C->reportStatus(os);
   }
