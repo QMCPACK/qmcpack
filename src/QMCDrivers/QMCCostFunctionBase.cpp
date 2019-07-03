@@ -677,14 +677,11 @@ void QMCCostFunctionBase::updateXmlNodes()
     // counting jastrow variables
     else if(rname.find("cj_") == 0 )
     {
-      //app_log() << "printing counting jastrow variable: " << rname << std::endl;
       opt_variables_type::iterator vit(OptVariables.begin());
       // F matrix variables
       if(rname.find("cj_F") < rname.size())
       {
-        //app_log() << "  recognized as F matrix" << std::endl;
         // get a vector of pairs with f matrix names, values
-        //std::vector<opt_variables_type::pair_type> f_pairs;
         std::vector<Return_rt> f_vals;
         for(auto vit = OptVariables.begin(); vit != OptVariables.end(); ++vit)
         {
@@ -695,7 +692,6 @@ void QMCCostFunctionBase::updateXmlNodes()
         f_vals.push_back(0);
         // get the dimensions of the f matrix
         int Fdim = (std::sqrt(1 + 8*f_vals.size()) - 1)/2;
-        //app_log() << "  Fdim = " << Fdim << std::endl;
         std::ostringstream os;
         std::string pad_str = std::string(14, ' ');
         os << std::endl;
@@ -718,7 +714,6 @@ void QMCCostFunctionBase::updateXmlNodes()
           if( i < Fdim - 1)
             os << std::endl;
         }
-        //app_log() << "  Constructed indented string and adding to xmlNode:" << os.str() << std::endl;
         // assign to tag
         xmlNodePtr cur = cit->second->children;
         xmlNodeSetContent(cur, (const xmlChar*)(os.str().c_str()));
@@ -727,14 +722,12 @@ void QMCCostFunctionBase::updateXmlNodes()
       // gaussian function parameters A, B, C
       else
       {
-        //app_log() << "  recognized as gaussian variable" << std::endl;
         std::string var_prefix = rname.substr(3);
         std::vector<opt_variables_type::pair_type> val_pairs;
         std::vector<Return_rt> vals;
 
         for(auto vit = OptVariablesForPsi.begin(); vit != OptVariablesForPsi.end(); ++vit)
         {
-          //app_log() << "  " << vit->first << " "  << vit->second << std::endl;
           if( vit->first.find( var_prefix ) == 0)
           {
             vals.push_back( vit->second );
@@ -749,10 +742,6 @@ void QMCCostFunctionBase::updateXmlNodes()
           if( i < vals.size() - 1)
             os << " ";
         }
-        //app_log() << "  Printing " << vals.size() << " values to tag with id " << var_prefix << std::endl;
-        //for(int i = 0; i < vals.size(); ++i)
-        //  app_log() << val_pairs[i].first << ": " << val_pairs[i].second << std::endl;;
-        //app_log() << std::endl;
         xmlNodePtr cur = cit->second->children;
         xmlNodeSetContent(cur, (const xmlChar*)(os.str().c_str()));
       }
@@ -841,7 +830,6 @@ void QMCCostFunctionBase::addCoefficients(xmlXPathContextPtr acontext, const cha
 
 void QMCCostFunctionBase::addCJParams(xmlXPathContextPtr acontext, const char* cname)
 {
-  //app_log() << "registering Counting Jastrow Parameters; cname = " << cname << std::endl;
   xmlXPathObjectPtr result = xmlXPathEvalExpression((const xmlChar*)cname, acontext);
   for(int iparam = 0; iparam < result->nodesetval->nodeNr; iparam++)
   {
@@ -853,7 +841,6 @@ void QMCCostFunctionBase::addCJParams(xmlXPathContextPtr acontext, const char* c
     cAttrib.add(aname, "name");
     cAttrib.add(atype, "type");
     cAttrib.put(cur);
-    //app_log() << "  searching for counting type, currently: " << atype << std::endl;
     if(atype == "Counting")
     {
       // iterate through children
@@ -863,7 +850,6 @@ void QMCCostFunctionBase::addCJParams(xmlXPathContextPtr acontext, const char* c
       // find the <var name="F" /> tag, save the location
       while(cur2 != NULL)
       {
-        //app_log() << "  in Counting tag" << std::endl;
         std::string tname2((const char*)cur2->name);
         OhmmsAttributeSet cAttrib2;
         std::string aname2("none");
@@ -907,7 +893,6 @@ void QMCCostFunctionBase::addCJParams(xmlXPathContextPtr acontext, const char* c
       cur2 = cur->xmlChildrenNode;
       while(cur2 != NULL)
       {
-        //app_log() << "  in Counting tag" << std::endl;
         std::string tname2((const char*)cur2->name);
         OhmmsAttributeSet cAttrib2;
         std::string aname2("none");
@@ -948,13 +933,10 @@ void QMCCostFunctionBase::addCJParams(xmlXPathContextPtr acontext, const char* c
               // create function tag, set id
               xmlNodeAddContent(cur2, (const xmlChar*)"\n        ");
               xmlNodePtr function_tag = xmlNewChild(cur2, NULL, (const xmlChar*)"function", NULL);
-              //xmlNewTextChild(cur2, NULL, (const xmlChar*)"\n", (const xmlChar*)"\n");
               xmlNewProp(function_tag, (const xmlChar*)"id", (const xmlChar*)gid.c_str());
               xmlNodeAddContent(function_tag, (const xmlChar*)"\n          ");
-
               // create A tag
               xmlNodePtr A_tag = xmlNewChild(function_tag, NULL, (const xmlChar*)"var", NULL);
-              //xmlNewTextChild(function_tag, NULL, (const xmlChar*)"", (const xmlChar*)"\n  ");
               xmlNodeAddContent(function_tag, (const xmlChar*)"\n          ");
               xmlNewProp(A_tag, (const xmlChar*)"name", (const xmlChar*)"A");
               xmlNewProp(A_tag, (const xmlChar*)"opt", (const xmlChar*)opt.c_str());
@@ -972,7 +954,6 @@ void QMCCostFunctionBase::addCJParams(xmlXPathContextPtr acontext, const char* c
 
               // create B tag
               xmlNodePtr B_tag = xmlNewChild(function_tag, NULL, (const xmlChar*)"var", NULL);
-              //xmlNewTextChild(function_tag, NULL, (const xmlChar*)"", (const xmlChar*)"\n  ");
               xmlNodeAddContent(function_tag, (const xmlChar*)"\n          ");
               xmlNewProp(B_tag, (const xmlChar*)"name", (const xmlChar*)"B");
               xmlNewProp(B_tag, (const xmlChar*)"opt", (const xmlChar*)opt.c_str());
@@ -989,7 +970,6 @@ void QMCCostFunctionBase::addCJParams(xmlXPathContextPtr acontext, const char* c
 
               // create C tag
               xmlNodePtr C_tag = xmlNewChild(function_tag, NULL, (const xmlChar*)"var", NULL);
-              //xmlNewTextChild(function_tag, NULL, (const xmlChar*)"", (const xmlChar*)"\n  ");
               xmlNodeAddContent(function_tag, (const xmlChar*)"\n        ");
               xmlNewProp(C_tag, (const xmlChar*)"name", (const xmlChar*)"C");
               xmlNewProp(C_tag, (const xmlChar*)"opt", (const xmlChar*)opt.c_str());
@@ -1010,8 +990,6 @@ void QMCCostFunctionBase::addCJParams(xmlXPathContextPtr acontext, const char* c
           // register the optimizable variables for each function
           // find <function /> tags
           xmlNodePtr cur3 = cur2->xmlChildrenNode;
-
-          //app_log() << " iterating through region children" << std::endl;
           while(cur3 != NULL)
           {
             std::string tname3((const char*) cur3->name);
@@ -1020,10 +998,8 @@ void QMCCostFunctionBase::addCJParams(xmlXPathContextPtr acontext, const char* c
             cAttrib3.add(fid, "id");
             cAttrib3.put(cur3);
             // for each function tag, register coeffNodes[gid_A/B/C] as each variable location
-            //app_log() << "  tname3: " << tname3 << std::endl;
             if(tname3 == "function")
             {
-              //app_log() << "  found <function />" << std::endl;;
               // find <var name="A/B/C" /> tags
               xmlNodePtr cur4 = cur3->xmlChildrenNode;
               while(cur4 != NULL)
@@ -1035,14 +1011,9 @@ void QMCCostFunctionBase::addCJParams(xmlXPathContextPtr acontext, const char* c
                 cAttrib4.add(aname4, "name");
                 cAttrib4.add(aopt4, "opt");
                 cAttrib4.put(cur4);
-                //bool is_bitstr = std::all_of(aopt4.begin(), aopt4.end(), [&](char c) { return c == '0' || c == '1'; });
-                //bool is_optstr = std::any_of(aopt4.begin(), aopt4.end(), [&](char c) { return c == '1'; });
-                //bool opt4 = (aopt4 == "true") || (is_bitstr && is_optstr);
                 if(tname4 == "var" && (aopt4 == "true" || aopt4 == "yes"))
                 {
-                  //app_log() << "  found <var opt=\"true\"/>" << std::endl;
                   std::string varname = "cj_" + fid + "_" + aname4;
-                  //app_log() << "  setting varname = " << varname << std::endl;
                   bool notlisted = true;
                   opt_variables_type::iterator oit(OptVariables.begin()), oit_end(OptVariables.end());
                   while(notlisted && oit != oit_end)
@@ -1053,7 +1024,6 @@ void QMCCostFunctionBase::addCJParams(xmlXPathContextPtr acontext, const char* c
                   }
                   if(!notlisted)
                   {
-                    //app_log() << "  registering location as " << varname << std::endl;
                     coeffNodes[varname] = cur4;
                   }
                 }

@@ -50,8 +50,7 @@ bool CountingJastrowBuilder::createCJ(xmlNodePtr cur)
   auto* C = new RegionType(targetPtcl);
 
   Matrix<RealType> F;
-  //std::vector<RealType> G;
-  bool opt_C = true, opt_F = true; //, opt_G = false;
+  bool opt_C = true, opt_F = true;
   bool debug_flag = false;
   int period = 0, seqlen = 0;
 
@@ -119,7 +118,6 @@ bool CountingJastrowBuilder::createCJ(xmlNodePtr cur)
         {
           // quit with error - need a valid source
         }
-        //int i = 0;
         std::ostringstream os;
         // add a function for each source particle
         for(int i = 0; i < SourcePtcl->R.size(); ++i)
@@ -205,13 +203,9 @@ bool CountingJastrowBuilder::createCJ(xmlNodePtr cur)
     }
     cur = cur->next;
   }
-
-  //auto* CJ = new CJOrbitalType(targetPtcl, C, F, G);
   auto* CJ = new CJOrbitalType(targetPtcl, C, F);
 
   CJ->addDebug(debug_flag, seqlen, period);
-  //CJ->addOpt(opt_C, opt_G, opt_F);
-  //CJ->setOptimizable(opt_C || opt_G || opt_F);
   CJ->addOpt(opt_C, opt_F);
   CJ->setOptimizable(opt_C || opt_F);
   CJ->initialize();
