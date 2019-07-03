@@ -139,7 +139,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOne(ParticleSet& W,
     for (int j = 0; j < nknot; j++)
     {
       deltaV[j] = r * rrotsgrid_m[j] - dr;
-      W.makeMoveOnSphere(iel, deltaV[j]);
+      W.makeMove(iel, deltaV[j]);
 #if defined(QMC_COMPLEX)
       psiratio[j] = psi.ratio(W, iel) * sgridweight_m[j] * std::cos(psi.getPhaseDiff());
 #else
@@ -239,7 +239,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
     for (int j = 0; j < nknot; j++)
     {
       deltaV[j] = r * rrotsgrid_m[j] - dr;
-      W.makeMoveOnSphere(iel, deltaV[j]);
+      W.makeMove(iel, deltaV[j]);
 #if defined(QMC_COMPLEX)
       gradtmp_ = 0;
 
@@ -424,7 +424,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
     for (int j = 0; j < nknot; j++)
     {
       deltaV[j] = r * rrotsgrid_m[j] - dr;
-      W.makeMoveOnSphere(iel, deltaV[j]);
+      W.makeMove(iel, deltaV[j]);
 #if defined(QMC_COMPLEX)
       gradtmp_ = 0;
 
@@ -487,7 +487,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
     for (unsigned int j = 0; j < nknot; j++)
     {
       deltaV[j] = r * rrotsgrid_m[j] - dr;
-      W.makeMoveOnSphere(iel, deltaV[j]);
+      W.makeMove(iel, deltaV[j]);
       //"Accepting" moves is necessary because evalGradSource needs full distance tables
       //for now.
       W.acceptMove(iel);
@@ -499,7 +499,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
       pulay_quad[j][jat] = iongradtmp_;
       //And move the particle back.
       deltaV[j] = dr - r * rrotsgrid_m[j];
-      W.makeMoveOnSphere(iel, deltaV[j]);
+      W.makeMove(iel, deltaV[j]);
       W.acceptMove(iel);
     }
   }

@@ -10,7 +10,7 @@
 ## File created by: Anouar Benali, benali@anl.gov, Argonne National Laboratory
 #######################################################################################
 
-
+from __future__ import print_function
 
 def savetoqmcpack(cell,mf,title="Default",kpts=[],kmesh=[],sp_twist=[],weight=1.0,cas_idx=None):
   import h5py, re, sys
@@ -129,7 +129,7 @@ def savetoqmcpack(cell,mf,title="Default",kpts=[],kmesh=[],sp_twist=[],weight=1.
         # Transform MO indices
         E_k_degen = abs(E_g[1:] - E_g[:-1]).max() < 1e-5
         if numpy.any(E_k_degen):
-            print "Entered Strange If statement"
+            print("Entered Strange If statement")
             degen_mask = numpy.append(False, E_k_degen) | numpy.append(E_k_degen, False)
             shift = min(E_g[degen_mask]) - .1
             f = numpy.dot(C_gamma[:,degen_mask] * (E_g[degen_mask] - shift),

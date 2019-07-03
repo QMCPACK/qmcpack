@@ -147,8 +147,6 @@ bool WaveFunctionFactory::build(xmlNodePtr cur, bool buildtree)
     }
     else if (cname == "example_he")
     {
-      if (targetPtcl->Lattice.SuperCellEnum == SUPERCELL_OPEN)
-        targetPtcl->setBoundBox(false);
       WaveFunctionComponentBuilder* exampleHe_builder = new ExampleHeBuilder(*targetPtcl, *targetPsi, ptclPool);
       success                                         = exampleHe_builder->put(cur);
       addNode(exampleHe_builder, cur);

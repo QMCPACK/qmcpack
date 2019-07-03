@@ -232,6 +232,8 @@ eigenproblem in the basis of these supposedly important block-wise directions.
    &   \texttt{max\_param\_change} &  real     & $>0$ & 0.3 & Allowed change in wave function parameter\\
    &   \texttt{shift\_i} &  real     & $>0$ & 0.01 & Initial diagonal      stabilizer added to the Hamiltonian matrix\\
    &   \texttt{shift\_s} &  real     & $>0$ & 1.00 & Initial overlap-based stabilizer added to the Hamiltonian matrix\\
+   &   \texttt{target\_shift\_i} &  real     & any & -1.0 & Diagonal stabilizer value aimed for during adaptive method (disabled if $\leq$ 0)\\
+   &   \texttt{cost\_increase\_tol} &  real     & $\geq 0$ & 0.0 & Tolerance for cost function increases\\
    &   \texttt{chase\_lowest} &  text   & yes, no & yes & Chase the lowest eigenvector in iterative solver\\
    &   \texttt{chase\_closest} &  text   & yes, no & no & Chase the eigenvector closest to initial guess\\
    &   \texttt{block\_lm} &  text   & yes, no & no & Use block linear method\\
@@ -251,6 +253,10 @@ Additional information:
   \item \ixml{shift_s}.  This is the initial coefficient used to scale the overlap-based stabilizer.
                             More stable but slower optimization is expected with a large value.
                             The adaptive method will automatically adjust this value after each linear method iteration.
+  \item \ixml{target_shift_i}.  If set greater than zero, the adaptive method will choose the update whose shift\_i value is closest to
+                              this target value so long as the associated cost is within cost\_increase\_tol of the lowest cost.
+                              Disable this behavior by setting target\_shift\_i to a negative number.
+  \item \ixml{cost_increase_tol}.  Tolerance for cost function increases when selecting the best shift.
   \item \ixml{nblocks}.   This is the number of blocks used in block LM. The amount of memory required to store LM matrices decreases
                             with increased number of blocks. But the error introduced by BLM would increase with number of blocks.  
   \item \ixml{nolds}.     In BLM, the inter-block correlation is accounted for by including a small number of wave function update vectors

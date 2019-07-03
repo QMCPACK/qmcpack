@@ -48,15 +48,13 @@ struct AtomicOrbitalSoA
   SoaSphericalTensor<ST> Ylm;
   vContainer_type l_vals;
   vContainer_type r_power_minus_l;
-  ///expose the pointer to reuse the reader and only assigned with create_spline
-  ///also used as identifier of shallow copy
-  AtomicSplineType* MultiSpline;
-  MultiBspline1D<ST>* SplineInst;
+  ///1D spline of radial functions of all the orbitals
+  std::shared_ptr<MultiBspline1D<ST>> SplineInst;
 
   vContainer_type localV, localG, localL;
 
   AtomicOrbitalSoA(int Lmax)
-      : Ylm(Lmax), MultiSpline(nullptr), SplineInst(nullptr), lmax(Lmax), lm_tot((Lmax + 1) * (Lmax + 1))
+      : Ylm(Lmax), lmax(Lmax), lm_tot((Lmax + 1) * (Lmax + 1))
   {
     r_power_minus_l.resize(lm_tot);
     l_vals.resize(lm_tot);
@@ -66,12 +64,6 @@ struct AtomicOrbitalSoA
     rmin      = std::exp(std::log(std::numeric_limits<ST>::min()) / std::max(Lmax, 1));
     rmin      = std::max(rmin, std::numeric_limits<ST>::epsilon());
     rmin_sqrt = std::max(rmin, std::sqrt(std::numeric_limits<ST>::epsilon()));
-  }
-
-  ~AtomicOrbitalSoA()
-  {
-    if (MultiSpline != nullptr)
-      delete SplineInst;
   }
 
   inline void resizeStorage(size_t Nb)
@@ -84,9 +76,9 @@ struct AtomicOrbitalSoA
     create_spline();
   }
 
-  void bcast_tables(Communicate* comm) { chunked_bcast(comm, MultiSpline); }
+  void bcast_tables(Communicate* comm) { chunked_bcast(comm, SplineInst->getSplinePtr()); }
 
-  void gather_tables(Communicate* comm, std::vector<int>& offset) { gatherv(comm, MultiSpline, Npad, offset); }
+  void gather_tables(Communicate* comm, std::vector<int>& offset) { gatherv(comm, SplineInst->getSplinePtr(), Npad, offset); }
 
   template<typename PT, typename VT>
   inline void set_info(const PT& R,
@@ -116,9 +108,8 @@ struct AtomicOrbitalSoA
     grid.start = 0.0;
     grid.end   = spline_radius;
     grid.num   = spline_npoints;
-    SplineInst = new MultiBspline1D<ST>();
+    SplineInst = std::make_shared<MultiBspline1D<ST>>();
     SplineInst->create(grid, bc, lm_tot * Npad);
-    MultiSpline = &(SplineInst->spline_m);
   }
 
   inline void flush_zero() { SplineInst->flush_zero(); }
@@ -130,7 +121,7 @@ struct AtomicOrbitalSoA
 
   bool read_splines(hdf_archive& h5f)
   {
-    einspline_engine<AtomicSplineType> bigtable(MultiSpline);
+    einspline_engine<AtomicSplineType> bigtable(SplineInst->getSplinePtr());
     int lmax_in, spline_npoints_in;
     ST spline_radius_in;
     bool success = true;
@@ -153,7 +144,7 @@ struct AtomicOrbitalSoA
     success      = success && h5f.writeEntry(spline_npoints, "spline_npoints");
     success      = success && h5f.writeEntry(lmax, "l_max");
     success      = success && h5f.writeEntry(pos, "position");
-    einspline_engine<AtomicSplineType> bigtable(MultiSpline);
+    einspline_engine<AtomicSplineType> bigtable(SplineInst->getSplinePtr());
     success = success && h5f.writeEntry(bigtable, "radial_spline");
     return success;
   }
@@ -531,8 +522,8 @@ struct HybridAdoptorBase
   template<typename VV>
   inline RealType evaluate_v(const ParticleSet& P, const int iat, VV& myV)
   {
-    const auto* ei_dist  = P.DistTables[myTableID];
-    const int center_idx = ei_dist->get_first_neighbor(iat, dist_r, dist_dr, P.activePtcl == iat);
+    const auto& ei_dist  = P.getDistTable(myTableID);
+    const int center_idx = ei_dist.get_first_neighbor(iat, dist_r, dist_dr, P.activePtcl == iat);
     if (center_idx < 0)
       abort();
     auto& myCenter = AtomicCenters[Super2Prim[center_idx]];
@@ -559,7 +550,7 @@ struct HybridAdoptorBase
   {
     const int center_idx = VP.refSourcePtcl;
     auto& myCenter       = AtomicCenters[Super2Prim[center_idx]];
-    return VP.refPS.DistTables[myTableID]->Distances[VP.refPtcl][center_idx] < myCenter.non_overlapping_radius;
+    return VP.refPS.getDistTable(myTableID).Distances[VP.refPtcl][center_idx] < myCenter.non_overlapping_radius;
   }
 
   // C2C, C2R cases
@@ -567,11 +558,11 @@ struct HybridAdoptorBase
   inline RealType evaluateValuesC2X(const VirtualParticleSet& VP, VM& multi_myV)
   {
     const int center_idx = VP.refSourcePtcl;
-    dist_r               = VP.refPS.DistTables[myTableID]->Distances[VP.refPtcl][center_idx];
+    dist_r               = VP.refPS.getDistTable(myTableID).Distances[VP.refPtcl][center_idx];
     auto& myCenter       = AtomicCenters[Super2Prim[center_idx]];
     if (dist_r < myCenter.cutoff)
     {
-      myCenter.evaluateValues(VP.DistTables[myTableID]->Displacements, center_idx, dist_r, multi_myV);
+      myCenter.evaluateValues(VP.getDistTable(myTableID).Displacements, center_idx, dist_r, multi_myV);
       return smooth_function(myCenter.cutoff_buffer, myCenter.cutoff, dist_r);
     }
     return RealType(-1);
@@ -586,11 +577,11 @@ struct HybridAdoptorBase
                                     SV& bc_signs)
   {
     const int center_idx = VP.refSourcePtcl;
-    dist_r               = VP.refPS.DistTables[myTableID]->Distances[VP.refPtcl][center_idx];
+    dist_r               = VP.refPS.getDistTable(myTableID).Distances[VP.refPtcl][center_idx];
     auto& myCenter       = AtomicCenters[Super2Prim[center_idx]];
     if (dist_r < myCenter.cutoff)
     {
-      const auto& displ = VP.DistTables[myTableID]->Displacements;
+      const auto& displ = VP.getDistTable(myTableID).Displacements;
       for (int ivp = 0; ivp < VP.getTotalNum(); ivp++)
       {
         r_image       = myCenter.pos - displ[ivp][center_idx];
@@ -607,8 +598,8 @@ struct HybridAdoptorBase
   template<typename VV, typename GV>
   inline RealType evaluate_vgl(const ParticleSet& P, const int iat, VV& myV, GV& myG, VV& myL)
   {
-    const auto* ei_dist  = P.DistTables[myTableID];
-    const int center_idx = ei_dist->get_first_neighbor(iat, dist_r, dist_dr, P.activePtcl == iat);
+    const auto& ei_dist  = P.getDistTable(myTableID);
+    const int center_idx = ei_dist.get_first_neighbor(iat, dist_r, dist_dr, P.activePtcl == iat);
     if (center_idx < 0)
       abort();
     auto& myCenter = AtomicCenters[Super2Prim[center_idx]];
@@ -626,8 +617,8 @@ struct HybridAdoptorBase
   template<typename VV, typename GV, typename HT>
   inline RealType evaluate_vgh(const ParticleSet& P, const int iat, VV& myV, GV& myG, HT& myH)
   {
-    const auto* ei_dist  = P.DistTables[myTableID];
-    const int center_idx = ei_dist->get_first_neighbor(iat, dist_r, dist_dr, P.activePtcl == iat);
+    const auto& ei_dist  = P.getDistTable(myTableID);
+    const int center_idx = ei_dist.get_first_neighbor(iat, dist_r, dist_dr, P.activePtcl == iat);
     if (center_idx < 0)
       abort();
     auto& myCenter = AtomicCenters[Super2Prim[center_idx]];

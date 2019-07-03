@@ -56,7 +56,6 @@ TEST_CASE("VMC Particle-by-Particle advanceWalkers", "[drivers][vmc]")
   ions.R[0][2] = 0.0;
 
   elec.setName("elec");
-  elec.setBoundBox(false);
   std::vector<int> agroup(1);
   agroup[0] = 2;
   elec.create(agroup);

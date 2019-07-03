@@ -299,11 +299,11 @@ void QMCCostFunction::checkConfigurations()
         psiClones[ip]->evaluateDerivatives(wRef, OptVariablesForPsi, Dsaved, HDsaved);
         #else
         psiClones[ip]->evaluateDerivatives(wRef, OptVariablesForPsi, Dsaved, HDsaved);
+        #endif
         for (int i=0; i < NumOptimizables; i++) {
           rDsaved[i] = std::real(Dsaved[i]);
           rHDsaved[i] = std::real(HDsaved[i]);
         }
-        #endif
         etmp = hClones[ip]->evaluateValueAndDerivatives(wRef, OptVariablesForPsi, rDsaved, rHDsaved, compute_nlpp);
         copy(rDsaved.begin(), rDsaved.end(), (*DerivRecords[ip])[iw]);
         copy(rHDsaved.begin(), rHDsaved.end(), (*HDerivRecords[ip])[iw]);
@@ -415,11 +415,11 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine* Engine
         psiClones[ip]->evaluateDerivatives(wRef, OptVariablesForPsi, Dsaved, HDsaved);
         #else
         psiClones[ip]->evaluateDerivatives(wRef, OptVariablesForPsi, Dsaved, HDsaved);
+        #endif
         for (int i=0; i < NumOptimizables; i++) {
           rDsaved[i] = std::real(Dsaved[i]);
           rHDsaved[i] = std::real(HDsaved[i]);
         }
-        #endif
         etmp = hClones[ip]->evaluateValueAndDerivatives(wRef, OptVariablesForPsi, rDsaved, rHDsaved, compute_nlpp);
         //std::copy(Dsaved.begin(),Dsaved.end(),(*DerivRecords[ip])[iw]);
         //std::copy(HDsaved.begin(),HDsaved.end(),(*HDerivRecords[ip])[iw]);

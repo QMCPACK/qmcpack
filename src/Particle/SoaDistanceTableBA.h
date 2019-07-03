@@ -13,6 +13,8 @@
 #ifndef QMCPLUSPLUS_DTDIMPL_BA_H
 #define QMCPLUSPLUS_DTDIMPL_BA_H
 
+#include "Utilities/FairDivide.h"
+
 namespace qmcplusplus
 {
 /**@ingroup nnlist
@@ -80,11 +82,6 @@ struct SoaDistanceTableBA : public DTD_BConds<T, D, SC>, public DistanceTableDat
   inline void evaluate(ParticleSet& P, IndexType iat)
   {
     DTD_BConds<T, D, SC>::computeDistances(P.R[iat], Origin->RSoA, Distances[iat], Displacements[iat], 0, Nsources);
-  }
-
-  inline void moveOnSphere(const ParticleSet& P, const PosType& rnew)
-  {
-    DTD_BConds<T, D, SC>::computeDistances(rnew, Origin->RSoA, Temp_r.data(), Temp_dr, 0, Nsources);
   }
 
   ///evaluate the temporary pair relations

@@ -291,10 +291,12 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
       TG.global_barrier();
 
       return Hamiltonian(FactorizedSparseHamiltonian(AFinfo,cur,std::move(H1),std::move(V2_fact),TG,NuclearCoulombEnergy,FrozenCoreEnergy));
-    } else {
-      app_error()<<" Error in HamiltonianFactory::fromHDF5(): Unknown Hamiltonian Type. \n";
-      APP_ABORT("");
-    }
+    } 
+
+    app_error()<<" Error in HamiltonianFactory::fromHDF5(): Unknown Hamiltonian Type. \n";
+    APP_ABORT("");
+    return Hamiltonian{};
+   
 
 }
 }  // afqmc

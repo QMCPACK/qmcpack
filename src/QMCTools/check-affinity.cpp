@@ -63,6 +63,9 @@ int main()
 
   bool hwthread_id_supported = (get_hwthread() != -1);
 
+  if(rank==0)
+    std::cout << "OpenMP OMP_MAX_ACTIVE_LEVELS = " << omp_get_max_active_levels() << std::endl;
+
   for (int l_rank = 0; l_rank < world_size; l_rank++)
   {
     if (l_rank == rank)
