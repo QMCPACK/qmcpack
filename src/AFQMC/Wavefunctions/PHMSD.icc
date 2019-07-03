@@ -730,6 +730,214 @@ namespace afqmc
     TG.local_barrier();
   } 
 
+  /* 
+   * Computes the density matrix for a given reference. 
+   * G and Ov are expected to be in shared memory.
+   * Simple round-robin is used. 
+   */
+  template<class WlkSet, class MatA, class MatB, class MatG, class TVec>
+  void PHMSD::DensityMatrix_shared(const WlkSet& wset, MatA&& RefA, MatB&& RefB,
+                            MatG&& G, TVec&& Ov, bool herm, bool compact, bool transposed)
+  {
+    assert(G.stride(1)==1);
+    assert(Ov.stride(0)==1);
+    if(transposed)
+      assert(G.size(0) == wset.size() && G.size(1) == size_t(dm_size(not compact)));
+    else
+      assert(G.size(1) == wset.size() && G.size(0) == size_t(dm_size(not compact)));
+    const int nw = wset.size();
+    assert(Ov.size() >= nw);
+    // to force synchronization before modifying structures in SHM
+    TG.local_barrier();
+    fill_n(Ov.origin(),Ov.num_elements(),0);
+    fill_n(G.origin(),G.num_elements(),ComplexType(0.0));
+    TG.local_barrier();
+    double LogOverlapFactor(wset.getLogOverlapFactor());
+    auto Gsize = size_t(dm_size(not compact));
+    if(localGbuff.size() < Gsize)
+      localGbuff.reextent(iextensions<1u>{Gsize});
+
+    if(walker_type != COLLINEAR) {
+
+      if(herm)
+        assert( RefA.size(0) == dm_dims(false,Alpha).first &&
+                RefA.size(1) == dm_dims(false,Alpha).second );
+      else
+        assert( RefA.size(1) == dm_dims(false,Alpha).first &&
+                RefA.size(0) == dm_dims(false,Alpha).second );
+
+      auto Gdims = dm_dims(not compact,Alpha);
+      CMatrix_ref G2D_(localGbuff.origin(),{Gdims.first,Gdims.second});
+      CVector_ref G1D_(G2D_.origin(),iextensions<1u>{G2D_.num_elements()});
+
+      for(int iw=0; iw<nw; ++iw) {
+        if(iw%TG.TG_local().size() != TG.TG_local().rank()) continue;
+        Ov[iw] = SDetOp.MixedDensityMatrix(RefA,wset[iw].SlaterMatrix(Alpha),G2D_,
+                                             LogOverlapFactor,compact,herm);
+        if(walker_type==CLOSED) Ov[iw] *= ComplexType(Ov[iw]);
+        if(transposed)
+          G[iw] = G1D_;
+        else
+          G(G.extension(0),iw) = G1D_;
+      }
+
+    } else {
+
+      if(herm)
+        assert( RefA.size(0) == dm_dims(false,Alpha).first &&
+                RefA.size(1) == dm_dims(false,Alpha).second );
+      else
+        assert( RefA.size(1) == dm_dims(false,Alpha).first &&
+                RefA.size(0) == dm_dims(false,Alpha).second );
+      if(herm)
+        assert( RefB.size(0) == dm_dims(false,Beta).first &&
+                RefB.size(1) == dm_dims(false,Beta).second );
+      else
+        assert( RefB.size(1) == dm_dims(false,Beta).first &&
+                RefB.size(0) == dm_dims(false,Beta).second );
+
+      if(ovlp2.size(0) < 2*nw) ovlp2.reextent(iextensions<1u>{2*nw});
+      fill_n(ovlp2.origin(),2*nw,ComplexType(0.0));
+      auto GAdims = dm_dims(not compact,Alpha);
+      auto GBdims = dm_dims(not compact,Beta);
+      CMatrix_ref GA2D_(localGbuff.origin(),{GAdims.first,GAdims.second});
+      CMatrix_ref GB2D_(GA2D_.origin()+GA2D_.num_elements(),
+                                   {GBdims.first,GBdims.second});
+      CVector_ref GA1D_(GA2D_.origin(),iextensions<1u>{GA2D_.num_elements()});
+      CVector_ref GB1D_(GB2D_.origin(),iextensions<1u>{GB2D_.num_elements()});
+
+      for(int iw=0; iw<2*nw; ++iw) {
+        if(iw%TG.TG_local().size() != TG.TG_local().rank()) continue;
+
+        if(iw%2==0) {
+          ovlp2[iw] = SDetOp.MixedDensityMatrix(RefA,wset[iw/2].SlaterMatrix(Alpha),
+                               GA2D_,LogOverlapFactor,compact,herm);
+          if(transposed)
+            G[iw/2].sliced(0,GAdims.first*GAdims.second) = GA1D_;
+          else
+            G({0,GAdims.first*GAdims.second},iw/2) = GA1D_;
+        } else {
+          ovlp2[iw] = SDetOp.MixedDensityMatrix(RefB,wset[iw/2].SlaterMatrix(Beta),
+                                 GB2D_,LogOverlapFactor,compact,herm);
+          if(transposed)
+            G[iw/2].sliced(GAdims.first*GAdims.second,G.size(1)) = GB1D_;
+          else
+            G({GAdims.first*GAdims.second,G.size(0)},iw/2) = GB1D_;
+        }
+      }
+      if(TG.TG_local().size() > 1 )
+        TG.TG_local().all_reduce_in_place_n(to_address(ovlp2.origin()),2*nw,std::plus<>());
+      if(TG.TG_local().root())
+        for(int iw=0; iw<nw; ++iw)
+          Ov[iw] = ovlp2[2*iw]*ovlp2[2*iw+1];
+    }
+    TG.local_barrier();
+  }
+
+
+  template<class WlkSet, class MatA, class MatB, class MatG, class TVec>
+  void PHMSD::DensityMatrix_shared(const WlkSet& wset,
+                            std::vector<MatA>& RefsA, std::vector<MatB>& RefsB,
+                            MatG&& G, TVec&& Ov, bool herm, bool compact, bool transposed)
+  {
+    assert(G.stride(1)==1);
+    assert(Ov.stride(0)==1);
+    if(transposed)
+      assert(G.size(0) == wset.size() && G.size(1) == size_t(dm_size(not compact)));
+    else
+      assert(G.size(1) == wset.size() && G.size(0) == size_t(dm_size(not compact)));
+    const int nw = wset.size();
+    assert(Ov.size() >= nw);
+    // to force synchronization before modifying structures in SHM
+    TG.local_barrier();
+    fill_n(Ov.origin(),Ov.num_elements(),0);
+    fill_n(G.origin(),G.num_elements(),ComplexType(0.0));
+    TG.local_barrier();
+    double LogOverlapFactor(wset.getLogOverlapFactor());
+    auto Gsize = size_t(dm_size(not compact));
+    if(localGbuff.size() < Gsize)
+      localGbuff.reextent(iextensions<1u>{Gsize});
+
+    if(walker_type != COLLINEAR) {
+
+      int nArefs(RefsA.size());
+      auto Gdims = dm_dims(not compact,Alpha);
+      CMatrix_ref G2D_(localGbuff.origin(),{Gdims.first,Gdims.second});
+      CVector_ref G1D_(G2D_.origin(),iextensions<1u>{G2D_.num_elements()});
+
+      for(int iw=0; iw<nw; ++iw) {
+        if(iw%TG.TG_local().size() != TG.TG_local().rank()) continue;
+        auto&& RAi(RefsA[iw%nArefs]);
+        if(herm)
+          assert( RAi.size(0) == dm_dims(false,Alpha).first &&
+                  RAi.size(1) == dm_dims(false,Alpha).second );
+        else
+          assert( RAi.size(1) == dm_dims(false,Alpha).first &&
+                  RAi.size(0) == dm_dims(false,Alpha).second );
+        Ov[iw] = SDetOp.MixedDensityMatrix(RAi,wset[iw].SlaterMatrix(Alpha),G2D_,
+                                             LogOverlapFactor,compact,herm);
+        if(walker_type==CLOSED) Ov[iw] *= ComplexType(Ov[iw]);
+        if(transposed)
+          G[iw] = G1D_;
+        else
+          G(G.extension(0),iw) = G1D_;
+      }
+    } else {
+
+      int nArefs(RefsA.size());
+      int nBrefs(RefsB.size());
+      if(ovlp2.size(0) < 2*nw) ovlp2.reextent(iextensions<1u>{2*nw});
+      fill_n(ovlp2.origin(),2*nw,ComplexType(0.0));
+      auto GAdims = dm_dims(not compact,Alpha);
+      auto GBdims = dm_dims(not compact,Beta);
+      CMatrix_ref GA2D_(localGbuff.origin(),{GAdims.first,GAdims.second});
+      CMatrix_ref GB2D_(GA2D_.origin()+GA2D_.num_elements(),
+                                   {GBdims.first,GBdims.second});
+      CVector_ref GA1D_(GA2D_.origin(),iextensions<1u>{GA2D_.num_elements()});
+      CVector_ref GB1D_(GB2D_.origin(),iextensions<1u>{GB2D_.num_elements()});
+
+      for(int iw=0; iw<2*nw; ++iw) {
+        if(iw%TG.TG_local().size() != TG.TG_local().rank()) continue;
+        auto&& RAi(RefsA[iw%nArefs]);
+        auto&& RBi(RefsB[iw%nBrefs]);
+        if(herm)
+          assert( RAi.size(0) == dm_dims(false,Alpha).first &&
+                  RAi.size(1) == dm_dims(false,Alpha).second );
+        else
+          assert( RAi.size(1) == dm_dims(false,Alpha).first &&
+                  RAi.size(0) == dm_dims(false,Alpha).second );
+        if(herm)
+          assert( RBi.size(0) == dm_dims(false,Beta).first &&
+                  RBi.size(1) == dm_dims(false,Beta).second );
+        else
+          assert( RBi.size(1) == dm_dims(false,Beta).first &&
+                  RBi.size(0) == dm_dims(false,Beta).second );
+
+        if(iw%2==0) {
+          ovlp2[iw] = SDetOp.MixedDensityMatrix(RAi,wset[iw/2].SlaterMatrix(Alpha),
+                               GA2D_,LogOverlapFactor,compact,herm);
+          if(transposed)
+            G[iw/2].sliced(0,GAdims.first*GAdims.second) = GA1D_;
+          else
+            G({0,GAdims.first*GAdims.second},iw/2) = GA1D_;
+        } else {
+          ovlp2[iw] = SDetOp.MixedDensityMatrix(RBi,wset[iw/2].SlaterMatrix(Beta),
+                                 GB2D_,LogOverlapFactor,compact,herm);
+          if(transposed)
+            G[iw/2].sliced(GAdims.first*GAdims.second,G.size(1)) = GB1D_;
+          else
+            G({GAdims.first*GAdims.second,G.size(0)},iw/2) = GB1D_;
+        }
+      }
+      if(TG.TG_local().size() > 1 )
+        TG.TG_local().all_reduce_in_place_n(to_address(ovlp2.origin()),2*nw,std::plus<>());
+      if(TG.TG_local().root())
+        for(int iw=0; iw<nw; ++iw)
+          Ov[iw] = ovlp2[2*iw]*ovlp2[2*iw+1];
+    }
+    TG.local_barrier();
+  }
+
   /*
    * TODO: Implement.
    */

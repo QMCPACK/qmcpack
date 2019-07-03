@@ -36,7 +36,12 @@ class dummy_obs
   dummy_obs() {};
 
   template<class... Args>
-  void accumulate(Args&&... args) {
+  void accumulate_block(Args&&... args) {
+    throw std::runtime_error("calling visitor on dummy_obs object");
+  }
+
+  template<class... Args>
+  void accumulate_reference(Args&&... args) {
     throw std::runtime_error("calling visitor on dummy_obs object");
   }
 
@@ -81,9 +86,17 @@ class Observable: public boost::variant<dummy::dummy_obs,full1rdm>
     Observable& operator=(Observable&& other) = default;
 
     template<class... Args>
-    void accumulate(Args&&... args) {
+    void accumulate_block(Args&&... args) {
         boost::apply_visitor(
-            [&](auto&& a){a.accumulate(std::forward<Args>(args)...);},
+            [&](auto&& a){a.accumulate_block(std::forward<Args>(args)...);},
+            *this
+        );
+    }
+
+    template<class... Args>
+    void accumulate_reference(Args&&... args) {
+        boost::apply_visitor(
+            [&](auto&& a){a.accumulate_reference(std::forward<Args>(args)...);},
             *this
         );
     }

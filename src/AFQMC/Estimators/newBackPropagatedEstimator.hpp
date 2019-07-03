@@ -1,7 +1,6 @@
 #ifndef QMCPLUSPLUS_AFQMC_newBACKPROPAGATEDESTIMATOR_HPP
 #define QMCPLUSPLUS_AFQMC_newBACKPROPAGATEDESTIMATOR_HPP
 
-#include <Message/MPIObjectBase.h>
 #include "AFQMC/config.h"
 #include <vector>
 #include <queue>
@@ -226,7 +225,7 @@ class BackPropagatedEstimator_: public EstimatorBase
         dump.pop();
         write_metadata = false;
       }
-      observ0.print(dump,wset);
+      observ0.print(iblock,dump);
     }
   }
 

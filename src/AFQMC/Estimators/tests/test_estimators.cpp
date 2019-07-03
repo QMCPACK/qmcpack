@@ -34,6 +34,7 @@
 #include "AFQMC/Propagators/PropagatorFactory.h"
 #include "AFQMC/Propagators/Propagator.hpp"
 #include "AFQMC/Estimators/BackPropagatedEstimator.hpp"
+#include "AFQMC/Estimators/newBackPropagatedEstimator.hpp"
 #include "AFQMC/Utilities/test_utils.hpp"
 
 using std::string;
@@ -157,6 +158,7 @@ const char *propg_xml_block =
 "<Estimator name=\"back_propagation\"> \
       <parameter name=\"nsteps\">1</parameter> \
       <parameter name=\"block_size\">2</parameter> \
+      <parameter name=\"observables\">1rdm</parameter> \
       <parameter name=\"path_restoration\">false</parameter> \
   </Estimator> \
 ";
@@ -165,7 +167,8 @@ const char *propg_xml_block =
     REQUIRE(okay);
     bool impsamp = true;
     estimators.emplace_back(static_cast<EstimPtr>(
-                    std::make_shared<BackPropagatedEstimator>(
+                    //std::make_shared<BackPropagatedEstimator>(
+                    std::make_shared<BackPropagatedEstimator_>(
                             TG,InfoMap["info0"],"none",doc4.getRoot(),type,
                             wset,wfn,prop,impsamp)));
 

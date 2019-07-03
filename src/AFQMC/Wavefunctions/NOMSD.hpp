@@ -100,6 +100,7 @@ class NOMSD: public AFQMCInfo
                 OrbMats(move_vector<devPsiT_Matrix>(std::move(orbs_))),
                 RefOrbMats({0,0},shared_allocator<ComplexType>{TG.Node()}),
                 walker_type(wlk),
+                nspins((walker_type==COLLINEAR)?(2):(1)),
                 NuclearCoulombEnergy(nce),
                 shmbuff_for_E(iextensions<1u>{1},alloc_shared_),
                 mutex(std::make_unique<shared_mutex>(TG.TG_local())),
@@ -312,7 +313,9 @@ class NOMSD: public AFQMCInfo
      *                 otherwise returns the transpose with Dim: [nW][XXX}
      */
     template<class WlkSet, class MatG>
-    void MixedDensityMatrix(const WlkSet& wset, MatG&& G, bool compact=true, bool transpose=false) {
+    void MixedDensityMatrix(const WlkSet& wset, MatG&& G, 
+                                            bool compact=true, bool transpose=false) 
+    {
       int nw = wset.size();
       if(ovlp.num_elements() != nw)
         ovlp.reextent(iextensions<1u>{nw});
@@ -320,11 +323,46 @@ class NOMSD: public AFQMCInfo
     }
 
     template<class WlkSet, class MatG, class TVec>
-    void MixedDensityMatrix(const WlkSet& wset, MatG&& G, TVec&& Ov, bool compact=true, bool transpose=false) {
+    void MixedDensityMatrix(const WlkSet& wset, MatG&& G, TVec&& Ov, 
+                                            bool compact=true, bool transpose=false) 
+    {
       if(nbatch != 0)
         MixedDensityMatrix_batched(wset,std::forward<MatG>(G),std::forward<TVec>(Ov),compact,transpose);
       else
         MixedDensityMatrix_shared(wset,std::forward<MatG>(G),std::forward<TVec>(Ov),compact,transpose);
+    }
+
+    /*
+     * Calculates the density matrix with respect to a given Reference
+     * for all walkers in the walker set. 
+     */
+    template<class WlkSet, class MatA, class MatB, class MatG, class TVec>
+    void DensityMatrix(const WlkSet& wset, MatA&& RefA, MatB&& RefB, MatG&& G,
+                        TVec&& Ov, bool herm, bool compact, bool transposed) 
+    {
+      if(nbatch != 0)
+        DensityMatrix_batched(wset,std::forward<MatA>(RefA),std::forward<MatB>(RefB),
+                                std::forward<MatG>(G),std::forward<TVec>(Ov),
+                                herm,compact,transposed);
+      else
+        DensityMatrix_shared(wset,std::forward<MatA>(RefA),std::forward<MatB>(RefB),
+                                std::forward<MatG>(G),std::forward<TVec>(Ov),
+                                herm,compact,transposed);
+    }
+
+    template<class WlkSet, class MatA, class MatB, class MatG, class TVec>
+    void DensityMatrix(const WlkSet& wset,
+                        std::vector<MatA>& RefsA, std::vector<MatB>& RefsB, MatG&& G,
+                        TVec&& Ov, bool herm, bool compact, bool transposed)
+    {
+      if(nbatch != 0)
+        DensityMatrix_batched(wset,RefsA,RefsB,
+                                std::forward<MatG>(G),std::forward<TVec>(Ov),
+                                herm,compact,transposed);
+      else
+        DensityMatrix_shared(wset,RefsA,RefsB,
+                                std::forward<MatG>(G),std::forward<TVec>(Ov),
+                                herm,compact,transposed);
     }
 
     /*
@@ -420,6 +458,8 @@ class NOMSD: public AFQMCInfo
       return ((walker_type==COLLINEAR)?OrbMats.size()/2:OrbMats.size());
     }
 
+    ComplexType getReferenceWeight(int i) { return ci[i]; }
+
     /*
      * Returns the reference Slater Matrices needed for back propagation.  
      */
@@ -490,6 +530,7 @@ class NOMSD: public AFQMCInfo
 
     // in both cases below: closed_shell=0, UHF/ROHF=1, GHF=2
     WALKER_TYPES walker_type;
+    int nspins;
 
     int nbatch;
     int nbatch_qr;
@@ -532,12 +573,27 @@ class NOMSD: public AFQMCInfo
     MPI_Request req_SMsend, req_SMrecv;
 
     /* 
-     * Computes the mixed density matrix of a single given determinant in the trial wave function.
+     * Computes the density matrix with respect to a given reference. 
      * Intended to be used in combination with the energy evaluation routine.
      * G and Ov are expected to be in shared memory.
      */
-    template<class WlkSet, class MatG, class TVec>
-    void MixedDensityMatrix_for_E(const WlkSet& wset, MatG&& G, TVec&& Ov, int nd);
+    template<class WlkSet, class MatA, class MatB, class MatG, class TVec>
+    void DensityMatrix_shared(const WlkSet& wset, MatA&& RefsA, MatB&& RefsB, MatG&& G,
+                                TVec&& Ov, bool herm, bool compact, bool transposed);
+
+    template<class WlkSet, class MatA, class MatB, class MatG, class TVec>
+    void DensityMatrix_batched(const WlkSet& wset, MatA&& RefsA, MatB&& RefsB, MatG&& G,
+                                TVec&& Ov, bool herm, bool compact, bool transposed);
+
+    template<class WlkSet, class MatA, class MatB, class MatG, class TVec>
+    void DensityMatrix_shared(const WlkSet& wset,
+                                std::vector<MatA>& RefsA, std::vector<MatB>& RefsB, MatG&& G,
+                                TVec&& Ov, bool herm, bool compact, bool transposed);
+
+    template<class WlkSet, class MatA, class MatB, class MatG, class TVec>
+    void DensityMatrix_batched(const WlkSet& wset,
+                                std::vector<MatA>& RefsA, std::vector<MatB>& RefsB, MatG&& G,
+                                TVec&& Ov, bool herm, bool compact, bool transposed);
 
     template<class MatSM, class MatG, class TVec>
     void MixedDensityMatrix_for_E_from_SM(const MatSM& SM, MatG&& G, TVec&& Ov, int nd, double LogOverlapFactor); 
