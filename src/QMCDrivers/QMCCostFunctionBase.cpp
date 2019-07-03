@@ -765,8 +765,8 @@ void QMCCostFunctionBase::updateXmlNodes()
             sprintf(lambda_id, "%s_%d", rname.c_str(), i);
           else
             sprintf(lambda_id, "%s_%d_%d", rname.c_str(), i, j);
-          opt_variables_type::iterator vTarget(OptVariables.find(lambda_id));
-          if (vTarget != OptVariables.end())
+          opt_variables_type::iterator vTarget(OptVariablesForPsi.find(lambda_id));
+          if (vTarget != OptVariablesForPsi.end())
           {
             std::ostringstream vout;
             vout.setf(std::ios::scientific, std::ios::floatfield);
