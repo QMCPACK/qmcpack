@@ -126,7 +126,7 @@ TEST_CASE("Gaussian Functor","[wavefunction]")
   REQUIRE( dfval[9] == Approx(1));
 }
 
-TEST_CASE("NormalizedGaussianRegion","[wavefunction]")
+TEST_CASE("CountingJastrow","[wavefunction]")
 {
   using PosType = QMCTraits::PosType;
   using GradType = QMCTraits::GradType;
@@ -134,28 +134,44 @@ TEST_CASE("NormalizedGaussianRegion","[wavefunction]")
   using ValueType = QMCTraits::ValueType;
   using VariableSet = optimize::VariableSet;
 
+  // initialize particle sets
   ParticleSet elec;
-  std::vector<int> agroup(1);
+  std::vector<int> egroup(1);
   int num_els = 4;
-  agroup[0] = num_els;
+  egroup[0] = num_els;
   elec.setName("e");
-  elec.create(agroup);
-  PosType R[] = { PosType(2.4601162537, 6.7476360528,-1.9073129953),
-                     PosType(2.2585811248, 2.1282254384,0.051545776028),
-                     PosType(0.84796873937,5.1735597110,0.84642416761),
-                     PosType(3.1597337850, 5.1079432473,1.0545953717)};
+  elec.create(egroup);
+  PosType Re[] = { PosType(2.4601162537, 6.7476360528,-1.9073129953),
+                   PosType(2.2585811248, 2.1282254384,0.051545776028),
+                   PosType(0.84796873937,5.1735597110,0.84642416761),
+                   PosType(3.1597337850, 5.1079432473,1.0545953717)};
   for(int i = 0; i < num_els; ++i)
     for(int k = 0; k < 3; ++k)
-      elec.R[i][k] = R[i][k];
+      elec.R[i][k] = Re[i][k];
 
-  const char * cj_xml = "<jastrow name=\"ncjf\" type=\"Counting\">\
+  ParticleSet ion0;
+  std::vector<int> igroup(1);
+  int num_ion = 4;
+  igroup[0] = num_ion;
+  ion0.setName("ion0");
+  ion0.create(igroup);
+  PosType Ri[] = {PosType(2.61363352510301,  5.01928226905281,  0.0),
+                  PosType(3.74709851167814,  3.70007145722224,  0.0),
+                  PosType(6.11011670934565,  1.66504047681825,  0.0),
+                  PosType(8.10584803421091,  7.78608266172472,  0.0)};
+  
+  for(int i = 0; i < num_ion; ++i)
+    for(int k = 0; k < 3; ++k)
+      ion0.R[i][k] = Ri[i][k];
+
+  const char * cj_normgauss_xml = "<jastrow name=\"ncjf_normgauss\" type=\"Counting\">\
       <var name=\"F\" opt=\"true\">\
         4.4903e-01 5.3502e-01 5.2550e-01 6.8081e-01\
                    5.1408e-01 4.8658e-01 6.2182e-01\
                               2.7189e-01 9.4951e-01\
                                          0.0000e+00\
       </var>\
-      <region function=\"gaussian\" norm=\"true\" opt=\"true\" reference_id=\"g0\">\
+      <region type=\"normalized_gaussian\" reference_id=\"g0\" opt=\"true\" >\
         <function id=\"g0\">\
           <var name=\"A\" opt=\"False\">-1.0 -0.0 -0.0 -1.0 -0.0 -1.0</var>\
           <var name=\"B\" opt=\"False\">-2.6136335251 -5.01928226905 0.0</var>\
@@ -178,17 +194,17 @@ TEST_CASE("NormalizedGaussianRegion","[wavefunction]")
         </function>\
       </region>\
     </jastrow>";
-  // test put
+  // test put for normalized_gaussian
   Libxml2Document doc;
   TrialWaveFunction wf(NULL);
-  bool parse_cj = doc.parseFromString(cj_xml);
+  bool parse_cj = doc.parseFromString(cj_normgauss_xml);
   xmlNodePtr cj_root = doc.getRoot();
   CountingJastrowBuilder cjb(elec, wf);
   bool put_cj = cjb.put(cj_root);
 
   REQUIRE( parse_cj );
   REQUIRE( put_cj );
-  
+
   CountingJastrow<NormalizedGaussianRegion>* cj = dynamic_cast<CountingJastrow<NormalizedGaussianRegion>*>(wf.getOrbitals()[0]);
   
   // reference for evaluateLog, evalGrad
@@ -200,8 +216,49 @@ TEST_CASE("NormalizedGaussianRegion","[wavefunction]")
   RealType Jlap_exact[] = {1.9649428566e-03, -1.1385706794e-01, 3.2312809658e-03, 4.0668060285e-01};
 
 
-  // test evaluateLog
+  // test evaluateLog for cj
   RealType logval = cj->evaluateLog(elec, elec.G, elec.L);
+  for(int i = 0; i < num_els; ++i)
+  {
+    for(int k = 0; k < 3; ++k)
+      CHECK( Jgrad_exact[i][k] == Approx(elec.G[i][k]) );
+    CHECK( Jlap_exact[i] == Approx(elec.L[i]) );
+  }
+  CHECK( Jval_exact == Approx(logval) );
+  
+  // test automatic voronoi generator
+  const char * cj_voronoi_xml = "<jastrow name=\"ncjf_voronoi\" type=\"Counting\" source=\"ion0\">\
+      <var name=\"F\" opt=\"true\">\
+        4.4903e-01 5.3502e-01 5.2550e-01 6.8081e-01\
+                   5.1408e-01 4.8658e-01 6.2182e-01\
+                              2.7189e-01 9.4951e-01\
+                                         0.0000e+00\
+      </var>\
+      <region type=\"voronoi\" opt=\"true\">\
+        <var name=\"alpha\">1.0</var>\
+      </region>\
+    </jastrow>";
+  // test put
+  Libxml2Document doc2;
+  TrialWaveFunction wfv(NULL);
+  bool parse_cjv = doc2.parseFromString(cj_voronoi_xml);
+  xmlNodePtr cjv_root = doc2.getRoot();
+  CountingJastrowBuilder cjvb(elec, wfv, ion0);
+  bool put_cjv = cjvb.put(cjv_root);
+
+  REQUIRE( parse_cjv );
+  REQUIRE( put_cjv );
+
+  // test evaluateLog for cjv
+  CountingJastrow<NormalizedGaussianRegion>* cjv = dynamic_cast<CountingJastrow<NormalizedGaussianRegion>*>(wfv.getOrbitals()[0]);
+  for(int i = 0; i < num_els; ++i)
+  {
+    for(int k = 0; k < 3; ++k)
+      elec.G[i][k] = 0;
+    elec.L[i] = 0;
+  }
+
+  logval = cjv->evaluateLog(elec, elec.G, elec.L);
   for(int i = 0; i < num_els; ++i)
   {
     for(int k = 0; k < 3; ++k)

@@ -24,11 +24,11 @@ CountingJastrowBuilder::CountingJastrowBuilder(ParticleSet& target, TrialWaveFun
   NameOpt   = "0";
   TypeOpt   = "Counting";
   RegionOpt = "voronoi";
-  SourceOpt = SourcePtcl.getName();
+  SourceOpt = SourcePtcl->getName();
 }
 
-CountingJastrowBuilder::CountingJastrowBuilder(ParticleSet& target, TrialWaveFunction& psi, ParticleSet& source)
-    : WaveFunctionComponentBuilder(target, psi), SourcePtcl(&source)
+CountingJastrowBuilder::CountingJastrowBuilder(ParticleSet& target, TrialWaveFunction& psi)
+    : WaveFunctionComponentBuilder(target, psi)
 {
   ClassName = "CountingJastrowBuilder";
   NameOpt   = "0";
@@ -47,11 +47,11 @@ bool CountingJastrowBuilder::createCJ(xmlNodePtr cur)
 
   SpeciesSet& species(targetPtcl.getSpeciesSet());
 
-  auto* C = new RegionType(targetPtcl, );
+  auto* C = new RegionType(targetPtcl);
 
   Matrix<RealType> F;
-  std::vector<RealType> G;
-  bool opt_C = true, opt_F = true, opt_G = false;
+  //std::vector<RealType> G;
+  bool opt_C = true, opt_F = true; //, opt_G = false;
   bool debug_flag = false;
   int period = 0, seqlen = 0;
 
@@ -71,7 +71,7 @@ bool CountingJastrowBuilder::createCJ(xmlNodePtr cur)
       oAttrib.add(type, "type");
       oAttrib.put(cur);
       opt_C = (opt == "true" || opt == "yes");
-      // add functions
+      // add based on <function /> tags
       xmlNodePtr cur2 = cur->xmlChildrenNode;
       if(type == "normalized_gaussian")
       {
@@ -93,6 +93,7 @@ bool CountingJastrowBuilder::createCJ(xmlNodePtr cur)
           cur2 = cur2->next;
         }
       }
+      // add functions based on source
       else if (type == "voronoi")
       {
         RealType alpha = 1.0;
@@ -118,18 +119,19 @@ bool CountingJastrowBuilder::createCJ(xmlNodePtr cur)
         {
           // quit with error - need a valid source
         }
-        int i = 0;
+        //int i = 0;
         std::ostringstream os;
         // add a function for each source particle
-        for(auto it = SourcePtcl->R.begin(); it != SourcePtcl->R.end(); ++it )
+        //for(auto it = SourcePtcl->R.begin(); it != SourcePtcl->R.end(); ++it )
+        for(int i = 0; i < SourcePtcl->R.size(); ++i)
         {
+          PosType gr = SourcePtcl->R[i];
           bool opt_g = opt_C && (i != 0);
           os.str("");
           os << "g" << i;
           std::string fid = os.str();
-          FunctorType* func = new FunctorType(fid, alpha, *it, opt_g);
+          FunctorType* func = new FunctorType(fid, alpha, gr, opt_g);
           C->addFunc(func, fid);
-          ++i;
         }
       }
       // read in the counting region
@@ -175,18 +177,25 @@ bool CountingJastrowBuilder::createCJ(xmlNodePtr cur)
         }
         else if (form == "full_matrix")
           putContent(F, cur);
+
+        // transform the F matrix to put a zero in the lower-right corner
+        
+        RealType x = F(F.rows()-1, F.cols()-1);
+        for(int I = 0; I < F.rows(); ++I)
+          for(int J = 0; J < F.cols(); ++J)
+            F(I,J) -= x;
       }
-      if (namestr == "G")
-      {
-        // read in opt_G
-        OhmmsAttributeSet rAttrib2;
-        std::string opt = "true";
-        rAttrib2.add(opt, "opt");
-        rAttrib2.put(cur);
-        opt = (opt == "yes" || opt == "true");
-        // read in G vector
-        putContent(G, cur);
-      }
+//      if (namestr == "G")
+//      {
+//        // read in opt_G
+//        OhmmsAttributeSet rAttrib2;
+//        std::string opt = "true";
+//        rAttrib2.add(opt, "opt");
+//        rAttrib2.put(cur);
+//        opt = (opt == "yes" || opt == "true");
+//        // read in G vector
+//        putContent(G, cur);
+//      }
       if (namestr == "debug")
       {
         // read in debug options
@@ -200,11 +209,14 @@ bool CountingJastrowBuilder::createCJ(xmlNodePtr cur)
     cur = cur->next;
   }
 
-  auto* CJ = new CJOrbitalType(targetPtcl, C, F, G);
+  //auto* CJ = new CJOrbitalType(targetPtcl, C, F, G);
+  auto* CJ = new CJOrbitalType(targetPtcl, C, F);
 
   CJ->addDebug(debug_flag, seqlen, period);
-  CJ->addOpt(opt_C, opt_G, opt_F);
-  CJ->setOptimizable(opt_C || opt_G || opt_F);
+  //CJ->addOpt(opt_C, opt_G, opt_F);
+  //CJ->setOptimizable(opt_C || opt_G || opt_F);
+  CJ->addOpt(opt_C, opt_F);
+  CJ->setOptimizable(opt_C || opt_F);
   CJ->initialize();
 
   std::string cjname = "CJ_" + RegionOpt;
@@ -219,12 +231,7 @@ bool CountingJastrowBuilder::put(xmlNodePtr cur)
   oAttrib.add(TypeOpt, "type");
   oAttrib.add(NameOpt, "name");
   oAttrib.put(cur);
-  if (RegionOpt.find("normalized_gaussian") < RegionOpt.size())
-  {
-    createCJ(cur);
-  }
-
-  return true;
+  return createCJ(cur);
 }
 
 } // namespace qmcplusplus

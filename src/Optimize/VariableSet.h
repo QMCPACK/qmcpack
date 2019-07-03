@@ -124,6 +124,18 @@ struct VariableSet
     return -1;
   }
 
+  inline int getLoc(const std::string& vname) const
+  {
+    int loc = 0;
+    while (loc != NameAndValue.size())
+    {
+      if (NameAndValue[loc].first == vname)
+        return loc;
+      ++loc;
+    }
+    return -1;
+  }
+
   inline void insert(const std::string& vname, value_type v, bool enable = true, int type = OTHER_P)
   {
     iterator loc = find(vname);

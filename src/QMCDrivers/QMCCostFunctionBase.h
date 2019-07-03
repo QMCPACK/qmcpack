@@ -129,6 +129,8 @@ public:
 
   void addCoefficients(xmlXPathContextPtr acontext, const char* cname);
 
+  void addCJParams(xmlXPathContextPtr acontext, const char* cname);
+
   /** implement the virtual function
    * @param x0 current parameters
    * @param gr gradients or conjugate gradients

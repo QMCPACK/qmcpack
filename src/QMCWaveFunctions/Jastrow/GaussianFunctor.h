@@ -59,6 +59,9 @@ class GaussianFunctor
 
   // id string
   std::string id;
+  
+  // reference gaussian
+  GaussianFunctor* gref = NULL;
 
   // most recent evaluations
   RealType Fval;
@@ -76,73 +79,50 @@ public:
   { 
     id = fid;
     // set opt flags
+    opt_A.resize(6);
+    opt_B.resize(3);
     for(auto it = opt_A.begin(); it != opt_A.end(); ++it)
       *it = opt;
     for(auto it = opt_B.begin(); it != opt_B.end(); ++it)
       *it = opt;
     opt_C = opt;
     // set A
-    A(0,0) = A(1,1) = A(2,2) = -alpha;
+    A(0,0) = A(1,1) = A(2,2) = -1.0*alpha;
     A(0,1) = A(1,0) = A(0,2) = A(2,0) = A(1,2) = A(2,1) = 0;
     // set B
     d_to_b(r, A, B);
     // set C
     k_to_c(0, A, r, C);
   }
-
-  void initialize()
+  
+  // initialize with another gaussian reference
+  void initialize(GaussianFunctor* ref)
   {
     // register and update optimizable variables to current values
-//    if (opt_A[XX])
-//    {
-      myVars.insert(id + "_A_xx", A(X, X), opt_A[XX], optimize::OTHER_P);
-      myVars[id + "_A_xx"] = A(X, X);
-//    }
-//    if (opt_A[XY])
-//    {
-      myVars.insert(id + "_A_xy", A(X, Y), opt_A[XY], optimize::OTHER_P);
-      myVars[id + "_A_xy"] = A(X, Y);
-//    }
-//    if (opt_A[XZ])
-//    {
-      myVars.insert(id + "_A_xz", A(X, Z), opt_A[XZ], optimize::OTHER_P);
-      myVars[id + "_A_xz"] = A(X, Z);
-//    }
-//    if (opt_A[YY])
-//    {
-      myVars.insert(id + "_A_yy", A(Y, Y), opt_A[YY], optimize::OTHER_P);
-      myVars[id + "_A_yy"] = A(Y, Y);
-//    }
-//    if (opt_A[YZ])
-//    {
-      myVars.insert(id + "_A_yz", A(Y, Z), opt_A[YZ], optimize::OTHER_P);
-      myVars[id + "_A_yz"] = A(Y, Z);
-//    }
-//    if (opt_A[ZZ])
-//    {
-      myVars.insert(id + "_A_zz", A(Z, Z), opt_A[ZZ], optimize::OTHER_P);
-      myVars[id + "_A_zz"] = A(Z, Z);
-//    }
-//    if (opt_B[X])
-//    {
-      myVars.insert(id + "_B_x", B[X], opt_B[X], optimize::OTHER_P);
-      myVars[id + "_B_x"] = B[X];
-//    }
-//    if (opt_B[Y])
-//    {
-      myVars.insert(id + "_B_y", B[Y], opt_B[Y], optimize::OTHER_P);
-      myVars[id + "_B_y"] = B[Y];
-//    }
-//    if (opt_B[Z])
-//    {
-      myVars.insert(id + "_B_z", B[Z], opt_B[Z], optimize::OTHER_P);
-      myVars[id + "_B_z"] = B[Z];
-//    }
-//    if (opt_C)
-//    {
-      myVars.insert(id + "_C", C, opt_C, optimize::OTHER_P);
-      myVars[id + "_C"] = C;
-//    }
+    myVars.insert(id + "_A_xx", A(X, X), opt_A[XX], optimize::OTHER_P);
+    myVars[id + "_A_xx"] = A(X, X);
+    myVars.insert(id + "_A_xy", A(X, Y), opt_A[XY], optimize::OTHER_P);
+    myVars[id + "_A_xy"] = A(X, Y);
+    myVars.insert(id + "_A_xz", A(X, Z), opt_A[XZ], optimize::OTHER_P);
+    myVars[id + "_A_xz"] = A(X, Z);
+    myVars.insert(id + "_A_yy", A(Y, Y), opt_A[YY], optimize::OTHER_P);
+    myVars[id + "_A_yy"] = A(Y, Y);
+    myVars.insert(id + "_A_yz", A(Y, Z), opt_A[YZ], optimize::OTHER_P);
+    myVars[id + "_A_yz"] = A(Y, Z);
+    myVars.insert(id + "_A_zz", A(Z, Z), opt_A[ZZ], optimize::OTHER_P);
+    myVars[id + "_A_zz"] = A(Z, Z);
+    myVars.insert(id + "_B_x", B[X], opt_B[X], optimize::OTHER_P);
+    myVars[id + "_B_x"] = B[X];
+    myVars.insert(id + "_B_y", B[Y], opt_B[Y], optimize::OTHER_P);
+    myVars[id + "_B_y"] = B[Y];
+    myVars.insert(id + "_B_z", B[Z], opt_B[Z], optimize::OTHER_P);
+    myVars[id + "_B_z"] = B[Z];
+    myVars.insert(id + "_C", C, opt_C, optimize::OTHER_P);
+    myVars[id + "_C"] = C;
+    // transform according to reference
+    if(gref != NULL)
+      this->divide_eq(gref);
+    this->reportStatus(app_log());
   }
 
   void restore(int iat) {}
@@ -155,34 +135,92 @@ public:
 
   void resetParameters(const opt_variables_type& active)
   {
-    // set myVars from active
-    for (int i = 0; i < myVars.size(); ++i)
-    {
-      int ia = myVars.where(i);
-      if (ia != -1)
-        myVars[i] = active[ia];
-    }
+    //myVars.getIndex(active);
+    //// set myVars from active
+    //for (int i = 0; i < myVars.size(); ++i)
+    //{
+    //  int ia = myVars.where(i);
+    //  if (ia != -1)
+    //    myVars[i] = active[ia];
+    //}
     // set local variables from myVars
+    int ia;
+    std::string vid;
     if (opt_A[XX])
-      A(0, 0) = std::real(myVars[id + "_A_xx"]);
+    {
+      vid = id + "_A_xx";
+      ia = active.getLoc(vid);
+      myVars[vid] = active[ia];
+      A(0, 0) = std::real(myVars[vid]);
+    }
     if (opt_A[YY])
-      A(1, 1) = std::real(myVars[id + "_A_yy"]);
+    {
+      vid = id + "_A_yy";
+      ia = active.getLoc(vid);
+      myVars[vid] = active[ia];
+      A(1, 1) = std::real(myVars[vid]);
+    }
     if (opt_A[ZZ])
-      A(2, 2) = std::real(myVars[id + "_A_zz"]);
+    {
+      vid = id + "_A_zz";
+      ia = active.getLoc(vid);
+      myVars[vid] = active[ia];
+      A(2, 2) = std::real(myVars[vid]);
+    }
     if (opt_A[XY])
-      A(1, 0) = A(0, 1) = std::real(myVars[id + "_A_xy"]);
+    {
+      vid = id + "_A_xy";
+      ia = active.getLoc(vid);
+      myVars[vid] = active[ia];
+      A(1, 0) = A(0, 1) = std::real(myVars[vid]);
+    }
     if (opt_A[XZ])
-      A(2, 0) = A(0, 2) = std::real(myVars[id + "_A_xz"]);
+    {
+      vid = id + "_A_xz";
+      ia = active.getLoc(vid);
+      myVars[vid] = active[ia];
+      A(2, 0) = A(0, 2) = std::real(myVars[vid]);
+    }
     if (opt_A[YZ])
-      A(2, 1) = A(1, 2) = std::real(myVars[id + "_A_yz"]);
+    {
+      vid = id + "_A_yz";
+      ia = active.getLoc(vid);
+      myVars[vid] = active[ia];
+      A(2, 1) = A(1, 2) = std::real(myVars[vid]);
+    }
     if (opt_B[X])
-      B[X] = std::real(myVars[id + "_B_x"]);
+    {
+      vid = id + "_B_x";
+      ia = active.getLoc(vid);
+      myVars[vid] = active[ia];
+      B[X] = std::real(myVars[vid]);
+    }
     if (opt_B[Y])
-      B[Y] = std::real(myVars[id + "_B_y"]);
+    {
+      vid = id + "_B_y";
+      ia = active.getLoc(vid);
+      myVars[vid] = active[ia];
+      B[Y] = std::real(myVars[vid]);
+    }
     if (opt_B[Z])
-      B[Z] = std::real(myVars[id + "_B_z"]);
+    {
+      vid = id + "_B_z";
+      ia = active.getLoc(vid);
+      myVars[vid] = active[ia];
+      B[Z] = std::real(myVars[vid]);
+    }
     if (opt_C)
-      C = std::real(myVars[id + "_C"]);
+    {
+      vid = id + "_C";
+      ia = active.getLoc(vid);
+      myVars[vid] = active[ia];
+      C = std::real(myVars[vid]);
+    }
+    // transform according to reference
+    if(gref != NULL)
+      this->divide_eq(gref);
+    //app_log() << "resetParameters: " << std::endl;
+    //this->reportStatus(app_log());
   }
 
   void reportStatus(std::ostream& os)
@@ -212,7 +250,7 @@ public:
 
   GaussianFunctor* makeClone(std::string fid) const
   {
-    app_log() << "  GaussianFunctor::makeClone" << std::endl;
+    //app_log() << "  GaussianFunctor::makeClone" << std::endl;
     GaussianFunctor* rptr = new GaussianFunctor(fid);
     for (int i = 0; i < A.size(); ++i)
       rptr->A[i] = A[i];
@@ -336,7 +374,6 @@ public:
       //      APP_ABORT(err.str());
       app_log() << err.str();
     }
-    initialize();
     return true;
   }
 
@@ -346,8 +383,9 @@ public:
 //    A = A + rhs->A;
 //    B = B + rhs->B;
 //    C = C + rhs->C;
-//    initialize();
+////    initialize();
 //  }
+
 
 
   void divide_eq(const GaussianFunctor* rhs)
@@ -357,7 +395,6 @@ public:
     A = A - rhs->A;
     B = B - rhs->B;
     C = C - rhs->C;
-    initialize();
   }
 
 

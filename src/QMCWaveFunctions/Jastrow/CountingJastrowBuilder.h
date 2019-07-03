@@ -32,6 +32,8 @@ private:
   std::string TypeOpt;
   ///jastrow/@region
   std::string RegionOpt;
+  ///jastrow/@source
+  std::string SourceOpt;
 
   ParticleSet* SourcePtcl;
 

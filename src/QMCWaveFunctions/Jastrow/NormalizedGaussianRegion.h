@@ -208,11 +208,9 @@ public:
                 (Cref_id == "none" ? " Cref not specified" : "\"" + Cref_id + "\""));
     // make a copy of the reference gaussian
     Cref = C[ref_index]->makeClone(Cref_id + "_ref");
-
-
-    // divide all gaussians by the reference
-    for (auto it = C.begin(); it != C.end(); ++it)
-      (*it)->divide_eq(Cref);
+    // initialize with reference gaussian
+    for(auto it = C.begin(); it != C.end(); ++it)
+      (*it)->initialize(Cref);
     initialize();
     return true;
   }

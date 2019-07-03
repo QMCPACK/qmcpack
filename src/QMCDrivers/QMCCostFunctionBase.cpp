@@ -618,8 +618,8 @@ void QMCCostFunctionBase::updateXmlNodes()
 
     addCoefficients(acontext, "//coefficient");
     addCoefficients(acontext, "//coefficients");
+    addCJParams(acontext, "//jastrow");
     xmlXPathFreeContext(acontext);
-
   }
   //     Psi.reportStatus(app_log());
   std::map<std::string, xmlNodePtr>::iterator pit(paramNodes.begin()), pit_end(paramNodes.end());
@@ -645,7 +645,6 @@ void QMCCostFunctionBase::updateXmlNodes()
   std::map<std::string, xmlNodePtr>::iterator cit(coeffNodes.begin()), cit_end(coeffNodes.end());
   while (cit != cit_end)
   {
-
     std::string rname((*cit).first);
     OhmmsAttributeSet cAttrib;
     std::string datatype("none");
@@ -673,6 +672,89 @@ void QMCCostFunctionBase::updateXmlNodes()
         contentPtr = contentPtr->children;
       getContent(c, contentPtr);
     }
+    // counting jastrow variables
+    else if(rname.find("cj_") == 0 )
+    {
+      //app_log() << "printing counting jastrow variable: " << rname << std::endl;
+      opt_variables_type::iterator vit(OptVariables.begin());
+      // F matrix variables
+      if(rname.find("cj_F") < rname.size())
+      {
+        //app_log() << "  recognized as F matrix" << std::endl;
+        // get a vector of pairs with f matrix names, values
+        //std::vector<opt_variables_type::pair_type> f_pairs;
+        std::vector<Return_rt> f_vals;
+        for(auto vit = OptVariables.begin(); vit != OptVariables.end(); ++vit)
+        {
+          if( (*vit).first.find("F_") == 0)
+            f_vals.push_back( vit->second );
+        }
+        // manually add final element = 0
+        f_vals.push_back(0);
+        // get the dimensions of the f matrix
+        int Fdim = (std::sqrt(1 + 8*f_vals.size()) - 1)/2;
+        //app_log() << "  Fdim = " << Fdim << std::endl;
+        std::ostringstream os;
+        std::string pad_str = std::string(14, ' ');
+        os << std::endl;
+        os << std::setprecision(6) << std::scientific;
+        // print out the values with the proper indentation
+        auto fit = f_vals.begin();
+        for(int i = 0; i < Fdim; ++i)
+        {
+          os << pad_str;
+          for(int j = 0; j < Fdim; ++j)
+          {
+            if(j < i) os << pad_str; //print blank
+            else // print value 
+            {
+              os << "  " << (*fit);
+              ++fit;
+            }
+          }
+          // line break
+          if( i < Fdim - 1)
+            os << std::endl;
+        }
+        //app_log() << "  Constructed indented string and adding to xmlNode:" << os.str() << std::endl;
+        // assign to tag
+        xmlNodePtr cur = cit->second->children;
+        xmlNodeSetContent(cur, (const xmlChar*)(os.str().c_str()));
+
+      }
+      // gaussian function parameters A, B, C
+      else
+      {
+        //app_log() << "  recognized as gaussian variable" << std::endl;
+        std::string var_prefix = rname.substr(3);
+        std::vector<opt_variables_type::pair_type> val_pairs;
+        std::vector<Return_rt> vals;
+
+        for(auto vit = OptVariablesForPsi.begin(); vit != OptVariablesForPsi.end(); ++vit)
+        {
+          //app_log() << "  " << vit->first << " "  << vit->second << std::endl;
+          if( vit->first.find( var_prefix ) == 0)
+          {
+            vals.push_back( vit->second );
+            val_pairs.push_back(*vit);
+          }
+        }
+        std::ostringstream os;
+        os << std::setprecision(6) << std::scientific;
+        for(int i = 0; i < vals.size(); ++i)
+        {
+          os << vals[i];
+          if( i < vals.size() - 1)
+            os << " ";
+        }
+//        app_log() << "  Printing " << vals.size() << " values to tag with id " << var_prefix << std::endl;
+//        for(int i = 0; i < vals.size(); ++i)
+//          app_log() << val_pairs[i].first << ": " << val_pairs[i].second << std::endl;;
+//        app_log() << std::endl;
+        xmlNodePtr cur = cit->second->children;
+        xmlNodeSetContent(cur, (const xmlChar*)(os.str().c_str()));
+      }
+    }
     else
     {
       xmlNodePtr cur = (*cit).second->children;
@@ -692,8 +774,8 @@ void QMCCostFunctionBase::updateXmlNodes()
             sprintf(lambda_id, "%s_%d", rname.c_str(), i);
           else
             sprintf(lambda_id, "%s_%d_%d", rname.c_str(), i, j);
-          opt_variables_type::iterator vTarget(OptVariablesForPsi.find(lambda_id));
-          if (vTarget != OptVariablesForPsi.end())
+          opt_variables_type::iterator vTarget(OptVariables.find(lambda_id));
+          if (vTarget != OptVariables.end())
           {
             std::ostringstream vout;
             vout.setf(std::ios::scientific, std::ios::floatfield);
@@ -752,6 +834,127 @@ void QMCCostFunctionBase::addCoefficients(xmlXPathContextPtr acontext, const cha
       }
     }
   }
+  xmlXPathFreeObject(result);
+}
+
+void QMCCostFunctionBase::addCJParams(xmlXPathContextPtr acontext, const char* cname)
+{
+  //app_log() << "registering Counting Jastrow Parameters; cname = " << cname << std::endl;
+  xmlXPathObjectPtr result = xmlXPathEvalExpression((const xmlChar*)cname, acontext);
+  for(int iparam = 0; iparam < result->nodesetval->nodeNr; iparam++)
+  {
+    // check that we're in a counting jastrow tag space
+    xmlNodePtr cur = result->nodesetval->nodeTab[iparam];
+    OhmmsAttributeSet cAttrib;
+    std::string aname("none");
+    std::string atype("none");
+    cAttrib.add(aname, "name");
+    cAttrib.add(atype, "type");
+    cAttrib.put(cur);
+    //app_log() << "  searching for counting type, currently: " << atype << std::endl;
+    if(atype == "Counting")
+    {
+      // iterate through children
+      xmlNodePtr cur2 = cur->xmlChildrenNode;
+      while(cur2 != NULL)
+      {
+        //app_log() << "  in Counting tag" << std::endl;
+        std::string tname2((const char*)cur2->name);
+        OhmmsAttributeSet cAttrib2;
+        std::string aname2("none");
+        std::string atype2("normalized_gaussian");
+        std::string aopt2("yes");
+        cAttrib2.add(aname2, "name");
+        cAttrib2.add(atype2, "type");
+        cAttrib2.add(aopt2, "opt");
+        cAttrib2.put(cur2);
+        // find the <var name="F" /> tags and register the tag location
+        if(tname2 == "var" && aname2 == "F" && (aopt2 == "yes" || aopt2 == "true" ))
+        {
+          bool notlisted = true;
+          opt_variables_type::iterator oit(OptVariables.begin()), oit_end(OptVariables.end());
+          //app_log() << "  found <var name=\"F\" />" << std::endl;
+          while(notlisted && oit != oit_end)
+          { 
+            const std::string& oname((*oit).first);
+            notlisted = (oname.find("F_") != 0);
+            ++oit;
+          }
+          if(!notlisted)
+          {
+            //app_log() << "   registering location as cj_F" << std::endl;
+            coeffNodes["cj_F"] = cur2;
+          }
+        }
+        // find <region /> tag
+        if(tname2 == "region" && (aopt2 == "true" || aopt2 == "yes") )
+        {
+          //app_log() << "  found <region />" << std::endl;
+          // if type is voronoi, reconstruct the tag structure
+          if(atype == "voronoi")
+          {
+          }
+          // register the optimizable variables for each function
+          
+          // find <function /> tags
+          xmlNodePtr cur3 = cur2->xmlChildrenNode;
+          while(cur3 != NULL)
+          {
+            std::string tname3((const char*) cur3->name);
+            OhmmsAttributeSet cAttrib3;
+            std::string fid("none");
+            cAttrib3.add(fid, "id");
+            cAttrib3.put(cur3);
+            // for each function tag, register coeffNodes[gid_A/B/C] as each variable location
+            if(tname3 == "function")
+            {
+              //app_log() << "  found <function />" << std::endl;;
+              // find <var name="A/B/C" /> tags
+              xmlNodePtr cur4 = cur3->xmlChildrenNode;
+              while(cur4 != NULL)
+              {
+                std::string tname4((const char*) cur4->name);
+                OhmmsAttributeSet cAttrib4;
+                std::string aname4("none");
+                std::string aopt4("false");
+                cAttrib4.add(aname4, "name");
+                cAttrib4.add(aopt4, "opt");
+                cAttrib4.put(cur4);
+                //bool is_bitstr = std::all_of(aopt4.begin(), aopt4.end(), [&](char c) { return c == '0' || c == '1'; });
+                //bool is_optstr = std::any_of(aopt4.begin(), aopt4.end(), [&](char c) { return c == '1'; });
+                //bool opt4 = (aopt4 == "true") || (is_bitstr && is_optstr);
+                if(tname4 == "var" && (aopt4 == "true" || aopt4 == "yes"))
+                {
+                  //app_log() << "  found <var opt=\"true\"/>" << std::endl;
+                  std::string varname = "cj_" + fid + "_" + aname4;
+                  //app_log() << "  setting varname = " << varname << std::endl;
+                  bool notlisted = true;
+                  opt_variables_type::iterator oit(OptVariables.begin()), oit_end(OptVariables.end());
+                  while(notlisted && oit != oit_end)
+                  { 
+                    const std::string& oname((*oit).first);
+                    notlisted = (oname.find(varname.substr(3)) >= oname.size());
+                    ++oit;
+                  }
+                  if(!notlisted)
+                  {
+                    //app_log() << "  registering location as " << varname << std::endl;
+                    coeffNodes[varname] = cur4;
+                  }
+                }
+                cur4 = cur4->next;
+              }
+            }
+            cur3 = cur3->next;
+          }
+        }
+        cur2 = cur2->next;
+      }
+      // currently can only handle one counting jastrow tag
+      break;
+    }
+  }     
+
   xmlXPathFreeObject(result);
 }
 
