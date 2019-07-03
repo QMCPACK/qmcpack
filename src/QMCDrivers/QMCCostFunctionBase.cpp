@@ -416,6 +416,7 @@ bool QMCCostFunctionBase::put(xmlNodePtr q)
   OptVariablesForPsi.resetIndex();
   //synchronize OptVariables and OptVariablesForPsi
   OptVariables = OptVariablesForPsi;
+  InitVariables = OptVariablesForPsi;
   //first disable <exclude>.... </exclude> from the big list used by a TrialWaveFunction
   OptVariablesForPsi.disable(excluded.begin(), excluded.end(), false);
   //now, set up the real variable list for optimization
@@ -747,10 +748,10 @@ void QMCCostFunctionBase::updateXmlNodes()
           if( i < vals.size() - 1)
             os << " ";
         }
-//        app_log() << "  Printing " << vals.size() << " values to tag with id " << var_prefix << std::endl;
-//        for(int i = 0; i < vals.size(); ++i)
-//          app_log() << val_pairs[i].first << ": " << val_pairs[i].second << std::endl;;
-//        app_log() << std::endl;
+        //app_log() << "  Printing " << vals.size() << " values to tag with id " << var_prefix << std::endl;
+        //for(int i = 0; i < vals.size(); ++i)
+        //  app_log() << val_pairs[i].first << ": " << val_pairs[i].second << std::endl;;
+        //app_log() << std::endl;
         xmlNodePtr cur = cit->second->children;
         xmlNodeSetContent(cur, (const xmlChar*)(os.str().c_str()));
       }
@@ -856,6 +857,7 @@ void QMCCostFunctionBase::addCJParams(xmlXPathContextPtr acontext, const char* c
     {
       // iterate through children
       xmlNodePtr cur2 = cur->xmlChildrenNode;
+      int Fnum = 0;
       while(cur2 != NULL)
       {
         //app_log() << "  in Counting tag" << std::endl;
@@ -864,40 +866,122 @@ void QMCCostFunctionBase::addCJParams(xmlXPathContextPtr acontext, const char* c
         std::string aname2("none");
         std::string atype2("normalized_gaussian");
         std::string aopt2("yes");
+        std::string ref_id("g0");
         cAttrib2.add(aname2, "name");
         cAttrib2.add(atype2, "type");
         cAttrib2.add(aopt2, "opt");
+        cAttrib2.add(ref_id, "reference_id");
         cAttrib2.put(cur2);
-        // find the <var name="F" /> tags and register the tag location
-        if(tname2 == "var" && aname2 == "F" && (aopt2 == "yes" || aopt2 == "true" ))
+        // find the <var name="F" /> tags and register the tag location first
+        if(tname2 == "var" && aname2 == "F" && (aopt2 == "yes" || aopt2 == "true" ) && Fnum == 0)
         {
-          bool notlisted = true;
+          bool listed = false;
           opt_variables_type::iterator oit(OptVariables.begin()), oit_end(OptVariables.end());
           //app_log() << "  found <var name=\"F\" />" << std::endl;
-          while(notlisted && oit != oit_end)
-          { 
-            const std::string& oname((*oit).first);
-            notlisted = (oname.find("F_") != 0);
-            ++oit;
-          }
-          if(!notlisted)
+          for(oit; oit != oit_end; ++oit)
           {
-            //app_log() << "   registering location as cj_F" << std::endl;
-            coeffNodes["cj_F"] = cur2;
+            const std::string& oname((*oit).first);
+            listed = (oname.find("F_") == 0);
+            if(listed)
+              ++Fnum;
           }
+          if(listed)
+            coeffNodes["cj_F"] = cur2;
+          // restart loop with Fnum > 0
+          Fnum++;
+          cur2 = cur->xmlChildrenNode;
         }
         // find <region /> tag
-        if(tname2 == "region" && (aopt2 == "true" || aopt2 == "yes") )
+        if(tname2 == "region" && (aopt2 == "true" || aopt2 == "yes") && Fnum != 0)
         {
-          //app_log() << "  found <region />" << std::endl;
           // if type is voronoi, reconstruct the tag structure
-          if(atype == "voronoi")
+          if(atype2 == "voronoi")
           {
+            // set property to normalized_gaussian
+            xmlSetProp(cur2, (const xmlChar*)"type" , (const xmlChar*)"normalized_gaussian");
+            // remove existing children
+            xmlNodePtr child = cur2->xmlChildrenNode;
+            while(child != NULL)
+            {
+              xmlUnlinkNode(child);
+              child = cur2->xmlChildrenNode;
+            }
+            // get Fdim
+            int Fdim = (std::sqrt(1 + 8*Fnum) - 1)/2;
+            for(int i = 0; i < Fdim; ++i)
+            {
+              std::ostringstream os;
+              os << "g" << i;
+              std::string gid = os.str();
+              std::string opt = (gid != ref_id)? "true" : "false";
+
+              // create function tag, set id
+              xmlNodeAddContent(cur2, (const xmlChar*)"\n        ");
+              xmlNodePtr function_tag = xmlNewChild(cur2, NULL, (const xmlChar*)"function", NULL);
+              //xmlNewTextChild(cur2, NULL, (const xmlChar*)"\n", (const xmlChar*)"\n");
+              xmlNewProp(function_tag, (const xmlChar*)"id", (const xmlChar*)gid.c_str());
+              xmlNodeAddContent(function_tag, (const xmlChar*)"\n          ");
+
+              // create A tag
+              xmlNodePtr A_tag = xmlNewChild(function_tag, NULL, (const xmlChar*)"var", NULL);
+              //xmlNewTextChild(function_tag, NULL, (const xmlChar*)"", (const xmlChar*)"\n  ");
+              xmlNodeAddContent(function_tag, (const xmlChar*)"\n          ");
+              xmlNewProp(A_tag, (const xmlChar*)"opt", (const xmlChar*)opt.c_str());
+              xmlNewProp(A_tag, (const xmlChar*)"name", (const xmlChar*)"A");
+              os.str("");
+              if(gid == ref_id)
+              {
+                os << std::setprecision(6) << std::scientific;
+                os << InitVariables.find(gid + "_A_xx")->second << " " << InitVariables.find(gid + "_A_xy")->second << " " <<
+                      InitVariables.find(gid + "_A_xz")->second << " " << InitVariables.find(gid + "_A_yy")->second << " " <<
+                      InitVariables.find(gid + "_A_yz")->second << " " << InitVariables.find(gid + "_A_zz")->second;
+              }
+              else
+                os << " ";
+              xmlNodeSetContent(A_tag, (const xmlChar*)(os.str().c_str()));
+
+              // create B tag
+              xmlNodePtr B_tag = xmlNewChild(function_tag, NULL, (const xmlChar*)"var", NULL);
+              //xmlNewTextChild(function_tag, NULL, (const xmlChar*)"", (const xmlChar*)"\n  ");
+              xmlNodeAddContent(function_tag, (const xmlChar*)"\n          ");
+              xmlNewProp(B_tag, (const xmlChar*)"opt", (const xmlChar*)opt.c_str());
+              xmlNewProp(B_tag, (const xmlChar*)"name", (const xmlChar*)"B");
+              os.str("");
+              if(gid == ref_id)
+              {
+                os << std::setprecision(6) << std::scientific;
+                os << InitVariables.find(gid + "_B_x")->second << " " << InitVariables.find(gid + "_B_y")->second << " " <<
+                      InitVariables.find(gid + "_B_z")->second;
+              }
+              else
+                os << " ";
+              xmlNodeSetContent(B_tag, (const xmlChar*)(os.str().c_str()));
+
+              // create C tag
+              xmlNodePtr C_tag = xmlNewChild(function_tag, NULL, (const xmlChar*)"var", NULL);
+              //xmlNewTextChild(function_tag, NULL, (const xmlChar*)"", (const xmlChar*)"\n  ");
+              xmlNodeAddContent(function_tag, (const xmlChar*)"\n        ");
+              xmlNewProp(C_tag, (const xmlChar*)"opt", (const xmlChar*)opt.c_str());
+              xmlNewProp(C_tag, (const xmlChar*)"name", (const xmlChar*)"C");
+              os.str("");
+              if(gid == ref_id)
+              {
+                os << std::setprecision(6) << std::scientific;
+                os << InitVariables.find(gid + "_C")->second;
+              }
+              else
+                os << " ";
+              xmlNodeSetContent(C_tag, (const xmlChar*)(os.str().c_str()));
+
+            }
+            xmlNodeAddContent(cur2, (const xmlChar*)"\n     ");
           }
-          // register the optimizable variables for each function
           
+          // register the optimizable variables for each function
           // find <function /> tags
           xmlNodePtr cur3 = cur2->xmlChildrenNode;
+
+          //app_log() << " iterating through region children" << std::endl;
           while(cur3 != NULL)
           {
             std::string tname3((const char*) cur3->name);
@@ -906,6 +990,7 @@ void QMCCostFunctionBase::addCJParams(xmlXPathContextPtr acontext, const char* c
             cAttrib3.add(fid, "id");
             cAttrib3.put(cur3);
             // for each function tag, register coeffNodes[gid_A/B/C] as each variable location
+            //app_log() << "  tname3: " << tname3 << std::endl;
             if(tname3 == "function")
             {
               //app_log() << "  found <function />" << std::endl;;
@@ -950,11 +1035,8 @@ void QMCCostFunctionBase::addCJParams(xmlXPathContextPtr acontext, const char* c
         }
         cur2 = cur2->next;
       }
-      // currently can only handle one counting jastrow tag
-      break;
     }
   }     
-
   xmlXPathFreeObject(result);
 }
 
