@@ -888,7 +888,7 @@ void MultiSlaterDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
             ValueType dpsi2                         = dpsia_dn(dnC, pa);
             ParticleSet::ParticleGradient_t& g1     = grads_up[upC];
             ParticleSet::ParticleGradient_t& g2     = grads_dn[dnC];
-#if ((__INTEL_COMPILER == 1900) && (__INTEL_COMPILER_UPDATE == 0) && !defined(QMC_COMPLEX))
+#if (__INTEL_COMPILER == 1900 && !defined(QMC_COMPLEX))
 #pragma omp simd reduction(+ : dot1)
 #endif
             for (int k = 0; k < n; k++)
