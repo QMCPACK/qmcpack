@@ -293,7 +293,7 @@ the position of the oxygen ion.  The $U_1^{\uparrow/\downarrow}$ term is a
 one-dimensional radial function represented with piecewise continuous cubic 
 polynomials (B-splines).  The adjustable parameters to be optimized are the 
 ``knots'' of the B-splines which are simply the values of the $U_1$ function at 
-uniformly spaced grid points (See fig. \ref{fig:u1_spline} for an example of a $U_1$ 
+uniformly spaced grid points (See fig.~\ref{fig:u1_spline} for an example of a $U_1$ 
 spline function with 8 knots).  
 
 The two-body Jastrow factor is spin resolved ($r^\uparrow/r^\downarrow$ are up/down electron positions):
@@ -600,7 +600,7 @@ The run should take only a few minutes to complete.
 
 QMCPACK will create files prefixed with \ishell{O.q0.dmc}.  The log file is \labsw{\ishell{O.q0.dmc.out}}{\ishell{O.q0.dmc.output}}.  As before, block averaged data is written to \ishell{scalar.dat} files.  In addition, DMC runs produce \ishell{dmc.dat} files which contain energy data averaged only over the walker population (one line per DMC step).  The \ishell{dmc.dat} files also provide a record of the walker population at each step.
 
-Use the \ishell{PlotTstepConv.pl} to obtain a linear fit to the timestep data (type ``\ishell{PlotTstepConv.pl O.q0.dmc.in.xml 40}'').  You should see a plot similar to fig. \ref{fig:timestep_conv}.  The tail end of the text output displays the parameters for the linear fit.  The ``\ishell{a}'' parameter is the total energy extrapolated to zero timestep in Hartree units. 
+Use the \ishell{PlotTstepConv.pl} to obtain a linear fit to the timestep data (type ``\ishell{PlotTstepConv.pl O.q0.dmc.in.xml 40}'').  You should see a plot similar to fig.~\ref{fig:timestep_conv}.  The tail end of the text output displays the parameters for the linear fit.  The ``\ishell{a}'' parameter is the total energy extrapolated to zero timestep in Hartree units. 
 
 \begin{shade}
 ...
