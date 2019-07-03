@@ -21,6 +21,7 @@
 #ifndef QMCPLUSPLUS_EINSPLINE_C2R_ADOPTOR_H
 #define QMCPLUSPLUS_EINSPLINE_C2R_ADOPTOR_H
 
+#include <memory>
 #include <OhmmsSoA/Container.h>
 #include <spline2/MultiBspline.hpp>
 #include <spline2/MultiBsplineEval.hpp>
