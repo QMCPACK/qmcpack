@@ -215,6 +215,7 @@ bool CountingJastrowBuilder::createCJ(xmlNodePtr cur)
   CJ->addOpt(opt_C, opt_F);
   CJ->setOptimizable(opt_C || opt_F);
   CJ->initialize();
+  CJ->reportStatus(app_log());
 
   std::string cjname = "CJ_" + RegionOpt;
   targetPsi.addOrbital(CJ, cjname.c_str());

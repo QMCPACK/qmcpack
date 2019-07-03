@@ -88,13 +88,13 @@ public:
   {
     int tnd = 0;
     for(int I = 0; I < C.size(); ++I)
-      tnd += getVars(I).size();
+      tnd += getVars(I).size_of_active();
     return tnd;
   }
 
   int max_num_derivs() const
   {
-    auto comp         = [](GaussianFunctor* a, GaussianFunctor* b) { return a->myVars.size() < b->myVars.size(); };
+    auto comp = [](GaussianFunctor* a, GaussianFunctor* b) { return a->myVars.size_of_active() < b->myVars.size_of_active(); };
     GaussianFunctor* Cmax = *(std::max_element(C.begin(), C.end(), comp));
     return Cmax->myVars.size();
   }
@@ -112,9 +112,7 @@ public:
 
   void initialize()
   {
-    //app_log() << "NormalizedGaussianRegion::initialize" << std::endl;
     num_regions = C.size();
-
 
     // resize arrays
     val.resize(num_regions, num_els);
@@ -139,6 +137,8 @@ public:
 
     // store log derivative values for single particle moves
     _dLval_saved.resize(max_num_derivs() * num_regions * num_els);
+    for(int I = 0; I < C.size(); ++I)
+      C[I]->myVars.resetIndex();
   }
 
   void checkInVariables(opt_variables_type& active)
@@ -184,9 +184,8 @@ public:
   {
     // print some class variables:
     os << "    Region type: NormalizedGaussianRegion" << std::endl;
-    os << "    Region parameters: " << total_num_derivs()  << std::endl;
+    os << "    Region optimizable parameters: " << total_num_derivs()  << std::endl << std::endl;
     os << "    Counting Functions: " << std::endl;
-    //os << "    Counting Functions: " << std::endl;
     for (int I = 0; I < C.size(); ++I)
       C[I]->reportStatus(os);
   }

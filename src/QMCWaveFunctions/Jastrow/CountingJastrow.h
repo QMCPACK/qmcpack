@@ -188,32 +188,23 @@ public:
         opt_index[OPT_F].push_back(IJ);
         opt_id[OPT_F].push_back(id_F);
       }
-    //reportStatus(app_log());
+    myVars.resetIndex();
   }
 
 
   void reportStatus(std::ostream& os)
   {
-    //os << std::endl << " --- CountingJastrow ---" << std::endl;
-    // print F matrix
-    //   << ", opt_F: " << (opt_F ? "true" : "false");
-    //for (int I = 0; I < num_regions; ++I)
-    //{
-    //  for (int J = 0, IJ = num_regions * I; J < num_regions; ++J, ++IJ)
-    //    os << "  " << F(IJ);
-    //  os << std::endl;
-    //}
-    // print additional information
     os << "    Number of counting regions: " << num_regions << std::endl;
-    os << "    Total optimizable parameters: " << C->total_num_derivs() + opt_index[OPT_F].size() << std::endl;
-    os << "      F matrix optimizable parameters: " << opt_index[OPT_F].size() << std::endl;
+    os << "    Total optimizable parameters: " << C->total_num_derivs() + myVars.size_of_active() << std::endl;
+    os << "    F matrix optimizable parameters: " << myVars.size_of_active() << std::endl;
     if (debug)
     {
-      os << "      Debug sample sequence length: " << debug_seqlen << std::endl;
-      os << "      Debug sample periodicity: " << debug_period << std::endl;
+      os << "    Debug sample sequence length: " << debug_seqlen << std::endl;
+      os << "    Debug sample periodicity: " << debug_period << std::endl;
     }
-    // print counting region status
+    os << std::endl;
     myVars.print(os, 6, true);
+    os << std::endl;
     C->reportStatus(os);
   }
 

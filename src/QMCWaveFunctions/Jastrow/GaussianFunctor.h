@@ -213,26 +213,11 @@ public:
 
   void reportStatus(std::ostream& os)
   {
-    os << "    Counting Function type: GaussianFunctor" << std::endl;
-    os << "      id: " << id << std::endl;
-    //os << "  A: ";
-    //for (int I = 0; I < 3; ++I)
-    //{
-    //  os << std::endl;
-    //  for (int J = 0, IJ = I * 3; J < 3; ++J, ++IJ)
-    //    os << "  " << A[IJ];
-    //}
-    //os << std::endl << "  opt_A: ";
-    //std::copy(opt_A.begin(), opt_A.end(), std::ostream_iterator<bool>(os, ", "));
-    //os << std::endl << "  B: ";
-    //for (auto it = B.begin(); it != B.end(); ++it)
-    //  os << "  " << *it;
-    //os << std::endl << "  opt_B: ";
-    //std::copy(opt_B.begin(), opt_B.end(), std::ostream_iterator<bool>(os, ", "));
-    //os << std::endl << "  C: " << C << std::endl;
-    //os << "  opt_C: " << opt_C << std::endl;
-    //os << "  registered optimizable variables:" << std::endl;
+    os << "    type: GaussianFunctor" << std::endl;
+    os << "    id: " << id << std::endl;
+    app_log() << std::endl;
     myVars.print(os, 6, true);
+    app_log() << std::endl;
   }
 
   GaussianFunctor* makeClone(std::string fid) const
