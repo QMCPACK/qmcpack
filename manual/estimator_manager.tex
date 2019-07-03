@@ -6,13 +6,13 @@ E[O] = \left(\sum\limits_{i=1}^{N^{tot}_{walker}} w_i O(\bs{R}_i) \right) / \lef
 \end{align}
 $N^{tot}_{walker}$ is the total number of walkers collected in the entire simulation. Notice, $N^{tot}_{walker}$ is typically far larger than the number of walkers held in memory at any given simulation step. $w_i$ is the weight of walker $i$.
 
-In a VMC simulation, the weight of every walkers is 1.0. Further, the number of walkers is constant at each step. Therefore, eq.~(\ref{eq:estimator}) simplifies to
+In a VMC simulation, the weight of every walkers is 1.0. Further, the number of walkers is constant at each step. Therefore, eq.~\ref{eq:estimator} simplifies to
 \begin{align}
 E_{VMC}[O] = \frac{1}{N_{step}N_{walker}^{ensemble}} \sum_{s,e} O(\bs{R}_{s,e}).
 \end{align}
 Each walker $\bs{R}_{s,e}$ is labeled by \textit{step index} s, and \textit{ensemble index} e.
 
-In a DMC simulation, the weight of each walker is different and may change from step to step. Further, the ensemble size varies from step to step. Therefore, eq.~(\ref{eq:estimator}) simplifies to
+In a DMC simulation, the weight of each walker is different and may change from step to step. Further, the ensemble size varies from step to step. Therefore, eq.~\ref{eq:estimator} simplifies to
 \begin{align}
 E_{DMC}[O] = \frac{1}{N_{step}} \sum_{s} \left\{ \left(\sum_e w_{s,e} O(\bs{R}_{s,e})  \right) / \left( \sum \limits_{e} w_{s,e} \right)  \right\}.
 \end{align}

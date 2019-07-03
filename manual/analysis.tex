@@ -107,7 +107,7 @@ following way:
 \noindent
 The \texttt{-e 0} part indicates that we do not want any data 
 to be initially excluded from the calculation of averages.  The resulting 
-plot is shown in Figure \ref{fig:qmca_mean_error_trace}.  The unphysical 
+plot is shown in Figure~\ref{fig:qmca_mean_error_trace}.  The unphysical 
 equilibration period is visible on the left side of the plot.
 
 Most of the data fluctuates around a well-defined mean (consistent 
@@ -198,7 +198,7 @@ local energy trace:
 >qmca -t -q e *scalar*
 \end{shade}
 \noindent
-The resulting plot can be found in Figure \ref{fig:qmca_judge_opt}. 
+The resulting plot can be found in Figure~\ref{fig:qmca_judge_opt}. 
 In this case sufficient \texttt{warmupsteps} were used to exit 
 the equilibration period before samples were collected and we can 
 proceed without using the \texttt{-e} option with \texttt{qmca}.
@@ -274,7 +274,7 @@ plot the energy and variance as a function of series with \texttt{qmca}:
 The \texttt{-p} option results in plots of means plus error bars 
 vs. series for all requested quantities.
 The resulting plots for the local energy and variance are shown 
-in Figure \ref{fig:qmca_opt_ev}.  In this case, the resulting energies 
+in Figure~\ref{fig:qmca_opt_ev}.  In this case, the resulting energies 
 and variances are statistically indistinguishable for all optimization 
 cycles.  
 
@@ -335,7 +335,7 @@ to plot the trace of the local energy:
 >qmca -t -q e -e 0 *scalar*
 \end{shade}
 \noindent
-The resulting trace plot is shown in Figure \ref{fig:qmca_short_dmc}.  
+The resulting trace plot is shown in Figure~\ref{fig:qmca_short_dmc}.  
 As always, the DMC local energy decreases exponentially away from 
 the VMC value, but in this case it takes a long time to do so.  
 At least half of the DMC run is inefficiently consumed by equilibration.
@@ -405,7 +405,7 @@ We again plot the local energy trace using \texttt{qmca}:
 >qmca -t -q e -e 0 *scalar* 
 \end{shade}
 \noindent
-with the result shown in Figure \ref{fig:qmca_accel_dmc}.
+with the result shown in Figure~\ref{fig:qmca_accel_dmc}.
 The projection transient has been effectively contained in the 
 short DMC run with a larger time step.  As expected, the 
 production run contains only a short equilibration period.
@@ -456,7 +456,7 @@ Our final DMC total energy is estimated to be $-46.0329(2)$ Ha.
 Another simulation property that should be explicitly monitored  
 is the behavior of the DMC walker population.  Data regarding the 
 walker population is contained in the \texttt{*.dmc.dat} files.
-In Figure \ref{fig:qmca_pop_trace} we show the trace of the DMC 
+In Figure~\ref{fig:qmca_pop_trace} we show the trace of the DMC 
 walker population for the current run:
 \begin{shade}
 >qmca -t -q nw *dmc.dat
@@ -576,8 +576,8 @@ at the command line with no other input.  This following is a current list:
 \end{shade}
 \noindent
 See the output overview for \texttt{scalar.dat} 
-(Section \ref{sec:scalardat_file}) and \texttt{dmc.dat} 
-(Section \ref{sec:dmc_file}) for more information about 
+(Section~\ref{sec:scalardat_file}) and \texttt{dmc.dat} 
+(Section~\ref{sec:dmc_file}) for more information about 
 these quantities.  The data analysis aspects for these 
 quantities are essentially the same as for the local 
 energy as covered in the preceding subsections. 
@@ -678,7 +678,7 @@ scale_0.90/vmc/qmc  series 0
 \subsection{Twist averaging}
 \label{sec:qmca_twist_average}
 Twist averaging can be performed straightforwardly for any 
-output quantity listed in Section \ref{sec:qmca_other_quantities} 
+output quantity listed in Section~\ref{sec:qmca_other_quantities} 
 with \texttt{qmca}.  We illustrate these capabilities by 
 repeating the 8-atom diamond DMC runs performed in Section 
 \ref{sec:qmca_judge_dmc} at 8 real-valued supercell twist 
@@ -695,7 +695,7 @@ equilibration input \texttt{-e '30 20 30'} cuts out from
 the analyzed data the first 30 blocks for series 0 (VMC), 
 20 blocks for series 1 (intermediate DMC), and 30 blocks for 
 series 2 (production DMC).  The resulting plot is shown in 
-Figure \ref{fig:qmca_twist_overlap}.
+Figure~\ref{fig:qmca_twist_overlap}.
 
 \begin{figure}
 \begin{center}
@@ -717,7 +717,7 @@ enforced, use a command similar to the following:
 >qmca -a -t -q e -e '30 20 30' *scalar*
 \end{shade}
 \noindent
-The resulting plot is shown in Figure \ref{fig:qmca_twist_average}.
+The resulting plot is shown in Figure~\ref{fig:qmca_twist_average}.
 As can be seen from the trace plot, the chosen equilibration lengths 
 are appropriate, and we proceed to obtain the twist-averaged total energy
 from the \texttt{scalar.dat} files
@@ -748,7 +748,7 @@ yielding a twist-averaged total energy of $-45.8733(8)$ Ha.
 \label{fig:qmca_twist_average}
 \end{figure}
 
-As can be seen from the Figure \ref{fig:qmca_twist_overlap}, some of the twist 
+As can be seen from the Figure~\ref{fig:qmca_twist_overlap}, some of the twist 
 angles are degenerate. This is seen more clearly in the text output:
 \begin{shade}
 >qmca -q ev -e 30 *s002.scalar*
@@ -789,7 +789,7 @@ efficiency of irreducible vs. uniform weighted twist averaging
 depends on the irreducible weights and the ratio of the lengths of 
 the available sampling and equilibration periods.  A formula for 
 the relative efficiency of these two cases is derived and discussed 
-in more detail in Appendix \ref{sec:app_ta_efficiency}.
+in more detail in Appendix~\ref{sec:app_ta_efficiency}.
 
 
 \subsection{Setting output units}

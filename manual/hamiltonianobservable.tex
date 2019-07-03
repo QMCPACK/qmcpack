@@ -156,7 +156,7 @@ When periodic boundary conditions are selected, Ewald summation is used automati
 \end{align}
 The sum indexed by $L$ is over all nonzero simulation cell lattice vectors.  In practice, the Ewald sum is broken into short- and long-range parts in a manner optimized for efficiency (see Ref. \cite{Natoli1995}) for details. 
 
-For information on how to set the boundary conditions, consult Section \ref{chap:simulationcell}.
+For information on how to set the boundary conditions, consult Section~\ref{chap:simulationcell}.
 
 
 \FloatBarrier
@@ -427,7 +427,7 @@ When an \texttt{<estimator/>} element appears in \texttt{<hamiltonian/>}, it is 
 \multicolumn{2}{l}{                } & \multicolumn{2}{l}{energydensity     } & \multicolumn{2}{l}{Energy density on uniform or Voronoi grid}\\
 \multicolumn{2}{l}{                } & \multicolumn{2}{l}{dm1b              } & \multicolumn{2}{l}{One body density matrix in arbitrary basis}\\
 \multicolumn{2}{l}{                } & \multicolumn{2}{l}{chiesa            } & \multicolumn{2}{l}{Chiesa-Ceperley-Martin-Holzmann kinetic energy correction}\\
-\multicolumn{2}{l}{                } & \multicolumn{2}{l}{Force             } & \multicolumn{2}{l}{Family of ``force'' estimators (see \ref{sec:force_est})}\\
+\multicolumn{2}{l}{                } & \multicolumn{2}{l}{Force             } & \multicolumn{2}{l}{Family of ``force'' estimators (see~\ref{sec:force_est})}\\
 \multicolumn{2}{l}{                } & \multicolumn{2}{l}{ForwardWalking    } & \multicolumn{2}{l}{Forward walking values for existing estimators}\\
 \multicolumn{2}{l}{                } & \multicolumn{2}{l}{orbitalimages     } & \multicolumn{2}{l}{Create image files for orbitals, then exit}\\
 \multicolumn{2}{l}{                } & \multicolumn{2}{l}{flux              } & \multicolumn{2}{l}{Checks sampling of kinetic energy}\\
@@ -920,7 +920,7 @@ Additional information:
 
 
 
-The \texttt{<reference\_points/>} element provides a set of points for later use in specifying the origin and coordinate axes needed to construct a spatial histogramming grid.  Several reference points on the surface of the simulation cell (see Table \ref{tab:ref_points}), as well as the positions of the ions (see the \texttt{energydensity.static} attribute), are made available by default.  The reference points can be used, for example, to construct a cylindrical grid along a bond with the origin on the bond center. 
+The \texttt{<reference\_points/>} element provides a set of points for later use in specifying the origin and coordinate axes needed to construct a spatial histogramming grid.  Several reference points on the surface of the simulation cell (see Table~\ref{tab:ref_points}), as well as the positions of the ions (see the \texttt{energydensity.static} attribute), are made available by default.  The reference points can be used, for example, to construct a cylindrical grid along a bond with the origin on the bond center. 
 
 \FloatBarrier
 \begin{table}[h]
@@ -945,14 +945,14 @@ The \texttt{<reference\_points/>} element provides a set of points for later use
 Additional information
 \begin{itemize}
   \item{\texttt{coord:} If \texttt{coord=cartesian}, labeled points are in Cartesian (x,y,z) format in units of Bohr.  If \texttt{coord=cell}, then labeled points are in units of the simulation cell axes.}
-  \item{\texttt{body text:}  The list of points provided in the body text are line formatted, with four entries per line (\textit{label} \textit{coor1} \textit{coor2} \textit{coor3}}).  A set of points referenced to the simulation cell is available by default (see Table \ref{tab:ref_points}).  If \texttt{energydensity.static} is provided, the location of each individual ion is also available (e.g., if \texttt{energydensity.static=ion0}, then the location of the first atom is available with label ion01, the second with ion02, etc.). All points can be used by label when constructing spatial histogramming grids (see the following \texttt{spacegrid} element) used to collect energy densities.    
+  \item{\texttt{body text:}  The list of points provided in the body text are line formatted, with four entries per line (\textit{label} \textit{coor1} \textit{coor2} \textit{coor3}}).  A set of points referenced to the simulation cell is available by default (see Table~\ref{tab:ref_points}).  If \texttt{energydensity.static} is provided, the location of each individual ion is also available (e.g., if \texttt{energydensity.static=ion0}, then the location of the first atom is available with label ion01, the second with ion02, etc.). All points can be used by label when constructing spatial histogramming grids (see the following \texttt{spacegrid} element) used to collect energy densities.    
 \end{itemize}
 
 
 \FloatBarrier
 \begin{table}[h]
 \begin{center}
-\caption{Reference points available by default.  Vectors $a_1$, $a_2$, and $a_3$ refer to the simulation cell axes.  The representation of the cell is centered around \texttt{zero}.}
+\caption{Reference points available by default.  Vectors $a_1$, $a_2$, and $a_3$ refer to the simulation cell axes.  The representation of the cell is centered around \texttt{zero}.\label{tab:ref_points}}
 \begin{tabular}{l l l}
 \hline
 \texttt{label} & \texttt{point} & \texttt{description} \\
@@ -978,8 +978,6 @@ Additional information
 \hline
 \end{tabular}
 \end{center}
-
-\protect{\label{tab:ref_points}}
 \end{table}
 \FloatBarrier
 
