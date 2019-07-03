@@ -25,7 +25,7 @@ Nightly testing currently includes the following software versions on x86:
 * Compilers
   * GCC 8.3.0, 7.4.0, 5.5.0
   * Clang/LLVM 7.0.1, 6.0.1, 4.0.1
-  * Intel 2018.3
+  * Intel 2019.4, 2018.5
   * PGI 19.4
 * Boost 1.70.0, 1.61.0 
 * HDF5 1.10.5, 1.8.19
@@ -33,7 +33,7 @@ Nightly testing currently includes the following software versions on x86:
 * CMake 3.14.4, 3.8.2
 * MPI
   * OpenMPI 4.0.1, 2.1.1
-  * Intel MPI 2018.3
+  * Intel MPI 2019.4, 2018.5
 * CUDA 10.0
 
 # Building with CMake
