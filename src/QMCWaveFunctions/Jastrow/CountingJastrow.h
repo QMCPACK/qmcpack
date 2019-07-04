@@ -15,7 +15,7 @@
 #include "Configuration.h"
 #include "Particle/ParticleSet.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
-#include "QMCWaveFunctions/Jastrow/NormalizedGaussianRegion.h"
+#include "QMCWaveFunctions/Jastrow/CountingGaussianRegion.h"
 
 namespace qmcplusplus
 {
@@ -35,7 +35,7 @@ protected:
 
   // Jastrow linear coefficients
   Matrix<RealType> F;
-  //std::vector<RealType> G;
+
   // Counting Regions
   RegionType* C;
 

@@ -19,7 +19,7 @@
 namespace qmcplusplus
 {
 
-class GaussianFunctor 
+class CountingGaussian 
 {
   using RealType = QMCTraits::RealType;
   using PosType = QMCTraits::PosType;
@@ -61,7 +61,7 @@ class GaussianFunctor
   std::string id;
   
   // reference gaussian
-  GaussianFunctor* gref = NULL;
+  CountingGaussian* gref = NULL;
 
   // most recent evaluations
   RealType Fval;
@@ -72,10 +72,10 @@ public:
   // optimizable variables
   opt_variables_type myVars;
 
-  GaussianFunctor(std::string fid) { id = fid; }
+  CountingGaussian(std::string fid) { id = fid; }
 
   // constructor for voronoi region
-  GaussianFunctor(std::string fid, RealType alpha, PosType r, bool opt)
+  CountingGaussian(std::string fid, RealType alpha, PosType r, bool opt)
   { 
     id = fid;
     // set opt flags
@@ -96,7 +96,7 @@ public:
   }
   
   // initialize with another gaussian reference
-  void initialize(GaussianFunctor* ref)
+  void initialize(CountingGaussian* ref)
   {
     // register and update optimizable variables to current values
     myVars.insert(id + "_A_xx", A(X, X), opt_A[XX], optimize::OTHER_P);
@@ -213,16 +213,16 @@ public:
 
   void reportStatus(std::ostream& os)
   {
-    os << "    type: GaussianFunctor" << std::endl;
+    os << "    type: CountingGaussian" << std::endl;
     os << "    id: " << id << std::endl;
     app_log() << std::endl;
     myVars.print(os, 6, true);
     app_log() << std::endl;
   }
 
-  GaussianFunctor* makeClone(std::string fid) const
+  CountingGaussian* makeClone(std::string fid) const
   {
-    GaussianFunctor* rptr = new GaussianFunctor(fid);
+    CountingGaussian* rptr = new CountingGaussian(fid);
     for (int i = 0; i < A.size(); ++i)
       rptr->A[i] = A[i];
     for (int i = 0; i < B.size(); ++i)
@@ -257,7 +257,7 @@ public:
 
   bool put(xmlNodePtr cur)
   {
-    //app_log() << "GaussianFunctor::put" << std::endl;
+    //app_log() << "CountingGaussian::put" << std::endl;
     bool put_A = false, put_B = false, put_C = false, put_D = false, put_K = false;
     // alternate inputs
     std::array<RealType, 6> A_euler;
@@ -327,9 +327,9 @@ public:
     }
     // convert B <=> D
     if (put_B && put_D)
-      APP_ABORT("GaussianFunctor::put: overdetermined: both B and D are specified");
+      APP_ABORT("CountingGaussian::put: overdetermined: both B and D are specified");
     if (put_C && put_K)
-      APP_ABORT("GaussianFunctor::put: overdetermined: both C and K are specified");
+      APP_ABORT("CountingGaussian::put: overdetermined: both C and K are specified");
     // convert D,B using A
     if (put_D)
       d_to_b(D, A, B);
@@ -339,7 +339,7 @@ public:
     if (!(put_A && (put_B || put_D) && (put_C || put_K)))
     {
       std::ostringstream err;
-      err << "GaussianFunctor::put:  required variable unspecified: ";
+      err << "CountingGaussian::put:  required variable unspecified: ";
       err << "put_A: " << put_A << ", put_B: " << put_B << ", put_C: " << put_C << ", put_D: " << put_D
           << ", put_K: " << put_K << std::endl;
       //      APP_ABORT(err.str());
@@ -348,7 +348,7 @@ public:
     return true;
   }
 
-  void divide_eq(const GaussianFunctor* rhs)
+  void divide_eq(const CountingGaussian* rhs)
   {
     A = A - rhs->A;
     B = B - rhs->B;
@@ -672,7 +672,7 @@ public:
       fgrad_vec.push_back(fgrad);
       flap_vec.push_back(flap);
     }
-    os << "GaussianFunctor::evaluate_print: id: " << id << std::endl;
+    os << "CountingGaussian::evaluate_print: id: " << id << std::endl;
     os << "r: ";
     std::copy(r_vec.begin(), r_vec.end(), std::ostream_iterator<PosType>(os, ", "));
     os << std::endl << "Ar: ";

@@ -13,14 +13,14 @@
 #define QMCPLUSPLUS_NORMALIZED_GAUSSIAN_REGION_H
 
 #include "Configuration.h"
-#include "QMCWaveFunctions/Jastrow/GaussianFunctor.h"
+#include "QMCWaveFunctions/Jastrow/CountingGaussian.h"
 #include "Optimize/VariableSet.h"
 #include "Particle/ParticleSet.h"
 
 namespace qmcplusplus
 {
 
-class NormalizedGaussianRegion
+class CountingGaussianRegion
 {
 public:
 
@@ -33,13 +33,13 @@ public:
   using opt_variables_type = optimize::VariableSet;
 
   // counting function pointers
-  std::vector<GaussianFunctor*> C;
+  std::vector<CountingGaussian*> C;
 
   RealType Nval_t;
 
   // reference gaussian id, pointer
   std::string Cref_id;
-  GaussianFunctor* Cref;
+  CountingGaussian* Cref;
 
   // number of electrons
   int num_els;
@@ -77,8 +77,8 @@ public:
 
 
 public:
-  NormalizedGaussianRegion(ParticleSet& P) { num_els = P.getTotalNum(); }
-  NormalizedGaussianRegion(int n) : num_els(n) { }
+  CountingGaussianRegion(ParticleSet& P) { num_els = P.getTotalNum(); }
+  CountingGaussianRegion(int n) : num_els(n) { }
 
   int size() const { return num_regions; }
 
@@ -94,8 +94,8 @@ public:
 
   int max_num_derivs() const
   {
-    auto comp = [](GaussianFunctor* a, GaussianFunctor* b) { return a->myVars.size_of_active() < b->myVars.size_of_active(); };
-    GaussianFunctor* Cmax = *(std::max_element(C.begin(), C.end(), comp));
+    auto comp = [](CountingGaussian* a, CountingGaussian* b) { return a->myVars.size_of_active() < b->myVars.size_of_active(); };
+    CountingGaussian* Cmax = *(std::max_element(C.begin(), C.end(), comp));
     return Cmax->myVars.size();
   }
 
@@ -104,7 +104,7 @@ public:
     return _dLval_saved[I * max_num_derivs() * num_els + p * num_els + i];
   }
 
-  void addFunc(GaussianFunctor* func, std::string fid)
+  void addFunc(CountingGaussian* func, std::string fid)
   {
     C_id.push_back(fid);
     C.push_back(func);
@@ -183,19 +183,19 @@ public:
   void reportStatus(std::ostream& os)
   {
     // print some class variables:
-    os << "    Region type: NormalizedGaussianRegion" << std::endl;
+    os << "    Region type: CountingGaussianRegion" << std::endl;
     os << "    Region optimizable parameters: " << total_num_derivs()  << std::endl << std::endl;
     os << "    Counting Functions: " << std::endl;
     for (int I = 0; I < C.size(); ++I)
       C[I]->reportStatus(os);
   }
 
-  NormalizedGaussianRegion* makeClone()
+  CountingGaussianRegion* makeClone()
   {
-    NormalizedGaussianRegion* cr = new NormalizedGaussianRegion(num_els);
+    CountingGaussianRegion* cr = new CountingGaussianRegion(num_els);
     for (int i = 0; i < C.size(); ++i)
     {
-      GaussianFunctor* Ci = C[i]->makeClone(C_id[i]);
+      CountingGaussian* Ci = C[i]->makeClone(C_id[i]);
       cr->addFunc(Ci, C_id[i]);
     }
     cr->initialize();
@@ -213,7 +213,7 @@ public:
     auto C_id_it  = std::find(C_id.begin(), C_id.end(), Cref_id);
     int ref_index = std::distance(C_id.begin(), C_id_it);
     if (C_id_it == C_id.end())
-      APP_ABORT("NormalizedGaussianRegion::put: reference function not found:" +
+      APP_ABORT("CountingGaussianRegion::put: reference function not found:" +
                 (Cref_id == "none" ? " Cref not specified" : "\"" + Cref_id + "\""));
     // make a copy of the reference gaussian
     Cref = C[ref_index]->makeClone(Cref_id + "_ref");
@@ -281,7 +281,7 @@ public:
   {
     for (auto it = C.begin(); it != C.end(); ++it)
       (*it)->evaluate_print(os, P);
-    os << "NormalizedGaussianRegions::evaluate_print" << std::endl;
+    os << "CountingGaussianRegions::evaluate_print" << std::endl;
     os << "val: ";
     std::copy(val.begin(), val.end(), std::ostream_iterator<RealType>(os, ", "));
     os << std::endl << "sum: ";
@@ -350,7 +350,7 @@ public:
 
   void evaluateTemp_print(std::ostream& os, ParticleSet& P)
   {
-    os << "NormalizedGaussianRegion::evaluateTemp_print" << std::endl;
+    os << "CountingGaussianRegion::evaluateTemp_print" << std::endl;
     os << "val_t: ";
     std::copy(val_t.begin(), val_t.end(), std::ostream_iterator<RealType>(os, ", "));
     os << std::endl << "sum_t: ";
