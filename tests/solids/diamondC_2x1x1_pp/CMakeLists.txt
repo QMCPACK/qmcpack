@@ -61,6 +61,36 @@ ENDIF()
                     1 DIAMOND2_DMC_SCALARS # DMC
                     )
 
+# Exicted state
+
+  LIST(APPEND DIAMOND2_EXCITED_SCALARS "totenergy" "-21.11748244 0.0079")
+  LIST(APPEND DIAMOND2_EXCITED_SCALARS "kinetic" "20.07165273 0.0451")
+  LIST(APPEND DIAMOND2_EXCITED_SCALARS "potential" "-41.18913517 0.0461")
+  LIST(APPEND DIAMOND2_EXCITED_SCALARS "eeenergy" "-5.45374267 0.0127")
+  LIST(APPEND DIAMOND2_EXCITED_SCALARS "ionion" "-25.55132710 0.000015")
+  LIST(APPEND DIAMOND2_EXCITED_SCALARS "localecp" "-11.73379802 0.0530")
+  LIST(APPEND DIAMOND2_EXCITED_SCALARS "nonlocalecp" "1.54973261 0.0186")
+  LIST(APPEND DIAMOND2_EXCITED_SCALARS "samples" "32000 0.0")
+
+  QMC_RUN_AND_CHECK(short-diamondC_2x1x1_pp-vmc_sdj_excited
+                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+                    qmc_short_excited
+                    qmc_short_excited.in.xml
+                    1 16
+                    TRUE
+                    0 DIAMOND2_EXCITED_SCALARS # VMC
+                    )
+
+  LIST(APPEND DIAMOND2_DMC_EXCITED_SCALARS "totenergy" "-21.35638151 0.0126")
+
+  QMC_RUN_AND_CHECK(short-diamondC_2x1x1_pp-dmc_sdj_excited
+                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+                    qmc_short_vmc_dmc_excited
+                    qmc_short_vmc_dmc_excited.in.xml
+                    1 16
+                    TRUE
+                    1 DIAMOND2_DMC_EXCITED_SCALARS # DMC
+                    )
 
 #
 # Long tests
@@ -99,6 +129,29 @@ ENDIF()
                     1 LONG_DIAMOND2_DMC_SCALARS # DMC
                     )
 
+# Excited state
+  LIST(APPEND LONG_DIAMOND2_EXCITED_SCALARS "totenergy" "-21.11748244 0.000269")
+  LIST(APPEND LONG_DIAMOND2_EXCITED_SCALARS "samples" "30720000 0.0")
+  LIST(APPEND LONG_DIAMOND2_EXCITED_SCALARS "flux" "0.045 0.222")
+
+  QMC_RUN_AND_CHECK(long-diamondC_2x1x1_pp-vmc_sdj_excited
+                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+                    qmc_long_excited
+                    qmc_long_excited.in.xml
+                    1 16
+                    TRUE
+                    0 LONG_DIAMOND2_EXCITED_SCALARS # VMC
+                    )
+
+  LIST(APPEND LONG_DIAMOND2_DMC_EXCITED_SCALARS "totenergy" "-21.35638151 0.004")
+  QMC_RUN_AND_CHECK(long-diamondC_2x1x1_pp-dmc_sdj_excited
+                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+                    qmc_long_vmc_dmc_excited
+                    qmc_long_vmc_dmc_excited.in.xml
+                    1 16
+                    TRUE
+                    1 LONG_DIAMOND2_DMC_EXCITED_SCALARS # DMC
+                    )
 
 #
 # Deterministic tests
