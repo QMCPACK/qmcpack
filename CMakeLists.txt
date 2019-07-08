@@ -23,6 +23,10 @@ IF(COMMAND cmake_policy)
   IF(CMAKE_GENERATOR MATCHES "Ninja")
     cmake_policy(SET CMP0058 NEW)
   ENDIF(CMAKE_GENERATOR MATCHES "Ninja")
+  # CMake find_package will use <PackageName>_ROOT CMake variable
+  # and environment variable in search path.
+  # various Find<Package>.cmake modules may not follow this policy
+  cmake_policy(SET CMP0074 NEW)
 ENDIF(COMMAND cmake_policy)
 
 
