@@ -162,10 +162,6 @@ class dummy_wavefunction
 
   SlaterDetOperations SDet;
   SlaterDetOperations* getSlaterDetOperations() {return std::addressof(SDet);}
-  void computeVariationalEnergy(Hamiltonian& ham)
-  {
-    throw std::runtime_error("calling visitor on dummy_wavefunction object");
-  }
 
 };
 }
@@ -350,12 +346,6 @@ class Wavefunction: public boost::variant<dummy::dummy_wavefunction,NOMSD,PHMSD>
     SlaterDetOperations* getSlaterDetOperations() {
         return boost::apply_visitor(
               [&](auto&& a){return a.getSlaterDetOperations();},
-              *this
-        );
-    }
-    void computeVariationalEnergy(Hamiltonian& ham) {
-        boost::apply_visitor(
-              [&](auto&& a){a.computeVariationalEnergy(ham);},
               *this
         );
     }

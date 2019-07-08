@@ -423,56 +423,6 @@ class PHMSD: public AFQMCInfo
       APP_ABORT(" Error: getReferencesForBackPropagation not implemented with PHMSD wavefunctions.\n"); 
     }
 
-    void computeVariationalEnergy(Hamiltonian& ham)
-    {
-      int ndets = abij.number_of_configurations();
-      CMatrix H({ndets,ndets});
-      ComplexType numer = ComplexType(0.0);
-      ComplexType denom = ComplexType(0.0);
-      using std::get;
-      auto cnfg_it = abij.configurations_begin();
-      for(int idet = 0; idet < ndets; idet++) {
-        std::vector<int> deti;
-        createDeterminant(idet, deti);
-        ComplexType cidet = get<2>(*(cnfg_it+idet));
-        for(int jdet = 0; jdet < ndets; jdet++) {
-          std::vector<int> detj;
-          ComplexType cjdet = get<2>(*(cnfg_it+jdet));
-          createDeterminant(jdet, detj);
-          int perm = 1;
-          std::vector<int> excit;
-          int nexcit = getExcitation(deti, detj, excit, perm);
-          // Compute <Di|H|Dj>
-          if(nexcit == 0) {
-            H[idet][jdet] = ComplexType(perm)*slaterCondon0(ham, detj);
-          } else if(nexcit == 1) {
-            H[idet][jdet] = ComplexType(perm)*slaterCondon1(ham, excit, detj);
-          } else if(nexcit == 2) {
-            H[idet][jdet] = ComplexType(perm)*slaterCondon2(ham, excit);
-          } else {
-            H[idet][jdet] = ComplexType(0.0);
-          }
-          numer += ma::conj(cidet)*cjdet*H[idet][jdet];
-        }
-        denom += ma::conj(cidet)*cidet;
-      }
-      app_log() << " Variational energy of trial wavefunction: " << numer / denom << "\n";
-      if(recomputeCI) {
-        app_log() << " Recomputing CI coefficients.\n";
-        std::pair<RVector,CMatrix> Sol = ma::symEig<RVector,CMatrix>(H);
-        using std::get;
-        app_log() << " Resetting CI coefficients. \n";
-        auto cnfg_it = abij.configurations_begin();
-        for(int idet=0; idet < ndets; idet++) {
-          ComplexType ci = Sol.second[idet][0];
-          abij.set_ci_coefficient(idet, ci);
-          ComplexType cidet = get<2>(*(cnfg_it+idet));
-        }
-        app_log() << " Recomputed variational energy of trial wavefunction: " << Sol.first[0] << "\n";
-      }
-
-    }
-
   protected: 
 
     TaskGroup_& TG;

@@ -468,8 +468,6 @@ class NOMSD: public AFQMCInfo
       TG.TG_local().barrier();
     }
 
-    void computeVariationalEnergy(Hamiltonian& ham) {}
-
   protected: 
 
     TaskGroup_& TG;
