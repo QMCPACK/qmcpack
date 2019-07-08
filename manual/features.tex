@@ -45,7 +45,7 @@ Array-of-Structures (AoS) code and can be enabled or disabled at compile time. T
 also reduced in the SoA implementation by better
 algorithms, enabling more systems to be run.
 
-The SoA build was made the default for QMCPACK v3.7.0. As described in Section \ref{sec:cmakeoptions}, the SoA
+The SoA build was made the default for QMCPACK v3.7.0. As described in Section~\ref{sec:cmakeoptions}, the SoA
 implementation can be disabled by configuring with \ishell{-DENABLE_SOA=0}.
 
 The SoA code path currently does \textit{not} support:
@@ -95,7 +95,7 @@ specific cases.
 
 \subsection{Auxiliary-Field Quantum Monte Carlo}
 
-The orbital-space Auxiliary-Field Quantum Monte Carlo (AFMQC) method is now available in QMCPACK. The main input for the code is the matrix elements of the Hamiltonian in a given single particle basis set, which must be produced from mean-field calculations such as Hartree-Fock or density functional theory. The code and many features are in development. Check the latest version of QMCPACK for an up-to-date description of available features. A partial list of the current capabilities of the code follows. For a detailed description of the available features, see chapter \ref{chap:afqmc}.
+The orbital-space Auxiliary-Field Quantum Monte Carlo (AFMQC) method is now available in QMCPACK. The main input for the code is the matrix elements of the Hamiltonian in a given single particle basis set, which must be produced from mean-field calculations such as Hartree-Fock or density functional theory. The code and many features are in development. Check the latest version of QMCPACK for an up-to-date description of available features. A partial list of the current capabilities of the code follows. For a detailed description of the available features, see chapter~\ref{chap:afqmc}.
  
 \begin{itemize}
     \item Phaseless AFQMC algorithm of Zhang et al. (S. Zhang and H. Krakauer. 2003. ``Quantum Monte Carlo Method using Phase-Free Random Walks with Slater Determinants." \textit{PRL} 90: 136401).
@@ -134,5 +134,5 @@ To use this feature, the following needs to be done:
       Ngpus").
     \item In the determinant set definition of the <wavefunction>
       section, the ``gpusharing" parameter needs to be set
-      (i.e., <determinantset gpusharing=``yes">). See Section \ref{sec:spo_spline}.
+      (i.e., <determinantset gpusharing=``yes">). See Section~\ref{sec:spo_spline}.
 \end{itemize}
