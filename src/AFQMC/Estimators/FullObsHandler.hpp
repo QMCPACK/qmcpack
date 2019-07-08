@@ -115,6 +115,11 @@ class FullObsHandler: public AFQMCInfo
     using std::fill_n;
     const int n_zero = 9;
 
+    if( TG.TG_local().root() ) {
+      ma::scal(ComplexType(1.0/block_size),denominator);
+      TG.TG_heads().reduce_in_place_n(to_address(denominator.origin()),denominator.num_elements(),std::plus<>(),0);
+    }
+
     if(writer) {
       ma::scal(ComplexType(1.0/block_size),denominator);
       for(int i=0; i<nave; ++i) {
@@ -151,6 +156,12 @@ class FullObsHandler: public AFQMCInfo
     RefsA.reserve(nw);
     if(walker_type == COLLINEAR) RefsB.reserve(nw);
 
+    if(impsamp) 
+      denominator[iav] += std::accumulate(wgt.begin(),wgt.end(),ComplexType(0.0));
+    else {
+      APP_ABORT(" Finish implementation of free projection. \n\n\n");
+    }
+
     for(int iref=0, is=0; iref<nrefs; iref++, is+=nspins) {
 
       ComplexType CIcoeff(wfn0.getReferenceWeight(iref));
@@ -159,23 +170,29 @@ class FullObsHandler: public AFQMCInfo
       // Refs({wset.size(),nrefs,ref_size}  
       RefsA.clear();  
       RefsB.clear();  
+// NOTE: Incomplete, must copy to device memory.
+//       Use the Aux SM in the walker and then make array_refs from them. 
       if(walker_type == CLOSED) {
         for(int iw=0; iw<nw; iw++) 
+// push SMAux and them copy_n from Refs to there
           RefsA.emplace_back(devCMatrix_ref(make_device_ptr(Refs[iw][iref].origin()), 
-                                            {NAEA,NMO}));
+                                            {NMO,NAEA}));
       } else if(walker_type == COLLINEAR) {
         for(int iw=0; iw<nw; iw++) { 
           RefsA.emplace_back(devCMatrix_ref(make_device_ptr(Refs[iw][iref].origin()), 
-                                            {NAEA,NMO}));
-          RefsB.emplace_back(devCMatrix_ref(make_device_ptr(Refs[iw][iref].origin()), 
-                                            {NAEB,NMO}));
+                                            {NMO,NAEA}));
+          RefsB.emplace_back(devCMatrix_ref(make_device_ptr(Refs[iw][iref].origin())+NAEA*NMO, 
+                                            {NMO,NAEB}));
         }
       } else if(walker_type == NONCOLLINEAR) {
         for(int iw=0; iw<nw; iw++) 
           RefsA.emplace_back(devCMatrix_ref(make_device_ptr(Refs[iw][iref].origin()), 
-                                            {NAEA+NAEB,2*NMO}));
+                                            {2*NMO,NAEA+NAEB}));
       }
       wfn0.DensityMatrix(wset, RefsA, RefsB, G2D, DevOv, false, false, true);
+double s(0.0);
+for(int i=0; i<NMO; i++) s+=real(G2D[0][i*NMO+i]);
+std::cout<<" G:" <<s <<std::endl;
 
       //2. calculate and accumulate appropriate weights 
       copy_n( make_device_ptr(DevOv.origin()), nw, Ov.origin());
@@ -191,11 +208,11 @@ class FullObsHandler: public AFQMCInfo
       } 
 
       //3. accumulate references 
-      for(auto& v: properties) v.accumulate_reference(iav,iref,G4D,wgt,Xw,Ov);
+      for(auto& v: properties) v.accumulate_reference(iav,iref,G4D,wgt,Xw,Ov,impsamp);
 
     }
     //4. accumulate block (normalize and accumulate sum over references)
-    for(auto& v: properties) v.accumulate_block(iav);
+    for(auto& v: properties) v.accumulate_block(iav,impsamp);
 
   }
 

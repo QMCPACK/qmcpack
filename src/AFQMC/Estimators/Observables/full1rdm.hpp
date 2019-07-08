@@ -87,7 +87,7 @@ class full1rdm: public AFQMCInfo
 
   template<class MatG, class HostCVec1, class HostCVec2, class HostCVec3>
   void accumulate_reference(int iav, int iref, MatG&& G, HostCVec1&& wgt, 
-                                               HostCVec2&& Xw, HostCVec3&& ovlp)
+                                               HostCVec2&& Xw, HostCVec3&& ovlp, bool impsamp)
   {
     static_assert(std::decay<MatG>::type::dimensionality == 4, "Wrong dimensionality");
     using std::fill_n;
@@ -112,8 +112,8 @@ class full1rdm: public AFQMCInfo
         DMWork = std::move(mpi3CTensor({2,nw,dm_size},
                                       shared_allocator<ComplexType>{TG.TG_local()}));
       }
-      fill_n(denom.origin(),nw,ComplexType(0.0,0.0));  
-      fill_n(DMWork.origin(),nw,ComplexType(0.0,0.0));  
+      fill_n(denom.origin(),denom.num_elements(),ComplexType(0.0,0.0));  
+      fill_n(DMWork.origin(),DMWork.num_elements(),ComplexType(0.0,0.0));  
     } else {
       if( denom.size(0) != nw ||
           DMWork.size(0) != 2 || 
@@ -136,9 +136,10 @@ class full1rdm: public AFQMCInfo
       if(TG.TG_local().root()) denom[iw] += Xw[iw];
       ma::axpy( Xw[iw]*wgt[iw], DMWork[0][iw].sliced(i0,iN), DMWork[1][iw].sliced(i0,iN) );
     }
+
   }
 
-  void accumulate_block(int iav) 
+  void accumulate_block(int iav, bool impsamp) 
   {
     int nw(denom.size(0));
     int i0,iN;

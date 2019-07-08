@@ -56,7 +56,7 @@ class BackPropagatedEstimator_: public EstimatorBase
                                       observ0(TG,info,name,cur,wlk,wfn), wfn0(wfn), prop0(prop),
                                       max_nback_prop(10),
                                       nStabalize(10), path_restoration(false), block_size(1),
-                                      writer(false), importanceSampling(impsamp_)
+                                      writer(false), importanceSampling(impsamp_),first(true)
   {
     int nave(1);
     if(cur != NULL) {
@@ -185,7 +185,7 @@ class BackPropagatedEstimator_: public EstimatorBase
       wset.getProperty(PHASE,phase);
       for(int i=0; i<wgt.size(); i++) wgt[i] *= phase[i];
     }
-    observ0.accumulate(iav, wset, Refs_, wgt, detR, !importanceSampling);
+    observ0.accumulate(iav, wset, Refs_, wgt, detR, importanceSampling);
 
     if(bp_step == max_nback_prop) {
       // 5. setup for next block 
@@ -214,16 +214,19 @@ class BackPropagatedEstimator_: public EstimatorBase
                     <<AFQMCTimers[back_propagate_timer]->get_total() <<" ";
       AFQMCTimers[back_propagate_timer]->reset();  
     }
-    if(writer && accumulated_in_last_block) {
-      int nave(nback_prop_steps.size());
-      int nref(detR.size(1));
-      if(write_metadata) {
-        dump.push("Metadata");
-        dump.write(max_nback_prop, "NumBackProp");
-        dump.write(nave, "NumAverages");
-        dump.write(nref, "NumReferences");
-        dump.pop();
-        write_metadata = false;
+    if(accumulated_in_last_block) {
+      if(writer && first) { 
+        first=false;
+        int nave(nback_prop_steps.size());
+        int nref(detR.size(1));
+        if(write_metadata) {
+          dump.push("Metadata");
+          dump.write(max_nback_prop, "NumBackProp");
+          dump.write(nave, "NumAverages");
+          dump.write(nref, "NumReferences");
+          dump.pop();
+          write_metadata = false;
+        }
       }
       observ0.print(iblock,dump);
     }
@@ -259,6 +262,8 @@ class BackPropagatedEstimator_: public EstimatorBase
   int nblocks_skip = 0;
   ComplexType zero = ComplexType(0.0, 0.0);
   ComplexType one = ComplexType(1.0, 0.0);
+
+  int first;
 
   // Frequency of reorthogonalisation.
   int nStabalize;
