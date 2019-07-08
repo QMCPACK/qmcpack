@@ -577,7 +577,8 @@ ph_excitations<int,ComplexType> read_ph_wavefunction(std::ifstream& in, int& nde
   return ph_struct;
 }
 
-ph_excitations<int,ComplexType> read_ph_wavefunction_hdf(hdf_archive& dump, int& ndets, WALKER_TYPES walker_type,
+void read_ph_wavefunction_hdf(hdf_archive& dump, std::vector<ComplexType>& ci_coeff, std::vector<int>& occs, 
+        int& ndets, WALKER_TYPES walker_type,
         boost::mpi3::shared_communicator& comm, int NMO, int NAEA, int NAEB,
         std::vector<PsiT_Matrix>& PsiT, std::string& type)
 {
@@ -605,7 +606,6 @@ ph_excitations<int,ComplexType> read_ph_wavefunction_hdf(hdf_archive& dump, int&
    *          NOTE: Does not mean perfect pairing, means excitations from a single reference
    *   - 1: excitations out of a UHF reference
    */
-  std::vector<ComplexType> ci_coeff;
   getCommonInput(dump, NMO, NAEA, NAEB, ndets, ci_coeff, walker_type, comm.root());
   if(walker_type != COLLINEAR)
     APP_ABORT(" Error: walker_type!=COLLINEAR not yet implemented in read_ph_wavefunction.\n");
@@ -636,6 +636,19 @@ ph_excitations<int,ComplexType> read_ph_wavefunction_hdf(hdf_archive& dump, int&
       dump.pop();
     }
   }
+  ComplexType ci;
+  if(comm.root()) {
+    if(!dump.readEntry(occs, "occs"))
+      APP_ABORT("Error reading occs array.\n");
+  }
+  comm.barrier();
+}
+
+ph_excitations<int,ComplexType> build_ph_struct(std::vector<ComplexType> ci_coeff, boost::multi::array_ref<int,2>& occs, int ndets,
+        boost::mpi3::shared_communicator& comm, int NMO, int NAEA, int NAEB)
+{
+
+  using Alloc = shared_allocator<ComplexType>;
 
   ComplexType ci;
   // count number of k-particle excitations
@@ -655,11 +668,7 @@ ph_excitations<int,ComplexType> read_ph_wavefunction_hdf(hdf_archive& dump, int&
   // record file position to come back
   std::vector<int> Iwork; // work arrays for permutation calculation
   std::streampos start;
-  std::vector<int> buff(ndets*(NAEA+NAEB));
-  boost::multi::array_ref<int,2> occs(to_address(buff.data()), {ndets, NAEA+NAEB});
   if(comm.root()) {
-    if(!dump.readEntry(buff, "occs"))
-      APP_ABORT("Error reading occs array.\n");
     confg.reserve(NAEA);
     Iwork.resize(2*NAEA);
     exct.reserve(2*NAEA);
