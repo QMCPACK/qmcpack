@@ -27,11 +27,10 @@
 
 namespace qmcplusplus
 {
-
 TEST_CASE("QMCDriverFactory::VMCBatchedDriver", "[qmcapp]")
 {
   Communicate comm;
-  QMCDriverFactory driver_factory(&comm);
+  QMCDriverFactory driver_factory;
   // clang-format off
   const char* driver_xml = R"(
   <qmc method="vmc_batch" move="pbyp">
@@ -51,8 +50,8 @@ TEST_CASE("QMCDriverFactory::VMCBatchedDriver", "[qmcapp]")
   Libxml2Document doc;
   bool okay = doc.parseFromString(driver_xml);
   REQUIRE(okay);
-  xmlNodePtr node = doc.getRoot();
+  xmlNodePtr node                           = doc.getRoot();
   QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(0, node);
-  REQUIRE(das.new_run_type == QMCDriverFactory::QMCRunType::VMC_BATCH);
+  REQUIRE(das.new_run_type == QMCRunType::VMC_BATCH);
 }
-}
+} // namespace qmcplusplus

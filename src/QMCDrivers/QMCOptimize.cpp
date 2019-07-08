@@ -52,7 +52,7 @@ QMCOptimize::QMCOptimize(MCWalkerConfiguration& w,
 {
   IsQMCDriver = false;
   //set the optimization flag
-  QMCDriverMode.set(QMC_OPTIMIZE, 1);
+  qmc_driver_mode.set(QMC_OPTIMIZE, 1);
   //read to use vmc output (just in case)
   RootName = "pot";
   QMCType  = "QMCOptimize";
@@ -138,9 +138,9 @@ void QMCOptimize::generateSamples()
   Timer t1;
   app_log() << "<optimization-report>" << std::endl;
 
-  vmcEngine->QMCDriverMode.set(QMC_WARMUP, 1);
-  vmcEngine->QMCDriverMode.set(QMC_OPTIMIZE, 1);
-  vmcEngine->QMCDriverMode.set(QMC_WARMUP, 0);
+  vmcEngine->qmc_driver_mode.set(QMC_WARMUP, 1);
+  vmcEngine->qmc_driver_mode.set(QMC_OPTIMIZE, 1);
+  vmcEngine->qmc_driver_mode.set(QMC_WARMUP, 0);
 
   //vmcEngine->setValue("recordWalkers",1);//set record
   vmcEngine->setValue("current", 0); //reset CurrentStep

@@ -33,6 +33,7 @@ public:
   bool run();
   bool put(xmlNodePtr cur);
   //inline std::vector<RandomGenerator_t*>& getRng() { return Rng;}
+  virtual QMCRunType getRunType() { return QMCRunType::RMC; }
 private:
   ///period for walker dump
   int myPeriod4WalkerDump;

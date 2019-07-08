@@ -191,6 +191,8 @@ public:
   RealType getNonLinearRescale(std::vector<RealType>& dP, Matrix<RealType>& S);
   void generateSamples();
   void add_timers(std::vector<NewTimer*>& timers);
+
+  virtual QMCRunType getRunType() { return QMCRunType::LINEAR_OPTIMIZE; }
   std::vector<NewTimer*> myTimers;
   Timer t1;
 };

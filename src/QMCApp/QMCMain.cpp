@@ -61,7 +61,7 @@ extern "C"
 namespace qmcplusplus
 {
 QMCMain::QMCMain(Communicate* c)
-    : QMCDriverFactory(c),
+    : QMCMainState(c),
       QMCAppBase(),
       FirstQMC(true)
 #if !defined(REMOVE_TRACEMANAGER)
@@ -617,15 +617,18 @@ bool QMCMain::processPWH(xmlNodePtr cur)
  */
 bool QMCMain::runQMC(xmlNodePtr cur)
 {
-  DriverAssemblyState das = readSection(myProject.m_series, cur);
-  bool append_run = setQMCDriver(myProject.m_series, cur, das);
+  QMCDriverFactory driver_factory;
+  QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(myProject.m_series, cur);
+  std::unique_ptr<QMCDriverInterface> qmc_driver;
+  qmc_driver =
+      driver_factory.newQMCDriver(std::move(last_driver), myProject.m_series, cur, das, *qmcSystem, *ptclPool, *psiPool, *hamPool, myComm);
   if (qmcDriver)
   {
     //advance the project id
     //if it is NOT the first qmc node and qmc/@append!='yes'
-    if (!FirstQMC && !append_run)
+    if (!FirstQMC && !das.append_run)
       myProject.advance();
-    qmcDriver->setStatus(myProject.CurrentMainRoot(), PrevConfigFile, append_run);
+    qmcDriver->setStatus(myProject.CurrentMainRoot(), PrevConfigFile, das.append_run);
     qmcDriver->putWalkers(m_walkerset_in);
 #if !defined(REMOVE_TRACEMANAGER)
     qmcDriver->putTraces(traces_xml);

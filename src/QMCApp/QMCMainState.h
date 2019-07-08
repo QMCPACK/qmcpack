@@ -2,27 +2,30 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2019 QMCPACK developers.
 //
-// File developed by: Bryan Clark, bclark@Princeton.edu, Princeton University
+// File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
+//                    Bryan Clark, bclark@Princeton.edu, Princeton University
 //                    Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //                    Raymond Clay III, j.k.rofling@gmail.com, Lawrence Livermore National Laboratory
 //                    Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 //
-// File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
+// Refactored from QMCDriverFactory.h  -- created by: Jeongnim Kim
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#ifndef QMCPLUSPLUS_QMCDRIVER_FACTORY_H
-#define QMCPLUSPLUS_QMCDRIVER_FACTORY_H
+#ifndef QMCPLUSPLUS_QMCMAINSTATE_H
+#define QMCPLUSPLUS_QMCMAINSTATE_H
 #include <bitset>
 #include <string>
 
 #include "OhmmsData/OhmmsElementBase.h"
 #include "Message/MPIObjectBase.h"
 #include "QMCApp/ParticleSetPool.h"
+#include "QMCApp/QMCDriverFactory.h"
+
 class Communicate;
 
 namespace qmcplusplus
@@ -33,45 +36,8 @@ class QMCDriverInterface;
 class WaveFunctionPool;
 class HamiltonianPool;
 
-struct QMCDriverFactory : public MPIObjectBase
+struct QMCMainState : public MPIObjectBase
 {
-  /*! enum for QMC Run Type */
-  enum class QMCRunType
-  {
-    DUMMY, /*!< dummy */
-    VMC,   /**< VMC type: vmc, vmc-ptcl, vmc-multiple, vmc-ptcl-multiple */
-    CSVMC,
-    DMC,      /**< DMC type: dmc, dmc-ptcl*/
-    RMC,      /**< RMC type: rmc, rmc-ptcl */
-    OPTIMIZE, /*!< Optimization */
-    VMC_OPT,  /*!< Optimization with vmc blocks */
-    LINEAR_OPTIMIZE,
-    CS_LINEAR_OPTIMIZE,
-    WF_TEST,
-    VMC_BATCH
-  };
-
-  /** enum to set the bit to determine the QMC mode 
-   *
-   *  Can't be a scoped enum
-   */
-  
-  enum QMCModeEnum
-  {
-    UPDATE_MODE,    /**< bit for move: walker or pbyp */
-    MULTIPLE_MODE,  /**< bit for multple configuration */
-    SPACEWARP_MODE, /**< bit for space-warping */
-    ALTERNATE_MODE, /**< bit for performing various analysis and weird qmc methods */
-    GPU_MODE,       /**< bit to use GPU driver */
-    QMC_MODE_MAX = 8
-  };
-
-  ///current QMC mode determined by curQmcModeBits
-  unsigned long curQmcMode;
-
-  ///8-bit (ALTERNATE_MODE,SPACEWARP_MODE, MULTIPLE_MODE, UPDATE_MODE)
-  std::bitset<QMC_MODE_MAX> curQmcModeBits;
-
   ///type of qmcdriver
   QMCRunType curRunType;
 
@@ -99,31 +65,13 @@ struct QMCDriverFactory : public MPIObjectBase
   HamiltonianPool* hamPool;
 
   /** default constructor **/
-  QMCDriverFactory(Communicate* c);
+  QMCMainState(Communicate* c);
 
   /** set the active qmcDriver */
   void putCommunicator(xmlNodePtr cur);
 
-  struct DriverAssemblyState
-  {
-    std::bitset<QMC_MODE_MAX> what_to_do;
-    bool append_run;
-    std::string traces_tag = "none";
-    QMCRunType new_run_type = QMCRunType::DUMMY;
-  };
-  
-  /** read the current QMC Section */
-  DriverAssemblyState readSection(int curSeries, xmlNodePtr cur);
-
-  /** set the active qmcDriver */
-  bool setQMCDriver(int curSeries, xmlNodePtr cur, DriverAssemblyState& das);
-
-  /** create a new QMCDriver
-   */
-  void createQMCDriver(xmlNodePtr cur);
-
   /** virtual destructor **/
-  virtual ~QMCDriverFactory();
+  virtual ~QMCMainState();
 };
 } // namespace qmcplusplus
 #endif

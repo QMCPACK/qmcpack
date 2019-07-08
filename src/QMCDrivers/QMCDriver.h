@@ -29,6 +29,7 @@
 #include "QMCApp/WaveFunctionPool.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Estimators/EstimatorManagerBase.h"
+#include "QMCDrivers/DriverTraits.h"
 #include "QMCDrivers/QMCDriverInterface.h"
 #include "QMCDrivers/GreenFunctionModifiers/DriftModifierBase.h"
 #include "QMCDrivers/SimpleFixedNodeBranch.h"
@@ -82,11 +83,11 @@ public:
 
   /** bits to classify QMCDriver
    *
-   * - QMCDriverMode[QMC_UPDATE_MODE]? particle-by-particle: walker-by-walker
-   * - QMCDriverMode[QMC_MULTIPLE]? multiple H/Psi : single H/Psi
-   * - QMCDriverMode[QMC_OPTIMIZE]? optimization : vmc/dmc/rmc
+   * - qmc_driver_mode[QMC_UPDATE_MODE]? particle-by-particle: walker-by-walker
+   * - qmc_driver_mode[QMC_MULTIPLE]? multiple H/Psi : single H/Psi
+   * - qmc_driver_mode[QMC_OPTIMIZE]? optimization : vmc/dmc/rmc
    */
-  std::bitset<4> QMCDriverMode;
+  std::bitset<QMC_MODE_MAX> qmc_driver_mode;
 
   /// whether to allow traces
   bool allow_traces;
@@ -108,7 +109,7 @@ public:
   /** set the update mode
    * @param pbyp if true, use particle-by-particle update
    */
-  inline void setUpdateMode(bool pbyp) { QMCDriverMode[QMC_UPDATE_MODE] = pbyp; }
+  inline void setUpdateMode(bool pbyp) { qmc_driver_mode[QMC_UPDATE_MODE] = pbyp; }
 
   /** Set the status of the QMCDriver
    * @param aname the root file name
@@ -184,6 +185,8 @@ public:
 
   ///return the i-th random generator
   inline RandomGenerator_t& getRng(int i) { return (*Rng[i]); }
+
+  unsigned long getDriverMode() { return qmc_driver_mode.to_ulong(); }
 
 protected:
   ///branch engine
