@@ -748,7 +748,9 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop, TaskGroup_& TGwfn
     read_ph_wavefunction_hdf(dump, coeffs, occbuff, ndets_to_read, walker_type, TGwfn.Node(), NMO, NAEA, NAEB, PsiT_MO, wfn_type);
     boost::multi::array_ref<int,2> occs(to_address(occbuff.data()), {ndets_to_read,NAEA+NAEB});
     // 2. Compute Variational Energy / update coefficients
-    computeVariationalEnergyPHMSD(h, occs, coeffs, ndets_to_read, NAEA, NAEB, recomputeCI);
+    if(TGwfn.Global().rank() == 0) {
+      computeVariationalEnergyPHMSD(h, occs, coeffs, ndets_to_read, NAEA, NAEB, recomputeCI);
+    }
     // 3. Construct Structures.
     ph_excitations<int,ComplexType> abij = build_ph_struct(coeffs, occs, ndets_to_read, TGwfn.Node(), NMO, NAEA, NAEB);
     int NEL = (walker_type==NONCOLLINEAR)?(NAEA+NAEB):NAEA;
@@ -955,6 +957,7 @@ void WavefunctionFactory::computeVariationalEnergyPHMSD(Hamiltonian& ham, boost:
   boost::multi::array<ComplexType,2> H({ndets,ndets});
   ComplexType numer = ComplexType(0.0);
   ComplexType denom = ComplexType(0.0);
+  ComplexType ENuc = ham.getNuclearCoulombEnergy();
   using std::get;
   for(int idet = 0; idet < ndets; idet++) {
     std::vector<int> deti;
@@ -973,7 +976,7 @@ void WavefunctionFactory::computeVariationalEnergyPHMSD(Hamiltonian& ham, boost:
       int nexcit = getExcitation(deti, detj, excit, perm);
       // Compute <Di|H|Dj>
       if(nexcit == 0) {
-        H[idet][jdet] = ComplexType(perm)*slaterCondon0(ham, detj);
+        H[idet][jdet] = ComplexType(perm)*(slaterCondon0(ham, detj) + ENuc);
       } else if(nexcit == 1) {
         H[idet][jdet] = ComplexType(perm)*slaterCondon1(ham, excit, detj);
       } else if(nexcit == 2) {
@@ -985,18 +988,18 @@ void WavefunctionFactory::computeVariationalEnergyPHMSD(Hamiltonian& ham, boost:
     }
     denom += ma::conj(cidet)*cidet;
   }
-  app_log() << " Variational energy of trial wavefunction: " << numer / denom << "\n";
+  app_log() << " - Variational energy of trial wavefunction: " << std::setprecision(16) << numer / denom << "\n";
   if(recomputeCI) {
-    app_log() << " Recomputing CI coefficients.\n";
+    app_log() << " - Diagonalizing CI matrix.\n";
     using RVector = boost::multi::array<RealType,1>;
     using CMatrix = boost::multi::array<ComplexType,2>;
     std::pair<RVector,CMatrix> Sol = ma::symEig<RVector,CMatrix>(H);
     using std::get;
-    app_log() << " Resetting CI coefficients. \n";
+    app_log() << " - Updating CI coefficients. \n";
     for(int idet=0; idet < ndets; idet++) {
       ComplexType ci = Sol.second[idet][0];
     }
-    app_log() << " Recomputed variational energy of trial wavefunction: " << Sol.first[0] << "\n";
+    app_log() << " - Recomputed variational energy of trial wavefunction: " << Sol.first[0] << "\n";
   }
 
 }
