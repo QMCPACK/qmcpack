@@ -33,7 +33,7 @@ LogValue=InvertWithLog(psiMinv.data(),NumPtcls,NumOrbitals
 QMCPACK represents the complex value of the wavefunction in polar coordinates $S=e^Ue^{i\theta}$. Specifically, \verb|LogValue| $U$ and \verb|PhaseValue| $\theta$ are handled separately. In the following, I will consider derivatives of the log value only.
 
 \subsection{Gradient}
-To evaluate particle gradient of the log value of the Slater-Backflow wavefunction, we can use the $\log\det$ identity in eq.~(\ref{eq:logdet}). This identity maps the derivative of $\log\det M$ with respect to a real variable $p$ to a trace over $M^{-1}dM$
+To evaluate particle gradient of the log value of the Slater-Backflow wavefunction, we can use the $\log\det$ identity in eq.~\ref{eq:logdet}. This identity maps the derivative of $\log\det M$ with respect to a real variable $p$ to a trace over $M^{-1}dM$
 \begin{align}
 \frac{\partial}{\partial p}\log\det M = \tr\left( M^{-1} \frac{\partial M}{\partial p} \right) \label{eq:logdet}.
 \end{align}
@@ -69,7 +69,7 @@ for(int i=0; i<num; i++) // k in above formula
 }
 \end{lstlisting}
 
-Eq. (\ref{eq:grad}) is still relatively simple to understand. The $A$ matrix maps changes in particle coordinates $d\bs{r}$ to changes in quasi-particle coordinates $d\bs{x}$. Dotting A into F propagates $d\bs{x}$ to $dM$. Thus $F\cdot A$ is the term inside the trace operator of eq.~(\ref{eq:logdet}). Finally, performing the trace completes the evaluation of the derivative.
+Eq.~\ref{eq:grad} is still relatively simple to understand. The $A$ matrix maps changes in particle coordinates $d\bs{r}$ to changes in quasi-particle coordinates $d\bs{x}$. Dotting A into F propagates $d\bs{x}$ to $dM$. Thus $F\cdot A$ is the term inside the trace operator of eq.~\ref{eq:logdet}. Finally, performing the trace completes the evaluation of the derivative.
 
 \subsection{Laplacian}
 The particle laplacian is given in ref.~\cite{Kwon1993backflow} as
@@ -140,7 +140,7 @@ for(int j=0; j<NumPtcls; j++)
 \subsection{Wavefunction Parameter Derivative}
 In order to use the robust linear optimization method of ref.~\cite{Toulouse2007linear}, the trial wavefunction needs to know its contributions to the overlap and hamiltonian matrices. In particular, we need derivatives of these matrices with respect to wavefunction parameters. As a consequence, the wavefunction $\psi$ needs to be able to evaluate $\frac{\partial}{\partial p} \ln \psi$ and $\frac{\partial}{\partial p} \frac{\mathcal{H}\psi}{\psi}$, where $p$ is a parameter.
 
-When two-body backflow is considered, a wavefunction parameter $p$ enters the $\eta$ function only (eq.~(\ref{eq:quasi})). $\bs{r}$, $\phi$, and $M$ are do not explicitly dependent on $p$. Derivative of the log value is almost identical to particle gradient. Namely, eq. (\ref{eq:grad}) applies upon the substitution $r_i^\alpha\rightarrow p$
+When two-body backflow is considered, a wavefunction parameter $p$ enters the $\eta$ function only eq.~\ref{eq:quasi}. $\bs{r}$, $\phi$, and $M$ are do not explicitly dependent on $p$. Derivative of the log value is almost identical to particle gradient. Namely, eq.~\ref{eq:grad} applies upon the substitution $r_i^\alpha\rightarrow p$
 \begin{align}
 \frac{\partial}{\partial p} \ln\det M = \sum\limits_{j=1}^N \sum\limits_{\beta=1}^3 F_{jj}^\beta \left({}_pC_{j}^{\beta}\right),
 \end{align}
@@ -153,7 +153,7 @@ The change in local kinetic energy is a lot more difficult to calculate
 \begin{align}
 \frac{\partial T_{\text{local}}}{\partial p} = \frac{\partial}{\partial p} \left\{ \left( \sum\limits_{i=1}^N \frac{1}{2m_i} \nabla^2_i \right) \ln \det M \right\} = \sum\limits_{i=1}^N \frac{1}{2m_i} \frac{\partial}{\partial p} L_i, \label{eq:dK}
 \end{align}
-where $L_i$ is the particle laplacian defined in eq.~(\ref{eq:lap}). In order to evaluate eq.~(\ref{eq:dK}), we need to calculate parameter derivatives of all three terms defined in the laplacian evalaution. Namely $(B)(F)$, $(AA)(FF)$, and $\tr(AA,Md2M)$, where I have put parentheses around previously identified data structures. After $\frac{\partial}{\partial p}$ hits, each of the 3 terms will split into two terms by the product rule. Each smaller term will contain a contraction of two data structures. Therefore, we will need to calculate the parameter derivatives of each data structure defined in the laplacian evaluation
+where $L_i$ is the particle laplacian defined in eq.~\ref{eq:lap}. In order to evaluate eq.~\ref{eq:dK}, we need to calculate parameter derivatives of all three terms defined in the laplacian evalaution. Namely $(B)(F)$, $(AA)(FF)$, and $\tr(AA,Md2M)$, where I have put parentheses around previously identified data structures. After $\frac{\partial}{\partial p}$ hits, each of the 3 terms will split into two terms by the product rule. Each smaller term will contain a contraction of two data structures. Therefore, we will need to calculate the parameter derivatives of each data structure defined in the laplacian evaluation
 \begin{align}
 {}_pX_{ij}^{\alpha\beta} \equiv \frac{\partial}{\partial p} A_{ij}^{\alpha\beta} \\
 {}_pY_{ij}^{\alpha} \equiv \frac{\partial}{\partial p} B_{ij}^{\alpha} \\

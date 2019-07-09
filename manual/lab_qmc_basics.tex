@@ -138,7 +138,7 @@ The full QMCPACK pseudopotential is also included in \ishell{oxygen_atom/referen
 \label{sec:lqb_dft}
 With the pseudopotential in hand, the next step toward a QMC calculation is to obtain the Fermionic part of the wavefunction, in this case a single Slater determinant constructed from DFT-LDA orbitals for a neutral oxygen atom.  If you had trouble with the pseudopotential conversion step, pre-converted pseudopotential files are located in the \ishell{oxygen_atom/reference} directory.  
 
-Quantum ESPRESSO input for the DFT-LDA ground state of the neutral oxygen atom can be found in \ishell{O.q0.dft.in} and also listing \ref{lst:O_q0_dft} below.  Setting \ishell{wf_collect=.true.} instructs Quantum Espresso to write the orbitals to disk at the end of the run. Option \ishell{wf_collect=.true.} may be a potential problem in large simulations, it is recommended to avoid it and use the converter pw2qmcpack in parallel, see details in Sec.~\ref{sec:pw2qmcpack}. Note that the plane-wave energy cutoff has been set to a reasonable value of 300 Ry here (\ishell{ecutwfc=300}).  This value depends on the pseudopotentials used, and in general should be selected by running DFT$\rightarrow$(orbital conversion)$\rightarrow$VMC with increasing energy cutoffs until the lowest VMC total energy and variance is reached.
+Quantum ESPRESSO input for the DFT-LDA ground state of the neutral oxygen atom can be found in \ishell{O.q0.dft.in} and also listing~\ref{lst:O_q0_dft} below.  Setting \ishell{wf_collect=.true.} instructs Quantum Espresso to write the orbitals to disk at the end of the run. Option \ishell{wf_collect=.true.} may be a potential problem in large simulations, it is recommended to avoid it and use the converter pw2qmcpack in parallel, see details in Sec.~\ref{sec:pw2qmcpack}. Note that the plane-wave energy cutoff has been set to a reasonable value of 300 Ry here (\ishell{ecutwfc=300}).  This value depends on the pseudopotentials used, and in general should be selected by running DFT$\rightarrow$(orbital conversion)$\rightarrow$VMC with increasing energy cutoffs until the lowest VMC total energy and variance is reached.
 
 \begin{lstlisting}[style=ESPRESSO, language=espresso, caption={Quantum ESPRESSO input file for the neutral oxygen atom (\ishell{O.q0.dft.in})\label{lst:O_q0_dft}}]
 &CONTROL
@@ -216,7 +216,7 @@ The DFT run should take a few minutes to complete.  If desired, you can track th
 
 
 
-The orbitals have been written in a format native to Quantum ESPRESSO in the \ishell{O.q0.save} directory.  We will convert them into the ESHDF format expected by QMCPACK by using the \ishell{pw2qmcpack.x} tool.  The input for \ishell{pw2qmcpack.x} can be found in the file \ishell{O.q0.p2q.in} and also in listing \ref{lst:O_q0_p2q} below. 
+The orbitals have been written in a format native to Quantum ESPRESSO in the \ishell{O.q0.save} directory.  We will convert them into the ESHDF format expected by QMCPACK by using the \ishell{pw2qmcpack.x} tool.  The input for \ishell{pw2qmcpack.x} can be found in the file \ishell{O.q0.p2q.in} and also in listing~\ref{lst:O_q0_p2q} below. 
 
 \begin{lstlisting}[caption={\ishell{pw2qmcpack.x} input file for orbital conversion (\ishell{O.q0.p2q.in})\label{lst:O_q0_p2q}}]
 &inputpp
@@ -293,7 +293,7 @@ the position of the oxygen ion.  The $U_1^{\uparrow/\downarrow}$ term is a
 one-dimensional radial function represented with piecewise continuous cubic 
 polynomials (B-splines).  The adjustable parameters to be optimized are the 
 ``knots'' of the B-splines which are simply the values of the $U_1$ function at 
-uniformly spaced grid points (See fig. \ref{fig:u1_spline} for an example of a $U_1$ 
+uniformly spaced grid points (See fig.~\ref{fig:u1_spline} for an example of a $U_1$ 
 spline function with 8 knots).  
 
 The two-body Jastrow factor is spin resolved ($r^\uparrow/r^\downarrow$ are up/down electron positions):
@@ -574,7 +574,7 @@ To study timestep bias, we will perform a sequence of DMC runs over a range of t
 \end{align}
 Each DMC run will require about twice as much computer time as the one preceding it.  Note that the number of blocks is kept fixed for uniform statistical analysis.  $\texttt{blocks}\times\texttt{steps}\times\texttt{timestep}\sim 60~\mathrm{Ha}^{-1}$ is sufficient for this system.
 
-Choose an initial DMC timestep and create a sequence of $N$ timesteps according to \ref{eq:timestep_iter}.  Make $N$ copies of the DMC XML block in the input file
+Choose an initial DMC timestep and create a sequence of $N$ timesteps according to~\ref{eq:timestep_iter}.  Make $N$ copies of the DMC XML block in the input file
 \begin{lstlisting}[style=QMCPXML]
    <qmc method="dmc" move="pbyp">
       <parameter name="warmupSteps"         >    DWARMUP         </parameter>
@@ -585,7 +585,7 @@ Choose an initial DMC timestep and create a sequence of $N$ timesteps according 
    </qmc>
 \end{lstlisting}
 \noindent
-Fill in \ishell{DWARMUP}, \ishell{DBLOCKS}, \ishell{DSTEPS}, and \ishell{DTIMESTEP} for each DMC run according to \ref{eq:timestep_iter}.  Start the DMC timestep extrapolation run by typing:  
+Fill in \ishell{DWARMUP}, \ishell{DBLOCKS}, \ishell{DSTEPS}, and \ishell{DTIMESTEP} for each DMC run according to~\ref{eq:timestep_iter}.  Start the DMC timestep extrapolation run by typing:  
 \ifws
 \begin{shade}
 mpirun -np 4 qmcpack O.q0.dmc.in.xml >&O.q0.dmc.out&
@@ -600,7 +600,7 @@ The run should take only a few minutes to complete.
 
 QMCPACK will create files prefixed with \ishell{O.q0.dmc}.  The log file is \labsw{\ishell{O.q0.dmc.out}}{\ishell{O.q0.dmc.output}}.  As before, block averaged data is written to \ishell{scalar.dat} files.  In addition, DMC runs produce \ishell{dmc.dat} files which contain energy data averaged only over the walker population (one line per DMC step).  The \ishell{dmc.dat} files also provide a record of the walker population at each step.
 
-Use the \ishell{PlotTstepConv.pl} to obtain a linear fit to the timestep data (type ``\ishell{PlotTstepConv.pl O.q0.dmc.in.xml 40}'').  You should see a plot similar to fig. \ref{fig:timestep_conv}.  The tail end of the text output displays the parameters for the linear fit.  The ``\ishell{a}'' parameter is the total energy extrapolated to zero timestep in Hartree units. 
+Use the \ishell{PlotTstepConv.pl} to obtain a linear fit to the timestep data (type ``\ishell{PlotTstepConv.pl O.q0.dmc.in.xml 40}'').  You should see a plot similar to fig.~\ref{fig:timestep_conv}.  The tail end of the text output displays the parameters for the linear fit.  The ``\ishell{a}'' parameter is the total energy extrapolated to zero timestep in Hartree units. 
 
 \begin{shade}
 ...
@@ -721,7 +721,7 @@ Obtaining the timestep extrapolated DMC total energy for ionized oxygen should t
     \item{Obtain the DMC total energy extrapolated to zero timestep with \ishell{PlotTstepConv.pl}.}
   \end{enumerate}
 \end{enumerate}
-The process listed above, which excludes additional steps for orbital generation and conversion, can become tedious to perform by hand in production settings where many calculations are often required.  For this reason automation tools are introduced for calculations involving the oxygen dimer in section \ref{sec:dimer_automation} of the lab.  
+The process listed above, which excludes additional steps for orbital generation and conversion, can become tedious to perform by hand in production settings where many calculations are often required.  For this reason automation tools are introduced for calculations involving the oxygen dimer in section~\ref{sec:dimer_automation} of the lab.  
 
 \vspace{1cm}
 \begin{flushleft}
@@ -753,7 +753,7 @@ Simulation workflows quickly become more complex with increasing costs in terms 
 
 The set of automation tools we will be using is known as Nexus \cite{Krogel2016nexus}, which is distributed with QMCPACK.  Nexus is capable of generating input files, submitting and monitoring compute jobs, passing data between simulations (such as relaxed structures, orbital files, optimized Jastrow parameters, etc.), and data analysis.  The user interface to Nexus is through a set of functions defined in the Python programming language.  User scripts that execute simple workflows resemble input files and do not require programming experience.  More complex workflows require only basic programming constructs (\emph{e.g.} for loops and if statements).  Nexus input files/scripts should be easier to navigate than QMCPACK input files and more efficient than submitting all the jobs by hand.
 
-Nexus is driven by simple user-defined scripts that resemble keyword-driven input files.  An example Nexus input file that performs a single VMC calculation (with pre-generated orbitals) is shown below.  Take a moment to read it over and especially note the comments (prefixed with ``\ishell{\#}'') explaining most of the contents.  If the input syntax is unclear you may want to consult portions of appendix \ref{app:python_basics}, which gives a condensed summary of Python constructs.  An additional example and details about the inner workings of Nexus can be found in the reference publication \cite{Krogel2016nexus}. 
+Nexus is driven by simple user-defined scripts that resemble keyword-driven input files.  An example Nexus input file that performs a single VMC calculation (with pre-generated orbitals) is shown below.  Take a moment to read it over and especially note the comments (prefixed with ``\ishell{\#}'') explaining most of the contents.  If the input syntax is unclear you may want to consult portions of appendix~\ref{app:python_basics}, which gives a condensed summary of Python constructs.  An additional example and details about the inner workings of Nexus can be found in the reference publication \cite{Krogel2016nexus}. 
 
 %For more information about the functionality and effective use of Nexus, consult \ishell{docs/Nexus.pdf}.  
 
@@ -1395,11 +1395,11 @@ Let's actually submit the jobs in the dimer workflow now.  Reset the state of th
 \section{(Optional) Running your system with QMCPACK}\label{sec:your_system}
 This section covers a fairly simple route to get started on QMC calculations of an arbitrary system of interest using the Nexus workflow management system to setup input files and optionally perform the runs.  The example provided in this section uses QM Espresso (PWSCF) to generate the orbitals forming the Slater determinant part of the trial wavefunction.  PWSCF is a natural choice for solid state systems and it can be used for surface/slab and molecular systems as well, albeit at the price of describing additional vacuum space with plane waves.
 
-To start out with, you will need pseudopotentials (PP's) for each element in your system in both the UPF (PWSCF) and FSATOM/XML (QMCPACK) formats.  A good place to start is the Burkatzki-Filippi-Dolg (BFD) pseudopotential database \newline (\href{http://www.burkatzki.com/pseudos/index.2.html}{http://www.burkatzki.com/pseudos/index.2.html}), which we have already used in our study of the oxygen atom.  The database does not contain PP's for the 4th and 5th row transition metals or any of the lanthanides or actinides.  If you need a PP that is not in the BFD database, you may need to generate and test one manually (\emph{e.g.} with OPIUM, \href{http://opium.sourceforge.net/}{http://opium.sourceforge.net/}).  Otherwise, use \ishell{ppconvert} as outlined in section \ref{sec:lqb_pseudo} to obtain PP's in the formats used by PWSCF and QMCPACK.  Enter the \ishell{your_system} lab directory and place the converted PP's in \ishell{your_system/pseudopotentials}.
+To start out with, you will need pseudopotentials (PP's) for each element in your system in both the UPF (PWSCF) and FSATOM/XML (QMCPACK) formats.  A good place to start is the Burkatzki-Filippi-Dolg (BFD) pseudopotential database \newline (\href{http://www.burkatzki.com/pseudos/index.2.html}{http://www.burkatzki.com/pseudos/index.2.html}), which we have already used in our study of the oxygen atom.  The database does not contain PP's for the 4th and 5th row transition metals or any of the lanthanides or actinides.  If you need a PP that is not in the BFD database, you may need to generate and test one manually (\emph{e.g.} with OPIUM, \href{http://opium.sourceforge.net/}{http://opium.sourceforge.net/}).  Otherwise, use \ishell{ppconvert} as outlined in section~\ref{sec:lqb_pseudo} to obtain PP's in the formats used by PWSCF and QMCPACK.  Enter the \ishell{your_system} lab directory and place the converted PP's in \ishell{your_system/pseudopotentials}.
 
 Before performing production calculations (more than just the initial setup in this section) be sure to converge the plane wave energy cutoff in PWSCF as these PP's can be rather hard, sometimes requiring cutoffs in excess of 300 Ry.  Depending on the system under study, the amount of memory required to represent the orbitals (QMCPACK uses 3D B-splines) becomes prohibitive and one may be forced to search for softer PP's.
 
-Beyond pseudopotentials, all that is required to get started are the atomic positions and the dimensions/shape of the simulation cell.  The Nexus file \ishell{example.py} illustrates how to setup PWSCF and QMCPACK input files by providing minimal information regarding the physical system (an 8-atom cubic cell of diamond in the example).  Most of the contents should be familiar from your experience with the automated calculations of the oxygen dimer binding curve in section \ref{sec:dimer_automation} (if you've skipped ahead you may want to skim that section for relevant information).  The most important change is the expanded description of the physical system:
+Beyond pseudopotentials, all that is required to get started are the atomic positions and the dimensions/shape of the simulation cell.  The Nexus file \ishell{example.py} illustrates how to setup PWSCF and QMCPACK input files by providing minimal information regarding the physical system (an 8-atom cubic cell of diamond in the example).  Most of the contents should be familiar from your experience with the automated calculations of the oxygen dimer binding curve in section~\ref{sec:dimer_automation} (if you've skipped ahead you may want to skim that section for relevant information).  The most important change is the expanded description of the physical system:
 
 \begin{lstlisting}[style=Python]
 # details of your physical system (diamond conventional cell below)
