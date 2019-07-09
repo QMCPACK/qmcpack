@@ -69,7 +69,7 @@ TEST_CASE("ShortRangeCuspJastrowFunctor", "[wavefunction]")
   RealType r   = 0.04;
   RealType val = f.evaluate(r);
   RealType dudr   = 10000000.0;  // initialize to a wrong value
-  RealType d2udr2 = 10000000.0;  // initialize to a wrong value
+  RealType d2udr2 = 15000000.0;  // initialize to a wrong value
   RealType val_2 = f.evaluate(r, dudr, d2udr2);
 
   REQUIRE( val   == Approx(-0.1970331287).epsilon(0.0001) );
@@ -78,13 +78,17 @@ TEST_CASE("ShortRangeCuspJastrowFunctor", "[wavefunction]")
 
   // Finite difference to verify the spatial derivatives
   const RealType h     = 0.0001;
-  RealType r_plus_h    = r + h;
-  RealType r_minus_h   = r - h;
-  RealType val_plus_h  = f.evaluate(r_plus_h);
-  RealType val_minus_h = f.evaluate(r_minus_h);
-  RealType approx_dudr = (val_plus_h - val_minus_h) / (2 * h);
-  RealType approx_d2udr2 = (val_plus_h + val_minus_h - 2 * val) / (h * h);
-  REQUIRE( dudr   == Approx(approx_dudr).epsilon(h)   );
+  RealType r_ph        = r + h;
+  RealType r_mh        = r - h;
+  RealType dudr_ph     = 20000000.0;  // initialize to a wrong value
+  RealType dudr_mh     = 30000000.0;  // initialize to a wrong value
+  RealType d2udr2_ph   = 40000000.0;  // initialize to a wrong value
+  RealType d2udr2_mh   = 50000000.0;  // initialize to a wrong value
+  RealType val_ph = f.evaluate(r_ph, dudr_ph, d2udr2_ph);
+  RealType val_mh = f.evaluate(r_mh, dudr_mh, d2udr2_mh);
+  RealType approx_dudr   = (  val_ph -  val_mh ) / (2*h);
+  RealType approx_d2udr2 = ( dudr_ph - dudr_mh ) / (2*h);
+  REQUIRE( dudr   == Approx(approx_dudr  ).epsilon(h) );
   REQUIRE( d2udr2 == Approx(approx_d2udr2).epsilon(h) );
 
   // currently the d3udr3_3 function is not implemented
