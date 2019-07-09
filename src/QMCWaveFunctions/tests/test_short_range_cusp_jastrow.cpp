@@ -52,18 +52,18 @@ TEST_CASE("ShortRangeCuspJastrowFunctor", "[wavefunction]")
   // prepare the Jastrow factor using the xml input
   ShortRangeCuspFunctor<RealType> f;
   f.put(child);
-  REQUIRE( f.A             == 3.0              );
-  REQUIRE( f.R0            == 0.0624           );
-  REQUIRE( f.B.at(0)       == 0.3              );
-  REQUIRE( f.B.at(1)       == 0.2              );
-  REQUIRE( f.B.at(2)       == 0.4              );
+  REQUIRE( f.A             == Approx(3.0   )   );
+  REQUIRE( f.R0            == Approx(0.0624)   );
+  REQUIRE( f.B.at(0)       == Approx(0.3   )   );
+  REQUIRE( f.B.at(1)       == Approx(0.2   )   );
+  REQUIRE( f.B.at(2)       == Approx(0.4   )   );
   REQUIRE( f.Opt_A         == false            );
   REQUIRE( f.Opt_R0        == true             );
   REQUIRE( f.Opt_B         == true             );
   REQUIRE( f.ID_A          == "string_not_set" );
   REQUIRE( f.ID_R0         == "LiCuspR0"       );
   REQUIRE( f.ID_B          == "LiCuspB"        );
-  REQUIRE( f.cutoff_radius == 6.0              );
+  REQUIRE( f.cutoff_radius == Approx(6.0)      );
 
   // evaluate a couple ways at a given radius
   RealType r   = 0.04;
@@ -72,8 +72,8 @@ TEST_CASE("ShortRangeCuspJastrowFunctor", "[wavefunction]")
   RealType d2udr2 = 10000000.0;  // initialize to a wrong value
   RealType val_2 = f.evaluate(r, dudr, d2udr2);
 
-  REQUIRE( val   == Approx(-0.1970331287).epsilon(0.00000001) );
-  REQUIRE( val_2 == Approx(-0.1970331287).epsilon(0.00000001) );
+  REQUIRE( val   == Approx(-0.1970331287).epsilon(0.0001) );
+  REQUIRE( val_2 == Approx(-0.1970331287).epsilon(0.0001) );
   REQUIRE( val   == Approx(val_2) );
 
   // Finite difference to verify the spatial derivatives
