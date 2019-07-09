@@ -36,6 +36,12 @@ namespace qmcplusplus
 namespace afqmc
 {
 
+/* 
+ * Observable class that calculates the walker averaged "full" 1 RDM.
+ * In this context, "full" means that no contraction over the RDM is
+ * being performed. The resulting RDM will be [spin][x*NMO][x*NMO],
+ * where x:2 for NONCOLLINEAR and 1 for everything else.
+ */
 class full1rdm: public AFQMCInfo
 {
 

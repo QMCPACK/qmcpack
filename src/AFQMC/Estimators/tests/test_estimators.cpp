@@ -34,7 +34,6 @@
 #include "AFQMC/Propagators/PropagatorFactory.h"
 #include "AFQMC/Propagators/Propagator.hpp"
 #include "AFQMC/Estimators/BackPropagatedEstimator.hpp"
-#include "AFQMC/Estimators/newBackPropagatedEstimator.hpp"
 #include "AFQMC/Utilities/test_utils.hpp"
 
 using std::string;
@@ -167,8 +166,7 @@ const char *propg_xml_block =
     REQUIRE(okay);
     bool impsamp = true;
     estimators.emplace_back(static_cast<EstimPtr>(
-                    //std::make_shared<BackPropagatedEstimator>(
-                    std::make_shared<BackPropagatedEstimator_>(
+                    std::make_shared<BackPropagatedEstimator>(
                             TG,InfoMap["info0"],"none",doc4.getRoot(),type,
                             wset,wfn,prop,impsamp)));
 

@@ -2114,10 +2114,10 @@ namespace afqmc
             }
             ComplexType ov1 = SDetOp.MixedDensityMatrix(OrbMats[q],PsiT,G_,0.0,false);
             if(walker_type==CLOSED) ov1 *= ov1;
-            ov += real(conj(ci[q])*ci[p]*ov1);
+            ov += real(ma::conj(ci[q])*ci[p]*ov1);
 // !!! GPU !!!
             for(int i=0; i<G1D.num_elements(); i++)
-              G1D[i] += real(conj(ci[q])*ci[p]*ov1*G1D_[i]);
+              G1D[i] += real(ma::conj(ci[q])*ci[p]*ov1*G1D_[i]);
           }
         }
       } else {
@@ -2152,11 +2152,11 @@ namespace afqmc
 //              SDetOp.OrthogonalUnnormalizedMixedDensityMatrix(OrbMats[2*q+1],PsiTB,
 //                                G_.sliced(NMO,2*NMO),false); 
             }
-            ov += real(conj(ci[q])*ci[p]*ov1*ov2);
+            ov += real(ma::conj(ci[q])*ci[p]*ov1*ov2);
             // 
 // !!! GPU !!!
             for(int i=0; i<G1D.num_elements(); i++)
-              G1D[i] += real(conj(ci[q])*ci[p]*ov1*ov2*G1D_[i]);
+              G1D[i] += real(ma::conj(ci[q])*ci[p]*ov1*ov2*G1D_[i]);
           }
         }
       }  

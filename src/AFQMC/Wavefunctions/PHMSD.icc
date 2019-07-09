@@ -209,7 +209,7 @@ namespace afqmc
               for(int iw=0; iw<nwalk; ++iw, ++nt) {  
                 if(nt%TG.TG_local().size()==TG.TG_local().rank()) {
                   size_t nd_alp = get<0>(*(confgs+(*it)));
-                  auto w_ = conj(get<2>(*(confgs+(*it)))) * Ovmsd[0][nd_alp][iw] * Ovmsd[1][nd][iw];
+                  auto w_ = ma::conj(get<2>(*(confgs+(*it)))) * Ovmsd[0][nd_alp][iw] * Ovmsd[1][nd][iw];
                   opSpinEJ[iw] += w_*ma::dot(KEleft[iw],KEright[nd_alp][iw]);
                 }  
               }  
@@ -232,7 +232,7 @@ namespace afqmc
           std::fill_n(wgt.origin(),nwalk,ComplexType(0.0));
           if(spin==0) {
             for(; it<ite; ++it) {
-              auto ci = conj(get<2>(*(confgs+(*it))));  
+              auto ci = ma::conj(get<2>(*(confgs+(*it))));  
               auto Ovmsd_ = Ovmsd[1][get<1>(*(confgs+(*it)))];  
               for(int iw=0; iw<nwalk; ++iw) 
                 wgt[iw] += ci * Ovmsd_[iw];
@@ -243,7 +243,7 @@ namespace afqmc
             }
           } else {
             for(; it<ite; ++it) {
-              auto ci = conj(get<2>(*(confgs+(*it))));
+              auto ci = ma::conj(get<2>(*(confgs+(*it))));
               auto Ovmsd_ = Ovmsd[0][get<0>(*(confgs+(*it)))];
               for(int iw=0; iw<nwalk; ++iw) 
                 wgt[iw] += ci * Ovmsd_[iw];
@@ -1347,7 +1347,7 @@ namespace afqmc
               exct.clear();
               int np = get_excitation_number(true,confg,confgB,exct,dummy,Iwork);
               if(np==1) {
-                ComplexType wgt = conj(ci1)*get<2>(*(confgs+(*it2)));
+                ComplexType wgt = ma::conj(ci1)*get<2>(*(confgs+(*it2)));
                 /*
                  * exct: [0]: location of orbital being excited, [1]: excited orbital 
                  * confg[exct[0]]: occupied orbital being excited
@@ -1357,7 +1357,7 @@ namespace afqmc
                 exct[0] = confg[exct[0]]; 
                 csr::CSR2MA('Z',OrbMats[orb_spin_indx],orbs,exct);
                 ma::axpy(wgt,orbs[0],G[exct[1]]);
-                ma::axpy(conj(wgt),orbs[1],G[exct[0]]);
+                ma::axpy(ma::conj(wgt),orbs[1],G[exct[0]]);
               }
             }  
           }  

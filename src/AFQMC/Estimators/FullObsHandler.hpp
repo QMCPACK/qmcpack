@@ -34,6 +34,18 @@ namespace qmcplusplus
 namespace afqmc
 {
 
+/*
+ * This class manages a list of "full" observables.
+ * Full observables are those that have a walker dependent left-hand side, 
+ * which result from back propagation. 
+ * This implementation of the class assumes a multi-determinant trial wavefunction,  
+ * resulting in the loop over "references" (each determinant in the trial wavefunciton
+ * being back-propagated). 
+ * Given a walker set and an array of (back propagated) slater matrices, 
+ * this routine will calculate and accumulate all requested observables.
+ * To make the implementation of the BackPropagated class cleaner, 
+ * this class also handles all the hdf5 I/O (given a hdf archive).
+ */
 class FullObsHandler: public AFQMCInfo
 {
 
@@ -145,14 +157,15 @@ class FullObsHandler: public AFQMCInfo
 
     for(int iref=0, is=0; iref<nrefs; iref++, is+=nspins) {
 
-      ComplexType CIcoeff(wfn0.getReferenceWeight(iref));
+      // conjugated here!
+      ComplexType CIcoeff( std::conj(wfn0.getReferenceWeight(iref)) );
 
       //1. Calculate Green functions
       // Refs({wset.size(),nrefs,ref_size}  
       RefsA.clear();  
       RefsB.clear();  
-// NOTE: Incomplete, must copy to device memory.
-//       Use the Aux SM in the walker and then make array_refs from them. 
+// Incomplete must put in device memory!
+//  Use Aux
       if(walker_type == CLOSED) {
         for(int iw=0; iw<nw; iw++) 
 // push SMAux and them copy_n from Refs to there
@@ -199,9 +212,6 @@ class FullObsHandler: public AFQMCInfo
   int nave;
 
   int block_size;
-
-  // true: G[nwalk][dm_size], false: G[dm_size][nwalk]
-  bool transposedG;
 
   std::string name;
 

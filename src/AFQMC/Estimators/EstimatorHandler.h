@@ -11,7 +11,6 @@
 #include "AFQMC/Estimators/BasicEstimator.h"
 #include "AFQMC/Estimators/MixedRDMEstimator.h"
 #include "AFQMC/Estimators/BackPropagatedEstimator.hpp"
-#include "AFQMC/Estimators/newBackPropagatedEstimator.hpp"
 //#include "AFQMC/Estimators/WalkerDMEstimator.h"
 
 #include "AFQMC/Walkers/WalkerSet.hpp"
@@ -29,6 +28,16 @@ namespace qmcplusplus
 namespace afqmc
 {
 
+/* 
+ * Manager class for all estimators/observables.
+ * This class contains and manages a list of estimator objects.
+ * An arbitrary combination of estimators can be used simultaneously
+ * during a simulation, including: 
+ *   1) mixed distribution estimators,  
+ *   2) back propagated estimators, 
+ *   3) any number of 1),2), 
+ *   4) each with independent wavefunctions.
+ */
 class EstimatorHandler: public AFQMCInfo
 {
 
@@ -136,9 +145,6 @@ class EstimatorHandler: public AFQMCInfo
             hdf_output = true;
           } else if (name == "back_propagation") {
             estimators.emplace_back(static_cast<EstimPtr>(std::make_shared<BackPropagatedEstimator>(TGgen.getTG(1),info,title,cur,walker_type,wset,*wfn,prop0,impsamp)));
-            hdf_output = true;
-          } else if (name == "new_back_propagation") {
-            estimators.emplace_back(static_cast<EstimPtr>(std::make_shared<BackPropagatedEstimator_>(TGgen.getTG(1),info,title,cur,walker_type,wset,*wfn,prop0,impsamp)));
             hdf_output = true;
           } else if (name == "energy") {
             estimators.emplace_back(static_cast<EstimPtr>(std::make_shared<EnergyEstimator>(TGgen.getTG(1),info,cur,*wfn,impsamp)));

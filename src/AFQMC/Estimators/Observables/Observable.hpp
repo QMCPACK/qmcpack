@@ -54,13 +54,10 @@ class dummy_obs
 
 }
 
-// General interface for observables.
-// Given a walker set and an array of (back propagated) slater matrices, 
-// this routine will calculate an accumulate all requested observables.
-// To make the implementation of the BackPropagated class cleaner, 
-// this class also handles all the hdf5 I/O (given a hdf archive).
-// This also eliminates the need to move references to arrays between this class
-// and the BackPropagated object
+/*
+ * Variant class for observables. 
+ * Defines a common interface for all observable classes.
+ */
 class Observable: public boost::variant<dummy::dummy_obs,full1rdm> 
                                         //,full2rdm,contract1rdm,contract2rdm>
 {
