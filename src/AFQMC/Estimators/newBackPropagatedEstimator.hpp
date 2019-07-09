@@ -220,15 +220,27 @@ class BackPropagatedEstimator_: public EstimatorBase
         int nave(nback_prop_steps.size());
         int nref(detR.size(1));
         if(write_metadata) {
+          dump.push("Observables");
+          dump.push("BackPropagated");
           dump.push("Metadata");
-          dump.write(max_nback_prop, "NumBackProp");
+          dump.write(nback_prop_steps, "BackPropSteps");
           dump.write(nave, "NumAverages");
           dump.write(nref, "NumReferences");
+          dump.pop();
+          dump.pop();
           dump.pop();
           write_metadata = false;
         }
       }
+      if(writer) { 
+        dump.push("Observables");
+        dump.push("BackPropagated");
+      }
       observ0.print(iblock,dump);
+      if(writer) { 
+        dump.pop();
+        dump.pop();
+      }  
     }
   }
 

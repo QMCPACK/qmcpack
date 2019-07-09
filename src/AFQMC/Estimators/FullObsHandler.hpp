@@ -66,11 +66,11 @@ class FullObsHandler: public AFQMCInfo
   {
 
     using std::fill_n;
-    std::string obs("");
+
+    xmlNodePtr curRoot = cur;
     if(cur != NULL) {
       ParameterSet m_param;
       m_param.add(nave, "naverages", "int");
-      m_param.add(obs, "observables", "std::string");
       m_param.add(block_size, "block_size", "int");
       m_param.put(cur);
     }
@@ -78,22 +78,14 @@ class FullObsHandler: public AFQMCInfo
     if(nave <= 0)
       APP_ABORT("naverages <= 0 is not allowed.\n");
 
-    if(obs == std::string(""))
-      APP_ABORT("empty observables list is not allowed.\n");
-
-    // add _XXX_
-    obs = std::string("_") + obs + std::string("_");
-
-    if(obs.find("_1rdm_") != std::string::npos) 
-      properties.emplace_back(Observable(std::move(full1rdm(TG,info,cur,walker_type))));
-/*
-    if(obs.find("_2rdm_") != std::string::npos) measure[TwoRDMFull]=true; 
-    if(obs.find("_ekt_") != std::string::npos) measure[GFockOpa]=true; 
-    if(obs.find("_ekt_") != std::string::npos) measure[GFockOpb]=true; 
-    // need to read rotation matrix
-    if(obs.find("_1rdmc_") != std::string::npos) measure[OneRDMc]=true; 
-    if(obs.find("_2rdmc_") != std::string::npos) measure[TwoRDMc]=true; 
-*/
+    cur = curRoot->children;
+    while (cur != NULL) {
+      std::string cname((const char*)(cur->name));
+      if(cname =="OneRDM") {
+        properties.emplace_back(Observable(std::move(full1rdm(TG,info,cur,walker_type,nave,block_size))));
+      }
+      cur = cur->next;
+    }
 
     if(properties.size() == 0)
       APP_ABORT("empty observables list is not allowed.\n");
@@ -120,18 +112,7 @@ class FullObsHandler: public AFQMCInfo
       TG.TG_heads().reduce_in_place_n(to_address(denominator.origin()),denominator.num_elements(),std::plus<>(),0);
     }
 
-    if(writer) {
-      ma::scal(ComplexType(1.0/block_size),denominator);
-      for(int i=0; i<nave; ++i) {
-        dump.push(std::string("BackProp_")+std::to_string(i));
-        std::string padded_iblock = std::string(n_zero-std::to_string(iblock).length(),'0')+std::to_string(iblock);
-        stdCVector_ref denom( denominator.origin()+i, {1});
-        dump.write(denom, "denominator_"+padded_iblock);
-        dump.pop();
-      }
-    }
-
-    for(auto& v: properties) v.print(iblock,dump);
+    for(auto& v: properties) v.print(iblock,dump,denominator);
     fill_n(denominator.origin(), denominator.num_elements(), ComplexType(0.0,0.0));
   }
 
@@ -190,9 +171,6 @@ class FullObsHandler: public AFQMCInfo
                                             {2*NMO,NAEA+NAEB}));
       }
       wfn0.DensityMatrix(wset, RefsA, RefsB, G2D, DevOv, false, false, true);
-double s(0.0);
-for(int i=0; i<NMO; i++) s+=real(G2D[0][i*NMO+i]);
-std::cout<<" G:" <<s <<std::endl;
 
       //2. calculate and accumulate appropriate weights 
       copy_n( make_device_ptr(DevOv.origin()), nw, Ov.origin());
@@ -212,7 +190,7 @@ std::cout<<" G:" <<s <<std::endl;
 
     }
     //4. accumulate block (normalize and accumulate sum over references)
-    for(auto& v: properties) v.accumulate_block(iav,impsamp);
+    for(auto& v: properties) v.accumulate_block(iav,wgt,impsamp);
 
   }
 

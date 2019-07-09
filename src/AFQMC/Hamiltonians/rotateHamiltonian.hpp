@@ -516,7 +516,7 @@ inline void rotateHijkl(std::string& type, WALKER_TYPES walker_type, bool addCou
   for(int nn=0, nb=0, nkcum=0; nn<comm.size(); nn++) {
 
     // just checking
-    assert(nkcum==M_split[nn+nn0]);
+    assert(nkcum+K0_==M_split[nn+nn0]);
     if(M_split[nn+nn0+1]==M_split[nn+nn0]) continue;
     int nblk = Qknum[nn];
     long ntermscum=0;
