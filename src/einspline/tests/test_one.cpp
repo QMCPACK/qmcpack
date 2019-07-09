@@ -23,6 +23,7 @@
 
 #include <stdio.h>
 #include <vector>
+#include "config/stdlib/Constants.h"
 
 TEST_CASE("double_1d_natural", "[einspline]")
 {
