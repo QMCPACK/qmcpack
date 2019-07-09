@@ -20,6 +20,7 @@
 #include <cmath>
 #include <stdexcept>
 #include "OhmmsPETE/TinyVector.h"
+#include "Utilities/ProgressReportEngine.h"
 
 namespace qmcplusplus
 {
@@ -190,7 +191,8 @@ struct ShortRangeCuspFunctor : public OptimizableFunctorBase
   ///compute U(r), dU/dr, d^2U/dr^2, and d^3U/dr^3
   inline real_type evaluate(real_type r, real_type& dudr, real_type& d2udr2, real_type& d3udr3) const
   {
-    throw std::runtime_error("evaluate d3udr3 not implemented for ShortRangeCuspFunctor");
+    ReportEngine PRE("ShortRangeCuspFunctor", "evaluate(r, dudr, d2udr2, d3udr3)");
+    PRE.error("evaluate(r, dudr, d2udr2, d3udr3) not implemented for ShortRangeCuspFunctor", true);
     return 0.0;
   }
 
@@ -564,7 +566,7 @@ struct ShortRangeCuspFunctor : public OptimizableFunctorBase
 
       // error if cname is not recognized
       else {
-        PRE.error("Unrecognized value for \"cname\". Allowed values are \"var\" and \"coefficients\"", true);
+        PRE.error("\"" + cname + "\" is not a recognized value for \"cname\". Allowed values are \"var\" and \"coefficients\"", true);
       }
 
       // go to the next node
