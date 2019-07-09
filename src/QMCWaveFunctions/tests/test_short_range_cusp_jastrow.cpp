@@ -88,8 +88,8 @@ TEST_CASE("ShortRangeCuspJastrowFunctor", "[wavefunction]")
   RealType val_mh = f.evaluate(r_mh, dudr_mh, d2udr2_mh);
   RealType approx_dudr   = (  val_ph -  val_mh ) / (2*h);
   RealType approx_d2udr2 = ( dudr_ph - dudr_mh ) / (2*h);
-  REQUIRE( dudr   == Approx(approx_dudr  ).epsilon(h) );
-  REQUIRE( d2udr2 == Approx(approx_d2udr2).epsilon(h) );
+  REQUIRE( dudr   == Approx(approx_dudr  ).epsilon(  h) );
+  REQUIRE( d2udr2 == Approx(approx_d2udr2).epsilon(4*h) );
 
   // currently the d3udr3_3 function is not implemented
   //RealType dudr_3;
