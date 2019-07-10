@@ -494,6 +494,12 @@ struct ShortRangeCuspFunctor : public OptimizableFunctorBase
     while (childPtr != NULL)
     {
 
+      // skip text nodes
+      if ( std::string((const char *)childPtr->name) == "text" ) {
+        childPtr = childPtr->next;
+        continue;
+      }
+
       // get the name of the child node
       std::string cname((const char*)childPtr->name);
       tolower(cname); // make it case insensitive
