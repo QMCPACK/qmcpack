@@ -78,7 +78,7 @@ void QMCDriverFactory::putCommunicator(xmlNodePtr cur)
 
 /** Read the xml specifify the driver for this QMC section
  *
- *  Copy ellision should result in just a move of the
+ *  Copy elision should result in just a move of the
  *  DriverAssemblyState
  */
 QMCDriverFactory::DriverAssemblyState QMCDriverFactory::readSection(int curSeries, xmlNodePtr cur)
