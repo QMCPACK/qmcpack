@@ -50,7 +50,7 @@ protected:
 	array_types(layout_t l, element_ptr data) : Layout{l}, base_{data}{}
 public://TODO find why this needs to be public and not protected or friend
 	template<class ArrayTypes, typename = std::enable_if_t<not std::is_base_of<array_types, std::decay_t<ArrayTypes>>{}>
-		, typename = decltype(base_(std::declval<ArrayTypes const&>().base_))
+		, typename = decltype(element_ptr(std::declval<ArrayTypes const&>().base_))
 	> 
 	array_types(ArrayTypes const& a) : Layout{a}, base_{a.base_}{}
 	template<typename ElementPtr2>
@@ -357,6 +357,7 @@ public:
 protected:
 	template<class A>
 	void intersection_assign_(A&& other) const{
+		using multi::extension;
 		for(auto i : intersection(types::extension(), extension(other)))
 			operator[](i).intersection_assign_(std::forward<A>(other)[i]);
 	}
