@@ -65,6 +65,12 @@ TEST_CASE("ShortRangeCuspJastrowFunctor", "[wavefunction]")
   REQUIRE( f.ID_B          == "LiCuspB"        );
   REQUIRE( f.cutoff_radius == Approx(6.0)      );
 
+  // set finite difference displacement parameter
+  const RealType h = 0.0001;
+
+  // accuracy tolerance depends on floating point precision
+  const RealType eps = ( sizeof(RealType) < 6 ? 0.002 : 0.0001 );
+
   // evaluate a couple ways at a given radius
   RealType r   = 0.04;
   RealType val = f.evaluate(r);
@@ -72,12 +78,11 @@ TEST_CASE("ShortRangeCuspJastrowFunctor", "[wavefunction]")
   RealType d2udr2 = 15000000.0;  // initialize to a wrong value
   RealType val_2 = f.evaluate(r, dudr, d2udr2);
 
-  REQUIRE( val   == Approx(-0.1970331287).epsilon(0.0001) );
-  REQUIRE( val_2 == Approx(-0.1970331287).epsilon(0.0001) );
+  REQUIRE( val   == Approx(-0.1970331287).epsilon(eps) );
+  REQUIRE( val_2 == Approx(-0.1970331287).epsilon(eps) );
   REQUIRE( val   == Approx(val_2) );
 
   // Finite difference to verify the spatial derivatives
-  const RealType h     = 0.0001;
   RealType r_ph        = r + h;
   RealType r_mh        = r - h;
   RealType dudr_ph     = 20000000.0;  // initialize to a wrong value
@@ -88,8 +93,8 @@ TEST_CASE("ShortRangeCuspJastrowFunctor", "[wavefunction]")
   RealType val_mh = f.evaluate(r_mh, dudr_mh, d2udr2_mh);
   RealType approx_dudr   = (  val_ph -  val_mh ) / (2*h);
   RealType approx_d2udr2 = ( dudr_ph - dudr_mh ) / (2*h);
-  REQUIRE( dudr   == Approx(approx_dudr  ).epsilon(  h) );
-  REQUIRE( d2udr2 == Approx(approx_d2udr2).epsilon(4*h) );
+  REQUIRE( dudr   == Approx(approx_dudr  ).epsilon(eps) );
+  REQUIRE( d2udr2 == Approx(approx_d2udr2).epsilon(eps) );
 
   // currently the d3udr3_3 function is not implemented
   //RealType dudr_3;
@@ -135,13 +140,13 @@ TEST_CASE("ShortRangeCuspJastrowFunctor", "[wavefunction]")
     RealType val_m = f.evaluate(r, dudr_m, d2udr2_m);
 
     const RealType val_dp = ( val_h - val_m ) / ( 2.0 * h );
-    REQUIRE( val_dp == Approx(param_derivs[i][0]).epsilon(h) );
+    REQUIRE( val_dp == Approx(param_derivs[i][0]).epsilon(eps) );
 
     const RealType dudr_dp = ( dudr_h - dudr_m ) / ( 2.0 * h );
-    REQUIRE( dudr_dp == Approx(param_derivs[i][1]).epsilon(h) );
+    REQUIRE( dudr_dp == Approx(param_derivs[i][1]).epsilon(eps) );
 
     const RealType d2udr2_dp = ( d2udr2_h - d2udr2_m ) / ( 2.0 * h );
-    REQUIRE( d2udr2_dp == Approx(param_derivs[i][2]).epsilon(h) );
+    REQUIRE( d2udr2_dp == Approx(param_derivs[i][2]).epsilon(eps) );
 
     var_param[var_name] = old_param;
     f.resetParameters(var_param);
