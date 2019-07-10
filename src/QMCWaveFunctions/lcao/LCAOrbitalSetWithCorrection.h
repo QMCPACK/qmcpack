@@ -38,8 +38,6 @@ struct LCAOrbitalSetWithCorrection : public LCAOrbitalSet
 
   LCAOrbitalSetWithCorrection(const LCAOrbitalSetWithCorrection& in) = default;
 
-  ~LCAOrbitalSetWithCorrection();
-
   SPOSet* makeClone() const;
 
   void setOrbitalSetSize(int norbs);
