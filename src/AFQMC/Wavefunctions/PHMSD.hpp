@@ -361,21 +361,18 @@ class PHMSD: public AFQMCInfo
                                 herm,compact,transposed);
     }
 
-    template<class WlkSet, class MatA, class MatB, class MatG, class TVec>
-    void DensityMatrix(const WlkSet& wset,
-                        std::vector<MatA>& RefsA, std::vector<MatB>& RefsB, MatG&& G,
-                        TVec&& Ov, bool herm, bool compact, bool transposed)
+    template<class MatA, class MatB, class MatG, class TVec>
+    void DensityMatrix(std::vector<MatA>& Left, std::vector<MatB>& Right, std::vector<MatG>& G,
+                        TVec&& Ov, double LogOverlapFactor, bool herm, bool compact)
     {
 /*
       if(nbatch != 0)
-        DensityMatrix_batched(wset,RefsA,RefsB,
-                                std::forward<MatG>(G),std::forward<TVec>(Ov),
-                                herm,compact,transposed);
+        DensityMatrix_batched(Left,Right,G,std::forward<TVec>(Ov),LogOverlapFactor,
+                                herm,compact);
       else
 */
-        DensityMatrix_shared(wset,RefsA,RefsB,
-                                std::forward<MatG>(G),std::forward<TVec>(Ov),
-                                herm,compact,transposed);
+        DensityMatrix_shared(Left,Right,G,std::forward<TVec>(Ov),LogOverlapFactor,
+                                herm,compact);
     }
 
     template<class WlkSet, class MatG, class CVec1, class CVec2, class Mat1, class Mat2>
@@ -575,16 +572,14 @@ class PHMSD: public AFQMCInfo
                                 TVec&& Ov, bool herm, bool compact, bool transposed);
 */
 
-    template<class WlkSet, class MatA, class MatB, class MatG, class TVec>
-    void DensityMatrix_shared(const WlkSet& wset,
-                                std::vector<MatA>& RefsA, std::vector<MatB>& RefsB, MatG&& G,
-                                TVec&& Ov, bool herm, bool compact, bool transposed);
+    template<class MatA, class MatB, class MatG, class TVec>
+    void DensityMatrix_shared(std::vector<MatA>& Left, std::vector<MatB>& Right, std::vector<MatG>& G,
+                        TVec&& Ov, double LogOverlapFactor, bool herm, bool compact);
 
 /*
-    template<class WlkSet, class MatA, class MatB, class MatG, class TVec>
-    void DensityMatrix_batched(const WlkSet& wset,
-                                std::vector<MatA>& RefsA, std::vector<MatB>& RefsB, MatG&& G,
-                                TVec&& Ov, bool herm, bool compact, bool transposed);
+    template<class MatA, class MatB, class MatG, class TVec>
+    void DensityMatrix_batched(std::vector<MatA>& Left, std::vector<MatB>& Right, std::vector<MatG>& G,
+                        TVec&& Ov, double LogOverlapFactor, bool herm, bool compact);
 */
 
     int dm_size(bool full) const {

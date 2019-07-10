@@ -127,7 +127,7 @@ class full1rdm: public AFQMCInfo
     assert(G[0].num_elements() == dm_size);
     assert(wgt.size(0) == nw);
     assert(Xw.size(0) == nw);
-    assert(ovlp.size(0) == nw);
+    assert(ovlp.size(0) >= nw);
     
     // check structure dimensions
     if(iref == 0) {
@@ -240,6 +240,7 @@ class full1rdm: public AFQMCInfo
           dump.write(Wsum, "denominator_"+padded_iblock);
           dump.pop();
         }
+        dump.pop();
       } 
     }
     TG.TG_local().barrier();

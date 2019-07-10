@@ -72,7 +72,7 @@ class FullObsHandler: public AFQMCInfo
         std::string name_, xmlNodePtr cur, WALKER_TYPES wlk, 
         Wavefunction& wfn):
                                     AFQMCInfo(info),TG(tg_),name(name_),walker_type(wlk),
-                                    wfn0(wfn), writer(false), block_size(1), nave(0),
+                                    wfn0(wfn), writer(false), block_size(1), nave(1),
                                     nspins((walker_type==COLLINEAR)?2:1),
                                     Buff(iextensions<1u>{1},make_localTG_allocator<ComplexType>(TG))
   {
@@ -136,18 +136,33 @@ class FullObsHandler: public AFQMCInfo
 
     int nw(wset.size());
     int nrefs(Refs.size(1));
+    double LogOverlapFactor(wset.getLogOverlapFactor());
     set_buffer( nw * (dm_size+3) );
     sharedC4Tensor_ref G4D(Buff.origin(), {nw, nspins, std::get<0>(Gdims),std::get<1>(Gdims)});
     sharedCMatrix_ref G2D(Buff.origin(), {nw, dm_size});
-    sharedCVector_ref DevOv(G4D.origin()+G4D.num_elements(), {nw});
+    sharedCVector_ref DevOv(G4D.origin()+G4D.num_elements(), {2*nw});
 
     stdCVector Xw(iextensions<1u>{nw});
-    stdCVector Ov(iextensions<1u>{nw});
+    stdCVector Ov(iextensions<1u>{2*nw});
     stdCMatrix detR(DevdetR); 
-    std::vector<devCMatrix_ref> RefsA;
-    std::vector<devCMatrix_ref> RefsB;
+
+    using SMType = typename WlkSet::reference::SMType;
+    // MAM: The pointer type of GA/GB needs to be device_ptr, it can not be  
+    //      one of the shared_memory types. The dispatching in DensityMatrices is done
+    //      through the pointer type of the result matrix (GA/GB).
+    std::vector<devCMatrix_ref> GA;
+    std::vector<devCMatrix_ref> GB;
+    std::vector<SMType> RefsA;
+    std::vector<SMType> RefsB;
+    std::vector<SMType> SMA;
+    std::vector<SMType> SMB;
     RefsA.reserve(nw);
+    SMA.reserve(nw);
+    GA.reserve(nw);
     if(walker_type == COLLINEAR) RefsB.reserve(nw);
+    if(walker_type == COLLINEAR) SMB.reserve(nw);
+    if(walker_type == COLLINEAR) GB.reserve(nw);
+
 
     if(impsamp) 
       denominator[iav] += std::accumulate(wgt.begin(),wgt.end(),ComplexType(0.0));
@@ -164,35 +179,44 @@ class FullObsHandler: public AFQMCInfo
       // Refs({wset.size(),nrefs,ref_size}  
       RefsA.clear();  
       RefsB.clear();  
-// Incomplete must put in device memory!
-//  Use Aux
-      if(walker_type == CLOSED) {
-        for(int iw=0; iw<nw; iw++) 
-// push SMAux and them copy_n from Refs to there
-          RefsA.emplace_back(devCMatrix_ref(make_device_ptr(Refs[iw][iref].origin()), 
-                                            {NMO,NAEA}));
-      } else if(walker_type == COLLINEAR) {
-        for(int iw=0; iw<nw; iw++) { 
-          RefsA.emplace_back(devCMatrix_ref(make_device_ptr(Refs[iw][iref].origin()), 
-                                            {NMO,NAEA}));
-          RefsB.emplace_back(devCMatrix_ref(make_device_ptr(Refs[iw][iref].origin())+NAEA*NMO, 
-                                            {NMO,NAEB}));
+      SMA.clear();  
+      SMB.clear();  
+      GA.clear();  
+      GB.clear();  
+      // using SlaterMatrixAux to store References in device memory
+      if(walker_type == COLLINEAR) {
+        for(int iw=0; iw<nw; iw++) {
+          SMA.emplace_back(wset[iw].SlaterMatrixN(Alpha));
+          SMB.emplace_back(wset[iw].SlaterMatrixN(Beta));
+          GA.emplace_back( devCMatrix_ref(make_device_ptr(G2D[iw].origin()),{NMO,NMO}) );
+          GB.emplace_back( devCMatrix_ref(make_device_ptr(G2D[iw].origin())+NMO*NMO,{NMO,NMO}) );
+          RefsA.emplace_back(wset[iw].SlaterMatrixAux(Alpha));
+          RefsB.emplace_back(wset[iw].SlaterMatrixAux(Beta));
+          copy_n(Refs[iw][iref].origin() , RefsA.back().num_elements(), RefsA.back().origin());
+          copy_n(Refs[iw][iref].origin()+RefsA.back().num_elements() , 
+                 RefsB.back().num_elements() , RefsB.back().origin());
         }
-      } else if(walker_type == NONCOLLINEAR) {
-        for(int iw=0; iw<nw; iw++) 
-          RefsA.emplace_back(devCMatrix_ref(make_device_ptr(Refs[iw][iref].origin()), 
-                                            {2*NMO,NAEA+NAEB}));
-      }
-      wfn0.DensityMatrix(wset, RefsA, RefsB, G2D, DevOv, false, false, true);
+        wfn0.DensityMatrix(RefsA, SMA, GA, DevOv.sliced(0,nw), LogOverlapFactor, false, false);
+        wfn0.DensityMatrix(RefsB, SMB, GB, DevOv.sliced(nw,2*nw), LogOverlapFactor, false, false);
+      } else {
+        for(int iw=0; iw<nw; iw++) {
+          SMA.emplace_back(wset[iw].SlaterMatrixN(Alpha));
+          GA.emplace_back( devCMatrix_ref(make_device_ptr(G2D[iw].origin()),{NMO,NMO}) );
+          RefsA.emplace_back(wset[iw].SlaterMatrixAux(Alpha));
+          copy_n(Refs[iw][iref].origin() , RefsA.back().num_elements(), RefsA.back().origin());
+        }
+        wfn0.DensityMatrix(RefsA, SMA, GA, DevOv.sliced(0,nw), LogOverlapFactor, false, false);
+      } 
 
       //2. calculate and accumulate appropriate weights 
-      copy_n( make_device_ptr(DevOv.origin()), nw, Ov.origin());
+      copy_n( DevOv.origin(), 2*nw, Ov.origin());
       if(walker_type == CLOSED) { 
         for(int iw=0; iw<nw; iw++) 
           Xw[iw] = CIcoeff * Ov[iw] * detR[iw][iref] * detR[iw][iref]; 
       } else if(walker_type == COLLINEAR) {
-        for(int iw=0; iw<nw; iw++) 
-          Xw[iw] = CIcoeff * Ov[iw] * detR[iw][2*iref] * detR[iw][2*iref+1]; 
+        for(int iw=0; iw<nw; iw++) { 
+          Xw[iw] = CIcoeff * Ov[iw] * Ov[iw+nw] * detR[iw][2*iref] * detR[iw][2*iref+1]; 
+        }
       } else if(walker_type == NONCOLLINEAR) {
         for(int iw=0; iw<nw; iw++) 
           Xw[iw] = CIcoeff * Ov[iw] * detR[iw][iref]; 

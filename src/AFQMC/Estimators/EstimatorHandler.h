@@ -11,8 +11,6 @@
 #include "AFQMC/Estimators/BasicEstimator.h"
 #include "AFQMC/Estimators/MixedRDMEstimator.h"
 #include "AFQMC/Estimators/BackPropagatedEstimator.hpp"
-//#include "AFQMC/Estimators/WalkerDMEstimator.h"
-
 #include "AFQMC/Walkers/WalkerSet.hpp"
 #include "AFQMC/Hamiltonians/HamiltonianFactory.h"
 #include "AFQMC/Wavefunctions/WavefunctionFactory.h"
@@ -108,8 +106,6 @@ class EstimatorHandler: public AFQMCInfo
         if(name == "basic" || name == "Basic" || name == "standard") {
         // do nothing
         // first process estimators that do not need a wfn
-        } else if (name == "walker_density_matrix") {
-//          estimators.emplace_back(static_cast<EstimPtr>(std::make_shared<WalkerDMEstimator>(TGgen.getTG(1),info,title,cur)));
         } else {
         // now do those that do
 

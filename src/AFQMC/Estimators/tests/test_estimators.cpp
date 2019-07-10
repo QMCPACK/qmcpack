@@ -157,7 +157,7 @@ const char *propg_xml_block =
 "<Estimator name=\"back_propagation\"> \
       <parameter name=\"nsteps\">1</parameter> \
       <parameter name=\"block_size\">2</parameter> \
-      <parameter name=\"observables\">1rdm</parameter> \
+      <OneRDM> </OneRDM>  \
       <parameter name=\"path_restoration\">false</parameter> \
   </Estimator> \
 ";
@@ -192,8 +192,8 @@ const char *propg_xml_block =
       app_error()<<" Error opening estimates.h5. \n";
       APP_ABORT("");
     }
-    reader.read(read_data, "BackPropagated/NumBackProp_1/one_rdm_000000004");
-    reader.read(denom, "BackPropagated/NumBackProp_1/one_rdm_denom_000000004");
+    reader.read(read_data, "Observables/BackPropagated/FullOneRDM/Average_0/one_rdm_000000004");
+    reader.read(denom, "Observables/BackPropagated/FullOneRDM/Average_0/denominator_000000004");
     // Test EstimatorHandler eventually.
     //int NAEA_READ, NAEB_READ, NMO_READ, WALKER_TYPE_READ;
     //reader.read(NAEA_READ, "Metadata/NAEA");
@@ -208,6 +208,7 @@ const char *propg_xml_block =
     // Test the RDM. Since no back propagation has been performed the RDM should be
     // identical to the mixed estimate.
     if(type == CLOSED) {
+      REQUIRE(read_data.num_elements() >= NMO*NMO);
       boost::multi::array_ref<ComplexType,2> BPRDM(read_data.origin(), {NMO,NMO});
       ma::scal(1.0/denom, BPRDM);
       ComplexType trace = ComplexType(0.0);
@@ -218,6 +219,7 @@ const char *propg_xml_block =
       boost::multi::array_ref<ComplexType,2,pointer> G(Gw.origin(), {NMO,NMO});
       verify_approx(G, BPRDM);
     } else if(type == COLLINEAR) {
+      REQUIRE(read_data.num_elements() >= 2*NMO*NMO);
       boost::multi::array_ref<ComplexType,3> BPRDM(read_data.origin(), {2,NMO,NMO});
       ma::scal(1.0/denom, BPRDM[0]);
       ma::scal(1.0/denom, BPRDM[1]);

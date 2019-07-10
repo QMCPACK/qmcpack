@@ -1080,11 +1080,11 @@ template< class MatA,
           class TBuffer,
           class Tp
         >
-void MixedDensityMatrix(const std::vector<MatA>& hermA, std::vector<MatB> &Bi, MatC&& C, Tp LogOverlapFactor, TVec&& ovlp, Mat&& TNN3D, Mat&& TNM3D, IBuffer& IWORK, TBuffer& WORK, bool compact=true, bool herm=true)
+void DensityMatrices(const std::vector<MatA>& Left, const std::vector<MatB> &Right, std::vector<MatC>& G, Tp LogOverlapFactor, TVec&& ovlp, Mat&& TNN3D, Mat&& TNM3D, IBuffer& IWORK, TBuffer& WORK, bool compact=true, bool herm=true)
 {
   static_assert( std::decay<TVec>::type::dimensionality == 1, " TVec::dimensionality == 1" );
   static_assert( std::decay<MatB>::type::dimensionality == 2, " MatB::dimensionality == 2" );
-  static_assert( std::decay<MatC>::type::dimensionality == 3, " MatC::dimensionality == 3" );
+  static_assert( std::decay<MatC>::type::dimensionality == 2, " MatC::dimensionality == 3" );
   static_assert( std::decay<Mat>::type::dimensionality == 3, "std::decay<Mat>::type::dimensionality == 3" );
 
   using ma::T;
@@ -1093,20 +1093,19 @@ void MixedDensityMatrix(const std::vector<MatA>& hermA, std::vector<MatB> &Bi, M
   using ma::getrfBatched;
   using ma::getriBatched;
 
-  int nbatch = Bi.size();
-  int nrefs(hermA.size());
-  int NMO = (herm?hermA[0].size(1):hermA[0].size(0));
-  int NEL = (herm?hermA[0].size(0):hermA[0].size(1));
+  int nbatch = Right.size();
+  int NMO = (herm?Left[0].size(1):Left[0].size(0));
+  int NEL = (herm?Left[0].size(0):Left[0].size(1));
   int wsz = ma::invert_optimal_workspace_size(TNN3D[0]);
 
-  assert( Bi[0].size(0) == NMO );  
-  assert( Bi[0].size(1) == NEL );  
-  assert( C.size(0) == nbatch );
-  assert( C.size(2) == NMO );
+  assert( Right[0].size(0) == NMO );  
+  assert( Right[0].size(1) == NEL );  
+  assert( G.size() == nbatch );
+  assert( G[0].size(1) == NMO );
   if(compact)
-    assert( C.size(1) == NEL );
+    assert( G[0].size(0) == NEL );
   else
-    assert( C.size(1) == NMO );
+    assert( G[0].size(0) == NMO );
   assert( ovlp.size() == nbatch ); 
   assert( TNN3D.size(1) == NEL );
   assert( TNN3D.size(2) == NEL );
@@ -1120,57 +1119,62 @@ void MixedDensityMatrix(const std::vector<MatA>& hermA, std::vector<MatB> &Bi, M
 
   using pointer = typename std::decay<MatC>::type::element_ptr;
 
-  int ldw = Bi[0].stride(0);
+  int ldw = Right[0].stride(0);
   int ldN = TNN3D.stride(1);
-  int ldC = C.stride(1);
-  std::vector<pointer> Carray;
+  int ldG = G[0].stride(0);
+  std::vector<pointer> Garray;
   std::vector<pointer> Warray;
   std::vector<pointer> workArray;
   std::vector<pointer> NNarray;
-  Carray.reserve(nbatch);
+  Garray.reserve(nbatch);
   Warray.reserve(nbatch);
   workArray.reserve(nbatch);
   NNarray.reserve(nbatch);
   for(int i=0; i<nbatch; i++) {
     NNarray.emplace_back(TNN3D[i].origin());
     workArray.emplace_back(WORK.origin()+i*wsz);
-    Carray.emplace_back(C[i].origin());
-    Warray.emplace_back(Bi[i].origin());
+    Garray.emplace_back(G[i].origin());
+    Warray.emplace_back(Right[i].origin());
   }
 
     // T(conj(A))*B 
     if(herm)
       for(int b=0; b<nbatch; ++b)
-        ma::product(hermA[b%nrefs],Bi[b],TNN3D[b]);
+        ma::product(Left[b],Right[b],TNN3D[b]);
     else
       for(int b=0; b<nbatch; ++b)
-        ma::product(H(hermA[b%nrefs]),Bi[b],TNN3D[b]);
+        ma::product(H(Left[b]),Right[b],TNN3D[b]);
   
 
     // T1 = T1^(-1)
 //    for(int b=0; b<nbatch; ++b) 
 //      ma::invert(TNN3D[b],IWORK,WORK,to_address(ovlp.origin())+b);
     // Invert
-    getrfBatched(NEL,NNarray.data(),ldN, IWORK.origin(), IWORK.origin()+nbatch*NEL, nbatch);
+    getrfBatched(NEL,ma::pointer_dispatch(NNarray.data()),ldN, 
+                 ma::pointer_dispatch(IWORK.origin()), 
+                 ma::pointer_dispatch(IWORK.origin())+nbatch*NEL, nbatch);
 
     for(int i=0; i<nbatch; i++) {
 
       using ma::determinant_from_getrf;
-      ovlp[i] = determinant_from_getrf(NEL, NNarray[i], ldN, IWORK.origin()+i*NEL,LogOverlapFactor);
+      ovlp[i] = determinant_from_getrf(NEL, ma::pointer_dispatch(NNarray[i]), ldN, 
+                             ma::pointer_dispatch(IWORK.origin())+i*NEL,LogOverlapFactor);
 
     }
 
-    getriBatched(NEL,NNarray.data(),ldN, IWORK.origin(), workArray.data(), wsz, 
-                 IWORK.origin()+nbatch*NEL, nbatch);
+    getriBatched(NEL,ma::pointer_dispatch(NNarray.data()),ldN, 
+                 ma::pointer_dispatch(IWORK.origin()), ma::pointer_dispatch(workArray.data()), 
+                 wsz, ma::pointer_dispatch(IWORK.origin())+nbatch*NEL, nbatch);
 
     if(compact) {
 
       // C = T(T1) * T(B)
 //      for(int b=0; b<nbatch; ++b)
-//        ma::product(T(TNN3D[b]),T(Bi[b]),C[b]);
+//        ma::product(T(TNN3D[b]),T(Right[b]),C[b]);
       // careful with fortan ordering
-      gemmBatched('T','T',NMO,NEL,NEL,ComplexType(1.0),Warray.data(),ldw,NNarray.data(),ldN,
-                  ComplexType(0.0),Carray.data(),ldC,nbatch);
+      gemmBatched('T','T',NMO,NEL,NEL,ComplexType(1.0),ma::pointer_dispatch(Warray.data()),ldw,
+                  ma::pointer_dispatch(NNarray.data()),ldN,
+                  ComplexType(0.0),ma::pointer_dispatch(Garray.data()),ldG,nbatch);
 
     } else {
 
@@ -1183,19 +1187,20 @@ void MixedDensityMatrix(const std::vector<MatA>& hermA, std::vector<MatB> &Bi, M
 
         // T2 = T(T1) * T(B)
         //for(int b=0; b<nbatch; ++b)
-        //  ma::product(T(TNN3D[b]),T(Bi[b]),TNM3D[b]);
-        gemmBatched('T','T',NMO,NEL,NEL,ComplexType(1.0),Warray.data(),ldw,NNarray.data(),ldN,
-                    ComplexType(0.0),NMarray.data(),ldM,nbatch);
+        //  ma::product(T(TNN3D[b]),T(Right[b]),TNM3D[b]);
+        gemmBatched('T','T',NMO,NEL,NEL,ComplexType(1.0),ma::pointer_dispatch(Warray.data()),ldw,
+                    ma::pointer_dispatch(NNarray.data()),ldN,
+                    ComplexType(0.0),ma::pointer_dispatch(NMarray.data()),ldM,nbatch);
 
         // C = conj(A) * T2
         for(int b=0; b<nbatch; ++b)
-          ma::product(T(hermA[b%nrefs]),TNM3D[b],C[b]);
+          ma::product(T(Left[b]),TNM3D[b],G[b]);
 
       } else {
 
         // T2 = T1 * H(A) 
         for(int b=0; b<nbatch; ++b)
-          ma::product(TNN3D[b],H(hermA[b%nrefs]),TNM3D[b]);
+          ma::product(TNN3D[b],H(Left[b]),TNM3D[b]);
 
 
         int ldM = TNM3D.stride(1);
@@ -1207,9 +1212,10 @@ void MixedDensityMatrix(const std::vector<MatA>& hermA, std::vector<MatB> &Bi, M
         // T2 = T(T1) * T(B)
         // C = T( B * T2) = T(T2) * T(B)
         //for(int b=0; b<nbatch; ++b)
-        //  ma::product(T(TNM3D[b]),T(Bi[b]),std::forward<MatC>(C));
-        gemmBatched('T','T',NMO,NMO,NEL,ComplexType(1.0),Warray.data(),ldw,NMarray.data(),ldM,
-                    ComplexType(0.0),Carray.data(),ldC,nbatch);
+        //  ma::product(T(TNM3D[b]),T(Right[b]),G[b]);
+        gemmBatched('T','T',NMO,NMO,NEL,ComplexType(1.0),ma::pointer_dispatch(Warray.data()),ldw,
+                    ma::pointer_dispatch(NMarray.data()),ldM,
+                    ComplexType(0.0),ma::pointer_dispatch(Garray.data()),ldG,nbatch);
 
       }
 

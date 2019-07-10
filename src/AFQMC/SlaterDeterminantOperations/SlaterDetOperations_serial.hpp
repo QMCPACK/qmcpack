@@ -189,15 +189,16 @@ class SlaterDetOperations_serial : public SlaterDetOperations_base<AllocType>
     }
 
     template<class MatA, class MatB, class MatC, class TVec>
-    void BatchedMixedDensityMatrix(const std::vector<MatA>& hermA, std::vector<MatB> &Bi, MatC&& C, T LogOverlapFactor, TVec&& ovlp, bool compact=false, bool herm=true) {
-      if(Bi.size()==0) return;
-      assert(hermA.size()>0); 
-      static_assert(std::decay<MatC>::type::dimensionality == 3, "Wrong dimensionality");
+    void BatchedDensityMatrices(const std::vector<MatA>& Left, const std::vector<MatB> &Right, std::vector<MatC>& G, T LogOverlapFactor, TVec&& ovlp, bool compact=false, bool herm=true) {
+      if(Left.size()==0) return;
+      static_assert(std::decay<MatB>::type::dimensionality == 2, "Wrong dimensionality");
+      static_assert(std::decay<MatC>::type::dimensionality == 2, "Wrong dimensionality");
       static_assert(std::decay<TVec>::type::dimensionality == 1, "Wrong dimensionality");
-      int NMO = (herm?hermA[0].size(1):hermA[0].size(0));
-      int NAEA = (herm?hermA[0].size(0):hermA[0].size(1));
-      int nbatch = Bi.size();
-      assert(C.size(0) == nbatch);
+      int NMO = (herm?Left[0].size(1):Left[0].size(0));
+      int NAEA = (herm?Left[0].size(0):Left[0].size(1));
+      int nbatch = Left.size();
+      assert(Right.size() == nbatch);
+      assert(G.size() == nbatch);
       assert(ovlp.size() == nbatch);
       int n1=nbatch, n2=NAEA, n3=NMO;
       if(compact) {
@@ -211,8 +212,8 @@ class SlaterDetOperations_serial : public SlaterDetOperations_base<AllocType>
         WORK.reextent(iextensions<1u>{nbatch*sz});
       if(IWORK.num_elements() < nbatch*(NMO+1))
         IWORK.reextent(iextensions<1u>{nbatch*(NMO+1)});
-      SlaterDeterminantOperations::batched::MixedDensityMatrix(hermA,Bi,
-                std::forward<MatC>(C),LogOverlapFactor,std::forward<TVec>(ovlp),TNN3D,TNM3D,IWORK,WORK,compact,herm);
+      SlaterDeterminantOperations::batched::DensityMatrices(Left,Right,G,
+                LogOverlapFactor,std::forward<TVec>(ovlp),TNN3D,TNM3D,IWORK,WORK,compact,herm);
     }
 
     template<class MatA, class MatB, class TVec>
