@@ -494,8 +494,8 @@ struct ShortRangeCuspFunctor : public OptimizableFunctorBase
     while (childPtr != NULL)
     {
 
-      // skip text nodes
-      if ( std::string((const char *)childPtr->name) == "text" ) {
+      // skip blank nodes
+      if ( xmlIsBlankNode(childPtr) ) {
         childPtr = childPtr->next;
         continue;
       }

@@ -27,14 +27,14 @@ TEST_CASE("ShortRangeCuspJastrowFunctor", "[wavefunction]")
   Communicate* c = OHMMS::Controller;
 
   // prepare xml input to set up the functor
-  const std::string xmltext("<tmp>"
-                              "<correlation rcut=\"6\" cusp=\"3\" elementType=\"Li\">"
-                                "<var id=\"LiCuspR0\" name=\"R0\" optimize=\"yes\"> 0.0624 </var>"
-                                "<coefficients id=\"LiCuspB\" type=\"Array\" optimize=\"yes\">"
-                                 " 0.3 0.2 0.4 "
-                                "</coefficients>"
-                              "</correlation>"
-                            "</tmp>");
+  const std::string xmltext("<tmp>                                                               "
+                            "  <correlation rcut=\"6\" cusp=\"3\" elementType=\"Li\">            "
+                            "    <var id=\"LiCuspR0\" name=\"R0\" optimize=\"yes\"> 0.0624 </var>"
+                            "    <coefficients id=\"LiCuspB\" type=\"Array\" optimize=\"yes\">   "
+                            "      0.3 0.2 0.4                                                   "
+                            "    </coefficients>                                                 "
+                            "  </correlation>                                                    "
+                            "</tmp>                                                              ");
 
   // parse the xml input
   Libxml2Document doc;
@@ -47,6 +47,12 @@ TEST_CASE("ShortRangeCuspJastrowFunctor", "[wavefunction]")
 
   // get the xml pointer to the functor node
   xmlNodePtr child = root->xmlChildrenNode;
+  while ( child != NULL ) {
+    if ( xmlIsBlankNode(child) )
+      child = child->next;
+    else
+      break;
+  }
   REQUIRE( child != NULL );
 
   // prepare the Jastrow factor using the xml input
