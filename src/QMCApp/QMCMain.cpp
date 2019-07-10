@@ -622,28 +622,29 @@ bool QMCMain::runQMC(xmlNodePtr cur)
   std::unique_ptr<QMCDriverInterface> qmc_driver;
   qmc_driver =
       driver_factory.newQMCDriver(std::move(last_driver), myProject.m_series, cur, das, *qmcSystem, *ptclPool, *psiPool, *hamPool, myComm);
-  if (qmcDriver)
+  if (qmc_driver)
   {
     //advance the project id
     //if it is NOT the first qmc node and qmc/@append!='yes'
     if (!FirstQMC && !das.append_run)
       myProject.advance();
-    qmcDriver->setStatus(myProject.CurrentMainRoot(), PrevConfigFile, das.append_run);
-    qmcDriver->putWalkers(m_walkerset_in);
+    qmc_driver->setStatus(myProject.CurrentMainRoot(), PrevConfigFile, das.append_run);
+    qmc_driver->putWalkers(m_walkerset_in);
 #if !defined(REMOVE_TRACEMANAGER)
-    qmcDriver->putTraces(traces_xml);
+    qmc_driver->putTraces(traces_xml);
 #endif
-    qmcDriver->process(cur);
+    qmc_driver->process(cur);
     infoSummary.flush();
     infoLog.flush();
     Timer qmcTimer;
-    NewTimer* t1 = TimerManager.createTimer(qmcDriver->getEngineName(), timer_level_coarse);
+    NewTimer* t1 = TimerManager.createTimer(qmc_driver->getEngineName(), timer_level_coarse);
     t1->start();
-    qmcDriver->run();
+    qmc_driver->run();
     t1->stop();
     app_log() << "  QMC Execution time = " << std::setprecision(4) << qmcTimer.elapsed() << " secs" << std::endl;
     //keeps track of the configuration file
     PrevConfigFile = myProject.CurrentMainRoot();
+    last_driver = std::move(qmc_driver);
     return true;
   }
   else

@@ -41,7 +41,7 @@ namespace qmcplusplus
 ///initialize the static data member
 //ParticleSetPool* QMCMainState::ptclPool = new ParticleSetPool;
 QMCMainState::QMCMainState(Communicate* c)
-    : MPIObjectBase(c), qmcSystem(0), qmcDriver(0), curRunType(QMCRunType::DUMMY)
+    : MPIObjectBase(c), qmcSystem(0), curRunType(QMCRunType::DUMMY)
 {
   ////create ParticleSetPool
   ptclPool = new ParticleSetPool(myComm);

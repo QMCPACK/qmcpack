@@ -50,7 +50,7 @@ struct QMCMainState : public MPIObjectBase
 
   /** current QMCDriver
    */
-  QMCDriverInterface* qmcDriver;
+  std::unique_ptr<QMCDriverInterface> last_driver;
 
   /** ParticleSet Pool
    */
