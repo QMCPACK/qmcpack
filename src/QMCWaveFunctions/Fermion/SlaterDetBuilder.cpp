@@ -24,11 +24,11 @@
 
 #include "QMCWaveFunctions/Fermion/MultiSlaterDeterminant.h"
 #include "QMCWaveFunctions/Fermion/MultiSlaterDeterminantFast.h"
-#if !defined(QMC_COMPLEX) && !defined(ENABLE_SOA)
+#if !defined(QMC_COMPLEX) 
 //Cannot use complex with SlaterDetOpt
-#include "QMCWaveFunctions/MolecularOrbitals/NGOBuilder.h"
-#include "QMCWaveFunctions/MolecularOrbitals/LocalizedBasisSet.h"
-#include "QMCWaveFunctions/MolecularOrbitals/LCOrbitalSetOpt.h"
+//#include "QMCWaveFunctions/MolecularOrbitals/NGOBuilder.h"
+//#include "QMCWaveFunctions/MolecularOrbitals/LocalizedBasisSet.h"
+//#include "QMCWaveFunctions/MolecularOrbitals/LCOrbitalSetOpt.h"
 #include "QMCWaveFunctions/Fermion/SlaterDetOpt.h"
 #endif
 #if defined(QMC_CUDA)
@@ -505,7 +505,6 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
 #else
     if (UseBackflow)
       adet = new DiracDeterminantWithBackflow(targetPtcl, psi, BFTrans, firstIndex);
-#ifndef ENABLE_SOA
     else if (optimize == "yes")
     {
 #ifdef QMC_COMPLEX
@@ -530,22 +529,23 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
 
       // YE: need check
       // get a pointer to the single particle orbital set and make sure it is of the correct type
-      if (!psi->is_of_type_LCOrbitalSetOpt())
-      {
-        std::string newname = "LCOrbitalSetOpt_" + psi->objectName;
-        SPOSetPtr newpsi    = get_sposet(newname);
-        if (newpsi == nullptr)
-        {
-          app_log() << "using an existing SPO object " << psi->objectName
-                    << " (not a clone) for the basis of an optimizable SPO set.\n";
-          newpsi = new LCOrbitalSetOpt<LocalizedBasisSet<NGOBuilder::CenteredOrbitalType>>(psi);
-          // YE: FIXME, need to register newpsi
-        }
-        else
-        {
-          psi = newpsi;
-        }
-      }
+//      if (!psi->is_of_type_LCOrbitalSetOpt())
+//      {
+//      APP_ABORT("unsupported SPOSET");
+//        std::string newname = "LCOrbitalSetOpt_" + psi->objectName;
+//        SPOSetPtr newpsi    = get_sposet(newname);
+//        if (newpsi == nullptr)
+//        {
+//          app_log() << "using an existing SPO object " << psi->objectName
+//                    << " (not a clone) for the basis of an optimizable SPO set.\n";
+//          newpsi = new LCOrbitalSetOpt<LocalizedBasisSet<NGOBuilder::CenteredOrbitalType>>(psi);
+//          // YE: FIXME, need to register newpsi
+//      }
+//        else
+//        {
+//          psi = newpsi;
+//        }
+//      }
 
       // build the optimizable slater determinant
       SlaterDetOpt* const retval = new SlaterDetOpt(targetPtcl, psi, spin_group);
@@ -554,7 +554,6 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
       retval->buildOptVariables(params, params_supplied, true);
 
       adet = retval;
-#endif
     }
 #endif
 #if defined(ENABLE_CUDA)

@@ -188,6 +188,7 @@ SET(FERMION_SRCS ${FERMION_SRCS}
   Fermion/DiracDeterminant.cpp
   Fermion/SlaterDet.cpp
   Fermion/SlaterDetBuilder.cpp
+  Fermion/SlaterDetOpt.cpp
   Fermion/MultiSlaterDeterminant.cpp
   Fermion/MultiSlaterDeterminantFast.cpp
   Fermion/MultiDiracDeterminant.cpp
@@ -207,7 +208,6 @@ ENDIF(ENABLE_CUDA)
 
 IF(NOT QMC_COMPLEX AND NOT ENABLE_SOA)
   SET(FERMION_SRCS ${FERMION_SRCS}
-    Fermion/SlaterDetOpt.cpp
     )
 ENDIF(NOT QMC_COMPLEX AND NOT ENABLE_SOA)
 

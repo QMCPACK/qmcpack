@@ -157,6 +157,21 @@ public:
   virtual void checkInVariables(opt_variables_type& active) {}
   virtual void checkOutVariables(const opt_variables_type& active) {}
 
+  virtual void evaluateDerivatives(ParticleSet& P,
+                                          const opt_variables_type& optvars,
+                                          std::vector<ValueType>& dlogpsi,
+                                          std::vector<ValueType>& dhpsioverpsi,
+                                          const ValueType& psiCurrent,
+                                          const ValueMatrix_t& M,
+                                          const ValueMatrix_t& Minv,
+                                          const ValueMatrix_t& Bbar,
+                                          const int m_first_var_pos,
+                                          const std::vector<std::pair<int, int>> m_act_rot_inds,
+                                          const int m_nel,
+                                          const int m_nmo)
+  {}
+
+
   /** Evaluate the derivative of the optimized orbitals with respect to the parameters
    *  this is used only for MSD, to be refined for better serving both single and multi SD
    */

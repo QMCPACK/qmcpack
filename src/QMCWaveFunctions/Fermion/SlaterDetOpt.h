@@ -28,6 +28,10 @@ class SlaterDetOpt : public DiracDeterminantBase
 {
   // private data members
 private:
+  //Only holds the information for particles held in this object 
+  ParticleSet::ParticleGradient_t  myG_temp, myG_J;
+  ParticleSet::ParticleLaplacian_t myL_temp, myL_J;
+  SPOSet::ValueMatrix_t Bbar;
   /// \brief   pointer to the set of optimizable single particle orbitals
   //SPOSet * m_spo;
 

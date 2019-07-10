@@ -12,7 +12,7 @@
 
 #include <QMCWaveFunctions/Fermion/SlaterDetOpt.h>
 #include <QMCWaveFunctions/TrialWaveFunction.h>
-#include <QMCWaveFunctions/MolecularOrbitals/LCOrbitalSetOpt.h>
+//#include <QMCWaveFunctions/MolecularOrbitals/LCOrbitalSetOpt.h>
 #include <Numerics/DeterminantOperators.h>
 #include <Numerics/MatrixOperators.h>
 
@@ -47,7 +47,13 @@ SlaterDetOpt::SlaterDetOpt(ParticleSet& ptcl, SPOSet* spo_ptr, const int up_or_d
   resize(m_nel, m_nmo);
 
   m_nlc = Phi->OrbitalSetSize;
-  m_nb  = Phi->BasisSetSize;
+//  m_nb  = Phi->BasisSetSize;
+
+  Bbar.resize(m_nel,m_nmo);
+  myG_temp.resize (this->NumPtcls);
+  myG_J.resize(this->NumPtcls);
+  myL_temp.resize(this->NumPtcls);
+  myL_J.resize(this->NumPtcls);
 
   // make sure we didn't start with a bad m_nlc
   check_index_sanity();
@@ -298,7 +304,8 @@ WaveFunctionComponent::RealType SlaterDetOpt::evaluateLog(ParticleSet& P,
                                                           ParticleSet::ParticleLaplacian_t& L)
 {
   //throw std::runtime_error("SlaterDetOpt::evaluateLog (P, G, L) die");
-  LogValue = this->evaluate_matrices_from_scratch(P, false);
+  //LogValue = this->evaluate_matrices_from_scratch(P, false);
+  LogValue = this->evaluate_matrices_from_scratch(P, true);
 
   // compute gradient and laplacian parts
   const bool slow_loops = true;
@@ -593,8 +600,10 @@ void SlaterDetOpt::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 void SlaterDetOpt::checkInVariables(opt_variables_type& active)
 {
-  // add these variables to the overall list of optimizable variables
-  active.insertFrom(this->myVars);
+  Phi->checkInVariables(active);
+//
+//  // add these variables to the overall list of optimizable variables
+//  active.insertFrom(this->myVars);
 
   // reset my first variable's position to say that we don't know where it is yet
   m_first_var_pos = -1;
@@ -610,24 +619,25 @@ void SlaterDetOpt::checkInVariables(opt_variables_type& active)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 void SlaterDetOpt::checkOutVariables(const opt_variables_type& active)
 {
-  // record the positions of this object's optimizable variables within the overall list of optimizable variables
-  myVars.getIndex(active);
-
-  // ensure that this object's variables are stored contiguously
-  for (int i = 0; i < myVars.size(); i++)
-  {
-    if (myVars.where(i) - myVars.where(0) != i)
-    {
-      std::stringstream error_msg;
-      error_msg << "variable " << (i - 1) << " was not contiguous with variable " << i
-                << " in SlaterDetOpt::checkOutVariables";
-      throw std::runtime_error(error_msg.str());
-    }
-  }
+Phi->checkOutVariables(active);
+//  // record the positions of this object's optimizable variables within the overall list of optimizable variables
+//  myVars.getIndex(active);
+//
+//  // ensure that this object's variables are stored contiguously
+//  for (int i = 0; i < myVars.size(); i++)
+//  {
+//    if (myVars.where(i) - myVars.where(0) != i)
+//    {
+//      std::stringstream error_msg;
+//      error_msg << "variable " << (i - 1) << " was not contiguous with variable " << i
+//                << " in SlaterDetOpt::checkOutVariables";
+//      throw std::runtime_error(error_msg.str());
+//    }
+//  }
 
   // record the position of my first variable
-  if (myVars.size() > 0)
-    m_first_var_pos = myVars.where(0);
+  if (Phi->myVars.size() > 0)
+    m_first_var_pos = Phi->myVars.where(0);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -639,28 +649,29 @@ void SlaterDetOpt::checkOutVariables(const opt_variables_type& active)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 void SlaterDetOpt::resetParameters(const opt_variables_type& active)
 {
-  // read out the parameters that define the rotation into an antisymmetric matrix
-  std::vector<RealType> rot_mat(m_nlc * m_nlc, 0.0);
-  for (int i = 0; i < m_act_rot_inds.size(); i++)
-  {
-    const int p = m_act_rot_inds.at(i).first;
-    const int q = m_act_rot_inds.at(i).second;
-    //const RealType x = active[i + m_first_var_pos] - myVars[i];
-    const RealType x       = active[i + m_first_var_pos];
-    rot_mat[p + q * m_nlc] = x;
-    rot_mat[q + p * m_nlc] = -x;
-  }
-
-  // exponentiate antisymmetric matrix to get the unitary rotation
-  this->exponentiate_matrix(m_nlc, &rot_mat.at(0));
-
-  // get the linear combination coefficients by applying the rotation to the old coefficients
-  Phi->rotate_B(rot_mat);
-
-  // Store the orbital rotations parameters internally in myVars
-  for (int i = 0; i < m_act_rot_inds.size(); i++)
-    myVars[i] = active[i + m_first_var_pos];
-
+  Phi->resetParameters(active);
+//  // read out the parameters that define the rotation into an antisymmetric matrix
+//  std::vector<RealType> rot_mat(m_nlc * m_nlc, 0.0);
+//  for (int i = 0; i < m_act_rot_inds.size(); i++)
+//  {
+//    const int p = m_act_rot_inds.at(i).first;
+//    const int q = m_act_rot_inds.at(i).second;
+//    //const RealType x = active[i + m_first_var_pos] - myVars[i];
+//    const RealType x       = active[i + m_first_var_pos];
+//    rot_mat[p + q * m_nlc] = x;
+//    rot_mat[q + p * m_nlc] = -x;
+//  }
+//
+//  // exponentiate antisymmetric matrix to get the unitary rotation
+//  this->exponentiate_matrix(m_nlc, &rot_mat.at(0));
+//
+//  // get the linear combination coefficients by applying the rotation to the old coefficients
+//  Phi->rotate_B(rot_mat);
+//
+//  // Store the orbital rotations parameters internally in myVars
+//  for (int i = 0; i < m_act_rot_inds.size(); i++)
+//    myVars[i] = active[i + m_first_var_pos];
+//
   //if (false)
   //  this->print_B();
 }
@@ -840,224 +851,71 @@ void SlaterDetOpt::evaluateDerivatives(ParticleSet& P,
   // Prepares:  m_orb_val_mat_all, m_orb_der_mat_all, m_orb_lap_mat_all, m_orb_val_mat, m_orb_der_mat, m_orb_lap_mat, and m_orb_inv_mat
   LogValue = this->evaluate_matrices_from_scratch(P, true);
 
+  // SDP CALL THE DERIVATIVE FUNCTION OF DiracDeterminant.cpp 
+
   // print for debugging
   if (false)
   {
-    std::vector<char> buff(1000, ' ');
-
-    app_log() << "printing m_orb_val_mat_all" << std::endl;
-    for (int p = 0; p < m_nmo; p++)
-    { // loop over orbitals
-      for (int a = 0; a < m_nel; a++)
-      { // loop over particles
-        const int len = std::sprintf(&buff[0], "  %12.6f", m_orb_val_mat_all(a, p));
-        for (int k = 0; k < len; k++)
-          app_log() << buff[k];
-      }
-      app_log() << std::endl;
-    }
-    app_log() << std::endl;
-
-    app_log() << "printing m_orb_der_mat_all" << std::endl;
-    for (int p = 0; p < m_nmo; p++)
-    { // loop over orbitals
-      for (int a = 0; a < m_nel; a++)
-      { // loop over particles
-        for (int k = 0; k < 3; k++)
-        { // loop over x,y,z directions
-          const int len = std::sprintf(&buff[0], "  %12.6f", m_orb_der_mat_all(a, p)[k]);
-          for (int k = 0; k < len; k++)
-            app_log() << buff[k];
-        }
-        app_log() << "        ";
-      }
-      app_log() << std::endl;
-    }
-    app_log() << std::endl;
-
-    app_log() << "printing m_orb_lap_mat_all" << std::endl;
-    for (int p = 0; p < m_nmo; p++)
-    { // loop over orbitals
-      for (int a = 0; a < m_nel; a++)
-      { // loop over particles
-        const int len = std::sprintf(&buff[0], "  %12.6f", m_orb_lap_mat_all(a, p));
-        for (int k = 0; k < len; k++)
-          app_log() << buff[k];
-      }
-      app_log() << std::endl;
-    }
-    app_log() << std::endl;
-
-    app_log() << "printing P.G" << std::endl;
-    for (int a = 0; a < m_nel; a++)
-    { // loop over particles
-      for (int k = 0; k < 3; k++)
-      { // loop over x,y,z directions
-        const int len = std::sprintf(&buff[0], "  %12.6f", P.G[m_first + a][k]);
-        for (int k = 0; k < len; k++)
-          app_log() << buff[k];
-      }
-      app_log() << "        ";
-    }
-    app_log() << std::endl;
-    app_log() << std::endl;
-
-    app_log() << "printing m_orb_inv_mat" << std::endl;
-    for (int b = 0; b < m_nel; b++)
-    {
-      for (int a = 0; a < m_nel; a++)
-      {
-        const int len = std::sprintf(&buff[0], "  %12.6f", m_orb_inv_mat(a, b));
-        for (int k = 0; k < len; k++)
-          app_log() << buff[k];
-      }
-      app_log() << std::endl;
-    }
-    app_log() << std::endl;
-
-    app_log() << "printing m_orb_der_mat" << std::endl;
-    for (int p = 0; p < m_nel; p++)
-    {
-      for (int a = 0; a < m_nel; a++)
-      {
-        for (int k = 0; k < 3; k++)
-        {
-          const int len = std::sprintf(&buff[0], "  %12.6f", m_orb_der_mat(a, p)[k]);
-          for (int k = 0; k < len; k++)
-            app_log() << buff[k];
-        }
-        app_log() << "        ";
-      }
-      app_log() << std::endl;
-    }
-    app_log() << std::endl;
-
-    app_log() << "printing m_orb_lap_mat" << std::endl;
-    for (int p = 0; p < m_nel; p++)
-    {
-      for (int a = 0; a < m_nel; a++)
-      {
-        const int len = std::sprintf(&buff[0], "  %12.6f", m_orb_lap_mat(a, p));
-        for (int k = 0; k < len; k++)
-          app_log() << buff[k];
-      }
-      app_log() << std::endl;
-    }
-    app_log() << std::endl;
+    app_log() << "first partcle in set is ... " << m_first << std::endl; 
+    app_log() << "variable starting position  ... " << m_first_var_pos << std::endl; 
+    app_log() << "printing m_orb_val_mat_all \n" << m_orb_val_mat_all << std::endl;
+    app_log() << "printing m_orb_der_mat_all \n" << m_orb_der_mat_all << std::endl;
+    app_log() << "printing m_orb_lap_mat_all \n" << m_orb_lap_mat_all << std::endl;
+    app_log() << "printing P.G \n" << P.G << std::endl;
+    app_log() << "printing m_orb_inv_mat \n" << m_orb_inv_mat << std::endl;
+    app_log() << "printing m_orb_inv_mat(0,1) \n" << m_orb_inv_mat(0,1) << std::endl;
   }
 
-  // fill matrix of contributions to derivatives of log of det value w.r.t. molecular orbital values
-  for (int a = 0; a < m_nel; a++)   // loop over particles
-    for (int p = 0; p < m_nel; p++) // loop over orbitals
-      m_dp0(a, p) = m_orb_inv_mat(a, p);
 
-  // construct temporary Y matrix
-  RealType* const Ymat = &m_work.at(0);
-  for (int b = 0; b < m_nel; b++)
-  { // loop over particles
-    const WaveFunctionComponent::GradType g = P.G[m_first + b] - simd::dot(m_orb_inv_mat[b], m_orb_der_mat[b], m_nel);
-    for (int q = 0; q < m_nel; q++) // loop over orbitals
-      Ymat[q + b * m_nel] = 0.5 * m_orb_lap_mat(b, q) + qmcplusplus::dot(m_orb_der_mat(b, q), g);
-  }
-
-  // contract Y with inverse matrices to get contribution of local energy derivatives w.r.t. orbital values
-  BLAS::gemm('N',
-             'T',
-             m_nel,
-             m_nel,
-             m_nel,
-             1.0,
-             m_orb_inv_mat.data(),
-             m_nel,
-             Ymat,
-             m_nel,
-             0.0,
-             &m_work.at(m_nel * m_nel),
-             m_nel);
-  BLAS::gemm('N',
-             'N',
-             m_nel,
-             m_nel,
-             m_nel,
-             1.0,
-             &m_work.at(m_nel * m_nel),
-             m_nel,
-             m_orb_inv_mat.data(),
-             m_nel,
-             0.0,
-             &m_work.at(0),
-             m_nel);
-
-  // fill result of contraction into top of local energy derivatives w.r.t. molecular orbital value matrix (derivatives w.r.t. virtual orbitals are zero and so we leave the bottom of the matrix alone)
-  for (int b = 0; b < m_nel; b++)   // loop over particles
-    for (int q = 0; q < m_nel; q++) // loop over orbitals
-      m_dh0(b, q) = m_work[q + b * m_nel];
-
-  // fill matrices of contributions to local energy derivatives w.r.t. orbital first derivatives
+  myG_temp=0.0;
+  myL_temp=0.0;
+  //current value of Gradient and Laplacian
+  // gradient components
   for (int a = 0; a < m_nel; a++)
-  { // loop over particles
-    const WaveFunctionComponent::GradType g = simd::dot(m_orb_inv_mat[a], m_orb_der_mat[a], m_nel) - P.G[m_first + a];
-    for (int v = 0; v < 3; v++)       // loop over particle coordinates x,y,z
-      for (int p = 0; p < m_nel; p++) // loop over orbitals
-        m_dh1(a + v * m_nel, p) = m_orb_inv_mat(a, p) * g[v];
+    for (int i = 0; i < m_nel; i++)
+      for (int k = 0; k < 3; k++)
+        myG_temp[a][k] += m_orb_inv_mat(a, i) * m_orb_der_mat(a, i)[k];
+  // laplacian components
+  for (int a = 0; a < m_nel; a++)
+  {
+    for (int i = 0; i < m_nel; i++)
+      myL_temp[a] += m_orb_inv_mat(a, i) * m_orb_lap_mat(a, i);
   }
 
-  // fill matrix of contributions to local energy derivatives w.r.t. orbital second derivatives
-  for (int a = 0; a < m_nel; a++)   // loop over particles
-    for (int p = 0; p < m_nel; p++) // loop over orbitals
-      m_dh2(a, p) = -0.5 * m_orb_inv_mat(a, p);
-
-  // use the work matrix to arrange the molecular orbital derivative data in the order needed
-  for (int a = 0; a < m_nel; a++)   // loop over particles
-    for (int p = 0; p < m_nmo; p++) // loop over orbitals
-      for (int k = 0; k < 3; k++)   // loop over particle coordinates x,y,z
-        m_work[p + a * m_nmo + k * m_nmo * m_nel] = m_orb_der_mat_all(a, p)[k];
-
-  // add this determinant's contribution to the orbital linear combinations' derivatives
-  add_derivatives(m_nmo,
-                  m_nel,
-                  m_dp0.data(),
-                  m_dh0.data(),
-                  m_dh1.data(),
-                  m_dh2.data(),
-                  m_orb_val_mat_all.data(),
-                  &m_work.at(0),
-                  m_orb_lap_mat_all.data());
-
-
-  // check that we have the position of the first of our variables in the overall list
-  if (myVars.size() > 0 && m_first_var_pos < 0)
-    throw std::runtime_error("position of first variable was not set on entry to SlaterDetOpt::evaluateDerivatives");
-
-  // check that my number of variables is consistent with the number of active rotations
-  if (myVars.size() != m_act_rot_inds.size())
+  // calculation of myG_J which will be used to represent \frac{\nabla\psi_{J}}{\psi_{J}} 
+  // calculation of myL_J will be used to represent \frac{\nabla^2\psi_{J}}{\psi_{J}}
+  // IMPORTANT NOTE:  The value of P.L holds \nabla^2 ln[\psi] but we need  \frac{\nabla^2 \psi}{\psi} and this is what myL_J will hold 
+  for(int a = 0, iat = m_first; a < m_nel; a++, iat++)
   {
-    std::stringstream error_msg;
-    error_msg << "mismatch between myVars.size() (" << myVars.size() << ") and m_act_rot_inds.size() ("
-              << m_act_rot_inds.size() << ") in SlaterDetOpt::evaluateDerivatives";
-    throw std::runtime_error(error_msg.str());
+    myG_J[a] = (P.G[iat] - myG_temp[a]);
+    myL_J[a] = (P.L[iat] + dot(P.G[iat],P.G[iat]) - myL_temp[a]);
+//    app_log()<< "myL_temp["<< iat <<"] "<< myL_temp[a] 
+//             << " P.L["<< iat <<"] " << P.L[iat] << " P.G[]^2 "<< dot(P.G[iat], P.G[iat]) << std::endl; 
   }
-
-  for (int i = 0; i < m_act_rot_inds.size(); i++)
-  {
-    const int p = m_act_rot_inds.at(i).first;
-    const int q = m_act_rot_inds.at(i).second;
-    dlogpsi.at(m_first_var_pos + i) += ValueType( m_pder_mat.at(p + q * m_nlc) - m_pder_mat.at(q + p * m_nlc) );
-    dhpsioverpsi.at(m_first_var_pos + i) += ValueType( m_hder_mat.at(p + q * m_nlc) - m_hder_mat.at(q + p * m_nlc) );
-    if (false)
-    {
-      std::vector<char> buff(1000, ' ');
-      const int len = std::sprintf(&buff[0],
-                                   " p = %4i   q = %4i     dlogpsi = %20.12f     dhpsioverpsi = %20.12f",
-                                   p,
-                                   q,
-                                   dlogpsi.at(m_first_var_pos + i),
-                                   dhpsioverpsi.at(m_first_var_pos + i));
-      for (int k = 0; k < len; k++)
-        app_log() << buff[k];
-      app_log() << std::endl;
+  //possibly replace wit BLAS calls 
+  for(int i = 0; i < m_nel; i++)
+    for(int j = 0; j < m_nmo; j++)
+    {  Bbar(i,j) = m_orb_lap_mat_all(i,j) + 2*dot(myG_J[i], m_orb_der_mat_all(i,j)) + myL_J[i]*m_orb_val_mat_all(i,j);
+//       app_log() << "a "<< m_orb_lap_mat_all(i,j) << std::endl 
+//                 << "b "<< 2*dot(myG_J[i], m_orb_der_mat_all(i,j)) << std::endl
+//                 << "c "<< myL_J[i] << std::endl
+//                 << "d " << m_orb_val_mat_all(i,j) << std::endl; 
     }
-  }
+
+  ValueType psiCurrent = std::exp(LogValue);
+
+  Phi->evaluateDerivatives(P,
+                           optvars,
+                           dlogpsi,
+                           dhpsioverpsi,
+                           psiCurrent, 
+                           m_orb_val_mat_all,
+                           m_orb_inv_mat,
+                           Bbar,
+                           m_first_var_pos,
+                           m_act_rot_inds,
+                           m_nel,
+                           m_nmo);
 
   // reset the internally stored derivatives to zero in preparation for the next sample
   this->initialize_matrices();
@@ -1218,63 +1076,65 @@ void SlaterDetOpt::set_optimizable_rotation_ranges(const int istart, const int i
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 void SlaterDetOpt::buildOptVariables(std::vector<RealType>& input_params, bool params_supplied, bool print_vars)
 {
-  int p, q;
-  int nparams_active = m_act_rot_inds.size();
+Phi->buildOptVariables(m_act_rot_inds);
 
-  if (params_supplied)
-  {
-    int nparams_input = input_params.size();
-    if (nparams_input != nparams_active)
-      throw std::runtime_error("Number of parameters provided for orbital rotations "
-                               "is not consistent with the expected number.");
-  }
-
-  for (int i = 0; i < nparams_active; i++)
-  {
-    p = m_act_rot_inds.at(i).first;
-    q = m_act_rot_inds.at(i).second;
-    std::stringstream sstr;
-    sstr << Phi->objectName << "_orb_rot_" << (p < 10 ? "0" : "") << (p < 100 ? "0" : "") << (p < 1000 ? "0" : "") << p
-         << "_" << (q < 10 ? "0" : "") << (q < 100 ? "0" : "") << (q < 1000 ? "0" : "") << q;
-
-    // If the user input parameters, use those. Otherwise, initialize the
-    // parameter to zero.
-    if (params_supplied)
-    {
-      myVars.insert(sstr.str(), input_params[i]);
-    }
-    else
-    {
-      myVars.insert(sstr.str(), 0.0);
-    }
-  }
-
-  if (print_vars)
-  {
-    // Print the current values of all the optimisable parameters,
-    // hopefully with correct formatting.
-    app_log() << std::string(16, ' ') << "Parameter name" << std::string(15, ' ') << "Value\n";
-    myVars.print(app_log());
-  }
-
-  // The code below applies the initial rotation requested by the user.
-  // This is basically doing the same as resetParameters, but that routine
-  // is a bit too specialized for what we want to do here. So we just
-  // rewrite the specific code we want, rather than calling that routine.
-
-  // Read out the parameters that define the rotation into an antisymmetric matrix
-  std::vector<RealType> rot_mat(m_nlc * m_nlc, 0.0);
-  for (int i = 0; i < m_act_rot_inds.size(); i++)
-  {
-    const int p            = m_act_rot_inds.at(i).first;
-    const int q            = m_act_rot_inds.at(i).second;
-    rot_mat[p + q * m_nlc] = myVars[i];
-    rot_mat[q + p * m_nlc] = -myVars[i];
-  }
-  // Exponentiate antisymmetric matrix to get the unitary rotation.
-  this->exponentiate_matrix(m_nlc, &rot_mat.at(0));
-  // get the linear combination coefficients by applying the rotation to the old coefficients
-  Phi->rotate_B(rot_mat);
+//  int p, q;
+//  int nparams_active = m_act_rot_inds.size();
+//
+//  if (params_supplied)
+//  {
+//    int nparams_input = input_params.size();
+//    if (nparams_input != nparams_active)
+//      throw std::runtime_error("Number of parameters provided for orbital rotations "
+//                               "is not consistent with the expected number.");
+//  }
+//
+//  for (int i = 0; i < nparams_active; i++)
+//  {
+//    p = m_act_rot_inds.at(i).first;
+//    q = m_act_rot_inds.at(i).second;
+//    std::stringstream sstr;
+//    sstr << Phi->objectName << "_orb_rot_" << (p < 10 ? "0" : "") << (p < 100 ? "0" : "") << (p < 1000 ? "0" : "") << p
+//         << "_" << (q < 10 ? "0" : "") << (q < 100 ? "0" : "") << (q < 1000 ? "0" : "") << q;
+//
+//    // If the user input parameters, use those. Otherwise, initialize the
+//    // parameter to zero.
+//    if (params_supplied)
+//    {
+//      myVars.insert(sstr.str(), input_params[i]);
+//    }
+//    else
+//    {
+//      myVars.insert(sstr.str(), 0.0);
+//    }
+//  }
+//
+//  if (print_vars)
+//  {
+//    // Print the current values of all the optimisable parameters,
+//    // hopefully with correct formatting.
+//    app_log() << std::string(16, ' ') << "Parameter name" << std::string(15, ' ') << "Value\n";
+//    myVars.print(app_log());
+//  }
+//
+//  // The code below applies the initial rotation requested by the user.
+//  // This is basically doing the same as resetParameters, but that routine
+//  // is a bit too specialized for what we want to do here. So we just
+//  // rewrite the specific code we want, rather than calling that routine.
+//
+//  // Read out the parameters that define the rotation into an antisymmetric matrix
+//  std::vector<RealType> rot_mat(m_nlc * m_nlc, 0.0);
+//  for (int i = 0; i < m_act_rot_inds.size(); i++)
+//  {
+//    const int p            = m_act_rot_inds.at(i).first;
+//    const int q            = m_act_rot_inds.at(i).second;
+//    rot_mat[p + q * m_nlc] = myVars[i];
+//    rot_mat[q + p * m_nlc] = -myVars[i];
+//  }
+//  // Exponentiate antisymmetric matrix to get the unitary rotation.
+//  this->exponentiate_matrix(m_nlc, &rot_mat.at(0));
+//  // get the linear combination coefficients by applying the rotation to the old coefficients
+//  Phi->rotate_B(rot_mat);
 }
 
 } // namespace qmcplusplus

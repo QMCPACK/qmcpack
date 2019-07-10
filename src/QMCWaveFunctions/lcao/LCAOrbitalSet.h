@@ -87,7 +87,21 @@ public:
 
   /// create optimizable orbital rotation parameters
   void buildOptVariables(const std::vector<std::pair<int, int>>& rotations);
+// for the Single-Slater Case
+  void evaluateDerivatives(ParticleSet& P,
+                           const opt_variables_type& optvars,
+                           std::vector<ValueType>& dlogpsi,
+                           std::vector<ValueType>& dhpsioverpsi,
+                           const ValueType& psiCurrent,
+                           const ValueMatrix_t& M,
+                           const ValueMatrix_t& Minv,
+                           const ValueMatrix_t& Bbar,
+                           const int m_first_var_pos,
+                           const std::vector<std::pair<int, int>> m_act_rot_inds,
+                           const int m_nel,
+                           const int m_nmo);
 
+// for the Multi-Slater Case
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& optvars,
                            std::vector<ValueType>& dlogpsi,

@@ -507,6 +507,9 @@ void LCAOrbitalSet::evaluate_notranspose(const ParticleSet& P,
       evaluate_vgl_impl(Tempv, i, logdet, dlogdet, d2logdet);
     }
   }
+//app_log() << "VALUE M   PRINT \n"<< logdet << std::endl;
+//app_log() << "GRADIENT  PRINT \n"<< dlogdet << std::endl;
+//app_log() << "LAPLACIAN PRINT \n"<< d2logdet << std::endl;
 }
 
 void LCAOrbitalSet::evaluate_notranspose(const ParticleSet& P,
@@ -699,7 +702,76 @@ void LCAOrbitalSet::buildOptVariables(const std::vector<std::pair<int, int>>& ro
   }
 #endif
 }
+// Single-Slater Case
+void LCAOrbitalSet::evaluateDerivatives(ParticleSet& P,
+                                        const opt_variables_type& optvars,
+                                        std::vector<ValueType>& dlogpsi,
+                                        std::vector<ValueType>& dhpsioverpsi,
+                                        const ValueType& psiCurrent,
+                                        const ValueMatrix_t& M,
+                                        const ValueMatrix_t& Minv,
+                                        const ValueMatrix_t& Bbar,
+                                        const int m_first_var_pos,
+                                        const std::vector<std::pair<int, int>> m_act_rot_inds,
+                                        const int m_nel,
+                                        const int m_nmo)
+{
+#if !defined(QMC_COMPLEX)
+//  bool recalculate(false);
+//  for (int k = 0; k < myVars.size(); ++k)
+//  {
+//    int kk = myVars.where(k);
+//    if (kk < 0)
+//      continue;
+//    if (optvars.recompute(kk))
+//      recalculate = true;
+//  }
+//  if (recalculate)
+//  {
+//    app_log() << "CALCULAING DERIVATIVES\n";
+    const double* const A(M.data());  
+    const double* const Ainv(Minv.data());  
+    const double* const B(Bbar.data());  
+    SPOSet::ValueMatrix_t T;
+    SPOSet::ValueMatrix_t Y1;
+    SPOSet::ValueMatrix_t Y2;
+    SPOSet::ValueMatrix_t Y3;
+    SPOSet::ValueMatrix_t Y4;
+     T.resize(m_nel,m_nmo);
+    Y1.resize(m_nel,m_nel);
+    Y2.resize(m_nel,m_nmo);
+    Y3.resize(m_nel,m_nmo);
+    Y4.resize(m_nel,m_nmo);
 
+
+    BLAS::gemm('N','T', m_nmo, m_nel, m_nel, ValueType(1.0),        A, m_nmo, Ainv,      m_nel, ValueType(0.0),   T.data(), m_nmo);
+    BLAS::gemm('N','T', m_nel, m_nel, m_nel, ValueType(1.0),        B, m_nmo, Ainv,      m_nel, ValueType(0.0),  Y1.data(), m_nel);
+    BLAS::gemm('N','N', m_nmo, m_nel, m_nel, ValueType(1.0), T.data(), m_nmo, Y1.data(), m_nel, ValueType(0.0),  Y2.data(), m_nmo);
+    BLAS::gemm('N','T', m_nmo, m_nel, m_nel, ValueType(1.0),        B, m_nmo, Ainv,      m_nel, ValueType(0.0),  Y3.data(), m_nmo);
+
+    //possibly replace with BLAS call
+    Y4 = Y3 - Y2;
+
+    for (int mu = 0; mu < m_act_rot_inds.size(); mu++)
+    {
+      const int p = m_act_rot_inds.at(mu).first;
+      const int q = m_act_rot_inds.at(mu).second;
+      const int i(m_act_rot_inds[mu].first), j(m_act_rot_inds[mu].second);
+
+
+      dlogpsi.at(m_first_var_pos + mu)       = T(i,j);
+      dhpsioverpsi.at(m_first_var_pos + mu)  = ValueType(-0.5) * Y4(i,j);
+    }
+//    for (int mu = 0; mu < m_act_rot_inds.size(); mu++)
+//    {
+//      app_log() <<  "dlogpsi: " << dlogpsi.at(m_first_var_pos + mu) << std::endl;
+//      app_log() <<  "dhpsioverpsi: " <<dhpsioverpsi.at(m_first_var_pos + mu) << std::endl;
+//    }
+//  }
+#endif
+}
+
+// Multi-Slater Case
 void LCAOrbitalSet::evaluateDerivatives(ParticleSet& P,
                                         const opt_variables_type& optvars,
                                         std::vector<ValueType>& dlogpsi,
@@ -1087,7 +1159,13 @@ $
   //possibly replace wit BLAS calls
   for (int i = 0; i < nel; i++)
     for (int j = 0; j < nmo; j++)
-      Bbar(i, j) = B_lapl(i, j) + 2 * dot(myG_J[i + offset1], B_grad(i, j)) + myL_J[i + offset1] * M_up(i, j);
+    {  Bbar(i, j) = B_lapl(i, j) + 2 * dot(myG_J[i + offset1], B_grad(i, j)) + myL_J[i + offset1] * M_up(i, j);
+//       app_log() << "a "<<B_lapl(i, j) << std::endl
+//                 << "b "<<2 * dot(myG_J[i + offset1], B_grad(i, j)) << std::endl
+//                 << "c "<< myL_J[i + offset1] << std::endl 
+//                 << "d "<< M_up(i, j) << std::endl;
+    }
+
 
   const RealType* restrict B(Bbar.data());
   const RealType* restrict A(M_up.data());
@@ -1328,6 +1406,12 @@ $
            K2T(i, j) + K2T(j, i)) );
     }
   }
+//  for (int mu = 0, k = parameter_start_index; k < (parameter_start_index + parameters_size); k++, mu++)
+//  {
+//    int kk = myVars.where(k);
+//    app_log() << "dlogpsi: " << dlogpsi[kk] << std::endl; 
+//    app_log() << "dhpsioverpsi: " << dhpsioverpsi[kk] << std::endl; 
+//  }
 }
 #endif // !defined(QMC_COMPLEX)
 
