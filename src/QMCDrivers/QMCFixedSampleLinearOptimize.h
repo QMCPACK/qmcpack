@@ -87,6 +87,8 @@ private:
   //helper method for writing vectors for BLM steps in hybrid method
   void storeVectors(std::vector< Return_t >& paramsForDiff);
 
+  double setStepSize(int i);
+
   void solveShiftsWithoutLMYEngine(const std::vector<double>& shifts_i,
                                    const std::vector<double>& shiffts_s,
                                    std::vector<std::vector<RealType>>& parameterDirections);
@@ -253,6 +255,12 @@ private:
   int blmCount;
 
   int hybrid_descent_samples;
+
+  // flag and input string for printing lm matrices
+  bool print_lm_matrices;
+  std::string print_lm_matrices_str = "no";
+
+
   std::string on_reset;
   std::string retainMem;
   int startStepNum;

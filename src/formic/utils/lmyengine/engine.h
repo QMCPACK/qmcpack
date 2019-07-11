@@ -489,7 +489,7 @@ public:
   cqmc::engine::HamOvlpBuilderHD & matrixBuilder() {return _mbuilder;}
 
   cqmc::engine::LMBlocker & LMBlocker() {return _lmb;}
-
+  
   void setHybrid(std::string h,int n);
 
   void setHybridBLM_Input(std::vector< std::vector<double> > &from_descent);
