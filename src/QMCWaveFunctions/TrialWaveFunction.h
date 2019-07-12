@@ -197,6 +197,8 @@ public:
   /** functions to handle particle-by-particle update */
   RealType ratio(ParticleSet& P, int iat);
   ValueType full_ratio(ParticleSet& P, int iat);
+  /** calculate the ratio of the new to old TrialWaveFunction value, but only the fermionic part. */
+  RealType calcRatioFermionic(ParticleSet& P, int iat);
 
   /** compulte multiple ratios to handle non-local moves and other virtual moves
    */
