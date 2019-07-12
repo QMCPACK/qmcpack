@@ -294,7 +294,7 @@ Excited state test details
 ============================
 The tests include short and long VMC/DMC runs for a primitive cell of
 diamond with electron promotion at Gamma point. Reference data was
-generated using QMCPACK 3.7.9.
+generated using QMCPACK 3.0.1
 
 Reference data was generated with runs the same overall length
 (blocks x steps) as those included in ./qmc-ref, but using 10x more blocks
@@ -310,32 +310,31 @@ The factor of +1 accounts for the error bar intrinsic to the high block count ru
 Reference data from the high block count VMC/DMC runs is found below:
 
 # VMC reference
-                        LocalEnergy                 Variance                    ratio 
-qmc_ref_excited  series 0  -9.99718139 +/- 0.00002287   0.42078675 +/- 0.00156841   0.0421 
+                               LocalEnergy               Variance           ratio 
+qmc_ref_excited  series 0  -9.997214 +/- 0.000022   0.420124 +/- 0.000378   0.0420                         
 
 # DMC reference
-                                    LocalEnergy                  Variance                    ratio 
-qmc_ref_vmc_dmc_excited  series 1  -10.05678497 +/- 0.00029838   0.41115033 +/- 0.00047066   0.0409
+                                        LocalEnergy               Variance           ratio 
+qmc_ref_vmc_dmc_excited  series 1  -10.057283 +/- 0.000320   0.411110 +/- 0.000441   0.0409                                   
 
 
 Typical long run results:
 
 # VMC run
-                    LocalEnergy               Variance           ratio 
-long  series 0  -9.997131 +/- 0.000068   0.420037 +/- 0.000992   0.0420
-
-# DMC run
-                    LocalEnergy               Variance           ratio 
-long  series 1  -10.058716 +/- 0.001087   0.411296 +/- 0.001796   0.0409
+                    LocalEnergy               Variance           ratio
+long  series 0  -9.997288 +/- 0.000066   0.420501 +/- 0.000801   0.0421
+                    
+# DMC run                  
+                     LocalEnergy               Variance           ratio
+long  series 1  -10.057554 +/- 0.001018   0.412262 +/- 0.001642   0.0410
 
 
 Typical short run results:
 
 # VMC run
-                    LocalEnergy               Variance           ratio 
-short series 0  -9.996113 +/- 0.002231   0.428472 +/- 0.023229   0.0429
-
-# DMC run
-                      LocalEnergy               Variance           ratio 
-short  series 1  -10.057868 +/- 0.002098   0.413500 +/- 0.005174   0.0411 
-
+                     LocalEnergy               Variance           ratio
+short  series 0  -9.999504 +/- 0.002103   0.437863 +/- 0.017384   0.0438
+                   
+# DMC run                                             
+                      LocalEnergy               Variance           ratio
+short  series 1  -10.052409 +/- 0.003526   0.406104 +/- 0.003185   0.0404
