@@ -63,11 +63,14 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
 #ifdef ENABLE_OFFLOAD
   NLPP_algo = "batched"; // set "batched" as the default
 #endif
+  std::string useDLA("no");
   std::string pbc("yes");
   std::string forces("no");
+
   OhmmsAttributeSet pAttrib;
   pAttrib.add(ecpFormat, "format");
   pAttrib.add(NLPP_algo, "algorithm");
+  pAttrib.add(useDLA, "DLA");
   pAttrib.add(pbc, "pbc");
   pAttrib.add(forces, "forces");
   pAttrib.put(cur);
@@ -134,8 +137,12 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
       if (nonLocalPot[i])
       {
         nknot_max = std::max(nknot_max, nonLocalPot[i]->getNknot());
+        if (NLPP_algo == "batched" && useDLA == "yes")
+          myComm->barrier_and_abort("Batched pseudopotential evaluation has not been made available to DLA!");
         if (NLPP_algo == "batched")
           nonLocalPot[i]->initVirtualParticle(targetPtcl);
+        if (useDLA == "yes")
+          nonLocalPot[i]->enableDLA();
         apot->addComponent(i, nonLocalPot[i]);
       }
     }
