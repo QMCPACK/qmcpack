@@ -777,6 +777,11 @@ class StructuredGrid(Grid):
     #end def unit_points
 
 
+    def unit_metric(self,upoints=None):
+        return self.unit_metric_bare(upoints)
+    #end def unit_metric
+
+
     def cell_indices(self,points=None):
         upoints = self.unit_points(points)
         shape = np.array(self.cell_grid_shape,dtype=int)
@@ -921,6 +926,10 @@ class StructuredGrid(Grid):
     #end def points_from_unit
 
 
+    def unit_metric_bare(self,upoints):
+        self.not_implemented()
+    #end def unit_metric_bare
+
     def volume(self):
         self.not_implemented()
     #end def volume
@@ -929,7 +938,6 @@ class StructuredGrid(Grid):
     def cell_volumes(self):
         self.not_implemented()
     #end def cell_volumes
-
 #end class StructuredGrid
 
 
@@ -1089,6 +1097,16 @@ class ParallelotopeGrid(StructuredGridWithAxes):
     #end def points_from_unit
 
 
+    def unit_metric_bare(self,upoints):
+        if upoints is None:
+            upoints = self.unit_points()
+        #end if
+        umetric = np.zeros((len(upoints),),dtype=self.dtype)
+        umetric += self.volume()
+        return umetric
+    #end def unit_metric_bare
+
+
     def volume(self):
         return self.axes_volume()
     #end def volume
@@ -1192,6 +1210,27 @@ class SpheroidGrid(StructuredGridWithAxes):
     #end def points_from_unit
 
 
+    def unit_metric_bare(self,upoints):
+        if upoints is None:
+            upoints = self.unit_points()
+        else:
+            upoints = np.array(upoints,dtype=self.dtype)
+        #end if
+        dim = self.grid_dim
+        umetric = np.zeros((len(upoints),),dtype=self.dtype)
+        r = upoints[:,0]
+        if dim==2:
+            umetric += r # r
+        elif dim==3:
+            umetric += r**2*np.sin(np.pi*upoints[:,1]) # r^2 sin(theta)
+        else:
+            self.error('unit_metric not supported for dim={}'.format(dim))
+        #end if
+        umetric *= self.axes_volume()
+        return umetric
+    #end def unit_metric_bare
+
+
     def volume(self):
         vol_axes = self.axes_volume()
         if self.grid_dim==2:
@@ -1229,7 +1268,7 @@ class SpheroidGrid(StructuredGridWithAxes):
                 cv  = (uc[0]*uc[0]+du[0]*du[0]/12.0)*du[0] # r
                 cv *= 2.0*np.sin(uc[1])*np.sin(.5*du[1])   # theta
                 cv *= du[2]                                # phi
-                cell_vols[i] =  cv*vol_axes
+                cell_vols[i] = cv*vol_axes
             #end for
         else:
             self.error('cell_volumes not supported for dim={}'.format(dim))
@@ -1360,6 +1399,30 @@ class SpheroidSurfaceGrid(StructuredGridWithAxes):
     #end def points_from_unit
 
 
+    def unit_metric_bare(self,upoints):
+        if not self.isotropic:
+            self.error('unit_metric is not supported for anisotropic spheroid surface grids')
+        #end if
+        if upoints is None:
+            upoints = self.unit_points()
+        else:
+            upoints = np.array(upoints,dtype=self.dtype)
+        #end if
+        dim = self.grid_dim
+        umetric = np.zeros((len(upoints),),dtype=self.dtype)
+        r = self.radius()
+        if dim==1:
+            umetric += r
+        elif dim==2:
+            umetric += r**2*np.sin(np.pi*upoints[:,1]) # r^2 sin(theta)
+        else:
+            self.error('unit_metric not supported for dim={}'.format(dim))
+        #end if
+        umetric *= self.axes_volume()
+        return umetric
+    #end def unit_metric_bare
+
+
     def radius(self):
         if not self.isotropic:
             self.error('radius is not supported for anisotropic spheroid surface grids')
@@ -1407,7 +1470,7 @@ class SpheroidSurfaceGrid(StructuredGridWithAxes):
                 cv  = r**2                                # r
                 cv *= 2.0*np.sin(uc[0])*np.sin(.5*du[0])  # theta
                 cv *= du[1]                               # phi
-                cell_vols[i] =  cv
+                cell_vols[i] = cv
             #end for
         else:
             self.error('cell_volumes is not supported for dim={}'.format(dim))
