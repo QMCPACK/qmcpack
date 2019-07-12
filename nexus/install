@@ -42,7 +42,7 @@ def execute(command):
 parser = OptionParser(
         usage='usage: %prog [options]',
         add_help_option=False,
-        version='%prog 1.6'
+        version='%prog 1.8'
         )
 parser.add_option('-h','--help',dest='help',
                   action='store_true',default=False,
@@ -156,7 +156,7 @@ set_env_formats = dict(
     )
 set_env_fmt = set_env_formats[shell]
 
-header = '### added by Nexus 1.6.0 installer ###'
+header = '### added by Nexus 1.8.0 installer ###'
 footer = '### end Nexus additions ###'
 paths  = set_env_fmt.format('PATH',bin_dir+':$PATH')
 paths += set_env_fmt.format('PYTHONPATH',lib_dir+':$PYTHONPATH')
