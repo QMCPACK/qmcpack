@@ -203,9 +203,9 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
           // keep i<=j by default
           if(ivec[i] <= ivec[i]) {
               H1[ivec[2*i]][ivec[2*i+1]] = vvec[i]; 
-              H1[ivec[2*i+1]][ivec[2*i]] = conj(vvec[i]); 
+              H1[ivec[2*i+1]][ivec[2*i]] = ma::conj(vvec[i]); 
           } else {
-              H1[ivec[2*i]][ivec[2*i+1]] = conj(vvec[i]); 
+              H1[ivec[2*i]][ivec[2*i+1]] = ma::conj(vvec[i]); 
               H1[ivec[2*i+1]][ivec[2*i]] = vvec[i]; 
           }
         }
