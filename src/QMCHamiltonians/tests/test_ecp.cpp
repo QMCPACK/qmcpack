@@ -353,7 +353,7 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
     for (int nn = myTable.M[iat], iel = 0; nn < myTable.M[iat + 1]; nn++, iel++)
     {
       const RealType r(myTable.r(nn));
-      if (r > nlpp->Rmax)
+      if (r > nlpp->getRmax())
         continue;
       Value1 += nlpp->evaluateOne(elec, iat, psi, iel, r, myTable.dr(nn), 0, Txy);
     }
