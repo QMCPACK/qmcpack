@@ -100,16 +100,21 @@ void test_read_phmsd(boost::mpi3::communicator & world)
     std::string wfn_type;
     WALKER_TYPES walker_type = COLLINEAR;
     std::vector<PsiT_Matrix> PsiT_MO; // read_ph_wavefunction returns the full MO matrix
-    ph_excitations<int,ComplexType> abij = read_ph_wavefunction_hdf(dump,ndets_to_read,walker_type,
-                                                                    gTG.Node(),NMO,NAEA,NAEB,PsiT_MO,
-                                                                    wfn_type);
-    std::vector<int> buff(ndets_to_read*(NAEA+NAEB));
-    boost::multi::array_ref<int,2> occs(to_address(buff.data()), {ndets_to_read, NAEA+NAEB});
-    if(!dump.readEntry(buff, "occs"))
-      APP_ABORT("Error reading occs array.\n");
-    std::vector<ComplexType> ci_coeffs(ndets_to_read);
-    if(!dump.readEntry(ci_coeffs, "ci_coeffs"))
-      APP_ABORT("Error reading occs array.\n");
+    std::vector<int> occbuff;
+    std::vector<ComplexType> coeffs;
+    //ph_excitations<int,ComplexType> abij = read_ph_wavefunction_hdf(dump,ndets_to_read,walker_type,
+                                                                    //gTG.Node(),NMO,NAEA,NAEB,PsiT_MO,
+                                                                    //wfn_type);
+    read_ph_wavefunction_hdf(dump, coeffs, occbuff, ndets_to_read, walker_type, TGwfn.Node(), NMO, NAEA, NAEB, PsiT_MO, wfn_type);
+    boost::multi::array_ref<int,2> occs(to_address(occbuff.data()), {ndets_to_read,NAEA+NAEB});
+    ph_excitations<int,ComplexType> abij = build_ph_struct(coeffs, occs, ndets_to_read, TGwfn.Node(), NMO, NAEA, NAEB);
+    //std::vector<int> buff(ndets_to_read*(NAEA+NAEB));
+    //boost::multi::array_ref<int,2> occs(to_address(buff.data()), {ndets_to_read, NAEA+NAEB});
+    //if(!dump.readEntry(buff, "occs"))
+      //APP_ABORT("Error reading occs array.\n");
+    //std::vector<ComplexType> ci_coeffs(ndets_to_read);
+    //if(!dump.readEntry(ci_coeffs, "ci_coeffs"))
+      //APP_ABORT("Error reading occs array.\n");
     using std::get;
     auto cit = abij.configurations_begin();
     std::vector<int> configa(NAEA), configb(NAEB);
@@ -128,7 +133,7 @@ void test_read_phmsd(boost::mpi3::communicator & world)
       for(int i = 0; i < NAEB; i++) {
         REQUIRE(configb[i]==occs[nd][i+NAEA]+NMO);
       }
-      REQUIRE(std::abs(ci_coeffs[nd])==std::abs(ci));
+      REQUIRE(std::abs(coeffs[nd])==std::abs(ci));
     }
     // Check sign of permutation.
     REQUIRE(abij.number_of_configurations() == ndets_to_read);
