@@ -74,7 +74,12 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
   pAttrib.add(pbc, "pbc");
   pAttrib.add(forces, "forces");
   pAttrib.put(cur);
+
   bool doForces = (forces == "yes") || (forces == "true");
+  if (useDLA == "yes")
+    app_log() << "    Using determinant localization approximation (DLA)" << std::endl;
+  if (NLPP_algo == "batched" && useDLA == "yes")
+    myComm->barrier_and_abort("Batched pseudopotential evaluation has not been made available to DLA!");
   //const xmlChar* t=xmlGetProp(cur,(const xmlChar*)"format");
   //if(t != NULL) {
   //  ecpFormat= (const char*)t;
@@ -137,8 +142,6 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
       if (nonLocalPot[i])
       {
         nknot_max = std::max(nknot_max, nonLocalPot[i]->getNknot());
-        if (NLPP_algo == "batched" && useDLA == "yes")
-          myComm->barrier_and_abort("Batched pseudopotential evaluation has not been made available to DLA!");
         if (NLPP_algo == "batched")
           nonLocalPot[i]->initVirtualParticle(targetPtcl);
         if (useDLA == "yes")
