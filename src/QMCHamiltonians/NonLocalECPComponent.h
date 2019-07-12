@@ -225,7 +225,7 @@ public:
   inline int getLmax() const { return lmax; }
 
   // copy sgridxyz_m to rrotsgrid_m without rotation. For testing only.
-  inline void copyGridUnrotated() { rrotsgrid_m = sgridxyz_m; }
+  friend void copyGridUnrotatedForTest(NonLocalECPComponent& nlpp);
 
   friend class ECPComponentBuilder;
   // a lazy temporal solution

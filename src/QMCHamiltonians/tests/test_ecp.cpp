@@ -121,6 +121,11 @@ TEST_CASE("ReadFileBuffer_reopen", "[hamiltonian]")
   REQUIRE(buf.length > 14);
 }
 
+void copyGridUnrotatedForTest(NonLocalECPComponent& nlpp)
+{
+  nlpp.rrotsgrid_m = nlpp.sgridxyz_m;
+}
+
 TEST_CASE("Evaluate_ecp", "[hamiltonian]")
 {
   typedef QMCTraits::RealType RealType;
@@ -248,7 +253,7 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
   //This line is required because the randomized quadrature Lattice is set by
   //random number generator in NonLocalECPotential.  We take the unrotated
   //quadrature Lattice instead...
-  nlpp->copyGridUnrotated();
+  copyGridUnrotatedForTest(*nlpp);
 
 
   //Not testing nonlocal moves here, but the PP functions take this as an argument
