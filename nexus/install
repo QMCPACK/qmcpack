@@ -121,8 +121,8 @@ else:
         ksh  = ['.kshrc','.profile'],
         csh  = ['.cshrc','.login'],
         tcsh = ['.tcshrc','.cshrc','.login'],
-        bash = ['.bashrc','.bash_login','.bash_profile','.profile'],
-        zsh  = ['.zshrc','.zlogin','.zprofile','.zshenv'],
+        bash = ['.bash_profile','.bash_login','.bashrc','.profile'],
+        zsh  = ['.zprofile','.zlogin','.zshrc','.zshenv'],
         )
     if shell not in shell_rc_files:
         error('user shell "{0}" is not recognized'.format(shell))
