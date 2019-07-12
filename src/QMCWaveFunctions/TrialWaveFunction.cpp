@@ -84,17 +84,11 @@ void TrialWaveFunction::stopOptimization()
   }
 }
 
-/** add an ObritalBase
- * @param aterm an WaveFunctionComponent
- * @param aname  name of aterm
- * @param fermion if true, set aterm to FermionWF
- */
-void TrialWaveFunction::addOrbital(WaveFunctionComponent* aterm, const std::string& aname, bool fermion)
+void TrialWaveFunction::addComponent(WaveFunctionComponent* aterm, std::string aname)
 {
   Z.push_back(aterm);
-  aterm->IsFermionWF = fermion;
-  if (fermion)
-    app_log() << "  FermionWF = " << aname << std::endl;
+  if (aterm->IsFermionic)
+    app_log() << "  Added a fermionic WaveFunctionComponent " << aname << std::endl;
 
   std::vector<std::string> suffixes(7);
   suffixes[0] = "_V";
@@ -628,7 +622,7 @@ TrialWaveFunction* TrialWaveFunction::makeClone(ParticleSet& tqp) const
   myclone->BufferCursor        = BufferCursor;
   myclone->BufferCursor_scalar = BufferCursor_scalar;
   for (int i = 0; i < Z.size(); ++i)
-    myclone->addOrbital(Z[i]->makeClone(tqp), "dummy", Z[i]->IsFermionWF);
+    myclone->addComponent(Z[i]->makeClone(tqp), "dummy");
   myclone->OneOverM = OneOverM;
   return myclone;
 }

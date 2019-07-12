@@ -35,6 +35,7 @@ MultiSlaterDeterminant::MultiSlaterDeterminant(ParticleSet& targetPtcl, SPOSetPr
   registerTimers();
   //Optimizable=true;
   Optimizable   = false;
+  IsFermionic   = true;
   ClassName     = "MultiSlaterDeterminant";
   usingCSF      = false;
   FirstIndex_up = targetPtcl.first(0);

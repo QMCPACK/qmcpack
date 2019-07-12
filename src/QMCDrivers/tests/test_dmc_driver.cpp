@@ -89,7 +89,7 @@ TEST_CASE("DMC", "[drivers][dmc]")
 
   TrialWaveFunction psi = TrialWaveFunction(c);
   ConstantOrbital* orb  = new ConstantOrbital;
-  psi.addOrbital(orb, "Constant");
+  psi.addComponent(orb, "Constant");
   psi.registerData(elec, elec.WalkerList[0]->DataSet);
   elec.WalkerList[0]->DataSet.allocate();
 

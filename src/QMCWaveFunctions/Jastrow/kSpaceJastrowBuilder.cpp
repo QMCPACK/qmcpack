@@ -138,7 +138,7 @@ bool kSpaceJastrowBuilder::put(xmlNodePtr cur)
                                              spin2_opt == "yes");
   jastrow->setCoefficients(oneBodyCoefs, twoBodyCoefs);
   //jastrow->addOptimizables(targetPsi.VarList);
-  targetPsi.addOrbital(jastrow, "kSpace");
+  targetPsi.addComponent(jastrow, "kSpace");
   return true;
 }
 } // namespace qmcplusplus

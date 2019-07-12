@@ -111,16 +111,9 @@ struct WaveFunctionComponent : public QMCTraits
    * If true, this object is actively modified during optimization
    */
   bool Optimizable;
-  /** true, if FermionWF */
-  bool IsFermionWF;
-  /** true, if it is done with derivatives */
-  bool derivsDone;
-  /** true, if compute for the ratio instead of buffering */
-  bool Need2Compute4PbyP;
-  /** define the level of storage in derivative buffer **/
-  int DerivStorageType;
+  /** true, if this component is fermionic */
+  bool IsFermionic;
 
-  int parameterType;
   /** current update mode */
   int UpdateMode;
   /** current \f$\log\phi \f$

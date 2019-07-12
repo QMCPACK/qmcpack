@@ -23,6 +23,7 @@ namespace qmcplusplus
 SlaterDet::SlaterDet(ParticleSet& targetPtcl)
 {
   Optimizable = false;
+  IsFermionic = true;
   ClassName   = "SlaterDet";
 
   Last.resize(targetPtcl.groups());
