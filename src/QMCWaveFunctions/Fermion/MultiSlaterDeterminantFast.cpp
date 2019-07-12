@@ -42,7 +42,7 @@ MultiSlaterDeterminantFast::MultiSlaterDeterminantFast(ParticleSet& targetPtcl,
   registerTimers();
   //Optimizable=true;
   Optimizable   = false;
-  IsFermionic   = true;
+  is_fermionic  = true;
   ClassName     = "MultiSlaterDeterminantFast";
   usingCSF      = false;
   NP            = targetPtcl.getTotalNum();

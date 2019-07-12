@@ -87,7 +87,7 @@ void TrialWaveFunction::stopOptimization()
 void TrialWaveFunction::addComponent(WaveFunctionComponent* aterm, std::string aname)
 {
   Z.push_back(aterm);
-  if (aterm->IsFermionic)
+  if (aterm->is_fermionic)
     app_log() << "  Added a fermionic WaveFunctionComponent " << aname << std::endl;
 
   std::vector<std::string> suffixes(7);

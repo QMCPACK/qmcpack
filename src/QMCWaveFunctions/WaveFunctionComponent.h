@@ -112,7 +112,7 @@ struct WaveFunctionComponent : public QMCTraits
    */
   bool Optimizable;
   /** true, if this component is fermionic */
-  bool IsFermionic;
+  bool is_fermionic;
 
   /** current update mode */
   int UpdateMode;

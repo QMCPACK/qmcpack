@@ -23,7 +23,7 @@ namespace qmcplusplus
 WaveFunctionComponent::WaveFunctionComponent()
     : IsOptimizing(false),
       Optimizable(true),
-      IsFermionic(false),
+      is_fermionic(false),
       UpdateMode(ORB_WALKER),
       LogValue(1.0),
       PhaseValue(0.0),

@@ -34,7 +34,7 @@ DiracDeterminantWithBackflow::DiracDeterminantWithBackflow(ParticleSet& ptcl,
     : DiracDeterminantBase(spos, first)
 {
   Optimizable = true;
-  IsFermionic = true;
+  is_fermionic = true;
   ClassName   = "DiracDeterminantWithBackflow";
   registerTimers();
   BFTrans      = BF;

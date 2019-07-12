@@ -44,7 +44,7 @@ public:
         SPOVGLTimer("DiracDeterminantBase::spovgl", timer_level_fine)
   {
     Optimizable = Phi->Optimizable;
-    IsFermionic = true;
+    is_fermionic = true;
     ClassName   = "DiracDeterminantBase";
     registerTimers();
   }
