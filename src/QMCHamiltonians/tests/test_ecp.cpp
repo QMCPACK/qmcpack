@@ -248,7 +248,7 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
   //This line is required because the randomized quadrature Lattice is set by
   //random number generator in NonLocalECPotential.  We take the unrotated
   //quadrature Lattice instead...
-  nlpp->rrotsgrid_m = nlpp->sgridxyz_m;
+  nlpp->copyGridUnrotated();
 
 
   //Not testing nonlocal moves here, but the PP functions take this as an argument
@@ -284,7 +284,7 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
     const auto& dist  = myTable.Distances[jel];
     const auto& displ = myTable.Displacements[jel];
     for (int iat = 0; iat < ions.getTotalNum(); iat++)
-      if (nlpp != nullptr && dist[iat] < nlpp->Rmax)
+      if (nlpp != nullptr && dist[iat] < nlpp->getRmax())
       {
         Value1 += nlpp->evaluateOne(elec, iat, psi, jel, dist[iat], RealType(-1) * displ[iat], 0, Txy);
 
