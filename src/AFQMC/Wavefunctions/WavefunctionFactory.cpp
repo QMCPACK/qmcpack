@@ -749,7 +749,7 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop, TaskGroup_& TGwfn
     boost::multi::array_ref<int,2> occs(to_address(occbuff.data()), {ndets_to_read,NAEA+NAEB});
     // 2. Compute Variational Energy / update coefficients
     if(TGwfn.Global().rank() == 0) {
-      computeVariationalEnergyPHMSD(h, occs, coeffs, ndets_to_read, NAEA, NAEB, recomputeCI);
+      computeVariationalEnergyPHMSD(h, occs, coeffs, ndets_to_read, NAEA, NAEB, NMO, recomputeCI);
     }
     // 3. Construct Structures.
     ph_excitations<int,ComplexType> abij = build_ph_struct(coeffs, occs, ndets_to_read, TGwfn.Node(), NMO, NAEA, NAEB);
@@ -952,7 +952,7 @@ void WavefunctionFactory::getInitialGuess(hdf_archive& dump, std::string& name, 
 
 
 
-void WavefunctionFactory::computeVariationalEnergyPHMSD(Hamiltonian& ham, boost::multi::array_ref<int,2>& occs, std::vector<ComplexType>& coeff, int ndets, int NAEA, int NAEB, bool recomputeCI)
+void WavefunctionFactory::computeVariationalEnergyPHMSD(Hamiltonian& ham, boost::multi::array_ref<int,2>& occs, std::vector<ComplexType>& coeff, int ndets, int NAEA, int NAEB, int NMO, bool recomputeCI)
 {
   boost::multi::array<ComplexType,2> H({ndets,ndets});
   ComplexType numer = ComplexType(0.0);
@@ -963,24 +963,24 @@ void WavefunctionFactory::computeVariationalEnergyPHMSD(Hamiltonian& ham, boost:
     std::vector<int> deti;
     boost::multi::array_ref<int,1> occai(occs[idet].origin(), {NAEA});
     boost::multi::array_ref<int,1> occbi(occs[idet].origin()+NAEA, {NAEB});
-    createDeterminant(idet, occai, occbi, deti);
+    createDeterminant(idet, occai, occbi, deti, NMO);
     ComplexType cidet = coeff[idet];
     for(int jdet = 0; jdet < ndets; jdet++) {
       boost::multi::array_ref<int,1> occaj(occs[jdet].origin(), {NAEA});
       boost::multi::array_ref<int,1> occbj(occs[jdet].origin()+NAEA, {NAEB});
       std::vector<int> detj;
       ComplexType cjdet = coeff[jdet];
-      createDeterminant(idet, occaj, occbj, detj);
+      createDeterminant(idet, occaj, occbj, detj, NMO);
       int perm = 1;
       std::vector<int> excit;
       int nexcit = getExcitation(deti, detj, excit, perm);
       // Compute <Di|H|Dj>
       if(nexcit == 0) {
-        H[idet][jdet] = ComplexType(perm)*(slaterCondon0(ham, detj) + ENuc);
+        H[idet][jdet] = ComplexType(perm)*(slaterCondon0(ham, detj, NMO) + ENuc);
       } else if(nexcit == 1) {
-        H[idet][jdet] = ComplexType(perm)*slaterCondon1(ham, excit, detj);
+        H[idet][jdet] = ComplexType(perm)*slaterCondon1(ham, excit, detj, NMO);
       } else if(nexcit == 2) {
-        H[idet][jdet] = ComplexType(perm)*slaterCondon2(ham, excit);
+        H[idet][jdet] = ComplexType(perm)*slaterCondon2(ham, excit, NMO);
       } else {
         H[idet][jdet] = ComplexType(0.0);
       }
@@ -1040,14 +1040,14 @@ int WavefunctionFactory::getExcitation(std::vector<int>& deti, std::vector<int>&
     for(auto o : from_orb) {
       auto it = std::find(detj.begin(), detj.end(), o);
       int loc = std::distance(detj.begin(), it);
-      nperm += detj.size() - loc - 1 + nmove;
+      nperm += loc - nmove;
       nmove += 1;
     }
     nmove = 0;
     for(auto o : to_orb) {
       auto it = std::find(deti.begin(), deti.end(), o);
       int loc = std::distance(deti.begin(), it);
-      nperm += deti.size() - loc - 1 + nmove;
+      nperm += loc - nmove;
       nmove += 1;
     }
     perm = nperm%2 == 1 ? -1 : 1;
@@ -1055,22 +1055,22 @@ int WavefunctionFactory::getExcitation(std::vector<int>& deti, std::vector<int>&
   return nexcit;
 }
 
-int WavefunctionFactory::decodeSpinOrbital(int spinOrb, int& spin)
+int WavefunctionFactory::decodeSpinOrbital(int spinOrb, int& spin, int NMO)
 {
-  spin = spinOrb%2==0 ? 0 : 1;
-  return spin ? (spinOrb-1) / 2 : spinOrb / 2;
+  spin = spinOrb/NMO ==0 ? 0 : 1;
+  return spin ? spinOrb-NMO : spinOrb;
 }
 
-ComplexType WavefunctionFactory::slaterCondon0(Hamiltonian& ham, std::vector<int>& det)
+ComplexType WavefunctionFactory::slaterCondon0(Hamiltonian& ham, std::vector<int>& det, int NMO)
 {
   ComplexType oneBody = ComplexType(0.0), twoBody = ComplexType(0.0);
   auto H1 = ham.getH1();
   int spini, spinj;
   for(auto i : det) {
-    int oi = decodeSpinOrbital(i, spini);
+    int oi = decodeSpinOrbital(i, spini, NMO);
     oneBody += H1[oi][oi];
     for(auto j : det) {
-      int oj = decodeSpinOrbital(j, spinj);
+      int oj = decodeSpinOrbital(j, spinj, NMO);
       twoBody += ham.H(oi,oj,oi,oj);
       if(spini == spinj) twoBody -= ham.H(oi,oj,oj,oi);
     }
@@ -1078,17 +1078,17 @@ ComplexType WavefunctionFactory::slaterCondon0(Hamiltonian& ham, std::vector<int
   return oneBody + 0.5 * twoBody;
 }
 
-ComplexType WavefunctionFactory::slaterCondon1(Hamiltonian& ham, std::vector<int>& excit, std::vector<int>& det)
+ComplexType WavefunctionFactory::slaterCondon1(Hamiltonian& ham, std::vector<int>& excit, std::vector<int>& det, int NMO)
 {
   int spini, spina;
-  int oi = decodeSpinOrbital(excit[0], spini);
-  int oa = decodeSpinOrbital(excit[1], spina);
+  int oi = decodeSpinOrbital(excit[0], spini, NMO);
+  int oa = decodeSpinOrbital(excit[1], spina, NMO);
   auto H1 = ham.getH1();
   ComplexType oneBody = H1[oi][oa];
   ComplexType twoBody = ComplexType(0.0);
   for(auto j : det) {
     int spinj;
-    int oj = decodeSpinOrbital(j, spinj);
+    int oj = decodeSpinOrbital(j, spinj, NMO);
     if(j != excit[0]) {
       twoBody += ham.H(oi,oj,oa,oj);
       if(spini == spinj)
@@ -1098,14 +1098,14 @@ ComplexType WavefunctionFactory::slaterCondon1(Hamiltonian& ham, std::vector<int
   return oneBody + twoBody;
 }
 
-ComplexType WavefunctionFactory::slaterCondon2(Hamiltonian& ham, std::vector<int>& excit)
+ComplexType WavefunctionFactory::slaterCondon2(Hamiltonian& ham, std::vector<int>& excit, int NMO)
 {
   ComplexType twoBody = ComplexType(0.0);
   int spini, spinj, spina, spinb;
-  int oi = decodeSpinOrbital(excit[0], spini);
-  int oj = decodeSpinOrbital(excit[1], spinj);
-  int oa = decodeSpinOrbital(excit[2], spina);
-  int ob = decodeSpinOrbital(excit[3], spinb);
+  int oi = decodeSpinOrbital(excit[0], spini, NMO);
+  int oj = decodeSpinOrbital(excit[1], spinj, NMO);
+  int oa = decodeSpinOrbital(excit[2], spina, NMO);
+  int ob = decodeSpinOrbital(excit[3], spinb, NMO);
   if(spini == spina)
     twoBody = ham.H(oi,oj,oa,ob);
   if(spini == spinb)
@@ -1113,27 +1113,27 @@ ComplexType WavefunctionFactory::slaterCondon2(Hamiltonian& ham, std::vector<int
   return twoBody;
 }
 
-void WavefunctionFactory::createDeterminant(int idet, boost::multi::array_ref<int,1>& occa, boost::multi::array_ref<int,1>& occb, std::vector<int>& det)
+void WavefunctionFactory::createDeterminant(int idet, boost::multi::array_ref<int,1>& occa, boost::multi::array_ref<int,1>& occb, std::vector<int>& det, int NMO)
 {
   for(auto i : occa)
-    det.push_back(2*i);
+    det.push_back(i);
   for(auto i : occb)
-    det.push_back(2*i+1);
+    det.push_back(i+NMO);
   std::sort(det.begin(), det.end());
 }
 
-ComplexType WavefunctionFactory::contractOneBody(std::vector<int>& det, std::vector<int>& excit, boost::multi::array_ref<ComplexType,2>& HSPot)
+ComplexType WavefunctionFactory::contractOneBody(std::vector<int>& det, std::vector<int>& excit, boost::multi::array_ref<ComplexType,2>& HSPot, int NMO)
 {
   ComplexType oneBody = ComplexType(0.0);
   int spini, spina;
   if(excit.size()==0) {
     for(auto i : det) {
-      int oi = decodeSpinOrbital(i, spini);
+      int oi = decodeSpinOrbital(i, spini, NMO);
       oneBody += HSPot[oi][oi];
     }
   } else {
-    int oi = decodeSpinOrbital(excit[0], spini);
-    int oa = decodeSpinOrbital(excit[1], spina);
+    int oi = decodeSpinOrbital(excit[0], spini, NMO);
+    int oa = decodeSpinOrbital(excit[1], spina, NMO);
     oneBody = HSPot[oi][oa];
   }
   return oneBody;
