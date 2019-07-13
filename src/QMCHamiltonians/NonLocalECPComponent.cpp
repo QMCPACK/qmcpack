@@ -142,7 +142,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOne(ParticleSet& W,
       deltaV[j] = r * rrotsgrid_m[j] - dr;
       W.makeMove(iel, deltaV[j]);
       if(useDLA)
-        psiratio[j] = psi.calcRatioFermionic(W, iel) * sgridweight_m[j];
+        psiratio[j] = psi.calcRatio(W, iel, TrialWaveFunction::ComputeType::FERMIONIC) * sgridweight_m[j];
       else
         psiratio[j] = psi.ratio(W, iel) * sgridweight_m[j];
 #if defined(QMC_COMPLEX)

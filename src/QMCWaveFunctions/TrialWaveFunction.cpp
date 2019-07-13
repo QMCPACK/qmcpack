@@ -333,7 +333,7 @@ TrialWaveFunction::ValueType TrialWaveFunction::full_ratio(ParticleSet& P, int i
   return r;
 }
 
-TrialWaveFunction::RealType TrialWaveFunction::calcRatioFermionic(ParticleSet& P, int iat)
+TrialWaveFunction::RealType TrialWaveFunction::calcRatio(ParticleSet& P, int iat, ComputeType ct)
 {
   ValueType r(1.0);
   std::vector<WaveFunctionComponent*>::iterator it(Z.begin());
@@ -341,7 +341,7 @@ TrialWaveFunction::RealType TrialWaveFunction::calcRatioFermionic(ParticleSet& P
   for (int ii = V_TIMER; it != it_end; ++it, ii += TIMER_SKIP)
   {
     myTimers[ii]->start();
-    if((*it)->is_fermionic)
+    if (ct == ComputeType::ALL || ((*it)->is_fermionic && ct == ComputeType::FERMIONIC) || (!(*it)->is_fermionic && ct == ComputeType::NONFERMIONIC))
       r *= (*it)->ratio(P, iat);
     myTimers[ii]->stop();
   }

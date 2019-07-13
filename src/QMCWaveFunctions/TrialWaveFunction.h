@@ -119,6 +119,9 @@ public:
   typedef ParticleSet::Walker_t Walker_t;
 #endif
 
+  /// enum type for computing partial WaveFunctionComponents
+  enum class ComputeType { ALL, FERMIONIC, NONFERMIONIC};
+
   ///differential gradients
   ParticleSet::ParticleGradient_t G;
   ///differential laplacians
@@ -198,7 +201,7 @@ public:
   RealType ratio(ParticleSet& P, int iat);
   ValueType full_ratio(ParticleSet& P, int iat);
   /** calculate the ratio of the new to old TrialWaveFunction value, but only the fermionic part. */
-  RealType calcRatioFermionic(ParticleSet& P, int iat);
+  RealType calcRatio(ParticleSet& P, int iat, ComputeType ct = ComputeType::ALL);
 
   /** compulte multiple ratios to handle non-local moves and other virtual moves
    */
