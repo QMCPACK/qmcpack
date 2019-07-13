@@ -9,7 +9,9 @@
 #// File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 #//////////////////////////////////////////////////////////////////////////////////////
 
-MESSAGE("Adding test test_sharedwset")
+IF ( QMC_VERBOSE_TEST_CONFIGURATION )
+    MESSAGE("Adding test test_sharedwset")
+ENDIF()
 
 SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
 

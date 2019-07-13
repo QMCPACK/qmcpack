@@ -39,9 +39,13 @@ IF (NOT QMC_CUDA)
 
 
  ELSE()
-    MESSAGE("Skipping LiH_dimer_ae tests because gaussian basis sets are not supported by complex build (QMC_COMPLEX=1)")
+    IF ( QMC_VERBOSE_TEST_CONFIGURATION )
+        MESSAGE("Skipping LiH_dimer_ae tests because gaussian basis sets are not supported by complex build (QMC_COMPLEX=1)")
+    ENDIF()
  ENDIF()
 ELSE()
-    MESSAGE("Skipping LiH_dimer_ae tests because gaussian basis sets are not supported by CUDA build (QMC_CUDA=1)")
+    IF ( QMC_VERBOSE_TEST_CONFIGURATION )
+        MESSAGE("Skipping LiH_dimer_ae tests because gaussian basis sets are not supported by CUDA build (QMC_CUDA=1)")
+    ENDIF()
 ENDIF()
 

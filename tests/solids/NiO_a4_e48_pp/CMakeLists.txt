@@ -1,5 +1,7 @@
 IF (NOT QMC_DATA)
-  MESSAGE("QMC_DATA not set. NiO_a4_e48_pp tests not added.")
+  IF ( QMC_VERBOSE_TEST_CONFIGURATION )
+      MESSAGE("QMC_DATA not set. NiO_a4_e48_pp tests not added.")
+  ENDIF()
 ELSEIF(NOT EXISTS ${QMC_DATA}/NiO)
   MESSAGE("NiO directory under QMC_DATA does not exist. NiO_a4_e48_pp tests not added.")
 ELSE()

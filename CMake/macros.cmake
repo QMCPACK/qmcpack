@@ -102,7 +102,9 @@ FUNCTION( RUN_QMC_APP_NO_COPY TESTNAME WORKDIR PROCS THREADS TEST_ADDED TEST_LAB
     SET( TEST_ADDED_TEMP FALSE )
     IF ( USE_MPI )
         IF ( ${TOT_PROCS} GREATER ${TEST_MAX_PROCS} )
-            MESSAGE("Disabling test ${TESTNAME} (exceeds maximum number of processors ${TEST_MAX_PROCS})")
+            IF ( QMC_VERBOSE_TEST_CONFIGURATION )
+                MESSAGE("Disabling test ${TESTNAME} (exceeds maximum number of processors ${TEST_MAX_PROCS})")
+             ENDIF()
         ELSEIF ( USE_MPI )
             ADD_TEST( ${TESTNAME} ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${PROCS} ${QMC_APP} ${ARGN} )
             SET_TESTS_PROPERTIES( ${TESTNAME} PROPERTIES FAIL_REGULAR_EXPRESSION "${TEST_FAIL_REGULAR_EXPRESSION}" 
@@ -118,7 +120,9 @@ FUNCTION( RUN_QMC_APP_NO_COPY TESTNAME WORKDIR PROCS THREADS TEST_ADDED TEST_LAB
                 ENVIRONMENT OMP_NUM_THREADS=${THREADS} )
             SET( TEST_ADDED_TEMP TRUE )
         ELSE()
-            MESSAGE("Disabling test ${TESTNAME} (building without MPI)")
+            IF ( QMC_VERBOSE_TEST_CONFIGURATION )
+                 MESSAGE("Disabling test ${TESTNAME} (building without MPI)")
+            ENDIF()
         ENDIF()
     ENDIF()
     SET(TEST_LABELS_TEMP "")
@@ -170,7 +174,9 @@ FUNCTION(QMC_RUN_AND_CHECK BASE_NAME BASE_DIR PREFIX INPUT_FILE PROCS THREADS SH
     SET( TEST_ADDED FALSE )
     SET( TEST_LABELS "")
     SET( FULL_NAME "${BASE_NAME}-${PROCS}-${THREADS}" )
-    MESSAGE("Adding test ${FULL_NAME}")
+    IF ( QMC_VERBOSE_TEST_CONFIGURATION )
+        MESSAGE("Adding test ${FULL_NAME}")
+    ENDIF()
     RUN_QMC_APP(${FULL_NAME} ${BASE_DIR} ${PROCS} ${THREADS} TEST_ADDED TEST_LABELS ${INPUT_FILE})
     IF ( TEST_ADDED )
         SET_PROPERTY(TEST ${FULL_NAME} APPEND PROPERTY LABELS "QMCPACK")
@@ -244,7 +250,9 @@ function(SIMPLE_RUN_AND_CHECK base_name base_dir input_file procs threads check_
 
   # build test name
   set(full_name "${base_name}-${procs}-${threads}")
-  message("Adding test ${full_name}")
+  IF ( QMC_VERBOSE_TEST_CONFIGURATION )
+       MESSAGE("Adding test ${full_name}")
+  ENDIF()
 
   # add run (task 1)
   set (test_added false)

@@ -5,7 +5,9 @@
 # QMC_DATA - NiO subdirectory should contain the *.h5 files
 
 FUNCTION(ADD_NIO_TEST TEST_NAME TEST_DIR TEST_SOURCE_DIR INPUT_FILE H5_FILE ADJUST_INPUT)
-  MESSAGE("Adding test ${TEST_NAME}")
+  IF ( QMC_VERBOSE_TEST_CONFIGURATION )
+      MESSAGE("Adding test ${TEST_NAME}")
+  ENDIF()
   SET (WDIR "${qmcpack_BINARY_DIR}/tests/performance/NiO/${TEST_DIR}")
   SET (SDIR "${CMAKE_SOURCE_DIR}/tests/performance/NiO/sample/${TEST_SOURCE_DIR}")
 
@@ -53,7 +55,9 @@ FUNCTION(ADD_NIO_TEST TEST_NAME TEST_DIR TEST_SOURCE_DIR INPUT_FILE H5_FILE ADJU
 ENDFUNCTION()
 
 IF (NOT QMC_DATA)
-  MESSAGE("QMC_DATA not set. Performance tests not added.")
+  IF ( QMC_VERBOSE_TEST_CONFIGURATION )
+      MESSAGE("QMC_DATA not set. Performance tests not added.")
+  ENDIF()
 ELSEIF(NOT EXISTS ${QMC_DATA}/NiO)
   MESSAGE("NiO directory under QMC_DATA does not exist. NiO performance tests not added.")
 ELSE()
