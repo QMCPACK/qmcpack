@@ -46,8 +46,8 @@ class OneBodyHamiltonian: public AFQMCInfo
     if( (I>=NMO && J<NMO) || (I<NMO && J>=NMO) ) return ValueType(0);
     I = (I>=NMO)?(I-NMO):(I);
     J = (J>=NMO)?(J-NMO):(J);
-    return ValueType(0.0); 
-    //return H1[I][J];
+    //return ValueType(0.0);
+    return H1[I][J];
   }
 
   ValueType getNuclearCoulombEnergy() const { return NuclearCoulombEnergy; }
