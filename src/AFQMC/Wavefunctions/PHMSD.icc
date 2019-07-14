@@ -241,9 +241,6 @@ namespace afqmc
             for(int iw=0; iw<nwalk; ++iw) { 
               wgt[iw] *= Ovmsd[0][nd][iw];  
               Ov[iw] += wgt[iw];
-              if(iw == 0) {
-                std::cout << "ovlp : " << nd << " " << Ov[iw] << std::endl;
-              }
             }
           } else {
             for(; it<ite; ++it) {
@@ -260,28 +257,19 @@ namespace afqmc
             E[iw][0] += wgt[iw]*Emsd[spin][nd][iw][0]/2.0;
             E[iw][1] += wgt[iw]*Emsd[spin][nd][iw][1]/2.0;
             E[iw][2] += wgt[iw]*Emsd[spin][nd][iw][2]/4.0;
-          }  
+          }
         } //nd%TG.TG_local().size()==TG.TG_local().rank()
       }  //nex
     }  // spin
 
-    // 3. reduce over TG_local 
+    // 3. reduce over TG_local
     TG.TG_local().all_reduce_in_place_n(to_address(opSpinEJ.origin()),nwalk,std::plus<>());
     TG.TG_local().all_reduce_in_place_n(to_address(Ov.origin()),nwalk,std::plus<>());
     TG.TG_local().all_reduce_in_place_n(to_address(E.origin()),3*nwalk,std::plus<>());
-    for(int i =0; i< NMO; i++) {
-      for(int j =0; j<NAEA; j++) {
-        std::cout << real(wset[0].SlaterMatrix(Alpha)[i][j]) << "+" << imag(wset[0].SlaterMatrix(Alpha)[i][j])<< "j" << std::endl;;
-      }
-    }
-    for(int i=0; i<nwalk; ++i) { 
-      E[i][0] /= Ov[i];   
-      // Doest not equal walkers overlap.
-      std::setprecision(16);
-      std::cout << "KE: " << E[i][0] << " " << Ov[i] << " " << *wset[i].overlap() << std::endl;
-      E[i][1] /= Ov[i];  
-      E[i][2] = (E[i][2] + opSpinEJ[i])/Ov[i];  
-      std::cout << "KE: " << E[i][0]+E[i][1]+E[i][2] << " " << E[i][0] << " " << E[i][1]+E[i][2] << std::endl;
+    for(int i=0; i<nwalk; ++i) {
+      E[i][0] /= Ov[i];
+      E[i][1] /= Ov[i];
+      E[i][2] = (E[i][2] + opSpinEJ[i])/Ov[i];
     }
     TG.local_barrier();
   }
@@ -1199,11 +1187,11 @@ namespace afqmc
       //ComplexType numer = ComplexType(0.0);
       //ComplexType denom = ComplexType(0.0);
       //for(int idet = 0; idet < ndets; idet++) {
-        //std::vector<int> deti;
+        //std::vector<int> deti(NAEA+NAEB);
         //createDeterminant(idet, deti);
         //ComplexType cidet = std::get<2>(*(cnfg_it+idet));
         //for(int jdet = 0; jdet < ndets; jdet++) {
-          //std::vector<int> detj;
+          //std::vector<int> detj(NAEA,NAEB);
           //ComplexType cjdet = std::get<2>(*(cnfg_it+jdet));
           //createDeterminant(jdet, detj);
           //int perm = 1;
@@ -1216,23 +1204,23 @@ namespace afqmc
         //}
         //denom += ma::conj(cidet)*cidet;
       //}
-      ////v[i] = numer/denom;
+      //v[i] = numer/denom;
     //}
-    //v[0] = ComplexType(3.77067,0);
-    //v[1] = ComplexType(0.97554,0);
-    //v[2] = ComplexType(-0.00015012,0);
-    //v[3] = ComplexType(0,0);
-    //v[4] = ComplexType(0,0);
-    //v[5] = ComplexType(0.284816,0);
-    //v[6] = ComplexType(0.173791,0);
-    //v[7] = ComplexType(0,0);
-    //v[8] = ComplexType(0,0);
-    //v[9] = ComplexType(0,0);
-    //v[10] = ComplexType(-0.000181944,0);
-    //v[11] = ComplexType(0,0);
-    //v[12] = ComplexType(0,0);
-    //v[13] = ComplexType(-0.0765616,0);
-    //v[14] = ComplexType(0.00838208,0);
+    ////v[0] = ComplexType(3.77067,0);
+    ////v[1] = ComplexType(0.97554,0);
+    ////v[2] = ComplexType(-0.00015012,0);
+    ////v[3] = ComplexType(0,0);
+    ////v[4] = ComplexType(0,0);
+    ////v[5] = ComplexType(0.284816,0);
+    ////v[6] = ComplexType(0.173791,0);
+    ////v[7] = ComplexType(0,0);
+    ////v[8] = ComplexType(0,0);
+    ////v[9] = ComplexType(0,0);
+    ////v[10] = ComplexType(-0.000181944,0);
+    ////v[11] = ComplexType(0,0);
+    ////v[12] = ComplexType(0,0);
+    ////v[13] = ComplexType(-0.0765616,0);
+    ////v[14] = ComplexType(0.00838208,0);
   //}
 
 
