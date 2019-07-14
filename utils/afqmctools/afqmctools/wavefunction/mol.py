@@ -198,7 +198,7 @@ def write_phmsd(fh5, occa, occb, nelec, norb, init=None, orbmat=None):
         fh5['type'] = numpy.string_(['occ'])
     occs = numpy.zeros((len(occa), na+nb), dtype=numpy.int32)
     occs[:,:na] = numpy.array(occa)
-    occs[:,na:] = numpy.array(occb)
+    occs[:,na:] = norb+numpy.array(occb)
     # Reading 1D array currently in qmcpack.
     fh5['occs'] = occs.ravel()
 
