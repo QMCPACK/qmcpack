@@ -131,7 +131,7 @@ void test_read_phmsd(boost::mpi3::communicator & world)
         REQUIRE(configa[i]==occs[nd][i]);
       }
       for(int i = 0; i < NAEB; i++) {
-        REQUIRE(configb[i]==occs[nd][i+NAEA]+NMO);
+        REQUIRE(configb[i]==occs[nd][i+NAEA]);
       }
       REQUIRE(std::abs(coeffs[nd])==std::abs(ci));
     }
@@ -471,13 +471,15 @@ void test_phmsd(boost::mpi3::communicator& world)
       boost::multi::array_ref<int,1> oa(occs[idet].origin(), {NAEA});
       getSlaterMatrix(TrialA, oa, NAEA);
       boost::multi::array_ref<int,1> ob(occs[idet].origin()+NAEA, {NAEB});
+      for(int i = 0; i < NAEB; i++)
+        ob[i] -= NMO;
       getSlaterMatrix(TrialB, ob, NAEB);
       ComplexType ovlpa = sdet->Overlap(TrialA, wset[0].SlaterMatrix(Alpha), logovlp);
       ComplexType ovlpb = sdet->Overlap(TrialB, wset[0].SlaterMatrix(Beta), logovlp);
       ovlp_sum += ma::conj(coeffs[idet])*ovlpa*ovlpb;
     }
     wfn.Overlap(wset);
-    std::cout.precision(16);
+    //std::cout.precision(16);
     for(auto it = wset.begin(); it!=wset.end(); ++it) {
       REQUIRE(real(*it->overlap()) == Approx(real(ovlp_sum)));
       REQUIRE(imag(*it->overlap()) == Approx(imag(ovlp_sum)));
