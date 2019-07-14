@@ -477,6 +477,7 @@ void test_phmsd(boost::mpi3::communicator& world)
       ComplexType ovlpa = sdet->Overlap(TrialA, wset[0].SlaterMatrix(Alpha), logovlp);
       ComplexType ovlpb = sdet->Overlap(TrialB, wset[0].SlaterMatrix(Beta), logovlp);
       ovlp_sum += ma::conj(coeffs[idet])*ovlpa*ovlpb;
+      // Add energy evaluation
     }
     wfn.Overlap(wset);
     //std::cout.precision(16);
