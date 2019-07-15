@@ -41,7 +41,7 @@ installed, QMCPACK can be built and run within five minutes. For
 supercomputers, cross-compilation systems, and other computer clusters,
 the build system might require hints on the locations of libraries and
 which versions to use, typical of any code; see Chapter
-\ref{chap:obtaininginstalling}. Section \ref{sec:installexamples}
+\ref{chap:obtaininginstalling}. Section~\ref{sec:installexamples}
 includes complete examples of installations for common workstations and supercomputers that you can reuse.
 
 To build QMCPACK:
@@ -86,7 +86,7 @@ H2O.s001.stat.h5    H2O.s002.dmc.dat    H2O.s002.scalar.dat
 
 If you have Python and matplotlib installed, you can use the
 \ishell{qmca} analysis utility to produce statistics and plots of the
-data. See Chapter \ref{chap:analyzing} for information on analyzing
+data. See Chapter~\ref{chap:analyzing} for information on analyzing
 QMCPACK data.
 \begin{verbatim}
 export PATH=$PATH:location-of-qmcpack/nexus/bin 
@@ -96,7 +96,7 @@ qmca -t -q e H2O.s002.scalar.dat # Graphical plot of DMC energy
 \end{verbatim}
 
 The last command will produce a graph as per
-Fig. \ref{fig:quick_qmca_dmc_trace}. This shows the average energy of
+Fig.~\ref{fig:quick_qmca_dmc_trace}. This shows the average energy of
 the DMC walkers at each timestep. In a real simulation we would have
 to check equilibration, convergence with walker population, time step, etc.
 

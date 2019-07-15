@@ -15,3 +15,8 @@
    is memory owning. 
 
 
+-- new strategy for observables
+1. Let the estimator do all the implementation of walker averaged properties, 
+   because there seems to be no way to make use of the PHMSD compact representation of references.
+2. The BP class will generate the new green functions (from wset and Refs) and will calculate all desired
+   properties based on them. The wave-function still provides the mapping from G to property, e.g. for EKT. 

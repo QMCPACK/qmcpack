@@ -43,6 +43,7 @@
 #include "QMCWaveFunctions/Jastrow/LRBreakupUtilities.h"
 #include "QMCWaveFunctions/Jastrow/BsplineFunctor.h"
 #include "QMCWaveFunctions/Jastrow/PadeFunctors.h"
+#include "QMCWaveFunctions/Jastrow/ShortRangeCuspFunctor.h"
 #include "QMCWaveFunctions/Jastrow/UserFunctor.h"
 #include <iostream>
 
@@ -512,6 +513,11 @@ bool RadialJastrowBuilder::put(xmlNodePtr cur)
     {
       guardAgainstPBC();
       success = createJ1<PadeFunctor<RealType>>(cur);
+    }
+    else if (Jastfunction == "shortrangecusp")
+    {
+      //guardAgainstPBC(); // is this needed?
+      success = createJ1<ShortRangeCuspFunctor<RealType>>(cur);
     }
     else if (Jastfunction == "user")
     {
