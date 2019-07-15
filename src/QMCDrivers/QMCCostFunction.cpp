@@ -502,6 +502,7 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine* Engine
 void QMCCostFunction::descent_checkConfigurations(std::vector<Return_t>& LDerivs, double& oldMu, bool& targetExcited, double& omega)
 {
 
+    //app_log() <<"This is omega: " << omega << std::endl; 
     //int process_rank;
     //MPI_Comm_rank(MPI_COMM_WORLD, &process_rank);
 
@@ -510,13 +511,24 @@ void QMCCostFunction::descent_checkConfigurations(std::vector<Return_t>& LDerivs
 
     //std::vector<Return_t> param_der_samp(NumOptimizables, 0.0);
 
+    /*
+    std::vector<Return_t> avg_le_der_samp(NumOptimizables+1, 0.0);
+    std::vector<Return_t> avg_der_rat_samp(NumOptimizables+1, 0.0);
+
+    std::vector<Return_t> numerTerm1(NumOptimizables,0.0);
+    std::vector<Return_t> numerTerm2(NumOptimizables,0.0);
+    std::vector<Return_t> denom(NumOptimizables,0.0);
+*/
+
     std::vector<Return_t> avg_le_der_samp(NumOptimizables, 0.0);
     std::vector<Return_t> avg_der_rat_samp(NumOptimizables, 0.0);
+
+    std::vector<Return_t> avg_hsquare_der_samp(NumOptimizables, 0.0);
+    std::vector<Return_t> other_hsquare_der_samp(NumOptimizables, 0.0);
 
     std::vector<Return_t> numerTerm1(NumOptimizables+1,0.0);
     std::vector<Return_t> numerTerm2(NumOptimizables+1,0.0);
     std::vector<Return_t> denom(NumOptimizables+1,0.0);
-
 
 
   RealType et_tot = 0.0;
@@ -596,14 +608,23 @@ double eSum = 0;
           le_der_samp.at(i + 1) = HDsaved.at(i) + etmp * Dsaved.at(i);
 
      
+     //app_log() << "This is weight on sample: " << saved[REWEIGHT] << std::endl;
      for (int i = 0; i < NumOptimizables; i++)
      {
      
      //param_der_samp.at(i) = 2*(le_der_samp.at(i+1)) - etmp*(2*der_rat_samp.at(i+1));
      eSum += etmp;
-     avg_le_der_samp.at(i) += le_der_samp.at(i+1);
-     avg_der_rat_samp.at(i) +=der_rat_samp.at(i+1);
+    // avg_le_der_samp.at(i) += le_der_samp.at(i);
+    // avg_der_rat_samp.at(i) +=der_rat_samp.at(i);
 
+     avg_le_der_samp.at(i) += le_der_samp.at(i+1);
+    avg_der_rat_samp.at(i) +=der_rat_samp.at(i+1);
+
+    other_hsquare_der_samp.at(i) += der_rat_samp.at(i+1)*etmp*etmp;
+ avg_hsquare_der_samp.at(i) += etmp*le_der_samp.at(i+1);
+// avg_hsquare_der_samp.at(i) += etmp*etmp*Dsaved.at(i);
+ //avg_hsquare_der_samp.at(i) += etmp*HDsaved.at(i);
+ 
      }   
 #ifdef HAVE_LMY_ENGINE
         // pass into engine
@@ -655,34 +676,92 @@ double eSum = 0;
 
   myComm->allreduce(avg_le_der_samp); 
   myComm->allreduce(avg_der_rat_samp);
+  myComm->allreduce(avg_hsquare_der_samp);
+
+  myComm->allreduce(other_hsquare_der_samp);
 
 double newE = etemp[0];
 newE = newE/etemp[1];
+double newHSquared = etemp[2] / etemp[1];
+
 for (int i = 0; i < LDerivs.size();i++)
 {
 
 avg_le_der_samp.at(i) = avg_le_der_samp.at(i)/etemp[1];
 avg_der_rat_samp.at(i) = avg_der_rat_samp.at(i)/etemp[1];
 
+avg_hsquare_der_samp.at(i) = avg_hsquare_der_samp.at(i)/etemp[1];
+other_hsquare_der_samp.at(i) = other_hsquare_der_samp.at(i)/etemp[1];
+
+app_log() << "This is avg_hsquare_term: " << avg_hsquare_der_samp.at(i) << " for parameter#: " << i << std::endl;
+app_log() << "This is other_hsquare_term: " << other_hsquare_der_samp.at(i) << " for parameter#: " << i << std::endl;
+app_log() << "This is newE*avg_le_der term: " << newE*avg_le_der_samp.at(i) << " for parameter#: " << i << std::endl;
 
 
 if(!targetExcited)
 {
 
+//LDerivs.at(i) = 2*avg_le_der_samp.at(i+1) - newE*(2*avg_der_rat_samp.at(i+1));
+
 LDerivs.at(i) = 2*avg_le_der_samp.at(i) - newE*(2*avg_der_rat_samp.at(i));
 
+app_log() << "This is derivative of GS functional: " << LDerivs.at(i) << " for parameter#: " << i << std::endl;
+app_log() << "Terms are: " << 2*avg_le_der_samp.at(i) << ", " << - newE*(2*avg_der_rat_samp.at(i)) << std::endl;
+app_log() << "Pieces are: " << avg_le_der_samp.at(i) << ", " << newE << ", " << avg_der_rat_samp.at(i) << std::endl;
 }
 
 else
 {
+
 //LDerivs.at(i) = omega*omega*(2*avg_le_der_samp.at(i)) -2*omega*(2*avg_le_der_samp.at(i)) + 2*avg_le_der_samp.at(0)*avg_le_der_samp.at(i);
 
+//LDerivs.at(i) = omega*omega*(2*avg_der_rat_samp.at(i)) -2*omega*(2*avg_le_der_samp.at(i)) + 2*newE*avg_le_der_samp.at(i);
+
+//LDerivs.at(i) = omega*omega*(2*avg_der_rat_samp.at(i)) - 2*omega*(2*avg_le_der_samp.at(i)) + 2*avg_hsquare_der_samp.at(i);
+
+//LDerivs.at(i) = omega*omega*(2*avg_der_rat_samp.at(i)) -2*omega*(2*avg_le_der_samp.at(i)) + 2*other_hsquare_der_samp.at(i);
+
+//LDerivs.at(i) = omega*omega*(2*avg_der_rat_samp.at(i)) -2*omega*(2*avg_le_der_samp.at(i));
+
+//LDerivs.at(i) = omega*omega*(2*avg_der_rat_samp.at(i)) -2*omega*(2*avg_le_der_samp.at(i)) + avg_hsquare_der_samp.at(i)+other_hsquare_der_samp.at(i);
+
+    /*
 numerTerm1.at(i) = (omega*2*avg_der_rat_samp.at(i) - 2*avg_le_der_samp.at(i))*(omega*omega*avg_der_rat_samp.at(0) - 2*omega*avg_le_der_samp.at(0) + avg_le_der_samp.at(0)*avg_le_der_samp.at(0));
 numerTerm2.at(i) = (omega* avg_der_rat_samp.at(0) - avg_le_der_samp.at(0))*(omega*omega*(2*avg_der_rat_samp.at(i)) - 2*omega*2*avg_le_der_samp.at(i) + 2* avg_le_der_samp.at(0)*avg_le_der_samp.at(i));
 
 denom.at(i) = (omega*omega*avg_der_rat_samp.at(0) - 2*omega*avg_le_der_samp.at(0) + avg_le_der_samp.at(0)*avg_le_der_samp.at(0))*(omega*omega*avg_der_rat_samp.at(0)-2*omega*avg_le_der_samp.at(0) + avg_le_der_samp.at(0)*avg_le_der_samp.at(0));
+*/
+/*
+numerTerm1.at(i) = (omega*2*avg_der_rat_samp.at(i) - 2*avg_le_der_samp.at(i))*(omega*omega - 2*omega*newE + newE*newE);
+numerTerm2.at(i) = (omega - newE)*(omega*omega*(2*avg_der_rat_samp.at(i)) - 2*omega*2*avg_le_der_samp.at(i) + 2*newE*avg_le_der_samp.at(i));
+
+denom.at(i) = (omega*omega - 2*omega*newE + newE*newE)*(omega*omega - 2*omega*newE + newE*newE);
+*/
+
+/*   
+numerTerm1.at(i) = (omega*2*avg_der_rat_samp.at(i) - 2*avg_le_der_samp.at(i))*(omega*omega - 2*omega*newE + newHSquared);
+numerTerm2.at(i) = (omega - newE)*(omega*omega*(2*avg_der_rat_samp.at(i)) - 2*omega*2*avg_le_der_samp.at(i) + 2*avg_hsquare_der_samp.at(i));
+
+denom.at(i) = (omega*omega - 2*omega*newE + newHSquared)*(omega*omega - 2*omega*newE + newHSquared);
+*/
+
+
+
+numerTerm1.at(i) = (omega*2*avg_der_rat_samp.at(i) - 2*avg_le_der_samp.at(i))*(omega*omega - 2*omega*newE + newHSquared);
+numerTerm2.at(i) = (omega - newE)*(omega*omega*(2*avg_der_rat_samp.at(i)) - 2*omega*2*avg_le_der_samp.at(i) + 2*newE*avg_le_der_samp.at(i));
+
+denom.at(i) = (omega*omega - 2*omega*newE + newHSquared)*(omega*omega - 2*omega*newE + newHSquared);
+
+
+
 LDerivs.at(i) = (numerTerm1.at(i) - numerTerm2.at(i))/denom.at(i);
 
+
+app_log() << "This is derivative of ES functional: " << LDerivs.at(i) << " for parameter#: " << i << std::endl;
+//app_log() << "Terms are: " << omega*omega*(2*avg_der_rat_samp.at(i)) << ", " << -2*omega*(2*avg_le_der_samp.at(i)) << ", " << 2*avg_hsquare_der_samp.at(i) << std::endl;
+//app_log() << "Terms are: " << omega*omega*(2*avg_der_rat_samp.at(i)) << ", " << -2*omega*(2*avg_le_der_samp.at(i)) << ", " << 2*other_hsquare_der_samp.at(i) << std::endl;
+//app_log() << "Terms are: " << omega*omega*(2*avg_der_rat_samp.at(i)) << ", " << -2*omega*(2*avg_le_der_samp.at(i)) << ", " << avg_hsquare_der_samp.at(i) << ", " << other_hsquare_der_samp.at(i) << std::endl;
+//app_log() << "Terms are: " << omega*omega*(2*avg_le_der_samp.at(i)) << ", " << -2*omega*(2*avg_le_der_samp.at(i)) << ", " << 2*avg_le_der_samp.at(0)*avg_le_der_samp.at(i) << std::endl; 
 }
 
 }
