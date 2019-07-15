@@ -4787,6 +4787,11 @@ def generate_jastrows(jastrows,system=None,return_list=False,check_ions=False):
         if '3' in jorders and have_ions:
             jterm = generate_jastrow('J3','polynomial',3,3,4.0,system=system)
         #end if
+        if 'k' in jorders:
+            kcut = max(system.rpa_kf())
+            nksh = system.structure.count_kshells(kcut)
+            jterm = generate_kspace_jastrow(0, kcut, 0, nksh)
+        #end if
         jin.append(jterm)
         if len(jin)==0:
             QmcpackInput.class_error('jastrow generation requested but no orders specified (1,2,and/or 3)')
