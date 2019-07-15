@@ -428,5 +428,5 @@ IF(NOT QMC_CUDA)
                     1 DET_DIAMOND2_DMC_EXCITED_SCALARS # DMC
                     )
 ELSE()
-  message("Skipping deterministic integration tests because they are not supported by CUDA build (QMC_CUDA=1)")
+  MESSAGE_VERBOSE("Skipping deterministic integration tests because they are not supported by CUDA build (QMC_CUDA=1)")
 ENDIF()
