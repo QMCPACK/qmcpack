@@ -790,6 +790,11 @@ def generate_physical_system(**kwargs):
 #end def generate_physical_system
 
 
+def ghost_atoms(*particles):
+    for particle in particles:
+        Matter.particle_collection.add_particles(Ion(name=particle,mass=0,charge=0,spin=0,protons=0,neutrons=0))
+    #end for
+#end def ghost_atoms
 
 
 if __name__=='__main__':

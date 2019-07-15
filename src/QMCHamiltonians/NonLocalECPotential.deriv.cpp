@@ -30,7 +30,7 @@ NonLocalECPotential::Return_t NonLocalECPotential::evaluateValueAndDerivatives(P
       PPset[ipp]->randomize_grid(*myRNG);
   for (int iat = 0; iat < NumIons; iat++)
     if (PP[iat])
-      Value += PP[iat]->evaluateValueAndDerivatives(P, iat, Psi, optvars, dlogpsi, dhpsioverpsi);
+      Value += PP[iat]->evaluateValueAndDerivatives(P, iat, Psi, optvars, dlogpsi, dhpsioverpsi, myTableIndex);
   return Value;
 
   //int Nvars=optvars.size();
@@ -104,7 +104,8 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateValueAndDerivatives
                                                                                  TrialWaveFunction& psi,
                                                                                  const opt_variables_type& optvars,
                                                                                  const std::vector<RealType>& dlogpsi,
-                                                                                 std::vector<RealType>& dhpsioverpsi)
+                                                                                 std::vector<RealType>& dhpsioverpsi,
+                                                                                 const int myTableIndex)
 {
 #if defined(ENABLE_SOA)
   APP_ABORT("NonLocalECPComponent::evaluateValueAndDerivatives(W,iat,psi.opt.dlogpsi,dhpsioverpsi) not implemented for SoA.\n");
@@ -113,18 +114,21 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateValueAndDerivatives
   std::vector<RealType> dlogpsi_t(dlogpsi.size(), 0.0);
   std::vector<RealType> dhlogpsi_t(dlogpsi.size(), 0.0);
 
-  DistanceTableData* myTable = W.DistTables[myTableIndex];
+  std::vector<ValueType> dlogpsi_ct(dlogpsi.size(), 0.0);
+  std::vector<ValueType> dhlogpsi_ct(dlogpsi.size(), 0.0);
+
+  const auto& myTable = W.getDistTable(myTableIndex);
   RealType esum              = 0.0;
   RealType pairpot;
   ParticleSet::ParticlePos_t deltarV(nknot);
-  for (int nn = myTable->M[iat], iel = 0; nn < myTable->M[iat + 1]; nn++, iel++)
+  for (int nn = myTable.M[iat], iel = 0; nn < myTable.M[iat + 1]; nn++, iel++)
   {
-    register RealType r(myTable->r(nn));
+    register RealType r(myTable.r(nn));
     if (r > Rmax)
       continue;
 
-    register RealType rinv(myTable->rinv(nn));
-    register PosType dr(myTable->dr(nn));
+    register RealType rinv(myTable.rinv(nn));
+    register PosType dr(myTable.dr(nn));
 
     //displacements wrt W.R[iel]
     for (int j = 0; j < nknot; j++)
@@ -133,7 +137,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateValueAndDerivatives
     for (int j = 0; j < nknot; j++)
     {
       PosType pos_now = W.R[iel];
-      W.makeMoveAndCheck(iel, deltarV[j]);
+      W.makeMove(iel, deltarV[j]);
 #if defined(QMC_COMPLEX)
       psiratio[j] = psi.ratio(W, iel) * std::cos(psi.getPhaseDiff());
 #else
@@ -145,12 +149,13 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateValueAndDerivatives
       W.acceptMove(iel);
 
       std::fill(dlogpsi_t.begin(), dlogpsi_t.end(), 0.0);
-      psi.evaluateDerivatives(W, optvars, dlogpsi_t, dhlogpsi_t);
+      std::fill(dlogpsi_ct.begin(), dlogpsi_ct.end(), 0.0);
+      psi.evaluateDerivatives(W, optvars, dlogpsi_ct, dhlogpsi_ct);
       for (int v = 0; v < dlogpsi_t.size(); ++v)
-        dratio(v, j) = dlogpsi_t[v];
+        dratio(v, j) = std::real(dlogpsi_t[v]);
 
       PosType md = -1.0 * deltarV[j];
-      W.makeMoveAndCheck(iel, md);
+      W.makeMove(iel, md);
       W.acceptMove(iel);
     }
 

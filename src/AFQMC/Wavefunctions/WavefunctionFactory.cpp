@@ -267,7 +267,7 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop, TaskGroup_& TGwf
         auto c0 = PsiT[iC].non_zero_indices2_data();  
         for(int i=0; i<PsiT[iC].size(0); i++) 
           for(int ip=pbegin[i]; ip<pend[i]; ip++) { 
-            ((newg.first)->second)[0][c0[ip-p0]][i] = conj(v0[ip-p0]);
+            ((newg.first)->second)[0][c0[ip-p0]][i] = ma::conj(v0[ip-p0]);
           }
       }  
       if(walker_type==COLLINEAR) {
@@ -278,7 +278,7 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop, TaskGroup_& TGwf
         auto c0 = PsiT[iC+1].non_zero_indices2_data();
         for(int i=0; i<PsiT[iC+1].size(0); i++) 
           for(int ip=pbegin[i]; ip<pend[i]; ip++) { 
-            ((newg.first)->second)[1][c0[ip-p0]][i] = conj(v0[ip-p0]);  
+            ((newg.first)->second)[1][c0[ip-p0]][i] = ma::conj(v0[ip-p0]);  
           }
       }  
     } else
@@ -505,7 +505,7 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop, TaskGroup_& TGwf
           //int ik = *(refc+i);
           int ik = alphaC[i]; 
           for(int ip=pbegin[ik]; ip<pend[ik]; ip++) 
-            Psi0[0][c0[ip-p0]][i] = conj(v0[ip-p0]);
+            Psi0[0][c0[ip-p0]][i] = ma::conj(v0[ip-p0]);
         }
         if(randomize_guess > 1e-12)
           for(int i=0; i<NMO; i++)
@@ -525,7 +525,7 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop, TaskGroup_& TGwf
           //int ik = *(refc+NAEA+i);
           int ik = betaC[i]; 
           for(int ip=pbegin[ik]; ip<pend[ik]; ip++) 
-            Psi0[1][c0[ip-p0]][i] = conj(v0[ip-p0]);  
+            Psi0[1][c0[ip-p0]][i] = ma::conj(v0[ip-p0]);  
         }
         if(randomize_guess > 1e-12)
           for(int i=0; i<NMO; i++)

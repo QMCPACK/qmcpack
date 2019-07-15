@@ -41,12 +41,12 @@ QMCCostFunctionCUDA::~QMCCostFunctionCUDA()
 
 /**  Perform the correlated sampling algorithm.
  */
-QMCCostFunctionCUDA::Return_t QMCCostFunctionCUDA::correlatedSampling(bool needDerivs)
+QMCCostFunctionCUDA::Return_rt QMCCostFunctionCUDA::correlatedSampling(bool needDerivs)
 {
-  Return_t wgt_tot = 0.0;
+  Return_rt wgt_tot = 0.0;
   int nw           = W.getActiveWalkers();
   //#pragma omp parallel reduction(+:wgt_tot)
-  Return_t eloc_new;
+  Return_rt eloc_new;
   //int totalElements=W.getTotalNum()*OHMMS_DIM;
   MCWalkerConfiguration::iterator it(W.begin());
   MCWalkerConfiguration::iterator it_end(W.end());
@@ -78,7 +78,7 @@ QMCCostFunctionCUDA::Return_t QMCCostFunctionCUDA::correlatedSampling(bool needD
     }
     // W.R = walker.R;
     // W.update();
-    // Return_t* restrict saved= &(Records(iw,0));
+    // Return_rt* restrict saved= &(Records(iw,0));
     // Psi.evaluateDeltaLog(W, saved[LOGPSI_FIXED], saved[LOGPSI_FREE],
     // 			   *dLogPsi[iw],*d2LogPsi[iw]);
     // Psi.evaluateDeltaLog(W);
@@ -103,7 +103,7 @@ QMCCostFunctionCUDA::Return_t QMCCostFunctionCUDA::correlatedSampling(bool needD
   for (int iw = 0; iw < nw; iw++)
   {
     ParticleSet::Walker_t& walker = *(W[iw]);
-    Return_t* restrict saved      = &(Records(iw, 0));
+    Return_rt* restrict saved      = &(Records(iw, 0));
     RealType weight               = factor * (logpsi_new[iw] - saved[LOGPSI_FREE]);
     RealType eloc_new             = KE[iw] + saved[ENERGY_FIXED];
     saved[ENERGY_NEW]             = eloc_new;
@@ -121,12 +121,12 @@ QMCCostFunctionCUDA::Return_t QMCCostFunctionCUDA::correlatedSampling(bool needD
   //collect the total weight for normalization and apply maximum weight
   myComm->allreduce(wgt_tot);
 
-  Return_t wgtnorm = wgt_tot / NumSamples;
+  Return_rt wgtnorm = wgt_tot / NumSamples;
   wgt_tot          = 0.0;
   for (int iw = 0; iw < nw; iw++)
   {
-    Return_t* restrict saved = &(Records(iw, 0));
-    saved[REWEIGHT] = std::min(std::exp(saved[REWEIGHT] - wgtnorm), std::numeric_limits<Return_t>::max() * 0.1);
+    Return_rt* restrict saved = &(Records(iw, 0));
+    saved[REWEIGHT] = std::min(std::exp(saved[REWEIGHT] - wgtnorm), std::numeric_limits<Return_rt>::max() * 0.1);
     wgt_tot += saved[REWEIGHT];
   }
   myComm->allreduce(wgt_tot);
@@ -135,7 +135,7 @@ QMCCostFunctionCUDA::Return_t QMCCostFunctionCUDA::correlatedSampling(bool needD
   wgt_tot = 0.0;
   for (int iw = 0; iw < nw; iw++)
   {
-    Return_t* restrict saved = Records[iw];
+    Return_rt* restrict saved = Records[iw];
     saved[REWEIGHT]          = std::min(saved[REWEIGHT] * wgtnorm, MaxWeight);
     //app_log()<<saved[REWEIGHT]<< std::endl;
     wgt_tot += saved[REWEIGHT];
@@ -146,10 +146,10 @@ QMCCostFunctionCUDA::Return_t QMCCostFunctionCUDA::correlatedSampling(bool needD
   CSWeight = wgt_tot = 1.0 / wgt_tot;
   for (int iw = 0; iw < nw; iw++)
   {
-    const Return_t* restrict saved = &(Records(iw, 0));
-    Return_t weight                = saved[REWEIGHT] * wgt_tot;
-    Return_t eloc_new              = saved[ENERGY_NEW];
-    Return_t delE                  = std::pow(std::abs(eloc_new - EtargetEff), PowerE);
+    const Return_rt* restrict saved = &(Records(iw, 0));
+    Return_rt weight                = saved[REWEIGHT] * wgt_tot;
+    Return_rt eloc_new              = saved[ENERGY_NEW];
+    Return_rt delE                  = std::pow(std::abs(eloc_new - EtargetEff), PowerE);
     SumValue[SUM_E_BARE] += eloc_new;
     SumValue[SUM_ESQ_BARE] += eloc_new * eloc_new;
     SumValue[SUM_ABSE_BARE] += delE;
@@ -235,13 +235,13 @@ void QMCCostFunctionCUDA::checkConfigurations()
   d2logPsi_fixed.resize(numWalkers, nptcl);
   //if (needGrads)
   {
-    TempHDerivRecords.resize(numWalkers, std::vector<Return_t>(NumOptimizables, 0));
-    TempDerivRecords.resize(numWalkers, std::vector<Return_t>(NumOptimizables, 0));
+    TempHDerivRecords.resize(numWalkers, std::vector<Return_rt>(NumOptimizables, 0));
+    TempDerivRecords.resize(numWalkers, std::vector<Return_rt>(NumOptimizables, 0));
     LogPsi_Derivs.resize(numWalkers, NumOptimizables);
     LocE_Derivs.resize(numWalkers, NumOptimizables);
   }
-  Return_t e0 = 0.0;
-  Return_t e2 = 0.0;
+  Return_rt e0 = 0.0;
+  Return_rt e2 = 0.0;
   std::vector<RealType> logPsi_free(numWalkers, 0), d2logPsi_free(numWalkers, 0);
   std::vector<RealType> logPsi_fixed(numWalkers, 0);
   std::vector<GradType> dlogPsi_free(numWalkers);
@@ -259,7 +259,7 @@ void QMCCostFunctionCUDA::checkConfigurations()
   {
     Walker_t& w(**it);
     RealType* prop           = w.getPropertyBase();
-    Return_t* restrict saved = &(Records(iw, 0));
+    Return_rt* restrict saved = &(Records(iw, 0));
     saved[ENERGY_TOT] = saved[ENERGY_NEW] = prop[LOCALENERGY];
     saved[ENERGY_FIXED]                   = prop[LOCALPOTENTIAL];
     saved[LOGPSI_FIXED]                   = prop[LOGPSI] - logPsi_free[iw];
@@ -304,9 +304,9 @@ void QMCCostFunctionCUDA::checkConfigurations()
   //   Walker_t& thisWalker(**it);
   //   W.R=thisWalker.R;
   //   W.update();
-  //   Return_t* restrict saved= &(Records(iw,0));
+  //   Return_rt* restrict saved= &(Records(iw,0));
   //   Psi.evaluateDeltaLog(W, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], *dLogPsi[iw],*d2LogPsi[iw]);
-  //   // Return_t x= H.evaluate(W);
+  //   // Return_rt x= H.evaluate(W);
   //   // e0 += saved[ENERGY_TOT] = x;
   //   // e2 += x*x;
   //   // saved[ENERGY_FIXED] = H.getLocalPotential();
@@ -324,12 +324,12 @@ void QMCCostFunctionCUDA::checkConfigurations()
   et_tot += e0;
   e2_tot += e2;
   //Need to sum over the processors
-  std::vector<Return_t> etemp(3);
+  std::vector<Return_rt> etemp(3);
   etemp[0] = et_tot;
-  etemp[1] = static_cast<Return_t>(W.getActiveWalkers());
+  etemp[1] = static_cast<Return_rt>(W.getActiveWalkers());
   etemp[2] = e2_tot;
   myComm->allreduce(etemp);
-  Etarget    = static_cast<Return_t>(etemp[0] / etemp[1]);
+  Etarget    = static_cast<Return_rt>(etemp[0] / etemp[1]);
   NumSamples = static_cast<int>(etemp[1]);
   app_log() << "  VMC Eavg = " << Etarget << std::endl;
   app_log() << "  VMC Evar = " << etemp[2] / etemp[1] - Etarget * Etarget << std::endl;
@@ -372,9 +372,9 @@ void QMCCostFunctionCUDA::resetPsi(bool final_reset)
 }
 
 
-void QMCCostFunctionCUDA::GradCost(std::vector<Return_t>& PGradient,
-                                   const std::vector<Return_t>& PM,
-                                   Return_t FiniteDiff)
+void QMCCostFunctionCUDA::GradCost(std::vector<Return_rt>& PGradient,
+                                   const std::vector<Return_rt>& PM,
+                                   Return_rt FiniteDiff)
 {
   if (std::abs(FiniteDiff) > 1.0e-10)
   {
@@ -399,44 +399,44 @@ void QMCCostFunctionCUDA::GradCost(std::vector<Return_t>& PGradient,
     NumWalkersEff = correlatedSampling(true);
     //Estimators::accumulate has been called by correlatedSampling
     curAvg_w           = SumValue[SUM_E_WGT] / SumValue[SUM_WGT];
-    Return_t curAvg2_w = curAvg_w * curAvg_w;
+    Return_rt curAvg2_w = curAvg_w * curAvg_w;
     curVar_w           = SumValue[SUM_ESQ_WGT] / SumValue[SUM_WGT] - curAvg_w * curAvg_w;
-    std::vector<Return_t> EDtotals(NumOptimizables, 0.0);
-    std::vector<Return_t> EDtotals_w(NumOptimizables, 0.0);
-    std::vector<Return_t> E2Dtotals_w(NumOptimizables, 0.0);
-    std::vector<Return_t> URV(NumOptimizables, 0.0);
-    std::vector<Return_t> HD_avg(NumOptimizables, 0.0);
-    Return_t wgtinv = 1.0 / SumValue[SUM_WGT];
-    Return_t delE_bar;
+    std::vector<Return_rt> EDtotals(NumOptimizables, 0.0);
+    std::vector<Return_rt> EDtotals_w(NumOptimizables, 0.0);
+    std::vector<Return_rt> E2Dtotals_w(NumOptimizables, 0.0);
+    std::vector<Return_rt> URV(NumOptimizables, 0.0);
+    std::vector<Return_rt> HD_avg(NumOptimizables, 0.0);
+    Return_rt wgtinv = 1.0 / SumValue[SUM_WGT];
+    Return_rt delE_bar;
     int nw = W.getActiveWalkers();
     for (int iw = 0; iw < nw; iw++)
     {
-      const Return_t* restrict saved = &(Records(iw, 0));
-      Return_t weight                = saved[REWEIGHT] * wgtinv;
-      Return_t eloc_new              = saved[ENERGY_NEW];
+      const Return_rt* restrict saved = &(Records(iw, 0));
+      Return_rt weight                = saved[REWEIGHT] * wgtinv;
+      Return_rt eloc_new              = saved[ENERGY_NEW];
       delE_bar += weight * std::pow(std::abs(eloc_new - EtargetEff), PowerE);
-      std::vector<Return_t>& Dsaved  = TempDerivRecords[iw];
-      std::vector<Return_t>& HDsaved = TempHDerivRecords[iw];
+      std::vector<Return_rt>& Dsaved  = TempDerivRecords[iw];
+      std::vector<Return_rt>& HDsaved = TempHDerivRecords[iw];
       for (int pm = 0; pm < NumOptimizables; pm++)
         HD_avg[pm] += HDsaved[pm];
     }
     myComm->allreduce(HD_avg);
     myComm->allreduce(delE_bar);
     for (int pm = 0; pm < NumOptimizables; pm++)
-      HD_avg[pm] *= 1.0 / static_cast<Return_t>(NumSamples);
+      HD_avg[pm] *= 1.0 / static_cast<Return_rt>(NumSamples);
     for (int iw = 0; iw < nw; iw++)
     {
-      const Return_t* restrict saved = &(Records(iw, 0));
-      Return_t weight                = saved[REWEIGHT] * wgtinv;
-      Return_t eloc_new              = saved[ENERGY_NEW];
-      Return_t delta_l               = (eloc_new - curAvg_w);
+      const Return_rt* restrict saved = &(Records(iw, 0));
+      Return_rt weight                = saved[REWEIGHT] * wgtinv;
+      Return_rt eloc_new              = saved[ENERGY_NEW];
+      Return_rt delta_l               = (eloc_new - curAvg_w);
       bool ltz(true);
       if (eloc_new - EtargetEff < 0)
         ltz = false;
-      Return_t delE                  = std::pow(std::abs(eloc_new - EtargetEff), PowerE);
-      Return_t ddelE                 = PowerE * std::pow(std::abs(eloc_new - EtargetEff), PowerE - 1);
-      std::vector<Return_t>& Dsaved  = TempDerivRecords[iw];
-      std::vector<Return_t>& HDsaved = TempHDerivRecords[iw];
+      Return_rt delE                  = std::pow(std::abs(eloc_new - EtargetEff), PowerE);
+      Return_rt ddelE                 = PowerE * std::pow(std::abs(eloc_new - EtargetEff), PowerE - 1);
+      std::vector<Return_rt>& Dsaved  = TempDerivRecords[iw];
+      std::vector<Return_rt>& HDsaved = TempHDerivRecords[iw];
       for (int pm = 0; pm < NumOptimizables; pm++)
       {
         EDtotals_w[pm] += weight * (HDsaved[pm] + 2.0 * Dsaved[pm] * delta_l);
@@ -450,16 +450,16 @@ void QMCCostFunctionCUDA::GradCost(std::vector<Return_t>& PGradient,
     myComm->allreduce(EDtotals);
     myComm->allreduce(EDtotals_w);
     myComm->allreduce(URV);
-    Return_t smpinv = 1.0 / static_cast<Return_t>(NumSamples);
+    Return_rt smpinv = 1.0 / static_cast<Return_rt>(NumSamples);
     for (int iw = 0; iw < nw; iw++)
     {
-      const Return_t* restrict saved = &(Records(iw, 0));
-      Return_t weight                = saved[REWEIGHT] * wgtinv;
-      Return_t eloc_new              = saved[ENERGY_NEW];
-      Return_t delta_l               = (eloc_new - curAvg_w);
-      Return_t sigma_l               = delta_l * delta_l;
-      std::vector<Return_t>& Dsaved  = TempDerivRecords[iw];
-      std::vector<Return_t>& HDsaved = TempHDerivRecords[iw];
+      const Return_rt* restrict saved = &(Records(iw, 0));
+      Return_rt weight                = saved[REWEIGHT] * wgtinv;
+      Return_rt eloc_new              = saved[ENERGY_NEW];
+      Return_rt delta_l               = (eloc_new - curAvg_w);
+      Return_rt sigma_l               = delta_l * delta_l;
+      std::vector<Return_rt>& Dsaved  = TempDerivRecords[iw];
+      std::vector<Return_rt>& HDsaved = TempHDerivRecords[iw];
       for (int pm = 0; pm < NumOptimizables; pm++)
         E2Dtotals_w[pm] +=
             weight * 2.0 * (Dsaved[pm] * (sigma_l - curVar_w) + delta_l * (HDsaved[pm] - EDtotals_w[pm]));
@@ -492,8 +492,8 @@ void QMCCostFunctionCUDA::GradCost(std::vector<Return_t>& PGradient,
 }
 
 
-QMCCostFunctionCUDA::Return_t QMCCostFunctionCUDA::fillOverlapHamiltonianMatrices(Matrix<Return_t>& Left,
-                                                                                  Matrix<Return_t>& Right)
+QMCCostFunctionCUDA::Return_rt QMCCostFunctionCUDA::fillOverlapHamiltonianMatrices(Matrix<Return_rt>& Left,
+                                                                                  Matrix<Return_rt>& Right)
 {
   RealType b1, b2;
   if (GEVType == "H2")
@@ -510,19 +510,19 @@ QMCCostFunctionCUDA::Return_t QMCCostFunctionCUDA::fillOverlapHamiltonianMatrice
   Left  = 0.0;
   //Is this really needed here?
   //resetPsi();
-  //Return_t NWE = NumWalkersEff=correlatedSampling(true);
+  //Return_rt NWE = NumWalkersEff=correlatedSampling(true);
   curAvg_w           = SumValue[SUM_E_WGT] / SumValue[SUM_WGT];
-  Return_t curAvg2_w = SumValue[SUM_ESQ_WGT] / SumValue[SUM_WGT];
+  Return_rt curAvg2_w = SumValue[SUM_ESQ_WGT] / SumValue[SUM_WGT];
   RealType H2_avg    = 1.0 / (curAvg_w * curAvg_w);
   RealType V_avg     = curAvg2_w - curAvg_w * curAvg_w;
-  std::vector<Return_t> D_avg(NumParams(), 0);
-  Return_t wgtinv = 1.0 / SumValue[SUM_WGT];
+  std::vector<Return_rt> D_avg(NumParams(), 0);
+  Return_rt wgtinv = 1.0 / SumValue[SUM_WGT];
   int nw          = W.getActiveWalkers();
   for (int iw = 0; iw < nw; iw++)
   {
-    const Return_t* restrict saved      = &(Records(iw, 0));
-    Return_t weight                     = saved[REWEIGHT] * wgtinv;
-    const std::vector<Return_t>& Dsaved = TempDerivRecords[iw];
+    const Return_rt* restrict saved      = &(Records(iw, 0));
+    Return_rt weight                     = saved[REWEIGHT] * wgtinv;
+    const std::vector<Return_rt>& Dsaved = TempDerivRecords[iw];
     for (int pm = 0; pm < NumParams(); pm++)
     {
       D_avg[pm] += Dsaved[pm] * weight;
@@ -531,21 +531,21 @@ QMCCostFunctionCUDA::Return_t QMCCostFunctionCUDA::fillOverlapHamiltonianMatrice
   myComm->allreduce(D_avg);
   for (int iw = 0; iw < nw; iw++)
   {
-    const Return_t* restrict saved       = &Records(iw, 0);
-    Return_t weight                      = saved[REWEIGHT] * wgtinv;
-    Return_t eloc_new                    = saved[ENERGY_NEW];
-    const std::vector<Return_t>& Dsaved  = TempDerivRecords[iw];
-    const std::vector<Return_t>& HDsaved = TempHDerivRecords[iw];
+    const Return_rt* restrict saved       = &Records(iw, 0);
+    Return_rt weight                      = saved[REWEIGHT] * wgtinv;
+    Return_rt eloc_new                    = saved[ENERGY_NEW];
+    const std::vector<Return_rt>& Dsaved  = TempDerivRecords[iw];
+    const std::vector<Return_rt>& HDsaved = TempHDerivRecords[iw];
 /*
     for (int pm=0; pm<NumParams(); pm++)
     {
-      Return_t wfe = (HDsaved[pm] + Dsaved[pm]*(eloc_new - curAvg_w) )*weight;
-      Return_t wfm = (HDsaved[pm] - 2.0*Dsaved[pm]*(eloc_new - curAvg_w) )*weight;
-      Return_t wfd = (Dsaved[pm]-D_avg[pm])*weight;
+      Return_rt wfe = (HDsaved[pm] + Dsaved[pm]*(eloc_new - curAvg_w) )*weight;
+      Return_rt wfm = (HDsaved[pm] - 2.0*Dsaved[pm]*(eloc_new - curAvg_w) )*weight;
+      Return_rt wfd = (Dsaved[pm]-D_avg[pm])*weight;
       //                 H2
       Right(0,pm+1) += b1*H2_avg*wfe*(eloc_new);
       Right(pm+1,0) += b1*H2_avg*wfe*(eloc_new);
-      Return_t vterm = HDsaved[pm]*(eloc_new-curAvg_w)+(eloc_new*eloc_new-curAvg2_w)*Dsaved[pm]-2.0*curAvg_w*Dsaved[pm]*(eloc_new - curAvg_w);
+      Return_rt vterm = HDsaved[pm]*(eloc_new-curAvg_w)+(eloc_new*eloc_new-curAvg2_w)*Dsaved[pm]-2.0*curAvg_w*Dsaved[pm]*(eloc_new - curAvg_w);
       //                 Variance
       Left(0,pm+1) += b2*vterm*weight;
       Left(pm+1,0) += b2*vterm*weight;
@@ -569,11 +569,11 @@ QMCCostFunctionCUDA::Return_t QMCCostFunctionCUDA::fillOverlapHamiltonianMatrice
 #pragma omp parallel for
     for (int pm = 0; pm < NumParams(); pm++)
     {
-      Return_t wfe = (HDsaved[pm] + (Dsaved[pm] - D_avg[pm]) * eloc_new) * weight;
-      Return_t wfd = (Dsaved[pm] - D_avg[pm]) * weight;
-      Return_t vterm =
+      Return_rt wfe = (HDsaved[pm] + (Dsaved[pm] - D_avg[pm]) * eloc_new) * weight;
+      Return_rt wfd = (Dsaved[pm] - D_avg[pm]) * weight;
+      Return_rt vterm =
           HDsaved[pm] * (eloc_new - curAvg_w) + (Dsaved[pm] - D_avg[pm]) * eloc_new * (eloc_new - 2.0 * curAvg_w);
-      //                Return_t vterm = (HDsaved[pm]+(Dsaved[pm]-D_avg[pm])*eloc_new -curAvg_w)*(eloc_new-curAvg_w);
+      //                Return_rt vterm = (HDsaved[pm]+(Dsaved[pm]-D_avg[pm])*eloc_new -curAvg_w)*(eloc_new-curAvg_w);
       //                 H2
       Right(0, pm + 1) += b1 * H2_avg * vterm * weight;
       Right(pm + 1, 0) += b1 * H2_avg * vterm * weight;

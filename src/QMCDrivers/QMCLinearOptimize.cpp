@@ -16,7 +16,6 @@
 
 #include "QMCDrivers/QMCLinearOptimize.h"
 #include "Particle/HDFWalkerIO.h"
-#include "Particle/DistanceTable.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Message/CommOperators.h"
 //#if defined(ENABLE_OPENMP)
@@ -218,7 +217,6 @@ void QMCLinearOptimize::generateSamples()
   //write parameter history and energies to the parameter file in the trial wave function through opttarget
   EstimatorRealType e, w, var;
   vmcEngine->Estimators->getEnergyAndWeight(e, w, var);
-  optTarget->recordParametersToPsi(e, var);
   //     NumOfVMCWalkers=W.getActiveWalkers();
   //branchEngine->Eref=vmcEngine->getBranchEngine()->Eref;
   //         branchEngine->setTrialEnergy(vmcEngine->getBranchEngine()->getEref());

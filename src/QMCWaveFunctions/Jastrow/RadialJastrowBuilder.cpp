@@ -43,6 +43,8 @@
 #include "QMCWaveFunctions/Jastrow/LRBreakupUtilities.h"
 #include "QMCWaveFunctions/Jastrow/BsplineFunctor.h"
 #include "QMCWaveFunctions/Jastrow/PadeFunctors.h"
+#include "QMCWaveFunctions/Jastrow/ShortRangeCuspFunctor.h"
+#include "QMCWaveFunctions/Jastrow/UserFunctor.h"
 #include <iostream>
 
 
@@ -281,7 +283,7 @@ bool RadialJastrowBuilder::createJ2(xmlNodePtr cur)
     cur = cur->next;
   }
   J2->dPsi = dJ2;
-  targetPsi.addOrbital(J2, j2name.c_str());
+  targetPsi.addComponent(J2, j2name.c_str());
   J2->setOptimizable(true);
   return true;
 }
@@ -292,7 +294,7 @@ bool RadialJastrowBuilder::createJ2<RPAFunctor>(xmlNodePtr cur)
 {
   RPAJastrow* rpajastrow = new RPAJastrow(targetPtcl, targetPsi.is_manager());
   rpajastrow->put(cur);
-  targetPsi.addOrbital(rpajastrow, NameOpt);
+  targetPsi.addComponent(rpajastrow, NameOpt);
   return true;
 }
 
@@ -381,7 +383,7 @@ bool RadialJastrowBuilder::createJ1(xmlNodePtr cur)
   if (success)
   {
     J1->dPsi = dJ1;
-    targetPsi.addOrbital(J1, jname.c_str());
+    targetPsi.addComponent(J1, jname.c_str());
     J1->setOptimizable(Opt);
     return true;
   }
@@ -475,7 +477,7 @@ bool RadialJastrowBuilder::createJ1<RPAFunctor>(xmlNodePtr cur)
 
   J1->dPsi          = dJ1;
   std::string jname = "J1_" + Jastfunction;
-  targetPsi.addOrbital(J1, jname.c_str());
+  targetPsi.addComponent(J1, jname.c_str());
   J1->setOptimizable(Opt);
   return true;
 }
@@ -512,6 +514,15 @@ bool RadialJastrowBuilder::put(xmlNodePtr cur)
       guardAgainstPBC();
       success = createJ1<PadeFunctor<RealType>>(cur);
     }
+    else if (Jastfunction == "shortrangecusp")
+    {
+      //guardAgainstPBC(); // is this needed?
+      success = createJ1<ShortRangeCuspFunctor<RealType>>(cur);
+    }
+    else if (Jastfunction == "user")
+    {
+      success = createJ1<UserFunctor<RealType>>(cur);
+    }
     else if (Jastfunction == "rpa")
     {
 #if !(OHMMS_DIM == 3)
@@ -541,6 +552,10 @@ bool RadialJastrowBuilder::put(xmlNodePtr cur)
     {
       guardAgainstPBC();
       success = createJ2<PadeFunctor<RealType>>(cur);
+    }
+    else if (Jastfunction == "user")
+    {
+      success = createJ2<UserFunctor<RealType>>(cur);
     }
     else if (Jastfunction == "rpa" || Jastfunction == "yukawa")
     {

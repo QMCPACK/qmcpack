@@ -46,6 +46,8 @@ protected:
   int MaxDim;
   Return_t evalSR(ParticleSet& P) const;
   Return_t evalLR(ParticleSet& P) const;
+  // AA table ID
+  const int d_aa_ID;
 
 public:
   ParticleSet* PtclRef;

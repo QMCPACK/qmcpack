@@ -157,7 +157,7 @@ bool PWOrbitalBuilder::putSlaterDet(xmlNodePtr cur)
   }
   if (spin_group)
   {
-    targetPsi.addOrbital(sdet, "SlaterDet");
+    targetPsi.addComponent(sdet, "SlaterDet");
   }
   else
   {

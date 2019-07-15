@@ -12,7 +12,7 @@
 /
 
 &SYSTEM
-   celldm(1)       = 1.0
+   !celldm(1)       = 1.0
    degauss         = 0.0001
    ecutrho         = 1800
    ecutwfc         = 450
@@ -38,14 +38,14 @@ ATOMIC_SPECIES
    H  1.00794 H.TN-DF.upf
    Li 6.941 Li.TN-DF.upf
 
-ATOMIC_POSITIONS alat
+ATOMIC_POSITIONS bohr
    Li       0.00000000       0.00000000       0.00000000 
    H        3.55000000       3.55000000       3.55000000 
 
 K_POINTS automatic
    1 1 1  0 0 0 
 
-CELL_PARAMETERS cubic
+CELL_PARAMETERS bohr
          3.55000000       3.55000000       0.00000000 
         -0.00000000       3.55000000       3.55000000 
          3.55000000       0.00000000       3.55000000 

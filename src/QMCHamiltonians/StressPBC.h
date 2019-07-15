@@ -42,7 +42,6 @@ struct StressPBC : public QMCHamiltonianBase, public ForceBase
   SymTensor<RealType, OHMMS_DIM> stress_ee_const;
   SymTensor<RealType, OHMMS_DIM> stress_eI_const;
 
-
   TrialWaveFunction& Psi;
 
   bool kcdifferent;
@@ -55,7 +54,9 @@ struct StressPBC : public QMCHamiltonianBase, public ForceBase
   //  LRHandlerType* AB;
   LRHandlerType* AA;
   ///locator of the distance table
-  int myTableIndex;
+  const int ei_table_index;
+  /// e-e table ID
+  const int ee_table_index;
   ///number of species of A particle set
   int NumSpeciesA;
   ///number of species of B particle set
