@@ -96,6 +96,43 @@ ENDIF()
                     1 DIAMOND_DMC_SCALARS # DMC
                     )
 
+# Excited state
+  LIST(APPEND DIAMOND_EXCITED_SCALARS "totenergy"  "-9.997214 0.002156")
+  LIST(APPEND DIAMOND_EXCITED_SCALARS "kinetic"    "11.454674 0.017147")
+  LIST(APPEND DIAMOND_EXCITED_SCALARS "potential" "-21.451888 0.017343")
+  LIST(APPEND DIAMOND_EXCITED_SCALARS "eeenergy"   "-2.790777 0.004311")
+  LIST(APPEND DIAMOND_EXCITED_SCALARS "ionion"    "-12.775668 0.00001")
+  LIST(APPEND DIAMOND_EXCITED_SCALARS "localecp"   "-6.493792 0.019499")
+  LIST(APPEND DIAMOND_EXCITED_SCALARS "nonlocalecp" "0.608349 0.005683")
+  LIST(APPEND DIAMOND_EXCITED_SCALARS "samples" "128000 0.0")
+  LIST(APPEND DIAMOND_EXCITED_SCALARS "mpc" "-2.504948 0.004507")
+
+  QMC_RUN_AND_CHECK(short-diamondC_1x1x1_pp-vmc_sdj_excited
+                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+                    qmc_short_excited
+                    qmc_short_excited.in.xml
+                    1 16
+                    TRUE
+                    0 DIAMOND_EXCITED_SCALARS # VMC
+                    )
+
+  LIST(APPEND DIAMOND_DMC_EXCITED_SCALARS "totenergy"   "-10.057283 0.003216")
+  LIST(APPEND DIAMOND_DMC_EXCITED_SCALARS "kinetic"      "11.598366 0.027848")
+  LIST(APPEND DIAMOND_DMC_EXCITED_SCALARS "potential"   "-21.655650 0.029074")
+  LIST(APPEND DIAMOND_DMC_EXCITED_SCALARS "localecp"     "-6.711209 0.035888")
+  LIST(APPEND DIAMOND_DMC_EXCITED_SCALARS "nonlocalecp"   "0.647451 0.008633")
+  LIST(APPEND DIAMOND_DMC_EXCITED_SCALARS "eeenergy"     "-2.816225 0.007467")
+  LIST(APPEND DIAMOND_DMC_EXCITED_SCALARS "mpc"    "-2.548944 0.00801")
+
+  QMC_RUN_AND_CHECK(short-diamondC_1x1x1_pp-dmc_sdj_excited
+                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+                    qmc_short_vmc_dmc_excited
+                    qmc_short_vmc_dmc_excited.in.xml
+                    1 16
+                    TRUE
+                    1 DIAMOND_DMC_EXCITED_SCALARS # DMC
+                    )
+
 IF(NOT QMC_CUDA)
   QMC_RUN_AND_CHECK(short-diamondC_1x1x1_pp-vmc-dmc-allp_sdj
                     "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
@@ -226,7 +263,30 @@ ENDIF()
                     1 LONG_DIAMOND_DMC_SCALARS # DMC
                     )
 
+# Excited state
+  LIST(APPEND LONG_DIAMOND_EXCITED_SCALARS "totenergy" "-9.997214 0.000073")
+  LIST(APPEND LONG_DIAMOND_EXCITED_SCALARS "samples" "122880000 0.0")
+  LIST(APPEND LONG_DIAMOND_EXCITED_SCALARS "flux" "-0.006826 0.040699")
 
+  QMC_RUN_AND_CHECK(long-diamondC_1x1x1_pp-vmc_sdj_excited
+                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+                    qmc_long_excited
+                    qmc_long_excited.in.xml
+                    1 16
+                    TRUE
+                    0 LONG_DIAMOND_EXCITED_SCALARS # VMC
+                    )
+
+  LIST(APPEND LONG_DIAMOND_DMC_EXCITED_SCALARS "totenergy" "-10.057283 0.001061")
+
+  QMC_RUN_AND_CHECK(long-diamondC_1x1x1_pp-dmc_sdj_excited
+                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+                    qmc_long_vmc_dmc_excited
+                    qmc_long_vmc_dmc_excited.in.xml
+                    1 16
+                    TRUE
+                    1 LONG_DIAMOND_DMC_EXCITED_SCALARS # DMC
+                    )
 
 # estimator tests
 INCLUDE("${qmcpack_SOURCE_DIR}/CMake/python.cmake")
