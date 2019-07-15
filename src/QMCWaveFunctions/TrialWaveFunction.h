@@ -93,9 +93,11 @@ public:
   inline RealType getLogPsi() const { return LogValue; }
   inline void setLogPsi(RealType LogPsi_new) { LogValue = LogPsi_new; }
 
-  ///Add an WaveFunctionComponent
-  //void addOrbital(WaveFunctionComponent* aterm);
-  void addOrbital(WaveFunctionComponent* aterm, const std::string& aname, bool fermion = false);
+  /** add a WaveFunctionComponent
+   * @param aterm a WaveFunctionComponent pointer
+   * @param aname a name to the added WaveFunctionComponent object for printing
+   */
+  void addComponent(WaveFunctionComponent* aterm, std::string aname);
 
   ///read from xmlNode
   bool put(xmlNodePtr cur);
