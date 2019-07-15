@@ -635,6 +635,15 @@ class PhysicalSystem(Matter):
         #end if
         return ae_species,pp_species
     #end def ae_pp_species
+
+    def kf_rpa(self):
+      import numpy as np
+      nelecs = self.particles.electron_counts()
+      volume = self.structure.volume()
+      kvol1 = (2*np.pi)**3/volume  # k-space volume per particle
+      kfs = [(3*nelec*kvol1/(4*np.pi))**(1./3) for nelec in nelecs]
+      return kfs
+    #end def kf_rpa
 #end class PhysicalSystem
 
 
