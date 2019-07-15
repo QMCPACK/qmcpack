@@ -751,9 +751,7 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop, TaskGroup_& TGwfn
     read_ph_wavefunction_hdf(dump, coeffs, occbuff, ndets_to_read, walker_type, TGwfn.Node(), NMO, NAEA, NAEB, PsiT_MO, wfn_type);
     boost::multi::array_ref<int,2> occs(to_address(occbuff.data()), {ndets_to_read,NAEA+NAEB});
     // 2. Compute Variational Energy / update coefficients
-    if(TGwfn.Global().rank() == 0) {
-      computeVariationalEnergyPHMSD(h, occs, coeffs, ndets_to_read, NAEA, NAEB, NMO, recompute_ci);
-    }
+    computeVariationalEnergyPHMSD(TGwfn, h, occs, coeffs, ndets_to_read, NAEA, NAEB, NMO, recompute_ci);
     // 3. Construct Structures.
     ph_excitations<int,ComplexType> abij = build_ph_struct(coeffs, occs, ndets_to_read, TGwfn.Node(), NMO, NAEA, NAEB);
     int NEL = (walker_type==NONCOLLINEAR)?(NAEA+NAEB):NAEA;
@@ -955,54 +953,66 @@ void WavefunctionFactory::getInitialGuess(hdf_archive& dump, std::string& name, 
 
 
 
-void WavefunctionFactory::computeVariationalEnergyPHMSD(Hamiltonian& ham, boost::multi::array_ref<int,2>& occs, std::vector<ComplexType>& coeff, int ndets, int NAEA, int NAEB, int NMO, bool recompute_ci)
+void WavefunctionFactory::computeVariationalEnergyPHMSD(TaskGroup_& TG, Hamiltonian& ham, boost::multi::array_ref<int,2>& occs, std::vector<ComplexType>& coeff, int ndets, int NAEA, int NAEB, int NMO, bool recompute_ci)
 {
-  boost::multi::array<ComplexType,2> H({ndets,ndets});
-  ComplexType numer = ComplexType(0.0);
-  ComplexType denom = ComplexType(0.0);
+  // Potentially memory intensive.
+  boost::multi::array<ComplexType,1> HamBuff;
+  HamBuff.reextent({ndets*ndets+2});
+  boost::multi::array_ref<ComplexType,2> H(HamBuff.origin(), {ndets,ndets});
+  boost::multi::array_ref<ComplexType,1> energy(HamBuff.origin()+ndets*ndets, iextensions<1u>{2});
+  using std::fill_n;
+  fill_n(HamBuff.origin(),HamBuff.num_elements(),ComplexType(0.0));
   ComplexType enuc = ham.getNuclearCoulombEnergy();
-  using std::get;
   for(int idet = 0; idet < ndets; idet++) {
     // These should already be sorted.
     boost::multi::array_ref<int,1> deti(occs[idet].origin(), {NAEA+NAEB});
     ComplexType cidet = coeff[idet];
-    H[idet][idet] = slaterCondon0(ham, deti, NMO) + enuc;
-    numer += ma::conj(cidet)*cidet*H[idet][idet];
-    denom += ma::conj(cidet)*cidet;
-    for(int jdet = idet+1; jdet < ndets; jdet++) {
-      boost::multi::array_ref<int,1> detj(occs[jdet].origin(), {NAEA+NAEB});
-      ComplexType cjdet = coeff[jdet];
-      int perm = 1;
-      std::vector<int> excit;
-      int nexcit = getExcitation(deti, detj, excit, perm);
+    for(int jdet = idet; jdet < ndets; jdet++) {
       // Compute <Di|H|Dj>
-      if(nexcit == 1) {
-        H[idet][jdet] = ComplexType(perm)*slaterCondon1(ham, excit, detj, NMO);
-      } else if(nexcit == 2) {
-        H[idet][jdet] = ComplexType(perm)*slaterCondon2(ham, excit, NMO);
-      } else {
-        H[idet][jdet] = ComplexType(0.0);
+      if((idet*ndets+jdet) % TG.Global().size() == TG.Global().rank()) {
+        if(idet == jdet) {
+          H[idet][idet] = slaterCondon0(ham, deti, NMO) + enuc;
+          energy[0] += ma::conj(cidet)*cidet*H[idet][idet];
+          energy[1] += ma::conj(cidet)*cidet;
+        } else {
+          boost::multi::array_ref<int,1> detj(occs[jdet].origin(), {NAEA+NAEB});
+          ComplexType cjdet = coeff[jdet];
+          int perm = 1;
+          std::vector<int> excit;
+          int nexcit = getExcitation(deti, detj, excit, perm);
+          if(nexcit == 1) {
+            H[idet][jdet] = ComplexType(perm)*slaterCondon1(ham, excit, detj, NMO);
+          } else if(nexcit == 2) {
+            H[idet][jdet] = ComplexType(perm)*slaterCondon2(ham, excit, NMO);
+          } else {
+            H[idet][jdet] = ComplexType(0.0);
+          }
+          H[jdet][idet] = ma::conj(H[idet][jdet]);
+          energy[0] += ma::conj(cidet)*cjdet*H[idet][jdet]+ma::conj(cjdet)*cidet*H[jdet][idet];
+        }
       }
-      H[jdet][idet] = ma::conj(H[idet][jdet]);
-      numer += ma::conj(cidet)*cjdet*H[idet][jdet]+ma::conj(cjdet)*cidet*H[jdet][idet];
     }
   }
-  app_log() << " - Variational energy of trial wavefunction: " << std::setprecision(16) << numer / denom << std::endl;
+  TG.Global().all_reduce_in_place_n(to_address(HamBuff.origin()),HamBuff.num_elements(),std::plus<>());
+  app_log() << " - Variational energy of trial wavefunction: " << std::setprecision(16) << energy[0] / energy[1] << "\n";
   if(recompute_ci) {
     app_log() << " - Diagonalizing CI matrix.\n";
     using RVector = boost::multi::array<RealType,1>;
     using CMatrix = boost::multi::array<ComplexType,2>;
-    std::pair<RVector,CMatrix> Sol = ma::symEig<RVector,CMatrix>(H);
-    using std::get;
-    app_log() << " - Updating CI coefficients. \n";
-    app_log() << " - Recomputed coefficient of first determinant: " << Sol.second[0][0] << "\n";
-    for(int idet=0; idet < ndets; idet++) {
-      ComplexType ci = Sol.second[idet][0];
-      // Do we want this much output?
-      //std::cout << idet << " old: " << coeff[idet] << " new: " << ci << std::endl;
-      coeff[idet] = ci;
+    // Want a "unique" solution for all cores/nodes.
+    if(TG.Global().rank() == 0) {
+      std::pair<RVector,CMatrix> Sol = ma::symEig<RVector,CMatrix>(H);
+      app_log() << " - Updating CI coefficients. \n";
+      app_log() << " - Recomputed coefficient of first determinant: " << Sol.second[0][0] << "\n";
+      for(int idet=0; idet < ndets; idet++) {
+        ComplexType ci = Sol.second[idet][0];
+        // Do we want this much output?
+        //app_log() << idet << " old: " << coeff[idet] << " new: " << ci << "\n";
+        coeff[idet] = ci;
+      }
+      app_log() << " - Recomputed variational energy of trial wavefunction: " << Sol.first[0] << "\n";
     }
-    app_log() << " - Recomputed variational energy of trial wavefunction: " << Sol.first[0] << "\n";
+    TG.Global().broadcast_n(to_address(coeff.data()), coeff.size(), 0);
   }
 
 }

@@ -636,10 +636,8 @@ void read_ph_wavefunction_hdf(hdf_archive& dump, std::vector<ComplexType>& ci_co
       dump.pop();
     }
   }
-  if(comm.root()) {
-    if(!dump.readEntry(occs, "occs"))
-      APP_ABORT("Error reading occs array.\n");
-  }
+  if(!dump.readEntry(occs, "occs"))
+    APP_ABORT("Error reading occs array.\n");
   comm.barrier();
 }
 
