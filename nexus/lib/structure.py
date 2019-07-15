@@ -1223,6 +1223,36 @@ class Structure(Sobj):
         return sqrt(((pos1-pos2)**2).sum(1))
     #end def distances
 
+    def count_kshells(self, kcut, tilevec=[12, 12, 12], nkdig=8):
+      # check tilevec input
+      for nt in tilevec:
+        if nt % 2 != 0:
+          msg = 'tilevec must contain even integers'
+          msg += ' so that kgrid can be zero centered.'
+          Structure.class_error(msg, 'count_kshells')
+        #end if
+      #end for
+
+      import numpy as np
+      origin = np.array([[0, 0, 0]])
+      axes = self.axes
+      raxes = 2*np.pi*np.linalg.inv(axes).T
+      kvecs = self.tile_points(origin, raxes, tilevec)
+      kvecs -= np.dot(tilevec, raxes)/2  # center around 0
+      kmags = np.linalg.norm(kvecs, axis=-1)
+
+      # make sure tilevec is sufficient for kcut
+      klimit = 0.5*kmags.max()
+      if kcut > klimit:
+        msg = 'kcut %3.2f > klimit=%3.2f\n' % (kcut, klimit)
+        msg += ' please increase tilevec to be safe.\n'
+        Structure.class_error(msg, 'count_kshells')
+      #end if
+
+      sel = (0<kmags) & (kmags<kcut)
+      ukmags = np.unique(kmags[sel].round(nkdig))
+      return len(ukmags)
+    #end def count_kshells
     
     def volume(self):
         if not self.has_axes():
