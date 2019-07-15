@@ -283,7 +283,7 @@ bool RadialJastrowBuilder::createJ2(xmlNodePtr cur)
     cur = cur->next;
   }
   J2->dPsi = dJ2;
-  targetPsi.addOrbital(J2, j2name.c_str());
+  targetPsi.addComponent(J2, j2name.c_str());
   J2->setOptimizable(true);
   return true;
 }
@@ -294,7 +294,7 @@ bool RadialJastrowBuilder::createJ2<RPAFunctor>(xmlNodePtr cur)
 {
   RPAJastrow* rpajastrow = new RPAJastrow(targetPtcl, targetPsi.is_manager());
   rpajastrow->put(cur);
-  targetPsi.addOrbital(rpajastrow, NameOpt);
+  targetPsi.addComponent(rpajastrow, NameOpt);
   return true;
 }
 
@@ -383,7 +383,7 @@ bool RadialJastrowBuilder::createJ1(xmlNodePtr cur)
   if (success)
   {
     J1->dPsi = dJ1;
-    targetPsi.addOrbital(J1, jname.c_str());
+    targetPsi.addComponent(J1, jname.c_str());
     J1->setOptimizable(Opt);
     return true;
   }
@@ -477,7 +477,7 @@ bool RadialJastrowBuilder::createJ1<RPAFunctor>(xmlNodePtr cur)
 
   J1->dPsi          = dJ1;
   std::string jname = "J1_" + Jastfunction;
-  targetPsi.addOrbital(J1, jname.c_str());
+  targetPsi.addComponent(J1, jname.c_str());
   J1->setOptimizable(Opt);
   return true;
 }

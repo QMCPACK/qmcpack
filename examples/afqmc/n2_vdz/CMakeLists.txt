@@ -1,6 +1,5 @@
 
 
-INCLUDE( "${qmcpack_SOURCE_DIR}/CMake/macros.cmake" )
 LIST(APPEND AFQMC_N2_SCALARS "Eloc" "-109.26 0.02")
 
 QMC_RUN_AND_CHECK(short-afqmc-N2_vdz
