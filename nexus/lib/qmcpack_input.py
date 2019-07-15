@@ -5276,33 +5276,35 @@ def generate_kspace_jastrow(kc1, kc2, nk1, nk2,
 
   if coeff1 is None: coeff1 = [0]*nk1
   if coeff2 is None: coeff2 = [0]*nk2
-  if len(coeff1) != nk1: raise RuntimeError('coeff1 mismatch')
-  if len(coeff2) != nk2: raise RuntimeError('coeff2 mismatch')
+  if len(coeff1) != nk1:
+    QmcpackInput.class_error('coeff1 mismatch', 'generate_kspace_jastrow')
+  if len(coeff2) != nk2:
+    QmcpackInput.class_error('coeff2 mismatch', 'generate_kspace_jastrow')
 
-  corr1 = correlation({
-    'type': 'One-Body',
-    'symmetry': symm1,
-    'kc': kc1,
-    'coefficients': section({
-      'id': 'cG1', 'type': 'Array',
-      'coeff': coeff1
-     })
-  })
-  corr2 = correlation({
-    'type': 'Two-Body',
-    'symmetry': symm2,
-    'kc': kc2,
-    'coefficients': section({
-      'id': 'cG2', 'type': 'Array',
-      'coeff': coeff2
-     })
-  })
-  jk = kspace_jastrow({
-    'type': 'kSpace',
-    'name': 'Jk',
-    'source': 'ion0',
-    'correlations': collection([corr1, corr2])
-  })
+  corr1 = correlation(
+    type = 'One-Body',
+    symmetry = symm1,
+    kc = kc1,
+    coefficients = section(
+      id = 'cG1', type = 'Array',
+      coeff = coeff1
+    )
+  )
+  corr2 = correlation(
+    type = 'Two-Body',
+    symmetry = symm2,
+    kc = kc2,
+    coefficients = section(
+      id = 'cG2', type = 'Array',
+      coeff = coeff2
+     )
+  )
+  jk = kspace_jastrow(
+    type = 'kSpace',
+    name = 'Jk',
+    source = 'ion0',
+    correlations = collection([corr1, corr2])
+  )
   return jk
 # end def generate_kspace_jastrow
 
