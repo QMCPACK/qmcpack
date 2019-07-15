@@ -3,7 +3,7 @@ INCLUDE("${PROJECT_SOURCE_DIR}/CMake/test_labels.cmake")
 
 # Runs unit tests
 FUNCTION( ADD_UNIT_TEST TESTNAME TEST_BINARY )
-    IF ( QMC_VERBOSE_TEST_CONFIGURATION )
+    IF ( QMC_VERBOSE_CONFIGURATION )
         MESSAGE("Adding test ${TESTNAME}")
     ENDIF()
     IF ( USE_MPI )

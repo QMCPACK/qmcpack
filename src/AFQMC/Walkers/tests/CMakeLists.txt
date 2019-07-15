@@ -9,7 +9,7 @@
 #// File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 #//////////////////////////////////////////////////////////////////////////////////////
 
-IF ( QMC_VERBOSE_TEST_CONFIGURATION )
+IF ( QMC_VERBOSE_CONFIGURATION )
     MESSAGE("Adding test test_sharedwset")
 ENDIF()
 

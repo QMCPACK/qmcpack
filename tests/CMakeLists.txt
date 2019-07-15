@@ -1,6 +1,6 @@
 MESSAGE(STATUS "Creating integration tests for QMCPACK")
-IF ( NOT QMC_VERBOSE_TEST_CONFIGURATION )
-  MESSAGE("Set QMC_VERBOSE_TEST_CONFIGURATION=1 for details of which tests will be enabled.")
+IF ( NOT QMC_VERBOSE_CONFIGURATION )
+  MESSAGE("Set QMC_VERBOSE_CONFIGURATION=1 for details of which tests will be enabled.")
 ENDIF()
 
 SUBDIRS(converter)

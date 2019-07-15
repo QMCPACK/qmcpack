@@ -102,7 +102,7 @@ FUNCTION( RUN_QMC_APP_NO_COPY TESTNAME WORKDIR PROCS THREADS TEST_ADDED TEST_LAB
     SET( TEST_ADDED_TEMP FALSE )
     IF ( USE_MPI )
         IF ( ${TOT_PROCS} GREATER ${TEST_MAX_PROCS} )
-            IF ( QMC_VERBOSE_TEST_CONFIGURATION )
+            IF ( QMC_VERBOSE_CONFIGURATION )
                 MESSAGE("Disabling test ${TESTNAME} (exceeds maximum number of processors ${TEST_MAX_PROCS})")
              ENDIF()
         ELSEIF ( USE_MPI )
@@ -120,7 +120,7 @@ FUNCTION( RUN_QMC_APP_NO_COPY TESTNAME WORKDIR PROCS THREADS TEST_ADDED TEST_LAB
                 ENVIRONMENT OMP_NUM_THREADS=${THREADS} )
             SET( TEST_ADDED_TEMP TRUE )
         ELSE()
-            IF ( QMC_VERBOSE_TEST_CONFIGURATION )
+            IF ( QMC_VERBOSE_CONFIGURATION )
                  MESSAGE("Disabling test ${TESTNAME} (building without MPI)")
             ENDIF()
         ENDIF()
@@ -174,7 +174,7 @@ FUNCTION(QMC_RUN_AND_CHECK BASE_NAME BASE_DIR PREFIX INPUT_FILE PROCS THREADS SH
     SET( TEST_ADDED FALSE )
     SET( TEST_LABELS "")
     SET( FULL_NAME "${BASE_NAME}-${PROCS}-${THREADS}" )
-    IF ( QMC_VERBOSE_TEST_CONFIGURATION )
+    IF ( QMC_VERBOSE_CONFIGURATION )
         MESSAGE("Adding test ${FULL_NAME}")
     ENDIF()
     RUN_QMC_APP(${FULL_NAME} ${BASE_DIR} ${PROCS} ${THREADS} TEST_ADDED TEST_LABELS ${INPUT_FILE})
@@ -250,7 +250,7 @@ function(SIMPLE_RUN_AND_CHECK base_name base_dir input_file procs threads check_
 
   # build test name
   set(full_name "${base_name}-${procs}-${threads}")
-  IF ( QMC_VERBOSE_TEST_CONFIGURATION )
+  IF ( QMC_VERBOSE_CONFIGURATION )
        MESSAGE("Adding test ${full_name}")
   ENDIF()
 

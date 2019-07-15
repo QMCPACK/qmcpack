@@ -163,7 +163,7 @@ IF(ENABLE_CUDA AND QMC_CUDA)
   MESSAGE(FATAL_ERROR "ENABLE_CUDA=1 and QMC_CUDA=1 can not be set together!")
 ENDIF(ENABLE_CUDA AND QMC_CUDA)
 
-SET(QMC_VERBOSE_TEST_CONFIGURATION 0 CACHE BOOL "Give details why specific tests are/are not added")
+SET(QMC_VERBOSE_CONFIGURATION 0 CACHE BOOL "Give details why specific tests are/are not added")
 
 ######################################################################
 # set debug printout
