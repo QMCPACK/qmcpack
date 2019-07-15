@@ -173,8 +173,8 @@ class Void:
         Void._unavailable(self)
     def __length_hint__(self,*args,**kwargs):
         Void._unavailable(self)
-    def __repr__(self,*args,**kwargs):
-        Void._unavailable(self)
+    #def __repr__(self,*args,**kwargs):
+    #    Void._unavailable(self)
     def __str__(self,*args,**kwargs):
         Void._unavailable(self)
     def __unicode__(self,*args,**kwargs):
