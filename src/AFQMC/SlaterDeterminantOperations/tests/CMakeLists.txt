@@ -9,9 +9,7 @@
 #// File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 #//////////////////////////////////////////////////////////////////////////////////////
 
-IF ( QMC_VERBOSE_CONFIGURATION )
-   MESSAGE("Adding AFQMC Slater Determinant Operations unit tests")
-ENDIF()
+MESSAGE_VERBOSE("Adding AFQMC Slater Determinant Operations unit tests")
 
 SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
 

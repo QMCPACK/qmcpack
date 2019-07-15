@@ -9,9 +9,7 @@
 #// File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 #//////////////////////////////////////////////////////////////////////////////////////
 
-IF ( QMC_VERBOSE_CONFIGURATION )
-   MESSAGE("Adding AFQMC matrix unit tests")
-ENDIF()
+MESSAGE_VERBOSE("Adding AFQMC matrix unit tests")
 
 SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
 

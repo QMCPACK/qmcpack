@@ -13,9 +13,7 @@ function(RUN_RESTART_AND_CHECK base_name base_dir input_file procs threads check
 
   # build test name
   set(full_name "${base_name}-${procs}-${threads}")
-  IF ( QMC_VERBOSE_CONFIGURATION )
-      message("Adding test ${full_name}")
-  ENDIF()
+  MESSAGE_VERBOSE("Adding test ${full_name}")
 
   # add run (task 1)
   set (test_added false)

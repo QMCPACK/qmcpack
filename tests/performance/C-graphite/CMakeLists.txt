@@ -5,9 +5,7 @@
 # QMC_DATA - C-graphite subdirectory should contain the *.h5 files
 
 FUNCTION(ADD_C_GRAPHITE_TEST TEST_NAME TEST_DIR INPUT_FILE H5_FILE)
-  IF ( QMC_VERBOSE_CONFIGURATION )
-      MESSAGE("Adding test ${TEST_NAME}")
-  ENDIF()
+  MESSAGE_VERBOSE("Adding test ${TEST_NAME}")
   SET (WDIR "${qmcpack_BINARY_DIR}/tests/performance/C-graphite/${TEST_DIR}")
   SET (SDIR "${CMAKE_SOURCE_DIR}/tests/performance/C-graphite/sample/${TEST_DIR}")
 
@@ -51,9 +49,7 @@ FUNCTION(ADD_C_GRAPHITE_TEST TEST_NAME TEST_DIR INPUT_FILE H5_FILE)
 ENDFUNCTION()
 
 IF (NOT QMC_DATA)
-  IF ( QMC_VERBOSE_CONFIGURATION )
-      MESSAGE("QMC_DATA not set. Performance tests not added.")
-  ENDIF()
+  MESSAGE_VERBOSE("QMC_DATA not set. Performance tests not added.")
 ELSEIF(NOT EXISTS ${QMC_DATA}/C-graphite)
   MESSAGE("C-graphite directory under QMC_DATA does not exist. C-graphite performance tests not added.")
 ELSE()
