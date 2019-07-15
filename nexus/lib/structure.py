@@ -1223,7 +1223,7 @@ class Structure(Sobj):
         return sqrt(((pos1-pos2)**2).sum(1))
     #end def distances
 
-    def count_kshells(self, kcut, tilevec=[12, 12, 12], nkdig=8):
+    def count_kshells(self, kcut, tilevec=[12, 12, 12], nkdig=10):
       # check tilevec input
       for nt in tilevec:
         if nt % 2 != 0:
