@@ -45,8 +45,6 @@ public:
 
   void descent_checkConfigurations(std::vector<Return_t>& LDerivs, double& oldMu, bool& targetExcited,double& omega);
   
-  void sr_checkConfigurations(formic::Matrix<Return_t>& lhsMatrix, std::vector<Return_t>& rhsVector, double& tau, bool& targetExcited,double& omega);
-
   void resetPsi(bool final_reset = false);
   void GradCost(std::vector<Return_t>& PGradient, const std::vector<Return_t>& PM, Return_rt FiniteDiff = 0);
   Return_rt fillOverlapHamiltonianMatrices(Matrix<Return_rt>& Left, Matrix<Return_rt>& Right);

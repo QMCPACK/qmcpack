@@ -154,10 +154,9 @@ public:
 #ifdef HAVE_LMY_ENGINE
   virtual void engine_checkConfigurations(cqmc::engine::LMYEngine* EngineObj) = 0;
 
+#endif
   virtual void descent_checkConfigurations(std::vector<Return_t>& LDerivs, double& oldMu, bool& targetExcited,double& omega) = 0;
 
-  virtual void sr_checkConfigurations(formic::Matrix<Return_t>& lhsMatrix, std::vector<Return_t>& rhsVector, double& tau, bool& targetExcited,double& omega) = 0;
-#endif
 
 
   void setRng(std::vector<RandomGenerator_t*>& r);
@@ -167,7 +166,8 @@ public:
   inline void setneedGrads(bool tf) { needGrads = tf; }
   inline void setDMC() { vmc_or_dmc = 1.0; }
 
-  inline opt_variables_type getVars() {return OptVariables;}
+  inline std::string getName(int i) {return OptVariables.name(i);}
+
 protected:
   ///walker ensemble
   MCWalkerConfiguration& W;

@@ -110,7 +110,6 @@ QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(
 
   // Parameters for descent and hybrid methods
   m_param.add(flavor, "flavor", "string");
-  m_param.add(useAvgParams, "useAvgParams", "string");
   // Parameters for setting step sizes for variables of different types
   m_param.add(TJF_2Body_eta, "TJF_2Body_eta", "double");
   m_param.add(TJF_1Body_eta, "TJF_1Body_eta", "double");
@@ -216,10 +215,7 @@ bool QMCFixedSampleLinearOptimize::run() {
     return hybrid_run();
   }
 
-  if (doSR) {
-    app_log() << "Going to sr_run()" << std::endl;
-    return sr_run();
-  }
+  
 
 // if requested, perform the update via the adaptive three-shift or single-shift
 // method
@@ -227,8 +223,6 @@ bool QMCFixedSampleLinearOptimize::run() {
   if (doAdaptiveThreeShift) {
     app_log() << "Going to adaptive_three_shift_run()" << std::endl;
     return adaptive_three_shift_run();
-    //    app_log() << "Returned from call to adaptive_three_shift_run()" <<
-    //    std::endl;
   }
 #endif
   if (doOneShiftOnly)
@@ -901,11 +895,7 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run() {
 
   const int init_num_samp = optTarget->getNumSamples();
 
-  // app_log() << "This is input s shift: " << shift_s_input << std::endl;
-  // app_log() << "This is input i shift: " << shift_i_input << std::endl;
-  // app_log() << "This is initial best s shift: " << bestShift_s << std::endl;
-  // app_log() << "This is initial best i shift: " << bestShift_i << std::endl;
-
+  
   // the index of central shift
   const int central_index = num_shifts / 2;
 
@@ -922,9 +912,7 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run() {
   // ensure the cost function is set to compute derivative vectors
   optTarget->setneedGrads(true);
 
-  // app_log() << "This is s shift: " << bestShift_s << std::endl;
-  // app_log() << "This is i shift: " << bestShift_i << std::endl;
-
+ 
   // prepare previous updates
   int count = 0;
   while (block_lm && previous_update.size() < nolds) {
@@ -1445,26 +1433,7 @@ bool QMCFixedSampleLinearOptimize::one_shift_run() {
 
 bool QMCFixedSampleLinearOptimize::descent_run() {
 
-  app_log() << "First Check number of samples: " << optTarget->getNumSamples()
-            << std::endl;
-  /*
-    int init_num_samp;
-    if(doHybrid)
-    {
-     init_num_samp = hybrid_descent_samples;
-    optTarget->setNumSamples(hybrid_descent_samples);
-    }
-
-    app_log() << "Second Check number of samples: " <<
-    optTarget->getNumSamples() << std::endl;
-    */
-  /*
-  else
-  {
-  // remember the initial number of samples
-  init_num_samp = optTarget->getNumSamples();
-  }*/
-
+  
   start();
   bool Valid(true);
   int Total_iterations(0);
@@ -1517,10 +1486,8 @@ void QMCFixedSampleLinearOptimize::updateParameters(
     std::vector<std::vector<Return_t>> &derivRecords, double &prevLambda,
     std::vector<double> &prevTaus, std::vector<Return_t> &derivsSquared,
     int stepNum) {
-  app_log() << "Inside updateParameters" << std::endl;
   numParams = optTarget->NumParams();
   app_log() << "Number of Parameters: " << numParams << std::endl;
-  // std::cout << "Optimization Step Number: "<< stepNum << std::endl;
 
   app_log() << "Parameter Type step sizes: "
             << " TJF_2Body_eta=" << TJF_2Body_eta
@@ -1530,12 +1497,10 @@ void QMCFixedSampleLinearOptimize::updateParameters(
   int process_rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &process_rank);
 
-  // std::cout << "derivRecords size is: " << derivRecords.size() << std::endl;
   // Get set of derivatives for current (kth) optimization step
   std::vector<Return_t> curDerivSet = derivRecords.at(derivRecords.size() - 1);
   std::vector<Return_t> prevDerivSet;
 
-  // std::cout << prevTaus.empty() << std::endl;
   if (!prevTaus.empty()) {
     // Get set of derivatives for previous (k-1th) optimization step
     prevDerivSet = derivRecords.at(derivRecords.size() - 2);
@@ -1566,9 +1531,7 @@ void QMCFixedSampleLinearOptimize::updateParameters(
     // Define damping factor that turns off acceleration of the algorithm
     // small value of d corresponds to quick damping and effectively using
     // steepest descent
-    // double d = .00000001;
     double d = 100;
-    //  double d = 100000000;
     double decayFactor = std::exp(-(1 / d) * (stepNum));
     gamma = gamma * decayFactor;
 
@@ -1590,10 +1553,7 @@ void QMCFixedSampleLinearOptimize::updateParameters(
 
       denom = std::sqrt(curSquare + epsilon);
 
-      //  app_log() << "This is denom: " << denom << std::endl;
       type_Eta = this->setStepSize(i);
-      //        app_log() << "This is step size: " << type_Eta << " for
-      //        parameter #" << i << std::endl;
       tau = type_Eta / denom;
 
       // Include an additional factor to cause step size to decrease to 0 as
@@ -1603,38 +1563,26 @@ void QMCFixedSampleLinearOptimize::updateParameters(
       double stepDecayDenom = 1 + stepLambda * stepNum;
       tau = tau / stepDecayDenom;
 
-      // app_log() << "This is final tau: " << tau << std::endl;
 
-      // optTarget->Params(i) = optTarget->Params(i) - tau*curDerivSet.at(i);
 
       if (prevTaus.size() >= numParams) {
-        //    app_log() <<"Each parameter has been updated once"<<std::endl;
-        //   app_log() << "Should print on new AD section on first iteration" <<
-        //   std::endl;
-        // std::cout << "Accessing entry #" << i << std::endl;
         double oldTau = prevTaus.at(i);
-        // std::cout <<"Accessed tau"<<std::endl;
 
         optTarget->Params(i) =
             (1 - gamma) * (optTarget->Params(i) - tau * curDerivSet.at(i)) +
             gamma * (paramsCopy.at(i) - oldTau * prevDerivSet.at(i));
       } else {
         tau = type_Eta;
-        // app_log() << "This is final tau on first step: " << tau << std::endl;
 
         optTarget->Params(i) = optTarget->Params(i) - tau * curDerivSet.at(i);
-        // optTarget->Params(i) = optTarget->Params(i) -
-        // type_Eta*curDerivSet[i];
       }
 
       if (prevTaus.size() < numParams) {
-        //             app_log() << "On the first step" << std::endl;
         // For the first optimization step, need to add to the vectors
         prevTaus.push_back(tau);
         derivsSquared.push_back(curSquare);
 
       } else {
-        //  	    app_log() << "Not on first step" << std::endl;
         // When not on the first step, can overwrite the previous stored values
         prevTaus[i] = tau;
         derivsSquared[i] = curSquare;
@@ -1707,16 +1655,13 @@ void QMCFixedSampleLinearOptimize::updateParameters(
         optTarget->Params(i) = optTarget->Params(i) - tau * corNumer;
 
         if (prevTaus.size() < numParams) {
-          //         app_log() << "On the first step" << std::endl;
           // For the first optimization step, need to add to the vectors
           prevTaus.push_back(tau);
           derivsSquared.push_back(curSquare);
           denomRecords[i] = v;
           numerRecords[i] = numer;
         } else {
-          //	    app_log() << "Not on first step" << std::endl;
-          // When not on the first step, can overwrite the previous stored
-          // values
+          // When not on the first step, can overwrite the previous stored values
           prevTaus[i] = tau;
           derivsSquared[i] = curSquare;
           denomRecords[i] = v;
@@ -1751,16 +1696,13 @@ void QMCFixedSampleLinearOptimize::updateParameters(
         optTarget->Params(i) = optTarget->Params(i) - tau * numer;
 
         if (prevTaus.size() < numParams) {
-          //         app_log() << "On the first step" << std::endl;
           // For the first optimization step, need to add to the vectors
           prevTaus.push_back(tau);
           derivsSquared.push_back(curSquare);
           denomRecords[i] = v;
           numerRecords[i] = numer;
         } else {
-          //	    app_log() << "Not on first step" << std::endl;
-          // When not on the first step, can overwrite the previous stored
-          // values
+          // When not on the first step, can overwrite the previous stored values
           prevTaus[i] = tau;
           derivsSquared[i] = curSquare;
           denomRecords[i] = v;
@@ -1772,7 +1714,6 @@ void QMCFixedSampleLinearOptimize::updateParameters(
     }
   }
 
-  // std::cout << "At hybrid storage check" << std::endl;
   if (doHybrid && ((stepNum + 1) % (descent_len / 5) == 0)) {
     if (process_rank == 0) {
       std::cout << "Step number is " << stepNum
@@ -1785,51 +1726,52 @@ void QMCFixedSampleLinearOptimize::updateParameters(
 
 // Helper method for setting step size according parameter type.
 double QMCFixedSampleLinearOptimize::setStepSize(int i) {
-  double type_Eta;
+  
+	double type_eta;
 
-        opt_variables_type tmp = optTarget->getVars();
-        app_log() << "Could be name: " << tmp.name(i) << std::endl;
+        //app_log() << "Could be name: " << tmp.name(i) << std::endl;
+        app_log() << "Could be name: " << optTarget->getName(i) << std::endl;
         int type = optTarget->getType(i);
       app_log() << "This is type: " << type << " for parameter#: " << i << std::endl;
 
-        std::string name = tmp.name(i);
+        std::string name = optTarget->getName(i);
 
         //Step sizes are assigned according to parameter type identified from the variable name.
         //Other parameter types could be added to this section as other wave function ansatzes are developed.
       if((name.find("uu") != std::string::npos ) || (name.find("ud")!= std::string::npos))
       {
-        type_Eta = TJF_2Body_eta;
+        type_eta = TJF_2Body_eta;
         app_log() << "Set step size to: " << TJF_2Body_eta << std::endl;
       } 
       else if(type == 1)
       {
-        type_Eta = TJF_1Body_eta;
+        type_eta = TJF_1Body_eta;
         app_log() << "Set step size to: " << TJF_1Body_eta << std::endl;
       }
       else if (name.find("F_")!= std::string::npos)
       {
-        type_Eta = F_eta;
+        type_eta = F_eta;
         app_log() << "Set step size to: " << F_eta << std::endl;
       }
       else if (name.find("CIcoeff_") != std::string::npos)
       {
-        type_Eta = CI_eta;
+        type_eta = CI_eta;
         app_log() << "Set step size to: " << CI_eta << std::endl;
       }
       else if(name.find("orb_rot_") != std::string::npos)
       {
-        type_Eta = Orb_eta;
+        type_eta = Orb_eta;
         app_log() << "Set step size to: " << Orb_eta << std::endl;
       }
       else if (name.find("g") != std::string::npos)
       {
           //Gaussian parameters are rarely optimized in practice but the descent code allows for it.
-        type_Eta = Gauss_eta;
+        type_eta = Gauss_eta;
         app_log() << "Set step size to: " << Gauss_eta << std::endl;
       }
 
 
-  return type_Eta;
+  return type_eta;
 }
 
 // Helper method for storing vectors of parameter differences over the course of
@@ -1880,7 +1822,6 @@ bool QMCFixedSampleLinearOptimize::hybrid_run() {
     optTarget->setNumSamples(hybrid_descent_samples);
     return descent_run();
   } else {
-    // descentCount = 0;
     if (blmCount < blm_len) {
       blmCount++;
       totalCount++;
@@ -1888,7 +1829,6 @@ bool QMCFixedSampleLinearOptimize::hybrid_run() {
                 << " of macro-iteration. Total steps: " << totalCount
                 << std::endl;
       EngineObj->setHybridBLM_Input(hybridBLM_Input);
-      // optTarget->setNumSamples(10^6);
       return adaptive_three_shift_run();
 
     } else {
@@ -1904,26 +1844,5 @@ bool QMCFixedSampleLinearOptimize::hybrid_run() {
   }
 }
 
-bool QMCFixedSampleLinearOptimize::sr_run() {
-  numParams = optTarget->NumParams();
-  formic::Matrix<Return_t> lhsMatrix(numParams, numParams);
-  std::vector<Return_t> rhsVector;
-
-  optTarget->sr_checkConfigurations(lhsMatrix, rhsVector, sr_tau, targetExcited,
-                                    omega_shift);
-
-  double lapackLHS[numParams][numParams];
-  double lapackRHS[numParams];
-  for (int i = 0; i < numParams; i++) {
-    lapackRHS[i] = rhsVector[i];
-    for (int j = 0; j < numParams; j++) {
-      lapackLHS[i][j] = lhsMatrix.at(i, j);
-    }
-  }
-  // Then use LAPACK to get pseudoinverse and then solve Ax=b to get updates in
-  // x.
-
-  // Then apply updates
-}
 
 } // namespace qmcplusplus
