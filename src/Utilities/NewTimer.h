@@ -128,10 +128,12 @@ public:
 // N = 2 gives 16 nesting levels
 typedef StackKeyParam<2> StackKey;
 
+using NewTimerPtr = NewTimer *;
+
 class TimerManagerClass
 {
 protected:
-  std::vector<NewTimer*> TimerList;
+  std::vector<NewTimerPtr> TimerList;
   std::vector<NewTimer*> CurrentTimerStack;
   timer_levels timer_threshold;
   timer_id_t max_timer_id;
