@@ -236,17 +236,11 @@ private:
   std::string useAvgParams;
 
   double TJF_2Body_eta;
-  int TJF_2Body_num;
   double TJF_1Body_eta;
-  int TJF_1Body_num;
   double F_eta;
-  int F_num;
   double Gauss_eta;
-  int Gauss_num;
   double CI_eta;
-  int CI_num;
   double Orb_eta;
-  int Orb_num;
 
   //int descent_len;
   //int blm_len;
@@ -256,14 +250,7 @@ private:
 
   int hybrid_descent_samples;
 
-  // flag and input string for printing lm matrices
-  bool print_lm_matrices;
-  std::string print_lm_matrices_str = "no";
 
-
-  std::string on_reset;
-  std::string retainMem;
-  int startStepNum;
 
 
 

@@ -78,9 +78,8 @@ QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(
 
       // Defaults for descent parameters
       flavor("RMSprop"), TJF_2Body_eta(.01), TJF_1Body_eta(.01), F_eta(.001),
-      Gauss_eta(.001), CI_eta(.01), Orb_eta(.001),
-
-      startStepNum(0), on_reset("no") {
+      Gauss_eta(.001), CI_eta(.01), Orb_eta(.001)
+       {
   IsQMCDriver = false;
   // set the optimization flag
   QMCDriverMode.set(QMC_OPTIMIZE, 1);
@@ -114,25 +113,17 @@ QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(
   m_param.add(useAvgParams, "useAvgParams", "string");
   // Parameters for setting step sizes for variables of different types
   m_param.add(TJF_2Body_eta, "TJF_2Body_eta", "double");
-  m_param.add(TJF_2Body_num, "TJF_2Body_num", "int");
   m_param.add(TJF_1Body_eta, "TJF_1Body_eta", "double");
-  m_param.add(TJF_1Body_num, "TJF_1Body_num", "int");
   m_param.add(F_eta, "F_eta", "double");
-  m_param.add(F_num, "F_num", "int");
   m_param.add(Gauss_eta, "Gauss_eta", "double");
-  m_param.add(Gauss_num, "Gauss_num", "int");
   m_param.add(CI_eta, "CI_eta", "double");
-  m_param.add(CI_num, "CI_num", "int");
   m_param.add(Orb_eta, "Orb_eta", "double");
-  m_param.add(Orb_num, "Orb_num", "int");
 
-  // m_param.add(print_lm_matrices_str,"print_lm_matrices","string");
 
   // m_param.add(descent_len,"descent_length","int");
   // m_param.add(blm_len,"BLM_length","int");
   // m_param.add(hybrid_descent_samples,"Hybrid_Descent_samples","int");
 
-  m_param.add(startStepNum, "starting_step", "int");
 
 #ifdef HAVE_LMY_ENGINE
   // app_log() << "construct QMCFixedSampleLinearOptimize" << endl;
@@ -1508,6 +1499,7 @@ bool QMCFixedSampleLinearOptimize::descent_run() {
 
     std::vector<RealType> LDerivs(numParams);
 
+    app_log() << "This is mu: " << mu << std::endl;
     optTarget->descent_checkConfigurations(LDerivs, mu, targetExcited,
                                            omega_shift);
 
@@ -1781,9 +1773,9 @@ void QMCFixedSampleLinearOptimize::updateParameters(
   }
 
   // std::cout << "At hybrid storage check" << std::endl;
-  if (doHybrid && ((startStepNum + stepNum + 1) % (descent_len / 5) == 0)) {
+  if (doHybrid && ((stepNum + 1) % (descent_len / 5) == 0)) {
     if (process_rank == 0) {
-      std::cout << "Step number is " << startStepNum + stepNum
+      std::cout << "Step number is " << stepNum
                 << " out of expected total of " << descent_len
                 << " descent steps." << std::endl;
     }
@@ -1792,31 +1784,50 @@ void QMCFixedSampleLinearOptimize::updateParameters(
 }
 
 // Helper method for setting step size according parameter type.
-// Parameters are assumed to come in the order TJF 2 Body, TJF 1 Body, F Matrix,
-// F matrix Gaussians, CI, Orbitals
 double QMCFixedSampleLinearOptimize::setStepSize(int i) {
   double type_Eta;
 
-  //    app_log() << "This is type: " << optTarget->getType(i) << " for
-  //    parameter#: " << i << std::endl;
+        opt_variables_type tmp = optTarget->getVars();
+        app_log() << "Could be name: " << tmp.name(i) << std::endl;
+        int type = optTarget->getType(i);
+      app_log() << "This is type: " << type << " for parameter#: " << i << std::endl;
 
-  if (i < TJF_2Body_num) {
-    type_Eta = TJF_2Body_eta;
-  } else if (i < TJF_2Body_num + TJF_1Body_num && TJF_1Body_num > 0) {
-    type_Eta = TJF_1Body_eta;
-  } else if (i < TJF_2Body_num + TJF_1Body_num + F_num && F_num > 0) {
-    type_Eta = F_eta;
-  } else if (i < TJF_2Body_num + TJF_1Body_num + F_num + Gauss_num &&
-             Gauss_num > 0) {
-    type_Eta = Gauss_eta;
-  } else if (i < TJF_2Body_num + TJF_1Body_num + F_num + Gauss_num + CI_num &&
-             CI_num > 0) {
-    type_Eta = CI_eta;
-  } else if (i < TJF_2Body_num + TJF_1Body_num + F_num + Gauss_num + CI_num +
-                     Orb_num &&
-             Orb_num > 0) {
-    type_Eta = Orb_eta;
-  }
+        std::string name = tmp.name(i);
+
+        //Step sizes are assigned according to parameter type identified from the variable name.
+        //Other parameter types could be added to this section as other wave function ansatzes are developed.
+      if((name.find("uu") != std::string::npos ) || (name.find("ud")!= std::string::npos))
+      {
+        type_Eta = TJF_2Body_eta;
+        app_log() << "Set step size to: " << TJF_2Body_eta << std::endl;
+      } 
+      else if(type == 1)
+      {
+        type_Eta = TJF_1Body_eta;
+        app_log() << "Set step size to: " << TJF_1Body_eta << std::endl;
+      }
+      else if (name.find("F_")!= std::string::npos)
+      {
+        type_Eta = F_eta;
+        app_log() << "Set step size to: " << F_eta << std::endl;
+      }
+      else if (name.find("CIcoeff_") != std::string::npos)
+      {
+        type_Eta = CI_eta;
+        app_log() << "Set step size to: " << CI_eta << std::endl;
+      }
+      else if(name.find("orb_rot_") != std::string::npos)
+      {
+        type_Eta = Orb_eta;
+        app_log() << "Set step size to: " << Orb_eta << std::endl;
+      }
+      else if (name.find("g") != std::string::npos)
+      {
+          //Gaussian parameters are rarely optimized in practice but the descent code allows for it.
+        type_Eta = Gauss_eta;
+        app_log() << "Set step size to: " << Gauss_eta << std::endl;
+      }
+
 
   return type_Eta;
 }
@@ -1843,7 +1854,7 @@ void QMCFixedSampleLinearOptimize::storeVectors(
   }
 
   // If on first step, clear anything that was in vector
-  if (startStepNum + stepNum + 1 == descent_len / 5) {
+  if (stepNum + 1 == descent_len / 5) {
     hybridBLM_Input.clear();
     hybridBLM_Input.push_back(rowVec);
   } else {

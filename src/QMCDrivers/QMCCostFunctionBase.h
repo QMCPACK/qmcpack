@@ -171,6 +171,7 @@ public:
   inline void setneedGrads(bool tf) { needGrads = tf; }
   inline void setDMC() { vmc_or_dmc = 1.0; }
 
+  inline opt_variables_type getVars() {return OptVariables;}
 protected:
   ///walker ensemble
   MCWalkerConfiguration& W;

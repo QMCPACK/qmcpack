@@ -680,8 +680,9 @@ double eSum = 0;
 
   myComm->allreduce(other_hsquare_der_samp);
 
-double newE = etemp[0];
-newE = newE/etemp[1];
+double newE = etemp[0]/etemp[1];
+newE = .99*newE +.01*oldMu;
+oldMu = newE;
 double newHSquared = etemp[2] / etemp[1];
 
 for (int i = 0; i < LDerivs.size();i++)
@@ -693,9 +694,10 @@ avg_der_rat_samp.at(i) = avg_der_rat_samp.at(i)/etemp[1];
 avg_hsquare_der_samp.at(i) = avg_hsquare_der_samp.at(i)/etemp[1];
 other_hsquare_der_samp.at(i) = other_hsquare_der_samp.at(i)/etemp[1];
 
-app_log() << "This is avg_hsquare_term: " << avg_hsquare_der_samp.at(i) << " for parameter#: " << i << std::endl;
-app_log() << "This is other_hsquare_term: " << other_hsquare_der_samp.at(i) << " for parameter#: " << i << std::endl;
-app_log() << "This is newE*avg_le_der term: " << newE*avg_le_der_samp.at(i) << " for parameter#: " << i << std::endl;
+
+//app_log() << "This is avg_hsquare_term: " << avg_hsquare_der_samp.at(i) << " for parameter#: " << i << std::endl;
+//app_log() << "This is other_hsquare_term: " << other_hsquare_der_samp.at(i) << " for parameter#: " << i << std::endl;
+//app_log() << "This is newE*avg_le_der term: " << newE*avg_le_der_samp.at(i) << " for parameter#: " << i << std::endl;
 
 
 if(!targetExcited)
@@ -705,9 +707,9 @@ if(!targetExcited)
 
 LDerivs.at(i) = 2*avg_le_der_samp.at(i) - newE*(2*avg_der_rat_samp.at(i));
 
-app_log() << "This is derivative of GS functional: " << LDerivs.at(i) << " for parameter#: " << i << std::endl;
-app_log() << "Terms are: " << 2*avg_le_der_samp.at(i) << ", " << - newE*(2*avg_der_rat_samp.at(i)) << std::endl;
-app_log() << "Pieces are: " << avg_le_der_samp.at(i) << ", " << newE << ", " << avg_der_rat_samp.at(i) << std::endl;
+//app_log() << "This is derivative of GS functional: " << LDerivs.at(i) << " for parameter#: " << i << std::endl;
+//app_log() << "Terms are: " << 2*avg_le_der_samp.at(i) << ", " << - newE*(2*avg_der_rat_samp.at(i)) << std::endl;
+//app_log() << "Pieces are: " << avg_le_der_samp.at(i) << ", " << newE << ", " << avg_der_rat_samp.at(i) << std::endl;
 }
 
 else
@@ -757,7 +759,7 @@ denom.at(i) = (omega*omega - 2*omega*newE + newHSquared)*(omega*omega - 2*omega*
 LDerivs.at(i) = (numerTerm1.at(i) - numerTerm2.at(i))/denom.at(i);
 
 
-app_log() << "This is derivative of ES functional: " << LDerivs.at(i) << " for parameter#: " << i << std::endl;
+//app_log() << "This is derivative of ES functional: " << LDerivs.at(i) << " for parameter#: " << i << std::endl;
 //app_log() << "Terms are: " << omega*omega*(2*avg_der_rat_samp.at(i)) << ", " << -2*omega*(2*avg_le_der_samp.at(i)) << ", " << 2*avg_hsquare_der_samp.at(i) << std::endl;
 //app_log() << "Terms are: " << omega*omega*(2*avg_der_rat_samp.at(i)) << ", " << -2*omega*(2*avg_le_der_samp.at(i)) << ", " << 2*other_hsquare_der_samp.at(i) << std::endl;
 //app_log() << "Terms are: " << omega*omega*(2*avg_der_rat_samp.at(i)) << ", " << -2*omega*(2*avg_le_der_samp.at(i)) << ", " << avg_hsquare_der_samp.at(i) << ", " << other_hsquare_der_samp.at(i) << std::endl;
