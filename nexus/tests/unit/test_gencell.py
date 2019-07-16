@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 import numpy as np
-import sys
-sys.path.insert(0, '../../lib/forlib')
-from gencell import nsupercell, generate_all_supercells
+from forlib.gencell import nsupercell, generate_all_tilematrices
+from forlib.gencell import generate_all_supercells
 
 def test_nsupercell():
   # test up to nprim=63
@@ -11,23 +10,40 @@ def test_nsupercell():
     nprim=i+1
     assert nsupercell(nprim) == ans
 
-def test_genall():
+def test_tilematrix():
   # test a few random ones
   nprim=3
   nhnf = nsupercell(nprim)
-  hnfs = generate_all_supercells(nprim, nhnf)
+  hnfs = generate_all_tilematrices(nprim, nhnf)
   ihnf = 1
   ans = np.array([[1, 0, 0], [0, 1, 1], [0, 0, 3]], dtype=int)
   assert np.allclose(hnfs[:, :, ihnf], ans)
   # N96
   nprim=4
   nhnf = nsupercell(nprim)
-  hnfs = generate_all_supercells(nprim, nhnf)
+  hnfs = generate_all_tilematrices(nprim, nhnf)
   ihnf = 20
   ans = np.array([[1, 1, 0], [0, 2, 0], [0, 0, 2]])
   assert np.allclose( hnfs[:, :, ihnf], ans)
 
+def test_opt_tile():
+  from structure import optimal_tilematrix_hnf
+  nprim=4  # 24 to 96
+  axes=np.array([
+    [2.6812469112636386, -1.5259544931042469e-4, -4.6349129093427388],
+    [-3.039595757365180e-2, 9.4905815242660267, 0.0],
+    [2.6812469112636386, -1.5259544931042469e-4, 4.6349129093427388]
+  ])
+  topt, ropt = optimal_tilematrix_hnf(axes, nprim)
+  assert np.isclose(ropt, 5.354577733)
+  assert np.allclose(topt, np.array([[1, 1, 0,], [2, 0, 0], [0, 0, 2]]))
+  nprim=32  # 24 to 768
+  topt, ropt = optimal_tilematrix_hnf(axes, nprim)
+  assert np.isclose(ropt, 10.725, atol=1e-4)
+  assert np.allclose(topt, np.array([[3, 1, -1], [-1, 1, 3], [4, 0, 4]]))
+
 if __name__ == '__main__':
-  test_nsupercell()
-  test_genall()
+  #test_nsupercell()
+  #test_tilematrix()
+  test_opt_tile()
 # end __main__

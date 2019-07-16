@@ -441,7 +441,58 @@ class MaskFilter(DevBase):
     #end def __call__
 #end class MaskFilter
 mask_filter = MaskFilter()
-            
+
+def rwsc(axes, dn=1):
+  """ radius of the inscribed sphere inside the real-space
+  Wigner-Seitz cell of the given cell
+
+  Args:
+    axes (np.array): lattice vectors in row-major
+    dn (int,optional): number of image cells to search in each
+     dimension, default dn=1 searches 26 images in 3D.
+  Returns:
+    float: Wigner-Seitz cell radius
+  """
+  import numpy as np
+  ndim = len(axes)
+  from itertools import product
+  r2imgl  = []  # keep a list of distance^2 to all neighboring images
+  images = product(range(-dn, dn+1), repeat=ndim)
+  for ushift in images:
+    if sum(ushift) == 0:
+      continue  # ignore self
+    shift = np.dot(ushift, axes)
+    r2imgl.append(np.dot(shift, shift))
+  rimg = np.sqrt(min(r2imgl))
+  return rimg/2.
+
+def optimal_tilematrix_hnf(axes, nprim, nc=5):
+  import numpy as np
+  try:
+    from forlib.gencell import nsupercell, generate_all_tilematrices
+    from forlib.gencell import generate_all_supercells
+  except ImportError:
+    msg = 'Failed to import from gencell.\n'
+    msg += 'Please make sure nexus/lib/forsub folder is compiled.'
+    raise RuntimeError(msg)
+  # first, generate all unique tilematrices that contain nprim
+  nhnf = nsupercell(nprim)
+  hnfs = generate_all_tilematrices(nprim, nhnf)
+  # second, reduce supercells to be most spherical/cubic
+  scells = generate_all_supercells(axes, hnfs)
+  # third, pick one with the largest Wigner-Seitz cell radius
+  radii = [rwsc(scells[:, :, ihnf]) for ihnf in range(nhnf)]
+  iopt = np.argmax(radii)
+  # fourth, back solve for the tilematrix
+  scell = scells[:, :, iopt]
+  topt = np.round(np.dot(scell, np.linalg.inv(axes))).astype(int)
+  ropt = radii[iopt]
+  # last but not least, check optimal tiling matrix
+  nvol = np.round(abs(np.linalg.det(topt))).astype(int)
+  assert nvol == nprim
+  rw = rwsc(np.dot(topt, axes))
+  assert np.isclose(ropt, rw)
+  return topt, ropt
 
 def optimal_tilematrix(axes,volfac,dn=1,tol=1e-3,filter=trivial_filter,mask=None,nc=5):
     if mask is not None:
