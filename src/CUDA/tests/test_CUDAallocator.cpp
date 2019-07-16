@@ -27,25 +27,39 @@ TEST_CASE("CUDA_allocators", "[CUDA]")
     Vector<double, CUDAManagedAllocator<double>> vec(1024);
     cudaPointerAttributes attr;
     cudaErrorCheck(cudaPointerGetAttributes(&attr, vec.data()) , "cudaPointerGetAttributes failed!");
+#if (CUDA_VERSION >= 10000)
     REQUIRE(attr.type == cudaMemoryTypeManaged);
+#endif
   }
   { // CUDAAllocator
     Vector<double, CUDAAllocator<double>> vec(1024);
     cudaPointerAttributes attr;
     cudaErrorCheck(cudaPointerGetAttributes(&attr, vec.data()) , "cudaPointerGetAttributes failed!");
+#if (CUDA_VERSION < 10000)
+    REQUIRE(attr.memoryType == cudaMemoryTypeDevice); 
+#else
     REQUIRE(attr.type == cudaMemoryTypeDevice);
+#endif
   }
   { // CUDAHostAllocator
     Vector<double, CUDAHostAllocator<double>> vec(1024);
     cudaPointerAttributes attr;
     cudaErrorCheck(cudaPointerGetAttributes(&attr, vec.data()) , "cudaPointerGetAttributes failed!");
+#if (CUDA_VERSION < 10000)
+    REQUIRE(attr.memoryType == cudaMemoryTypeHost); 
+#else
     REQUIRE(attr.type == cudaMemoryTypeHost);
+#endif
   }
   { // CUDALockedPageAllocator
     Vector<double, CUDALockedPageAllocator<double>> vec(1024);
     cudaPointerAttributes attr;
     cudaErrorCheck(cudaPointerGetAttributes(&attr, vec.data()) , "cudaPointerGetAttributes failed!");
+#if (CUDA_VERSION < 10000)
+    REQUIRE(attr.memoryType == cudaMemoryTypeHost);
+#else
     REQUIRE(attr.type == cudaMemoryTypeHost);
+#endif
     Vector<double, CUDALockedPageAllocator<double>> vecb(vec);
   }
   { // CUDALockedPageAllocator zero size and copy constructor

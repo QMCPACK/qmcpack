@@ -61,6 +61,36 @@ ENDIF()
                     1 DIAMOND2_DMC_SCALARS # DMC
                     )
 
+# Exicted state
+
+  LIST(APPEND DIAMOND2_EXCITED_SCALARS "totenergy" "-21.117471 0.007937")
+  LIST(APPEND DIAMOND2_EXCITED_SCALARS "kinetic"    "20.070595 0.043211")
+  LIST(APPEND DIAMOND2_EXCITED_SCALARS "potential" "-41.188066 0.044583")
+  LIST(APPEND DIAMOND2_EXCITED_SCALARS "eeenergy"   "-5.453806 0.013619")
+  LIST(APPEND DIAMOND2_EXCITED_SCALARS "ionion"    "-25.551327 0.00001")
+  LIST(APPEND DIAMOND2_EXCITED_SCALARS "localecp"  "-11.732568 0.050756")
+  LIST(APPEND DIAMOND2_EXCITED_SCALARS "nonlocalecp" "1.549634 0.018029")
+  LIST(APPEND DIAMOND2_EXCITED_SCALARS "samples" "32000 0.0")
+
+  QMC_RUN_AND_CHECK(short-diamondC_2x1x1_pp-vmc_sdj_excited
+                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+                    qmc_short_excited
+                    qmc_short_excited.in.xml
+                    1 16
+                    TRUE
+                    0 DIAMOND2_EXCITED_SCALARS # VMC
+                    )
+
+  LIST(APPEND DIAMOND2_DMC_EXCITED_SCALARS "totenergy" "-21.359004 0.012291")
+
+  QMC_RUN_AND_CHECK(short-diamondC_2x1x1_pp-dmc_sdj_excited
+                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+                    qmc_short_vmc_dmc_excited
+                    qmc_short_vmc_dmc_excited.in.xml
+                    1 16
+                    TRUE
+                    1 DIAMOND2_DMC_EXCITED_SCALARS # DMC
+                    )
 
 #
 # Long tests
@@ -99,13 +129,37 @@ ENDIF()
                     1 LONG_DIAMOND2_DMC_SCALARS # DMC
                     )
 
+# Excited state
+  LIST(APPEND LONG_DIAMOND2_EXCITED_SCALARS "totenergy" "-21.117471 0.00027")
+  LIST(APPEND LONG_DIAMOND2_EXCITED_SCALARS "samples" "30720000 0.0")
+  LIST(APPEND LONG_DIAMOND2_EXCITED_SCALARS "flux" "-0.042346 0.075078")
+
+  QMC_RUN_AND_CHECK(long-diamondC_2x1x1_pp-vmc_sdj_excited
+                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+                    qmc_long_excited
+                    qmc_long_excited.in.xml
+                    1 16
+                    TRUE
+                    0 LONG_DIAMOND2_EXCITED_SCALARS # VMC
+                    )
+
+  LIST(APPEND LONG_DIAMOND2_DMC_EXCITED_SCALARS "totenergy" "-21.359004 0.004056")
+  QMC_RUN_AND_CHECK(long-diamondC_2x1x1_pp-dmc_sdj_excited
+                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+                    qmc_long_vmc_dmc_excited
+                    qmc_long_vmc_dmc_excited.in.xml
+                    1 16
+                    TRUE
+                    1 LONG_DIAMOND2_DMC_EXCITED_SCALARS # DMC
+                    )
 
 #
 # Deterministic tests
 #
 
 # VMC RUN
-IF(QMC_MIXED_PRECISION)
+IF(NOT QMC_CUDA)
+ IF(QMC_MIXED_PRECISION)
   IF(QMC_COMPLEX)
    LIST(APPEND DET_DIAMOND2_SCALARS "totenergy" "-22.30283274 0.00003602")
    LIST(APPEND DET_DIAMOND2_SCALARS "kinetic" "19.25965947 0.00019745")
@@ -127,7 +181,7 @@ IF(QMC_MIXED_PRECISION)
    LIST(APPEND DET_DIAMOND2_SCALARS "samples" "9.00000000 0.0")
    LIST(APPEND DET_DIAMOND2_SCALARS "flux" "-5.36609515 0.00064723")
   ENDIF()
-ELSE()
+ ELSE()
   IF(QMC_COMPLEX)
    LIST(APPEND DET_DIAMOND2_SCALARS "totenergy" "-22.30283274 0.000001")
    LIST(APPEND DET_DIAMOND2_SCALARS "kinetic" "19.25965947 0.000001")
@@ -149,7 +203,7 @@ ELSE()
    LIST(APPEND DET_DIAMOND2_SCALARS "samples" "9.00000000 0.0")
    LIST(APPEND DET_DIAMOND2_SCALARS "flux" "-5.36609515 0.000001")
   ENDIF()
-ENDIF()
+ ENDIF()
 
   QMC_RUN_AND_CHECK(deterministic-diamondC_2x1x1_pp-vmc_sdj
                     "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
@@ -160,7 +214,7 @@ ENDIF()
                     0 DET_DIAMOND2_SCALARS # VMC
                     )
 
-IF(QMC_MIXED_PRECISION)
+ IF(QMC_MIXED_PRECISION)
   IF(QMC_COMPLEX)
    LIST(APPEND DET_DIAMOND2_EXCITED_SCALARS "totenergy" "-21.82533699 0.00003602")
    LIST(APPEND DET_DIAMOND2_EXCITED_SCALARS "kinetic" "22.21682105 0.00019745")
@@ -182,7 +236,7 @@ IF(QMC_MIXED_PRECISION)
    LIST(APPEND DET_DIAMOND2_EXCITED_SCALARS "samples" "9.00000000 0.0")
    LIST(APPEND DET_DIAMOND2_EXCITED_SCALARS "flux" "-19.92285549 0.00064723")
   ENDIF()
-ELSE()
+ ELSE()
   IF(QMC_COMPLEX)
    LIST(APPEND DET_DIAMOND2_EXCITED_SCALARS "totenergy" "-21.82533699 0.000001")
    LIST(APPEND DET_DIAMOND2_EXCITED_SCALARS "kinetic" "22.21682105 0.000001")
@@ -204,7 +258,7 @@ ELSE()
    LIST(APPEND DET_DIAMOND2_EXCITED_SCALARS "samples" "9.00000000 0.0")
    LIST(APPEND DET_DIAMOND2_EXCITED_SCALARS "flux" "-19.92285549 0.000001")
   ENDIF()
-ENDIF()
+ ENDIF()
 
   QMC_RUN_AND_CHECK(deterministic-diamondC_2x1x1_pp-vmc_sdj_excited
                     "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
@@ -216,7 +270,7 @@ ENDIF()
                     )
 
 # VMC DELAYED-UPDATE
-IF(QMC_MIXED_PRECISION)
+ IF(QMC_MIXED_PRECISION)
   IF(QMC_COMPLEX)
    LIST(APPEND DET_DIAMOND2_DELAY_SCALARS "totenergy" "-20.94752145 0.00001301")
    LIST(APPEND DET_DIAMOND2_DELAY_SCALARS "kinetic" "16.53205375 0.00001323")
@@ -238,7 +292,7 @@ IF(QMC_MIXED_PRECISION)
    LIST(APPEND DET_DIAMOND2_DELAY_SCALARS "samples" "9.00000000 0.0")
    LIST(APPEND DET_DIAMOND2_DELAY_SCALARS "flux" "-12.48031692 0.00005328")
   ENDIF()
-ELSE()
+ ELSE()
   IF(QMC_COMPLEX)
    LIST(APPEND DET_DIAMOND2_DELAY_SCALARS "totenergy" "-20.94752145 0.000001")
    LIST(APPEND DET_DIAMOND2_DELAY_SCALARS "kinetic" "16.53205375 0.000001")
@@ -260,7 +314,7 @@ ELSE()
    LIST(APPEND DET_DIAMOND2_DELAY_SCALARS "samples" "9.00000000 0.0")
    LIST(APPEND DET_DIAMOND2_DELAY_SCALARS "flux" "-12.48031692 0.000001")
   ENDIF()
-ENDIF()  
+ ENDIF()  
 
   QMC_RUN_AND_CHECK(deterministic-diamondC_2x1x1_pp-delayed_update-vmc_sdj
                     "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
@@ -272,7 +326,7 @@ ENDIF()
                     )
 
 # DMC RUN
-IF(QMC_MIXED_PRECISION)
+ IF(QMC_MIXED_PRECISION)
   IF(QMC_COMPLEX)
    LIST(APPEND DET_DIAMOND2_DMC_SCALARS "totenergy" "-21.04525132 0.00001242")
    LIST(APPEND DET_DIAMOND2_DMC_SCALARS "kinetic" "22.67697372 0.00002856")
@@ -292,7 +346,7 @@ IF(QMC_MIXED_PRECISION)
    LIST(APPEND DET_DIAMOND2_DMC_SCALARS "nonlocalecp" "-2.88535642 0.00001507")
    LIST(APPEND DET_DIAMOND2_DMC_SCALARS "samples" "9.00000000 0.0")
   ENDIF()
-ELSE()
+ ELSE()
   IF(QMC_COMPLEX)
    LIST(APPEND DET_DIAMOND2_DMC_SCALARS "totenergy" "-21.04525132 0.000001")
    LIST(APPEND DET_DIAMOND2_DMC_SCALARS "kinetic" "22.67697372 0.000001")
@@ -312,7 +366,7 @@ ELSE()
    LIST(APPEND DET_DIAMOND2_DMC_SCALARS "nonlocalecp" "-2.88535642 0.000001")
    LIST(APPEND DET_DIAMOND2_DMC_SCALARS "samples" "9.00000000 0.0")
   ENDIF()
-ENDIF()
+ ENDIF()
 
   QMC_RUN_AND_CHECK(deterministic-diamondC_2x1x1_pp-dmc_sdj
                     "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
@@ -323,7 +377,7 @@ ENDIF()
                     1 DET_DIAMOND2_DMC_SCALARS # DMC
                     )
 
-IF(QMC_MIXED_PRECISION)
+ IF(QMC_MIXED_PRECISION)
   IF(QMC_COMPLEX)
    LIST(APPEND DET_DIAMOND2_DMC_EXCITED_SCALARS "totenergy" "-19.57992731 0.00001242")
    LIST(APPEND DET_DIAMOND2_DMC_EXCITED_SCALARS "kinetic" "24.19434492 0.00002856")
@@ -343,7 +397,7 @@ IF(QMC_MIXED_PRECISION)
    LIST(APPEND DET_DIAMOND2_DMC_EXCITED_SCALARS "nonlocalecp" "4.27815606 0.00001507")
    LIST(APPEND DET_DIAMOND2_DMC_EXCITED_SCALARS "samples" "9.00000000 0.0")
   ENDIF()
-ELSE()
+ ELSE()
   IF(QMC_COMPLEX)
    LIST(APPEND DET_DIAMOND2_DMC_EXCITED_SCALARS "totenergy" "-19.57992731 0.000001")
    LIST(APPEND DET_DIAMOND2_DMC_EXCITED_SCALARS "kinetic" "24.19434492 0.000001")
@@ -363,7 +417,7 @@ ELSE()
    LIST(APPEND DET_DIAMOND2_DMC_EXCITED_SCALARS "nonlocalecp" "4.27815606 0.000001")
    LIST(APPEND DET_DIAMOND2_DMC_EXCITED_SCALARS "samples" "9.00000000 0.0")
   ENDIF()
-ENDIF()
+ ENDIF()
 
   QMC_RUN_AND_CHECK(deterministic-diamondC_2x1x1_pp-dmc_sdj_excited
                     "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
@@ -373,3 +427,6 @@ ENDIF()
                     TRUE
                     1 DET_DIAMOND2_DMC_EXCITED_SCALARS # DMC
                     )
+ELSE()
+  MESSAGE_VERBOSE("Skipping deterministic integration tests because they are not supported by CUDA build (QMC_CUDA=1)")
+ENDIF()

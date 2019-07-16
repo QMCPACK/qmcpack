@@ -127,10 +127,10 @@ inline void calculate_R(int rank, int ngrp, int spin, PH_EXCT const& abij, index
     auto ite = to_address(couplings.values()) + (*couplings.pointers_end(0));
     if(spin==0)
       for(; it<ite; ++it)
-        w += conj(get<2>(*(confgs+(*it)))) * ov[get<1>(*(confgs+(*it)))];
+        w += ma::conj(get<2>(*(confgs+(*it)))) * ov[get<1>(*(confgs+(*it)))];
     else
       for(; it<ite; ++it)
-        w += conj(get<2>(*(confgs+(*it)))) * ov[get<0>(*(confgs+(*it)))];
+        w += ma::conj(get<2>(*(confgs+(*it)))) * ov[get<0>(*(confgs+(*it)))];
     w *= ov0;
 // Wrong if NAEB < NAEA!!! FIX FIX FIX
     for(int i=0; i<NEL; ++i)
@@ -164,10 +164,10 @@ inline void calculate_R(int rank, int ngrp, int spin, PH_EXCT const& abij, index
         auto ite = to_address(couplings.values()) + (*couplings.pointers_end(nd));  
         if(spin==0) 
           for(; it<ite; ++it) 
-            w += conj(get<2>(*(confgs+(*it)))) * ov[get<1>(*(confgs+(*it)))];
+            w += ma::conj(get<2>(*(confgs+(*it)))) * ov[get<1>(*(confgs+(*it)))];
         else
           for(; it<ite; ++it) 
-            w += conj(get<2>(*(confgs+(*it)))) * ov[get<0>(*(confgs+(*it)))];
+            w += ma::conj(get<2>(*(confgs+(*it)))) * ov[get<0>(*(confgs+(*it)))];
         w *= ov_a*ov0;
         if(std::abs(w) > 1e-10) {
           // add term coming from identity
@@ -221,10 +221,10 @@ void calculate_ph_energies_v1(int spin, int rank, int size,
     auto ite = to_address(couplings.values()) + (*couplings.pointers_end(0));
     if(spin==0)
       for(; it<ite; ++it)
-        w += conj(get<2>(*(confgs+(*it)))) * ov[get<1>(*(confgs+(*it)))];
+        w += ma::conj(get<2>(*(confgs+(*it)))) * ov[get<1>(*(confgs+(*it)))];
     else
       for(; it<ite; ++it)
-        w += conj(get<2>(*(confgs+(*it)))) * ov[get<0>(*(confgs+(*it)))];
+        w += ma::conj(get<2>(*(confgs+(*it)))) * ov[get<0>(*(confgs+(*it)))];
     w *= ov0;
 // Wrong if NAEB < NAEA!!! FIX FIX FIX
     for(int i=0; i<NEL; ++i)
@@ -258,10 +258,10 @@ void calculate_ph_energies_v1(int spin, int rank, int size,
         auto ite = to_address(couplings.values()) + (*couplings.pointers_end(nd));
         if(spin==0)
           for(; it<ite; ++it)
-            w += conj(get<2>(*(confgs+(*it)))) * ov[get<1>(*(confgs+(*it)))];
+            w += ma::conj(get<2>(*(confgs+(*it)))) * ov[get<1>(*(confgs+(*it)))];
         else
           for(; it<ite; ++it)
-            w += conj(get<2>(*(confgs+(*it)))) * ov[get<0>(*(confgs+(*it)))];
+            w += ma::conj(get<2>(*(confgs+(*it)))) * ov[get<0>(*(confgs+(*it)))];
         w *= ov_a*ov0;
         if(std::abs(w) > 1e-10) {
           // add term coming from identity

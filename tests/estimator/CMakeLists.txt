@@ -19,8 +19,6 @@ endif()
 #
 if(NOT ${QMCAPP_ERR} STREQUAL "")
   message("${QMCAPP_ERR}  skipping tests")
-else()
-  INCLUDE( "${qmcpack_SOURCE_DIR}/CMake/macros.cmake" )
 endif()
 
 set(skinetic_python_reqs numpy;h5py)
