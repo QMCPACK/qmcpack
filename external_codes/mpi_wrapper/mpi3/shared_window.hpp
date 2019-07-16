@@ -20,9 +20,9 @@ namespace mpi3{
 
 template<class T /*= void*/>
 struct shared_window : window<T>{
-	shared_communicator& comm_;
+	shared_communicator* comm_;
 	shared_window(shared_communicator& comm, mpi3::size_t n, int disp_unit = alignof(T)) : //sizeof(T)) : // here we assume that disp_unit is used for align
-		window<T>(), comm_{comm}
+		window<T>(), comm_{std::addressof(comm)}
 	{
 		void* base_ptr = nullptr;
 		int s = MPI_Win_allocate_shared(n*sizeof(T), disp_unit, MPI_INFO_NULL, &comm, &base_ptr, &this->impl_);
@@ -34,7 +34,7 @@ struct shared_window : window<T>{
 	shared_window(shared_window const&) = default;
 	shared_window(shared_window&& other) : window<T>{std::move(other)}, comm_{other.comm_}{}
 	auto get_group() const{return group(*this);}
-	shared_communicator& get_communicator() const{return comm_;}
+	shared_communicator& get_communicator() const{return *comm_;}
 	using query_t = std::tuple<mpi3::size_t, int, void*>;
 	query_t query(int rank = MPI_PROC_NULL) const{
 		query_t ret;
@@ -278,14 +278,20 @@ template<class T = void> struct allocator{
 	array_ptr<T> allocate(size_type n, const void* /*hint*/ = 0){
 		array_ptr<T> ret = 0;
 		if(n == 0){
-			ret.wSP_ = std::make_shared<shared_window<T>>(
-				comm_.make_shared_window<T>(0)
-			);
+			//ret.wSP_ = std::make_shared<shared_window<T>>(
+			//	comm_.make_shared_window<T>(0)
+			//);
+                        ret.wSP_.reset(new shared_window<T>{
+                                comm_.make_shared_window<T>(comm_.root()?n:0)
+                        });
 			return ret;
 		}
-		ret.wSP_ = std::make_shared<shared_window<T>>(
-			comm_.make_shared_window<T>(comm_.root()?n:0)
-		);
+		//ret.wSP_ = std::make_shared<shared_window<T>>(
+		//	comm_.make_shared_window<T>(comm_.root()?n:0)
+		//);
+                ret.wSP_.reset(new shared_window<T>{
+                        comm_.make_shared_window<T>(comm_.root()?n:0)
+                        });
 		return ret;
 	}
 	void deallocate(array_ptr<T> ptr, size_type){ptr.wSP_.reset();}

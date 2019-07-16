@@ -14,15 +14,7 @@
 #define QMCPLUSPLUS_STDLIB_PORT_H
 #include <config.h>
 #include <cmath>
-
-#ifndef TWOPI
-#ifndef M_PI
-#define TWOPI 6.2831853071795862
-#else
-#define TWOPI (2*M_PI)
-#endif /* M_PI */
-#endif /* TWOPI */
-
+#include "config/stdlib/Constants.h"
 
 #if __APPLE__
 

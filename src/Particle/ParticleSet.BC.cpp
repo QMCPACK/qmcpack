@@ -66,7 +66,7 @@ void ParticleSet::createSK()
   //for(int ig=0; ig<mySpecies.size(); ++ig)
   //  SubPtcl[ig+1]=SubPtcl[ig]+mySpecies(membersize,ig);
 
-  if (UseBoundBox)
+  if (Lattice.explicitly_defined)
     convert2Cart(R); //make sure that R is in Cartesian coordinates
 
   if (Lattice.SuperCellEnum != SUPERCELL_OPEN)

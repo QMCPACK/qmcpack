@@ -67,7 +67,7 @@ bool IonOrbitalBuilder::put(xmlNodePtr cur)
     abort();
   }
   assert(num_nonzero == sourcePtcl->getTotalNum());
-  targetPsi.addOrbital(orb, nameOpt);
+  targetPsi.addComponent(orb, nameOpt);
   return true;
 }
 } // namespace qmcplusplus

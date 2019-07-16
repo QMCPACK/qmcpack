@@ -192,7 +192,7 @@ bool AGPDeterminantBuilder::put(xmlNodePtr cur)
     app_log() << agpDet->LambdaUP << std::endl;
   }
   if (agpDet)
-    targetPsi.addOrbital(agpDet, "AGP");
+    targetPsi.addComponent(agpDet, "AGP");
   return success;
 }
 } // namespace qmcplusplus

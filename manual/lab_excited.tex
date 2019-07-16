@@ -43,9 +43,9 @@ However, it is relatively straightforward to calculate the band gap minimum of a
 We will briefly discuss the two main ways of obtaining the band gap minimum through experiments: photoemission and absorption studies.  
 The energy required to remove an electron from a neutral system is called the ionization potential (IP), which is available from direct photoemission experiments. 
 In contrast, the emission energy of a negatively charged system (or the energy required to convert a negatively charged system to a neutral system) known as electron affinity (EA) and it is available from inverse photoemission experiments. 
-Outline of these experiments are shown in Fig. \ref{fig:lab_ex_exp}. 
+Outline of these experiments are shown in Fig.~\ref{fig:lab_ex_exp}. 
 
-Following the explanation in the previous paragraph and Fig. \ref{fig:lab_ex_exp}, the \textit{quasiparticle} band gap of a material can be defined as:
+Following the explanation in the previous paragraph and Fig.~\ref{fig:lab_ex_exp}, the \textit{quasiparticle} band gap of a material can be defined as:
 \begin{equation}
 	E_g=EA-IP=(E_{N+1}^{CBM}-E_{N}^{K'})-(E_{N}^{K'}-E_{N-1}^{VBM})=E_{N+1}^{CBM}+E_{N-1}^{VBM}-2*E_{N}^{K'}\label{eq:qp}
 \end{equation}
@@ -66,7 +66,7 @@ Additionally, one can also perform absorption experiments where electrons are pe
 In absorption experiments,  electrons are perturbed at lower energies. 
 Therefore, they are not completely free and the system is still considered neutral. 
 Since a \textit{quasihole} and \textit{quasielectron} are formed simultaneously, it creates a bound state, unlike the free electron in the quasiparticle gap as described above. 
-This process is also known as \textit{optical} excitation, which is schematically shown in Fig. \ref{fig:lab_ex_exp}, under "Absorption". 
+This process is also known as \textit{optical} excitation, which is schematically shown in Fig.~\ref{fig:lab_ex_exp}, under "Absorption". 
 The optical gap can be formulated as follows:
 \begin{equation}
 E_g^{K_1 {\rightarrow} K_2}=E^{K_1 {\rightarrow} K_2}- E_{0}\label{eq:optical}
@@ -112,11 +112,11 @@ $a_n$ are the real space lattice vectors in three dimensions. Thanks to the peri
 \begin{equation}
 f({\bf R_n + r})= \sum_{m}f_me^{iG_m({\bf R_n+r})}\label{eqn:lab_ex_rec_real}
 \end{equation}
-where $G_m$ are called as the reciprocal lattice vectors. Equation \ref{eqn:lab_ex_rec_real} also satisfies the equality $G_m\cdot{R_n}=2{\pi}N$. High-symmetry structures can be represented using a subspace of the BZ, which is called as the irreducible Brillouin Zone (iBZ). If we choose series of  paths of high-symmetry k-points which encapsulates the iBZ, we can determine the band gap and electronic structure of the material. For more discussion, please refer to any solid state physics textbook. 
+where $G_m$ are called as the reciprocal lattice vectors. Equation~\ref{eqn:lab_ex_rec_real} also satisfies the equality $G_m\cdot{R_n}=2{\pi}N$. High-symmetry structures can be represented using a subspace of the BZ, which is called as the irreducible Brillouin Zone (iBZ). If we choose series of  paths of high-symmetry k-points which encapsulates the iBZ, we can determine the band gap and electronic structure of the material. For more discussion, please refer to any solid state physics textbook. 
 
 There are multiple practical ways to find the high-symmetry k-point path. 
 For example, one can use pymatgen, \cite{Ong2013} XCRYSDEN \cite{Kokalj1999} or SeeK-path \cite{Hinuma2017}. 
-Figure \ref{fig:lab_ex_xcrysden} shows the procedure for visualizing the Brillouin Zone using XCRYSDEN after the structure file is loaded. 
+Figure~\ref{fig:lab_ex_xcrysden} shows the procedure for visualizing the Brillouin Zone using XCRYSDEN after the structure file is loaded. 
 However, the primitive cell is not unique, and the actual shape of the BZ can depend on the structure used. 
 In our example, we use the python libraries of SeeK-path, using a wrapper written in Nexus. 
 
@@ -155,7 +155,7 @@ Basically,  \ishell{band.py} will:
 	\item Perform a 'band' calculation in QE explicitly writing all the k-points on the path. (Make sure to add extra unoccupied bands)
 	\item Plot the band structure curves and the location of VBM/CBM if available.
 \end{enumerate}
-In Fig. \ref{fig:lab_ex_bands}, C-diamond is shown to have an indirect band gap between the red and green dots (CBM and VBM respectively). 
+In Fig.~\ref{fig:lab_ex_bands}, C-diamond is shown to have an indirect band gap between the red and green dots (CBM and VBM respectively). 
 VBM is located at $\Gamma$. CBM is not located on a high symmetry k-point in this case. 
 Therefore, we can use the symbol $\Delta$ to denote the CBM wavevector in the rest of this document. 
 In \ishell{band.py} script, once the band structure calculation is finished, you can use the following lines to get the exact location of VBM and CBM using:
@@ -183,15 +183,15 @@ CBM:
   pol             = up
 \end{lstlisting}
 \subsection{Finding a supertwist which includes all the k-points of interest}
-Using the VBM and CBM wavevectors defined in the previous section, we now construct the supertwist which will hopefully contain both VBM and CBM. In Fig. \ref{fig:lab_ex_twists}, we provide a simple example using 2D rectangular lattice. 
+Using the VBM and CBM wavevectors defined in the previous section, we now construct the supertwist which will hopefully contain both VBM and CBM. In Fig.~\ref{fig:lab_ex_twists}, we provide a simple example using 2D rectangular lattice. 
 Let us assume that we are interested in the indirect transition, $\Gamma \rightarrow X_1$. 
-In Fig. \ref{fig:lab_ex_twists}a, the first BZ of the primitive cell is shown as the square centered on $\Gamma$, which is drawn using dashed lines. Due to the periodicity of the lattice, this primitive cell BZ repeats itself with spacings equal to the reciprocal lattice vectors: (2$\pi$/a, 0) and (0, 2$\pi$/a) (or (1,0) and (0,1) in crystal coordinates). 
+In Fig.~\ref{fig:lab_ex_twists}a, the first BZ of the primitive cell is shown as the square centered on $\Gamma$, which is drawn using dashed lines. Due to the periodicity of the lattice, this primitive cell BZ repeats itself with spacings equal to the reciprocal lattice vectors: (2$\pi$/a, 0) and (0, 2$\pi$/a) (or (1,0) and (0,1) in crystal coordinates). 
 We are interested in the  first BZ, where $X_1$ is at (0,0.5). 
-In Fig. \ref{fig:lab_ex_twists}b, the first BZ of the 2x2 supercell is the smaller square, drawn using solid lines. 
-In Fig. \ref{fig:lab_ex_twists}c, the BZ of the 2x2 supercell also repeats in the space, similar to Fig. \ref{fig:lab_ex_twists}a. 
+In Fig.~\ref{fig:lab_ex_twists}b, the first BZ of the 2x2 supercell is the smaller square, drawn using solid lines. 
+In Fig.~\ref{fig:lab_ex_twists}c, the BZ of the 2x2 supercell also repeats in the space, similar to Fig.~\ref{fig:lab_ex_twists}a. 
 Therefore, in the 2x2 supercell, $X_1$, $X_2$ and $R$ are only the periodic images of $\Gamma$.  2x2 supercell calculation can be performed in reciprocal space using [2,2] tiling matrix. 
 Therefore, individual kpoints (twists) of the primitive cell are combined in the supercell calculation, which are then called as supertwists. 
-In more complex primitive cell (hence BZ), more general criteria would be constructing a set of supercell reciprocal lattice vectors which contains the $\Gamma \rightarrow X_1$ (e.g. $G_1$ in Fig. \ref{fig:lab_ex_twists}) vector within their convex hull. 
+In more complex primitive cell (hence BZ), more general criteria would be constructing a set of supercell reciprocal lattice vectors which contains the $\Gamma \rightarrow X_1$ (e.g. $G_1$ in Fig.~\ref{fig:lab_ex_twists}) vector within their convex hull. 
 Under this constraint, Wigner-Seitz radius of the simulation cell can be maximized to in an effort to reduce finite size errors. 
 
 \begin{figure}
@@ -247,7 +247,7 @@ Therefore, one should promote an electron from state number 35 to 36 to study th
 \end{lstlisting}
 However, one should always check whether this is really what we want. 
 It can be seen  that band \# 33, 34 and 35 are degenerate (energy eigenvalues are listed in the 5th column), but also they have the same reciprocal coordinates in (K1,K2,K3). 
-This is actually expected as one can see from Fig. \ref{fig:lab_ex_bands}, in the band diagram the band structure is threefold degenerate at $\Gamma$.  
+This is actually expected as one can see from Fig.~\ref{fig:lab_ex_bands}, in the band diagram the band structure is threefold degenerate at $\Gamma$.  
 Here, we can choose the state with the largest band index: (0,3). 
 Following the (twistindex, bandindex) notation, we can say that $\Gamma$ to $\Delta'$ transition can be defined as from (0,3) to (4,4). 
 
@@ -363,7 +363,7 @@ A typical workflow for a quasiparticle calculation includes:
   </slaterdeterminant>
 </determinantset>
 \end{lstlisting}
-Going back to equation \ref{eq:qp}, one can see that it is essential to include VBM and CBM wavevectors in the same twist for quasiparticle calculations as well. 
+Going back to equation~\ref{eq:qp}, one can see that it is essential to include VBM and CBM wavevectors in the same twist for quasiparticle calculations as well. 
 Therefore, the added electron will sit at CBM while the subtracted electron will be removed from VBM. 
 However, for the charged cell calculations, one may need to make changes in the input files for the fourth step.  Alternatively, in \ishell{quasiparticle.py} file the changes in the qmc input are shown for negatively charged system:
 \begin{lstlisting}[style=Python]

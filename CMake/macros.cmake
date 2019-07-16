@@ -102,7 +102,7 @@ FUNCTION( RUN_QMC_APP_NO_COPY TESTNAME WORKDIR PROCS THREADS TEST_ADDED TEST_LAB
     SET( TEST_ADDED_TEMP FALSE )
     IF ( USE_MPI )
         IF ( ${TOT_PROCS} GREATER ${TEST_MAX_PROCS} )
-            MESSAGE("Disabling test ${TESTNAME} (exceeds maximum number of processors ${TEST_MAX_PROCS})")
+            MESSAGE_VERBOSE("Disabling test ${TESTNAME} (exceeds maximum number of processors ${TEST_MAX_PROCS})")   
         ELSEIF ( USE_MPI )
             ADD_TEST( ${TESTNAME} ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${PROCS} ${QMC_APP} ${ARGN} )
             SET_TESTS_PROPERTIES( ${TESTNAME} PROPERTIES FAIL_REGULAR_EXPRESSION "${TEST_FAIL_REGULAR_EXPRESSION}" 
@@ -118,7 +118,7 @@ FUNCTION( RUN_QMC_APP_NO_COPY TESTNAME WORKDIR PROCS THREADS TEST_ADDED TEST_LAB
                 ENVIRONMENT OMP_NUM_THREADS=${THREADS} )
             SET( TEST_ADDED_TEMP TRUE )
         ELSE()
-            MESSAGE("Disabling test ${TESTNAME} (building without MPI)")
+            MESSAGE_VERBOSE("Disabling test ${TESTNAME} (building without MPI)")
         ENDIF()
     ENDIF()
     SET(TEST_LABELS_TEMP "")
@@ -170,7 +170,7 @@ FUNCTION(QMC_RUN_AND_CHECK BASE_NAME BASE_DIR PREFIX INPUT_FILE PROCS THREADS SH
     SET( TEST_ADDED FALSE )
     SET( TEST_LABELS "")
     SET( FULL_NAME "${BASE_NAME}-${PROCS}-${THREADS}" )
-    MESSAGE("Adding test ${FULL_NAME}")
+    MESSAGE_VERBOSE("Adding test ${FULL_NAME}")
     RUN_QMC_APP(${FULL_NAME} ${BASE_DIR} ${PROCS} ${THREADS} TEST_ADDED TEST_LABELS ${INPUT_FILE})
     IF ( TEST_ADDED )
         SET_PROPERTY(TEST ${FULL_NAME} APPEND PROPERTY LABELS "QMCPACK")
@@ -244,7 +244,7 @@ function(SIMPLE_RUN_AND_CHECK base_name base_dir input_file procs threads check_
 
   # build test name
   set(full_name "${base_name}-${procs}-${threads}")
-  message("Adding test ${full_name}")
+  MESSAGE_VERBOSE("Adding test ${full_name}")
 
   # add run (task 1)
   set (test_added false)
@@ -301,5 +301,12 @@ FUNCTION( CPU_LIMIT_RUN TESTNAME SRC_DIR PROCS THREADS TIME ${ARGN} )
     IF (TEST_ADDED)
       SET_PROPERTY(TEST ${FULLNAME} APPEND PROPERTY TIMEOUT ${TIME})
       SET_PROPERTY(TEST ${FULLNAME} APPEND PROPERTY PASS_REGULAR_EXPRESSION "Time limit reached for")
+    ENDIF()
+ENDFUNCTION()
+
+# Print THE_MESSAGE if verbose configuration is enabled
+FUNCTION ( MESSAGE_VERBOSE THE_MESSAGE )
+    IF ( QMC_VERBOSE_CONFIGURATION )
+      MESSAGE( ${THE_MESSAGE} )
     ENDIF()
 ENDFUNCTION()

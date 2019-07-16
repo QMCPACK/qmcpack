@@ -117,10 +117,6 @@ public:
 
   void setWaveFunctionNode(xmlNodePtr cur) { m_wfPtr = cur; }
 
-  void recordParametersToPsi(Return_rt e, Return_rt v) { Psi.coefficientHistory.addParams(OptVariables, e, v); }
-  void getAvgParameters(int N) { OptVariables = Psi.coefficientHistory.getAvgCoefficients(N); }
-  //void getConfigurations(std::vector<std::string>& ConfigFile, int partid, int nparts);
-
   void setTargetEnergy(Return_rt et);
 
   void setRootName(const std::string& aroot) { RootName = aroot; }

@@ -50,7 +50,7 @@ QMCHamiltonianBase* NonLocalECPotential_CUDA::makeClone(ParticleSet& qp, TrialWa
   for (int ig = 0; ig < PPset.size(); ++ig)
   {
     if (PPset[ig])
-      myclone->add(ig, PPset[ig]->makeClone(qp));
+      myclone->addComponent(ig, PPset[ig]->makeClone(qp));
   }
   return myclone;
 }
