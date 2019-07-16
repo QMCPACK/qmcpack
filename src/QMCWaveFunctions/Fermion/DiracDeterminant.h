@@ -178,6 +178,9 @@ public:
   ValueType* FirstAddressOfdV;
   ValueType* LastAddressOfdV;
   
+  /// create optimizable orbital rotation parameters
+  void buildOptVariables();
+
 private:
   /** Resize all temporary arrays required for force computation.
   */ 

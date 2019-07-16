@@ -35,6 +35,25 @@ DiracDeterminant<DU_TYPE>::DiracDeterminant(SPOSetPtr const spos, int first)
   ClassName = "DiracDeterminant";
 }
 
+
+template<typename DU_TYPE>
+void DiracDeterminant<DU_TYPE>::buildOptVariables()
+{
+  const size_t nel = NumPtcls;
+  const size_t nmo = NumOrbitals;
+
+  // create active rotation parameter indices
+  std::vector<std::pair<int, int>> m_act_rot_inds;
+
+  // only core->active rotations created
+  for (int i = 0; i < nel; i++)
+    for (int j = nel; j < nmo; j++)
+      m_act_rot_inds.push_back(std::pair<int,int>(i,j));
+
+  Phi->buildOptVariables(m_act_rot_inds);
+}
+
+
 /** set the index of the first particle in the determinant and reset the size of the determinant
  *@param first index of first particle
  *@param nel number of particles in the determinant
@@ -44,7 +63,12 @@ void DiracDeterminant<DU_TYPE>::set(int first, int nel, int delay)
 {
   FirstIndex = first;
   ndelay     = delay;
-  resize(nel, nel);
+
+  resize(nel, Phi->getOrbitalSetSize());
+
+  if(Optimizable)
+    this->buildOptVariables();  
+
 }
 
 template<typename DU_TYPE>
@@ -78,7 +102,6 @@ void DiracDeterminant<DU_TYPE>::resize(int nel, int morb)
   d2psiV.resize(NumOrbitals);
   FirstAddressOfdV = &(dpsiM(0, 0)[0]); //(*dpsiM.begin())[0]);
   LastAddressOfdV  = FirstAddressOfdV + NumPtcls * NumOrbitals * DIM;
-
 }
 
 template<typename DU_TYPE>
@@ -518,7 +541,24 @@ void DiracDeterminant<DU_TYPE>::evaluateDerivatives(ParticleSet& P,
                                                     const opt_variables_type& active,
                                                     std::vector<ValueType>& dlogpsi,
                                                     std::vector<ValueType>& dhpsioverpsi)
-{}
+{
+
+//  LogValue = this->evaluateLog(P,P.G,P.L);
+
+  // print for debugging
+  if (true)
+  {
+//    app_log() << "first partcle in set is ... " << m_first << std::endl; 
+//    app_log() << "variable starting position  ... " << m_first_var_pos << std::endl; 
+    app_log() << "printing psiM \n" << psiM << std::endl;
+    app_log() << "printing dpsiM \n" << dpsiM << std::endl;
+    app_log() << "printing d2psiM \n" << d2psiM << std::endl;
+    app_log() << "printing psiMinv \n" << psiMinv << std::endl;
+  }
+
+
+
+}
 
 template<typename DU_TYPE>
 DiracDeterminant<DU_TYPE>* DiracDeterminant<DU_TYPE>::makeCopy(SPOSetPtr spo) const
