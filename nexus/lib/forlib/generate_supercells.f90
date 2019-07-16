@@ -23,8 +23,8 @@ function nsupercell(nprim)
  enddo ! a
 end
 
-subroutine generate_all_supercells(nprim,nhnf,hnf)
- ! Generate all unique supercells that contain nprim primitive cells
+subroutine generate_all_tilematrices(nprim,nhnf,hnf)
+ ! Generate all unique tilematrices that contain nprim primitive cells
  implicit none
  integer, parameter :: ndim=3
  integer, intent(in) :: nprim,nhnf
@@ -62,4 +62,100 @@ subroutine generate_all_supercells(nprim,nhnf,hnf)
    write(*,*)'Did not generate all HNF matrices.'
    stop
  endif
+end
+
+subroutine generate_all_supercells(prim,hnf,nhnf,scells)
+ implicit none
+ integer, parameter :: ndim=3
+ real*8, intent(in) :: prim(ndim,ndim),hnf(ndim,ndim,nhnf)
+ integer, intent(in) :: nhnf
+ real*8, intent(out) :: scells(ndim,ndim,nhnf)
+ integer :: ihnf,k,j
+ real*8 :: axes(ndim, ndim)
+ do ihnf=1,nhnf
+  do k=1,ndim
+    do j=1,ndim
+     axes(k,j)=sum(dble(hnf(k,1:ndim,ihnf))*prim(1:ndim,j))
+    enddo ! j
+  enddo ! k
+  call minkowski_reduce(axes)
+  scells(:,:,ihnf)=axes(:,:)
+ enddo ! ihnf
+end
+
+subroutine minkowski_reduce(vecs)
+!-----------------------------------------------------------------------------!
+! Given n vectors a(i) that form a basis for a lattice L in n dimensions, the !
+! a(i) are said to be Minkowski-reduced if the following conditions are met:  !
+!                                                                             !
+! - a(1) is the shortest non-zero vector in L                                 !
+! - for i>1, a(i) is the shortest possible vector in L such that a(i)>=a(i-1) !
+!   and the set of vectors a(1) to a(i) are linearly independent              !
+!                                                                             !
+! In other words the a(i) are the shortest possible basis vectors for L. This !
+! routine, given a set of input vectors a'(i) that are possibly not           !
+! Minkowski-reduced, returns the vectors a(i) that are.                       !
+!-----------------------------------------------------------------------------!
+ IMPLICIT NONE
+ real*8,INTENT(inout) :: vecs(3,3)
+ INTEGER :: i
+ real*8:: tempvec(3,3)
+ LOGICAL :: changed, reduce_vec
+
+ iter: DO
+  tempvec=vecs
+  DO i=1,3
+! First check linear combinations involving two vectors
+   vecs(i,1:3)=0
+   changed=reduce_vec(vecs)
+   vecs(i,1:3)=tempvec(i,1:3)
+   IF(changed)CYCLE iter
+  ENDDO ! i
+! Then check linear combinations involving all three
+  IF(reduce_vec(vecs))CYCLE
+  EXIT
+ ENDDO iter
+end
+
+logical function reduce_vec(vecs)
+!------------------------------------------------------------------------------!
+! Given three linearly independent input vectors a, b and c, construct the     !
+! following linear combinations: a+b-c, a-b+c, -a+b+c, a+b+c and  check if any !
+! of the four new vectors is shorter than any of a, b or c. If so, replace the !
+! longest of a, b and c with the new (shorter) vector. The resulting three     !
+! vectors are also linearly independent.                                       !
+!------------------------------------------------------------------------------!
+ IMPLICIT NONE
+ real*8, intent(inout) :: vecs(3,3)
+ real*8, parameter :: tol_zero=1.d-7
+ INTEGER :: longest,i
+ real*8 :: newvecs(4,3),maxlen,nlen
+
+! Determine which of the three input vectors is the longest
+ maxlen=0
+ DO i=1,3
+  nlen=vecs(i,1)**2+vecs(i,2)**2+vecs(i,3)**2
+! Test nlen>maxlen within some tolerance to avoid floating point problems
+  IF(nlen-maxlen>tol_zero*maxlen)THEN
+   maxlen=nlen
+   longest=i
+  ENDIF
+ ENDDO ! i
+
+! Construct the four linear combinations
+ newvecs(1,1:3)=vecs(1,1:3)+vecs(2,1:3)-vecs(3,1:3)
+ newvecs(2,1:3)=vecs(1,1:3)-vecs(2,1:3)+vecs(3,1:3)
+ newvecs(3,1:3)=-vecs(1,1:3)+vecs(2,1:3)+vecs(3,1:3)
+ newvecs(4,1:3)=vecs(1,1:3)+vecs(2,1:3)+vecs(3,1:3)
+
+! Check if any of the four new vectors is shorter than longest input vector
+ reduce_vec=.FALSE.
+ DO i=1,4
+  nlen=newvecs(i,1)**2+newvecs(i,2)**2+newvecs(i,3)**2
+  IF(nlen-maxlen<-tol_zero*maxlen)THEN
+   vecs(longest,1:3)=newvecs(i,1:3)
+   reduce_vec=.TRUE.
+   EXIT
+  ENDIF
+ ENDDO ! i
 end
