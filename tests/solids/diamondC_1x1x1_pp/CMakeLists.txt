@@ -41,6 +41,7 @@ ENDIF()
                     0 DIAMOND_SCALARS # VMC
                     )
 
+IF(NOT QMC_CUDA)
   LIST(APPEND DIAMOND_KSPACE_SCALARS "totenergy" "-10.500719 0.001769")
   LIST(APPEND DIAMOND_KSPACE_SCALARS "variance"  "0.312264 0.028662")
   QMC_RUN_AND_CHECK(short-diamondC_1x1x1_pp-vmc_sdj_kspace
@@ -60,6 +61,9 @@ ENDIF()
                     TRUE
                     0 DIAMOND_KSPACE_SCALARS # VMC
                     )
+ELSE()
+  MESSAGE_VERBOSE("Skipping k-space Jastrow tests because they are not supported by CUDA build (QMC_CUDA=1)")
+ENDIF()
 
 
 # Reference OPT run in qmc-ref
@@ -239,6 +243,7 @@ IF(NOT QMC_CUDA)
                     )
 ENDIF()
 
+IF(NOT QMC_CUDA)
   LIST(APPEND LONG_DIAMOND_KSPACE_SCALARS "totenergy" "-10.500719 0.001769")
   LIST(APPEND LONG_DIAMOND_KSPACE_SCALARS "variance"  "0.312264 0.028662")
   QMC_RUN_AND_CHECK(long-diamondC_1x1x1_pp-vmc_sdj_kspace
@@ -249,6 +254,9 @@ ENDIF()
                     TRUE
                     0 LONG_DIAMOND_KSPACE_SCALARS # VMC
                     )
+ELSE()
+  MESSAGE_VERBOSE("Skipping k-space Jastrow tests because they are not supported by CUDA build (QMC_CUDA=1)")
+ENDIF()
 
 # Reference DMC run in qmc-ref "-10.531583 0.000265"
   LIST(APPEND LONG_DIAMOND_DMC_SCALARS "totenergy" "-10.531583 0.000815")
