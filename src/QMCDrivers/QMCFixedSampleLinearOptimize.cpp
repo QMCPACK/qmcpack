@@ -479,10 +479,9 @@ bool QMCFixedSampleLinearOptimize::put(xmlNodePtr q) {
   // get whether to use descent, hybrid, or sr
   doDescent = (MinMethod == "descent");
   doHybrid = (MinMethod == "hybrid");
-  doSR = (MinMethod == "sr");
 
   // sanity check
-  if (targetExcited && !(doAdaptiveThreeShift || doDescent || doHybrid))
+  if (targetExcited && !doAdaptiveThreeShift)
     APP_ABORT("targetExcited = \"yes\" requires that MinMethod = \"adaptive or "
               "descent or hybrid\"");
 
@@ -894,7 +893,6 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run() {
   const bool saved_grads_flag = optTarget->getneedGrads();
 
   const int init_num_samp = optTarget->getNumSamples();
-
   
   // the index of central shift
   const int central_index = num_shifts / 2;
@@ -1716,7 +1714,7 @@ void QMCFixedSampleLinearOptimize::updateParameters(
 
   if (doHybrid && ((stepNum + 1) % (descent_len / 5) == 0)) {
     if (process_rank == 0) {
-      std::cout << "Step number is " << stepNum
+      std::cout << "Step number in macro-iteration is " << stepNum % descent_len
                 << " out of expected total of " << descent_len
                 << " descent steps." << std::endl;
     }
@@ -1778,10 +1776,10 @@ double QMCFixedSampleLinearOptimize::setStepSize(int i) {
 // a descent optimization for use in BLM steps of the hybrid method
 void QMCFixedSampleLinearOptimize::storeVectors(
     std::vector<Return_t> &paramsForDiff) {
-  int process_rank;
+
+    int process_rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &process_rank);
 
-  // std::cout << "Inside storing vectors function" << std::endl;
 
   std::vector<Return_t> rowVec(paramsForDiff.size());
   std::fill(rowVec.begin(), rowVec.end(), 0.0);
@@ -1796,7 +1794,7 @@ void QMCFixedSampleLinearOptimize::storeVectors(
   }
 
   // If on first step, clear anything that was in vector
-  if (stepNum + 1 == descent_len / 5) {
+  if ((stepNum + 1) % descent_len == descent_len / 5) {
     hybridBLM_Input.clear();
     hybridBLM_Input.push_back(rowVec);
   } else {
@@ -1823,12 +1821,16 @@ bool QMCFixedSampleLinearOptimize::hybrid_run() {
     return descent_run();
   } else {
     if (blmCount < blm_len) {
+	if(blmCount == 0)
+	{
+//Only need to set input vectors from AD on first BLM step	
+      EngineObj->setHybridBLM_Input(hybridBLM_Input);
+	}
       blmCount++;
       totalCount++;
       app_log() << "Should be on blm step# " << blmCount - 1
                 << " of macro-iteration. Total steps: " << totalCount
                 << std::endl;
-      EngineObj->setHybridBLM_Input(hybridBLM_Input);
       return adaptive_three_shift_run();
 
     } else {

@@ -119,7 +119,7 @@ class LMBlocker {
     void setHybrid(bool h);
     void setNumParams(int n);
 
-    std::vector< std::vector<double> > getInputVector() {return hybridBLM_Input;}
+    std::vector< std::vector<double> >&  getInputVector() {return hybridBLM_Input;}
     void overwriteOldUpates(formic::Matrix<double>& m_ou);
 
   };

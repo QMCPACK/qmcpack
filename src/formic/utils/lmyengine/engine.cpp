@@ -913,11 +913,25 @@ void cqmc::engine::LMYEngine::setHybrid(std::string h,int n)
 void cqmc::engine::LMYEngine::setHybridBLM_Input(std::vector< std::vector<double>> &from_descent) 
 {
 
-    std::vector< std::vector<double>> h = this->LMBlocker().getInputVector();
+    //std::vector< std::vector<double>> h = this->LMBlocker().getInputVector();
 
+    this->LMBlocker().getInputVector().clear();
+
+    int my_rank = formic::mpi::rank();
+    
     for (std::vector<double> v : from_descent)
     {
-        h.push_back(v);
+	if(my_rank == 0)
+	{
+	    std::cout << "Vector from descent" << std::endl;
+	for(int i =0; i < v.size(); i++)
+	{
+	    std::cout << v[i] << ",";
+	}
+	std::cout << std::endl;
+	}
+	this->LMBlocker().getInputVector().push_back(v);
+        //h.push_back(v);
     }
 }
 /////////////////////////////////////////////////////////////////////////////////////////////

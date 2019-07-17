@@ -129,9 +129,6 @@ QMCDriver::QMCDriver(MCWalkerConfiguration& w,
   m_param.add(descent_len,"descent_length","int");
   m_param.add(blm_len,"BLM_length","int");
 
-  //app_log() << "This is MinMethod: " << MinMethod << std::endl;
-  //app_log() << "This is descent_len: " << descent_len << std::endl;
-  //app_log() << "This is blm_len: " << blm_len << std::endl;
 
   m_param.add(nTargetPopulation, "samples", "real");
 

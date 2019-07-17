@@ -395,8 +395,6 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine* Engine
     //Return_rt e2 = 0.0;
     Return_t e2 = 0.0;
   
-    //app_log() << "Actual number of samples?: " << wRef.numSamples() << std::endl;
-    //app_log() << "Also related to number of samples?: " << wPerNode[ip] << std::endl;
 
     for (int iw = 0, iwg = wPerNode[ip]; iw < wRef.numSamples(); ++iw, ++iwg)
     {

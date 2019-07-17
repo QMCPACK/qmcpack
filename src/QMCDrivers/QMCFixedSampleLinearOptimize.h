@@ -183,18 +183,10 @@ private:
   //whether to use hybrid method
   bool doHybrid;
 
-  //whether to use stochastic reconfiguration
-  bool doSR;
-
-  //Small number in SR's first order expansion
-  double sr_tau;
-
   
   //Vector for storing parameter values from previous optimization step
   std::vector<double> paramsCopy;
 
-//Vector for storing a running average of parameter values
-  std::vector<double > paramsRunAvg;
 
   //Vector for storing parameter values for calcualting differences to be written to a file 
   std::vector<double> paramsForDiff;
@@ -232,8 +224,6 @@ private:
   //What variety of gradient descent will be used
   std::string flavor;
 
-  //Whether to substitute in a running average of parameters
-  std::string useAvgParams;
 
   double TJF_2Body_eta;
   double TJF_1Body_eta;
