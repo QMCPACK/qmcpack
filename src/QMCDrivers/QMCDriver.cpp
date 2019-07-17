@@ -121,22 +121,26 @@ QMCDriver::QMCDriver(MCWalkerConfiguration& w,
   m_param.add(nSamplesPerThread, "samplesperthread", "real");
   m_param.add(nSamplesPerThread, "dmcwalkersperthread", "real");
  
-//  nTargetPopulation = 0;
-//  MinMethod = "";
- // descent_len = 0;
- // blm_len = 0;
-  m_param.add(MinMethod, "MinMethod","string");
-  m_param.add(descent_len,"descent_length","int");
-  m_param.add(blm_len,"BLM_length","int");
-
+  nTargetPopulation = 0;
+  
 
   m_param.add(nTargetPopulation, "samples", "real");
 
   stepCounter = 0;
 
+  //Number of samples used on descent steps of the hybrid method.
+  //This is generally different from samples for the BLM
   m_param.add(otherTargetPopulation, "Hybrid_Descent_Samples", "real");
 
- 
+  //Need to know type of minimization method to check if hybrid method is being 
+  //used and there will be a need to change the number of samples
+  m_param.add(MinMethod, "MinMethod","string");
+  //Number of steps in a descent section of hybrid method
+  m_param.add(descent_len,"descent_length","int");
+  //Number of steps in a BLM of section of hybrid method
+  m_param.add(blm_len,"BLM_length","int");
+
+
 
   Tau = 0.1;
   //m_param.add(Tau,"timeStep","AU");
@@ -208,7 +212,6 @@ void QMCDriver::add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi)
  */
 void QMCDriver::process(xmlNodePtr cur)
 {
-    //app_log() << "This is nTargetPopulation inside QMCDriver process: " << nTargetPopulation << std::endl;
 
   deltaR.resize(W.getTotalNum());
   drift.resize(W.getTotalNum());
@@ -669,7 +672,10 @@ bool QMCDriver::putQMCInfo(xmlNodePtr cur)
 
  
 
-  
+ //Hybrid method typically uses different numbers of samples for AD and BLM sections.
+ //The numbers of steps in each type of section and the current step are used to determine if
+ //the hybrid method is on a descent section and whether it has just changed to using descent.
+ //If descent is being used the number of samples is changed to the value in otherTargetPopulation. 
   if(MinMethod == "hybrid")
   {
      int lhs = stepCounter  % (descent_len +blm_len);
@@ -701,6 +707,8 @@ bool QMCDriver::putQMCInfo(xmlNodePtr cur)
  
   //if walkers are initialized via <mcwalkerset/>, use the existing one
 
+ //Added this condition to avoid walkers being reset during descent section
+ //of the hybrid method.
   bool useHybridAndOnDescent = (MinMethod == "hybrid") && on_hybrid_descent;
 
   if (qmc_common.qmc_counter || qmc_common.is_restart  || useHybridAndOnDescent)

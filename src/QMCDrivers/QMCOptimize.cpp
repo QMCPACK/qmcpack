@@ -87,15 +87,6 @@ bool QMCOptimize::run()
   //branchEngine->finalize();
   //generate samples
  
-    /*
-    m_param.add(MinMethod, "MinMethod", "string");
-  
-  if(MinMethod == "hybrid")
-  {
-      m_param.add(hybrid_descent_samples,"Hybrid_Descent_samples","int");
-    optTarget->setNumSamples(hybrid_descent_samples);
-  }
-  */
     generateSamples();
 
   NumOfVMCWalkers = W.getActiveWalkers();

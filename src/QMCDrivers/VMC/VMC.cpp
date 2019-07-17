@@ -148,16 +148,11 @@ bool VMC::run()
 void VMC::resetRun()
 {
  
-  //nTargetSamples = nTargetPopulation;
-//    app_log() << "This is on_hybrid_descent inside VMC resetRun: " << on_hybrid_descent << std::endl;
- // app_log() << "This is nTargetPopulation inside VMC resetRun: " << nTargetPopulation << std::endl;
- // app_log() << "This is nTargetSamples inside VMC resetRun: " << nTargetSamples << std::endl;
-
+  
   
 if((MinMethod == "hybrid") && on_hybrid_descent)
 {
 nTargetPopulation = otherTargetPopulation;
-//app_log() << "This is overwritten nTargetPopulation in VMC resetRun: " << nTargetPopulation << std::endl;
 }
 
 
@@ -328,49 +323,13 @@ bool VMC::put(xmlNodePtr q)
   p.add(target_min, "minimumtargetwalkers", "int"); //p.add(target_min,"minimumTargetWalkers","int");
   p.add(target_min, "minimumsamples", "int");       //p.add(target_min,"minimumSamples","int");
 
- // app_log() << "This is nTargetPopulation inside VMC put: " << nTargetPopulation << std::endl;
-  //nTargetSamples = nTargetPopulation;
-
-   // app_log() << "This is nTargetSamples inside VMC put after overwrite: " << nTargetSamples << std::endl;
- // app_log() << "This is MinMethod inside VMC put: " << MinMethod << std::endl;
-  /*
-    MinMethod = "";
-  descent_len = 0;
-  blm_len = 0;
-  p.add(MinMethod, "MinMethod","string");
-  p.add(descent_len,"descent_length","int");
-  p.add(blm_len,"BLM_length","int");
-
-  app_log() << "This is descent_len: " << descent_len << std::endl;
-  app_log() << "This is blm_len: " << blm_len << std::endl;
-
-  if(MinMethod == "hybrid")
-  {
-      bool on_hybrid_descent = (CurrentStep - blm_len) % descent_len < descent_len;
-      if(on_hybrid_descent)
-      {
-          app_log() << "Using samples for descent" << std::endl;
-          p.add(nTargetPopulation, "Hybrid_Descent_Samples", "real");
-      }
-      else
-      {
-          p.add(nTargetPopulation, "samples", "real");
-      }
-  }
-  else
-  {
-    p.add(nTargetPopulation, "samples", "real");
-  }
-*/
   p.put(q);
 
   app_log() << "\n<vmc function=\"put\">"
             << "\n  qmc_counter=" << qmc_common.qmc_counter << "  my_counter=" << MyCounter << std::endl;
  
-// app_log() << "This is value of just_changed in VMC put" << just_changed << std::endl; 
-  //Need to change to control for non-hybrid cases
-  //if (qmc_common.qmc_counter && MyCounter && (! just_changed))
-  
+//Need to know whether hybrid method is being used and if a change has been made from AD to BLM or vice versa
+//in order to change number of samples being taken  
  bool onHybridAndChanged = (MinMethod == "hybrid") && just_changed;
 
  if (qmc_common.qmc_counter && MyCounter && (! onHybridAndChanged))
@@ -380,28 +339,22 @@ bool VMC::put(xmlNodePtr q)
   }
   else
   {
-  //    app_log() << "Entered else branch in VMC put" << std::endl;
     int nw = W.getActiveWalkers();
     //compute samples and overwrite steps for the given samples
     int Nthreads = omp_get_max_threads();
     int Nprocs   = myComm->size();
     
-  // app_log() << "This is initial nSamplesPerThread in VMC put: " << nSamplesPerThread << std::endl;
   //Also overwrite nSamplesPerThread so you can switch back to lower samples on AD after BLM
   if((MinMethod == "hybrid") && on_hybrid_descent)
   {
    nSamplesPerThread = nTargetSamples / Nprocs / Nthreads;
   }
-  // app_log() << "This is overwritten nSamplesPerThread in VMC put: " << nSamplesPerThread << std::endl;
  
 
     //target samples set by samples or samplesperthread/dmcwalkersperthread
     nTargetPopulation = std::max(nTargetPopulation, nSamplesPerThread * Nprocs * Nthreads);
     nTargetSamples    = static_cast<int>(std::ceil(nTargetPopulation));
 
-    //app_log() << "This is nw inside else branch of VMC put: " << nw << std::endl;
-   // app_log() << "This is nSamplesPerThread inside else branch of VMC put: " << nSamplesPerThread << std::endl;
-   // app_log() << "This is nTargetPopulation inside else branch of VMC put: " << nTargetPopulation << std::endl;
 
     if (nTargetSamples)
     {

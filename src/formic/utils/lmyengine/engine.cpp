@@ -1290,10 +1290,9 @@ void cqmc::engine::LMYEngine::get_brlm_update_alg_part_one(const formic::VarDeps
   // block_ups[i][j](p,q) refers to the pth element of the qth update vector for the jth shift for the ith block
   //std::vector<std::vector<formic::Matrix<double> > > block_ups(_nblock);
 
-   _lmb.solve_for_block_dirs(_dep_ptr, nkps, shift_i, shift_s, shift_scale, _block_ups, output, _hd_lm_shift);
  
   // compute the useful update directions on root process
-  //_lmb.solve_for_block_dirs(_dep_ptr, nkps, shift_i, shift_s, shift_scale, _block_ups, output, _hd_lm_shift);
+  _lmb.solve_for_block_dirs(_dep_ptr, nkps, shift_i, shift_s, shift_scale, _block_ups, output, _hd_lm_shift);
 
   // get the total number of directions involved in the final basis
   const int n_dir = nsv + nkps * shift_scale.size() * _nblocks;
