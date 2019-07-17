@@ -72,14 +72,12 @@ private:
   // perform the single-shift update, no sample regeneration
   bool one_shift_run();
 
-  // perform update using accelerated descent
+  // perform optimization using a gradient descent algorithm
   bool descent_run();
 
-  // use hybrid approach
+  // use hybrid approach of descent and blocked linear method for optimization
   bool hybrid_run();
 
-  // perform update using stochastic reconfiguration
-  bool sr_run();
 
   // helper method for updating parameter values with descent
   void updateParameters(std::vector< std::vector<Return_t> >& Lderivs, double& prevLambda, std::vector<double>& prevTaus,std::vector<Return_t>& derivsSquared, int stepNum);
@@ -87,6 +85,7 @@ private:
   //helper method for writing vectors for BLM steps in hybrid method
   void storeVectors(std::vector< Return_t >& paramsForDiff);
 
+  //helper method for seting step sizes for different parameter types in descent optimization
   double setStepSize(int i);
 
   void solveShiftsWithoutLMYEngine(const std::vector<double>& shifts_i,
@@ -225,6 +224,7 @@ private:
   std::string flavor;
 
 
+  //Step sizes for different types of parameters
   double TJF_2Body_eta;
   double TJF_1Body_eta;
   double F_eta;
@@ -232,8 +232,8 @@ private:
   double CI_eta;
   double Orb_eta;
 
-  //int descent_len;
-  //int blm_len;
+  //Counters for controlling changes between descent
+  //and BLM in hybrid method
   int totalCount;
   int descentCount;
   int blmCount;

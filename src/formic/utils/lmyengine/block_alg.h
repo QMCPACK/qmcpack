@@ -56,9 +56,6 @@ class LMBlocker {
 //whether hybrid optimization method is being used, default is false
     bool hybrid = false;
         
-//number of parameters being optimized
-    int numParams;
-
     //Vector for storing the input vectors to the BLM steps of hybrid method
     std::vector< std::vector<double> > hybridBLM_Input;
 

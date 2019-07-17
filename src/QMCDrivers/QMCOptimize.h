@@ -90,8 +90,6 @@ private:
   ///Copy operator (disabled).
   QMCOptimize& operator=(const QMCOptimize&) = delete;
 
-  std::string MinMethod;
-  int hybrid_descent_samples;
 
   void generateSamples();
 };

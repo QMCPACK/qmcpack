@@ -109,7 +109,10 @@ QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(
   m_param.add(target_shift_i, "target_shift_i", "double");
 
   // Parameters for descent and hybrid methods
+
+  //Type of descent method being used
   m_param.add(flavor, "flavor", "string");
+
   // Parameters for setting step sizes for variables of different types
   m_param.add(TJF_2Body_eta, "TJF_2Body_eta", "double");
   m_param.add(TJF_1Body_eta, "TJF_1Body_eta", "double");
@@ -118,10 +121,6 @@ QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(
   m_param.add(CI_eta, "CI_eta", "double");
   m_param.add(Orb_eta, "Orb_eta", "double");
 
-
-  // m_param.add(descent_len,"descent_length","int");
-  // m_param.add(blm_len,"BLM_length","int");
-  // m_param.add(hybrid_descent_samples,"Hybrid_Descent_samples","int");
 
 
 #ifdef HAVE_LMY_ENGINE
@@ -204,13 +203,12 @@ QMCFixedSampleLinearOptimize::Func(RealType dl) {
 
 bool QMCFixedSampleLinearOptimize::run() {
 
+
+//Can perform update using either accelerated descent or the hybrid method
   if (doDescent) {
-    app_log() << "Going to descent_run()" << std::endl;
     return descent_run();
   }
   if (doHybrid) {
-    app_log() << "Going to hybrid_run()" << std::endl;
-
     return hybrid_run();
   }
 
@@ -220,7 +218,6 @@ bool QMCFixedSampleLinearOptimize::run() {
 // method
 #ifdef HAVE_LMY_ENGINE
   if (doAdaptiveThreeShift) {
-    app_log() << "Going to adaptive_three_shift_run()" << std::endl;
     return adaptive_three_shift_run();
   }
 #endif
@@ -461,22 +458,14 @@ bool QMCFixedSampleLinearOptimize::put(xmlNodePtr q) {
   tolower(block_lmStr);
   block_lm = (block_lmStr == "yes");
 
-  // print_lm_matrices = (print_lm_matrices_str == "yes" );
-  // EngineObj->setMatrixPrint(print_lm_matrices);
-
-  // app_log() << "This is MinMethod inside FixedSampleLinearOptimize: " <<
-  // MinMethod << std::endl;
-  // app_log() << "This is descent_len inside FixedSampleLinearOptimize: " <<
-  // descent_len << std::endl;
-  // app_log() << "This is blm_len inside FixedSampleLinearOptimize: " <<
-  // blm_len << std::endl;
-
+  
   // get whether to use the adaptive three-shift version of the update
   doAdaptiveThreeShift = (MinMethod == "adaptive");
   doOneShiftOnly = (MinMethod == "OneShiftOnly");
 
-  // get whether to use descent, hybrid, or sr
+  // get whether to use descent
   doDescent = (MinMethod == "descent");
+  //get whether to use hybrid method
   doHybrid = (MinMethod == "hybrid");
 
   // sanity check
@@ -1428,19 +1417,15 @@ bool QMCFixedSampleLinearOptimize::one_shift_run() {
   return (optTarget->getReportCounter() > 0);
 }
 
+//Function for optimizing using gradient descent
 bool QMCFixedSampleLinearOptimize::descent_run() {
 
   
   start();
   bool Valid(true);
   int Total_iterations(0);
-  // size of matrix
   numParams = optTarget->NumParams();
-  N = numParams + 1;
-
-  int process_rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, &process_rank);
-  std::ofstream paramFileWriter;
+   N = numParams + 1;
 
   for (int i = 0; i < numParams; i++) {
     if (stepNum == 0) {
@@ -1448,30 +1433,22 @@ bool QMCFixedSampleLinearOptimize::descent_run() {
     }
   }
 
-  //   where we are and where we are pointing
-  std::vector<RealType> currentParameterDirections(N, 0);
-  std::vector<RealType> currentParameters(numParams, 0);
-  std::vector<RealType> bestParameters(numParams, 0);
-  for (int i = 0; i < numParams; i++)
-    bestParameters[i] = currentParameters[i] = optTarget->Params(i);
-  //   proposed direction and new parameters
-  optdir.resize(numParams, 0);
-  optparm.resize(numParams, 0);
 
   while (Total_iterations < Max_iterations) {
     Total_iterations += 1;
     app_log() << "Iteration: " << Total_iterations << "/" << Max_iterations
               << std::endl;
 
-    std::vector<RealType> LDerivs(numParams);
+    std::vector<RealType> lDerivs(numParams);
 
-    app_log() << "This is mu: " << mu << std::endl;
-    optTarget->descent_checkConfigurations(LDerivs, mu, targetExcited,
+    //Compute Lagragian derivatives needed for parameter updates
+    optTarget->descent_checkConfigurations(lDerivs, mu, targetExcited,
                                            omega_shift);
 
-    derivRecords.push_back(LDerivs);
-
+    //Store the derivatives and then compute parameter updates
+    derivRecords.push_back(lDerivs);
     updateParameters(derivRecords, lambda, taus, derivsSquared, stepNum);
+    
     stepNum = stepNum + 1;
   }
 
@@ -1479,6 +1456,8 @@ bool QMCFixedSampleLinearOptimize::descent_run() {
   return (optTarget->getReportCounter() > 0);
 }
 
+
+//Function for updating parameters during descent optimization
 void QMCFixedSampleLinearOptimize::updateParameters(
     std::vector<std::vector<Return_t>> &derivRecords, double &prevLambda,
     std::vector<double> &prevTaus, std::vector<Return_t> &derivsSquared,
@@ -1491,8 +1470,6 @@ void QMCFixedSampleLinearOptimize::updateParameters(
             << " TJF_1Body_eta=" << TJF_1Body_eta << " F_eta=" << F_eta
             << " CI_eta=" << CI_eta << " Orb_eta=" << Orb_eta << std::endl;
 
-  int process_rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, &process_rank);
 
   // Get set of derivatives for current (kth) optimization step
   std::vector<Return_t> curDerivSet = derivRecords.at(derivRecords.size() - 1);
@@ -1602,11 +1579,10 @@ void QMCFixedSampleLinearOptimize::updateParameters(
       double alpha = ((double)rand() / RAND_MAX);
       double sign = std::abs(curDerivSet[i]) / curDerivSet[i];
       if (std::isnan(sign)) {
-        if (process_rank == 0) {
-          std::cout
+          app_log()
               << "Got a nan, choosing sign randomly with 50-50 probability"
               << std::endl;
-        }
+        
         double t = ((double)rand() / RAND_MAX);
         if (t > .5) {
           sign = 1;
@@ -1614,10 +1590,7 @@ void QMCFixedSampleLinearOptimize::updateParameters(
           sign = -1;
         }
       }
-      if (process_rank == 0) {
-        std::cout << "This is random alpha: " << alpha << std::endl;
-        std::cout << "This is sign: " << sign << std::endl;
-      }
+        app_log() << "This is random alpha: " << alpha <<  " with sign: " << sign << std::endl;
       optTarget->Params(i) = optTarget->Params(i) - tau * alpha * sign;
     }
 
@@ -1712,11 +1685,9 @@ void QMCFixedSampleLinearOptimize::updateParameters(
   }
 
   if (doHybrid && ((stepNum + 1) % (descent_len / 5) == 0)) {
-    if (process_rank == 0) {
-      std::cout << "Step number in macro-iteration is " << stepNum % descent_len
+      app_log() << "Step number in macro-iteration is " << stepNum % descent_len
                 << " out of expected total of " << descent_len
                 << " descent steps." << std::endl;
-    }
     storeVectors(paramsForDiff);
   }
 }
@@ -1726,45 +1697,38 @@ double QMCFixedSampleLinearOptimize::setStepSize(int i) {
   
 	double type_eta;
 
-        //app_log() << "Could be name: " << tmp.name(i) << std::endl;
-        app_log() << "Could be name: " << optTarget->getName(i) << std::endl;
-        int type = optTarget->getType(i);
-      app_log() << "This is type: " << type << " for parameter#: " << i << std::endl;
 
         std::string name = optTarget->getName(i);
+
+	int type = optTarget->getType(i);
 
         //Step sizes are assigned according to parameter type identified from the variable name.
         //Other parameter types could be added to this section as other wave function ansatzes are developed.
       if((name.find("uu") != std::string::npos ) || (name.find("ud")!= std::string::npos))
       {
         type_eta = TJF_2Body_eta;
-        app_log() << "Set step size to: " << TJF_2Body_eta << std::endl;
-      } 
+      }
+     //If parameter name doesn't have "uu" or "ud" in it and is of type 1, assume it is a 1 body Jastrow parameter. 
       else if(type == 1)
       {
         type_eta = TJF_1Body_eta;
-        app_log() << "Set step size to: " << TJF_1Body_eta << std::endl;
       }
       else if (name.find("F_")!= std::string::npos)
       {
         type_eta = F_eta;
-        app_log() << "Set step size to: " << F_eta << std::endl;
       }
       else if (name.find("CIcoeff_") != std::string::npos)
       {
         type_eta = CI_eta;
-        app_log() << "Set step size to: " << CI_eta << std::endl;
       }
       else if(name.find("orb_rot_") != std::string::npos)
       {
         type_eta = Orb_eta;
-        app_log() << "Set step size to: " << Orb_eta << std::endl;
       }
       else if (name.find("g") != std::string::npos)
       {
           //Gaussian parameters are rarely optimized in practice but the descent code allows for it.
         type_eta = Gauss_eta;
-        app_log() << "Set step size to: " << Gauss_eta << std::endl;
       }
 
 
@@ -1784,9 +1748,9 @@ void QMCFixedSampleLinearOptimize::storeVectors(
   std::fill(rowVec.begin(), rowVec.end(), 0.0);
 
   // Take difference between current parameter values and the values from 20
-  // iterations before to be written to file
+  // iterations before (in the case descent_len = 100) to be stored as input to BLM.
   // The current parameter values are then copied to paramsForDiff to be used
-  // another 20 iterations later
+  // another 20 iterations later.
   for (int i = 0; i < numParams; i++) {
     rowVec[i] = (optTarget->Params(i) - paramsForDiff[i]);
     paramsForDiff[i] = optTarget->Params(i);
@@ -1809,16 +1773,20 @@ void QMCFixedSampleLinearOptimize::storeVectors(
   }
 }
 
+//Function for controlling the alternation between sections of descent
+//optimization and BLM optimization.
 bool QMCFixedSampleLinearOptimize::hybrid_run() {
-  if (descentCount < descent_len) {
+ 
+    if (descentCount < descent_len) {
     descentCount++;
     totalCount++;
     app_log() << "Should be on descent step# " << descentCount - 1
               << " of macro-iteration. Total steps: " << totalCount
               << std::endl;
-    optTarget->setNumSamples(hybrid_descent_samples);
+    //optTarget->setNumSamples(hybrid_descent_samples);
     return descent_run();
-  } else {
+  }
+  else {
     if (blmCount < blm_len) {
 	if(blmCount == 0)
 	{
@@ -1832,7 +1800,8 @@ bool QMCFixedSampleLinearOptimize::hybrid_run() {
                 << std::endl;
       return adaptive_three_shift_run();
 
-    } else {
+    }
+    else {
       descentCount = 0;
       blmCount = 0;
       descentCount++;

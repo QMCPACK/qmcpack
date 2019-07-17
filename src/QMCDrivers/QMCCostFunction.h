@@ -18,7 +18,6 @@
 #include "QMCDrivers/QMCCostFunctionBase.h"
 #include "QMCDrivers/CloneManager.h"
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
-#include "formic/utils/matrix.h"
 
 namespace qmcplusplus
 {

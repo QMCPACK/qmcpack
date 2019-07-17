@@ -21,7 +21,6 @@
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "Message/CommOperators.h"
 //#define QMCCOSTFUNCTION_DEBUG
-#include "formic/utils/matrix.h"
 
 namespace qmcplusplus
 {
@@ -390,10 +389,9 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine* Engine
     (*MoverRng[ip]) = (*RngSaved[ip]);
     hClones[ip]->setRandomGenerator(MoverRng[ip]);
     //int nat = wRef.getTotalNum();
-    Return_t e0 = 0.0;
+    Return_rt e0 = 0.0;
     //       Return_t ef=0.0;
-    //Return_rt e2 = 0.0;
-    Return_t e2 = 0.0;
+    Return_rt e2 = 0.0;
   
 
     for (int iw = 0, iwg = wPerNode[ip]; iw < wRef.numSamples(); ++iw, ++iwg)
