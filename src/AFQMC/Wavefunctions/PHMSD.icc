@@ -1171,57 +1171,6 @@ namespace afqmc
 //      v[i] = ComplexType(real(v[i]),0.0); 
 
   }
-  /**
-   * Compute Mean Field shift using Slater Condon rules.
-   */
-  //template<class Vec>
-  //void PHMSD::vMF(Vec&& v)
-  //{
-    //int nCV = global_number_of_cholesky_vectors();
-    //boost::multi::array<ComplexType,2> HSPot = HamOp.getHSPotentials();
-    //int ndets = abij.number_of_configurations();
-    //auto cnfg_it = abij.configurations_begin();
-    //ComplexType maxvn = 0.0;
-    //for(int i = 0; i < nCV; i++) {
-      //boost::multi::array_ref<ComplexType,2> HSn(HSPot.origin()+i*NMO*NMO,{NMO,NMO});
-      //ComplexType numer = ComplexType(0.0);
-      //ComplexType denom = ComplexType(0.0);
-      //for(int idet = 0; idet < ndets; idet++) {
-        //std::vector<int> deti(NAEA+NAEB);
-        //createDeterminant(idet, deti);
-        //ComplexType cidet = std::get<2>(*(cnfg_it+idet));
-        //for(int jdet = 0; jdet < ndets; jdet++) {
-          //std::vector<int> detj(NAEA,NAEB);
-          //ComplexType cjdet = std::get<2>(*(cnfg_it+jdet));
-          //createDeterminant(jdet, detj);
-          //int perm = 1;
-          //std::vector<int> excit;
-          //int nexcit = getExcitation(deti, detj, excit, perm);
-          //ComplexType matel = ComplexType(0.0);
-          //if(nexcit <= 1)
-            //matel = ComplexType(perm)*contractOneBody(detj, excit, HSn);
-          //numer += ma::conj(cidet) * cjdet * matel;
-        //}
-        //denom += ma::conj(cidet)*cidet;
-      //}
-      //v[i] = numer/denom;
-    //}
-    ////v[0] = ComplexType(3.77067,0);
-    ////v[1] = ComplexType(0.97554,0);
-    ////v[2] = ComplexType(-0.00015012,0);
-    ////v[3] = ComplexType(0,0);
-    ////v[4] = ComplexType(0,0);
-    ////v[5] = ComplexType(0.284816,0);
-    ////v[6] = ComplexType(0.173791,0);
-    ////v[7] = ComplexType(0,0);
-    ////v[8] = ComplexType(0,0);
-    ////v[9] = ComplexType(0,0);
-    ////v[10] = ComplexType(-0.000181944,0);
-    ////v[11] = ComplexType(0,0);
-    ////v[12] = ComplexType(0,0);
-    ////v[13] = ComplexType(-0.0765616,0);
-    ////v[14] = ComplexType(0.00838208,0);
-  //}
 
 
 }

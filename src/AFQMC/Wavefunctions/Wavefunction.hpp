@@ -21,7 +21,6 @@
 #include "AFQMC/config.h"
 #include "boost/variant.hpp"
 
-#include "AFQMC/Hamiltonians/Hamiltonian.hpp"
 #include "AFQMC/SlaterDeterminantOperations/SlaterDetOperations.hpp"
 #include "AFQMC/Wavefunctions/NOMSD.hpp"
 #include "AFQMC/Wavefunctions/PHMSD.hpp"

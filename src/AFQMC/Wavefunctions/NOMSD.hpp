@@ -30,7 +30,6 @@
 #include "AFQMC/Walkers/WalkerConfig.hpp"
 
 #include "AFQMC/HamiltonianOperations/HamiltonianOperations.hpp"
-#include "AFQMC/Hamiltonians/Hamiltonian.hpp"
 #include "AFQMC/SlaterDeterminantOperations/SlaterDetOperations.hpp"
 
 
@@ -361,7 +360,6 @@ class NOMSD: public AFQMCInfo
         ovlp.reextent(iextensions<1u>{nw});	
       MixedDensityMatrix(wset,std::forward<MatG>(G),ovlp,compact_G_for_vbias,transposed_G_for_vbias_);
     }
-
 
     /*
      * Calculates the overlaps of all walkers in the set. Returns values in arrays. 

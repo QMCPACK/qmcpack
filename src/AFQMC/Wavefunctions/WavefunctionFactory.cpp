@@ -14,7 +14,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include<random>
-#include<ctime>
 
 #include "io/hdf_archive.h"
 #include "AFQMC/Utilities/readWfn.h"
@@ -618,7 +617,6 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop, TaskGroup_& TGwfn
   m_param.add(restart_file,"restart_file","std::string");
   m_param.add(cutv2,"cutoff","double");
   m_param.add(rediag,"rediag","std::string");
-  m_param.add(rediag,"rediag","std::string");
   m_param.add(ndets_to_read,"ndet","int");
   m_param.put(cur);
   bool recompute_ci = false;
@@ -899,11 +897,10 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop, TaskGroup_& TGwfn
     }
     TGwfn.Node().barrier();
 
-    auto wfn =  Wavefunction(PHMSD(AFinfo,cur,TGwfn,std::move(HOps),std::move(acta2mo),
+    return Wavefunction(PHMSD(AFinfo,cur,TGwfn,std::move(HOps),std::move(acta2mo),
                         std::move(actb2mo),std::move(abij),std::move(beta_coupled_to_unique_alpha),
                         std::move(alpha_coupled_to_unique_beta),std::move(PsiT),
                         walker_type,NCE,targetNW));
-    return wfn;
     app_error()<<" Error: Wavefunction type PHMSD not yet implemented. \n";
     APP_ABORT(" Error: Wavefunction type PHMSD not yet implemented. \n");
     return Wavefunction();
