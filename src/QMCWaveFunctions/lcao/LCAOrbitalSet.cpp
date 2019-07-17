@@ -361,17 +361,20 @@ inline void LCAOrbitalSet::evaluate_vgl_impl(const vgl_type& temp,
                                              GradMatrix_t& dlogdet,
                                              ValueMatrix_t& d2logdet) const
 {
-  std::copy_n(temp.data(0), OrbitalSetSize, logdet[i]);
+  //cannot use OrbitalSetSize because in the DiracClass this will always be nel
+  const size_t MatColSize =  logdet.cols(); 
+
+  std::copy_n(temp.data(0), MatColSize, logdet[i]);
   const ValueType* restrict gx = temp.data(1);
   const ValueType* restrict gy = temp.data(2);
   const ValueType* restrict gz = temp.data(3);
-  for (size_t j = 0; j < OrbitalSetSize; j++)
+  for (size_t j = 0; j < MatColSize; j++)
   {
     dlogdet[i][j][0] = gx[j];
     dlogdet[i][j][1] = gy[j];
     dlogdet[i][j][2] = gz[j];
   }
-  std::copy_n(temp.data(4), OrbitalSetSize, d2logdet[i]);
+  std::copy_n(temp.data(4), MatColSize, d2logdet[i]);
 }
 
 inline void LCAOrbitalSet::evaluate_vgh_impl(const vgh_type& temp,
@@ -608,7 +611,24 @@ void LCAOrbitalSet::evaluateThirdDeriv(const ParticleSet& P, int first, int last
 {
   APP_ABORT("LCAOrbitalSet::evaluateThirdDeriv(P,istart,istop,ggg_logdet) not implemented\n");
 }
+void LCAOrbitalSet::buildOptVariables(const size_t& nel)
+{
+#if !defined(QMC_COMPLEX)
 
+  const size_t nmo = OrbitalSetSize;
+
+  // create active rotation parameter indices
+  std::vector<std::pair<int, int>> created_m_act_rot_inds;
+
+  // only core->active rotations created
+  for (int i = 0; i < nel; i++)
+    for (int j = nel; j < nmo; j++)
+      created_m_act_rot_inds.push_back(std::pair<int,int>(i,j));
+
+  buildOptVariables(created_m_act_rot_inds);
+
+#endif
+}
 void LCAOrbitalSet::buildOptVariables(const std::vector<std::pair<int, int>>& rotations)
 {
 #if !defined(QMC_COMPLEX)
@@ -648,7 +668,7 @@ void LCAOrbitalSet::buildOptVariables(const std::vector<std::pair<int, int>>& ro
   }
 
   //Printing the parameters
-  if (false)
+  if (true)
   {
     app_log() << std::string(16, ' ') << "Parameter name" << std::string(15, ' ') << "Value\n";
     myVars.print(app_log());
@@ -692,6 +712,124 @@ void LCAOrbitalSet::buildOptVariables(const std::vector<std::pair<int, int>>& ro
   }
 #endif
 }
+
+/*
+The evaluateDerivative function can be understood in two parts. 
+
+PART1: The first part involves evaluating all pieces of information necessary to perform the derivative.
+There is most likely more efficient ways of having this necessary information available, but for now
+everything is evaluated from scratch. For now I am also initializing all objects used inside this function
+but this will change once a decision of how to have this information available is done.
+
+PART2: Matrix math necessary to evaluate the expressions of the derivatives requested is performed.
+Then the values of the derivatives are returned.
+*/
+void LCAOrbitalSet::evaluateDerivatives(ParticleSet& P,
+                                        const opt_variables_type& optvars,
+                                        std::vector<ValueType>& dlogpsi,
+                                        std::vector<ValueType>& dhpsioverpsi,
+                                        const int& FirstIndex,
+                                        const int& LastIndex)
+{
+  const size_t nel = LastIndex - FirstIndex;
+  const size_t nmo = OrbitalSetSize;
+
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~PART1
+  ParticleSet::ParticleGradient_t  myG_temp, myG_J;
+  ParticleSet::ParticleLaplacian_t myL_temp, myL_J;
+
+  myG_temp.resize(nel); myG_J.resize(nel);
+  myL_temp.resize(nel); myL_J.resize(nel);  
+
+  myG_temp = 0; myG_J = 0;
+  myL_temp = 0; myL_J = 0;
+
+  ValueMatrix_t Bbar;
+  ValueMatrix_t psiM_inv;
+  ValueMatrix_t psiM_all;
+  GradMatrix_t  dpsiM_all;
+  ValueMatrix_t d2psiM_all;
+  
+  Bbar.resize(nel,nmo);
+  psiM_inv.resize(nel,nel);
+  psiM_all.resize(nel,nmo);
+  dpsiM_all.resize(nel,nmo);
+  d2psiM_all.resize(nel,nmo);
+
+  Bbar = 0;
+  psiM_inv = 0;
+  psiM_all = 0;
+  dpsiM_all = 0;
+  d2psiM_all = 0;
+
+
+  this->evaluate_notranspose(P, FirstIndex, LastIndex, psiM_all, dpsiM_all, d2psiM_all);
+
+  for (int i=0; i<nel; i++)
+    for(int j=0; j<nel; j++)
+      psiM_inv(i,j) = psiM_all(i,j);
+
+  Invert(psiM_inv.data(), nel, nel);
+
+  //current value of Gradient and Laplacian                                                              
+  // gradient components
+  for (int a = 0; a < nel; a++)
+    for (int i = 0; i < nel; i++)
+      for (int k = 0; k < 3; k++)
+        myG_temp[a][k] += psiM_inv(i, a) * dpsiM_all(a, i)[k];
+  // laplacian components
+  for (int a = 0; a < nel; a++){
+    for (int i = 0; i < nel; i++)
+      myL_temp[a] += psiM_inv(i, a) * d2psiM_all(a, i);
+  }
+
+  // calculation of myG_J which will be used to represent \frac{\nabla\psi_{J}}{\psi_{J}} 
+  // calculation of myL_J will be used to represent \frac{\nabla^2\psi_{J}}{\psi_{J}}
+  // IMPORTANT NOTE:  The value of P.L holds \nabla^2 ln[\psi] but we need  \frac{\nabla^2 \psi}{\psi} and this is what myL_J will hold 
+  for(int a = 0, iat = FirstIndex; a < nel; a++, iat++){
+    myG_J[a] = (P.G[iat] - myG_temp[a]);
+    myL_J[a] = (P.L[iat] + dot(P.G[iat],P.G[iat]) - myL_temp[a]);
+  }
+  //possibly replace wit BLAS calls 
+  for(int i = 0; i < nel; i++)
+    for(int j = 0; j < nmo; j++)
+      Bbar(i,j) = d2psiM_all(i,j) + 2*dot(myG_J[i], dpsiM_all(i,j)) + myL_J[i]*psiM_all(i,j);
+
+
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~PART2
+  const double* const A(psiM_all.data());  
+  const double* const Ainv(psiM_inv.data());  
+  const double* const B(Bbar.data());  
+  SPOSet::ValueMatrix_t T;
+  SPOSet::ValueMatrix_t Y1;
+  SPOSet::ValueMatrix_t Y2;
+  SPOSet::ValueMatrix_t Y3;
+  SPOSet::ValueMatrix_t Y4;
+   T.resize(nel,nmo);
+  Y1.resize(nel,nel);
+  Y2.resize(nel,nmo);
+  Y3.resize(nel,nmo);
+  Y4.resize(nel,nmo);
+
+
+  BLAS::gemm('N','N', nmo, nel, nel, ValueType(1.0),        A, nmo, Ainv,      nel, ValueType(0.0),   T.data(), nmo);
+  BLAS::gemm('N','N', nel, nel, nel, ValueType(1.0),        B, nmo, Ainv,      nel, ValueType(0.0),  Y1.data(), nel);
+  BLAS::gemm('N','N', nmo, nel, nel, ValueType(1.0), T.data(), nmo, Y1.data(), nel, ValueType(0.0),  Y2.data(), nmo);
+  BLAS::gemm('N','N', nmo, nel, nel, ValueType(1.0),        B, nmo, Ainv,      nel, ValueType(0.0),  Y3.data(), nmo);
+
+  //possibly replace with BLAS call
+  Y4 = Y3 - Y2;
+
+  for (int i = 0; i < m_act_rot_inds.size(); i++)
+  {
+    int kk = myVars.where(i);
+    const int p = m_act_rot_inds.at(i).first;
+    const int q = m_act_rot_inds.at(i).second;
+    dlogpsi.at(kk)       = T(p,q);; 
+    dhpsioverpsi.at(kk)  = ValueType(-0.5) * Y4(p,q);
+  }
+}
+
 
 void LCAOrbitalSet::evaluateDerivatives(ParticleSet& P,
                                         const opt_variables_type& optvars,

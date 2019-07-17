@@ -148,6 +148,9 @@ public:
 #endif
 
   /// create optimizable orbital rotation parameters
+  // Single Slater creation
+  virtual void buildOptVariables(const size_t& nel) {}
+  // For the MSD case rotations must be created in MultiSlaterFast class
   virtual void buildOptVariables(const std::vector<std::pair<int, int>>& rotations) {}
 
   /// reset parameters to the values from optimizer
@@ -157,6 +160,12 @@ public:
   virtual void checkInVariables(opt_variables_type& active) {}
   virtual void checkOutVariables(const opt_variables_type& active) {}
 
+  virtual void evaluateDerivatives(ParticleSet& P,
+                                   const opt_variables_type& optvars,
+                                   std::vector<ValueType>& dlogpsi, 
+                                   std::vector<ValueType>& dhpsioverpsi,
+                                   const int& FirstIndex,
+                                   const int& LastIndex) {}
   /** Evaluate the derivative of the optimized orbitals with respect to the parameters
    *  this is used only for MSD, to be refined for better serving both single and multi SD
    */

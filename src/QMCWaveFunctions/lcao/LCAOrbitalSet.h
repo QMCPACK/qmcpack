@@ -82,7 +82,17 @@ public:
   SPOSet* makeClone() const;
 
   /// create optimizable orbital rotation parameters
+  // Single Slater creation
+  void buildOptVariables(const size_t& nel);
+  // For the MSD case rotations must be created in MultiSlaterFast class
   void buildOptVariables(const std::vector<std::pair<int, int>>& rotations);
+
+  void evaluateDerivatives(ParticleSet& P,
+                           const opt_variables_type& optvars,
+                           std::vector<ValueType>& dlogpsi,
+                           std::vector<ValueType>& dhpsioverpsi,
+                           const int& FirstIndex,
+                           const int& LastIndex);
 
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& optvars,
