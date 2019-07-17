@@ -107,7 +107,7 @@ struct QMCDriverFactory : public MPIObjectBase
   struct DriverAssemblyState
   {
     std::bitset<QMC_MODE_MAX> what_to_do;
-    bool append_run;
+    bool append_run = false;
     std::string traces_tag = "none";
     QMCRunType new_run_type = QMCRunType::DUMMY;
   };

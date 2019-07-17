@@ -54,5 +54,6 @@ TEST_CASE("QMCDriverFactory::VMCBatchedDriver", "[qmcapp]")
   xmlNodePtr node = doc.getRoot();
   QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(0, node);
   REQUIRE(das.new_run_type == QMCDriverFactory::QMCRunType::VMC_BATCH);
+  REQUIRE(das.append_run == false);
 }
 }

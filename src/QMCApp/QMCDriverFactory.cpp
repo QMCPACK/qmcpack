@@ -187,15 +187,8 @@ bool QMCDriverFactory::setQMCDriver(int curSeries, xmlNodePtr cur, QMCDriverFact
     delete qmcDriver;
     //set to 0 so that a new driver is created
     qmcDriver = 0;
-    //if the current qmc method is different from the previous one, append_run is set to false
-    
-    if(das.new_run_type == curRunType && newQmcMode == curQmcMode)
-      das.append_run = true;
-    else
-      das.append_run = false;
+    //if the current qmc method is different from the previous one, append_run is set to false    
   }
-  if (curSeries == 0)
-    das.append_run = false;
 
   //need to create a qmcDriver
   curRunType     = das.new_run_type;
