@@ -905,6 +905,7 @@ void cqmc::engine::LMYEngine::setHybridBLM_Input(std::vector< std::vector<double
     //Change the LMBlocker object's hybrid variable to true so input vectors will be used later on
     _lmb.setHybrid(true);
 
+    //Clear to avoid retaining old sets of vectors
     _lmb.getInputVector().clear();
     
     for (std::vector<double> v : from_descent)
