@@ -209,7 +209,6 @@ bool QMCFixedSampleLinearOptimize::run() {
     return descent_run();
   }
   if (doHybrid) {
-    EngineObj->setHybrid("yes", optTarget->NumParams());
     app_log() << "Going to hybrid_run()" << std::endl;
 
     return hybrid_run();

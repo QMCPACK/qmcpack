@@ -53,8 +53,8 @@ class LMBlocker {
     // whether to solve the eigenvalue problem iteratively
     bool _iterative;
 
-//whether hybrid optimization method is being used
-    bool hybrid;
+//whether hybrid optimization method is being used, default is false
+    bool hybrid = false;
         
 //number of parameters being optimized
     int numParams;
@@ -116,10 +116,13 @@ class LMBlocker {
                               std::ostream & output,
                               const double omega=0.0);
 
-    void setHybrid(bool h);
-    void setNumParams(int n);
+    //function that sets whether hybrid method is being used
+    void setHybrid(bool h) {hybrid = h;}
 
+    //function that returns the vector of vectors for receiving information from the engine object
     std::vector< std::vector<double> >&  getInputVector() {return hybridBLM_Input;}
+    
+    //function for overwriting the set of old updates used in the blocked linear method portion of the hybrid method
     void overwriteOldUpates(formic::Matrix<double>& m_ou);
 
   };

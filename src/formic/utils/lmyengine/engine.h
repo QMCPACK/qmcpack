@@ -244,13 +244,7 @@ private:
   /// \brief [in]output stream
   std::ostream & output;
 
-  //Whether hybrid method is being used
-    bool hybrid;
 
-//Number of parameters
-    int numParams;
-
-    //std::vector< std::vector<double> > hybridBLM_Input;
 
 public:
   
@@ -490,8 +484,6 @@ public:
 
   cqmc::engine::LMBlocker & LMBlocker() {return _lmb;}
   
-  void setHybrid(std::string h,int n);
-
   void setHybridBLM_Input(std::vector< std::vector<double> > &from_descent);
   
   ////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -169,22 +169,11 @@ void cqmc::engine::LMBlocker::solve_for_block_dirs(const formic::VarDeps * dep_p
   // clear eigenvectors
   m_ou_dd.clear();
 
-//  std::cout << "Inside solve_for_block_dirs" << std::endl;
 //Use old updates from AD if doing hybrid method
 if(hybrid)
 {
-  //  std::cout << "hybrid is set to true" << std::endl;
-if (my_rank == 0)
-{
- std::cout << m_ou.print("%12.2e", "original old updates") << std::endl;
-}
- overwriteOldUpates(m_ou);
-
- if(my_rank == 0)
-{
-std::cout << m_ou.print("%12.2e", "overwritten old updates") << std::endl;
-}
-
+  overwriteOldUpates(m_ou);
+ 
 }
 
   // on root process
@@ -315,50 +304,29 @@ std::cout << m_ou.print("%12.2e", "overwritten old updates") << std::endl;
 }
 
 
-void cqmc::engine::LMBlocker::setHybrid(bool h)
-{
-hybrid = h;
-}
-
-void cqmc::engine::LMBlocker::setNumParams(int n)
-{
-numParams = n;
-}
-
+//Function uses vectors from from descent previously put in hybridBLM_Input and transfers them to the matrix of old updates m_ou
 void cqmc::engine::LMBlocker::overwriteOldUpates(formic::Matrix<double>& m_ou)
 {
-    int my_rank = formic::mpi::rank();
 
     //Column vector that will hold parameter directions from AD in hybrid method
-    formic::ColVec<double> dir_vec(numParams,0.0);
+    formic::ColVec<double> dir_vec(hybridBLM_Input[0].size(),0.0);
 
     int dirCount = 0;
-   if(my_rank == 0)
-   {
-    std::cout << "Inside overwrite" << std::endl;
-    std::cout << "This is number of vecs from descent: " << hybridBLM_Input.size() << std::endl;
-   } 
+    
    
 
     //Copy over information into the Column Vector format and add to matrix of old updates.
     for (std::vector<double> v : hybridBLM_Input)
     {
-	if(my_rank == 0)
-	{
-	    std::cout << "Inside loop over AD input" << std::endl;
-	}
-        for(int i = 0; i < numParams; i++)
+
+        for(int i = 0; i < v.size(); i++)
         {
             dir_vec.at(i) = v[i];
         }
     
-       if(my_rank == 0)
-       {
-	std::cout << dir_vec.print("%12.2e", "vector from AD") << std::endl;
-       }
-    m_ou.put_vec_in_col(dirCount,dir_vec);
+	m_ou.put_vec_in_col(dirCount,dir_vec);
 
-    dirCount++;
+	dirCount++;
     }
 
 

@@ -896,44 +896,24 @@ void cqmc::engine::LMYEngine::shift_update(std::vector<double> & new_shift) {
 }
 
 
-void cqmc::engine::LMYEngine::setHybrid(std::string h,int n)
-{
-        if(h.compare("yes")==0)
-        {    
-            hybrid = true;
-        }    
-        else 
-        {    
-            hybrid = false;
-        }    
-    numParams = n; 
 
-}
 
+//Transfers the vectors from descent to the engine's LMBlocker object during the hybrid method.
 void cqmc::engine::LMYEngine::setHybridBLM_Input(std::vector< std::vector<double>> &from_descent) 
 {
 
-    //std::vector< std::vector<double>> h = this->LMBlocker().getInputVector();
+    //Change the LMBlocker object's hybrid variable to true so input vectors will be used later on
+    _lmb.setHybrid(true);
 
-    this->LMBlocker().getInputVector().clear();
-
-    int my_rank = formic::mpi::rank();
+    _lmb.getInputVector().clear();
     
     for (std::vector<double> v : from_descent)
     {
-	if(my_rank == 0)
-	{
-	    std::cout << "Vector from descent" << std::endl;
-	for(int i =0; i < v.size(); i++)
-	{
-	    std::cout << v[i] << ",";
-	}
-	std::cout << std::endl;
-	}
-	this->LMBlocker().getInputVector().push_back(v);
-        //h.push_back(v);
+
+	_lmb.getInputVector().push_back(v);
     }
 }
+
 /////////////////////////////////////////////////////////////////////////////////////////////
 /// \brief harmonic davidson engine call to calculate energy and target function 
 ///
@@ -1309,19 +1289,8 @@ void cqmc::engine::LMYEngine::get_brlm_update_alg_part_one(const formic::VarDeps
   // block_ups[i][j](p,q) refers to the pth element of the qth update vector for the jth shift for the ith block
   //std::vector<std::vector<formic::Matrix<double> > > block_ups(_nblock);
 
-  if(!hybrid)
-  {
-  _lmb.setHybrid(false);
-  _lmb.solve_for_block_dirs(_dep_ptr, nkps, shift_i, shift_s, shift_scale, _block_ups, output, _hd_lm_shift);
-  }
-  else
-  {
-  _lmb.setNumParams(numParams);
-  _lmb.setHybrid(true);
    _lmb.solve_for_block_dirs(_dep_ptr, nkps, shift_i, shift_s, shift_scale, _block_ups, output, _hd_lm_shift);
-  
-  }
-
+ 
   // compute the useful update directions on root process
   //_lmb.solve_for_block_dirs(_dep_ptr, nkps, shift_i, shift_s, shift_scale, _block_ups, output, _hd_lm_shift);
 
