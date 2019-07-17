@@ -267,10 +267,9 @@ IF (NOT QMC_COMPLEX)
                     )
 
  ELSE()
-    MESSAGE("Skipping HEG backflow tests because they are not supported by complex build (QMC_COMPLEX=1)")
+    MESSAGE_VERBOSE("Skipping HEG backflow tests because they are not supported by complex build (QMC_COMPLEX=1)")
  ENDIF()
-
-ELSE()
-    MESSAGE("Skipping all HEG tests because they are not supported by CUDA build (QMC_CUDA=1)")  
+ELSE() 
+    MESSAGE_VERBOSE("Skipping all HEG tests because they are not supported by CUDA build (QMC_CUDA=1)")  
 ENDIF()
 

@@ -19,8 +19,8 @@ harmonic angular functions or Cartesian angular expansions. The radial
 functions in the basis set can be expanded in either Gaussian
 functions, Slater-type functions, or numerical radial functions.
 
-In this section we describe the input sections for the atom-centered basis set and the \ixml{sposet} for a single Slater determinant trial wavefunction. The input sections for multideterminant trial wavefunctions are described in Section \ref{sec:multideterminants}. The basic structure for the input block of a single Slater determinant is given in Listing \ref{listing:lcaosposet}.
-A list of options for \ixml{determinantset} associated with this \ixml{sposet} is given in Table \ref{table:determinantset}.
+In this section we describe the input sections for the atom-centered basis set and the \ixml{sposet} for a single Slater determinant trial wavefunction. The input sections for multideterminant trial wavefunctions are described in Section~\ref{sec:multideterminants}. The basic structure for the input block of a single Slater determinant is given in Listing~\ref{listing:lcaosposet}.
+A list of options for \ixml{determinantset} associated with this \ixml{sposet} is given in Table~\ref{table:determinantset}.
 
 \begin{minipage}{\linewidth}
 \begin{lstlisting}[style=QMCPXML,caption=Basic input block for a single determinant trial wavefunction using a \ixml{sposet} expanded on an atom-centered basis set. \label{listing:lcaosposet}]
@@ -61,7 +61,7 @@ A list of options for \ixml{determinantset} associated with this \ixml{sposet} i
 \label{table:determinantset}
 \end{table}
 
-The definition of the set of atom-centered basis functions is given by the \ixml{basisset} block, and the \ixml{sposet} is defined within \ixml{slaterdeterminant}. The \ixml{basisset} input block is composed from a collection of \ixml{atomicBasisSet} input blocks, one for each atomic species in the simulation where basis functions are centered. The general structure for \ixml{basisset} and \ixml{atomicBasisSet} are given in Listing \ref{listing:basisset}, and the corresponding lists of options are given in Tables \ref{table:basisset} and \ref{table:atomicBasisSet}.
+The definition of the set of atom-centered basis functions is given by the \ixml{basisset} block, and the \ixml{sposet} is defined within \ixml{slaterdeterminant}. The \ixml{basisset} input block is composed from a collection of \ixml{atomicBasisSet} input blocks, one for each atomic species in the simulation where basis functions are centered. The general structure for \ixml{basisset} and \ixml{atomicBasisSet} are given in Listing~\ref{listing:basisset}, and the corresponding lists of options are given in Tables~\ref{table:basisset} and~\ref{table:atomicBasisSet}.
 
 \begin{minipage}{\linewidth}
 \begin{lstlisting}[style=QMCPXML,caption=Basic input block for \ixml{basisset}.\label{listing:basisset}]

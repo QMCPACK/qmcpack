@@ -51,7 +51,7 @@ public:
   bool run();
   ///process xml node
   bool put(xmlNodePtr cur);
-  RealType Func(Return_t dl);
+  RealType Func(RealType dl);
 
 private:
   inline bool ValidCostFunction(bool valid)
@@ -64,7 +64,7 @@ private:
   }
 
   // check if the proposed new cost function value is the best available
-  bool is_best_cost(const int ii, const std::vector<RealType>& cv, const RealType ic) const;
+  bool is_best_cost(const int ii, const std::vector<RealType>& cv, const std::vector<double>& sh, const RealType ic) const;
 
   // perform the adaptive three-shift update
   bool adaptive_three_shift_run();
@@ -129,6 +129,10 @@ private:
   RealType max_relative_cost_change;
   ///max amount a parameter may change relative to current wave function weight
   RealType max_param_change;
+  /// the tolerance to cost function increases when choosing the best shift in the adaptive shift method
+  RealType cost_increase_tol;
+  /// the shift_i value that the adaptive shift method should aim for
+  RealType target_shift_i;
   ///whether we are targeting an excited state
   std::string targetExcitedStr;
   ///whether we are targeting an excited state

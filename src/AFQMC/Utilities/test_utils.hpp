@@ -114,6 +114,21 @@ TEST_DATA<T>  read_test_results_from_hdf(std::string fileName, std::string wfn_t
     return TEST_DATA<T>{Idata[3],Idata[4],Idata[5],E0,E1,E2,Xsum,Vsum};
 }
 
+// Create a fake output hdf5 filename for unit tests.
+inline std::string create_test_hdf(std::string& wfn_file, std::string& hamil_file)
+{
+  std::size_t startw = wfn_file.find_last_of("\\/");
+  std::size_t endw = wfn_file.find_last_of(".");
+  std::string wfn_base = wfn_file.substr(startw+1,endw-startw-1);
+
+  std::size_t starth = hamil_file.find_last_of("\\/");
+  std::size_t endh = hamil_file.find_last_of(".");
+  std::string ham_base = hamil_file.substr(starth+1,endh-starth-1);
+
+  return wfn_base + "_" + ham_base + ".h5";
+}
+
+
 }
 }
 

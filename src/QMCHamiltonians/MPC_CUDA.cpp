@@ -20,7 +20,6 @@
 // #include "Lattice/ParticleBConds.h"
 // #include "OhmmsPETE/OhmmsArray.h"
 // #include "OhmmsData/AttributeSet.h"
-// #include "Particle/DistanceTable.h"
 // #include "Particle/DistanceTableData.h"
 
 

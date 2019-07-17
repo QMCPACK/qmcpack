@@ -27,6 +27,7 @@
 #include <algorithm>
 #include <spline2/bspline_traits.hpp>
 #include <spline2/MultiBsplineData.hpp>
+#include <spline2/MultiBsplineEval_helper.hpp>
 
 // select evaluation functions based on the architecture.
 ///include evaluate_v_impl

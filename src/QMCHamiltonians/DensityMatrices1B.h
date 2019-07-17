@@ -22,6 +22,20 @@ namespace qmcplusplus
 {
 class DensityMatrices1B : public QMCHamiltonianBase
 {
+protected:
+  enum DMTimers
+  {
+    DM_eval,
+    DM_gen_samples,
+    DM_gen_sample_basis,
+    DM_gen_sample_ratios,
+    DM_gen_particle_basis,
+    DM_matrix_products,
+    DM_accumulate,
+  };
+
+  TimerList_t timers;
+
 public:
   enum
   {
@@ -71,6 +85,7 @@ public:
   bool warmed_up;
   std::vector<PosType> rsamples;
   Vector<RealType> sample_weights;
+  std::vector<ValueType> psi_ratios;
   RealType dens;
   PosType drift;
   int nindex;
@@ -137,6 +152,7 @@ public:
   RealType rhocur;
 
   RandomGenerator_t* uniform_random;
+
 
   //constructor/destructor
   DensityMatrices1B(ParticleSet& P, TrialWaveFunction& psi, ParticleSet* Pcl);

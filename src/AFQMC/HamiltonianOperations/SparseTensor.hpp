@@ -30,6 +30,7 @@
 #include "AFQMC/Utilities/taskgroup.h"
 
 #include "AFQMC/HamiltonianOperations/sparse_matrix_energy.hpp"
+#include "Utilities/FairDivide.h"
 
 namespace qmcplusplus
 {
@@ -153,15 +154,15 @@ class SparseTensor
           H1[i][j] += hij[i][j] + vn0[i][j];
           H1[j][i] += hij[j][i] + vn0[j][i];
           // This is really cutoff dependent!!!
-          if( std::abs( H1[i][j] - conj(H1[j][i]) ) > 1e-6 ) {
+          if( std::abs( H1[i][j] - ma::conj(H1[j][i]) ) > 1e-6 ) {
             app_error()<<" WARNING in getOneBodyPropagatorMatrix. H1 is not hermitian. \n";
             app_error()<<i <<" " <<j <<" " <<H1[i][j] <<" " <<H1[j][i] <<" "
                        <<hij[i][j] <<" " <<hij[j][i] <<" "
                        <<vn0[i][j] <<" " <<vn0[j][i] <<std::endl;
             //APP_ABORT("Error in getOneBodyPropagatorMatrix. H1 is not hermitian. \n");
           }
-          H1[i][j] = 0.5*(H1[i][j]+conj(H1[j][i]));
-          H1[j][i] = conj(H1[i][j]);
+          H1[i][j] = 0.5*(H1[i][j]+ma::conj(H1[j][i]));
+          H1[j][i] = ma::conj(H1[i][j]);
         }
       }
 

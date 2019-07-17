@@ -40,11 +40,10 @@ using qmcplusplus::afqmc::to_address;
 template<class MultiArray2D, typename = typename std::enable_if<(MultiArray2D::dimensionality > 1)>::type>
 bool is_hermitian(MultiArray2D const& A){
 	using ma::conj;
-	using ma::conj;
 	if(A.size(0) != A.size(1)) return false;
 	for(int i = 0; i != A.size(0); ++i)
 		for(int j = i + 1; j != A.size(1); ++j)
-			if( std::abs(A[i][j] - conj(A[j][i])) > 1e-12 ) return false;
+			if( std::abs(A[i][j] - ma::conj(A[j][i])) > 1e-12 ) return false;
 	return true;
 }
 
@@ -260,10 +259,25 @@ MultiArray2DC product(T alpha, SparseMatrixA const& A, MultiArray2DB const& B, T
         return std::forward<MultiArray2DC>(C);
 }
 
+template<class T, class SparseMatrixA, class MultiArray2DB, class MultiArray2DC,
+        typename = typename std::enable_if<
+                SparseMatrixA::dimensionality == -2 and
+                MultiArray2DB::dimensionality == 2 and
+                std::decay<MultiArray2DC>::type::dimensionality == 2
+        >::type,
+        typename = void,
+        typename = void // TODO change to use dispatch 
+>
+MultiArray2DC product(T alpha, MultiArray2DB const& B, SparseMatrixA const& A, T beta, MultiArray2DC&& C ) 
+{
+  APP_ABORT(" Error: DenseMatrix x SparseMatrix product not implemented. \n\n\n");
+  return std::forward<MultiArray2DC>(C);
+}
+
 template<class MultiArray2DA, class MultiArray2DB, class MultiArray2DC,
         typename = typename std::enable_if<
                 (MultiArray2DA::dimensionality == 2 or MultiArray2DA::dimensionality == -2) and
-                MultiArray2DB::dimensionality == 2 and
+                (MultiArray2DB::dimensionality == 2 or MultiArray2DB::dimensionality == -2) and
                 std::decay<MultiArray2DC>::type::dimensionality == 2
         >::type
 >

@@ -126,8 +126,6 @@ public:
   ParticleSet& TargetPtcl;
   ///ionic system
   ParticleSet* SourcePtcl;
-  ///index for the ion-el distance table
-  int myTableIndex;
 
   /**  Helper vector for sorting bands
    */
@@ -202,8 +200,8 @@ public:
   {
     oset->TileFactor   = TileFactor;
     oset->Tiling       = (TileFactor[0] * TileFactor[1] * TileFactor[2] != 1);
-    oset->PrimLattice  = Lattice;
-    oset->SuperLattice = SuperLattice;
+    oset->PrimLattice.set(Lattice);
+    oset->SuperLattice.set(SuperLattice);
     //oset->GGt=dot(transpose(oset->PrimLattice.G), oset->PrimLattice.G);
     oset->GGt = GGt;
     oset->setOrbitalSetSize(numOrbs);

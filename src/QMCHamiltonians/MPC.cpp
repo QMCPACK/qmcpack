@@ -17,7 +17,6 @@
 #include "Lattice/ParticleBConds.h"
 #include "OhmmsPETE/OhmmsArray.h"
 #include "OhmmsData/AttributeSet.h"
-#include "Particle/DistanceTable.h"
 #include "Particle/DistanceTableData.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "Utilities/IteratorUtility.h"
@@ -31,9 +30,9 @@ namespace qmcplusplus
 void MPC::resetTargetParticleSet(ParticleSet& ptcl) {}
 
 MPC::MPC(ParticleSet& ptcl, double cutoff)
-    : PtclRef(&ptcl), Ecut(cutoff), FirstTime(true), VlongSpline(0), DensitySpline(0)
+    : PtclRef(&ptcl), Ecut(cutoff), FirstTime(true), VlongSpline(0), DensitySpline(0),
+      d_aa_ID(ptcl.addTable(ptcl, DT_SOA_PREFERRED))
 {
-  int it = ptcl.addTable(ptcl, DT_AOS);
   initBreakup();
 }
 
@@ -47,13 +46,10 @@ MPC::~MPC()
 
 void MPC::init_gvecs()
 {
-  TinyVector<int, OHMMS_DIM> maxIndex;
+  TinyVector<int, OHMMS_DIM> maxIndex(0);
   PosType b[OHMMS_DIM];
   for (int j = 0; j < OHMMS_DIM; j++)
-  {
-    maxIndex[j] = 0;
-    b[j]        = 2.0 * M_PI * PtclRef->Lattice.b(j);
-  }
+    b[j] = static_cast<RealType>(2.0 * M_PI) * PtclRef->Lattice.b(j);
   int numG1 = PtclRef->Density_G.size();
   int numG2 = PtclRef->DensityReducedGvecs.size();
   assert(PtclRef->Density_G.size() == PtclRef->DensityReducedGvecs.size());
@@ -338,7 +334,7 @@ QMCHamiltonianBase* MPC::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 
 MPC::Return_t MPC::evalSR(ParticleSet& P) const
 {
-  const DistanceTableData& d_aa = (*P.DistTables[0]);
+  const DistanceTableData& d_aa = P.getDistTable(d_aa_ID);
   RealType SR                   = 0.0;
   if (d_aa.DTType == DT_SOA)
   {

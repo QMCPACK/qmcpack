@@ -130,7 +130,7 @@ void DampedDynamics<T>::setTarget(ObjectFuncType* fn)
   Y0.resize(NumParams);
   for (int i = 0; i < NumParams; i++)
   {
-    Y[i]  = TargetFunc->Params(i);
+    Y[i]  = std::real(TargetFunc->Params(i));
     Y0[i] = Y[i];
   }
 }

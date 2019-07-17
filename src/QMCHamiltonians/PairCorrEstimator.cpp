@@ -22,7 +22,8 @@
 
 namespace qmcplusplus
 {
-PairCorrEstimator::PairCorrEstimator(ParticleSet& elns, std::string& sources) : Dmax(10.), Delta(0.5), num_species(2)
+PairCorrEstimator::PairCorrEstimator(ParticleSet& elns, std::string& sources)
+  : Dmax(10.), Delta(0.5), num_species(2), d_aa_ID_(elns.addTable(elns, DT_SOA_PREFERRED))
 {
   UpdateMode.set(COLLECTABLE, 1);
   num_species = elns.groups();
@@ -54,7 +55,7 @@ PairCorrEstimator::PairCorrEstimator(ParticleSet& elns, std::string& sources) : 
       gof_r_prefix.push_back(os.str());
       pair_map[i * num_species + j] = npairs;
     }
-  const DistanceTableData& dii(*elns.DistTables[0]);
+  const DistanceTableData& dii(elns.getDistTable(d_aa_ID_));
   if (dii.DTType == DT_AOS)
   {
     pair_ids.resize(dii.getTotNadj());
@@ -67,10 +68,11 @@ PairCorrEstimator::PairCorrEstimator(ParticleSet& elns, std::string& sources) : 
   }
   // source-target tables
   std::vector<std::string> slist, dlist;
-  for (int k = 1; k < elns.DistTables.size(); ++k)
-    dlist.push_back(elns.DistTables[k]->origin().getName());
+  const int ntables = elns.getNumDistTables();
+  for (int k = 0; k < ntables; ++k)
+    if (elns.getName() != elns.getDistTable(k).origin().getName())
+      dlist.push_back(elns.getDistTable(k).origin().getName());
   parsewords(sources.c_str(), slist);
-  int ntables = elns.DistTables.size();
   std::set<int> others_sorted;
   for (int i = 0; i < slist.size(); ++i)
   {
@@ -91,7 +93,7 @@ PairCorrEstimator::PairCorrEstimator(ParticleSet& elns, std::string& sources) : 
   int toff = gof_r_prefix.size();
   for (int k = 0; k < other_ids.size(); ++k)
   {
-    const DistanceTableData& t(*elns.DistTables[other_ids[k]]);
+    const DistanceTableData& t(elns.getDistTable(other_ids[k]));
     app_log() << "  GOFR for " << t.getName() << " starts at " << toff << std::endl;
     other_offsets[k] = toff;
     const SpeciesSet& species(t.origin().getSpeciesSet());
@@ -111,7 +113,7 @@ void PairCorrEstimator::resetTargetParticleSet(ParticleSet& P) {}
 PairCorrEstimator::Return_t PairCorrEstimator::evaluate(ParticleSet& P)
 {
   BufferType& collectables(P.Collectables);
-  const DistanceTableData& dii(*P.DistTables[0]);
+  const DistanceTableData& dii(P.getDistTable(d_aa_ID_));
   if (dii.DTType == DT_SOA)
   {
     for (int iat = 1; iat < dii.centers(); ++iat)
@@ -131,7 +133,7 @@ PairCorrEstimator::Return_t PairCorrEstimator::evaluate(ParticleSet& P)
     }
     for (int k = 0; k < other_ids.size(); ++k)
     {
-      const DistanceTableData& d1(*P.DistTables[other_ids[k]]);
+      const DistanceTableData& d1(P.getDistTable(other_ids[k]));
       const ParticleSet::ParticleIndex_t& gid(d1.origin().GroupID);
       int koff        = other_offsets[k];
       RealType overNI = 1.0 / d1.centers();
@@ -165,7 +167,7 @@ PairCorrEstimator::Return_t PairCorrEstimator::evaluate(ParticleSet& P)
     }
     for (int k = 0; k < other_ids.size(); ++k)
     {
-      const DistanceTableData& d1(*P.DistTables[other_ids[k]]);
+      const DistanceTableData& d1(P.getDistTable(other_ids[k]));
       const ParticleSet::ParticleIndex_t& gid(d1.origin().GroupID);
       int koff = other_offsets[k];
       for (int iat = 0; iat < d1.centers(); ++iat)

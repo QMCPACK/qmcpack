@@ -262,7 +262,7 @@ std::pair<MultiArray1D,MultiArray2D> symEig(MultiArray2D const& A) {
             MultiArray2D A_({N,N});
             for(int i=0; i<N; i++)
               for(int j=0; j<N; j++) 
-                A_[i][j] = conj(A[i][j]);                
+                A_[i][j] = ma::conj(A[i][j]);                
             char JOBZ('V');
             char RANGE('A');
             char UPLO('U');

@@ -32,7 +32,6 @@
 #include "Lattice/ParticleBConds.h"
 #include "Particle/ParticleSet.h"
 #include "Particle/DistanceTableData.h"
-#include "Particle/DistanceTable.h"
 #include "Particle/SymmetricDistanceTableData.h"
 #include "QMCApp/ParticleSetPool.h"
 #include "LongRange/EwaldHandler3D.h"
@@ -122,6 +121,11 @@ TEST_CASE("ReadFileBuffer_reopen", "[hamiltonian]")
   REQUIRE(buf.length > 14);
 }
 
+void copyGridUnrotatedForTest(NonLocalECPComponent& nlpp)
+{
+  nlpp.rrotsgrid_m = nlpp.sgridxyz_m;
+}
+
 TEST_CASE("Evaluate_ecp", "[hamiltonian]")
 {
   typedef QMCTraits::RealType RealType;
@@ -133,11 +137,11 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
 
   //Cell definition:
 
-  Uniform3DGridLayout grid;
-  grid.BoxBConds = true; // periodic
-  grid.R.diagonal(20);
-  grid.LR_dim_cutoff = 15;
-  grid.reset();
+  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
+  Lattice.BoxBConds = true; // periodic
+  Lattice.R.diagonal(20);
+  Lattice.LR_dim_cutoff = 15;
+  Lattice.reset();
 
 
   ParticleSet ions;
@@ -159,11 +163,11 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
   int iatnumber                 = ion_species.addAttribute("atomic_number");
   ion_species(pChargeIdx, pIdx) = 1;
   ion_species(iatnumber, pIdx)  = 11;
-  ions.Lattice.copy(grid);
+  ions.Lattice = Lattice;
   ions.createSK();
 
 
-  elec.Lattice.copy(grid);
+  elec.Lattice = Lattice;
   elec.setName("e");
   elec.create(2);
   elec.R[0][0] = 2.0;
@@ -193,19 +197,6 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
   // The call to resetGroups is needed transfer the SpeciesSet
   // settings to the ParticleSet
   elec.resetGroups();
-
-  int myTableIndex = -1;
-#ifdef ENABLE_SOA
-  myTableIndex = elec.addTable(ions, DT_SOA);
-  ions.addTable(ions, DT_SOA);
-#else
-  myTableIndex = elec.addTable(ions, DT_AOS);
-  ions.addTable(ions, DT_AOS);
-#endif
-
-  ions.update();
-  elec.update();
-
 
   //Cool.  Now to construct a wavefunction with 1 and 2 body jastrow (no determinant)
   TrialWaveFunction psi = TrialWaveFunction(c);
@@ -259,17 +250,23 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
 
   NonLocalECPComponent* nlpp = ecp.pp_nonloc;
 
-  //This line is required because the randomized quadrature grid is set by
+  //This line is required because the randomized quadrature Lattice is set by
   //random number generator in NonLocalECPotential.  We take the unrotated
-  //quadrature grid instead...
-  nlpp->rrotsgrid_m = nlpp->sgridxyz_m;
+  //quadrature Lattice instead...
+  copyGridUnrotatedForTest(*nlpp);
 
 
   //Not testing nonlocal moves here, but the PP functions take this as an argument
   NonLocalTOperator nonLocalOps(elec.getTotalNum());
   std::vector<NonLocalData>& Txy(nonLocalOps.Txy);
 
-  const auto myTable = elec.DistTables[myTableIndex];
+  const int myTableIndex = elec.addTable(ions, DT_SOA_PREFERRED);
+
+  const auto& myTable = elec.getDistTable(myTableIndex);
+
+  // update all distance tables
+  ions.update();
+  elec.update();
 
   //Need to set up temporary data for this configuration in trial wavefunction.  Needed for ratios.
   double logpsi = psi.evaluateLog(elec);
@@ -289,10 +286,10 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
 
   for (int jel = 0; jel < elec.getTotalNum(); jel++)
   {
-    const auto& dist  = myTable->Distances[jel];
-    const auto& displ = myTable->Displacements[jel];
+    const auto& dist  = myTable.Distances[jel];
+    const auto& displ = myTable.Displacements[jel];
     for (int iat = 0; iat < ions.getTotalNum(); iat++)
-      if (nlpp != nullptr && dist[iat] < nlpp->Rmax)
+      if (nlpp != nullptr && dist[iat] < nlpp->getRmax())
       {
         Value1 += nlpp->evaluateOne(elec, iat, psi, jel, dist[iat], RealType(-1) * displ[iat], 0, Txy);
 
@@ -358,12 +355,12 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
   {
     if (nlpp == nullptr)
       continue;
-    for (int nn = myTable->M[iat], iel = 0; nn < myTable->M[iat + 1]; nn++, iel++)
+    for (int nn = myTable.M[iat], iel = 0; nn < myTable.M[iat + 1]; nn++, iel++)
     {
-      const RealType r(myTable->r(nn));
-      if (r > nlpp->Rmax)
+      const RealType r(myTable.r(nn));
+      if (r > nlpp->getRmax())
         continue;
-      Value1 += nlpp->evaluateOne(elec, iat, psi, iel, r, myTable->dr(nn), 0, Txy);
+      Value1 += nlpp->evaluateOne(elec, iat, psi, iel, r, myTable.dr(nn), 0, Txy);
     }
   }
   REQUIRE(Value1 == Approx(6.9015710211e-02));

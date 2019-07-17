@@ -56,9 +56,6 @@ EinsplineSetBuilder::EinsplineSetBuilder(ParticleSet& p, PtclPoolType& psets, Co
       MeshFactor(1.0),
       MeshSize(0, 0, 0)
 {
-  //assume one, not safe!!
-  myTableIndex = 1;
-
   MatchingTol = 10 * std::numeric_limits<float>::epsilon();
   for (int i = 0; i < 3; i++)
     for (int j = 0; j < 3; j++)

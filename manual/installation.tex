@@ -13,25 +13,25 @@ administrator to install QMCPACK.
 To install QMCPACK, follow the steps below. Full details of
 each step are given in the referenced sections.
 \begin{enumerate}
-\item Download the source code (Section \ref{sec:obrelease} or \ref{sec:obdevelopment}).
+\item Download the source code (Section~\ref{sec:obrelease} or~\ref{sec:obdevelopment}).
 \item Verify that you have the required compilers, libraries, and tools
-  installed (Section \ref{sec:prerequisites}).
+  installed (Section~\ref{sec:prerequisites}).
+\item If you will use Quantum ESPRESSO, download and patch it. The patch adds the
+  pw2qmcpack utility (Section~\ref{sec:buildqe}).
 \item Run the cmake configure step and build with make (Sections
-  \ref{sec:cmake} and \ref{sec:cmakequick}). Examples for common
-  systems are given in Section \ref{sec:installexamples}.
-\item Run the tests to verify QMCPACK (Section \ref{sec:testing}).
-\item Build the ppconvert utility in QMCPACK (Section \ref{sec:buildppconvert}).
-\item Download and patch Quantum ESPRESSO. This patch adds the
-  pw2qmcpack utility (Section \ref{sec:buildqe}).
+  \ref{sec:cmake} and~\ref{sec:cmakequick}). Examples for common
+  systems are given in Section~\ref{sec:installexamples}.
+\item Run the tests to verify QMCPACK (Section~\ref{sec:testing}).
+\item Build the ppconvert utility in QMCPACK (Section~\ref{sec:buildppconvert}).
 \end{enumerate}
 
-Hints for high performance are in Section \ref{sec:buildperformance}. Troubleshooting suggestions are in Section \ref{sec:troubleshoot}.
+Hints for high performance are in Section~\ref{sec:buildperformance}. Troubleshooting suggestions are in Section~\ref{sec:troubleshoot}.
 
 Note that there are two different QMCPACK executables that can be
 produced: the general one, which is the default, and the ``complex''
 version, which supports periodic calculations at arbitrary twist angles and
 k-points. This second version is enabled via a cmake configuration
-parameter (see Section \ref{sec:cmakeoptions}). The general version
+parameter (see Section~\ref{sec:cmakeoptions}). The general version
  supports only wavefunctions that can be made real. If you run a
 calculation that needs the complex version, QMCPACK will stop and inform you.
 
@@ -50,7 +50,7 @@ corresponding to the release. To obtain the latest release:
 \end{itemize}
 
 Releases can also be obtained from the `master' branch of the QMCPACK
-git repository, similar to obtaining the development version (Section \ref{sec:obdevelopment}).
+git repository, similar to obtaining the development version (Section~\ref{sec:obdevelopment}).
 
 \section{Obtaining the latest development version}
 \label{sec:obdevelopment}
@@ -82,7 +82,7 @@ documentation.
 
 \textbf{Use of the latest versions of all compilers and libraries is
 strongly encouraged} but not absolutely essential. Generally, newer versions are faster; see
-Section \ref{sec:buildperformance} for performance suggestions.
+Section~\ref{sec:buildperformance} for performance suggestions.
 
 \begin{itemize}
 \item C/C++ compilers such as GNU, Clang, Intel, and IBM XL. C++ compilers
@@ -200,7 +200,7 @@ The complexities of modern computer hardware and software systems are
 such that you should check that the autoconfiguration system has made
 good choices and picked optimized libraries and compiler settings
 before doing significant production. That is, check the following details. We
-give examples for a number of common systems in Section \ref{sec:installexamples}.
+give examples for a number of common systems in Section~\ref{sec:installexamples}.
 
 \subsection{Environment variables}
 \label{sec:envvar}
@@ -212,7 +212,6 @@ compilers, etc.  The list of environment variables is given below:
 CXX              C++ compiler
 CC               C Compiler
 MKL_ROOT         Path for MKL
-LIBXML2_HOME     Path for libxml2
 HDF5_ROOT        Path for HDF5
 BOOST_ROOT       Path for Boost
 FFTW_HOME        Path for FFTW
@@ -275,15 +274,17 @@ INSTALL_NEXUS        Install Nexus alongside QMCPACK (if using the optional inst
 \item Additional QMCPACK build options
 
 \begin{shade}
+QE_BIN                 Location of Quantum Espresso binaries including pw2qmcpack.x
+QMC_DATA               Specify data directory for QMCPACK performance and integration tests
 QMC_INCLUDE            Add extra include paths
 QMC_EXTRA_LIBS         Add extra link libraries
 QMC_BUILD_STATIC       Add -static flags to build
-QMC_DATA               Specify data directory for QMCPACK performance and integration tests
-QE_BIN                 Location of Quantum Espresso binaries including pw2qmcpack.x
 QMC_SYMLINK_TEST_FILES Set to zero to require test files to be copied. Avoids space
                        saving default use of symbolic links for test files. Useful
                        if the build is on a separate filesystem from the source, as
                        required on some HPC systems.
+QMC_VERBOSE_CONFIGURATION Print additional information during cmake configuration
+                          including details of which tests are enabled.
 \end{shade}
 
 \item Intel MKL related
@@ -299,8 +300,8 @@ MKL_ROOT            Path to MKL libraries (only necessary for non intel compiler
 \item libxml2 related
 %
 \begin{shade}
-Libxml2_INCLUDE_DIRS   Specify include directories for libxml2
-Libxml2_LIBRARY_DIRS   Specify library directories for libxml2
+LIBXML2_INCLUDE_DIR   Include directory for libxml2
+LIBXML2_LIBRARY       Libxml2 library
 \end{shade}
 
 \item HDF5 related
@@ -330,7 +331,7 @@ LLVM_SANITIZE_ADDRESS     link with the %*\href{https://clang.llvm.org/docs/Addr
 LLVM_SANITIZE_MEMORY      link with the %*\href{https://clang.llvm.org/docs/MemorySanitizer.html}{Clang memory sanitizer library}*
 \end{shade}
 
-See Section \ref{tool:LLVM-Sanitizer-Libraries} for more information.
+See Section~\ref{tool:LLVM-Sanitizer-Libraries} for more information.
 \end{itemize}
 
 \subsection{Installation from CMake}
@@ -349,17 +350,25 @@ large input files are stored in the location pointed to by QMC\_DATA (e.g., scra
 files are not included in the source code distribution to minimize
 size. The tests are activated if CMake detects the files when
 configured. See tests/performance/NiO/README,
-tests/solids/NiO\_afqmc/README, and tests/performance/C-graphite/README
+tests/solids/NiO\_afqmc/README, tests/performance/C-graphite/README, and tests/performance/C-molecule/README
 for details of the current tests and input files and to download them.
 
-Currently the files must be downloaded via\\
-\url{https://anl.box.com/s/pveyyzrc2wuvg5tmxjzzwxeo561vh3r0} and \\
-\url{https://anl.box.com/s/j5d6jeazpgx5441s04ajtv77iogoyjsh}.
+Currently the files must be downloaded via \\
+\url{https://anl.box.com/s/yxz1ic4kxtdtgpva5hcmlom9ixfl3v3c}.
 
-Current complete set of files:
+The layout of current complete set of files is given below. If a file is missing, the appropriate performance test is skipped.
 %
 \begin{shade}
 QMC_DATA/C-graphite/lda.pwscf.h5
+QMC_DATA/C-molecule/C12-e48-pp.h5 
+QMC_DATA/C-molecule/C12-e72-ae.h5 
+QMC_DATA/C-molecule/C18-e108-ae.h5
+QMC_DATA/C-molecule/C18-e72-pp.h5 
+QMC_DATA/C-molecule/C24-e144-ae.h5
+QMC_DATA/C-molecule/C24-e96-pp.h5 
+QMC_DATA/C-molecule/C30-e120-pp.h5
+QMC_DATA/C-molecule/C30-e180-ae.h5
+QMC_DATA/C-molecule/C60-e240-pp.h5
 QMC_DATA/NiO/NiO-fcc-supertwist111-supershift000-S1.h5
 QMC_DATA/NiO/NiO-fcc-supertwist111-supershift000-S2.h5
 QMC_DATA/NiO/NiO-fcc-supertwist111-supershift000-S4.h5
@@ -403,7 +412,6 @@ directory locations.
 \begin{shade}
 export CXX=icpc
 export CC=icc
-export LIBXML2_HOME=/usr/local
 export MKL_ROOT=/usr/local/intel/mkl/10.0.3.020
 export HDF5_ROOT=/usr/local
 export BOOST_ROOT=/usr/local/boost
@@ -451,8 +459,8 @@ rm -rf CMake*
 
 cmake                                                \
   -D CMAKE_BUILD_TYPE=Debug                         \
-  -D Libxml2_INCLUDE_DIRS=/usr/include/libxml2      \
-  -D Libxml2_LIBRARY_DIRS=/usr/lib/x86_64-linux-gnu \
+  -D LIBXML2_INCLUDE_DIR=/usr/include/libxml2      \
+  -D LIBXML2_LIBRARY=/usr/lib/x86_64-linux-gnu/libxml2.so \
   -D FFTW_INCLUDE_DIRS=/usr/include                 \
   -D FFTW_LIBRARY_DIRS=/usr/lib/x86_64-linux-gnu    \
   -D QMC_EXTRA_LIBS="-ldl ${ACML_HOME}/lib/libacml.a -lgfortran" \
@@ -531,9 +539,9 @@ supercomputers. The examples should serve as good starting points for
 building QMCPACK on similar machines. For example, the software
 environment on modern Crays is very consistent. Note that updates to
 operating systems and system software might require small modifications
-to these recipes. See Section \ref{sec:buildperformance} for key
+to these recipes. See Section~\ref{sec:buildperformance} for key
 points to check to obtain highest performance and
-Section \ref{sec:troubleshoot} for troubleshooting hints.
+Section~\ref{sec:troubleshoot} for troubleshooting hints.
 
 \subsection{Installing on Ubuntu Linux or other apt-get--based distributions}
 \label{sec:buildubuntu}
@@ -650,7 +658,7 @@ ls -l bin/qmcpack
 Cmake should pickup the versions of HDF5 and libxml (etc.) installed in
 /opt/local by macports. If you have other copies of these libraries
 installed and wish to force use of a specific version, use the
-environment variables detailed in Section \ref{sec:envvar}.
+environment variables detailed in Section~\ref{sec:envvar}.
 
 This recipe was verified on July 1, 2016, on a Mac running OS X 10.11.5
 ``El Capitain.''
@@ -771,7 +779,7 @@ ls -l bin/qmcpack
 \end{shade}
 
 \subsection{Installing on ORNL OLCF Titan Cray XK7 (CPU version)}
-As noted in Section \ref{sec:titanbuildgpu} for the GPU, building on
+As noted in Section~\ref{sec:titanbuildgpu} for the GPU, building on
 Crays requires only loading the appropriate library modules.
 
 %
@@ -1023,7 +1031,7 @@ Note that armclang is recognized as an `unknown' compiler by CMake v3.13* and be
 
 \subsection{Installing on Windows}
 Install the Windows Subsystem for Linux and Bash on Windows.
-Open a bash shell and follow the install directions for Ubuntu in Section \ref{sec:buildubuntu}.
+Open a bash shell and follow the install directions for Ubuntu in Section~\ref{sec:buildubuntu}.
 
 \section{Installing via Spack}
 Spack is a package manager for scientific software.
@@ -1447,7 +1455,7 @@ calculations. For example, although the calculations might fit in cache,
 there will be essentially no vectorization because of the small electron
 counts. \textbf{These tests should therefore not be used for any benchmarking or
 performance analysis}. Example runs that can be used for testing performance are described in
-Section \ref{sec:perftests}.
+Section~\ref{sec:perftests}.
 
 \subsection{Deterministic and unit tests}
 
@@ -1487,11 +1495,11 @@ Total Test time (real) =   2.31 sec
 Individual unit test executables can be found in \ishell{build/tests/bin}.
 The source for the unit tests is located in the \ishell{tests} directory under each directory in \ishell{src} (e.g. \ishell{src/QMCWavefunctions/tests}).
 
-See Chapter \ref{chap:unit_testing} for more details about unit tests.
+See Chapter~\ref{chap:unit_testing} for more details about unit tests.
 
 \subsection{Integration tests with Quantum Espresso}
 \label{sec:integtestqe}
-As described in Section \ref{sec:buildqe}, it is possible to test entire
+As described in Section~\ref{sec:buildqe}, it is possible to test entire
 workflows of trial wavefunction generation, conversion, and eventual
 QMC calculation. A patched QE must be installed so that the
 pw2qmcpack converter is available.
@@ -1697,7 +1705,7 @@ You can test the whole pw $\to$ pw2qmcpack $\to$ qmcpack workflow by
 \begin{shade}
 ctest -R qe
 \end{shade}
-See Section \ref{sec:integtestqe} and the testing section for more details.
+See Section~\ref{sec:integtestqe} and the testing section for more details.
 
 \section{How to build the fastest executable version of QMCPACK}
 \label{sec:buildperformance}

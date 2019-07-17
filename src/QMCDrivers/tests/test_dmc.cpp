@@ -18,7 +18,6 @@
 #include "Lattice/ParticleBConds.h"
 #include "Particle/ParticleSet.h"
 #include "Particle/DistanceTableData.h"
-#include "Particle/DistanceTable.h"
 #include "Particle/SymmetricDistanceTableData.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "QMCApp/ParticleSetPool.h"
@@ -57,7 +56,6 @@ TEST_CASE("DMC Particle-by-Particle advanceWalkers ConstantOrbital", "[drivers][
   ions.R[0][2] = 0.0;
 
   elec.setName("elec");
-  elec.setBoundBox(false);
   std::vector<int> agroup(1);
   agroup[0] = 2;
   elec.create(agroup);
@@ -89,7 +87,7 @@ TEST_CASE("DMC Particle-by-Particle advanceWalkers ConstantOrbital", "[drivers][
 
   TrialWaveFunction psi(c);
   ConstantOrbital* orb = new ConstantOrbital;
-  psi.addOrbital(orb, "Constant");
+  psi.addComponent(orb, "Constant");
   psi.registerData(elec, elec.WalkerList[0]->DataSet);
   elec.WalkerList[0]->DataSet.allocate();
 
@@ -161,7 +159,6 @@ TEST_CASE("DMC Particle-by-Particle advanceWalkers LinearOrbital", "[drivers][dm
   ions.R[0][2] = 0.0;
 
   elec.setName("elec");
-  elec.setBoundBox(false);
   std::vector<int> agroup(1);
   agroup[0] = 2;
   elec.create(agroup);
@@ -193,7 +190,7 @@ TEST_CASE("DMC Particle-by-Particle advanceWalkers LinearOrbital", "[drivers][dm
 
   TrialWaveFunction psi(c);
   LinearOrbital* orb = new LinearOrbital;
-  psi.addOrbital(orb, "Linear");
+  psi.addComponent(orb, "Linear");
   psi.registerData(elec, elec.WalkerList[0]->DataSet);
   elec.WalkerList[0]->DataSet.allocate();
 

@@ -13,6 +13,7 @@
 #ifndef QMCPLUSPLUS_SOA_LINEARCOMIBINATIONORBITALSET_TEMP_H
 #define QMCPLUSPLUS_SOA_LINEARCOMIBINATIONORBITALSET_TEMP_H
 
+#include <memory>
 #include "QMCWaveFunctions/SPOSet.h"
 #include "QMCWaveFunctions/BasisSetBase.h"
 
@@ -37,11 +38,8 @@ public:
   basis_type* myBasisSet;
   ///number of Single-particle orbitals
   IndexType BasisSetSize;
-  /** pointer to matrix containing the coefficients
-     *
-     * makeClone makes a shallow copy
-     */
-  ValueMatrix_t* C;
+  /// pointer to matrix containing the coefficients
+  std::shared_ptr<ValueMatrix_t> C;
   /// Scratch space for the initial coefficents before the rotation is applied
   ValueMatrix_t m_init_B;
   /// true if SPO parameters (orbital rotation parameters) have been supplied by input
@@ -81,8 +79,6 @@ public:
 
   LCAOrbitalSet(const LCAOrbitalSet& in) = default;
 
-  virtual ~LCAOrbitalSet();
-
   SPOSet* makeClone() const;
 
   /// create optimizable orbital rotation parameters
@@ -90,8 +86,8 @@ public:
 
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& optvars,
-                           std::vector<RealType>& dlogpsi,
-                           std::vector<RealType>& dhpsioverpsi,
+                           std::vector<ValueType>& dlogpsi,
+                           std::vector<ValueType>& dhpsioverpsi,
                            const ValueType& psiCurrent,
                            const std::vector<ValueType>& Coeff,
                            const std::vector<size_t>& C2node_up,
@@ -348,8 +344,8 @@ private:
 
 
   //helper function to evaluatederivative; evaluate orbital rotation parameter derivative using table method
-  void table_method_eval(std::vector<RealType>& dlogpsi,
-                         std::vector<RealType>& dhpsioverpsi,
+  void table_method_eval(std::vector<ValueType>& dlogpsi,
+                         std::vector<ValueType>& dhpsioverpsi,
                          const ParticleSet::ParticleLaplacian_t& myL_J,
                          const ParticleSet::ParticleGradient_t& myG_J,
                          const size_t nel,
