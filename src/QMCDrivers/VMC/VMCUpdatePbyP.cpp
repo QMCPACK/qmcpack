@@ -121,7 +121,7 @@ void VMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
   myTimers[0]->stop();
   // end PbyP moves
   myTimers[2]->start();
-  EstimatorRealType eloc = H.evaluate(W);
+  FullPrecRealType eloc = H.evaluate(W);
   thisWalker.resetProperty(logpsi, Psi.getPhase(), eloc);
   myTimers[2]->stop();
   myTimers[3]->start();

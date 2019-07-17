@@ -33,9 +33,9 @@ public:
   double Rcut;                    // parameter: radial distance within which estimator is used
   int m_exp;                      // parameter: exponent in polynomial fit
   int N_basis;                    // parameter: size of polynomial basis set
-  Matrix<EstimatorRealType> Sinv; // terms in fitting polynomial
-  Vector<EstimatorRealType> h;    // terms in fitting polynomial
-  Vector<EstimatorRealType> c;    // polynomial coefficients
+  Matrix<FullPrecRealType> Sinv; // terms in fitting polynomial
+  Vector<FullPrecRealType> h;    // terms in fitting polynomial
+  Vector<FullPrecRealType> c;    // polynomial coefficients
   // container for short-range force estimator
 
   ParticleSet::ParticlePos_t forces_ShortRange;
