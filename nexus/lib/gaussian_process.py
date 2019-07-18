@@ -1460,6 +1460,7 @@ class GaussianProcessOptimizer(DevBase):
     Examples
     --------
     ::
+
         # minimize a 2D parabola over the domain -1 < x,y < 1
         def x2(x,s):
             E = (x**2).sum(axis=1,keepdims=1)
