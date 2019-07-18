@@ -9,8 +9,6 @@
 #// File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 #//////////////////////////////////////////////////////////////////////////////////////
 
-INCLUDE("${qmcpack_SOURCE_DIR}/CMake/macros.cmake")
-
 SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
 
 SET(SRC_DIR afqmc_hamiltonian_operations)

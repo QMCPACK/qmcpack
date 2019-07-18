@@ -37,58 +37,6 @@
 
 namespace qmcplusplus
 {
-struct CoefficientHolder
-{
-  typedef WaveFunctionComponent::RealType RealType;
-
-  std::vector<opt_variables_type> oldVars;
-  std::vector<RealType> energies;
-  std::vector<RealType> variances;
-
-  void addParams(opt_variables_type& var, RealType e, RealType v)
-  {
-    oldVars.push_back(var);
-    energies.push_back(e);
-    variances.push_back(v);
-  }
-
-  //this returns the "best" parameters stored in the history. we=energy weight and wv=weightvariance
-  opt_variables_type getBestCoefficients(RealType we, RealType wv, bool print = 0)
-  {
-    int best(0);
-    RealType bestVal(0);
-    bestVal = energies[0] * we + variances[0] * wv;
-    if (print)
-      app_log() << 0 << " " << energies[0] << " " << variances[0] << " " << bestVal << std::endl;
-    for (int ix = 1; ix < energies.size(); ix++)
-    {
-      if (print)
-        app_log() << ix << " " << energies[ix] << " " << variances[ix] << " " << energies[ix] * we + variances[ix] * wv
-                  << std::endl;
-      if (energies[ix] * we + variances[ix] * wv < bestVal)
-      {
-        bestVal = energies[ix] * we + variances[ix] * wv;
-        best    = ix;
-      }
-    }
-    return oldVars[best];
-  }
-  opt_variables_type getAvgCoefficients(int lastN)
-  {
-    opt_variables_type return_params(oldVars[0]);
-    for (int i = 0; i < return_params.size(); i++)
-      return_params[i] = 0;
-    int start(std::max((int)(oldVars.size() - lastN), 0));
-    for (int x = start; x < oldVars.size(); x++)
-      for (int i = 0; i < return_params.size(); i++)
-        return_params[i] += oldVars[x][i];
-    RealType nrm(1.0 / (oldVars.size() - start));
-    for (int i = 0; i < return_params.size(); i++)
-      return_params[i] *= nrm;
-    return return_params;
-  }
-};
-
 /** @ingroup MBWfs
  * @brief Class to represent a many-body trial wave function
  *
@@ -269,8 +217,6 @@ public:
 
   void setTwist(std::vector<RealType> t) { myTwist = t; }
   const std::vector<RealType> twist() { return myTwist; }
-
-  CoefficientHolder coefficientHistory;
 
   inline void setMassTerm(ParticleSet& P)
   {

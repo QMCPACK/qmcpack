@@ -88,7 +88,7 @@ public:
 
   //@{ public data members
   ///property of an ensemble represented by this ParticleSet
-  MCDataType<EstimatorRealType> EnsembleProperty;
+  MCDataType<FullPrecRealType> EnsembleProperty;
 
   ///ParticleLayout
   ParticleLayout_t Lattice, PrimitiveLattice;
@@ -191,7 +191,7 @@ public:
   std::vector<ParticleSet*> myClones;
 
   ///Property history vector
-  std::vector<std::vector<EstimatorRealType>> PropertyHistory;
+  std::vector<std::vector<FullPrecRealType>> PropertyHistory;
   std::vector<int> PHindex;
   ///@}
 
@@ -414,16 +414,16 @@ public:
   void donePbyP();
 
   ///return the address of the values of Hamiltonian terms
-  inline EstimatorRealType* restrict getPropertyBase() { return Properties.data(); }
+  inline FullPrecRealType* restrict getPropertyBase() { return Properties.data(); }
 
   ///return the address of the values of Hamiltonian terms
-  inline const EstimatorRealType* restrict getPropertyBase() const { return Properties.data(); }
+  inline const FullPrecRealType* restrict getPropertyBase() const { return Properties.data(); }
 
   ///return the address of the i-th properties
-  inline EstimatorRealType* restrict getPropertyBase(int i) { return Properties[i]; }
+  inline FullPrecRealType* restrict getPropertyBase(int i) { return Properties[i]; }
 
   ///return the address of the i-th properties
-  inline const EstimatorRealType* restrict getPropertyBase(int i) const { return Properties[i]; }
+  inline const FullPrecRealType* restrict getPropertyBase(int i) const { return Properties[i]; }
 
   inline void setTwist(SingleParticlePos_t& t) { myTwist = t; }
   inline SingleParticlePos_t getTwist() const { return myTwist; }
