@@ -282,13 +282,20 @@ protected:
   ///target population
   RealType nTargetPopulation;
 
+  //number of samples for descent in hybrid method
   RealType otherTargetPopulation;
+  //type of optimization method
   std::string MinMethod;
+  //number of steps in a descent section of hybrid method
   int descent_len;
+  //number of steps in a BLM section of hybrid method
   int blm_len;
+   //counter for steps in the optimization
   int stepCounter;
 
+  //whether a hybrid optimization has just made a switch between descent and BLM
   bool just_changed;
+  //whether the hybrid optimization is currently on a descent section
   bool on_hybrid_descent;
 
   ///timestep

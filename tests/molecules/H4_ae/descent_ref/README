@@ -1,0 +1,12 @@
+Test details
+
+This is a partial optimization using descent for a H4 geometry followed by VMC.
+
+Reference VMC was performed using 100x as many total samples as the test.
+
+Reference files
+
+h4_descent_ref.in.xml
+h4_descent.structure.xml
+h4_descent.wf.xml
+qmcpack.out
