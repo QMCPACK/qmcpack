@@ -212,7 +212,6 @@ void QMCDriver::add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi)
  */
 void QMCDriver::process(xmlNodePtr cur)
 {
-
   deltaR.resize(W.getTotalNum());
   drift.resize(W.getTotalNum());
   qmcNode = cur;
@@ -529,7 +528,6 @@ bool QMCDriver::finalize(int block, bool dumpwalkers)
  */
 void QMCDriver::addWalkers(int nwalkers)
 {
-
   if (nwalkers > 0)
   {
     //add nwalkers walkers to the end of the ensemble
@@ -592,7 +590,6 @@ void QMCDriver::setWalkerOffsets()
  */
 bool QMCDriver::putQMCInfo(xmlNodePtr cur)
 {
-
   if (!IsQMCDriver)
   {
     app_log() << getName() << "  Skip QMCDriver::putQMCInfo " << std::endl;
@@ -718,7 +715,6 @@ bool QMCDriver::putQMCInfo(xmlNodePtr cur)
   else
   { 
       app_log() << "Resetting walkers" << std::endl;
-      //always reset the walkers
 #ifdef QMC_CUDA
     int nths(1);
 #else

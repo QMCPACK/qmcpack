@@ -53,8 +53,6 @@ VMC::VMC(MCWalkerConfiguration& w,
 
   prevSteps               = nSteps;
   prevStepsBetweenSamples = nStepsBetweenSamples;
-
-  
 }
 
 bool VMC::run()
@@ -147,16 +145,12 @@ bool VMC::run()
 
 void VMC::resetRun()
 {
- 
-  
   
 if((MinMethod == "hybrid") && on_hybrid_descent)
 {
 nTargetPopulation = otherTargetPopulation;
 }
 
-
-   
     ////only VMC can overwrite this
   if (nTargetPopulation > 0)
     branchEngine->iParam[SimpleFixedNodeBranch::B_TARGETWALKERS] = static_cast<int>(std::ceil(nTargetPopulation));
@@ -322,7 +316,6 @@ bool VMC::put(xmlNodePtr q)
   ParameterSet p;
   p.add(target_min, "minimumtargetwalkers", "int"); //p.add(target_min,"minimumTargetWalkers","int");
   p.add(target_min, "minimumsamples", "int");       //p.add(target_min,"minimumSamples","int");
-
   p.put(q);
 
   app_log() << "\n<vmc function=\"put\">"
@@ -354,7 +347,6 @@ bool VMC::put(xmlNodePtr q)
     //target samples set by samples or samplesperthread/dmcwalkersperthread
     nTargetPopulation = std::max(nTargetPopulation, nSamplesPerThread * Nprocs * Nthreads);
     nTargetSamples    = static_cast<int>(std::ceil(nTargetPopulation));
-
 
     if (nTargetSamples)
     {

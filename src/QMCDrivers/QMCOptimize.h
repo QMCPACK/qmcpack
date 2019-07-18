@@ -90,7 +90,6 @@ private:
   ///Copy operator (disabled).
   QMCOptimize& operator=(const QMCOptimize&) = delete;
 
-
   void generateSamples();
 };
 } // namespace qmcplusplus
