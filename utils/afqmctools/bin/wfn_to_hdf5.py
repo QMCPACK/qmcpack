@@ -27,10 +27,10 @@ def parse_args(args):
 
     parser = argparse.ArgumentParser(description = __doc__)
     parser.add_argument('-i', '--input', dest='input_file', type=str,
-                        default=None, help='Input FCIDUMP file.')
+                        default=None, help='Input wavefunction file.')
     parser.add_argument('-o', '--output', dest='output_file',
                         type=str, default='wfn.h5',
-                        help='Output file name for QMCPACK data.')
+                        help='Output file name for wavefunction.')
     parser.add_argument('-v', '--verbose', dest='verbose',
                         action='store_true', default=False,
                         help='Verbose output.')

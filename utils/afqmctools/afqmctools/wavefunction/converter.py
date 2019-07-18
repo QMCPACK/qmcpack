@@ -4,6 +4,9 @@ import numpy
 
 def read_qmcpack_ascii_wavefunction(filename, nmo, nelec):
     na, nb = nelec
+    cmajor = False
+    nci = 1
+    fullmo = False
     with open(filename) as f:
         line = f.readline()
         cnt = 1
@@ -31,7 +34,7 @@ def read_qmcpack_ascii_wavefunction(filename, nmo, nelec):
         else:
             wfn = read_nomsd(f, nmo, na, nb, nci, uhf, fullmo, cmajor)
 
-    return wfn, 'uhf' if uhf else 'rhf'
+    return wfn, True if uhf else False
 
 def read_phmsd(f, na, nb, nmo):
     line = f.readline()
