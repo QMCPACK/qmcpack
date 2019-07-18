@@ -19,4 +19,5 @@ help:
 %: Makefile
 	sphinx-apidoc -o $(SOURCEDIR) ../lib/
 	cp conf.py $(SOURCEDIR)
+	cp index.rst $(SOURCEDIR)
 	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
