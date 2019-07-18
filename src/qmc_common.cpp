@@ -47,6 +47,14 @@ void QMCState::initialize(int argc, char** argv)
     {
       dryrun = true;
     }
+    else if (c.find("--save_wfs") < c.size())
+    {
+      if (io_node)
+        std::cerr << std::endl
+                  << "ERROR: command line option --save_wfs has been removed."
+                  << "Use save_coefs input tag as described in the manual." << std::endl;
+      stopit = true;
+    }
     else if (c.find("--help") < c.size())
     {
       stopit = true;
