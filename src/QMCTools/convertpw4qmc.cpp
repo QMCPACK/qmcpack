@@ -12,21 +12,28 @@ void convertToVecStrings(int argc, char* argv[], std::vector<std::string>& vec) 
   }
 }
 
+
 inline bool file_exists (const std::string& name) {
-  struct stat buffer;   
-  return (stat (name.c_str(), &buffer) == 0); 
+  ifstream ifile(name.c_str());
+  return (bool)ifile;
 }
 
 int main(int argc, char* argv[]) {
   vector<string> vecParams;
   convertToVecStrings(argc, argv, vecParams);
   string fname;
+  string ofname = "eshdf.h5";
   for (int i = 0; i < vecParams.size(); i++) {
-    // in principle check for other flags here
-    fname = vecParams[i];
+    if (vecParams[i] == "--output" || vecParams[i] == "-o") {
+      ofname = vecParams[i+1];
+      i++;
+    } else {
+      fname = vecParams[i];
+    }
   }
   if (file_exists(fname) == false) {
     cout << "must specify a valid xml file name as an argument" << endl;
+    cout << fname << " did not work" << endl;
     exit(1);
   }
 
@@ -34,7 +41,6 @@ int main(int argc, char* argv[]) {
   xmlNode qboxSampleXml(&is, 0, true);
 
 
-  string ofname = "qboxEshdf.h5";
   eshdfFile outFile(ofname);
   outFile.writeBoilerPlate("qbox", qboxSampleXml);
   outFile.writeSupercell(qboxSampleXml);

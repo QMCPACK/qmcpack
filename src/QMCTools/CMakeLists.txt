@@ -34,7 +34,7 @@ SET(MOSRCS
   GamesFMOParser.cpp
   QPParser.cpp
   LCAOH5Parser.cpp
-  QBoxToQMC.cpp 
+  convertpw4qmc.cpp 
   WriteEshdf.cpp
   XmlRep.cpp
 )
@@ -50,12 +50,12 @@ ADD_EXECUTABLE(qmc-check-affinity check-affinity.cpp)
 INSTALL(TARGETS qmc-check-affinity
         RUNTIME DESTINATION bin)
 
-ADD_EXECUTABLE(QBoxToQMC QBoxToQMC.cpp XmlRep.cpp WriteEshdf.cpp)
+ADD_EXECUTABLE(convertpw4qmc convertpw4qmc.cpp XmlRep.cpp WriteEshdf.cpp)
 FOREACH(l ${QMC_UTIL_LIBS})		       
-  TARGET_LINK_LIBRARIES(QBoxToQMC ${l})
+  TARGET_LINK_LIBRARIES(convertpw4qmc ${l})
 ENDFOREACH(l ${QMC_UTIL_LIBS})
 
-INSTALL(TARGETS QBoxToQMC
+INSTALL(TARGETS convertpw4qmc
         RUNTIME DESTINATION bin)
 
 
