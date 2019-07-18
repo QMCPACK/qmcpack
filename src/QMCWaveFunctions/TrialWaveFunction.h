@@ -145,10 +145,12 @@ public:
                         ParticleSet::ParticleGradient_t& fixedG,
                         ParticleSet::ParticleLaplacian_t& fixedL);
 
-  /** functions to handle particle-by-particle update */
+  /** functions to handle particle-by-particle update
+   * both ratio and full_ratio will be replaced by calcRatio which will handle ValueType.
+   */
   RealType ratio(ParticleSet& P, int iat);
   ValueType full_ratio(ParticleSet& P, int iat);
-  /** calculate the ratio of the new to old TrialWaveFunction value, but only the fermionic part. */
+  /** calculate the ratio of the new to old TrialWaveFunction value. Components selected by ComputeType */
   RealType calcRatio(ParticleSet& P, int iat, ComputeType ct = ComputeType::ALL);
 
   /** compulte multiple ratios to handle non-local moves and other virtual moves
