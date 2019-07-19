@@ -1137,18 +1137,24 @@ void WavefunctionFactory::getInitialGuess(hdf_archive& dump, std::string& name, 
     using ma::conj;
     std::fill_n((newg.first)->second.origin(),2*NMO*NAEA,ComplexType(0.0,0.0));
     {
-      boost::multi::array_ref<ComplexType,2> psi0((newg.first)->second.origin(),{NMO,NAEA});
-      if(!dump.readEntry(psi0, "Psi0_alpha")) {
+      boost::multi::array<ComplexType,2> Psi0Alpha({NMO,NAEA});
+      if(!dump.readEntry(Psi0Alpha, "Psi0_alpha")) {
         app_error()<<" Error in WavefunctionFactory: Initial wavefunction Psi0_alpha not found. \n";
         APP_ABORT("");
       }
+      for(int i = 0; i < NMO; i++)
+        for(int j = 0; j < NAEA; j++)
+          ((newg.first)->second)[0][i][j] = Psi0Alpha[i][j];
     }
     if(walker_type==COLLINEAR) {
-      boost::multi::array_ref<ComplexType,2> psi0((newg.first)->second.origin()+NMO*NAEA,{NMO,NAEB});
-      if(!dump.readEntry(psi0, "Psi0_beta")) {
+      boost::multi::array<ComplexType,2> Psi0Beta({NMO,NAEB});
+      if(!dump.readEntry(Psi0Beta, "Psi0_beta")) {
         app_error()<<" Error in WavefunctionFactory: Initial wavefunction Psi0_beta not found. \n";
         APP_ABORT("");
       }
+      for(int i = 0; i < NMO; i++)
+        for(int j = 0; j < NAEB; j++)
+          ((newg.first)->second)[1][i][j] = Psi0Beta[i][j];
     }
   } else
     APP_ABORT(" Error: Problems adding new initial guess, already exists. \n");
