@@ -320,6 +320,12 @@ void eshdfFile::writeElectrons(const xmlNode& qboxSample) {
     }
   }
   hid_t electrons_group = makeHDFGroup("electrons", file);
+  if (kpts.size() > 1) {
+    std::cerr << "Warning: Due to limitations of the current tool, extreme care" << std::endl;
+    std::cerr << "is required if tiling to a supercell from qbox calculations with" << std::endl;
+    std::cerr << "multiple k-points.  Specifically spo eigenvalues are not properly" << std::endl;
+    std::cerr << "included, so improper choice of orbitals may result." << std::endl;
+  }
   writeNumsToHDF("number_of_kpoints", static_cast<int>(kpts.size()), electrons_group);
   writeNumsToHDF("number_of_spins", nspin, electrons_group);
 
