@@ -70,9 +70,14 @@ class SimulationBundle(Simulation):
             relative_paths = kwargs['relative']
             del kwargs['relative']
         #end if
+        serial_exec = False
+        if 'serial' in kwargs:
+            serial_exec = kwargs['serial']
+            del kwargs['serial']
+        #end if
 
         self.sims = sims
-        self.bundle_jobs(relative=relative_paths)
+        self.bundle_jobs(relative=relative_paths,serial=serial_exec)
         self.system = None
 
         if not 'path' in kwargs:
@@ -146,7 +151,7 @@ class SimulationBundle(Simulation):
     #end def bundle_dependencies
 
 
-    def bundle_jobs(self,relative=False):
+    def bundle_jobs(self,relative=False,serial=False):
         jobs = []
         job0 = self.sims[0].job
         time    = Job.zero_time()
@@ -159,8 +164,12 @@ class SimulationBundle(Simulation):
         machine_set = set()
         for sim in self.sims:
             job = sim.job
-            nodes += job.nodes
-            cores += job.cores
+            if serial:
+                nodes = job.nodes
+                cores = job.cores
+            else:
+                nodes += job.nodes
+                cores += job.cores
             constraint = job.constraint
             time    = job.max_time(time)
             machine = job.get_machine()
@@ -200,6 +209,7 @@ class SimulationBundle(Simulation):
             machine      = machine,
             presub       = presub,
             constraint   = constraint,
+            serial       = serial,
             **time
             )
     #end def bundle_jobs
