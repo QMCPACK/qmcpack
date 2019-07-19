@@ -153,7 +153,7 @@ void QMCOptimize::generateSamples()
   app_log() << "  Execution time = " << std::setprecision(4) << t1.elapsed() << std::endl;
   app_log() << "</vmc>" << std::endl;
   //write parameter history and energies to the parameter file in the trial wave function through opttarget
-  EstimatorRealType e, w, var;
+  FullPrecRealType e, w, var;
   vmcEngine->Estimators->getEnergyAndWeight(e, w, var);
 
   h5FileRoot = RootName;
