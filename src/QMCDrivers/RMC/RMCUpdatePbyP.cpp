@@ -34,6 +34,21 @@
 
 namespace qmcplusplus
 {
+enum RMCTimers
+{
+  RMC_advance,
+  RMC_movePbyP,
+  RMC_updateMBO,
+  RMC_energy
+};
+
+TimerNameList_t<RMCTimers> RMCTimerNames = {
+    {RMC_advance, "RMCUpdatePbyP::advance"},     //timer for the walker loop
+    {RMC_movePbyP, "RMCUpdatePbyP::movePbyP"},   //timer for MC, ratio etc
+    {RMC_updateMBO, "RMCUpdatePbyP::updateMBO"}, //timer for measurements
+    {RMC_energy, "RMCUpdatePbyP::energy"}        //timer for measurements
+};
+
 /// Constructor.
 RMCUpdatePbyPWithDrift::RMCUpdatePbyPWithDrift(MCWalkerConfiguration& w,
                                                TrialWaveFunction& psi,
@@ -43,17 +58,9 @@ RMCUpdatePbyPWithDrift::RMCUpdatePbyPWithDrift(MCWalkerConfiguration& w,
                                                std::vector<int> tp)
     : QMCUpdateBase(w, psi, h, rg), Action(act), TransProb(tp)
 {
-  //add_rmc_timers(myTimers);
   scaleDrift = false;
   actionType = SYM_ACTION;
-  myTimers.push_back(new NewTimer("RMCUpdatePbyP::advance"));   //timer for the walker loop
-  myTimers.push_back(new NewTimer("RMCUpdatePbyP::movePbyP"));  //timer for MC, ratio etc
-  myTimers.push_back(new NewTimer("RMCUpdatePbyP::updateMBO")); //timer for measurements
-  myTimers.push_back(new NewTimer("RMCUpdatePbyP::energy"));    //timer for measurements
-  TimerManager.addTimer(myTimers[0]);
-  TimerManager.addTimer(myTimers[1]);
-  TimerManager.addTimer(myTimers[2]);
-  TimerManager.addTimer(myTimers[3]);
+  setup_timers(myTimers, RMCTimerNames, timer_level_medium);
 }
 
 RMCUpdatePbyPWithDrift::~RMCUpdatePbyPWithDrift() {}
@@ -124,7 +131,7 @@ bool RMCUpdatePbyPWithDrift::put(xmlNodePtr cur)
 }
 void RMCUpdatePbyPWithDrift::advanceWalkersVMC()
 {
-  myTimers[0]->start();
+  myTimers[RMC_advance]->start();
   Walker_t& curhead = W.reptile->getHead();
   Walker_t prophead(curhead);
   Walker_t::WFBuffer_t& w_buffer(prophead.DataSet);
@@ -141,7 +148,7 @@ void RMCUpdatePbyPWithDrift::advanceWalkersVMC()
   RealType rr_proposed = 0.0;
   RealType rr_accepted = 0.0;
   RealType gf_acc      = 1.0;
-  myTimers[1]->start();
+  myTimers[RMC_movePbyP]->start();
   for (int ig = 0; ig < W.groups(); ++ig) //loop over species
   {
     RealType tauovermass = Tau * MassInvS[ig];
@@ -198,7 +205,7 @@ void RMCUpdatePbyPWithDrift::advanceWalkersVMC()
       }
     }
   }
-  myTimers[1]->stop();
+  myTimers[RMC_movePbyP]->stop();
   Psi.completeUpdates();
   W.donePbyP();
 
@@ -206,15 +213,15 @@ void RMCUpdatePbyPWithDrift::advanceWalkersVMC()
   {
     //need to overwrite the walker properties
     MCWalkerConfiguration::Walker_t& newhead(W.reptile->getNewHead());
-    myTimers[2]->start();
+    myTimers[RMC_updateMBO]->start();
     prophead.Age    = 0;
     prophead.R      = W.R;
     RealType logpsi = Psi.updateBuffer(W, w_buffer, false);
     W.saveWalker(prophead);
-    myTimers[2]->stop();
-    myTimers[3]->start();
+    myTimers[RMC_updateMBO]->stop();
+    myTimers[RMC_energy]->start();
     enew = H.evaluate(W);
-    myTimers[3]->stop();
+    myTimers[RMC_energy]->stop();
     prophead.resetProperty(logpsi, Psi.getPhase(), enew, rr_accepted, rr_proposed, 0.0);
     prophead.Weight = 1.0;
     H.auxHevaluate(W, prophead, true, false); //evaluate properties but not collectables.
@@ -272,7 +279,7 @@ void RMCUpdatePbyPWithDrift::advanceWalkersRMC()
   RealType rr_proposed = 0.0;
   RealType rr_accepted = 0.0;
   RealType gf_acc      = 1.0;
-  myTimers[1]->start();
+  myTimers[RMC_movePbyP]->start();
   for (int ig = 0; ig < W.groups(); ++ig) //loop over species
   {
     RealType tauovermass = Tau * MassInvS[ig];
@@ -330,7 +337,7 @@ void RMCUpdatePbyPWithDrift::advanceWalkersRMC()
       }
     }
   }
-  myTimers[1]->stop();
+  myTimers[RMC_movePbyP]->stop();
   Psi.completeUpdates();
   W.donePbyP();
   // In the rare case that all proposed moves fail, we bounce.

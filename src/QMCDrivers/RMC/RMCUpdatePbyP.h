@@ -59,7 +59,7 @@ private:
   bool scaleDrift;
   IndexType actionType;
 
-  std::vector<NewTimer*> myTimers;
+  TimerList_t myTimers;
 
   IndexType vmcSteps;
   IndexType equilSteps;
