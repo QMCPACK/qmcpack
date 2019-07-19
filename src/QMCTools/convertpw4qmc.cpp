@@ -34,7 +34,7 @@ int main(int argc, char* argv[]) {
   if (file_exists(fname) == false) {
     cout << "must specify a valid xml file name as an argument" << endl;
     cout << fname << " did not work" << endl;
-    exit(1);
+    return(1);
   }
 
   ifstream is(fname.c_str());
@@ -46,4 +46,5 @@ int main(int argc, char* argv[]) {
   outFile.writeSupercell(qboxSampleXml);
   outFile.writeAtoms(qboxSampleXml);
   outFile.writeElectrons(qboxSampleXml);
+  return 0;
 }
