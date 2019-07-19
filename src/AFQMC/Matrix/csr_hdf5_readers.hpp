@@ -461,7 +461,8 @@ inline void multiple_reader_global_count(hdf_archive& dump, matrix_partition con
       } 
       for(int ik=0, ikend=block_size[ib]; ik<ikend; ik++) {
         int ip = split.map(ivec[2*ik],ivec[2*ik+1], vvec[ik]);
-        assert( ip < counts.size() );
+        if( ip > 0 )
+          assert( ip < counts.size() );
         if( ip >= 0 ) counts[ip]++;
       }
     }
@@ -495,14 +496,14 @@ inline SparseArray2D column_distributed_CSR_from_HDF(hdf_archive& dump, task_gro
   if(nread <= 0) nread = TG.Node().size();
 
   int c0,cN;
-  bool distribute_Ham = (TG.getNNodesPerTG() > 1); 
+  bool distribute_Ham = (TG.getNGroupsPerTG() > 1); 
   std::vector<int> row_counts(nrows);
 
   // calculate column range that belong to this node
   if(distribute_Ham) {
     // count number of non-zero elements along each column (Chol Vec)
     std::vector<IndexType> col_counts(ncols);
-    std::vector<IndexType> sets(TG.getNNodesPerTG()+1);
+    std::vector<IndexType> sets(TG.getNGroupsPerTG()+1);
     csr_hdf5::multiple_reader_global_count(dump,
                                counter(false,nrows,ncols,0,nrows,0,ncols,cutoff1bar),
                                col_counts,TG,nread);
@@ -512,18 +513,18 @@ inline SparseArray2D column_distributed_CSR_from_HDF(hdf_archive& dump, task_gro
       split.partition(TG,false,col_counts,sets);
 
       app_log()<<" Partitioning of columns in column_distributed_CSR_from_HDF: ";
-      for(int i=0; i<=TG.getNNodesPerTG(); i++)
+      for(int i=0; i<=TG.getNGroupsPerTG(); i++)
         app_log()<<sets[i] <<" ";
       app_log()<<std::endl;
       app_log()<<" Number of terms in each partitioning: ";
-      for(int i=0; i<TG.getNNodesPerTG(); i++)
+      for(int i=0; i<TG.getNGroupsPerTG(); i++)
         app_log()<<accumulate(col_counts.begin()+sets[i],col_counts.begin()+sets[i+1],0) <<" ";
       app_log()<<std::endl;
     }
 
     TG.Global().broadcast(sets.begin(),sets.end());
-    c0 = sets[TG.getLocalNodeNumber()];
-    cN = sets[TG.getLocalNodeNumber()+1];
+    c0 = sets[TG.getLocalGroupNumber()];
+    cN = sets[TG.getLocalGroupNumber()+1];
 
     csr_hdf5::multiple_reader_local_count(dump,
                              counter(true,nrows,ncols,0,nrows,c0,cN,cutoff1bar),
@@ -573,7 +574,7 @@ inline SparseArray2D unstructured_distributed_CSR_from_HDF(hdf_archive& dump, ta
                                 shared_allocator<value_type>,
                                 ma::sparse::is_root>;
 
-  bool distribute_Ham = (TG.getNNodesPerTG() > 1);
+  bool distribute_Ham = (TG.getNGroupsPerTG() > 1);
 
   if(distribute_Ham) {
 
@@ -613,7 +614,7 @@ inline void write_distributed_CSR_to_HDF(SparseArray2D const& SpM, hdf_archive& 
   size_t nnz = SpM.num_non_zero_elements();
   if(nnz == size_t(0)) return;
 
-  if(TG.getNNodesPerTG() > 1) {
+  if(TG.getNGroupsPerTG() > 1) {
     if(TG.Global().root()) {
       std::vector<int> block_sizes;
       block_sizes.reserve( (nnz-size_t(1))/CSR_HDF_BLOCK_SIZE + 1);
@@ -647,7 +648,7 @@ inline void write_distributed_CSR_to_HDF(SparseArray2D const& SpM, hdf_archive& 
         vvec.clear();
       }
 
-      int nnodes_per_TG = TG.getNNodesPerTG();
+      int nnodes_per_TG = TG.getNGroupsPerTG();
       for(int core=1; core<nnodes_per_TG; ++core) {
         size_t nnz_;
         TG.Cores().receive_n(&nnz_,1,core,core);
@@ -667,8 +668,8 @@ inline void write_distributed_CSR_to_HDF(SparseArray2D const& SpM, hdf_archive& 
       }    
 
       dump.write(block_sizes,"block_sizes");
-    } else if(TG.Node().root() && TG.Cores().rank() < TG.getNNodesPerTG()) { // only one TG writes
-      int nnodes_per_TG = TG.getNNodesPerTG();
+    } else if(TG.Node().root() && TG.Cores().rank() < TG.getNGroupsPerTG()) { // only one TG writes
+      int nnodes_per_TG = TG.getNGroupsPerTG();
       int rank = TG.Cores().rank();
       TG.Cores().send_n(&nnz,1,0,rank);
       std::vector<value_type> vvec;

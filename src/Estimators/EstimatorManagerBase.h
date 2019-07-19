@@ -13,8 +13,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
 
 
 /** @file EstimatorManagerBase.h
@@ -34,7 +32,6 @@
 
 namespace qmcplusplus
 {
-
 class MCWalkerConifugration;
 class QMCHamiltonian;
 class CollectablesEstimator;
@@ -42,12 +39,10 @@ class CollectablesEstimator;
 /**Class to manage a set of ScalarEstimators */
 class EstimatorManagerBase
 {
-
 public:
-
-  typedef QMCTraits::EstimatorRealType  RealType;
-  typedef ScalarEstimatorBase           EstimatorType;
-  typedef std::vector<RealType>              BufferType;
+  typedef QMCTraits::FullPrecRealType RealType;
+  typedef ScalarEstimatorBase EstimatorType;
+  typedef std::vector<RealType> BufferType;
   //enum { WEIGHT_INDEX=0, BLOCK_CPU_INDEX, ACCEPT_RATIO_INDEX, TOTAL_INDEX};
 
   ///name of the primary estimator name
@@ -55,11 +50,11 @@ public:
   ///the root file name
   std::string RootName;
   ///energy
-  TinyVector<RealType,4> RefEnergy;
+  TinyVector<RealType, 4> RefEnergy;
   // //Cummulative energy, weight and variance
   // TinyVector<RealType,4>  EPSum;
   ///default constructor
-  EstimatorManagerBase(Communicate* c=0);
+  EstimatorManagerBase(Communicate* c = 0);
   ///copy constructor
   EstimatorManagerBase(EstimatorManagerBase& em);
   ///destructor
@@ -70,23 +65,14 @@ public:
 
   /** return the communicator
    */
-  Communicate* getCommunicator()
-  {
-    return myComm;
-  }
+  Communicate* getCommunicator() { return myComm; }
 
   /** return true if the rank == 0
    */
-  inline bool is_manager() const
-  {
-    return !myComm->rank();
-  }
+  inline bool is_manager() const { return !myComm->rank(); }
 
   ///return the number of ScalarEstimators
-  inline int size() const
-  {
-    return Estimators.size();
-  }
+  inline int size() const { return Estimators.size(); }
 
   /** add a property with a name
    * @param aname name of the column
@@ -95,31 +81,19 @@ public:
    * Append a named column. BlockProperties do not contain any meaning data
    * but manages the name to index map for PropertyCache.
    */
-  inline int addProperty(const char* aname)
-  {
-    return BlockProperties.add(aname);
-  }
+  inline int addProperty(const char* aname) { return BlockProperties.add(aname); }
 
   /** set the value of the i-th column with a value v
    * @param i column index
    * @param v value
    */
-  inline void setProperty(int i, RealType v)
-  {
-    PropertyCache[i]=v;
-  }
+  inline void setProperty(int i, RealType v) { PropertyCache[i] = v; }
 
-  inline RealType getProperty(int i) const
-  {
-    return PropertyCache[i];
-  }
+  inline RealType getProperty(int i) const { return PropertyCache[i]; }
 
   int addObservable(const char* aname);
 
-  inline RealType getObservable(int i) const
-  {
-    return  TotalAverages[i];
-  }
+  inline RealType getObservable(int i) const { return TotalAverages[i]; }
 
   void getData(int i, std::vector<RealType>& values);
 
@@ -135,10 +109,7 @@ public:
    * @param newestimator New Estimator
    * @return locator of newestimator
    */
-  int add(EstimatorType* newestimator)
-  {
-    return add(newestimator,MainEstimatorName);
-  }
+  int add(EstimatorType* newestimator) { return add(newestimator, MainEstimatorName); }
 
   ///return a pointer to the estimator aname
   EstimatorType* getEstimator(const std::string& a);
@@ -147,16 +118,10 @@ public:
   EstimatorType* getMainEstimator();
 
   ///return the average for estimator i
-  inline RealType average(int i) const
-  {
-    return Estimators[i]->average();
-  }
+  inline RealType average(int i) const { return Estimators[i]->average(); }
 
   ///returns a variance for estimator i
-  inline RealType variance(int i) const
-  {
-    return Estimators[i]->variance();
-  }
+  inline RealType variance(int i) const { return Estimators[i]->variance(); }
 
   void setCollectionMode(bool collect);
   //void setAccumulateMode (bool setAccum) {AccumulateBlocks = setAccum;};
@@ -177,7 +142,7 @@ public:
    *
    * Replace reportHeader and reset functon.
    */
-  void start(int blocks, bool record=true);
+  void start(int blocks, bool record = true);
   /** stop a qmc run
    *
    * Replace finalize();
@@ -195,14 +160,14 @@ public:
 
   void setNumberOfBlocks(int blocks)
   {
-    for(int i=0; i<Estimators.size(); i++)
+    for (int i = 0; i < Estimators.size(); i++)
       Estimators[i]->setNumberOfBlocks(blocks);
   }
 
   /** stop a block
    * @param accept acceptance rate of this block
    */
-  void stopBlock(RealType accept, bool collectall=true);
+  void stopBlock(RealType accept, bool collectall = true);
   /** stop a block
    * @param m list of estimator which has been collecting data independently
    */
@@ -218,12 +183,11 @@ public:
    * @param it first walker
    * @param it_end last walker
    */
-  void accumulate(MCWalkerConfiguration& W, MCWalkerConfiguration::iterator it,
-                  MCWalkerConfiguration::iterator it_end);
+  void accumulate(MCWalkerConfiguration& W, MCWalkerConfiguration::iterator it, MCWalkerConfiguration::iterator it_end);
 
-//     /** accumulate the FW observables
-//      */
-//     void accumulate(HDF5_FW_observables& OBS, HDF5_FW_weights& WGTS, std::vector<int>& Dims);
+  //     /** accumulate the FW observables
+  //      */
+  //     void accumulate(HDF5_FW_observables& OBS, HDF5_FW_weights& WGTS, std::vector<int>& Dims);
 
   ///** set the cummulative energy and weight
   void getEnergyAndWeight(RealType& e, RealType& w, RealType& var);
@@ -233,7 +197,7 @@ public:
   template<class CT>
   void write(CT& anything, bool doappend)
   {
-    anything.write(h_file,doappend);
+    anything.write(h_file, doappend);
   }
 
 protected:
@@ -291,7 +255,7 @@ protected:
   ///index mapping between BlockAverages and TotalAverages
   std::vector<int> Block2Total;
   ///column map
-  std::map<std::string,int> EstimatorMap;
+  std::map<std::string, int> EstimatorMap;
   ///estimators of simple scalars
   std::vector<EstimatorType*> Estimators;
   ///convenient descriptors for hdf5
@@ -300,6 +264,7 @@ protected:
   //CompositeEstimatorSet* CompEstimators;
   ///Timer
   Timer MyTimer;
+
 private:
   ///number of maximum data for a scalar.dat
   int max4ascii;
@@ -311,5 +276,5 @@ private:
   void addHeader(std::ostream& o);
   size_t FieldWidth;
 };
-}
+} // namespace qmcplusplus
 #endif

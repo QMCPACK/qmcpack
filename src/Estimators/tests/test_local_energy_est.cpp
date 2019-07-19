@@ -25,7 +25,6 @@
 
 namespace qmcplusplus
 {
-
 TEST_CASE("LocalEnergyOnly", "[estimators]")
 {
   OHMMS::Controller->initialize(0, NULL);
@@ -51,7 +50,7 @@ TEST_CASE("LocalEnergy", "[estimators]")
   QMCHamiltonian H;
   LocalEnergyEstimator le_est(H, false);
 
-  LocalEnergyEstimator *le_est2 = dynamic_cast<LocalEnergyEstimator *>(le_est.clone());
+  LocalEnergyEstimator* le_est2 = dynamic_cast<LocalEnergyEstimator*>(le_est.clone());
   REQUIRE(le_est2 != NULL);
   REQUIRE(le_est2 != &le_est);
 
@@ -60,7 +59,7 @@ TEST_CASE("LocalEnergy", "[estimators]")
   W.create(1);
   W.createWalkers(1);
 
-  (*W.begin())->Properties(LOCALENERGY) = 1.1;
+  (*W.begin())->Properties(LOCALENERGY)    = 1.1;
   (*W.begin())->Properties(LOCALPOTENTIAL) = 1.2;
 
   le_est.accumulate(W, W.begin(), W.end(), 1.0);
@@ -86,12 +85,12 @@ TEST_CASE("LocalEnergy with hdf5", "[estimators]")
   W.create(1);
   W.createWalkers(1);
 
-  (*W.begin())->Properties(LOCALENERGY) = 1.1;
+  (*W.begin())->Properties(LOCALENERGY)    = 1.1;
   (*W.begin())->Properties(LOCALPOTENTIAL) = 1.2;
 
   std::vector<observable_helper*> h5desc;
 
-  hid_t h_file= H5Fcreate("tmp_obs.h5",H5F_ACC_TRUNC,H5P_DEFAULT,H5P_DEFAULT);
+  hid_t h_file = H5Fcreate("tmp_obs.h5", H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
   le_est.registerObservables(h5desc, h_file);
   H5Fclose(h_file);
   // Should make sure h5 file was created?  Check contents?
@@ -99,7 +98,6 @@ TEST_CASE("LocalEnergy with hdf5", "[estimators]")
   LocalEnergyEstimator::RecordListType record;
   le_est.add2Record(record);
   // Not sure how to test this - for now make sure it doesn't crash
-
 }
 
-}
+} // namespace qmcplusplus

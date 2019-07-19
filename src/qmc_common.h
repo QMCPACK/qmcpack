@@ -11,8 +11,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
 
 
 #ifndef QMCPLUSPLUS_GLOBAL_OBJECTS_H
@@ -22,9 +20,6 @@
 
 namespace qmcplusplus
 {
-///enumeration for main computing devices
-enum {SMP=0, CUDA=1};
-
 /** class to definte global variables to keep track a run
  */
 struct QMCState
@@ -35,25 +30,23 @@ struct QMCState
   bool use_density;
   ///true, if it is a dryrun
   bool dryrun;
-  ///true, if wave functions are stored for next runs
-  bool save_wfs;
   ///true, print out file
   bool io_node;
   ///true, use Ewald instead of optimal breakup for the Coulomb
   bool use_ewald;
-  ///int for compute_device
-  int compute_device;
   ///init for <qmc/> section
   int qmc_counter;
   ///number of mpi groups
   int mpi_groups;
   ///size of memory allocated in byte per MPI
   size_t memory_allocated;
+  /// the id of the default accelerator
+  int default_accelerator_id;
 
   ///constructor
   QMCState();
   ///initialize options from the command-line
-  void initialize(int argc, char **argv);
+  void initialize(int argc, char** argv);
   ///print command-line options
   void print_options(std::ostream& os);
   /** print memory increase
@@ -68,6 +61,6 @@ struct QMCState
 
 ///a unique QMCState during a run
 extern QMCState qmc_common;
-}
+} // namespace qmcplusplus
 
 #endif

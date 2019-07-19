@@ -19,7 +19,6 @@
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 //#include "QMCWaveFunctions/Jastrow/DiffOneBodySpinJastrowOrbital.h"
 #include "Particle/DistanceTableData.h"
-#include "Particle/DistanceTable.h"
 
 namespace qmcplusplus
 {
@@ -210,24 +209,24 @@ public:
   {
     LogValue                         = 0.0;
     U                                = 0.0;
-    const DistanceTableData* d_table = P.DistTables[myTableIndex];
+    const auto& d_table = P.getDistTable(myTableIndex);
     RealType dudr, d2udr2;
     for (int sg = 0; sg < F.rows(); ++sg)
     {
       for (int iat = s_offset[sg]; iat < s_offset[sg + 1]; ++iat)
       {
-        int nn = d_table->M[iat]; //starting nn for the iat-th source
+        int nn = d_table.M[iat]; //starting nn for the iat-th source
         for (int tg = 0; tg < F.cols(); ++tg)
         {
           FT* func = F(sg, tg);
           if (func)
             for (int jat = t_offset[tg]; jat < t_offset[tg + 1]; ++jat, ++nn)
             {
-              RealType uij = func->evaluate(d_table->r(nn), dudr, d2udr2);
+              RealType uij = func->evaluate(d_table.r(nn), dudr, d2udr2);
               LogValue -= uij;
               U[jat] += uij;
-              dudr *= d_table->rinv(nn);
-              G[jat] -= dudr * d_table->dr(nn);
+              dudr *= d_table.rinv(nn);
+              G[jat] -= dudr * d_table.dr(nn);
               L[jat] -= d2udr2 + 2.0 * dudr;
             }
           else
@@ -245,7 +244,7 @@ public:
   inline ValueType ratio(ParticleSet& P, int iat)
   {
     curVal                           = 0.0;
-    const DistanceTableData* d_table = P.DistTables[myTableIndex];
+    const auto& d_table = P.getDistTable(myTableIndex);
     int tg                           = P.GroupID[iat];
     for (int sg = 0; sg < F.rows(); ++sg)
     {
@@ -253,7 +252,7 @@ public:
       if (!func)
         continue;
       for (int s = s_offset[sg]; s < s_offset[sg + 1]; ++s)
-        curVal += func->evaluate(d_table->Temp[s].r1);
+        curVal += func->evaluate(d_table.Temp[s].r1);
     }
     return std::exp(U[iat] - curVal);
   }
@@ -261,7 +260,7 @@ public:
   inline void evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios)
   {
     std::vector<RealType> myr(ratios.size(), U[VP.refPtcl]);
-    const DistanceTableData* d_table = VP.DistTables[myTableIndex];
+    const auto& d_table = VP.getDistTable(myTableIndex);
     int tg                           = VP.GroupID[VP.refPtcl];
     for (int sg = 0; sg < F.rows(); ++sg)
     {
@@ -269,8 +268,8 @@ public:
       if (func)
       {
         for (int s = s_offset[sg]; s < s_offset[sg + 1]; ++s)
-          for (int nn = d_table->M[s], j = 0; nn < d_table->M[s + 1]; ++nn, ++j)
-            myr[j] -= func->evaluate(d_table->r(nn));
+          for (int nn = d_table.M[s], j = 0; nn < d_table.M[s + 1]; ++nn, ++j)
+            myr[j] -= func->evaluate(d_table.r(nn));
       }
     }
     for (int k = 0; k < ratios.size(); ++k)
@@ -285,20 +284,20 @@ public:
   inline void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
   {
     std::fill(ratios.begin(), ratios.end(), 0.0);
-    const DistanceTableData* d_table = P.DistTables[myTableIndex];
+    const auto& d_table = P.getDistTable(myTableIndex);
     for (int sg = 0; sg < F.rows(); ++sg)
     {
       for (int iat = s_offset[sg]; iat < s_offset[sg + 1]; ++iat)
       {
-        int nn = d_table->M[iat]; //starting nn for the iat-th source
+        int nn = d_table.M[iat]; //starting nn for the iat-th source
         for (int tg = 0; tg < F.cols(); ++tg)
         {
           FT* func = F(sg, tg);
           if (func)
           {
-            RealType up = func->evaluate(d_table->Temp[iat].r1);
+            RealType up = func->evaluate(d_table.Temp[iat].r1);
             for (int jat = t_offset[tg]; jat < t_offset[tg + 1]; ++jat, ++nn)
-              ratios[jat] += func->evaluate(d_table->r(nn)) - up;
+              ratios[jat] += func->evaluate(d_table.r(nn)) - up;
           }
           else
             nn += t_offset[tg + 1] - t_offset[tg]; //move forward by the number of particles in the group tg
@@ -314,8 +313,8 @@ public:
 
   inline GradType evalGrad(ParticleSet& P, int iat)
   {
-    const DistanceTableData* d_table = P.DistTables[myTableIndex];
-    int n                            = d_table->size(VisitorIndex);
+    const auto& d_table = P.getDistTable(myTableIndex);
+    int n                            = d_table.size(VisitorIndex);
     int tg                           = P.GroupID[iat];
     curGrad                          = 0.0;
     RealType ur, dudr, d2udr2;
@@ -326,9 +325,9 @@ public:
       if (func)
         for (int s = s_offset[sg]; s < s_offset[sg + 1]; ++s, nn += n)
         {
-          ur = func->evaluate(d_table->r(nn), dudr, d2udr2);
-          dudr *= d_table->rinv(nn);
-          curGrad -= dudr * d_table->dr(nn);
+          ur = func->evaluate(d_table.r(nn), dudr, d2udr2);
+          dudr *= d_table.rinv(nn);
+          curGrad -= dudr * d_table.dr(nn);
         }
       else
         nn += n * (s_offset[sg + 1] - s_offset[sg]);
@@ -355,7 +354,7 @@ public:
 
   inline ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
   {
-    const DistanceTableData* d_table = P.DistTables[myTableIndex];
+    const auto& d_table = P.getDistTable(myTableIndex);
     int tg                           = P.GroupID[iat]; //pick the target group
     curVal                           = 0.0;
     curGrad                          = 0.0;
@@ -366,9 +365,9 @@ public:
       if (func)
         for (int s = s_offset[sg]; s < s_offset[sg + 1]; ++s)
         {
-          curVal += func->evaluate(d_table->Temp[s].r1, dudr, d2udr2);
-          dudr *= d_table->Temp[s].rinv1;
-          curGrad -= dudr * d_table->Temp[s].dr1;
+          curVal += func->evaluate(d_table.Temp[s].r1, dudr, d2udr2);
+          dudr *= d_table.Temp[s].rinv1;
+          curGrad -= dudr * d_table.Temp[s].dr1;
         }
     }
     grad_iat += curGrad;
@@ -390,26 +389,26 @@ public:
     U                                = 0.0;
     dU                               = 0.0;
     d2U                              = 0.0;
-    const DistanceTableData* d_table = P.DistTables[myTableIndex];
+    const auto& d_table = P.getDistTable(myTableIndex);
     RealType uij, dudr, d2udr2;
     for (int ig = 0; ig < F.rows(); ++ig)
     {
       for (int iat = s_offset[ig]; iat < s_offset[ig + 1]; ++iat)
       {
-        int nn = d_table->M[iat];
+        int nn = d_table.M[iat];
         for (int jg = 0; jg < F.cols(); ++jg)
         {
           FT* func = F(ig, jg);
           if (func)
             for (int jat = t_offset[jg]; jat < t_offset[jg + 1]; ++jat, ++nn)
             {
-              uij = func->evaluate(d_table->r(nn), dudr, d2udr2);
+              uij = func->evaluate(d_table.r(nn), dudr, d2udr2);
               LogValue -= uij;
               U[jat] += uij;
-              dudr *= d_table->rinv(nn);
-              dU[jat]  -= dudr * d_table->dr(nn);
+              dudr *= d_table.rinv(nn);
+              dU[jat]  -= dudr * d_table.dr(nn);
               d2U[jat] -= d2udr2 + 2.0 * dudr;
-              dG[jat]  -= dudr * d_table->dr(nn);
+              dG[jat]  -= dudr * d_table.dr(nn);
               dL[jat]  -= d2udr2 + 2.0 * dudr;
             }
           else
@@ -422,9 +421,9 @@ public:
   /** equivalent to evalaute with additional data management */
   void registerData(ParticleSet& P, WFBufferType& buf)
   {
-    const DistanceTableData* d_table = P.DistTables[myTableIndex];
-    d2U.resize(d_table->size(VisitorIndex));
-    dU.resize(d_table->size(VisitorIndex));
+    const auto& d_table = P.getDistTable(myTableIndex);
+    d2U.resize(d_table.size(VisitorIndex));
+    dU.resize(d_table.size(VisitorIndex));
     FirstAddressOfdU = &(dU[0][0]);
     LastAddressOfdU  = FirstAddressOfdU + dU.size() * DIM;
     evaluateLogAndStore(P, P.G, P.L);

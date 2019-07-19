@@ -30,7 +30,12 @@ void AFQMCBasePropagator::parse(xmlNodePtr cur)
   apply_constrain=true;
 // this is wrong!!! must get batched capability from SDet, not from input
   nbatched_propagation=0;
+  nbatched_qr=0;
   if(number_of_devices() > 0) nbatched_propagation=-1;
+  if(number_of_devices() > 0) { 
+    // get better bounds later on
+    if(NMO < 1024 && NAEA < 512) nbatched_qr=-1;
+  }
 
   xmlNodePtr curRoot=cur;
 
@@ -39,13 +44,21 @@ void AFQMCBasePropagator::parse(xmlNodePtr cur)
   std::string hyb("yes");
   std::string freep("no");
   std::string impsam("yes");
+  std::string external_field("");
+  std::string P1ev("no");
+  double extfield_scale(1.0);
   ParameterSet m_param;
   m_param.add(vbias_bound,"vbias_bound","double");
   m_param.add(constrain,"apply_constrain","std::string");
   m_param.add(impsam,"importance_sampling","std::string");
   m_param.add(hyb,"hybrid","std::string");
+  m_param.add(external_field,"external_field","std::string");
+  m_param.add(extfield_scale,"external_field_scale","double");
+  m_param.add(P1ev,"printP1eigval","std::string");
   if(TG.TG_local().size() == 1)
-    m_param.add(nbatched_propagation,"batched","int");
+    m_param.add(nbatched_propagation,"nbatch","int");
+  if(TG.TG_local().size() == 1)
+    m_param.add(nbatched_qr,"nbatch_qr","int");
   m_param.add(freep,"free_projection","std::string");
 
   //m_param.add(sz_pin_field_file,"sz_pinning_field_file","std::string");
@@ -61,6 +74,8 @@ void AFQMCBasePropagator::parse(xmlNodePtr cur)
   if(hyb == "no" || hyb == "false") hybrid = false;
   std::transform(freep.begin(),freep.end(),freep.begin(),(int (*)(int)) tolower);
   if(freep == "yes" || freep == "true") free_projection=true; 
+  std::transform(P1ev.begin(),P1ev.end(),P1ev.begin(),(int (*)(int)) tolower);
+  if(P1ev == "yes" || P1ev == "true") printP1eV=true; 
 
   app_log()<<"\n\n --------------- Parsing Propagator input ------------------ \n\n";
 
@@ -68,6 +83,11 @@ void AFQMCBasePropagator::parse(xmlNodePtr cur)
     app_log()<<" Using batched propagation with a batch size: " <<nbatched_propagation <<"\n";
   else
     app_log()<<" Using sequential propagation. \n";
+  if(nbatched_qr != 0)
+    app_log()<<" Using batched orthogonalization in back propagation with a batch size: " <<nbatched_qr <<"\n";
+  else
+    app_log()<<" Using sequential orthogonalization in back propagation. \n";
+  app_log()<<" vbias_bound: " <<vbias_bound <<std::endl;
 
   if(free_projection) {
 
@@ -107,6 +127,33 @@ void AFQMCBasePropagator::parse(xmlNodePtr cur)
       app_log()<<" Using hybrid method to calculate the weights during the propagation." <<"\n";
     else
       app_log()<<" Using local energy method to calculate the weights during the propagation." <<"\n";
+
+  }
+
+  if(external_field != std::string("")) {
+
+//    read_external_field(H1ext);
+
+    // add placeholder for beta component
+    P1.emplace_back(P1Type(tp_ul_ul{0,0},tp_ul_ul{0,0},0,aux_alloc_));
+
+    spin_dependent_P1=true;
+    H1ext.reextent({2,NMO,NMO});
+    TG.Node().barrier();
+    if(TG.Node().root()) {
+      std::ifstream in(external_field.c_str());
+      for(int i=0; i<NMO; i++)
+        for(int j=0; j<NMO; j++)
+          in>>H1ext[0][i][j];
+      for(int i=0; i<NMO; i++)
+        for(int j=0; j<NMO; j++)
+          in>>H1ext[1][i][j];
+      if(in.fail())
+          APP_ABORT(" Error: Problems with external field.");
+      ma::scal(ComplexType(extfield_scale),H1ext[0]);
+      ma::scal(ComplexType(extfield_scale),H1ext[1]);
+    }
+    TG.Node().barrier();
 
   }
 
@@ -163,7 +210,7 @@ void AFQMCBasePropagator::assemble_X(size_t nsteps, size_t nwalk, RealType sqrtd
 
 // leaving compiler switch until I decide how to do this better
 // basically hide this decision somewhere based on the value of pointer!!!
-#ifdef QMC_CUDA
+#ifdef ENABLE_CUDA
   kernels::construct_X(nCV,nsteps,nwalk,free_projection,sqrtdt,vbias_bound,
                        to_address(vMF.origin()),
                        to_address(vbias.origin()),

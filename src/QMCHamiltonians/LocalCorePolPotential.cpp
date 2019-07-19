@@ -10,9 +10,8 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
-#include "Particle/DistanceTable.h"
+
+
 #include "Particle/DistanceTableData.h"
 #include "QMCHamiltonians/LocalCorePolPotential.h"
 #include "Utilities/IteratorUtility.h"
@@ -20,20 +19,17 @@
 
 namespace qmcplusplus
 {
-
-LocalCorePolPotential::LocalCorePolPotential(ParticleSet& ions,
-    ParticleSet& els):
-  FirstTime(true), eCoreCore(0.0), IonConfig(ions), d_ie(0), d_ii(0)
+LocalCorePolPotential::LocalCorePolPotential(ParticleSet& ions, ParticleSet& els)
+    : FirstTime(true), eCoreCore(0.0), IonConfig(ions),
+      d_ie_ID(els.addTable(ions, DT_AOS)), d_ii_ID(ions.addTable(ions, DT_AOS))
 {
   //set the distance tables
-  d_ie = DistanceTable::add(ions,els,DT_AOS);
-  d_ii = DistanceTable::add(ions,DT_AOS);
-  nCenters = ions.getTotalNum();
+  nCenters   = ions.getTotalNum();
   nParticles = els.getTotalNum();
-  InpCPP.resize(IonConfig.getSpeciesSet().getTotalNum(),0);
-  Centers.resize(nCenters,0);
-  CoreCoreDipole.resize(nCenters,0.0);
-  CoreElDipole.resize(nCenters,nParticles);
+  InpCPP.resize(IonConfig.getSpeciesSet().getTotalNum(), 0);
+  Centers.resize(nCenters, 0);
+  CoreCoreDipole.resize(nCenters, 0.0);
+  CoreElDipole.resize(nCenters, nParticles);
   CoreElDipole = 0.0;
 }
 
@@ -43,16 +39,13 @@ LocalCorePolPotential::LocalCorePolPotential(ParticleSet& ions,
  */
 LocalCorePolPotential::~LocalCorePolPotential()
 {
-  for(int i=0; i<InpCPP.size(); i++)
-    if(InpCPP[i])
+  for (int i = 0; i < InpCPP.size(); i++)
+    if (InpCPP[i])
       delete InpCPP[i];
 }
 
 
-void LocalCorePolPotential::resetTargetParticleSet(ParticleSet& P)
-{
-  d_ie = DistanceTable::add(IonConfig,P,DT_AOS);
-}
+void LocalCorePolPotential::resetTargetParticleSet(ParticleSet& P) { }
 
 /** process xml node for each element
  * @param cur xmlnode <element name="string" alpha="double" rb="double"/>
@@ -60,15 +53,15 @@ void LocalCorePolPotential::resetTargetParticleSet(ParticleSet& P)
 bool LocalCorePolPotential::CPP_Param::put(xmlNodePtr cur)
 {
   OhmmsAttributeSet att;
-  att.add(alpha,"alpha");
-  att.add(r_b,"rb");
+  att.add(alpha, "alpha");
+  att.add(r_b, "rb");
   att.put(cur);
   //const xmlChar* a_ptr = xmlGetProp(cur,(const xmlChar *)"alpha");
   //const xmlChar* b_ptr = xmlGetProp(cur,(const xmlChar *)"rb");
   //if(a_ptr) alpha = atof((const char*)a_ptr);
   //if(b_ptr) r_b = atof((const char*)b_ptr);
-  C = -0.5*alpha;
-  one_over_rr = 1.0/r_b/r_b;
+  C           = -0.5 * alpha;
+  one_over_rr = 1.0 / r_b / r_b;
   app_log() << "\talpha = " << alpha << " rb = " << r_b << std::endl;
   return true;
 }
@@ -83,98 +76,99 @@ bool LocalCorePolPotential::CPP_Param::put(xmlNodePtr cur)
 bool LocalCorePolPotential::put(xmlNodePtr cur)
 {
   bool success(true);
-  if(cur!= NULL)//input is provided
+  if (cur != NULL) //input is provided
   {
     std::string ename;
-    cur= cur->children;
-    while(cur != NULL)
+    cur = cur->children;
+    while (cur != NULL)
     {
       std::string cname((const char*)cur->name);
-      if(cname == "element")
+      if (cname == "element")
       {
         std::string species_name;
         OhmmsAttributeSet att;
-        att.add(species_name,"name");
+        att.add(species_name, "name");
         att.put(cur);
-        if(species_name.size())
+        if (species_name.size())
         {
           int itype = IonConfig.getSpeciesSet().addSpecies(species_name); //(const char*)e_ptr);
-          if(InpCPP[itype]==0)
+          if (InpCPP[itype] == 0)
             InpCPP[itype] = new CPP_Param;
           app_log() << "CPP parameters for " << IonConfig.getSpeciesSet().speciesName[itype] << std::endl;
           success = InpCPP[itype]->put(cur);
         }
       }
-      cur=cur->next;
+      cur = cur->next;
     }
   }
-  for(int iat=0; iat<nCenters; iat++)
-    Centers[iat]=InpCPP[IonConfig.GroupID[iat]];
+  for (int iat = 0; iat < nCenters; iat++)
+    Centers[iat] = InpCPP[IonConfig.GroupID[iat]];
   return success;
 }
 
-LocalCorePolPotential::Return_t
-LocalCorePolPotential::evaluate(ParticleSet& P)
+LocalCorePolPotential::Return_t LocalCorePolPotential::evaluate(ParticleSet& P)
 {
-  if(FirstTime)
+  if (FirstTime)
   {
     //index for attribute charge
     SpeciesSet& Species(IonConfig.getSpeciesSet());
     int iz = Species.addAttribute("charge");
+    const auto& d_ii = IonConfig.getDistTable(d_ii_ID);
     //calculate the Core-Core Dipole matrix
-    for(int iat=0; iat<nCenters; iat++)
+    for (int iat = 0; iat < nCenters; iat++)
     {
-      for(int nn=d_ii->M[iat]; nn<d_ii->M[iat+1]; nn++)
+      for (int nn = d_ii.M[iat]; nn < d_ii.M[iat + 1]; nn++)
       {
-        int jat(d_ii->J[nn]);
-        RealType rinv3 = std::pow(d_ii->rinv(nn),3);//(1/R_{JI}^3) R_{JI} = R_J-R_I
-        PosType dipole(rinv3*d_ii->dr(nn));//(\vec{R_{JI}}/R_{JI}^3)
+        int jat(d_ii.J[nn]);
+        RealType rinv3 = std::pow(d_ii.rinv(nn), 3); //(1/R_{JI}^3) R_{JI} = R_J-R_I
+        PosType dipole(rinv3 * d_ii.dr(nn));         //(\vec{R_{JI}}/R_{JI}^3)
         //Sign and the charge of the paired ion are taken into account here
-        CoreCoreDipole[iat] -= dipole*Species(iz,IonConfig.GroupID[jat]);
-        CoreCoreDipole[jat] += dipole*Species(iz,IonConfig.GroupID[iat]);
+        CoreCoreDipole[iat] -= dipole * Species(iz, IonConfig.GroupID[jat]);
+        CoreCoreDipole[jat] += dipole * Species(iz, IonConfig.GroupID[iat]);
       }
     }
     RealType corecore(0.0);
-    for(int iat=0; iat<nCenters; iat++)
+    for (int iat = 0; iat < nCenters; iat++)
     {
       //app_log() << "Checking CPP = " << Centers[iat] << std::endl;
-      if(Centers[iat])
-        corecore+= Centers[iat]->C*dot(CoreCoreDipole[iat],CoreCoreDipole[iat]);
+      if (Centers[iat])
+        corecore += Centers[iat]->C * dot(CoreCoreDipole[iat], CoreCoreDipole[iat]);
     }
-//      LOGMSG("Core-Core Dipole = " << corecore);
-    FirstTime=false;
+    //      LOGMSG("Core-Core Dipole = " << corecore);
+    FirstTime = false;
   }
   //calculate the Electron-Core Dipole matrix
   //CoreElDipole=0.0;
   RealType e = 0.0;
-  for(int iat=0; iat<nCenters; iat++)
+  const auto& d_ie = P.getDistTable(d_ie_ID);
+  for (int iat = 0; iat < nCenters; iat++)
   {
-    if(Centers[iat])
+    if (Centers[iat])
     {
       PosType cc(CoreCoreDipole[iat]);
-      for(int nn=d_ie->M[iat]; nn<d_ie->M[iat+1]; nn++)
+      for (int nn = d_ie.M[iat]; nn < d_ie.M[iat + 1]; nn++)
       {
-        int eid(d_ie->J[nn]);
-        RealType rinv3 = std::pow(d_ie->rinv(nn),3);//(1/r^3)
-        PosType dipole = rinv3*d_ie->dr(nn);//(\vec{r}/r^3)
+        int eid(d_ie.J[nn]);
+        RealType rinv3 = std::pow(d_ie.rinv(nn), 3); //(1/r^3)
+        PosType dipole = rinv3 * d_ie.dr(nn);        //(\vec{r}/r^3)
         //cc +=  dipole*fcpp(d_ie->r(nn)*r_binv);
-        cc += dipole*((*Centers[iat])(d_ie->r(nn)));
+        cc += dipole * ((*Centers[iat])(d_ie.r(nn)));
       }
-      e += Centers[iat]->C*dot(cc,cc);
+      e += Centers[iat]->C * dot(cc, cc);
     }
   }
-  return Value=e;
+  return Value = e;
 }
 
 QMCHamiltonianBase* LocalCorePolPotential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
-  LocalCorePolPotential* myclone=new LocalCorePolPotential(IonConfig,qp);
+  LocalCorePolPotential* myclone = new LocalCorePolPotential(IonConfig, qp);
   //copy cpp parameters
-  for(int i=0; i<InpCPP.size(); ++i)
-    if(InpCPP[i])
-      myclone->InpCPP[i]=new CPP_Param(*InpCPP[i]);
+  for (int i = 0; i < InpCPP.size(); ++i)
+    if (InpCPP[i])
+      myclone->InpCPP[i] = new CPP_Param(*InpCPP[i]);
   myclone->put(NULL);
   return myclone;
 }
 
-}
+} // namespace qmcplusplus

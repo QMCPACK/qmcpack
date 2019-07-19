@@ -9,8 +9,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
 
 
 #ifndef QMCPLUSPLUS_HDFWALKERVERSION_H
@@ -23,94 +21,79 @@
 
 namespace qmcplusplus
 {
-
 namespace hdf
 {
 /// extension of a configuration file
-const char config_ext[]=".config.h5";
+const char config_ext[] = ".config.h5";
 
 //1st level
-const char version[]="version";
-const char main_state[]="state_0";
-const char config_group[]="config_collection";
+const char version[]      = "version";
+const char main_state[]   = "state_0";
+const char config_group[] = "config_collection";
 
 //2nd level for main_state
-const char random[]="random_state";
-const char walkers[]="walkers";
-const char num_walkers[]="number_of_walkers";
-const char energy_history[]="energy_history";
-const char norm_history[]="norm_history";
-const char qmc_status[]="qmc_status";
+const char random[]         = "random_state";
+const char walkers[]        = "walkers";
+const char num_walkers[]    = "number_of_walkers";
+const char energy_history[] = "energy_history";
+const char norm_history[]   = "norm_history";
+const char qmc_status[]     = "qmc_status";
 
 //2nd level for config_group
-const char num_blocks[]="NumOfConfigurations";
-const char append_walkers[]="config_";
+const char num_blocks[]     = "NumOfConfigurations";
+const char append_walkers[] = "config_";
 
 //unused
-const char coord[]="coord";
-}
+const char coord[] = "coord";
+} // namespace hdf
 
-struct HDFVersion//: public HDFAttribIOBase
+struct HDFVersion //: public HDFAttribIOBase
 {
   //enumeration to get version value
-  enum {MAJOR=0, MINOR};
-  typedef TinyVector<int,2> data_type;
+  enum
+  {
+    MAJOR = 0,
+    MINOR
+  };
+  typedef TinyVector<int, 2> data_type;
   data_type version;
 
-  inline HDFVersion():
-    version(QMCPACK_VERSION_MAJOR,QMCPACK_VERSION_MINOR)
-  { }
+  inline HDFVersion() : version(QMCPACK_VERSION_MAJOR, QMCPACK_VERSION_MINOR) {}
 
-  inline explicit HDFVersion(int m, int n):version(m,n)
-  { }
+  inline explicit HDFVersion(int m, int n) : version(m, n) {}
 
-  inline int operator[](int i) const
-  {
-    return version[i];
-  }
+  inline int operator[](int i) const { return version[i]; }
 
-  inline int& operator[](int i)
-  {
-    return version[i];
-  }
+  inline int& operator[](int i) { return version[i]; }
 
   //could be general to D
-  inline bool operator==(const HDFVersion &other) const
+  inline bool operator==(const HDFVersion& other) const
   {
     return (version[0] == other.version[0] && version[1] == other.version[1]);
   }
 
-  inline bool operator!=(const HDFVersion &other) const
+  inline bool operator!=(const HDFVersion& other) const
   {
     return (version[0] != other.version[0] || version[1] != other.version[1]);
   }
 
   ///limited to 100 for each version field
-  inline int serialized() const
-  {
-    return version[0]*100+version[1];
-  }
+  inline int serialized() const { return version[0] * 100 + version[1]; }
 
-  inline bool operator>=(const HDFVersion &other) const
-  {
-    return serialized()>=other.serialized();
-  }
+  inline bool operator>=(const HDFVersion& other) const { return serialized() >= other.serialized(); }
 
-  inline bool operator<(const HDFVersion &other) const
-  {
-    return serialized()<other.serialized();
-  }
+  inline bool operator<(const HDFVersion& other) const { return serialized() < other.serialized(); }
 
-  inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist=H5P_DEFAULT)
+  inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
     h5data_proxy<data_type> vin(version);
-    return vin.read(grp,aname,xfer_plist);
+    return vin.read(grp, aname, xfer_plist);
   }
 
-  inline bool write(hid_t grp, const std::string& aname, hid_t xfer_plist=H5P_DEFAULT)
+  inline bool write(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
     h5data_proxy<data_type> vout(version);
-    return vout.write(grp,aname,xfer_plist);
+    return vout.write(grp, aname, xfer_plist);
   }
 };
 
@@ -131,18 +114,18 @@ template<>
 struct h5data_proxy<HDFVersion>
 {
   HDFVersion& ref;
-  h5data_proxy(HDFVersion& a):ref(a) {}
-  inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist=H5P_DEFAULT)
+  h5data_proxy(HDFVersion& a) : ref(a) {}
+  inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
     h5data_proxy<HDFVersion::data_type> vin(ref.version);
-    return vin.read(grp,aname,xfer_plist);
+    return vin.read(grp, aname, xfer_plist);
   }
-  inline bool write(hid_t grp, const std::string& aname, hid_t xfer_plist=H5P_DEFAULT)
+  inline bool write(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
     h5data_proxy<HDFVersion::data_type> vout(ref.version);
-    return vout.write(grp,aname,xfer_plist);
+    return vout.write(grp, aname, xfer_plist);
   }
 };
 
-}
+} // namespace qmcplusplus
 #endif

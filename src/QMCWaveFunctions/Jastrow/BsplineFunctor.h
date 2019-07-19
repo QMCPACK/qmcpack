@@ -396,7 +396,10 @@ struct BsplineFunctor : public OptimizableFunctorBase
     rAttrib.put(cur);
     if (radius < 0.0)
       if (periodic)
-        app_log() << "  Jastrow cutoff unspecified.  Setting to Wigner-Seitz radius = " << cutoff_radius << ".\n";
+      {
+        app_log() << "    Jastrow cutoff unspecified.  Setting to Wigner-Seitz radius = " << cutoff_radius << std::endl;
+        app_log() << std::endl;
+      }
       else
       {
         APP_ABORT("  Jastrow cutoff unspecified.  Cutoff must be given when using open boundary conditions");
@@ -419,9 +422,9 @@ struct BsplineFunctor : public OptimizableFunctorBase
     {
       PRE.error("You must specify a positive number of parameters for the Bspline jastrow function.", true);
     }
-    app_log() << " size = " << NumParams << " parameters " << std::endl;
-    app_log() << " cusp = " << CuspValue << std::endl;
-    app_log() << " rcut = " << cutoff_radius << std::endl;
+    app_summary() << "     Number of parameters: " << NumParams << std::endl;
+    app_summary() << "     Cusp: " << CuspValue << std::endl;
+    app_summary() << "     Cutoff radius: " << cutoff_radius << std::endl;
     resize(NumParams);
     // Now read coefficents
     xmlNodePtr xmlCoefs = cur->xmlChildrenNode;
@@ -448,7 +451,7 @@ struct BsplineFunctor : public OptimizableFunctorBase
           Parameters = params;
         else
         {
-          app_log() << "Changing number of Bspline parameters from " << params.size() << " to " << NumParams
+          app_log() << "    Changing number of Bspline parameters from " << params.size() << " to " << NumParams
                     << ".  Performing fit:\n";
           // Fit function to new number of parameters
           const int numPoints = 500;
@@ -486,10 +489,11 @@ struct BsplineFunctor : public OptimizableFunctorBase
         {
           std::stringstream sstr;
           sstr << id << "_" << i;
-          myVars.insert(sstr.str(), Parameters[i], !notOpt, optimize::LOGLINEAR_P);
+          myVars.insert(sstr.str(), (value_type)Parameters[i], !notOpt, optimize::LOGLINEAR_P);
         }
-        app_log() << "Parameter     Name      Value\n";
-        myVars.print(app_log());
+        int left_pad_space = 5;
+        app_log() << std::endl;
+        myVars.print(app_log(), left_pad_space, true);
       }
       xmlCoefs = xmlCoefs->next;
     }
@@ -548,9 +552,8 @@ struct BsplineFunctor : public OptimizableFunctorBase
       {
         std::stringstream sstr;
         sstr << id << "_" << i;
-        myVars.insert(sstr.str(), Parameters[i], true, optimize::LOGLINEAR_P);
+        myVars.insert(sstr.str(), (value_type)Parameters[i], true, optimize::LOGLINEAR_P);
       }
-      app_log() << "Parameter     Name      Value\n";
       myVars.print(app_log());
     }
     else
@@ -590,8 +593,9 @@ struct BsplineFunctor : public OptimizableFunctorBase
     for (int i = 0; i < Parameters.size(); ++i)
     {
       int loc = myVars.where(i);
-      if (loc >= 0)
-        Parameters[i] = myVars[i] = active[loc];
+      if (loc >= 0) {
+        Parameters[i] = std::real( myVars[i] = active[loc] );
+      }
     }
     //         if (ResetCount++ == 100)
     //         {

@@ -15,7 +15,6 @@
 
 
 #include "Particle/DistanceTableData.h"
-#include "Particle/DistanceTable.h"
 #include "QMCWaveFunctions/Jastrow/eeI_JastrowBuilder.h"
 #include "QMCWaveFunctions/Jastrow/eeI_JastrowOrbital.h"
 #include "QMCWaveFunctions/Jastrow/JeeIOrbitalSoA.h"
@@ -111,7 +110,7 @@ bool eeI_JastrowBuilder::putkids(xmlNodePtr kids, J3type& J3)
   }
   //check that each ion species has up and down components
   J3.check_complete();
-  targetPsi.addOrbital(&J3, jname.c_str());
+  targetPsi.addComponent(&J3, jname.c_str());
   J3.setOptimizable(true);
   return true;
 }

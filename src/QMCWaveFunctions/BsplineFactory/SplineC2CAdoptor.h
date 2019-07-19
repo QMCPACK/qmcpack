@@ -17,6 +17,7 @@
 #ifndef QMCPLUSPLUS_EINSPLINE_C2C_SOA_ADOPTOR_H
 #define QMCPLUSPLUS_EINSPLINE_C2C_SOA_ADOPTOR_H
 
+#include <memory>
 #include <OhmmsSoA/Container.h>
 #include <spline2/MultiBspline.hpp>
 #include <spline2/MultiBsplineEval.hpp>
@@ -38,12 +39,12 @@ template<typename ST, typename TT>
 struct SplineC2CSoA : public SplineAdoptorBase<ST, 3>
 {
   static const int D     = 3;
-  using BaseType         = SplineAdoptorBase<ST, 3>;
+  using Base             = SplineAdoptorBase<ST, 3>;
   using SplineType       = typename bspline_traits<ST, 3>::SplineType;
   using BCType           = typename bspline_traits<ST, 3>::BCType;
   using DataType         = ST;
-  using PointType        = typename BaseType::PointType;
-  using SingleSplineType = typename BaseType::SingleSplineType;
+  using PointType        = typename Base::PointType;
+  using SingleSplineType = typename Base::SingleSplineType;
   using ComplexT         = typename std::complex<TT>;
 
   using vContainer_type  = Vector<ST, aligned_allocator<ST>>;
@@ -51,19 +52,16 @@ struct SplineC2CSoA : public SplineAdoptorBase<ST, 3>
   using hContainer_type  = VectorSoaContainer<ST, 6>;
   using ghContainer_type = VectorSoaContainer<ST, 10>;
 
-  using BaseType::first_spo;
-  using BaseType::GGt;
-  using BaseType::kPoints;
-  using BaseType::last_spo;
-  using BaseType::MakeTwoCopies;
-  using BaseType::offset;
-  using BaseType::PrimLattice;
+  using Base::first_spo;
+  using Base::GGt;
+  using Base::kPoints;
+  using Base::last_spo;
+  using Base::MakeTwoCopies;
+  using Base::offset;
+  using Base::PrimLattice;
 
   ///multi bspline set
-  MultiBspline<ST>* SplineInst;
-  ///expose the pointer to reuse the reader and only assigned with create_spline
-  ///also used as identifier of shallow copy
-  SplineType* MultiSpline;
+  std::shared_ptr<MultiBspline<ST>> SplineInst;
 
   vContainer_type mKK;
   VectorSoaContainer<ST, 3> myKcart;
@@ -77,7 +75,7 @@ struct SplineC2CSoA : public SplineAdoptorBase<ST, 3>
   ///thread private ratios for reduction when using nested threading, numVP x numThread
   Matrix<ComplexT> ratios_private;
 
-  SplineC2CSoA() : BaseType(), SplineInst(nullptr), MultiSpline(nullptr)
+  SplineC2CSoA() : Base()
   {
     this->is_complex   = true;
     this->is_soa_ready = true;
@@ -85,25 +83,9 @@ struct SplineC2CSoA : public SplineAdoptorBase<ST, 3>
     this->KeyWord      = "SplineC2CSoA";
   }
 
-  SplineC2CSoA(const SplineC2CSoA& a)
-      : SplineAdoptorBase<ST, 3>(a), SplineInst(a.SplineInst), MultiSpline(nullptr), mKK(a.mKK), myKcart(a.myKcart)
-  {
-    const size_t n = a.myL.size();
-    myV.resize(n);
-    myG.resize(n);
-    myL.resize(n);
-    myH.resize(n), mygH.resize(n);
-  }
-
-  ~SplineC2CSoA()
-  {
-    if (MultiSpline != nullptr)
-      delete SplineInst;
-  }
-
   inline void resizeStorage(size_t n, size_t nvals)
   {
-    BaseType::init_base(n);
+    Base::init_base(n);
     size_t npad = getAlignedSize<ST>(2 * n);
     myV.resize(npad);
     myG.resize(npad);
@@ -112,7 +94,7 @@ struct SplineC2CSoA : public SplineAdoptorBase<ST, 3>
     mygH.resize(npad);
   }
 
-  void bcast_tables(Communicate* comm) { chunked_bcast(comm, MultiSpline); }
+  void bcast_tables(Communicate* comm) { chunked_bcast(comm, SplineInst->getSplinePtr()); }
 
   void gather_tables(Communicate* comm)
   {
@@ -124,16 +106,15 @@ struct SplineC2CSoA : public SplineAdoptorBase<ST, 3>
     FairDivideLow(Nbands, Nbandgroups, offset);
     for (size_t ib = 0; ib < offset.size(); ib++)
       offset[ib] *= 2;
-    gatherv(comm, MultiSpline, MultiSpline->z_stride, offset);
+    gatherv(comm, SplineInst->getSplinePtr(), SplineInst->getSplinePtr()->z_stride, offset);
   }
 
   template<typename GT, typename BCT>
   void create_spline(GT& xyz_g, BCT& xyz_bc)
   {
     resize_kpoints();
-    SplineInst = new MultiBspline<ST>();
+    SplineInst = std::make_shared<MultiBspline<ST>>();
     SplineInst->create(xyz_g, xyz_bc, myV.size());
-    MultiSpline = SplineInst->spline_m;
     app_log() << "MEMORY " << SplineInst->sizeInByte() / (1 << 20) << " MB allocated "
               << "for the coefficients in 3D spline orbital representation" << std::endl;
   }
@@ -163,7 +144,7 @@ struct SplineC2CSoA : public SplineAdoptorBase<ST, 3>
   {
     std::ostringstream o;
     o << "spline_" << SplineAdoptorBase<ST, D>::MyIndex;
-    einspline_engine<SplineType> bigtable(SplineInst->spline_m);
+    einspline_engine<SplineType> bigtable(SplineInst->getSplinePtr());
     return h5f.readEntry(bigtable, o.str().c_str()); //"spline_0");
   }
 
@@ -171,7 +152,7 @@ struct SplineC2CSoA : public SplineAdoptorBase<ST, 3>
   {
     std::ostringstream o;
     o << "spline_" << SplineAdoptorBase<ST, D>::MyIndex;
-    einspline_engine<SplineType> bigtable(SplineInst->spline_m);
+    einspline_engine<SplineType> bigtable(SplineInst->getSplinePtr());
     return h5f.writeEntry(bigtable, o.str().c_str()); //"spline_0");
   }
 
@@ -207,7 +188,7 @@ struct SplineC2CSoA : public SplineAdoptorBase<ST, 3>
       int first, last;
       FairDivideAligned(myV.size(), getAlignment<ST>(), omp_get_num_threads(), omp_get_thread_num(), first, last);
 
-      spline2::evaluate3d(SplineInst->spline_m, ru, myV, first, last);
+      spline2::evaluate3d(SplineInst->getSplinePtr(), ru, myV, first, last);
       assign_v(r, myV, psi, first / 2, last / 2);
     }
   }
@@ -237,7 +218,7 @@ struct SplineC2CSoA : public SplineAdoptorBase<ST, 3>
         const PointType& r = VP.activeR(iat);
         PointType ru(PrimLattice.toUnit_floor(r));
 
-        spline2::evaluate3d(SplineInst->spline_m, ru, myV, first, last);
+        spline2::evaluate3d(SplineInst->getSplinePtr(), ru, myV, first, last);
         assign_v(r, myV, psi, first_cplx, last_cplx);
         ratios_private[iat][tid] =
             simd::dot(psi.data() + first_cplx, psiinv.data() + first_cplx, last_cplx - first_cplx);
@@ -402,7 +383,7 @@ struct SplineC2CSoA : public SplineAdoptorBase<ST, 3>
       int first, last;
       FairDivideAligned(myV.size(), getAlignment<ST>(), omp_get_num_threads(), omp_get_thread_num(), first, last);
 
-      spline2::evaluate3d_vgh(SplineInst->spline_m, ru, myV, myG, myH, first, last);
+      spline2::evaluate3d_vgh(SplineInst->getSplinePtr(), ru, myV, myG, myH, first, last);
       assign_vgl(r, psi, dpsi, d2psi, first / 2, last / 2);
     }
   }
@@ -645,387 +626,47 @@ struct SplineC2CSoA : public SplineAdoptorBase<ST, 3>
       //These are the real and imaginary components of the third SPO derivative.  _xxx denotes
       // third derivative w.r.t. x, _xyz, a derivative with resepect to x,y, and z, and so on.
 
-      const ST f3_xxx_r = t3_contract(gh000[jr],
-                                      gh001[jr],
-                                      gh002[jr],
-                                      gh011[jr],
-                                      gh012[jr],
-                                      gh022[jr],
-                                      gh111[jr],
-                                      gh112[jr],
-                                      gh122[jr],
-                                      gh222[jr],
-                                      g00,
-                                      g01,
-                                      g02,
-                                      g00,
-                                      g01,
-                                      g02,
-                                      g00,
-                                      g01,
-                                      g02);
-      const ST f3_xxy_r = t3_contract(gh000[jr],
-                                      gh001[jr],
-                                      gh002[jr],
-                                      gh011[jr],
-                                      gh012[jr],
-                                      gh022[jr],
-                                      gh111[jr],
-                                      gh112[jr],
-                                      gh122[jr],
-                                      gh222[jr],
-                                      g00,
-                                      g01,
-                                      g02,
-                                      g00,
-                                      g01,
-                                      g02,
-                                      g10,
-                                      g11,
-                                      g12);
-      const ST f3_xxz_r = t3_contract(gh000[jr],
-                                      gh001[jr],
-                                      gh002[jr],
-                                      gh011[jr],
-                                      gh012[jr],
-                                      gh022[jr],
-                                      gh111[jr],
-                                      gh112[jr],
-                                      gh122[jr],
-                                      gh222[jr],
-                                      g00,
-                                      g01,
-                                      g02,
-                                      g00,
-                                      g01,
-                                      g02,
-                                      g20,
-                                      g21,
-                                      g22);
-      const ST f3_xyy_r = t3_contract(gh000[jr],
-                                      gh001[jr],
-                                      gh002[jr],
-                                      gh011[jr],
-                                      gh012[jr],
-                                      gh022[jr],
-                                      gh111[jr],
-                                      gh112[jr],
-                                      gh122[jr],
-                                      gh222[jr],
-                                      g00,
-                                      g01,
-                                      g02,
-                                      g10,
-                                      g11,
-                                      g12,
-                                      g10,
-                                      g11,
-                                      g12);
-      const ST f3_xyz_r = t3_contract(gh000[jr],
-                                      gh001[jr],
-                                      gh002[jr],
-                                      gh011[jr],
-                                      gh012[jr],
-                                      gh022[jr],
-                                      gh111[jr],
-                                      gh112[jr],
-                                      gh122[jr],
-                                      gh222[jr],
-                                      g00,
-                                      g01,
-                                      g02,
-                                      g10,
-                                      g11,
-                                      g12,
-                                      g20,
-                                      g21,
-                                      g22);
-      const ST f3_xzz_r = t3_contract(gh000[jr],
-                                      gh001[jr],
-                                      gh002[jr],
-                                      gh011[jr],
-                                      gh012[jr],
-                                      gh022[jr],
-                                      gh111[jr],
-                                      gh112[jr],
-                                      gh122[jr],
-                                      gh222[jr],
-                                      g00,
-                                      g01,
-                                      g02,
-                                      g20,
-                                      g21,
-                                      g22,
-                                      g20,
-                                      g21,
-                                      g22);
-      const ST f3_yyy_r = t3_contract(gh000[jr],
-                                      gh001[jr],
-                                      gh002[jr],
-                                      gh011[jr],
-                                      gh012[jr],
-                                      gh022[jr],
-                                      gh111[jr],
-                                      gh112[jr],
-                                      gh122[jr],
-                                      gh222[jr],
-                                      g10,
-                                      g11,
-                                      g12,
-                                      g10,
-                                      g11,
-                                      g12,
-                                      g10,
-                                      g11,
-                                      g12);
-      const ST f3_yyz_r = t3_contract(gh000[jr],
-                                      gh001[jr],
-                                      gh002[jr],
-                                      gh011[jr],
-                                      gh012[jr],
-                                      gh022[jr],
-                                      gh111[jr],
-                                      gh112[jr],
-                                      gh122[jr],
-                                      gh222[jr],
-                                      g10,
-                                      g11,
-                                      g12,
-                                      g10,
-                                      g11,
-                                      g12,
-                                      g20,
-                                      g21,
-                                      g22);
-      const ST f3_yzz_r = t3_contract(gh000[jr],
-                                      gh001[jr],
-                                      gh002[jr],
-                                      gh011[jr],
-                                      gh012[jr],
-                                      gh022[jr],
-                                      gh111[jr],
-                                      gh112[jr],
-                                      gh122[jr],
-                                      gh222[jr],
-                                      g10,
-                                      g11,
-                                      g12,
-                                      g20,
-                                      g21,
-                                      g22,
-                                      g20,
-                                      g21,
-                                      g22);
-      const ST f3_zzz_r = t3_contract(gh000[jr],
-                                      gh001[jr],
-                                      gh002[jr],
-                                      gh011[jr],
-                                      gh012[jr],
-                                      gh022[jr],
-                                      gh111[jr],
-                                      gh112[jr],
-                                      gh122[jr],
-                                      gh222[jr],
-                                      g20,
-                                      g21,
-                                      g22,
-                                      g20,
-                                      g21,
-                                      g22,
-                                      g20,
-                                      g21,
-                                      g22);
+      const ST f3_xxx_r = t3_contract(gh000[jr], gh001[jr], gh002[jr], gh011[jr], gh012[jr], gh022[jr], gh111[jr],
+                                      gh112[jr], gh122[jr], gh222[jr], g00, g01, g02, g00, g01, g02, g00, g01, g02);
+      const ST f3_xxy_r = t3_contract(gh000[jr], gh001[jr], gh002[jr], gh011[jr], gh012[jr], gh022[jr], gh111[jr],
+                                      gh112[jr], gh122[jr], gh222[jr], g00, g01, g02, g00, g01, g02, g10, g11, g12);
+      const ST f3_xxz_r = t3_contract(gh000[jr], gh001[jr], gh002[jr], gh011[jr], gh012[jr], gh022[jr], gh111[jr],
+                                      gh112[jr], gh122[jr], gh222[jr], g00, g01, g02, g00, g01, g02, g20, g21, g22);
+      const ST f3_xyy_r = t3_contract(gh000[jr], gh001[jr], gh002[jr], gh011[jr], gh012[jr], gh022[jr], gh111[jr],
+                                      gh112[jr], gh122[jr], gh222[jr], g00, g01, g02, g10, g11, g12, g10, g11, g12);
+      const ST f3_xyz_r = t3_contract(gh000[jr], gh001[jr], gh002[jr], gh011[jr], gh012[jr], gh022[jr], gh111[jr],
+                                      gh112[jr], gh122[jr], gh222[jr], g00, g01, g02, g10, g11, g12, g20, g21, g22);
+      const ST f3_xzz_r = t3_contract(gh000[jr], gh001[jr], gh002[jr], gh011[jr], gh012[jr], gh022[jr], gh111[jr],
+                                      gh112[jr], gh122[jr], gh222[jr], g00, g01, g02, g20, g21, g22, g20, g21, g22);
+      const ST f3_yyy_r = t3_contract(gh000[jr], gh001[jr], gh002[jr], gh011[jr], gh012[jr], gh022[jr], gh111[jr],
+                                      gh112[jr], gh122[jr], gh222[jr], g10, g11, g12, g10, g11, g12, g10, g11, g12);
+      const ST f3_yyz_r = t3_contract(gh000[jr], gh001[jr], gh002[jr], gh011[jr], gh012[jr], gh022[jr], gh111[jr],
+                                      gh112[jr], gh122[jr], gh222[jr], g10, g11, g12, g10, g11, g12, g20, g21, g22);
+      const ST f3_yzz_r = t3_contract(gh000[jr], gh001[jr], gh002[jr], gh011[jr], gh012[jr], gh022[jr], gh111[jr],
+                                      gh112[jr], gh122[jr], gh222[jr], g10, g11, g12, g20, g21, g22, g20, g21, g22);
+      const ST f3_zzz_r = t3_contract(gh000[jr], gh001[jr], gh002[jr], gh011[jr], gh012[jr], gh022[jr], gh111[jr],
+                                      gh112[jr], gh122[jr], gh222[jr], g20, g21, g22, g20, g21, g22, g20, g21, g22);
 
-      const ST f3_xxx_i = t3_contract(gh000[ji],
-                                      gh001[ji],
-                                      gh002[ji],
-                                      gh011[ji],
-                                      gh012[ji],
-                                      gh022[ji],
-                                      gh111[ji],
-                                      gh112[ji],
-                                      gh122[ji],
-                                      gh222[ji],
-                                      g00,
-                                      g01,
-                                      g02,
-                                      g00,
-                                      g01,
-                                      g02,
-                                      g00,
-                                      g01,
-                                      g02);
-      const ST f3_xxy_i = t3_contract(gh000[ji],
-                                      gh001[ji],
-                                      gh002[ji],
-                                      gh011[ji],
-                                      gh012[ji],
-                                      gh022[ji],
-                                      gh111[ji],
-                                      gh112[ji],
-                                      gh122[ji],
-                                      gh222[ji],
-                                      g00,
-                                      g01,
-                                      g02,
-                                      g00,
-                                      g01,
-                                      g02,
-                                      g10,
-                                      g11,
-                                      g12);
-      const ST f3_xxz_i = t3_contract(gh000[ji],
-                                      gh001[ji],
-                                      gh002[ji],
-                                      gh011[ji],
-                                      gh012[ji],
-                                      gh022[ji],
-                                      gh111[ji],
-                                      gh112[ji],
-                                      gh122[ji],
-                                      gh222[ji],
-                                      g00,
-                                      g01,
-                                      g02,
-                                      g00,
-                                      g01,
-                                      g02,
-                                      g20,
-                                      g21,
-                                      g22);
-      const ST f3_xyy_i = t3_contract(gh000[ji],
-                                      gh001[ji],
-                                      gh002[ji],
-                                      gh011[ji],
-                                      gh012[ji],
-                                      gh022[ji],
-                                      gh111[ji],
-                                      gh112[ji],
-                                      gh122[ji],
-                                      gh222[ji],
-                                      g00,
-                                      g01,
-                                      g02,
-                                      g10,
-                                      g11,
-                                      g12,
-                                      g10,
-                                      g11,
-                                      g12);
-      const ST f3_xyz_i = t3_contract(gh000[ji],
-                                      gh001[ji],
-                                      gh002[ji],
-                                      gh011[ji],
-                                      gh012[ji],
-                                      gh022[ji],
-                                      gh111[ji],
-                                      gh112[ji],
-                                      gh122[ji],
-                                      gh222[ji],
-                                      g00,
-                                      g01,
-                                      g02,
-                                      g10,
-                                      g11,
-                                      g12,
-                                      g20,
-                                      g21,
-                                      g22);
-      const ST f3_xzz_i = t3_contract(gh000[ji],
-                                      gh001[ji],
-                                      gh002[ji],
-                                      gh011[ji],
-                                      gh012[ji],
-                                      gh022[ji],
-                                      gh111[ji],
-                                      gh112[ji],
-                                      gh122[ji],
-                                      gh222[ji],
-                                      g00,
-                                      g01,
-                                      g02,
-                                      g20,
-                                      g21,
-                                      g22,
-                                      g20,
-                                      g21,
-                                      g22);
-      const ST f3_yyy_i = t3_contract(gh000[ji],
-                                      gh001[ji],
-                                      gh002[ji],
-                                      gh011[ji],
-                                      gh012[ji],
-                                      gh022[ji],
-                                      gh111[ji],
-                                      gh112[ji],
-                                      gh122[ji],
-                                      gh222[ji],
-                                      g10,
-                                      g11,
-                                      g12,
-                                      g10,
-                                      g11,
-                                      g12,
-                                      g10,
-                                      g11,
-                                      g12);
-      const ST f3_yyz_i = t3_contract(gh000[ji],
-                                      gh001[ji],
-                                      gh002[ji],
-                                      gh011[ji],
-                                      gh012[ji],
-                                      gh022[ji],
-                                      gh111[ji],
-                                      gh112[ji],
-                                      gh122[ji],
-                                      gh222[ji],
-                                      g10,
-                                      g11,
-                                      g12,
-                                      g10,
-                                      g11,
-                                      g12,
-                                      g20,
-                                      g21,
-                                      g22);
-      const ST f3_yzz_i = t3_contract(gh000[ji],
-                                      gh001[ji],
-                                      gh002[ji],
-                                      gh011[ji],
-                                      gh012[ji],
-                                      gh022[ji],
-                                      gh111[ji],
-                                      gh112[ji],
-                                      gh122[ji],
-                                      gh222[ji],
-                                      g10,
-                                      g11,
-                                      g12,
-                                      g20,
-                                      g21,
-                                      g22,
-                                      g20,
-                                      g21,
-                                      g22);
-      const ST f3_zzz_i = t3_contract(gh000[ji],
-                                      gh001[ji],
-                                      gh002[ji],
-                                      gh011[ji],
-                                      gh012[ji],
-                                      gh022[ji],
-                                      gh111[ji],
-                                      gh112[ji],
-                                      gh122[ji],
-                                      gh222[ji],
-                                      g20,
-                                      g21,
-                                      g22,
-                                      g20,
-                                      g21,
-                                      g22,
-                                      g20,
-                                      g21,
-                                      g22);
+      const ST f3_xxx_i = t3_contract(gh000[ji], gh001[ji], gh002[ji], gh011[ji], gh012[ji], gh022[ji], gh111[ji],
+                                      gh112[ji], gh122[ji], gh222[ji], g00, g01, g02, g00, g01, g02, g00, g01, g02);
+      const ST f3_xxy_i = t3_contract(gh000[ji], gh001[ji], gh002[ji], gh011[ji], gh012[ji], gh022[ji], gh111[ji],
+                                      gh112[ji], gh122[ji], gh222[ji], g00, g01, g02, g00, g01, g02, g10, g11, g12);
+      const ST f3_xxz_i = t3_contract(gh000[ji], gh001[ji], gh002[ji], gh011[ji], gh012[ji], gh022[ji], gh111[ji],
+                                      gh112[ji], gh122[ji], gh222[ji], g00, g01, g02, g00, g01, g02, g20, g21, g22);
+      const ST f3_xyy_i = t3_contract(gh000[ji], gh001[ji], gh002[ji], gh011[ji], gh012[ji], gh022[ji], gh111[ji],
+                                      gh112[ji], gh122[ji], gh222[ji], g00, g01, g02, g10, g11, g12, g10, g11, g12);
+      const ST f3_xyz_i = t3_contract(gh000[ji], gh001[ji], gh002[ji], gh011[ji], gh012[ji], gh022[ji], gh111[ji],
+                                      gh112[ji], gh122[ji], gh222[ji], g00, g01, g02, g10, g11, g12, g20, g21, g22);
+      const ST f3_xzz_i = t3_contract(gh000[ji], gh001[ji], gh002[ji], gh011[ji], gh012[ji], gh022[ji], gh111[ji],
+                                      gh112[ji], gh122[ji], gh222[ji], g00, g01, g02, g20, g21, g22, g20, g21, g22);
+      const ST f3_yyy_i = t3_contract(gh000[ji], gh001[ji], gh002[ji], gh011[ji], gh012[ji], gh022[ji], gh111[ji],
+                                      gh112[ji], gh122[ji], gh222[ji], g10, g11, g12, g10, g11, g12, g10, g11, g12);
+      const ST f3_yyz_i = t3_contract(gh000[ji], gh001[ji], gh002[ji], gh011[ji], gh012[ji], gh022[ji], gh111[ji],
+                                      gh112[ji], gh122[ji], gh222[ji], g10, g11, g12, g10, g11, g12, g20, g21, g22);
+      const ST f3_yzz_i = t3_contract(gh000[ji], gh001[ji], gh002[ji], gh011[ji], gh012[ji], gh022[ji], gh111[ji],
+                                      gh112[ji], gh122[ji], gh222[ji], g10, g11, g12, g20, g21, g22, g20, g21, g22);
+      const ST f3_zzz_i = t3_contract(gh000[ji], gh001[ji], gh002[ji], gh011[ji], gh012[ji], gh022[ji], gh111[ji],
+                                      gh112[ji], gh122[ji], gh222[ji], g20, g21, g22, g20, g21, g22, g20, g21, g22);
 
       //Here is where we build up the components of the physical hessian gradient, namely, d^3/dx^3(e^{-ik*r}\phi(r)
       const ST gh_xxx_r = f3_xxx_r + 3 * kX * f_xx_i - 3 * kX * kX * dX_r - kX * kX * kX * val_i;
@@ -1107,7 +748,7 @@ struct SplineC2CSoA : public SplineAdoptorBase<ST, 3>
       int first, last;
       FairDivideAligned(myV.size(), getAlignment<ST>(), omp_get_num_threads(), omp_get_thread_num(), first, last);
 
-      spline2::evaluate3d_vgh(SplineInst->spline_m, ru, myV, myG, myH, first, last);
+      spline2::evaluate3d_vgh(SplineInst->getSplinePtr(), ru, myV, myG, myH, first, last);
       assign_vgh(r, psi, dpsi, grad_grad_psi, first / 2, last / 2);
     }
   }
@@ -1127,7 +768,7 @@ struct SplineC2CSoA : public SplineAdoptorBase<ST, 3>
       int first, last;
       FairDivideAligned(myV.size(), getAlignment<ST>(), omp_get_num_threads(), omp_get_thread_num(), first, last);
 
-      spline2::evaluate3d_vghgh(SplineInst->spline_m, ru, myV, myG, myH, mygH, first, last);
+      spline2::evaluate3d_vghgh(SplineInst->getSplinePtr(), ru, myV, myG, myH, mygH, first, last);
       assign_vghgh(r, psi, dpsi, grad_grad_psi, grad_grad_grad_psi, first / 2, last / 2);
     }
   }

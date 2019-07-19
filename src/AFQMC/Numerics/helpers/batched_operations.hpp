@@ -16,7 +16,7 @@
 #define AFQMC_NUMERICS_HELPERS_BATCHED_OPERATIONS_HPP
 
 #include<cassert>
-#if defined(QMC_CUDA)
+#if defined(ENABLE_CUDA)
 #include "AFQMC/Memory/CUDA/cuda_gpu_pointer.hpp"
 #include "AFQMC/Numerics/detail/CUDA/Kernels/batched_dot_wabn_wban.cuh"
 #include "AFQMC/Numerics/detail/CUDA/Kernels/batched_Tab_to_Klr.cuh"
@@ -83,13 +83,14 @@ void vbias_from_v1( int nwalk, int nkpts, int nchol_max, int* Qsym, int* kminus,
                     std::complex<T1> const* v1, std::complex<T>* vb)
 {
   for(int Q=0; Q<nkpts; Q++) {
+    if( Qsym[Q] < 0 ) return;
     int Qm = kminus[Q];
     int nc0 = ncholpQ0[Q];
     int nc = ncholpQ[Q];
     int ncm = ncholpQ[Qm];
     int Qm_ = Qm;
     int ntot = nc*nwalk;
-    if( Qsym[Q] >= 0 ) Qm_ = nkpts+Qsym[Q];
+    if( Qsym[Q] > 0 ) Qm_ = nkpts+Qsym[Q]-1;
 
     // v+
     auto vb_(vb + nc0*nwalk);
@@ -113,7 +114,7 @@ void vbias_from_v1( int nwalk, int nkpts, int nchol_max, int* Qsym, int* kminus,
 
 } // namespace ma
 
-#ifdef QMC_CUDA
+#ifdef ENABLE_CUDA
 namespace qmc_cuda{
 
 template<typename T, typename Q>

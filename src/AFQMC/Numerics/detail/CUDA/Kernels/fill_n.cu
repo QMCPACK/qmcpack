@@ -12,30 +12,28 @@
 //    Lawrence Livermore National Laboratory 
 ////////////////////////////////////////////////////////////////////////////////
 
+#define BOOST_NO_AUTO_PTR
 #include<cassert>
 #include <complex>
 #include <type_traits>
-#include <thrust/complex.h>
-#include <thrust/device_ptr.h>
-#include <thrust/fill.h>
-#define QMC_CUDA 1
+#define ENABLE_CUDA 1
 #include "AFQMC/Memory/CUDA/cuda_utilities.h"
-//#include "AFQMC/Numerics/detail/CUDA/Kernels/strided_range.hpp"
 
 namespace kernels 
 {
 
-template<typename T, typename Size>
-__global__ void kernel_fill_n(Size N, T* x, int incx, T const a)
+template<typename T>
+__global__ void kernel_fill_n(int N, T* x, int incx, T const a)
 {
- for(Size ip=Size(threadIdx.x); ip<N; ip+=Size(blockDim.x))
+ if(threadIdx.x >= N) return; 
+ for(int ip=threadIdx.x; ip<N; ip+=blockDim.x)
   {
     x[ip*incx] = a;
   }
 }
 
 template<typename T, typename Size>
-__global__ void kernel_fill2D_n(Size N, Size M, T* y, int lda, T const a)
+__global__ void kernel_fill2D_n(Size N, Size M, T* y, Size lda, T const a)
 {
   for(Size ip=Size(threadIdx.x); ip<N; ip+=Size(blockDim.x))
     for(Size jp=Size(threadIdx.y); jp<M; jp+=Size(blockDim.y))
@@ -47,35 +45,34 @@ __global__ void kernel_fill2D_n(Size N, Size M, T* y, int lda, T const a)
 
 void fill_n(int * first, int N, int incx, int const value)
 { 
-  kernel_fill_n<<<1,256>>>(N,first,1,value);
+  kernel_fill_n<<<1,256>>>(N,first,incx,value);
   qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 void fill_n(float * first, int N, int incx, float const value)
 { 
-  kernel_fill_n<<<1,256>>>(N,first,1,value);
+  kernel_fill_n<<<1,256>>>(N,first,incx,value);
   qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 void fill_n(double * first, int N, int incx, double const value)
 { 
-  kernel_fill_n<<<1,256>>>(N,first,1,value);
+  kernel_fill_n<<<1,256>>>(N,first,incx,value);
   qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 void fill_n(std::complex<float> * first, int N, int incx, std::complex<float> const value)
 { 
-  kernel_fill_n<<<1,256>>>(N,first,1,value);
+  kernel_fill_n<<<1,256>>>(N,first,incx,value);
   qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
-void fill_n(std::complex<double> * first, int N, int stride, std::complex<double> const value)
+void fill_n(std::complex<double> * first, int N, int incx, std::complex<double> const value)
 { 
-  kernel_fill_n<<<1,256>>>(N,first,1,value);
+  kernel_fill_n<<<1,256>>>(N,first,incx,value);
   qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
-
 
 void fill_n(int * first, int N, int const value)
 { 

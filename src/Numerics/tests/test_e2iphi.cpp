@@ -22,20 +22,21 @@ using std::string;
 
 namespace qmcplusplus
 {
-
-template <unsigned int N, typename T>
+template<unsigned int N, typename T>
 void test_e2iphi()
 {
   T phi[N];
   T vcos[N];
   T vsin[N];
-  for (int i = 0; i < N; i++) {
-    phi[i] = 0.2*i;
+  for (int i = 0; i < N; i++)
+  {
+    phi[i] = 0.2 * i;
   }
 
   eval_e2iphi(N, phi, vcos, vsin);
 
-  for (int i = 0; i < N; i++) {
+  for (int i = 0; i < N; i++)
+  {
     REQUIRE(vcos[i] == Approx(std::cos(phi[i])));
     REQUIRE(vsin[i] == Approx(std::sin(phi[i])));
   }
@@ -54,4 +55,4 @@ TEST_CASE("e2iphi", "[numerics]")
   test_e2iphi<4, float>();
 }
 
-}
+} // namespace qmcplusplus

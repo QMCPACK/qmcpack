@@ -26,6 +26,7 @@
 #include "AFQMC/Matrix/ma_hdf5_readers.hpp"
 
 #include "AFQMC/HamiltonianOperations/THCOps.hpp"
+#include "AFQMC/Hamiltonians/rotateHamiltonian.hpp"
 
 namespace qmcplusplus
 {
@@ -37,7 +38,7 @@ template<typename T>
 THCOps<T> loadTHCOps(hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA, int NAEB, std::vector<PsiT_Matrix>& PsiT, TaskGroup_& TGprop, TaskGroup_& TGwfn, RealType cutvn, RealType cutv2)
 {
 
-#if defined(AFQMC_SP)
+#if defined(MIXED_PRECISION)
   using SpT = typename to_single_precision<T>::value_type;
   using SpC = typename to_single_precision<ComplexType>::value_type;
 #else
@@ -120,13 +121,13 @@ THCOps<T> loadTHCOps(hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA, in
 
   // setup partition, in general matrices are partitioned along 'u'
   {
-    int node_number = TGwfn.getLocalNodeNumber();
-    int nnodes_prt_TG = TGwfn.getNNodesPerTG();
+    int node_number = TGwfn.getLocalGroupNumber();
+    int nnodes_prt_TG = TGwfn.getNGroupsPerTG();
     std::tie(rotnmu0,rotnmuN) = FairDivideBoundary(std::size_t(node_number),grotnmu,std::size_t(nnodes_prt_TG));
     rotnmu = rotnmuN-rotnmu0;
 
-    node_number = TGprop.getLocalNodeNumber();
-    nnodes_prt_TG = TGprop.getNNodesPerTG();
+    node_number = TGprop.getLocalGroupNumber();
+    nnodes_prt_TG = TGprop.getNGroupsPerTG();
     std::tie(nmu0,nmuN) = FairDivideBoundary(std::size_t(node_number),gnmu,std::size_t(nnodes_prt_TG));
     nmu = nmuN-nmu0;
   }
@@ -149,9 +150,9 @@ THCOps<T> loadTHCOps(hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA, in
 
   // Until I figure something else, rotPiu and rotcPua are not distributed because a full copy is needed
   size_t nel_ = ((type==CLOSED)?NAEA:(NAEA+NAEB));
-  shm_Cmatrix rotMuv(TGwfn.Node(),{rotnmu,grotnmu},{grotnmu,grotnmu},{rotnmu0,0});
+  shm_Vmatrix rotMuv(TGwfn.Node(),{rotnmu,grotnmu},{grotnmu,grotnmu},{rotnmu0,0});
   shm_Cmatrix rotPiu(TGwfn.Node(),{size_t(NMO),grotnmu});
-  shm_Vmatrix Piu(TGwfn.Node(),{size_t(NMO),nmu},{size_t(NMO),gnmu},{0,nmu0});
+  shm_Cmatrix Piu(TGwfn.Node(),{size_t(NMO),nmu},{size_t(NMO),gnmu},{0,nmu0});
   shm_Vmatrix Luv(TGwfn.Node(),{nmu,gnmu},{gnmu,gnmu},{nmu0,0});
 
   // read Half transformed first
@@ -164,8 +165,8 @@ THCOps<T> loadTHCOps(hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA, in
       APP_ABORT("");
     }
     /***************************************/
-    typename shm_Cmatrix::ma_type muv_(rotMuv.get());
-    hyperslab_proxy<typename shm_Cmatrix::ma_type,2> hslab(muv_,
+    typename shm_Vmatrix::ma_type muv_(rotMuv.get());
+    hyperslab_proxy<typename shm_Vmatrix::ma_type,2> hslab(muv_,
                                                            rotMuv.global_size(),
                                                            rotMuv.shape(),
                                                            rotMuv.global_offset());
@@ -175,8 +176,8 @@ THCOps<T> loadTHCOps(hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA, in
       APP_ABORT("");
     }
     /***************************************/
-    typename shm_Vmatrix::ma_type piu_(Piu.get());
-    hyperslab_proxy<typename shm_Vmatrix::ma_type,2> hslab2(piu_,
+    typename shm_Cmatrix::ma_type piu_(Piu.get());
+    hyperslab_proxy<typename shm_Cmatrix::ma_type,2> hslab2(piu_,
                                                          Piu.global_size(),
                                                          Piu.shape(),
                                                          Piu.global_offset());
@@ -239,7 +240,7 @@ THCOps<T> loadTHCOps(hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA, in
   TGwfn.node_barrier();
 
   // rotated 1 body hamiltonians
-  std::vector<boost::multi::array<SpT,1>> hij;
+  std::vector<boost::multi::array<ComplexType,1>> hij;
   hij.reserve(ndet);
   int skp=((type==COLLINEAR)?1:0);
   for(int n=0, nd=0; n<ndet; ++n, nd+=(skp+1)) {
@@ -260,8 +261,8 @@ inline void writeTHCOps(hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA,
                               TaskGroup_& TGprop, TaskGroup_& TGwfn,
                               boost::multi::array<ComplexType,2> & H1,
                               shm_Cmatrix & rotPiu,
-                              shm_Cmatrix & rotMuv,
-                              shm_Vmatrix & Piu,
+                              shm_Vmatrix & rotMuv,
+                              shm_Cmatrix & Piu,
                               shm_Vmatrix & Luv,
                               boost::multi::array<ComplexType,2> & v0,
                               ValueType E0)

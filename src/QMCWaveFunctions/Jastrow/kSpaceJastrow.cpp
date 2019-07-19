@@ -731,7 +731,7 @@ void kSpaceJastrow::resetParameters(const opt_variables_type& active)
     {
       myVars[ii] = active[loc_r]; //update the optimization parameter
       //lvalue error with LLVM
-      OneBodySymmCoefs[i].cG = ComplexType(myVars[ii], OneBodySymmCoefs[i].cG.imag());
+      OneBodySymmCoefs[i].cG = ComplexType(std::real(myVars[ii]), OneBodySymmCoefs[i].cG.imag());
       //OneBodySymmCoefs[i].cG.real()=myVars[ii];  //update the coefficient from local opt parametr
       ii++;
     }
@@ -741,7 +741,7 @@ void kSpaceJastrow::resetParameters(const opt_variables_type& active)
     {
       myVars[ii] = active[loc_i];
       //lvalue error with LLVM
-      OneBodySymmCoefs[i].cG = ComplexType(OneBodySymmCoefs[i].cG.real(), myVars[ii]);
+      OneBodySymmCoefs[i].cG = ComplexType(OneBodySymmCoefs[i].cG.real(), std::real(myVars[ii]));
       //OneBodySymmCoefs[i].cG.imag()=myVars[ii];
       ii++;
     }
@@ -754,7 +754,7 @@ void kSpaceJastrow::resetParameters(const opt_variables_type& active)
     if (loc >= 0)
     {
       myVars[ii]             = active[loc];
-      TwoBodySymmCoefs[i].cG = myVars[ii];
+      TwoBodySymmCoefs[i].cG = std::real(myVars[ii]);
     }
     ii++;
   }
@@ -842,8 +842,8 @@ void kSpaceJastrow::copyFrom(const kSpaceJastrow& old)
 
 void kSpaceJastrow::evaluateDerivatives(ParticleSet& P,
                                         const opt_variables_type& active,
-                                        std::vector<RealType>& dlogpsi,
-                                        std::vector<RealType>& dhpsioverpsi)
+                                        std::vector<ValueType>& dlogpsi,
+                                        std::vector<ValueType>& dhpsioverpsi)
 {
   bool recalculate(false);
   for (int k = 0; k < myVars.size(); ++k)
@@ -875,18 +875,18 @@ void kSpaceJastrow::evaluateDerivatives(ParticleSet& P,
           if (kk >= 0)
           {
             //real part of coeff
-            dlogpsi[kk] += Prefactor * real(z);
+            dlogpsi[kk] += ValueType(Prefactor * real(z));
             //convert(dot(OneBodyGvecs[i],P.G[iat]),tmp_dot);
             convert(dot(P.G[iat], OneBodyGvecs[i]), tmp_dot);
             dhpsioverpsi[kk] +=
-                0.5 * Prefactor * dot(OneBodyGvecs[i], OneBodyGvecs[i]) * real(z) + Prefactor * real(z * eye) * tmp_dot;
+                ValueType(0.5 * Prefactor * dot(OneBodyGvecs[i], OneBodyGvecs[i]) * real(z) + Prefactor * real(z * eye) * tmp_dot);
             //	+ Prefactor*real(z*eye)*real(dot(OneBodyGvecs[i],P.G[iat]));
             //imaginary part of coeff,
-            dlogpsi[kk + 1] += Prefactor * real(eye * z);
+            dlogpsi[kk + 1] += ValueType( Prefactor * real(eye * z) );
             //mius here due to i*i term
             //dhpsioverpsi[kk+1] += 0.5*Prefactor*dot(OneBodyGvecs[i],OneBodyGvecs[i])*real(eye*z) - Prefactor*real(z)*real(dot(OneBodyGvecs[i],P.G[iat]));
             dhpsioverpsi[kk + 1] +=
-                0.5 * Prefactor * dot(OneBodyGvecs[i], OneBodyGvecs[i]) * real(eye * z) - Prefactor * real(z) * tmp_dot;
+                ValueType( 0.5 * Prefactor * dot(OneBodyGvecs[i], OneBodyGvecs[i]) * real(eye * z) - Prefactor * real(z) * tmp_dot);
           }
         }
       }
@@ -909,7 +909,7 @@ void kSpaceJastrow::evaluateDerivatives(ParticleSet& P,
       int kk = myVars.where(TwoBodyVarMap[i]);
       if (kk >= 0)
       {
-        dlogpsi[kk] += Prefactor * norm(TwoBody_rhoG[i]);
+        dlogpsi[kk] += ValueType( Prefactor * norm(TwoBody_rhoG[i]) );
       }
     }
     for (int iat = 0; iat < N; iat++)
@@ -927,8 +927,8 @@ void kSpaceJastrow::evaluateDerivatives(ParticleSet& P,
         {
           convert(dot(P.G[iat], Gvec), tmp_dot);
           //dhpsioverpsi[kk] -= Prefactor*dot(Gvec,Gvec)*(-real(z*qmcplusplus::conj(TwoBody_rhoG[i])) + 1.0) - Prefactor*2.0*real(dot(P.G[iat],Gvec))*imag(qmcplusplus::conj(TwoBody_rhoG[i])*z);
-          dhpsioverpsi[kk] -= Prefactor * dot(Gvec, Gvec) * (-real(z * qmcplusplus::conj(TwoBody_rhoG[i])) + 1.0) -
-              Prefactor * 2.0 * tmp_dot * imag(qmcplusplus::conj(TwoBody_rhoG[i]) * z);
+          dhpsioverpsi[kk] -= ValueType( Prefactor * dot(Gvec, Gvec) * (-real(z * qmcplusplus::conj(TwoBody_rhoG[i])) + 1.0) -
+              Prefactor * 2.0 * tmp_dot * imag(qmcplusplus::conj(TwoBody_rhoG[i]) * z) );
         }
       }
     }

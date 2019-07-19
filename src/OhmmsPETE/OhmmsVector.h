@@ -19,12 +19,13 @@
 
 #ifndef OHMMS_NEW_VECTOR_H
 #define OHMMS_NEW_VECTOR_H
-#include "PETE/PETE.h"
 #include <algorithm>
 #include <vector>
 #include <iostream>
 #include <type_traits>
 #include <stdexcept>
+#include "PETE/PETE.h"
+#include "simd/allocator_traits.hpp"
 
 namespace qmcplusplus
 {
@@ -33,6 +34,7 @@ class Vector
 {
 public:
   typedef T Type_t;
+  typedef T value_type;
   typedef T* iterator;
   typedef const T* const_iterator;
   typedef typename Alloc::size_type size_type;
@@ -46,7 +48,8 @@ public:
     if (n)
     {
       resize_impl(n);
-      std::fill_n(X, n, val);
+      if (allocator_traits<Alloc>::is_host_accessible)
+        std::fill_n(X, n, val);
     }
   }
 
@@ -56,8 +59,12 @@ public:
   /** copy constructor */
   Vector(const Vector& rhs) : nLocal(rhs.nLocal), nAllocated(0), X(nullptr)
   {
-    resize_impl(rhs.nLocal);
-    std::copy_n(rhs.data(), nLocal, X);
+    if (nLocal)
+    {
+      resize_impl(rhs.nLocal);
+      if (allocator_traits<Alloc>::is_host_accessible)
+        std::copy_n(rhs.data(), nLocal, X);
+    }
   }
 
   // default assignment operator
@@ -67,12 +74,13 @@ public:
       return *this;
     if (nLocal != rhs.nLocal)
       resize(rhs.nLocal);
-    std::copy_n(rhs.data(), nLocal, X);
+    if (allocator_traits<Alloc>::is_host_accessible)
+      std::copy_n(rhs.data(), nLocal, X);
     return *this;
   }
 
   // assignment operator from anther Vector class
-  template<typename T1, typename C1>
+  template<typename T1, typename C1, typename Allocator = Alloc, typename = IsHostSafe<Allocator>>
   inline Vector& operator=(const Vector<T1, C1>& rhs)
   {
     if (std::is_convertible<T1, T>::value)
@@ -85,7 +93,7 @@ public:
   }
 
   // assigment operator to enable PETE
-  template<class RHS>
+  template<class RHS, typename Allocator = Alloc, typename = IsHostSafe<Allocator>>
   inline Vector& operator=(const RHS& rhs)
   {
     assign(*this, rhs);
@@ -117,20 +125,29 @@ public:
   ///resize
   inline void resize(size_t n, Type_t val = Type_t())
   {
+    static_assert(std::is_same<value_type, typename Alloc::value_type>::value, "Vector and Alloc data types must agree!");
     if (nLocal > nAllocated)
       throw std::runtime_error("Resize not allowed on Vector constructed by initialized memory.");
-    if (n > nAllocated)
+    if(allocator_traits<Alloc>::is_host_accessible)
     {
-      resize_impl(n);
-      std::fill_n(X, n, val);
-    }
-    else if (n > nLocal)
-    {
-      std::fill_n(X + nLocal, n - nLocal, val);
-      nLocal = n;
+      if (n > nAllocated)
+      {
+        resize_impl(n);
+        std::fill_n(X, n, val);
+      }
+      else
+      {
+        if (n > nLocal) std::fill_n(X + nLocal, n - nLocal, val);
+        nLocal = n;
+      }
     }
     else
-      nLocal = n;
+    {
+      if (n > nAllocated)
+        resize_impl(n);
+      else
+        nLocal = n;
+    }
     return;
   }
 
@@ -150,9 +167,17 @@ public:
   }
 
   // Get and Set Operations
-  inline Type_t& operator[](size_t i) { return X[i]; }
+  template<typename Allocator = Alloc, typename = IsHostSafe<Allocator>>
+  inline Type_t& operator[](size_t i)
+  {
+    return X[i];
+  }
 
-  inline const Type_t& operator[](size_t i) const { return X[i]; }
+  template<typename Allocator = Alloc, typename = IsHostSafe<Allocator>>
+  inline const Type_t& operator[](size_t i) const
+  {
+    return X[i];
+  }
 
   //inline Type_t& operator()(size_t i)
   //{

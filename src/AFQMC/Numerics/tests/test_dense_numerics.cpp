@@ -41,7 +41,7 @@
 #include "multi/array.hpp"
 #include "multi/array_ref.hpp"
 
-#if defined(QMC_CUDA)
+#if defined(ENABLE_CUDA)
 #include "mpi3/communicator.hpp"
 #include "mpi3/shared_communicator.hpp"
 #include "AFQMC/Memory/custom_pointers.hpp"
@@ -244,7 +244,7 @@ void test_dense_matrix_mult()
 		array_ref<double, 2> A(a.data(), {3,3});
 		REQUIRE(A.num_elements() == a.size());
 		array<double, 2> B = A;
-		ma::invert(B);
+		ma::invert(B,0.0);
 
 		array<double, 2> Id({3,3});
 		ma::set_identity(Id);
@@ -391,7 +391,7 @@ TEST_CASE("dense_ma_operations", "[matrix_operations]")
   test_dense_matrix_mult();
 }
 
-#if defined(QMC_CUDA)
+#if defined(ENABLE_CUDA)
 template<class Allocator>
 void test_dense_matrix_mult_device(Allocator alloc)
 {
@@ -604,7 +604,7 @@ void test_dense_matrix_mult_device(Allocator alloc)
 
     array<T,2,Allocator> I({3,3},alloc);
 
-    ma::invert(B);
+    ma::invert(B,0.0);
 
     ma::product(A, B, I);
 

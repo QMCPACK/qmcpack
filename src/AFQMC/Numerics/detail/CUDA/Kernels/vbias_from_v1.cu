@@ -18,7 +18,7 @@
 #include <thrust/complex.h>
 #include<cuda_runtime.h>
 #include "AFQMC/Numerics/detail/CUDA/Kernels/cuda_settings.h"
-#define QMC_CUDA 1
+#define ENABLE_CUDA 1
 #include "AFQMC/Memory/CUDA/cuda_utilities.h"
 
 namespace kernels
@@ -33,14 +33,17 @@ __global__ void kernel_vbias_from_v1( int nwalk, int nkpts, int nchol_max, int* 
                                       int* ncholpQ, int* ncholpQ0, thrust::complex<T2> const alpha, 
                                       thrust::complex<T> const* v1, thrust::complex<T2> * vb)
 {
+// This is inefficient now, eventually map to assigned Qs and only launch based on this
+// essentially only need a map to the assigned Q's and use blockIdx.x to index into this array
   int Q = blockIdx.x;  
   if(Q >= nkpts || blockIdx.y > 1) return;  
+  if( Qsym[Q] < 0 ) return;  
   int Qm = kminus[Q];
   int nc0 = ncholpQ0[Q];
   int nc = ncholpQ[Q];
   int ncm = ncholpQ[Qm];
   // now redefine Qm based on Qsym
-  if( Qsym[Q] >= 0 ) Qm = nkpts+Qsym[Q];
+  if( Qsym[Q] > 0 ) Qm = nkpts+Qsym[Q]-1;
 
   if(blockIdx.y == 0) {
     // v+

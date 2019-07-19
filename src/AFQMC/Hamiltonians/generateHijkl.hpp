@@ -28,6 +28,7 @@
 
 #include "AFQMC/config.h"
 #include "AFQMC/Utilities/Utils.hpp"
+#include "AFQMC/Utilities/afqmc_TTI.hpp"
 #include "AFQMC/Matrix/array_partition.hpp"
 #include "AFQMC/Hamiltonians/createHamiltonian_Helper.hpp"
 
@@ -51,7 +52,7 @@ namespace HamHelper
                             bool reserve_to_fit_=true, bool global_reserve = true,
                             RealType const cut=1e-6)
   {
-    using std::conj;
+    using ma::conj;
     using std::abs;
     using std::sqrt;
 
@@ -151,7 +152,7 @@ namespace HamHelper
         if(j==k) {
           J3=J1;
         } else if(i==l) {
-          J3 = conj(J1);
+          J3 = ma::conj(J1);
         } else {
           if( sqrt( abs(DiagHam[i][j]*DiagHam[l][k]) ) > cut ) {
             J3 = H.H(i,k,j,l);
@@ -172,7 +173,7 @@ namespace HamHelper
         } else if(k==j) {
           J2a=J2;
         } else if(i==l) {
-          J2a=conj(J2);
+          J2a=ma::conj(J2);
         } else {
           if( sqrt( abs(DiagHam[i][l]*DiagHam[j][k]) ) > cut )
             J2a = H.H(i,k,l,j);
@@ -182,11 +183,11 @@ namespace HamHelper
         if(l==j) {
           J3a=J2;
         } else if(i==k) {
-          J3a=conj(J2);
+          J3a=ma::conj(J2);
         } else if(k==l) {
           J3a=J3;
         } else if(i==j) {
-          J3a=conj(J3);
+          J3a=ma::conj(J3);
         } else {
           if( sqrt( abs(DiagHam[i][j]*DiagHam[k][l]) ) > cut )
             J3a = H.H(i,l,j,k);
@@ -197,7 +198,7 @@ namespace HamHelper
         if(k==l) {
           J1a=J2a;
         } else if(i==j) {
-          J1a=conj(J2a);
+          J1a=ma::conj(J2a);
         } else if(j==k) {
           J1a=J3a;
         } else if(i==l) {
@@ -205,7 +206,7 @@ namespace HamHelper
         } else if(l==j) {
           J1a=J1;
         } else if(i==k) {
-          J1a=conj(J1);
+          J1a=ma::conj(J1);
         } else {
           if( sqrt( abs(DiagHam[i][k]*DiagHam[j][l]) ) > cut )
             J1a = H.H(i,l,k,j);
@@ -315,7 +316,7 @@ namespace HamHelper
         if(j==k) {
           J3=J1;
         } else if(i==l) {
-          J3 = conj(J1);
+          J3 = ma::conj(J1);
         } else {
           if( sqrt( abs(DiagHam[i][j]*DiagHam[l][k]) ) > cut ) {
             J3 = H.H(i,k,j,l);
@@ -336,7 +337,7 @@ namespace HamHelper
         } else if(k==j) {
           J2a=J2;
         } else if(i==l) {
-          J2a=conj(J2);
+          J2a=ma::conj(J2);
         } else {
           if( sqrt( abs(DiagHam[i][l]*DiagHam[j][k]) ) > cut )
             J2a = H.H(i,k,l,j);
@@ -346,11 +347,11 @@ namespace HamHelper
         if(l==j) {
           J3a=J2;
         } else if(i==k) {
-          J3a=conj(J2);
+          J3a=ma::conj(J2);
         } else if(k==l) {
           J3a=J3;
         } else if(i==j) {
-          J3a=conj(J3);
+          J3a=ma::conj(J3);
         } else {
           if( sqrt( abs(DiagHam[i][j]*DiagHam[k][l]) ) > cut )
             J3a = H.H(i,l,j,k);
@@ -361,7 +362,7 @@ namespace HamHelper
         if(k==l) {
           J1a=J2a;
         } else if(i==j) {
-          J1a=conj(J2a);
+          J1a=ma::conj(J2a);
         } else if(j==k) {
           J1a=J3a;
         } else if(i==l) {
@@ -369,7 +370,7 @@ namespace HamHelper
         } else if(l==j) {
           J1a=J1;
         } else if(i==k) {
-          J1a=conj(J1);
+          J1a=ma::conj(J1);
         } else {
           if( sqrt( abs(DiagHam[i][k]*DiagHam[j][l]) ) > cut )
             J1a = H.H(i,l,k,j);

@@ -40,11 +40,14 @@ bool AFQMCDriver::run(WalkerSet& wset)
       prop0.Propagate(nSubstep,wset,Eshift,dt,fix_bias);
       total_time += nSubstep*dt;
 
-      if (step_tot != 0 && step_tot % nStabilize == 0) {
+      if ( (step_tot+1) % nStabilize == 0) {
         AFQMCTimers[ortho_timer]->start();
         wfn0.Orthogonalize(wset,!prop0.free_propagation());
         AFQMCTimers[ortho_timer]->stop();
       }
+
+      if(total_time < weight_reset_period && !prop0.free_propagation()) 
+        wset.resetWeights();
 
       {
         AFQMCTimers[popcont_timer]->start();
@@ -61,14 +64,14 @@ bool AFQMCDriver::run(WalkerSet& wset)
     }
 
     // checkpoint
-    if(nCheckpoint > 0 && iBlock != 0 && iBlock % nCheckpoint == 0)
+    if(nCheckpoint > 0 && (iBlock+1) % nCheckpoint == 0)
       if(!checkpoint(wset,iBlock,step_tot)) {
         app_error()<<" Error in AFQMCDriver::checkpoint(). \n" <<std::endl;
         return false;
       }
 
     // write samples
-    if(samplePeriod > 0 && iBlock != 0 && iBlock % samplePeriod == 0)
+    if(samplePeriod > 0 && (iBlock+1) % samplePeriod == 0)
       if(!writeSamples(wset)) {
         app_error()<<" Error in AFQMCDriver::writeSamples(). \n" <<std::endl;
         return false;
@@ -81,9 +84,8 @@ bool AFQMCDriver::run(WalkerSet& wset)
 
   }
 
-  if(nCheckpoint > 0) {
+  if(nCheckpoint > 0) 
     checkpoint(wset,iBlock,step_tot);
-  }
 
   return true;
 }
@@ -111,6 +113,7 @@ bool AFQMCDriver::parse(xmlNodePtr cur)
   m_param.add(nStabilize,"ortho","int");
   m_param.add(nCheckpoint,"checkpoint","int");
   m_param.add(samplePeriod,"samplePeriod","int");
+  m_param.add(weight_reset_period,"weight_reset","double");
   m_param.add(dt,"dt","double");
   m_param.add(dt,"timestep","double");
   m_param.add(dShift,"dshift","double");

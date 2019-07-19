@@ -10,23 +10,19 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
-
 
 
 #ifndef QMCPLUSPLUS_RADIALGRIDFUNCTOR_GAUSSIANBASISSET_H
 #define QMCPLUSPLUS_RADIALGRIDFUNCTOR_GAUSSIANBASISSET_H
-#include <io/hdf_archive.h>   
+#include <io/hdf_archive.h>
 #include "Numerics/OptimizableFunctorBase.h"
 #include "OhmmsData/AttributeSet.h"
 #include <cmath>
 #include "Message/CommOperators.h"
 namespace qmcplusplus
 {
-
 template<class T>
-struct GaussianCombo: public OptimizableFunctorBase
+struct GaussianCombo : public OptimizableFunctorBase
 {
   // Caution: most other code assumes value_type can only be real
   // but maybe it can be different precision
@@ -44,31 +40,28 @@ struct GaussianCombo: public OptimizableFunctorBase
     real_type CoeffPP;
     real_type CoeffPPP1;
     real_type CoeffPPP2;
-    BasicGaussian(): Sigma(1.0), Coeff(1.0) { }
+    BasicGaussian() : Sigma(1.0), Coeff(1.0) {}
 
-    inline BasicGaussian(real_type sig, real_type c)
-    {
-      reset(sig,c);
-    }
+    inline BasicGaussian(real_type sig, real_type c) { reset(sig, c); }
 
     inline void reset(real_type sig, real_type c)
     {
-      Sigma = sig;
-      MinusSigma=-sig;
-      Coeff = c;
-      CoeffP = -2.0*Sigma*Coeff;
-      CoeffPP = 4.0*Sigma*Sigma*Coeff;
-      CoeffPPP1= 12.0*Sigma*Sigma*Coeff;
-      CoeffPPP2= -8.0*Sigma*Sigma*Sigma*Coeff;
+      Sigma      = sig;
+      MinusSigma = -sig;
+      Coeff      = c;
+      CoeffP     = -2.0 * Sigma * Coeff;
+      CoeffPP    = 4.0 * Sigma * Sigma * Coeff;
+      CoeffPPP1  = 12.0 * Sigma * Sigma * Coeff;
+      CoeffPPP2  = -8.0 * Sigma * Sigma * Sigma * Coeff;
     }
 
     inline void reset()
     {
-      MinusSigma=-Sigma;
-      CoeffP = -2.0*Sigma*Coeff;
-      CoeffPP = 4.0*Sigma*Sigma*Coeff;
-      CoeffPPP1= 12.0*Sigma*Sigma*Coeff;
-      CoeffPPP2= -8.0*Sigma*Sigma*Sigma*Coeff;
+      MinusSigma = -Sigma;
+      CoeffP     = -2.0 * Sigma * Coeff;
+      CoeffPP    = 4.0 * Sigma * Sigma * Coeff;
+      CoeffPPP1  = 12.0 * Sigma * Sigma * Coeff;
+      CoeffPPP2  = -8.0 * Sigma * Sigma * Sigma * Coeff;
     }
 
     void resetParameters(const opt_variables_type& active)
@@ -76,30 +69,24 @@ struct GaussianCombo: public OptimizableFunctorBase
       //DO NOTHING
     }
 
-    inline void setgrid(real_type r) { }
+    inline void setgrid(real_type r) {}
 
-    inline real_type f(real_type rr) const
-    {
-      return Coeff*std::exp(MinusSigma*rr);
-    }
-    inline real_type df(real_type r, real_type rr) const
-    {
-      return CoeffP*r*std::exp(MinusSigma*rr);
-    }
+    inline real_type f(real_type rr) const { return Coeff * std::exp(MinusSigma * rr); }
+    inline real_type df(real_type r, real_type rr) const { return CoeffP * r * std::exp(MinusSigma * rr); }
     inline real_type evaluate(real_type r, real_type rr, real_type& du, real_type& d2u)
     {
-      real_type v=std::exp(MinusSigma*rr);
-      du += CoeffP*r*v;
-      d2u += (CoeffP+CoeffPP*rr)*v;
-      return Coeff*v;
+      real_type v = std::exp(MinusSigma * rr);
+      du  += CoeffP * r * v;
+      d2u += (CoeffP + CoeffPP * rr) * v;
+      return Coeff * v;
     }
     inline real_type evaluate(real_type r, real_type rr, real_type& du, real_type& d2u, real_type& d3u)
     {
-      real_type v=std::exp(MinusSigma*rr);
-      du += CoeffP*r*v;
-      d2u += (CoeffP+CoeffPP*rr)*v;
-      d3u += (CoeffPPP1*r+CoeffPPP2*r*rr)*v;
-      return Coeff*v;
+      real_type v = std::exp(MinusSigma * rr);
+      du  += CoeffP * r * v;
+      d2u += (CoeffP + CoeffPP * rr) * v;
+      d3u += (CoeffPPP1 * r + CoeffPPP2 * r * rr) * v;
+      return Coeff * v;
     }
   };
 
@@ -108,40 +95,34 @@ struct GaussianCombo: public OptimizableFunctorBase
   real_type L;
   real_type NormL;
   real_type NormPow;
-  std::string  nodeName;
-  std::string  expName;
-  std::string  coeffName;
+  std::string nodeName;
+  std::string expName;
+  std::string coeffName;
   std::vector<BasicGaussian> gset;
 
-  explicit
-  GaussianCombo(int l=0, bool normalized=false,
-                const char* node_name="radfunc",
-                const char* exp_name="exponent",
-                const char* c_name="contraction");
+  explicit GaussianCombo(int l                 = 0,
+                         bool normalized       = false,
+                         const char* node_name = "radfunc",
+                         const char* exp_name  = "exponent",
+                         const char* c_name    = "contraction");
 
-  ~GaussianCombo() { }
+  ~GaussianCombo() {}
 
-  OptimizableFunctorBase* makeClone() const
-  {
-    return new GaussianCombo<T>(*this);
-  }
+  OptimizableFunctorBase* makeClone() const { return new GaussianCombo<T>(*this); }
 
   void reset();
 
   /** return the number Gaussians
    */
-  inline int size() const
-  {
-    return gset.size();
-  }
+  inline int size() const { return gset.size(); }
 
   inline real_type f(real_type r)
   {
-    real_type res=0;
-    real_type r2 = r*r;
+    real_type res = 0;
+    real_type r2  = r * r;
     typename std::vector<BasicGaussian>::const_iterator it(gset.begin());
     typename std::vector<BasicGaussian>::const_iterator it_end(gset.end());
-    while(it != it_end)
+    while (it != it_end)
     {
       res += (*it).f(r2);
       ++it;
@@ -150,13 +131,13 @@ struct GaussianCombo: public OptimizableFunctorBase
   }
   inline real_type df(real_type r)
   {
-    real_type res=0;
-    real_type r2 = r*r;
+    real_type res = 0;
+    real_type r2  = r * r;
     typename std::vector<BasicGaussian>::const_iterator it(gset.begin());
     typename std::vector<BasicGaussian>::const_iterator it_end(gset.end());
-    while(it != it_end)
+    while (it != it_end)
     {
-      res += (*it).df(r,r2);
+      res += (*it).df(r, r2);
       ++it;
     }
     return res;
@@ -164,12 +145,12 @@ struct GaussianCombo: public OptimizableFunctorBase
 
   inline real_type evaluate(real_type r, real_type rinv)
   {
-    Y=0.0;
-    real_type rr = r*r;
-    typename std::vector<BasicGaussian>::iterator it(gset.begin()),it_end(gset.end());
-    while(it != it_end)
+    Y            = 0.0;
+    real_type rr = r * r;
+    typename std::vector<BasicGaussian>::iterator it(gset.begin()), it_end(gset.end());
+    while (it != it_end)
     {
-      Y+=(*it).f(rr);
+      Y += (*it).f(rr);
       ++it;
     }
     return Y;
@@ -177,28 +158,28 @@ struct GaussianCombo: public OptimizableFunctorBase
 
   inline void evaluateAll(real_type r, real_type rinv)
   {
-    Y=0.0;
-    dY=0.0;
-    d2Y=0.0;
-    real_type rr = r*r;
-    typename std::vector<BasicGaussian>::iterator it(gset.begin()),it_end(gset.end());
-    while(it != it_end)
+    Y            = 0.0;
+    dY           = 0.0;
+    d2Y          = 0.0;
+    real_type rr = r * r;
+    typename std::vector<BasicGaussian>::iterator it(gset.begin()), it_end(gset.end());
+    while (it != it_end)
     {
-      Y+=(*it).evaluate(r,rr,dY,d2Y);
+      Y += (*it).evaluate(r, rr, dY, d2Y);
       ++it;
     }
   }
 
   inline void evaluateWithThirdDeriv(real_type r, real_type rinv)
   {
-    Y=0.0;
-    dY=0.0;
-    d2Y=0.0,d3Y=0.0;
-    real_type rr = r*r;
-    typename std::vector<BasicGaussian>::iterator it(gset.begin()),it_end(gset.end());
-    while(it != it_end)
+    Y   = 0.0;
+    dY  = 0.0;
+    d2Y = 0.0, d3Y = 0.0;
+    real_type rr = r * r;
+    typename std::vector<BasicGaussian>::iterator it(gset.begin()), it_end(gset.end());
+    while (it != it_end)
     {
-      Y+=(*it).evaluate(r,rr,dY,d2Y,d3Y);
+      Y += (*it).evaluate(r, rr, dY, d2Y, d3Y);
       ++it;
     }
   }
@@ -220,15 +201,15 @@ struct GaussianCombo: public OptimizableFunctorBase
 
   void addGaussian(real_type c, real_type alpha);
 
-  void checkInVariables(opt_variables_type& active) { }
-  void checkOutVariables(const opt_variables_type& active) { }
+  void checkInVariables(opt_variables_type& active) {}
+  void checkOutVariables(const opt_variables_type& active) {}
   void resetParameters(const opt_variables_type& active)
   {
     //DO NOTHING FOR NOW
   }
 
   bool putBasisGroup(xmlNodePtr cur);
-  bool putBasisGroupH5(hdf_archive &hin);
+  bool putBasisGroupH5(hdf_archive& hin);
 
   /**  double factorial of num
    * @param num integer to be factored
@@ -239,32 +220,28 @@ struct GaussianCombo: public OptimizableFunctorBase
    * \else num == even,
    * \f$ num!! = 2\cdot 4\cdot ... \cdot num-2 \cdot num\f$
    */
-  int DFactorial(int num)
-  {
-    return (num<2)? 1: num*DFactorial(num-2);
-  }
+  int DFactorial(int num) { return (num < 2) ? 1 : num * DFactorial(num - 2); }
 };
 
 template<class T>
-GaussianCombo<T>::GaussianCombo(int l, bool normalized,
-                                const char* node_name, const char* exp_name, const char* c_name):
-  Normalized(normalized), nodeName(node_name),
-  expName(exp_name), coeffName(c_name)
+GaussianCombo<T>::GaussianCombo(int l, bool normalized, const char* node_name, const char* exp_name, const char* c_name)
+    : Normalized(normalized), nodeName(node_name), expName(exp_name), coeffName(c_name)
 {
   L = static_cast<real_type>(l);
   //Everything related to L goes to NormL and NormPow
-  const real_type pi = 4.0*std::atan(1.0);
-  NormL = std::pow(2,L+1)*std::sqrt(2.0/static_cast<real_type>(DFactorial(2*l+1)))*std::pow(2.0/pi,0.25);
-  NormPow = 0.5*(L+1.0)+0.25;
+  const real_type pi = 4.0 * std::atan(1.0);
+  NormL =
+      std::pow(2, L + 1) * std::sqrt(2.0 / static_cast<real_type>(DFactorial(2 * l + 1))) * std::pow(2.0 / pi, 0.25);
+  NormPow = 0.5 * (L + 1.0) + 0.25;
 }
 
 template<class T>
 bool GaussianCombo<T>::put(xmlNodePtr cur)
 {
-  real_type alpha(1.0),c(1.0);
+  real_type alpha(1.0), c(1.0);
   OhmmsAttributeSet radAttrib;
-  radAttrib.add(alpha,expName);
-  radAttrib.add(c,coeffName);
+  radAttrib.add(alpha, expName);
+  radAttrib.add(c, coeffName);
   radAttrib.put(cur);
   addGaussian(c, alpha);
   return true;
@@ -273,18 +250,19 @@ bool GaussianCombo<T>::put(xmlNodePtr cur)
 template<class T>
 void GaussianCombo<T>::addGaussian(real_type c, real_type alpha)
 {
-  if(!Normalized) {
-    c *= NormL*std::pow(alpha,NormPow);
+  if (!Normalized)
+  {
+    c *= NormL * std::pow(alpha, NormPow);
   }
   //  LOGMSG("    Gaussian exponent = " << alpha
   //         << "\n              contraction=" << c0 <<  " normalized contraction = " << c)
-  gset.push_back(BasicGaussian(alpha,c));
+  gset.push_back(BasicGaussian(alpha, c));
 }
 
 template<class T>
 void GaussianCombo<T>::reset()
 {
-  for(int i=0; i<gset.size(); i++)
+  for (int i = 0; i < gset.size(); i++)
     gset[i].reset();
 }
 
@@ -292,59 +270,61 @@ template<class T>
 bool GaussianCombo<T>::putBasisGroup(xmlNodePtr cur)
 {
   cur = cur->children;
-  while(cur != NULL)
+  while (cur != NULL)
   {
     std::string cname((const char*)cur->name);
-    if(cname == "radfunc")
+    if (cname == "radfunc")
     {
       put(cur);
     }
-    cur=cur->next;
+    cur = cur->next;
   }
   reset();
   return true;
 }
 
 template<class T>
-bool GaussianCombo<T>::putBasisGroupH5(hdf_archive &hin)
+bool GaussianCombo<T>::putBasisGroupH5(hdf_archive& hin)
 {
-  int NbRadFunc(0); 
-  if(hin.myComm->rank()==0){  
-    hin.read(NbRadFunc,"NbRadFunc");
+  int NbRadFunc(0);
+  if (hin.myComm->rank() == 0)
+  {
+    hin.read(NbRadFunc, "NbRadFunc");
     hin.push("radfunctions");
   }
-  hin.myComm->bcast(NbRadFunc);  
+  hin.myComm->bcast(NbRadFunc);
 
-  for (int i=0; i<NbRadFunc;i++)
+  for (int i = 0; i < NbRadFunc; i++)
   {
-    real_type alpha(1.0),c(1.0);
+    real_type alpha(1.0), c(1.0);
     std::stringstream tempdata;
-    std::string dataradID0="DataRad",dataradID;
-    tempdata<<dataradID0<<i;
-    dataradID=tempdata.str();
+    std::string dataradID0 = "DataRad", dataradID;
+    tempdata << dataradID0 << i;
+    dataradID = tempdata.str();
 
-    if(hin.myComm->rank()==0){  
-       hin.push(dataradID.c_str());
-       hin.read(alpha, "exponent");
-       hin.read(c, "contraction");
+    if (hin.myComm->rank() == 0)
+    {
+      hin.push(dataradID.c_str());
+      hin.read(alpha, "exponent");
+      hin.read(c, "contraction");
     }
-    
-    hin.myComm->bcast(alpha);  
-    hin.myComm->bcast(c);  
 
-    if(!Normalized)
-      c *= NormL*std::pow(alpha,NormPow);
+    hin.myComm->bcast(alpha);
+    hin.myComm->bcast(c);
+
+    if (!Normalized)
+      c *= NormL * std::pow(alpha, NormPow);
     //    LOGMSG("    Gaussian exponent = " << alpha
     //     << "\n              contraction=" << c0 <<  " nomralized contraction = " << c)
-    gset.push_back(BasicGaussian(alpha,c));
-    if(hin.myComm->rank()==0)  
-       hin.pop();
-    }
+    gset.push_back(BasicGaussian(alpha, c));
+    if (hin.myComm->rank() == 0)
+      hin.pop();
+  }
   reset();
-  if(hin.myComm->rank()==0)  
-     hin.pop();
+  if (hin.myComm->rank() == 0)
+    hin.pop();
 
   return true;
 }
-} // qmcplusplus
+} // namespace qmcplusplus
 #endif

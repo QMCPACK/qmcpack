@@ -82,7 +82,7 @@ class Settings(NexusCore):
 
     machine_vars = set('''
         machine         account         machine_info    interactive_cores
-        machine_mode
+        machine_mode    user
         '''.split())
 
     core_assign_vars = set('''
@@ -243,7 +243,7 @@ class Settings(NexusCore):
     def process_command_line_settings(self,script_settings):
         from optparse import OptionParser
         usage = '''usage: %prog [options]'''
-        parser = OptionParser(usage=usage,add_help_option=True,version='%prog 1.6.0')
+        parser = OptionParser(usage=usage,add_help_option=True,version='%prog 1.7.0')
 
         parser.add_option('--status_only',dest='status_only',
                           action='store_true',default=False,
@@ -385,9 +385,16 @@ class Settings(NexusCore):
             if 'account' in mset:
                 account = mset.account
                 if not isinstance(account,str):
-                    self.error('account for {0} must be a string\n  you provided: {1}'.format(machine_name,account))
+                    self.error('account for {0} must be a string\nyou provided: {1}'.format(machine_name,account))
                 #end if
                 ProjectManager.machine.account = account
+            #end if
+            if 'user' in mset:
+                user = mset.user
+                if not isinstance(user,str):
+                    self.error('user for {0} must be a string\nyou provided: {1}'.format(machine_name,user))
+                #end if
+                ProjectManager.machine.user = user
             #end if
             if 'machine_mode' in mset:
                 machine_mode = mset.machine_mode

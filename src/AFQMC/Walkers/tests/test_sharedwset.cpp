@@ -88,7 +88,7 @@ void test_basic_walker_features(bool serial)
   auto world = boost::mpi3::environment::get_world_instance();
   auto node = world.split_shared(world.rank());
 
-#ifdef QMC_CUDA
+#ifdef ENABLE_CUDA
   qmc_cuda::CUDA_INIT(node);
 #endif
 
@@ -186,7 +186,7 @@ const char *xml_block =
   REQUIRE(wset.get_global_target_population() == nwalkers*TG.getNumberOfTGs());
   REQUIRE(wset.GlobalPopulation() == nwalkers*TG.getNumberOfTGs());
   REQUIRE(wset.GlobalPopulation() == wset.get_global_target_population());
-  REQUIRE(wset.getNBackProp() == 0);
+  REQUIRE(wset.NumBackProp() == 0);
   REQUIRE(wset.GlobalWeight() == tot_weight*TG.getNumberOfTGs());
 
   wset.scaleWeight(2.0);
@@ -201,9 +201,10 @@ const char *xml_block =
   REQUIRE(wset.GlobalPopulation() == nwalkers*TG.getNumberOfTGs());
   REQUIRE(wset.GlobalPopulation() == wset.get_global_target_population());
   REQUIRE(wset.GlobalWeight() == Approx(static_cast<RealType>(wset.get_global_target_population())));
+  double nx = (wset.getWalkerType()==NONCOLLINEAR?1.0:2.0);  
   for(int i=0; i<wset.size(); i++) {
     auto w = wset[i];
-    REQUIRE( *w.overlap() == *w.E1());
+    myREQUIRE( std::exp(nx*wset.getLogOverlapFactor())*ComplexType(*w.overlap()), ComplexType(*w.E1()));
     REQUIRE( *w.EXX() == *w.E1());
     REQUIRE( *w.EJ() == *w.E1());
   }
@@ -220,7 +221,7 @@ void test_hyperslab()
   auto world = boost::mpi3::environment::get_world_instance();
   auto node = world.split_shared(world.rank());
 
-#ifdef QMC_CUDA
+#ifdef ENABLE_CUDA
   qmc_cuda::CUDA_INIT(node);
 #endif
 
@@ -368,7 +369,7 @@ void test_walker_io()
 
   using Type = std::complex<double>;
 
-#ifdef QMC_CUDA
+#ifdef ENABLE_CUDA
   qmc_cuda::CUDA_INIT(node);
 #endif
 

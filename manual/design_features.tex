@@ -71,7 +71,7 @@ eliminates the need to sum over images in real space.
 
 \subsection{Reciprocal-Space Sums}
 \subsubsection{Heterologous terms}
-We begin with (\ref{eq:direct}), starting with the heterologous terms,
+We begin with Eq.~\ref{eq:direct}, starting with the heterologous terms,
 i.e. the terms involving particles of different species.  The
 short-range terms are trivial, so we neglect them here.
 \begin{equation}
@@ -212,7 +212,7 @@ v_l^{\alpha \beta}(r)
 \end{equation}
 We recognize that this integral will not converge because of the
 large-$r$ behavior.  However, we recognize that when we do the sum in
-(\ref{eq:kzero}), the large-$r$ parts of the integrals will cancel
+Eq.~\ref{eq:kzero}, the large-$r$ parts of the integrals will cancel
 precisely.  Therefore, we define
 \begin{equation}
 \tilde{v}^{\alpha \beta}_{k=0} = \frac{4 \pi}{\Omega} 
@@ -263,7 +263,7 @@ V & = & \sum_{\alpha > \beta} \left[\sum_{i,j} v_s(|\vr_i^\alpha
 \end{eqnarray}
 
 \subsection {Computing the Reciprocal Potential}
-Now we return to (\ref{eq:vk}).  Without loss of generality, we define
+Now we return to Eq.~\ref{eq:vk}.  Without loss of generality, we define
 for convenience $\vk = k\hat{\mathbf{z}}$.
 \begin{equation}
 v^{\alpha \beta}_k = \frac{2\pi}{\Omega} \int_0^\infty dr \int_{-1}^1
@@ -293,7 +293,7 @@ v_k^\text{coul} = \frac{4 \pi q_1 q_2}{\Omega k^2}
 \end{equation}
 
 For more generalized potentials with a coulomb tail, we cannot
-evaluate (\ref{eq:vkint}) numerically but must handle the coulomb part
+evaluate Eq.~\ref{eq:vkint} numerically but must handle the coulomb part
 analytically.  In this case, we have
 \begin{equation}
 v_k^{\alpha \beta} = \frac{4\pi}{\Omega} 
@@ -759,7 +759,7 @@ x_k^{1/r^4} = -\frac{4 \pi}{\Omega k}
 %\begin{equation}
 %\mathcal{H} = \sum_i -\lambda_i \nabla_i^2 + V,
 %\end{equation}
-%where $V$ is the periodic potential given by (\ref{eq:Vperiodic}), and $\lambda \equiv \frac{\hbar^2}{2m_i}$. 
+%where $V$ is the periodic potential given by \ref{eq:Vperiodic}, and $\lambda \equiv \frac{\hbar^2}{2m_i}$. 
 %
 %We approximately solved the action of this Hamiltonian by considering
 %the particles pairwise, and solving for the density matrix for the
@@ -1260,7 +1260,7 @@ at $r_{i-1}$ as well). These constraints have a simple interpretation: the basis
 and their first $m$ derivatives are $0$ on the boundary of the subinterval where they
 are defined; the only function to have a non zero $\beta$-th derivative in $r_i$ is $c_{i\beta}$.
 These $2(m+1)$ constraints therefore impose $\mathcal{N}=2m+1$. 
-Inserting the definitions of Eq.(\ref{basisdef}) in the constraints of Eq.(\ref{constr})
+Inserting the definitions of Eq.~\ref{basisdef} in the constraints of Eq.~\ref{constr}
 leads to the set of $2(m+1)$ linear equation that fixes the value of $S_{\alpha n}$: 
 \begin{eqnarray}
 \Delta^{\alpha-\beta} S_{\alpha\beta} \beta!=\delta_{\alpha\beta}
@@ -1505,13 +1505,13 @@ b_j=&\sum_{k>k_c} \left(\tV(k)-\sum_{m=1}^g \gamma_m \tc_m(k)\right)\tc_j(k)\qua
 %
 %\subsubsection*{splint2D}
 %Called by {\em fitpnnew}. This routine compute $D^\pm_{in}(k)$ in the 2D case.
-%The \verb!i\o! format is identical to {\em splint3D}. Equations from \ref{0thmoment}
-%to \ref{nthmoment} are used to generate the required integrals.
+%The \verb!i\o! format is identical to {\em splint3D}. Equations from~\ref{0thmoment}
+%to~\ref{nthmoment} are used to generate the required integrals.
 %
 %
 %\subsubsection*{basis}
 %Called by {\em fitpnnew}. It computes the coefficients $S_{\alpha n}$ (the $n$-th 
-%coefficient of the $\alpha$-th polynomials) using Eqs.\ref{Smatrix1} and \ref{Smatrix2}.
+%coefficient of the $\alpha$-th polynomials) using Eqs.\ref{Smatrix1} and~\ref{Smatrix2}.
 %These coefficients are stored in \verb!s(0:m,0:2m+1)!. $m$ (called \verb!m!) 
 %is required in input.
 %
@@ -1580,8 +1580,8 @@ function,
 \begin{equation}
 P(x) = y_i p_1(t) + y_{i+1}p_2(t) + h\left[y'_i q_1(t) + y'_{i+1} q_2(t)\right]
 \end{equation}
-It can be easily verified that $P(x)$ satisfies conditions (\ref{eq:c1})
-through (\ref{eq:c4}).  It is now left to
+It can be easily verified that $P(x)$ satisfies the conditions Eq.~\ref{eq:c1}
+through Eq.~\ref{eq:c4}.  It is now left to
 determine the proper values for the $y'_i\,$s such that the continuity
 conditions given above are satisfied.
 
@@ -2102,7 +2102,7 @@ e^{i(\vG+\vk)\cdot\vI} \sum_{\ell,m}
   \left[Y_\ell^m(\hat{\vG+\vk})\right]^*
 Y_\ell^m(\hat{\vr - \vI})
 \end{equation}
-Comparing to (\ref{eq:ulm}),
+Comparing to Eq.~\ref{eq:ulm},
 \begin{equation}
 u_{\ell m}^n(r) = 4\pi i^\ell \sum_G c_{\vG+\vk}^n e^{i(\vG+\vk)\cdot\vI}  j_\ell\left(|\vG + \vk|r|\right)
 \left[Y_\ell^m(\hat{\vG + \vk})\right]^*.

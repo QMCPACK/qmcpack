@@ -1,0 +1,16 @@
+1. scf.py is run to compute RHF solution for Neon atom in cc-pvdz
+which dumps one- and two-electron integrals in MO basis to plain text
+FCIDUMP (not included in repo). Will also dump RHF trial wavefunction
+to wfn_rhf.dat.
+2. Use conversion script `fcidump_to_qmcpack.py` to generate
+Cholesky decomposed integrals in qmcpack format: ham_chol.h5.
+
+.. bash::
+    fcidump_to_qmcpack.py -i FCIDUMP -o ham_chol.h5 -v > choldump.out
+
+Reference values (RHF):
+E1: -182.616099922
+EJ: 66.2528743434
+EXX: 54.1273649439
+Xsum: 1.98819122838
+Vsum: 1.355651285

@@ -9,9 +9,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
-
 
 
 /**@file InitMolecularSystem.h
@@ -25,7 +22,6 @@
 
 namespace qmcplusplus
 {
-
 class ParticleSet;
 class ParticleSetPool;
 
@@ -33,9 +29,7 @@ class ParticleSetPool;
  */
 class InitMolecularSystem : public OhmmsElementBase
 {
-
 public:
-
   InitMolecularSystem(ParticleSetPool* pset, const char* aname = "mosystem");
 
   bool get(std::ostream& os) const;
@@ -58,7 +52,6 @@ public:
   void initWithVolume(ParticleSet* ions, ParticleSet* els);
 
 private:
-
   /** pointer to ParticleSetPool
    *
    * QMCHamiltonian needs to know which ParticleSet object
@@ -67,7 +60,6 @@ private:
    * a QMCHamiltonian.
    */
   ParticleSetPool* ptclPool;
-
 };
-}
+} // namespace qmcplusplus
 #endif

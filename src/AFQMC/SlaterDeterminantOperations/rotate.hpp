@@ -63,9 +63,10 @@ namespace sparse_rotate
  *  If conjV=true, Spvn(ik,n) -> conj(Spvn(ki,n)) in the expressions above
  */ 
 template< class Container,
-          class task_group
+          class task_group,
+          class PsiT_Type
         >
-void halfRotateCholeskyMatrix(WALKER_TYPES type, task_group& TG, int k0, int kN, Container& Q, PsiT_Matrix *Alpha, PsiT_Matrix *Beta, SpVType_shm_csr_matrix const& CholMat, bool transpose, bool conjV = false, double cutoff=1e-6, bool reserve_to_fit_=true)
+void halfRotateCholeskyMatrix(WALKER_TYPES type, task_group& TG, int k0, int kN, Container& Q, PsiT_Type *Alpha, PsiT_Type *Beta, SpVType_shm_csr_matrix const& CholMat, bool transpose, bool conjV = false, double cutoff=1e-6, bool reserve_to_fit_=true)
 {
   int NAEA = Alpha->size(0); 
   int NAEB = Alpha->size(0); 
@@ -129,12 +130,13 @@ void halfRotateCholeskyMatrix(WALKER_TYPES type, task_group& TG, int k0, int kN,
           else
             csr::axpy('N',Aai,CholMat[i*NMO+k],vec);  
         }  
-        if(transpose)  
+        if(transpose) { 
           for(int n=0; n<nvec; n++)
             if(std::abs(vec[n])>cutoff) ++sz_per_row[n]; 
-        else  
+        } else { 
           for(int n=0; n<nvec; n++)
             if(std::abs(vec[n])>cutoff) ++sz_per_row[cnt];
+        }
       }
     }  
     // reset "amount of work done" to full alpha piece
@@ -155,12 +157,13 @@ void halfRotateCholeskyMatrix(WALKER_TYPES type, task_group& TG, int k0, int kN,
             else
               csr::axpy('N',Aai,CholMat[i*NMO+k],vec);
           }
-          if(transpose)
+          if(transpose) {
             for(int n=0; n<nvec; n++)
               if(std::abs(vec[n])>cutoff) ++sz_per_row[n]; 
-          else
+          } else {
             for(int n=0; n<nvec; n++)
               if(std::abs(vec[n])>cutoff) ++sz_per_row[cnt]; 
+          }
         }
       }
     }
@@ -184,12 +187,13 @@ void halfRotateCholeskyMatrix(WALKER_TYPES type, task_group& TG, int k0, int kN,
         else
           csr::axpy('N',Aai,CholMat[i*NMO+k],vec);
       }   
-      if(transpose)  
+      if(transpose) {  
         for(int n=0; n<nvec; n++)
           if(std::abs(vec[n])>cutoff) emplace(Q,std::forward_as_tuple(n,cnt,vec[n])); 
-      else  
+      } else {  
         for(int n=0; n<nvec; n++)
           if(std::abs(vec[n])>cutoff) emplace(Q,std::forward_as_tuple(cnt,n,vec[n])); 
+      }  
     }
   }  
   // reset "amount of work done" to full alpha piece
@@ -210,12 +214,13 @@ void halfRotateCholeskyMatrix(WALKER_TYPES type, task_group& TG, int k0, int kN,
           else
             csr::axpy('N',Aai,CholMat[i*NMO+k],vec);
         }
-        if(transpose)
+        if(transpose) {
           for(int n=0; n<nvec; n++)
             if(std::abs(vec[n])>cutoff) emplace(Q,std::forward_as_tuple(n,cnt,vec[n]));
-        else
+        } else {
           for(int n=0; n<nvec; n++)
             if(std::abs(vec[n])>cutoff) emplace(Q,std::forward_as_tuple(cnt,n,vec[n]));
+        }
       }
     }
   }
@@ -230,8 +235,11 @@ void halfRotateCholeskyMatrix(WALKER_TYPES type, task_group& TG, int k0, int kN,
  *  Since we only rotate the "local" cholesky matrix, the algorithm is only parallelized
  *  over a node. In principle, it is possible to spread this over equivalent nodes.
  */ 
-template<class task_group>
-SpCType_shm_csr_matrix halfRotateCholeskyMatrixForBias(WALKER_TYPES type, task_group& TG, PsiT_Matrix *Alpha, PsiT_Matrix *Beta, SpVType_shm_csr_matrix const& CholMat, double cutoff=1e-6)
+template<typename T, class task_group, class PsiT_Type, 
+         typename = typename std::enable_if_t<std::is_same<T,std::complex<double>>::value or
+                                              std::is_same<T,std::complex<float>>::value>
+         >
+SpCType_shm_csr_matrix halfRotateCholeskyMatrixForBias(WALKER_TYPES type, task_group& TG, PsiT_Type *Alpha, PsiT_Type *Beta, SpVType_shm_csr_matrix const& CholMat, double cutoff=1e-6)
 {
   int NAEA = Alpha->size(0); 
   int NAEB = Alpha->size(0); 
@@ -344,15 +352,31 @@ SpCType_shm_csr_matrix halfRotateCholeskyMatrixForBias(WALKER_TYPES type, task_g
   return SpCType_shm_csr_matrix(std::move(ucsr)); 
 }
 
+// This is needed to allow generic implementation of SparseTensorIO while catching errors at compile time.
+template<typename T, class task_group, class PsiT_Type, 
+         typename = typename std::enable_if_t<not( std::is_same<T,std::complex<double>>::value or
+                                              std::is_same<T,std::complex<float>>::value)>,
+         typename = void   
+         >
+SpVType_shm_csr_matrix halfRotateCholeskyMatrixForBias(WALKER_TYPES type, task_group& TG, PsiT_Type *Alpha, PsiT_Type *Beta, SpVType_shm_csr_matrix const& CholMat, double cutoff=1e-6)
+{
+  print_stacktrace
+  throw std::runtime_error("Error: Incorrect template parameter in halfRotateCholeskyMatrixForBias. \n"); 
+  using Alloc = shared_allocator<SPRealType>;
+  SpVType_shm_csr_matrix csr(tp_ul_ul{1,1},tp_ul_ul{0,0},1,Alloc(TG.Node()));
+  return csr;
+}
+
 }
 
 namespace ma_rotate
 {
 
 template< class MultiArray2D, 
-          class task_group
+          class task_group,
+          class PsiT_Type
         >
-void halfRotateCholeskyMatrix(WALKER_TYPES type, task_group& TG, int k0, int kN, MultiArray2D&& Q, PsiT_Matrix *Alpha, PsiT_Matrix *Beta, SpVType_shm_csr_matrix const& CholMat, bool transpose, bool conjV = false, double cutoff=1e-6)
+void halfRotateCholeskyMatrix(WALKER_TYPES type, task_group& TG, int k0, int kN, MultiArray2D&& Q, PsiT_Type *Alpha, PsiT_Type *Beta, SpVType_shm_csr_matrix const& CholMat, bool transpose, bool conjV = false, double cutoff=1e-6)
 {
   int NAEA = Alpha->size(0); 
   int NAEB = 0; 
@@ -508,7 +532,7 @@ void getLank_from_Lkin(MultiArray2DA&& Aai, MultiArray3DB&& Lkin,
   int ni = Aai.size(1);
   int nk = Lkin.size(0);
   int nchol = Lkin.size(2);
-  assert(Lkin.size(0)==ni);
+  assert(Lkin.size(1)==ni);
   assert(Lank.size(0)==na);
   assert(Lank.size(1)==nchol);
   assert(Lank.size(2)==nk);

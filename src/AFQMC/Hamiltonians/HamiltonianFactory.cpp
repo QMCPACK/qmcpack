@@ -32,7 +32,7 @@
 #include "AFQMC/Hamiltonians/THCHamiltonian.h"
 #include "AFQMC/Hamiltonians/FactorizedSparseHamiltonian.h"
 #include "AFQMC/Hamiltonians/KPFactorizedHamiltonian.h"
-#include "AFQMC/Hamiltonians/KPTHCHamiltonian.h"
+//#include "AFQMC/Hamiltonians/KPTHCHamiltonian.h"
 
 #include "AFQMC/Utilities/readHeader.h"
 #include "AFQMC/Utilities/Utils.hpp"
@@ -73,44 +73,17 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
     xmlNodePtr curRoot=cur;
 
     // defaults
-    double cutoff1body = 1e-8;
     double cutoff1bar = 1e-8;
-    double cutoff_cholesky = 1e-6;
-    std::string hdf_write_type="";
-    std::string filetype = "undefined";
     std::string fileName = "";
-    std::string ascii_write_file = "";
-    std::string hdf_write_file = "";
     int number_of_TGs = 1;
     int n_reading_cores = -1;
-    bool orderStates=false;
 
-    std::string order("no");
-    std::string str("no");
     ParameterSet m_param;
-    m_param.add(order,"orderStates","std::string");
-    m_param.add(cutoff1body,"cutoff_1body","double");
     m_param.add(cutoff1bar,"cutoff_1bar","double");
-    m_param.add(cutoff_cholesky,"cutoff_decomp","double");
-    m_param.add(cutoff_cholesky,"cutoff_decomposition","double");
-    m_param.add(cutoff_cholesky,"cutoff_factorization","double");
-    m_param.add(cutoff_cholesky,"cutoff_cholesky","double");
-    m_param.add(filetype,"filetype","std::string");
     m_param.add(fileName,"filename","std::string");
-    m_param.add(hdf_write_file,"hdf_write_file","std::string");
-    m_param.add(hdf_write_type,"hdf_write_type","std::string");
-    m_param.add(ascii_write_file,"ascii_write_file","std::string");
     m_param.add(number_of_TGs,"nblocks","int");
     m_param.add(n_reading_cores,"num_io_cores","int");
     m_param.put(cur);
-
-    orderStates=false;
-    std::transform(order.begin(),order.end(),order.begin(),(int (*)(int))tolower);
-    std::transform(filetype.begin(),filetype.end(),filetype.begin(),(int (*)(int))tolower);
-    std::transform(hdf_write_type.begin(),hdf_write_type.end(),hdf_write_type.begin(),(int (*)(int))tolower);
-    std::transform(str.begin(),str.end(),str.begin(),(int (*)(int))tolower);
-
-    orderStates = (order == "yes" || order == "true");
 
     // make or get TG
     number_of_TGs = std::max(1, std::min(number_of_TGs,gTG.getTotalNodes()));
@@ -146,7 +119,7 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
       htype = HamiltonianTypes(htype_);
     }
 
-    int int_blocks,nvecs,nkpts=-1;
+    int int_blocks,nvecs;
     std::vector<int> Idata(8);
     if(head)
       if(!dump.readEntry(Idata,"dims")) {
@@ -169,7 +142,10 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
 //      APP_ABORT(" ");
     }
     nvecs = Idata[7];
+#ifdef QMC_COMPLEX
+    int nkpts=-1;
     if(htype == KPFactorized || htype == KPTHC) nkpts=Idata[2];
+#endif
 
     // 1 body hamiltonian: Why isn't this in shared memory!!!
     boost::multi::array<ValueType,2> H1({NMO,NMO});
@@ -194,12 +170,15 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
 
     if(head) {
 
-      using std::conj;
+      using ma::conj;
       using std::imag;
       bool foundH1=false;
+#ifdef QMC_COMPLEX
       if(nkpts > 0) {
         // nothing to do, H1 is read during construction of HamiltonianOperations object.
-      } else if(dump.readEntry(H1,"hcore")) {
+      } else 
+#endif
+      if(dump.readEntry(H1,"hcore")) {
         foundH1 = true;
       } else {
 
@@ -224,9 +203,9 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
           // keep i<=j by default
           if(ivec[i] <= ivec[i]) {
               H1[ivec[2*i]][ivec[2*i+1]] = vvec[i]; 
-              H1[ivec[2*i+1]][ivec[2*i]] = conj(vvec[i]); 
+              H1[ivec[2*i+1]][ivec[2*i]] = ma::conj(vvec[i]); 
           } else {
-              H1[ivec[2*i]][ivec[2*i+1]] = conj(vvec[i]); 
+              H1[ivec[2*i]][ivec[2*i+1]] = ma::conj(vvec[i]); 
               H1[ivec[2*i+1]][ivec[2*i]] = vvec[i]; 
           }
         }
@@ -235,8 +214,10 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
     TG.Global().broadcast_n(to_address(H1.origin()),H1.num_elements(),0);
 
     // now read the integrals
+#ifdef QMC_COMPLEX
     if(htype == KPTHC) {
 
+      APP_ABORT(" Error: KPTHC hamiltonian not yet working. \n");  
       if(coreid < nread && !dump.push("KPTHC",false)) {
         app_error()<<" Error in HamiltonianFactory::fromHDF5(): Group not KPTHC found. \n";
         APP_ABORT("");
@@ -247,8 +228,9 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
         dump.close();
       }
       TG.global_barrier();
-      return Hamiltonian(KPTHCHamiltonian(AFinfo,cur,std::move(H1),TG,
-                                        NuclearCoulombEnergy,FrozenCoreEnergy));
+      return Hamiltonian{};  
+//      return Hamiltonian(KPTHCHamiltonian(AFinfo,cur,std::move(H1),TG,
+//                                        NuclearCoulombEnergy,FrozenCoreEnergy));
 
     } else if(htype == KPFactorized) {
 
@@ -267,7 +249,9 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
       return Hamiltonian(KPFactorizedHamiltonian(AFinfo,cur,std::move(H1),TG,
                                         NuclearCoulombEnergy,FrozenCoreEnergy));
 
-    } else if(htype == THC) {
+    } else 
+#endif
+    if(htype == THC) {
 
       if(coreid < nread && !dump.push("THC",false)) {
         app_error()<<" Error in HamiltonianFactory::fromHDF5(): Group not THC found. \n";
@@ -307,10 +291,12 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
       TG.global_barrier();
 
       return Hamiltonian(FactorizedSparseHamiltonian(AFinfo,cur,std::move(H1),std::move(V2_fact),TG,NuclearCoulombEnergy,FrozenCoreEnergy));
-    } else {
-      app_error()<<" Error in HamiltonianFactory::fromHDF5(): Unknown Hamiltonian Type. \n";
-      APP_ABORT("");
-    }
+    } 
+
+    app_error()<<" Error in HamiltonianFactory::fromHDF5(): Unknown Hamiltonian Type. \n";
+    APP_ABORT("");
+    return Hamiltonian{};
+   
 
 }
 }  // afqmc

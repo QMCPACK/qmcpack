@@ -12,8 +12,8 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 /**@file WaveFunctionComponentBuilder.h
  *@brief declaration of the base class for many-body wavefunction.
  */
@@ -28,20 +28,17 @@
  */
 namespace qmcplusplus
 {
-
 /**@ingroup WFSBuilder
  * @brief An abstract class for wave function builders
  */
-class WaveFunctionComponentBuilder: public MPIObjectBase
+class WaveFunctionComponentBuilder : public MPIObjectBase
 {
-
 public:
-
-  typedef TrialWaveFunction::RealType  RealType;
+  typedef TrialWaveFunction::RealType RealType;
   typedef TrialWaveFunction::ValueType ValueType;
-  typedef TrialWaveFunction::PosType   PosType;
-  typedef TrialWaveFunction::GradType  GradType;
-  typedef std::map<std::string,ParticleSet*> PtclPoolType;
+  typedef TrialWaveFunction::PosType PosType;
+  typedef TrialWaveFunction::GradType GradType;
+  typedef std::map<std::string, ParticleSet*> PtclPoolType;
 
   /////level of printing
   //static int print_level;
@@ -117,5 +114,5 @@ protected:
   std::vector<WaveFunctionComponentBuilder*> Children;
 };
 
-}
+} // namespace qmcplusplus
 #endif

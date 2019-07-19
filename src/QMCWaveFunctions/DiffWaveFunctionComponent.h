@@ -10,8 +10,8 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 #ifndef QMCPLUSPLUS_DIFFERENTIAL_ORBITAL_BASE_H
 #define QMCPLUSPLUS_DIFFERENTIAL_ORBITAL_BASE_H
 #include "Configuration.h"
@@ -23,9 +23,6 @@
  */
 namespace qmcplusplus
 {
-
-
-
 /**@defgroup WaveFunctionComponent group
  * @brief Base base class for derivatives of WaveFunctionComponent
  *
@@ -41,34 +38,33 @@ namespace qmcplusplus
  */
 struct DiffWaveFunctionComponent
 {
-  enum {SourceIndex  = WaveFunctionComponent::SourceIndex,
-        VisitorIndex = WaveFunctionComponent::VisitorIndex,
-        WalkerIndex  = WaveFunctionComponent::WalkerIndex
-       };
+  enum
+  {
+    SourceIndex  = WaveFunctionComponent::SourceIndex,
+    VisitorIndex = WaveFunctionComponent::VisitorIndex,
+    WalkerIndex  = WaveFunctionComponent::WalkerIndex
+  };
 
   //@{typedefs inherited from WaveFunctionComponent
-  typedef WaveFunctionComponent::RealType             RealType;
-  typedef WaveFunctionComponent::ValueType            ValueType;
-  typedef WaveFunctionComponent::PosType              PosType;
-  typedef ParticleSet::ParticleGradient_t   GradVectorType;
-  typedef ParticleSet::ParticleLaplacian_t  ValueVectorType;
+  typedef WaveFunctionComponent::RealType RealType;
+  typedef WaveFunctionComponent::ValueType ValueType;
+  typedef WaveFunctionComponent::PosType PosType;
+  typedef ParticleSet::ParticleGradient_t GradVectorType;
+  typedef ParticleSet::ParticleLaplacian_t ValueVectorType;
   //@}
   /** list of reference orbitals which contribute to the derivatives
    */
   std::vector<WaveFunctionComponent*> refOrbital;
 
   /// default constructor
-  DiffWaveFunctionComponent(WaveFunctionComponent* orb=0);
+  DiffWaveFunctionComponent(WaveFunctionComponent* orb = 0);
 
   ///default destructor
-  virtual ~DiffWaveFunctionComponent() { }
+  virtual ~DiffWaveFunctionComponent() {}
 
   /** add an WaveFunctionComponent*
    */
-  inline void addOrbital(WaveFunctionComponent* psi)
-  {
-    refOrbital.push_back(psi);
-  }
+  inline void addOrbital(WaveFunctionComponent* psi) { refOrbital.push_back(psi); }
 
   /** initialize the object
    *
@@ -77,7 +73,7 @@ struct DiffWaveFunctionComponent
   virtual void initialize() {}
 
   ///prepare internal data for a new particle sets
-  virtual void resetTargetParticleSet(ParticleSet& P)=0;
+  virtual void resetTargetParticleSet(ParticleSet& P) = 0;
 
   /** evaluate derivatives at \f$\{R\}\f$
    * @param P current configuration
@@ -85,19 +81,24 @@ struct DiffWaveFunctionComponent
    */
   virtual void evaluateDerivatives(ParticleSet& P,
                                    const opt_variables_type& optvars,
-                                   std::vector<RealType>& dlogpsi,
-                                   std::vector<RealType>& dhpsioverpsi)=0;
+                                   std::vector<ValueType>& dlogpsi,
+                                   std::vector<ValueType>& dhpsioverpsi)=0;
 
   virtual void evaluateDerivRatios(ParticleSet& VP, const opt_variables_type& optvars, Matrix<ValueType>& dratios);
 
-  virtual void multiplyDerivsByOrbR(std::vector<RealType>& dlogpsi)
+  virtual void multiplyDerivsByOrbR(std::vector<ValueType>& dlogpsi)
   {
-    for (int i=0; i<refOrbital.size(); ++i)
+    for (int i = 0; i < refOrbital.size(); ++i)
     {
-      RealType myrat = std::exp(refOrbital[i]->LogValue)*std::cos(refOrbital[i]->PhaseValue);
+      #ifdef QMC_COMPLEX
+      std::complex<RealType> eit(std::cos(refOrbital[i]->PhaseValue), std::sin(refOrbital[i]->PhaseValue));
+      ValueType myrat = std::exp(refOrbital[i]->LogValue) * eit;
+      #else
+      RealType myrat = std::exp(refOrbital[i]->LogValue) * std::cos(refOrbital[i]->PhaseValue);
+      #endif
       for(int j=0; j<refOrbital[i]->myVars.size(); j++)
       {
-        int loc=refOrbital[j]->myVars.where(j);
+        int loc = refOrbital[j]->myVars.where(j);
         dlogpsi[loc] *= myrat;
       }
     }
@@ -105,28 +106,25 @@ struct DiffWaveFunctionComponent
 
   /** check out optimizable variables
    */
-  virtual void checkOutVariables(const opt_variables_type& optvars)=0;
+  virtual void checkOutVariables(const opt_variables_type& optvars) = 0;
 
   /** reset the parameters during optimizations
    */
-  virtual void resetParameters(const opt_variables_type& optvars)=0;
+  virtual void resetParameters(const opt_variables_type& optvars) = 0;
 
   /** make clone
     * @param tqp target Quantum ParticleSet
     */
   virtual DiffWaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;
-
-
 };
 
 /** a generic DiffWaveFunctionComponent using a finite-difference method for a single optimizable parameter.
  *
  * This class handles any orbital whose analytic derivatives are not implemented nor easily available.
  */
-struct NumericalDiffOrbital: public DiffWaveFunctionComponent
+struct NumericalDiffOrbital : public DiffWaveFunctionComponent
 {
-
-  NumericalDiffOrbital(WaveFunctionComponent* orb=0): DiffWaveFunctionComponent(orb) {}
+  NumericalDiffOrbital(WaveFunctionComponent* orb = 0) : DiffWaveFunctionComponent(orb) {}
 
   void resetTargetParticleSet(ParticleSet& P);
   void evaluateDerivatives(ParticleSet& P,
@@ -144,10 +142,9 @@ struct NumericalDiffOrbital: public DiffWaveFunctionComponent
 
 /** a generic DiffWaveFunctionComponent using analytic derivates for a single optimizable parameter
  */
-struct AnalyticDiffOrbital: public DiffWaveFunctionComponent
+struct AnalyticDiffOrbital : public DiffWaveFunctionComponent
 {
-
-  AnalyticDiffOrbital(WaveFunctionComponent* orb=0): DiffWaveFunctionComponent(orb)  { }
+  AnalyticDiffOrbital(WaveFunctionComponent* orb = 0) : DiffWaveFunctionComponent(orb) {}
 
   void resetTargetParticleSet(ParticleSet& P);
   void evaluateDerivatives(ParticleSet& P,
@@ -164,6 +161,5 @@ struct AnalyticDiffOrbital: public DiffWaveFunctionComponent
   ///get the index in the variable list
   int MyIndex;
 };
-}
+} // namespace qmcplusplus
 #endif
-

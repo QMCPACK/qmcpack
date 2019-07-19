@@ -60,7 +60,7 @@ bool ElectronGasComplexOrbitalBuilder::put(xmlNodePtr cur)
   aAttrib.put(cur);
   //typedef DiracDeterminant<EGOSet>  Det_t;
   //typedef SlaterDeterminant<EGOSet> SlaterDeterminant_t;
-  typedef DiracDeterminant Det_t;
+  typedef DiracDeterminant<> Det_t;
   typedef SlaterDet SlaterDeterminant_t;
   int nat = targetPtcl.getTotalNum();
   int nup = nat / 2;
@@ -86,7 +86,7 @@ bool ElectronGasComplexOrbitalBuilder::put(xmlNodePtr cur)
   sdet->add(updet, 0);
   sdet->add(downdet, 1);
   //add Slater determinant to targetPsi
-  targetPsi.addOrbital(sdet, "SlaterDet", true);
+  targetPsi.addComponent(sdet, "SlaterDet");
   return true;
 }
 

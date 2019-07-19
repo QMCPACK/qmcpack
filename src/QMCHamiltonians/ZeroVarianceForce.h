@@ -11,8 +11,7 @@
 //
 // File created by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
 
 #ifndef QMCPLUSPLUS_ZERO_VARIANCE_FORCE_H
 #define QMCPLUSPLUS_ZERO_VARIANCE_FORCE_H
@@ -22,38 +21,34 @@
 
 namespace qmcplusplus
 {
-
 struct ZeroVarianceForce : public QMCHamiltonianBase, public ForceBase
 {
+private:
+  const int d_ei_ID;
+
+public:
   ParticleSet& Ions;
   ParticleSet& Electrons;
   TrialWaveFunction& Psi;
 
   ParticleSet::ParticlePos_t F_ZV1, F_ZV2;
-  TinyVector<ParticleSet::ParticleGradient_t,OHMMS_DIM>  grad_grad_psi;
-  TinyVector<ParticleSet::ParticleLaplacian_t,OHMMS_DIM> lapl_grad_psi;
+  TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM> grad_grad_psi;
+  TinyVector<ParticleSet::ParticleLaplacian_t, OHMMS_DIM> lapl_grad_psi;
 
-  ZeroVarianceForce(ParticleSet& ions, ParticleSet& elns,
-                    TrialWaveFunction &psi);
+  ZeroVarianceForce(ParticleSet& ions, ParticleSet& elns, TrialWaveFunction& psi);
 
   void resetTargetParticleSet(ParticleSet& P);
 
   Return_t evaluate(ParticleSet& P);
 
-  bool put(xmlNodePtr cur)
-  {
-    return true;
-  }
+  bool put(xmlNodePtr cur) { return true; }
 
-  bool get(std::ostream& os) const
-  {
-    return true;
-  }
+  bool get(std::ostream& os) const { return true; }
 
   QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi)
   {
-    ZeroVarianceForce *myClone = new ZeroVarianceForce (Ions, qp, psi);
-    myClone->FirstForceIndex = FirstForceIndex;
+    ZeroVarianceForce* myClone = new ZeroVarianceForce(Ions, qp, psi);
+    myClone->FirstForceIndex   = FirstForceIndex;
     return myClone;
   }
 
@@ -63,9 +58,8 @@ struct ZeroVarianceForce : public QMCHamiltonianBase, public ForceBase
 
   void setParticlePropertyList(PropertySetType& plist, int offset);
 
-  void registerObservables(std::vector<observable_helper*>& h5list,
-                           hid_t gid) const;
+  void registerObservables(std::vector<observable_helper*>& h5list, hid_t gid) const;
 };
 
-}
+} // namespace qmcplusplus
 #endif

@@ -205,10 +205,15 @@ def read_cif(filepath,block=None,grammar='1.1',cell='prim',args_only=False):
 #    enter ase directory (cd spglib-1.8.2/python/ase/)
 #    build and install (sudo python setup.py install)
 from periodic_table import pt as ptable
+#try:
+#    from pyspglib import spglib
+#except:
+#    spglib = unavailable('pyspglib','spglib')
+##end try
 try:
-    from pyspglib import spglib
+    import spglib
 except:
-    spglib = unavailable('pyspglib','spglib')
+    spglib = unavailable('spglib')
 #end try
 
 
@@ -266,6 +271,9 @@ def reduce_tilematrix(tiling):
     dim = len(t)
     matrix_tiling = t.shape == (dim,dim)
     if matrix_tiling:
+        if abs(det(t))==0:
+            Structure.class_error('requested tiling matrix is singular\ntiling requested: {0}'.format(t))
+        #end if
         #find a tiling tuple from the tiling matrix
         # do this by shearing the tiling matrix (or equivalently the tiled cell)
         # until it is orthogonal (in the untiled cell axes)
@@ -276,7 +284,6 @@ def reduce_tilematrix(tiling):
         T = t  #tiling matrix
         tilematrix = T.copy()
         del t
-        Tnew = array(T,dtype=float) #sheared/orthogonal tiling matrix
         tbar = identity(dim) #basis for shearing
         dr = range(dim)
         #dr = [1,0,2]
@@ -287,8 +294,10 @@ def reduce_tilematrix(tiling):
         #move each axis to be parallel to barred directions
         # these are volume preserving shears of the supercell
         # each shear keeps two cell face planes fixed while moving the others
+        tvecs = []
         for dp in [(0,1,2),(2,0,1),(1,2,0),(2,1,0),(0,2,1),(1,0,2)]:
             success = True
+            Tnew = array(T,dtype=float) #sheared/orthogonal tiling matrix
             for d in dr:
                 tb = tbar[dp[d]] 
                 t  = T[d]
@@ -304,29 +313,32 @@ def reduce_tilematrix(tiling):
                 Tnew[d] = tn
             #end for
             if success:
-                break
+                # apply inverse permutation, if needed
+                Tn = Tnew.copy()
+                for d in dr:
+                    d2 = dp[d]
+                    Tnew[d2] = Tn[d]
+                #end for
+                #the resulting tiling matrix should be diagonal and integer
+                tr = diag(Tnew)
+                nondiagonal = abs(Tnew-diag(tr)).sum()>1e-6
+                if nondiagonal:
+                    Structure.class_error('could not find a diagonal tiling matrix for generating tiled coordinates')
+                #end if
+                tvecs.append(abs(tr))
             #end if
         #end for
-        # apply inverse permutation, if needed
-        Tn = Tnew.copy()
-        for d in dr:
-            d2 = dp[d]
-            Tnew[d2] = Tn[d]
+        tvecs_old = tvecs
+        tvecs = []
+        tvset = set()
+        for tv in tvecs_old:
+            tvk = tuple(array(around(1e7*tv),dtype=uint64))
+            if tvk not in tvset:
+                tvset.add(tvk)
+                tvecs.append(tv)
+            #end if
         #end for
-        #the resulting tiling matrix should be diagonal and integer
-        tr = diag(Tnew)
-        t  = array(around(tr),dtype=int)
-        nondiagonal = abs(Tnew-diag(tr)).sum()>1e-6
-        noninteger  = abs(tr-t).sum()>1e-6
-        if nondiagonal:
-            Structure.class_error('could not find a diagonal tiling matrix for generating tiled coordinates')
-        #end if
-        #non-integer tile vectors are handled directly by tile_points now
-        #if noninteger:
-        #    Structure.class_error('calculated diagonal tiling matrix is non-integer\n  tiled coordinates cannot be determined')
-        ##end if
-        #tilevector = abs(t)
-        tilevector = abs(tr)
+        tilevector = array(tvecs)
     else:
         tilevector = t
         tilematrix = diag(t)
@@ -334,6 +346,7 @@ def reduce_tilematrix(tiling):
 
     return tilematrix,tilevector
 #end def reduce_tilematrix
+
 
 
 def tile_magnetization(mag,tilevec,mag_order,mag_prim):
@@ -348,7 +361,7 @@ def tile_magnetization(mag,tilevec,mag_order,mag_prim):
     #  if magnetic primitive is requested, a small tiling vector should first be used
     #   (ie 221,212,122,222 periods all involve a 211 prim tiling w/ a simple reshaping/reassignment of the cell axes
     #  Structure should have a function providing labels to each magnetic species
-    mag = array(int(round( tilevec.prod() ))*list(mag),dtype=object)
+    #mag = array(int(round( tilevec.prod() ))*list(mag),dtype=object)
     return mag
 #end def tile_magnetization
 
@@ -699,6 +712,7 @@ class Structure(Sobj):
                  posu              = None,
                  use_prim          = None,
                  add_kpath         = False,
+                 symm_kgrid        = False,
                  ):
 
         if isinstance(axes,str):
@@ -783,7 +797,11 @@ class Structure(Sobj):
             self.add_kpoints(kpoints,kweights)
         #end if
         if kgrid is not None:
-            self.add_kmesh(kgrid,kshift)
+            if not symm_kgrid:
+                self.add_kmesh(kgrid,kshift)
+            else:
+                self.add_symmetrized_kmesh(kgrid,kshift)
+            #end if
         #end if
         if rescale:
             self.rescale(scale)
@@ -1380,7 +1398,7 @@ class Structure(Sobj):
         axinv  = inv(self.axes)
         axnew  = dot(self.axes,skew)
         kaxinv = inv(self.kaxes)
-        kaxnew = dot(inv(skew),self.kaxes)
+        kaxnew = dot(inv(skew).T,self.kaxes)
         self.pos     = dot(dot(self.pos,axinv),axnew)
         self.center  = dot(dot(self.center,axinv),axnew)
         self.kpoints = dot(dot(self.kpoints,kaxinv),kaxnew)
@@ -2950,6 +2968,7 @@ class Structure(Sobj):
         in_place           = kwargs.pop('in_place',False)
         magnetic_order     = kwargs.pop('magnetic_order',None)
         magnetic_primitive = kwargs.pop('magnetic_primitive',True)
+        check              = kwargs.pop('check',False)
 
         dim = self.dim
         if len(td)==1:
@@ -3016,6 +3035,10 @@ class Structure(Sobj):
             ts = self
         #end if
 
+        if check:
+            ts.check_tiling()
+        #end if
+
         return ts
     #end def tile
 
@@ -3024,6 +3047,48 @@ class Structure(Sobj):
         if tilevec is None:
             tilemat,tilevec = reduce_tilematrix(tilemat)
         #end if
+        if not isinstance(tilemat,ndarray):
+            tilemat = array(tilemat)
+        #end if
+        matrix_tiling = abs(tilemat-diag(diag(tilemat))).sum()>0.1
+        if not matrix_tiling:
+            return self.tile_points_simple(points,axes,diag(tilemat))
+        else:
+            if not isinstance(axes,ndarray):
+                axes = array(axes)
+            #end if
+            if not isinstance(tilevec,ndarray):
+                tilevec = array(tilevec)
+            #end if
+            dim     = len(axes)
+            npoints = len(points)
+            ntpoints = npoints*int(round(abs(det(tilemat))))
+            if tilevec.size==dim:
+                tilevec.shape = 1,dim
+            #end if
+            taxes = dot(tilemat,axes)
+            success = False
+            for tvec in tilevec:
+                tpoints = self.tile_points_simple(points,axes,tvec)
+                tpoints,weights,pmap = self.unique_points_fast(tpoints,taxes)
+                if len(tpoints)==ntpoints:
+                    success = True
+                    break
+                #end if
+            #end for
+            if not success:
+                tpoints = self.tile_points_brute(points,axes,tilemat)
+                tpoints,weights,pmap = self.unique_points_fast(tpoints,taxes)
+                if len(tpoints)!=ntpoints:
+                    self.error('brute force tiling failed')
+                #end if
+            #end if
+        #end if
+        return tpoints
+    #end def tile_points
+
+
+    def tile_points_simple(self,points,axes,tilevec):
         if not isinstance(points,ndarray):
             points = array(points)
         #end if
@@ -3033,57 +3098,64 @@ class Structure(Sobj):
         if not isinstance(axes,ndarray):
             axes = array(axes)
         #end if
-        t = tilevec
-        ti = array(around(t),dtype=int)
-        noninteger = abs(t-ti).sum()>1e-6
         if len(points.shape)==1:
             npoints,dim = len(points),1
         else:
             npoints,dim = points.shape
         #end if
-        ntpoints = npoints*int(round( t.prod() ))
-        if not noninteger:
-            t = ti
-            if ntpoints==0:
-                tpoints = array([])
-            else:
-                tpoints  = empty((ntpoints,dim))
-                ns=0
-                ne=npoints
-                for k in range(t[2]):
-                    for j in range(t[1]):
-                        for i in range(t[0]):
-                            v = dot(array([[i,j,k]]),axes)
-                            for d in range(dim):
-                                tpoints[ns:ne,d] = points[:,d]+v[0,d]
-                            #end for
-                            ns+=npoints 
-                            ne+=npoints
-                        #end for
-                    #end for
-                #end for
-            #end if
-        else:
-            if abs(ntpoints-int(around(ntpoints)))>1e-6:
+        t = tilevec
+        ti = array(around(t),dtype=int)
+        noninteger = abs(t-ti).sum()>1e-6
+        if noninteger:
+            tp = t.prod()
+            if abs(tp-int(tp))>1e-6:
                 self.error('tiling vector does not correspond to an integer volume change\ntiling vector: {0}\nvolume change: {1}  {2}  {3}'.format(tilevec,tilevec.prod(),ntpoints,int(ntpoints)))
             #end if
-            ntpoints = int(around(ntpoints))
-            # round up to larger tiling
-            #  +1 added for greater cell coverage
-            #  add more if error below is tripped w/ fewer points than expected
-            t = array(ceil(t),dtype=int)+1 
-            # get the tiled points
-            tpoints = self.tile_points(points,axes,tilemat,t)
-            # remove any that are not unique
-            taxes = dot(tilemat,axes)
-            #tpoints,weights,pmap = self.unique_points(tpoints,taxes)
-            tpoints,weights,pmap = self.unique_points_fast(tpoints,taxes)
-            if len(tpoints)!=ntpoints:
-                self.error('tiling by non-integer tiling vector failed\npoints expected after tiling: {0}\npoints resulted from tiling: {1}'.format(ntpoints,len(tpoints)))
-            #end if
+            t = array(ceil(t),dtype=int)+1
+        else:
+            t = ti
+        #end if
+        ntpoints = npoints*int(round( t.prod() ))
+        if ntpoints==0:
+            tpoints = array([])
+        else:
+            tpoints = empty((ntpoints,dim))
+            ns=0
+            ne=npoints
+            for k in range(t[2]):
+                for j in range(t[1]):
+                    for i in range(t[0]):
+                        v = dot(array([[i,j,k]]),axes)
+                        for d in range(dim):
+                            tpoints[ns:ne,d] = points[:,d]+v[0,d]
+                        #end for
+                        ns+=npoints 
+                        ne+=npoints
+                    #end for
+                #end for
+            #end for
         #end if
         return tpoints
-    #end def tile_points
+    #end def tile_points_simple
+
+
+    def tile_points_brute(self,points,axes,tilemat):
+        tcorners = [[0,0,0],
+                    [1,0,0],
+                    [0,1,0],
+                    [0,0,1],
+                    [0,1,1],
+                    [1,0,1],
+                    [1,1,0],
+                    [1,1,1]]
+        tcorners = dot(tcorners,tilemat)
+        tmin = tcorners.min(axis=0)
+        tmax = tcorners.max(axis=0)
+        tilevec = tmax-tmin
+        tpoints = self.tile_points_simple(points,axes,tilevec)
+        return tpoints
+    #end def tile_points_brute
+
 
 
     def opt_tilematrix(self,*args,**kwargs):
@@ -3095,6 +3167,43 @@ class Structure(Sobj):
         Topt,ropt = self.opt_tilematrix(*args,**kwargs)
         return self.tile(Topt)
     #end def tile_opt
+
+
+    def check_tiling(self,tol=1e-6,exit=True):
+        msg = ''
+        if not self.is_tiled():
+            return msg
+        #end if
+        msgs = []
+        st = self
+        s  = self.folded_structure
+        nt = len(st.pos)
+        n  = len(s.pos)
+        if nt%n!=0:
+            msgs.append('tiled atom count does is not divisible by untiled atom count')
+        #end if
+        vratio = st.volume()/s.volume()
+        if abs(vratio-float(nt)/n)>tol:
+            msgs.append('tiled/untiled volume ratio does not match tiled/untiled atom count ratio')
+        #end if
+        if abs(vratio-abs(det(st.tmatrix)))>tol:
+            msgs.append('tiled/untiled volume ratio does not match tiling matrix determinant')
+        #end if
+        p,w,pmap = self.unique_points_fast(st.pos,st.axes)
+        if len(p)!=nt:
+            msgs.append('tiled positions are not unique')
+        #end if
+        if len(msgs)>0:
+            msg = 'tiling check failed'
+            for m in msgs:
+                msg += '\n'+m
+            #end for
+            if exit:
+                self.error(msg)
+            #end if
+        #end if
+        return msg
+    #end def check_tiling
 
 
     def kfold(self,tiling,kpoints,kweights):
@@ -3299,6 +3408,48 @@ class Structure(Sobj):
     def add_kmesh(self,kgrid,kshift=None,unique=False):
         self.add_kpoints(kmesh(self.kaxes,kgrid,kshift),unique=unique)
     #end def add_kmesh
+
+
+    def add_symmetrized_kmesh(self,kgrid,kshift=(0,0,0)):
+        # get spglib cell data structure
+        cell = self.spglib_cell()
+
+        # get the symmetry mapping
+        kmap,kpoints_int = spglib.get_ir_reciprocal_mesh(
+            kgrid,
+            cell,
+            is_shift=kshift
+            )
+
+        # create the Monkhorst-Pack mesh
+        kshift = array(kshift,dtype=float)
+        okgrid = 1.0/array(kgrid,dtype=float)
+        kpoints = empty(kpoints_int.shape,dtype=float)
+        for i,ki in enumerate(kpoints_int):
+            kpoints[i] = (ki+kshift)*okgrid
+        #end for
+        kpoints = dot(kpoints,self.kaxes)
+
+        # reduce to only the symmetric kpoints with weights
+        kwmap = obj()
+        for ik in kmap:
+            if ik not in kwmap:
+                kwmap[ik] = 1
+            else:
+                kwmap[ik] += 1
+            #end if
+        #end for
+        nkpoints = len(kwmap)
+        kpoints_symm  = empty((nkpoints,self.dim),dtype=float)
+        kweights_symm = empty((nkpoints,),dtype=float)
+        n = 0
+        for ik,kw in kwmap.iteritems():
+            kpoints_symm[n]  = kpoints[ik]
+            kweights_symm[n] = kw
+            n+=1
+        #end for
+        self.add_kpoints(kpoints_symm,kweights_symm)
+    #end def add_symmetrized_kmesh
 
     
     def kpoints_unit(self,kpoints=None):
@@ -4417,7 +4568,7 @@ class Structure(Sobj):
 
     # minimal ASE Atoms-like interface to Structure objects for spglib
     def get_cell(self):
-        return self.axes
+        return self.axes.copy()
     #end def get_cell
 
     def get_scaled_positions(self):
@@ -4440,6 +4591,14 @@ class Structure(Sobj):
         self.error('structure objects do not currently support magnetic moments')
     #end def get_magnetic_moments
 
+    # direct spglib interface
+    def spglib_cell(self):
+        lattice   = self.axes.copy()
+        positions = self.pos_unit()
+        numbers   = self.get_atomic_numbers()
+        cell = (lattice,positions,numbers)
+        return cell
+    #end def spglib_cell
 #end class Structure
 Structure.set_operations()
 
@@ -5377,6 +5536,7 @@ class Crystal(Structure):
                  pos            = None,
                  use_prim       = None,
                  add_kpath      = False,
+                 symm_kgrid     = False,
                  ):
 
         if lattice is None and cell is None and atoms is None and units is None:
@@ -5409,6 +5569,7 @@ class Crystal(Structure):
             pos            = pos           ,
             use_prim       = use_prim      ,
             add_kpath      = add_kpath     ,
+            symm_kgrid     = symm_kgrid    ,
             )
         generation_info = gi.copy()
 
@@ -5692,6 +5853,7 @@ class Crystal(Structure):
             operations     = operations,
             use_prim       = use_prim,
             add_kpath      = add_kpath,
+            symm_kgrid     = symm_kgrid,
             )
 
     #end def __init__
@@ -5995,6 +6157,7 @@ def generate_crystal_structure(
     folded_units   = None,
     use_prim       = None,
     add_kpath      = False,
+    symm_kgrid     = False,
     #legacy inputs
     structure      = None,
     shape          = None,
@@ -6041,6 +6204,7 @@ def generate_crystal_structure(
             elem_pos       = elem_pos,
             use_prim       = use_prim,
             add_kpath      = add_kpath,
+            symm_kgrid     = symm_kgrid,
             )
     elif isinstance(structure,Structure):
         s = structure
@@ -6054,7 +6218,11 @@ def generate_crystal_structure(
             s.add_kpoints(kpoints,kweights)
         #end if
         if kgrid is not None:
-            s.add_kmesh(kgrid,kshift)
+            if not symm_kgrid:
+                s.add_kmesh(kgrid,kshift)
+            else:
+                self.add_symmetrized_kmesh(kgrid,kshift)
+            #end if
         #end if
     #end if
     if s is not None:
@@ -6100,6 +6268,7 @@ def generate_crystal_structure(
         pos            = pos           ,
         use_prim       = use_prim      ,
         add_kpath      = add_kpath     ,
+        symm_kgrid     = symm_kgrid    ,
         )
 
     if struct_type!=Crystal:

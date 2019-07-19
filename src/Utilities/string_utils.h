@@ -9,72 +9,63 @@
 //
 // File created by: Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
-
-
 
 
 #ifndef STRING_UTILS_H
 #define STRING_UTILS_H
 
 
-#include<cstdio>
-#include<Configuration.h>
+#include <cstdio>
+#include <Configuration.h>
 
 namespace qmcplusplus
 {
-
-
 inline std::string strip(const std::string& s)
 {
-  int start=s.length();
-  int end=0;
+  int start = s.length();
+  int end   = 0;
   int i;
-  for(i=0; i<s.length(); i++)
+  for (i = 0; i < s.length(); i++)
   {
-    if(s[i]!=' '&&s[i]!='\n'&&s[i]!='\t')
+    if (s[i] != ' ' && s[i] != '\n' && s[i] != '\t')
     {
-      start=i;
+      start = i;
       break;
     }
   }
-  for(i=s.length()-1; i>0; i--)
+  for (i = s.length() - 1; i > 0; i--)
   {
-    if(s[i]!=' '&&s[i]!='\n'&&s[i]!='\t')
+    if (s[i] != ' ' && s[i] != '\n' && s[i] != '\t')
     {
-      end=i;
+      end = i;
       break;
     }
   }
   //app_log()<<"strip got '"<<s<<"'"<< std::endl;
   //app_log()<<"start,end "<<start<<","<<end<<" "<<s[start]<<" "<<s[end]<< std::endl;
   //app_log()<<"returning '"<<s.substr(start,end-start+1)<<"'"<< std::endl;
-  return s.substr(start,end-start+1);
+  return s.substr(start, end - start + 1);
 }
 
 
-inline bool whitespace(char c)
-{
-  return (c==' ' || c=='\n' || c=='\t');
-}
+inline bool whitespace(char c) { return (c == ' ' || c == '\n' || c == '\t'); }
 
 
 inline std::vector<std::string> split(const std::string& s)
 {
   std::vector<std::string> tokens;
-  int i=0;
-  while(i<s.length())
+  int i = 0;
+  while (i < s.length())
   {
-    while(i<s.length() && whitespace(s[i]))
+    while (i < s.length() && whitespace(s[i]))
       i++;
     int start = i;
-    while(i<s.length() && !whitespace(s[i]))
+    while (i < s.length() && !whitespace(s[i]))
       i++;
     int end = i;
-    int len = end-start;
-    if(len>0)
-      tokens.push_back(s.substr(start,len));
+    int len = end - start;
+    if (len > 0)
+      tokens.push_back(s.substr(start, len));
   }
   return tokens;
 }
@@ -82,31 +73,31 @@ inline std::vector<std::string> split(const std::string& s)
 
 inline std::vector<std::string> split(const std::string& s, const std::string& pattern)
 {
-  int sloc=0;
+  int sloc = 0;
   int eloc;
-  int plen=pattern.length();
+  int plen = pattern.length();
   std::string ss;
   std::vector<std::string> tokens;
   //app_log() << "split got string:" << std::endl<<"'"<<s<<"'"<< std::endl;
-  while(true)
+  while (true)
   {
-    eloc=s.find(pattern,sloc);
-    if(eloc!=std::string::npos)
+    eloc = s.find(pattern, sloc);
+    if (eloc != std::string::npos)
     {
-      ss=s.substr(sloc,eloc-sloc);
-      if(ss!="")
+      ss = s.substr(sloc, eloc - sloc);
+      if (ss != "")
       {
         //app_log()<<"  adding token: "<< std::endl;
         //app_log()<<"    '"<< ss <<"'" << std::endl;
         tokens.push_back(ss);
       }
-      sloc=eloc+plen;
+      sloc = eloc + plen;
     }
     else
     {
-      eloc=s.length();
-      ss=s.substr(sloc,eloc-sloc);
-      if(ss!="")
+      eloc = s.length();
+      ss   = s.substr(sloc, eloc - sloc);
+      if (ss != "")
       {
         //app_log()<<"  adding token: "<< std::endl;
         //app_log()<<"    '"<< ss <<"'" << std::endl;
@@ -118,46 +109,39 @@ inline std::vector<std::string> split(const std::string& s, const std::string& p
   return tokens;
 }
 
-inline int string2int(const std::string& s)
-{
-  return atoi(s.c_str());
-}
+inline int string2int(const std::string& s) { return atoi(s.c_str()); }
 
-inline double string2real(const std::string& s)
-{
-  return atof(s.c_str());
-}
+inline double string2real(const std::string& s) { return atof(s.c_str()); }
 
 inline std::string int2string(const int& i)
 {
   std::stringstream ss;
-  ss<<i;
+  ss << i;
   return ss.str();
 }
 
 inline std::string real2string(const double& r)
 {
   std::stringstream ss;
-  ss<<r;
+  ss << r;
   return ss.str();
 }
 
 inline bool string2bool(const std::string& s)
 {
-  if(s=="true" || s=="yes" || s=="1")
+  if (s == "true" || s == "yes" || s == "1")
   {
     return true;
   }
+  else if (s == "false" || s == "no" || s == "0")
+  {
+    return false;
+  }
   else
-    if(s=="false" || s=="no" || s=="0")
-    {
-      return false;
-    }
-    else
-    {
-      APP_ABORT("string2bool received non-boolean string: "+s);
-      return false;
-    }
+  {
+    APP_ABORT("string2bool received non-boolean string: " + s);
+    return false;
+  }
 }
 
 
@@ -166,19 +150,19 @@ struct astring
 {
   std::string s;
 };
-inline std::istream& operator>>( std::istream& is,astring& rhs)
+inline std::istream& operator>>(std::istream& is, astring& rhs)
 {
   char buf[256];
-  is.getline(buf,256);
+  is.getline(buf, 256);
   rhs.s.assign(buf);
   return is;
 }
 inline std::ostream& operator<<(std::ostream& os, const astring& rhs)
 {
-  os<<rhs.s<< std::endl;
+  os << rhs.s << std::endl;
   return os;
 }
 
-}
+} // namespace qmcplusplus
 
 #endif

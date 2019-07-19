@@ -48,7 +48,7 @@ MultiArray2D getrf(MultiArray2D&& m, Array1D& pivot, Buffer&& WORK){
                 status,
                 pointer_dispatch(WORK.data())
         );
-        assert(status==0);
+        //assert(status==0); 
         return std::forward<MultiArray2D>(m);
 }
 
@@ -208,6 +208,39 @@ MultiArray2D potrf(MultiArray2D&& A) {
         if(INFO != 0) throw std::runtime_error(" error in ma::potrf: Error code != 0");
 }
 
+template<class MultiArray2D>
+int gesvd_optimal_workspace_size(MultiArray2D && A){
+        assert(A.stride(0) > 0);
+        assert(A.stride(1) == 1);
+
+        int res;
+        gesvd_bufferSize(A.size(1), A.size(0), pointer_dispatch(A.origin()), res);
+        return res;
+}
+
+template<class MultiArray2D, class Array1D, class MultiArray2DU, class MultiArray2DV, class Buffer, class RBuffer>
+MultiArray2D gesvd(char jobU, char jobVT, MultiArray2D&& A, Array1D&& S, MultiArray2DU&& U, MultiArray2DV&& VT, Buffer&& WORK, RBuffer&& RWORK){
+        assert(A.stride(1) > 0);
+        assert(A.stride(1) == 1);
+
+        // in C: A = U * S * VT
+        // in F: At = (U * S * VT)t = VTt * S * Ut 
+        // so I need to switch U <--> VT when calling fortran interface 
+        int status = -1;
+        gesvd(
+                jobVT, jobU, A.size(1), A.size(0),  
+                pointer_dispatch(A.origin()), A.stride(0), 
+                pointer_dispatch(S.origin()),
+                pointer_dispatch(VT.origin()), VT.stride(0),    // !!! 
+                pointer_dispatch(U.origin()), U.stride(0),      // !!!
+                pointer_dispatch(WORK.data()), WORK.size(),
+                pointer_dispatch(RWORK.origin()), 
+                status
+        );
+        assert(status==0);
+        return std::forward<MultiArray2D>(A);
+}
+
 template<class MultiArray1D,
          class MultiArray2D,
          typename = typename std::enable_if_t<MultiArray1D::dimensionality == 1>,
@@ -229,7 +262,7 @@ std::pair<MultiArray1D,MultiArray2D> symEig(MultiArray2D const& A) {
             MultiArray2D A_({N,N});
             for(int i=0; i<N; i++)
               for(int j=0; j<N; j++) 
-                A_[i][j] = conj(A[i][j]);                
+                A_[i][j] = ma::conj(A[i][j]);                
             char JOBZ('V');
             char RANGE('A');
             char UPLO('U');

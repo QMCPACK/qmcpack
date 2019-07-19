@@ -18,7 +18,7 @@
 #include <thrust/complex.h>
 #include<cuda_runtime.h>
 #include "AFQMC/Numerics/detail/CUDA/Kernels/cuda_settings.h"
-#define QMC_CUDA 1
+#define ENABLE_CUDA 1
 #include "AFQMC/Memory/CUDA/cuda_utilities.h"
 #if __CUDA_ARCH__ < 600
 #include "AFQMC/Numerics/detail/CUDA/Kernels/myAtomicAdd.cu"
@@ -60,9 +60,9 @@ __global__ void kernel_batched_dot_wabn_wban(int nbatch, int nwalk, int nocc, in
     }
     //if( threadIdx.x == 0 ) *(y+w*incy) = (*(y+w*incy)) + alp * cache[ 0 ];
     if( threadIdx.x == 0 ) {
-        T2 re = (alp * cache[ 0 ]).real();
-        T2 im = (alp * cache[ 0 ]).imag();
-        T2* re_ = reinterpret_cast<T2*>(y+w*incy);
+        T re = (alp * cache[ 0 ]).real();
+        T im = (alp * cache[ 0 ]).imag();
+        T* re_ = reinterpret_cast<T*>(y+w*incy);
 #if __CUDA_ARCH__ < 600
         myAtomicAdd(re_,re); 
         myAtomicAdd(re_+1,im); 

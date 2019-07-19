@@ -29,7 +29,7 @@ void WalkerSetBase<Alloc,Ptr>::parse(xmlNodePtr cur)
       APP_ABORT(" Error: Empty Walker xml-node pointer. \n");
 
     app_log()<<"\n****************************************************\n";
-    app_log()<<"           Initializating Walker Set \n";
+    app_log()<<"           Initializing Walker Set \n";
     app_log()<<"****************************************************\n";
 
     xmlNodePtr curRoot=cur;
@@ -47,7 +47,7 @@ void WalkerSetBase<Alloc,Ptr>::parse(xmlNodePtr cur)
     m_param.add(type,"walker_type","std::string");
     m_param.add(load_balance_type,"load_balance","std::string");
     m_param.add(pop_control_type,"pop_control","std::string");
-    m_param.add(nback_prop,"back_propagation_steps","int");
+//    m_param.add(nback_prop,"back_propagation_steps","int");
     m_param.put(cur);
 
     std::for_each(type.begin(), type.end(), [](char & c){
@@ -126,25 +126,20 @@ void WalkerSetBase<Alloc,Ptr>::setup()
   // careful! These are only used to calculate memory needs and access points/partitionings
   int ncol=NAEA;
   int nrow=NMO;
-  int ndim_bp = NMO;
+  // wlk_descriptor: {nmo, naea, naeb, nback_prop, nCV, nRefs} 
   if(walkerType == CLOSED)  {
-    // wlk_descriptor: {nmo, naea, naeb, nback_prop} from the point of view of a single spin SM 
-    wlk_desc = {NMO,NAEA,0,nback_prop};
+    wlk_desc = {NMO,NAEA,0,0,0,0};
   } else if(walkerType == COLLINEAR) {
-    // wlk_descriptor: {nmo, naea, naeb, nback_prop} from the point of view of a single spin SM 
-    wlk_desc = {NMO,NAEA,NAEB,nback_prop};
+    wlk_desc = {NMO,NAEA,NAEB,0,0,0};
     ncol += NAEB;
   } else if(walkerType == NONCOLLINEAR) {
-    // wlk_descriptor: {nmo, naea, naeb, nback_prop} from the point of view of a single spin SM 
-    wlk_desc = {2*NMO,NAEA+NAEB,0,nback_prop};
+    wlk_desc = {2*NMO,NAEA+NAEB,0,0,0,0};
     nrow += NMO;
     ncol += NAEB;
-    ndim_bp *= 2;
   } else {
     app_error()<<" Error: Incorrect walker_type on WalkerSetBase::setup \n";
     APP_ABORT("");
   }
-  int bp_size = nback_prop*ndim_bp*ndim_bp;
 
   //   - SlaterMatrix:         NCOL*NROW 
   //   - weight:               1 
@@ -154,12 +149,8 @@ void WalkerSetBase<Alloc,Ptr>::setup()
   //   - EXX:                  1
   //   - EJ:                   1
   //   - overlap:              1
-  //   - propagators:          NBACK_PROP*NCOL_BP*NROW_BP=BP_SIZE
-  //   - head:                 1
-  //   - tail:                 1
   //   - SlaterMatrixN:        Same size as Slater Matrix
-  //   - cos_fac :             NBACK_PROP
-  //   - weight_fac:           NBACK_PROP
+  //   - SlaterMatrixAux:        Same size as Slater Matrix
   //   Total: 7+2*NROW*NCOL+BP_SIZE+2*NBACK_PROP
   int cnt=0;
   data_displ[SM] = cnt;          cnt+=nrow*ncol;
@@ -170,23 +161,15 @@ void WalkerSetBase<Alloc,Ptr>::setup()
   data_displ[EXX_] = cnt;         cnt+=1; // EXX
   data_displ[EJ_] = cnt;          cnt+=1; // EJ 
   data_displ[OVLP] = cnt;        cnt+=1; // overlap
-  if(nback_prop > 0) {
-    data_displ[PROPAGATORS] = cnt; cnt+=bp_size; // propagators for back propagation.
-    data_displ[HEAD] = cnt;        cnt+=1; // current location of propagator matrix in circular buffer.
-    data_displ[TAIL] = cnt;        cnt+=1; // position of tail of circular buffer.
-    data_displ[SMN] = cnt;         cnt+=nrow*ncol; // Slater Matrix at beggining of BP path 
-    data_displ[COS_FAC] = cnt;     cnt+=1; // Cosine factors along BP path.
-    data_displ[WEIGHT_FAC] = cnt;  cnt+=1; // Missing imaginary weight factors along BP path.
-  } else {
-    data_displ[PROPAGATORS] = -1;
-    data_displ[HEAD] = -1;
-    data_displ[TAIL] = -1;
-    data_displ[SMN] = -1;
-    data_displ[COS_FAC] = -1;
-    data_displ[WEIGHT_FAC] = -1;
-  }
   walker_size = cnt;
   walker_memory_usage = walker_size*sizeof(ComplexType);
+  data_displ[SMN] = -1; 
+  data_displ[SM_AUX] = -1; 
+  data_displ[FIELDS] = -1; 
+  data_displ[WEIGHT_FAC] = -1; 
+  data_displ[WEIGHT_HISTORY] = -1; 
+  bp_walker_size=0;  
+  bp_walker_memory_usage = bp_walker_size*sizeof(ComplexType);
 
   tot_num_walkers=0;
 
@@ -196,7 +179,8 @@ void WalkerSetBase<Alloc,Ptr>::setup()
 template<class Alloc, typename Ptr>
 bool WalkerSetBase<Alloc,Ptr>::clean()
 {
-  walker_buffer.reextent({0,0});
+  walker_buffer.reextent({0,walker_size});
+  bp_buffer.reextent({bp_walker_size,0});
   tot_num_walkers=targetN=targetN_per_TG=0;
   return true;
 }
@@ -209,6 +193,8 @@ void WalkerSetBase<Alloc,Ptr>::reserve(int n)
 {
   if(walker_buffer.size(0) < n || walker_buffer.size(1) != walker_size)
     walker_buffer.reextent({n,walker_size});
+  if(bp_buffer.size(1) < n || bp_buffer.size(0) != bp_walker_size)
+    bp_buffer.reextent({bp_walker_size,n});
 }
 
 /*
@@ -273,14 +259,17 @@ void WalkerSetBase<Alloc,Ptr>::popControl(std::vector<ComplexType>& curData)
   if(TG.TG_local().root()) {
     afqmc::BasicWalkerData(*this,curData,TG.TG_heads());
     RealType scl = 1.0/curData[0].real();
-    scaleWeight(scl);
+    scaleWeight(scl,true);
   }
   if(TG.TG_local().size() > 1) TG.TG_local().broadcast_n(curData.data(),curData.size());
+  // by default, LogOverlapFactor is set to the walker mean in popControl  
+  // this comes at no extra cost and keeps the values of overlaps stable  
+  adjustLogOverlapFactor(std::log(std::abs(curData[4])));
 
   // matrix to hold walkers beyond targetN_per_TG
   // doing this to avoid resizing SHMBuffer, instead use local memory
   // will be resized later
-  boost::multi::array<ComplexType,2> Wexcess({0,walker_size});
+  boost::multi::array<ComplexType,2> Wexcess({0,walker_size+(wlk_desc[3]>0?bp_walker_size:0)});
 
   if(TG.TG_local().root()) {
     nwalk_counts_new.resize(TG.TG_heads().size());

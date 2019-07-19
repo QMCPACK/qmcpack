@@ -32,6 +32,8 @@ SET(WFBASE_SRCS
   CompositeSPOSet.cpp
   HarmonicOscillator/SHOSet.cpp
   HarmonicOscillator/SHOSetBuilder.cpp
+  ExampleHeBuilder.cpp
+  ExampleHeComponent.cpp
   )
 
 IF(NOT QMC_COMPLEX)
@@ -46,7 +48,6 @@ ENDIF(NOT QMC_COMPLEX)
 ########################
 #common jastrows
 SET(JASTROW_SRCS
-  Jastrow/LRTwoBodyJastrow.cpp
   Jastrow/JastrowBuilder.cpp
   Jastrow/kSpaceJastrow.cpp
   Jastrow/kSpaceJastrowBuilder.cpp
@@ -132,7 +133,6 @@ IF(OHMMS_DIM MATCHES 3)
     ENDIF(HAVE_EINSPLINE)
   ENDIF(QMC_CUDA)
 
-
   IF(HAVE_EINSPLINE)
     IF(NOT MIXED_PRECISION)
       SET(FERMION_SRCS ${FERMION_SRCS} EinsplineSet.cpp)
@@ -186,7 +186,6 @@ ENDIF(OHMMS_DIM MATCHES 3)
 
 SET(FERMION_SRCS ${FERMION_SRCS}
   Fermion/DiracDeterminant.cpp
-  Fermion/DiracDeterminantOpt.cpp
   Fermion/SlaterDet.cpp
   Fermion/SlaterDetBuilder.cpp
   Fermion/MultiSlaterDeterminant.cpp
@@ -202,6 +201,10 @@ SET(FERMION_SRCS ${FERMION_SRCS}
   WaveFunctionFactory.cpp
   )
 
+IF(ENABLE_CUDA)
+  SET(FERMION_SRCS ${FERMION_SRCS} Fermion/delayed_update_helper.cu)
+ENDIF(ENABLE_CUDA)
+
 IF(NOT QMC_COMPLEX AND NOT ENABLE_SOA)
   SET(FERMION_SRCS ${FERMION_SRCS}
     Fermion/SlaterDetOpt.cpp
@@ -211,11 +214,17 @@ ENDIF(NOT QMC_COMPLEX AND NOT ENABLE_SOA)
 ####################################
 # create libqmcwfs
 ####################################
-IF(QMC_CUDA)
+IF(QMC_CUDA OR ENABLE_CUDA)
   CUDA_ADD_LIBRARY(qmcwfs ${WFBASE_SRCS} ${JASTROW_SRCS} ${FERMION_SRCS})
-ELSE(QMC_CUDA)
+ELSE(QMC_CUDA OR ENABLE_CUDA)
   ADD_LIBRARY(qmcwfs ${WFBASE_SRCS} ${JASTROW_SRCS} ${FERMION_SRCS})
-ENDIF(QMC_CUDA)
+ENDIF(QMC_CUDA OR ENABLE_CUDA)
+
+IF(HAVE_CUDA)
+  CUDA_ADD_CUBLAS_TO_TARGET(qmcwfs)
+  TARGET_LINK_LIBRARIES( qmcwfs ${CUDA_cusolver_LIBRARY} )
+ENDIF(HAVE_CUDA)
+
 #IF(QMC_BUILD_STATIC)
 #  ADD_LIBRARY(qmcwfs STATIC ${WFBASE_SRCS} ${JASTROW_SRCS} ${FERMION_SRCS})
 #ELSE(QMC_BUILD_STATIC)

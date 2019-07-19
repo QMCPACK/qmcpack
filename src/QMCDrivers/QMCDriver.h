@@ -12,8 +12,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
 
 
 /**
@@ -31,6 +29,7 @@
 #include "QMCApp/WaveFunctionPool.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Estimators/EstimatorManagerBase.h"
+#include "QMCDrivers/GreenFunctionModifiers/DriftModifierBase.h"
 #include "QMCDrivers/SimpleFixedNodeBranch.h"
 #include "QMCDrivers/BranchIO.h"
 class Communicate;
@@ -65,17 +64,21 @@ class TraceManager;
  * @{
  * @brief abstract base class for QMC engines
  */
-class QMCDriver: public QMCTraits, public MPIObjectBase
+class QMCDriver : public QMCTraits, public MPIObjectBase
 {
-
 public:
-
   /** enumeration coupled with QMCMode */
-  enum {QMC_UPDATE_MODE, QMC_MULTIPLE, QMC_OPTIMIZE, QMC_WARMUP};
+  enum
+  {
+    QMC_UPDATE_MODE,
+    QMC_MULTIPLE,
+    QMC_OPTIMIZE,
+    QMC_WARMUP
+  };
 
   typedef MCWalkerConfiguration::Walker_t Walker_t;
-  typedef Walker_t::Buffer_t              Buffer_t;
-  typedef SimpleFixedNodeBranch           BranchEngineType;
+  typedef Walker_t::Buffer_t Buffer_t;
+  typedef SimpleFixedNodeBranch BranchEngineType;
 
   /** bits to classify QMCDriver
    *
@@ -91,23 +94,21 @@ public:
   xmlNodePtr traces_xml;
 
   /// Constructor.
-  QMCDriver(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, WaveFunctionPool& ppool, Communicate* comm);
+  QMCDriver(MCWalkerConfiguration& w,
+            TrialWaveFunction& psi,
+            QMCHamiltonian& h,
+            WaveFunctionPool& ppool,
+            Communicate* comm);
 
   virtual ~QMCDriver();
 
   ///return current step
-  inline int current() const
-  {
-    return CurrentStep;
-  }
+  inline int current() const { return CurrentStep; }
 
   /** set the update mode
    * @param pbyp if true, use particle-by-particle update
    */
-  inline void setUpdateMode(bool pbyp)
-  {
-    QMCDriverMode[QMC_UPDATE_MODE]=pbyp;
-  }
+  inline void setUpdateMode(bool pbyp) { QMCDriverMode[QMC_UPDATE_MODE] = pbyp; }
 
   /** Set the status of the QMCDriver
    * @param aname the root file name
@@ -139,60 +140,42 @@ public:
 
   void putWalkers(std::vector<xmlNodePtr>& wset);
 
-  inline void putTraces(xmlNodePtr txml)
-  {
-    traces_xml=txml;
-  };
+  inline void putTraces(xmlNodePtr txml) { traces_xml = txml; };
 
   virtual bool run() = 0;
 
   virtual bool put(xmlNodePtr cur) = 0;
 
-  inline std::string getEngineName() const
-  {
-    return  QMCType;
-  }
+  inline std::string getEngineName() const { return QMCType; }
 
   template<class PDT>
   void setValue(const std::string& aname, PDT x)
   {
-    m_param.setValue(aname,x);
+    m_param.setValue(aname, x);
   }
 
   ///set the BranchEngineType
-  void setBranchEngine(BranchEngineType* be)
-  {
-    branchEngine=be;
-  }
+  void setBranchEngine(BranchEngineType* be) { branchEngine = be; }
 
   ///return BranchEngineType*
-  BranchEngineType* getBranchEngine()
-  {
-    return branchEngine;
-  }
+  BranchEngineType* getBranchEngine() { return branchEngine; }
 
   int addObservable(const std::string& aname)
   {
-    if(Estimators)
+    if (Estimators)
       return Estimators->addObservable(aname.c_str());
     else
       return -1;
   }
 
-  RealType getObservable(int i)
-  {
-    return Estimators->getObservable(i);
-  }
+  RealType getObservable(int i) { return Estimators->getObservable(i); }
 
-  void setTau(RealType i)
-  {
-    Tau=i;
-  }
+  void setTau(RealType i) { Tau = i; }
 
   ///resetComponents for next run if reusing a driver.
   virtual void resetComponents(xmlNodePtr cur)
   {
-    qmcNode=cur;
+    qmcNode = cur;
     m_param.put(cur);
   }
 
@@ -208,21 +191,16 @@ public:
   TraceManager* Traces;
 
   ///return the random generators
-  inline std::vector<RandomGenerator_t*>& getRng()
-  {
-    return Rng;
-  }
+  inline std::vector<RandomGenerator_t*>& getRng() { return Rng; }
 
   ///return the i-th random generator
-  inline RandomGenerator_t& getRng(int i)
-  {
-    return (*Rng[i]);
-  }
+  inline RandomGenerator_t& getRng(int i) { return (*Rng[i]); }
 
 protected:
-
   ///branch engine
-  BranchEngineType *branchEngine;
+  BranchEngineType* branchEngine;
+  ///drift modifer
+  DriftModifierBase* DriftModifier;
   ///randomize it
   bool ResetRandom;
   ///flag to append or restart the run
@@ -368,9 +346,9 @@ protected:
   //PooledData<RealType> HamPool;
 
   ///Copy Constructor (disabled).
-  QMCDriver(const QMCDriver &) = delete;
+  QMCDriver(const QMCDriver&) = delete;
   ///Copy operator (disabled).
-  QMCDriver & operator=(const QMCDriver &) = delete;
+  QMCDriver& operator=(const QMCDriver&) = delete;
 
   bool putQMCInfo(xmlNodePtr cur);
 
@@ -390,18 +368,17 @@ protected:
    * Accumulate energy and weight is written to a hdf5 file.
    * Finialize the estimators
    */
-  bool finalize(int block, bool dumpwalkers=true);
+  bool finalize(int block, bool dumpwalkers = true);
 
   int rotation;
   void adiosCheckpoint(int block);
   void adiosCheckpointFinal(int block, bool dumpwalkers);
-  std::string getRotationName( std::string RootName);
-  std::string getLastRotationName( std::string RootName);
+  std::string getRotationName(std::string RootName);
+  std::string getLastRotationName(std::string RootName);
 
-  NewTimer *checkpointTimer;
-
+  NewTimer* checkpointTimer;
 };
 /**@}*/
-}
+} // namespace qmcplusplus
 
 #endif

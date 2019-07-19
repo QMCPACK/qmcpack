@@ -205,8 +205,8 @@ class SlaterDetOperations: public MPIObjectBase, public AFQMCInfo
           if( !(it2->alive && std::abs(it2->weight) > 1e-3) ) continue;
           matrix_element_and_overlap(HF->data(),(it2->SlaterMat).data(),S(i,j),H(i,j));
           if(i!=j) {
-            H(j,i)=std::conj(H(i,j));
-            S(j,i)=std::conj(S(i,j));
+            H(j,i)=ma::conj(H(i,j));
+            S(j,i)=ma::conj(S(i,j));
           }
           j++;
         }
@@ -221,10 +221,10 @@ class SlaterDetOperations: public MPIObjectBase, public AFQMCInfo
           nume += it1->weight*it2->weight*H(i,j);
           deno += it1->weight*it2->weight*S(i,j);
           if(i!=j) {
-            H(j,i)=std::conj(H(i,j));
-            S(j,i)=std::conj(S(i,j));
-            nume += std::conj(it1->weight)*it2->weight*H(j,i)/(std::conj(std::get<0>(it1->overlap_alpha)*std::get<0>(it1->overlap_beta)) * std::get<0>(it2->overlap_alpha)*std::get<0>(it2->overlap_beta) );
-            deno += std::conj(it1->weight)*it2->weight*S(j,i)/(std::conj(std::get<0>(it1->overlap_alpha)*std::get<0>(it1->overlap_beta)) * std::get<0>(it2->overlap_alpha)*std::get<0>(it2->overlap_beta) );
+            H(j,i)=ma::conj(H(i,j));
+            S(j,i)=ma::conj(S(i,j));
+            nume += ma::conj(it1->weight)*it2->weight*H(j,i)/(ma::conj(std::get<0>(it1->overlap_alpha)*std::get<0>(it1->overlap_beta)) * std::get<0>(it2->overlap_alpha)*std::get<0>(it2->overlap_beta) );
+            deno += ma::conj(it1->weight)*it2->weight*S(j,i)/(ma::conj(std::get<0>(it1->overlap_alpha)*std::get<0>(it1->overlap_beta)) * std::get<0>(it2->overlap_alpha)*std::get<0>(it2->overlap_beta) );
           }
           j++;
         }
@@ -325,8 +325,8 @@ APP_ABORT("Testing. \n");
         for(int j=i; j<nW; j++) {
           itbegin->unpackFromChar(buffer_out.data()+j*sz,B,w2,e2,o2);
           green_function(A,B,ov,G,false);
-          ovlp[1] += std::conj(w1)*w2*ov/(std::conj(o1)*o2)
-                  +  std::conj(w2)*w1*std::conj(ov)/(std::conj(o2)*o1);
+          ovlp[1] += ma::conj(w1)*w2*ov/(ma::conj(o1)*o2)
+                  +  ma::conj(w2)*w1*ma::conj(ov)/(ma::conj(o2)*o1);
         }
       }
 
@@ -348,8 +348,8 @@ APP_ABORT("Testing. \n");
             for(int j=0; j<nW; j++) {
               itbegin->unpackFromChar(buffer_out.data()+j*sz,B,w2,e2,o2);
               green_function(A,B,ov,G,false);
-              ovlp[1] += std::conj(w1)*w2*ov/(std::conj(o1)*o2)
-                      +  std::conj(w2)*w1*std::conj(ov)/(std::conj(o2)*o1);
+              ovlp[1] += ma::conj(w1)*w2*ov/(ma::conj(o1)*o2)
+                      +  ma::conj(w2)*w1*ma::conj(ov)/(ma::conj(o2)*o1);
             }
           }
         } else {
@@ -359,8 +359,8 @@ APP_ABORT("Testing. \n");
             for(int j=0; j<from[rec]; j++) {
               itbegin->unpackFromChar(buffer_in.data()+j*sz,B,w2,e2,o2);
               green_function(A,B,ov,G,false);
-              ovlp[1] += std::conj(w1)*w2*ov/(std::conj(o1)*o2)
-                      +  std::conj(w2)*w1*std::conj(ov)/(std::conj(o2)*o1);
+              ovlp[1] += ma::conj(w1)*w2*ov/(ma::conj(o1)*o2)
+                      +  ma::conj(w2)*w1*ma::conj(ov)/(ma::conj(o2)*o1);
             }
           }
         }

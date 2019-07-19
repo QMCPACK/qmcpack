@@ -27,6 +27,7 @@
 #define QMCPLUSPLUS_EINSPLINE_ADOPTOR_READERP_H
 #include <mpi/collectives.h>
 #include <mpi/point2point.h>
+#include "Utilities/FairDivide.h"
 
 namespace qmcplusplus
 {
@@ -67,10 +68,13 @@ struct SplineAdoptorReader : public BsplineReaderBase
   // transform cG to radial functions
   virtual void create_atomic_centers_Gspace(Vector<std::complex<double>>& cG, Communicate& band_group_comm, int iorb) {}
 
+  /** for exporting data from multi_UBspline_3d_d to multi_UBspline_3d_z
+   *  This is only used by the legacy EinsplineSet class. To be deleted together with EinsplineSet.
+   */
   void export_MultiSpline(multi_UBspline_3d_z** target)
   {
-    *target                                 = new multi_UBspline_3d_z;
-    multi_UBspline_3d_d* source_MultiSpline = (multi_UBspline_3d_d*)bspline->MultiSpline;
+    *target                        = new multi_UBspline_3d_z;
+    const auto* source_MultiSpline = (multi_UBspline_3d_d*)bspline->SplineInst->getSplinePtr();
 
     (*target)->spcode   = MULTI_U3D;
     (*target)->tcode    = DOUBLE_COMPLEX;
@@ -119,7 +123,10 @@ struct SplineAdoptorReader : public BsplineReaderBase
     // (*target)->lapl3 = (complex_double*) malloc (6*sizeof(double)*(*target)->z_stride);
   }
 
-  void export_MultiSpline(multi_UBspline_3d_d** target) { *target = (multi_UBspline_3d_d*)bspline->MultiSpline; }
+  /** for exporting data from multi_UBspline_3d_d to multi_UBspline_3d_z
+   *  This is only used by the legacy EinsplineSet class. To be deleted together with EinsplineSet.
+   */
+  void export_MultiSpline(multi_UBspline_3d_d** target) { *target = (multi_UBspline_3d_d*)bspline->SplineInst->getSplinePtr(); }
 
   SPOSet* create_spline_set(int spin, const BandInfoGroup& bandgroup)
   {
@@ -202,13 +209,8 @@ struct SplineAdoptorReader : public BsplineReaderBase
       if (havePsig) //perform FFT using FFTW
       {
         FFTbox.resize(nx, ny, nz);
-        FFTplan = fftw_plan_dft_3d(nx,
-                                   ny,
-                                   nz,
-                                   reinterpret_cast<fftw_complex*>(FFTbox.data()),
-                                   reinterpret_cast<fftw_complex*>(FFTbox.data()),
-                                   +1,
-                                   FFTW_ESTIMATE);
+        FFTplan = fftw_plan_dft_3d(nx, ny, nz, reinterpret_cast<fftw_complex*>(FFTbox.data()),
+                                   reinterpret_cast<fftw_complex*>(FFTbox.data()), +1, FFTW_ESTIMATE);
         splineData_r.resize(nx, ny, nz);
         if (bspline->is_complex)
           splineData_i.resize(nx, ny, nz);
@@ -260,11 +262,7 @@ struct SplineAdoptorReader : public BsplineReaderBase
     fftw_execute(FFTplan);
     if (bspline->is_complex)
     {
-      fix_phase_rotate_c2c(FFTbox,
-                           splineData_r,
-                           splineData_i,
-                           mybuilder->TwistAngles[ti],
-                           rotate_phase_r,
+      fix_phase_rotate_c2c(FFTbox, splineData_r, splineData_i, mybuilder->TwistAngles[ti], rotate_phase_r,
                            rotate_phase_i);
       einspline::set(spline_r, splineData_r.data());
       einspline::set(spline_i, splineData_i.data());

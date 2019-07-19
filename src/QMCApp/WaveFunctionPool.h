@@ -9,9 +9,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
-
 
 
 /**@file WaveFunctionPool.h
@@ -28,7 +25,6 @@
 
 namespace qmcplusplus
 {
-
 class ParticleSetPool;
 class ParticleSet;
 
@@ -40,37 +36,26 @@ class ParticleSet;
  */
 class WaveFunctionPool : public MPIObjectBase
 {
-
 public:
-
-  typedef std::map<std::string,WaveFunctionFactory*> PoolType;
+  typedef std::map<std::string, WaveFunctionFactory*> PoolType;
 
   WaveFunctionPool(Communicate* c, const char* aname = "wavefunction");
   ~WaveFunctionPool();
 
   bool put(xmlNodePtr cur);
 
-  inline bool empty() const
-  {
-    return myPool.empty();
-  }
+  inline bool empty() const { return myPool.empty(); }
 
-  TrialWaveFunction* getPrimary()
-  {
-    return primaryPsi;
-  }
+  TrialWaveFunction* getPrimary() { return primaryPsi; }
 
-  void setPrimary(TrialWaveFunction *psi)
-  {
-    primaryPsi=psi;
-  }
+  void setPrimary(TrialWaveFunction* psi) { primaryPsi = psi; }
 
   TrialWaveFunction* getWaveFunction(const std::string& pname)
   {
-    std::map<std::string,WaveFunctionFactory*>::iterator pit(myPool.find(pname));
-    if(pit == myPool.end())
+    std::map<std::string, WaveFunctionFactory*>::iterator pit(myPool.find(pname));
+    if (pit == myPool.end())
     {
-      if(myPool.empty())
+      if (myPool.empty())
         return 0;
       else
         return (*(myPool.begin())).second->targetPsi;
@@ -81,10 +66,10 @@ public:
 
   WaveFunctionFactory* getWaveFunctionFactory(const std::string& pname)
   {
-    std::map<std::string,WaveFunctionFactory*>::iterator pit(myPool.find(pname));
-    if(pit == myPool.end())
+    std::map<std::string, WaveFunctionFactory*>::iterator pit(myPool.find(pname));
+    if (pit == myPool.end())
     {
-      if(myPool.empty())
+      if (myPool.empty())
         return 0;
       else
         return (*(myPool.begin())).second;
@@ -95,11 +80,7 @@ public:
 
   /** assign a pointer of ParticleSetPool
    */
-  inline void
-  setParticleSetPool(ParticleSetPool* pset)
-  {
-    ptclPool=pset;
-  }
+  inline void setParticleSetPool(ParticleSetPool* pset) { ptclPool = pset; }
 
   /** return a xmlNode containing Jastrow
    * @param id name of the wave function
@@ -110,17 +91,13 @@ public:
 
   /** get the Pool object
    */
-  inline PoolType& getPool()
-  {
-    return myPool;
-  }
+  inline PoolType& getPool() { return myPool; }
 
   /** add a WaveFunctionFactory* to myPool
    */
   void addFactory(WaveFunctionFactory* psifac);
 
 private:
-
   /// pointer to the primary TrialWaveFunction
   TrialWaveFunction* primaryPsi;
 
@@ -133,7 +110,6 @@ private:
    * is used as an input object for the evaluations.
    */
   ParticleSetPool* ptclPool;
-
 };
-}
+} // namespace qmcplusplus
 #endif

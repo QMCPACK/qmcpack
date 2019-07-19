@@ -30,6 +30,7 @@
 
 // generic header for blas routines
 #include "AFQMC/Numerics/detail/CPU/Blasf.h"
+#include "AFQMC/config.0.h"
 
 #if defined(HAVE_MKL)
 inline CBLAS_TRANSPOSE cblas_operation(char Op) {
@@ -98,6 +99,22 @@ namespace ma
                           std::complex<double> *b, int incy)
   {
     zaxpy(n, x, a, incx, b, incy);
+  }
+
+  inline static void axpy(int n, const float x,
+                          const float *a, int incx,
+                          double *b, int incy)
+  {
+    for (int i = 0; i < n; ++i, a+=incx, b+=incy)
+      (*b) += static_cast<double>(x*(*a));
+  }
+
+  inline static void axpy(int n, const std::complex<float> x,
+                          const std::complex<float> *a, int incx,
+                          std::complex<double> *b, int incy)
+  {
+    for (int i = 0; i < n; ++i, a+=incx, b+=incy)
+      (*b) += static_cast<std::complex<double>>(x*(*a));
   }
 
   inline static double norm2(int n, const double *a, int incx = 1)
@@ -234,23 +251,65 @@ namespace ma
 
 #if defined(HAVE_MKL)
   inline static void gemv(char trans_in, int n, int m,
-                          const std::complex<double> &alpha,
+                          const double &alpha,
                           const double *restrict amat, int lda,
                           const std::complex<double> *restrict x, int incx,
-                          const std::complex<double> &beta,
+                          const double &beta,
                           std::complex<double> *y, int incy)
   {
-    dzgemv(trans_in, n, m, alpha, amat, lda, x, incx, beta, y, incy);
+    dzgemv(trans_in, n, m, std::complex<double>(alpha), amat, lda, x, incx, std::complex<double>(beta), y, incy);
   }
 
   inline static void gemv(char trans_in, int n, int m,
-                          const std::complex<float> &alpha,
+                          const float &alpha,
                           const float *restrict amat, int lda,
                           const std::complex<float> *restrict x, int incx,
-                          const std::complex<float> &beta,
+                          const float &beta,
                           std::complex<float> *y, int incy)
   {
-    scgemv(trans_in, n, m, alpha, amat, lda, x, incx, beta, y, incy);
+    scgemv(trans_in, n, m, std::complex<float>(alpha), amat, lda, x, incx, std::complex<float>(beta), y, incy);
+  }
+#else
+  inline static void gemv(char trans_in, int n, int m,
+                          const double &alpha,
+                          const double *restrict amat, int lda,
+                          const std::complex<double> *restrict x, int incx,
+                          const double &beta,
+                          std::complex<double> *y, int incy)
+  {
+    // A * x  --(Fortran)--> A^T * x --> X * A, where X is the interpretation of x as a 2 row matrix 
+    // A^T * x  --(Fortran)--> A * x --> X * A^T, where X is the interpretation of x as a 2 row matrix 
+    if(trans_in == 'n' || trans_in == 'N') 
+      dgemm('N','T',2,n,m,alpha,reinterpret_cast<double const*>(x),2*incx,amat,lda,
+                          beta,reinterpret_cast<double*>(y),2*incy);      
+    else if(trans_in == 't' || trans_in == 'T')
+      dgemm('N','N',2,n,m,alpha,reinterpret_cast<double const*>(x),2*incx,amat,lda,
+                          beta,reinterpret_cast<double*>(y),2*incy);      
+    else {
+      print_stacktrace
+      throw std::runtime_error("Error: Incorrect trans_in. \n"); 
+    }
+  }
+
+  inline static void gemv(char trans_in, int n, int m,
+                          const float &alpha,
+                          const float *restrict amat, int lda,
+                          const std::complex<float> *restrict x, int incx,
+                          const float &beta,
+                          std::complex<float> *y, int incy)
+  {
+    // A * x  --(Fortran)--> A^T * x --> X * A, where X is the interpretation of x as a 2 row matrix 
+    // A^T * x  --(Fortran)--> A * x --> X * A^T, where X is the interpretation of x as a 2 row matrix 
+    if(trans_in == 'n' || trans_in == 'N')
+      sgemm('N','T',2,n,m,alpha,reinterpret_cast<float const*>(x),2*incx,amat,lda,
+                          beta,reinterpret_cast<float*>(y),2*incy);
+    else if(trans_in == 't' || trans_in == 'T')
+      sgemm('N','N',2,n,m,alpha,reinterpret_cast<float const*>(x),2*incx,amat,lda,
+                          beta,reinterpret_cast<float*>(y),2*incy);
+    else {
+      print_stacktrace
+      throw std::runtime_error("Error: Incorrect trans_in. \n");
+    }
   }
 #endif
 
@@ -288,6 +347,30 @@ namespace ma
                           std::complex<float> *restrict C, int ldc)
   {
     cgemm(Atrans, Btrans, M, N, K, alpha, A, lda, B, ldb, beta, C, ldc);
+  }
+
+  inline static void gemm(char Atrans, char Btrans, int M, int N, int K,
+                          double alpha,
+                          const std::complex<double> *A, int lda,
+                          const double *restrict B, int ldb,
+                          double beta,
+                          std::complex<double> *restrict C, int ldc)
+  {
+    assert(Atrans=='n' || Atrans=='N');
+    dgemm(Atrans, Btrans, 2*M, N, K, alpha, reinterpret_cast<double const*>(A), 2*lda, B, ldb, 
+                                     beta, reinterpret_cast<double*>(C), 2*ldc);
+  }
+
+  inline static void gemm(char Atrans, char Btrans, int M, int N, int K,
+                          float alpha,
+                          const std::complex<float> *A, int lda,
+                          const float *restrict B, int ldb,
+                          float beta,
+                          std::complex<float> *restrict C, int ldc)
+  {
+    assert(Atrans=='n' || Atrans=='N');
+    sgemm(Atrans, Btrans, 2*M, N, K, alpha, reinterpret_cast<float const*>(A), 2*lda, B, ldb, 
+                                     beta, reinterpret_cast<float*>(C), 2*ldc);
   }
   
 
@@ -794,6 +877,22 @@ namespace ma
      for(int j=0; j<m; j++)
       res += A[i*lda+j];
     return res;
+  }
+
+  // assume Fortran ordering like all blas calls
+  template<typename T>
+  void set_identity(int m, int n, T* A, int lda)
+  {
+    for(int i=0; i<n; i++) 
+      for(int j=0; j<m; j++)
+        A[i*lda+j] = ((i==j)?1:0);
+  }
+
+  template<typename T>
+  void set_identity_strided(int nbatch, int stride, int m, int n, T* A, int lda)
+  {
+    for(int b=0, b0=0; b<nbatch; b++, b0+=stride) 
+      set_identity(m,n,A+b0,lda);  
   }
 
 #ifdef HAVE_MKL

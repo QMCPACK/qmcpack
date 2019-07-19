@@ -12,8 +12,8 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 #ifndef QMCPLUSPLUS_COULOMBPBCAB_TEMP_H
 #define QMCPLUSPLUS_COULOMBPBCAB_TEMP_H
 #include "QMCHamiltonians/QMCHamiltonianBase.h"
@@ -26,20 +26,18 @@
 #include "Particle/DistanceTableData.h"
 namespace qmcplusplus
 {
-
 /** @ingroup hamiltonian
  *\brief Calculates the AA Coulomb potential using PBCs
  *
  * Functionally identical to CoulombPBCAB but uses a templated version of
  * LRHandler.
  */
-struct CoulombPBCAB: public QMCHamiltonianBase, public ForceBase
+struct CoulombPBCAB : public QMCHamiltonianBase, public ForceBase
 {
-
-  typedef LRCoulombSingleton::LRHandlerType  LRHandlerType;
-  typedef LRCoulombSingleton::GridType       GridType;
+  typedef LRCoulombSingleton::LRHandlerType LRHandlerType;
+  typedef LRCoulombSingleton::GridType GridType;
   typedef LRCoulombSingleton::RadFunctorType RadFunctorType;
-  typedef LRHandlerType::mRealType           mRealType;
+  typedef LRHandlerType::mRealType mRealType;
 
   typedef DistanceTableData::RowContainer RowContainerType;
 
@@ -50,7 +48,7 @@ struct CoulombPBCAB: public QMCHamiltonianBase, public ForceBase
   ///long-range derivative handler
   LRHandlerType* dAB;
   ///locator of the distance table
-  int myTableIndex;
+  const int myTableIndex;
   ///number of species of A particle set
   int NumSpeciesA;
   ///number of species of B particle set
@@ -117,15 +115,15 @@ struct CoulombPBCAB: public QMCHamiltonianBase, public ForceBase
 
 #if !defined(REMOVE_TRACEMANAGER)
   //particle trace samples
-  Array<TraceReal,1>* Ve_sample;
-  Array<TraceReal,1>* Vi_sample;
-  Array<TraceReal,1>  Ve_const;
-  Array<TraceReal,1>  Vi_const;
+  Array<TraceReal, 1>* Ve_sample;
+  Array<TraceReal, 1>* Vi_sample;
+  Array<TraceReal, 1> Ve_const;
+  Array<TraceReal, 1> Vi_const;
 #endif
   ParticleSet& Peln;
   ParticleSet& Pion;
 
-  CoulombPBCAB(ParticleSet& ions, ParticleSet& elns, bool computeForces=false);
+  CoulombPBCAB(ParticleSet& ions, ParticleSet& elns, bool computeForces = false);
 
   ///// copy constructor
   //CoulombPBCAB(const CoulombPBCAB& c);
@@ -144,32 +142,31 @@ struct CoulombPBCAB: public QMCHamiltonianBase, public ForceBase
 
 
   Return_t evaluate(ParticleSet& P);
-  Return_t evaluateWithIonDerivs(ParticleSet& P, ParticleSet& ions, TrialWaveFunction& psi,
+  Return_t evaluateWithIonDerivs(ParticleSet& P,
+                                 ParticleSet& ions,
+                                 TrialWaveFunction& psi,
                                  ParticleSet::ParticlePos_t& hf_terms,
                                  ParticleSet::ParticlePos_t& pulay_terms);
 
   /** Do nothing */
-  bool put(xmlNodePtr cur)
-  {
-    return true;
-  }
+  bool put(xmlNodePtr cur) { return true; }
 
   bool get(std::ostream& os) const
   {
-    os << "CoulombPBCAB potential source: " << PtclA.getName() ;
+    os << "CoulombPBCAB potential source: " << PtclA.getName();
     return true;
   }
 
   QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
-  
+
   ///Creates the long-range handlers, then splines and stores it by particle and species for quick evaluation.
   void initBreakup(ParticleSet& P);
 
   //Do these functions need to be kept?
-  Return_t evalConsts_orig(bool report=true);
+  Return_t evalConsts_orig(bool report = true);
   Return_t evalSR_old(ParticleSet& P);
   Return_t evalLR_old(ParticleSet& P);
-  Return_t evalConsts_old(bool report=true);
+  Return_t evalConsts_old(bool report = true);
   //
 
   ///Computes the short-range contribution to the coulomb energy.
@@ -181,7 +178,7 @@ struct CoulombPBCAB: public QMCHamiltonianBase, public ForceBase
   ///Computes the long-range contribution to the coulomb energy and forces.
   Return_t evalLRwithForces(ParticleSet& P);
   ///Evaluates madelung and background contributions to total energy.
-  Return_t evalConsts(bool report=true);
+  Return_t evalConsts(bool report = true);
   ///Adds a local pseudopotential channel "ppot" to all source species of type "groupID".
   void add(int groupID, RadFunctorType* ppot);
 
@@ -200,10 +197,7 @@ struct CoulombPBCAB: public QMCHamiltonianBase, public ForceBase
     if (ComputeForces)
       setParticleSetF(plist, offset);
   }
-
 };
 
-}
+} // namespace qmcplusplus
 #endif
-
-

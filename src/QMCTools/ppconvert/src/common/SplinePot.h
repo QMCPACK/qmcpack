@@ -8,8 +8,8 @@
 //
 // File created by: Paul R. C. Kent, kentpr@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 //           http://pathintegrals.info                     //
 /////////////////////////////////////////////////////////////
 
@@ -25,22 +25,20 @@
 class SplinePot : public Potential
 {
 protected:
-
 public:
-  /// This stores 
+  /// This stores
   CubicSplineCommon Spline;
   /// This is an optionally set potential that kicks in outside the
   /// maximum value of the grid point.
-  Potential *Vouter;
+  Potential* Vouter;
 
-  double V      (double r);
-  double dVdr   (double r);
-  double d2Vdr2 (double r);
-  void Write(IOSectionClass &out);
-  void Read (IOSectionClass &in);
+  double V(double r);
+  double dVdr(double r);
+  double d2Vdr2(double r);
+  void Write(IOSectionClass& out);
+  void Read(IOSectionClass& in);
   SplinePot() : Vouter(NULL)
-  { 
-    /* No nothing else for now */
+  { /* No nothing else for now */
   }
 };
 

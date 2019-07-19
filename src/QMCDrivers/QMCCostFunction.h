@@ -10,8 +10,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
 
 
 #ifndef QMCPLUSPLUS_COSTFUNCTION_H
@@ -23,20 +21,17 @@
 
 namespace qmcplusplus
 {
-
 /** @ingroup QMCDrivers
  * @brief Implements wave-function optimization
  *
  * Optimization by correlated sampling method with configurations
  * generated from VMC running on a single thread.
  */
-class QMCCostFunction: public QMCCostFunctionBase, public CloneManager
+class QMCCostFunction : public QMCCostFunctionBase, public CloneManager
 {
 public:
-
   ///Constructor.
-  QMCCostFunction(MCWalkerConfiguration& w, TrialWaveFunction& psi,
-                     QMCHamiltonian& h, Communicate* comm);
+  QMCCostFunction(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate* comm);
 
   ///Destructor
   ~QMCCostFunction();
@@ -44,29 +39,28 @@ public:
   void getConfigurations(const std::string& aroot);
   void checkConfigurations();
 #ifdef HAVE_LMY_ENGINE
-  void engine_checkConfigurations(cqmc::engine::LMYEngine * EngineObj);
+  void engine_checkConfigurations(cqmc::engine::LMYEngine* EngineObj);
 #endif
-  void resetPsi(bool final_reset=false);
-  void GradCost(std::vector<Return_t>& PGradient, const std::vector<Return_t>& PM, Return_t FiniteDiff=0);
-  Return_t fillOverlapHamiltonianMatrices(Matrix<Return_t>& Left, Matrix<Return_t>& Right);
+  void resetPsi(bool final_reset = false);
+  void GradCost(std::vector<Return_t>& PGradient, const std::vector<Return_t>& PM, Return_rt FiniteDiff = 0);
+  Return_rt fillOverlapHamiltonianMatrices(Matrix<Return_rt>& Left, Matrix<Return_rt>& Right);
 
 protected:
   std::vector<QMCHamiltonian*> H_KE_Node;
-  std::vector<Matrix<Return_t>*> RecordsOnNode;
+  std::vector<Matrix<Return_rt>*> RecordsOnNode;
 
   /** Temp derivative properties and Hderivative properties of all the walkers
   */
-  std::vector<Matrix<Return_t>* > DerivRecords;
-  std::vector<Matrix<Return_t>* > HDerivRecords;
-  Return_t CSWeight;
+  std::vector<Matrix<Return_rt>*> DerivRecords;
+  std::vector<Matrix<Return_rt>*> HDerivRecords;
+  Return_rt CSWeight;
 
-  Return_t correlatedSampling(bool needGrad=true);
+  Return_rt correlatedSampling(bool needGrad = true);
 
-  #ifdef HAVE_LMY_ENGINE
+#ifdef HAVE_LMY_ENGINE
   int total_samples();
-  Return_t LMYEngineCost_detail(cqmc::engine::LMYEngine * EngineObj);
-  #endif
-
+  Return_rt LMYEngineCost_detail(cqmc::engine::LMYEngine* EngineObj);
+#endif
 };
-}
+} // namespace qmcplusplus
 #endif

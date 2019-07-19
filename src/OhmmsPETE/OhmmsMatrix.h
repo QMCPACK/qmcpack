@@ -14,10 +14,11 @@
 #ifndef OHMMS_PETE_MATRIX_H
 #define OHMMS_PETE_MATRIX_H
 
-#include "PETE/PETE.h"
 #include <cstdlib>
-#include "OhmmsPETE/OhmmsVector.h"
+#include <type_traits>
 #include <iostream>
+#include "PETE/PETE.h"
+#include "OhmmsPETE/OhmmsVector.h"
 
 namespace qmcplusplus
 {
@@ -52,7 +53,12 @@ public:
   inline Matrix(T* ref, size_type n, size_type m) : D1(n), D2(m), TotSize(n * m), X(ref, n * m) {}
 
   // Copy Constructor
-  Matrix(const Matrix<T, Alloc>& rhs) { copy(rhs); }
+  Matrix(const This_t& rhs)
+  {
+    resize(rhs.D1, rhs.D2);
+    if (allocator_traits<Alloc>::is_host_accessible)
+      assign(*this, rhs);
+  }
 
   // Destructor
   ~Matrix() {}
@@ -80,6 +86,7 @@ public:
 
   inline void resize(size_type n, size_type m)
   {
+    static_assert(std::is_same<value_type, typename Alloc::value_type>::value, "Matrix and Alloc data types must agree!");
     D1      = n;
     D2      = m;
     TotSize = n * m;
@@ -100,28 +107,30 @@ public:
     X.attachReference(ref, TotSize);
   }
 
+  template<typename Allocator = Alloc, typename = IsHostSafe<Allocator>>
   inline void add(size_type n) // you can add rows: adding columns are forbidden
   {
     X.insert(X.end(), n * D2, T());
     D1 += n;
   }
 
-  inline void copy(const Matrix<T, Alloc>& rhs)
+  template<typename Allocator = Alloc, typename = IsHostSafe<Allocator>>
+  inline void copy(const This_t& rhs)
   {
     resize(rhs.D1, rhs.D2);
     assign(*this, rhs);
   }
 
   // Assignment Operators
-  inline This_t& operator=(const Matrix<T, Alloc>& rhs)
+  inline This_t& operator=(const This_t& rhs)
   {
     resize(rhs.D1, rhs.D2);
-    return assign(*this, rhs);
+    if (allocator_traits<Alloc>::is_host_accessible)
+      assign(*this, rhs);
+    return *this;
   }
 
-  inline const This_t& operator=(const Matrix<T, Alloc>& rhs) const { return assign(*this, rhs); }
-
-  template<class RHS>
+  template<class RHS, typename Allocator = Alloc, typename = IsHostSafe<Allocator>>
   This_t& operator=(const RHS& rhs)
   {
     return assign(*this, rhs);
@@ -157,16 +166,34 @@ public:
   /// returns a pointer of i-th row, g++ iterator problem
   inline Type_t* operator[](size_type i) { return X.data() + i * D2; }
 
-  inline Type_t& operator()(size_type i) { return X[i]; }
+  template<typename Allocator = Alloc, typename = IsHostSafe<Allocator>>
+  inline Type_t& operator()(size_type i)
+  {
+    return X[i];
+  }
+
   // returns the i-th value in D1*D2 vector
-  inline Type_t operator()(size_type i) const { return X[i]; }
+  template<typename Allocator = Alloc, typename = IsHostSafe<Allocator>>
+  inline Type_t operator()(size_type i) const
+  {
+    return X[i];
+  }
 
   // returns val(i,j)
-  inline Type_t& operator()(size_type i, size_type j) { return X[i * D2 + j]; }
+  template<typename Allocator = Alloc, typename = IsHostSafe<Allocator>>
+  inline Type_t& operator()(size_type i, size_type j)
+  {
+    return X[i * D2 + j];
+  }
 
   // returns val(i,j)
-  inline const Type_t& operator()(size_type i, size_type j) const { return X[i * D2 + j]; }
+  template<typename Allocator = Alloc, typename = IsHostSafe<Allocator>>
+  inline const Type_t& operator()(size_type i, size_type j) const
+  {
+    return X[i * D2 + j];
+  }
 
+  template<typename Allocator = Alloc, typename = IsHostSafe<Allocator>>
   inline void swap_rows(int r1, int r2)
   {
     for (int col = 0; col < D2; col++)
@@ -177,6 +204,7 @@ public:
     }
   }
 
+  template<typename Allocator = Alloc, typename = IsHostSafe<Allocator>>
   inline void swap_cols(int c1, int c2)
   {
     for (int row = 0; row < D1; row++)
@@ -187,14 +215,13 @@ public:
     }
   }
 
-
-  template<class IT>
+  template<class IT, typename Allocator = Alloc, typename = IsHostSafe<Allocator>>
   inline void replaceRow(IT first, size_type i)
   {
     std::copy(first, first + D2, X.begin() + i * D2);
   }
 
-  template<class IT>
+  template<class IT, typename Allocator = Alloc, typename = IsHostSafe<Allocator>>
   inline void replaceColumn(IT first, size_type j)
   {
     typename Container_t::iterator ii(X.begin() + j);
@@ -202,7 +229,7 @@ public:
       *ii = *first++;
   }
 
-  template<class IT>
+  template<class IT, typename Allocator = Alloc, typename = IsHostSafe<Allocator>>
   inline void add2Column(IT first, size_type j)
   {
     typename Container_t::iterator ii(X.begin() + j);
@@ -217,7 +244,7 @@ public:
    * \param i0  starting row where the copying is done
    * \param j0  starting column where the copying is done
    */
-  template<class T1>
+  template<class T1, typename Allocator = Alloc, typename = IsHostSafe<Allocator>>
   inline void add(const T1* sub, size_type d1, size_type d2, size_type i0, size_type j0)
   {
     int ii = 0;
@@ -231,7 +258,7 @@ public:
     }
   }
 
-  template<class T1>
+  template<class T1, typename Allocator = Alloc, typename = IsHostSafe<Allocator>>
   inline void add(const T1* sub, size_type d1, size_type d2, size_type i0, size_type j0, const T& phi)
   {
     size_type ii = 0;
@@ -244,7 +271,8 @@ public:
       }
     }
   }
-  template<class SubMat_t>
+
+  template<class SubMat_t, typename Allocator = Alloc, typename = IsHostSafe<Allocator>>
   inline void add(const SubMat_t& sub, unsigned int i0, unsigned int j0)
   {
     size_type ii = 0;
@@ -257,6 +285,8 @@ public:
       }
     }
   }
+
+  template<typename Allocator = Alloc, typename = IsHostSafe<Allocator>>
   inline void add(const This_t& sub, unsigned int i0, unsigned int j0)
   {
     size_type ii = 0;
@@ -270,14 +300,14 @@ public:
     }
   }
 
-  template<class Msg>
+  template<class Msg, typename Allocator = Alloc, typename = IsHostSafe<Allocator>>
   inline Msg& putMessage(Msg& m)
   {
     m.Pack(X.data(), D1 * D2);
     return m;
   }
 
-  template<class Msg>
+  template<class Msg, typename Allocator = Alloc, typename = IsHostSafe<Allocator>>
   inline Msg& getMessage(Msg& m)
   {
     m.Unpack(X.data(), D1 * D2);

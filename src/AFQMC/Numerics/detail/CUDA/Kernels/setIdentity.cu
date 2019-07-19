@@ -17,7 +17,7 @@
 #include<cuda.h>
 #include <thrust/complex.h>
 #include<cuda_runtime.h>
-#define QMC_CUDA 1
+#define ENABLE_CUDA 1
 #include "AFQMC/Memory/CUDA/cuda_utilities.h"
 
 namespace kernels 
@@ -26,11 +26,11 @@ namespace kernels
 
 
 template<typename T>
-__global__ void kernel_setIdentity(int n, T * A, int lda)
+__global__ void kernel_setIdentity(int m, int n, T * A, int lda)
 {
   int i = threadIdx.x + blockDim.x*blockIdx.x;
   int j = threadIdx.y + blockDim.y*blockIdx.y;
-  if( (i < n) && (j < n) ) 
+  if( (i < m) && (j < n) ) 
     if(i==j) {
       A[i*lda+i] = T(1.0); 
     } else {  
@@ -39,11 +39,11 @@ __global__ void kernel_setIdentity(int n, T * A, int lda)
 }
 
 template<typename T>
-__global__ void kernel_setIdentity(int n, thrust::complex<T> * A, int lda)
+__global__ void kernel_setIdentity(int m, int n, thrust::complex<T> * A, int lda)
 {
   int i = threadIdx.x + blockDim.x*blockIdx.x;
   int j = threadIdx.y + blockDim.y*blockIdx.y;
-  if( (i < n) && (j < n) )
+  if( (i < m) && (j < n) )
     if(i==j) {
       A[i*lda+i] = thrust::complex<T>(1.0,0.0);
     } else {
@@ -51,46 +51,124 @@ __global__ void kernel_setIdentity(int n, thrust::complex<T> * A, int lda)
     }
 }
 
-void setIdentity(int n, double * A, int lda)
+template<typename T>
+__global__ void kernel_setIdentity_strided(int nbatch, int stride, int m, int n, T * A, int lda)
+{
+  int i = threadIdx.x + blockDim.x*blockIdx.x;
+  int j = threadIdx.y + blockDim.y*blockIdx.y;
+  if( (i < m) && (j < n) && (blockIdx.z < nbatch) )
+    if(i==j) {
+      A[blockIdx.z*stride+i*lda+i] = T(1.0);
+    } else {
+      A[blockIdx.z*stride+j*lda+i] = T(0.0);
+    }
+}
+
+template<typename T>
+__global__ void kernel_setIdentity_strided(int nbatch, int stride, int m, int n, thrust::complex<T> * A, int lda)
+{
+  int i = threadIdx.x + blockDim.x*blockIdx.x;
+  int j = threadIdx.y + blockDim.y*blockIdx.y;
+  if( (i < m) && (j < n) && (blockIdx.z < nbatch) )
+    if(i==j) {
+      A[blockIdx.z*stride+i*lda+i] = thrust::complex<T>(1.0,0.0);
+    } else {
+      A[blockIdx.z*stride+j*lda+i] = thrust::complex<T>(0.0,0.0);
+    }
+}
+
+void set_identity(int m, int n, double * A, int lda)
 {
   int xblock_dim = 16;
-  int xgrid_dim = (n + xblock_dim - 1)/xblock_dim;
+  int xgrid_dim = (m + xblock_dim - 1)/xblock_dim;
+  int ygrid_dim = (n + xblock_dim - 1)/xblock_dim;
   dim3 block_dim(xblock_dim,xblock_dim);
-  dim3 grid_dim(xgrid_dim,xgrid_dim); 
-  kernel_setIdentity<<<grid_dim, block_dim>>>(n,A,lda);
+  dim3 grid_dim(xgrid_dim,ygrid_dim); 
+  kernel_setIdentity<<<grid_dim, block_dim>>>(m,n,A,lda);
   qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 
-void setIdentity(int n, float * A, int lda)
+void set_identity(int m, int n, float * A, int lda)
 {
   int xblock_dim = 16;
-  int xgrid_dim = (n + xblock_dim - 1)/xblock_dim;
+  int xgrid_dim = (m + xblock_dim - 1)/xblock_dim;
+  int ygrid_dim = (n + xblock_dim - 1)/xblock_dim;
   dim3 block_dim(xblock_dim,xblock_dim);
-  dim3 grid_dim(xgrid_dim,xgrid_dim);
-  kernel_setIdentity<<<grid_dim, block_dim>>>(n,A,lda);
+  dim3 grid_dim(xgrid_dim,ygrid_dim);
+  kernel_setIdentity<<<grid_dim, block_dim>>>(m,n,A,lda);
   qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 
-void setIdentity(int n, std::complex<double> * A, int lda)
+void set_identity(int m, int n, std::complex<double> * A, int lda)
 {
   int xblock_dim = 16;
-  int xgrid_dim = (n + xblock_dim - 1)/xblock_dim;
+  int xgrid_dim = (m + xblock_dim - 1)/xblock_dim;
+  int ygrid_dim = (n + xblock_dim - 1)/xblock_dim;
   dim3 block_dim(xblock_dim,xblock_dim);
-  dim3 grid_dim(xgrid_dim,xgrid_dim);
-  kernel_setIdentity<<<grid_dim, block_dim>>>(n,reinterpret_cast<thrust::complex<double> *>(A),lda);
+  dim3 grid_dim(xgrid_dim,ygrid_dim);
+  kernel_setIdentity<<<grid_dim, block_dim>>>(m,n,reinterpret_cast<thrust::complex<double> *>(A),lda);
   qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 
-void setIdentity(int n, std::complex<float> * A, int lda)
+void set_identity(int m, int n, std::complex<float> * A, int lda)
 {
   int xblock_dim = 16;
-  int xgrid_dim = (n + xblock_dim - 1)/xblock_dim;
+  int xgrid_dim = (m + xblock_dim - 1)/xblock_dim;
+  int ygrid_dim = (n + xblock_dim - 1)/xblock_dim;
   dim3 block_dim(xblock_dim,xblock_dim);
-  dim3 grid_dim(xgrid_dim,xgrid_dim);
-  kernel_setIdentity<<<grid_dim, block_dim>>>(n,reinterpret_cast<thrust::complex<float> *>(A),lda);
+  dim3 grid_dim(xgrid_dim,ygrid_dim);
+  kernel_setIdentity<<<grid_dim, block_dim>>>(m,n,reinterpret_cast<thrust::complex<float> *>(A),lda);
+  qmc_cuda::cuda_check(cudaGetLastError());
+  qmc_cuda::cuda_check(cudaDeviceSynchronize());
+}
+
+void set_identity_strided(int nbatch, int stride, int m, int n, double * A, int lda)
+{
+  int xblock_dim = 16;
+  int xgrid_dim = (m + xblock_dim - 1)/xblock_dim;
+  int ygrid_dim = (n + xblock_dim - 1)/xblock_dim;
+  dim3 block_dim(xblock_dim,xblock_dim);
+  dim3 grid_dim(xgrid_dim,ygrid_dim,nbatch);
+  kernel_setIdentity_strided<<<grid_dim, block_dim>>>(nbatch,stride,m,n,A,lda);
+  qmc_cuda::cuda_check(cudaGetLastError());
+  qmc_cuda::cuda_check(cudaDeviceSynchronize());
+}
+
+void set_identity_strided(int nbatch, int stride, int m, int n, float * A, int lda)
+{
+  int xblock_dim = 16;
+  int xgrid_dim = (m + xblock_dim - 1)/xblock_dim;
+  int ygrid_dim = (n + xblock_dim - 1)/xblock_dim;
+  dim3 block_dim(xblock_dim,xblock_dim);
+  dim3 grid_dim(xgrid_dim,ygrid_dim,nbatch);
+  kernel_setIdentity_strided<<<grid_dim, block_dim>>>(nbatch,stride,m,n,A,lda);
+  qmc_cuda::cuda_check(cudaGetLastError());
+  qmc_cuda::cuda_check(cudaDeviceSynchronize());
+}
+
+void set_identity_strided(int nbatch, int stride, int m, int n, std::complex<double> * A, int lda)
+{
+  int xblock_dim = 16;
+  int xgrid_dim = (m + xblock_dim - 1)/xblock_dim;
+  int ygrid_dim = (n + xblock_dim - 1)/xblock_dim;
+  dim3 block_dim(xblock_dim,xblock_dim);
+  dim3 grid_dim(xgrid_dim,ygrid_dim,nbatch);
+  kernel_setIdentity_strided<<<grid_dim, block_dim>>>(nbatch,stride,m,n,reinterpret_cast<thrust::complex<double> *>(A),lda);
+  qmc_cuda::cuda_check(cudaGetLastError());
+  qmc_cuda::cuda_check(cudaDeviceSynchronize());
+}
+
+void set_identity_strided(int nbatch, int stride, int m, int n, std::complex<float> * A, int lda)
+{
+  int xblock_dim = 16;
+  int xgrid_dim = (m + xblock_dim - 1)/xblock_dim;
+  int ygrid_dim = (n + xblock_dim - 1)/xblock_dim;
+  dim3 block_dim(xblock_dim,xblock_dim);
+  dim3 grid_dim(xgrid_dim,ygrid_dim,nbatch);
+  kernel_setIdentity_strided<<<grid_dim, block_dim>>>(nbatch,stride,m,n,reinterpret_cast<thrust::complex<float> *>(A),lda);
   qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }

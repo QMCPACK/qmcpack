@@ -47,6 +47,11 @@ class dummy_Propagator
     throw std::runtime_error("calling visitor on dummy object");
   } 
 
+  template<class WlkSet, class CTens, class CMat>
+  void BackPropagate(int steps, int nStabalize, WlkSet& wset, CTens&& Refs, CMat&& detR){
+    throw std::runtime_error("calling visitor on dummy object");
+  } 
+
   bool hybrid_propagation() { 
     throw std::runtime_error("calling visitor on dummy_Propagator object");
     return false;
@@ -55,6 +60,15 @@ class dummy_Propagator
   bool free_propagation() {
     throw std::runtime_error("calling visitor on dummy_Propagator object");
     return false;
+  }
+
+  int global_number_of_cholesky_vectors() const{
+    throw std::runtime_error("calling visitor on dummy_Propagator object");
+    return 0;
+  }
+
+  void generateP1(int,WALKER_TYPES) {
+    throw std::runtime_error("calling visitor on dummy_Propagator object");
   }
 
 };
@@ -92,6 +106,22 @@ class Propagator: public boost::variant<dummy::dummy_Propagator,AFQMCBasePropaga
         );
     }
 
+    template<class... Args>
+    void BackPropagate(Args&&... args) {
+        boost::apply_visitor(
+            [&](auto&& a){a.BackPropagate(std::forward<Args>(args)...);},
+            *this
+        );
+    }
+
+    template<class... Args>
+    void generateP1(Args&&... args) {
+        boost::apply_visitor(
+            [&](auto&& a){a.generateP1(std::forward<Args>(args)...);},
+            *this
+        );
+    }
+
     bool hybrid_propagation() {
         return boost::apply_visitor(
             [&](auto&& a){return a.hybrid_propagation();},
@@ -102,6 +132,13 @@ class Propagator: public boost::variant<dummy::dummy_Propagator,AFQMCBasePropaga
     bool free_propagation() {
         return boost::apply_visitor(
             [&](auto&& a){return a.free_propagation();},
+            *this
+        );
+    }
+
+    int global_number_of_cholesky_vectors() const{
+        return boost::apply_visitor(
+            [&](auto&& a){return a.global_number_of_cholesky_vectors();},
             *this
         );
     }

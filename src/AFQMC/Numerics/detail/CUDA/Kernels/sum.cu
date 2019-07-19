@@ -18,7 +18,7 @@
 #include <thrust/device_ptr.h>
 #include "AFQMC/Numerics/detail/CUDA/Kernels/strided_range.hpp"
 #include "AFQMC/Numerics/detail/CUDA/Kernels/strided_2Drange.hpp"
-#define QMC_CUDA 1
+#define ENABLE_CUDA 1
 #include "AFQMC/Memory/CUDA/cuda_utilities.h"
 
 namespace kernels

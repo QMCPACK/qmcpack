@@ -35,18 +35,59 @@
 namespace ma 
 {
 
-  inline static void gesvd(char *jobu, char *jobvt, int *m, int *n, float *a,
-                           int *lda, float *s, float *u, int *ldu, float *vt,
-                           int *ldvt, float *work, int *lwork, int *info)
+  inline static void gesvd(char jobu, char jobvt, int m, int n, 
+                    float *a, int lda, float *s, float *u, int ldu, 
+                    float *vt, int ldvt, float *work, int lwork, int &info)
   {
-    sgesvd(jobu, jobvt, m, n, a, lda, s, u, ldu, vt, ldvt, work, lwork, info);
+    sgesvd(&jobu, &jobvt, &m, &n, a, &lda, s, u, &ldu, vt, &ldvt, work, &lwork, &info);
+    //sgesvd(jobu, jobvt, m, n, a, lda, s, u, ldu, vt, ldvt, work, lwork, info);
   }
 
-  inline static void gesvd(char *jobu, char *jobvt, int *m, int *n, double *a,
-                           int *lda, double *s, double *u, int *ldu, double *vt,
-                           int *ldvt, double *work, int *lwork, int *info)
+  inline static void gesvd(char jobu, char jobvt, int m, int n, 
+                    double *a, int lda, double *s, double *u, int ldu, 
+                    double *vt, int ldvt, double *work, int lwork, int &info)
   {
-    dgesvd(jobu, jobvt, m, n, a, lda, s, u, ldu, vt, ldvt, work, lwork, info);
+    dgesvd(&jobu, &jobvt, &m, &n, a, &lda, s, u, &ldu, vt, &ldvt, work, &lwork, &info);
+    //dgesvd(jobu, jobvt, m, n, a, lda, s, u, ldu, vt, ldvt, work, lwork, info);
+  }
+
+  inline static void gesvd(char jobu, char jobvt, int m, int n,
+                    std::complex<float> *a, int lda, float *s, std::complex<float> *u, int ldu,
+                    std::complex<float> *vt, int ldvt, std::complex<float> *work, int lwork, 
+                    float* rwork, int &info)
+  {
+    cgesvd(&jobu, &jobvt, &m, &n, a, &lda, s, u, &ldu, vt, &ldvt, work, &lwork, rwork, &info);
+    //cgesvd(jobu, jobvt, m, n, a, lda, s, u, ldu, vt, ldvt, work, lwork, rwork, info);
+  }
+
+  inline static void gesvd(char jobu, char jobvt, int m, int n, 
+                    std::complex<double> *a, int lda, double *s, std::complex<double> *u, int ldu,   
+                    std::complex<double> *vt, int ldvt, std::complex<double> *work, int lwork, 
+                    double* rwork, int &info)
+  {
+    zgesvd(&jobu, &jobvt, &m, &n, a, &lda, s, u, &ldu, vt, &ldvt, work, &lwork, rwork, &info);
+    //zgesvd(jobu, jobvt, m, n, a, lda, s, u, ldu, vt, ldvt, work, lwork, rwork, info);
+  }
+
+  template<typename T>
+  inline static void gesvd_bufferSize (const int m, const int n, T* a, int& lwork)
+  {
+    T work, S;
+    int status;
+    lwork = -1;
+    gesvd('A','A', m, n, a, m , nullptr, nullptr, m, nullptr, m, &work, lwork, nullptr, status);
+    lwork = int(work);
+  }
+
+  template<typename T>
+  inline static void gesvd_bufferSize (const int m, const int n, std::complex<T>* a, int& lwork)
+  {
+    std::complex<T> work;
+    T S;
+    int status;
+    lwork = -1;
+    gesvd('A','A', m, n, a, m , nullptr, nullptr, m, nullptr, m, &work, lwork, nullptr, status);
+    lwork = int(real(work));
   }
 
   inline static void geev(char *jobvl, char *jobvr, int *n, double *a, int *lda,
