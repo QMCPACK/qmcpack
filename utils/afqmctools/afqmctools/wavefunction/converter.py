@@ -27,13 +27,13 @@ def read_qmcpack_ascii_wavefunction(filename, nmo, nelec):
                     break
         if wfn_type == 'occ':
             uhf = True
-            wfn = read_phmsd(f, na, nb)
+            wfn = read_phmsd(f, na, nb, nmo)
         else:
             wfn = read_nomsd(f, nmo, na, nb, nci, uhf, fullmo)
 
     return wfn, 'uhf' if uhf else 'rhf'
 
-def read_phmsd(f, na, nb):
+def read_phmsd(f, na, nb, nmo):
     line = f.readline()
     coeffs = []
     occa = []
@@ -42,8 +42,8 @@ def read_phmsd(f, na, nb):
         line = f.readline().split()
         if len(line) > 0:
             coeffs.append(convert_string(line[0]))
-            occa.append([int(i) for i in line[1:na+1]])
-            occb.append([int(i) for i in line[na+1:]])
+            occa.append([int(i)-1 for i in line[1:na+1]])
+            occb.append([int(i)-1-nmo  for i in line[na+1:]])
 
     return numpy.array(coeffs), numpy.array(occa), numpy.array(occb)
 
