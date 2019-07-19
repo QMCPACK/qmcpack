@@ -102,7 +102,7 @@ void eshdfFile::readInEigFcn(const xmlNode& nd, fftContainer& cont) {
   const string encoding = nd.getAttribute("encoding");
   
   if (encoding != "text") {
-    cout << "Don't yet know how to handle encoding of wavefunction values other than text" << endl;
+    cerr << "Don't yet know how to handle encoding of wavefunction values other than text" << endl;
     exit(1);
   }
   

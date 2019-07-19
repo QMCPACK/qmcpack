@@ -32,8 +32,8 @@ int main(int argc, char* argv[]) {
     }
   }
   if (file_exists(fname) == false) {
-    cout << "must specify a valid xml file name as an argument" << endl;
-    cout << fname << " did not work" << endl;
+    cerr << "must specify a valid xml file name as an argument" << endl;
+    cerr << fname << " did not work" << endl;
     return(1);
   }
 
