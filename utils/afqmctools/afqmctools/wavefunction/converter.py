@@ -150,4 +150,4 @@ def read_qmcpack_ci_wavefunction(input_file, ndets=None):
             occa.append(get_occupied(ca[0], na, nmo))
             occb.append(get_occupied(cb[0], nb, nmo))
     wfn = (coeffs, numpy.array(occa), numpy.array(occb))
-    return wfn, 'uhf', nmo, (na,nb)
+    return wfn, True, nmo, (na,nb)
