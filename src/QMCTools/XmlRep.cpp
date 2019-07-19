@@ -296,7 +296,7 @@ string xmlStream::getTag(const xmlElement& e) const {
 
 string xmlStream::getTag(int i) const {
   if (i >= elements.size()) {
-    cout << "requested a tag index past the end of the vector" << endl;
+    cerr << "requested a tag index past the end of the vector" << endl;
     exit(1);
   }
   return getTag(elements[i]);
@@ -350,7 +350,7 @@ int xmlNode::getChildIndex(const string& childName, int strict) const {
     }
   }
   if (strict != 0 && index < 0) {
-    cout << "In xmlNode with name: " << name << ", could not find index for child with name: " << childName << endl;
+    cerr << "In xmlNode with name: " << name << ", could not find index for child with name: " << childName << endl;
     exit(1);
   }
   return index;
@@ -366,7 +366,7 @@ const xmlNode& xmlNode::getChild(const string& name) const {
 
 xmlNode& xmlNode::getChild(int i) {
   if (i < 0 || i >= children.size()) {
-    cout << "Asked to get child node: " << i << ", but there are only " << getNumChildren() << "nodes" << endl;
+    cerr << "Asked to get child node: " << i << ", but there are only " << getNumChildren() << "nodes" << endl;
     exit(1);
   }
   return children[i];
@@ -374,7 +374,7 @@ xmlNode& xmlNode::getChild(int i) {
 
 const xmlNode& xmlNode::getChild(int i) const {
   if (i < 0 || i >= children.size()) {
-    cout << "Asked to get child node: " << i << ", but there are only " << getNumChildren() << "nodes" << endl;
+    cerr << "Asked to get child node: " << i << ", but there are only " << getNumChildren() << "nodes" << endl;
     exit(1);
   }
   return children[i];
@@ -388,7 +388,7 @@ int xmlNode::getAttributeIndex(const string& attrName, int strict) const {
     }
   }
   if (strict != 0 && index < 0) {
-    cout << "In xmlNode with name: " << name << ", could not find index for attribute with name: " << attrName << endl;
+    cerr << "In xmlNode with name: " << name << ", could not find index for attribute with name: " << attrName << endl;
     exit(1);
   }
   return index;
@@ -400,7 +400,7 @@ string xmlNode::getAttributeName(int index) const {
 
 string xmlNode::getAttribute(int index) const {
   if (index < 0 || index >= attributes.size()) {
-    cout << "in xmlNode with name: " << name << ", requested attribute with index " << index << ", but this index is not present." << endl;
+    cerr << "in xmlNode with name: " << name << ", requested attribute with index " << index << ", but this index is not present." << endl;
     exit(1);
   } 
   return attributes[index].second;
@@ -573,7 +573,7 @@ xmlNode::xmlNode(const xmlNode& c) : stream(c.stream) {
 
 xmlNode::xmlNode(istream* _stream, int start, bool deferValue) : stream(_stream) {
   xmlStream xl(_stream);
-  cout << "Finished creating stream object" << endl;
+  //cout << "Finished creating stream object" << endl;
   //xl.listAll();
   createFromStream(xl, start, deferValue);
 }
