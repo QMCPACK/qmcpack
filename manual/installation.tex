@@ -1536,9 +1536,11 @@ developers if you are unsure of what is a fair change.
 For the largest problem sizes, the initialization of spline orbitals might
 take a large portion of overall runtime. When QMCPACK is run at scale,
 the initialization is fast because it is fully
-parallelized. However, the performance runs are most usually run on a single node.
-Consider running QMCPACK once with \ishell{--save_wfs=1} to save the
-converted spline coefficients to the disk and load them for later runs in the same folder.
+parallelized. However, the performance tests usually run on a single node.
+Consider running QMCPACK once with \ishell{save_coefs="yes"} XML input tag
+added to the line of `determinantset' to save the converted spline
+coefficients to the disk and load them for later runs in the same folder.
+See Section \ref{sec:spo_spline} for more information.
 
 The delayed update algorithm in Section~\ref{sec:singledeterminant}
 significantly changes the performance characteristics of QMCPACK.  A
