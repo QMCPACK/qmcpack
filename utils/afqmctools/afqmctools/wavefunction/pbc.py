@@ -57,8 +57,10 @@ def write_wfn_pbc(scf_data, ortho_ao, filename, rediag=True,
                                                 mo_energy, uhf, verbose=verbose)
     re_occ, trial, ndeg, srt, isrt = reoccupy(mo_occ, eigs, uhf, verbose,
                                               ndet_max=ndet_max)
-    nalpha = int(round(numpy.sum(re_occ[0])))
-    nbeta = int(round(numpy.sum(re_occ[1])))
+    # mo_occs from pyscf is a list of numpy arrays of potentially different
+    # length so can't just use numpy.sum.
+    nalpha = int(round(sum(sum(occ) for occ in re_occ[0])))
+    nbeta = int(round(sum(sum(occ) for occ in re_occ[1])))
     nelec = (nalpha, nbeta)
     if ndeg == 1 or ndet_max == 1:
         if verbose:
@@ -147,8 +149,9 @@ def create_wavefunction(orbs, occs, nmo_pk, nelec, uhf, verbose):
     return wfn
 
 def print_eigenvalues(ks, bands, eigs, uhf, srt, nelec, verbose):
-    ks = numpy.array(ks).ravel()
-    bands = numpy.array(bands).ravel()
+    # Can't use ravel because arrays can be of different length
+    ks = numpy.array([val for item in ks for val in item])
+    bands = numpy.array([val for item in bands for val in item])
     # TODO: Dangerous should subselect from already sorted array.
     print(" # Recomputed MO energies.")
     if uhf:
@@ -262,7 +265,7 @@ def determine_occupancies(mo_occ, mo_energy, rhf, low=0.1,
                           high=0.95, verbose=False, refdet=0,
                           offset=0):
     nocc = 0
-    nelec = numpy.sum(mo_occ)
+    nelec = sum(sum(occ) for occ in mo_occ)
     col_sort = numpy.ravel(mo_energy).argsort()
     col_sort_inv = col_sort.argsort()
     nmo_pk = []
@@ -277,8 +280,8 @@ def determine_occupancies(mo_occ, mo_energy, rhf, low=0.1,
         if verbose:
             print(" # All occupancies are one or zero.")
         ndeg = 1
-        msd = [numpy.where(numpy.ravel(mo_occ) > high)[0]]
-        pcomb = numpy.ones(len(msd))
+        msd = None
+        pcomb = None
         return (mo_occ, ndeg, msd, col_sort, col_sort_inv, pcomb)
     else:
         if verbose:
