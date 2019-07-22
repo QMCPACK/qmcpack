@@ -6,8 +6,8 @@ echo "Purging current module set"
 
 declare -A builds=( ["cpu"]=" " \
                     ["complex_cpu"]="-DQMC_COMPLEX=1 " \
-                    ["legacy_gpu"]="-DQMC_CUDA=1 " \
-		    ["complex_legacy_gpu"]="-DQMC_CUDA=1 -DQMC_COMPLEX=1 " )
+                    ["legacy_gpu"]="-DQMC_CUDA=1 -DCUDA_ARCH=sm_70 " \
+		    ["complex_legacy_gpu"]="-DQMC_CUDA=1 -DQMC_COMPLEX=1 -DCUDA_ARCH=sm_70 " )
 
 mkdir bin
 
@@ -18,11 +18,10 @@ do
     mkdir build_summit_${build}
     cd build_summit_${build}
     cmake -DCMAKE_C_COMPILER="mpicc" \
-      -DCMAKE_CXX_COMPILER="mpicxx" \
-      -DBUILD_LMYENGINE_INTERFACE=0 \
-      ${builds[$build]} \
-      -DCUDA_ARCH="sm_70" \
-      ..
+          -DCMAKE_CXX_COMPILER="mpicxx" \
+          -DBUILD_LMYENGINE_INTERFACE=0 \
+          ${builds[$build]} \
+          ..
     make -j 20
     if [ $? -eq 0 ]; then
       build_dir=$(pwd)

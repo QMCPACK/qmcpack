@@ -4,6 +4,7 @@ module load gcc
 module load spectrum-mpi
 module load essl
 module load netlib-lapack
+module load netlib-scalapack
 module load hdf5
 module load fftw
 export FFTW_ROOT=$OLCF_FFTW_ROOT
