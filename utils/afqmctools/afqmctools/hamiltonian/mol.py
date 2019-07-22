@@ -13,7 +13,8 @@ from afqmctools.utils.pyscf_utils import load_from_pyscf_chk_mol
 
 
 def write_hamil_mol(scf_data, hamil_file, chol_cut,
-                    verbose=True, cas=None, ortho_ao=False, nelec=None):
+                    verbose=True, cas=None, ortho_ao=False, nelec=None,
+                    real_chol=False):
     """Write QMCPACK hamiltonian from pyscf scf calculation on mol object.
     """
     hcore, chol_vecs, nelec, enuc = generate_hamiltonian(scf_data,
@@ -38,7 +39,7 @@ def write_hamil_mol(scf_data, hamil_file, chol_cut,
                "%f"%(1-float(chol_vecs.nnz)/nelem))
         print(" # Total memory required for ERI tensor: %13.8e GB"%(mem))
     write_qmcpack_cholesky(hcore, chol_vecs, nelec, nbasis, enuc,
-                           filename=hamil_file)
+                           filename=hamil_file, real_chol=real_chol)
 
 def write_qmcpack_cholesky(hcore, chol, nelec, nmo, e0=0.0,
                            filename='hamiltonian.h5', real_chol=False):
