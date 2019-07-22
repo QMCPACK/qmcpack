@@ -498,7 +498,7 @@ def read_ascii_integrals(filename, symmetry=8, verbose=True):
     f = open(filename)
     while True:
         line = f.readline()
-        if 'END' in line:
+        if 'END' in line or '/' in line:
             break
         for i in line.split(','):
             if 'NORB' in i:
