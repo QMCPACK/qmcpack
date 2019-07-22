@@ -37,17 +37,10 @@ bool GridExternalPotential::put(xmlNodePtr cur)
 
   Array<double, 3> data(grid.num, grid.num, grid.num);
 
-  for (int ix = 0; ix < grid.num; ix++) {
-    for (int iy = 0; iy < grid.num; iy++) {
-      for (int iz = 0; iz < grid.num; iz++) {
-        double x = delta*ix + grid.start;
-        double y = delta*iy + grid.start;
-        double z = delta*iz + grid.start;
-        double r2 = x*x + y*y + z*z;
-        double val = 0.5 * r2;
-        data(ix, iy, iz) = val;
-      }
-    }
+  hdf_archive hin;
+  bool read_okay = hin.open("sho.h5",H5F_ACC_RDONLY);
+  if (!read_okay) {
+    app_log() << "Failed to open sho.h5" << std::endl;
   }
   
 
