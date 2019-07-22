@@ -84,7 +84,7 @@ The exercise will be performed on a water molecule at the equilibrium geometry.
 From the top directory, go to ``\texttt{ex1\_first-run-hartree-fock/gms}.'' This directory contains an input
 file for a HF calculation of a water molecule using BFD ECPs and the corresponding
 cc-pVTZ basis set. The input file should be named: “h2o.hf.inp.” Study the input
-file. See Section 19.6, ``Appendix A: GAMESS input" for a more detailed description of the
+file. See Section~\ref{sec:lab_adv_mol_gamess}, ``Appendix A: GAMESS input" for a more detailed description of the
 GAMESS input syntax. However, there will be a better time to do this soon, so we recommend
 continuing with the exercise at this point. After you are done, execute
 GAMESS with this input and store the standard output in a file named ``h2o.hf.output.''
@@ -124,7 +124,7 @@ grep "TOTAL ENERGY =" h2o.hf.output
 %submit the execution of the converter using ``qsub submit convert.csh'' (all QMCPACK execution 
 %scripts will be submitted with qsub). This is a good time to review section B, which
 %contains a description on the use of the converter.
-As the job runs on VESTA, it is a good time to review Section 19.7, ``Appendix B: convert4qmc," which contains a description on the use of the converter.
+As the job runs on VESTA, it is a good time to review Section~\ref{sec:lab_adv_mol_convert4qmc}, ``Appendix B: convert4qmc," which contains a description on the use of the converter.
 
 
 \subsection{Optimize the wavefunction}
@@ -145,7 +145,7 @@ defined before the wavefunction). The name of the particle set and wavefunction 
 and \texttt{h2o.wfs.xml}, respectively. Study both files and submit when you are ready. Notice that the
 location of the ECPs has been set for you; in your own calculations you have to make
 sure you obtain the ECPs from the appropriate libraries and convert them to QMCPACK
-format using ppconvert. While these calculations finish is a good time to study Section 19.8, ``Appendix C: Wavefunction optimization XML block," which contains a review
+format using ppconvert. While these calculations finish is a good time to study Section~\ref{sec:lab_adv_mol_opt_appendix}, ``Appendix C: Wavefunction optimization XML block," which contains a review
 of the main parameters in the optimization XML block.  The
 previous steps can be accomplished by the following commands:
 \begin{shade}
@@ -202,7 +202,7 @@ cp ../opt/jopt-h2o.s007.opt.xml h2o.opt.wfs.xml
 # edit dmc_ts.xml to include the correct ptcl.xml and wfs.xml
 jobrun_vesta qmcpack dmc_ts.xml
 \end{lstlisting}
-While these runs complete, go to Section 19.9, ``Appendix D: VMC and DMC XML block," and review the basic VMC and DMC input
+While these runs complete, go to Section\ref{sec:lab_adv_mol_vmcdmc_appendix}, ``Appendix D: VMC and DMC XML block," and review the basic VMC and DMC input
 blocks. Notice that in the current DMC blocks the time step is decreased as the number of blocks is increased. Why is this?
 
 When the simulations are finished, use \texttt{qmca} to analyze the output files and plot the
@@ -335,7 +335,7 @@ input, just leave the VMC step. In all three cases, modify the submission script
 \end{figure}
 
 Because these simulations will take several minutes to complete, this is an excellent opportunity
-to go to Section 19.10, ``Appendix E: Wavefunction XML block," and review the wavefunction XML block used by QMCPACK. When the
+to go to Section~\ref{\label{sec:lab_adv_mol_wf_appendix}}, ``Appendix E: Wavefunction XML block," and review the wavefunction XML block used by QMCPACK. When the
 simulations are completed, use \texttt{qmca} to analyze the output files. Using your favorite plotting
 program (e.g., gnu plot), plot the energy and variance as a function of the Jastrow form.
 Figure \ref{fig:lam_vmc_jastrow} shows a typical result for this calculation. As can be seen, the VMC energy and
@@ -394,7 +394,7 @@ Go to ``\texttt{ex3\_multi-slater-jastrow/cisd/gms}'' and you will see input and
 %CASSCF, CASCI, SOCI. 
 
 There will be time in the next step to study the GAMESS input
-files and the description in Section~19.6, ``Appendix A: GAMESS input." %In the next exercise we will use the CISD output, in
+files and the description in Section~\ref{{sec:lab_adv_mol_gamess}, ``Appendix A: GAMESS input." %In the next exercise we will use the CISD output, in
 %the next exercise we will use the remaining files. 
 Since the output is already provided, the
 only action needed is to use the converter to generate the appropriate QMCPACK files.  %Copy a submission script from GAMESS/Generic Files and execute the converter for all the output 
@@ -422,7 +422,7 @@ the same steps used in Section 9.4.3, ``Optimization and DMC calculations with D
 to optimize the wavefunction. Similar to this case, design a QMCPACK input file that performs
 wavefunction optimization followed by VMC and DMC calculations. Submit the calculation.
 
-This is a good time to review the GAMESS input file description in Section 19.6, ``Appendix A. GAMESS input."
+This is a good time to review the GAMESS input file description in Section~\ref{sec:lab_adv_mol_gamess}, ``Appendix A. GAMESS input."
 When the run is completed, go to the previous directory and make a new folder named
 \texttt{thres0.0075}. Repeat the previous steps to optimize the wavefunction with a cutoff of 0.01, but use a cutoff of 0.0075 this time. This will increase the number of determinants used in the calculation. Notice that the ``cutoff'' parameter in the XML should be less than the ``-threshold 0.0075'' flag passed to the converted, which is further bounded by the PRTTOL flag in the GAMESS input.
 
@@ -468,12 +468,12 @@ What about the choice in the set of orbitals?
 
 
 \newpage
-\section{Appendix A: GAMESS input}
+\section{Appendix A: GAMESS input}\label{sec:lab_adv_mol_gamess}
 In this section we provide a brief description of the GAMESS input needed to produce
 trial wavefunction for QMC calculations with QMCPACK. We assume basic familiarity
 with GAMESS input structure, particularly regarding the input of atomic coordinates and
 the definition of Gaussian basis sets. This section focuses on generation of the output
-files needed by the converter tool, \texttt{convert4qmc}. For a description of the converter, see Section 19.7, ``Appendix B: convert4qmc."
+files needed by the converter tool, \texttt{convert4qmc}. For a description of the converter, see Section~\ref{sec:lab_adv_mol_convert4qmc}, ``Appendix B: convert4qmc."
 
 Only a subset of the methods available in GAMESS can be used to generate wavefunctions 
 for QMCPACK, and we restrict our description to these.
@@ -627,14 +627,14 @@ $END
 
 
 \newpage
-\section{Appendix B: convert4qmc}
+\section{Appendix B: convert4qmc}\label{sec:lab_adv_mol_convert4qmc}
 To generate the particleset and wavefunction XML blocks required by QMCPACK in
 calculations with molecular systems, the converter \texttt{convert4qmc} must be used. The converter
 will read the standard output from the appropriate quantum chemistry calculation and will
 generate all the necessary input for QMCPACK. In the following, we describe the main options of the
 converter for GAMESS output. In general, there are three ways to use the converter depending
 on the type of calculation performed. The minimum syntax for each option is shown subsequently.
-For a description of the XML files produced by the converter, see Section 19.10, ``Appendix E: Wavefunction XML block."
+For a description of the XML files produced by the converter, see Section~\ref{sec:lab_adv_mol_wf_appendix}, ``Appendix E: Wavefunction XML block."
 
 \begin{enumerate}
   \item{For all single-determinant calculations (HF and DFT with any DFTTYP):}
@@ -729,7 +729,7 @@ symmetry rotation, the resulting output will always be consistent.}
 
 
 \newpage
-\section{Appendix C: Wavefunction optimization XML block}
+\section{Appendix C: Wavefunction optimization XML block}\label{sec:lab_adv_mol_opt_appendix}
 
 \begin{lstlisting}[style=QMCPXML,caption=``Sample XML optimization block.",label=lst:lam_xml_opt]
   <loop max="10">
@@ -792,7 +792,7 @@ to 0 and do a single inner iteration (max its=1) per sample of configurations.}
 
 
 \newpage
-\section{Appendix D: VMC and DMC XML block}
+\section{Appendix D: VMC and DMC XML block}\ref{sec:lab_adv_mol_vmcdmc_appendix}
 
 \begin{lstlisting}[style=QMCPXML,caption=``Sample XML blocks for VMC and DMC calculations.",label=lst:lam_xml_vmc_dmc]
   <qmc method="vmc" move="pbyp" checkpoint="-1">
@@ -849,7 +849,7 @@ given node, the walkers are split across all the threads in the system.}
 
 
 \newpage
-\section{Appendix E: Wavefunction XML block}
+\section{Appendix E: Wavefunction XML block}\label{sec:lab_adv_mol_wf_appendix}
 
 \begin{lstlisting}[style=QMCPXML,caption=``Basic framework for a single-determinant determinantset XML block.",label=lst:lam_xml_determinantset]
 <wavefunction name="psi0" target="e">
