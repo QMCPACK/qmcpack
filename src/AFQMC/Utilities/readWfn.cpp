@@ -610,10 +610,15 @@ void read_ph_wavefunction_hdf(hdf_archive& dump, std::vector<ComplexType>& ci_co
   if(walker_type != COLLINEAR)
     APP_ABORT(" Error: walker_type!=COLLINEAR not yet implemented in read_ph_wavefunction.\n");
 
-  if(!dump.readEntry(type,"type")) {
+  int type_;
+  if(!dump.readEntry(type_,"type")) {
     app_error()<<" Error in WavefunctionFactory::fromHDF5(): Problems reading type. \n";
     APP_ABORT("");
   }
+  if(type_ == 0)
+    type = "occ";
+  else
+    type = "mixed";
   if(type == "mixed") mixed = true;
 
   if(mixed) { // read reference
