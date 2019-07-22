@@ -193,14 +193,14 @@ def write_phmsd(fh5, occa, occb, nelec, norb, init=None, orbmat=None):
         add_dataset(fh5, 'Psi0_beta',
                     to_qmcpack_complex(init[:,occb[0]-norb].copy()))
     if orbmat is not None:
-        fh5['type'] = numpy.string_(['mixed'])
+        fh5['type'] = 1
         # Expects conjugate transpose.
         oa = scipy.sparse.csr_matrix(orbmat[0].conj().T)
         write_nomsd_single(fh5, oa, 0)
         ob = scipy.sparse.csr_matrix(orbmat[1].conj().T)
         write_nomsd_single(fh5, ob, 1)
     else:
-        fh5['type'] = numpy.string_(['occ'])
+        fh5['type'] = 0
     occs = numpy.zeros((len(occa), na+nb), dtype=numpy.int32)
     occs[:,:na] = numpy.array(occa)
     occs[:,na:] = norb+numpy.array(occb)
