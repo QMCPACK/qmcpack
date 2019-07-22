@@ -7,7 +7,7 @@ Notable changes to QMCPACK are documented in this file.
 ### Notes
 
 This release includes Quantum Espresso v6.4.1 support, new examples
-for adding wavefunctions and Jastrow functions, and many updates the
+for adding wavefunctions and Jastrow functions, and many updates to the
 AFQMC code functionality. Additionally, all the updated scripts and
 functionality utilized during the [2019 QMCPACK
 workshop](https://github.com/QMCPACK/qmcpack_workshop_2019) are
@@ -36,7 +36,7 @@ source code cleanup have also been performed.
   2019 QMCPACK Workshop and in manual.
 * Improved human-readable Jastrow output [\#1525](https://github.com/QMCPACK/qmcpack/pull/1525).
 * Improved MPI implementation. QMCPACK is now compatible with OpenMPI v4.
-* Majority of the manual has being professionally edited.
+* Majority of the manual has been professionally edited.
 
 ### Known bugs
 
