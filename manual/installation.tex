@@ -744,85 +744,6 @@ make -j 24
 ls -l bin/qmcpack
 \end{shade}
 
-\subsection{Installing on ORNL OLCF Titan Cray XK7 (NVIDIA GPU
-  accelerated)}
-\label{sec:titanbuildgpu}
-Titan is a GPU-accelerated supercomputer at Oak Ridge National
-Laboratory's  Oak Ridge Leadership Computing Facility  (ORNL OLCF). Each
-compute node has a 16 core AMD 2.2GHz Opteron 6274 (Interlagos) and an
-NVIDIA Kepler accelerator. The standard Cray software environment is
-available, with libraries accessed via modules. The only extra
-settings required to build the GPU version are the cudatoolkit module
-and specifying -DQMC\_CUDA=1 on the CMake configure line.
-
-Note that on Crays, the compiler wrappers ``CC'' and ``cc'' are
-used. The build system checks for these and does not (should not) use
-the compilers directly.
-
-%
-\begin{shade}
-export CRAYPE_LINK_TYPE=dynamic
-module swap PrgEnv-pgi PrgEnv-gnu # Use gnu compilers
-module load cudatoolkit           # CUDA for GPU build
-module load cray-hdf5-parallel
-module load cmake3
-module load fftw
-export FFTW_HOME=$FFTW_DIR/..
-module load boost
-mkdir build_titan_gpu
-cd build_titan_gpu
-export CC=cc
-export CXX=CC
-cmake -DQMC_CUDA=1 ..             # Must enable CUDA capabilities
-make -j 8
-ls -l bin/qmcpack
-\end{shade}
-
-\subsection{Installing on ORNL OLCF Titan Cray XK7 (CPU version)}
-As noted in Section~\ref{sec:titanbuildgpu} for the GPU, building on
-Crays requires only loading the appropriate library modules.
-
-%
-\begin{shade}
-export CRAYPE_LINK_TYPE=dynamic
-module swap PrgEnv-pgi PrgEnv-gnu # Use gnu compilers
-module unload cudatoolkit         # No CUDA for CPU build
-module load cray-hdf5-parallel
-module load cmake3
-module load fftw
-export FFTW_HOME=$FFTW_DIR/..
-module load boost
-mkdir build_titan_cpu
-cd build_titan_cpu
-export CC=cc
-export CXX=CC
-cmake ..
-make -j 8
-ls -l bin/qmcpack
-\end{shade}
-
-\subsection{Installing on ORNL OLCF Eos Cray XC30}
-Eos is a Cray XC30 with 16 core Intel Xeon E5-2670 processors connected
-by the Aries interconnect. The build process is identical to Titan
-except that we use the default Intel programming environment. This is
-usually preferred to GNU.
-
-\begin{shade}
-export CRAYPE_LINK_TYPE=dynamic
-module unload cray-libsci
-module load cray-hdf5
-module load cmake3/3.6.1   # Or newer
-module load fftw
-export FFTW_HOME=$FFTW_DIR/..
-module load boost
-module swap gcc gcc/6.3.0  # Make C++ 14 standard library available to the Intel compiler
-mkdir build_eos
-cd build_eos
-cmake ..
-make -j 8
-ls -l bin/qmcpack
-\end{shade}
-
 \subsection{Installing on ORNL OLCF Summit}
 Summit is an IBM system at the ORNL OLCF built with IBM Power System AC922
 nodes. They have two IBM Power 9 processors and six NVIDIA Volta V100
@@ -1496,9 +1417,11 @@ developers if you are unsure of what is a fair change.
 For the largest problem sizes, the initialization of spline orbitals might
 take a large portion of overall runtime. When QMCPACK is run at scale,
 the initialization is fast because it is fully
-parallelized. However, the performance runs are most usually run on a single node.
-Consider running QMCPACK once with \ishell{--save_wfs=1} to save the
-converted spline coefficients to the disk and load them for later runs in the same folder.
+parallelized. However, the performance tests usually run on a single node.
+Consider running QMCPACK once with \ishell{save_coefs="yes"} XML input tag
+added to the line of `determinantset' to save the converted spline
+coefficients to the disk and load them for later runs in the same folder.
+See Section \ref{sec:spo_spline} for more information.
 
 The delayed update algorithm in Section~\ref{sec:singledeterminant}
 significantly changes the performance characteristics of QMCPACK.  A
