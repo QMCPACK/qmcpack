@@ -36,6 +36,7 @@ SET(HAMSRCS
   HamiltonianFactory.cpp
   CoulombPotentialFactory.cpp
   HarmonicExternalPotential.cpp
+  GridExternalPotential.cpp
   StaticStructureFactor.cpp
   OrbitalImages.cpp
   SpinDensity.cpp
