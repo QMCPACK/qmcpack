@@ -152,9 +152,9 @@ class WavefunctionFactory
   void getInitialGuess(hdf_archive& dump, std::string& name, int NMO, int NAEA, int NAEB, WALKER_TYPES walker_type);
   int getExcitation(boost::multi::array_ref<int,1>& deti, boost::multi::array_ref<int,1>& detj, std::vector<int>& excit, int& perm);
   void computeVariationalEnergyPHMSD(TaskGroup_& TG, Hamiltonian& ham, boost::multi::array_ref<int,2>& occs, std::vector<ComplexType>& coeff, int ndets, int NAEA, int NAEB, int NMO, bool recomputeCI);
-  ValueType slaterCondon0(Hamiltonian& ham, boost::multi::array_ref<int,1>& det, int NMO);
-  ValueType slaterCondon1(Hamiltonian& ham, std::vector<int>& excit, boost::multi::array_ref<int,1>& det, int NMO);
-  ValueType slaterCondon2(Hamiltonian& ham, std::vector<int>& excit, int NMO);
+  ComplexType slaterCondon0(Hamiltonian& ham, boost::multi::array_ref<int,1>& det, int NMO);
+  ComplexType slaterCondon1(Hamiltonian& ham, std::vector<int>& excit, boost::multi::array_ref<int,1>& det, int NMO);
+  ComplexType slaterCondon2(Hamiltonian& ham, std::vector<int>& excit, int NMO);
 
 
   // MAM: should I store a copy rather than a pointer???

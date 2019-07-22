@@ -970,7 +970,7 @@ void WavefunctionFactory::computeVariationalEnergyPHMSD(TaskGroup_& TG, Hamilton
       // Compute <Di|H|Dj>
       if((idet*ndets+jdet) % TG.Global().size() == TG.Global().rank()) {
         if(idet == jdet) {
-          H[idet][idet] = ComplexType(slaterCondon0(ham, deti, NMO) + enuc);
+          H[idet][idet] = slaterCondon0(ham, deti, NMO) + enuc;
           energy[0] += ma::conj(cidet)*cidet*H[idet][idet];
           energy[1] += ma::conj(cidet)*cidet;
         } else {
@@ -980,9 +980,9 @@ void WavefunctionFactory::computeVariationalEnergyPHMSD(TaskGroup_& TG, Hamilton
           std::vector<int> excit;
           int nexcit = getExcitation(deti, detj, excit, perm);
           if(nexcit == 1) {
-            H[idet][jdet] = ComplexType(perm*slaterCondon1(ham, excit, detj, NMO));
+            H[idet][jdet] = ComplexType(perm)*slaterCondon1(ham, excit, detj, NMO);
           } else if(nexcit == 2) {
-            H[idet][jdet] = ComplexType(perm*slaterCondon2(ham, excit, NMO));
+            H[idet][jdet] = ComplexType(perm)*slaterCondon2(ham, excit, NMO);
           } else {
             H[idet][jdet] = ComplexType(0.0);
           }
@@ -1067,7 +1067,7 @@ int WavefunctionFactory::getExcitation(boost::multi::array_ref<int,1>& deti, boo
   return nexcit;
 }
 
-ValueType  WavefunctionFactory::slaterCondon0(Hamiltonian& ham, boost::multi::array_ref<int,1>& det, int NMO)
+ComplexType WavefunctionFactory::slaterCondon0(Hamiltonian& ham, boost::multi::array_ref<int,1>& det, int NMO)
 {
   ValueType one_body = ValueType(0.0);
   ValueType two_body = ValueType(0.0);
@@ -1079,10 +1079,10 @@ ValueType  WavefunctionFactory::slaterCondon0(Hamiltonian& ham, boost::multi::ar
       two_body += ham.H(oi,oj,oi,oj) - ham.H(oi,oj,oj,oi);
     }
   }
-  return one_body + two_body;
+  return ComplexType(one_body + two_body);
 }
 
-ValueType WavefunctionFactory::slaterCondon1(Hamiltonian& ham, std::vector<int>& excit, boost::multi::array_ref<int,1>& det, int NMO)
+ComplexType WavefunctionFactory::slaterCondon1(Hamiltonian& ham, std::vector<int>& excit, boost::multi::array_ref<int,1>& det, int NMO)
 {
   int i = excit[0];
   int a = excit[1];
@@ -1091,16 +1091,16 @@ ValueType WavefunctionFactory::slaterCondon1(Hamiltonian& ham, std::vector<int>&
   for(auto j : det) {
     two_body += ham.H(i,j,a,j) - ham.H(i,j,j,a);
   }
-  return one_body + two_body;
+  return ComplexType(one_body + two_body);
 }
 
-ValueType  WavefunctionFactory::slaterCondon2(Hamiltonian& ham, std::vector<int>& excit, int NMO)
+ComplexType WavefunctionFactory::slaterCondon2(Hamiltonian& ham, std::vector<int>& excit, int NMO)
 {
   int i = excit[0];
   int j = excit[1];
   int a = excit[2];
   int b = excit[3];
-  return ham.H(i,j,a,b) - ham.H(i,j,b,a);
+  return ComplexType(ham.H(i,j,a,b) - ham.H(i,j,b,a));
 }
 
 //ComplexType WavefunctionFactory::contractOneBody(std::vector<int>& det, std::vector<int>& excit, boost::multi::array_ref<ComplexType,2>& HSPot, int NMO)
