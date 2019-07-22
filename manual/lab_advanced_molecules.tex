@@ -335,7 +335,7 @@ input, just leave the VMC step. In all three cases, modify the submission script
 \end{figure}
 
 Because these simulations will take several minutes to complete, this is an excellent opportunity
-to go to Section~\ref{\label{sec:lab_adv_mol_wf_appendix}}, ``Appendix E: Wavefunction XML block," and review the wavefunction XML block used by QMCPACK. When the
+to go to Section~\ref{sec:lab_adv_mol_wf_appendix}, ``Appendix E: Wavefunction XML block," and review the wavefunction XML block used by QMCPACK. When the
 simulations are completed, use \texttt{qmca} to analyze the output files. Using your favorite plotting
 program (e.g., gnu plot), plot the energy and variance as a function of the Jastrow form.
 Figure \ref{fig:lam_vmc_jastrow} shows a typical result for this calculation. As can be seen, the VMC energy and
@@ -394,7 +394,7 @@ Go to ``\texttt{ex3\_multi-slater-jastrow/cisd/gms}'' and you will see input and
 %CASSCF, CASCI, SOCI. 
 
 There will be time in the next step to study the GAMESS input
-files and the description in Section~\ref{{sec:lab_adv_mol_gamess}, ``Appendix A: GAMESS input." %In the next exercise we will use the CISD output, in
+files and the description in Section~\ref{sec:lab_adv_mol_gamess}, ``Appendix A: GAMESS input." %In the next exercise we will use the CISD output, in
 %the next exercise we will use the remaining files. 
 Since the output is already provided, the
 only action needed is to use the converter to generate the appropriate QMCPACK files.  %Copy a submission script from GAMESS/Generic Files and execute the converter for all the output 
@@ -792,7 +792,7 @@ to 0 and do a single inner iteration (max its=1) per sample of configurations.}
 
 
 \newpage
-\section{Appendix D: VMC and DMC XML block}\ref{sec:lab_adv_mol_vmcdmc_appendix}
+\section{Appendix D: VMC and DMC XML block}\label{sec:lab_adv_mol_vmcdmc_appendix}
 
 \begin{lstlisting}[style=QMCPXML,caption=``Sample XML blocks for VMC and DMC calculations.",label=lst:lam_xml_vmc_dmc]
   <qmc method="vmc" move="pbyp" checkpoint="-1">
