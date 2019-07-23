@@ -100,6 +100,25 @@ TEST_CASE("ReadFileBuffer_ecp", "[hamiltonian]")
   // TODO: add more checks that pseudopotential file was read correctly
 }
 
+TEST_CASE("ReadFileBuffer_sorep", "[hamiltonian]")
+{
+  OHMMS::Controller->initialize(0, NULL);
+  Communicate* c = OHMMS::Controller;
+
+  ECPComponentBuilder ecp("test_read_sorep", c);
+
+  bool okay = ecp.read_pp_file("Zn.ccECP-SO.xml");
+  REQUIRE(okay);
+
+  REQUIRE(ecp.Zeff == 20);
+
+  // TODO: add more checks that pseudopotential file was read correctly
+}
+
+
+
+
+
 TEST_CASE("ReadFileBuffer_reopen", "[hamiltonian]")
 {
   // Initializing with no Communicate pointer under MPI,
