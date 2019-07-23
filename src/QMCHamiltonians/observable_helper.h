@@ -35,7 +35,7 @@ const hsize_t h5_observable_type = H5T_NATIVE_DOUBLE;
  */
 struct observable_helper
 {
-  typedef QMCTraits::EstimatorRealType value_type;
+  typedef QMCTraits::FullPrecRealType value_type;
   ///this can be handled by template argument
   //enum {type_id=H5T_NATIVE_DOUBLE};
   ///starting index
