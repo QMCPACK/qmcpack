@@ -2,7 +2,7 @@
 
 Notable changes to QMCPACK are documented in this file.
 
-## [Unreleased]
+## [3.8.0] - 2019-07-23
 
 ### Notes
 
