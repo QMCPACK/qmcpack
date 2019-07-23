@@ -824,24 +824,6 @@ bool QMCLinearOptimize::put(xmlNodePtr q)
   return success;
 }
 
-void QMCLinearOptimize::resetComponents(xmlNodePtr cur)
-{
-  std::string useGPU("yes");
-  optNode = cur;
-  m_param.put(cur);
-  if (optTarget)
-    delete optTarget;
-#if defined(QMC_CUDA)
-  if (useGPU == "yes")
-    optTarget = new QMCCostFunctionCUDA(W, Psi, H, myComm);
-  else
-#endif
-    optTarget = new QMCCostFunction(W, Psi, H, myComm);
-  optTarget->setStream(&app_log());
-  optTarget->put(cur);
-
-  //vmcEngine->resetComponents(cur);
-}
 bool QMCLinearOptimize::fitMappedStabilizers(std::vector<std::pair<RealType, RealType>>& mappedStabilizers,
                                              RealType& XS,
                                              RealType& val,
