@@ -57,6 +57,7 @@ size_t find_excitation(Vector const& abij, Vector& v)
   for(typename Vector::iterator it=v.begin(); it<v.end(); it+=n, loc++) 
     if( std::equal(abij.begin(),abij.end(),it) ) return loc;
   APP_ABORT("Error: Sequence not found in find_excitation.\n");
+  return 0;
 }
 
 template<class excitations>
@@ -504,8 +505,8 @@ struct ph_excitations
     if(index==0) return;
     // could use lower bound 
     for(int i=1; i<unique_beta.size(); i++) {
-      if(index >= sum_of_exct[i][0] && index < sum_of_exct[i+1][0]) {
-        size_t dn = index-sum_of_exct[i][0];
+      if(index >= sum_of_exct[i][1] && index < sum_of_exct[i+1][1]) {
+        size_t dn = index-sum_of_exct[i][1];
         auto exct = unique_beta.values(i) + 2*i*dn;
         for(int n=0; n<i; n++)
           confg[ exct[n] ] = exct[n+i];

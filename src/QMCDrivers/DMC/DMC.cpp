@@ -30,6 +30,7 @@
 #include "Utilities/ProgressReportEngine.h"
 #include <qmc_common.h>
 #include "ADIOS/ADIOS_profile.h"
+#include "Utilities/FairDivide.h"
 #if !defined(REMOVE_TRACEMANAGER)
 #include "Estimators/TraceManager.h"
 #else
@@ -101,7 +102,7 @@ void DMC::resetComponents(xmlNodePtr cur)
     {
       Movers[ip] = new DMCUpdatePbyPWithRejectionFast(*wClones[ip], *psiClones[ip], *hClones[ip], *Rng[ip]);
       Movers[ip]->put(cur);
-      Movers[ip]->resetRun(branchEngine, estimatorClones[ip], traceClones[ip]);
+      Movers[ip]->resetRun(branchEngine, estimatorClones[ip], traceClones[ip], DriftModifier);
       Movers[ip]->initWalkersForPbyP(W.begin() + wPerNode[ip], W.begin() + wPerNode[ip + 1]);
     }
     else
@@ -111,7 +112,7 @@ void DMC::resetComponents(xmlNodePtr cur)
       else
         Movers[ip] = new DMCUpdateAllWithRejection(*wClones[ip], *psiClones[ip], *hClones[ip], *Rng[ip]);
       Movers[ip]->put(cur);
-      Movers[ip]->resetRun(branchEngine, estimatorClones[ip], traceClones[ip]);
+      Movers[ip]->resetRun(branchEngine, estimatorClones[ip], traceClones[ip], DriftModifier);
       Movers[ip]->initWalkers(W.begin() + wPerNode[ip], W.begin() + wPerNode[ip + 1]);
     }
   }
@@ -174,7 +175,7 @@ void DMC::resetUpdateEngines()
       {
         Movers[ip] = new DMCUpdatePbyPWithRejectionFast(*wClones[ip], *psiClones[ip], *hClones[ip], *Rng[ip]);
         Movers[ip]->put(qmcNode);
-        Movers[ip]->resetRun(branchEngine, estimatorClones[ip], traceClones[ip]);
+        Movers[ip]->resetRun(branchEngine, estimatorClones[ip], traceClones[ip], DriftModifier);
         Movers[ip]->initWalkersForPbyP(W.begin() + wPerNode[ip], W.begin() + wPerNode[ip + 1]);
       }
       else
@@ -184,7 +185,7 @@ void DMC::resetUpdateEngines()
         else
           Movers[ip] = new DMCUpdateAllWithRejection(*wClones[ip], *psiClones[ip], *hClones[ip], *Rng[ip]);
         Movers[ip]->put(qmcNode);
-        Movers[ip]->resetRun(branchEngine, estimatorClones[ip], traceClones[ip]);
+        Movers[ip]->resetRun(branchEngine, estimatorClones[ip], traceClones[ip], DriftModifier);
         Movers[ip]->initWalkers(W.begin() + wPerNode[ip], W.begin() + wPerNode[ip + 1]);
       }
     }

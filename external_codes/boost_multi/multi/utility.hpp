@@ -12,6 +12,19 @@
 namespace boost{
 namespace multi{
 
+//template<class Array, typename Reference = void> struct array_traits;
+
+template<class Array>///, typename std::enable_if_t< Array::reference>
+struct array_traits{
+	using reference = typename Array::reference;
+};
+
+template<class T, size_t N>
+struct array_traits<T[N]>{
+	using reference = T&;
+};
+
+
 template<class T, typename = typename T::rank>
 std::true_type has_rank_aux(T const&){return {};}
 inline std::false_type has_rank_aux(...){return {};}
@@ -52,8 +65,24 @@ constexpr auto num_elements(A const& arr)
 ->decltype(arr.num_elements()){
 	return arr.num_elements();}
 	
-template<class T, typename = std::enable_if_t<not has_num_elements<T>{}> > 
+template<class T, typename = std::enable_if_t<!has_num_elements<T>{}>> 
 constexpr size_type num_elements(T const&){return 1;}
+
+template<class T>
+auto has_data_elements_aux(T&& t)->decltype(t.data_elements(), std::true_type {});
+auto has_data_elements_aux(...  )->decltype(                   std::false_type{});
+template<class T> struct has_data_elements : decltype(has_data_elements_aux(std::declval<T>())){};
+
+template<class A, typename = std::enable_if_t<has_data_elements<A>{}> > 
+constexpr auto data_elements(A const& arr)
+->decltype(arr.data_elements()){
+	return arr.data_elements();}
+
+template<class T, typename = std::enable_if_t<not std::is_array<T>{}> >
+[[deprecated("use constexpr data_elements")]] auto data(T& t){return &t;}
+
+template<class T, typename = std::enable_if_t<not std::is_array<T>{} and not has_data_elements<T>{}>>
+constexpr auto data_elements(T& t){return &t;}
 
 template<class T, std::size_t N>
 constexpr auto num_elements(const T(&t)[N]) noexcept{return N*num_elements(t[0]);}
@@ -64,8 +93,18 @@ constexpr auto num_elements(std::array<T, N> arr){return N*num_elements(arr[0]);
 template <class T, std::size_t N>
 constexpr auto stride(const T(&t)[N]) noexcept{return num_elements(t[0]);}
 
-template <class T, std::size_t N>
+template<class T, std::size_t N>
 constexpr std::ptrdiff_t offset(const T(&)[N]) noexcept{return 0;}
+
+template<class T, std::size_t N>
+[[deprecated("use data_elements instead")]] // this name is bad because when the element belongs to std:: then std::data is picked up by ADL and the 
+constexpr auto data(T(&t)[N]) noexcept{return data(t[0]);}
+
+template<class T, std::size_t N>
+constexpr auto data_elements(T(&t)[N]) noexcept{return data_elements(t[0]);}
+
+//template<class T, std::size_t N>
+//constexpr auto data(const T(&t)[N]) noexcept{return data(t[0]);}
 
 template<class Container>
 auto extension(Container const& c) // TODO consider "extent"
@@ -87,13 +126,13 @@ auto has_dimensionaliy_member_aux(T const& t)->decltype(size_t(t.dimensionality)
 inline auto has_dimensionaliy_member_aux(...       )->decltype(                          std::false_type{});
 template<class T> struct has_dimensionality_member : decltype(has_dimensionaliy_member_aux(std::declval<T>())){};
 
-template<class C> constexpr auto dimensionality(C const&)->decltype(C::dimensionality){return C::dimensionality;}
+template<class C> constexpr auto dimensionality(C const& c)->decltype(c.dimensionality){return c.dimensionality;}
 
-template<class T, typename = std::enable_if_t<not has_dimensionality<T>{}> >
-constexpr auto dimensionality(T const&){return 0;}
+template<class T, typename = std::enable_if_t<not has_dimensionality_member<T>{}>>
+constexpr auto dimensionality(T const&, void* = 0){return 0;}
 
 template<class T, std::size_t N>
-constexpr auto dimensionality(T(&t)[N]){return 1 + dimensionality(t[0]);}
+constexpr auto dimensionality(T const(&t)[N]){return 1 + dimensionality(t[0]);}
 
 template<class T, std::size_t N>
 constexpr auto dimensionality(std::array<T, N> const&){return 1 + dimensionality<T>();}
@@ -111,6 +150,8 @@ constexpr auto sizes(Array const& arr)
 
 template<class T, typename = std::enable_if_t<not has_sizes<T>{}> >
 inline constexpr std::tuple<> sizes(T const&){return {};}
+
+inline decltype(auto) base(std::tuple<> const& a){return a;}
 
 template<class T, std::size_t N>
 constexpr auto sizes(const T(&t)[N]) noexcept{
@@ -211,6 +252,7 @@ layout_t<0> layout(T const&){return {};}
 #include<cassert>
 #include<iostream>
 #include<vector>
+#include<cmath>
 
 using std::cout;
 namespace multi = boost::multi;
@@ -221,7 +263,11 @@ void f(T&& t){
 	std::cout<< dimensionality(t) <<'\n';
 }
 
+template<class T> void f();
 int main(){
+
+	using T4 = typename multi::array_traits<typename std::remove_reference_t<double(&)[4][4]>>::reference;
+	f<T4>();
 
 	using multi::corigin;
 	using multi::dimensionality;
@@ -235,10 +281,15 @@ int main(){
 	assert( dimensionality(A) == 1 );
 	assert( extension(A).first() == 0 );
 	assert( extension(A).last() == 4 );
-//	extensions(A[
 	assert( origin(A) == &A[0] );
 	assert( size(A) == 4 );
 	assert( std::get<0>(sizes(A)) == size(A) );
+	using std::addressof;
+//	using multi::data;
+	using multi::data_elements;
+	static_assert( std::is_same<decltype(data_elements(A)), double*>{} );
+//	assert( data(A) == addressof(A[0]) );
+	assert( data_elements(A) == addressof(A[0]) );
 }{
 	double const A[4] = {1.,2.,3.,4.};
 	f(A);

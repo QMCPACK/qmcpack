@@ -18,7 +18,6 @@
 #include "Lattice/ParticleBConds.h"
 #include "Particle/ParticleSet.h"
 #include "Particle/DistanceTableData.h"
-#include "Particle/DistanceTable.h"
 #include "Particle/SymmetricDistanceTableData.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "QMCApp/ParticleSetPool.h"
@@ -30,6 +29,7 @@
 #include "Estimators/EstimatorManagerBase.h"
 #include "Estimators/TraceManager.h"
 #include "QMCDrivers/DMC/DMCUpdatePbyP.h"
+#include "QMCDrivers/GreenFunctionModifiers/DriftModifierUNR.h"
 
 
 #include <stdio.h>
@@ -56,7 +56,6 @@ TEST_CASE("DMC Particle-by-Particle advanceWalkers ConstantOrbital", "[drivers][
   ions.R[0][2] = 0.0;
 
   elec.setName("elec");
-  elec.setBoundBox(false);
   std::vector<int> agroup(1);
   agroup[0] = 2;
   elec.create(agroup);
@@ -88,7 +87,7 @@ TEST_CASE("DMC Particle-by-Particle advanceWalkers ConstantOrbital", "[drivers][
 
   TrialWaveFunction psi(c);
   ConstantOrbital* orb = new ConstantOrbital;
-  psi.addOrbital(orb, "Constant");
+  psi.addComponent(orb, "Constant");
   psi.registerData(elec, elec.WalkerList[0]->DataSet);
   elec.WalkerList[0]->DataSet.allocate();
 
@@ -105,7 +104,8 @@ TEST_CASE("DMC Particle-by-Particle advanceWalkers ConstantOrbital", "[drivers][
   double tau = 0.1;
   SimpleFixedNodeBranch branch(tau, 1);
   TraceManager TM;
-  dmc.resetRun(&branch, &EM, &TM);
+  DriftModifierUNR DM;
+  dmc.resetRun(&branch, &EM, &TM, &DM);
   dmc.startBlock(1);
 
   DMCUpdatePbyPWithRejectionFast::WalkerIter_t begin = elec.begin();
@@ -159,7 +159,6 @@ TEST_CASE("DMC Particle-by-Particle advanceWalkers LinearOrbital", "[drivers][dm
   ions.R[0][2] = 0.0;
 
   elec.setName("elec");
-  elec.setBoundBox(false);
   std::vector<int> agroup(1);
   agroup[0] = 2;
   elec.create(agroup);
@@ -191,7 +190,7 @@ TEST_CASE("DMC Particle-by-Particle advanceWalkers LinearOrbital", "[drivers][dm
 
   TrialWaveFunction psi(c);
   LinearOrbital* orb = new LinearOrbital;
-  psi.addOrbital(orb, "Linear");
+  psi.addComponent(orb, "Linear");
   psi.registerData(elec, elec.WalkerList[0]->DataSet);
   elec.WalkerList[0]->DataSet.allocate();
 
@@ -208,7 +207,8 @@ TEST_CASE("DMC Particle-by-Particle advanceWalkers LinearOrbital", "[drivers][dm
   double tau = 0.1;
   SimpleFixedNodeBranch branch(tau, 1);
   TraceManager TM;
-  dmc.resetRun(&branch, &EM, &TM);
+  DriftModifierUNR DM;
+  dmc.resetRun(&branch, &EM, &TM, &DM);
   dmc.startBlock(1);
 
   DMCUpdatePbyPWithRejectionFast::WalkerIter_t begin = elec.begin();

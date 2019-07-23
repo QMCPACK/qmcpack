@@ -125,6 +125,34 @@ bool readCuspInfo(const std::string& cuspInfoFile,
   return success;
 }
 
+void broadcastCuspInfo(CuspCorrectionParameters& param, Communicate& Comm, int root)
+{
+#ifdef HAVE_MPI
+  std::vector<double> buffer(9);
+  buffer[0] = param.Rc;
+  buffer[1] = param.C;
+  buffer[2] = param.sg;
+  buffer[3] = param.alpha[0];
+  buffer[4] = param.alpha[1];
+  buffer[5] = param.alpha[2];
+  buffer[6] = param.alpha[3];
+  buffer[7] = param.alpha[4];
+  buffer[8] = param.redo;
+
+  Comm.comm.broadcast(buffer.begin(), buffer.end(), root);
+
+  param.Rc       = buffer[0];
+  param.C        = buffer[1];
+  param.sg       = buffer[2];
+  param.alpha[0] = buffer[3];
+  param.alpha[1] = buffer[4];
+  param.alpha[2] = buffer[5];
+  param.alpha[3] = buffer[6];
+  param.alpha[4] = buffer[7];
+  param.redo     = buffer[8] == 0.0 ? 0 : 1;
+#endif
+}
+
 void splitPhiEta(int center, const std::vector<bool>& corrCenter, LCAOrbitalSet& Phi, LCAOrbitalSet& Eta)
 {
   typedef QMCTraits::RealType RealType;
@@ -282,10 +310,13 @@ void getCurrentLocalEnergy(const ValueVector_t& pos,
   for (int i = 0; i < pos.size(); i++)
   {
     RealType r = pos[i];
+    // prevent NaN's if phiBar is zero
+    RealType offset = 1e-12;
     if (r <= Rc)
     {
       RealType dp = cusp.dpr(r);
-      ELcurr[i]   = -0.5 * cusp.Rr(r) * (2.0 * dp / r + cusp.d2pr(r) + dp * dp) / cusp.phiBar(r, phiMO) - Zeff / r + dE;
+      ELcurr[i]   = -0.5 * cusp.Rr(r) * (2.0 * dp / r + cusp.d2pr(r) + dp * dp) / (offset + cusp.phiBar(r, phiMO)) -
+          Zeff / r + dE;
     }
     else
     {
@@ -372,7 +403,8 @@ RealType minimizeForPhiAtZero(CuspCorrection& cusp,
                               RealType eta0,
                               ValueVector_t& pos,
                               ValueVector_t& ELcurr,
-                              ValueVector_t& ELideal)
+                              ValueVector_t& ELideal,
+                              RealType start_phi0)
 {
   ValGradLap vglAtRc;
   ValueVector_t tmp_pos(0);
@@ -383,18 +415,28 @@ RealType minimizeForPhiAtZero(CuspCorrection& cusp,
   getIdealLocalEnergy(pos, Z, cusp.cparam.Rc, ELorigAtRc, ELideal);
   phiMO.phi_vgl(cusp.cparam.Rc, vglAtRc.val, vglAtRc.grad, vglAtRc.lap);
 
-  RealType start_phi0             = phiMO.phi(0.0);
-  Bracket_min_t<RealType> bracket = bracket_minimum(
-      [&](RealType x) -> RealType {
-        return evaluateForPhi0Body(x, pos, ELcurr, ELideal, cusp, phiMO, vglAtRc, eta0, ELorigAtRc, Z);
-      },
-      start_phi0);
+  Bracket_min_t<RealType> bracket(start_phi0, 0.0, 0.0, false);
+  try
+  {
+    bracket = bracket_minimum(
+        [&](RealType x) -> RealType {
+          return evaluateForPhi0Body(x, pos, ELcurr, ELideal, cusp, phiMO, vglAtRc, eta0, ELorigAtRc, Z);
+        },
+        start_phi0);
+  }
+  catch (const std::runtime_error& e)
+  {
+    APP_ABORT("Bracketing minimum failed for finding phi0. \n");
+  }
 
   auto min_res = find_minimum(
       [&](RealType x) -> RealType {
         return evaluateForPhi0Body(x, pos, ELcurr, ELideal, cusp, phiMO, vglAtRc, eta0, ELorigAtRc, Z);
       },
       bracket);
+
+  start_phi0 = min_res.first;
+
   return min_res.second;
 }
 
@@ -412,27 +454,37 @@ void minimizeForRc(CuspCorrection& cusp,
                    ValueVector_t& ELcurr,
                    ValueVector_t& ELideal)
 {
-  RealType Rc                     = Rc_init;
-  Bracket_min_t<RealType> bracket = bracket_minimum(
-      [&](RealType x) -> RealType {
-        cusp.cparam.Rc = x;
-        return minimizeForPhiAtZero(cusp, phiMO, Z, eta0, pos, ELcurr, ELideal);
-      },
-      Rc_init, Rc_max);
+  RealType Rc = Rc_init;
+  Bracket_min_t<RealType> bracket(Rc_init, 0.0, 0.0, false);
+  RealType start_phi0 = phiMO.phi(0.0);
+  try
+  {
+    bracket = bracket_minimum(
+        [&](RealType x) -> RealType {
+          cusp.cparam.Rc = x;
+          return minimizeForPhiAtZero(cusp, phiMO, Z, eta0, pos, ELcurr, ELideal, start_phi0);
+        },
+        Rc_init, Rc_max);
+  }
+  catch (const std::runtime_error& e)
+  {
+    APP_ABORT("Bracketing minimum failed for finding rc. \n");
+  }
+
 
   if (bracket.success)
   {
     auto min_res = find_minimum(
         [&](RealType x) -> RealType {
           cusp.cparam.Rc = x;
-          return minimizeForPhiAtZero(cusp, phiMO, Z, eta0, pos, ELcurr, ELideal);
+          return minimizeForPhiAtZero(cusp, phiMO, Z, eta0, pos, ELcurr, ELideal, start_phi0);
         },
         bracket);
   }
   else
   {
     cusp.cparam.Rc = bracket.a;
-    minimizeForPhiAtZero(cusp, phiMO, Z, eta0, pos, ELcurr, ELideal);
+    minimizeForPhiAtZero(cusp, phiMO, Z, eta0, pos, ELcurr, ELideal, start_phi0);
   }
 }
 

@@ -35,6 +35,7 @@
 #include "QMCWaveFunctions/lcao/SoaSphericalTensor.h"
 
 
+class Communicate;
 namespace qmcplusplus
 {
 /**
@@ -69,6 +70,10 @@ struct CuspCorrectionParameters
   CuspCorrectionParameters() : Rc(0.0), C(0.0), sg(1.0), redo(0), alpha(0.0) {}
 };
 
+
+/// Broadcast cusp correction parameters
+void broadcastCuspInfo(CuspCorrectionParameters& param, Communicate& Comm, int root);
+
 class OneMolecularOrbital
 {
   typedef QMCTraits::RealType RealType;
@@ -84,8 +89,8 @@ public:
     TinyVector<RealType, 3> dr = 0;
     dr[0]                      = r;
 
-    targetPtcl->R[0]             = sourcePtcl->R[curCenter];
-    TinyVector<RealType, 3> ddr2 = targetPtcl->makeMove(0, dr);
+    targetPtcl->R[0] = sourcePtcl->R[curCenter];
+    targetPtcl->makeMove(0, dr);
     Psi1->evaluate(*targetPtcl, 0, val1);
 
     return val1[curOrb];
@@ -96,8 +101,8 @@ public:
     TinyVector<RealType, 3> dr = 0;
     dr[0]                      = r;
 
-    targetPtcl->R[0]             = sourcePtcl->R[curCenter];
-    TinyVector<RealType, 3> ddr2 = targetPtcl->makeMove(0, dr);
+    targetPtcl->R[0] = sourcePtcl->R[curCenter];
+    targetPtcl->makeMove(0, dr);
     Psi1->evaluate(*targetPtcl, 0, val1, grad1, lap1);
 
     val  = val1[curOrb];
@@ -319,7 +324,8 @@ RealType minimizeForPhiAtZero(CuspCorrection& cusp,
                               RealType eta0,
                               ValueVector_t& pos,
                               ValueVector_t& ELcurr,
-                              ValueVector_t& ELideal);
+                              ValueVector_t& ELideal,
+                              RealType start_phi0);
 
 
 /** Minimize chi2 with respect to Rc and phi at zero.

@@ -86,10 +86,12 @@ class KP3IndexFactorization
                  std::vector<RealType>&& gQ_,
                  int nsampleQ_,
                  ValueType e0_,
+                 int cv0,
                  int gncv):
         comm(std::addressof(c_)),
         walker_type(type),
         global_nCV(gncv),
+        global_origin(cv0),
         E0(e0_),
         H1(std::move(hij_)),
         haj(std::move(h1)),
@@ -169,7 +171,8 @@ class KP3IndexFactorization
       // making a copy of vMF since it will be modified
       shmCVector vMF_(iextensions<1u>{vMF.num_elements()},shared_allocator<ComplexType>{*comm});
       comm->barrier();
-      if(comm->root()) {
+      //if(comm->root()) 
+      {
         using std::copy_n;
         copy_n(vMF.origin(),vMF.num_elements(),vMF_.origin());
       }
@@ -178,9 +181,12 @@ class KP3IndexFactorization
       boost::multi::array_ref<ComplexType,1> P1D(to_address(P1.origin()),{NMO*NMO});
       std::fill_n(P1D.origin(),P1D.num_elements(),ComplexType(0));
       vHS(vMF_, P1D);
-      TG.TG().all_reduce_in_place_n(P1D.origin(),P1D.num_elements(),std::plus<>());
+      if(TG.TG().size() > 1)
+        TG.TG().all_reduce_in_place_n(P1D.origin(),P1D.num_elements(),std::plus<>());
 
       // add H1 + vn0 and symmetrize
+      // MAM: intel 19 doesn't accept this using statement, I'm forced to
+      //      call ma::conj explicitly even though I should not need to
       using ma::conj;
 
       for(int K=0, nk0=0; K<nkpts; ++K) {
@@ -190,15 +196,19 @@ class KP3IndexFactorization
             P1[I][J] += H1[K][i][j] + vn0[K][i][j];
             P1[J][I] += H1[K][j][i] + vn0[K][j][i];
             // This is really cutoff dependent!!!
-            if( std::abs( P1[I][J] - conj(P1[J][I]) ) > 1e-6 ) {
+#if AFQMC_MIXED_PRECISION
+            if( std::abs(P1[I][J]-ma::conj(P1[J][I]))*2.0 > 1e-5 ) {
+#else
+            if( std::abs(P1[I][J]-ma::conj(P1[J][I]))*2.0 > 1e-6 ) {
+#endif
               app_error()<<" WARNING in getOneBodyPropagatorMatrix. H1 is not hermitian. \n";
-              app_error()<<I <<" " <<J <<" " <<P1[I][J] <<" " <<P1[j][i] <<" "
+              app_error()<<I <<" " <<J <<" " <<P1[I][J] <<" " <<P1[J][I] <<" "
                          <<H1[K][i][j] <<" " <<H1[K][j][i] <<" "
                          <<vn0[K][i][j] <<" " <<vn0[K][j][i] <<std::endl;
               //APP_ABORT("Error in getOneBodyPropagatorMatrix. H1 is not hermitian. \n");
             }
-            P1[I][J] = 0.5*(P1[I][J]+conj(P1[J][I]));
-            P1[J][I] = conj(P1[I][J]);
+            P1[I][J] = 0.5*(P1[I][J]+ma::conj(P1[J][I]));
+            P1[J][I] = ma::conj(P1[I][J]);
           }
         }
         nk0 += nopk[K];
@@ -1112,8 +1122,8 @@ class KP3IndexFactorization
           }
         }
       }
-      comm->barrier();
       // do I need to "rotate" back, can be done if necessary
+      comm->barrier();
     }
 
     template<class MatA, class MatB,
@@ -1323,6 +1333,7 @@ class KP3IndexFactorization
     int number_of_ke_vectors() const{ return local_nCV; }
     int local_number_of_cholesky_vectors() const{ return 2*local_nCV; }
     int global_number_of_cholesky_vectors() const{ return global_nCV; }
+    int global_origin_cholesky_vector() const{ return global_origin; }
 
     // transpose=true means G[nwalk][ik], false means G[ik][nwalk]
     bool transposed_G_for_vbias() const{return false;}
@@ -1338,6 +1349,7 @@ class KP3IndexFactorization
 
     WALKER_TYPES walker_type;
 
+    int global_origin;
     int global_nCV;
     int local_nCV;
 

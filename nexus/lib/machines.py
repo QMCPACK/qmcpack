@@ -135,6 +135,65 @@ class Options(DevBase):
 
 
 
+job_defaults = obj(
+    name               = 'jobname',
+    type               = None,
+    directory          = None,
+    subdir             = None,
+    app_name           = None, # name of/path to application
+    app_command        = None, # command used to launch application
+    app_props          = None,
+    full_command       = None, # custom command including e.g. mpirun
+    outfile            = None,
+    errfile            = None,
+    env                = None,
+    user_env           = True, # import user environment
+    presub             = '',   # shell text executed just prior to submission
+    postsub            = '',   # shell text executed just after submission
+    queue              = None,
+    bundled_jobs       = None,
+    relative           = False,
+    cores              = None, # number of cores for the job
+    nodes              = None, # number of nodes for the job
+    threads            = 1,    # number of openmp threads for the job
+    hyperthreads       = None,
+    ppn                = None,
+    gpus               = None, # number of gpus per node
+    compiler           = None,
+    serial             = False, # run job serially, no mpi
+    local              = False, # run job locally, no queue submission
+    days               = 0,
+    hours              = 0,
+    minutes            = 0,
+    seconds            = 0,
+    subfile            = None,
+    grains             = None,
+    procs              = None,
+    processes          = None,
+    processes_per_proc = None,
+    processes_per_node = None,
+    account            = None,
+    email              = None,
+    constraint         = None, # slurm specific, Cori
+    core_spec          = None, # slurm specific, Cori
+    switches           = None, # slurm specific, SuperMUC-NG
+    alloc_flags        = None, # lsf specific, Summit
+    qos                = None,
+    group_list         = None,
+    default_cpus_per_task = False, # optionally bypass typical nexus processing for supermucng
+    ntasks_per_core    = None,
+    cpus_per_task      = None,
+    # these are not assigned directly
+    fake               = False,
+    app                = None, # name of/path to application
+    machine            = None,
+    options            = None,
+    app_flags          = None,
+    app_options        = None,
+    run_options        = None,
+    sub_options        = None,
+    )
+
 class Job(NexusCore):
 
     machine = None #default machine if none is specified in settings
@@ -177,107 +236,38 @@ class Job(NexusCore):
     #end def zero_time
 
 
-    def __init__(self,
-                 name               = 'jobname',
-                 type               = None,
-                 directory          = None,
-                 sub_dir            = None,
-                 app_name           = None, # name of/path to application
-                 app_flags          = None,
-                 app_command        = None, # command used to launch application
-                 app_props          = None,
-                 app                = None, # name of/path to application
-                 full_command       = None, # custom command including e.g. mpirun
-                 env                = None,
-                 user_env           = True, # import user environment
-                 presub             = '',   # shell text executed just prior to submission
-                 postsub            = '',   # shell text executed just after submission
-                 outfile            = None,
-                 errfile            = None,
-                 mode               = None,
-                 machine            = None,
-                 account            = None,
-                 queue              = None,
-                 bundled_jobs       = None,
-                 relative           = False,
-                 cores              = None, # number of cores for the job
-                 nodes              = None, # number of nodes for the job
-                 threads            = 1,    # number of openmp threads for the job
-                 hyperthreads       = None,
-                 ppn                = None,
-                 gpus               = None, # number of gpus per node
-                 compiler           = None,
-                 options            = None,
-                 app_options        = None,
-                 run_options        = None,
-                 sub_options        = None,
-                 serial             = False, # run job serially, no mpi
-                 local              = False, # run job locally, no queue submission
-                 days               = 0,
-                 hours              = 0,
-                 minutes            = 0,
-                 seconds            = 0,
-                 subfile            = None,
-                 grains             = None,
-                 procs              = None,
-                 processes          = None,
-                 processes_per_proc = None,
-                 processes_per_node = None,
-                 email              = None,
-                 constraint         = None, # slurm specific, Cori
-                 core_spec          = None, # slurm specific, Cori
-                 alloc_flags        = None, # lsf specific, Summit
-                 qos                = None,
-                 group_list         = None,
-                 fake               = False,
-                 ):
+    def __init__(self,**kwargs):
+        # rewrap keyword arguments
+        kw = obj(**kwargs)
 
-        self.directory          = directory
-        self.subdir             = sub_dir
-        self.app_name           = app_name
-        self.app_command        = app_command
-        self.app_props          = app_props
-        self.full_command       = full_command
-        self.outfile            = outfile
-        self.errfile            = errfile
-        self.env                = None
-        self.user_env           = user_env
-        self.presub             = presub
-        self.postsub            = postsub
-        self.name               = name
-        self.type               = type
-        self.queue              = queue
-        self.bundled_jobs       = bundled_jobs
-        self.relative           = relative
-        self.cores              = cores
-        self.nodes              = nodes
-        self.threads            = threads
-        self.hyperthreads       = hyperthreads
-        self.ppn                = ppn
-        self.gpus               = gpus
-        self.compiler           = compiler
+        # save information used to initialize job object
+        self.init_info = kw.copy()
+
+        # set defaults
+        kw.set_optional(**job_defaults)
+
+        # extract keywords not assigned
+        app         = kw.delete('app')
+        machine     = kw.delete('machine')
+        options     = kw.delete('options')
+        app_flags   = kw.delete('app_flags')
+        app_options = kw.delete('app_options')
+        run_options = kw.delete('run_options')
+        sub_options = kw.delete('sub_options')
+        env         = kw.delete('env')
+        fake        = kw.delete('fake')
+
+        # assign keywords
+        self.set(**kw)
+
+        # assign fake job
+        self.fake_job           = fake
+
+        # initialize other internal variables
         self.app_options        = Options()
         self.run_options        = Options()
         self.sub_options        = Options()
-        self.serial             = serial
-        self.local              = local
-        self.days               = days
-        self.hours              = hours
-        self.minutes            = minutes
-        self.seconds            = seconds
-        self.subfile            = subfile
-        self.grains             = grains
-        self.procs              = procs
-        self.processes          = processes
-        self.processes_per_proc = processes_per_proc
-        self.processes_per_node = processes_per_node        
-        self.account            = account
-        self.email              = email
-        self.constraint         = constraint
-        self.core_spec          = core_spec
-        self.alloc_flags        = alloc_flags
-        self.qos                = qos
-        self.group_list         = group_list
+        self.env                = None
         self.internal_id        = None
         self.system_id          = None
         self.tot_cores          = None
@@ -288,9 +278,8 @@ class Job(NexusCore):
         self.overtime           = False
         self.successful         = False
         self.finished           = False
-        self.fake_job           = fake
 
-        self.user_app_command = app_command is not None
+        self.user_app_command = self.app_command is not None
 
         if app is not None:
             self.app_name = app
@@ -311,17 +300,17 @@ class Job(NexusCore):
             self.run_options.read(options)
         #end if
 
-        if app_props is None:
+        if self.app_props is None:
             self.app_props = []
         #end if
-        if compiler is not None:
-            if compiler in self.intel_compilers:
+        if self.compiler is not None:
+            if self.compiler in self.intel_compilers:
                 self.compiler = 'intel'
-            elif compiler in self.gnu_compilers:
+            elif self.compiler in self.gnu_compilers:
                 self.compiler = 'gnu'
-            elif compiler in self.pgi_compilers:
+            elif self.compiler in self.pgi_compilers:
                 self.compiler = 'pgi'
-            elif compiler in self.cray_compilers:
+            elif self.compiler in self.cray_compilers:
                 self.compiler = 'cray'
             #end if
         #end if
@@ -343,7 +332,7 @@ class Job(NexusCore):
         machine = self.get_machine() 
         self.batch_mode = machine.in_batch_mode()
 
-        if bundled_jobs is not None and not machine.batch_capable:
+        if self.bundled_jobs is not None and not machine.batch_capable:
             self.error('running batched/bundled jobs on {0} is either not possible or not yet implemented, sorry.'.format(machine.name))
         #end if
 
@@ -545,8 +534,8 @@ class Job(NexusCore):
 
 
     def run_command(self,launcher=None,redirect=False):
+        machine = self.get_machine()
         if launcher is None:
-            machine = self.get_machine()
             launcher = machine.app_launcher
         #end if
         c = ''
@@ -570,6 +559,8 @@ class Job(NexusCore):
                 c+=self.app_command+self.app_options.write()
                 if redirect:
                     c+=' >'+self.outfile+' 2>'+self.errfile+'&'
+                elif machine.redirect_output and self.outfile is not None:
+                    c+=' >'+self.outfile+' 2>'+self.errfile
                 #end if
             #end if
         elif self.relative:
@@ -674,6 +665,13 @@ class Job(NexusCore):
     #end def clone
 
 
+    def serial_clone(self):
+        kw = self.init_info.copy()
+        kw.serial=True
+        return Job(**kw)
+    #end def serial_clone
+
+
     def split_nodes(self,n):
         run_options = self.run_options
         if not isinstance(n,int):
@@ -709,9 +707,11 @@ class Machine(NexusCore):
         )
     mode = modes.none
 
-    batch_capable      = False
-    requires_account   = False
-    executable_subfile = False
+    batch_capable       = False
+    requires_account    = False
+    executable_subfile  = False
+    redirect_output     = False
+    query_with_username = False
 
     prefixed_output    = False
     outfile_extension  = None
@@ -838,6 +838,7 @@ class Machine(NexusCore):
 
         #user defined variables
         self.account         = None
+        self.user            = None
         self.local_directory = None
         self.app_directory   = None
         self.app_directories = None
@@ -1523,6 +1524,9 @@ class Supercomputer(Machine):
 
     def query_queue(self,out=None):
         self.system_queue.clear()
+        if self.query_with_username and self.user is None:
+            self.error('querying queue on machine "{}" requires user name\nplease provide username via the "user" keyword in settings'.format(self.name))
+        #end if
         if self.queue_querier=='qstat':
             if out is None:
                 out,err = Popen('qstat -a',shell=True,stdout=PIPE,stderr=PIPE,close_fds=True).communicate()
@@ -1569,7 +1573,11 @@ class Supercomputer(Machine):
             #end for
         elif self.queue_querier=='squeue': # contributed by Ryan McAvoy
             if out is None:
-                out,err = Popen('squeue',shell=True,stdout=PIPE,stderr=PIPE,close_fds=True).communicate()
+                extra = ''
+                if self.query_with_username:
+                    extra = ' -u {}'.format(self.user)
+                #end if
+                out,err = Popen('squeue'+extra,shell=True,stdout=PIPE,stderr=PIPE,close_fds=True).communicate()
             #end if
             lines = out.splitlines()
             for line in lines:
@@ -2884,13 +2892,16 @@ class Solo(Supercomputer):
 # machines at LRZ  https://www.lrz.de/english/
 class SuperMUC(Supercomputer):
     name = 'supermuc'
+    requires_account    = False
+    batch_capable       = True
+    query_with_username = False
 
     def write_job_header(self,job):
         if job.queue is None:
             job.queue = 'general'
         #end if
         if job.type is None:
-            job.type = 'parallel'
+            job.type = 'MPICH'
         else:
             job.type = job.type.lower()
             if job.type=='mpich':
@@ -2908,7 +2919,7 @@ class SuperMUC(Supercomputer):
         c+='#@ job_type         = {0}\n'.format(job.type)
         c+='#@ class            = {0}\n'.format(job.queue)
         c+='#@ node             = {0}\n'.format(job.nodes)
-        if job.nodes<400:
+        if job.nodes<512:
             icmin = 1
             icmax = 1
         else:
@@ -2926,6 +2937,8 @@ class SuperMUC(Supercomputer):
         c+='#@ initialdir       = {0}\n'.format(job.abs_dir)
         c+='#@ output           = {0}\n'.format(job.outfile)
         c+='#@ error            = {0}\n'.format(job.errfile)
+        c+='#@ energy_policy_tag = my_energy_tag\n'
+        c+='#@ minimize_time_to_solution = yes\n'
         if job.email is None:
             c+='#@ notification     = never\n'
         else:
@@ -2944,12 +2957,74 @@ class SuperMUC(Supercomputer):
         elif intel and omp:
             c+='module unload mpi.ibm\n'
             c+='module load mpi.intel\n'
-            #c+='export OMP_NUM_THREADS={0}\n'.format(job.threads)
+            c+='export OMP_NUM_THREADS={0}\n'.format(job.threads)
             #c+='module load mpi_pinning/hybrid_blocked\n'
         #end if
         return c
     #end def write_job_header
 #end class SuperMUC
+
+
+
+class SuperMUC_NG(Supercomputer):
+    name                = 'supermucng'
+    requires_account    = True
+    batch_capable       = True
+    query_with_username = True
+
+    def write_job_header(self,job):
+        if job.queue is None:
+            job.queue = 'general'
+        #end if
+        if job.hyperthreads is None:
+            job.hyperthreads = job.processes_per_node/48
+            if job.hyperthreads==0:
+                job.hyperthreads=None
+            #end if
+        #end if
+        if job.constraint is None:
+            job.contraint = 'scratch&work'
+        #end if
+        c ='#!/bin/bash\n'
+        c+='#SBATCH --account={}\n'.format(job.account)
+        c+='#SBATCH --partition={}\n'.format(job.queue)
+        c+='#SBATCH -J {}\n'.format(job.name)
+        c+='#SBATCH --time={}\n'.format(job.sbatch_walltime())
+        c+='#SBATCH -o ./{}\n'.format(job.outfile)
+        c+='#SBATCH -e ./{}\n'.format(job.errfile)
+        if job.switches is not None:
+            c+='#SBATCH --switches={}\n'.format(job.switches)
+        #end if
+        c+='#SBATCH --nodes={}\n'.format(job.nodes)
+        c+='#SBATCH --ntasks-per-node={}\n'.format(job.processes_per_node)
+        if job.ntasks_per_core is not None:
+            c+='#SBATCH --ntasks-per-core={}\n'.format(job.ntasks_per_core)
+        elif job.hyperthreads is not None:
+            c+='#SBATCH --ntasks-per-core={}\n'.format(job.hyperthreads)
+        #end if
+        if not job.default_cpus_per_task:
+            if job.cpus_per_task is None:
+                c+='#SBATCH --cpus-per-task={}\n'.format(job.threads)
+            else:
+                c+='#SBATCH --cpus-per-task={}\n'.format(job.cpus_per_task)
+            #end if
+        #end if
+        c+='#SBATCH -D ./\n'
+        c+='#SBATCH --no-requeue\n'
+        if job.constraint is not None:
+            c+='#--constraint="{}"\n'.format(job.constraint)
+        #end if
+        if job.email is not None:
+            c+='#SBATCH --mail-type=ALL\n'
+            c+='#SBATCH --mail-user={}\n'.format(job.email)
+        #end if
+        c+='#SBATCH --export=NONE\n'
+        if job.user_env:
+            c+='#SBATCH --get-user-env\n'
+        #end if
+        return c
+    #end def write_job_header
+#end class SuperMUC_NG
 
 
 
@@ -3164,6 +3239,37 @@ class Summit(Supercomputer):
 
 
 
+class Tomcat3(Supercomputer):
+    name             = 'tomcat3'
+    requires_account = False
+    batch_capable    = True
+    redirect_output  = True
+
+    def write_job_header(self,job):
+        if job.queue is None:
+            job.queue = 'tomcat'
+        #end if
+        c = '#!/bin/bash -l\n'
+        c+='#SBATCH -J {}\n'.format(job.name) 
+        c+='#SBATCH -N {}\n'.format(job.nodes)
+        c+='#SBATCH -t {}\n'.format(job.sbatch_walltime())
+        c+='#SBATCH -p {}\n'.format(job.queue)
+        if job.email is not None:
+            c+='#SBATCH --mail-user {}\n'.format(job.email)
+            c+='#SBATCH --mail-type ALL\n'
+        #end if
+        c+='#. /home/rcohen/.bashrc\n'
+        if len(job.presub)==0:
+            c+='unalias cd; source /mnt/beegfs/intel/parallel_studio_xe_2019.3.062/bin/psxevars.sh\n'
+            c+='ulimit -a\n'
+        #end if
+        return c
+    #end def write_job_header
+#end class Tomcat3
+
+
+
+
 #Known machines
 #  workstations
 for cores in range(1,128+1):
@@ -3171,7 +3277,7 @@ for cores in range(1,128+1):
     Workstation('node'+str(cores),cores,'mpirun'),
 #end for
 #  supercomputers and clusters
-#            nodes sockets cores ram qslots  qlaunch  qsubmit     qstatus   qdelete
+#            nodes sockets cores ram qslots  qlaunch  qsubmit     qstatus    qdelete
 Jaguar(      18688,   2,     8,   32,  100,  'aprun',     'qsub',   'qstat',    'qdel')
 Kraken(       9408,   2,     6,   16,  100,  'aprun',     'qsub',   'qstat',    'qdel')
 Taub(          400,   2,     6,   24,   50, 'mpirun',     'qsub',   'qstat',    'qdel')
@@ -3197,10 +3303,13 @@ Serrano(      1122,   2,    18,  128, 1000,   'srun',   'sbatch',  'squeue', 'sc
 Skybridge(    1848,   2,    16,   64, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
 Redsky(       2302,   2,     8,   12, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
 Solo(          187,   2,    18,  128, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
-SuperMUC(      205,   4,    10,  256,    8,'mpiexec', 'llsubmit',     'llq','llcancel')
+SuperMUC(      512,   1,    28,  256,    8,'mpiexec', 'llsubmit',     'llq','llcancel')
 Stampede2(    4200,   1,    68,   96,   50,  'ibrun',   'sbatch',  'squeue', 'scancel')
 Cades(         156,   2,    18,  128,  100, 'mpirun',     'qsub',   'qstat',    'qdel')
 Summit(       4608,   2,    21,  512,  100,  'jsrun',     'bsub',   'bjobs',   'bkill')
+Tomcat3(         8,   1,    64,  192, 1000, 'mpirun',   'sbatch',   'sacct', 'scancel')
+SuperMUC_NG(  6336,   1,    48,   96, 1000,'mpiexec',   'sbatch',   'sacct', 'scancel')
+
 
 #machine accessor functions
 get_machine_name = Machine.get_hostname

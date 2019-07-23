@@ -6,7 +6,7 @@
 /
 
 &SYSTEM
-   celldm(1)       = 1.0
+   !celldm(1)       = 1.0
    ecutwfc         = 35
    ibrav           = 0
    input_dft       = 'lda'
@@ -28,7 +28,7 @@
 ATOMIC_SPECIES 
    C  12.011 C.BFD.upf
 
-ATOMIC_POSITIONS alat
+ATOMIC_POSITIONS bohr
    C        0.00000000       0.00000000       0.00000000 
    C        3.37316115       3.37316115       0.00000000 
    C        5.05974172       5.05974172       1.68658057 
@@ -48,7 +48,7 @@ ATOMIC_POSITIONS alat
 K_POINTS automatic
    2 2 2  0 0 0 
 
-CELL_PARAMETERS cubic
+CELL_PARAMETERS bohr
          6.74632229       6.74632229       0.00000000 
         -0.00000000       6.74632229       6.74632229 
          6.74632229       0.00000000       6.74632229 

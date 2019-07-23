@@ -618,6 +618,18 @@ class obj(object_interface):
         return o
     #end def obj
 
+    def to_obj(self):
+        o = obj()
+        for k,v in self._iteritems():
+            if isinstance(v,obj):
+                o[k] = v._to_obj()
+            else:
+                o[k] = v
+            #end if
+        #end for
+        return o
+    #end def to_obj
+
 
     # list extensions
     def first(self):
@@ -1011,6 +1023,8 @@ class obj(object_interface):
         return obj.to_dict(self,*args,**kwargs)
     def _obj(self,*args,**kwargs):
         return obj.obj(self,*args,**kwargs)
+    def _to_obj(self,*args,**kwargs):
+        return obj.to_obj(self,*args,**kwargs)
     #  list extensions
     def _first(self,*args,**kwargs):
         return obj.first(self,*args,**kwargs)

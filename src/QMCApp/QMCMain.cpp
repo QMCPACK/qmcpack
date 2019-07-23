@@ -32,7 +32,6 @@
 #include "Utilities/NewTimer.h"
 #include "Particle/HDFWalkerIO.h"
 #include "QMCApp/InitMolecularSystem.h"
-#include "Particle/DistanceTable.h"
 #include "QMCDrivers/QMCDriver.h"
 #include "Message/Communicate.h"
 #include "Message/OpenMP.h"
@@ -83,6 +82,7 @@ QMCMain::QMCMain(Communicate* c)
   qmc_common.print_git_info_if_present(app_summary());
   app_summary() << "=====================================================\n";
   qmc_common.print_options(app_log());
+  // clang-format off
   app_summary()
 #if !defined(HAVE_MPI)
       << "\n  Built without MPI. Running in serial or with OMP threading only." << std::endl
@@ -93,6 +93,8 @@ QMCMain::QMCMain(Communicate* c)
       << "\n  Number of ranks in group  = " << myComm->size()
       << "\n  MPI ranks per node        = " << NodeComm.size()
       << std::endl;
+  // clang-format on
+
   // assign accelerators within a node
   assignAccelerators(NodeComm);
 #pragma omp parallel

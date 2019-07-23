@@ -12,7 +12,7 @@
 /
 
 &SYSTEM
-   celldm(1)       = 1.0
+   !celldm(1)       = 1.0
    degauss         = 0.0001
    ecutrho         = 600
    ecutwfc         = 150
@@ -38,7 +38,7 @@
 ATOMIC_SPECIES 
    C  12.011 C.BFD.upf
 
-ATOMIC_POSITIONS alat
+ATOMIC_POSITIONS bohr
    C        5.67201488       2.07077135       6.12363826 
    C        6.75261319      10.35385673       6.12363826 
    C        7.08201324       3.22522394       3.94377340 
@@ -63,7 +63,7 @@ ATOMIC_POSITIONS alat
 K_POINTS automatic
    1 1 1  0 0 0 
 
-CELL_PARAMETERS cubic
+CELL_PARAMETERS bohr
         12.42462807       0.00000000       0.00000000 
          0.00000000      12.42462807       0.00000000 
          0.00000000       0.00000000      12.42462807 

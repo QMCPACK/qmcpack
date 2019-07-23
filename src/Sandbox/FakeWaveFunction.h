@@ -26,8 +26,6 @@ namespace qmcplusplus
     using posT=TinyVector<OHMMS_PRECISION,OHMMS_DIM>;
 
     valT LogValue;
-    DistanceTableData* d_ee;
-    DistanceTableData* d_ie;
 
     virtual ~FakeWaveFunctionBase(){}
     virtual void evaluateLog(ParticleSet& P)=0;

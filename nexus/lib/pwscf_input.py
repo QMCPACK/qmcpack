@@ -204,7 +204,7 @@ class PwscfInputBase(DevBase):
         'esm_efield','fcp_mu','london_c6','london_rvdw','xdm_a1','xdm_a2',
         # 6.3 additions
         'block_1','block_2','block_height','zgate','ts_vdw_econv_thr',
-        'starting_charge',
+        'starting_charge'
         ]
     strs=[
         # pre 5.4
@@ -240,12 +240,13 @@ class PwscfInputBase(DevBase):
         'hubbard_j0', 'hubbard_beta', 'hubbard_j',
         'starting_ns_eigenvalue', 'angle1', 'angle2', 'fixed_magnetization',
         'fe_step', 'efield_cart', 'london_c6', 'london_rvdw',
-        ]
+        'starting_charge' ,
+         ]
 
     species_arrays = [
         'starting_magnetization', 'hubbard_alpha', 'hubbard_u', 'hubbard_j0', 
         'hubbard_beta', 'hubbard_j', 'angle1', 'angle2', 
-        'london_c6', 'london_rvdw',
+        'london_c6', 'london_rvdw','starting_charge',
         ]
 
     species_array_indices = obj(hubbard_j=1)
@@ -510,7 +511,11 @@ class Card(Element):
 
     def change_specifier(self,new_specifier):
         self.not_implemented()
-    #end def change_specifier    
+    #end def change_specifier
+
+    def change_option(self,*args,**kwargs):
+        self.change_specifier(*args,**kwargs)
+    #end def change_option
 #end class Card
 
 
@@ -1050,7 +1055,7 @@ class atomic_positions(Card):
 
 
     def change_specifier(self,new_specifier,pwi):
-        scale,axes = pwi.get_common_vars('scale','axes')
+        scale = pwi.get_common_vars('scale')
 
         pos = self.positions
 
@@ -1062,6 +1067,7 @@ class atomic_positions(Card):
         elif spec=='angstrom':
             pos *= convert(1.,'A','B')
         elif spec=='crystal':
+            axes = pwi.get_common_vars('axes')
             pos = dot(pos,axes)
         else:
             self.error('old specifier for atomic_positions is invalid\n  old specifier: '+spec+'\n  valid options: alat, bohr, angstrom, crystal')
@@ -1075,6 +1081,7 @@ class atomic_positions(Card):
         elif spec=='angstrom':
             pos /= convert(1.,'A','B')
         elif spec=='crystal':
+            axes = pwi.get_common_vars('axes')
             pos = dot(pos,inv(axes))
         else:
             self.error('new specifier for atomic_positions is invalid\n  new specifier: '+spec+'\n  valid options: alat, bohr, angstrom, crystal')
@@ -1219,6 +1226,37 @@ class cell_parameters(Card):
     def write_text(self):
         return array_to_string(self.vectors)
     #end def write_text
+
+    def change_specifier(self,new_specifier,pwi):
+        scale = pwi.get_common_vars('scale')
+
+        vec = self.vectors
+
+        spec = self.specifier
+        if spec=='alat' or spec=='':
+            vec *= scale
+        elif spec=='bohr':
+            None
+        elif spec=='angstrom':
+            vec *= convert(1.,'A','B')
+        else:
+            self.error('old specifier for cell_parameters is invalid\nold specifier: '+spec+'\nvalid options: alat, bohr, angstrom')
+        #end if
+
+        spec = new_specifier
+        if spec=='alat' or spec=='':
+            vec /= scale
+        elif spec=='bohr':
+            None
+        elif spec=='angstrom':
+            vec /= convert(1.,'A','B')
+        else:
+            self.error('new specifier for cell_parameters is invalid\nnew specifier: '+spec+'\nvalid options: alat, bohr, angstrom')
+        #end if
+            
+        self.vectors   = vec
+        self.specifier = new_specifier
+    #end def change_specifier
 #end class cell_parameters
 
 
@@ -1465,20 +1503,16 @@ class PwscfInput(SimulationInput):
 
 
     def get_common_vars(self,*vars):
-        scale = None
+        scale = 1.0
         axes  = None
         kaxes = None
 
         if 'celldm(1)' in self.system:
             scale = self.system['celldm(1)']
-        elif 'ibrav' in self.system and self.system.ibrav==0:
-            scale = 1.0
         #end if
-        if scale!=None:
-            if 'cell_parameters' in self:
-                axes = scale*array(self.cell_parameters.vectors)
-                kaxes = 2*pi*inv(axes).T
-            #end if
+        if 'cell_parameters' in self:
+            axes = scale*array(self.cell_parameters.vectors)
+            kaxes = 2*pi*inv(axes).T
         #end if
 
         vals = []
@@ -1518,7 +1552,7 @@ class PwscfInput(SimulationInput):
         ndn = p.down_electron.count
 
         self.system.ibrav        = 0
-        self.system['celldm(1)'] = 1.0e0
+#        self.system['celldm(1)'] = 1.0e0
         nions,nspecies = p.count_ions(species=True)
         self.system.nat          = nions
         self.system.ntyp         = nspecies
@@ -1527,7 +1561,7 @@ class PwscfInput(SimulationInput):
         if not 'cell_parameters' in self:
             self.cell_parameters = self.element_types['cell_parameters']()
         #end if
-        self.cell_parameters.specifier = 'cubic'
+        self.cell_parameters.specifier = 'bohr' 
         self.cell_parameters.vectors   = s.axes.copy()
 
         self.k_points.clear()
@@ -1579,7 +1613,7 @@ class PwscfInput(SimulationInput):
             #end if
         #end for
 
-        self.atomic_positions.specifier = 'alat'
+        self.atomic_positions.specifier = 'bohr'
         self.atomic_positions.positions = s.pos.copy()
         self.atomic_positions.atoms     = list(s.elem)
         if s.frozen!=None:
@@ -1612,7 +1646,7 @@ class PwscfInput(SimulationInput):
         ndn = p.down_electron.count
 
         self.system.ibrav        = 0
-        self.system['celldm(1)'] = 1.0e0
+#        self.system['celldm(1)'] = 1.0e0
         nions,nspecies = p.count_ions(species=True)
         self.system.nat          = nions
         self.system.ntyp         = nspecies
@@ -1627,7 +1661,7 @@ class PwscfInput(SimulationInput):
         if not 'cell_parameters' in self:
             self.cell_parameters = self.element_types['cell_parameters']()
         #end if
-        self.cell_parameters.specifier = 'cubic'
+        self.cell_parameters.specifier = 'bohr'
         self.cell_parameters.vectors   = s.axes.copy()
 
         self.k_points.clear()
@@ -1670,7 +1704,7 @@ class PwscfInput(SimulationInput):
             #end if
         #end for
 
-        self.atomic_positions.specifier = 'alat'
+        self.atomic_positions.specifier = 'bohr'
         self.atomic_positions.positions = s.pos.copy()
         self.atomic_positions.atoms     = list(s.elem)
         if s.frozen!=None:
@@ -1957,20 +1991,34 @@ def generate_any_pwscf_input(**kwargs):
     #end for
 
     #process other keywords
-    use_folded    = kwargs.delete_required('use_folded')
-    kgrid         = kwargs.delete_required('kgrid')
-    kshift        = kwargs.delete_required('kshift')
-    system        = kwargs.delete_optional('system',None)
-    pseudos       = kwargs.delete_optional('pseudos',[])
-    elem_order    = kwargs.delete_optional('elem_order',None)
-    mass          = kwargs.delete_optional('mass',None)
-    elem          = kwargs.delete_optional('elem',None)
-    pos           = kwargs.delete_optional('pos',None)
-    pos_specifier = kwargs.delete_optional('pos_specifier',None)
-    totmag_sys    = kwargs.delete_optional('totmag_sys',False)
-    start_mag     = kwargs.delete_optional('start_mag',None)
-    bandfac       = kwargs.delete_optional('bandfac',None)
-    nogamma       = kwargs.delete_optional('nogamma',False)
+    use_folded       = kwargs.delete_required('use_folded')
+    kgrid            = kwargs.delete_required('kgrid')
+    kshift           = kwargs.delete_required('kshift')
+    system           = kwargs.delete_optional('system',None)
+    pseudos          = kwargs.delete_optional('pseudos',[])
+    elem_order       = kwargs.delete_optional('elem_order',None)
+    mass             = kwargs.delete_optional('mass',None)
+    elem             = kwargs.delete_optional('elem',None)
+    pos              = kwargs.delete_optional('pos',None)
+    totmag_sys       = kwargs.delete_optional('totmag_sys',False)
+    start_mag        = kwargs.delete_optional('start_mag',None)
+    bandfac          = kwargs.delete_optional('bandfac',None)
+    nogamma          = kwargs.delete_optional('nogamma',False)
+    positions_option = kwargs.delete_optional('pos_specifier',None)
+    if positions_option is None:
+        positions_option = kwargs.delete_optional('positions_option',None)
+    #end if
+    if positions_option is None:
+        positions_option = kwargs.delete_optional('atomic_positions_option',None)
+    #end if
+    kpoints_option   = kwargs.delete_optional('kpoints_option',None)
+    if kpoints_option is None:
+        kpoints_option   = kwargs.delete_optional('k_points_option',None)
+    #end if
+    cell_option      = kwargs.delete_optional('cell_option',None)
+    if cell_option is None:
+        cell_option      = kwargs.delete_optional('cell_parameters_option',None)
+    #end if
 
     #  pseudopotentials
     pseudopotentials = obj()
@@ -1997,8 +2045,8 @@ def generate_any_pwscf_input(**kwargs):
             if pos is None:
                 PwscfInput.class_error('"pos" must be provided when "elem" is given','generate_pwscf_input')
             #end if
-            if pos_specifier is None:
-                PwscfInput.class_error('"pos_specifier" must be provided when "elem" is given','generate_pwscf_input')
+            if positions_option is None:
+                PwscfInput.class_error('"atomic_positions_option" must be provided when "elem" is given','generate_pwscf_input')
             #end if
 
             # fill in atomic_species
@@ -2025,7 +2073,7 @@ def generate_any_pwscf_input(**kwargs):
             #end for
 
             # fill in atomic_positions
-            pw.atomic_positions.specifier = pos_specifier
+            pw.atomic_positions.specifier = positions_option
             pw.atomic_positions.positions = array(pos,dtype=float)
             pw.atomic_positions.atoms     = list(elem)
         #end if
@@ -2135,6 +2183,21 @@ def generate_any_pwscf_input(**kwargs):
     #        shift     = kshift
     #        )
     #end if
+
+    # adjust card options, if requested
+    options = obj(
+        atomic_positions = positions_option,
+        k_points         = kpoints_option,
+        cell_parameters  = cell_option,
+        )
+    for card_name,option in options.items():
+        if option is not None:
+            if card_name not in pw:
+                PwscfInput.class_error('Card option provided for card "{}" but card is not present\noption provided: {}'.format(card_name,option))
+            #end if
+            pw[card_name].change_option(option,pw)
+        #end if
+    #end for
 
     # check for misformatted kpoints
     if len(pw.k_points)==0:

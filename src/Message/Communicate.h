@@ -26,14 +26,12 @@
 namespace mpi3 = boost::mpi3;
 #endif
 
-#ifdef HAVE_OOMPI
-#include "oompi.h"
+#ifdef HAVE_MPI
 struct CommunicatorTraits
 {
   typedef MPI_Comm mpi_comm_type;
   typedef MPI_Status status;
   typedef MPI_Request request;
-  typedef OOMPI_Intra_comm intra_comm_type;
 };
 #define APP_ABORT(msg)                                            \
   {                                                               \
@@ -53,7 +51,6 @@ struct CommunicatorTraits
   typedef int mpi_comm_type;
   typedef int status;
   typedef int request;
-  typedef int intra_comm_type;
   static const int MPI_COMM_NULL    = 0;
   static const int MPI_REQUEST_NULL = 1;
 };
@@ -96,13 +93,12 @@ public:
   ///constructor from mpi3 environment
 #ifdef HAVE_MPI
   Communicate(const mpi3::environment& env);
+
+  ///constructor with communicator
+  Communicate(const mpi3::communicator& in_comm);
 #endif
 
   ///constructor with communicator
-  Communicate(const mpi_comm_type comm_input);
-
-  ///constructor with communicator
-  //Communicate(const intra_comm_type& c);
   Communicate(const Communicate& in_comm, int nparts);
 
   /**destructor
@@ -122,8 +118,9 @@ public:
   /// initialize this as a node/shared-memory communicator
   void initializeAsNodeComm(const Communicate& parent);
   void finalize();
-  void abort();
-  void abort(const char* msg);
+  void barrier() const;
+  void abort() const;
+  void barrier_and_abort(const std::string& msg) const;
   void set_world();
 
 #if defined(HAVE_MPI)
@@ -133,9 +130,6 @@ public:
 
   ///return the Communicator ID (typically MPI_WORLD_COMM)
   inline mpi_comm_type getMPI() const { return myMPI; }
-
-  inline intra_comm_type& getComm() { return myComm; }
-  inline const intra_comm_type& getComm() const { return myComm; }
 
   ///return the rank
   inline int rank() const { return d_mycontext; }
@@ -151,8 +145,6 @@ public:
   void cleanupMessage(void*);
   inline void setNodeID(int i) { d_mycontext = i; }
   inline void setNumNodes(int n) { d_ncontexts = n; }
-
-  void barrier();
 
   inline void setName(const std::string& aname) { myName = aname; }
   inline const std::string& getName() const { return myName; }
@@ -255,25 +247,6 @@ protected:
    *  After switching to mpi3::communicator, myMPI is only a reference to the raw communicator owned by mpi3::communicator
    */
   mpi_comm_type myMPI;
-#ifdef HAVE_MPI
-  /* helper class to destroy myMPI after the destruction of myComm
-   * it must be declared before myComm and the destruction automatically happens after myComm
-   */
-  class MPI_Comm_destructor
-  {
-    MPI_Comm& comm;
-
-  public:
-    MPI_Comm_destructor(MPI_Comm& myMPI) : comm(myMPI) {}
-    ~MPI_Comm_destructor()
-    {
-      if (comm != MPI_COMM_NULL)
-        MPI_Comm_free(&comm);
-    }
-  } myMPI_destroy_helper;
-#endif
-  /// OOMPI communicator
-  intra_comm_type myComm;
   /// Communicator name
   std::string myName;
   /// Rank

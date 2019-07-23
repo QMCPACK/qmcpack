@@ -164,7 +164,7 @@ public:
                                real_type& LogDet,
                                real_type& Phase)
   {
-    BlasThreadingEnv knob(getNumThreadsNested());
+    BlasThreadingEnv knob(getNextLevelNumThreads());
     const int n   = invMat.rows();
     const int lda = invMat.cols();
     T_FP* invMat_ptr(nullptr);

@@ -122,11 +122,13 @@ class KP3IndexFactorization_batched
                  int nsampleQ_,
                  ValueType e0_,
                  Allocator const& alloc_,
+                 int cv0,
                  int gncv): 
         allocator_(alloc_),
         sp_allocator_(alloc_),
         walker_type(type),
         global_nCV(gncv),
+        global_origin(cv0),
         E0(e0_),
         H1(std::move(hij_)),
         haj(std::move(h1)),
@@ -273,6 +275,7 @@ class KP3IndexFactorization_batched
     KP3IndexFactorization_batched& operator=(KP3IndexFactorization_batched&& other) = default;
 
     // must have the same signature as shared classes, so keeping it with std::allocator
+    // NOTE: THIS SHOULD USE mpi3::shm!!!
     boost::multi::array<ComplexType,2> getOneBodyPropagatorMatrix(TaskGroup_& TG, boost::multi::array<ComplexType,1> const& vMF) {
 
       int nkpts = nopk.size();
@@ -300,15 +303,19 @@ class KP3IndexFactorization_batched
             P1[I][J] += H1[K][i][j] + vn0[K][i][j];
             P1[J][I] += H1[K][j][i] + vn0[K][j][i];
             // This is really cutoff dependent!!!
-            if( std::abs( P1[I][J] - conj(P1[J][I]) ) > 1e-6 ) {
+#if AFQMC_MIXED_PRECISION
+            if( std::abs(P1[I][J]-ma::conj(P1[J][I]))*2.0 > 1e-5 ) {
+#else
+            if( std::abs(P1[I][J]-ma::conj(P1[J][I]))*2.0 > 1e-6 ) {
+#endif
               app_error()<<" WARNING in getOneBodyPropagatorMatrix. H1 is not hermitian. \n";
-              app_error()<<I <<" " <<J <<" " <<P1[I][J] <<" " <<P1[j][i] <<" "
+              app_error()<<I <<" " <<J <<" " <<P1[I][J] <<" " <<P1[J][I] <<" "
                          <<H1[K][i][j] <<" " <<H1[K][j][i] <<" "
                          <<vn0[K][i][j] <<" " <<vn0[K][j][i] <<std::endl;
               //APP_ABORT("Error in getOneBodyPropagatorMatrix. H1 is not hermitian. \n");
             }
-            P1[I][J] = 0.5*(P1[I][J]+conj(P1[J][I]));
-            P1[J][I] = conj(P1[I][J]);
+            P1[I][J] = 0.5*(P1[I][J]+ma::conj(P1[J][I]));
+            P1[J][I] = ma::conj(P1[I][J]);
           }
         }
         nk0 += nopk[K];
@@ -1113,7 +1120,7 @@ class KP3IndexFactorization_batched
         // assuming contiguous
         ma::scal(c,v);
       }
-        
+
       using ma::gemmBatched;
       std::vector<sp_pointer> Aarray;
       std::vector<sp_pointer> Barray;
@@ -1151,7 +1158,6 @@ class KP3IndexFactorization_batched
             Barray.push_back(XQnw[Q][0].origin());
             Carray.push_back(vKK[K][QK].origin());
           }
-// } else if( Qmap[Q] > 0 ) {
         } else if(Qmap[Q]>0) { // rho(Q)^+ term 
           for(int K=0; K<nkpts; ++K) {        // K is the index of the kpoint pair of (i,k)
             int QK = QKToK2[Q][K];
@@ -1305,6 +1311,7 @@ class KP3IndexFactorization_batched
     int number_of_ke_vectors() const{ return local_nCV; }
     int local_number_of_cholesky_vectors() const{ return 2*local_nCV; } 
     int global_number_of_cholesky_vectors() const{ return global_nCV; }
+    int global_origin_cholesky_vector() const{ return global_origin; }
 
     // transpose=true means G[nwalk][ik], false means G[ik][nwalk]
     bool transposed_G_for_vbias() const{return false;}
@@ -1325,6 +1332,7 @@ class KP3IndexFactorization_batched
 
     int global_nCV;
     int local_nCV;
+    int global_origin;
 
     ValueType E0;
 

@@ -17,7 +17,6 @@
 #include "Lattice/ParticleBConds.h"
 #include "Particle/ParticleSet.h"
 #include "Particle/DistanceTableData.h"
-#include "Particle/DistanceTable.h"
 #include "Particle/SymmetricDistanceTableData.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
@@ -91,13 +90,6 @@ TEST_CASE("PolynomialFunctor3D Jastrow", "[wavefunction]")
   target_species(chargeIdx, downIdx) = -1;
   //elec_.resetGroups();
 
-#ifdef ENABLE_SOA
-  elec_.addTable(ions_, DT_SOA);
-#else
-  elec_.addTable(ions_, DT_AOS);
-#endif
-  elec_.update();
-
   TrialWaveFunction psi = TrialWaveFunction(c);
 
   const char* particles = "<tmp> \
@@ -132,6 +124,9 @@ TEST_CASE("PolynomialFunctor3D Jastrow", "[wavefunction]")
 #endif
   J3Type* j3 = dynamic_cast<J3Type*>(orb);
   REQUIRE(j3 != NULL);
+
+  // update all distance tables
+  elec_.update();
 
   double logpsi = psi.evaluateLog(elec_);
   REQUIRE(logpsi == Approx(-1.193457749)); // note: number not validated
@@ -176,8 +171,8 @@ TEST_CASE("PolynomialFunctor3D Jastrow", "[wavefunction]")
   REQUIRE(ratio_3 == ComplexApprox(0.7987703724).compare_real_only());
 
   opt_variables_type optvars;
-  std::vector<WaveFunctionComponent::RealType> dlogpsi;
-  std::vector<WaveFunctionComponent::RealType> dhpsioverpsi;
+  std::vector<WaveFunctionComponent::ValueType> dlogpsi;
+  std::vector<WaveFunctionComponent::ValueType> dhpsioverpsi;
 
   psi.checkInVariables(optvars);
   optvars.resetIndex();
@@ -192,8 +187,8 @@ TEST_CASE("PolynomialFunctor3D Jastrow", "[wavefunction]")
     std::cout << "param=" << iparam << " : " << dlogpsi[iparam] << "  " << dhpsioverpsi[iparam] << std::endl;
   std::cout << std::endl;
 
-  REQUIRE(dlogpsi[43] == Approx(1.3358726814e+05));
-  REQUIRE(dhpsioverpsi[43] == Approx(-2.3246270644e+05));
+  REQUIRE(dlogpsi[43] == ComplexApprox(1.3358726814e+05).compare_real_only());
+  REQUIRE(dhpsioverpsi[43] == ComplexApprox(-2.3246270644e+05).compare_real_only());
 
   VirtualParticleSet VP(elec_, 2);
   ParticleSet::ParticlePos_t newpos2(2);

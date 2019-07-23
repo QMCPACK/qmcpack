@@ -62,10 +62,13 @@ void NonLocalECPComponent::add(int l, RadialPotentialType* pp)
 void NonLocalECPComponent::resize_warrays(int n, int m, int l)
 {
   psiratio.resize(n);
-  psigrad.resize(n);
-  psigrad_source.resize(n);
+  gradpsiratio.resize(n);
+  deltaV.resize(n);
+  cosgrad.resize(n);
+  wfngrad.resize(n);
   vrad.resize(m);
   dvrad.resize(m);
+  vgrad.resize(m);
   wvec.resize(m);
   Amat.resize(n * m);
   dAmat.resize(n * m);
@@ -111,15 +114,10 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOne(ParticleSet& W,
                                                                  RealType r,
                                                                  const PosType& dr,
                                                                  bool Tmove,
-                                                                 std::vector<NonLocalData>& Txy) const
+                                                                 std::vector<NonLocalData>& Txy)
 {
   constexpr RealType czero(0);
   constexpr RealType cone(1);
-
-  RealType lpol_[lmax + 1];
-  RealType vrad_[nchannel];
-  std::vector<RealType> psiratio_(nknot);
-  PosType deltaV[nknot];
 
   if (VP)
   {
@@ -131,9 +129,9 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOne(ParticleSet& W,
       VPos[j]   = deltaV[j] + W.R[iel];
     }
     VP->makeMoves(iel, VPos, true, iat);
-    psi.evaluateRatios(*VP, psiratio_);
+    psi.evaluateRatios(*VP, psiratio);
     for (int j = 0; j < nknot; j++)
-      psiratio_[j] *= sgridweight_m[j];
+      psiratio[j] *= sgridweight_m[j];
   }
   else
   {
@@ -141,11 +139,11 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOne(ParticleSet& W,
     for (int j = 0; j < nknot; j++)
     {
       deltaV[j] = r * rrotsgrid_m[j] - dr;
-      W.makeMoveOnSphere(iel, deltaV[j]);
+      W.makeMove(iel, deltaV[j]);
 #if defined(QMC_COMPLEX)
-      psiratio_[j] = psi.ratio(W, iel) * sgridweight_m[j] * std::cos(psi.getPhaseDiff());
+      psiratio[j] = psi.ratio(W, iel) * sgridweight_m[j] * std::cos(psi.getPhaseDiff());
 #else
-      psiratio_[j] = psi.ratio(W, iel) * sgridweight_m[j];
+      psiratio[j] = psi.ratio(W, iel) * sgridweight_m[j];
 #endif
       W.rejectMove(iel);
       psi.resetPhaseDiff();
@@ -155,7 +153,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOne(ParticleSet& W,
 
   // Compute radial potential, multiplied by (2l+1) factor.
   for (int ip = 0; ip < nchannel; ip++)
-    vrad_[ip] = nlpp_m[ip]->splint(r) * wgt_angpp_m[ip];
+    vrad[ip] = nlpp_m[ip]->splint(r) * wgt_angpp_m[ip];
 
   const RealType rinv = cone / r;
   RealType pairpot    = 0;
@@ -164,22 +162,22 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOne(ParticleSet& W,
   {
     RealType zz = dot(dr, rrotsgrid_m[j]) * rinv;
     // Forming the Legendre polynomials
-    lpol_[0]          = cone;
+    lpol[0]           = cone;
     RealType lpolprev = czero;
     for (int l = 0; l < lmax; l++)
     {
       //Not a big difference
       //lpol[l+1]=(2*l+1)*zz*lpol[l]-l*lpolprev;
       //lpol[l+1]/=(l+1);
-      lpol_[l + 1] = Lfactor1[l] * zz * lpol_[l] - l * lpolprev;
-      lpol_[l + 1] *= Lfactor2[l];
-      lpolprev = lpol_[l];
+      lpol[l + 1] = Lfactor1[l] * zz * lpol[l] - l * lpolprev;
+      lpol[l + 1] *= Lfactor2[l];
+      lpolprev = lpol[l];
     }
 
     RealType lsum = czero;
     for (int l = 0; l < nchannel; l++)
-      lsum += vrad_[l] * lpol_[angpp_m[l]];
-    lsum *= psiratio_[j];
+      lsum += vrad[l] * lpol[angpp_m[l]];
+    lsum *= psiratio[j];
     if (Tmove)
       Txy.push_back(NonLocalData(iel, lsum, deltaV[j]));
     pairpot += lsum;
@@ -203,36 +201,10 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
                                                                            const PosType& dr,
                                                                            PosType& force_iat,
                                                                            bool Tmove,
-                                                                           std::vector<NonLocalData>& Txy) const
+                                                                           std::vector<NonLocalData>& Txy)
 {
   constexpr RealType czero(0);
   constexpr RealType cone(1);
-
-  //Array for P_l[cos(theta)].
-  RealType lpol_[lmax + 1];
-  //Array for P'_l[cos(theta)]
-  RealType dlpol_[lmax + 1];
-
-  //Array for v_l(r).
-  RealType vrad_[nchannel];
-  //Array for (2l+1)*v'_l(r)/r.
-  RealType dvrad_[nchannel];
-
-  //$\Psi(...q...)/\Psi(...r...)$ for all quadrature points q.
-  std::vector<RealType> psiratio_(nknot);
-  //$\nabla \Psi(...q...)/\Psi(...r...)$ for all quadrature points q.
-  //  $\nabla$ is w.r.t. the electron coordinates involved in the quadrature.
-  std::vector<PosType> gradpsiratio_(nknot);
-
-  //This stores gradient of v(r):
-  std::vector<PosType> vgrad_(nchannel);
-  //This stores the gradient of the cos(theta) term in force expression.
-  std::vector<PosType> cosgrad_(nknot);
-  //This stores grad psi/psi - dot(u,grad psi)
-  std::vector<PosType> wfngrad_(nknot);
-
-  //^^^ "Why not GradType?" you ask.  Because GradType can be complex.
-  PosType deltaV[nknot];
 
   GradType gradtmp_(0);
   PosType realgradtmp_(0);
@@ -256,9 +228,9 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
       VPos[j]   = deltaV[j] + W.R[iel];
     }
     VP->makeMoves(iel, VPos, true, iat);
-    psi.evaluateRatios(*VP, psiratio_);
+    psi.evaluateRatios(*VP, psiratio);
     for (int j = 0; j < nknot; j++)
-      psiratio_[j] *= sgridweight_m[j];
+      psiratio[j] *= sgridweight_m[j];
   }
   else
   {
@@ -267,7 +239,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
     for (int j = 0; j < nknot; j++)
     {
       deltaV[j] = r * rrotsgrid_m[j] - dr;
-      W.makeMoveOnSphere(iel, deltaV[j]);
+      W.makeMove(iel, deltaV[j]);
 #if defined(QMC_COMPLEX)
       gradtmp_ = 0;
 
@@ -278,7 +250,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
       ratio = ValueType(ratio_r, ratio_i);
 
       //Only need the real part.
-      psiratio_[j] = ratio_r * sgridweight_m[j];
+      psiratio[j] = ratio_r * sgridweight_m[j];
 
       //QMCPACK spits out $\nabla\Psi(q)/\Psi(q)$.
       //Multiply times $\Psi(q)/\Psi(r)$ to get
@@ -286,7 +258,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
       gradtmp_ *= ratio;
 
       //And now we take the real part and save it.
-      convert(gradtmp_, gradpsiratio_[j]);
+      convert(gradtmp_, gradpsiratio[j]);
 
 
 #else
@@ -299,9 +271,9 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
       ratio    = psi.ratioGrad(W, iel, gradtmp_);
 
       gradtmp_ *= ratio;
-      psiratio_[j] = ratio * sgridweight_m[j];
+      psiratio[j] = ratio * sgridweight_m[j];
 
-      gradpsiratio_[j] = gradtmp_;
+      gradpsiratio[j] = gradtmp_;
 #endif
       W.rejectMove(iel);
       psi.resetPhaseDiff();
@@ -318,8 +290,8 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
   for (int ip = 0; ip < nchannel; ip++)
   {
     //fun fact.  NLPComponent stores v(r) as v(r), and not as r*v(r) like in other places.
-    vrad_[ip]  = nlpp_m[ip]->splint(r, dvrad_[ip], secondderiv) * wgt_angpp_m[ip];
-    vgrad_[ip] = dvrad_[ip] * dr * wgt_angpp_m[ip] * rinv;
+    vrad[ip]  = nlpp_m[ip]->splint(r, dvrad[ip], secondderiv) * wgt_angpp_m[ip];
+    vgrad[ip] = dvrad[ip] * dr * wgt_angpp_m[ip] * rinv;
   }
 
   RealType pairpot = 0;
@@ -329,16 +301,16 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
     RealType zz        = dot(dr, rrotsgrid_m[j]) * rinv;
     PosType uminusrvec = rrotsgrid_m[j] - zz * dr * rinv;
 
-    cosgrad_[j] = rinv * uminusrvec;
+    cosgrad[j] = rinv * uminusrvec;
 
-    RealType udotgradpsi = dot(gradpsiratio_[j], rrotsgrid_m[j]);
-    wfngrad_[j]          = gradpsiratio_[j] - dr * (udotgradpsi * rinv);
-    wfngrad_[j] *= sgridweight_m[j];
+    RealType udotgradpsi = dot(gradpsiratio[j], rrotsgrid_m[j]);
+    wfngrad[j]           = gradpsiratio[j] - dr * (udotgradpsi * rinv);
+    wfngrad[j] *= sgridweight_m[j];
 
     // Forming the Legendre polynomials
     //P_0(x)=1; P'_0(x)=0.
-    lpol_[0]  = cone;
-    dlpol_[0] = czero;
+    lpol[0]  = cone;
+    dlpol[0] = czero;
 
     RealType lpolprev  = czero;
     RealType dlpolprev = czero;
@@ -346,15 +318,15 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
     for (int l = 0; l < lmax; l++)
     {
       //Legendre polynomial recursion formula.
-      lpol_[l + 1] = Lfactor1[l] * zz * lpol_[l] - l * lpolprev;
-      lpol_[l + 1] *= Lfactor2[l];
+      lpol[l + 1] = Lfactor1[l] * zz * lpol[l] - l * lpolprev;
+      lpol[l + 1] *= Lfactor2[l];
 
       //and for the derivative...
-      dlpol_[l + 1] = Lfactor1[l] * (zz * dlpol_[l] + lpol_[l]) - l * dlpolprev;
-      dlpol_[l + 1] *= Lfactor2[l];
+      dlpol[l + 1] = Lfactor1[l] * (zz * dlpol[l] + lpol[l]) - l * dlpolprev;
+      dlpol[l + 1] *= Lfactor2[l];
 
-      lpolprev  = lpol_[l];
-      dlpolprev = dlpol_[l];
+      lpolprev  = lpol[l];
+      dlpolprev = dlpol[l];
     }
 
     RealType lsum = czero;
@@ -365,15 +337,15 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
 
     for (int l = 0; l < nchannel; l++)
     {
-      lsum           += vrad_[l] * lpol_[angpp_m[l]] * psiratio_[j];
-      gradpotterm_   += vgrad_[l] * lpol_[angpp_m[l]] * psiratio_[j];
-      gradlpolyterm_ += vrad_[l] * dlpol_[angpp_m[l]] * cosgrad_[j] * psiratio_[j];
-      gradwfnterm_   += vrad_[l] * lpol_[angpp_m[l]] * wfngrad_[j];
+      lsum += vrad[l] * lpol[angpp_m[l]] * psiratio[j];
+      gradpotterm_ += vgrad[l] * lpol[angpp_m[l]] * psiratio[j];
+      gradlpolyterm_ += vrad[l] * dlpol[angpp_m[l]] * cosgrad[j] * psiratio[j];
+      gradwfnterm_ += vrad[l] * lpol[angpp_m[l]] * wfngrad[j];
     }
 
     if (Tmove)
       Txy.push_back(NonLocalData(iel, lsum, deltaV[j]));
-    pairpot   += lsum;
+    pairpot += lsum;
     force_iat += gradpotterm_ + gradlpolyterm_ - gradwfnterm_;
   }
 
@@ -397,36 +369,10 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
                                                                            PosType& force_iat,
                                                                            ParticleSet::ParticlePos_t& pulay_terms,
                                                                            bool Tmove,
-                                                                           std::vector<NonLocalData>& Txy) const
+                                                                           std::vector<NonLocalData>& Txy)
 {
   constexpr RealType czero(0);
   constexpr RealType cone(1);
-
-  //Array for P_l[cos(theta)].
-  RealType lpol_[lmax + 1];
-  //Array for P'_l[cos(theta)]
-  RealType dlpol_[lmax + 1];
-
-  //Array for v_l(r).
-  RealType vrad_[nchannel];
-  //Array for (2l+1)*v'_l(r)/r.
-  RealType dvrad_[nchannel];
-
-  //$\Psi(...q...)/\Psi(...r...)$ for all quadrature points q.
-  std::vector<RealType> psiratio_(nknot);
-  //$\nabla \Psi(...q...)/\Psi(...r...)$ for all quadrature points q.
-  //  $\nabla$ is w.r.t. the electron coordinates involved in the quadrature.
-  std::vector<PosType> gradpsiratio_(nknot);
-
-  //This stores gradient of v(r):
-  std::vector<PosType> vgrad_(nchannel);
-  //This stores the gradient of the cos(theta) term in force expression.
-  std::vector<PosType> cosgrad_(nknot);
-  //This stores grad psi/psi - dot(u,grad psi)
-  std::vector<PosType> wfngrad_(nknot);
-
-  //^^^ "Why not GradType?" you ask.  Because GradType can be complex.
-  PosType deltaV[nknot];
 
   GradType gradtmp_(0);
   PosType realgradtmp_(0);
@@ -467,9 +413,9 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
       VPos[j]   = deltaV[j] + W.R[iel];
     }
     VP->makeMoves(iel, VPos, true, iat);
-    psi.evaluateRatios(*VP, psiratio_);
+    psi.evaluateRatios(*VP, psiratio);
     for (int j = 0; j < nknot; j++)
-      psiratio_[j] *= sgridweight_m[j];
+      psiratio[j] *= sgridweight_m[j];
   }
   else
   {
@@ -478,7 +424,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
     for (int j = 0; j < nknot; j++)
     {
       deltaV[j] = r * rrotsgrid_m[j] - dr;
-      W.makeMoveOnSphere(iel, deltaV[j]);
+      W.makeMove(iel, deltaV[j]);
 #if defined(QMC_COMPLEX)
       gradtmp_ = 0;
 
@@ -489,7 +435,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
       ratio            = ValueType(ratio_r, ratio_i);
       psiratiofull_[j] = ratio;
       //Only need the real part.
-      psiratio_[j] = ratio_r * sgridweight_m[j];
+      psiratio[j] = ratio_r * sgridweight_m[j];
 
       //QMCPACK spits out $\nabla\Psi(q)/\Psi(q)$.
       //Multiply times $\Psi(q)/\Psi(r)$ to get
@@ -497,7 +443,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
       gradtmp_ *= ratio;
 
       //And now we take the real part and save it.
-      convert(gradtmp_, gradpsiratio_[j]);
+      convert(gradtmp_, gradpsiratio[j]);
 
 
 #else
@@ -509,9 +455,9 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
 
       psiratiofull_[j] = ratio;
       gradtmp_ *= ratio;
-      psiratio_[j] = ratio * sgridweight_m[j];
+      psiratio[j] = ratio * sgridweight_m[j];
 
-      gradpsiratio_[j] = gradtmp_;
+      gradpsiratio[j] = gradtmp_;
 #endif
       W.rejectMove(iel);
       psi.resetPhaseDiff();
@@ -528,8 +474,8 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
   for (int ip = 0; ip < nchannel; ip++)
   {
     //fun fact.  NLPComponent stores v(r) as v(r), and not as r*v(r) like in other places.
-    vrad_[ip]  = nlpp_m[ip]->splint(r, dvrad_[ip], secondderiv) * wgt_angpp_m[ip];
-    vgrad_[ip] = dvrad_[ip] * dr * wgt_angpp_m[ip] * rinv;
+    vrad[ip]  = nlpp_m[ip]->splint(r, dvrad[ip], secondderiv) * wgt_angpp_m[ip];
+    vgrad[ip] = dvrad[ip] * dr * wgt_angpp_m[ip] * rinv;
   }
 
   //Now to construct the 3N dimensional ionic wfn derivatives for pulay terms.
@@ -541,7 +487,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
     for (unsigned int j = 0; j < nknot; j++)
     {
       deltaV[j] = r * rrotsgrid_m[j] - dr;
-      W.makeMoveOnSphere(iel, deltaV[j]);
+      W.makeMove(iel, deltaV[j]);
       //"Accepting" moves is necessary because evalGradSource needs full distance tables
       //for now.
       W.acceptMove(iel);
@@ -553,7 +499,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
       pulay_quad[j][jat] = iongradtmp_;
       //And move the particle back.
       deltaV[j] = dr - r * rrotsgrid_m[j];
-      W.makeMoveOnSphere(iel, deltaV[j]);
+      W.makeMove(iel, deltaV[j]);
       W.acceptMove(iel);
     }
   }
@@ -565,16 +511,16 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
     RealType zz        = dot(dr, rrotsgrid_m[j]) * rinv;
     PosType uminusrvec = rrotsgrid_m[j] - zz * dr * rinv;
 
-    cosgrad_[j] = rinv * uminusrvec;
+    cosgrad[j] = rinv * uminusrvec;
 
-    RealType udotgradpsi = dot(gradpsiratio_[j], rrotsgrid_m[j]);
-    wfngrad_[j]          = gradpsiratio_[j] - dr * (udotgradpsi * rinv);
-    wfngrad_[j] *= sgridweight_m[j];
+    RealType udotgradpsi = dot(gradpsiratio[j], rrotsgrid_m[j]);
+    wfngrad[j]           = gradpsiratio[j] - dr * (udotgradpsi * rinv);
+    wfngrad[j] *= sgridweight_m[j];
 
     // Forming the Legendre polynomials
     //P_0(x)=1; P'_0(x)=0.
-    lpol_[0]  = cone;
-    dlpol_[0] = czero;
+    lpol[0]  = cone;
+    dlpol[0] = czero;
 
     RealType lpolprev  = czero;
     RealType dlpolprev = czero;
@@ -582,15 +528,15 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
     for (int l = 0; l < lmax; l++)
     {
       //Legendre polynomial recursion formula.
-      lpol_[l + 1] = Lfactor1[l] * zz * lpol_[l] - l * lpolprev;
-      lpol_[l + 1] *= Lfactor2[l];
+      lpol[l + 1] = Lfactor1[l] * zz * lpol[l] - l * lpolprev;
+      lpol[l + 1] *= Lfactor2[l];
 
       //and for the derivative...
-      dlpol_[l + 1] = Lfactor1[l] * (zz * dlpol_[l] + lpol_[l]) - l * dlpolprev;
-      dlpol_[l + 1] *= Lfactor2[l];
+      dlpol[l + 1] = Lfactor1[l] * (zz * dlpol[l] + lpol[l]) - l * dlpolprev;
+      dlpol[l + 1] *= Lfactor2[l];
 
-      lpolprev  = lpol_[l];
-      dlpolprev = dlpol_[l];
+      lpolprev  = lpol[l];
+      dlpolprev = dlpol[l];
     }
 
     RealType lsum = czero;
@@ -604,17 +550,17 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
     {
       //Note.  Because we are computing "forces", there's a -1 difference between this and
       //direct finite difference calculations.
-      lsum           += vrad_[l] * lpol_[angpp_m[l]] * psiratio_[j];
-      gradpotterm_   += vgrad_[l] * lpol_[angpp_m[l]] * psiratio_[j];
-      gradlpolyterm_ += vrad_[l] * dlpol_[angpp_m[l]] * cosgrad_[j] * psiratio_[j];
-      gradwfnterm_   += vrad_[l] * lpol_[angpp_m[l]] * wfngrad_[j];
-      pulaytmp_ -= vrad_[l] * lpol_[angpp_m[l]] * pulay_quad[j];
+      lsum += vrad[l] * lpol[angpp_m[l]] * psiratio[j];
+      gradpotterm_ += vgrad[l] * lpol[angpp_m[l]] * psiratio[j];
+      gradlpolyterm_ += vrad[l] * dlpol[angpp_m[l]] * cosgrad[j] * psiratio[j];
+      gradwfnterm_ += vrad[l] * lpol[angpp_m[l]] * wfngrad[j];
+      pulaytmp_ -= vrad[l] * lpol[angpp_m[l]] * pulay_quad[j];
     }
     pulaytmp_ += lsum * pulay_ref;
     if (Tmove)
       Txy.push_back(NonLocalData(iel, lsum, deltaV[j]));
-    pairpot     += lsum;
-    force_iat   += gradpotterm_ + gradlpolyterm_ - gradwfnterm_;
+    pairpot += lsum;
+    force_iat += gradpotterm_ + gradlpolyterm_ - gradwfnterm_;
     pulay_terms += pulaytmp_;
   }
 

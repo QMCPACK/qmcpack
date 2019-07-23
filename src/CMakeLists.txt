@@ -124,20 +124,6 @@ if (HAVE_LIBBOOST)
     INCLUDE_DIRECTORIES("${qmcpack_SOURCE_DIR}/external_codes/boost_multi")
 endif()
 
-####################################
-# create liboompi
-####################################
-IF(HAVE_OOMPI)
-  CONFIGURE_FILE(${qmcpack_SOURCE_DIR}/src/oompi-config.h.cmake.in 
-    ${qmcpack_BINARY_DIR}/src/oompi-config.h)
-  INCLUDE_DIRECTORIES(${qmcpack_SOURCE_DIR}/src/OOMPI)
-  SUBDIRS(OOMPI)
-  IF ( MPI_LIBRARY )
-     SET(MPI_LIBRARY oompi ${MPI_LIBRARY})
-  ELSE()
-     SET(MPI_LIBRARY oompi )
-  ENDIF()
-ENDIF(HAVE_OOMPI)
 
   ####################################
   # create libqmcutil
@@ -159,6 +145,7 @@ ENDIF(HAVE_OOMPI)
     OhmmsApp/RandomNumberControl.cpp
     Numerics/OhmmsBlas.cpp
     Numerics/OptimizableFunctorBase.cpp
+    Numerics/SmoothFunctions.cpp
     Platforms/sysutil.cpp
     Platforms/accelerators.cpp
     QMCFactory/OneDimGridFactory.cpp
@@ -217,15 +204,6 @@ ENDIF()
   #  ADD_LIBRARY(qmcutil SHARED ${UTILITIES})
   #ENDIF(QMC_BUILD_STATIC)
 
-
-  IF(OHMMS_DIM MATCHES 3)
-    SET(PARTICLE Lattice/Uniform3DGridLayout.cpp)
-  ENDIF(OHMMS_DIM MATCHES 3)
-
-  IF(OHMMS_DIM MATCHES 2)
-    SET(PARTICLE Lattice/Uniform2DGridLayout.cpp)
-  ENDIF(OHMMS_DIM MATCHES 2)
-
   ####################################
   # create libqmcbase 
   ####################################
@@ -234,9 +212,8 @@ ENDIF()
     Particle/VirtualParticleSet.cpp
     Particle/ParticleSet.BC.cpp 
     Particle/MCWalkerConfiguration.cpp 
-    Particle/DistanceTableAA.cpp
-    Particle/DistanceTableAB.cpp
-    Particle/DistanceTable.cpp
+    Particle/createDistanceTableAA.cpp
+    Particle/createDistanceTableAB.cpp
     Particle/HDFWalkerInputManager.cpp
     LongRange/KContainer.cpp
     LongRange/StructFact.cpp
@@ -355,7 +332,9 @@ ENDIF()
     SUBDIRS(QMCDrivers/tests)
     SUBDIRS(QMCApp/tests)
     SUBDIRS(Message/tests)
+    SUBDIRS(CUDA/tests)
     SUBDIRS(OpenMP/tests)
+    SUBDIRS(Optimize/tests)
   endif() #}
 
 endif() #}}}

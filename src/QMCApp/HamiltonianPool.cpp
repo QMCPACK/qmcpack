@@ -75,11 +75,12 @@ bool HamiltonianPool::get(std::ostream& os) const
   PoolType::const_iterator it(myPool.begin()), it_end(myPool.end());
   while (it != it_end)
   {
-    os << "\n  Hamiltonian " << (*it).first << std::endl;
+    os << "  Hamiltonian " << (*it).first << std::endl;
     ;
     (*it).second->targetH->get(os);
     ++it;
   }
+  os << std::endl;
   return true;
 }
 

@@ -80,7 +80,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_shared(b
   if(ndet > 1)
     APP_ABORT("Error: ndet > 1 not yet implemented in THCHamiltonian::getHamiltonianOperations.\n");
 
-  long nkpts, Qbeg=0, Qend, nQ;
+  long nkpts;
   hdf_archive dump(TGwfn.Global());
   // right now only Node.root() reads
   if( TG.Node().root() ) {
@@ -104,12 +104,10 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_shared(b
     }
   }
   TG.Global().broadcast_n(Idata.begin(),8,0);
-  nkpts = Qend = Idata[2];
+  nkpts = Idata[2];
   app_log()<<" nkpts: " <<nkpts <<std::endl;
 
   // partition Q over nodes if distributed Q
-
-  nQ = Qend-Qbeg;
 
   IVector nmo_per_kp(iextensions<1u>{nkpts});
   IVector nchol_per_kp(iextensions<1u>{nkpts});
@@ -174,6 +172,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_shared(b
   TG.Node().barrier();
 
   int number_of_symmetric_Q=0;
+  int global_origin(0);
   // Defines behavior over Q vector:
   //   <0: Ignore (handled by another TG)
   //    0: Calculate, without rho^+ contribution
@@ -182,25 +181,27 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_shared(b
   {
     int ngrp(TGwfn.getNGroupsPerTG());
     int ig(TGwfn.getLocalGroupNumber());
+    int work(0);
     // assign Q/Qm pairs of vectors to groups round-robin
-    for(int Q=0, work=0; Q<nkpts; Q++) { 
+    for(int Q=0; Q<nkpts; Q++) { 
       if(kminus[Q]==Q) { 
         if( work%ngrp == ig )
           Qmap[Q] = 1 + (number_of_symmetric_Q++);
+        if( work%ngrp < ig )
+          global_origin += 2*nchol_per_kp[Q];  
         work++;
       } else if(Q < kminus[Q]) { 
         if( work%ngrp == ig ) {
           Qmap[Q] = 0;
           Qmap[kminus[Q]] = 0;
         }
+        if( work%ngrp < ig )
+          global_origin += 4*nchol_per_kp[Q];  
         work++;
       }  
     }
-//  for(int Q=0; Q<nkpts; Q++) 
-//    if(kminus[Q]==Q) 
-//      Qmap[Q] = 1+ (number_of_symmetric_Q++);
-//    else 
-//      Qmap[Q] = 0;
+    if(work < ngrp)
+      APP_ABORT(" Error: Too many nodes in group (nnodes) for given number of kpoints. \n");
   }
   // new communicator over nodes that share the same set of Q 
   auto Qcomm(TG.Global().split(TGwfn.getLocalGroupNumber(),TG.Global().rank()));
@@ -541,7 +542,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_shared(b
 // NOTE NOTE NOTE
   TG.Node().barrier();
 
-  // calculate vn0(I,L) = -0.5 sum_K sum_j sum_n L[0][K][i][j][n] conj(L[0][K][l][j][n])
+  // calculate vn0(I,L) = -0.5 sum_K sum_j sum_n L[0][K][i][j][n] ma::conj(L[0][K][l][j][n])
   for(int Q=0; Q<nkpts; Q++) {
     if( Qmap[Q] < 0 ) continue;
     for(int K=0; K<nkpts; K++) {
@@ -571,7 +572,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_shared(b
           for(int i=0; i<nmo_per_kp[K]; i++)
           for(int k=0; k<nmo_per_kp[QK]; k++)
           for(int n=0; n<nchol_per_kp[Qm]; n++)
-            buff3D[i][k][n] = conj(Lkin[k][i][n]);
+            buff3D[i][k][n] = ma::conj(Lkin[k][i][n]);
           boost::multi::array_ref<SPComplexType,2> L_(to_address(buff3D.origin()),
                                                    {nmo_per_kp[K],nmo_per_kp[QK]*nchol_per_kp[Qm]});
           using ma::H;
@@ -599,7 +600,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_shared(b
     dump.close();
   }
 
-  int global_ncvecs = std::accumulate(nchol_per_kp.begin(),nchol_per_kp.end(),0);
+  int global_ncvecs = 2*std::accumulate(nchol_per_kp.begin(),nchol_per_kp.end(),0);
 
   std::vector<RealType> gQ(nkpts);
   if(nsampleQ>0) {
@@ -639,10 +640,10 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_shared(b
           auto Gbk = get_PsiK<boost::multi::array<SPComplexType,2>>(nmo_per_kp,PsiT[0],Kb);
           for(int a=0; a<na; ++a)
             for(int l=0; l<nl; ++l)
-              Gal[a][l] = conj(Gal[a][l]);
+              Gal[a][l] = ma::conj(Gal[a][l]);
           for(int b=0; b<nb; ++b)
             for(int k=0; k<nk; ++k)
-              Gbk[b][k] = conj(Gbk[b][k]);
+              Gbk[b][k] = ma::conj(Gbk[b][k]);
 
           ma::product(Gal,ma::T(Lbnl),Tabn);
           ma::product(Gbk,ma::T(Lank),Tban);
@@ -677,7 +678,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_shared(b
             std::move(nchol_per_kp),std::move(kminus),std::move(nocc_per_kp),
             std::move(QKtok2),std::move(H1),std::move(haj),std::move(LQKikn),
             std::move(LQKank),std::move(LQKbnl),std::move(Qmap),
-            std::move(vn0),std::move(gQ),nsampleQ,E0,global_ncvecs));
+            std::move(vn0),std::move(gQ),nsampleQ,E0,global_origin,global_ncvecs));
 
 }
 
@@ -727,7 +728,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
   auto distNode(TG.Node().split(TGwfn.getLocalGroupNumber(),TG.Node().rank())); 
   auto Qcomm_roots(Qcomm.split(distNode.rank(),Qcomm.rank()));
 
-  long nkpts, Qbeg=0, Qend, nQ;
+  long nkpts;
   hdf_archive dump(TGwfn.Global());
   // right now only Node.root() reads
   if( distNode.root() ) {
@@ -751,12 +752,10 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
     }
   }
   TG.Global().broadcast_n(Idata.begin(),8,0);
-  nkpts = Qend = Idata[2];
+  nkpts = Idata[2];
   app_log()<<" nkpts: " <<nkpts <<std::endl;
 
   // partition Q over nodes if distributed Q
-
-  nQ = Qend-Qbeg;
 
   IVector nmo_per_kp(iextensions<1u>{nkpts});
   IVector nchol_per_kp(iextensions<1u>{nkpts});
@@ -825,24 +824,32 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
   //    0: Calculate, without rho^+ contribution
   //   >0: Calculate, with rho^+ contribution. LQKbln data located at Qmap[Q]-1
   int number_of_symmetric_Q=0;
+  int global_origin(0);
   std::fill_n(Qmap.origin(),Qmap.num_elements(),-1);
   {
     int ngrp(TGwfn.getNGroupsPerTG());
     int ig(TGwfn.getLocalGroupNumber());
+    int work(0);
     // assign Q/Qm pairs of vectors to groups round-robin
-    for(int Q=0, work=0; Q<nkpts; Q++) {
+    for(int Q=0; Q<nkpts; Q++) {
       if(kminus[Q]==Q) {
         if( work%ngrp == ig )
           Qmap[Q] = 1 + (number_of_symmetric_Q++);
+        if( work%ngrp < ig )
+          global_origin += 2*nchol_per_kp[Q];
         work++;
       } else if(Q < kminus[Q]) {
         if( work%ngrp == ig ) {
           Qmap[Q] = 0;
           Qmap[kminus[Q]] = 0;
         }
+        if( work%ngrp < ig )
+          global_origin += 4*nchol_per_kp[Q];
         work++;
       }
     }
+    if(work < ngrp)
+      APP_ABORT(" Error: Too many nodes in group (nnodes) for given number of kpoints. \n");
   }
 
   int nmo_max = *std::max_element(nmo_per_kp.begin(),nmo_per_kp.end());
@@ -1232,7 +1239,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
   // local storage seems necessary 
   stdCTensor vn0_({nkpts,nmo_max,nmo_max},ComplexType(0.0));
 
-  // calculate vn0(I,L) = -0.5 sum_K sum_j sum_n L[0][K][i][j][n] conj(L[0][K][l][j][n])
+  // calculate vn0(I,L) = -0.5 sum_K sum_j sum_n L[0][K][i][j][n] ma::conj(L[0][K][l][j][n])
   nt=0;
   for(int Q=0; Q<nkpts; Q++) {
     if( Qmap[Q] < 0 ) continue;
@@ -1245,15 +1252,13 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
                                                    {nmo_max,nmo_max*nchol_max});
           using ma::H;
 #if MIXED_PRECISION
-          boost::multi::array<SPComplexType,2> v1_({nmo_per_kp[K],nmo_per_kp[K]});
+          boost::multi::array<SPComplexType,2> v1_({nmo_max,nmo_max});
           ma::product(SPComplexType(-0.5),Likn,H(Likn),SPComplexType(1.0),v1_);
           using std::copy_n;
           boost::multi::array<ComplexType,2> v2_(v1_); 
-          ma::add(ComplexType(1.0),v2_,
-                  ComplexType(1.0),vn0_[K]({0,nmo_per_kp[K]},{0,nmo_per_kp[K]}),
-                  vn0_[K]({0,nmo_per_kp[K]},{0,nmo_per_kp[K]}));
+          ma::add(ComplexType(1.0),v2_,ComplexType(1.0),vn0_[K],vn0_[K]);
 #else
-          ma::product(-0.5,Likn,H(Likn),1.0,vn0_[K]({0,nmo_per_kp[K]},{0,nmo_per_kp[K]}));
+          ma::product(-0.5,Likn,H(Likn),1.0,vn0_[K]);
 #endif
         } else {
           int QmK = QKtok2[Qm][K];
@@ -1264,18 +1269,16 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
           for(int i=0; i<nmo_max; i++)
           for(int k=0; k<nmo_max; k++)
           for(int n=0; n<nchol_max; n++)
-            buff3D[i][k][n] = conj(Lkin[k][i][n]);
+            buff3D[i][k][n] = ma::conj(Lkin[k][i][n]);
           boost::multi::array_ref<SPComplexType,2> L_(to_address(buff3D.origin()),
                                                    {nmo_max,nmo_max*nchol_max});
           using ma::H;
 #if MIXED_PRECISION
-          boost::multi::array<SPComplexType,2> v1_({nmo_per_kp[K],nmo_per_kp[K]});
+          boost::multi::array<SPComplexType,2> v1_({nmo_max,nmo_max});
           ma::product(SPComplexType(-0.5),L_,H(L_),
                       SPComplexType(1.0),v1_);
           boost::multi::array<ComplexType,2> v2_(v1_); 
-          ma::add(ComplexType(1.0),v2_,
-                  ComplexType(1.0),vn0_[K]({0,nmo_per_kp[K]},{0,nmo_per_kp[K]}),
-                  vn0_[K]({0,nmo_per_kp[K]},{0,nmo_per_kp[K]}));
+          ma::add(ComplexType(1.0),v2_,ComplexType(1.0),vn0_[K],vn0_[K]);
 #else
           ma::product(-0.5,L_,H(L_),1.0,vn0_[K]);
 #endif
@@ -1295,7 +1298,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
     dump.close();
   }
 
-  int global_ncvecs = std::accumulate(nchol_per_kp.begin(),nchol_per_kp.end(),0);
+  int global_ncvecs = 2*std::accumulate(nchol_per_kp.begin(),nchol_per_kp.end(),0);
 
   std::vector<RealType> gQ(nkpts);
   if(nsampleQ>0) {
@@ -1335,10 +1338,10 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
           auto Gbk = get_PsiK<boost::multi::array<SPComplexType,2>>(nmo_per_kp,PsiT[0],Kb);
           for(int a=0; a<na; ++a)
             for(int l=0; l<nl; ++l)
-              Gal[a][l] = conj(Gal[a][l]);
+              Gal[a][l] = ma::conj(Gal[a][l]);
           for(int b=0; b<nb; ++b)
             for(int k=0; k<nk; ++k)
-              Gbk[b][k] = conj(Gbk[b][k]);
+              Gbk[b][k] = ma::conj(Gbk[b][k]);
 
           ma::product(Gal,ma::T(Lbnl),Tabn);
           ma::product(Gbk,ma::T(Lank),Tban);
@@ -1376,7 +1379,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
             std::move(LQKbnl),std::move(LQKbln),std::move(Qmap),
             std::move(vn0),
             std::move(gQ),nsampleQ,E0,device_allocator<ComplexType>{},
-            global_ncvecs));
+            global_origin,global_ncvecs));
 
 }
 

@@ -67,7 +67,8 @@ class OptimizationAnalyzer(ResultAnalyzer):
                 vw = 0
                 if crv is not None:
                     vw += crv
-                elif curv is not None:
+                #end if
+                if curv is not None:
                     vw += curv
                 #end if
             #end if

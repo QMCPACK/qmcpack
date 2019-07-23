@@ -135,8 +135,7 @@ void VMCcuda::advanceWalkers()
         for (int iw = 0; iw < nw; ++iw)
           newpos[iw] = W.Rnew_host[iw + k * nw];
         std::vector<bool> acc(nw, true);
-        if (W.UseBoundBox)
-          checkBounds(newpos, acc);
+        checkBounds(newpos, acc);
 #ifdef SPLIT_SPLINE_DEBUG
         if (gpu::rank == 1)
           std::cerr << "iat = " << iat << "\n";
@@ -363,7 +362,7 @@ void VMCcuda::advanceWalkersWithDrift()
       {
         PosType dr;
         delpos[iw] *= m_sqrttau;
-        getScaledDrift(m_tauovermass, oldG[iw], dr);
+        DriftModifier->getDrift(m_tauovermass, oldG[iw], dr);
         newpos[iw] = W[iw]->R[iat] + delpos[iw] + dr;
         ratios[iw] = 1.0;
         acc[iw]    = true;
@@ -375,8 +374,7 @@ void VMCcuda::advanceWalkersWithDrift()
       update_now = W.update_now(iat);
       Psi.calcRatio(W, iat, ratios, newG, newL);
       accepted.clear();
-      if (W.UseBoundBox)
-        checkBounds(newpos, acc);
+      checkBounds(newpos, acc);
       if (kDelay)
         Psi.det_lookahead(W, ratios, newG, newL, iat, k, W.getkblocksize(), nw);
       std::vector<RealType> logGf_v(nw);
@@ -393,7 +391,7 @@ void VMCcuda::advanceWalkersWithDrift()
       for (int iw = 0; iw < nw; ++iw)
       {
         PosType drNew;
-        getScaledDrift(m_tauovermass, newG[iw], drNew);
+        DriftModifier->getDrift(m_tauovermass, newG[iw], drNew);
         drNew += newpos[iw] - W[iw]->R[iat];
         // if (dot(drNew, drNew) > 25.0)
         //   std::cerr << "Large drift encountered!  Drift = " << drNew << std::endl;

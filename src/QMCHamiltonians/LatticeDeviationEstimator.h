@@ -16,7 +16,6 @@
 #include "Particle/WalkerSetRef.h"
 #include "QMCHamiltonians/QMCHamiltonianBase.h"
 #include "ParticleBase/ParticleAttribOps.h"
-#include <Particle/DistanceTable.h>
 #include <Particle/DistanceTableData.h>
 
 namespace qmcplusplus
@@ -66,7 +65,6 @@ private:
   SpeciesSet& tspecies;       // species table of target particle set
   SpeciesSet& sspecies;       // species table of source particle set
   std::string tgroup, sgroup; // name of species to track
-  DistanceTableData* d_table; // distance table between target and source particle sets
   ParticleSet &tpset, spset;  // save references to source and target particle sets
   int num_sites;              // number of lattice sites (i.e. number of source particles)
   bool hdf5_out;              // use .h5 file for data (follow SkEstimator)
@@ -74,6 +72,8 @@ private:
   bool per_xyz;               // track deviation in each of x,y,z directions
   std::vector<RealType> xyz2; // temporary storage for deviation in each of x,y,z directions
   xmlNodePtr input_xml;       // original xml
+  // distance table ID
+  const int myTableID_;
 };                            // LatticeDeviationEstimator
 
 } // namespace qmcplusplus

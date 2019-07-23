@@ -10,26 +10,22 @@
 //
 // File created by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 #ifndef QMCPLUSPLUS_ION_ORBITAL_BUILDER_H
 #define QMCPLUSPLUS_ION_ORBITAL_BUILDER_H
 #include "QMCWaveFunctions/WaveFunctionComponentBuilder.h"
 
 namespace qmcplusplus
 {
-
 class OrbitalConstraintsBase;
 
 /** IonOrbital IonOrbital Builder with constraints
  */
-class IonOrbitalBuilder: public WaveFunctionComponentBuilder
+class IonOrbitalBuilder : public WaveFunctionComponentBuilder
 {
-
 public:
-
-  IonOrbitalBuilder(ParticleSet& p, TrialWaveFunction& psi,
-                    PtclPoolType& psets);
+  IonOrbitalBuilder(ParticleSet& p, TrialWaveFunction& psi, PtclPoolType& psets);
 
   bool put(xmlNodePtr cur);
 
@@ -54,5 +50,5 @@ private:
   void resetOptions();
 };
 
-}
+} // namespace qmcplusplus
 #endif

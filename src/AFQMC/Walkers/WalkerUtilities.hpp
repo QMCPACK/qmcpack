@@ -27,6 +27,7 @@ namespace qmcplusplus
 namespace afqmc
 {
 
+// This should use meaningful names from an enum instead of an implicit known order
 template<class WlkBucket, 
          class DVec = std::vector<ComplexType>
          >

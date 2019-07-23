@@ -16,7 +16,6 @@
 /**@file ParticleSetPool.cpp
  * @brief Implements ParticleSetPool operators.
  */
-//#include "Particle/DistanceTable.h"
 #include "QMCApp/ParticleSetPool.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "ParticleIO/XMLParticleIO.h"
@@ -162,7 +161,7 @@ bool ParticleSetPool::put(xmlNodePtr cur)
     if (SimulationCell)
     {
       app_log() << "  Initializing the lattice by the global supercell" << std::endl;
-      pTemp->Lattice.copy(*SimulationCell);
+      pTemp->Lattice = *SimulationCell;
     }
     myPool[id] = pTemp;
     XMLParticleParser pread(*pTemp, TileMatrix);
@@ -191,24 +190,26 @@ bool ParticleSetPool::put(xmlNodePtr cur)
 void ParticleSetPool::randomize()
 {
   app_log() << "ParticleSetPool::randomize " << std::endl;
+  bool success = true;
   for (int i = 0; i < randomize_nodes.size(); ++i)
   {
     InitMolecularSystem moinit(this);
-    moinit.put(randomize_nodes[i]);
+    success &= moinit.put(randomize_nodes[i]);
     xmlFreeNode(randomize_nodes[i]);
   }
   randomize_nodes.clear();
+  if (!success)
+    APP_ABORT("ParticleSePool::randomize failed to randomize some Particlesets!");
 }
 
 bool ParticleSetPool::get(std::ostream& os) const
 {
-  os << "ParticleSetPool has: " << std::endl;
+  os << "ParticleSetPool has: " << std::endl << std::endl;
   os.setf(std::ios::scientific, std::ios::floatfield);
   os.precision(14);
   PoolType::const_iterator it(myPool.begin()), it_end(myPool.end());
   while (it != it_end)
   {
-    os << std::endl;
     (*it).second->get(os);
     ++it;
   }
@@ -320,7 +321,6 @@ ParticleSet* ParticleSetPool::createESParticleSet(xmlNodePtr cur, const std::str
     typedef ParticleSet::SingleParticleIndex_t SingleParticleIndex_t;
     std::vector<SingleParticleIndex_t> grid(OHMMS_DIM, SingleParticleIndex_t(1));
     ions->Lattice.reset();
-    ions->Lattice.makeGrid(grid);
 
     myPool[source] = ions;
   }
@@ -335,7 +335,7 @@ ParticleSet* ParticleSetPool::createESParticleSet(xmlNodePtr cur, const std::str
     //create the electrons
     qp = new MCWalkerConfiguration;
     qp->setName(target);
-    qp->Lattice.copy(ions->Lattice);
+    qp->Lattice = ions->Lattice;
 
     app_log() << "  Simulation cell radius = " << qp->Lattice.SimulationCellRadius << std::endl;
     app_log() << "  Wigner-Seitz cell radius = " << qp->Lattice.WignerSeitzRadius << std::endl;

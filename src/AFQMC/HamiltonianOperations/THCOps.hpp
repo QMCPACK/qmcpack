@@ -21,6 +21,7 @@
 #include "AFQMC/config.h"
 #include "AFQMC/Numerics/ma_operations.hpp"
 
+#include "Utilities/FairDivide.h"
 #include "AFQMC/Utilities/taskgroup.h"
 #include "mpi3/shared_communicator.hpp"
 #include "AFQMC/Matrix/mpi3_shared_ma_proxy.hpp"
@@ -158,7 +159,7 @@ std::cout<<"\n";
         for(int j=i+1; j<NMO; j++) {
           H1[i][j] += hij[i][j] + v0[i][j];
           H1[j][i] += hij[j][i] + v0[j][i];
-          if( std::abs( H1[i][j] - conj(H1[j][i]) ) > 1e-8 ) {
+          if( std::abs( H1[i][j] - ma::conj(H1[j][i]) ) > 1e-8 ) {
             app_error()<<" Error in getOneBodyPropagatorMatrix. H1 is not hermitian. \n";
             app_error()<<i <<" " <<j <<" " <<H1[i][j] <<" " <<H1[j][i] <<" "
                        <<H1[i][j]-(hij[i][j] + v0[i][j]) <<" " <<H1[j][i]-(hij[j][i] + v0[j][i]) <<" "
@@ -166,8 +167,8 @@ std::cout<<"\n";
                        <<v0[i][j] <<" " <<v0[j][i] <<std::endl;
             APP_ABORT("Error in getOneBodyPropagatorMatrix. H1 is not hermitian. \n");
           }
-          H1[i][j] = 0.5*(H1[i][j]+conj(H1[j][i]));
-          H1[j][i] = conj(H1[i][j]);
+          H1[i][j] = 0.5*(H1[i][j]+ma::conj(H1[j][i]));
+          H1[j][i] = ma::conj(H1[i][j]);
         }
       }
 
@@ -347,12 +348,11 @@ std::cout<<"\n";
        * QQ0A[nwalk][NAOA][NAEA]
        * QQ0B[nwalk][NAOA][NAEA]
        */
-      static_assert(E.dimensionality==4, "Wrong dimensionality");
-      static_assert(Ov.dimensionality==3, "Wrong dimensionality");
-      static_assert(GrefA.dimensionality==3, "Wrong dimensionality");
-      static_assert(GrefB.dimensionality==3, "Wrong dimensionality");
-      static_assert(QQ0A.dimensionality==3, "Wrong dimensionality");
-      static_assert(QQ0B.dimensionality==3, "Wrong dimensionality");
+      static_assert(std::decay<MatE>::type::dimensionality==4, "Wrong dimensionality");
+      static_assert(std::decay<MatO>::type::dimensionality==3, "Wrong dimensionality");
+      static_assert(std::decay<MatG>::type::dimensionality==3, "Wrong dimensionality");
+      static_assert(std::decay<MatQ>::type::dimensionality==3, "Wrong dimensionality");
+      //static_assert(std::decay<MatB>::type::dimensionality==3, "Wrong dimensionality");
       int nspin = E.size(0);
       int nrefs = haj.size();
       int nwalk = GrefA.size(0);
@@ -627,7 +627,7 @@ std::cout<<"\n";
         for(int i=k0; i<kN; i++) {
           auto p_ = Piu.get()[i].origin();
           for(int u=0; u<nu; u++, ++p_)
-            Qwiu[wi][i][u] = Tuw[u][wi]*conj(*p_);
+            Qwiu[wi][i][u] = Tuw[u][wi]*ma::conj(*p_);
         }
       boost::multi::array_ref<ComplexType,2> v_(to_address(v.origin()),{nwalk*nmo_,nmo_});
       // this can benefit significantly from 2-D partition of work
@@ -733,6 +733,9 @@ std::cout<<"\n";
         return Luv.size(1);
     }
 #endif
+    int global_origin_cholesky_vector() const{
+        return 0;
+    }
 
     // transpose=true means G[nwalk][ik], false means G[ik][nwalk]
     bool transposed_G_for_vbias() const {return true;}
@@ -819,10 +822,10 @@ std::cout<<"\n";
     template<class MatA, class MatB, class MatC, class MatD>
     void Guv_Guu(MatA const& G, MatB&& Guv, MatC&& Guu, MatD&& T1, int k) {
 
-      //static_assert(G.dimensionality == 2);
-      //static_assert(T1.dimensionality == 2);
-      //static_assert(Guu.dimensionality == 1);
-      //static_assert(Guv.dimensionality == 3);
+      static_assert(std::decay<MatA>::type::dimensionality == 2, "Wrong dimensionality");
+      static_assert(std::decay<MatB>::type::dimensionality == 3, "Wrong dimensionality");
+      static_assert(std::decay<MatC>::type::dimensionality == 1, "Wrong dimensionality");
+      static_assert(std::decay<MatD>::type::dimensionality == 2, "Wrong dimensionality");
       int nspin = (walker_type==COLLINEAR)?2:1;
       int nmo_ = int(rotPiu.size(0));
       int nu = int(rotMuv.size(0));  // potentially distributed over nodes
@@ -899,10 +902,10 @@ std::cout<<"\n";
     template<class MatA, class MatB, class MatC, class MatD>
     void Guv_Guu2(MatA const& G, MatB&& Guv, MatC&& Guu, MatD&& T1, int k) {
 
-      static_assert(G.dimensionality == 2, "Wrong dimensionality");
-      static_assert(T1.dimensionality == 2, "Wrong dimensionality");
-      static_assert(Guu.dimensionality == 1, "Wrong dimensionality");
-      static_assert(Guv.dimensionality == 2, "Wrong dimensionality");
+      static_assert(std::decay<MatA>::type::dimensionality == 2, "Wrong dimensionality");
+      static_assert(std::decay<MatB>::type::dimensionality == 2, "Wrong dimensionality");
+      static_assert(std::decay<MatC>::type::dimensionality == 1, "Wrong dimensionality");
+      static_assert(std::decay<MatD>::type::dimensionality == 2, "Wrong dimensionality");
       int nmo_ = int(rotPiu.size(0));
       int nu = int(rotMuv.size(0));  // potentially distributed over nodes
       int nv = int(rotMuv.size(1));  // not distributed over nodes

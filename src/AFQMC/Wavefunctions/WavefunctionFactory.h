@@ -97,8 +97,8 @@ class WavefunctionFactory
     auto mat = initial_guess.find(ID);
     if(mat == initial_guess.end()) { 
       APP_ABORT(" Error: Missing initial guess in WavefunctionFactory. \n");
-    } else 
-      return mat->second;
+    }
+    return mat->second;
   }
 
   // adds a xml block from which a Wavefunction can be built
@@ -133,18 +133,30 @@ class WavefunctionFactory
       assert(h!=nullptr);
       return fromASCII(TGprop,TGwfn,cur,walker_type,*h,cutvn,targetNW);
     } else if(type == "hdf5")
-      return fromHDF5(TGprop,TGwfn,cur,walker_type,cutvn,targetNW);
+      return fromHDF5(TGprop,TGwfn,cur,walker_type,*h,cutvn,targetNW);
     else {
       app_error()<<"Unknown Wavefunction filetype in WavefunctionFactory::buildWavefunction(): " <<type <<std::endl;
       APP_ABORT(" Error: Unknown Wavefunction filetype in WavefunctionFactory::buildWavefunction(). \n");
     }
+    return Wavefunction{};
   }
 
   Wavefunction fromASCII(TaskGroup_& TGprop, TaskGroup_& TGwfn, xmlNodePtr cur, WALKER_TYPES walker_type,
                             Hamiltonian& h, RealType cutvn, int targetNW);
 
   Wavefunction fromHDF5(TaskGroup_& TGprop, TaskGroup_& TGwfn, xmlNodePtr cur, WALKER_TYPES walker_type, 
-                            RealType cutvn, int targetNW);
+                        Hamiltonian& h, RealType cutvn, int targetNW);
+  HamiltonianOperations getHamOps(bool read, hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA, int NAEB,
+                                  std::vector<PsiT_Matrix>& PsiT, TaskGroup_& TGprop, TaskGroup_& TGwfn, RealType cutvn, RealType cutv2,
+                                  int ndets_to_read, Hamiltonian& h);
+  void getCommonInput(hdf_archive& dump, int NMO, int NAEA, int NAEB, int& ndets_to_read,
+                      std::vector<ComplexType>& ci, WALKER_TYPES walker_type, bool root);
+  ph_excitations<int,ComplexType> read_ph_wavefunction_hdf(hdf_archive& dump, int& ndets, 
+          WALKER_TYPES walker_type,
+          boost::mpi3::shared_communicator& comm, int NMO, int NAEA, int NAEB,
+          std::vector<PsiT_Matrix>& PsiT, std::string& type);
+  void getInitialGuess(hdf_archive& dump, std::string& name, int NMO, int NAEA, int NAEB, WALKER_TYPES walker_type);
+
 
   // MAM: should I store a copy rather than a pointer???
   std::map<std::string,xmlNodePtr> xmlBlocks;

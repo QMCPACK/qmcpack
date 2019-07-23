@@ -89,6 +89,8 @@ public:
     delay_count = 0;
   }
 
+  inline int getDelayCount() const { return delay_count; }
+
   /** compute the row of up-to-date Ainv
    * @param Ainv inverse matrix
    * @param rowchanged the row id corresponding to the proposed electron
@@ -174,14 +176,13 @@ public:
     }
     else
     {
-      const int lda_Binv     = Binv.cols();
-      int num_threads_nested = getNumThreadsNested();
-      // always use serial when norb is small or only one second level thread
-      bool use_serial(norb <= 256 || num_threads_nested == 1);
-      if (use_serial || BlasThreadingEnv::NestedThreadingSupported())
+      const int lda_Binv = Binv.cols();
+      // number of threads at the next level, forced to 1 if the problem is small.
+      const int num_threads = (norb < 256 ? 1 : getNextLevelNumThreads());
+      if (num_threads == 1 || BlasThreadingEnv::NestedThreadingSupported())
       {
         // threading depends on BLAS
-        BlasThreadingEnv knob(use_serial ? 1 : num_threads_nested);
+        BlasThreadingEnv knob(num_threads);
         BLAS::gemm('T', 'N', delay_count, norb, norb, cone, U.data(), norb, Ainv.data(), norb, czero, tempMat.data(),
                    lda_Binv);
         for (int i = 0; i < delay_count; i++)
@@ -196,7 +197,7 @@ public:
         // manually threaded version of the above GEMM calls
 #pragma omp parallel
         {
-          const int block_size = getAlignedSize<T>((norb + num_threads_nested - 1) / num_threads_nested);
+          const int block_size = getAlignedSize<T>((norb + num_threads - 1) / num_threads);
           int num_block        = (norb + block_size - 1) / block_size;
 #pragma omp for
           for (int ix = 0; ix < num_block; ix++)

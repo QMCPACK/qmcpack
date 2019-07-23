@@ -10,14 +10,13 @@
 #include "AFQMC/Estimators/EnergyEstimator.h"
 #include "AFQMC/Estimators/BasicEstimator.h"
 #include "AFQMC/Estimators/MixedRDMEstimator.h"
-#include "AFQMC/Estimators/BackPropagatedEstimator.h"
-//#include "AFQMC/Estimators/WalkerDMEstimator.h"
-
+#include "AFQMC/Estimators/BackPropagatedEstimator.hpp"
 #include "AFQMC/Walkers/WalkerSet.hpp"
 #include "AFQMC/Hamiltonians/HamiltonianFactory.h"
 #include "AFQMC/Wavefunctions/WavefunctionFactory.h"
 #include "AFQMC/Wavefunctions/Wavefunction.hpp"
 #include "AFQMC/Hamiltonians/Hamiltonian.hpp"
+#include "AFQMC/Propagators/Propagator.hpp"
 
 #include "mpi3/communicator.hpp"
 
@@ -27,6 +26,16 @@ namespace qmcplusplus
 namespace afqmc
 {
 
+/* 
+ * Manager class for all estimators/observables.
+ * This class contains and manages a list of estimator objects.
+ * An arbitrary combination of estimators can be used simultaneously
+ * during a simulation, including: 
+ *   1) mixed distribution estimators,  
+ *   2) back propagated estimators, 
+ *   3) any number of 1),2), 
+ *   4) each with independent wavefunctions.
+ */
 class EstimatorHandler: public AFQMCInfo
 {
 
@@ -36,8 +45,10 @@ class EstimatorHandler: public AFQMCInfo
   public:
 
   EstimatorHandler(afqmc::TaskGroupHandler& TGgen, AFQMCInfo info, std::string title, xmlNodePtr cur,
+        WalkerSet& wset,
         WavefunctionFactory& WfnFac,
         Wavefunction& wfn0,
+        Propagator& prop0,
         WALKER_TYPES walker_type,
         HamiltonianFactory& HamFac,
         std::string ham0,
@@ -95,8 +106,6 @@ class EstimatorHandler: public AFQMCInfo
         if(name == "basic" || name == "Basic" || name == "standard") {
         // do nothing
         // first process estimators that do not need a wfn
-        } else if (name == "walker_density_matrix") {
-//          estimators.emplace_back(static_cast<EstimPtr>(std::make_shared<WalkerDMEstimator>(TGgen.getTG(1),info,title,cur)));
         } else {
         // now do those that do
 
@@ -131,7 +140,7 @@ class EstimatorHandler: public AFQMCInfo
             estimators.emplace_back(static_cast<EstimPtr>(std::make_shared<MixedRDMEstimator>(TGgen.getTG(1),info,title,cur,walker_type,*wfn,impsamp)));
             hdf_output = true;
           } else if (name == "back_propagation") {
-            estimators.emplace_back(static_cast<EstimPtr>(std::make_shared<BackPropagatedEstimator>(TGgen.getTG(1),info,title,cur,walker_type,*wfn,impsamp)));
+            estimators.emplace_back(static_cast<EstimPtr>(std::make_shared<BackPropagatedEstimator>(TGgen.getTG(1),info,title,cur,walker_type,wset,*wfn,prop0,impsamp)));
             hdf_output = true;
           } else if (name == "energy") {
             estimators.emplace_back(static_cast<EstimPtr>(std::make_shared<EnergyEstimator>(TGgen.getTG(1),info,cur,*wfn,impsamp)));

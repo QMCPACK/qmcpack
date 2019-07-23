@@ -29,6 +29,7 @@
 #include "AFQMC/config.h"
 #include "AFQMC/Utilities/taskgroup.h"
 #include "AFQMC/SlaterDeterminantOperations/SlaterDetOperations.hpp"
+#include "AFQMC/Propagators/generate1BodyPropagator.hpp"
 
 #include "AFQMC/Wavefunctions/Wavefunction.hpp"
 
@@ -58,31 +59,41 @@ class AFQMCBasePropagator: public AFQMCInfo
   using CMatrix_ref = boost::multi::array_ref<ComplexType,2,pointer>;  
   using C3Tensor_ref = boost::multi::array_ref<ComplexType,3,pointer>;  
   using sharedCVector = ComplexVector<aux_allocator>; 
+  using stdCVector = boost::multi::array<ComplexType,1>;  
+  using stdCMatrix = boost::multi::array<ComplexType,2>;  
+  using stdCVector_ref = boost::multi::array_ref<ComplexType,1>;  
+  using stdCMatrix_ref = boost::multi::array_ref<ComplexType,2>;  
+  using stdC3Tensor_ref = boost::multi::array_ref<ComplexType,3>;  
+
+  using mpi3CVector = boost::multi::array<ComplexType,1,shared_allocator<ComplexType>>;  
+  using mpi3CMatrix = boost::multi::array<ComplexType,2,shared_allocator<ComplexType>>;  
+  using mpi3CTensor = boost::multi::array<ComplexType,3,shared_allocator<ComplexType>>;  
 
   public:
 
     AFQMCBasePropagator(AFQMCInfo& info, xmlNodePtr cur, afqmc::TaskGroup_& tg_, 
                           Wavefunction& wfn_, 
-                          CMatrix&& h1_, CVector&& vmf_, 
+                          stdCMatrix&& h1_, CVector&& vmf_, 
                           RandomGenerator_t* r):
             AFQMCInfo(info),TG(tg_),
             alloc_(),aux_alloc_(make_localTG_allocator<ComplexType>(TG)),wfn(wfn_),
-            H1(std::move(h1_)),
-            P1(P1Type(tp_ul_ul{0,0},tp_ul_ul{0,0},0,aux_alloc_)),
+            H1(std::move(h1_),shared_allocator<ComplexType>{TG.Node()}),
+            H1ext({2,1,1},shared_allocator<ComplexType>{TG.Node()}),
             vMF(std::move(vmf_)),
             rng(r),
             SDetOp(wfn.getSlaterDetOperations()),
-            //SDetOp(2*NMO,NAEA+NAEB),
-            //SDetOp(SlaterDetOperations_shared<ComplexType>(2*NMO,NAEA+NAEB)),
-            TSM({2*NMO,NAEA+NAEB},alloc_), // safe for now, since I don't know walker_type
             buffer(iextensions<1u>{1},aux_alloc_),
             local_group_comm(),
             last_nextra(-1),
             last_task_index(-1),
             old_dt(-123456.789),
             order(6),
-            nbatched_propagation(0)
+            nbatched_propagation(0),
+            nbatched_qr(0),
+            spin_dependent_P1(false)
     {
+      P1.reserve(2);  
+      P1.emplace_back(P1Type(tp_ul_ul{0,0},tp_ul_ul{0,0},0,aux_alloc_));
       transposed_vHS_ = wfn.transposed_vHS();
       transposed_G_ = wfn.transposed_G_for_vbias();
       parse(cur);  
@@ -108,6 +119,9 @@ class AFQMCBasePropagator: public AFQMCInfo
       TG.local_barrier();
     }
 
+    template<class WlkSet, class CTens, class CMat>
+    void BackPropagate(int steps, int nStabalize, WlkSet& wset, CTens&& Refs, CMat&& detR); 
+
     // reset shared memory buffers
     // useful when the current buffers use too much memory (e.g. reducing steps in future calls)
     void reset() { buffer.reextent(iextensions<1u>{0}); }
@@ -115,6 +129,27 @@ class AFQMCBasePropagator: public AFQMCInfo
     bool hybrid_propagation() { return hybrid; }
 
     bool free_propagation() { return free_projection; }
+
+    int global_number_of_cholesky_vectors() const{
+      return wfn.global_number_of_cholesky_vectors(); 
+    }
+
+    // in case P1 needs to exist before call to Propagate is executed
+    void generateP1(double dt, WALKER_TYPES walker_type) {
+      old_dt = dt;
+      // generate1BodyPropagator currently expects a shared_allocator, fix later
+      using P1shm = ma::sparse::csr_matrix<ComplexType,int,int,
+                                shared_allocator<ComplexType>,
+                                ma::sparse::is_root>;
+      if(spin_dependent_P1) {
+        if(walker_type!=COLLINEAR)
+           APP_ABORT(" Error: Spin dependent P1 being used with CLOSED walker.\n");
+        P1[0] = std::move(generate1BodyPropagator<P1shm>(TG,1e-8,dt,H1,H1ext[0],printP1eV));
+        P1[1] = std::move(generate1BodyPropagator<P1shm>(TG,1e-8,dt,H1,H1ext[1],printP1eV));
+      } else {
+        P1[0] = std::move(generate1BodyPropagator<P1shm>(TG,1e-8,dt,H1,printP1eV));
+      } 
+    }
 
   protected: 
 
@@ -128,13 +163,13 @@ class AFQMCBasePropagator: public AFQMCInfo
 
     // P1 = exp(-0.5*dt*H1), so H1 includes terms from MF substraction 
     //                       and the exchange term from the cholesky decomposition (e.g. vn0) 
-    CMatrix H1;
+    mpi3CMatrix H1;
+    mpi3CTensor H1ext;
 
-    P1Type P1;
+    std::vector<P1Type> P1;
 
     RandomGenerator_t* rng;
 
-    //SlaterDetOperations_shared<ComplexType> SDetOp;
     SlaterDetOperations* SDetOp;
 
     sharedCVector buffer;    
@@ -146,6 +181,9 @@ class AFQMCBasePropagator: public AFQMCInfo
     int last_task_index;
     int order;
     int nbatched_propagation;
+    int nbatched_qr;
+    bool spin_dependent_P1;
+    bool printP1eV=false;
 
     RealType vbias_bound;
 
@@ -170,8 +208,6 @@ class AFQMCBasePropagator: public AFQMCInfo
     CMatrix hybrid_weight;  
 
     CVector vMF;  
-    // Temporary for propagating with constructed B matrix.
-    CMatrix TSM;
 
     boost::multi::array<ComplexType,2> work; 
  
@@ -187,24 +223,24 @@ class AFQMCBasePropagator: public AFQMCInfo
     void parse(xmlNodePtr cur);
 
     template<class WSet>
-    void apply_propagators(WSet& wset, int ni, int tk0, int tkN, int ntask_total_serial,
+    void apply_propagators(char TA, WSet& wset, int ni, int tk0, int tkN, int ntask_total_serial,
                            C3Tensor_ref& vHS3D);
 
     template<class WSet>
-    void apply_propagators_batched(WSet& wset, int ni, C3Tensor_ref& vHS3D);
-
-    template<class WSet>
-    void apply_propagators_construct_propagator(WSet& wset, int ni, int tk0, int tkN, int ntask_total_serial,
-                                                C3Tensor_ref& vHS3D);
-
-    template<class WSet>
-    void apply_propagators_construct_propagator_batched(WSet& wset, int ni, C3Tensor_ref& vHS3D);
+    void apply_propagators_batched(char TA, WSet& wset, int ni, C3Tensor_ref& vHS3D);
 
     ComplexType apply_bound_vbias(ComplexType v, RealType sqrtdt)
     {
       return (std::abs(v)>vbias_bound*sqrtdt)?
                 (v/(std::abs(v)/static_cast<ValueType>(vbias_bound*sqrtdt))):(v);
     }
+
+    // taken from NOMSD 
+    template<class WlkSet, class CMat>
+    void Orthogonalize_batched(WlkSet& wset, CMat&& detR);
+
+    template<class WlkSet, class CMat>
+    void Orthogonalize_shared(WlkSet& wset, CMat&& detR);
 
 };
 

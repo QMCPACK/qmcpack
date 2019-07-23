@@ -19,8 +19,6 @@ LCAOrbitalSetWithCorrection::LCAOrbitalSetWithCorrection(ParticleSet& ions, Part
     : LCAOrbitalSet(bs), cusp(ions, els)
 {}
 
-LCAOrbitalSetWithCorrection::~LCAOrbitalSetWithCorrection() {}
-
 void LCAOrbitalSetWithCorrection::setOrbitalSetSize(int norbs)
 {
   LCAOrbitalSet::setOrbitalSetSize(norbs);

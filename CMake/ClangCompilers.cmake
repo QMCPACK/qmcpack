@@ -63,7 +63,7 @@ ELSEIF(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64")
     endif() #(CMAKE_CXX_FLAGS MATCHES "-march=" AND CMAKE_C_FLAGS MATCHES "-march=")
   else() #(CMAKE_CXX_FLAGS MATCHES "-march=" OR CMAKE_C_FLAGS MATCHES "-march=")
     # use -march=native
-    SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -march=native")
+    SET(CMAKE_C_FLAGS     "${CMAKE_C_FLAGS} -march=native")
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
   endif()  #(CMAKE_CXX_FLAGS MATCHES "-march=" OR CMAKE_C_FLAGS MATCHES "-march=")
 ELSEIF(CMAKE_SYSTEM_PROCESSOR MATCHES "ppc64" OR CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64")
@@ -77,7 +77,7 @@ ELSEIF(CMAKE_SYSTEM_PROCESSOR MATCHES "ppc64" OR CMAKE_SYSTEM_PROCESSOR MATCHES 
     endif() #(CMAKE_CXX_FLAGS MATCHES "-mcpu=" AND CMAKE_C_FLAGS MATCHES "-mcpu=")
   else() #(CMAKE_CXX_FLAGS MATCHES "-mcpu=" OR CMAKE_C_FLAGS MATCHES "-mcpu=")
     # use -mcpu=native
-    SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -mcpu=native")
+    SET(CMAKE_C_FLAGS     "${CMAKE_C_FLAGS} -mcpu=native")
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mcpu=native")
   endif() #(CMAKE_CXX_FLAGS MATCHES "-mcpu=" OR CMAKE_C_FLAGS MATCHES "-mcpu=")
 ENDIF()
@@ -97,7 +97,7 @@ IF (ENABLE_GCOV)
 ENDIF(ENABLE_GCOV)
 
 SET(XRAY_PROFILE FALSE CACHE BOOL "Use llvm xray profiling")
-SET(XRAY_INSTRUCTION_THRESHOLD 200 CACHE INT "Instruction threshold for xray instrumentation")
+SET(XRAY_INSTRUCTION_THRESHOLD 200 CACHE STRING "Instruction threshold for xray instrumentation")
 
 IF(XRAY_PROFILE)
   set(XRAY_FLAGS "-fxray-instrument -fxray-instruction-threshold=${XRAY_INSTRUCTION_THRESHOLD}")

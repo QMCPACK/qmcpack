@@ -75,8 +75,8 @@ public:
   WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& optvars,
-                           std::vector<RealType>& dlogpsi,
-                           std::vector<RealType>& dhpsioverpsi);
+                           std::vector<ValueType>& dlogpsi,
+                           std::vector<ValueType>& dhpsioverpsi);
 
   void resize(int, int);
 

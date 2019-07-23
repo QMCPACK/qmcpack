@@ -34,6 +34,7 @@ DiracDeterminantWithBackflow::DiracDeterminantWithBackflow(ParticleSet& ptcl,
     : DiracDeterminantBase(spos, first)
 {
   Optimizable = true;
+  is_fermionic = true;
   ClassName   = "DiracDeterminantWithBackflow";
   registerTimers();
   BFTrans      = BF;
@@ -219,7 +220,7 @@ DiracDeterminantWithBackflow::ValueType DiracDeterminantWithBackflow::ratio(Part
     }
     int jat    = *it - FirstIndex;
     PosType dr = BFTrans->newQP[*it] - BFTrans->QP.R[*it];
-    BFTrans->QP.makeMoveAndCheck(*it, dr);
+    BFTrans->QP.makeMove(*it, dr);
     Phi->evaluate(BFTrans->QP, *it, psiV);
     for (int orb = 0; orb < psiV.size(); orb++)
       psiM_temp(orb, jat) = psiV[orb];
@@ -266,18 +267,6 @@ DiracDeterminantWithBackflow::GradType DiracDeterminantWithBackflow::evalGradSou
   return GradType();
 }
 
-DiracDeterminantWithBackflow::GradType DiracDeterminantWithBackflow::evalGradSourcep(
-    ParticleSet& P,
-    ParticleSet& source,
-    int iat,
-    TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM>& grad_grad,
-    TinyVector<ParticleSet::ParticleLaplacian_t, OHMMS_DIM>& lapl_grad)
-{
-  APP_ABORT(" Need to implement DiracDeterminantWithBackflow::evalGradSourcep() \n");
-  return GradType();
-}
-
-
 DiracDeterminantWithBackflow::GradType DiracDeterminantWithBackflow::evalGradSource(
     ParticleSet& P,
     ParticleSet& source,
@@ -309,7 +298,7 @@ DiracDeterminantWithBackflow::ValueType DiracDeterminantWithBackflow::ratioGrad(
     }
     int jat    = *it - FirstIndex;
     PosType dr = BFTrans->newQP[*it] - BFTrans->QP.R[*it];
-    BFTrans->QP.makeMoveAndCheck(*it, dr);
+    BFTrans->QP.makeMove(*it, dr);
     Phi->evaluate(BFTrans->QP, *it, psiV, dpsiV, d2psiV);
     for (int orb = 0; orb < psiV.size(); orb++)
       psiM_temp(orb, jat) = psiV[orb];
@@ -635,8 +624,8 @@ void DiracDeterminantWithBackflow::restore(int iat) { curRatio = 1.0; }
 
 void DiracDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
                                                        const opt_variables_type& active,
-                                                       std::vector<RealType>& dlogpsi,
-                                                       std::vector<RealType>& dhpsioverpsi)
+                                                       std::vector<ValueType>& dlogpsi,
+                                                       std::vector<ValueType>& dhpsioverpsi)
 {
   /*  Note:
    *    Since evaluateDerivatives seems to always be called after
@@ -763,8 +752,10 @@ void DiracDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
     //int kk = pa; //BFTrans->optIndexMap[pa];
     int kk = BFTrans->optIndexMap[pa];
 #if defined(QMC_COMPLEX)
-    dlogpsi[kk] += real(dpsia);
-    dhpsioverpsi[kk] -= real(0.5 * static_cast<ParticleSet::SingleParticleValue_t>(dLa) + Dot(P.G, Gtemp));
+    //dlogpsi[kk] += real(dpsia);
+    dlogpsi[kk] += dpsia;
+    //dhpsioverpsi[kk] -= real(0.5 * static_cast<ParticleSet::SingleParticleValue_t>(dLa) + Dot(P.G, Gtemp));
+    dhpsioverpsi[kk] -= 0.5 * static_cast<ParticleSet::SingleParticleValue_t>(dLa) + Dot(P.G, Gtemp);
 #else
     dlogpsi[kk] += dpsia;
     dhpsioverpsi[kk] -= (0.5 * static_cast<ParticleSet::SingleParticleValue_t>(dLa) + Dot(P.G, Gtemp));

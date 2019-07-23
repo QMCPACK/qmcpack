@@ -121,8 +121,8 @@ inline void rotateHijkl(std::string& type, WALKER_TYPES walker_type, bool addCou
 
   // <ab||kl> = sum_n Qk(a,n) * Rl(b,n) - Rl(a,n)*Qk(b,n),
   // where:
-  //   Qk(a,n) = sum_i conj(Amat(i,a)) * V2_fact(ik,n)
-  //   Rl(a,n) = sum_i conj(Amat(i,a)) * conj(V2_fact(li,n))
+  //   Qk(a,n) = sum_i ma::conj(Amat(i,a)) * V2_fact(ik,n)
+  //   Rl(a,n) = sum_i ma::conj(Amat(i,a)) * ma::conj(V2_fact(li,n))
   // For real build, Qk=Rk
   //
   // For parallelization, distribute (k,l) pairs over nodes.
@@ -237,8 +237,8 @@ inline void rotateHijkl(std::string& type, WALKER_TYPES walker_type, bool addCou
    APP_ABORT(" Finish THIS (43)!!! \n\n\n");
   } else {
 
-    //   Q(k,a,n) = sum_i conj(Amat(i,a)) * V2_fact(ik,n)
-    //   R(l,a,n) = sum_i conj(Amat(i,a)) * conj(V2_fact(li,n))
+    //   Q(k,a,n) = sum_i ma::conj(Amat(i,a)) * V2_fact(ik,n)
+    //   R(l,a,n) = sum_i ma::conj(Amat(i,a)) * ma::conj(V2_fact(li,n))
 
     // Construct SpQk[k,n,nvec]
     if(sparseQk) {
@@ -343,7 +343,7 @@ inline void rotateHijkl(std::string& type, WALKER_TYPES walker_type, bool addCou
 
   MPI_Bcast(Qknum.data(),comm.size(),MPI_INT,0,&TG.Node());
   int ntt = std::accumulate(Qknum.begin(),Qknum.end(),0);
-  if(!coreid==0)
+  if(coreid!=0)
     Qksizes.resize(2*ntt);
   MPI_Bcast(Qksizes.data(),Qksizes.size(),MPI_INT,0,&TG.Node());
 
@@ -516,7 +516,7 @@ inline void rotateHijkl(std::string& type, WALKER_TYPES walker_type, bool addCou
   for(int nn=0, nb=0, nkcum=0; nn<comm.size(); nn++) {
 
     // just checking
-    assert(nkcum==M_split[nn+nn0]);
+    assert(nkcum+K0_==M_split[nn+nn0]);
     if(M_split[nn+nn0+1]==M_split[nn+nn0]) continue;
     int nblk = Qknum[nn];
     long ntermscum=0;
@@ -620,8 +620,8 @@ inline void rotateHijkl_single_node(std::string& type, WALKER_TYPES walker_type,
 
   // <ab||kl> = sum_n Qk(a,n) * Rl(b,n) - Rl(a,n)*Qk(b,n),
   // where:
-  //   Qk(a,n) = sum_i conj(Amat(i,a)) * V2_fact(ik,n)
-  //   Rl(a,n) = sum_i conj(Amat(i,a)) * conj(V2_fact(li,n))
+  //   Qk(a,n) = sum_i ma::conj(Amat(i,a)) * V2_fact(ik,n)
+  //   Rl(a,n) = sum_i ma::conj(Amat(i,a)) * ma::conj(V2_fact(li,n))
   // For real build, Qk=Rk
   //
   // For parallelization, distribute (k,l) pairs over nodes.
@@ -673,8 +673,8 @@ inline void rotateHijkl_single_node(std::string& type, WALKER_TYPES walker_type,
   if(coreid==0) std::fill_n(Rl.origin(),Rl.num_elements(),SPComplexType(0.0));
 
   {
-    //   Q(k,a,n) = sum_i conj(Amat(i,a)) * V2_fact(ik,n)
-    //   R(l,a,n) = sum_i conj(Amat(i,a)) * conj(V2_fact(li,n))
+    //   Q(k,a,n) = sum_i ma::conj(Amat(i,a)) * V2_fact(ik,n)
+    //   R(l,a,n) = sum_i ma::conj(Amat(i,a)) * ma::conj(V2_fact(li,n))
 
     // Construct SpQk[k,n,nvec]
     int NMO2 = (walker_type!=CLOSED)?2*NMO:NMO;

@@ -15,7 +15,6 @@
 #ifndef QMCPLUSPLUS_ECPPOTENTIAL_BUILDER_H
 #define QMCPLUSPLUS_ECPPOTENTIAL_BUILDER_H
 #include "Configuration.h"
-#include "Particle/DistanceTableData.h"
 #include "QMCHamiltonians/LocalECPotential.h"
 #include "QMCHamiltonians/NonLocalECPotential.h"
 #include "QMCHamiltonians/L2Potential.h"
