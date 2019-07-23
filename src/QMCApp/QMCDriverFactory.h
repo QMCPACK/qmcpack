@@ -55,7 +55,7 @@ struct QMCDriverFactory : public MPIObjectBase
    *
    *  Can't be a scoped enum
    */
-  
+
   enum QMCModeEnum
   {
     UPDATE_MODE,    /**< bit for move: walker or pbyp */
@@ -107,11 +107,11 @@ struct QMCDriverFactory : public MPIObjectBase
   struct DriverAssemblyState
   {
     std::bitset<QMC_MODE_MAX> what_to_do;
-    bool append_run = false;
-    std::string traces_tag = "none";
+    bool append_run         = false;
+    std::string traces_tag  = "none";
     QMCRunType new_run_type = QMCRunType::DUMMY;
   };
-  
+
   /** read the current QMC Section */
   DriverAssemblyState readSection(int curSeries, xmlNodePtr cur);
 
