@@ -42,6 +42,8 @@ bool GridExternalPotential::put(xmlNodePtr cur)
   if (!read_okay) {
     app_log() << "Failed to open sho.h5" << std::endl;
   }
+
+  hin.read(data, "pot_data");
   
 
   spline_data = create_UBspline_3d_d(grid, grid, grid, 
