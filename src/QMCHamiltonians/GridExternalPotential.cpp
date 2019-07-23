@@ -6,8 +6,9 @@
 //
 // File developed by: Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+//                    Kevin Ryczko, kryczko@uottawa.ca, University of Ottawa
 //
-// File created by: Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
+// File created by: Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -23,7 +24,12 @@ bool GridExternalPotential::put(xmlNodePtr cur)
 
 
   OhmmsAttributeSet attrib;
-  attrib.put(cur);
+
+  /*
+    Future update must include differing grid sizes in the x, y, and z directions. 
+
+    Everything is the same size for now.
+  */
 
   Ugrid grid;
   grid.start = -2.0;
@@ -32,18 +38,45 @@ bool GridExternalPotential::put(xmlNodePtr cur)
   BCtype_d BC;
   BC.lCode = NATURAL;
   BC.rCode = NATURAL;
+  std::string file_name;
+  std::string dataset_name;
+  bool pbc;
 
-  double delta = (grid.end - grid.start)/(grid.num-1);
+  attrib.add(grid.start, "start");
+  attrib.add(grid.end, "end");
+  attrib.add(grid.num, "num");
+  attrib.add(file_name, "file_name");
+  attrib.add(dataset_name, "dataset_name");
+  attrib.add(pbc, "pbc");
+  attrib.put(cur);
+
+  if (pbc) {
+    BC.lCode = PERIODIC;
+    BC.rCode = PERIODIC;
+  }
+
+  double delta = (grid.end - grid.start) / (grid.num-1);
 
   Array<double, 3> data(grid.num, grid.num, grid.num);
 
   hdf_archive hin;
-  bool read_okay = hin.open("sho.h5",H5F_ACC_RDONLY);
+  bool read_okay = hin.open(file_name, H5F_ACC_RDONLY);
   if (!read_okay) {
-    app_log() << "Failed to open sho.h5" << std::endl;
+    app_log() << "Failed to open HDF5 file: " << file_name << "." << std::endl;
+  } else {
+      app_log() << "    ==============================\n" 
+                << "    Information of grid:\n" 
+                << "    Grid start: " << grid.start << std::endl
+                << "    Grid end: " << grid.end << std::endl
+                << "    Grid num: " << grid.num << std::endl
+                << "    Grid file_name: " << file_name << std::endl
+                << "    Grid dataset_name: " << dataset_name << std::endl
+                << "    ==============================\n";
+
+
   }
 
-  hin.read(data, "pot_data");
+  hin.read(data, dataset_name);
   
 
   spline_data = create_UBspline_3d_d(grid, grid, grid, 
