@@ -27,6 +27,7 @@
 #! /usr/bin/env python
 
 import os
+import numpy as np
 from copy import deepcopy
 from random import randint
 from numpy import array,floor,empty,dot,diag,sqrt,pi,mgrid,exp,append,arange,ceil,cross,cos,sin,identity,ndarray,atleast_2d,around,ones,zeros,logical_not,flipud,uint64,sign,isclose
