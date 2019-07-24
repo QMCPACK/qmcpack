@@ -129,6 +129,10 @@ void ECPComponentBuilder::buildSemiLocalAndLocal(std::vector<xmlNodePtr>& semiPt
     Llocal = Lmax;
     app_log() << "    Only one vps is found. Set the local component=" << Lmax << std::endl;
   }
+
+  if (angListSO.size()!=nso)
+    APP_ABORT("Error. npots-so does not match number of spin-orbit channels.");
+
   int npts = grid_global->size();
   Matrix<mRealType> vnn(angList.size(), npts);
   for (int l = 0; l < angList.size(); l++)
@@ -180,6 +184,7 @@ void ECPComponentBuilder::buildSemiLocalAndLocal(std::vector<xmlNodePtr>& semiPt
     copy(vtso.begin(), vtso.end(), vnnso[l]);
   }
 
+
   
   ////rather stupid to do this but necessary
   //vector<RealType> temp(npts);
@@ -194,6 +199,19 @@ void ECPComponentBuilder::buildSemiLocalAndLocal(std::vector<xmlNodePtr>& semiPt
   app_log() << "   Number of angular momentum channels " << angList.size() << std::endl;
   app_log() << "   Maximum angular momentum channel " << Lmax << std::endl;
   doBreakUp(angList, vnn, rmax, Vprefactor);
+
+  //If any spinorbit terms are found...
+  if(nso>0)
+    buildSO(angListSO,vnnso,rmax,1.0);
+
+}
+
+void ECPComponentBuilder::buildSO(const std::vector<int>& angList,
+                                  const Matrix<mRealType>& vnn,
+                                  RealType rmax,
+                                  mRealType Vprefactor)
+{
+
 }
 
 bool ECPComponentBuilder::parseCasino(const std::string& fname, xmlNodePtr cur)

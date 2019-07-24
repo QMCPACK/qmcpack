@@ -78,6 +78,11 @@ struct ECPComponentBuilder : public MPIObjectBase, public QMCTraits
                  const Matrix<mRealType>& vnn,
                  RealType rmax,
                  mRealType Vprefactor = 1.0);
+ 
+  void buildSO(const std::vector<int>& angList,
+               const Matrix<mRealType>& vnnso,
+               RealType rmax,
+               mRealType Vprefactor = 1.0);
 
   void printECPTable();
   bool read_pp_file(const std::string& fname);
