@@ -60,7 +60,6 @@ public:
   virtual bool run() = 0;
   ///process xml node
   virtual bool put(xmlNodePtr cur);
-  void resetComponents(xmlNodePtr cur);
   ///add a configuration file to the list of files
   void addConfiguration(const std::string& a);
   void setWaveFunctionNode(xmlNodePtr cur) { wfNode = cur; }

@@ -744,85 +744,6 @@ make -j 24
 ls -l bin/qmcpack
 \end{shade}
 
-\subsection{Installing on ORNL OLCF Titan Cray XK7 (NVIDIA GPU
-  accelerated)}
-\label{sec:titanbuildgpu}
-Titan is a GPU-accelerated supercomputer at Oak Ridge National
-Laboratory's  Oak Ridge Leadership Computing Facility  (ORNL OLCF). Each
-compute node has a 16 core AMD 2.2GHz Opteron 6274 (Interlagos) and an
-NVIDIA Kepler accelerator. The standard Cray software environment is
-available, with libraries accessed via modules. The only extra
-settings required to build the GPU version are the cudatoolkit module
-and specifying -DQMC\_CUDA=1 on the CMake configure line.
-
-Note that on Crays, the compiler wrappers ``CC'' and ``cc'' are
-used. The build system checks for these and does not (should not) use
-the compilers directly.
-
-%
-\begin{shade}
-export CRAYPE_LINK_TYPE=dynamic
-module swap PrgEnv-pgi PrgEnv-gnu # Use gnu compilers
-module load cudatoolkit           # CUDA for GPU build
-module load cray-hdf5-parallel
-module load cmake3
-module load fftw
-export FFTW_HOME=$FFTW_DIR/..
-module load boost
-mkdir build_titan_gpu
-cd build_titan_gpu
-export CC=cc
-export CXX=CC
-cmake -DQMC_CUDA=1 ..             # Must enable CUDA capabilities
-make -j 8
-ls -l bin/qmcpack
-\end{shade}
-
-\subsection{Installing on ORNL OLCF Titan Cray XK7 (CPU version)}
-As noted in Section~\ref{sec:titanbuildgpu} for the GPU, building on
-Crays requires only loading the appropriate library modules.
-
-%
-\begin{shade}
-export CRAYPE_LINK_TYPE=dynamic
-module swap PrgEnv-pgi PrgEnv-gnu # Use gnu compilers
-module unload cudatoolkit         # No CUDA for CPU build
-module load cray-hdf5-parallel
-module load cmake3
-module load fftw
-export FFTW_HOME=$FFTW_DIR/..
-module load boost
-mkdir build_titan_cpu
-cd build_titan_cpu
-export CC=cc
-export CXX=CC
-cmake ..
-make -j 8
-ls -l bin/qmcpack
-\end{shade}
-
-\subsection{Installing on ORNL OLCF Eos Cray XC30}
-Eos is a Cray XC30 with 16 core Intel Xeon E5-2670 processors connected
-by the Aries interconnect. The build process is identical to Titan
-except that we use the default Intel programming environment. This is
-usually preferred to GNU.
-
-\begin{shade}
-export CRAYPE_LINK_TYPE=dynamic
-module unload cray-libsci
-module load cray-hdf5
-module load cmake3/3.6.1   # Or newer
-module load fftw
-export FFTW_HOME=$FFTW_DIR/..
-module load boost
-module swap gcc gcc/6.3.0  # Make C++ 14 standard library available to the Intel compiler
-mkdir build_eos
-cd build_eos
-cmake ..
-make -j 8
-ls -l bin/qmcpack
-\end{shade}
-
 \subsection{Installing on ORNL OLCF Summit}
 Summit is an IBM system at the ORNL OLCF built with IBM Power System AC922
 nodes. They have two IBM Power 9 processors and six NVIDIA Volta V100
@@ -834,74 +755,34 @@ software environment is subject to change. As of December 2018, the
 IBM XL compiler does not support C++14, so we currently use the
 gnu compiler. 
 
-\begin{shade}
-module load gcc
-module load essl
-module load netlib-lapack #because ESSL does not provided needed LAPACK functionality
-module load hdf5
-module load fftw
-export FFTW_HOME=$OLCF_FFTW_ROOT
-module load cmake
-module load boost
-module load cuda
-module load python/2.7.15-anaconda2-5.3.0
-mkdir build_summit
-cd build_summit
-cmake -DCMAKE_C_COMPILER="mpicc" \
-      -DCMAKE_CXX_COMPILER="mpicxx" \
-      -DBUILD_LMYENGINE_INTERFACE=0 \
-      -DQMC_CUDA=1 \
-      -DCUDA_ARCH="sm_70" \
-      ..
-make -j 8
-ls -l bin/qmcpack
-\end{shade}
+For ease of reproducibility we provide build scripts for summit.
+\lstset{language=bash,style=SHELL}
+\begin{lstlisting}
+cd qmcpack
+./config/build_olcf_summit.sh
+ls bin
+\end{lstlisting}
 
 \subsubsection{Building Quantum Espresso}
-The v6.3 release of Quantum Espresso (QE) does not officially support the
-Power 9 architecture, and several steps of the configuration process
-require updating to build successfully. v6.4 is expected to officially support
-the new architecture. The following can be used to build a
-CPU version of QE on Summit, placing the script in the
-external\_codes/quantum\_espresso directory. Note that performance is
+We provide a build script for the v6.4.1 release of Quantum Espresso (QE).
+The following can be used to build a CPU version of QE on Summit,
+placing the script in the external\_codes/quantum\_espresso directory.
+
+\begin{lstlisting}
+cd external_codes/quantum_espresso
+./build_qe_olcf_summit.sh
+\end{lstlisting}
+
+Note that performance is
 not yet optimized although vendor libraries are
 used. Alternatively, the wavefunction files can be generated on
 another system and the converted HDF5 files copied over.
-
-
-\begin{shade}
-#!/usr/bin/bash
-module load gcc/6.4.0 #6.4.0 was default on 2019-01-03
-module load essl
-module load netlib-lapack #because ESSL does not provided needed LAPACK functionality
-module load hdf5
-module load fftw
-export FFTW_HOME=$OLCF_FFTW_ROOT
-module -t list
-./download_and_patch_qe6.3.sh
-cd qe-6.3
-cd archive
-mv fox.tgz fox.tgz_orig
-wget https://gitlab.com/QEF/q-e/raw/develop/archive/fox.tgz # Latest FoX on develop is patched for PPC64 architectures
-cd ..
-./configure --with-hdf5=$OLCF_HDF5_ROOT
-cp -p make.inc make.inc_orig
-sed -e 's/libhdf5.a /libhdf5.a -L/g' make.inc_orig >make.inc # Incorrect awk in install/configure drops library dir for zlib
-sed -i 's/-D__FFTW3/-D__LINUX_ESSL/g' make.inc
-sed -i "s|-lblas|-L${OLCF_ESSL_ROOT}/lib64 -lessl|g" make.inc
-sed -i 's/-lfftw3/ /g' make.inc # Use the ESSL FFTW
-sed -i 's/^LAPACK_LIBS .*=.*/LAPACK_LIBS = -lessl -llapack -lessl/g' make.inc
-echo --- Starting build `date`
-make all
-echo --- Finished build `date`
-\end{shade}
 
 \subsection{Installing on NERSC Cori, Haswell Partition, Cray XC40}
 Cori is a Cray XC40 that includes 16-core Intel "Haswell" nodes
 installed at NERSC. In the following example, the source code is
 cloned in \$HOME/qmc/git\_QMCPACK and QMCPACK is built in the scratch
 space.
-
 
 \begin{shade}
 mkdir $HOME/qmc

@@ -234,8 +234,9 @@ namespace afqmc
             for(; it<ite; ++it) {
               auto ci = ma::conj(get<2>(*(confgs+(*it))));  
               auto Ovmsd_ = Ovmsd[1][get<1>(*(confgs+(*it)))];  
-              for(int iw=0; iw<nwalk; ++iw) 
+              for(int iw=0; iw<nwalk; ++iw) { 
                 wgt[iw] += ci * Ovmsd_[iw];
+              }
             }
             for(int iw=0; iw<nwalk; ++iw) { 
               wgt[iw] *= Ovmsd[0][nd][iw];  
@@ -256,19 +257,19 @@ namespace afqmc
             E[iw][0] += wgt[iw]*Emsd[spin][nd][iw][0]/2.0;
             E[iw][1] += wgt[iw]*Emsd[spin][nd][iw][1]/2.0;
             E[iw][2] += wgt[iw]*Emsd[spin][nd][iw][2]/4.0;
-          }  
+          }
         } //nd%TG.TG_local().size()==TG.TG_local().rank()
       }  //nex
     }  // spin
 
-    // 3. reduce over TG_local 
+    // 3. reduce over TG_local
     TG.TG_local().all_reduce_in_place_n(to_address(opSpinEJ.origin()),nwalk,std::plus<>());
     TG.TG_local().all_reduce_in_place_n(to_address(Ov.origin()),nwalk,std::plus<>());
     TG.TG_local().all_reduce_in_place_n(to_address(E.origin()),3*nwalk,std::plus<>());
-    for(int i=0; i<nwalk; ++i) { 
-      E[i][0] /= Ov[i];   
-      E[i][1] /= Ov[i];  
-      E[i][2] = (E[i][2] + opSpinEJ[i])/Ov[i];  
+    for(int i=0; i<nwalk; ++i) {
+      E[i][0] /= Ov[i];
+      E[i][1] /= Ov[i];
+      E[i][2] = (E[i][2] + opSpinEJ[i])/Ov[i];
     }
     TG.local_barrier();
   }
@@ -1200,7 +1201,7 @@ namespace afqmc
     TG.Node().barrier();
 
     ComplexType ov(0.0);
-    for(auto it=abij.configurations_begin(); it<abij.configurations_end(); ++it) 
+    for(auto it=abij.configurations_begin(); it<abij.configurations_end(); ++it)
       ov += norm(std::get<2>(*it))*
             ovlps[0][std::get<0>(*it)]*
             ovlps[1][std::get<1>(*it)];
@@ -1294,7 +1295,8 @@ namespace afqmc
 //    for(int i=0; i<v.num_elements(); i++)
 //      v[i] = ComplexType(real(v[i]),0.0); 
 
-}
+  }
+
 
 }
 }

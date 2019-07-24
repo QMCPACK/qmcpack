@@ -115,7 +115,7 @@ SparseTensor<T1,T2> loadSparseTensor(hdf_archive& dump, WALKER_TYPES type, int N
   Spvn_ncols = dims[8];
 
   // read 1-body hamiltonian and exchange potential (v0)
-  boost::multi::array<ComplexType,2> H1({NMO,NMO});
+  boost::multi::array<ValueType,2> H1({NMO,NMO});
   boost::multi::array<ComplexType,2> v0({NMO,NMO});
   if(TGwfn.Global().root()) {
     if(!dump.readEntry(H1,"H1")) {
@@ -212,7 +212,7 @@ template<class shm_mat1,
          class shm_mat2>
 inline void writeSparseTensor(hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA, int NAEB,
                               TaskGroup_& TGprop, TaskGroup_& TGwfn,
-                              boost::multi::array<ComplexType,2> & H1,
+                              boost::multi::array<ValueType,2> & H1,
                               std::vector<shm_mat1> const& v2,
                               shm_mat2 const& Spvn,
                               boost::multi::array<ComplexType,2> & v0,
