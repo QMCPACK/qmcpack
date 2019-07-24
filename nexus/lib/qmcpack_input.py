@@ -5262,21 +5262,30 @@ def generate_jastrow3(function='polynomial',esize=3,isize=3,rcut=4.,coeff=None,i
 
 def generate_kspace_jastrow(kc1=0, kc2=0, nk1=0, nk2=0,
   symm1='isotropic', symm2='isotropic', coeff1=None, coeff2=None):
-  """ generate <jastrow type="kSpace">
+  """Generate <jastrow type="kSpace">
 
-  Args:
-    kc1 (float): kcut for one-body Jastrow
-    kc2 (float): kcut for two-body Jastrow
-    nk1 (int): number of coefficients for one-body Jastrow
-    nk2 (int): number of coefficients for two-body Jastrow
-    symm1 (str, optional): one of ['crystal', 'isotropic', 'none'],
-     default is 'isotropic'
-    symm2 (str, optional): one of ['crystal', 'isotropic', 'none'],
-     default is 'isotropic'
-    coeff1 (list, optional): one-body Jastrow coefficients, default None
-    coeff2 (list, optional): two-body Jastrow coefficients, default None
-  Returns:
-    QIxml: kspace_jastrow qmcpack_input element
+  Parameters
+  ----------
+    kc1 : float, optional
+      kcut for one-body Jastrow, default 0
+    kc2 : float, optional
+      kcut for two-body Jastrow, default 0
+    nk1 : int, optional
+      number of coefficients for one-body Jastrow, default 0
+    nk2 : int, optional
+      number of coefficients for two-body Jastrow, default 0
+    symm1 : str, optional
+      one of ['crystal', 'isotropic', 'none'], default 'isotropic'
+    symm2 : str, optional
+      one of ['crystal', 'isotropic', 'none'], default is 'isotropic'
+    coeff1 : list, optional
+      one-body Jastrow coefficients, default None
+    coeff2 : list, optional
+      list, optional two-body Jastrow coefficients, default None
+  Returns
+  -------
+    jk: QIxml
+      kspace_jastrow qmcpack_input element
   """
 
   if coeff1 is None: coeff1 = [0]*nk1
