@@ -46,6 +46,7 @@ void ECPComponentBuilder::buildSemiLocalAndLocal(std::vector<xmlNodePtr>& semiPt
   std::string lloc;
   int ndown = 1;
   int nup   = 0;
+  int nso   = 0;
   Llocal    = -1;
   OhmmsAttributeSet aAttrib;
   aAttrib.add(eunits, "units");
@@ -54,6 +55,8 @@ void ECPComponentBuilder::buildSemiLocalAndLocal(std::vector<xmlNodePtr>& semiPt
   aAttrib.add(nup, "npots-up");
   aAttrib.add(Llocal, "l-local");
   aAttrib.add(Nrule, "nrule");
+  aAttrib.add(nso, "npots-so");
+
   xmlNodePtr cur_semilocal = semiPtr[0];
   aAttrib.put(cur_semilocal);
   RealType Vprefactor = 1.0;
@@ -78,8 +81,11 @@ void ECPComponentBuilder::buildSemiLocalAndLocal(std::vector<xmlNodePtr>& semiPt
   }
   // We cannot construct the potentials as we construct them since
   // we may not know which one is local yet.
+  
   std::vector<int> angList;
+  std::vector<int> angListSO; //For spin-orbit, if it exists
   std::vector<xmlNodePtr> vpsPtr;
+  std::vector<xmlNodePtr> vpsoPtr; //For spin-orbit, if it exists.
   Lmax = -1;
   // Now read vps sections
   xmlNodePtr cur_vps = cur_semilocal->children;
@@ -99,6 +105,20 @@ void ECPComponentBuilder::buildSemiLocalAndLocal(std::vector<xmlNodePtr>& semiPt
       angList.push_back(l);
       vpsPtr.push_back(cur_vps);
       Lmax = std::max(Lmax, l); //count the maximum L
+    }
+    else if (vname== "vps_so") //This accumulates the spin-orbit corrections, if defined.
+    {
+      app_log()<<"Yo.  We got a vps-so up in heah\n";
+      OhmmsAttributeSet aAttrib;
+      std::string lstr("s");
+      RealType rc = -1.0;
+      aAttrib.add(lstr, "l");
+      aAttrib.add(rc, "cutoff");
+      aAttrib.put(cur_vps);
+      rmax  = std::max(rmax, rc);
+      int l = angMon[lstr];
+      angListSO.push_back(l);
+      vpsoPtr.push_back(cur_vps);
     }
     cur_vps = cur_vps->next;
   }
@@ -132,6 +152,35 @@ void ECPComponentBuilder::buildSemiLocalAndLocal(std::vector<xmlNodePtr>& semiPt
     //copy the numerical data with the correct map
     copy(vt.begin(), vt.end(), vnn[angList[l]]);
   }
+
+  //Grabbing the spin-orbit functions from XML.
+  Matrix<mRealType> vnnso(angListSO.size(), npts);
+  for (int l = 0; l < angListSO.size(); l++)
+  {
+    std::vector<mRealType> vtso(npts);
+    xmlNodePtr c = vpsoPtr[l]->children;
+    while (c != NULL)
+    {
+      if (xmlStrEqual(c->name, (const xmlChar*)"radfunc"))
+      {
+        xmlNodePtr c1 = c->children;
+        while (c1 != NULL)
+        {
+          if (xmlStrEqual(c1->name, (const xmlChar*)"data"))
+            putContent(vtso, c1);
+          c1 = c1->next;
+        }
+      }
+      c = c->next;
+    }
+    //copy the numerical data with the correct map
+    //So this is weird, but I feel like l should be the proper index for vnnso,
+    //with angListSO[l] being the actual angular momentum channel referred to by l.
+    //This differs from the parsing of the nonlocal pseudopotential piece, but whatever. 
+    copy(vtso.begin(), vtso.end(), vnnso[l]);
+  }
+
+  
   ////rather stupid to do this but necessary
   //vector<RealType> temp(npts);
   //for(int i=0; i<npts; i++) temp[i]=grid_global->r(i);

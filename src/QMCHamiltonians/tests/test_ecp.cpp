@@ -111,6 +111,7 @@ TEST_CASE("ReadFileBuffer_sorep", "[hamiltonian]")
   REQUIRE(okay);
 
   REQUIRE(ecp.Zeff == 20);
+  
 
   // TODO: add more checks that pseudopotential file was read correctly
 }

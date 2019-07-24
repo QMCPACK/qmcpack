@@ -38,6 +38,7 @@ ECPComponentBuilder::ECPComponentBuilder(const std::string& aname, Communicate* 
       grid_global(0),
       pp_loc(0),
       pp_nonloc(0),
+      pp_so(0),
       pp_L2(0)
 {
   angMon["s"] = 0;
