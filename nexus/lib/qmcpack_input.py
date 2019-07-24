@@ -5292,8 +5292,10 @@ def generate_kspace_jastrow(kc1=0, kc2=0, nk1=0, nk2=0,
   if coeff2 is None: coeff2 = [0]*nk2
   if len(coeff1) != nk1:
     QmcpackInput.class_error('coeff1 mismatch', 'generate_kspace_jastrow')
+  #end if
   if len(coeff2) != nk2:
     QmcpackInput.class_error('coeff2 mismatch', 'generate_kspace_jastrow')
+  #end if
 
   corr1 = correlation(
     type = 'One-Body',

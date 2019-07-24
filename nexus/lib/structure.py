@@ -1233,7 +1233,6 @@ class Structure(Sobj):
         #end if
       #end for
 
-      import numpy as np
       origin = np.array([[0, 0, 0]])
       axes = self.axes
       raxes = 2*np.pi*np.linalg.inv(axes).T
