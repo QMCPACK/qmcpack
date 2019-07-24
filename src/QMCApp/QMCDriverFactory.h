@@ -17,39 +17,45 @@
 
 #ifndef QMCPLUSPLUS_QMCDRIVER_FACTORY_H
 #define QMCPLUSPLUS_QMCDRIVER_FACTORY_H
+#include <bitset>
+#include <string>
+
 #include "OhmmsData/OhmmsElementBase.h"
 #include "Message/MPIObjectBase.h"
 #include "QMCApp/ParticleSetPool.h"
-#include <bitset>
-
 class Communicate;
 
 namespace qmcplusplus
 {
 //forward declaration
 class MCWalkerConfiguration;
-class QMCDriver;
+class QMCDriverInterface;
 class WaveFunctionPool;
 class HamiltonianPool;
 
 struct QMCDriverFactory : public MPIObjectBase
 {
   /*! enum for QMC Run Type */
-  enum QMCRunType
+  enum class QMCRunType
   {
-    DUMMY_RUN, /*!< dummy */
-    VMC_RUN,   /**< VMC type: vmc, vmc-ptcl, vmc-multiple, vmc-ptcl-multiple */
-    CSVMC_RUN,
-    DMC_RUN,      /**< DMC type: dmc, dmc-ptcl*/
-    RMC_RUN,      /**< RMC type: rmc, rmc-ptcl */
-    OPTIMIZE_RUN, /*!< Optimization */
-    VMC_OPT_RUN,  /*!< Optimization with vmc blocks */
-    LINEAR_OPTIMIZE_RUN,
-    CS_LINEAR_OPTIMIZE_RUN,
-    WF_TEST_RUN
+    DUMMY, /*!< dummy */
+    VMC,   /**< VMC type: vmc, vmc-ptcl, vmc-multiple, vmc-ptcl-multiple */
+    CSVMC,
+    DMC,      /**< DMC type: dmc, dmc-ptcl*/
+    RMC,      /**< RMC type: rmc, rmc-ptcl */
+    OPTIMIZE, /*!< Optimization */
+    VMC_OPT,  /*!< Optimization with vmc blocks */
+    LINEAR_OPTIMIZE,
+    CS_LINEAR_OPTIMIZE,
+    WF_TEST,
+    VMC_BATCH
   };
 
-  /*! enum to set the bit to determine the QMC mode */
+  /** enum to set the bit to determine the QMC mode 
+   *
+   *  Can't be a scoped enum
+   */
+
   enum QMCModeEnum
   {
     UPDATE_MODE,    /**< bit for move: walker or pbyp */
@@ -78,7 +84,7 @@ struct QMCDriverFactory : public MPIObjectBase
 
   /** current QMCDriver
    */
-  QMCDriver* qmcDriver;
+  QMCDriverInterface* qmcDriver;
 
   /** ParticleSet Pool
    */
@@ -98,8 +104,19 @@ struct QMCDriverFactory : public MPIObjectBase
   /** set the active qmcDriver */
   void putCommunicator(xmlNodePtr cur);
 
+  struct DriverAssemblyState
+  {
+    std::bitset<QMC_MODE_MAX> what_to_do;
+    bool append_run         = false;
+    std::string traces_tag  = "none";
+    QMCRunType new_run_type = QMCRunType::DUMMY;
+  };
+
+  /** read the current QMC Section */
+  DriverAssemblyState readSection(int curSeries, xmlNodePtr cur);
+
   /** set the active qmcDriver */
-  bool setQMCDriver(int curSeries, xmlNodePtr cur);
+  bool setQMCDriver(int curSeries, xmlNodePtr cur, DriverAssemblyState& das);
 
   /** create a new QMCDriver
    */

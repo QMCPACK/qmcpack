@@ -617,7 +617,8 @@ bool QMCMain::processPWH(xmlNodePtr cur)
  */
 bool QMCMain::runQMC(xmlNodePtr cur)
 {
-  bool append_run = setQMCDriver(myProject.m_series, cur);
+  DriverAssemblyState das = readSection(myProject.m_series, cur);
+  bool append_run         = setQMCDriver(myProject.m_series, cur, das);
   if (qmcDriver)
   {
     //advance the project id
