@@ -143,7 +143,7 @@ void RMCUpdateAllWithDrift::advanceWalkersVMC()
   else
     assignDrift(m_tauovermass, W.G, drift);
   fromdeltaR = curhead.R - W.R - drift;
-  EstimatorRealType* restrict new_headProp(W.getPropertyBase());
+  FullPrecRealType* restrict new_headProp(W.getPropertyBase());
 
   RealType logGb = -m_oneover2tau * Dot(fromdeltaR, fromdeltaR);
 
@@ -370,7 +370,7 @@ void RMCUpdateAllWithDrift::advanceWalkersRMC()
   else
     assignDrift(m_tauovermass, W.G, drift);
   fromdeltaR = curhead.R - W.R - drift;
-  EstimatorRealType* restrict new_headProp(W.getPropertyBase());
+  FullPrecRealType* restrict new_headProp(W.getPropertyBase());
   W.Properties(W.reptile->TransProb[backward]) = -m_oneover2tau * Dot(fromdeltaR, fromdeltaR);
   W.Properties(W.reptile->Action[backward])    = 0.5 * m_oneover2tau * Dot(fromdeltaR, fromdeltaR);
 

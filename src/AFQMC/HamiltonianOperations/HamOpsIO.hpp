@@ -90,10 +90,10 @@ HamiltonianOperations loadHamOps(hdf_archive& dump, WALKER_TYPES type, int NMO, 
     return HamiltonianOperations(loadSparseTensor<ComplexType,ComplexType>(dump,type,NMO,NAEA,NAEB,PsiT,TGprop,TGwfn,cutvn,cutv2));
 //  else if(hops_type == 3) 
 //    return  HamiltonianOperations(loadKP3IndexFactorization(dump,type,NMO,NAEA,NAEB,PsiT,TGprop,TGwfn,cutvn,cutv2));
-  else {
-    app_error()<<" Error in loadHamOps: Unknown HOps type: " <<hops_type <<std::endl;;
-    APP_ABORT("");
-  }
+  
+  app_error()<<" Error in loadHamOps: Unknown HOps type: " <<hops_type <<std::endl;;
+  APP_ABORT("");
+  return HamiltonianOperations{};
 
 }
 

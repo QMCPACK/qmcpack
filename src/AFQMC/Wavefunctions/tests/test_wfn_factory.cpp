@@ -135,12 +135,13 @@ const char *wlk_xml_block_noncol =
     Libxml2Document doc3;
     okay = doc3.parseFromString(wlk_xml_block);
     REQUIRE(okay);
+    std::string restart_file = create_test_hdf(UTEST_WFN, UTEST_HAMIL);
     std::string wfn_xml =
 "<Wavefunction name=\"wfn0\" info=\"info0\"> \
       <parameter name=\"filetype\">ascii</parameter> \
       <parameter name=\"filename\">"+UTEST_WFN+"</parameter> \
       <parameter name=\"cutoff\">1e-6</parameter> \
-      <parameter name=\"restart_file\">dummy.h5</parameter> \
+      <parameter name=\"restart_file\">"+restart_file+"</parameter> \
   </Wavefunction> \
 ";
     const char *wfn_xml_block = wfn_xml.c_str();
@@ -239,12 +240,13 @@ const char *wlk_xml_block_noncol =
       if(std::abs(file_data.Vsum)>1e-8) {
         for(int n=0; n<nwalk; n++) {
           Vsum=0;
-          if(wfn.transposed_vHS()) 
+          if(wfn.transposed_vHS()) { 
             for(int i=0; i<vHS.size(1); i++)
               Vsum += vHS[n][i];
-          else
+          } else {
             for(int i=0; i<vHS.size(0); i++)
               Vsum += vHS[i][n];
+          }
           REQUIRE( real(Vsum) == Approx(real(file_data.Vsum)) );
           REQUIRE( imag(Vsum) == Approx(imag(file_data.Vsum)) );
         }
@@ -339,23 +341,25 @@ const char *wlk_xml_block_noncol =
       if(std::abs(file_data.Vsum)>1e-8) {
         for(int n=0; n<nwalk; n++) {
           Vsum=0;
-          if(wfn.transposed_vHS()) 
+          if(wfn.transposed_vHS()) { 
             for(int i=0; i<vHS.size(1); i++)
               Vsum += vHS[n][i];
-          else
+          } else {
             for(int i=0; i<vHS.size(0); i++)
               Vsum += vHS[i][n];
+          }  
           REQUIRE( real(Vsum) == Approx(real(file_data.Vsum)) );
           REQUIRE( imag(Vsum) == Approx(imag(file_data.Vsum)) );
         }
       } else {
         Vsum=0;
-        if(wfn.transposed_vHS()) 
+        if(wfn.transposed_vHS()) { 
           for(int i=0; i<vHS.size(1); i++)
             Vsum += vHS[0][i];
-        else
+        } else {
           for(int i=0; i<vHS.size(0); i++)
             Vsum += vHS[i][0];
+        }
         app_log()<<" Vsum: " <<setprecision(12) <<Vsum <<std::endl;
       }
 
@@ -441,12 +445,13 @@ const char *wlk_xml_block_noncol =
     okay = doc3.parseFromString(wlk_xml_block);
     REQUIRE(okay);
 
+    std::string restart_file = create_test_hdf(UTEST_WFN, UTEST_HAMIL);
     std::string wfn_xml =
 "<Wavefunction name=\"wfn0\" info=\"info0\"> \
       <parameter name=\"filetype\">ascii</parameter> \
       <parameter name=\"filename\">"+UTEST_WFN+"</parameter> \
       <parameter name=\"cutoff\">1e-6</parameter> \
-      <parameter name=\"restart_file\">dummy.h5</parameter> \
+      <parameter name=\"restart_file\">"+restart_file+"</parameter> \
   </Wavefunction> \
 ";
     const char *wfn_xml_block = wfn_xml.c_str();
@@ -555,26 +560,30 @@ const char *wlk_xml_block_noncol =
     if(std::abs(file_data.Vsum)>1e-8) {
       for(int n=0; n<nwalk; n++) {
         Vsum=0;
-        if(TGwfn.TG_local().root())
-          if(wfn.transposed_vHS()) 
+        if(TGwfn.TG_local().root()) { 
+          if(wfn.transposed_vHS()) {
             for(int i=0; i<vHS.size(1); i++)
               Vsum += vHS[n][i];
-          else  
+          } else { 
             for(int i=0; i<vHS.size(0); i++)
               Vsum += vHS[i][n];
+          }
+        }
         Vsum = ( TGwfn.TG() += Vsum );
         REQUIRE( real(Vsum) == Approx(real(file_data.Vsum)) );
         REQUIRE( imag(Vsum) == Approx(imag(file_data.Vsum)) );
       }
     } else {
       Vsum=0;
-      if(TGwfn.TG_local().root())
-        if(wfn.transposed_vHS()) 
+      if(TGwfn.TG_local().root()) {
+        if(wfn.transposed_vHS()) { 
           for(int i=0; i<vHS.size(1); i++)
             Vsum += vHS[0][i];
-        else
+        } else {
           for(int i=0; i<vHS.size(0); i++)
             Vsum += vHS[i][0];
+        }
+      }
       Vsum = ( TGwfn.TG() += Vsum );
       app_log()<<" Vsum: " <<setprecision(12) <<Vsum <<" Time: " <<t1 <<std::endl;
     }
@@ -673,26 +682,30 @@ const char *wlk_xml_block_noncol =
     if(std::abs(file_data.Vsum)>1e-8) {
       for(int n=0; n<nwalk; n++) {
         Vsum=0;
-        if(TGwfn.TG_local().root())
-          if(wfn.transposed_vHS()) 
+        if(TGwfn.TG_local().root()) {
+          if(wfn.transposed_vHS()) { 
             for(int i=0; i<vHS.size(1); i++)
               Vsum += vHS[n][i];
-          else
+          } else {
             for(int i=0; i<vHS.size(0); i++)
               Vsum += vHS[i][n];
+          }
+        }
         Vsum = ( TGwfn.TG() += Vsum );
         REQUIRE( real(Vsum) == Approx(real(file_data.Vsum)) );
         REQUIRE( imag(Vsum) == Approx(imag(file_data.Vsum)) );
       }
     } else {
       Vsum=0;
-      if(TGwfn.TG_local().root())
-        if(wfn.transposed_vHS()) 
+      if(TGwfn.TG_local().root()) {
+        if(wfn.transposed_vHS()) { 
           for(int i=0; i<vHS.size(1); i++)
             Vsum += vHS[0][i];
-        else
+        } else {
           for(int i=0; i<vHS.size(0); i++)
             Vsum += vHS[i][0];
+        }
+      }
       Vsum = ( TGwfn.TG() += Vsum );
       app_log()<<" Vsum: " <<setprecision(12) <<Vsum <<std::endl;
     }
@@ -915,12 +928,13 @@ const char *wlk_xml_block =
     if(std::abs(file_data.Vsum)>1e-8) {
       for(int n=0; n<nwalk; n++) {
         Vsum=0;
-        if(wfn.transposed_vHS())
+        if(wfn.transposed_vHS()) {
           for(int i=0; i<vHS.size(1); i++)
             Vsum += vHS[n][i];
-        else
+        } else {
           for(int i=0; i<vHS.size(0); i++)
             Vsum += vHS[i][n];
+        }
         REQUIRE( real(Vsum) == Approx(real(file_data.Vsum)) );
         REQUIRE( imag(Vsum) == Approx(imag(file_data.Vsum)) );
       }
@@ -928,21 +942,23 @@ const char *wlk_xml_block =
 #endif
     {
       Vsum=0;
-      if(wfn.transposed_vHS())
+      if(wfn.transposed_vHS()) {
         for(int i=0; i<vHS.size(1); i++)
           Vsum += vHS[0][i];
-      else
+      } else {
         for(int i=0; i<vHS.size(0); i++)
           Vsum += vHS[i][0];
+      }  
       app_log()<<" Vsum: " <<setprecision(12) <<Vsum <<std::endl;
       for(int n=1; n<nwalk; n++) {
         ComplexType Vsum_=0;
-        if(wfn.transposed_vHS())
+        if(wfn.transposed_vHS()) {
           for(int i=0; i<vHS.size(1); i++)
             Vsum_ += vHS[n][i];
-        else
+        } else {
           for(int i=0; i<vHS.size(0); i++)
             Vsum_ += vHS[i][n];
+        }
         REQUIRE( real(Vsum) == Approx(real(Vsum_)) );
         REQUIRE( imag(Vsum) == Approx(imag(Vsum_)) );
       }

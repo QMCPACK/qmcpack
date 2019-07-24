@@ -75,7 +75,7 @@ struct Walker
   /** typedef for real data type */
   typedef typename t_traits::RealType RealType;
   /** typedef for estimator real data type */
-  typedef typename t_traits::EstimatorRealType EstimatorRealType;
+  typedef typename t_traits::FullPrecRealType FullPrecRealType;
   /** typedef for value data type. */
   typedef typename t_traits::ValueType ValueType;
 #ifdef QMC_CUDA
@@ -93,7 +93,7 @@ struct Walker
   typedef typename p_traits::SingleParticleValue_t SingleParticleValue_t;
 
   ///typedef for the property container, fixed size
-  typedef Matrix<EstimatorRealType> PropertyContainer_t;
+  typedef Matrix<FullPrecRealType> PropertyContainer_t;
   typedef PooledMemory<OHMMS_PRECISION_FULL> WFBuffer_t;
   typedef PooledData<RealType> Buffer_t;
 
@@ -108,7 +108,7 @@ struct Walker
   ///Age of this walker age is incremented when a walker is not moved after a sweep
   int ReleasedNodeAge;
   ///Weight of the walker
-  EstimatorRealType Weight;
+  FullPrecRealType Weight;
   ///Weight of the walker
   RealType ReleasedNodeWeight;
   /** Number of copies for branching
@@ -132,7 +132,7 @@ struct Walker
   PropertyContainer_t Properties;
 
   ///Property history vector
-  std::vector<std::vector<EstimatorRealType>> PropertyHistory;
+  std::vector<std::vector<FullPrecRealType>> PropertyHistory;
   std::vector<int> PHindex;
 
   ///buffer for the data for particle-by-particle update
@@ -216,7 +216,7 @@ struct Walker
     }
   }
 
-  inline void addPropertyHistoryPoint(int index, EstimatorRealType data)
+  inline void addPropertyHistoryPoint(int index, FullPrecRealType data)
   {
     PropertyHistory[index][PHindex[index]] = (data);
     PHindex[index]++;
@@ -225,10 +225,10 @@ struct Walker
     //       PropertyHistory[index].pop_back();
   }
 
-  inline EstimatorRealType getPropertyHistorySum(int index, int endN)
+  inline FullPrecRealType getPropertyHistorySum(int index, int endN)
   {
-    EstimatorRealType mean = 0.0;
-    typename std::vector<EstimatorRealType>::const_iterator phStart;
+    FullPrecRealType mean = 0.0;
+    typename std::vector<FullPrecRealType>::const_iterator phStart;
     phStart = PropertyHistory[index].begin() + PHindex[index];
     for (int i = 0; i < endN; phStart++, i++)
     {
@@ -301,16 +301,16 @@ struct Walker
   }
 
   //return the address of the values of Hamiltonian terms
-  inline EstimatorRealType* restrict getPropertyBase() { return Properties.data(); }
+  inline FullPrecRealType* restrict getPropertyBase() { return Properties.data(); }
 
   //return the address of the values of Hamiltonian terms
-  inline const EstimatorRealType* restrict getPropertyBase() const { return Properties.data(); }
+  inline const FullPrecRealType* restrict getPropertyBase() const { return Properties.data(); }
 
   ///return the address of the i-th properties
-  inline EstimatorRealType* restrict getPropertyBase(int i) { return Properties[i]; }
+  inline FullPrecRealType* restrict getPropertyBase(int i) { return Properties[i]; }
 
   ///return the address of the i-th properties
-  inline const EstimatorRealType* restrict getPropertyBase(int i) const { return Properties[i]; }
+  inline const FullPrecRealType* restrict getPropertyBase(int i) const { return Properties[i]; }
 
 
   /** reset the property of a walker
@@ -321,7 +321,7 @@ struct Walker
    *Assign the values and reset the age
    * but leave the weight and multiplicity
    */
-  inline void resetProperty(EstimatorRealType logpsi, EstimatorRealType sigN, EstimatorRealType ene)
+  inline void resetProperty(FullPrecRealType logpsi, FullPrecRealType sigN, FullPrecRealType ene)
   {
     Age = 0;
     //Weight=1.0;
@@ -330,15 +330,15 @@ struct Walker
     Properties(LOCALENERGY) = ene;
   }
 
-  inline void resetReleasedNodeProperty(EstimatorRealType localenergy,
-                                        EstimatorRealType alternateEnergy,
-                                        EstimatorRealType altR)
+  inline void resetReleasedNodeProperty(FullPrecRealType localenergy,
+                                        FullPrecRealType alternateEnergy,
+                                        FullPrecRealType altR)
   {
     Properties(ALTERNATEENERGY) = alternateEnergy;
     Properties(LOCALENERGY)     = localenergy;
     Properties(SIGN)            = altR;
   }
-  inline void resetReleasedNodeProperty(EstimatorRealType localenergy, EstimatorRealType alternateEnergy)
+  inline void resetReleasedNodeProperty(FullPrecRealType localenergy, FullPrecRealType alternateEnergy)
   {
     Properties(ALTERNATEENERGY) = alternateEnergy;
     Properties(LOCALENERGY)     = localenergy;
@@ -354,12 +354,12 @@ struct Walker
    *Assign the values and reset the age
    * but leave the weight and multiplicity
    */
-  inline void resetProperty(EstimatorRealType logpsi,
-                            EstimatorRealType sigN,
-                            EstimatorRealType ene,
-                            EstimatorRealType r2a,
-                            EstimatorRealType r2p,
-                            EstimatorRealType vq)
+  inline void resetProperty(FullPrecRealType logpsi,
+                            FullPrecRealType sigN,
+                            FullPrecRealType ene,
+                            FullPrecRealType r2a,
+                            FullPrecRealType r2p,
+                            FullPrecRealType vq)
   {
     Age                     = 0;
     Properties(LOGPSI)      = logpsi;

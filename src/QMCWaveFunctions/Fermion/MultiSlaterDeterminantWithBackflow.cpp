@@ -25,6 +25,7 @@ MultiSlaterDeterminantWithBackflow::MultiSlaterDeterminantWithBackflow(ParticleS
     : MultiSlaterDeterminant(targetPtcl, upspo, dnspo), BFTrans(BF)
 {
   Optimizable = false;
+  is_fermionic = true;
   ClassName   = "MultiSlaterDeterminantWithBackflow";
 }
 

@@ -23,6 +23,7 @@
 #include "AFQMC/config.h"
 #include "mpi3/shared_communicator.hpp"
 #include "AFQMC/Matrix/csr_matrix.hpp"
+#include "AFQMC/Numerics/csr_blas.hpp"
 #include "AFQMC/Numerics/ma_operations.hpp"
 
 #include "AFQMC/Utilities/type_conversion.hpp"
@@ -413,6 +414,14 @@ class SparseTensor
     bool transposed_vHS() const{return false;}
 
     bool fast_ph_energy() const { return false; }
+
+    boost::multi::array<ComplexType,2> getHSPotentials()
+    {
+      int nchol = global_number_of_cholesky_vectors();
+      boost::multi::array<ComplexType,2> HSPot({nchol,nchol});
+      csr::CSR2MA('T',Spvn,HSPot);
+      return HSPot;
+    }
 
   private:
 

@@ -42,7 +42,7 @@ namespace qmcplusplus
 {
 /** Read the xml specifify the driver for this QMC section
  *
- *  Copy ellision should result in just a move of the
+ *  Copy elision should result in just a move of the
  *  DriverAssemblyState
  */
 QMCDriverFactory::DriverAssemblyState QMCDriverFactory::readSection(int curSeries, xmlNodePtr cur)
@@ -155,13 +155,7 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::newQMCDriver(std::unique_p
     }
 
     branchEngine = last_driver->getBranchEngine();
-
-    //if the current qmc method is the same type and mode append_run is set true
-    if (das.new_run_type == last_driver->getRunType() && das.what_to_do.to_ulong() == last_driver->getDriverMode())
-      das.append_run = true;
   }
-  if (curSeries == 0)
-    das.append_run = false;
 
   //create a driver
   std::unique_ptr<QMCDriverInterface> new_driver =

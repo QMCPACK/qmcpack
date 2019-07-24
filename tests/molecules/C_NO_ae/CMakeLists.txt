@@ -67,9 +67,9 @@ IF (NOT QMC_CUDA)
                     )
 
  ELSE()
-    MESSAGE("Skipping C_NO_ae tests because the basis sets are not supported by complex build (QMC_COMPLEX=1)")
+    MESSAGE_VERBOSE("Skipping C_NO_ae tests because the basis sets are not supported by complex build (QMC_COMPLEX=1)")
  ENDIF()
 ELSE()
-    MESSAGE("Skipping C_NO_ae tests because the basis sets are not supported by CUDA build (QMC_CUDA=1)")
+    MESSAGE_VERBOSE("Skipping C_NO_ae tests because the basis sets are not supported by CUDA build (QMC_CUDA=1)")
 ENDIF()
 
