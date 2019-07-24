@@ -18,7 +18,6 @@
 
 namespace qmcplusplus
 {
-
 class MinimalWaveFunctionPool
 {
   const char* wf_input = R"(
@@ -56,10 +55,10 @@ public:
 
     return wp;
   }
-    
+
 private:
   Communicate* comm_;
 };
 
-}
+} // namespace qmcplusplus
 #endif
