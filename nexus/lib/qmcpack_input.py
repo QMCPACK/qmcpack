@@ -4790,7 +4790,7 @@ def generate_jastrows(jastrows,system=None,return_list=False,check_ions=False):
         if 'k' in jorders:
             kcut = max(system.rpa_kf())
             nksh = system.structure.count_kshells(kcut)
-            jterm = generate_kspace_jastrow(0, kcut, 0, nksh)
+            jterm = generate_kspace_jastrow(kc1=0, kc2=kcut, nk1=0, nk2=nksh)
         #end if
         jin.append(jterm)
         if len(jin)==0:
@@ -5260,7 +5260,7 @@ def generate_jastrow3(function='polynomial',esize=3,isize=3,rcut=4.,coeff=None,i
 #end def generate_jastrow3
 
 
-def generate_kspace_jastrow(kc1, kc2, nk1, nk2,
+def generate_kspace_jastrow(kc1=0, kc2=0, nk1=0, nk2=0,
   symm1='isotropic', symm2='isotropic', coeff1=None, coeff2=None):
   """ generate <jastrow type="kSpace">
 
