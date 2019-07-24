@@ -166,11 +166,11 @@ void QMCLinearOptimize::finish()
   app_log() << "  Execution time = " << std::setprecision(4) << t1.elapsed() << std::endl;
   app_log() << "  </log>" << std::endl;
 
-  if(optTarget->reportH5)
+  if (optTarget->reportH5)
     optTarget->reportParametersH5();
   optTarget->reportParameters();
 
-  
+
   int nw_removed = W.getActiveWalkers() - NumOfVMCWalkers;
   app_log() << "   Restore the number of walkers to " << NumOfVMCWalkers << ", removing " << nw_removed << " walkers."
             << std::endl;
@@ -215,9 +215,8 @@ void QMCLinearOptimize::generateSamples()
   app_log() << "  Execution time = " << std::setprecision(4) << t1.elapsed() << std::endl;
   app_log() << "</vmc>" << std::endl;
   //write parameter history and energies to the parameter file in the trial wave function through opttarget
-  EstimatorRealType e, w, var;
+  FullPrecRealType e, w, var;
   vmcEngine->Estimators->getEnergyAndWeight(e, w, var);
-  optTarget->recordParametersToPsi(e, var);
   //     NumOfVMCWalkers=W.getActiveWalkers();
   //branchEngine->Eref=vmcEngine->getBranchEngine()->Eref;
   //         branchEngine->setTrialEnergy(vmcEngine->getBranchEngine()->getEref());
@@ -825,24 +824,6 @@ bool QMCLinearOptimize::put(xmlNodePtr q)
   return success;
 }
 
-void QMCLinearOptimize::resetComponents(xmlNodePtr cur)
-{
-  std::string useGPU("yes");
-  optNode = cur;
-  m_param.put(cur);
-  if (optTarget)
-    delete optTarget;
-#if defined(QMC_CUDA)
-  if (useGPU == "yes")
-    optTarget = new QMCCostFunctionCUDA(W, Psi, H, myComm);
-  else
-#endif
-    optTarget = new QMCCostFunction(W, Psi, H, myComm);
-  optTarget->setStream(&app_log());
-  optTarget->put(cur);
-
-  //vmcEngine->resetComponents(cur);
-}
 bool QMCLinearOptimize::fitMappedStabilizers(std::vector<std::pair<RealType, RealType>>& mappedStabilizers,
                                              RealType& XS,
                                              RealType& val,

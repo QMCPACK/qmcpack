@@ -63,6 +63,9 @@ def parse_args(args, comm):
                             type=int, default=None,
                             help='Set upper limit on number of determinants to '
                             'generate.')
+        parser.add_argument('-r', '--real-ham', dest='real_chol',
+                            type=int, default=None,
+                            help='Write integrals as real numbers')
         parser.add_argument('-v', '--verbose', action='count', default=0,
                             help='Verbose output.')
 
@@ -125,7 +128,8 @@ def main(args):
                   qmc_input=options.qmc_input,
                   wfn_file=options.wfn_file,
                   write_hamil=(not options.disable_ham),
-                  ndet_max=options.ndet_max)
+                  ndet_max=options.ndet_max,
+                  real_chol=options.real_chol)
     if comm.rank == 0:
         write_metadata(options, sha1, cwd, date_time)
 

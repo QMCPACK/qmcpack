@@ -153,7 +153,7 @@ bool CountingJastrowBuilder::createCJ(xmlNodePtr cur)
   CJ->initialize();
 
   std::string cjname = "CJ_" + RegionOpt;
-  targetPsi.addOrbital(CJ, cjname.c_str());
+  targetPsi.addComponent(CJ, cjname.c_str());
   return true;
 }
 

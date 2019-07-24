@@ -284,7 +284,7 @@ bool WaveFunctionFactory::addFDLRTerm(xmlNodePtr cur)
       // TrialWaveFunction objects.
       FDLRWfn* fdlr_wfn = new FDLRWfn(psiFactoryWfn_d->targetPsi, psiFactoryWfn_x->targetPsi, *targetPtcl, opt_x, opt_d,
                                       singlet, triplet);
-      targetPsi->addOrbital(fdlr_wfn, "FDLRWfn", true);
+      targetPsi->addComponent(fdlr_wfn, "FDLRWfn");
 
       delete doc_x;
       delete doc_d;

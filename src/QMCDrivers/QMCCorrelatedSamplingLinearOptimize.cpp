@@ -210,10 +210,11 @@ bool QMCCorrelatedSamplingLinearOptimize::run()
     }
     if (MinMethod == "rescale")
     {
-      for (int i = 0; i < numParams; i++) {
-        //FIXME This std::real should be removed later when the optimizer starts to work with complex parameters 
+      for (int i = 0; i < numParams; i++)
+      {
+        //FIXME This std::real should be removed later when the optimizer starts to work with complex parameters
         optTarget->Params(i) = currentParameters[i] + Lambda * currentParameterDirections[i + 1];
-        bestParameters[i] = std::real(optTarget->Params(i));
+        bestParameters[i]    = std::real(optTarget->Params(i));
       }
       if (GEVtype == "H2")
         acceptedOneMove = true;

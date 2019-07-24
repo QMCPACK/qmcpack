@@ -152,6 +152,7 @@ class SimulationBundle(Simulation):
         time    = Job.zero_time()
         nodes   = 0
         cores   = 0
+        constraint = None
         thread_set = set()
         queue_set  = set()
         presub_set = set()
@@ -160,6 +161,7 @@ class SimulationBundle(Simulation):
             job = sim.job
             nodes += job.nodes
             cores += job.cores
+            constraint = job.constraint
             time    = job.max_time(time)
             machine = job.get_machine()
             machine_set.add(machine.name)
@@ -197,6 +199,7 @@ class SimulationBundle(Simulation):
             threads      = threads,
             machine      = machine,
             presub       = presub,
+            constraint   = constraint,
             **time
             )
     #end def bundle_jobs

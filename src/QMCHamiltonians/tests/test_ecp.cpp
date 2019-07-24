@@ -121,6 +121,11 @@ TEST_CASE("ReadFileBuffer_reopen", "[hamiltonian]")
   REQUIRE(buf.length > 14);
 }
 
+void copyGridUnrotatedForTest(NonLocalECPComponent& nlpp)
+{
+  nlpp.rrotsgrid_m = nlpp.sgridxyz_m;
+}
+
 TEST_CASE("Evaluate_ecp", "[hamiltonian]")
 {
   typedef QMCTraits::RealType RealType;
@@ -248,7 +253,7 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
   //This line is required because the randomized quadrature Lattice is set by
   //random number generator in NonLocalECPotential.  We take the unrotated
   //quadrature Lattice instead...
-  nlpp->rrotsgrid_m = nlpp->sgridxyz_m;
+  copyGridUnrotatedForTest(*nlpp);
 
 
   //Not testing nonlocal moves here, but the PP functions take this as an argument
@@ -284,7 +289,7 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
     const auto& dist  = myTable.Distances[jel];
     const auto& displ = myTable.Displacements[jel];
     for (int iat = 0; iat < ions.getTotalNum(); iat++)
-      if (nlpp != nullptr && dist[iat] < nlpp->Rmax)
+      if (nlpp != nullptr && dist[iat] < nlpp->getRmax())
       {
         Value1 += nlpp->evaluateOne(elec, iat, psi, jel, dist[iat], RealType(-1) * displ[iat], 0, Txy);
 
@@ -353,7 +358,7 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
     for (int nn = myTable.M[iat], iel = 0; nn < myTable.M[iat + 1]; nn++, iel++)
     {
       const RealType r(myTable.r(nn));
-      if (r > nlpp->Rmax)
+      if (r > nlpp->getRmax())
         continue;
       Value1 += nlpp->evaluateOne(elec, iat, psi, iel, r, myTable.dr(nn), 0, Txy);
     }
