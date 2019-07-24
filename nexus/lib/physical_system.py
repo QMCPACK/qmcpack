@@ -33,6 +33,7 @@
 #====================================================================#
 
 
+import numpy as np
 from numpy import dot,array
 from numpy.linalg import inv
 from generic import obj
@@ -637,12 +638,11 @@ class PhysicalSystem(Matter):
     #end def ae_pp_species
 
     def kf_rpa(self):
-      import numpy as np
       nelecs = self.particles.electron_counts()
       volume = self.structure.volume()
       kvol1 = (2*np.pi)**3/volume  # k-space volume per particle
       kfs = [(3*nelec*kvol1/(4*np.pi))**(1./3) for nelec in nelecs]
-      return kfs
+      return np.array(kfs)
     #end def kf_rpa
 #end class PhysicalSystem
 
