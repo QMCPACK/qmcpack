@@ -1,10 +1,22 @@
+/////////////////////////////////////////////////////////////////////////////////////////
+// This file is distributed under the University of Illinois / NCSA Open Source License.
+// See LICENSE file in top directory for details .
+//
+// Copyright ( c ) 2018 QMCPACK developers
+//
+// File developed by : Luke Shulenburger, lshulen@sandia.gov, Sandia National Laboratories
+//
+// File created by : Luke Shulenburger, lshulen@sandia.gov, Sandia National Laboratories
+/////////////////////////////////////////////////////////////////////////////////////////
+
 #include "XmlRep.h"
 #include <ctype.h>
 #include <stdio.h>
 #include <string.h>
 using namespace std;
 
-string xmlStream::getTagName(const string& tagstr, tagType type) const {
+string XmlStream::getTagName(const string& tagstr, tagType type) const 
+{
   string tagName;
   
   size_t spaceLoc = tagstr.find(" ");
@@ -16,85 +28,107 @@ string xmlStream::getTagName(const string& tagstr, tagType type) const {
   }
   
   int endChar = tagstr.size();
-  if (spaceLoc != string::npos) {
+  if (spaceLoc != string::npos) 
+  {
     endChar = spaceLoc;
   }
-  if (closeLoc < endChar && closeLoc != string::npos) {
+  if (closeLoc < endChar && closeLoc != string::npos) 
+  {
     endChar = closeLoc;
   }
-  if (slashLoc < endChar && slashLoc != string::npos) {
+  if (slashLoc < endChar && slashLoc != string::npos) 
+  {
     endChar = slashLoc;
   }
 
-  if (type == tagType::closing) {
+  if (type == tagType::closing) 
+  {
     endChar -= 2;
     tagName = tagstr.substr(2, endChar);  
-  } else {
+  } 
+  else 
+  {
     endChar -= 1;
     tagName = tagstr.substr(1, endChar);  
   }
   return tagName;
 }
 
-int xmlStream::startComment(long position, long length) const {
+int XmlStream::startComment(long position, long length) const 
+{
   int isCommentStart = 0;
-  std::streampos curLoc = stream->tellg();
-  if ((length - position) > 4) {
+  std::streampos curLoc = stream_->tellg();
+  if ((length - position) > 4) 
+  {
     char buf[4];
-    stream->read(buf, 4);
-    if (strncmp(buf, "<!--", 4) == 0) {
+    stream_->read(buf, 4);
+    if (strncmp(buf, "<!--", 4) == 0) 
+    {
       isCommentStart = 1;
     }
   }
-  stream->seekg(curLoc);
+  stream_->seekg(curLoc);
   return isCommentStart;
 }
 
-int xmlStream::endComment(long position, long length) const {
+int XmlStream::endComment(long position, long length) const 
+{
   int isCommentEnd = 0;
-  std::streampos curLoc = stream->tellg();
-  if ((length - position) > 3) {
+  std::streampos curLoc = stream_->tellg();
+  if ((length - position) > 3) 
+  {
     char buf[3];
-    stream->read(buf, 3);
-    if (strncmp(buf, "-->", 3) == 0) {
+    stream_->read(buf, 3);
+    if (strncmp(buf, "-->", 3) == 0) 
+    {
       isCommentEnd = 1;
     }
   }
-  stream->seekg(curLoc);
+  stream_->seekg(curLoc);
   return isCommentEnd;
 }
 
-int xmlStream::checkForPOD(const xmlElement& before, const xmlElement& after) const {
+int XmlStream::checkForPOD(const XmlElement& before, const XmlElement& after) const 
+{
   int foundPOD = 0;
-  std::streampos curLoc = stream->tellg();
+  std::streampos curLoc = stream_->tellg();
 
-  stream->seekg(before.endLoc);
+  stream_->seekg(before.endLoc);
 
   long length = after.startLoc - before.endLoc;
   long position = 0;
   char c;
   int inComment = 0;
-  while (foundPOD == 0 && position < length) {
-    c = stream->get();
-    if (!isspace(c)) {
+  while (foundPOD == 0 && position < length) 
+  {
+    c = stream_->get();
+    if (!isspace(c)) 
+    {
     //if (!isspace(c) && c != '\n') {
-      stream->unget();
+      stream_->unget();
       // if we're in a comment, check that we are not ending it
-      if (inComment == 1) {
-	if (endComment(position, length) == 1) {
+      if (inComment == 1) 
+      {
+	if (endComment(position, length) == 1) 
+        {
 	  // position ourselves after the end comment tag
-	  stream->seekg(3,std::ios_base::cur);
+	  stream_->seekg(3,std::ios_base::cur);
 	  position+=3;
 	  inComment = 0;
 	}
-      } else {
+      } 
+      else 
+      {
 	// if we're not in a comment, check that we aren't starting one
-	if (endComment(position,length) == 1) {
+	if (endComment(position,length) == 1) 
+        {
 	  // position ourselves after the comment tag
-	  stream->seekg(4,std::ios_base::cur);
+	  stream_->seekg(4,std::ios_base::cur);
 	  position+=4;
 	  inComment = 1;
-	} else {
+	} 
+        else 
+        {
 	  // we've found POD !!
 	  foundPOD = 1;
 	}
@@ -103,13 +137,14 @@ int xmlStream::checkForPOD(const xmlElement& before, const xmlElement& after) co
     position++;
   }
   
-  stream->seekg(curLoc);
+  stream_->seekg(curLoc);
   return foundPOD;
 }
 
 
 
-int xmlStream::addNextTag() {
+int XmlStream::addNextTag() 
+{
   std::streampos start;
   std::streampos end;
   char twoprev = '0';
@@ -126,48 +161,67 @@ int xmlStream::addNextTag() {
   
   int numSingleQuotes = 0;
   int numDoubleQuotes = 0;
-  while ((current = stream->get()) && current != EOF && closeCaretFound == 0) {
-    if (current == '<') {
-      if (prev != '\\') {
+  while ((current = stream_->get()) && current != EOF && closeCaretFound == 0) 
+  {
+    if (current == '<') 
+    {
+      if (prev != '\\') 
+      {
 	// we found a live start string
-	stream->unget();
-	start = stream->tellg();
-	stream->get();
+	stream_->unget();
+	start = stream_->tellg();
+	stream_->get();
 	openCaretFound = 1;
       }
-      char one = stream->get();
-      char two = stream->get();
-      char three = stream->get();
-      if (one == '\?') {
+      char one = stream_->get();
+      char two = stream_->get();
+      char three = stream_->get();
+      if (one == '\?') 
+      {
 	isProcessingInstruction = 1;
       }
-      if (one == '!' && two == '-' && three == '-') {
+      if (one == '!' && two == '-' && three == '-') 
+      {
 	isComment = 1;
       }
-      if (one == '/') {
+      if (one == '/') 
+      {
 	isClosingTag = 1;
       }
-      stream->unget(); stream->unget(); stream->unget();
+      stream_->unget(); stream_->unget(); stream_->unget();
     }
-    if (openCaretFound == 1) {
-      if (current == '\'') {
+    if (openCaretFound == 1) 
+      {
+      if (current == '\'') 
+      {
 	numSingleQuotes++;
-      } else if (current == '\"') {
+      } 
+      else if (current == '\"') 
+      {
 	numDoubleQuotes++;
-      } else if (current == '>') {
+      } 
+      else if (current == '>') 
+      {
 	// check that we aren't currently in a quoted section
-	if (numSingleQuotes % 2 == 0 && numDoubleQuotes % 2 == 0) {
+	if (numSingleQuotes % 2 == 0 && numDoubleQuotes % 2 == 0) 
+        {
 	  // check that this close caret isn't escaped
-	  if (prev != '\\') {
-	    if (isComment == 1) {
-	      if (prev == '-' && twoprev == '-') {
+	  if (prev != '\\') 
+          {
+	    if (isComment == 1) 
+            {
+	      if (prev == '-' && twoprev == '-') 
+              {
 		closeCaretFound = 1;
-		end = stream->tellg();
+		end = stream_->tellg();
 	      }
-	    } else {
+	    } 
+            else 
+            {
 	      closeCaretFound = 1;
-	      end = stream->tellg();
-	      if (prev == '/') {
+	      end = stream_->tellg();
+	      if (prev == '/') 
+              {
 		isSelfClosing = 1;
 	      }
 	    }
@@ -179,107 +233,142 @@ int xmlStream::addNextTag() {
     prev = current;
   }
   
-  if (current == EOF) {
-    stream->clear();
-    stream->seekg(0);
+  if (current == EOF) 
+  {
+    stream_->clear();
+    stream_->seekg(0);
     return -1;
   }
   
-  if (isProcessingInstruction == 0 && isComment == 0) {
-    xmlElement elem;
+  if (isProcessingInstruction == 0 && isComment == 0) 
+  {
+    XmlElement elem;
     elem.startLoc=start;
     elem.endLoc=end;
 
-    if (isSelfClosing == 1) {
+    if (isSelfClosing == 1) 
+    {
       elem.type = tagType::selfClosing;
-    } else if (isClosingTag == 1) {
+    } 
+    else if (isClosingTag == 1) 
+    {
       elem.type = tagType::closing;
-    } else {
+    } 
+    else 
+    {
       elem.type = tagType::opening;
     }
     elem.name = getTagName(getTag(elem), elem.type);
     elements.push_back(elem);
     return 1;
   }
-  if (isProcessingInstruction == 1 || isComment == 1) {
+  if (isProcessingInstruction == 1 || isComment == 1) 
+  {
     return 0;
   }
   return -1;
 }
 
-string xmlStream::getStreamSection(const std::streampos& start, const std::streampos& end) const {
+string XmlStream::getStreamSection(const std::streampos& start, const std::streampos& end) const 
+{
   // save current place in the stream
-  std::streampos curLoc = stream->tellg();
+  std::streampos curLoc = stream_->tellg();
 
   char* buffer = new char[end - start];
-  stream->seekg(start);
-  stream->read(buffer,end-start);
+  stream_->seekg(start);
+  stream_->read(buffer,end-start);
   string result(buffer, end-start);
   delete[] buffer;
   
   // go back to current place in the stream
-  stream->seekg(curLoc);
+  stream_->seekg(curLoc);
   return result;  
 }
 
-void xmlStream::findChildElements(int start, vector<int>& childIndices, int& podIndex) const {
+void XmlStream::findChildElements(int start, vector<int>& childIndices, int& podIndex) const 
+{
   int index = start+1;
   int level = 1;
 
-  while (index < elements.size() && level > 0) {
+  while (index < elements.size() && level > 0) 
+  {
     const tagType tt = elements[index].type;
-    if (tt == tagType::opening) {
-      if (level == 1) {
+    if (tt == tagType::opening) 
+    {
+      if (level == 1) 
+      {
 	childIndices.push_back(index);
       }
       level++;
-    } else if (tt == tagType::closing) {
+    } 
+    else if (tt == tagType::closing) 
+    {
       level--;
-    } else if (tt == tagType::selfClosing) {
-      if (level == 1) {
+    } 
+    else if (tt == tagType::selfClosing) 
+    {
+      if (level == 1) 
+      {
 	childIndices.push_back(index);
       }
-    } else if (tt == tagType::pod) {
-      if (level == 1) {
+    } 
+    else if (tt == tagType::pod) 
+    {
+      if (level == 1) 
+      {
 	podIndex = index;
       }
-    } else {
-      //cout << "There is an error, in findChildElements and the xmlElement at index: " << index << " did not have a recognized tag type" << endl;
+    } 
+    else 
+    {
+      //cout << "There is an error, in findChildElements and the XmlElement at index: " << index << " did not have a recognized tag type" << endl;
       exit(1);
     }
     index++;
   }
 }
   
-void xmlStream::listAll() const {
-  for (int i = 0; i < elements.size(); i++) {
+void XmlStream::listAll() const 
+{
+  for (int i = 0; i < elements.size(); i++) 
+  {
     std::cout << i << "   ";
     tagType tt = elements[i].type;
-    if (tt == tagType::opening) {
+    if (tt == tagType::opening) 
+    {
       std::cout << "opening, name = " << elements[i].name << std::endl;
-    } else if (tt == tagType::closing) {
+    } 
+    else if (tt == tagType::closing) 
+    {
       std::cout << "closing, name = " << elements[i].name << std::endl;
-    } else if (tt == tagType::selfClosing) {
+    } 
+    else if (tt == tagType::selfClosing) 
+    {
       std::cout << "selfClosing, name = " << elements[i].name << std::endl;
-    } else if (tt == tagType::pod) {
+    } 
+    else if (tt == tagType::pod) 
+    {
       std::cout << "POD" << std::endl;
     }
   }
 }
 
-xmlStream::xmlStream(std::istream* is) : stream(is) {
+XmlStream::XmlStream(std::istream* is) : stream_(is) 
+{
   // on first pass, try to find all of the tags and encode their names
   while(addNextTag() != -1) { }
   
   //now go through and look at space between live tags and see if there is POD there
-  std::vector<xmlElement> tags;
+  std::vector<XmlElement> tags;
   elements.swap(tags);
   
   elements.push_back(tags[0]);
-  for (int i = 1; i < tags.size(); i++) {
-    if (checkForPOD(tags[i-1],tags[i]) == 1) {
+  for (int i = 1; i < tags.size(); i++) 
+  {
+    if (checkForPOD(tags[i-1],tags[i]) == 1) 
+    {
       // add POD element
-      xmlElement podElem;
+      XmlElement podElem;
       podElem.startLoc = tags[i-1].endLoc;
       podElem.endLoc = tags[i].startLoc;
       podElem.type = tagType::pod;
@@ -290,31 +379,36 @@ xmlStream::xmlStream(std::istream* is) : stream(is) {
 }
   
   
-string xmlStream::getTag(const xmlElement& e) const {
+string XmlStream::getTag(const XmlElement& e) const 
+{
   return getStreamSection(e.startLoc, e.endLoc);
 }
 
-string xmlStream::getTag(int i) const {
-  if (i >= elements.size()) {
+string XmlStream::getTag(int i) const 
+{
+  if (i >= elements.size()) 
+  {
     cerr << "requested a tag index past the end of the vector" << endl;
     exit(1);
   }
   return getTag(elements[i]);
 }
 
-void xmlNode::readToString(std::string& s) const {
-  if (valueDeferred) {
-    std::streampos curLoc = stream->tellg();
+void XmlNode::readToString(std::string& s) const 
+{
+  if (valueDeferred_) 
+  {
+    std::streampos curLoc = stream_->tellg();
     
-    char* buffer = new char[podEnd - podStart];
-    stream->seekg(podStart);
-    stream->read(buffer,podEnd-podStart);
+    char* buffer = new char[podEnd_ - podStart_];
+    stream_->seekg(podStart_);
+    stream_->read(buffer,podEnd_-podStart_);
     
-    s.assign(buffer,podEnd-podStart);
+    s.assign(buffer,podEnd_-podStart_);
     delete[] buffer;
 
     // go back to current place in the stream
-    stream->seekg(curLoc);
+    stream_->seekg(curLoc);
     
     // now strip out any xml comments
     std::stringstream ss;
@@ -323,164 +417,204 @@ void xmlNode::readToString(std::string& s) const {
     int commentEnd = 0;
 
     // if we find a comment, will put everything but the comments in ss
-    while (s.find("<!--",commentEnd) != string::npos) {
+    while (s.find("<!--",commentEnd) != string::npos) 
+    {
       commentStart = s.find("<!--",commentEnd);
       ss << s.substr(commentEnd, commentStart-commentEnd);
       commentEnd = s.find("-->",commentStart);
     }
     // this means we didn't find a comment, so the string s is OK to return
-    if (commentStart == -1) {
+    if (commentStart == -1) 
+    {
       return;
-    } else {
+    } 
+    else 
+    {
       // we found comments and we're putting everything after the last comment in ss
       ss << s.substr(commentEnd+3, s.size()-commentEnd-3);
     }
     s = ss.str();
-  } else {
-    s = value;
+  } 
+  else 
+  {
+    s = value_;
   }
 }
 
 // note, will return only the first child index that matches!
-int xmlNode::getChildIndex(const string& childName, int strict) const {
+int XmlNode::getChildIndex(const string& childName, int strict) const 
+{
   int index = -1;
-  for (int i = 0; i < children.size(); i++) {
-    if (children[i].getName() == childName) {
+  for (int i = 0; i < children_.size(); i++) 
+  {
+    if (children_[i].getName() == childName) 
+    {
       index = i;
     }
   }
-  if (strict != 0 && index < 0) {
-    cerr << "In xmlNode with name: " << name << ", could not find index for child with name: " << childName << endl;
+  if (strict != 0 && index < 0) 
+  {
+    cerr << "In XmlNode with name: " << name_ << ", could not find index for child with name: " << childName << endl;
     exit(1);
   }
   return index;
 }
 
-xmlNode& xmlNode::getChild(const string& name) {
+XmlNode& XmlNode::getChild(const string& name) 
+{
   return getChild(getChildIndex(name, 1));
 }		  
 
-const xmlNode& xmlNode::getChild(const string& name) const {
+const XmlNode& XmlNode::getChild(const string& name) const 
+{
   return getChild(getChildIndex(name, 1));
 }		  
 
-xmlNode& xmlNode::getChild(int i) {
-  if (i < 0 || i >= children.size()) {
+XmlNode& XmlNode::getChild(int i) 
+{
+  if (i < 0 || i >= children_.size()) 
+  {
     cerr << "Asked to get child node: " << i << ", but there are only " << getNumChildren() << "nodes" << endl;
     exit(1);
   }
-  return children[i];
+  return children_[i];
 }
 
-const xmlNode& xmlNode::getChild(int i) const {
-  if (i < 0 || i >= children.size()) {
+const XmlNode& XmlNode::getChild(int i) const 
+{
+  if (i < 0 || i >= children_.size()) 
+  {
     cerr << "Asked to get child node: " << i << ", but there are only " << getNumChildren() << "nodes" << endl;
     exit(1);
   }
-  return children[i];
+  return children_[i];
 }
 
-int xmlNode::getAttributeIndex(const string& attrName, int strict) const {
+int XmlNode::getAttributeIndex(const string& attrName, int strict) const 
+{
   int index = -1;
-  for (int i = 0; i < attributes.size(); i++) {
-    if (attributes[i].first == attrName) {
+  for (int i = 0; i < attributes_.size(); i++) 
+  {
+    if (attributes_[i].first == attrName) 
+    {
       index = i;
     }
   }
-  if (strict != 0 && index < 0) {
-    cerr << "In xmlNode with name: " << name << ", could not find index for attribute with name: " << attrName << endl;
+  if (strict != 0 && index < 0) 
+  {
+    cerr << "In XmlNode with name: " << name_ << ", could not find index for attribute with name: " << attrName << endl;
     exit(1);
   }
   return index;
 }
 
-string xmlNode::getAttributeName(int index) const {
-  return attributes[index].first;
+string XmlNode::getAttributeName(int index) const 
+{
+  return attributes_[index].first;
 }
 
-string xmlNode::getAttribute(int index) const {
-  if (index < 0 || index >= attributes.size()) {
-    cerr << "in xmlNode with name: " << name << ", requested attribute with index " << index << ", but this index is not present." << endl;
+string XmlNode::getAttribute(int index) const 
+{
+  if (index < 0 || index >= attributes_.size()) 
+  {
+    cerr << "in XmlNode with name: " << name_ << ", requested attribute with index " << index << ", but this index is not present." << endl;
     exit(1);
   } 
-  return attributes[index].second;
+  return attributes_[index].second;
 }
 
-string xmlNode::getAttribute(const string& name) const {
-  return attributes[getAttributeIndex(name, 1)].second;
+string XmlNode::getAttribute(const string& name) const 
+{
+  return attributes_[getAttributeIndex(name, 1)].second;
 }
 
-string xmlNode::getAttribute(const char* name) const {
+string XmlNode::getAttribute(const char* name) const 
+{
   string sname(name);
   return getAttribute(sname);
 }
 
-std::string xmlNode::getValue() const {
-  if (valueDeferred) {
+std::string XmlNode::getValue() const 
+{
+  if (valueDeferred_) 
+  {
     std::string val;
     readToString(val);
     return val;
   }
-  return value;
+  return value_;
 }
 
-int xmlNode::getValueSize() const {
-  if (valueDeferred) {
-    return (podEnd - podStart);
+int XmlNode::getValueSize() const 
+{
+  if (valueDeferred_) 
+  {
+    return (podEnd_ - podStart_);
   }
-  return value.size();
+  return value_.size();
 }
 
-xmlNode& xmlNode::addChild(const xmlNode& nd) {
-  children.push_back(nd);
-  return children.back();
+XmlNode& XmlNode::addChild(const XmlNode& nd) 
+{
+  children_.push_back(nd);
+  return children_.back();
 }
 
-xmlNode& xmlNode::addChild() {
-  xmlNode nd;
-  children.push_back(nd);
-  return children.back();
+XmlNode& XmlNode::addChild() 
+{
+  XmlNode nd;
+  children_.push_back(nd);
+  return children_.back();
 }
 
 // removes whitespace at the beginning and end of a string
-string xmlNode::trimWhitespace(const string& str) const {
+string XmlNode::trimWhitespace(const string& str) const 
+{
   size_t first = str.find_first_not_of(" \n\t\v\f\r");
-  if (string::npos == first) {
+  if (string::npos == first) 
+  {
     return string("");
   }
   size_t last = str.find_last_not_of(" \n\t\v\f\r");
   return str.substr(first, (last - first + 1));
 }
 
-void xmlNode::handleTagString(const xmlStream& xs, int loc) {
-  const xmlElement& elem = xs.elements[loc];
-  name = elem.name;
+void XmlNode::handleTagString(const XmlStream& xs, int loc) 
+{
+  const XmlElement& elem = xs.elements[loc];
+  name_ = elem.name;
   string tagstr = xs.getTag(elem);
-  if (elem.type == tagType::selfClosing) {
-    isSelfClosing = true;
-  } else {
-    isSelfClosing = false;
+  if (elem.type == tagType::selfClosing) 
+  {
+    isSelfClosing_ = true;
+  } 
+  else 
+  {
+    isSelfClosing_ = false;
   }
   
   // take everything after the name
-  string decliningstring = tagstr.substr(tagstr.find(name)+name.size()+1);
+  string decliningstring = tagstr.substr(tagstr.find(name_)+name_.size()+1);
   
   // remove trailing > or /> if appropriate and trim whitespace from left and right ends
   int numToRemove = 1;
-  if (isSelfClosing) {
+  if (isSelfClosing_) 
+  {
     numToRemove++;
   }
   decliningstring = decliningstring.substr(0,decliningstring.size()-numToRemove);
   decliningstring = trimWhitespace(decliningstring);
   
-  while(decliningstring.size() > 1) {
+  while(decliningstring.size() > 1) 
+  {
     attrpair att;
     getNextKeyVal(decliningstring, att.first, att.second);
-    attributes.push_back(att);
+    attributes_.push_back(att);
   }
 }
 
-void xmlNode::getNextKeyVal(string& contentstr, string& key, string& val) const {
+void XmlNode::getNextKeyVal(string& contentstr, string& key, string& val) const 
+{
   size_t breakone = getPosNextLiveChar(contentstr, '=');
 
   key = contentstr.substr(0,breakone);
@@ -489,12 +623,14 @@ void xmlNode::getNextKeyVal(string& contentstr, string& key, string& val) const 
   contentstr = contentstr.substr(breakone+1);
  
   size_t firstquote = getPosNextLiveChar(contentstr, '\"');
-  if (firstquote == string::npos) {
+  if (firstquote == string::npos) 
+  {
     firstquote = getPosNextLiveChar(contentstr, '\'');
   }
   contentstr = contentstr.substr(firstquote+1);
   size_t secondquote = getPosNextLiveChar(contentstr, '\"');
-  if (secondquote == string::npos) {
+  if (secondquote == string::npos) 
+  {
     secondquote = getPosNextLiveChar(contentstr, '\'');
   }
   val = contentstr.substr(0,secondquote);
@@ -503,13 +639,19 @@ void xmlNode::getNextKeyVal(string& contentstr, string& key, string& val) const 
   contentstr = contentstr.substr(secondquote+1);
 }
 
-size_t xmlNode::getPosNextLiveChar(const std::string& str, char c) const {
+size_t XmlNode::getPosNextLiveChar(const std::string& str, char c) const 
+{
   size_t index = string::npos;
-  if (str[0] == c) {
+  if (str[0] == c) 
+  {
     index = 0;
-  } else {
-    for(int i = 1; i < str.size(); i++) {
-      if (str[i] == c && str[i-1] != '\\') {
+  } 
+  else 
+  {
+    for(int i = 1; i < str.size(); i++) 
+    {
+      if (str[i] == c && str[i-1] != '\\') 
+      {
 	index = i;
 	break;
       }
@@ -518,109 +660,134 @@ size_t xmlNode::getPosNextLiveChar(const std::string& str, char c) const {
   return index;
 }
 
-std::string xmlNode::getInStr(int is) const {
+std::string XmlNode::getInStr(int is) const 
+{
   std::stringstream ss;
-  for (int i = 0; i < is; i++) {
+  for (int i = 0; i < is; i++) 
+  {
     ss << " ";
   }
   return ss.str(); 
 }
 
-void xmlNode::write(ostream& os, int indentLevel) const {
+void XmlNode::write(ostream& os, int indentLevel) const 
+{
   string str = getString(indentLevel);
   os << str;
 }
 
-string xmlNode::getString(int indentLevel) const {
+string XmlNode::getString(int indentLevel) const 
+{
   stringstream ss;
   ss << getInStr(indentLevel);
-  ss << "<" << name;
+  ss << "<" << name_;
   
-  for (int i = 0; i < attributes.size(); i++) {
-    ss << " " << attributes[i].first << "=\"" << attributes[i].second << "\"";
+  for (int i = 0; i < attributes_.size(); i++) 
+  {
+    ss << " " << attributes_[i].first << "=\"" << attributes_[i].second << "\"";
   }
-  if (isSelfClosing == 1) {
+  if (isSelfClosing_ == 1) 
+  {
     ss << "/>" << endl;
     return ss.str();
-  } else {
+  } 
+  else 
+  {
     ss << ">";
   } 
-  if (valInline) {
-    ss << getValue() << "</" << name << ">" << endl;
-  } else {
+  if (valInline_) 
+  {
+    ss << getValue() << "</" << name_ << ">" << endl;
+  } 
+  else 
+  {
     ss << endl;
-    for (int i = 0; i < children.size(); i++) {
-      ss << children[i].getString(indentLevel+2);
+    for (int i = 0; i < children_.size(); i++) 
+    {
+      ss << children_[i].getString(indentLevel+2);
     }
     
     if(getValueSize() > 0) ss << getInStr(indentLevel+2) << getValue() << endl;
-    ss << getInStr(indentLevel) << "</" << name << ">" << endl;
+    ss << getInStr(indentLevel) << "</" << name_ << ">" << endl;
   }
   return ss.str();
 }
 
-xmlNode::xmlNode(const xmlNode& c) : stream(c.stream) {
-  isSelfClosing = c.isSelfClosing;
-  name = c.name;
-  attributes = c.attributes;
-  valInline = c.valInline;
-  value = c.value;
-  valueDeferred = c.valueDeferred;
-  podStart = c.podStart;
-  podEnd = c.podEnd;
-  children = c.children;
+XmlNode::XmlNode(const XmlNode& c) : stream_(c.stream_) 
+{
+  isSelfClosing_ = c.isSelfClosing_;
+  name_ = c.name_;
+  attributes_ = c.attributes_;
+  valInline_ = c.valInline_;
+  value_ = c.value_;
+  valueDeferred_ = c.valueDeferred_;
+  podStart_ = c.podStart_;
+  podEnd_ = c.podEnd_;
+  children_ = c.children_;
 }
 
-xmlNode::xmlNode(istream* _stream, int start, bool deferValue) : stream(_stream) {
-  xmlStream xl(_stream);
+XmlNode::XmlNode(istream* _stream, int start, bool deferValue) : stream_(_stream) 
+{
+  XmlStream xl(_stream);
   //cout << "Finished creating stream object" << endl;
   //xl.listAll();
   createFromStream(xl, start, deferValue);
 }
 
-xmlNode::xmlNode(const xmlStream& xstream, std::istream* const _stream, int start, bool deferValue) : stream(_stream) {
+XmlNode::XmlNode(const XmlStream& xstream, std::istream* const _stream, int start, bool deferValue) : stream_(_stream) 
+{
   createFromStream(xstream, start, deferValue);
 }
 
-void xmlNode::createFromStream(const xmlStream& xstream, int start, bool deferValue) {
-  valueDeferred = deferValue;
+void XmlNode::createFromStream(const XmlStream& xstream, int start, bool deferValue) 
+{
+  valueDeferred_ = deferValue;
 
   // this will populate the name and attributes
   handleTagString(xstream, start);
   tagType tt = xstream.elements[start].type;
-  if (tt == tagType::selfClosing) {
+  if (tt == tagType::selfClosing) 
+  {
     // if self closing, then there is not POD and we are at the end
-    isSelfClosing = true;
-  } else {
+    isSelfClosing_ = true;
+  } 
+  else 
+  {
     // otherwise need to look for POD and subtags
-    isSelfClosing = false;
+    isSelfClosing_ = false;
 
     vector<int> childIndices;
     int podIndex = -1;
     xstream.findChildElements(start, childIndices, podIndex);
 
     // if no children, try to put and POD inline
-    if (childIndices.size() == 0) {
-      valInline = true;
-    } else {
-      valInline = false;
+    if (childIndices.size() == 0) 
+    {
+      valInline_ = true;
+    } 
+    else 
+    {
+      valInline_ = false;
     }
 
     // deal with POD if it exists
-    if (podIndex > 0) {
-      podStart = xstream.elements[podIndex].startLoc;
-      podEnd = xstream.elements[podIndex].endLoc;
-      if (valueDeferred == false) {
-	valueDeferred = true;
-	readToString(value);
-	valueDeferred = false;
+    if (podIndex > 0) 
+    {
+      podStart_ = xstream.elements[podIndex].startLoc;
+      podEnd_ = xstream.elements[podIndex].endLoc;
+      if (valueDeferred_ == false) 
+      {
+	valueDeferred_ = true;
+	readToString(value_);
+	valueDeferred_ = false;
       }
     }
 
-    // now sequentially create xmlNodes from subelements and add them to children vector
-    for (int i = 0; i < childIndices.size(); i++) {
-      xmlNode child(xstream, this->stream, childIndices[i], valueDeferred);
-      children.push_back(child);
+    // now sequentially create XmlNodes from subelements and add them to children vector
+    for (int i = 0; i < childIndices.size(); i++) 
+    {
+      XmlNode child(xstream, this->stream_, childIndices[i], valueDeferred_);
+      children_.push_back(child);
     }
   }
   

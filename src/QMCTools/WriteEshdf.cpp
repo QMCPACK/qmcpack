@@ -1,3 +1,14 @@
+/////////////////////////////////////////////////////////////////////////////////////////
+// This file is distributed under the University of Illinois / NCSA Open Source License.
+// See LICENSE file in top directory for details .
+//
+// Copyright ( c ) 2018 QMCPACK developers
+//
+// File developed by : Luke Shulenburger, lshulen@sandia.gov, Sandia National Laboratories
+//
+// File created by : Luke Shulenburger, lshulen@sandia.gov, Sandia National Laboratories
+/////////////////////////////////////////////////////////////////////////////////////////
+
 #include "WriteEshdf.h"
 #include "XmlRep.h"
 #include "FftContainer.h"
@@ -5,29 +16,38 @@
 #include <sstream>
 #include <map>
 using namespace std;
-using namespace hdfHelper;
+using namespace hdfhelper;
 
-class kpoint {
+class KPoint 
+{
 public:
   double kx;
   double ky;
   double kz;
-  kpoint() { kx = 0; ky = 0; kz = 0; }
-  kpoint(double x, double y, double z) { kx = x; ky = y; kz = z; }
-  kpoint(const kpoint& kp) { kx = kp.kx; ky = kp.ky; kz = kp.kz; }
-  kpoint& operator=(const kpoint& kp) { kx = kp.kx; ky = kp.ky; kz = kp.kz; return *this; }
-  bool operator==(const kpoint& kp) const {
-    if ((std::abs(kx-kp.kx) < 1e-7) && (std::abs(ky-kp.ky) < 1e-7) && (std::abs(kz-kp.kz) < 1e-7)) {
+  KPoint() { kx = 0; ky = 0; kz = 0; }
+  KPoint(double x, double y, double z) { kx = x; ky = y; kz = z; }
+  KPoint(const KPoint& kp) { kx = kp.kx; ky = kp.ky; kz = kp.kz; }
+  KPoint& operator=(const KPoint& kp) { kx = kp.kx; ky = kp.ky; kz = kp.kz; return *this; }
+  bool operator==(const KPoint& kp) const 
+  {
+    if ((std::abs(kx-kp.kx) < 1e-7) && (std::abs(ky-kp.ky) < 1e-7) && (std::abs(kz-kp.kz) < 1e-7)) 
+    {
       return true;
     }
     return false;
   }
-  bool operator<(const kpoint& kp) const {
-    if (abs(kx-kp.kx) > 1e-7) {
+  bool operator<(const KPoint& kp) const 
+  {
+    if (abs(kx-kp.kx) > 1e-7) 
+    {
       return kx < kp.kx;
-    } else if (abs(ky-kp.ky) > 1e-7) {
+    } 
+    else if (abs(ky-kp.ky) > 1e-7) 
+    {
       return ky < kp.ky;
-    } else if (abs(kz-kp.kz) > 1e-7) {
+    } 
+    else if (abs(kz-kp.kz) > 1e-7) 
+    {
       return kz < kp.kz;
     }
     return false;
@@ -35,41 +55,52 @@ public:
 };
 
 
-eshdfFile::eshdfFile(const string& hdfFileName) {
-  file = H5Fcreate(hdfFileName.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+EshdfFile::EshdfFile(const string& hdfFileName) 
+{
+  file_ = H5Fcreate(hdfFileName.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
 }
 
-eshdfFile::~eshdfFile() {
-  H5Fclose(file);
+EshdfFile::~EshdfFile() 
+{
+  H5Fclose(file_);
 }
 
 
-int eshdfFile::wrapped(int i, int size) const {
-  if (i < size/2) {
+int EshdfFile::wrapped(int i, int size) const 
+{
+  if (i < size/2) 
+  {
     return i;
-  } else {
+  } 
+  else 
+  {
     return wrapped(i-size, size);
   }
 }
 
-double eshdfFile::getOccupation(const xmlNode* nd) const {
+double EshdfFile::getOccupation(const XmlNode* nd) const 
+{
   double result = 0.0;
   vector<double> occupancies;
-  const xmlNode& densMat = nd->getChild("density_matrix");
+  const XmlNode& densMat = nd->getChild("density_matrix");
   densMat.getValue(occupancies);
-  for (int i = 0; i < occupancies.size(); i++) {
+  for (int i = 0; i < occupancies.size(); i++) 
+  {
     result += occupancies[i];
   }
   return result;
 }
 
-void eshdfFile::handleSpinGroup(const xmlNode* nd, hid_t groupLoc, double& nocc, fftContainer& cont) {
+void EshdfFile::handleSpinGroup(const XmlNode* nd, hid_t groupLoc, double& nocc, FftContainer& cont) 
+{
   nocc = getOccupation(nd);
   int stateCounter = 0;
   vector<double> eigvals;
 
-  for (int chIdx = 0; chIdx < nd->getNumChildren(); chIdx++) {
-    if (nd->getChild(chIdx).getName() == "grid_function") {
+  for (int chIdx = 0; chIdx < nd->getNumChildren(); chIdx++) 
+  {
+    if (nd->getChild(chIdx).getName() == "grid_function") 
+    {
       //cout << "Working on state " << stateCounter << endl;
       stringstream statess;
       statess << "state_" << stateCounter;
@@ -78,13 +109,14 @@ void eshdfFile::handleSpinGroup(const xmlNode* nd, hid_t groupLoc, double& nocc,
       // HACK_HACK_HACK!!!
       eigvals.push_back(-5000.0+stateCounter);
 
-      const xmlNode& eigFcnNode = nd->getChild(chIdx);
+      const XmlNode& eigFcnNode = nd->getChild(chIdx);
       readInEigFcn(eigFcnNode, cont);
       // write eigfcn to proper place
       hsize_t psig_dims[]={static_cast<hsize_t>(cont.fullSize),2};
 
       vector<double> temp;
-      for (int i = 0; i < cont.fullSize; i++) {
+      for (int i = 0; i < cont.fullSize; i++) 
+      {
 	temp.push_back(cont.kspace[i][0]);
 	temp.push_back(cont.kspace[i][1]);
       }
@@ -97,11 +129,13 @@ void eshdfFile::handleSpinGroup(const xmlNode* nd, hid_t groupLoc, double& nocc,
   writeNumsToHDF("eigenvalues", eigvals, groupLoc);
 }
 
-void eshdfFile::readInEigFcn(const xmlNode& nd, fftContainer& cont) {
+void EshdfFile::readInEigFcn(const XmlNode& nd, FftContainer& cont) 
+{
   const string type = nd.getAttribute("type");
   const string encoding = nd.getAttribute("encoding");
   
-  if (encoding != "text") {
+  if (encoding != "text") 
+  {
     cerr << "Don't yet know how to handle encoding of wavefunction values other than text" << endl;
     exit(1);
   }
@@ -109,11 +143,15 @@ void eshdfFile::readInEigFcn(const xmlNode& nd, fftContainer& cont) {
   vector<double> values;
   nd.getValue(values);
   const double fixnorm = 1/std::sqrt(static_cast<double>(cont.fullSize));
-  if (type == "complex") {
+  if (type == "complex") 
+  {
     int index = 0;
-    for (int ix = 0; ix < cont.getNx(); ix++) {
-      for (int iy = 0; iy < cont.getNy(); iy++) {
-	for (int iz = 0; iz < cont.getNz(); iz++) {
+    for (int ix = 0; ix < cont.getNx(); ix++) 
+    {
+      for (int iy = 0; iy < cont.getNy(); iy++) 
+      {
+	for (int iz = 0; iz < cont.getNz(); iz++) 
+        {
 	  const int qbx = cont.getQboxIndex(ix,iy,iz);
 	  cont.rspace[index][0] = values[2*qbx]*fixnorm;
 	  cont.rspace[index][1] = values[2*qbx+1]*fixnorm;
@@ -121,11 +159,16 @@ void eshdfFile::readInEigFcn(const xmlNode& nd, fftContainer& cont) {
 	}
       }
     }
-  } else if (type == "double") {
+  } 
+  else if (type == "double") 
+  {
     int index = 0;
-    for (int ix = 0; ix < cont.getNx(); ix++) {
-      for (int iy = 0; iy < cont.getNy(); iy++) {
-	for (int iz = 0; iz < cont.getNz(); iz++) {
+    for (int ix = 0; ix < cont.getNx(); ix++) 
+    {
+      for (int iy = 0; iy < cont.getNy(); iy++) 
+      {
+	for (int iz = 0; iz < cont.getNz(); iz++) 
+        {
 	  const int qbx = cont.getQboxIndex(ix,iy,iz);
 	  cont.rspace[index][0] = values[qbx] * fixnorm;
 	  cont.rspace[index][1] = 0.0;
@@ -140,10 +183,11 @@ void eshdfFile::readInEigFcn(const xmlNode& nd, fftContainer& cont) {
   //cout << "in readInEigFcn, after fft, k space L2 norm = " << cont.getL2NormKS() << endl;
 }
 
-void eshdfFile::writeApplication(const string& appName, int major, int minor, int sub) {
+void EshdfFile::writeApplication(const string& appName, int major, int minor, int sub) 
+{
   vector<int> version{major, minor, sub};
 
-  hid_t h_app = makeHDFGroup("application", file);
+  hid_t h_app = makeHDFGroup("application", file_);
   { 
     writeStringToHDF("code", appName, h_app);
     writeNumsToHDF("version", version, h_app);
@@ -151,27 +195,31 @@ void eshdfFile::writeApplication(const string& appName, int major, int minor, in
 }
 
 
-void eshdfFile::writeVersion() {
+void EshdfFile::writeVersion() 
+{
   vector<int> version{2,1,0};
-  writeNumsToHDF("version", version, file);
+  writeNumsToHDF("version", version, file_);
 }
 
-void eshdfFile::writeCreator() {
+void EshdfFile::writeCreator() 
+{
   string nameStr("creator");
   vector<int> version{0,1,0};
-  hid_t h_creator = makeHDFGroup("creator", file);
+  hid_t h_creator = makeHDFGroup("creator", file_);
   {
     writeStringToHDF("program_name", "qboxConverter", h_creator);
     writeNumsToHDF("version", version, h_creator);
   }
 }
 
-void eshdfFile::writeFormat() {
-  writeStringToHDF("format", "ES-HDF", file);
+void EshdfFile::writeFormat() 
+{
+  writeStringToHDF("format", "ES-HDF", file_);
 }
 
-void eshdfFile::writeBoilerPlate(const string& appName, const xmlNode& qboxSample) {
-  const xmlNode& description = qboxSample.getChild("description");
+void EshdfFile::writeBoilerPlate(const string& appName, const XmlNode& qboxSample) 
+{
+  const XmlNode& description = qboxSample.getChild("description");
   string desString = description.getValue();
   int versionStart = desString.find("qbox-");
   versionStart += 5;
@@ -189,41 +237,46 @@ void eshdfFile::writeBoilerPlate(const string& appName, const xmlNode& qboxSampl
   writeFormat();
 }
 
-void eshdfFile::writeSupercell(const xmlNode& qboxSample) {
+void EshdfFile::writeSupercell(const XmlNode& qboxSample) 
+{
   // grab the primitive translation vectors from the atomset tag's attributes and put the entries in the vector ptvs
-  const xmlNode& atomset = qboxSample.getChild("atomset");
-  const xmlNode& unit_cell = atomset.getChild("unit_cell");
+  const XmlNode& atomset = qboxSample.getChild("atomset");
+  const XmlNode& unit_cell = atomset.getChild("unit_cell");
 
   stringstream ss;
   ss << unit_cell.getAttribute("a") << "  " << unit_cell.getAttribute("b") << "  " << unit_cell.getAttribute("c");
 
   vector<double> ptvs;
   double temp;
-  while (ss >> temp) {
+  while (ss >> temp) 
+  {
     ptvs.push_back(temp);
   }
 
   // write the ptvs to the supercell group of the hdf file
-  hid_t supercell_group = makeHDFGroup("supercell", file);
+  hid_t supercell_group = makeHDFGroup("supercell", file_);
   hsize_t dims[]={3,3};
   writeNumsToHDF("primitive_vectors", ptvs, supercell_group, 2, dims);  
 }
 
 
-void eshdfFile::writeAtoms(const xmlNode& qboxSample) {
-  const xmlNode& atomset = qboxSample.getChild("atomset");
+void EshdfFile::writeAtoms(const XmlNode& qboxSample) 
+{
+  const XmlNode& atomset = qboxSample.getChild("atomset");
 
   //make group
-  hid_t atoms_group = makeHDFGroup("atoms", file);
+  hid_t atoms_group = makeHDFGroup("atoms", file_);
   
   map<string, int> SpeciesNameToInt;  
   //go through each species, extract: 
   //   atomic_number, mass, name, pseudopotential and valence_charge
   //   then write to a file, also set up mapping between species name and number
   int speciesNum = 0;
-  for (int i = 0; i < atomset.getNumChildren(); i++) {
-    if (atomset.getChild(i).getName() == "species") {
-      const xmlNode& species = atomset.getChild(i);
+  for (int i = 0; i < atomset.getNumChildren(); i++) 
+  {
+    if (atomset.getChild(i).getName() == "species") 
+    {
+      const XmlNode& species = atomset.getChild(i);
 
       string spName = species.getAttribute("name");
       SpeciesNameToInt[spName] = speciesNum;
@@ -253,9 +306,11 @@ void eshdfFile::writeAtoms(const xmlNode& qboxSample) {
   std::vector<int> species_ids;
   std::vector<double> positions;
   hsize_t atNum = 0;
-  for (int i = 0; i < atomset.getNumChildren(); i++) {
-    if (atomset.getChild(i).getName() == "atom") {
-      const xmlNode& atNode = atomset.getChild(i);
+  for (int i = 0; i < atomset.getNumChildren(); i++) 
+  {
+    if (atomset.getChild(i).getName() == "atom") 
+    {
+      const XmlNode& atNode = atomset.getChild(i);
       species_ids.push_back(SpeciesNameToInt[atNode.getAttribute("species")]);
       atNode.getChild("position").getValue(positions);
       atNum++;
@@ -267,35 +322,41 @@ void eshdfFile::writeAtoms(const xmlNode& qboxSample) {
   writeNumsToHDF("number_of_atoms", static_cast<int>(atNum), atoms_group);
 }
 
-void eshdfFile::writeElectrons(const xmlNode& qboxSample) {
-  const xmlNode& wfnNode = qboxSample.getChild("wavefunction");
+void EshdfFile::writeElectrons(const XmlNode& qboxSample) 
+{
+  const XmlNode& wfnNode = qboxSample.getChild("wavefunction");
   int nspin, nel;
   wfnNode.getAttribute("nspin", nspin);
   wfnNode.getAttribute("nel", nel);
-  const xmlNode& gridNode = wfnNode.getChild("grid");
+  const XmlNode& gridNode = wfnNode.getChild("grid");
   int nx, ny, nz;
   gridNode.getAttribute("nx", nx);
   gridNode.getAttribute("ny", ny);
   gridNode.getAttribute("nz", nz);
 
-  fftContainer fftCont(nx,ny,nz);
+  FftContainer fftCont(nx,ny,nz);
 
-  vector<kpoint> kpts;
-  map<kpoint, const xmlNode*> kptToUpNode;
-  map<kpoint, const xmlNode*> kptToDnNode;
+  vector<KPoint> kpts;
+  map<KPoint, const XmlNode*> kptToUpNode;
+  map<KPoint, const XmlNode*> kptToDnNode;
 
-  for (int i = 0; i < wfnNode.getNumChildren(); i++) {
-    if (wfnNode.getChild(i).getName() == "slater_determinant") {
-      const xmlNode& sdNode = wfnNode.getChild(i);
+  for (int i = 0; i < wfnNode.getNumChildren(); i++) 
+  {
+    if (wfnNode.getChild(i).getName() == "slater_determinant") 
+    {
+      const XmlNode& sdNode = wfnNode.getChild(i);
       int spinIdx = sdNode.getAttributeIndex("spin");
       string species;
-      if (spinIdx >= 0) {
+      if (spinIdx >= 0) 
+      {
 	species = sdNode.getAttribute(spinIdx);
-      } else {
+      } 
+      else 
+      {
 	species = "up";
       }
 
-      kpoint kpt;
+      KPoint kpt;
       stringstream ss;
       ss.str(sdNode.getAttribute("kpoint"));
       ss >> kpt.kx;
@@ -303,24 +364,31 @@ void eshdfFile::writeElectrons(const xmlNode& qboxSample) {
       ss >> kpt.kz;
 
       bool newKpt = true;
-      for (int j = 0; j < kpts.size(); j++) {
-	if (kpts[j] == kpt) {
+      for (int j = 0; j < kpts.size(); j++) 
+      {
+	if (kpts[j] == kpt) 
+        {
 	  newKpt = false;
 	}
       }
-      if (newKpt) {
+      if (newKpt) 
+      {
 	kpts.push_back(kpt);
       }
       
-      if (species == "up") {
+      if (species == "up") 
+      {
 	kptToUpNode[kpt] = std::addressof(sdNode);
-      } else {
+      } 
+      else 
+      {
 	kptToDnNode[kpt] = std::addressof(sdNode);
       }
     }
   }
-  hid_t electrons_group = makeHDFGroup("electrons", file);
-  if (kpts.size() > 1) {
+  hid_t electrons_group = makeHDFGroup("electrons", file_);
+  if (kpts.size() > 1) 
+  {
     std::cerr << "Warning: Due to limitations of the current tool, extreme care" << std::endl;
     std::cerr << "is required if tiling to a supercell from qbox calculations with" << std::endl;
     std::cerr << "multiple k-points.  Specifically spo eigenvalues are not properly" << std::endl;
@@ -332,7 +400,8 @@ void eshdfFile::writeElectrons(const xmlNode& qboxSample) {
   double avgNup = 0.0;
   double avgNdn = 0.0;
   // go through kpt by kpt and write 
-  for (int i = 0; i < kpts.size(); i++) {
+  for (int i = 0; i < kpts.size(); i++) 
+  {
     stringstream kptElemName;
     kptElemName << "kpoint_" << i;
     hid_t kpt_group = makeHDFGroup(kptElemName.str(), electrons_group);
@@ -345,13 +414,17 @@ void eshdfFile::writeElectrons(const xmlNode& qboxSample) {
     writeNumsToHDF("reduced_k", kvector, kpt_group);
     writeNumsToHDF("weight", 1.0/static_cast<double>(kpts.size()), kpt_group); 
 
-    if (i == 0) {
+    if (i == 0) 
+    {
       // figure out the order of the g-vectors
       // write them to an integer array and then put it in the element
       vector<int> gvectors;
-      for (int ix = 0; ix < nx; ix++) {
-	for (int iy = 0; iy < ny; iy++) {
-	  for (int iz = 0; iz < nz; iz++) {
+      for (int ix = 0; ix < nx; ix++) 
+      {
+	for (int iy = 0; iy < ny; iy++) 
+        {
+	  for (int iz = 0; iz < nz; iz++) 
+          {
 	    gvectors.push_back(wrapped(ix,nx));
 	    gvectors.push_back(wrapped(iy,ny));
 	    gvectors.push_back(wrapped(iz,nz));
@@ -373,15 +446,18 @@ void eshdfFile::writeElectrons(const xmlNode& qboxSample) {
     double ndn = 0;
 
     hid_t up_spin_group = makeHDFGroup("spin_0", kpt_group);
-    const xmlNode* upnd = kptToUpNode[kpts[i]];    
+    const XmlNode* upnd = kptToUpNode[kpts[i]];    
     handleSpinGroup(upnd, up_spin_group, nup, fftCont);
 
 
-    if (nspin == 2) {
+    if (nspin == 2) 
+    {
       hid_t dn_spin_group = makeHDFGroup("spin_1", kpt_group);
-      const xmlNode* dnnd = kptToDnNode[kpts[i]];
+      const XmlNode* dnnd = kptToDnNode[kpts[i]];
       handleSpinGroup(dnnd, dn_spin_group, ndn, fftCont);
-    } else {
+    } 
+    else 
+    {
       ndn = nup;
     }
 

@@ -1,3 +1,15 @@
+/////////////////////////////////////////////////////////////////////////////////////////
+// This file is distributed under the University of Illinois / NCSA Open Source License.
+// See LICENSE file in top directory for details .
+//
+// Copyright ( c ) 2018 QMCPACK developers
+//
+// File developed by : Luke Shulenburger, lshulen@sandia.gov, Sandia National Laboratories
+//
+// File created by : Luke Shulenburger, lshulen@sandia.gov, Sandia National Laboratories
+/////////////////////////////////////////////////////////////////////////////////////////
+
+
 #ifndef WRITE_ESHDF_H
 #define WRITE_ESHDF_H
 #include "hdf5.h"
@@ -5,13 +17,14 @@
 #include <vector>
 #include <cmath>
 
-class xmlNode;
-class fftContainer;
+class XmlNode;
+class FftContainer;
 
-class eshdfFile {
+class EshdfFile 
+{
 private:
-  hid_t file;
-  herr_t error;
+  hid_t file_;
+  herr_t error_;
 
   int wrapped(int i, int size) const;
   void writeApplication(const std::string& appName, int major, int minor, int sub);
@@ -19,20 +32,20 @@ private:
   void writeFormat();
   void writeVersion();
 
-  void readInEigFcn(const xmlNode& nd, fftContainer& cont);
-  void handleSpinGroup(const xmlNode* nd, hid_t groupLoc, double& nocc, fftContainer& cont);
-  double getOccupation(const xmlNode* nd) const;
+  void readInEigFcn(const XmlNode& nd, FftContainer& cont);
+  void handleSpinGroup(const XmlNode* nd, hid_t groupLoc, double& nocc, FftContainer& cont);
+  double getOccupation(const XmlNode* nd) const;
 
-  eshdfFile(const eshdfFile& f); // no copy constructor
-  eshdfFile& operator=(const eshdfFile& f); // operator= not allowed
+  EshdfFile(const EshdfFile& f); // no copy constructor
+  EshdfFile& operator=(const EshdfFile& f); // operator= not allowed
 public:
-  eshdfFile(const std::string& hdfFileName);
-  ~eshdfFile();
+  EshdfFile(const std::string& hdfFileName);
+  ~EshdfFile();
 
-  void writeBoilerPlate(const std::string& appName, const xmlNode& qboxSample);
-  void writeSupercell(const xmlNode& qboxSample);
-  void writeAtoms(const xmlNode& qboxSample);
-  void writeElectrons(const xmlNode& qboxSample);
+  void writeBoilerPlate(const std::string& appName, const XmlNode& qboxSample);
+  void writeSupercell(const XmlNode& qboxSample);
+  void writeAtoms(const XmlNode& qboxSample);
+  void writeElectrons(const XmlNode& qboxSample);
 };
 
 #endif
