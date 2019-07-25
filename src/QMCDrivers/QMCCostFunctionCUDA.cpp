@@ -44,7 +44,7 @@ QMCCostFunctionCUDA::~QMCCostFunctionCUDA()
 QMCCostFunctionCUDA::Return_rt QMCCostFunctionCUDA::correlatedSampling(bool needDerivs)
 {
   Return_rt wgt_tot = 0.0;
-  int nw           = W.getActiveWalkers();
+  int nw            = W.getActiveWalkers();
   //#pragma omp parallel reduction(+:wgt_tot)
   Return_rt eloc_new;
   //int totalElements=W.getTotalNum()*OHMMS_DIM;
@@ -103,7 +103,7 @@ QMCCostFunctionCUDA::Return_rt QMCCostFunctionCUDA::correlatedSampling(bool need
   for (int iw = 0; iw < nw; iw++)
   {
     ParticleSet::Walker_t& walker = *(W[iw]);
-    Return_rt* restrict saved      = &(Records(iw, 0));
+    Return_rt* restrict saved     = &(Records(iw, 0));
     RealType weight               = factor * (logpsi_new[iw] - saved[LOGPSI_FREE]);
     RealType eloc_new             = KE[iw] + saved[ENERGY_FIXED];
     saved[ENERGY_NEW]             = eloc_new;
@@ -122,7 +122,7 @@ QMCCostFunctionCUDA::Return_rt QMCCostFunctionCUDA::correlatedSampling(bool need
   myComm->allreduce(wgt_tot);
 
   Return_rt wgtnorm = wgt_tot / NumSamples;
-  wgt_tot          = 0.0;
+  wgt_tot           = 0.0;
   for (int iw = 0; iw < nw; iw++)
   {
     Return_rt* restrict saved = &(Records(iw, 0));
@@ -136,7 +136,7 @@ QMCCostFunctionCUDA::Return_rt QMCCostFunctionCUDA::correlatedSampling(bool need
   for (int iw = 0; iw < nw; iw++)
   {
     Return_rt* restrict saved = Records[iw];
-    saved[REWEIGHT]          = std::min(saved[REWEIGHT] * wgtnorm, MaxWeight);
+    saved[REWEIGHT]           = std::min(saved[REWEIGHT] * wgtnorm, MaxWeight);
     //app_log()<<saved[REWEIGHT]<< std::endl;
     wgt_tot += saved[REWEIGHT];
   }
@@ -258,7 +258,7 @@ void QMCCostFunctionCUDA::checkConfigurations()
   for (int iw = 0; it != it_end; ++it, ++iw)
   {
     Walker_t& w(**it);
-    RealType* prop           = w.getPropertyBase();
+    RealType* prop            = w.getPropertyBase();
     Return_rt* restrict saved = &(Records(iw, 0));
     saved[ENERGY_TOT] = saved[ENERGY_NEW] = prop[LOCALENERGY];
     saved[ENERGY_FIXED]                   = prop[LOCALPOTENTIAL];
@@ -398,9 +398,9 @@ void QMCCostFunctionCUDA::GradCost(std::vector<Return_rt>& PGradient,
     //evaluate new local energies and derivatives
     NumWalkersEff = correlatedSampling(true);
     //Estimators::accumulate has been called by correlatedSampling
-    curAvg_w           = SumValue[SUM_E_WGT] / SumValue[SUM_WGT];
+    curAvg_w            = SumValue[SUM_E_WGT] / SumValue[SUM_WGT];
     Return_rt curAvg2_w = curAvg_w * curAvg_w;
-    curVar_w           = SumValue[SUM_ESQ_WGT] / SumValue[SUM_WGT] - curAvg_w * curAvg_w;
+    curVar_w            = SumValue[SUM_ESQ_WGT] / SumValue[SUM_WGT] - curAvg_w * curAvg_w;
     std::vector<Return_rt> EDtotals(NumOptimizables, 0.0);
     std::vector<Return_rt> EDtotals_w(NumOptimizables, 0.0);
     std::vector<Return_rt> E2Dtotals_w(NumOptimizables, 0.0);
@@ -493,7 +493,7 @@ void QMCCostFunctionCUDA::GradCost(std::vector<Return_rt>& PGradient,
 
 
 QMCCostFunctionCUDA::Return_rt QMCCostFunctionCUDA::fillOverlapHamiltonianMatrices(Matrix<Return_rt>& Left,
-                                                                                  Matrix<Return_rt>& Right)
+                                                                                   Matrix<Return_rt>& Right)
 {
   RealType b1, b2;
   if (GEVType == "H2")
@@ -511,13 +511,13 @@ QMCCostFunctionCUDA::Return_rt QMCCostFunctionCUDA::fillOverlapHamiltonianMatric
   //Is this really needed here?
   //resetPsi();
   //Return_rt NWE = NumWalkersEff=correlatedSampling(true);
-  curAvg_w           = SumValue[SUM_E_WGT] / SumValue[SUM_WGT];
+  curAvg_w            = SumValue[SUM_E_WGT] / SumValue[SUM_WGT];
   Return_rt curAvg2_w = SumValue[SUM_ESQ_WGT] / SumValue[SUM_WGT];
-  RealType H2_avg    = 1.0 / (curAvg_w * curAvg_w);
-  RealType V_avg     = curAvg2_w - curAvg_w * curAvg_w;
+  RealType H2_avg     = 1.0 / (curAvg_w * curAvg_w);
+  RealType V_avg      = curAvg2_w - curAvg_w * curAvg_w;
   std::vector<Return_rt> D_avg(NumParams(), 0);
   Return_rt wgtinv = 1.0 / SumValue[SUM_WGT];
-  int nw          = W.getActiveWalkers();
+  int nw           = W.getActiveWalkers();
   for (int iw = 0; iw < nw; iw++)
   {
     const Return_rt* restrict saved      = &(Records(iw, 0));
