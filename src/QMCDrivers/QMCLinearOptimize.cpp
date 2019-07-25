@@ -59,7 +59,7 @@ QMCLinearOptimize::QMCLinearOptimize(MCWalkerConfiguration& w,
 {
   IsQMCDriver = false;
   //     //set the optimization flag
-  QMCDriverMode.set(QMC_OPTIMIZE, 1);
+  qmc_driver_mode.set(QMC_OPTIMIZE, 1);
   //read to use vmc output (just in case)
   m_param.add(param_tol, "alloweddifference", "double");
   //Set parameters for line minimization:
@@ -190,7 +190,7 @@ void QMCLinearOptimize::generateSamples()
   //  app_log() << "<vmc stage=\"warm-up\" blocks=\"" << WarmupBlocks << "\">" << std::endl;
   //  //turn off QMC_OPTIMIZE
   //  vmcEngine->setValue("blocks",WarmupBlocks);
-  vmcEngine->QMCDriverMode.set(QMC_WARMUP, 1);
+  vmcEngine->qmc_driver_mode.set(QMC_WARMUP, 1);
   //  vmcEngine->run();
   //  vmcEngine->setValue("blocks",nBlocks);
   //  app_log() << "  Execution time = " << std::setprecision(4) << t1.elapsed() << std::endl;
@@ -202,8 +202,8 @@ void QMCLinearOptimize::generateSamples()
   //         app_log() << "  QMCLinearOptimize::generateSamples removed walkers." << std::endl;
   //         app_log() << "  Number of Walkers per node " << W.getActiveWalkers() << std::endl;
   //     }
-  vmcEngine->QMCDriverMode.set(QMC_OPTIMIZE, 1);
-  vmcEngine->QMCDriverMode.set(QMC_WARMUP, 0);
+  vmcEngine->qmc_driver_mode.set(QMC_OPTIMIZE, 1);
+  vmcEngine->qmc_driver_mode.set(QMC_WARMUP, 0);
   //vmcEngine->setValue("recordWalkers",1);//set record
   vmcEngine->setValue("current", 0); //reset CurrentStep
   app_log() << "<vmc stage=\"main\" blocks=\"" << nBlocks << "\">" << std::endl;

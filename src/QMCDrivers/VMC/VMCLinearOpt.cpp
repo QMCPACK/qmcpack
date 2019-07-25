@@ -49,8 +49,8 @@ VMCLinearOpt::VMCLinearOpt(MCWalkerConfiguration& w,
 {
   RootName = "vmc";
   QMCType  = "VMCLinearOpt";
-  QMCDriverMode.set(QMC_UPDATE_MODE, 1);
-  QMCDriverMode.set(QMC_WARMUP, 0);
+  qmc_driver_mode.set(QMC_UPDATE_MODE, 1);
+  qmc_driver_mode.set(QMC_WARMUP, 0);
   DumpConfig = false;
   //default is 10
   nWarmupSteps = 10;
@@ -161,7 +161,7 @@ bool VMCLinearOpt::run()
 // #pragma omp parallel
 //     {
 //       int ip=omp_get_thread_num();
-//       if (QMCDriverMode[QMC_UPDATE_MODE])
+//       if (qmc_driver_mode[QMC_UPDATE_MODE])
 //         CSMovers[ip]->initWalkersForPbyP(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
 //       else
 //         CSMovers[ip]->initWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
@@ -515,7 +515,7 @@ void VMCLinearOpt::resetRun()
 #endif
       Rng[ip] = new RandomGenerator_t(*(RandomNumberControl::Children[ip]));
       hClones[ip]->setRandomGenerator(Rng[ip]);
-      if (QMCDriverMode[QMC_UPDATE_MODE])
+      if (qmc_driver_mode[QMC_UPDATE_MODE])
       {
         //           if (UseDrift == "rn")
         //           {
@@ -582,7 +582,7 @@ void VMCLinearOpt::resetRun()
     //       CSMovers[ip]->put(qmcNode);
     Movers[ip]->resetRun(branchEngine, estimatorClones[ip], traceClones[ip], DriftModifier);
     //       CSMovers[ip]->resetRun(branchEngine,estimatorClones[ip]);
-    if (QMCDriverMode[QMC_UPDATE_MODE])
+    if (qmc_driver_mode[QMC_UPDATE_MODE])
       Movers[ip]->initWalkersForPbyP(W.begin() + wPerNode[ip], W.begin() + wPerNode[ip + 1]);
     else
       Movers[ip]->initWalkers(W.begin() + wPerNode[ip], W.begin() + wPerNode[ip + 1]);

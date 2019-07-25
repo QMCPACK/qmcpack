@@ -20,6 +20,7 @@
 #define QMCPLUSPLUS_MAINAPPLICATIONS_H
 
 #include "QMCApp/QMCDriverFactory.h"
+#include "QMCApp/QMCMainState.h"
 #include "QMCApp/QMCAppBase.h"
 
 namespace qmcplusplus
@@ -30,7 +31,7 @@ namespace qmcplusplus
  * This is a generalized QMC application which can handle multiple ParticleSet,
  * TrialWaveFunction and QMCHamiltonian objects.
  */
-class QMCMain : public QMCDriverFactory, public QMCAppBase
+class QMCMain : public QMCMainState, public QMCAppBase
 {
 public:
   ///constructor
@@ -48,6 +49,8 @@ private:
 
   ///previous configuration file for next qmc node
   std::string PrevConfigFile;
+
+  std::unique_ptr<QMCDriverInterface> last_driver;
 
   ///xml mcwalkerset elements for output
   std::vector<xmlNodePtr> m_walkerset;
