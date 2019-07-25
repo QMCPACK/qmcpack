@@ -33,7 +33,7 @@ def run_test(cpw4q_exe, h5diff_exe, gold_file, conv_inp):
         print ("Gold file missing")
         okay = False
     else:
-        ret = os.system(h5diff_exe + ' -p 1e-8 ' + gold_file + ' eshdf.h5')
+        ret = os.system(h5diff_exe + ' -d 1e-9 ' + gold_file + ' eshdf.h5')
         if ret==0:
             print("   pass")
             return True
