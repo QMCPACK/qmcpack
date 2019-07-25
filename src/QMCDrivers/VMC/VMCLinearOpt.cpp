@@ -130,8 +130,9 @@ bool VMCLinearOpt::run()
       std::vector<RealType> rHDsaved(NumOptimizables);
       psiClones[ip]->evaluateDerivatives(*wClones[ip], dummyOptVars[ip], Dsaved, HDsaved);
 
-      for (int i = 0; i < NumOptimizables; i++) {
-        rDsaved[i] = std::real(Dsaved[i]);
+      for (int i = 0; i < NumOptimizables; i++)
+      {
+        rDsaved[i]  = std::real(Dsaved[i]);
         rHDsaved[i] = std::real(HDsaved[i]);
       }
 #pragma omp critical
