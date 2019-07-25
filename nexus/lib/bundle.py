@@ -170,6 +170,7 @@ class SimulationBundle(Simulation):
             else:
                 nodes += job.nodes
                 cores += job.cores
+            #end if
             constraint = job.constraint
             time    = job.max_time(time)
             machine = job.get_machine()

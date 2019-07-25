@@ -561,6 +561,7 @@ class Job(NexusCore):
                     c+=' >'+self.outfile+' 2>'+self.errfile
                     if not serial:
                         c+='&'
+                    #end if
                 elif machine.redirect_output and self.outfile is not None:
                     c+=' >'+self.outfile+' 2>'+self.errfile
                 #end if
@@ -1083,6 +1084,7 @@ class Workstation(Machine):
             command += job.run_command(self.app_launcher,serial=job.serial)
         else:
             command += job.run_command(self.app_launcher)
+        #end if
         if len(job.postsub)>0:
             command += job.postsub+'\n'
         #end if
