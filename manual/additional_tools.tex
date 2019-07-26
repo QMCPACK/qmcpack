@@ -60,6 +60,24 @@ There are tests labeled ``no-collect'' running the pw.x with setting \ishell{wf_
 The input files are stored at examples/solids/dft-inputs-polarized-no-collect.
 The scf, nscf, pw2qmcpack runs are performed on 16, 12, 12 MPI tasks with 16, 2, 2 k-pools respectively.
 
+\subsection{convertpw4qmc}
+Convertpw4qmc is an executable that reads xml from a plane wave based DFT code and produces a QMCPACK readable 
+HDF5 format wavefunction.  For the moment, the only supported code is Qbox, although others may follow.
+
+In order to save the wavefunction from qbox so that convertpw4qmc can work on it, one needs to add a line to the
+Qbox input like
+\begin{shade}
+save -text -serial basename.sample
+\end{shade}
+after the end of a converged dft calculation.  This will write an ascii wavefunction file and will avoid
+qbox's optimized parallel IO (which is not currently supported).
+
+After the wavefunction file is written (basename.sample in this case) one can use convertpw4qmc as follows:
+\begin{shade}
+convertpw4qmc basename.sample -o qmcpackWavefunction.h5
+\end{shade}
+
+This reads the Qbox wavefunction and performs the Fourier transform before saving to a qmcpack eshdf format wavefunction.  Currently multiple k-points are supported, but due to difficulties with the qbox wavefunction file format, the single particle orbitals do not have their proper energies associated with them.  This means that when tiling from a primitive cell to a supercell, the lowest n single particle orbitals from all necessary k-points will be used.  This can be problematic in the case of a metal and this feature should be used with EXTREME caution.
 
   \subsection{ppconvert}
     \label{sec:ppconvert}
