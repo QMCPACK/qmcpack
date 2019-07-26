@@ -5,7 +5,6 @@ import sys
 import shutil
 import traceback
 from optparse import OptionParser
-from numpy import ndarray,array,abs
 
 # find the path to the nxs-test executable and its parent directory
 scriptpath=os.path.realpath(__file__)
@@ -2441,6 +2440,7 @@ def structure():
     nlog_divert()
 
     nlabel('imports')
+    import numpy as np
     from generic import obj
     from structure import Structure,Crystal
     from structure import generate_structure
@@ -2694,7 +2694,7 @@ def structure():
         s = ref[name]
         npass = 0
         for tmat in matrix_tilings:
-            tmat = array(tmat,dtype=int)
+            tmat = np.array(tmat,dtype=int)
             tmat.shape = 3,3
             st = s.tile(tmat)
             st.check_tiling()
@@ -2729,6 +2729,7 @@ def pwscf_input():
 
 
     nlabel('imports')
+    import numpy as np
     import pwscf_input as pwi
     from generic import obj
     from structure import read_structure
@@ -2797,15 +2798,15 @@ def pwscf_input():
     pw.atomic_positions.set(
         specifier = 'angstrom',
         atoms     = ['Fe','Fe'],
-        positions = array([
+        positions = np.array([
             [2.070000000,   0.000000000,   0.000000000],   
             [0.000000000,   0.000000000,   0.000000000], 
             ]),
         )
     pw.k_points.set(
         specifier = 'automatic',
-        grid      = array((1,1,1)),
-        shift     = array((1,1,1)),
+        grid      = np.array((1,1,1)),
+        shift     = np.array((1,1,1)),
         )
 
     compositions['Fe_start_ns_eig.in'] = pw
@@ -2938,8 +2939,8 @@ def pwscf_input():
         pos             = [[2.070000000, 0.000000000, 0.000000000],    
                            [0.000000000, 0.000000000, 0.000000000]],
         pos_specifier   = 'angstrom',
-        kgrid           = array((1,1,1)),
-        kshift          = array((1,1,1)),
+        kgrid           = np.array((1,1,1)),
+        kshift          = np.array((1,1,1)),
         )
     pw.system.set({
         'celldm(1)' : 15,
@@ -2999,8 +3000,8 @@ def pwscf_input():
         pos             = [[2.070000000, 0.000000000, 0.000000000],    
                            [0.000000000, 0.000000000, 0.000000000]],
         pos_specifier   = 'angstrom',
-        kgrid           = array((1,1,1)),
-        kshift          = array((1,1,1)),
+        kgrid           = np.array((1,1,1)),
+        kshift          = np.array((1,1,1)),
         starting_ns_eigenvalue = {(1,2,1) : 0.0,
                                   (2,2,1) : 0.0476060,
                                   (3,2,1) : 0.0476060,
