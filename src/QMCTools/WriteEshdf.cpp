@@ -207,7 +207,7 @@ void EshdfFile::writeCreator()
   vector<int> version{0,1,0};
   hid_t h_creator = makeHDFGroup("creator", file_);
   {
-    writeStringToHDF("program_name", "qboxConverter", h_creator);
+    writeStringToHDF("program_name", "convertpw4qmc", h_creator);
     writeNumsToHDF("version", version, h_creator);
   }
 }
@@ -217,8 +217,9 @@ void EshdfFile::writeFormat()
   writeStringToHDF("format", "ES-HDF", file_);
 }
 
-void EshdfFile::writeBoilerPlate(const string& appName, const XmlNode& qboxSample) 
+void EshdfFile::writeQboxBoilerPlate(const XmlNode& qboxSample) 
 {
+  const string appName = "qbox";
   const XmlNode& description = qboxSample.getChild("description");
   string desString = description.getValue();
   int versionStart = desString.find("qbox-");
@@ -237,7 +238,49 @@ void EshdfFile::writeBoilerPlate(const string& appName, const XmlNode& qboxSampl
   writeFormat();
 }
 
-void EshdfFile::writeSupercell(const XmlNode& qboxSample) 
+int EshdfFile::getIntsOnly(const string& str) const
+{
+  stringstream numerals;
+  int temp;
+  for (int i = 0; i < str.size(); ++i) 
+  {
+    string blah = str.substr(i,1);
+    if (stringstream(blah) >> temp) {
+      numerals << str[i];
+    }
+  }
+  int result;
+  numerals >> result;
+  return result;
+}
+	 
+
+void EshdfFile::writeQEBoilerPlate(const XmlNode& qeXml)
+{
+  const string appName = "espresso";
+  const XmlNode& generalInfo = qeXml.getChild("general_info");
+  const XmlNode& creatorNode = generalInfo.getChild("creator");
+  const string versionStr = creatorNode.getAttribute("VERSION");
+  int minor = 0;
+  int sub = 0;
+  const int firstDotIdx = versionStr.find_first_of('.');
+  const int secondDotIdx = versionStr.find_last_of('.');
+  const int major = getIntsOnly(versionStr.substr(0,firstDotIdx));
+  if (firstDotIdx == secondDotIdx) // this means on subersion is provided
+  {
+    minor = getIntsOnly(versionStr.substr(firstDotIdx+1));
+  } 
+  else {
+    minor = getIntsOnly(versionStr.substr(firstDotIdx+1,secondDotIdx-firstDotIdx-1));
+    sub = getIntsOnly(versionStr.substr(secondDotIdx+1));
+  }  
+  writeApplication(appName, major, minor, sub);
+  writeVersion();
+  writeCreator();
+  writeFormat();
+}
+
+void EshdfFile::writeQboxSupercell(const XmlNode& qboxSample) 
 {
   // grab the primitive translation vectors from the atomset tag's attributes and put the entries in the vector ptvs
   const XmlNode& atomset = qboxSample.getChild("atomset");
@@ -245,6 +288,32 @@ void EshdfFile::writeSupercell(const XmlNode& qboxSample)
 
   stringstream ss;
   ss << unit_cell.getAttribute("a") << "  " << unit_cell.getAttribute("b") << "  " << unit_cell.getAttribute("c");
+
+  vector<double> ptvs;
+  double temp;
+  while (ss >> temp) 
+  {
+    ptvs.push_back(temp);
+  }
+
+  // write the ptvs to the supercell group of the hdf file
+  hid_t supercell_group = makeHDFGroup("supercell", file_);
+  hsize_t dims[]={3,3};
+  writeNumsToHDF("primitive_vectors", ptvs, supercell_group, 2, dims);  
+}
+
+void EshdfFile::writeQESupercell(const XmlNode& qeXml) 
+{
+  // grab the primitive translation vectors the output tag's atomic structure part
+  const XmlNode& output = qeXml.getChild("output");
+  const XmlNode& atomStructure = output.getChild("atomic_structure");
+  const XmlNode& cell = atomStructure.getChild("cell");
+  const XmlNode& a = cell.getChild("a1");
+  const XmlNode& b = cell.getChild("a2");
+  const XmlNode& c = cell.getChild("a3");
+
+  stringstream ss;
+  ss << a.getValue() << "  " << b.getValue() << "  " << c.getValue();
 
   vector<double> ptvs;
   double temp;

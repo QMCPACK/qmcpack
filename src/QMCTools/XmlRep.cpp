@@ -260,10 +260,12 @@ int XmlStream::addNextTag()
     }
     elem.name = getTagName(getTag(elem), elem.type);
     elements.push_back(elem);
+    stream_->unget();
     return 1;
   }
   if (isProcessingInstruction == 1 || isComment == 1) 
   {
+    stream_->unget();
     return 0;
   }
   return -1;

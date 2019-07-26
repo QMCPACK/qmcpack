@@ -27,6 +27,7 @@ private:
   herr_t error_;
 
   int wrapped(int i, int size) const;
+  int getIntsOnly(const std::string& str) const;
   void writeApplication(const std::string& appName, int major, int minor, int sub);
   void writeCreator();
   void writeFormat();
@@ -42,8 +43,10 @@ public:
   EshdfFile(const std::string& hdfFileName);
   ~EshdfFile();
 
-  void writeBoilerPlate(const std::string& appName, const XmlNode& qboxSample);
-  void writeSupercell(const XmlNode& qboxSample);
+  void writeQEBoilerPlate(const XmlNode& qboxSample);
+  void writeQboxBoilerPlate(const XmlNode& qeXml);
+  void writeQESupercell(const XmlNode& qboxSample);
+  void writeQboxSupercell(const XmlNode& qboxSample);
   void writeAtoms(const XmlNode& qboxSample);
   void writeElectrons(const XmlNode& qboxSample);
 };

@@ -58,13 +58,33 @@ int main(int argc, char* argv[])
   }
 
   ifstream is(fname.c_str());
-  XmlNode qboxSampleXml(&is, 0, true);
+
+  XmlNode inFile(&is, 0, true);
+  string name = inFile.getName();
+
+  if (name == "qes:espresso") 
+  { 
+    // may be good to test different versions of espresso to see
+    // if this changes at all
+    cerr << "xml file comes from quantum espresso" << endl;
+    EshdfFile outFile(ofname);
+    outFile.writeQEBoilerPlate(inFile);
+    outFile.writeQESupercell(inFile);
+  } 
+  else if (name == "fpmd:sample") {
+    cerr << "xml file comes from qbox" << endl;
+    EshdfFile outFile(ofname);
+    outFile.writeQboxBoilerPlate(inFile);
+    outFile.writeQboxSupercell(inFile);
+    outFile.writeAtoms(inFile);
+    outFile.writeElectrons(inFile);
+  }
+  else 
+  {
+    cerr << "xml format is unrecognized" << endl;
+    return(1);
+  }
 
 
-  EshdfFile outFile(ofname);
-  outFile.writeBoilerPlate("qbox", qboxSampleXml);
-  outFile.writeSupercell(qboxSampleXml);
-  outFile.writeAtoms(qboxSampleXml);
-  outFile.writeElectrons(qboxSampleXml);
   return 0;
 }
