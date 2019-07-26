@@ -21,8 +21,9 @@
 #include <string>
 
 #include "OhmmsData/OhmmsElementBase.h"
-#include "Message/MPIObjectBase.h"
+#include "QMCDrivers/DriverTraits.h"
 #include "QMCApp/ParticleSetPool.h"
+
 class Communicate;
 
 namespace qmcplusplus
@@ -33,77 +34,9 @@ class QMCDriverInterface;
 class WaveFunctionPool;
 class HamiltonianPool;
 
-struct QMCDriverFactory : public MPIObjectBase
+class QMCDriverFactory
 {
-  /*! enum for QMC Run Type */
-  enum class QMCRunType
-  {
-    DUMMY, /*!< dummy */
-    VMC,   /**< VMC type: vmc, vmc-ptcl, vmc-multiple, vmc-ptcl-multiple */
-    CSVMC,
-    DMC,      /**< DMC type: dmc, dmc-ptcl*/
-    RMC,      /**< RMC type: rmc, rmc-ptcl */
-    OPTIMIZE, /*!< Optimization */
-    VMC_OPT,  /*!< Optimization with vmc blocks */
-    LINEAR_OPTIMIZE,
-    CS_LINEAR_OPTIMIZE,
-    WF_TEST,
-    VMC_BATCH
-  };
-
-  /** enum to set the bit to determine the QMC mode 
-   *
-   *  Can't be a scoped enum
-   */
-
-  enum QMCModeEnum
-  {
-    UPDATE_MODE,    /**< bit for move: walker or pbyp */
-    MULTIPLE_MODE,  /**< bit for multple configuration */
-    SPACEWARP_MODE, /**< bit for space-warping */
-    ALTERNATE_MODE, /**< bit for performing various analysis and weird qmc methods */
-    GPU_MODE,       /**< bit to use GPU driver */
-    QMC_MODE_MAX = 8
-  };
-
-  ///current QMC mode determined by curQmcModeBits
-  unsigned long curQmcMode;
-
-  ///8-bit (ALTERNATE_MODE,SPACEWARP_MODE, MULTIPLE_MODE, UPDATE_MODE)
-  std::bitset<QMC_MODE_MAX> curQmcModeBits;
-
-  ///type of qmcdriver
-  QMCRunType curRunType;
-
-  ///name of the current QMCriver
-  std::string curMethod;
-
-  /** current MCWalkerConfiguration
-   */
-  MCWalkerConfiguration* qmcSystem;
-
-  /** current QMCDriver
-   */
-  QMCDriverInterface* qmcDriver;
-
-  /** ParticleSet Pool
-   */
-  ParticleSetPool* ptclPool;
-
-  /** TrialWaveFunction Pool
-   */
-  WaveFunctionPool* psiPool;
-
-  /** QMCHamiltonian Pool
-   */
-  HamiltonianPool* hamPool;
-
-  /** default constructor **/
-  QMCDriverFactory(Communicate* c);
-
-  /** set the active qmcDriver */
-  void putCommunicator(xmlNodePtr cur);
-
+public:
   struct DriverAssemblyState
   {
     std::bitset<QMC_MODE_MAX> what_to_do;
@@ -112,18 +45,36 @@ struct QMCDriverFactory : public MPIObjectBase
     QMCRunType new_run_type = QMCRunType::DUMMY;
   };
 
+  /** default constructor **/
+  //QMCDriverFactory() ;
+
   /** read the current QMC Section */
   DriverAssemblyState readSection(int curSeries, xmlNodePtr cur);
 
-  /** set the active qmcDriver */
-  bool setQMCDriver(int curSeries, xmlNodePtr cur, DriverAssemblyState& das);
+  /** set the active qmcDriver
+   *  The unique_ptr's take care of killing the old driver if it exists */
+  std::unique_ptr<QMCDriverInterface> newQMCDriver(std::unique_ptr<QMCDriverInterface> last_driver,
+                                                   int curSeries,
+                                                   xmlNodePtr cur,
+                                                   DriverAssemblyState& das,
+                                                   MCWalkerConfiguration& qmc_system,
+                                                   ParticleSetPool& particle_pool,
+                                                   WaveFunctionPool& wave_function_pool,
+                                                   HamiltonianPool& hamiltonian_pool,
+                                                   Communicate* comm);
 
+private:
   /** create a new QMCDriver
+   *
+   *  Broken out for unit tests
    */
-  void createQMCDriver(xmlNodePtr cur);
-
-  /** virtual destructor **/
-  virtual ~QMCDriverFactory();
+  std::unique_ptr<QMCDriverInterface> createQMCDriver(xmlNodePtr cur,
+                                                      DriverAssemblyState& das,
+                                                      MCWalkerConfiguration& qmc_system,
+                                                      ParticleSetPool& particle_pool,
+                                                      WaveFunctionPool& wave_function_pool,
+                                                      HamiltonianPool& hamiltonian_pool,
+                                                      Communicate* comm);
 };
 } // namespace qmcplusplus
 #endif
