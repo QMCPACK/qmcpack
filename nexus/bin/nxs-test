@@ -46,6 +46,47 @@ from generic import generic_settings,object_interface,NexusError
 generic_settings.raise_error = True
 
 
+
+# add unit test modules
+sys.path.append(os.path.abspath(os.path.join(__file__,'..','..','tests','unit')))
+
+unit_test_module_lists = dict()
+unit_test_modules      = dict()
+
+import inspect
+import importlib
+
+def import_unit_test_module_list(module_name):
+    if module_name not in unit_test_module_lists:
+        module = importlib.import_module(module_name)
+        unit_test_list = []
+        for name,member in inspect.getmembers(module):
+            if name.startswith('test_') and inspect.isfunction(member):
+                unit_test = member
+                unit_test_list.append((name,unit_test))
+            #end if
+        #end for
+        unit_test_module_lists[module_name] = unit_test_list
+    #end if
+    return unit_test_module_lists[module_name]
+#end def import unit_test_module_list
+
+
+def import_unit_test_module(module_name):
+    if module_name not in unit_test_modules:
+        unit_test_list = import_unit_test_module_list(module_name)
+        unit_test_modules[module_name] = dict(unit_test_list)
+    #end if
+    return unit_test_modules[module_name]
+#end def import unit_test_module
+
+
+def import_from_unit_test_module(module_name,test_name):
+    return import_unit_test_module(module_name)[test_name]
+#end def import_from_unit_test_module
+
+
+
 # tests
 #   generic logging
 #   generic intrinsics
@@ -202,18 +243,18 @@ class NexusTestTripped(Exception):
 
 
 class NexusTestBase(object):
-    nexus_test_dir = '.nexus_test' # nxs-test directory
+    nexus_test_dir    = '.nexus_test' # nxs-test directory
 
-    launch_path    = None # path from which nxs-test exe was launched
-    current_test   = None # current NexusTest
-    current_label  = ''   # current nlabel()
-    test_count     =  0   # current test count
-    label_count    =  0   # current label count in NexusTest.operation()
-    current_assert =  0   # current assert count
+    launch_path       = None  # path from which nxs-test exe was launched
+    current_test      = None  # current NexusTest
+    current_label     = ''    # current nlabel()
+    test_count        =  0    # current test count
+    label_count       =  0    # current label count in NexusTest.operation()
+    current_assert    =  0    # current assert count
 
-    assert_trip    = -1   # developer tool to trip assert's one by one
-                          # if set to n, an exception will be raised for the
-                          # n-th assert call
+    assert_trip       = -1    # developer tool to trip assert's one by one
+                              # if set to n, an exception will be raised for the
+                              # n-th assert call
 
     # keep a running count of assert calls
     @staticmethod
@@ -429,6 +470,41 @@ def nassert(result):
 #end def nassert
 
 
+# run a unit test from an external file
+def nunit(test_name):
+    module_name = 'test_'+NexusTestBase.current_test.name
+    unit_test   = import_from_unit_test_module(module_name,test_name)
+    run_external_unit_test(test_name,unit_test)
+#end def nunit
+
+
+# run all uncalled unit tests from an external file
+def nunit_all():
+    nexus_test = NexusTestBase.current_test
+    module_name = 'test_'+NexusTestBase.current_test.name
+    module = import_unit_test_module(module_name)
+    uncalled_tests = sorted(nexus_test.unit_tests-nexus_test.unit_tests_called)
+    for test_name in uncalled_tests:
+        unit_test = module[test_name]
+        run_external_unit_test(test_name,unit_test)
+    #end for
+#end def nunit_all
+
+
+# actually execute the unit test (not to be called directly within a Nexus test)
+def run_external_unit_test(test_name,unit_test):
+    nexus_test = NexusTestBase.current_test
+    if len(nexus_test.unit_tests)==0:
+        module_name = 'test_'+NexusTestBase.current_test.name
+        module = import_unit_test_module(module_name)
+        nexus_test.unit_tests = set(module.keys())
+    elif test_name in nexus_test.unit_tests_called:
+        raise NexusTestMisconstructed('unit test "{}" has already been called in function "{}"'.format(test_name,nexus_test.name))
+    #end if
+    nlabel(test_name)
+    unit_test()
+    nexus_test.unit_tests_called.add(test_name)
+#end def run_external_unit_test
 
 
 # class to represent a test
@@ -450,7 +526,6 @@ class NexusTest(NexusTestBase):
 
     test_list = []
     test_dict = {}
-
 
     # capture launch path and clear out any old test data
     #   to be called once at user launch
@@ -477,12 +552,14 @@ class NexusTest(NexusTestBase):
         if test_dir is not None and not isinstance(test_dir,str):
             raise NexusTestMisconstructed
         #end if
-        self.name         = name
-        self.operation    = operation
-        self.op_inputs    = op_inputs
-        self.test_dir     = test_dir
-        self.exception    = None
-        self.status  = NexusTest.status_options['unused']
+        self.name              = name
+        self.operation         = operation
+        self.op_inputs         = op_inputs
+        self.test_dir          = test_dir
+        self.exception         = None
+        self.status            = NexusTest.status_options['unused']
+        self.unit_tests        = set() # complete set of unit tests
+        self.unit_tests_called = set() # set of unit tests called so far
         NexusTest.test_list.append(self)
         NexusTest.test_dict[self.name] = self
     #end def __init__
@@ -522,11 +599,15 @@ class NexusTest(NexusTestBase):
                 raise NexusTestMisconstructed
             #end if
             self.status=NexusTest.status_options['passed']
-        except Exception,e:
+        except Exception as e:
             self.exception = e
             self.traceback = sys.exc_info()[2]
             self.status=NexusTest.status_options['failed']
         #end try
+        uncalled_unit_tests = self.unit_tests-self.unit_tests_called
+        if len(uncalled_unit_tests)>0:
+            raise NexusTestMisconstructed('not all unit tests were called\n  uncalled unit tests: {}\n  please add these either by calling "nunit" for each of them\n  or by calling "nunit_all" at the end of function "{}"'.format(sorted(uncalled_unit_tests),self.name))
+        #end if
     #end def run
 
 
