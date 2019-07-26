@@ -36,7 +36,7 @@ public:
   bool run();
   bool put(xmlNodePtr cur);
   void setTau(RealType i);
-  void resetComponents(xmlNodePtr cur);
+  QMCRunType getRunType() { return QMCRunType::DMC; }
 
 private:
   ///Index to determine what to do when node crossing is detected

@@ -133,7 +133,7 @@ THCOps<T> loadTHCOps(hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA, in
   }
 
   // read 1-body hamiltonian and exchange potential (v0)
-  boost::multi::array<ComplexType,2> H1({NMO,NMO});
+  boost::multi::array<ValueType,2> H1({NMO,NMO});
   boost::multi::array<ComplexType,2> v0({NMO,NMO});
   if(TGwfn.Global().root()) {
     if(!dump.readEntry(H1,"H1")) {
@@ -259,7 +259,7 @@ template<class shm_Vmatrix,
          class shm_Cmatrix>
 inline void writeTHCOps(hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA, int NAEB, int ndet,
                               TaskGroup_& TGprop, TaskGroup_& TGwfn,
-                              boost::multi::array<ComplexType,2> & H1,
+                              boost::multi::array<ValueType,2> & H1,
                               shm_Cmatrix & rotPiu,
                               shm_Vmatrix & rotMuv,
                               shm_Cmatrix & Piu,

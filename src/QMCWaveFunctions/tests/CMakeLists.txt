@@ -10,9 +10,6 @@
 #// File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 #//////////////////////////////////////////////////////////////////////////////////////
     
-INCLUDE("${qmcpack_SOURCE_DIR}/CMake/macros.cmake")
-    
-
 SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
 
 SET(SRC_DIR wavefunction)
