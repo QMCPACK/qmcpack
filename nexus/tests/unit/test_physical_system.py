@@ -24,20 +24,11 @@ def test_kf_rpa():
     net_spin = 1,
     H = 1
   )
-  kfs = ps.kf_rpa() 
+  kfs = ps.kf_rpa()
   assert np.isclose(kfs[0], 1.465, atol=1e-3)
   assert np.isclose(kfs[1], 1.465/2**(1./3), atol=1e-3)
 #end def test_kf_rpa
 
-def test_count_kshells():
-  s1 = example_structure_h4()
-  kf = 1.465
-  kcut = 5*kf
-  nksh = s1.count_kshells(kcut)
-  assert nksh==13
-#end def test_count_kshells
-
 if __name__ == '__main__':
-  #test_kf_rpa()
-  test_count_kshells()
+  test_kf_rpa()
 #end __main__
