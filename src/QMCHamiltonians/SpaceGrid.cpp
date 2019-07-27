@@ -15,7 +15,7 @@
 #include <OhmmsData/AttributeSet.h>
 #include <Utilities/string_utils.h>
 #include <cmath>
-#include <math.h>
+#include <cmath>
 #include <OhmmsPETE/OhmmsArray.h>
 
 #include <Message/OpenMP.h>
