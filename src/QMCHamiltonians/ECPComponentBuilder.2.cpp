@@ -209,7 +209,7 @@ void ECPComponentBuilder::buildSemiLocalAndLocal(std::vector<xmlNodePtr>& semiPt
 }
 
 void ECPComponentBuilder::buildSO(const std::vector<int>& angList,
-                                  const Matrix<mRealType>& vnn,
+                                  const Matrix<mRealType>& vnnso,
                                   RealType rmax,
                                   mRealType Vprefactor)
 {
@@ -240,18 +240,15 @@ void ECPComponentBuilder::buildSO(const std::vector<int>& angList,
   // This is critical!!!
   // If d is not reset, we generate an error in the interpolated PP!
   d        = agrid->Delta;
-  int ngIn = vnn.cols() - 2;
+  int ngIn = vnnso.cols() - 2;
   std::vector<RealType> newP(ng);
   std::vector<mRealType> newPin(ngIn);
   for (int l = 0; l < angList.size(); l++)
   {
-/*    if (angList[l] == Llocal)
-      continue;
-    const mRealType* restrict vp    = vnn[angList[l]];
-    const mRealType* restrict vpLoc = vnn[iLlocal];
-    int ll                          = angList[l];
+    const mRealType* restrict vp    = vnnso[angList[l]];
     for (int i = 0; i < ngIn; i++)
-      newPin[i] = Vprefactor * (vp[i] - vpLoc[i]);
+      newPin[i] = Vprefactor * vp[i];
+
     OneDimCubicSpline<mRealType> infunc(grid_global, newPin);
     infunc.spline(0, 0.0, ngIn - 1, 0.0);
     for (int i = 1; i < ng - 1; i++)
@@ -263,7 +260,7 @@ void ECPComponentBuilder::buildSO(const std::vector<int>& angList,
     newP[ng - 1]             = 0.0;
     RadialPotentialType* app = new RadialPotentialType(agrid, newP);
     app->spline();
-    pp_nonloc->add(angList[l], app); */
+    pp_so->add(angList[l], app); 
   }
 
 
