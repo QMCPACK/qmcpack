@@ -111,9 +111,9 @@ Note the following:
 \end{figure}
 The CIPSI method
 %\cite{XXXrecentCIPSIpaper}
-is implemented in the QP code\cite{QP} developed by the Caffarel group. Once the trial wavefunction is generated, QP is able to produce output readable by the QMCPACK converter as described in Section \ref{sec:convert4qmc}. QP can be installed with multiple plugins for different levels of theory in quantum chemistry. When installing the ``QMC" plugin, QP can save the wavefunction in a format readable by the QMCPACK converter. 
+is implemented in the QP code\cite{QP} developed by the Caffarel group. Once the trial wavefunction is generated, QP is able to produce output readable by the QMCPACK converter as described in Section~\ref{sec:convert4qmc}. QP can be installed with multiple plugins for different levels of theory in quantum chemistry. When installing the ``QMC" plugin, QP can save the wavefunction in a format readable by the QMCPACK converter. 
 
-In the following we use the $C_2O_2H_3N$ molecule (Figure \ref{fig:C2O2H3N}) as an example of how to run a multireference calculation with CIPSI as a trial wavefunction for \qmcpack. The choice of this molecule is motivated by its multireference nature. Although the molecule remains small enough for CCSD(T) calculations with aug-cc-pVTZ basis set, the D1 diagnostic shows a very high value for  $C_2O_2H_3N$, suggesting a multireference character.  Therefore, an accurate reference for the system is not available, and it becomes difficult to trust the quality of a single-determinant wavefunction even when using the DFT-B3LYP exchange and correlation functional. Therefore, in the following, we show an example of how to systematically improve the nodal surface by increasing the number of determinants in the trial wavefunction.
+In the following we use the $C_2O_2H_3N$ molecule (Figure~\ref{fig:C2O2H3N}) as an example of how to run a multireference calculation with CIPSI as a trial wavefunction for \qmcpack. The choice of this molecule is motivated by its multireference nature. Although the molecule remains small enough for CCSD(T) calculations with aug-cc-pVTZ basis set, the D1 diagnostic shows a very high value for  $C_2O_2H_3N$, suggesting a multireference character.  Therefore, an accurate reference for the system is not available, and it becomes difficult to trust the quality of a single-determinant wavefunction even when using the DFT-B3LYP exchange and correlation functional. Therefore, in the following, we show an example of how to systematically improve the nodal surface by increasing the number of determinants in the trial wavefunction.
 
 The following steps show how to run from Hartree-Fock to selected CI using QP, convert the wavefunction to a QMCPACK trial wavefunction, and analyze the result.
 
@@ -197,7 +197,7 @@ qp_run save_natorb C2O2H3N.ezfio
 At this point, the orbitals are modified, a new AO$\rightarrow$MO transformation is required, and steps 3 and 4 need to be run again.
 
 \item Step 7: Analyze the CIPSI results.\\
-Figure \ref{fig:CIPSI} shows the evolution of the variational energy and the energy corrected with PT2 as a function of the number of determinants up to 4M determinants. Although it is clear that the raw variational energy is far from being converged, the Energy + PT2 appears converged around 0.4M determinants.
+Figure~\ref{fig:CIPSI} shows the evolution of the variational energy and the energy corrected with PT2 as a function of the number of determinants up to 4M determinants. Although it is clear that the raw variational energy is far from being converged, the Energy + PT2 appears converged around 0.4M determinants.
 
 \begin{figure}
 \begin{center}
@@ -296,7 +296,7 @@ for each truncation scheme and usually cannot be reused efficiently
 from one truncation scheme to another.\\
 
 \item Step 11: Analyze the DMC results from \qmcpack. \\
-From Table \ref{TAB:CIPSI-DMC}, we can see that increasing the number
+From Table~\ref{TAB:CIPSI-DMC}, we can see that increasing the number
 of determinants from 0.5M to almost 1M keeps the energy
 within error bars and does not improve the quality of the nodal
 surface. We can conclude that the DMC energy is converged at 0.54M
@@ -328,7 +328,7 @@ As mentioned in previous sections, DMC is variational relative to the
 exact nodal surface. A nodal surface is ``better" if it lowers DMC
 energy. To assess the quality of the nodal surface from CIPSI, we
 compare these DMC results to other single-determinant calculations
-from multiple nodal surfaces and theories. Figure \ref{fig:CIPSI-DMC}
+from multiple nodal surfaces and theories. Figure~\ref{fig:CIPSI-DMC}
 shows the energy of the $C_2O_2H_3N$ molecule as a function of
 different single-determinant trial wavefunctions with an
 aug-cc-pVTZ basis set, including Hartree-Fock, DFT-PBE, and hybrid
