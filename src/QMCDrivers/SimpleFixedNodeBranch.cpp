@@ -131,7 +131,7 @@ int SimpleFixedNodeBranch::initWalkerController(MCWalkerConfiguration& walkers, 
   //this is not necessary
   //check if tau is different and set the initial values
   //vParam[B_TAU]=tau;
-  bool fromscratch      = false;
+  bool fromscratch     = false;
   FullPrecRealType tau = vParam[B_TAU];
 
   int nwtot_now = walkers.getGlobalNumWalkers();
@@ -220,7 +220,7 @@ void SimpleFixedNodeBranch::initReptile(MCWalkerConfiguration& W)
   //this is not necessary
   //check if tau is different and set the initial values
   //vParam[B_TAU]=tau;
-  bool fromscratch      = false;
+  bool fromscratch     = false;
   FullPrecRealType tau = vParam[B_TAU];
   //this is the first time DMC is used
   if (WalkerController == 0)
