@@ -87,6 +87,7 @@ void ECPComponentBuilder::buildSemiLocalAndLocal(std::vector<xmlNodePtr>& semiPt
   std::vector<xmlNodePtr> vpsPtr;
   std::vector<xmlNodePtr> vpsoPtr; //For spin-orbit, if it exists.
   Lmax = -1;
+  LmaxSO = -1;
   // Now read vps sections
   xmlNodePtr cur_vps = cur_semilocal->children;
   while (cur_vps != NULL)
@@ -119,6 +120,7 @@ void ECPComponentBuilder::buildSemiLocalAndLocal(std::vector<xmlNodePtr>& semiPt
       int l = angMon[lstr];
       angListSO.push_back(l);
       vpsoPtr.push_back(cur_vps);
+      LmaxSO = std::max(LmaxSO, l); //count the maximum L
     }
     cur_vps = cur_vps->next;
   }
@@ -211,6 +213,59 @@ void ECPComponentBuilder::buildSO(const std::vector<int>& angList,
                                   RealType rmax,
                                   mRealType Vprefactor)
 {
+  const int max_points = 100000;
+  app_log() << "   Creating a Linear Grid Rmax=" << rmax << std::endl;
+  //this is a new grid
+  mRealType d                 = 1e-4;
+  LinearGrid<RealType>* agrid = new LinearGrid<RealType>;
+  // If the global grid is already linear, do not interpolate the data
+  int ng;
+  if (grid_global->getGridTag() == LINEAR_1DGRID)
+  {
+    ng = (int)std::ceil(rmax * grid_global->DeltaInv) + 1;
+    if (ng <= max_points)
+    {
+      app_log() << "  Using global grid with delta = " << grid_global->Delta << std::endl;
+      rmax = grid_global->Delta * (ng - 1);
+      agrid->set(0.0, rmax, ng);
+    }
+    else
+      agrid->set(0.0, rmax, max_points);
+  }
+  else
+  {
+    ng = std::min(max_points, static_cast<int>(rmax / d) + 1);
+    agrid->set(0, rmax, ng);
+  }
+  // This is critical!!!
+  // If d is not reset, we generate an error in the interpolated PP!
+  d        = agrid->Delta;
+  int ngIn = vnn.cols() - 2;
+  std::vector<RealType> newP(ng);
+  std::vector<mRealType> newPin(ngIn);
+  for (int l = 0; l < angList.size(); l++)
+  {
+/*    if (angList[l] == Llocal)
+      continue;
+    const mRealType* restrict vp    = vnn[angList[l]];
+    const mRealType* restrict vpLoc = vnn[iLlocal];
+    int ll                          = angList[l];
+    for (int i = 0; i < ngIn; i++)
+      newPin[i] = Vprefactor * (vp[i] - vpLoc[i]);
+    OneDimCubicSpline<mRealType> infunc(grid_global, newPin);
+    infunc.spline(0, 0.0, ngIn - 1, 0.0);
+    for (int i = 1; i < ng - 1; i++)
+    {
+      mRealType r = d * i;
+      newP[i]     = infunc.splint(r) / r;
+    }
+    newP[0]                  = newP[1];
+    newP[ng - 1]             = 0.0;
+    RadialPotentialType* app = new RadialPotentialType(agrid, newP);
+    app->spline();
+    pp_nonloc->add(angList[l], app); */
+  }
+
 
 }
 
