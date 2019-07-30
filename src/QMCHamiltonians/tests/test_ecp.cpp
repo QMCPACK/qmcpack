@@ -111,7 +111,27 @@ TEST_CASE("ReadFileBuffer_sorep", "[hamiltonian]")
   REQUIRE(okay);
 
   REQUIRE(ecp.Zeff == 20);
+
+  double rlist[5]={0.001, 0.500, 1.000, 2.000, 10.000};
+  double so_p[5]={0.0614288376917,  0.10399457248,4.85269969439e-06, 4.6722444395e-25,0.000};
+  double so_d[5]={0.0850898886265,0.0029447669325,6.35734161822e-08, 2.8386702794e-27,0.000};
+  double so_f[5]={-0.284560515732,0.0071131554209,6.79818097092e-05,1.64868282163e-15,0.000}; 
   
+  for(int i=0; i<5; i++)
+  {
+    double r=rlist[i];
+    double so_p_ref=so_p[i];
+    double so_d_ref=so_d[i];
+    double so_f_ref=so_f[i];
+
+    double so_p_val = ecp.pp_so->test_splined_pot(0,r);
+    double so_d_val = ecp.pp_so->test_splined_pot(1,r);
+    double so_f_val = ecp.pp_so->test_splined_pot(2,r);
+
+    REQUIRE(so_p_val == Approx(so_p_ref));
+    REQUIRE(so_d_val == Approx(so_d_ref));
+    REQUIRE(so_f_val == Approx(so_f_ref));
+  }
 
   // TODO: add more checks that pseudopotential file was read correctly
 }
