@@ -57,8 +57,8 @@ public:
   SOECPComponent* makeClone(const ParticleSet& qp){};
 
   ///add a new Spin-Orbit component
-  void add(int l, RadialPotentialType* pp){};
-
+  void add(int l, RadialPotentialType* pp);
+  RealType test_splined_pot(int l, RealType r);
   /** @brief Evaluate the spin orbit pp contribution 
    * to total energy from ion "iat" and electron "iel".
    *

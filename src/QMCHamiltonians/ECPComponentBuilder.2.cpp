@@ -245,7 +245,7 @@ void ECPComponentBuilder::buildSO(const std::vector<int>& angList,
   std::vector<mRealType> newPin(ngIn);
   for (int l = 0; l < angList.size(); l++)
   {
-    const mRealType* restrict vp    = vnnso[angList[l]];
+    const mRealType* restrict vp    = vnnso[l];
     for (int i = 0; i < ngIn; i++)
       newPin[i] = Vprefactor * vp[i];
 
@@ -254,7 +254,7 @@ void ECPComponentBuilder::buildSO(const std::vector<int>& angList,
     for (int i = 1; i < ng - 1; i++)
     {
       mRealType r = d * i;
-      newP[i]     = infunc.splint(r) / r;
+      newP[i]     = infunc.splint(r);
     }
     newP[0]                  = newP[1];
     newP[ng - 1]             = 0.0;

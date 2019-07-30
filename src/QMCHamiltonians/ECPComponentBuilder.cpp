@@ -203,6 +203,8 @@ bool ECPComponentBuilder::put(xmlNodePtr cur)
   {
     if (pp_nonloc == 0)
       pp_nonloc = new NonLocalECPComponent;
+    if (pp_so == 0)
+      pp_so = new SOECPComponent;
     if (pp_loc)
     {
       for (int i = 0; i < semiPtr.size(); i++)
