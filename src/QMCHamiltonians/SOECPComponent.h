@@ -26,8 +26,13 @@
 
 namespace qmcplusplus
 {
-/** Contains a set of radial grid potentials around a center.
-*/
+/** class SOECPComponent
+ **  brief Computes the nonlocal spin-orbit interaction $\Delta V_SO(r) |ljm_j><ljm_j|$.
+ **  details This computes the nonlocal spin-orbit interaction between a single ion species and 
+ **           a given electron.  
+ **           Currently, this class does nothing other than generate and store $\Delta V_SO(r)$
+ **           for different orbital angular momenta.  Implementation coming soon!  
+ **/
 class SOECPComponent : public QMCTraits
 {
 private:
@@ -58,7 +63,9 @@ public:
 
   ///add a new Spin-Orbit component
   void add(int l, RadialPotentialType* pp);
+  ///API for accessing the value of an SO radial potential at distance r.  For unit and other testing.
   RealType test_splined_pot(int l, RealType r);
+
   /** @brief Evaluate the spin orbit pp contribution 
    * to total energy from ion "iat" and electron "iel".
    *
@@ -71,21 +78,29 @@ public:
    *
    * @return RealType Contribution to $\frac{V\Psi_T}{\Psi_T}$ from ion iat and electron iel.
    */
-  RealType evaluateOne(ParticleSet& W,
+  inline RealType evaluateOne(ParticleSet& W,
                        int iat,
                        TrialWaveFunction& Psi,
                        int iel,
                        RealType r,
-                       const PosType& dr){return 0.0;};
+                       const PosType& dr)
+                       {
+                         APP_ABORT("evaluateOne not implemented yet\n"); 
+                         return 0.0;
+                       };
 
   // This function needs to be updated to SoA. myTableIndex is introduced temporarily.
-  RealType evaluateValueAndDerivatives(ParticleSet& P,
+  inline RealType evaluateValueAndDerivatives(ParticleSet& P,
                                        int iat,
                                        TrialWaveFunction& psi,
                                        const opt_variables_type& optvars,
                                        const std::vector<RealType>& dlogpsi,
                                        std::vector<RealType>& dhpsioverpsi,
-                                       const int myTableIndex){return 0.0;};
+                                       const int myTableIndex)
+                                       {
+                                         APP_ABORT("evaluateValueAndDerivatives not implemented yet\n");
+                                         return 0.0;
+                                       };
 
   void print(std::ostream& os){};
 

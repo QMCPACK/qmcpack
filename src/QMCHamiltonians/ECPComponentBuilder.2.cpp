@@ -208,6 +208,9 @@ void ECPComponentBuilder::buildSemiLocalAndLocal(std::vector<xmlNodePtr>& semiPt
 
 }
 
+//Most of this is copied directly from doBreakUp, but is separated to prevent from cluttering doBreakUp.
+//This function takes the input grid and input SO potential table, interpolates it onto a linear grid if necessary
+//via a cubic spline, and then adds the final splined RadialPotentialType object to the SOECPComponent object.
 void ECPComponentBuilder::buildSO(const std::vector<int>& angList,
                                   const Matrix<mRealType>& vnnso,
                                   RealType rmax,
