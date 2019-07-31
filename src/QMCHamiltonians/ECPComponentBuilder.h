@@ -34,8 +34,8 @@ struct ECPComponentBuilder : public MPIObjectBase, public QMCTraits
 
   int NumNonLocal;
   int Lmax, Llocal, Nrule;
-  int NumSO;
-  int LmaxSO;
+  int NumSO; //The number of spin-orbit channels.
+  int LmaxSO; //The maximum angular momentum of spin-orbit channels.
   int AtomicNumber;
   RealType Zeff;
   RealType RcutMax;
@@ -44,7 +44,7 @@ struct ECPComponentBuilder : public MPIObjectBase, public QMCTraits
   std::map<std::string, mGridType*> grid_inp;
   RadialPotentialType* pp_loc;
   NonLocalECPComponent* pp_nonloc;
-  SOECPComponent* pp_so;
+  SOECPComponent* pp_so; //Spin-orbit potential component.
   L2RadialPotential* pp_L2;
   std::map<std::string, int> angMon;
 
@@ -80,7 +80,9 @@ struct ECPComponentBuilder : public MPIObjectBase, public QMCTraits
                  const Matrix<mRealType>& vnn,
                  RealType rmax,
                  mRealType Vprefactor = 1.0);
- 
+
+  //This takes the previously parsed angular momenta and spin-orbit tabulated potentials and uses
+  //  them to construct SOECPComponent* pp_so.   
   void buildSO(const std::vector<int>& angList,
                const Matrix<mRealType>& vnnso,
                RealType rmax,
