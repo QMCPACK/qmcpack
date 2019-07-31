@@ -81,8 +81,17 @@ struct ECPComponentBuilder : public MPIObjectBase, public QMCTraits
                  RealType rmax,
                  mRealType Vprefactor = 1.0);
 
-  //This takes the previously parsed angular momenta and spin-orbit tabulated potentials and uses
-  //  them to construct SOECPComponent* pp_so.   
+  /** brief buildSO - takes the previously parsed angular momenta and spin-orbit tabulated potentials and uses
+  **     them to construct SOECPComponent* pp_so.  This is called in "doBreakUp". 
+  **
+  ** param std::vector<int>& angList  The angular momentum for each SO potential.
+  ** param Matrix<mRealType>& vnnso (npot x ngrid) matrix storing all tabulated SO potentials.
+  ** param RealType rmax  max r on the specified grid.
+  ** param mRealType Vprefactor  optional scale factor.
+  **
+  ** return void
+  **
+  **/    
   void buildSO(const std::vector<int>& angList,
                const Matrix<mRealType>& vnnso,
                RealType rmax,
