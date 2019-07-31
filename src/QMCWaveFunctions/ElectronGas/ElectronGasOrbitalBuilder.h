@@ -19,7 +19,7 @@
 
 #include <QMCWaveFunctions/WaveFunctionComponentBuilder.h>
 #include <QMCWaveFunctions/SPOSet.h>
-#include <config/stdlib/math.h>
+#include <config/stdlib/math.hpp>
 
 #include "QMCWaveFunctions/SPOSetBuilder.h"
 #include "QMCWaveFunctions/ElectronGas/HEGGrid.h"

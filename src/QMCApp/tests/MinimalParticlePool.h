@@ -18,7 +18,6 @@
 
 namespace qmcplusplus
 {
-
 /** This should be the minimal ParticleSetPool for integration tests
  *
  */
@@ -57,8 +56,8 @@ class MinimalParticlePool
 </particleset>
 </tmp>
 )";
-public:
 
+public:
   ParticleSetPool operator()(Communicate* c)
   {
     Libxml2Document doc;
@@ -72,7 +71,7 @@ public:
 
     // Need to set up simulation cell lattice before reading particle sets
     pp.putLattice(sim_cell);
-    
+
     xmlNodePtr part_ion = xmlNextElementSibling(sim_cell);
     pp.put(part_ion);
     xmlNodePtr part_elec = xmlNextElementSibling(part_ion);
@@ -82,7 +81,7 @@ public:
     return pp;
   }
 };
-  
-}
+
+} // namespace qmcplusplus
 
 #endif

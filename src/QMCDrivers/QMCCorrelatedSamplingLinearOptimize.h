@@ -53,6 +53,7 @@ public:
   bool put(xmlNodePtr cur);
   RealType Func(RealType dl);
   virtual QMCRunType getRunType() { return QMCRunType::CS_LINEAR_OPTIMIZE; }
+
 private:
   inline bool ValidCostFunction(bool valid)
   {

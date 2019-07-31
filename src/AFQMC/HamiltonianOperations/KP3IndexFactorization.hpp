@@ -171,7 +171,8 @@ class KP3IndexFactorization
       // making a copy of vMF since it will be modified
       shmCVector vMF_(iextensions<1u>{vMF.num_elements()},shared_allocator<ComplexType>{*comm});
       comm->barrier();
-      if(comm->root()) {
+      //if(comm->root()) 
+      {
         using std::copy_n;
         copy_n(vMF.origin(),vMF.num_elements(),vMF_.origin());
       }
@@ -1121,8 +1122,8 @@ class KP3IndexFactorization
           }
         }
       }
-      comm->barrier();
       // do I need to "rotate" back, can be done if necessary
+      comm->barrier();
     }
 
     template<class MatA, class MatB,
@@ -1341,6 +1342,11 @@ class KP3IndexFactorization
     bool transposed_vHS() const{return true;}
 
     bool fast_ph_energy() const { return false; }
+
+    boost::multi::array<ComplexType,2> getHSPotentials()
+    {
+      return boost::multi::array<ComplexType,2>{};
+    }
 
   private:
 

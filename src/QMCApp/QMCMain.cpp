@@ -620,8 +620,8 @@ bool QMCMain::runQMC(xmlNodePtr cur)
   QMCDriverFactory driver_factory;
   QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(myProject.m_series, cur);
   std::unique_ptr<QMCDriverInterface> qmc_driver;
-  qmc_driver =
-      driver_factory.newQMCDriver(std::move(last_driver), myProject.m_series, cur, das, *qmcSystem, *ptclPool, *psiPool, *hamPool, myComm);
+  qmc_driver = driver_factory.newQMCDriver(std::move(last_driver), myProject.m_series, cur, das, *qmcSystem, *ptclPool,
+                                           *psiPool, *hamPool, myComm);
   if (qmc_driver)
   {
     //advance the project id
@@ -644,7 +644,7 @@ bool QMCMain::runQMC(xmlNodePtr cur)
     app_log() << "  QMC Execution time = " << std::setprecision(4) << qmcTimer.elapsed() << " secs" << std::endl;
     //keeps track of the configuration file
     PrevConfigFile = myProject.CurrentMainRoot();
-    last_driver = std::move(qmc_driver);
+    last_driver    = std::move(qmc_driver);
     return true;
   }
   else

@@ -9,8 +9,7 @@
 #// File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 #//////////////////////////////////////////////////////////////////////////////////////
 
-MESSAGE("Adding this unit test")
-
+MESSAGE_VERBOSE("Adding AFQMC matrix unit tests")
 
 SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
 
@@ -23,5 +22,6 @@ ADD_EXECUTABLE(${UTEST_EXE} test_csr_matrix.cpp)
 TARGET_LINK_LIBRARIES(${UTEST_EXE} afqmc qmcutil ${QMC_UTIL_LIBS} ${MPI_LIBRARY})
 
 ADD_UNIT_TEST(${UTEST_NAME} "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
-SET_PROPERTY(TEST ${UTEST_NAME} APPEND PROPERTY LABELS afqmc)
+SET_TESTS_PROPERTIES(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
+SET_PROPERTY(TEST ${UTEST_NAME} APPEND PROPERTY LABELS "afqmc")
 

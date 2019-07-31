@@ -36,7 +36,6 @@ public:
   bool run();
   bool put(xmlNodePtr cur);
   void setTau(RealType i);
-  void resetComponents(xmlNodePtr cur);
   QMCRunType getRunType() { return QMCRunType::DMC; }
 
 private:

@@ -64,6 +64,7 @@ public:
       s_vec[i] = 0;
   }
   virtual QMCRunType getRunType() { return QMCRunType::CS_LINEAR_OPTIMIZE; }
+
 private:
   ///number of RN warmup steps
   //       int myRNWarmupSteps;

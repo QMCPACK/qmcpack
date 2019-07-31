@@ -64,61 +64,6 @@ DMC::DMC(MCWalkerConfiguration& w,
   ConstPopulation = false;
 }
 
-void DMC::resetComponents(xmlNodePtr cur)
-{
-  qmcNode = cur;
-  m_param.put(cur);
-  put(cur);
-  //app_log()<<"DMC::resetComponents"<< std::endl;
-  Estimators->reset();
-  int nw_multi = branchEngine->resetRun(cur);
-  if (nw_multi > 1)
-  {
-    app_log() << " Current population " << W.getActiveWalkers() << " " << W.getGlobalNumWalkers() << std::endl;
-    app_log() << " The target population has changed. Multiply walkers by " << nw_multi << std::endl;
-    W.createWalkers((nw_multi - 1) * W.getActiveWalkers());
-    setWalkerOffsets();
-    FairDivideLow(W.getActiveWalkers(), NumThreads, wPerNode);
-    app_log() << " New population " << W.getActiveWalkers() << " per task  total =" << W.getGlobalNumWalkers()
-              << std::endl;
-  }
-  branchEngine->checkParameters(W);
-  //delete Movers[0];
-  for (int ip = 0; ip < NumThreads; ++ip)
-  {
-    delete Movers[ip];
-    delete estimatorClones[ip];
-    estimatorClones[ip] = new EstimatorManagerBase(*Estimators);
-    estimatorClones[ip]->setCollectionMode(false);
-#if !defined(REMOVE_TRACEMANAGER)
-    delete traceClones[ip];
-    traceClones[ip] = Traces->makeClone();
-#endif
-  }
-#pragma omp parallel for
-  for (int ip = 0; ip < NumThreads; ++ip)
-  {
-    if (qmc_driver_mode[QMC_UPDATE_MODE])
-    {
-      Movers[ip] = new DMCUpdatePbyPWithRejectionFast(*wClones[ip], *psiClones[ip], *hClones[ip], *Rng[ip]);
-      Movers[ip]->put(cur);
-      Movers[ip]->resetRun(branchEngine, estimatorClones[ip], traceClones[ip], DriftModifier);
-      Movers[ip]->initWalkersForPbyP(W.begin() + wPerNode[ip], W.begin() + wPerNode[ip + 1]);
-    }
-    else
-    {
-      if (KillNodeCrossing)
-        Movers[ip] = new DMCUpdateAllWithKill(*wClones[ip], *psiClones[ip], *hClones[ip], *Rng[ip]);
-      else
-        Movers[ip] = new DMCUpdateAllWithRejection(*wClones[ip], *psiClones[ip], *hClones[ip], *Rng[ip]);
-      Movers[ip]->put(cur);
-      Movers[ip]->resetRun(branchEngine, estimatorClones[ip], traceClones[ip], DriftModifier);
-      Movers[ip]->initWalkers(W.begin() + wPerNode[ip], W.begin() + wPerNode[ip + 1]);
-    }
-  }
-}
-
-
 void DMC::resetUpdateEngines()
 {
   ReportEngine PRE("DMC", "resetUpdateEngines");

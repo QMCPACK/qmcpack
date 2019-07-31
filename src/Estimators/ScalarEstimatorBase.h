@@ -37,7 +37,7 @@ class observable_helper;
  */
 struct ScalarEstimatorBase
 {
-  typedef QMCTraits::EstimatorRealType RealType;
+  typedef QMCTraits::FullPrecRealType RealType;
   typedef accumulator_set<RealType> accumulator_type;
   typedef MCWalkerConfiguration::Walker_t Walker_t;
   typedef MCWalkerConfiguration::const_iterator WalkerIterator;
