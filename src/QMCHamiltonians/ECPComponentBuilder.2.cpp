@@ -109,7 +109,6 @@ void ECPComponentBuilder::buildSemiLocalAndLocal(std::vector<xmlNodePtr>& semiPt
     }
     else if (vname== "vps_so") //This accumulates the spin-orbit corrections, if defined.
     {
-      app_log()<<"Yo.  We got a vps-so up in heah\n";
       OhmmsAttributeSet aAttrib;
       std::string lstr("s");
       RealType rc = -1.0;
@@ -133,8 +132,14 @@ void ECPComponentBuilder::buildSemiLocalAndLocal(std::vector<xmlNodePtr>& semiPt
   }
 
   if (angListSO.size()!=nso)
-    APP_ABORT("Error. npots-so does not match number of spin-orbit channels.");
-
+  {
+    std::stringstream ssout;
+    ssout<<"Error. npots-so="<<angListSO.size()<<" while declared number of SO channels is "<<nso<<std::endl;
+    std::string outstring("");
+    outstring=ssout.str();
+ 
+    APP_ABORT(outstring.c_str());
+  }
   int npts = grid_global->size();
   Matrix<mRealType> vnn(angList.size(), npts);
   for (int l = 0; l < angList.size(); l++)
