@@ -24,7 +24,7 @@ void SOECPComponent::add(int l, RadialPotentialType* pp)
   angpp_m.push_back(l);
   sopp_m.push_back(pp);
 }
-SOECPComponent::RealType SOECPComponent::test_splined_pot(int l, RealType r)
+SOECPComponent::RealType SOECPComponent::getSplinedPotValue(int l, RealType r)
 {
   return sopp_m[l]->splint(r);
 }

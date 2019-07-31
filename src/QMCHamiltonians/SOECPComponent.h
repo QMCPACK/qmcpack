@@ -57,7 +57,7 @@ public:
   ///add a new Spin-Orbit component
   void add(int l, RadialPotentialType* pp);
   ///API for accessing the value of an SO radial potential at distance r.  For unit and other testing.
-  RealType test_splined_pot(int l, RealType r);
+  RealType getSplinedPotValue(int l, RealType r);
 
   /** @brief Evaluate the spin orbit pp contribution 
    * to total energy from ion "iat" and electron "iel".
