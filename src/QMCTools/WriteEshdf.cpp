@@ -356,7 +356,7 @@ void EshdfFile::writeQEAtoms(const XmlNode& qeXml)
       stringstream gname;
       gname << "species_" << species_num;
       hid_t species_group = makeHDFGroup(gname.str(), atoms_group);
-      writeNumsToHDF("name", name, species_group);
+      writeStringToHDF("name", sp_name, species_group);
       writeNumsToHDF("mass", mass, species_group);
       species_num++;
     }
@@ -374,7 +374,7 @@ void EshdfFile::writeQEAtoms(const XmlNode& qeXml)
     if (atomic_positions_xml.getChild(i).getName() == "atom") 
     {
       const XmlNode& at_node_xml = atomic_positions_xml.getChild(i);
-      species_ids.push_back(SpeciesNameToInt[at_node_xml.getAttribute("name")]);
+      species_ids.push_back(species_name_to_int[at_node_xml.getAttribute("name")]);
       at_node_xml.getValue(positions); // this will append the three numbers to the verctor
       at_num++;
     }
