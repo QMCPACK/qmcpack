@@ -38,6 +38,12 @@
 
 namespace qmcplusplus
 {
+
+QMCTraits::RealType getSplinedSOPot(SOECPComponent* so_comp, int l, double r)
+{
+  return so_comp->sopp_m[l]->splint(r); 
+}
+
 TEST_CASE("CheckSphericalIntegration", "[hamiltonian]")
 {
   // Use the built-in quadrature rule check
@@ -124,9 +130,9 @@ TEST_CASE("ReadFileBuffer_sorep", "[hamiltonian]")
     double so_d_ref=so_d[i];
     double so_f_ref=so_f[i];
 
-    double so_p_val = ecp.pp_so->getSplinedPotValue(0,r);
-    double so_d_val = ecp.pp_so->getSplinedPotValue(1,r);
-    double so_f_val = ecp.pp_so->getSplinedPotValue(2,r);
+    double so_p_val = getSplinedSOPot(ecp.pp_so,0,r);
+    double so_d_val = getSplinedSOPot(ecp.pp_so,1,r);
+    double so_f_val = getSplinedSOPot(ecp.pp_so,2,r);
 
     REQUIRE(so_p_val == Approx(so_p_ref));
     REQUIRE(so_d_val == Approx(so_d_ref));
