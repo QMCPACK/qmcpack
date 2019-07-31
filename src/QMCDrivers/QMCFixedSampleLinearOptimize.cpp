@@ -86,6 +86,8 @@ QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(MCWalkerConfiguration
       shift_s_base(4.0),
       accept_history(3),
       num_shifts(3),
+      cost_increase_tol(0.0),
+      target_shift_i(-1.0),
       nblocks(1),
       nolds(1),
       nkept(1),
@@ -99,7 +101,7 @@ QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(MCWalkerConfiguration
 {
   IsQMCDriver = false;
   //set the optimization flag
-  QMCDriverMode.set(QMC_OPTIMIZE, 1);
+  qmc_driver_mode.set(QMC_OPTIMIZE, 1);
   //read to use vmc output (just in case)
   RootName = "pot";
   QMCType  = "QMCFixedSampleLinearOptimize";
@@ -122,6 +124,8 @@ QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(MCWalkerConfiguration
   m_param.add(shift_i_input, "shift_i", "double");
   m_param.add(shift_s_input, "shift_s", "double");
   m_param.add(num_shifts, "num_shifts", "int");
+  m_param.add(cost_increase_tol, "cost_increase_tol", "double");
+  m_param.add(target_shift_i, "target_shift_i", "double");
 
 #ifdef HAVE_LMY_ENGINE
   //app_log() << "construct QMCFixedSampleLinearOptimize" << endl;
@@ -481,6 +485,10 @@ bool QMCFixedSampleLinearOptimize::put(xmlNodePtr q)
   if (shift_s_input <= 0.0)
     throw std::runtime_error("shift_s must be positive in QMCFixedSampleLinearOptimize::put");
 
+  // check cost increase tolerance sanity
+  if (cost_increase_tol < 0.0)
+    throw std::runtime_error("cost_increase_tol must be non-negative in QMCFixedSampleLinearOptimize::put");
+
   // if this is the first time this function has been called, set the initial shifts
   if (bestShift_i < 0.0 && doAdaptiveThreeShift)
     bestShift_i = shift_i_input;
@@ -530,12 +538,12 @@ bool QMCFixedSampleLinearOptimize::put(xmlNodePtr q)
 #endif
       optTarget = new QMCCostFunction(W, Psi, H, myComm);
     optTarget->setStream(&app_log());
-    if (ReportToH5=="yes")
-       optTarget->reportH5=true;
+    if (ReportToH5 == "yes")
+      optTarget->reportH5 = true;
     success = optTarget->put(q);
   }
-  if (ReportToH5=="yes")
-     optTarget->reportH5=true;
+  if (ReportToH5 == "yes")
+    optTarget->reportH5 = true;
   return success;
 }
 
@@ -647,29 +655,60 @@ void QMCFixedSampleLinearOptimize::print_cost_summary(const double si,
 ///
 /// \param[in]      ii             index of the proposed best cost
 /// \param[in]      cv             vector of new costs
+/// \param[in]      sh             vector of identity shifts (shift_i values)
 /// \param[in]      ic             the initial cost
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-bool QMCFixedSampleLinearOptimize::is_best_cost(const int ii, const std::vector<RealType>& cv, const RealType ic) const
+bool QMCFixedSampleLinearOptimize::is_best_cost(const int ii,
+                                                const std::vector<RealType>& cv,
+                                                const std::vector<double>& sh,
+                                                const RealType ic) const
 {
+  //app_log() << "determining best cost with cost_increase_tol = " << cost_increase_tol << " and target_shift_i = " << target_shift_i << std::endl;
+
   // initialize return value
   bool retval = true;
 
   //app_log() << "retval = " << retval << std::endl;
 
-  // new cost is only best if it is less than or equal to the other new costs
+  // compare to other costs
   for (int i = 0; i < cv.size(); i++)
   {
-    // we only worry about being less than the other value if the other value is within the maximum relative change threshold
-    const bool other_is_valid = ((ic == 0.0 ? 0.0 : std::abs((cv.at(i) - ic) / ic)) < max_relative_cost_change);
-    retval                    = (retval && (cv.at(ii) <= cv.at(i) || !other_is_valid));
+    // don't compare to yourself
+    if (i == ii)
+      continue;
+
+    // we only worry about the other value if it is within the maximum relative change threshold and not too high
+    const bool other_is_valid = ((ic == 0.0 ? 0.0 : std::abs((cv.at(i) - ic) / ic)) < max_relative_cost_change &&
+                                 cv.at(i) < ic + cost_increase_tol);
+    if (other_is_valid)
+    {
+      // if we are using a target shift and the cost is not too much higher, then prefer this cost if its shift is closer to the target shift
+      if (target_shift_i > 0.0)
+      {
+        const bool closer_to_target   = (std::abs(sh.at(ii) - target_shift_i) < std::abs(sh.at(i) - target_shift_i));
+        const bool cost_is_similar    = (std::abs(cv.at(ii) - cv.at(i)) < cost_increase_tol);
+        const bool cost_is_much_lower = (!cost_is_similar && cv.at(ii) < cv.at(i) - cost_increase_tol);
+        if (cost_is_much_lower || (closer_to_target && cost_is_similar))
+          retval = (retval && true);
+        else
+          retval = false;
+
+        // if we are not using a target shift, then prefer this cost if it is lower
+      }
+      else
+      {
+        retval = (retval && cv.at(ii) <= cv.at(i));
+      }
+    }
+
     //app_log() << "cv.at(ii)   = " << std::fixed << std::right << std::setw(20) << std::setprecision(12) << cv.at(ii) << " <= "
     //          << "cv.at(i)    = " << std::fixed << std::right << std::setw(20) << std::setprecision(12) << cv.at(i)  << " ?" << std::endl;
     //app_log() << "retval = " << retval << std::endl;
   }
 
-  // new cost is only best if it is less than the initial cost
-  retval = (retval && cv.at(ii) < ic);
+  // new cost can only be the best cost if it is less than (or not too much higher than) the initial cost
+  retval = (retval && cv.at(ii) < ic + cost_increase_tol);
   //app_log() << "cv.at(ii)   = " << std::fixed << std::right << std::setw(20) << std::setprecision(12) << cv.at(ii) << " <= "
   //          << "ic          = " << std::fixed << std::right << std::setw(20) << std::setprecision(12) << ic        << " ?" << std::endl;
   //app_log() << "retval = " << retval << std::endl;
@@ -943,7 +982,7 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
 
   // initialize the initial and current parameter vectors
   for (int i = 0; i < numParams; i++)
-    currParams.at(i) = std::real( optTarget->Params(i) );
+    currParams.at(i) = std::real(optTarget->Params(i));
 
   // create a vector telling which updates are within our constraints
   std::vector<bool> good_update(parameterDirections.size(), true);
@@ -998,7 +1037,7 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
 
   // update the current parameters to those of the new guiding function
   for (int i = 0; i < numParams; i++)
-    currParams.at(i) = std::real( optTarget->Params(i) );
+    currParams.at(i) = std::real(optTarget->Params(i));
 
   // compute cost function for the initial parameters (by subtracting the middle shift's update back off)
   for (int i = 0; i < numParams; i++)
@@ -1043,7 +1082,7 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
   const std::vector<RealType>* bestDirection = 0;
   int best_shift                             = -1;
   for (int k = 0; k < costValues.size() && std::abs((initCost - initCost) / initCost) < max_relative_cost_change; k++)
-    if (is_best_cost(k, costValues, initCost) && good_update.at(k))
+    if (is_best_cost(k, costValues, shifts_i, initCost) && good_update.at(k))
     {
       best_shift    = k;
       bestDirection = &parameterDirections.at(k);
@@ -1136,7 +1175,7 @@ bool QMCFixedSampleLinearOptimize::one_shift_run()
 
   // initialize the initial and current parameter vectors
   for (int i = 0; i < numParams; i++)
-    currentParameters.at(i) = std::real( optTarget->Params(i) );
+    currentParameters.at(i) = std::real(optTarget->Params(i));
 
   // prepare vectors to hold the parameter update directions for each shift
   std::vector<RealType> parameterDirections;

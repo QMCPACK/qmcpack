@@ -58,7 +58,7 @@ TEST_CASE("UserJastrowFunctor", "[wavefunction]")
 
   // Finite difference to verify the spatial derivatives
 
-  RealType h           = 0.001;
+  RealType h           = 0.01;
   RealType r_plus_h    = r + h;
   RealType r_minus_h   = r - h;
   RealType val_plus_h  = uf.evaluate(r_plus_h);

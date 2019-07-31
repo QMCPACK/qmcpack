@@ -30,7 +30,7 @@ NonLocalECPotential::Return_t NonLocalECPotential::evaluateValueAndDerivatives(P
       PPset[ipp]->randomize_grid(*myRNG);
   for (int iat = 0; iat < NumIons; iat++)
     if (PP[iat])
-      Value += PP[iat]->evaluateValueAndDerivatives(P, iat, Psi, optvars, dlogpsi, dhpsioverpsi);
+      Value += PP[iat]->evaluateValueAndDerivatives(P, iat, Psi, optvars, dlogpsi, dhpsioverpsi, myTableIndex);
   return Value;
 
   //int Nvars=optvars.size();
@@ -104,7 +104,8 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateValueAndDerivatives
                                                                                  TrialWaveFunction& psi,
                                                                                  const opt_variables_type& optvars,
                                                                                  const std::vector<RealType>& dlogpsi,
-                                                                                 std::vector<RealType>& dhpsioverpsi)
+                                                                                 std::vector<RealType>& dhpsioverpsi,
+                                                                                 const int myTableIndex)
 {
 #if defined(ENABLE_SOA)
   APP_ABORT("NonLocalECPComponent::evaluateValueAndDerivatives(W,iat,psi.opt.dlogpsi,dhpsioverpsi) not implemented for SoA.\n");
@@ -136,7 +137,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateValueAndDerivatives
     for (int j = 0; j < nknot; j++)
     {
       PosType pos_now = W.R[iel];
-      W.makeMoveAndCheck(iel, deltarV[j]);
+      W.makeMove(iel, deltarV[j]);
 #if defined(QMC_COMPLEX)
       psiratio[j] = psi.ratio(W, iel) * std::cos(psi.getPhaseDiff());
 #else
@@ -154,7 +155,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateValueAndDerivatives
         dratio(v, j) = std::real(dlogpsi_t[v]);
 
       PosType md = -1.0 * deltarV[j];
-      W.makeMoveAndCheck(iel, md);
+      W.makeMove(iel, md);
       W.acceptMove(iel);
     }
 

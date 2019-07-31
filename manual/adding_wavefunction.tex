@@ -4,7 +4,7 @@
 The total wavefunction is stored in \texttt{TrialWaveFunction} as a product of all
 the components.  Each component derives from \texttt{WaveFunctionComponent}.
 The code contains an example of a wavefunction component for a Helium atom using a simple form and
-is described in Section \ref{sec:helium_wavefunction_example}.
+is described in Section~\ref{sec:helium_wavefunction_example}.
 
 
 \subsection{Mathematical preliminaries}
@@ -85,19 +85,20 @@ The following example shows part of an input block for VMC with all-electron mov
 
 The \texttt{ParticleSet} parameter in these functions refers to the electrons.
 The distance tables that store the inter-particle distances are stored as an array.
-The first distance table is
-always for election-electron distances (in general, the first table is for distances between the same particles).  It is accessed with the following.
+
+To get the electron-ion distances, add the ion \texttt{ParticleSet} using \texttt{addTable}
+and save the returned index. Use that index to get the ion-electron distance table.
 \begin{verbatim}
-const DistanceTableData *ee_table = P.DistTables[0];
+const int ei_id = elecs.addTable(ions, DT_SOA); // in the constructor only
+const auto& ei_table = elecs.getDistTable(ei_id); // when consuming a distance table
 \end{verbatim}
-From there the distances and displacements can obtained.
+Getting the electron-electron distances is very similar, just add the electron \texttt{ParticleSet} using \texttt{addTable}.
 
-The lower triangle for the electron-electron table should be used.
-It is the only part of the distance table valid during particle-by-particle updates.
-
-To get the ion-electron distances, add the ion \texttt{ParticleSet} using \texttt{addTable}
-and save the returned index.
-Use that index into distance table array to get the ion-electron distance table.
+Only the lower triangle for the electron-electron table should be used.
+It is the only part of the distance table valid throughout the run.
+During particle-by-particle move, there are extra restrictions.
+When a move of electron iel is proposed, only the lower triangle parts [0,iel)[0,iel) [iel, Nelec)[iel, Nelec) and the row [iel][0:Nelec) are valid.
+In fact, the current implementation of distance based two and three body Jastrow factors in QMCPACK only needs the row [iel][0:Nelec).
 
 In \texttt{ratioGrad}, the new distances are stored in the \texttt{Temp\_r} and \texttt{Temp\_dr}
 members of the distance tables.

@@ -117,7 +117,7 @@ void RMCUpdateAllWithDrift::advanceWalkersVMC()
   RealType r2accept   = 0.0;
   //      W.reptile->r2prop += r2proposed;
   //      W.reptile->r2samp++;
-  if (!W.makeMoveWithDrift(curhead, drift, deltaR, m_sqrttau))
+  if (!W.makeMoveAllParticlesWithDrift(curhead, drift, deltaR, m_sqrttau))
   {
     ++nReject;
     H.rejectedMove(W, curhead);
@@ -143,7 +143,7 @@ void RMCUpdateAllWithDrift::advanceWalkersVMC()
   else
     assignDrift(m_tauovermass, W.G, drift);
   fromdeltaR = curhead.R - W.R - drift;
-  EstimatorRealType* restrict new_headProp(W.getPropertyBase());
+  FullPrecRealType* restrict new_headProp(W.getPropertyBase());
 
   RealType logGb = -m_oneover2tau * Dot(fromdeltaR, fromdeltaR);
 
@@ -343,7 +343,7 @@ void RMCUpdateAllWithDrift::advanceWalkersRMC()
   RealType r2accept   = 0.0;
   //  W.reptile->r2prop += r2proposed;
   //  W.reptile->r2samp++;
-  if (!W.makeMoveWithDrift(curhead, drift, deltaR, m_sqrttau))
+  if (!W.makeMoveAllParticlesWithDrift(curhead, drift, deltaR, m_sqrttau))
   {
     ++nReject;
     H.rejectedMove(W, curhead);
@@ -370,7 +370,7 @@ void RMCUpdateAllWithDrift::advanceWalkersRMC()
   else
     assignDrift(m_tauovermass, W.G, drift);
   fromdeltaR = curhead.R - W.R - drift;
-  EstimatorRealType* restrict new_headProp(W.getPropertyBase());
+  FullPrecRealType* restrict new_headProp(W.getPropertyBase());
   W.Properties(W.reptile->TransProb[backward]) = -m_oneover2tau * Dot(fromdeltaR, fromdeltaR);
   W.Properties(W.reptile->Action[backward])    = 0.5 * m_oneover2tau * Dot(fromdeltaR, fromdeltaR);
 

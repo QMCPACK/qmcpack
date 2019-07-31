@@ -38,18 +38,13 @@ template<>
 int ParticleSet::Walker_t::cuda_DataSize = 0;
 #endif
 
-void add_p_timer(std::vector<NewTimer*>& timers)
-{
-  timers.push_back(TimerManager.createTimer("ParticleSet::makeMove", timer_level_fine));         // timer for moves
-  timers.push_back(TimerManager.createTimer("ParticleSet::makeMoveOnSphere", timer_level_fine)); // timer for NLPP moves
-  timers.push_back(TimerManager.createTimer("ParticleSet::donePbyP", timer_level_fine));         // timer for donePbyP
-  timers.push_back(TimerManager.createTimer("ParticleSet::setActive", timer_level_fine));        // timer for setActive
-  timers.push_back(TimerManager.createTimer("ParticleSet::update", timer_level_fine));           // timer for update
-}
+const TimerNameList_t<ParticleSet::PSTimers> ParticleSet::PSTimerNames = {{PS_newpos, "ParticleSet::computeNewPosDT"},
+                                                                          {PS_donePbyP, "ParticleSet::donePbyP"},
+                                                                          {PS_setActive, "ParticleSet::setActive"},
+                                                                          {PS_update, "ParticleSet::update"}};
 
 ParticleSet::ParticleSet()
-    : UseBoundBox(true),
-      IsGrouped(true),
+    : IsGrouped(true),
       ThreadID(0),
       SK(0),
       ParentName("0"),
@@ -60,12 +55,11 @@ ParticleSet::ParticleSet()
       activePtcl(-1)
 {
   initPropertyList();
-  add_p_timer(myTimers);
+  setup_timers(myTimers, PSTimerNames, timer_level_fine);
 }
 
 ParticleSet::ParticleSet(const ParticleSet& p)
-    : UseBoundBox(p.UseBoundBox),
-      IsGrouped(p.IsGrouped),
+    : IsGrouped(p.IsGrouped),
       ThreadID(0),
       mySpecies(p.getSpeciesSet()),
       SK(0),
@@ -102,7 +96,7 @@ ParticleSet::ParticleSet(const ParticleSet& p)
     //createSK();
     //SK->DoUpdate=p.SK->DoUpdate;
   }
-  add_p_timer(myTimers);
+  setup_timers(myTimers, PSTimerNames, timer_level_fine);
   myTwist = p.myTwist;
 
   RSoA = p.RSoA;
@@ -323,17 +317,6 @@ void ParticleSet::reset() { app_log() << "<<<< going to set properties >>>> " <<
 ///read the particleset
 bool ParticleSet::put(xmlNodePtr cur) { return true; }
 
-void ParticleSet::setBoundBox(bool yes) { UseBoundBox = yes; }
-
-void ParticleSet::checkBoundBox(RealType rb)
-{
-  if (UseBoundBox && rb > Lattice.SimulationCellRadius)
-  {
-    app_warning() << "ParticleSet::checkBoundBox " << rb << "> SimulationCellRadius=" << Lattice.SimulationCellRadius
-                  << "\n Using SLOW method for the sphere update. " << std::endl;
-  }
-}
-
 int ParticleSet::addTable(const ParticleSet& psrc, int dt_type, bool need_full_table_loadWalker)
 {
   if (myName == "none" || psrc.getName() == "none")
@@ -369,98 +352,68 @@ int ParticleSet::addTable(const ParticleSet& psrc, int dt_type, bool need_full_t
 
 void ParticleSet::update(bool skipSK)
 {
-  myTimers[4]->start();
+  ScopedTimer update_scope(myTimers[PS_update]);
+
   RSoA.copyIn(R);
   for (int i = 0; i < DistTables.size(); i++)
     DistTables[i]->evaluate(*this);
   if (!skipSK && SK)
     SK->UpdateAllPart(*this);
-  myTimers[4]->stop();
 
   activePtcl = -1;
-}
-
-/** move a particle iat
- * @param iat the index of the particle to be moved
- * @param displ the displacement of the iath-particle position
- * @return the proposed position
- *
- * Update activePtcl index and activePos position for the proposed move.
- * Evaluate the related distance table data DistanceTableData::Temp.
- */
-ParticleSet::SingleParticlePos_t ParticleSet::makeMove(Index_t iat, const SingleParticlePos_t& displ)
-{
-  activePtcl = iat;
-  activePos  = R[iat] + displ;
-  for (int i = 0; i < DistTables.size(); ++i)
-    DistTables[i]->move(*this, activePos);
-  //Do not change SK: 2007-05-18
-  //Change SK only if DoUpdate is true: 2008-09-12
-  if (SK && SK->DoUpdate)
-    SK->makeMove(iat, activePos);
-  return activePos;
 }
 
 void ParticleSet::setActive(int iat)
 {
-  myTimers[3]->start();
+  ScopedTimer set_active_scope(myTimers[PS_setActive]);
+
   for (size_t i = 0; i < DistTables.size(); i++)
     if (DistTables[i]->DTType == DT_SOA)
       DistTables[i]->evaluate(*this, iat);
-  myTimers[3]->stop();
 }
 
-
-/** move a particle iat
- * @param iat the index of the particle to be moved
- * @param displ the displacement of the iath-particle position
- * @return the proposed position
- *
- * Update activePtcl index and activePos position for the proposed move.
- * Evaluate the related distance table data DistanceTableData::Temp.
- */
-bool ParticleSet::makeMoveAndCheck(Index_t iat, const SingleParticlePos_t& displ)
+void ParticleSet::makeMove(Index_t iat, const SingleParticlePos_t& displ)
 {
-  myTimers[0]->start();
   activePtcl = iat;
   activePos  = R[iat] + displ;
-  //SingleParticlePos_t red_displ(Lattice.toUnit(displ));
-  if (UseBoundBox)
-  {
-    if (Lattice.outOfBound(Lattice.toUnit(displ)))
-    {
-      activePtcl = -1;
-      myTimers[0]->stop();
-      return false;
-    }
-    newRedPos = Lattice.toUnit(activePos);
-    if (Lattice.isValid(newRedPos))
-    {
-      for (int i = 0; i < DistTables.size(); ++i)
-        DistTables[i]->move(*this, activePos);
-      if (SK && SK->DoUpdate)
-        SK->makeMove(iat, activePos);
-      myTimers[0]->stop();
-      return true;
-    }
-    //out of bound
-    activePtcl = -1;
-    myTimers[0]->stop();
-    return false;
-  }
-  else
-  {
-    for (int i = 0; i < DistTables.size(); ++i)
-      DistTables[i]->move(*this, activePos);
-    myTimers[0]->stop();
-    return true;
-  }
+  computeNewPosDistTablesAndSK(iat, activePos);
 }
 
-bool ParticleSet::makeMove(const Walker_t& awalker, const ParticlePos_t& deltaR, RealType dt)
+bool ParticleSet::makeMoveAndCheck(Index_t iat, const SingleParticlePos_t& displ)
+{
+  activePtcl = iat;
+  activePos  = R[iat] + displ;
+  bool is_valid = true;
+  if (Lattice.explicitly_defined)
+  {
+    if (Lattice.outOfBound(Lattice.toUnit(displ)))
+      is_valid = false;
+    else
+    {
+      newRedPos = Lattice.toUnit(activePos);
+      if (!Lattice.isValid(newRedPos)) is_valid = false;
+    }
+  }
+  computeNewPosDistTablesAndSK(iat, activePos);
+  return is_valid;
+}
+
+void ParticleSet::computeNewPosDistTablesAndSK(Index_t iat, const SingleParticlePos_t& newpos)
+{
+  ScopedTimer compute_newpos_scope(myTimers[PS_newpos]);
+
+  for (int i = 0; i < DistTables.size(); ++i)
+    DistTables[i]->move(*this, newpos);
+  //Do not change SK: 2007-05-18
+  //Change SK only if DoUpdate is true: 2008-09-12
+  if (SK && SK->DoUpdate)
+    SK->makeMove(iat, newpos);
+}
+
+bool ParticleSet::makeMoveAllParticles(const Walker_t& awalker, const ParticlePos_t& deltaR, RealType dt)
 {
   activePtcl = -1;
-  if (UseBoundBox)
+  if (Lattice.explicitly_defined)
   {
     for (int iat = 0; iat < deltaR.size(); ++iat)
     {
@@ -489,10 +442,10 @@ bool ParticleSet::makeMove(const Walker_t& awalker, const ParticlePos_t& deltaR,
   return true;
 }
 
-bool ParticleSet::makeMove(const Walker_t& awalker, const ParticlePos_t& deltaR, const std::vector<RealType>& dt)
+bool ParticleSet::makeMoveAllParticles(const Walker_t& awalker, const ParticlePos_t& deltaR, const std::vector<RealType>& dt)
 {
   activePtcl = -1;
-  if (UseBoundBox)
+  if (Lattice.explicitly_defined)
   {
     for (int iat = 0; iat < deltaR.size(); ++iat)
     {
@@ -528,13 +481,13 @@ bool ParticleSet::makeMove(const Walker_t& awalker, const ParticlePos_t& deltaR,
  * @param dt timestep
  * @return true, if all the particle moves are legal under the boundary conditions
  */
-bool ParticleSet::makeMoveWithDrift(const Walker_t& awalker,
+bool ParticleSet::makeMoveAllParticlesWithDrift(const Walker_t& awalker,
                                     const ParticlePos_t& drift,
                                     const ParticlePos_t& deltaR,
                                     RealType dt)
 {
   activePtcl = -1;
-  if (UseBoundBox)
+  if (Lattice.explicitly_defined)
   {
     for (int iat = 0; iat < deltaR.size(); ++iat)
     {
@@ -563,13 +516,13 @@ bool ParticleSet::makeMoveWithDrift(const Walker_t& awalker,
   return true;
 }
 
-bool ParticleSet::makeMoveWithDrift(const Walker_t& awalker,
+bool ParticleSet::makeMoveAllParticlesWithDrift(const Walker_t& awalker,
                                     const ParticlePos_t& drift,
                                     const ParticlePos_t& deltaR,
                                     const std::vector<RealType>& dt)
 {
   activePtcl = -1;
-  if (UseBoundBox)
+  if (Lattice.explicitly_defined)
   {
     for (int iat = 0; iat < deltaR.size(); ++iat)
     {
@@ -598,24 +551,6 @@ bool ParticleSet::makeMoveWithDrift(const Walker_t& awalker,
     SK->UpdateAllPart(*this);
   //every move is valid
   return true;
-}
-
-
-/** move the iat-th particle by displ
- *
- * @param iat the particle that is moved on a sphere
- * @param displ displacement from the current position
- */
-void ParticleSet::makeMoveOnSphere(Index_t iat, const SingleParticlePos_t& displ)
-{
-  myTimers[1]->start();
-  activePtcl = iat;
-  activePos  = R[iat] + displ;
-  for (int i = 0; i < DistTables.size(); ++i)
-    DistTables[i]->moveOnSphere(*this, activePos);
-  if (SK && SK->DoUpdate)
-    SK->makeMove(iat, R[iat]);
-  myTimers[1]->stop();
 }
 
 /** update the particle attribute by the proposed move
@@ -650,11 +585,10 @@ void ParticleSet::acceptMove(Index_t iat)
 
 void ParticleSet::donePbyP()
 {
-  myTimers[2]->start();
+  ScopedTimer donePbyP_scope(myTimers[PS_donePbyP]);
   if (SK && !SK->DoUpdate)
     SK->UpdateAllPart(*this);
   activePtcl = -1;
-  myTimers[2]->stop();
 }
 
 void ParticleSet::makeVirtualMoves(const SingleParticlePos_t& newpos)
@@ -735,7 +669,7 @@ void ParticleSet::clearDistanceTables()
 int ParticleSet::addPropertyHistory(int leng)
 {
   int newL                                     = PropertyHistory.size();
-  std::vector<EstimatorRealType> newVecHistory = std::vector<EstimatorRealType>(leng, 0.0);
+  std::vector<FullPrecRealType> newVecHistory = std::vector<FullPrecRealType>(leng, 0.0);
   PropertyHistory.push_back(newVecHistory);
   PHindex.push_back(0);
   return newL;

@@ -44,8 +44,8 @@ RMC::RMC(MCWalkerConfiguration& w,
 {
   RootName = "rmc";
   QMCType  = "RMC";
-  QMCDriverMode.set(QMC_UPDATE_MODE, 1);
-  QMCDriverMode.set(QMC_WARMUP, 0);
+  qmc_driver_mode.set(QMC_UPDATE_MODE, 1);
+  qmc_driver_mode.set(QMC_WARMUP, 0);
   m_param.add(rescaleDrift, "drift", "string");
   m_param.add(beta, "beta", "double");
   m_param.add(beads, "beads", "int");
@@ -81,7 +81,7 @@ bool RMC::run()
 #pragma omp parallel
     {
       int ip                 = omp_get_thread_num();
-      IndexType updatePeriod = (QMCDriverMode[QMC_UPDATE_MODE]) ? Period4CheckProperties : 0;
+      IndexType updatePeriod = (qmc_driver_mode[QMC_UPDATE_MODE]) ? Period4CheckProperties : 0;
       //assign the iterators and resuse them
       MCWalkerConfiguration::iterator wit(W.begin() + wPerNode[ip]), wit_end(W.begin() + wPerNode[ip + 1]);
       Movers[ip]->startBlock(nSteps);
@@ -218,7 +218,7 @@ void RMC::resetRun()
       traceClones[ip] = Traces->makeClone();
 #endif
       hClones[ip]->setRandomGenerator(Rng[ip]);
-      if (QMCDriverMode[QMC_UPDATE_MODE])
+      if (qmc_driver_mode[QMC_UPDATE_MODE])
       {
         os << "  PbyP moves with drift, using RMCUpdatePbyPWithDriftFast" << std::endl;
         Movers[ip] =
@@ -259,7 +259,7 @@ void RMC::resetRun()
     wClones[ip]->activeBead = 0;
     wClones[ip]->direction  = +1;
 
-    if (QMCDriverMode[QMC_UPDATE_MODE])
+    if (qmc_driver_mode[QMC_UPDATE_MODE])
     {
       // app_log () << ip << " initWalkers for pbyp...\n";
       Movers[ip]->initWalkersForPbyP(W.ReptileList[ip]->repstart, W.ReptileList[ip]->repend);

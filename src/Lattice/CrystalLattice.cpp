@@ -29,8 +29,9 @@ namespace qmcplusplus
 template<class T, unsigned D>
 CrystalLattice<T, D>::CrystalLattice()
 {
-  BoxBConds   = 0;
-  VacuumScale = 1.0;
+  explicitly_defined = false;
+  BoxBConds          = 0;
+  VacuumScale        = 1.0;
   R.diagonal(1e10);
   G      = R;
   M      = R;
@@ -39,59 +40,11 @@ CrystalLattice<T, D>::CrystalLattice()
 }
 
 template<class T, unsigned D>
-void CrystalLattice<T, D>::set(int argc, char** argv)
-{
-  std::vector<std::string> opt;
-  for (int i = 0; i < argc; i++)
-    opt.push_back(argv[i]);
-  set(opt);
-}
-
-template<class T, unsigned D>
-void CrystalLattice<T, D>::set(std::vector<std::string>& argv)
-{
-  makelattice<CrystalLattice<T, D>>::apply(*this, argv);
-}
-
-
-template<class T, unsigned D>
 template<class TT>
 void CrystalLattice<T, D>::set(const Tensor<TT, D>& lat)
 {
-  R = lat;
-  reset();
-}
-
-template<class T, unsigned D>
-void CrystalLattice<T, D>::set(T sc, T* lat)
-{
-  if (lat)
-  {
-    for (int i = 0; i < D; ++i)
-      for (int j = 0; j < D; ++j)
-        R(i, j) = *lat++;
-    R *= sc;
-  }
-  else
-  {
-    R = 0.0e0;
-    R.diagonal(sc);
-  }
-  reset();
-}
-
-template<class T, unsigned D>
-void CrystalLattice<T, D>::set(const CrystalLattice<T, D>& oldlat, int* uc)
-{
-  BoxBConds   = oldlat.BoxBConds;
-  VacuumScale = oldlat.VacuumScale;
-  R           = oldlat.R;
-  if (uc)
-  {
-    for (int i = 0; i < D; ++i)
-      for (int j = 0; j < D; ++j)
-        R(i, j) *= static_cast<T>(uc[i]);
-  }
+  explicitly_defined = true;
+  R                  = lat;
   reset();
 }
 

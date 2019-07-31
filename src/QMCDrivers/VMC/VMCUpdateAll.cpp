@@ -51,7 +51,7 @@ void VMCUpdateAll::advanceWalker(Walker_t& thisWalker, bool recompute)
     if (UseDrift)
     {
       assignDrift(Tau, MassInvP, thisWalker.G, drift); // fill variable drift
-      if (W.makeMoveWithDrift(thisWalker, drift, deltaR, SqrtTauOverMass))
+      if (W.makeMoveAllParticlesWithDrift(thisWalker, drift, deltaR, SqrtTauOverMass))
       { // W.R = thisWalker.R + drift + deltaR; W.DistTables,SK are updated; W.G,L are now stale
         RealType logpsi = Psi.evaluateLog(W); // update W.G,L; update Psi.PhaseValue,LogValue
         RealType logGf  = -0.5 * Dot(deltaR, deltaR);
@@ -73,7 +73,7 @@ void VMCUpdateAll::advanceWalker(Walker_t& thisWalker, bool recompute)
     }
     else
     {
-      if (W.makeMove(thisWalker, deltaR, SqrtTauOverMass))
+      if (W.makeMoveAllParticles(thisWalker, deltaR, SqrtTauOverMass))
       {                                       // W.R += dR*dt; W.DistTables,SK are updated; W.G,L are now stale
         RealType logpsi = Psi.evaluateLog(W); // update W.G,L at changed W.R; update Psi.LogValue,PhaseValue
         RealType g      = std::exp(2.0 * (logpsi - logpsi_old));

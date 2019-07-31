@@ -147,8 +147,6 @@ bool WaveFunctionFactory::build(xmlNodePtr cur, bool buildtree)
     }
     else if (cname == "example_he")
     {
-      if (targetPtcl->Lattice.SuperCellEnum == SUPERCELL_OPEN)
-        targetPtcl->setBoundBox(false);
       WaveFunctionComponentBuilder* exampleHe_builder = new ExampleHeBuilder(*targetPtcl, *targetPsi, ptclPool);
       success                                         = exampleHe_builder->put(cur);
       addNode(exampleHe_builder, cur);
@@ -286,7 +284,7 @@ bool WaveFunctionFactory::addFDLRTerm(xmlNodePtr cur)
       // TrialWaveFunction objects.
       FDLRWfn* fdlr_wfn = new FDLRWfn(psiFactoryWfn_d->targetPsi, psiFactoryWfn_x->targetPsi, *targetPtcl, opt_x, opt_d,
                                       singlet, triplet);
-      targetPsi->addOrbital(fdlr_wfn, "FDLRWfn", true);
+      targetPsi->addComponent(fdlr_wfn, "FDLRWfn");
 
       delete doc_x;
       delete doc_d;

@@ -31,6 +31,7 @@ SET(QMCAPPDIR
     HamiltonianPool.cpp
     InitMolecularSystem.cpp
     QMCAppBase.cpp
+    QMCMainState.cpp
     QMCDriverFactory.cpp
     QMCMain.cpp
     CoupledMC.cpp

@@ -54,7 +54,6 @@ TEST_CASE("QMCUpdate", "[drivers]")
 
   MCWalkerConfiguration elec;
   elec.setName("e");
-  elec.setBoundBox(false);
   elec.create(1);
   elec.createWalkers(1);
 

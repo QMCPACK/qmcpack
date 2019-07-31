@@ -1,5 +1,5 @@
 #ifdef COMPILATION_INSTRUCTIONS
-$CXX -O3 -std=c++14 -Wall -Wextra -Wpedantic -Wfatal-errors $0 -o $0.x && $0.x $@ && rm $0.x; exit
+$CXX -O3 -std=c++14 -Wall -Wextra -Wpedantic `#-Wfatal-errors` $0 -o $0.x && $0.x $@ && rm $0.x; exit
 #endif
 
 #include<iostream>
@@ -13,8 +13,6 @@ namespace multi = boost::multi;
 using std::cout;
 
 int main(){
-
-using boost::multi::size;
 
  {	multi::array<double, 1> A     ; assert( empty(A) );
 }{	multi::array<double, 1> A{}   ; assert( empty(A) );
@@ -33,15 +31,20 @@ using boost::multi::size;
 }{	multi::array<double, 3, std::allocator<double>> A{std::allocator<double>{}}; assert( empty(A) );
 }
 
+// {  multi::array<double, 1> A({3}); assert( size(A)==3 and A[0]==0 );
+//}
  {  multi::array<double, 1> A(multi::iextensions<1>{3}); assert( size(A)==3 and A[0]==0 );
-#if not defined(__INTEL_COMPILER)
+}{  multi::array<double, 1> A(multi::array<double, 1>::extensions_type{3}); assert( size(A)==3 and A[0]==0 );
+//#if not defined(__INTEL_COMPILER)
 }{	multi::array<double, 1> A({3}); assert( size(A)==1 and A[0]==3. );  // uses init_list
-#endif
-#if not defined(__INTEL_COMPILER)
-}{  multi::array<double, 1> A({3l}); assert( size(A)==1 and A[0]==3. ); // uses init_list
-#else
-}{  multi::array<double, 1> A({3l}); assert( size(A)==3 and A[0]==0. );
-#endif
+}{	multi::array<double, 1> A({3}); assert( size(A)==1 and A[0]==3. );  // uses init_list
+//#endif
+//#if not defined(__INTEL_COMPILER)
+}{  multi::array<double, 1> A({3.}); assert( size(A)==1 and A[0]==3. ); // uses init_list
+}{  multi::array<double, 1> A = {3l}; assert( size(A)==1 and A[0]==3. ); // uses init_list
+//#else
+}{  multi::array<double, 1> A(3l, 0.); assert( size(A)==3 and A[0]==0. ); // gives warning in clang++ A({3l}, 0.);
+//#endif
 }{  multi::array<double, 1> A(multi::index_extensions<1>{{0, 3}}); assert( size(A)==3 and A[0]==0 );
 #if (!defined(__INTEL_COMPILER)) && (defined(__GNUC) && __GNU_VERSION__ >= 600)
 //}{  multi::array<double, 1> A({{0l, 3l}}); cout<<size(A)<<std::endl; assert( size(A)==3 and A[1]==0. ); //uses init_list
