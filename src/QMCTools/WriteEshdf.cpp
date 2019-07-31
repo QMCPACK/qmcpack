@@ -328,8 +328,65 @@ void EshdfFile::writeQESupercell(const XmlNode& qeXml)
   writeNumsToHDF("primitive_vectors", ptvs, supercell_group, 2, dims);  
 }
 
+void EshdfFile::writeQEAtoms(const XmlNode& qeXml) 
+{
+  const XmlNode& output_xml = qeXml.getChild("output");
+  const XmlNode& atomic_species_xml = output_xml.getChild("atomic_species");
 
-void EshdfFile::writeAtoms(const XmlNode& qboxSample) 
+  //make group
+  hid_t atoms_group = makeHDFGroup("atoms", file_);
+  
+  map<string, int> species_name_to_int;  
+  //go through each species, extract:
+  //   name, mass
+  //   in future, it would be good to extract atomic_number, and valence_charge
+  //   then write to a file, also set up mapping between species name and number
+
+  int species_num = 0;
+  for (int i = 0; i < atomic_species_xml.getNumChildren(); i++)
+  {
+    if (atomic_species_xml.getChild(i).getName() == "species")
+    {
+      const XmlNode& species_xml = atomic_species_xml.getChild(i);
+      string sp_name = species_xml.getAttribute("name");
+      species_name_to_int[sp_name] = species_num;
+      double mass;
+      species_xml.getChild("mass").getValue(mass);
+
+      stringstream gname;
+      gname << "species_" << species_num;
+      hid_t species_group = makeHDFGroup(gname.str(), atoms_group);
+      writeNumsToHDF("name", name, species_group);
+      writeNumsToHDF("mass", mass, species_group);
+      species_num++;
+    }
+  }      
+  writeNumsToHDF("number_of_species", species_num, atoms_group);
+
+  const XmlNode& atomic_structure_xml = output_xml.getChild("atomic_structure");
+  const XmlNode& atomic_positions_xml = atomic_structure_xml.getChild("atomic_positions");
+  // go through atoms and extract their position and type 
+  std::vector<int> species_ids;
+  std::vector<double> positions;
+  hsize_t at_num = 0;
+  for (int i = 0; i < atomic_positions_xml.getNumChildren(); i++) 
+  {
+    if (atomic_positions_xml.getChild(i).getName() == "atom") 
+    {
+      const XmlNode& at_node_xml = atomic_positions_xml.getChild(i);
+      species_ids.push_back(SpeciesNameToInt[at_node_xml.getAttribute("name")]);
+      at_node_xml.getValue(positions); // this will append the three numbers to the verctor
+      at_num++;
+    }
+  }
+  hsize_t dims[]={at_num,3};  
+  writeNumsToHDF("positions", positions, atoms_group, 2, dims);
+  writeNumsToHDF("species_ids", species_ids, atoms_group);
+  writeNumsToHDF("number_of_atoms", static_cast<int>(at_num), atoms_group);
+}
+
+
+void EshdfFile::writeQboxAtoms(const XmlNode& qboxSample) 
 {
   const XmlNode& atomset = qboxSample.getChild("atomset");
 

@@ -70,13 +70,14 @@ int main(int argc, char* argv[])
     EshdfFile outFile(ofname);
     outFile.writeQEBoilerPlate(inFile);
     outFile.writeQESupercell(inFile);
+    outFile.writeQEAtoms(inFile);
   } 
   else if (name == "fpmd:sample") {
     cerr << "xml file comes from qbox" << endl;
     EshdfFile outFile(ofname);
     outFile.writeQboxBoilerPlate(inFile);
     outFile.writeQboxSupercell(inFile);
-    outFile.writeAtoms(inFile);
+    outFile.writeQboxAtoms(inFile);
     outFile.writeElectrons(inFile);
   }
   else 

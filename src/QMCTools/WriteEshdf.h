@@ -43,11 +43,12 @@ public:
   EshdfFile(const std::string& hdfFileName);
   ~EshdfFile();
 
-  void writeQEBoilerPlate(const XmlNode& qboxSample);
-  void writeQboxBoilerPlate(const XmlNode& qeXml);
-  void writeQESupercell(const XmlNode& qboxSample);
+  void writeQEBoilerPlate(const XmlNode& qeXml);
+  void writeQboxBoilerPlate(const XmlNode& qboxSample);
+  void writeQESupercell(const XmlNode& qeXml);
   void writeQboxSupercell(const XmlNode& qboxSample);
-  void writeAtoms(const XmlNode& qboxSample);
+  void writeQEAtoms(const XmlNode& qeXml);
+  void writeQboxAtoms(const XmlNode& qboxSample);
   void writeElectrons(const XmlNode& qboxSample);
 };
 
