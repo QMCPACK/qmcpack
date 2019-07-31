@@ -46,9 +46,6 @@ private:
   ///Non-Local part of the pseudo-potential
   std::vector<RadialPotentialType*> sopp_m;
 
-  ParticleSet::ParticleGradient_t dG;
-  ParticleSet::ParticleLaplacian_t dL;
-
 public:
   SOECPComponent(){};
 
