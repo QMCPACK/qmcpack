@@ -61,6 +61,11 @@ int main(int argc, char* argv[])
 
   XmlNode inFile(&is, 0, true);
   string name = inFile.getName();
+  string directory("./");
+  const int last_slash_index = fname.find_last_of('/');
+  if (last_slash_index > -1) {
+    directory = fname.substr(0,last_slash_index+1);
+  }
 
   if (name == "qes:espresso") 
   { 
@@ -71,7 +76,7 @@ int main(int argc, char* argv[])
     outFile.writeQEBoilerPlate(inFile);
     outFile.writeQESupercell(inFile);
     outFile.writeQEAtoms(inFile);
-    outFile.writeQEElectrons(inFile);
+    outFile.writeQEElectrons(inFile, directory);
   } 
   else if (name == "fpmd:sample") {
     cerr << "xml file comes from qbox" << endl;

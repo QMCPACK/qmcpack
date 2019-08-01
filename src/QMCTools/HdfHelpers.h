@@ -26,17 +26,7 @@ namespace hdfhelper {
     return H5T_NATIVE_DOUBLE;
   }
     
-  // note currently only support int,float and double
-  template<typename T>
-  herr_t writeNumsToHDF(const std::string& fieldName, 
-			const std::vector<T>& data, 
-			hid_t loc,
-			int rank, 
-			hsize_t* dimensionality) 
-  {
-    return writeNumsToHDF(fieldName, &(data.front()), loc, rank, dimensionality);
-  }
-  
+  // note currently only support int,float and double  
   template<typename T>
   herr_t writeNumsToHDF(const std::string& fieldName,
 			T* const data,
@@ -52,6 +42,16 @@ namespace hdfhelper {
     H5Tclose(type);
     H5Dclose(dset);
     return ret;
+  }
+
+  template<typename T>
+  herr_t writeNumsToHDF(const std::string& fieldName, 
+			const std::vector<T>& data, 
+			hid_t loc,
+			int rank, 
+			hsize_t* dimensionality) 
+  {
+    return writeNumsToHDF(fieldName, &(data.front()), loc, rank, dimensionality);
   }
     
   template<typename T>
@@ -105,6 +105,7 @@ namespace hdfhelper {
     hid_t dset = H5Dopen1(file, fieldName.c_str());
     herr_t status = H5Dread(dset, type, H5S_ALL, H5S_ALL, H5P_DEFAULT, data);
     status = H5Dclose(dset);
+    return status;
   }
 
   // also do a version to read a single number
