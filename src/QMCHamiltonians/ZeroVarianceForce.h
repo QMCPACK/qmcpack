@@ -23,6 +23,10 @@ namespace qmcplusplus
 {
 struct ZeroVarianceForce : public QMCHamiltonianBase, public ForceBase
 {
+private:
+  const int d_ei_ID;
+
+public:
   ParticleSet& Ions;
   ParticleSet& Electrons;
   TrialWaveFunction& Psi;

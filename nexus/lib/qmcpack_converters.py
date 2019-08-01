@@ -62,6 +62,7 @@ from generic import obj
 from simulation import Simulation,SimulationInput,SimulationAnalyzer
 from gamess import Gamess
 from pyscf_sim import Pyscf
+from quantum_package import QuantumPackage
 
 
 # read/write functions associated with pw2qmcpack only
@@ -944,11 +945,19 @@ class Convert4qmc(Simulation):
             else:
                 implemented = False
             #end if
+        elif isinstance(sim,QuantumPackage):
+            self.input_code = 'qp'
+            if result_name=='orbitals':
+                orbpath = os.path.relpath(result.outfile,self.locdir)
+                input.qp = orbpath
+            else:
+                implemented = False
+            #end if
         else:
             implemented = False
         #end if
         if not implemented:
-            self.error('ability to incorporate result {0} from {1} has not been implemented'.format(result_name,sim.__class__.__name__))
+            self.error('ability to incorporate result "{0}" from {1} has not been implemented'.format(result_name,sim.__class__.__name__))
         #end if
     #end def incorporate_result
 

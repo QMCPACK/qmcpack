@@ -12,7 +12,6 @@
 
 
 #include "QMCHamiltonians/StressPBCAB.h"
-#include "Particle/DistanceTable.h"
 #include "Particle/DistanceTableData.h"
 #include "Message/Communicate.h"
 #include "Utilities/ProgressReportEngine.h"
@@ -28,14 +27,14 @@ StressPBCAB::StressPBCAB(ParticleSet& ions, ParticleSet& elns, bool computeForce
       ForceBase(ions, elns),
       MaxGridPoints(10000),
       Pion(ions),
-      Peln(elns)
+      Peln(elns),
+      d_ei_ID_(elns.addTable(ions, DT_AOS))
 {
   // if (ComputeForces)
   // 	InitVarReduction (0.5, 0, 3);
   ReportEngine PRE("StressPBCAB", "StressPBCAB");
   //Use singleton pattern
   //AB = new LRHandlerType(ions);
-  myTableIndex = elns.addTable(ions);
   initBreakup(elns);
   prefix = "S_AB";
   app_log() << "  Maximum K shell " << AB->MaxKshell << std::endl;
@@ -137,7 +136,7 @@ SymTensor<StressPBCAB::RealType, OHMMS_DIM> StressPBCAB::evalConsts(bool report)
 
 SymTensor<StressPBCAB::RealType, OHMMS_DIM> StressPBCAB::evalSR(ParticleSet& P)
 {
-  const DistanceTableData& d_ab(*P.DistTables[myTableIndex]);
+  const DistanceTableData& d_ab(P.getDistTable(d_ei_ID_));
   SymTensor<RealType, OHMMS_DIM> res = 0.0;
   //Loop over distinct eln-ion pairs
   for (int iat = 0; iat < NptclA; iat++)
@@ -165,7 +164,7 @@ SymTensor<StressPBCAB::RealType, OHMMS_DIM> StressPBCAB::evalLR(ParticleSet& P)
   const StructFact& RhoKB(*(P.SK));
   //  if(RhoKA.SuperCellEnum==SUPERCELL_SLAB)
   //  {
-  //   const DistanceTableData &d_ab(*P.DistTables[myTableIndex]);
+  //   const DistanceTableData &d_ab(P.getDistTable(d_ei_ID_));
   //    for(int iat=0; iat<NptclA; ++iat)
   //    {
   //      RealType u=0;
@@ -296,7 +295,7 @@ StressPBCAB::evalLRwithForces(ParticleSet& P)
 StressPBCAB::Return_t
 StressPBCAB::evalSRwithForces(ParticleSet& P)
 {
-  const DistanceTableData &d_ab(*P.DistTables[myTableIndex]);
+  const DistanceTableData &d_ab(P.getDistTable(d_ei_ID_));
   RealType res=0.0;
   //Loop over distinct eln-ion pairs
   for(int iat=0; iat<NptclA; iat++)

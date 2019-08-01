@@ -86,6 +86,16 @@ struct BsplineSet : public SPOSet, public SplineAdoptor
     SplineAdoptor::evaluate_vgh(P, iat, psi, dpsi, grad_grad_psi);
   }
 
+  inline void evaluate(const ParticleSet& P,
+                       int iat,
+                       ValueVector_t& psi,
+                       GradVector_t& dpsi,
+                       HessVector_t& grad_grad_psi,
+                       GGGVector_t& grad_grad_grad_psi)
+  {
+    SplineAdoptor::evaluate_vghgh(P, iat, psi, dpsi, grad_grad_psi, grad_grad_grad_psi);
+  }
+
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
                             int last,

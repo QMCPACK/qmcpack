@@ -15,7 +15,6 @@
 
 #include "QMCDrivers/DMC/DMCUpdatePbyP.h"
 #include "Particle/MCWalkerConfiguration.h"
-#include "Particle/DistanceTable.h"
 #include "Particle/HDFWalkerIO.h"
 #include "ParticleBase/ParticleUtility.h"
 #include "ParticleBase/RandomSeqGenerator.h"
@@ -62,8 +61,8 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool re
   int nAcceptTemp(0);
   int nRejectTemp(0);
   //copy the old energy and scale factor of drift
-  EstimatorRealType eold(thisWalker.Properties(LOCALENERGY));
-  EstimatorRealType enew(eold);
+  FullPrecRealType eold(thisWalker.Properties(LOCALENERGY));
+  FullPrecRealType enew(eold);
   RealType rr_proposed = 0.0;
   RealType rr_accepted = 0.0;
   RealType gf_acc      = 1.0;
@@ -78,10 +77,9 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool re
       W.setActive(iat);
       //get the displacement
       GradType grad_iat = Psi.evalGrad(W, iat);
-      mPosType dr;
-      getScaledDrift(tauovermass, grad_iat, dr);
+      PosType dr;
+      DriftModifier->getDrift(tauovermass, grad_iat, dr);
       dr += sqrttau * deltaR[iat];
-      //RealType rr=dot(dr,dr);
       RealType rr = tauovermass * dot(deltaR[iat], deltaR[iat]);
       rr_proposed += rr;
       if (rr > m_r2max)
@@ -93,8 +91,6 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool re
         continue;
       RealType ratio = Psi.ratioGrad(W, iat, grad_iat);
       //node is crossed reject the move
-      //if(Psi.getPhase() > std::numeric_limits<RealType>::epsilon())
-      //if(branchEngine->phaseChanged(Psi.getPhase(),thisWalker.Properties(SIGN)))
       if (branchEngine->phaseChanged(Psi.getPhaseDiff()))
       {
         ++nRejectTemp;
@@ -104,14 +100,12 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool re
       }
       else
       {
-        EstimatorRealType logGf = -0.5 * dot(deltaR[iat], deltaR[iat]);
+        FullPrecRealType logGf = -0.5 * dot(deltaR[iat], deltaR[iat]);
         //Use the force of the particle iat
-        //RealType scale=getDriftScale(m_tauovermass,grad_iat);
-        //dr = W.R[iat]-W.activePos-scale*real(grad_iat);
-        getScaledDrift(tauovermass, grad_iat, dr);
-        dr                      = W.R[iat] - W.activePos - dr;
-        EstimatorRealType logGb = -oneover2tau * dot(dr, dr);
-        RealType prob           = ratio * ratio * std::exp(logGb - logGf);
+        DriftModifier->getDrift(tauovermass, grad_iat, dr);
+        dr                     = W.R[iat] - W.activePos - dr;
+        FullPrecRealType logGb = -oneover2tau * dot(dr, dr);
+        RealType prob          = ratio * ratio * std::exp(logGb - logGf);
         if (RandomGen() < prob)
         {
           ++nAcceptTemp;

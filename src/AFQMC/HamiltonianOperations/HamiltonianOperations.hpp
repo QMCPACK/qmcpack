@@ -101,6 +101,12 @@ class dummy_HOps
     return 0;
   }
 
+  int global_origin_cholesky_vector() const
+  {
+    throw std::runtime_error("calling visitor on dummy_HOps object");
+    return 0;
+  }
+
   int global_number_of_cholesky_vectors() const
   {
     throw std::runtime_error("calling visitor on dummy_HOps object");
@@ -129,6 +135,12 @@ class dummy_HOps
   {
     throw std::runtime_error("calling visitor on dummy_HOps object");
     return false;
+  }
+
+  boost::multi::array<ComplexType,2> getHSPotentials()
+  {
+    throw std::runtime_error("calling visitor on dummy_HOps object");
+    return boost::multi::array<ComplexType,2>{};
   }
 
 };
@@ -264,6 +276,13 @@ class HamiltonianOperations:
         );
     }
 
+    int global_origin_cholesky_vector() const{
+        return boost::apply_visitor(
+            [&](auto&& a){return a.global_origin_cholesky_vector();},
+            *this
+        );
+    }
+
     int number_of_ke_vectors() const{
         return boost::apply_visitor(
             [&](auto&& a){return a.number_of_ke_vectors();},
@@ -310,6 +329,14 @@ class HamiltonianOperations:
     bool fast_ph_energy() const {
         return boost::apply_visitor(
             [&](auto&& a){return a.fast_ph_energy();},
+            *this
+        );
+    }
+
+    template<class... Args>
+    boost::multi::array<ComplexType,2> getHSPotentials() {
+        return boost::apply_visitor(
+            [&](auto&& a){return a.getHSPotentials();},
             *this
         );
     }

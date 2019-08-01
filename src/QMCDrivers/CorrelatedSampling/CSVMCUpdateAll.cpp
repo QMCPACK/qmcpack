@@ -43,7 +43,7 @@ void CSVMCUpdateAll::advanceWalker(Walker_t& thisWalker, bool recompute)
 
   RealType tau_over_mass = std::sqrt(Tau * MassInvS[0]);
 
-  if (!W.makeMove(thisWalker, deltaR, tau_over_mass))
+  if (!W.makeMoveAllParticles(thisWalker, deltaR, tau_over_mass))
   {
     for (int ipsi = 0; ipsi < nPsi; ipsi++)
       H1[ipsi]->rejectedMove(W, thisWalker);
@@ -134,7 +134,7 @@ void CSVMCUpdateAllWithDrift::advanceWalker(Walker_t& thisWalker, bool recompute
 
   RealType tau_over_mass = std::sqrt(Tau * MassInvS[0]);
 
-  if (!W.makeMoveWithDrift(thisWalker, drift, deltaR, SqrtTauOverMass))
+  if (!W.makeMoveAllParticlesWithDrift(thisWalker, drift, deltaR, SqrtTauOverMass))
   {
     for (int ipsi = 1; ipsi < nPsi; ipsi++)
       H1[ipsi]->rejectedMove(W, thisWalker);

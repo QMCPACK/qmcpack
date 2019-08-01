@@ -22,6 +22,7 @@
 #include "OhmmsApp/RandomNumberControl.h"
 #include "Message/OpenMP.h"
 #include "Message/CommOperators.h"
+#include "Utilities/FairDivide.h"
 #include <qmc_common.h>
 //#define ENABLE_VMC_OMP_MASTER
 #include "ADIOS/ADIOS_profile.h"
@@ -48,7 +49,7 @@ CSVMC::CSVMC(MCWalkerConfiguration& w,
   m_param.add(UseDrift, "use_drift", "string");
   equilBlocks = -1;
   m_param.add(equilBlocks, "equilBlocks", "int");
-  QMCDriverMode.set(QMC_MULTIPLE, 1);
+  qmc_driver_mode.set(QMC_MULTIPLE, 1);
 }
 
 /** allocate internal data here before run() is called
@@ -160,7 +161,7 @@ bool CSVMC::run()
 #pragma omp parallel
     {
       int ip                 = omp_get_thread_num();
-      IndexType updatePeriod = (QMCDriverMode[QMC_UPDATE_MODE]) ? Period4CheckProperties : 0;
+      IndexType updatePeriod = (qmc_driver_mode[QMC_UPDATE_MODE]) ? Period4CheckProperties : 0;
       //assign the iterators and resuse them
       MCWalkerConfiguration::iterator wit(W.begin() + wPerNode[ip]), wit_end(W.begin() + wPerNode[ip + 1]);
       CSMovers[ip]->startBlock(nSteps);
@@ -256,7 +257,7 @@ void CSVMC::resetRun()
 #endif
       Rng[ip] = new RandomGenerator_t(*(RandomNumberControl::Children[ip]));
 
-      if (QMCDriverMode[QMC_UPDATE_MODE])
+      if (qmc_driver_mode[QMC_UPDATE_MODE])
       {
         if (UseDrift == "yes")
         {
@@ -286,7 +287,7 @@ void CSVMC::resetRun()
         app_log() << os.str() << std::endl;
 
       CSMovers[ip]->put(qmcNode);
-      CSMovers[ip]->resetRun(branchEngine, estimatorClones[ip], traceClones[ip]);
+      CSMovers[ip]->resetRun(branchEngine, estimatorClones[ip], traceClones[ip], DriftModifier);
     }
   }
 #if !defined(REMOVE_TRACEMANAGER)
@@ -311,8 +312,8 @@ void CSVMC::resetRun()
   {
     //int ip=omp_get_thread_num();
     CSMovers[ip]->put(qmcNode);
-    CSMovers[ip]->resetRun(branchEngine, estimatorClones[ip], traceClones[ip]);
-    if (QMCDriverMode[QMC_UPDATE_MODE])
+    CSMovers[ip]->resetRun(branchEngine, estimatorClones[ip], traceClones[ip], DriftModifier);
+    if (qmc_driver_mode[QMC_UPDATE_MODE])
       CSMovers[ip]->initCSWalkersForPbyP(W.begin() + wPerNode[ip], W.begin() + wPerNode[ip + 1], nWarmupSteps > 0);
     else
       CSMovers[ip]->initCSWalkers(W.begin() + wPerNode[ip], W.begin() + wPerNode[ip + 1], nWarmupSteps > 0);

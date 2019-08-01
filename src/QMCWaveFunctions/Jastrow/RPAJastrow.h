@@ -22,8 +22,7 @@
 #include "QMCWaveFunctions/Jastrow/SplineFunctors.h"
 #include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbital.h"
 #include "QMCWaveFunctions/Jastrow/LRBreakupUtilities.h"
-#include "QMCWaveFunctions/Jastrow/LRTwoBodyJastrow.h"
-
+#include "QMCWaveFunctions/Jastrow/kSpaceJastrow.h"
 
 namespace qmcplusplus
 {
@@ -108,7 +107,7 @@ private:
    */
   HandlerType* myHandler;
   ///object to handle the long-range part
-  LRTwoBodyJastrow* LongRangeRPA;
+  kSpaceJastrow* LongRangeRPA;
   ///@{objects to handle the short-range part
   ///two-body Jastrow function
   WaveFunctionComponent* ShortRangeRPA;

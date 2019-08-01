@@ -99,7 +99,7 @@ LocalECPotential::Return_t LocalECPotential::evaluate(ParticleSet& P)
   else
 #endif
   {
-    const DistanceTableData& d_table(*P.DistTables[myTableIndex]);
+    const DistanceTableData& d_table(P.getDistTable(myTableIndex));
     Value = 0.0;
     if (d_table.DTType == DT_SOA)
     {
@@ -139,7 +139,7 @@ LocalECPotential::Return_t LocalECPotential::evaluateWithIonDerivs(ParticleSet& 
                                                                    ParticleSet::ParticlePos_t& hf_terms,
                                                                    ParticleSet::ParticlePos_t& pulay_terms)
 {
-  const DistanceTableData& d_table(*P.DistTables[myTableIndex]);
+  const DistanceTableData& d_table(P.getDistTable(myTableIndex));
   Value = 0.0;
   if (d_table.DTType == DT_SOA)
   {
@@ -178,7 +178,7 @@ LocalECPotential::Return_t LocalECPotential::evaluateWithIonDerivs(ParticleSet& 
 #if !defined(REMOVE_TRACEMANAGER)
 LocalECPotential::Return_t LocalECPotential::evaluate_sp(ParticleSet& P)
 {
-  const DistanceTableData& d_table(*P.DistTables[myTableIndex]);
+  const DistanceTableData& d_table(P.getDistTable(myTableIndex));
   Value                       = 0.0;
   Array<RealType, 1>& Ve_samp = *Ve_sample;
   Array<RealType, 1>& Vi_samp = *Vi_sample;
@@ -237,7 +237,7 @@ LocalECPotential::Return_t LocalECPotential::evaluate_sp(ParticleSet& P)
 
 LocalECPotential::Return_t LocalECPotential::evaluate_orig(ParticleSet& P)
 {
-  const DistanceTableData& d_table(*P.DistTables[myTableIndex]);
+  const DistanceTableData& d_table(P.getDistTable(myTableIndex));
   Value = 0.0;
   //loop over all the ions
   for (int iat = 0; iat < NumIons; iat++)

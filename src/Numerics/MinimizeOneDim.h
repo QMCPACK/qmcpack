@@ -93,8 +93,16 @@ Bracket_min_t<T> bracket_minimum(const F& f, T initial_value, T bound_max = -1.0
     {
       delx *= 5;
     }
-    cnt++;
     if (cnt == 1000)
+    {
+      delx *= 5;
+    }
+    if (cnt == 10000)
+    {
+      delx *= 5;
+    }
+    cnt++;
+    if (cnt == 100000)
     {
       throw std::runtime_error("Failed to bracket minimum");
     }

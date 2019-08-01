@@ -205,10 +205,15 @@ def read_cif(filepath,block=None,grammar='1.1',cell='prim',args_only=False):
 #    enter ase directory (cd spglib-1.8.2/python/ase/)
 #    build and install (sudo python setup.py install)
 from periodic_table import pt as ptable
+#try:
+#    from pyspglib import spglib
+#except:
+#    spglib = unavailable('pyspglib','spglib')
+##end try
 try:
-    from pyspglib import spglib
+    import spglib
 except:
-    spglib = unavailable('pyspglib','spglib')
+    spglib = unavailable('spglib')
 #end try
 
 
@@ -707,6 +712,7 @@ class Structure(Sobj):
                  posu              = None,
                  use_prim          = None,
                  add_kpath         = False,
+                 symm_kgrid        = False,
                  ):
 
         if isinstance(axes,str):
@@ -791,7 +797,11 @@ class Structure(Sobj):
             self.add_kpoints(kpoints,kweights)
         #end if
         if kgrid is not None:
-            self.add_kmesh(kgrid,kshift)
+            if not symm_kgrid:
+                self.add_kmesh(kgrid,kshift)
+            else:
+                self.add_symmetrized_kmesh(kgrid,kshift)
+            #end if
         #end if
         if rescale:
             self.rescale(scale)
@@ -1388,7 +1398,7 @@ class Structure(Sobj):
         axinv  = inv(self.axes)
         axnew  = dot(self.axes,skew)
         kaxinv = inv(self.kaxes)
-        kaxnew = dot(inv(skew),self.kaxes)
+        kaxnew = dot(inv(skew).T,self.kaxes)
         self.pos     = dot(dot(self.pos,axinv),axnew)
         self.center  = dot(dot(self.center,axinv),axnew)
         self.kpoints = dot(dot(self.kpoints,kaxinv),kaxnew)
@@ -3399,6 +3409,48 @@ class Structure(Sobj):
         self.add_kpoints(kmesh(self.kaxes,kgrid,kshift),unique=unique)
     #end def add_kmesh
 
+
+    def add_symmetrized_kmesh(self,kgrid,kshift=(0,0,0)):
+        # get spglib cell data structure
+        cell = self.spglib_cell()
+
+        # get the symmetry mapping
+        kmap,kpoints_int = spglib.get_ir_reciprocal_mesh(
+            kgrid,
+            cell,
+            is_shift=kshift
+            )
+
+        # create the Monkhorst-Pack mesh
+        kshift = array(kshift,dtype=float)
+        okgrid = 1.0/array(kgrid,dtype=float)
+        kpoints = empty(kpoints_int.shape,dtype=float)
+        for i,ki in enumerate(kpoints_int):
+            kpoints[i] = (ki+kshift)*okgrid
+        #end for
+        kpoints = dot(kpoints,self.kaxes)
+
+        # reduce to only the symmetric kpoints with weights
+        kwmap = obj()
+        for ik in kmap:
+            if ik not in kwmap:
+                kwmap[ik] = 1
+            else:
+                kwmap[ik] += 1
+            #end if
+        #end for
+        nkpoints = len(kwmap)
+        kpoints_symm  = empty((nkpoints,self.dim),dtype=float)
+        kweights_symm = empty((nkpoints,),dtype=float)
+        n = 0
+        for ik,kw in kwmap.iteritems():
+            kpoints_symm[n]  = kpoints[ik]
+            kweights_symm[n] = kw
+            n+=1
+        #end for
+        self.add_kpoints(kpoints_symm,kweights_symm)
+    #end def add_symmetrized_kmesh
+
     
     def kpoints_unit(self,kpoints=None):
         if kpoints is None:
@@ -4516,7 +4568,7 @@ class Structure(Sobj):
 
     # minimal ASE Atoms-like interface to Structure objects for spglib
     def get_cell(self):
-        return self.axes
+        return self.axes.copy()
     #end def get_cell
 
     def get_scaled_positions(self):
@@ -4539,6 +4591,14 @@ class Structure(Sobj):
         self.error('structure objects do not currently support magnetic moments')
     #end def get_magnetic_moments
 
+    # direct spglib interface
+    def spglib_cell(self):
+        lattice   = self.axes.copy()
+        positions = self.pos_unit()
+        numbers   = self.get_atomic_numbers()
+        cell = (lattice,positions,numbers)
+        return cell
+    #end def spglib_cell
 #end class Structure
 Structure.set_operations()
 
@@ -5476,6 +5536,7 @@ class Crystal(Structure):
                  pos            = None,
                  use_prim       = None,
                  add_kpath      = False,
+                 symm_kgrid     = False,
                  ):
 
         if lattice is None and cell is None and atoms is None and units is None:
@@ -5508,6 +5569,7 @@ class Crystal(Structure):
             pos            = pos           ,
             use_prim       = use_prim      ,
             add_kpath      = add_kpath     ,
+            symm_kgrid     = symm_kgrid    ,
             )
         generation_info = gi.copy()
 
@@ -5791,6 +5853,7 @@ class Crystal(Structure):
             operations     = operations,
             use_prim       = use_prim,
             add_kpath      = add_kpath,
+            symm_kgrid     = symm_kgrid,
             )
 
     #end def __init__
@@ -6094,6 +6157,7 @@ def generate_crystal_structure(
     folded_units   = None,
     use_prim       = None,
     add_kpath      = False,
+    symm_kgrid     = False,
     #legacy inputs
     structure      = None,
     shape          = None,
@@ -6140,6 +6204,7 @@ def generate_crystal_structure(
             elem_pos       = elem_pos,
             use_prim       = use_prim,
             add_kpath      = add_kpath,
+            symm_kgrid     = symm_kgrid,
             )
     elif isinstance(structure,Structure):
         s = structure
@@ -6153,7 +6218,11 @@ def generate_crystal_structure(
             s.add_kpoints(kpoints,kweights)
         #end if
         if kgrid is not None:
-            s.add_kmesh(kgrid,kshift)
+            if not symm_kgrid:
+                s.add_kmesh(kgrid,kshift)
+            else:
+                self.add_symmetrized_kmesh(kgrid,kshift)
+            #end if
         #end if
     #end if
     if s is not None:
@@ -6199,6 +6268,7 @@ def generate_crystal_structure(
         pos            = pos           ,
         use_prim       = use_prim      ,
         add_kpath      = add_kpath     ,
+        symm_kgrid     = symm_kgrid    ,
         )
 
     if struct_type!=Crystal:

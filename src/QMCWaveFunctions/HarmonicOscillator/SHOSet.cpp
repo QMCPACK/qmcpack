@@ -543,11 +543,6 @@ void SHOSet::resetParameters(const opt_variables_type& optVariables) { not_imple
 
 void SHOSet::evaluate(const ParticleSet& P, PosType& r, ValueVector_t& psi) { not_implemented("evaluate(P,r,psi)"); }
 
-void SHOSet::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, HessVector_t& ddpsi)
-{
-  not_implemented("evaluate(P,iat,psi,dpsi,ddpsi)");
-}
-
 void SHOSet::evaluateThirdDeriv(const ParticleSet& P, int first, int last, GGGMatrix_t& grad_grad_grad_logdet)
 {
   not_implemented("evaluateThirdDeriv(P,first,last,dddlogdet)");

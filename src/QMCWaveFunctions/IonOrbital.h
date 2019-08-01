@@ -10,8 +10,8 @@
 //
 // File created by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 /** @file IonOrbital.h
  * @brief Simple gaussian functions used for orbitals for ions
  */
@@ -19,31 +19,30 @@
 #define QMCPLUSPLUS_ION_ORBITAL
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "Particle/DistanceTableData.h"
-#include "Particle/DistanceTable.h"
 
 namespace qmcplusplus
 {
-
 /** A composite Orbital
  */
 struct IonOrbital : public WaveFunctionComponent
 {
 private:
-  ParticleAttrib<RealType> U,d2U;
+  ParticleAttrib<RealType> U, d2U;
   ParticleAttrib<PosType> dU;
   RealType *FirstAddressOfdU, *LastAddressOfdU;
   ///table index
   int myTableID;
   ///orbital centers
-  ParticleSet &CenterRef;
+  ParticleSet& CenterRef;
   int NumTargetPtcls, NumCenters;
   RealType curVal, curLap;
   PosType curGrad;
+
 public:
   std::vector<RealType> ParticleAlpha;
   std::vector<int> ParticleCenter;
 
-  IonOrbital(ParticleSet &centers, ParticleSet &ptcls);
+  IonOrbital(ParticleSet& centers, ParticleSet& ptcls);
 
   ~IonOrbital();
 
@@ -65,8 +64,7 @@ public:
 
   void resetTargetParticleSet(ParticleSet& P);
 
-  RealType evaluateLog(ParticleSet& P,
-                       ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
+  RealType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
 
   ValueType ratio(ParticleSet& P, int iat);
 
@@ -76,11 +74,9 @@ public:
 
   void registerData(ParticleSet& P, WFBufferType& buf);
 
-  RealType
-  updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch);
+  RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch);
 
-  void
-  copyFromBuffer(ParticleSet& P, WFBufferType& buf);
+  void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
 
   GradType evalGrad(ParticleSet& P, int iat);
 
@@ -89,11 +85,7 @@ public:
 
   WaveFunctionComponent* makeClone(ParticleSet& tqp) const;
 
-  void evaluateLogAndStore(ParticleSet& P,
-                           ParticleSet::ParticleGradient_t& dG,
-                           ParticleSet::ParticleLaplacian_t& dL);
-
-
+  void evaluateLogAndStore(ParticleSet& P, ParticleSet::ParticleGradient_t& dG, ParticleSet::ParticleLaplacian_t& dL);
 };
-}
+} // namespace qmcplusplus
 #endif

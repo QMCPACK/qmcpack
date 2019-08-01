@@ -19,7 +19,6 @@
 #include "Lattice/ParticleBConds.h"
 #include "Particle/ParticleSet.h"
 #include "Particle/DistanceTableData.h"
-#include "Particle/DistanceTable.h"
 #include "Particle/SymmetricDistanceTableData.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "QMCApp/ParticleSetPool.h"
@@ -30,6 +29,7 @@
 #include "Estimators/EstimatorManagerBase.h"
 #include "Estimators/TraceManager.h"
 #include "QMCDrivers/VMC/VMCUpdatePbyP.h"
+#include "QMCDrivers/GreenFunctionModifiers/DriftModifierUNR.h"
 
 
 #include <stdio.h>
@@ -56,7 +56,6 @@ TEST_CASE("VMC Particle-by-Particle advanceWalkers", "[drivers][vmc]")
   ions.R[0][2] = 0.0;
 
   elec.setName("elec");
-  elec.setBoundBox(false);
   std::vector<int> agroup(1);
   agroup[0] = 2;
   elec.create(agroup);
@@ -88,7 +87,7 @@ TEST_CASE("VMC Particle-by-Particle advanceWalkers", "[drivers][vmc]")
 
   TrialWaveFunction psi = TrialWaveFunction(c);
   ConstantOrbital* orb  = new ConstantOrbital;
-  psi.addOrbital(orb, "Constant");
+  psi.addComponent(orb, "Constant");
   psi.registerData(elec, elec.WalkerList[0]->DataSet);
   elec.WalkerList[0]->DataSet.allocate();
 
@@ -104,7 +103,8 @@ TEST_CASE("VMC Particle-by-Particle advanceWalkers", "[drivers][vmc]")
   EstimatorManagerBase EM;
   SimpleFixedNodeBranch branch(0.1, 1);
   TraceManager TM;
-  vmc.resetRun(&branch, &EM, &TM);
+  DriftModifierUNR DM;
+  vmc.resetRun(&branch, &EM, &TM, &DM);
   vmc.startBlock(1);
 
   VMCUpdatePbyP::WalkerIter_t begin = elec.begin();

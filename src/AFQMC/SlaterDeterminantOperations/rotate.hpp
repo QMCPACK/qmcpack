@@ -130,12 +130,13 @@ void halfRotateCholeskyMatrix(WALKER_TYPES type, task_group& TG, int k0, int kN,
           else
             csr::axpy('N',Aai,CholMat[i*NMO+k],vec);  
         }  
-        if(transpose)  
+        if(transpose) { 
           for(int n=0; n<nvec; n++)
             if(std::abs(vec[n])>cutoff) ++sz_per_row[n]; 
-        else  
+        } else { 
           for(int n=0; n<nvec; n++)
             if(std::abs(vec[n])>cutoff) ++sz_per_row[cnt];
+        }
       }
     }  
     // reset "amount of work done" to full alpha piece
@@ -156,12 +157,13 @@ void halfRotateCholeskyMatrix(WALKER_TYPES type, task_group& TG, int k0, int kN,
             else
               csr::axpy('N',Aai,CholMat[i*NMO+k],vec);
           }
-          if(transpose)
+          if(transpose) {
             for(int n=0; n<nvec; n++)
               if(std::abs(vec[n])>cutoff) ++sz_per_row[n]; 
-          else
+          } else {
             for(int n=0; n<nvec; n++)
               if(std::abs(vec[n])>cutoff) ++sz_per_row[cnt]; 
+          }
         }
       }
     }
@@ -185,12 +187,13 @@ void halfRotateCholeskyMatrix(WALKER_TYPES type, task_group& TG, int k0, int kN,
         else
           csr::axpy('N',Aai,CholMat[i*NMO+k],vec);
       }   
-      if(transpose)  
+      if(transpose) {  
         for(int n=0; n<nvec; n++)
           if(std::abs(vec[n])>cutoff) emplace(Q,std::forward_as_tuple(n,cnt,vec[n])); 
-      else  
+      } else {  
         for(int n=0; n<nvec; n++)
           if(std::abs(vec[n])>cutoff) emplace(Q,std::forward_as_tuple(cnt,n,vec[n])); 
+      }  
     }
   }  
   // reset "amount of work done" to full alpha piece
@@ -211,12 +214,13 @@ void halfRotateCholeskyMatrix(WALKER_TYPES type, task_group& TG, int k0, int kN,
           else
             csr::axpy('N',Aai,CholMat[i*NMO+k],vec);
         }
-        if(transpose)
+        if(transpose) {
           for(int n=0; n<nvec; n++)
             if(std::abs(vec[n])>cutoff) emplace(Q,std::forward_as_tuple(n,cnt,vec[n]));
-        else
+        } else {
           for(int n=0; n<nvec; n++)
             if(std::abs(vec[n])>cutoff) emplace(Q,std::forward_as_tuple(cnt,n,vec[n]));
+        }
       }
     }
   }
@@ -528,7 +532,7 @@ void getLank_from_Lkin(MultiArray2DA&& Aai, MultiArray3DB&& Lkin,
   int ni = Aai.size(1);
   int nk = Lkin.size(0);
   int nchol = Lkin.size(2);
-  assert(Lkin.size(0)==ni);
+  assert(Lkin.size(1)==ni);
   assert(Lank.size(0)==na);
   assert(Lank.size(1)==nchol);
   assert(Lank.size(2)==nk);

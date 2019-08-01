@@ -1690,7 +1690,7 @@ class QBase(DevBase):
         fl_A = 'Flux_0',        fl_B = 'Flux_1',       fl_AB  = 'dFlux_0_1',
         wp_A = 'wpsi_0',        wp_B = 'wpsi_1',
         # AFQMC
-        el = 'Eloc',            ele = 'ElocEstim'
+        el = 'EnergyEstim__nume_real'
         )
 
     def log(self,*texts,**kwargs):

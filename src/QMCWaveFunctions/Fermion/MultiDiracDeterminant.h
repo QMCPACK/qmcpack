@@ -106,11 +106,11 @@ public:
 
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& optvars,
-                           std::vector<RealType>& dlogpsi,
-                           std::vector<RealType>& dhpsioverpsi,
+                           std::vector<ValueType>& dlogpsi,
+                           std::vector<ValueType>& dhpsioverpsi,
                            const MultiDiracDeterminant& pseudo_dn,
                            const ValueType& psiCurrent,
-                           const std::vector<RealType>& Coeff,
+                           const std::vector<ValueType>& Coeff,
                            const std::vector<size_t>& C2node_up,
                            const std::vector<size_t>& C2node_dn)
   {

@@ -69,7 +69,9 @@ struct cuda_gpu_reference {
 
   operator value_type() const { return this->val(); }
 
-  operator value_type&() {
+  // try getting rid of this
+  operator value_type&() 
+  {
     if(cudaSuccess != cudaMemcpy(std::addressof(host_impl_),impl_,sizeof(T),cudaMemcpyDefault))
      throw std::runtime_error("Error: cudaMemcpy returned error code.");
     return host_impl_;
@@ -602,7 +604,7 @@ void fill2D(int n, int m, qmc_cuda::cuda_gpu_ptr<T> first, int lda, T const& val
 namespace boost{
 namespace multi{
 
-using qmcplusplus::afqmc::to_address;
+//using qmcplusplus::afqmc::to_address;
 
 /**************** copy *****************/
 // Can always call cudaMemcopy2D like you do in the blas backend
@@ -793,6 +795,7 @@ multi::array_iterator<T, 1, T*> uninitialized_copy(
   static_assert(std::is_same<typename std::decay<Q2>::type,T>::value,"Wrong dispatch.\n");
   assert( stride(first) == stride(last) );
   if(std::distance(first,last) == 0 ) return dest;
+  using qmcplusplus::afqmc::to_address;
   if(cudaSuccess != cudaMemcpy2D(to_address(base(dest)),sizeof(T)*stride(dest),
                                  to_address(base(first)),sizeof(T)*stride(first),
                                  sizeof(T),std::distance(first,last),cudaMemcpyDeviceToHost))

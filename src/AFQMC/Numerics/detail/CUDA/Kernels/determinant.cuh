@@ -21,14 +21,14 @@
 namespace kernels 
 {
 
-double determinant_from_getrf_gpu(int N, double *m, int lda, int *piv);
-std::complex<double> determinant_from_getrf_gpu(int N, std::complex<double> *m, int lda, int *piv);
+double determinant_from_getrf_gpu(int N, double *m, int lda, int *piv, double LogOverlapFactor);
+std::complex<double> determinant_from_getrf_gpu(int N, std::complex<double> *m, int lda, int *piv, std::complex<double> LogOverlapFactor);
 
-void determinant_from_getrf_gpu(int N, double *m, int lda, int *piv, double* res);
-void determinant_from_getrf_gpu(int N, std::complex<double> *m, int lda, int *piv, std::complex<double>* res);
+void determinant_from_getrf_gpu(int N, double *m, int lda, int *piv, double LogOverlapFactor, double* res);
+void determinant_from_getrf_gpu(int N, std::complex<double> *m, int lda, int *piv, std::complex<double> LogOverlapFactor, std::complex<double>* res);
 
-void determinant_from_geqrf_gpu(int N, double *m, int lda, double *piv, std::complex<double>* res);
-void determinant_from_geqrf_gpu(int N, std::complex<double> *m, int lda, std::complex<double> *piv, std::complex<double>* res);
+std::complex<double> determinant_from_geqrf_gpu(int N, double *m, int lda, double *piv, double LogOverlapFactor);
+std::complex<double> determinant_from_geqrf_gpu(int N, std::complex<double> *m, int lda, std::complex<double> *piv, std::complex<double> LogOverlapFactor);
 
 void determinant_from_geqrf_gpu(int N, double *m, int lda, double *piv);
 void determinant_from_geqrf_gpu(int N, std::complex<double> *m, int lda, std::complex<double> *piv);

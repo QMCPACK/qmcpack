@@ -30,15 +30,16 @@ void applyCuspCorrection(const Matrix<CuspCorrectionParameters>& info,
                          LCAOrbitalSetWithCorrection& lcwc,
                          const std::string& id);
 
-void saveCusp(int orbital_set_size, int num_centers, Matrix<CuspCorrectionParameters>& info, std::string id);
+void saveCusp(int orbital_set_size, int num_centers, Matrix<CuspCorrectionParameters>& info, const std::string &id);
 
 void generateCuspInfo(int orbital_set_size,
                       int num_centers,
                       Matrix<CuspCorrectionParameters>& info,
-                      ParticleSet& targetPtcl,
-                      ParticleSet& sourcePtcl,
-                      LCAOrbitalSetWithCorrection& lcwc,
-                      std::string id);
+                      const ParticleSet& targetPtcl,
+                      const ParticleSet& sourcePtcl,
+                      const LCAOrbitalSetWithCorrection& lcwc,
+                      const std::string& id,
+                      Communicate& Comm);
 } // namespace qmcplusplus
 
 #endif

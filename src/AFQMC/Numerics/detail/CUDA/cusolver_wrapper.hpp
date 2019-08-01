@@ -554,6 +554,162 @@ namespace cusolver {
 
   }
 
+  //gesvd_bufferSize
+  inline cusolverStatus_t
+  cusolver_gesvd_bufferSize(cusolverDnHandle_t handle,
+                      int m,
+                      int n,
+                      float* A,
+                      int *Lwork )
+  {
+    cusolverStatus_t sucess =
+              cusolverDnSgesvd_bufferSize(handle,m,n,Lwork);
+    cudaDeviceSynchronize ();
+    return sucess;
+  }
+
+  inline cusolverStatus_t
+  cusolver_gesvd_bufferSize(cusolverDnHandle_t handle,
+                      int m,
+                      int n,
+                      double* A,
+                      int *Lwork )
+  {
+    cusolverStatus_t sucess =
+              cusolverDnDgesvd_bufferSize(handle,m,n,Lwork);
+    cudaDeviceSynchronize ();
+    return sucess;
+  }
+
+  inline cusolverStatus_t
+  cusolver_gesvd_bufferSize(cusolverDnHandle_t handle,
+                      int m,
+                      int n,
+                      std::complex<float>* A,
+                      int *Lwork )
+  {
+    cusolverStatus_t sucess =
+              cusolverDnCgesvd_bufferSize(handle,m,n,Lwork);
+    cudaDeviceSynchronize ();
+    return sucess;
+  }
+
+  inline cusolverStatus_t
+  cusolver_gesvd_bufferSize(cusolverDnHandle_t handle,
+                      int m,
+                      int n,
+                      std::complex<double>* A,
+                      int *Lwork )
+  {
+    cusolverStatus_t sucess =
+              cusolverDnZgesvd_bufferSize(handle,m,n,Lwork);
+    cudaDeviceSynchronize ();
+    return sucess;
+  }
+
+  //gesvd
+  inline cusolverStatus_t
+  cusolver_gesvd(cusolverDnHandle_t handle,
+    signed char jobu,
+    signed char jobvt,
+    int m,
+    int n,
+    float *A,
+    int lda,
+    float *S,
+    float *U,
+    int ldu,
+    float *VT,
+    int ldvt,
+    float *work,
+    int lwork,
+    int *devInfo)
+  {
+    cusolverStatus_t sucess =
+              cusolverDnSgesvd(handle,jobu,jobvt,m,n,A,lda,S,U,ldu,VT,ldvt,work,lwork,nullptr,devInfo);
+    cudaDeviceSynchronize ();
+    return sucess;
+  }
+
+  inline cusolverStatus_t
+  cusolver_gesvd(cusolverDnHandle_t handle,
+    signed char jobu,
+    signed char jobvt,
+    int m,
+    int n,
+    double *A,
+    int lda,
+    double *S,
+    double *U,
+    int ldu,
+    double *VT,
+    int ldvt,
+    double *work,
+    int lwork,
+    int *devInfo)
+  {
+    cusolverStatus_t sucess =
+              cusolverDnDgesvd(handle,jobu,jobvt,m,n,A,lda,S,U,ldu,VT,ldvt,work,lwork,nullptr,devInfo);
+    cudaDeviceSynchronize ();
+    return sucess;
+  }
+
+  inline cusolverStatus_t
+  cusolver_gesvd(cusolverDnHandle_t handle,
+    signed char jobu,
+    signed char jobvt,
+    int m,
+    int n,
+    std::complex<float> *A,
+    int lda,
+    float *S,
+    std::complex<float> *U,
+    int ldu,
+    std::complex<float> *VT,
+    int ldvt,
+    std::complex<float> *work,
+    int lwork,
+    int *devInfo)
+  {
+    cusolverStatus_t sucess =
+             cusolverDnCgesvd(handle,jobu,jobvt,m,n,
+                               reinterpret_cast<cuComplex *>(A),lda,S,
+                               reinterpret_cast<cuComplex *>(U),ldu,
+                               reinterpret_cast<cuComplex *>(VT),ldvt,
+                               reinterpret_cast<cuComplex *>(work),lwork,
+                               nullptr,devInfo);
+    cudaDeviceSynchronize ();
+    return sucess;
+  }
+
+  inline cusolverStatus_t
+  cusolver_gesvd(cusolverDnHandle_t handle,
+    signed char jobu,
+    signed char jobvt,
+    int m,
+    int n, 
+    std::complex<double> *A,
+    int lda,
+    double *S,
+    std::complex<double> *U,
+    int ldu,
+    std::complex<double> *VT,
+    int ldvt,
+    std::complex<double> *work,
+    int lwork,
+    int *devInfo)
+  { 
+    cusolverStatus_t sucess =
+              cusolverDnZgesvd(handle,jobu,jobvt,m,n,
+                               reinterpret_cast<cuDoubleComplex *>(A),lda,S,
+                               reinterpret_cast<cuDoubleComplex *>(U),ldu,
+                               reinterpret_cast<cuDoubleComplex *>(VT),ldvt,
+                               reinterpret_cast<cuDoubleComplex *>(work),lwork,
+                               nullptr,devInfo);
+    cudaDeviceSynchronize ();
+    return sucess;
+  }
+
 }
 
 #endif

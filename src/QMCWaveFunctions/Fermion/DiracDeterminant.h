@@ -71,8 +71,8 @@ public:
 
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& active,
-                           std::vector<RealType>& dlogpsi,
-                           std::vector<RealType>& dhpsioverpsi);
+                           std::vector<ValueType>& dlogpsi,
+                           std::vector<ValueType>& dhpsioverpsi);
 
   ///reset the size: with the number of particles and number of orbtials
   void resize(int nel, int morb);
@@ -97,6 +97,7 @@ public:
 
   ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
   GradType evalGrad(ParticleSet& P, int iat);
+
   GradType evalGradSource(ParticleSet& P, ParticleSet& source, int iat);
 
   GradType evalGradSource(ParticleSet& P,
@@ -104,12 +105,6 @@ public:
                           int iat,
                           TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM>& grad_grad,
                           TinyVector<ParticleSet::ParticleLaplacian_t, OHMMS_DIM>& lapl_grad);
-
-  GradType evalGradSourcep(ParticleSet& P,
-                           ParticleSet& source,
-                           int iat,
-                           TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM>& grad_grad,
-                           TinyVector<ParticleSet::ParticleLaplacian_t, OHMMS_DIM>& lapl_grad);
 
   /** move was accepted, update the real container
    */
@@ -182,6 +177,11 @@ public:
   ValueType curRatio;
   ValueType* FirstAddressOfdV;
   ValueType* LastAddressOfdV;
+  
+private:
+  /** Resize all temporary arrays required for force computation.
+  */ 
+  void resizeScratchObjectsForIonDerivs();
 };
 
 

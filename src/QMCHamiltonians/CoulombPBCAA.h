@@ -134,6 +134,10 @@ struct CoulombPBCAA : public QMCHamiltonianBase, public ForceBase
     if (ComputeForces)
       setParticleSetF(plist, offset);
   }
+
+private:
+  // AA table ID
+  const int d_aa_ID;
 };
 
 } // namespace qmcplusplus

@@ -925,9 +925,10 @@ struct PolynomialFunctor3D : public OptimizableFunctorBase
       PRE.error("You must specify a positive number for \"isize\"", true);
     if (N_ee == 0)
       PRE.error("You must specify a positive number for \"esize\"", true);
-    // app_log() << " esize = " << NumParams_ee << " parameters " << std::endl;
-    // app_log() << " isize = " << NumParams_eI << " parameters " << std::endl;
-    // app_log() << " rcut = " << cutoff_radius << std::endl;
+    app_summary() << "     Ion: " << iSpecies << "   electron-electron: " << eSpecies1 << " - " << eSpecies2 << std::endl;
+    app_summary() << "      Number of parameters for e-e: " << N_ee << ", for e-I: " << N_eI << std::endl;
+    app_summary() << "      Cutoff radius: " << cutoff_radius << std::endl;
+    app_summary() << std::endl;
     resize(N_eI, N_ee);
     // Now read coefficents
     xmlNodePtr xmlCoefs = cur->xmlChildrenNode;
@@ -979,8 +980,9 @@ struct PolynomialFunctor3D : public OptimizableFunctorBase
         //     }
         if (!notOpt)
         {
-          app_log() << "Parameter     Name      Value\n";
-          myVars.print(app_log());
+          int left_pad_spaces = 6;
+          myVars.print(app_log(), left_pad_spaces, true);
+          app_log() << std::endl;
         }
       }
       xmlCoefs = xmlCoefs->next;
@@ -997,8 +999,9 @@ struct PolynomialFunctor3D : public OptimizableFunctorBase
     for (int i = 0; i < Parameters.size(); ++i)
     {
       int loc = myVars.where(i);
-      if (loc >= 0)
-        Parameters[i] = myVars[i] = active[loc];
+      if (loc >= 0) {
+        Parameters[i] = std::real( myVars[i] = active[loc] );
+      }
     }
     if (ResetCount++ == 100)
     {

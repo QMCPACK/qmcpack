@@ -176,7 +176,7 @@ bool ElectronGasOrbitalBuilder::put(xmlNodePtr cur)
     }
   }
   //add Slater determinant to targetPsi
-  targetPsi.addOrbital(sdet, "SlaterDet", true);
+  targetPsi.addComponent(sdet, "SlaterDet");
   return true;
 }
 

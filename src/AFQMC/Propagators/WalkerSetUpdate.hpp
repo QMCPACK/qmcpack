@@ -78,14 +78,12 @@ void hybrid_walker_update(Wlk&& w, RealType dt, bool apply_constrain, bool imp_s
   // between WMat and Mat/OMat
   if(work.size(0) < 7 || work.size(1) < nwalk)
     work.reextent({7,nwalk});
-  
-  bool BackProp = (w.getNBackProp()>0);
+
+  bool BackProp = (w.getBPPos() >=0 && w.getBPPos()<w.NumBackProp());
 
   w.getProperty(WEIGHT,work[0]);
   w.getProperty(PSEUDO_ELOC_,work[1]);
   w.getProperty(OVLP,work[2]);
-  if(BackProp) 
-    w.getProperty(WEIGHT_FAC,work[3]);
   using std::copy_n;
   copy_n(overlap.origin(),nwalk,work[4].origin());
   copy_n(MFfactor.origin(),nwalk,work[5].origin());
@@ -138,15 +136,18 @@ std::cout<<" update: "
     work[0][i] *= ComplexType(scale*std::exp( -dt*( 0.5*( eloc.real() + old_eloc.real() ) - Eshift )),0.0);
     work[1][i] = eloc;
     work[2][i] = work[4][i];
-    if(BackProp && std::abs(scale) > 1e-16)
-      work[3][i] *= std::exp( -ComplexType(0.0,dt) * ( 0.5*( eloc.imag() + old_eloc.imag()) ) ) / scale;
-
+    work[3][i] = std::exp( -ComplexType(0.0,dt) * ( 0.5*( eloc.imag() + old_eloc.imag()) ) ) / scale;
   }
   w.setProperty(WEIGHT,work[0]);
   w.setProperty(PSEUDO_ELOC_,work[1]);
   w.setProperty(OVLP,work[2]);
-  if(BackProp)
-    w.setProperty(WEIGHT_FAC,work[3]);
+  if(BackProp) {
+    auto&& WFac(w.getWeightFactors()[w.getBPPos()]);
+    using std::copy_n;
+    copy_n(work[3].origin(),nwalk,WFac.origin());
+    auto&& WHis(w.getWeightHistory()[w.getBPPos()]);
+    copy_n(work[0].origin(),nwalk,WHis.origin());
+  }
 
 }
 
@@ -161,7 +162,7 @@ void local_energy_walker_update(Wlk&& w, RealType dt, bool apply_constrain, Real
   if(work.size(0) < 12 || work.size(1) < nwalk)
     work.reextent({12,nwalk});
 
-  bool BackProp = (w.getNBackProp()>0);
+  bool BackProp = (w.getBPPos() >=0 && w.getBPPos()<w.NumBackProp());
 
   w.getProperty(WEIGHT,work[0]);
   w.getProperty(PSEUDO_ELOC_,work[1]);
@@ -169,8 +170,6 @@ void local_energy_walker_update(Wlk&& w, RealType dt, bool apply_constrain, Real
   w.getProperty(E1_,work[3]);
   w.getProperty(EXX_,work[4]);
   w.getProperty(EJ_,work[5]);
-  if(BackProp)
-    w.getProperty(WEIGHT_FAC,work[6]);
   using std::copy_n;
   copy_n(overlap.origin(),nwalk,work[7].origin());
   copy_n(MFfactor.origin(),nwalk,work[8].origin());
@@ -205,8 +204,7 @@ void local_energy_walker_update(Wlk&& w, RealType dt, bool apply_constrain, Real
 
     work[0][i] *= ComplexType(scale*std::exp( -dt*( 0.5*( eloc.real() + old_eloc.real() ) - 
                             Eshift )),0.0);
-    if(BackProp && std::abs(scale) > 1e-16) 
-      work[6][i] *= std::exp( -ComplexType(0.0,dt) * ( 0.5*( eloc.imag() + old_eloc.imag()) ) ) / scale;
+    work[6][i] = std::exp( -ComplexType(0.0,dt) * ( 0.5*( eloc.imag() + old_eloc.imag()) ) ) / scale;
     work[1][i] = eloc;
     work[2][i] = work[7][i];
     work[3][i] = work[9][i]; 
@@ -221,8 +219,13 @@ void local_energy_walker_update(Wlk&& w, RealType dt, bool apply_constrain, Real
   w.setProperty(E1_,work[3]);
   w.setProperty(EXX_,work[4]);
   w.setProperty(EJ_,work[5]);
-  if(BackProp)
-    w.setProperty(WEIGHT_FAC,work[6]);
+  if(BackProp) {
+    auto&& WFac(w.getWeightFactors()[w.getBPPos()]);
+    using std::copy_n;
+    copy_n(work[6].origin(),nwalk,WFac.origin());
+    auto&& WHis(w.getWeightHistory()[w.getBPPos()]);
+    copy_n(work[0].origin(),nwalk,WHis.origin());
+  }
 
 }
 

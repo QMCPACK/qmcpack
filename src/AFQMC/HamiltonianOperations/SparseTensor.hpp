@@ -23,12 +23,14 @@
 #include "AFQMC/config.h"
 #include "mpi3/shared_communicator.hpp"
 #include "AFQMC/Matrix/csr_matrix.hpp"
+#include "AFQMC/Numerics/csr_blas.hpp"
 #include "AFQMC/Numerics/ma_operations.hpp"
 
 #include "AFQMC/Utilities/type_conversion.hpp"
 #include "AFQMC/Utilities/taskgroup.h"
 
 #include "AFQMC/HamiltonianOperations/sparse_matrix_energy.hpp"
+#include "Utilities/FairDivide.h"
 
 namespace qmcplusplus
 {
@@ -152,15 +154,15 @@ class SparseTensor
           H1[i][j] += hij[i][j] + vn0[i][j];
           H1[j][i] += hij[j][i] + vn0[j][i];
           // This is really cutoff dependent!!!
-          if( std::abs( H1[i][j] - conj(H1[j][i]) ) > 1e-6 ) {
+          if( std::abs( H1[i][j] - ma::conj(H1[j][i]) ) > 1e-6 ) {
             app_error()<<" WARNING in getOneBodyPropagatorMatrix. H1 is not hermitian. \n";
             app_error()<<i <<" " <<j <<" " <<H1[i][j] <<" " <<H1[j][i] <<" "
                        <<hij[i][j] <<" " <<hij[j][i] <<" "
                        <<vn0[i][j] <<" " <<vn0[j][i] <<std::endl;
             //APP_ABORT("Error in getOneBodyPropagatorMatrix. H1 is not hermitian. \n");
           }
-          H1[i][j] = 0.5*(H1[i][j]+conj(H1[j][i]));
-          H1[j][i] = conj(H1[i][j]);
+          H1[i][j] = 0.5*(H1[i][j]+ma::conj(H1[j][i]));
+          H1[j][i] = ma::conj(H1[i][j]);
         }
       }
 
@@ -403,6 +405,7 @@ class SparseTensor
     int number_of_ke_vectors() const{ return Spvn.size(1); }
     int local_number_of_cholesky_vectors() const{ return Spvn.size(1); }
     int global_number_of_cholesky_vectors() const{ return global_nCV; }
+    int global_origin_cholesky_vector() const{ return Spvn.global_origin()[1];}
 
     // transpose=true means G[nwalk][ik], false means G[ik][nwalk]
     bool transposed_G_for_vbias() const{return false;}
@@ -411,6 +414,14 @@ class SparseTensor
     bool transposed_vHS() const{return false;}
 
     bool fast_ph_energy() const { return false; }
+
+    boost::multi::array<ComplexType,2> getHSPotentials()
+    {
+      int nchol = global_number_of_cholesky_vectors();
+      boost::multi::array<ComplexType,2> HSPot({nchol,nchol});
+      csr::CSR2MA('T',Spvn,HSPot);
+      return HSPot;
+    }
 
   private:
 

@@ -40,17 +40,21 @@ namespace afqmc
  * Implements communication, load balancing, and I/O operations.   
  * Walkers are always accessed through the handler.
  */
-class SharedWalkerSet: public WalkerSetBase<shared_allocator<ComplexType>,ComplexType*> 
+class SharedWalkerSet: public WalkerSetBase<shared_allocator<ComplexType>,ComplexType*
+                                           > 
 {
 
-  using Base = WalkerSetBase<shared_allocator<ComplexType>,ComplexType*>;
-
   public:
+
+  using Base = WalkerSetBase<shared_allocator<ComplexType>,ComplexType*
+                            >;
 
   /// constructor
   SharedWalkerSet(afqmc::TaskGroup_& tg_, xmlNodePtr cur, AFQMCInfo& info, 
         RandomGenerator_t* r):
-                Base(tg_,cur,info,r,shared_allocator<ComplexType>{tg_.TG_local()})
+                Base(tg_,cur,info,r,
+                     shared_allocator<ComplexType>{tg_.TG_local()},
+                     shared_allocator<ComplexType>{tg_.TG_local()})
   {
   }
 

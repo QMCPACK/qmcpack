@@ -25,7 +25,7 @@
 #include <OhmmsPETE/OhmmsVector.h>
 #include <OhmmsPETE/OhmmsMatrix.h>
 #include <Numerics/OhmmsBlas.h>
-#include <config/stdlib/math.h>
+#include <config/stdlib/math.hpp>
 #include <simd/simd.hpp>
 #include <Numerics/determinant_operators.h>
 
@@ -161,9 +161,9 @@ inline T Determinant(T* restrict x, int n, int m, int* restrict pivot)
 template<class T>
 inline T Invert(T* restrict x, int n, int m)
 {
-  int pivot[n];
-  T work[n];
-  return Invert(x, n, m, work, pivot);
+  std::vector<int> pivot(n);
+  std::vector<T> work(n);
+  return Invert(x, n, m, work.data(), pivot.data());
 }
 
 template<class T>
@@ -222,9 +222,9 @@ inline T InvertWithLog(std::complex<T>* restrict x,
 template<typename T, typename RT>
 inline RT InvertWithLog(T* restrict x, int n, int m, RT& phase)
 {
-  int pivot[m];
-  T work[m];
-  return InvertWithLog(x, n, m, work, pivot, phase);
+  std::vector<int> pivot(m);
+  std::vector<T> work(m);
+  return InvertWithLog(x, n, m, work.data(), pivot.data(), phase);
 }
 
 /** invert a matrix
@@ -237,9 +237,9 @@ inline typename MatrixA::value_type invert_matrix(MatrixA& M, bool getdet = true
 {
   typedef typename MatrixA::value_type value_type;
   const int n = M.rows();
-  int pivot[n];
-  value_type work[n];
-  LUFactorization(n, n, M.data(), n, pivot);
+  std::vector<int> pivot(n);
+  std::vector<value_type> work(n);
+  LUFactorization(n, n, M.data(), n, pivot.data());
   value_type det0 = 1.0;
   if (getdet)
   // calculate determinant
@@ -253,7 +253,7 @@ inline typename MatrixA::value_type invert_matrix(MatrixA& M, bool getdet = true
     }
     det0 *= static_cast<value_type>(sign);
   }
-  InvertLU(n, M.data(), n, pivot, work, n);
+  InvertLU(n, M.data(), n, pivot.data(), work.data(), n);
   return det0;
 }
 
@@ -267,9 +267,8 @@ inline typename MatrixA::value_type determinant_matrix(MatrixA& M)
   typedef typename MatrixA::value_type value_type;
   MatrixA N(M);
   const int n = N.rows();
-  int pivot[n];
-  value_type work[n];
-  LUFactorization(n, n, N.data(), n, pivot);
+  std::vector<int> pivot(n);
+  LUFactorization(n, n, N.data(), n, pivot.data());
   value_type det0 = 1.0;
   int sign        = 1;
   for (int i = 0; i < n; ++i)

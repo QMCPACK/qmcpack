@@ -17,7 +17,6 @@
 #include "Lattice/ParticleBConds.h"
 #include "Particle/ParticleSet.h"
 #include "Particle/DistanceTableData.h"
-#include "Particle/DistanceTable.h"
 #include "Particle/SymmetricDistanceTableData.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
@@ -94,15 +93,7 @@ TEST_CASE("BSpline builder Jastrow J2", "[wavefunction]")
   int chargeIdx                = tspecies.addAttribute("charge");
   tspecies(chargeIdx, upIdx)   = -1;
   tspecies(chargeIdx, downIdx) = -1;
-
-#ifdef ENABLE_SOA
-  elec_.addTable(ions_, DT_SOA);
-#else
-  elec_.addTable(ions_, DT_AOS);
-#endif
   elec_.resetGroups();
-  elec_.update();
-
 
   TrialWaveFunction psi = TrialWaveFunction(c);
 
@@ -136,11 +127,51 @@ TEST_CASE("BSpline builder Jastrow J2", "[wavefunction]")
   J2Type* j2 = dynamic_cast<J2Type*>(orb);
   REQUIRE(j2 != NULL);
 
+  // update all distance tables
+  elec_.update();
+
   double logpsi = psi.evaluateLog(elec_);
   REQUIRE(logpsi == Approx(0.1012632641)); // note: number not validated
 
   double KE = -0.5 * (Dot(elec_.G, elec_.G) + Sum(elec_.L));
   REQUIRE(KE == Approx(-0.1616624771)); // note: number not validated
+
+
+  // now test evaluateHessian
+  WaveFunctionComponent::HessVector_t grad_grad_psi;
+  grad_grad_psi.resize(elec_.getTotalNum());
+  grad_grad_psi = 0.0;
+  
+  std::cout<<"eval hess"<<std::endl;
+  j2->evaluateHessian(elec_,grad_grad_psi);
+  std::vector<double> hess_values = {
+    -0.0627236,
+    0,
+    0,
+    0,
+    0.10652,
+    0,
+    0,
+    0,
+    0.10652,
+    -0.0627236,
+    0,
+    0,
+    0,
+    0.10652,
+    0,
+    0,
+    0,
+    0.10652,
+  };
+
+  int m=0;
+  for(int n=0; n<elec_.getTotalNum(); n++)
+    for(int i=0; i<OHMMS_DIM; i++)
+      for(int j=0; j<OHMMS_DIM; j++,m++)
+        {
+          REQUIRE(grad_grad_psi[n](i,j) == ComplexApprox(hess_values[m]).compare_real_only());
+        }
 
 
   struct JValues
@@ -251,6 +282,7 @@ TEST_CASE("BSpline builder Jastrow J2", "[wavefunction]")
 
   REQUIRE(ratio_1 == ComplexApprox(0.9871985577).compare_real_only());
   REQUIRE(j2->LogValue == Approx(0.0883791773));
+
 }
 
 TEST_CASE("BSpline builder Jastrow J1", "[wavefunction]")
@@ -292,15 +324,7 @@ TEST_CASE("BSpline builder Jastrow J1", "[wavefunction]")
   int chargeIdx                = tspecies.addAttribute("charge");
   tspecies(chargeIdx, upIdx)   = -1;
   tspecies(chargeIdx, downIdx) = -1;
-
-#ifdef ENABLE_SOA
-  elec_.addTable(ions_, DT_SOA);
-#else
-  elec_.addTable(ions_, DT_AOS);
-#endif
   elec_.resetGroups();
-  elec_.update();
-
 
   TrialWaveFunction psi = TrialWaveFunction(c);
 
@@ -336,6 +360,9 @@ TEST_CASE("BSpline builder Jastrow J1", "[wavefunction]")
 #endif
   J1Type* j1 = dynamic_cast<J1Type*>(orb);
   REQUIRE(j1 != NULL);
+
+  // update all distance tables
+  elec_.update();
 
   double logpsi = psi.evaluateLog(elec_);
   REQUIRE(logpsi == Approx(0.3160552244)); // note: number not validated
@@ -391,6 +418,46 @@ TEST_CASE("BSpline builder Jastrow J1", "[wavefunction]")
   REQUIRE(lapl_grad_source[1][1] == ComplexApprox(0.0000000000).compare_real_only());
   REQUIRE(lapl_grad_source[2][0] == ComplexApprox(0.0000000000).compare_real_only());
   REQUIRE(lapl_grad_source[2][1] == ComplexApprox(0.0000000000).compare_real_only());
+
+
+  // now test evaluateHessian
+  WaveFunctionComponent::HessVector_t grad_grad_psi;
+  grad_grad_psi.resize(elec_.getTotalNum());
+  grad_grad_psi = 0.0;
+
+  psi.evaluateHessian(elec_,grad_grad_psi);
+  
+  std::vector<double> hess_values = {
+    0.00888367,
+    0,
+    0,
+    0,
+    -0.0284893,
+    0,
+    0,
+    0,
+    -0.0284893,
+    0.00211188,
+    0,
+    0,
+    0,
+    -0.00923137,
+    0,
+    0,
+    0,
+    -0.00923137,
+  };
+
+  int m=0;
+  for(int n=0; n<elec_.getTotalNum(); n++)
+    for(int i=0; i<OHMMS_DIM; i++)
+      for(int j=0; j<OHMMS_DIM; j++,m++)
+        {
+          REQUIRE(grad_grad_psi[n](i,j) == ComplexApprox(hess_values[m]).compare_real_only());
+        }
+
+  psi.evaluateLog(elec_); // evaluateHessian has side effects
+
 
   struct JValues
   {

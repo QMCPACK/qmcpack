@@ -64,11 +64,11 @@ void VMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
       for (int iat = W.first(ig); iat < W.last(ig); ++iat)
       {
         W.setActive(iat);
-        mPosType dr;
+        PosType dr;
         if (UseDrift)
         {
           GradType grad_now = Psi.evalGrad(W, iat);
-          getScaledDrift(tauovermass, grad_now, dr);
+          DriftModifier->getDrift(tauovermass, grad_now, dr);
           dr += sqrttau * deltaR[iat];
         }
         else
@@ -87,7 +87,7 @@ void VMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
           RealType ratio = Psi.ratioGrad(W, iat, grad_new);
           prob           = ratio * ratio;
           logGf          = mhalf * dot(deltaR[iat], deltaR[iat]);
-          getScaledDrift(tauovermass, grad_new, dr);
+          DriftModifier->getDrift(tauovermass, grad_new, dr);
           dr    = W.R[iat] - W.activePos - dr;
           logGb = -oneover2tau * dot(dr, dr);
         }
@@ -121,7 +121,7 @@ void VMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
   myTimers[0]->stop();
   // end PbyP moves
   myTimers[2]->start();
-  EstimatorRealType eloc = H.evaluate(W);
+  FullPrecRealType eloc = H.evaluate(W);
   thisWalker.resetProperty(logpsi, Psi.getPhase(), eloc);
   myTimers[2]->stop();
   myTimers[3]->start();

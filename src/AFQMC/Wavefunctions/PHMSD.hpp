@@ -219,6 +219,8 @@ class PHMSD: public AFQMCInfo
     { return HamOp.local_number_of_cholesky_vectors(); }
     int global_number_of_cholesky_vectors() const 
     { return HamOp.global_number_of_cholesky_vectors(); }
+    int global_origin_cholesky_vector() const
+    { return HamOp.global_origin_cholesky_vector(); }
     bool distribution_over_cholesky_vectors() const 
     { return HamOp.distribution_over_cholesky_vectors(); }
 
@@ -339,8 +341,43 @@ class PHMSD: public AFQMCInfo
     template<class WlkSet, class MatG, class TVec>
     void MixedDensityMatrix(const WlkSet& wset, MatG&& G, TVec&& Ov, bool compact=true, bool transpose=false);
 
-    template<class WlkSet, class MatG, class CVec>
-    void WalkerAveragedDensityMatrix(const WlkSet& wset, MatG& G, CVec& denom, bool path_restoration=false, bool free_projection=false, bool back_propagated=false);
+    /*
+     * Calculates the density matrix with respect to a given Reference
+     * for all walkers in the walker set. 
+     */
+    template<class WlkSet, class MatA, class MatB, class MatG, class TVec>
+    void DensityMatrix(const WlkSet& wset, MatA&& RefA, MatB&& RefB, MatG&& G,
+                        TVec&& Ov, bool herm, bool compact, bool transposed)
+    {
+/*
+      if(nbatch != 0)
+        DensityMatrix_batched(wset,std::forward<MatA>(RefA),std::forward<MatB>(RefB),
+                                std::forward<MatG>(G),std::forward<TVec>(Ov),
+                                herm,compact,transposed);
+      else
+*/
+        DensityMatrix_shared(wset,std::forward<MatA>(RefA),std::forward<MatB>(RefB),
+                                std::forward<MatG>(G),std::forward<TVec>(Ov),
+                                herm,compact,transposed);
+    }
+
+    template<class MatA, class MatB, class MatG, class TVec>
+    void DensityMatrix(std::vector<MatA>& Left, std::vector<MatB>& Right, std::vector<MatG>& G,
+                        TVec&& Ov, double LogOverlapFactor, bool herm, bool compact)
+    {
+/*
+      if(nbatch != 0)
+        DensityMatrix_batched(Left,Right,G,std::forward<TVec>(Ov),LogOverlapFactor,
+                                herm,compact);
+      else
+*/
+        DensityMatrix_shared(Left,Right,G,std::forward<TVec>(Ov),LogOverlapFactor,
+                                herm,compact);
+    }
+
+    template<class WlkSet, class MatG, class CVec1, class CVec2, class Mat1, class Mat2>
+    void WalkerAveragedDensityMatrix(const WlkSet& wset, CVec1& wgt, MatG& G, CVec2& denom, Mat1 &&Ovlp, Mat2&& DMsum, bool free_projection=false, boost::multi::array_ref<ComplexType,3>* Refs=nullptr, boost::multi::array<ComplexType,2>* detR=nullptr); 
+
     /*
      * Calculates the mixed density matrix for all walkers in the walker set
      *   with a format consistent with (and expected by) the vbias routine.
@@ -395,13 +432,24 @@ class PHMSD: public AFQMCInfo
      * Orthogonalizes the Slater matrix of a walker in an excited state calculation.
      */
     template<class Mat>
-    void OrthogonalizeExcited(Mat&& A, SpinTypes spin);
+    void OrthogonalizeExcited(Mat&& A, SpinTypes spin, double LogOverlapFactor);
 
     /*
-     * Back Propagates the trial wavefunction.
-    */
-    template<class MatA, class Wlk, class MatB>
-    ComplexType BackPropagateOrbMat(MatA& OrbMat, const Wlk& walker, MatB& PsiBP);
+     * Returns the number of reference Slater Matrices needed for back propagation.  
+     */
+    int number_of_references_for_back_propagation() const {
+      return 0; 
+    }
+
+    ComplexType getReferenceWeight(int i) {return ComplexType(0.0,0.0);}
+
+    /*
+     * Returns the reference Slater Matrices needed for back propagation.  
+     */
+    template<class Mat>
+    void getReferencesForBackPropagation(Mat&& A) {
+      APP_ABORT(" Error: getReferencesForBackPropagation not implemented with PHMSD wavefunctions.\n"); 
+    }
 
   protected: 
 
@@ -508,6 +556,31 @@ class PHMSD: public AFQMCInfo
      */
     template<class WlkSet, class Mat, class TVec>
     void Energy_distributed(const WlkSet& wset, Mat&& E, TVec&& Ov); 
+
+    /* 
+     * Computes the density matrix with respect to a given reference. 
+     * Intended to be used in combination with the energy evaluation routine.
+     * G and Ov are expected to be in shared memory.
+     */
+    template<class WlkSet, class MatA, class MatB, class MatG, class TVec>
+    void DensityMatrix_shared(const WlkSet& wset, MatA&& RefsA, MatB&& RefsB, MatG&& G,
+                                TVec&& Ov, bool herm, bool compact, bool transposed);
+
+/*
+    template<class WlkSet, class MatA, class MatB, class MatG, class TVec>
+    void DensityMatrix_batched(const WlkSet& wset, MatA&& RefsA, MatB&& RefsB, MatG&& G,
+                                TVec&& Ov, bool herm, bool compact, bool transposed);
+*/
+
+    template<class MatA, class MatB, class MatG, class TVec>
+    void DensityMatrix_shared(std::vector<MatA>& Left, std::vector<MatB>& Right, std::vector<MatG>& G,
+                        TVec&& Ov, double LogOverlapFactor, bool herm, bool compact);
+
+/*
+    template<class MatA, class MatB, class MatG, class TVec>
+    void DensityMatrix_batched(std::vector<MatA>& Left, std::vector<MatB>& Right, std::vector<MatG>& G,
+                        TVec&& Ov, double LogOverlapFactor, bool herm, bool compact);
+*/
 
     int dm_size(bool full) const {
       switch(walker_type) {

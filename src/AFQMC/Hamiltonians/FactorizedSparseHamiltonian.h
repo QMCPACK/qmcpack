@@ -11,14 +11,14 @@
 
 #include "AFQMC/config.h"
 #include "AFQMC/Utilities/taskgroup.h"
-#include "AFQMC/Numerics/ma_operations.hpp"
+//#include "AFQMC/Numerics/ma_operations.hpp"
 #include "AFQMC/Numerics/csr_blas.hpp"
 
 #include "AFQMC/Hamiltonians/OneBodyHamiltonian.hpp"
 
 #include "AFQMC/Matrix/matrix_emplace_wrapper.hpp"
 #include "AFQMC/Matrix/csr_matrix_construct.hpp"
-#include "AFQMC/Hamiltonians/rotateHamiltonian.hpp"
+//#include "AFQMC/Hamiltonians/rotateHamiltonian.hpp"
 #include "AFQMC/HamiltonianOperations/HamiltonianOperations.hpp"
 
 namespace qmcplusplus
@@ -36,7 +36,7 @@ class FactorizedSparseHamiltonian: public OneBodyHamiltonian
   using csr_matrix_view = shm_csr_matrix::template matrix_view<int>;
 
 
-  FactorizedSparseHamiltonian(AFQMCInfo const& info, xmlNodePtr cur, boost::multi::array<ComplexType,2>&& h,
+  FactorizedSparseHamiltonian(AFQMCInfo const& info, xmlNodePtr cur, boost::multi::array<ValueType,2>&& h,
                               shm_csr_matrix&& v2_, TaskGroup_& tg_, ValueType nucE=0, ValueType fzcE=0):
                                     OneBodyHamiltonian(info,std::move(h),nucE,fzcE),
                                     TG(tg_),V2_fact(std::move(v2_)),
@@ -94,12 +94,9 @@ class FactorizedSparseHamiltonian: public OneBodyHamiltonian
   FactorizedSparseHamiltonian& operator=(FactorizedSparseHamiltonian const& other) = delete;
   FactorizedSparseHamiltonian& operator=(FactorizedSparseHamiltonian && other) = default;
 
-  boost::multi::array<ComplexType,2> getH1() const{ return OneBodyHamiltonian::getH1(); }
+  boost::multi::array<ValueType,2> getH1() const{ return OneBodyHamiltonian::getH1(); }
 
-  boost::multi::array<ComplexType,1> halfRotatedHij(WALKER_TYPES type, PsiT_Matrix *Alpha, PsiT_Matrix *Beta) {
-    check_wavefunction_consistency(type,Alpha,Beta,NMO,NAEA,NAEB);
-    return rotateHij(type,Alpha,Beta,OneBodyHamiltonian::H1);
-  }
+  boost::multi::array<ComplexType,1> halfRotatedHij(WALKER_TYPES type, PsiT_Matrix *Alpha, PsiT_Matrix *Beta); 
 
   SpVType_shm_csr_matrix generateHijkl(WALKER_TYPES type, bool addCoulomb, TaskGroup_& TGwfn, std::map<IndexType,std::pair<bool,IndexType>>& occ_a, std::map<IndexType,std::pair<bool,IndexType>>& occ_b , RealType const cut=1e-6);
 
