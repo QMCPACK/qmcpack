@@ -71,6 +71,7 @@ int main(int argc, char* argv[])
     outFile.writeQEBoilerPlate(inFile);
     outFile.writeQESupercell(inFile);
     outFile.writeQEAtoms(inFile);
+    outFile.writeQEElectrons(inFile);
   } 
   else if (name == "fpmd:sample") {
     cerr << "xml file comes from qbox" << endl;
@@ -78,7 +79,7 @@ int main(int argc, char* argv[])
     outFile.writeQboxBoilerPlate(inFile);
     outFile.writeQboxSupercell(inFile);
     outFile.writeQboxAtoms(inFile);
-    outFile.writeElectrons(inFile);
+    outFile.writeQboxElectrons(inFile);
   }
   else 
   {
