@@ -34,16 +34,26 @@ namespace hdfhelper {
 			int rank, 
 			hsize_t* dimensionality) 
   {
-    hid_t type = H5Tcopy(getHdfDataType(data[0]));
+    return writeNumsToHDF(fieldName, &(data.front()), loc, rank, dimensionality);
+  }
+  
+  template<typename T>
+  herr_t writeNumsToHDF(const std::string& fieldName,
+			T* const data,
+			hid_t loc,
+			int rank,
+			hsize_t* dimensionality)
+  {
+    hid_t type = H5Tcopy(getHdfDataType(*data));
     hid_t dspace = H5Screate_simple(rank, dimensionality, NULL);
     hid_t dset = H5Dcreate2(loc, fieldName.c_str(), type, dspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-    herr_t ret = H5Dwrite(dset, type, H5S_ALL, H5S_ALL, H5P_DEFAULT, &(data.front()));
+    herr_t ret = H5Dwrite(dset, type, H5S_ALL, H5S_ALL, H5P_DEFAULT, data);
     H5Sclose(dspace);
     H5Tclose(type);
     H5Dclose(dset);
     return ret;
   }
-
+    
   template<typename T>
   herr_t writeNumsToHDF(const std::string& fieldName, const std::vector<T>& data, hid_t loc) 
   {
@@ -51,6 +61,15 @@ namespace hdfhelper {
     return writeNumsToHDF(fieldName, data, loc, 1, &len);
   }
 
+  // this assumes a 1d arrangement
+  template<typename T>
+  herr_t writeNumsToHDF(const std::string& fieldName, T *const data, int len, hid_t loc) 
+  {
+    hsize_t lena = len;
+    return writeNumsToHDF(fieldName, data, data, 1, &lena);
+  }
+
+  
   template<typename T>
   herr_t writeNumsToHDF(const std::string& fieldName, T data, hid_t loc) 
   {
@@ -77,6 +96,23 @@ namespace hdfhelper {
     return H5Gcreate2(location, gName.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
   }
 
+  // we are assuming that enough memory to hold all the data has already been
+  // allocated an is associated with the pointer that is handed in
+  template<typename T>
+  hid_t readNumsFromHDF(const std::string& fieldName, T* const data, hid_t file)
+  {
+    hid_t type = H5Tcopy(getHdfDataType(*data));
+    hid_t dset = H5Dopen1(file, fieldName.c_str());
+    herr_t status = H5Dread(dset, type, H5S_ALL, H5S_ALL, H5P_DEFAULT, data);
+    status = H5Dclose(dset);
+  }
+
+  // also do a version to read a single number
+  template<typename T>
+  hid_t readNumsFromHDF(const std::string& fieldName, T& data, hid_t file)
+  {
+    return readNumsFromHDF(fieldName, &data, file);
+  }
 };
 
 #endif

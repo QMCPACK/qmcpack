@@ -49,7 +49,8 @@ public:
   void writeQboxSupercell(const XmlNode& qboxSample);
   void writeQEAtoms(const XmlNode& qeXml);
   void writeQboxAtoms(const XmlNode& qboxSample);
-  void writeElectrons(const XmlNode& qboxSample);
+  void writeQEElectrons(const XmlNode& qeXml);
+  void writeQboxElectrons(const XmlNode& qboxSample);
 };
 
 #endif

@@ -448,7 +448,97 @@ void EshdfFile::writeQboxAtoms(const XmlNode& qboxSample)
   writeNumsToHDF("number_of_atoms", static_cast<int>(atNum), atoms_group);
 }
 
-void EshdfFile::writeElectrons(const XmlNode& qboxSample) 
+void EshdfFile::writeQeElectrons(const XmlNode& qeXml) {
+  const XmlNode& output_xml = qeXml.getChild("output");
+  // read in the grid to put in the charge density 
+  const XmlNode& basis_set_xml = output_xml.getChild("basis_set");
+  const XmlNode& fft_grid = basis_set_xml.getChild("fft_grid");
+  int nr1;
+  int nr2;
+  int nr3;
+  fft_grid.getAttribute("nr1", nr1);
+  fft_grid.getAttribute("nr2", nr2);
+  fft_grid.getAttribute("nr3", nr3);
+  // also figure out how many gvectors there will be
+  const XmlNode& ngm_xml = basis_set_xml.getChild("ngm");
+  int num_dens_gvecs;
+  ngm_xml.getValue(num_dens_gvecs);
+  // finally, need to figure out if this is spin polarized, or if it is noncolinear
+  int spinpol = 0;
+  int noncol = 0;
+  const XmlNode& band_structure_xml = output_xml.getChild("band_structure");
+  const XmlNode& lsda_xml = band_structure_xml.getChild("lsda");
+  string lsda_string_bool = lsda_xml.getValue();
+  const XmlNode& noncolin_xml = band_structure_xml.getChild("noncolin");
+  string noncolin_string_bool = noncolin_xml.getValue();
+  if (lsda_string_bool == "true") spinpol = 1;
+  if (noncolin_string_bool == "true") noncol = 1;
+  
+  // now open the hdf file and read the necessary quantities
+  herr_t status;
+  hid_t file, dset;
+  const string dens_fname = "charge-density.hdf5"
+  file = H5Fopen(dens_fname.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
+
+  const string gvectors_str ="MillerIndices";
+  int* gvecs = new int[3*num_dens_gvecs];
+  readNumsFromHDF(gvectors_str, gvecs, file);
+
+  const string totdens_str = "rhotot_g";
+  double* dens = new double[2*num_dens_gvecs];
+  readNumsFromHDF(totdens_str, dens, file);
+  
+  double* diffdens = new double[2*num_dens_gvecs];
+  if (spinol == 1) {
+    const string diffdens_str = "rhodiff_g";
+    readNumsFromHDF(diffdens_str, diffdens, file);
+  }
+
+  // now need to write everything out
+  hid_t electrons_group = makeHDFGroup("electrons", file_);
+  hid_t density_group = makeHDFGroup("density", electrons_group);
+
+  hsize_t dims[]={num_dens_gvecs,3};
+  writeNumsToHDF("gvectors", gvecs, density_group, 2, dims);
+  delete[] gvecs;
+  
+  vector<int> grid;
+  grid.push_back(nr1);
+  grid.push_back(nr2);
+  grid.push_back(nr3);
+  writeNumsToHDF("mesh", grid);
+  writeNumsToHDF("number_of_gvectors", num_dens_gvecs);
+  if (spinpol == 0) {
+    hid_t spin_0_group = makeHDFGroup("spin_0", density_group);
+    hsize_t dims_dens[]={num_dens_gvecs,2};
+    writeNumsToHDF("density_g", dens, spin_0_group, 2, dims);
+  } else {
+    // do spin up
+    double* working = new double[2*num_dens_gvecs];
+    for (int i = 0; i < num_dens_gvecs*2; i++) {
+      working[i] = (dens[i]+diffdens[i])/2.0;
+    }
+    hid_t spin_0_group = makeHDFGroup("spin_0", density_group);
+    hsize_t dims_dens[]={num_dens_gvecs,2};
+    writeNumsToHDF("density_g", working, spin_0_group, 2, dims);
+
+    // do spin down
+    for (int i = 0; i < num_dens_gvecs*2; i++) {
+      working[i] = (dens[i]-diffdens[i])/2.0;
+    }
+    hid_t spin_1_group = makeHDFGroup("spin_1", density_group);
+    hsize_t dims_dens[]={num_dens_gvecs,2};
+    writeNumsToHDF("density_g", working, spin_1_group, 2, dims);
+    delete[] working;
+  }
+  delete[] dens;
+  delete[] diffdens;
+         
+}
+  
+
+
+void EshdfFile::writeQboxElectrons(const XmlNode& qboxSample) 
 {
   const XmlNode& wfnNode = qboxSample.getChild("wavefunction");
   int nspin, nel;
