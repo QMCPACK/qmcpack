@@ -9,6 +9,14 @@
 // File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
+/** @file
+ *  Temporary DriverRactory test for legacy CUDA.
+ * 
+ *  Since there is not any plan to have the new batch driver and the legacy CUDA variant co-compile.
+ *  This avoids polluting the new test code and new batch drivers with #ifdef QMC_CUDA
+ *  The new driver sources are simply not part of the build at all for the legacy CUDA
+ *  variant.
+ */
 
 #include "catch.hpp"
 
@@ -29,7 +37,7 @@
 
 namespace qmcplusplus
 {
-TEST_CASE("QMCDriverFactory create VMC Driver", "[qmcapp]")
+TEST_CASE("QMCDriverFactory create VMC_CUDA Driver", "[qmcapp]")
 {
   Communicate* comm;
   OHMMS::Controller->initialize(0, NULL);
@@ -38,7 +46,7 @@ TEST_CASE("QMCDriverFactory create VMC Driver", "[qmcapp]")
   QMCDriverFactory driver_factory;
   // clang-format off
   const char* driver_xml = R"(
-  <qmc method="vmc" move="pbyp">
+  <qmc method="vmc" move="pbyp" gpu="yes">
     <estimator name="LocalEnergy" hdf5="no" />
     <parameter name="walkers">                1 </parameter>
     <parameter name="stepsbetweensamples">    1 </parameter>
@@ -75,58 +83,4 @@ TEST_CASE("QMCDriverFactory create VMC Driver", "[qmcapp]")
   REQUIRE(qmc_driver != nullptr);
 }
 
-TEST_CASE("QMCDriverFactory create VMCBatched driver", "[qmcapp]")
-{
-  Communicate* comm;
-  OHMMS::Controller->initialize(0, NULL);
-  comm = OHMMS::Controller;
-
-  QMCDriverFactory driver_factory;
-  // clang-format off
-  const char* driver_xml = R"(
-  <qmc method="vmc_batch" move="pbyp">
-    <estimator name="LocalEnergy" hdf5="no" />
-    <parameter name="walkers">                1 </parameter>
-    <parameter name="stepsbetweensamples">    1 </parameter>
-    <parameter name="warmupSteps">            5 </parameter>
-    <parameter name="substeps">               5 </parameter>
-    <parameter name="steps">                  1 </parameter>
-    <parameter name="blocks">                 2 </parameter>
-    <parameter name="timestep">             1.0 </parameter>
-    <parameter name="usedrift">              no </parameter>
-  </qmc>
-)";
-  // clang-format on
-
-  Libxml2Document doc;
-  bool okay = doc.parseFromString(driver_xml);
-  REQUIRE(okay);
-  xmlNodePtr node                           = doc.getRoot();
-  QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(0, node);
-  REQUIRE(das.new_run_type == QMCRunType::VMC_BATCH);
-
-  MinimalParticlePool mpp;
-  ParticleSetPool particle_pool = mpp(comm);
-  MinimalWaveFunctionPool wfp(comm);
-  WaveFunctionPool wavefunction_pool = wfp(particle_pool);
-  MinimalHamiltonianPool mhp(comm);
-  HamiltonianPool hamiltonian_pool = mhp(particle_pool, wavefunction_pool);
-  std::string target("e");
-  MCWalkerConfiguration* qmc_system = particle_pool.getWalkerSet(target);
-
-  std::unique_ptr<QMCDriverInterface> last_driver;
-  std::unique_ptr<QMCDriverInterface> qmc_driver;
-  qmc_driver =
-      driver_factory.newQMCDriver(std::move(last_driver),
-  				  0,
-  				  node,
-  				  das,
-  				  *qmc_system,
-  				  particle_pool,
-  				  wavefunction_pool,
-  				  hamiltonian_pool,
-  				  comm);
-  REQUIRE(qmc_driver != nullptr);
-
-}
 } // namespace qmcplusplus
