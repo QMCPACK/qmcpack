@@ -14,7 +14,7 @@
 
 
 #include <LongRange/StructFact.h>
-#include <config/stdlib/math.h>
+#include <config/stdlib/math.hpp>
 #include <Numerics/e2iphi.h>
 #include <simd/vmath.hpp>
 #include <Numerics/OhmmsBlas.h>
