@@ -188,9 +188,6 @@ INCLUDE(${CMAKE_ROOT}/Modules/CheckCXXSourceCompiles.cmake)
 
 CHECK_FUNCTION_EXISTS(sincos HAVE_SINCOS)
 CHECK_FUNCTION_EXISTS(posix_memalign HAVE_POSIX_MEMALIGN)
-SET(CHECK_ISZERO_SOURCE "#include <math.h>
-                         int main() {iszero(1.0); return 0;}")
-CHECK_CXX_SOURCE_COMPILES("${CHECK_ISZERO_SOURCE}" HAVE_ISZERO)
 
 CHECK_INCLUDE_FILE(dlfcn.h HAVE_DLFCN_H)
 CHECK_INCLUDE_FILE(inttypes.h HAVE_INTTYPES_H)

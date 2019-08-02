@@ -60,6 +60,7 @@ IF(OHMMS_DIM MATCHES 3)
     NonLocalECPotential.deriv.cpp
     NonLocalECPotential.cpp
     L2Potential.cpp
+    SOECPComponent.cpp
     ECPotentialBuilder.cpp
     ECPComponentBuilder.cpp
     ECPComponentBuilder.1.cpp
