@@ -528,6 +528,178 @@ void EshdfFile::handleDensity(const XmlNode& qeXml, const string& dir_name, int 
   delete[] diffdens;
 }
 
+void EshdfFile::processKPts(const XmlNode& band_structure_xml,
+			    vector<vector<double > >& eigenvals,
+			    vector<vector<double > >& occupations,
+			    vector<KPoint>& kpts,
+			    vector<double>& weights,
+			    vector<int>& ngvecs) 
+{
+  int nks = 0;
+  for (int i = 0; i < band_structure_xml.getNumChildren(); i++) 
+  {
+    const XmlNode& child_xml = band_structure_xml.getChild(i);
+    if (child_xml.getName() == "ks_energies")
+    {
+      vector<double> eigs;
+      vector<double> occs;
+      vector<double> kpt_vec;
+      KPoint kpt;
+      double weight;
+      int ngvec;
+      
+      nks++;
+      const XmlNode& k_point_xml = child_xml.getChild("k_point");
+      k_point_xml.getAttribute("weight", weight);
+      k_point_xml.getValue(kpt_vec);
+      kpt.kx=kpt_vec[0];
+      kpt.ky=kpt_vec[1];
+      kpt.kz=kpt_vec[2];
+      const XmlNode& npw_xml = child_xml.getChild("npw");
+      npw_xml.getValue(ngvec);
+      const XmlNode& eig_xml = child_xml.getChild("eigenvalues");
+      eig_xml.getValue(eigs);
+      const XmlNode& occs_xml = child_xml.getChild("occupations");
+      occs_xml.getValue(occs);
+      
+      eigenvals.push_back(eigs);
+      occupations.push_back(occs);
+      kpts.push_back(kpt);
+      weights.push_back(weight);
+      ngvecs.push_back(ngvec);
+    }
+  }
+}
+
+void EshdfFile::getNumElectrons(vector<vector<double> >& occupations, 
+				vector<double>& weights, int& nup, int& ndn, 
+				int spinpol, int noncol) 
+{
+  nup = 0;
+  ndn = 0;
+
+  double nup_flt = 0.0;
+  double ndn_flt = 0.0;
+
+  for (int i = 0; i < weights.size(); i++) 
+  {
+    if (noncol == 1) 
+    {
+      double sum = 0.0;
+      for (int j = 0; j < occupations[i].size(); j++) 
+      {
+	sum += occupations[i][j];
+      }
+      nup_flt += sum*weights[i];
+    }
+    else if (spinpol == 0) 
+    {
+      double sum = 0.0;
+      for (int j = 0; j < occupations[i].size(); j++) 
+      {
+	sum += occupations[i][j];
+      }
+      nup_flt += sum*weights[i]/2.0;
+      ndn_flt += sum*weights[i]/2.0;
+    }
+    else 
+    {
+      double sum_up = 0.0;
+      double sum_dn = 0.0;
+      for (int j = 0; j < occupations[i].size()/2; j++) 
+      {
+	sum_up += occupations[i][j];
+	sum_dn += occupations[i][j+occupations[i].size()/2];
+      }
+      nup_flt += sum_up*weights[i];
+      ndn_flt += sum_dn*weights[i];
+    }
+  }
+  nup = static_cast<int>(round(nup_flt));
+  ndn = static_cast<int>(round(ndn_flt));
+}
+
+void EshdfFile::handleKpt(int kpt_num, const std::string& dir_name, KPoint& kpt, 
+			  const std::vector<double>& eigenvalues, int ngvec, int maxgvec_idx,
+			  double weight, int spinpol, int noncol, hid_t electrons_group)
+{
+  stringstream ss;
+  ss << "kpoint_" << kpt_num;
+  hid_t kpt_group = makeHDFGroup(ss.str(), electrons_group);
+  writeNumsToHDF("weight", weight, kpt_group);
+  vector<double> kpt_vector;
+  kpt_vector.push_back(kpt.kx);
+  kpt_vector.push_back(kpt.ky);
+  kpt_vector.push_back(kpt.kz);
+  writeNumsToHDF("reduced_k", kpt_vector, kpt_group);
+
+  if (kpt_num == 0) 
+  {
+    herr_t status;
+    hid_t file, dset;
+    string fname;
+    if (spinpol == 1) 
+    {
+      stringstream ss;
+      ss << dir_name << "wfcup" << (kpt_num+1) << ".hdf5";
+      fname = ss.str();
+    }
+    else 
+    {
+      stringstream ss;
+      ss << dir_name << "wfc" << (kpt_num+1) << ".hdf5";
+      fname = ss.str();
+    }
+    if (!file_exists(fname)) {
+      cout << "could not find " << fname << ", make sure espresso is" << endl;
+      cout << "compiled with hdf support and you do not explicitly set" << endl;
+      cout << "wf_collect=.false. in your input" << endl;
+      exit(1);
+    }
+    file = H5Fopen(fname.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
+    int* gvecs = new int[3*ngvec];
+    const string gvectors_str ="MillerIndices";
+    readNumsFromHDF(gvectors_str, gvecs, file);
+    hsize_t dims[]={static_cast<hsize_t>(ngvec),3};
+    writeNumsToHDF("gvectors", gvecs, kpt_group, 2, dims);
+    writeNumsToHDF("number_of_gvectors", ngvec, kpt_group);
+
+    delete[] gvecs;
+    H5Fclose(file);
+  }
+
+  //dfile_id = H5Fopen (FILE, H5F_ACC_RDWR, H5P_DEFAULT);
+  //dataset_id = H5Dopen2 (file_id, DATASETNAME, H5P_DEFAULT);
+  
+  /* Specify size and shape of subset to write. */
+  
+  //offset[0] = 1;
+  //offset[1] = 2;
+  
+  //count[0]  = DIM0_SUB;  
+  //count[1]  = DIM1_SUB;
+  
+  //stride[0] = 1;
+  //stride[1] = 1;
+  
+  //block[0] = 1;
+  //block[1] = 1;
+  
+  /* Create memory space with size of subset. Get file dataspace 
+     and select subset from file dataspace. */
+  
+  //dimsm[0] = DIM0_SUB;
+  //dimsm[1] = DIM1_SUB;
+  //memspace_id = H5Screate_simple (RANK, dimsm, NULL); 
+  
+  //dataspace_id = H5Dget_space (dataset_id);
+  //status = H5Sselect_hyperslab (dataspace_id, H5S_SELECT_SET, offset,
+  //                              stride, count, block);
+
+    
+}
+
+
 void EshdfFile::writeQEElectrons(const XmlNode& qeXml, const string& dir_name) {
   // make electrons group in hdf file
   hid_t electrons_group = makeHDFGroup("electrons", file_);
@@ -543,9 +715,53 @@ void EshdfFile::writeQEElectrons(const XmlNode& qeXml, const string& dir_name) {
   if (lsda_string_bool == "true") spinpol = 1;
   if (noncolin_string_bool == "true") noncol = 1;
 
+  // scrape xml file and associated hdf for density and write out
   handleDensity(qeXml, dir_name, spinpol, electrons_group);
-  
-         
+
+  // read in information about kpts from the xml
+  vector<vector<double> > eigenvals;
+  vector<vector<double> > occupations;
+  vector<KPoint> kpts;
+  vector<double> weights;
+  vector<int> ngvecs;
+  processKPts(band_structure_xml, eigenvals, occupations, kpts, weights, ngvecs);
+
+  // write number of kpoints, number of spins and spinors if appropriate
+  writeNumsToHDF("number_of_kpoints", static_cast<int>(kpts.size()), electrons_group);
+  writeNumsToHDF("has_spinors", noncol, electrons_group);
+  if (noncol == 0) 
+  {
+    int nspins = 1;
+    if (spinpol == 1) nspins = 2;
+    writeNumsToHDF("number_of_spins", nspins, electrons_group);
+  }
+
+  // figure out how many electrons of each spin and write to file
+  int nup;
+  int ndn;  
+  getNumElectrons(occupations, weights, nup, ndn, spinpol, noncol);
+  vector<int> nels;
+  nels.push_back(nup);
+  nels.push_back(ndn);
+  writeNumsToHDF("number_of_electrons", nels, electrons_group);
+
+
+  int maxgvecs = 0;
+  int maxgvecs_index = -1;
+  for (int i = 0; i < ngvecs.size(); i++) 
+  {
+    if (ngvecs[i] > maxgvecs) {
+      maxgvecs = ngvecs[i];
+      maxgvecs_index = i;
+    }
+  }
+
+  // now read and write the appropriate coefficients to the kpoint_xxx group
+  for (int i = 0; i < kpts.size(); i++) 
+  {
+    handleKpt(i, dir_name, kpts[i], eigenvals[i], maxgvecs, maxgvecs_index, weights[i], 
+	      spinpol, noncol, electrons_group);
+  }
 }
   
 

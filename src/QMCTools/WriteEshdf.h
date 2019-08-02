@@ -20,6 +20,7 @@
 
 class XmlNode;
 class FftContainer;
+class KPoint;
 
 class EshdfFile 
 {
@@ -40,11 +41,25 @@ private:
   void writeFormat();
   void writeVersion();
 
+  // helper functions meant for qbox
   void readInEigFcn(const XmlNode& nd, FftContainer& cont);
   void handleSpinGroup(const XmlNode* nd, hid_t groupLoc, double& nocc, FftContainer& cont);
   double getOccupation(const XmlNode* nd) const;
 
+  // helper functions meant for espresso
   void handleDensity(const XmlNode& qeXml, const std::string& dir_name, int spinpol, hid_t el_group);
+  void processKPts(const XmlNode& band_structure_xml,
+		   std::vector<std::vector<double > >& eigenvals,
+		   std::vector<std::vector<double > >& occupations,
+		   std::vector<KPoint>& kpts,
+		   std::vector<double>& weights,
+		   std::vector<int>& ngvecs);
+  void getNumElectrons(std::vector<std::vector<double> >& occupations, 
+		       std::vector<double>& weights, int& nup, int& ndn, 
+		       int spinpol, int ncol);
+  void handleKpt(int kpt_num, const std::string& dir_name, KPoint& kpt, 
+		 const std::vector<double>& eigenvalues, int ngvecs, int ngvecs_index, 
+		 double weight, int spinpol, int noncol, hid_t electrons_group);
 
   EshdfFile(const EshdfFile& f); // no copy constructor
   EshdfFile& operator=(const EshdfFile& f); // operator= not allowed
