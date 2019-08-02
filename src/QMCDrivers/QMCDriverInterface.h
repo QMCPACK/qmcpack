@@ -12,7 +12,11 @@
 #ifndef QMCPLUSPLUS_QMCDRIVERINTERFACE_H
 #define QMCPLUSPLUS_QMCDRIVERINTERFACE_H
 
+#include <string>
+#include <vector>
 #include <libxml/parser.h>
+#include "QMCDrivers/DriverTraits.h"
+#include "Utilities/RandomGenerator.h"
 
 namespace qmcplusplus
 {
