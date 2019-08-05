@@ -155,6 +155,17 @@ QMCDriverNew::QMCDriverNew(MCPopulation& population,
   checkpointTimer = TimerManager.createTimer("checkpoint::recordBlock", timer_level_medium);
 }
 
+int QMCDriverNew::addObservable(const std::string& aname)
+{
+    if (Estimators)
+      return Estimators->addObservable(aname.c_str());
+    else
+      return -1;
+  }
+
+QMCDriverNew::RealType QMCDriverNew::getObservable(int i) { return Estimators->getObservable(i); }
+
+    
 QMCDriverNew::~QMCDriverNew()
 {
   delete_iter(Rng.begin(), Rng.end());
@@ -487,7 +498,7 @@ bool QMCDriverNew::putQMCInfo(xmlNodePtr cur)
     int nths(omp_get_max_threads());
 #endif
     nTargetWalkers = (std::max(nths, (nTargetWalkers / nths) * nths));
-    int nw         = W.getActiveWalkers();
+    int nw         = population_.get_num_global_walkers();
     int ndiff      = 0;
     if (nw)
     {
@@ -501,7 +512,7 @@ bool QMCDriverNew::putQMCInfo(xmlNodePtr cur)
     addWalkers(ndiff);
   }
 
-  return (W.getActiveWalkers() > 0);
+  return (population_.get_num_global_walkers() > 0);
 }
 
 xmlNodePtr QMCDriverNew::getQMCNode()

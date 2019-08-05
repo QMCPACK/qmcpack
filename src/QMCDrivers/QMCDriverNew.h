@@ -29,6 +29,7 @@
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Estimators/EstimatorManagerBase.h"
 #include "Particle/MCPopulation.h"
+#include "QMCDrivers/Crowd.h"
 #include "QMCDrivers/QMCDriverInterface.h"
 #include "QMCDrivers/GreenFunctionModifiers/DriftModifierBase.h"
 #include "QMCDrivers/SimpleFixedNodeBranch.h"
@@ -141,15 +142,9 @@ public:
   ///return BranchEngineType*
   SimpleFixedNodeBranch* getBranchEngine() { return branchEngine; }
 
-  int addObservable(const std::string& aname)
-  {
-    if (Estimators)
-      return Estimators->addObservable(aname.c_str());
-    else
-      return -1;
-  }
+  int addObservable(const std::string& aname);
 
-  RealType getObservable(int i) { return Estimators->getObservable(i); }
+  RealType getObservable(int i);
 
   void setTau(RealType i) { Tau = i; }
 
@@ -181,6 +176,7 @@ public:
   unsigned long getDriverMode() { return qmc_driver_mode.to_ulong(); }
 
 protected:
+  std::vector<Crowd> crowds_;
   ///branch engine
   SimpleFixedNodeBranch* branchEngine;
   ///drift modifer
