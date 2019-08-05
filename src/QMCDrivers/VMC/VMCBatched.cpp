@@ -50,7 +50,7 @@ VMCBatched::VMCBatched(MCPopulation& pop,
   m_param.add(UseDrift, "usedrift", "string");
   m_param.add(UseDrift, "use_drift", "string");
 
-  prevSteps               = nSteps;
+  prevSteps               = max_steps;
   prevStepsBetweenSamples = nStepsBetweenSamples;
 }
 

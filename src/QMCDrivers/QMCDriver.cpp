@@ -65,12 +65,12 @@ QMCDriver::QMCDriver(MCWalkerConfiguration& w,
       qmcNode(NULL),
       wOut(0)
 {
-  ResetRandom     = false;
-  AppendRun       = false;
-  DumpConfig      = false;
-  IsQMCDriver     = true;
-  allow_traces    = false;
-  MyCounter       = 0;
+  ResetRandom  = false;
+  AppendRun    = false;
+  DumpConfig   = false;
+  IsQMCDriver  = true;
+  allow_traces = false;
+  MyCounter    = 0;
   //<parameter name=" "> value </parameter>
   //accept multiple names for the same value
   //recommend using all lower cases for a new parameter
@@ -653,7 +653,8 @@ bool QMCDriver::putQMCInfo(xmlNodePtr cur)
   //set the minimum nSubSteps
   if (nSubSteps < 1)
   {
-    app_warning() << "Input parameter \"substeps\" must be positive! Set to 1. User input value " << nSubSteps << std::endl;
+    app_warning() << "Input parameter \"substeps\" must be positive! Set to 1. User input value " << nSubSteps
+                  << std::endl;
     nSubSteps = 1;
   }
 

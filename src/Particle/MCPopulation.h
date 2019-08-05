@@ -9,8 +9,8 @@
 // File refactored from VMC.h
 //////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef QMCPLUSPLUS_MCPOPULATION_HPP
-#define QMCPLUSPLUS_MCPOPULATION_HPP
+#ifndef QMCPLUSPLUS_MCPOPULATION_H
+#define QMCPLUSPLUS_MCPOPULATION_H
 
 #include "Particle/ParticleSet.h"
 #include "Particle/MCWalkerConfiguration.h"

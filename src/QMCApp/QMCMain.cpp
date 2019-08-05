@@ -658,9 +658,9 @@ bool QMCMain::runQMC(xmlNodePtr cur)
   }
 }
 
-    
+
 /** This appears to read walkers sets from the restart file during XML validation
- */    
+ */
 bool QMCMain::setMCWalkers(xmlXPathContextPtr context_)
 {
   OhmmsXPathObject result("/simulation/mcwalkerset", context_);

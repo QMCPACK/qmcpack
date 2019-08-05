@@ -63,7 +63,7 @@ public:
   using MCPWalker = MCPopulation::PopulationWalker;
   using Buffer    = MCPWalker::Buffer_t;
 
- /** bits to classify QMCDriver
+  /** bits to classify QMCDriver
    *
    * - qmc_driver_mode[QMC_UPDATE_MODE]? particle-by-particle: walker-by-walker
    * - qmc_driver_mode[QMC_MULTIPLE]? multiple H/Psi : single H/Psi
@@ -86,7 +86,7 @@ public:
   virtual ~QMCDriverNew();
 
   ///return current step
-  inline int current() const { return CurrentStep; }
+  inline int current() const { return current_step; }
 
   /** set the update mode
    * @param pbyp if true, use particle-by-particle update
@@ -156,7 +156,7 @@ public:
   ///resetComponents for next run if reusing a driver.
   virtual void resetComponents(xmlNodePtr cur)
   {
-    qmcNode = cur;
+    qmc_node = cur;
     m_param.put(cur);
   }
 
@@ -186,13 +186,13 @@ protected:
   ///drift modifer
   DriftModifierBase* DriftModifier;
   ///randomize it
-  bool ResetRandom;
+  bool reset_random;
   ///flag to append or restart the run
-  bool AppendRun;
+  bool append_run;
   ///flag to turn off dumping configurations
-  bool DumpConfig;
+  bool dump_config;
   ///true, if the size of population is fixed.
-  bool ConstPopulation;
+  bool const_population;
 
   ///the number of blocks to be rolled back
   int RollBackBlocks;
@@ -202,35 +202,30 @@ protected:
    *
    * The unit is a block.
    */
-  int Period4CheckPoint;
+  int check_point_period;
   /** period of dumping walker positions and IDs for Forward Walking
   *
   * The unit is in steps.
   */
-  int storeConfigs;
+  int store_config_period;
 
   ///Period to recalculate the walker properties from scratch.
-  int Period4CheckProperties;
+  int recalculate_properties_period;
 
   /** period of recording walker configurations
    *
    * Default is 0 indicating that only the last configuration will be saved.
    */
-  int Period4WalkerDump;
+  int walker_dump_period;
 
   /** period of recording walker positions and IDs for forward walking afterwards
    *
    */
-  int Period4ConfigDump;
+  int config_dump_period;
 
-  ///current step
-  IndexType CurrentStep;
-
-  ///maximum number of blocks
-  IndexType nBlocks;
-
-  ///maximum number of steps
-  IndexType nSteps;
+  IndexType current_step;
+  IndexType max_blocks;
+  IndexType max_steps;
 
   ///number of steps between a step: VMCs do not evaluate energies
   IndexType nSubSteps;
@@ -319,7 +314,6 @@ protected:
 
   ///pointer to qmc node in xml file
   xmlNodePtr qmc_node;
-
 
 
 public:
