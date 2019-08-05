@@ -960,13 +960,13 @@ void WavefunctionFactory::computeVariationalEnergyPHMSD(TaskGroup_& TG, Hamilton
 {
   // CI coefficients can in general be complex and want to avoid two mpi communications so
   // keep everything complex even if Hamiltonian matrix elements are real.
-  // Allocate HamBuff in Node's shared memory, but use as a raw array with proper synchronization 
+  // Allocate H in Node's shared memory, but use as a raw array with proper synchronization 
   int dim( (recompute_ci?ndets:0) );
-  boost::multi::array<ComplexType,1,shared_allocator<ComplexType>> HamBuff(iextensions<1u>{dim*dim+2},TG.Node());
-  boost::multi::array_ref<ComplexType,2> H(to_address(HamBuff.origin()), {dim,dim});
-  boost::multi::array_ref<ComplexType,1> energy(H.origin()+H.num_elements(), iextensions<1u>{2});
+  boost::multi::array<ComplexType,2,shared_allocator<ComplexType>> H({dim,dim},TG.Node());
+  boost::multi::array<ComplexType,1> energy(iextensions<1u>{2});
   using std::fill_n;
-  fill_n(HamBuff.origin(),HamBuff.num_elements(),ComplexType(0.0));  // this call synchronizes
+  fill_n(H.origin(),H.num_elements(),ComplexType(0.0));  // this call synchronizes
+  fill_n(energy.origin(),energy.num_elements(),ComplexType(0.0));  // this call synchronizes
   ValueType enuc = ham.getNuclearCoulombEnergy();
   for(int idet = 0; idet < ndets; idet++) {
     // These should already be sorted.
@@ -1002,13 +1002,10 @@ void WavefunctionFactory::computeVariationalEnergyPHMSD(TaskGroup_& TG, Hamilton
       }
     }
   }
-  // since this is in Node's shared memory, only the root of Node reduces over Cores   
-  // might lead to large memory usage on GPU machines, since in that case the Node communicator
-  // is not actually connecting all tasks on a node
   TG.Node().barrier();
   if(TG.Node().root())  
-    TG.Cores().all_reduce_in_place_n(to_address(HamBuff.origin()),HamBuff.num_elements(),std::plus<>());
-  TG.Node().barrier();
+    TG.Cores().all_reduce_in_place_n(to_address(H.origin()),H.num_elements(),std::plus<>());
+  TG.Global().all_reduce_in_place_n(energy.origin(),2,std::plus<>());
   app_log() << " - Variational energy of trial wavefunction: " << std::setprecision(16) << energy[0] / energy[1] << "\n";
   if(recompute_ci) {
     app_log() << " - Diagonalizing CI matrix.\n";
