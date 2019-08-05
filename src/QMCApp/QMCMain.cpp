@@ -338,7 +338,7 @@ bool QMCMain::executeQMCSection(xmlNodePtr cur, bool noloop)
   return success;
 }
 
-/** validate the main document
+/** validate the main document and (! read the walker sets !)
  * @return false, if any of the basic objects is not properly created.
  *
  * Current xml schema is changing. Instead validating the input file,
@@ -629,6 +629,11 @@ bool QMCMain::runQMC(xmlNodePtr cur)
     if (!FirstQMC && !das.append_run)
       myProject.advance();
     qmc_driver->setStatus(myProject.CurrentMainRoot(), PrevConfigFile, das.append_run);
+    // PD:
+    // How does m_walkerset_in end up being non empty?
+    // Anytime that we aren't doing a restart as it turns out.
+    // So put walkers if it is not elminated should have a name indicative of
+    // what an exception thing it is.
     qmc_driver->putWalkers(m_walkerset_in);
 #if !defined(REMOVE_TRACEMANAGER)
     qmc_driver->putTraces(traces_xml);
@@ -653,6 +658,9 @@ bool QMCMain::runQMC(xmlNodePtr cur)
   }
 }
 
+    
+/** This appears to read walkers sets from the restart file during XML validation
+ */    
 bool QMCMain::setMCWalkers(xmlXPathContextPtr context_)
 {
   OhmmsXPathObject result("/simulation/mcwalkerset", context_);

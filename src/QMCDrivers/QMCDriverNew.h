@@ -193,19 +193,11 @@ protected:
   bool DumpConfig;
   ///true, if the size of population is fixed.
   bool ConstPopulation;
-  ///true, if it is a real QMC engine
-  bool IsQMCDriver;
-  /** the number of times this QMCDriver is executed
-   *
-   * MyCounter is initialized to zero by the constructor and is incremented
-   * whenever a run is completed by calling finalize(int block) or
-   * using MyCounter++ as in RQMC.
-   */
-  int MyCounter;
+
   ///the number of blocks to be rolled back
   int RollBackBlocks;
   ///the number to delay updates by
-  int kDelay;
+  int k_delay;
   /** period of dumping walker configurations and everything else for restart
    *
    * The unit is a block.
@@ -277,9 +269,6 @@ protected:
   ///Time-step factor \f$ \sqrt{\tau}\f$
   RealType m_sqrttau;
 
-  ///pointer to qmc node in xml file
-  xmlNodePtr qmcNode;
-
   ///type of qmc: assigned by subclasses
   std::string QMCType;
   ///the root of h5File
@@ -324,6 +313,16 @@ protected:
   ///temporary storage for random displacement
   ParticleSet::ParticlePos_t deltaR;
 
+
+protected:
+  // I suspect all of this state is unecessary
+
+  ///pointer to qmc node in xml file
+  xmlNodePtr qmc_node;
+
+
+
+public:
   ///temporary buffer to accumulate data
   //ostrstream log_buffer;
 

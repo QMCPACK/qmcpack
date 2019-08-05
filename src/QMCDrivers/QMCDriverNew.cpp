@@ -190,7 +190,7 @@ void QMCDriverNew::process(xmlNodePtr cur)
 {
   //  deltaR.resize(W.getTotalNum());
   //  drift.resize(W.getTotalNum());
-  qmcNode = cur;
+  qmc_node = cur;
   //process common parameters
   putQMCInfo(cur);
   ////set the Tau parameter inside the Hamiltonian
@@ -264,6 +264,14 @@ void QMCDriverNew::setStatus(const std::string& aname, const std::string& h5name
 
 /** Read walker configurations from *.config.h5 files
  * @param wset list of xml elements containing mcwalkerset
+ *
+ * All this does is look in the walker xml section for the hdf file.
+ * It reads that (I think) and if there are active walkers 
+ * declares it a restart run.
+ *
+ * This inferred behavior is asking for trouble.
+ * Unified driver will not support until restart feature is
+ * re-architected
  */
 void QMCDriverNew::putWalkers(std::vector<xmlNodePtr>& wset)
 {
@@ -417,113 +425,90 @@ void QMCDriverNew::setWalkerOffsets()
  * - kdelay = "0|1|n" default=0
  */
 bool QMCDriverNew::putQMCInfo(xmlNodePtr cur)
-{
-  //   if (!IsQMCDriver)
-  //   {
-  //     app_log() << getName() << "  Skip QMCDriverNew::putQMCInfo " << std::endl;
-  //     return true;
-  //   }
+{  
+    int defaultw = omp_get_max_threads();
+    OhmmsAttributeSet aAttrib;
+    aAttrib.add(k_delay, "kdelay");
+    aAttrib.put(cur);
+    if (cur != NULL)
+    {
+      //initialize the parameter set
+      m_param.put(cur);
 
-  //   ////store the current nSteps and nStepsBetweenSamples
-  //   //int oldStepsBetweenSamples=nStepsBetweenSamples;
-  //   //int oldSteps=nSteps;
+      xmlNodePtr tcur = cur->children;
+      //determine how often to print walkers to hdf5 file
+      while (tcur != NULL)
+      {
+        std::string cname((const char*)(tcur->name));
+        if (cname == "record")
+        {
+          //dump walkers for optimization
+          OhmmsAttributeSet rAttrib;
+          rAttrib.add(Period4WalkerDump, "stride");
+          rAttrib.add(Period4WalkerDump, "period");
+          rAttrib.put(tcur);
+        }
+        else if (cname == "checkpoint")
+        {
+          OhmmsAttributeSet rAttrib;
+          rAttrib.add(Period4CheckPoint, "stride");
+          rAttrib.add(Period4CheckPoint, "period");
+          rAttrib.put(tcur);
+          //DumpConfig=(Period4CheckPoint>0);
+        }
+        else if (cname == "dumpconfig")
+        {
+          OhmmsAttributeSet rAttrib;
+          rAttrib.add(Period4ConfigDump, "stride");
+          rAttrib.add(Period4ConfigDump, "period");
+          rAttrib.put(tcur);
+        }
+        else if (cname == "random")
+        {
+          ResetRandom = true;
+        }
+        tcur = tcur->next;
+      }
+    }
+    //set the minimum blocks
+    if (nBlocks < 1)
+      nBlocks = 1;
 
-  //   //set the default walker to the number of threads times 10
-  //   Period4CheckPoint = -1;
-  //   // set default for delayed update streak k to zero, meaning use the original Sherman-Morrison rank-1 update
-  //   // if kdelay is set to k (k>1), then the new rank-k scheme is used
-  // #ifdef QMC_CUDA
-  //   kDelay = Psi.getndelay();
-  // #endif
-  //   int defaultw = omp_get_max_threads();
-  //   OhmmsAttributeSet aAttrib;
-  //   aAttrib.add(Period4CheckPoint, "checkpoint");
-  //   aAttrib.add(kDelay, "kdelay");
-  //   aAttrib.put(cur);
-  // #ifdef QMC_CUDA
-  // //  W.setkDelay(kDelay);
-  // //  kDelay = W.getkDelay(); // in case number is sanitized
-  // #endif
-  //   if (cur != NULL)
-  //   {
-  //     //initialize the parameter set
-  //     m_param.put(cur);
+    DumpConfig = (Period4CheckPoint >= 0);
+    if (Period4CheckPoint < 1)
+      Period4CheckPoint = nBlocks;
+    //reset CurrentStep to zero if qmc/@continue='no'
+    if (!AppendRun)
+      CurrentStep = 0;
 
-  //     xmlNodePtr tcur = cur->children;
-  //     //determine how often to print walkers to hdf5 file
-  //     while (tcur != NULL)
-  //     {
-  //       std::string cname((const char*)(tcur->name));
-  //       if (cname == "record")
-  //       {
-  //         //dump walkers for optimization
-  //         OhmmsAttributeSet rAttrib;
-  //         rAttrib.add(Period4WalkerDump, "stride");
-  //         rAttrib.add(Period4WalkerDump, "period");
-  //         rAttrib.put(tcur);
-  //       }
-  //       else if (cname == "checkpoint")
-  //       {
-  //         OhmmsAttributeSet rAttrib;
-  //         rAttrib.add(Period4CheckPoint, "stride");
-  //         rAttrib.add(Period4CheckPoint, "period");
-  //         rAttrib.put(tcur);
-  //         //DumpConfig=(Period4CheckPoint>0);
-  //       }
-  //       else if (cname == "dumpconfig")
-  //       {
-  //         OhmmsAttributeSet rAttrib;
-  //         rAttrib.add(Period4ConfigDump, "stride");
-  //         rAttrib.add(Period4ConfigDump, "period");
-  //         rAttrib.put(tcur);
-  //       }
-  //       else if (cname == "random")
-  //       {
-  //         ResetRandom = true;
-  //       }
-  //       tcur = tcur->next;
-  //     }
-  //   }
-  //   //set the minimum blocks
-  //   if (nBlocks < 1)
-  //     nBlocks = 1;
+    //if walkers are initialized via <mcwalkerset/>, use the existing one
+    if (qmc_common.qmc_counter || qmc_common.is_restart)
+    {
+      app_log() << "Using existing walkers " << std::endl;
+    }
+    else
+    { //always reset the walkers
+  #ifdef QMC_CUDA
+      int nths(1);
+  #else
+      int nths(omp_get_max_threads());
+  #endif
+      nTargetWalkers = (std::max(nths, (nTargetWalkers / nths) * nths));
+      int nw         = W.getActiveWalkers();
+      int ndiff      = 0;
+      if (nw)
+      {
+        // nTargetWalkers == 0, if it is not set by the input file
+        ndiff = (nTargetWalkers) ? nTargetWalkers - nw : 0;
+      }
+      else
+      {
+        ndiff = (nTargetWalkers) ? nTargetWalkers : defaultw;
+      }
+      addWalkers(ndiff);
+    }
 
-  //   DumpConfig = (Period4CheckPoint >= 0);
-  //   if (Period4CheckPoint < 1)
-  //     Period4CheckPoint = nBlocks;
-  //   //reset CurrentStep to zero if qmc/@continue='no'
-  //   if (!AppendRun)
-  //     CurrentStep = 0;
-
-  //   //if walkers are initialized via <mcwalkerset/>, use the existing one
-  //   if (qmc_common.qmc_counter || qmc_common.is_restart)
-  //   {
-  //     app_log() << "Using existing walkers " << std::endl;
-  //   }
-  //   else
-  //   { //always reset the walkers
-  // #ifdef QMC_CUDA
-  //     int nths(1);
-  // #else
-  //     int nths(omp_get_max_threads());
-  // #endif
-  //     nTargetWalkers = (std::max(nths, (nTargetWalkers / nths) * nths));
-  //     int nw         = W.getActiveWalkers();
-  //     int ndiff      = 0;
-  //     if (nw)
-  //     {
-  //       // nTargetWalkers == 0, if it is not set by the input file
-  //       ndiff = (nTargetWalkers) ? nTargetWalkers - nw : 0;
-  //     }
-  //     else
-  //     {
-  //       ndiff = (nTargetWalkers) ? nTargetWalkers : defaultw;
-  //     }
-  //     addWalkers(ndiff);
-  //   }
-
-  //   return (W.getActiveWalkers() > 0);
-  return false;
+    return (W.getActiveWalkers() > 0);
 }
 
 xmlNodePtr QMCDriverNew::getQMCNode()
