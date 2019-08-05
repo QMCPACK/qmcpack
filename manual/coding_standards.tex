@@ -1,19 +1,19 @@
-\section{QMCPACK Coding Standards}
+\section{QMCPACK coding standards}
 
-The following document presents what we collectively have agreed are best practices for the code. This includes both a formatting style, naming conventions, documentation conventions, and certain prescriptions for C++ languague use. At the moment only the formatting can be enforced in an objective fashion.
+This chapter presents what we collectively have agreed are best practices for the code. This includes formatting style, naming conventions, documentation conventions, and certain prescriptions for C++ language use. At the moment only the formatting can be enforced in an objective fashion.
 
-New development should follow these guidelines and contributors are expected to adhere to them as they represent an integral part of our effort to continue \qmcpack as a worldclass and sustainable quantum Monte Carlo code. While some of the source code has a ways to go to live up to these ideas, new code even in old files should follow the new conventions not the local conventions of the file whenever possible. Work on the code with continuous improvement in mind and not a commitment to stasis.
+New development should follow these guidelines, and contributors are expected to adhere to them as they represent an integral part of our effort to continue \qmcpack as a world-class, sustainable QMC code. Although some of the source code has a ways to go to live up to these ideas, new code, even in old files, should follow the new conventions not the local conventions of the file whenever possible. Work on the code with continuous improvement in mind rather than a commitment to stasis.
 
-At anytime the \href{https://github.com/QMCPACK/qmcpack/wiki/Development-workflow}{current workflow conventions} for the project are described in the wiki on the github repository. It will save you and all the maintainers considerable time if you read these and ask questions up front.
+The \href{https://github.com/QMCPACK/qmcpack/wiki/Development-workflow}{current workflow conventions} for the project are described in the wiki on the GitHub repository. It will save you and all the maintainers considerable time if you read these and ask questions up front.
 
-A PR should follow these standards before inclusion in the mainline. You can be sure of properly following the formatting conventions if you use clang-format.  The mechanics of clang-format setup and use are can be found at \url{https://github.com/QMCPACK/qmcpack/wiki/Source-formatting}.
+A PR should follow these standards before inclusion in the mainline. You can be sure of properly following the formatting conventions if you use clang-format.  The mechanics of clang-format setup and use can be found at \url{https://github.com/QMCPACK/qmcpack/wiki/Source-formatting}.
 
-The clang-format file found at \ishell{qmcpack/src/.clang-format} that should be run over all code touched in a PR before a pull request is prepared. We also encourage developers to run clang-tidy with the \ishell{qmcpack/src/.clang-tidy} configuration over all new code.
+The clang-format file found at \ishell{qmcpack/src/.clang-format} should be run over all code touched in a PR before a pull request is prepared. We also encourage developers to run clang-tidy with the \ishell{qmcpack/src/.clang-tidy} configuration over all new code.
 
-As much as possible try to break up refactoring, reformatting, feature, and bugs into separate small PR's. Aim for something that would take a reviewer no more than an hour. In this way we can maintain a good collective development velocity.
+As much as possible, try to break up refactoring, reformatting, feature, and bugs into separate, small PR                                                                              s. Aim for something that would take a reviewer no more than an hour. In this way we can maintain a good collective development velocity.
 
 \section{Files}
-Each file should start with the header
+Each file should start with the header.
 \lstset{language=C++,style=C++}
 \begin{lstlisting}
 //////////////////////////////////////////////////////////////////////////////////////
@@ -27,22 +27,22 @@ Each file should start with the header
 // File created by: Name, email, affiliation
 //////////////////////////////////////////////////////////////////////////////////////
 \end{lstlisting}
-If you make significant changes to an existing file, add yourself to the list of developed by authors.
+If you make significant changes to an existing file, add yourself to the list of "developed by" authors.
 
 \subsection{File organization}
 Header files should be placed in the same directory as their implementations. 
 Unit tests should be written for all new functionality. These tests should be placed in a \inlinecode{tests} subdirectory below the implementations.
 
-\subsection{File Names}
-Each class should be defined in a separate file whose name is the same as the class name. Use separate \inlinecode{.cpp} implementation files whenever possible to aid in incremental compilation. 
+\subsection{File names}
+Each class should be defined in a separate file with the same name as the class name. Use separate \inlinecode{.cpp} implementation files whenever possible to aid in incremental compilation. 
 
 The filenames of tests are composed by the filename of the object tested and the prefix \inlinecode{test_}.
 The filenames of \emph{fake} and \emph{mock} objects used in tests are composed by the prefixes \inlinecode{fake_} and \inlinecode{mock_}, respectively, and the filename of the object that is imitated.
 
 \subsection{Header files}
-All header files should be self-contained i.e. it is not dependent on following any other header when it is included. Nor should they include files that are not necessary for their use, i.e. headers only needed by the implementation. Implementation files should not include files only for the benefit of files they include.
+All header files should be self-contained (i.e., not dependent on following any other header when it is included). Nor should they include files that are not necessary for their use (i.e., headers needed only by the implementation). Implementation files should not include files only for the benefit of files they include.
 
-There are many header files that violate this currently.
+There are many header files that currently violate this.
 Each header must use \inlinecode{\#define} guards to prevent multiple inclusion.
 The symbol name of the \inlinecode{\#define} guards should be \inlinecode{NAMESPACE(s)_CLASSNAME_H}.
 
@@ -52,9 +52,9 @@ For example, the file \verb|qmcpack/src/QMCWaveFunctions/SPOSet.h| should be inc
 \begin{lstlisting}
 #include "QMCWaveFunctions/SPOSet.h"
 \end{lstlisting}
-Even if the included file is located in the same directory as the including file this rule should be obeyed. Header files from external projects and standard libraries should be includes using \inlinecode{<iostream>} convention, while headers that are part of the QMCPACK project should be included using the \verb|"our_header.h"| convention.
+Even if the included file is located in the same directory as the including file, this rule should be obeyed. Header files from external projects and standard libraries should be includes using the \inlinecode{<iostream>} convention, while headers that are part of the QMCPACK project should be included using the \verb|"our_header.h"| convention.
 
-For readability it is suggested to use the standard order of includes:
+For readability, we suggest using the following standard order of includes:
 \begin{enumerate}
 	\item related header
 	\item std C library headers
@@ -66,37 +66,37 @@ For readability it is suggested to use the standard order of includes:
 In each section the included files should be sorted in alphabetical order.
 
 \section{Naming}
-The balance between description and ease of implementation should be balanced such that the code remains self documenting within a single terminal window.  If an extremely short variable name is used its scope must be shorter than $\sim 40$ lines. An exception is made for template parameters which must be in all CAPS.
+The balance between description and ease of implementation should be balanced such that the code remains self-documenting within a single terminal window.  If an extremely short variable name is used, its scope must be shorter than $\sim 40$ lines. An exception is made for template parameters, which must be in all CAPS.
 
-\subsection{Namespace Names}
+\subsection{Namespace names}
 Namespace names should be one word, lowercase.
 
-\subsection{Type and Class Names}
+\subsection{Type and class names}
 Type and class names should start with a capital letter and have a capital letter for each new word.
-Underscores \inlinecode{_} are not allowed. 
+Underscores (\inlinecode{_}) are not allowed. 
 
-\subsection{Variable Names}
-Variable names should not begin with a capital letter this is reserved for type and class names. Underscores (\inlinecode{_}) should be used to separate words.
+\subsection{Variable names}
+Variable names should not begin with a capital letter, which is reserved for type and class names. Underscores (\inlinecode{_}) should be used to separate words.
 
-\subsection{Class Data Members}
-Class private/protected data members names should follow the convention of variable names with a trailing underscore \inlinecode{_}.
+\subsection{Class data members}
+Class private/protected data members names should follow the convention of variable names with a trailing underscore (\inlinecode{_}).
 
-\subsection{(Member) Function Names}
+\subsection{(Member) function names}
 Function names should start with a lowercase character and have a capital letter for each new word.
 
-\subsection{Lambda Expressions}
+\subsection{Lambda expressions}
 Named lambda expressions follow the naming convention for functions:
 
 \begin{lstlisting}[showspaces=false]
 auto myWhatever = [](int i) { return i + 4; };
 \end{lstlisting}
 
-\subsection{Macro Names}
+\subsection{Macro names}
 Macro names should be all uppercase and can include underscores (\inlinecode{_}).
 The underscore is not allowed as first or last character.
 
-\subsection{Test Case and Test Names}
-Test code files should be named
+\subsection{Test case and test names}
+Test code files should be named as follows:
 \begin{lstlisting}[showspaces=false]
 class DiracMatrix;
 //leads to
@@ -104,12 +104,12 @@ test_dirac_matrix.cpp
 //which contains test cases named
 TEST_CASE("DiracMatrix_update_row","[wavefunction][fermion]")
 \end{lstlisting}
-Where the test case covers the \inlinecode{updateRow} and  \inlinecode{[wavefunction][fermion]} indicates this test belongs to the fermion wavefunction functionality.
+where the test case covers the \inlinecode{updateRow} and  \inlinecode{[wavefunction][fermion]} indicates the test belongs to the fermion wavefunction functionality.
 
 \section{Comments}
-\subsection{Comment Style}
+\subsection{Comment style}
 Use the \inlinecode{// Comment} syntax for actual comments.
-Use:
+Use
 \begin{lstlisting}
 /** base class for Single-particle orbital sets
  *
@@ -125,22 +125,22 @@ int builder_index;
 \end{lstlisting}
 
 \subsection{Documentation}
-Doxygen will be used for source documentation. Doxygen commands should be used when appropriate guidance on this TBD.
+Doxygen will be used for source documentation. Doxygen commands should be used when appropriate guidance on this has been decided.
 
-\subsubsection{File Docs}
-Do not put the file name after the \verb|\file| doxygen command. Doxygen will fill it in for the file the tag appears in.
+\subsubsection{File docs}
+Do not put the file name after the \verb|\file| Doxygen command. Doxygen will fill it in for the file the tag appears in.
 \begin{lstlisting}
 /** \file
  *  File level documentation 
  */
 \end{lstlisting}
 
-\subsubsection{Class Docs}
+\subsubsection{Class docs}
 Every class should have a short description (in the header of the file) of what it is and what is does.
 Comments for public class member functions follow the same rules as general function comments.
-Comments for private members are allowed, but not mandatory.
+Comments for private members are allowed but are not mandatory.
 
-\subsubsection{Function Docs}
+\subsubsection{Function docs}
 For function parameters whose type is non-const reference or pointer to non-const memory,
 it should be specified if they are input (In:), output (Out:) or input-output parameters (InOut:).
 
@@ -159,44 +159,44 @@ void computeFooBar(Type in_1, const Type& in_2, Type& in_3,
                    Type& bar);
 \end{lstlisting}
 
-\subsubsection{Variable Documentation}
+\subsubsection{Variable documentation}
 Name should be self-descriptive.  If you need documentation consider renaming first.
 
-\subsubsection{Golden Rule of Comments}
+\subsubsection{Golden rule of comments}
 If you modify a piece of code, also adapt the comments that belong to it if necessary.
 
-\section{Formatting and ``Style''}
-Use the provided clang-format style in \inlinecode{src/.clang-format} to format \verb|.h|, \verb|.hpp|, \verb|.cu| and \verb|.cpp| files. Many of the rules below will be applied to the code by clang-format, which should allow you to ignore most of them if you always run it on your modified code.
+\section{Formatting and ``style''}
+Use the provided clang-format style in \inlinecode{src/.clang-format} to format \verb|.h|, \verb|.hpp|, \verb|.cu|, and \verb|.cpp| files. Many of the following rules will be applied to the code by clang-format, which should allow you to ignore most of them if you always run it on your modified code.
 
-You should use clang-format support and the .clangformat file with your editor, use a git precommit hook to run clang-format or run clang-format manually on every file you modify.  However if you see numerous formatting updates outside of the code you have modified first commit the formatting changes in a separate PR.
+You should use clang-format support and the \inlinecode{.clangformat} file with your editor, use a Git precommit hook to run clang-format or run clang-format manually on every file you modify.  However, if you see numerous formatting updates outside of the code you have modified, first commit the formatting changes in a separate PR.
 
 \subsection{Indentation}
-Indentation consists of 2 spaces.
+Indentation consists of two spaces.
 Do not use tabs in the code.
 
-\subsection{Line Length}
+\subsection{Line length}
 The length of each line of your code should be at most \emph{120} characters.
 
-\subsection{Horizontal Spacing}
-No trailing whitespaces should be added to any line.
-Use no space before a comma (\inlinecode{,}) and a semicolon (\inlinecode{;}) and add a space after them if they are not at the end of a line.
+\subsection{Horizontal spacing}
+No trailing white spaces should be added to any line.
+Use no space before a comma (\inlinecode{,}) and a semicolon (\inlinecode{;}), and add a space after them if they are not at the end of a line.
 
-\subsection{Preprocessor Directives}
+\subsection{Preprocessor directives}
 The preprocessor directives are not indented.
 The hash is the first character of the line.
 
-\subsection{Binary Operators}
+\subsection{Binary operators}
 The assignment operators should always have spaces around them.
 
-\subsection{Unary Operators}
-Do not put any space between an unary operator and their argument.
+\subsection{Unary operators}
+Do not put any space between an unary operator and its argument.
 
 \subsection{Types}
 The \inlinecode{using} syntax is preferred to \inlinecode{typedef} for type aliases.
-If the actual type is not excessively long or complex simply just use it, renaming simple types makes code less understandable.
+If the actual type is not excessively long or complex, simply use it; renaming simple types makes code less understandable.
 
-\subsection{Pointers and References}
-Pointer or Reference operators should go with the type. But understand the compiler reads them right to left.
+\subsection{Pointers and references}
+Pointer or reference operators should go with the type. But understand the compiler reads them from right to left.
 
 \begin{lstlisting}
 Type* var;
@@ -207,7 +207,7 @@ Type* var1, var2; // var1 is a pointer to Type but var2 is a Type.
 \end{lstlisting}
 
 \subsection{Templates}
-The angle brackets of templates should not have any external and internal padding.
+The angle brackets of templates should not have any external or internal padding.
 \begin{lstlisting}
 template<class C>
 class Class1;
@@ -215,14 +215,14 @@ class Class1;
 Class1<Class2<type1>> object;
 \end{lstlisting}
 
-\subsection{Vertical Spacing}
+\subsection{Vertical spacing}
 Use empty lines when it helps to improve the readability of the code, but do not use too many.
-Do not use empty lines after a brace which opens a scope,
-or before a brace which closes a scope.
+Do not use empty lines after a brace that opens a scope
+or before a brace that closes a scope.
 Each file should contain an empty line at the end of the file.
 Some editors add an empty line automatically, some do not.
 
-\subsection{Variable Declarations and Definitions}
+\subsection{Variable declarations and definitions}
 \begin{itemize}
 \item Avoid declaring multiple variables in the same declaration, especially if they are not fundamental types:
 
@@ -258,13 +258,13 @@ constexpr unsigned long l(42);
 
 \end{itemize}
 
-\subsection{Function Declarations and Definitions}
+\subsection{Function declarations and definitions}
 
 The return type should be on the same line as the function name.
-Parameters should be on the same line, too, unless they do not fit on it then one parameter
+Parameters should also be on the same line unless they do not fit on it, in which case one parameter
 per line aligned with the first parameter should be used.
 
-Include the parameter names also in the declaration of a function, i.e.
+Also include the parameter names in the declaration of a function, that is,
 \begin{lstlisting}
 // calculates a*b+c
 double function(double a, double b, double c);
@@ -359,9 +359,9 @@ do
 while (condition);
 \end{lstlisting}
 
-\subsection{Class Format}
+\subsection{Class format}
 \label{subsec:class_format}
-\inlinecode{public}, \inlinecode{protected} and \inlinecode{private} keywords are not indented.
+\inlinecode{public}, \inlinecode{protected}, and \inlinecode{private} keywords are not indented.
 
 Example:
 \begin{lstlisting}
@@ -391,7 +391,7 @@ private:
 };
 \end{lstlisting}
 
-\subsubsection{Constructor Initializer Lists}
+\subsubsection{Constructor initializer lists}
 
 Examples:
 \begin{lstlisting}
@@ -423,9 +423,9 @@ Foo::Foo(int var)
     : some_var_(var) {}
 \end{lstlisting}
 
-\subsection{Namespace Formatting}
+\subsection{Namespace formatting}
 The content of namespaces is not indented.
-A comment should indicate when a namespace is closed. (clang-format will add these if absent)
+A comment should indicate when a namespace is closed. (clang-format will add these if absent).
 If nested namespaces are used, a comment with the full namespace is required after opening a set of namespaces or an inner namespace.
 
 Examples:
@@ -463,18 +463,18 @@ void foo();
 \end{lstlisting}
 
 
-\section{QMCPack C++ Guidance}
-The guidance here like any advice on how to program should not be treated as a set of rules but rather the hardwon wisdom of many hours of develop suffering. In the past many were ignored and the absolute worst results of that will affect whatever code you need to work with. Your PR should go much smoother if you don't ignore them.
+\section{QMCPACK C++ guidance}
+The guidance here, like any advice on how to program, should not be treated as a set of rules but rather the hard-won wisdom of many hours of suffering development. In the past, many rules were ignored, and the absolute worst results of that will affect whatever code you need to work with. Your PR should go much smoother if you do not ignore them.
 
 \subsection{Encapsulation}
-A class is not just a naming scheme for a set of variables and functions. It should provide a logical set of methods, could contain the state of a logical object and might allow access to object data through a well defined interface related variables. while preserving maximally ability to change internal implementation of the class.
+A class is not just a naming scheme for a set of variables and functions. It should provide a logical set of methods, could contain the state of a logical object, and might allow access to object data through a well-defined interface related variables, while preserving maximally ability to change internal implementation of the class.
 
 Do not use \inlinecode{struct} as a way to avoid controlling access to the class. Only in rare cases where a class is a fully public data structure \inlinecode{struct} is this appropriate. Ignore (or fix one) the many examples of this in QMCPACK.
 
-Do not use inheritance primarily as a means to break encapsulation. If your class could aggregate or compose another class do that and access it solely through its public interface. You will reduce dependencies.
+Do not use inheritance primarily as a means to break encapsulation. If your class could aggregate or compose another class, do that, and access it solely through its public interface. This will reduce dependencies.
 
 \subsection{Casting}
-In C++ source avoid C style casts, they are difficult to search for and imprecise in function.
+In C++ source, avoid C style casts; they are difficult to search for and imprecise in function.
 An exception is made for controlling implicit conversion of simple numerical types.
 
 Explicit C++ style casts make it clear what the safety of the cast is and what sort of conversion is expected to be possible.
@@ -510,16 +510,16 @@ for (int i = 0; i < N; i++)
 }
 \end{lstlisting}
 
-The post-increment and post-decrement operators create an unnecessary copy, that the compiler cannot optimize away in the case of iterators or other classes with overloaded increment and decrement operators.
+The post-increment and post-decrement operators create an unnecessary copy that the compiler cannot optimize away in the case of iterators or other classes with overloaded increment and decrement operators.
 
-\subsection{Alternative Operator Representations}
+\subsection{Alternative operator representations}
 Alternative representations of operators and other tokens such as \inlinecode{and}, \inlinecode{or}, and \inlinecode{not} instead of \inlinecode{&&}, \inlinecode{||}, and \inlinecode{!} are not allowed.
 For the reason of consistency, the far more common primary tokens should always be used.
 
 \subsection{Use of const}
 \begin{itemize}
 \item Add the \inlinecode{const} qualifier to all function parameters that are not modified in the function body.
-\item For parameters passed by value, only add the keyword in the function definition.
+\item For parameters passed by value, add only the keyword in the function definition.
 \item Member functions should be specified const whenever possible.
 
 \begin{lstlisting}[showspaces=false]
