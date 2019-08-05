@@ -68,7 +68,6 @@ QMCDriver::QMCDriver(MCWalkerConfiguration& w,
   ResetRandom     = false;
   AppendRun       = false;
   DumpConfig      = false;
-  ConstPopulation = true; //default is a fixed population method
   IsQMCDriver     = true;
   allow_traces    = false;
   MyCounter       = 0;
