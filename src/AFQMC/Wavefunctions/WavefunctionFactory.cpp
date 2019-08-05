@@ -1016,11 +1016,11 @@ void WavefunctionFactory::computeVariationalEnergyPHMSD(TaskGroup_& TG, Hamilton
     using CMatrix = boost::multi::array<ComplexType,2>;
     // Want a "unique" solution for all cores/nodes.
     if(TG.Global().rank() == 0) {
-      std::pair<RVector,CMatrix> Sol = ma::symEig<RVector,CMatrix>(H);
+      std::pair<RVector,CMatrix> Sol = ma::symEigSelect<RVector,CMatrix>(H,1);
       app_log() << " - Updating CI coefficients. \n";
       app_log() << " - Recomputed coefficient of first determinant: " << Sol.second[0][0] << "\n";
       for(int idet=0; idet < ndets; idet++) {
-        ComplexType ci = Sol.second[idet][0];
+        ComplexType ci = Sol.second[0][idet];
         // Do we want this much output?
         //app_log() << idet << " old: " << coeff[idet] << " new: " << ci << "\n";
         coeff[idet] = ci;
