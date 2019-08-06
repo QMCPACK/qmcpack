@@ -13,26 +13,35 @@
 
 #ifndef QMCPLUSPLUS_THREAD_HPP
 #define QMCPLUSPLUS_THREAD_HPP
-
 /** @file
  *  @brief Abstractions threads performing identical independent tasks
  *
  *  We assume they will come to a common synchronization point
+ *  TaskWrapper code from
+ *  https://stackoverflow.com/questions/48268322/wrap-stdthread-call-function
+ *
+ *  Currently reference arguments to the "task" need to be wrapped in std::ref
+ *  to survive std::forward used in the STD specialization.  This doesn't cause trouble
+ *  for the OPENMP variant except for the TaskBlockBarrier which breaks with std::ref.
  */
-
+#include <iostream>
 #include <functional>
+#include <condition_variable>
 #include <thread>
+#include <utility>
 
+#include <omp.h>
 namespace qmcplusplus
 {
+    
 template<typename F>
-class TaskWrapper
+struct TaskWrapper
 {
   F f;
   template<typename... T>
   void operator()(T&&... args)
   {
-    f(std::forward<T>(args)...);
+      f(std::forward<T>(args)...);
   }
 };
 
@@ -53,16 +62,43 @@ private:
   unsigned int num_threads_;
 };
 
+template<>
+class TaskBlockBarrier<Threading::STD>
+{
+public:
+  TaskBlockBarrier(unsigned int num_threads) : num_threads_(num_threads),
+						 threads_at_barrier_(0)  {}
+  void wait();
+
+
+private:
+  std::condition_variable barrier_;
+  int num_threads_;
+  std::mutex mutex_;
+  int threads_at_barrier_;
+};
+
 template<Threading TT>
 inline void TaskBlockBarrier<TT>::wait()
 {
 #pragma omp barrier
 }
 
-template<>
-inline void TaskBlockBarrier<Threading::STD>::wait()
+void TaskBlockBarrier<Threading::STD>::wait()
 {
-  std::cout << "We'll need to implement this for std::thread\n";
+    {
+	std::lock_guard<std::mutex> lock(mutex_);
+	threads_at_barrier_++;
+    }
+    if (threads_at_barrier_ == num_threads_)
+    {
+	barrier_.notify_all();
+    }
+    else
+    {
+	std::unique_lock<std::mutex> lock(mutex_);
+	barrier_.wait(lock);
+    }
 }
 
 template<Threading TT>
@@ -91,10 +127,9 @@ void TaskBlock<TT>::operator()(F&& f, Args&&... args)
   }
 }
 
-template<Threading TT>
+template<>
 template<typename F, typename... Args>
-void TaskBlock<TT>::operator()(F&& f, TaskBlockBarrier<TT>& barrier, Args&&... args)
-
+void TaskBlock<Threading::OPENMP>::operator()(F&& f, TaskBlockBarrier<Threading::OPENMP>& barrier, Args&&... args)
 {
   omp_set_num_threads(num_threads_);
 #pragma omp parallel for
@@ -113,7 +148,7 @@ void TaskBlock<Threading::STD>::operator()(F&& f, Args&&... args)
 
   for (int task_id = 0; task_id < num_threads_; ++task_id)
   {
-    threads[task_id] = std::thread(TaskWrapper<F>{std::forward<F>(f)}, task_id, std::forward<Args>(args)...);
+      threads[task_id] = std::thread(TaskWrapper<F>{std::forward<F>(f)}, task_id, std::forward<Args>(args)...);
   }
 
   for (int task_id = 0; task_id < num_threads_; ++task_id)
@@ -121,6 +156,25 @@ void TaskBlock<Threading::STD>::operator()(F&& f, Args&&... args)
     threads[task_id].join();
   }
 }
+
+template<>
+template<typename F, typename... Args>
+void TaskBlock<Threading::STD>::operator()(F&& f, TaskBlockBarrier<Threading::STD>& barrier, Args&&... args)
+
+{
+  std::vector<std::thread> threads(num_threads_);
+
+  for (int task_id = 0; task_id < num_threads_; ++task_id)
+  {
+      threads[task_id] = std::thread(TaskWrapper<F>{std::forward<F>(f)}, task_id, barrier, std::forward<Args>(args)...);
+  }
+
+  for (int task_id = 0; task_id < num_threads_; ++task_id)
+  {
+    threads[task_id].join();
+  }
+}
+
 } // namespace qmcplusplus
 
 #endif
