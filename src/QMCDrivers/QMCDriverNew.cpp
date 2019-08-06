@@ -38,9 +38,6 @@
 typedef int TraceManager;
 #endif
 
-// #ifdef QMC_CUDA
-// #include "type_traits/CUDATypes.h"
-// #endif
 
 namespace qmcplusplus
 {
@@ -123,28 +120,9 @@ QMCDriverNew::QMCDriverNew(MCPopulation& population,
   m_param.add(Tau, "tau", "AU");
   MaxCPUSecs = 360000; //100 hours
   m_param.add(MaxCPUSecs, "maxcpusecs", "real");
-  // by default call recompute at the end of each block in the mixed precision case.
-#ifdef QMC_CUDA
-  using CTS = CUDAGlobalTypes;
-  if (typeid(CTS::RealType) == typeid(float))
-  {
-    // gpu mixed precision
-    nBlocksBetweenRecompute = 1;
-  }
-  else if (typeid(CTS::RealType) == typeid(double))
-  {
-    // gpu double precision
-    nBlocksBetweenRecompute = 0;
-  }
-#else
-#ifdef MIXED_PRECISION
-  // cpu mixed precision
-  nBlocksBetweenRecompute = 1;
-#else
-  // cpu double precision
-  nBlocksBetweenRecompute = 0;
-#endif
-#endif
+
+  nBlocksBetweenRecompute = defaultBlocksBetweenRecompute<>();
+
   m_param.add(nBlocksBetweenRecompute, "blocks_between_recompute", "int");
   QMCType = "invalid";
   ////add each QMCHamiltonianBase to W.PropertyList so that averages can be taken
@@ -492,11 +470,7 @@ bool QMCDriverNew::putQMCInfo(xmlNodePtr cur)
   }
   else
   { //always reset the walkers
-#ifdef QMC_CUDA
-    int nths(1);
-#else
     int nths(omp_get_max_threads());
-#endif
     nTargetWalkers = (std::max(nths, (nTargetWalkers / nths) * nths));
     int nw         = population_.get_num_global_walkers();
     int ndiff      = 0;

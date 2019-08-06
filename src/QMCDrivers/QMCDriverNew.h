@@ -20,6 +20,8 @@
 #ifndef QMCPLUSPLUS_QMCDRIVERNEW_H
 #define QMCPLUSPLUS_QMCDRIVERNEW_H
 
+#include <type_traits>
+
 #include "Configuration.h"
 #include "OhmmsData/ParameterSet.h"
 #include "Utilities/PooledData.h"
@@ -51,8 +53,27 @@ class QMCDriverNew : public QMCDriverInterface, public MPIObjectBase
 public:
   using RealType  = QMCTraits::RealType;
   using IndexType = QMCTraits::IndexType;
+  using FullPrecisionRealType = QMCTraits::FullPrecRealType;
 
-  /** enumeration coupled with QMCMode */
+  /** @ingroup Type dependent behavior
+   * @{
+   * @brief use simple metaprogramming in anticipation of single executable
+   */
+  /** call recompute at the end of each block in the mixed precision case.
+   */
+  template<typename RT = RealType, typename FPRT = FullPrecisionRealType>
+  int defaultBlocksBetweenRecompute() { return 0; }
+
+  template<typename RT = RealType, typename FPRT = FullPrecisionRealType,
+	   std::enable_if_t<std::is_same<RT, FPRT>{}>>
+  int defaultBlocksBetweenRecompute() { return 1; }
+  /** @}
+   */
+  
+  /** separate but similar to QMCModeEnum
+   *  
+   *  a code smell
+   */
   enum
   {
     QMC_UPDATE_MODE,
