@@ -123,13 +123,16 @@ namespace hdfhelper {
     hid_t dspace = H5Dget_space(dset);
     const int dimensionality = H5Sget_simple_extent_ndims(dspace);
     dims.resize(dimensionality);
-    hsize_t maxdims[dimensionality];
-    hsize_t intdims[dimensionality];
+    hsize_t *maxdims = new hsize_t[dimensionality];
+    hsize_t *intdims = new hsize_t[dimensionality];
+
     H5Sget_simple_extent_dims(dspace, intdims, maxdims);
     for (int i = 0; i < dimensionality; i++)
     {
       dims[i] = intdims[i];
     }
+    delete[] maxdims;
+    delete[] intdims;
 
   }
 
@@ -150,8 +153,9 @@ namespace hdfhelper {
     hid_t dset = H5Dopen1(file, fieldName.c_str());
     hid_t dspace = H5Dget_space(dset);
     const int dimensionality = H5Sget_simple_extent_ndims(dspace);
-    hsize_t maxdims[dimensionality];
-    hsize_t intdims[dimensionality];
+    hsize_t *maxdims = new hsize_t[dimensionality];
+    hsize_t *intdims = new hsize_t[dimensionality];
+
     H5Sget_simple_extent_dims(dspace, intdims, maxdims);
 
     // check that what we have requested is within bounds
@@ -175,11 +179,11 @@ namespace hdfhelper {
     }
     hid_t type = H5Tcopy(getHdfDataType(*outdata));
 
+
     // set up hyperslab parameters to match what we are asking for
-    hsize_t offset[dimensionality];
-    hsize_t block[dimensionality];
-    hsize_t stride[dimensionality];
-    hsize_t count[dimensionality];
+    hsize_t *offset = new hsize_t[dimensionality];
+    hsize_t *count = new hsize_t[dimensionality];
+
     for (int i = 0; i < dimensionality; i++) {
       offset[i] = readSpec[i];
       count[i] = 1;
@@ -187,9 +191,10 @@ namespace hdfhelper {
 	offset[i] = 0;
 	count[i] = intdims[i];
       }
-      block[i] = 1;
-      stride[i] = 1;
     }
+    delete[] maxdims;
+    delete[] intdims;
+
     H5Sselect_hyperslab(dspace, H5S_SELECT_SET, offset, NULL, count, NULL);
     
     // make memory dataspace
@@ -197,6 +202,9 @@ namespace hdfhelper {
     for (int i = 0; i < dimensionality; i++) {
       dimsm[0] *= count[i];
     }
+    delete[] offset;
+    delete[] count;
+
     //std::cerr << "memory dataspace contains " << dimsm[0] << " elements" << std::endl;
 
     hid_t memspace = H5Screate_simple(1,dimsm,NULL);  

@@ -749,14 +749,14 @@ void EshdfFile::handleKpt(int kpt_num, const std::string& dir_name, KPoint& kpt,
 	vector<int> dimensionality;
 	getDatasetDimensionality("evc", dimensionality, spin_0_file);
 	size_t stored_num_gvecs = dimensionality[1];
-	
+
 	hid_t state_0_group = makeHDFGroup(ss2.str(), spin_0_group);
 	hsize_t dims[]={static_cast<hsize_t>(ngvec),2};
 	for (int i = 0; i < stored_num_gvecs/2; i++) dncoefs[i] = upcoefs[i];
 	writeNumsToHDF("psi_g", dncoefs, state_0_group, 2, dims);
 
 	hid_t state_1_group = makeHDFGroup(ss2.str(), spin_1_group);
-	for (int i = 0; i < stored_num_gvecs; i++) dncoefs[i] = upcoefs[i+stored_num_gvecs/2];
+	for (int i = 0; i < stored_num_gvecs/2; i++) dncoefs[i] = upcoefs[i+stored_num_gvecs/2];
 	writeNumsToHDF("psi_g", dncoefs, state_1_group, 2, dims);
       }
     }
@@ -769,6 +769,7 @@ void EshdfFile::handleKpt(int kpt_num, const std::string& dir_name, KPoint& kpt,
       writeNumsToHDF("psi_g", dncoefs, state_1_group, 2, dims);
     }
   }
+
 
   // now all the states are writen, so write out eigenvalues and number of states
   if (spinpol == 0)
