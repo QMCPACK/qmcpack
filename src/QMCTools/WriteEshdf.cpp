@@ -448,7 +448,21 @@ void EshdfFile::writeQboxAtoms(const XmlNode& qboxSample)
   writeNumsToHDF("number_of_atoms", static_cast<int>(atNum), atoms_group);
 }
 
-void EshdfFile::handleDensity(const XmlNode& qeXml, const string& dir_name, int spinpol, hid_t el_group) {
+hid_t EshdfFile::openHdfFileForRead(const string& fname)
+{
+  hid_t file;
+  if (!file_exists(fname)) {
+    cout << "could not find " << fname << ", make sure espresso is" << endl;
+    cout << "compiled with hdf support and you do not explicitly set" << endl;
+    cout << "wf_collect=.false. in your input" << endl;
+    exit(1);
+  }
+  file = H5Fopen(fname.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
+  return file;
+}
+
+void EshdfFile::handleDensity(const XmlNode& qeXml, const string& dir_name, int spinpol, hid_t el_group)
+{
   const XmlNode& output_xml = qeXml.getChild("output");
   // read in the grid to put in the charge density 
   const XmlNode& basis_set_xml = output_xml.getChild("basis_set");
@@ -468,14 +482,8 @@ void EshdfFile::handleDensity(const XmlNode& qeXml, const string& dir_name, int 
   herr_t status;
   hid_t file, dset;
   const string dens_fname = dir_name + "charge-density.hdf5";
-  if (!file_exists(dens_fname)) {
-    cout << "could not find " << dens_fname << ", make sure espresso is" << endl;
-    cout << "compiled with hdf support and you do not explicitly set" << endl;
-    cout << "wf_collect=.false. in your input" << endl;
-    exit(1);
-  }
-  file = H5Fopen(dens_fname.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
-
+  file = openHdfFileForRead(dens_fname);
+  
   const string gvectors_str ="MillerIndices";
   int* gvecs = new int[3*num_dens_gvecs];
   readNumsFromHDF(gvectors_str, gvecs, file);
@@ -529,6 +537,7 @@ void EshdfFile::handleDensity(const XmlNode& qeXml, const string& dir_name, int 
 }
 
 void EshdfFile::processKPts(const XmlNode& band_structure_xml,
+			    const vector<double>& ptvs,
 			    vector<vector<double > >& eigenvals,
 			    vector<vector<double > >& occupations,
 			    vector<KPoint>& kpts,
@@ -552,15 +561,13 @@ void EshdfFile::processKPts(const XmlNode& band_structure_xml,
       const XmlNode& k_point_xml = child_xml.getChild("k_point");
       k_point_xml.getAttribute("weight", weight);
       k_point_xml.getValue(kpt_vec);
-      kpt.kx=kpt_vec[0];
-      kpt.ky=kpt_vec[1];
-      kpt.kz=kpt_vec[2];
-      const XmlNode& npw_xml = child_xml.getChild("npw");
-      npw_xml.getValue(ngvec);
-      const XmlNode& eig_xml = child_xml.getChild("eigenvalues");
-      eig_xml.getValue(eigs);
-      const XmlNode& occs_xml = child_xml.getChild("occupations");
-      occs_xml.getValue(occs);
+      kpt.kx= kpt_vec[0]*ptvs[0]+kpt_vec[1]*ptvs[1]+kpt_vec[2]*ptvs[2];
+      kpt.ky= kpt_vec[0]*ptvs[3]+kpt_vec[1]*ptvs[4]+kpt_vec[2]*ptvs[5];
+      kpt.kz= kpt_vec[0]*ptvs[6]+kpt_vec[1]*ptvs[7]+kpt_vec[2]*ptvs[8];
+
+      child_xml.getChild("npw").getValue(ngvec);
+      child_xml.getChild("eigenvalues").getValue(eigs);
+      child_xml.getChild("occupations").getValue(occs);
       
       eigenvals.push_back(eigs);
       occupations.push_back(occs);
@@ -591,6 +598,7 @@ void EshdfFile::getNumElectrons(vector<vector<double> >& occupations,
 	sum += occupations[i][j];
       }
       nup_flt += sum*weights[i];
+      ndn_flt = -1.0;
     }
     else if (spinpol == 0) 
     {
@@ -650,13 +658,7 @@ void EshdfFile::handleKpt(int kpt_num, const std::string& dir_name, KPoint& kpt,
       ss << dir_name << "wfc" << (kpt_num+1) << ".hdf5";
       fname = ss.str();
     }
-    if (!file_exists(fname)) {
-      cout << "could not find " << fname << ", make sure espresso is" << endl;
-      cout << "compiled with hdf support and you do not explicitly set" << endl;
-      cout << "wf_collect=.false. in your input" << endl;
-      exit(1);
-    }
-    file = H5Fopen(fname.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
+    file = openHdfFileForRead(fname);
     int* gvecs = new int[3*ngvec];
     const string gvectors_str ="MillerIndices";
     readNumsFromHDF(gvectors_str, gvecs, file);
@@ -668,46 +670,176 @@ void EshdfFile::handleKpt(int kpt_num, const std::string& dir_name, KPoint& kpt,
     H5Fclose(file);
   }
 
-  //dfile_id = H5Fopen (FILE, H5F_ACC_RDWR, H5P_DEFAULT);
-  //dataset_id = H5Dopen2 (file_id, DATASETNAME, H5P_DEFAULT);
+  // now do the non-gvectors related stuff
+  hid_t spin_0_group = makeHDFGroup("spin_0", kpt_group);
+  hid_t spin_1_group;
+  if (spinpol == 1 || noncol == 1) spin_1_group = makeHDFGroup("spin_1", kpt_group);
   
-  /* Specify size and shape of subset to write. */
-  
-  //offset[0] = 1;
-  //offset[1] = 2;
-  
-  //count[0]  = DIM0_SUB;  
-  //count[1]  = DIM1_SUB;
-  
-  //stride[0] = 1;
-  //stride[1] = 1;
-  
-  //block[0] = 1;
-  //block[1] = 1;
-  
-  /* Create memory space with size of subset. Get file dataspace 
-     and select subset from file dataspace. */
-  
-  //dimsm[0] = DIM0_SUB;
-  //dimsm[1] = DIM1_SUB;
-  //memspace_id = H5Screate_simple (RANK, dimsm, NULL); 
-  
-  //dataspace_id = H5Dget_space (dataset_id);
-  //status = H5Sselect_hyperslab (dataspace_id, H5S_SELECT_SET, offset,
-  //                              stride, count, block);
+  hid_t spin_0_file;
+  hid_t spin_1_file;
+  if (spinpol == 1)
+  {
+    stringstream ss0;
+    ss0 << dir_name << "wfcup" << (kpt_num+1) << ".hdf5";
+    spin_0_file = openHdfFileForRead(ss0.str());
+    stringstream ss1;
+    ss1 << dir_name << "wfcdw" << (kpt_num+1) << ".hdf5";
+    spin_1_file = openHdfFileForRead(ss1.str());
+  }
+  else
+  {
+    stringstream ss0;
+    ss0 << dir_name << "wfc" << (kpt_num+1) << ".hdf5";
+    spin_0_file = openHdfFileForRead(ss0.str());
+  }
 
-    
+  // set up storage space for the coefficients to be read from the file
+  vector<double> upcoefs;
+  vector<double> dncoefs;
+  if (spinpol == 0)
+  {
+    if (noncol == 0) upcoefs.resize(ngvec*2);
+    if (noncol == 1)
+    {
+      upcoefs.resize(ngvec*4);
+      dncoefs.resize(ngvec*2);
+    }
+  }
+  else
+  {
+    upcoefs.resize(ngvec*2);
+    dncoefs.resize(ngvec*2); 
+  }
+  
+  int states_to_loop = eigenvalues.size();
+  if (spinpol == 1) states_to_loop /= 2;
+  for (int state = 0; state < states_to_loop; state++)
+  {
+    // set the elements of coefs to 0
+    for (int i = 0; i < upcoefs.size(); i++) upcoefs[i] = 0.0;
+    for (int i = 0; i < dncoefs.size(); i++) dncoefs[i] = 0.0;
+
+    // do what is necessary to read only this band's coefficients
+    vector<int> read_from;
+    read_from.push_back(state);
+    read_from.push_back(-1);
+    if (spinpol == 0)
+    {
+      readPortionFromHDF("evc", read_from, &upcoefs[0], spin_0_file);
+    }
+    else
+    {
+      readPortionFromHDF("evc", read_from, &upcoefs[0], spin_0_file);
+      readPortionFromHDF("evc", read_from, &dncoefs[0], spin_1_file);
+    }
+
+    // once the coefficients are read in, write them out to the appropriate place
+    stringstream ss2;
+    ss2 << "state_" << state;
+    if (spinpol == 0)
+    {
+      if (noncol == 0)
+      {
+	hid_t state_group = makeHDFGroup(ss2.str(), spin_0_group);
+	hsize_t dims[]={static_cast<hsize_t>(ngvec),2};
+	writeNumsToHDF("psi_g", upcoefs, state_group, 2, dims);
+      }
+      else // non-colinear calculation
+      {
+	vector<int> dimensionality;
+	getDatasetDimensionality("evc", dimensionality, spin_0_file);
+	size_t stored_num_gvecs = dimensionality[1];
+	
+	hid_t state_0_group = makeHDFGroup(ss2.str(), spin_0_group);
+	hsize_t dims[]={static_cast<hsize_t>(ngvec),2};
+	for (int i = 0; i < stored_num_gvecs/2; i++) dncoefs[i] = upcoefs[i];
+	writeNumsToHDF("psi_g", dncoefs, state_0_group, 2, dims);
+
+	hid_t state_1_group = makeHDFGroup(ss2.str(), spin_1_group);
+	for (int i = 0; i < stored_num_gvecs; i++) dncoefs[i] = upcoefs[i+stored_num_gvecs/2];
+	writeNumsToHDF("psi_g", dncoefs, state_1_group, 2, dims);
+      }
+    }
+    else  // spin polarized case
+    {
+      hid_t state_0_group = makeHDFGroup(ss2.str(), spin_0_group);
+      hid_t state_1_group = makeHDFGroup(ss2.str(), spin_1_group);
+      hsize_t dims[]={static_cast<hsize_t>(ngvec),2};
+      writeNumsToHDF("psi_g", upcoefs, state_0_group, 2, dims);
+      writeNumsToHDF("psi_g", dncoefs, state_1_group, 2, dims);
+    }
+  }
+
+  // now all the states are writen, so write out eigenvalues and number of states
+  if (spinpol == 0)
+  {
+    writeNumsToHDF("number_of_states", static_cast<int>(eigenvalues.size()), spin_0_group);
+    writeNumsToHDF("eigenvalues", eigenvalues, spin_0_group);
+    if (noncol == 1)
+    {
+      writeNumsToHDF("number_of_states", static_cast<int>(eigenvalues.size()), spin_1_group);
+      writeNumsToHDF("eigenvalues", eigenvalues, spin_1_group);
+    }
+  }
+  else // spin polarized case
+  {
+    int totstates = eigenvalues.size();
+    int upstates = totstates / 2;
+    int dnstates = totstates / 2;
+    writeNumsToHDF("number_of_states", static_cast<int>(upstates), spin_0_group);
+    writeNumsToHDF("number_of_states", static_cast<int>(dnstates), spin_1_group);
+
+    vector<double> upeig;
+    vector<double> dneig;
+    for (int i = 0; i < upstates; i++)
+    {
+      upeig.push_back(eigenvalues[i]);
+      dneig.push_back(eigenvalues[i+upstates]);
+    }
+    writeNumsToHDF("eigenvalues", upeig, spin_0_group);
+    writeNumsToHDF("eigenvalues", dneig, spin_1_group);
+  }
+
+  H5Fclose(spin_0_file);
+  if (spinpol == 1) H5Fclose(spin_1_file);
+  
 }
 
+vector<double> EshdfFile::getPtvs(const XmlNode& qeXml) {
+  const XmlNode& reciprocal_lattice_xml =
+    qeXml.getChild("output").getChild("basis_set").getChild("reciprocal_lattice");
+  vector<double> rlv; // reciprocal_lattice_vectors
+  reciprocal_lattice_xml.getChild("b1").getValue(rlv);
+  reciprocal_lattice_xml.getChild("b2").getValue(rlv);
+  reciprocal_lattice_xml.getChild("b3").getValue(rlv);
+
+  const double det = rlv[0]*(rlv[4]*rlv[8] - rlv[5]*rlv[7])
+    - rlv[1]*(rlv[3]*rlv[8] - rlv[5]*rlv[6])
+    + rlv[2]*(rlv[3]*rlv[7] - rlv[4]*rlv[6]);
+  const double invdet = 1.0/det;
+  vector<double> ptv;
+  ptv.push_back(invdet*(rlv[4]*rlv[8] - rlv[5]*rlv[7]));
+  ptv.push_back(invdet*(rlv[5]*rlv[6] - rlv[3]*rlv[8]));
+  ptv.push_back(invdet*(rlv[3]*rlv[7] - rlv[4]*rlv[6]));
+  ptv.push_back(invdet*(rlv[2]*rlv[7] - rlv[1]*rlv[8]));
+  ptv.push_back(invdet*(rlv[0]*rlv[8] - rlv[2]*rlv[6]));
+  ptv.push_back(invdet*(rlv[1]*rlv[6] - rlv[0]*rlv[7]));
+  ptv.push_back(invdet*(rlv[1]*rlv[5] - rlv[2]*rlv[4]));
+  ptv.push_back(invdet*(rlv[2]*rlv[3] - rlv[0]*rlv[5]));
+  ptv.push_back(invdet*(rlv[0]*rlv[4] - rlv[1]*rlv[3]));
+  return ptv;
+}
 
 void EshdfFile::writeQEElectrons(const XmlNode& qeXml, const string& dir_name) {
   // make electrons group in hdf file
   hid_t electrons_group = makeHDFGroup("electrons", file_);
   const XmlNode& output_xml = qeXml.getChild("output");
+
   // need to figure out if this is spin polarized, or if it is noncolinear
   int spinpol = 0;
   int noncol = 0;
-  const XmlNode& band_structure_xml = output_xml.getChild("band_structure");
+  const XmlNode& band_structure_xml = output_xml.getChild("band_structure");  
+
   const XmlNode& lsda_xml = band_structure_xml.getChild("lsda");
   string lsda_string_bool = lsda_xml.getValue();
   const XmlNode& noncolin_xml = band_structure_xml.getChild("noncolin");
@@ -719,12 +851,13 @@ void EshdfFile::writeQEElectrons(const XmlNode& qeXml, const string& dir_name) {
   handleDensity(qeXml, dir_name, spinpol, electrons_group);
 
   // read in information about kpts from the xml
+  vector<double> ptv = getPtvs(qeXml);
   vector<vector<double> > eigenvals;
   vector<vector<double> > occupations;
   vector<KPoint> kpts;
   vector<double> weights;
   vector<int> ngvecs;
-  processKPts(band_structure_xml, eigenvals, occupations, kpts, weights, ngvecs);
+  processKPts(band_structure_xml, ptv, eigenvals, occupations, kpts, weights, ngvecs);
 
   // write number of kpoints, number of spins and spinors if appropriate
   writeNumsToHDF("number_of_kpoints", static_cast<int>(kpts.size()), electrons_group);

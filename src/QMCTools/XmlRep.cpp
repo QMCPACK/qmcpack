@@ -257,10 +257,10 @@ int XmlStream::addNextTag()
     else 
     {
       elem.type = tagType::opening;
+      stream_->unget();
     }
     elem.name = getTagName(getTag(elem), elem.type);
     elements.push_back(elem);
-    stream_->unget();
     return 1;
   }
   if (isProcessingInstruction == 1 || isComment == 1) 

@@ -48,7 +48,9 @@ private:
 
   // helper functions meant for espresso
   void handleDensity(const XmlNode& qeXml, const std::string& dir_name, int spinpol, hid_t el_group);
+  std::vector<double> getPtvs(const XmlNode& qeXml);
   void processKPts(const XmlNode& band_structure_xml,
+		   const std::vector<double>& ptvs,
 		   std::vector<std::vector<double > >& eigenvals,
 		   std::vector<std::vector<double > >& occupations,
 		   std::vector<KPoint>& kpts,
@@ -60,7 +62,8 @@ private:
   void handleKpt(int kpt_num, const std::string& dir_name, KPoint& kpt, 
 		 const std::vector<double>& eigenvalues, int ngvecs, int ngvecs_index, 
 		 double weight, int spinpol, int noncol, hid_t electrons_group);
-
+  hid_t openHdfFileForRead(const std::string& fname);
+  
   EshdfFile(const EshdfFile& f); // no copy constructor
   EshdfFile& operator=(const EshdfFile& f); // operator= not allowed
 public:
