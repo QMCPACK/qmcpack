@@ -157,7 +157,7 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF()
       if (Super2Prim[i] < 0)
       {
         app_error() << "Supercell ion " << i << " not found in the primitive cell" << std::endl;
-        abort();
+        // abort();
       }
       else
       {
