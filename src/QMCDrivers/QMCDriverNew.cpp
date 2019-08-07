@@ -18,6 +18,7 @@
  */
 
 #include "QMCDrivers/QMCDriverNew.h"
+#include "Concurrency/TaskBlock.hpp"
 #include "Particle/HDFWalkerIO.h"
 #include "ParticleBase/ParticleUtility.h"
 #include "ParticleBase/RandomSeqGenerator.h"
@@ -102,6 +103,7 @@ QMCDriverNew::QMCDriverNew(MCPopulation& population,
   nReject = 0;
   //nTargetWalkers = W.getActiveWalkers();
   m_param.add(nTargetWalkers, "walkers", "int");
+  m_param.add(num_crowds, "crowds", "int");
   //sample-related parameters
   //samples will set nTargetPopulation
   nTargetSamples       = 0;
@@ -135,15 +137,15 @@ QMCDriverNew::QMCDriverNew(MCPopulation& population,
 
 int QMCDriverNew::addObservable(const std::string& aname)
 {
-    if (Estimators)
-      return Estimators->addObservable(aname.c_str());
-    else
-      return -1;
-  }
+  if (Estimators)
+    return Estimators->addObservable(aname.c_str());
+  else
+    return -1;
+}
 
 QMCDriverNew::RealType QMCDriverNew::getObservable(int i) { return Estimators->getObservable(i); }
 
-    
+
 QMCDriverNew::~QMCDriverNew()
 {
   delete_iter(Rng.begin(), Rng.end());
@@ -408,7 +410,7 @@ void QMCDriverNew::setWalkerOffsets()
  */
 bool QMCDriverNew::putQMCInfo(xmlNodePtr cur)
 {
-  int defaultw = omp_get_max_threads();
+  int defaultw = Concurrency::maxThreads<>();
   OhmmsAttributeSet aAttrib;
   aAttrib.add(k_delay, "kdelay");
   aAttrib.put(cur);
@@ -469,9 +471,11 @@ bool QMCDriverNew::putQMCInfo(xmlNodePtr cur)
     app_log() << "Using existing walkers " << std::endl;
   }
   else
-  { //always reset the walkers
-    int nths(omp_get_max_threads());
-    nTargetWalkers = (std::max(nths, (nTargetWalkers / nths) * nths));
+  { // always reset the walkers
+    // Here we engage in some suspect adjustments of the number of walkers and crowds
+    int num_threads(Concurrency::maxThreads<>());
+    num_crowds     = std::min(num_crowds, num_threads);
+    nTargetWalkers = (std::max(num_crowds, (nTargetWalkers / num_crowds) * num_crowds));
     int nw         = population_.get_num_global_walkers();
     int ndiff      = 0;
     if (nw)
@@ -483,6 +487,7 @@ bool QMCDriverNew::putQMCInfo(xmlNodePtr cur)
     {
       ndiff = (nTargetWalkers) ? nTargetWalkers : defaultw;
     }
+    // really?
     addWalkers(ndiff);
   }
 

@@ -51,8 +51,8 @@ class TraceManager;
 class QMCDriverNew : public QMCDriverInterface, public MPIObjectBase
 {
 public:
-  using RealType  = QMCTraits::RealType;
-  using IndexType = QMCTraits::IndexType;
+  using RealType              = QMCTraits::RealType;
+  using IndexType             = QMCTraits::IndexType;
   using FullPrecisionRealType = QMCTraits::FullPrecRealType;
 
   /** @ingroup Type dependent behavior
@@ -62,14 +62,19 @@ public:
   /** call recompute at the end of each block in the mixed precision case.
    */
   template<typename RT = RealType, typename FPRT = FullPrecisionRealType>
-  int defaultBlocksBetweenRecompute() { return 0; }
+  int defaultBlocksBetweenRecompute()
+  {
+    return 0;
+  }
 
-  template<typename RT = RealType, typename FPRT = FullPrecisionRealType,
-	   std::enable_if_t<std::is_same<RT, FPRT>{}>>
-  int defaultBlocksBetweenRecompute() { return 1; }
+  template<typename RT = RealType, typename FPRT = FullPrecisionRealType, std::enable_if_t<std::is_same<RT, FPRT>{}>>
+  int defaultBlocksBetweenRecompute()
+  {
+    return 1;
+  }
   /** @}
    */
-  
+
   /** separate but similar to QMCModeEnum
    *  
    *  a code smell
@@ -259,16 +264,12 @@ protected:
   /// the number of blocks between recomptePsi
   IndexType nBlocksBetweenRecompute;
 
-  ///the number of walkers
-  IndexType nTargetWalkers;
   ///the number of saved samples
   IndexType nTargetSamples;
   ///alternate method of setting QMC run parameters
   IndexType nStepsBetweenSamples;
   ///samples per thread
-  RealType nSamplesPerThread;
-  ///target population
-  RealType nTargetPopulation;
+  IndexType nSamplesPerThread;
 
   ///timestep
   RealType Tau;
@@ -325,6 +326,12 @@ protected:
   ///temporary storage for random displacement
   ParticleSet::ParticlePos_t deltaR;
 
+/** Driver Input Parameters
+ *
+ * consider separate class
+ */
+  IndexType requested_walkers;
+
 
 protected:
   // I suspect all of this state is unecessary
@@ -348,6 +355,7 @@ public:
 
   void addWalkers(int nwalkers);
 
+  int get_num_crowds() { return crowds_.size(); } 
   /** record the state of the block
    * @param block current block
    *

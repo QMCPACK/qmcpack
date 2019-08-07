@@ -49,9 +49,6 @@ VMCBatched::VMCBatched(MCPopulation& pop,
   m_param.add(UseDrift, "useDrift", "string");
   m_param.add(UseDrift, "usedrift", "string");
   m_param.add(UseDrift, "use_drift", "string");
-
-  prevSteps               = max_steps;
-  prevStepsBetweenSamples = nStepsBetweenSamples;
 }
 
 bool VMCBatched::run()
@@ -308,53 +305,38 @@ bool VMCBatched::run()
 
 bool VMCBatched::put(xmlNodePtr q)
 {
-  // //grep minimumTargetWalker
-  // int target_min = -1;
-  // ParameterSet p;
-  // p.add(target_min, "minimumtargetwalkers", "int"); //p.add(target_min,"minimumTargetWalkers","int");
-  // p.add(target_min, "minimumsamples", "int");       //p.add(target_min,"minimumSamples","int");
-  // p.put(q);
+  //grep minimumTargetWalker
+  int target_min = -1;
+  ParameterSet p;
+  p.add(target_min, "minimumtargetwalkers", "int"); //p.add(target_min,"minimumTargetWalkers","int");
+  p.add(target_min, "minimumsamples", "int");       //p.add(target_min,"minimumSamples","int");
+  p.put(q);
 
-  // app_log() << "\n<vmc function=\"put\">"
-  //           << "\n  qmc_counter=" << qmc_common.qmc_counter << "  my_counter=" << MyCounter << std::endl;
-  // if (qmc_common.qmc_counter && MyCounter)
-  // {
-  //   nSteps               = prevSteps;
-  //   nStepsBetweenSamples = prevStepsBetweenSamples;
-  // }
-  // else
-  // {
-  //   int nw = W.getActiveWalkers();
-  //   //compute samples and overwrite steps for the given samples
-  //   int Nthreads = omp_get_max_threads();
-  //   int Nprocs   = myComm->size();
-  //   //target samples set by samples or samplesperthread/dmcwalkersperthread
-  //   nTargetPopulation = std::max(nTargetPopulation, nSamplesPerThread * Nprocs * Nthreads);
-  //   nTargetSamples    = static_cast<int>(std::ceil(nTargetPopulation));
+  //int nw = W.getActiveWalkers();
 
-  //   if (nTargetSamples)
-  //   {
-  //     int nwtot      = nw * Nprocs; //total number of walkers used by this qmcsection
-  //     nTargetSamples = std::max(nwtot, nTargetSamples);
-  //     if (target_min > 0)
-  //     {
-  //       nTargetSamples    = std::max(nTargetSamples, target_min);
-  //       nTargetPopulation = std::max(nTargetPopulation, static_cast<RealType>(target_min));
-  //     }
-  //     nTargetSamples = ((nTargetSamples + nwtot - 1) / nwtot) *
-  //         nwtot; // nTargetSamples are always multiples of total number of walkers
-  //     nSamplesPerThread = nTargetSamples / Nprocs / Nthreads;
-  //     int ns_target     = nTargetSamples * nStepsBetweenSamples; //total samples to generate
-  //     int ns_per_step   = Nprocs * nw;                           //total samples per step
-  //     nSteps            = std::max(nSteps, (ns_target / ns_per_step + nBlocks - 1) / nBlocks);
-  //     Period4WalkerDump = nStepsBetweenSamples = (ns_per_step * nSteps * nBlocks) / nTargetSamples;
-  //   }
-  //   else
-  //   {
-  //     Period4WalkerDump = nStepsBetweenSamples = (nBlocks + 1) * nSteps; //some positive number, not used
-  //     nSamplesPerThread                        = 0;
-  //   }
-  // }
+  //compute samples and overwrite steps for the given samples
+  // The option to specify this in input needs to be added
+  int Nprocs   = myComm->size();
+  //target samples set by samples or samplesperthread/dmcwalkersperthread
+  population_.set_target(std::max(population_.get_target(), nSamplesPerThread * Nprocs * get_num_crowds()));
+  population_.set_target_samples(population_.get_target());
+
+  int nwtot      = nw * Nprocs; //total number of walkers used by this qmcsection
+  nTargetSamples = std::max(nwtot, nTargetSamples);
+  if (target_min > 0)
+  {
+      nTargetSamples    = std::max(nTargetSamples, target_min);
+      nTargetPopulation = std::max(nTargetPopulation, static_cast<RealType>(target_min));
+    }
+    nTargetSamples = ((nTargetSamples + nwtot - 1) / nwtot) *
+        nwtot; // nTargetSamples are always multiples of total number of walkers
+    nSamplesPerThread = nTargetSamples / Nprocs / Nthreads;
+    int ns_target     = nTargetSamples * nStepsBetweenSamples; //total samples to generate
+    int ns_per_step   = Nprocs * nw;                           //total samples per step
+    nSteps            = std::max(nSteps, (ns_target / ns_per_step + nBlocks - 1) / nBlocks);
+    Period4WalkerDump = nStepsBetweenSamples = (ns_per_step * nSteps * nBlocks) / nTargetSamples;
+
+
   // prevSteps               = nSteps;
   // prevStepsBetweenSamples = nStepsBetweenSamples;
 
