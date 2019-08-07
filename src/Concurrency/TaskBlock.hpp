@@ -60,6 +60,39 @@ private:
 };
 
 template<>
+class TaskBlockBarrier<Threading::OPENMP>
+{
+public:
+  TaskBlockBarrier(unsigned int num_threads) : num_threads_(num_threads)
+  {
+    omp_init_lock(&mutex_);
+    omp_init_lock(&barrier_);
+  }
+  void wait()
+  {
+  omp_set_lock(&mutex_);
+  threads_at_barrier_++;
+  int local_tab = threads_at_barrier_;
+  omp_unset_lock(&mutex_);
+  omp_set_lock(&barrier_);
+  while(local_tab < num_threads_)
+  {
+    omp_set_lock(&mutex_);
+    local_tab = threads_at_barrier_;
+    omp_unset_lock(&mutex_);
+  }
+  omp_unset_lock(&barrier_);
+  }
+  
+private:
+  omp_lock_t mutex_;
+  omp_lock_t barrier_;
+  unsigned int num_threads_;
+  int threads_at_barrier_;
+};
+
+    
+template<>
 class TaskBlockBarrier<Threading::STD>
 {
 public:
@@ -74,12 +107,7 @@ private:
   std::mutex mutex_;
   int threads_at_barrier_;
 };
-
-template<Threading TT>
-inline void TaskBlockBarrier<TT>::wait()
-{
-#pragma omp barrier
-}
+    
 
 void TaskBlockBarrier<Threading::STD>::wait()
 {
