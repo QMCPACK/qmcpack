@@ -33,10 +33,6 @@ def write_wfn_mol(scf_data, ortho_ao, filename, wfn=None,
     C = scf_data['mo_coeff']
     X = scf_data['X']
     uhf = scf_data['isUHF']
-    if uhf:
-        walker_type = 'uhf'
-    else:
-        walker_type = 'rhf'
     # For RHF only nalpha entries will be filled.
     if uhf:
         norb = C[0].shape[0]
@@ -61,7 +57,7 @@ def write_wfn_mol(scf_data, ortho_ao, filename, wfn=None,
             if uhf:
                 print(" # Warning: UHF trial wavefunction can only be used of "
                       "working in ortho AO basis.")
-    write_qmcpack_wfn(filename, (numpy.array([1.0+0j]),wfn), walker_type,
+    write_qmcpack_wfn(filename, (numpy.array([1.0+0j]),wfn), uhf,
                       nelec, norb, verbose=verbose)
     return nelec
 
