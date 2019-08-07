@@ -31,6 +31,9 @@
 #include <utility>
 
 #include <omp.h>
+
+#include "Concurrency/Info.hpp"
+
 namespace qmcplusplus
 {
     
@@ -45,19 +48,13 @@ struct TaskWrapper
   }
 };
 
-enum class Threading
-{
-  OPENMP,
-  STD
-};
-
 template<Threading TT>
 class TaskBlockBarrier
 {
 public:
   TaskBlockBarrier(unsigned int num_threads) : num_threads_(num_threads) {}
   void wait();
-
+  
 private:
   unsigned int num_threads_;
 };
