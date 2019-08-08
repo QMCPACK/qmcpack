@@ -1051,7 +1051,7 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
     for (int j = 0; j < parameterDirections.size(); j++)
     {
       if (j != central_index)
-        parameterDirections.at(j).at(i + 1) -= parameterDirections.at(1).at(i + 1);
+        parameterDirections.at(j).at(i + 1) -= parameterDirections.at(central_index).at(i + 1);
       //parameterDirections.at(2).at(i+1) -= parameterDirections.at(1).at(i+1);
     }
   }
@@ -1063,7 +1063,7 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
   for (int k = 0; k < parameterDirections.size(); k++)
   {
     for (int i = 0; i < numParams; i++)
-      optTarget->Params(i) = currParams.at(i) + (k == num_shifts ? 0.0 : parameterDirections.at(k).at(i + 1));
+      optTarget->Params(i) = currParams.at(i) + (k == central_index ? 0.0 : parameterDirections.at(k).at(i + 1));
     optTarget->IsValid = true;
     costValues.at(k)   = optTarget->LMYEngineCost(false, EngineObj);
     good_update.at(k) =
