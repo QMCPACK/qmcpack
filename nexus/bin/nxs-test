@@ -384,6 +384,7 @@ def nunit_all():
     nexus_test = NexusTestBase.current_test
     module_name = 'test_'+NexusTestBase.current_test.name
     module = import_unit_test_module(module_name)
+    load_external_unit_tests()
     uncalled_tests = sorted(nexus_test.unit_tests-nexus_test.unit_tests_called)
     for test_name in uncalled_tests:
         unit_test = module[test_name]
@@ -392,13 +393,22 @@ def nunit_all():
 #end def nunit_all
 
 
+# ensure all external unit tests are loaded
+def load_external_unit_tests():
+    nexus_test = NexusTestBase.current_test
+    if len(nexus_test.unit_tests)==0:
+        module_name = 'test_'+nexus_test.name
+        module = import_unit_test_module(module_name)
+        nexus_test.unit_tests = set(module.keys())
+    #end if
+#end def load_external_unit_tests
+
+
 # actually execute the unit test (not to be called directly within a Nexus test)
 def run_external_unit_test(test_name,unit_test):
     nexus_test = NexusTestBase.current_test
-    if len(nexus_test.unit_tests)==0:
-        module_name = 'test_'+NexusTestBase.current_test.name
-        module = import_unit_test_module(module_name)
-        nexus_test.unit_tests = set(module.keys())
+    if test_name not in nexus_test.unit_tests:
+        raise NexusTestMisconstructed('unit test "{}" does not exist for function "{}"'.format(test_name,nexus_test.name))
     elif test_name in nexus_test.unit_tests_called:
         raise NexusTestMisconstructed('unit test "{}" has already been called in function "{}"'.format(test_name,nexus_test.name))
     #end if
