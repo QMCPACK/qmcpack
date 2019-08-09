@@ -413,8 +413,8 @@ def run_external_unit_test(test_name,unit_test):
         raise NexusTestMisconstructed('unit test "{}" has already been called in function "{}"'.format(test_name,nexus_test.name))
     #end if
     nlabel(test_name)
-    unit_test()
     nexus_test.unit_tests_called.add(test_name)
+    unit_test()
 #end def run_external_unit_test
 
 
@@ -511,8 +511,9 @@ class NexusTest(NexusTestBase):
             #end if
             self.status=NexusTest.status_options['passed']
         except Exception as e:
+            t,v,tb = sys.exc_info()
             self.exception = e
-            self.traceback = sys.exc_info()[2]
+            self.traceback = tb
             self.status=NexusTest.status_options['failed']
         #end try
         uncalled_unit_tests = self.unit_tests-self.unit_tests_called
