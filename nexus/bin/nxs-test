@@ -2721,6 +2721,13 @@ def structure():
 
 
 
+def physical_system():
+    # call all unit tests
+    nunit_all()
+#end def physical_system
+
+
+
 def pwscf_input():
     # divert logging function
     nlog_divert()
@@ -3306,6 +3313,7 @@ NexusTest( nexus_imports      )
 NexusTest( settings_operation , 'settings' )
 NexusTest( machines           )
 NexusTest( structure          )
+NexusTest( physical_system    )
 NexusTest( pwscf_input        )
 
 for label in example_information.keys():
