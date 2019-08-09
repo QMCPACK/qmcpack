@@ -952,15 +952,11 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
 #ifdef HAVE_LMY_ENGINE
   // call the engine to perform update
   EngineObj->wfn_update_compute();
-//std::cout << "optimization here 0.5" << std::endl;
 #else
   solveShiftsWithoutLMYEngine(shifts_i, shifts_s, parameterDirections);
 #endif
 
   // size update direction vector correctly
-  //for (int i = 0; i < EngineObj->good_solve().size(); i++)
-  //  app_log() << EngineObj->good_solve().at(i) << "  ";
-  //app_log() << endl;
   parameterDirections.resize(shifts_i.size());
   for (int i = 0; i < shifts_i.size(); i++)
   {
@@ -1011,11 +1007,6 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
   // generate the new sample on which we will compare the different shifts
 
   finish();
-  // reset the number of samples
-  //this->optTarget->setNumSamples(nsamp_comp);
-  //nTargetSamples = nsamp_comp;
-  //app_log() << "# of sample before correlated sampling is " << nTargetSamples << std::endl;
-  //app_log() << "number of samples is" << this->optTarget->getNumSamples() << std::endl;
   app_log() << std::endl
             << "*************************************************************" << std::endl
             << "Generating a new sample based on the updated guiding function" << std::endl
@@ -1026,7 +1017,6 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
   vmcEngine->getCommunicator()->setName(old_name + ".middleShift");
   start();
   vmcEngine->getCommunicator()->setName(old_name);
-  //app_log() << "number of samples is" << this->optTarget->getNumSamples() << std::endl;
 
   // say what we are doing
   app_log() << std::endl
@@ -1051,8 +1041,7 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
     for (int j = 0; j < parameterDirections.size(); j++)
     {
       if (j != central_index)
-        parameterDirections.at(j).at(i + 1) -= parameterDirections.at(1).at(i + 1);
-      //parameterDirections.at(2).at(i+1) -= parameterDirections.at(1).at(i+1);
+        parameterDirections.at(j).at(i + 1) -= parameterDirections.at(central_index).at(i + 1);
     }
   }
 
@@ -1063,20 +1052,14 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
   for (int k = 0; k < parameterDirections.size(); k++)
   {
     for (int i = 0; i < numParams; i++)
-      optTarget->Params(i) = currParams.at(i) + (k == num_shifts ? 0.0 : parameterDirections.at(k).at(i + 1));
+      optTarget->Params(i) = currParams.at(i) + (k == central_index ? 0.0 : parameterDirections.at(k).at(i + 1));
     optTarget->IsValid = true;
     costValues.at(k)   = optTarget->LMYEngineCost(false, EngineObj);
     good_update.at(k) =
         (good_update.at(k) && std::abs((initCost - costValues.at(k)) / initCost) < max_relative_cost_change);
-    //app_log() << std::abs( (starting_cost - costValues.at(k)) / starting_cost ) << "  ";
     if (!good_update.at(k))
       costValues.at(k) = std::abs(1.5 * initCost) + 1.0;
   }
-  //app_log() << endl;
-
-  //for (int i = 0; i < good_update.size(); i++)
-  //  app_log() << good_update.at(i) << "  ";
-  //app_log() << endl;
 
   // find the best shift and the corresponding update direction
   const std::vector<RealType>* bestDirection = 0;
