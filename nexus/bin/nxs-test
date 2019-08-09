@@ -2711,6 +2711,9 @@ def structure():
         #end for
     #end for
 
+    # call all unit tests
+    nunit_all()
+
     # restore logging function
     nlog_restore()
 #end def structure
