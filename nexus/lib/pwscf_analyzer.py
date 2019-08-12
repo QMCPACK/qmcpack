@@ -140,7 +140,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
 
         outfile = os.path.join(path,outfile_name)
 
-        if self.input.control.calculation != 'nscf':
+        try:
             # perform MD analysis
             f = TextFile(outfile)
             n = 0
@@ -171,7 +171,12 @@ class PwscfAnalyzer(SimulationAnalyzer):
             if self.info.md_only:
                 return
             #end if
-        #end if
+        except:
+            nx+=1
+            if self.info.warn:
+                self.warn('MD analysis failed')
+            #end if
+        #end try
 
         try:
             lines = open(outfile,'r').read().splitlines()
