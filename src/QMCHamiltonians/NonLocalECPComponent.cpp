@@ -139,12 +139,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOne(ParticleSet& W,
     for (int j = 0; j < nknot; j++)
     {
       deltaV[j] = r * rrotsgrid_m[j] - dr;
-      W.makeMoveOnSphere(iel, deltaV[j]);
-//#if defined(QMC_COMPLEX)
-      //psiratio[j] = psi.full_ratio(W, iel) * sgridweight_m[j] * std::cos(psi.getPhaseDiff());
-//#else
-      //psiratio[j] = psi.ratio(W, iel) * sgridweight_m[j];
-//#endif
+      W.makeMove(iel, deltaV[j]);
       psiratio[j] = psi.full_ratio(W, iel) * sgridweight_m[j];
       W.rejectMove(iel);
       psi.resetPhaseDiff();
@@ -163,7 +158,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOne(ParticleSet& W,
   {
     RealType zz = dot(dr, rrotsgrid_m[j]) * rinv;
     // Forming the Legendre polynomials
-    lpol[0]          = cone;
+    lpol[0]           = cone;
     RealType lpolprev = czero;
     for (int l = 0; l < lmax; l++)
     {
@@ -240,7 +235,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
     for (int j = 0; j < nknot; j++)
     {
       deltaV[j] = r * rrotsgrid_m[j] - dr;
-      W.makeMoveOnSphere(iel, deltaV[j]);
+      W.makeMove(iel, deltaV[j]);
 #if defined(QMC_COMPLEX)
       gradtmp_ = 0;
 
@@ -305,7 +300,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
     cosgrad[j] = rinv * uminusrvec;
 
     RealType udotgradpsi = dot(gradpsiratio[j], rrotsgrid_m[j]);
-    wfngrad[j]          = gradpsiratio[j] - dr * (udotgradpsi * rinv);
+    wfngrad[j]           = gradpsiratio[j] - dr * (udotgradpsi * rinv);
     wfngrad[j] *= sgridweight_m[j];
 
     // Forming the Legendre polynomials
@@ -346,7 +341,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
 
     if (Tmove)
       Txy.push_back(NonLocalData(iel, lsum, deltaV[j]));
-    pairpot   += lsum;
+    pairpot += lsum;
     force_iat += gradpotterm_ + gradlpolyterm_ - gradwfnterm_;
   }
 
@@ -425,7 +420,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
     for (int j = 0; j < nknot; j++)
     {
       deltaV[j] = r * rrotsgrid_m[j] - dr;
-      W.makeMoveOnSphere(iel, deltaV[j]);
+      W.makeMove(iel, deltaV[j]);
 #if defined(QMC_COMPLEX)
       gradtmp_ = 0;
 
@@ -488,7 +483,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
     for (unsigned int j = 0; j < nknot; j++)
     {
       deltaV[j] = r * rrotsgrid_m[j] - dr;
-      W.makeMoveOnSphere(iel, deltaV[j]);
+      W.makeMove(iel, deltaV[j]);
       //"Accepting" moves is necessary because evalGradSource needs full distance tables
       //for now.
       W.acceptMove(iel);
@@ -500,7 +495,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
       pulay_quad[j][jat] = iongradtmp_;
       //And move the particle back.
       deltaV[j] = dr - r * rrotsgrid_m[j];
-      W.makeMoveOnSphere(iel, deltaV[j]);
+      W.makeMove(iel, deltaV[j]);
       W.acceptMove(iel);
     }
   }
@@ -515,7 +510,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
     cosgrad[j] = rinv * uminusrvec;
 
     RealType udotgradpsi = dot(gradpsiratio[j], rrotsgrid_m[j]);
-    wfngrad[j]          = gradpsiratio[j] - dr * (udotgradpsi * rinv);
+    wfngrad[j]           = gradpsiratio[j] - dr * (udotgradpsi * rinv);
     wfngrad[j] *= sgridweight_m[j];
 
     // Forming the Legendre polynomials
@@ -560,8 +555,8 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
     pulaytmp_ += lsum * pulay_ref;
     if (Tmove)
       Txy.push_back(NonLocalData(iel, lsum, deltaV[j]));
-    pairpot     += lsum;
-    force_iat   += gradpotterm_ + gradlpolyterm_ - gradwfnterm_;
+    pairpot += lsum;
+    force_iat += gradpotterm_ + gradlpolyterm_ - gradwfnterm_;
     pulay_terms += pulaytmp_;
   }
 

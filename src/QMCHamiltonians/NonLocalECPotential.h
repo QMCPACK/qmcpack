@@ -82,7 +82,7 @@ public:
 
   QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 
-  void add(int groupID, NonLocalECPComponent* pp);
+  void addComponent(int groupID, NonLocalECPComponent* pp);
 
   /** set the internal RNG pointer as the given pointer
    * @param rng input RNG pointer
@@ -128,8 +128,6 @@ private:
   NonLocalTOperator nonLocalOps;
   ///true if we should compute forces
   bool ComputeForces;
-  ///true if we should use new algorithm
-  bool UseVP;
   ///Pulay force vector
   ParticleSet::ParticlePos_t PulayTerm;
 #if !defined(REMOVE_TRACEMANAGER)
@@ -156,7 +154,7 @@ private:
    * @param myTable electron ion distance table
    * @param iel reference electron
    */
-  void markAffectedElecs(const DistanceTableData* myTable, int iel);
+  void markAffectedElecs(const DistanceTableData& myTable, int iel);
 };
 } // namespace qmcplusplus
 #endif

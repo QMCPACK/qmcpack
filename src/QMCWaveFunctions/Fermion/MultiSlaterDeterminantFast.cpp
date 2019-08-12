@@ -42,6 +42,7 @@ MultiSlaterDeterminantFast::MultiSlaterDeterminantFast(ParticleSet& targetPtcl,
   registerTimers();
   //Optimizable=true;
   Optimizable   = false;
+  is_fermionic  = true;
   ClassName     = "MultiSlaterDeterminantFast";
   usingCSF      = false;
   NP            = targetPtcl.getTotalNum();
@@ -176,7 +177,7 @@ void MultiSlaterDeterminantFast::testMSD(ParticleSet& P, int iat)
   dr[0] = 0.1;
   dr[1] = 0.05;
   dr[2] = -0.01;
-  PosType newpos(P.makeMove(iat, dr));
+  P.makeMove(iat, dr);
   app_log() << "Testing ratio(P,dG,dL). \n";
   G       = 0;
   G0      = 0;

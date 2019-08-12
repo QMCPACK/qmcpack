@@ -17,7 +17,6 @@
 #include "Lattice/ParticleBConds.h"
 #include "Particle/ParticleSet.h"
 #include "Particle/DistanceTableData.h"
-#include "Particle/DistanceTable.h"
 #include "Particle/SymmetricDistanceTableData.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
@@ -91,13 +90,6 @@ TEST_CASE("PolynomialFunctor3D Jastrow", "[wavefunction]")
   target_species(chargeIdx, downIdx) = -1;
   //elec_.resetGroups();
 
-#ifdef ENABLE_SOA
-  elec_.addTable(ions_, DT_SOA);
-#else
-  elec_.addTable(ions_, DT_AOS);
-#endif
-  elec_.update();
-
   TrialWaveFunction psi = TrialWaveFunction(c);
 
   const char* particles = "<tmp> \
@@ -132,6 +124,9 @@ TEST_CASE("PolynomialFunctor3D Jastrow", "[wavefunction]")
 #endif
   J3Type* j3 = dynamic_cast<J3Type*>(orb);
   REQUIRE(j3 != NULL);
+
+  // update all distance tables
+  elec_.update();
 
   double logpsi = psi.evaluateLog(elec_);
   REQUIRE(logpsi == Approx(-1.193457749)); // note: number not validated

@@ -10,9 +10,6 @@
 #// File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 #//////////////////////////////////////////////////////////////////////////////////////
     
-INCLUDE("${qmcpack_SOURCE_DIR}/CMake/macros.cmake")
-    
-
 SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
 
 SET(SRC_DIR type_traits)
@@ -28,4 +25,3 @@ if(QMC_CUDA)
 endif(QMC_CUDA)
 ADD_EXECUTABLE(${UTEST_EXE} ${TEST_SRCS})
 ADD_UNIT_TEST(${UTEST_NAME} "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
-SET_TESTS_PROPERTIES(${UTEST_NAME} PROPERTIES LABELS "unit" WORKING_DIRECTORY ${UTEST_DIR})

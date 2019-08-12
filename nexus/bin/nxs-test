@@ -5,7 +5,6 @@ import sys
 import shutil
 import traceback
 from optparse import OptionParser
-from numpy import ndarray,array,abs
 
 # find the path to the nxs-test executable and its parent directory
 scriptpath=os.path.realpath(__file__)
@@ -46,6 +45,50 @@ from generic import generic_settings,object_interface,NexusError
 generic_settings.raise_error = True
 
 
+
+# add unit test modules
+sys.path.append(os.path.abspath(os.path.join(__file__,'..','..','tests','unit')))
+
+unit_test_module_lists = dict()
+unit_test_modules      = dict()
+
+import inspect
+import importlib
+
+def import_unit_test_module_list(module_name):
+    if module_name not in unit_test_module_lists:
+        module = importlib.import_module(module_name)
+        unit_test_list = []
+        for name,member in inspect.getmembers(module):
+            if name.startswith('test_') and inspect.isfunction(member):
+                unit_test = member
+                unit_test_list.append((name,unit_test))
+            #end if
+        #end for
+        unit_test_module_lists[module_name] = unit_test_list
+    #end if
+    return unit_test_module_lists[module_name]
+#end def import unit_test_module_list
+
+
+def import_unit_test_module(module_name):
+    if module_name not in unit_test_modules:
+        unit_test_list = import_unit_test_module_list(module_name)
+        unit_test_modules[module_name] = dict(unit_test_list)
+    #end if
+    return unit_test_modules[module_name]
+#end def import unit_test_module
+
+
+def import_from_unit_test_module(module_name,test_name):
+    return import_unit_test_module(module_name)[test_name]
+#end def import_from_unit_test_module
+
+
+# import core testing functions (shared between nxs-test and unit tests)
+from testing import *
+
+
 # tests
 #   generic logging
 #   generic intrinsics
@@ -80,107 +123,6 @@ generic_settings.raise_error = True
 #   simulation analyzers
 
 
-# determine if two values differ
-def value_diff(v1,v2,tol=1e-6,int_as_float=False):
-    diff = False
-    if int_as_float and isinstance(v1,(int,float)) and isinstance(v2,(int,float)):
-        diff = abs(float(v1)-float(v2))>tol
-    elif not isinstance(v1,type(v2)):
-        diff = True
-    elif isinstance(v1,(bool,int,str)):
-        diff = v1!=v2
-    elif isinstance(v1,float):
-        diff = abs(v1-v2)>tol
-    elif isinstance(v1,(list,tuple)):
-        v1 = array(v1,dtype=object).ravel()
-        v2 = array(v2,dtype=object).ravel()
-        for vv1,vv2 in zip(v1,v2):
-            diff |= value_diff(vv1,vv2,tol,int_as_float)
-        #end for
-    elif isinstance(v1,ndarray):
-        v1 = v1.ravel()
-        v2 = v2.ravel()
-        for vv1,vv2 in zip(v1,v2):
-            diff |= value_diff(vv1,vv2,tol,int_as_float)
-        #end for
-    elif isinstance(v1,dict):
-        diff = v1!=v2
-    elif isinstance(v1,set):
-        diff = v1!=v2
-    elif v1 is None and v2 is None:
-        diff = False
-    elif hasattr(v1,'__len__') and hasattr(v2,'__len__') and len(v1)==0 and len(v2)==0:
-        None
-    else:
-        diff = True # unsupported types
-    #end if
-    return diff
-#end def value_diff
-
-
-# determine if two objects differ
-def object_diff(o1,o2,tol=1e-6,full=False,int_as_float=False):
-    diff1 = dict()
-    diff2 = dict()
-    o1    = o1._serial()
-    o2    = o2._serial()
-    keys1 = set(o1._keys())
-    keys2 = set(o2._keys())
-    ku1   = keys1 - keys2
-    ku2   = keys2 - keys1
-    km    = keys1 & keys2
-    for k in ku1:
-        diff1[k] = o1[k]
-    #end for
-    for k in ku2:
-        diff2[k] = o2[k]
-    #end for
-    for k in km:
-        v1 = o1[k]
-        v2 = o2[k]
-        if value_diff(v1,v2,tol,int_as_float):
-            diff1[k] = v1
-            diff2[k] = v2
-        #end if
-    #end for
-    diff = len(diff1)!=0 or len(diff2)!=0
-    if not full:
-        return diff
-    else:
-        return diff,diff1,diff2
-    #end if
-#end def object_diff
-
-
-# print the difference between two objects
-def print_diff(o1,o2): # used in debugging, not actual tests
-    from nexus import obj
-    print 20*'='
-    print o1
-    print 20*'='
-    print o2
-    diff,diff1,diff2 = object_diff(o1,o2,full=True)
-    d1 = obj(diff1)
-    d2 = obj(diff2)
-    print 20*'='
-    print d1
-    print 20*'='
-    print d2
-#end def print_diff
-
-
-
-# additional convenience functions to use value_diff and object_diff
-value_neq = value_diff
-def value_eq(*args,**kwargs):
-    return not value_neq(*args,**kwargs)
-#end def value_eq
-
-object_neq = object_diff
-def object_eq(*args,**kwargs):
-    return not object_neq(*args,**kwargs)
-#end def object_eq
-
 
 
 # exception indicating test failure
@@ -202,18 +144,18 @@ class NexusTestTripped(Exception):
 
 
 class NexusTestBase(object):
-    nexus_test_dir = '.nexus_test' # nxs-test directory
+    nexus_test_dir    = '.nexus_test' # nxs-test directory
 
-    launch_path    = None # path from which nxs-test exe was launched
-    current_test   = None # current NexusTest
-    current_label  = ''   # current nlabel()
-    test_count     =  0   # current test count
-    label_count    =  0   # current label count in NexusTest.operation()
-    current_assert =  0   # current assert count
+    launch_path       = None  # path from which nxs-test exe was launched
+    current_test      = None  # current NexusTest
+    current_label     = ''    # current nlabel()
+    test_count        =  0    # current test count
+    label_count       =  0    # current label count in NexusTest.operation()
+    current_assert    =  0    # current assert count
 
-    assert_trip    = -1   # developer tool to trip assert's one by one
-                          # if set to n, an exception will be raised for the
-                          # n-th assert call
+    assert_trip       = -1    # developer tool to trip assert's one by one
+                              # if set to n, an exception will be raised for the
+                              # n-th assert call
 
     # keep a running count of assert calls
     @staticmethod
@@ -429,6 +371,51 @@ def nassert(result):
 #end def nassert
 
 
+# run a unit test from an external file
+def nunit(test_name):
+    module_name = 'test_'+NexusTestBase.current_test.name
+    unit_test   = import_from_unit_test_module(module_name,test_name)
+    run_external_unit_test(test_name,unit_test)
+#end def nunit
+
+
+# run all uncalled unit tests from an external file
+def nunit_all():
+    nexus_test = NexusTestBase.current_test
+    module_name = 'test_'+NexusTestBase.current_test.name
+    module = import_unit_test_module(module_name)
+    load_external_unit_tests()
+    uncalled_tests = sorted(nexus_test.unit_tests-nexus_test.unit_tests_called)
+    for test_name in uncalled_tests:
+        unit_test = module[test_name]
+        run_external_unit_test(test_name,unit_test)
+    #end for
+#end def nunit_all
+
+
+# ensure all external unit tests are loaded
+def load_external_unit_tests():
+    nexus_test = NexusTestBase.current_test
+    if len(nexus_test.unit_tests)==0:
+        module_name = 'test_'+nexus_test.name
+        module = import_unit_test_module(module_name)
+        nexus_test.unit_tests = set(module.keys())
+    #end if
+#end def load_external_unit_tests
+
+
+# actually execute the unit test (not to be called directly within a Nexus test)
+def run_external_unit_test(test_name,unit_test):
+    nexus_test = NexusTestBase.current_test
+    if test_name not in nexus_test.unit_tests:
+        raise NexusTestMisconstructed('unit test "{}" does not exist for function "{}"'.format(test_name,nexus_test.name))
+    elif test_name in nexus_test.unit_tests_called:
+        raise NexusTestMisconstructed('unit test "{}" has already been called in function "{}"'.format(test_name,nexus_test.name))
+    #end if
+    nlabel(test_name)
+    nexus_test.unit_tests_called.add(test_name)
+    unit_test()
+#end def run_external_unit_test
 
 
 # class to represent a test
@@ -450,7 +437,6 @@ class NexusTest(NexusTestBase):
 
     test_list = []
     test_dict = {}
-
 
     # capture launch path and clear out any old test data
     #   to be called once at user launch
@@ -477,12 +463,14 @@ class NexusTest(NexusTestBase):
         if test_dir is not None and not isinstance(test_dir,str):
             raise NexusTestMisconstructed
         #end if
-        self.name         = name
-        self.operation    = operation
-        self.op_inputs    = op_inputs
-        self.test_dir     = test_dir
-        self.exception    = None
-        self.status  = NexusTest.status_options['unused']
+        self.name              = name
+        self.operation         = operation
+        self.op_inputs         = op_inputs
+        self.test_dir          = test_dir
+        self.exception         = None
+        self.status            = NexusTest.status_options['unused']
+        self.unit_tests        = set() # complete set of unit tests
+        self.unit_tests_called = set() # set of unit tests called so far
         NexusTest.test_list.append(self)
         NexusTest.test_dict[self.name] = self
     #end def __init__
@@ -522,11 +510,16 @@ class NexusTest(NexusTestBase):
                 raise NexusTestMisconstructed
             #end if
             self.status=NexusTest.status_options['passed']
-        except Exception,e:
+        except Exception as e:
+            t,v,tb = sys.exc_info()
             self.exception = e
-            self.traceback = sys.exc_info()[2]
+            self.traceback = tb
             self.status=NexusTest.status_options['failed']
         #end try
+        uncalled_unit_tests = self.unit_tests-self.unit_tests_called
+        if len(uncalled_unit_tests)>0:
+            raise NexusTestMisconstructed('not all unit tests were called\n  uncalled unit tests: {}\n  please add these either by calling "nunit" for each of them\n  or by calling "nunit_all" at the end of function "{}"'.format(sorted(uncalled_unit_tests),self.name))
+        #end if
     #end def run
 
 
@@ -2298,11 +2291,11 @@ def machines():
         ('summit'         , 'n2_t2_e'       ) : 'jsrun -a 10 -r 2 -b rs -c 20 -d packed -n 4 -g 0 test.x',
         ('summit'         , 'n2_t2_e_g6'    ) : 'jsrun -a 3 -r 6 -b rs -c 6 -d packed -n 12 -g 1 test.x',
         ('summit'         , 'n2_t2_g6'      ) : 'jsrun -a 3 -r 6 -b rs -c 6 -d packed -n 12 -g 1 test.x',
-        ('supermuc'       , 'n1'            ) : 'mpiexec -n 40 test.x',
+        ('supermuc'       , 'n1'            ) : 'mpiexec -n 28 test.x',
         ('supermuc'       , 'n1_p1'         ) : 'mpiexec -n 1 test.x',
-        ('supermuc'       , 'n2'            ) : 'mpiexec -n 80 test.x',
-        ('supermuc'       , 'n2_t2'         ) : 'mpiexec -n 40 test.x',
-        ('supermuc'       , 'n2_t2_e'       ) : 'mpiexec -n 40 test.x',
+        ('supermuc'       , 'n2'            ) : 'mpiexec -n 56 test.x',
+        ('supermuc'       , 'n2_t2'         ) : 'mpiexec -n 28 test.x',
+        ('supermuc'       , 'n2_t2_e'       ) : 'mpiexec -n 28 test.x',
         ('supermuc'       , 'n2_t2_p2'      ) : 'mpiexec -n 4 test.x',
         ('supermucng'     , 'n1'            ) : 'mpiexec -n 48 test.x',
         ('supermucng'     , 'n1_p1'         ) : 'mpiexec -n 1 test.x',
@@ -2458,6 +2451,7 @@ def structure():
     nlog_divert()
 
     nlabel('imports')
+    import numpy as np
     from generic import obj
     from structure import Structure,Crystal
     from structure import generate_structure
@@ -2711,16 +2705,26 @@ def structure():
         s = ref[name]
         npass = 0
         for tmat in matrix_tilings:
-            tmat = array(tmat,dtype=int)
+            tmat = np.array(tmat,dtype=int)
             tmat.shape = 3,3
             st = s.tile(tmat)
             st.check_tiling()
         #end for
     #end for
 
+    # call all unit tests
+    nunit_all()
+
     # restore logging function
     nlog_restore()
 #end def structure
+
+
+
+def physical_system():
+    # call all unit tests
+    nunit_all()
+#end def physical_system
 
 
 
@@ -2746,6 +2750,7 @@ def pwscf_input():
 
 
     nlabel('imports')
+    import numpy as np
     import pwscf_input as pwi
     from generic import obj
     from structure import read_structure
@@ -2814,15 +2819,15 @@ def pwscf_input():
     pw.atomic_positions.set(
         specifier = 'angstrom',
         atoms     = ['Fe','Fe'],
-        positions = array([
+        positions = np.array([
             [2.070000000,   0.000000000,   0.000000000],   
             [0.000000000,   0.000000000,   0.000000000], 
             ]),
         )
     pw.k_points.set(
         specifier = 'automatic',
-        grid      = array((1,1,1)),
-        shift     = array((1,1,1)),
+        grid      = np.array((1,1,1)),
+        shift     = np.array((1,1,1)),
         )
 
     compositions['Fe_start_ns_eig.in'] = pw
@@ -2905,6 +2910,10 @@ def pwscf_input():
         pseudos          = ['V.opt.upf','O.opt.upf'],
         kgrid            = (6,6,6),
         kshift           = (0,0,0),
+        # added for reverse compatibility
+        celldm           = {1:1.0},
+        cell_option      = 'alat',
+        positions_option = 'alat',
         )
 
     generations[infile] = pw
@@ -2951,8 +2960,8 @@ def pwscf_input():
         pos             = [[2.070000000, 0.000000000, 0.000000000],    
                            [0.000000000, 0.000000000, 0.000000000]],
         pos_specifier   = 'angstrom',
-        kgrid           = array((1,1,1)),
-        kshift          = array((1,1,1)),
+        kgrid           = np.array((1,1,1)),
+        kshift          = np.array((1,1,1)),
         )
     pw.system.set({
         'celldm(1)' : 15,
@@ -3012,8 +3021,8 @@ def pwscf_input():
         pos             = [[2.070000000, 0.000000000, 0.000000000],    
                            [0.000000000, 0.000000000, 0.000000000]],
         pos_specifier   = 'angstrom',
-        kgrid           = array((1,1,1)),
-        kshift          = array((1,1,1)),
+        kgrid           = np.array((1,1,1)),
+        kshift          = np.array((1,1,1)),
         starting_ns_eigenvalue = {(1,2,1) : 0.0,
                                   (2,2,1) : 0.0476060,
                                   (3,2,1) : 0.0476060,
@@ -3304,6 +3313,7 @@ NexusTest( nexus_imports      )
 NexusTest( settings_operation , 'settings' )
 NexusTest( machines           )
 NexusTest( structure          )
+NexusTest( physical_system    )
 NexusTest( pwscf_input        )
 
 for label in example_information.keys():

@@ -16,6 +16,7 @@
 #define AFQMC_MA_UTILITIES_HPP
 
 #include<complex>
+#include "AFQMC/config.0.h"
 #include "AFQMC/Memory/raw_pointers.hpp"
 #include "AFQMC/Memory/SharedMemory/shm_ptr_with_raw_ptr_dispatch.hpp"
 

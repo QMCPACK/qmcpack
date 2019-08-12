@@ -27,11 +27,11 @@ class ExampleHeComponent : public WaveFunctionComponent
 {
 public:
 
-  ExampleHeComponent(const ParticleSet& ions, ParticleSet& els) : ions_(ions)
+  ExampleHeComponent(const ParticleSet& ions, ParticleSet& els)
+    : ions_(ions), my_table_ee_idx_(els.addTable(els, DT_SOA)), my_table_ei_idx_(els.addTable(ions, DT_SOA))
   {
-    my_table_idx_ = els.addTable(ions_, DT_SOA);
-  }
-
+    ClassName = "ExampleHeComponent";
+  };
 
   using OptVariablesType = optimize::VariableSet;
 
@@ -84,7 +84,8 @@ public:
 
 private:
   const ParticleSet& ions_;
-  int my_table_idx_;
+  const int my_table_ei_idx_;
+  const int my_table_ee_idx_;
 
   OptVariablesType my_vars_;
 };

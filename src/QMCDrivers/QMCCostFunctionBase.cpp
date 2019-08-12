@@ -149,8 +149,8 @@ QMCCostFunctionBase::Return_rt QMCCostFunctionBase::computedCost()
 {
   //   Assumes the Sums have been computed all ready
   //Estimators::accumulate has been called by correlatedSampling
-  curAvg_w        = SumValue[SUM_E_WGT] / SumValue[SUM_WGT];
-  curVar_w        = SumValue[SUM_ESQ_WGT] / SumValue[SUM_WGT] - curAvg_w * curAvg_w;
+  curAvg_w         = SumValue[SUM_E_WGT] / SumValue[SUM_WGT];
+  curVar_w         = SumValue[SUM_ESQ_WGT] / SumValue[SUM_WGT] - curAvg_w * curAvg_w;
   Return_rt wgtinv = 1.0 / static_cast<Return_rt>(NumSamples);
   // app_log() << "wgtinv = " << wgtinv << std::endl;
   curAvg     = SumValue[SUM_E_BARE] * wgtinv;
@@ -166,7 +166,7 @@ QMCCostFunctionBase::Return_rt QMCCostFunctionBase::computedCost()
   // app_log() << "SumValue[SUM_ESQ_WGT] = " << SumValue[SUM_ESQ_WGT] << std::endl;
   Return_rt wgt_var = SumValue[SUM_WGTSQ] - SumValue[SUM_WGT] * SumValue[SUM_WGT];
   wgt_var *= wgtinv;
-  CostValue            = 0.0;
+  CostValue             = 0.0;
   const Return_rt small = 1.0e-10;
   if (std::abs(w_abs) > small)
     CostValue += w_abs * curVar_abs;
@@ -264,36 +264,37 @@ void QMCCostFunctionBase::reportParametersH5()
 {
   if (!myComm->rank())
   {
-     int ci_size=0;
-     std::vector<opt_variables_type::value_type> CIcoeff;
-     for (int i=0; i<OptVariables.size(); i++)
-     {
-          char Coeff[128];
-          sprintf(Coeff,"CIcoeff_%d", ci_size+1);
-          if(Coeff!=OptVariables.name(i))
-              if(ci_size>0)
-                 break;
-              else
-                 continue;
-
-          CIcoeff.push_back(OptVariables[i]); 
-          ci_size++;
-     }
-     if (ci_size>0)
-     {
-         CI_Opt=true;
-//         sprintf(newh5, "%s.opt.h5", RootName.c_str());
-         newh5=RootName+".opt.h5";
-         *msg_stream << "  <Ci Coeffs saved in opt_coeffs=\"" << newh5 << "\">" << std::endl;
-         hdf_archive hout;
-         hout.create(newh5, H5F_ACC_TRUNC);
-         hout.push("MultiDet", true);
-         hout.write(ci_size, "NbDet");
-         hout.write(CIcoeff, "Coeff");
-         hout.close();
+    int ci_size = 0;
+    std::vector<opt_variables_type::value_type> CIcoeff;
+    for (int i = 0; i < OptVariables.size(); i++)
+    {
+      char Coeff[128];
+      sprintf(Coeff, "CIcoeff_%d", ci_size + 1);
+      if (Coeff != OptVariables.name(i))
+      {
+        if (ci_size > 0)
+          break;
+        else
+          continue;
       }
-  }
 
+      CIcoeff.push_back(OptVariables[i]);
+      ci_size++;
+    }
+    if (ci_size > 0)
+    {
+      CI_Opt = true;
+      //         sprintf(newh5, "%s.opt.h5", RootName.c_str());
+      newh5 = RootName + ".opt.h5";
+      *msg_stream << "  <Ci Coeffs saved in opt_coeffs=\"" << newh5 << "\">" << std::endl;
+      hdf_archive hout;
+      hout.create(newh5, H5F_ACC_TRUNC);
+      hout.push("MultiDet", true);
+      hout.write(ci_size, "NbDet");
+      hout.write(CIcoeff, "Coeff");
+      hout.close();
+    }
+  }
 }
 /** Apply constraints on the optimizables.
  *
@@ -610,23 +611,22 @@ void QMCCostFunctionBase::updateXmlNodes()
       result = xmlXPathEvalExpression((const xmlChar*)"//detlist", acontext);
       for (int iparam = 0; iparam < result->nodesetval->nodeNr; iparam++)
       {
-        xmlNodePtr cur      = result->nodesetval->nodeTab[iparam];
+        xmlNodePtr cur = result->nodesetval->nodeTab[iparam];
         xmlSetProp(cur, (const xmlChar*)"opt_coeffs", (const xmlChar*)newh5.c_str());
-      } 
+      }
       xmlXPathFreeObject(result);
     }
 
     addCoefficients(acontext, "//coefficient");
     addCoefficients(acontext, "//coefficients");
     xmlXPathFreeContext(acontext);
-
   }
   //     Psi.reportStatus(app_log());
   std::map<std::string, xmlNodePtr>::iterator pit(paramNodes.begin()), pit_end(paramNodes.end());
   while (pit != pit_end)
   {
     //FIXME real value is forced here to makde sure that the code builds
-    Return_rt v = std::real( OptVariablesForPsi[(*pit).first] );
+    Return_rt v = std::real(OptVariablesForPsi[(*pit).first]);
     getContent(v, (*pit).second);
     //         vout <<(*pit).second<< std::endl;
     ++pit;
@@ -645,7 +645,6 @@ void QMCCostFunctionBase::updateXmlNodes()
   std::map<std::string, xmlNodePtr>::iterator cit(coeffNodes.begin()), cit_end(coeffNodes.end());
   while (cit != cit_end)
   {
-
     std::string rname((*cit).first);
     OhmmsAttributeSet cAttrib;
     std::string datatype("none");
@@ -844,7 +843,7 @@ bool QMCCostFunctionBase::lineoptimization(const std::vector<Return_rt>& x0,
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 #ifdef HAVE_LMY_ENGINE
 QMCCostFunctionBase::Return_rt QMCCostFunctionBase::LMYEngineCost(const bool needDeriv,
-                                                                 cqmc::engine::LMYEngine* EngineObj)
+                                                                  cqmc::engine::LMYEngine* EngineObj)
 {
   // prepare local energies, weights, and possibly derivative vectors, and compute standard cost
   const Return_rt standardCost = this->Cost(needDeriv);

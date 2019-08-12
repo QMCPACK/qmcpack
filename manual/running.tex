@@ -24,11 +24,6 @@ option is disabled.
   that contain information about pseudopotentials (one file per PP) and Jastrow
   factors (one per Jastrow factor). These file might be useful for visual inspection
   of the Jastrow, for example. }
-\item[\texttt{-{}-save\_wfs}]{ \textbf{deprecated} Replaced by \ishell{save\_coefs} XML input tag.
-  Write a \ishell{.h5} file containing the real-space B-spline
-  coefficients of the single-particle wavefunctions. See Section
-  \ref{sec:spo_spline} for more information.}
-\item[\texttt{-{}-vacuum X}]{Removed, use the ``vacuum'' input tag described in Section \ref{chap:simulationcell}. }
 \item[\texttt{-{}-verbosity=low|high|debug}]{ Control the output verbosity. The default low verbosity is concise and, for example, does not include all electron or atomic positions for large systems to reduce output size. Use ``high'' to see this information and more details of initialization, allocations, QMC method settings, etc. }
 \item[\texttt{-{}-version}]{ Print version information and optional arguments.
   Same as \ishell{--help}. }
@@ -103,7 +98,7 @@ KMP_HOT_TEAMS_MAX_LEVEL=2
 \end{shade}
 
 Most multithreaded BLAS/LAPACK libraries do not spawn threads by default
-when being called from an OpenMP parallel region. See the explanation in Section \ref{sec:threadedlibrary}.
+when being called from an OpenMP parallel region. See the explanation in Section~\ref{sec:threadedlibrary}.
 This results in the use of only a single thread in each second-level thread team for BLAS/LAPACK operations.
 Some vendor libraries like MKL support using multiple threads when being called from an OpenMP parallel region.
 One way to enable this feature is using environment variables to override the default behavior.

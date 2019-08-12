@@ -29,6 +29,8 @@
 #include "QMCApp/WaveFunctionPool.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Estimators/EstimatorManagerBase.h"
+#include "QMCDrivers/DriverTraits.h"
+#include "QMCDrivers/QMCDriverInterface.h"
 #include "QMCDrivers/GreenFunctionModifiers/DriftModifierBase.h"
 #include "QMCDrivers/SimpleFixedNodeBranch.h"
 #include "QMCDrivers/BranchIO.h"
@@ -64,7 +66,7 @@ class TraceManager;
  * @{
  * @brief abstract base class for QMC engines
  */
-class QMCDriver : public QMCTraits, public MPIObjectBase
+class QMCDriver : public QMCDriverInterface, public QMCTraits, public MPIObjectBase
 {
 public:
   /** enumeration coupled with QMCMode */
@@ -78,15 +80,14 @@ public:
 
   typedef MCWalkerConfiguration::Walker_t Walker_t;
   typedef Walker_t::Buffer_t Buffer_t;
-  typedef SimpleFixedNodeBranch BranchEngineType;
 
   /** bits to classify QMCDriver
    *
-   * - QMCDriverMode[QMC_UPDATE_MODE]? particle-by-particle: walker-by-walker
-   * - QMCDriverMode[QMC_MULTIPLE]? multiple H/Psi : single H/Psi
-   * - QMCDriverMode[QMC_OPTIMIZE]? optimization : vmc/dmc/rmc
+   * - qmc_driver_mode[QMC_UPDATE_MODE]? particle-by-particle: walker-by-walker
+   * - qmc_driver_mode[QMC_MULTIPLE]? multiple H/Psi : single H/Psi
+   * - qmc_driver_mode[QMC_OPTIMIZE]? optimization : vmc/dmc/rmc
    */
-  std::bitset<4> QMCDriverMode;
+  std::bitset<QMC_MODE_MAX> qmc_driver_mode;
 
   /// whether to allow traces
   bool allow_traces;
@@ -108,7 +109,7 @@ public:
   /** set the update mode
    * @param pbyp if true, use particle-by-particle update
    */
-  inline void setUpdateMode(bool pbyp) { QMCDriverMode[QMC_UPDATE_MODE] = pbyp; }
+  inline void setUpdateMode(bool pbyp) { qmc_driver_mode[QMC_UPDATE_MODE] = pbyp; }
 
   /** Set the status of the QMCDriver
    * @param aname the root file name
@@ -140,13 +141,11 @@ public:
 
   void putWalkers(std::vector<xmlNodePtr>& wset);
 
-  inline void putTraces(xmlNodePtr txml) { traces_xml = txml; };
+  inline void putTraces(xmlNodePtr txml) { traces_xml = txml; }
 
-  virtual bool run() = 0;
+  inline void requestTraces(bool traces) { allow_traces = traces; }
 
-  virtual bool put(xmlNodePtr cur) = 0;
-
-  inline std::string getEngineName() const { return QMCType; }
+  std::string getEngineName() { return QMCType; }
 
   template<class PDT>
   void setValue(const std::string& aname, PDT x)
@@ -172,17 +171,8 @@ public:
 
   void setTau(RealType i) { Tau = i; }
 
-  ///resetComponents for next run if reusing a driver.
-  virtual void resetComponents(xmlNodePtr cur)
-  {
-    qmcNode = cur;
-    m_param.put(cur);
-  }
-
   ///set global offsets of the walkers
   void setWalkerOffsets();
-
-  //virtual std::vector<RandomGenerator_t*>& getRng() {}
 
   ///Observables manager
   EstimatorManagerBase* Estimators;
@@ -195,6 +185,8 @@ public:
 
   ///return the i-th random generator
   inline RandomGenerator_t& getRng(int i) { return (*Rng[i]); }
+
+  unsigned long getDriverMode() { return qmc_driver_mode.to_ulong(); }
 
 protected:
   ///branch engine

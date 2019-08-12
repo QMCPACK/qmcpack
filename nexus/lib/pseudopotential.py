@@ -214,14 +214,23 @@ class Pseudopotentials(DevBase):
         pps = []
         self.log('\n  Pseudopotentials')
         for filepath in ppfiles:
-            self.log('    reading pp: ',filepath)
-            ext = filepath.split('.')[-1].lower()
-            if ext=='gms':
-                pp = gamessPPFile(filepath)
-            else:
-                pp = PseudoFile(filepath)
+            filename = os.path.basename(filepath)
+            elem_label,symbol,is_elem = pp_elem_label(filename)
+            is_file = os.path.isfile(filepath)
+            if is_elem and is_file:
+                self.log('    reading pp: ',filepath)
+                ext = filepath.split('.')[-1].lower()
+                if ext=='gms':
+                    pp = gamessPPFile(filepath)
+                else:
+                    pp = PseudoFile(filepath)
+                #end if
+                pps.append(pp)
+            elif not is_file:
+                self.log('    ignoring directory: ',filepath)
+            elif not is_elem:
+                self.log('    ignoring file w/o atomic symbol: ',filepath)
             #end if
-            pps.append(pp)
         #end for
         self.log(' ')
         self.addpp(pps)

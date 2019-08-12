@@ -5,7 +5,7 @@ Although the spline Jastrow factor is the most flexible and most commonly used f
 there are times where its flexibility can make it difficult to optimize.  As an example, a spline Jastrow
 with a very large cutoff can be difficult to optimize for isolated systems such as molecules because of the small
 number of samples present in the tail of the function.  In such cases, a simpler functional
-form might be advantageous.  The second-order Pade Jastrow factor, given in Equation \ref{padeeqn}, is a good choice 
+form might be advantageous.  The second-order Pade Jastrow factor, given in Equation~\ref{padeeqn}, is a good choice 
 in such cases.  
 \begin{equation}
 \label{padeeqn}
@@ -45,7 +45,7 @@ ElementType & Text & Name & See below & Classical particle target  \\
 \bfseries Name & \bfseries Datatype & \bfseries Values & \bfseries Defaults & \bfseries Description \\
 \hline
 Id & String & Name & (Required) & Name for variable \\
-Name & String & A or B or C & (Required) & See Equation \ref{padeeqn}\\
+Name & String & A or B or C & (Required) & See Equation~\ref{padeeqn}\\
 Optimize & Text & Yes or no & Yes & If no, values are fixed in optimizations \\
 \hline
 \multicolumn{5}{l}{Elements}\\ \hline

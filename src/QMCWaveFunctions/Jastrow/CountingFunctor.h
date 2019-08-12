@@ -64,8 +64,6 @@ public:
   // optimizable variables
   opt_variables_type myVars;
 
-  const std::vector<std::pair<std::string, real_type>>* getNameAndValue() { return &myVars.NameAndValue; }
-
   GaussianFunctor(std::string fid) { id = fid; }
 
   void initialize()

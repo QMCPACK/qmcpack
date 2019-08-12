@@ -13,14 +13,14 @@
 
 #include <QMCHamiltonians/LocalMomentEstimator.h>
 #include <Particle/DistanceTableData.h>
-#include <Particle/DistanceTable.h>
 #include <OhmmsData/AttributeSet.h>
 #include <Utilities/SimpleParser.h>
 #include <set>
 
 namespace qmcplusplus
 {
-LocalMomentEstimator::LocalMomentEstimator(ParticleSet& elns, ParticleSet& srcs) : ions(srcs)
+LocalMomentEstimator::LocalMomentEstimator(ParticleSet& elns, ParticleSet& srcs)
+  : ions(srcs), d_table_ID(elns.addTable(srcs, DT_AOS))
 {
   int num_species = elns.groups();
   const SpeciesSet& e_species(elns.getSpeciesSet());
@@ -40,7 +40,6 @@ LocalMomentEstimator::LocalMomentEstimator(ParticleSet& elns, ParticleSet& srcs)
   //use the simulation cell radius if any direction is periodic
   if (elns.Lattice.SuperCellEnum)
     Dmax = elns.Lattice.SimulationCellRadius;
-  d_table = DistanceTable::add(ions, elns, DT_AOS);
   const SpeciesSet& species(srcs.getSpeciesSet());
   int ng = species.size();
   nag    = srcs.getTotalNum();
@@ -60,17 +59,18 @@ LocalMomentEstimator::LocalMomentEstimator(ParticleSet& elns, ParticleSet& srcs)
   lm = 0.0;
 }
 
-void LocalMomentEstimator::resetTargetParticleSet(ParticleSet& P) { d_table = DistanceTable::add(ions, P, DT_AOS); }
+void LocalMomentEstimator::resetTargetParticleSet(ParticleSet& P) { }
 
 LocalMomentEstimator::Return_t LocalMomentEstimator::evaluate(ParticleSet& P)
 {
+  const auto& d_table = P.getDistTable(d_table_ID);
   lm = 0;
   for (int iat = 0; iat < nag; ++iat)
   {
     int j(0);
-    for (int nn = d_table->M[iat]; nn < d_table->M[iat + 1]; ++nn, j++)
+    for (int nn = d_table.M[iat]; nn < d_table.M[iat + 1]; ++nn, j++)
     {
-      RealType r = d_table->r(nn);
+      RealType r = d_table.r(nn);
       if (r >= Dmax)
         continue;
       lm(ion_id[iat], el_id[j]) += el_nrm[el_id[j]];
