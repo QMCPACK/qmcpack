@@ -62,13 +62,8 @@ struct QMCTraits
   typedef QTBase::TensorType TensorType;
   ///define other types
   typedef OHMMS_INDEXTYPE IndexType;
-<<<<<<< HEAD
-  typedef QTFull::RealType EstimatorRealType;
-  typedef QTFull::ValueType EstimatorValueType;
-=======
   typedef QTFull::RealType FullPrecRealType;
   typedef QTFull::ValueType FullPrecValueType;
->>>>>>> 57ec576b0ff2495472e0a01027f633bd90648a8d
   ///define PropertyList_t
   typedef RecordNamedProperty<FullPrecRealType> PropertySetType;
 };
