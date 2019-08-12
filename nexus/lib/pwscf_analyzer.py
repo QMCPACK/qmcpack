@@ -140,36 +140,43 @@ class PwscfAnalyzer(SimulationAnalyzer):
 
         outfile = os.path.join(path,outfile_name)
 
-        # perform MD analysis
-        f = TextFile(outfile)
-        n = 0
-        md_res = []
-        while f.seek('!',1)!=-1:
-            E = float(f.readtokens()[-2])
-            f.seek('P=',1)
-            P = float(f.readtokens()[-1])
-            f.seek('time      =',1)
-            t = float(f.readtokens()[-2])
-            f.seek('kinetic energy',1)
-            K = float(f.readtokens()[-2])
-            f.seek('temperature',1)
-            T = float(f.readtokens()[-2])
-            md_res.append((E,P,t,K,T))
-            n+=1
-        #end while
-        md_res = array(md_res,dtype=float).T
-        quantities = ('total_energy','pressure','time','kinetic_energy',
-                      'temperature')
-        md = obj()
-        for i,q in enumerate(quantities):
-            md[q] = md_res[i]
-        #end for
-        md.potential_energy = md.total_energy - md.kinetic_energy
-        self.md_data = md
-        self.md_stats = self.md_statistics()
-        if self.info.md_only:
-            return
-        #end if
+        try:
+            # perform MD analysis
+            f = TextFile(outfile)
+            n = 0
+            md_res = []
+            while f.seek('!',1)!=-1:
+                E = float(f.readtokens()[-2])
+                f.seek('P=',1)
+                P = float(f.readtokens()[-1])
+                f.seek('time      =',1)
+                t = float(f.readtokens()[-2])
+                f.seek('kinetic energy',1)
+                K = float(f.readtokens()[-2])
+                f.seek('temperature',1)
+                T = float(f.readtokens()[-2])
+                md_res.append((E,P,t,K,T))
+                n+=1
+            #end while
+            md_res = array(md_res,dtype=float).T
+            quantities = ('total_energy','pressure','time','kinetic_energy',
+                          'temperature')
+            md = obj()
+            for i,q in enumerate(quantities):
+                md[q] = md_res[i]
+            #end for
+            md.potential_energy = md.total_energy - md.kinetic_energy
+            self.md_data = md
+            self.md_stats = self.md_statistics()
+            if self.info.md_only:
+                return
+            #end if
+        except:
+            nx+=1
+            if self.info.warn:
+                self.warn('MD analysis failed')
+            #end if
+        #end try
 
         try:
             lines = open(outfile,'r').read().splitlines()
