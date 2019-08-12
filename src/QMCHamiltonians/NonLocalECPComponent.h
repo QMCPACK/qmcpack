@@ -61,7 +61,7 @@ struct NonLocalECPComponent : public QMCTraits
   ///weight of the spherical grid
   std::vector<RealType> sgridweight_m;
   ///Working arrays
-  std::vector<RealType> wvec, Amat, dAmat;
+  std::vector<ValueType> wvec, Amat, dAmat;
 
   //^^^ "Why not GradType?" you ask.  Because GradType can be complex.
   std::vector<PosType> deltaV;
@@ -70,11 +70,11 @@ struct NonLocalECPComponent : public QMCTraits
   //Array for P'_l[cos(theta)]
   std::vector<RealType> dlpol;
   //Array for v_l(r).
-  std::vector<RealType> vrad;
+  std::vector<ValueType> vrad;
   //Array for (2l+1)*v'_l(r)/r.
   std::vector<RealType> dvrad;
   //$\Psi(...q...)/\Psi(...r...)$ for all quadrature points q.
-  std::vector<RealType> psiratio;
+  std::vector<ValueType> psiratio;
   //$\nabla \Psi(...q...)/\Psi(...r...)$ for all quadrature points q.
   //  $\nabla$ is w.r.t. the electron coordinates involved in the quadrature.
   std::vector<PosType> gradpsiratio;
@@ -212,8 +212,8 @@ struct NonLocalECPComponent : public QMCTraits
                                        int iat,
                                        TrialWaveFunction& psi,
                                        const opt_variables_type& optvars,
-                                       const std::vector<RealType>& dlogpsi,
-                                       std::vector<RealType>& dhpsioverpsi);
+                                       const std::vector<ValueType>& dlogpsi,
+                                       std::vector<ValueType>& dhpsioverpsi);
 
   void print(std::ostream& os);
 

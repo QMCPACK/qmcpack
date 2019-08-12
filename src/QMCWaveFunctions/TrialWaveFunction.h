@@ -198,7 +198,7 @@ public:
 
   /** compulte multiple ratios to handle non-local moves and other virtual moves
    */
-  void evaluateRatios(VirtualParticleSet& P, std::vector<RealType>& ratios);
+  void evaluateRatios(VirtualParticleSet& P, std::vector<ValueType>& ratios);
   /** compute both ratios and deriatives of ratio with respect to the optimizables*/
   void evaluateDerivRatios(VirtualParticleSet& P, const opt_variables_type& optvars,
       std::vector<ValueType>& ratios, Matrix<ValueType>& dratio);
@@ -242,6 +242,11 @@ public:
                            std::vector<ValueType>& dlogpsi,
                            std::vector<ValueType>& dhpsioverpsi,
                            bool project=false);
+
+  void evaluateDerivativesForNonLocalPP(ParticleSet& P, 
+                                        int iat,
+                                        const opt_variables_type& optvars, 
+                                        std::vector<ValueType>& dlogpsi);
 
   void evaluateGradDerivatives(const ParticleSet::ParticleGradient_t& G_in, std::vector<ValueType>& dgradlogpsi);
 

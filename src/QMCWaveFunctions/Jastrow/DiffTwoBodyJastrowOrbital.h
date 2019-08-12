@@ -284,6 +284,133 @@ public:
     }
   }
 
+  void evaluateDerivativesForNonLocalPP(ParticleSet& P,
+                                        int iat,
+                                        const opt_variables_type& active,
+                                        std::vector<ValueType>& dlogpsi)
+  {
+    if (myVars.size() == 0)
+      return;
+    bool recalculate(false);
+    std::vector<bool> rcsingles(myVars.size(), false);
+    for (int k = 0; k < myVars.size(); ++k)
+    {
+      int kk = myVars.where(k);
+      if (kk < 0)
+        continue;
+      if (active.recompute(kk))
+        recalculate = true;
+      rcsingles[k] = true;
+    }
+    if (recalculate)
+    {
+      ///precomputed recalculation switch
+      std::vector<bool> RecalcSwitch(F.size(), false);
+      for (int i = 0; i < F.size(); ++i)
+      {
+        if (OffSet[i].first < 0)
+        {
+          // nothing to optimize
+          RecalcSwitch[i] = false;
+        }
+        else
+        {
+          bool recalcFunc(false);
+          for (int rcs = OffSet[i].first; rcs < OffSet[i].second; rcs++)
+            if (rcsingles[rcs] == true)
+              recalcFunc = true;
+          RecalcSwitch[i] = recalcFunc;
+        }
+      }
+      dLogPsi = 0.0;
+      //for (int p = 0; p < NumVars; ++p)
+      //  (*gradLogPsi[p]) = 0.0;
+      //for (int p = 0; p < NumVars; ++p)
+      //  (*lapLogPsi[p]) = 0.0;
+      std::vector<TinyVector<RealType, 3>> derivs(NumVars);
+      const DistanceTableData* d_table = P.DistTables[0];
+      if (d_table->DTType == DT_SOA)
+      {
+        constexpr RealType cone(1);
+        constexpr RealType lapfac(OHMMS_DIM - cone);
+        const size_t n  = d_table->size(SourceIndex);
+        const size_t ng = P.groups();
+        for (size_t i = 1; i < n; ++i)
+        {
+          const size_t ig      = P.GroupID[i] * ng;
+          const RealType* dist = d_table->Distances[i];
+          const auto& displ    = d_table->Displacements[i];
+          for (size_t j = 0; j < i; ++j)
+          {
+            const size_t ptype = ig + P.GroupID[j];
+            if (RecalcSwitch[ptype])
+            {
+              std::fill(derivs.begin(), derivs.end(), 0.0);
+              if (!F[ptype]->evaluateDerivatives(dist[j], derivs))
+                continue;
+              RealType rinv(cone / dist[j]);
+              PosType dr(displ[j]);
+              for (int p = OffSet[ptype].first, ip = 0; p < OffSet[ptype].second; ++p, ++ip)
+              {
+                RealType dudr(rinv * derivs[ip][1]);
+                //RealType lap(derivs[ip][2] + lapfac * dudr);
+                ////RealType lap(derivs[ip][2]+(OHMMS_DIM-1.0)*dudr);
+                //PosType gr(dudr * dr);
+                dLogPsi[p] -= derivs[ip][0];
+                //(*gradLogPsi[p])[i] += gr;
+                //(*gradLogPsi[p])[j] -= gr;
+                //(*lapLogPsi[p])[i]  -= lap;
+                //(*lapLogPsi[p])[j]  -= lap;
+              }
+            }
+          }
+        }
+      }
+      else
+      {
+        for (int i = 0; i < d_table->size(SourceIndex); ++i)
+        {
+          for (int nn = d_table->M[i]; nn < d_table->M[i + 1]; ++nn)
+          {
+            int ptype = d_table->PairID[nn];
+            if (RecalcSwitch[ptype])
+            {
+              std::fill(derivs.begin(), derivs.end(), 0.0);
+              if (!F[ptype]->evaluateDerivatives(d_table->r(nn), derivs))
+                continue;
+              int j = d_table->J[nn];
+              RealType rinv(d_table->rinv(nn));
+              PosType dr(d_table->dr(nn));
+              for (int p = OffSet[ptype].first, ip = 0; p < OffSet[ptype].second; ++p, ++ip)
+              {
+                RealType dudr(rinv * derivs[ip][1]);
+                //RealType lap(derivs[ip][2] + (OHMMS_DIM - 1.0) * dudr);
+                //PosType gr(dudr * dr);
+                dLogPsi[p] -= derivs[ip][0];
+                //(*gradLogPsi[p])[i] += gr;
+                //(*gradLogPsi[p])[j] -= gr;
+                //(*lapLogPsi[p])[i]  -= lap;
+                //(*lapLogPsi[p])[j]  -= lap;
+              }
+            }
+          }
+        }
+      }
+      for (int k = 0; k < myVars.size(); ++k)
+      {
+        int kk = myVars.where(k);
+        if (kk < 0)
+          continue;
+        if (rcsingles[k])
+        {
+          dlogpsi[kk]      = dLogPsi[k];
+          //dhpsioverpsi[kk] = - RealType(0.5) * ValueType(Sum(*lapLogPsi[k])) - ValueType(Dot(P.G, *gradLogPsi[k]));
+        }
+        //optVars.setDeriv(p,dLogPsi[ip],-0.5*Sum(*lapLogPsi[ip])-Dot(P.G,*gradLogPsi[ip]));
+      }
+    }
+  }
+
   DiffWaveFunctionComponentPtr makeClone(ParticleSet& tqp) const
   {
     DiffTwoBodyJastrowOrbital<FT>* j2copy = new DiffTwoBodyJastrowOrbital<FT>(tqp);

@@ -69,6 +69,7 @@ struct QMCTraits
   ///define other types
   typedef OHMMS_INDEXTYPE IndexType;
   typedef QTFull::RealType EstimatorRealType;
+  typedef QTFull::ValueType EstimatorValueType;
   ///define PropertyList_t
   typedef RecordNamedProperty<EstimatorRealType> PropertySetType;
 };

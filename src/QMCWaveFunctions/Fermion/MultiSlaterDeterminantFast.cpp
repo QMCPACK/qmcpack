@@ -761,6 +761,129 @@ void MultiSlaterDeterminantFast::evaluateDerivatives(ParticleSet& P,
   Dets[1]->evaluateDerivatives(P, optvars, dlogpsi, dhpsioverpsi, *Dets[0], psiCurrent, *C, *C2node_dn, *C2node_up);
 }
 
+void MultiSlaterDeterminantFast::evaluateDerivativesForNonLocalPP(ParticleSet& P,
+    int iat,
+    const opt_variables_type& optvars,
+    std::vector<ValueType>& dlogpsi)
+{
+  if ( !CI_Optimizable )
+    return; 
+
+  bool recalculate(false);
+  for (int k=0; k<myVars->size(); ++k)
+  {
+    int kk=myVars->where(k);
+    if (kk<0)
+      continue;
+    if (optvars.recompute(kk))
+      recalculate=true;
+  }
+
+  // evaluate determinants on this configuration
+  // alpha 
+  //Dets[0] -> evaluateForWalkerMove(P);
+  
+  // beta 
+  //Dets[1] -> evaluateForWalkerMove(P);
+
+  // need to modify for CSF later on, right now assume Slater Det basis
+  if(usingCSF)
+  {
+ 
+    // alpha determinants 
+    ValueVector_t& detValues_up = (iat >= nels_up ? Dets[0]->detValues : Dets[0]->new_detValues);
+
+    // beta determinants
+    ValueVector_t& detValues_dn = (iat >= nels_up ? Dets[1]->new_detValues : Dets[1]->detValues);
+
+    ValueType psiCurrent_t(0.0);
+    //std::vector<int>::iterator upC(C2node_up.begin()), dnC(C2node_dn.begin());
+    //std::vector<ValueType>::iterator it(C.begin()), last(C.end());
+    const ValueType *restrict C_p=C->data();
+    for(size_t i=0; i<C->size(); i++)
+    {
+      size_t upC = (*C2node_up)[i];
+      size_t dnC = (*C2node_dn)[i];
+      psiCurrent_t += C_p[i] * detValues_up[upC]*detValues_dn[dnC];
+    }
+
+    int n = P.getTotalNum();
+
+    // inverse of current wave function 
+    ValueType psiinv = (RealType)1.0/psiCurrent_t;
+
+    // number of optimizable CSF coefficients
+    int num=CSFcoeff->size()-1;
+
+    int cnt=0;
+    // this one is not optable
+    cnt+=(*DetsPerCSF)[0];
+
+    int ip(1);
+    //std::cout << "Luning debug 7" << std::endl;
+    for(int i=0; i<num; i++,ip++)
+    {
+      int kk=myVars->where(i);
+
+      if (kk<0)
+      {
+        cnt+=(*DetsPerCSF)[ip];
+        continue;
+      }
+      ValueType cdet=0.0,q0=0.0,v1=0.0,v2=0.0;
+      const RealType *restrict CSFexpansion_p=CSFexpansion->data();
+      for(int k=0; k<(*DetsPerCSF)[ip]; k++)
+      {
+        size_t upC = (*C2node_up)[cnt];
+        size_t dnC = (*C2node_dn)[cnt];
+        cdet+=CSFexpansion_p[cnt]*detValues_up[upC]*detValues_dn[dnC]*psiinv;
+        cnt++;
+      }
+
+        dlogpsi[kk]=cdet;
+    }
+  }
+  else
+    //usingCSF
+  {
+    // alpha determinants 
+    ValueVector_t& detValues_up = (iat >= nels_up ? Dets[0]->detValues : Dets[0]->new_detValues);
+
+    // beta determinants
+    ValueVector_t& detValues_dn = (iat >= nels_up ? Dets[1]->new_detValues : Dets[1]->detValues);
+
+    ValueType psiCurrent_t(0.0);
+    //std::vector<int>::iterator upC(C2node_up.begin()), dnC(C2node_dn.begin());
+    //std::vector<ValueType>::iterator it(C.begin()), last(C.end());
+    const ValueType *restrict C_p=C->data();
+    for(size_t i=0; i<C->size(); i++)
+    {
+      size_t upC = (*C2node_up)[i];
+      size_t dnC = (*C2node_dn)[i];
+      psiCurrent_t += C_p[i] * detValues_up[upC]*detValues_dn[dnC];
+    }
+
+    int n = P.getTotalNum();
+
+    // inverse of current wave function 
+    ValueType psiinv = (RealType)1.0/psiCurrent_t;
+
+    for(int i=1; i<C->size(); i++)
+    {
+      int kk=myVars->where(i-1);
+      if (kk<0)
+        continue;
+      const size_t upC = (*C2node_up)[i];
+      const size_t dnC = (*C2node_dn)[i];
+      ValueType cdet=detValues_up[upC]*detValues_dn[dnC]*psiinv;
+      ValueType tmp1=detValues_dn[dnC]*psiinv;
+      ValueType tmp2=detValues_up[upC]*psiinv;
+      //convert(cdet,dlogpsi[kk]);
+      dlogpsi[kk]=cdet;
+    }
+  } // usingCSF
+}
+
 void MultiSlaterDeterminantFast::buildOptVariables()
 {
   Dets[0]->buildOptVariables(*C2node_up);

@@ -43,6 +43,7 @@ public:
   typedef QMCHamiltonianBase::RealType RealType;
   typedef QMCHamiltonianBase::ValueType ValueType;
   typedef QMCHamiltonianBase::Return_t Return_t;
+  typedef QMCHamiltonianBase::Return_ct Return_ct;
   typedef QMCHamiltonianBase::PropertySetType PropertySetType;
   typedef QMCHamiltonianBase::BufferType BufferType;
   typedef QMCHamiltonianBase::Walker_t Walker_t;
@@ -230,10 +231,10 @@ public:
    * @param compute_deriv if true, compute dhpsioverpsi of the non-local potential component
    */
   RealType evaluateValueAndDerivatives(ParticleSet& P,
-                                       const opt_variables_type& optvars,
-                                       std::vector<RealType>& dlogpsi,
-                                       std::vector<RealType>& dhpsioverpsi,
-                                       bool compute_deriv);
+                                        const opt_variables_type& optvars,
+                                        std::vector<ValueType>& dlogpsi,
+                                        std::vector<ValueType>& dhpsioverpsi,
+                                        bool compute_deriv);
 
   /** evaluate local energy and derivatives w.r.t ionic coordinates.  
   * @param P target particle set (electrons)

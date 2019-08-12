@@ -132,6 +132,11 @@ public:
                            std::vector<ValueType>& dlogpsi,
                            std::vector<ValueType>& dhpsioverpsi);
 
+  void evaluateDerivativesForNonLocalPP(ParticleSet& P,
+                                        int iat,
+                                        const opt_variables_type& optvars,
+                                        std::vector<ValueType>& dlogpsi);
+
   void resize(int, int);
   void initialize();
 
