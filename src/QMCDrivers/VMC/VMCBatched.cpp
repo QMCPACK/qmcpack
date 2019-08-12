@@ -2,19 +2,12 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2019 QMCPACK developers.
 //
-// File developed by: Bryan Clark, bclark@Princeton.edu, Princeton University
-//                    Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
-//                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
-//                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
-//                    Cynthia Gu, zg1@ornl.gov, Oak Ridge National Laboratory
-//                    Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
-//                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+// File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
-// File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
+// File refactored from: VMC.cpp
 //////////////////////////////////////////////////////////////////////////////////////
-
 
 #include "QMCDrivers/VMC/VMCBatched.h"
 #include "QMCDrivers/VMC/VMCUpdatePbyP.h"
@@ -26,29 +19,25 @@
 #include <qmc_common.h>
 //#define ENABLE_VMC_OMP_MASTER
 #include "ADIOS/ADIOS_profile.h"
-#if !defined(REMOVE_TRACEMANAGER)
-#include "Estimators/TraceManager.h"
-#else
-typedef int TraceManager;
-#endif
 
 namespace qmcplusplus
 {
 /// Constructor.
-VMCBatched::VMCBatched(MCPopulation& pop,
+VMCBatched::VMCBatched(VMCDriverInput& input,
+                       MCPopulation& pop,
                        TrialWaveFunction& psi,
                        QMCHamiltonian& h,
                        WaveFunctionPool& ppool,
                        Communicate* comm)
-    : QMCDriverNew(pop, psi, h, ppool, comm), UseDrift("yes")
+    : QMCDriverNew(input.get_qmcdriver_input(), pop, psi, h, ppool, comm), UseDrift("yes")
 {
-  RootName = "vmc";
-  QMCType  = "VMCBatched";
-  qmc_driver_mode.set(QMC_UPDATE_MODE, 1);
-  qmc_driver_mode.set(QMC_WARMUP, 0);
-  m_param.add(UseDrift, "useDrift", "string");
-  m_param.add(UseDrift, "usedrift", "string");
-  m_param.add(UseDrift, "use_drift", "string");
+  // RootName = "vmc";
+  // QMCType  = "VMCBatched";
+  // qmc_driver_mode.set(QMC_UPDATE_MODE, 1);
+  // qmc_driver_mode.set(QMC_WARMUP, 0);
+  // m_param.add(UseDrift, "useDrift", "string");
+  // m_param.add(UseDrift, "usedrift", "string");
+  // m_param.add(UseDrift, "use_drift", "string");
 }
 
 bool VMCBatched::run()
@@ -303,39 +292,43 @@ bool VMCBatched::run()
   return false;
 }
 
+/** Configuration of batched VMC Driver
+ *
+ *  This should for the most part be generalized into QMCDriverFactory.
+ *  For the moment I'm going to try and rationalize it some here.
+ *  Truly VMC parts belong in VMCFactory
+ *
+ *  Meaning of input parameters in VMCBatched
+ *  walkers --> still walkers per MPI rank
+ *  samples --> global walkers?
+ *  
+ */
 bool VMCBatched::put(xmlNodePtr q)
 {
-  //grep minimumTargetWalker
-  int target_min = -1;
-  ParameterSet p;
-  p.add(target_min, "minimumtargetwalkers", "int"); //p.add(target_min,"minimumTargetWalkers","int");
-  p.add(target_min, "minimumsamples", "int");       //p.add(target_min,"minimumSamples","int");
-  p.put(q);
+  int Nprocs = myComm->size();
 
-  //int nw = W.getActiveWalkers();
+  // //target samples set by samples or samplesperthread/dmcwalkersperthread
+  // population_.set_target(std::max(population_.get_target(), nSamplesPerThread * Nprocs * get_num_crowds() * num_crowds_));
+  // population_.set_target_samples(population_.get_target());
 
-  //compute samples and overwrite steps for the given samples
-  // The option to specify this in input needs to be added
-  int Nprocs   = myComm->size();
-  //target samples set by samples or samplesperthread/dmcwalkersperthread
-  population_.set_target(std::max(population_.get_target(), nSamplesPerThread * Nprocs * get_num_crowds()));
-  population_.set_target_samples(population_.get_target());
+  // int nwtot      = nw * Nprocs; //total number of walkers used by this qmcsection
+  // nTargetSamples = std::max(nwtot, nTargetSamples);
 
-  int nwtot      = nw * Nprocs; //total number of walkers used by this qmcsection
-  nTargetSamples = std::max(nwtot, nTargetSamples);
-  if (target_min > 0)
-  {
-      nTargetSamples    = std::max(nTargetSamples, target_min);
-      nTargetPopulation = std::max(nTargetPopulation, static_cast<RealType>(target_min));
-    }
-    nTargetSamples = ((nTargetSamples + nwtot - 1) / nwtot) *
-        nwtot; // nTargetSamples are always multiples of total number of walkers
-    nSamplesPerThread = nTargetSamples / Nprocs / Nthreads;
-    int ns_target     = nTargetSamples * nStepsBetweenSamples; //total samples to generate
-    int ns_per_step   = Nprocs * nw;                           //total samples per step
-    nSteps            = std::max(nSteps, (ns_target / ns_per_step + nBlocks - 1) / nBlocks);
-    Period4WalkerDump = nStepsBetweenSamples = (ns_per_step * nSteps * nBlocks) / nTargetSamples;
+  // if (target_min > 0)
+  // {
+  //     nTargetSamples    = std::max(nTargetSamples, target_min);
+  //     nTargetPopulation = std::max(nTargetPopulation, static_cast<RealType>(target_min));
+  //   }
+  //   nTargetSamples = ((nTargetSamples + nwtot - 1) / nwtot) *
+  //       nwtot; // nTargetSamples are always multiples of total number of walkers
+  //   nSamplesPerThread = nTargetSamples / Nprocs / Nthreads;
+  //   int ns_target     = nTargetSamples * nStepsBetweenSamples; //total samples to generate
+  //   int ns_per_step   = Nprocs * nw;                           //total samples per step
+  //   nSteps            = std::max(nSteps, (ns_target / ns_per_step + nBlocks - 1) / nBlocks);
+  //   Period4WalkerDump = nStepsBetweenSamples = (ns_per_step * nSteps * nBlocks) / nTargetSamples;
 
+
+  // TODO: had uncommented the above
 
   // prevSteps               = nSteps;
   // prevStepsBetweenSamples = nStepsBetweenSamples;

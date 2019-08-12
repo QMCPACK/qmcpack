@@ -14,6 +14,7 @@
 #define QMCPLUSPLUS_VMCBATCHED_H
 
 #include "QMCDrivers/QMCDriverNew.h"
+#include "QMCDrivers/VMC/VMCDriverInput.h"
 #include "Particle/MCPopulation.h"
 
 namespace qmcplusplus
@@ -25,7 +26,12 @@ class VMCBatched : public QMCDriverNew
 {
 public:
   /// Constructor.
-  VMCBatched(MCPopulation& pop, TrialWaveFunction& psi, QMCHamiltonian& h, WaveFunctionPool& ppool, Communicate* comm);
+  VMCBatched(VMCDriverInput& input,
+             MCPopulation& pop,
+             TrialWaveFunction& psi,
+             QMCHamiltonian& h,
+             WaveFunctionPool& ppool,
+             Communicate* comm);
 
   bool run();
   bool put(xmlNodePtr cur);

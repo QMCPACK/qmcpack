@@ -25,6 +25,7 @@ SET(QMCDRIVERS
   SimpleFixedNodeBranch.cpp
   BranchIO.cpp
   QMCDriver.cpp
+  QMCDriverInput.cpp
   QMCDriverNew.cpp
   QMCOptimize.cpp
   QMCLinearOptimize.cpp
@@ -40,7 +41,7 @@ SET(QMCDRIVERS
   VMC/VMCUpdatePbyP.cpp
   VMC/VMCUpdateAll.cpp
   VMC/VMCFactory.cpp
-    VMC/VMCFactoryNew.cpp
+  VMC/VMCFactoryNew.cpp
   DMC/DMC.cpp
   DMC/DMCUpdateAll.cpp
   DMC/DMCUpdatePbyPFast.cpp

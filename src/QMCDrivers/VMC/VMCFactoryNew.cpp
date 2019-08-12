@@ -34,9 +34,12 @@ QMCDriverInterface* VMCFactoryNew::create(MCPopulation& pop,
   int np = omp_get_max_threads();
   //(SPACEWARP_MODE,MULTIPE_MODE,UPDATE_MODE)
   QMCDriverInterface* qmc = nullptr;
+
+  // FIX: This ignores the current QMC section
+  VMCDriverInput vmc_input(0);
   if (VMCMode == 0 || VMCMode == 1) //(0,0,0) (0,0,1)
   {
-    qmc = new VMCBatched(pop, psi, h, ppool, comm);
+    qmc = new VMCBatched(vmc_input, pop, psi, h, ppool, comm);
   }
   else
   {

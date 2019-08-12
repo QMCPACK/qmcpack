@@ -23,7 +23,6 @@
 #include <type_traits>
 
 #include "Configuration.h"
-#include "OhmmsData/ParameterSet.h"
 #include "Utilities/PooledData.h"
 #include "Utilities/NewTimer.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
@@ -36,6 +35,7 @@
 #include "QMCDrivers/GreenFunctionModifiers/DriftModifierBase.h"
 #include "QMCDrivers/SimpleFixedNodeBranch.h"
 #include "QMCDrivers/BranchIO.h"
+#include "QMCDrivers/QMCDriverInput.h"
 class Communicate;
 
 namespace qmcplusplus
@@ -54,26 +54,6 @@ public:
   using RealType              = QMCTraits::RealType;
   using IndexType             = QMCTraits::IndexType;
   using FullPrecisionRealType = QMCTraits::FullPrecRealType;
-
-  /** @ingroup Type dependent behavior
-   * @{
-   * @brief use simple metaprogramming in anticipation of single executable
-   */
-  /** call recompute at the end of each block in the mixed precision case.
-   */
-  template<typename RT = RealType, typename FPRT = FullPrecisionRealType>
-  int defaultBlocksBetweenRecompute()
-  {
-    return 0;
-  }
-
-  template<typename RT = RealType, typename FPRT = FullPrecisionRealType, std::enable_if_t<std::is_same<RT, FPRT>{}>>
-  int defaultBlocksBetweenRecompute()
-  {
-    return 1;
-  }
-  /** @}
-   */
 
   /** separate but similar to QMCModeEnum
    *  
@@ -104,7 +84,8 @@ public:
   xmlNodePtr traces_xml;
 
   /// Constructor.
-  QMCDriverNew(MCPopulation& population,
+  QMCDriverNew(QMCDriverInput& input,
+               MCPopulation& population,
                TrialWaveFunction& psi,
                QMCHamiltonian& h,
                WaveFunctionPool& ppool,
@@ -113,7 +94,7 @@ public:
   virtual ~QMCDriverNew();
 
   ///return current step
-  inline int current() const { return current_step; }
+  inline IndexType current() const { return current_step_; }
 
   /** set the update mode
    * @param pbyp if true, use particle-by-particle update
@@ -148,6 +129,8 @@ public:
   /** return a xmlnode with update **/
   xmlNodePtr getQMCNode();
 
+  void setupWalkers();
+
   void putWalkers(std::vector<xmlNodePtr>& wset);
 
   inline void putTraces(xmlNodePtr txml) { traces_xml = txml; };
@@ -155,12 +138,6 @@ public:
   inline void requestTraces(bool traces) { allow_traces = traces; }
 
   inline std::string getEngineName() const { return QMCType; }
-
-  template<class PDT>
-  void setValue(const std::string& aname, PDT x)
-  {
-    m_param.setValue(aname, x);
-  }
 
   ///set the BranchEngineType
   void setBranchEngine(SimpleFixedNodeBranch* be) { branchEngine = be; }
@@ -173,13 +150,6 @@ public:
   RealType getObservable(int i);
 
   void setTau(RealType i) { Tau = i; }
-
-  ///resetComponents for next run if reusing a driver.
-  virtual void resetComponents(xmlNodePtr cur)
-  {
-    qmc_node = cur;
-    m_param.put(cur);
-  }
 
   ///set global offsets of the walkers
   void setWalkerOffsets();
@@ -203,6 +173,8 @@ public:
 
 protected:
   std::vector<Crowd> crowds_;
+  IndexType walkers_per_crowd_;
+
   ///branch engine
   SimpleFixedNodeBranch* branchEngine;
   ///drift modifer
@@ -216,8 +188,6 @@ protected:
   ///true, if the size of population is fixed.
   bool const_population;
 
-  ///the number of blocks to be rolled back
-  int RollBackBlocks;
   ///the number to delay updates by
   int k_delay;
   /** period of dumping walker configurations and everything else for restart
@@ -225,14 +195,7 @@ protected:
    * The unit is a block.
    */
   int check_point_period;
-  /** period of dumping walker positions and IDs for Forward Walking
-  *
-  * The unit is in steps.
-  */
-  int store_config_period;
 
-  ///Period to recalculate the walker properties from scratch.
-  int recalculate_properties_period;
 
   /** period of recording walker configurations
    *
@@ -240,20 +203,8 @@ protected:
    */
   int walker_dump_period;
 
-  /** period of recording walker positions and IDs for forward walking afterwards
-   *
-   */
-  int config_dump_period;
 
-  IndexType current_step;
-  IndexType max_blocks;
-  IndexType max_steps;
-
-  ///number of steps between a step: VMCs do not evaluate energies
-  IndexType nSubSteps;
-
-  ///number of warmup steps
-  IndexType nWarmupSteps;
+  IndexType current_step_;
 
   ///counter for number of moves accepted
   IndexType nAccept;
@@ -289,8 +240,6 @@ protected:
   ///root of all the output files
   std::string RootName;
 
-  ///store any parameter that has to be read from a file
-  ParameterSet m_param;
 
   ///record engine for walkers
   HDFWalkerOutput* wOut;
@@ -326,26 +275,21 @@ protected:
   ///temporary storage for random displacement
   ParticleSet::ParticlePos_t deltaR;
 
-/** Driver Input Parameters
- *
- * consider separate class
- */
-  IndexType requested_walkers;
-
-
-protected:
-  // I suspect all of this state is unecessary
-
-  ///pointer to qmc node in xml file
+  /** State I suspect is unecessay and should be removed
+   */
+  /// pointer to qmc node in xml file
   xmlNodePtr qmc_node;
 
-
+  QMCDriverInput qmcdriver_input_;
+  /** @ingroup Driver mutable values
+   *
+   *  variables here are derived input but either for convenience or
+   *  because the driver may change them
+   *  @{
+   */
+  int num_crowds_;
+  /** }@ */
 public:
-  ///temporary buffer to accumulate data
-  //ostrstream log_buffer;
-
-  //PooledData<RealType> HamPool;
-
   ///Copy Constructor (disabled).
   QMCDriverNew(const QMCDriverNew&) = delete;
   ///Copy operator (disabled).
@@ -355,7 +299,7 @@ public:
 
   void addWalkers(int nwalkers);
 
-  int get_num_crowds() { return crowds_.size(); } 
+  int get_num_crowds() { return num_crowds_; }
   /** record the state of the block
    * @param block current block
    *

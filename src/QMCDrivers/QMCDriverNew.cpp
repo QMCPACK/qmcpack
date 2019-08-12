@@ -15,7 +15,14 @@
  * This driver base class should be generic with respect to precision,
  * value type, device execution, and ...
  * It should contain no typdefs not related to compiler bugs or platform workarounds
+ *
+ * Some integer math is done in non performance critical areas in the clear and
+ * not optimized way. Leave these alone.
  */
+
+#include <limits>
+#include <typeinfo>
+#include <cmath>
 
 #include "QMCDrivers/QMCDriverNew.h"
 #include "Concurrency/TaskBlock.hpp"
@@ -27,27 +34,20 @@
 #include "Message/CommOperators.h"
 #include "OhmmsApp/RandomNumberControl.h"
 #include "HDFVersion.h"
-#include <qmc_common.h>
-#include <limits>
-#include <typeinfo>
+#include "qmc_common.h"
 
 #include "QMCDrivers/GreenFunctionModifiers/DriftModifierBuilder.h"
 
-#if !defined(REMOVE_TRACEMANAGER)
-#include "Estimators/TraceManager.h"
-#else
-typedef int TraceManager;
-#endif
-
-
 namespace qmcplusplus
 {
-QMCDriverNew::QMCDriverNew(MCPopulation& population,
+QMCDriverNew::QMCDriverNew(QMCDriverInput& input,
+                           MCPopulation& population,
                            TrialWaveFunction& psi,
                            QMCHamiltonian& h,
                            WaveFunctionPool& ppool,
                            Communicate* comm)
     : MPIObjectBase(comm),
+      qmcdriver_input_(input),
       branchEngine(0),
       DriftModifier(0),
       population_(population),
@@ -62,71 +62,14 @@ QMCDriverNew::QMCDriverNew(MCPopulation& population,
   reset_random = false;
   append_run   = false;
   dump_config  = false;
-  allow_traces = false;
   //<parameter name=" "> value </parameter>
   //accept multiple names for the same value
   //recommend using all lower cases for a new parameter
-  RollBackBlocks = 0;
-  m_param.add(RollBackBlocks, "rewind", "int");
-  check_point_period  = -1;
-  store_config_period = 0;
   //m_param.add(storeConfigs,"storeConfigs","int");
-  m_param.add(store_config_period, "storeconfigs", "int");
-  m_param.add(store_config_period, "store_configs", "int");
-  recalculate_properties_period = 100;
-  m_param.add(recalculate_properties_period, "checkProperties", "int");
-  m_param.add(recalculate_properties_period, "checkproperties", "int");
-  m_param.add(recalculate_properties_period, "check_properties", "int");
-  walker_dump_period = 0;
-  //m_param.add(Period4WalkerDump,"recordWalkers","int");
-  m_param.add(walker_dump_period, "record_walkers", "int");
-  m_param.add(walker_dump_period, "recordwalkers", "int");
-  config_dump_period = 0;
   //m_param.add(Period4ConfigDump,"recordConfigs","int");
-  m_param.add(config_dump_period, "recordconfigs", "int");
-  m_param.add(config_dump_period, "record_configs", "int");
-  current_step = 0;
-  m_param.add(current_step, "current", "int");
-  max_blocks = 1;
-  m_param.add(max_blocks, "blocks", "int");
-  max_steps = 1;
-  m_param.add(max_steps, "steps", "int");
-  nSubSteps = 1;
-  m_param.add(nSubSteps, "substeps", "int");
-  //m_param.add(nSubSteps,"subSteps","int");
-  m_param.add(nSubSteps, "sub_steps", "int");
-  nWarmupSteps = 0;
-  m_param.add(nWarmupSteps, "warmupsteps", "int");
-  //m_param.add(nWarmupSteps,"warmupSteps","int");
-  m_param.add(nWarmupSteps, "warmup_steps", "int");
-  nAccept = 0;
-  nReject = 0;
-  //nTargetWalkers = W.getActiveWalkers();
-  m_param.add(nTargetWalkers, "walkers", "int");
-  m_param.add(num_crowds, "crowds", "int");
-  //sample-related parameters
-  //samples will set nTargetPopulation
-  nTargetSamples       = 0;
-  nStepsBetweenSamples = 1;
-  m_param.add(nStepsBetweenSamples, "stepsbetweensamples", "int");
-  nSamplesPerThread = 0;
-  m_param.add(nSamplesPerThread, "samplesperthread", "real");
-  m_param.add(nSamplesPerThread, "dmcwalkersperthread", "real");
-  nTargetPopulation = 0;
-  m_param.add(nTargetPopulation, "samples", "real");
-  Tau = 0.1;
-  //m_param.add(Tau,"timeStep","AU");
-  m_param.add(Tau, "timestep", "AU");
-  m_param.add(Tau, "time_step", "AU");
-  //m_param.add(Tau,"Tau","AU");
-  m_param.add(Tau, "tau", "AU");
-  MaxCPUSecs = 360000; //100 hours
-  m_param.add(MaxCPUSecs, "maxcpusecs", "real");
 
-  nBlocksBetweenRecompute = defaultBlocksBetweenRecompute<>();
-
-  m_param.add(nBlocksBetweenRecompute, "blocks_between_recompute", "int");
   QMCType = "invalid";
+
   ////add each QMCHamiltonianBase to W.PropertyList so that averages can be taken
   //H.add2WalkerProperty(W);
   //if (storeConfigs) ForwardWalkingHistory.storeConfigsForForwardWalking(w);
@@ -181,6 +124,10 @@ void QMCDriverNew::process(xmlNodePtr cur)
   qmc_node = cur;
   //process common parameters
   putQMCInfo(cur);
+  if (!qmcdriver_input_.get_append_run())
+    current_step_ = 0;
+  else
+    current_step_ = qmcdriver_input_.get_starting_step();
   ////set the Tau parameter inside the Hamiltonian
   //H.setTau(Tau);
   //need to initialize properties
@@ -344,8 +291,47 @@ bool QMCDriverNew::finalize(int block, bool dumpwalkers)
   return true;
 }
 
+
+/** Elements of putQMCInfo that have nothing to do with input
+ */
+void QMCDriverNew::setupWalkers()
+{
+  //if walkers are initialized via <mcwalkerset/>, use the existing one
+  if (qmcdriver_input_.get_qmc_section_count() > 0 || qmc_common.is_restart)
+  {
+    app_log() << "Using existing walkers " << std::endl;
+  }
+  else
+  { // always reset the walkers
+    // Here we do some minimal fixing of walker numbers
+    int num_threads(Concurrency::maxThreads<>());
+    if (qmcdriver_input_.get_num_crowds() <= 0)
+      num_crowds_ = num_threads;
+    if (num_crowds_ > num_threads)
+    {
+      std::stringstream error_msg;
+      error_msg << "Bad Input: num_crowds (" << qmcdriver_input_.get_num_crowds() << ") > num_threads (" << num_threads
+                << ")\n";
+      throw std::runtime_error(error_msg.str());
+    }
+
+    // Finding the equal groups that will fit the inputs request
+    IndexType rw            = qmcdriver_input_.get_requested_walkers_per_rank();
+    walkers_per_crowd_      = (rw % num_crowds_) ? rw / num_crowds_ + 1 : rw / num_crowds_;
+    IndexType local_walkers = walkers_per_crowd_ * num_crowds_;
+
+    population_.set_num_local_walkers(local_walkers);
+    population_.set_num_global_walkers(local_walkers * num_crowds_ * population_.get_num_ranks());
+
+    int ndiff = 0;
+
+    addWalkers(local_walkers);
+  }
+}
+
 /** Add walkers to the end of the ensemble of walkers.
  * @param nwalkers number of walkers to add
+ *
  */
 void QMCDriverNew::addWalkers(int nwalkers)
 {
@@ -398,102 +384,6 @@ void QMCDriverNew::setWalkerOffsets()
 }
 
 
-/** Parses the xml input file for parameter definitions for a single qmc simulation.
- *
- * Basic parameters are handled here and each driver will perform its own initialization with the input
- * attribute list
- * - checkpoint="-1|0|n" default=-1
- *   -- 1 = do not write anything
- *   -- 0 = dump after the completion of a qmc section
- *   -- n = dump after n blocks
- * - kdelay = "0|1|n" default=0
- */
-bool QMCDriverNew::putQMCInfo(xmlNodePtr cur)
-{
-  int defaultw = Concurrency::maxThreads<>();
-  OhmmsAttributeSet aAttrib;
-  aAttrib.add(k_delay, "kdelay");
-  aAttrib.put(cur);
-  if (cur != NULL)
-  {
-    //initialize the parameter set
-    m_param.put(cur);
-
-    xmlNodePtr tcur = cur->children;
-    //determine how often to print walkers to hdf5 file
-    while (tcur != NULL)
-    {
-      std::string cname((const char*)(tcur->name));
-      if (cname == "record")
-      {
-        //dump walkers for optimization
-        OhmmsAttributeSet rAttrib;
-        rAttrib.add(walker_dump_period, "stride");
-        rAttrib.add(walker_dump_period, "period");
-        rAttrib.put(tcur);
-      }
-      else if (cname == "checkpoint")
-      {
-        OhmmsAttributeSet rAttrib;
-        rAttrib.add(check_point_period, "stride");
-        rAttrib.add(check_point_period, "period");
-        rAttrib.put(tcur);
-        //DumpConfig=(Period4CheckPoint>0);
-      }
-      else if (cname == "dumpconfig")
-      {
-        OhmmsAttributeSet rAttrib;
-        rAttrib.add(config_dump_period, "stride");
-        rAttrib.add(config_dump_period, "period");
-        rAttrib.put(tcur);
-      }
-      else if (cname == "random")
-      {
-        reset_random = true;
-      }
-      tcur = tcur->next;
-    }
-  }
-  //set the minimum blocks
-  if (max_blocks < 1)
-    max_blocks = 1;
-
-  dump_config = (check_point_period >= 0);
-  if (check_point_period < 1)
-    check_point_period = max_blocks;
-  //reset CurrentStep to zero if qmc/@continue='no'
-  if (!append_run)
-    current_step = 0;
-
-  //if walkers are initialized via <mcwalkerset/>, use the existing one
-  if (qmc_common.qmc_counter || qmc_common.is_restart)
-  {
-    app_log() << "Using existing walkers " << std::endl;
-  }
-  else
-  { // always reset the walkers
-    // Here we engage in some suspect adjustments of the number of walkers and crowds
-    int num_threads(Concurrency::maxThreads<>());
-    num_crowds     = std::min(num_crowds, num_threads);
-    nTargetWalkers = (std::max(num_crowds, (nTargetWalkers / num_crowds) * num_crowds));
-    int nw         = population_.get_num_global_walkers();
-    int ndiff      = 0;
-    if (nw)
-    {
-      // nTargetWalkers == 0, if it is not set by the input file
-      ndiff = (nTargetWalkers) ? nTargetWalkers - nw : 0;
-    }
-    else
-    {
-      ndiff = (nTargetWalkers) ? nTargetWalkers : defaultw;
-    }
-    // really?
-    addWalkers(ndiff);
-  }
-
-  return (population_.get_num_global_walkers() > 0);
-}
-
 xmlNodePtr QMCDriverNew::getQMCNode()
 {
   xmlNodePtr newqmc      = xmlCopyNode(qmc_node, 1);
@@ -518,7 +408,7 @@ xmlNodePtr QMCDriverNew::getQMCNode()
     current_ptr = xmlNewTextChild(newqmc, NULL, (const xmlChar*)"parameter", (const xmlChar*)"0");
     xmlNewProp(current_ptr, (const xmlChar*)"name", (const xmlChar*)"current");
   }
-  getContent(current_step, current_ptr);
+  getContent(current_step_, current_ptr);
   return newqmc;
 }
 

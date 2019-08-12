@@ -19,37 +19,46 @@
 
 namespace qmcplusplus
 {
-
 class MCPopulation
 {
 public:
   using PopulationWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
-  using Properties = PopulationWalker::PropertyContainer_t;
-  using IndexType = QMCTraits::IndexType;
+  using Properties       = PopulationWalker::PropertyContainer_t;
+  using IndexType        = QMCTraits::IndexType;
+
 private:
-  IndexType global_num_walkers_;
-  IndexType local_num_walkers_;
+  int num_ranks_;
+  IndexType num_global_walkers_;
+  IndexType num_local_walkers_;
   IndexType max_samples_;
   IndexType target_population_;
   IndexType target_samples_;
   Properties properties_;
   ParticleSet ions_;
   std::vector<IndexType> walker_offsets_;
+
 public:
-  MCPopulation() {};
+  MCPopulation(){};
   MCPopulation(MCWalkerConfiguration& mcwc);
-  const ParticleSet& get_ions() const {return ions_;}
-  const IndexType get_target() const { return target_population_; }
-  
-  const IndexType get_max_samples() const { return max_samples_; }
-  const Properties& get_properties() const {return properties_; }
-  const IndexType get_num_global_walkers() const {return global_num_walkers_; }
-  const std::vector<int>& get_walker_offsets() const {return walker_offsets_; }
+
+  int get_num_ranks() const { return num_ranks_; }
+  IndexType get_num_global_walkers() const { return num_global_walkers_; }
+  IndexType get_num_local_walkers() const { return num_local_walkers_; }
+  IndexType get_max_samples() const { return max_samples_; }
+  IndexType get_target_population() const { return target_population_; }
+  IndexType get_target_samples() const { return target_samples_; }
+  const Properties& get_properties() const { return properties_; }
+  const ParticleSet& get_ions() const { return ions_; }
+  const std::vector<int>& get_walker_offsets() const { return walker_offsets_; }
+
+  void set_num_global_walkers(IndexType num_global_walkers) { num_global_walkers_ = num_global_walkers; }
+  void set_num_local_walkers(IndexType num_local_walkers) { num_local_walkers_ = num_local_walkers; }
+
   void set_target(IndexType pop) { target_population_ = pop; }
   void set_target_samples(IndexType samples) { target_samples_ = samples; }
 };
 
 
-}
+} // namespace qmcplusplus
 
 #endif
