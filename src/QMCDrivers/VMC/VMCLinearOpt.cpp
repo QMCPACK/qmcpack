@@ -22,6 +22,7 @@
 #include "Optimize/VarList.h"
 #include "Numerics/LinearFit.h"
 //#define ENABLE_VMC__MASTER
+#include "Utilities/FairDivide.h"
 #if !defined(REMOVE_TRACEMANAGER)
 #include "Estimators/TraceManager.h"
 #else
@@ -48,8 +49,8 @@ VMCLinearOpt::VMCLinearOpt(MCWalkerConfiguration& w,
 {
   RootName = "vmc";
   QMCType  = "VMCLinearOpt";
-  QMCDriverMode.set(QMC_UPDATE_MODE, 1);
-  QMCDriverMode.set(QMC_WARMUP, 0);
+  qmc_driver_mode.set(QMC_UPDATE_MODE, 1);
+  qmc_driver_mode.set(QMC_WARMUP, 0);
   DumpConfig = false;
   //default is 10
   nWarmupSteps = 10;
@@ -123,13 +124,21 @@ bool VMCLinearOpt::run()
 #pragma omp parallel for
     for (int ip = 0; ip < NumThreads; ++ip)
     {
-      std::vector<RealType> Dsaved(NumOptimizables);
-      std::vector<RealType> HDsaved(NumOptimizables);
+      std::vector<ValueType> Dsaved(NumOptimizables);
+      std::vector<ValueType> HDsaved(NumOptimizables);
+      std::vector<RealType> rDsaved(NumOptimizables);
+      std::vector<RealType> rHDsaved(NumOptimizables);
       psiClones[ip]->evaluateDerivatives(*wClones[ip], dummyOptVars[ip], Dsaved, HDsaved);
+
+      for (int i = 0; i < NumOptimizables; i++)
+      {
+        rDsaved[i]  = std::real(Dsaved[i]);
+        rHDsaved[i] = std::real(HDsaved[i]);
+      }
 #pragma omp critical
       {
-        copy(Dsaved.begin(), Dsaved.end(), &DerivRecords(ip, 0));
-        copy(HDsaved.begin(), HDsaved.end(), &HDerivRecords(ip, 0));
+        copy(rDsaved.begin(), rDsaved.end(), &DerivRecords(ip, 0));
+        copy(rHDsaved.begin(), rHDsaved.end(), &HDerivRecords(ip, 0));
       }
     }
     fillComponentMatrices();
@@ -152,7 +161,7 @@ bool VMCLinearOpt::run()
 // #pragma omp parallel
 //     {
 //       int ip=omp_get_thread_num();
-//       if (QMCDriverMode[QMC_UPDATE_MODE])
+//       if (qmc_driver_mode[QMC_UPDATE_MODE])
 //         CSMovers[ip]->initWalkersForPbyP(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
 //       else
 //         CSMovers[ip]->initWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
@@ -506,7 +515,7 @@ void VMCLinearOpt::resetRun()
 #endif
       Rng[ip] = new RandomGenerator_t(*(RandomNumberControl::Children[ip]));
       hClones[ip]->setRandomGenerator(Rng[ip]);
-      if (QMCDriverMode[QMC_UPDATE_MODE])
+      if (qmc_driver_mode[QMC_UPDATE_MODE])
       {
         //           if (UseDrift == "rn")
         //           {
@@ -573,7 +582,7 @@ void VMCLinearOpt::resetRun()
     //       CSMovers[ip]->put(qmcNode);
     Movers[ip]->resetRun(branchEngine, estimatorClones[ip], traceClones[ip], DriftModifier);
     //       CSMovers[ip]->resetRun(branchEngine,estimatorClones[ip]);
-    if (QMCDriverMode[QMC_UPDATE_MODE])
+    if (qmc_driver_mode[QMC_UPDATE_MODE])
       Movers[ip]->initWalkersForPbyP(W.begin() + wPerNode[ip], W.begin() + wPerNode[ip + 1]);
     else
       Movers[ip]->initWalkers(W.begin() + wPerNode[ip], W.begin() + wPerNode[ip + 1]);

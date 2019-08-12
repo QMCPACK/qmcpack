@@ -533,7 +533,7 @@ class Job(NexusCore):
     #end def reenter_queue
 
 
-    def run_command(self,launcher=None,redirect=False):
+    def run_command(self,launcher=None,redirect=False,serial=False):
         machine = self.get_machine()
         if launcher is None:
             launcher = machine.app_launcher
@@ -558,7 +558,10 @@ class Job(NexusCore):
                 #end if
                 c+=self.app_command+self.app_options.write()
                 if redirect:
-                    c+=' >'+self.outfile+' 2>'+self.errfile+'&'
+                    c+=' >'+self.outfile+' 2>'+self.errfile
+                    if not serial:
+                        c+='&'
+                    #end if
                 elif machine.redirect_output and self.outfile is not None:
                     c+=' >'+self.outfile+' 2>'+self.errfile
                 #end if
@@ -568,7 +571,7 @@ class Job(NexusCore):
             c+='\n'
             for job in self.bundled_jobs:
                 c+='\ncd '+os.path.relpath(job.abs_subdir,cdir)+'\n'
-                c+=job.run_command(launcher,redirect=True)+'\n'
+                c+=job.run_command(launcher,redirect=True,serial=serial)+'\n'
                 cdir = job.abs_subdir
             #end for
             c+='\nwait\n'
@@ -576,7 +579,7 @@ class Job(NexusCore):
             c+='\n'
             for job in self.bundled_jobs:
                 c+='\ncd '+job.abs_subdir+'\n'
-                c+=job.run_command(launcher,redirect=True)+'\n'
+                c+=job.run_command(launcher,redirect=True,serial=serial)+'\n'
             #end for
             c+='\nwait\n'
         #end if
@@ -1077,7 +1080,11 @@ class Workstation(Machine):
         if len(job.presub)>0:
             command += job.presub+'\n'
         #end if
-        command += job.run_command(self.app_launcher)
+        if job.serial is not None: 
+            command += job.run_command(self.app_launcher,serial=job.serial)
+        else:
+            command += job.run_command(self.app_launcher)
+        #end if
         if len(job.postsub)>0:
             command += job.postsub+'\n'
         #end if
@@ -1795,7 +1802,7 @@ class Supercomputer(Machine):
     def write_job(self,job,file=False):
         job.subfile = job.name+'.'+self.sub_launcher+'.in'
         env = self.setup_environment(job)
-        command = job.run_command(self.app_launcher)
+        command = job.run_command(self.app_launcher,serial=job.serial)
         
         c = self.write_job_header(job)+'\n'
         if len(job.presub)>0:
@@ -2892,13 +2899,16 @@ class Solo(Supercomputer):
 # machines at LRZ  https://www.lrz.de/english/
 class SuperMUC(Supercomputer):
     name = 'supermuc'
+    requires_account    = False
+    batch_capable       = True
+    query_with_username = False
 
     def write_job_header(self,job):
         if job.queue is None:
             job.queue = 'general'
         #end if
         if job.type is None:
-            job.type = 'parallel'
+            job.type = 'MPICH'
         else:
             job.type = job.type.lower()
             if job.type=='mpich':
@@ -2916,7 +2926,7 @@ class SuperMUC(Supercomputer):
         c+='#@ job_type         = {0}\n'.format(job.type)
         c+='#@ class            = {0}\n'.format(job.queue)
         c+='#@ node             = {0}\n'.format(job.nodes)
-        if job.nodes<400:
+        if job.nodes<512:
             icmin = 1
             icmax = 1
         else:
@@ -2934,6 +2944,8 @@ class SuperMUC(Supercomputer):
         c+='#@ initialdir       = {0}\n'.format(job.abs_dir)
         c+='#@ output           = {0}\n'.format(job.outfile)
         c+='#@ error            = {0}\n'.format(job.errfile)
+        c+='#@ energy_policy_tag = my_energy_tag\n'
+        c+='#@ minimize_time_to_solution = yes\n'
         if job.email is None:
             c+='#@ notification     = never\n'
         else:
@@ -2952,7 +2964,7 @@ class SuperMUC(Supercomputer):
         elif intel and omp:
             c+='module unload mpi.ibm\n'
             c+='module load mpi.intel\n'
-            #c+='export OMP_NUM_THREADS={0}\n'.format(job.threads)
+            c+='export OMP_NUM_THREADS={0}\n'.format(job.threads)
             #c+='module load mpi_pinning/hybrid_blocked\n'
         #end if
         return c
@@ -3298,7 +3310,7 @@ Serrano(      1122,   2,    18,  128, 1000,   'srun',   'sbatch',  'squeue', 'sc
 Skybridge(    1848,   2,    16,   64, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
 Redsky(       2302,   2,     8,   12, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
 Solo(          187,   2,    18,  128, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
-SuperMUC(      205,   4,    10,  256,    8,'mpiexec', 'llsubmit',     'llq','llcancel')
+SuperMUC(      512,   1,    28,  256,    8,'mpiexec', 'llsubmit',     'llq','llcancel')
 Stampede2(    4200,   1,    68,   96,   50,  'ibrun',   'sbatch',  'squeue', 'scancel')
 Cades(         156,   2,    18,  128,  100, 'mpirun',     'qsub',   'qstat',    'qdel')
 Summit(       4608,   2,    21,  512,  100,  'jsrun',     'bsub',   'bjobs',   'bkill')

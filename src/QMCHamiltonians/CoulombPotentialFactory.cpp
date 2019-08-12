@@ -123,16 +123,16 @@ void HamiltonianFactory::addCoulombPotential(xmlNodePtr cur)
     else
     {
       if (quantum)
-        targetH->addOperator(new CoulombPotentialAA_CUDA(ptclA, true), title, physical);
+        targetH->addOperator(new CoulombPotentialAA_CUDA(*ptclA, true), title, physical);
       else
-        targetH->addOperator(new CoulombPotential<Return_t>(ptclA, 0, quantum), title, physical);
+        targetH->addOperator(new CoulombPotential<Return_t>(*ptclA, quantum), title, physical);
     }
 #else
     if (applyPBC)
       targetH->addOperator(new CoulombPBCAA(*ptclA, quantum, doForces), title, physical);
     else
     {
-      targetH->addOperator(new CoulombPotential<Return_t>(ptclA, 0, quantum), title, physical);
+      targetH->addOperator(new CoulombPotential<Return_t>(*ptclA, quantum), title, physical);
     }
 #endif
   }
@@ -142,12 +142,12 @@ void HamiltonianFactory::addCoulombPotential(xmlNodePtr cur)
     if (applyPBC)
       targetH->addOperator(new CoulombPBCAB_CUDA(*ptclA, *targetPtcl), title);
     else
-      targetH->addOperator(new CoulombPotentialAB_CUDA(ptclA, targetPtcl), title);
+      targetH->addOperator(new CoulombPotentialAB_CUDA(*ptclA, *targetPtcl), title);
 #else
     if (applyPBC)
       targetH->addOperator(new CoulombPBCAB(*ptclA, *targetPtcl), title);
     else
-      targetH->addOperator(new CoulombPotential<Return_t>(ptclA, targetPtcl, true), title);
+      targetH->addOperator(new CoulombPotential<Return_t>(*ptclA, *targetPtcl, true), title);
 #endif
   }
 }

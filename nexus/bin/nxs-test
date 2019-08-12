@@ -2303,11 +2303,11 @@ def machines():
         ('summit'         , 'n2_t2_e'       ) : 'jsrun -a 10 -r 2 -b rs -c 20 -d packed -n 4 -g 0 test.x',
         ('summit'         , 'n2_t2_e_g6'    ) : 'jsrun -a 3 -r 6 -b rs -c 6 -d packed -n 12 -g 1 test.x',
         ('summit'         , 'n2_t2_g6'      ) : 'jsrun -a 3 -r 6 -b rs -c 6 -d packed -n 12 -g 1 test.x',
-        ('supermuc'       , 'n1'            ) : 'mpiexec -n 40 test.x',
+        ('supermuc'       , 'n1'            ) : 'mpiexec -n 28 test.x',
         ('supermuc'       , 'n1_p1'         ) : 'mpiexec -n 1 test.x',
-        ('supermuc'       , 'n2'            ) : 'mpiexec -n 80 test.x',
-        ('supermuc'       , 'n2_t2'         ) : 'mpiexec -n 40 test.x',
-        ('supermuc'       , 'n2_t2_e'       ) : 'mpiexec -n 40 test.x',
+        ('supermuc'       , 'n2'            ) : 'mpiexec -n 56 test.x',
+        ('supermuc'       , 'n2_t2'         ) : 'mpiexec -n 28 test.x',
+        ('supermuc'       , 'n2_t2_e'       ) : 'mpiexec -n 28 test.x',
         ('supermuc'       , 'n2_t2_p2'      ) : 'mpiexec -n 4 test.x',
         ('supermucng'     , 'n1'            ) : 'mpiexec -n 48 test.x',
         ('supermucng'     , 'n1_p1'         ) : 'mpiexec -n 1 test.x',
@@ -2910,6 +2910,10 @@ def pwscf_input():
         pseudos          = ['V.opt.upf','O.opt.upf'],
         kgrid            = (6,6,6),
         kshift           = (0,0,0),
+        # added for reverse compatibility
+        celldm           = {1:1.0},
+        cell_option      = 'alat',
+        positions_option = 'alat',
         )
 
     generations[infile] = pw

@@ -23,6 +23,7 @@
 #include "QMCWaveFunctions/Jastrow/JastrowBuilder.h"
 #include "QMCWaveFunctions/Fermion/SlaterDetBuilder.h"
 #include "QMCWaveFunctions/IonOrbitalBuilder.h"
+#include "QMCWaveFunctions/ExampleHeBuilder.h"
 
 #if !defined(QMC_COMPLEX)
 #include "QMCWaveFunctions/FDLRWfn.h"
@@ -143,6 +144,12 @@ bool WaveFunctionFactory::build(xmlNodePtr cur, bool buildtree)
     else if ((cname == "Molecular") || (cname == "molecular"))
     {
       APP_ABORT("  Removed Helium Molecular terms from qmcpack ");
+    }
+    else if (cname == "example_he")
+    {
+      WaveFunctionComponentBuilder* exampleHe_builder = new ExampleHeBuilder(*targetPtcl, *targetPsi, ptclPool);
+      success                                         = exampleHe_builder->put(cur);
+      addNode(exampleHe_builder, cur);
     }
 #if !defined(QMC_COMPLEX) && OHMMS_DIM == 3
     else if (cname == "agp")
@@ -277,7 +284,7 @@ bool WaveFunctionFactory::addFDLRTerm(xmlNodePtr cur)
       // TrialWaveFunction objects.
       FDLRWfn* fdlr_wfn = new FDLRWfn(psiFactoryWfn_d->targetPsi, psiFactoryWfn_x->targetPsi, *targetPtcl, opt_x, opt_d,
                                       singlet, triplet);
-      targetPsi->addOrbital(fdlr_wfn, "FDLRWfn", true);
+      targetPsi->addComponent(fdlr_wfn, "FDLRWfn");
 
       delete doc_x;
       delete doc_d;

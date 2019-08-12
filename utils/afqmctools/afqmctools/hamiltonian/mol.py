@@ -13,7 +13,8 @@ from afqmctools.utils.pyscf_utils import load_from_pyscf_chk_mol
 
 
 def write_hamil_mol(scf_data, hamil_file, chol_cut,
-                    verbose=True, cas=None, ortho_ao=False, nelec=None):
+                    verbose=True, cas=None, ortho_ao=False, nelec=None,
+                    real_chol=False):
     """Write QMCPACK hamiltonian from pyscf scf calculation on mol object.
     """
     hcore, chol_vecs, nelec, enuc = generate_hamiltonian(scf_data,
@@ -38,7 +39,7 @@ def write_hamil_mol(scf_data, hamil_file, chol_cut,
                "%f"%(1-float(chol_vecs.nnz)/nelem))
         print(" # Total memory required for ERI tensor: %13.8e GB"%(mem))
     write_qmcpack_cholesky(hcore, chol_vecs, nelec, nbasis, enuc,
-                           filename=hamil_file)
+                           filename=hamil_file, real_chol=real_chol)
 
 def write_qmcpack_cholesky(hcore, chol, nelec, nmo, e0=0.0,
                            filename='hamiltonian.h5', real_chol=False):
@@ -478,7 +479,7 @@ def modified_cholesky_direct(M, kappa, verbose=False, cmax=10):
     return numpy.array(chol_vecs[:nchol])
 
 
-def read_ascii_integrals(filename, verbose=True):
+def read_ascii_integrals(filename, symmetry=8, verbose=True):
     """Read in integrals from file.
 
     Returns
@@ -492,12 +493,13 @@ def read_ascii_integrals(filename, verbose=True):
     nelec : int
         Number of electrons.
     """
+    assert(symmetry==1 or symmetry==4 or symmetry==8)
     if verbose:
         print ("# Reading integrals in plain text FCIDUMP format.")
     f = open(filename)
     while True:
         line = f.readline()
-        if 'END' in line:
+        if 'END' in line or '/' in line:
             break
         for i in line.split(','):
             if 'NORB' in i:
@@ -536,12 +538,16 @@ def read_ascii_integrals(filename, verbose=True):
             # <kj|il> = <li|jk> = <il|kj> = <jk|li>
             # (ik|jl)
             h2e[i-1,k-1,j-1,l-1] = integral
+            if symmetry == 1: 
+                continue
             # (jl|ik)
             h2e[j-1,l-1,i-1,k-1] = integral
             # (ki|lj)
             h2e[k-1,i-1,l-1,j-1] = integral
             # (lj|ki)
             h2e[l-1,j-1,k-1,i-1] = integral
+            if symmetry == 4: 
+                continue
             # (ki|jl)
             h2e[k-1,i-1,j-1,l-1] = integral
             # (lj|ik)

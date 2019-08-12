@@ -12,7 +12,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "Particle/DistanceTable.h"
 #include "Particle/DistanceTableData.h"
 #include "QMCHamiltonians/LocalCorePolPotential.h"
 #include "Utilities/IteratorUtility.h"
@@ -21,11 +20,10 @@
 namespace qmcplusplus
 {
 LocalCorePolPotential::LocalCorePolPotential(ParticleSet& ions, ParticleSet& els)
-    : FirstTime(true), eCoreCore(0.0), IonConfig(ions), d_ie(0), d_ii(0)
+    : FirstTime(true), eCoreCore(0.0), IonConfig(ions),
+      d_ie_ID(els.addTable(ions, DT_AOS)), d_ii_ID(ions.addTable(ions, DT_AOS))
 {
   //set the distance tables
-  d_ie       = DistanceTable::add(ions, els, DT_AOS);
-  d_ii       = DistanceTable::add(ions, DT_AOS);
   nCenters   = ions.getTotalNum();
   nParticles = els.getTotalNum();
   InpCPP.resize(IonConfig.getSpeciesSet().getTotalNum(), 0);
@@ -47,7 +45,7 @@ LocalCorePolPotential::~LocalCorePolPotential()
 }
 
 
-void LocalCorePolPotential::resetTargetParticleSet(ParticleSet& P) { d_ie = DistanceTable::add(IonConfig, P, DT_AOS); }
+void LocalCorePolPotential::resetTargetParticleSet(ParticleSet& P) { }
 
 /** process xml node for each element
  * @param cur xmlnode <element name="string" alpha="double" rb="double"/>
@@ -115,14 +113,15 @@ LocalCorePolPotential::Return_t LocalCorePolPotential::evaluate(ParticleSet& P)
     //index for attribute charge
     SpeciesSet& Species(IonConfig.getSpeciesSet());
     int iz = Species.addAttribute("charge");
+    const auto& d_ii = IonConfig.getDistTable(d_ii_ID);
     //calculate the Core-Core Dipole matrix
     for (int iat = 0; iat < nCenters; iat++)
     {
-      for (int nn = d_ii->M[iat]; nn < d_ii->M[iat + 1]; nn++)
+      for (int nn = d_ii.M[iat]; nn < d_ii.M[iat + 1]; nn++)
       {
-        int jat(d_ii->J[nn]);
-        RealType rinv3 = std::pow(d_ii->rinv(nn), 3); //(1/R_{JI}^3) R_{JI} = R_J-R_I
-        PosType dipole(rinv3 * d_ii->dr(nn));         //(\vec{R_{JI}}/R_{JI}^3)
+        int jat(d_ii.J[nn]);
+        RealType rinv3 = std::pow(d_ii.rinv(nn), 3); //(1/R_{JI}^3) R_{JI} = R_J-R_I
+        PosType dipole(rinv3 * d_ii.dr(nn));         //(\vec{R_{JI}}/R_{JI}^3)
         //Sign and the charge of the paired ion are taken into account here
         CoreCoreDipole[iat] -= dipole * Species(iz, IonConfig.GroupID[jat]);
         CoreCoreDipole[jat] += dipole * Species(iz, IonConfig.GroupID[iat]);
@@ -141,18 +140,19 @@ LocalCorePolPotential::Return_t LocalCorePolPotential::evaluate(ParticleSet& P)
   //calculate the Electron-Core Dipole matrix
   //CoreElDipole=0.0;
   RealType e = 0.0;
+  const auto& d_ie = P.getDistTable(d_ie_ID);
   for (int iat = 0; iat < nCenters; iat++)
   {
     if (Centers[iat])
     {
       PosType cc(CoreCoreDipole[iat]);
-      for (int nn = d_ie->M[iat]; nn < d_ie->M[iat + 1]; nn++)
+      for (int nn = d_ie.M[iat]; nn < d_ie.M[iat + 1]; nn++)
       {
-        int eid(d_ie->J[nn]);
-        RealType rinv3 = std::pow(d_ie->rinv(nn), 3); //(1/r^3)
-        PosType dipole = rinv3 * d_ie->dr(nn);        //(\vec{r}/r^3)
+        int eid(d_ie.J[nn]);
+        RealType rinv3 = std::pow(d_ie.rinv(nn), 3); //(1/r^3)
+        PosType dipole = rinv3 * d_ie.dr(nn);        //(\vec{r}/r^3)
         //cc +=  dipole*fcpp(d_ie->r(nn)*r_binv);
-        cc += dipole * ((*Centers[iat])(d_ie->r(nn)));
+        cc += dipole * ((*Centers[iat])(d_ie.r(nn)));
       }
       e += Centers[iat]->C * dot(cc, cc);
     }

@@ -12,7 +12,6 @@
 
 
 #include "QMCHamiltonians/StressPBC.h"
-#include "Particle/DistanceTable.h"
 #include "Particle/DistanceTableData.h"
 #include "Message/Communicate.h"
 #include "Utilities/ProgressReportEngine.h"
@@ -26,7 +25,8 @@
 namespace qmcplusplus
 {
 StressPBC::StressPBC(ParticleSet& ions, ParticleSet& elns, TrialWaveFunction& Psi0, bool firsttime)
-    : ForceBase(ions, elns), PtclTarg(elns), PtclA(ions), Psi(Psi0), first_time(firsttime)
+    : ForceBase(ions, elns), PtclTarg(elns), PtclA(ions), Psi(Psi0), first_time(firsttime),
+      ei_table_index(elns.addTable(ions, DT_AOS)), ee_table_index(elns.addTable(elns, DT_AOS))
 {
   ReportEngine PRE("StressPBC", "StressPBC");
   myName = "StressPBC";
@@ -43,7 +43,6 @@ StressPBC::StressPBC(ParticleSet& ions, ParticleSet& elns, TrialWaveFunction& Ps
   //This sets up the long range breakups.
 
   kcdifferent  = false;
-  myTableIndex = elns.addTable(PtclA, DT_AOS);
   initBreakup(PtclTarg);
 
   targetconsts    = 0.0;
@@ -176,7 +175,7 @@ SymTensor<StressPBC::RealType, OHMMS_DIM> StressPBC::evaluateLR_AB(ParticleSet& 
 
 SymTensor<StressPBC::RealType, OHMMS_DIM> StressPBC::evaluateSR_AB(ParticleSet& P)
 {
-  const DistanceTableData& d_ab(*P.DistTables[myTableIndex]);
+  const DistanceTableData& d_ab(P.getDistTable(ei_table_index));
   SymTensor<RealType, OHMMS_DIM> res = 0.0;
   //Loop over distinct eln-ion pairs
   for (int iat = 0; iat < NptclA; iat++)
@@ -198,7 +197,7 @@ SymTensor<StressPBC::RealType, OHMMS_DIM> StressPBC::evaluateSR_AB(ParticleSet& 
 
 SymTensor<StressPBC::RealType, OHMMS_DIM> StressPBC::evaluateSR_AA(ParticleSet& P)
 {
-  const DistanceTableData& d_aa(*P.DistTables[0]);
+  const DistanceTableData& d_aa(P.getDistTable(ee_table_index));
   SymTensor<RealType, OHMMS_DIM> stress;
   int NumSpecies = P.getSpeciesSet().TotalNum;
   //RealType res=0.0;
@@ -233,7 +232,7 @@ SymTensor<StressPBC::RealType, OHMMS_DIM> StressPBC::evaluateSR_AA(ParticleSet& 
 
 SymTensor<StressPBC::RealType, OHMMS_DIM> StressPBC::evaluateLR_AA(ParticleSet& P)
 {
-  // const DistanceTableData &d_aa(*P.DistTables[0]);
+  // const DistanceTableData &d_aa(P.getDistTable(ee_table_index));
   int NumSpecies = P.getSpeciesSet().TotalNum;
   SymTensor<RealType, OHMMS_DIM> stress;
   const StructFact& PtclRhoK(*(P.SK));

@@ -19,7 +19,6 @@
 #include <OhmmsPETE/OhmmsMatrix.h>
 #include <Utilities/PooledData.h>
 #include <QMCHamiltonians/observable_helper.h>
-#include "Particle/DistanceTable.h"
 #include "Particle/DistanceTableData.h"
 
 namespace qmcplusplus

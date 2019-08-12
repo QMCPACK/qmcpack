@@ -17,6 +17,7 @@
 #include <cmath>
 #include <complex>
 #include "OhmmsPETE/TinyVector.h"
+#include "config/stdlib/Constants.h"
 
 namespace qmcplusplus
 {

@@ -84,17 +84,11 @@ void TrialWaveFunction::stopOptimization()
   }
 }
 
-/** add an ObritalBase
- * @param aterm an WaveFunctionComponent
- * @param aname  name of aterm
- * @param fermion if true, set aterm to FermionWF
- */
-void TrialWaveFunction::addOrbital(WaveFunctionComponent* aterm, const std::string& aname, bool fermion)
+void TrialWaveFunction::addComponent(WaveFunctionComponent* aterm, std::string aname)
 {
   Z.push_back(aterm);
-  aterm->IsFermionWF = fermion;
-  if (fermion)
-    app_log() << "  FermionWF = " << aname << std::endl;
+  if (aterm->is_fermionic)
+    app_log() << "  Added a fermionic WaveFunctionComponent " << aname << std::endl;
 
   std::vector<std::string> suffixes(7);
   suffixes[0] = "_V";
@@ -593,10 +587,8 @@ void TrialWaveFunction::evaluateRatios(VirtualParticleSet& VP, std::vector<RealT
 #endif
 }
 
-void TrialWaveFunction::evaluateDerivRatios(VirtualParticleSet& VP,
-                                            const opt_variables_type& optvars,
-                                            std::vector<RealType>& ratios,
-                                            Matrix<RealType>& dratio)
+void TrialWaveFunction::evaluateDerivRatios(VirtualParticleSet& VP, const opt_variables_type& optvars,
+    std::vector<ValueType>& ratios, Matrix<ValueType>& dratio)
 {
 #if defined(QMC_COMPLEX)
   APP_ABORT("TrialWaveFunction::evaluateDerivRatios not available for complex wavefunctions");
@@ -630,7 +622,7 @@ TrialWaveFunction* TrialWaveFunction::makeClone(ParticleSet& tqp) const
   myclone->BufferCursor        = BufferCursor;
   myclone->BufferCursor_scalar = BufferCursor_scalar;
   for (int i = 0; i < Z.size(); ++i)
-    myclone->addOrbital(Z[i]->makeClone(tqp), "dummy", Z[i]->IsFermionWF);
+    myclone->addComponent(Z[i]->makeClone(tqp), "dummy");
   myclone->OneOverM = OneOverM;
   return myclone;
 }
@@ -640,10 +632,10 @@ TrialWaveFunction* TrialWaveFunction::makeClone(ParticleSet& tqp) const
  * @todo WaveFunctionComponent objects should take the mass into account.
  */
 void TrialWaveFunction::evaluateDerivatives(ParticleSet& P,
-                                            const opt_variables_type& optvars,
-                                            std::vector<RealType>& dlogpsi,
-                                            std::vector<RealType>& dhpsioverpsi,
-                                            bool project)
+    const opt_variables_type& optvars,
+    std::vector<ValueType>& dlogpsi,
+    std::vector<ValueType>& dhpsioverpsi,
+    bool project)
 {
   //     // First, zero out derivatives
   //  This should only be done for some variables.
@@ -676,10 +668,8 @@ void TrialWaveFunction::evaluateDerivatives(ParticleSet& P,
 }
 
 void TrialWaveFunction::evaluateGradDerivatives(const ParticleSet::ParticleGradient_t& G_in,
-                                                std::vector<RealType>& dgradlogpsi)
-{
-  for (int i = 0; i < Z.size(); i++)
-  {
+                                                std::vector<ValueType>& dgradlogpsi) {
+  for (int i=0; i<Z.size(); i++) {
     Z[i]->evaluateGradDerivatives(G_in, dgradlogpsi);
   }
 }

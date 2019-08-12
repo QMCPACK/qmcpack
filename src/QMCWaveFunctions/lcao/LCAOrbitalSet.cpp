@@ -17,18 +17,12 @@
 namespace qmcplusplus
 {
 LCAOrbitalSet::LCAOrbitalSet(basis_type* bs)
-    : myBasisSet(nullptr), C(nullptr), params_supplied(false), BasisSetSize(0), Identity(true), IsCloned(false)
+    : myBasisSet(nullptr), params_supplied(false), BasisSetSize(0), Identity(true)
 {
   //This SPOSet has an explicit ion dependence, so set this flag.
   ionDerivs=true;
   if (bs != nullptr)
     setBasisSet(bs);
-}
-
-LCAOrbitalSet::~LCAOrbitalSet()
-{
-  if (!IsCloned && C != nullptr)
-    delete C;
 }
 
 void LCAOrbitalSet::setBasisSet(basis_type* bs)
@@ -46,9 +40,9 @@ bool LCAOrbitalSet::setIdentity(bool useIdentity)
   if (Identity)
     return true;
 
-  if (C == nullptr && (OrbitalSetSize > 0) && (BasisSetSize > 0))
+  if (!C && (OrbitalSetSize > 0) && (BasisSetSize > 0))
   {
-    C = new ValueMatrix_t(OrbitalSetSize, BasisSetSize);
+    C = std::make_shared<ValueMatrix_t>(OrbitalSetSize, BasisSetSize);
   }
   else
   {
@@ -65,7 +59,6 @@ SPOSet* LCAOrbitalSet::makeClone() const
 {
   LCAOrbitalSet* myclone = new LCAOrbitalSet(*this);
   myclone->myBasisSet    = myBasisSet->makeClone();
-  myclone->IsCloned      = true;
   return myclone;
 }
 
@@ -702,8 +695,8 @@ void LCAOrbitalSet::buildOptVariables(const std::vector<std::pair<int, int>>& ro
 
 void LCAOrbitalSet::evaluateDerivatives(ParticleSet& P,
                                         const opt_variables_type& optvars,
-                                        std::vector<RealType>& dlogpsi,
-                                        std::vector<RealType>& dhpsioverpsi,
+                                        std::vector<ValueType>& dlogpsi,
+                                        std::vector<ValueType>& dhpsioverpsi,
                                         const ValueType& psiCurrent,
                                         const std::vector<ValueType>& Coeff,
                                         const std::vector<size_t>& C2node_up,
@@ -884,8 +877,8 @@ void LCAOrbitalSet::exponentiate_antisym_matrix(ValueMatrix_t& mat)
     }
 }
 
-void LCAOrbitalSet::table_method_eval(std::vector<RealType>& dlogpsi,
-                                      std::vector<RealType>& dhpsioverpsi,
+void LCAOrbitalSet::table_method_eval(std::vector<ValueType>& dlogpsi,
+                                      std::vector<ValueType>& dhpsioverpsi,
                                       const ParticleSet::ParticleLaplacian_t& myL_J,
                                       const ParticleSet::ParticleGradient_t& myG_J,
                                       const size_t nel,
@@ -1295,37 +1288,37 @@ $
     const int i(m_act_rot_inds[mu].first), j(m_act_rot_inds[mu].second);
     if (i <= nel - 1 && j > nel - 1)
     {
-      dlogpsi[kk] += detValues_up[0] * (Table(i, j)) * const0 * (1 / psiCurrent) + (K4T(i, j) - K4T(j, i) - TK4T(i, j));
+      dlogpsi[kk] += ValueType( detValues_up[0] * (Table(i, j)) * const0 * (1 / psiCurrent) + (K4T(i, j) - K4T(j, i) - TK4T(i, j)) );
 
-      dhpsioverpsi[kk] += -0.5 * Y4(i, j) -
+      dhpsioverpsi[kk] += ValueType( -0.5 * Y4(i, j) -
           0.5 *
               (-K5T(i, j) + K5T(j, i) + TK5T(i, j) + K2AiB(i, j) - K2AiB(j, i) - TK2AiB(i, j) - K2XA(i, j) +
                K2XA(j, i) + TK2XA(i, j) - MK2T(i, j) + K1T(i, j) - K1T(j, i) - TK1T(i, j) -
                const2 / const1 * K2T(i, j) + const2 / const1 * K2T(j, i) + const2 / const1 * TK2T(i, j) + K3T(i, j) -
-               K3T(j, i) - TK3T(i, j) - K2T(i, j) + K2T(j, i) + TK2T(i, j));
+               K3T(j, i) - TK3T(i, j) - K2T(i, j) + K2T(j, i) + TK2T(i, j)) );
     }
     else if (i <= nel - 1 && j <= nel - 1)
     {
-      dlogpsi[kk] += detValues_up[0] * (Table(i, j) - Table(j, i)) * const0 * (1 / psiCurrent) +
-          (K4T(i, j) - TK4T(i, j) - K4T(j, i) + TK4T(j, i));
+      dlogpsi[kk] += ValueType( detValues_up[0] * (Table(i, j) - Table(j, i)) * const0 * (1 / psiCurrent) +
+          (K4T(i, j) - TK4T(i, j) - K4T(j, i) + TK4T(j, i)) );
 
-      dhpsioverpsi[kk] += -0.5 * (Y4(i, j) - Y4(j, i)) -
+      dhpsioverpsi[kk] += ValueType( -0.5 * (Y4(i, j) - Y4(j, i)) -
           0.5 *
               (-K5T(i, j) + K5T(j, i) + TK5T(i, j) - TK5T(j, i) + K2AiB(i, j) - K2AiB(j, i) - TK2AiB(i, j) +
                TK2AiB(j, i) - K2XA(i, j) + K2XA(j, i) + TK2XA(i, j) - TK2XA(j, i) - MK2T(i, j) + MK2T(j, i) +
                K1T(i, j) - K1T(j, i) - TK1T(i, j) + TK1T(j, i) - const2 / const1 * K2T(i, j) +
                const2 / const1 * K2T(j, i) + const2 / const1 * TK2T(i, j) - const2 / const1 * TK2T(j, i) + K3T(i, j) -
-               K3T(j, i) - TK3T(i, j) + TK3T(j, i) - K2T(i, j) + K2T(j, i) + TK2T(i, j) - TK2T(j, i));
+               K3T(j, i) - TK3T(i, j) + TK3T(j, i) - K2T(i, j) + K2T(j, i) + TK2T(i, j) - TK2T(j, i)) );
     }
     else
     {
-      dlogpsi[kk] += (K4T(i, j) - K4T(j, i));
+      dlogpsi[kk] += ValueType( (K4T(i, j) - K4T(j, i)) );
 
-      dhpsioverpsi[kk] += -0.5 *
+      dhpsioverpsi[kk] += ValueType( -0.5 *
           (-K5T(i, j) + K5T(j, i) + K2AiB(i, j) - K2AiB(j, i) - K2XA(i, j) + K2XA(j, i)
 
            + K1T(i, j) - K1T(j, i) - const2 / const1 * K2T(i, j) + const2 / const1 * K2T(j, i) + K3T(i, j) - K3T(j, i) -
-           K2T(i, j) + K2T(j, i));
+           K2T(i, j) + K2T(j, i)) );
     }
   }
 }

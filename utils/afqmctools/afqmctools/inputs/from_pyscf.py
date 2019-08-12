@@ -8,7 +8,7 @@ except ImportError:
 from afqmctools.hamiltonian.supercell import write_hamil_supercell
 from afqmctools.hamiltonian.kpoint import write_hamil_kpoints
 from afqmctools.hamiltonian.mol import write_hamil_mol
-from afqmctools.utils.qmcpack_utils import write_skeleton_input
+from afqmctools.utils.qmcpack_utils import write_xml_input
 from afqmctools.utils.pyscf_utils import (
         load_from_pyscf_chk,
         load_from_pyscf_chk_mol
@@ -20,7 +20,7 @@ from afqmctools.wavefunction.pbc import write_wfn_pbc
 def write_qmcpack(comm, chkfile, hamil_file, threshold,
                   ortho_ao=False, gdf=False, kpoint=False, verbose=False,
                   cas=None, qmc_input=None, wfn_file=None,
-                  write_hamil=True):
+                  write_hamil=True, ndet_max=None, real_chol=False):
     """Dispatching routine dependent on options.
     """
     try:
@@ -35,7 +35,8 @@ def write_qmcpack(comm, chkfile, hamil_file, threshold,
                   " object.")
         scf_data = load_from_pyscf_chk(chkfile, orthoAO=ortho_ao)
         if comm.rank == 0:
-            nelec = write_wfn_pbc(scf_data, ortho_ao, wfn_file, verbose=verbose)
+            nelec = write_wfn_pbc(scf_data, ortho_ao, wfn_file, verbose=verbose,
+                                  ndet_max=ndet_max)
         if write_hamil:
             if kpoint:
                 write_hamil_kpoints(comm, scf_data, hamil_file, threshold,
@@ -57,8 +58,9 @@ def write_qmcpack(comm, chkfile, hamil_file, threshold,
         scf_data = load_from_pyscf_chk_mol(chkfile)
         if write_hamil:
             write_hamil_mol(scf_data, hamil_file, threshold,
-                            verbose=verbose, cas=cas, ortho_ao=ortho_ao)
+                            verbose=verbose, cas=cas,
+                            ortho_ao=ortho_ao, real_chol=real_chol)
         write_wfn_mol(scf_data, ortho_ao, wfn_file)
 
     if comm.rank == 0 and qmc_input is not None:
-        write_skeleton_input(qmc_input, hamil_file, wfn_file=wfn_file)
+        write_xml_input(qmc_input, hamil_file, wfn_file=wfn_file)

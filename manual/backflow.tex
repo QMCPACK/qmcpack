@@ -2,17 +2,17 @@
 
 \label{sec:backflow}
 
-One can perturb the nodal surface of a single-slater/multi-slater wavefunction through use of a backflow-transformation.  Specifically, if we have an antisymmetric function $D(\mathbf{x}_{0\uparrow},\cdots,\mathbf{x}_{N\uparrow}, \mathbf{x}_{0\downarrow},\cdots,\mathbf{x}_{N\downarrow})$, and if $i_\alpha$ is the $i$-th particle of species type $\alpha$, then the backflow transformation works by making the coordinate transformation $\mathbf{x}_{i_\alpha} \to \mathbf{x}'_{i_\alpha}$, and evaluating $D$ at these new ``quasiparticle" coordinates.  QMCPACK currently supports quasiparticle transformations given by:
+One can perturb the nodal surface of a single-Slater/multi-Slater wavefunction through use of a backflow transformation.  Specifically, if we have an antisymmetric function $D(\mathbf{x}_{0\uparrow},\cdots,\mathbf{x}_{N\uparrow}, \mathbf{x}_{0\downarrow},\cdots,\mathbf{x}_{N\downarrow})$, and if $i_\alpha$ is the $i$-th particle of species type $\alpha$, then the backflow transformation works by making the coordinate transformation $\mathbf{x}_{i_\alpha} \to \mathbf{x}'_{i_\alpha}$ and evaluating $D$ at these new ``quasiparticle" coordinates.  QMCPACK currently supports quasiparticle transformations given by
 
 \begin{equation}\label{backflowdef}
-\mathbf{x}'_{i_\alpha}=\mathbf{x}_{i_\alpha}+\sum_{\alpha \leq \beta} \sum_{i_\alpha \neq j_\beta} \eta^{\alpha\beta}(|\mathbf{x}_{i_\alpha}-\mathbf{x}_{j_\beta}|)(\mathbf{x}_{i_\alpha}-\mathbf{x}_{j_\beta})
+\mathbf{x}'_{i_\alpha}=\mathbf{x}_{i_\alpha}+\sum_{\alpha \leq \beta} \sum_{i_\alpha \neq j_\beta} \eta^{\alpha\beta}(|\mathbf{x}_{i_\alpha}-\mathbf{x}_{j_\beta}|)(\mathbf{x}_{i_\alpha}-\mathbf{x}_{j_\beta})\:.
 \end{equation}
 
-Here, $\eta^{\alpha\beta}(|\mathbf{x}_{i_\alpha}-\mathbf{x}_{j_\beta}|)$ is a radially symmetric back flow transformation between species $\alpha$ and $\beta$.  In QMCPACK, particle $i_\alpha$ is known as the ``target" particle and $j_\beta$ is known as the ``source".  The main types of transformations are so called one-body terms, which are between an electron and an ion $\eta^{eI}(|\mathbf{x}_{i_e}-\mathbf{x}_{j_I}|)$, and two-body terms.  Two body terms are distinguished as those between like and opposite spin electrons:  $\eta^{e(\uparrow)e(\uparrow)}(|\mathbf{x}_{i_e(\uparrow)}-\mathbf{x}_{j_e(\uparrow)}|)$ and  $\eta^{e(\uparrow)e(\downarrow)}(|\mathbf{x}_{i_e(\uparrow)}-\mathbf{x}_{j_e(\downarrow)}|)$.  Henceforth, we will assume that $\eta^{e(\uparrow)e(\uparrow)}=\eta^{e(\downarrow)e(\downarrow)}$.
+Here, $\eta^{\alpha\beta}(|\mathbf{x}_{i_\alpha}-\mathbf{x}_{j_\beta}|)$ is a radially symmetric backflow transformation between species $\alpha$ and $\beta$.  In QMCPACK, particle $i_\alpha$ is known as the ``target" particle and $j_\beta$ is known as the ``source."  The main types of transformations are so-called one-body terms, which are between an electron and an ion $\eta^{eI}(|\mathbf{x}_{i_e}-\mathbf{x}_{j_I}|)$ and two-body terms.  Two-body terms are distinguished as those between like and opposite spin electrons:  $\eta^{e(\uparrow)e(\uparrow)}(|\mathbf{x}_{i_e(\uparrow)}-\mathbf{x}_{j_e(\uparrow)}|)$ and  $\eta^{e(\uparrow)e(\downarrow)}(|\mathbf{x}_{i_e(\uparrow)}-\mathbf{x}_{j_e(\downarrow)}|)$.  Henceforth, we will assume that $\eta^{e(\uparrow)e(\uparrow)}=\eta^{e(\downarrow)e(\downarrow)}$.
 
-In the following, we explain how to describe general terms like Eq. \ref{backflowdef} in a QMCPACK XML file.  For specificity, we will consider a particle set consisting of H and He (in that order).  This ordering will be important when we build the XML file, so you can find this out either through your specific declaration of <particleset>, by looking at the hdf5 file in the case of plane waves, or by looking at the qmcpack output file in the section labelled ``Summary of QMC systems".  
+In the following, we explain how to describe general terms such as Eq.~\ref{backflowdef} in a QMCPACK XML file.  For specificity, we will consider a particle set consisting of H and He (in that order).  This ordering will be important when we build the XML file, so you can find this out either through your specific declaration of <particleset>, by looking at the hdf5 file in the case of plane waves, or by looking at the QMCPACK output file in the section labeled ``Summary of QMC systems."  
 \subsection{Input Specifications}
-All backflow declarations occur within a single \ixml{<backflow> ... </backflow>} block.  Backflow transformations occur in \ixml{<transformation>} blocks, and have the following input parameters
+All backflow declarations occur within a single \ixml{<backflow> ... </backflow>} block.  Backflow transformations occur in \ixml{<transformation>} blocks and have the following input parameters:
 
 \begin{table}[h]
 \begin{center}
@@ -20,23 +20,23 @@ All backflow declarations occur within a single \ixml{<backflow> ... </backflow>
 \hline
 \multicolumn{5}{l}{Transformation element} \\
 \hline
-\bfseries name & \bfseries datatype & \bfseries values & \bfseries defaults  & \bfseries description \\
+\bfseries Name & \bfseries Datatype & \bfseries Values & \bfseries Defaults  & \bfseries Description \\
 \hline
-name & text &  & (required) & Unique name for this Jastrow function \\
-type & text & ``e-I" & (required) & Define a one-body backflow transformation. \\ 
+name & Text &  & (Required) & Unique name for this Jastrow function. \\
+type & Text & ``e-I" & (Required) & Define a one-body backflow transformation. \\ 
         &          & ``e-e" & & Define a two-body backflow transformation. \\
-function & text & Bspline & (required) & B-spline type transformation. (No other types supported) \\
-source & text &  &  & ``e" if two-body, ion particle set if one-body.\\ 
+function & Text & B-spline & (Required) & B-spline type transformation (no other types supported). \\
+source & Text &  &  & ``e" if two body, ion particle set if one body.\\ 
   \hline
 \end{tabular}
 %\end{tabular*}
 \end{center}
 \end{table}
 
-Just like one and two-body jastrows, parameterization of the backflow transformations are specified within the \ixml{<transformation>} blocks by  \ixml{<correlation>} blocks.  Please refer to \ref{sec:onebodyjastrowspline} for more information.
+Just like one- and two-body jastrows, parameterization of the backflow transformations are specified within the \ixml{<transformation>} blocks by  \ixml{<correlation>} blocks.  Please refer to Section~\ref{sec:onebodyjastrowspline} for more information.
 
 \subsection{Example Use Case}
-Having specified the general form, we present a general example of one-body and two-body backflow transformations in a hydrogen-helium mixture.  The H and He ions have independent backflow transformations, as do the like and unlike-spin two-body terms.  One caveat is in order:  ionic backflow transformations must be listed in the order that they appear in the particle set.  If in our example, He is listed first, and H is listed second, the following example would be correct.  However, switching backflow declaration to H first, then He, will result in an error.  Outside of this, declaration of one-body blocks and two-body blocks aren't sensitive to ordering.  
+Having specified the general form, we present a general example of one-body and two-body backflow transformations in a hydrogen-helium mixture.  The hydrogen and helium ions have independent backflow transformations, as do the like and unlike-spin two-body terms.  One caveat is in order:  ionic backflow transformations must be listed in the order they appear in the particle set.  If in our example, helium is listed first and hydrogen is listed second, the following example would be correct.  However, switching backflow declaration to hydrogen first then helium, will result in an error.  Outside of this, declaration of one-body blocks and two-body blocks are not sensitive to ordering.  
 
 \begin{lstlisting}[style=QMCPXML]
 <backflow>
@@ -70,7 +70,7 @@ Having specified the general form, we present a general example of one-body and 
 </backflow>
 \end{lstlisting}  
 
-Currently, backflow only works with single-slater determinant wavefunctions.  When a backflow transformation has been declared, it should be placed within the \ixml{<determinantset>} block, but outside of the \ixml{<slaterdeterminant>} blocks, like so:
+Currently, backflow works only with single-Slater determinant wavefunctions.  When a backflow transformation has been declared, it should be placed within the \ixml{<determinantset>} block, but outside of the \ixml{<slaterdeterminant>} blocks, like so:
 
 \begin{lstlisting}[style=QMCPXML]
 <determinantset ... >
@@ -89,31 +89,31 @@ Currently, backflow only works with single-slater determinant wavefunctions.  Wh
 \end{lstlisting}
 
 \subsection{Optimization Tips}
-Backflow is notoriously difficult to optimize--its extremely nonlinear in the variational parameters and also moves the nodal surface around.  As such, it is likely that a full Jastrow+Backflow optimization with all parameters initialized to zero may not converge in a reasonable time.  If you are experiencing this problem, the following pointers are suggested (in no particular order):
+Backflow is notoriously difficult to optimize---it is extremely nonlinear in the variational parameters and moves the nodal surface around.  As such, it is likely that a full Jastrow+Backflow optimization with all parameters initialized to zero might not converge in a reasonable time.  If you are experiencing this problem, the following pointers are suggested (in no particular order).
 
-\subsubsection{Get a good starting guess for $\Psi_T$}
+\subsubsection{Get a good starting guess for $\Psi_T$:}
 
 \begin{enumerate}
 \item Try optimizing the Jastrow first without backflow.
-\item Freeze the jastrow parameters, introduce only the e-e terms in the backflow transformation, and optimize these parameters.
-\item Freeze the e-e backflow parameters, and now optimize the e-I terms.
+\item Freeze the Jastrow parameters, introduce only the e-e terms in the backflow transformation, and optimize these parameters.
+\item Freeze the e-e backflow parameters, and then optimize the e-I terms.
   \begin{itemize}
     \item If difficulty is encountered here, try optimizing each species independently.
   \end{itemize}
-\item Now, unfreeze all jastrow, e-e backflow, and e-I backflow parameters, and reoptimize.  
+\item Unfreeze all Jastrow, e-e backflow, and e-I backflow parameters, and reoptimize.  
 
 \end{enumerate}
 
 
 \subsubsection{Optimizing Backflow Terms}
 
-It is wholly possible that the above prescription might grind to a halt in steps 2 or 3 with the inability to optimize the e-e or e-I backflow transformation independently, especially if it is initialized to zero.  To get around this, one suggestion is to build a good starting guess for the e-e or e-I backflow terms iteratively as follows.  
+It is possible that the previous prescription might grind to a halt in steps 2 or 3 with the inability to optimize the e-e or e-I backflow transformation independently, especially if it is initialized to zero.  One way to get around this is to build a good starting guess for the e-e or e-I backflow terms iteratively as follows:  
 
 \begin{enumerate}
 \item Start off with a small number of knots initialized to zero.  Set $r_{cut}$ to be small (much smaller than an interatomic distance).
 \item Optimize the backflow function.
 \item If this works, slowly increase $r_{cut}$ and/or the number of knots.
-\item Repeat steps 2-3 until there is no noticeable change in energy or variance of $\Psi_T$.
+\item Repeat steps 2 and 3 until there is no noticeable change in energy or variance of $\Psi_T$.
 \end{enumerate}
 
 \subsubsection{Tweaking the Optimization Run}
@@ -121,8 +121,8 @@ It is wholly possible that the above prescription might grind to a halt in steps
 The following modifications are worth a try in the optimization block:
 
 \begin{itemize}
-\item Try setting ``useDrift" to ``no".  This eliminates the use of wavefunction gradients and force biasing in the VMC algorithm.  This could be an issue for poorly optimized wavefunctions with pathological gradients.  
-\item Try increasing ``exp0" in the optimization block.  Larger values of "exp0" cause the search directions to more closely follow those predicted by steepest-descent than those by the linear method.
+\item Try setting ``useDrift" to ``no."  This eliminates the use of wavefunction gradients and force biasing in the VMC algorithm.  This could be an issue for poorly optimized wavefunctions with pathological gradients.  
+\item Try increasing ``exp0" in the optimization block.  Larger values of exp0 cause the search directions to more closely follow those predicted by steepest-descent than those by the linear method.
 \end{itemize}
 
 Note that the new adaptive shift optimizer has not yet been tried with backflow wavefunctions. It should perform better than the older optimizers, but a considered optimization process is still recommended.

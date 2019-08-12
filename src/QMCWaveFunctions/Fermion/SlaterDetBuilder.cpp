@@ -379,13 +379,13 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
   if (multiDet)
   {
     if (FastMSD)
-      targetPsi.addOrbital(multislaterdetfast_0, "MultiSlaterDeterminantFast", true);
+      targetPsi.addComponent(multislaterdetfast_0, "MultiSlaterDeterminantFast");
     else
-      targetPsi.addOrbital(multislaterdet_0, "MultiSlaterDeterminant", true);
+      targetPsi.addComponent(multislaterdet_0, "MultiSlaterDeterminant");
   }
   else
   {
-    targetPsi.addOrbital(slaterdet_0, "SlaterDet", true);
+    targetPsi.addComponent(slaterdet_0, "SlaterDet");
   }
   delete mySPOSetBuilderFactory;
   mySPOSetBuilderFactory = 0;
@@ -603,6 +603,7 @@ bool SlaterDetBuilder::createMSDFast(MultiSlaterDeterminantFast* multiSD, xmlNod
   std::vector<ci_configuration> uniqueConfg_up, uniqueConfg_dn;
   std::vector<std::string> CItags;
   std::string HDF5Path(""), cname;
+
   bool optimizeCI;
   int nels_up = multiSD->nels_up;
   int nels_dn = multiSD->nels_dn;
@@ -623,7 +624,6 @@ bool SlaterDetBuilder::createMSDFast(MultiSlaterDeterminantFast* multiSD, xmlNod
   }
   ciAttrib.add(HDF5Path, "href");
   ciAttrib.put(DetListNode);
-
   if (HDF5Path != "")
   {
     app_log() << "Found Multideterminants in H5 File" << std::endl;
@@ -721,12 +721,7 @@ bool SlaterDetBuilder::createMSDFast(MultiSlaterDeterminantFast* multiSD, xmlNod
       {
         //std::stringstream sstr;
         //sstr << "CIcoeff" << "_" << i;
-        #ifdef QMC_COMPLEX
-          // TODO: to be fixed by the complex VariableSet.
-          multiSD->myVars->insert(CItags[i], std::real((*(multiSD->CSFcoeff))[i]), true, optimize::LINEAR_P);
-        #else
-          multiSD->myVars->insert(CItags[i], (*(multiSD->CSFcoeff))[i], true, optimize::LINEAR_P);
-        #endif
+        multiSD->myVars->insert(CItags[i], (*(multiSD->CSFcoeff))[i], true, optimize::LINEAR_P);
       }
     }
     else
@@ -734,14 +729,7 @@ bool SlaterDetBuilder::createMSDFast(MultiSlaterDeterminantFast* multiSD, xmlNod
       //          multiSD->myVars.insert(CItags[0],multiSD->C[0],false,optimize::LINEAR_P);
       for (int i = 1; i < multiSD->C->size(); i++)
       {
-        //std::stringstream sstr;
-        //sstr << "CIcoeff" << "_" << i;
-        #ifdef QMC_COMPLEX
-          // TODO: to be fixed by the complex VariableSet.
-          multiSD->myVars->insert(CItags[i], std::real( (*(multiSD->C))[i] ), true, optimize::LINEAR_P);
-        #else
-          multiSD->myVars->insert(CItags[i], (*(multiSD->C))[i], true, optimize::LINEAR_P);         
-        #endif
+        multiSD->myVars->insert(CItags[i], (*(multiSD->C))[i], true, optimize::LINEAR_P);         
       }
     }
   }
@@ -940,8 +928,7 @@ bool SlaterDetBuilder::createMSD(MultiSlaterDeterminant* multiSD, xmlNodePtr cur
       {
         //std::stringstream sstr;
         //sstr << "CIcoeff" << "_" << i;
-        // TODO: to be fixed by the complex VariableSet.
-        multiSD->myVars.insert(CItags[i], std::real(multiSD->CSFcoeff[i]), true, optimize::LINEAR_P);
+        multiSD->myVars.insert(CItags[i], multiSD->CSFcoeff[i], true, optimize::LINEAR_P);
       }
     }
     else
@@ -951,8 +938,7 @@ bool SlaterDetBuilder::createMSD(MultiSlaterDeterminant* multiSD, xmlNodePtr cur
       {
         //std::stringstream sstr;
         //sstr << "CIcoeff" << "_" << i;
-        // TODO: to be fixed by the complex VariableSet.
-        multiSD->myVars.insert(CItags[i], std::real(multiSD->C[i]), true, optimize::LINEAR_P);
+        multiSD->myVars.insert(CItags[i], multiSD->C[i], true, optimize::LINEAR_P);
       }
     }
   }
@@ -1396,6 +1382,7 @@ bool SlaterDetBuilder::readDetListH5(xmlNodePtr cur,
   C2node_dn.clear();
   CItags.clear();
   coeff.clear();
+  std::string CICoeffH5path("");
   std::vector<ci_configuration> confgList_up;
   std::vector<ci_configuration> confgList_dn;
   std::vector<RealType> CIcoeff;
@@ -1435,6 +1422,7 @@ bool SlaterDetBuilder::readDetListH5(xmlNodePtr cur,
   spoAttrib.add(nstates, "nstates");
   spoAttrib.add(cutoff, "cutoff");
   spoAttrib.add(multidetH5path, "href");
+  spoAttrib.add(CICoeffH5path, "opt_coeffs");
   spoAttrib.put(DetListNode);
   if (ndets == 0)
   {
@@ -1477,7 +1465,42 @@ bool SlaterDetBuilder::readDetListH5(xmlNodePtr cur,
   hin.read(N_int, "Nbits");
   CIcoeff.resize(ndets);
   ConfigTag.resize(ndets);
+
   hin.read(CIcoeff, "Coeff");
+
+  ///IF OPTIMIZED COEFFICIENTS ARE PRESENT IN opt_coeffs Path
+  ///THEY ARE READ FROM DIFFERENT HDF5 the replace the previous coeff
+  ///It is important to still read all old coeffs and only replace the optimized ones
+  ///in order to keep coherence with the cutoff on the number of determinants 
+  ///REMEMBER!! FIRST COEFF IS FIXED. THEREFORE WE DO NOT REPLACE IT!!!
+  if(CICoeffH5path!="")
+  {
+
+    int OptCiSize=0;
+    std::vector<RealType> CIcoeffopt;
+    hdf_archive coeffin;
+    if (!coeffin.open(CICoeffH5path.c_str(), H5F_ACC_RDONLY))
+    {
+      std::cerr << "Could not open H5 file containing Optimized Coefficients" << std::endl;
+      abort();
+    }
+
+    if (!coeffin.push("MultiDet"))
+    {
+      std::cerr << "Could not open Multidet Group in H5 file" << std::endl;
+      abort();
+    }
+    coeffin.read(OptCiSize, "NbDet");
+    CIcoeffopt.resize(OptCiSize);
+    
+    coeffin.read(CIcoeffopt, "Coeff");
+    coeffin.close();
+
+    for (int i=0; i<OptCiSize;i++)
+          CIcoeff[i+1]=CIcoeffopt[i];
+  
+    app_log()<<"The first "<<OptCiSize<<" Optimized coefficients were substituted to the original set of coefficients." <<std::endl;
+  }
 
   Matrix<long int> tempAlpha(ndets, N_int);
   hin.read(tempAlpha, "CI_Alpha");

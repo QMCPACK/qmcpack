@@ -48,22 +48,6 @@ bool ProjectData::get(std::ostream& os) const
 
 bool ProjectData::put(std::istream& is)
 {
-#if defined(ENABLE_GUI)
-  // get the data from window
-  wxTextCtrl* temp = (wxTextCtrl*)(wxWindow::FindWindowById(ID_PROJECT_TITLE));
-  m_title          = temp->GetValue();
-  temp             = (wxTextCtrl*)(wxWindow::FindWindowById(ID_PROJECT_SID));
-  wxString t       = temp->GetValue();
-  m_series         = atoi(t.c_str());
-  temp             = (wxTextCtrl*)(wxWindow::FindWindowById(ID_DATE));
-  wxDateTime now   = wxDateTime::Now();
-  m_date           = now.FormatISODate();
-  temp->SetValue(m_date.c_str());
-  temp   = (wxTextCtrl*)(wxWindow::FindWindowById(ID_HOST));
-  m_host = wxGetFullHostName();
-  temp->SetValue(m_host.c_str());
-  temp = (wxTextCtrl*)(wxWindow::FindWindowById(ID_USER_ID));
-#else
   std::string t1;
   while (!is.eof())
   {
@@ -79,7 +63,6 @@ bool ProjectData::put(std::istream& is)
     else
       m_title = t1;
   }
-#endif
   reset();
   return true;
 }

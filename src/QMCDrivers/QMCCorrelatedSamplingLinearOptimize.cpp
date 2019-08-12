@@ -16,7 +16,6 @@
 
 #include "QMCDrivers/QMCCorrelatedSamplingLinearOptimize.h"
 #include "Particle/HDFWalkerIO.h"
-#include "Particle/DistanceTable.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Message/CommOperators.h"
 #include "QMCDrivers/QMCCostFunctionBase.h"
@@ -62,7 +61,7 @@ QMCCorrelatedSamplingLinearOptimize::QMCCorrelatedSamplingLinearOptimize(MCWalke
 {
   IsQMCDriver = false;
   //set the optimization flag
-  QMCDriverMode.set(QMC_OPTIMIZE, 1);
+  qmc_driver_mode.set(QMC_OPTIMIZE, 1);
   //read to use vmc output (just in case)
   RootName = "pot";
   QMCType  = "QMCCorrelatedSamplingLinearOptimize";
@@ -112,7 +111,7 @@ bool QMCCorrelatedSamplingLinearOptimize::run()
   optdir.resize(numParams, 0);
   optparm.resize(numParams, 0);
   for (int i = 0; i < numParams; i++)
-    currentParameters[i] = optTarget->Params(i);
+    currentParameters[i] = std::real(optTarget->Params(i));
   //this is the small amount added to the diagonal to stabilize the eigenvalue equation. e^stabilityBase
   RealType stabilityBase(exp0);
   std::vector<std::vector<RealType>> LastDirections;
@@ -212,7 +211,11 @@ bool QMCCorrelatedSamplingLinearOptimize::run()
     if (MinMethod == "rescale")
     {
       for (int i = 0; i < numParams; i++)
-        bestParameters[i] = optTarget->Params(i) = currentParameters[i] + Lambda * currentParameterDirections[i + 1];
+      {
+        //FIXME This std::real should be removed later when the optimizer starts to work with complex parameters
+        optTarget->Params(i) = currentParameters[i] + Lambda * currentParameterDirections[i + 1];
+        bestParameters[i]    = std::real(optTarget->Params(i));
+      }
       if (GEVtype == "H2")
         acceptedOneMove = true;
     }
@@ -276,7 +279,7 @@ bool QMCCorrelatedSamplingLinearOptimize::run()
     {
       //Move was acceptable
       for (int i = 0; i < numParams; i++)
-        bestParameters[i] = optTarget->Params(i);
+        bestParameters[i] = std::real(optTarget->Params(i));
       lastCost        = newCost;
       acceptedOneMove = true;
       deltaPrms       = Lambda;

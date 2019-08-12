@@ -66,7 +66,7 @@ L2Potential::Return_t L2Potential::evaluate(ParticleSet& P)
         D2[n](i, j) += P.G[n][i] * P.G[n][j];
 
   // compute v_L2(r)*L^2 for all electron-ion pairs
-  const DistanceTableData& d_table(*P.DistTables[myTableIndex]);
+  const DistanceTableData& d_table(P.getDistTable(myTableIndex));
   Value = 0.0;
   if (d_table.DTType == DT_SOA)
   {

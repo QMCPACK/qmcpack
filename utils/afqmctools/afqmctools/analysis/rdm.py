@@ -29,7 +29,7 @@ def extract_qmc_dm(filename, dm_name='Mixed'):
         weights = []
         data = fh5[dm_name]
         for G in data.keys():
-            if 'one_rdm_denom' in G:
+            if 'denominator' in G:
                 weight = data[G][:].view(numpy.complex128).ravel()
                 weights.append(weight[0])
                 ix = G.split('_')[-1]
@@ -99,7 +99,7 @@ def get_rdm_len(filename, dm_name='Mixed'):
     with h5py.File(filename, 'r') as fh5:
         dms = fh5[dm_name].keys()
         # Block size of RDM is not necessarily known so just be dumb and count.
-        num_dm = len([n for n in dms if 'one_rdm_denom' in n])
+        num_dm = len([n for n in dms if 'denominator' in n])
     return num_dm
 
 def extract_rdm_single(filename, indx, dm_name='Mixed'):

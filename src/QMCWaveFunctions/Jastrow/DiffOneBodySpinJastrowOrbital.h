@@ -17,7 +17,6 @@
 #include "Configuration.h"
 #include "QMCWaveFunctions/DiffWaveFunctionComponent.h"
 #include "Particle/DistanceTableData.h"
-#include "Particle/DistanceTable.h"
 #include "ParticleBase/ParticleAttribOps.h"
 #include "Utilities/IteratorUtility.h"
 
@@ -38,7 +37,7 @@ class DiffOneBodySpinJastrowOrbital : public DiffWaveFunctionComponent
   ///starting index
   int VarOffset;
   ///index of the table
-  int myTableIndex;
+  const int myTableIndex;
   ///reference to the ions
   const ParticleSet& CenterRef;
   ///variables handled by this orbital
@@ -56,9 +55,8 @@ class DiffOneBodySpinJastrowOrbital : public DiffWaveFunctionComponent
 public:
   ///constructor
   DiffOneBodySpinJastrowOrbital(const ParticleSet& centers, ParticleSet& els)
-      : Spin(false), CenterRef(centers), NumVars(0), VarOffset(0)
+      : Spin(false), CenterRef(centers), myTableIndex(els.addTable(centers, DT_SOA_PREFERRED)), NumVars(0), VarOffset(0)
   {
-    myTableIndex = els.addTable(CenterRef, DT_SOA_PREFERRED);
     NumPtcls     = els.getTotalNum();
     F.resize(CenterRef.groups(), els.groups());
     for (int i = 0; i < F.size(); ++i)
@@ -169,8 +167,8 @@ public:
 
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& active,
-                           std::vector<RealType>& dlogpsi,
-                           std::vector<RealType>& dhpsioverpsi)
+                           std::vector<ValueType>& dlogpsi,
+                           std::vector<ValueType>& dhpsioverpsi)
   {
     if (myVars.Index.size() == 0)
       return;
@@ -180,13 +178,13 @@ public:
     for (int p = 0; p < NumVars; ++p)
       (*lapLogPsi[p]) = 0.0;
     std::vector<TinyVector<RealType, 3>> derivs(NumVars);
-    const DistanceTableData* d_table = P.DistTables[myTableIndex];
+    const auto& d_table = P.getDistTable(myTableIndex);
     int varoffset                    = myVars.Index[0];
     for (int ig = 0; ig < F.rows(); ++ig) //species
     {
       for (int iat = s_offset[ig]; iat < s_offset[ig + 1]; ++iat) //
       {
-        int nn = d_table->M[iat]; //starting nn for the iat-th source
+        int nn = d_table.M[iat]; //starting nn for the iat-th source
         for (int jg = 0; jg < F.cols(); ++jg)
         {
           FT* func = F(ig, jg);
@@ -197,10 +195,10 @@ public:
             for (int jat = t_offset[jg]; jat < t_offset[jg + 1]; ++jat, ++nn)
             {
               std::fill(derivs.begin(), derivs.end(), 0.0);
-              if (!func->evaluateDerivatives(d_table->r(nn), derivs))
+              if (!func->evaluateDerivatives(d_table.r(nn), derivs))
                 continue;
-              RealType rinv(d_table->rinv(nn));
-              PosType dr(d_table->dr(nn));
+              RealType rinv(d_table.rinv(nn));
+              PosType dr(d_table.dr(nn));
               for (int p = first, ip = 0; p < last; ++p, ++ip)
               {
                 dLogPsi[p] -= derivs[ip][0];
@@ -222,8 +220,8 @@ public:
       int kk = myVars.where(k);
       if (kk < 0)
         continue;
-      dlogpsi[kk]      = dLogPsi[k];
-      dhpsioverpsi[kk] = -0.5 * Sum(*lapLogPsi[k]) - Dot(P.G, *gradLogPsi[k]);
+      dlogpsi[kk]      = ValueType(dLogPsi[k]);
+      dhpsioverpsi[kk] = - RealType(0.5) * ValueType(Sum(*lapLogPsi[k])) - ValueType(Dot(P.G, *gradLogPsi[k]));
     }
   }
 

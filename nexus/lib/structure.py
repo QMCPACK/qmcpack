@@ -27,6 +27,7 @@
 #! /usr/bin/env python
 
 import os
+import numpy as np
 from copy import deepcopy
 from random import randint
 from numpy import array,floor,empty,dot,diag,sqrt,pi,mgrid,exp,append,arange,ceil,cross,cos,sin,identity,ndarray,atleast_2d,around,ones,zeros,logical_not,flipud,uint64,sign,isclose
@@ -1223,6 +1224,35 @@ class Structure(Sobj):
         return sqrt(((pos1-pos2)**2).sum(1))
     #end def distances
 
+    def count_kshells(self, kcut, tilevec=[12, 12, 12], nkdig=10):
+      # check tilevec input
+      for nt in tilevec:
+        if nt % 2 != 0:
+          msg = 'tilevec must contain even integers'
+          msg += ' so that kgrid can be zero centered.'
+          Structure.class_error(msg, 'count_kshells')
+        #end if
+      #end for
+
+      origin = np.array([[0, 0, 0]])
+      axes = self.axes
+      raxes = 2*np.pi*np.linalg.inv(axes).T
+      kvecs = self.tile_points(origin, raxes, tilevec)
+      kvecs -= np.dot(tilevec, raxes)/2  # center around 0
+      kmags = np.linalg.norm(kvecs, axis=-1)
+
+      # make sure tilevec is sufficient for kcut
+      klimit = 0.5*kmags.max()
+      if kcut > klimit:
+        msg = 'kcut %3.2f > klimit=%3.2f\n' % (kcut, klimit)
+        msg += ' please increase tilevec to be safe.\n'
+        Structure.class_error(msg, 'count_kshells')
+      #end if
+
+      sel = (0<kmags) & (kmags<kcut)
+      ukmags = np.unique(kmags[sel].round(nkdig))
+      return len(ukmags)
+    #end def count_kshells
     
     def volume(self):
         if not self.has_axes():
@@ -1398,7 +1428,7 @@ class Structure(Sobj):
         axinv  = inv(self.axes)
         axnew  = dot(self.axes,skew)
         kaxinv = inv(self.kaxes)
-        kaxnew = dot(inv(skew),self.kaxes)
+        kaxnew = dot(inv(skew).T,self.kaxes)
         self.pos     = dot(dot(self.pos,axinv),axnew)
         self.center  = dot(dot(self.center,axinv),axnew)
         self.kpoints = dot(dot(self.kpoints,kaxinv),kaxnew)

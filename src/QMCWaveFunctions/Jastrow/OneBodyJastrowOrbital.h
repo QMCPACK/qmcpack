@@ -22,7 +22,6 @@
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/Jastrow/DiffOneBodyJastrowOrbital.h"
 #include "Particle/DistanceTableData.h"
-#include "Particle/DistanceTable.h"
 
 namespace qmcplusplus
 {
@@ -200,22 +199,22 @@ public:
   {
     LogValue                         = 0.0;
     U                                = 0.0;
-    const DistanceTableData* d_table = P.DistTables[myTableIndex];
+    const auto& d_table = P.getDistTable(myTableIndex);
     RealType dudr, d2udr2;
-    for (int i = 0; i < d_table->size(SourceIndex); i++)
+    for (int i = 0; i < d_table.size(SourceIndex); i++)
     {
       FT* func = Fs[i];
       if (func == nullptr)
         continue;
-      for (int nn = d_table->M[i]; nn < d_table->M[i + 1]; nn++)
+      for (int nn = d_table.M[i]; nn < d_table.M[i + 1]; nn++)
       {
-        int j = d_table->J[nn];
-        //ValueType uij= F[d_table->PairID[nn]]->evaluate(d_table->r(nn), dudr, d2udr2);
-        RealType uij = func->evaluate(d_table->r(nn), dudr, d2udr2);
+        int j = d_table.J[nn];
+        //ValueType uij= F[d_table.PairID[nn]]->evaluate(d_table.r(nn), dudr, d2udr2);
+        RealType uij = func->evaluate(d_table.r(nn), dudr, d2udr2);
         LogValue -= uij;
         U[j] += uij;
-        dudr *= d_table->rinv(nn);
-        G[j] -= dudr * d_table->dr(nn);
+        dudr *= d_table.rinv(nn);
+        G[j] -= dudr * d_table.dr(nn);
         L[j] -= d2udr2 + 2.0 * dudr;
       }
     }
@@ -226,25 +225,25 @@ public:
   {
     LogValue                         = 0.0;
     U                                = 0.0;
-    const DistanceTableData* d_table = P.DistTables[myTableIndex];
+    const auto& d_table = P.getDistTable(myTableIndex);
     RealType dudr, d2udr2;
 
     Tensor<RealType, OHMMS_DIM> ident;
     grad_grad_psi = 0.0;
     ident.diagonal(1.0);
 
-    for (int i = 0; i < d_table->size(SourceIndex); i++)
+    for (int i = 0; i < d_table.size(SourceIndex); i++)
     {
       FT* func = Fs[i];
       if (func == nullptr)
         continue;
-      for (int nn = d_table->M[i]; nn < d_table->M[i + 1]; nn++)
+      for (int nn = d_table.M[i]; nn < d_table.M[i + 1]; nn++)
       {
-        int j         = d_table->J[nn];
-        RealType rinv = d_table->rinv(nn);
-        RealType uij  = func->evaluate(d_table->r(nn), dudr, d2udr2);
+        int j         = d_table.J[nn];
+        RealType rinv = d_table.rinv(nn);
+        RealType uij  = func->evaluate(d_table.r(nn), dudr, d2udr2);
         grad_grad_psi[j] -=
-            rinv * rinv * outerProduct(d_table->dr(nn), d_table->dr(nn)) * (d2udr2 - dudr * rinv) + ident * dudr * rinv;
+            rinv * rinv * outerProduct(d_table.dr(nn), d_table.dr(nn)) * (d2udr2 - dudr * rinv) + ident * dudr * rinv;
       }
     }
   }
@@ -255,31 +254,31 @@ public:
    */
   inline ValueType ratio(ParticleSet& P, int iat)
   {
-    const DistanceTableData* d_table = P.DistTables[myTableIndex];
+    const auto& d_table = P.getDistTable(myTableIndex);
     curVal                           = 0.0;
-    for (int i = 0; i < d_table->size(SourceIndex); ++i)
+    for (int i = 0; i < d_table.size(SourceIndex); ++i)
       if (Fs[i] != nullptr)
-        curVal += Fs[i]->evaluate(d_table->Temp[i].r1);
+        curVal += Fs[i]->evaluate(d_table.Temp[i].r1);
     return std::exp(U[iat] - curVal);
   }
 
   inline void evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios)
   {
     //vector<RealType> myr(ratios.size(),0.0);
-    //const DistanceTableData* d_table=VP.DistTables[myTableIndex];
-    //for (int i=0; i<d_table->size(SourceIndex); ++i)
+    //const DistanceTableData* d_table=VP.getDistTable(myTableIndex);
+    //for (int i=0; i<d_table.size(SourceIndex); ++i)
     //  if (Fs[i])
-    //    for (int nn=d_table->M[i],j=0; nn<d_table->M[i+1]; ++nn,++j)
-    //      myr[j]+=Fs[i]->evaluate(d_table->r(nn));
+    //    for (int nn=d_table.M[i],j=0; nn<d_table.M[i+1]; ++nn,++j)
+    //      myr[j]+=Fs[i]->evaluate(d_table.r(nn));
     //RealType x=U[VP.refPtcl];
     //for(int k=0; k<ratios.size(); ++k)
     //  ratios[k]=std::exp(x-myr[k]);
     std::vector<RealType> myr(ratios.size(), U[VP.refPtcl]);
-    const DistanceTableData* d_table = VP.DistTables[myTableIndex];
-    for (int i = 0; i < d_table->size(SourceIndex); ++i)
+    const auto& d_table = VP.getDistTable(myTableIndex);
+    for (int i = 0; i < d_table.size(SourceIndex); ++i)
       if (Fs[i] != nullptr)
-        for (int nn = d_table->M[i], j = 0; nn < d_table->M[i + 1]; ++nn, ++j)
-          myr[j] -= Fs[i]->evaluate(d_table->r(nn));
+        for (int nn = d_table.M[i], j = 0; nn < d_table.M[i + 1]; ++nn, ++j)
+          myr[j] -= Fs[i]->evaluate(d_table.r(nn));
     for (int k = 0; k < ratios.size(); ++k)
       ratios[k] = std::exp(myr[k]);
   }
@@ -296,17 +295,17 @@ public:
 
   inline GradType evalGrad(ParticleSet& P, int iat)
   {
-    const DistanceTableData* d_table = P.DistTables[myTableIndex];
-    int n                            = d_table->size(VisitorIndex);
+    const auto& d_table = P.getDistTable(myTableIndex);
+    int n                            = d_table.size(VisitorIndex);
     curGrad                          = 0.0;
     RealType ur, dudr, d2udr2;
-    for (int i = 0, nn = iat; i < d_table->size(SourceIndex); ++i, nn += n)
+    for (int i = 0, nn = iat; i < d_table.size(SourceIndex); ++i, nn += n)
     {
       if (Fs[i] != nullptr)
       {
-        ur = Fs[i]->evaluate(d_table->r(nn), dudr, d2udr2);
-        dudr *= d_table->rinv(nn);
-        curGrad -= dudr * d_table->dr(nn);
+        ur = Fs[i]->evaluate(d_table.r(nn), dudr, d2udr2);
+        dudr *= d_table.rinv(nn);
+        curGrad -= dudr * d_table.dr(nn);
       }
     }
     return curGrad;
@@ -321,12 +320,12 @@ public:
       return GradType();
     GradType G(0.0);
     RealType dudr, d2udr2;
-    const DistanceTableData* d_table = P.DistTables[myTableIndex];
-    for (int nn = d_table->M[isrc]; nn < d_table->M[isrc + 1]; nn++)
+    const auto& d_table = P.getDistTable(myTableIndex);
+    for (int nn = d_table.M[isrc]; nn < d_table.M[isrc + 1]; nn++)
     {
-      RealType uij = func->evaluate(d_table->r(nn), dudr, d2udr2);
-      dudr *= d_table->rinv(nn);
-      G += dudr * d_table->dr(nn);
+      RealType uij = func->evaluate(d_table.r(nn), dudr, d2udr2);
+      dudr *= d_table.rinv(nn);
+      G += dudr * d_table.dr(nn);
     }
     return G;
   }
@@ -345,21 +344,21 @@ public:
       return GradType();
     GradType G(0.0);
     RealType dudr, d2udr2, d3udr3 = 0.0;
-    const DistanceTableData* d_table = P.DistTables[myTableIndex];
-    for (int nn = d_table->M[isrc], iel = 0; nn < d_table->M[isrc + 1]; nn++, iel++)
+    const auto& d_table = P.getDistTable(myTableIndex);
+    for (int nn = d_table.M[isrc], iel = 0; nn < d_table.M[isrc + 1]; nn++, iel++)
     {
-      RealType rinv = d_table->rinv(nn);
-      RealType uij  = func->evaluate(d_table->r(nn), dudr, d2udr2, d3udr3);
+      RealType rinv = d_table.rinv(nn);
+      RealType uij  = func->evaluate(d_table.r(nn), dudr, d2udr2, d3udr3);
       dudr   *= rinv;
       d2udr2 *= rinv * rinv;
-      G += dudr * d_table->dr(nn);
+      G += dudr * d_table.dr(nn);
       for (int dim_ion = 0; dim_ion < OHMMS_DIM; dim_ion++)
       {
         for (int dim_el = 0; dim_el < OHMMS_DIM; dim_el++)
-          grad_grad[dim_ion][iel][dim_el] += d2udr2 * d_table->dr(nn)[dim_ion] * d_table->dr(nn)[dim_el] -
-              dudr * rinv * rinv * d_table->dr(nn)[dim_ion] * d_table->dr(nn)[dim_el];
+          grad_grad[dim_ion][iel][dim_el] += d2udr2 * d_table.dr(nn)[dim_ion] * d_table.dr(nn)[dim_el] -
+              dudr * rinv * rinv * d_table.dr(nn)[dim_ion] * d_table.dr(nn)[dim_el];
         grad_grad[dim_ion][iel][dim_ion] += dudr;
-        lapl_grad[dim_ion][iel] += (d3udr3 * rinv + 2.0 * d2udr2 - 2.0 * rinv * rinv * dudr) * d_table->dr(nn)[dim_ion];
+        lapl_grad[dim_ion][iel] += (d3udr3 * rinv + 2.0 * d2udr2 - 2.0 * rinv * rinv * dudr) * d_table.dr(nn)[dim_ion];
       }
     }
     return G;
@@ -367,18 +366,18 @@ public:
 
   inline ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
   {
-    const DistanceTableData* d_table = P.DistTables[myTableIndex];
-    int n                            = d_table->size(VisitorIndex);
+    const auto& d_table = P.getDistTable(myTableIndex);
+    int n                            = d_table.size(VisitorIndex);
     curVal                           = 0.0;
     curGrad                          = 0.0;
     RealType dudr, d2udr2;
-    for (int i = 0; i < d_table->size(SourceIndex); ++i)
+    for (int i = 0; i < d_table.size(SourceIndex); ++i)
     {
       if (Fs[i] != nullptr)
       {
-        curVal += Fs[i]->evaluate(d_table->Temp[i].r1, dudr, d2udr2);
-        dudr *= d_table->Temp[i].rinv1;
-        curGrad -= dudr * d_table->Temp[i].dr1;
+        curVal += Fs[i]->evaluate(d_table.Temp[i].r1, dudr, d2udr2);
+        dudr *= d_table.Temp[i].rinv1;
+        curGrad -= dudr * d_table.Temp[i].dr1;
       }
     }
     grad_iat += curGrad;
@@ -402,24 +401,24 @@ public:
     dU       = 0.0;
     d2U      = 0.0;
     RealType uij, dudr, d2udr2;
-    const DistanceTableData* d_table = P.DistTables[myTableIndex];
-    for (int i = 0, ns = d_table->size(SourceIndex); i < ns; i++)
+    const auto& d_table = P.getDistTable(myTableIndex);
+    for (int i = 0, ns = d_table.size(SourceIndex); i < ns; i++)
     {
       FT* func = Fs[i];
       if (func == nullptr)
         continue;
-      for (int nn = d_table->M[i]; nn < d_table->M[i + 1]; nn++)
+      for (int nn = d_table.M[i]; nn < d_table.M[i + 1]; nn++)
       {
-        int j = d_table->J[nn];
-        //uij = F[d_table->PairID[nn]]->evaluate(d_table->r(nn), dudr, d2udr2);
-        uij = func->evaluate(d_table->r(nn), dudr, d2udr2);
+        int j = d_table.J[nn];
+        //uij = F[d_table.PairID[nn]]->evaluate(d_table.r(nn), dudr, d2udr2);
+        uij = func->evaluate(d_table.r(nn), dudr, d2udr2);
         LogValue -= uij;
         U[j] += uij;
-        dudr *= d_table->rinv(nn);
-        dU[j]  -= dudr * d_table->dr(nn);
+        dudr *= d_table.rinv(nn);
+        dU[j]  -= dudr * d_table.dr(nn);
         d2U[j] -= d2udr2 + 2.0 * dudr;
         //add gradient and laplacian contribution
-        dG[j] -= dudr * d_table->dr(nn);
+        dG[j] -= dudr * d_table.dr(nn);
         dL[j] -= d2udr2 + 2.0 * dudr;
       }
     }
@@ -446,20 +445,20 @@ public:
     //LogValue = 0.0;
     //U=0.0; dU=0.0; d2U=0.0;
     //RealType uij, dudr, d2udr2;
-    //for(int i=0; i<d_table->size(SourceIndex); i++) {
+    //for(int i=0; i<d_table.size(SourceIndex); i++) {
     //  FT* func=Fs[i];
     //  if(func == 0) continue;
-    //  for(int nn=d_table->M[i]; nn<d_table->M[i+1]; nn++) {
-    //    int j = d_table->J[nn];
-    //    //uij = F[d_table->PairID[nn]]->evaluate(d_table->r(nn), dudr, d2udr2);
-    //    uij = func->evaluate(d_table->r(nn), dudr, d2udr2);
+    //  for(int nn=d_table.M[i]; nn<d_table.M[i+1]; nn++) {
+    //    int j = d_table.J[nn];
+    //    //uij = F[d_table.PairID[nn]]->evaluate(d_table.r(nn), dudr, d2udr2);
+    //    uij = func->evaluate(d_table.r(nn), dudr, d2udr2);
     //    LogValue-=uij;
     //    U[j]+=uij;
-    //    dudr *= d_table->rinv(nn);
-    //    dU[j] -= dudr*d_table->dr(nn);
+    //    dudr *= d_table.rinv(nn);
+    //    dU[j] -= dudr*d_table.dr(nn);
     //    d2U[j] -= d2udr2+2.0*dudr;
     //    //add gradient and laplacian contribution
-    //    P.G[j] -= dudr*d_table->dr(nn);
+    //    P.G[j] -= dudr*d_table.dr(nn);
     //    P.L[j] -= d2udr2+2.0*dudr;
     //  }
     //}

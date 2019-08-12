@@ -75,16 +75,10 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableDat
     Distances[jat][jat] = std::numeric_limits<T>::max(); //assign a big number
   }
 
-  inline void moveOnSphere(const ParticleSet& P, const PosType& rnew)
-  {
-    DTD_BConds<T, D, SC>::computeDistances(rnew, P.RSoA, Temp_r.data(), Temp_dr, 0, Ntargets, P.activePtcl);
-  }
-
   ///evaluate the temporary pair relations
   inline void move(const ParticleSet& P, const PosType& rnew)
   {
-    //#pragma omp master
-    moveOnSphere(P, rnew);
+    DTD_BConds<T, D, SC>::computeDistances(rnew, P.RSoA, Temp_r.data(), Temp_dr, 0, Ntargets, P.activePtcl);
   }
 
   int get_first_neighbor(IndexType iat, RealType& r, PosType& dr, bool newpos) const

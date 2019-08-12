@@ -12,7 +12,7 @@ class TestMolWavefunction(unittest.TestCase):
         mf = scf.RHF(atom)
         energy = mf.kernel()
         scf_data = {'mol': atom, 'mo_coeff': mf.mo_coeff, 'mo_occ': mf.mo_occ,
-                    'X': mf.mo_coeff, 'isUHF': False}
+                'X': mf.mo_coeff, 'isUHF': False, 'mo_energy': mf.mo_energy}
         with h5py.File('wfn.h5', 'w') as fh5:
             pass
         mol.write_wfn_mol(scf_data, False, 'wfn.h5')
