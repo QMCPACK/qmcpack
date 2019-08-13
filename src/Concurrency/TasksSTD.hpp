@@ -11,8 +11,11 @@
 // Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef QMCPLUSPLUS_TASKSSTD_HPP
-#define QMCPLUSPLUS_TASKSSTD_HPP
+/** @file
+ *  @brief implementation of std::thread specialization of TasksOneToOne
+ */
+#ifndef QMCPLUSPLUS_TASKSONETOONESTD_HPP
+#define QMCPLUSPLUS_TASKSONETOONESTD_HPP
 
 #include <vector>
 #include <functional>

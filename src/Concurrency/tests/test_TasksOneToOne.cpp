@@ -30,8 +30,7 @@ void TestTaskOMP(const int ip, int& counter)
   counter++;
 }
 
-
-TEST_CASE("TaskBlock function case openmp", "[concurrency]")
+TEST_CASE("TasksOneToOne<OPENMP> function case", "[concurrency]")
 {
   int num_threads = 8;
   TasksOneToOne<Threading::OPENMP> test_block(num_threads);
@@ -40,7 +39,7 @@ TEST_CASE("TaskBlock function case openmp", "[concurrency]")
   REQUIRE(count == 8);
 }
 
-TEST_CASE("TaskBlock lambda case openmp", "[concurrency]")
+TEST_CASE("TasksOneToOne<OPENMP> lambda case", "[concurrency]")
 {
   int num_threads = 8;
   TasksOneToOne<Threading::OPENMP> test_block(num_threads);
@@ -54,7 +53,25 @@ TEST_CASE("TaskBlock lambda case openmp", "[concurrency]")
   REQUIRE(count == 8);
 }
 
-TEST_CASE("TaskBlock simple case std::thread", "[concurrency]")
+// Sadly this test case is not straight forward with openmp
+// Wouldn't be with std::thread either both call terminate when
+// the exception is not
+//
+TEST_CASE("TasksOneToOne<OPENMP> nested case", "[concurrency]")
+{
+  int num_threads = 1;
+  TasksOneToOne<Threading::OPENMP> test_block(num_threads);
+  int count(0);
+  auto nested_tasks = [num_threads](int task_id, int& my_count) {
+    TasksOneToOne<Threading::OPENMP> test_block2(num_threads);
+    test_block2(TestTaskOMP, std::ref(my_count));
+  };
+  bool threw = false;
+  REQUIRE_THROWS_WITH(test_block(nested_tasks, std::ref(count)),
+                      Catch::Contains("TasksOneToOne should not be used for nested openmp threading"));
+}
+
+TEST_CASE("TasksOneToOne<STD> function case", "[concurrency]")
 {
   int num_threads = 8;
   TasksOneToOne<Threading::STD> test_block(num_threads);
@@ -63,13 +80,27 @@ TEST_CASE("TaskBlock simple case std::thread", "[concurrency]")
   REQUIRE(count == 8);
 }
 
-TEST_CASE("TaskBlock lambda case std::thread", "[concurrency]")
+TEST_CASE("TasksOneToOne<STD> lambda case", "[concurrency]")
 {
   int num_threads = 8;
   TasksOneToOne<Threading::STD> test_block(num_threads);
   std::atomic<int> count(0);
   test_block([](int id, auto& my_count) { my_count++; }, std::ref(count));
   REQUIRE(count == 8);
+}
+
+TEST_CASE("TasksOneToOne<STD> nested case", "[concurrency]")
+{
+  int num_threads = 8;
+  TasksOneToOne<Threading::STD> test_block(num_threads);
+  int count(0);
+  test_block(
+      [num_threads](int task_id, int& my_count) {
+        TasksOneToOne<Threading::STD> test_block2(num_threads);
+        test_block2(TestTaskOMP, std::ref(my_count));
+      },
+      std::ref(count));
+  REQUIRE(count == 64);
 }
 
 } // namespace qmcplusplus
