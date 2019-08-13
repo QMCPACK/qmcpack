@@ -14,15 +14,9 @@
 #ifndef QMCPLUSPLUS_THREAD_HPP
 #define QMCPLUSPLUS_THREAD_HPP
 /** @file
- *  @brief Abstractions threads performing identical independent tasks
+ *  @brief For threads performing identical independent tasks
  *
- *  We assume they will come to a common synchronization point
- *  TaskWrapper code from
- *  https://stackoverflow.com/questions/48268322/wrap-stdthread-call-function
  *
- *  Currently reference arguments to the "task" need to be wrapped in std::ref
- *  to survive std::forward used in the STD specialization.  This doesn't cause trouble
- *  for the OPENMP variant except for the TaskBlockBarrier which breaks with std::ref.
  */
 #include <iostream>
 #include <functional>
@@ -37,25 +31,13 @@
 namespace qmcplusplus
 {
 
-template<typename F>
-struct TaskWrapper
-{
-  F f;
-
-  template<typename... T>
-  void operator()(T&&... args)
-  {
-    f(std::forward<T>(args)...);
-  }
-};
-    
 /** Abstraction for simple 1 task to 1 thread concurrency
  *
  *  Functor takes num_threads to construct
  *  Call with F and args...
  *  F takes task_id, args..
  */
-template<Threading TT>
+template<Threading TT = Threading::OPENMP>
 class TasksOneToOne
 {
 public:
@@ -67,35 +49,10 @@ private:
   unsigned int num_threads_;
 };
 
-template<>
-template<typename F, typename... Args>
-void TasksOneToOne<Threading::OPENMP>::operator()(F&& f, Args&&... args)
-{
-#pragma omp parallel num_threads(num_threads_)
-  {
-      f(omp_get_thread_num(), std::forward<Args>(args)...);
-  }
-}
-
-template<>
-template<typename F, typename... Args>
-void TasksOneToOne<Threading::STD>::operator()(F&& f, Args&&... args)
-
-{
-  std::vector<std::thread> threads(num_threads_);
-
-  for (int task_id = 0; task_id < num_threads_; ++task_id)
-  {
-      threads[task_id] = std::thread(TaskWrapper<F>{std::forward<F>(f)}, task_id, std::forward<Args>(args)...);
-  }
-
-  for (int task_id = 0; task_id < num_threads_; ++task_id)
-  {
-    threads[task_id].join();
-  }
-}
-
-
 } // namespace qmcplusplus
 
+// Implementation includes must follow functor declaration
+#include "Concurrency/TasksOPENMP.hpp"
+#include "Concurrency/TasksSTD.hpp"
+// Additional implementations enabled by cmake options would go here
 #endif
