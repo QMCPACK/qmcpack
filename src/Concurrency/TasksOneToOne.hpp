@@ -49,7 +49,7 @@ private:
 } // namespace qmcplusplus
 
 // Implementation includes must follow functor declaration
-#include "Concurrency/TasksOPENMP.hpp"
-#include "Concurrency/TasksSTD.hpp"
+#include "Concurrency/TasksOneToOneOPENMP.hpp"
+#include "Concurrency/TasksOneToOneSTD.hpp"
 // Additional implementations enabled by cmake options would go here
 #endif
