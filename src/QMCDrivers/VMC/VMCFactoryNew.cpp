@@ -32,20 +32,22 @@ QMCDriverInterface* VMCFactoryNew::create(MCPopulation& pop,
                                           Communicate* comm)
 {
   int np = omp_get_max_threads();
-  //(SPACEWARP_MODE,MULTIPE_MODE,UPDATE_MODE)
+
   QMCDriverInterface* qmc = nullptr;
 
   // FIX: This ignores the current QMC section
   VMCDriverInput vmc_input(0);
-  if (VMCMode == 0 || VMCMode == 1) //(0,0,0) (0,0,1)
+
+  if (vmc_mode_ == 0 || vmc_mode_ == 1) //(0,0,0) (0,0,1)
   {
     qmc = new VMCBatched(vmc_input, pop, psi, h, ppool, comm);
   }
   else
   {
-    APP_ABORT("VMCBatch driver not yet supported");
+    throw std::runtime_error("VMCFactoryNew does not support VMC_MODE");
   }
-  qmc->setUpdateMode(VMCMode & 1);
+  //why?
+  qmc->setUpdateMode(vmc_mode_ & 1);
   return qmc;
 }
 } // namespace qmcplusplus

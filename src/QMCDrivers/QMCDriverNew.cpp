@@ -62,12 +62,7 @@ QMCDriverNew::QMCDriverNew(QMCDriverInput& input,
   reset_random = false;
   append_run   = false;
   dump_config  = false;
-  //<parameter name=" "> value </parameter>
-  //accept multiple names for the same value
-  //recommend using all lower cases for a new parameter
-  //m_param.add(storeConfigs,"storeConfigs","int");
-  //m_param.add(Period4ConfigDump,"recordConfigs","int");
-
+  
   QMCType = "invalid";
 
   ////add each QMCHamiltonianBase to W.PropertyList so that averages can be taken

@@ -17,7 +17,7 @@ SET(UTEST_EXE test_${SRC_DIR})
 SET(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 
 
-SET(DRIVER_TEST_SRC test_QMCDriverInput.cpp test_VMCDriverInput.cpp test_vmc.cpp test_dmc.cpp test_drift.cpp test_clone_manager.cpp test_fixed_node_branch.cpp)
+SET(DRIVER_TEST_SRC test_QMCDriverInput.cpp test_VMCDriverInput.cpp test_VMCFactoryNew.cpp test_vmc.cpp test_dmc.cpp test_drift.cpp test_clone_manager.cpp test_fixed_node_branch.cpp)
 
 IF (NOT QMC_CUDA)
   SET(DRIVER_TEST_SRC ${DRIVER_TEST_SRC} test_vmc_driver.cpp test_dmc_driver.cpp)

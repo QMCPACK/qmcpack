@@ -27,11 +27,12 @@ class MCPopulation;
 class VMCFactoryNew
 {
 private:
-  int VMCMode;
-  xmlNodePtr myNode;
-
+  const int vmc_mode_;
+  // const ?
+  xmlNodePtr input_node_;
+  const int qmc_counter_;
 public:
-  VMCFactoryNew(int vmode, xmlNodePtr cur) : VMCMode(vmode), myNode(cur) {}
+  VMCFactoryNew(xmlNodePtr cur, const int vmode, const int qmc_counter) : vmc_mode_(vmode), input_node_(cur), qmc_counter_(qmc_counter) {}
 
   QMCDriverInterface* create(MCPopulation& pop,
                              TrialWaveFunction& psi,
