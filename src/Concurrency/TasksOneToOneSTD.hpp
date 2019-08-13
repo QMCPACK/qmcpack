@@ -19,6 +19,7 @@
 
 #include <vector>
 #include <functional>
+#include <utility>
 #include <thread>
 
 #include "Concurrency/TasksOneToOne.hpp"
