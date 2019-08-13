@@ -39,10 +39,38 @@ struct h5data_proxy<std::vector<T>> : public h5_space_type<T, 1>
     return h5d_read(grp, aname, get_address(&ref_[0]), xfer_plist);
   }
 
+  inline bool read(hid_t grp,
+		   const std::string& aname,
+		   const std::vector<int>& readSpec,
+		   hid_t xfer_plist = H5P_DEFAULT)
+  {
+    std::vector<hsize_t> offsets;
+    std::vector<hsize_t> counts;
+    int numElements;
+    getOffsets(grp, aname, readSpec, offsets, counts, numElements);
+    std::vector<hsize_t> gcounts;
+    
+    std::vector<hsize_t> mem_gcounts{static_cast<hsize_t>(numElements)};
+    std::vector<hsize_t> mem_counts{static_cast<hsize_t>(numElements)};
+    std::vector<hsize_t> mem_offsets{0};
+
+    return h5d_read(grp, aname, readSpec.size(), gcounts.data(),
+		    counts.data(), offsets.data(), 1, mem_gcounts.data(),
+		    mem_counts.data(), mem_offsets.data(), get_address(&ref_[0]),
+		    xfer_plist);
+  }
+
+
   inline bool write(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
     return h5d_write(grp, aname.c_str(), this->size(), dims, get_address(&ref_[0]), xfer_plist);
   }
+
+  inline bool write(hid_t grp, const std::string& aname, const std::vector<hsize_t>& dvec, hid_t xfer_plist)
+  {
+    return h5d_write(grp, aname.c_str(), dvec.size(), dvec.data(), get_address(&ref_[0]), xfer_plist);
+  }
+
 };
 
 /** specialization for std::bitset<N>

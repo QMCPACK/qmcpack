@@ -5,6 +5,7 @@
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
 // File developed by: Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
+//                    Luke Shulenburger, lshulen@sandia.gov, Sandia National Laboratories
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
@@ -177,6 +178,24 @@ public:
     return e.write(p, aname, xfer_plist);
   }
 
+  /* write the data to the group aname and return status
+     use write() for inbuilt error checking
+     use user provided dimensions to determine shape of
+     dataset in the hdf file
+     @return true if successful
+   */
+  template<typename T>
+  bool writeEntry(T& data, const std::vector<hsize_t>& dims, const std::string& aname)
+  {
+    if (Mode[NOIO])
+      return true;
+    if (!(Mode[IS_PARALLEL] || Mode[IS_MASTER]))
+      std::runtime_error("Only write data in parallel or by master but not every rank!");
+    hid_t p = group_id.empty() ? file_id : group_id.top();
+    h5data_proxy<T> e(data);
+    return e.write(p, aname, dims, xfer_plist);
+  }
+
   /* write the data to the group aname and check status
      runtime error is issued on I/O error
    */
@@ -184,6 +203,19 @@ public:
   void write(T& data, const std::string& aname)
   {
     if (!writeEntry(data, aname))
+    {
+      std::runtime_error("HDF5 write failure in hdf_archive::write " + aname);
+    }
+  }
+
+  /* write the data to the group aname and check status
+     Use externally provided dimensions for shape of entry in hdf
+     runtime error is issued on I/O error
+   */
+  template<typename T>
+  void write(T& data, const std::vector<hsize_t>& dims, const std::string& aname)
+  {
+    if (!writeEntry(data, dims, aname))
     {
       std::runtime_error("HDF5 write failure in hdf_archive::write " + aname);
     }
@@ -203,6 +235,23 @@ public:
     return e.read(p, aname, xfer_plist);
   }
 
+  /* read the data from the group aname and return status
+     use read() for inbuilt error checking
+     @return true if successful
+
+     This is using slicing of the dataspace described in the corresponding 
+     version of read
+  */
+  template<typename T>
+  bool readEntry(T& data, const std::vector<int>& readSpec, const std::string& aname)
+  {
+    if (Mode[NOIO])
+      return true;
+    hid_t p = group_id.empty() ? file_id : group_id.top();
+    h5data_proxy<T> e(data);
+    return e.read(p, aname, readSpec);
+  }
+  
   /* read the data from the group aname and check status
      runtime error is issued on I/O error
    */
@@ -210,6 +259,24 @@ public:
   void read(T& data, const std::string& aname)
   {
     if (!readEntry(data, aname))
+    {
+      std::runtime_error("HDF5 read failure in hdf_archive::read " + aname);
+    }
+  }
+
+  /* read a portion of the data from the group aname and check status
+     runtime error is issued on I/O error
+
+     note the vector must have dimensionality corresponding to the dataset,
+     values for a dimension must be [0,num_entries-1] for that dimension to specify
+     which value to hold and a -1 to grab all elements from that dimension
+     for example, if the dataset was [5,2,6] and the vector contained (2,1,-1),
+     this would grab 6 elements corresponding to [2,1,:]
+  */
+  template<typename T>
+  void read(T& data, const std::vector<int>& readSpec, const std::string& aname)
+  {
+    if (!readEntry(data, readSpec, aname))
     {
       std::runtime_error("HDF5 read failure in hdf_archive::read " + aname);
     }
