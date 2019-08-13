@@ -47,7 +47,7 @@ public:
   ///typedef of Walker_t
   typedef MCWalkerConfiguration::Walker_t Walker_t;
   ///typedef of RealType
-  typedef QMCTraits::EstimatorRealType RealType;
+  typedef QMCTraits::FullPrecRealType RealType;
   ///typedef of IndexType
   typedef QMCTraits::IndexType IndexType;
 

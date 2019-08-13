@@ -1,12 +1,12 @@
 
-\chapter{Contributing to the Manual}
+\chapter{Contributing to the manual}
 \label{chap:contrib}
 
-This section briefly describes how to contribute to the manual.  This is primarily ``by developers, for developers''.   This section should iterate until a consistent view on style/contents is reached.
+This section briefly describes how to contribute to the manual and is primarily ``by developers, for developers.''   This section should iterate until a consistent view on style/contents is reached.
 
 \textbf{\underline{Desirable:}}
 \begin{itemize}
-\item{Use the table templates below when describing XML input.}
+\item{Use the following table templates when describing XML input.}
 \item{Instead of \ilatex{\\texttt} or \ilatex{\\verb} use
     \begin{itemize}
       \item{\ilatex{\\ishell} for shell text}
@@ -14,27 +14,27 @@ This section briefly describes how to contribute to the manual.  This is primari
       \item{\ilatex{\\icode} for C++ text}
       \end{itemize}
      \bf{Except} within tabularx or math environments}
-    \item{Instead of \ilatex{\\begin\{verbatim\}} environments use the appropriate \ilatex{\\begin\{lstlisting\}[style=<see qmcpack_listings.sty>]}}
-\item{\ilatex{\\begin\{shade\}} can be used in place of \ilatex{\\begin\{lstlisting\}[style=SHELL]}}
+    \item{Instead of \ilatex{\\begin\{verbatim\}} environments, use the appropriate \ilatex{\\begin\{lstlisting\}[style=<see qmcpack_listings.sty>]}}.
+\item{\ilatex{\\begin\{shade\}} can be used in place of \ilatex{\\begin\{lstlisting\}[style=SHELL]}}.
 \item{Unicode rules}
 \begin{itemize}
-\item Do not use characters for which well established latex idiom exists, especially dashes, quotes, and apostrophes.
+\item Do not use characters for which well-established latex idiom exists, especially dashes, quotes, and apostrophes.
 \item Use math mode markup instead of unicode characters for equations.
-\item Be cautious of WYSIWYG word processors, cutting and pasting can pickup characters promoted to unicode by the program.
-\item Take a look at your text multibyte expanded i.e. open in (emacs and `esc-x toggle-enable-multibyte-characters`), see any unicode you didn't intend?
+\item Be cautious of WYSIWYG word processors; cutting and pasting can pickup characters promoted to unicode by the program.
+\item Take a look at your text multibyte expanded; that is open it in (emacs and `esc-x toggle-enable-multibyte-characters')---see any unicode you did not intend?
 \end{itemize}
-\item{Place unformatted text targeted at developers working on the latex in comments.  Include generously.}
+\item{Place unformatted text targeted at developers working on the LaTeX in comments.  Include generously.}
 \item{Encapsulate formatted text aimed at developers (like this entire chapter), in \ilatex{\\dev\{\}}.  Text encapsulated in this way will be removed from the user version of the manual by editing the definition of \ilatex{\\dev\{\}} in \ishell{qmcpack_manual.tex}.  Existing but deprecated or partially functioning features fall in this category.}
-\item Newly added entries to a Bib file should be complete as possible. Use a tool such as JabRef or Zotero that can automate creation of these entries from just a DOI.
+\item Newly added entries to a Bib file should be as complete as possible. Use a tool such as JabRef or Zotero that can automate creation of these entries from just a DOI.
 \end{itemize}
 
 \textbf{\underline{Forbidden:}}
 \begin{itemize}
 \item Including images instead of using lstlisting sections for text.
-\item Packages the LaTeX community considers \href{https://latex.org/forum/viewtopic.php?f=37&t=6637}{deprecated}.
-\item Do not use packages, features, or fonts not included in texlive 2017 unless you insure they degrade reasonably for 2017.
-\item Don't add packages unless they are bringing great value and are supported by tex4ht (unless you are willing to add the support).
-\item Tex files and Bib files are UTF8 encoded, do not save them in other encodings. Some may report being ASCII encoded since they contain no unicode characters.
+\item Using packages the LaTeX community considers \href{https://latex.org/forum/viewtopic.php?f=37&t=6637}{deprecated}.
+\item Using packages, features, or fonts not included in texlive 2017 unless you ensure they degrade reasonably for 2017.
+\item Adding packages unless they bring great value and are supported by tex4ht (unless you are willing to add the support).
+\item Saving Tex files and Bib files in encodings other than UTF8. Some may report being ASCII encoded since they contain no unicode characters.
 \end{itemize}
 
 
@@ -51,7 +51,7 @@ This section briefly describes how to contribute to the manual.  This is primari
 \end{itemize}
 
 
-Below are template tables for describing XML elements in reference fashion.  A number of examples can be found in \textit{e.g.} Chapter~\ref{chap:hamiltobs}.  Preliminary style is (please weigh in with opinions): typewriter text (\ilatex{\\texttt\{\}}) for XML element, attribute, and parameter names, normal text for literal information in datatype/values/default columns, bold (\ilatex{\\textbf\{\}}) text if an attribute/parameter must take on a particular value (values column), italics (\ilatex{\\textit\{\}}) for descriptive (non-literal) information in the values column (e.g. \textit{anything}, \textit{non-zero}, etc.), required/optional attributes/parameters noted by \texttt{some\_attr$^r$}/\texttt{some\_attr$^o$} superscripts.  Valid datatypes are text, integer, real, boolean, and arrays of each.  Fixed lengh arrays can be noted, \textit{e.g.} by ``real array(3)''.
+Table templates follow for describing XML elements in reference fashion.  A number of examples can be found in, for example, Chapter~\ref{chap:hamiltobs}.  Preliminary style is (please weigh in with opinions): typewriter text (\ilatex{\\texttt\{\}}) for XML elements, attributes, and parameter names; normal text for literal information in the datatype, values, and default columns; bold (\ilatex{\\textbf\{\}}) text if an attribute or parameter must take on a particular value (values column); italics (\ilatex{\\textit\{\}}) for descriptive (nonliteral) information in the values column (e.g., \textit{anything}, \textit{non-zero}); and required/optional attributes or parameters noted by \texttt{some\_attr$^r$}/\texttt{some\_attr$^o$} superscripts.  Valid datatypes are text, integer, real, Boolean, and arrays of each.  Fixed length arrays can be noted, for example, by ``real array(3).''
 
 
 Template for a generic XML element:
@@ -94,9 +94,9 @@ Template for a generic XML element:
 
 
 
-``Factory'' elements are XML elements that share a tag, but whose contents change based on the value an attribute (or sometimes multiple attributes take).  The attribute(s) that determine the allowed contents is referred to below as the ``type selector''  (\textit{e.g.} for \ixml{<estimator/>} elements, the type selector is usually the \ixml{type} attribute).  These types of elements are frequently encountered as they correspond (sometimes loosely, sometimes literally) to polymorphic classes in \qmcpack that are built in ``factories''.  This name is true to the underlying code, but may be obscure to the general user (is there a better name to retain the general meaning?).   
+``Factory'' elements are XML elements that share a tag but whose contents change based on the value an attribute, or sometimes multiple attributes, take.  The attribute(s) that determines the allowed content is subsequently referred to as the ``type selector''  (e.g., for \ixml{<estimator/>} elements, the type selector is usually the \ixml{type} attribute).  These types of elements are frequently encountered as they correspond (sometimes loosely, sometimes literally) to polymorphic classes in \qmcpack that are built in ``factories.''  This name is true to the underlying code but may be obscure to the general user (is there a better name to retain the general meaning?).   
 
-The template below should be provided each time a new ``factory'' type is encountered (like \ixml{<estimator/>}).  The table lists all types of possible elements (see ``type options'' below) and any attributes that are common to all possible related elements.  Specific ``derived'' elements are then described one at a time with the template above, noting the type selector in addition to the XML tag (\textit{e.g.} ``\ixml{estimator type=density} element'').
+The following template should be provided each time a new ``factory'' type is encountered (such as \ixml{<estimator/>}).  The table lists all types of possible elements (see ``type options'' in the template) and any attributes that are common to all possible related elements.  Specific ``derived'' elements are then described one at a time with the previous template, noting the type selector in addition to the XML tag (e.g., ``\ixml{estimator type=density} element'').
 
 Template for shared information about ``factory'' elements.
 \FloatBarrier

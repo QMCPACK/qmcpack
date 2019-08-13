@@ -131,8 +131,8 @@ int SimpleFixedNodeBranch::initWalkerController(MCWalkerConfiguration& walkers, 
   //this is not necessary
   //check if tau is different and set the initial values
   //vParam[B_TAU]=tau;
-  bool fromscratch      = false;
-  EstimatorRealType tau = vParam[B_TAU];
+  bool fromscratch     = false;
+  FullPrecRealType tau = vParam[B_TAU];
 
   int nwtot_now = walkers.getGlobalNumWalkers();
 
@@ -220,8 +220,8 @@ void SimpleFixedNodeBranch::initReptile(MCWalkerConfiguration& W)
   //this is not necessary
   //check if tau is different and set the initial values
   //vParam[B_TAU]=tau;
-  bool fromscratch      = false;
-  EstimatorRealType tau = vParam[B_TAU];
+  bool fromscratch     = false;
+  FullPrecRealType tau = vParam[B_TAU];
   //this is the first time DMC is used
   if (WalkerController == 0)
   {
@@ -281,7 +281,7 @@ void SimpleFixedNodeBranch::branch(int iter, MCWalkerConfiguration& walkers)
 {
   //collect the total weights and redistribute the walkers accordingly, using a fixed tolerance
   //RealType pop_now= WalkerController->branch(iter,walkers,0.1);
-  EstimatorRealType pop_now;
+  FullPrecRealType pop_now;
   if (BranchMode[B_DMCSTAGE] || iter)
     pop_now = WalkerController->branch(iter, walkers, 0.1);
   else
@@ -371,7 +371,7 @@ void SimpleFixedNodeBranch::branch(int iter, MCWalkerConfiguration& walkers)
   }
   WalkerController->setTrialEnergy(vParam[B_ETRIAL]);
   //accumulate collectables and energies for scalar.dat
-  EstimatorRealType wgt_inv = WalkerController->NumContexts / WalkerController->EnsembleProperty.Weight;
+  FullPrecRealType wgt_inv = WalkerController->NumContexts / WalkerController->EnsembleProperty.Weight;
   walkers.Collectables *= wgt_inv;
   MyEstimator->accumulate(walkers);
 }
@@ -488,7 +488,7 @@ void SimpleFixedNodeBranch::reset()
     if (BranchMode[B_POPCONTROL])
     {
       //logN = Feedback*std::log(static_cast<RealType>(iParam[B_TARGETWALKERS]));
-      logN = std::log(static_cast<EstimatorRealType>(iParam[B_TARGETWALKERS]));
+      logN = std::log(static_cast<FullPrecRealType>(iParam[B_TARGETWALKERS]));
       if (vParam[B_FEEDBACK] == 0.0)
         vParam[B_FEEDBACK] = 1.0;
     }
@@ -641,7 +641,7 @@ void SimpleFixedNodeBranch::checkParameters(MCWalkerConfiguration& w)
   std::ostringstream o;
   if (!BranchMode[B_DMCSTAGE])
   {
-    EstimatorRealType e, sigma2;
+    FullPrecRealType e, sigma2;
     MyEstimator->getCurrentStatistics(w, e, sigma2);
     vParam[B_ETRIAL] = vParam[B_EREF] = e;
     vParam[B_SIGMA2]                  = sigma2;
@@ -696,7 +696,7 @@ void SimpleFixedNodeBranch::finalize(MCWalkerConfiguration& w)
   else
   {
     //running VMC
-    EstimatorRealType e, sigma2;
+    FullPrecRealType e, sigma2;
     //MyEstimator->getEnergyAndWeight(e,w,sigma2);
     MyEstimator->getCurrentStatistics(w, e, sigma2);
     vParam[B_ETRIAL] = vParam[B_EREF] = e;
@@ -827,9 +827,9 @@ void SimpleFixedNodeBranch::read(const std::string& fname)
 //     }
 //   }
 
-void SimpleFixedNodeBranch::setBranchCutoff(EstimatorRealType variance,
-                                            EstimatorRealType targetSigma,
-                                            EstimatorRealType maxSigma,
+void SimpleFixedNodeBranch::setBranchCutoff(FullPrecRealType variance,
+                                            FullPrecRealType targetSigma,
+                                            FullPrecRealType maxSigma,
                                             int Nelec)
 {
   if (branching_cutoff_scheme == "DRV")

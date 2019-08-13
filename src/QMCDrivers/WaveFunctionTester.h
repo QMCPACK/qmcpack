@@ -107,6 +107,7 @@ private:
 
   bool checkGradientAtConfiguration(MCWalkerConfiguration::Walker_t* W1, std::stringstream& fail_log, bool& ignore);
 
+  QMCRunType getRunType() { return QMCRunType::WF_TEST; }
   //vector<RealType> Mv3(std::vector<std::vector<RealType> >& M, std::vector<RealType>& v);
 
   std::ofstream fout;
