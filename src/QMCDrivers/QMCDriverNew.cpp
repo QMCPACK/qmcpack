@@ -114,66 +114,67 @@ void QMCDriverNew::add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi)
  */
 void QMCDriverNew::process(xmlNodePtr cur)
 {
-  //  deltaR.resize(W.getTotalNum());
-  //  drift.resize(W.getTotalNum());
-  qmc_node = cur;
-  //process common parameters
-  putQMCInfo(cur);
-  if (!qmcdriver_input_.get_append_run())
-    current_step_ = 0;
-  else
-    current_step_ = qmcdriver_input_.get_starting_step();
-  ////set the Tau parameter inside the Hamiltonian
-  //H.setTau(Tau);
-  //need to initialize properties
+//   //  deltaR.resize(W.getTotalNum());
+//   //  drift.resize(W.getTotalNum());
+//   qmc_node = cur;
+//   //process common parameters
 
-  //int numCopies = (H1.empty()) ? 1 : H1.size();
-  //W.resetWalkerProperty(numCopies);
+//   putQMCInfo(cur);
+//   if (!qmcdriver_input_.get_append_run())
+//     current_step_ = 0;
+//   else
+//     current_step_ = qmcdriver_input_.get_starting_step();
+//   ////set the Tau parameter inside the Hamiltonian
+//   //H.setTau(Tau);
+//   //need to initialize properties
 
-  //create branchEngine first
-  if (branchEngine == 0)
-  {
-    branchEngine = new SimpleFixedNodeBranch(Tau, population_.get_num_global_walkers());
-  }
-  //execute the put function implemented by the derived classes
-  put(cur);
-  //create and initialize estimator
-  Estimators = branchEngine->getEstimatorManager();
-  if (Estimators == 0)
-  {
-    Estimators = new EstimatorManagerBase(myComm);
-    branchEngine->setEstimatorManager(Estimators);
-    branchEngine->read(h5FileRoot);
-  }
-  if (DriftModifier == 0)
-    DriftModifier = createDriftModifier(cur, myComm);
-  DriftModifier->parseXML(cur);
-#if !defined(REMOVE_TRACEMANAGER)
-  //create and initialize traces
-  if (Traces == 0)
-  {
-    Traces = new TraceManager(myComm);
-  }
-  Traces->put(traces_xml, allow_traces, RootName);
-#endif
-  branchEngine->put(cur);
-  // Estimators->put(W, H, cur);
-  // if (wOut == 0)
-  //   wOut = new HDFWalkerOutput(W, RootName, myComm);
-  branchEngine->start(RootName);
-  branchEngine->write(RootName);
-  //use new random seeds
-  if (reset_random)
-  {
-    app_log() << "  Regenerate random seeds." << std::endl;
-    RandomNumberControl::make_seeds();
-    reset_random = false;
-  }
-  //flush the std::ostreams
-  infoSummary.flush();
-  infoLog.flush();
-  //increment QMCCounter of the branch engine
-  branchEngine->advanceQMCCounter();
+//   //int numCopies = (H1.empty()) ? 1 : H1.size();
+//   //W.resetWalkerProperty(numCopies);
+
+//   //create branchEngine first
+//   if (branchEngine == 0)
+//   {
+//     branchEngine = new SimpleFixedNodeBranch(Tau, population_.get_num_global_walkers());
+//   }
+//   //execute the put function implemented by the derived classes
+//   put(cur);
+//   //create and initialize estimator
+//   Estimators = branchEngine->getEstimatorManager();
+//   if (Estimators == 0)
+//   {
+//     Estimators = new EstimatorManagerBase(myComm);
+//     branchEngine->setEstimatorManager(Estimators);
+//     branchEngine->read(h5FileRoot);
+//   }
+//   if (DriftModifier == 0)
+//     DriftModifier = createDriftModifier(cur, myComm);
+//   DriftModifier->parseXML(cur);
+// #if !defined(REMOVE_TRACEMANAGER)
+//   //create and initialize traces
+//   if (Traces == 0)
+//   {
+//     Traces = new TraceManager(myComm);
+//   }
+//   Traces->put(traces_xml, allow_traces, RootName);
+// #endif
+//   branchEngine->put(cur);
+//   // Estimators->put(W, H, cur);
+//   // if (wOut == 0)
+//   //   wOut = new HDFWalkerOutput(W, RootName, myComm);
+//   branchEngine->start(RootName);
+//   branchEngine->write(RootName);
+//   //use new random seeds
+//   if (reset_random)
+//   {
+//     app_log() << "  Regenerate random seeds." << std::endl;
+//     RandomNumberControl::make_seeds();
+//     reset_random = false;
+//   }
+//   //flush the std::ostreams
+//   infoSummary.flush();
+//   infoLog.flush();
+//   //increment QMCCounter of the branch engine
+//   branchEngine->advanceQMCCounter();
 }
 
 void QMCDriverNew::setStatus(const std::string& aname, const std::string& h5name, bool append)

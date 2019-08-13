@@ -36,13 +36,13 @@ template<Threading TT = Threading::OPENMP>
 unsigned int maxThreads();
 
 template<>
-unsigned int maxThreads<Threading::OPENMP>()
+inline unsigned int maxThreads<Threading::OPENMP>()
 {
   return omp_get_max_threads();
 }	
 
 template<>
-unsigned int maxThreads<Threading::STD>()
+inline unsigned int maxThreads<Threading::STD>()
 {
   // Does taskset fix what this reports?  i.e. deal with binding to socket properly
   return std::thread::hardware_concurrency();
