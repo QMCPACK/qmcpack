@@ -14,22 +14,22 @@
 #ifndef QMCPLUSPLUS_TASKSOPENMP_HPP
 #define QMCPLUSPLUS_TASKSOPENMP_HPP
 
+#include <omp.h>
+
 #include "Concurrency/TasksOneToOne.hpp"
 
 namespace qmcplusplus
 {
-
-
 template<>
 template<typename F, typename... Args>
 void TasksOneToOne<Threading::OPENMP>::operator()(F&& f, Args&&... args)
 {
 #pragma omp parallel num_threads(num_threads_)
   {
-      f(omp_get_thread_num(), std::forward<Args>(args)...);
+    f(omp_get_thread_num(), std::forward<Args>(args)...);
   }
 }
 
-}
+} // namespace qmcplusplus
 
 #endif

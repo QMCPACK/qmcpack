@@ -18,24 +18,18 @@
  *
  *
  */
-#include <iostream>
-#include <functional>
-#include <type_traits>
-#include <thread>
-#include <utility>
-
-#include <omp.h>
-
 #include "Concurrency/Info.hpp"
 
 namespace qmcplusplus
 {
-
 /** Abstraction for simple 1 task to 1 thread concurrency
  *
- *  Functor takes num_threads to construct
- *  Call with F and args...
- *  F takes task_id, args..
+ *  Construct with num_threads to to run on
+ *  then call operator(F, args...) 
+ *  F is lambda or function with form
+ *      void F(int task_id, args...)
+ *      [](int task_id, args...){...}
+ *
  */
 template<Threading TT = Threading::OPENMP>
 class TasksOneToOne

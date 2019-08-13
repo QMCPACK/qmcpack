@@ -15,11 +15,13 @@
 #define QMCPLUSPLUS_TASKSSTD_HPP
 
 #include <vector>
+#include <functional>
+#include <thread>
+
 #include "Concurrency/TasksOneToOne.hpp"
 
 namespace qmcplusplus
 {
-
 /**  TaskWrapper code from
   *  https://stackoverflow.com/questions/48268322/wrap-stdthread-call-function
   *
@@ -37,7 +39,6 @@ struct TaskWrapper
   }
 };
 
-    
 template<>
 template<typename F, typename... Args>
 void TasksOneToOne<Threading::STD>::operator()(F&& f, Args&&... args)
@@ -46,7 +47,7 @@ void TasksOneToOne<Threading::STD>::operator()(F&& f, Args&&... args)
 
   for (int task_id = 0; task_id < num_threads_; ++task_id)
   {
-      threads[task_id] = std::thread(TaskWrapper<F>{std::forward<F>(f)}, task_id, std::forward<Args>(args)...);
+    threads[task_id] = std::thread(TaskWrapper<F>{std::forward<F>(f)}, task_id, std::forward<Args>(args)...);
   }
 
   for (int task_id = 0; task_id < num_threads_; ++task_id)
@@ -55,6 +56,6 @@ void TasksOneToOne<Threading::STD>::operator()(F&& f, Args&&... args)
   }
 }
 
-}
+} // namespace qmcplusplus
 
 #endif

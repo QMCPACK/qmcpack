@@ -14,7 +14,7 @@ SET(SRC_DIR Concurrency)
 SET(UTEST_EXE test_${SRC_DIR})
 SET(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 
-SET(SRCS test_TaskBlock.cpp)
+SET(SRCS test_TasksOneToOne.cpp)
 
 ADD_EXECUTABLE(${UTEST_EXE} ${SRCS})
 
