@@ -16,7 +16,7 @@
  */
 #ifndef OHMMS_SPRNGRANDOM_H
 #define OHMMS_SPRNGRANDOM_H
-#include <math.h>
+#include <cmath>
 #include <sprng.h>
 
 #define SRSEED 985456376

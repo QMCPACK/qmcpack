@@ -48,8 +48,8 @@ DMCcuda::DMCcuda(MCWalkerConfiguration& w,
 {
   RootName = "dmc";
   QMCType  = "DMCcuda";
-  QMCDriverMode.set(QMC_UPDATE_MODE, 1);
-  QMCDriverMode.set(QMC_WARMUP, 0);
+  qmc_driver_mode.set(QMC_UPDATE_MODE, 1);
+  qmc_driver_mode.set(QMC_WARMUP, 0);
   //m_param.add(myWarmupSteps,"warmupSteps","int");
   //m_param.add(nTargetSamples,"targetWalkers","int");
   m_param.add(ScaleWeight, "scaleweight", "string");

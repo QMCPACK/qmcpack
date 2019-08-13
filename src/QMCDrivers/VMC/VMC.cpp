@@ -45,8 +45,8 @@ VMC::VMC(MCWalkerConfiguration& w,
 {
   RootName = "vmc";
   QMCType  = "VMC";
-  QMCDriverMode.set(QMC_UPDATE_MODE, 1);
-  QMCDriverMode.set(QMC_WARMUP, 0);
+  qmc_driver_mode.set(QMC_UPDATE_MODE, 1);
+  qmc_driver_mode.set(QMC_WARMUP, 0);
   m_param.add(UseDrift, "useDrift", "string");
   m_param.add(UseDrift, "usedrift", "string");
   m_param.add(UseDrift, "use_drift", "string");
@@ -77,8 +77,8 @@ bool VMC::run()
 #pragma omp parallel
     {
       int ip = omp_get_thread_num();
-      //IndexType updatePeriod=(QMCDriverMode[QMC_UPDATE_MODE])?Period4CheckProperties:(nBlocks+1)*nSteps;
-      IndexType updatePeriod = (QMCDriverMode[QMC_UPDATE_MODE]) ? Period4CheckProperties : 0;
+      //IndexType updatePeriod=(qmc_driver_mode[QMC_UPDATE_MODE])?Period4CheckProperties:(nBlocks+1)*nSteps;
+      IndexType updatePeriod = (qmc_driver_mode[QMC_UPDATE_MODE]) ? Period4CheckProperties : 0;
       //assign the iterators and resuse them
       MCWalkerConfiguration::iterator wit(W.begin() + wPerNode[ip]), wit_end(W.begin() + wPerNode[ip + 1]);
       Movers[ip]->startBlock(nSteps);
@@ -90,7 +90,7 @@ bool VMC::run()
         //collectables are reset, it is accumulated while advancing walkers
         wClones[ip]->resetCollectables();
         bool recompute = (nBlocksBetweenRecompute && (step + 1) == nSteps &&
-                          (1 + block) % nBlocksBetweenRecompute == 0 && QMCDriverMode[QMC_UPDATE_MODE]);
+                          (1 + block) % nBlocksBetweenRecompute == 0 && qmc_driver_mode[QMC_UPDATE_MODE]);
         Movers[ip]->advanceWalkers(wit, wit_end, recompute);
         if (has_collectables)
           wClones[ip]->Collectables *= cnorm;
@@ -184,7 +184,7 @@ nTargetPopulation = otherTargetPopulation;
       Rng[ip] = new RandomGenerator_t(*(RandomNumberControl::Children[ip]));
       hClones[ip]->setRandomGenerator(Rng[ip]);
 #endif
-      if (QMCDriverMode[QMC_UPDATE_MODE])
+      if (qmc_driver_mode[QMC_UPDATE_MODE])
       {
         Movers[ip] = new VMCUpdatePbyP(*wClones[ip], *psiClones[ip], *hClones[ip], *Rng[ip]);
       }
@@ -207,7 +207,7 @@ nTargetPopulation = otherTargetPopulation;
     }
   }
 #endif
-  if (QMCDriverMode[QMC_UPDATE_MODE])
+  if (qmc_driver_mode[QMC_UPDATE_MODE])
   {
     app_log() << "  Using Particle by Particle moves" << std::endl;
   }
@@ -242,7 +242,7 @@ nTargetPopulation = otherTargetPopulation;
     //int ip=omp_get_thread_num();
     Movers[ip]->put(qmcNode);
     Movers[ip]->resetRun(branchEngine, estimatorClones[ip], traceClones[ip], DriftModifier);
-    if (QMCDriverMode[QMC_UPDATE_MODE])
+    if (qmc_driver_mode[QMC_UPDATE_MODE])
       Movers[ip]->initWalkersForPbyP(W.begin() + wPerNode[ip], W.begin() + wPerNode[ip + 1]);
     else
       Movers[ip]->initWalkers(W.begin() + wPerNode[ip], W.begin() + wPerNode[ip + 1]);

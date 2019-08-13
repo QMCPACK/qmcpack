@@ -533,7 +533,7 @@ class Job(NexusCore):
     #end def reenter_queue
 
 
-    def run_command(self,launcher=None,redirect=False):
+    def run_command(self,launcher=None,redirect=False,serial=False):
         machine = self.get_machine()
         if launcher is None:
             launcher = machine.app_launcher
@@ -558,7 +558,10 @@ class Job(NexusCore):
                 #end if
                 c+=self.app_command+self.app_options.write()
                 if redirect:
-                    c+=' >'+self.outfile+' 2>'+self.errfile+'&'
+                    c+=' >'+self.outfile+' 2>'+self.errfile
+                    if not serial:
+                        c+='&'
+                    #end if
                 elif machine.redirect_output and self.outfile is not None:
                     c+=' >'+self.outfile+' 2>'+self.errfile
                 #end if
@@ -568,7 +571,7 @@ class Job(NexusCore):
             c+='\n'
             for job in self.bundled_jobs:
                 c+='\ncd '+os.path.relpath(job.abs_subdir,cdir)+'\n'
-                c+=job.run_command(launcher,redirect=True)+'\n'
+                c+=job.run_command(launcher,redirect=True,serial=serial)+'\n'
                 cdir = job.abs_subdir
             #end for
             c+='\nwait\n'
@@ -576,7 +579,7 @@ class Job(NexusCore):
             c+='\n'
             for job in self.bundled_jobs:
                 c+='\ncd '+job.abs_subdir+'\n'
-                c+=job.run_command(launcher,redirect=True)+'\n'
+                c+=job.run_command(launcher,redirect=True,serial=serial)+'\n'
             #end for
             c+='\nwait\n'
         #end if
@@ -1077,7 +1080,11 @@ class Workstation(Machine):
         if len(job.presub)>0:
             command += job.presub+'\n'
         #end if
-        command += job.run_command(self.app_launcher)
+        if job.serial is not None: 
+            command += job.run_command(self.app_launcher,serial=job.serial)
+        else:
+            command += job.run_command(self.app_launcher)
+        #end if
         if len(job.postsub)>0:
             command += job.postsub+'\n'
         #end if
@@ -1795,7 +1802,7 @@ class Supercomputer(Machine):
     def write_job(self,job,file=False):
         job.subfile = job.name+'.'+self.sub_launcher+'.in'
         env = self.setup_environment(job)
-        command = job.run_command(self.app_launcher)
+        command = job.run_command(self.app_launcher,serial=job.serial)
         
         c = self.write_job_header(job)+'\n'
         if len(job.presub)>0:

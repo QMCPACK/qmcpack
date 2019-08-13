@@ -38,6 +38,7 @@ ECPComponentBuilder::ECPComponentBuilder(const std::string& aname, Communicate* 
       grid_global(0),
       pp_loc(0),
       pp_nonloc(0),
+      pp_so(0),
       pp_L2(0)
 {
   angMon["s"] = 0;
@@ -202,6 +203,8 @@ bool ECPComponentBuilder::put(xmlNodePtr cur)
   {
     if (pp_nonloc == 0)
       pp_nonloc = new NonLocalECPComponent;
+    if (pp_so == 0)
+      pp_so = new SOECPComponent;
     if (pp_loc)
     {
       for (int i = 0; i < semiPtr.size(); i++)

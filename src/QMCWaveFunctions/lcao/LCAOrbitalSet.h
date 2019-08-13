@@ -13,6 +13,7 @@
 #ifndef QMCPLUSPLUS_SOA_LINEARCOMIBINATIONORBITALSET_TEMP_H
 #define QMCPLUSPLUS_SOA_LINEARCOMIBINATIONORBITALSET_TEMP_H
 
+#include <memory>
 #include "QMCWaveFunctions/SPOSet.h"
 #include "QMCWaveFunctions/BasisSetBase.h"
 
@@ -37,11 +38,8 @@ public:
   basis_type* myBasisSet;
   ///number of Single-particle orbitals
   IndexType BasisSetSize;
-  /** pointer to matrix containing the coefficients
-     *
-     * makeClone makes a shallow copy
-     */
-  ValueMatrix_t* C;
+  /// pointer to matrix containing the coefficients
+  std::shared_ptr<ValueMatrix_t> C;
   /// Scratch space for the initial coefficents before the rotation is applied
   ValueMatrix_t m_init_B;
   /// true if SPO parameters (orbital rotation parameters) have been supplied by input
@@ -80,8 +78,6 @@ public:
   LCAOrbitalSet(basis_type* bs = nullptr);
 
   LCAOrbitalSet(const LCAOrbitalSet& in) = default;
-
-  virtual ~LCAOrbitalSet();
 
   SPOSet* makeClone() const;
 

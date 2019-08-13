@@ -64,7 +64,10 @@ private:
   }
 
   // check if the proposed new cost function value is the best available
-  bool is_best_cost(const int ii, const std::vector<RealType>& cv, const std::vector<double>& sh, const RealType ic) const;
+  bool is_best_cost(const int ii,
+                    const std::vector<RealType>& cv,
+                    const std::vector<double>& sh,
+                    const RealType ic) const;
 
   // perform the adaptive three-shift update
   bool adaptive_three_shift_run();

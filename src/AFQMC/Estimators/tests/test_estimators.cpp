@@ -173,10 +173,11 @@ const char *propg_xml_block =
     // generate P1 with dt=0
     prop.generateP1(0.0,wset.getWalkerType());
 
+    std::string file = create_test_hdf(UTEST_WFN, UTEST_HAMIL);
     hdf_archive dump;
     std::ofstream out;
-    dump.create("estimates.h5");
-    dump.open("estimates.h5");
+    dump.create(file);
+    dump.open(file);
     for (int iblock = 0; iblock < 10; iblock++) {
       wset.advanceBPPos();
       estimators[0]->accumulate_block(wset);
@@ -188,7 +189,7 @@ const char *propg_xml_block =
     ComplexType denom;
     hdf_archive reader;
     // Read from a particular block.
-    if(!reader.open("estimates.h5",H5F_ACC_RDONLY)) {
+    if(!reader.open(file,H5F_ACC_RDONLY)) {
       app_error()<<" Error opening estimates.h5. \n";
       APP_ABORT("");
     }

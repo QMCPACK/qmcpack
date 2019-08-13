@@ -22,7 +22,7 @@
 #ifndef OHMMS_CRYSTALLATTICE_H
 #define OHMMS_CRYSTALLATTICE_H
 #include <limits>
-#include <config/stdlib/math.h>
+#include <config/stdlib/math.hpp>
 #include <OhmmsPETE/TinyVector.h>
 #include <OhmmsPETE/Tensor.h>
 #include <Lattice/LRBreakupParameters.h>

@@ -54,6 +54,7 @@
 #        generate_pade_jastrow2                                      #
 #        generate_jastrow2                                           #
 #        generate_jastrow3                                           #
+#        generate_kspace_jastrow                                     #
 #        generate_opt                                                #
 #        generate_opts                                               #
 #                                                                    #
@@ -4786,6 +4787,11 @@ def generate_jastrows(jastrows,system=None,return_list=False,check_ions=False):
         if '3' in jorders and have_ions:
             jterm = generate_jastrow('J3','polynomial',3,3,4.0,system=system)
         #end if
+        if 'k' in jorders:
+            kcut = max(system.rpa_kf())
+            nksh = system.structure.count_kshells(kcut)
+            jterm = generate_kspace_jastrow(kc1=0, kc2=kcut, nk1=0, nk2=nksh)
+        #end if
         jin.append(jterm)
         if len(jin)==0:
             QmcpackInput.class_error('jastrow generation requested but no orders specified (1,2,and/or 3)')
@@ -5253,6 +5259,70 @@ def generate_jastrow3(function='polynomial',esize=3,isize=3,rcut=4.,coeff=None,i
     return jastrow
 #end def generate_jastrow3
 
+
+def generate_kspace_jastrow(kc1=0, kc2=0, nk1=0, nk2=0,
+  symm1='isotropic', symm2='isotropic', coeff1=None, coeff2=None):
+  """Generate <jastrow type="kSpace">
+
+  Parameters
+  ----------
+    kc1 : float, optional
+      kcut for one-body Jastrow, default 0
+    kc2 : float, optional
+      kcut for two-body Jastrow, default 0
+    nk1 : int, optional
+      number of coefficients for one-body Jastrow, default 0
+    nk2 : int, optional
+      number of coefficients for two-body Jastrow, default 0
+    symm1 : str, optional
+      one of ['crystal', 'isotropic', 'none'], default 'isotropic'
+    symm2 : str, optional
+      one of ['crystal', 'isotropic', 'none'], default is 'isotropic'
+    coeff1 : list, optional
+      one-body Jastrow coefficients, default None
+    coeff2 : list, optional
+      list, optional two-body Jastrow coefficients, default None
+  Returns
+  -------
+    jk: QIxml
+      kspace_jastrow qmcpack_input element
+  """
+
+  if coeff1 is None: coeff1 = [0]*nk1
+  if coeff2 is None: coeff2 = [0]*nk2
+  if len(coeff1) != nk1:
+    QmcpackInput.class_error('coeff1 mismatch', 'generate_kspace_jastrow')
+  #end if
+  if len(coeff2) != nk2:
+    QmcpackInput.class_error('coeff2 mismatch', 'generate_kspace_jastrow')
+  #end if
+
+  corr1 = correlation(
+    type = 'One-Body',
+    symmetry = symm1,
+    kc = kc1,
+    coefficients = section(
+      id = 'cG1', type = 'Array',
+      coeff = coeff1
+    )
+  )
+  corr2 = correlation(
+    type = 'Two-Body',
+    symmetry = symm2,
+    kc = kc2,
+    coefficients = section(
+      id = 'cG2', type = 'Array',
+      coeff = coeff2
+     )
+  )
+  jk = kspace_jastrow(
+    type = 'kSpace',
+    name = 'Jk',
+    source = 'ion0',
+    correlations = collection([corr1, corr2])
+  )
+  return jk
+# end def generate_kspace_jastrow
 
 
 def count_jastrow_params(jastrows):
