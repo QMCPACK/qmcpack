@@ -14,8 +14,8 @@
 /** @file
  *  @brief implementation of openmp specialization of TasksOneToOne
  */
-#ifndef QMCPLUSPLUS_TASKSOPENMP_HPP
-#define QMCPLUSPLUS_TASKSOPENMP_HPP
+#ifndef QMCPLUSPLUS_TASKSONETOONEOPENMP_HPP
+#define QMCPLUSPLUS_TASKSONETOONEOPENMP_HPP
 
 #include <stdexcept>
 #include <omp.h>
