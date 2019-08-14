@@ -193,7 +193,7 @@ struct LRHandlerBase
       PosType k = kpts[ki];
       for (int iat = 0; iat < Zat.size(); iat++)
       {
-        grad1[iat] -= Zat[iat] * k * Fkg[ki] * (e2ikrA_r(iat, ki) * rhokB_i[ki] - e2ikrA_i(iat, ki) * rhokB_r[ki]);
+        grad1[iat] -= Zat[iat] * k * Fk[ki] * (e2ikrA_r(iat, ki) * rhokB_i[ki] - e2ikrA_i(iat, ki) * rhokB_r[ki]);
       }
     }
 #endif
