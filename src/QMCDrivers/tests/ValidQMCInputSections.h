@@ -13,12 +13,18 @@
 #ifndef QMCPLUSPLUS_VALIDQMCINPUTSECTIONS_H
 #define QMCPLUSPLUS_VALIDQMCINPUTSECTIONS_H
 
+/** @file
+ *  @brief avoids many repeated xml heredoc sections
+ */
+
+#include <array>
+
 namespace qmcplusplus
 {
 namespace testing
 {
 // clang-format: off    
-std::vector<const char*> valid_vmc_input_sections{
+constexpr std::array<const char*,2> valid_vmc_input_sections{
   R"(
   <qmc method="vmc" move="pbyp">
     <estimator name="LocalEnergy" hdf5="no" />
@@ -47,7 +53,11 @@ std::vector<const char*> valid_vmc_input_sections{
 )"
 };
 
-std::vector<const char*> valid_dmc_input_sections{
+// to avoid creating a situation where section test xml is in two places
+constexpr int valid_vmc_input_vmc_index = 0;
+constexpr int valid_vmc_input_vmc_batch_index = 1;
+
+constexpr std::array<const char*,1> valid_dmc_input_sections{
   R"(
   <qmc method="dmc" move="pbyp" gpu="yes">
     <estimator name="LocalEnergy" hdf5="no" />

@@ -252,10 +252,6 @@ std::string QMCDriverNew::getLastRotationName(std::string RootName)
   return r_RootName;
 }
 
-void QMCDriverNew::adiosCheckpoint(int block) {}
-
-void QMCDriverNew::adiosCheckpointFinal(int block, bool dumpwalkers) {}
-
 void QMCDriverNew::recordBlock(int block)
 {
   if (dump_config && block % check_point_period == 0)

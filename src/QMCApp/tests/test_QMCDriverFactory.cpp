@@ -17,6 +17,7 @@
 #include "OhmmsData/Libxml2Doc.h"
 #include "QMCApp/QMCDriverFactory.h"
 #include "QMCDrivers/QMCDriverInterface.h"
+#include "QMCDrivers/tests/ValidQMCInputSections.h"
 #include "QMCApp/tests/MinimalParticlePool.h"
 #include "QMCApp/tests/MinimalWaveFunctionPool.h"
 #include "QMCApp/tests/MinimalHamiltonianPool.h"
@@ -36,24 +37,9 @@ TEST_CASE("QMCDriverFactory create VMC Driver", "[qmcapp]")
   comm = OHMMS::Controller;
 
   QMCDriverFactory driver_factory;
-  // clang-format off
-  const char* driver_xml = R"(
-  <qmc method="vmc" move="pbyp">
-    <estimator name="LocalEnergy" hdf5="no" />
-    <parameter name="walkers">                1 </parameter>
-    <parameter name="stepsbetweensamples">    1 </parameter>
-    <parameter name="warmupSteps">            5 </parameter>
-    <parameter name="substeps">               5 </parameter>
-    <parameter name="steps">                  1 </parameter>
-    <parameter name="blocks">                 2 </parameter>
-    <parameter name="timestep">             1.0 </parameter>
-    <parameter name="usedrift">              no </parameter>
-  </qmc>
-)";
-  // clang-format on
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(driver_xml);
+  bool okay = doc.parseFromString(valid_vmc_input_sections[valid_vmc_input_vmc_index]);
   REQUIRE(okay);
   xmlNodePtr node                           = doc.getRoot();
   QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(0, node);
@@ -82,24 +68,9 @@ TEST_CASE("QMCDriverFactory create VMCBatched driver", "[qmcapp]")
   comm = OHMMS::Controller;
 
   QMCDriverFactory driver_factory;
-  // clang-format off
-  const char* driver_xml = R"(
-  <qmc method="vmc_batch" move="pbyp">
-    <estimator name="LocalEnergy" hdf5="no" />
-    <parameter name="walkers">                1 </parameter>
-    <parameter name="stepsbetweensamples">    1 </parameter>
-    <parameter name="warmupSteps">            5 </parameter>
-    <parameter name="substeps">               5 </parameter>
-    <parameter name="steps">                  1 </parameter>
-    <parameter name="blocks">                 2 </parameter>
-    <parameter name="timestep">             1.0 </parameter>
-    <parameter name="usedrift">              no </parameter>
-  </qmc>
-)";
-  // clang-format on
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(driver_xml);
+  bool okay = doc.parseFromString(valid_vmc_input_sections[valid_vmc_input_vmc_batch_index]);
   REQUIRE(okay);
   xmlNodePtr node                           = doc.getRoot();
   QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(0, node);
