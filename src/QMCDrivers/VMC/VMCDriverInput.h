@@ -21,7 +21,7 @@ class VMCDriverInput
 public:
   VMCDriverInput(int qmc_section_count) : qmcdriver_input(qmc_section_count) {}
   inline QMCDriverInput& get_qmcdriver_input() { return qmcdriver_input; }
-
+  void readXML(xmlNodePtr& xml_input);
 protected:
   QMCDriverInput qmcdriver_input;
 };

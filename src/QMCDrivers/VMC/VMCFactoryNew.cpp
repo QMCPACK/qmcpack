@@ -33,6 +33,8 @@ QMCDriverInterface* VMCFactoryNew::create(MCPopulation& pop,
 {
   int np = omp_get_max_threads();
 
+  QMCDriverInput qmcdriver_input(qmc_counter_);
+      
   QMCDriverInterface* qmc = nullptr;
 
   // FIX: This ignores the current QMC section

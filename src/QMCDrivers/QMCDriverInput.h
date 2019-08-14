@@ -28,7 +28,7 @@ public:
   using FullPrecisionRealType = QMCTraits::FullPrecRealType;
 
   QMCDriverInput(int qmc_section_count);
-  void put(xmlNodePtr cur);
+  void readXML(xmlNodePtr cur);
   void putQMCInfo(xmlNodePtr cur);
 
 protected:
