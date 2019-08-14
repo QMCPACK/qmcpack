@@ -12,14 +12,10 @@
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
 
-
 #include "QMCDrivers/VMC/VMCFactoryNew.h"
 #include "QMCDrivers/VMC/VMCBatched.h"
-#include "Message/OpenMP.h"
-
-#ifdef QMC_CUDA
-#include "QMCDrivers/VMC/VMC_CUDA.h"
-#endif
+//#include "Message/OpenMP.h"
+#include "Concurrency/Info.hpp"
 
 namespace qmcplusplus
 {
@@ -31,10 +27,10 @@ QMCDriverInterface* VMCFactoryNew::create(MCPopulation& pop,
                                           WaveFunctionPool& ppool,
                                           Communicate* comm)
 {
-  int np = omp_get_max_threads();
+    //int np = Concurrency::maxThreads();
 
   QMCDriverInput qmcdriver_input(qmc_counter_);
-      
+  qmcdriver_input.readXML(input_node_);    
   QMCDriverInterface* qmc = nullptr;
 
   // FIX: This ignores the current QMC section

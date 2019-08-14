@@ -25,7 +25,7 @@
 #include <cmath>
 
 #include "QMCDrivers/QMCDriverNew.h"
-#include "Concurrency/TaskBlock.hpp"
+#include "Concurrency/TasksOneToOne.hpp"
 #include "Particle/HDFWalkerIO.h"
 #include "ParticleBase/ParticleUtility.h"
 #include "ParticleBase/RandomSeqGenerator.h"
@@ -55,8 +55,6 @@ QMCDriverNew::QMCDriverNew(QMCDriverInput& input,
       H(h),
       psiPool(ppool),
       Estimators(0),
-      Traces(0),
-      qmc_node(NULL),
       wOut(0)
 {
   reset_random = false;
@@ -149,14 +147,6 @@ void QMCDriverNew::process(xmlNodePtr cur)
   if (DriftModifier == 0)
     DriftModifier = createDriftModifier(cur, myComm);
   DriftModifier->parseXML(cur);
-#if !defined(REMOVE_TRACEMANAGER)
-  //create and initialize traces
-  if (Traces == 0)
-  {
-    Traces = new TraceManager(myComm);
-  }
-  Traces->put(traces_xml, allow_traces, RootName);
-#endif
   branchEngine->put(cur);
   // Estimators->put(W, H, cur);
   // if (wOut == 0)
@@ -319,8 +309,6 @@ void QMCDriverNew::setupWalkers()
     population_.set_num_local_walkers(local_walkers);
     population_.set_num_global_walkers(local_walkers * num_crowds_ * population_.get_num_ranks());
 
-    int ndiff = 0;
-
     addWalkers(local_walkers);
   }
 }
@@ -377,35 +365,6 @@ void QMCDriverNew::setWalkerOffsets()
   }
   //  app_log() << "  Total number of walkers: " << W.EnsembleProperty.NumSamples << std::endl;
   //  app_log() << "  Total weight: " << W.EnsembleProperty.Weight << std::endl;
-}
-
-
-xmlNodePtr QMCDriverNew::getQMCNode()
-{
-  xmlNodePtr newqmc      = xmlCopyNode(qmc_node, 1);
-  xmlNodePtr current_ptr = NULL;
-  xmlNodePtr cur         = newqmc->children;
-  while (cur != NULL && current_ptr == NULL)
-  {
-    std::string cname((const char*)(cur->name));
-    if (cname == "parameter")
-    {
-      const xmlChar* aptr = xmlGetProp(cur, (const xmlChar*)"name");
-      if (aptr)
-      {
-        if (xmlStrEqual(aptr, (const xmlChar*)"current"))
-          current_ptr = cur;
-      }
-    }
-    cur = cur->next;
-  }
-  if (current_ptr == NULL)
-  {
-    current_ptr = xmlNewTextChild(newqmc, NULL, (const xmlChar*)"parameter", (const xmlChar*)"0");
-    xmlNewProp(current_ptr, (const xmlChar*)"name", (const xmlChar*)"current");
-  }
-  getContent(current_step_, current_ptr);
-  return newqmc;
 }
 
 } // namespace qmcplusplus

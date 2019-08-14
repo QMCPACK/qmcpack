@@ -29,7 +29,6 @@ public:
 
   QMCDriverInput(int qmc_section_count);
   void readXML(xmlNodePtr cur);
-  void putQMCInfo(xmlNodePtr cur);
 
 protected:
   ///store any parameter that has to be read from a file
@@ -89,6 +88,10 @@ protected:
   IndexType blocks_between_recompute_ = defaultBlocksBetweenRecompute<>();
   bool append_run_                    = false;
 
+  // from QMCDriverFactory
+  std::string qmc_method_ {"invalid"};
+  std::string update_mode_ {"pbyp"};
+
   // from putQMCInfo
   input::PeriodStride walker_dump_period_;
   input::PeriodStride check_point_period_;
@@ -122,6 +125,9 @@ public:
   input::PeriodStride get_check_point_period() const { return check_point_period_; }
   IndexType get_k_delay() const { return k_delay_; }
   bool get_reset_random() const { return reset_random_; }
+
+  const std::string& get_qmc_method() const { return qmc_method_; }
+  const std::string& get_update_mode() const { return update_mode_; }
 
 
   template<class PDT>

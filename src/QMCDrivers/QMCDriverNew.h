@@ -126,9 +126,6 @@ public:
    */
   void process(xmlNodePtr cur);
 
-  /** return a xmlnode with update **/
-  xmlNodePtr getQMCNode();
-
   void setupWalkers();
 
   void putWalkers(std::vector<xmlNodePtr>& wset);
@@ -156,12 +153,6 @@ public:
 
   //virtual std::vector<RandomGenerator_t*>& getRng() {}
 
-  ///Observables manager
-  EstimatorManagerBase* Estimators;
-
-  ///Traces manager
-  TraceManager* Traces;
-
   ///return the random generators
   inline std::vector<RandomGenerator_t*>& getRng() { return Rng; }
 
@@ -172,6 +163,8 @@ public:
   unsigned long getDriverMode() { return qmc_driver_mode.to_ulong(); }
 
 protected:
+  QMCDriverInput qmcdriver_input_;
+
   std::vector<Crowd> crowds_;
   IndexType walkers_per_crowd_;
 
@@ -241,18 +234,23 @@ protected:
   std::string RootName;
 
 
-  ///record engine for walkers
-  HDFWalkerOutput* wOut;
   ///the entire (or on node) walker population
   MCPopulation& population_;
 
   ///trial function
   TrialWaveFunction& Psi;
 
-  WaveFunctionPool& psiPool;
-
   ///Hamiltonian
   QMCHamiltonian& H;
+
+  WaveFunctionPool& psiPool;
+
+  ///Observables manager
+  EstimatorManagerBase* Estimators;
+
+  ///record engine for walkers
+  HDFWalkerOutput* wOut;
+
 
   ///a list of TrialWaveFunctions for multiple method
   std::vector<TrialWaveFunction*> Psi1;
@@ -275,12 +273,6 @@ protected:
   ///temporary storage for random displacement
   ParticleSet::ParticlePos_t deltaR;
 
-  /** State I suspect is unecessay and should be removed
-   */
-  /// pointer to qmc node in xml file
-  xmlNodePtr qmc_node;
-
-  QMCDriverInput qmcdriver_input_;
   /** @ingroup Driver mutable values
    *
    *  variables here are derived input but either for convenience or

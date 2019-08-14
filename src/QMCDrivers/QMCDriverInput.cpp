@@ -59,9 +59,15 @@ QMCDriverInput::QMCDriverInput(int qmc_section_count) : qmc_section_count_(qmc_s
  *   -- n = dump after n blocks
  * - kdelay = "0|1|n" default=0
  */
-void QMCDriverInput::putQMCInfo(xmlNodePtr cur)
+void QMCDriverInput::readXML(xmlNodePtr cur)
 {
   OhmmsAttributeSet aAttrib;
+
+  // first stage in from QMCDriverFactory
+  aAttrib.add(qmc_method_, "method");
+  aAttrib.add(update_mode_, "move");
+
+
   aAttrib.add(k_delay_, "kdelay");
   // This does all the parameter parsing setup in the constructor
   aAttrib.put(cur);
@@ -113,86 +119,86 @@ void QMCDriverInput::putQMCInfo(xmlNodePtr cur)
 
 /** Input representation for Driver base class runtime parameters
  */
-void QMCDriverInput::readXML(xmlNodePtr cur) {
-      //grep minimumTargetWalker
-  int target_min = -1;
-  ParameterSet p;
-  p.add(target_min, "minimumtargetwalkers", "int"); //p.add(target_min,"minimumTargetWalkers","int");
-  p.add(target_min, "minimumsamples", "int");       //p.add(target_min,"minimumSamples","int");
-  p.put(q);
+// void QMCDriverInput::readXML(xmlNodePtr cur) {
+//       //grep minimumTargetWalker
+//   int target_min = -1;
+//   ParameterSet p;
+//   p.add(target_min, "minimumtargetwalkers", "int"); //p.add(target_min,"minimumTargetWalkers","int");
+//   p.add(target_min, "minimumsamples", "int");       //p.add(target_min,"minimumSamples","int");
+//   p.put(q);
 
-  app_log() << "\n<vmc function=\"put\">"
-            << "\n  qmc_counter=" << qmc_common.qmc_counter << "  my_counter=" << MyCounter << std::endl;
-  if (qmc_common.qmc_counter && MyCounter)
-  {
-    nSteps               = prevSteps;
-    nStepsBetweenSamples = prevStepsBetweenSamples;
-  }
-  else
-  {
-    int nw = W.getActiveWalkers();
-    //compute samples and overwrite steps for the given samples
-    int Nthreads = omp_get_max_threads();
-    int Nprocs   = myComm->size();
-    //target samples set by samples or samplesperthread/dmcwalkersperthread
-    nTargetPopulation = std::max(nTargetPopulation, nSamplesPerThread * Nprocs * Nthreads);
-    nTargetSamples    = static_cast<int>(std::ceil(nTargetPopulation));
+//   app_log() << "\n<vmc function=\"put\">"
+//             << "\n  qmc_counter=" << qmc_common.qmc_counter << "  my_counter=" << MyCounter << std::endl;
+//   if (qmc_common.qmc_counter && MyCounter)
+//   {
+//     nSteps               = prevSteps;
+//     nStepsBetweenSamples = prevStepsBetweenSamples;
+//   }
+//   else
+//   {
+//     int nw = W.getActiveWalkers();
+//     //compute samples and overwrite steps for the given samples
+//     int Nthreads = omp_get_max_threads();
+//     int Nprocs   = myComm->size();
+//     //target samples set by samples or samplesperthread/dmcwalkersperthread
+//     nTargetPopulation = std::max(nTargetPopulation, nSamplesPerThread * Nprocs * Nthreads);
+//     nTargetSamples    = static_cast<int>(std::ceil(nTargetPopulation));
 
-    if (nTargetSamples)
-    {
-      int nwtot      = nw * Nprocs; //total number of walkers used by this qmcsection
-      nTargetSamples = std::max(nwtot, nTargetSamples);
-      if (target_min > 0)
-      {
-        nTargetSamples    = std::max(nTargetSamples, target_min);
-        nTargetPopulation = std::max(nTargetPopulation, static_cast<RealType>(target_min));
-      }
-      nTargetSamples = ((nTargetSamples + nwtot - 1) / nwtot) *
-          nwtot; // nTargetSamples are always multiples of total number of walkers
-      nSamplesPerThread = nTargetSamples / Nprocs / Nthreads;
-      int ns_target     = nTargetSamples * nStepsBetweenSamples; //total samples to generate
-      int ns_per_step   = Nprocs * nw;                           //total samples per step
-      nSteps            = std::max(nSteps, (ns_target / ns_per_step + nBlocks - 1) / nBlocks);
-      Period4WalkerDump = nStepsBetweenSamples = (ns_per_step * nSteps * nBlocks) / nTargetSamples;
-    }
-    else
-    {
-      Period4WalkerDump = nStepsBetweenSamples = (nBlocks + 1) * nSteps; //some positive number, not used
-      nSamplesPerThread                        = 0;
-    }
-  }
-  prevSteps               = nSteps;
-  prevStepsBetweenSamples = nStepsBetweenSamples;
+//     if (nTargetSamples)
+//     {
+//       int nwtot      = nw * Nprocs; //total number of walkers used by this qmcsection
+//       nTargetSamples = std::max(nwtot, nTargetSamples);
+//       if (target_min > 0)
+//       {
+//         nTargetSamples    = std::max(nTargetSamples, target_min);
+//         nTargetPopulation = std::max(nTargetPopulation, static_cast<RealType>(target_min));
+//       }
+//       nTargetSamples = ((nTargetSamples + nwtot - 1) / nwtot) *
+//           nwtot; // nTargetSamples are always multiples of total number of walkers
+//       nSamplesPerThread = nTargetSamples / Nprocs / Nthreads;
+//       int ns_target     = nTargetSamples * nStepsBetweenSamples; //total samples to generate
+//       int ns_per_step   = Nprocs * nw;                           //total samples per step
+//       nSteps            = std::max(nSteps, (ns_target / ns_per_step + nBlocks - 1) / nBlocks);
+//       Period4WalkerDump = nStepsBetweenSamples = (ns_per_step * nSteps * nBlocks) / nTargetSamples;
+//     }
+//     else
+//     {
+//       Period4WalkerDump = nStepsBetweenSamples = (nBlocks + 1) * nSteps; //some positive number, not used
+//       nSamplesPerThread                        = 0;
+//     }
+//   }
+//   prevSteps               = nSteps;
+//   prevStepsBetweenSamples = nStepsBetweenSamples;
 
-  app_log() << "  time step      = " << Tau << std::endl;
-  app_log() << "  blocks         = " << nBlocks << std::endl;
-  app_log() << "  steps          = " << nSteps << std::endl;
-  app_log() << "  substeps       = " << nSubSteps << std::endl;
-  app_log() << "  current        = " << CurrentStep << std::endl;
-  app_log() << "  target samples = " << nTargetPopulation << std::endl;
-  app_log() << "  walkers/mpi    = " << W.getActiveWalkers() << std::endl << std::endl;
-  app_log() << "  stepsbetweensamples = " << nStepsBetweenSamples << std::endl;
+//   app_log() << "  time step      = " << Tau << std::endl;
+//   app_log() << "  blocks         = " << nBlocks << std::endl;
+//   app_log() << "  steps          = " << nSteps << std::endl;
+//   app_log() << "  substeps       = " << nSubSteps << std::endl;
+//   app_log() << "  current        = " << CurrentStep << std::endl;
+//   app_log() << "  target samples = " << nTargetPopulation << std::endl;
+//   app_log() << "  walkers/mpi    = " << W.getActiveWalkers() << std::endl << std::endl;
+//   app_log() << "  stepsbetweensamples = " << nStepsBetweenSamples << std::endl;
 
-  m_param.get(app_log());
+//   m_param.get(app_log());
 
-  if (DumpConfig)
-  {
-    app_log() << "  DumpConfig==true Configurations are dumped to config.h5 with a period of " << Period4CheckPoint
-              << " blocks" << std::endl;
-  }
-  else
-  {
-    app_log() << "  DumpConfig==false Nothing (configurations, state) will be saved." << std::endl;
-  }
+//   if (DumpConfig)
+//   {
+//     app_log() << "  DumpConfig==true Configurations are dumped to config.h5 with a period of " << Period4CheckPoint
+//               << " blocks" << std::endl;
+//   }
+//   else
+//   {
+//     app_log() << "  DumpConfig==false Nothing (configurations, state) will be saved." << std::endl;
+//   }
 
-  if (Period4WalkerDump > 0)
-    app_log() << "  Walker Samples are dumped every " << Period4WalkerDump << " steps." << std::endl;
+//   if (Period4WalkerDump > 0)
+//     app_log() << "  Walker Samples are dumped every " << Period4WalkerDump << " steps." << std::endl;
 
-  app_log() << "</vmc>" << std::endl;
-  app_log().flush();
+//   app_log() << "</vmc>" << std::endl;
+//   app_log().flush();
 
-  return true;
+//   return true;
 
-}
+//}
 
 } // namespace qmcplusplus

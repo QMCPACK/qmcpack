@@ -46,6 +46,10 @@ namespace qmcplusplus
  *
  *  Copy elision should result in just a move of the
  *  DriverAssemblyState
+ *
+ *  Most (all) of this should be done by calling QMCDriverInput::readXML
+ *  At some point in driver refactoring this should go there and
+ *  QMCDriverInput created before the giant switch
  */
 QMCDriverFactory::DriverAssemblyState QMCDriverFactory::readSection(int curSeries, xmlNodePtr cur)
 {
