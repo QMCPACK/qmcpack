@@ -2901,6 +2901,103 @@ class SpheroidSurfaceGrid(StructuredGridWithAxes):
 
 
 
+class GridFunction(GBase):
+    grid_class = None
+
+    @property
+    def dtype(self):
+        return self.values.dtype
+    #end def dtype
+
+    def __init__(self,
+                 values     = None,
+                 copy       = True,
+                 check      = True,
+                 dtype      = None,
+                 grid_dtype = None,
+                 **kwargs):
+        cls = self.__class__
+
+        self.reset()
+
+        if grid_dtype is not None:
+            kwargs['dtype'] = grid_dtype
+        #end if
+
+        grid = cls.grid_class(**kwargs)
+
+        if not grid.initialized:
+            if values is not None:
+                self.error('grid must be initialized to describe the domain of the function values\nplease add inputs to initialize the appropriate grid')
+            #end if
+            return
+        #end if
+        if values is None:
+            self.error('function values must be provided at the grid points')
+        elif isinstance(values,(tuple,list)):
+            if dtype is None:
+                dtype = float
+            #end if
+            values = np.array(values,dtype=dtype)
+        elif instance(values,ndarray):
+            if copy:
+                if dtype is None:
+                    dtype = values.dtype
+                #end if
+                values = np.array(values,dtype=dtype)
+            #end if
+        else:
+            self.error('provided function values are of incorrect type\nvalues must be tuple, list, or ndarray\nyou provided: {}'.format(values.__class__.__name__))
+        #end if
+    
+        self.grid   = grid
+        self.values = values
+
+        if check:
+            self.check_valid()
+        #end if
+    #end def __init__
+
+
+    def reset(self):
+        self.grid        = None
+        self.values      = None
+        self.initialized = False
+    #end def reset
+
+
+    def check_valid(self):
+        self.not_implemented()
+    #end def check_valid
+#end class GridFunction
+
+
+class StructuredGridFunction(GridFunction):
+    None
+#end class StructuredGridFunction
+
+
+class StructuredGridFunctionWithAxes(StructuredGridFunction):
+    None
+#end class StructuredGridFunctionWithAxes
+
+
+class ParallelotopeGridFunction(StructuredGridFunctionWithAxes):
+    grid_class = ParallelotopeGrid
+#end class ParallelotopeGridFunction
+
+
+class SpheroidGridFunction(StructuredGridFunctionWithAxes):
+    grid_class = SpheroidGrid
+#end class SpheroidGridFunction
+
+
+class SpheroidSurfaceGridFunction(StructuredGridFunctionWithAxes):
+    grid_class = SpheroidSurfaceGrid
+#end class SpheroidSurfaceGridFunction
+
+
+
 
 if __name__=='__main__':
 
