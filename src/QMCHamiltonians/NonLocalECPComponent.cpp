@@ -170,13 +170,13 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOne(ParticleSet& W,
       lpolprev = lpol[l];
     }
 
-    RealType lsum = czero;
+    ValueType lsum = 0.0;
     for (int l = 0; l < nchannel; l++)
-      lsum += std::real(vrad[l]) * lpol[angpp_m[l]];
-    lsum *= std::real(psiratio[j]);
+      lsum += vrad[l] * lpol[angpp_m[l]];
+    lsum *= psiratio[j];
     if (Tmove)
-      Txy.push_back(NonLocalData(iel, lsum, deltaV[j]));
-    pairpot += lsum;
+      Txy.push_back(NonLocalData(iel, std::real(lsum), deltaV[j]));
+    pairpot += std::real(lsum);
   }
 
 #if !defined(REMOVE_TRACEMANAGER)

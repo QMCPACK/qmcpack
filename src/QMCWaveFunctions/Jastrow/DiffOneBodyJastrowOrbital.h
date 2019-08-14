@@ -263,7 +263,7 @@ public:
     }
     if (recalculate)
     {
-      const DistanceTableData* d_table = P.DistTables[myTableIndex];
+      const auto& d_table = P.getDistTable(myTableIndex);
       dLogPsi                          = 0.0;
       for (int p = 0; p < NumVars; ++p)
         (*gradLogPsi[p]) = 0.0;
@@ -271,11 +271,11 @@ public:
         (*lapLogPsi[p]) = 0.0;
       std::vector<TinyVector<RealType, 3>> derivs(NumVars);
 
-      if (d_table->DTType == DT_SOA)
+      if (d_table.DTType == DT_SOA)
       {
         constexpr RealType cone(1);
         constexpr RealType lapfac(OHMMS_DIM - cone);
-        const size_t ns = d_table->size(SourceIndex);
+        const size_t ns = d_table.size(SourceIndex);
         const size_t nt = P.getTotalNum();
 
         aligned_vector<int> iadj(nt);
@@ -295,7 +295,7 @@ public:
               recalcFunc = true;
           if (recalcFunc)
           {
-            size_t nn = d_table->get_neighbors(i, func->cutoff_radius, iadj.data(), dist.data(), displ.data());
+            size_t nn = d_table.get_neighbors(i, func->cutoff_radius, iadj.data(), dist.data(), displ.data());
             for (size_t nj = 0; nj < nn; ++nj)
             {
               std::fill(derivs.begin(), derivs.end(), 0);
@@ -317,7 +317,7 @@ public:
       }
       else
       {
-        for (int i = 0; i < d_table->size(SourceIndex); ++i)
+        for (int i = 0; i < d_table.size(SourceIndex); ++i)
         {
           FT* func = Fs[i];
           if (func == 0)
@@ -330,14 +330,14 @@ public:
               recalcFunc = true;
           if (recalcFunc)
           {
-            for (int nn = d_table->M[i]; nn < d_table->M[i + 1]; ++nn)
+            for (int nn = d_table.M[i]; nn < d_table.M[i + 1]; ++nn)
             {
               std::fill(derivs.begin(), derivs.end(), 0.0);
-              if (!func->evaluateDerivatives(d_table->r(nn), derivs))
+              if (!func->evaluateDerivatives(d_table.r(nn), derivs))
                 continue;
-              int j = d_table->J[nn];
-              RealType rinv(d_table->rinv(nn));
-              PosType dr(d_table->dr(nn));
+              int j = d_table.J[nn];
+              RealType rinv(d_table.rinv(nn));
+              PosType dr(d_table.dr(nn));
               for (int p = first, ip = 0; p < last; ++p, ++ip)
               {
                 dLogPsi[p] -= derivs[ip][0];
