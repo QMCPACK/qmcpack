@@ -142,6 +142,8 @@ public:
   ///return BranchEngineType*
   SimpleFixedNodeBranch* getBranchEngine() { return branchEngine; }
 
+  virtual IndexType calc_default_local_walkers() = 0;
+
   int addObservable(const std::string& aname);
 
   RealType getObservable(int i);
@@ -161,12 +163,14 @@ public:
 
   std::string getEngineName() { return QMCType; }
   unsigned long getDriverMode() { return qmc_driver_mode.to_ulong(); }
+  IndexType get_walkers_per_crowd() const { return walkers_per_crowd_; }
 
 protected:
   QMCDriverInput qmcdriver_input_;
 
   std::vector<Crowd> crowds_;
   IndexType walkers_per_crowd_;
+
 
   ///branch engine
   SimpleFixedNodeBranch* branchEngine;

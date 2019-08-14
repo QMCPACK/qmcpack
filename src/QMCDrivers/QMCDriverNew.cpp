@@ -48,6 +48,7 @@ QMCDriverNew::QMCDriverNew(QMCDriverInput& input,
                            Communicate* comm)
     : MPIObjectBase(comm),
       qmcdriver_input_(input),
+      num_crowds_(input.get_num_crowds()),
       branchEngine(0),
       DriftModifier(0),
       population_(population),
@@ -60,7 +61,7 @@ QMCDriverNew::QMCDriverNew(QMCDriverInput& input,
   reset_random = false;
   append_run   = false;
   dump_config  = false;
-  
+
   QMCType = "invalid";
 
   ////add each QMCHamiltonianBase to W.PropertyList so that averages can be taken
@@ -114,10 +115,7 @@ void QMCDriverNew::process(xmlNodePtr cur)
 {
   //  deltaR.resize(W.getTotalNum());
   //  drift.resize(W.getTotalNum());
-  
-  //process common parameters
 
-  putQMCInfo(cur);
   if (!qmcdriver_input_.get_append_run())
     current_step_ = 0;
   else
@@ -298,13 +296,8 @@ void QMCDriverNew::setupWalkers()
     }
 
     // Finding the equal groups that will fit the inputs request
-    IndexType rw            = qmcdriver_input_.get_requested_walkers_per_rank();
-    walkers_per_crowd_      = (rw % num_crowds_) ? rw / num_crowds_ + 1 : rw / num_crowds_;
-    IndexType local_walkers = walkers_per_crowd_ * num_crowds_;
 
-    population_.set_num_local_walkers(local_walkers);
-    population_.set_num_global_walkers(local_walkers * num_crowds_ * population_.get_num_ranks());
-
+    IndexType local_walkers = calc_default_local_walkers();
     addWalkers(local_walkers);
   }
 }
@@ -362,5 +355,15 @@ void QMCDriverNew::setWalkerOffsets()
   //  app_log() << "  Total number of walkers: " << W.EnsembleProperty.NumSamples << std::endl;
   //  app_log() << "  Total weight: " << W.EnsembleProperty.Weight << std::endl;
 }
+
+// operator <<
+//   app_log() << "  time step      = " << Tau << std::endl;
+//   app_log() << "  blocks         = " << nBlocks << std::endl;
+//   app_log() << "  steps          = " << nSteps << std::endl;
+//   app_log() << "  substeps       = " << nSubSteps << std::endl;
+//   app_log() << "  current        = " << CurrentStep << std::endl;
+//   app_log() << "  target samples = " << nTargetPopulation << std::endl;
+//   app_log() << "  walkers/mpi    = " << W.getActiveWalkers() << std::endl << std::endl;
+//   app_log() << "  stepsbetweensamples = " << nStepsBetweenSamples << std::endl;
 
 } // namespace qmcplusplus

@@ -19,35 +19,7 @@
 
 namespace qmcplusplus
 {
-QMCDriverInput::QMCDriverInput(int qmc_section_count) : qmc_section_count_(qmc_section_count)
-{
-  parameter_set_.add(RollBackBlocks_, "rewind", "int");
-  parameter_set_.add(store_config_period_, "storeconfigs", "int");
-  parameter_set_.add(store_config_period_, "store_configs", "int");
-  parameter_set_.add(recalculate_properties_period_, "checkProperties", "int");
-  parameter_set_.add(recalculate_properties_period_, "checkproperties", "int");
-  parameter_set_.add(recalculate_properties_period_, "check_properties", "int");
-  parameter_set_.add(config_dump_period_.period, "recordconfigs", "int");
-  parameter_set_.add(config_dump_period_.period, "record_configs", "int");
-  parameter_set_.add(starting_step_, "current", "int");
-  parameter_set_.add(max_blocks_, "blocks", "int");
-  parameter_set_.add(max_steps_, "steps", "int");
-  parameter_set_.add(sub_steps_, "substeps", "int");
-  parameter_set_.add(sub_steps_, "sub_steps", "int");
-  parameter_set_.add(warmup_steps_, "warmupsteps", "int");
-  parameter_set_.add(warmup_steps_, "warmup_steps", "int");
-  parameter_set_.add(requested_walkers_per_rank_, "walkers", "int");
-  parameter_set_.add(num_crowds_, "crowds", "int");
-  parameter_set_.add(steps_between_samples_, "stepsbetweensamples", "int");
-  parameter_set_.add(samples_per_thread_, "samplesperthread", "real");
-  parameter_set_.add(samples_per_thread_, "dmcwalkersperthread", "real");
-  parameter_set_.add(requested_samples_, "samples", "real");
-  parameter_set_.add(tau_, "timestep", "AU");
-  parameter_set_.add(tau_, "time_step", "AU");
-  parameter_set_.add(tau_, "tau", "AU");
-  parameter_set_.add(max_cpu_secs_, "maxcpusecs", "real");
-  parameter_set_.add(blocks_between_recompute_, "blocks_between_recompute", "int");
-}
+QMCDriverInput::QMCDriverInput(int qmc_section_count) : qmc_section_count_(qmc_section_count) {}
 
 /** Reads qmc section xml node parameters
  *
@@ -61,6 +33,35 @@ QMCDriverInput::QMCDriverInput(int qmc_section_count) : qmc_section_count_(qmc_s
  */
 void QMCDriverInput::readXML(xmlNodePtr cur)
 {
+  // ParameterSet has an dependency on the lifetime of the backing xmlNodePtr
+  // so its better it not live long
+  ParameterSet parameter_set;
+  parameter_set.add(RollBackBlocks_, "rewind", "int");
+  parameter_set.add(store_config_period_, "storeconfigs", "int");
+  parameter_set.add(store_config_period_, "store_configs", "int");
+  parameter_set.add(recalculate_properties_period_, "checkProperties", "int");
+  parameter_set.add(recalculate_properties_period_, "checkproperties", "int");
+  parameter_set.add(recalculate_properties_period_, "check_properties", "int");
+  parameter_set.add(config_dump_period_.period, "recordconfigs", "int");
+  parameter_set.add(config_dump_period_.period, "record_configs", "int");
+  parameter_set.add(starting_step_, "current", "int");
+  parameter_set.add(max_blocks_, "blocks", "int");
+  parameter_set.add(max_steps_, "steps", "int");
+  parameter_set.add(sub_steps_, "substeps", "int");
+  parameter_set.add(sub_steps_, "sub_steps", "int");
+  parameter_set.add(warmup_steps_, "warmupsteps", "int");
+  parameter_set.add(warmup_steps_, "warmup_steps", "int");
+  parameter_set.add(num_crowds_, "crowds", "int");
+  parameter_set.add(steps_between_samples_, "stepsbetweensamples", "int");
+  parameter_set.add(samples_per_thread_, "samplesperthread", "real");
+  parameter_set.add(samples_per_thread_, "dmcwalkersperthread", "real");
+  parameter_set.add(requested_samples_, "samples", "real");
+  parameter_set.add(tau_, "timestep", "AU");
+  parameter_set.add(tau_, "time_step", "AU");
+  parameter_set.add(tau_, "tau", "AU");
+  parameter_set.add(max_cpu_secs_, "maxcpusecs", "real");
+  parameter_set.add(blocks_between_recompute_, "blocks_between_recompute", "int");
+
   OhmmsAttributeSet aAttrib;
 
   // first stage in from QMCDriverFactory

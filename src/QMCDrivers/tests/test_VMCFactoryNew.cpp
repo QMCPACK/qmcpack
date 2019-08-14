@@ -20,23 +20,18 @@
 
 namespace qmcplusplus
 {
-TEST_CASE("VMCFactory Instantiation", "[drivers]") {
-    using namespace testing;
+TEST_CASE("VMCFactory Instantiation", "[drivers]")
+{
+  using namespace testing;
   Libxml2Document doc;
-  
+
   bool okay = doc.parseFromString(valid_vmc_input_sections[valid_vmc_input_vmc_batch_index]);
   REQUIRE(okay);
-  xmlNodePtr node                           = doc.getRoot();
+  xmlNodePtr node = doc.getRoot();
   std::bitset<QMC_MODE_MAX> vmc_mode;
-  vmc_mode[SPACEWARP_MODE] = false;
-  vmc_mode[MULTIPLE_MODE]  = false;
   vmc_mode[UPDATE_MODE] = true;
-  vmc_mode[GPU_MODE] = false;
-  int qmc_counter = 0;
-  VMCFactoryNew vmc_factory(node,
-                            vmc_mode.to_ulong(),
-                            qmc_counter);
-  
+  int qmc_counter       = 0;
+  VMCFactoryNew vmc_factory(node, vmc_mode[UPDATE_MODE], qmc_counter);
 }
 
 } // namespace qmcplusplus

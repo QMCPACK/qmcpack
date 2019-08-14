@@ -32,6 +32,7 @@ namespace qmcplusplus
 {
 TEST_CASE("QMCDriverFactory create VMC Driver", "[qmcapp]")
 {
+  using namespace testing;
   Communicate* comm;
   OHMMS::Controller->initialize(0, NULL);
   comm = OHMMS::Controller;
@@ -63,6 +64,7 @@ TEST_CASE("QMCDriverFactory create VMC Driver", "[qmcapp]")
 
 TEST_CASE("QMCDriverFactory create VMCBatched driver", "[qmcapp]")
 {
+  using namespace testing;
   Communicate* comm;
   OHMMS::Controller->initialize(0, NULL);
   comm = OHMMS::Controller;

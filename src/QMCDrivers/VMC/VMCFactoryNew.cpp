@@ -27,18 +27,17 @@ QMCDriverInterface* VMCFactoryNew::create(MCPopulation& pop,
                                           WaveFunctionPool& ppool,
                                           Communicate* comm)
 {
-    //int np = Concurrency::maxThreads();
+  //int np = Concurrency::maxThreads();
 
   QMCDriverInput qmcdriver_input(qmc_counter_);
-  qmcdriver_input.readXML(input_node_);    
+  qmcdriver_input.readXML(input_node_);
+  VMCDriverInput vmcdriver_input;
+  vmcdriver_input.readXML(input_node_);
   QMCDriverInterface* qmc = nullptr;
-
-  // FIX: This ignores the current QMC section
-  VMCDriverInput vmc_input(0);
 
   if (vmc_mode_ == 0 || vmc_mode_ == 1) //(0,0,0) (0,0,1)
   {
-    qmc = new VMCBatched(vmc_input, pop, psi, h, ppool, comm);
+    qmc = new VMCBatched(qmcdriver_input, vmcdriver_input, pop, psi, h, ppool, comm);
   }
   else
   {

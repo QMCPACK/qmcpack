@@ -22,22 +22,31 @@
 
 namespace qmcplusplus
 {
-/// Constructor.
-VMCBatched::VMCBatched(VMCDriverInput& input,
+/** Constructor maintains proper ownership of input parameters
+   */
+VMCBatched::VMCBatched(QMCDriverInput& qmcdriver_input,
+                       VMCDriverInput& input,
                        MCPopulation& pop,
                        TrialWaveFunction& psi,
                        QMCHamiltonian& h,
                        WaveFunctionPool& ppool,
                        Communicate* comm)
-    : QMCDriverNew(input.get_qmcdriver_input(), pop, psi, h, ppool, comm), UseDrift("yes")
+    : QMCDriverNew(qmcdriver_input, pop, psi, h, ppool, comm), vmcdriver_input_(input)
 {
-  // RootName = "vmc";
-  // QMCType  = "VMCBatched";
   // qmc_driver_mode.set(QMC_UPDATE_MODE, 1);
   // qmc_driver_mode.set(QMC_WARMUP, 0);
-  // m_param.add(UseDrift, "useDrift", "string");
-  // m_param.add(UseDrift, "usedrift", "string");
-  // m_param.add(UseDrift, "use_drift", "string");
+}
+
+VMCBatched::IndexType VMCBatched::calc_default_local_walkers()
+{
+  IndexType rw = vmcdriver_input_.get_requested_walkers_per_rank();
+  if (rw < num_crowds_)
+    rw = num_crowds_;
+  walkers_per_crowd_      = (rw % num_crowds_) ? rw / num_crowds_ + 1 : rw / num_crowds_;
+  IndexType local_walkers = walkers_per_crowd_ * num_crowds_;
+  population_.set_num_local_walkers(local_walkers);
+  population_.set_num_global_walkers(local_walkers * population_.get_num_ranks());
+  return local_walkers;
 }
 
 bool VMCBatched::run()

@@ -12,18 +12,42 @@
 #ifndef QMCPLUSPLUS_VMCDRIVERINPUT_H
 #define QMCPLUSPLUS_VMCDRIVERINPUT_H
 
-#include "QMCDrivers/QMCDriverInput.h"
+#include "Configuration.h"
+#include "OhmmsData/ParameterSet.h"
 
 namespace qmcplusplus
 {
 class VMCDriverInput
 {
 public:
-  VMCDriverInput(int qmc_section_count) : qmcdriver_input(qmc_section_count) {}
-  inline QMCDriverInput& get_qmcdriver_input() { return qmcdriver_input; }
+  using IndexType             = QMCTraits::IndexType;
+  using RealType              = QMCTraits::RealType;
+  using FullPrecisionRealType = QMCTraits::FullPrecRealType;
+
+  VMCDriverInput(){};
+  VMCDriverInput(int walkers_per_rank, const std::string& use_drift);
   void readXML(xmlNodePtr& xml_input);
+
 protected:
-  QMCDriverInput qmcdriver_input;
+  ///store any parameter that has to be read from a file
+  //ParameterSet parameter_set_;
+
+  /** @ingroup Parameters for VMC Driver
+   *  @{
+   *  All unshared input should be here
+   *  
+   *  Do not write out blocks of gets for variables like this
+   *  there is are code_generation tools in QMCPACK_ROOT/utils/code_generation
+   */
+
+  IndexType requested_walkers_per_rank_ = 0;
+  std::string use_drift_{"yes"};
+
+  /** @} */
+
+public:
+  IndexType get_requested_walkers_per_rank() const { return requested_walkers_per_rank_; }
+  const std::string get_use_drift() const { return use_drift_; }
 };
 
 } // namespace qmcplusplus

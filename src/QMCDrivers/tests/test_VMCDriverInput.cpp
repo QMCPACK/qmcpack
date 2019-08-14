@@ -13,9 +13,28 @@
 #include "catch.hpp"
 
 #include "QMCDrivers/VMC/VMCDriverInput.h"
+#include "QMCDrivers/tests/ValidQMCInputSections.h"
+#include "OhmmsData/Libxml2Doc.h"
 
 namespace qmcplusplus
 {
-TEST_CASE("VMCDriverInput Instantiation", "[drivers]") { VMCDriverInput driver_input(0); }
+TEST_CASE("VMCDriverInput Instantiation", "[drivers]") { VMCDriverInput driver_input; }
+
+TEST_CASE("VMCDriverInput readXML", "[drivers]")
+{
+  auto xml_test = [](const char* driver_xml) {
+    Libxml2Document doc;
+    bool okay = doc.parseFromString(driver_xml);
+    REQUIRE(okay);
+    xmlNodePtr node = doc.getRoot();
+    VMCDriverInput vmcdriver_input;
+    vmcdriver_input.readXML(node);
+    REQUIRE(vmcdriver_input.get_use_drift() == "no");
+    REQUIRE(vmcdriver_input.get_requested_walkers_per_rank() > 0);
+  };
+
+  std::for_each(testing::valid_vmc_input_sections.begin(), testing::valid_vmc_input_sections.end(), xml_test);
+}
+
 
 } // namespace qmcplusplus

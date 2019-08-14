@@ -26,7 +26,8 @@ class VMCBatched : public QMCDriverNew
 {
 public:
   /// Constructor.
-  VMCBatched(VMCDriverInput& input,
+  VMCBatched(QMCDriverInput& qmcdriver_input,
+             VMCDriverInput& input,
              MCPopulation& pop,
              TrialWaveFunction& psi,
              QMCHamiltonian& h,
@@ -36,11 +37,13 @@ public:
   bool run();
   bool put(xmlNodePtr cur);
   //inline std::vector<RandomGenerator_t*>& getRng() { return Rng;}
+  IndexType calc_default_local_walkers();
+
 private:
   int prevSteps;
   int prevStepsBetweenSamples;
+  VMCDriverInput& vmcdriver_input_;
   QMCRunType getRunType() { return QMCRunType::VMC_BATCH; }
-
   ///Ways to set rn constant
   RealType logoffset, logepsilon;
   ///option to enable/disable drift equation or RN for VMC

@@ -27,18 +27,19 @@ public:
   using IndexType        = QMCTraits::IndexType;
 
 private:
-  int num_ranks_;
-  IndexType num_global_walkers_;
-  IndexType num_local_walkers_;
-  IndexType max_samples_;
-  IndexType target_population_;
-  IndexType target_samples_;
+  int num_ranks_                = 0;
+  IndexType num_global_walkers_ = 0;
+  IndexType num_local_walkers_  = 0;
+  IndexType max_samples_        = 0;
+  IndexType target_population_  = 0;
+  IndexType target_samples_     = 0;
   Properties properties_;
   ParticleSet ions_;
   std::vector<IndexType> walker_offsets_;
 
 public:
   MCPopulation(){};
+  MCPopulation(int num_ranks) : num_ranks_(num_ranks) {}
   MCPopulation(MCWalkerConfiguration& mcwc);
 
   int get_num_ranks() const { return num_ranks_; }

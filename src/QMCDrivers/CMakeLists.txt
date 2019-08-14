@@ -42,6 +42,7 @@ SET(QMCDRIVERS
   VMC/VMCUpdateAll.cpp
   VMC/VMCFactory.cpp
   VMC/VMCFactoryNew.cpp
+  VMC/VMCDriverInput.cpp
   DMC/DMC.cpp
   DMC/DMCUpdateAll.cpp
   DMC/DMCUpdatePbyPFast.cpp

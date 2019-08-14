@@ -31,9 +31,6 @@ public:
   void readXML(xmlNodePtr cur);
 
 protected:
-  ///store any parameter that has to be read from a file
-  ParameterSet parameter_set_;
-
   /** @ingroup Type dependent behavior
    * @{
    * @brief use simple metaprogramming in anticipation of single executable
@@ -89,8 +86,8 @@ protected:
   bool append_run_                    = false;
 
   // from QMCDriverFactory
-  std::string qmc_method_ {"invalid"};
-  std::string update_mode_ {"pbyp"};
+  std::string qmc_method_{"invalid"};
+  std::string update_mode_{"pbyp"};
 
   // from putQMCInfo
   input::PeriodStride walker_dump_period_;
@@ -108,7 +105,6 @@ public:
   int get_recalculate_properties_period() const { return recalculate_properties_period_; }
   input::PeriodStride get_config_dump_period() const { return config_dump_period_; }
   IndexType get_starting_step() const { return starting_step_; }
-  IndexType get_requested_walkers_per_rank() const { return requested_walkers_per_rank_; }
   IndexType get_num_crowds() const { return num_crowds_; }
   IndexType get_requested_samples() const { return requested_samples_; }
   IndexType get_sub_steps() const { return sub_steps_; }
@@ -128,13 +124,6 @@ public:
 
   const std::string& get_qmc_method() const { return qmc_method_; }
   const std::string& get_update_mode() const { return update_mode_; }
-
-
-  template<class PDT>
-  void setValue(const std::string& aname, PDT x)
-  {
-    parameter_set_.setValue(aname, x);
-  }
 };
 
 } // namespace qmcplusplus
