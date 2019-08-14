@@ -50,12 +50,15 @@ bool GridExternalPotential::put(xmlNodePtr cur)
   attrib.add(pbc, "pbc");
   attrib.put(cur);
 
+  double delta = (grid.end - grid.start) / (grid.num-1);
+
+
   if (pbc) {
     BC.lCode = PERIODIC;
     BC.rCode = PERIODIC;
-  }
+    delta = (grid.end - grid.start) / (grid.num);
 
-  double delta = (grid.end - grid.start) / (grid.num-1);
+  }
 
   Array<double, 3> data(grid.num, grid.num, grid.num);
 
@@ -69,8 +72,10 @@ bool GridExternalPotential::put(xmlNodePtr cur)
                 << "    Grid start: " << grid.start << std::endl
                 << "    Grid end: " << grid.end << std::endl
                 << "    Grid num: " << grid.num << std::endl
+                << "    Grid delta: " << delta << std::endl
                 << "    Grid file_name: " << file_name << std::endl
                 << "    Grid dataset_name: " << dataset_name << std::endl
+                << "    Periodic: " << pbc << std::endl
                 << "    ==============================\n";
 
 
@@ -78,7 +83,6 @@ bool GridExternalPotential::put(xmlNodePtr cur)
 
   hin.read(data, dataset_name);
   
-
   spline_data = create_UBspline_3d_d(grid, grid, grid, 
                                      BC, BC, BC, data.data());
 
@@ -111,8 +115,13 @@ GridExternalPotential::Return_t GridExternalPotential::evaluate(ParticleSet& P)
     for (int i = 0; i < P.getTotalNum(); ++i)
     {
       PosType r = P.R[i];
+      P.Lattice.applyMinimumImage(r);
       double val = 0.0;
       eval_UBspline_3d_d(spline_data, r[0], r[1], r[2], &val);
+      // app_log() << "Coordinates: " << r[0] << " " << r[1] << " " << r[2] << " " << val << std::endl;
+
+      // app_log() << "Value: " << val << std::endl;
+      // app_log() << "Should be: " << 0.5 * dot(r, r) << std::endl;
       Value += val;
     }
 #if !defined(REMOVE_TRACEMANAGER)
