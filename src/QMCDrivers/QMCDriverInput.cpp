@@ -75,7 +75,7 @@ void QMCDriverInput::readXML(xmlNodePtr cur)
   if (cur != NULL)
   {
     //initialize the parameter set
-    parameter_set_.put(cur);
+    parameter_set.put(cur);
 
     xmlNodePtr tcur = cur->children;
     //determine how often to print walkers to hdf5 file
