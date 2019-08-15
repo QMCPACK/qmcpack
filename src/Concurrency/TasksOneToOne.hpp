@@ -50,6 +50,8 @@ private:
 
 // Implementation includes must follow functor declaration
 #include "Concurrency/TasksOneToOneOPENMP.hpp"
+#ifdef QMC_EXP_THREADING
 #include "Concurrency/TasksOneToOneSTD.hpp"
+#endif
 // Additional implementations enabled by cmake options would go here
 #endif

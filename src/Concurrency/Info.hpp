@@ -25,27 +25,32 @@ namespace qmcplusplus
 enum class Threading
 {
   OPENMP,
+#ifdef QMC_EXP_THREADING
   STD
+#endif
 };
 
 namespace Concurrency
 {
-using Threading = typename qmcplusplus::Threading;
+using qmcplusplus::Threading;
+
 template<Threading TT = Threading::OPENMP>
 unsigned int maxThreads();
 
 template<>
-unsigned int maxThreads<Threading::OPENMP>()
+inline unsigned int maxThreads<Threading::OPENMP>()
 {
   return omp_get_max_threads();
 }
 
+#ifdef QMC_EXP_THREADING
 template<>
-unsigned int maxThreads<Threading::STD>()
+inline unsigned int maxThreads<Threading::STD>()
 {
   // Does taskset fix what this reports?  i.e. deal with binding to socket properly
   return std::thread::hardware_concurrency();
 }
+#endif
 
 } // namespace Concurrency
 } // namespace qmcplusplus
