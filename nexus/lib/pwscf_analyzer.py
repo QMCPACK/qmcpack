@@ -191,7 +191,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
             fermi_energies = []
             for l in lines:
                 if l.find('Fermi energy')!=-1:
-                    fermi_energies.append( eval( l.split('is')[1].split()[0] ) )
+                    fermi_energies.append( float( l.split('is')[1].split()[0] ) )
                 #end if
             #end for
             if len(fermi_energies)==0:
@@ -210,7 +210,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
             energies = []
             for l in lines:
                 if l.find('!  ')!=-1:
-                    energies.append( eval( l.split('=')[1].split()[0] ) )
+                    energies.append( float( l.split('=')[1].split()[0] ) )
                 #end if
             #end for
             if len(energies)==0:
