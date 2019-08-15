@@ -9,10 +9,6 @@
 // File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
-#include <atomic>
-#include <thread>
-#include <functional>
-
 #define CATCH_CONFIG_MAIN
 #include "catch.hpp"
 
@@ -20,8 +16,6 @@
 
 namespace qmcplusplus
 {
-void TestTask(const int ip, std::atomic<int>& counter) { counter++; }
-
 /** Openmp generally works but is not guaranteed with std::atomic
  */
 void TestTaskOMP(const int ip, int& counter)
@@ -69,38 +63,6 @@ TEST_CASE("TasksOneToOne<OPENMP> nested case", "[concurrency]")
   bool threw = false;
   REQUIRE_THROWS_WITH(test_block(nested_tasks, std::ref(count)),
                       Catch::Contains("TasksOneToOne should not be used for nested openmp threading"));
-}
-
-TEST_CASE("TasksOneToOne<STD> function case", "[concurrency]")
-{
-  int num_threads = 8;
-  TasksOneToOne<Threading::STD> test_block(num_threads);
-  std::atomic<int> count(0);
-  test_block(TestTask, std::ref(count));
-  REQUIRE(count == 8);
-}
-
-TEST_CASE("TasksOneToOne<STD> lambda case", "[concurrency]")
-{
-  int num_threads = 8;
-  TasksOneToOne<Threading::STD> test_block(num_threads);
-  std::atomic<int> count(0);
-  test_block([](int id, auto& my_count) { my_count++; }, std::ref(count));
-  REQUIRE(count == 8);
-}
-
-TEST_CASE("TasksOneToOne<STD> nested case", "[concurrency]")
-{
-  int num_threads = 8;
-  TasksOneToOne<Threading::STD> test_block(num_threads);
-  int count(0);
-  test_block(
-      [num_threads](int task_id, int& my_count) {
-        TasksOneToOne<Threading::STD> test_block2(num_threads);
-        test_block2(TestTaskOMP, std::ref(my_count));
-      },
-      std::ref(count));
-  REQUIRE(count == 64);
 }
 
 } // namespace qmcplusplus
