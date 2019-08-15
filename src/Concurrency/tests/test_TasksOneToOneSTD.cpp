@@ -19,7 +19,7 @@
 
 namespace qmcplusplus
 {
-void TestTask(const int ip, std::atomic<int>& counter) { counter++; }
+void TestTask(const int ip, std::atomic<int>& counter) { ++counter; }
 
 TEST_CASE("TasksOneToOne<STD> function case", "[concurrency]")
 {
@@ -35,7 +35,7 @@ TEST_CASE("TasksOneToOne<STD> lambda case", "[concurrency]")
   int num_threads = 8;
   TasksOneToOne<Threading::STD> test_block(num_threads);
   std::atomic<int> count(0);
-  test_block([](int id, auto& my_count) { my_count++; }, std::ref(count));
+  test_block([](int id, std::atomic<int>& my_count) { ++my_count; }, std::ref(count));
   REQUIRE(count == 8);
 }
 
