@@ -188,10 +188,29 @@ class PwscfAnalyzer(SimulationAnalyzer):
         #end try
 
         try:
+            fermi_energies = []
+            for l in lines:
+                if l.find('Fermi energy')!=-1:
+                    fermi_energies.append( float( l.split('is')[1].split()[0] ) )
+                #end if
+            #end for
+            if len(fermi_energies)==0:
+                self.Ef = 0.0
+            else:
+                self.Ef = fermi_energies[-1]
+            #end if
+            self.fermi_energies = array(fermi_energies)
+        except:
+            nx+=1
+            if self.info.warn:
+                self.warn('fermi energy read failed')
+            #end if
+        #end try
+        try:
             energies = []
             for l in lines:
                 if l.find('!  ')!=-1:
-                    energies.append( eval( l.split('=')[1].split()[0] ) )
+                    energies.append( float( l.split('=')[1].split()[0] ) )
                 #end if
             #end for
             if len(energies)==0:
@@ -203,7 +222,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
         except:
             nx+=1
             if self.info.warn:
-                self.warn('energy read failed')
+                self.warn('total energy read failed')
             #end if
         #end try
         try:
