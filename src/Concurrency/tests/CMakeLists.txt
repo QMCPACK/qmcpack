@@ -14,7 +14,7 @@ SET(SRC_DIR Concurrency)
 SET(UTEST_EXE test_${SRC_DIR})
 SET(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 
-SET(SRCS test_TasksOneToOne.cpp)
+SET(SRCS test_TasksOneToOneOPENMP.cpp)
 
 IF(QMC_EXP_THREADING)
   SET(SRCS ${SRCS} test_TasksOneToOneSTD.cpp)
