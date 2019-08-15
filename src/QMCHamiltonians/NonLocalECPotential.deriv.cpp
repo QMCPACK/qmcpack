@@ -137,36 +137,27 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateValueAndDerivatives
     for (int j = 0; j < nknot; j++)
     {
       PosType pos_now = W.R[iel];
-      //W.makeMoveAndCheck(iel, deltarV[j]);
-
-//#if defined(QMC_COMPLEX)
-//      psiratio[j] = psi.ratio(W, iel) * ValueType( std::cos(psi.getPhaseDiff()), std::sin(psi.getPhaseDiff()) );
-//#else
-//      psiratio[j] = psi.ratio(W, iel);
-//#endif
-//      psiratio[j] = psi.full_ratio(W, iel);
       W.makeMove(iel, deltarV[j]);
-//#if defined(QMC_COMPLEX)
-//      psiratio[j] = psi.ratio(W, iel) * std::cos(psi.getPhaseDiff());
-//#else
-//      psiratio[j] = psi.ratio(W, iel);
-//#endif
       psiratio[j] = psi.full_ratio(W, iel);
       psi.resetPhaseDiff();
 
       //use existing methods
       W.acceptMove(iel);
 
+      // update values for the wave function
+      RealType logpsi = psi.evaluateDeltaLog(W, false);
+
       std::fill(dlogpsi_t.begin(), dlogpsi_t.end(), 0.0);
       //std::fill(dlogpsi_ct.begin(), dlogpsi_ct.end(), 0.0);
-      //psi.evaluateDerivatives(W, optvars, dlogpsi_t, dhlogpsi_t);
-      psi.evaluateDerivativesForNonLocalPP(W, iel, optvars, dlogpsi_t);
+      psi.evaluateDerivatives(W, optvars, dlogpsi_t, dhlogpsi_t, true);
+      //psi.evaluateDerivativesForNonLocalPP(W, iel, optvars, dlogpsi_t);
       for (int v = 0; v < dlogpsi_t.size(); ++v)
         dratio(v, j) = dlogpsi_t[v];
 
       PosType md = -1.0 * deltarV[j];
       W.makeMove(iel, md);
       W.acceptMove(iel);
+      logpsi = psi.evaluateDeltaLog(W, false);
     }
 
     for (int j = 0; j < nknot; ++j)

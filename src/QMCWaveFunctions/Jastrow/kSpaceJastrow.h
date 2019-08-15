@@ -193,7 +193,8 @@ public:
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& active,
                            std::vector<ValueType>& dlogpsi,
-                           std::vector<ValueType>& dhpsioverpsi);
+                           std::vector<ValueType>& dhpsioverpsi, 
+                           bool wf_deriv_only=false);
 
   /** evaluate the ratio
   */

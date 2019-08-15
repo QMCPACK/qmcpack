@@ -211,7 +211,8 @@ void ExampleHeComponent::resetParameters(const OptVariablesType& active)
 void ExampleHeComponent::evaluateDerivatives(ParticleSet& P,
                                              const OptVariablesType& optvars,
                                              std::vector<ValueType>& dlogpsi,
-                                             std::vector<ValueType>& dhpsioverpsi)
+                                             std::vector<ValueType>& dhpsioverpsi, 
+                                             bool wf_deriv_only)
 {
   typedef TinyVector<RealType, 3> RealGradType;
 

@@ -157,7 +157,8 @@ public:
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& active,
                            std::vector<ValueType>& dlogpsi,
-                           std::vector<ValueType>& dhpsioverpsi)
+                           std::vector<ValueType>& dhpsioverpsi, 
+                           bool wf_deriv_only=false )
   {
     // First zero out values, since each determinant only adds on
     // its contribution (i.e. +=) , rather than setting the value

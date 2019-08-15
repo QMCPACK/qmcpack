@@ -106,7 +106,8 @@ public:
   virtual void evaluateDerivatives(ParticleSet& P,
                                    const opt_variables_type& optvars,
                                    std::vector<RealType>& dlogpsi,
-                                   std::vector<RealType>& dhpsioverpsi);
+                                   std::vector<RealType>& dhpsioverpsi, 
+                                   bool wf_deriv_only=false);
 
   virtual void resize(int, int);
 

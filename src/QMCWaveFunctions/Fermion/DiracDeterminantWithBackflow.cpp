@@ -625,7 +625,8 @@ void DiracDeterminantWithBackflow::restore(int iat) { curRatio = 1.0; }
 void DiracDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
                                                        const opt_variables_type& active,
                                                        std::vector<ValueType>& dlogpsi,
-                                                       std::vector<ValueType>& dhpsioverpsi)
+                                                       std::vector<ValueType>& dhpsioverpsi, 
+                                                       bool wf_deriv_only)
 {
   /*  Note:
    *    Since evaluateDerivatives seems to always be called after

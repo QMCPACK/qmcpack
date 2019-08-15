@@ -636,6 +636,7 @@ void TrialWaveFunction::evaluateDerivatives(ParticleSet& P,
     const opt_variables_type& optvars,
     std::vector<ValueType>& dlogpsi,
     std::vector<ValueType>& dhpsioverpsi,
+    bool wf_deriv_only,
     bool project)
 {
   //     // First, zero out derivatives
@@ -645,9 +646,9 @@ void TrialWaveFunction::evaluateDerivatives(ParticleSet& P,
   for (int i = 0; i < Z.size(); i++)
   {
     if (Z[i]->dPsi)
-      (Z[i]->dPsi)->evaluateDerivatives(P, optvars, dlogpsi, dhpsioverpsi);
+      (Z[i]->dPsi)->evaluateDerivatives(P, optvars, dlogpsi, dhpsioverpsi, wf_deriv_only);
     else
-      Z[i]->evaluateDerivatives(P, optvars, dlogpsi, dhpsioverpsi);
+      Z[i]->evaluateDerivatives(P, optvars, dlogpsi, dhpsioverpsi, wf_deriv_only);
   }
   //orbitals do not know about mass of particle.
   for (int i = 0; i < dhpsioverpsi.size(); i++)
@@ -666,15 +667,6 @@ void TrialWaveFunction::evaluateDerivatives(ParticleSet& P,
     for (int i = 0; i < dlogpsi.size(); i++)
       dlogpsi[i] *= psiValue;
   }
-}
-
-void TrialWaveFunction::evaluateDerivativesForNonLocalPP(ParticleSet& P,
-                                                         int iat,
-                                                         const opt_variables_type& optvars,
-                                                         std::vector<ValueType>& dlogpsi)
-{
-  for (int i = 0; i < Z.size(); i++)
-    Z[i]->evaluateDerivativesForNonLocalPP(P, iat, optvars, dlogpsi);
 }
 
 void TrialWaveFunction::evaluateGradDerivatives(const ParticleSet::ParticleGradient_t& G_in,
