@@ -519,7 +519,7 @@ void PWOrbitalBuilder::transform2GridData(PWBasis::GIndex_t& nG, int spinIndex, 
 
 hid_t PWOrbitalBuilder::getH5(xmlNodePtr cur, const char* aname)
 {
-  XMLAttrString a(cur, aname);
+  const XMLAttrString a(cur, aname);
   if (a.empty()) return -1;
   hid_t h = H5Fopen(a.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
   if (h < 0)

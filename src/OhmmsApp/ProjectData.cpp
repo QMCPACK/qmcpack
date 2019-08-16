@@ -179,11 +179,8 @@ bool ProjectData::put(xmlNodePtr cur)
   m_cur                  = cur;
   m_title = XMLAttrString(cur, "id");
   const XMLAttrString series_str(cur, "series");
-  if (!series_str.empty())
-  {
-    std::istringstream stream(series_str);
-    stream >> m_series;
-  }
+  if (!series_str.empty()) m_series = std::stoi(series_str);
+
   ///first, overwrite the existing xml nodes
   cur = cur->xmlChildrenNode;
   while (cur != NULL)

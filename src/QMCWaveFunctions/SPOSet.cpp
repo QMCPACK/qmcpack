@@ -352,7 +352,7 @@ bool SPOSet::putOccupation(xmlNodePtr occ_ptr)
   }
   else
   {
-    XMLAttrString o(occ_ptr, "mode");
+    const XMLAttrString o(occ_ptr, "mode");
     if (!o.empty())
       occ_mode = o;
   }
