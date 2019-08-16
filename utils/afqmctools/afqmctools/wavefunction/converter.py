@@ -161,10 +161,6 @@ def read_qmcpack_ci_wavefunction(input_file, nelec, nmo, ndets=None):
         occa = []
         occb = []
         for i, (ca, cb) in enumerate(zip(ci_a[:ndets], ci_b[:ndets])):
-            if len(get_occupied(ca,na,nmo)) != 5:
-                print(i, "alpha", ca, get_occupied(ca,nb,nmo))
-            if len(get_occupied(cb,nb,nmo)) != 5:
-                print(i, "beta", cb, get_occupied(cb,nb,nmo))
             occa.append(get_occupied(ca, na, nmo))
             occb.append(get_occupied(cb, nb, nmo))
     wfn = (coeffs, numpy.array(occa), numpy.array(occb))
