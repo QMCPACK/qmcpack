@@ -120,7 +120,6 @@ struct ParameterSet : public OhmmsElementBase
    *The condition will be used to convert the external unit to the internal unit.
    */
   template<class PDT>
-  // INLINE_ALL void add(PDT& aparam, const char* aname, const char* uname) {
   inline void add(PDT& aparam, const char* aname_in, const char* uname)
   {
     std::string aname(aname_in);
@@ -133,7 +132,6 @@ struct ParameterSet : public OhmmsElementBase
   }
 
   template<class PDT>
-  //INLINE_ALL void setValue(const std::string& aname, PDT aval){
   inline void setValue(const std::string& aname_in, PDT aval)
   {
     std::string aname(aname_in);

@@ -12,7 +12,8 @@
 
 /** @file XMLParsingString.h
  *
- * convert xmlNode contents into a std::string
+ * XMLNodeString convert xmlNode contents into a std::string
+ * XMLAttrString convert one xmlNode attribute into a std::string
  */
 #ifndef QMCPLUSPLUS_XMLSTRING_H
 #define QMCPLUSPLUS_XMLSTRING_H
@@ -50,6 +51,7 @@ public:
 };
 
 /** convert an xmlNode attribute into a std::string
+ * if parsing multiple attributes is needed, use OhmmsAttributeSet
  */
 class XMLAttrString : public std::string
 {
