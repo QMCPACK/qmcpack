@@ -470,7 +470,7 @@ public:
 protected:
   bool putOccupation(xmlNodePtr occ_ptr);
   bool putFromXML(xmlNodePtr coeff_ptr);
-  bool putFromH5(const char* fname, xmlNodePtr coeff_ptr);
+  bool putFromH5(const std::string& fname, xmlNodePtr coeff_ptr);
 #endif
   ///true, if the derived class has non-zero ionic derivatives.
   bool ionDerivs;
