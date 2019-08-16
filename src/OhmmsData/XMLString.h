@@ -28,8 +28,11 @@ public:
   XMLString(const xmlNodePtr cur)
   {
     xmlChar* node_char = xmlNodeListGetString(cur->doc, cur->xmlChildrenNode, 1);
-    assign((const char*)node_char);
-    xmlFree(node_char);
+    if(node_char)
+    {
+      assign((const char*)node_char);
+      xmlFree(node_char);
+    }
   }
 
   /// expose base class constructors
