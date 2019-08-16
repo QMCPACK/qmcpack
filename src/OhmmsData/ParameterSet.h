@@ -84,7 +84,7 @@ struct ParameterSet : public OhmmsElementBase
       {
         if (cname == myName)
         {
-          const xmlChar* aptr = xmlGetProp(cur, (const xmlChar*)"name");
+          xmlChar* aptr = xmlGetProp(cur, (const xmlChar*)"name");
           if (aptr)
           {
             //string aname = (const char*)(xmlGetProp(cur, (const xmlChar *) "name"));
@@ -96,6 +96,7 @@ struct ParameterSet : public OhmmsElementBase
               something = true;
               (*it).second->put(cur);
             }
+            xmlFree(aptr);
           }
         }
       }
