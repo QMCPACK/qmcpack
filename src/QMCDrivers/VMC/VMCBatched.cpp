@@ -40,11 +40,9 @@ VMCBatched::IndexType VMCBatched::calc_default_local_walkers()
   population_.set_num_local_walkers(local_walkers);
   population_.set_num_global_walkers(local_walkers * population_.get_num_ranks());
   if (rw != vmcdriver_input_.get_requested_walkers_per_rank())
-      app_warning() << "VMCBatched driver has adjusted walkers per rank to: "
-                    << local_walkers << '\n';
+    app_warning() << "VMCBatched driver has adjusted walkers per rank to: " << local_walkers << '\n';
 
-  if (vmcdriver_input_.get_samples() >= 0 ||
-      vmcdriver_input_.get_samples_per_thread() >= 0 ||
+  if (vmcdriver_input_.get_samples() >= 0 || vmcdriver_input_.get_samples_per_thread() >= 0 ||
       vmcdriver_input_.get_steps_between_samples() >= 0)
     app_warning() << "VMCBatched currently ignores samples and samplesperthread\n";
 
@@ -55,13 +53,10 @@ VMCBatched::IndexType VMCBatched::calc_default_local_walkers()
 
 bool VMCBatched::run()
 {
-  //   //start the main estimator
-  //   Estimators->start(nBlocks);
-  //   for (int ip = 0; ip < NumThreads; ++ip)
-  //     Movers[ip]->startRun(nBlocks, false);
-  // #if !defined(REMOVE_TRACEMANAGER)
-  //   Traces->startRun(nBlocks, traceClones);
-  // #endif
+  //start the main estimator
+  Estimators->start(nBlocks);
+  // for (int ip = 0; ip < NumThreads; ++ip)
+  //   Movers[ip]->startRun(nBlocks, false);
 
   //   LoopTimer vmc_loop;
   //   RunTimeControl runtimeControl(RunTimeManager, MaxCPUSecs);
@@ -142,9 +137,8 @@ bool VMCBatched::run()
   //   //finalize a qmc section
   //   return finalize(nBlocks, !wrotesamples);
   // }
-    return false;
+  return false;
 }
-
 
 
 } // namespace qmcplusplus

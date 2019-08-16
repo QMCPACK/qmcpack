@@ -30,9 +30,6 @@ void VMCDriverInput::readXML(xmlNodePtr& node)
   parameter_set_.put(node);
 }
 
-std::ostream& operator<<(std::ostream& o_stream, const VMCDriverInput& vmci)
-{
-    return o_stream;
-}
+std::ostream& operator<<(std::ostream& o_stream, const VMCDriverInput& vmci) { return o_stream; }
 
 } // namespace qmcplusplus

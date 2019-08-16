@@ -57,7 +57,7 @@ class QMCDriverNew : public QMCDriverInterface, public MPIObjectBase
 {
 public:
   using RealType              = QMCTraits::RealType;
-   using IndexType             = QMCTraits::IndexType;
+  using IndexType             = QMCTraits::IndexType;
   using FullPrecisionRealType = QMCTraits::FullPrecRealType;
 
   /** separate but similar to QMCModeEnum
@@ -128,7 +128,7 @@ public:
   void add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi);
 
   bool put(xmlNodePtr cur) { return false; };
-    
+
   /** initialize with xmlNode
    */
   void process(xmlNodePtr cur);
@@ -176,19 +176,14 @@ protected:
   std::vector<Crowd> crowds_;
   IndexType walkers_per_crowd_;
 
-
   ///branch engine
   SimpleFixedNodeBranch* branchEngine;
   ///drift modifer
   DriftModifierBase* DriftModifier;
+
   ///randomize it
   bool reset_random;
   ///flag to append or restart the run
-  bool append_run;
-  ///flag to turn off dumping configurations
-  bool dump_config;
-  ///true, if the size of population is fixed.
-  bool const_population;
 
   ///the number to delay updates by
   int k_delay;
@@ -325,8 +320,7 @@ public:
   NewTimer* checkpointTimer;
 
 private:
-  friend std::ostream& operator<<(std::ostream &o_stream, const QMCDriverNew& qmcd);
-
+  friend std::ostream& operator<<(std::ostream& o_stream, const QMCDriverNew& qmcd);
 };
 /**@}*/
 } // namespace qmcplusplus

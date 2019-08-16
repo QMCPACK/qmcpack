@@ -59,8 +59,6 @@ QMCDriverNew::QMCDriverNew(QMCDriverInput& input,
       wOut(0)
 {
   reset_random = false;
-  append_run   = false;
-  dump_config  = false;
 
   QMCType = "invalid";
 
@@ -127,7 +125,7 @@ void QMCDriverNew::process(xmlNodePtr cur)
   //create branchEngine first
   if (branchEngine == 0)
   {
-      branchEngine = new SimpleFixedNodeBranch(qmcdriver_input_.get_tau(), population_.get_num_global_walkers());
+    branchEngine = new SimpleFixedNodeBranch(qmcdriver_input_.get_tau(), population_.get_num_global_walkers());
   }
 
   //create and initialize estimator
@@ -166,14 +164,9 @@ void QMCDriverNew::setStatus(const std::string& aname, const std::string& h5name
   RootName = aname;
   app_log() << "\n========================================================="
             << "\n  Start " << QMCType << "\n  File Root " << RootName;
-  if (append)
-    app_log() << " append = yes ";
-  else
-    app_log() << " append = no ";
   app_log() << "\n=========================================================" << std::endl;
   if (h5name.size())
     h5FileRoot = h5name;
-  append_run = append;
 }
 
 
@@ -248,7 +241,7 @@ std::string QMCDriverNew::getLastRotationName(std::string RootName)
 
 void QMCDriverNew::recordBlock(int block)
 {
-    if (block % qmcdriver_input_.get_check_point_period().period == 0)
+  if (qmcdriver_input_.get_dump_config() && block % qmcdriver_input_.get_check_point_period().period == 0)
   {
     checkpointTimer->start();
     branchEngine->write(RootName, true); //save energy_history
@@ -261,7 +254,7 @@ bool QMCDriverNew::finalize(int block, bool dumpwalkers)
 {
   //  branchEngine->finalize(W);
 
-  if (dump_config)
+  if (qmcdriver_input_.get_dump_config())
     RandomNumberControl::write(RootName, myComm);
 
   return true;
@@ -352,7 +345,7 @@ void QMCDriverNew::setWalkerOffsets()
   //  app_log() << "  Total weight: " << W.EnsembleProperty.Weight << std::endl;
 }
 
-std::ostream& operator<<(std::ostream &o_stream, const QMCDriverNew& qmcd)
+std::ostream& operator<<(std::ostream& o_stream, const QMCDriverNew& qmcd)
 {
   o_stream << "  time step      = " << qmcd.qmcdriver_input_.get_tau() << '\n';
   o_stream << "  blocks         = " << qmcd.qmcdriver_input_.get_max_blocks() << '\n';

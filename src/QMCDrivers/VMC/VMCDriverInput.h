@@ -40,8 +40,8 @@ protected:
   IndexType requested_walkers_per_rank_ = 0;
   std::string use_drift_{"yes"};
 
-  IndexType samples_per_thread_ = -1;
-  IndexType samples_ = -1;
+  IndexType samples_per_thread_    = -1;
+  IndexType samples_               = -1;
   IndexType steps_between_samples_ = -1;
   /** @} */
 
