@@ -26,7 +26,8 @@
 template<class T>
 inline bool putContent(qmcplusplus::Vector<T>& a, xmlNodePtr cur)
 {
-  std::istringstream stream((const char*)(xmlNodeListGetString(cur->doc, cur->xmlChildrenNode, 1)));
+  const XMLParsingString node_string(cur);
+  std::istringstream stream(node_string);
   int i = 0;
   int n(a.size());
   while (!stream.eof() && i < n)
@@ -39,7 +40,8 @@ inline bool putContent(qmcplusplus::Vector<T>& a, xmlNodePtr cur)
 template<typename T>
 inline bool putContent(qmcplusplus::Matrix<T>& a, xmlNodePtr cur)
 {
-  std::istringstream stream((const char*)(xmlNodeListGetString(cur->doc, cur->xmlChildrenNode, 1)));
+  const XMLParsingString node_string(cur);
+  std::istringstream stream(node_string);
   int i = 0, ntot = a.size();
   while (!stream.eof() && i < ntot)
   {
