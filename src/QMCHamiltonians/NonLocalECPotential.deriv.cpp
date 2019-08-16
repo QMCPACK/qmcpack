@@ -156,17 +156,19 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateValueAndDerivatives
 
       //use existing methods
       W.acceptMove(iel);
+      psi.acceptMove(W, iel);
 
       std::fill(dlogpsi_t.begin(), dlogpsi_t.end(), 0.0);
       //std::fill(dlogpsi_ct.begin(), dlogpsi_ct.end(), 0.0);
-      //psi.evaluateDerivatives(W, optvars, dlogpsi_t, dhlogpsi_t);
-      psi.evaluateDerivativesForNonLocalPP(W, iel, optvars, dlogpsi_t);
+      psi.evaluateDerivatives(W, optvars, dlogpsi_t, dhlogpsi_t);
       for (int v = 0; v < dlogpsi_t.size(); ++v)
         dratio(v, j) = dlogpsi_t[v];
 
       PosType md = -1.0 * deltarV[j];
       W.makeMove(iel, md);
       W.acceptMove(iel);
+      ValueType tmp_ratio = psi.full_ratio(W, iel);
+      psi.acceptMove(W, iel);
     }
 
     for (int j = 0; j < nknot; ++j)

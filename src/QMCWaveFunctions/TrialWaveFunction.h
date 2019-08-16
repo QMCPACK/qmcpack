@@ -193,11 +193,6 @@ public:
                            std::vector<ValueType>& dhpsioverpsi,
                            bool project=false);
 
-  void evaluateDerivativesForNonLocalPP(ParticleSet& P, 
-                                        int iat,
-                                        const opt_variables_type& optvars, 
-                                        std::vector<ValueType>& dlogpsi);
-
   void evaluateGradDerivatives(const ParticleSet::ParticleGradient_t& G_in, std::vector<ValueType>& dgradlogpsi);
 
   /** evaluate the hessian w.r.t. electronic coordinates of particle iat **/
