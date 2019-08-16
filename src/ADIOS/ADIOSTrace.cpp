@@ -208,8 +208,11 @@ namespace ADIOS
                 eattrib.put(element);
                 method_name = name;
                 if (element->doc) {
-                    const XMLParsingString node_string(element);
-                    method_args = node_string;
+                    const char *args = (const char*)
+                        (xmlNodeListGetString(element->doc, element->xmlChildrenNode, 1));
+                    if (args != NULL)  {
+                        method_args = args;
+                    }
                 }
                 qmcplusplus::app_log()<<"    Output method: "<<method_name<< std::endl;
                 qmcplusplus::app_log()<<"        Arguments: "<<method_args<< std::endl;
