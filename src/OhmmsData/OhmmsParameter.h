@@ -158,7 +158,7 @@ public:
   inline bool put(xmlNodePtr cur)
   {
     node_          = cur;
-    const XMLParsingString ac(cur);
+    const XMLNodeString ac(cur);
     if (!ac.empty())
     {
       std::istringstream stream(ac);

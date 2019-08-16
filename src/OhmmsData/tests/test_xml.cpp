@@ -68,7 +68,7 @@ aa \
   xmlNodePtr root = doc.getRoot();
   REQUIRE(root != NULL);
 
-  const XMLParsingString node_string(root);
+  const XMLNodeString node_string(root);
   REQUIRE(node_string == " aa ");
 }
 
