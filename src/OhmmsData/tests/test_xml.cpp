@@ -57,7 +57,7 @@ TEST_CASE("parseString", "[xml]")
 TEST_CASE("XMLParsingString", "[xml]")
 {
   string s1("<?xml version=\"1.0\"?> \
-<simulation> \
+<simulation name=\"qmc\"> \
 aa \
 </simulation> ");
 
@@ -70,6 +70,9 @@ aa \
 
   const XMLNodeString node_string(root);
   REQUIRE(node_string == " aa ");
+
+  const XMLAttrString attr_string(root, "name");
+  REQUIRE(attr_string == "qmc");
 }
 
 TEST_CASE("putContent", "[xml]")

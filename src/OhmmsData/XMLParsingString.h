@@ -48,4 +48,35 @@ public:
     xmlNodeSetContent(cur, (const xmlChar*)(this->c_str()));
   }
 };
+
+/** convert an xmlNode attribute into a std::string
+ */
+class XMLAttrString : public std::string
+{
+  const std::string attribute_name_;
+
+public:
+  /// construct a string from an xmlNode
+  XMLAttrString(const xmlNodePtr cur, const char* name)
+      : attribute_name_(name)
+  {
+    xmlChar* attr_char = xmlGetProp(cur, (const xmlChar*)name);
+    if(attr_char)
+    {
+      assign((const char*)attr_char);
+      xmlFree(attr_char);
+    }
+  }
+
+  /// expose base class constructors
+  XMLAttrString(const std::string& in, const std::string& name) : std::string(in), attribute_name_(name) { }
+
+  XMLAttrString(const char* in, const char* name) : std::string(in), attribute_name_(name) { }
+
+  /// write a string to an xmlNode
+  void setXMLAttribute(xmlNodePtr cur) const
+  {
+    xmlSetProp(cur, (const xmlChar*)attribute_name_.c_str(), (const xmlChar*)this->c_str());
+  }
+};
 #endif
