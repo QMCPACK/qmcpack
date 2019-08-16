@@ -50,9 +50,10 @@ inline bool get_space(hid_t grp, const std::string& aname, int rank, hsize_t* di
 
 /** free function to go from spec to dimensionality of memory space and data space
  */
+template<typename IC>
 inline bool getOffsets(hid_t grp,
 		       const std::string& aname,
-		       const std::vector<int>& readSpec,
+		       const IC& readSpec,
 		       std::vector<hsize_t>& offset,
 		       std::vector<hsize_t>& count,
 		       int& numElements)

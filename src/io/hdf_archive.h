@@ -251,7 +251,21 @@ public:
     h5data_proxy<T> e(data);
     return e.read(p, aname, readSpec);
   }
-  
+
+  template<typename T, typename IC>
+  bool readEntry2(T& data, const IC& readSpec, const std::string& aname)
+  {
+    if (Mode[NOIO])
+      return true;
+    hid_t p = group_id.empty() ? file_id : group_id.top();
+    std::vector<hsize_t> offset(readSpec.size());
+    std::vector<hsize_t> count(readSpec.size());
+    int numElements;
+    getOffsets(p, aname, readSpec, offset, count, numElements);
+    hyperslab_proxy<T,7> pxy(data, count, count, offset);
+    return readEntry(pxy, aname);
+  }
+
   /* read the data from the group aname and check status
      runtime error is issued on I/O error
    */
@@ -277,6 +291,16 @@ public:
   void read(T& data, const std::vector<int>& readSpec, const std::string& aname)
   {
     if (!readEntry(data, readSpec, aname))
+    {
+      std::runtime_error("HDF5 read failure in hdf_archive::read " + aname);
+    }
+  }
+
+  // new version that will use hyperslab rather than stl specific things
+  template<typename T, typename IC>
+  void read2(T& data, const IC& readSpec, const std::string& aname)
+  {
+    if (!readEntry2(data, readSpec, aname))
     {
       std::runtime_error("HDF5 read failure in hdf_archive::read " + aname);
     }
