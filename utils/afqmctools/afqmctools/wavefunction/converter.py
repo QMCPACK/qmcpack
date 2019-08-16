@@ -128,7 +128,7 @@ def get_occupied(det, nel, nmo):
     shift = 0
     all_found = False
     for d in det:
-        while pos < nmo:
+        while pos < min(nmo,64):
             if d & (1<<pos):
                 nset += 1
                 occs.append(pos+shift)
@@ -137,6 +137,7 @@ def get_occupied(det, nel, nmo):
                 break
             pos += 1
         # Assuming 64 bit integers
+        pos = 0
         if all_found:
             break
         shift += 64
@@ -159,8 +160,12 @@ def read_qmcpack_ci_wavefunction(input_file, nelec, nmo, ndets=None):
         coeffs = fh5['MultiDet/Coeff'][:][:ndets]
         occa = []
         occb = []
-        for ca, cb in zip(ci_a[:ndets], ci_b[:ndets]):
-            occa.append(get_occupied(ca, na, nmo, nbs))
-            occb.append(get_occupied(cb, nb, nmo, nbs))
+        for i, (ca, cb) in enumerate(zip(ci_a[:ndets], ci_b[:ndets])):
+            if len(get_occupied(ca,na,nmo)) != 5:
+                print(i, "alpha", ca, get_occupied(ca,nb,nmo))
+            if len(get_occupied(cb,nb,nmo)) != 5:
+                print(i, "beta", cb, get_occupied(cb,nb,nmo))
+            occa.append(get_occupied(ca, na, nmo))
+            occb.append(get_occupied(cb, nb, nmo))
     wfn = (coeffs, numpy.array(occa), numpy.array(occb))
     return wfn, True, nmo, (na,nb)
