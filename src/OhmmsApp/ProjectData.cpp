@@ -195,13 +195,13 @@ bool ProjectData::put(xmlNodePtr cur)
     if (cname == "host")
     {
       m_host = getHostName();
-      XMLString node_string(m_host);
+      XMLParsingString node_string(m_host);
       node_string.setXMLNodeContent(cur);
     }
     if (cname == "date")
     {
       m_date = getDateAndTime();
-      XMLString node_string(m_date);
+      XMLParsingString node_string(m_date);
       node_string.setXMLNodeContent(cur);
     }
     cur = cur->next;

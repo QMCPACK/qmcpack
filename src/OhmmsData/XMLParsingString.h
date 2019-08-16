@@ -10,7 +10,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-/** @file XMLString.h
+/** @file XMLParsingString.h
  *
  * convert xmlNode contents into a std::string
  */
@@ -21,11 +21,11 @@
 #include <libxml/xmlmemory.h>
 #include <libxml/tree.h>
 
-class XMLString : public std::string
+class XMLParsingString : public std::string
 {
 public:
   /// construct a string from an xmlNode
-  XMLString(const xmlNodePtr cur)
+  XMLParsingString(const xmlNodePtr cur)
   {
     xmlChar* node_char = xmlNodeListGetString(cur->doc, cur->xmlChildrenNode, 1);
     if(node_char)
@@ -36,9 +36,9 @@ public:
   }
 
   /// expose base class constructors
-  XMLString(const std::string& in) : std::string(in) { }
+  XMLParsingString(const std::string& in) : std::string(in) { }
 
-  XMLString(const char* in) : std::string(in) { }
+  XMLParsingString(const char* in) : std::string(in) { }
 
   /// write a string to an xmlNode
   void setXMLNodeContent(xmlNodePtr cur) const

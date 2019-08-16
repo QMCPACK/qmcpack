@@ -23,7 +23,7 @@
 #include <string>
 #include <vector>
 #include <algorithm>
-#include "OhmmsData/XMLString.h"
+#include "OhmmsData/XMLParsingString.h"
 
 template<typename _CharT>
 inline void getNodeName(std::basic_string<_CharT>& cname, xmlNodePtr cur)
@@ -63,7 +63,7 @@ inline void getNodeName(std::basic_string<_CharT>& cname, xmlNodePtr cur)
 template<class T>
 bool putContent(T& a, xmlNodePtr cur)
 {
-  XMLString node_string(cur);
+  XMLParsingString node_string(cur);
   std::istringstream stream(node_string);
   stream >> a;
   return !stream.fail();
@@ -72,7 +72,7 @@ bool putContent(T& a, xmlNodePtr cur)
 template<class IT>
 bool putContent(IT first, IT last, xmlNodePtr cur)
 {
-  XMLString node_string(cur);
+  XMLParsingString node_string(cur);
   std::istringstream stream(node_string);
   bool success = true;
   while (success && first != last)
@@ -102,7 +102,7 @@ bool getContent(const T& a, xmlNodePtr cur)
   s.setf(std::ios::scientific, std::ios::floatfield);
   s.precision(10);
   s << a;
-  XMLString node_string(s.str());
+  XMLParsingString node_string(s.str());
   node_string.setXMLNodeContent(cur);
   return true;
 }
@@ -120,7 +120,7 @@ inline bool putContent(std::vector<T>& a, const xmlNodePtr cur)
 {
   if (cur->children == NULL)
     return false;
-  XMLString node_string(cur);
+  XMLParsingString node_string(cur);
   std::istringstream stream(node_string);
   std::vector<T> b;
   T t;
@@ -149,7 +149,7 @@ inline bool getContent(const std::vector<T>& a, xmlNodePtr cur)
   s.precision(10);
   for (int i = 0; i < a.size(); i++)
     s << ' ' << a[i];
-  XMLString node_string(s.str());
+  XMLParsingString node_string(s.str());
   node_string.setXMLNodeContent(cur);
   return true;
 }
