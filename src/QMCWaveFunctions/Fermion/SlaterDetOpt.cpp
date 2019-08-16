@@ -834,8 +834,7 @@ void SlaterDetOpt::add_grad_derivatives(const int nl,
 void SlaterDetOpt::evaluateDerivatives(ParticleSet& P,
                                        const opt_variables_type& optvars,
                                        std::vector<ValueType>& dlogpsi,
-                                       std::vector<ValueType>& dhpsioverpsi, 
-                                       bool wf_deriv_only)
+                                       std::vector<ValueType>& dhpsioverpsi)
 {
   // Evaluate orbital data for all orbitals (not just those in this determinant).
   // Prepares:  m_orb_val_mat_all, m_orb_der_mat_all, m_orb_lap_mat_all, m_orb_val_mat, m_orb_der_mat, m_orb_lap_mat, and m_orb_inv_mat

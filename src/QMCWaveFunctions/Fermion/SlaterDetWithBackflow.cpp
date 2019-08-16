@@ -238,8 +238,7 @@ void SlaterDetWithBackflow::testDerivGL(ParticleSet& P)
 void SlaterDetWithBackflow::evaluateDerivatives(ParticleSet& P,
                                                 const opt_variables_type& optvars,
                                                 std::vector<ValueType>& dlogpsi,
-                                                std::vector<ValueType>& dhpsioverpsi, 
-                                                bool wf_deriv_only)
+                                                std::vector<ValueType>& dhpsioverpsi)
 {
   //testDerivGL(P);
   if (BFTrans->isOptimizable())

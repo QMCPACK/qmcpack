@@ -82,8 +82,16 @@ struct DiffWaveFunctionComponent
   virtual void evaluateDerivatives(ParticleSet& P,
                                    const opt_variables_type& optvars,
                                    std::vector<ValueType>& dlogpsi,
-                                   std::vector<ValueType>& dhpsioverpsi, 
-                                   bool wf_deriv_only = false)=0;
+                                   std::vector<ValueType>& dhpsioverpsi)=0;
+
+  virtual void evaluateDerivativesForNonLocalPP(ParticleSet& P, 
+                                                int iat,
+                                                const opt_variables_type& optvars, 
+                                                std::vector<ValueType>& dlogpsi)
+  {
+    app_error() << "Need specialization of DiffOrbitalBase::evaluateDerivatives.\n";
+    abort();
+  }
 
   virtual void evaluateDerivRatios(ParticleSet& VP, const opt_variables_type& optvars, Matrix<ValueType>& dratios);
 

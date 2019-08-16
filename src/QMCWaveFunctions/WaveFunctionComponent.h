@@ -349,9 +349,12 @@ struct WaveFunctionComponent : public QMCTraits
   virtual void evaluateDerivatives(ParticleSet& P,
                                    const opt_variables_type& optvars,
                                    std::vector<ValueType>& dlogpsi,
-                                   std::vector<ValueType>& dhpsioverpsi, 
-                                   bool wf_deriv_only = false);
+                                   std::vector<ValueType>& dhpsioverpsi);
 
+  virtual void evaluateDerivativesForNonLocalPP(ParticleSet& P, 
+                                                int iat,
+                                                const opt_variables_type& optvars,
+                                                std::vector<ValueType>& dlogpsi);
 
   virtual void multiplyDerivsByOrbR(std::vector<ValueType>& dlogpsi)
   {

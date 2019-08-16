@@ -712,8 +712,7 @@ void FDLRWfn::restore(int iat)
 void FDLRWfn::evaluateDerivatives(ParticleSet& P,
                                   const opt_variables_type& optvars,
                                   std::vector<FDLRWfn::RealType>& dlogpsi,
-                                  std::vector<FDLRWfn::RealType>& dhpsioverpsi, 
-                                  bool wf_deriv_only)
+                                  std::vector<FDLRWfn::RealType>& dhpsioverpsi)
 {
   // The number of "x" parameters (which is also the number of "d"
   // parameters, hence the name - it is *not* the total number of both

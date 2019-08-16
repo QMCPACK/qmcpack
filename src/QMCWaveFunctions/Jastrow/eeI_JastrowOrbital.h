@@ -1131,8 +1131,7 @@ public:
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& optvars,
                            std::vector<ValueType>& dlogpsi,
-                           std::vector<ValueType>& dhpsioverpsi, 
-                           bool wf_deriv_only=false)
+                           std::vector<ValueType>& dhpsioverpsi)
   {
     bool recalculate(false);
     std::vector<bool> rcsingles(myVars.size(), false);

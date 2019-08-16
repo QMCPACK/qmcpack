@@ -62,8 +62,7 @@ public:
   void evaluateDerivatives(ParticleSet& P,
                            const OptVariablesType& optvars,
                            std::vector<ValueType>& dlogpsi,
-                           std::vector<ValueType>& dhpsioverpsi, 
-                           bool wf_deriv_only = false) override;
+                           std::vector<ValueType>& dhpsioverpsi) override;
 
 
   void registerData(ParticleSet& P, WFBufferType& buf) override {}

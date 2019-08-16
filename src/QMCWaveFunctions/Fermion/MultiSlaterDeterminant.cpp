@@ -722,8 +722,7 @@ void MultiSlaterDeterminant::reportStatus(std::ostream& os) {}
 void MultiSlaterDeterminant::evaluateDerivatives(ParticleSet& P,
                                                  const opt_variables_type& optvars,
                                                  std::vector<RealType>& dlogpsi,
-                                                 std::vector<RealType>& dhpsioverpsi, 
-                                                 bool wf_deriv_only)
+                                                 std::vector<RealType>& dhpsioverpsi)
 {
   bool recalculate(false);
   for (int k = 0; k < myVars.size(); ++k)

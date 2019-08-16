@@ -520,8 +520,7 @@ public:
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& active,
                            std::vector<ValueType>& dlogpsi,
-                           std::vector<ValueType>& dhpsioverpsi, 
-                           bool wf_deriv_only = false)
+                           std::vector<ValueType>& dhpsioverpsi)
   {
 #ifdef QMC_COMPLEX
     APP_ABORT("CountingJastrow::evaluateDerivatives is not available on complex builds.");

@@ -207,8 +207,7 @@ public:
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& optvars,
                            std::vector<RealType>& dlogpsi,
-                           std::vector<RealType>& dhpsioverpsi, 
-                           bool wf_deriv_only = false);
+                           std::vector<RealType>& dhpsioverpsi);
 
   void copy_recompute_vector(const opt_variables_type& vars_full, opt_variables_type& vars_part);
 
