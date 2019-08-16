@@ -12,13 +12,6 @@
 #include "QMCDrivers/VMC/VMCBatched.h"
 #include "QMCDrivers/VMC/VMCUpdatePbyP.h"
 #include "QMCDrivers/VMC/VMCUpdateAll.h"
-#include "OhmmsApp/RandomNumberControl.h"
-#include "Message/OpenMP.h"
-#include "Message/CommOperators.h"
-#include "Utilities/RunTimeManager.h"
-#include <qmc_common.h>
-//#define ENABLE_VMC_OMP_MASTER
-#include "ADIOS/ADIOS_profile.h"
 
 namespace qmcplusplus
 {
@@ -46,12 +39,22 @@ VMCBatched::IndexType VMCBatched::calc_default_local_walkers()
   IndexType local_walkers = walkers_per_crowd_ * num_crowds_;
   population_.set_num_local_walkers(local_walkers);
   population_.set_num_global_walkers(local_walkers * population_.get_num_ranks());
+  if (rw != vmcdriver_input_.get_requested_walkers_per_rank())
+      app_warning() << "VMCBatched driver has adjusted walkers per rank to: "
+                    << local_walkers << '\n';
+
+  if (vmcdriver_input_.get_samples() >= 0 ||
+      vmcdriver_input_.get_samples_per_thread() >= 0 ||
+      vmcdriver_input_.get_steps_between_samples())
+    app_warning() << "VMCBatched currently ignores samples and samplesperthread\n";
+
+  // TODO: Simplify samples, samples per thread etc in the unified driver
+  // see login in original VMC.cpp
   return local_walkers;
 }
 
 bool VMCBatched::run()
 {
-  //   resetRun();
   //   //start the main estimator
   //   Estimators->start(nBlocks);
   //   for (int ip = 0; ip < NumThreads; ++ip)
@@ -139,236 +142,9 @@ bool VMCBatched::run()
   //   //finalize a qmc section
   //   return finalize(nBlocks, !wrotesamples);
   // }
-
-  // void VMCBatched::resetRun()
-  // {
-  //   ////only VMC can overwrite this
-  //   if (nTargetPopulation > 0)
-  //     branchEngine->iParam[SimpleFixedNodeBranch::B_TARGETWALKERS] = static_cast<int>(std::ceil(nTargetPopulation));
-  //   makeClones(W, Psi, H);
-  //   FairDivideLow(W.getActiveWalkers(), NumThreads, wPerNode);
-  //   app_log() << "  Initial partition of walkers ";
-  //   copy(wPerNode.begin(), wPerNode.end(), std::ostream_iterator<int>(app_log(), " "));
-  //   app_log() << std::endl;
-
-  //   bool movers_created = false;
-  //   if (Movers.empty())
-  //   {
-  //     movers_created = true;
-  //     Movers.resize(NumThreads, 0);
-  //     estimatorClones.resize(NumThreads, 0);
-  //     traceClones.resize(NumThreads, 0);
-  //     Rng.resize(NumThreads, 0);
-  // #pragma omp parallel for
-  //     for (int ip = 0; ip < NumThreads; ++ip)
-  //     {
-  //       std::ostringstream os;
-  //       estimatorClones[ip] = new EstimatorManagerBase(*Estimators); //,*hClones[ip]);
-  //       estimatorClones[ip]->resetTargetParticleSet(*wClones[ip]);
-  //       estimatorClones[ip]->setCollectionMode(false);
-  // #if !defined(REMOVE_TRACEMANAGER)
-  //       traceClones[ip] = Traces->makeClone();
-  // #endif
-  // #ifdef USE_FAKE_RNG
-  //       Rng[ip] = new FakeRandom();
-  // #else
-  //       Rng[ip] = new RandomGenerator_t(*(RandomNumberControl::Children[ip]));
-  //       hClones[ip]->setRandomGenerator(Rng[ip]);
-  // #endif
-  //       if (QMCDriverMode[QMC_UPDATE_MODE])
-  //       {
-  //         Movers[ip] = new VMCUpdatePbyP(*wClones[ip], *psiClones[ip], *hClones[ip], *Rng[ip]);
-  //       }
-  //       else
-  //       {
-  //         Movers[ip] = new VMCUpdateAll(*wClones[ip], *psiClones[ip], *hClones[ip], *Rng[ip]);
-  //       }
-  //       Movers[ip]->nSubSteps = nSubSteps;
-  //       if (ip == 0)
-  //         app_log() << os.str() << std::endl;
-  //     }
-  //   }
-  // #if !defined(REMOVE_TRACEMANAGER)
-  //   else
-  //   {
-  // #pragma omp parallel for
-  //     for (int ip = 0; ip < NumThreads; ++ip)
-  //     {
-  //       traceClones[ip]->transfer_state_from(*Traces);
-  //     }
-  //   }
-  // #endif
-  //   if (QMCDriverMode[QMC_UPDATE_MODE])
-  //   {
-  //     app_log() << "  Using Particle by Particle moves" << std::endl;
-  //   }
-  //   else
-  //   {
-  //     app_log() << "  Using All Particle moves" << std::endl;
-  //   }
-
-  //   if (UseDrift == "yes")
-  //   {
-  //     app_log() << "  Walker moves with drift" << std::endl;
-  //     for (int i = 0; i < Movers.size(); i++)
-  //       Movers[i]->UseDrift = true;
-  //   }
-  //   else
-  //   {
-  //     app_log() << "  Walker moves without drift" << std::endl;
-  //     for (int i = 0; i < Movers.size(); i++)
-  //       Movers[i]->UseDrift = false;
-  //   }
-  //   app_log() << "  Total Sample Size   =" << nTargetSamples << std::endl;
-  //   app_log() << "  Walker distribution on root = ";
-  //   copy(wPerNode.begin(), wPerNode.end(), std::ostream_iterator<int>(app_log(), " "));
-  //   app_log() << std::endl;
-  //   //app_log() << "  Sample Size per node=" << samples_this_node << std::endl;
-  //   //for (int ip=0; ip<NumThreads; ++ip)
-  //   //  app_log()  << "    Sample size for thread " <<ip<<" = " << samples_th[ip] << std::endl;
-  //   app_log().flush();
-  // #pragma omp parallel for
-  //   for (int ip = 0; ip < NumThreads; ++ip)
-  //   {
-  //     //int ip=omp_get_thread_num();
-  //     Movers[ip]->put(qmcNode);
-  //     Movers[ip]->resetRun(branchEngine, estimatorClones[ip], traceClones[ip], DriftModifier);
-  //     if (QMCDriverMode[QMC_UPDATE_MODE])
-  //       Movers[ip]->initWalkersForPbyP(W.begin() + wPerNode[ip], W.begin() + wPerNode[ip + 1]);
-  //     else
-  //       Movers[ip]->initWalkers(W.begin() + wPerNode[ip], W.begin() + wPerNode[ip + 1]);
-  //     //       if (UseDrift != "rn")
-  //     //       {
-  //     for (int prestep = 0; prestep < nWarmupSteps; ++prestep)
-  //       Movers[ip]->advanceWalkers(W.begin() + wPerNode[ip], W.begin() + wPerNode[ip + 1], false);
-  //     //       }
-  //   }
-
-  //   if (movers_created)
-  //   {
-  //     size_t before = qmc_common.memory_allocated;
-  //     app_log() << "  Anonymous Buffer size per walker : " << W[0]->DataSet.byteSize() << " Bytes." << std::endl;
-  //     qmc_common.memory_allocated += W.getActiveWalkers() * W[0]->DataSet.byteSize();
-  //     qmc_common.print_memory_change("VMC::resetRun", before);
-  //   }
-  //   //     //JNKIM: THIS IS BAD AND WRONG
-  //   //     if (UseDrift == "rn")
-  //   //     {
-  //   //       RealType avg_w(0);
-  //   //       RealType n_w(0);
-  //   // #pragma omp parallel
-  //   //       {
-  //   //         int ip=omp_get_thread_num();
-  //   //         for (int step=0; step<nWarmupSteps; ++step)
-  //   //         {
-  //   //           avg_w=0;
-  //   //           n_w=0;
-  //   //           for (int prestep=0; prestep<myRNWarmupSteps; ++prestep)
-  //   //           {
-  //   //             Movers[ip]->advanceWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1],true);
-  //   //             #pragma omp single
-  //   //             {
-  //   //               MCWalkerConfiguration::iterator wit(W.begin()), wit_end(W.end());
-  //   //               while (wit!=wit_end)
-  //   //               {
-  //   //                 avg_w += (*wit)->Weight;
-  //   //                 n_w +=1;
-  //   //                 wit++;
-  //   //               }
-  //   //             }
-  //   //             #pragma omp barrier
-  //   //            }
-  //   //            #pragma omp single
-  //   //            {
-  //   //              avg_w *= 1.0/n_w;
-  //   //              RealType w_m = avg_w/(1.0-avg_w);
-  //   //              w_m = std::log(0.5+0.5*w_m);
-  //   //              if (std::abs(w_m)>0.01)
-  //   //                logepsilon += w_m;
-  //   //            }
-  //   //           }
-  //   //
-  //   //         for (int prestep=0; prestep<nWarmupSteps; ++prestep)
-  //   //           Movers[ip]->advanceWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1],false);
-  //   //       }
-  //   //     }
-  //   for (int ip = 0; ip < NumThreads; ++ip)
-  //     wClones[ip]->clearEnsemble();
-  //   if (nSamplesPerThread)
-  //     for (int ip = 0; ip < NumThreads; ++ip)
-  //       wClones[ip]->setNumSamples(nSamplesPerThread);
-  //   nWarmupSteps = 0;
-  return false;
+    return false;
 }
 
-/** Configuration of batched VMC Driver
- *
- *  This should for the most part be generalized into QMCDriverFactory.
- *  For the moment I'm going to try and rationalize it some here.
- *  Truly VMC parts belong in VMCFactory
- *
- *  Meaning of input parameters in VMCBatched
- *  walkers --> still walkers per MPI rank
- *  samples --> global walkers?
- *  
- */
-bool VMCBatched::put(xmlNodePtr q)
-{
-  int Nprocs = myComm->size();
-
-  // //target samples set by samples or samplesperthread/dmcwalkersperthread
-  // population_.set_target(std::max(population_.get_target(), nSamplesPerThread * Nprocs * get_num_crowds() * num_crowds_));
-  // population_.set_target_samples(population_.get_target());
-
-  // int nwtot      = nw * Nprocs; //total number of walkers used by this qmcsection
-  // nTargetSamples = std::max(nwtot, nTargetSamples);
-
-  // if (target_min > 0)
-  // {
-  //     nTargetSamples    = std::max(nTargetSamples, target_min);
-  //     nTargetPopulation = std::max(nTargetPopulation, static_cast<RealType>(target_min));
-  //   }
-  //   nTargetSamples = ((nTargetSamples + nwtot - 1) / nwtot) *
-  //       nwtot; // nTargetSamples are always multiples of total number of walkers
-  //   nSamplesPerThread = nTargetSamples / Nprocs / Nthreads;
-  //   int ns_target     = nTargetSamples * nStepsBetweenSamples; //total samples to generate
-  //   int ns_per_step   = Nprocs * nw;                           //total samples per step
-  //   nSteps            = std::max(nSteps, (ns_target / ns_per_step + nBlocks - 1) / nBlocks);
-  //   Period4WalkerDump = nStepsBetweenSamples = (ns_per_step * nSteps * nBlocks) / nTargetSamples;
 
 
-  // TODO: had uncommented the above
-
-  // prevSteps               = nSteps;
-  // prevStepsBetweenSamples = nStepsBetweenSamples;
-
-  // app_log() << "  time step      = " << Tau << std::endl;
-  // app_log() << "  blocks         = " << nBlocks << std::endl;
-  // app_log() << "  steps          = " << nSteps << std::endl;
-  // app_log() << "  substeps       = " << nSubSteps << std::endl;
-  // app_log() << "  current        = " << CurrentStep << std::endl;
-  // app_log() << "  target samples = " << nTargetPopulation << std::endl;
-  // app_log() << "  walkers/mpi    = " << W.getActiveWalkers() << std::endl << std::endl;
-  // app_log() << "  stepsbetweensamples = " << nStepsBetweenSamples << std::endl;
-
-  // m_param.get(app_log());
-
-  // if (DumpConfig)
-  // {
-  //   app_log() << "  DumpConfig==true Configurations are dumped to config.h5 with a period of " << Period4CheckPoint
-  //             << " blocks" << std::endl;
-  // }
-  // else
-  // {
-  //   app_log() << "  DumpConfig==false Nothing (configurations, state) will be saved." << std::endl;
-  // }
-
-  // if (Period4WalkerDump > 0)
-  //   app_log() << "  Walker Samples are dumped every " << Period4WalkerDump << " steps." << std::endl;
-
-  // app_log() << "</vmc>" << std::endl;
-  // app_log().flush();
-
-  return false;
-}
 } // namespace qmcplusplus

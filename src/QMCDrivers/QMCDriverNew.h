@@ -47,12 +47,17 @@ class TraceManager;
 /** @ingroup QMCDrivers
  * @{
  * @brief QMCDriverNew Base class for Unified Drivers
+ *
+ * General Principals
+ * Parameters unchanged from input by driver are not copied into class state
+ * The driver state machine should be simple.
+ *
  */
 class QMCDriverNew : public QMCDriverInterface, public MPIObjectBase
 {
 public:
   using RealType              = QMCTraits::RealType;
-  using IndexType             = QMCTraits::IndexType;
+   using IndexType             = QMCTraits::IndexType;
   using FullPrecisionRealType = QMCTraits::FullPrecRealType;
 
   /** separate but similar to QMCModeEnum
@@ -122,6 +127,8 @@ public:
    */
   void add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi);
 
+  bool put(xmlNodePtr cur) { return false; };
+    
   /** initialize with xmlNode
    */
   void process(xmlNodePtr cur);
@@ -147,8 +154,6 @@ public:
   int addObservable(const std::string& aname);
 
   RealType getObservable(int i);
-
-  void setTau(RealType i) { Tau = i; }
 
   ///set global offsets of the walkers
   void setWalkerOffsets();
@@ -187,12 +192,6 @@ protected:
 
   ///the number to delay updates by
   int k_delay;
-  /** period of dumping walker configurations and everything else for restart
-   *
-   * The unit is a block.
-   */
-  int check_point_period;
-
 
   /** period of recording walker configurations
    *
@@ -209,18 +208,6 @@ protected:
   ///counter for number of moves /rejected
   IndexType nReject;
 
-  /// the number of blocks between recomptePsi
-  IndexType nBlocksBetweenRecompute;
-
-  ///the number of saved samples
-  IndexType nTargetSamples;
-  ///alternate method of setting QMC run parameters
-  IndexType nStepsBetweenSamples;
-  ///samples per thread
-  IndexType nSamplesPerThread;
-
-  ///timestep
-  RealType Tau;
 
   ///maximum cpu in secs
   RealType MaxCPUSecs;
@@ -277,13 +264,32 @@ protected:
   ///temporary storage for random displacement
   ParticleSet::ParticlePos_t deltaR;
 
-  /** @ingroup Driver mutable values
+  /** @ingroup Driver mutable input values
    *
-   *  variables here are derived input but either for convenience or
-   *  because the driver may change them
+   *  they should be limited to values that can be changed from input
+   *  or are live state.
    *  @{
    */
   int num_crowds_;
+
+  ///the number of saved samples
+  IndexType target_samples_;
+
+  /// the number of blocks between recomptePsi
+  IndexType nBlocksBetweenRecompute;
+
+  // ///alternate method of setting QMC run parameters
+  // IndexType nStepsBetweenSamples;
+  // ///samples per thread
+  // IndexType nSamplesPerThread;
+
+  //  TODO: restart
+  //  /** period of dumping walker configurations and everything else for restart
+  //  *
+  //  * The unit is a block.
+  //  */
+  // int check_point_period_;
+
   /** }@ */
 public:
   ///Copy Constructor (disabled).
@@ -317,6 +323,10 @@ public:
   std::string getLastRotationName(std::string RootName);
 
   NewTimer* checkpointTimer;
+
+private:
+  friend std::ostream& operator<<(std::ostream &o_stream, const QMCDriverNew& qmcd);
+
 };
 /**@}*/
 } // namespace qmcplusplus

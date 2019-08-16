@@ -80,7 +80,7 @@ protected:
   IndexType warmup_steps_             = 0;
   IndexType steps_between_samples_    = 1;
   IndexType samples_per_thread_       = 0;
-  RealType tau_                       = 0;
+  RealType tau_                       = 0.1;
   IndexType max_cpu_secs_             = 360000;
   IndexType blocks_between_recompute_ = defaultBlocksBetweenRecompute<>();
   bool append_run_                    = false;

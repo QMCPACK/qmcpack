@@ -120,9 +120,6 @@ void QMCDriverNew::process(xmlNodePtr cur)
     current_step_ = 0;
   else
     current_step_ = qmcdriver_input_.get_starting_step();
-  ////set the Tau parameter inside the Hamiltonian
-  //H.setTau(Tau);
-  //need to initialize properties
 
   //int numCopies = (H1.empty()) ? 1 : H1.size();
   //W.resetWalkerProperty(numCopies);
@@ -130,10 +127,9 @@ void QMCDriverNew::process(xmlNodePtr cur)
   //create branchEngine first
   if (branchEngine == 0)
   {
-    branchEngine = new SimpleFixedNodeBranch(Tau, population_.get_num_global_walkers());
+      branchEngine = new SimpleFixedNodeBranch(qmcdriver_input_.get_tau(), population_.get_num_global_walkers());
   }
-  //execute the put function implemented by the derived classes
-  put(cur);
+
   //create and initialize estimator
   Estimators = branchEngine->getEstimatorManager();
   if (Estimators == 0)
@@ -252,7 +248,7 @@ std::string QMCDriverNew::getLastRotationName(std::string RootName)
 
 void QMCDriverNew::recordBlock(int block)
 {
-  if (dump_config && block % check_point_period == 0)
+    if (block % qmcdriver_input_.get_check_point_period().period == 0)
   {
     checkpointTimer->start();
     branchEngine->write(RootName, true); //save energy_history
@@ -356,14 +352,19 @@ void QMCDriverNew::setWalkerOffsets()
   //  app_log() << "  Total weight: " << W.EnsembleProperty.Weight << std::endl;
 }
 
-// operator <<
-//   app_log() << "  time step      = " << Tau << std::endl;
-//   app_log() << "  blocks         = " << nBlocks << std::endl;
-//   app_log() << "  steps          = " << nSteps << std::endl;
-//   app_log() << "  substeps       = " << nSubSteps << std::endl;
-//   app_log() << "  current        = " << CurrentStep << std::endl;
-//   app_log() << "  target samples = " << nTargetPopulation << std::endl;
-//   app_log() << "  walkers/mpi    = " << W.getActiveWalkers() << std::endl << std::endl;
-//   app_log() << "  stepsbetweensamples = " << nStepsBetweenSamples << std::endl;
+std::ostream& operator<<(std::ostream &o_stream, const QMCDriverNew& qmcd)
+{
+  o_stream << "  time step      = " << qmcd.qmcdriver_input_.get_tau() << '\n';
+  o_stream << "  blocks         = " << qmcd.qmcdriver_input_.get_max_blocks() << '\n';
+  o_stream << "  steps          = " << qmcd.qmcdriver_input_.get_max_steps() << '\n';
+  o_stream << "  substeps       = " << qmcd.qmcdriver_input_.get_sub_steps() << '\n';
+  o_stream << "  current        = " << qmcd.current_step_ << '\n';
+  o_stream << "  target samples = " << qmcd.target_samples_ << '\n';
+  o_stream << "  walkers/mpi    = " << qmcd.population_.get_num_local_walkers() << '\n' << '\n';
+  o_stream << "  stepsbetweensamples = " << qmcd.qmcdriver_input_.get_steps_between_samples() << std::endl;
+  app_log().flush();
+
+  return o_stream;
+}
 
 } // namespace qmcplusplus

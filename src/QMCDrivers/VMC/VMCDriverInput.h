@@ -17,38 +17,45 @@
 
 namespace qmcplusplus
 {
+/** Input representation for VMC driver class runtime parameters
+ */
 class VMCDriverInput
 {
 public:
   using IndexType             = QMCTraits::IndexType;
   using RealType              = QMCTraits::RealType;
   using FullPrecisionRealType = QMCTraits::FullPrecRealType;
-
   VMCDriverInput(){};
   VMCDriverInput(int walkers_per_rank, const std::string& use_drift);
   void readXML(xmlNodePtr& xml_input);
 
 protected:
-  ///store any parameter that has to be read from a file
-  //ParameterSet parameter_set_;
-
   /** @ingroup Parameters for VMC Driver
    *  @{
-   *  All unshared input should be here
    *  
    *  Do not write out blocks of gets for variables like this
-   *  there is are code_generation tools in QMCPACK_ROOT/utils/code_generation
+   *  there is are code_generation tools in QMCPACK_ROOT/utils/code_tools
    */
 
   IndexType requested_walkers_per_rank_ = 0;
   std::string use_drift_{"yes"};
 
+  IndexType samples_per_thread_ = -1;
+  IndexType samples_ = -1;
+  IndexType steps_between_samples_ = -1;
   /** @} */
 
 public:
   IndexType get_requested_walkers_per_rank() const { return requested_walkers_per_rank_; }
   const std::string get_use_drift() const { return use_drift_; }
+  IndexType get_samples_per_thread() const { return samples_per_thread_; }
+  IndexType get_samples() const { return samples_; }
+  IndexType get_steps_between_samples() const { return steps_between_samples_; }
+
+  friend std::ostream& operator<<(std::ostream& o_stream, const VMCDriverInput& vmci);
 };
+
+extern std::ostream& operator<<(std::ostream& o_stream, const VMCDriverInput& vmci);
 
 } // namespace qmcplusplus
 #endif

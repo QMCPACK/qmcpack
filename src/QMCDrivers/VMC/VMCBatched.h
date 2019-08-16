@@ -35,7 +35,7 @@ public:
              Communicate* comm);
 
   bool run();
-  bool put(xmlNodePtr cur);
+  void setup();
   //inline std::vector<RandomGenerator_t*>& getRng() { return Rng;}
   IndexType calc_default_local_walkers();
 
@@ -54,7 +54,11 @@ private:
   VMCBatched(const VMCBatched&) = delete;
   /// Copy operator (disabled).
   VMCBatched& operator=(const VMCBatched&) = delete;
+
+
 };
+
+extern std::ostream& operator<<(std::ostream &o_stream, const VMCBatched& vmc_batched);
 } // namespace qmcplusplus
 
 #endif
