@@ -70,11 +70,7 @@ bool PWOrbitalBuilder::put(xmlNodePtr cur)
     if (cname == "basisset")
     {
       const XMLAttrString a(cur, "ecut");
-      if (!a.empty())
-      {
-        std::istringstream stream(a);
-        stream >> myParam->Ecut;
-      }
+      if (!a.empty()) myParam->Ecut = std::stod(a);
     }
     else if (cname == "coefficients")
     {

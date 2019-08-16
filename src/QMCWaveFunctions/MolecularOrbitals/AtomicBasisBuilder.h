@@ -239,9 +239,7 @@ typename AtomicBasisBuilder<RFB>::COT* AtomicBasisBuilder<RFB>::createAOSet(xmlN
     if (cname1 == "basisGroup")
     {
       radGroup.push_back(cur1);
-      std::istringstream stream(XMLAttrString{cur1, "l"});
-      int l;
-      stream >> l;
+      const int l = std::stoi(XMLAttrString{cur1, "l"});
       Lmax  = std::max(Lmax, l);
       //expect that only Rnl is given
       if (expandlm == CARTESIAN_EXPAND)
