@@ -177,11 +177,12 @@ bool ProjectData::PreviousRoot(std::string& oldroot) const
 bool ProjectData::put(xmlNodePtr cur)
 {
   m_cur                  = cur;
-  m_title                = (const char*)(xmlGetProp(cur, (const xmlChar*)"id"));
-  const char* series_str = (const char*)(xmlGetProp(cur, (const xmlChar*)"series"));
-  if (series_str)
+  m_title = XMLAttrString(cur, "id");
+  const XMLAttrString series_str(cur, "series");
+  if (!series_str.empty())
   {
-    m_series = atoi(series_str);
+    std::istringstream stream(series_str);
+    stream >> m_series;
   }
   ///first, overwrite the existing xml nodes
   cur = cur->xmlChildrenNode;
