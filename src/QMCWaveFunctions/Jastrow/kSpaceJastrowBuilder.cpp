@@ -21,8 +21,7 @@ namespace qmcplusplus
 template<class T>
 inline bool putContent2(std::vector<T>& a, xmlNodePtr cur)
 {
-  const XMLNodeString node_string(cur);
-  std::istringstream stream(node_string);
+  std::istringstream stream(XMLNodeString{cur});
   T temp;
   a.clear();
   while (!stream.eof())

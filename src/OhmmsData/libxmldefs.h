@@ -63,8 +63,7 @@ inline void getNodeName(std::basic_string<_CharT>& cname, xmlNodePtr cur)
 template<class T>
 bool putContent(T& a, xmlNodePtr cur)
 {
-  const XMLNodeString node_string(cur);
-  std::istringstream stream(node_string);
+  std::istringstream stream(XMLNodeString{cur});
   stream >> a;
   return !stream.fail();
 }
@@ -72,8 +71,7 @@ bool putContent(T& a, xmlNodePtr cur)
 template<class IT>
 bool putContent(IT first, IT last, xmlNodePtr cur)
 {
-  const XMLNodeString node_string(cur);
-  std::istringstream stream(node_string);
+  std::istringstream stream(XMLNodeString{cur});
   bool success = true;
   while (success && first != last)
   {
@@ -120,8 +118,7 @@ inline bool putContent(std::vector<T>& a, const xmlNodePtr cur)
 {
   if (cur->children == NULL)
     return false;
-  const XMLNodeString node_string(cur);
-  std::istringstream stream(node_string);
+  std::istringstream stream(XMLNodeString{cur});
   std::vector<T> b;
   T t;
   while (!stream.eof())

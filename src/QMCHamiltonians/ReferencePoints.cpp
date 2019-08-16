@@ -56,8 +56,7 @@ bool ReferencePoints::put(xmlNodePtr cur, ParticleSet& P, std::vector<ParticleSe
   }
   //read in the point contents
   app_log() << "    reading reference_points contents" << std::endl;
-  const XMLNodeString contents(cur);
-  std::vector<std::string> lines = split(strip(contents), "\n");
+  std::vector<std::string> lines = split(strip(XMLNodeString{cur}), "\n");
   for (int i = 0; i < lines.size(); i++)
   {
     std::vector<std::string> tokens = split(strip(lines[i]), " ");
