@@ -76,6 +76,12 @@ public:
   XMLAttrString(const char* in, const char* name) : std::string(in), attribute_name_(name) { }
 
   /// write a string to an xmlNode
+  void createXMLAttribute(xmlNodePtr cur) const
+  {
+    xmlNewProp(cur, (const xmlChar*)attribute_name_.c_str(), (const xmlChar*)this->c_str());
+  }
+
+  /// write a string to an xmlNode
   void setXMLAttribute(xmlNodePtr cur) const
   {
     xmlSetProp(cur, (const xmlChar*)attribute_name_.c_str(), (const xmlChar*)this->c_str());
