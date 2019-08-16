@@ -45,7 +45,7 @@ VMCBatched::IndexType VMCBatched::calc_default_local_walkers()
 
   if (vmcdriver_input_.get_samples() >= 0 ||
       vmcdriver_input_.get_samples_per_thread() >= 0 ||
-      vmcdriver_input_.get_steps_between_samples())
+      vmcdriver_input_.get_steps_between_samples() >= 0)
     app_warning() << "VMCBatched currently ignores samples and samplesperthread\n";
 
   // TODO: Simplify samples, samples per thread etc in the unified driver
