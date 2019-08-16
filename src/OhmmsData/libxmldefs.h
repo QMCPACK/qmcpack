@@ -16,9 +16,6 @@
 
 #ifndef ESTOOLS_OHMMS_LIBXML_DEF_H
 #define ESTOOLS_OHMMS_LIBXML_DEF_H
-#include <libxml/xmlmemory.h>
-#include <libxml/parser.h>
-#include <libxml/xpath.h>
 #include <iostream>
 #include <sstream>
 #include <iomanip>
@@ -26,6 +23,7 @@
 #include <string>
 #include <vector>
 #include <algorithm>
+#include "OhmmsData/XMLString.h"
 
 template<typename _CharT>
 inline void getNodeName(std::basic_string<_CharT>& cname, xmlNodePtr cur)
@@ -65,7 +63,8 @@ inline void getNodeName(std::basic_string<_CharT>& cname, xmlNodePtr cur)
 template<class T>
 bool putContent(T& a, xmlNodePtr cur)
 {
-  std::istringstream stream((const char*)(xmlNodeListGetString(cur->doc, cur->xmlChildrenNode, 1)));
+  XMLString node_string(cur);
+  std::istringstream stream(node_string);
   stream >> a;
   return !stream.fail();
 }
@@ -73,7 +72,8 @@ bool putContent(T& a, xmlNodePtr cur)
 template<class IT>
 bool putContent(IT first, IT last, xmlNodePtr cur)
 {
-  std::istringstream stream((const char*)(xmlNodeListGetString(cur->doc, cur->xmlChildrenNode, 1)));
+  XMLString node_string(cur);
+  std::istringstream stream(node_string);
   bool success = true;
   while (success && first != last)
   {
@@ -102,7 +102,8 @@ bool getContent(const T& a, xmlNodePtr cur)
   s.setf(std::ios::scientific, std::ios::floatfield);
   s.precision(10);
   s << a;
-  xmlNodeSetContent(cur, (const xmlChar*)(s.str().c_str()));
+  XMLString node_string(s.str());
+  node_string.setXMLNodeContent(cur);
   return true;
 }
 
@@ -115,11 +116,12 @@ bool getContent(const T& a, xmlNodePtr cur)
  *e.g., std::vector<double>
  */
 template<class T>
-inline bool putContent(std::vector<T>& a, xmlNodePtr cur)
+inline bool putContent(std::vector<T>& a, const xmlNodePtr cur)
 {
   if (cur->children == NULL)
     return false;
-  std::istringstream stream((const char*)(xmlNodeListGetString(cur->doc, cur->xmlChildrenNode, 1)));
+  XMLString node_string(cur);
+  std::istringstream stream(node_string);
   std::vector<T> b;
   T t;
   while (!stream.eof())
@@ -147,8 +149,8 @@ inline bool getContent(const std::vector<T>& a, xmlNodePtr cur)
   s.precision(10);
   for (int i = 0; i < a.size(); i++)
     s << ' ' << a[i];
-  //xmlNodeAddContent(cur,(const xmlChar*)(s.str().c_str()));
-  xmlNodeSetContent(cur, (const xmlChar*)(s.str().c_str()));
+  XMLString node_string(s.str());
+  node_string.setXMLNodeContent(cur);
   return true;
 }
 
