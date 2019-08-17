@@ -101,11 +101,6 @@ public:
   ///return current step
   inline IndexType current() const { return current_step_; }
 
-  /** set the update mode
-   * @param pbyp if true, use particle-by-particle update
-   */
-  inline void setUpdateMode(bool pbyp) { qmc_driver_mode[QMC_UPDATE_MODE] = pbyp; }
-
   /** Set the status of the QMCDriver
    * @param aname the root file name
    * @param h5name root name of the master hdf5 file containing previous qmcrun
@@ -127,21 +122,9 @@ public:
    */
   void add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi);
 
-  bool put(xmlNodePtr cur) { return false; };
-
-  /** initialize with xmlNode
-   */
-  void process(xmlNodePtr cur);
-
   void setupWalkers();
 
   void putWalkers(std::vector<xmlNodePtr>& wset);
-
-  inline void putTraces(xmlNodePtr txml) { traces_xml = txml; };
-
-  inline void requestTraces(bool traces) { allow_traces = traces; }
-
-  inline std::string getEngineName() const { return QMCType; }
 
   ///set the BranchEngineType
   void setBranchEngine(SimpleFixedNodeBranch* be) { branchEngine = be; }
@@ -169,6 +152,27 @@ public:
   std::string getEngineName() { return QMCType; }
   unsigned long getDriverMode() { return qmc_driver_mode.to_ulong(); }
   IndexType get_walkers_per_crowd() const { return walkers_per_crowd_; }
+
+  /** @ingroup Legacy interface to be dropped
+   *  @{
+   */
+  bool put(xmlNodePtr cur) { return false; };
+
+  /** QMCDriverNew driver ignores cur
+   *
+   *  This is the shared entry point
+   *  from QMCMain so cannot be updated yet
+   */
+  void process(xmlNodePtr cur);
+
+  /** should be set in input don't see a reason to set individually
+   * @param pbyp if true, use particle-by-particle update
+   */
+  inline void setUpdateMode(bool pbyp) { qmc_driver_mode[QMC_UPDATE_MODE] = pbyp; }
+
+  void putTraces(xmlNodePtr txml) {}
+  void requestTraces(bool allow_traces) {}
+  /** }@ */
 
 protected:
   QMCDriverInput qmcdriver_input_;

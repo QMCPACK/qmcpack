@@ -54,7 +54,7 @@ VMCBatched::IndexType VMCBatched::calc_default_local_walkers()
 bool VMCBatched::run()
 {
   //start the main estimator
-  Estimators->start(nBlocks);
+  Estimators->start(qmcdriver_input_.get_max_blocks());
   // for (int ip = 0; ip < NumThreads; ++ip)
   //   Movers[ip]->startRun(nBlocks, false);
 

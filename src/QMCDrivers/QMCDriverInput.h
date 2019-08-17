@@ -90,11 +90,11 @@ protected:
   std::string update_mode_{"pbyp"};
 
   // from putQMCInfo
-  input::PeriodStride walker_dump_period_ = 0;
-  input::PeriodStride check_point_period_ = 0;
-  bool dump_config_                       = false;
-  IndexType k_delay_                      = 0;
-  bool reset_random_                      = false;
+  input::PeriodStride walker_dump_period_{0, 0};
+  input::PeriodStride check_point_period_{0, 0};
+  bool dump_config_  = false;
+  IndexType k_delay_ = 0;
+  bool reset_random_ = false;
 
   /** @}
    */
