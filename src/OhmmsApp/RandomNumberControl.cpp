@@ -33,6 +33,7 @@
 #include <iostream>
 #endif
 #include <Utilities/SimpleParser.h>
+#include "OhmmsData/Libxml2Doc.h"
 
 namespace qmcplusplus
 {
@@ -109,12 +110,8 @@ void RandomNumberControl::make_children()
 
 xmlNodePtr RandomNumberControl::initialize(xmlXPathContextPtr acontext)
 {
-  xmlXPathObjectPtr rg_request = xmlXPathEvalExpression((const xmlChar*)"//random", acontext);
-  if (xmlXPathNodeSetIsEmpty(rg_request->nodesetval))
-    put(NULL);
-  else
-    put(rg_request->nodesetval->nodeTab[0]);
-  xmlXPathFreeObject(rg_request);
+  OhmmsXPathObject rg_request("//random", acontext);
+  put(rg_request[0]);
   return myCur;
 }
 

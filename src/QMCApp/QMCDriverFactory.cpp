@@ -195,20 +195,20 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
   {
     if (xmlStrEqual(tcur->name, (const xmlChar*)"qmcsystem"))
     {
-      const xmlChar* t = xmlGetProp(tcur, (const xmlChar*)"wavefunction");
-      if (t != NULL)
+      const XMLAttrString wf_name(tcur, "wavefunction");
+      if (!wf_name.empty())
       {
-        targetPsi.push(wavefunction_pool.getWaveFunction((const char*)t));
+        targetPsi.push(wavefunction_pool.getWaveFunction(wf_name));
       }
       else
       {
         app_warning() << " qmcsystem does not have wavefunction. Assign 0" << std::endl;
         targetPsi.push(0);
       }
-      t = xmlGetProp(tcur, (const xmlChar*)"hamiltonian");
-      if (t != NULL)
+      const XMLAttrString ham_name(tcur, "hamiltonian");
+      if (!ham_name.empty())
       {
-        targetH.push(hamiltonian_pool.getHamiltonian((const char*)t));
+        targetH.push(hamiltonian_pool.getHamiltonian(ham_name));
       }
       else
       {

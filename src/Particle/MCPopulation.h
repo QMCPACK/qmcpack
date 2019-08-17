@@ -35,9 +35,9 @@ public:
   MCPopulation() {};
   MCPopulation(MCWalkerConfiguration& mcwc);
   const ParticleSet& get_ions() const {return ions_;}
-  const int get_max_samples() const { return max_samples_; }
+  int get_max_samples() const { return max_samples_; }
   const Properties& get_properties() const {return properties_; }
-  const int get_num_global_walkers() const {return global_num_walkers_; }
+  int get_num_global_walkers() const {return global_num_walkers_; }
   const std::vector<int>& get_walker_offsets() const {return walker_offsets_; }
 };
 
