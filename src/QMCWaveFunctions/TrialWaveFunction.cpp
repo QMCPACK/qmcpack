@@ -652,8 +652,7 @@ void TrialWaveFunction::evaluateDerivatives(ParticleSet& P,
 
 void TrialWaveFunction::evaluateDerivativesWF(ParticleSet& P,
     const opt_variables_type& optvars,
-    std::vector<ValueType>& dlogpsi,
-    bool project)
+    std::vector<ValueType>& dlogpsi)
 {
   for (int i = 0; i < Z.size(); i++)
   {
@@ -661,20 +660,6 @@ void TrialWaveFunction::evaluateDerivativesWF(ParticleSet& P,
       (Z[i]->dPsi)->evaluateDerivativesWF(P, optvars, dlogpsi);
     else
       Z[i]->evaluateDerivativesWF(P, optvars, dlogpsi);
-  }
-
-  if (project)
-  {
-    for (int i = 0; i < Z.size(); i++)
-    {
-      if (Z[i]->dPsi)
-        (Z[i]->dPsi)->multiplyDerivsByOrbR(dlogpsi);
-      else
-        Z[i]->multiplyDerivsByOrbR(dlogpsi);
-    }
-    RealType psiValue = std::exp(-LogValue) * std::cos(PhaseValue);
-    for (int i = 0; i < dlogpsi.size(); i++)
-      dlogpsi[i] *= psiValue;
   }
 }
 

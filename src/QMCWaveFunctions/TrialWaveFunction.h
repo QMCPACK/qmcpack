@@ -144,6 +144,10 @@ public:
 
   /** functions to handle particle-by-particle update */
   RealType ratio(ParticleSet& P, int iat);
+
+  /** function that computes psi(R_new) / psi(R_current). It returns a complex value if the wavefunction 
+  *   is complex. It differs from the ratio(ParticleSet& P, int iat) function in the way that the ratio
+  *   function takes the absolute value of psi(R_new) / psi(R_current). */
   ValueType evaluateFullRatio(ParticleSet& P, int iat);
 
   /** compulte multiple ratios to handle non-local moves and other virtual moves
@@ -195,8 +199,7 @@ public:
 
   void evaluateDerivativesWF(ParticleSet& P,
                              const opt_variables_type& optvars,
-                             std::vector<ValueType>& dlogpsi,
-                             bool project=false);
+                             std::vector<ValueType>& dlogpsi);
 
   void evaluateGradDerivatives(const ParticleSet::ParticleGradient_t& G_in, std::vector<ValueType>& dgradlogpsi);
 
