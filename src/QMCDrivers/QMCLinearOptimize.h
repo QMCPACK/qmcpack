@@ -61,7 +61,6 @@ public:
   virtual bool run() = 0;
   ///process xml node
   virtual bool put(xmlNodePtr cur);
-  void resetComponents(xmlNodePtr cur);
   ///add a configuration file to the list of files
   void addConfiguration(const std::string& a);
   void setWaveFunctionNode(xmlNodePtr cur) { wfNode = cur; }
@@ -191,8 +190,10 @@ public:
   bool nonLinearRescale(std::vector<RealType>& dP, Matrix<RealType>& S);
   RealType getNonLinearRescale(std::vector<RealType>& dP, Matrix<RealType>& S);
   void generateSamples();
-  Timer t1;
+
+  virtual QMCRunType getRunType() { return QMCRunType::LINEAR_OPTIMIZE; }
   TimerList_t myTimers;
+  Timer t1;
 };
 } // namespace qmcplusplus
 #endif

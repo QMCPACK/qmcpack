@@ -50,15 +50,15 @@ bool LatticeParser::put(xmlNodePtr cur)
     std::string cname((const char*)cur->name);
     if (cname == "parameter")
     {
-      std::string aname((const char*)(xmlGetProp(cur, (const xmlChar*)"name")));
+      const XMLAttrString aname(cur, "name");
       if (aname == "scale")
       {
         putContent(a0, cur);
       }
       else if (aname == "lattice")
       {
-        const char* units_prop = (const char*)(xmlGetProp(cur, (const xmlChar*)"units"));
-        if (units_prop && std::string(units_prop) != "bohr")
+        const XMLAttrString units_prop(cur, "units");
+        if (!units_prop.empty() && units_prop != "bohr")
         {
           APP_ABORT("LatticeParser::put. Only atomic units (bohr) supported for lattice units. Input file uses: "
                     << std::string(units_prop));

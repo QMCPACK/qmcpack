@@ -1772,10 +1772,12 @@ void WaveFunctionTester::runDerivTest()
   Psi.resetParameters(wfVars);
   fout << std::endl << "Deriv  Numeric Analytic" << std::endl;
   for (int i = 0; i < Nvars; i++)
-    fout << i << "  " << PGradient[i] << "  " << std::real(Dsaved[i]) << "  " << (PGradient[i] - std::real(Dsaved[i])) << std::endl;
+    fout << i << "  " << PGradient[i] << "  " << std::real(Dsaved[i]) << "  " << (PGradient[i] - std::real(Dsaved[i]))
+         << std::endl;
   fout << std::endl << "Hderiv  Numeric Analytic" << std::endl;
   for (int i = 0; i < Nvars; i++)
-    fout << i << "  " << HGradient[i] << "  " << std::real(HDsaved[i]) << "  " << (HGradient[i] - std::real(HDsaved[i])) << std::endl;
+    fout << i << "  " << HGradient[i] << "  " << std::real(HDsaved[i]) << "  " << (HGradient[i] - std::real(HDsaved[i]))
+         << std::endl;
 }
 
 
@@ -1851,8 +1853,9 @@ void WaveFunctionTester::runDerivNLPPTest()
   std::vector<RealType> ene(4), ene_p(4), ene_m(4);
   Psi.evaluateDerivatives(W, wfVars, Dsaved, HDsaved);
 
-  for (int i = 0; i < Nvars; i++) {
-    rDsaved[i] = std::real(Dsaved[i]);
+  for (int i = 0; i < Nvars; i++)
+  {
+    rDsaved[i]  = std::real(Dsaved[i]);
     rHDsaved[i] = std::real(HDsaved[i]);
   }
   ene[0] = H.evaluateValueAndDerivatives(W, wfVars, rDsaved, rHDsaved, true);
@@ -1991,12 +1994,12 @@ void WaveFunctionTester::runDerivCloneTest()
   fout << "CLONE" << std::endl;
   fout << std::endl << "   Deriv  Numeric Analytic" << std::endl;
   for (int i = 0; i < Nvars; i++)
-    fout << i << "  " << PGradient[i] << "  " << std::real(Dsaved[i]) << "  " << (PGradient[i] - std::real(Dsaved[i])) / PGradient[i]
-         << std::endl;
+    fout << i << "  " << PGradient[i] << "  " << std::real(Dsaved[i]) << "  "
+         << (PGradient[i] - std::real(Dsaved[i])) / PGradient[i] << std::endl;
   fout << std::endl << "   Hderiv  Numeric Analytic" << std::endl;
   for (int i = 0; i < Nvars; i++)
-    fout << i << "  " << HGradient[i] << "  " << std::real(HDsaved[i]) << "  " << (HGradient[i] - std::real(HDsaved[i])) / HGradient[i]
-         << std::endl;
+    fout << i << "  " << HGradient[i] << "  " << std::real(HDsaved[i]) << "  "
+         << (HGradient[i] - std::real(HDsaved[i])) / HGradient[i] << std::endl;
   for (int i = 0; i < Nvars; i++)
   {
     for (int j = 0; j < Nvars; j++)
@@ -2025,12 +2028,12 @@ void WaveFunctionTester::runDerivCloneTest()
   fout << "ORIGINAL" << std::endl;
   fout << std::endl << "   Deriv  Numeric Analytic" << std::endl;
   for (int i = 0; i < Nvars; i++)
-    fout << i << "  " << PGradient[i] << "  " << std::real(Dsaved[i]) << "  " << (PGradient[i] - std::real(Dsaved[i])) / PGradient[i]
-         << std::endl;
+    fout << i << "  " << PGradient[i] << "  " << std::real(Dsaved[i]) << "  "
+         << (PGradient[i] - std::real(Dsaved[i])) / PGradient[i] << std::endl;
   fout << std::endl << "   Hderiv  Numeric Analytic" << std::endl;
   for (int i = 0; i < Nvars; i++)
-    fout << i << "  " << HGradient[i] << "  " << std::real(HDsaved[i]) << "  " << (HGradient[i] - std::real(HDsaved[i])) / HGradient[i]
-         << std::endl;
+    fout << i << "  " << HGradient[i] << "  " << std::real(HDsaved[i]) << "  "
+         << (HGradient[i] - std::real(HDsaved[i])) / HGradient[i] << std::endl;
 }
 void WaveFunctionTester::runwftricks()
 {

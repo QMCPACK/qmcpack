@@ -14,6 +14,7 @@
 #define QMCPLUSPLUS_STDLIB_PORT_H
 #include <config.h>
 #include <cmath>
+#include <type_traits>
 #include "config/stdlib/Constants.h"
 
 #if __APPLE__
@@ -68,6 +69,14 @@ inline int pow(int i, int n)
 {
   return static_cast<int>(std::pow(static_cast<double>(i),n));
 }
+
+template<typename T,
+  typename = typename std::enable_if<std::is_floating_point<T>::value>::type>
+inline bool iszero(T a)
+{
+  return std::fpclassify(a) == FP_ZERO;
+}
+
 }
 
 #endif

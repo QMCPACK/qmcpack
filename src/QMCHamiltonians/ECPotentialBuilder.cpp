@@ -72,10 +72,6 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
   pAttrib.add(forces, "forces");
   pAttrib.put(cur);
   bool doForces = (forces == "yes") || (forces == "true");
-  //const xmlChar* t=xmlGetProp(cur,(const xmlChar*)"format");
-  //if(t != NULL) {
-  //  ecpFormat= (const char*)t;
-  //}
   if (ecpFormat == "xml")
   {
     useXmlFormat(cur);

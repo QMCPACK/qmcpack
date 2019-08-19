@@ -27,6 +27,7 @@
 #! /usr/bin/env python
 
 import os
+import numpy as np
 from copy import deepcopy
 from random import randint
 from numpy import array,floor,empty,dot,diag,sqrt,pi,mgrid,exp,append,arange,ceil,cross,cos,sin,identity,ndarray,atleast_2d,around,ones,zeros,logical_not,flipud,uint64,sign,isclose
@@ -35,7 +36,7 @@ from types import NoneType
 from unit_converter import convert
 from numerics import nearest_neighbors,convex_hull,voronoi_neighbors
 from periodic_table import pt,is_element
-from fileio import XsfFile
+from fileio import XsfFile,PoscarFile
 from generic import obj
 from developer import DevBase,unavailable,error,warn
 from debug import ci,ls,gs
@@ -99,11 +100,15 @@ cif2cell_unit_dict = dict(angstrom='A',bohr='B',nm='nm')
 def read_cif_celldata(filepath,block=None,grammar='1.1'):
     # read cif file with PyCifRW
     path,cif_file = os.path.split(filepath)
-    cwd = os.getcwd()
-    os.chdir(path)
+    if path!='':
+        cwd = os.getcwd()
+        os.chdir(path)
+    #end if
     cf = CifFile(cif_file,grammar=grammar)
     #cf = ReadCif(cif_file,grammar=grammar)
-    os.chdir(cwd)
+    if path!='':
+        os.chdir(cwd)
+    #end if
     if block is None:
         block = cf.keys()[0]
     #end if
@@ -1053,11 +1058,16 @@ class Structure(Sobj):
     #end def project_plane
 
         
-    def bounding_box(self,scale=1.0,box='tight',recenter=False):
-        pmin    = self.pos.min(0)
-        pmax    = self.pos.max(0)
+    def bounding_box(self,scale=1.0,minsize=None,mindist=0,box='tight',recenter=False):
+        pmin    = self.pos.min(0)-mindist
+        pmax    = self.pos.max(0)+mindist
         pcenter = (pmax+pmin)/2
         prange  = pmax-pmin
+        if minsize is not None:
+            for i,pr in enumerate(prange):
+                prange[i] = max(minsize,prange[i])
+            #end for
+        #end if
         if box=='tight':
             axes = diag(prange)
         elif box=='cubic' or box=='cube':
@@ -1210,8 +1220,8 @@ class Structure(Sobj):
         if isinstance(pos1,Structure):
             pos1 = pos1.pos
         #end if
-        if pos2==None:
-            if pos1==None:
+        if pos2 is None:
+            if pos1 is None:
                 return sqrt((self.pos**2).sum(1))
             else:
                 pos2 = self.pos
@@ -1222,6 +1232,37 @@ class Structure(Sobj):
         #end if
         return sqrt(((pos1-pos2)**2).sum(1))
     #end def distances
+
+
+    def count_kshells(self, kcut, tilevec=[12, 12, 12], nkdig=10):
+      # check tilevec input
+      for nt in tilevec:
+        if nt % 2 != 0:
+          msg = 'tilevec must contain even integers'
+          msg += ' so that kgrid can be zero centered.'
+          Structure.class_error(msg, 'count_kshells')
+        #end if
+      #end for
+
+      origin = np.array([[0, 0, 0]])
+      axes = self.axes
+      raxes = 2*np.pi*np.linalg.inv(axes).T
+      kvecs = self.tile_points(origin, raxes, tilevec)
+      kvecs -= np.dot(tilevec, raxes)/2  # center around 0
+      kmags = np.linalg.norm(kvecs, axis=-1)
+
+      # make sure tilevec is sufficient for kcut
+      klimit = 0.5*kmags.max()
+      if kcut > klimit:
+        msg = 'kcut %3.2f > klimit=%3.2f\n' % (kcut, klimit)
+        msg += ' please increase tilevec to be safe.\n'
+        Structure.class_error(msg, 'count_kshells')
+      #end if
+
+      sel = (0<kmags) & (kmags<kcut)
+      ukmags = np.unique(kmags[sel].round(nkdig))
+      return len(ukmags)
+    #end def count_kshells
 
     
     def volume(self):
@@ -1567,7 +1608,7 @@ class Structure(Sobj):
                 #end for
             #end for
         #end if
-        if radii!=None or indices==None:
+        if radii is not None or indices is None:
             if indices is None:
                 pos = identifiers
             else:
@@ -1575,7 +1616,7 @@ class Structure(Sobj):
             #end if
             if isinstance(radii,float) or isinstance(radii,int):
                 radii = len(pos)*[radii]
-            elif radii!=None and len(radii)!=len(pos):
+            elif radii is not None and len(radii)!=len(pos):
                 self.error('lengths of input radii and positions do not match\n  len(radii)={0}\n  len(pos)={1}'.format(len(radii),len(pos)))
             #end if
             dtable = self.min_image_distances(pos)
@@ -1641,6 +1682,15 @@ class Structure(Sobj):
             #end for
         #end if
     #end def freeze
+
+
+    def is_frozen(self):
+        if self.frozen is None:
+            return np.ones((len(self.pos),),dtype=bool)
+        else:
+            return self.frozen.sum(1)>0
+        #end if
+    #end def is_frozen
 
 
     def magnetize(self,identifiers=None,magnetization='',**mags):
@@ -2499,6 +2549,8 @@ class Structure(Sobj):
     def min_image_vectors(self,points=None,points2=None,axes=None,pairs=True):
         if points is None:
             points = self.pos
+        elif isinstance(points,Structure):
+            points = points.pos
         #end if
         if axes is None:
             axes  = self.axes
@@ -2511,6 +2563,8 @@ class Structure(Sobj):
         #end if
         if points2 is None:
             points2 = self.pos
+        elif isinstance(points2,Structure):
+            points2 = points2.pos
         elif points2.shape==(self.dim,):
             points2 = [points2]
         #end if
@@ -2825,8 +2879,8 @@ class Structure(Sobj):
 
 
     def recenter(self,center=None):
-        if center!=None:
-            self.center=array(center)
+        if center is not None:
+            self.center=array(center,dtype=float)
         #end if
         pos = self.pos
         c = empty((1,self.dim),dtype=float)
@@ -4420,6 +4474,8 @@ class Structure(Sobj):
             c = self.write_xyz(filepath)
         elif format=='xsf':
             c = self.write_xsf(filepath)
+        elif format=='poscar':
+            c = self.write_poscar(filepath)
         elif format=='fhi-aims':
             c = self.write_fhi_aims(filepath)
         else:
@@ -4489,6 +4545,25 @@ class Structure(Sobj):
     #end def write_xsf
 
 
+    def write_poscar(self,filepath=None):
+        s = self.copy()
+        s.change_units('A')
+        species,species_count = s.order_by_species()
+        poscar = PoscarFile()
+        poscar.scale      = 1.0
+        poscar.axes       = s.axes
+        poscar.elem       = species
+        poscar.elem_count = species_count
+        poscar.coord      = 'cartesian'
+        poscar.pos        = s.pos
+        c = poscar.write_text()
+        if filepath is not None:
+            open(filepath,'w').write(c)
+        #end if
+        return c
+    #end def write_poscar
+
+
     def write_fhi_aims(self,filepath=None):
         s = self.copy()
         s.change_units('A')
@@ -4536,7 +4611,7 @@ class Structure(Sobj):
             pp[i] -= dot(a,pp[i])/dot(a,a)*a
         #end for
         plot(pp[:,ix],pp[:,iy],*args,**kwargs)
-    #end def plot2d
+    #end def plot2d_pos
 
 
     def plot2d(self,pos_style='b.',ax_style='k-'):
@@ -4556,6 +4631,38 @@ class Structure(Sobj):
         self.plot2d_pos(2,0,pos_style)
         title('a3,a1')
     #end def plot2d
+
+
+    def plot2d_kax(self,ix,iy,*args,**kwargs):
+        if self.dim!=3:
+            self.error('plot2d_ax is currently only implemented for 3 dimensions')
+        #end if
+        iz = list(set([0,1,2])-set([ix,iy]))[0]
+        ax = self.kaxes.copy()
+        a  = ax[iz]
+        dc = 0*a
+        pp = array([0*a,ax[ix],ax[ix]+ax[iy],ax[iy],0*a])
+        for i in range(len(pp)):
+            pp[i]+=dc
+            pp[i]-=dot(a,pp[i])/dot(a,a)*a
+        #end for
+        plot(pp[:,ix],pp[:,iy],*args,**kwargs)
+    #end def plot2d_kax
+
+
+    def plot2d_kp(self,ix,iy,*args,**kwargs):
+        if self.dim!=3:
+            self.error('plot2d_kp is currently only implemented for 3 dimensions')
+        #end if
+        iz = list(set([0,1,2])-set([ix,iy]))[0]
+        pp = self.kpoints.copy()
+        a = self.kaxes[iz]
+        for i in range(len(pp)):
+            pp[i] -= dot(a,pp[i])/dot(a,a)*a
+        #end for
+        plot(pp[:,ix],pp[:,iy],*args,**kwargs)
+    #end def plot2d_kp
+
 
     def show(self,viewer='vmd',filepath='/tmp/tmp.xyz'):
         if self.dim!=3:
