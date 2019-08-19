@@ -2,9 +2,10 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2019 QMCPACK developers.
 //
-// File developed by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
+// File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
+//                    Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //                    Raymond Clay III, j.k.rofling@gmail.com, Lawrence Livermore National Laboratory
@@ -22,13 +23,12 @@ namespace qmcplusplus
 QMCDriverInterface* VMCFactoryNew::create(MCPopulation& pop,
                                           TrialWaveFunction& psi,
                                           QMCHamiltonian& h,
+
                                           ParticleSetPool& ptclpool,
                                           HamiltonianPool& hpool,
                                           WaveFunctionPool& ppool,
                                           Communicate* comm)
 {
-  //int np = Concurrency::maxThreads();
-
   QMCDriverInput qmcdriver_input(qmc_counter_);
   qmcdriver_input.readXML(input_node_);
   VMCDriverInput vmcdriver_input;
@@ -43,7 +43,8 @@ QMCDriverInterface* VMCFactoryNew::create(MCPopulation& pop,
   {
     throw std::runtime_error("VMCFactoryNew does not support VMC_MODE");
   }
-  //why?
+
+  // TODO: I believe this is redundant and could become a bug.
   qmc->setUpdateMode(vmc_mode_ & 1);
   return qmc;
 }

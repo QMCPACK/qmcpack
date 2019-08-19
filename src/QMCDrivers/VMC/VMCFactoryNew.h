@@ -5,8 +5,12 @@
 // Copyright (c) 2019 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
+//                    Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
+//                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
+//                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
+//                    Raymond Clay III, j.k.rofling@gmail.com, Lawrence Livermore National Laboratory
 //
-// Refactored From: VMCFactory.cpp
+// File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
 
 #ifndef QMCPLUSPLUS_VMCFACTORYNEW_H
