@@ -555,18 +555,15 @@ void TrialWaveFunction::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 void TrialWaveFunction::evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios)
 {
   assert(VP.getTotalNum() == ratios.size());
-  std::vector<ValueType> t(ratios.size()), r(ratios.size(), 1.0);
+  std::vector<ValueType> t(ratios.size());
+  std::fill(ratios.begin(), ratios.end(), 1.0);
   for (int i = 0, ii = NL_TIMER; i < Z.size(); ++i, ii += TIMER_SKIP)
   {
     myTimers[ii]->start();
     Z[i]->evaluateRatios(VP, t);
     for (int j = 0; j < ratios.size(); ++j)
-      r[j] *= t[j];
+      ratios[j] *= t[j];
     myTimers[ii]->stop();
-  }
-  for (int j = 0; j < ratios.size(); ++j)
-  {
-    ratios[j] = r[j];
   }
 }
 
