@@ -16,8 +16,8 @@
 #include "Particle/ParticleSet.h"
 #include "Optimize/VariableSet.h"
 
-#include "QMCWaveFunctions/Jastrow/GaussianFunctor.h"
-#include "QMCWaveFunctions/Jastrow/NormalizedGaussianRegion.h"
+#include "QMCWaveFunctions/Jastrow/CountingGaussian.h"
+#include "QMCWaveFunctions/Jastrow/CountingGaussianRegion.h"
 #include "QMCWaveFunctions/Jastrow/CountingJastrow.h"
 #include "QMCWaveFunctions/Jastrow/CountingJastrowBuilder.h"
 
@@ -26,7 +26,7 @@
 namespace qmcplusplus
 {
 
-// GaussianFunctor unit tests
+// CountingGaussian unit tests
 TEST_CASE("Gaussian Functor","[wavefunction]")
 {
   using RealType = QMCTraits::RealType;
@@ -34,8 +34,8 @@ TEST_CASE("Gaussian Functor","[wavefunction]")
   using GradType = QMCTraits::GradType;
   using TensorType = QMCTraits::TensorType;
 
-  GaussianFunctor gf_abc("gf_abc");
-  GaussianFunctor gf_adk("gf_adk");
+  CountingGaussian gf_abc("gf_abc");
+  CountingGaussian gf_adk("gf_adk");
 
   // test parse/put for both input modes
   const char * gaussian_xml_abc = "<function id=\"g0\"> \
@@ -205,7 +205,7 @@ TEST_CASE("CountingJastrow","[wavefunction]")
   REQUIRE( parse_cj );
   REQUIRE( put_cj );
 
-  CountingJastrow<NormalizedGaussianRegion>* cj = dynamic_cast<CountingJastrow<NormalizedGaussianRegion>*>(wf.getOrbitals()[0]);
+  CountingJastrow<CountingGaussianRegion>* cj = dynamic_cast<CountingJastrow<CountingGaussianRegion>*>(wf.getOrbitals()[0]);
   
   // reference for evaluateLog, evalGrad
   RealType Jval_exact = 7.8100074447e+00;
@@ -250,7 +250,7 @@ TEST_CASE("CountingJastrow","[wavefunction]")
   REQUIRE( put_cjv );
 
   // test evaluateLog for cjv
-  CountingJastrow<NormalizedGaussianRegion>* cjv = dynamic_cast<CountingJastrow<NormalizedGaussianRegion>*>(wfv.getOrbitals()[0]);
+  CountingJastrow<CountingGaussianRegion>* cjv = dynamic_cast<CountingJastrow<CountingGaussianRegion>*>(wfv.getOrbitals()[0]);
   for(int i = 0; i < num_els; ++i)
   {
     for(int k = 0; k < 3; ++k)
@@ -366,7 +366,7 @@ TEST_CASE("CountingJastrow","[wavefunction]")
   }
   
   // test makeClone
-  CountingJastrow<NormalizedGaussianRegion>* cj2 = dynamic_cast<CountingJastrow<NormalizedGaussianRegion>*>(cj->makeClone(elec));
+  CountingJastrow<CountingGaussianRegion>* cj2 = dynamic_cast<CountingJastrow<CountingGaussianRegion>*>(cj->makeClone(elec));
   std::fill(dlogpsi.begin(), dlogpsi.end(), 0);
   std::fill(dhpsioverpsi.begin(), dhpsioverpsi.end(), 0);
   cj2->evaluateDerivatives(elec, optVars, dlogpsi, dhpsioverpsi);
