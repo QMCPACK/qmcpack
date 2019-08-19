@@ -634,7 +634,6 @@ bool QMCMain::runQMC(xmlNodePtr cur)
     // A: Anytime that we aren't doing a restart.
     // So put walkers is an exceptional call. This code does not tell a useful
     // story of a QMCDriver's life.
-
     qmc_driver->putWalkers(m_walkerset_in);
 #if !defined(REMOVE_TRACEMANAGER)
     qmc_driver->putTraces(traces_xml);
