@@ -22,8 +22,8 @@ namespace qmcplusplus
 class MCPopulation
 {
 public:
-  using PopulationWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
-  using Properties       = PopulationWalker::PropertyContainer_t;
+  using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
+  using Properties       = MCPWalker::PropertyContainer_t;
   using IndexType        = QMCTraits::IndexType;
 
 private:
@@ -36,6 +36,7 @@ private:
   Properties properties_;
   ParticleSet ions_;
   std::vector<IndexType> walker_offsets_;
+  std::vector<std::unique_ptr<MCPWalker>> walker_list;
 
 public:
   MCPopulation(){};

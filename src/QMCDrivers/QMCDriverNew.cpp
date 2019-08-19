@@ -49,7 +49,7 @@ QMCDriverNew::QMCDriverNew(QMCDriverInput& input,
     : MPIObjectBase(comm),
       qmcdriver_input_(input),
       num_crowds_(input.get_num_crowds()),
-      branchEngine(0),
+      branchEngine(nullptr),
       DriftModifier(0),
       population_(population),
       Psi(psi),
@@ -58,8 +58,6 @@ QMCDriverNew::QMCDriverNew(QMCDriverInput& input,
       Estimators(0),
       wOut(0)
 {
-  reset_random = false;
-
   QMCType = "invalid";
 
   ////add each QMCHamiltonianBase to W.PropertyList so that averages can be taken
@@ -119,11 +117,13 @@ void QMCDriverNew::process(xmlNodePtr cur)
   else
     current_step_ = qmcdriver_input_.get_starting_step();
 
+  // If you really wanter to persist the MCPopulation it is not the business of QMCDriver to reset it.
+  // It could tell it we are starting a new section but shouldn't be pulling internal strings.
   //int numCopies = (H1.empty()) ? 1 : H1.size();
   //W.resetWalkerProperty(numCopies);
 
   //create branchEngine first
-  if (branchEngine == 0)
+  if (branchEngine == nullptr)
   {
     branchEngine = new SimpleFixedNodeBranch(qmcdriver_input_.get_tau(), population_.get_num_global_walkers());
   }
@@ -137,8 +137,8 @@ void QMCDriverNew::process(xmlNodePtr cur)
     branchEngine->read(h5FileRoot);
   }
   if (DriftModifier == 0)
-    DriftModifier = createDriftModifier(cur, myComm);
-  DriftModifier->parseXML(cur);
+    DriftModifier = createDriftModifier(qmcdriver_input_);
+
   branchEngine->put(cur);
   // Estimators->put(W, H, cur);
   // if (wOut == 0)
@@ -146,11 +146,10 @@ void QMCDriverNew::process(xmlNodePtr cur)
   branchEngine->start(RootName);
   branchEngine->write(RootName);
   //use new random seeds
-  if (reset_random)
+  if (qmcdriver_input_.get_reset_random())
   {
     app_log() << "  Regenerate random seeds." << std::endl;
     RandomNumberControl::make_seeds();
-    reset_random = false;
   }
   //flush the std::ostreams
   infoSummary.flush();

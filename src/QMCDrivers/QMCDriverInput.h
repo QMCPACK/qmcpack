@@ -96,6 +96,10 @@ protected:
   IndexType k_delay_ = 0;
   bool reset_random_ = false;
 
+  // for drift modifer
+  std::string drift_modifier_{"UNR"};
+  RealType drift_modifier_unr_a_ = 1.0;
+  
   /** @}
    */
 
@@ -126,6 +130,10 @@ public:
 
   const std::string& get_qmc_method() const { return qmc_method_; }
   const std::string& get_update_mode() const { return update_mode_; }
+
+  const std::string get_drift_modifier() const { return drift_modifier_; }
+  RealType get_drift_modifier_unr_a() const { return drift_modifier_unr_a_; }
+
 };
 
 } // namespace qmcplusplus

@@ -72,7 +72,7 @@ public:
     QMC_WARMUP
   };
 
-  using MCPWalker = MCPopulation::PopulationWalker;
+  using MCPWalker = MCPopulation::MCPWalker;
   using Buffer    = MCPWalker::Buffer_t;
 
   /** bits to classify QMCDriver
@@ -158,7 +158,7 @@ public:
    */
   bool put(xmlNodePtr cur) { return false; };
 
-  /** QMCDriverNew driver ignores cur
+  /** QMCDriverNew driver will eventuall ignore cur
    *
    *  This is the shared entry point
    *  from QMCMain so cannot be updated yet
@@ -184,10 +184,6 @@ protected:
   SimpleFixedNodeBranch* branchEngine;
   ///drift modifer
   DriftModifierBase* DriftModifier;
-
-  ///randomize it
-  bool reset_random;
-  ///flag to append or restart the run
 
   ///the number to delay updates by
   int k_delay;
