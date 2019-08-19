@@ -458,8 +458,7 @@ public:
 
   WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const
   {
-    //CountingJastrow* cjc = new CountingJastrow(tqp, C, F, G);
-    CountingJastrow* cjc = new CountingJastrow(tqp, C, F);
+    CountingJastrow* cjc = new CountingJastrow(tqp, C->makeClone(), F);
     cjc->setOptimizable(opt_C || opt_F);
     cjc->addOpt(opt_C, opt_F);
     cjc->addDebug(debug, debug_seqlen, debug_period);

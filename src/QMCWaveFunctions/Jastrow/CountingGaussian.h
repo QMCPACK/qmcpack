@@ -19,6 +19,7 @@
 namespace qmcplusplus
 {
 
+// doesn't inherit from OptimizableFunctorBase since this is a function of the entire position vector
 class CountingGaussian 
 {
   using RealType = QMCTraits::RealType;
@@ -48,9 +49,6 @@ class CountingGaussian
     DIM
   };
 
-  TensorType A;
-  PosType B;
-  RealType C;
 
   // opt variables: vector of bools: one for each parameter
   std::vector<bool> opt_A;
@@ -69,6 +67,10 @@ class CountingGaussian
   RealType Flap;
 
 public:
+  TensorType A;
+  PosType B;
+  RealType C;
+
   // optimizable variables
   opt_variables_type myVars;
 
