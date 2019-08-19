@@ -160,7 +160,8 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateValueAndDerivatives
 
       std::fill(dlogpsi_t.begin(), dlogpsi_t.end(), 0.0);
       //std::fill(dlogpsi_ct.begin(), dlogpsi_ct.end(), 0.0);
-      psi.evaluateDerivatives(W, optvars, dlogpsi_t, dhlogpsi_t);
+      //psi.evaluateDerivatives(W, optvars, dlogpsi_t, dhlogpsi_t);
+      psi.evaluateDerivativesWF(W, optvars, dlogpsi_t);
       for (int v = 0; v < dlogpsi_t.size(); ++v)
         dratio(v, j) = dlogpsi_t[v];
 

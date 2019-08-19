@@ -668,6 +668,38 @@ void TrialWaveFunction::evaluateDerivatives(ParticleSet& P,
   }
 }
 
+void TrialWaveFunction::evaluateDerivativesWF(ParticleSet& P,
+    const opt_variables_type& optvars,
+    std::vector<ValueType>& dlogpsi,
+    bool project)
+{
+  //     // First, zero out derivatives
+  //  This should only be done for some variables.
+  //     for (int j=0; j<dlogpsi.size(); j++)
+  //       dlogpsi[j] = dhpsioverpsi[j] = 0.0;
+  for (int i = 0; i < Z.size(); i++)
+  {
+    if (Z[i]->dPsi)
+      (Z[i]->dPsi)->evaluateDerivativesWF(P, optvars, dlogpsi);
+    else
+      Z[i]->evaluateDerivativesWF(P, optvars, dlogpsi);
+  }
+
+  if (project)
+  {
+    for (int i = 0; i < Z.size(); i++)
+    {
+      if (Z[i]->dPsi)
+        (Z[i]->dPsi)->multiplyDerivsByOrbR(dlogpsi);
+      else
+        Z[i]->multiplyDerivsByOrbR(dlogpsi);
+    }
+    RealType psiValue = std::exp(-LogValue) * std::cos(PhaseValue);
+    for (int i = 0; i < dlogpsi.size(); i++)
+      dlogpsi[i] *= psiValue;
+  }
+}
+
 void TrialWaveFunction::evaluateGradDerivatives(const ParticleSet::ParticleGradient_t& G_in,
                                                 std::vector<ValueType>& dgradlogpsi) {
   for (int i=0; i<Z.size(); i++) {
