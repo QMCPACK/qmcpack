@@ -12,6 +12,11 @@ try:
 except:
     plt = unavailable('matplotlib','plt')
 #end try
+try:
+    from skimage import measure
+except:
+    measure = unavailable('skimage','measure')
+#end try
 
 
 
@@ -3071,8 +3076,18 @@ class StructuredGridFunction(GridFunction):
 
     @property
     def grid_shape(self):
-        return self.grid.shape
+        return self.grid.grid_shape
     #end def grid_shape
+
+    @property
+    def cell_grid_shape(self):
+        return self.grid.cell_grid_shape
+    #end def cell_grid_shape
+
+    @property
+    def ncells(self):
+        return self.grid.ncells
+    #end def ncells
 
     @property
     def flat_points_shape(self):
@@ -3087,7 +3102,7 @@ class StructuredGridFunction(GridFunction):
 
     def plot_unit_contours(self,boundary=False,fig=True,show=True,**kwargs):
         if self.grid_dim!=2:
-            self.error('cannot plot contours is unit coordinates\ngrid must have dimension 2 to make contour plots\ndimension of grid for this function: {}'.format(self.grid_dim))
+            self.error('cannot plot contours in unit coordinates\ngrid must have dimension 2 to make contour plots\ndimension of grid for this function: {}'.format(self.grid_dim))
         #end if
         X,Y = self.grid.unit_points().T
         X.shape = self.grid_shape
@@ -3109,7 +3124,7 @@ class StructuredGridFunction(GridFunction):
 
     def plot_unit_surface(self,fig=True,show=True,**kwargs):
         if self.grid_dim!=2:
-            self.error('cannot plot contours is unit coordinates\ngrid must have dimension 2 to make contour plots\ndimension of grid for this function: {}'.format(self.grid_dim))
+            self.error('cannot plot contours in unit coordinates\ngrid must have dimension 2 to make contour plots\ndimension of grid for this function: {}'.format(self.grid_dim))
         #end if
         X,Y = self.grid.unit_points().T
         X.shape = self.grid_shape
@@ -3124,6 +3139,30 @@ class StructuredGridFunction(GridFunction):
             plt.show()
         #end if
     #end def plot_unit_surface
+    
+
+    def plot_unit_isosurface(self,level=None,fig=True,show=True,**kwargs):
+        if self.grid_dim!=3:
+            self.error('cannot plot isosurface in unit coordinates\ngrid must have dimension 3 to make contour plots\ndimension of grid for this function: {}'.format(self.grid_dim))
+        #end if
+        fm = self.f.T
+        # unit grid is used implicitly
+        spacing = tuple(1./(np.array(self.cell_grid_shape,dtype=float)))
+        for f in fm:
+            if level is None:
+                level = (f.max()+f.min())/2
+            #end if
+            f.shape = self.grid_shape
+            ret = measure.marching_cubes(f,level,spacing=spacing)
+            verts = ret[0] 
+            faces = ret[1]
+            fig,ax = self.setup_mpl_fig(fig=fig,dim=self.grid_dim)
+            ax.plot_trisurf(verts[:, 0], verts[:,1], faces, verts[:, 2],**kwargs)
+        #end for
+        if show:
+            plt.show()
+        #end if
+    #end def plot_unit_isosurface
 
 #end class StructuredGridFunction
 
@@ -3158,7 +3197,7 @@ class StructuredGridFunctionWithAxes(StructuredGridFunction):
 
     def plot_surface(self,fig=True,show=True,**kwargs):
         if self.grid_dim!=2:
-            self.error('cannot plot contours is unit coordinates\ngrid must have dimension 2 to make contour plots\ndimension of grid for this function: {}'.format(self.grid_dim))
+            self.error('cannot plot surface\ngrid must have dimension 2 to make contour plots\ndimension of grid for this function: {}'.format(self.grid_dim))
         #end if
         X,Y = self.r.T
         X.shape = self.grid_shape
@@ -3173,6 +3212,35 @@ class StructuredGridFunctionWithAxes(StructuredGridFunction):
             plt.show()
         #end if
     #end def plot_surface
+    
+
+    def plot_isosurface(self,level=None,fig=True,show=True,**kwargs):
+        if self.grid_dim!=3:
+            self.error('cannot plot isosurface \ngrid must have dimension 3 to make contour plots\ndimension of grid for this function: {}'.format(self.grid_dim))
+        #end if
+        if self.space_dim!=3:
+            self.error('cannot plot isosurface\ngrid points must reside in a 3D space to make contour plots\ndimension of the space for this function: {}'.format(self.space_dim))
+        #end if
+        fm = self.f.T
+        # unit grid is used implicitly
+        spacing = tuple(1./(np.array(self.cell_grid_shape,dtype=float)))
+        for f in fm:
+            if level is None:
+                level = (f.max()+f.min())/2
+            #end if
+            f.shape = self.grid_shape
+            ret = measure.marching_cubes(f,level,spacing=spacing)
+            verts = ret[0] 
+            faces = ret[1]
+            verts = self.grid.points_from_unit(verts)
+            fig,ax = self.setup_mpl_fig(fig=fig,dim=self.grid_dim)
+            ax.plot_trisurf(verts[:, 0], verts[:,1], faces, verts[:, 2],**kwargs)
+        #end for
+        if show:
+            plt.show()
+        #end if
+    #end def plot_isosurface
+
 
 #end class StructuredGridFunctionWithAxes
 
@@ -3206,7 +3274,8 @@ if __name__=='__main__':
         plot_projection    = 0,
         cell_volumes       = 0,
         plot_contours      = 0,
-        plot_surface       = 1,
+        plot_surface       = 0,
+        plot_isosurface    = 1,
         )
 
     shapes = {
@@ -3502,6 +3571,55 @@ if __name__=='__main__':
         fs.plot_unit_surface(show=False)
         
         fs.plot_surface()
+        
+    #end if
+
+
+    if demos.plot_isosurface:
+
+        gp = ParallelotopeGrid(
+            axes  = [[1,0,0],
+                     [1,1,0],
+                     [1,1,1]],
+            bconds = 'ppp',
+            cells  = (30,30,30),
+            )
+
+        u = gp.unit_points()
+        r = 2*np.pi*(u-1)
+        values = np.cos(r[:,0])+ np.cos(r[:,1])+ np.cos(r[:,2])
+
+        fp = ParallelotopeGridFunction(
+            grid   = gp,
+            values = values,
+            )
+
+        fp.plot_unit_isosurface(level=0,show=0)
+
+        fp.plot_isosurface(level=0,show=0)
+
+
+
+        gs = SpheroidGrid(
+            axes  = [[1,0,0],
+                     [1,1,0],
+                     [1,1,1]],
+            cells  = (30,30,30),
+            )
+
+        u = gs.unit_points()
+        r = 2*np.pi*(u-1)
+        values = np.cos(r[:,0])+ np.cos(r[:,1])+ np.cos(r[:,2])
+
+
+        fs = SpheroidGridFunction(
+            grid   = gs,
+            values = values,
+            )
+        
+        fs.plot_unit_isosurface(level=0,show=False)
+        
+        fs.plot_isosurface(level=0)
         
     #end if
     
