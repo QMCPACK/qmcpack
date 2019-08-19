@@ -707,6 +707,13 @@ PlotHandler.reset()
 class GBase(PlotHandler):
     """
     Base class for Grid and GridFunction classes.
+
+    This class should not be instantiated directly.
+
+    Attributes
+    ----------
+    initialized : `bool`
+        Set to true if the instance has been initialized in non-vacuous fashion.
     """
 
     descriptor = 'gbase'
@@ -873,7 +880,7 @@ class GBase(PlotHandler):
 
 class Grid(GBase):
     """
-    Base class for M dimensional grids embedded within N dimensional spaces.
+    Base class for `M` dimensional grids embedded within `N` dimensional spaces.
 
     Universal grid properties are handled/represented at this level.  This 
     includes the fact that a grid contains a set of points and resides within
@@ -895,10 +902,8 @@ class Grid(GBase):
     points : `ndarray, float, shape (N,d)`
         Array containing the grid points.  `N` is the number of grid points, 
         `d` is the dimension of the space.
-    initialized : `bool`
-        Set to true if the instance has been initialized in non-vacuous fashion.
     r : `ndarray, float, property`
-        Array containing the grid points.  User facing alias for `points`.
+        Array containing the grid points.  User-facing alias for `points`.
     npoints : `int, property`
         Number of grid points.
     space_dim : `int, property`
@@ -2938,11 +2943,75 @@ class SpheroidSurfaceGrid(StructuredGridWithAxes):
 
 
 class GridFunction(GBase):
+    """
+    Base class for `P` dimensional functions defined over `M` dimensional grids
+    that are embedded in `N` dimensional spaces.
 
+    The main aims of this class hierarchy are to provide interpolation, 
+    integration, and (where possible) plotting capabilities for functions of 
+    this type.  These operations are common in large scale post-processing 
+    and analysis of scientific data.
+
+    This class should not be instantiated directly.
+
+    Parameters
+    ----------
+    grid : `Grid, optional`
+        Grid of points in a `d` dimensional space.  If `grid` is not provided, 
+        additional parameters must be given to initialize a Grid object.
+    values : `array_like, float/complex, shape (N,P), (N,)`
+        Array of function values defined at the grid points.  `N` is the number
+        of points and `P` is the number of function values.  With `P>1`, the 
+        function is vector or tensor valued.  If the array has shape (`N`,), 
+        then `P` is set to `1`.
+    copy_grid : `bool, optional, default True`
+        Copy provided grid (`True`) or not (`False`).
+    copy_values : `bool, optional, default True`
+        Copy provided values (`True`) or not (`False`).
+    copy : `bool, optional`
+        Copy provided grid and values (`True`) or not (`False`).
+    dtype : `optional`
+        Data type for local function values.
+    grid_dtype : `optional`
+        Data type for grid point locations.
+    **kwargs: 
+        Arbitrary set of parameters used to create a Grid object.  See 
+        documentation for the `Grid` class and its derived classes for allowed 
+        inputs.  Used/allowed only if `grid` is not provided.
+
+    Attributes
+    ----------
+    grid : `Grid`
+        Grid of points in a `d` dimensional space.
+    values : `ndarray, float/complex, shape (N,P)`
+        Array of function values defined at the grid points.  `N` is the number
+        of points and `P` is the number of function values.  With `P>1`, the 
+        function is vector or tensor valued.
+    space_dim : `int, property`
+        Dimension of the space the grid resides in.  Referred to as `d` above.
+    npoints : `int, property`
+        Number of grid points.  Referred to as `N` above.
+    nvalues : `int, property`
+        Number of function values at each grid point.  Referred to as `P` above.
+    r : `ndarray, float, property`
+        Array containing the grid points.
+    f : `ndarray, float/complex, property`
+        Array containing the function values.  User-facing alias for `values`.
+    dtype : `property`
+        Datatype of the function values.
+    """
+
+    #: Descriptive string for class.  Used in the GBase base class when 
+    #: printing error messages.
     descriptor = 'grid function'
 
+    #: Grid class type that must be associated (contained by) a particular
+    #: `GridFunction` class.  Must be a sub-class of `Grid`.  Required only 
+    #: for grid function classes that support direct instantiation.
     grid_class = None
 
+    #: (`obj`) Collection of attributes for the class.  Used to check assigned 
+    #: members for type conformity and to assign default values.
     persistent_data_types = obj(
         grid        = (Grid,None),
         values      = (np.ndarray,None),
@@ -2984,11 +3053,40 @@ class GridFunction(GBase):
                          grid        = None,
                          values      = None,
                          copy        = None,
-                         copy_grid   = None,
-                         copy_values = None,
+                         copy_grid   = True,
+                         copy_values = True,
                          dtype       = None,
                          grid_dtype  = None,
                          **kwargs):
+        """
+        (`Internal API`) Sets `grid` and `values` attributes.
+
+        Parameters
+        ----------
+        grid : `Grid, optional`
+            Grid of points in a `d` dimensional space.  If `grid` is not 
+            provided, additional parameters must be given to initialize a Grid
+            object.
+        values : `array_like, float/complex, shape (N,P), (N,)`
+            Array of function values defined at the grid points.  `N` is the 
+            number of points and `P` is the number of function values.  With 
+            `P>1`, the function is vector or tensor valued.  If the array 
+            has shape (`N`,), then `P` is set to `1`.
+        copy_grid : `bool, optional, default True`
+            Copy provided grid (`True`) or not (`False`).
+        copy_values : `bool, optional, default True`
+            Copy provided values (`True`) or not (`False`).
+        copy : `bool, optional`
+            Copy provided grid and values (`True`) or not (`False`).
+        dtype : `optional`
+            Data type for local function values.
+        grid_dtype : `optional`
+            Data type for grid point locations.
+        **kwargs: 
+            Arbitrary set of parameters used to create a Grid object.  See 
+            documentation for the `Grid` class and its derived classes for 
+            allowed inputs.  Used/allowed only if `grid` is not provided.
+        """
 
         if grid_dtype is not None:
             kwargs['dtype'] = grid_dtype
@@ -2998,13 +3096,6 @@ class GridFunction(GBase):
         if copy is not None:
             copy_grid   = copy
             copy_values = copy
-        else:
-            if copy_grid is None:
-                copy_grid = True
-            #end if
-            if copy_values is None:
-                copy_values = True
-            #end if
         #end if
         
         # process grid inputs
@@ -3019,6 +3110,8 @@ class GridFunction(GBase):
             #end if
         elif not isinstance(grid,cls.grid_class):
             self.error('received "grid" input with incorrect type\ntype provided: {}\ntype required: {}'.format(grid.__class__.__name__,cls.grid_class.__name__))
+        elif len(kwargs)>0:
+            self.error('received both a grid object and parameters intended for grid initialization\nplease remove the following parameters and try again: {}'.format(sorted(kwargs.keys())))
         elif copy_grid:
             grid = grid.copy()
         #end if
@@ -3052,15 +3145,25 @@ class GridFunction(GBase):
 
 
     def local_validity_checks(self,msgs):
+        """
+        (`Internal API`) Check validity of `grid` and `values`.
+
+        Parameters
+        ----------
+        msgs : `list, str`
+            List containing error messages.  Empty if no problems are found.
+        """
         cls = self.__class__
         if not isinstance(self.grid,cls.grid_class):
             msgs.append('grid is not of the required type for current grid function\ngrid function type: {}\ngrid type required: {}'.format(cls.__name__,self.grid.__class__.__name__))
         #end if
+        self.grid.local_validity_checks(msgs)
         if len(self.values)!=self.npoints:
             msgs.append('number of function values and number of gird points do not match\nnumber of grid points: {}\nnumber of function values: {}'.format(self.npoints,len(self.values)))
         #end if
         if len(self.values.shape)!=2:
             msgs.append('function values has incorrect shape\nexpected shape is (# of points, # of function values at each point)\nshape received: {}'.format(self.values.shape))
+        #end if
     #end def local_validity_checks
 
 #end class GridFunction
@@ -3068,6 +3171,35 @@ class GridFunction(GBase):
 
 
 class StructuredGridFunction(GridFunction):
+    """
+    Base class for functions defined on structured grids.
+
+    This class handles plotting functions within the unit coordinate space.  
+    It will handle unified interpolation and integration of (potentially 
+    multi-valued) discrete functions.
+
+    This class should not be instantiated directly.
+
+    Attributes
+    ----------
+    grid_dim : `int, property`
+        The dimension of the grid.
+    grid_shape : `tuple, int, property`
+        The number of grid points in each dimension.
+    cell_grid_shape : `tuple, int, property`
+        The number of grid cells in each dimension.
+    ncells : `int, property`
+        The total number of grid cells.
+    flat_points_shape : `tuple, int, property`
+        The shape of the `points` array in its default (flat) representation. 
+        If `grid_shape` is `(N,M,P)` and `space_dim` is `D`, then 
+        `flat_points_shape` is `(N*M*P,D)`.
+    full_points_shape : `tuple, int, property`
+        The shape of the points array in its full representation.
+        If `grid_shape` is `(N,M,P)` and `space_dim` is `D`, then 
+        `full_points_shape` is `(N,M,P,D)`.
+    """
+
 
     @property
     def grid_dim(self):
@@ -3101,6 +3233,20 @@ class StructuredGridFunction(GridFunction):
     
 
     def plot_unit_contours(self,boundary=False,fig=True,show=True,**kwargs):
+        """
+        (`User API`) Make 2D contour plots in the unit coordinate space.
+
+        Parameters
+        ----------
+        boundary : `bool, optional, default False`
+            Draw lines at the grid boundaries (`True`) or not (`False`).
+        fig : `bool, optional, default True`
+            Create a fresh figure (`True`) or not (`False`).
+        show : `bool, optional, default True`
+            Display the figure (`True`) or not (`False`).
+        **kwargs : `optional`
+            Arbitrary keyword argments passed to `pyplot.contour`.
+        """
         if self.grid_dim!=2:
             self.error('cannot plot contours in unit coordinates\ngrid must have dimension 2 to make contour plots\ndimension of grid for this function: {}'.format(self.grid_dim))
         #end if
@@ -3123,6 +3269,18 @@ class StructuredGridFunction(GridFunction):
     
 
     def plot_unit_surface(self,fig=True,show=True,**kwargs):
+        """
+        (`User API`) Make 2D surface plots in the unit coordinate space.
+
+        Parameters
+        ----------
+        fig : `bool, optional, default True`
+            Create a fresh figure (`True`) or not (`False`).
+        show : `bool, optional, default True`
+            Display the figure (`True`) or not (`False`).
+        **kwargs : `optional`
+            Arbitrary keyword argments passed to `pyplot.plot_surface`.
+        """
         if self.grid_dim!=2:
             self.error('cannot plot contours in unit coordinates\ngrid must have dimension 2 to make contour plots\ndimension of grid for this function: {}'.format(self.grid_dim))
         #end if
@@ -3142,6 +3300,21 @@ class StructuredGridFunction(GridFunction):
     
 
     def plot_unit_isosurface(self,level=None,fig=True,show=True,**kwargs):
+        """
+        (`User API`) Make 3D isosurface plots in the unit coordinate space.
+
+        Parameters
+        ----------
+        level : `float, optional`
+            Isosurface value to plot.  If not provided, the average of the max 
+            and min function values are used.
+        fig : `bool, optional, default True`
+            Create a fresh figure (`True`) or not (`False`).
+        show : `bool, optional, default True`
+            Display the figure (`True`) or not (`False`).
+        **kwargs : `optional`
+            Arbitrary keyword argments passed to `pyplot.plot_trisurf`.
+        """
         if self.grid_dim!=3:
             self.error('cannot plot isosurface in unit coordinates\ngrid must have dimension 3 to make contour plots\ndimension of grid for this function: {}'.format(self.grid_dim))
         #end if
@@ -3169,8 +3342,32 @@ class StructuredGridFunction(GridFunction):
 
 
 class StructuredGridFunctionWithAxes(StructuredGridFunction):
+    """
+    Base class for functions over structured grids with linear axes that act 
+    as scaffolding for the coordinate system.
+
+    The associated Grids for these classes can handle the mapping back and 
+    forth between the unit and full coordinate spaces.  As such, this class
+    handles the plotting of function values in the full space.
+
+    This class should not be instantiated directly.
+    """
 
     def plot_contours(self,boundary=False,fig=True,show=True,**kwargs):
+        """
+        (`User API`) Make 2D contour plots in the full coordinate space.
+
+        Parameters
+        ----------
+        boundary : `bool, optional, default False`
+            Draw lines at the grid boundaries (`True`) or not (`False`).
+        fig : `bool, optional, default True`
+            Create a fresh figure (`True`) or not (`False`).
+        show : `bool, optional, default True`
+            Display the figure (`True`) or not (`False`).
+        **kwargs : `optional`
+            Arbitrary keyword argments passed to `pyplot.contour`.
+        """
         if self.grid_dim!=2:
             self.error('cannot plot contours\ngrid must have dimension 2 to make contour plots\ndimension of grid for this function: {}'.format(self.grid_dim))
         #end if
@@ -3196,6 +3393,18 @@ class StructuredGridFunctionWithAxes(StructuredGridFunction):
     
 
     def plot_surface(self,fig=True,show=True,**kwargs):
+        """
+        (`User API`) Make 2D surface plots in the full coordinate space.
+
+        Parameters
+        ----------
+        fig : `bool, optional, default True`
+            Create a fresh figure (`True`) or not (`False`).
+        show : `bool, optional, default True`
+            Display the figure (`True`) or not (`False`).
+        **kwargs : `optional`
+            Arbitrary keyword argments passed to `pyplot.plot_surface`.
+        """
         if self.grid_dim!=2:
             self.error('cannot plot surface\ngrid must have dimension 2 to make contour plots\ndimension of grid for this function: {}'.format(self.grid_dim))
         #end if
@@ -3215,6 +3424,21 @@ class StructuredGridFunctionWithAxes(StructuredGridFunction):
     
 
     def plot_isosurface(self,level=None,fig=True,show=True,**kwargs):
+        """
+        (`User API`) Make 3D isosurface plots in the full coordinate space.
+
+        Parameters
+        ----------
+        level : `float, optional`
+            Isosurface value to plot.  If not provided, the average of the max 
+            and min function values are used.
+        fig : `bool, optional, default True`
+            Create a fresh figure (`True`) or not (`False`).
+        show : `bool, optional, default True`
+            Display the figure (`True`) or not (`False`).
+        **kwargs : `optional`
+            Arbitrary keyword argments passed to `pyplot.plot_trisurf`.
+        """
         if self.grid_dim!=3:
             self.error('cannot plot isosurface \ngrid must have dimension 3 to make contour plots\ndimension of grid for this function: {}'.format(self.grid_dim))
         #end if
@@ -3247,18 +3471,42 @@ class StructuredGridFunctionWithAxes(StructuredGridFunction):
 
 
 class ParallelotopeGridFunction(StructuredGridFunctionWithAxes):
+    """
+    Represents functions over parallelotope grids.
+
+    Most of the functionality is enabled by parent classes.  Instances of 
+    this class must only own a ParallelotopeGrid.
+
+    This class is intended for direct instantiation and use.
+    """
     grid_class = ParallelotopeGrid
 #end class ParallelotopeGridFunction
 
 
 
 class SpheroidGridFunction(StructuredGridFunctionWithAxes):
+    """
+    Represents functions over spheroidal grids.
+
+    Most of the functionality is enabled by parent classes.  Instances of 
+    this class must only own a SpheroidGrid.
+
+    This class is intended for direct instantiation and use.
+    """
     grid_class = SpheroidGrid
 #end class SpheroidGridFunction
 
 
 
 class SpheroidSurfaceGridFunction(StructuredGridFunctionWithAxes):
+    """
+    Represents functions over spheroidal surface grids.
+
+    Most of the functionality is enabled by parent classes.  Instances of 
+    this class must only own a SpheroidalSurfaceGrid.
+
+    This class is intended for direct instantiation and use.
+    """
     grid_class = SpheroidSurfaceGrid
 #end class SpheroidSurfaceGridFunction
 
