@@ -556,7 +556,6 @@ void TrialWaveFunction::evaluateRatios(VirtualParticleSet& VP, std::vector<Value
 {
   assert(VP.getTotalNum() == ratios.size());
   std::vector<ValueType> t(ratios.size()), r(ratios.size(), 1.0);
-  ;
   for (int i = 0, ii = NL_TIMER; i < Z.size(); ++i, ii += TIMER_SKIP)
   {
     myTimers[ii]->start();
