@@ -351,6 +351,14 @@ struct WaveFunctionComponent : public QMCTraits
                                    std::vector<ValueType>& dlogpsi,
                                    std::vector<ValueType>& dhpsioverpsi);
 
+  /** Compute derivatives of rhe wavefunction with respect to the optimizable 
+   *  parameters
+   *  @param P particle set
+   *  @param optvars optimizable parameters
+   *  @param dlogpsi array of derivatives of the log of the wavefunction
+   *  Note: this function differs from the evaluateDerivatives function in the way that it only computes
+   *        the derivative of the log of the wavefunction. 
+  */
   virtual void evaluateDerivativesWF(ParticleSet& P,
                                      const opt_variables_type& optvars,
                                      std::vector<ValueType>& dlogpsi);

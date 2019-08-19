@@ -1839,8 +1839,6 @@ void WaveFunctionTester::runDerivNLPPTest()
   int Nvars = wfVars.size();
   std::vector<ValueType> Dsaved(Nvars);
   std::vector<ValueType> HDsaved(Nvars);
-  //std::vector<RealType> rDsaved(Nvars);
-  //std::vector<RealType> rHDsaved(Nvars);
   std::vector<RealType> PGradient(Nvars);
   std::vector<RealType> HGradient(Nvars);
   Psi.resetParameters(wfVars);

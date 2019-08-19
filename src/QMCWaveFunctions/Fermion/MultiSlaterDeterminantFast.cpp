@@ -550,7 +550,7 @@ void MultiSlaterDeterminantFast::evaluateDerivatives(ParticleSet& P,
                                                      std::vector<ValueType>& dlogpsi,
                                                      std::vector<ValueType>& dhpsioverpsi)
 {
-  this->evaluateDerivativesWF(P, optvars, dlogpsi);
+  evaluateDerivativesWF(P, optvars, dlogpsi);
   if (CI_Optimizable)
   {
     bool recalculate(false);
@@ -660,13 +660,7 @@ void MultiSlaterDeterminantFast::evaluateDerivatives(ParticleSet& P,
               v2 += tmp2 * static_cast<ValueType>(dot(P.G[j], grads_dn(dnC, l)) - dot(myG_temp[j], grads_dn(dnC, l)));
             cnt++;
           }
-          //dlogpsi[kk] = cdet;
-          //convert(cdet, dlogpsi[kk]);
           ValueType dhpsi = (RealType)-0.5 * (q0 - dlogpsi[kk] * lapl_sum) - dlogpsi[kk] * gg - v1 - v2;
-          //ValueType dhpsi =  -0.5*(tmp1*laplSum_up[upC]+tmp2*laplSum_dn[dnC]
-          //                         -cdet*lapl_sum)
-          //                   -cdet*gg-(tmp1*v1+tmp2*v2);
-          //convert(dhpsi, dhpsioverpsi[kk]);
           dhpsioverpsi[kk] = dhpsi;
         }
       }

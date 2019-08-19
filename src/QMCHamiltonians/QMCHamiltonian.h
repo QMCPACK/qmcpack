@@ -43,7 +43,6 @@ public:
   typedef QMCHamiltonianBase::RealType RealType;
   typedef QMCHamiltonianBase::ValueType ValueType;
   typedef QMCHamiltonianBase::Return_t Return_t;
-  typedef QMCHamiltonianBase::Return_ct Return_ct;
   typedef QMCHamiltonianBase::PropertySetType PropertySetType;
   typedef QMCHamiltonianBase::BufferType BufferType;
   typedef QMCHamiltonianBase::Walker_t Walker_t;

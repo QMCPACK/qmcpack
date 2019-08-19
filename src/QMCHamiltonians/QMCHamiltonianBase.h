@@ -64,7 +64,6 @@ struct QMCHamiltonianBase : public QMCTraits
   /** type of return value of evaluate
    */
   typedef FullPrecRealType Return_t;
-  typedef FullPrecValueType Return_ct;
   /** typedef for the serialized buffer
    *
    * PooledData<RealType> is used to serialized an anonymous buffer

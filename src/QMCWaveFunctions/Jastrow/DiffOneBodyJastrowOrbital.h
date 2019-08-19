@@ -132,7 +132,7 @@ public:
                            std::vector<ValueType>& dlogpsi,
                            std::vector<ValueType>& dhpsioverpsi)
   {
-    this->evaluateDerivativesWF(P, active, dlogpsi);
+    evaluateDerivativesWF(P, active, dlogpsi);
     bool recalculate(false);
     std::vector<bool> rcsingles(myVars.size(), false);
     for (int k = 0; k < myVars.size(); ++k)

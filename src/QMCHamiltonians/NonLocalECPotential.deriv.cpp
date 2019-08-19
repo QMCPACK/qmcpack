@@ -114,9 +114,6 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateValueAndDerivatives
   std::vector<ValueType> dlogpsi_t(dlogpsi.size(), 0.0);
   std::vector<ValueType> dhlogpsi_t(dlogpsi.size(), 0.0);
 
-  //std::vector<ValueType> dlogpsi_ct(dlogpsi.size(), 0.0);
-  //std::vector<ValueType> dhlogpsi_ct(dlogpsi.size(), 0.0);
-
   const auto& myTable = W.getDistTable(myTableIndex);
   RealType esum              = 0.0;
   ValueType pairpot;
@@ -137,39 +134,24 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateValueAndDerivatives
     for (int j = 0; j < nknot; j++)
     {
       PosType pos_now = W.R[iel];
-      //W.makeMoveAndCheck(iel, deltarV[j]);
-
-//#if defined(QMC_COMPLEX)
-//      psiratio[j] = psi.ratio(W, iel) * ValueType( std::cos(psi.getPhaseDiff()), std::sin(psi.getPhaseDiff()) );
-//#else
-//      psiratio[j] = psi.ratio(W, iel);
-//#endif
-//      psiratio[j] = psi.full_ratio(W, iel);
       W.makeMove(iel, deltarV[j]);
-//#if defined(QMC_COMPLEX)
-//      psiratio[j] = psi.ratio(W, iel) * std::cos(psi.getPhaseDiff());
-//#else
-//      psiratio[j] = psi.ratio(W, iel);
-//#endif
-      psiratio[j] = psi.full_ratio(W, iel);
+      psiratio[j] = psi.evaluateFullRatio(W, iel);
       psi.resetPhaseDiff();
 
       //use existing methods
-      W.acceptMove(iel);
       psi.acceptMove(W, iel);
+      W.acceptMove(iel);
 
       std::fill(dlogpsi_t.begin(), dlogpsi_t.end(), 0.0);
-      //std::fill(dlogpsi_ct.begin(), dlogpsi_ct.end(), 0.0);
-      //psi.evaluateDerivatives(W, optvars, dlogpsi_t, dhlogpsi_t);
       psi.evaluateDerivativesWF(W, optvars, dlogpsi_t);
       for (int v = 0; v < dlogpsi_t.size(); ++v)
         dratio(v, j) = dlogpsi_t[v];
 
       PosType md = -1.0 * deltarV[j];
       W.makeMove(iel, md);
-      W.acceptMove(iel);
-      ValueType tmp_ratio = psi.full_ratio(W, iel);
+      ValueType tmp_ratio = psi.evaluateFullRatio(W, iel);
       psi.acceptMove(W, iel);
+      W.acceptMove(iel);
     }
 
     for (int j = 0; j < nknot; ++j)

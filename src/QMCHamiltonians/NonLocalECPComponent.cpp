@@ -140,7 +140,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOne(ParticleSet& W,
     {
       deltaV[j] = r * rrotsgrid_m[j] - dr;
       W.makeMove(iel, deltaV[j]);
-      psiratio[j] = psi.full_ratio(W, iel) * sgridweight_m[j];
+      psiratio[j] = psi.evaluateFullRatio(W, iel) * sgridweight_m[j];
       W.rejectMove(iel);
       psi.resetPhaseDiff();
       //psi.rejectMove(iel);

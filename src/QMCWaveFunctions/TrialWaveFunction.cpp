@@ -327,7 +327,7 @@ TrialWaveFunction::RealType TrialWaveFunction::ratio(ParticleSet& P, int iat)
 #endif
 }
 
-TrialWaveFunction::ValueType TrialWaveFunction::full_ratio(ParticleSet& P, int iat)
+TrialWaveFunction::ValueType TrialWaveFunction::evaluateFullRatio(ParticleSet& P, int iat)
 {
   ValueType r(1.0);
   for (size_t i = 0, n = Z.size(); i < n; ++i)
@@ -555,7 +555,6 @@ void TrialWaveFunction::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 void TrialWaveFunction::evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios)
 {
   assert(VP.getTotalNum() == ratios.size());
-//#if defined(QMC_COMPLEX)
   std::vector<ValueType> t(ratios.size()), r(ratios.size(), 1.0);
   ;
   for (int i = 0, ii = NL_TIMER; i < Z.size(); ++i, ii += TIMER_SKIP)
@@ -566,26 +565,10 @@ void TrialWaveFunction::evaluateRatios(VirtualParticleSet& VP, std::vector<Value
       r[j] *= t[j];
     myTimers[ii]->stop();
   }
-  //RealType pdiff;
   for (int j = 0; j < ratios.size(); ++j)
   {
-    //RealType logr = evaluateLogAndPhase(r[j], pdiff);
-    //ratios[j]     = std::exp(logr) * std::cos(pdiff);
     ratios[j] = r[j];
-    //ratios[j]=std::abs(r)*std::cos(std::arg(r[j]));
   }
-//#else
-//  std::fill(ratios.begin(), ratios.end(), 1.0);
-//  std::vector<ValueType> t(ratios.size());
-//  for (int i = 0, ii = NL_TIMER; i < Z.size(); ++i, ii += TIMER_SKIP)
-//  {
-//    myTimers[ii]->start();
-//    Z[i]->evaluateRatios(VP, t);
-//    for (int j = 0; j < ratios.size(); ++j)
-//      ratios[j] *= t[j];
-//    myTimers[ii]->stop();
-//  }
-//#endif
 }
 
 void TrialWaveFunction::evaluateDerivRatios(VirtualParticleSet& VP, const opt_variables_type& optvars,
@@ -673,10 +656,6 @@ void TrialWaveFunction::evaluateDerivativesWF(ParticleSet& P,
     std::vector<ValueType>& dlogpsi,
     bool project)
 {
-  //     // First, zero out derivatives
-  //  This should only be done for some variables.
-  //     for (int j=0; j<dlogpsi.size(); j++)
-  //       dlogpsi[j] = dhpsioverpsi[j] = 0.0;
   for (int i = 0; i < Z.size(); i++)
   {
     if (Z[i]->dPsi)

@@ -166,7 +166,7 @@ public:
   {
     if (myVars.size() == 0)
       return;
-    this->evaluateDerivativesWF(P, active, dlogpsi);
+    evaluateDerivativesWF(P, active, dlogpsi);
     bool recalculate(false);
     std::vector<bool> rcsingles(myVars.size(), false);
     for (int k = 0; k < myVars.size(); ++k)
