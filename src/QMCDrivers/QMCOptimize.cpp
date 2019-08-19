@@ -183,11 +183,8 @@ bool QMCOptimize::put(xmlNodePtr q)
     }
     else if (cname.find("optimize") < cname.size())
     {
-      xmlChar* att = xmlGetProp(cur, (const xmlChar*)"method");
-      if (att)
-      {
-        optmethod = (const char*)att;
-      }
+      const XMLAttrString att(cur, "method");
+      if (!att.empty()) optmethod = att;
       optNode = cur;
     }
     cur = cur->next;

@@ -41,7 +41,6 @@ public:
   MCPopulation(){};
   MCPopulation(int num_ranks) : num_ranks_(num_ranks) {}
   MCPopulation(MCWalkerConfiguration& mcwc);
-
   int get_num_ranks() const { return num_ranks_; }
   IndexType get_num_global_walkers() const { return num_global_walkers_; }
   IndexType get_num_local_walkers() const { return num_local_walkers_; }

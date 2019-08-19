@@ -56,10 +56,6 @@ bool LocalCorePolPotential::CPP_Param::put(xmlNodePtr cur)
   att.add(alpha, "alpha");
   att.add(r_b, "rb");
   att.put(cur);
-  //const xmlChar* a_ptr = xmlGetProp(cur,(const xmlChar *)"alpha");
-  //const xmlChar* b_ptr = xmlGetProp(cur,(const xmlChar *)"rb");
-  //if(a_ptr) alpha = atof((const char*)a_ptr);
-  //if(b_ptr) r_b = atof((const char*)b_ptr);
   C           = -0.5 * alpha;
   one_over_rr = 1.0 / r_b / r_b;
   app_log() << "\talpha = " << alpha << " rb = " << r_b << std::endl;

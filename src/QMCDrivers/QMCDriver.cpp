@@ -705,12 +705,9 @@ xmlNodePtr QMCDriver::getQMCNode()
     std::string cname((const char*)(cur->name));
     if (cname == "parameter")
     {
-      const xmlChar* aptr = xmlGetProp(cur, (const xmlChar*)"name");
-      if (aptr)
-      {
-        if (xmlStrEqual(aptr, (const xmlChar*)"current"))
-          current_ptr = cur;
-      }
+      const XMLAttrString name(cur, "name");
+      if (name == "current")
+        current_ptr = cur;
     }
     cur = cur->next;
   }
