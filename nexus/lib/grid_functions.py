@@ -702,9 +702,166 @@ PlotHandler.reset()
 class GBase(PlotHandler):
     """
     Base class for Grid and GridFunction classes.
-
-    Currently vacuous.
     """
+
+    descriptor = 'gbase'
+
+    #: (`obj`) Collection of attributes for the class.  Used to check assigned 
+    #: members for type conformity and to assign default values.
+    persistent_data_types = obj(
+        initialized = (bool,False),
+        )
+
+
+    def __init__(self,**kwargs):
+        self.reset()
+
+        if len(kwargs)>0:
+            self.initialize(**kwargs)
+        #end if
+    #end def __init__
+
+
+    def reset(self):
+        """
+        (`User API`) Reset all attributes to default values.
+        """
+        cls = self.__class__
+        for name,(dtype,default) in cls.persistent_data_types.items():
+            self[name] = default
+        #end for
+    #end def reset
+
+
+    def initialize(self,*args,**kwargs):
+        """
+        (`Internal API`) Initialize the instance, starting from the Grid base 
+        class and then down the inheritance hierarchy.
+
+        Parameters
+        ----------
+        check : `bool, optional, default True`
+            Check all the assigned attributes for type and shape validity.
+        **kwargs : 
+            Arbitrary keyword arguments corresponding to instance attributes.
+        """
+        # remove check argument
+        check = kwargs.pop('check',True)
+
+        # call derived initialize
+        self.initialize_local(*args,**kwargs)
+
+        # record initialization action
+        self.initialized = True
+
+        # check validity of grid
+        if check:
+            self.check_valid()
+        #end if
+    #end def initialize
+
+
+    def valid(self):
+        """
+        (`User API`) Return the validity status of a Grid object.
+
+        Returns
+        -------
+        valid : `bool`
+            True if no problems are found.
+        """
+        return self.check_valid(exit=False)
+    #end def valid
+
+
+    def check_valid(self,exit=True):
+        """
+        (`User API`) Check the validity of a Grid object.  
+
+        Parameters
+        ----------
+        exit : `bool, default True`
+            If `True` (the default), exit with an error if the object is 
+            invalid.
+
+        Returns
+        -------
+        valid : `bool`
+            True if no problems are found.
+        """
+        cls = self.__class__
+        msgs = self.validity_checks()
+        valid = len(msgs)==0
+        if not valid and exit:
+            for msg in msgs:
+                self.error(msg,exit=False,trace=False)
+            #end for
+            self.error('{} is not valid, see error messages above'.format(cls.descriptor))
+        #end if
+        return valid
+    #end def check_valid
+
+
+    def validity_checks(self):
+        """
+        (`Internal API`)  Check validity of all assigned attributes, starting 
+        from the Grid base class and then down the inheritance hierarchy.
+        """
+        cls = self.__class__
+        msgs = []
+        # check that the grid has been initialized
+        if not self.initialized:
+            msgs.append('{} has not been initialized'.format(cls.descriptor))
+            return msgs
+        #end if
+        valid_key_list = list(cls.persistent_data_types.keys())
+        valid_key_set  = set(valid_key_list)
+        key_set = set(self.keys())
+        # check that all data members are present
+        missing = valid_key_set - key_set
+        if len(missing)>0:
+            msgs.append('some data members are missing: {}'.format(sorted(missing)))
+        #end if
+        # check that extra data members are not present
+        extra = key_set - valid_key_set
+        if len(extra)>0:
+            msgs.append('unknown data members encountered: {}'.format(sorted(extra)))
+        #end if
+        # check that all data members are of the correct type
+        for name in valid_key_list:
+            type,default = cls.persistent_data_types[name]
+            if name in self:
+                val = self[name]
+                if val is None:
+                    msgs.append('data member "{}" has not been initialized, it is "None"'.format(name))
+                elif not isinstance(val,type):
+                    msgs.append('data member "{}" is not of type "{}", it is of type "{}" instead'.format(name,type.__name__,val.__class__.__name__))
+                #end if
+            #end if
+        #end for
+        if len(msgs)==0:
+            self.local_validity_checks(msgs)
+        #end if
+        return msgs
+    #end def validity_checks
+
+
+    def initialize_local(self,*args,**kwargs):
+        """
+        (`Internal API`) Virtual function used to assign attributes local 
+        to the current derived class.
+        """
+        self.not_implemented()
+    #end def initialize_local
+
+
+    def local_validity_checks(self,msgs):
+        """
+        (`Internal API`) Virtual function used to check the validity of 
+        attributes local to the current derived class.
+        """
+        self.not_implemented()
+    #end def local_validity_checks
 #end class GBase
 
 
@@ -745,12 +902,13 @@ class Grid(GBase):
         Datatype of the grid point values.
     """
 
+    descriptor = 'grid'
 
     #: (`obj`) Collection of attributes for the class.  Used to check assigned 
     #: members for type conformity and to assign default values.
     persistent_data_types = obj(
         points      = (np.ndarray,None ),
-        initialized = (bool      ,False),
+        **GBase.persistent_data_types
         )
 
     @property
@@ -774,58 +932,9 @@ class Grid(GBase):
     #end def dtype
 
 
-    def __init__(self,**kwargs):
-        self.reset()
-
-        if len(kwargs)>0:
-            self.initialize(**kwargs)
-        #end if
-    #end def __init__
-
-
-    def reset(self):
-        """
-        (`User API`) Reset all attributes to default values.
-        """
-        cls = self.__class__
-        for name,(dtype,default) in cls.persistent_data_types.items():
-            self[name] = default
-        #end for
-    #end def reset
-
-
-    def initialize(self,**kwargs):
-        """
-        (`Internal API`) Initialize the instance, starting from the Grid base 
-        class and then down the inheritance hierarchy.
-
-        Parameters
-        ----------
-        check : `bool, optional, default True`
-            Check all the assigned attributes for type and shape validity.
-        **kwargs : 
-            Arbitrary keyword arguments corresponding to instance attributes.
-        """
-        # remove check argument
-        check = kwargs.pop('check',True)
-
-        # call derived initialize
-        self.initialize_local(**kwargs)
-
-        # record initialization action
-        self.initialized = True
-
-        # check validity of grid
-        if check:
-            self.check_valid()
-        #end if
-    #end def initialize
-
-
     def initialize_local(self,points=None,dtype=None,copy=True):
         """
-        (`Internal API`) Virtual function used to assign attributes local 
-        to the current derived class.
+        (`Internal API`) Sets `points` and `dtype` attributes.
 
         Parameters
         ----------
@@ -917,54 +1026,9 @@ class Grid(GBase):
     #end def translate
 
 
-    def validity_checks(self):
-        """
-        (`Internal API`)  Check validity of all assigned attributes, starting 
-        from the Grid base class and then down the inheritance hierarchy.
-        """
-        cls = self.__class__
-        msgs = []
-        # check that the grid has been initialized
-        if not self.initialized:
-            msgs.append('grid has not been initialized')
-            return msgs
-        #end if
-        valid_key_list = list(cls.persistent_data_types.keys())
-        valid_key_set  = set(valid_key_list)
-        key_set = set(self.keys())
-        # check that all data members are present
-        missing = valid_key_set - key_set
-        if len(missing)>0:
-            msgs.append('some data members are missing: {}'.format(sorted(missing)))
-        #end if
-        # check that extra data members are not present
-        extra = key_set - valid_key_set
-        if len(extra)>0:
-            msgs.append('unknown data members encountered: {}'.format(sorted(extra)))
-        #end if
-        # check that all data members are of the correct type
-        for name in valid_key_list:
-            type,default = cls.persistent_data_types[name]
-            if name in self:
-                val = self[name]
-                if val is None:
-                    msgs.append('data member "{}" has not been initialized, it is "None"'.format(name))
-                elif not isinstance(val,type):
-                    msgs.append('data member "{}" is not of type "{}", it is of type "{}" instead'.format(name,type.__name__,val.__class__.__name__))
-                #end if
-            #end if
-        #end for
-        if len(msgs)==0:
-            self.local_validity_checks(msgs)
-        #end if
-        return msgs
-    #end def validity_checks
-
-
     def local_validity_checks(self,msgs):
         """
-        (`Internal API`) Virtual function used to check the validity of 
-        attributes local to the current derived class.
+        (`Internal API`) Check validity of `shape` and `points`.
 
         Parameters
         ----------
@@ -987,46 +1051,6 @@ class Grid(GBase):
         #end if
         return msgs
     #end def local_validity_checks
-
-
-    def check_valid(self,exit=True):
-        """
-        (`User API`) Check the validity of a Grid object.  
-
-        Parameters
-        ----------
-        exit : `bool, default True`
-            If `True` (the default), exit with an error if the object is 
-            invalid.
-
-        Returns
-        -------
-        valid : `bool`
-            True if no problems are found.
-        """
-        msgs = self.validity_checks()
-        valid = len(msgs)==0
-        if not valid and exit:
-            for msg in msgs:
-                self.error(msg,exit=False,trace=False)
-            #end for
-            self.error('grid is not valid, see error messages above')
-        #end if
-        return valid
-    #end def check_valid
-
-
-    def valid(self):
-        """
-        (`User API`) Return the validity status of a Grid object.
-
-        Returns
-        -------
-        valid : `bool`
-            True if no problems are found.
-        """
-        return self.check_valid(exit=False)
-    #end def valid
 
 
     def check_valid_points(self,points,dim,loc):
@@ -1282,6 +1306,9 @@ class StructuredGrid(Grid):
         """
         (`Internal API`) Sets the `bconds` attribute in a protected way.
         """
+        if isinstance(bconds,str):
+            bconds = tuple(bconds)
+        #end if
         if not isinstance(bconds,(tuple,list,np.ndarray)):
             self.error('cannot set bconds from data with type "{}"\nplease use tuple, list, or array for inputted bconds'.format(bconds.__class__.__name__))
         #end if
@@ -1305,6 +1332,8 @@ class StructuredGrid(Grid):
         if grid_dim is not None:
             if bconds is None:
                 bconds = grid_dim*[self.bcond_types.open]
+            elif isinstance(bconds,str):
+                bconds = tuple(bconds)
             #end if
             bconds = np.array(bconds,dtype=object)
         #end if
@@ -1332,6 +1361,8 @@ class StructuredGrid(Grid):
         if len(self.shape)!=self.grid_dim:
             msgs.append('number of entries in grid shape does not match grid dimension\nnumber of entries in grid shape: {}\ngrid dimension: {}'.format(len(self.shape),self.grid_dim))
         #end if
+        if len(self.bconds)!=self.grid_dim:
+            msgs.append('number of entries in bconds does not match grid dimension\nnumber of entries in bconds: {}\ngrid dimension: {}'.format(len(self.bconds),self.grid_dim))
         if len(set(self.bconds)-StructuredGrid.valid_bconds)>0:
             msgs.append('boundary conditions are invalid\nboundary conditions in each dimension must be one of: {}\nboundary conditions provided: {}'.format(sorted(StructuredGrid.valid_bconds),self.bconds))
             #end if
@@ -2902,36 +2933,92 @@ class SpheroidSurfaceGrid(StructuredGridWithAxes):
 
 
 class GridFunction(GBase):
+
+    descriptor = 'grid function'
+
     grid_class = None
+
+    persistent_data_types = obj(
+        grid        = (Grid,None),
+        values      = (np.ndarray,None),
+        **GBase.persistent_data_types
+        )
+
+    @property
+    def space_dim(self):
+        return self.grid.space_dim
+    #end def space_dim
+
+    @property
+    def npoints(self):
+        return self.grid.npoints
+    #end def npoints
+
+    @property
+    def nvalues(self):
+        return self.values.shape[1]
+    #end def nvalues
+
+    @property
+    def r(self):
+        return self.grid.r
+    #end def r
+
+    @property 
+    def f(self):
+        return self.values
+    #end def f
 
     @property
     def dtype(self):
         return self.values.dtype
     #end def dtype
 
-    def __init__(self,
-                 values     = None,
-                 copy       = True,
-                 check      = True,
-                 dtype      = None,
-                 grid_dtype = None,
-                 **kwargs):
-        cls = self.__class__
 
-        self.reset()
+    def initialize_local(self,
+                         grid        = None,
+                         values      = None,
+                         copy        = None,
+                         copy_grid   = None,
+                         copy_values = None,
+                         dtype       = None,
+                         grid_dtype  = None,
+                         **kwargs):
 
         if grid_dtype is not None:
             kwargs['dtype'] = grid_dtype
         #end if
 
-        grid = cls.grid_class(**kwargs)
-
-        if not grid.initialized:
-            if values is not None:
-                self.error('grid must be initialized to describe the domain of the function values\nplease add inputs to initialize the appropriate grid')
+        # process copy inputs
+        if copy is not None:
+            copy_grid   = copy
+            copy_values = copy
+        else:
+            if copy_grid is None:
+                copy_grid = True
             #end if
-            return
+            if copy_values is None:
+                copy_values = True
+            #end if
         #end if
+        
+        # process grid inputs
+        cls = self.__class__
+        if grid is None:
+            grid = cls.grid_class(**kwargs)
+            if not grid.initialized:
+                if values is not None:
+                    self.error('grid must be initialized to describe the domain of the function values\nplease add inputs to initialize the appropriate grid')
+                #end if
+                return
+            #end if
+        elif not isinstance(grid,cls.grid_class):
+            self.error('received "grid" input with incorrect type\ntype provided: {}\ntype required: {}'.format(grid.__class__.__name__,cls.grid_class.__name__))
+        elif copy_grid:
+            grid = grid.copy()
+        #end if
+
+        # process values input
         if values is None:
             self.error('function values must be provided at the grid points')
         elif isinstance(values,(tuple,list)):
@@ -2939,8 +3026,8 @@ class GridFunction(GBase):
                 dtype = float
             #end if
             values = np.array(values,dtype=dtype)
-        elif instance(values,ndarray):
-            if copy:
+        elif isinstance(values,np.ndarray):
+            if copy_values:
                 if dtype is None:
                     dtype = values.dtype
                 #end if
@@ -2949,37 +3036,146 @@ class GridFunction(GBase):
         else:
             self.error('provided function values are of incorrect type\nvalues must be tuple, list, or ndarray\nyou provided: {}'.format(values.__class__.__name__))
         #end if
+        if len(values.shape)==1:
+            values.shape = (values.shape[0],1)
+        #end if
     
+        # assign grid and values
         self.grid   = grid
         self.values = values
+    #end def initialize_local
 
-        if check:
-            self.check_valid()
+
+    def local_validity_checks(self,msgs):
+        cls = self.__class__
+        if not isinstance(self.grid,cls.grid_class):
+            msgs.append('grid is not of the required type for current grid function\ngrid function type: {}\ngrid type required: {}'.format(cls.__name__,self.grid.__class__.__name__))
         #end if
-    #end def __init__
+        if len(self.values)!=self.npoints:
+            msgs.append('number of function values and number of gird points do not match\nnumber of grid points: {}\nnumber of function values: {}'.format(self.npoints,len(self.values)))
+        #end if
+        if len(self.values.shape)!=2:
+            msgs.append('function values has incorrect shape\nexpected shape is (# of points, # of function values at each point)\nshape received: {}'.format(self.values.shape))
+    #end def local_validity_checks
 
-
-    def reset(self):
-        self.grid        = None
-        self.values      = None
-        self.initialized = False
-    #end def reset
-
-
-    def check_valid(self):
-        self.not_implemented()
-    #end def check_valid
 #end class GridFunction
 
 
+
 class StructuredGridFunction(GridFunction):
-    None
+
+    @property
+    def grid_dim(self):
+        return self.grid.grid_dim
+    #end def grid_dim
+
+    @property
+    def grid_shape(self):
+        return self.grid.shape
+    #end def grid_shape
+
+    @property
+    def flat_points_shape(self):
+        return self.grid.flat_points_shape
+    #end def flat_points_shape
+
+    @property
+    def full_points_shape(self):
+        return self.grid.full_points_shape
+    #end def full_points_shape
+    
+
+    def plot_unit_contours(self,boundary=False,fig=True,show=True,**kwargs):
+        if self.grid_dim!=2:
+            self.error('cannot plot contours is unit coordinates\ngrid must have dimension 2 to make contour plots\ndimension of grid for this function: {}'.format(self.grid_dim))
+        #end if
+        X,Y = self.grid.unit_points().T
+        X.shape = self.grid_shape
+        Y.shape = self.grid_shape
+        Zm = self.f.T
+        for Z in Zm:
+            Z.shape = self.grid_shape
+            fig,ax = self.setup_mpl_fig(fig=fig,dim=self.grid_dim)
+            ax.contour(X,Y,Z,**kwargs)
+            if boundary:
+                self.grid.plot_unit_boundary(fig=False,show=False)
+            #end if
+        #end for
+        if show:
+            plt.show()
+        #end if
+    #end def plot_unit_contours
+    
+
+    def plot_unit_surface(self,fig=True,show=True,**kwargs):
+        if self.grid_dim!=2:
+            self.error('cannot plot contours is unit coordinates\ngrid must have dimension 2 to make contour plots\ndimension of grid for this function: {}'.format(self.grid_dim))
+        #end if
+        X,Y = self.grid.unit_points().T
+        X.shape = self.grid_shape
+        Y.shape = self.grid_shape
+        Zm = self.f.T
+        for Z in Zm:
+            Z.shape = self.grid_shape
+            fig,ax = self.setup_mpl_fig(fig=fig,dim=self.grid_dim+1)
+            ax.plot_surface(X,Y,Z,**kwargs)
+        #end for
+        if show:
+            plt.show()
+        #end if
+    #end def plot_unit_surface
+
 #end class StructuredGridFunction
 
 
+
 class StructuredGridFunctionWithAxes(StructuredGridFunction):
-    None
+
+    def plot_contours(self,boundary=False,fig=True,show=True,**kwargs):
+        if self.grid_dim!=2:
+            self.error('cannot plot contours\ngrid must have dimension 2 to make contour plots\ndimension of grid for this function: {}'.format(self.grid_dim))
+        #end if
+        if self.space_dim!=2:
+            self.error('cannot plot contours\ngrid points must reside in a 2D space to make contour plots\ndimension of the space for this function: {}'.format(self.space_dim))
+        #end if
+        X,Y = self.r.T
+        X.shape = self.grid_shape
+        Y.shape = self.grid_shape
+        Zm = self.f.T
+        for Z in Zm:
+            Z.shape = self.grid_shape
+            fig,ax = self.setup_mpl_fig(fig=fig,dim=self.grid_dim)
+            ax.contour(X,Y,Z,**kwargs)
+            if boundary:
+                self.grid.plot_boundary(fig=False,show=False)
+            #end if
+        #end for
+        if show:
+            plt.show()
+        #end if
+    #end def plot_contours
+    
+
+    def plot_surface(self,fig=True,show=True,**kwargs):
+        if self.grid_dim!=2:
+            self.error('cannot plot contours is unit coordinates\ngrid must have dimension 2 to make contour plots\ndimension of grid for this function: {}'.format(self.grid_dim))
+        #end if
+        X,Y = self.r.T
+        X.shape = self.grid_shape
+        Y.shape = self.grid_shape
+        Zm = self.f.T
+        for Z in Zm:
+            Z.shape = self.grid_shape
+            fig,ax = self.setup_mpl_fig(fig=fig,dim=self.grid_dim+1)
+            ax.plot_surface(X,Y,Z,**kwargs)
+        #end for
+        if show:
+            plt.show()
+        #end if
+    #end def plot_surface
+
 #end class StructuredGridFunctionWithAxes
+
 
 
 class ParallelotopeGridFunction(StructuredGridFunctionWithAxes):
@@ -2987,9 +3183,11 @@ class ParallelotopeGridFunction(StructuredGridFunctionWithAxes):
 #end class ParallelotopeGridFunction
 
 
+
 class SpheroidGridFunction(StructuredGridFunctionWithAxes):
     grid_class = SpheroidGrid
 #end class SpheroidGridFunction
+
 
 
 class SpheroidSurfaceGridFunction(StructuredGridFunctionWithAxes):
@@ -3006,7 +3204,9 @@ if __name__=='__main__':
         plot_grids         = 0,
         plot_inside        = 0,
         plot_projection    = 0,
-        cell_volumes       = 1,
+        cell_volumes       = 0,
+        plot_contours      = 0,
+        plot_surface       = 1,
         )
 
     shapes = {
@@ -3216,5 +3416,94 @@ if __name__=='__main__':
             print name,g.volume(),g.cell_volumes().sum()
         #end for
     #end if
+
+
+    if demos.plot_contours:
+
+        gp = ParallelotopeGrid(
+            axes  = [[1,0],
+                     [1,1]],
+            bconds = 'pp',
+            cells  = (80,80),
+            )
+
+        u = gp.unit_points()
+        values = np.cos(3*np.pi*u[:,0])**2*np.sin(2*np.pi*u[:,1])
+
+        fp = ParallelotopeGridFunction(
+            grid   = gp,
+            values = values,
+            )
+
+        fp.plot_unit_contours(boundary=True,show=False)
+
+        fp.plot_contours(boundary=True,show=False)
+
+
+
+        gs = SpheroidGrid(
+            axes  = [[1,0],
+                     [1,1]],
+            cells  = (80,80),
+            )
+
+        u = gs.unit_points()
+        values = np.cos(3*np.pi*u[:,0])**2*np.sin(2*np.pi*u[:,1])
+
+        fs = SpheroidGridFunction(
+            grid   = gs,
+            values = values,
+            )
+
+        fs.plot_unit_contours(boundary=True,show=False)
+
+        fs.plot_contours(boundary=True)
+        
+    #end if
+
+
+    if demos.plot_surface:
+
+        gp = ParallelotopeGrid(
+            axes  = [[1,0],
+                     [1,1]],
+            bconds = 'pp',
+            cells  = (80,80),
+            )
+
+        u = gp.unit_points()
+        values = np.cos(3*np.pi*u[:,0])**2*np.sin(2*np.pi*u[:,1])
+
+        fp = ParallelotopeGridFunction(
+            grid   = gp,
+            values = values,
+            )
+
+        fp.plot_unit_surface(show=0)
+
+        fp.plot_surface(show=0)
+
+
+
+        gs = SpheroidGrid(
+            axes  = [[1,0],
+                     [1,1]],
+            cells  = (80,80),
+            )
+        
+        u = gs.unit_points()
+        values = np.cos(3*np.pi*u[:,0])**2*np.sin(2*np.pi*u[:,1])
+        
+        fs = SpheroidGridFunction(
+            grid   = gs,
+            values = values,
+            )
+        
+        fs.plot_unit_surface(show=False)
+        
+        fs.plot_surface()
+        
+    #end if
+    
 
 #end if 
