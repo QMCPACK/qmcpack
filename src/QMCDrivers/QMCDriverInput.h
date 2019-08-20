@@ -30,6 +30,13 @@ public:
   QMCDriverInput(int qmc_section_count);
   void readXML(xmlNodePtr cur);
 
+  // To allow compile check if move constructor is still implicit
+  QMCDriverInput() = delete;
+  QMCDriverInput(const QMCDriverInput&) = default;
+  QMCDriverInput(QMCDriverInput&&);
+  QMCDriverInput& operator=(const QMCDriverInput&) = default;
+  QMCDriverInput& operator=(QMCDriverInput&&);
+  
 protected:
   /** @ingroup Type dependent behavior
    * @{
@@ -127,6 +134,10 @@ public:
   const std::string& get_qmc_method() const { return qmc_method_; }
   const std::string& get_update_mode() const { return update_mode_; }
 };
+
+// These will cause a compiler error if the implicit move constructor has been broken
+inline QMCDriverInput::QMCDriverInput(QMCDriverInput&&) = default;
+inline QMCDriverInput& QMCDriverInput::operator=(QMCDriverInput&&) = default;
 
 } // namespace qmcplusplus
 

@@ -40,7 +40,7 @@
 
 namespace qmcplusplus
 {
-QMCDriverNew::QMCDriverNew(QMCDriverInput& input,
+QMCDriverNew::QMCDriverNew(QMCDriverInput&& input,
                            MCPopulation& population,
                            TrialWaveFunction& psi,
                            QMCHamiltonian& h,

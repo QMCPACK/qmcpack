@@ -17,14 +17,14 @@ namespace qmcplusplus
 {
 /** Constructor maintains proper ownership of input parameters
    */
-VMCBatched::VMCBatched(QMCDriverInput& qmcdriver_input,
-                       VMCDriverInput& input,
+VMCBatched::VMCBatched(QMCDriverInput&& qmcdriver_input,
+                       VMCDriverInput&& input,
                        MCPopulation& pop,
                        TrialWaveFunction& psi,
                        QMCHamiltonian& h,
                        WaveFunctionPool& ppool,
                        Communicate* comm)
-    : QMCDriverNew(qmcdriver_input, pop, psi, h, ppool, comm), vmcdriver_input_(input)
+    : QMCDriverNew(std::move(qmcdriver_input), pop, psi, h, ppool, comm), vmcdriver_input_(input)
 {
   // qmc_driver_mode.set(QMC_UPDATE_MODE, 1);
   // qmc_driver_mode.set(QMC_WARMUP, 0);

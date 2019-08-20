@@ -89,7 +89,7 @@ public:
   xmlNodePtr traces_xml;
 
   /// Constructor.
-  QMCDriverNew(QMCDriverInput& input,
+  QMCDriverNew(QMCDriverInput&& input,
                MCPopulation& population,
                TrialWaveFunction& psi,
                QMCHamiltonian& h,

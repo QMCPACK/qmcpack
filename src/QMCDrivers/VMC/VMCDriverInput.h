@@ -27,7 +27,7 @@ public:
   using FullPrecisionRealType = QMCTraits::FullPrecRealType;
   VMCDriverInput(){};
   VMCDriverInput(int walkers_per_rank, const std::string& use_drift);
-  void readXML(xmlNodePtr& xml_input);
+  void readXML(xmlNodePtr xml_input);
 
 protected:
   /** @ingroup Parameters for VMC Driver
@@ -37,7 +37,7 @@ protected:
    *  there is are code_generation tools in QMCPACK_ROOT/utils/code_tools
    */
 
-  IndexType requested_walkers_per_rank_ = 0;
+  IndexType walkers_per_rank_ = 0;
   std::string use_drift_{"yes"};
 
   IndexType samples_per_thread_    = -1;
@@ -46,7 +46,7 @@ protected:
   /** @} */
 
 public:
-  IndexType get_requested_walkers_per_rank() const { return requested_walkers_per_rank_; }
+  IndexType get_requested_walkers_per_rank() const { return walkers_per_rank_; }
   const std::string get_use_drift() const { return use_drift_; }
   IndexType get_samples_per_thread() const { return samples_per_thread_; }
   IndexType get_samples() const { return samples_; }

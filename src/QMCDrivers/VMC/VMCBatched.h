@@ -26,8 +26,8 @@ class VMCBatched : public QMCDriverNew
 {
 public:
   /// Constructor.
-  VMCBatched(QMCDriverInput& qmcdriver_input,
-             VMCDriverInput& input,
+  VMCBatched(QMCDriverInput&& qmcdriver_input,
+             VMCDriverInput&& input,
              MCPopulation& pop,
              TrialWaveFunction& psi,
              QMCHamiltonian& h,
@@ -42,7 +42,7 @@ public:
 private:
   int prevSteps;
   int prevStepsBetweenSamples;
-  VMCDriverInput& vmcdriver_input_;
+  VMCDriverInput vmcdriver_input_;
   QMCRunType getRunType() { return QMCRunType::VMC_BATCH; }
   ///Ways to set rn constant
   RealType logoffset, logepsilon;
