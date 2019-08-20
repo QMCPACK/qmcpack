@@ -3065,8 +3065,8 @@ class GridFunction(GBase):
         ----------
         grid : `Grid, optional`
             Grid of points in a `d` dimensional space.  If `grid` is not 
-            provided, additional parameters must be given to initialize a Grid
-            object.
+            provided, additional parameters must be given to initialize a 
+            `Grid` object.
         values : `array_like, float/complex, shape (N,P), (N,)`
             Array of function values defined at the grid points.  `N` is the 
             number of points and `P` is the number of function values.  With 
@@ -3083,7 +3083,7 @@ class GridFunction(GBase):
         grid_dtype : `optional`
             Data type for grid point locations.
         **kwargs: 
-            Arbitrary set of parameters used to create a Grid object.  See 
+            Arbitrary set of parameters used to create a `Grid` object.  See 
             documentation for the `Grid` class and its derived classes for 
             allowed inputs.  Used/allowed only if `grid` is not provided.
         """
@@ -3199,7 +3199,6 @@ class StructuredGridFunction(GridFunction):
         If `grid_shape` is `(N,M,P)` and `space_dim` is `D`, then 
         `full_points_shape` is `(N,M,P,D)`.
     """
-
 
     @property
     def grid_dim(self):
@@ -3478,6 +3477,69 @@ class ParallelotopeGridFunction(StructuredGridFunctionWithAxes):
     this class must only own a ParallelotopeGrid.
 
     This class is intended for direct instantiation and use.
+
+    Parameters
+    ----------
+    grid : `ParallelotopeGrid, optional`
+        Grid of points in a `d` dimensional space.  If `grid` is not provided, 
+        additional parameters must be given to initialize a `ParallelotopeGrid`
+        object.
+    values : `array_like, float/complex, shape (N,P), (N,)`
+        Array of function values defined at the grid points.  `N` is the number
+        of points and `P` is the number of function values.  With `P>1`, the 
+        function is vector or tensor valued.  If the array has shape (`N`,), 
+        then `P` is set to `1`.
+    copy_grid : `bool, optional, default True`
+        Copy provided grid (`True`) or not (`False`).
+    copy_values : `bool, optional, default True`
+        Copy provided values (`True`) or not (`False`).
+    copy : `bool, optional`
+        Copy provided grid and values (`True`) or not (`False`).
+    dtype : `optional`
+        Data type for local function values.
+    grid_dtype : `optional`
+        Data type for grid point locations.
+    **kwargs: 
+        Arbitrary set of parameters used to create a `ParallelotopeGrid` 
+        object.  See documentation for the `ParallelotopeGrid` class and for 
+        allowed inputs.  Used/allowed only if `grid` is not provided.
+
+    Attributes
+    ----------
+    grid : `ParallelotopeGrid`
+        Grid of points in a `d` dimensional space.
+    values : `ndarray, float/complex, shape (N,P)`
+        Array of function values defined at the grid points.  `N` is the number
+        of points and `P` is the number of function values.  With `P>1`, the 
+        function is vector or tensor valued.
+    space_dim : `int, property`
+        Dimension of the space the grid resides in.  Referred to as `d` above.
+    grid_dim : `int, property`
+        The dimension of the grid.
+    npoints : `int, property`
+        Number of grid points.  Referred to as `N` above.
+    nvalues : `int, property`
+        Number of function values at each grid point. Referred to as `P` above.
+    grid_shape : `tuple, int, property`
+        The number of grid points in each dimension.
+    cell_grid_shape : `tuple, int, property`
+        The number of grid cells in each dimension.
+    ncells : `int, property`
+        The total number of grid cells.
+    flat_points_shape : `tuple, int, property`
+        The shape of the `points` array in its default (flat) representation. 
+        If `grid_shape` is `(N,M,P)` and `space_dim` is `D`, then 
+        `flat_points_shape` is `(N*M*P,D)`.
+    full_points_shape : `tuple, int, property`
+        The shape of the points array in its full representation.
+        If `grid_shape` is `(N,M,P)` and `space_dim` is `D`, then 
+        `full_points_shape` is `(N,M,P,D)`.
+    r : `ndarray, float, property`
+        Array containing the grid points.
+    f : `ndarray, float/complex, property`
+        Array containing the function values.  User-facing alias for `values`.
+    dtype : `property`
+        Datatype of the function values.
     """
     grid_class = ParallelotopeGrid
 #end class ParallelotopeGridFunction
@@ -3492,6 +3554,69 @@ class SpheroidGridFunction(StructuredGridFunctionWithAxes):
     this class must only own a SpheroidGrid.
 
     This class is intended for direct instantiation and use.
+
+    Parameters
+    ----------
+    grid : `SpheroidGrid, optional`
+        Grid of points in a `d` dimensional space.  If `grid` is not provided, 
+        additional parameters must be given to initialize a `SpheroidGrid` 
+        object.
+    values : `array_like, float/complex, shape (N,P), (N,)`
+        Array of function values defined at the grid points.  `N` is the number
+        of points and `P` is the number of function values.  With `P>1`, the 
+        function is vector or tensor valued.  If the array has shape (`N`,), 
+        then `P` is set to `1`.
+    copy_grid : `bool, optional, default True`
+        Copy provided grid (`True`) or not (`False`).
+    copy_values : `bool, optional, default True`
+        Copy provided values (`True`) or not (`False`).
+    copy : `bool, optional`
+        Copy provided grid and values (`True`) or not (`False`).
+    dtype : `optional`
+        Data type for local function values.
+    grid_dtype : `optional`
+        Data type for grid point locations.
+    **kwargs: 
+        Arbitrary set of parameters used to create a `SpheroidGrid` object. See
+        documentation for the `SpheroidGrid` class for allowed inputs.  
+        Used/allowed only if `grid` is not provided.
+
+    Attributes
+    ----------
+    grid : `SpheroidGrid`
+        Grid of points in a `d` dimensional space.
+    values : `ndarray, float/complex, shape (N,P)`
+        Array of function values defined at the grid points.  `N` is the number
+        of points and `P` is the number of function values.  With `P>1`, the 
+        function is vector or tensor valued.
+    space_dim : `int, property`
+        Dimension of the space the grid resides in.  Referred to as `d` above.
+    grid_dim : `int, property`
+        The dimension of the grid.
+    npoints : `int, property`
+        Number of grid points.  Referred to as `N` above.
+    nvalues : `int, property`
+        Number of function values at each grid point. Referred to as `P` above.
+    grid_shape : `tuple, int, property`
+        The number of grid points in each dimension.
+    cell_grid_shape : `tuple, int, property`
+        The number of grid cells in each dimension.
+    ncells : `int, property`
+        The total number of grid cells.
+    flat_points_shape : `tuple, int, property`
+        The shape of the `points` array in its default (flat) representation. 
+        If `grid_shape` is `(N,M,P)` and `space_dim` is `D`, then 
+        `flat_points_shape` is `(N*M*P,D)`.
+    full_points_shape : `tuple, int, property`
+        The shape of the points array in its full representation.
+        If `grid_shape` is `(N,M,P)` and `space_dim` is `D`, then 
+        `full_points_shape` is `(N,M,P,D)`.
+    r : `ndarray, float, property`
+        Array containing the grid points.
+    f : `ndarray, float/complex, property`
+        Array containing the function values.  User-facing alias for `values`.
+    dtype : `property`
+        Datatype of the function values.
     """
     grid_class = SpheroidGrid
 #end class SpheroidGridFunction
@@ -3506,6 +3631,69 @@ class SpheroidSurfaceGridFunction(StructuredGridFunctionWithAxes):
     this class must only own a SpheroidalSurfaceGrid.
 
     This class is intended for direct instantiation and use.
+
+    Parameters
+    ----------
+    grid : `SpheroidSurfaceGrid, optional`
+        Grid of points in a `d` dimensional space.  If `grid` is not provided, 
+        additional parameters must be given to initialize a 
+        `SpheroidSurfaceGrid` object.
+    values : `array_like, float/complex, shape (N,P), (N,)`
+        Array of function values defined at the grid points.  `N` is the number
+        of points and `P` is the number of function values.  With `P>1`, the 
+        function is vector or tensor valued.  If the array has shape (`N`,), 
+        then `P` is set to `1`.
+    copy_grid : `bool, optional, default True`
+        Copy provided grid (`True`) or not (`False`).
+    copy_values : `bool, optional, default True`
+        Copy provided values (`True`) or not (`False`).
+    copy : `bool, optional`
+        Copy provided grid and values (`True`) or not (`False`).
+    dtype : `optional`
+        Data type for local function values.
+    grid_dtype : `optional`
+        Data type for grid point locations.
+    **kwargs: 
+        Arbitrary set of parameters used to create a `SpheroidSurfaceGrid` 
+        object.  See documentation for the `SpheroidSurfaceGrid` class for 
+        allowed inputs.  Used/allowed only if `grid` is not provided.
+
+    Attributes
+    ----------
+    grid : `SpheroidSurfaceGrid`
+        Grid of points in a `d` dimensional space.
+    values : `ndarray, float/complex, shape (N,P)`
+        Array of function values defined at the grid points.  `N` is the number
+        of points and `P` is the number of function values.  With `P>1`, the 
+        function is vector or tensor valued.
+    space_dim : `int, property`
+        Dimension of the space the grid resides in.  Referred to as `d` above.
+    grid_dim : `int, property`
+        The dimension of the grid.
+    npoints : `int, property`
+        Number of grid points.  Referred to as `N` above.
+    nvalues : `int, property`
+        Number of function values at each grid point. Referred to as `P` above.
+    grid_shape : `tuple, int, property`
+        The number of grid points in each dimension.
+    cell_grid_shape : `tuple, int, property`
+        The number of grid cells in each dimension.
+    ncells : `int, property`
+        The total number of grid cells.
+    flat_points_shape : `tuple, int, property`
+        The shape of the `points` array in its default (flat) representation. 
+        If `grid_shape` is `(N,M,P)` and `space_dim` is `D`, then 
+        `flat_points_shape` is `(N*M*P,D)`.
+    full_points_shape : `tuple, int, property`
+        The shape of the points array in its full representation.
+        If `grid_shape` is `(N,M,P)` and `space_dim` is `D`, then 
+        `full_points_shape` is `(N,M,P,D)`.
+    r : `ndarray, float, property`
+        Array containing the grid points.
+    f : `ndarray, float/complex, property`
+        Array containing the function values.  User-facing alias for `values`.
+    dtype : `property`
+        Datatype of the function values.
     """
     grid_class = SpheroidSurfaceGrid
 #end class SpheroidSurfaceGridFunction
