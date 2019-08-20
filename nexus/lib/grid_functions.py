@@ -20,33 +20,6 @@ except:
 
 
 
-## n-dimensional version, not using due to axis order conventions
-## https://en.wikipedia.org/wiki/N-sphere
-#def spherical_to_cartesian(points):
-#    if not isinstance(points,np.ndarray):
-#        points = np.array(points)
-#    #end if
-#    sphere_points = points
-#    npoints,dim = sphere_points.shape
-#    cart_points = []
-#    r = sphere_points[:,0]
-#    s = np.sin(sphere_points[:,1:])
-#    c = np.cos(sphere_points[:,1:])
-#    for d in range(dim):
-#        cart = r.copy()
-#        if d>0:
-#            cart *= s[:,:d].prod(axis=1)
-#        #end if
-#        if d<dim-1:
-#            cart *= c[:,d]
-#        #end if
-#        cart_points.append(cart)
-#    #end for
-#    cart_points = np.array(cart_points).T
-#    return cart_points
-##end def spherical_to_cartesian
-
-
 def polar_to_cartesian(points,surface=False):
     """
     Conversion from polar to Cartesian coordinates.
@@ -229,46 +202,6 @@ def cartesian_to_spherical(points,surface=False):
     #end if
     return sphere_points
 #end def cartesian_to_spherical
-
-
-
-
-def linear_grid_1d(rmin=0.0,rmax=1.0,n=None,dr=None,centered=False):
-    """
-    Generation of grid points in one dimension.
-
-    Parameters
-    ----------
-    rmin : `float, optional, default 0.0`
-        Lower edge of the domain.
-    rmax : `float, optional, default 1.0`
-        Upper edge of the domain.
-    n    : `int, optional`
-        Number of grid points.  Either `n` or `dr` must be provided.
-    dr   : `float, optional`
-        Grid cell width.   Either `n` or `dr` must be provided.
-    centered : `bool, optional, default False`
-        Place each grid point either at the lower edge (`False`) or center 
-        (`True`) of each grid cell.
-
-    Returns
-    -------
-    r : `ndarray`
-        Array of grid points.
-    """
-    if n is not None and dr is not None:
-        error('provide only one of "dr" and "n", not both','linear_grid_1d')
-    elif dr is not None:
-        n = int(round((rmax-rmin)/dr))
-    elif n is None:
-        error('either "n" or "dr" must be provided','linear_grid_1d')
-    #end if
-    r = np.linspace(rmin,rmax,n,endpoint=False)
-    if centered:
-        r += 0.5/n
-    #end if
-    return r
-#end def linear_grid_1d
 
 
 
