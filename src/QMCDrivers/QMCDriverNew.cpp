@@ -272,21 +272,9 @@ void QMCDriverNew::setupWalkers()
   else
   { // always reset the walkers
     // Here we do some minimal fixing of walker numbers
-    int num_threads(Concurrency::maxThreads<>());
-    if (qmcdriver_input_.get_num_crowds() <= 0)
-      num_crowds_ = num_threads;
-    if (num_crowds_ > num_threads)
-    {
-      std::stringstream error_msg;
-      error_msg << "Bad Input: num_crowds (" << qmcdriver_input_.get_num_crowds() << ") > num_threads (" << num_threads
-                << ")\n";
-      throw std::runtime_error(error_msg.str());
-    }
-
-    // Finding the equal groups that will fit the inputs request
-
     IndexType local_walkers = calc_default_local_walkers();
-    addWalkers(local_walkers);
+    addWalkers(local_walkers,
+               ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>(population_.get_num_particles()));
   }
 }
 
@@ -294,21 +282,9 @@ void QMCDriverNew::setupWalkers()
  * @param nwalkers number of walkers to add
  *
  */
-void QMCDriverNew::addWalkers(int nwalkers)
+void QMCDriverNew::addWalkers(int nwalkers, const ParticleAttrib<TinyVector<QMCTraits::RealType,3>>& positions)
 {
-  // if (nwalkers > 0)
-  // {
-  //   //add nwalkers walkers to the end of the ensemble
-  //   int nold = W.getActiveWalkers();
-  //   app_log() << "  Adding " << nwalkers << " walkers to " << nold << " existing sets" << std::endl;
-  //   W.createWalkers(nwalkers);
-  //   if (nold)
-  //   {
-  //     int iw = nold;
-  //     for (MCWalkerConfiguration::iterator it = W.begin() + nold; it != W.end(); ++it, ++iw)
-  //       (*it)->R = W[iw % nold]->R; //assign existing walker configurations when the number of walkers change
-  //   }
-  // }
+  population_.createWalkers(nwalkers, positions);
   // else if (nwalkers < 0)
   // {
   //   W.destroyWalkers(-nwalkers);

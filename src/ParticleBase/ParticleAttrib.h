@@ -23,6 +23,11 @@
 
 namespace qmcplusplus
 {
+
+/** Attaches a unit to a Vector for IO
+ *
+ *  Makes Vect
+ */
 template<class T, typename Alloc = std::allocator<T>>
 class ParticleAttrib : public Vector<T, Alloc>, public OhmmsObject
 {

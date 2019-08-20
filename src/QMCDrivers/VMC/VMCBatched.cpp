@@ -12,6 +12,7 @@
 #include "QMCDrivers/VMC/VMCBatched.h"
 #include "QMCDrivers/VMC/VMCUpdatePbyP.h"
 #include "QMCDrivers/VMC/VMCUpdateAll.h"
+#include "Concurrency/Info.hpp"
 
 namespace qmcplusplus
 {
@@ -32,6 +33,16 @@ VMCBatched::VMCBatched(QMCDriverInput&& qmcdriver_input,
 
 VMCBatched::IndexType VMCBatched::calc_default_local_walkers()
 {
+  int num_threads(Concurrency::maxThreads<>());
+  
+  if (num_crowds_ > num_threads)
+  {
+    std::stringstream error_msg;
+    error_msg << "Bad Input: num_crowds (" << qmcdriver_input_.get_num_crowds() << ") > num_threads (" << num_threads
+                << ")\n";
+    throw std::runtime_error(error_msg.str());
+  }
+
   IndexType rw = vmcdriver_input_.get_requested_walkers_per_rank();
   if (rw < num_crowds_)
     rw = num_crowds_;

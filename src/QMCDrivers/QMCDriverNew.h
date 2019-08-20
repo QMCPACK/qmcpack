@@ -294,7 +294,7 @@ public:
 
   bool putQMCInfo(xmlNodePtr cur);
 
-  void addWalkers(int nwalkers);
+  void addWalkers(int nwalkers, const ParticleAttrib<TinyVector<QMCTraits::RealType,3>>& positions);
 
   int get_num_crowds() { return num_crowds_; }
   /** record the state of the block
