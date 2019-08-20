@@ -75,6 +75,7 @@ TEST_CASE("TrialWaveFunction", "[wavefunction]")
 #endif
   elec_.resetGroups();
   elec_.update();
+  elec_.createSK(); // needed by AoS J2 for ChiesaKEcorrection
 
   ParticleSetPool ptcl{c};
   ptcl.addParticleSet(&elec_);
@@ -123,7 +124,11 @@ TEST_CASE("TrialWaveFunction", "[wavefunction]")
 
 #if !defined(QMC_CUDA)
   double logpsi = psi.evaluateLog(elec_);
+#if defined(QMC_COMPLEX)
+  REQUIRE(logpsi == Approx(2.2906113566615));
+#else
   REQUIRE(logpsi == Approx(0.8785940749059));
+#endif
 
   const int moved_elec_id = 1;
 
