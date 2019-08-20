@@ -502,31 +502,6 @@ def spheroid_surface_grid_points(axes,shape=None,cells=None,centered=False,endpo
 
 
 
-def all_none(*vals):
-    """
-    Check if all values in a list are `None`.
-    """
-    all = True
-    for v in vals:
-        all &= v is None
-    #end for
-    return all
-#end def all_none
-
-
-def any_none(*vals):
-    """
-    Check if any value in a list is `None`.
-    """
-    any = False
-    for v in vals:
-        any |= v is None
-    #end for
-    return any
-#end def any_none
-
-
-
 class PlotHandler(DevBase):
     """
     Handler class for plotting.
