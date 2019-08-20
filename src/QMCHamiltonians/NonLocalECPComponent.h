@@ -97,7 +97,7 @@ private:
   ///virtual particle set: delayed initialization
   VirtualParticleSet* VP;
   ///true, determinant localization approximation(DLA) is enabled
-  bool useDLA;
+  bool use_DLA;
 
 public:
 #if !defined(REMOVE_TRACEMANAGER)
@@ -124,7 +124,7 @@ public:
     sgridweight_m.push_back(weight);
   }
 
-  inline void enableDLA() { useDLA = true; }
+  inline void enableDLA() { use_DLA = true; }
 
   void resize_warrays(int n, int m, int l);
 
