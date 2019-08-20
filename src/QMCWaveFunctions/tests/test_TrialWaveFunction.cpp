@@ -34,17 +34,15 @@ TEST_CASE("TrialWaveFunction", "[wavefunction]")
 
   ions_.setName("ion");
   ions_.create(2);
-  ions_.R[0][0] = 0.0;
-  ions_.R[0][1] = 0.0;
-  ions_.R[0][2] = 0.0;
-  ions_.R[1][0] = 1.68658058;
-  ions_.R[1][1] = 1.68658058;
-  ions_.R[1][2] = 1.68658058;
+  ions_.R[0] = {0.0, 0.0, 0.0};
+  ions_.R[1] = {1.68658058, 1.68658058, 1.68658058};
   ions_.update();
 
 
   elec_.setName("elec");
-  elec_.create(4);
+  std::vector<int> ud(2);
+  ud[0] = ud[1] = 2;
+  elec_.create(ud);
   elec_.R[0] = {0.0, 0.0, 0.0};
   elec_.R[1] = {0.0, 1.0, 0.0};
   elec_.R[2] = {1.0, 0.0, 0.0};
@@ -60,6 +58,8 @@ TEST_CASE("TrialWaveFunction", "[wavefunction]")
   elec_.Lattice.R(2, 0) = 3.37316115;
   elec_.Lattice.R(2, 1) = 0.0;
   elec_.Lattice.R(2, 2) = 3.37316115;
+  elec_.Lattice.BoxBConds = {1, 1, 1};
+  elec_.Lattice.reset();
 
   SpeciesSet& tspecies         = elec_.getSpeciesSet();
   int upIdx                    = tspecies.addSpecies("u");
@@ -104,8 +104,8 @@ TEST_CASE("TrialWaveFunction", "[wavefunction]")
   psi.addComponent(det, "SingleDet");
   const char* jas_input = "<tmp> \
 <jastrow name=\"J2\" type=\"Two-Body\" function=\"Bspline\" print=\"yes\"> \
-   <correlation size=\"10\" speciesA=\"u\" speciesB=\"d\"> \
-      <coefficients id=\"ud\" type=\"Array\"> 0.02904699284 -0.1004179 -0.1752703883 -0.2232576505 -0.2728029201 -0.3253286875 -0.3624525145 -0.3958223107 -0.4268582166 -0.4394531176</coefficients> \
+   <correlation size=\"10\" speciesA=\"u\" speciesB=\"u\"> \
+      <coefficients id=\"uu\" type=\"Array\"> 0.02904699284 -0.1004179 -0.1752703883 -0.2232576505 -0.2728029201 -0.3253286875 -0.3624525145 -0.3958223107 -0.4268582166 -0.4394531176</coefficients> \
     </correlation> \
 </jastrow> \
 </tmp> \
@@ -119,13 +119,29 @@ TEST_CASE("TrialWaveFunction", "[wavefunction]")
 
   RadialJastrowBuilder jb(elec_, psi);
   bool build_okay = jb.put(jas1);
-/*
   REQUIRE(build_okay);
-*/
+
 #if !defined(QMC_CUDA)
   double logpsi = psi.evaluateLog(elec_);
-  std::cout << std::setprecision(20) << logpsi << "debug YYYY" << std::endl;
-  REQUIRE(logpsi == Approx(0.9023637518659));
+  REQUIRE(logpsi == Approx(0.8785940749059));
+
+  const int moved_elec_id = 1;
+
+  using PosType = QMCTraits::PosType;
+  PosType delta(0.1, -0.1, 0.2);
+
+  elec_.makeMove(moved_elec_id, delta);
+
+  double r_val = psi.ratio(elec_, moved_elec_id);
+  double r_all_val = psi.calcRatio(elec_, moved_elec_id);
+  double r_fermionic_val = psi.calcRatio(elec_, moved_elec_id, TrialWaveFunction::ComputeType::FERMIONIC);
+  double r_bosonic_val = psi.calcRatio(elec_, moved_elec_id, TrialWaveFunction::ComputeType::NONFERMIONIC);
+
+  REQUIRE(r_val == Approx(2.83819310073227));
+  REQUIRE(r_all_val == Approx(2.83819310073227));
+  REQUIRE(r_fermionic_val == Approx(1.03849468840389));
+  REQUIRE(r_bosonic_val == Approx(2.73298759485658));
+
 #endif
 
 }
