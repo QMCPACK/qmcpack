@@ -220,12 +220,12 @@ bool WaveFunctionFactory::addFDLRTerm(xmlNodePtr cur)
     {
       // Find the names of the files, specified with the "wfn_x_href" and
       // "wfn_d_href" variables in the tag.
-      const xmlChar* wfn_x = xmlGetProp(cur_child, (const xmlChar*)"wfn_x_href");
-      const xmlChar* wfn_d = xmlGetProp(cur_child, (const xmlChar*)"wfn_d_href");
+      const XMLAttrString wfn_x(cur_child, "wfn_x_href");
+      const XMLAttrString wfn_d(cur_child, "wfn_d_href");
 
-      if (!wfn_x)
+      if (wfn_x.empty())
         throw std::runtime_error("wfn_x not provided for FDLR wave function.");
-      if (!wfn_d)
+      if (wfn_d.empty())
         throw std::runtime_error("wfn_d not provided for FDLR wave function.");
 
       // Lookup optional input options.
@@ -255,10 +255,10 @@ bool WaveFunctionFactory::addFDLRTerm(xmlNodePtr cur)
       Libxml2Document* doc_x = new Libxml2Document();
       Libxml2Document* doc_d = new Libxml2Document();
       // Try parsing the files...
-      bool success_read_x = doc_x->parse((const char*)wfn_x);
+      bool success_read_x = doc_x->parse(wfn_x);
       if (!success_read_x)
         throw std::runtime_error("File provided for wfn_x in invalid.");
-      bool success_read_d = doc_d->parse((const char*)wfn_d);
+      bool success_read_d = doc_d->parse(wfn_d);
       if (!success_read_d)
         throw std::runtime_error("File provided for wfn_d in invalid.");
 
@@ -327,88 +327,4 @@ bool WaveFunctionFactory::put(xmlNodePtr cur) { return build(cur, true); }
 
 void WaveFunctionFactory::reset() {}
 
-//  bool WaveFunctionFactory::addJastrowTerm(xmlNodePtr cur) {
-//    std::string jasttype("0");
-//    std::string jastname("0");
-//    std::string funcname("0");
-//
-//    OhmmsAttributeSet oAttrib;
-//    oAttrib.add(jasttype,"type");
-//    oAttrib.add(jastname,"name");
-//    oAttrib.add(funcname,"function");
-//    oAttrib.put(cur);
-//
-//    if(jasttype[0] == '0')
-//    {
-//      app_warning() << "  WaveFunctionFactory::addJastrowTerm missing type. Ignore " << jastname << std::endl;
-//      return false;
-//    }
-//
-//    //string jasttype((const char*)(xmlGetProp(cur, (const xmlChar *)"type")));
-//    //string jastname((const char*)(xmlGetProp(cur, (const xmlChar *)"name")));
-//    //string funcname((const char*)(xmlGetProp(cur, (const xmlChar *)"function")));
-//    bool useSpline=false;
-//    const xmlChar* gptr=xmlGetProp(cur,(const xmlChar*)"transform");
-//    if(gptr != NULL) {
-//      if(xmlStrEqual(gptr,(const xmlChar*)"yes")) {
-//        useSpline=true;
-//      }
-//    }
-//
-//    WaveFunctionComponentBuilder* jbuilder=0;
-//    if(jasttype.find("Two") < jasttype.size())
-//    {
-//      jbuilder=new TwoBodyJastrowBuilder(*targetPtcl,*targetPsi,ptclPool);
-//    }
-//    else if(jasttype == "TEST")
-//    {
-//      app_log() << "\n  Using JastrowBasisBuilder for TESTING ONLY" << std::endl;
-//      jbuilder=new JastrowBuilder(*targetPtcl,*targetPsi,ptclPool);
-//    }
-//    else if(jasttype == "Long-Range")
-//    {
-//      app_log() << "\n  Using JAAPBCBuilder for two-body jatrow TESTING ONLY" << std::endl;
-//      jbuilder = new JAAPBCBuilder(*targetPtcl,*targetPsi);
-//    }
-//    else if(jasttype == "One-Body")
-//    {
-//      if(useSpline) {
-//        app_log() << "\n  Using NJABBuilder for one-body jatrow with spline functions" << std::endl;
-//        jbuilder = new NJABBuilder(*targetPtcl,*targetPsi,ptclPool);
-//      } else {
-//        app_log() << "\n  Using JABBuilder for one-body jatrow with analytic functions" << std::endl;
-//        jbuilder = new JABBuilder(*targetPtcl,*targetPsi,ptclPool);
-//      }
-//    }
-//#if !defined(QMC_COMPLEX)
-//    else if(jasttype == "Three-Body-Geminal") {
-//      app_log() << "\n  creating Three-Body-Germinal Jastrow function " << std::endl;
-//      std::string source_name("i");
-//      const xmlChar* iptr = xmlGetProp(cur, (const xmlChar *)"source");
-//      if(iptr != NULL) source_name=(const char*)iptr;
-//      PtclPoolType::iterator pit(ptclPool.find(source_name));
-//      if(pit != ptclPool.end()) {
-//        jbuilder = new ThreeBodyGeminalBuilder(*targetPtcl,*targetPsi,*((*pit).second));
-//      }
-//    } else if (jasttype == "Three-Body-Pade") {
-//      app_log() << "\n  creating Three-Body-Pade Jastrow function " << std::endl;
-//      std::string source_name("i");
-//      const xmlChar* iptr = xmlGetProp(cur, (const xmlChar *)"source");
-//      //if(iptr != NULL) source_name=(const char*)iptr;
-//      PtclPoolType::iterator pit(ptclPool.find(source_name));
-//      if(pit != ptclPool.end()) {
-//        jbuilder = new ThreeBodyPadeBuilder(*targetPtcl,*targetPsi,*((*pit).second));
-//      }
-//    }
-//#endif
-//
-//    if(jbuilder) {
-//      jbuilder->put(cur);
-//      addNode(jbuilder,cur);
-//      return true;
-//    } else {
-//      app_warning() << "    " << jasttype << " is not valid." << std::endl;
-//      return false;
-//    }
-//  }
 } // namespace qmcplusplus

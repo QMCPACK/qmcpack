@@ -80,10 +80,6 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
     app_log() << "    Using determinant localization approximation (DLA)" << std::endl;
   if (NLPP_algo == "batched" && useDLA == "yes")
     myComm->barrier_and_abort("Batched pseudopotential evaluation has not been made available to DLA!");
-  //const xmlChar* t=xmlGetProp(cur,(const xmlChar*)"format");
-  //if(t != NULL) {
-  //  ecpFormat= (const char*)t;
-  //}
   if (ecpFormat == "xml")
   {
     useXmlFormat(cur);

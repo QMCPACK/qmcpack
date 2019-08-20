@@ -45,8 +45,8 @@ VMCcuda::VMCcuda(MCWalkerConfiguration& w,
 {
   RootName = "vmc";
   QMCType  = "VMCcuda";
-  QMCDriverMode.set(QMC_UPDATE_MODE, 1);
-  QMCDriverMode.set(QMC_WARMUP, 0);
+  qmc_driver_mode.set(QMC_UPDATE_MODE, 1);
+  qmc_driver_mode.set(QMC_WARMUP, 0);
   m_param.add(UseDrift, "useDrift", "string");
   m_param.add(UseDrift, "usedrift", "string");
   m_param.add(nTargetSamples, "targetWalkers", "int");
@@ -200,7 +200,7 @@ bool VMCcuda::run()
   IndexType block        = 0;
   IndexType nAcceptTot   = 0;
   IndexType nRejectTot   = 0;
-  IndexType updatePeriod = (QMCDriverMode[QMC_UPDATE_MODE]) ? Period4CheckProperties : (nBlocks + 1) * nSteps;
+  IndexType updatePeriod = (qmc_driver_mode[QMC_UPDATE_MODE]) ? Period4CheckProperties : (nBlocks + 1) * nSteps;
   int nat                = W.getTotalNum();
   int nw                 = W.getActiveWalkers();
   std::vector<RealType> LocalEnergy(nw);
