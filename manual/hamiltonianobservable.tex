@@ -260,6 +260,7 @@ Evaluation of the localized pseudopotential energy $\Psi_T^{-1}V^{PP}\Psi_T$ req
    &\texttt{wavefunction}$^r$ &  text          & \texttt{wavefunction.name}& invalid    & Identify wavefunction \\
    &   \texttt{format}$^r$    &  text          & xml/table        & table               & Select file format   \\
    & \texttt{algorithm}$^o$   &  text          & batched/default  & default             & Choose NLPP algorithm \\
+   & \texttt{DLA}$^o$   &  text          & yes/no  & no             & Use determinant localization approximation \\
   \hline
 \end{tabularx}
 \end{center}
@@ -273,6 +274,7 @@ Additional information:
   \item{\textbf{pbc:} Ewald summation will not be performed if \texttt{simulationcell.bconds== n n n}, regardless of the value of \texttt{pbc}.  Similarly, the \texttt{pbc} attribute can only be used to turn off Ewald summation if \texttt{simulationcell.bconds!= n n n}.}
   \item{\textbf{format:}  If \texttt{format}==table, QMCPACK looks for \texttt{*.psf} files containing pseudopotential data in a tabular format.  The files must be named after the ionic species provided in \texttt{particleset} (e.g., \texttt{Li.psf} and \texttt{H.psf}). If \texttt{format}==xml, additional \texttt{pseudo} child XML elements must be provided (see the following).  These elements specify individual file names and formats (both the FSAtom XML and CASINO tabular data formats are supported). }
   \item{\textbf{algorithm} The default algorithm evaluates the ratios of wavefunction components together for each qudarature point and then one point after another. The batched algorithm evaluates the ratios of qudarature points together for each wavefunction component and then one component after another. Internally, it uses \texttt{VirtualParticleSet} for quadrature points. Hybrid orbital representation has an extra optimization enabled when using the batched algorithm.}
+  \item{\textbf{DLA} Determinant localization approximation (DLA)~\cite{Zen2019} uses only the fermionic part of the wavefunction when calculating NLPP.}
 \end{itemize}
 
 

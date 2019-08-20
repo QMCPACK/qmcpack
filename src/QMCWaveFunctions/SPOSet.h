@@ -162,7 +162,7 @@ public:
    */
   virtual void evaluateDerivatives(ParticleSet& P,
                                    const opt_variables_type& optvars,
-                                   std::vector<ValueType>& dlogpsi, 
+                                   std::vector<ValueType>& dlogpsi,
                                    std::vector<ValueType>& dhpsioverpsi,
                                    const ValueType& psiCurrent,
                                    const std::vector<ValueType>& Coeff,
@@ -215,6 +215,22 @@ public:
    */
   virtual void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi) = 0;
 
+  /** evaluate the values of this single-particle orbital sets of multiple walkers
+   * @param spo_list the list of SPOSet pointers in a walker batch
+   * @param P_list the list of ParticleSet pointers in a walker batch
+   * @param iat active particle
+   * @param psi_v_list the list of value vector pointers in a walker batch
+   */
+  virtual void mw_evaluateValue(const std::vector<SPOSet*>& spo_list,
+                                const std::vector<ParticleSet*>& P_list,
+                                int iat,
+                                const std::vector<ValueVector_t*>& psi_v_list)
+  {
+#pragma omp parallel for
+    for (int iw = 0; iw < spo_list.size(); iw++)
+      spo_list[iw]->evaluate(*P_list[iw], iat, *psi_v_list[iw]);
+  }
+
   /** evaluate determinant ratios for virtual moves, e.g., sphere move for nonlocalPP
    * @param VP virtual particle set
    * @param psi values of the SPO, used as a scratch space if needed
@@ -238,6 +254,26 @@ public:
                         ValueVector_t& psi,
                         GradVector_t& dpsi,
                         ValueVector_t& d2psi) = 0;
+
+  /** evaluate the values, gradients and laplacians of this single-particle orbital sets of multiple walkers
+   * @param spo_list the list of SPOSet pointers in a walker batch
+   * @param P_list the list of ParticleSet pointers in a walker batch
+   * @param iat active particle
+   * @param psi_v_list the list of value vector pointers in a walker batch
+   * @param dpsi_v_list the list of gradient vector pointers in a walker batch
+   * @param d2psi_v_list the list of laplacian vector pointers in a walker batch
+   */
+  virtual void mw_evaluateVGL(const std::vector<SPOSet*>& spo_list,
+                              const std::vector<ParticleSet*>& P_list,
+                              int iat,
+                              const std::vector<ValueVector_t*>& psi_v_list,
+                              const std::vector<GradVector_t*>& dpsi_v_list,
+                              const std::vector<ValueVector_t*>& d2psi_v_list)
+  {
+#pragma omp parallel for
+    for (int iw = 0; iw < spo_list.size(); iw++)
+      spo_list[iw]->evaluate(*P_list[iw], iat, *psi_v_list[iw], *dpsi_v_list[iw], *d2psi_v_list[iw]);
+  }
 
   /** evaluate the values, gradients and hessians of this single-particle orbital set
    * @param P current ParticleSet
@@ -434,7 +470,7 @@ public:
 protected:
   bool putOccupation(xmlNodePtr occ_ptr);
   bool putFromXML(xmlNodePtr coeff_ptr);
-  bool putFromH5(const char* fname, xmlNodePtr coeff_ptr);
+  bool putFromH5(const std::string& fname, xmlNodePtr coeff_ptr);
 #endif
   ///true, if the derived class has non-zero ionic derivatives.
   bool ionDerivs;

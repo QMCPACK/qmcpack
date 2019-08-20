@@ -6,17 +6,20 @@
 # 
 
 export TEST_SITE_NAME=bora.alcf.anl.gov
-export N_PROCS_BUILD=24
-export N_PROCS=32
+export N_PROCS_BUILD=16
+export N_PROCS=16
 export CC=mpicc
 export CXX=mpicxx
 export BOOST_ROOT=/sandbox/opt/boost_1_61_0
+
+# run on socket 1
+NUMA_ID=1
 
 #CUDA
 export PATH=/sandbox/opt/NVIDIA/cuda-10.0/bin:$PATH
 export LD_LIBRARY_PATH=/sandbox/opt/NVIDIA/cuda-10.0/lib64:$LD_LIBRARY_PATH
 
-QE_BIN=/sandbox/opt/qe-stable/qe-6.3/bin
+QE_BIN=/sandbox/opt/qe-stable/qe-6.4.1/bin
 QMC_DATA=/sandbox/opt/h5data
 
 #Must be an absolute path
@@ -98,6 +101,7 @@ fi
 
 export QMCPACK_TEST_SUBMIT_NAME=${compiler}-${sys}-Release
 
+numactl -N $NUMA_ID \
 ctest $CTEST_FLAGS -S $PWD/../CMake/ctest_script.cmake,release -VV -E 'long' --timeout 800 &> $place/log/$entry/$mydate/${QMCPACK_TEST_SUBMIT_NAME}.log
 
 cd ..

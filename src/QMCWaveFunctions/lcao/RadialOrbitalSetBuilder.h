@@ -330,12 +330,6 @@ bool RadialOrbitalSetBuilder<COT>::addRadialOrbital(xmlNodePtr cur,
   std::string dsname("0");
   OhmmsAttributeSet aAttrib;
   aAttrib.add(radtype, "type");
-  //m_rcut doesn't ever have anything useful in it.
-  //Maybe it was once from the xml
-  //const xmlChar *tptr = xmlGetProp(cur,(const xmlChar*)"type");
-  //if(tptr) radtype = (const char*)tptr;
-  //tptr = xmlGetProp(cur,(const xmlChar*)"rmax");
-  //if(tptr) m_rcut = atof((const char*)tptr);
   aAttrib.add(m_rcut, "rmax");
   aAttrib.add(dsname, "ds");
   aAttrib.put(cur);

@@ -94,8 +94,10 @@ private:
   ///The gradient of the wave function w.r.t. the ion position
   ParticleSet::ParticleGradient_t Gion;
 
-  ///virtual particle set: delay initialization
+  ///virtual particle set: delayed initialization
   VirtualParticleSet* VP;
+  ///true, determinant localization approximation(DLA) is enabled
+  bool use_DLA;
 
 public:
 #if !defined(REMOVE_TRACEMANAGER)
@@ -121,6 +123,8 @@ public:
     sgridxyz_m.push_back(xyz);
     sgridweight_m.push_back(weight);
   }
+
+  inline void enableDLA() { use_DLA = true; }
 
   void resize_warrays(int n, int m, int l);
 
