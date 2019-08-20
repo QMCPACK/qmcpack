@@ -24,10 +24,10 @@
 // MakeOperators
 
 // WHERE are these Files?
+
 // matrixOps.in
 // MatrixDefs.in
 //
-// This is a lot to compile for the joy of having a OhmmsVector with a integer unit
 ///////////////////////////////////////////////////////////////////////////////
 
 namespace qmcplusplus

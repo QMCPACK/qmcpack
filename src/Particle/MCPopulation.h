@@ -47,6 +47,7 @@ public:
   MCPopulation(int num_ranks) : num_ranks_(num_ranks) {}
   MCPopulation(MCWalkerConfiguration& mcwc);
   MCPopulation(int num_ranks, int num_particles) : num_ranks_(num_ranks), num_particles_(num_particles) {}
+  void createWalkers();
   void createWalkers(IndexType num_walkers, const ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>& pos);
 
   /**@ingroup Accessors
@@ -68,6 +69,9 @@ public:
 
   void set_target(IndexType pop) { target_population_ = pop; }
   void set_target_samples(IndexType samples) { target_samples_ = samples; }
+
+  std::vector<std::unique_ptr<MCPWalker>>&
+  get_walkers() { return walkers_; }
     /** }@ */
 };
 

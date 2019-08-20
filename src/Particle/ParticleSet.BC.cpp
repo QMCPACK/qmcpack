@@ -148,7 +148,7 @@ void ParticleSet::convert(const ParticlePos_t& pin, ParticlePos_t& pout)
     pout = pin;
     return;
   }
-  if (pin.getUnit() == PosUnit::LatticeUnit)
+  if (pin.getUnit() == PosUnit::Lattice)
   //convert to CartesianUnit
   {
     ConvertPosUnit<ParticlePos_t, Tensor_t, DIM>::apply(pin, Lattice.R, pout, 0, pin.size());
@@ -162,8 +162,8 @@ void ParticleSet::convert(const ParticlePos_t& pin, ParticlePos_t& pout)
 
 void ParticleSet::convert2Unit(const ParticlePos_t& pin, ParticlePos_t& pout)
 {
-  pout.setUnit(PosUnit::LatticeUnit);
-  if (pin.getUnit() == PosUnit::LatticeUnit)
+  pout.setUnit(PosUnit::Lattice);
+  if (pin.getUnit() == PosUnit::Lattice)
     pout = pin;
   else
     ConvertPosUnit<ParticlePos_t, Tensor_t, DIM>::apply(pin, Lattice.G, pout, 0, pin.size());
@@ -171,8 +171,8 @@ void ParticleSet::convert2Unit(const ParticlePos_t& pin, ParticlePos_t& pout)
 
 void ParticleSet::convert2Cart(const ParticlePos_t& pin, ParticlePos_t& pout)
 {
-  pout.setUnit(PosUnit::CartesianUnit);
-  if (pin.getUnit() == PosUnit::CartesianUnit)
+  pout.setUnit(PosUnit::Cartesian);
+  if (pin.getUnit() == PosUnit::Cartesian)
     pout = pin;
   else
     ConvertPosUnit<ParticlePos_t, Tensor_t, DIM>::apply(pin, Lattice.R, pout, 0, pin.size());
@@ -180,22 +180,22 @@ void ParticleSet::convert2Cart(const ParticlePos_t& pin, ParticlePos_t& pout)
 
 void ParticleSet::convert2Unit(ParticlePos_t& pinout)
 {
-  if (pinout.getUnit() == PosUnit::LatticeUnit)
+  if (pinout.getUnit() == PosUnit::Lattice)
     return;
   else
   {
-    pinout.setUnit(PosUnit::LatticeUnit);
+    pinout.setUnit(PosUnit::Lattice);
     ConvertPosUnit<ParticlePos_t, Tensor_t, DIM>::apply(pinout, Lattice.G, 0, pinout.size());
   }
 }
 
 void ParticleSet::convert2Cart(ParticlePos_t& pinout)
 {
-  if (pinout.getUnit() == PosUnit::CartesianUnit)
+  if (pinout.getUnit() == PosUnit::Cartesian)
     return;
   else
   {
-    pinout.setUnit(PosUnit::CartesianUnit);
+    pinout.setUnit(PosUnit::Cartesian);
     ConvertPosUnit<ParticlePos_t, Tensor_t, DIM>::apply(pinout, Lattice.R, 0, pinout.size());
   }
 }
@@ -204,7 +204,7 @@ void ParticleSet::applyBC(const ParticlePos_t& pin, ParticlePos_t& pout) { apply
 
 void ParticleSet::applyBC(const ParticlePos_t& pin, ParticlePos_t& pout, int first, int last)
 {
-  int mode              = pin.getUnit() * 2 + pout.getUnit();
+  int mode              = static_cast<int>(pin.getUnit()) * 2 + static_cast<int>(pout.getUnit());
   switch (mode)
   {
   case (0):
@@ -224,7 +224,7 @@ void ParticleSet::applyBC(const ParticlePos_t& pin, ParticlePos_t& pout, int fir
 
 void ParticleSet::applyBC(ParticlePos_t& pos)
 {
-  if (pos.getUnit() == PosUnit::LatticeUnit)
+  if (pos.getUnit() == PosUnit::Lattice)
   {
     ApplyBConds<ParticlePos_t, Tensor_t, DIM>::Unit2Unit(pos, 0, TotalNum);
   }
@@ -244,7 +244,7 @@ void ParticleSet::applyMinimumImage(ParticlePos_t& pinout)
 
 void ParticleSet::convert2UnitInBox(const ParticlePos_t& pin, ParticlePos_t& pout)
 {
-  pout.setUnit(PosUnit::LatticeUnit);
+  pout.setUnit(PosUnit::Lattice);
   convert2Unit(pin, pout); // convert to crystalline unit
   put2box(pout);
 }

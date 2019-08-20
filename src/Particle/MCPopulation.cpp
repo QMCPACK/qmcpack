@@ -11,6 +11,13 @@ MCPopulation::MCPopulation(MCWalkerConfiguration& mcwc)
   num_particles_ = mcwc.getParticleNum();
 }
 
+/** Default creates walkers equal to num_local_walkers_ and zeroed positions
+ */
+void MCPopulation::createWalkers()
+{
+  createWalkers(num_local_walkers_, ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>(num_particles_));
+}
+
 /** Creates walkers with starting positions pos
  *
  *  Eventually MCPopulation should not depend on ParticleAttrib
