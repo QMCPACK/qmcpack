@@ -148,7 +148,7 @@ public:
   /** function that computes psi(R_new) / psi(R_current). It returns a complex value if the wavefunction 
   *   is complex. It differs from the ratio(ParticleSet& P, int iat) function in the way that the ratio
   *   function takes the absolute value of psi(R_new) / psi(R_current). */
-  ValueType evaluateFullRatio(ParticleSet& P, int iat);
+  ValueType calcRatio(ParticleSet& P, int iat);
 
   /** compulte multiple ratios to handle non-local moves and other virtual moves
    */

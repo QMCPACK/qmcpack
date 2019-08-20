@@ -327,7 +327,7 @@ TrialWaveFunction::RealType TrialWaveFunction::ratio(ParticleSet& P, int iat)
 #endif
 }
 
-TrialWaveFunction::ValueType TrialWaveFunction::evaluateFullRatio(ParticleSet& P, int iat)
+TrialWaveFunction::ValueType TrialWaveFunction::calcRatio(ParticleSet& P, int iat)
 {
   ValueType r(1.0);
   for (size_t i = 0, n = Z.size(); i < n; ++i)

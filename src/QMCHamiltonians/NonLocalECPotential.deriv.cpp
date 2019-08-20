@@ -135,7 +135,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateValueAndDerivatives
     {
       PosType pos_now = W.R[iel];
       W.makeMove(iel, deltarV[j]);
-      psiratio[j] = psi.evaluateFullRatio(W, iel);
+      psiratio[j] = psi.calcRatio(W, iel);
       psi.resetPhaseDiff();
 
       //use existing methods
@@ -149,7 +149,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateValueAndDerivatives
 
       PosType md = -1.0 * deltarV[j];
       W.makeMove(iel, md);
-      ValueType tmp_ratio = psi.evaluateFullRatio(W, iel);
+      ValueType tmp_ratio = psi.calcRatio(W, iel);
       psi.resetPhaseDiff();
       psi.acceptMove(W, iel);
       W.acceptMove(iel);
