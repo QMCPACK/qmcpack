@@ -47,9 +47,11 @@ TEST_CASE("VMCBatched::calc_default_local_walkers", "[drivers]")
   MCPopulation population(num_ranks);
 
   auto testWRTWalkersPerRank = [&](int walkers_per_rank) {
+    QMCDriverInput qmcdriver_copy(qmcdriver_input);
     VMCDriverInput vmcdriver_input(walkers_per_rank, "yes");
-    VMCBatched vmc_batched(qmcdriver_input, vmcdriver_input, population, *(wavefunction_pool.getPrimary()),
-                           *(hamiltonian_pool.getPrimary()), wavefunction_pool, comm);
+    VMCBatched vmc_batched(std::move(qmcdriver_copy), std::move(vmcdriver_input), population,
+                           *(wavefunction_pool.getPrimary()), *(hamiltonian_pool.getPrimary()), wavefunction_pool,
+                           comm);
     VMCBatched::IndexType local_walkers       = vmc_batched.calc_default_local_walkers();
     QMCDriverNew::IndexType walkers_per_crowd = vmc_batched.get_walkers_per_crowd();
 
