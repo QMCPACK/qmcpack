@@ -147,7 +147,7 @@ void DensityMatrices1B::set_state(xmlNodePtr cur)
     std::string ename((const char*)element->name);
     if (ename == "parameter")
     {
-      std::string name((const char*)(xmlGetProp(element, (const xmlChar*)"name")));
+      const XMLAttrString name(element, "name");
       if (name == "basis")
         putContent(sposets, element);
       else if (name == "energy_matrix")

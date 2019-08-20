@@ -1225,7 +1225,7 @@ def distance_table(p1,p2,ordering=0):
 
 def nearest_neighbors(n,points,qpoints=None,return_distances=False,slow=False):
     extra = 0
-    if qpoints==None:
+    if qpoints is None:
         qpoints=points
         if len(points)>1:
             extra=1
@@ -1273,7 +1273,7 @@ def convex_hull(points,dimension=None,tol=None):
         np,dimension = points.shape
     #end if
     d1 = dimension+1
-    tri = Delaunay(points)
+    tri = Delaunay(points,qhull_options='QJ')
     all_inds = empty((d1,),dtype=bool)
     all_inds[:] = True
     verts = []

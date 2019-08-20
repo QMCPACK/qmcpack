@@ -316,22 +316,27 @@ TrialWaveFunction::RealType TrialWaveFunction::ratio(ParticleSet& P, int iat)
     myTimers[ii]->stop();
   }
 #if defined(QMC_COMPLEX)
-  //return std::exp(evaluateLogAndPhase(r,PhaseValue));
   RealType logr = evaluateLogAndPhase(r, PhaseDiff);
   return std::exp(logr);
 #else
   if (r < 0)
     PhaseDiff = M_PI;
-  //     else PhaseDiff=0.0;
   return r;
 #endif
 }
 
-TrialWaveFunction::ValueType TrialWaveFunction::calcRatio(ParticleSet& P, int iat)
+TrialWaveFunction::ValueType TrialWaveFunction::calcRatio(ParticleSet& P, int iat, ComputeType ct)
 {
   ValueType r(1.0);
-  for (size_t i = 0, n = Z.size(); i < n; ++i)
-    r *= Z[i]->ratio(P, iat);
+  std::vector<WaveFunctionComponent*>::iterator it(Z.begin());
+  std::vector<WaveFunctionComponent*>::iterator it_end(Z.end());
+  for (int ii = V_TIMER; it != it_end; ++it, ii += TIMER_SKIP)
+  {
+    myTimers[ii]->start();
+    if (ct == ComputeType::ALL || ((*it)->is_fermionic && ct == ComputeType::FERMIONIC) || (!(*it)->is_fermionic && ct == ComputeType::NONFERMIONIC))
+      r *= (*it)->ratio(P, iat);
+    myTimers[ii]->stop();
+  }
   return r;
 }
 

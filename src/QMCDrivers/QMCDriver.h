@@ -199,8 +199,6 @@ protected:
   bool AppendRun;
   ///flag to turn off dumping configurations
   bool DumpConfig;
-  ///true, if the size of population is fixed.
-  bool ConstPopulation;
   ///true, if it is a real QMC engine
   bool IsQMCDriver;
   /** the number of times this QMCDriver is executed

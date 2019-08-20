@@ -791,9 +791,9 @@ bool LCAOrbitalBuilder::putOccupation(LCAOrbitalSet& spo, xmlNodePtr occ_ptr)
   }
   else
   {
-    const xmlChar* o = xmlGetProp(occ_ptr, (const xmlChar*)"mode");
-    if (o)
-      occ_mode = (const char*)o;
+    const XMLAttrString o(occ_ptr, "mode");
+    if (!o.empty())
+      occ_mode = o;
   }
   //Do nothing if mode == ground
   if (occ_mode == "excited")
