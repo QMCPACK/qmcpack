@@ -24,6 +24,7 @@
 
 
 #include "Particle/MCPopulation.h"
+#include "qmc_common.h"
 #include "QMCApp/QMCDriverFactory.h"
 #include "QMCApp/WaveFunctionPool.h"
 #include "QMCApp/HamiltonianPool.h"
@@ -45,6 +46,10 @@ namespace qmcplusplus
  *
  *  Copy elision should result in just a move of the
  *  DriverAssemblyState
+ *
+ *  Most (all) of this should be done by calling QMCDriverInput::readXML
+ *  At some point in driver refactoring this should go there and
+ *  QMCDriverInput created before the giant switch
  */
 QMCDriverFactory::DriverAssemblyState QMCDriverFactory::readSection(int curSeries, xmlNodePtr cur)
 {
@@ -247,7 +252,7 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
   if (das.new_run_type == QMCRunType::VMC || das.new_run_type == QMCRunType::CSVMC)
   {
     //VMCFactory fac(curQmcModeBits[UPDATE_MODE],cur);
-    VMCFactory fac(das.what_to_do.to_ulong(), cur);
+    VMCFactory fac(das.what_to_do[UPDATE_MODE], cur);
     new_driver.reset(
         fac.create(qmc_system, *primaryPsi, *primaryH, particle_pool, hamiltonian_pool, wavefunction_pool, comm));
     //TESTING CLONE
@@ -256,9 +261,10 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
   }
   else if (das.new_run_type == QMCRunType::VMC_BATCH)
   {
-    VMCFactoryNew fac(das.what_to_do.to_ulong(), cur);
+    VMCFactoryNew fac(cur, das.what_to_do[UPDATE_MODE], qmc_common.qmc_counter);
     MCPopulation qmc_pop(qmc_system);
-    new_driver.reset(fac.create(qmc_pop, *primaryPsi, *primaryH, particle_pool, hamiltonian_pool, wavefunction_pool, comm));
+    new_driver.reset(
+        fac.create(qmc_pop, *primaryPsi, *primaryH, particle_pool, hamiltonian_pool, wavefunction_pool, comm));
   }
   else if (das.new_run_type == QMCRunType::DMC)
   {

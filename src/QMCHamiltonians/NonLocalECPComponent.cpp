@@ -19,7 +19,8 @@
 
 namespace qmcplusplus
 {
-NonLocalECPComponent::NonLocalECPComponent() : lmax(0), nchannel(0), nknot(0), Rmax(-1), VP(0)
+NonLocalECPComponent::NonLocalECPComponent()
+    : lmax(0), nchannel(0), nknot(0), Rmax(-1), VP(nullptr), use_DLA(false)
 {
 #if !defined(REMOVE_TRACEMANAGER)
   streaming_particles = false;
@@ -140,10 +141,12 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOne(ParticleSet& W,
     {
       deltaV[j] = r * rrotsgrid_m[j] - dr;
       W.makeMove(iel, deltaV[j]);
+      if(use_DLA)
+        psiratio[j] = psi.calcRatio(W, iel, TrialWaveFunction::ComputeType::FERMIONIC) * sgridweight_m[j];
+      else
+        psiratio[j] = psi.ratio(W, iel) * sgridweight_m[j];
 #if defined(QMC_COMPLEX)
-      psiratio[j] = psi.ratio(W, iel) * sgridweight_m[j] * std::cos(psi.getPhaseDiff());
-#else
-      psiratio[j] = psi.ratio(W, iel) * sgridweight_m[j];
+      psiratio[j] *= std::cos(psi.getPhaseDiff());
 #endif
       W.rejectMove(iel);
       psi.resetPhaseDiff();
