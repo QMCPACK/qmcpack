@@ -142,5 +142,6 @@ TEST_CASE("VMC", "[drivers][vmc]")
   REQUIRE(elec.R[1][0] == Approx(0.0));
   REQUIRE(elec.R[1][1] == Approx(-0.372329741105903));
   REQUIRE(elec.R[1][2] == Approx(1.0));
+  delete doc;
 }
 } // namespace qmcplusplus

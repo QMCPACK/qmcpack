@@ -9,8 +9,7 @@
 // File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
-
-#include "catch.hpp"
+#include "Message/catch_mpi_main.hpp"
 
 #include "Message/Communicate.h"
 #include "QMCDrivers/VMC/VMCDriverInput.h"
