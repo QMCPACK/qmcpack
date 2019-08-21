@@ -20,6 +20,15 @@
 
 namespace qmcplusplus
 {
+
+// The manager will take ownership of the timer.  This means the timer must
+// be allocated dynamically, not on the stack.
+void addRawTimer(TimerManagerClass &tm, NewTimer* t)
+{
+  tm.TimerList.push_back(std::unique_ptr<NewTimer>(t));
+  tm.addTimer(t);
+}
+
 // Used by fake_cpu_clock in Clock.h if USE_FAKE_CLOCK is defined
 double fake_cpu_clock_increment = 1.0;
 double fake_cpu_clock_value     = 0.0;
@@ -66,10 +75,10 @@ TEST_CASE("test_timer_scoped", "[utilities]")
 TEST_CASE("test_timer_flat_profile", "[utilities]")
 {
   TimerManagerClass tm;
-  FakeTimer t1("timer1");
-  tm.addTimer(&t1);
-  t1.set_total_time(1.1);
-  t1.set_num_calls(2);
+  FakeTimer* t1 = new FakeTimer("timer1");
+  addRawTimer(tm, t1);
+  t1->set_total_time(1.1);
+  t1->set_num_calls(2);
 
   TimerManagerClass::FlatProfileData p;
   tm.collate_flat_profile(NULL, p);
@@ -86,27 +95,27 @@ TEST_CASE("test_timer_flat_profile_same_name", "[utilities]")
 {
   TimerManagerClass tm;
   tm.set_timer_threshold(timer_level_fine);
-  FakeTimer t1("timer1");
-  tm.addTimer(&t1);
-  FakeTimer t2("timer2");
-  tm.addTimer(&t2);
-  FakeTimer t3("timer1");
-  tm.addTimer(&t3);
+  FakeTimer* t1 = new FakeTimer("timer1");
+  addRawTimer(tm, t1);
+  FakeTimer* t2 = new FakeTimer("timer2");
+  addRawTimer(tm, t2);
+  FakeTimer* t3 = new FakeTimer("timer1");
+  addRawTimer(tm, t3);
 
   fake_cpu_clock_increment = 1.1;
-  t1.start();
-  t1.stop();
+  t1->start();
+  t1->stop();
   fake_cpu_clock_increment = 1.2;
   for (int i = 0; i < 3; i++)
   {
-    t2.start();
-    t2.stop();
+    t2->start();
+    t2->stop();
 
-    t3.start();
-    t3.stop();
+    t3->start();
+    t3->stop();
   }
-  t3.start();
-  t3.stop();
+  t3->start();
+  t3->stop();
 
   TimerManagerClass::FlatProfileData p;
 
@@ -130,16 +139,16 @@ TEST_CASE("test_timer_nested_profile", "[utilities]")
 {
   TimerManagerClass tm;
   tm.set_timer_threshold(timer_level_fine);
-  FakeTimer t1("timer1");
-  tm.addTimer(&t1);
-  FakeTimer t2("timer2");
-  tm.addTimer(&t2);
+  FakeTimer* t1 = new FakeTimer("timer1");
+  addRawTimer(tm, t1);
+  FakeTimer* t2 = new FakeTimer("timer2");
+  addRawTimer(tm, t2);
 
   fake_cpu_clock_increment = 1.1;
-  t1.start();
-  t2.start();
-  t2.stop();
-  t1.stop();
+  t1->start();
+  t2->start();
+  t2->stop();
+  t1->stop();
 
   TimerManagerClass::FlatProfileData p;
   tm.collate_flat_profile(NULL, p);
@@ -175,20 +184,20 @@ TEST_CASE("test_timer_nested_profile_two_children", "[utilities]")
 {
   TimerManagerClass tm;
   tm.set_timer_threshold(timer_level_fine);
-  NewTimer t1("timer1");
-  tm.addTimer(&t1);
-  NewTimer t2("timer2");
-  tm.addTimer(&t2);
-  NewTimer t3("timer3");
-  tm.addTimer(&t3);
+  NewTimer* t1 = new FakeTimer("timer1");
+  addRawTimer(tm, t1);
+  NewTimer* t2 = new FakeTimer("timer2");
+  addRawTimer(tm, t2);
+  NewTimer* t3 = new FakeTimer("timer3");
+  addRawTimer(tm, t3);
 
   fake_cpu_clock_increment = 1.1;
-  t1.start();
-  t2.start();
-  t2.stop();
-  t3.start();
-  t3.stop();
-  t1.stop();
+  t1->start();
+  t2->start();
+  t2->stop();
+  t3->start();
+  t3->stop();
+  t1->stop();
 
   TimerManagerClass::StackProfileData p2;
   tm.collate_stack_profile(NULL, p2);
@@ -213,33 +222,33 @@ TEST_CASE("test_timer_nested_profile_alt_routes", "[utilities]")
 {
   TimerManagerClass tm;
   tm.set_timer_threshold(timer_level_fine);
-  NewTimer t1("timer1");
-  tm.addTimer(&t1);
-  NewTimer t2("timer2");
-  tm.addTimer(&t2);
-  NewTimer t3("timer3");
-  tm.addTimer(&t3);
-  NewTimer t4("timer4");
-  tm.addTimer(&t4);
-  NewTimer t5("timer5");
-  tm.addTimer(&t5);
+  NewTimer* t1 = new NewTimer("timer1");
+  addRawTimer(tm, t1);
+  NewTimer* t2 = new NewTimer("timer2");
+  addRawTimer(tm, t2);
+  NewTimer* t3 = new NewTimer("timer3");
+  addRawTimer(tm, t3);
+  NewTimer* t4 = new NewTimer("timer4");
+  addRawTimer(tm, t4);
+  NewTimer* t5 = new NewTimer("timer5");
+  addRawTimer(tm ,t5);
 
 
   fake_cpu_clock_increment = 1.1;
-  t1.start();
-  t2.start();
-  t3.start();
-  t4.start();
-  t4.stop();
-  t5.start();
-  t5.stop();
-  t3.stop();
-  t2.stop();
-  t3.start();
-  t4.start();
-  t4.stop();
-  t3.stop();
-  t1.stop();
+  t1->start();
+  t2->start();
+  t3->start();
+  t4->start();
+  t4->stop();
+  t5->start();
+  t5->stop();
+  t3->stop();
+  t2->stop();
+  t3->start();
+  t4->start();
+  t4->stop();
+  t3->stop();
+  t1->stop();
 
   TimerManagerClass::StackProfileData p2;
   tm.collate_stack_profile(NULL, p2);
@@ -270,35 +279,35 @@ TEST_CASE("test_timer_nested_profile_collate", "[utilities]")
 {
   TimerManagerClass tm;
   tm.set_timer_threshold(timer_level_fine);
-  NewTimer t1("timer1");
-  tm.addTimer(&t1);
-  NewTimer t2("timer2");
-  tm.addTimer(&t2);
-  NewTimer t2b("timer2");
-  tm.addTimer(&t2b);
-  NewTimer t3("timer3");
-  tm.addTimer(&t3);
+  NewTimer* t1 = new NewTimer("timer1");
+  addRawTimer(tm, t1);
+  NewTimer* t2 = new NewTimer("timer2");
+  addRawTimer(tm, t2);
+  NewTimer* t2b = new NewTimer("timer2");
+  addRawTimer(tm, t2b);
+  NewTimer* t3 = new NewTimer("timer3");
+  addRawTimer(tm, t3);
 
 
   fake_cpu_clock_increment = 1.1;
-  t1.start();
-  t2.start();
-  t3.start();
-  t3.stop();
-  t2.stop();
-  t2b.start();
-  t3.start();
-  t3.stop();
-  t2b.stop();
-  t2.start();
-  t3.start();
-  t3.stop();
-  t2.stop();
-  t2b.start();
-  t3.start();
-  t3.stop();
-  t2b.stop();
-  t1.stop();
+  t1->start();
+  t2->start();
+  t3->start();
+  t3->stop();
+  t2->stop();
+  t2b->start();
+  t3->start();
+  t3->stop();
+  t2b->stop();
+  t2->start();
+  t3->start();
+  t3->stop();
+  t2->stop();
+  t2b->start();
+  t3->start();
+  t3->stop();
+  t2b->stop();
+  t1->stop();
 
 
   TimerManagerClass::StackProfileData p2;
@@ -339,7 +348,7 @@ TEST_CASE("test stack exceeded message")
     std::ostringstream name;
     name << "timer" << i;
     NewTimer* t = new NewTimer(name.str());
-    tm.addTimer(t);
+    addRawTimer(tm, t);
     timer_list.push_back(t);
   }
   for (int i = 0; i < StackKey::max_level + 1; i++)
@@ -370,7 +379,7 @@ TEST_CASE("test max exceeded message")
     std::ostringstream name;
     name << "timer" << i;
     NewTimer* t = new NewTimer(name.str());
-    tm.addTimer(t);
+    addRawTimer(tm, t);
     timer_list.push_back(t);
   }
 

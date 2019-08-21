@@ -35,6 +35,7 @@ class Communicate;
 
 namespace qmcplusplus
 {
+
 class NewTimer;
 
 enum timer_levels
@@ -131,13 +132,15 @@ typedef StackKeyParam<2> StackKey;
 class TimerManagerClass
 {
 protected:
-  std::vector<NewTimer*> TimerList;
+  std::vector<std::unique_ptr<NewTimer>> TimerList;
   std::vector<NewTimer*> CurrentTimerStack;
   timer_levels timer_threshold;
   timer_id_t max_timer_id;
   bool max_timers_exceeded;
   std::map<timer_id_t, std::string> timer_id_name;
   std::map<std::string, timer_id_t> timer_name_to_id;
+
+  void addTimer(NewTimer* t);
 
 public:
 #ifdef USE_VTUNE_TASKS
@@ -150,7 +153,11 @@ public:
     task_domain = __itt_domain_create("QMCPACK");
 #endif
   }
-  void addTimer(NewTimer* t);
+
+  // For unit testing.  The manager will take ownership of the timer.
+  // This means the unit tests should allocate timers dynamically, and not on the stack.
+  friend void addRawTimer(TimerManagerClass &tm, NewTimer* t);
+
   NewTimer* createTimer(const std::string& myname, timer_levels mytimer = timer_level_fine);
 
   void push_timer(NewTimer* t)
