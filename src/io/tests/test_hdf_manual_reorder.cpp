@@ -140,14 +140,14 @@ TEST_CASE("hdf_read_partial", "[hdf]")
   REQUIRE(readBuffer[0] == Approx(allData(2,0)));
 
   // method 2 (direct utilization of hyperslab_proxy in client code)
-  using buftype = std::vector<double>;
-  buftype ob1(4);
-  buftype ob2(3);
-  buftype ob3(1);
+  //using buftype = std::vector<double>;
+  //buftype ob1(4);
+  //buftype ob2(3);
+  //buftype ob3(1);
 
-  Matrix<double> outbuffer1(ob1.data(),1,4);
-  Matrix<double> outbuffer2(ob2.data(),3,1);
-  Matrix<double> outbuffer3(ob3.data(),1,1);
+  Matrix<double> outbuffer1(1,4);
+  Matrix<double> outbuffer2(3,1);
+  Matrix<double> outbuffer3(1,1);
 
   TinyVector<int,2> dims_unused;
   dims_unused[0] = 1;
@@ -159,7 +159,7 @@ TEST_CASE("hdf_read_partial", "[hdf]")
   offsets[0] = 1;
   offsets[1] = 0;
 
-  hyperslab_proxy<buftype,7> pxy1(ob1, dims_unused, dims_local, offsets);
+  hyperslab_proxy<Matrix<double>,7> pxy1(outbuffer1, dims_unused, dims_local, offsets);
   hd2.read(pxy1, "matrix");
   for (int i = 0; i < 4; i++) {
     REQUIRE(outbuffer1(0,i) == Approx(allData(1,i)));
@@ -169,7 +169,7 @@ TEST_CASE("hdf_read_partial", "[hdf]")
   dims_local[1] = 1;
   offsets[0] = 0;
   offsets[1] = 2;
-  hyperslab_proxy<buftype,7> pxy2(ob2, dims_unused, dims_local, offsets);
+  hyperslab_proxy<Matrix<double>,7> pxy2(outbuffer2, dims_unused, dims_local, offsets);
   hd2.read(pxy2, "matrix");
   for (int i = 0; i < 3; i++) {
     REQUIRE(outbuffer2(i,0) == Approx(allData(i,2)));
@@ -179,17 +179,19 @@ TEST_CASE("hdf_read_partial", "[hdf]")
   dims_local[1] = 1;
   offsets[0] = 2;
   offsets[1] = 0;
-  hyperslab_proxy<buftype,7> pxy3(ob3, dims_unused, dims_local, offsets);
+  hyperslab_proxy<Matrix<double>,7> pxy3(outbuffer3, dims_unused, dims_local, offsets);
   hd2.read(pxy3, "matrix");
   REQUIRE(outbuffer3(0,0) == Approx(allData(2,0)));
 
   // method 3 here
-  buftype sto(4);
-  Matrix<double> locob1(sto.data(),1,4);
-  buftype locob2(3);
-  buftype locob3(1);
+  //  buftype sto(4);
+  Matrix<double> locob1(1,4);
+  Matrix<double> locob2(3,1);
+  Matrix<double> locob3(1,1);
+  // buftype locob2(3);
+  // buftype locob3(1);
   TinyVector<int,2> locReadSpec{1,-1};
-  hd2.read2(sto, locReadSpec, "matrix");
+  hd2.read2(locob1, locReadSpec, "matrix");
   for (int i = 0; i < 4; i++) {
     REQUIRE(locob1(0,i) == Approx(allData(1,i)));
   }
@@ -198,13 +200,13 @@ TEST_CASE("hdf_read_partial", "[hdf]")
   locReadSpec[1] = 2;
   hd2.read2(locob2, locReadSpec, "matrix");
   for (int i = 0; i < 3; i++) {
-    REQUIRE(locob2[i] == Approx(allData(i,2)));
+          REQUIRE(locob2.data()[i] == Approx(allData(i,2)));
   }
   
   locReadSpec[0] = 2;
   locReadSpec[1] = 0;
   hd2.read2(locob3, locReadSpec, "matrix");
-  REQUIRE(locob3[0] == Approx(allData(2,0)));
+  REQUIRE(locob3.data()[0] == Approx(allData(2,0)));
 
   hd2.close();
 }
