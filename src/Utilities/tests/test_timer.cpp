@@ -95,12 +95,9 @@ TEST_CASE("test_timer_flat_profile_same_name", "[utilities]")
 {
   TimerManagerClass tm;
   tm.set_timer_threshold(timer_level_fine);
-  FakeTimer* t1 = new FakeTimer("timer1");
-  addRawTimer(tm, t1);
-  FakeTimer* t2 = new FakeTimer("timer2");
-  addRawTimer(tm, t2);
-  FakeTimer* t3 = new FakeTimer("timer1");
-  addRawTimer(tm, t3);
+  NewTimer* t1 = tm.createTimer("timer1");
+  NewTimer* t2 = tm.createTimer("timer2");
+  NewTimer* t3 = tm.createTimer("timer1");
 
   fake_cpu_clock_increment = 1.1;
   t1->start();
@@ -139,10 +136,8 @@ TEST_CASE("test_timer_nested_profile", "[utilities]")
 {
   TimerManagerClass tm;
   tm.set_timer_threshold(timer_level_fine);
-  FakeTimer* t1 = new FakeTimer("timer1");
-  addRawTimer(tm, t1);
-  FakeTimer* t2 = new FakeTimer("timer2");
-  addRawTimer(tm, t2);
+  NewTimer* t1 = tm.createTimer("timer1");
+  NewTimer* t2 = tm.createTimer("timer2");
 
   fake_cpu_clock_increment = 1.1;
   t1->start();
@@ -184,12 +179,9 @@ TEST_CASE("test_timer_nested_profile_two_children", "[utilities]")
 {
   TimerManagerClass tm;
   tm.set_timer_threshold(timer_level_fine);
-  NewTimer* t1 = new FakeTimer("timer1");
-  addRawTimer(tm, t1);
-  NewTimer* t2 = new FakeTimer("timer2");
-  addRawTimer(tm, t2);
-  NewTimer* t3 = new FakeTimer("timer3");
-  addRawTimer(tm, t3);
+  NewTimer* t1 = tm.createTimer("timer1");
+  NewTimer* t2 = tm.createTimer("timer2");
+  NewTimer* t3 = tm.createTimer("timer3");
 
   fake_cpu_clock_increment = 1.1;
   t1->start();
@@ -222,16 +214,11 @@ TEST_CASE("test_timer_nested_profile_alt_routes", "[utilities]")
 {
   TimerManagerClass tm;
   tm.set_timer_threshold(timer_level_fine);
-  NewTimer* t1 = new NewTimer("timer1");
-  addRawTimer(tm, t1);
-  NewTimer* t2 = new NewTimer("timer2");
-  addRawTimer(tm, t2);
-  NewTimer* t3 = new NewTimer("timer3");
-  addRawTimer(tm, t3);
-  NewTimer* t4 = new NewTimer("timer4");
-  addRawTimer(tm, t4);
-  NewTimer* t5 = new NewTimer("timer5");
-  addRawTimer(tm ,t5);
+  NewTimer* t1 = tm.createTimer("timer1");
+  NewTimer* t2 = tm.createTimer("timer2");
+  NewTimer* t3 = tm.createTimer("timer3");
+  NewTimer* t4 = tm.createTimer("timer4");
+  NewTimer* t5 = tm.createTimer("timer5");
 
 
   fake_cpu_clock_increment = 1.1;
@@ -279,14 +266,10 @@ TEST_CASE("test_timer_nested_profile_collate", "[utilities]")
 {
   TimerManagerClass tm;
   tm.set_timer_threshold(timer_level_fine);
-  NewTimer* t1 = new NewTimer("timer1");
-  addRawTimer(tm, t1);
-  NewTimer* t2 = new NewTimer("timer2");
-  addRawTimer(tm, t2);
-  NewTimer* t2b = new NewTimer("timer2");
-  addRawTimer(tm, t2b);
-  NewTimer* t3 = new NewTimer("timer3");
-  addRawTimer(tm, t3);
+  NewTimer* t1 = tm.createTimer("timer1");
+  NewTimer* t2 = tm.createTimer("timer2");
+  NewTimer* t2b = tm.createTimer("timer2");
+  NewTimer* t3 = tm.createTimer("timer3");
 
 
   fake_cpu_clock_increment = 1.1;
@@ -347,8 +330,7 @@ TEST_CASE("test stack exceeded message")
   {
     std::ostringstream name;
     name << "timer" << i;
-    NewTimer* t = new NewTimer(name.str());
-    addRawTimer(tm, t);
+    NewTimer* t = tm.createTimer(name.str());
     timer_list.push_back(t);
   }
   for (int i = 0; i < StackKey::max_level + 1; i++)
@@ -378,8 +360,7 @@ TEST_CASE("test max exceeded message")
   {
     std::ostringstream name;
     name << "timer" << i;
-    NewTimer* t = new NewTimer(name.str());
-    addRawTimer(tm, t);
+    NewTimer* t = tm.createTimer(name.str());
     timer_list.push_back(t);
   }
 
