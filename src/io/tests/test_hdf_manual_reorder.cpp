@@ -140,11 +140,6 @@ TEST_CASE("hdf_read_partial", "[hdf]")
   REQUIRE(readBuffer[0] == Approx(allData(2,0)));
 
   // method 2 (direct utilization of hyperslab_proxy in client code)
-  //using buftype = std::vector<double>;
-  //buftype ob1(4);
-  //buftype ob2(3);
-  //buftype ob3(1);
-
   Matrix<double> outbuffer1(1,4);
   Matrix<double> outbuffer2(3,1);
   Matrix<double> outbuffer3(1,1);
@@ -188,8 +183,6 @@ TEST_CASE("hdf_read_partial", "[hdf]")
   Matrix<double> locob1(1,4);
   Matrix<double> locob2(3,1);
   Matrix<double> locob3(1,1);
-  // buftype locob2(3);
-  // buftype locob3(1);
   TinyVector<int,2> locReadSpec{1,-1};
   hd2.read2(locob1, locReadSpec, "matrix");
   for (int i = 0; i < 4; i++) {
