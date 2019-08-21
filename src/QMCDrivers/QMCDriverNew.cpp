@@ -78,10 +78,7 @@ int QMCDriverNew::addObservable(const std::string& aname)
 QMCDriverNew::RealType QMCDriverNew::getObservable(int i) { return estimator_manager_->getObservable(i); }
 
 
-QMCDriverNew::~QMCDriverNew()
-{
-  delete_iter(Rng.begin(), Rng.end());
-}
+QMCDriverNew::~QMCDriverNew() { delete_iter(Rng.begin(), Rng.end()); }
 
 void QMCDriverNew::add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi)
 {
@@ -150,7 +147,7 @@ void QMCDriverNew::process(xmlNodePtr cur)
     app_log() << "  Regenerate random seeds." << std::endl;
     RandomNumberControl::make_seeds();
   }
- 
+
   // PD: not really sure what the point of this is.  Seems to just go to output
   branchEngine->advanceQMCCounter();
 }
@@ -165,7 +162,7 @@ void QMCDriverNew::setStatus(const std::string& aname, const std::string& h5name
             << "\n  Start " << QMCType << "\n  File Root " << root_name_;
   app_log() << "\n=========================================================" << std::endl;
 
-  if(h5name.size())
+  if (h5name.size())
     h5_file_root_ = h5name;
 }
 
@@ -273,8 +270,7 @@ void QMCDriverNew::setupWalkers()
   { // always reset the walkers
     // Here we do some minimal fixing of walker numbers
     IndexType local_walkers = calc_default_local_walkers();
-    addWalkers(local_walkers,
-               ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>(population_.get_num_particles()));
+    addWalkers(local_walkers, ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>(population_.get_num_particles()));
   }
 }
 
@@ -282,7 +278,7 @@ void QMCDriverNew::setupWalkers()
  * @param nwalkers number of walkers to add
  *
  */
-void QMCDriverNew::addWalkers(int nwalkers, const ParticleAttrib<TinyVector<QMCTraits::RealType,3>>& positions)
+void QMCDriverNew::addWalkers(int nwalkers, const ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>& positions)
 {
   population_.createWalkers(nwalkers, positions);
   // else if (nwalkers < 0)

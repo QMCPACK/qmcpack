@@ -97,7 +97,7 @@ public:
                Communicate* comm);
 
   virtual ~QMCDriverNew();
-  
+
   ///return current step
   inline IndexType current() const { return current_step_; }
 
@@ -181,7 +181,7 @@ protected:
   IndexType walkers_per_crowd_;
 
   std::string h5_file_root_;
-  
+
   ///branch engine
   SimpleFixedNodeBranch* branchEngine;
   ///drift modifer
@@ -294,7 +294,7 @@ public:
 
   bool putQMCInfo(xmlNodePtr cur);
 
-  void addWalkers(int nwalkers, const ParticleAttrib<TinyVector<QMCTraits::RealType,3>>& positions);
+  void addWalkers(int nwalkers, const ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>& positions);
 
   int get_num_crowds() { return num_crowds_; }
   /** record the state of the block
@@ -314,7 +314,7 @@ public:
   bool finalize(int block, bool dumpwalkers = true);
 
   int rotation;
-  const std::string & get_root_name() const { return root_name_; }
+  const std::string& get_root_name() const { return root_name_; }
   std::string getRotationName(std::string RootName);
   std::string getLastRotationName(std::string RootName);
 

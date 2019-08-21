@@ -31,12 +31,12 @@ public:
   void readXML(xmlNodePtr cur);
 
   // To allow compile check if move constructor is still implicit
-  QMCDriverInput() = delete;
+  QMCDriverInput()                      = delete;
   QMCDriverInput(const QMCDriverInput&) = default;
-  QMCDriverInput(QMCDriverInput&&);
   QMCDriverInput& operator=(const QMCDriverInput&) = default;
+  QMCDriverInput(QMCDriverInput&&);
   QMCDriverInput& operator=(QMCDriverInput&&);
-  
+
 protected:
   /** @ingroup Type dependent behavior
    * @{
@@ -106,7 +106,7 @@ protected:
   // for drift modifer
   std::string drift_modifier_{"UNR"};
   RealType drift_modifier_unr_a_ = 1.0;
-  
+
   /** @}
    */
 
@@ -140,7 +140,6 @@ public:
 
   const std::string get_drift_modifier() const { return drift_modifier_; }
   RealType get_drift_modifier_unr_a() const { return drift_modifier_unr_a_; }
-
 };
 
 // These will cause a compiler error if the implicit move constructor has been broken

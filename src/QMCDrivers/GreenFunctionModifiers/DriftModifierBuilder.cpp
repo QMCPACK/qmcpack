@@ -30,7 +30,7 @@ DriftModifierBase* createDriftModifier(xmlNodePtr cur, const Communicate* myComm
   return DriftModifier;
 }
 
-    DriftModifierBase* createDriftModifier(const QMCDriverInput& qmcdriver_input)
+DriftModifierBase* createDriftModifier(const QMCDriverInput& qmcdriver_input)
 {
   DriftModifierBase* DriftModifier;
   if (qmcdriver_input.get_drift_modifier() == "UNR")

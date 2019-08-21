@@ -53,7 +53,7 @@ public:
   virtual void requestTraces(bool allow_traces)                         = 0;
   virtual void process(xmlNodePtr cur)                                  = 0;
   virtual QMCRunType getRunType()                                       = 0;
-  virtual const std::string& get_root_name() const                            = 0;
+  virtual const std::string& get_root_name() const                      = 0;
   virtual void setBranchEngine(BranchEngineType* be)                    = 0;
   virtual BranchEngineType* getBranchEngine()                           = 0;
   virtual std::string getEngineName()                                   = 0;

@@ -34,12 +34,13 @@ VMCBatched::VMCBatched(QMCDriverInput&& qmcdriver_input,
 VMCBatched::IndexType VMCBatched::calc_default_local_walkers()
 {
   int num_threads(Concurrency::maxThreads<>());
-  
+
   if (num_crowds_ > num_threads)
   {
     std::stringstream error_msg;
-    error_msg << "Bad Input: num_crowds (" << qmcdriver_input_.get_num_crowds() << ") > num_threads (" << num_threads
-                << ")\n";
+    error_msg << "Bad Input: num_crowds (" << qmcdriver_input_.get_num_crowds()
+              << ") > num_threads (" << num_threads
+              << ")\n";
     throw std::runtime_error(error_msg.str());
   }
 
