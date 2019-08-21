@@ -140,7 +140,7 @@ void QMCDriverNew::process(xmlNodePtr cur)
     DriftModifier = createDriftModifier(qmcdriver_input_);
 
   branchEngine->put(cur);
-  // Estimators->put(W, H, cur);
+  Estimators->put(H, cur);
   // if (wOut == 0)
   //   wOut = new HDFWalkerOutput(W, RootName, myComm);
   branchEngine->start(RootName);
