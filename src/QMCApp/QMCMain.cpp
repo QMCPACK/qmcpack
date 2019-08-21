@@ -620,6 +620,7 @@ bool QMCMain::runQMC(xmlNodePtr cur)
   QMCDriverFactory driver_factory;
   QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(myProject.m_series, cur);
   std::unique_ptr<QMCDriverInterface> qmc_driver;
+  std::string prev_config_file = last_driver ? last_driver->get_root_name() : ""; 
   qmc_driver = driver_factory.newQMCDriver(std::move(last_driver), myProject.m_series, cur, das, *qmcSystem, *ptclPool,
                                            *psiPool, *hamPool, myComm);
   if (qmc_driver)
@@ -628,7 +629,8 @@ bool QMCMain::runQMC(xmlNodePtr cur)
     //if it is NOT the first qmc node and qmc/@append!='yes'
     if (!FirstQMC && !das.append_run)
       myProject.advance();
-    qmc_driver->setStatus(myProject.CurrentMainRoot(), PrevConfigFile, das.append_run);
+    
+    qmc_driver->setStatus(myProject.CurrentMainRoot(), prev_config_file, das.append_run);
     // PD:
     // Q: How does m_walkerset_in end up being non empty?
     // A: Anytime that we aren't doing a restart.
@@ -647,8 +649,6 @@ bool QMCMain::runQMC(xmlNodePtr cur)
     qmc_driver->run();
     t1->stop();
     app_log() << "  QMC Execution time = " << std::setprecision(4) << qmcTimer.elapsed() << " secs" << std::endl;
-    //keeps track of the configuration file
-    PrevConfigFile = myProject.CurrentMainRoot();
     last_driver    = std::move(qmc_driver);
     return true;
   }

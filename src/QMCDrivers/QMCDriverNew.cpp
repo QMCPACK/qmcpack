@@ -48,15 +48,14 @@ QMCDriverNew::QMCDriverNew(QMCDriverInput&& input,
                            Communicate* comm)
     : MPIObjectBase(comm),
       qmcdriver_input_(input),
-      num_crowds_(input.get_num_crowds()),
       branchEngine(nullptr),
-      DriftModifier(0),
       population_(population),
       Psi(psi),
       H(h),
       psiPool(ppool),
-      Estimators(0),
-      wOut(0)
+      estimator_manager_(nullptr),
+      wOut(0),
+      num_crowds_(input.get_num_crowds())
 {
   QMCType = "invalid";
 
@@ -70,20 +69,18 @@ QMCDriverNew::QMCDriverNew(QMCDriverInput&& input,
 
 int QMCDriverNew::addObservable(const std::string& aname)
 {
-  if (Estimators)
-    return Estimators->addObservable(aname.c_str());
+  if (estimator_manager_)
+    return estimator_manager_->addObservable(aname.c_str());
   else
     return -1;
 }
 
-QMCDriverNew::RealType QMCDriverNew::getObservable(int i) { return Estimators->getObservable(i); }
+QMCDriverNew::RealType QMCDriverNew::getObservable(int i) { return estimator_manager_->getObservable(i); }
 
 
 QMCDriverNew::~QMCDriverNew()
 {
   delete_iter(Rng.begin(), Rng.end());
-  if (DriftModifier)
-    delete DriftModifier;
 }
 
 void QMCDriverNew::add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi)
@@ -123,51 +120,54 @@ void QMCDriverNew::process(xmlNodePtr cur)
   //W.resetWalkerProperty(numCopies);
 
   //create branchEngine first
-  if (branchEngine == nullptr)
+  if (!branchEngine)
   {
     branchEngine = new SimpleFixedNodeBranch(qmcdriver_input_.get_tau(), population_.get_num_global_walkers());
   }
 
   //create and initialize estimator
-  Estimators = branchEngine->getEstimatorManager();
-  if (Estimators == 0)
+  estimator_manager_ = branchEngine->getEstimatorManager();
+  if (!estimator_manager_)
   {
-    Estimators = new EstimatorManagerBase(myComm);
-    branchEngine->setEstimatorManager(Estimators);
-    branchEngine->read(h5FileRoot);
+    estimator_manager_ = new EstimatorManagerBase(myComm);
+    branchEngine->setEstimatorManager(estimator_manager_);
+    // This used to get updated as a side effect of setStatus
+    branchEngine->read(h5_file_root_);
   }
-  if (DriftModifier == 0)
-    DriftModifier = createDriftModifier(qmcdriver_input_);
+
+  if (!drift_modifier_)
+    drift_modifier_.reset(createDriftModifier(qmcdriver_input_));
 
   branchEngine->put(cur);
-  Estimators->put(H, cur);
+  estimator_manager_->put(H, cur);
   // if (wOut == 0)
-  //   wOut = new HDFWalkerOutput(W, RootName, myComm);
-  branchEngine->start(RootName);
-  branchEngine->write(RootName);
-  //use new random seeds
+  //   wOut = new HDFWalkerOutput(W, root_name_, myComm);
+  branchEngine->start(root_name_);
+  branchEngine->write(root_name_);
+
   if (qmcdriver_input_.get_reset_random())
   {
     app_log() << "  Regenerate random seeds." << std::endl;
     RandomNumberControl::make_seeds();
   }
-  //flush the std::ostreams
-  infoSummary.flush();
-  infoLog.flush();
-  //increment QMCCounter of the branch engine
+ 
+  // PD: not really sure what the point of this is.  Seems to just go to output
   branchEngine->advanceQMCCounter();
 }
 
+/** QMCDriverNew ignores h5name if you want to read and h5 config you have to explicitly
+ *  do so.
+ */
 void QMCDriverNew::setStatus(const std::string& aname, const std::string& h5name, bool append)
 {
-  RootName = aname;
+  root_name_ = aname;
   app_log() << "\n========================================================="
-            << "\n  Start " << QMCType << "\n  File Root " << RootName;
+            << "\n  Start " << QMCType << "\n  File Root " << root_name_;
   app_log() << "\n=========================================================" << std::endl;
-  if (h5name.size())
-    h5FileRoot = h5name;
-}
 
+  if(h5name.size())
+    h5_file_root_ = h5name;
+}
 
 /** Read walker configurations from *.config.h5 files
  * @param wset list of xml elements containing mcwalkerset
@@ -209,31 +209,31 @@ void QMCDriverNew::putWalkers(std::vector<xmlNodePtr>& wset)
   //   qmc_common.is_restart = false;
 }
 
-std::string QMCDriverNew::getRotationName(std::string RootName)
+std::string QMCDriverNew::getRotationName(std::string root_name)
 {
   std::string r_RootName;
   if (rotation % 2 == 0)
   {
-    r_RootName = RootName;
+    r_RootName = root_name;
   }
   else
   {
-    r_RootName = RootName + ".bk";
+    r_RootName = root_name + ".bk";
   }
   rotation++;
   return r_RootName;
 }
 
-std::string QMCDriverNew::getLastRotationName(std::string RootName)
+std::string QMCDriverNew::getLastRotationName(std::string root_name)
 {
   std::string r_RootName;
   if ((rotation - 1) % 2 == 0)
   {
-    r_RootName = RootName;
+    r_RootName = root_name;
   }
   else
   {
-    r_RootName = RootName + ".bk";
+    r_RootName = root_name + ".bk";
   }
   return r_RootName;
 }
@@ -243,8 +243,8 @@ void QMCDriverNew::recordBlock(int block)
   if (qmcdriver_input_.get_dump_config() && block % qmcdriver_input_.get_check_point_period().period == 0)
   {
     checkpointTimer->start();
-    branchEngine->write(RootName, true); //save energy_history
-    RandomNumberControl::write(RootName, myComm);
+    branchEngine->write(root_name_, true); //save energy_history
+    RandomNumberControl::write(root_name_, myComm);
     checkpointTimer->stop();
   }
 }
@@ -254,7 +254,7 @@ bool QMCDriverNew::finalize(int block, bool dumpwalkers)
   //  branchEngine->finalize(W);
 
   if (qmcdriver_input_.get_dump_config())
-    RandomNumberControl::write(RootName, myComm);
+    RandomNumberControl::write(root_name_, myComm);
 
   return true;
 }

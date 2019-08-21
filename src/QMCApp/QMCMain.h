@@ -47,9 +47,6 @@ private:
   ///flag to indicate that a qmc is the first QMC
   bool FirstQMC;
 
-  ///previous configuration file for next qmc node
-  std::string PrevConfigFile;
-
   std::unique_ptr<QMCDriverInterface> last_driver;
 
   ///xml mcwalkerset elements for output

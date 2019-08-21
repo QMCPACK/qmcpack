@@ -97,7 +97,7 @@ public:
                Communicate* comm);
 
   virtual ~QMCDriverNew();
-
+  
   ///return current step
   inline IndexType current() const { return current_step_; }
 
@@ -180,10 +180,12 @@ protected:
   std::vector<Crowd> crowds_;
   IndexType walkers_per_crowd_;
 
+  std::string h5_file_root_;
+  
   ///branch engine
   SimpleFixedNodeBranch* branchEngine;
   ///drift modifer
-  DriftModifierBase* DriftModifier;
+  std::unique_ptr<DriftModifierBase> drift_modifier_;
 
   ///the number to delay updates by
   int k_delay;
@@ -214,10 +216,8 @@ protected:
 
   ///type of qmc: assigned by subclasses
   std::string QMCType;
-  ///the root of h5File
-  std::string h5FileRoot;
   ///root of all the output files
-  std::string RootName;
+  std::string root_name_;
 
 
   ///the entire (or on node) walker population
@@ -232,7 +232,7 @@ protected:
   WaveFunctionPool& psiPool;
 
   ///Observables manager
-  EstimatorManagerBase* Estimators;
+  EstimatorManagerBase* estimator_manager_;
 
   ///record engine for walkers
   HDFWalkerOutput* wOut;
@@ -314,6 +314,7 @@ public:
   bool finalize(int block, bool dumpwalkers = true);
 
   int rotation;
+  const std::string & get_root_name() const { return root_name_; }
   std::string getRotationName(std::string RootName);
   std::string getLastRotationName(std::string RootName);
 
