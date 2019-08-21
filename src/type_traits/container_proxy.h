@@ -16,7 +16,6 @@
 #define QMCPLUSPLUS_MPI_CONTAINER_PROXY_H
 
 #include <stdexcept>
-#include <type_traits>
 
 #include "type_traits/scalar_traits.h"
 #include "OhmmsPETE/Tensor.h"
@@ -178,11 +177,6 @@ struct container_proxy<Matrix<T>>
   inline container_proxy(Matrix<T>& a) : ref(a) {}
   inline size_t size() const { return ref.size(); }
   inline pointer data() { return scalar_traits<T>::get_address(ref.data()); }
-  template<typename I>
-  inline void resize(I* n)
-  {
-    
-  }
   template<typename I>
   inline void resize(I* n, int d)
   {
