@@ -381,6 +381,8 @@ public:
 #endif
   }
 
+  NewTimer(const NewTimer& o) = delete;
+
   void set_name(const std::string& myname) { name = myname; }
 
   void set_active(const bool& is_active) { active = is_active; }

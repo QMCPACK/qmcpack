@@ -173,7 +173,7 @@ public:
 
 protected:
   /// Timers
-  NewTimer UpdateTimer, RatioTimer, InverseTimer, BufferTimer, SPOVTimer, SPOVGLTimer;
+  NewTimer &UpdateTimer, &RatioTimer, &InverseTimer, &BufferTimer, &SPOVTimer, &SPOVGLTimer;
   /// a set of single-particle orbitals used to fill in the  values of the matrix
   SPOSetPtr const Phi;
   ///index of the first particle with respect to the particle set

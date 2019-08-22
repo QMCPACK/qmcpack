@@ -92,7 +92,7 @@ private:
   SplineType* RadialSpline;
   // The first index is n in r^n, the second is lm = l*(l+1)+m
   Array<StorageType, 3> PolyCoefs;
-  NewTimer &YlmTimer, SplineTimer, SumTimer;
+  NewTimer &YlmTimer, &SplineTimer, &SumTimer;
   RealType rmagLast;
   std::vector<PosType> TwistAngles;
 

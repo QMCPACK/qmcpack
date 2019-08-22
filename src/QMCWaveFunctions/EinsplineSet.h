@@ -288,8 +288,8 @@ protected:
   ////////////
   // Timers //
   ////////////
-  NewTimer& ValueTimer, VGLTimer, VGLMatTimer;
-  NewTimer& EinsplineTimer;
+  NewTimer &ValueTimer, &VGLTimer, &VGLMatTimer;
+  NewTimer &EinsplineTimer;
 
 #ifdef QMC_CUDA
   // Cuda equivalents of the above
