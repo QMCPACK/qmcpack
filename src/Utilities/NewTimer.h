@@ -154,10 +154,6 @@ public:
 #endif
   }
 
-  // For unit testing.  The manager will take ownership of the timer.
-  // This means the unit tests should allocate timers dynamically, and not on the stack.
-  friend void addRawTimer(TimerManagerClass &tm, NewTimer* t);
-
   NewTimer* createTimer(const std::string& myname, timer_levels mytimer = timer_level_fine);
 
   void push_timer(NewTimer* t)
@@ -221,6 +217,7 @@ public:
   void output_timing(Communicate* comm, Libxml2Document& doc, xmlNodePtr root);
 
   void get_stack_name_from_id(const StackKey& key, std::string& name);
+
 };
 
 extern TimerManagerClass TimerManager;
@@ -384,7 +381,6 @@ public:
 #endif
   }
 
-
   void set_name(const std::string& myname) { name = myname; }
 
   void set_active(const bool& is_active) { active = is_active; }
@@ -403,6 +399,11 @@ public:
 
   void set_parent(NewTimer* new_parent) { parent = new_parent; }
 #endif
+
+  // Functions for unit testing
+  friend void set_total_time(NewTimer *timer, double total_time_input);
+
+  friend void set_num_calls(NewTimer *timer, long num_calls_input);
 };
 
 // Wrapper for timer that starts on construction and stops on destruction

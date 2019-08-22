@@ -21,27 +21,22 @@
 namespace qmcplusplus
 {
 
-// The manager will take ownership of the timer.  This means the timer must
-// be allocated dynamically, not on the stack.
-void addRawTimer(TimerManagerClass &tm, NewTimer* t)
+
+void set_total_time(NewTimer *timer, double total_time_input)
 {
-  tm.TimerList.push_back(std::unique_ptr<NewTimer>(t));
-  tm.addTimer(t);
+  timer->total_time = total_time_input;
 }
+
+void set_num_calls(NewTimer *timer, long num_calls_input)
+{
+  timer->num_calls = num_calls_input;
+}
+
 
 // Used by fake_cpu_clock in Clock.h if USE_FAKE_CLOCK is defined
 double fake_cpu_clock_increment = 1.0;
 double fake_cpu_clock_value     = 0.0;
 
-class FakeTimer : public NewTimer
-{
-public:
-  FakeTimer(const std::string& myname) : NewTimer(myname) {}
-
-  void set_total_time(double my_total_time) { total_time = my_total_time; }
-
-  void set_num_calls(long my_num_calls) { num_calls = my_num_calls; }
-};
 
 TEST_CASE("test_timer_stack", "[utilities]")
 {
@@ -75,10 +70,9 @@ TEST_CASE("test_timer_scoped", "[utilities]")
 TEST_CASE("test_timer_flat_profile", "[utilities]")
 {
   TimerManagerClass tm;
-  FakeTimer* t1 = new FakeTimer("timer1");
-  addRawTimer(tm, t1);
-  t1->set_total_time(1.1);
-  t1->set_num_calls(2);
+  NewTimer* t1 = tm.createTimer("timer1");
+  set_total_time(t1, 1.1);
+  set_num_calls(t1, 2);
 
   TimerManagerClass::FlatProfileData p;
   tm.collate_flat_profile(NULL, p);
