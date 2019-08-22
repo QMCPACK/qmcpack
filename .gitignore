@@ -1,8 +1,14 @@
+# emacs temp files
+*~
+*#
+
+# python bytecode 
 *.pyc
+
+# excluded manual files 
 *.aux
 qmcpack_manual.bbl
 qmcpack_manual.blg
 qmcpack_manual.log
 qmcpack_manual.out
 qmcpack_manual.toc
-qmcpack_manual.pdf
