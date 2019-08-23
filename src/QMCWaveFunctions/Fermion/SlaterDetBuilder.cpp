@@ -22,6 +22,7 @@
 #include "Utilities/ProgressReportEngine.h"
 #include "OhmmsData/AttributeSet.h"
 
+#include "QMCWaveFunctions/Fermion/RotationHelper.h"
 #include "QMCWaveFunctions/Fermion/MultiSlaterDeterminant.h"
 #include "QMCWaveFunctions/Fermion/MultiSlaterDeterminantFast.h"
 #if !defined(QMC_COMPLEX) && !defined(ENABLE_SOA)
@@ -301,11 +302,15 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
         app_log() << "Using Bryan's algorithm for MultiSlaterDeterminant expansion. \n";
         MultiDiracDeterminant* up_det = 0;
         MultiDiracDeterminant* dn_det = 0;
+        RotationHelper *rot_helper_up_det, *rot_helper_dn_det;
         app_log() << "Creating base determinant (up) for MSD expansion. \n";
-        up_det = new MultiDiracDeterminant((SPOSetPtr)spomap.find(spo_alpha)->second, 0);
+        rot_helper_up_det     = new RotationHelper((SPOSetPtr)spomap.find(spo_alpha)->second);
+        up_det                = new MultiDiracDeterminant(rot_helper_up_det, 0);
         app_log() << "Creating base determinant (down) for MSD expansion. \n";
-        dn_det               = new MultiDiracDeterminant((SPOSetPtr)spomap.find(spo_beta)->second, 1);
+        rot_helper_dn_det    = new RotationHelper((SPOSetPtr)spomap.find(spo_beta)->second);
+        dn_det               = new MultiDiracDeterminant(rot_helper_dn_det, 1);
         multislaterdetfast_0 = new MultiSlaterDeterminantFast(targetPtcl, up_det, dn_det);
+
         success              = createMSDFast(multislaterdetfast_0, cur);
       }
       else
@@ -566,8 +571,13 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
 #endif
     else
     {
+
+      RotationHelper* rot_helper;
+      rot_helper = new RotationHelper(psi);
+
       app_log() << "Using DiracDeterminant with DelayedUpdate engine" << std::endl;
-      adet = new DiracDeterminant<>(psi, firstIndex);
+      adet = new DiracDeterminant<>(rot_helper, firstIndex);
+//      adet = new DiracDeterminant<>(psi, firstIndex);
     }
 #endif
   }

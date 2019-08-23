@@ -57,8 +57,8 @@ bool LCAOrbitalSet::setIdentity(bool useIdentity)
 
 SPOSet* LCAOrbitalSet::makeClone() const
 {
-  LCAOrbitalSet* myclone = new LCAOrbitalSet(*this);
-  myclone->myBasisSet    = myBasisSet->makeClone();
+  LCAOrbitalSet* myclone    = new LCAOrbitalSet(*this);
+  myclone->myBasisSet       = myBasisSet->makeClone();
   return myclone;
 }
 
@@ -361,20 +361,17 @@ inline void LCAOrbitalSet::evaluate_vgl_impl(const vgl_type& temp,
                                              GradMatrix_t& dlogdet,
                                              ValueMatrix_t& d2logdet) const
 {
-  //cannot use OrbitalSetSize because in the DiracClass this will always be nel
-  const size_t MatColSize =  logdet.cols(); 
-
-  std::copy_n(temp.data(0), MatColSize, logdet[i]);
+  std::copy_n(temp.data(0), OrbitalSetSize, logdet[i]);
   const ValueType* restrict gx = temp.data(1);
   const ValueType* restrict gy = temp.data(2);
   const ValueType* restrict gz = temp.data(3);
-  for (size_t j = 0; j < MatColSize; j++)
+  for (size_t j = 0; j < OrbitalSetSize; j++)
   {
     dlogdet[i][j][0] = gx[j];
     dlogdet[i][j][1] = gy[j];
     dlogdet[i][j][2] = gz[j];
   }
-  std::copy_n(temp.data(4), MatColSize, d2logdet[i]);
+  std::copy_n(temp.data(4), OrbitalSetSize, d2logdet[i]);
 }
 
 inline void LCAOrbitalSet::evaluate_vgh_impl(const vgh_type& temp,
@@ -503,6 +500,7 @@ void LCAOrbitalSet::evaluate_notranspose(const ParticleSet& P,
       evaluate_vgl_impl(Tempv, i, logdet, dlogdet, d2logdet);
     }
   }
+
 }
 
 void LCAOrbitalSet::evaluate_notranspose(const ParticleSet& P,
@@ -611,6 +609,22 @@ void LCAOrbitalSet::evaluateThirdDeriv(const ParticleSet& P, int first, int last
 {
   APP_ABORT("LCAOrbitalSet::evaluateThirdDeriv(P,istart,istop,ggg_logdet) not implemented\n");
 }
+void LCAOrbitalSet::returnMemberVariables(ValueMatrix_t& C_original,
+                                          std::shared_ptr<ValueMatrix_t>& C_sposet,
+                                          bool& params_supplied,
+                                          std::vector<RealType>& params,
+                                          bool& IsCloned)
+{
+  if(!IsCloned)
+  {
+    C_original      = *C;
+    C_sposet        = C;
+    params          = this->params;
+    params_supplied = this->params_supplied;
+    IsCloned        = this->IsCloned;
+  }
+}
+
 void LCAOrbitalSet::buildOptVariables(const size_t& nel)
 {
 #if !defined(QMC_COMPLEX)

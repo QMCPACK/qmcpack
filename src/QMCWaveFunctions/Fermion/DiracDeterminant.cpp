@@ -45,7 +45,8 @@ void DiracDeterminant<DU_TYPE>::set(int first, int nel, int delay)
   FirstIndex = first;
   ndelay     = delay;
 
-  resize(nel, nel);
+  resize(nel, Phi->OrbitalSetSize);
+//  resize(nel, nel);
 
   if(Optimizable)
     Phi->buildOptVariables(nel);
