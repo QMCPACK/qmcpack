@@ -437,7 +437,7 @@ inline bool h5d_append(hid_t grp,
 
 
 /** generic h5data_proxy<T> for scalar basic datatypes defined in hdf_dataspace.h
-*/
+ */
 template<typename T>
 struct h5data_proxy : public h5_space_type<T, 0>
 {
@@ -456,6 +456,34 @@ struct h5data_proxy : public h5_space_type<T, 0>
   inline bool write(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
     return h5d_write(grp, aname.c_str(), this->size(), dims, get_address(&ref_), xfer_plist);
+  }
+
+};
+
+/** specialization for bool, convert to int
+ */
+template<>
+struct h5data_proxy<bool> : public h5_space_type<int, 0>
+{
+  typedef bool data_type;
+  using h5_space_type<int, 0>::dims;
+  using h5_space_type<int, 0>::get_address;
+  data_type& ref_;
+
+  inline h5data_proxy(data_type& a) : ref_(a) { }
+
+  inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
+  {
+    int copy;
+    bool okay = h5d_read(grp, aname, get_address(&copy), xfer_plist);
+    ref_ = static_cast<bool>(copy);
+    return okay;
+  }
+
+  inline bool write(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
+  {
+    int copy = static_cast<int>(ref_);
+    return h5d_write(grp, aname.c_str(), this->size(), dims, get_address(&copy), xfer_plist);
   }
 
 };

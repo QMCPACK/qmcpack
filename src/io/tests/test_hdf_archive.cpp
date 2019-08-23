@@ -51,8 +51,12 @@ TEST_CASE("hdf_archive_simple_data", "[hdf]")
 {
   hdf_archive hd;
   hd.create("test_simple_data.hdf");
-  int i     = 23;
-  bool okay = hd.writeEntry(i, "int");
+  bool b = true;
+  bool okay = hd.writeEntry(b, "bool");
+  REQUIRE(okay);
+
+  int i = 23;
+  okay  = hd.writeEntry(i, "int");
   REQUIRE(okay);
 
   float f = -2.3;
@@ -73,6 +77,7 @@ TEST_CASE("hdf_archive_simple_data", "[hdf]")
 
   hdf_archive hd3;
   hd3.create("test_simple_data.hdf");
+  hd3.write(b, "bool");
   hd3.write(i, "int");
   hd3.write(f, "float");
   hd3.write(d, "double");
@@ -83,6 +88,11 @@ TEST_CASE("hdf_archive_simple_data", "[hdf]")
 
   hdf_archive hd2;
   hd2.open("test_simple_data.hdf");
+  bool b2 = false;
+  okay = hd2.readEntry(b2, "bool");
+  REQUIRE(okay);
+  REQUIRE(b == b2);
+
   int i2;
   okay = hd2.readEntry(i2, "int");
   REQUIRE(okay);
@@ -115,6 +125,10 @@ TEST_CASE("hdf_archive_simple_data", "[hdf]")
 
   hdf_archive hd4;
   hd4.open("test_simple_data.hdf");
+  bool b4 = false;
+  hd4.read(b4, "bool");
+  REQUIRE(b == b4);
+
   int i4;
   hd4.read(i4, "int");
   REQUIRE(i == i4);
