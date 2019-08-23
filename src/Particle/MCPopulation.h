@@ -24,10 +24,10 @@ namespace qmcplusplus
 class MCPopulation
 {
 public:
-  using MCPWalker = Walker<QMCTraits,PtclOnLatticeTraits>;
-  using RealType = QMCTraits::RealType;
-  using Properties       = MCPWalker::PropertyContainer_t;
-  using IndexType        = QMCTraits::IndexType;
+  using MCPWalker  = Walker<QMCTraits, PtclOnLatticeTraits>;
+  using RealType   = QMCTraits::RealType;
+  using Properties = MCPWalker::PropertyContainer_t;
+  using IndexType  = QMCTraits::IndexType;
 
 private:
   int num_ranks_                = 0;
@@ -37,9 +37,10 @@ private:
   IndexType max_samples_        = 0;
   IndexType target_population_  = 0;
   IndexType target_samples_     = 0;
-    //Properties properties_;
+  //Properties properties_;
   ParticleSet ions_;
   std::vector<IndexType> walker_offsets_;
+  // By making this a linked list and creating the crowds at the same time we could get first touch.
   std::vector<std::unique_ptr<MCPWalker>> walkers_;
 
 public:
@@ -49,6 +50,10 @@ public:
   MCPopulation(int num_ranks, int num_particles) : num_ranks_(num_ranks), num_particles_(num_particles) {}
   void createWalkers();
   void createWalkers(IndexType num_walkers, const ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>& pos);
+  void createWalkers(int num_crowds_,
+                     int num_walkers_per_crowd_,
+                     IndexType num_walkers,
+                     const ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>& pos);
 
   /**@ingroup Accessors
    * @{
@@ -60,7 +65,7 @@ public:
   IndexType get_max_samples() const { return max_samples_; }
   IndexType get_target_population() const { return target_population_; }
   IndexType get_target_samples() const { return target_samples_; }
-    //const Properties& get_properties() const { return properties_; }
+  //const Properties& get_properties() const { return properties_; }
   const ParticleSet& get_ions() const { return ions_; }
   const std::vector<int>& get_walker_offsets() const { return walker_offsets_; }
 
@@ -70,9 +75,8 @@ public:
   void set_target(IndexType pop) { target_population_ = pop; }
   void set_target_samples(IndexType samples) { target_samples_ = samples; }
 
-  std::vector<std::unique_ptr<MCPWalker>>&
-  get_walkers() { return walkers_; }
-    /** }@ */
+  std::vector<std::unique_ptr<MCPWalker>>& get_walkers() { return walkers_; }
+  /** }@ */
 };
 
 

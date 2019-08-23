@@ -64,57 +64,64 @@ VMCBatched::IndexType VMCBatched::calc_default_local_walkers()
   return local_walkers;
 }
 
-void VMCBatched::runVMCBlock(int crowd_id, const QMCDriverInput& qmcdriver_input, std::vector<Crowd>& crowds)
-{  
+void VMCBatched::runVMCBlock(int crowd_id,
+                             const QMCDriverInput& qmcdriver_input,
+                             const StateForThreads vmc_state,
+                             std::vector<Crowd>& crowds)
+{
   int nAccept              = 0;
   int nReject              = 0;
   int nAllRejected         = 0;
   int nNodeCrossing        = 0;
   int NonLocalMoveAccepted = 0;
 
-  crowds[crowd_id].startBlock(qmcdriver_input.get_max_steps());
+  Crowd& crowd = crowds[crowd_id];
+  crowd.startBlock(qmcdriver_input.get_max_steps());
+
+
   //Is there any rebalance per block with VMC?  I don't think so.
   //Therefore there is no need to return to a global population
+
   // MCWalkerConfiguration::iterator wit(W.begin() + wPerNode[crowd_id]), wit_end(W.begin() + wPerNode[crowd_id + 1]);
-//     Movers[crowd_id]->startBlock(nSteps);
-//     int now_loc    = CurrentStep;
-//     RealType cnorm = 1.0 / static_cast<RealType>(wPerNode[crowd_id + 1] - wPerNode[crowd_id]);
-//     for (int step = 0; step < nSteps; ++step)
-//     {
-//       // Why?
-//       Movers[crowd_id]->set_step(now_loc);
-//       //collectables are reset, it is accumulated while advancing walkers
-//       wClones[crowd_id]->resetCollectables();
-//       bool recompute = (nBlocksBetweenRecompute && (step + 1) == nSteps && (1 + block) % nBlocksBetweenRecompute == 0 &&
-//                         QMCDriverMode[QMC_UPDATE_MODE]);
-//       Movers[crowd_id]->advanceWalkers(wit, wit_end, recompute);
-//       if (has_collectables)
-//         wClones[crowd_id]->Collectables *= cnorm;
-//       Movers[crowd_id]->accumulate(wit, wit_end);
-//       ++now_loc;
-//       if (Period4WalkerDump && now_loc % Period4WalkerDump == 0)
-//         wClones[crowd_id]->saveEnsemble(wit, wit_end);
-//       //           if(storeConfigs && (now_loc%storeConfigs == 0))
-//       //             ForwardWalkingHistory.storeConfigsForForwardWalking(*wClones[crowd_id]);
-//     }
-//     Movers[crowd_id]->stopBlock(false);
-//   } //end-of-parallel for
-//   //Estimators->accumulateCollectables(wClones,nSteps);
-//   CurrentStep += nSteps;
-//   Estimators->stopBlock(estimatorClones);
-// #if !defined(REMOVE_TRACEMANAGER)
-//   Traces->write_buffers(traceClones, block);
-// #endif
-//   if (storeConfigs)
-//     recordBlock(block);
-//   vmc_loop.stop();
-//   enough_time_for_next_iteration = runtimeControl.enough_time_for_next_iteration(vmc_loop);
-//   myComm->bcast(enough_time_for_next_iteration);
-//   if (!enough_time_for_next_iteration)
-//   {
-//     app_log() << runtimeControl.time_limit_message("VMC", block);
-//     break;
-//   } 
+  //     Movers[crowd_id]->startBlock(nSteps);
+  //     int now_loc    = CurrentStep;
+  //     RealType cnorm = 1.0 / static_cast<RealType>(wPerNode[crowd_id + 1] - wPerNode[crowd_id]);
+  //     for (int step = 0; step < nSteps; ++step)
+  //     {
+  //       // Why?
+  //       Movers[crowd_id]->set_step(now_loc);
+  //       //collectables are reset, it is accumulated while advancing walkers
+  //       wClones[crowd_id]->resetCollectables();
+  //       bool recompute = (nBlocksBetweenRecompute && (step + 1) == nSteps && (1 + block) % nBlocksBetweenRecompute == 0 &&
+  //                         QMCDriverMode[QMC_UPDATE_MODE]);
+  //       Movers[crowd_id]->advanceWalkers(wit, wit_end, recompute);
+  //       if (has_collectables)
+  //         wClones[crowd_id]->Collectables *= cnorm;
+  //       Movers[crowd_id]->accumulate(wit, wit_end);
+  //       ++now_loc;
+  //       if (Period4WalkerDump && now_loc % Period4WalkerDump == 0)
+  //         wClones[crowd_id]->saveEnsemble(wit, wit_end);
+  //       //           if(storeConfigs && (now_loc%storeConfigs == 0))
+  //       //             ForwardWalkingHistory.storeConfigsForForwardWalking(*wClones[crowd_id]);
+  //     }
+  //     Movers[crowd_id]->stopBlock(false);
+  //   } //end-of-parallel for
+  //   //Estimators->accumulateCollectables(wClones,nSteps);
+  //   CurrentStep += nSteps;
+  //   Estimators->stopBlock(estimatorClones);
+  // #if !defined(REMOVE_TRACEMANAGER)
+  //   Traces->write_buffers(traceClones, block);
+  // #endif
+  //   if (storeConfigs)
+  //     recordBlock(block);
+  //   vmc_loop.stop();
+  //   enough_time_for_next_iteration = runtimeControl.enough_time_for_next_iteration(vmc_loop);
+  //   myComm->bcast(enough_time_for_next_iteration);
+  //   if (!enough_time_for_next_iteration)
+  //   {
+  //     app_log() << runtimeControl.time_limit_message("VMC", block);
+  //     break;
+  //   }
 }
 
 /** Runs the actual VMC section
@@ -124,12 +131,18 @@ void VMCBatched::runVMCBlock(int crowd_id, const QMCDriverInput& qmcdriver_input
  *  1. QMCDriverNew::setStatus
  *  2. QMCDriverNew::putWalkers
  *  3. QMCDriverNew::process
+ *
+ *  At the moment I don't care about 1st touch, prove it matters
+ *  If does consider giving more to the thread by value that should
+ *  end up thread local. (I think)
  */
 bool VMCBatched::run()
 {
   IndexType num_blocks = qmcdriver_input_.get_max_blocks();
   //start the main estimator
   estimator_manager_->start(num_blocks);
+
+  StateForThreads vmc_state;
 
   LoopTimer vmc_loop;
   RunTimeControl runtimeControl(RunTimeManager, MaxCPUSecs);
@@ -140,12 +153,13 @@ bool VMCBatched::run()
   for (int block = 0; block < num_blocks; ++block)
   {
     vmc_loop.start();
-    IndexType updatePeriod = (qmc_driver_mode_[QMC_UPDATE_MODE]) ? qmcdriver_input_.get_recalculate_properties_period() : 0;
+    vmc_state.recalculate_properties_period =
+        (qmc_driver_mode_[QMC_UPDATE_MODE]) ? qmcdriver_input_.get_recalculate_properties_period() : 0;
 
     estimator_manager_->startBlock(qmcdriver_input_.get_max_steps());
 
     TasksOneToOne<> crowd_task(num_crowds_);
-    crowd_task(runVMCBlock, qmcdriver_input_, crowds_);
+    crowd_task(runVMCBlock, qmcdriver_input_, vmc_state, crowds_);
   }
 
   //   } //block

@@ -25,6 +25,12 @@ namespace qmcplusplus
 class VMCBatched : public QMCDriverNew
 {
 public:
+  struct StateForThreads
+  {
+    IndexType recalculate_properties_period;
+  };
+
+public:
   /// Constructor.
   VMCBatched(QMCDriverInput&& qmcdriver_input,
              VMCDriverInput&& input,
@@ -37,7 +43,10 @@ public:
   bool run();
   // This is the task body executed at crowd scope
   // it does not have access to object member variables by design
-  static void runVMCBlock(int crowd_id, const QMCDriverInput& qmcdriver_input, std::vector<Crowd>& crowds);
+  static void runVMCBlock(int crowd_id,
+                          const QMCDriverInput& qmcdriver_input,
+                          const StateForThreads vmc_state,
+                          std::vector<Crowd>& crowds);
   void setup();
   //inline std::vector<RandomGenerator_t*>& getRng() { return Rng;}
   IndexType calc_default_local_walkers();
