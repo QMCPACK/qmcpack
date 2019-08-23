@@ -132,6 +132,10 @@ public:
   ///return BranchEngineType*
   SimpleFixedNodeBranch* getBranchEngine() { return branchEngine; }
 
+  /** This would be better than the many side effects calc_default_local_walkers has 
+   *
+   * struct WalkerDistribution
+   */
   virtual IndexType calc_default_local_walkers() = 0;
 
   int addObservable(const std::string& aname);
@@ -152,6 +156,8 @@ public:
   std::string getEngineName() { return QMCType; }
   unsigned long getDriverMode() { return qmc_driver_mode_.to_ulong(); }
   IndexType get_walkers_per_crowd() const { return walkers_per_crowd_; }
+  IndexType get_living_walkers() const { return population_.get_active_walkers(); }
+
 
   /** @ingroup Legacy interface to be dropped
    *  @{

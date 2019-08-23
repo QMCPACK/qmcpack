@@ -32,7 +32,13 @@ public:
   {}
 
   QMCRunType getRunType() { return QMCRunType::DUMMY; }
-  IndexType calc_default_local_walkers() { return 0; };
+  // Notice that this is a crap method in that we have to fake all the side effects of the
+  // calculation in the child class.
+  IndexType calc_default_local_walkers()
+  {
+    walkers_per_crowd_ = 4;
+    return 32;
+  }
   bool run() { return false; }
 };
 

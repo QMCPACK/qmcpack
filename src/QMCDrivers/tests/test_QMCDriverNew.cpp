@@ -23,7 +23,7 @@
 
 namespace qmcplusplus
 {
-TEST_CASE("QMCDriverNew", "[drivers]")
+TEST_CASE("QMCDriverNew integration", "[drivers]")
 {
   using namespace testing;
   Communicate* comm;
@@ -56,8 +56,9 @@ TEST_CASE("QMCDriverNew", "[drivers]")
   // changes to it over time.
   REQUIRE(qmcdriver.getBranchEngine() == nullptr);
   qmcdriver.process(node);
-  // I'm pretty sure after process more than this is expected.
   REQUIRE(qmcdriver.getBranchEngine() != nullptr);
+  REQUIRE(qmcdriver.get_living_walkers() == 32);
+  // What else should we expect after process
 }
 
 } // namespace qmcplusplus

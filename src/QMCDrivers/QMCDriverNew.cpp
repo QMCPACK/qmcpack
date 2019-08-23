@@ -55,6 +55,7 @@ QMCDriverNew::QMCDriverNew(QMCDriverInput&& input,
       psiPool(ppool),
       estimator_manager_(nullptr),
       wOut(0),
+      walkers_per_crowd_(1),
       num_crowds_(input.get_num_crowds())
 {
   QMCType = "invalid";
@@ -103,20 +104,17 @@ void QMCDriverNew::add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi)
  */
 void QMCDriverNew::process(xmlNodePtr cur)
 {
-  //  deltaR.resize(W.getTotalNum());
-  //  drift.resize(W.getTotalNum());
-
   if (!qmcdriver_input_.get_append_run())
     current_step_ = 0;
   else
     current_step_ = qmcdriver_input_.get_starting_step();
 
+  setupWalkers();
   // If you really wanter to persist the MCPopulation it is not the business of QMCDriver to reset it.
   // It could tell it we are starting a new section but shouldn't be pulling internal strings.
   //int numCopies = (H1.empty()) ? 1 : H1.size();
   //W.resetWalkerProperty(numCopies);
 
-  //create branchEngine first
   if (!branchEngine)
   {
     branchEngine = new SimpleFixedNodeBranch(qmcdriver_input_.get_tau(), population_.get_num_global_walkers());
@@ -261,17 +259,12 @@ bool QMCDriverNew::finalize(int block, bool dumpwalkers)
  */
 void QMCDriverNew::setupWalkers()
 {
-  //if walkers are initialized via <mcwalkerset/>, use the existing one
-  if (qmcdriver_input_.get_qmc_section_count() > 0 || qmc_common.is_restart)
-  {
-    app_log() << "Using existing walkers " << std::endl;
-  }
-  else
-  { // always reset the walkers
-    // Here we do some minimal fixing of walker numbers
-    IndexType local_walkers = calc_default_local_walkers();
-    addWalkers(local_walkers, ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>(population_.get_num_particles()));
-  }
+  IndexType local_walkers = calc_default_local_walkers();
+  addWalkers(local_walkers, ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>(population_.get_num_particles()));
+  //now give walkers references to their walkers
+  auto crowd_start = crowds_.begin();
+  auto crowd_end   = crowds_.end();
+  population_.distributeWalkers(crowd_start, crowd_end, walkers_per_crowd_);
 }
 
 /** Add walkers to the end of the ensemble of walkers.
@@ -280,7 +273,7 @@ void QMCDriverNew::setupWalkers()
  */
 void QMCDriverNew::addWalkers(int nwalkers, const ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>& positions)
 {
-  population_.createWalkers(nwalkers, positions);
+  population_.createWalkers(num_crowds_, walkers_per_crowd_, nwalkers, positions);
   // else if (nwalkers < 0)
   // {
   //   W.destroyWalkers(-nwalkers);

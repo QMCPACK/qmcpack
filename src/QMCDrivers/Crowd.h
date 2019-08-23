@@ -46,6 +46,8 @@ public:
   {
     estimator_manager_.startBlock(steps);
   }
+
+  void addWalker(MCPWalker& walker) { mcp_walkers_.push_back(walker); };
 private:
   Walkers walkers_;
   std::vector<std::reference_wrapper<MCPWalker>> mcp_walkers_;
