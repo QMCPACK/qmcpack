@@ -95,7 +95,8 @@ class full1rdm: public AFQMCInfo
       dump.write(NMO, "NMO");
       dump.write(NAEA, "NUP");
       dump.write(NAEB, "NDOWN");
-      dump.write(walker_type, "WalkerType");
+      int wlk_t_copy = walker_type; // the actual data type of enum is implementation-defined. convert to int for file
+      dump.write(wlk_t_copy, "WalkerType");
       dump.pop();
       dump.pop();
       dump.close();
