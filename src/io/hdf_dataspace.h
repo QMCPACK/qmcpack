@@ -40,10 +40,12 @@ struct h5_space_type
 {
   ///shape of the dataspace
   hsize_t dims[D];
-  ///size, dimension, of the dataspace
+  ///dimension of the dataspace
   constexpr int size() const { return D; }
+  ///new dimension added due to T
+  constexpr int added_size() const { return 0; }
   ///return the address
-  inline auto get_address(T* a) { return a; }
+  inline static auto get_address(T* a) { return a; }
 };
 
 /** specialization of h5_space_type for scalar intrinsic type T
@@ -54,7 +56,8 @@ struct h5_space_type<T, 0, std::enable_if_t<std::is_floating_point<T>::value || 
   hsize_t dims[1];
   inline h5_space_type() { dims[0] = 1; }
   constexpr int size() const { return 1; }
-  inline auto get_address(T* a) { return a; }
+  constexpr int added_size() const { return 1; }
+  inline static auto get_address(T* a) { return a; }
 };
 
 /** specialization of h5_space_type for std::complex<T>
@@ -67,8 +70,9 @@ struct h5_space_type<std::complex<T>, D> : public h5_space_type<T, D + 1>
   using base = h5_space_type<T, D + 1>;
   using base::dims;
   using base::size;
+  constexpr int added_size() const { return base::added_size() + 1; }
   inline h5_space_type() { dims[D] = 2; }
-  inline auto get_address(std::complex<T>* a) { return base::get_address(reinterpret_cast<T*>(a)); }
+  inline static auto get_address(std::complex<T>* a) { return base::get_address(reinterpret_cast<T*>(a)); }
 };
 
 /** specialization of h5_space_type for TinyVector<T,D> for any intrinsic type T
@@ -80,7 +84,8 @@ struct h5_space_type<TinyVector<T, D>, DS> : public h5_space_type<T, DS + 1>
   using base::dims;
   using base::size;
   inline h5_space_type() { dims[DS] = D; }
-  inline auto get_address(TinyVector<T, D>* a) { return base::get_address(a->data()); }
+  constexpr int added_size() const { return base::added_size() + 1; }
+  inline static auto get_address(TinyVector<T, D>* a) { return base::get_address(a->data()); }
 };
 
 /** specialization of h5_space_type for TinyVector<T,D> for any intrinsic type T
@@ -96,7 +101,8 @@ struct h5_space_type<Tensor<T, D>, DS> : public h5_space_type<T, DS + 2>
     dims[DS]     = D;
     dims[DS + 1] = D;
   }
-  inline auto get_address(Tensor<T, D>* a) { return base::get_address(a->data()); }
+  constexpr int added_size() const { return base::added_size() + 2; }
+  inline static auto get_address(Tensor<T, D>* a) { return base::get_address(a->data()); }
 };
 
 } // namespace qmcplusplus
