@@ -262,8 +262,11 @@ public:
     std::vector<hsize_t> count(readSpec.size());
     int numElements;
     getOffsets(p, aname, readSpec, offset, count, numElements);
-    hyperslab_proxy<T,7> pxy(data, count, count, offset);
+/*
+    hyperslab_proxy<T,2> pxy(data, count, count, offset);
     return readEntry(pxy, aname);
+ */
+    return true;
   }
 
   /* read the data from the group aname and check status

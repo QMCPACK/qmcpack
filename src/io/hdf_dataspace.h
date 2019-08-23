@@ -41,7 +41,7 @@ struct h5_space_type
   ///shape of the dataspace
   hsize_t dims[D];
   ///dimension of the dataspace
-  constexpr int size() const { return D; }
+  static constexpr int size() { return D; }
   ///new dimension added due to T
   constexpr int added_size() const { return 0; }
   ///return the address
@@ -55,7 +55,7 @@ struct h5_space_type<T, 0, std::enable_if_t<std::is_floating_point<T>::value || 
 {
   hsize_t dims[1];
   inline h5_space_type() { dims[0] = 1; }
-  constexpr int size() const { return 1; }
+  static constexpr int size() { return 1; }
   constexpr int added_size() const { return 1; }
   inline static auto get_address(T* a) { return a; }
 };

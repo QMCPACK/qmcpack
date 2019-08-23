@@ -400,12 +400,12 @@ void RandomNumberControl::read_parallel(hdf_archive& hin, Communicate* comm)
   }
   app_log() << "  Restart from the random number streams from the previous configuration.\n";
 
-  TinyVector<int, 2> shape(comm->size() * nthreads, Random.state_size()); //global dims of children dataset
+  std::array<int, 2> shape = {comm->size() * nthreads, Random.state_size()}; //global dims of children dataset
   vt.resize(nthreads * Random.state_size());                              //buffer for children[ip]
   mt.resize(Random.state_size()); //buffer for single thread Random object of random nums
 
-  TinyVector<int, 2> counts(nthreads, Random.state_size()); //local dimensions of dataset
-  TinyVector<int, 2> offsets(comm->rank() * nthreads, 0);   //offsets for each process to read in
+  std::array<int, 2> counts = {nthreads, Random.state_size()}; //local dimensions of dataset
+  std::array<int, 2> offsets = {comm->rank() * nthreads, 0};   //offsets for each process to read in
 
   hin.push("random"); //group that holds children[ip] random nums
   hyperslab_proxy<std::vector<uint_type>, 2> slab(vt, shape, counts, offsets);
@@ -446,9 +446,9 @@ void RandomNumberControl::write_parallel(hdf_archive& hout, Communicate* comm)
   }
   Random.save(mt); //get nums for single random object (no threads)
 
-  TinyVector<int, 2> shape(comm->size() * nthreads, Random.state_size()); //global dimensions
-  TinyVector<int, 2> counts(nthreads, Random.state_size());               //local dimensions
-  TinyVector<int, 2> offsets(comm->rank() * nthreads, 0);                 //offset for the file write
+  std::array<int, 2> shape = {comm->size() * nthreads, Random.state_size()}; //global dimensions
+  std::array<int, 2> counts = {nthreads, Random.state_size()};               //local dimensions
+  std::array<int, 2> offsets = {comm->rank() * nthreads, 0};                 //offset for the file write
 
   hout.push(hdf::main_state);
   hout.write(shape_hdf5, "nprocs_nthreads_statesize"); //save the shape of the data at write
