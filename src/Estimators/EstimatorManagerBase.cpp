@@ -82,6 +82,8 @@ EstimatorManagerBase::EstimatorManagerBase(EstimatorManagerBase& em)
 {
   //inherit communicator
   setCommunicator(em.myComm);
+
+  // Here Estimators are ScalarEstimatorBase
   for (int i = 0; i < em.Estimators.size(); i++)
     Estimators.push_back(em.Estimators[i]->clone());
   MainEstimator = Estimators[EstimatorMap[MainEstimatorName]];
@@ -100,10 +102,13 @@ EstimatorManagerBase::~EstimatorManagerBase()
 
 void EstimatorManagerBase::setCommunicator(Communicate* c)
 {
+  // I think this is actually checking if this is the "Main Estimator"
   if (myComm && myComm == c)
     return;
   myComm = c ? c : OHMMS::Controller;
   //set the default options
+  // This is a flag to tell manager if there is more than one thread
+  // running walkers, its discovered by smelly query of myComm.
   Options.set(COLLECT, myComm->size() > 1);
   Options.set(MANAGE, myComm->rank() == 0);
   if (RemoteData.empty())

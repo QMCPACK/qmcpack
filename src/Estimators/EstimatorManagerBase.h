@@ -26,6 +26,7 @@
 #include "Utilities/PooledData.h"
 #include "Message/Communicate.h"
 #include "Estimators/ScalarEstimatorBase.h"
+#include "Estimators/EstimatorManagerInterface.h"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsData/HDFAttribIO.h"
 #include <bitset>
@@ -36,8 +37,8 @@ class MCWalkerConifugration;
 class QMCHamiltonian;
 class CollectablesEstimator;
 
-/**Class to manage a set of ScalarEstimators */
-class EstimatorManagerBase
+/** Class to manage a set of ScalarEstimators */
+class EstimatorManagerBase : public EstimatorManagerInterface
 {
 public:
   typedef QMCTraits::FullPrecRealType RealType;
@@ -201,7 +202,7 @@ public:
   }
 
 protected:
-  ///use bitset to handle options
+  //  TODO: fix needless use of bitset instead of clearer more visible booleans
   std::bitset<8> Options;
   ///size of the message buffer
   int BufferSize;

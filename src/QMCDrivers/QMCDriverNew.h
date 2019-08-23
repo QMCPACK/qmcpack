@@ -81,7 +81,7 @@ public:
    * - qmc_driver_mode[QMC_MULTIPLE]? multiple H/Psi : single H/Psi
    * - qmc_driver_mode[QMC_OPTIMIZE]? optimization : vmc/dmc/rmc
    */
-  std::bitset<QMC_MODE_MAX> qmc_driver_mode;
+  std::bitset<QMC_MODE_MAX> qmc_driver_mode_;
 
   /// whether to allow traces
   bool allow_traces;
@@ -150,7 +150,7 @@ public:
   inline RandomGenerator_t& getRng(int i) { return (*Rng[i]); }
 
   std::string getEngineName() { return QMCType; }
-  unsigned long getDriverMode() { return qmc_driver_mode.to_ulong(); }
+  unsigned long getDriverMode() { return qmc_driver_mode_.to_ulong(); }
   IndexType get_walkers_per_crowd() const { return walkers_per_crowd_; }
 
   /** @ingroup Legacy interface to be dropped
@@ -168,7 +168,7 @@ public:
   /** should be set in input don't see a reason to set individually
    * @param pbyp if true, use particle-by-particle update
    */
-  inline void setUpdateMode(bool pbyp) { qmc_driver_mode[QMC_UPDATE_MODE] = pbyp; }
+  inline void setUpdateMode(bool pbyp) { qmc_driver_mode_[QMC_UPDATE_MODE] = pbyp; }
 
   void putTraces(xmlNodePtr txml) {}
   void requestTraces(bool allow_traces) {}
@@ -231,7 +231,11 @@ protected:
 
   WaveFunctionPool& psiPool;
 
-  ///Observables manager
+  /** Observables manager
+   *  Has very problematic owner ship and life cycle.
+   *  Can be transfered via branch manager one driver to the next indefinitely
+   *  TODO:  Modify Branch manager and others to clear this up.
+   */
   EstimatorManagerBase* estimator_manager_;
 
   ///record engine for walkers
