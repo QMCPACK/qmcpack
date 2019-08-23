@@ -436,17 +436,17 @@ inline bool h5d_append(hid_t grp,
 }
 
 
-/** generic h5data_proxy<T> for hdf5 native type T
+/** generic h5data_proxy<T> for scalar basic datatypes defined in hdf_dataspace.h
 */
 template<typename T>
-struct h5data_proxy : public h5_space_type<T, 1>
+struct h5data_proxy : public h5_space_type<T, 0>
 {
   typedef T data_type;
-  using h5_space_type<T, 1>::dims;
-  using h5_space_type<T, 1>::get_address;
+  using h5_space_type<T, 0>::dims;
+  using h5_space_type<T, 0>::get_address;
   data_type& ref_;
 
-  inline h5data_proxy(data_type& a) : ref_(a) { dims[0] = 1; }
+  inline h5data_proxy(data_type& a) : ref_(a) { }
 
   inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {

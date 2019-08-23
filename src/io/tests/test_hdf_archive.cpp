@@ -208,11 +208,14 @@ TEST_CASE("hdf_archive_tiny_vector", "[hdf]")
   hd.create("test_tiny_vector.hdf");
 
   TinyVector<double, 2> v(2);
+  TinyVector<std::complex<double>, 2> v_cplx(2);
 
-  v[0] = 1.2;
-  v[1] = 1.3;
+  v_cplx[0] = v[0] = 1.2;
+  v_cplx[1] = v[1] = 1.3;
 
   bool okay = hd.writeEntry(v, "tiny_vector_double");
+  REQUIRE(okay);
+  okay = hd.writeEntry(v_cplx, "tiny_vector_complex_double");
   REQUIRE(okay);
 
   hd.close();
@@ -221,11 +224,15 @@ TEST_CASE("hdf_archive_tiny_vector", "[hdf]")
   hd2.open("test_tiny_vector.hdf");
 
   TinyVector<double, 2> v2;
+  TinyVector<std::complex<double>, 2> v2_cplx(2);
   okay = hd2.readEntry(v2, "tiny_vector_double");
+  REQUIRE(okay);
+  okay = hd2.readEntry(v2_cplx, "tiny_vector_complex_double");
   REQUIRE(okay);
   for (int i = 0; i < v.size(); i++)
   {
     REQUIRE(v[i] == v2[i]);
+    REQUIRE(v_cplx[i] == v2_cplx[i]);
   }
 }
 

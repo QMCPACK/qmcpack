@@ -37,7 +37,7 @@ namespace qmcplusplus
  * \tparm T intrinsic datatype
  * \tparm D dimension of the h5dataspace
  */
-template<typename T, hsize_t D>
+template<typename T, hsize_t D, typename ENABLE = void>
 struct h5_space_type
 {
   ///pointer type
@@ -47,6 +47,18 @@ struct h5_space_type
   ///size, dimension,  of the dataspace
   inline int size() const { return D; }
   ///return the address
+  inline pointer get_address(T* a) { return a; }
+};
+
+/** specialization of h5_space_type for scalar T
+ */
+template<typename T>
+struct h5_space_type<T, 0, std::enable_if_t<std::is_floating_point<T>::value || std::is_integral<T>::value>>
+{
+  typedef T* pointer;
+  hsize_t dims[1];
+  inline h5_space_type() { dims[0] = 1; }
+  inline int size() const { return 1; }
   inline pointer get_address(T* a) { return a; }
 };
 
