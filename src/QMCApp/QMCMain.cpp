@@ -338,7 +338,7 @@ bool QMCMain::executeQMCSection(xmlNodePtr cur, bool noloop)
   return success;
 }
 
-/** validate the main document
+/** validate the main document and (read the walker sets !)
  * @return false, if any of the basic objects is not properly created.
  *
  * Current xml schema is changing. Instead validating the input file,
@@ -350,6 +350,7 @@ bool QMCMain::executeQMCSection(xmlNodePtr cur, bool noloop)
  * - hamiltonian: create hamiltonians
  * Finally, if /simulation/mcwalkerset exists, read the configurations
  * from the external files.
+ * TODO: Move this out of what should be a stateless call
  */
 bool QMCMain::validateXML()
 {
@@ -492,11 +493,10 @@ bool QMCMain::validateXML()
     else if (cname == "include")
     {
       //file is provided
-      xmlChar* a = xmlGetProp(cur, (const xmlChar*)"href");
-      if (a)
+      const XMLAttrString include_name(cur, "href");
+      if (!include_name.empty())
       {
-        bool success = pushDocument((const char*)a);
-        xmlFree(a);
+        bool success = pushDocument(include_name);
         if (success)
         {
           inputnode = processPWH(XmlDocStack.top()->getRoot());
@@ -629,6 +629,12 @@ bool QMCMain::runQMC(xmlNodePtr cur)
     if (!FirstQMC && !das.append_run)
       myProject.advance();
     qmc_driver->setStatus(myProject.CurrentMainRoot(), PrevConfigFile, das.append_run);
+    // PD:
+    // Q: How does m_walkerset_in end up being non empty?
+    // A: Anytime that we aren't doing a restart.
+    // So put walkers is an exceptional call. This code does not tell a useful
+    // story of a QMCDriver's life.
+
     qmc_driver->putWalkers(m_walkerset_in);
 #if !defined(REMOVE_TRACEMANAGER)
     qmc_driver->putTraces(traces_xml);
@@ -653,6 +659,11 @@ bool QMCMain::runQMC(xmlNodePtr cur)
   }
 }
 
+
+/** Reads walkers sets from the restart file during XML validation
+ *
+ *  TODO: Move this, it is not a concern of QMCMain
+ */
 bool QMCMain::setMCWalkers(xmlXPathContextPtr context_)
 {
   OhmmsXPathObject result("/simulation/mcwalkerset", context_);
