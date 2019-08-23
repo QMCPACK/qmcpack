@@ -53,7 +53,7 @@ TEST_CASE("ParticleSetPool", "[qmcapp]")
   pp.put(root);
 
   ParticleSet* ions = pp.getParticleSet("ion0");
-  REQUIRE(ions != NULL);
+  REQUIRE(ions == NULL);
 
   ParticleSet* not_here = pp.getParticleSet("does_not_exist");
   REQUIRE(not_here == NULL);
