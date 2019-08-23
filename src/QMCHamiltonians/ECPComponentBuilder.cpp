@@ -55,9 +55,8 @@ ECPComponentBuilder::ECPComponentBuilder(const std::string& aname, Communicate* 
 
 bool ECPComponentBuilder::parse(const std::string& fname, xmlNodePtr cur)
 {
-  const xmlChar* rptr = xmlGetProp(cur, (const xmlChar*)"cutoff");
-  if (rptr != NULL)
-    RcutMax = atof((const char*)rptr);
+  const XMLAttrString cutoff_str(cur, "cutoff");
+  if(!cutoff_str.empty()) RcutMax = std::stod(cutoff_str);
 
   return read_pp_file(fname);
 }
@@ -171,8 +170,8 @@ bool ECPComponentBuilder::put(xmlNodePtr cur)
     std::string cname((const char*)cur->name);
     if (cname == "header")
     {
-      Zeff         = atoi((const char*)xmlGetProp(cur, (const xmlChar*)"zval"));
-      AtomicNumber = atoi((const char*)xmlGetProp(cur, (const xmlChar*)"atomic-number"));
+      Zeff         = std::stoi(XMLAttrString{cur, "zval"});
+      AtomicNumber = std::stoi(XMLAttrString{cur, "atomic-number"});
     }
     else if (cname == "grid")
     {
@@ -191,12 +190,6 @@ bool ECPComponentBuilder::put(xmlNodePtr cur)
     {
       buildLocal(cur);
     }
-    // else if(cname == "sphericalGrid")
-    // {
-    //  nk=atoi((const char*)xmlGetProp(cur,(const xmlChar*)"size"));
-    //  kpts.resize(nk*4);
-    //  putContent(kpts,cur);
-    // }
     cur = cur->next;
   }
   if (semiPtr.size())

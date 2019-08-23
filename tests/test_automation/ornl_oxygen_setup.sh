@@ -21,6 +21,7 @@ config:
   build_jobs: 12
 
 EOF
+# Use flash /scratch for builds
 rm -r -f /scratch/$USER/spack_build_stage
 mkdir /scratch/$USER/spack_build_stage
 
@@ -28,12 +29,13 @@ cd $HOME/apps
 git clone https://github.com/spack/spack.git
 cd spack
 # For reproducibility, use a specific version of Spack
-git checkout b39a9925280e5dff661d1db76a7a2c8f1f871d53
-#commit b39a9925280e5dff661d1db76a7a2c8f1f871d53
-#Author: Andreas Baumbach <healther@users.noreply.github.com>
-#Date:   Sun Jun 23 23:33:36 2019 +0200
+git checkout 2e6b44328a54293cebc5e871523c974b8be5a1fb
+# This is a few commits after gcc@9.2.0 was included
+#commit 2e6b44328a54293cebc5e871523c974b8be5a1fb
+#Author: Adam J. Stewart <ajstewart426@gmail.com>
+#Date:   Tue Aug 13 21:09:25 2019 -0500
 #
-# add new package py-absl-py (#11812)
+#    zstd: fix build linking error (#12413)
 
 cd bin
 ./spack bootstrap
@@ -125,6 +127,15 @@ spack compiler add
 spack unload gcc@${gcc_vintel}
 echo --- Convenience
 spack install git
+echo --- Python setup for NEXUS
+# Specify py-numpy@1.16.4 to avoid python3 dependencies in later versions
+spack install py-numpy@1.16.4
+spack install py-h5py^py-numpy@1.16.4
+spack install py-pandas@0.24.2^py-numpy@1.16.4
+spack activate py-numpy@1.16.4
+spack activate py-h5py^py-numpy@1.16.4
+spack activate py-pandas@0.24.2^py-numpy@1.16.4
+
 echo --- PGI setup reminder
 echo "To configure the PGI compilers with one of the newly installed C++ libraries:"
 echo "spack load gcc@8.2.0 # For example"
