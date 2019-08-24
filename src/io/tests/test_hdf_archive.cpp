@@ -1,4 +1,3 @@
-
 //////////////////////////////////////////////////////////////////////////////////////
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
@@ -150,13 +149,11 @@ TEST_CASE("hdf_archive_simple_data", "[hdf]")
   std::vector<int> datashape;
   okay = hd4.getShape<double>("double", datashape);
   REQUIRE(okay);
-  REQUIRE(datashape.size() == 1);
-  REQUIRE(datashape[0] == 1);
+  REQUIRE(datashape.size() == 0);
 
   okay = hd4.getShape<std::complex<float>>("complex float", datashape);
   REQUIRE(okay);
-  REQUIRE(datashape.size() == 1);
-  REQUIRE(datashape[0] == 1);
+  REQUIRE(datashape.size() == 0);
 
   okay = hd4.getShape<float>("complex float", datashape);
   REQUIRE(okay);
@@ -231,6 +228,36 @@ TEST_CASE("hdf_archive_group", "[hdf]")
   REQUIRE(j3 == j);
 
   hd2.close();
+}
+
+TEST_CASE("hdf_archive_scalar_convert", "[hdf]")
+{
+  hdf_archive hd;
+  hd.create("test_scalar_convert.hdf");
+
+  TinyVector<double, 1> v0(1);
+  bool okay = hd.writeEntry(v0, "tiny_vector_one");
+  REQUIRE(okay);
+
+  double v1(1);
+  okay = hd.writeEntry(v1, "tiny_scalar_one");
+  REQUIRE(okay);
+
+  hd.close();
+
+  hdf_archive hd2;
+  hd2.open("test_scalar_convert.hdf");
+
+  TinyVector<double, 1> v2(0);
+  okay = hd2.readEntry(v2, "tiny_scalar_one");
+  REQUIRE(okay);
+
+  double v3(0);
+  okay = hd2.readEntry(v3, "tiny_vector_one");
+  REQUIRE(okay);
+
+  REQUIRE(v0[0] == v3);
+  REQUIRE(v1 == v2[0]);
 }
 
 TEST_CASE("hdf_archive_tiny_vector", "[hdf]")

@@ -19,9 +19,9 @@
  * - h5_space_type<T,DS>
  * - h5_space_type<std::complex<T>,DS>
  * - h5_space_type<TinyVector<T,D>,DS>
- * - h5_space_type<std::complex<TinyVector<T,D>>,DS> // removed, picked up by template recursion
+ * - h5_space_type<TinyVector<std::complex<T>,D>,DS> // removed, picked up by template recursion
  * - h5_space_type<Tensor<T,D>,DS>
- * - h5_space_type<std::complex<Tensor<T,D>>,DS> // removed, picked up by template recursion
+ * - h5_space_type<Tensor<std::complex<T>,D>,DS> // removed, picked up by template recursion
  */
 
 
@@ -40,25 +40,13 @@ namespace qmcplusplus
 template<typename T, hsize_t D, typename ENABLE = void>
 struct h5_space_type
 {
-  ///shape of the dataspace
-  hsize_t dims[D];
+  ///shape of the dataspace, protected for zero size array, hdf5 support scalar as rank = 0
+  hsize_t dims[D>0?D:1];
   ///dimension of the dataspace
   static constexpr int size() { return D; }
   ///new dimension added due to T
   static constexpr int added_size() { return 0; }
   ///return the address
-  inline static auto get_address(T* a) { return a; }
-};
-
-/** specialization of h5_space_type for scalar intrinsic type T
- */
-template<typename T>
-struct h5_space_type<T, 0, std::enable_if_t<std::is_floating_point<T>::value || std::is_integral<T>::value>>
-{
-  hsize_t dims[1];
-  inline h5_space_type() { dims[0] = 1; }
-  static constexpr int size() { return 1; }
-  static constexpr int added_size() { return 0; }
   inline static auto get_address(T* a) { return a; }
 };
 

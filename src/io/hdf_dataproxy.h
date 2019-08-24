@@ -89,16 +89,9 @@ inline bool getDataShape(hid_t grp, const std::string& aname, std::vector<int>& 
     else
     {
       // save the sizes of each directions excluding dimensions contributed by the data type
-      if (user_rank == 0)
-      {
-        sizes_out.resize(1, 1);
-      }
-      else
-      {
-        sizes_out.resize(user_rank);
-        for(int dim = 0; dim < user_rank; dim++)
-          sizes_out[dim] = sizes_in[dim];
-      }
+      sizes_out.resize(user_rank);
+      for(int dim = 0; dim < user_rank; dim++)
+        sizes_out[dim] = sizes_in[dim];
     }
   }
 
