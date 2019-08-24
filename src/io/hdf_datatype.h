@@ -13,7 +13,6 @@
 #ifndef QMCPLUSPLUS_H5DATATYPE_DEFINE_H
 #define QMCPLUSPLUS_H5DATATYPE_DEFINE_H
 
-#include <type_traits/scalar_traits.h>
 #if defined(HAVE_LIBHDF5)
 #include <hdf5.h>
 #endif

@@ -5,6 +5,7 @@
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
 // File developed by: Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
+//                    Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
@@ -12,6 +13,7 @@
 
 #ifndef QMCPLUSPLUS_HDF_DATASPACE_TRAITS_H
 #define QMCPLUSPLUS_HDF_DATASPACE_TRAITS_H
+
 /**@file hdf_dataspace.h
  * @brief define h5_space_type to handle basic datatype for hdf5
  *
@@ -23,7 +25,6 @@
  * - h5_space_type<Tensor<T,D>,DS>
  * - h5_space_type<Tensor<std::complex<T>,D>,DS> // removed, picked up by template recursion
  */
-
 
 #include <io/hdf_datatype.h>
 #include <complex>
