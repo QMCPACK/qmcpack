@@ -19,7 +19,9 @@
  * - h5_space_type<T,DS>
  * - h5_space_type<std::complex<T>,DS>
  * - h5_space_type<TinyVector<T,D>,DS>
+ * - h5_space_type<std::complex<TinyVector<T,D>>,DS> // removed, picked up by template recursion
  * - h5_space_type<Tensor<T,D>,DS>
+ * - h5_space_type<std::complex<Tensor<T,D>>,DS> // removed, picked up by template recursion
  */
 
 
@@ -43,7 +45,7 @@ struct h5_space_type
   ///dimension of the dataspace
   static constexpr int size() { return D; }
   ///new dimension added due to T
-  constexpr int added_size() const { return 0; }
+  static constexpr int added_size() { return 0; }
   ///return the address
   inline static auto get_address(T* a) { return a; }
 };
@@ -56,7 +58,7 @@ struct h5_space_type<T, 0, std::enable_if_t<std::is_floating_point<T>::value || 
   hsize_t dims[1];
   inline h5_space_type() { dims[0] = 1; }
   static constexpr int size() { return 1; }
-  constexpr int added_size() const { return 1; }
+  static constexpr int added_size() { return 0; }
   inline static auto get_address(T* a) { return a; }
 };
 
@@ -70,7 +72,7 @@ struct h5_space_type<std::complex<T>, D> : public h5_space_type<T, D + 1>
   using base = h5_space_type<T, D + 1>;
   using base::dims;
   using base::size;
-  constexpr int added_size() const { return base::added_size() + 1; }
+  static constexpr int added_size() { return base::added_size() + 1; }
   inline h5_space_type() { dims[D] = 2; }
   inline static auto get_address(std::complex<T>* a) { return base::get_address(reinterpret_cast<T*>(a)); }
 };
@@ -84,7 +86,7 @@ struct h5_space_type<TinyVector<T, D>, DS> : public h5_space_type<T, DS + 1>
   using base::dims;
   using base::size;
   inline h5_space_type() { dims[DS] = D; }
-  constexpr int added_size() const { return base::added_size() + 1; }
+  static constexpr int added_size() { return base::added_size() + 1; }
   inline static auto get_address(TinyVector<T, D>* a) { return base::get_address(a->data()); }
 };
 
@@ -101,7 +103,7 @@ struct h5_space_type<Tensor<T, D>, DS> : public h5_space_type<T, DS + 2>
     dims[DS]     = D;
     dims[DS + 1] = D;
   }
-  constexpr int added_size() const { return base::added_size() + 2; }
+  static constexpr int added_size() { return base::added_size() + 2; }
   inline static auto get_address(Tensor<T, D>* a) { return base::get_address(a->data()); }
 };
 

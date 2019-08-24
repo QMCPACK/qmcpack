@@ -221,6 +221,18 @@ public:
     }
   }
 
+  /* read the filespace shape from the group aname
+     @return true if successful
+   */
+  template<typename T>
+  bool getShape(const std::string& aname, std::vector<int>& sizes_out)
+  {
+    if (Mode[NOIO])
+      return true;
+    hid_t p = group_id.empty() ? file_id : group_id.top();
+    return getDataShape<T>(p, aname, sizes_out);
+  }
+
   /* read the data from the group aname and return status
      use read() for inbuilt error checking
      @return true if successful

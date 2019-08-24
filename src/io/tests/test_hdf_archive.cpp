@@ -146,6 +146,23 @@ TEST_CASE("hdf_archive_simple_data", "[hdf]")
   hd4.read(cf4, "complex float");
   REQUIRE(cf == cf4);
 
+  //read scalar
+  std::vector<int> datashape;
+  okay = hd4.getShape<double>("double", datashape);
+  REQUIRE(okay);
+  REQUIRE(datashape.size() == 1);
+  REQUIRE(datashape[0] == 1);
+
+  okay = hd4.getShape<std::complex<float>>("complex float", datashape);
+  REQUIRE(okay);
+  REQUIRE(datashape.size() == 1);
+  REQUIRE(datashape[0] == 1);
+
+  okay = hd4.getShape<float>("complex float", datashape);
+  REQUIRE(okay);
+  REQUIRE(datashape.size() == 1);
+  REQUIRE(datashape[0] == 2);
+
   hd4.close();
 }
 

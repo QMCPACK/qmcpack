@@ -48,6 +48,64 @@ inline bool get_space(hid_t grp, const std::string& aname, int rank, hsize_t* di
   return thesame;
 }
 
+/** free template function to read the dimension and shape of the dataset
+ * @param grp group id
+ * @param aname name of the dataspace
+ * @param dims[rank] size for each direction
+ * @return true if the dims is the same as the dataspace
+ */
+template<typename T>
+inline bool getDataShape(hid_t grp, const std::string& aname, std::vector<int>& sizes_out)
+{
+  using TSpaceType = h5_space_type<T, 0>;
+  TSpaceType TSpace;
+
+  bool success = true;
+
+  hid_t h1        = H5Dopen(grp, aname.c_str());
+  hid_t dataspace = H5Dget_space(h1);
+  int rank        = H5Sget_simple_extent_ndims(dataspace);
+  // check if the rank is sufficient to hold the data type
+  if(rank < TSpaceType::size())
+  {
+    success = false;
+    throw std::runtime_error(aname + " dataset is too small for the requested data type");
+  }
+  else
+  {
+    std::vector<hsize_t> sizes_in(rank);
+    int status_n = H5Sget_simple_extent_dims(dataspace, sizes_in.data(), NULL);
+
+    // check if the lowest dimensions match the data type
+    int user_rank = rank - TSpaceType::added_size();
+    bool size_match = true;
+    for (int dim = user_rank, dim_type = 0 ; dim < rank; dim++, dim_type++)
+      if (sizes_in[dim] != TSpace.dims[dim_type]) size_match = false;
+    if (!size_match)
+    {
+      success = false;
+      throw std::runtime_error("The lower dimensions of " + aname + " dataset do not match the requested data type");
+    }
+    else
+    {
+      // save the sizes of each directions excluding dimensions contributed by the data type
+      if (user_rank == 0)
+      {
+        sizes_out.resize(1, 1);
+      }
+      else
+      {
+        sizes_out.resize(user_rank);
+        for(int dim = 0; dim < user_rank; dim++)
+          sizes_out[dim] = sizes_in[dim];
+      }
+    }
+  }
+
+  H5Dclose(h1);
+  return success;
+}
+
 /** free function to go from spec to dimensionality of memory space and data space
  */
 template<typename IC>

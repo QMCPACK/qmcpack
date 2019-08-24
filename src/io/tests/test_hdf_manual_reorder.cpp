@@ -121,6 +121,28 @@ TEST_CASE("hdf_read_partial", "[hdf]")
   okay = hd2.open("test_read_partial.hdf");
   REQUIRE(okay);
 
+  // test getShape
+  std::vector<int> datashape;
+  okay = hd2.getShape<double>("matrix", datashape);
+  REQUIRE(okay);
+  REQUIRE(datashape.size() == 2);
+  REQUIRE(datashape[0] == 3);
+  REQUIRE(datashape[1] == 4);
+
+  okay = hd2.getShape<std::complex<float>>("matrix_cplx_float", datashape);
+  REQUIRE(okay);
+  REQUIRE(datashape.size() == 2);
+  REQUIRE(datashape[0] == 3);
+  REQUIRE(datashape[1] == 4);
+
+  //treat std::complex<float> as an array[2]
+  okay = hd2.getShape<float>("matrix_cplx_float", datashape);
+  REQUIRE(okay);
+  REQUIRE(datashape.size() == 3);
+  REQUIRE(datashape[0] == 3);
+  REQUIRE(datashape[1] == 4);
+  REQUIRE(datashape[2] == 2);
+
   // method 1 (relying on vector in hdf_stl)
   vector<int> readSpec{1, -1};
   vector<double> readBuffer(4);
