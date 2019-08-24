@@ -104,13 +104,11 @@ void QMCDriverNew::add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi)
  */
 void QMCDriverNew::process(xmlNodePtr cur)
 {
-  if (!qmcdriver_input_.get_append_run())
-    current_step_ = 0;
-  else
-    current_step_ = qmcdriver_input_.get_starting_step();
+  createMoveContexts();
 
   setupWalkers();
-  // If you really wanter to persist the MCPopulation it is not the business of QMCDriver to reset it.
+
+  // If you really want to persist the MCPopulation it is not the business of QMCDriver to reset it.
   // It could tell it we are starting a new section but shouldn't be pulling internal strings.
   //int numCopies = (H1.empty()) ? 1 : H1.size();
   //W.resetWalkerProperty(numCopies);
@@ -289,6 +287,23 @@ void QMCDriverNew::addWalkers(int nwalkers, const ParticleAttrib<TinyVector<QMCT
   // ////int nw=W.getActiveWalkers();
   // ////myComm->allreduce(nw);
 }
+
+/** Creates MoveContexts doing first touch in their crowd (thread) context
+ */
+void QMCDriverNew::createMoveContexts()
+{
+  move_contexts_.resize(num_crowds_);
+
+  TasksOneToOne<> do_per_crowd(num_crowds_);
+
+  auto firstTouchCreateMoveContexts =
+      [this](int crowd_index) {
+        move_contexts_[crowd_index] = std::make_unique<MoveContext>(population_.get_num_particles());
+      };
+  do_per_crowd(firstTouchCreateMoveContexts);
+
+}
+
 
 void QMCDriverNew::setWalkerOffsets()
 {

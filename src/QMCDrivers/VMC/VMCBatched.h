@@ -16,6 +16,7 @@
 #include "QMCDrivers/QMCDriverNew.h"
 #include "QMCDrivers/VMC/VMCDriverInput.h"
 #include "Particle/MCPopulation.h"
+#include "Particle/MoveContext.h"
 
 namespace qmcplusplus
 {
@@ -28,6 +29,9 @@ public:
   struct StateForThreads
   {
     IndexType recalculate_properties_period;
+    IndexType step;
+    int       block;
+    bool recomputing_blocks;
   };
 
 public:
@@ -41,12 +45,15 @@ public:
              Communicate* comm);
 
   bool run();
+
+  static void advanceWalker(MCPWalker& walker, MoveContext& move_context, bool recompute);
   // This is the task body executed at crowd scope
   // it does not have access to object member variables by design
-  static void runVMCBlock(int crowd_id,
-                          const QMCDriverInput& qmcdriver_input,
-                          const StateForThreads vmc_state,
-                          std::vector<Crowd>& crowds);
+  static void runVMCStep(int crowd_id,
+                         const QMCDriverInput& qmcdriver_input,
+                         const StateForThreads vmc_state,
+                         std::vector<std::unique_ptr<MoveContext>>& move_context,
+                         std::vector<Crowd>& crowds);
   void setup();
   //inline std::vector<RandomGenerator_t*>& getRng() { return Rng;}
   IndexType calc_default_local_walkers();

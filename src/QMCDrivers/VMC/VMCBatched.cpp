@@ -64,10 +64,112 @@ VMCBatched::IndexType VMCBatched::calc_default_local_walkers()
   return local_walkers;
 }
 
-void VMCBatched::runVMCBlock(int crowd_id,
-                             const QMCDriverInput& qmcdriver_input,
-                             const StateForThreads vmc_state,
-                             std::vector<Crowd>& crowds)
+void VMCBatched::advanceWalker(MCPWalker& walker, MoveContext& move_context, bool recompute)
+{
+  move_context.loadWalker(walker);
+//   Walker_t::WFBuffer_t& w_buffer(thisWalker.DataSet);
+//   Psi.copyFromBuffer(W, w_buffer);
+//   myTimers[0]->stop();
+
+//   // start PbyP moves
+//   myTimers[1]->start();
+//   bool moved = false;
+//   constexpr RealType mhalf(-0.5);
+//   for (int iter = 0; iter < nSubSteps; ++iter)
+//   {
+//     //create a 3N-Dimensional Gaussian with variance=1
+//     makeGaussRandomWithEngine(deltaR, RandomGen);
+//     moved = false;
+//     for (int ig = 0; ig < W.groups(); ++ig) //loop over species
+//     {
+//       RealType tauovermass = Tau * MassInvS[ig];
+//       RealType oneover2tau = 0.5 / (tauovermass);
+//       RealType sqrttau     = std::sqrt(tauovermass);
+//       for (int iat = W.first(ig); iat < W.last(ig); ++iat)
+//       {
+//         W.setActive(iat);
+//         PosType dr;
+//         if (UseDrift)
+//         {
+//           GradType grad_now = Psi.evalGrad(W, iat);
+//           DriftModifier->getDrift(tauovermass, grad_now, dr);
+//           dr += sqrttau * deltaR[iat];
+//         }
+//         else
+//         {
+//           dr = sqrttau * deltaR[iat];
+//         }
+//         if (!W.makeMoveAndCheck(iat, dr))
+//         {
+//           ++nReject;
+//           continue;
+//         }
+//         RealType logGf(1), logGb(1), prob;
+//         if (UseDrift)
+//         {
+//           GradType grad_new;
+//           RealType ratio = Psi.ratioGrad(W, iat, grad_new);
+//           prob           = ratio * ratio;
+//           logGf          = mhalf * dot(deltaR[iat], deltaR[iat]);
+//           DriftModifier->getDrift(tauovermass, grad_new, dr);
+//           dr    = W.R[iat] - W.activePos - dr;
+//           logGb = -oneover2tau * dot(dr, dr);
+//         }
+//         else
+//         {
+//           RealType ratio = Psi.ratio(W, iat);
+//           prob           = ratio * ratio;
+//         }
+//         if (prob >= std::numeric_limits<RealType>::epsilon() && RandomGen() < prob * std::exp(logGb - logGf))
+//         {
+//           moved = true;
+//           ++nAccept;
+//           Psi.acceptMove(W, iat);
+//           W.acceptMove(iat);
+//         }
+//         else
+//         {
+//           ++nReject;
+//           W.rejectMove(iat);
+//           Psi.rejectMove(iat);
+//         }
+//       }
+//     }
+//     Psi.completeUpdates();
+//   }
+//   W.donePbyP();
+//   myTimers[1]->stop();
+//   myTimers[0]->start();
+//   RealType logpsi = Psi.updateBuffer(W, w_buffer, recompute);
+//   W.saveWalker(thisWalker);
+//   myTimers[0]->stop();
+//   // end PbyP moves
+//   myTimers[2]->start();
+//   FullPrecRealType eloc = H.evaluate(W);
+//   thisWalker.resetProperty(logpsi, Psi.getPhase(), eloc);
+//   myTimers[2]->stop();
+//   myTimers[3]->start();
+//   H.auxHevaluate(W, thisWalker);
+//   H.saveProperty(thisWalker.getPropertyBase());
+//   myTimers[3]->stop();
+// #if !defined(REMOVE_TRACEMANAGER)
+//   Traces->buffer_sample(W.current_step);
+// #endif
+//   if (!moved)
+//     ++nAllRejected;
+  
+}
+
+/** Thread body for VMC block
+ *
+ *  Things to consider:
+ *  - should qmcdriver_input be a copy local to the core in Crowd
+ */
+void VMCBatched::runVMCStep(int crowd_id,
+                            const QMCDriverInput& qmcdriver_input,
+                            const StateForThreads vmc_state,
+                            std::vector<std::unique_ptr<MoveContext>>& move_context,
+                            std::vector<Crowd>& crowds)
 {
   int nAccept              = 0;
   int nReject              = 0;
@@ -77,23 +179,21 @@ void VMCBatched::runVMCBlock(int crowd_id,
 
   Crowd& crowd = crowds[crowd_id];
   crowd.startBlock(qmcdriver_input.get_max_steps());
-
-
-  //Is there any rebalance per block with VMC?  I don't think so.
-  //Therefore there is no need to return to a global population
-
-  // MCWalkerConfiguration::iterator wit(W.begin() + wPerNode[crowd_id]), wit_end(W.begin() + wPerNode[crowd_id + 1]);
-  //     Movers[crowd_id]->startBlock(nSteps);
-  //     int now_loc    = CurrentStep;
-  //     RealType cnorm = 1.0 / static_cast<RealType>(wPerNode[crowd_id + 1] - wPerNode[crowd_id]);
-  //     for (int step = 0; step < nSteps; ++step)
-  //     {
-  //       // Why?
-  //       Movers[crowd_id]->set_step(now_loc);
-  //       //collectables are reset, it is accumulated while advancing walkers
-  //       wClones[crowd_id]->resetCollectables();
-  //       bool recompute = (nBlocksBetweenRecompute && (step + 1) == nSteps && (1 + block) % nBlocksBetweenRecompute == 0 &&
-  //                         QMCDriverMode[QMC_UPDATE_MODE]);
+  
+  int max_steps = qmcdriver_input.get_max_steps();
+  bool is_recompute_block = vmc_state.recomputing_blocks ? (1 + vmc_state.block) % qmcdriver_input.get_blocks_between_recompute() == 0 : false;
+  RealType cnorm = 1.0 / static_cast<RealType>(crowd.size());
+  IndexType step = vmc_state.step;
+  // Are we entering the the last step of a block to recompute at?
+  bool recompute_this_step = (is_recompute_block && (step + 1) == max_steps );
+  auto it_walkers = crowd.beginWalkers();
+  auto walkers_end = crowd.endWalkers();
+  while( it_walkers != walkers_end )
+  {
+    advanceWalker(*it_walkers, *move_context[crowd_id], recompute_this_step);
+    ++it_walkers;
+  }
+  
   //       Movers[crowd_id]->advanceWalkers(wit, wit_end, recompute);
   //       if (has_collectables)
   //         wClones[crowd_id]->Collectables *= cnorm;
@@ -155,11 +255,16 @@ bool VMCBatched::run()
     vmc_loop.start();
     vmc_state.recalculate_properties_period =
         (qmc_driver_mode_[QMC_UPDATE_MODE]) ? qmcdriver_input_.get_recalculate_properties_period() : 0;
+    vmc_state.recomputing_blocks = qmcdriver_input_.get_blocks_between_recompute();
 
     estimator_manager_->startBlock(qmcdriver_input_.get_max_steps());
 
-    TasksOneToOne<> crowd_task(num_crowds_);
-    crowd_task(runVMCBlock, qmcdriver_input_, vmc_state, crowds_);
+    for(int step = 0; step < qmcdriver_input_.get_max_steps(); ++step)
+    {
+      vmc_state.step =  step;
+      TasksOneToOne<> crowd_task(num_crowds_);
+      crowd_task(runVMCStep, std::cref(qmcdriver_input_), vmc_state, std::ref(move_contexts_), std::ref(crowds_));
+    }
   }
 
   //   } //block

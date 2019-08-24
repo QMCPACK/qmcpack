@@ -36,6 +36,8 @@
 #include "QMCDrivers/SimpleFixedNodeBranch.h"
 #include "QMCDrivers/BranchIO.h"
 #include "QMCDrivers/QMCDriverInput.h"
+#include "Particle/MoveContext.h"
+
 class Communicate;
 
 namespace qmcplusplus
@@ -122,6 +124,8 @@ public:
    */
   void add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi);
 
+  void createMoveContexts();
+  
   void setupWalkers();
 
   void putWalkers(std::vector<xmlNodePtr>& wset);
@@ -247,7 +251,10 @@ protected:
   ///record engine for walkers
   HDFWalkerOutput* wOut;
 
-
+  /** Per crowd move contexts, this is where the DistanceTables etc. reside
+   */
+  std::vector<std::unique_ptr<MoveContext>> move_contexts_;
+  
   ///a list of TrialWaveFunctions for multiple method
   std::vector<TrialWaveFunction*> Psi1;
 

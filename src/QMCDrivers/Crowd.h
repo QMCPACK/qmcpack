@@ -22,6 +22,7 @@ namespace qmcplusplus
 /** Driver synchronized step context
  * 
  *  assumed to live inside the drivers scope
+ *  TODO: Construct and initialize in thread execution space
  */
 class Crowd
 {
@@ -29,12 +30,6 @@ public:
   using MCPWalker = MCPopulation::MCPWalker;
   /** This is the data structure for walkers within a crowd
    */
-  struct Walkers
-  {
-  public:
-    int live;
-  };
-
   Crowd(EstimatorManagerBase emb) : estimator_manager_(emb) {}
   
   void startRun()
@@ -48,10 +43,15 @@ public:
   }
 
   void addWalker(MCPWalker& walker) { mcp_walkers_.push_back(walker); };
+
+  auto
+  beginWalkers() { return mcp_walkers_.begin(); }
+  auto
+  endWalkers() { return mcp_walkers_.end(); }
+
+  int size() const { return mcp_walkers_.size(); }
 private:
-  Walkers walkers_;
   std::vector<std::reference_wrapper<MCPWalker>> mcp_walkers_;
-  
   EstimatorManagerCrowd estimator_manager_;
 public:
 };
