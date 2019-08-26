@@ -213,7 +213,6 @@ ENDIF()
     Particle/ParticleSet.BC.cpp 
     Particle/MCWalkerConfiguration.cpp 
     Particle/MCPopulation.cpp
-    Particle/MoveContext.cpp
     Particle/createDistanceTableAA.cpp
     Particle/createDistanceTableAB.cpp
     Particle/HDFWalkerInputManager.cpp
