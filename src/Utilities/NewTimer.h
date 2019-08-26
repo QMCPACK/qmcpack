@@ -140,7 +140,7 @@ protected:
   std::map<timer_id_t, std::string> timer_id_name;
   std::map<std::string, timer_id_t> timer_name_to_id;
 
-  void addTimer(NewTimer* t);
+  void initializeTimer(NewTimer* t);
 
 public:
 #ifdef USE_VTUNE_TASKS

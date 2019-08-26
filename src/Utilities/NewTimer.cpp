@@ -30,7 +30,7 @@ TimerManagerClass TimerManager;
 
 bool timer_max_level_exceeded = false;
 
-void TimerManagerClass::addTimer(NewTimer* t)
+void TimerManagerClass::initializeTimer(NewTimer* t)
 {
   {
     if (t->get_name().find(TIMER_STACK_SEPARATOR) != std::string::npos)
@@ -72,7 +72,7 @@ NewTimer* TimerManagerClass::createTimer(const std::string& myname, timer_levels
   {
     TimerList.push_back(std::make_unique<NewTimer>(myname, mytimer));
     t = TimerList.back().get();
-    addTimer(t);
+    initializeTimer(t);
   }
   return t;
 }
