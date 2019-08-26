@@ -149,10 +149,10 @@ public:
   ///set global offsets of the walkers
   void setWalkerOffsets();
 
-  //virtual std::vector<RandomGenerator_t*>& getRng() {}
+  inline std::vector<RandomGenerator_t*>& getRng() { return RngCompatibility; }
 
-  ///return the random generators
-  inline std::vector<RandomGenerator_t*>& getRng() { return Rng; }
+  // ///return the random generators
+  //       inline std::vector<std::unique_ptr RandomGenerator_t*>& getRng() { return Rng; }
 
   ///return the i-th random generator
   inline RandomGenerator_t& getRng(int i) { return (*Rng[i]); }
@@ -262,7 +262,7 @@ protected:
   std::vector<QMCHamiltonian*> H1;
 
   ///Random number generators
-  std::vector<RandomGenerator_t*> Rng;
+  std::vector<std::unique_ptr<RandomGenerator_t>> Rng;
 
   ///a list of mcwalkerset element
   std::vector<xmlNodePtr> mcwalkerNodePtr;
@@ -303,6 +303,8 @@ protected:
   // int check_point_period_;
 
   /** }@ */
+
+        std::vector<RandomGenerator_t*> RngCompatibility;
 public:
   ///Copy Constructor (disabled).
   QMCDriverNew(const QMCDriverNew&) = delete;

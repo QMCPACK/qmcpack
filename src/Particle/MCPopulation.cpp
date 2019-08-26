@@ -11,6 +11,14 @@ MCPopulation::MCPopulation(MCWalkerConfiguration& mcwc)
   num_global_walkers_ = mcwc.GlobalNumWalkers;
   num_local_walkers_  = mcwc.LocalNumWalkers;
   num_particles_      = mcwc.getParticleNum();
+  // MCWalkerConfiguration doesn't give actual number of groups
+  num_groups_         = mcwc.groups() + 1;
+  particle_group_indexes_.resize(num_groups_);
+  for(int i = 0; i < num_groups_; ++i)
+  {
+    particle_group_indexes_[i].first = mcwc.first(i);
+    particle_group_indexes_[i].second = mcwc.last(i);
+  }
 }
 
 /** Default creates walkers equal to num_local_walkers_ and zeroed positions

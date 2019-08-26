@@ -38,6 +38,7 @@ private:
   IndexType num_global_walkers_ = 0;
   IndexType num_local_walkers_  = 0;
   IndexType num_particles_      = 0;
+  IndexType num_groups_         = 0;
   IndexType max_samples_        = 0;
   IndexType target_population_  = 0;
   IndexType target_samples_     = 0;
@@ -46,7 +47,7 @@ private:
   std::vector<IndexType> walker_offsets_;
   // By making this a linked list and creating the crowds at the same time we could get first touch.
   std::vector<std::unique_ptr<MCPWalker>> walkers_;
-
+  std::vector<std::pair<int,int>> particle_group_indexes_;
 public:
   MCPopulation(){};
   MCPopulation(int num_ranks) : num_ranks_(num_ranks) {}
@@ -107,6 +108,8 @@ public:
     void set_target_samples(IndexType samples) { target_samples_ = samples; }
 
     std::vector<std::unique_ptr<MCPWalker>>& get_walkers() { return walkers_; }
+    const std::vector<std::pair<int,int>>& get_particle_group_indexes() const { return particle_group_indexes_; }
+
     /** }@ */
   };
 

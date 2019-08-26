@@ -46,7 +46,7 @@ public:
 
   bool run();
 
-  static void advanceWalker(MCPWalker& walker, MoveContext& move_context, bool recompute);
+  static void advanceWalkers(Crowd& crowd, MoveContext& move_context, bool recompute);
   // This is the task body executed at crowd scope
   // it does not have access to object member variables by design
   static void runVMCStep(int crowd_id,

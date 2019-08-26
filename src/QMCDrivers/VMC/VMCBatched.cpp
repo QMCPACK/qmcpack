@@ -15,6 +15,7 @@
 #include "Concurrency/TasksOneToOne.hpp"
 #include "Concurrency/Info.hpp"
 #include "Utilities/RunTimeManager.h"
+#include "ParticleBase/RandomSeqGenerator.h"
 
 namespace qmcplusplus
 {
@@ -64,24 +65,26 @@ VMCBatched::IndexType VMCBatched::calc_default_local_walkers()
   return local_walkers;
 }
 
-void VMCBatched::advanceWalker(MCPWalker& walker, MoveContext& move_context, bool recompute)
+void VMCBatched::advanceWalkers(Crowd& crowd, MoveContext& move_context, bool recompute)
 {
-  move_context.loadWalker(walker);
+  move_context.loadCrowd(crowd);
 //   Walker_t::WFBuffer_t& w_buffer(thisWalker.DataSet);
 //   Psi.copyFromBuffer(W, w_buffer);
 //   myTimers[0]->stop();
-
+  
 //   // start PbyP moves
 //   myTimers[1]->start();
-//   bool moved = false;
-//   constexpr RealType mhalf(-0.5);
+
+  bool moved = false;
+  constexpr RealType mhalf(-0.5);
 //   for (int iter = 0; iter < nSubSteps; ++iter)
 //   {
 //     //create a 3N-Dimensional Gaussian with variance=1
-//     makeGaussRandomWithEngine(deltaR, RandomGen);
-//     moved = false;
-//     for (int ig = 0; ig < W.groups(); ++ig) //loop over species
-//     {
+
+
+  // up and down electrons are "species" within qmpack
+  for (int ig = 0; ig < move_context.get_num_groups(); ++ig) //loop over species
+  {}
 //       RealType tauovermass = Tau * MassInvS[ig];
 //       RealType oneover2tau = 0.5 / (tauovermass);
 //       RealType sqrttau     = std::sqrt(tauovermass);
@@ -186,13 +189,7 @@ void VMCBatched::runVMCStep(int crowd_id,
   IndexType step = vmc_state.step;
   // Are we entering the the last step of a block to recompute at?
   bool recompute_this_step = (is_recompute_block && (step + 1) == max_steps );
-  auto it_walkers = crowd.beginWalkers();
-  auto walkers_end = crowd.endWalkers();
-  while( it_walkers != walkers_end )
-  {
-    advanceWalker(*it_walkers, *move_context[crowd_id], recompute_this_step);
-    ++it_walkers;
-  }
+  advanceWalkers(crowd, *move_context[crowd_id], recompute_this_step);
   
   //       Movers[crowd_id]->advanceWalkers(wit, wit_end, recompute);
   //       if (has_collectables)
