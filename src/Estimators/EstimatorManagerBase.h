@@ -202,6 +202,7 @@ public:
   }
 
 protected:
+  friend class EstimatorManagerCrowd;
   //  TODO: fix needless use of bitset instead of clearer more visible booleans
   std::bitset<8> Options;
   ///size of the message buffer

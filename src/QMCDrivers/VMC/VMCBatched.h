@@ -16,7 +16,7 @@
 #include "QMCDrivers/QMCDriverNew.h"
 #include "QMCDrivers/VMC/VMCDriverInput.h"
 #include "Particle/MCPopulation.h"
-#include "Particle/MoveContext.h"
+#include "QMCDrivers/MoveContext.h"
 
 namespace qmcplusplus
 {

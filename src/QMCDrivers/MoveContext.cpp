@@ -10,7 +10,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 #include <type_traits>
-#include "Particle/MoveContext.h"
+#include "QMCDrivers/MoveContext.h"
 #include "Particle/MCPopulation.h"
 
 namespace qmcplusplus

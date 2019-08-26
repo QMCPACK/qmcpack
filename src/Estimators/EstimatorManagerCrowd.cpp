@@ -9,20 +9,19 @@
 // File refactored from: EstimatorManagerBase.cpp
 //////////////////////////////////////////////////////////////////////////////////////
 
-#include "EstimatorManagerCrowd.h"
+#include "Estimators/EstimatorManagerCrowd.h"
+#include "Estimators/CollectablesEstimator.h"
 
-namespace qmmcplusplus
+namespace qmcplusplus
 {
 
 EstimatorManagerCrowd::EstimatorManagerCrowd(EstimatorManagerBase& em)
     : RecordCount(0),
-      h_file(-1),
       FieldWidth(20),
       MainEstimatorName(em.MainEstimatorName),
       Options(em.Options),
       Archive(0),
       DebugArchive(0),
-      myComm(0),
       MainEstimator(0),
       Collectables(0),
       EstimatorMap(em.EstimatorMap),
@@ -30,9 +29,9 @@ EstimatorManagerCrowd::EstimatorManagerCrowd(EstimatorManagerBase& em)
 {
   // For now I'm going to try to refactor away the clone pattern only at the manager level.
   // i.e. not continue into the scalar_estimators and collectables
-  for (int i = 0; i < em.scalar_estimators_.size(); i++)
+  for (int i = 0; i < em.Estimators.size(); i++)
     scalar_estimators_.push_back(em.Estimators[i]->clone());
-  MainEstimator = Estimators[EstimatorMap[MainEstimatorName]];
+  MainEstimator = scalar_estimators_[EstimatorMap[MainEstimatorName]];
   if (em.Collectables)
     Collectables = em.Collectables->clone();
 }

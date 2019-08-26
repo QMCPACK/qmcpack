@@ -36,7 +36,7 @@
 #include "QMCDrivers/SimpleFixedNodeBranch.h"
 #include "QMCDrivers/BranchIO.h"
 #include "QMCDrivers/QMCDriverInput.h"
-#include "Particle/MoveContext.h"
+#include "QMCDrivers/MoveContext.h"
 
 class Communicate;
 

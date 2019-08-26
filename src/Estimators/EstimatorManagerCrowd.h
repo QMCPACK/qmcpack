@@ -12,15 +12,17 @@
 #ifndef QMCPLUSPLUS_ESTIMATORMANAGERCROWD_H
 #define QMCPLUSPLUS_ESTIMATORMANAGERCROWD_H
 
+#include <bitset>
+
 #include "Configuration.h"
 #include "Utilities/Timer.h"
 #include "Utilities/PooledData.h"
 #include "Message/Communicate.h"
 #include "Estimators/ScalarEstimatorBase.h"
+#include "Estimators/EstimatorManagerBase.h"
 #include "Estimators/EstimatorManagerInterface.h"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsData/HDFAttribIO.h"
-#include <bitset>
 
 namespace qmcplusplus
 {
@@ -154,5 +156,7 @@ private:
   void addHeader(std::ostream& o);
   size_t FieldWidth;
 };
+
 } // namespace qmcplusplus
+
 #endif

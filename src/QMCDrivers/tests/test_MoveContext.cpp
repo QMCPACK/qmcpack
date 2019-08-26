@@ -12,16 +12,16 @@
 #include "catch.hpp"
 
 #include "Configuration.h"
-#include "Particle/MoveContext"
+#include "QMCDrivers/MoveContext.h"
 
 namespace qmcplusplus
 {
-using Walker = Walker<QMCTraits, PtclOnLatticeTraits>;
+using WalkerHere = Walker<QMCTraits, PtclOnLatticeTraits>;
 
 TEST_CASE("MoveContext::loadWalker", "[particle]")
 {
-  Walker walker(1);
-  Walker.R[0] = TinyVector<double, 3>(1.0, 0.0, 0.0);
+  WalkerHere walker(1);
+  walker.R[0] = TinyVector<double, 3>(1.0, 0.0, 0.0);
   MoveContext move_context;
 
   move_context.loadWalker(walker);

@@ -62,6 +62,7 @@ SET(QMCDRIVERS
   ../Estimators/LocalEnergyEstimator.cpp
   ../Estimators/RMCLocalEnergyEstimator.cpp
   ../Estimators/EstimatorManagerBase.cpp
+  ../Estimators/EstimatorManagerCrowd.cpp
   ../Estimators/CollectablesEstimator.cpp
 )
 
