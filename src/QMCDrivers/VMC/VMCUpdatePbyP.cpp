@@ -26,40 +26,29 @@ typedef int TraceManager;
 
 namespace qmcplusplus
 {
-enum VMCTimers
-{
-  VMC_buffer,
-  VMC_movePbyP,
-  VMC_hamiltonian,
-  VMC_collectables
-};
-
-TimerNameList_t<VMCTimers> VMCTimerNames = {
-    {VMC_buffer, "VMCUpdatePbyP::Buffer"},            //timer for MC, ratio etc
-    {VMC_movePbyP, "VMCUpdatePbyP::MovePbyP"},        //timer for MC, ratio etc
-    {VMC_hamiltonian, "VMCUpdatePbyP::Hamiltonian"},  //timer for Hamiltonian
-    {VMC_collectables, "VMCUpdatePbyP::Collectables"} //timer for measurements
-};
 
 /// Constructor
 VMCUpdatePbyP::VMCUpdatePbyP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator_t& rg)
-    : QMCUpdateBase(w, psi, h, rg)
+    : QMCUpdateBase(w, psi, h, rg),
+      buffer_timer_(*TimerManager.createTimer("VMCUpdatePbyP::Buffer",timer_level_medium)),
+      movepbyp_timer_(*TimerManager.createTimer("VMCUpdatePbyP::MovePbyP",timer_level_medium)),
+      hamiltonian_timer_(*TimerManager.createTimer("VMCUpdatePbyP::Hamiltonian",timer_level_medium)),
+      collectables_timer_(*TimerManager.createTimer("VMCUpdatePbyP::Collectables",timer_level_medium))
 {
-  setup_timers(myTimers, VMCTimerNames, timer_level_medium);
 }
 
 VMCUpdatePbyP::~VMCUpdatePbyP() {}
 
 void VMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
 {
-  myTimers[VMC_buffer]->start();
+  buffer_timer_.start();
   W.loadWalker(thisWalker, true);
   Walker_t::WFBuffer_t& w_buffer(thisWalker.DataSet);
   Psi.copyFromBuffer(W, w_buffer);
-  myTimers[VMC_buffer]->stop();
+  buffer_timer_.stop();
 
   // start PbyP moves
-  myTimers[VMC_movePbyP]->start();
+  movepbyp_timer_.start();
   bool moved = false;
   constexpr RealType mhalf(-0.5);
   for (int iter = 0; iter < nSubSteps; ++iter)
@@ -125,20 +114,20 @@ void VMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
     Psi.completeUpdates();
   }
   W.donePbyP();
-  myTimers[VMC_movePbyP]->stop();
-  myTimers[VMC_buffer]->start();
+  movepbyp_timer_.stop();
+  buffer_timer_.start();
   RealType logpsi = Psi.updateBuffer(W, w_buffer, recompute);
   W.saveWalker(thisWalker);
-  myTimers[VMC_buffer]->stop();
+  buffer_timer_.stop();
   // end PbyP moves
-  myTimers[VMC_hamiltonian]->start();
+  hamiltonian_timer_.start();
   FullPrecRealType eloc = H.evaluate(W);
   thisWalker.resetProperty(logpsi, Psi.getPhase(), eloc);
-  myTimers[VMC_hamiltonian]->stop();
-  myTimers[VMC_collectables]->start();
+  hamiltonian_timer_.stop();
+  collectables_timer_.start();
   H.auxHevaluate(W, thisWalker);
   H.saveProperty(thisWalker.getPropertyBase());
-  myTimers[VMC_collectables]->stop();
+  collectables_timer_.stop();
 #if !defined(REMOVE_TRACEMANAGER)
   Traces->buffer_sample(W.current_step);
 #endif

@@ -192,7 +192,9 @@ public:
   void generateSamples();
 
   virtual QMCRunType getRunType() { return QMCRunType::LINEAR_OPTIMIZE; }
-  TimerList_t myTimers;
+  NewTimer& generate_samples_timer_;
+  NewTimer& initialize_timer_;
+  NewTimer& eigenvalue_timer_;
   Timer t1;
 };
 } // namespace qmcplusplus

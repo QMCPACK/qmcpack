@@ -59,7 +59,10 @@ private:
   bool scaleDrift;
   IndexType actionType;
 
-  TimerList_t myTimers;
+  NewTimer& advance_timer_;
+  NewTimer& movepbyp_timer_;
+  NewTimer& update_mbo_timer_;
+  NewTimer& energy_timer_;
 
   IndexType vmcSteps;
   IndexType equilSteps;
