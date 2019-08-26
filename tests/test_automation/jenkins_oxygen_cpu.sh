@@ -28,10 +28,10 @@ echo ""
 mkdir -p /dev/shm/${BUILD_TAG}-build
 cd /dev/shm/${BUILD_TAG}-build
 
-cmake -DQMC_COMPLEX=0 -DQMC_MIXED_PRECISION=0 -DENABLE_SOA=0 -DBUILD_AFQMC=1 -DCMAKE_C_COMPILER="mpicc" -DCMAKE_CXX_COMPILER="mpicxx" /dev/shm/${BUILD_TAG}-src 2>&1 | tee cmake.out
+time cmake -DQMC_COMPLEX=0 -DQMC_MIXED_PRECISION=0 -DENABLE_SOA=0 -DBUILD_AFQMC=1 -DCMAKE_C_COMPILER="mpicc" -DCMAKE_CXX_COMPILER="mpicxx" /dev/shm/${BUILD_TAG}-src 2>&1 | tee cmake.out
 
-make -j 8
-ctest -L unit --output-on-failure
+time make -j 4
+time ctest -L unit --output-on-failure
 
 ret=$?
 if [[ ${ret} -ne 0 ]] ; then
@@ -50,10 +50,10 @@ rm -rf ./${BUILD_TAG}-build
 mkdir -p ${BUILD_TAG}-build
 cd ${BUILD_TAG}-build
 
-cmake -DQMC_COMPLEX=0 -DQMC_MIXED_PRECISION=1 -DBUILD_AFQMC=1 -DCMAKE_C_COMPILER="mpicc" -DCMAKE_CXX_COMPILER="mpicxx" /dev/shm/${BUILD_TAG}-src 2>&1 | tee cmake.out
+time cmake -DQMC_COMPLEX=0 -DQMC_MIXED_PRECISION=1 -DBUILD_AFQMC=1 -DCMAKE_C_COMPILER="mpicc" -DCMAKE_CXX_COMPILER="mpicxx" /dev/shm/${BUILD_TAG}-src 2>&1 | tee cmake.out
 
-make -j 8
-ctest -L unit --output-on-failure
+time make -j 4
+time ctest -L unit --output-on-failure
 
 ret=$?
 if [[ ${ret} -ne 0 ]] ; then
@@ -72,10 +72,10 @@ rm -rf ./${BUILD_TAG}-build
 mkdir -p ${BUILD_TAG}-build
 cd ${BUILD_TAG}-build
 
-cmake -DQMC_COMPLEX=1 -DQMC_MIXED_PRECISION=0 -DENABLE_SOA=0 -DBUILD_AFQMC=1 -DCMAKE_C_COMPILER="mpicc" -DCMAKE_CXX_COMPILER="mpicxx" /dev/shm/${BUILD_TAG}-src 2>&1 | tee cmake.out
+time cmake -DQMC_COMPLEX=1 -DQMC_MIXED_PRECISION=0 -DENABLE_SOA=0 -DBUILD_AFQMC=1 -DCMAKE_C_COMPILER="mpicc" -DCMAKE_CXX_COMPILER="mpicxx" /dev/shm/${BUILD_TAG}-src 2>&1 | tee cmake.out
 
-make -j 8
-ctest -L unit --output-on-failure
+time make -j 4
+time ctest -L unit --output-on-failure
 
 ret=$?
 if [[ ${ret} -ne 0 ]] ; then
@@ -94,10 +94,10 @@ rm -rf ./${BUILD_TAG}-build
 mkdir -p ${BUILD_TAG}-build
 cd ${BUILD_TAG}-build
 
-cmake -DQMC_COMPLEX=1 -DQMC_MIXED_PRECISION=1 -DBUILD_AFQMC=1 -DCMAKE_C_COMPILER="mpicc" -DCMAKE_CXX_COMPILER="mpicxx" /dev/shm/${BUILD_TAG}-src 2>&1 | tee cmake.out
+time cmake -DQMC_COMPLEX=1 -DQMC_MIXED_PRECISION=1 -DBUILD_AFQMC=1 -DCMAKE_C_COMPILER="mpicc" -DCMAKE_CXX_COMPILER="mpicxx" /dev/shm/${BUILD_TAG}-src 2>&1 | tee cmake.out
 
-make -j 8
-ctest -L unit --output-on-failure
+time make -j 4
+time ctest -L unit --output-on-failure
 
 ret=$?
 if [[ ${ret} -ne 0 ]] ; then

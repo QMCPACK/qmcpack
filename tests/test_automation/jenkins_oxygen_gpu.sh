@@ -31,8 +31,8 @@ cd /dev/shm/${BUILD_TAG}-build
 
 time cmake -DQMC_COMPLEX=0 -DQMC_MIXED_PRECISION=0 -DENABLE_SOA=0 -DCMAKE_C_COMPILER="mpicc" -DCMAKE_CXX_COMPILER="mpicxx" -DQMC_CUDA=1 /dev/shm/${BUILD_TAG}-src 2>&1 | tee cmake.out
 
-make -j 8
-ctest -L unit --output-on-failure
+time make -j 4
+time ctest -L unit --output-on-failure
 
 ret=$?
 if [[ ${ret} -ne 0 ]] ; then
@@ -53,8 +53,8 @@ cd ${BUILD_TAG}-build
 
 time cmake -DQMC_COMPLEX=0 -DQMC_MIXED_PRECISION=1 -DCMAKE_C_COMPILER="mpicc" -DCMAKE_CXX_COMPILER="mpicxx" -DQMC_CUDA=1 /dev/shm/${BUILD_TAG}-src 2>&1 | tee cmake.out
 
-make -j 8
-ctest -L unit --output-on-failure
+time make -j 4
+time ctest -L unit --output-on-failure
 
 ret=$?
 if [[ ${ret} -ne 0 ]] ; then
@@ -75,8 +75,8 @@ cd ${BUILD_TAG}-build
 
 time cmake -DQMC_COMPLEX=1 -DQMC_MIXED_PRECISION=0 -DENABLE_SOA=0 -DCMAKE_C_COMPILER="mpicc" -DCMAKE_CXX_COMPILER="mpicxx" -DQMC_CUDA=1 /dev/shm/${BUILD_TAG}-src 2>&1 | tee cmake.out
 
-make -j 8
-ctest -L unit --output-on-failure
+time make -j 4
+time ctest -L unit --output-on-failure
 
 ret=$?
 if [[ ${ret} -ne 0 ]] ; then
@@ -97,8 +97,8 @@ cd ${BUILD_TAG}-build
 
 time cmake -DQMC_COMPLEX=1 -DQMC_MIXED_PRECISION=1 -DCMAKE_C_COMPILER="mpicc" -DCMAKE_CXX_COMPILER="mpicxx" -DQMC_CUDA=1 /dev/shm/${BUILD_TAG}-src 2>&1 | tee cmake.out
 
-make -j 8
-ctest -L unit --output-on-failure
+time make -j 4
+time ctest -L unit --output-on-failure
 
 ret=$?
 if [[ ${ret} -ne 0 ]] ; then
