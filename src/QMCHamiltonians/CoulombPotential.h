@@ -166,7 +166,6 @@ struct CoulombPotential : public QMCHamiltonianBase, public ForceBase
   inline void evaluateAAForces(const DistanceTableData& d, const ParticleScalar_t* restrict Z)
   {
     forces = 0.0;
-    GradType forcetmp = 0.0;
     if (d.DTType == DT_SOA)
     {
       for (size_t iat = 1; iat < nCenters; ++iat)
@@ -175,9 +174,8 @@ struct CoulombPotential : public QMCHamiltonianBase, public ForceBase
         T q                           = Z[iat];
         for (size_t j = 0; j < iat; ++j)
         {
-          forcetmp     = -q * Z[j] * d.Displacements[iat][j] / dist[j] / dist[j] / dist[j];
-	  forces[iat] += forcetmp;
-	  forces[j]   -= forcetmp;
+          forces[iat] += -q * Z[j] * d.Displacements[iat][j] / dist[j] / dist[j] / dist[j];;
+          forces[j]   -= -q * Z[j] * d.Displacements[iat][j] / dist[j] / dist[j] / dist[j];
         }
       }
     }
@@ -190,9 +188,8 @@ struct CoulombPotential : public QMCHamiltonianBase, public ForceBase
         T q = Z[iat];
         for (int nn = M[iat]; nn < M[iat + 1]; ++nn)
         {
-          forcetmp     = q * Z[J[nn]] * d.dr(nn) * d.rinv(nn) * d.rinv(nn) * d.rinv(nn);
-	  forces[iat] += forcetmp;
-	  forces[nn]  -= forcetmp;
+          forces[iat] += -q * Z[J[nn]] * d.dr(nn) * d.rinv(nn) * d.rinv(nn) * d.rinv(nn);
+          forces[nn]  -= -q * Z[J[nn]] * d.dr(nn) * d.rinv(nn) * d.rinv(nn) * d.rinv(nn);
         }
       }
     }
