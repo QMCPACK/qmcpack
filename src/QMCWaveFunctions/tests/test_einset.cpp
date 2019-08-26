@@ -22,7 +22,7 @@
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCWaveFunctions/EinsplineSetBuilder.h"
-
+#include "QMCWaveFunctions/EinsplineSpinorSetBuilder.h"
 
 #include <stdio.h>
 #include <string>
@@ -297,4 +297,96 @@ TEST_CASE("EinsplineSetBuilder CheckLattice", "[wavefunction]")
   esb.SuperLattice(0, 0) = 1.1;
   REQUIRE_FALSE(esb.CheckLattice());
 }
+
+//Now we test the spinor sets.
+
+TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
+{
+  Communicate* c;
+  OHMMS::Controller->initialize(0, NULL);
+  c = OHMMS::Controller;
+
+  ParticleSet ions_;
+  ParticleSet elec_;
+
+  ions_.setName("ion");
+  ions_.create(2);
+  ions_.R[0][0] = 0.0;
+  ions_.R[0][1] = 0.0;
+  ions_.R[0][2] = 0.0;
+  ions_.R[1][0] = 1.68658058;
+  ions_.R[1][1] = 1.68658058;
+  ions_.R[1][2] = 1.68658058;
+
+
+  elec_.setName("elec");
+  elec_.create(2);
+  elec_.R[0][0] = 0.00;
+  elec_.R[0][1] = 0.0;
+  elec_.R[0][2] = 0.0;
+  elec_.R[1][0] = 0.0;
+  elec_.R[1][1] = 1.0;
+  elec_.R[1][2] = 0.0;
+
+  // diamondC_1x1x1
+  elec_.Lattice.R(0, 0) = 3.37316115;
+  elec_.Lattice.R(0, 1) = 3.37316115;
+  elec_.Lattice.R(0, 2) = 0.0;
+  elec_.Lattice.R(1, 0) = 0.0;
+  elec_.Lattice.R(1, 1) = 3.37316115;
+  elec_.Lattice.R(1, 2) = 3.37316115;
+  elec_.Lattice.R(2, 0) = 3.37316115;
+  elec_.Lattice.R(2, 1) = 0.0;
+  elec_.Lattice.R(2, 2) = 3.37316115;
+
+  SpeciesSet& tspecies         = elec_.getSpeciesSet();
+  int upIdx                    = tspecies.addSpecies("u");
+  int downIdx                  = tspecies.addSpecies("d");
+  int chargeIdx                = tspecies.addAttribute("charge");
+  tspecies(chargeIdx, upIdx)   = -1;
+  tspecies(chargeIdx, downIdx) = -1;
+
+#ifdef ENABLE_SOA
+  elec_.addTable(ions_, DT_SOA);
+#else
+  elec_.addTable(ions_, DT_AOS);
+#endif
+  elec_.resetGroups();
+  elec_.update();
+
+
+  TrialWaveFunction psi = TrialWaveFunction(c);
+  // Need 1 electron and 1 proton, somehow
+  //ParticleSet target = ParticleSet();
+  ParticleSetPool ptcl = ParticleSetPool(c);
+  ptcl.addParticleSet(&elec_);
+  ptcl.addParticleSet(&ions_);
+
+  //diamondC_1x1x1
+
+  const char* particles = "<tmp> \
+   <sposet_builder name=\"A\" type=\"bspline\" href=\"pwscf.pwscf.h5\" tilematrix=\"1 0 0 0 1 0 0 0 1\" twistnum=\"0\" source=\"ion0\"> \
+     <spinorset name=\"myspo\" size=\"8\"> \
+       <occupation mode=\"ground\"/> \
+     </spinorset> \
+   </sposet_builder> \
+   </tmp> \
+";
+
+  Libxml2Document doc;
+  bool okay = doc.parseFromString(particles);
+  REQUIRE(okay);
+
+  xmlNodePtr root = doc.getRoot();
+
+  xmlNodePtr ein1 = xmlFirstElementChild(root);
+
+  EinsplineSpinorSetBuilder einSet(elec_,ptcl.getPool(), c, ein1);
+ // EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, ein1);
+ // SPOSet* spo = einSet.createSPOSetFromXML(ein1);
+ // REQUIRE(spo != NULL);
+
+}
+
+
 } // namespace qmcplusplus
