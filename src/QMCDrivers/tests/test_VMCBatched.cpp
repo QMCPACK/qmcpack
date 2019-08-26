@@ -18,6 +18,7 @@
 #include "QMCApp/tests/MinimalParticlePool.h"
 #include "QMCApp/tests/MinimalWaveFunctionPool.h"
 #include "QMCApp/tests/MinimalHamiltonianPool.h"
+#include "Concurrency/Info.hpp"
 
 namespace qmcplusplus
 {
@@ -43,6 +44,9 @@ TEST_CASE("VMCBatched::calc_default_local_walkers", "[drivers]")
 
   int num_ranks  = 4;
   int num_crowds = 8;
+  if (Concurrency::maxThreads<>() < 8)
+    num_crowds = Concurrency::maxThreads<>();
+
   MCPopulation population(num_ranks);
 
   auto testWRTWalkersPerRank = [&](int walkers_per_rank) {
@@ -51,6 +55,8 @@ TEST_CASE("VMCBatched::calc_default_local_walkers", "[drivers]")
     VMCBatched vmc_batched(std::move(qmcdriver_copy), std::move(vmcdriver_input), population,
                            *(wavefunction_pool.getPrimary()), *(hamiltonian_pool.getPrimary()), wavefunction_pool,
                            comm);
+    if (num_crowds < 8)
+      vmc_batched.set_num_crowds(Concurrency::maxThreads(), "Insufficient threads available to match test input");
     VMCBatched::IndexType local_walkers       = vmc_batched.calc_default_local_walkers();
     QMCDriverNew::IndexType walkers_per_crowd = vmc_batched.get_walkers_per_crowd();
 

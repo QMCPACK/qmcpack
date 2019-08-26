@@ -297,6 +297,7 @@ public:
   void addWalkers(int nwalkers, const ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>& positions);
 
   int get_num_crowds() { return num_crowds_; }
+  void set_num_crowds(int num_crowds, const std::string& reason);
   /** record the state of the block
    * @param block current block
    *

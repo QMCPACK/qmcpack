@@ -166,6 +166,14 @@ void QMCDriverNew::setStatus(const std::string& aname, const std::string& h5name
     h5_file_root_ = h5name;
 }
 
+void QMCDriverNew::set_num_crowds(int num_crowds, const std::string& reason)
+{
+  num_crowds_ = num_crowds;
+  app_warning() << " [INPUT OVERIDDEN] The number of crowds has been set to :  " << num_crowds
+                << '\n';
+  app_warning() << " Overiding the input of value of " << qmcdriver_input_.get_num_crowds()
+                << " because " << reason << std::endl;
+}
 /** Read walker configurations from *.config.h5 files
  * @param wset list of xml elements containing mcwalkerset
  *
