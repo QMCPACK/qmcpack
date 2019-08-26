@@ -490,10 +490,15 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
     for (unsigned int j = 0; j < nknot; j++)
     {
       deltaV[j] = r * rrotsgrid_m[j] - dr;
+      //This sequence is necessary to update the distance tables and make the 
+      //inverse matrix available for force computation.  Move the particle to 
+      //quadrature point...
       W.makeMove(iel, deltaV[j]);
-      //"Accepting" moves is necessary because evalGradSource needs full distance tables
-      //for now.
+      psi.ratio(W,iel);
+      psi.acceptMove(W,iel);
       W.acceptMove(iel);
+      //Done with the move.  Ready for force computation.  
+    
       iongradtmp_ = psi.evalGradSource(W, ions, jat);
       iongradtmp_ *= psiratiofull_[j] * sgridweight_m[j];
 #ifdef QMC_COMPLEX
@@ -502,7 +507,10 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
       pulay_quad[j][jat] = iongradtmp_;
       //And move the particle back.
       deltaV[j] = dr - r * rrotsgrid_m[j];
+      
       W.makeMove(iel, deltaV[j]);
+      psi.ratio(W,iel);
+      psi.acceptMove(W,iel);
       W.acceptMove(iel);
     }
   }
