@@ -7,9 +7,9 @@ FUNCTION( ADD_TEST_LABELS TEST_NAME TEST_LABELS )
   IF( NOT ${SUCCESS} STREQUAL "0" )
     MESSAGE("Warning: test labeling failed.  Test labeling error output:\n${TEST_LABELS_TEMP}")
     SET(TEST_LABELS_TEMP "")
-  ELSE()
-    MESSAGE("  Test: ${TEST_NAME}")
-    MESSAGE("    ${TEST_LABELS_TEMP}")
+  #ELSE()
+  #  MESSAGE("  Test: ${TEST_NAME}")
+  #  MESSAGE("    ${TEST_LABELS_TEMP}")
   ENDIF()
   # Remove unstable label from direct execution.
   # It will still be added to statistical child tests.
