@@ -514,6 +514,9 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
       W.acceptMove(iel);
     }
   }
+  //It appears as though after doing this for all ion force components, calling evaluateOne() after gives a slightly
+  // incorrect value.  Recomputing the inverse matrix seems to help this.  
+  psi.evaluateLog(W);
 
   RealType pairpot = 0;
   // Compute spherical harmonics on grid
