@@ -264,6 +264,7 @@ public:
     return e.read(p, aname, readSpec);
   }
 
+/*
   template<typename T, typename IC>
   bool readEntry2(T& data, const IC& readSpec, const std::string& aname)
   {
@@ -274,11 +275,32 @@ public:
     std::vector<hsize_t> count(readSpec.size());
     int numElements;
     getOffsets(p, aname, readSpec, offset, count, numElements);
-/*
-    hyperslab_proxy<T,2> pxy(data, count, count, offset);
+    hyperslab_proxy<T,7> pxy(data, count, count, offset);
     return readEntry(pxy, aname);
- */
-    return true;
+  }
+*/
+
+  template<typename T, typename IT, unsigned DIM>
+  void readEntryHyperslabNew(T& data, const std::array<IT, DIM>& readSpec, const std::string& aname)
+  {
+    std::array<hsize_t, DIM> globals, counts, offsets;
+    for(int dim = 0; dim < DIM; dim++)
+    {
+      globals[dim] = 0;
+      if (readSpec[dim] < 0)
+      {
+        counts[dim] = 0;
+        offsets[dim] = 0;
+      }
+      else
+      {
+        counts[dim] = 1;
+        offsets[dim] = static_cast<hsize_t>(readSpec[dim]);
+      }
+    }
+
+    hyperslab_proxy<T, DIM> pxy(data, globals, counts, offsets);
+    return readEntry(pxy, aname);
   }
 
   /* read the data from the group aname and check status
@@ -312,6 +334,7 @@ public:
   }
 
   // new version that will use hyperslab rather than stl specific things
+/*
   template<typename T, typename IC>
   void read2(T& data, const IC& readSpec, const std::string& aname)
   {
@@ -320,7 +343,29 @@ public:
       std::runtime_error("HDF5 read failure in hdf_archive::read " + aname);
     }
   }
+*/
+  template<typename T, typename IT, std::size_t DIM>
+  void readHyperslabNew(T& data, const std::array<IT, DIM>& readSpec, const std::string& aname)
+  {
+    std::array<hsize_t, DIM> globals, counts, offsets;
+    for(int dim = 0; dim < DIM; dim++)
+    {
+      globals[dim] = 0;
+      if (readSpec[dim] < 0)
+      {
+        counts[dim] = 0;
+        offsets[dim] = 0;
+      }
+      else
+      {
+        counts[dim] = 1;
+        offsets[dim] = static_cast<hsize_t>(readSpec[dim]);
+      }
+    }
 
+    hyperslab_proxy<T, DIM> pxy(data, globals, counts, offsets);
+    read(pxy, aname);
+  }
 
   inline void unlink(const std::string& aname)
   {

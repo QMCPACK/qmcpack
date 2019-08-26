@@ -83,7 +83,7 @@ struct container_traits<Array<T, D>>
     if (d != DIM)
     {
       std::ostringstream err_msg;
-      err_msg << "Array<T, " + DIM + "> cannot be resized. Requested dimension = " << d << std::endl;
+      err_msg << "Array<T, " << DIM << "> cannot be resized. Requested dimension = " << d << std::endl;
       throw std::runtime_error(err_msg.str());
     }
     ref.resize(n);

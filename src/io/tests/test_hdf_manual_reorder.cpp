@@ -223,13 +223,11 @@ TEST_CASE("hdf_read_partial", "[hdf]")
     REQUIRE(outbuffer2(i, 0) == Approx(allData(i, 2)));
 
   // method 3 here
-  //  buftype sto(4);
-/*
   Matrix<double> locob1(1, 4);
   Matrix<double> locob2(3, 1);
   Matrix<double> locob3(1, 1);
-  TinyVector<int, 2> locReadSpec{1, -1};
-  hd2.read2(locob1, locReadSpec, "matrix");
+  std::array<int, 2> locReadSpec{1, -1};
+  hd2.readHyperslabNew(locob1, locReadSpec, "matrix");
   for (int i = 0; i < 4; i++)
   {
     REQUIRE(locob1(0, i) == Approx(allData(1, i)));
@@ -237,7 +235,7 @@ TEST_CASE("hdf_read_partial", "[hdf]")
 
   locReadSpec[0] = -1;
   locReadSpec[1] = 2;
-  hd2.read2(locob2, locReadSpec, "matrix");
+  hd2.readHyperslabNew(locob2, locReadSpec, "matrix");
   for (int i = 0; i < 3; i++)
   {
     REQUIRE(locob2.data()[i] == Approx(allData(i, 2)));
@@ -246,8 +244,7 @@ TEST_CASE("hdf_read_partial", "[hdf]")
 
   locReadSpec[0] = 2;
   locReadSpec[1] = 0;
-  hd2.read2(locob3, locReadSpec, "matrix");
+  hd2.readHyperslabNew(locob3, locReadSpec, "matrix");
   REQUIRE(locob3.data()[0] == Approx(allData(2, 0)));
-*/
   hd2.close();
 }
