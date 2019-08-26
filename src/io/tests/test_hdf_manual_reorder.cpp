@@ -170,10 +170,11 @@ TEST_CASE("hdf_read_partial", "[hdf]")
   Matrix<double> outbuffer1(1, 4);
   Matrix<double> outbuffer2(3, 1);
   Matrix<double> outbuffer3(1, 1);
+  Matrix<double> outbuffer4;
 
   std::array<int, 2> dims_unused;
-  dims_unused[0] = 1;
-  dims_unused[1] = 2;
+  dims_unused[0] = 3;
+  dims_unused[1] = 4;
   std::array<int, 2> dims_local;
   dims_local[0] = 1;
   dims_local[1] = 4;
@@ -195,9 +196,11 @@ TEST_CASE("hdf_read_partial", "[hdf]")
   hyperslab_proxy<Matrix<double>, 2> pxy2(outbuffer2, dims_unused, dims_local, offsets);
   hd2.read(pxy2, "matrix");
   for (int i = 0; i < 3; i++)
-  {
     REQUIRE(outbuffer2(i, 0) == Approx(allData(i, 2)));
-  }
+
+  // set dims_unused to sero and to be detect
+  dims_unused[0] = 0;
+  dims_unused[1] = 0;
 
   dims_local[0] = 1;
   dims_local[1] = 1;
@@ -206,6 +209,18 @@ TEST_CASE("hdf_read_partial", "[hdf]")
   hyperslab_proxy<Matrix<double>, 2> pxy3(outbuffer3, dims_unused, dims_local, offsets);
   hd2.read(pxy3, "matrix");
   REQUIRE(outbuffer3(0, 0) == Approx(allData(2, 0)));
+
+  // mostly the same as outbuffer2 but outbuffer4 resized by hyperslab_proxy
+  dims_local[0] = 3;
+  dims_local[1] = 1;
+  offsets[0]    = 0;
+  offsets[1]    = 2;
+  hyperslab_proxy<Matrix<double>, 2> pxy4(outbuffer4, dims_unused, dims_local, offsets);
+  hd2.read(pxy4, "matrix");
+  REQUIRE(outbuffer4.rows() == 3);
+  REQUIRE(outbuffer4.cols() == 1);
+  for (int i = 0; i < 3; i++)
+    REQUIRE(outbuffer2(i, 0) == Approx(allData(i, 2)));
 
   // method 3 here
   //  buftype sto(4);

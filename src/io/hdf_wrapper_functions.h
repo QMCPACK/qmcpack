@@ -67,8 +67,8 @@ inline bool get_space(hid_t grp, const std::string& aname, int rank, hsize_t* di
  * getDataShape<std::complex<double>> only returns the first 3 dimension
  * getDataShape<double> returns all the 3 dimension
  */
-template<typename T>
-inline bool getDataShape(hid_t grp, const std::string& aname, std::vector<int>& sizes_out)
+template<typename T, typename IT>
+inline bool getDataShape(hid_t grp, const std::string& aname, std::vector<IT>& sizes_out)
 {
   using TSpaceType = h5_space_type<T, 0>;
   TSpaceType TSpace;
@@ -105,7 +105,7 @@ inline bool getDataShape(hid_t grp, const std::string& aname, std::vector<int>& 
       // save the sizes of each directions excluding dimensions contributed by the data type
       sizes_out.resize(user_rank);
       for (int dim = 0; dim < user_rank; dim++)
-        sizes_out[dim] = sizes_in[dim];
+        sizes_out[dim] = static_cast<IT>(sizes_in[dim]);
     }
   }
 
