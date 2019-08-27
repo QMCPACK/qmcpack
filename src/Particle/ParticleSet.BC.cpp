@@ -204,22 +204,26 @@ void ParticleSet::applyBC(const ParticlePos_t& pin, ParticlePos_t& pout) { apply
 
 void ParticleSet::applyBC(const ParticlePos_t& pin, ParticlePos_t& pout, int first, int last)
 {
-  int mode              = static_cast<int>(pin.getUnit()) * 2 + static_cast<int>(pout.getUnit());
-  switch (mode)
+  if (pin.getUnit() == PosUnit::Cartesian)
   {
-  case (0):
-    ApplyBConds<ParticlePos_t, Tensor_t, DIM>::Cart2Cart(pin, Lattice.G, Lattice.R, pout, first, last);
-    break;
-  case (1):
-    ApplyBConds<ParticlePos_t, Tensor_t, DIM>::Cart2Unit(pin, Lattice.G, pout, first, last);
-    break;
-  case (2):
-    ApplyBConds<ParticlePos_t, Tensor_t, DIM>::Unit2Cart(pin, Lattice.R, pout, first, last);
-    break;
-  case (3):
-    ApplyBConds<ParticlePos_t, Tensor_t, DIM>::Unit2Unit(pin, pout, first, last);
-    break;
+    if (pout.getUnit() == PosUnit::Cartesian)
+      ApplyBConds<ParticlePos_t, Tensor_t, DIM>::Cart2Cart(pin, Lattice.G, Lattice.R, pout, first, last);
+    else if (pout.getUnit() == PosUnit::Lattice)
+      ApplyBConds<ParticlePos_t, Tensor_t, DIM>::Cart2Unit(pin, Lattice.G, pout, first, last);
+    else
+       throw std::runtime_error("Unknown unit conversion");
   }
+  else if (pin.getUnit() == PosUnit::Lattice)
+  {
+    if (pout.getUnit() == PosUnit::Cartesian)
+      ApplyBConds<ParticlePos_t, Tensor_t, DIM>::Unit2Cart(pin, Lattice.R, pout, first, last);
+    else if (pout.getUnit() == PosUnit::Lattice)
+      ApplyBConds<ParticlePos_t, Tensor_t, DIM>::Unit2Unit(pin, pout, first, last);
+    else
+       throw std::runtime_error("Unknown unit conversion");
+  }
+  else
+    throw std::runtime_error("Unknown unit conversion");
 }
 
 void ParticleSet::applyBC(ParticlePos_t& pos)
