@@ -96,8 +96,6 @@ struct DistanceTableData
   using ripair          = std::pair<RealType, IndexType>;
   using RowContainer    = VectorSoaContainer<RealType, DIM>;
 
-  ///type of cell
-  int CellType;
   ///Type of DT
   int DTType;
   ///size of indicies

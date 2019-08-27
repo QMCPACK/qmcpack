@@ -618,6 +618,7 @@ bool QMCMain::processPWH(xmlNodePtr cur)
 bool QMCMain::runQMC(xmlNodePtr cur, bool reuse)
 {
   std::unique_ptr<QMCDriverInterface> qmc_driver;
+  std::string prev_config_file = last_driver ? last_driver->get_root_name() : "";
   bool append_run = false;
 
   if (reuse)
@@ -637,13 +638,13 @@ bool QMCMain::runQMC(xmlNodePtr cur, bool reuse)
     //if it is NOT the first qmc node and qmc/@append!='yes'
     if (!FirstQMC && !append_run)
       myProject.advance();
-    qmc_driver->setStatus(myProject.CurrentMainRoot(), PrevConfigFile, append_run);
+    
+    qmc_driver->setStatus(myProject.CurrentMainRoot(), prev_config_file, append_run);
     // PD:
     // Q: How does m_walkerset_in end up being non empty?
     // A: Anytime that we aren't doing a restart.
     // So put walkers is an exceptional call. This code does not tell a useful
     // story of a QMCDriver's life.
-
     qmc_driver->putWalkers(m_walkerset_in);
 #if !defined(REMOVE_TRACEMANAGER)
     qmc_driver->putTraces(traces_xml);
@@ -657,8 +658,6 @@ bool QMCMain::runQMC(xmlNodePtr cur, bool reuse)
     qmc_driver->run();
     t1->stop();
     app_log() << "  QMC Execution time = " << std::setprecision(4) << qmcTimer.elapsed() << " secs" << std::endl;
-    //keeps track of the configuration file
-    PrevConfigFile = myProject.CurrentMainRoot();
     last_driver    = std::move(qmc_driver);
     return true;
   }
