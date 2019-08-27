@@ -51,14 +51,6 @@ public:
   //typedef Array<GradType,3>       GradArray_t;
   //typedef Array<PosType,3>        PosArray_t;
 
-  ///recasting enum of DistanceTableData to maintain consistency
-  enum
-  {
-    SourceIndex  = DistanceTableData::SourceIndex,
-    VisitorIndex = DistanceTableData::VisitorIndex,
-    WalkerIndex  = DistanceTableData::WalkerIndex
-  };
-
   /** enum for a update mode */
   enum
   {
