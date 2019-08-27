@@ -48,7 +48,7 @@ MultiArray2D getrf(MultiArray2D&& m, Array1D& pivot, Buffer&& WORK){
                 status,
                 pointer_dispatch(WORK.data())
         );
-        assert(status==0);
+        //assert(status==0); 
         return std::forward<MultiArray2D>(m);
 }
 
@@ -208,6 +208,39 @@ MultiArray2D potrf(MultiArray2D&& A) {
         if(INFO != 0) throw std::runtime_error(" error in ma::potrf: Error code != 0");
 }
 
+template<class MultiArray2D>
+int gesvd_optimal_workspace_size(MultiArray2D && A){
+        assert(A.stride(0) > 0);
+        assert(A.stride(1) == 1);
+
+        int res;
+        gesvd_bufferSize(A.size(1), A.size(0), pointer_dispatch(A.origin()), res);
+        return res;
+}
+
+template<class MultiArray2D, class Array1D, class MultiArray2DU, class MultiArray2DV, class Buffer, class RBuffer>
+MultiArray2D gesvd(char jobU, char jobVT, MultiArray2D&& A, Array1D&& S, MultiArray2DU&& U, MultiArray2DV&& VT, Buffer&& WORK, RBuffer&& RWORK){
+        assert(A.stride(1) > 0);
+        assert(A.stride(1) == 1);
+
+        // in C: A = U * S * VT
+        // in F: At = (U * S * VT)t = VTt * S * Ut 
+        // so I need to switch U <--> VT when calling fortran interface 
+        int status = -1;
+        gesvd(
+                jobVT, jobU, A.size(1), A.size(0),  
+                pointer_dispatch(A.origin()), A.stride(0), 
+                pointer_dispatch(S.origin()),
+                pointer_dispatch(VT.origin()), VT.stride(0),    // !!! 
+                pointer_dispatch(U.origin()), U.stride(0),      // !!!
+                pointer_dispatch(WORK.data()), WORK.size(),
+                pointer_dispatch(RWORK.origin()), 
+                status
+        );
+        assert(status==0);
+        return std::forward<MultiArray2D>(A);
+}
+
 template<class MultiArray1D,
          class MultiArray2D,
          typename = typename std::enable_if_t<MultiArray1D::dimensionality == 1>,
@@ -224,52 +257,124 @@ std::pair<MultiArray1D,MultiArray2D> symEig(MultiArray2D const& A) {
         int N = A.size(0);
         int LDA = A.stride(0);
         
-            MultiArray1D eigVal(extensions{N});
-            MultiArray2D eigVec({N,N});
-            MultiArray2D A_({N,N});
-            for(int i=0; i<N; i++)
-              for(int j=0; j<N; j++) 
-                A_[i][j] = conj(A[i][j]);                
-            char JOBZ('V');
-            char RANGE('A');
-            char UPLO('U');
-            RealType VL=0;
-            RealType VU=0;
-            int IL=0;
-            int IU=0;
-            RealType ABSTOL=0;//DLAMCH( 'Safe minimum' );
-            int M; // output: total number of eigenvalues found
-            std::vector<int> ISUPPZ(2*N);
-            std::vector<Type> WORK(1); // set with workspace query
-            int LWORK=-1;
-            std::vector<RealType> RWORK(1); // set with workspace query
-            int LRWORK=-1;
-            std::vector<int> IWORK(1);
-            int LIWORK=-1;
-            int INFO;
+        MultiArray1D eigVal(extensions{N});
+        MultiArray2D eigVec({N,N});
+        MultiArray2D A_({N,N});
+        for(int i=0; i<N; i++)
+          for(int j=0; j<N; j++) 
+            A_[i][j] = ma::conj(A[i][j]);                
+        char JOBZ('V');
+        char RANGE('A');
+        char UPLO('U');
+        RealType VL=0;
+        RealType VU=0;
+        int IL=0;
+        int IU=0;
+        RealType ABSTOL=0;//DLAMCH( 'Safe minimum' );
+        int M; // output: total number of eigenvalues found
+        std::vector<int> ISUPPZ(2*N);
+        std::vector<Type> WORK(1); // set with workspace query
+        int LWORK=-1;
+        std::vector<RealType> RWORK(1); // set with workspace query
+        int LRWORK=-1;
+        std::vector<int> IWORK(1);
+        int LIWORK=-1;
+        int INFO;
 
-            hevr (JOBZ, RANGE, UPLO, N, pointer_dispatch(A_.origin()), LDA, VL, VU, IL, IU, ABSTOL, 
-                          M,pointer_dispatch(eigVal.origin()), pointer_dispatch(eigVec.origin()), N, pointer_dispatch(ISUPPZ.data()), pointer_dispatch(WORK.data()), LWORK, 
-                          pointer_dispatch(RWORK.data()), LRWORK, pointer_dispatch(IWORK.data()), LIWORK, INFO);
+        hevr (JOBZ, RANGE, UPLO, N, pointer_dispatch(A_.origin()), LDA, VL, VU, IL, IU, ABSTOL, 
+                      M,pointer_dispatch(eigVal.origin()), pointer_dispatch(eigVec.origin()), N, 
+                      pointer_dispatch(ISUPPZ.data()), pointer_dispatch(WORK.data()), LWORK, 
+                      pointer_dispatch(RWORK.data()), LRWORK, pointer_dispatch(IWORK.data()), LIWORK, INFO);
 
-            LWORK = int(real(WORK[0]));
-            WORK.resize(LWORK);
-            LRWORK = int(RWORK[0]);
-            RWORK.resize(LRWORK);
-            LIWORK = int(IWORK[0]);
-            IWORK.resize(LIWORK);
+        LWORK = int(real(WORK[0]));
+        WORK.resize(LWORK);
+        LRWORK = int(RWORK[0]);
+        RWORK.resize(LRWORK);
+        LIWORK = int(IWORK[0]);
+        IWORK.resize(LIWORK);
 
-            hevr (JOBZ, RANGE, UPLO, N, pointer_dispatch(A_.origin()), LDA, VL, VU, IL, IU, ABSTOL, 
-                          M,pointer_dispatch(eigVal.origin()), pointer_dispatch(eigVec.origin()), N, pointer_dispatch(ISUPPZ.data()), pointer_dispatch(WORK.data()), LWORK, 
-                          pointer_dispatch(RWORK.data()), LRWORK, pointer_dispatch(IWORK.data()), LIWORK, INFO);
-            if(INFO != 0) throw std::runtime_error(" error in ma::eig: Error code != 0");
-            if(M != N) throw std::runtime_error(" error in ma::eig: Not enough eigenvalues"); 
-            for(int i=0; i<N; i++)
-              for(int j=i+1; j<N; j++) 
-                std::swap(eigVec[i][j],eigVec[j][i]);                
+        hevr (JOBZ, RANGE, UPLO, N, pointer_dispatch(A_.origin()), LDA, VL, VU, IL, IU, ABSTOL, 
+                      M,pointer_dispatch(eigVal.origin()), pointer_dispatch(eigVec.origin()), N, 
+                      pointer_dispatch(ISUPPZ.data()), pointer_dispatch(WORK.data()), LWORK, 
+                      pointer_dispatch(RWORK.data()), LRWORK, pointer_dispatch(IWORK.data()), LIWORK, INFO);
+        if(INFO != 0) throw std::runtime_error(" error in ma::eig: Error code != 0");
+        if(M != N) throw std::runtime_error(" error in ma::eig: Not enough eigenvalues"); 
+        for(int i=0; i<N; i++)
+          for(int j=i+1; j<N; j++) 
+            std::swap(eigVec[i][j],eigVec[j][i]);                
 
-            return std::pair<MultiArray1D,MultiArray2D>{eigVal,eigVec};
+        return std::pair<MultiArray1D,MultiArray2D>{eigVal,eigVec};
+}
 
+// Careful!!!! 
+// This routine modifies the original matrix.
+template<class MultiArray1D,
+         class MultiArray2D,
+         class MultiArray2DA,
+         typename = typename std::enable_if_t<MultiArray1D::dimensionality == 1>,
+         typename = typename std::enable_if_t<MultiArray2DA::dimensionality == 2>,
+         typename = typename std::enable_if_t<MultiArray2D::dimensionality == 2>
+        >
+std::pair<MultiArray1D,MultiArray2D> symEigSelect(MultiArray2DA & A, int neig) {
+        using eigSys = std::pair<MultiArray1D,MultiArray2D>;
+        using Type = typename MultiArray2D::element;
+        using TypeA = typename MultiArray2DA::element;
+        static_assert(std::is_same<Type,TypeA>::value,"Wrong types.");
+        using RealType = typename qmcplusplus::afqmc::remove_complex<Type>::value_type;
+        using extensions = typename boost::multi::layout_t<1u>::extensions_type;
+        assert(A.size(0)==A.size(1));
+        assert(A.stride(1)==1);
+        assert(A.size(0)>0);
+        int N = A.size(0);
+        int LDA = A.stride(0);
+
+        MultiArray1D eigVal(extensions{neig});
+        MultiArray2D eigVec({neig,N});
+        // Transpose A to avoid using more memory
+        for(int i=0; i<N; i++) 
+          for(int j=i+1; j<N; j++) {
+            using std::swap;
+            swap(A[i][j],A[j][i]);
+          }
+
+        char JOBZ('V');
+        char RANGE('I');
+        char UPLO('U');
+        RealType VL=0;
+        RealType VU=0;
+        int IL=1;
+        int IU=neig;
+        RealType ABSTOL=0;//DLAMCH( 'Safe minimum' );
+        int M; // output: total number of eigenvalues found
+        std::vector<int> ISUPPZ(2*N);
+        std::vector<Type> WORK(1); // set with workspace query
+        int LWORK=-1;
+        std::vector<RealType> RWORK(1); // set with workspace query
+        int LRWORK=-1;
+        std::vector<int> IWORK(1);
+        int LIWORK=-1;
+        int INFO;
+
+        hevr (JOBZ, RANGE, UPLO, N, pointer_dispatch(A.origin()), LDA, VL, VU, IL, IU, ABSTOL,
+                    M,pointer_dispatch(eigVal.origin()), pointer_dispatch(eigVec.origin()), N, 
+                    pointer_dispatch(ISUPPZ.data()), pointer_dispatch(WORK.data()), LWORK,
+                    pointer_dispatch(RWORK.data()), LRWORK, pointer_dispatch(IWORK.data()), LIWORK, INFO);
+
+        LWORK = int(real(WORK[0]));
+        WORK.resize(LWORK);
+        LRWORK = int(RWORK[0]);
+        RWORK.resize(LRWORK);
+        LIWORK = int(IWORK[0]);
+        IWORK.resize(LIWORK);
+
+        hevr (JOBZ, RANGE, UPLO, N, pointer_dispatch(A.origin()), LDA, VL, VU, IL, IU, ABSTOL,
+                      M,pointer_dispatch(eigVal.origin()), pointer_dispatch(eigVec.origin()), N, 
+                      pointer_dispatch(ISUPPZ.data()), pointer_dispatch(WORK.data()), LWORK,
+                      pointer_dispatch(RWORK.data()), LRWORK, pointer_dispatch(IWORK.data()), LIWORK, INFO);
+        if(INFO != 0) throw std::runtime_error(" error in ma::eig: Error code != 0");
+        if(M != neig) throw std::runtime_error(" error in ma::eig: Not enough eigenvalues");
+
+        return std::pair<MultiArray1D,MultiArray2D>{eigVal,eigVec};
 }
 
 }

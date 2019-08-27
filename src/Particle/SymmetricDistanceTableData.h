@@ -11,9 +11,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
-
 
 
 #ifndef QMCPLUSPLUS_SYMMETRICDISTANCETABLEDATAIMPL_H
@@ -21,7 +18,6 @@
 
 namespace qmcplusplus
 {
-
 /**@ingroup nnlist
  * @brief A derived classe from DistacneTableData, specialized for dense-symmetric case
  *
@@ -32,71 +28,68 @@ namespace qmcplusplus
  * to evaluate Cartesian distances.
  */
 template<typename T, unsigned D, int SC>
-struct SymmetricDTD
-    : public DTD_BConds<T,D,SC>, public DistanceTableData
+struct SymmetricDTD : public DTD_BConds<T, D, SC>, public DistanceTableData
 {
-
-
   //blitz::Array<IndexType,2> IJ;
   ///constructor using source and target arrays
   SymmetricDTD(const ParticleSet& source, const ParticleSet& target)
-    : DTD_BConds<T,D,SC>(source.Lattice), DistanceTableData(source,target)
+      : DTD_BConds<T, D, SC>(source.Lattice), DistanceTableData(source, target)
   {
-    reset(Origin->getTotalNum(),1);
+    reset(Origin->getTotalNum(), 1);
   }
 
   inline void reset(int m, int nactive)
   {
-    if(m != N[SourceIndex] || nactive != N[WalkerIndex])
+    if (m != N[SourceIndex] || nactive != N[WalkerIndex])
     {
-      N[SourceIndex]=m;
-      N[VisitorIndex]=m;
-      int nn = m*(m-1)/2;
-      M.resize(m+1);
+      N[SourceIndex]  = m;
+      N[VisitorIndex] = m;
+      int nn          = m * (m - 1) / 2;
+      M.resize(m + 1);
       J.resize(nn);
-      IJ.resize(m*m);
-      PairID.resize(m*m);
-      resize(nn,nactive);
-      M[0] = 0;
+      IJ.resize(m * m);
+      PairID.resize(m * m);
+      resize(nn, nactive);
+      M[0]    = 0;
       int nsp = Origin->groups();
-      int ij = 0;
-      for(int i=0; i<m; i++)
+      int ij  = 0;
+      for (int i = 0; i < m; i++)
       {
-        for(int j=i+1; j<m; j++, ij++)
+        for (int j = i + 1; j < m; j++, ij++)
         {
-          J[ij] = j;
-          PairID[ij] = Origin->GroupID[j]+nsp*Origin->GroupID[i];
-          IJ[i*m+j] = ij;
-          IJ[j*m+i] = ij;
+          J[ij]         = j;
+          PairID[ij]    = Origin->GroupID[j] + nsp * Origin->GroupID[i];
+          IJ[i * m + j] = ij;
+          IJ[j * m + i] = ij;
           //@warning: using a simple pair scheme
           // Upper packed-storage scheme
           //PairID[ij] = Origin.GroupID[j]+(2*nsp-Origin.GroupID[i]-1)*(Origin.GroupID[i])/2;
         }
-        M[i+1] = ij;
+        M[i + 1] = ij;
       }
       npairs_m = ij;
     }
   }
 
 
-  inline virtual void nearest_neighbors(int n,int neighbors,std::vector<ripair>& ri,bool transposed=false)
+  inline virtual void nearest_neighbors(int n, int neighbors, std::vector<ripair>& ri, bool transposed = false)
   {
-    int m = N[VisitorIndex];
-    int shift = n*m;
-    for(int i=0; i<n; ++i)
+    int m     = N[VisitorIndex];
+    int shift = n * m;
+    for (int i = 0; i < n; ++i)
     {
-      ri[i].first  = r_m[IJ[shift+i]];
+      ri[i].first  = r_m[IJ[shift + i]];
       ri[i].second = i;
     }
     ri[n].first  = std::numeric_limits<RealType>::max();
     ri[n].second = n;
-    shift = M[n];
-    for(int i=n+1; i<m; ++i)
+    shift        = M[n];
+    for (int i = n + 1; i < m; ++i)
     {
-      ri[i].first  = r_m[shift+i];
+      ri[i].first  = r_m[shift + i];
       ri[i].second = i;
     }
-    partial_sort(ri.begin(),ri.begin()+neighbors,ri.end());
+    partial_sort(ri.begin(), ri.begin() + neighbors, ri.end());
   }
 
   ///evaluate the Distance Table using a set of Particle Positions
@@ -127,66 +120,57 @@ struct SymmetricDTD
   inline void evaluate(ParticleSet& P)
   {
     const int n = N[SourceIndex];
-    for(int i=0,ij=0; i<n; i++)
-      for(int j=i+1; j<n; j++, ij++)
-        dr_m[ij]=P.R[j]-P.R[i];
+    for (int i = 0, ij = 0; i < n; i++)
+      for (int j = i + 1; j < n; j++, ij++)
+        dr_m[ij] = P.R[j] - P.R[i];
     //old with static type
     //BC::apply(Origin.Lattice,dr_m,r_m,rinv_m);
-    DTD_BConds<T,D,SC>::apply_bc(dr_m,r_m,rinv_m);
+    DTD_BConds<T, D, SC>::apply_bc(dr_m, r_m, rinv_m);
   }
 
   inline void evaluate(ParticleSet& P, int jat)
   {
     APP_ABORT("  No need to call SymmetricDTD::evaluate(ParticleSet& P, int jat)");
     //based on full evaluation. Only compute it if jat==0
-    if(jat==0) evaluate(P);
+    if (jat == 0)
+      evaluate(P);
   }
 
   ///evaluate the temporary pair relations
   inline void move(const ParticleSet& P, const PosType& rnew)
   {
-    for(int iat=0; iat<N[SourceIndex]; ++iat)
+    for (int iat = 0; iat < N[SourceIndex]; ++iat)
     {
       PosType drij(rnew - P.R[iat]);
-      RealType sep=std::sqrt(DTD_BConds<T,D,SC>::apply_bc(drij));
-      Temp[iat].r1=sep;
-      Temp[iat].rinv1=1.0/sep;
-      Temp[iat].dr1=drij;
-    }
-  }
-
-  inline void moveOnSphere(const ParticleSet& P, const PosType& rnew)
-  {
-    for(int iat=0; iat<N[SourceIndex]; ++iat)
-    {
-      PosType drij(rnew - P.R[iat]);
-      Temp[iat].r1=std::sqrt(DTD_BConds<T,D,SC>::apply_bc(drij));
-      Temp[iat].dr1=drij;
+      RealType sep    = std::sqrt(DTD_BConds<T, D, SC>::apply_bc(drij));
+      Temp[iat].r1    = sep;
+      Temp[iat].rinv1 = 1.0 / sep;
+      Temp[iat].dr1   = drij;
     }
   }
 
   ///update the stripe for jat-th particle
   inline void update(IndexType jat)
   {
-    int nn=jat;
-    for(int iat=0; iat<jat; iat++,nn+=N[SourceIndex])
+    int nn = jat;
+    for (int iat = 0; iat < jat; iat++, nn += N[SourceIndex])
     {
-      int loc =IJ[nn];
-      r_m[loc] = Temp[iat].r1;
-      rinv_m[loc]= 1.0/Temp[iat].r1;
+      int loc     = IJ[nn];
+      r_m[loc]    = Temp[iat].r1;
+      rinv_m[loc] = 1.0 / Temp[iat].r1;
       //rinv_m[loc]= Temp[iat].rinv1;
-      dr_m[loc]= Temp[iat].dr1;
+      dr_m[loc] = Temp[iat].dr1;
     }
-    for(int nn=M[jat]; nn<M[jat+1]; nn++)
+    for (int nn = M[jat]; nn < M[jat + 1]; nn++)
     {
-      int iat = J[nn];
-      r_m[nn] = Temp[iat].r1;
-      rinv_m[nn]= 1.0/Temp[iat].r1;
+      int iat    = J[nn];
+      r_m[nn]    = Temp[iat].r1;
+      rinv_m[nn] = 1.0 / Temp[iat].r1;
       //rinv_m[nn]= Temp[iat].rinv1;
-      dr_m[nn]= -1.0*Temp[iat].dr1;
+      dr_m[nn] = -1.0 * Temp[iat].dr1;
     }
   }
 };
 
-}
+} // namespace qmcplusplus
 #endif

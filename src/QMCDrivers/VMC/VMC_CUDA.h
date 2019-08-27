@@ -12,8 +12,6 @@
 //
 // File created by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
 
 
 #ifndef QMCPLUSPLUS_VMC_CUDA_H
@@ -22,32 +20,32 @@
 #include "type_traits/CUDATypes.h"
 namespace qmcplusplus
 {
-
 class QMCUpdateBase;
 
 /** @ingroup QMCDrivers  PbyP
  *@brief Implements the VMC algorithm using particle-by-particle move.
  */
-class VMCcuda: public QMCDriver
+class VMCcuda : public QMCDriver
 {
 public:
   /// Constructor.
-  VMCcuda(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,WaveFunctionPool& ppool, Communicate* comm);
+  VMCcuda(MCWalkerConfiguration& w,
+          TrialWaveFunction& psi,
+          QMCHamiltonian& h,
+          WaveFunctionPool& ppool,
+          Communicate* comm);
 
-  GPU_XRAY_TRACE bool run();
-  GPU_XRAY_TRACE bool runWithDrift();
+  bool run();
+  bool runWithDrift();
 
   /// advance walkers without drift
-  GPU_XRAY_TRACE void advanceWalkers();
+  void advanceWalkers();
   /// advance walkers with drift
-  GPU_XRAY_TRACE void advanceWalkersWithDrift();
+  void advanceWalkersWithDrift();
 
-  GPU_XRAY_TRACE bool put(xmlNodePtr cur);
-  GPU_XRAY_TRACE RealType fillOverlapHamiltonianMatrices(Matrix<RealType>& LeftM, Matrix<RealType>& RightM);
-  inline void setOpt(bool o)
-  {
-    forOpt=o;
-  };
+  bool put(xmlNodePtr cur);
+  RealType fillOverlapHamiltonianMatrices(Matrix<RealType>& LeftM, Matrix<RealType>& RightM);
+  inline void setOpt(bool o) { forOpt = o; };
 
 private:
   using CTS = CUDAGlobalTypes;
@@ -62,18 +60,18 @@ private:
   ///period for walker dump
   int myPeriod4WalkerDump;
   /// Copy Constructor (disabled)
-  VMCcuda(const VMCcuda &) = delete;
+  VMCcuda(const VMCcuda&) = delete;
   /// Copy operator (disabled).
-  VMCcuda & operator=(const VMCcuda &) = delete;
+  VMCcuda& operator=(const VMCcuda&) = delete;
   ///hide initialization from the main function
-  bool checkBounds (std::vector<PosType> &newpos, std::vector<bool> &valid);
-
-  GPU_XRAY_TRACE void  resetRun();
+  bool checkBounds(std::vector<PosType>& newpos, std::vector<bool>& valid);
+  QMCRunType getRunType() { return QMCRunType::VMC; }
+  void resetRun();
 
   opt_variables_type dummy;
   int numParams;
   Matrix<RealType> d_logpsi_dalpha, d_hpsioverpsi_dalpha;
-  RealType w_beta,w_alpha;
+  RealType w_beta, w_alpha;
   RealType E_avg, V_avg;
   std::string GEVtype;
   bool forOpt;
@@ -81,32 +79,32 @@ private:
   ///These are the values we collect to build the Matrices GLOBAL
   Matrix<RealType> Olp, Ham, Ham2;
   std::vector<RealType> D_E, HD2, HD, D;
-  RealType sE,sE2,sE4,sW,sN;
+  RealType sE, sE2, sE4, sW, sN;
 
-  GPU_XRAY_TRACE void  clearComponentMatrices()
+  void clearComponentMatrices()
   {
-    Olp=0.0;
-    Ham=0.0;
-    Ham2=0.0;
-    for(int i=0; i<D_E.size(); i++)
+    Olp  = 0.0;
+    Ham  = 0.0;
+    Ham2 = 0.0;
+    for (int i = 0; i < D_E.size(); i++)
     {
-      D_E[i]=0.0;
-      HD[i]=0.0;
-      HD2[i]=0.0;
-      D[i]=0.0;
+      D_E[i] = 0.0;
+      HD[i]  = 0.0;
+      HD2[i] = 0.0;
+      D[i]   = 0.0;
     }
-    sE=0;
-    sE2=0;
-    sE4=0;
-    sW=0;
-    sN=0;
+    sE  = 0;
+    sE2 = 0;
+    sE4 = 0;
+    sW  = 0;
+    sN  = 0;
   }
 
-  GPU_XRAY_TRACE void  resizeForOpt(int n)
+  void resizeForOpt(int n)
   {
-    Olp.resize(n,n);
-    Ham.resize(n,n);
-    Ham2.resize(n,n);
+    Olp.resize(n, n);
+    Ham.resize(n, n);
+    Ham2.resize(n, n);
     D_E.resize(n);
     HD.resize(n);
     HD2.resize(n);
@@ -114,6 +112,6 @@ private:
     clearComponentMatrices();
   }
 };
-}
+} // namespace qmcplusplus
 
 #endif

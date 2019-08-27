@@ -61,16 +61,37 @@ namespace afqmc
 class PHMSD: public AFQMCInfo
 {
 
-  using CVector = boost::multi::array<ComplexType,1>;  
-  using CMatrix = boost::multi::array<ComplexType,2>;  
-  using shared_mutex = boost::mpi3::shm::mutex;  
-  using shared_CMatrix = boost::multi::array<ComplexType,2,shared_allocator<ComplexType>>;
-  using shared_C3Tensor = boost::multi::array<ComplexType,3,shared_allocator<ComplexType>>;
-  using shared_C4Tensor = boost::multi::array<ComplexType,4,shared_allocator<ComplexType>>;
-  using shmCVector = boost::multi::array<ComplexType,1,shared_allocator<ComplexType>>;
+  // allocators
+  using Allocator = std::allocator<ComplexType>; //device_allocator<ComplexType>;
+  using Allocator_shared = shared_allocator<ComplexType>; //localTG_allocator<ComplexType>;
+
+  // type defs
+  using pointer = typename Allocator::pointer;
+  using const_pointer = typename Allocator::const_pointer;
+  using pointer_shared = typename Allocator_shared::pointer;
+  using const_pointer_shared = typename Allocator_shared::const_pointer;
+
+  using CVector = boost::multi::array<ComplexType,1,Allocator>;
+  using CMatrix = boost::multi::array<ComplexType,2,Allocator>;
+  using CTensor = boost::multi::array<ComplexType,3,Allocator>;
+  using CVector_ref = boost::multi::array_ref<ComplexType,1,pointer>;
+  using CMatrix_ref = boost::multi::array_ref<ComplexType,2,pointer>;
+  using CMatrix_cref = boost::multi::array_ref<const ComplexType,2,const_pointer>;
+  using CTensor_ref = boost::multi::array_ref<ComplexType,3,pointer>;
+  using CTensor_cref = boost::multi::array_ref<const ComplexType,3,const_pointer>;
+  using shmCVector = boost::multi::array<ComplexType,1,Allocator_shared>;
+  using shmCMatrix = boost::multi::array<ComplexType,2,Allocator_shared>;
+  using shmC3Tensor = boost::multi::array<ComplexType,3,Allocator_shared>;
+  using shmC4Tensor = boost::multi::array<ComplexType,4,Allocator_shared>;
+  using shared_mutex = boost::mpi3::shm::mutex;
   using index_aos = ma::sparse::array_of_sequences<int,int,
                                                    shared_allocator<int>,
                                                    ma::sparse::is_root>;
+
+  using stdCVector = boost::multi::array<ComplexType,1>;
+  using stdCMatrix = boost::multi::array<ComplexType,2>;
+  using stdCTensor = boost::multi::array<ComplexType,3>;
+  using mpi3CVector = boost::multi::array<ComplexType,1,shared_allocator<ComplexType>>;
 
   public:
 
@@ -198,6 +219,8 @@ class PHMSD: public AFQMCInfo
     { return HamOp.local_number_of_cholesky_vectors(); }
     int global_number_of_cholesky_vectors() const 
     { return HamOp.global_number_of_cholesky_vectors(); }
+    int global_origin_cholesky_vector() const
+    { return HamOp.global_origin_cholesky_vector(); }
     bool distribution_over_cholesky_vectors() const 
     { return HamOp.distribution_over_cholesky_vectors(); }
 
@@ -293,7 +316,7 @@ class PHMSD: public AFQMCInfo
      */
     template<class WlkSet, class Mat, class TVec> 
     void Energy(const WlkSet& wset, Mat&& E, TVec&& Ov) {
-      if(TG.getNNodesPerTG() > 1)
+      if(TG.getNGroupsPerTG() > 1)
         Energy_distributed(wset,std::forward<Mat>(E),std::forward<TVec>(Ov));
       else
         Energy_shared(wset,std::forward<Mat>(E),std::forward<TVec>(Ov));
@@ -318,8 +341,43 @@ class PHMSD: public AFQMCInfo
     template<class WlkSet, class MatG, class TVec>
     void MixedDensityMatrix(const WlkSet& wset, MatG&& G, TVec&& Ov, bool compact=true, bool transpose=false);
 
-    template<class WlkSet, class MatG, class CVec>
-    void BackPropagatedDensityMatrix(const WlkSet& wset, MatG& G, CVec& denom, bool path_restoration=false, bool free_projection=false);
+    /*
+     * Calculates the density matrix with respect to a given Reference
+     * for all walkers in the walker set. 
+     */
+    template<class WlkSet, class MatA, class MatB, class MatG, class TVec>
+    void DensityMatrix(const WlkSet& wset, MatA&& RefA, MatB&& RefB, MatG&& G,
+                        TVec&& Ov, bool herm, bool compact, bool transposed)
+    {
+/*
+      if(nbatch != 0)
+        DensityMatrix_batched(wset,std::forward<MatA>(RefA),std::forward<MatB>(RefB),
+                                std::forward<MatG>(G),std::forward<TVec>(Ov),
+                                herm,compact,transposed);
+      else
+*/
+        DensityMatrix_shared(wset,std::forward<MatA>(RefA),std::forward<MatB>(RefB),
+                                std::forward<MatG>(G),std::forward<TVec>(Ov),
+                                herm,compact,transposed);
+    }
+
+    template<class MatA, class MatB, class MatG, class TVec>
+    void DensityMatrix(std::vector<MatA>& Left, std::vector<MatB>& Right, std::vector<MatG>& G,
+                        TVec&& Ov, double LogOverlapFactor, bool herm, bool compact)
+    {
+/*
+      if(nbatch != 0)
+        DensityMatrix_batched(Left,Right,G,std::forward<TVec>(Ov),LogOverlapFactor,
+                                herm,compact);
+      else
+*/
+        DensityMatrix_shared(Left,Right,G,std::forward<TVec>(Ov),LogOverlapFactor,
+                                herm,compact);
+    }
+
+    template<class WlkSet, class MatG, class CVec1, class CVec2, class Mat1, class Mat2>
+    void WalkerAveragedDensityMatrix(const WlkSet& wset, CVec1& wgt, MatG& G, CVec2& denom, Mat1 &&Ovlp, Mat2&& DMsum, bool free_projection=false, boost::multi::array_ref<ComplexType,3>* Refs=nullptr, boost::multi::array<ComplexType,2>* detR=nullptr); 
+
     /*
      * Calculates the mixed density matrix for all walkers in the walker set
      *   with a format consistent with (and expected by) the vbias routine.
@@ -374,13 +432,24 @@ class PHMSD: public AFQMCInfo
      * Orthogonalizes the Slater matrix of a walker in an excited state calculation.
      */
     template<class Mat>
-    void OrthogonalizeExcited(Mat&& A, SpinTypes spin);
+    void OrthogonalizeExcited(Mat&& A, SpinTypes spin, double LogOverlapFactor);
 
     /*
-     * Back Propagates the trial wavefunction.
-    */
-    template<class MatA, class Wlk, class MatB>
-    ComplexType BackPropagateOrbMat(MatA& OrbMat, const Wlk& walker, MatB& PsiBP);
+     * Returns the number of reference Slater Matrices needed for back propagation.  
+     */
+    int number_of_references_for_back_propagation() const {
+      return 0; 
+    }
+
+    ComplexType getReferenceWeight(int i) {return ComplexType(0.0,0.0);}
+
+    /*
+     * Returns the reference Slater Matrices needed for back propagation.  
+     */
+    template<class Mat>
+    void getReferencesForBackPropagation(Mat&& A) {
+      APP_ABORT(" Error: getReferencesForBackPropagation not implemented with PHMSD wavefunctions.\n"); 
+    }
 
   protected: 
 
@@ -430,12 +499,12 @@ class PHMSD: public AFQMCInfo
     size_t maxnactive;   // maximum number of states in active space
     size_t max_exct_n;   // maximum excitation number (number of electrons excited simultaneously)
     // used by OVerlap and MixedDensityMatrix
-    shared_CMatrix unique_overlaps;
-    shared_CMatrix unique_Etot;
-    shared_CMatrix QQ0inv0;  // Q * inv(Q0) 
-    shared_CMatrix QQ0inv1;  // Q * inv(Q0) 
-    shared_CMatrix GA2D0_shm;  
-    shared_CMatrix GB2D0_shm; 
+    shmCMatrix unique_overlaps;
+    shmCMatrix unique_Etot;
+    shmCMatrix QQ0inv0;  // Q * inv(Q0) 
+    shmCMatrix QQ0inv1;  // Q * inv(Q0) 
+    shmCMatrix GA2D0_shm;  
+    shmCMatrix GB2D0_shm; 
     boost::multi::array<ComplexType,2> local_ov;
     boost::multi::array<ComplexType,2> local_etot;
     boost::multi::array<ComplexType,2> local_QQ0inv0;
@@ -445,14 +514,14 @@ class PHMSD: public AFQMCInfo
     // used by Energy_shared 
     boost::multi::array<ComplexType,1> wgt; 
     boost::multi::array<ComplexType,1> opSpinEJ; 
-    shared_C3Tensor Ovmsd;   // [nspins][maxn_unique_confg][nwalk]
-    shared_C4Tensor Emsd;    // [nspins][maxn_unique_confg][nwalk][3]
-    shared_C3Tensor QQ0A;    // [nwalk][NAOA][NAEA]
-    shared_C3Tensor QQ0B;    // [nwalk][NAOB][NAEB]
-    shared_C3Tensor GrefA;     // [nwalk][NAOA][NMO]
-    shared_C3Tensor GrefB;     // [nwalk][NAOB][NMO]
-    shared_C3Tensor KEright;   
-    shared_CMatrix KEleft;     
+    shmC3Tensor Ovmsd;   // [nspins][maxn_unique_confg][nwalk]
+    shmC4Tensor Emsd;    // [nspins][maxn_unique_confg][nwalk][3]
+    shmC3Tensor QQ0A;    // [nwalk][NAOA][NAEA]
+    shmC3Tensor QQ0B;    // [nwalk][NAOB][NAEB]
+    shmC3Tensor GrefA;     // [nwalk][NAOA][NMO]
+    shmC3Tensor GrefB;     // [nwalk][NAOB][NMO]
+    shmC3Tensor KEright;   
+    shmCMatrix KEleft;     
      
 
     // array of sequence structure storing the list of connected alpha/beta configurations
@@ -487,6 +556,31 @@ class PHMSD: public AFQMCInfo
      */
     template<class WlkSet, class Mat, class TVec>
     void Energy_distributed(const WlkSet& wset, Mat&& E, TVec&& Ov); 
+
+    /* 
+     * Computes the density matrix with respect to a given reference. 
+     * Intended to be used in combination with the energy evaluation routine.
+     * G and Ov are expected to be in shared memory.
+     */
+    template<class WlkSet, class MatA, class MatB, class MatG, class TVec>
+    void DensityMatrix_shared(const WlkSet& wset, MatA&& RefsA, MatB&& RefsB, MatG&& G,
+                                TVec&& Ov, bool herm, bool compact, bool transposed);
+
+/*
+    template<class WlkSet, class MatA, class MatB, class MatG, class TVec>
+    void DensityMatrix_batched(const WlkSet& wset, MatA&& RefsA, MatB&& RefsB, MatG&& G,
+                                TVec&& Ov, bool herm, bool compact, bool transposed);
+*/
+
+    template<class MatA, class MatB, class MatG, class TVec>
+    void DensityMatrix_shared(std::vector<MatA>& Left, std::vector<MatB>& Right, std::vector<MatG>& G,
+                        TVec&& Ov, double LogOverlapFactor, bool herm, bool compact);
+
+/*
+    template<class MatA, class MatB, class MatG, class TVec>
+    void DensityMatrix_batched(std::vector<MatA>& Left, std::vector<MatB>& Right, std::vector<MatG>& G,
+                        TVec&& Ov, double LogOverlapFactor, bool herm, bool compact);
+*/
 
     int dm_size(bool full) const {
       switch(walker_type) {

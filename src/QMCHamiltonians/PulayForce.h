@@ -11,8 +11,7 @@
 //
 // File created by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
 
 #ifndef QMCPLUSPLUS_PULAY_FOCE_H
 #define QMCPLUSPLUS_PULAY_FOCE_H
@@ -22,9 +21,12 @@
 
 namespace qmcplusplus
 {
-
 struct PulayForce : public QMCHamiltonianBase, public ForceBase
 {
+private:
+  const int d_ei_ID;
+
+public:
   ParticleSet& Ions;
   ParticleSet& Electrons;
   TrialWaveFunction& Psi;
@@ -33,36 +35,25 @@ struct PulayForce : public QMCHamiltonianBase, public ForceBase
 
   ParticleSet::ParticlePos_t GradLogPsi, EGradLogPsi;
 
-  PulayForce(ParticleSet& ions, ParticleSet& elns,
-             TrialWaveFunction &psi);
+  PulayForce(ParticleSet& ions, ParticleSet& elns, TrialWaveFunction& psi);
 
   void resetTargetParticleSet(ParticleSet& P);
 
   Return_t evaluate(ParticleSet& P);
 
-  bool put(xmlNodePtr cur)
-  {
-    return true;
-  }
+  bool put(xmlNodePtr cur) { return true; }
 
-  bool get(std::ostream& os) const
-  {
-    return true;
-  }
+  bool get(std::ostream& os) const { return true; }
 
   QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi)
   {
-    PulayForce *myClone = new PulayForce (Ions, qp, psi);
+    PulayForce* myClone      = new PulayForce(Ions, qp, psi);
     myClone->FirstForceIndex = FirstForceIndex;
     return myClone;
   }
 
 
-  inline RealType
-  WarpFunction (RealType r)
-  {
-    return 1.0/(r*r*r*r);
-  }
+  inline RealType WarpFunction(RealType r) { return 1.0 / (r * r * r * r); }
 
   void addObservables(PropertySetType& plist, BufferType& collectables);
 
@@ -70,9 +61,8 @@ struct PulayForce : public QMCHamiltonianBase, public ForceBase
 
   void setParticlePropertyList(PropertySetType& plist, int offset);
 
-  void registerObservables(std::vector<observable_helper*>& h5list,
-                           hid_t gid) const;
+  void registerObservables(std::vector<observable_helper*>& h5list, hid_t gid) const;
 };
 
-}
+} // namespace qmcplusplus
 #endif

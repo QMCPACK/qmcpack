@@ -9,8 +9,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
 
 
 #ifndef QMCPLUSPLUS_DMC_ALLPARTICLE_UPDATE_H
@@ -18,12 +16,9 @@
 #include "QMCDrivers/QMCUpdateBase.h"
 namespace qmcplusplus
 {
-
-class DMCUpdateAllWithRejection: public QMCUpdateBase
+class DMCUpdateAllWithRejection : public QMCUpdateBase
 {
-
 public:
-
   /// Constructor.
   DMCUpdateAllWithRejection(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator_t& rg);
   ///destructor
@@ -37,11 +32,9 @@ public:
   DMCUpdateAllWithRejection& operator=(const DMCUpdateAllWithRejection&) = delete;
 };
 
-class DMCUpdateAllWithKill: public QMCUpdateBase
+class DMCUpdateAllWithKill : public QMCUpdateBase
 {
-
 public:
-
   /// Constructor.
   DMCUpdateAllWithKill(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator_t& rg);
   ///destructor
@@ -54,6 +47,6 @@ public:
   /// Copy operator (disabled).
   DMCUpdateAllWithKill& operator=(const DMCUpdateAllWithKill&) = delete;
 };
-}
+} // namespace qmcplusplus
 
 #endif

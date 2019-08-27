@@ -10,8 +10,8 @@
                   0.00000000       12.42462807        0.00000000
                   0.00000000        0.00000000       12.42462807
          </parameter>
-         <parameter name="bconds"              >
-           n n n
+         <parameter name="bconds">
+            n n n
          </parameter>
       </simulationcell>
       <particleset name="e" random="yes" randomsrc="ion0">
@@ -74,20 +74,18 @@
       </hamiltonian>
    </qmcsystem>
    <qmc method="vmc" move="pbyp">
+      <parameter name="warmupSteps"         >    100             </parameter>
       <parameter name="blocks"              >    200             </parameter>
       <parameter name="steps"               >    10              </parameter>
       <parameter name="subSteps"            >    3               </parameter>
       <parameter name="timestep"            >    0.5             </parameter>
-      <parameter name="warmupSteps"         >    100             </parameter>
       <parameter name="samplesperthread"    >    40              </parameter>
-      <estimator name="LocalEnergy" hdf5="yes"/>
    </qmc>
    <qmc method="dmc" move="pbyp">
+      <parameter name="warmupSteps"         >    50              </parameter>
       <parameter name="blocks"              >    400             </parameter>
       <parameter name="steps"               >    5               </parameter>
       <parameter name="timestep"            >    0.01            </parameter>
       <parameter name="nonlocalmoves"       >    yes             </parameter>
-      <parameter name="warmupSteps"         >    50              </parameter>
-      <estimator name="LocalEnergy" hdf5="yes"/>
    </qmc>
 </simulation>

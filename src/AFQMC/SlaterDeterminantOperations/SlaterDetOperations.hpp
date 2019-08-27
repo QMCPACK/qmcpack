@@ -25,7 +25,7 @@ namespace afqmc
 {
 
 class SlaterDetOperations:
-#ifdef QMC_CUDA
+#ifdef ENABLE_CUDA
         public boost::variant<SlaterDetOperations_shared<ComplexType>,SlaterDetOperations_serial<device_allocator<ComplexType>>>
 #else
         public boost::variant<SlaterDetOperations_shared<ComplexType>,SlaterDetOperations_serial<std::allocator<ComplexType>>>
@@ -42,7 +42,7 @@ class SlaterDetOperations:
 
     explicit SlaterDetOperations(SlaterDetOperations_shared<ComplexType> const& other) = delete;
 
-#ifdef QMC_CUDA
+#ifdef ENABLE_CUDA
     explicit SlaterDetOperations(SlaterDetOperations_serial<device_allocator<ComplexType>> const& other) = delete;
     explicit SlaterDetOperations(SlaterDetOperations_serial<device_allocator<ComplexType>>&& other) : variant(std::move(other)) {}
 #else
@@ -58,9 +58,9 @@ class SlaterDetOperations:
 
     // member functions visible outside the variant
     template<class... Args>
-    void MixedDensityMatrix(Args&&... args) {
-        boost::apply_visitor(
-            [&](auto&& a){a.MixedDensityMatrix(std::forward<Args>(args)...);},
+    ComplexType MixedDensityMatrix(Args&&... args) {
+        return boost::apply_visitor(
+            [&](auto&& a){return a.MixedDensityMatrix(std::forward<Args>(args)...);},
             *this
         );
     }
@@ -69,6 +69,14 @@ class SlaterDetOperations:
     void BatchedMixedDensityMatrix(Args&&... args) {
         boost::apply_visitor(
             [&](auto&& a){a.BatchedMixedDensityMatrix(std::forward<Args>(args)...);},
+            *this
+        );
+    }
+
+    template<class... Args>
+    void BatchedDensityMatrices(Args&&... args) {
+        boost::apply_visitor(
+            [&](auto&& a){a.BatchedDensityMatrices(std::forward<Args>(args)...);},
             *this
         );
     }
@@ -90,49 +98,49 @@ class SlaterDetOperations:
     }
 
     template<class... Args>
-    void MixedDensityMatrix_noHerm(Args&&... args) {
-        boost::apply_visitor(
-            [&](auto&& a){a.MixedDensityMatrix_noHerm(std::forward<Args>(args)...);},
+    ComplexType MixedDensityMatrix_noHerm(Args&&... args) {
+        return boost::apply_visitor(
+            [&](auto&& a){return a.MixedDensityMatrix_noHerm(std::forward<Args>(args)...);},
             *this
         );
     }
 
     template<class... Args>
-    void MixedDensityMatrixForWoodbury(Args&&... args) {
-        boost::apply_visitor(
-            [&](auto&& a){a.MixedDensityMatrixForWoodbury(std::forward<Args>(args)...);},
+    ComplexType MixedDensityMatrixForWoodbury(Args&&... args) {
+        return boost::apply_visitor(
+            [&](auto&& a){return a.MixedDensityMatrixForWoodbury(std::forward<Args>(args)...);},
             *this
         );
     }
 
     template<class... Args>
-    void MixedDensityMatrixFromConfiguration(Args&&... args) {
-        boost::apply_visitor(
-            [&](auto&& a){a.MixedDensityMatrixFromConfiguration(std::forward<Args>(args)...);},
+    ComplexType MixedDensityMatrixFromConfiguration(Args&&... args) {
+        return boost::apply_visitor(
+            [&](auto&& a){return a.MixedDensityMatrixFromConfiguration(std::forward<Args>(args)...);},
             *this
         );
     }
 
     template<class... Args>
-    void Overlap(Args&&... args) {
-        boost::apply_visitor(
-            [&](auto&& a){a.Overlap(std::forward<Args>(args)...);},
+    ComplexType Overlap(Args&&... args) {
+        return boost::apply_visitor(
+            [&](auto&& a){return a.Overlap(std::forward<Args>(args)...);},
             *this
         );
     }
 
     template<class... Args>
-    void Overlap_noHerm(Args&&... args) {
-        boost::apply_visitor(
-            [&](auto&& a){a.Overlap_noHerm(std::forward<Args>(args)...);},
+    ComplexType Overlap_noHerm(Args&&... args) {
+        return boost::apply_visitor(
+            [&](auto&& a){return a.Overlap_noHerm(std::forward<Args>(args)...);},
             *this
         );
     }
 
     template<class... Args>
-    void OverlapForWoodbury(Args&&... args) {
-        boost::apply_visitor(
-            [&](auto&& a){a.OverlapForWoodbury(std::forward<Args>(args)...);},
+    ComplexType OverlapForWoodbury(Args&&... args) {
+        return boost::apply_visitor(
+            [&](auto&& a){return a.OverlapForWoodbury(std::forward<Args>(args)...);},
             *this
         );
     }
@@ -146,9 +154,9 @@ class SlaterDetOperations:
     }
 
     template<class... Args>
-    void Orthogonalize(Args&&... args) {
-        boost::apply_visitor(
-            [&](auto&& a){a.Orthogonalize(std::forward<Args>(args)...);},
+    ComplexType Orthogonalize(Args&&... args) {
+        return boost::apply_visitor(
+            [&](auto&& a){return a.Orthogonalize(std::forward<Args>(args)...);},
             *this
         );
     }

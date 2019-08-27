@@ -17,10 +17,7 @@ namespace qmcplusplus
 {
 LCAOrbitalSetWithCorrection::LCAOrbitalSetWithCorrection(ParticleSet& ions, ParticleSet& els, basis_type* bs)
     : LCAOrbitalSet(bs), cusp(ions, els)
-{
-}
-
-LCAOrbitalSetWithCorrection::~LCAOrbitalSetWithCorrection() { }
+{}
 
 void LCAOrbitalSetWithCorrection::setOrbitalSetSize(int norbs)
 {
@@ -43,21 +40,31 @@ void LCAOrbitalSetWithCorrection::evaluate(const ParticleSet& P, int iat, ValueV
   cusp.addV(P, iat, psi.data());
 }
 
-void LCAOrbitalSetWithCorrection::evaluate(
-    const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
+void LCAOrbitalSetWithCorrection::evaluate(const ParticleSet& P,
+                                           int iat,
+                                           ValueVector_t& psi,
+                                           GradVector_t& dpsi,
+                                           ValueVector_t& d2psi)
 {
   LCAOrbitalSet::evaluate(P, iat, psi, dpsi, d2psi);
   cusp.add_vector_vgl(P, iat, psi, dpsi, d2psi);
 }
 
-void LCAOrbitalSetWithCorrection::evaluate(
-    const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, HessVector_t& grad_grad_psi)
+void LCAOrbitalSetWithCorrection::evaluate(const ParticleSet& P,
+                                           int iat,
+                                           ValueVector_t& psi,
+                                           GradVector_t& dpsi,
+                                           HessVector_t& grad_grad_psi)
 {
   APP_ABORT("LCAOrbitalSetWithCorrection::evaluate with HessVector_t not implemented");
 }
 
-void LCAOrbitalSetWithCorrection::evaluate_notranspose(
-    const ParticleSet& P, int first, int last, ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet)
+void LCAOrbitalSetWithCorrection::evaluate_notranspose(const ParticleSet& P,
+                                                       int first,
+                                                       int last,
+                                                       ValueMatrix_t& logdet,
+                                                       GradMatrix_t& dlogdet,
+                                                       ValueMatrix_t& d2logdet)
 {
   LCAOrbitalSet::evaluate_notranspose(P, first, last, logdet, dlogdet, d2logdet);
   for (size_t i = 0, iat = first; iat < last; i++, iat++)

@@ -18,46 +18,35 @@
 #include <Configuration.h>
 #include <Particle/VirtualParticleSet.h>
 #include <Particle/DistanceTableData.h>
-#include <Particle/DistanceTable.h>
+#include <Particle/createDistanceTable.h>
 
 namespace qmcplusplus
 {
+VirtualParticleSet::VirtualParticleSet(const ParticleSet& p, int nptcl) : refPS(p)
+{
+  setName("virtual");
 
-  VirtualParticleSet::VirtualParticleSet(const ParticleSet& p, int nptcl): refPS(p)
-  {
-    setName("virtual");
+  //initialize local data structure
+  Lattice  = p.Lattice;
+  TotalNum = nptcl;
+  R.resize(nptcl);
+  RSoA.resize(nptcl);
 
-    //initialize local data structure
-    Lattice = p.Lattice;
-    TotalNum = nptcl;
-    R.resize(nptcl);
-    RSoA.resize(nptcl);
-
-    //create distancetables
-    if(refPS.DistTables.size())
-    {
-      DistTables.resize(refPS.DistTables.size());
-      for(int i=0; i<DistTables.size(); ++i)
-      {
-        DistTables[i]=createDistanceTable(refPS.DistTables[i]->origin(),*this, refPS.DistTables[0]->DTType);
-        DistTables[i]->ID=i;
-      }
-    }
-  }
-
-  /// move virtual particles to new postions and update distance tables
-  void VirtualParticleSet::makeMoves(int jel, const ParticlePos_t& vitualPos, bool sphere, int iat)
-  {
-    if(sphere && iat<0) APP_ABORT("VirtualParticleSet::makeMoves is invoked incorrectly, the flag sphere=true requires iat specified!");
-    onSphere=sphere;
-    myTimers[1]->start();
-    refPtcl=jel;
-    refSourcePtcl=iat;
-    R=vitualPos;
-    RSoA.copyIn(R);
-    for (int i=0; i<DistTables.size(); i++)
-      DistTables[i]->evaluate(*this);
-    myTimers[1]->stop();
-  }
-
+  //create distancetables
+  for (int i = 0; i < refPS.getNumDistTables(); ++i)
+    addTable(refPS.getDistTable(i).origin(), refPS.getDistTable(0).DTType);
 }
+
+/// move virtual particles to new postions and update distance tables
+void VirtualParticleSet::makeMoves(int jel, const ParticlePos_t& vitualPos, bool sphere, int iat)
+{
+  if (sphere && iat < 0)
+    APP_ABORT("VirtualParticleSet::makeMoves is invoked incorrectly, the flag sphere=true requires iat specified!");
+  onSphere = sphere;
+  refPtcl       = jel;
+  refSourcePtcl = iat;
+  R             = vitualPos;
+  update();
+}
+
+} // namespace qmcplusplus

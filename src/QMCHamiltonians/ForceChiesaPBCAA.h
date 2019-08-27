@@ -9,8 +9,8 @@
 //
 // File created by: Raymond Clay III, j.k.rofling@gmail.com, Lawrence Livermore National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 #ifndef QMCPLUSPLUS_FORCE_CHIESA_HAMILTONIAN_H
 #define QMCPLUSPLUS_FORCE_CHIESA_HAMILTONIAN_H
 #include "QMCHamiltonians/ForceBase.h"
@@ -21,32 +21,28 @@
 
 namespace qmcplusplus
 {
-
-struct ForceChiesaPBCAA: public QMCHamiltonianBase, public ForceBase
+struct ForceChiesaPBCAA : public QMCHamiltonianBase, public ForceBase
 {
-
   typedef LRCoulombSingleton::LRHandlerType LRHandlerType;
   typedef LRCoulombSingleton::GridType GridType;
   typedef LRCoulombSingleton::RadFunctorType RadFunctorType;
 
 
-  RealType Rcut; // parameter: radial distance within which estimator is used
-  int m_exp; // parameter: exponent in polynomial fit
-  int N_basis; // parameter: size of polynomial basis set
+  RealType Rcut;         // parameter: radial distance within which estimator is used
+  int m_exp;             // parameter: exponent in polynomial fit
+  int N_basis;           // parameter: size of polynomial basis set
   Matrix<RealType> Sinv; // terms in fitting polynomial
-  Vector<RealType> h; // terms in fitting polynomial
-  Vector<RealType> c; // polynomial coefficients
+  Vector<RealType> h;    // terms in fitting polynomial
+  Vector<RealType> c;    // polynomial coefficients
   // container for short-range force estimator
-  
+
   bool kcdifferent;
   RealType minkc;
-  
+
   ///source particle set
   ParticleSet& PtclA;
   ///long-range Handler
   LRHandlerType* AB;
-  ///locator of the distance table
-  int myTableIndex;
   ///number of species of A particle set
   int NumSpeciesA;
   ///number of species of B particle set
@@ -55,7 +51,7 @@ struct ForceChiesaPBCAA: public QMCHamiltonianBase, public ForceBase
   int NptclA;
   ///number of particles of B
   int NptclB;
-  
+
   ///cutoff radius of the short-range part
   RealType myRcut;
   ///radial grid
@@ -80,27 +76,27 @@ struct ForceChiesaPBCAA: public QMCHamiltonianBase, public ForceBase
   ///Short-range potential for each species
   std::vector<RadFunctorType*> Vspec;
 
-  bool first_time;  
+  bool first_time;
 
   ParticleSet::ParticlePos_t forces_ShortRange;
 
-  ForceChiesaPBCAA(ParticleSet& ions, ParticleSet& elns, bool firsttime=true);
+  ForceChiesaPBCAA(ParticleSet& ions, ParticleSet& elns, bool firsttime = true);
 
   Return_t evaluate(ParticleSet& P);
 
   void InitMatrix();
   void initBreakup(ParticleSet& P);
-  
+
   void evaluateLR(ParticleSet&);
   void evaluateSR(ParticleSet&);
   void evaluateSR_AA();
   void evaluateLR_AA();
-  
+
   Return_t g_filter(RealType r);
 
   void registerObservables(std::vector<observable_helper*>& h5list, hid_t gid) const
   {
-    registerObservablesF(h5list,gid);
+    registerObservablesF(h5list, gid);
   }
 
   void addObservables(PropertySetType& plist, BufferType& collectables);
@@ -109,23 +105,22 @@ struct ForceChiesaPBCAA: public QMCHamiltonianBase, public ForceBase
   void setObservables(PropertySetType& plist)
   {
     QMCHamiltonianBase::setObservables(plist);
-      setObservablesF(plist);
+    setObservablesF(plist);
   }
 
   void setParticlePropertyList(PropertySetType& plist, int offset)
   {
     QMCHamiltonianBase::setParticlePropertyList(plist, offset);
-      setParticleSetF(plist, offset);
+    setParticleSetF(plist, offset);
   }
 
 
   void resetTargetParticleSet(ParticleSet& P);
-  
-  
+
 
   QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 
-  bool put(xmlNodePtr cur) ;
+  bool put(xmlNodePtr cur);
 
   bool get(std::ostream& os) const
   {
@@ -133,9 +128,14 @@ struct ForceChiesaPBCAA: public QMCHamiltonianBase, public ForceBase
     return true;
   }
 
+  // for testing only
+  int getDistanceTableAAID() const { return d_aa_ID; }
+
+private:
+  // AA table ID
+  const int d_aa_ID;
+  const int d_ei_ID;
 };
 
-}
+} // namespace qmcplusplus
 #endif
-
-

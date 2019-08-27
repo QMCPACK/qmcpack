@@ -15,7 +15,7 @@
 #ifndef AFQMC_MEMORY_UTILITIES_HPP
 #define AFQMC_MEMORY_UTILITIES_HPP
 
-#ifdef QMC_CUDA
+#ifdef ENABLE_CUDA
 #include <cuda_runtime.h>
 #endif
 #include "Message/OpenMP.h"
@@ -27,7 +27,7 @@ extern bool afqmc_cuda_handles_init;
 inline int number_of_devices()
 {
   int num_devices=0;
-#ifdef QMC_CUDA
+#ifdef ENABLE_CUDA
   if(not qmc_cuda::afqmc_cuda_handles_init) 
     throw std::runtime_error(" Error: Uninitialized CUDA environment.");
   cudaGetDeviceCount(&num_devices);

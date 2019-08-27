@@ -9,10 +9,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
-
-
 
 
 #include "Configuration.h"
@@ -20,10 +16,6 @@
 
 namespace qmcplusplus
 {
+MPIObjectBase::MPIObjectBase(Communicate* c) : myComm(c), ClassName("MPIObjectBase") {}
 
-MPIObjectBase::MPIObjectBase(Communicate* c)
-  : myComm(c), ClassName("MPIObjectBase")
-{
-}
-
-}
+} // namespace qmcplusplus

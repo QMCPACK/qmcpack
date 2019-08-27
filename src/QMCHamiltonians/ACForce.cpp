@@ -8,8 +8,8 @@
 //
 // File created by: Raymond Clay, rclay@sandia.gov, Sandia National Laboratories
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 /**@file ACForce.cpp
  *@brief Implementation of ACForce, Assaraf-Caffarel ZVZB style force estimation.
  */
@@ -18,17 +18,15 @@
 
 namespace qmcplusplus
 {
-
-ACForce::ACForce(ParticleSet& source, ParticleSet& target, TrialWaveFunction& psi_in, QMCHamiltonian& H):
-FirstForceIndex(-1), ions(source), elns(target), psi(psi_in), ham(H), Nions(0)
+ACForce::ACForce(ParticleSet& source, ParticleSet& target, TrialWaveFunction& psi_in, QMCHamiltonian& H)
+    : FirstForceIndex(-1), ions(source), elns(target), psi(psi_in), ham(H), Nions(0)
 {
-  prefix="ACForce";
+  prefix = "ACForce";
   myName = prefix;
-  Nions=ions.getTotalNum();
+  Nions  = ions.getTotalNum();
   hf_force.resize(Nions);
   pulay_force.resize(Nions);
   wf_grad.resize(Nions);
-  
 };
 
 QMCHamiltonianBase* ACForce::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
@@ -39,35 +37,35 @@ QMCHamiltonianBase* ACForce::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 
 QMCHamiltonianBase* ACForce::makeClone(ParticleSet& qp, TrialWaveFunction& psi_in, QMCHamiltonian& ham_in)
 {
-  QMCHamiltonianBase* myclone = new ACForce(qp,ions,psi_in,ham_in);
+  QMCHamiltonianBase* myclone = new ACForce(qp, ions, psi_in, ham_in);
   return myclone;
 }
 void ACForce::add2Hamiltonian(ParticleSet& qp, TrialWaveFunction& psi, QMCHamiltonian& ham_in)
 {
-  //The following line is modified 
-  QMCHamiltonianBase* myclone = makeClone(qp,psi,ham_in);
-  if(myclone)
-    ham_in.addOperator(myclone,myName,UpdateMode[PHYSICAL]);
+  //The following line is modified
+  QMCHamiltonianBase* myclone = makeClone(qp, psi, ham_in);
+  if (myclone)
+    ham_in.addOperator(myclone, myName, UpdateMode[PHYSICAL]);
 }
 ACForce::Return_t ACForce::evaluate(ParticleSet& P)
 {
-  hf_force=0;
-  pulay_force=0;
-  wf_grad=0;
+  hf_force    = 0;
+  pulay_force = 0;
+  wf_grad     = 0;
 
   //This function returns d/dR of the sum of all observables in the physical hamiltonian.
   //Note that the sign will be flipped based on definition of force = -d/dR.
-  Value=ham.evaluateIonDerivs(P,ions,psi,hf_force,pulay_force,wf_grad);
+  Value = ham.evaluateIonDerivs(P, ions, psi, hf_force, pulay_force, wf_grad);
   return 0.0;
-};  
+};
 
 void ACForce::addObservables(PropertySetType& plist, BufferType& collectables)
 {
-  if(FirstForceIndex<0)
-    FirstForceIndex=plist.size();
-  for(int iat=0; iat<Nions; iat++)
+  if (FirstForceIndex < 0)
+    FirstForceIndex = plist.size();
+  for (int iat = 0; iat < Nions; iat++)
   {
-    for(int x=0; x<OHMMS_DIM; x++)
+    for (int x = 0; x < OHMMS_DIM; x++)
     {
       std::ostringstream hfname;
       std::ostringstream pulayname;
@@ -86,33 +84,33 @@ void ACForce::addObservables(PropertySetType& plist, BufferType& collectables)
 };
 void ACForce::setObservables(PropertySetType& plist)
 {
-  int myindex=FirstForceIndex;
-  for(int iat=0; iat<Nions; iat++)
+  int myindex = FirstForceIndex;
+  for (int iat = 0; iat < Nions; iat++)
   {
-    for(int iondim=0; iondim<OHMMS_DIM; iondim++)
+    for (int iondim = 0; iondim < OHMMS_DIM; iondim++)
     {
       //Flipping the sign, since these terms currently store d/dR values.
       // add the minus one to be a force.
       plist[myindex++] = -hf_force[iat][iondim];
       plist[myindex++] = -pulay_force[iat][iondim];
-      plist[myindex++] = -Value*wf_grad[iat][iondim];
+      plist[myindex++] = -Value * wf_grad[iat][iondim];
       plist[myindex++] = -wf_grad[iat][iondim];
     }
   }
 };
 void ACForce::setParticlePropertyList(PropertySetType& plist, int offset)
 {
-  int myindex=FirstForceIndex+offset;
-  for(int iat=0; iat<Nions; iat++)
+  int myindex = FirstForceIndex + offset;
+  for (int iat = 0; iat < Nions; iat++)
   {
-    for(int iondim=0; iondim<OHMMS_DIM; iondim++)
+    for (int iondim = 0; iondim < OHMMS_DIM; iondim++)
     {
       plist[myindex++] = -hf_force[iat][iondim];
       plist[myindex++] = -pulay_force[iat][iondim];
-      plist[myindex++] = -Value*wf_grad[iat][iondim];
+      plist[myindex++] = -Value * wf_grad[iat][iondim];
       plist[myindex++] = -wf_grad[iat][iondim];
     }
   }
 };
 
-}
+} // namespace qmcplusplus

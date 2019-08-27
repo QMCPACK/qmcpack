@@ -16,15 +16,13 @@
 
 namespace qmcplusplus
 {
-
-struct CountingJastrowBuilder: public WaveFunctionComponentBuilder
+struct CountingJastrowBuilder : public WaveFunctionComponentBuilder
 {
   CountingJastrowBuilder(ParticleSet& target, TrialWaveFunction& psi);
   bool put(xmlNodePtr cur);
-  
- private:
-  
-  ///jastrow/@name 
+
+private:
+  ///jastrow/@name
   std::string NameOpt;
   ///jastrow/@type
   std::string TypeOpt;
@@ -36,6 +34,6 @@ struct CountingJastrowBuilder: public WaveFunctionComponentBuilder
   bool createCJ(xmlNodePtr cur);
 };
 
-}
+} // namespace qmcplusplus
 
 #endif

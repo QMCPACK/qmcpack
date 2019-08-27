@@ -532,6 +532,16 @@ except:
 #end try
 
 
+# directly apply labels based on test names/pattern matching
+try:
+    if test.startswith('deterministic'):
+        labels.append('deterministic')
+    #end if
+except:
+    error()
+#end try
+
+
 # make a ctest list of the labels
 try:
     ctest_labels = ''

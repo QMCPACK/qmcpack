@@ -52,14 +52,14 @@ class AFQMCDistributedPropagator: public AFQMCBasePropagator
   public:
 
     AFQMCDistributedPropagator(AFQMCInfo& info, xmlNodePtr cur, afqmc::TaskGroup_& tg_, 
-                          Wavefunction& wfn_, CMatrix&& h1_, CVector&& vmf_, 
+                          Wavefunction& wfn_, stdCMatrix&& h1_, CVector&& vmf_, 
                           RandomGenerator_t* r): 
             base(info,cur,tg_,wfn_,std::move(h1_),std::move(vmf_),r)
             ,core_comm(tg_.TG().split(tg_.getLocalTGRank(),tg_.TG().rank()))
 //            ,core_comm()
     {
 //      core_comm = std::move(tg_.TG().split(tg_.getLocalTGRank()));
-      assert(TG.getNNodesPerTG() > 1);
+      assert(TG.getNGroupsPerTG() > 1);
     }
 
     ~AFQMCDistributedPropagator() {}
@@ -86,6 +86,12 @@ class AFQMCDistributedPropagator: public AFQMCBasePropagator
       if(nextra>0)
         step(nextra,wset,E1,dt);
       TG.local_barrier();
+    }
+
+    template<class WlkSet, class CTens, class CMat>
+    void BackPropagate(int steps, int nStabalize, WlkSet& wset, CTens&& Refs, CMat&& detR)
+    {
+      APP_ABORT(" Error: Finish BackPropagate.\n");
     }
 
   protected: 

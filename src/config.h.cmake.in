@@ -35,6 +35,15 @@
 /* Enable OpenMP parallelization. */
 #cmakedefine ENABLE_OPENMP @ENABLE_OPENMP@
 
+/* Enable OpenMP offload. */
+#cmakedefine ENABLE_OFFLOAD @ENABLE_OFFLOAD@
+
+#ifdef ENABLE_OFFLOAD
+  #define PRAGMA_OFFLOAD(x) _Pragma(x)
+#else
+  #define PRAGMA_OFFLOAD(x)
+#endif
+
 /* Define to 1 if you have the `hdf5' library (-lhdf5). */
 #cmakedefine HAVE_LIBHDF5 @HAVE_LIBHDF5@
 
@@ -65,9 +74,6 @@
 /* Define to 1 if you have MPI library */
 #cmakedefine HAVE_MPI @HAVE_MPI@
 
-/* Define to 1 if you have OOMPI library */
-#cmakedefine HAVE_OOMPI @HAVE_OOMPI@
-
 /* Define the physical dimension of appliation. */
 #cmakedefine OHMMS_DIM @OHMMS_DIM@
 
@@ -83,20 +89,14 @@
 /* Define to 1 if precision is mixed, only for the CPU code */
 #cmakedefine MIXED_PRECISION @MIXED_PRECISION@
 
+/* Define to 1 if precision is mixed, only for AFQMC code */
+#cmakedefine AFQMC_MIXED_PRECISION @AFQMC_MIXED_PRECISION@
+
 /* Define to 1 if complex wavefunctions are used */
 #cmakedefine QMC_COMPLEX @QMC_COMPLEX@
 
-/* Define if the code is specialized for orthorhombic supercell */
-#define OHMMS_ORTHO @OHMMS_ORTHO@
-
-/* Define the index of the walker iterator. NOT USED */
-#cmakedefine QMC_FASTWALKER @QMC_FASTWALKER@
-
 /* Define if sincos function exists */
 #cmakedefine HAVE_SINCOS @HAVE_SINCOS@
-
-/* Define if iszero function exists */
-#cmakedefine HAVE_ISZERO @HAVE_ISZERO@
 
 /* Define if einspline lib exists */
 #cmakedefine HAVE_EINSPLINE @HAVE_EINSPLINE@
@@ -136,18 +136,6 @@
 /* Define if unistd.h exists */
 #cmakedefine HAVE_UNISTD_H @HAVE_UNISTD_H@
 
-/* Define if c variable array support exists */
-#cmakedefine HAVE_C_VARARRAYS @HAVE_C_VARARRAYS@
-
-/* Prefetch loop lead distance  */
-#cmakedefine PREFETCH_AHEAD @PREFETCH_AHEAD@
-
-/* Use SSE prefetch  */
-#cmakedefine USE_PREFETCH @USE_PREFETCH@
-
-/* Define the alignment of SIMD in byte*/
-#cmakedefine SIMD_ALIGNMENT @SIMD_ALIGNMENT@
-
 #endif /* HAVE_EINSPLINE_EXT */
 
 /* Find mkl library */
@@ -164,6 +152,9 @@
 
 /* Using CUDA for GPU execution */
 #cmakedefine QMC_CUDA @QMC_CUDA@
+
+/* Using CUDA for GPU execution, next generation */
+#cmakedefine ENABLE_CUDA @ENABLE_CUDA@
 
 /* Setting base precision for CUDA kernels */
 #cmakedefine CUDA_PRECISION @CUDA_PRECISION@

@@ -38,7 +38,7 @@ namespace afqmc
 
 class KPTHCOps
 {
-#if defined(AFQMC_SP)
+#if defined(MIXED_PRECISION)
   using SpC = typename to_single_precision<ComplexType>::value_type;
 #else
   using SpC = ComplexType;
@@ -210,7 +210,7 @@ class KPTHCOps
       TG.TG().all_reduce_in_place_n(P1D.origin(),P1D.num_elements(),std::plus<>());
 
       // add H1 + vn0 and symmetrize
-      using std::conj;
+      using ma::conj;
 
       for(int K=0, nk0=0; K<nkpts; ++K) {
         for(int i=0, I=nk0; i<nopk[K]; i++, I++) {
@@ -247,7 +247,7 @@ class KPTHCOps
     void energy(Mat&& E, MatB const& Gc, int nd, MatC* KEleft, MatD* KEright, bool addH1=true, bool addEJ=true, bool addEXX=true) {
       using ma::T;
       using ma::H;
-      using std::conj;
+      using ma::conj;
       if(nd>0)
 	APP_ABORT(" Error: KPTHC not yet implemented for multiple references.\n");
       static_assert(E.dimensionality==2, "Wrong dimensionality");

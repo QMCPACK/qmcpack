@@ -16,10 +16,9 @@
 #include "QMCWaveFunctions/MolecularOrbitals/GTOBuilder.h"
 namespace qmcplusplus
 {
-
-GTOBuilder::GTOBuilder(xmlNodePtr cur): Normalized(true), m_orbitals(0)
+GTOBuilder::GTOBuilder(xmlNodePtr cur) : Normalized(true), m_orbitals(0)
 {
-  if(cur != NULL)
+  if (cur != NULL)
   {
     putCommon(cur);
   }
@@ -27,28 +26,24 @@ GTOBuilder::GTOBuilder(xmlNodePtr cur): Normalized(true), m_orbitals(0)
 
 bool GTOBuilder::putCommon(xmlNodePtr cur)
 {
-  const xmlChar* a=xmlGetProp(cur,(const xmlChar*)"normalized");
-  if(a)
-  {
-    if(xmlStrEqual(a,(const xmlChar*)"no"))
-      Normalized=false;
-  }
+  const XMLAttrString a(cur, "normalized");
+  if (a == "no")
+    Normalized = false;
   return true;
 }
 
-bool
-GTOBuilder::addRadialOrbital(xmlNodePtr cur, const QuantumNumberType& nlms)
+bool GTOBuilder::addRadialOrbital(xmlNodePtr cur, const QuantumNumberType& nlms)
 {
-  if(!m_orbitals)
+  if (!m_orbitals)
   {
     ERRORMSG("m_orbitals, SphericalOrbitals<ROT,GT>*, is not initialized")
     return false;
   }
-  RadialOrbitalType* radorb= new RadialOrbitalType(nlms[q_l],Normalized);
+  RadialOrbitalType* radorb = new RadialOrbitalType(nlms[q_l], Normalized);
   radorb->putBasisGroup(cur);
   m_orbitals->Rnl.push_back(radorb);
   m_orbitals->RnlID.push_back(nlms);
   return true;
 }
 
-}
+} // namespace qmcplusplus

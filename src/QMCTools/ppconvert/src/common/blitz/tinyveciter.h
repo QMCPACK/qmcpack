@@ -29,133 +29,107 @@
 #define BZ_TINYVECITER_H
 
 #ifndef BZ_TINYVEC_H
- #include <blitz/tinyvec.h>
+#include <blitz/tinyvec.h>
 #endif
 
 #ifndef BZ_MANUAL_VECEXPR_COPY_CONSTRUCTOR
- #error "Debug in tinyveciter.h (this line shouldn't be here)"
+#error "Debug in tinyveciter.h (this line shouldn't be here)"
 #endif
 
 BZ_NAMESPACE(blitz)
 
 // N_stride has default 1, in forward declaration in <blitz/tinyvec.h>
 template<typename P_numtype, int N_length, int N_stride>
-class TinyVectorIter {
+class TinyVectorIter
+{
 public:
-    typedef P_numtype T_numtype;
+  typedef P_numtype T_numtype;
 
-    explicit TinyVectorIter(TinyVector<T_numtype, N_length>& x)
-        : data_(x.data())
-    { }
+  explicit TinyVectorIter(TinyVector<T_numtype, N_length>& x) : data_(x.data()) {}
 
 #ifdef BZ_MANUAL_VECEXPR_COPY_CONSTRUCTOR
-    TinyVectorIter(const TinyVectorIter<T_numtype, N_length, N_stride>& iter)
-        : data_(iter.data_)
-    {
-    }
+  TinyVectorIter(const TinyVectorIter<T_numtype, N_length, N_stride>& iter) : data_(iter.data_) {}
 #endif
 
-    T_numtype operator[](int i) const
-    {
-        BZPRECONDITION(i >= 0 && i < N_length);
-        return data_[i * N_stride];
-    }
+  T_numtype operator[](int i) const
+  {
+    BZPRECONDITION(i >= 0 && i < N_length);
+    return data_[i * N_stride];
+  }
 
-    T_numtype& restrict operator[](int i)
-    {
-        BZPRECONDITION(i >= 0 && i < N_length);
-        return data_[i * N_stride];
-    }
+  T_numtype& restrict operator[](int i)
+  {
+    BZPRECONDITION(i >= 0 && i < N_length);
+    return data_[i * N_stride];
+  }
 
-    T_numtype operator()(int i) const
-    {
-        BZPRECONDITION(i >= 0 && i < N_length);
-        return data_[i * N_stride];
-    }
+  T_numtype operator()(int i) const
+  {
+    BZPRECONDITION(i >= 0 && i < N_length);
+    return data_[i * N_stride];
+  }
 
-    T_numtype& restrict operator()(int i)
-    {
-        BZPRECONDITION(i >= 0 && i < N_length);
-        return data_[i * N_stride];
-    }
+  T_numtype& restrict operator()(int i)
+  {
+    BZPRECONDITION(i >= 0 && i < N_length);
+    return data_[i * N_stride];
+  }
 
-    int length(int) const
-    { return N_length; }
+  int length(int) const { return N_length; }
 
-    static const int _bz_staticLengthCount = 1,
-                     _bz_dynamicLengthCount = 0,
-                     _bz_staticLength = 0;
+  static const int _bz_staticLengthCount = 1, _bz_dynamicLengthCount = 0, _bz_staticLength = 0;
 
-    bool _bz_hasFastAccess() const
-    { return true; }
+  bool _bz_hasFastAccess() const { return true; }
 
-    T_numtype _bz_fastAccess(int i) const
-    { return data_[i * N_stride]; }
+  T_numtype _bz_fastAccess(int i) const { return data_[i * N_stride]; }
 
-    T_numtype& _bz_fastAccess(int i)
-    { return data_[i * N_stride]; }
+  T_numtype& _bz_fastAccess(int i) { return data_[i * N_stride]; }
 
-    int _bz_suggestLength() const
-    { return N_length; }
+  int _bz_suggestLength() const { return N_length; }
 
 private:
-    T_numtype * restrict data_;
+  T_numtype* restrict data_;
 };
 
 // N_stride has default 1, in forward declaration in <blitz/tinyvec.h>
 template<typename P_numtype, int N_length, int N_stride>
-class TinyVectorIterConst {
+class TinyVectorIterConst
+{
 public:
-    typedef P_numtype T_numtype;
+  typedef P_numtype T_numtype;
 
-    explicit TinyVectorIterConst(const TinyVector<T_numtype, N_length>& x)
-        : data_(x.data())
-    { }
+  explicit TinyVectorIterConst(const TinyVector<T_numtype, N_length>& x) : data_(x.data()) {}
 
 #ifdef BZ_MANUAL_VECEXPR_COPY_CONSTRUCTOR
-    TinyVectorIterConst(const TinyVectorIterConst<T_numtype, N_length, 
-        N_stride>& iter)
-        : data_(iter.data_)
-    {
-    }
+  TinyVectorIterConst(const TinyVectorIterConst<T_numtype, N_length, N_stride>& iter) : data_(iter.data_) {}
 
-    void operator=(const TinyVectorIterConst<T_numtype, N_length, N_stride>& 
-        iter)
-    {
-        data_ = iter.data_;
-    }
+  void operator=(const TinyVectorIterConst<T_numtype, N_length, N_stride>& iter) { data_ = iter.data_; }
 #endif
 
-    T_numtype operator[](int i) const
-    {
-        BZPRECONDITION(i >= 0 && i < N_length);
-        return data_[i * N_stride];
-    }
+  T_numtype operator[](int i) const
+  {
+    BZPRECONDITION(i >= 0 && i < N_length);
+    return data_[i * N_stride];
+  }
 
-    T_numtype operator()(int i) const
-    {
-        BZPRECONDITION(i >= 0 && i < N_length);
-        return data_[i * N_stride];
-    }
+  T_numtype operator()(int i) const
+  {
+    BZPRECONDITION(i >= 0 && i < N_length);
+    return data_[i * N_stride];
+  }
 
-    int length(int) const
-    { return N_length; }
+  int length(int) const { return N_length; }
 
-    static const int _bz_staticLengthCount = 1,
-                     _bz_dynamicLengthCount = 0,
-                     _bz_staticLength = 0;
+  static const int _bz_staticLengthCount = 1, _bz_dynamicLengthCount = 0, _bz_staticLength = 0;
 
-    bool _bz_hasFastAccess() const
-    { return true; }
+  bool _bz_hasFastAccess() const { return true; }
 
-    T_numtype _bz_fastAccess(int i) const
-    { return data_[i * N_stride]; }
+  T_numtype _bz_fastAccess(int i) const { return data_[i * N_stride]; }
 
-    int _bz_suggestLength() const
-    { return N_length; }
+  int _bz_suggestLength() const { return N_length; }
 
 private:
-    const T_numtype * restrict data_;
+  const T_numtype* restrict data_;
 };
 
 BZ_NAMESPACE_END

@@ -23,6 +23,12 @@ IF(COMMAND cmake_policy)
   IF(CMAKE_GENERATOR MATCHES "Ninja")
     cmake_policy(SET CMP0058 NEW)
   ENDIF(CMAKE_GENERATOR MATCHES "Ninja")
+  # CMake find_package will use <PackageName>_ROOT CMake variable
+  # and environment variable in search path.
+  # various Find<Package>.cmake modules may not follow this policy
+  IF(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.12.0") 
+    cmake_policy(SET CMP0074 NEW)
+  ENDIF(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.12.0") 
 ENDIF(COMMAND cmake_policy)
 
 
@@ -30,13 +36,23 @@ ENDIF(COMMAND cmake_policy)
 # Version
 ######################################################################
 SET(QMCPACK_VERSION_MAJOR 3)
-SET(QMCPACK_VERSION_MINOR 6)
-SET(QMCPACK_VERSION_PATCH 0)
+SET(QMCPACK_VERSION_MINOR 8)
+SET(QMCPACK_VERSION_PATCH 9)
 SET(QMCPACK_VERSION "${QMCPACK_VERSION_MAJOR}.${QMCPACK_VERSION_MINOR}.${QMCPACK_VERSION_PATCH}")
+
+
+######################################################################
+# Verify QE executables present if QE_BIN specified
+######################################################################
+IF ( DEFINED QE_BIN )
+  INCLUDE(CMake/run_qe.cmake)
+  VERIFY_QE_PRESENT( ${QE_BIN} )
+ENDIF()
 
 ######################################################################
 # CTest
 ######################################################################
+INCLUDE( "${qmcpack_SOURCE_DIR}/CMake/macros.cmake" )
 SET( DROP_METHOD "http" )
 SET( DROP_SITE "cdash.qmcpack.org" )
 SET( DROP_LOCATION "/CDash/submit.php?project=QMCPACK" )
@@ -61,7 +77,7 @@ MESSAGE(STATUS "QMC_SYMLINK_TEST_FILES = ${QMC_SYMLINK_TEST_FILES}.  ${SYMLINK_M
 # Build level
 ######################################################################
 
-SET(QMC_BUILD_SANDBOX_ONLY OFF CACHE BOOLEAN "Build only applications in Sandbox directory")
+SET(QMC_BUILD_SANDBOX_ONLY OFF CACHE BOOL "Build only applications in Sandbox directory")
 IF ( NOT CMAKE_BUILD_TYPE AND NOT CMAKE_TOOLCHAIN_FILE)
   SET( CMAKE_BUILD_TYPE Release )
 ENDIF()
@@ -99,7 +115,7 @@ SET (EXECUTABLE_OUTPUT_PATH ${qmcpack_BINARY_DIR}/bin CACHE PATH "Single output 
 # QMC_MPI =  enable MPI
 # QMC_OMP = enable OMP
 ######################################################################
-SET(OHMMS_DIM 3 CACHE INTEGER "Select physical dimension")
+SET(OHMMS_DIM 3 CACHE STRING "Select physical dimension")
 SET(OHMMS_INDEXTYPE int)
 MESSAGE(STATUS "defining the float point precision")
 SET(OHMMS_PRECISION_FULL double)
@@ -137,10 +153,18 @@ SET(ENABLE_GCOV FALSE CACHE BOOL "Enable code coverage")
 ######################################################################
 SET(QMC_MPI 1 CACHE BOOL "Enable/disable MPI")
 SET(QMC_OMP 1 CACHE BOOL "Enable/disable OpenMP")
-SET(QMC_COMPLEX 0 CACHE INTEGER "Build for complex binary")
+SET(QMC_COMPLEX 0 CACHE BOOL "Build for complex binary")
 SET(PRINT_DEBUG 0 CACHE BOOL "Enable/disable debug printing")
 SET(QMC_CUDA 0 CACHE BOOL "Build with GPU support through CUDA")
-SET(ENABLE_SOA 0 CACHE BOOL "Enable/disable SoA optimization")
+SET(ENABLE_CUDA 0 CACHE BOOL "Build with the second generation of GPU support through CUDA (production quality for AFQMC, experimental for real space)")
+SET(ENABLE_SOA 1 CACHE BOOL "Enable/disable SoA optimization")
+SET(ENABLE_OFFLOAD 0 CACHE BOOL "Enable OpenMP offload")
+
+IF(ENABLE_CUDA AND QMC_CUDA)
+  MESSAGE(FATAL_ERROR "ENABLE_CUDA=1 and QMC_CUDA=1 can not be set together!")
+ENDIF(ENABLE_CUDA AND QMC_CUDA)
+
+SET(QMC_VERBOSE_CONFIGURATION 0 CACHE BOOL "Give details why specific tests are/are not added")
 
 ######################################################################
 # set debug printout
@@ -164,9 +188,6 @@ INCLUDE(${CMAKE_ROOT}/Modules/CheckCXXSourceCompiles.cmake)
 
 CHECK_FUNCTION_EXISTS(sincos HAVE_SINCOS)
 CHECK_FUNCTION_EXISTS(posix_memalign HAVE_POSIX_MEMALIGN)
-SET(CHECK_ISZERO_SOURCE "#include <math.h>
-                         int main() {iszero(1.0); return 0;}")
-CHECK_CXX_SOURCE_COMPILES("${CHECK_ISZERO_SOURCE}" HAVE_ISZERO)
 
 CHECK_INCLUDE_FILE(dlfcn.h HAVE_DLFCN_H)
 CHECK_INCLUDE_FILE(inttypes.h HAVE_INTTYPES_H)
@@ -194,15 +215,12 @@ IF(MIXED_PRECISION AND BUILD_LMYENGINE_INTERFACE)
   SET(BUILD_LMYENGINE_INTERFACE 0)
 ENDIF()
 SET(BUILD_AFQMC 0 CACHE BOOL "Build with AFQMC")
-# AFQMC requires MPI. Works with neither real nor mixed precision builds.
+# AFQMC requires MPI.
 If (BUILD_AFQMC AND NOT QMC_MPI)
   MESSAGE(FATAL_ERROR "AFQMC requires building with MPI (QMC_MPI=1). Set BUILD_AFQMC=0 or configure MPI.")
 ENDIF()
-If (BUILD_AFQMC AND NOT QMC_COMPLEX)
-  MESSAGE(FATAL_ERROR "AFQMC requires building with QMC_COMPLEX=1 for now.")
-ENDIF()
-If (BUILD_AFQMC AND MIXED_PRECISION)
-  MESSAGE(FATAL_ERROR "AFQMC requires building with QMC_MIXED_PRECISION=0 for now.")
+If (BUILD_AFQMC AND ENABLE_CUDA AND NOT QMC_COMPLEX)
+  MESSAGE(FATAL_ERROR "AFQMC only works on GPUs if QMC_COMPLEX=1.")
 ENDIF()
 SET(BUILD_FCIQMC 0 CACHE BOOL "Build with FCIQMC")
 #SET(BUILD_QMCTOOLS 1 CACHE BOOL "Build tools for QMCPACK")
@@ -217,15 +235,6 @@ SET(ENABLE_TIMERS 0 CACHE BOOL "Enable internal timers")
 # INSTALL_NEXUS install Nexus alongside QMCPACK
 ######################################################################
 SET(INSTALL_NEXUS 1 CACHE BOOL "Install Nexus alongside QMCPACK")
-
-######################################################################
-# FIXED PARAMETERS for test and legacy reasons
-# DO NOT TOUCH THESE
-# QMC_ORTHO  = 0 for general unit cell, 1 for orthogonal cells
-# QMC_FASTWALKER  = true, when operation is faster for each walker
-######################################################################
-SET(QMC_FASTWALKER 1)
-SET(OHMMS_ORTHO 0)
 
 ######################################################################
 #list of options to determine libraries. First, try to use libraries available
@@ -306,9 +315,6 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
   SET(HAVE_MKL 0)
   SET(HAVE_MKL_VML 0)
   SET(HAVE_ACML 0)
-  SET(USE_PREFETCH 0)
-  SET(PREFETCH_AHEAD 12)
-  SET(HAVE_C_VARARRAYS 1)
 
   ######################################################
   # Try to identify CPU identity
@@ -405,6 +411,11 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
   ENDIF()
 
 
+  #--------------------------------------------------------------------------
+  # Check that a C++ compiler is compatiable with the underlying libstdc++
+  #--------------------------------------------------------------------------
+  include(CMake/Testlibstdc++.cmake)
+
   #---------------------------------------------------
   # Check that a C++ 14 standard library is configured
   #---------------------------------------------------
@@ -418,11 +429,9 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
     GET_FILENAME_COMPONENT(BASE_CXX_COMPILER_NAME ${CMAKE_CXX_COMPILER} NAME)
     if(${BASE_CXX_COMPILER_NAME} MATCHES "^mp")
       SET(HAVE_MPI 1)
-      SET(HAVE_OOMPI 1)
       SET(MPI_FOUND TRUE)
     elseif($ENV{CRAYPE_VERSION} MATCHES ".")
       SET(HAVE_MPI 1)
-      SET(HAVE_OOMPI 1)
       SET(MPI_FOUND TRUE)
     else()
       include(FindMPI)
@@ -446,12 +455,10 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
         IF(MPI_WORKS)
           MESSAGE(STATUS "MPI is enabled")
           SET(HAVE_MPI 1)
-          SET(HAVE_OOMPI 1)
           LINK_LIBRARIES(${MPI_CXX_LIBRARIES})
         ELSE(MPI_WORKS)
           MESSAGE(STATUS "MPI is disabled")
           SET(HAVE_MPI 0)
-          SET(HAVE_OOMPI 0)
           SET(MPI_LIBRARY "")
         ENDIF(MPI_WORKS)
       ELSE(MPI_FOUND)
@@ -543,7 +550,6 @@ IF ( HAVE_MPI )
   MESSAGE(STATUS "MPI runner is ${MPIEXEC}")
 ENDIF(HAVE_MPI)
 
-SET(HAVE_OOMPI ${HAVE_MPI})
 INCLUDE(${CMAKE_ROOT}/Modules/FindThreads.cmake)
 
 ####################################################################
@@ -578,8 +584,7 @@ ENDIF(FFTW_FOUND)
 SET(QMC_UTIL_LIBS ${QMC_UTIL_LIBS} ${FORTRAN_LIBRARIES})
 
 find_package(ZLIB)
-#find_package(LibXml2)
-INCLUDE(CMake/FindLibxml2QMC.cmake)
+find_package(LibXml2)
 
 IF(LIBXML2_FOUND)
   INCLUDE_DIRECTORIES(${LIBXML2_INCLUDE_DIR})
@@ -646,7 +651,7 @@ ELSE()
 ENDIF()
 
 SET(HAVE_CUDA 0)
-IF(QMC_CUDA)
+IF(QMC_CUDA OR ENABLE_CUDA)
   IF(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     set(CUDA_PROPAGATE_HOST_FLAGS ON)
   ELSE(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
@@ -674,11 +679,12 @@ IF(QMC_CUDA)
     SET( CUDA_ARCH sm_35 CACHE STRING "CUDA architecture sm_XX")
     SET(CUDA_NVCC_FLAGS "-arch=${CUDA_ARCH};${CUDA_NVCC_FLAGS}")
   endif(CUDA_NVCC_FLAGS MATCHES "arch")
+  INCLUDE_DIRECTORIES(${CUDA_INCLUDE_DIRS})
   set(HAVE_CUDA 1)
   MESSAGE("   CUDA_NVCC_FLAGS=${CUDA_NVCC_FLAGS}")
-ELSE(QMC_CUDA)
+ELSE(QMC_CUDA OR ENABLE_CUDA)
   MESSAGE(STATUS "Disabling CUDA")
-ENDIF(QMC_CUDA)
+ENDIF(QMC_CUDA OR ENABLE_CUDA)
 
 SET(USE_NVTX_API 0 CACHE BOOL "Enable/disable NVTX regions in CUDA code.")
 IF(USE_NVTX_API)
@@ -754,6 +760,16 @@ IF (USE_VTUNE_API)
   ENDIF()
   LINK_LIBRARIES("${VTUNE_ITTNOTIFY_LIBRARY}")
 ENDIF()
+
+SET(QMC_EXP_THREADING FALSE CACHE BOOL "Experimental non openmp threading models")
+MARK_AS_ADVANCED(QMC_EXP_THREADING)
+IF(QMC_EXP_THREADING)
+  include(CheckAtomic)
+  IF(HAVE_LIBATOMIC)
+    LINK_LIBRARIES("${HAVE_LIBATOMIC}")
+  ENDIF(HAVE_LIBATOMIC)
+  ADD_DEFINITIONS(-DQMC_EXP_THREADING)
+ENDIF(QMC_EXP_THREADING)
 
 #include(ExternalProject)
 #  set(einspline_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/einspline")

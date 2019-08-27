@@ -13,45 +13,38 @@
 #include <Utilities/InfoStream.h>
 #include <fstream>
 
-InfoStream::~InfoStream()
+void InfoStream::pause()
 {
-  if (currStream != nullStream) {
-    delete nullStream;
-  }
-
-  if (ownStream && currStream) {
-    delete(currStream);
-  }
-}
-
-void InfoStream::pause() {
-  if (currStream != nullStream)
+  if (currStream != &nullStream)
   {
     prevStream = currStream;
-    currStream = nullStream;
+    currStream = &nullStream;
   }
 }
 
-void InfoStream::resume() {
-  if (prevStream) {
+void InfoStream::resume()
+{
+  if (prevStream)
+  {
     currStream = prevStream;
-    prevStream = NULL;
-   }
+    prevStream = nullptr;
+  }
 }
 
-void InfoStream::shutOff() {
-  prevStream = NULL;
-  currStream = nullStream;
+void InfoStream::shutOff()
+{
+  prevStream = nullptr;
+  currStream = &nullStream;
 }
 
-void InfoStream::redirectToFile(const std::string &fname) {
-  currStream = new std::ofstream(fname);
-  ownStream = true;
+void InfoStream::redirectToFile(const std::string& fname)
+{
+  fileStream = std::unique_ptr<std::ofstream>(new std::ofstream(fname));
+  currStream = fileStream.get();
 }
 
-void InfoStream::redirectToSameStream(InfoStream &info)
+void InfoStream::redirectToSameStream(InfoStream& info)
 {
   currStream = &info.getStream();
-  ownStream = false;
+  fileStream.reset();
 }
-

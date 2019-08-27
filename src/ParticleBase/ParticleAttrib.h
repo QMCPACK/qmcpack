@@ -4,12 +4,10 @@
 //
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
-// File developed by: 
+// File developed by:
 //
 // File created by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Corp.
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
 
 
 /**@file ParticleAttrib.h
@@ -22,51 +20,47 @@
 
 #include <OhmmsPETE/OhmmsVector.h>
 #include "Utilities/OhmmsObject.h"
+#include "Lattice/CrystalLattice.h"
 
 namespace qmcplusplus
 {
 
-template<class T, typename Alloc=std::allocator<T> >
-class ParticleAttrib: public Vector<T,Alloc>, public OhmmsObject
+/** Attaches a unit to a Vector for IO
+ *
+ *  Makes Vect
+ */
+template<class T, typename Alloc = std::allocator<T>>
+class ParticleAttrib : public Vector<T, Alloc>, public OhmmsObject
 {
-  typedef Vector<T,Alloc> __my_base;
+  typedef Vector<T, Alloc> __my_base;
+
 public:
   /// The unit type
-  int InUnit;
+  PosUnit InUnit;
 
   /** constructor with size n*/
-  explicit inline 
-    ParticleAttrib(size_t n=0):__my_base(n), InUnit(0) { }
+  explicit inline ParticleAttrib(size_t n = 0) : __my_base(n), InUnit(PosUnit::Cartesian) {}
 
   /** constructor with an initialized ref */
-  explicit inline ParticleAttrib(T* ref, size_t n) : __my_base(ref,n), InUnit(0){}
+  explicit inline ParticleAttrib(T* ref, size_t n) : __my_base(ref, n), InUnit(PosUnit::Cartesian) {}
 
-  ParticleAttrib(const ParticleAttrib& rhs)=default;
-  inline ParticleAttrib& operator=(const ParticleAttrib& rhs)=default;
+  ParticleAttrib(const ParticleAttrib& rhs) = default;
+  inline ParticleAttrib& operator=(const ParticleAttrib& rhs) = default;
 
   /** assignment operator to enable PETE */
   template<class RHS>
   inline ParticleAttrib& operator=(const RHS& rhs)
   {
-    assign(*this,rhs); 
+    assign(*this, rhs);
     return *this;
   }
 
   //@{set/set the unit
-  inline void setUnit(int i)
-  {
-    InUnit = i;
-  }
-  inline int getUnit() const
-  {
-    return InUnit;
-  }
+  inline void setUnit(PosUnit i) { InUnit = i; }
+  inline PosUnit getUnit() const { return InUnit; }
   //@}
 
-  OhmmsObject* makeClone() const
-  {
-    return new ParticleAttrib<T,Alloc>(*this);
-  }
+  OhmmsObject* makeClone() const { return new ParticleAttrib<T, Alloc>(*this); }
 
   /** Specialized to write the unit
    *\return true, if the attribute is relative to a unit
@@ -89,32 +83,26 @@ public:
   }
 
   /*@warning not fully implemented.*/
-  bool put(xmlNodePtr cur)
-  {
-    return true;
-  }
+  bool put(xmlNodePtr cur) { return true; }
 
   ///reset member data
-  void reset() { }
-
+  void reset() {}
 };
 
 template<class T, unsigned D>
-inline T* get_first_address(ParticleAttrib<TinyVector<T,D> >& a)
+inline T* get_first_address(ParticleAttrib<TinyVector<T, D>>& a)
 {
   return &(a[0][0]);
 }
 
 template<class T, unsigned D>
-inline T* get_last_address(ParticleAttrib<TinyVector<T,D> >& a)
+inline T* get_last_address(ParticleAttrib<TinyVector<T, D>>& a)
 {
-  return &(a[0][0])+D*a.size();
+  return &(a[0][0]) + D * a.size();
 }
 
-}
+} // namespace qmcplusplus
 
 #include "ParticleBase/ParticleAttrib.cpp"
 
 #endif // OHMMS_PARTICLEATTRIB_PEPE_H
-
-

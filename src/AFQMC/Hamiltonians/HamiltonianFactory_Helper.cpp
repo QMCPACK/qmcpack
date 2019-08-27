@@ -47,16 +47,16 @@ namespace afqmc
   FactorizedSparseHamiltonian::shm_csr_matrix read_V2fact(hdf_archive& dump, TaskGroup_& TG, int nread, int NMO, int nvecs, double cutoff1bar, int int_blocks)
   {
       using counter =  qmcplusplus::afqmc::sparse_matrix_element_counter;
-      using Alloc = shared_allocator<ValueType>;
-      using ucsr_matrix = ma::sparse::ucsr_matrix<ValueType,int,std::size_t,
-                                shared_allocator<ValueType>,
+      using Alloc = shared_allocator<SPValueType>;
+      using ucsr_matrix = ma::sparse::ucsr_matrix<SPValueType,int,std::size_t,
+                                shared_allocator<SPValueType>,
                                 ma::sparse::is_root>;
 
       int min_i = 0;
       int max_i = nvecs;
 
       int nrows = NMO*NMO;
-      bool distribute_Ham = (TG.getNNodesPerTG() < TG.getTotalNodes());
+      bool distribute_Ham = (TG.getNGroupsPerTG() < TG.getTotalNodes());
       std::vector<IndexType> row_counts(nrows);
 
       // calculate column range that belong to this node
@@ -104,7 +104,7 @@ namespace afqmc
       csr::matrix_emplace_wrapper<ucsr_matrix> csr_wrapper(ucsr,TG.Node());
 
       using mat_map =  qmcplusplus::afqmc::matrix_map;
-      csr_hdf5::multiple_reader_hdf5_csr<ValueType,int>(csr_wrapper,
+      csr_hdf5::multiple_reader_hdf5_csr<SPValueType,int>(csr_wrapper,
                                   mat_map(false,true,nrows,nvecs,0,nrows,min_i,max_i,cutoff1bar),
                                   dump,TG,nread);
       csr_wrapper.push_buffer();

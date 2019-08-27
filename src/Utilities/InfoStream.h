@@ -17,10 +17,9 @@
 #ifndef INFOSTREAM_H
 #define INFOSTREAM_H
 
-#include <string>
+#include <fstream>
+#include <memory>
 #include <iostream>
-#include <iomanip>
-#include <sstream>
 
 /**
  *  Interface to output streams.  Can redirect output to stdout/stderr, a file, or a null stream.
@@ -29,30 +28,18 @@
 class InfoStream
 {
 public:
-  InfoStream(std::ostream *output_stream): prevStream(NULL), nullStream(new std::ostream(NULL)),
-      ownStream(false) {
-    currStream = output_stream;
-  }
+  InfoStream(std::ostream* output_stream) : currStream(output_stream), prevStream(nullptr), nullStream(nullptr)
+  { }
 
-  InfoStream(InfoStream &in): prevStream(NULL), nullStream(new std::ostream(NULL)),
-      ownStream(false) {
-    redirectToSameStream(in);
-  }
+  InfoStream(InfoStream& in) : currStream(&in.getStream()), prevStream(nullptr), nullStream(nullptr)
+  { }
 
-  ~InfoStream();
+  std::ostream& getStream(const std::string& tag = "") { return *currStream; }
 
-  std::ostream &getStream(const std::string &tag = "") {
-    return *currStream;
-  }
-
-  void setStream(std::ostream *output_stream) {
-    currStream = output_stream;
-  }
+  void setStream(std::ostream* output_stream) { currStream = output_stream; }
 
 
-  void flush() {
-    currStream->flush();
-  }
+  void flush() { currStream->flush(); }
 
   /// Stop output (redirect to a null stream)
   void pause();
@@ -61,31 +48,30 @@ public:
   void resume();
 
   /// Open a file and output to that file
-  void redirectToFile(const std::string &fname);
+  void redirectToFile(const std::string& fname);
 
   /// Copy a stream
-  void redirectToSameStream(InfoStream &info);
+  void redirectToSameStream(InfoStream& info);
 
   ///  Permanently turn off the stream
   void shutOff();
 
 private:
+  // ofstream pointer allocated when file output is used
+  std::unique_ptr<std::ofstream> fileStream;
 
-  // Keep track of whether we should delete the stream or not
-  bool ownStream;
-
-  std::ostream *currStream;
+  // current stream that InfoStream represents
+  std::ostream* currStream;
 
   // save stream during pause
-  std::ostream *prevStream;
+  std::ostream* prevStream;
 
   // Created at construction. Used during pause
-  std::ostream *nullStream;
+  std::ostream nullStream;
 };
 
 template<class T>
-inline
-InfoStream& operator<<(InfoStream& o, const T& val)
+inline InfoStream& operator<<(InfoStream& o, const T& val)
 {
   o.getStream() << val;
   return o;

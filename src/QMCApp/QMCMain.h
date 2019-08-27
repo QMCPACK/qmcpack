@@ -11,9 +11,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
-
 
 
 /**@file QMCMain.h
@@ -23,23 +20,20 @@
 #define QMCPLUSPLUS_MAINAPPLICATIONS_H
 
 #include "QMCApp/QMCDriverFactory.h"
+#include "QMCApp/QMCMainState.h"
 #include "QMCApp/QMCAppBase.h"
 
 namespace qmcplusplus
 {
-
 /** @ingroup qmcapp
  * @brief Main application to perform QMC simulations
  *
  * This is a generalized QMC application which can handle multiple ParticleSet,
  * TrialWaveFunction and QMCHamiltonian objects.
  */
-class QMCMain: public QMCDriverFactory,
-  public QMCAppBase
+class QMCMain : public QMCMainState, public QMCAppBase
 {
-
 public:
-
   ///constructor
   QMCMain(Communicate* c);
 
@@ -50,12 +44,10 @@ public:
   bool execute();
 
 private:
-
   ///flag to indicate that a qmc is the first QMC
   bool FirstQMC;
 
-  ///previous configuration file for next qmc node
-  std::string PrevConfigFile;
+  std::unique_ptr<QMCDriverInterface> last_driver;
 
   ///xml mcwalkerset elements for output
   std::vector<xmlNodePtr> m_walkerset;
@@ -64,7 +56,7 @@ private:
   ///traces xml
   xmlNodePtr traces_xml;
   ///qmc sections
-  std::vector<std::pair<xmlNodePtr,bool> > m_qmcaction;
+  std::vector<std::pair<xmlNodePtr, bool>> m_qmcaction;
   ///pointer to the last node of the main inputfile
   xmlNodePtr lastInputNode;
   ///execute <qmc/> element
@@ -86,12 +78,11 @@ private:
    * @param noloop if true, this qmc section is not in a loop.
    * @return true, if a section is successfully executed.
    */
-  bool executeQMCSection(xmlNodePtr cur, bool noloop=true);
+  bool executeQMCSection(xmlNodePtr cur, bool noloop = true);
   ///execute <cmc/> element
   bool executeCMCSection(xmlNodePtr cur);
   ///execute <debug/> element
   bool executeDebugSection(xmlNodePtr cur);
-   
 };
-}
+} // namespace qmcplusplus
 #endif

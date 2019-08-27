@@ -6,20 +6,27 @@
 # 
 
 export TEST_SITE_NAME=bora.alcf.anl.gov
-export N_PROCS_BUILD=24
-export N_PROCS=32
+export N_PROCS_BUILD=16
+export N_PROCS=16
 export CC=mpicc
 export CXX=mpicxx
 export BOOST_ROOT=/sandbox/opt/boost_1_61_0
 
-QE_BIN=/sandbox/opt/qe-stable/qe-6.3/bin
+# run on socket 1
+NUMA_ID=1
+
+#CUDA
+export PATH=/sandbox/opt/NVIDIA/cuda-10.0/bin:$PATH
+export LD_LIBRARY_PATH=/sandbox/opt/NVIDIA/cuda-10.0/lib64:$LD_LIBRARY_PATH
+
+QE_BIN=/sandbox/opt/qe-stable/qe-6.4.1/bin
 QMC_DATA=/sandbox/opt/h5data
 
 #Must be an absolute path
 place=/sandbox/QMCPACK_CI_BUILDS_DO_NOT_REMOVE
 
 #define and load compiler
-compiler=Intel2019
+compiler=Intel2018
 
 if [ ! -e $place ]; then
 mkdir $place
@@ -49,7 +56,8 @@ cd $entry
 
 git checkout $branch
 
-for sys in Real-SoA Real-Mixed-SoA Complex-SoA Complex-Mixed-SoA Real Real-Mixed Complex Complex-Mixed
+for sys in Real-SoA Real-Mixed-SoA Complex-SoA Complex-Mixed-SoA Real Real-Mixed Complex Complex-Mixed \
+           Real-Mixed-SoA-CUDA2 Complex-Mixed-SoA-CUDA2
 do
 
 folder=build_$compiler_$sys
@@ -69,7 +77,13 @@ then
   mkdir -p $place/log/$entry/$mydate
 fi
 
-CTEST_FLAGS="-D QE_BIN=$QE_BIN -D QMC_DATA=$QMC_DATA -D ENABLE_TIMERS=1 -D C_FLAGS=-xCOMMON-AVX512 -D CXX_FLAGS=-xCOMMON-AVX512"
+CTEST_FLAGS="-D QMC_DATA=$QMC_DATA -D ENABLE_TIMERS=1 -D C_FLAGS=-xCOMMON-AVX512 -D CXX_FLAGS=-xCOMMON-AVX512"
+
+if [[ $sys == *"-CUDA2"* ]]; then
+  CTEST_FLAGS="$CTEST_FLAGS -D ENABLE_CUDA=1 -D CUDA_ARCH=sm_61 -L 'deterministic|performance' -LE unstable"
+else
+  CTEST_FLAGS="$CTEST_FLAGS -D QE_BIN=$QE_BIN"
+fi
 
 if [[ $sys == *"Complex"* ]]; then
   CTEST_FLAGS="$CTEST_FLAGS -D QMC_COMPLEX=1"
@@ -77,6 +91,8 @@ fi
 
 if [[ $sys == *"-SoA"* ]]; then
   CTEST_FLAGS="$CTEST_FLAGS -D ENABLE_SOA=1"
+else
+  CTEST_FLAGS="$CTEST_FLAGS -D ENABLE_SOA=0"
 fi
 
 if [[ $sys == *"-Mixed"* ]]; then
@@ -85,6 +101,7 @@ fi
 
 export QMCPACK_TEST_SUBMIT_NAME=${compiler}-${sys}-Release
 
+numactl -N $NUMA_ID \
 ctest $CTEST_FLAGS -S $PWD/../CMake/ctest_script.cmake,release -VV -E 'long' --timeout 800 &> $place/log/$entry/$mydate/${QMCPACK_TEST_SUBMIT_NAME}.log
 
 cd ..

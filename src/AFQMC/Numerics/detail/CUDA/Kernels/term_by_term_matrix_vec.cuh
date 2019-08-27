@@ -29,6 +29,14 @@ void term_by_term_mat_vec_mult( int dim, int nrow, int ncol, std::complex<double
                     std::complex<double>* x, int incx);
 void term_by_term_mat_vec_div( int dim, int nrow, int ncol, std::complex<double>* A, int lda,
                     std::complex<double>* x, int incx);
+void term_by_term_mat_vec_plus( int dim, int nrow, int ncol, std::complex<double>* A, int lda,
+                    double* x, int incx);
+void term_by_term_mat_vec_minus( int dim, int nrow, int ncol, std::complex<double>* A, int lda,
+                    double* x, int incx);
+void term_by_term_mat_vec_mult( int dim, int nrow, int ncol, std::complex<double>* A, int lda,
+                    double* x, int incx);
+void term_by_term_mat_vec_div( int dim, int nrow, int ncol, std::complex<double>* A, int lda,
+                    double* x, int incx);
 
 }
 

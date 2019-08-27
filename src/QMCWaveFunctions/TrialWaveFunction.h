@@ -14,8 +14,8 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 /**@file TrialWaveFunction.h
  *@brief Declaration of a TrialWaveFunction
  */
@@ -37,58 +37,6 @@
 
 namespace qmcplusplus
 {
-
-struct CoefficientHolder
-{
-  typedef WaveFunctionComponent::RealType           RealType;
-
-  std::vector<opt_variables_type> oldVars;
-  std::vector<RealType> energies;
-  std::vector<RealType> variances;
-
-  void addParams(opt_variables_type& var, RealType e, RealType v)
-  {
-    oldVars.push_back(var);
-    energies.push_back(e);
-    variances.push_back(v);
-  }
-
-  //this returns the "best" parameters stored in the history. we=energy weight and wv=weightvariance
-  opt_variables_type getBestCoefficients(RealType we, RealType wv, bool print=0)
-  {
-    int best(0);
-    RealType bestVal(0);
-    bestVal=energies[0]*we + variances[0]*wv;
-    if (print)
-      app_log()<<0<<" "<<energies[0]<<" "<<variances[0]<<" "<<bestVal<< std::endl;
-    for(int ix=1; ix<energies.size(); ix++)
-    {
-      if (print)
-        app_log()<<ix<<" "<<energies[ix]<<" "<<variances[ix]<<" "<<energies[ix]*we+variances[ix]*wv<< std::endl;
-      if (energies[ix]*we+variances[ix]*wv < bestVal)
-      {
-        bestVal=energies[ix]*we+variances[ix]*wv;
-        best=ix;
-      }
-    }
-    return oldVars[best];
-  }
-  opt_variables_type getAvgCoefficients(int lastN)
-  {
-    opt_variables_type return_params(oldVars[0]);
-    for (int i=0; i<return_params.size(); i++)
-      return_params[i]=0;
-    int start(std::max((int)(oldVars.size()-lastN),0));
-    for (int x=start; x<oldVars.size(); x++)
-      for (int i=0; i<return_params.size(); i++)
-        return_params[i]+=oldVars[x][i];
-    RealType nrm(1.0/(oldVars.size()-start));
-    for (int i=0; i<return_params.size(); i++)
-      return_params[i]*=nrm;
-    return return_params;
-  }
-};
-
 /** @ingroup MBWfs
  * @brief Class to represent a many-body trial wave function
  *
@@ -100,26 +48,27 @@ struct CoefficientHolder
  *Each WaveFunctionComponent should provide proper evaluate functions
  *for the value, gradient and laplacian values.
  */
-class TrialWaveFunction: public MPIObjectBase
+class TrialWaveFunction : public MPIObjectBase
 {
-
 public:
-
-  typedef WaveFunctionComponent::RealType           RealType;
-  typedef WaveFunctionComponent::ValueType          ValueType;
-  typedef WaveFunctionComponent::PosType            PosType;
-  typedef WaveFunctionComponent::GradType           GradType;
-  typedef WaveFunctionComponent::BufferType         BufferType;
-  typedef WaveFunctionComponent::WFBufferType       WFBufferType;
-  typedef WaveFunctionComponent::HessType           HessType;
-  typedef WaveFunctionComponent::HessVector_t       HessVector_t;
+  typedef WaveFunctionComponent::RealType RealType;
+  typedef WaveFunctionComponent::ValueType ValueType;
+  typedef WaveFunctionComponent::PosType PosType;
+  typedef WaveFunctionComponent::GradType GradType;
+  typedef WaveFunctionComponent::BufferType BufferType;
+  typedef WaveFunctionComponent::WFBufferType WFBufferType;
+  typedef WaveFunctionComponent::HessType HessType;
+  typedef WaveFunctionComponent::HessVector_t HessVector_t;
 #ifdef QMC_CUDA
   using CTS = CUDAGlobalTypes;
-  typedef WaveFunctionComponent::RealMatrix_t    RealMatrix_t;
-  typedef WaveFunctionComponent::ValueMatrix_t   ValueMatrix_t;
-  typedef WaveFunctionComponent::GradMatrix_t    GradMatrix_t;
-  typedef ParticleSet::Walker_t        Walker_t;
+  typedef WaveFunctionComponent::RealMatrix_t RealMatrix_t;
+  typedef WaveFunctionComponent::ValueMatrix_t ValueMatrix_t;
+  typedef WaveFunctionComponent::GradMatrix_t GradMatrix_t;
+  typedef ParticleSet::Walker_t Walker_t;
 #endif
+
+  /// enum type for computing partial WaveFunctionComponents
+  enum class ComputeType { ALL, FERMIONIC, NONFERMIONIC};
 
   ///differential gradients
   ParticleSet::ParticleGradient_t G;
@@ -130,44 +79,28 @@ public:
 
   ~TrialWaveFunction();
 
-  inline int size() const
-  {
-    return Z.size();
-  }
-  inline RealType getPhase() const
-  {
-    return PhaseValue;
-  }
+  inline int size() const { return Z.size(); }
+  inline RealType getPhase() const { return PhaseValue; }
 
-  inline void setPhase(RealType PhaseValue_new)
-  {
-    PhaseValue = PhaseValue_new;
-  }
+  inline void setPhase(RealType PhaseValue_new) { PhaseValue = PhaseValue_new; }
   void getLogs(std::vector<RealType>& lvals);
   void getPhases(std::vector<RealType>& pvals);
 
-  inline RealType getPhaseDiff() const
-  {
-    return PhaseDiff;
-  }
+  inline RealType getPhaseDiff() const { return PhaseDiff; }
   inline void resetPhaseDiff()
   {
-    PhaseDiff=0.0;
-    for (int i=0; i<Z.size(); i++)
+    PhaseDiff = 0.0;
+    for (int i = 0; i < Z.size(); i++)
       Z[i]->resetPhaseDiff();
   }
-  inline RealType getLogPsi() const
-  {
-    return LogValue;
-  }
-  inline void setLogPsi(RealType LogPsi_new)
-  {
-    LogValue = LogPsi_new;
-  }
+  inline RealType getLogPsi() const { return LogValue; }
+  inline void setLogPsi(RealType LogPsi_new) { LogValue = LogPsi_new; }
 
-  ///Add an WaveFunctionComponent
-  //void addOrbital(WaveFunctionComponent* aterm);
-  void addOrbital(WaveFunctionComponent* aterm, const std::string& aname, bool fermion=false);
+  /** add a WaveFunctionComponent
+   * @param aterm a WaveFunctionComponent pointer
+   * @param aname a name to the added WaveFunctionComponent object for printing
+   */
+  void addComponent(WaveFunctionComponent* aterm, std::string aname);
 
   ///read from xmlNode
   bool put(xmlNodePtr cur);
@@ -200,11 +133,11 @@ public:
 
   /** evalaute the log of the trial wave function */
   RealType evaluateLog(ParticleSet& P);
-  
+
   /** recompute the value of the orbitals which require critical accuracy */
   void recompute(ParticleSet& P);
 
-  RealType evaluateDeltaLog(ParticleSet& P, bool recompute=false);
+  RealType evaluateDeltaLog(ParticleSet& P, bool recompute = false);
 
   void evaluateDeltaLog(ParticleSet& P,
                         RealType& logpsi_fixed,
@@ -212,30 +145,34 @@ public:
                         ParticleSet::ParticleGradient_t& fixedG,
                         ParticleSet::ParticleLaplacian_t& fixedL);
 
-  /** functions to handle particle-by-particle update */
+  /** functions to handle particle-by-particle update
+   * both ratio and full_ratio will be replaced by calcRatio which will handle ValueType.
+   */
   RealType ratio(ParticleSet& P, int iat);
   ValueType full_ratio(ParticleSet& P, int iat);
+  /** calculate the ratio of the new to old TrialWaveFunction value. Components selected by ComputeType */
+  RealType calcRatio(ParticleSet& P, int iat, ComputeType ct = ComputeType::ALL);
 
   /** compulte multiple ratios to handle non-local moves and other virtual moves
    */
   void evaluateRatios(VirtualParticleSet& P, std::vector<RealType>& ratios);
   /** compute both ratios and deriatives of ratio with respect to the optimizables*/
   void evaluateDerivRatios(VirtualParticleSet& P, const opt_variables_type& optvars,
-      std::vector<RealType>& ratios, Matrix<RealType>& dratio);
+      std::vector<ValueType>& ratios, Matrix<ValueType>& dratio);
 
-  void printGL(ParticleSet::ParticleGradient_t& G,
-               ParticleSet::ParticleLaplacian_t& L, std::string tag = "GL");
+  void printGL(ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L, std::string tag = "GL");
 
   /** Returns the logarithmic gradient of the trial wave function
    *  with respect to the iat^th atom of the source ParticleSet. */
-  GradType evalGradSource(ParticleSet& P, ParticleSet &source, int iat);
+  GradType evalGradSource(ParticleSet& P, ParticleSet& source, int iat);
   /** Returns the logarithmic gradient of the w.r.t. the iat^th atom
    * of the source ParticleSet of the sum of laplacians w.r.t. the
    * electrons (target ParticleSet) of the trial wave function. */
-  GradType evalGradSource
-  (ParticleSet& P, ParticleSet &source, int iat,
-   TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM> &grad_grad,
-   TinyVector<ParticleSet::ParticleLaplacian_t,OHMMS_DIM> &lapl_grad);
+  GradType evalGradSource(ParticleSet& P,
+                          ParticleSet& source,
+                          int iat,
+                          TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM>& grad_grad,
+                          TinyVector<ParticleSet::ParticleLaplacian_t, OHMMS_DIM>& lapl_grad);
 
   RealType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
 
@@ -250,7 +187,7 @@ public:
   void registerData(ParticleSet& P, WFBufferType& buf);
   /** update all the wavefunction components in buffer.
    *  See WaveFunctionComponent::updateBuffer for more detail */
-  RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch=false);
+  RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false);
   /** copy all the wavefunction components from buffer.
    *  See WaveFunctionComponent::updateBuffer for more detail */
   void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
@@ -259,48 +196,33 @@ public:
 
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& optvars,
-                           std::vector<RealType>& dlogpsi,
-                           std::vector<RealType>& dhpsioverpsi,
+                           std::vector<ValueType>& dlogpsi,
+                           std::vector<ValueType>& dhpsioverpsi,
                            bool project=false);
 
-  void evaluateGradDerivatives(const ParticleSet::ParticleGradient_t& G_in,
-                               std::vector<RealType>& dgradlogpsi);
+  void evaluateGradDerivatives(const ParticleSet::ParticleGradient_t& G_in, std::vector<ValueType>& dgradlogpsi);
 
   /** evaluate the hessian w.r.t. electronic coordinates of particle iat **/
- // void evaluateHessian(ParticleSet & P, int iat, HessType& grad_grad_psi);
+  // void evaluateHessian(ParticleSet & P, int iat, HessType& grad_grad_psi);
   /** evaluate the hessian hessian w.r.t. electronic coordinates of particle iat **/
-  void evaluateHessian(ParticleSet & P, HessVector_t& all_grad_grad_psi);
-  
+  void evaluateHessian(ParticleSet& P, HessVector_t& all_grad_grad_psi);
+
   void reverse();
 
-  inline void resizeTempP(ParticleSet& P)
-  {
-    tempP = new ParticleSet(P);
-  }
+  inline void resizeTempP(ParticleSet& P) { tempP = new ParticleSet(P); }
 
   TrialWaveFunction* makeClone(ParticleSet& tqp) const;
 
-  std::vector<WaveFunctionComponent*>& getOrbitals()
-  {
-    return Z;
-  }
+  std::vector<WaveFunctionComponent*>& getOrbitals() { return Z; }
 
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios);
 
-  void setTwist(std::vector<RealType> t)
-  {
-    myTwist=t;
-  }
-  const std::vector<RealType> twist()
-  {
-    return myTwist;
-  }
-
-  CoefficientHolder coefficientHistory;
+  void setTwist(std::vector<RealType> t) { myTwist = t; }
+  const std::vector<RealType> twist() { return myTwist; }
 
   inline void setMassTerm(ParticleSet& P)
   {
-    OneOverM=1.0/P.Mass[0];
+    OneOverM = 1.0 / P.Mass[0];
     //SpeciesSet tspecies(P.getSpeciesSet());
     //int massind=tspecies.addAttribute("mass");
     //RealType mass = tspecies(massind,0);
@@ -308,7 +230,6 @@ public:
   }
 
 private:
-
   ///control how ratio is calculated
   bool Ordered;
 
@@ -353,119 +274,111 @@ private:
   ///////////////////////////////////////////
 #ifdef QMC_CUDA
 private:
-  gpu::device_host_vector<CTS::ValueType>   GPUratios;
-  gpu::device_host_vector<CTS::GradType>    GPUgrads;
-  gpu::device_host_vector<CTS::ValueType>   GPUlapls;
+  gpu::device_host_vector<CTS::ValueType> GPUratios;
+  gpu::device_host_vector<CTS::GradType> GPUgrads;
+  gpu::device_host_vector<CTS::ValueType> GPUlapls;
   int ndelay; // delay rank
 
 public:
-  void freeGPUmem GPU_XRAY_TRACE ();
+  void freeGPUmem();
 
-  void recompute GPU_XRAY_TRACE (MCWalkerConfiguration &W, bool firstTime=true);
+  void recompute(MCWalkerConfiguration& W, bool firstTime = true);
 
-  void reserve GPU_XRAY_TRACE (PointerPool<gpu::device_vector<CTS::ValueType> > &pool,
-                bool onlyOptimizable=false, int kblocksize=1);
-  void getGradient GPU_XRAY_TRACE (MCWalkerConfiguration &W, int iat,
-                    std::vector<GradType> &grad);
-  void calcGradient GPU_XRAY_TRACE (MCWalkerConfiguration &W, int iat, int k,
-                     std::vector<GradType> &grad);
-  void calcGradient GPU_XRAY_TRACE (MCWalkerConfiguration &W, int iat,
-                     std::vector<GradType> &grad) { calcGradient (W, iat, 0, grad); }
-  void addGradient GPU_XRAY_TRACE (MCWalkerConfiguration &W, int iat,
-                    std::vector<GradType> &grad);
-  void evaluateLog GPU_XRAY_TRACE (MCWalkerConfiguration &W,
-                    std::vector<RealType> &logPsi);
-  void ratio GPU_XRAY_TRACE (MCWalkerConfiguration &W, int iat,
-              std::vector<ValueType> &psi_ratios);
-  void ratio GPU_XRAY_TRACE (MCWalkerConfiguration &W, int iat,
-              std::vector<ValueType> &psi_ratios,
-              std::vector<GradType> &newG);
-  void ratio GPU_XRAY_TRACE (MCWalkerConfiguration &W, int iat,
-              std::vector<ValueType> &psi_ratios,
-              std::vector<GradType> &newG,
-              std::vector<ValueType> &newL);
-  void calcRatio GPU_XRAY_TRACE (MCWalkerConfiguration &W, int iat,
-                  std::vector<ValueType> &psi_ratios,
-                  std::vector<GradType> &newG,
-                  std::vector<ValueType> &newL);
-  void addRatio GPU_XRAY_TRACE (MCWalkerConfiguration &W, int iat, int k,
-                 std::vector<ValueType> &psi_ratios,
-                 std::vector<GradType> &newG,
-                 std::vector<ValueType> &newL);
-  void addRatio (MCWalkerConfiguration &W, int iat,
-                 std::vector<ValueType> &psi_ratios,
-                 std::vector<GradType> &newG,
-                 std::vector<ValueType> &newL)
-  { addRatio (W, iat, 0, psi_ratios, newG, newL); }
-  void det_lookahead (MCWalkerConfiguration &W,
-                      std::vector<ValueType> &psi_ratios,
-                      std::vector<GradType>  &grad,
-                      std::vector<ValueType> &lapl,
-                      int iat, int k, int kd, int nw);
+  void reserve(PointerPool<gpu::device_vector<CTS::ValueType>>& pool, bool onlyOptimizable = false, int kblocksize = 1);
+  void getGradient(MCWalkerConfiguration& W, int iat, std::vector<GradType>& grad);
+  void calcGradient(MCWalkerConfiguration& W, int iat, int k, std::vector<GradType>& grad);
+  void calcGradient(MCWalkerConfiguration& W, int iat, std::vector<GradType>& grad) { calcGradient(W, iat, 0, grad); }
+  void addGradient(MCWalkerConfiguration& W, int iat, std::vector<GradType>& grad);
+  void evaluateLog(MCWalkerConfiguration& W, std::vector<RealType>& logPsi);
+  void ratio(MCWalkerConfiguration& W, int iat, std::vector<ValueType>& psi_ratios);
+  void ratio(MCWalkerConfiguration& W, int iat, std::vector<ValueType>& psi_ratios, std::vector<GradType>& newG);
+  void ratio(MCWalkerConfiguration& W,
+             int iat,
+             std::vector<ValueType>& psi_ratios,
+             std::vector<GradType>& newG,
+             std::vector<ValueType>& newL);
+  void calcRatio(MCWalkerConfiguration& W,
+                 int iat,
+                 std::vector<ValueType>& psi_ratios,
+                 std::vector<GradType>& newG,
+                 std::vector<ValueType>& newL);
+  void addRatio(MCWalkerConfiguration& W,
+                int iat,
+                int k,
+                std::vector<ValueType>& psi_ratios,
+                std::vector<GradType>& newG,
+                std::vector<ValueType>& newL);
+  void addRatio(MCWalkerConfiguration& W,
+                int iat,
+                std::vector<ValueType>& psi_ratios,
+                std::vector<GradType>& newG,
+                std::vector<ValueType>& newL)
+  {
+    addRatio(W, iat, 0, psi_ratios, newG, newL);
+  }
+  void det_lookahead(MCWalkerConfiguration& W,
+                     std::vector<ValueType>& psi_ratios,
+                     std::vector<GradType>& grad,
+                     std::vector<ValueType>& lapl,
+                     int iat,
+                     int k,
+                     int kd,
+                     int nw);
 
 #ifdef QMC_COMPLEX
-  void convertRatiosFromComplexToReal GPU_XRAY_TRACE (std::vector<ValueType> &psi_ratios,
-                                       std::vector<RealType> &psi_ratios_real);
+  void convertRatiosFromComplexToReal(std::vector<ValueType>& psi_ratios, std::vector<RealType>& psi_ratios_real);
 #endif
-  void ratio GPU_XRAY_TRACE (std::vector<Walker_t*> &walkers, std::vector<int> &iatList,
-              std::vector<PosType> &rNew,
-              std::vector<ValueType> &psi_ratios,
-              std::vector<GradType> &newG,
-              std::vector<ValueType> &newL);
+  void ratio(std::vector<Walker_t*>& walkers,
+             std::vector<int>& iatList,
+             std::vector<PosType>& rNew,
+             std::vector<ValueType>& psi_ratios,
+             std::vector<GradType>& newG,
+             std::vector<ValueType>& newL);
 
-  void NLratios GPU_XRAY_TRACE (MCWalkerConfiguration &W,
-                 gpu::device_vector<CUDA_PRECISION*> &Rlist,
-                 gpu::device_vector<int*>            &ElecList,
-                 gpu::device_vector<int>             &NumCoreElecs,
-                 gpu::device_vector<CUDA_PRECISION*> &QuadPosList,
-                 gpu::device_vector<CUDA_PRECISION*> &RatioList,
-                 int numQuadPoints);
+  void NLratios(MCWalkerConfiguration& W,
+                gpu::device_vector<CUDA_PRECISION*>& Rlist,
+                gpu::device_vector<int*>& ElecList,
+                gpu::device_vector<int>& NumCoreElecs,
+                gpu::device_vector<CUDA_PRECISION*>& QuadPosList,
+                gpu::device_vector<CUDA_PRECISION*>& RatioList,
+                int numQuadPoints);
 
-  void NLratios GPU_XRAY_TRACE (MCWalkerConfiguration &W,  std::vector<NLjob> &jobList,
-                 std::vector<PosType> &quadPoints, std::vector<ValueType> &psi_ratios);
+  void NLratios(MCWalkerConfiguration& W,
+                std::vector<NLjob>& jobList,
+                std::vector<PosType>& quadPoints,
+                std::vector<ValueType>& psi_ratios);
 
-  void update GPU_XRAY_TRACE (MCWalkerConfiguration *W, std::vector<Walker_t*> &walkers, int iat, std::vector<bool> *acc, int k);
-  void update GPU_XRAY_TRACE (std::vector<Walker_t*> &walkers, int iat){ update(NULL,walkers,iat,NULL,0); }
-  void update GPU_XRAY_TRACE (const std::vector<Walker_t*> &walkers,
-               const std::vector<int> &iatList);
+  void update(MCWalkerConfiguration* W, std::vector<Walker_t*>& walkers, int iat, std::vector<bool>* acc, int k);
+  void update(std::vector<Walker_t*>& walkers, int iat) { update(NULL, walkers, iat, NULL, 0); }
+  void update(const std::vector<Walker_t*>& walkers, const std::vector<int>& iatList);
 
-  void gradLapl GPU_XRAY_TRACE (MCWalkerConfiguration &W, GradMatrix_t &grads,
-                 ValueMatrix_t &lapl);
+  void gradLapl(MCWalkerConfiguration& W, GradMatrix_t& grads, ValueMatrix_t& lapl);
 
 
-  void evaluateDeltaLog(MCWalkerConfiguration &W,
-                        std::vector<RealType>& logpsi_opt);
+  void evaluateDeltaLog(MCWalkerConfiguration& W, std::vector<RealType>& logpsi_opt);
 
-  void evaluateDeltaLog GPU_XRAY_TRACE (MCWalkerConfiguration &W,
+  void evaluateDeltaLog(MCWalkerConfiguration& W,
                         std::vector<RealType>& logpsi_fixed,
                         std::vector<RealType>& logpsi_opt,
-                        GradMatrix_t&  fixedG,
+                        GradMatrix_t& fixedG,
                         ValueMatrix_t& fixedL);
 
-  void evaluateOptimizableLog GPU_XRAY_TRACE (MCWalkerConfiguration &W,
-                               std::vector<RealType>& logpsi_opt,
-                               GradMatrix_t&  optG,
-                               ValueMatrix_t& optL);
+  void evaluateOptimizableLog(MCWalkerConfiguration& W,
+                              std::vector<RealType>& logpsi_opt,
+                              GradMatrix_t& optG,
+                              ValueMatrix_t& optL);
 
-  void evaluateDerivatives GPU_XRAY_TRACE (MCWalkerConfiguration &W,
-                            const opt_variables_type& optvars,
-                            RealMatrix_t &dlogpsi,
-                            RealMatrix_t &dhpsioverpsi);
+  void evaluateDerivatives(MCWalkerConfiguration& W,
+                           const opt_variables_type& optvars,
+                           RealMatrix_t& dlogpsi,
+                           RealMatrix_t& dhpsioverpsi);
 
 
-  void setndelay GPU_XRAY_TRACE (int delay)
-  {
-    ndelay=delay;
-  }
+  void setndelay(int delay) { ndelay = delay; }
 
-  int getndelay GPU_XRAY_TRACE ()
-  {
-    return ndelay;
-  }
+  int getndelay() { return ndelay; }
 #endif
-
-
 };
 /**@}*/
-}
+} // namespace qmcplusplus
 #endif

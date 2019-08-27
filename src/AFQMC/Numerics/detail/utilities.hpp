@@ -16,6 +16,7 @@
 #define AFQMC_MA_UTILITIES_HPP
 
 #include<complex>
+#include "AFQMC/config.0.h"
 #include "AFQMC/Memory/raw_pointers.hpp"
 #include "AFQMC/Memory/SharedMemory/shm_ptr_with_raw_ptr_dispatch.hpp"
 
@@ -54,6 +55,10 @@ inline float conj(float const& f){return f;}
 
 inline std::complex<double> conj(std::complex<double> const& d){return std::conj(d);}
 inline std::complex<float>  conj(std::complex<float> const& f){return std::conj(f);}
+//template<typename T>
+//T conj(T const& v) { return v; }
+//template<typename T>
+//std::complex<T> conj(std::complex<T> const& v) { return std::conj(v); }
 
 template<class Ptr>
 auto pointer_dispatch(Ptr p) { return p; }

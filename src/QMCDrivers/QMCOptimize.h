@@ -10,8 +10,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
 
 
 /** @file QMCOptimize.h
@@ -25,7 +23,6 @@
 
 namespace qmcplusplus
 {
-
 ///forward declaration of a cost function
 class QMCCostFunctionBase;
 class HamiltonianPool;
@@ -37,13 +34,16 @@ class HamiltonianPool;
  * generated from VMC.
  */
 
-class QMCOptimize: public QMCDriver
+class QMCOptimize : public QMCDriver
 {
 public:
-
   ///Constructor.
-  QMCOptimize(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
-              HamiltonianPool& hpool, WaveFunctionPool& ppool, Communicate* comm);
+  QMCOptimize(MCWalkerConfiguration& w,
+              TrialWaveFunction& psi,
+              QMCHamiltonian& h,
+              HamiltonianPool& hpool,
+              WaveFunctionPool& ppool,
+              Communicate* comm);
 
   ///Destructor
   ~QMCOptimize();
@@ -55,13 +55,10 @@ public:
   ///add a configuration file to the list of files
   void addConfiguration(const std::string& a);
 
-  void setWaveFunctionNode(xmlNodePtr cur)
-  {
-    wfNode=cur;
-  }
+  void setWaveFunctionNode(xmlNodePtr cur) { wfNode = cur; }
+  QMCRunType getRunType() { return QMCRunType::OPTIMIZE; }
 
 private:
-
   ///index to denote the partition id
   int PartID;
   ///total number of partitions that will share a set of configuratons
@@ -90,11 +87,11 @@ private:
   ///list of files storing configurations
   std::vector<std::string> ConfigFile;
   ///Copy Constructor (disabled).
-  QMCOptimize(const QMCOptimize &) = delete;
+  QMCOptimize(const QMCOptimize&) = delete;
   ///Copy operator (disabled).
-  QMCOptimize & operator=(const QMCOptimize &) = delete;
+  QMCOptimize& operator=(const QMCOptimize&) = delete;
 
   void generateSamples();
 };
-}
+} // namespace qmcplusplus
 #endif

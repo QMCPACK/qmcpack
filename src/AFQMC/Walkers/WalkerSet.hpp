@@ -21,7 +21,7 @@ namespace qmcplusplus
 namespace afqmc
 {
 
-#if defined(QMC_CUDA)
+#if defined(ENABLE_CUDA)
   using WalkerSet = SerialWalkerSet;
 #else
   using WalkerSet = SharedWalkerSet;

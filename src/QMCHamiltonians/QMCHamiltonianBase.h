@@ -14,8 +14,8 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 /**@file QMCHamiltonianBase.h
  *@brief Declaration of QMCHamiltonianBase
  */
@@ -44,14 +44,13 @@ class DistanceTableData;
 class TrialWaveFunction;
 class QMCHamiltonian;
 
-struct NonLocalData: public QMCTraits
+struct NonLocalData : public QMCTraits
 {
   IndexType PID;
   RealType Weight;
   PosType Delta;
-  inline NonLocalData():PID(-1),Weight(1.0) {}
-  inline NonLocalData(IndexType id, RealType w, const PosType& d)
-    :PID(id),Weight(w),Delta(d) {}
+  inline NonLocalData() : PID(-1), Weight(1.0) {}
+  inline NonLocalData(IndexType id, RealType w, const PosType& d) : PID(id), Weight(w), Delta(d) {}
 };
 
 /** @ingroup hamiltonian
@@ -60,41 +59,54 @@ struct NonLocalData: public QMCTraits
  * Return_t is defined as RealTye.
  * The types should be checked when using complex wave functions.
  */
-struct QMCHamiltonianBase: public QMCTraits
+struct QMCHamiltonianBase : public QMCTraits
 {
-
   /** type of return value of evaluate
    */
-  typedef EstimatorRealType Return_t;
+  typedef FullPrecRealType Return_t;
   /** typedef for the serialized buffer
    *
    * PooledData<RealType> is used to serialized an anonymous buffer
    */
-  typedef ParticleSet::Buffer_t  BufferType;
+  typedef ParticleSet::Buffer_t BufferType;
   ///typedef for the walker
-  typedef ParticleSet::Walker_t  Walker_t;
+  typedef ParticleSet::Walker_t Walker_t;
   ///typedef for the ParticleScalar
-  typedef ParticleSet::Scalar_t  ParticleScalar_t;
+  typedef ParticleSet::Scalar_t ParticleScalar_t;
 
   ///enum to denote energy domain of operators
-  enum energy_domains {kinetic=0,potential,no_energy_domain};
+  enum energy_domains
+  {
+    kinetic = 0,
+    potential,
+    no_energy_domain
+  };
 
-  enum quantum_domains {no_quantum_domain=0,classical,quantum,
-                        classical_classical,quantum_classical,quantum_quantum};
+  enum quantum_domains
+  {
+    no_quantum_domain = 0,
+    classical,
+    quantum,
+    classical_classical,
+    quantum_classical,
+    quantum_quantum
+  };
 
   ///quantum_domain of the (particle) operator, default = no_quantum_domain
   quantum_domains quantum_domain;
   ///energy domain of the operator (kinetic/potential), default = no_energy_domain
   energy_domains energy_domain;
   ///enum for UpdateMode
-  enum {PRIMARY=0, 
-    OPTIMIZABLE=1, 
-    RATIOUPDATE=2, 
-    PHYSICAL=3, 
-    COLLECTABLE=4, 
-    NONLOCAL=5,
+  enum
+  {
+    PRIMARY     = 0,
+    OPTIMIZABLE = 1,
+    RATIOUPDATE = 2,
+    PHYSICAL    = 3,
+    COLLECTABLE = 4,
+    NONLOCAL    = 5,
   };
-  
+
   ///set the current update mode
   std::bitset<8> UpdateMode;
   ///starting index of this object
@@ -125,29 +137,23 @@ struct QMCHamiltonianBase: public QMCTraits
   std::vector<RealType> ValueVector;
 
   ///array to store sample value
-  Array<RealType,1>* value_sample;
+  Array<RealType, 1>* value_sample;
 #endif
 
   ///constructor
   QMCHamiltonianBase();
 
   ///virtual destructor
-  virtual ~QMCHamiltonianBase() { }
+  virtual ~QMCHamiltonianBase() {}
 
   ///set energy domain
   void set_energy_domain(energy_domains edomain);
 
   ///return whether the energy domain is valid
-  inline bool energy_domain_valid(energy_domains edomain) const
-  {
-    return edomain!=no_energy_domain;
-  }
+  inline bool energy_domain_valid(energy_domains edomain) const { return edomain != no_energy_domain; }
 
   ///return whether the energy domain is valid
-  inline bool energy_domain_valid() const
-  {
-    return energy_domain_valid(energy_domain);
-  }
+  inline bool energy_domain_valid() const { return energy_domain_valid(energy_domain); }
 
   ///set quantum domain
   void set_quantum_domain(quantum_domains qdomain);
@@ -159,50 +165,26 @@ struct QMCHamiltonianBase: public QMCTraits
   void two_body_quantum_domain(const ParticleSet& P);
 
   ///set quantum domain for two-body operator
-  void two_body_quantum_domain(const ParticleSet& P1,const ParticleSet& P2);
+  void two_body_quantum_domain(const ParticleSet& P1, const ParticleSet& P2);
 
   ///return whether the quantum domain is valid
   bool quantum_domain_valid(quantum_domains qdomain);
 
   ///return whether the quantum domain is valid
-  inline bool quantum_domain_valid()
-  {
-    return quantum_domain_valid(quantum_domain);
-  }
+  inline bool quantum_domain_valid() { return quantum_domain_valid(quantum_domain); }
 
-  inline bool is_classical()
-  {
-    return quantum_domain==classical;
-  }
-  inline bool is_quantum()
-  {
-    return quantum_domain==quantum;
-  }
-  inline bool is_classical_classical()
-  {
-    return quantum_domain==classical_classical;
-  }
-  inline bool is_quantum_classical()
-  {
-    return quantum_domain==quantum_classical;
-  }
-  inline bool is_quantum_quantum()
-  {
-    return quantum_domain==quantum_quantum;
-  }
+  inline bool is_classical() { return quantum_domain == classical; }
+  inline bool is_quantum() { return quantum_domain == quantum; }
+  inline bool is_classical_classical() { return quantum_domain == classical_classical; }
+  inline bool is_quantum_classical() { return quantum_domain == quantum_classical; }
+  inline bool is_quantum_quantum() { return quantum_domain == quantum_quantum; }
 
   /** return the mode i
    * @param i index among PRIMARY, OPTIMIZABLE, RATIOUPDATE, PHYSICAL
    */
-  inline bool getMode(int i)
-  {
-    return UpdateMode[i];
-  }
+  inline bool getMode(int i) { return UpdateMode[i]; }
 
-  inline bool isNonLocal() const 
-  {
-    return UpdateMode[NONLOCAL];
-  }
+  inline bool isNonLocal() const { return UpdateMode[NONLOCAL]; }
 
   /** named values to  the property list
    * @param plist RecordNameProperty
@@ -211,8 +193,8 @@ struct QMCHamiltonianBase: public QMCTraits
    */
   inline void addValue(PropertySetType& plist)
   {
-    if(!UpdateMode[COLLECTABLE])
-      myIndex=plist.add(myName.c_str());
+    if (!UpdateMode[COLLECTABLE])
+      myIndex = plist.add(myName.c_str());
   }
 
   /** named values to  the property list
@@ -221,10 +203,7 @@ struct QMCHamiltonianBase: public QMCTraits
    *
    * Default implementaton uses addValue(plist)
    */
-  virtual void addObservables(PropertySetType& plist, BufferType& collectables)
-  {
-    addValue(plist);
-  }
+  virtual void addObservables(PropertySetType& plist, BufferType& collectables) { addValue(plist); }
 
   /*** add to observable descriptor for hdf5
    * @param h5desc contains a set of hdf5 descriptors for a scalar observable
@@ -232,8 +211,7 @@ struct QMCHamiltonianBase: public QMCTraits
    *
    * The default implementation is to register a scalar for this->Value
    */
-  virtual void registerObservables(std::vector<observable_helper*>& h5desc
-                                   , hid_t gid) const ;
+  virtual void registerObservables(std::vector<observable_helper*>& h5desc, hid_t gid) const;
 
   /*** add to collectables descriptor for hdf5
    * @param h5desc contains a set of hdf5 descriptors for a scalar observable
@@ -242,9 +220,7 @@ struct QMCHamiltonianBase: public QMCTraits
    * The default implementation does nothing. The derived classes which compute
    * big data, e.g. density, should overwrite this function.
    */
-  virtual void registerCollectables(std::vector<observable_helper*>& h5desc
-                                    , hid_t gid) const
-  {}
+  virtual void registerCollectables(std::vector<observable_helper*>& h5desc, hid_t gid) const {}
 
   /** set the values evaluated by this object to plist
    * @param plist RecordNameProperty
@@ -252,22 +228,12 @@ struct QMCHamiltonianBase: public QMCTraits
    * Default implementation is to assign Value which is updated
    * by evaluate  function using myIndex.
    */
-  virtual void setObservables(PropertySetType& plist)
-  {
-    plist[myIndex]=Value;
-  }
+  virtual void setObservables(PropertySetType& plist) { plist[myIndex] = Value; }
 
-  virtual void setParticlePropertyList(PropertySetType& plist
-                                       , int offset)
-  {
-    plist[myIndex+offset]=Value;
-  }
+  virtual void setParticlePropertyList(PropertySetType& plist, int offset) { plist[myIndex + offset] = Value; }
 
   //virtual void setHistories(Walker<Return_t, ParticleSet::ParticleGradient_t>& ThisWalker)
-  virtual void setHistories(Walker_t& ThisWalker)
-  {
-    tWalker = &(ThisWalker);
-  }
+  virtual void setHistories(Walker_t& ThisWalker) { tWalker = &(ThisWalker); }
 
   /** reset the data with the target ParticleSet
    * @param P new target ParticleSet
@@ -279,24 +245,21 @@ struct QMCHamiltonianBase: public QMCTraits
    *@return the value of the Hamiltonian component
    */
   virtual Return_t evaluate(ParticleSet& P) = 0;
-  virtual Return_t rejectedMove(ParticleSet& P)
-  {
-    return 0;
-  }
+  virtual Return_t rejectedMove(ParticleSet& P) { return 0; }
   /** Evaluate the local energy contribution of this component with Toperators updated if requested
    *@param P input configuration containing N particles
    *@return the value of the Hamiltonian component
    */
   virtual Return_t evaluateWithToperator(ParticleSet& P) { return evaluate(P); }
-  
+
   /** evaluate value and derivatives wrt the optimizables
    *
    * Default uses evaluate
    */
   virtual Return_t evaluateValueAndDerivatives(ParticleSet& P,
-      const opt_variables_type& optvars,
-      const std::vector<RealType>& dlogpsi,
-      std::vector<RealType>& dhpsioverpsi)
+                                               const opt_variables_type& optvars,
+                                               const std::vector<RealType>& dlogpsi,
+                                               std::vector<RealType>& dhpsioverpsi)
   {
     return evaluate(P);
   }
@@ -309,7 +272,9 @@ struct QMCHamiltonianBase: public QMCTraits
   * @param pulay_terms Adds QMCHamiltonianBase's contribution to Re [(H-E_L)dPsi]/Psi 
   * @return Contribution of QMCHamiltonianBase to Local Energy.
   */
-  virtual Return_t evaluateWithIonDerivs(ParticleSet& P, ParticleSet& ions, TrialWaveFunction& psi,
+  virtual Return_t evaluateWithIonDerivs(ParticleSet& P,
+                                         ParticleSet& ions,
+                                         TrialWaveFunction& psi,
                                          ParticleSet::ParticlePos_t& hf_term,
                                          ParticleSet::ParticlePos_t& pulay_term)
   {
@@ -320,32 +285,28 @@ struct QMCHamiltonianBase: public QMCTraits
    *
    * Default implementation does nothing. Only A-A interactions for s needs to implement its own method.
    */
-  virtual void update_source(ParticleSet& s) { }
-   
+  virtual void update_source(ParticleSet& s) {}
+
   /** return an average value by collective operation
    */
-  virtual Return_t getEnsembleAverage()
-  {
-    return 0.0;
-  }
+  virtual Return_t getEnsembleAverage() { return 0.0; }
 
   /** read the input parameter
    * @param cur xml node for a QMCHamiltonianBase object
    */
-  virtual bool put(xmlNodePtr cur)=0;
+  virtual bool put(xmlNodePtr cur) = 0;
 
   /** write about the class */
-  virtual bool get(std::ostream& os) const =0;
+  virtual bool get(std::ostream& os) const = 0;
 
-  virtual QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi)=0;
+  virtual QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi) = 0;
 
   virtual void setRandomGenerator(RandomGenerator_t* rng)
   {
     //empty
   }
 
-  virtual void add2Hamiltonian(ParticleSet& qp, TrialWaveFunction& psi
-                               , QMCHamiltonian& targetH);
+  virtual void add2Hamiltonian(ParticleSet& qp, TrialWaveFunction& psi, QMCHamiltonian& targetH);
   //virtual QMCHamiltonianBase* makeDependants(ParticleSet& qp )
   //{
   //  return 0;
@@ -390,47 +351,41 @@ struct QMCHamiltonianBase: public QMCTraits
     request.reset();
   }
 
-  virtual void contribute_scalar_quantities()
-  {
-    request.contribute_scalar(myName);
-  }
+  virtual void contribute_scalar_quantities() { request.contribute_scalar(myName); }
 
   virtual void checkout_scalar_quantities(TraceManager& tm)
   {
     streaming_scalars = request.streaming_scalar(myName);
-    if( streaming_scalars)
+    if (streaming_scalars)
       value_sample = tm.checkout_real<1>(myName);
   }
 
   virtual void collect_scalar_quantities()
   {
-    if( streaming_scalars)
+    if (streaming_scalars)
       (*value_sample)(0) = Value;
   }
 
   virtual void delete_scalar_quantities()
   {
-    if( streaming_scalars)
+    if (streaming_scalars)
       delete value_sample;
   }
 
-  virtual void contribute_particle_quantities() {};
-  virtual void checkout_particle_quantities(TraceManager& tm) {};
-  virtual void delete_particle_quantities() {};
-  virtual void get_required_traces(TraceManager& tm) {};
+  virtual void contribute_particle_quantities(){};
+  virtual void checkout_particle_quantities(TraceManager& tm){};
+  virtual void delete_particle_quantities(){};
+  virtual void get_required_traces(TraceManager& tm){};
 #endif
 
-  virtual void addEnergy(MCWalkerConfiguration &W, std::vector<RealType> &LocalEnergy);
+  virtual void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy);
 
-  virtual void addEnergy(MCWalkerConfiguration &W,
-                         std::vector<RealType> &LocalEnergy,
-                         std::vector<std::vector<NonLocalData> > &Txy)
+  virtual void addEnergy(MCWalkerConfiguration& W,
+                         std::vector<RealType>& LocalEnergy,
+                         std::vector<std::vector<NonLocalData>>& Txy)
   {
-    addEnergy (W, LocalEnergy);
+    addEnergy(W, LocalEnergy);
   }
-
 };
-}
+} // namespace qmcplusplus
 #endif
-
-

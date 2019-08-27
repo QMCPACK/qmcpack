@@ -17,7 +17,7 @@
 
 #include<cassert>
 #include "AFQMC/Numerics/detail/utilities.hpp"
-#if defined(QMC_CUDA)
+#if defined(ENABLE_CUDA)
 #include "AFQMC/Memory/CUDA/cuda_gpu_pointer.hpp"
 #include "AFQMC/Numerics/detail/CUDA/Kernels/KaKjw_to_KKwaj.cuh"
 #include "AFQMC/Numerics/detail/CUDA/Kernels/KaKjw_to_QKajw.cuh"
@@ -108,6 +108,7 @@ void vKKwij_to_vwKiKj( int nwalk, int nkpts, int nmo_max, int nmo_tot,
         // 2: transpose from [Ki][Kj] without rho^+ term
         // -P: copy from [Ki][Kj] and transpose from [nkpts+P-1][Kj] 
         int key = kk[Ki*nkpts+Kj];
+        if( key == 3 ) continue;
         if( key == 2 ) { // transpose
           auto vb_( B + w*nmo_tot*nmo_tot + ni0*nmo_tot + nj0);
           auto v_( A + ((Ki*nkpts+Kj)*nwalk + w )*nmo_max*nmo_max);
@@ -142,9 +143,9 @@ void vKKwij_to_vwKiKj( int nwalk, int nkpts, int nmo_max, int nmo_tot,
  * A[i,j] = A[i,j] op x[...], 
  *   where op is {+,-,*,/} and x[...] depends on dim (0:i, 1:j, ...}
  */
-template<typename T>
+template<typename T, typename T2>
 void term_by_term_matrix_vector(TENSOR_OPERATIONS op, int dim, int nrow, int ncol, T* A, int lda, 
-                                  T const* x, int incx)
+                                  T2 const* x, int incx)
 {
   assert(dim==0 || dim==1);  
   if(op==TOp_PLUS) {
@@ -202,7 +203,7 @@ void term_by_term_matrix_vector(TENSOR_OPERATIONS op, int dim, int nrow, int nco
 
 } //namespace ma
 
-#ifdef QMC_CUDA
+#ifdef ENABLE_CUDA
 namespace qmc_cuda{
 
 template<typename T, typename Q>
@@ -236,10 +237,10 @@ void vKKwij_to_vwKiKj( int nwalk, int nkpts, int nmo_max, int nmo_tot,
  * A[i,j] = A[i,j] op x[...], 
  *   where op is {+,-,*,/} and x[...] depends on dim (0:i, 1:j, ...}
  */
-template<typename T>
+template<typename T, typename T2>
 void term_by_term_matrix_vector(ma::TENSOR_OPERATIONS op, int dim, int nrow, int ncol, 
                                   cuda_gpu_ptr<T> A, int lda,
-                                  cuda_gpu_ptr<T> x, int incx)
+                                  cuda_gpu_ptr<T2> x, int incx)
 {
   assert(dim==0 || dim==1);
   if(op==ma::TOp_PLUS) 

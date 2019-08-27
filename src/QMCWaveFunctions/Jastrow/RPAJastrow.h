@@ -11,8 +11,8 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 #ifndef QMCPLUSPLUS_RPA_JASTROW_H
 #define QMCPLUSPLUS_RPA_JASTROW_H
 
@@ -22,17 +22,15 @@
 #include "QMCWaveFunctions/Jastrow/SplineFunctors.h"
 #include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbital.h"
 #include "QMCWaveFunctions/Jastrow/LRBreakupUtilities.h"
-#include "QMCWaveFunctions/Jastrow/LRTwoBodyJastrow.h"
-
+#include "QMCWaveFunctions/Jastrow/kSpaceJastrow.h"
 
 namespace qmcplusplus
 {
-
 /** JastrowBuilder using RPA functor
  *  Modification of RPAJastrow
  *
  */
-struct RPAJastrow: public WaveFunctionComponent
+struct RPAJastrow : public WaveFunctionComponent
 {
   typedef LRHandlerBase HandlerType;
   typedef BsplineFunctor<RealType> FuncType;
@@ -44,16 +42,17 @@ struct RPAJastrow: public WaveFunctionComponent
 
   bool put(xmlNodePtr cur);
 
-  void buildOrbital(const std::string& name, const std::string& UL
-                    , const std::string& US, const std::string& RF, RealType R, RealType K);
+  void buildOrbital(const std::string& name,
+                    const std::string& UL,
+                    const std::string& US,
+                    const std::string& RF,
+                    RealType R,
+                    RealType K);
 
   void makeShortRange();
   void makeLongRange();
 
-  void setHandler(HandlerType* Handler)
-  {
-    myHandler=Handler;
-  };
+  void setHandler(HandlerType* Handler) { myHandler = Handler; };
 
   /** check out optimizable variables
     */
@@ -73,8 +72,7 @@ struct RPAJastrow: public WaveFunctionComponent
 
   void resetTargetParticleSet(ParticleSet& P);
 
-  RealType evaluateLog(ParticleSet& P,
-                       ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
+  RealType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
 
   ValueType ratio(ParticleSet& P, int iat);
   GradType evalGrad(ParticleSet& P, int iat);
@@ -86,14 +84,13 @@ struct RPAJastrow: public WaveFunctionComponent
 
   void registerData(ParticleSet& P, WFBufferType& buf);
 
-  RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch=false);
+  RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false);
 
   void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
 
   WaveFunctionComponent* makeClone(ParticleSet& tqp) const;
 
 private:
-
   bool IsManager;
   bool IgnoreSpin;
   bool DropLongRange;
@@ -110,7 +107,7 @@ private:
    */
   HandlerType* myHandler;
   ///object to handle the long-range part
-  LRTwoBodyJastrow* LongRangeRPA;
+  kSpaceJastrow* LongRangeRPA;
   ///@{objects to handle the short-range part
   ///two-body Jastrow function
   WaveFunctionComponent* ShortRangeRPA;
@@ -123,5 +120,5 @@ private:
   ///A list of WaveFunctionComponent*
   std::vector<WaveFunctionComponent*> Psi;
 };
-}
+} // namespace qmcplusplus
 #endif

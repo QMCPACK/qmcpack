@@ -50,6 +50,17 @@ namespace afqmc {
     return B;
   }
 
+  /************* fill2D ****************/
+  template<typename T, typename Size>
+  void fill2D(Size N, Size M, T* y, Size lda, T const a)
+  {
+    for(Size ip=0; ip<N; ++ip)
+      for(Size jp=0; jp<M; ++jp)
+      {
+        y[ip*lda + jp] = a;
+      }
+  }
+
   /************* print ****************/
   template<typename T>
   void print(std::string str, T const* p, int n) {

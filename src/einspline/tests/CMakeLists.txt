@@ -17,7 +17,7 @@ SET(UTEST_EXE test_${SRC_DIR})
 SET(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 
 SET(SRCS test_one.cpp test_3d.cpp)
-IF(HAVE_CUDA)
+IF(QMC_CUDA)
   SET(SRCS ${SRCS}
       test_cuda.cu)
   CUDA_ADD_LIBRARY(cudatests test_cuda.cu)

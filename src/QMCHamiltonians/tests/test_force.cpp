@@ -17,7 +17,6 @@
 #include "Lattice/ParticleBConds.h"
 #include "Particle/ParticleSet.h"
 #include "Particle/DistanceTableData.h"
-#include "Particle/DistanceTable.h"
 #include "Particle/SymmetricDistanceTableData.h"
 #include "QMCApp/ParticleSetPool.h"
 #include "QMCHamiltonians/ForceChiesaPBCAA.h"
@@ -32,11 +31,9 @@ using std::string;
 
 namespace qmcplusplus
 {
-
 TEST_CASE("Bare Force", "[hamiltonian]")
 {
-
-  Communicate *c;
+  Communicate* c;
   OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
@@ -58,17 +55,17 @@ TEST_CASE("Bare Force", "[hamiltonian]")
   elec.R[1][1] = 0.3;
   elec.R[1][2] = 0.0;
 
-  SpeciesSet &tspecies =  elec.getSpeciesSet();
-  int upIdx = tspecies.addSpecies("u");
-  int downIdx = tspecies.addSpecies("d");
+  SpeciesSet& tspecies = elec.getSpeciesSet();
+  int upIdx            = tspecies.addSpecies("u");
+  int downIdx          = tspecies.addSpecies("d");
   //int chargeIdx = tspecies.addAttribute("charge");
-  int massIdx = tspecies.addAttribute("mass");
-  int eChargeIdx = tspecies.addAttribute("charge");
-  tspecies(eChargeIdx, upIdx) = -1.0;
+  int massIdx                   = tspecies.addAttribute("mass");
+  int eChargeIdx                = tspecies.addAttribute("charge");
+  tspecies(eChargeIdx, upIdx)   = -1.0;
   tspecies(eChargeIdx, downIdx) = -1.0;
   //tspecies(chargeIdx, upIdx) = -1;
   //tspecies(chargeIdx, downIdx) = -1;
-  tspecies(massIdx, upIdx) = 1.0;
+  tspecies(massIdx, upIdx)   = 1.0;
   tspecies(massIdx, downIdx) = 1.0;
 
 
@@ -76,16 +73,16 @@ TEST_CASE("Bare Force", "[hamiltonian]")
   // settings to the ParticleSet
   elec.resetGroups();
 
-  SpeciesSet &ion_species =  ions.getSpeciesSet();
-  int pIdx = ion_species.addSpecies("H");
-  int pChargeIdx = ion_species.addAttribute("charge");
-  int pMembersizeIdx = ion_species.addAttribute("membersize");
-  ion_species(pChargeIdx, pIdx) = 1;
+  SpeciesSet& ion_species           = ions.getSpeciesSet();
+  int pIdx                          = ion_species.addSpecies("H");
+  int pChargeIdx                    = ion_species.addAttribute("charge");
+  int pMembersizeIdx                = ion_species.addAttribute("membersize");
+  ion_species(pChargeIdx, pIdx)     = 1;
   ion_species(pMembersizeIdx, pIdx) = 1;
 
   ions.resetGroups();
 
-  elec.addTable(ions,DT_AOS);
+  elec.addTable(ions, DT_AOS);
   elec.update();
 
   ParticleSetPool ptcl = ParticleSetPool(c);
@@ -101,7 +98,7 @@ TEST_CASE("Bare Force", "[hamiltonian]")
   REQUIRE(force.forces[0][2] == Approx(0.0));
 }
 
-void check_force_copy(ForceChiesaPBCAA &force, ForceChiesaPBCAA &force2)
+void check_force_copy(ForceChiesaPBCAA& force, ForceChiesaPBCAA& force2)
 {
   REQUIRE(force2.Rcut == Approx(force.Rcut));
   REQUIRE(force2.m_exp == force.m_exp);
@@ -110,24 +107,28 @@ void check_force_copy(ForceChiesaPBCAA &force, ForceChiesaPBCAA &force2)
   REQUIRE(force2.Sinv.size() == force.Sinv.size());
   std::cout << force.Sinv << std::endl;
   std::cout << force2.Sinv << std::endl;
-  for (int i = 0; i < force2.Sinv.rows(); i++) {
-    for (int j = 0; j < force2.Sinv.cols(); j++) {
+  for (int i = 0; i < force2.Sinv.rows(); i++)
+  {
+    for (int j = 0; j < force2.Sinv.cols(); j++)
+    {
       //std::cout << "Sinv " << i << "  " << j << " " << force2.Sinv(i,j) << " "  << force.Sinv(i,j) << std::endl;
-      REQUIRE(force2.Sinv(i,j) == Approx(force.Sinv(i,j)));
+      REQUIRE(force2.Sinv(i, j) == Approx(force.Sinv(i, j)));
     }
   }
 
   REQUIRE(force2.h.size() == force.h.size());
-  for (int i = 0; i < force2.h.size(); i++) {
-      REQUIRE(force2.h[i] == Approx(force.h[i]));
+  for (int i = 0; i < force2.h.size(); i++)
+  {
+    REQUIRE(force2.h[i] == Approx(force.h[i]));
   }
 
   REQUIRE(force2.c.size() == force.c.size());
-  for (int i = 0; i < force2.h.size(); i++) {
-      REQUIRE(force2.c[i] == Approx(force.c[i]));
+  for (int i = 0; i < force2.h.size(); i++)
+  {
+    REQUIRE(force2.c[i] == Approx(force.c[i]));
   }
 
-  REQUIRE(force2.myTableIndex == force.myTableIndex);
+  REQUIRE(force2.getDistanceTableAAID() == force.getDistanceTableAAID());
   REQUIRE(force2.NumSpeciesA == force.NumSpeciesA);
   REQUIRE(force2.NumSpeciesB == force.NumSpeciesB);
   REQUIRE(force2.NptclA == force.NptclA);
@@ -147,15 +148,14 @@ void check_force_copy(ForceChiesaPBCAA &force, ForceChiesaPBCAA &force2)
 // PBC case
 TEST_CASE("Chiesa Force", "[hamiltonian]")
 {
-
-  Communicate *c;
+  Communicate* c;
   OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
-  Uniform3DGridLayout grid;
-  grid.BoxBConds = true; // periodic
-  grid.R.diagonal(5.0);
-  grid.reset();
+  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
+  Lattice.BoxBConds = true; // periodic
+  Lattice.R.diagonal(5.0);
+  Lattice.reset();
 
 
   ParticleSet ions;
@@ -176,29 +176,29 @@ TEST_CASE("Chiesa Force", "[hamiltonian]")
   elec.R[1][1] = 0.3;
   elec.R[1][2] = 0.0;
 
-  SpeciesSet &tspecies =  elec.getSpeciesSet();
-  int upIdx = tspecies.addSpecies("u");
-  int downIdx = tspecies.addSpecies("d");
+  SpeciesSet& tspecies = elec.getSpeciesSet();
+  int upIdx            = tspecies.addSpecies("u");
+  int downIdx          = tspecies.addSpecies("d");
   //int chargeIdx = tspecies.addAttribute("charge");
-  int massIdx = tspecies.addAttribute("mass");
-  int eChargeIdx = tspecies.addAttribute("charge");
-  tspecies(eChargeIdx, upIdx) = -1.0;
+  int massIdx                   = tspecies.addAttribute("mass");
+  int eChargeIdx                = tspecies.addAttribute("charge");
+  tspecies(eChargeIdx, upIdx)   = -1.0;
   tspecies(eChargeIdx, downIdx) = -1.0;
   //tspecies(chargeIdx, upIdx) = -1;
   //tspecies(chargeIdx, downIdx) = -1;
-  tspecies(massIdx, upIdx) = 1.0;
+  tspecies(massIdx, upIdx)   = 1.0;
   tspecies(massIdx, downIdx) = 1.0;
 
-  elec.Lattice.copy(grid);
+  elec.Lattice = Lattice;
   elec.createSK();
 
-  SpeciesSet &ion_species =  ions.getSpeciesSet();
-  int pIdx = ion_species.addSpecies("H");
-  int pChargeIdx = ion_species.addAttribute("charge");
-  int pMembersizeIdx = ion_species.addAttribute("membersize");
-  ion_species(pChargeIdx, pIdx) = 1;
+  SpeciesSet& ion_species           = ions.getSpeciesSet();
+  int pIdx                          = ion_species.addSpecies("H");
+  int pChargeIdx                    = ion_species.addAttribute("charge");
+  int pMembersizeIdx                = ion_species.addAttribute("membersize");
+  ion_species(pChargeIdx, pIdx)     = 1;
   ion_species(pMembersizeIdx, pIdx) = 1;
-  ions.Lattice.copy(grid);
+  ions.Lattice = Lattice;
   ions.createSK();
 
   ions.resetGroups();
@@ -207,21 +207,11 @@ TEST_CASE("Chiesa Force", "[hamiltonian]")
   // settings to the ParticleSet
   elec.resetGroups();
 
-#ifdef ENABLE_SOA
-  elec.addTable(ions,DT_SOA);
-  ions.addTable(ions,DT_SOA);
-#else
-  elec.addTable(ions,DT_AOS);
-  ions.addTable(ions,DT_AOS);
-#endif
-
-  elec.update();
-  ions.update();
-
   ForceChiesaPBCAA force(ions, elec);
   force.addionion = false;
   force.InitMatrix();
 
+  elec.update();
   force.evaluate(elec);
   std::cout << " Force = " << force.forces << std::endl;
 
@@ -237,9 +227,9 @@ TEST_CASE("Chiesa Force", "[hamiltonian]")
   // copied.  Would be nice if there were a better way than inspection
   // to ensure all the members are copied/set up/tested.
 
-  TrialWaveFunction psi = TrialWaveFunction(c);
-  QMCHamiltonianBase *base_force2 = force.makeClone(elec,psi);
-  ForceChiesaPBCAA *force2 = dynamic_cast<ForceChiesaPBCAA *>(base_force2);
+  TrialWaveFunction psi           = TrialWaveFunction(c);
+  QMCHamiltonianBase* base_force2 = force.makeClone(elec, psi);
+  ForceChiesaPBCAA* force2        = dynamic_cast<ForceChiesaPBCAA*>(base_force2);
   REQUIRE(force2 != NULL);
 
   check_force_copy(*force2, force);
@@ -248,15 +238,14 @@ TEST_CASE("Chiesa Force", "[hamiltonian]")
 // Open BC case
 TEST_CASE("Ceperley Force", "[hamiltonian]")
 {
-
-  Communicate *c;
+  Communicate* c;
   OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
-  //Uniform3DGridLayout grid;
-  //grid.BoxBConds = false; // periodic
-  //grid.R.diagonal(5.0);
-  //grid.reset();
+  //CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
+  //Lattice.BoxBConds = false; // periodic
+  //Lattice.R.diagonal(5.0);
+  //Lattice.reset();
 
 
   ParticleSet ions;
@@ -277,47 +266,35 @@ TEST_CASE("Ceperley Force", "[hamiltonian]")
   elec.R[1][1] = 0.3;
   elec.R[1][2] = 0.0;
 
-  SpeciesSet &tspecies =  elec.getSpeciesSet();
-  int upIdx = tspecies.addSpecies("u");
-  int downIdx = tspecies.addSpecies("d");
+  SpeciesSet& tspecies = elec.getSpeciesSet();
+  int upIdx            = tspecies.addSpecies("u");
+  int downIdx          = tspecies.addSpecies("d");
   //int chargeIdx = tspecies.addAttribute("charge");
-  int massIdx = tspecies.addAttribute("mass");
-  int eChargeIdx = tspecies.addAttribute("charge");
-  tspecies(eChargeIdx, upIdx) = -1.0;
+  int massIdx                   = tspecies.addAttribute("mass");
+  int eChargeIdx                = tspecies.addAttribute("charge");
+  tspecies(eChargeIdx, upIdx)   = -1.0;
   tspecies(eChargeIdx, downIdx) = -1.0;
   //tspecies(chargeIdx, upIdx) = -1;
   //tspecies(chargeIdx, downIdx) = -1;
-  tspecies(massIdx, upIdx) = 1.0;
+  tspecies(massIdx, upIdx)   = 1.0;
   tspecies(massIdx, downIdx) = 1.0;
 
-  //elec.Lattice.copy(grid);
+  //elec.Lattice = Lattice;
   //elec.createSK();
 
-  SpeciesSet &ion_species =  ions.getSpeciesSet();
-  int pIdx = ion_species.addSpecies("H");
-  int pChargeIdx = ion_species.addAttribute("charge");
-  int pMembersizeIdx = ion_species.addAttribute("membersize");
-  ion_species(pChargeIdx, pIdx) = 1;
+  SpeciesSet& ion_species           = ions.getSpeciesSet();
+  int pIdx                          = ion_species.addSpecies("H");
+  int pChargeIdx                    = ion_species.addAttribute("charge");
+  int pMembersizeIdx                = ion_species.addAttribute("membersize");
+  ion_species(pChargeIdx, pIdx)     = 1;
   ion_species(pMembersizeIdx, pIdx) = 1;
-  //ions.Lattice.copy(grid);
+  //ions.Lattice = Lattice;
   //ions.createSK();
-
   ions.resetGroups();
 
   // The call to resetGroups is needed transfer the SpeciesSet
   // settings to the ParticleSet
   elec.resetGroups();
-
-#ifdef ENABLE_SOA
-  elec.addTable(ions,DT_SOA);
-  ions.addTable(ions,DT_SOA);
-#else
-  elec.addTable(ions,DT_AOS);
-  ions.addTable(ions,DT_AOS);
-#endif
-
-  ions.update();
-  elec.update();
 
   ForceCeperley force(ions, elec);
   force.InitMatrix();
@@ -330,6 +307,9 @@ TEST_CASE("Ceperley Force", "[hamiltonian]")
     REQUIRE(force.c[i] == Approx(coeff[i]));
   }
 
+  ions.update();
+  elec.update();
+
   force.evaluate(elec);
   std::cout << " Force = " << force.forces << std::endl;
   REQUIRE(force.forces[0][0] == Approx(9.24061106));
@@ -337,14 +317,13 @@ TEST_CASE("Ceperley Force", "[hamiltonian]")
   REQUIRE(force.forces[0][2] == Approx(0.0));
 
   force.N_basis = 6;
-  force.Rcut = 0.8;
+  force.Rcut    = 0.8;
   force.InitMatrix();
   // for m_exp=2, N_basis=6, Rcut=0.800000
-  double coeff2[6] = { 3281.25,-33837.9,135352,-261841,245476,-89496.4};
+  double coeff2[6] = {3281.25, -33837.9, 135352, -261841, 245476, -89496.4};
   for (int i = 0; i < 6; i++)
   {
     REQUIRE(force.c[i] == Approx(coeff2[i]));
   }
 }
-}
-
+} // namespace qmcplusplus

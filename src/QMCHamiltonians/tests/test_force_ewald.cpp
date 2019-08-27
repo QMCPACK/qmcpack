@@ -17,7 +17,6 @@
 #include "Lattice/ParticleBConds.h"
 #include "Particle/ParticleSet.h"
 #include "Particle/DistanceTableData.h"
-#include "Particle/DistanceTable.h"
 #include "Particle/SymmetricDistanceTableData.h"
 #include "QMCApp/ParticleSetPool.h"
 #include "QMCHamiltonians/ForceChiesaPBCAA.h"
@@ -32,20 +31,18 @@ using std::string;
 
 namespace qmcplusplus
 {
-
 // PBC case
 TEST_CASE("Chiesa Force BCC H Ewald3D", "[hamiltonian]")
 {
-
-  Communicate *c;
+  Communicate* c;
   OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
-  Uniform3DGridLayout grid;
-  grid.BoxBConds = true; // periodic
-  grid.R.diagonal(3.77945227);
-  grid.LR_dim_cutoff=40;
-  grid.reset();
+  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
+  Lattice.BoxBConds = true; // periodic
+  Lattice.R.diagonal(3.77945227);
+  Lattice.LR_dim_cutoff = 40;
+  Lattice.reset();
 
 
   ParticleSet ions;
@@ -61,15 +58,15 @@ TEST_CASE("Chiesa Force BCC H Ewald3D", "[hamiltonian]")
   ions.R[1][2] = 1.88972614;
 
 
-  SpeciesSet &ion_species =  ions.getSpeciesSet();
-  int pIdx = ion_species.addSpecies("H");
-  int pChargeIdx = ion_species.addAttribute("charge");
+  SpeciesSet& ion_species       = ions.getSpeciesSet();
+  int pIdx                      = ion_species.addSpecies("H");
+  int pChargeIdx                = ion_species.addAttribute("charge");
   ion_species(pChargeIdx, pIdx) = 1;
-  ions.Lattice.copy(grid);
+  ions.Lattice = Lattice;
   ions.createSK();
 
 
-  elec.Lattice.copy(grid);
+  elec.Lattice = Lattice;
   elec.setName("elec");
   elec.create(2);
   elec.R[0][0] = 0.5;
@@ -80,15 +77,15 @@ TEST_CASE("Chiesa Force BCC H Ewald3D", "[hamiltonian]")
   elec.R[1][2] = 0.0;
 
 
-  SpeciesSet &tspecies =  elec.getSpeciesSet();
-  int upIdx = tspecies.addSpecies("u");
-  int downIdx = tspecies.addSpecies("d");
-  int chargeIdx = tspecies.addAttribute("charge");
-  int massIdx = tspecies.addAttribute("mass");
-  tspecies(chargeIdx, upIdx) = -1;
+  SpeciesSet& tspecies         = elec.getSpeciesSet();
+  int upIdx                    = tspecies.addSpecies("u");
+  int downIdx                  = tspecies.addSpecies("d");
+  int chargeIdx                = tspecies.addAttribute("charge");
+  int massIdx                  = tspecies.addAttribute("mass");
+  tspecies(chargeIdx, upIdx)   = -1;
   tspecies(chargeIdx, downIdx) = -1;
-  tspecies(massIdx, upIdx) = 1.0;
-  tspecies(massIdx, downIdx) = 1.0;
+  tspecies(massIdx, upIdx)     = 1.0;
+  tspecies(massIdx, downIdx)   = 1.0;
 
   elec.createSK();
 
@@ -100,17 +97,6 @@ TEST_CASE("Chiesa Force BCC H Ewald3D", "[hamiltonian]")
   // settings to the ParticleSet
   elec.resetGroups();
 
-#ifdef ENABLE_SOA
-  elec.addTable(ions,DT_SOA);
-  ions.addTable(ions,DT_SOA);
-#else
-  elec.addTable(ions,DT_AOS);
-  ions.addTable(ions,DT_AOS);
-#endif
-
-  elec.update();
-  ions.update();
-
   LRCoulombSingleton::CoulombHandler = new EwaldHandler3D(ions);
   LRCoulombSingleton::CoulombHandler->initBreakup(ions);
   LRCoulombSingleton::CoulombDerivHandler = new EwaldHandler3D(ions);
@@ -120,33 +106,31 @@ TEST_CASE("Chiesa Force BCC H Ewald3D", "[hamiltonian]")
   force.addionion = false;
   force.InitMatrix();
 
+  elec.update();
   force.evaluate(elec);
 
   //Ion-Ion forces are validated against Quantum Espresso's ewald method:
-  REQUIRE( force.forces_IonIon[0][0] == Approx(-0.0228366 ));  
-  REQUIRE( force.forces_IonIon[0][1] == Approx(-0.0228366 ));
-  REQUIRE( force.forces_IonIon[0][2] == Approx( 0.0000000 ));
-  REQUIRE( force.forces_IonIon[1][0] == Approx( 0.0228366 ));
-  REQUIRE( force.forces_IonIon[1][1] == Approx( 0.0228366 ));
-  REQUIRE( force.forces_IonIon[1][2] == Approx( 0.0000000 ));
-  
-  //Electron-Ion forces are unvalidated externally: 
-  REQUIRE( force.forces[0][0] == Approx( 3.959178977 ));  
-  REQUIRE( force.forces[0][1] == Approx( 3.959178977 ));
-  REQUIRE( force.forces[0][2] == Approx( 0.000000000 ));
-  REQUIRE( force.forces[1][0] == Approx(-0.078308730 ));
-  REQUIRE( force.forces[1][1] == Approx(-0.078308730 ));
-  REQUIRE( force.forces[1][2] == Approx( 0.000000000 ));
+  REQUIRE(force.forces_IonIon[0][0] == Approx(-0.0228366));
+  REQUIRE(force.forces_IonIon[0][1] == Approx(-0.0228366));
+  REQUIRE(force.forces_IonIon[0][2] == Approx(0.0000000));
+  REQUIRE(force.forces_IonIon[1][0] == Approx(0.0228366));
+  REQUIRE(force.forces_IonIon[1][1] == Approx(0.0228366));
+  REQUIRE(force.forces_IonIon[1][2] == Approx(0.0000000));
 
-  
+  //Electron-Ion forces are unvalidated externally:
+  REQUIRE(force.forces[0][0] == Approx(3.959178977));
+  REQUIRE(force.forces[0][1] == Approx(3.959178977));
+  REQUIRE(force.forces[0][2] == Approx(0.000000000));
+  REQUIRE(force.forces[1][0] == Approx(-0.078308730));
+  REQUIRE(force.forces[1][1] == Approx(-0.078308730));
+  REQUIRE(force.forces[1][2] == Approx(0.000000000));
+
+
   delete LRCoulombSingleton::CoulombHandler;
-  LRCoulombSingleton::CoulombHandler=0;
- 
+  LRCoulombSingleton::CoulombHandler = 0;
+
   delete LRCoulombSingleton::CoulombDerivHandler;
-  LRCoulombSingleton::CoulombDerivHandler=0;
- 
-  
+  LRCoulombSingleton::CoulombDerivHandler = 0;
 }
 
-}
-
+} // namespace qmcplusplus

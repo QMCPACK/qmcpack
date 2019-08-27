@@ -15,14 +15,15 @@
 #include<cassert>
 #include <complex>
 #include <type_traits>
+/*
 #include <thrust/complex.h>
 #include <thrust/device_ptr.h>
 #include <thrust/device_vector.h>
 #include <thrust/host_vector.h>
 #include <thrust/uninitialized_fill.h>
-#define QMC_CUDA 1
+*/
+#define ENABLE_CUDA 1
 #include "AFQMC/Memory/CUDA/cuda_utilities.h"
-//#include "AFQMC/Numerics/detail/CUDA/Kernels/strided_range.hpp"
 
 namespace kernels 
 {

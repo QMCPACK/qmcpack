@@ -11,8 +11,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
 
 
 /**@file CSVMC.h
@@ -24,7 +22,6 @@
 #include "QMCDrivers/CloneManager.h"
 namespace qmcplusplus
 {
-
 class CSEnergyEstimator;
 class CSUpdateBase;
 
@@ -34,15 +31,19 @@ class CSUpdateBase;
  * Energy difference method with multiple H/Psi.
  * Consult S. Chiesa's note.
  */
-class CSVMC: public QMCDriver, public CloneManager
+class CSVMC : public QMCDriver, public CloneManager
 {
 public:
   /// Constructor.
-  CSVMC(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, 
-        WaveFunctionPool& ppool, Communicate* comm);
+  CSVMC(MCWalkerConfiguration& w,
+        TrialWaveFunction& psi,
+        QMCHamiltonian& h,
+        WaveFunctionPool& ppool,
+        Communicate* comm);
 
   bool run();
   bool put(xmlNodePtr cur);
+  virtual QMCRunType getRunType() { return QMCRunType::CSVMC; }
 
 private:
   std::string UseDrift;
@@ -51,16 +52,16 @@ private:
   ///blocks over which normalization factors are accumulated
   int equilBlocks;
   /// Copy Constructor (disabled)
-  CSVMC(const CSVMC &) = delete;
+  CSVMC(const CSVMC&) = delete;
   /// Copy operator (disabled).
-  CSVMC & operator=(const CSVMC &) = delete;
-  
-  void resetRun();
-  
+  CSVMC& operator=(const CSVMC&) = delete;
 
-  CSEnergyEstimator *multiEstimator;
+  void resetRun();
+
+
+  CSEnergyEstimator* multiEstimator;
   CSUpdateBase* Mover;
 };
-}
+} // namespace qmcplusplus
 
 #endif

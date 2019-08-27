@@ -9,8 +9,8 @@
 //
 // File created by: Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 #ifndef QMCPLUSPLUS_LOCAL_MOMENT_HAMILTONIAN_H
 #define QMCPLUSPLUS_LOCAL_MOMENT_HAMILTONIAN_H
 #include <QMCHamiltonians/QMCHamiltonianBase.h>
@@ -18,15 +18,13 @@
 
 namespace qmcplusplus
 {
-
 /** local moment estimator
  *
  * Compute local moment for up - down spins and all ion types in some particleset
  */
-class LocalMomentEstimator: public QMCHamiltonianBase
+class LocalMomentEstimator : public QMCHamiltonianBase
 {
 public:
-
   /** constructor
    * @param elns target particle set
    * @param sources source particle set
@@ -42,12 +40,12 @@ public:
 
   void addObservables(PropertySetType& plist)
   {
-    myIndex=plist.size();
-    int dm=std::floor(Dmax*100);
-    for (int i=0; i<lm.size1()*lm.size2(); i++)
+    myIndex = plist.size();
+    int dm  = std::floor(Dmax * 100);
+    for (int i = 0; i < lm.size1() * lm.size2(); i++)
     {
       std::stringstream sstr;
-      sstr << "lm" <<dm<<names[i];
+      sstr << "lm" << dm << names[i];
       plist.add(sstr.str());
     }
   }
@@ -56,16 +54,16 @@ public:
   void setObservables(PropertySetType& plist)
   {
     int k(0);
-    for(int i(0); i<lm.size1(); i++)
-      for(int j(0); j<lm.size2(); j++,k++)
-        plist[myIndex+k]=lm(i,j);
+    for (int i(0); i < lm.size1(); i++)
+      for (int j(0); j < lm.size2(); j++, k++)
+        plist[myIndex + k] = lm(i, j);
   }
   void setParticlePropertyList(PropertySetType& plist, int offset)
   {
     int k(0);
-    for(int i(0); i<lm.size1(); i++)
-      for(int j(0); j<lm.size2(); j++,k++)
-        plist[myIndex+k+offset]=lm(i,j);
+    for (int i(0); i < lm.size1(); i++)
+      for (int j(0); j < lm.size2(); j++, k++)
+        plist[myIndex + k + offset] = lm(i, j);
   }
   bool put(xmlNodePtr cur);
   bool get(std::ostream& os) const;
@@ -78,11 +76,10 @@ private:
   std::vector<int> ion_id, el_id;
   std::vector<RealType> el_nrm;
   int nag;
-  DistanceTableData* d_table;
+  const int d_table_ID;
   std::vector<std::string> names;
   ParticleSet& ions;
 };
 
-}
+} // namespace qmcplusplus
 #endif
-

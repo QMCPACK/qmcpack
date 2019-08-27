@@ -15,6 +15,8 @@
 #ifndef AFQMC_KERNELS_SETTINGS_HPP
 #define AFQMC_KERNELS_SETTINGS_HPP
 
+#define BOOST_NO_AUTO_PTR
+
 static const size_t DOT_BLOCK_SIZE = 32; 
 static const size_t REDUCE_BLOCK_SIZE = 32; 
 

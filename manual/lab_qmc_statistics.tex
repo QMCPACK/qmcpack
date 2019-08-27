@@ -1,28 +1,27 @@
 
-\chapter{Lab 1: Monte Carlo Statistical Analysis}
+\chapter{Lab 1: MC Statistical Analysis}
 \label{chap:lab_qmc_statistics}
 
 
-\section{Topics covered in this Lab} 
+\section{Topics covered in this lab} 
 
-This lab focuses on the basics of analyzing data from Monte Carlo (MC)
+This lab focuses on the basics of analyzing data from MC
 calculations.  In this lab, participants will use data from
-VMC calculations of a simple one-electron system with an analytically soluble
-system (the ground state of the hydrogen atom) to understand how to interpret a
-MC situation.  Most of these analyses will also carry over to diffusion Monte
-Carlo (DMC) simulations.  Topics covered include:
+VMC calculations of a simple 1-electron system with an analytically soluble
+system (the ground state of the hydrogen atom) to understand how to interpret an
+MC situation.  Most of these analyses will also carry over to DMC simulations.  Topics covered include:
 \begin{itemize}
-  \item{averaging Monte Carlo variables}
-  \item{the statisical error bar of mean values}
-  \item{effects of autocorrelation and variance on the error bar}
-  \item{the relationship between Monte Carlo timestep and autocorrelation}
-  \item{the use of blocking to reduce autocorrelation}
-  \item{the significance of the acceptance ratio}
-  \item{the significance of the sample size}
-  \item{how to determine whether a Monte Carlo run was successful}
-  \item{the relationship between wavefunction quality and variance}
-  \item{gauging the efficiency of Monte Carlo runs}
-  \item{the cost of scaling up to larger system sizes}
+  \item{Averaging MC variables}
+  \item{The statisical error bar of mean values}
+  \item{The effects of autocorrelation and variance on the error bar}
+  \item{The relationship between MC time step and autocorrelation}
+  \item{The use of blocking to reduce autocorrelation}
+  \item{The significance of the acceptance ratio}
+  \item{The significance of the sample size}
+  \item{How to determine whether an MC run was successful}
+  \item{The relationship between wavefunction quality and variance}
+  \item{Gauging the efficiency of MC runs}
+  \item{The cost of scaling up to larger system sizes}
 \end{itemize}
 
 
@@ -141,11 +140,11 @@ labs/lab1_qmc_statistics/
 
 \section{Atomic units} 
 
-QMCPACK operates in Hartree atomic units to reduce the
+QMCPACK operates in Ha atomic units to reduce the
 number of factors in the Schr\"odinger equation.  Thus, the unit of length is
 the bohr (5.291772 $\times 10^{-11}$ m = 0.529177 \AA); the unit of energy is
-the hartree (4.359744 $\times 10^{-18}$ J = 27.211385 eV).  The energy of the
-ground state of the hydrogen atom in these units is -0.5 hartrees.
+the Ha (4.359744 $\times 10^{-18}$ J = 27.211385 eV).  The energy of the
+ground state of the hydrogen atom in these units is -0.5 Ha.
 
 
 %\section{Monte Carlo data analysis:\newline average, error bars, variance}
@@ -153,18 +152,17 @@ ground state of the hydrogen atom in these units is -0.5 hartrees.
 \section{Reviewing statistics}
 \label{sec:review}
 
-We will practice taking the average (mean) and standard deviation of some Monte
-Carlo data by hand to review the basic definitions.
+We will practice taking the average (mean) and standard deviation of some MC data by hand to review the basic definitions.
 
-Enter Python's command line by typing \textbf{python [Enter]}.
-You will see a prompt ``\textgreater\textgreater\textgreater''.
+Enter Python's command line by typing \texttt{python [Enter]}.
+You will see a prompt ``\textgreater\textgreater\textgreater.''
 
-The mean of a data set is given by:
+The mean of a dataset is given by:
 \begin{align}
-  \overline{x} = \frac{1}{N}\sum_{i=1}^{N} x_i
+  \overline{x} = \frac{1}{N}\sum_{i=1}^{N} x_i\:.
 \end{align}
 
-To calculate the average of five local energies from a MC calculation of the
+To calculate the average of five local energies from an MC calculation of the
 ground state of an electron in the hydrogen atom, input (truncate at the
 thousandths place if you cannot copy and paste; script versions are also
 available in the \texttt{average} directory): 
@@ -179,7 +177,7 @@ available in the \texttt{average} directory):
 )/5.
 \end{lstlisting} 
 
-Then, press \textbf{[Enter]} to get:
+Then, press \texttt{[Enter]} to get:
 
 \begin{shade}
 >>> ((-0.45298911858) + (-0.45481953564) + (-0.48066105923) + 
@@ -191,7 +189,7 @@ To understand the significance of the mean, we also need the standard deviation
 around the mean of the data (also called the error bar), given by:
 
 \begin{align}
-  \sigma = \sqrt{\frac{1}{N(N-1)}\sum_{i=1}^{N} ({x_i} - \overline{x})^2}
+  \sigma = \sqrt{\frac{1}{N(N-1)}\sum_{i=1}^{N} ({x_i} - \overline{x})^2}\:.
 \end{align}
 
 To calculate the standard deviation around the mean (-0.464736835668) of these
@@ -207,7 +205,7 @@ five data points, put in:
 )**0.5
 \end{lstlisting} 
 
-Then, press \textbf{[Enter]} to get:
+Then, press \texttt{[Enter]} to get:
 
 \begin{shade}
 >>> ( (1./(5.*(5.-1.))) * ( (-0.45298911858-(-0.464736835668))**2 +
@@ -217,14 +215,14 @@ Then, press \textbf{[Enter]} to get:
 0.0053303187464332066
 \end{shade}
 
-Thus, we might report this data as having a value -0.465 +/- 0.005 hartrees.
+Thus, we might report this data as having a value -0.465 +/- 0.005 Ha.
 This calculation of the standard deviation assumes that the average for this
-data is fixed, but we may continually add Monte Carlo samples to the data so it
+data is fixed, but we can continually add MC samples to the data, so it
 is better to use an estimate of the error bar that does not rely on the overall
 average.  Such an estimate is given by:
 
 \begin{align}
-  \tilde{\sigma} = \sqrt{\frac{1}{N-1}\sum_{i=1}^{N} \left[{(x^2)}_i - ({x_i})^2\right]}
+  \tilde{\sigma} = \sqrt{\frac{1}{N-1}\sum_{i=1}^{N} \left[{(x^2)}_i - ({x_i})^2\right]}\:.
 \end{align}
 
 To calculate the standard deviation with this formula, input the following,
@@ -241,7 +239,7 @@ corresponding local energy:
 )**0.5
 \end{lstlisting}
 
-and press \textbf{[Enter]} to get:
+and press \texttt{[Enter]} to get:
 
 \begin{shade}
 >>> ((1./(5.-1.))*((0.60984565298-(-0.45298911858)**2)+ 
@@ -252,20 +250,20 @@ and press \textbf{[Enter]} to get:
 \end{shade}
 
 This much larger standard deviation, acknowledging that the mean of this small
-data set is not the average in the limit of infinite sampling more accurately,
-reports the value of the local energy as -0.5 +/- 0.8 hartrees.
+data set is not the average in the limit of infinite sampling, more accurately
+reports the value of the local energy as -0.5 +/- 0.8 Ha.
 
-Type \textbf{quit()} and press \textbf{[Enter]} to exit the Python command line.
+Type \texttt{quit()} and press \texttt{[Enter]} to exit the Python command line.
 
-\section{Inspecting Monte Carlo data}
+\section{Inspecting MC data}
 \label{sec:inspect_data} 
 
-QMCPACK outputs data from MC calculations into files ending in scalar.dat.
-Several quantities are calculated and written for each block of Monte Carlo
+QMCPACK outputs data from MC calculations into files ending in \texttt{scalar.dat}.
+Several quantities are calculated and written for each block of MC
 steps in successive columns to the right of the step index. 
 
 Change directories to \texttt{atom}, and open the file ending in
-scalar.dat with a text editor (e.g., \textbf{vi *.scalar.dat} or \textbf{emacs
+\texttt{scalar.dat} with a text editor (e.g., \textbf{vi *.scalar.dat} or \textbf{emacs
 *.scalar.dat}.  If possible, adjust the terminal so that lines do not wrap.
 The data will begin as follows (broken into three groups to fit on this page):
 
@@ -287,14 +285,13 @@ The first line begins with a \#, indicating that this line does not contain MC
 data but rather the labels of the columns.  After a blank line, the remaining
 lines consist of the MC data.  The first column, labeled index, is an integer
 indicating which block of MC data is on that line.  The second column contains
-the quantity usually of greatest interest from the simulation, the local
-energy.  Since this simulation did not use the exact ground state wave
-function, it does not produce -0.5 hartrees as the local energy although the
+the quantity usually of greatest interest from the simulation: the local
+energy.  Since this simulation did not use the exact ground state wavefunction, it does not produce -0.5 Ha as the local energy although the
 value lies within about 10\%.  The value of the local energy fluctuates from
-block to block and the closer the trial wave function is to the ground state,
+block to block, and the closer the trial wavefunction is to the ground state
 the smaller these fluctuations will be.  The next column contains an important
-ingredient in estimating the error in the MC average--the square of the local
-energy--found by evaluating the square of the Hamiltonian.  
+ingredient in estimating the error in the MC average---the square of the local
+energy---found by evaluating the square of the Hamiltonian.  
 
 \begin{shade} 
 ...   Kinetic             Coulomb             BlockWeight        ... 
@@ -317,7 +314,7 @@ only the potential energy coming from its interaction with the nucleus.  In
 many-electron simulations, the local potential energy contains contributions
 from the electron-electron Coulomb interactions and the nuclear potential or
 pseudopotential.  The fifth column contains the local kinetic energy value for
-each MC block, obtained from the Laplacian of the wave function.  The sixth
+each MC block, obtained from the Laplacian of the wavefunction.  The sixth
 column shows the local Coulomb interaction energy.  The seventh column displays
 the weight each line of data has in the average (the weights are identical in
 this simulation).   
@@ -338,7 +335,7 @@ this simulation).
 
 The eighth column shows the CPU time (in seconds) to calculate the data in that
 line.  The ninth column from the left contains the acceptance ratio (1 being
-full acceptance) for Monte Carlo steps in that line's data.  Other than the
+full acceptance) for MC steps in that line's data.  Other than the
 block weight, all quantities vary from line to line.
 
 Exit the text editor (\textbf{[Esc] :q! [Enter]} in vi, \textbf{[Ctrl]-x [Ctrl]-c} in
@@ -347,11 +344,11 @@ emacs).
 \section{Averaging quantities in the MC data}
 \label{sec:averaging} 
 
-QMCPACK includes the qmca Python tool to average quantities in the scalar.dat file (and
-also the dmc.dat file of DMC simulations).  Without any flags, qmca will output
-the average of each column with a quantity in the scalar.dat file as follows. 
+QMCPACK includes the qmca Python tool to average quantities in the \texttt{scalar.dat} file (and
+also the \texttt{dmc.dat} file of DMC simulations).  Without any flags, qmca will output
+the average of each column with a quantity in the \texttt{scalar.dat} file as follows. 
 
-Execute qmca by \textbf{qmca *.scalar.dat}, which for this data outputs:
+Execute qmca by \texttt{qmca *.scalar.dat}, which for this data outputs:
 
 \begin{shade}
 
@@ -369,9 +366,9 @@ Efficiency            =        0.00000000 +/-       0.00000000
 \end{shade}
 
 After one blank, qmca prints the title of the subsequent data, gleaned from the
-data file name.  In this case, H.s000.scalar.dat became ``H  series 0''.
-Everything before the first ``.s'' will be interpreted as the title, and the
-number between ``.s'' and the next ``.'' will be interpreted as the series
+data file name.  In this case, \texttt{H.s000.scalar.dat} became ``H  series 0.''
+Everything before the first ``\texttt{.s}'' will be interpreted as the title, and the
+number between ``\texttt{.s}'' and the next ``.'' will be interpreted as the series
 number. 
 
 The first column under the title is the name of each quantity qmca averaged.
@@ -380,18 +377,18 @@ quantity of that line, and the column to the right of the plus-slash-minus is
 the statistical error bar on the quantity.  All quantities calculated from MC
 simulations have and must be reported with a statistical error bar!
 
-Two new quantities not present in the scalar.dat file are computed by qmca from
-the data--variance and efficiency.  We will look at these later in this lab. 
+Two new quantities not present in the \texttt{scalar.dat} file are computed by qmca from
+the data---variance and efficiency.  We will look at these later in this lab. 
 
 To view only one value, \textbf{qmca} takes the \textbf{-q (quantity)} flag.
-For example, the output of \textbf{qmca -q LocalEnergy *.scalar.dat} in this
+For example, the output of \texttt{qmca -q LocalEnergy *.scalar.dat} in this
 directory produces a single line of output:
 
 \begin{shade} 
 H  series 0  LocalEnergy = -0.454460 +/- 0.000568 
 \end{shade}
 
-Type \textbf{qmca --help} to see the list of all quantities and their
+Type \texttt{qmca --help} to see the list of all quantities and their
 abbreviations.
 
 \section{Evaluating MC simulation quality}
@@ -401,15 +398,15 @@ it went.  Besides the deviation of the average from an expected value (if there
 is one), the stability of the simulation in its sampling, the autocorrelation
 between MC steps, the value of the acceptance ratio (accepted steps over total
 proposed steps), and the variance in the local energy all indicate the quality
-of a MC simulation.  We will look at these one by one.
+of an MC simulation.  We will look at these one by one.
 
 \subsection{Tracing MC quantities}
 
 Visualizing the evolution of MC quantities over the course of the simulation by
-a \textit{trace} offers a quick picture of whether the random walk had expected
+a \textit{trace} offers a quick picture of whether the random walk had the expected
 behavior.  qmca plots traces with the -t flag.
 
-Type \textbf{qmca -q e -t H.s000.scalar.dat}, which produces a graph of the
+Type \texttt{qmca -q e -t H.s000.scalar.dat}, which produces a graph of the
 trace of the local energy:
 
 \FloatBarrier
@@ -427,13 +424,13 @@ The solid black line connects the values of the local energy at each MC block
 red line.  One standard deviation above and below the average are marked with
 horizontal, dashed red lines.  
 
-The trace of this run is largely centered around the average with no
-large-scale oscillations or major shifts, indicating a good quality MC run. 
+The trace of this run is largely centered on the average with no
+large-scale oscillations or major shifts, indicating a good-quality MC run. 
 
 Try tracing the kinetic and potential energies, seeing that their behavior is
-comparable to the total local energy.
+comparable with the total local energy.
 
-Change to directory \texttt{problematic} and type \textbf{qmca -q e -t
+Change to directory \texttt{problematic} and type \texttt{qmca -q e -t
 H.s000.scalar.dat} to produce this graph:
 
 \FloatBarrier
@@ -446,21 +443,21 @@ H.s000.scalar.dat} to produce this graph:
 
 %\includegraphics[scale=0.5]{E_L_H_B-splines.png}
 
-Here, the local energy samples cluster around the expected -0.5 hartrees for the
+Here, the local energy samples cluster around the expected -0.5 Ha for the
 first 150 samples or so and then begin to oscillate more wildly and increase
-erratically toward 0, indicating a poor quality MC run.
+erratically toward 0, indicating a poor-quality MC run.
 
 Again, trace the kinetic and potential energies in this run and see how their
-behavior compares to the total local energy.
+behavior compares with the total local energy.
 
 \subsection{Blocking away autocorrelation}
 
 \textit{Autocorrelation} occurs when a given MC step biases subsequent MC
 steps, leading to samples that are not statistically independent.  We must take
-this autocorrelation into account in order to obtain accurate statistics.  qmca
+this autocorrelation into account to obtain accurate statistics.  qmca
 outputs autocorrelation when given the {-}{-}sac flag.
 
-Change to directory \texttt{autocorrelation} and type \textbf{qmca -q e
+Change to directory \texttt{autocorrelation} and type \texttt{qmca -q e
 {-}{-}sac H.s000.scalar.dat}.  
 
 \begin{shade} 
@@ -472,8 +469,8 @@ this case).
 
 Proposing too small a step in configuration space, the MC \textit{time step},
 can lead to autocorrelation since the new samples will be in the neighborhood
-of previous samples.  Type \textbf{grep timestep H.xml} to see the varying time
-step values in this QMCPACK input file (H.xml):
+of previous samples.  Type \texttt{grep timestep H.xml} to see the varying time
+step values in this QMCPACK input file (\texttt{H.xml}):
 
 \begin{shade} 
 <parameter name="timestep">10</parameter>
@@ -496,8 +493,8 @@ step values in this QMCPACK input file (H.xml):
 
 Generally, as the time step decreases, the autocorrelation will increase
 (caveat: very large time steps will also have increasing autocorrelation). To
-see this, type \textbf{qmca -q e {-}{-}sac *.scalar.dat} to see the energies
-and autocorrelation times, then plot with gnuplot by inputting \textbf{gnuplot
+see this, type \texttt{qmca -q e {-}{-}sac *.scalar.dat} to see the energies
+and autocorrelation times, then plot with gnuplot by inputting \texttt{gnuplot
 H.plt}:
 
 \FloatBarrier
@@ -512,25 +509,25 @@ H.plt}:
 
 The error bar also increases with the autocorrelation.  
 
-Press \textbf{q [Enter]} to quit gnuplot.
+Press \texttt{q [Enter]} to quit gnuplot.
 
 To get around the bias of autocorrelation, we group the MC steps into blocks,
 take the average of the data in the steps of each block, and then finally
 average the averages in all the blocks.  QMCPACK outputs the block averages as
-each line in the scalar.dat file.  (For DMC simulations, in addition to the
-scalar.dat, QMCPACK outputs the quantities at each step to the dmc.dat file,
+each line in the \texttt{scalar.dat} file.  (For DMC simulations, in addition to the
+\texttt{scalar.dat}, QMCPACK outputs the quantities at each step to the \texttt{dmc.dat} file,
 which permits reblocking the data differently from the specification in the
 input file.) 
 
 Change directories to \texttt{blocking}.  Here we look at the time step of the
-last data set in the \texttt{autocorrelation} directory.  Verify this by typing
-\textbf{grep timestep H.xml} to see that all values are set to 0.001.  Now to
-see how we will vary the blocking, type \textbf{grep -A1 blocks H.xml}.  The
+last dataset in the \texttt{autocorrelation} directory.  Verify this by typing
+\texttt{grep timestep H.xml} to see that all values are set to 0.001.  Now to
+see how we will vary the blocking, type \texttt{grep -A1 blocks H.xml}.  The
 parameter ``steps'' indicates the number of steps per block, and the parameter
 ``blocks'' gives the number of blocks.  For this comparison, the total number
 of MC steps (equal to the product of ``steps'' and ``blocks'') is fixed at
-50000.  Now check the effect of blocking on autocorrelation--type \textbf{qmca
--q e {-}{-}sac *scalar.dat} to see the data and \textbf{gnuplot H.plt} to
+50,000.  Now check the effect of blocking on autocorrelation---type \texttt{qmca
+-q e {-}{-}sac *scalar.dat} to see the data and \texttt{gnuplot H.plt} to
 visualize the data:
 
 %\begin{shaded} 
@@ -569,7 +566,7 @@ time.  The larger number of blocks over which to average at small
 step-per-block number masks the corresponding increase in error bar with
 increasing autocorrelation.
 
-Press \textbf{q [Enter]} to quit gnuplot.
+Press \texttt{q [Enter]} to quit gnuplot.
 
 \subsection{Balancing autocorrelation and acceptance ratio}
 
@@ -579,8 +576,8 @@ probability distribution is similar and thus more likely to result in an
 accepted move.  Keeping the acceptance ratio high means the algorithm is
 efficiently exploring configuration space and not sticking at particular
 configurations.  Return to the \ishell{autocorrelation} directory.  Refresh your
-memory on the time steps in this set of simulations by \textbf{grep timestep
-H.xml}. Then, type \textbf{qmca -q ar *scalar.dat} to see the acceptance ratio
+memory on the time steps in this set of simulations by \texttt{grep timestep
+H.xml}. Then, type \texttt{qmca -q ar *scalar.dat} to see the acceptance ratio
 as it varies with decreasing time step:
 
 \begin{shade} 
@@ -607,29 +604,28 @@ By series 8 (time step = 0.02), the acceptance ratio is in excess of 99\%.
 Considering the increase in autocorrelation and subsequent increase in error
 bar as time step decreases, it is important to choose a time step that trades
 off appropriately between acceptance ratio and autocorrelation.  In this
-example, a time step of 0.02 occupies a spot where acceptance ratio is high
-(99.6\%), and autocorrelation is not appreciably larger than the minimum value
+example, a time step of 0.02 occupies a spot where the acceptance ratio is high
+(99.6\%) and autocorrelation is not appreciably larger than the minimum value
 (1.4 vs. 1.0).
 
 \subsection{Considering variance}
 
 Besides autocorrelation, the dominant contributor to the error bar is the
 \textit{variance} in the local energy.  The variance measures the fluctuations
-around the average local energy, and, as the fluctuations go to zero, the wave
-function reaches an exact eigenstate of the Hamiltonian.  qmca calculates this
-from the local energy and local energy squared columns of the scalar.dat. 
+around the average local energy, and, as the fluctuations go to zero, the wavefunction reaches an exact eigenstate of the Hamiltonian.  qmca calculates this
+from the local energy and local energy squared columns of the \texttt{scalar.dat}. 
 
-Type \textbf{qmca -q v H.s009.scalar.dat} to calculate the variance on the run
+Type \texttt{qmca -q v H.s009.scalar.dat} to calculate the variance on the run
 with time step balancing autocorrelation and acceptance ratio:
 
 \begin{shade}
 H  series 9  Variance = 0.513570 +/- 0.010589  
 \end{shade}
 
-Just as the total energy doesn't tell us much by itself, neither does the
-variance.  However, comparing the ratio of the variance to the energy indicates
-how the magnitude of the fluctuations compares to the energy itself.   Type
-\textbf{qmca -q ev H.s009.scalar.dat} to calculate the energy and variance on
+Just as the total energy does not tell us much by itself, neither does the
+variance.  However, comparing the ratio of the variance with the energy indicates
+how the magnitude of the fluctuations compares with the energy itself.   Type
+\texttt{qmca -q ev H.s009.scalar.dat} to calculate the energy and variance on
 the run side by side with the ratio:
 
 \begin{shade}
@@ -637,23 +633,23 @@ the run side by side with the ratio:
 H  series 0  -0.454460 +/- 0.000568   0.529496 +/- 0.018445   1.1651
 \end{shade}
 
-1.1651 is a very high ratio indicating the square of the fluctuations is on
+The very high ration of 1.1651 indicates the square of the fluctuations is on
 average larger than the value itself.  In the next section, we will approach
-ways to improve the variance that subsequent labs will build upon.  
+ways to improve the variance that subsequent labs will build on.  
 
 \section{Reducing statistical error bars}
 
 \subsection{Increasing MC sampling}
 
-Increasing the number of MC samples in a data set reduces the error bar as the
+Increasing the number of MC samples in a dataset reduces the error bar as the
 inverse of the square root of the number of samples.  There are two ways to
-increase the number of MC samples in a simulation: running more samples in
-parallel and increasing the number of blocks (with fixed number of steps per
+increase the number of MC samples in a simulation: (1) running more samples in
+parallel and (2) increasing the number of blocks (with fixed number of steps per
 block, this increases the total number of MC steps).
 
-To see the effect of the running more samples in parallel, change to the
+To see the effect of running more samples in parallel, change to the
 directory \ishell{nodes}.  The series here increases the number of nodes by
-factors of four from 32 to 128 to 512.  Type \textbf{qmca -q ev *scalar.dat}
+factors of four from 32 to 128 to 512.  Type \texttt{qmca -q ev *scalar.dat}
 and note the change in the error bar on the local energy as the number of
 nodes.  Visualize this with \textbf{gnuplot H.plt}:
 
@@ -670,13 +666,13 @@ nodes.  Visualize this with \textbf{gnuplot H.plt}:
 Increasing the number of blocks, unlike running in parallel, increases the
 total CPU time of the simulation.  
 
-Press \textbf{q [Enter]} to quit gnuplot.
+Press \texttt{q [Enter]} to quit gnuplot.
 
 To see the effect of increasing the block number, change to the directory
 \ishell{blocks}. To see how we will vary the number of blocks, type
-\textbf{grep -A1 blocks H.xml}.  The number of steps remains fixed, thus
+\texttt{grep -A1 blocks H.xml}.  The number of steps remains fixed, thus
 increasing the total number of samples.   Visualize the tradeoff by inputting
-\textbf{gnuplot H.plt}: 
+\texttt{gnuplot H.plt}: 
 
 \FloatBarrier
 \begin{figure}[ht!]
@@ -688,22 +684,21 @@ increasing the total number of samples.   Visualize the tradeoff by inputting
 
 %\includegraphics[scale=1.0]{nblock_vs_tcpu_energy_H_STO-2G.png}
 
-Press \textbf{q [Enter]} to quit gnuplot.
+Press \texttt{q [Enter]} to quit gnuplot.
 
 \subsection{Improving the basis set}
 
-In all of the above examples, we are using the sum of two gaussian functions
-(STO-2G) to approximate what should be a simple decaying exponential (STO =
-Slater-type orbital) for the wave function of the ground state of the hydrogen
+In all of the previous examples, we are using the sum of two Gaussian functions
+(STO-2G) to approximate what should be a simple decaying exponential for the wavefunction of the ground state of the hydrogen
 atom.  The sum of multiple copies of a function varying each copy's width and
-amplitude with coefficients is called a \textit{basis set}. As we add gaussians
-to the basis set, the approximation improves, the variance goes toward zero and
-the energy goes to -0.5 hartrees.  In nearly every other case, the exact
+amplitude with coefficients is called a \textit{basis set}. As we add Gaussians
+to the basis set, the approximation improves, the variance goes toward zero, and
+the energy goes to -0.5 Ha.  In nearly every other case, the exact
 function is unknown, and we add basis functions until the total energy does not
 change within some threshold.
 
 Change to the directory \ishell{basis} and look at the total energy and
-variance as we change the wave function by typing \textbf{qmca -q ev H\_*}:
+variance as we change the wavefunction by typing \texttt{qmca -q ev H\_*}:
 
 \begin{shade}
                             LocalEnergy               Variance        ratio 
@@ -714,12 +709,12 @@ H__exact  series 0  -0.500000 +/- 0.000000   0.000000 +/- 0.000000   -0.0000
 \end{shade}
 
 qmca also puts out the ratio of the variance to the local energy in a column to
-the right of the variance error bar.  A typical high quality value for this
-ratio is lower than 0.1 or so--none of these few-gaussian wave functions
+the right of the variance error bar.  A typical high-quality value for this
+ratio is lower than 0.1 or so---none of these few-Gaussian wavefunctions
 satisfy that rule of thumb.
 
 Use qmca to plot the trace of the local energy, kinetic energy, and potential
-energy of H\_\_exact--the total energy is constantly -0.5 hartree even though
+energy of H\_\_exact. The total energy is constantly -0.5 Ha even though
 the kinetic and potential energies fluctuate from configuration to
 configuration.
 
@@ -727,12 +722,12 @@ configuration.
 
 Another route to reducing the variance is the introduction of a Jastrow factor to 
 account for electron-electron correlation (not the statistical autocorrelation
-of Monte Carlo steps but the physical avoidance that electrons have of one another).
+of MC steps but the physical avoidance that electrons have of one another).
 To do this, we will switch to the hydrogen dimer with the exact ground state
-wave function of the atom (STO basis)--this will not be exact for the dimer.
-The ground state energy of the hydrogen dimer is -1.174 hartrees.
+wavefunction of the atom (STO basis)---this will not be exact for the dimer.
+The ground state energy of the hydrogen dimer is -1.174 Ha.
 
-Change directories to \ishell{dimer} and put in \textbf{qmca -q ev *scalar.dat}
+Change directories to \ishell{dimer} and put in \texttt{qmca -q ev *scalar.dat}
 to see the result of adding a simple, one-parameter Jastrow to the STO basis
 for the hydrogen dimer at experimental bond length:
 
@@ -742,9 +737,9 @@ H2_STO___no_jastrow  series 0  -0.876548 +/- 0.005313   0.473526 +/- 0.014910
 H2_STO_with_jastrow  series 0  -0.912763 +/- 0.004470   0.279651 +/- 0.016405
 \end{shade}
 
-The energy reduces by 0.044 +/- 0.006 hartrees and the variance by 0.19 +/- 0.02.
+The energy reduces by 0.044 +/- 0.006 HA and the variance by 0.19 +/- 0.02.
 This is still 20\% above the ground state energy, and subsequent labs will cover how
-to improve on this with improved forms of the wave function that capture more
+to improve on this with improved forms of the wavefunction that capture more
 of the physics.
 
 \section{Scaling to larger numbers of electrons}
@@ -753,7 +748,7 @@ of the physics.
 
 The inverse of the product of CPU time and the variance measures the
 \textit{efficiency} of an MC calculation.  Use qmca to calculate efficiency by
-typing \textbf{qmca -q eff *scalar.dat} to see the efficiency of these two
+typing \texttt{qmca -q eff *scalar.dat} to see the efficiency of these two
 H$_2$ calculations:
 
 \begin{shade}
@@ -768,12 +763,12 @@ CPU time to verify this claim).
 \subsection{Scaling up}
 
 To see how MC scales with increasing particle number, change directories to
-\ishell{size}.  Here are the data from runs of increasing number of electrons
+\ishell{size}.  Here are the data from runs of increasing numbers of electrons
 for H, H$_2$, C, CH$_4$, C$_2$, C$_2$H$_4$, (CH$_4$)$_2$, and (C$_2$H$_4$)$_2$
 using the STO-6G basis set for the orbitals of the Slater determinant.  The file names begin with the number of electrons simulated for those data.
 
-Use \textbf{qmca -q bc *scalar.dat} to see that the CPU time per block
-increases with number of electrons in the simulation, then plot the total CPU
+Use \texttt{qmca -q bc *scalar.dat} to see that the CPU time per block
+increases with the number of electrons in the simulation; then plot the total CPU
 time of the simulation by \textbf{gnuplot Nelectron\_tCPU.plt}:
 
 \FloatBarrier
@@ -787,13 +782,13 @@ time of the simulation by \textbf{gnuplot Nelectron\_tCPU.plt}:
 %\includegraphics[scale=1.0]{nelectron_vs_tcpu_H_C_CH_STO-6G.png}
 
 The green pluses represent the CPU time per block at each electron number.
-The red line is a quadratic fit to those data.  For a fixed basis set size, we expect the time to scale quadratically up to 1000s of electrons, at which point a cubic scaling term may become dominant.  Knowing the scaling allows you to roughly project the calculation time for a larger number of electrons.
+The red line is a quadratic fit to those data.  For a fixed basis set size, we expect the time to scale quadratically up to 1,000s of electrons, at which point a cubic scaling term may become dominant.  Knowing the scaling allows you to roughly project the calculation time for a larger number of electrons.
 
-Press \textbf{q [Enter]} to quit gnuplot.
+Press \texttt{q [Enter]} to quit gnuplot.
 
-This isn't the whole story, however.  The variance of the energy also increases
+This is not the whole story, however.  The variance of the energy also increases
 with a fixed basis set as the number of particles increases at a faster rate
-than the energy decreases.  To see this, type \textbf{qmca -q ev *scalar.dat}:
+than the energy decreases.  To see this, type \texttt{qmca -q ev *scalar.dat}:
 
 \begin{shade}
                             LocalEnergy               Variance           
@@ -808,5 +803,5 @@ than the energy decreases.  To see this, type \textbf{qmca -q ev *scalar.dat}:
 \end{shade}
 
 The increase in variance is not uniform, but the general trend is upward with a
-fixed wave function form and basis set.  Subsequent labs will address how to
-improve the wave function in order to keep the variance manageable.
+fixed wavefunction form and basis set.  Subsequent labs will address how to
+improve the wavefunction to keep the variance manageable.
