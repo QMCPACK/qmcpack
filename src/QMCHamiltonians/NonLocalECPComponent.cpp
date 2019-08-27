@@ -493,10 +493,12 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
       //This sequence is necessary to update the distance tables and make the 
       //inverse matrix available for force computation.  Move the particle to 
       //quadrature point...
+      W.setActive(iel); // initialize distances for iel
       W.makeMove(iel, deltaV[j]);
-      psi.ratio(W,iel);
-      psi.acceptMove(W,iel);
-      W.acceptMove(iel);
+      psi.ratio(W, iel);
+      psi.acceptMove(W, iel);
+      W.acceptMove(iel); // it only updates the jel-th row of e-e table
+      W.update(true); // need this to update the full e-e table.
       //Done with the move.  Ready for force computation.  
     
       iongradtmp_ = psi.evalGradSource(W, ions, jat);
@@ -507,16 +509,16 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
       pulay_quad[j][jat] = iongradtmp_;
       //And move the particle back.
       deltaV[j] = dr - r * rrotsgrid_m[j];
-      
+
+      // mirror the above in reverse order
+      W.setActive(iel);
       W.makeMove(iel, deltaV[j]);
-      psi.ratio(W,iel);
-      psi.acceptMove(W,iel);
+      psi.ratio(W, iel);
+      psi.acceptMove(W, iel);
       W.acceptMove(iel);
+      W.update(true);
     }
   }
-  //It appears as though after doing this for all ion force components, calling evaluateOne() after gives a slightly
-  // incorrect value.  Recomputing the inverse matrix seems to help this.  
-  psi.evaluateLog(W);
 
   RealType pairpot = 0;
   // Compute spherical harmonics on grid
