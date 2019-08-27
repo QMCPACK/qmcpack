@@ -276,6 +276,26 @@ class Pwscf(Simulation):
             if preserve_kp:
                 input.k_points = kp
             #end if
+        elif result_name=='restart':
+            c = self.input.control
+            res_path = os.path.abspath(result.locdir)
+            loc_path = os.path.abspath(self.locdir)
+            if res_path==loc_path:
+                None # don't need to do anything if in same directory
+            else: # rsync output into new scf dir
+                outdir = os.path.join(self.locdir,c.outdir)
+                command = 'rsync -av {0}/* {1}/'.format(result.outdir,outdir)
+                if not os.path.exists(outdir):
+                    os.makedirs(outdir)
+                #end if
+                sync_record = os.path.join(outdir,'nexus_sync_record')
+                if not os.path.exists(sync_record):
+                    execute(command)
+                    f = open(sync_record,'w')
+                    f.write('\n')
+                    f.close()
+                #end if
+            #end if
         else:
             self.error('ability to incorporate result '+result_name+' has not been implemented')
         #end if        
