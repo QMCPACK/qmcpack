@@ -4523,16 +4523,15 @@ def generate_determinantset_old(type           = 'bspline',
             #There are three types of input:
             #1. excitation=['up','0 45 3 46'] 
             #2. excitation=['up','-215 216']  
-            #3. excitation=['up', 'L vb F cb', nscf]
+            #3. excitation=['up', 'L vb F cb']
             if len(excitation) == 2: #Type 1 or 2 
-                try:
-                    tmp = array(excitation[1].split(),dtype=int)
-                except:
-                    format_failed = True
-                #end try
-            elif len(excitation) == 3: #Type 3
-                if not isinstance(excitation[2], Pwscf):
-                    format_failed = True
+                if 'cb' not in excitation[1] and 'vb' not in excitation[1]:
+                    try:
+                        tmp = array(excitation[1].split(),dtype=int)
+                    except:
+                        format_failed = True
+                    #end try
+                #end if
             else:
                 format_failed = True
             #end if
@@ -4542,11 +4541,7 @@ def generate_determinantset_old(type           = 'bspline',
             QmcpackInput.class_error('excitation must be a tuple or list with with two elements\nthe first element must be either "up" or "down"\nand the second element must be integers separated by spaces, e.g. "-216 +217"\nyou provided: {0}'.format(excitation))
         #end if
         
-        if len(excitation) == 2:
-            spin_channel,excitation = excitation
-        elif len(excitation) == 3:
-            spin_channel,excitation, nscf = excitation
-        #end if
+        spin_channel,excitation = excitation
         
         if spin_channel=='up':
             det = dset.get('updet')
@@ -4575,20 +4570,20 @@ def generate_determinantset_old(type           = 'bspline',
                 if 'CB' in b:
                     if '-' in b:
                         b = b.split('-')
-                        bands[bnum] = cb - b[1]
+                        bands[bnum] = cb - int(b[1])
                     elif '+' in b:
                         b = b.split('+')
-                        bands[bnum] = cb + b[1]
+                        bands[bnum] = cb + int(b[1])
                     else:
                         bands[bnum] = cb
                     #end if
                 elif 'VB' in b:
                     if '-' in b:
                         b = b.split('-')
-                        bands[bnum] = vb - b[1]
+                        bands[bnum] = vb - int(b[1])
                     elif '+' in b:
                         b = b.split('+')
-                        bands[bnum] = vb + b[1]
+                        bands[bnum] = vb + int(b[1])
                     else:
                         bands[bnum] = vb
                     #end if
@@ -4605,19 +4600,31 @@ def generate_determinantset_old(type           = 'bspline',
             kpath_label = array(kpath['explicit_kpoints_labels'])
             kpath_rel   = kpath['explicit_kpoints_rel']
             
+            k1_in = k_1
+            k2_in = k_2
             if k_1 in kpath_label and k_2 in kpath_label:   
                 k_1 = kpath_rel[where(kpath_label == k_1)][0]
                 k_2 = kpath_rel[where(kpath_label == k_2)][0]
 
-                kpts = nscf.input.k_points.kpoints
+                #kpts = nscf.input.k_points.kpoints
+                kpts = structure.kpoints_unit()
+                found_k1 = False
+                found_k2 = False
                 for knum, k in enumerate(kpts):
                     if isclose(k_1, k).all():
                         k_1 = knum
+                        found_k1 = True
+                    #end if
                     if isclose(k_2, k).all():
                         k_2 = knum
+                        found_k2 = True
+                    #end if
                 #end for
+                if not found_k1 or not found_k2:
+                    QmcpackInput.class_error('Requested special kpoint is not in the tiled cell\nRequested "{}", present={}\nRequested "{}", present={}\nAvailable kpoints: {}'.format(k1_in,found_k1,k2_in,found_k2,sorted(set(kpath_label))))
+                #end if
             else:
-                QmcpackInput.class_error('Excitation wavevectors are not found in the kpath')
+                QmcpackInput.class_error('Excitation wavevectors are not found in the kpath\nlabels requested: {} {}\nlabels present: {}'.format(k_1,k_2,sorted(set(kpath_label))))
             #end if
 
             #Write everything in band (ti,bi) format

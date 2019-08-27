@@ -4838,6 +4838,8 @@ def get_kpath(
                                    recipe=recipe, reference_distance=reference_distance, with_time_reversal=with_time_reversal)
     #end if
     if check_standard:
+        structure = structure.copy()
+        structure.change_units('A')
         axes    = structure.axes
         primlat = seekpathout['primitive_lattice']
         if not isclose(primlat, axes).all():
