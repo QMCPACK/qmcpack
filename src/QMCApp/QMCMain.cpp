@@ -308,7 +308,7 @@ void QMCMain::executeLoop(xmlNodePtr cur)
       if (cname == "qmc")
       {
         //prevent completed is set
-        bool success = executeQMCSection(tcur, false);
+        bool success = executeQMCSection(tcur, iter > 0);
         if (!success)
         {
           app_warning() << "  Terminated loop execution. A sub section returns false." << std::endl;
@@ -321,7 +321,7 @@ void QMCMain::executeLoop(xmlNodePtr cur)
   }
 }
 
-bool QMCMain::executeQMCSection(xmlNodePtr cur, bool noloop)
+bool QMCMain::executeQMCSection(xmlNodePtr cur, bool reuse)
 {
   std::string target("e");
   std::string random_test("no");
@@ -333,7 +333,7 @@ bool QMCMain::executeQMCSection(xmlNodePtr cur, bool noloop)
     RandomNumberControl::test();
   if (qmcSystem == 0)
     qmcSystem = ptclPool->getWalkerSet(target);
-  bool success = runQMC(cur);
+  bool success = runQMC(cur, reuse);
   FirstQMC     = false;
   return success;
 }
@@ -615,20 +615,29 @@ bool QMCMain::processPWH(xmlNodePtr cur)
  * @param cur qmc element
  * @return true, if a valid QMCDriver is set.
  */
-bool QMCMain::runQMC(xmlNodePtr cur)
+bool QMCMain::runQMC(xmlNodePtr cur, bool reuse)
 {
-  QMCDriverFactory driver_factory;
-  QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(myProject.m_series, cur);
   std::unique_ptr<QMCDriverInterface> qmc_driver;
-  qmc_driver = driver_factory.newQMCDriver(std::move(last_driver), myProject.m_series, cur, das, *qmcSystem, *ptclPool,
-                                           *psiPool, *hamPool, myComm);
+  bool append_run = false;
+
+  if (reuse)
+    qmc_driver = std::move(last_driver);
+  else
+  {
+    QMCDriverFactory driver_factory;
+    QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(myProject.m_series, cur);
+    qmc_driver = driver_factory.newQMCDriver(std::move(last_driver), myProject.m_series, cur, das, *qmcSystem, *ptclPool,
+                                             *psiPool, *hamPool, myComm);
+    append_run = das.append_run;
+  }
+
   if (qmc_driver)
   {
     //advance the project id
     //if it is NOT the first qmc node and qmc/@append!='yes'
-    if (!FirstQMC && !das.append_run)
+    if (!FirstQMC && !append_run)
       myProject.advance();
-    qmc_driver->setStatus(myProject.CurrentMainRoot(), PrevConfigFile, das.append_run);
+    qmc_driver->setStatus(myProject.CurrentMainRoot(), PrevConfigFile, append_run);
     // PD:
     // Q: How does m_walkerset_in end up being non empty?
     // A: Anytime that we aren't doing a restart.
@@ -655,6 +664,7 @@ bool QMCMain::runQMC(xmlNodePtr cur)
   }
   else
   {
+    // Ye: in which case, the code hits this?
     return false;
   }
 }
