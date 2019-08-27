@@ -86,7 +86,7 @@ class Pwscf(Simulation):
     generic_identifier = 'pwscf'
     application = 'pw.x'
     application_properties = set(['serial','mpi'])
-    application_results    = set(['charge_density','orbitals','structure'])
+    application_results    = set(['charge_density','orbitals','structure','restart'])
 
     supports_restarts = True # supports restartable, but not force restart yet
 
@@ -154,7 +154,7 @@ class Pwscf(Simulation):
     def check_result(self,result_name,sim):
         input = self.input
         control = input.control
-        if result_name=='charge_density':
+        if result_name=='charge_density' or result_name=='restart':
             calculating_result = True
         elif result_name=='orbitals':
             calculating_result = 'calculation' not in control or 'scf' in control.calculation.lower()
@@ -182,7 +182,7 @@ class Pwscf(Simulation):
         if outdir.startswith('./'):
             outdir = outdir[2:]
         #end if
-        if result_name=='charge_density':
+        if result_name=='charge_density' or result_name=='restart':
             result.locdir   = self.locdir
             result.outdir   = os.path.join(self.locdir,outdir)
             result.location = os.path.join(self.locdir,outdir,prefix+'.save','charge-density.dat')
@@ -278,6 +278,13 @@ class Pwscf(Simulation):
             #end if
         elif result_name=='restart':
             c = self.input.control
+            if('startingwfc' in self.input.electrons and self.input.electrons.startingwfc != 'file'):
+                self.error('Exiting. User has specified startingwfc=\''+self.input.electrons.startingwfc+'\'.\nThis value will overwritten when incorporating result \'restart\'.\nPlease fix conflict.')
+            #end if
+            if('startingpot' in self.input.electrons and self.input.electrons.startingpot != 'file'):
+                self.error('Exiting. User has specified startingpot=\''+self.input.electrons.startingpot+'\'.\nThis value will overwritten when incorporating result \'restart\'.\nPlease fix conflict.')
+            #end if
+            c.restart_mode='restart'
             res_path = os.path.abspath(result.locdir)
             loc_path = os.path.abspath(self.locdir)
             if res_path==loc_path:
