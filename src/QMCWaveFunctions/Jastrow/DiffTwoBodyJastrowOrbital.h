@@ -243,7 +243,6 @@ public:
       }
       else
       {
-#ifndef ENABLE_SOA
         for (int i = 0; i < d_table.sources(); ++i)
         {
           for (int nn = d_table.M[i]; nn < d_table.M[i + 1]; ++nn)
@@ -271,7 +270,6 @@ public:
             }
           }
         }
-#endif
       }
       for (int k = 0; k < myVars.size(); ++k)
       {
