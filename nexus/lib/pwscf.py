@@ -279,10 +279,10 @@ class Pwscf(Simulation):
         elif result_name=='restart':
             c = self.input.control
             if('startingwfc' in self.input.electrons and self.input.electrons.startingwfc != 'file'):
-                self.error('Exiting. User has specified startingwfc=\''+self.input.electrons.startingwfc+'\'.\nThis value will overwritten when incorporating result \'restart\'.\nPlease fix conflict.')
+                self.error('Exiting. User has specified startingwfc=\''+self.input.electrons.startingwfc+'\'.\nThis value will be overwritten when incorporating result \'restart\'.\nPlease fix conflict.')
             #end if
             if('startingpot' in self.input.electrons and self.input.electrons.startingpot != 'file'):
-                self.error('Exiting. User has specified startingpot=\''+self.input.electrons.startingpot+'\'.\nThis value will overwritten when incorporating result \'restart\'.\nPlease fix conflict.')
+                self.error('Exiting. User has specified startingpot=\''+self.input.electrons.startingpot+'\'.\nThis value will be overwritten when incorporating result \'restart\'.\nPlease fix conflict.')
             #end if
             c.restart_mode='restart'
             res_path = os.path.abspath(result.locdir)
