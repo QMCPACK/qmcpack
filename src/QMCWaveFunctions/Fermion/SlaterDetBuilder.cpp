@@ -54,7 +54,7 @@ SlaterDetBuilder::SlaterDetBuilder(ParticleSet& els, TrialWaveFunction& psi, Ptc
     : WaveFunctionComponentBuilder(els, psi),
       ptclPool(psets),
       mySPOSetBuilderFactory(0),
-      slaterdet_0(0),
+      slaterdet_0(nullptr),
       multislaterdet_0(0),
       multislaterdetfast_0(0)
 {

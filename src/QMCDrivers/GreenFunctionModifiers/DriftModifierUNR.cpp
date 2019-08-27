@@ -22,7 +22,7 @@ void DriftModifierUNR::getDrift(RealType tau, const GradType& qf, PosType& drift
   RealType vsq = dot(drift, drift);
   RealType sc  = (vsq < std::numeric_limits<RealType>::epsilon())
       ? tau
-      : ((-1.0 + std::sqrt(1.0 + 2.0 * a * tau * vsq)) / (a * vsq));
+      : ((-1.0 + std::sqrt(1.0 + 2.0 * a_ * tau * vsq)) / (a_ * vsq));
   //Apply the umrigar scaled drift.
   drift *= sc;
 }
@@ -30,9 +30,9 @@ void DriftModifierUNR::getDrift(RealType tau, const GradType& qf, PosType& drift
 bool DriftModifierUNR::parseXML(xmlNodePtr cur)
 {
   ParameterSet m_param;
-  m_param.add(a, "drift_UNR_a", "double");
+  m_param.add(a_, "drift_UNR_a", "double");
   m_param.put(cur);
-  app_log() << "  Set drift_modifier UNR parameter a = " << a << std::endl;
+  app_log() << "  Set drift_modifier UNR parameter a = " << a_ << std::endl;
   return true;
 }
 
