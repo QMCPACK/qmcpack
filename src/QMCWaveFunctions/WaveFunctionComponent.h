@@ -68,10 +68,13 @@ typedef DiffWaveFunctionComponent* DiffWaveFunctionComponentPtr;
  \Psi(\{ {\bf R}\}) = \prod_i \psi_{i}(\{ {\bf R}\}),
  * \f]
  * where \f$\Psi\f$s are represented by
- * the derived classes from OrbtialBase.
+ * the derived classes from WaveFunctionComponent.
  */
 /** @ingroup WaveFunctionComponent
  * @brief An abstract class for a component of a many-body trial wave function
+ *
+ * mw_ prefix is a function name signature indicating it is for handling a batch of WaveFunctionComponent objects
+ * which are required to be base class pointers of the same derived class type.
  */
 struct WaveFunctionComponent : public QMCTraits
 {
