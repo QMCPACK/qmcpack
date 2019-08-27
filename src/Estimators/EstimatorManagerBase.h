@@ -128,7 +128,7 @@ public:
 
   ///process xml tag associated with estimators
   //bool put(xmlNodePtr cur);
-  bool put(MCWalkerConfiguration& W, QMCHamiltonian& H, xmlNodePtr cur);
+  bool put(QMCHamiltonian& H, xmlNodePtr cur);
 
   void resetTargetParticleSet(ParticleSet& p);
 

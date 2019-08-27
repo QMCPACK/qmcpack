@@ -228,7 +228,7 @@ void QMCDriver::process(xmlNodePtr cur)
   Traces->put(traces_xml, allow_traces, RootName);
 #endif
   branchEngine->put(cur);
-  Estimators->put(W, H, cur);
+  Estimators->put(H, cur);
   if (wOut == 0)
     wOut = new HDFWalkerOutput(W, RootName, myComm);
   branchEngine->start(RootName);
