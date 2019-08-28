@@ -14,12 +14,14 @@
 #define QMCPLUSPLUS_DRIFTMODIFIER_BUILDER_H
 
 #include "QMCDrivers/GreenFunctionModifiers/DriftModifierBase.h"
+#include "QMCDrivers/QMCDriverInput.h"
 #include "Message/Communicate.h"
 
 namespace qmcplusplus
 {
 /// create DriftModifier
 DriftModifierBase* createDriftModifier(xmlNodePtr cur, const Communicate* myComm);
+DriftModifierBase* createDriftModifier(const QMCDriverInput& qmcdriver_input);
 } // namespace qmcplusplus
 
 #endif

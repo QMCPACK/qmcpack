@@ -208,7 +208,7 @@ public:
       {
         constexpr RealType cone(1);
         constexpr RealType lapfac(OHMMS_DIM - cone);
-        const size_t n  = d_table.size(SourceIndex);
+        const size_t n  = d_table.sources();
         const size_t ng = P.groups();
         for (size_t i = 1; i < n; ++i)
         {
@@ -243,7 +243,7 @@ public:
       }
       else
       {
-        for (int i = 0; i < d_table.size(SourceIndex); ++i)
+        for (int i = 0; i < d_table.sources(); ++i)
         {
           for (int nn = d_table.M[i]; nn < d_table.M[i + 1]; ++nn)
           {
