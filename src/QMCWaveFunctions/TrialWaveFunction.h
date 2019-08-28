@@ -59,6 +59,16 @@ public:
   typedef WaveFunctionComponent::WFBufferType WFBufferType;
   typedef WaveFunctionComponent::HessType HessType;
   typedef WaveFunctionComponent::HessVector_t HessVector_t;
+  // output variable types
+  // the RealType for log(|psi(R)|)
+  using LogRealType = QTFull::RealType;
+  // the ValueType for log(psi(R))
+  using LogValueType = QTFull::ValueType;
+  // the RealType for |psi(R')/psi(R)|
+  using RatioRealType = QTFull::RealType;
+  // the ValueType for psi(R')/psi(R)
+  using RatioValueType = QTFull::ValueType;
+
 #ifdef QMC_CUDA
   using CTS = CUDAGlobalTypes;
   typedef WaveFunctionComponent::RealMatrix_t RealMatrix_t;
@@ -131,8 +141,13 @@ public:
   /** evalaute the values of the wavefunction, gradient and laplacian  for a walkers */
   RealType evaluateLogOnly(ParticleSet& P);
 
-  /** evalaute the log of the trial wave function */
+  /** evalaute the log (internally gradients and laplacian) of the trial wavefunction. gold reference */
   RealType evaluateLog(ParticleSet& P);
+
+  /** evalaute the log (internally gradients and laplacian) of the trial wavefunction of one or multiple walkers. gold reference */
+  void flex_evaluateLog(const std::vector<WaveFunction*>& WF_list,
+                        const std::vector<ParticleSet*>& P_list
+                        const std::vector<LogRealType>& P_list) const;
 
   /** recompute the value of the orbitals which require critical accuracy */
   void recompute(ParticleSet& P);
@@ -228,7 +243,26 @@ public:
     //RealType mass = tspecies(massind,0);
     //OneOverM = 1.0/mass;
   }
+/*
+  void flex_evalGrad(const std::vector<WaveFunction*>& WF_list,
+                      const std::vector<ParticleSet*>& P_list,
+                      int iat,
+                      std::vector<posT>& grad_now) const;
+  void flex_ratioGrad(const std::vector<WaveFunction*>& WF_list,
+                       const std::vector<ParticleSet*>& P_list,
+                       int iat,
+                       std::vector<valT>& ratio_list,
+                       std::vector<posT>& grad_new) const;
+  void flex_ratio(const std::vector<ParticleSet*>& P_list, int iat) const {};
+  void flex_acceptrestoreMove(const std::vector<WaveFunction*>& WF_list,
+                               const std::vector<ParticleSet*>& P_list,
+                               const std::vector<bool>& isAccepted,
+                               int iat) const;
+  void flex_evaluateGL(const std::vector<WaveFunction*>& WF_list,
+                        const std::vector<ParticleSet*>& P_list) const;
 
+  void flex_completeUpdates(const std::vector<WaveFunction*>& WF_list) const;
+*/
 private:
   ///control how ratio is calculated
   bool Ordered;
