@@ -19,7 +19,8 @@
 
 namespace qmcplusplus
 {
-NonLocalECPComponent::NonLocalECPComponent() : lmax(0), nchannel(0), nknot(0), Rmax(-1), VP(0)
+NonLocalECPComponent::NonLocalECPComponent()
+    : lmax(0), nchannel(0), nknot(0), Rmax(-1), VP(nullptr), use_DLA(false)
 {
 #if !defined(REMOVE_TRACEMANAGER)
   streaming_particles = false;
@@ -140,10 +141,12 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOne(ParticleSet& W,
     {
       deltaV[j] = r * rrotsgrid_m[j] - dr;
       W.makeMove(iel, deltaV[j]);
+      if(use_DLA)
+        psiratio[j] = psi.calcRatio(W, iel, TrialWaveFunction::ComputeType::FERMIONIC) * sgridweight_m[j];
+      else
+        psiratio[j] = psi.ratio(W, iel) * sgridweight_m[j];
 #if defined(QMC_COMPLEX)
-      psiratio[j] = psi.ratio(W, iel) * sgridweight_m[j] * std::cos(psi.getPhaseDiff());
-#else
-      psiratio[j] = psi.ratio(W, iel) * sgridweight_m[j];
+      psiratio[j] *= std::cos(psi.getPhaseDiff());
 #endif
       W.rejectMove(iel);
       psi.resetPhaseDiff();
@@ -487,10 +490,17 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
     for (unsigned int j = 0; j < nknot; j++)
     {
       deltaV[j] = r * rrotsgrid_m[j] - dr;
+      //This sequence is necessary to update the distance tables and make the 
+      //inverse matrix available for force computation.  Move the particle to 
+      //quadrature point...
+      W.setActive(iel); // initialize distances for iel
       W.makeMove(iel, deltaV[j]);
-      //"Accepting" moves is necessary because evalGradSource needs full distance tables
-      //for now.
-      W.acceptMove(iel);
+      psi.ratio(W, iel);
+      psi.acceptMove(W, iel);
+      W.acceptMove(iel); // it only updates the jel-th row of e-e table
+      W.update(true); // need this to update the full e-e table.
+      //Done with the move.  Ready for force computation.  
+    
       iongradtmp_ = psi.evalGradSource(W, ions, jat);
       iongradtmp_ *= psiratiofull_[j] * sgridweight_m[j];
 #ifdef QMC_COMPLEX
@@ -499,8 +509,14 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
       pulay_quad[j][jat] = iongradtmp_;
       //And move the particle back.
       deltaV[j] = dr - r * rrotsgrid_m[j];
+
+      // mirror the above in reverse order
+      W.setActive(iel);
       W.makeMove(iel, deltaV[j]);
+      psi.ratio(W, iel);
+      psi.acceptMove(W, iel);
       W.acceptMove(iel);
+      W.update(true);
     }
   }
 
