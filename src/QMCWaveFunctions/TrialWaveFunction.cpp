@@ -244,8 +244,8 @@ void TrialWaveFunction::evaluateDeltaLog(ParticleSet& P,
   P.L    = 0.0;
   fixedL = 0.0;
   fixedG = 0.0;
-  ValueType logpsi_fixed(0.0);
-  ValueType logpsi_opt(0.0);
+  LogValueType logpsi_fixed(0.0);
+  LogValueType logpsi_opt(0.0);
   std::vector<WaveFunctionComponent*>::iterator it(Z.begin());
   std::vector<WaveFunctionComponent*>::iterator it_end(Z.end());
   int ii = RECOMPUTE_TIMER;

@@ -501,7 +501,7 @@ void DiracDeterminant<DU_TYPE>::recompute(ParticleSet& P)
     //CurrentDet=psiM(0,0);
     ValueType det = psiM_temp(0, 0);
     psiM(0, 0)    = RealType(1) / det;
-    LogValue += convertValueToLog(curRatio);
+    LogValue      = convertValueToLog(det);
   }
   else
   {

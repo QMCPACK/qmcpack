@@ -194,7 +194,7 @@ public:
 
   void registerData(ParticleSet& P, WFBufferType& buf);
 
-  RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false);
+  LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false);
 
   void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
 

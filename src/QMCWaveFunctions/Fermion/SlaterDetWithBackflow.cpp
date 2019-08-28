@@ -164,8 +164,8 @@ void SlaterDetWithBackflow::testDerivGL(ParticleSet& P)
   L0.resize(P.getTotalNum());
   L1.resize(P.getTotalNum());
   L2.resize(P.getTotalNum());
-  ValueType psi1 = 1.0;
-  ValueType psi2 = 1.0;
+  LogValueType psi1 = 1.0;
+  LogValueType psi2 = 1.0;
   RealType dh    = 0.00001;
   for (int k = 0; k < Dets.size(); k++)
   {
