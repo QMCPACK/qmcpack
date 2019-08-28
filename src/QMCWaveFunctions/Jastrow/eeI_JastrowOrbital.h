@@ -1047,7 +1047,7 @@ public:
     //    P.L[j] -= lap;
     //  }
     //}
-    U[NN] = LogValue;
+    U[NN] = std::real(LogValue);
     buf.put(U.begin(), U.end());
     buf.put(d2U.begin(), d2U.end());
     buf.put(FirstAddressOfdU, LastAddressOfdU);

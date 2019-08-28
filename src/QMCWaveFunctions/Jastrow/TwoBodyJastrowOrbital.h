@@ -493,7 +493,7 @@ public:
   inline LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false)
   {
     evaluateLogAndStore(P, P.G, P.L);
-    U[NN] = LogValue;
+    U[NN] = std::real(LogValue);
     DEBUG_PSIBUFFER(" TwoBodyJastrow::updateBuffer ", buf.current());
     buf.put(U.begin(), U.end());
     buf.put(d2U.begin(), d2U.end());

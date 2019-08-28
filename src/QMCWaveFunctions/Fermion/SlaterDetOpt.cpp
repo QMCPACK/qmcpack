@@ -242,7 +242,7 @@ void SlaterDetOpt::resize(int m_nel, int m_nmo)
 /// \return  the log of the determinant value
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-WaveFunctionComponent::RealType SlaterDetOpt::evaluate_matrices_from_scratch(ParticleSet& P, const bool all)
+WaveFunctionComponent::LogValueType SlaterDetOpt::evaluate_matrices_from_scratch(ParticleSet& P, const bool all)
 {
   //app_log() << " EWN ENTERING SlaterDetOpt::evaluate_matrices_from_scratch(ParticleSet& P, const bool all)" << std::endl;
 
@@ -274,12 +274,14 @@ WaveFunctionComponent::RealType SlaterDetOpt::evaluate_matrices_from_scratch(Par
                                           m_orb_inv_mat); // m_orb_inv_mat slow (i.e. first) index is now combinations
 
   // get the log of the determinant and the inverse of the orbital value matrix
-  return InvertWithLog(m_orb_inv_mat.data(),
+
+  InvertWithLog(m_orb_inv_mat.data(),
                        m_nel,
                        m_nel,
                        &m_work.at(0),
                        &m_pivot.at(0),
-                       PhaseValue); // m_orb_inv_mat slow (i.e. first) index is now particles
+                       LogValue); // m_orb_inv_mat slow (i.e. first) index is now particles
+  return LogValue;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -446,8 +448,7 @@ void SlaterDetOpt::acceptMove(ParticleSet& P, int iat)
     return;
 
   // Update Log and Phase values, then reset the ratio to 1.
-  PhaseValue += evaluatePhase(curRatio);
-  LogValue += std::log(std::abs(curRatio));
+  LogValue += convertValueToLog(curRatio);
   curRatio = 1.0;
 
   // get row difference
@@ -493,9 +494,6 @@ void SlaterDetOpt::registerData(ParticleSet& P, WFBufferType& buf)
   // add the log of the wave function to the buffer
   buf.add(LogValue);
 
-  // add the phase of the wave function to the buffer
-  buf.add(PhaseValue);
-
   // add orbital matrix to the buffer
   buf.add(m_orb_val_mat.first_address(), m_orb_val_mat.last_address());
 
@@ -537,9 +535,6 @@ WaveFunctionComponent::LogValueType SlaterDetOpt::updateBuffer(ParticleSet& P, W
   // add the log of the wave function to the buffer
   buf.put(LogValue);
 
-  // add the phase of the wave function to the buffer
-  buf.put(PhaseValue);
-
   // add orbital matrix to the buffer
   buf.put(m_orb_val_mat.first_address(), m_orb_val_mat.last_address());
 
@@ -567,9 +562,6 @@ void SlaterDetOpt::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 {
   // read in the log of the wave function
   buf.get(LogValue);
-
-  // read in the phase of the wave function
-  buf.get(PhaseValue);
 
   // read in the orbital matrix
   buf.get(m_orb_val_mat.first_address(), m_orb_val_mat.last_address());

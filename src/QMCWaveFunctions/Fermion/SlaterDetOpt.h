@@ -119,7 +119,7 @@ protected:
 
   // private member functions
 private:
-  WaveFunctionComponent::RealType evaluate_matrices_from_scratch(ParticleSet& P, const bool all);
+  WaveFunctionComponent::LogValueType evaluate_matrices_from_scratch(ParticleSet& P, const bool all);
 
   // public type definitions
 public:
