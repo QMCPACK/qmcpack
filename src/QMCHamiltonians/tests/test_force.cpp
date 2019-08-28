@@ -17,7 +17,9 @@
 #include "Lattice/ParticleBConds.h"
 #include "Particle/ParticleSet.h"
 #include "Particle/DistanceTableData.h"
+#ifndef ENABLE_SOA
 #include "Particle/SymmetricDistanceTableData.h"
+#endif
 #include "QMCApp/ParticleSetPool.h"
 #include "QMCHamiltonians/ForceChiesaPBCAA.h"
 #include "QMCHamiltonians/ForceCeperley.h"
@@ -82,8 +84,14 @@ TEST_CASE("Bare Force", "[hamiltonian]")
   ion_species(pMembersizeIdx, pIdx) = 1;
 
   ions.resetGroups();
+  // Must update ions first in SoA so ions.RSoA is valid
+  ions.update();
 
+#ifdef ENABLE_SOA
+  elec.addTable(ions, DT_SOA);
+#else
   elec.addTable(ions, DT_AOS);
+#endif
   elec.update();
 
   ParticleSetPool ptcl = ParticleSetPool(c);

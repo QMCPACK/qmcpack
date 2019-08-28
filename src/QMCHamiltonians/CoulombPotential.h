@@ -149,6 +149,7 @@ struct CoulombPotential : public QMCHamiltonianBase, public ForceBase
       }
       else
       {
+#ifndef ENABLE_SOA
         const int* restrict M = d.M.data();
         const int* restrict J = d.J.data();
         for (int iat = 0; iat < nCenters; ++iat)
@@ -157,6 +158,7 @@ struct CoulombPotential : public QMCHamiltonianBase, public ForceBase
           for (int nn = M[iat]; nn < M[iat + 1]; ++nn)
             res += q * Z[J[nn]] * d.rinv(nn);
         }
+#endif
       }
     }
     return res;
@@ -182,6 +184,7 @@ struct CoulombPotential : public QMCHamiltonianBase, public ForceBase
     }
     else
     {
+#ifndef ENABLE_SOA
       const int* restrict M = d.M.data();
       const int* restrict J = d.J.data();
       for (int iat = 0; iat < nCenters; ++iat)
@@ -193,6 +196,7 @@ struct CoulombPotential : public QMCHamiltonianBase, public ForceBase
           forces[nn]  -= -q * Z[J[nn]] * d.dr(nn) * d.rinv(nn) * d.rinv(nn) * d.rinv(nn);
         }
       }
+#endif
     }
   }
 
@@ -224,6 +228,7 @@ struct CoulombPotential : public QMCHamiltonianBase, public ForceBase
       }
       else
       {
+#ifndef ENABLE_SOA
         const int* restrict M = d.M.data();
         const int* restrict J = d.J.data();
         for (int iat = 0; iat < nCenters; ++iat)
@@ -232,6 +237,7 @@ struct CoulombPotential : public QMCHamiltonianBase, public ForceBase
           for (int nn = M[iat]; nn < M[iat + 1]; ++nn)
             res += q * Zb[J[nn]] * d.rinv(nn);
         }
+#endif
       }
     }
     return res;
@@ -242,9 +248,10 @@ struct CoulombPotential : public QMCHamiltonianBase, public ForceBase
   /** evaluate AA-type interactions */
   inline T evaluate_spAA(const DistanceTableData& d, const ParticleScalar_t* restrict Z)
   {
+    T res                 = 0.0;
+#ifndef ENABLE_SOA
     const int* restrict M = d.M.data();
     const int* restrict J = d.J.data();
-    T res                 = 0.0;
     T pairpot;
     Array<RealType, 1>& Va_samp = *Va_sample;
     Va_samp                     = 0.0;
@@ -259,6 +266,7 @@ struct CoulombPotential : public QMCHamiltonianBase, public ForceBase
         res          += 2.0 * pairpot;
       }
     }
+#endif
 #if defined(TRACE_CHECK)
     T Vnow  = res;
     T Vsum  = Va_samp.sum();
@@ -286,9 +294,10 @@ struct CoulombPotential : public QMCHamiltonianBase, public ForceBase
                          const ParticleScalar_t* restrict Za,
                          const ParticleScalar_t* restrict Zb)
   {
+    T res                 = 0.0;
+#ifndef ENABLE_SOA
     const int* restrict M = d.M.data();
     const int* restrict J = d.J.data();
-    T res                 = 0.0;
     T pairpot;
     Array<RealType, 1>& Va_samp = *Va_sample;
     Array<RealType, 1>& Vb_samp = *Vb_sample;
@@ -305,6 +314,7 @@ struct CoulombPotential : public QMCHamiltonianBase, public ForceBase
         res          += 2.0 * pairpot;
       }
     }
+#endif
 #if defined(TRACE_CHECK)
     T Vnow  = res;
     T Vasum = Va_samp.sum();
@@ -342,6 +352,7 @@ struct CoulombPotential : public QMCHamiltonianBase, public ForceBase
   inline T evaluateAA_orig(const DistanceTableData& d, const ParticleScalar_t* restrict Z)
   {
     T res                 = 0.0;
+#ifndef ENABLE_SOA
     const int* restrict M = d.M.data();
     const int* restrict J = d.J.data();
     for (int iat = 0; iat < nCenters; ++iat)
@@ -350,6 +361,7 @@ struct CoulombPotential : public QMCHamiltonianBase, public ForceBase
       for (int nn = M[iat]; nn < M[iat + 1]; ++nn)
         res += q * Z[J[nn]] * d.rinv(nn);
     }
+#endif
     return res;
   }
 
@@ -359,6 +371,7 @@ struct CoulombPotential : public QMCHamiltonianBase, public ForceBase
                            const ParticleScalar_t* restrict Zb)
   {
     T res                 = 0.0;
+#ifndef ENABLE_SOA
     const int* restrict M = d.M.data();
     const int* restrict J = d.J.data();
     for (int iat = 0; iat < nCenters; ++iat)
@@ -367,6 +380,7 @@ struct CoulombPotential : public QMCHamiltonianBase, public ForceBase
       for (int nn = M[iat]; nn < M[iat + 1]; ++nn)
         res += q * Zb[J[nn]] * d.rinv(nn);
     }
+#endif
     return res;
   }
 

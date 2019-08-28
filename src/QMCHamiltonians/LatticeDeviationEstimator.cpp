@@ -24,7 +24,11 @@ LatticeDeviationEstimator::LatticeDeviationEstimator(ParticleSet& P,
       tpset(P),
       tgroup(tgroup_in),
       sgroup(sgroup_in),
+#ifdef ENABLE_SOA
+      myTableID_(P.addTable(sP, DT_SOA)),
+#else
       myTableID_(P.addTable(sP, DT_AOS)),
+#endif
       hdf5_out(false),
       per_xyz(false)
 {
@@ -107,6 +111,7 @@ LatticeDeviationEstimator::Return_t LatticeDeviationEstimator::evaluate(Particle
 
   int nsite(0);    // site index
   int cur_jat(-1); // target particle index
+#ifndef ENABLE_SOA
   for (int iat = 0; iat < spset.getTotalNum(); iat++)
   { // for each desired source particle
     if (sspecies.speciesName[spset.GroupID[iat]] == sgroup)
@@ -146,6 +151,7 @@ LatticeDeviationEstimator::Return_t LatticeDeviationEstimator::evaluate(Particle
       nsite += 1; // count the number of sites, for checking only
     }             // found desired species (source particle)
   }
+#endif
 
   if (nsite != num_sites)
   {

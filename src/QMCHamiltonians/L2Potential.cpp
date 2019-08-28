@@ -99,6 +99,7 @@ L2Potential::Return_t L2Potential::evaluate(ParticleSet& P)
   }
   else
   {
+#ifndef ENABLE_SOA
     for (int iat = 0; iat < NumIons; iat++)
     {
       L2RadialPotential* ppot = PP[iat];
@@ -125,6 +126,7 @@ L2Potential::Return_t L2Potential::evaluate(ParticleSet& P)
       }
       Value += esum;
     }
+#endif
   }
   return Value;
 }

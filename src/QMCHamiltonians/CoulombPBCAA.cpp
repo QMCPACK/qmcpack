@@ -165,6 +165,7 @@ CoulombPBCAA::Return_t CoulombPBCAA::evaluate_sp(ParticleSet& P)
     }
     else
     {
+#ifndef ENABLE_SOA
       for (int ipart = 0; ipart < NumCenters; ipart++)
       {
         z = .5 * Zat[ipart];
@@ -176,6 +177,7 @@ CoulombPBCAA::Return_t CoulombPBCAA::evaluate_sp(ParticleSet& P)
           Vsr           += pairpot;
         }
       }
+#endif
     }
     Vsr *= 2.0;
   }
@@ -370,6 +372,7 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalSRwithForces(ParticleSet& P)
   }
   else
   {
+#ifndef ENABLE_SOA
     for (int ipart = 0; ipart < NumCenters; ipart++)
     {
       mRealType esum = 0.0;
@@ -386,6 +389,7 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalSRwithForces(ParticleSet& P)
       //Accumulate pair sums...species charge for atom i.
       SR += Zat[ipart] * esum;
     }
+#endif
   }
   return SR;
 }
@@ -476,6 +480,7 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalSR(ParticleSet& P)
   }
   else
   { //this will be removed
+#ifndef ENABLE_SOA
     for (int ipart = 0; ipart < NumCenters; ipart++)
     {
       mRealType esum = 0.0;
@@ -488,6 +493,7 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalSR(ParticleSet& P)
       //Accumulate pair sums...species charge for atom i.
       SR += Zat[ipart] * esum;
     }
+#endif
   }
   return SR;
 }
@@ -599,6 +605,7 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalSR_old(ParticleSet& P)
 {
   const auto& d_aa = P.getDistTable(d_aa_ID);
   RealType SR                   = 0.0;
+#ifndef ENABLE_SOA
   for (int ipart = 0; ipart < NumCenters; ipart++)
   {
     RealType esum = 0.0;
@@ -611,6 +618,7 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalSR_old(ParticleSet& P)
     //Accumulate pair sums...species charge for atom i.
     SR += Zat[ipart] * esum;
   }
+#endif
   return SR;
 }
 
