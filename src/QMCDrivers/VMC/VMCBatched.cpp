@@ -65,9 +65,17 @@ VMCBatched::IndexType VMCBatched::calc_default_local_walkers()
   return local_walkers;
 }
 
-void VMCBatched::advanceWalkers(Crowd& crowd, MoveContext& move_context, bool recompute)
+void VMCBatched::advanceWalkers(const StateForThread& sft, Crowd& crowd, MoveContext& move_context, bool recompute)
 {
   move_context.loadCrowd(crowd);
+
+  auto it_walker_twfs = crowd.beginTrialWaveFunctions();
+  auto it_mcp_walkers = crowd.beginWalkers();
+  auto it_walker_elecs = crowd.beginElectrons();
+  while(it_walker_twfs != crowd.endTrialWaveFunctions())
+  {
+    it_walker_twfs->get().copyFromBuffer(it_walker_elecs->get(), it_mcp_walkers->get().DataSet);
+  }                
 //   Walker_t::WFBuffer_t& w_buffer(thisWalker.DataSet);
 //   Psi.copyFromBuffer(W, w_buffer);
 //   myTimers[0]->stop();
@@ -77,17 +85,25 @@ void VMCBatched::advanceWalkers(Crowd& crowd, MoveContext& move_context, bool re
 
   bool moved = false;
   constexpr RealType mhalf(-0.5);
-//   for (int iter = 0; iter < nSubSteps; ++iter)
-//   {
-//     //create a 3N-Dimensional Gaussian with variance=1
-
 
   // up and down electrons are "species" within qmpack
   for (int ig = 0; ig < move_context.get_num_groups(); ++ig) //loop over species
-  {}
-//       RealType tauovermass = Tau * MassInvS[ig];
-//       RealType oneover2tau = 0.5 / (tauovermass);
-//       RealType sqrttau     = std::sqrt(tauovermass);
+  {
+    RealType tauovermass = sft.qmcdrv_input.get_tau() * sft.population.get_ptclgrp_inv_mass()[ig];
+    RealType oneover2tau = 0.5 / (tauovermass);
+    RealType sqrttau     = std::sqrt(tauovermass);
+
+    int start_index = move_context.getPtclGroupStart(ig);
+    int end_index = move_context.getPtclGroupEnd(ig);
+    for(int iat = start_index; iat < end_index; ++iat)
+    {
+      PosType dr;
+      // if (sft.vmcdrv_input.get_use_drift())
+      //   GradType grad_now = Psi.
+    }
+  }
+}
+//    for(int iat = move_context
 //       for (int iat = W.first(ig); iat < W.last(ig); ++iat)
 //       {
 //         W.setActive(iat);
@@ -161,7 +177,6 @@ void VMCBatched::advanceWalkers(Crowd& crowd, MoveContext& move_context, bool re
 //   if (!moved)
 //     ++nAllRejected;
   
-}
 
 /** Thread body for VMC block
  *
@@ -169,9 +184,8 @@ void VMCBatched::advanceWalkers(Crowd& crowd, MoveContext& move_context, bool re
  *  - should qmcdriver_input be a copy local to the core in Crowd
  */
 void VMCBatched::runVMCStep(int crowd_id,
-                            const QMCDriverInput& qmcdriver_input,
-                            const StateForThreads vmc_state,
-                            std::vector<std::unique_ptr<MoveContext>>& move_context,
+                            const StateForThread& sft,
+                            std::vector<std::unique_ptr<MoveContext>>& move_contexts,
                             std::vector<std::unique_ptr<Crowd>>& crowds)
 {
   int nAccept              = 0;
@@ -181,15 +195,15 @@ void VMCBatched::runVMCStep(int crowd_id,
   int NonLocalMoveAccepted = 0;
 
   Crowd& crowd = *(crowds[crowd_id]);
-  crowd.startBlock(qmcdriver_input.get_max_steps());
+  crowd.startBlock(sft.qmcdrv_input.get_max_steps());
   
-  int max_steps = qmcdriver_input.get_max_steps();
-  bool is_recompute_block = vmc_state.recomputing_blocks ? (1 + vmc_state.block) % qmcdriver_input.get_blocks_between_recompute() == 0 : false;
+  int max_steps = sft.qmcdrv_input.get_max_steps();
+  bool is_recompute_block = sft.recomputing_blocks ? (1 + sft.block) % sft.qmcdrv_input.get_blocks_between_recompute() == 0 : false;
   RealType cnorm = 1.0 / static_cast<RealType>(crowd.size());
-  IndexType step = vmc_state.step;
+  IndexType step = sft.step;
   // Are we entering the the last step of a block to recompute at?
   bool recompute_this_step = (is_recompute_block && (step + 1) == max_steps );
-  advanceWalkers(crowd, *move_context[crowd_id], recompute_this_step);
+  advanceWalkers(sft, crowd, *move_contexts[crowd_id], recompute_this_step);
   
   //       Movers[crowd_id]->advanceWalkers(wit, wit_end, recompute);
   //       if (has_collectables)
@@ -239,7 +253,9 @@ bool VMCBatched::run()
   //start the main estimator
   estimator_manager_->start(num_blocks);
 
-  StateForThreads vmc_state;
+  StateForThread vmc_state(qmcdriver_input_,
+                           vmcdriver_input_,
+                           population_);
 
   LoopTimer vmc_loop;
   RunTimeControl runtimeControl(RunTimeManager, MaxCPUSecs);
@@ -260,7 +276,7 @@ bool VMCBatched::run()
     {
       vmc_state.step =  step;
       TasksOneToOne<> crowd_task(num_crowds_);
-      crowd_task(runVMCStep, std::cref(qmcdriver_input_), vmc_state, std::ref(move_contexts_), std::ref(crowds_));
+      crowd_task(runVMCStep, vmc_state, std::ref(move_contexts_), std::ref(crowds_));
     }
   }
 

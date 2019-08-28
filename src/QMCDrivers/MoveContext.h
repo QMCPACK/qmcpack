@@ -58,6 +58,9 @@ public:
   
   std::vector<std::unique_ptr<ParticlePositions>>& get_walker_deltas() { return walker_deltas_; }
 
+  int getPtclGroupStart(int group) const { return particle_group_indexes_[group].first; }
+  int getPtclGroupEnd(int group) const { return particle_group_indexes_[group].first; }
+  
 protected:
 // only one of these should exist
   ///Positions
@@ -67,9 +70,11 @@ protected:
   std::vector<std::unique_ptr<VectorSoaContainer<RealType, OHMMS_DIM>>> positions_soa_;
 
   std::vector<std::unique_ptr<ParticlePositions>> walker_deltas_;
- 
-  
-  ///indexes of start and stop of each particle group;
+   
+  /** indexes of start and stop of each particle group;
+   *
+   *  Seems like these should be iterators but haven't thought through the implications.
+   */
   std::vector<std::pair<int,int>> particle_group_indexes_;
 
   /** map to handle distance tables

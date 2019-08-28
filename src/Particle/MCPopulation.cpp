@@ -1,3 +1,14 @@
+//////////////////////////////////////////////////////////////////////////////////////
+// This file is distributed under the University of Illinois/NCSA Open Source License.
+// See LICENSE file in top directory for details.
+//
+// Copyright (c) 2019 QMCPACK developers.
+//
+// File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
+//
+// File refactored from: MCWalkerConfiguration.cpp, QMCUpdate.cpp
+//////////////////////////////////////////////////////////////////////////////////////
+
 #include "Particle/MCPopulation.h"
 
 #include "Configuration.h"
@@ -5,6 +16,7 @@
 
 namespace qmcplusplus
 {
+
 MCPopulation::MCPopulation(MCWalkerConfiguration& mcwc)
 {
   walker_offsets_     = mcwc.WalkerOffsets;
@@ -19,6 +31,20 @@ MCPopulation::MCPopulation(MCWalkerConfiguration& mcwc)
     particle_group_indexes_[i].first = mcwc.first(i);
     particle_group_indexes_[i].second = mcwc.last(i);
   }
+  ptclgrp_mass_.resize(num_groups_);
+  for(int ig = 0; ig < num_groups_; ++ig)
+    ptclgrp_mass_[ig] = mcwc.Mass[ig];
+  ptclgrp_inv_mass_.resize(num_groups_);
+  for (int ig = 0; ig < num_groups_; ++ig)
+    ptclgrp_inv_mass_[ig] = 1.0 / ptclgrp_mass_[ig];
+  ptcl_inv_mass_.resize(num_particles_);
+  for (int ig = 0; ig < num_groups_; ++ig)
+  {
+    for (int iat = particle_group_indexes_[ig].first;
+         iat < particle_group_indexes_[ig].second;
+         ++iat)
+      ptcl_inv_mass_[iat] = ptclgrp_inv_mass_[ig];
+  }
 }
 
 /** Default creates walkers equal to num_local_walkers_ and zeroed positions
@@ -28,6 +54,9 @@ void MCPopulation::createWalkers()
   createWalkers(num_local_walkers_, ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>(num_particles_));
 }
 
+/** Create walkers
+ *
+ *
 /** Creates walkers with starting positions pos
  *
  *  Eventually MCPopulation should not depend on ParticleAttrib
@@ -42,9 +71,31 @@ void MCPopulation::createWalkers(IndexType num_walkers,
     walker_ptr->R.resize(num_particles_);
     walker_ptr->R = positions;
   });
+  
+  // Sadly the wfc makeClone interface depends on the full particle set as a way to not to keep track
+  // of what different wave function components depend on. I'm going to try and create a hollow elec PS
+  // with an eye toward removing the ParticleSet dependency of WFC components in the future.
+  walker_elec_particle_sets_.resize(num_walkers);
+  std::for_each(walker_elec_particle_sets_.begin(),
+                walker_elec_particle_sets_.end(),
+                [this, positions](std::unique_ptr<ParticleSet>& elec_ps_ptr) {
+                  elec_ps_ptr.reset(new ParticleSet());
+                  elec_ps_ptr->R.resize(num_particles_);
+                  elec_ps_ptr->R = positions;
+                  });
+
+  auto it_weps = walker_elec_particle_sets_.begin();
+  walker_trial_wavefunctions_.resize(num_walkers);
+  auto it_wtw = walker_trial_wavefunctions_.begin();
+  while(it_wtw != walker_trial_wavefunctions_.end())
+  {
+    it_wtw->reset(trial_wf_->makeClone(**it_weps));
+    ++it_weps;
+  }
+
 }
 
-/** Creates walkers with doing there first touch in their crowd (thread) context
+/** Creates walkers doing their first touch in their crowd (thread) context
  *
  *  This is basically premature optimization but I wanted to check if this sort of thing
  *  would work.  It seems to.

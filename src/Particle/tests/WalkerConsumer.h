@@ -28,8 +28,20 @@ class WalkerConsumer
 {
 public:
   std::vector<std::reference_wrapper<Walker<QMCTraits, PtclOnLatticeTraits>>> walkers;
+  std::vector<std::reference_wrapper<ParticleSet>> walker_elecs_;
+  std::vector<std::reference_wrapper<TrialWaveFunction>> walker_twfs_;
+  std::vector<std::reference_wrapper<QMCHamiltonian>> walker_hamiltonians_;
 
-  void addWalker(Walker<QMCTraits, PtclOnLatticeTraits>& walker) { walkers.push_back(walker); }
+  void addWalker(Walker<QMCTraits, PtclOnLatticeTraits>& walker,
+                 ParticleSet& elecs,
+                 TrialWaveFunction& twf,
+                 QMCHamiltonian& hamiltonian)
+  {
+    walkers.push_back(walker);
+    walker_elecs_.push_back(elecs);
+    walker_twfs_.push_back(twf);
+    walker_hamiltonians_.push_back(hamiltonian);
+  }
 };
 
 } // namespace testing

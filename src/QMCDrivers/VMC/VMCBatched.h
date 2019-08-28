@@ -26,12 +26,23 @@ namespace qmcplusplus
 class VMCBatched : public QMCDriverNew
 {
 public:
-  struct StateForThreads
+  using PosType = QMCTraits::PosType;
+  /** To avoid 10's of arguments to runVMCStep
+   */
+  struct StateForThread
   {
+    QMCDriverInput& qmcdrv_input;
+    VMCDriverInput& vmcdrv_input;
+    MCPopulation&   population;
     IndexType recalculate_properties_period;
     IndexType step;
-    int       block;
+    int block;
     bool recomputing_blocks;
+    StateForThread(QMCDriverInput&  qmci,
+                   VMCDriverInput& vmci,
+                   MCPopulation&   pop) : qmcdrv_input(qmci), vmcdrv_input(vmci), population(pop) {}
+
+                   
   };
 
 public:
@@ -46,12 +57,12 @@ public:
 
   bool run();
 
-  static void advanceWalkers(Crowd& crowd, MoveContext& move_context, bool recompute);
+  static void advanceWalkers(const StateForThread& sft, Crowd& crowd, MoveContext& move_context, bool recompute);
+  
   // This is the task body executed at crowd scope
   // it does not have access to object member variables by design
   static void runVMCStep(int crowd_id,
-                         const QMCDriverInput& qmcdriver_input,
-                         const StateForThreads vmc_state,
+                         const StateForThread& sft,
                          std::vector<std::unique_ptr<MoveContext>>& move_context,
                          std::vector<std::unique_ptr<Crowd>>& crowds);
   void setup();

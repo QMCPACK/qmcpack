@@ -23,6 +23,8 @@
 #include "Particle/MCWalkerConfiguration.h"
 #include "Particle/Walker.h"
 #include "OhmmsPETE/OhmmsVector.h"
+#include "QMCWaveFunctions/TrialWaveFunction.h"
+#include "QMCHamiltonians/QMCHamiltonian.h"
 
 namespace qmcplusplus
 {
@@ -49,6 +51,19 @@ private:
   // By making this a linked list and creating the crowds at the same time we could get first touch.
   std::vector<std::unique_ptr<MCPWalker>> walkers_;
   std::vector<std::pair<int, int>> particle_group_indexes_;
+  SpeciesSet species_set_;
+  std::vector<RealType> ptclgrp_mass_;
+  ///1/Mass per species
+  std::vector<RealType> ptclgrp_inv_mass_;
+  ///1/Mass per particle
+  std::vector<RealType> ptcl_inv_mass_;
+
+  std::shared_ptr<TrialWaveFunction> trial_wf_;
+  std::shared_ptr<ParticleSet> elec_particle_set_;
+  // At the moment these are "clones" but I think this design pattern smells.
+  std::vector<std::unique_ptr<ParticleSet>> walker_elec_particle_sets_;
+  std::vector<std::unique_ptr<TrialWaveFunction>> walker_trial_wavefunctions_;
+  std::vector<std::unique_ptr<QMCHamiltonian>> walker_hamiltonians_;
 
 public:
   MCPopulation(){};
@@ -62,15 +77,20 @@ public:
                      IndexType num_walkers,
                      const ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>& pos);
 
-  /** puts walkers per group walkers into groups
- *
- *  Should compile only if ITER is a proper input ITERATOR
- *  and implements addWalker
- */
+  /** puts walkers and their "cloned" things into groups in a somewhat general way
+   *
+   *  Should compile only if ITER is a proper input ITERATOR
+   *  and implements addWalker
+   *  
+   */
   template<typename ITER, typename = RequireInputIterator<ITER>>
   void distributeWalkers(ITER it_group, ITER group_end, int walkers_per_group)
   {
-    auto it_walkers = walkers_.begin();
+    auto it_walkers             = walkers_.begin();
+    auto it_walker_elecs        = walker_elec_particle_sets_.begin();
+    auto it_walker_twfs         = walker_trial_wavefunctions_.begin();
+    auto it_walker_hamiltonians = walker_hamiltonians_.begin();
+
     while (it_group != group_end)
     {
       for (int i = 0; i < walkers_per_group; ++i)
@@ -78,8 +98,11 @@ public:
         // possible that walkers_all < walkers_per_group * group_size
         if (it_walkers == walkers_.end())
           break;
-        (**it_group).addWalker(**it_walkers);
+        (**it_group).addWalker(**it_walkers, **it_walker_elecs, **it_walker_twfs, **it_walker_hamiltonians);
         ++it_walkers;
+        ++it_walker_elecs;
+        ++it_walker_twfs;
+        ++it_walker_hamiltonians;
       }
       ++it_group;
     }
@@ -96,6 +119,7 @@ public:
   IndexType get_target_population() const { return target_population_; }
   IndexType get_target_samples() const { return target_samples_; }
   //const Properties& get_properties() const { return properties_; }
+  const SpeciesSet& get_species_set() const { return species_set_; }
   const ParticleSet& get_ions() const { return ions_; }
   const std::vector<int>& get_walker_offsets() const { return walker_offsets_; }
 
@@ -107,6 +131,9 @@ public:
 
   std::vector<std::unique_ptr<MCPWalker>>& get_walkers() { return walkers_; }
   const std::vector<std::pair<int, int>>& get_particle_group_indexes() const { return particle_group_indexes_; }
+  const std::vector<RealType>& get_ptclgrp_mass() const { return ptclgrp_mass_; }
+  const std::vector<RealType>& get_ptclgrp_inv_mass() const { return ptclgrp_inv_mass_; }
+  const std::vector<RealType>& get_ptcl_inv_mass() const { return ptcl_inv_mass_; }
 
   /** }@ */
 };

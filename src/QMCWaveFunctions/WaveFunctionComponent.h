@@ -332,6 +332,12 @@ struct WaveFunctionComponent : public QMCTraits
    */
   virtual WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;
 
+  /** Intended as a handle to break 
+   *
+   *  
+   */
+  //virtual WaveFunctionComponentPtr makeThrScope(std::vector<std::pair<int,int>>& ptcl_group_indexes) const = 0;
+  
   /** Return the Chiesa kinetic energy correction
    */
   virtual RealType KECorrection();

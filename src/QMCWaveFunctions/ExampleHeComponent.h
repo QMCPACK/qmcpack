@@ -34,7 +34,7 @@ public:
   };
 
   using OptVariablesType = optimize::VariableSet;
-
+  using PtclGrpIndexes = QMCTraits::PtclGrpIndexes;
 
   void checkInVariables(OptVariablesType& active) override { active.insertFrom(my_vars_); }
   void checkOutVariables(const OptVariablesType& active) override { my_vars_.getIndex(active); }
