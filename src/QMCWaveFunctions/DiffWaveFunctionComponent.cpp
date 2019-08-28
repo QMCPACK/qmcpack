@@ -78,8 +78,8 @@ void NumericalDiffOrbital::evaluateDerivatives(ParticleSet& P,
     int jj = ind_map[j];
     if (jj < 0)
       continue;
-    RealType plus=0.0;
-    RealType minus=0.0;
+    LogValueType plus=0.0;
+    LogValueType minus=0.0;
     RealType curvar=std::real(optvars[jj]);
     dg_p=0.0;
     dl_p=0.0;
@@ -101,7 +101,7 @@ void NumericalDiffOrbital::evaluateDerivatives(ParticleSet& P,
     const ParticleSet::Scalar_t dh = 1.0 / (2.0 * delta);
     gradLogPsi                     = dh * (dg_p - dg_m);
     lapLogPsi                      = dh * (dl_p - dl_m);
-    RealType dLogPsi               = dh * (plus - minus);
+    RealType dLogPsi               = dh * std::real(plus - minus);
     dlogpsi[jj]                    = dLogPsi;
     dhpsioverpsi[jj]               = -0.5 * Sum(lapLogPsi) - Dot(P.G, gradLogPsi);
   }
@@ -152,7 +152,7 @@ void AnalyticDiffOrbital::evaluateDerivatives(ParticleSet& P,
   gradLogPsi       = 0.0;
   lapLogPsi        = 0.0;
   for (int i = 0; i < refOrbital.size(); ++i)
-    dLogPsi += refOrbital[i]->evaluateLog(P, gradLogPsi, lapLogPsi);
+    dLogPsi += std::real(refOrbital[i]->evaluateLog(P, gradLogPsi, lapLogPsi));
   dlogpsi[MyIndex]      = dLogPsi;
   dhpsioverpsi[MyIndex] = -0.5 * Sum(lapLogPsi) - Dot(P.G, gradLogPsi);
   //optvars.setDeriv(FirstIndex,dLogPsi,-0.5*Sum(lapLogPsi)-Dot(P.G,gradLogPsi));

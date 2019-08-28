@@ -64,7 +64,7 @@ public:
 
   void resetTargetParticleSet(ParticleSet& P);
 
-  RealType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
+  LogValueType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
 
   ValueType ratio(ParticleSet& P, int iat);
 
@@ -74,7 +74,7 @@ public:
 
   void registerData(ParticleSet& P, WFBufferType& buf);
 
-  RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch);
+  LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch);
 
   void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
 

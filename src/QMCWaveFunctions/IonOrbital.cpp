@@ -57,7 +57,7 @@ void IonOrbital::reportStatus(std::ostream& os) {}
      *such that \f[ G[i]+={\bf \nabla}_i J({\bf R}) \f]
      *and \f[ L[i]+=\nabla^2_i J({\bf R}). \f]
      */
-IonOrbital::RealType IonOrbital::evaluateLog(ParticleSet& P,
+IonOrbital::LogValueType IonOrbital::evaluateLog(ParticleSet& P,
                                              ParticleSet::ParticleGradient_t& G,
                                              ParticleSet::ParticleLaplacian_t& L)
 {
@@ -186,7 +186,7 @@ void IonOrbital::registerData(ParticleSet& P, WFBufferType& buf)
   buf.add(FirstAddressOfdU, LastAddressOfdU);
 }
 
-IonOrbital::RealType IonOrbital::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false)
+IonOrbital::LogValueType IonOrbital::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false)
 {
   evaluateLogAndStore(P, P.G, P.L);
   buf.put(U.first_address(), U.last_address());

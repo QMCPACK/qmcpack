@@ -351,7 +351,7 @@ void FDLRWfn::resetTargetParticleSet(ParticleSet& P)
 /// \return  the log of the FDLR wave function
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////
-FDLRWfn::RealType FDLRWfn::evaluateLog(ParticleSet& P,
+FDLRWfn::LogValueType FDLRWfn::evaluateLog(ParticleSet& P,
                                        ParticleSet::ParticleGradient_t& G,
                                        ParticleSet::ParticleLaplacian_t& L)
 {
@@ -396,7 +396,7 @@ FDLRWfn::RealType FDLRWfn::evaluateLog(ParticleSet& P,
 /// \return  the log of the FDLR wave function
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////
-FDLRWfn::RealType FDLRWfn::evaluateLogFDLR(ParticleSet& P,
+FDLRWfn::LogValueType FDLRWfn::evaluateLogFDLR(ParticleSet& P,
                                            ParticleSet::ParticleGradient_t& G,
                                            ParticleSet::ParticleLaplacian_t& L,
                                            const FDLRWfn::RealType& logpsi_plus,

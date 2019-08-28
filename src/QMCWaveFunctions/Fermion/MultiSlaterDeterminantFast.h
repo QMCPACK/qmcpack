@@ -101,7 +101,7 @@ public:
 
   ValueType evaluate(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
 
-  RealType evaluateLog(ParticleSet& P //const DistanceTableData* dtable,
+  LogValueType evaluateLog(ParticleSet& P //const DistanceTableData* dtable,
                        ,
                        ParticleSet::ParticleGradient_t& G,
                        ParticleSet::ParticleLaplacian_t& L);
@@ -123,7 +123,7 @@ public:
   void restore(int iat);
 
   void registerData(ParticleSet& P, WFBufferType& buf);
-  RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false);
+  LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false);
   void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
 
   WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;

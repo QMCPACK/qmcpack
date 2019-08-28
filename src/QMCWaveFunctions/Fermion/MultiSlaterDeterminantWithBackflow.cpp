@@ -173,7 +173,7 @@ WaveFunctionComponent::ValueType MultiSlaterDeterminantWithBackflow::evaluate(Pa
   return psi;
 }
 
-WaveFunctionComponent::RealType MultiSlaterDeterminantWithBackflow::evaluateLog(ParticleSet& P,
+WaveFunctionComponent::LogValueType MultiSlaterDeterminantWithBackflow::evaluateLog(ParticleSet& P,
                                                                                 ParticleSet::ParticleGradient_t& G,
                                                                                 ParticleSet::ParticleLaplacian_t& L)
 {
@@ -515,7 +515,7 @@ void MultiSlaterDeterminantWithBackflow::registerData(ParticleSet& P, WFBufferTy
 }
 
 // FIX FIX FIX
-WaveFunctionComponent::RealType MultiSlaterDeterminantWithBackflow::updateBuffer(ParticleSet& P,
+WaveFunctionComponent::LogValueType MultiSlaterDeterminantWithBackflow::updateBuffer(ParticleSet& P,
                                                                                  WFBufferType& buf,
                                                                                  bool fromscratch)
 {

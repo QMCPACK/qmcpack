@@ -152,7 +152,7 @@ void DiracDeterminantWithBackflow::registerData(ParticleSet& P, WFBufferType& bu
   buf.add(PhaseValue);
 }
 
-DiracDeterminantWithBackflow::RealType DiracDeterminantWithBackflow::updateBuffer(ParticleSet& P,
+DiracDeterminantWithBackflow::LogValueType DiracDeterminantWithBackflow::updateBuffer(ParticleSet& P,
                                                                                   WFBufferType& buf,
                                                                                   bool fromscratch)
 {
@@ -505,7 +505,7 @@ void DiracDeterminantWithBackflow::testL(ParticleSet& P)
  *contribution of the determinant to G(radient) and L(aplacian)
  *for local energy calculations.
  */
-DiracDeterminantWithBackflow::RealType DiracDeterminantWithBackflow::evaluateLog(ParticleSet& P,
+DiracDeterminantWithBackflow::LogValueType DiracDeterminantWithBackflow::evaluateLog(ParticleSet& P,
                                                                                  ParticleSet::ParticleGradient_t& G,
                                                                                  ParticleSet::ParticleLaplacian_t& L)
 {

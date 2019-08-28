@@ -50,7 +50,7 @@ void SlaterDetWithBackflow::resetTargetParticleSet(ParticleSet& P)
   }
 }
 
-SlaterDetWithBackflow::RealType SlaterDetWithBackflow::evaluateLog(ParticleSet& P,
+SlaterDetWithBackflow::LogValueType SlaterDetWithBackflow::evaluateLog(ParticleSet& P,
                                                                    ParticleSet::ParticleGradient_t& G,
                                                                    ParticleSet::ParticleLaplacian_t& L)
 {
@@ -72,7 +72,7 @@ void SlaterDetWithBackflow::registerData(ParticleSet& P, WFBufferType& buf)
     Dets[i]->registerData(P, buf);
 }
 
-SlaterDetWithBackflow::RealType SlaterDetWithBackflow::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch)
+SlaterDetWithBackflow::LogValueType SlaterDetWithBackflow::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch)
 {
   //BFTrans->updateBuffer(P,buf,fromscratch);
   BFTrans->updateBuffer(P, buf, fromscratch);

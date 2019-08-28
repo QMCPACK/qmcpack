@@ -110,6 +110,36 @@ inline T evaluateLogAndPhase(const T psi, T& phase)
   }
 }
 
+template<typename T>
+struct LogToValue
+{
+  inline static T convert(const std::complex<T>& logpsi)
+  {
+    return std::real(std::exp(logpsi));
+  }
+};
+
+template<typename T>
+struct LogToValue<std::complex<T>>
+{
+  inline static std::complex<T> convert(const std::complex<T>& logpsi)
+  {
+    return std::exp(logpsi);
+  }
+};
+
+template<typename T>
+inline std::complex<T> convertValueToLog(const std::complex<T>& logpsi)
+{
+  return std::log(logpsi);
+}
+
+template<typename T>
+inline std::complex<T> convertValueToLog(const T logpsi)
+{
+  return std::log(std::complex<T>(logpsi));
+}
+
 template<class T>
 inline T evaluateLogAndPhase(const std::complex<T>& psi, T& phase)
 {

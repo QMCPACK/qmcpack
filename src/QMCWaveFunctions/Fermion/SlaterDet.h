@@ -78,7 +78,7 @@ public:
 
   virtual void resetTargetParticleSet(ParticleSet& P);
 
-  virtual RealType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
+  virtual LogValueType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
 
   virtual void recompute(ParticleSet& P);
 
@@ -89,7 +89,7 @@ public:
 
   virtual void registerData(ParticleSet& P, WFBufferType& buf);
 
-  virtual RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false);
+  virtual LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false);
 
   virtual void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
 
@@ -132,12 +132,8 @@ public:
     Dets[getDetID(iat)]->acceptMove(P, iat);
 
     LogValue   = 0.0;
-    PhaseValue = 0.0;
     for (int i = 0; i < Dets.size(); ++i)
-    {
       LogValue += Dets[i]->LogValue;
-      PhaseValue += Dets[i]->PhaseValue;
-    }
   }
 
   virtual void completeUpdates()

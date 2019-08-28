@@ -293,7 +293,7 @@ WaveFunctionComponent::RealType SlaterDetOpt::evaluate_matrices_from_scratch(Par
 /// \return  the log of the determinant value
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-WaveFunctionComponent::RealType SlaterDetOpt::evaluateLog(ParticleSet& P,
+WaveFunctionComponent::LogValueType SlaterDetOpt::evaluateLog(ParticleSet& P,
                                                           ParticleSet::ParticleGradient_t& G,
                                                           ParticleSet::ParticleLaplacian_t& L)
 {
@@ -520,7 +520,7 @@ void SlaterDetOpt::registerData(ParticleSet& P, WFBufferType& buf)
 /// \return  the log of the determinant value
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-WaveFunctionComponent::RealType SlaterDetOpt::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch)
+WaveFunctionComponent::LogValueType SlaterDetOpt::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch)
 {
   // BEGIN EWN DEBUG
   //app_log() << " EWN ENTERING SlaterDetOpt::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch)" << std::endl;

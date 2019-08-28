@@ -104,6 +104,11 @@ struct WaveFunctionComponent : public QMCTraits
   typedef OrbitalSetTraits<ValueType>::HessType HessType;
   typedef OrbitalSetTraits<ValueType>::HessVector_t HessVector_t;
 
+  // the value type for log(psi)
+  using LogValueType = std::complex<QTFull::RealType>;
+  // the value type for psi(r')/psi(r)
+  using PsiValueType = QTFull::ValueType;
+
   /** flag to set the optimization mode */
   bool IsOptimizing;
   /** boolean to set optimization
@@ -118,10 +123,7 @@ struct WaveFunctionComponent : public QMCTraits
   int UpdateMode;
   /** current \f$\log\phi \f$
    */
-  RealType LogValue;
-  /** current phase
-   */
-  RealType PhaseValue;
+  LogValueType LogValue;
   /** Pointer to the differential WaveFunctionComponent of this object
    *
    * If dPsi=0, this WaveFunctionComponent is constant with respect to the optimizable variables
@@ -150,20 +152,13 @@ struct WaveFunctionComponent : public QMCTraits
 
   inline void setOptimizable(bool optimizeit) { Optimizable = optimizeit; }
 
-  virtual void resetPhaseDiff() {}
-
   ///assign a differential WaveFunctionComponent
   virtual void setDiffOrbital(DiffWaveFunctionComponentPtr d);
 
-  ///assembles the full value from LogValue and PhaseValue
-  ValueType getValue() const
+  ///assembles the full value
+  PsiValueType getValue() const
   {
-#if defined(QMC_COMPLEX)
-    RealType ratioMag = std::exp(LogValue);
-    return ValueType(std::cos(PhaseValue) * ratioMag, std::sin(PhaseValue) * ratioMag);
-#else
-    return std::exp(LogValue);
-#endif
+    return LogToValue<PsiValueType>::convert(LogValue);
   }
 
   /** check in optimizable parameters
@@ -200,7 +195,7 @@ struct WaveFunctionComponent : public QMCTraits
    *Mainly for walker-by-walker move. The initial stage of particle-by-particle
    *move also uses this.
    */
-  virtual RealType evaluateLog(ParticleSet& P,
+  virtual LogValueType evaluateLog(ParticleSet& P,
                                ParticleSet::ParticleGradient_t& G,
                                ParticleSet::ParticleLaplacian_t& L) = 0;
 
@@ -313,7 +308,7 @@ struct WaveFunctionComponent : public QMCTraits
    *        pieces of wavefunction from scratch
    * @return log value of the wavefunction.
    */
-  virtual RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) = 0;
+  virtual LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) = 0;
 
   /** For particle-by-particle move. Copy data or attach memory
    *  from a walker buffer to the objects of this class.
@@ -353,7 +348,7 @@ struct WaveFunctionComponent : public QMCTraits
 
   virtual void multiplyDerivsByOrbR(std::vector<ValueType>& dlogpsi)
   {
-    RealType myrat = std::exp(LogValue) * std::cos(PhaseValue);
+    RealType myrat = std::real(LogToValue<PsiValueType>::convert(LogValue));
     for (int j = 0; j < myVars.size(); j++)
     {
       int loc = myVars.where(j);

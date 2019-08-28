@@ -375,7 +375,7 @@ void kSpaceJastrow::resetTargetParticleSet(ParticleSet& P)
 //                  Evaluation functions                     //
 ///////////////////////////////////////////////////////////////
 
-kSpaceJastrow::RealType kSpaceJastrow::evaluateLog(ParticleSet& P,
+kSpaceJastrow::LogValueType kSpaceJastrow::evaluateLog(ParticleSet& P,
                                                    ParticleSet::ParticleGradient_t& G,
                                                    ParticleSet::ParticleLaplacian_t& L)
 {
@@ -654,7 +654,7 @@ void kSpaceJastrow::registerData(ParticleSet& P, WFBufferType& buf)
   // return LogValue;
 }
 
-kSpaceJastrow::RealType kSpaceJastrow::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch)
+kSpaceJastrow::LogValueType kSpaceJastrow::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch)
 {
   LogValue = evaluateLog(P, P.G, P.L);
   // for(int iat=0; iat<NumPtcls; iat++)

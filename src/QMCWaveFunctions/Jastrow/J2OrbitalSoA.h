@@ -170,7 +170,7 @@ struct J2OrbitalSoA : public WaveFunctionComponent
 
   WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;
 
-  RealType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
+  LogValueType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
 
   void evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi);
 
@@ -224,7 +224,7 @@ struct J2OrbitalSoA : public WaveFunctionComponent
     d2Uat.attachReference(buf.lendReference<valT>(N), N);
   }
 
-  RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false)
+  LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false)
   {
     evaluateGL(P, P.G, P.L, false);
     buf.forward(Bytes_in_WFBuffer);
@@ -575,7 +575,7 @@ void J2OrbitalSoA<FT>::recompute(ParticleSet& P)
 }
 
 template<typename FT>
-typename J2OrbitalSoA<FT>::RealType J2OrbitalSoA<FT>::evaluateLog(ParticleSet& P,
+typename J2OrbitalSoA<FT>::LogValueType J2OrbitalSoA<FT>::evaluateLog(ParticleSet& P,
                                                                   ParticleSet::ParticleGradient_t& G,
                                                                   ParticleSet::ParticleLaplacian_t& L)
 {

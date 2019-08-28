@@ -228,7 +228,7 @@ void MultiDiracDeterminant::evaluateForWalkerMove(ParticleSet& P, bool fromScrat
 }
 
 
-MultiDiracDeterminant::RealType MultiDiracDeterminant::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch)
+MultiDiracDeterminant::LogValueType MultiDiracDeterminant::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch)
 {
   evaluateForWalkerMove(P, (fromscratch || UpdateMode == ORB_PBYP_RATIO));
   buf.put(psiM.first_address(), psiM.last_address());

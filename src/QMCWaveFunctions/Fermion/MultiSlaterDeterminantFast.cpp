@@ -272,7 +272,7 @@ WaveFunctionComponent::ValueType MultiSlaterDeterminantFast::evaluate(ParticleSe
   return psiCurrent;
 }
 
-WaveFunctionComponent::RealType MultiSlaterDeterminantFast::evaluateLog(ParticleSet& P,
+WaveFunctionComponent::LogValueType MultiSlaterDeterminantFast::evaluateLog(ParticleSet& P,
                                                                         ParticleSet::ParticleGradient_t& G,
                                                                         ParticleSet::ParticleLaplacian_t& L)
 {
@@ -427,7 +427,7 @@ void MultiSlaterDeterminantFast::registerData(ParticleSet& P, WFBufferType& buf)
 }
 
 // FIX FIX FIX
-WaveFunctionComponent::RealType MultiSlaterDeterminantFast::updateBuffer(ParticleSet& P,
+WaveFunctionComponent::LogValueType MultiSlaterDeterminantFast::updateBuffer(ParticleSet& P,
                                                                          WFBufferType& buf,
                                                                          bool fromscratch)
 {

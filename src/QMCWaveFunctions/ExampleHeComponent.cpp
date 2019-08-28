@@ -61,7 +61,7 @@ bool ExampleHeComponent::put(xmlNodePtr cur)
   return true;
 }
 
-ExampleHeComponent::RealType ExampleHeComponent::evaluateLog(ParticleSet& P,
+ExampleHeComponent::LogValueType ExampleHeComponent::evaluateLog(ParticleSet& P,
                                                              ParticleSet::ParticleGradient_t& G,
                                                              ParticleSet::ParticleLaplacian_t& L)
 {
@@ -185,7 +185,7 @@ ExampleHeComponent::ValueType ExampleHeComponent::ratioGrad(ParticleSet& P, int 
 }
 
 
-ExampleHeComponent::RealType ExampleHeComponent::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch)
+ExampleHeComponent::LogValueType ExampleHeComponent::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch)
 {
   return evaluateLog(P, P.G, P.L);
 }

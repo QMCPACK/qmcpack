@@ -118,7 +118,7 @@ void SlaterDet::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& r
     Dets[i]->evaluateRatiosAlltoOne(P, ratios);
 }
 
-SlaterDet::RealType SlaterDet::evaluateLog(ParticleSet& P,
+SlaterDet::LogValueType SlaterDet::evaluateLog(ParticleSet& P,
                                            ParticleSet::ParticleGradient_t& G,
                                            ParticleSet::ParticleLaplacian_t& L)
 {
@@ -126,12 +126,8 @@ SlaterDet::RealType SlaterDet::evaluateLog(ParticleSet& P,
   //for(int i=0; i<Dets.size(); i++) psi *= Dets[i]->evaluate(P,G,L);
   //return LogValue = evaluateLogAndPhase(psi,PhaseValue);
   LogValue   = 0.0;
-  PhaseValue = 0.0;
   for (int i = 0; i < Dets.size(); ++i)
-  {
     LogValue += Dets[i]->evaluateLog(P, G, L);
-    PhaseValue += Dets[i]->PhaseValue;
-  }
   return LogValue;
 }
 
@@ -165,19 +161,15 @@ void SlaterDet::registerData(ParticleSet& P, WFBufferType& buf)
   DEBUG_PSIBUFFER(" SlaterDet::registerData ", buf.current());
 }
 
-SlaterDet::RealType SlaterDet::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch)
+SlaterDet::LogValueType SlaterDet::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch)
 {
   DEBUG_PSIBUFFER(" SlaterDet::updateBuffer ", buf.current());
   //ValueType psi = 1.0;
   //for(int i=0; i<Dets.size(); i++) psi *= Dets[i]->updateBuffer(P,buf,fromscratch);
   //return LogValue = evaluateLogAndPhase(psi,PhaseValue);
   LogValue   = 0.0;
-  PhaseValue = 0.0;
   for (int i = 0; i < Dets.size(); ++i)
-  {
     LogValue += Dets[i]->updateBuffer(P, buf, fromscratch);
-    PhaseValue += Dets[i]->PhaseValue;
-  }
   DEBUG_PSIBUFFER(" SlaterDet::updateBuffer ", buf.current());
   return LogValue;
 }

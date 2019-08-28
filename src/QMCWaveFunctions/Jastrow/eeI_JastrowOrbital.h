@@ -384,7 +384,7 @@ public:
    *@note The DistanceTableData contains only distinct pairs of the
    *particles belonging to one set, e.g., SymmetricDTD.
    */
-  RealType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
+  LogValueType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
   {
     // HACK HACK HACK
     // evaluateLogAndStore(P,G,L);
@@ -1014,7 +1014,7 @@ public:
     buf.add(FirstAddressOfdU, LastAddressOfdU);
   }
 
-  inline RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false)
+  inline LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false)
   {
     evaluateLogAndStore(P, P.G, P.L);
     //RealType dudr, d2udr2,u;
