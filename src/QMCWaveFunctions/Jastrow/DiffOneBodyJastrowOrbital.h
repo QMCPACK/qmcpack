@@ -132,6 +132,36 @@ public:
                            std::vector<ValueType>& dlogpsi,
                            std::vector<ValueType>& dhpsioverpsi)
   {
+    evaluateDerivativesWF(P, active, dlogpsi);
+    bool recalculate(false);
+    std::vector<bool> rcsingles(myVars.size(), false);
+    for (int k = 0; k < myVars.size(); ++k)
+    {
+      int kk = myVars.where(k);
+      if (kk < 0)
+        continue;
+      if (active.recompute(kk))
+        recalculate = true;
+      rcsingles[k] = true;
+    }
+    if (recalculate) {
+      for (int k = 0; k < myVars.size(); ++k)
+      {
+        int kk = myVars.where(k);
+        if (kk < 0)
+          continue;
+        if (rcsingles[k])
+        {
+          dhpsioverpsi[kk] = - RealType(0.5) * ValueType(Sum(*lapLogPsi[k])) - ValueType(Dot(P.G, *gradLogPsi[k]));
+        }
+      }
+    }
+  }
+
+  void evaluateDerivativesWF(ParticleSet& P,
+                             const opt_variables_type& active,
+                             std::vector<ValueType>& dlogpsi)
+  {
     bool recalculate(false);
     std::vector<bool> rcsingles(myVars.size(), false);
     for (int k = 0; k < myVars.size(); ++k)
@@ -239,7 +269,6 @@ public:
         if (rcsingles[k])
         {
           dlogpsi[kk]      = ValueType(dLogPsi[k]);
-          dhpsioverpsi[kk] = - RealType(0.5) * ValueType(Sum(*lapLogPsi[k])) - ValueType(Dot(P.G, *gradLogPsi[k]));
         }
       }
     }

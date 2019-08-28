@@ -130,7 +130,11 @@ public:
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& optvars,
                            std::vector<ValueType>& dlogpsi,
-                           std::vector<ValueType>& dhpsioverpsi);
+                           std::vector<ValueType>& dhpsioverpsi) override;
+
+  void evaluateDerivativesWF(ParticleSet& P,
+                             const opt_variables_type& optvars,
+                             std::vector<ValueType>& dlogpsi) override;
 
   void resize(int, int);
   void initialize();
