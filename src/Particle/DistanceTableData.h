@@ -74,20 +74,6 @@ struct DistanceTableData
 {
   static constexpr unsigned DIM = OHMMS_DIM;
 
-  /**enum for index ordering and storage.
-   *@brief Equivalent to using three-dimensional array with (i,j,k)
-   * for i = source particle index (slowest),
-   *     j = target particle index
-   *     k = copies (walkers) index.
-   */
-  enum
-  {
-    WalkerIndex = 0,
-    SourceIndex,
-    VisitorIndex,
-    PairIndex
-  };
-
   using IndexType       = QMCTraits::IndexType;
   using RealType        = QMCTraits::RealType;
   using PosType         = QMCTraits::PosType;
@@ -96,20 +82,20 @@ struct DistanceTableData
   using ripair          = std::pair<RealType, IndexType>;
   using RowContainer    = VectorSoaContainer<RealType, DIM>;
 
-  ///type of cell
-  int CellType;
   ///Type of DT
   int DTType;
-  ///size of indicies
-  TinyVector<IndexType, 4> N;
 
-  /** @brief M.size() = N[SourceIndex]+1
+  int N_targets;
+  int N_sources;
+  int N_walkers;
+
+  /** @brief M.size() = N_sources+1
    *
    * M[i+i] - M[i] = the number of connected points to the i-th source
    */
   IndexVectorType M;
 
-  /** @brief J.size() = M[N[SourceIndex]]
+  /** @brief J.size() = M[N_sources]]
    *
    * J[nn] = the index of the connected point for the i-th point
    * satisfying  \f$M[i] <= nn < M[i+i]\f$
@@ -172,7 +158,7 @@ struct DistanceTableData
   std::string Name;
   ///constructor using source and target ParticleSet
   DistanceTableData(const ParticleSet& source, const ParticleSet& target)
-      : Origin(&source), N(0), Need_full_table_loadWalker(false)
+      : Origin(&source), N_sources(0), N_targets(0), N_walkers(0), Need_full_table_loadWalker(false)
   {}
 
   ///virutal destructor
@@ -193,17 +179,16 @@ struct DistanceTableData
   inline PosType dr(int j) const { return dr_m[j]; }
   inline RealType r(int j) const { return r_m[j]; }
   inline RealType rinv(int j) const { return rinv_m[j]; }
-
   //@}
 
   ///returns the number of centers
   inline IndexType centers() const { return Origin->getTotalNum(); }
 
   ///returns the number of centers
-  inline IndexType targets() const { return N[VisitorIndex]; }
+  inline IndexType targets() const { return N_targets; }
 
-  ///returns the size of each dimension using enum
-  inline IndexType size(int i) const { return N[i]; }
+  ///returns the number of source particles
+  inline IndexType sources() const { return N_sources; }
 
   inline IndexType getTotNadj() const { return npairs_m; }
 
@@ -230,7 +215,7 @@ struct DistanceTableData
   inline IndexType find_closest_source(RealType rcut) const
   {
     int i = 0;
-    while (i < N[SourceIndex])
+    while (i < N_sources)
     {
       if (Temp[i].r1 < rcut)
         return i;
@@ -253,7 +238,7 @@ struct DistanceTableData
     {
       if (r_m[nn] < rcut)
         return i;
-      nn += N[VisitorIndex];
+      nn += N_targets;
       i++;
     }
     return -1;
@@ -336,9 +321,9 @@ struct DistanceTableData
   {
     int m;
     if (transposed)
-      m = N[SourceIndex];
+      m = N_sources;
     else
-      m = N[VisitorIndex];
+      m = N_targets;
     if (ri.size() != m)
       APP_ABORT("DistanceTableData::check_neighbor_size  distance/index vector length is not equal to the number of "
                 "neighbor particles");
@@ -384,13 +369,13 @@ struct DistanceTableData
    */
   void resize(int npairs, int nw)
   {
-    N[WalkerIndex] = nw;
+    N_walkers = nw;
     //if(nw==1)
     {
       dr_m.resize(npairs);
       r_m.resize(npairs);
       rinv_m.resize(npairs);
-      Temp.resize(N[SourceIndex]);
+      Temp.resize(N_sources);
     }
   }
 

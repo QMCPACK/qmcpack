@@ -49,8 +49,6 @@ public:
 
   ///true if C is an identity matrix
   bool Identity;
-  ///if true, do not clean up
-  bool IsCloned;
   ///Temp(BasisSetSize) : Row index=V,Gx,Gy,Gz,L
   vgl_type Temp;
   ///Tempv(OrbitalSetSize) Tempv=C*Temp
@@ -114,7 +112,7 @@ public:
 
   void checkInVariables(opt_variables_type& active)
   {
-    if (Optimizable && !IsCloned)
+    if (Optimizable)
     {
       if (myVars.size())
         active.insertFrom(myVars);
@@ -125,7 +123,7 @@ public:
 
   void checkOutVariables(const opt_variables_type& active)
   {
-    if (Optimizable && !IsCloned)
+    if (Optimizable)
       myVars.getIndex(active);
   }
 
