@@ -88,7 +88,6 @@ struct PtclOnLatticeTraits
   typedef ParticleAttrib<SingleParticlePos_t> ParticlePos_t;
   typedef ParticleAttrib<Tensor_t> ParticleTensor_t;
 
-  typedef ParticleAttrib<QTFull::ValueType> ParticleValue_t;
   typedef ParticleAttrib<QTFull::GradType> ParticleGradient_t;
   typedef ParticleAttrib<QTFull::ValueType> ParticleLaplacian_t;
   typedef QTFull::ValueType SingleParticleValue_t;

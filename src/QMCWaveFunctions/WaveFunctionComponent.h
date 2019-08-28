@@ -107,6 +107,11 @@ struct WaveFunctionComponent : public QMCTraits
   typedef OrbitalSetTraits<ValueType>::HessType HessType;
   typedef OrbitalSetTraits<ValueType>::HessVector_t HessVector_t;
 
+  // the value type for log(psi)
+  using LogValueType = QTFull::ValueType;
+  // the value type for psi(r')/psi(r)
+  using RatioValueType = QTFull::ValueType;
+
   /** flag to set the optimization mode */
   bool IsOptimizing;
   /** boolean to set optimization
@@ -218,7 +223,7 @@ struct WaveFunctionComponent : public QMCTraits
                               const std::vector<ParticleSet*>& P_list,
                               const std::vector<ParticleSet::ParticleGradient_t*>& G_list,
                               const std::vector<ParticleSet::ParticleLaplacian_t*>& L_list,
-                              ParticleSet::ParticleValue_t& values)
+                              std::vector<LogValueType>& values)
   {
     #pragma omp parallel for
     for (int iw = 0; iw < WFC_list.size(); iw++)
@@ -321,7 +326,7 @@ struct WaveFunctionComponent : public QMCTraits
   virtual void mw_ratioGrad(const std::vector<WaveFunctionComponent*>& WFC_list,
                             const std::vector<ParticleSet*>& P_list,
                             int iat,
-                            ParticleSet::ParticleValue_t& ratios,
+                            std::vector<RatioValueType>& ratios,
                             std::vector<PosType>& grad_new)
   {
     #pragma omp parallel for
@@ -403,7 +408,7 @@ struct WaveFunctionComponent : public QMCTraits
   virtual void mw_ratio(const std::vector<WaveFunctionComponent*>& WFC_list,
                         const std::vector<ParticleSet*>& P_list,
                         int iat,
-                        ParticleSet::ParticleValue_t& ratios)
+                        std::vector<RatioValueType>& ratios)
   {
     #pragma omp parallel for
     for (int iw = 0; iw < WFC_list.size(); iw++)
@@ -454,7 +459,7 @@ struct WaveFunctionComponent : public QMCTraits
   virtual void mw_updateBuffer(const std::vector<WaveFunctionComponent*>& WFC_list,
                                const std::vector<ParticleSet*>& P_list,
                                const std::vector<WFBufferType*>& buf_list,
-                               ParticleSet::ParticleValue_t& values,
+                               std::vector<LogValueType>& values,
                                bool fromscratch = false)
   {
     #pragma omp parallel for
