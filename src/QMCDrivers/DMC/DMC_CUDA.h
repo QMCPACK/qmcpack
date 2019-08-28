@@ -69,7 +69,7 @@ private:
   ///use T-moves
   int UseTMove;
 
-  NewTimer ResizeTimer, DriftDiffuseTimer, BranchTimer, HTimer;
+  NewTimer& ResizeTimer, &DriftDiffuseTimer, &BranchTimer, &HTimer;
 };
 } // namespace qmcplusplus
 
