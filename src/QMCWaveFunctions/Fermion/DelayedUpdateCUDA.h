@@ -159,7 +159,7 @@ public:
    * @param logdetT orbital value matrix
    * @param Ainv inverse matrix
    */
-  inline void invert_transpose(const Matrix<T>& logdetT, Matrix<T>& Ainv, real_type& LogValue, real_type& PhaseValue)
+  inline void invert_transpose(const Matrix<T>& logdetT, Matrix<T>& Ainv, std::complex<real_type_fp>& LogValue)
   {
     // safe mechanism
     delay_count = 0;
@@ -211,9 +211,7 @@ public:
     cudaErrorCheck(cudaMemcpyAsync(ipiv.data(), ipiv_gpu.data(), sizeof(int), cudaMemcpyDeviceToHost,
                                    hstream),
                    "cudaMemcpyAsync failed!");
-    real_type_fp Phase_tmp;
-    LogValue = computeLogDet(LU_diag.data(), norb, ipiv.data()+1, Phase_tmp);
-    PhaseValue = Phase_tmp;
+    computeLogDet(LU_diag.data(), norb, ipiv.data()+1, LogValue);
     cudaErrorCheck(cudaMemcpyAsync(Ainv.data(), Ainv_gpu.data(), Ainv.size() * sizeof(T), cudaMemcpyDeviceToHost,
                                    hstream),
                    "cudaMemcpyAsync failed!");
