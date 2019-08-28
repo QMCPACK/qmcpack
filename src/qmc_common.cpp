@@ -18,6 +18,7 @@
 #include <qmc_common.h>
 #include <Platforms/sysutil.h>
 #include "qmcpack_version.h"
+#include "BREAK_CODE"
 
 namespace qmcplusplus
 {
