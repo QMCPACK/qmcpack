@@ -35,6 +35,7 @@ class Communicate;
 
 namespace qmcplusplus
 {
+
 class NewTimer;
 
 enum timer_levels
@@ -131,13 +132,15 @@ typedef StackKeyParam<2> StackKey;
 class TimerManagerClass
 {
 protected:
-  std::vector<NewTimer*> TimerList;
+  std::vector<std::unique_ptr<NewTimer>> TimerList;
   std::vector<NewTimer*> CurrentTimerStack;
   timer_levels timer_threshold;
   timer_id_t max_timer_id;
   bool max_timers_exceeded;
   std::map<timer_id_t, std::string> timer_id_name;
   std::map<std::string, timer_id_t> timer_name_to_id;
+
+  void initializeTimer(NewTimer* t);
 
 public:
 #ifdef USE_VTUNE_TASKS
@@ -150,7 +153,7 @@ public:
     task_domain = __itt_domain_create("QMCPACK");
 #endif
   }
-  void addTimer(NewTimer* t);
+
   NewTimer* createTimer(const std::string& myname, timer_levels mytimer = timer_level_fine);
 
   void push_timer(NewTimer* t)
@@ -214,6 +217,7 @@ public:
   void output_timing(Communicate* comm, Libxml2Document& doc, xmlNodePtr root);
 
   void get_stack_name_from_id(const StackKey& key, std::string& name);
+
 };
 
 extern TimerManagerClass TimerManager;
@@ -377,6 +381,7 @@ public:
 #endif
   }
 
+  NewTimer(const NewTimer& o) = delete;
 
   void set_name(const std::string& myname) { name = myname; }
 
@@ -396,6 +401,11 @@ public:
 
   void set_parent(NewTimer* new_parent) { parent = new_parent; }
 #endif
+
+  // Functions for unit testing
+  friend void set_total_time(NewTimer *timer, double total_time_input);
+
+  friend void set_num_calls(NewTimer *timer, long num_calls_input);
 };
 
 // Wrapper for timer that starts on construction and stops on destruction
