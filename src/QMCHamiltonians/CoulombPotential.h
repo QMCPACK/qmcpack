@@ -122,6 +122,7 @@ struct CoulombPotential : public QMCHamiltonianBase, public ForceBase
 
   inline void addObservables(PropertySetType& plist, BufferType& collectables)
   {
+    addValue(plist);
     if (ComputeForces)
       addObservablesF(plist);
   }
