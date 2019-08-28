@@ -19,7 +19,7 @@
 ;;  following QMCPACK coding conventions and should produce code following
 ;;  the same conventions.
 
-;;  There is more copy pasting than there should be feel free to refactor
+;;  There is more copy pasting than there should be feel, free to refactor
 
 ;;; Code:
 (defun qmcp-leading-indent ()

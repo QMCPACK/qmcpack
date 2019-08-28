@@ -15,39 +15,33 @@
 
 namespace qmcplusplus
 {
-MoveContext::MoveContext(Crowd& crowd, int particles, std::vector<std::pair<int, int>> particle_group_indexes, RandomGenerator_t& random_gen)
+MoveContext::MoveContext(int num_walkers,
+                         int num_particles,
+                         std::vector<std::pair<int, int>> particle_group_indexes,
+                         RandomGenerator_t& random_gen)
     : particle_group_indexes_(particle_group_indexes), random_gen_(random_gen)
 {
-  // std::for_each(positions_per_walker_.begin(), positions_per_walker_.end(),
-  //               [particles](std::unique_ptr<ParticlePositions>& positions_) {
-  //                 positions_ = std::make_unique<ParticlePositions>(particles);
-  //               });
-
-  auto vecUniqueResize = [particles](auto& vec_unique) {
-                           vec_unique.reset(new typename std::remove_pointer<decltype(vec_unique.get())>::type (particles));
+  /** glambda to create type T with constructor T(int) and put in it unique_ptr
+   *
+   *  captures num_particles to use as argument to constructor
+   *  gets T for type unique_ptr unique is templated on
+   */
+  auto constructT = [num_particles](auto& unique) {
+    unique.reset(new typename std::remove_pointer<decltype(unique.get())>::type(num_particles));
   };
 
-  positions_per_walker_.resize(crowd.size());
-  std::for_each(positions_per_walker_.begin(), positions_per_walker_.end(), vecUniqueResize);
-  delta_positions_per_walker_.resize(crowd.size());
-  std::for_each(delta_positions_per_walker_.begin(), delta_positions_per_walker_.end(), vecUniqueResize);
-  
-  positions_soa_.resize(crowd.size());
-  std::for_each(positions_soa_.begin(), positions_soa_.end(), vecUniqueResize);
-  
-  // std::for_each(positions_soa_.begin(), positions_soa_.end(),
-  //               [particles](std::unique_ptr<VectorSoaContainer<RealType, OHMMS_DIM>>& walker_positions_soa) {
-  //                 walker_positions_soa = std::make_unique<VectorSoaContainer<RealType, OHMMS_DIM>>(particles);
-  //               });
-
-  
-  
+  walker_positions_.resize(num_walkers);
+  std::for_each(walker_positions_.begin(), walker_positions_.end(), constructT);
+  walker_deltas_.resize(num_walkers);
+  std::for_each(walker_deltas_.begin(), walker_deltas_.end(), constructT);
+  positions_soa_.resize(num_walkers);
+  std::for_each(positions_soa_.begin(), positions_soa_.end(), constructT);
 }
 
 void MoveContext::loadCrowd(Crowd& crowd)
 {
   auto it_walker        = crowd.beginWalkers();
-  auto it_positions     = positions_per_walker_.begin();
+  auto it_positions     = walker_positions_.begin();
   auto it_positions_soa = positions_soa_.begin();
   while (it_walker != crowd.endWalkers())
   {

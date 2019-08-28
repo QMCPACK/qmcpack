@@ -79,7 +79,7 @@ int QMCDriverNew::addObservable(const std::string& aname)
 QMCDriverNew::RealType QMCDriverNew::getObservable(int i) { return estimator_manager_->getObservable(i); }
 
 
-QMCDriverNew::~QMCDriverNew() { }
+QMCDriverNew::~QMCDriverNew() {}
 
 void QMCDriverNew::add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi)
 {
@@ -104,8 +104,15 @@ void QMCDriverNew::add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi)
  */
 void QMCDriverNew::process(xmlNodePtr cur)
 {
-  createMoveContexts();
+  // if (qmcdriver_input_.get_reset_random() || RandomNumberControl)
+  // {
 
+  // if seeds are not made neither are the children and then when MoveContexts are created a segfault occurs.
+  // For now it is unclear whether get_reset_random should always be true on the first run or what.
+  app_log() << "  Regenerate random seeds." << std::endl;
+  RandomNumberControl::make_seeds();
+  // }
+  
   setupWalkers();
 
   // If you really want to persist the MCPopulation it is not the business of QMCDriver to reset it.
@@ -133,16 +140,23 @@ void QMCDriverNew::process(xmlNodePtr cur)
 
   branchEngine->put(cur);
   estimator_manager_->put(H, cur);
+
+  crowds_.resize(num_crowds_);
+  // at this point we can finally construct the Crowd objects.
+  // neglecting first touch for the moment
+  // because em cloning is not threadsafe
+  for(int i = 0; i < num_crowds_; ++i)
+  {
+    crowds_[i].reset(new Crowd(*estimator_manager_));
+  }//  crowds_.push_back(
+                        
+  // Once they are created move contexts can be created.
+  createMoveContexts();
+
   // if (wOut == 0)
   //   wOut = new HDFWalkerOutput(W, root_name_, myComm);
   branchEngine->start(root_name_);
   branchEngine->write(root_name_);
-
-  if (qmcdriver_input_.get_reset_random())
-  {
-    app_log() << "  Regenerate random seeds." << std::endl;
-    RandomNumberControl::make_seeds();
-  }
 
   // PD: not really sure what the point of this is.  Seems to just go to output
   branchEngine->advanceQMCCounter();
@@ -165,10 +179,9 @@ void QMCDriverNew::setStatus(const std::string& aname, const std::string& h5name
 void QMCDriverNew::set_num_crowds(int num_crowds, const std::string& reason)
 {
   num_crowds_ = num_crowds;
-  app_warning() << " [INPUT OVERIDDEN] The number of crowds has been set to :  " << num_crowds
-                << '\n';
-  app_warning() << " Overiding the input of value of " << qmcdriver_input_.get_num_crowds()
-                << " because " << reason << std::endl;
+  app_warning() << " [INPUT OVERIDDEN] The number of crowds has been set to :  " << num_crowds << '\n';
+  app_warning() << " Overiding the input of value of " << qmcdriver_input_.get_num_crowds() << " because " << reason
+                << std::endl;
 }
 /** Read walker configurations from *.config.h5 files
  * @param wset list of xml elements containing mcwalkerset
@@ -304,17 +317,15 @@ void QMCDriverNew::createMoveContexts()
 
   TasksOneToOne<> do_per_crowd(num_crowds_);
 
-  auto firstTouchCreateMoveContexts =
-          [this](int crowd_index) {
-                  Rng[crowd_index] = std::make_unique<RandomGenerator_t>(*(RandomNumberControl::Children[crowd_index]));
-                  move_contexts_[crowd_index] = std::make_unique<MoveContext>(crowds_[crowd_index],
-                                                                              population_.get_num_particles(),
-                                                                              population_.get_particle_group_indexes(),
-                                                                              *Rng[crowd_index]);
-
-      };
+  Rng.resize(num_crowds_);
+  
+  auto firstTouchCreateMoveContexts = [this](int crowd_index) {
+    Rng[crowd_index].reset(new RandomGenerator_t(*(RandomNumberControl::Children[crowd_index])));
+    move_contexts_[crowd_index] =
+        std::make_unique<MoveContext>(crowds_[crowd_index]->size(), population_.get_num_particles(),
+                                      population_.get_particle_group_indexes(), *(Rng[crowd_index]));
+  };
   do_per_crowd(firstTouchCreateMoveContexts);
-
 }
 
 

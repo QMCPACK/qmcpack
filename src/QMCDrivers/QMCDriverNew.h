@@ -187,7 +187,7 @@ public:
 protected:
   QMCDriverInput qmcdriver_input_;
 
-  std::vector<Crowd> crowds_;
+  std::vector<std::unique_ptr<Crowd>> crowds_;
   IndexType walkers_per_crowd_;
 
   std::string h5_file_root_;

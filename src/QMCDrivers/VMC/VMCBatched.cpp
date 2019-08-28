@@ -172,7 +172,7 @@ void VMCBatched::runVMCStep(int crowd_id,
                             const QMCDriverInput& qmcdriver_input,
                             const StateForThreads vmc_state,
                             std::vector<std::unique_ptr<MoveContext>>& move_context,
-                            std::vector<Crowd>& crowds)
+                            std::vector<std::unique_ptr<Crowd>>& crowds)
 {
   int nAccept              = 0;
   int nReject              = 0;
@@ -180,7 +180,7 @@ void VMCBatched::runVMCStep(int crowd_id,
   int nNodeCrossing        = 0;
   int NonLocalMoveAccepted = 0;
 
-  Crowd& crowd = crowds[crowd_id];
+  Crowd& crowd = *(crowds[crowd_id]);
   crowd.startBlock(qmcdriver_input.get_max_steps());
   
   int max_steps = qmcdriver_input.get_max_steps();

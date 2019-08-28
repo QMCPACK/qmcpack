@@ -53,7 +53,7 @@ public:
                          const QMCDriverInput& qmcdriver_input,
                          const StateForThreads vmc_state,
                          std::vector<std::unique_ptr<MoveContext>>& move_context,
-                         std::vector<Crowd>& crowds);
+                         std::vector<std::unique_ptr<Crowd>>& crowds);
   void setup();
   //inline std::vector<RandomGenerator_t*>& getRng() { return Rng;}
   IndexType calc_default_local_walkers();

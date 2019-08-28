@@ -17,6 +17,7 @@
 #include <memory>
 
 #include "Configuration.h"
+#include "type_traits/TypeRequire.hpp"
 #include "Particle/ParticleSet.h"
 #include "ParticleBase/ParticleAttrib.h"
 #include "Particle/MCWalkerConfiguration.h"
@@ -47,7 +48,8 @@ private:
   std::vector<IndexType> walker_offsets_;
   // By making this a linked list and creating the crowds at the same time we could get first touch.
   std::vector<std::unique_ptr<MCPWalker>> walkers_;
-  std::vector<std::pair<int,int>> particle_group_indexes_;
+  std::vector<std::pair<int, int>> particle_group_indexes_;
+
 public:
   MCPopulation(){};
   MCPopulation(int num_ranks) : num_ranks_(num_ranks) {}
@@ -65,11 +67,6 @@ public:
  *  Should compile only if ITER is a proper input ITERATOR
  *  and implements addWalker
  */
-  template<typename InputIterator>
-  using RequireInputIterator =
-      typename std::enable_if<std::is_convertible<typename std::iterator_traits<InputIterator>::iterator_category,
-                                                  std::input_iterator_tag>::value>::type;
-
   template<typename ITER, typename = RequireInputIterator<ITER>>
   void distributeWalkers(ITER it_group, ITER group_end, int walkers_per_group)
   {
@@ -78,40 +75,41 @@ public:
     {
       for (int i = 0; i < walkers_per_group; ++i)
       {
+        // possible that walkers_all < walkers_per_group * group_size
         if (it_walkers == walkers_.end())
           break;
-        it_group->addWalker(**it_walkers);
+        (**it_group).addWalker(**it_walkers);
         ++it_walkers;
       }
       ++it_group;
     }
   }
-    /**@ingroup Accessors
+  /**@ingroup Accessors
    * @{
    */
-    IndexType get_active_walkers() { return walkers_.size(); }
-    int get_num_ranks() const { return num_ranks_; }
-    IndexType get_num_global_walkers() const { return num_global_walkers_; }
-    IndexType get_num_local_walkers() const { return num_local_walkers_; }
-    IndexType get_num_particles() const { return num_particles_; }
-    IndexType get_max_samples() const { return max_samples_; }
-    IndexType get_target_population() const { return target_population_; }
-    IndexType get_target_samples() const { return target_samples_; }
-    //const Properties& get_properties() const { return properties_; }
-    const ParticleSet& get_ions() const { return ions_; }
-    const std::vector<int>& get_walker_offsets() const { return walker_offsets_; }
+  IndexType get_active_walkers() { return walkers_.size(); }
+  int get_num_ranks() const { return num_ranks_; }
+  IndexType get_num_global_walkers() const { return num_global_walkers_; }
+  IndexType get_num_local_walkers() const { return num_local_walkers_; }
+  IndexType get_num_particles() const { return num_particles_; }
+  IndexType get_max_samples() const { return max_samples_; }
+  IndexType get_target_population() const { return target_population_; }
+  IndexType get_target_samples() const { return target_samples_; }
+  //const Properties& get_properties() const { return properties_; }
+  const ParticleSet& get_ions() const { return ions_; }
+  const std::vector<int>& get_walker_offsets() const { return walker_offsets_; }
 
-    void set_num_global_walkers(IndexType num_global_walkers) { num_global_walkers_ = num_global_walkers; }
-    void set_num_local_walkers(IndexType num_local_walkers) { num_local_walkers_ = num_local_walkers; }
+  void set_num_global_walkers(IndexType num_global_walkers) { num_global_walkers_ = num_global_walkers; }
+  void set_num_local_walkers(IndexType num_local_walkers) { num_local_walkers_ = num_local_walkers; }
 
-    void set_target(IndexType pop) { target_population_ = pop; }
-    void set_target_samples(IndexType samples) { target_samples_ = samples; }
+  void set_target(IndexType pop) { target_population_ = pop; }
+  void set_target_samples(IndexType samples) { target_samples_ = samples; }
 
-    std::vector<std::unique_ptr<MCPWalker>>& get_walkers() { return walkers_; }
-    const std::vector<std::pair<int,int>>& get_particle_group_indexes() const { return particle_group_indexes_; }
+  std::vector<std::unique_ptr<MCPWalker>>& get_walkers() { return walkers_; }
+  const std::vector<std::pair<int, int>>& get_particle_group_indexes() const { return particle_group_indexes_; }
 
-    /** }@ */
-  };
+  /** }@ */
+};
 
 
 } // namespace qmcplusplus

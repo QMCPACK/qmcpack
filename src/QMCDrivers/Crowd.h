@@ -30,7 +30,7 @@ public:
   using MCPWalker = MCPopulation::MCPWalker;
   /** This is the data structure for walkers within a crowd
    */
-  Crowd(EstimatorManagerBase emb) : estimator_manager_(emb) {}
+  Crowd(EstimatorManagerBase& emb) : estimator_manager_crowd_(emb) {}
   
   void startRun()
   {
@@ -39,7 +39,7 @@ public:
 
   void startBlock(int steps)
   {
-    estimator_manager_.startBlock(steps);
+    estimator_manager_crowd_.startBlock(steps);
   }
 
   void addWalker(MCPWalker& walker) { mcp_walkers_.push_back(walker); };
@@ -52,7 +52,7 @@ public:
   int size() const { return mcp_walkers_.size(); }
 private:
   std::vector<std::reference_wrapper<MCPWalker>> mcp_walkers_;
-  EstimatorManagerCrowd estimator_manager_;
+  EstimatorManagerCrowd estimator_manager_crowd_;
 public:
 };
 } // namespace qmcplusplus
