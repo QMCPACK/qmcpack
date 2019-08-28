@@ -183,4 +183,27 @@ inline bool operator!=(const CrystalLattice<T, D>& lhs, const CrystalLattice<T, 
   return !(lhs == rhs);
 }
 
+inline std::istream& operator>>(std::istream& i_stream, PosUnit& pos_unit)
+{
+  int unit_read;
+  i_stream >> unit_read;
+  pos_unit = static_cast<PosUnit>(unit_read);
+  return i_stream;
+}
+
+inline std::ostream& operator<<(std::ostream& o_stream, PosUnit pos_unit)
+{
+  switch (pos_unit)
+  {
+  case PosUnit::Cartesian:
+    o_stream << "Cartesian";
+    break;
+  case PosUnit::Lattice:
+    o_stream << "Lattice";
+    break;
+  }
+  return o_stream;
+}
+
+
 } // namespace qmcplusplus

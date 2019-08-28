@@ -187,7 +187,7 @@ public:
       {
         constexpr RealType cone(1);
         constexpr RealType lapfac(OHMMS_DIM - cone);
-        const size_t ns = d_table.size(SourceIndex);
+        const size_t ns = d_table.sources();
         const size_t nt = P.getTotalNum();
 
         aligned_vector<int> iadj(nt);
@@ -229,7 +229,7 @@ public:
       }
       else
       {
-        for (int i = 0; i < d_table.size(SourceIndex); ++i)
+        for (int i = 0; i < d_table.sources(); ++i)
         {
           FT* func = Fs[i];
           if (func == 0)

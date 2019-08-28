@@ -2066,9 +2066,9 @@ void WaveFunctionTester::runwftricks()
     kids = kids->next;
   }
   ParticleSet::ParticlePos_t R_cart(1);
-  R_cart.setUnit(PosUnit::CartesianUnit);
+  R_cart.setUnit(PosUnit::Cartesian);
   ParticleSet::ParticlePos_t R_unit(1);
-  R_unit.setUnit(PosUnit::LatticeUnit);
+  R_unit.setUnit(PosUnit::Lattice);
   //       app_log()<<" My crystals basis set is:"<< std::endl;
   //       std::vector<std::vector<RealType> > BasisMatrix(3, std::vector<RealType>(3,0.0));
   //
@@ -2277,9 +2277,9 @@ void WaveFunctionTester::runNodePlot()
     kids = kids->next;
   }
   ParticleSet::ParticlePos_t R_cart(1);
-  R_cart.setUnit(PosUnit::CartesianUnit);
+  R_cart.setUnit(PosUnit::Cartesian);
   ParticleSet::ParticlePos_t R_unit(1);
-  R_unit.setUnit(PosUnit::LatticeUnit);
+  R_unit.setUnit(PosUnit::Lattice);
   Walker_t& thisWalker(**(W.begin()));
   W.loadWalker(thisWalker, true);
   Walker_t::WFBuffer_t& w_buffer(thisWalker.DataSet);

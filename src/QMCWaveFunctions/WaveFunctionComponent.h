@@ -75,13 +75,6 @@ typedef DiffWaveFunctionComponent* DiffWaveFunctionComponentPtr;
  */
 struct WaveFunctionComponent : public QMCTraits
 {
-  ///recasting enum of DistanceTableData to maintain consistency
-  enum
-  {
-    SourceIndex  = DistanceTableData::SourceIndex,
-    VisitorIndex = DistanceTableData::VisitorIndex,
-    WalkerIndex  = DistanceTableData::WalkerIndex
-  };
 
   /** enum for a update mode */
   enum

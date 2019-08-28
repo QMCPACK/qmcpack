@@ -84,6 +84,8 @@ void TrialWaveFunction::stopOptimization()
   }
 }
 
+/** Takes owndership of aterm
+ */
 void TrialWaveFunction::addComponent(WaveFunctionComponent* aterm, std::string aname)
 {
   Z.push_back(aterm);

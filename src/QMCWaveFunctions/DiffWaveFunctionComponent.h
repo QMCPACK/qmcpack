@@ -38,13 +38,6 @@ namespace qmcplusplus
  */
 struct DiffWaveFunctionComponent
 {
-  enum
-  {
-    SourceIndex  = WaveFunctionComponent::SourceIndex,
-    VisitorIndex = WaveFunctionComponent::VisitorIndex,
-    WalkerIndex  = WaveFunctionComponent::WalkerIndex
-  };
-
   //@{typedefs inherited from WaveFunctionComponent
   typedef WaveFunctionComponent::RealType RealType;
   typedef WaveFunctionComponent::ValueType ValueType;

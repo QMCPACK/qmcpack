@@ -29,15 +29,15 @@ MultiSlaterDeterminantFast::MultiSlaterDeterminantFast(ParticleSet& targetPtcl,
       DetsPerCSF(nullptr),
       CSFexpansion(nullptr),
       IsCloned(false),
-      RatioTimer("MultiSlaterDeterminantFast::ratio"),
-      RatioGradTimer("MultiSlaterDeterminantFast::ratioGrad"),
-      RatioAllTimer("MultiSlaterDeterminantFast::ratio(all)"),
-      Ratio1Timer("MultiSlaterDeterminantFast::detEval_ratio"),
-      Ratio1GradTimer("MultiSlaterDeterminantFast::detEval_ratioGrad"),
-      Ratio1AllTimer("MultiSlaterDeterminantFast::detEval_ratio(all)"),
-      UpdateTimer("MultiSlaterDeterminantFast::updateBuffer"),
-      EvaluateTimer("MultiSlaterDeterminantFast::evaluate"),
-      AccRejTimer("MultiSlaterDeterminantFast::Accept_Reject")
+      RatioTimer(*TimerManager.createTimer("MultiSlaterDeterminantFast::ratio")),
+      RatioGradTimer(*TimerManager.createTimer("MultiSlaterDeterminantFast::ratioGrad")),
+      RatioAllTimer(*TimerManager.createTimer("MultiSlaterDeterminantFast::ratio(all)")),
+      Ratio1Timer(*TimerManager.createTimer("MultiSlaterDeterminantFast::detEval_ratio")),
+      Ratio1GradTimer(*TimerManager.createTimer("MultiSlaterDeterminantFast::detEval_ratioGrad")),
+      Ratio1AllTimer(*TimerManager.createTimer("MultiSlaterDeterminantFast::detEval_ratio(all)")),
+      UpdateTimer(*TimerManager.createTimer("MultiSlaterDeterminantFast::updateBuffer")),
+      EvaluateTimer(*TimerManager.createTimer("MultiSlaterDeterminantFast::evaluate")),
+      AccRejTimer(*TimerManager.createTimer("MultiSlaterDeterminantFast::Accept_Reject"))
 {
   registerTimers();
   //Optimizable=true;
@@ -847,15 +847,6 @@ void MultiSlaterDeterminantFast::registerTimers()
   UpdateTimer.reset();
   EvaluateTimer.reset();
   AccRejTimer.reset();
-  TimerManager.addTimer(&RatioTimer);
-  TimerManager.addTimer(&RatioGradTimer);
-  TimerManager.addTimer(&RatioAllTimer);
-  TimerManager.addTimer(&Ratio1Timer);
-  TimerManager.addTimer(&Ratio1GradTimer);
-  TimerManager.addTimer(&Ratio1AllTimer);
-  TimerManager.addTimer(&UpdateTimer);
-  TimerManager.addTimer(&EvaluateTimer);
-  TimerManager.addTimer(&AccRejTimer);
 }
 
 
