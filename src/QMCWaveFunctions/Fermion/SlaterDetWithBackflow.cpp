@@ -56,12 +56,8 @@ SlaterDetWithBackflow::LogValueType SlaterDetWithBackflow::evaluateLog(ParticleS
 {
   BFTrans->evaluate(P);
   LogValue   = 0.0;
-  PhaseValue = 0.0;
   for (int i = 0; i < Dets.size(); ++i)
-  {
     LogValue += Dets[i]->evaluateLog(P, G, L);
-    PhaseValue += Dets[i]->PhaseValue;
-  }
   return LogValue;
 }
 
@@ -78,12 +74,8 @@ SlaterDetWithBackflow::LogValueType SlaterDetWithBackflow::updateBuffer(Particle
   BFTrans->updateBuffer(P, buf, fromscratch);
   //BFTrans->evaluate(P);
   LogValue   = 0.0;
-  PhaseValue = 0.0;
   for (int i = 0; i < Dets.size(); ++i)
-  {
     LogValue += Dets[i]->updateBuffer(P, buf, fromscratch);
-    PhaseValue += Dets[i]->PhaseValue;
-  }
   return LogValue;
 }
 

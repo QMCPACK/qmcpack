@@ -281,7 +281,7 @@ TEST_CASE("BSpline builder Jastrow J2", "[wavefunction]")
   elec_.acceptMove(1);
 
   REQUIRE(ratio_1 == ComplexApprox(0.9871985577).compare_real_only());
-  REQUIRE(j2->LogValue == Approx(0.0883791773));
+  REQUIRE(j2->LogValue == ComplexApprox(0.0883791773).compare_real_only());
 
 }
 
@@ -560,7 +560,7 @@ TEST_CASE("BSpline builder Jastrow J1", "[wavefunction]")
   elec_.acceptMove(1);
 
   REQUIRE(ratio_1 == ComplexApprox(1.0040884258).compare_real_only());
-  REQUIRE(j1->LogValue == Approx(0.32013531536));
+  REQUIRE(j1->LogValue == ComplexApprox(0.32013531536).compare_real_only());
 
 
   // test to make sure that setting cusp for J1 works properly

@@ -276,8 +276,7 @@ WaveFunctionComponent::LogValueType MultiSlaterDeterminantFast::evaluateLog(Part
                                                                         ParticleSet::ParticleGradient_t& G,
                                                                         ParticleSet::ParticleLaplacian_t& L)
 {
-  ValueType psi   = evaluate(P, G, L);
-  return LogValue = evaluateLogAndPhase(psi, PhaseValue);
+  return LogValue = convertValueToLog(evaluate(P, G, L));
 }
 
 WaveFunctionComponent::ValueType MultiSlaterDeterminantFast::evalGrad_impl(ParticleSet& P,
@@ -445,7 +444,7 @@ WaveFunctionComponent::LogValueType MultiSlaterDeterminantFast::updateBuffer(Par
   buf.put(psiCurrent);
 
   UpdateTimer.stop();
-  return LogValue = evaluateLogAndPhase(psiCurrent, PhaseValue);
+  return LogValue = convertValueToLog(psiCurrent);
 }
 
 void MultiSlaterDeterminantFast::copyFromBuffer(ParticleSet& P, WFBufferType& buf)

@@ -52,7 +52,7 @@ public:
       G[i] = coeff;
     }
     L        = 0.0;
-    LogValue = evaluateLogAndPhase(v, PhaseValue);
+    LogValue = convertValueToLog(v);
     return LogValue;
   }
 

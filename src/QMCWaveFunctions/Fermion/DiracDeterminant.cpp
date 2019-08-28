@@ -51,7 +51,7 @@ template<typename DU_TYPE>
 void DiracDeterminant<DU_TYPE>::invertPsiM(const ValueMatrix_t& logdetT, ValueMatrix_t& invMat)
 {
   InverseTimer.start();
-  updateEng.invert_transpose(logdetT, invMat, LogValue, PhaseValue);
+  updateEng.invert_transpose(logdetT, invMat, LogValue);
   InverseTimer.stop();
 }
 

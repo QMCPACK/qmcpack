@@ -116,19 +116,16 @@ TrialWaveFunction::RealType TrialWaveFunction::evaluateLog(ParticleSet& P)
 {
   P.G = 0.0;
   P.L = 0.0;
-  ValueType logpsi(0.0);
-  PhaseValue = 0.0;
+  LogValueType logpsi(0.0);
   for (int i = 0, ii = RECOMPUTE_TIMER; i < Z.size(); ++i, ii += TIMER_SKIP)
   {
     myTimers[ii]->start();
     logpsi += Z[i]->evaluateLog(P, P.G, P.L);
-    PhaseValue += Z[i]->PhaseValue;
     myTimers[ii]->stop();
   }
-
-  convert(logpsi, LogValue);
+  LogValue = std::real(logpsi);
+  PhaseValue = std::imag(logpsi);
   return LogValue;
-  //return LogValue=real(logpsi);
 }
 
 void TrialWaveFunction::recompute(ParticleSet& P)
@@ -152,19 +149,17 @@ TrialWaveFunction::RealType TrialWaveFunction::evaluateLogOnly(ParticleSet& P)
   tempP->R = P.R;
   tempP->L = 0.0;
   tempP->G = 0.0;
-  ValueType logpsi(0.0);
-  PhaseValue = 0.0;
+  LogValueType logpsi(0.0);
   std::vector<WaveFunctionComponent*>::iterator it(Z.begin());
   std::vector<WaveFunctionComponent*>::iterator it_end(Z.end());
   //WARNING: multiplication for PhaseValue is not correct, fix this!!
   for (; it != it_end; ++it)
   {
     logpsi += (*it)->evaluateLog(*tempP, tempP->G, tempP->L);
-    PhaseValue += (*it)->PhaseValue;
   }
-  convert(logpsi, LogValue);
+  LogValue = std::real(logpsi);
+  PhaseValue = std::imag(logpsi);
   return LogValue;
-  //return LogValue=real(logpsi);
 }
 
 
@@ -188,8 +183,7 @@ TrialWaveFunction::RealType TrialWaveFunction::evaluateDeltaLog(ParticleSet& P, 
 {
   P.G = 0.0;
   P.L = 0.0;
-  ValueType logpsi(0.0);
-  PhaseValue = 0.0;
+  LogValueType logpsi(0.0);
   std::vector<WaveFunctionComponent*>::iterator it(Z.begin());
   std::vector<WaveFunctionComponent*>::iterator it_end(Z.end());
   int ii = RECOMPUTE_TIMER;
@@ -199,10 +193,11 @@ TrialWaveFunction::RealType TrialWaveFunction::evaluateDeltaLog(ParticleSet& P, 
     if ((*it)->Optimizable)
     {
       logpsi += (*it)->evaluateLog(P, P.G, P.L);
-      PhaseValue += (*it)->PhaseValue;
     }
     myTimers[ii]->stop();
   }
+  LogValue = std::real(logpsi);
+  PhaseValue = std::imag(logpsi);
 
   //In case we need to recompute orbitals, initialize dummy vectors for G and L.
   //evaluateLog dumps into these variables, and logPsi contribution is discarded.
@@ -222,7 +217,6 @@ TrialWaveFunction::RealType TrialWaveFunction::evaluateDeltaLog(ParticleSet& P, 
                            dummyL); //update orbitals if its not flagged optimizable, AND recomputeall is true
     }
   }
-  convert(logpsi, LogValue);
   return LogValue;
 }
 
@@ -268,8 +262,6 @@ void TrialWaveFunction::evaluateDeltaLog(ParticleSet& P,
   P.L += fixedL;
   convert(logpsi_fixed, logpsi_fixed_r);
   convert(logpsi_opt, logpsi_opt_r);
-  //logpsi_fixed_r = real(logpsi_fixed);
-  //logpsi_opt_r = real(logpsi_opt);
 }
 
 /*void TrialWaveFunction::evaluateHessian(ParticleSet & P, int iat, HessType& grad_grad_psi)
@@ -464,7 +456,7 @@ void TrialWaveFunction::acceptMove(ParticleSet& P, int iat)
   PhaseDiff = 0.0;
   LogValue  = 0;
   for (int i = 0; i < Z.size(); i++)
-    LogValue += Z[i]->LogValue;
+    LogValue += std::real(Z[i]->LogValue);
 }
 
 void TrialWaveFunction::completeUpdates()
@@ -506,7 +498,7 @@ void TrialWaveFunction::getLogs(std::vector<RealType>& lvals)
   lvals.resize(Z.size(), 0);
   for (int i = 0; i < Z.size(); i++)
   {
-    lvals[i] = Z[i]->LogValue;
+    lvals[i] = std::real(Z[i]->LogValue);
   }
 }
 
@@ -515,7 +507,7 @@ void TrialWaveFunction::getPhases(std::vector<RealType>& pvals)
   pvals.resize(Z.size(), 0);
   for (int i = 0; i < Z.size(); i++)
   {
-    pvals[i] = Z[i]->PhaseValue;
+    pvals[i] = std::imag(Z[i]->LogValue);
   }
 }
 
@@ -540,18 +532,17 @@ TrialWaveFunction::RealType TrialWaveFunction::updateBuffer(ParticleSet& P, WFBu
   P.G = 0.0;
   P.L = 0.0;
   buf.rewind(BufferCursor, BufferCursor_scalar);
-  ValueType logpsi(0.0);
-  PhaseValue = 0.0;
+  LogValueType logpsi(0.0);
   for (int i = 0, ii = BUFFER_TIMER; i < Z.size(); ++i, ii += TIMER_SKIP)
   {
     myTimers[ii]->start();
     logpsi += Z[i]->updateBuffer(P, buf, fromscratch);
-    PhaseValue += Z[i]->PhaseValue;
     myTimers[ii]->stop();
   }
+
+  LogValue = std::real(logpsi);
+  PhaseValue = std::imag(logpsi);
   //printGL(P.G,P.L);
-  convert(logpsi, LogValue);
-  //LogValue=real(logpsi);
   buf.put(PhaseValue);
   buf.put(LogValue);
   // Ye: temperal added check, to be removed
@@ -579,7 +570,7 @@ void TrialWaveFunction::evaluateRatios(VirtualParticleSet& VP, std::vector<RealT
   assert(VP.getTotalNum() == ratios.size());
 #if defined(QMC_COMPLEX)
   std::vector<ValueType> t(ratios.size()), r(ratios.size(), 1.0);
-  ;
+
   for (int i = 0, ii = NL_TIMER; i < Z.size(); ++i, ii += TIMER_SKIP)
   {
     myTimers[ii]->start();

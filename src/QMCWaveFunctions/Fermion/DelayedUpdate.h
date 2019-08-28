@@ -30,7 +30,7 @@ template<typename T, typename T_FP>
 class DelayedUpdate
 {
   /// define real type
-  using real_type = typename scalar_traits<T>::real_type;
+  using real_type = typename scalar_traits<T_FP>::real_type;
   /// orbital values of delayed electrons
   Matrix<T> U;
   /// rows of Ainv corresponding to delayed electrons
@@ -73,9 +73,9 @@ public:
    * @param logdetT orbital value matrix
    * @param Ainv inverse matrix
    */
-  inline void invert_transpose(const Matrix<T>& logdetT, Matrix<T>& Ainv, real_type& LogValue, real_type& PhaseValue)
+  inline void invert_transpose(const Matrix<T>& logdetT, Matrix<T>& Ainv, std::complex<real_type>& LogValue)
   {
-    detEng.invert_transpose(logdetT, Ainv, LogValue, PhaseValue);
+    detEng.invert_transpose(logdetT, Ainv, LogValue);
     // safe mechanism
     delay_count = 0;
   }

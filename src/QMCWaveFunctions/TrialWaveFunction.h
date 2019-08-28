@@ -59,6 +59,7 @@ public:
   typedef WaveFunctionComponent::WFBufferType WFBufferType;
   typedef WaveFunctionComponent::HessType HessType;
   typedef WaveFunctionComponent::HessVector_t HessVector_t;
+  using LogValueType = WaveFunctionComponent::LogValueType;
 #ifdef QMC_CUDA
   using CTS = CUDAGlobalTypes;
   typedef WaveFunctionComponent::RealMatrix_t RealMatrix_t;

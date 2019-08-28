@@ -166,48 +166,18 @@ inline T Invert(T* restrict x, int n, int m)
   return Invert(x, n, m, work.data(), pivot.data());
 }
 
-template<class T>
-inline T InvertWithLog(T* restrict x, int n, int m, T* restrict work, int* restrict pivot, T& phase)
+template<class T, class T1>
+inline void InvertWithLog(T* restrict x, int n, int m, T* restrict work, int* restrict pivot, std::complex<T1>& logdet)
 {
-  T logdet(0.0);
+  logdet = std::complex<T1>(1.0);
   LUFactorization(n, m, x, n, pivot);
-  int sign_det = 1;
   for (int i = 0; i < n; i++)
   {
-    sign_det *= (pivot[i] == i + 1) ? 1 : -1;
-    sign_det *= (x[i * m + i] > 0) ? 1 : -1;
-    logdet += std::log(std::abs(x[i * m + i]));
+    logdet *= (pivot[i] == i + 1) ? 1 : -1;
+    logdet *= x[i * m + i];
   }
+  logdet = std::log(logdet);
   InvertLU(n, x, n, pivot, work, n);
-  phase = (sign_det > 0) ? 0.0 : M_PI;
-  return logdet;
-}
-
-template<class T>
-inline T InvertWithLog(std::complex<T>* restrict x,
-                       int n,
-                       int m,
-                       std::complex<T>* restrict work,
-                       int* restrict pivot,
-                       T& phase)
-{
-  T logdet(0.0);
-  LUFactorization(n, m, x, n, pivot);
-  phase = 0.0;
-  for (int i = 0; i < n; i++)
-  {
-    int ii = i * m + i;
-    phase += std::arg(x[ii]);
-    if (pivot[i] != i + 1)
-      phase += M_PI;
-    logdet += std::log(x[ii].real() * x[ii].real() + x[ii].imag() * x[ii].imag());
-    //slightly smaller error with the following
-    //        logdet+=2.0*std::log(std::abs(x[ii]);
-  }
-  InvertLU(n, x, n, pivot, work, n);
-  const T one_over_2pi = 1.0 / TWOPI;
-  phase -= std::floor(phase * one_over_2pi) * TWOPI;
-  return 0.5 * logdet;
 }
 
 /** matrix inversion using log method to avoid numerical over/under-flow
