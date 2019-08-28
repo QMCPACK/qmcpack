@@ -65,13 +65,12 @@ QMCDriver::QMCDriver(MCWalkerConfiguration& w,
       qmcNode(NULL),
       wOut(0)
 {
-  ResetRandom     = false;
-  AppendRun       = false;
-  DumpConfig      = false;
-  ConstPopulation = true; //default is a fixed population method
-  IsQMCDriver     = true;
-  allow_traces    = false;
-  MyCounter       = 0;
+  ResetRandom  = false;
+  AppendRun    = false;
+  DumpConfig   = false;
+  IsQMCDriver  = true;
+  allow_traces = false;
+  MyCounter    = 0;
   //<parameter name=" "> value </parameter>
   //accept multiple names for the same value
   //recommend using all lower cases for a new parameter
@@ -229,7 +228,7 @@ void QMCDriver::process(xmlNodePtr cur)
   Traces->put(traces_xml, allow_traces, RootName);
 #endif
   branchEngine->put(cur);
-  Estimators->put(W, H, cur);
+  Estimators->put(H, cur);
   if (wOut == 0)
     wOut = new HDFWalkerOutput(W, RootName, myComm);
   branchEngine->start(RootName);
@@ -635,9 +634,29 @@ bool QMCDriver::putQMCInfo(xmlNodePtr cur)
       tcur = tcur->next;
     }
   }
+
+  // check input parameters collected by m_param
   //set the minimum blocks
   if (nBlocks < 1)
+  {
+    app_warning() << "Input parameter \"blocks\" must be positive! Set to 1. User input value " << nBlocks << std::endl;
     nBlocks = 1;
+  }
+
+  //set the minimum nSteps
+  if (nSteps < 1)
+  {
+    app_warning() << "Input parameter \"steps\" must be positive! Set to 1. User input value " << nSteps << std::endl;
+    nSteps = 1;
+  }
+
+  //set the minimum nSubSteps
+  if (nSubSteps < 1)
+  {
+    app_warning() << "Input parameter \"substeps\" must be positive! Set to 1. User input value " << nSubSteps
+                  << std::endl;
+    nSubSteps = 1;
+  }
 
   DumpConfig = (Period4CheckPoint >= 0);
   if (Period4CheckPoint < 1)
@@ -686,12 +705,9 @@ xmlNodePtr QMCDriver::getQMCNode()
     std::string cname((const char*)(cur->name));
     if (cname == "parameter")
     {
-      const xmlChar* aptr = xmlGetProp(cur, (const xmlChar*)"name");
-      if (aptr)
-      {
-        if (xmlStrEqual(aptr, (const xmlChar*)"current"))
-          current_ptr = cur;
-      }
+      const XMLAttrString name(cur, "name");
+      if (name == "current")
+        current_ptr = cur;
     }
     cur = cur->next;
   }

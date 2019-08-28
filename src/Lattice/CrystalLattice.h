@@ -22,7 +22,8 @@
 #ifndef OHMMS_CRYSTALLATTICE_H
 #define OHMMS_CRYSTALLATTICE_H
 #include <limits>
-#include <config/stdlib/math.h>
+#include <iostream>
+#include <config/stdlib/math.hpp>
 #include <OhmmsPETE/TinyVector.h>
 #include <OhmmsPETE/Tensor.h>
 #include <Lattice/LRBreakupParameters.h>
@@ -42,19 +43,24 @@ enum
   SOA_OFFSET     = 32 /*!< const to differentiate AoS and SoA */
 };
 
-/** class to assist copy and unit conversion operations on position vectors
+/** enum class to assist copy and unit conversion operations on position vectors
 */
-struct PosUnit
+enum class PosUnit
 {
-  /** enumeraton for the unit of position types.
-  */
-  enum
-  {
-    CartesianUnit = 0, /*!< indicates that the values are in Cartesian units*/
-    LatticeUnit        /*!< indicates that the values are in Lattice units*/
-  };
+  Cartesian = 0, /*!< indicates that the values are in Cartesian units*/
+  Lattice        /*!< indicates that the values are in Lattice units*/
 };
-
+/** write unit type in human readable format
+ *
+ *  This could break tools if they rely on parsing log.
+ */
+std::ostream& operator<<(std::ostream& o_stream, PosUnit pos_unit);
+/** Read unit type recorded in int
+ *
+ *  This should really be human readable
+ *  TODO: support both until going to string only.
+ */
+std::istream& operator>>(std::istream& i_stream, PosUnit& pos_unit);
 
 /** a class that defines a supercell in D-dimensional Euclean space.
  *

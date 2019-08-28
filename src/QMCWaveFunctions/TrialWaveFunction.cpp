@@ -84,17 +84,13 @@ void TrialWaveFunction::stopOptimization()
   }
 }
 
-/** add an ObritalBase
- * @param aterm an WaveFunctionComponent
- * @param aname  name of aterm
- * @param fermion if true, set aterm to FermionWF
+/** Takes owndership of aterm
  */
-void TrialWaveFunction::addOrbital(WaveFunctionComponent* aterm, const std::string& aname, bool fermion)
+void TrialWaveFunction::addComponent(WaveFunctionComponent* aterm, std::string aname)
 {
   Z.push_back(aterm);
-  aterm->IsFermionWF = fermion;
-  if (fermion)
-    app_log() << "  FermionWF = " << aname << std::endl;
+  if (aterm->is_fermionic)
+    app_log() << "  Added a fermionic WaveFunctionComponent " << aname << std::endl;
 
   std::vector<std::string> suffixes(7);
   suffixes[0] = "_V";
@@ -322,22 +318,27 @@ TrialWaveFunction::RealType TrialWaveFunction::ratio(ParticleSet& P, int iat)
     myTimers[ii]->stop();
   }
 #if defined(QMC_COMPLEX)
-  //return std::exp(evaluateLogAndPhase(r,PhaseValue));
   RealType logr = evaluateLogAndPhase(r, PhaseDiff);
   return std::exp(logr);
 #else
   if (r < 0)
     PhaseDiff = M_PI;
-  //     else PhaseDiff=0.0;
   return r;
 #endif
 }
 
-TrialWaveFunction::ValueType TrialWaveFunction::full_ratio(ParticleSet& P, int iat)
+TrialWaveFunction::ValueType TrialWaveFunction::calcRatio(ParticleSet& P, int iat, ComputeType ct)
 {
   ValueType r(1.0);
-  for (size_t i = 0, n = Z.size(); i < n; ++i)
-    r *= Z[i]->ratio(P, iat);
+  std::vector<WaveFunctionComponent*>::iterator it(Z.begin());
+  std::vector<WaveFunctionComponent*>::iterator it_end(Z.end());
+  for (int ii = V_TIMER; it != it_end; ++it, ii += TIMER_SKIP)
+  {
+    myTimers[ii]->start();
+    if (ct == ComputeType::ALL || ((*it)->is_fermionic && ct == ComputeType::FERMIONIC) || (!(*it)->is_fermionic && ct == ComputeType::NONFERMIONIC))
+      r *= (*it)->ratio(P, iat);
+    myTimers[ii]->stop();
+  }
   return r;
 }
 
@@ -558,30 +559,11 @@ void TrialWaveFunction::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
   assert(buf.size() == buf.current() + buf.current_scalar() * sizeof(double));
 }
 
-void TrialWaveFunction::evaluateRatios(VirtualParticleSet& VP, std::vector<RealType>& ratios)
+void TrialWaveFunction::evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios)
 {
   assert(VP.getTotalNum() == ratios.size());
-#if defined(QMC_COMPLEX)
-  std::vector<ValueType> t(ratios.size()), r(ratios.size(), 1.0);
-  ;
-  for (int i = 0, ii = NL_TIMER; i < Z.size(); ++i, ii += TIMER_SKIP)
-  {
-    myTimers[ii]->start();
-    Z[i]->evaluateRatios(VP, t);
-    for (int j = 0; j < ratios.size(); ++j)
-      r[j] *= t[j];
-    myTimers[ii]->stop();
-  }
-  RealType pdiff;
-  for (int j = 0; j < ratios.size(); ++j)
-  {
-    RealType logr = evaluateLogAndPhase(r[j], pdiff);
-    ratios[j]     = std::exp(logr) * std::cos(pdiff);
-    //ratios[j]=std::abs(r)*std::cos(std::arg(r[j]));
-  }
-#else
-  std::fill(ratios.begin(), ratios.end(), 1.0);
   std::vector<ValueType> t(ratios.size());
+  std::fill(ratios.begin(), ratios.end(), 1.0);
   for (int i = 0, ii = NL_TIMER; i < Z.size(); ++i, ii += TIMER_SKIP)
   {
     myTimers[ii]->start();
@@ -590,7 +572,6 @@ void TrialWaveFunction::evaluateRatios(VirtualParticleSet& VP, std::vector<RealT
       ratios[j] *= t[j];
     myTimers[ii]->stop();
   }
-#endif
 }
 
 void TrialWaveFunction::evaluateDerivRatios(VirtualParticleSet& VP, const opt_variables_type& optvars,
@@ -628,7 +609,7 @@ TrialWaveFunction* TrialWaveFunction::makeClone(ParticleSet& tqp) const
   myclone->BufferCursor        = BufferCursor;
   myclone->BufferCursor_scalar = BufferCursor_scalar;
   for (int i = 0; i < Z.size(); ++i)
-    myclone->addOrbital(Z[i]->makeClone(tqp), "dummy", Z[i]->IsFermionWF);
+    myclone->addComponent(Z[i]->makeClone(tqp), "dummy");
   myclone->OneOverM = OneOverM;
   return myclone;
 }
@@ -670,6 +651,19 @@ void TrialWaveFunction::evaluateDerivatives(ParticleSet& P,
     RealType psiValue = std::exp(-LogValue) * std::cos(PhaseValue);
     for (int i = 0; i < dlogpsi.size(); i++)
       dlogpsi[i] *= psiValue;
+  }
+}
+
+void TrialWaveFunction::evaluateDerivativesWF(ParticleSet& P,
+    const opt_variables_type& optvars,
+    std::vector<ValueType>& dlogpsi)
+{
+  for (int i = 0; i < Z.size(); i++)
+  {
+    if (Z[i]->dPsi)
+      (Z[i]->dPsi)->evaluateDerivativesWF(P, optvars, dlogpsi);
+    else
+      Z[i]->evaluateDerivativesWF(P, optvars, dlogpsi);
   }
 }
 

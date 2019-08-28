@@ -22,7 +22,7 @@ namespace qmcplusplus
 template<class T>
 inline bool putContent2(std::vector<T>& a, xmlNodePtr cur)
 {
-  std::istringstream stream((const char*)(xmlNodeListGetString(cur->doc, cur->xmlChildrenNode, 1)));
+  std::istringstream stream(XMLNodeString{cur});
   T temp;
   a.clear();
   while (!stream.eof())
@@ -140,7 +140,7 @@ bool kSpaceJastrowBuilder::put(xmlNodePtr cur)
   jastrow->setCoefficients(oneBodyCoefs, twoBodyCoefs);
   if (qmc_common.io_node) outputJastrow(jastrow);
   //jastrow->addOptimizables(targetPsi.VarList);
-  targetPsi.addOrbital(jastrow, "kSpace");
+  targetPsi.addComponent(jastrow, "kSpace");
   return true;
 }
 

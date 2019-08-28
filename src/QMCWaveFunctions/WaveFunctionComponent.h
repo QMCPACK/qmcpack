@@ -75,13 +75,6 @@ typedef DiffWaveFunctionComponent* DiffWaveFunctionComponentPtr;
  */
 struct WaveFunctionComponent : public QMCTraits
 {
-  ///recasting enum of DistanceTableData to maintain consistency
-  enum
-  {
-    SourceIndex  = DistanceTableData::SourceIndex,
-    VisitorIndex = DistanceTableData::VisitorIndex,
-    WalkerIndex  = DistanceTableData::WalkerIndex
-  };
 
   /** enum for a update mode */
   enum
@@ -111,16 +104,9 @@ struct WaveFunctionComponent : public QMCTraits
    * If true, this object is actively modified during optimization
    */
   bool Optimizable;
-  /** true, if FermionWF */
-  bool IsFermionWF;
-  /** true, if it is done with derivatives */
-  bool derivsDone;
-  /** true, if compute for the ratio instead of buffering */
-  bool Need2Compute4PbyP;
-  /** define the level of storage in derivative buffer **/
-  int DerivStorageType;
+  /** true, if this component is fermionic */
+  bool is_fermionic;
 
-  int parameterType;
   /** current update mode */
   int UpdateMode;
   /** current \f$\log\phi \f$
@@ -129,9 +115,9 @@ struct WaveFunctionComponent : public QMCTraits
   /** current phase
    */
   RealType PhaseValue;
-  /** Pointer to the differential orbital of this object
+  /** Pointer to the differential WaveFunctionComponent of this object
    *
-   * If dPsi=0, this orbital is constant with respect to the optimizable variables
+   * If dPsi=0, this WaveFunctionComponent is constant with respect to the optimizable variables
    */
   DiffWaveFunctionComponentPtr dPsi;
   /** A vector for \f$ \frac{\partial \nabla \log\phi}{\partial \alpha} \f$
@@ -143,7 +129,7 @@ struct WaveFunctionComponent : public QMCTraits
   /** Name of the class derived from WaveFunctionComponent
    */
   std::string ClassName;
-  ///list of variables this orbital handles
+  ///list of variables this WaveFunctionComponent handles
   opt_variables_type myVars;
   ///Bytes in WFBuffer
   size_t Bytes_in_WFBuffer;
@@ -159,7 +145,7 @@ struct WaveFunctionComponent : public QMCTraits
 
   virtual void resetPhaseDiff() {}
 
-  ///assign a differential orbital
+  ///assign a differential WaveFunctionComponent
   virtual void setDiffOrbital(DiffWaveFunctionComponentPtr d);
 
   ///assembles the full value from LogValue and PhaseValue
@@ -176,7 +162,7 @@ struct WaveFunctionComponent : public QMCTraits
   /** check in optimizable parameters
    * @param active a super set of optimizable variables
    *
-   * Add the paramemters this orbital manage to active.
+   * Add the paramemters this WaveFunctionComponent manage to active.
    */
   virtual void checkInVariables(opt_variables_type& active) = 0;
 
@@ -198,7 +184,7 @@ struct WaveFunctionComponent : public QMCTraits
    */
   virtual void resetTargetParticleSet(ParticleSet& P) = 0;
 
-  /** evaluate the value of the orbital for a configuration P.R
+  /** evaluate the value of the WaveFunctionComponent for a configuration P.R
    * @param P  active ParticleSet
    * @param G Gradients, \f$\nabla\ln\Psi\f$
    * @param L Laplacians, \f$\nabla^2\ln\Psi\f$
@@ -211,8 +197,8 @@ struct WaveFunctionComponent : public QMCTraits
                                ParticleSet::ParticleGradient_t& G,
                                ParticleSet::ParticleLaplacian_t& L) = 0;
 
-  /** recompute the value of the orbitals which require critical accuracy.
-   * needed for Slater Determinants but not needed for most types of orbitals
+  /** recompute the value of the WaveFunctionComponents which require critical accuracy.
+   * needed for Slater Determinants but not needed for most types of WaveFunctionComponents
    */
   virtual void recompute(ParticleSet& P){};
 
@@ -270,7 +256,7 @@ struct WaveFunctionComponent : public QMCTraits
   }
 
 
-  /** evaluate the ratio of the new to old orbital value
+  /** evaluate the ratio of the new to old WaveFunctionComponent value and the new gradient
    * @param P the active ParticleSet
    * @param iat the index of a particle
    * @param grad_iat Gradient for the active particle
@@ -296,7 +282,7 @@ struct WaveFunctionComponent : public QMCTraits
    */
   virtual void restore(int iat) = 0;
 
-  /** evalaute the ratio of the new to old orbital value
+  /** evaluate the ratio of the new to old WaveFunctionComponent value
    *@param P the active ParticleSet
    *@param iat the index of a particle
    *@return \f$ \psi( \{ {\bf R}^{'} \} )/ \psi( \{ {\bf R}^{'}\})\f$
@@ -357,6 +343,18 @@ struct WaveFunctionComponent : public QMCTraits
                                    const opt_variables_type& optvars,
                                    std::vector<ValueType>& dlogpsi,
                                    std::vector<ValueType>& dhpsioverpsi);
+
+  /** Compute derivatives of rhe wavefunction with respect to the optimizable 
+   *  parameters
+   *  @param P particle set
+   *  @param optvars optimizable parameters
+   *  @param dlogpsi array of derivatives of the log of the wavefunction
+   *  Note: this function differs from the evaluateDerivatives function in the way that it only computes
+   *        the derivative of the log of the wavefunction. 
+  */
+  virtual void evaluateDerivativesWF(ParticleSet& P,
+                                     const opt_variables_type& optvars,
+                                     std::vector<ValueType>& dlogpsi);
 
   virtual void multiplyDerivsByOrbR(std::vector<ValueType>& dlogpsi)
   {

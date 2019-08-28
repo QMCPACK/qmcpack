@@ -19,8 +19,6 @@ LCAOrbitalSetWithCorrection::LCAOrbitalSetWithCorrection(ParticleSet& ions, Part
     : LCAOrbitalSet(bs), cusp(ions, els)
 {}
 
-LCAOrbitalSetWithCorrection::~LCAOrbitalSetWithCorrection() {}
-
 void LCAOrbitalSetWithCorrection::setOrbitalSetSize(int norbs)
 {
   LCAOrbitalSet::setOrbitalSetSize(norbs);
@@ -32,7 +30,6 @@ SPOSet* LCAOrbitalSetWithCorrection::makeClone() const
 {
   LCAOrbitalSetWithCorrection* myclone = new LCAOrbitalSetWithCorrection(*this);
   myclone->myBasisSet                  = myBasisSet->makeClone();
-  myclone->IsCloned                    = true;
   return myclone;
 }
 
