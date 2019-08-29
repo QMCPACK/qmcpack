@@ -183,6 +183,9 @@ public:
 
   ///process input file
   bool put(xmlNodePtr cur);
+  ///output jastrow coefficients
+  void printOneBody(std::ostream& os);
+  void printTwoBody(std::ostream& os);
 
   // Implements strict weak ordering with respect to the
   // structure factors.  Used to sort the G-vectors according to

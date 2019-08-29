@@ -21,6 +21,7 @@
 #include "QMCApp/ParticleSetPool.h"
 #include "QMCHamiltonians/ForceChiesaPBCAA.h"
 #include "QMCHamiltonians/ForceCeperley.h"
+#include "QMCHamiltonians/CoulombPotential.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 
 
@@ -324,6 +325,47 @@ TEST_CASE("Ceperley Force", "[hamiltonian]")
   for (int i = 0; i < 6; i++)
   {
     REQUIRE(force.c[i] == Approx(coeff2[i]));
+  }
+}
+
+// Open BC case
+TEST_CASE("Ion-ion Force", "[hamiltonian]")
+{
+  Communicate* c;
+  OHMMS::Controller->initialize(0, NULL);
+  c = OHMMS::Controller;
+
+  ParticleSet ions;
+  ions.setName("ions");
+  ions.create(3);
+  ions.R[0][0] = 0.0;
+  ions.R[0][1] = 0.0;
+  ions.R[0][2] = 0.0;
+  ions.R[1][0] = 2.0;
+  ions.R[1][1] = 0.0;
+  ions.R[1][2] = 0.0;
+  ions.R[2][0] = 1.0;
+  ions.R[2][1] = 1.0;
+  ions.R[2][2] = 0.0;
+
+  SpeciesSet& ion_species           = ions.getSpeciesSet();
+  int pIdx                          = ion_species.addSpecies("H");
+  int pChargeIdx                    = ion_species.addAttribute("charge");
+  int pMembersizeIdx                = ion_species.addAttribute("membersize");
+  ion_species(pChargeIdx, pIdx)     = 1;
+  ion_species(pMembersizeIdx, pIdx) = 3;
+  ions.resetGroups();
+
+  CoulombPotential<QMCHamiltonianBase::Return_t> force(ions, false, true);
+
+  double coeff0[3] = {-0.60355339059, -0.35355339059, 0.0};
+  double coeff1[3] = { 0.60355339059, -0.35355339059, 0.0};
+  double coeff2[3] = { 0.00000000000,  0.70710678119, 0.0};
+  for (int i = 0; i < 3; i++)
+  {
+    REQUIRE(force.forces[0][i] == Approx(coeff0[i]));
+    REQUIRE(force.forces[1][i] == Approx(coeff1[i]));
+    REQUIRE(force.forces[2][i] == Approx(coeff2[i]));
   }
 }
 } // namespace qmcplusplus

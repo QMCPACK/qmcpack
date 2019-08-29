@@ -95,9 +95,7 @@ void QMCHamiltonian::addOperator(QMCHamiltonianBase* h, const std::string& aname
     h->myName = aname;
     H.push_back(h);
     std::string tname = "Hamiltonian::" + aname;
-    NewTimer* atimer  = new NewTimer(tname, timer_level_fine);
-    myTimers.push_back(atimer);
-    TimerManager.addTimer(atimer);
+    myTimers.push_back(TimerManager.createTimer(tname, timer_level_fine));
   }
   else
   {
@@ -491,10 +489,10 @@ QMCHamiltonian::Return_t QMCHamiltonian::evaluate(ParticleSet& P)
 }
 
 QMCHamiltonian::RealType QMCHamiltonian::evaluateValueAndDerivatives(ParticleSet& P,
-                                                                     const opt_variables_type& optvars,
-                                                                     std::vector<RealType>& dlogpsi,
-                                                                     std::vector<RealType>& dhpsioverpsi,
-                                                                     bool compute_deriv)
+                                                                      const opt_variables_type& optvars,
+                                                                      std::vector<ValueType>& dlogpsi,
+                                                                      std::vector<ValueType>& dhpsioverpsi,
+                                                                      bool compute_deriv)
 {
   LocalEnergy = KineticEnergy = H[0]->evaluate(P);
   if (compute_deriv)
@@ -617,7 +615,7 @@ QMCHamiltonian::Return_t QMCHamiltonian::evaluateIonDerivs(ParticleSet& P,
                                                            ParticleSet::ParticlePos_t& wf_grad)
 {
   ParticleSet::ParticleGradient_t wfgradraw_(ions.getTotalNum());
-  wfgradraw_           = 0.0;
+  wfgradraw_            = 0.0;
   RealType localEnergy = 0.0;
 
   for (int i = 0; i < H.size(); ++i)

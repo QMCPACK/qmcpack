@@ -252,7 +252,7 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
   if (das.new_run_type == QMCRunType::VMC || das.new_run_type == QMCRunType::CSVMC)
   {
     //VMCFactory fac(curQmcModeBits[UPDATE_MODE],cur);
-    VMCFactory fac(das.what_to_do[UPDATE_MODE], cur);
+    VMCFactory fac(das.what_to_do.to_ulong(), cur);
     new_driver.reset(
         fac.create(qmc_system, *primaryPsi, *primaryH, particle_pool, hamiltonian_pool, wavefunction_pool, comm));
     //TESTING CLONE
