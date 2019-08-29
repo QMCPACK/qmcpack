@@ -36,12 +36,12 @@ public:
         LastIndex(first + spos->size()),
         NumPtcls(spos->size()),
         NumOrbitals(spos->size()),
-        UpdateTimer("DiracDeterminantBase::update", timer_level_fine),
-        RatioTimer("DiracDeterminantBase::ratio", timer_level_fine),
-        InverseTimer("DiracDeterminantBase::inverse", timer_level_fine),
-        BufferTimer("DiracDeterminantBase::buffer", timer_level_fine),
-        SPOVTimer("DiracDeterminantBase::spoval", timer_level_fine),
-        SPOVGLTimer("DiracDeterminantBase::spovgl", timer_level_fine)
+        UpdateTimer(*TimerManager.createTimer("DiracDeterminantBase::update", timer_level_fine)),
+        RatioTimer(*TimerManager.createTimer("DiracDeterminantBase::ratio", timer_level_fine)),
+        InverseTimer(*TimerManager.createTimer("DiracDeterminantBase::inverse", timer_level_fine)),
+        BufferTimer(*TimerManager.createTimer("DiracDeterminantBase::buffer", timer_level_fine)),
+        SPOVTimer(*TimerManager.createTimer("DiracDeterminantBase::spoval", timer_level_fine)),
+        SPOVGLTimer(*TimerManager.createTimer("DiracDeterminantBase::spovgl", timer_level_fine))
   {
     Optimizable = Phi->Optimizable;
     is_fermionic = true;
@@ -173,7 +173,7 @@ public:
 
 protected:
   /// Timers
-  NewTimer UpdateTimer, RatioTimer, InverseTimer, BufferTimer, SPOVTimer, SPOVGLTimer;
+  NewTimer &UpdateTimer, &RatioTimer, &InverseTimer, &BufferTimer, &SPOVTimer, &SPOVGLTimer;
   /// a set of single-particle orbitals used to fill in the  values of the matrix
   SPOSetPtr const Phi;
   ///index of the first particle with respect to the particle set
@@ -192,12 +192,6 @@ protected:
   {
     UpdateTimer.reset();
     RatioTimer.reset();
-    TimerManager.addTimer(&UpdateTimer);
-    TimerManager.addTimer(&RatioTimer);
-    TimerManager.addTimer(&InverseTimer);
-    TimerManager.addTimer(&BufferTimer);
-    TimerManager.addTimer(&SPOVTimer);
-    TimerManager.addTimer(&SPOVGLTimer);
   }
 };
 
