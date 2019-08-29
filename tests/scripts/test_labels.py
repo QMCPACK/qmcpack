@@ -152,7 +152,7 @@ def create_label_sets():
         'short-diamondC_2x1x1_hybridrep_pp-vmc_sdj',
         'short-bccH_1x1x1_ae-dmc_sdj',
         'short-NiO_a4_e48_pp-dmc-TMv1v3_sdj',
-	'long-heg_14_gamma-sj-1-16',            
+        'long-heg_14_gamma-sj-1-16',            
         'short-chn_ae_cuspCorrection-vmc',
         'short-li2_sto-sj_dmc',
         'short-LiH_dimer_ae_qp-vmc_hf_noj',
