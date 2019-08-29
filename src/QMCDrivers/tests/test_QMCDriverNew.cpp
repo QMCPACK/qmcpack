@@ -19,7 +19,7 @@
 #include "QMCApp/tests/MinimalParticlePool.h"
 #include "QMCApp/tests/MinimalWaveFunctionPool.h"
 #include "QMCApp/tests/MinimalHamiltonianPool.h"
-#include "Particle/MCPopulation.h"
+#include "QMCDrivers/MCPopulation.h"
 
 namespace qmcplusplus
 {
@@ -39,11 +39,13 @@ TEST_CASE("QMCDriverNew integration", "[drivers]")
   MinimalParticlePool mpp;
   ParticleSetPool particle_pool = mpp(comm);
   MinimalWaveFunctionPool wfp(comm);
-  WaveFunctionPool wavefunction_pool = wfp(particle_pool);
+  WaveFunctionPool wavefunction_pool = wfp(&particle_pool);
+  wavefunction_pool.setPrimary(wavefunction_pool.getWaveFunction("psi0"));
+  
   MinimalHamiltonianPool mhp(comm);
-  HamiltonianPool hamiltonian_pool = mhp(particle_pool, wavefunction_pool);
-  MCPopulation population(4, 2);
-  QMCDriverNewTestWrapper qmcdriver(std::move(qmcdriver_input), population, *(wavefunction_pool.getPrimary()),
+  HamiltonianPool hamiltonian_pool = mhp(&particle_pool, &wavefunction_pool);
+  MCPopulation population(4, particle_pool.getParticleSet("e"), wavefunction_pool.getPrimary(), hamiltonian_pool.getPrimary());
+  QMCDriverNewTestWrapper qmcdriver(std::move(qmcdriver_input), std::move(population), *(wavefunction_pool.getPrimary()),
                                     *(hamiltonian_pool.getPrimary()), wavefunction_pool, comm);
 
   // setStatus must be called before process

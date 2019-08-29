@@ -15,7 +15,7 @@
 
 #include "QMCDrivers/QMCDriverNew.h"
 #include "QMCDrivers/VMC/VMCDriverInput.h"
-#include "Particle/MCPopulation.h"
+#include "QMCDrivers/MCPopulation.h"
 #include "QMCDrivers/MoveContext.h"
 
 namespace qmcplusplus
@@ -49,7 +49,7 @@ public:
   /// Constructor.
   VMCBatched(QMCDriverInput&& qmcdriver_input,
              VMCDriverInput&& input,
-             MCPopulation& pop,
+             MCPopulation&& pop,
              TrialWaveFunction& psi,
              QMCHamiltonian& h,
              WaveFunctionPool& ppool,

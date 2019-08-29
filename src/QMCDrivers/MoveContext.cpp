@@ -11,7 +11,7 @@
 
 #include <type_traits>
 #include "QMCDrivers/MoveContext.h"
-#include "Particle/MCPopulation.h"
+#include "QMCDrivers/MCPopulation.h"
 
 namespace qmcplusplus
 {

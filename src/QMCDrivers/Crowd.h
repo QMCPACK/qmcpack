@@ -13,7 +13,7 @@
 #define QMCPLUSPLUS_CROWD_H
 
 #include <vector>
-#include "Particle/MCPopulation.h"
+#include "QMCDrivers/MCPopulation.h"
 #include "Estimators/EstimatorManagerBase.h"
 #include "Estimators/EstimatorManagerCrowd.h"
 

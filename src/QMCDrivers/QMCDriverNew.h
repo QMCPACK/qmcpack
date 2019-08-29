@@ -29,7 +29,7 @@
 #include "QMCApp/WaveFunctionPool.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Estimators/EstimatorManagerBase.h"
-#include "Particle/MCPopulation.h"
+#include "QMCDrivers/MCPopulation.h"
 #include "QMCDrivers/Crowd.h"
 #include "QMCDrivers/QMCDriverInterface.h"
 #include "QMCDrivers/GreenFunctionModifiers/DriftModifierBase.h"
@@ -92,7 +92,7 @@ public:
 
   /// Constructor.
   QMCDriverNew(QMCDriverInput&& input,
-               MCPopulation& population,
+               MCPopulation&& population,
                TrialWaveFunction& psi,
                QMCHamiltonian& h,
                WaveFunctionPool& ppool,
@@ -162,6 +162,7 @@ public:
   IndexType get_walkers_per_crowd() const { return walkers_per_crowd_; }
   IndexType get_living_walkers() const { return population_.get_active_walkers(); }
 
+  MCPopulation&& releasePopulation() { return std::move(population_); }
 
   /** @ingroup Legacy interface to be dropped
    *  @{
@@ -231,7 +232,7 @@ protected:
 
 
   ///the entire (or on node) walker population
-  MCPopulation& population_;
+  MCPopulation population_;
 
   ///trial function
   TrialWaveFunction& Psi;

@@ -13,6 +13,10 @@
 
 #include "Configuration.h"
 #include "QMCDrivers/MoveContext.h"
+#include "QMCApp/tests/MinimalWaveFunctionPool.h"
+#include "QMCApp/tests/MinimalParticlePool.h"
+#include "QMCApp/tests/MinimalHamiltonianPool.h"
+
 #include "OhmmsPETE/TinyVector.h"
 #include "OhmmsPETE/TinyVectorOps.h"
 #include "Estimators/tests/FakeEstimator.h"
@@ -34,12 +38,36 @@ TEST_CASE("MoveContext::loadWalker", "[particle]")
 
   int num_particles = 1;
   WalkerMCP walker1(num_particles);
-  walker1.R[0] = TinyVector<double, 3>(1.0, 0.0, 0.0);
+  TinyVector<double, 3> pos1(1.0, 0.0, 0.0);
+  walker1.R[0] = pos1;
   WalkerMCP walker2(num_particles);
-  walker2.R[0] = TinyVector<double, 3>(1.0, 2.0, 0.0);
+  TinyVector<double, 3> pos2(1.0, 2.0, 0.0);
+  walker2.R[0] = pos2;
 
-  crowd.addWalker(walker1);
-  crowd.addWalker(walker2);
+  MinimalParticlePool mpp;
+  ParticleSetPool particle_pool = mpp(comm);
+  MinimalWaveFunctionPool wfp(comm);
+  WaveFunctionPool wavefunction_pool = wfp(&particle_pool);
+  wavefunction_pool.setPrimary(wavefunction_pool.getWaveFunction("psi0"));
+  MinimalHamiltonianPool mhp(comm);
+  HamiltonianPool hamiltonian_pool = mhp(&particle_pool, &wavefunction_pool);
+  
+  ParticleSet pset1(*(particle_pool.getParticleSet("e")));
+  pset1.R = pos1;
+  ParticleSet pset2(*(particle_pool.getParticleSet("e")));
+  pset2.R = pos2;
+
+  std::unique_ptr<TrialWaveFunction> twf1;
+  twf1.reset(wavefunction_pool.getPrimary()->makeClone(pset1));
+  std::unique_ptr<TrialWaveFunction> twf2;
+  twf2.reset(wavefunction_pool.getPrimary()->makeClone(pset2));
+  std::unique_ptr<QMCHamiltonian> ham1;
+  ham1.reset(hamiltonian_pool.getPrimary()->makeClone(pset1, *twf1));
+  std::unique_ptr<QMCHamiltonian> ham2;
+  ham1.reset(hamiltonian_pool.getPrimary()->makeClone(pset2, *twf2));
+  
+  crowd.addWalker(walker1,pset1,*twf1,*ham1);
+  crowd.addWalker(walker2,pset2,*twf2,*ham2);
 
   std::vector<std::pair<int, int>> particle_group_indexes{{0, 1}, {1, 2}};
 

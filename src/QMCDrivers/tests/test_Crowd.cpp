@@ -35,6 +35,8 @@ TEST_CASE("Crowd integration", "[drivers]")
   REQUIRE(fake_est2 == fake_est);
 
   Crowd crowd(em);
+
+  
 }
   
 }

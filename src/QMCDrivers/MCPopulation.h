@@ -58,18 +58,35 @@ private:
   ///1/Mass per particle
   std::vector<RealType> ptcl_inv_mass_;
 
-  std::shared_ptr<TrialWaveFunction> trial_wf_;
-  std::shared_ptr<ParticleSet> elec_particle_set_;
+  // Should be 
+  // std::shared_ptr<TrialWaveFunction> trial_wf_;
+  // std::shared_ptr<ParticleSet> elec_particle_set_;
+  // std::shared_ptr<QMCHamiltonian> hamiltonian_;
+  // Are raw pointers. This is necessary if MCPopulation is going to be moved by value into QMCDriverNew
+  // and possible moved out into the next driver later.
+  TrialWaveFunction* trial_wf_;
+  ParticleSet* elec_particle_set_;
+  QMCHamiltonian* hamiltonian_;
   // At the moment these are "clones" but I think this design pattern smells.
   std::vector<std::unique_ptr<ParticleSet>> walker_elec_particle_sets_;
   std::vector<std::unique_ptr<TrialWaveFunction>> walker_trial_wavefunctions_;
   std::vector<std::unique_ptr<QMCHamiltonian>> walker_hamiltonians_;
 
 public:
-  MCPopulation(){};
-  MCPopulation(int num_ranks) : num_ranks_(num_ranks) {}
-  MCPopulation(MCWalkerConfiguration& mcwc);
-  MCPopulation(int num_ranks, int num_particles) : num_ranks_(num_ranks), num_particles_(num_particles) {}
+  //MCPopulation(){};
+  //MCPopulation(int num_ranks) : num_ranks_(num_ranks) {}
+  MCPopulation(MCWalkerConfiguration& mcwc, ParticleSet* elecs, TrialWaveFunction* trial_wf, QMCHamiltonian* hamiltonian_);
+  //MCPopulation(int num_ranks, int num_particles) : num_ranks_(num_ranks), num_particles_(num_particles) {}
+  MCPopulation(int num_ranks, ParticleSet* elecs, TrialWaveFunction* trial_wf, QMCHamiltonian* hamiltonian)
+      : num_ranks_(num_ranks),
+        trial_wf_(trial_wf),
+        elec_particle_set_(elecs),
+        hamiltonian_(hamiltonian),
+        num_particles_(elecs->R.size())
+  {}
+  MCPopulation(MCPopulation&&) = default;
+  MCPopulation& operator=(MCPopulation&&) = default;
+  
   void createWalkers();
   void createWalkers(IndexType num_walkers, const ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>& pos);
   void createWalkers(int num_crowds_,
@@ -80,7 +97,7 @@ public:
   /** puts walkers and their "cloned" things into groups in a somewhat general way
    *
    *  Should compile only if ITER is a proper input ITERATOR
-   *  and implements addWalker
+   *  Will crash if ITER does point to a std::unique_ptr<WALKER_CONSUMER>
    *  
    */
   template<typename ITER, typename = RequireInputIterator<ITER>>
@@ -110,7 +127,7 @@ public:
   /**@ingroup Accessors
    * @{
    */
-  IndexType get_active_walkers() { return walkers_.size(); }
+  IndexType get_active_walkers() const { return walkers_.size(); }
   int get_num_ranks() const { return num_ranks_; }
   IndexType get_num_global_walkers() const { return num_global_walkers_; }
   IndexType get_num_local_walkers() const { return num_local_walkers_; }

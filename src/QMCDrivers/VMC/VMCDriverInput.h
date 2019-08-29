@@ -38,7 +38,7 @@ protected:
    */
 
   IndexType walkers_per_rank_ = 0;
-  bool use_drift_ = true;
+  bool use_drift_ = false;
 
   IndexType samples_per_thread_    = -1;
   IndexType samples_               = -1;

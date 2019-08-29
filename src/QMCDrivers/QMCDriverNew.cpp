@@ -41,7 +41,7 @@
 namespace qmcplusplus
 {
 QMCDriverNew::QMCDriverNew(QMCDriverInput&& input,
-                           MCPopulation& population,
+                           MCPopulation&& population,
                            TrialWaveFunction& psi,
                            QMCHamiltonian& h,
                            WaveFunctionPool& ppool,
@@ -49,7 +49,7 @@ QMCDriverNew::QMCDriverNew(QMCDriverInput&& input,
     : MPIObjectBase(comm),
       qmcdriver_input_(input),
       branchEngine(nullptr),
-      population_(population),
+      population_(std::move(population)),
       Psi(psi),
       H(h),
       psiPool(ppool),
@@ -292,7 +292,7 @@ void QMCDriverNew::setupWalkers()
  */
 void QMCDriverNew::addWalkers(int nwalkers, const ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>& positions)
 {
-  population_.createWalkers(num_crowds_, walkers_per_crowd_, nwalkers, positions);
+  population_.createWalkers(nwalkers, positions);
   // else if (nwalkers < 0)
   // {
   //   W.destroyWalkers(-nwalkers);

@@ -23,12 +23,12 @@ class QMCDriverNewTestWrapper : public QMCDriverNew
 {
 public:
   QMCDriverNewTestWrapper(QMCDriverInput&& input,
-                          MCPopulation& population,
+                          MCPopulation&& population,
                           TrialWaveFunction& psi,
                           QMCHamiltonian& h,
                           WaveFunctionPool& ppool,
                           Communicate* comm)
-      : QMCDriverNew(std::move(input), population, psi, h, ppool, comm)
+      : QMCDriverNew(std::move(input), std::move(population), psi, h, ppool, comm)
   {}
 
   QMCRunType getRunType() { return QMCRunType::DUMMY; }
