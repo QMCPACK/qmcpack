@@ -57,7 +57,6 @@ class DelayedUpdateCUDA
 {
   /// define real type
   using real_type = typename scalar_traits<T>::real_type;
-  using real_type_fp = typename scalar_traits<T_FP>::real_type;
   // Data staged during for delayed acceptRows
   Matrix<T, CUDAHostAllocator<T>> U;
   Matrix<T, CUDAHostAllocator<T>> Binv;
@@ -159,7 +158,8 @@ public:
    * @param logdetT orbital value matrix
    * @param Ainv inverse matrix
    */
-  inline void invert_transpose(const Matrix<T>& logdetT, Matrix<T>& Ainv, std::complex<real_type_fp>& LogValue)
+  template<typename TREAL>
+  inline void invert_transpose(const Matrix<T>& logdetT, Matrix<T>& Ainv, std::complex<TREAL>& LogValue)
   {
     // safe mechanism
     delay_count = 0;

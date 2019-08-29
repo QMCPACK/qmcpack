@@ -29,8 +29,6 @@ namespace qmcplusplus
 template<typename T, typename T_FP>
 class DelayedUpdate
 {
-  /// define real type
-  using real_type_fp = typename scalar_traits<T_FP>::real_type;
   /// orbital values of delayed electrons
   Matrix<T> U;
   /// rows of Ainv corresponding to delayed electrons
@@ -48,7 +46,7 @@ class DelayedUpdate
   /// current number of delays, increase one for each acceptance, reset to 0 after updating Ainv
   int delay_count;
   /// matrix inversion engine
-  DiracMatrix<T_FP, T> detEng;
+  DiracMatrix<T_FP> detEng;
 
 public:
   /// default constructor
@@ -73,7 +71,8 @@ public:
    * @param logdetT orbital value matrix
    * @param Ainv inverse matrix
    */
-  inline void invert_transpose(const Matrix<T>& logdetT, Matrix<T>& Ainv, std::complex<real_type_fp>& LogValue)
+  template<typename TREAL>
+  inline void invert_transpose(const Matrix<T>& logdetT, Matrix<T>& Ainv, std::complex<TREAL>& LogValue)
   {
     detEng.invert_transpose(logdetT, Ainv, LogValue);
     // safe mechanism
