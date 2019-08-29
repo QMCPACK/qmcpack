@@ -178,24 +178,6 @@ public:
     return e.write(p, aname, xfer_plist);
   }
 
-  /* write the data to the group aname and return status
-     use write() for inbuilt error checking
-     use user provided dimensions to determine shape of
-     dataset in the hdf file
-     @return true if successful
-   */
-  template<typename T>
-  bool writeEntry(T& data, const std::vector<hsize_t>& dims, const std::string& aname)
-  {
-    if (Mode[NOIO])
-      return true;
-    if (!(Mode[IS_PARALLEL] || Mode[IS_MASTER]))
-      std::runtime_error("Only write data in parallel or by master but not every rank!");
-    hid_t p = group_id.empty() ? file_id : group_id.top();
-    h5data_proxy<T> e(data);
-    return e.write(p, aname, dims, xfer_plist);
-  }
-
   /* write the data to the group aname and check status
      runtime error is issued on I/O error
    */
