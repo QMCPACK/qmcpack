@@ -258,7 +258,7 @@ struct WaveFunctionComponent : public QMCTraits
   virtual void mw_evalGrad(const std::vector<WaveFunctionComponent*>& WFC_list,
                            const std::vector<ParticleSet*>& P_list,
                            int iat,
-                           std::vector<PosType>& grad_now)
+                           std::vector<GradType>& grad_now)
   {
     #pragma omp parallel for
     for (int iw = 0; iw < WFC_list.size(); iw++)
@@ -320,7 +320,7 @@ struct WaveFunctionComponent : public QMCTraits
                             const std::vector<ParticleSet*>& P_list,
                             int iat,
                             std::vector<PsiValueType>& ratios,
-                            std::vector<PosType>& grad_new)
+                            std::vector<GradType>& grad_new)
   {
     #pragma omp parallel for
     for (int iw = 0; iw < WFC_list.size(); iw++)

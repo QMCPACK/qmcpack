@@ -144,10 +144,10 @@ TEST_CASE("TrialWaveFunction", "[wavefunction]")
   ValueType r_bosonic_val = psi.calcRatio(elec_, moved_elec_id, TrialWaveFunction::ComputeType::NONFERMIONIC);
 
   std::cout << "debug " << r_val << std::endl;
-  REQUIRE(r_val == ComplexApprox(2.83819310073227).compare_real_only());
-  REQUIRE(r_all_val == ComplexApprox(2.83819310073227).compare_real_only());
-  REQUIRE(r_fermionic_val == ComplexApprox(1.03849468840389).compare_real_only());
-  REQUIRE(r_bosonic_val == ComplexApprox(2.73298759485658).compare_real_only());
+  REQUIRE(r_val == ValueApprox(2.83819310073227));
+  REQUIRE(r_all_val == ValueApprox(2.83819310073227));
+  REQUIRE(r_fermionic_val == ValueApprox(1.03849468840389));
+  REQUIRE(r_bosonic_val == ValueApprox(2.73298759485658));
 
 #endif
 
