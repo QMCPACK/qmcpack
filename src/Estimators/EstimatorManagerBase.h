@@ -38,7 +38,7 @@ class QMCHamiltonian;
 class CollectablesEstimator;
 
 /** Class to manage a set of ScalarEstimators */
-class EstimatorManagerBase : public EstimatorManagerInterface
+class EstimatorManagerBase
 {
 public:
   typedef QMCTraits::FullPrecRealType RealType;

@@ -187,7 +187,10 @@ struct TinyVector
   inline Type_t* end() { return X + D; }
   inline const Type_t* end() const { return X + D; }
 
-  // Comparison operators.
+  /** Elementwise comparison
+   *
+   *  not optimized but useful for testing
+   */
   bool operator==(const TinyVector<T,D>& that) const {
     for( int i = 0; i < D; ++i) {
       if ((*this)[i] != that[i])

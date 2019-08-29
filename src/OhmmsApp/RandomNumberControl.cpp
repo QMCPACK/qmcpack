@@ -34,7 +34,6 @@
 #endif
 #include <Utilities/SimpleParser.h>
 #include "OhmmsData/Libxml2Doc.h"
-#include "Concurrency/Info.hpp"
 
 namespace qmcplusplus
 {
@@ -45,9 +44,8 @@ RandomGenerator_t::uint_type RandomNumberControl::Offset = 11u;
 
 /// constructors and destructors
 RandomNumberControl::RandomNumberControl(const char* aname)
-  : OhmmsElementBase(aname), NeverBeenInitialized(true), myCur(NULL)
-{
-}
+    : OhmmsElementBase(aname), NeverBeenInitialized(true), myCur(NULL) //, Offset(5)
+{}
 
 /// generic output
 bool RandomNumberControl::get(std::ostream& os) const
@@ -83,7 +81,6 @@ void RandomNumberControl::make_seeds()
   //OHMMS::Controller->bcast(iseed);//broadcast the seed
   Offset = iseed;
   std::vector<uint_type> mySeeds;
-  // no idea what this magic +2 is about
   RandomNumberControl::PrimeNumbers.get(Offset, nprocs * (omp_get_max_threads() + 2), mySeeds);
   Random.init(pid, nprocs, mySeeds[pid], Offset + pid);
   //change children as well

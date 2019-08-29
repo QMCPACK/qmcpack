@@ -27,10 +27,6 @@ namespace qmcplusplus
 /**class RandomNumberControl
  *\brief Encapsulate data to initialize and save the status of the random number generator
  *
- * This should be rewritten. It should be created on the stack of QMCMain, it should not be global.
- * It should not depend internally on global functions from C libraries for hidden magic numbers
- * the time %another_magic_number is not a good idea.
- *
  * Default:  myName = "random"
  * 2007-12-01
  *   Use PrimeNumbers to generate random seeds.
@@ -45,6 +41,7 @@ public:
 
   /// constructors and destructors
   RandomNumberControl(const char* aname = "random");
+
   bool get(std::ostream& os) const;
   bool put(std::istream& is);
   bool put(xmlNodePtr cur);
