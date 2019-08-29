@@ -702,8 +702,7 @@ void MultiSlaterDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
     if (usingCSF)
     {
       int n = P.getTotalNum();
-      PsiValueType psi = getValue();
-      ValueType psiinv = (PsiValueType)1.0 / psi;
+      ValueType psiinv = ValueType(1) / LogToValue<ValueType>::convert(LogValue);
 
       ValueType lapl_sum = 0.0;
       ParticleSet::ParticleGradient_t g(n), gmP(n);
@@ -765,8 +764,7 @@ void MultiSlaterDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
     else
     {
       int n = P.getTotalNum();
-      PsiValueType psi = getValue();
-      ValueType psiinv = (PsiValueType)1.0 / psi;
+      ValueType psiinv = ValueType(1) / LogToValue<ValueType>::convert(LogValue);
 
       ValueType lapl_sum = 0.0;
       ParticleSet::ParticleGradient_t g(n), gmP(n);

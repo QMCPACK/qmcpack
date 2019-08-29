@@ -113,7 +113,8 @@ inline T evaluateLogAndPhase(const T psi, T& phase)
 template<typename T>
 struct LogToValue
 {
-  inline static T convert(const std::complex<T>& logpsi)
+  template<typename T1>
+  inline static T convert(const std::complex<T1>& logpsi)
   {
     return std::real(std::exp(logpsi));
   }
@@ -122,6 +123,13 @@ struct LogToValue
 template<typename T>
 struct LogToValue<std::complex<T>>
 {
+  template<typename T1, typename = std::enable_if_t<!std::is_same<T, T1>::value>>
+  inline static std::complex<T> convert(const std::complex<T1>& logpsi)
+  {
+    std::complex<T> tmp(std::real(logpsi), std::imag(logpsi));
+    return std::exp(tmp);
+  }
+
   inline static std::complex<T> convert(const std::complex<T>& logpsi)
   {
     return std::exp(logpsi);
