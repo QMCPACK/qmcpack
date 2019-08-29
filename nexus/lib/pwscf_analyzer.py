@@ -227,11 +227,6 @@ class PwscfAnalyzer(SimulationAnalyzer):
         #end try
         try:
             # get bands and occupations
-            nfound = 0
-            index = -1
-            bands = obj()
-            bands.up = obj()
-            bands.down = obj()
             polarized = False
             if self.input.system.nspin > 1:
                 polarized = True
@@ -243,6 +238,12 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 l = lines[i]
                 if '- SPIN UP -' in l:
                     up_spin   = True
+                    # Initialize each time in case a hybrid functional was used
+                    nfound = 0
+                    index = -1
+                    bands = obj()
+                    bands.up = obj()
+                    bands.down = obj()
                 elif '- SPIN DOWN -' in l:
                     up_spin   = False
                     index = -1
