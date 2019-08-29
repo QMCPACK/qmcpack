@@ -190,19 +190,6 @@ public:
     }
   }
 
-  /* write the data to the group aname and check status
-     Use externally provided dimensions for shape of entry in hdf
-     runtime error is issued on I/O error
-   */
-  template<typename T>
-  void write(T& data, const std::vector<hsize_t>& dims, const std::string& aname)
-  {
-    if (!writeEntry(data, dims, aname))
-    {
-      std::runtime_error("HDF5 write failure in hdf_archive::write " + aname);
-    }
-  }
-
   /* read the data from the group aname and return status
      use read() for inbuilt error checking
      @return true if successful
