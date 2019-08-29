@@ -138,7 +138,7 @@ import inspect
 import keyword
 from numpy import fromstring,empty,array,float64,\
     loadtxt,ndarray,dtype,sqrt,pi,arange,exp,eye,\
-    ceil,mod,dot,abs,identity,floor
+    ceil,mod,dot,abs,identity,floor,linalg,where,isclose
 from StringIO import StringIO
 from superstring import string2val
 from generic import obj,hidden
@@ -150,9 +150,6 @@ from physical_system import PhysicalSystem
 from simulation import SimulationInput,SimulationInputTemplate
 from pwscf_input import array_to_string as pwscf_array_string
 from debug import ci as interact
-#Kayahan added modules
-from pwscf import Pwscf
-from numpy import linalg,where,isclose
 
 yesno_dict     = {True:'yes' ,False:'no'}
 truefalse_dict = {True:'true',False:'false'}
