@@ -302,6 +302,10 @@ TEST_CASE("EinsplineSetBuilder CheckLattice", "[wavefunction]")
 
 TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
 {
+  app_log()<<"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n";
+  app_log()<<"!!!!!  Einspline SpinorSet from HDF   !!!!!\n";
+  app_log()<<"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n";
+  
   Communicate* c;
   OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
@@ -383,7 +387,7 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
 
   EinsplineSpinorSetBuilder einSet(elec_,ptcl.getPool(), c, ein1);
  // EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, ein1);
- // SPOSet* spo = einSet.createSPOSetFromXML(ein1);
+  SPOSet* spo = einSet.createSPOSetFromXML(ein1);
  // REQUIRE(spo != NULL);
 
 }

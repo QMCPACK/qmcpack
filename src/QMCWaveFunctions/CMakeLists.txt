@@ -149,6 +149,7 @@ IF(OHMMS_DIM MATCHES 3)
       BsplineFactory/createComplexSingle.cpp
       BandInfo.cpp
       BsplineFactory/BsplineReaderBase.cpp
+      EinsplineSpinorSetBuilder.cpp
       )
 
     IF(NOT QMC_COMPLEX)
