@@ -257,6 +257,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
                         num_kpoints      = int(l.strip().split()[4])
                     except:
                         print "Number of k-points {0} is not an integer".format(num_kpoints)
+
                     kpoints_2pi_alat = lines[i+2:i+2+num_kpoints]
                     kpoints_rel      = lines[i+4+num_kpoints:i+4+2*num_kpoints]
                     kpoints_2pi_alat = array([k.strip().split()[4:6] + [k.strip().split()[6][0:-2]] for k in kpoints_2pi_alat], dtype=float)
