@@ -599,8 +599,7 @@ void J2OrbitalSoA<FT>::evaluateGL(ParticleSet& P,
     L[iat]   += d2Uat[iat];
   }
 
-  constexpr valT mhalf(-0.5);
-  LogValue = mhalf * LogValue;
+  LogValue = - LogValue * 0.5;
 }
 
 template<typename FT>

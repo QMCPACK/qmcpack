@@ -905,8 +905,7 @@ public:
       L[iat]   += d2Uat[iat];
     }
 
-    constexpr valT mhalf(-0.5);
-    LogValue = mhalf * LogValue;
+    LogValue = - LogValue * 0.5;
   }
 
   void evaluateDerivatives(ParticleSet& P,
