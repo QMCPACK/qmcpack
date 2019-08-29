@@ -217,8 +217,14 @@ struct BareKineticEnergy : public QMCHamiltonianBase
 #endif
         if (SameMass)
     {
+      //app_log() << "Here" << std::endl;
+      #ifdef QMC_COMPLEX  
+      Value = std::real( CplxDot(P.G, P.G) + CplxSum(P.L) );
+      Value *= -OneOver2M;
+      #else
       Value = Dot(P.G, P.G) + Sum(P.L);
       Value *= -OneOver2M;
+      #endif
     }
     else
     {

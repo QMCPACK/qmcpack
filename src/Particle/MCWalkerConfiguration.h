@@ -433,6 +433,8 @@ public:
   ReptileList_t ReptileList;
   Reptile* reptile;
 
+  friend class MCPopulation;
+
 private:
   MultiChain* Polymer;
 

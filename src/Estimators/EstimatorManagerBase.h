@@ -40,7 +40,7 @@ class CollectablesEstimator;
 class EstimatorManagerBase
 {
 public:
-  typedef QMCTraits::EstimatorRealType RealType;
+  typedef QMCTraits::FullPrecRealType RealType;
   typedef ScalarEstimatorBase EstimatorType;
   typedef std::vector<RealType> BufferType;
   //enum { WEIGHT_INDEX=0, BLOCK_CPU_INDEX, ACCEPT_RATIO_INDEX, TOTAL_INDEX};
@@ -128,7 +128,7 @@ public:
 
   ///process xml tag associated with estimators
   //bool put(xmlNodePtr cur);
-  bool put(MCWalkerConfiguration& W, QMCHamiltonian& H, xmlNodePtr cur);
+  bool put(QMCHamiltonian& H, xmlNodePtr cur);
 
   void resetTargetParticleSet(ParticleSet& p);
 

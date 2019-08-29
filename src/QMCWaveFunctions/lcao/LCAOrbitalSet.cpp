@@ -17,18 +17,12 @@
 namespace qmcplusplus
 {
 LCAOrbitalSet::LCAOrbitalSet(basis_type* bs)
-    : myBasisSet(nullptr), C(nullptr), params_supplied(false), BasisSetSize(0), Identity(true), IsCloned(false)
+    : myBasisSet(nullptr), params_supplied(false), BasisSetSize(0), Identity(true)
 {
   //This SPOSet has an explicit ion dependence, so set this flag.
   ionDerivs=true;
   if (bs != nullptr)
     setBasisSet(bs);
-}
-
-LCAOrbitalSet::~LCAOrbitalSet()
-{
-  if (!IsCloned && C != nullptr)
-    delete C;
 }
 
 void LCAOrbitalSet::setBasisSet(basis_type* bs)
@@ -46,9 +40,9 @@ bool LCAOrbitalSet::setIdentity(bool useIdentity)
   if (Identity)
     return true;
 
-  if (C == nullptr && (OrbitalSetSize > 0) && (BasisSetSize > 0))
+  if (!C && (OrbitalSetSize > 0) && (BasisSetSize > 0))
   {
-    C = new ValueMatrix_t(OrbitalSetSize, BasisSetSize);
+    C = std::make_shared<ValueMatrix_t>(OrbitalSetSize, BasisSetSize);
   }
   else
   {
@@ -65,7 +59,6 @@ SPOSet* LCAOrbitalSet::makeClone() const
 {
   LCAOrbitalSet* myclone = new LCAOrbitalSet(*this);
   myclone->myBasisSet    = myBasisSet->makeClone();
-  myclone->IsCloned      = true;
   return myclone;
 }
 

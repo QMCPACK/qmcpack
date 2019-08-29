@@ -78,8 +78,8 @@ public:
   bool put(xmlNodePtr cur);
   void resetCostFunction(std::vector<xmlNodePtr>& cset);
   ///Save opt parameters to HDF5
-  bool reportH5;  
-  bool CI_Opt;  
+  bool reportH5;
+  bool CI_Opt;
   ///Path and name of the HDF5 prefix where CI coeffs are saved
   std::string newh5;
   ///assign optimization parameter i
@@ -94,7 +94,9 @@ public:
   Return_rt computedCost();
   void printEstimates();
   ///return the gradient of cost value for CGMinimization
-  virtual void GradCost(std::vector<Return_rt>& PGradient, const std::vector<Return_rt>& PM, Return_rt FiniteDiff = 0){};
+  virtual void GradCost(std::vector<Return_rt>& PGradient,
+                        const std::vector<Return_rt>& PM,
+                        Return_rt FiniteDiff = 0){};
   ///return the number of optimizable parameters
   inline int NumParams() { return OptVariables.size(); }
   ///return the number of optimizable parameters
@@ -116,10 +118,6 @@ public:
   inline int getReportCounter() const { return ReportCounter; }
 
   void setWaveFunctionNode(xmlNodePtr cur) { m_wfPtr = cur; }
-
-  void recordParametersToPsi(Return_rt e, Return_rt v) { Psi.coefficientHistory.addParams(OptVariables, e, v); }
-  void getAvgParameters(int N) { OptVariables = Psi.coefficientHistory.getAvgCoefficients(N); }
-  //void getConfigurations(std::vector<std::string>& ConfigFile, int partid, int nparts);
 
   void setTargetEnergy(Return_rt et);
 

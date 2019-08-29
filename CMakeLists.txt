@@ -23,6 +23,12 @@ IF(COMMAND cmake_policy)
   IF(CMAKE_GENERATOR MATCHES "Ninja")
     cmake_policy(SET CMP0058 NEW)
   ENDIF(CMAKE_GENERATOR MATCHES "Ninja")
+  # CMake find_package will use <PackageName>_ROOT CMake variable
+  # and environment variable in search path.
+  # various Find<Package>.cmake modules may not follow this policy
+  IF(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.12.0") 
+    cmake_policy(SET CMP0074 NEW)
+  ENDIF(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.12.0") 
 ENDIF(COMMAND cmake_policy)
 
 
@@ -30,7 +36,7 @@ ENDIF(COMMAND cmake_policy)
 # Version
 ######################################################################
 SET(QMCPACK_VERSION_MAJOR 3)
-SET(QMCPACK_VERSION_MINOR 7)
+SET(QMCPACK_VERSION_MINOR 8)
 SET(QMCPACK_VERSION_PATCH 9)
 SET(QMCPACK_VERSION "${QMCPACK_VERSION_MAJOR}.${QMCPACK_VERSION_MINOR}.${QMCPACK_VERSION_PATCH}")
 
@@ -46,6 +52,7 @@ ENDIF()
 ######################################################################
 # CTest
 ######################################################################
+INCLUDE( "${qmcpack_SOURCE_DIR}/CMake/macros.cmake" )
 SET( DROP_METHOD "http" )
 SET( DROP_SITE "cdash.qmcpack.org" )
 SET( DROP_LOCATION "/CDash/submit.php?project=QMCPACK" )
@@ -157,6 +164,8 @@ IF(ENABLE_CUDA AND QMC_CUDA)
   MESSAGE(FATAL_ERROR "ENABLE_CUDA=1 and QMC_CUDA=1 can not be set together!")
 ENDIF(ENABLE_CUDA AND QMC_CUDA)
 
+SET(QMC_VERBOSE_CONFIGURATION 0 CACHE BOOL "Give details why specific tests are/are not added")
+
 ######################################################################
 # set debug printout
 # DEBUG_PSIBUFFER_ON keep track buffer's locator
@@ -179,9 +188,6 @@ INCLUDE(${CMAKE_ROOT}/Modules/CheckCXXSourceCompiles.cmake)
 
 CHECK_FUNCTION_EXISTS(sincos HAVE_SINCOS)
 CHECK_FUNCTION_EXISTS(posix_memalign HAVE_POSIX_MEMALIGN)
-SET(CHECK_ISZERO_SOURCE "#include <math.h>
-                         int main() {iszero(1.0); return 0;}")
-CHECK_CXX_SOURCE_COMPILES("${CHECK_ISZERO_SOURCE}" HAVE_ISZERO)
 
 CHECK_INCLUDE_FILE(dlfcn.h HAVE_DLFCN_H)
 CHECK_INCLUDE_FILE(inttypes.h HAVE_INTTYPES_H)
@@ -754,6 +760,16 @@ IF (USE_VTUNE_API)
   ENDIF()
   LINK_LIBRARIES("${VTUNE_ITTNOTIFY_LIBRARY}")
 ENDIF()
+
+SET(QMC_EXP_THREADING FALSE CACHE BOOL "Experimental non openmp threading models")
+MARK_AS_ADVANCED(QMC_EXP_THREADING)
+IF(QMC_EXP_THREADING)
+  include(CheckAtomic)
+  IF(HAVE_LIBATOMIC)
+    LINK_LIBRARIES("${HAVE_LIBATOMIC}")
+  ENDIF(HAVE_LIBATOMIC)
+  ADD_DEFINITIONS(-DQMC_EXP_THREADING)
+ENDIF(QMC_EXP_THREADING)
 
 #include(ExternalProject)
 #  set(einspline_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/einspline")

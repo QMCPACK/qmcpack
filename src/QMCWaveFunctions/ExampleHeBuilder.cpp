@@ -39,7 +39,7 @@ bool ExampleHeBuilder::put(xmlNodePtr cur)
   }
   auto* WF = new ExampleHeComponent(*(ion_it->second), els);
   WF->put(cur);
-  targetPsi.addOrbital(WF, "example_he");
+  targetPsi.addComponent(WF, "example_he");
   return true;
 }
 

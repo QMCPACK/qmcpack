@@ -21,20 +21,21 @@ namespace qmcplusplus
 MultiSlaterDeterminant::MultiSlaterDeterminant(ParticleSet& targetPtcl, SPOSetProxyPtr upspo, SPOSetProxyPtr dnspo)
     : spo_up(upspo),
       spo_dn(dnspo),
-      RatioTimer("MultiSlaterDeterminant::ratio"),
-      Ratio1Timer("MultiSlaterDeterminant::detEval_ratio"),
-      RatioGradTimer("MultiSlaterDeterminant::ratioGrad"),
-      Ratio1GradTimer("MultiSlaterDeterminant::detEval_ratioGrad"),
-      RatioAllTimer("MultiSlaterDeterminant::ratio(all)"),
-      Ratio1AllTimer("MultiSlaterDeterminant::detEval_ratio(all)"),
-      UpdateTimer("MultiSlaterDeterminant::updateBuffer"),
-      AccRejTimer("MultiSlaterDeterminant::Accept_Reject"),
-      EvaluateTimer("MultiSlaterDeterminant::evaluate"),
-      evalOrbTimer("MultiSlaterDeterminant::evalOrbGrad")
+      RatioTimer(*TimerManager.createTimer("MultiSlaterDeterminant::ratio")),
+      Ratio1Timer(*TimerManager.createTimer("MultiSlaterDeterminant::detEval_ratio")),
+      RatioGradTimer(*TimerManager.createTimer("MultiSlaterDeterminant::ratioGrad")),
+      Ratio1GradTimer(*TimerManager.createTimer("MultiSlaterDeterminant::detEval_ratioGrad")),
+      RatioAllTimer(*TimerManager.createTimer("MultiSlaterDeterminant::ratio(all)")),
+      Ratio1AllTimer(*TimerManager.createTimer("MultiSlaterDeterminant::detEval_ratio(all)")),
+      UpdateTimer(*TimerManager.createTimer("MultiSlaterDeterminant::updateBuffer")),
+      AccRejTimer(*TimerManager.createTimer("MultiSlaterDeterminant::Accept_Reject")),
+      EvaluateTimer(*TimerManager.createTimer("MultiSlaterDeterminant::evaluate")),
+      evalOrbTimer(*TimerManager.createTimer("MultiSlaterDeterminant::evalOrbGrad"))
 {
   registerTimers();
   //Optimizable=true;
   Optimizable   = false;
+  is_fermionic  = true;
   ClassName     = "MultiSlaterDeterminant";
   usingCSF      = false;
   FirstIndex_up = targetPtcl.first(0);
@@ -873,16 +874,6 @@ void MultiSlaterDeterminant::registerTimers()
   AccRejTimer.reset();
   EvaluateTimer.reset();
   evalOrbTimer.reset();
-  TimerManager.addTimer(&RatioTimer);
-  TimerManager.addTimer(&RatioGradTimer);
-  TimerManager.addTimer(&RatioAllTimer);
-  TimerManager.addTimer(&Ratio1Timer);
-  TimerManager.addTimer(&Ratio1GradTimer);
-  TimerManager.addTimer(&Ratio1AllTimer);
-  TimerManager.addTimer(&UpdateTimer);
-  TimerManager.addTimer(&AccRejTimer);
-  TimerManager.addTimer(&EvaluateTimer);
-  TimerManager.addTimer(&evalOrbTimer);
 }
 
 } // namespace qmcplusplus

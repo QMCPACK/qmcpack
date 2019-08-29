@@ -212,6 +212,7 @@ ENDIF()
     Particle/VirtualParticleSet.cpp
     Particle/ParticleSet.BC.cpp 
     Particle/MCWalkerConfiguration.cpp 
+    Particle/MCPopulation.cpp 
     Particle/createDistanceTableAA.cpp
     Particle/createDistanceTableAB.cpp
     Particle/HDFWalkerInputManager.cpp
@@ -319,6 +320,7 @@ ENDIF()
     SUBDIRS(Utilities/tests)
     SUBDIRS(einspline/tests)
     SUBDIRS(spline2/tests)
+    SUBDIRS(Concurrency/tests)
     SUBDIRS(OhmmsData/tests)
     SUBDIRS(io/tests)
     SUBDIRS(Lattice/tests)

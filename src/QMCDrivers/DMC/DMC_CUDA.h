@@ -61,13 +61,15 @@ private:
   bool checkBounds(const PosType& newpos);
   void checkBounds(std::vector<PosType>& newpos, std::vector<bool>& valid);
 
+  QMCRunType getRunType() { return QMCRunType::DMC; }
+
   ///hide initialization from the main function
   void resetRun();
   NonLocalTOperator NLop;
   ///use T-moves
   int UseTMove;
 
-  NewTimer ResizeTimer, DriftDiffuseTimer, BranchTimer, HTimer;
+  NewTimer& ResizeTimer, &DriftDiffuseTimer, &BranchTimer, &HTimer;
 };
 } // namespace qmcplusplus
 

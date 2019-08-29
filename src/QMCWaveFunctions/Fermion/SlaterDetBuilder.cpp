@@ -54,7 +54,7 @@ SlaterDetBuilder::SlaterDetBuilder(ParticleSet& els, TrialWaveFunction& psi, Ptc
     : WaveFunctionComponentBuilder(els, psi),
       ptclPool(psets),
       mySPOSetBuilderFactory(0),
-      slaterdet_0(0),
+      slaterdet_0(nullptr),
       multislaterdet_0(0),
       multislaterdetfast_0(0)
 {
@@ -379,13 +379,13 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
   if (multiDet)
   {
     if (FastMSD)
-      targetPsi.addOrbital(multislaterdetfast_0, "MultiSlaterDeterminantFast", true);
+      targetPsi.addComponent(multislaterdetfast_0, "MultiSlaterDeterminantFast");
     else
-      targetPsi.addOrbital(multislaterdet_0, "MultiSlaterDeterminant", true);
+      targetPsi.addComponent(multislaterdet_0, "MultiSlaterDeterminant");
   }
   else
   {
-    targetPsi.addOrbital(slaterdet_0, "SlaterDet", true);
+    targetPsi.addComponent(slaterdet_0, "SlaterDet");
   }
   delete mySPOSetBuilderFactory;
   mySPOSetBuilderFactory = 0;

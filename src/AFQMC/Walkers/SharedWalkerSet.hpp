@@ -44,10 +44,10 @@ class SharedWalkerSet: public WalkerSetBase<shared_allocator<ComplexType>,Comple
                                            > 
 {
 
+  public:
+
   using Base = WalkerSetBase<shared_allocator<ComplexType>,ComplexType*
                             >;
-
-  public:
 
   /// constructor
   SharedWalkerSet(afqmc::TaskGroup_& tg_, xmlNodePtr cur, AFQMCInfo& info, 

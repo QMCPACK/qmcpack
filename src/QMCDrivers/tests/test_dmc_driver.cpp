@@ -89,14 +89,15 @@ TEST_CASE("DMC", "[drivers][dmc]")
 
   TrialWaveFunction psi = TrialWaveFunction(c);
   ConstantOrbital* orb  = new ConstantOrbital;
-  psi.addOrbital(orb, "Constant");
+  psi.addComponent(orb, "Constant");
   psi.registerData(elec, elec.WalkerList[0]->DataSet);
   elec.WalkerList[0]->DataSet.allocate();
 
   FakeRandom rg;
 
   QMCHamiltonian h;
-  h.addOperator(new BareKineticEnergy<double>(elec), "Kinetic");
+  BareKineticEnergy<double>* p_bke = new BareKineticEnergy<double>(elec);
+  h.addOperator(p_bke, "Kinetic");
   h.addObservables(elec); // get double free error on 'h.Observables' w/o this
 
   elec.resetWalkerProperty(); // get memory corruption w/o this
@@ -140,5 +141,8 @@ TEST_CASE("DMC", "[drivers][dmc]")
   REQUIRE(elec.R[1][0] == Approx(0.0));
   REQUIRE(elec.R[1][1] == Approx(-0.372329741105903));
   REQUIRE(elec.R[1][2] == Approx(1.0));
+
+  delete doc;
+  delete p_bke;
 }
 } // namespace qmcplusplus

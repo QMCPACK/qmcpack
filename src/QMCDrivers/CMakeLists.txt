@@ -25,6 +25,8 @@ SET(QMCDRIVERS
   SimpleFixedNodeBranch.cpp
   BranchIO.cpp
   QMCDriver.cpp
+  QMCDriverInput.cpp
+  QMCDriverNew.cpp
   QMCOptimize.cpp
   QMCLinearOptimize.cpp
   QMCCorrelatedSamplingLinearOptimize.cpp
@@ -39,6 +41,8 @@ SET(QMCDRIVERS
   VMC/VMCUpdatePbyP.cpp
   VMC/VMCUpdateAll.cpp
   VMC/VMCFactory.cpp
+  VMC/VMCFactoryNew.cpp
+  VMC/VMCDriverInput.cpp
   DMC/DMC.cpp
   DMC/DMCUpdateAll.cpp
   DMC/DMCUpdatePbyPFast.cpp
@@ -68,7 +72,8 @@ IF(QMC_CUDA)
 ENDIF(QMC_CUDA)
 
   SET(QMCDRIVERS ${QMCDRIVERS} 
-      VMC/VMC.cpp
+    VMC/VMC.cpp
+    VMC/VMCBatched.cpp
       VMC/VMCLinearOpt.cpp
       QMCCostFunction.cpp
      )

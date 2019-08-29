@@ -37,58 +37,6 @@
 
 namespace qmcplusplus
 {
-struct CoefficientHolder
-{
-  typedef WaveFunctionComponent::RealType RealType;
-
-  std::vector<opt_variables_type> oldVars;
-  std::vector<RealType> energies;
-  std::vector<RealType> variances;
-
-  void addParams(opt_variables_type& var, RealType e, RealType v)
-  {
-    oldVars.push_back(var);
-    energies.push_back(e);
-    variances.push_back(v);
-  }
-
-  //this returns the "best" parameters stored in the history. we=energy weight and wv=weightvariance
-  opt_variables_type getBestCoefficients(RealType we, RealType wv, bool print = 0)
-  {
-    int best(0);
-    RealType bestVal(0);
-    bestVal = energies[0] * we + variances[0] * wv;
-    if (print)
-      app_log() << 0 << " " << energies[0] << " " << variances[0] << " " << bestVal << std::endl;
-    for (int ix = 1; ix < energies.size(); ix++)
-    {
-      if (print)
-        app_log() << ix << " " << energies[ix] << " " << variances[ix] << " " << energies[ix] * we + variances[ix] * wv
-                  << std::endl;
-      if (energies[ix] * we + variances[ix] * wv < bestVal)
-      {
-        bestVal = energies[ix] * we + variances[ix] * wv;
-        best    = ix;
-      }
-    }
-    return oldVars[best];
-  }
-  opt_variables_type getAvgCoefficients(int lastN)
-  {
-    opt_variables_type return_params(oldVars[0]);
-    for (int i = 0; i < return_params.size(); i++)
-      return_params[i] = 0;
-    int start(std::max((int)(oldVars.size() - lastN), 0));
-    for (int x = start; x < oldVars.size(); x++)
-      for (int i = 0; i < return_params.size(); i++)
-        return_params[i] += oldVars[x][i];
-    RealType nrm(1.0 / (oldVars.size() - start));
-    for (int i = 0; i < return_params.size(); i++)
-      return_params[i] *= nrm;
-    return return_params;
-  }
-};
-
 /** @ingroup MBWfs
  * @brief Class to represent a many-body trial wave function
  *
@@ -119,6 +67,9 @@ public:
   typedef ParticleSet::Walker_t Walker_t;
 #endif
 
+  /// enum type for computing partial WaveFunctionComponents
+  enum class ComputeType { ALL, FERMIONIC, NONFERMIONIC};
+
   ///differential gradients
   ParticleSet::ParticleGradient_t G;
   ///differential laplacians
@@ -145,9 +96,11 @@ public:
   inline RealType getLogPsi() const { return LogValue; }
   inline void setLogPsi(RealType LogPsi_new) { LogValue = LogPsi_new; }
 
-  ///Add an WaveFunctionComponent
-  //void addOrbital(WaveFunctionComponent* aterm);
-  void addOrbital(WaveFunctionComponent* aterm, const std::string& aname, bool fermion = false);
+  /** add a WaveFunctionComponent
+   * @param aterm a WaveFunctionComponent pointer
+   * @param aname a name to the added WaveFunctionComponent object for printing
+   */
+  void addComponent(WaveFunctionComponent* aterm, std::string aname);
 
   ///read from xmlNode
   bool put(xmlNodePtr cur);
@@ -192,13 +145,19 @@ public:
                         ParticleSet::ParticleGradient_t& fixedG,
                         ParticleSet::ParticleLaplacian_t& fixedL);
 
-  /** functions to handle particle-by-particle update */
+  /** functions to handle particle-by-particle update
+   * both ratio and full_ratio will be replaced by calcRatio which will handle ValueType.
+   */
   RealType ratio(ParticleSet& P, int iat);
-  ValueType full_ratio(ParticleSet& P, int iat);
+
+  /** function that computes psi(R_new) / psi(R_current). It returns a complex value if the wavefunction 
+  *   is complex. It differs from the ratio(ParticleSet& P, int iat) function in the way that the ratio
+  *   function takes the absolute value of psi(R_new) / psi(R_current). */
+  ValueType calcRatio(ParticleSet& P, int iat, ComputeType ct = ComputeType::ALL);
 
   /** compulte multiple ratios to handle non-local moves and other virtual moves
    */
-  void evaluateRatios(VirtualParticleSet& P, std::vector<RealType>& ratios);
+  void evaluateRatios(VirtualParticleSet& P, std::vector<ValueType>& ratios);
   /** compute both ratios and deriatives of ratio with respect to the optimizables*/
   void evaluateDerivRatios(VirtualParticleSet& P, const opt_variables_type& optvars,
       std::vector<ValueType>& ratios, Matrix<ValueType>& dratio);
@@ -243,6 +202,10 @@ public:
                            std::vector<ValueType>& dhpsioverpsi,
                            bool project=false);
 
+  void evaluateDerivativesWF(ParticleSet& P,
+                             const opt_variables_type& optvars,
+                             std::vector<ValueType>& dlogpsi);
+
   void evaluateGradDerivatives(const ParticleSet::ParticleGradient_t& G_in, std::vector<ValueType>& dgradlogpsi);
 
   /** evaluate the hessian w.r.t. electronic coordinates of particle iat **/
@@ -262,8 +225,6 @@ public:
 
   void setTwist(std::vector<RealType> t) { myTwist = t; }
   const std::vector<RealType> twist() { return myTwist; }
-
-  CoefficientHolder coefficientHistory;
 
   inline void setMassTerm(ParticleSet& P)
   {

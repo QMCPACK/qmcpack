@@ -23,20 +23,17 @@ namespace qmcplusplus
 WaveFunctionComponent::WaveFunctionComponent()
     : IsOptimizing(false),
       Optimizable(true),
+      is_fermionic(false),
       UpdateMode(ORB_WALKER),
       LogValue(1.0),
       PhaseValue(0.0),
       ClassName("WaveFunctionComponent"),
-      derivsDone(false),
-      parameterType(0),
       Bytes_in_WFBuffer(0)
 #if !defined(ENABLE_SMARTPOINTER)
       ,
       dPsi(0)
 #endif
 {
-  ///store instead of computing
-  Need2Compute4PbyP = false;
 }
 
 // WaveFunctionComponent::WaveFunctionComponent(const WaveFunctionComponent& old):
@@ -71,6 +68,18 @@ void WaveFunctionComponent::evaluateDerivatives(ParticleSet& P,
   if (dPsi)
 #endif
     dPsi->evaluateDerivatives(P, active, dlogpsi, dhpsioverpsi);
+}
+
+void WaveFunctionComponent::evaluateDerivativesWF(ParticleSet& P,
+                                      const opt_variables_type& active,
+                                      std::vector<ValueType>& dlogpsi)
+{
+#if defined(ENABLE_SMARTPOINTER)
+  if (dPsi.get())
+#else
+  if (dPsi)
+#endif
+    dPsi->evaluateDerivativesWF(P, active, dlogpsi);
 }
 
 /*@todo makeClone should be a pure virtual function

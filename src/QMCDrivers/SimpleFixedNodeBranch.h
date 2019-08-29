@@ -26,6 +26,7 @@
 #include <Particle/MCWalkerConfiguration.h>
 #include <Estimators/BlockHistogram.h>
 #include <Estimators/accumulators.h>
+#include "QMCDrivers/WalkerControlBase.h"
 #include <Utilities/NewTimer.h>
 #include <bitset>
 
@@ -35,7 +36,6 @@
 
 namespace qmcplusplus
 {
-class WalkerControlBase;
 class EstimatorManagerBase;
 
 /** Manages the state of QMC sections and handles population control for DMCs
@@ -138,7 +138,7 @@ struct SimpleFixedNodeBranch : public QMCTraits
    *
    * Mostly internal
    */
-  typedef TinyVector<EstimatorRealType, B_VPARAM_MAX> VParamType;
+  typedef TinyVector<FullPrecRealType, B_VPARAM_MAX> VParamType;
   VParamType vParam;
 
   /** number of remaning steps for a specific tasks
@@ -147,19 +147,19 @@ struct SimpleFixedNodeBranch : public QMCTraits
    */
   int ToDoSteps;
   ///Feed*log(N)
-  EstimatorRealType logN;
+  FullPrecRealType logN;
   ///save xml element
   xmlNodePtr myNode;
   ///WalkerController
-  WalkerControlBase* WalkerController;
+  std::unique_ptr<WalkerControlBase> WalkerController;
   ///Backup WalkerController for mixed DMC
-  WalkerControlBase* BackupWalkerController;
+  std::unique_ptr<WalkerControlBase> BackupWalkerController;
   ///EstimatorManager
   EstimatorManagerBase* MyEstimator;
   ///a simple accumulator for energy
-  accumulator_set<EstimatorRealType> EnergyHist;
+  accumulator_set<FullPrecRealType> EnergyHist;
   ///a simple accumulator for variance
-  accumulator_set<EstimatorRealType> VarianceHist;
+  accumulator_set<FullPrecRealType> VarianceHist;
   ///a simple accumulator for energy
   accumulator_set<RealType> R2Accepted;
   ///a simple accumulator for energy
@@ -180,7 +180,7 @@ struct SimpleFixedNodeBranch : public QMCTraits
   std::vector<std::string> sParam;
 
   /// Used for the average scaling
-  EstimatorRealType ScaleSum;
+  FullPrecRealType ScaleSum;
   unsigned long ScaleNum;
   //@TODO move these to private
   ///LogJacob
@@ -263,10 +263,10 @@ struct SimpleFixedNodeBranch : public QMCTraits
    *
    * Cutoff values are set by the variance
    */
-  inline RealType branchWeight(EstimatorRealType enew, EstimatorRealType eold) const
+  inline RealType branchWeight(FullPrecRealType enew, FullPrecRealType eold) const
   {
-    EstimatorRealType taueff_ = vParam[B_TAUEFF] * 0.5;
-    EstimatorRealType x       = std::max(vParam[B_EREF] - enew, vParam[B_EREF] - eold);
+    FullPrecRealType taueff_ = vParam[B_TAUEFF] * 0.5;
+    FullPrecRealType x       = std::max(vParam[B_EREF] - enew, vParam[B_EREF] - eold);
     if (x > vParam[B_BRANCHMAX])
       taueff_ = 0.0;
     else if (x > vParam[B_BRANCHCUTOFF])
@@ -315,8 +315,8 @@ struct SimpleFixedNodeBranch : public QMCTraits
    */
   inline RealType branchWeight(RealType enew, RealType eold, RealType scnew, RealType scold) const
   {
-    EstimatorRealType s1 = (vParam[B_ETRIAL] - vParam[B_EREF]) + (vParam[B_EREF] - enew) * scnew;
-    EstimatorRealType s0 = (vParam[B_ETRIAL] - vParam[B_EREF]) + (vParam[B_EREF] - eold) * scold;
+    FullPrecRealType s1 = (vParam[B_ETRIAL] - vParam[B_EREF]) + (vParam[B_EREF] - enew) * scnew;
+    FullPrecRealType s0 = (vParam[B_ETRIAL] - vParam[B_EREF]) + (vParam[B_EREF] - eold) * scold;
     return std::exp(vParam[B_TAUEFF] * 0.5 * (s1 + s0));
   }
 
@@ -329,8 +329,8 @@ struct SimpleFixedNodeBranch : public QMCTraits
    */
   inline RealType branchWeight(RealType enew, RealType eold, RealType scnew, RealType scold, RealType p) const
   {
-    EstimatorRealType s1 = (vParam[B_ETRIAL] - vParam[B_EREF]) + (vParam[B_EREF] - enew) * scnew;
-    EstimatorRealType s0 = (vParam[B_ETRIAL] - vParam[B_EREF]) + (vParam[B_EREF] - eold) * scold;
+    FullPrecRealType s1 = (vParam[B_ETRIAL] - vParam[B_EREF]) + (vParam[B_EREF] - enew) * scnew;
+    FullPrecRealType s0 = (vParam[B_ETRIAL] - vParam[B_EREF]) + (vParam[B_EREF] - eold) * scold;
     return std::exp(vParam[B_TAUEFF] * (p * 0.5 * (s1 - s0) + s0));
     //return std::exp(TauEff*(p*0.5*(sp-sq)+sq));
   }
@@ -345,9 +345,9 @@ struct SimpleFixedNodeBranch : public QMCTraits
   {
     ScaleSum += scnew + scold;
     ScaleNum += 2;
-    EstimatorRealType scavg = (ScaleNum > 10000) ? ScaleSum / (RealType)ScaleNum : 1.0;
-    EstimatorRealType s1    = (vParam[B_ETRIAL] - vParam[B_EREF]) + (vParam[B_EREF] - enew) * scnew / scavg;
-    EstimatorRealType s0    = (vParam[B_ETRIAL] - vParam[B_EREF]) + (vParam[B_EREF] - eold) * scold / scavg;
+    FullPrecRealType scavg = (ScaleNum > 10000) ? ScaleSum / (RealType)ScaleNum : 1.0;
+    FullPrecRealType s1    = (vParam[B_ETRIAL] - vParam[B_EREF]) + (vParam[B_EREF] - enew) * scnew / scavg;
+    FullPrecRealType s0    = (vParam[B_ETRIAL] - vParam[B_EREF]) + (vParam[B_EREF] - eold) * scold / scavg;
     return std::exp(taueff * 0.5 * (s1 + s0));
   }
 
@@ -424,9 +424,9 @@ private:
   //void read(hid_t grp);
 
   ///set branch cutoff, max, filter
-  void setBranchCutoff(EstimatorRealType variance,
-                       EstimatorRealType targetSigma,
-                       EstimatorRealType maxSigma,
+  void setBranchCutoff(FullPrecRealType variance,
+                       FullPrecRealType targetSigma,
+                       FullPrecRealType maxSigma,
                        int Nelec = 0);
 };
 

@@ -68,8 +68,8 @@ public:
 
   Return_t evaluateValueAndDerivatives(ParticleSet& P,
                                        const opt_variables_type& optvars,
-                                       const std::vector<RealType>& dlogpsi,
-                                       std::vector<RealType>& dhpsioverpsi);
+                                       const std::vector<ValueType>& dlogpsi,
+                                       std::vector<ValueType>& dhpsioverpsi);
 
   /** Do nothing */
   bool put(xmlNodePtr cur) { return true; }
@@ -82,7 +82,7 @@ public:
 
   QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 
-  void add(int groupID, NonLocalECPComponent* pp);
+  void addComponent(int groupID, NonLocalECPComponent* pp);
 
   /** set the internal RNG pointer as the given pointer
    * @param rng input RNG pointer
@@ -128,8 +128,6 @@ private:
   NonLocalTOperator nonLocalOps;
   ///true if we should compute forces
   bool ComputeForces;
-  ///true if we should use new algorithm
-  bool UseVP;
   ///Pulay force vector
   ParticleSet::ParticlePos_t PulayTerm;
 #if !defined(REMOVE_TRACEMANAGER)

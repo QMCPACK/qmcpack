@@ -61,7 +61,7 @@ QMCCorrelatedSamplingLinearOptimize::QMCCorrelatedSamplingLinearOptimize(MCWalke
 {
   IsQMCDriver = false;
   //set the optimization flag
-  QMCDriverMode.set(QMC_OPTIMIZE, 1);
+  qmc_driver_mode.set(QMC_OPTIMIZE, 1);
   //read to use vmc output (just in case)
   RootName = "pot";
   QMCType  = "QMCCorrelatedSamplingLinearOptimize";
@@ -210,10 +210,11 @@ bool QMCCorrelatedSamplingLinearOptimize::run()
     }
     if (MinMethod == "rescale")
     {
-      for (int i = 0; i < numParams; i++) {
-        //FIXME This std::real should be removed later when the optimizer starts to work with complex parameters 
+      for (int i = 0; i < numParams; i++)
+      {
+        //FIXME This std::real should be removed later when the optimizer starts to work with complex parameters
         optTarget->Params(i) = currentParameters[i] + Lambda * currentParameterDirections[i + 1];
-        bestParameters[i] = std::real(optTarget->Params(i));
+        bestParameters[i]    = std::real(optTarget->Params(i));
       }
       if (GEVtype == "H2")
         acceptedOneMove = true;
@@ -319,23 +320,6 @@ bool QMCCorrelatedSamplingLinearOptimize::put(xmlNodePtr q)
     {
       mcwalkerNodePtr.push_back(cur);
     }
-    //         else if (cname == "optimizer")
-    //         {
-    //             xmlChar* att= xmlGetProp(cur,(const xmlChar*)"method");
-    //             if (att)
-    //             {
-    //                 optmethod = (const char*)att;
-    //             }
-    //             optNode=cur;
-    //         }
-    //         else if (cname == "optimize")
-    //         {
-    //             xmlChar* att= xmlGetProp(cur,(const xmlChar*)"method");
-    //             if (att)
-    //             {
-    //                 optmethod = (const char*)att;
-    //             }
-    //         }
     cur = cur->next;
   }
   //no walkers exist, add 10
