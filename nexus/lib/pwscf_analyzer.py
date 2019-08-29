@@ -236,14 +236,17 @@ class PwscfAnalyzer(SimulationAnalyzer):
             read_rel      = False
             for i in xrange(len(lines)):
                 l = lines[i]
-                if '- SPIN UP -' in l:
-                    up_spin   = True
+                if 'End of self-consistent calculation' in l:
                     # Initialize each time in case a hybrid functional was used
                     nfound = 0
                     index = -1
                     bands = obj()
                     bands.up = obj()
                     bands.down = obj()
+                #end if
+
+                if '- SPIN UP -' in l:
+                    up_spin   = True
                 elif '- SPIN DOWN -' in l:
                     up_spin   = False
                     index = -1
@@ -254,7 +257,6 @@ class PwscfAnalyzer(SimulationAnalyzer):
                         num_kpoints      = int(l.strip().split()[4])
                     except:
                         print "Number of k-points {0} is not an integer".format(num_kpoints)
-
                     kpoints_2pi_alat = lines[i+2:i+2+num_kpoints]
                     kpoints_rel      = lines[i+4+num_kpoints:i+4+2*num_kpoints]
                     kpoints_2pi_alat = array([k.strip().split()[4:6] + [k.strip().split()[6][0:-2]] for k in kpoints_2pi_alat], dtype=float)
