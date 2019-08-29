@@ -242,18 +242,8 @@ public:
      This is using slicing of the dataspace described in the corresponding 
      version of read
   */
-  template<typename T>
-  bool readEntry(T& data, const std::vector<int>& readSpec, const std::string& aname)
-  {
-    if (Mode[NOIO])
-      return true;
-    hid_t p = group_id.empty() ? file_id : group_id.top();
-    h5data_proxy<T> e(data);
-    return e.read(p, aname, readSpec);
-  }
-
   template<typename T, typename IC>
-  bool readEntry2(T& data, const IC& readSpec, const std::string& aname)
+  bool readHyperslabEntry(T& data, const IC& readSpec, const std::string& aname)
   {
     if (Mode[NOIO])
       return true;
@@ -287,22 +277,12 @@ public:
      for example, if the dataset was [5,2,6] and the vector contained (2,1,-1),
      this would grab 6 elements corresponding to [2,1,:]
   */
-  template<typename T>
-  void read(T& data, const std::vector<int>& readSpec, const std::string& aname)
-  {
-    if (!readEntry(data, readSpec, aname))
-    {
-      std::runtime_error("HDF5 read failure in hdf_archive::read " + aname);
-    }
-  }
-
-  // new version that will use hyperslab rather than stl specific things
   template<typename T, typename IC>
-  void read2(T& data, const IC& readSpec, const std::string& aname)
+  void readHyperslab(T& data, const IC& readSpec, const std::string& aname)
   {
-    if (!readEntry2(data, readSpec, aname))
+    if (!readHyperslabEntry(data, readSpec, aname))
     {
-      std::runtime_error("HDF5 read failure in hdf_archive::read " + aname);
+      std::runtime_error("HDF5 read failure in hdf_archive::readHyperslab " + aname);
     }
   }
 
