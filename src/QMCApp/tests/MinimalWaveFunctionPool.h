@@ -53,6 +53,7 @@ public:
     TrialWaveFunction psi = TrialWaveFunction(comm_);
     wp.setPrimary(&psi);
 
+    delete doc;
     return wp;
   }
 
