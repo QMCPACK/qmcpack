@@ -312,7 +312,7 @@ bool XMLParticleParser::putSpecial(xmlNodePtr cur)
     if (randomizeR == "yes")
     {
       makeUniformRandom(ref_.R);
-      ref_.R.setUnit(PosUnit::LatticeUnit);
+      ref_.R.setUnit(PosUnit::Lattice);
       ref_.convert2Cart(ref_.R);
     }
     else // put them [0,1) in the cell
@@ -372,7 +372,7 @@ struct ParticleAttribXmlNode
 {
   PAT& ref_;
 
-  inline ParticleAttribXmlNode(PAT& a, int utype) : ref_(a) { ref_.InUnit = utype; }
+  inline ParticleAttribXmlNode(PAT& a, PosUnit utype) : ref_(a) { ref_.InUnit = utype; }
 
   inline bool put(xmlNodePtr cur, int n_in, int start)
   {
@@ -417,7 +417,7 @@ void XMLParticleParser::getPtclAttrib(xmlNodePtr cur, int nat, int nloc)
     }
     else
     {
-      ParticleAttribXmlNode<ParticleIndex_t> a(ref_.GroupID, utype);
+      ParticleAttribXmlNode<ParticleIndex_t> a(ref_.GroupID, static_cast<PosUnit>(utype));
       a.put(cur, nat, nloc);
     }
   }
@@ -429,28 +429,28 @@ void XMLParticleParser::getPtclAttrib(xmlNodePtr cur, int nat, int nloc)
     {
       ParticleIndex_t* obj = nullptr;
       obj                  = ref_AttribList.getAttribute(otype, oname, obj);
-      ParticleAttribXmlNode<ParticleIndex_t> a(*obj, utype);
+      ParticleAttribXmlNode<ParticleIndex_t> a(*obj, static_cast<PosUnit>(utype));
       a.put(cur, nat, nloc);
     }
     else if (t_id == PA_ScalarType)
     {
       ParticleScalar_t* obj = nullptr;
       obj                   = ref_AttribList.getAttribute(otype, oname, obj);
-      ParticleAttribXmlNode<ParticleScalar_t> a(*obj, utype);
+      ParticleAttribXmlNode<ParticleScalar_t> a(*obj, static_cast<PosUnit>(utype));
       a.put(cur, nat, nloc);
     }
     else if (t_id == PA_PositionType)
     {
       ParticlePos_t* obj = nullptr;
       obj                = ref_AttribList.getAttribute(otype, oname, obj);
-      ParticleAttribXmlNode<ParticlePos_t> a(*obj, utype);
+      ParticleAttribXmlNode<ParticlePos_t> a(*obj, static_cast<PosUnit>(utype));
       a.put(cur, nat, nloc);
     }
     else if (t_id == PA_TensorType)
     {
       ParticleTensor_t* obj = nullptr;
       obj                   = ref_AttribList.getAttribute(otype, oname, obj);
-      ParticleAttribXmlNode<ParticleTensor_t> a(*obj, utype);
+      ParticleAttribXmlNode<ParticleTensor_t> a(*obj, static_cast<PosUnit>(utype));
       a.put(cur, nat, nloc);
     }
   }

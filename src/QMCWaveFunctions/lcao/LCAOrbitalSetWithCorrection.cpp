@@ -30,7 +30,6 @@ SPOSet* LCAOrbitalSetWithCorrection::makeClone() const
 {
   LCAOrbitalSetWithCorrection* myclone = new LCAOrbitalSetWithCorrection(*this);
   myclone->myBasisSet                  = myBasisSet->makeClone();
-  myclone->IsCloned                    = true;
   return myclone;
 }
 

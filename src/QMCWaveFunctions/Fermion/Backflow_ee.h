@@ -237,7 +237,7 @@ public:
     APP_ABORT("Backflow_ee.h::evaluate(P,QP) not implemented for SoA\n");
 #else
     const auto& myTable = P.getDistTable(myTableIndex_);
-    for (int i = 0; i < myTable.size(SourceIndex); i++)
+    for (int i = 0; i < myTable.sources(); i++)
     {
       for (int nn = myTable.M[i]; nn < myTable.M[i + 1]; nn++)
       {
@@ -261,7 +261,7 @@ public:
     APP_ABORT("Backflow_ee.h::evaluate(P,QP,Bmat_vec,Amat) not implemented for SoA\n");
 #else
     const auto& myTable = P.getDistTable(myTableIndex_);
-    for (int i = 0; i < myTable.size(SourceIndex); i++)
+    for (int i = 0; i < myTable.sources(); i++)
     {
       for (int nn = myTable.M[i]; nn < myTable.M[i + 1]; nn++)
       {
@@ -348,7 +348,7 @@ public:
       }
     }
 #else
-    for (int i = 0; i < myTable.size(SourceIndex); i++)
+    for (int i = 0; i < myTable.sources(); i++)
     {
       for (int nn = myTable.M[i]; nn < myTable.M[i + 1]; nn++)
       {
@@ -734,7 +734,7 @@ public:
     APP_ABORT("Backflow_ee.h::evaluateBmatOnly(P,QP,Bmat_full) not implemented for SoA\n");
 #else
     const auto& myTable = P.getDistTable(myTableIndex_);
-    for (int i = 0; i < myTable.size(SourceIndex); i++)
+    for (int i = 0; i < myTable.sources(); i++)
     {
       for (int nn = myTable.M[i]; nn < myTable.M[i + 1]; nn++)
       {
@@ -837,7 +837,7 @@ public:
       }
     }
 #else
-    for (int i = 0; i < myTable.size(SourceIndex); i++)
+    for (int i = 0; i < myTable.sources(); i++)
     {
       for (int nn = myTable.M[i]; nn < myTable.M[i + 1]; nn++)
       {

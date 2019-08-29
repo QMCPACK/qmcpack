@@ -53,8 +53,8 @@ class MultiSlaterDeterminantFast : public WaveFunctionComponent
 {
 public:
   void registerTimers();
-  NewTimer RatioTimer, RatioGradTimer, RatioAllTimer, UpdateTimer, EvaluateTimer;
-  NewTimer Ratio1Timer, Ratio1GradTimer, Ratio1AllTimer, AccRejTimer;
+  NewTimer &RatioTimer, &RatioGradTimer, &RatioAllTimer, &UpdateTimer, &EvaluateTimer;
+  NewTimer &Ratio1Timer, &Ratio1GradTimer, &Ratio1AllTimer, &AccRejTimer;
 
   typedef SPOSet* SPOSetPtr;
   typedef SPOSetProxyForMSD* SPOSetProxyPtr;
@@ -130,7 +130,11 @@ public:
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& optvars,
                            std::vector<ValueType>& dlogpsi,
-                           std::vector<ValueType>& dhpsioverpsi);
+                           std::vector<ValueType>& dhpsioverpsi) override;
+
+  void evaluateDerivativesWF(ParticleSet& P,
+                             const opt_variables_type& optvars,
+                             std::vector<ValueType>& dlogpsi) override;
 
   void resize(int, int);
   void initialize();
