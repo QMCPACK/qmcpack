@@ -1810,10 +1810,6 @@ void EinsplineSetExtended<StorageType>::registerTimers()
   VGLTimer.reset();
   VGLMatTimer.reset();
   EinsplineTimer.reset();
-  TimerManager.addTimer(&ValueTimer);
-  TimerManager.addTimer(&VGLTimer);
-  TimerManager.addTimer(&VGLMatTimer);
-  TimerManager.addTimer(&EinsplineTimer);
 }
 
 
@@ -1865,15 +1861,7 @@ std::string EinsplineSetHybrid<std::complex<double>>::Type()
 template<>
 EinsplineSetHybrid<double>::EinsplineSetHybrid() : CurrentWalkers(0)
 {
-  ValueTimer.set_name("EinsplineSetHybrid::ValueOnly");
-  VGLTimer.set_name("EinsplineSetHybrid::VGL");
-  ValueTimer.set_name("EinsplineSetHybrid::VGLMat");
-  EinsplineTimer.set_name("EinsplineSetHybrid::Einspline");
   className = "EinsplineSeHybrid";
-  TimerManager.addTimer(&ValueTimer);
-  TimerManager.addTimer(&VGLTimer);
-  TimerManager.addTimer(&VGLMatTimer);
-  TimerManager.addTimer(&EinsplineTimer);
   for (int i = 0; i < OHMMS_DIM; i++)
     HalfG[i] = 0;
 }
@@ -1881,15 +1869,7 @@ EinsplineSetHybrid<double>::EinsplineSetHybrid() : CurrentWalkers(0)
 template<>
 EinsplineSetHybrid<std::complex<double>>::EinsplineSetHybrid() : CurrentWalkers(0)
 {
-  ValueTimer.set_name("EinsplineSetHybrid::ValueOnly");
-  VGLTimer.set_name("EinsplineSetHybrid::VGL");
-  ValueTimer.set_name("EinsplineSetHybrid::VGLMat");
-  EinsplineTimer.set_name("EinsplineSetHybrid::Einspline");
   className = "EinsplineSeHybrid";
-  TimerManager.addTimer(&ValueTimer);
-  TimerManager.addTimer(&VGLTimer);
-  TimerManager.addTimer(&VGLMatTimer);
-  TimerManager.addTimer(&EinsplineTimer);
   for (int i = 0; i < OHMMS_DIM; i++)
     HalfG[i] = 0;
 }

@@ -37,6 +37,7 @@ struct kSpaceJastrowBuilder : public WaveFunctionComponentBuilder
   }
 
   bool put(xmlNodePtr cur);
+  void outputJastrow(kSpaceJastrow* jastrow);
 };
 
 } // namespace qmcplusplus
