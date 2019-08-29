@@ -51,6 +51,7 @@ namespace qmcplusplus
 class TrialWaveFunction : public MPIObjectBase
 {
 public:
+  // derived types from WaveFunctionComponent
   typedef WaveFunctionComponent::RealType RealType;
   typedef WaveFunctionComponent::ValueType ValueType;
   typedef WaveFunctionComponent::PosType PosType;
@@ -59,15 +60,8 @@ public:
   typedef WaveFunctionComponent::WFBufferType WFBufferType;
   typedef WaveFunctionComponent::HessType HessType;
   typedef WaveFunctionComponent::HessVector_t HessVector_t;
-  // output variable types
-  // the RealType for log(|psi(R)|)
-  using LogRealType = QTFull::RealType;
-  // the ValueType for log(psi(R))
-  using LogValueType = QTFull::ValueType;
-  // the RealType for |psi(R')/psi(R)|
-  using RatioRealType = QTFull::RealType;
-  // the ValueType for psi(R')/psi(R)
-  using RatioValueType = QTFull::ValueType;
+  using LogValueType = WaveFunctionComponent::LogValueType;
+  using PsiValueType = WaveFunctionComponent::PsiValueType;
 
 #ifdef QMC_CUDA
   using CTS = CUDAGlobalTypes;
@@ -145,9 +139,9 @@ public:
   RealType evaluateLog(ParticleSet& P);
 
   /** evalaute the log (internally gradients and laplacian) of the trial wavefunction of one or multiple walkers. gold reference */
-  void flex_evaluateLog(const std::vector<WaveFunction*>& WF_list,
-                        const std::vector<ParticleSet*>& P_list
-                        const std::vector<LogRealType>& P_list) const;
+  void flex_evaluateLog(const std::vector<TrialWaveFunction*>& WF_list,
+                        const std::vector<ParticleSet*>& P_list,
+                        std::vector<LogValueType>& log_vals) const;
 
   /** recompute the value of the orbitals which require critical accuracy */
   void recompute(ParticleSet& P);
@@ -302,6 +296,10 @@ private:
 
   std::vector<NewTimer*> myTimers;
   std::vector<RealType> myTwist;
+
+  // helper function for extrating a list of WaveFunctionComponent from a list of TrialWaveFunction
+  std::vector<WaveFunctionComponent*>&&
+  extract_WFC_list(const std::vector<TrialWaveFunction*>& WF_list, int id) const;
 
   ///////////////////////////////////////////
   // Vectorized version for GPU evaluation //

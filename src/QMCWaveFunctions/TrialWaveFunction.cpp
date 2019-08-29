@@ -131,6 +131,44 @@ TrialWaveFunction::RealType TrialWaveFunction::evaluateLog(ParticleSet& P)
   //return LogValue=real(logpsi);
 }
 
+void TrialWaveFunction::flex_evaluateLog(const std::vector<TrialWaveFunction*>& WF_list,
+                                         const std::vector<ParticleSet*>& P_list,
+                                         std::vector<LogValueType>& log_vals) const
+{
+  if (P_list.size() > 1)
+  {
+    constexpr RealType czero(0);
+    const auto G_list(extract_G_list(P_list));
+    const auto L_list(extract_L_list(P_list));
+    std::vector<LogValueType> log_vals_z(P_list.size());
+
+    for (int iw = 0; iw < P_list.size(); iw++)
+    {
+      *G_list[iw] = czero;
+      *L_list[iw] = czero;
+      log_vals[iw] = czero;
+    }
+
+    for (int i = 0, ii = RECOMPUTE_TIMER; i < Z.size(); ++i, ii += TIMER_SKIP)
+    {
+      myTimers[ii]->start();
+      const auto WFC_list(extract_WFC_list(WF_list, i));
+      Z[i]->mw_evaluateLog(WFC_list, P_list, G_list, L_list, log_vals_z);
+      for (int iw = 0; iw < P_list.size(); iw++)
+        log_vals[iw] += log_vals_z[iw];
+      myTimers[ii]->stop();
+    }
+
+    for (int iw = 0; iw < P_list.size(); iw++)
+    {
+      WF_list[iw]->LogValue = std::real(log_vals[iw]);
+      WF_list[iw]->PhaseValue = std::imag(log_vals[iw]);
+    }
+  }
+  else if(P_list.size()==1)
+    WF_list[0]->evaluateLog(*P_list[0]);
+}
+
 void TrialWaveFunction::recompute(ParticleSet& P)
 {
   std::vector<WaveFunctionComponent*>::iterator it(Z.begin());
@@ -716,6 +754,15 @@ void TrialWaveFunction::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<Value
       ratios[j] *= t[j];
     myTimers[ii]->stop();
   }
+}
+
+std::vector<WaveFunctionComponent*>&&
+TrialWaveFunction::extract_WFC_list(const std::vector<TrialWaveFunction*>& WF_list, int id) const
+{
+  std::vector<WaveFunctionComponent*> WFC_list;
+  for (auto WF : WF_list)
+    WFC_list.push_back(WF->Z[id]);
+  return std::move(WFC_list);
 }
 
 } // namespace qmcplusplus

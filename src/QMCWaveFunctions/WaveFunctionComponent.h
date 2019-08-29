@@ -108,9 +108,9 @@ struct WaveFunctionComponent : public QMCTraits
   typedef OrbitalSetTraits<ValueType>::HessVector_t HessVector_t;
 
   // the value type for log(psi)
-  using LogValueType = QTFull::ValueType;
+  using LogValueType = std::complex<QTFull::RealType>;
   // the value type for psi(r')/psi(r)
-  using RatioValueType = QTFull::ValueType;
+  using PsiValueType = QTFull::ValueType;
 
   /** flag to set the optimization mode */
   bool IsOptimizing;
@@ -223,11 +223,11 @@ struct WaveFunctionComponent : public QMCTraits
                               const std::vector<ParticleSet*>& P_list,
                               const std::vector<ParticleSet::ParticleGradient_t*>& G_list,
                               const std::vector<ParticleSet::ParticleLaplacian_t*>& L_list,
-                              std::vector<LogValueType>& values)
+                              std::vector<LogValueType>& log_vals)
   {
     #pragma omp parallel for
     for (int iw = 0; iw < WFC_list.size(); iw++)
-      values[iw] = WFC_list[iw]->evaluateLog(*P_list[iw], *G_list[iw], *L_list[iw]);
+      log_vals[iw] = LogValueType(WFC_list[iw]->evaluateLog(*P_list[iw], *G_list[iw], *L_list[iw]), WFC_list[iw]->PhaseValue);
   }
 
   /** recompute the value of the WaveFunctionComponents which require critical accuracy.
@@ -326,7 +326,7 @@ struct WaveFunctionComponent : public QMCTraits
   virtual void mw_ratioGrad(const std::vector<WaveFunctionComponent*>& WFC_list,
                             const std::vector<ParticleSet*>& P_list,
                             int iat,
-                            std::vector<RatioValueType>& ratios,
+                            std::vector<PsiValueType>& ratios,
                             std::vector<PosType>& grad_new)
   {
     #pragma omp parallel for
@@ -408,7 +408,7 @@ struct WaveFunctionComponent : public QMCTraits
   virtual void mw_ratio(const std::vector<WaveFunctionComponent*>& WFC_list,
                         const std::vector<ParticleSet*>& P_list,
                         int iat,
-                        std::vector<RatioValueType>& ratios)
+                        std::vector<PsiValueType>& ratios)
   {
     #pragma omp parallel for
     for (int iw = 0; iw < WFC_list.size(); iw++)
@@ -459,12 +459,12 @@ struct WaveFunctionComponent : public QMCTraits
   virtual void mw_updateBuffer(const std::vector<WaveFunctionComponent*>& WFC_list,
                                const std::vector<ParticleSet*>& P_list,
                                const std::vector<WFBufferType*>& buf_list,
-                               std::vector<LogValueType>& values,
+                               std::vector<LogValueType>& log_vals,
                                bool fromscratch = false)
   {
     #pragma omp parallel for
     for (int iw = 0; iw < WFC_list.size(); iw++)
-      values[iw] = WFC_list[iw]->updateBuffer(*P_list[iw], *buf_list[iw], fromscratch);
+      log_vals[iw] = LogValueType(WFC_list[iw]->updateBuffer(*P_list[iw], *buf_list[iw], fromscratch), WFC_list[iw]->PhaseValue);
   }
 
   /** For particle-by-particle move. Copy data or attach memory
