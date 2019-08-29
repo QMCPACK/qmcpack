@@ -260,7 +260,7 @@ public:
     const auto& d_table = P.getDistTable(my_table_ID_);
     RealType dudr, d2udr2;
     PosType gr;
-    for (int i = 0; i < d_table.size(SourceIndex); i++)
+    for (int i = 0; i < d_table.sources(); i++)
     {
       for (int nn = d_table.M[i]; nn < d_table.M[i + 1]; nn++)
       {
@@ -300,7 +300,7 @@ public:
     grad_grad_psi = 0.0;
     ident.diagonal(1.0);
 
-    for (int i = 0; i < d_table.size(SourceIndex); i++)
+    for (int i = 0; i < d_table.sources(); i++)
     {
       for (int nn = d_table.M[i]; nn < d_table.M[i + 1]; nn++)
       {
@@ -356,7 +356,7 @@ public:
 
     const auto& d_table = VP.getDistTable(my_table_ID_);
     const int* pairid(PairID[iat]);
-    for (int i = 0; i < d_table.size(SourceIndex); ++i)
+    for (int i = 0; i < d_table.sources(); ++i)
     {
       if (i != iat)
       {
@@ -448,7 +448,7 @@ public:
     RealType dudr, d2udr2, u;
     LogValue = 0.0;
     GradType gr;
-    for (int i = 0; i < d_table.size(SourceIndex); i++)
+    for (int i = 0; i < d_table.sources(); i++)
     {
       for (int nn = d_table.M[i]; nn < d_table.M[i + 1]; nn++)
       {

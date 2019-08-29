@@ -148,13 +148,15 @@ public:
    * both ratio and full_ratio will be replaced by calcRatio which will handle ValueType.
    */
   RealType ratio(ParticleSet& P, int iat);
-  ValueType full_ratio(ParticleSet& P, int iat);
-  /** calculate the ratio of the new to old TrialWaveFunction value. Components selected by ComputeType */
-  RealType calcRatio(ParticleSet& P, int iat, ComputeType ct = ComputeType::ALL);
+
+  /** function that computes psi(R_new) / psi(R_current). It returns a complex value if the wavefunction 
+  *   is complex. It differs from the ratio(ParticleSet& P, int iat) function in the way that the ratio
+  *   function takes the absolute value of psi(R_new) / psi(R_current). */
+  ValueType calcRatio(ParticleSet& P, int iat, ComputeType ct = ComputeType::ALL);
 
   /** compulte multiple ratios to handle non-local moves and other virtual moves
    */
-  void evaluateRatios(VirtualParticleSet& P, std::vector<RealType>& ratios);
+  void evaluateRatios(VirtualParticleSet& P, std::vector<ValueType>& ratios);
   /** compute both ratios and deriatives of ratio with respect to the optimizables*/
   void evaluateDerivRatios(VirtualParticleSet& P, const opt_variables_type& optvars,
       std::vector<ValueType>& ratios, Matrix<ValueType>& dratio);
@@ -198,6 +200,10 @@ public:
                            std::vector<ValueType>& dlogpsi,
                            std::vector<ValueType>& dhpsioverpsi,
                            bool project=false);
+
+  void evaluateDerivativesWF(ParticleSet& P,
+                             const opt_variables_type& optvars,
+                             std::vector<ValueType>& dlogpsi);
 
   void evaluateGradDerivatives(const ParticleSet::ParticleGradient_t& G_in, std::vector<ValueType>& dgradlogpsi);
 

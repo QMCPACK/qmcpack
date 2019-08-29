@@ -69,6 +69,18 @@ void WaveFunctionComponent::evaluateDerivatives(ParticleSet& P,
     dPsi->evaluateDerivatives(P, active, dlogpsi, dhpsioverpsi);
 }
 
+void WaveFunctionComponent::evaluateDerivativesWF(ParticleSet& P,
+                                      const opt_variables_type& active,
+                                      std::vector<ValueType>& dlogpsi)
+{
+#if defined(ENABLE_SMARTPOINTER)
+  if (dPsi.get())
+#else
+  if (dPsi)
+#endif
+    dPsi->evaluateDerivativesWF(P, active, dlogpsi);
+}
+
 /*@todo makeClone should be a pure virtual function
  */
 WaveFunctionComponentPtr WaveFunctionComponent::makeClone(ParticleSet& tpq) const

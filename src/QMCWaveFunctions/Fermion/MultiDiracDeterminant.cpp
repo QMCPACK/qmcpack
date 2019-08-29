@@ -326,17 +326,17 @@ MultiDiracDeterminant::MultiDiracDeterminant(const MultiDiracDeterminant& s)
       NP(0),
       FirstIndex(s.FirstIndex),
       ciConfigList(nullptr),
-      UpdateTimer("MultiDiracDeterminant::update"),
-      RatioTimer("MultiDiracDeterminant::ratio"),
-      InverseTimer("MultiDiracDeterminant::inverse"),
-      buildTableTimer("MultiDiracDeterminant::buildTable"),
-      evalWTimer("MultiDiracDeterminant::evalW"),
-      evalOrbTimer("MultiDiracDeterminant::evalOrb"),
-      evalOrb1Timer("MultiDiracDeterminant::evalOrbGrad"),
-      readMatTimer("MultiDiracDeterminant::readMat"),
-      readMatGradTimer("MultiDiracDeterminant::readMatGrad"),
-      buildTableGradTimer("MultiDiracDeterminant::buildTableGrad"),
-      ExtraStuffTimer("MultiDiracDeterminant::ExtraStuff")
+      UpdateTimer(*TimerManager.createTimer("MultiDiracDeterminant::update")),
+      RatioTimer(*TimerManager.createTimer("MultiDiracDeterminant::ratio")),
+      InverseTimer(*TimerManager.createTimer("MultiDiracDeterminant::inverse")),
+      buildTableTimer(*TimerManager.createTimer("MultiDiracDeterminant::buildTable")),
+      evalWTimer(*TimerManager.createTimer("MultiDiracDeterminant::evalW")),
+      evalOrbTimer(*TimerManager.createTimer("MultiDiracDeterminant::evalOrb")),
+      evalOrb1Timer(*TimerManager.createTimer("MultiDiracDeterminant::evalOrbGrad")),
+      readMatTimer(*TimerManager.createTimer("MultiDiracDeterminant::readMat")),
+      readMatGradTimer(*TimerManager.createTimer("MultiDiracDeterminant::readMatGrad")),
+      buildTableGradTimer(*TimerManager.createTimer("MultiDiracDeterminant::buildTableGrad")),
+      ExtraStuffTimer(*TimerManager.createTimer("MultiDiracDeterminant::ExtraStuff"))
 {
   IsCloned = true;
 
@@ -371,17 +371,17 @@ MultiDiracDeterminant::MultiDiracDeterminant(SPOSetPtr const& spos, int first)
       FirstIndex(first),
       ReferenceDeterminant(0),
       ciConfigList(nullptr),
-      UpdateTimer("MultiDiracDeterminant::update"),
-      RatioTimer("MultiDiracDeterminant::ratio"),
-      InverseTimer("MultiDiracDeterminant::inverse"),
-      buildTableTimer("MultiDiracDeterminant::buildTable"),
-      evalWTimer("MultiDiracDeterminant::evalW"),
-      evalOrbTimer("MultiDiracDeterminant::evalOrb"),
-      evalOrb1Timer("MultiDiracDeterminant::evalOrbGrad"),
-      readMatTimer("MultiDiracDeterminant::readMat"),
-      readMatGradTimer("MultiDiracDeterminant::readMatGrad"),
-      buildTableGradTimer("MultiDiracDeterminant::buildTableGrad"),
-      ExtraStuffTimer("MultiDiracDeterminant::ExtraStuff")
+      UpdateTimer(*TimerManager.createTimer("MultiDiracDeterminant::update")),
+      RatioTimer(*TimerManager.createTimer("MultiDiracDeterminant::ratio")),
+      InverseTimer(*TimerManager.createTimer("MultiDiracDeterminant::inverse")),
+      buildTableTimer(*TimerManager.createTimer("MultiDiracDeterminant::buildTable")),
+      evalWTimer(*TimerManager.createTimer("MultiDiracDeterminant::evalW")),
+      evalOrbTimer(*TimerManager.createTimer("MultiDiracDeterminant::evalOrb")),
+      evalOrb1Timer(*TimerManager.createTimer("MultiDiracDeterminant::evalOrbGrad")),
+      readMatTimer(*TimerManager.createTimer("MultiDiracDeterminant::readMat")),
+      readMatGradTimer(*TimerManager.createTimer("MultiDiracDeterminant::readMatGrad")),
+      buildTableGradTimer(*TimerManager.createTimer("MultiDiracDeterminant::buildTableGrad")),
+      ExtraStuffTimer(*TimerManager.createTimer("MultiDiracDeterminant::ExtraStuff"))
 {
   (spos->Optimizable == true) ? Optimizable = true : Optimizable = false;
   ClassName                                                      = "MultiDiracDeterminant";
@@ -516,17 +516,6 @@ void MultiDiracDeterminant::registerTimers()
   ExtraStuffTimer.reset();
   buildTableGradTimer.reset();
   readMatGradTimer.reset();
-  TimerManager.addTimer(&UpdateTimer);
-  TimerManager.addTimer(&RatioTimer);
-  TimerManager.addTimer(&InverseTimer);
-  TimerManager.addTimer(&buildTableTimer);
-  TimerManager.addTimer(&readMatTimer);
-  TimerManager.addTimer(&evalWTimer);
-  TimerManager.addTimer(&evalOrbTimer);
-  TimerManager.addTimer(&evalOrb1Timer);
-  TimerManager.addTimer(&buildTableGradTimer);
-  TimerManager.addTimer(&readMatGradTimer);
-  TimerManager.addTimer(&ExtraStuffTimer);
 }
 
 void MultiDiracDeterminant::buildOptVariables(std::vector<size_t>& C2node)

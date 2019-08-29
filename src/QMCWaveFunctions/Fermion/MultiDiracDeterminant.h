@@ -35,9 +35,9 @@ class MultiDiracDeterminant : public WaveFunctionComponent
 public:
   bool Optimizable;
   void registerTimers();
-  NewTimer UpdateTimer, RatioTimer, InverseTimer, buildTableTimer, readMatTimer, evalWTimer, evalOrbTimer,
-      evalOrb1Timer;
-  NewTimer readMatGradTimer, buildTableGradTimer, ExtraStuffTimer;
+  NewTimer &UpdateTimer, &RatioTimer, &InverseTimer, &buildTableTimer, &readMatTimer, &evalWTimer, &evalOrbTimer,
+      &evalOrb1Timer;
+  NewTimer &readMatGradTimer, &buildTableGradTimer, &ExtraStuffTimer;
   // Optimizable parameters
   opt_variables_type myVars;
 

@@ -314,7 +314,7 @@ public:
   inline GradType evalGrad(ParticleSet& P, int iat)
   {
     const auto& d_table = P.getDistTable(myTableIndex);
-    int n                            = d_table.size(VisitorIndex);
+    int n                            = d_table.targets();
     int tg                           = P.GroupID[iat];
     curGrad                          = 0.0;
     RealType ur, dudr, d2udr2;
@@ -422,8 +422,8 @@ public:
   void registerData(ParticleSet& P, WFBufferType& buf)
   {
     const auto& d_table = P.getDistTable(myTableIndex);
-    d2U.resize(d_table.size(VisitorIndex));
-    dU.resize(d_table.size(VisitorIndex));
+    d2U.resize(d_table.targets());
+    dU.resize(d_table.targets());
     FirstAddressOfdU = &(dU[0][0]);
     LastAddressOfdU  = FirstAddressOfdU + dU.size() * DIM;
     evaluateLogAndStore(P, P.G, P.L);
