@@ -24,6 +24,7 @@
 SET(QMCDRIVERS 
   SimpleFixedNodeBranch.cpp
   BranchIO.cpp
+  MCPopulation.cpp
   QMCDriver.cpp
   QMCDriverInput.cpp
   QMCDriverNew.cpp
