@@ -79,7 +79,6 @@ typedef DiffWaveFunctionComponent* DiffWaveFunctionComponentPtr;
  */
 struct WaveFunctionComponent : public QMCTraits
 {
-
   /** enum for a update mode */
   enum
   {
@@ -226,7 +225,7 @@ struct WaveFunctionComponent : public QMCTraits
   /** recompute the value of the WaveFunctionComponents which require critical accuracy.
    * needed for Slater Determinants but not needed for most types of WaveFunctionComponents
    */
-  virtual void recompute(ParticleSet& P) { }
+  virtual void recompute(ParticleSet& P) {}
 
   // virtual void evaluateHessian(ParticleSet& P, IndexType iat, HessType& grad_grad_psi)
   // {
@@ -350,7 +349,7 @@ struct WaveFunctionComponent : public QMCTraits
 
   /** complete all the delayed updates, must be called after each substep or step during pbyp move
    */
-  virtual void completeUpdates() { }
+  virtual void completeUpdates() {}
 
   /** complete all the delayed updates for all the walkers in a batch
    * must be called after each substep or step during pbyp move

@@ -78,7 +78,12 @@ public:
 #endif
 
   /// enum type for computing partial WaveFunctionComponents
-  enum class ComputeType { ALL, FERMIONIC, NONFERMIONIC};
+  enum class ComputeType
+  {
+    ALL,
+    FERMIONIC,
+    NONFERMIONIC
+  };
 
   ///differential gradients
   ParticleSet::ParticleGradient_t G;
@@ -147,8 +152,7 @@ public:
   RealType evaluateLog(ParticleSet& P);
 
   /** batched verison of evaluateLog. gold reference */
-  void flex_evaluateLog(const std::vector<TrialWaveFunction*>& WF_list,
-                        const std::vector<ParticleSet*>& P_list) const;
+  void flex_evaluateLog(const std::vector<TrialWaveFunction*>& WF_list, const std::vector<ParticleSet*>& P_list) const;
 
   /** recompute the value of the orbitals which require critical accuracy */
   void recompute(ParticleSet& P);
@@ -181,8 +185,10 @@ public:
    */
   void evaluateRatios(VirtualParticleSet& P, std::vector<ValueType>& ratios);
   /** compute both ratios and deriatives of ratio with respect to the optimizables*/
-  void evaluateDerivRatios(VirtualParticleSet& P, const opt_variables_type& optvars,
-      std::vector<ValueType>& ratios, Matrix<ValueType>& dratio);
+  void evaluateDerivRatios(VirtualParticleSet& P,
+                           const opt_variables_type& optvars,
+                           std::vector<ValueType>& ratios,
+                           Matrix<ValueType>& dratio);
 
   void printGL(ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L, std::string tag = "GL");
 
@@ -215,14 +221,13 @@ public:
 
   void rejectMove(int iat);
   /* flexible batched version of rejectMove */
-  void flex_rejectMove(const std::vector<TrialWaveFunction*>& WF_list,
-                       int iat) const;
+  void flex_rejectMove(const std::vector<TrialWaveFunction*>& WF_list, int iat) const;
 
   void acceptMove(ParticleSet& P, int iat);
   /* flexible batched version of acceptMove */
   void flex_acceptMove(const std::vector<TrialWaveFunction*>& WF_list,
-                              const std::vector<ParticleSet*>& P_list,
-                              int iat) const;
+                       const std::vector<ParticleSet*>& P_list,
+                       int iat) const;
   void completeUpdates();
   /* flexible batched version of completeUpdates.  */
   void flex_completeUpdates(const std::vector<TrialWaveFunction*>& WF_list) const;
@@ -233,7 +238,9 @@ public:
   /* flexible batched version of registerData. 
    * Ye: perhaps it doesn't need to be flexible but just operates on all the walkers
    */
-  void flex_registerData(const std::vector<TrialWaveFunction*>& WF_list, const std::vector<ParticleSet*>& P_list, const std::vector<WFBufferType*>& buf_list) const;
+  void flex_registerData(const std::vector<TrialWaveFunction*>& WF_list,
+                         const std::vector<ParticleSet*>& P_list,
+                         const std::vector<WFBufferType*>& buf_list) const;
 
   /** update all the wavefunction components in buffer.
    *  See WaveFunctionComponent::updateBuffer for more detail */
@@ -241,7 +248,10 @@ public:
   /* flexible batched version of updateBuffer. 
    * Ye: perhaps it doesn't need to be flexible but just operates on all the walkers
    */
-  void flex_updateBuffer(const std::vector<TrialWaveFunction*>& WF_list, const std::vector<ParticleSet*>& P_list, const std::vector<WFBufferType*>& buf_list, bool fromscratch = false) const;
+  void flex_updateBuffer(const std::vector<TrialWaveFunction*>& WF_list,
+                         const std::vector<ParticleSet*>& P_list,
+                         const std::vector<WFBufferType*>& buf_list,
+                         bool fromscratch = false) const;
 
   /** copy all the wavefunction components from buffer.
    *  See WaveFunctionComponent::updateBuffer for more detail */
@@ -249,7 +259,9 @@ public:
   /* flexible batched version of copyFromBuffer. 
    * Ye: perhaps it doesn't need to be flexible but just operates on all the walkers
    */
-  void flex_copyFromBuffer(const std::vector<TrialWaveFunction*>& WF_list, const std::vector<ParticleSet*>& P_list, const std::vector<WFBufferType*>& buf_list) const;
+  void flex_copyFromBuffer(const std::vector<TrialWaveFunction*>& WF_list,
+                           const std::vector<ParticleSet*>& P_list,
+                           const std::vector<WFBufferType*>& buf_list) const;
 
   RealType KECorrection() const;
 
@@ -257,11 +269,9 @@ public:
                            const opt_variables_type& optvars,
                            std::vector<ValueType>& dlogpsi,
                            std::vector<ValueType>& dhpsioverpsi,
-                           bool project=false);
+                           bool project = false);
 
-  void evaluateDerivativesWF(ParticleSet& P,
-                             const opt_variables_type& optvars,
-                             std::vector<ValueType>& dlogpsi);
+  void evaluateDerivativesWF(ParticleSet& P, const opt_variables_type& optvars, std::vector<ValueType>& dlogpsi);
 
   void evaluateGradDerivatives(const ParticleSet::ParticleGradient_t& G_in, std::vector<ValueType>& dgradlogpsi);
 
@@ -291,8 +301,7 @@ public:
   /* flexible batched version of evaluateGL.
    * TODO: split the computation from updateBuffer to evaluateGL. Expected to be called by KE
    */
-  void flex_evaluateGL(const std::vector<TrialWaveFunction*>& WF_list,
-                        const std::vector<ParticleSet*>& P_list) const;
+  void flex_evaluateGL(const std::vector<TrialWaveFunction*>& WF_list, const std::vector<ParticleSet*>& P_list) const;
 
 private:
   ///the size of ParticleSet
@@ -326,8 +335,7 @@ private:
   std::vector<RealType> myTwist;
 
   // helper function for extrating a list of WaveFunctionComponent from a list of TrialWaveFunction
-  std::vector<WaveFunctionComponent*>
-  extract_WFC_list(const std::vector<TrialWaveFunction*>& WF_list, int id) const;
+  std::vector<WaveFunctionComponent*> extract_WFC_list(const std::vector<TrialWaveFunction*>& WF_list, int id) const;
 
   ///////////////////////////////////////////
   // Vectorized version for GPU evaluation //
