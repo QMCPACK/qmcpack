@@ -653,7 +653,7 @@ void TrialWaveFunction::flex_registerData(const std::vector<TrialWaveFunction*>&
     WF_list[iw]->BufferCursor_scalar = buf_list[iw]->current_scalar();
   }
 
-  for (int i = 0, ii = ACCEPT_TIMER; i < Z.size(); i++, ii += TIMER_SKIP)
+  for (int i = 0, ii = BUFFER_TIMER; i < Z.size(); i++, ii += TIMER_SKIP)
   {
     ScopedTimer local_timer(myTimers[ii]);
     std::vector<WaveFunctionComponent*> WFC_list(extract_WFC_list(WF_list, i));
@@ -706,7 +706,7 @@ void TrialWaveFunction::flex_updateBuffer(const std::vector<TrialWaveFunction*>&
     buf_list[iw]->rewind(WF_list[iw]->BufferCursor, WF_list[iw]->BufferCursor_scalar);
   }
 
-  for (int i = 0, ii = RECOMPUTE_TIMER; i < Z.size(); ++i, ii += TIMER_SKIP)
+  for (int i = 0, ii = BUFFER_TIMER; i < Z.size(); ++i, ii += TIMER_SKIP)
   {
     ScopedTimer local_timer(myTimers[ii]);
     const auto WFC_list(extract_WFC_list(WF_list, i));
