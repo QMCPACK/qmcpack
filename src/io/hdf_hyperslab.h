@@ -155,12 +155,12 @@ struct hyperslab_proxy
   }
 };
 
-template<typename CT, unsigned MAXDIM>
-struct h5data_proxy<hyperslab_proxy<CT, MAXDIM>>
+template<typename CT, unsigned DIM>
+struct h5data_proxy<hyperslab_proxy<CT, DIM>>
 {
-  hyperslab_proxy<CT, MAXDIM>& ref_;
+  hyperslab_proxy<CT, DIM>& ref_;
 
-  h5data_proxy(hyperslab_proxy<CT, MAXDIM>& a) : ref_(a) {}
+  h5data_proxy(hyperslab_proxy<CT, DIM>& a) : ref_(a) {}
 
   inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
@@ -169,7 +169,7 @@ struct h5data_proxy<hyperslab_proxy<CT, MAXDIM>>
     ref_.adaptShape(sizes_file);
     ref_.checkUserRankSizes();
     return h5d_read(grp, aname.c_str(), ref_.slab_rank, ref_.file_space.dims, ref_.selected_space.dims,
-                    ref_.slab_offset.data(), hyperslab_proxy<CT, MAXDIM>::SpaceType::get_address(ref_.ref_.data()),
+                    ref_.slab_offset.data(), hyperslab_proxy<CT, DIM>::SpaceType::get_address(ref_.ref_.data()),
                     xfer_plist);
   }
 
@@ -177,19 +177,19 @@ struct h5data_proxy<hyperslab_proxy<CT, MAXDIM>>
   {
     ref_.checkUserRankSizes();
     return h5d_write(grp, aname.c_str(), ref_.slab_rank, ref_.file_space.dims, ref_.selected_space.dims,
-                     ref_.slab_offset.data(), hyperslab_proxy<CT, MAXDIM>::SpaceType::get_address(ref_.ref_.data()),
+                     ref_.slab_offset.data(), hyperslab_proxy<CT, DIM>::SpaceType::get_address(ref_.ref_.data()),
                      xfer_plist);
   }
 };
 
 #ifdef BUILD_AFQMC
 #ifdef QMC_CUDA
-template<typename T, unsigned MAXDIM>
-struct h5data_proxy<hyperslab_proxy<boost::multi::array<T, 2, qmc_cuda::cuda_gpu_allocator<T>>, MAXDIM>>
+template<typename T, unsigned DIM>
+struct h5data_proxy<hyperslab_proxy<boost::multi::array<T, 2, qmc_cuda::cuda_gpu_allocator<T>>, DIM>>
 {
   typedef boost::multi::array<T, 2, qmc_cuda::cuda_gpu_allocator<T>> CT;
-  hyperslab_proxy<CT, MAXDIM>& ref_;
-  h5data_proxy(hyperslab_proxy<CT, MAXDIM>& a) : ref_(a) {}
+  hyperslab_proxy<CT, DIM>& ref_;
+  h5data_proxy(hyperslab_proxy<CT, DIM>& a) : ref_(a) {}
   inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
     if (ref_.use_slab)
@@ -220,12 +220,12 @@ struct h5data_proxy<hyperslab_proxy<boost::multi::array<T, 2, qmc_cuda::cuda_gpu
   }
 };
 
-template<typename T, unsigned MAXDIM>
-struct h5data_proxy<hyperslab_proxy<boost::multi::array_ref<T, 2, qmc_cuda::cuda_gpu_ptr<T>>, MAXDIM>>
+template<typename T, unsigned DIM>
+struct h5data_proxy<hyperslab_proxy<boost::multi::array_ref<T, 2, qmc_cuda::cuda_gpu_ptr<T>>, DIM>>
 {
   typedef boost::multi::array_ref<T, 2, qmc_cuda::cuda_gpu_ptr<T>> CT;
-  hyperslab_proxy<CT, MAXDIM>& ref_;
-  h5data_proxy(hyperslab_proxy<CT, MAXDIM>& a) : ref_(a) {}
+  hyperslab_proxy<CT, DIM>& ref_;
+  h5data_proxy(hyperslab_proxy<CT, DIM>& a) : ref_(a) {}
   inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
     if (ref_.use_slab)
