@@ -322,7 +322,7 @@ void QMCDriverNew::createMoveContexts()
   auto firstTouchCreateMoveContexts = [this](int crowd_index) {
     Rng[crowd_index].reset(new RandomGenerator_t(*(RandomNumberControl::Children[crowd_index])));
     move_contexts_[crowd_index] =
-        std::make_unique<MoveContext>(crowds_[crowd_index]->size(), population_.get_num_particles(),
+        std::make_unique<ContextForSteps>(crowds_[crowd_index]->size(), population_.get_num_particles(),
                                       population_.get_particle_group_indexes(), *(Rng[crowd_index]));
   };
   do_per_crowd(firstTouchCreateMoveContexts);

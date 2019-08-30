@@ -65,7 +65,7 @@ VMCBatched::IndexType VMCBatched::calc_default_local_walkers()
   return local_walkers;
 }
 
-void VMCBatched::advanceWalkers(const StateForThread& sft, Crowd& crowd, MoveContext& move_context, bool recompute)
+void VMCBatched::advanceWalkers(const StateForThread& sft, Crowd& crowd, ContextForSteps& move_context, bool recompute)
 {
   move_context.loadCrowd(crowd);
 
@@ -185,7 +185,7 @@ void VMCBatched::advanceWalkers(const StateForThread& sft, Crowd& crowd, MoveCon
  */
 void VMCBatched::runVMCStep(int crowd_id,
                             const StateForThread& sft,
-                            std::vector<std::unique_ptr<MoveContext>>& move_contexts,
+                            std::vector<std::unique_ptr<ContextForSteps>>& move_contexts,
                             std::vector<std::unique_ptr<Crowd>>& crowds)
 {
   int nAccept              = 0;
