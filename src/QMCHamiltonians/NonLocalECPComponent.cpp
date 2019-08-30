@@ -144,13 +144,9 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOne(ParticleSet& W,
       if(use_DLA)
         psiratio[j] = psi.calcRatio(W, iel, TrialWaveFunction::ComputeType::FERMIONIC) * sgridweight_m[j];
       else
-        psiratio[j] = psi.ratio(W, iel) * sgridweight_m[j];
-#if defined(QMC_COMPLEX)
-      psiratio[j] *= std::cos(psi.getPhaseDiff());
-#endif
+        psiratio[j] = psi.calcRatio(W, iel) * sgridweight_m[j];
       W.rejectMove(iel);
       psi.resetPhaseDiff();
-      //psi.rejectMove(iel);
     }
   }
 
@@ -177,13 +173,13 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOne(ParticleSet& W,
       lpolprev = lpol[l];
     }
 
-    RealType lsum = czero;
+    ValueType lsum = 0.0;
     for (int l = 0; l < nchannel; l++)
       lsum += vrad[l] * lpol[angpp_m[l]];
     lsum *= psiratio[j];
     if (Tmove)
-      Txy.push_back(NonLocalData(iel, lsum, deltaV[j]));
-    pairpot += lsum;
+      Txy.push_back(NonLocalData(iel, std::real(lsum), deltaV[j]));
+    pairpot += std::real(lsum);
   }
 
 #if !defined(REMOVE_TRACEMANAGER)
@@ -340,10 +336,10 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
 
     for (int l = 0; l < nchannel; l++)
     {
-      lsum += vrad[l] * lpol[angpp_m[l]] * psiratio[j];
-      gradpotterm_ += vgrad[l] * lpol[angpp_m[l]] * psiratio[j];
-      gradlpolyterm_ += vrad[l] * dlpol[angpp_m[l]] * cosgrad[j] * psiratio[j];
-      gradwfnterm_ += vrad[l] * lpol[angpp_m[l]] * wfngrad[j];
+      lsum           += std::real(vrad[l]) * lpol[angpp_m[l]] * std::real(psiratio[j]);
+      gradpotterm_   += vgrad[l] * lpol[angpp_m[l]] * std::real(psiratio[j]);
+      gradlpolyterm_ += std::real(vrad[l]) * dlpol[angpp_m[l]] * cosgrad[j] * std::real(psiratio[j]);
+      gradwfnterm_   += std::real(vrad[l]) * lpol[angpp_m[l]] * wfngrad[j];
     }
 
     if (Tmove)
@@ -566,11 +562,11 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
     {
       //Note.  Because we are computing "forces", there's a -1 difference between this and
       //direct finite difference calculations.
-      lsum += vrad[l] * lpol[angpp_m[l]] * psiratio[j];
-      gradpotterm_ += vgrad[l] * lpol[angpp_m[l]] * psiratio[j];
-      gradlpolyterm_ += vrad[l] * dlpol[angpp_m[l]] * cosgrad[j] * psiratio[j];
-      gradwfnterm_ += vrad[l] * lpol[angpp_m[l]] * wfngrad[j];
-      pulaytmp_ -= vrad[l] * lpol[angpp_m[l]] * pulay_quad[j];
+      lsum           += std::real(vrad[l]) * lpol[angpp_m[l]] * std::real(psiratio[j]);
+      gradpotterm_   += vgrad[l] * lpol[angpp_m[l]] * std::real(psiratio[j]);
+      gradlpolyterm_ += std::real(vrad[l]) * dlpol[angpp_m[l]] * cosgrad[j] * std::real(psiratio[j]);
+      gradwfnterm_   += std::real(vrad[l]) * lpol[angpp_m[l]] * wfngrad[j];
+      pulaytmp_ -= std::real(vrad[l]) * lpol[angpp_m[l]] * pulay_quad[j];
     }
     pulaytmp_ += lsum * pulay_ref;
     if (Tmove)

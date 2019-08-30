@@ -133,19 +133,21 @@ TEST_CASE("TrialWaveFunction", "[wavefunction]")
   const int moved_elec_id = 1;
 
   using PosType = QMCTraits::PosType;
+  using ValueType = QMCTraits::ValueType;
   PosType delta(0.1, -0.1, 0.2);
 
   elec_.makeMove(moved_elec_id, delta);
 
-  double r_val = psi.ratio(elec_, moved_elec_id);
-  double r_all_val = psi.calcRatio(elec_, moved_elec_id);
-  double r_fermionic_val = psi.calcRatio(elec_, moved_elec_id, TrialWaveFunction::ComputeType::FERMIONIC);
-  double r_bosonic_val = psi.calcRatio(elec_, moved_elec_id, TrialWaveFunction::ComputeType::NONFERMIONIC);
+  ValueType r_val = psi.ratio(elec_, moved_elec_id);
+  ValueType r_all_val = psi.calcRatio(elec_, moved_elec_id);
+  ValueType r_fermionic_val = psi.calcRatio(elec_, moved_elec_id, TrialWaveFunction::ComputeType::FERMIONIC);
+  ValueType r_bosonic_val = psi.calcRatio(elec_, moved_elec_id, TrialWaveFunction::ComputeType::NONFERMIONIC);
 
-  REQUIRE(r_val == Approx(2.83819310073227));
-  REQUIRE(r_all_val == Approx(2.83819310073227));
-  REQUIRE(r_fermionic_val == Approx(1.03849468840389));
-  REQUIRE(r_bosonic_val == Approx(2.73298759485658));
+  std::cout << "debug " << r_val << std::endl;
+  REQUIRE(r_val == ComplexApprox(2.83819310073227).compare_real_only());
+  REQUIRE(r_all_val == ComplexApprox(2.83819310073227).compare_real_only());
+  REQUIRE(r_fermionic_val == ComplexApprox(1.03849468840389).compare_real_only());
+  REQUIRE(r_bosonic_val == ComplexApprox(2.73298759485658).compare_real_only());
 
 #endif
 

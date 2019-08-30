@@ -250,9 +250,6 @@ protected:
   ///a list of mcwalkerset element
   std::vector<xmlNodePtr> mcwalkerNodePtr;
 
-  ///a list of timers
-  std::vector<NewTimer*> myTimers;
-
   ///temporary storage for drift
   ParticleSet::ParticlePos_t drift;
 

@@ -79,10 +79,10 @@ struct CoulombPotential : public QMCHamiltonianBase, public ForceBase
    * @param s source particleset
    * @param t target particleset
    * @param active if true, new Value is computed whenver evaluate is used.
-   * @param computeForces does nothing, because forces between AB species not implemented 
+   * @param ComputeForces is not implemented for AB
    */
-  inline CoulombPotential(ParticleSet& s, ParticleSet& t, bool active, bool computeForces, bool copy = false)
-      : Pa(s), myTableIndex(t.addTable(s, DT_SOA_PREFERRED)), is_AA(false), is_active(active), ComputeForces(computeForces), ForceBase(s, t)
+  inline CoulombPotential(ParticleSet& s, ParticleSet& t, bool active, bool copy = false)
+      : Pa(s), myTableIndex(t.addTable(s, DT_SOA_PREFERRED)), is_AA(false), is_active(active), ComputeForces(false), ForceBase(s, t)
   {
     set_energy_domain(potential);
     two_body_quantum_domain(s, t);
@@ -418,8 +418,10 @@ struct CoulombPotential : public QMCHamiltonianBase, public ForceBase
                                  ParticleSet::ParticlePos_t& hf_terms,
                                  ParticleSet::ParticlePos_t& pulay_terms)
   {
-    hf_terms -= forces;
-    // No pulay term.
+    if (is_active)
+      Value = evaluate(P); // No forces for the active
+    else
+      hf_terms -= forces; // No Pulay here
     return Value;
   }
 
@@ -460,7 +462,7 @@ struct CoulombPotential : public QMCHamiltonianBase, public ForceBase
         return new CoulombPotential(Pa, false, ComputeForces, true);
     }
     else
-      return new CoulombPotential(Pa, qp, ComputeForces, true);
+      return new CoulombPotential(Pa, qp, true);
   }
 };
 
