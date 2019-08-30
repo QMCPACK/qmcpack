@@ -76,14 +76,9 @@ void VMCBatched::advanceWalkers(const StateForThread& sft, Crowd& crowd, MoveCon
   {
     it_walker_twfs->get().copyFromBuffer(it_walker_elecs->get(), it_mcp_walkers->get().DataSet);
   }                
-//   Walker_t::WFBuffer_t& w_buffer(thisWalker.DataSet);
-//   Psi.copyFromBuffer(W, w_buffer);
-//   myTimers[0]->stop();
-  
-//   // start PbyP moves
-//   myTimers[1]->start();
 
-  bool moved = false;
+  // Note std::vector<bool> is not like the rest of stl.
+  std::vector<bool> moved(crowd.size(), false);
   constexpr RealType mhalf(-0.5);
 
   // up and down electrons are "species" within qmpack
@@ -99,7 +94,7 @@ void VMCBatched::advanceWalkers(const StateForThread& sft, Crowd& crowd, MoveCon
     {
       PosType dr;
       // if (sft.vmcdrv_input.get_use_drift())
-      //   GradType grad_now = Psi.
+      //   GradType grad_now = 
     }
   }
 }
