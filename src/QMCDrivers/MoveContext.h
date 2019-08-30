@@ -27,8 +27,8 @@ class MCPopulation;
 struct DistanceTableData;
 /** Thread local context for moving walkers
  *
- *  created on the stack once per driver per crowd
- *  refactored out of ParticleSet, only the minimum
+ *  created once per driver per crowd
+ *  might be merged with Crowd
  */
 class ContextForSteps
 {
