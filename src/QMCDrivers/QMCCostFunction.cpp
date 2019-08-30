@@ -293,18 +293,15 @@ void QMCCostFunction::checkConfigurations()
         std::vector<Return_t> Dsaved(NumOptimizables, 0.0);
         std::vector<Return_t> HDsaved(NumOptimizables, 0.0);
 
-//FIXME the ifdef should be removed after the optimizer is made compatible with complex coefficients
-#ifndef QMC_COMPLEX
         psiClones[ip]->evaluateDerivatives(wRef, OptVariablesForPsi, Dsaved, HDsaved);
-#else
-        psiClones[ip]->evaluateDerivatives(wRef, OptVariablesForPsi, Dsaved, HDsaved);
-#endif
-        for (int i = 0; i < NumOptimizables; i++)
-        {
-          rDsaved[i]  = std::real(Dsaved[i]);
+        etmp = hClones[ip]->evaluateValueAndDerivatives(wRef, OptVariablesForPsi, Dsaved, HDsaved, compute_nlpp);
+
+
+        //FIXME the ifdef should be removed after the optimizer is made compatible with complex coefficients
+        for (int i=0; i < NumOptimizables; i++) {
+          rDsaved[i] = std::real(Dsaved[i]);
           rHDsaved[i] = std::real(HDsaved[i]);
         }
-        etmp = hClones[ip]->evaluateValueAndDerivatives(wRef, OptVariablesForPsi, rDsaved, rHDsaved, compute_nlpp);
         copy(rDsaved.begin(), rDsaved.end(), (*DerivRecords[ip])[iw]);
         copy(rHDsaved.begin(), rHDsaved.end(), (*HDerivRecords[ip])[iw]);
       }
@@ -412,20 +409,15 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine* Engine
         std::vector<Return_rt> rDsaved(NumOptimizables, 0.0);
         std::vector<Return_rt> rHDsaved(NumOptimizables, 0.0);
 
-//FIXME The ifdef should be removed after the optimizer is compatible with complex wave function parameters
-#ifndef QMC_COMPLEX
         psiClones[ip]->evaluateDerivatives(wRef, OptVariablesForPsi, Dsaved, HDsaved);
-#else
-        psiClones[ip]->evaluateDerivatives(wRef, OptVariablesForPsi, Dsaved, HDsaved);
-#endif
-        for (int i = 0; i < NumOptimizables; i++)
-        {
-          rDsaved[i]  = std::real(Dsaved[i]);
+        etmp = hClones[ip]->evaluateValueAndDerivatives(wRef, OptVariablesForPsi, Dsaved, HDsaved, compute_nlpp);
+
+
+        //FIXME The ifdef should be removed after the optimizer is compatible with complex wave function parameters
+        for (int i=0; i < NumOptimizables; i++) {
+          rDsaved[i] = std::real(Dsaved[i]);
           rHDsaved[i] = std::real(HDsaved[i]);
         }
-        etmp = hClones[ip]->evaluateValueAndDerivatives(wRef, OptVariablesForPsi, rDsaved, rHDsaved, compute_nlpp);
-        //std::copy(Dsaved.begin(),Dsaved.end(),(*DerivRecords[ip])[iw]);
-        //std::copy(HDsaved.begin(),HDsaved.end(),(*HDerivRecords[ip])[iw]);
 
         // add non-differentiated derivative vector
         std::vector<Return_rt> der_rat_samp(NumOptimizables + 1, 0.0);
@@ -435,9 +427,6 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine* Engine
         der_rat_samp.at(0) = 1.0;
         for (int i = 0; i < rDsaved.size(); i++)
           der_rat_samp.at(i + 1) = rDsaved.at(i);
-
-        // evaluate local energy
-        etmp = hClones[ip]->evaluate(wRef);
 
         // energy dervivatives
         le_der_samp.at(0) = etmp;
@@ -449,7 +438,6 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine* Engine
         EngineObj->take_sample(der_rat_samp, le_der_samp, le_der_samp, 1.0, saved[REWEIGHT]);
 #endif
 
-        //etmp= hClones[ip]->evaluate(wRef);
       }
       else
         etmp = hClones[ip]->evaluate(wRef);
@@ -736,15 +724,16 @@ QMCCostFunction::Return_rt QMCCostFunction::correlatedSampling(bool needGrad)
         std::vector<Return_rt> rHDsaved(NumOptimizables, 0);
         psiClones[ip]->evaluateDerivatives(wRef, OptVariablesForPsi, Dsaved, HDsaved);
 
-        for (int i = 0; i < NumOptimizables; i++)
-        {
-          rDsaved[i]  = std::real(Dsaved[i]);
-          rHDsaved[i] = std::real(HDsaved[i]);
-        }
         saved[ENERGY_NEW] =
-            H_KE_Node[ip]->evaluateValueAndDerivatives(wRef, OptVariablesForPsi, rDsaved, rHDsaved, compute_nlpp) +
+            H_KE_Node[ip]->evaluateValueAndDerivatives(wRef, OptVariablesForPsi, Dsaved, HDsaved, compute_nlpp) +
             saved[ENERGY_FIXED];
         ;
+
+        for (int i = 0; i < NumOptimizables; i++) {
+          rDsaved[i] = std::real(Dsaved[i]);
+          rHDsaved[i] = std::real(HDsaved[i]);
+        }
+
         for (int i = 0; i < NumOptimizables; i++)
           if (OptVariablesForPsi.recompute(i))
           {

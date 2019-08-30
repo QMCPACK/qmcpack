@@ -240,10 +240,6 @@ bool NGOBuilder::addRadialOrbital(xmlNodePtr cur, const QuantumNumberType& nlms)
   aAttrib.add(m_rcut, "rmax");
   aAttrib.add(dsname, "ds");
   aAttrib.put(cur);
-  //const xmlChar *tptr = xmlGetProp(cur,(const xmlChar*)"type");
-  //if(tptr) radtype = (const char*)tptr;
-  //tptr = xmlGetProp(cur,(const xmlChar*)"rmax");
-  //if(tptr) m_rcut = atof((const char*)tptr);
   int lastRnl = m_orbitals->Rnl.size();
   m_nlms      = nlms;
   if (radtype == "Gaussian" || radtype == "GTO")

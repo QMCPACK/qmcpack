@@ -26,6 +26,7 @@
 #include <Particle/MCWalkerConfiguration.h>
 #include <Estimators/BlockHistogram.h>
 #include <Estimators/accumulators.h>
+#include "QMCDrivers/WalkerControlBase.h"
 #include <Utilities/NewTimer.h>
 #include <bitset>
 
@@ -35,7 +36,6 @@
 
 namespace qmcplusplus
 {
-class WalkerControlBase;
 class EstimatorManagerBase;
 
 /** Manages the state of QMC sections and handles population control for DMCs
@@ -151,9 +151,9 @@ struct SimpleFixedNodeBranch : public QMCTraits
   ///save xml element
   xmlNodePtr myNode;
   ///WalkerController
-  WalkerControlBase* WalkerController;
+  std::unique_ptr<WalkerControlBase> WalkerController;
   ///Backup WalkerController for mixed DMC
-  WalkerControlBase* BackupWalkerController;
+  std::unique_ptr<WalkerControlBase> BackupWalkerController;
   ///EstimatorManager
   EstimatorManagerBase* MyEstimator;
   ///a simple accumulator for energy

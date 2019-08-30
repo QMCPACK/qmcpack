@@ -60,7 +60,7 @@ private:
   ///weight of the spherical grid
   std::vector<RealType> sgridweight_m;
   ///Working arrays
-  std::vector<RealType> wvec, Amat, dAmat;
+  std::vector<ValueType> wvec, Amat, dAmat;
 
   //Position delta for virtual moves.
   std::vector<PosType> deltaV;
@@ -69,11 +69,11 @@ private:
   //Array for P'_l[cos(theta)]
   std::vector<RealType> dlpol;
   //Array for v_l(r).
-  std::vector<RealType> vrad;
+  std::vector<ValueType> vrad;
   //Array for (2l+1)*v'_l(r)/r.
   std::vector<RealType> dvrad;
   //$\Psi(...q...)/\Psi(...r...)$ for all quadrature points q.
-  std::vector<RealType> psiratio;
+  std::vector<ValueType> psiratio;
   //$\nabla \Psi(...q...)/\Psi(...r...)$ for all quadrature points q.
   //  $\nabla$ is w.r.t. the electron coordinates involved in the quadrature.
   std::vector<PosType> gradpsiratio;
@@ -94,8 +94,10 @@ private:
   ///The gradient of the wave function w.r.t. the ion position
   ParticleSet::ParticleGradient_t Gion;
 
-  ///virtual particle set: delay initialization
+  ///virtual particle set: delayed initialization
   VirtualParticleSet* VP;
+  ///true, determinant localization approximation(DLA) is enabled
+  bool use_DLA;
 
 public:
 #if !defined(REMOVE_TRACEMANAGER)
@@ -121,6 +123,8 @@ public:
     sgridxyz_m.push_back(xyz);
     sgridweight_m.push_back(weight);
   }
+
+  inline void enableDLA() { use_DLA = true; }
 
   void resize_warrays(int n, int m, int l);
 
@@ -210,8 +214,8 @@ public:
                                        int iat,
                                        TrialWaveFunction& psi,
                                        const opt_variables_type& optvars,
-                                       const std::vector<RealType>& dlogpsi,
-                                       std::vector<RealType>& dhpsioverpsi,
+                                       const std::vector<ValueType>& dlogpsi,
+                                       std::vector<ValueType>& dhpsioverpsi,
                                        const int myTableIndex);
 
   void print(std::ostream& os);

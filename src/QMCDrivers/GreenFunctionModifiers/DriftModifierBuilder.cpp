@@ -30,4 +30,14 @@ DriftModifierBase* createDriftModifier(xmlNodePtr cur, const Communicate* myComm
   return DriftModifier;
 }
 
+DriftModifierBase* createDriftModifier(const QMCDriverInput& qmcdriver_input)
+{
+  DriftModifierBase* DriftModifier;
+  if (qmcdriver_input.get_drift_modifier() == "UNR")
+    DriftModifier = new DriftModifierUNR(qmcdriver_input.get_drift_modifier_unr_a());
+  else
+    throw std::runtime_error("createDriftModifier unknown drift_modifier ");
+  return DriftModifier;
+}
+
 } // namespace qmcplusplus

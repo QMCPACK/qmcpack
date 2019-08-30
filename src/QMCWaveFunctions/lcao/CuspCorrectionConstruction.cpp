@@ -237,13 +237,11 @@ void generateCuspInfo(int orbital_set_size,
 
       LCAOrbitalSet local_phi(phi);
       local_phi.myBasisSet = phi.myBasisSet->makeClone();
-      local_phi.IsCloned   = true;
       local_phi.C          = nullptr;
       local_phi.setIdentity(false);
 
       LCAOrbitalSet local_eta(eta);
       local_eta.myBasisSet = eta.myBasisSet->makeClone();
-      local_eta.IsCloned   = true;
       local_eta.C          = nullptr;
       local_eta.setIdentity(false);
 

@@ -37,18 +37,6 @@ dia = generate_physical_system(
     **dia_inputs
     )
 
-dia_plus = generate_physical_system(
-    net_charge = 1,
-    net_spin   = 1,
-    **dia_inputs
-    )
-
-dia_minus = generate_physical_system(
-    net_charge = -1,
-    net_spin   = -1,
-    **dia_inputs
-    )
-
 scf = generate_pwscf(
     identifier   = 'scf',
     path         = 'scf',
@@ -59,7 +47,9 @@ scf = generate_pwscf(
     input_dft    = 'lda', 
     ecutwfc      = 200,   
     conv_thr     = 1e-8, 
-    nosym        = False,
+    nosym        = True, # Important in this case.
+                         # With nosym=False a 1eV larger gap is found.
+                         # Issue does not appear in larger, e.g. 3x3x3 cells.
     wf_collect   = False,
     system       = dia,
     kgrid        = (4,4,4),
@@ -155,7 +145,7 @@ qmc_minus = generate_qmcpack(
     job          = job(cores=16,threads=16,app='qmcpack_complex'),
     input_type   = 'basic',
     spin_polarized = True,
-    system       = dia_minus,
+    system       = dia,
     pseudos      = ['C.BFD.xml'],
     jastrows     = [],
     calculations   = [
@@ -170,6 +160,10 @@ qmc_minus = generate_qmcpack(
     dependencies = [(conv,'orbitals'),
                     (opt,'jastrow')],
     )
+u = qmc_minus.input.get('u')
+u.size-=1
+updet = qmc_minus.input.get('updet')
+updet.size-=1
 
 qmc_plus = generate_qmcpack(
     det_format   = 'old',
@@ -178,7 +172,7 @@ qmc_plus = generate_qmcpack(
     job          = job(cores=16,threads=16,app='qmcpack_complex'),
     input_type   = 'basic',
     spin_polarized = True,
-    system       = dia_plus,
+    system       = dia,
     pseudos      = ['C.BFD.xml'],
     jastrows     = [],
     calculations   = [
@@ -193,5 +187,10 @@ qmc_plus = generate_qmcpack(
     dependencies = [(conv,'orbitals'),
                     (opt,'jastrow')],
     )
+u = qmc_plus.input.get('u')
+u.size+=1
+updet = qmc_plus.input.get('updet')
+updet.size+=1
+
 
 run_project()

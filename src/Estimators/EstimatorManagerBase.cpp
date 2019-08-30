@@ -441,7 +441,7 @@ EstimatorManagerBase::EstimatorType* EstimatorManagerBase::getEstimator(const st
 }
 
 /** This should be moved to branch engine */
-bool EstimatorManagerBase::put(MCWalkerConfiguration& W, QMCHamiltonian& H, xmlNodePtr cur)
+bool EstimatorManagerBase::put(QMCHamiltonian& H, xmlNodePtr cur)
 {
   std::vector<std::string> extra;
   cur = cur->children;

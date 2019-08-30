@@ -935,4 +935,36 @@ void kSpaceJastrow::evaluateDerivatives(ParticleSet& P,
   }
 }
 
+void kSpaceJastrow::printOneBody(std::ostream& os)
+{
+  for (int i=0;i<OneBodyCoefs.size();i++)
+  {
+    PosType     gvec  = OneBodyGvecs[i];
+    ComplexType coeff = OneBodyCoefs[i];
+    os <<std::fixed << std::setprecision( 6 )
+       << std::setw( 12 ) << gvec[0]
+       << std::setw( 12 ) << gvec[1]
+       << std::setw( 12 ) << gvec[2]
+       << std::setw( 24 ) << coeff.real()
+       << std::setw( 24 ) << coeff.imag()
+       << std::endl;
+  }
+}
+
+void kSpaceJastrow::printTwoBody(std::ostream& os)
+{
+  for (int i=0;i<TwoBodyCoefs.size();i++)
+  {
+    PosType     gvec  = TwoBodyGvecs[i];
+    ComplexType coeff = TwoBodyCoefs[i];
+    os <<std::fixed << std::setprecision( 6 )
+       << std::setw( 12 ) << gvec[0]
+       << std::setw( 12 ) << gvec[1]
+       << std::setw( 12 ) << gvec[2]
+       << std::setw( 24 ) << coeff.real()
+       << std::setw( 24 ) << coeff.imag()
+       << std::endl;
+  }
+}
+
 } // namespace qmcplusplus

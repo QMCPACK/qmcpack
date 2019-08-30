@@ -19,9 +19,7 @@
 #include <string>
 #include "OhmmsData/OhmmsParameter.h"
 
-/** class to handle a set of parameters
- *
- *This may become an inherited class from OhmmsElementBase.
+/** class to handle a set of attributes of an xmlNode
  */
 struct OhmmsAttributeSet
 {
@@ -29,10 +27,7 @@ struct OhmmsAttributeSet
   typedef Container_t::iterator iterator;
   typedef Container_t::const_iterator const_iterator;
 
-  xmlNodePtr myNode;
   Container_t m_param;
-
-  inline OhmmsAttributeSet() : myNode(0) {}
 
   ~OhmmsAttributeSet()
   {
@@ -57,14 +52,9 @@ struct OhmmsAttributeSet
     return true;
   }
 
-  /** add a new parameter corresponding to an xmlNode <parameter/>
-   *@param aparam reference the object which this parameter is assigned to.
-   *@param aname the value of the name attribute
-   *
-   *The attributes of a parameter are
-   * - name, the name of the parameter
-   * - condition, the unit of the parameter
-   *The condition will be used to convert the external unit to the internal unit.
+  /** add a new attribute
+   *@param aparam reference the object which this attribute is assigned to.
+   *@param aname the name of the added attribute
    */
   template<class PDT>
   void add(PDT& aparam, const std::string& aname)
@@ -76,7 +66,7 @@ struct OhmmsAttributeSet
     }
   }
 
-  /** assign parameters to the set
+  /** assign attributes to the set
    *@param cur the xml node to work on
    *@return true, if any valid parameter is processed.
    */

@@ -125,14 +125,14 @@ void HamiltonianFactory::addCoulombPotential(xmlNodePtr cur)
       if (quantum)
         targetH->addOperator(new CoulombPotentialAA_CUDA(*ptclA, true), title, physical);
       else
-        targetH->addOperator(new CoulombPotential<Return_t>(*ptclA, quantum), title, physical);
+        targetH->addOperator(new CoulombPotential<Return_t>(*ptclA, quantum, doForces), title, physical);
     }
 #else
     if (applyPBC)
       targetH->addOperator(new CoulombPBCAA(*ptclA, quantum, doForces), title, physical);
     else
     {
-      targetH->addOperator(new CoulombPotential<Return_t>(*ptclA, quantum), title, physical);
+      targetH->addOperator(new CoulombPotential<Return_t>(*ptclA, quantum, doForces), title, physical);
     }
 #endif
   }

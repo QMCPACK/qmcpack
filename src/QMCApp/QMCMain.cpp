@@ -308,7 +308,7 @@ void QMCMain::executeLoop(xmlNodePtr cur)
       if (cname == "qmc")
       {
         //prevent completed is set
-        bool success = executeQMCSection(tcur, false);
+        bool success = executeQMCSection(tcur, iter > 0);
         if (!success)
         {
           app_warning() << "  Terminated loop execution. A sub section returns false." << std::endl;
@@ -321,7 +321,7 @@ void QMCMain::executeLoop(xmlNodePtr cur)
   }
 }
 
-bool QMCMain::executeQMCSection(xmlNodePtr cur, bool noloop)
+bool QMCMain::executeQMCSection(xmlNodePtr cur, bool reuse)
 {
   std::string target("e");
   std::string random_test("no");
@@ -333,12 +333,12 @@ bool QMCMain::executeQMCSection(xmlNodePtr cur, bool noloop)
     RandomNumberControl::test();
   if (qmcSystem == 0)
     qmcSystem = ptclPool->getWalkerSet(target);
-  bool success = runQMC(cur);
+  bool success = runQMC(cur, reuse);
   FirstQMC     = false;
   return success;
 }
 
-/** validate the main document
+/** validate the main document and (read the walker sets !)
  * @return false, if any of the basic objects is not properly created.
  *
  * Current xml schema is changing. Instead validating the input file,
@@ -350,6 +350,7 @@ bool QMCMain::executeQMCSection(xmlNodePtr cur, bool noloop)
  * - hamiltonian: create hamiltonians
  * Finally, if /simulation/mcwalkerset exists, read the configurations
  * from the external files.
+ * TODO: Move this out of what should be a stateless call
  */
 bool QMCMain::validateXML()
 {
@@ -492,11 +493,10 @@ bool QMCMain::validateXML()
     else if (cname == "include")
     {
       //file is provided
-      xmlChar* a = xmlGetProp(cur, (const xmlChar*)"href");
-      if (a)
+      const XMLAttrString include_name(cur, "href");
+      if (!include_name.empty())
       {
-        bool success = pushDocument((const char*)a);
-        xmlFree(a);
+        bool success = pushDocument(include_name);
         if (success)
         {
           inputnode = processPWH(XmlDocStack.top()->getRoot());
@@ -615,20 +615,36 @@ bool QMCMain::processPWH(xmlNodePtr cur)
  * @param cur qmc element
  * @return true, if a valid QMCDriver is set.
  */
-bool QMCMain::runQMC(xmlNodePtr cur)
+bool QMCMain::runQMC(xmlNodePtr cur, bool reuse)
 {
-  QMCDriverFactory driver_factory;
-  QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(myProject.m_series, cur);
   std::unique_ptr<QMCDriverInterface> qmc_driver;
-  qmc_driver = driver_factory.newQMCDriver(std::move(last_driver), myProject.m_series, cur, das, *qmcSystem, *ptclPool,
-                                           *psiPool, *hamPool, myComm);
+  std::string prev_config_file = last_driver ? last_driver->get_root_name() : "";
+  bool append_run = false;
+
+  if (reuse)
+    qmc_driver = std::move(last_driver);
+  else
+  {
+    QMCDriverFactory driver_factory;
+    QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(myProject.m_series, cur);
+    qmc_driver = driver_factory.newQMCDriver(std::move(last_driver), myProject.m_series, cur, das, *qmcSystem, *ptclPool,
+                                             *psiPool, *hamPool, myComm);
+    append_run = das.append_run;
+  }
+
   if (qmc_driver)
   {
     //advance the project id
     //if it is NOT the first qmc node and qmc/@append!='yes'
-    if (!FirstQMC && !das.append_run)
+    if (!FirstQMC && !append_run)
       myProject.advance();
-    qmc_driver->setStatus(myProject.CurrentMainRoot(), PrevConfigFile, das.append_run);
+    
+    qmc_driver->setStatus(myProject.CurrentMainRoot(), prev_config_file, append_run);
+    // PD:
+    // Q: How does m_walkerset_in end up being non empty?
+    // A: Anytime that we aren't doing a restart.
+    // So put walkers is an exceptional call. This code does not tell a useful
+    // story of a QMCDriver's life.
     qmc_driver->putWalkers(m_walkerset_in);
 #if !defined(REMOVE_TRACEMANAGER)
     qmc_driver->putTraces(traces_xml);
@@ -642,17 +658,21 @@ bool QMCMain::runQMC(xmlNodePtr cur)
     qmc_driver->run();
     t1->stop();
     app_log() << "  QMC Execution time = " << std::setprecision(4) << qmcTimer.elapsed() << " secs" << std::endl;
-    //keeps track of the configuration file
-    PrevConfigFile = myProject.CurrentMainRoot();
     last_driver    = std::move(qmc_driver);
     return true;
   }
   else
   {
+    // Ye: in which case, the code hits this?
     return false;
   }
 }
 
+
+/** Reads walkers sets from the restart file during XML validation
+ *
+ *  TODO: Move this, it is not a concern of QMCMain
+ */
 bool QMCMain::setMCWalkers(xmlXPathContextPtr context_)
 {
   OhmmsXPathObject result("/simulation/mcwalkerset", context_);
