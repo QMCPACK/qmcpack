@@ -215,12 +215,11 @@ struct WaveFunctionComponent : public QMCTraits
   virtual void mw_evaluateLog(const std::vector<WaveFunctionComponent*>& WFC_list,
                               const std::vector<ParticleSet*>& P_list,
                               const std::vector<ParticleSet::ParticleGradient_t*>& G_list,
-                              const std::vector<ParticleSet::ParticleLaplacian_t*>& L_list,
-                              std::vector<LogValueType>& log_vals)
+                              const std::vector<ParticleSet::ParticleLaplacian_t*>& L_list)
   {
     #pragma omp parallel for
     for (int iw = 0; iw < WFC_list.size(); iw++)
-      log_vals[iw] = LogValueType(WFC_list[iw]->evaluateLog(*P_list[iw], *G_list[iw], *L_list[iw]), WFC_list[iw]->PhaseValue);
+      WFC_list[iw]->evaluateLog(*P_list[iw], *G_list[iw], *L_list[iw]);
   }
 
   /** recompute the value of the WaveFunctionComponents which require critical accuracy.

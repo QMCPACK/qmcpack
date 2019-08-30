@@ -145,8 +145,7 @@ public:
 
   /** evalaute the log (internally gradients and laplacian) of the trial wavefunction of one or multiple walkers. gold reference */
   void flex_evaluateLog(const std::vector<TrialWaveFunction*>& WF_list,
-                        const std::vector<ParticleSet*>& P_list,
-                        std::vector<LogValueType>& log_vals) const;
+                        const std::vector<ParticleSet*>& P_list) const;
 
   /** recompute the value of the orbitals which require critical accuracy */
   void recompute(ParticleSet& P);
