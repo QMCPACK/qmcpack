@@ -16,7 +16,7 @@
 #include "QMCDrivers/QMCDriverNew.h"
 #include "QMCDrivers/VMC/VMCDriverInput.h"
 #include "QMCDrivers/MCPopulation.h"
-#include "QMCDrivers/MoveContext.h"
+#include "QMCDrivers/ContextForSteps.h"
 
 namespace qmcplusplus
 {

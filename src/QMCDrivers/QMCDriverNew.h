@@ -36,7 +36,7 @@
 #include "QMCDrivers/SimpleFixedNodeBranch.h"
 #include "QMCDrivers/BranchIO.h"
 #include "QMCDrivers/QMCDriverInput.h"
-#include "QMCDrivers/MoveContext.h"
+#include "QMCDrivers/ContextForSteps.h"
 
 class Communicate;
 

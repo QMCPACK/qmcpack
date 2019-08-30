@@ -12,7 +12,7 @@
 #include "catch.hpp"
 
 #include "Configuration.h"
-#include "QMCDrivers/MoveContext.h"
+#include "QMCDrivers/ContextForSteps.h"
 #include "QMCApp/tests/MinimalWaveFunctionPool.h"
 #include "QMCApp/tests/MinimalParticlePool.h"
 #include "QMCApp/tests/MinimalHamiltonianPool.h"
