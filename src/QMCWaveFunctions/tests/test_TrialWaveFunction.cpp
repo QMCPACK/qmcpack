@@ -220,8 +220,8 @@ TEST_CASE("TrialWaveFunction", "[wavefunction]")
   REQUIRE(std::complex<RealType>(WF_list[1]->getLogPsi(), WF_list[1]->getPhase()) == ComplexApprox(std::complex<RealType>(-1.471840358291562, 3.141592653589793)));
 #endif
 
-  //FIXME cannot delete clean now
-  //delete psi_clone;
+  //FIXME more thinking and fix about ownership and schope are needed for exiting clean
+  delete psi_clone;
 #endif
 
 }
