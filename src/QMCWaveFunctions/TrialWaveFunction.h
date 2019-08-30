@@ -143,7 +143,7 @@ public:
   /** evalaute the log (internally gradients and laplacian) of the trial wavefunction. gold reference */
   RealType evaluateLog(ParticleSet& P);
 
-  /** evalaute the log (internally gradients and laplacian) of the trial wavefunction of one or multiple walkers. gold reference */
+  /** batched verison of evaluateLog. gold reference */
   void flex_evaluateLog(const std::vector<TrialWaveFunction*>& WF_list,
                         const std::vector<ParticleSet*>& P_list) const;
 
@@ -196,8 +196,7 @@ public:
                           TinyVector<ParticleSet::ParticleLaplacian_t, OHMMS_DIM>& lapl_grad);
 
   RealType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
-  /** compute the WF ratio and new gradients for the proposed move of the iat-th particle of one or multiple walkers.
-   */
+  /** batched verison of ratioGrad */
   void flex_ratioGrad(const std::vector<TrialWaveFunction*>& WF_list,
                       const std::vector<ParticleSet*>& P_list,
                       int iat,
@@ -205,16 +204,25 @@ public:
                       std::vector<GradType>& grad_new) const;
 
   GradType evalGrad(ParticleSet& P, int iat);
-  /** compute the current gradients for the iat-th particle of one or multiple walkers.
-   */
+  /** batched verison of evalGrad */
   void flex_evalGrad(const std::vector<TrialWaveFunction*>& WF_list,
                      const std::vector<ParticleSet*>& P_list,
                      int iat,
                      std::vector<GradType>& grad_now) const;
 
   void rejectMove(int iat);
+  /* batched version of rejectMove */
+  void flex_rejectMove(const std::vector<TrialWaveFunction*>& WF_list,
+                       int iat) const;
+
   void acceptMove(ParticleSet& P, int iat);
+  /* batched version of acceptMove */
+  void flex_acceptMove(const std::vector<TrialWaveFunction*>& WF_list,
+                              const std::vector<ParticleSet*>& P_list,
+                              int iat) const;
   void completeUpdates();
+  /* batched version of completeUpdates.  */
+  void flex_completeUpdates(const std::vector<TrialWaveFunction*>& WF_list) const;
 
   /** register all the wavefunction components in buffer.
    *  See WaveFunctionComponent::registerData for more detail */
@@ -266,16 +274,13 @@ public:
     //RealType mass = tspecies(massind,0);
     //OneOverM = 1.0/mass;
   }
-/*
-  void flex_acceptrestoreMove(const std::vector<TrialWaveFunction*>& WF_list,
-                              const std::vector<ParticleSet*>& P_list,
-                              const std::vector<bool>& isAccepted,
-                              int iat) const;
-  void flex_evaluateGL(const std::vector<WaveFunction*>& WF_list,
+
+  /* batched version of evaluateGL.
+   * TODO: split the computation from updateBuffer to evaluateGL. Expected to be called by KE
+   */
+  void flex_evaluateGL(const std::vector<TrialWaveFunction*>& WF_list,
                         const std::vector<ParticleSet*>& P_list) const;
 
-  void flex_completeUpdates(const std::vector<TrialWaveFunction*>& WF_list) const;
-*/
 private:
   ///control how ratio is calculated
   bool Ordered;
