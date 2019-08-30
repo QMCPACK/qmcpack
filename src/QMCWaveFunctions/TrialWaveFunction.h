@@ -137,9 +137,6 @@ public:
   /** recursively change the ParticleSet whose G and L are evaluated */
   void resetTargetParticleSet(ParticleSet& P);
 
-  /** evalaute the values of the wavefunction, gradient and laplacian  for a walkers */
-  RealType evaluateLogOnly(ParticleSet& P);
-
   /** evalaute the log (internally gradients and laplacian) of the trial wavefunction. gold reference */
   RealType evaluateLog(ParticleSet& P);
 
@@ -253,10 +250,6 @@ public:
   /** evaluate the hessian hessian w.r.t. electronic coordinates of particle iat **/
   void evaluateHessian(ParticleSet& P, HessVector_t& all_grad_grad_psi);
 
-  void reverse();
-
-  inline void resizeTempP(ParticleSet& P) { tempP = new ParticleSet(P); }
-
   TrialWaveFunction* makeClone(ParticleSet& tqp) const;
 
   std::vector<WaveFunctionComponent*>& getOrbitals() { return Z; }
@@ -282,17 +275,11 @@ public:
                         const std::vector<ParticleSet*>& P_list) const;
 
 private:
-  ///control how ratio is calculated
-  bool Ordered;
-
   ///the size of ParticleSet
   int NumPtcls;
 
   ///the size of gradient component (QMCTraits::DIM)*the number of particles
   int TotalDim;
-
-  ///index of the active particle
-  int WorkingPtcl;
 
   ///starting index of the buffer
   size_t BufferCursor;
@@ -314,9 +301,6 @@ private:
 
   ///a list of WaveFunctionComponents constituting many-body wave functions
   std::vector<WaveFunctionComponent*> Z;
-
-  ///fake particleset
-  ParticleSet* tempP;
 
   std::vector<NewTimer*> myTimers;
   std::vector<RealType> myTwist;

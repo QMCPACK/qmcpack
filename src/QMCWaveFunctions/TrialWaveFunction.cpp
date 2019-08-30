@@ -37,7 +37,6 @@ typedef enum
 
 TrialWaveFunction::TrialWaveFunction(Communicate* c)
     : MPIObjectBase(c),
-      Ordered(true),
       NumPtcls(0),
       TotalDim(0),
       BufferCursor(0),
@@ -174,31 +173,6 @@ void TrialWaveFunction::recompute(ParticleSet& P)
     myTimers[ii]->stop();
   }
 }
-
-/** return log(|psi|)
-*
-* PhaseValue is the phase for the complex wave function
-*/
-TrialWaveFunction::RealType TrialWaveFunction::evaluateLogOnly(ParticleSet& P)
-{
-  tempP->R = P.R;
-  tempP->L = 0.0;
-  tempP->G = 0.0;
-  ValueType logpsi(0.0);
-  PhaseValue = 0.0;
-  std::vector<WaveFunctionComponent*>::iterator it(Z.begin());
-  std::vector<WaveFunctionComponent*>::iterator it_end(Z.end());
-  //WARNING: multiplication for PhaseValue is not correct, fix this!!
-  for (; it != it_end; ++it)
-  {
-    logpsi += (*it)->evaluateLog(*tempP, tempP->G, tempP->L);
-    PhaseValue += (*it)->PhaseValue;
-  }
-  convert(logpsi, LogValue);
-  return LogValue;
-  //return LogValue=real(logpsi);
-}
-
 
 /** evaluate the log value of a many-body wave function
  * @param P input configuration containing N particles
@@ -745,14 +719,6 @@ void TrialWaveFunction::evaluateDerivRatios(VirtualParticleSet& VP, const opt_va
 bool TrialWaveFunction::put(xmlNodePtr cur) { return true; }
 
 void TrialWaveFunction::reset() {}
-
-void TrialWaveFunction::reverse()
-{
-  Ordered = false;
-  //vector<WaveFunctionComponent*> zcopy(Z);
-  //int n=Z.size()-1;
-  //for(int i=0; i<Z.size(); ++i) Z[n-i]=zcopy[i];
-}
 
 TrialWaveFunction* TrialWaveFunction::makeClone(ParticleSet& tqp) const
 {
