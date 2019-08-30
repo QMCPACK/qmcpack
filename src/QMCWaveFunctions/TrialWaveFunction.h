@@ -211,17 +211,17 @@ public:
                      std::vector<GradType>& grad_now) const;
 
   void rejectMove(int iat);
-  /* batched version of rejectMove */
+  /* flexible batched version of rejectMove */
   void flex_rejectMove(const std::vector<TrialWaveFunction*>& WF_list,
                        int iat) const;
 
   void acceptMove(ParticleSet& P, int iat);
-  /* batched version of acceptMove */
+  /* flexible batched version of acceptMove */
   void flex_acceptMove(const std::vector<TrialWaveFunction*>& WF_list,
                               const std::vector<ParticleSet*>& P_list,
                               int iat) const;
   void completeUpdates();
-  /* batched version of completeUpdates.  */
+  /* flexible batched version of completeUpdates.  */
   void flex_completeUpdates(const std::vector<TrialWaveFunction*>& WF_list) const;
 
   /** register all the wavefunction components in buffer.
@@ -275,7 +275,7 @@ public:
     //OneOverM = 1.0/mass;
   }
 
-  /* batched version of evaluateGL.
+  /* flexible batched version of evaluateGL.
    * TODO: split the computation from updateBuffer to evaluateGL. Expected to be called by KE
    */
   void flex_evaluateGL(const std::vector<TrialWaveFunction*>& WF_list,

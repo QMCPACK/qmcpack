@@ -120,10 +120,9 @@ TrialWaveFunction::RealType TrialWaveFunction::evaluateLog(ParticleSet& P)
   PhaseValue = 0.0;
   for (int i = 0, ii = RECOMPUTE_TIMER; i < Z.size(); ++i, ii += TIMER_SKIP)
   {
-    myTimers[ii]->start();
+    ScopedTimer local_timer(myTimers[ii]);
     logpsi += Z[i]->evaluateLog(P, P.G, P.L);
     PhaseValue += Z[i]->PhaseValue;
-    myTimers[ii]->stop();
   }
 
   convert(logpsi, LogValue);
@@ -134,13 +133,13 @@ TrialWaveFunction::RealType TrialWaveFunction::evaluateLog(ParticleSet& P)
 void TrialWaveFunction::flex_evaluateLog(const std::vector<TrialWaveFunction*>& WF_list,
                                          const std::vector<ParticleSet*>& P_list) const
 {
-  if (P_list.size() > 1)
+  if (WF_list.size() > 1)
   {
     constexpr RealType czero(0);
     const auto G_list(extract_G_list(P_list));
     const auto L_list(extract_L_list(P_list));
 
-    for (int iw = 0; iw < P_list.size(); iw++)
+    for (int iw = 0; iw < WF_list.size(); iw++)
     {
       *G_list[iw] = czero;
       *L_list[iw] = czero;
@@ -150,18 +149,17 @@ void TrialWaveFunction::flex_evaluateLog(const std::vector<TrialWaveFunction*>& 
 
     for (int i = 0, ii = RECOMPUTE_TIMER; i < Z.size(); ++i, ii += TIMER_SKIP)
     {
-      myTimers[ii]->start();
+      ScopedTimer local_timer(myTimers[ii]);
       const auto WFC_list(extract_WFC_list(WF_list, i));
       Z[i]->mw_evaluateLog(WFC_list, P_list, G_list, L_list);
-      for (int iw = 0; iw < P_list.size(); iw++)
+      for (int iw = 0; iw < WF_list.size(); iw++)
       {
         WF_list[iw]->LogValue += WFC_list[iw]->LogValue;
         WF_list[iw]->PhaseValue += WFC_list[iw]->PhaseValue;
       }
-      myTimers[ii]->stop();
     }
   }
-  else if(P_list.size()==1)
+  else if(WF_list.size()==1)
     WF_list[0]->evaluateLog(*P_list[0]);
 }
 
@@ -380,25 +378,24 @@ void TrialWaveFunction::flex_calcRatio(const std::vector<TrialWaveFunction*>& WF
                       std::vector<PsiValueType>& ratios,
                       ComputeType ct) const
 {
-  ratios.resize(P_list.size(), PsiValueType(1));
+  ratios.resize(WF_list.size(), PsiValueType(1));
 
-  if (P_list.size() > 1)
+  if (WF_list.size() > 1)
   {
-    std::vector<PsiValueType> ratios_z(P_list.size());
+    std::vector<PsiValueType> ratios_z(WF_list.size());
     for (int i = 0, ii = V_TIMER; i < Z.size(); i++, ii += TIMER_SKIP)
     {
       if (ct == ComputeType::ALL || (Z[i]->is_fermionic && ct == ComputeType::FERMIONIC) || (!Z[i]->is_fermionic && ct == ComputeType::NONFERMIONIC))
       {
-        myTimers[ii]->start();
+        ScopedTimer local_timer(myTimers[ii]);
         const auto WFC_list(extract_WFC_list(WF_list, i));
         Z[i]->mw_calcRatio(WFC_list, P_list, iat, ratios_z);
-        for (int iw = 0; iw < P_list.size(); iw++)
+        for (int iw = 0; iw < WF_list.size(); iw++)
           ratios[iw] *= ratios_z[iw];
-        myTimers[ii]->stop();
       }
     }
   }
-  else if (P_list.size() == 1)
+  else if (WF_list.size() == 1)
     ratios[0] = WF_list[0]->calcRatio(*P_list[0], iat);
 }
 
@@ -419,21 +416,20 @@ void TrialWaveFunction::flex_evalGrad(const std::vector<TrialWaveFunction*>& WF_
                                       int iat,
                                       std::vector<GradType>& grad_now) const
 {
-  grad_now.resize(P_list.size(), GradType(0));
-  if (P_list.size() > 1)
+  grad_now.resize(WF_list.size(), GradType(0));
+  if (WF_list.size() > 1)
   {
-    std::vector<GradType> grad_now_z(P_list.size());
+    std::vector<GradType> grad_now_z(WF_list.size());
     for (int i = 0, ii = VGL_TIMER; i < Z.size(); ++i, ii += TIMER_SKIP)
     {
-      myTimers[ii]->start();
+      ScopedTimer local_timer(myTimers[ii]);
       const auto WFC_list(extract_WFC_list(WF_list, i));
       Z[i]->mw_evalGrad(WFC_list, P_list, iat, grad_now_z);
-      for (int iw = 0; iw < P_list.size(); iw++)
+      for (int iw = 0; iw < WF_list.size(); iw++)
         grad_now[iw] += grad_now_z[iw];
-      myTimers[ii]->stop();
     }
   }
-  else if (P_list.size() == 1)
+  else if (WF_list.size() == 1)
     grad_now[0] = WF_list[0]->evalGrad(*P_list[0], iat);
 }
 
@@ -494,27 +490,26 @@ void TrialWaveFunction::flex_ratioGrad(const std::vector<TrialWaveFunction*>& WF
                       std::vector<PsiValueType>& ratios,
                       std::vector<GradType>& grad_new) const
 {
-  grad_new.resize(P_list.size(), GradType(0));
-  ratios.resize(P_list.size(), PsiValueType(1));
+  grad_new.resize(WF_list.size(), GradType(0));
+  ratios.resize(WF_list.size(), PsiValueType(1));
 
-  if (P_list.size() > 1)
+  if (WF_list.size() > 1)
   {
-    std::vector<GradType> grad_new_z(P_list.size());
-    std::vector<PsiValueType> ratios_z(P_list.size());
+    std::vector<GradType> grad_new_z(WF_list.size());
+    std::vector<PsiValueType> ratios_z(WF_list.size());
     for (int i = 0, ii = VGL_TIMER; i < Z.size(); ++i, ii += TIMER_SKIP)
     {
-      myTimers[ii]->start();
+      ScopedTimer local_timer(myTimers[ii]);
       const auto WFC_list(extract_WFC_list(WF_list, i));
       Z[i]->mw_ratioGrad(WFC_list, P_list, iat, ratios_z, grad_new_z);
-      for (int iw = 0; iw < P_list.size(); iw++)
+      for (int iw = 0; iw < WF_list.size(); iw++)
       {
         ratios[iw] *= ratios_z[iw];
         grad_new[iw] += grad_new_z[iw];
       }
-      myTimers[ii]->stop();
     }
   }
-  else if (P_list.size() == 1)
+  else if (WF_list.size() == 1)
     ratios[0] = WF_list[0]->ratioGrad(*P_list[0], iat, grad_new[0]);
 }
 
@@ -566,6 +561,33 @@ void TrialWaveFunction::acceptMove(ParticleSet& P, int iat)
     LogValue += Z[i]->LogValue;
 }
 
+void TrialWaveFunction::flex_acceptMove(const std::vector<TrialWaveFunction*>& WF_list,
+                     const std::vector<ParticleSet*>& P_list,
+                     int iat) const
+{
+  if (WF_list.size() > 1)
+  {
+    for (int iw = 0; iw < WF_list.size(); iw++)
+    {
+      WF_list[iw]->LogValue = 0;
+      WF_list[iw]->PhaseValue = 0;
+    }
+    for (int i = 0, ii = ACCEPT_TIMER; i < Z.size(); i++, ii += TIMER_SKIP)
+    {
+      ScopedTimer local_timer(myTimers[ii]);
+      std::vector<WaveFunctionComponent*> WFC_list(extract_WFC_list(WF_list, i));
+      Z[i]->mw_acceptMove(WFC_list, P_list, iat);
+      for (int iw = 0; iw < WF_list.size(); iw++)
+      {
+        WF_list[iw]->LogValue += WFC_list[iw]->LogValue;
+        WF_list[iw]->PhaseValue += WFC_list[iw]->PhaseValue;
+      }
+    }
+  }
+  else if(WF_list.size()==1)
+    WF_list[0]->acceptMove(*P_list[0], iat);
+}
+
 void TrialWaveFunction::completeUpdates()
 {
   for (int i = 0, ii = ACCEPT_TIMER; i < Z.size(); i++, ii += TIMER_SKIP)
@@ -574,6 +596,21 @@ void TrialWaveFunction::completeUpdates()
     Z[i]->completeUpdates();
     myTimers[ii]->stop();
   }
+}
+
+void TrialWaveFunction::flex_completeUpdates(const std::vector<TrialWaveFunction*>& WF_list) const
+{
+  if (WF_list.size() > 1)
+  {
+    for (int i = 0, ii = ACCEPT_TIMER; i < Z.size(); i++, ii += TIMER_SKIP)
+    {
+      ScopedTimer local_timer(myTimers[ii]);
+      std::vector<WaveFunctionComponent*> WFC_list(extract_WFC_list(WF_list, i));
+      Z[i]->mw_completeUpdates(WFC_list);
+    }
+  }
+  else if(WF_list.size()==1)
+    WF_list[0]->completeUpdates();
 }
 
 void TrialWaveFunction::checkInVariables(opt_variables_type& active)
