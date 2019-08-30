@@ -116,6 +116,7 @@ LocalECPotential::Return_t LocalECPotential::evaluate(ParticleSet& P)
     }
     else
     {
+#ifndef ENABLE_SOA
       //loop over all the ions
       for (int iat = 0; iat < NumIons; iat++)
       {
@@ -128,6 +129,7 @@ LocalECPotential::Return_t LocalECPotential::evaluate(ParticleSet& P)
         //count the sign and effective charge
         Value -= esum * Zeff[iat];
       }
+#endif
     }
   }
   return Value;
@@ -191,6 +193,7 @@ LocalECPotential::Return_t LocalECPotential::evaluate_sp(ParticleSet& P)
     if (ppot == 0)
       continue;
     Return_t esum(0.0), pairpot;
+#ifndef ENABLE_SOA
     //loop over all the electrons
     for (int nn = d_table.M[iat], iel = 0; nn < d_table.M[iat + 1]; ++nn, iel++)
     {
@@ -199,6 +202,7 @@ LocalECPotential::Return_t LocalECPotential::evaluate_sp(ParticleSet& P)
       Ve_samp(iel) += pairpot;
       esum         += pairpot;
     }
+#endif
     Value += esum;
   }
   Value *= 2.0;
@@ -246,8 +250,10 @@ LocalECPotential::Return_t LocalECPotential::evaluate_orig(ParticleSet& P)
     if (ppot == 0)
       continue;
     Return_t esum(0.0);
+#ifndef ENABLE_SOA
     for (int nn = d_table.M[iat]; nn < d_table.M[iat + 1]; ++nn)
       esum += ppot->splint(d_table.r(nn)) * d_table.rinv(nn);
+#endif
     //count the sign and effective charge
     Value -= esum * Zeff[iat];
   }

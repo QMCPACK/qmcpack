@@ -188,10 +188,29 @@ class PwscfAnalyzer(SimulationAnalyzer):
         #end try
 
         try:
+            fermi_energies = []
+            for l in lines:
+                if l.find('Fermi energy')!=-1:
+                    fermi_energies.append( float( l.split('is')[1].split()[0] ) )
+                #end if
+            #end for
+            if len(fermi_energies)==0:
+                self.Ef = 0.0
+            else:
+                self.Ef = fermi_energies[-1]
+            #end if
+            self.fermi_energies = array(fermi_energies)
+        except:
+            nx+=1
+            if self.info.warn:
+                self.warn('fermi energy read failed')
+            #end if
+        #end try
+        try:
             energies = []
             for l in lines:
                 if l.find('!  ')!=-1:
-                    energies.append( eval( l.split('=')[1].split()[0] ) )
+                    energies.append( float( l.split('=')[1].split()[0] ) )
                 #end if
             #end for
             if len(energies)==0:
@@ -203,7 +222,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
         except:
             nx+=1
             if self.info.warn:
-                self.warn('energy read failed')
+                self.warn('total energy read failed')
             #end if
         #end try
         try:
@@ -222,6 +241,17 @@ class PwscfAnalyzer(SimulationAnalyzer):
             read_rel      = False
             for i in xrange(len(lines)):
                 l = lines[i]
+                if 'End of self-consistent calculation' in l:
+                    # Initialize each time in case a hybrid functional was used
+                    if nfound > 0:
+                        nfound = 0
+                        index = -1
+                        bands = obj()
+                        bands.up = obj()
+                        bands.down = obj()
+                    #end if
+                #end if
+
                 if '- SPIN UP -' in l:
                     up_spin   = True
                 elif '- SPIN DOWN -' in l:

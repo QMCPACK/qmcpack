@@ -330,12 +330,15 @@ ELSE()
     CTEST_START( "${CTEST_DASHBOARD}" TRACK "Performance" APPEND)
     CTEST_TEST( INCLUDE_LABEL "performance" PARALLEL_LEVEL 16 )
     CTEST_SUBMIT( PARTS Test )
-    CTEST_START( "${CTEST_DASHBOARD}" TRACK "Unstable" APPEND)
-    CTEST_TEST( INCLUDE_LABEL "unstable" PARALLEL_LEVEL ${N_CONCURRENT_TESTS} )
-    CTEST_SUBMIT( PARTS Test )
     # run and submit unclassified tests to the default track
     CTEST_START( "${CTEST_DASHBOARD}" TRACK "${CTEST_DASHBOARD}" APPEND)
     CTEST_TEST( EXCLUDE_LABEL "deterministic|performance|converter|unstable" PARALLEL_LEVEL ${N_CONCURRENT_TESTS} )
+    CTEST_SUBMIT( PARTS Test )
+    # Only the result checking is placed in the unstable category and parent process must run before it
+    # To fullfil this implicit dependency, the unstable category is placed last.
+    # A better solution is needed to make the dependency explicit.
+    CTEST_START( "${CTEST_DASHBOARD}" TRACK "Unstable" APPEND)
+    CTEST_TEST( INCLUDE_LABEL "unstable" PARALLEL_LEVEL ${N_CONCURRENT_TESTS} )
     CTEST_SUBMIT( PARTS Test )
 ENDIF()
 

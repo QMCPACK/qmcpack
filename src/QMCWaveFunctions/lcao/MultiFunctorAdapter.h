@@ -110,12 +110,9 @@ struct RadialOrbitalSetBuilder<SoaAtomicBasisSet<MultiFunctorAdapter<FN>, SH>> :
   bool openNumericalBasisH5(xmlNodePtr cur) { return true; }
   bool put(xmlNodePtr cur)
   {
-    const xmlChar* a = xmlGetProp(cur, (const xmlChar*)"normalized");
-    if (a)
-    {
-      if (xmlStrEqual(a, (const xmlChar*)"no"))
-        Normalized = false;
-    }
+    const XMLAttrString a(cur, "normalized");
+    if (a == "no")
+      Normalized = false;
     return true;
   }
 

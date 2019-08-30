@@ -17,7 +17,9 @@
 #include "Particle/createDistanceTable.h"
 #include "Particle/DistanceTableData.h"
 #include "Lattice/ParticleBConds.h"
+#ifndef ENABLE_SOA
 #include "Particle/SymmetricDistanceTableData.h"
+#endif
 #include "Lattice/ParticleBConds3DSoa.h"
 #include "Particle/SoaDistanceTableAA.h"
 namespace qmcplusplus
@@ -59,7 +61,9 @@ DistanceTableData* createDistanceTable(ParticleSet& s, int dt_type, std::ostream
       }
       else
       {
+#ifndef ENABLE_SOA
         dt = new SymmetricDTD<RealType, DIM, PPPO>(s, s);
+#endif
       }
     }
     else
@@ -73,7 +77,9 @@ DistanceTableData* createDistanceTable(ParticleSet& s, int dt_type, std::ostream
         }
         else
         {
+#ifndef ENABLE_SOA
           dt = new SymmetricDTD<RealType, DIM, PPPG>(s, s);
+#endif
         }
       }
       else
@@ -85,7 +91,9 @@ DistanceTableData* createDistanceTable(ParticleSet& s, int dt_type, std::ostream
         }
         else
         {
+#ifndef ENABLE_SOA
           dt = new SymmetricDTD<RealType, DIM, PPPS>(s, s);
+#endif
         }
       }
     }
@@ -101,7 +109,9 @@ DistanceTableData* createDistanceTable(ParticleSet& s, int dt_type, std::ostream
       }
       else
       {
+#ifndef ENABLE_SOA
         dt = new SymmetricDTD<RealType, DIM, PPNO>(s, s);
+#endif
       }
     }
     else
@@ -117,7 +127,9 @@ DistanceTableData* createDistanceTable(ParticleSet& s, int dt_type, std::ostream
         {
           o << "    Distance computations use general periodic cell in 2D with all surrounding image checks."
             << std::endl;
+#ifndef ENABLE_SOA
           dt = new SymmetricDTD<RealType, DIM, PPNX>(s, s);
+#endif
         }
       }
       else
@@ -129,7 +141,9 @@ DistanceTableData* createDistanceTable(ParticleSet& s, int dt_type, std::ostream
         }
         else
         {
+#ifndef ENABLE_SOA
           dt = new SymmetricDTD<RealType, DIM, PPNS>(s, s);
+#endif
         }
       }
     }
@@ -143,7 +157,9 @@ DistanceTableData* createDistanceTable(ParticleSet& s, int dt_type, std::ostream
     }
     else
     {
+#ifndef ENABLE_SOA
       dt = new SymmetricDTD<RealType, DIM, SUPERCELL_WIRE>(s, s);
+#endif
     }
   }
   else //open boundary condition
@@ -155,13 +171,14 @@ DistanceTableData* createDistanceTable(ParticleSet& s, int dt_type, std::ostream
     }
     else
     {
+#ifndef ENABLE_SOA
       dt = new SymmetricDTD<RealType, DIM, SUPERCELL_OPEN>(s, s);
+#endif
     }
   }
 
 
   //set dt properties
-  dt->CellType = sc;
   dt->DTType   = (useSoA) ? DT_SOA : DT_AOS;
   std::ostringstream p;
   p << s.getName() << "_" << s.getName();
