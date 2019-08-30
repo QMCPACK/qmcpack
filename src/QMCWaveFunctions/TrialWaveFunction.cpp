@@ -364,16 +364,42 @@ TrialWaveFunction::RealType TrialWaveFunction::ratio(ParticleSet& P, int iat)
 TrialWaveFunction::ValueType TrialWaveFunction::calcRatio(ParticleSet& P, int iat, ComputeType ct)
 {
   ValueType r(1.0);
-  std::vector<WaveFunctionComponent*>::iterator it(Z.begin());
-  std::vector<WaveFunctionComponent*>::iterator it_end(Z.end());
-  for (int ii = V_TIMER; it != it_end; ++it, ii += TIMER_SKIP)
+  for (int i = 0, ii = V_TIMER; i < Z.size(); i++, ii += TIMER_SKIP)
   {
     myTimers[ii]->start();
-    if (ct == ComputeType::ALL || ((*it)->is_fermionic && ct == ComputeType::FERMIONIC) || (!(*it)->is_fermionic && ct == ComputeType::NONFERMIONIC))
-      r *= (*it)->ratio(P, iat);
+    if (ct == ComputeType::ALL || (Z[i]->is_fermionic && ct == ComputeType::FERMIONIC) || (!Z[i]->is_fermionic && ct == ComputeType::NONFERMIONIC))
+      r *= Z[i]->ratio(P, iat);
     myTimers[ii]->stop();
   }
   return r;
+}
+
+void TrialWaveFunction::flex_calcRatio(const std::vector<TrialWaveFunction*>& WF_list,
+                      const std::vector<ParticleSet*>& P_list,
+                      int iat,
+                      std::vector<PsiValueType>& ratios,
+                      ComputeType ct) const
+{
+  ratios.resize(P_list.size(), PsiValueType(1));
+
+  if (P_list.size() > 1)
+  {
+    std::vector<PsiValueType> ratios_z(P_list.size());
+    for (int i = 0, ii = V_TIMER; i < Z.size(); i++, ii += TIMER_SKIP)
+    {
+      if (ct == ComputeType::ALL || (Z[i]->is_fermionic && ct == ComputeType::FERMIONIC) || (!Z[i]->is_fermionic && ct == ComputeType::NONFERMIONIC))
+      {
+        myTimers[ii]->start();
+        const auto WFC_list(extract_WFC_list(WF_list, i));
+        Z[i]->mw_calcRatio(WFC_list, P_list, iat, ratios_z);
+        for (int iw = 0; iw < P_list.size(); iw++)
+          ratios[iw] *= ratios_z[iw];
+        myTimers[ii]->stop();
+      }
+    }
+  }
+  else if (P_list.size() == 1)
+    ratios[0] = WF_list[0]->calcRatio(*P_list[0], iat);
 }
 
 TrialWaveFunction::GradType TrialWaveFunction::evalGrad(ParticleSet& P, int iat)
@@ -387,6 +413,30 @@ TrialWaveFunction::GradType TrialWaveFunction::evalGrad(ParticleSet& P, int iat)
   }
   return grad_iat;
 }
+
+void TrialWaveFunction::flex_evalGrad(const std::vector<TrialWaveFunction*>& WF_list,
+                                      const std::vector<ParticleSet*>& P_list,
+                                      int iat,
+                                      std::vector<GradType>& grad_now) const
+{
+  grad_now.resize(P_list.size(), GradType(0));
+  if (P_list.size() > 1)
+  {
+    std::vector<GradType> grad_now_z(P_list.size());
+    for (int i = 0, ii = VGL_TIMER; i < Z.size(); ++i, ii += TIMER_SKIP)
+    {
+      myTimers[ii]->start();
+      const auto WFC_list(extract_WFC_list(WF_list, i));
+      Z[i]->mw_evalGrad(WFC_list, P_list, iat, grad_now_z);
+      for (int iw = 0; iw < P_list.size(); iw++)
+        grad_now[iw] += grad_now_z[iw];
+      myTimers[ii]->stop();
+    }
+  }
+  else if (P_list.size() == 1)
+    grad_now[0] = WF_list[0]->evalGrad(*P_list[0], iat);
+}
+
 
 // Evaluates the gradient w.r.t. to the source of the Laplacian
 // w.r.t. to the electrons of the wave function.
@@ -436,6 +486,36 @@ TrialWaveFunction::RealType TrialWaveFunction::ratioGrad(ParticleSet& P, int iat
     PhaseDiff = M_PI;
   return r;
 #endif
+}
+
+void TrialWaveFunction::flex_ratioGrad(const std::vector<TrialWaveFunction*>& WF_list,
+                      const std::vector<ParticleSet*>& P_list,
+                      int iat,
+                      std::vector<PsiValueType>& ratios,
+                      std::vector<GradType>& grad_new) const
+{
+  grad_new.resize(P_list.size(), GradType(0));
+  ratios.resize(P_list.size(), PsiValueType(1));
+
+  if (P_list.size() > 1)
+  {
+    std::vector<GradType> grad_new_z(P_list.size());
+    std::vector<PsiValueType> ratios_z(P_list.size());
+    for (int i = 0, ii = VGL_TIMER; i < Z.size(); ++i, ii += TIMER_SKIP)
+    {
+      myTimers[ii]->start();
+      const auto WFC_list(extract_WFC_list(WF_list, i));
+      Z[i]->mw_ratioGrad(WFC_list, P_list, iat, ratios_z, grad_new_z);
+      for (int iw = 0; iw < P_list.size(); iw++)
+      {
+        ratios[iw] *= ratios_z[iw];
+        grad_new[iw] += grad_new_z[iw];
+      }
+      myTimers[ii]->stop();
+    }
+  }
+  else if (P_list.size() == 1)
+    ratios[0] = WF_list[0]->ratioGrad(*P_list[0], iat, grad_new[0]);
 }
 
 void TrialWaveFunction::printGL(ParticleSet::ParticleGradient_t& G,

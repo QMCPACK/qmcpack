@@ -397,10 +397,10 @@ struct WaveFunctionComponent : public QMCTraits
    * @param iat particle index
    * @param ratios the list of WF ratios of a walker batch, \f$ \Psi( \{ {\bf R}^{'} \} )/ \Psi( \{ {\bf R}\})\f$
    */
-  virtual void mw_ratio(const std::vector<WaveFunctionComponent*>& WFC_list,
-                        const std::vector<ParticleSet*>& P_list,
-                        int iat,
-                        std::vector<PsiValueType>& ratios)
+  virtual void mw_calcRatio(const std::vector<WaveFunctionComponent*>& WFC_list,
+                            const std::vector<ParticleSet*>& P_list,
+                            int iat,
+                            std::vector<PsiValueType>& ratios)
   {
     #pragma omp parallel for
     for (int iw = 0; iw < WFC_list.size(); iw++)

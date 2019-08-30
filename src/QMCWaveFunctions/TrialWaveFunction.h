@@ -167,6 +167,12 @@ public:
   *   is complex. It differs from the ratio(ParticleSet& P, int iat) function in the way that the ratio
   *   function takes the absolute value of psi(R_new) / psi(R_current). */
   ValueType calcRatio(ParticleSet& P, int iat, ComputeType ct = ComputeType::ALL);
+  /** batched verison of calcRatio */
+  void flex_calcRatio(const std::vector<TrialWaveFunction*>& WF_list,
+                      const std::vector<ParticleSet*>& P_list,
+                      int iat,
+                      std::vector<PsiValueType>& ratios,
+                      ComputeType ct = ComputeType::ALL) const;
 
   /** compulte multiple ratios to handle non-local moves and other virtual moves
    */
@@ -190,8 +196,21 @@ public:
                           TinyVector<ParticleSet::ParticleLaplacian_t, OHMMS_DIM>& lapl_grad);
 
   RealType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
+  /** compute the WF ratio and new gradients for the proposed move of the iat-th particle of one or multiple walkers.
+   */
+  void flex_ratioGrad(const std::vector<TrialWaveFunction*>& WF_list,
+                      const std::vector<ParticleSet*>& P_list,
+                      int iat,
+                      std::vector<PsiValueType>& ratios,
+                      std::vector<GradType>& grad_new) const;
 
   GradType evalGrad(ParticleSet& P, int iat);
+  /** compute the current gradients for the iat-th particle of one or multiple walkers.
+   */
+  void flex_evalGrad(const std::vector<TrialWaveFunction*>& WF_list,
+                     const std::vector<ParticleSet*>& P_list,
+                     int iat,
+                     std::vector<GradType>& grad_now) const;
 
   void rejectMove(int iat);
   void acceptMove(ParticleSet& P, int iat);
@@ -248,24 +267,14 @@ public:
     //OneOverM = 1.0/mass;
   }
 /*
-  void flex_evalGrad(const std::vector<WaveFunction*>& WF_list,
-                      const std::vector<ParticleSet*>& P_list,
-                      int iat,
-                      std::vector<posT>& grad_now) const;
-  void flex_ratioGrad(const std::vector<WaveFunction*>& WF_list,
-                       const std::vector<ParticleSet*>& P_list,
-                       int iat,
-                       std::vector<valT>& ratio_list,
-                       std::vector<posT>& grad_new) const;
-  void flex_ratio(const std::vector<ParticleSet*>& P_list, int iat) const {};
-  void flex_acceptrestoreMove(const std::vector<WaveFunction*>& WF_list,
-                               const std::vector<ParticleSet*>& P_list,
-                               const std::vector<bool>& isAccepted,
-                               int iat) const;
+  void flex_acceptrestoreMove(const std::vector<TrialWaveFunction*>& WF_list,
+                              const std::vector<ParticleSet*>& P_list,
+                              const std::vector<bool>& isAccepted,
+                              int iat) const;
   void flex_evaluateGL(const std::vector<WaveFunction*>& WF_list,
                         const std::vector<ParticleSet*>& P_list) const;
 
-  void flex_completeUpdates(const std::vector<WaveFunction*>& WF_list) const;
+  void flex_completeUpdates(const std::vector<TrialWaveFunction*>& WF_list) const;
 */
 private:
   ///control how ratio is calculated
