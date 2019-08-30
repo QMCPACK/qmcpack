@@ -246,6 +246,7 @@ public:
     {
       for (int iat = s_offset[sg]; iat < s_offset[sg + 1]; ++iat)
       {
+#ifndef ENABLE_SOA
         int nn = myTable.M[iat]; //starting nn for the iat-th source
         for (int tg = 0; tg < RadFunc.cols(); ++tg)
         {
@@ -259,6 +260,7 @@ public:
           else
             nn += t_offset[tg + 1] - t_offset[tg]; //move forward by the number of particles in the group tg
         }
+#endif
       }
     }
   }
@@ -272,6 +274,7 @@ public:
     {
       for (int iat = s_offset[sg]; iat < s_offset[sg + 1]; ++iat)
       {
+#ifndef ENABLE_SOA
         int nn = myTable.M[iat]; //starting nn for the iat-th source
         for (int tg = 0; tg < RadFunc.cols(); ++tg)
         {
@@ -295,6 +298,7 @@ public:
           else
             nn += t_offset[tg + 1] - t_offset[tg]; //move forward by the number of particles in the group tg
         }
+#endif
       }
     }
   }
@@ -308,6 +312,7 @@ public:
     const auto& myTable = P.getDistTable(myTableIndex_);
     for (int sg = 0; sg < RadFunc.rows(); ++sg)
     {
+#ifndef ENABLE_SOA
       for (int iat = s_offset[sg]; iat < s_offset[sg + 1]; ++iat)
       {
         int nn = myTable.M[iat]; //starting nn for the iat-th source
@@ -335,6 +340,7 @@ public:
             nn += t_offset[tg + 1] - t_offset[tg]; //move forward by the number of particles in the group tg
         }
       }
+#endif
     }
   }
 
@@ -454,6 +460,7 @@ public:
     const auto& myTable = P.getDistTable(myTableIndex_);
     for (int sg = 0; sg < RadFunc.rows(); ++sg)
     {
+#ifndef ENABLE_SOA
       for (int iat = s_offset[sg]; iat < s_offset[sg + 1]; ++iat)
       {
         int nn = myTable.M[iat]; //starting nn for the iat-th source
@@ -470,6 +477,7 @@ public:
             nn += t_offset[tg + 1] - t_offset[tg]; //move forward by the number of particles in the group tg
         }
       }
+#endif
     }
   }
 
@@ -490,6 +498,7 @@ public:
     {
       for (int iat = s_offset[sg]; iat < s_offset[sg + 1]; ++iat)
       {
+#ifndef ENABLE_SOA
         int nn = myTable.M[iat]; //starting nn for the iat-th source
         for (int tg = 0; tg < RadFunc.cols(); ++tg)
         {
@@ -529,6 +538,7 @@ public:
           else
             nn += t_offset[tg + 1] - t_offset[tg]; //move forward by the number of particles in the group tg
         }
+#endif
       }
     }
   }
