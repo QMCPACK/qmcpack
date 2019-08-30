@@ -5,6 +5,7 @@
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
 // File developed by: Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
+//                    Luke Shulenburger, lshulen@sandia.gov, Sandia National Laboratories
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
@@ -203,6 +204,27 @@ public:
     return e.read(p, aname, xfer_plist);
   }
 
+  /* read the data from the group aname and return status
+     use read() for inbuilt error checking
+     @return true if successful
+
+     This is using slicing of the dataspace described in the corresponding 
+     version of read
+  */
+  template<typename T, typename IC>
+  bool readHyperslabEntry(T& data, const IC& readSpec, const std::string& aname)
+  {
+    if (Mode[NOIO])
+      return true;
+    hid_t p = group_id.empty() ? file_id : group_id.top();
+    std::vector<hsize_t> offset(readSpec.size());
+    std::vector<hsize_t> count(readSpec.size());
+    int numElements;
+    getOffsets(p, aname, readSpec, offset, count, numElements);
+    hyperslab_proxy<T,7> pxy(data, count, count, offset);
+    return readEntry(pxy, aname);
+  }
+
   /* read the data from the group aname and check status
      runtime error is issued on I/O error
    */
@@ -212,6 +234,24 @@ public:
     if (!readEntry(data, aname))
     {
       std::runtime_error("HDF5 read failure in hdf_archive::read " + aname);
+    }
+  }
+
+  /* read a portion of the data from the group aname and check status
+     runtime error is issued on I/O error
+
+     note the vector must have dimensionality corresponding to the dataset,
+     values for a dimension must be [0,num_entries-1] for that dimension to specify
+     which value to hold and a -1 to grab all elements from that dimension
+     for example, if the dataset was [5,2,6] and the vector contained (2,1,-1),
+     this would grab 6 elements corresponding to [2,1,:]
+  */
+  template<typename T, typename IC>
+  void readHyperslab(T& data, const IC& readSpec, const std::string& aname)
+  {
+    if (!readHyperslabEntry(data, readSpec, aname))
+    {
+      std::runtime_error("HDF5 read failure in hdf_archive::readHyperslab " + aname);
     }
   }
 
