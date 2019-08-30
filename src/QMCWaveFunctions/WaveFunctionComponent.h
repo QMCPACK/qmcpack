@@ -75,6 +75,7 @@ typedef DiffWaveFunctionComponent* DiffWaveFunctionComponentPtr;
  *
  * mw_ prefix is a function name signature indicating it is for handling a batch of WaveFunctionComponent objects
  * which are required to be base class pointers of the same derived class type.
+ * all the mw_ routines must be implemented in a way either stateless or maintains states of every walker.
  */
 struct WaveFunctionComponent : public QMCTraits
 {
@@ -451,12 +452,11 @@ struct WaveFunctionComponent : public QMCTraits
   virtual void mw_updateBuffer(const std::vector<WaveFunctionComponent*>& WFC_list,
                                const std::vector<ParticleSet*>& P_list,
                                const std::vector<WFBufferType*>& buf_list,
-                               std::vector<LogValueType>& log_vals,
                                bool fromscratch = false)
   {
     #pragma omp parallel for
     for (int iw = 0; iw < WFC_list.size(); iw++)
-      log_vals[iw] = LogValueType(WFC_list[iw]->updateBuffer(*P_list[iw], *buf_list[iw], fromscratch), WFC_list[iw]->PhaseValue);
+      WFC_list[iw]->updateBuffer(*P_list[iw], *buf_list[iw], fromscratch);
   }
 
   /** For particle-by-particle move. Copy data or attach memory

@@ -47,6 +47,12 @@ namespace qmcplusplus
  *A Composite Pattern is used to handle \f$\prod\f$ operations.
  *Each WaveFunctionComponent should provide proper evaluate functions
  *for the value, gradient and laplacian values.
+ *
+ * flex_ prefix is a function name signature indicating it is for handling
+ * a batch of TrialWaveFunction objects in a lock-step fashion.
+ * It dispatched mw_ functions of WaveFunctionComponent or single walker functions
+ * based on the number of objects in the list to faciliate different parallelization
+ * schemes to maximize performance.
  */
 class TrialWaveFunction : public MPIObjectBase
 {
@@ -224,12 +230,26 @@ public:
   /** register all the wavefunction components in buffer.
    *  See WaveFunctionComponent::registerData for more detail */
   void registerData(ParticleSet& P, WFBufferType& buf);
+  /* flexible batched version of registerData. 
+   * Ye: perhaps it doesn't need to be flexible but just operates on all the walkers
+   */
+  void flex_registerData(const std::vector<TrialWaveFunction*>& WF_list, const std::vector<ParticleSet*>& P_list, const std::vector<WFBufferType*>& buf_list) const;
+
   /** update all the wavefunction components in buffer.
    *  See WaveFunctionComponent::updateBuffer for more detail */
   RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false);
+  /* flexible batched version of updateBuffer. 
+   * Ye: perhaps it doesn't need to be flexible but just operates on all the walkers
+   */
+  void flex_updateBuffer(const std::vector<TrialWaveFunction*>& WF_list, const std::vector<ParticleSet*>& P_list, const std::vector<WFBufferType*>& buf_list, bool fromscratch = false) const;
+
   /** copy all the wavefunction components from buffer.
    *  See WaveFunctionComponent::updateBuffer for more detail */
   void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
+  /* flexible batched version of copyFromBuffer. 
+   * Ye: perhaps it doesn't need to be flexible but just operates on all the walkers
+   */
+  void flex_copyFromBuffer(const std::vector<TrialWaveFunction*>& WF_list, const std::vector<ParticleSet*>& P_list, const std::vector<WFBufferType*>& buf_list) const;
 
   RealType KECorrection() const;
 
