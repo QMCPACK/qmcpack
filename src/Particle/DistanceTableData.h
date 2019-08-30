@@ -123,7 +123,7 @@ struct DistanceTableData
 
   /**defgroup SoA data */
   /*@{*/
-  /** Distances[i][j] , [Nsources][Ntargets]
+  /** Distances[i][j] , [N_targets][N_sources]
    *  Note: For derived AA, only the lower triangle (j<i) is up-to-date after pbyp move
    *          The upper triangle is symmetric to the lower one only when the full table is evaluated from scratch.
    *          Avoid using the upper triangle because we may change the code to only allocate the lower triangle part.
@@ -131,7 +131,7 @@ struct DistanceTableData
    */
   Matrix<RealType, aligned_allocator<RealType>> Distances;
 
-  /** Displacements[Nsources]x[3][Ntargets]
+  /** Displacements[N_targets]x[3][N_sources]
    *  Note: This is a memory view using the memory space allocated in memoryPool
    *        Displacements[i][j] = r_A2[j] - r_A1[i], the opposite sign of AoS dr
    *        For derived AA, A1=A2=A, only the lower triangle (j<i) is allocated in memoryPool
