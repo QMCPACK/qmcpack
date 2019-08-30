@@ -245,7 +245,7 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
   elec.resetGroups();
 
   //Cool.  Now to construct a wavefunction with 1 and 2 body jastrow (no determinant)
-  TrialWaveFunction psi = TrialWaveFunction(c);
+  TrialWaveFunction psi(c);
 
   //Add the two body jastrow
   const char* particles = "<tmp> \

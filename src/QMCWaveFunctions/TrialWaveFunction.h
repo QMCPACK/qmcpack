@@ -81,6 +81,11 @@ public:
 
   TrialWaveFunction(Communicate* c);
 
+  // delete copy constructor
+  TrialWaveFunction(const TrialWaveFunction&) = delete;
+  // deleteFassign operator
+  TrialWaveFunction& operator=(const TrialWaveFunction&) = delete;
+
   ~TrialWaveFunction();
 
   inline int size() const { return Z.size(); }
