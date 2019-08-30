@@ -309,7 +309,7 @@ private:
   std::vector<RealType> myTwist;
 
   // helper function for extrating a list of WaveFunctionComponent from a list of TrialWaveFunction
-  std::vector<WaveFunctionComponent*>&&
+  std::vector<WaveFunctionComponent*>
   extract_WFC_list(const std::vector<TrialWaveFunction*>& WF_list, int id) const;
 
   ///////////////////////////////////////////

@@ -638,10 +638,10 @@ protected:
 };
 
 // helper function for extrating a list of gradients from a list of ParticleSet
-std::vector<ParticleSet::ParticleGradient_t*>&&
+std::vector<ParticleSet::ParticleGradient_t*>
     extract_G_list(const std::vector<ParticleSet*>& P_list);
 // helper function for extrating a list of laplacian from a list of ParticleSet
-std::vector<ParticleSet::ParticleLaplacian_t*>&&
+std::vector<ParticleSet::ParticleLaplacian_t*>
     extract_L_list(const std::vector<ParticleSet*>& P_list);
 
 } // namespace qmcplusplus

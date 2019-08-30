@@ -734,13 +734,13 @@ void TrialWaveFunction::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<Value
   }
 }
 
-std::vector<WaveFunctionComponent*>&&
+std::vector<WaveFunctionComponent*>
 TrialWaveFunction::extract_WFC_list(const std::vector<TrialWaveFunction*>& WF_list, int id) const
 {
   std::vector<WaveFunctionComponent*> WFC_list;
   for (auto WF : WF_list)
     WFC_list.push_back(WF->Z[id]);
-  return std::move(WFC_list);
+  return WFC_list;
 }
 
 } // namespace qmcplusplus
