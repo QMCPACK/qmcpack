@@ -891,6 +891,7 @@ void SpaceGrid::evaluate(const ParticlePos_t& R,
       int nd, nn;
       RealType dist;
       for (nd = 0; nd < ndomains; nd++)
+#ifndef ENABLE_SOA
         for (nn = dtab.M[nd], p = 0; nn < dtab.M[nd + 1]; ++nn, ++p)
         {
           dist = dtab.r(nn);
@@ -900,6 +901,7 @@ void SpaceGrid::evaluate(const ParticlePos_t& R,
             nearcell[p].i = nd;
           }
         }
+#endif
       //accumulate values for each dynamic particle
       for (p = 0; p < ndparticles; p++)
       {
@@ -994,6 +996,7 @@ void SpaceGrid::evaluate(const ParticlePos_t& R,
       int nn;
       RealType dist;
       for (nd = 0; nd < ndomains; nd++)
+#ifndef ENABLE_SOA
         for (nn = dtab.M[nd], p = 0; nn < dtab.M[nd + 1]; ++nn, ++p)
         {
           dist = dtab.r(nn);
@@ -1003,6 +1006,7 @@ void SpaceGrid::evaluate(const ParticlePos_t& R,
             nearcell[p].i = nd;
           }
         }
+#endif
       //accumulate values for each dynamic particle
       for (p = 0; p < ndparticles; p++)
       {

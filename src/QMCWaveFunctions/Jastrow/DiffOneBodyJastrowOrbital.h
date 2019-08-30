@@ -229,6 +229,7 @@ public:
       }
       else
       {
+#ifndef ENABLE_SOA
         for (int i = 0; i < d_table.sources(); ++i)
         {
           FT* func = Fs[i];
@@ -260,6 +261,7 @@ public:
             }
           }
         }
+#endif
       }
       for (int k = 0; k < myVars.size(); ++k)
       {

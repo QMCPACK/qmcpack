@@ -147,7 +147,7 @@ void HamiltonianFactory::addCoulombPotential(xmlNodePtr cur)
     if (applyPBC)
       targetH->addOperator(new CoulombPBCAB(*ptclA, *targetPtcl), title);
     else
-      targetH->addOperator(new CoulombPotential<Return_t>(*ptclA, *targetPtcl, true, doForces), title);
+      targetH->addOperator(new CoulombPotential<Return_t>(*ptclA, *targetPtcl, true), title);
 #endif
   }
 }

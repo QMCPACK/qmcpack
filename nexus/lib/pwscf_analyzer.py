@@ -241,6 +241,17 @@ class PwscfAnalyzer(SimulationAnalyzer):
             read_rel      = False
             for i in xrange(len(lines)):
                 l = lines[i]
+                if 'End of self-consistent calculation' in l:
+                    # Initialize each time in case a hybrid functional was used
+                    if nfound > 0:
+                        nfound = 0
+                        index = -1
+                        bands = obj()
+                        bands.up = obj()
+                        bands.down = obj()
+                    #end if
+                #end if
+
                 if '- SPIN UP -' in l:
                     up_spin   = True
                 elif '- SPIN DOWN -' in l:

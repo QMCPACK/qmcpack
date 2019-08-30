@@ -17,17 +17,17 @@
 #include "Lattice/ParticleBConds.h"
 #include "Particle/ParticleSet.h"
 #include "Particle/DistanceTableData.h"
-#include "Particle/SymmetricDistanceTableData.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
-#include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbital.h"
-#include "QMCWaveFunctions/Jastrow/OneBodyJastrowOrbital.h"
 #include "QMCWaveFunctions/Jastrow/BsplineFunctor.h"
 #include "QMCWaveFunctions/Jastrow/RadialJastrowBuilder.h"
 #include "ParticleBase/ParticleAttribOps.h"
 #ifdef ENABLE_SOA
 #include "QMCWaveFunctions/Jastrow/J2OrbitalSoA.h"
 #include "QMCWaveFunctions/Jastrow/J1OrbitalSoA.h"
+#else
+#include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbital.h"
+#include "QMCWaveFunctions/Jastrow/OneBodyJastrowOrbital.h"
 #endif
 
 #include <stdio.h>

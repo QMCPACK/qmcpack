@@ -17,7 +17,9 @@
 #include "Particle/createDistanceTable.h"
 #include "Particle/DistanceTableData.h"
 #include "Lattice/ParticleBConds.h"
+#ifndef ENABLE_SOA
 #include "Particle/AsymmetricDistanceTableData.h"
+#endif
 #include "simd/algorithm.hpp"
 #include "Lattice/ParticleBConds3DSoa.h"
 #include "Particle/SoaDistanceTableBA.h"
@@ -61,7 +63,9 @@ DistanceTableData* createDistanceTable(const ParticleSet& s, ParticleSet& t, int
       }
       else
       {
+#ifndef ENABLE_SOA
         dt = new AsymmetricDTD<RealType, DIM, PPPO>(s, t);
+#endif
       }
     }
     else
@@ -75,7 +79,9 @@ DistanceTableData* createDistanceTable(const ParticleSet& s, ParticleSet& t, int
         }
         else
         {
+#ifndef ENABLE_SOA
           dt = new AsymmetricDTD<RealType, DIM, PPPG>(s, t);
+#endif
         }
       }
       else
@@ -87,7 +93,9 @@ DistanceTableData* createDistanceTable(const ParticleSet& s, ParticleSet& t, int
         }
         else
         {
+#ifndef ENABLE_SOA
           dt = new AsymmetricDTD<RealType, DIM, PPPS>(s, t);
+#endif
         }
       }
     }
@@ -103,7 +111,9 @@ DistanceTableData* createDistanceTable(const ParticleSet& s, ParticleSet& t, int
       }
       else
       {
+#ifndef ENABLE_SOA
         dt = new AsymmetricDTD<RealType, DIM, PPNO>(s, t);
+#endif
       }
     }
     else
@@ -119,7 +129,9 @@ DistanceTableData* createDistanceTable(const ParticleSet& s, ParticleSet& t, int
         {
           o << "    Distance computations use general periodic cell in 2D with all surrounding image checks."
             << std::endl;
+#ifndef ENABLE_SOA
           dt = new AsymmetricDTD<RealType, DIM, PPNX>(s, t);
+#endif
         }
       }
       else
@@ -131,7 +143,9 @@ DistanceTableData* createDistanceTable(const ParticleSet& s, ParticleSet& t, int
         }
         else
         {
+#ifndef ENABLE_SOA
           dt = new AsymmetricDTD<RealType, DIM, PPNS>(s, t);
+#endif
         }
       }
     }
@@ -145,7 +159,9 @@ DistanceTableData* createDistanceTable(const ParticleSet& s, ParticleSet& t, int
     }
     else
     {
+#ifndef ENABLE_SOA
       dt = new AsymmetricDTD<RealType, DIM, SUPERCELL_WIRE>(s, t);
+#endif
     }
   }
   else //open boundary condition
@@ -157,7 +173,9 @@ DistanceTableData* createDistanceTable(const ParticleSet& s, ParticleSet& t, int
     }
     else
     {
+#ifndef ENABLE_SOA
       dt = new AsymmetricDTD<RealType, DIM, SUPERCELL_OPEN>(s, t);
+#endif
     }
   }
 
