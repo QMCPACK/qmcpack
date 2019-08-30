@@ -29,7 +29,11 @@ def write_xml_input(qmc_in, hamil_file, wfn_file, series=0,
                             'ortho': 1,
                             'nskip': 8,
                             'block_size': 100,
-                            'nsteps': 1000
+                            'nsteps': 1000,
+                            'obs': {
+                                'OneRDM': {}
+                                }
+                            }
                         }
                     }
                 },
@@ -121,12 +125,25 @@ def add_param(root, block, name, val):
     param.text = str(val)
     node.append(param)
 
-def add_estimator(root, name, vals):
-    node = root.find('execute')
-    param = et.Element('Estimator', name=name)
+def add_estimator(root, name, vals, block='execute', est_name='Estimator'):
+    node = root.find(block)
+    if name is None:
+        param = et.Element(est_name)
+    else:
+        param = et.Element(est_name, name=name)
     node.append(param)
+    bname = "execute/Estimator[@name='{:s}']".format(name)
     for k, v in vals.items():
-        add_param(root, 'execute/Estimator', k, v)
+        # Add list of observables
+        if k == 'obs':
+            for o, p in v.items():
+                add_estimator(root, None, p,
+                          block=bname,
+                          est_name=o)
+        else:
+            if est_name != 'Estimator':
+                bname += '/'+est_name
+            add_param(root, bname, k, v)
 
 def indent(elem, ilevel=0):
     # Stackoverflow.
