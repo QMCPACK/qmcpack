@@ -79,10 +79,10 @@ struct CoulombPotential : public QMCHamiltonianBase, public ForceBase
    * @param s source particleset
    * @param t target particleset
    * @param active if true, new Value is computed whenver evaluate is used.
-   * @param computeForces does nothing, because forces between AB species not implemented 
+   * @param ComputeForces is not implemented for AB
    */
-  inline CoulombPotential(ParticleSet& s, ParticleSet& t, bool active, bool computeForces, bool copy = false)
-      : Pa(s), myTableIndex(t.addTable(s, DT_SOA_PREFERRED)), is_AA(false), is_active(active), ComputeForces(computeForces), ForceBase(s, t)
+  inline CoulombPotential(ParticleSet& s, ParticleSet& t, bool active, bool copy = false)
+      : Pa(s), myTableIndex(t.addTable(s, DT_SOA_PREFERRED)), is_AA(false), is_active(active), ComputeForces(false), ForceBase(s, t)
   {
     set_energy_domain(potential);
     two_body_quantum_domain(s, t);
@@ -149,6 +149,7 @@ struct CoulombPotential : public QMCHamiltonianBase, public ForceBase
       }
       else
       {
+#ifndef ENABLE_SOA
         const int* restrict M = d.M.data();
         const int* restrict J = d.J.data();
         for (int iat = 0; iat < nCenters; ++iat)
@@ -157,6 +158,7 @@ struct CoulombPotential : public QMCHamiltonianBase, public ForceBase
           for (int nn = M[iat]; nn < M[iat + 1]; ++nn)
             res += q * Z[J[nn]] * d.rinv(nn);
         }
+#endif
       }
     }
     return res;
@@ -182,6 +184,7 @@ struct CoulombPotential : public QMCHamiltonianBase, public ForceBase
     }
     else
     {
+#ifndef ENABLE_SOA
       const int* restrict M = d.M.data();
       const int* restrict J = d.J.data();
       for (int iat = 0; iat < nCenters; ++iat)
@@ -193,6 +196,7 @@ struct CoulombPotential : public QMCHamiltonianBase, public ForceBase
           forces[nn]  -= -q * Z[J[nn]] * d.dr(nn) * d.rinv(nn) * d.rinv(nn) * d.rinv(nn);
         }
       }
+#endif
     }
   }
 
@@ -224,6 +228,7 @@ struct CoulombPotential : public QMCHamiltonianBase, public ForceBase
       }
       else
       {
+#ifndef ENABLE_SOA
         const int* restrict M = d.M.data();
         const int* restrict J = d.J.data();
         for (int iat = 0; iat < nCenters; ++iat)
@@ -232,6 +237,7 @@ struct CoulombPotential : public QMCHamiltonianBase, public ForceBase
           for (int nn = M[iat]; nn < M[iat + 1]; ++nn)
             res += q * Zb[J[nn]] * d.rinv(nn);
         }
+#endif
       }
     }
     return res;
@@ -242,9 +248,10 @@ struct CoulombPotential : public QMCHamiltonianBase, public ForceBase
   /** evaluate AA-type interactions */
   inline T evaluate_spAA(const DistanceTableData& d, const ParticleScalar_t* restrict Z)
   {
+    T res                 = 0.0;
+#ifndef ENABLE_SOA
     const int* restrict M = d.M.data();
     const int* restrict J = d.J.data();
-    T res                 = 0.0;
     T pairpot;
     Array<RealType, 1>& Va_samp = *Va_sample;
     Va_samp                     = 0.0;
@@ -259,6 +266,7 @@ struct CoulombPotential : public QMCHamiltonianBase, public ForceBase
         res          += 2.0 * pairpot;
       }
     }
+#endif
 #if defined(TRACE_CHECK)
     T Vnow  = res;
     T Vsum  = Va_samp.sum();
@@ -286,9 +294,10 @@ struct CoulombPotential : public QMCHamiltonianBase, public ForceBase
                          const ParticleScalar_t* restrict Za,
                          const ParticleScalar_t* restrict Zb)
   {
+    T res                 = 0.0;
+#ifndef ENABLE_SOA
     const int* restrict M = d.M.data();
     const int* restrict J = d.J.data();
-    T res                 = 0.0;
     T pairpot;
     Array<RealType, 1>& Va_samp = *Va_sample;
     Array<RealType, 1>& Vb_samp = *Vb_sample;
@@ -305,6 +314,7 @@ struct CoulombPotential : public QMCHamiltonianBase, public ForceBase
         res          += 2.0 * pairpot;
       }
     }
+#endif
 #if defined(TRACE_CHECK)
     T Vnow  = res;
     T Vasum = Va_samp.sum();
@@ -342,6 +352,7 @@ struct CoulombPotential : public QMCHamiltonianBase, public ForceBase
   inline T evaluateAA_orig(const DistanceTableData& d, const ParticleScalar_t* restrict Z)
   {
     T res                 = 0.0;
+#ifndef ENABLE_SOA
     const int* restrict M = d.M.data();
     const int* restrict J = d.J.data();
     for (int iat = 0; iat < nCenters; ++iat)
@@ -350,6 +361,7 @@ struct CoulombPotential : public QMCHamiltonianBase, public ForceBase
       for (int nn = M[iat]; nn < M[iat + 1]; ++nn)
         res += q * Z[J[nn]] * d.rinv(nn);
     }
+#endif
     return res;
   }
 
@@ -359,6 +371,7 @@ struct CoulombPotential : public QMCHamiltonianBase, public ForceBase
                            const ParticleScalar_t* restrict Zb)
   {
     T res                 = 0.0;
+#ifndef ENABLE_SOA
     const int* restrict M = d.M.data();
     const int* restrict J = d.J.data();
     for (int iat = 0; iat < nCenters; ++iat)
@@ -367,6 +380,7 @@ struct CoulombPotential : public QMCHamiltonianBase, public ForceBase
       for (int nn = M[iat]; nn < M[iat + 1]; ++nn)
         res += q * Zb[J[nn]] * d.rinv(nn);
     }
+#endif
     return res;
   }
 
@@ -404,8 +418,10 @@ struct CoulombPotential : public QMCHamiltonianBase, public ForceBase
                                  ParticleSet::ParticlePos_t& hf_terms,
                                  ParticleSet::ParticlePos_t& pulay_terms)
   {
-    hf_terms -= forces;
-    // No pulay term.
+    if (is_active)
+      Value = evaluate(P); // No forces for the active
+    else
+      hf_terms -= forces; // No Pulay here
     return Value;
   }
 
@@ -446,7 +462,7 @@ struct CoulombPotential : public QMCHamiltonianBase, public ForceBase
         return new CoulombPotential(Pa, false, ComputeForces, true);
     }
     else
-      return new CoulombPotential(Pa, qp, ComputeForces, true);
+      return new CoulombPotential(Pa, qp, true);
   }
 };
 

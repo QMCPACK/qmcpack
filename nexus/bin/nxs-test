@@ -3053,6 +3053,10 @@ def pwscf_input():
 #end def pwscf_input
 
 
+def qmcpack_input():
+    nunit_all()
+#end def qmcpack_input
+
 
 example_information = dict(
     pwscf_relax_Ge_T = dict(
@@ -3315,6 +3319,7 @@ NexusTest( machines           )
 NexusTest( structure          )
 NexusTest( physical_system    )
 NexusTest( pwscf_input        )
+NexusTest( qmcpack_input      )
 
 for label in example_information.keys():
     NexusTest(
