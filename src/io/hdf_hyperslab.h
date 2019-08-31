@@ -41,12 +41,12 @@ struct hyperslab_proxy
   ///user rank of a hyperslab
   static const unsigned int slab_rank = DIM;
 
-  using value_type = typename CT::value_type;
+  using element_type = typename container_traits<CT>::element_type;
   /** type alias for h5_space_type
-   * encapsulates both DIM and ranks contributed by value_type
+   * encapsulates both DIM and ranks contributed by element_type
    * for constructing an hdf5 dataspace.
    */
-  using SpaceType = h5_space_type<value_type, DIM>;
+  using SpaceType = h5_space_type<element_type, DIM>;
   ///global dimension of the hyperslab
   SpaceType file_space;
   ///local dimension of the hyperslab
@@ -86,7 +86,7 @@ struct hyperslab_proxy
       slab_offset[i] = static_cast<hsize_t>(offsets_in[i]);
     }
 
-    /// value_type related dimensions always have offset 0
+    /// element_type related dimensions always have offset 0
     for (int i = slab_rank; i < SpaceType::size(); ++i)
       slab_offset[i] = 0;
   }
@@ -150,8 +150,8 @@ struct hyperslab_proxy
       total_size *= selected_space.dims[dim];
     }
 
-    if (total_size != container_traits::getSize(ref_))
-      container_traits::resize(ref_, selected_space.dims, slab_rank);
+    if (total_size != container_traits<CT>::getSize(ref_))
+      container_traits<CT>::resize(ref_, selected_space.dims, slab_rank);
   }
 };
 
@@ -165,11 +165,11 @@ struct h5data_proxy<hyperslab_proxy<CT, DIM>>
   inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
     std::vector<hsize_t> sizes_file;
-    getDataShape<typename CT::value_type>(grp, aname, sizes_file);
+    getDataShape<typename hyperslab_proxy<CT, DIM>::element_type>(grp, aname, sizes_file);
     ref_.adaptShape(sizes_file);
     ref_.checkUserRankSizes();
     return h5d_read(grp, aname.c_str(), ref_.slab_rank, ref_.file_space.dims, ref_.selected_space.dims,
-                    ref_.slab_offset.data(), hyperslab_proxy<CT, DIM>::SpaceType::get_address(ref_.ref_.data()),
+                    ref_.slab_offset.data(), hyperslab_proxy<CT, DIM>::SpaceType::get_address(container_traits<CT>::getElementPtr(ref_.ref_)),
                     xfer_plist);
   }
 
@@ -177,7 +177,7 @@ struct h5data_proxy<hyperslab_proxy<CT, DIM>>
   {
     ref_.checkUserRankSizes();
     return h5d_write(grp, aname.c_str(), ref_.slab_rank, ref_.file_space.dims, ref_.selected_space.dims,
-                     ref_.slab_offset.data(), hyperslab_proxy<CT, DIM>::SpaceType::get_address(ref_.ref_.data()),
+                     ref_.slab_offset.data(), hyperslab_proxy<CT, DIM>::SpaceType::get_address(container_traits<CT>::getElementPtr(ref_.ref_)),
                      xfer_plist);
   }
 };

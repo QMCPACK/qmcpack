@@ -17,6 +17,8 @@
 
 #include "multi/array.hpp"
 #include "multi/array_ref.hpp"
+#include "type_traits/container_proxy.h"
+#include "type_traits/container_traits.h"
 
 namespace qmcplusplus
 {
@@ -78,6 +80,51 @@ struct container_proxy<boost::multi::array_ref<T, 2>>
   {
     APP_ABORT(" Error: Can not resize container_proxy<boost::multi::array_ref<T,D> >. \n");
   }
+};
+
+
+// template specialization for functions in container_traits
+template<typename T, boost::multi::dimensionality_type D, class Alloc>
+struct container_traits<boost::multi::array<T, D, Alloc>>
+{
+  using element_type = T;
+  using CT = boost::multi::array<T, D, Alloc>;
+
+  template<typename I>
+  inline static void resize(CT& ref, I* n, int d)
+  {
+    if (d != D)
+    {
+      std::ostringstream err_msg;
+      err_msg << "boost::multi::array<T, " << D << ", Alloc> cannot be resized. Requested dimension = " << d << std::endl;
+      throw std::runtime_error(err_msg.str());
+    }
+    std::array<I, 2> shape;
+    for (int i = 0; i < d; ++i)
+      shape[i]= n[i];
+    ref.reextent(shape);
+  }
+
+  inline static size_t getSize(const CT& ref) { return ref.num_elements(); }
+
+  inline static auto getElementPtr(CT& ref) { return std::addressof(*ref.origin()); }
+};
+
+template<typename T, boost::multi::dimensionality_type D>
+struct container_traits<boost::multi::array_ref<T, D>>
+{
+  using element_type = T;
+  using CT = boost::multi::array_ref<T, D>;
+
+  template<typename I>
+  inline static void resize(CT& ref, I* n, int d)
+  {
+    std::runtime_error("Can not resize container_proxy<boost::multi::array_ref<T,D>>!\n");
+  }
+
+  inline static size_t getSize(const CT& ref) { return ref.num_elements(); }
+
+  inline static auto getElementPtr(CT& ref) { return std::addressof(*ref.origin()); }
 };
 
 } // namespace qmcplusplus

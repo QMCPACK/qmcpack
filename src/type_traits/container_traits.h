@@ -18,67 +18,108 @@
 namespace qmcplusplus
 {
 
-namespace container_traits
-{
-
-template<typename CT, typename I>
-inline void resize(CT& ref, I* n, int d)
-{
-  throw std::runtime_error("Unknown container, resizing is not available!");
-}
-
 template<typename CT>
-inline size_t getSize(CT& ref)
+struct container_traits
 {
-  return ref.size();
-}
+  using element_type = typename CT::value_type;
+
+  template<typename I>
+  inline static void resize(CT& ref, I* n, int d)
+  {
+    throw std::runtime_error("Unknown container, resizing is not available!");
+  }
+
+  inline static size_t getSize(const CT& ref) { return ref.size(); }
+
+  inline static auto getElementPtr(CT& ref) { return ref.data(); }
+};
 
 // tempalte specialization for resize
-template<typename CT, typename I>
-inline void resize1D(CT& ref, I* n, int d)
+template<typename T, class ALLOC>
+struct container_traits<std::vector<T, ALLOC>>
 {
-  size_t nt = 1;
-  for (int i = 0; i < d; ++i)
-    nt *= n[i];
-  ref.resize(nt);
-}
+  using element_type = T;
+  using CT = std::vector<T, ALLOC>;
 
-template<typename T, class ALLOC, typename I>
-inline void resize1D(std::vector<T, ALLOC>& ref, I* n, int d)
-{
-  resize1D(ref, n, d);
-}
-
-template<typename T, class ALLOC, typename I>
-inline void resize1D(Vector<T, ALLOC>& ref, I* n, int d)
-{
-  resize1D(ref, n, d);
-}
-
-template<typename T, class ALLOC, typename I>
-inline void resize(Matrix<T, ALLOC>& ref, I* n, int d)
-{
-  if (d != 2)
+  template<typename I>
+  inline static void resize(CT& ref, I* n, int d)
   {
-    std::ostringstream err_msg;
-    err_msg << "Matrix cannot be resized. Requested dimension = " << d << std::endl;
-    throw std::runtime_error(err_msg.str());
+    size_t nt = d>0?1:0;
+    for (int i = 0; i < d; ++i)
+      nt *= n[i];
+    ref.resize(nt);
   }
-  ref.resize(n[0], n[1]);
-}
 
-template<typename T, unsigned D, typename I>
-inline static void resize(Array<T, D>& ref, I* n, int d)
+  inline static size_t getSize(const CT& ref) { return ref.size(); }
+
+  inline static auto getElementPtr(CT& ref) { return ref.data(); }
+};
+
+template<typename T, class ALLOC>
+struct container_traits<Vector<T, ALLOC>>
 {
-  if (d != D)
-  {
-    std::ostringstream err_msg;
-    err_msg << "Array<T, " << D << "> cannot be resized. Requested dimension = " << d << std::endl;
-    throw std::runtime_error(err_msg.str());
-  }
-  ref.resize(n);
-}
+  using element_type = T;
+  using CT = Vector<T, ALLOC>;
 
-} // namespace container_traits
+  template<typename I>
+  inline static void resize(CT& ref, I* n, int d)
+  {
+    size_t nt = d>0?1:0;
+    for (int i = 0; i < d; ++i)
+      nt *= n[i];
+    ref.resize(nt);
+  }
+
+  inline static size_t getSize(const CT& ref) { return ref.size(); }
+
+  inline static auto getElementPtr(CT& ref) { return ref.data(); }
+};
+
+template<typename T, class ALLOC>
+struct container_traits<Matrix<T, ALLOC>>
+{
+  using element_type = T;
+  using CT = Matrix<T, ALLOC>;
+
+  template<typename I>
+  inline static void resize(CT& ref, I* n, int d)
+  {
+    if (d != 2)
+    {
+      std::ostringstream err_msg;
+      err_msg << "Matrix cannot be resized. Requested dimension = " << d << std::endl;
+      throw std::runtime_error(err_msg.str());
+    }
+    ref.resize(n[0], n[1]);
+  }
+
+  inline static size_t getSize(const CT& ref) { return ref.size(); }
+
+  inline static auto getElementPtr(CT& ref) { return ref.data(); }
+};
+
+template<typename T, unsigned D>
+struct container_traits<Array<T, D>>
+{
+  using element_type = T;
+  using CT = Array<T, D>;
+
+  template<typename I>
+  inline static void resize(CT& ref, I* n, int d)
+  {
+    if (d != D)
+    {
+      std::ostringstream err_msg;
+      err_msg << "Array<T, " << D << "> cannot be resized. Requested dimension = " << d << std::endl;
+      throw std::runtime_error(err_msg.str());
+    }
+    ref.resize(n);
+  }
+
+  inline static size_t getSize(const CT& ref) { return ref.size(); }
+
+  inline static auto getElementPtr(CT& ref) { return ref.data(); }
+};
+
 } // namespace qmcplusplus
 #endif
