@@ -33,7 +33,10 @@ public:
   void advanceWalker(Walker_t& thisWalker, bool recompute);
 
 private:
-  std::vector<NewTimer*> myTimers;
+  NewTimer& buffer_timer_;
+  NewTimer& movepbyp_timer_;
+  NewTimer& hamiltonian_timer_;
+  NewTimer& collectables_timer_;
 };
 
 } // namespace qmcplusplus

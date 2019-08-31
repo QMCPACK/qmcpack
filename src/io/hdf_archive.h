@@ -178,24 +178,6 @@ public:
     return e.write(p, aname, xfer_plist);
   }
 
-  /* write the data to the group aname and return status
-     use write() for inbuilt error checking
-     use user provided dimensions to determine shape of
-     dataset in the hdf file
-     @return true if successful
-   */
-  template<typename T>
-  bool writeEntry(T& data, const std::vector<hsize_t>& dims, const std::string& aname)
-  {
-    if (Mode[NOIO])
-      return true;
-    if (!(Mode[IS_PARALLEL] || Mode[IS_MASTER]))
-      std::runtime_error("Only write data in parallel or by master but not every rank!");
-    hid_t p = group_id.empty() ? file_id : group_id.top();
-    h5data_proxy<T> e(data);
-    return e.write(p, aname, dims, xfer_plist);
-  }
-
   /* write the data to the group aname and check status
      runtime error is issued on I/O error
    */
@@ -203,19 +185,6 @@ public:
   void write(T& data, const std::string& aname)
   {
     if (!writeEntry(data, aname))
-    {
-      std::runtime_error("HDF5 write failure in hdf_archive::write " + aname);
-    }
-  }
-
-  /* write the data to the group aname and check status
-     Use externally provided dimensions for shape of entry in hdf
-     runtime error is issued on I/O error
-   */
-  template<typename T>
-  void write(T& data, const std::vector<hsize_t>& dims, const std::string& aname)
-  {
-    if (!writeEntry(data, dims, aname))
     {
       std::runtime_error("HDF5 write failure in hdf_archive::write " + aname);
     }
@@ -247,62 +216,6 @@ public:
     return e.read(p, aname, xfer_plist);
   }
 
-  /* read the data from the group aname and return status
-     use read() for inbuilt error checking
-     @return true if successful
-
-     This is using slicing of the dataspace described in the corresponding 
-     version of read
-  */
-  template<typename T>
-  bool readEntry(T& data, const std::vector<int>& readSpec, const std::string& aname)
-  {
-    if (Mode[NOIO])
-      return true;
-    hid_t p = group_id.empty() ? file_id : group_id.top();
-    h5data_proxy<T> e(data);
-    return e.read(p, aname, readSpec);
-  }
-
-/*
-  template<typename T, typename IC>
-  bool readEntry2(T& data, const IC& readSpec, const std::string& aname)
-  {
-    if (Mode[NOIO])
-      return true;
-    hid_t p = group_id.empty() ? file_id : group_id.top();
-    std::vector<hsize_t> offset(readSpec.size());
-    std::vector<hsize_t> count(readSpec.size());
-    int numElements;
-    getOffsets(p, aname, readSpec, offset, count, numElements);
-    hyperslab_proxy<T,7> pxy(data, count, count, offset);
-    return readEntry(pxy, aname);
-  }
-*/
-
-  template<typename T, typename IT, unsigned DIM>
-  void readEntryHyperslabNew(T& data, const std::array<IT, DIM>& readSpec, const std::string& aname)
-  {
-    std::array<hsize_t, DIM> globals, counts, offsets;
-    for(int dim = 0; dim < DIM; dim++)
-    {
-      globals[dim] = 0;
-      if (readSpec[dim] < 0)
-      {
-        counts[dim] = 0;
-        offsets[dim] = 0;
-      }
-      else
-      {
-        counts[dim] = 1;
-        offsets[dim] = static_cast<hsize_t>(readSpec[dim]);
-      }
-    }
-
-    hyperslab_proxy<T, DIM> pxy(data, globals, counts, offsets);
-    return readEntry(pxy, aname);
-  }
-
   /* read the data from the group aname and check status
      runtime error is issued on I/O error
    */
@@ -324,28 +237,8 @@ public:
      for example, if the dataset was [5,2,6] and the vector contained (2,1,-1),
      this would grab 6 elements corresponding to [2,1,:]
   */
-  template<typename T>
-  void read(T& data, const std::vector<int>& readSpec, const std::string& aname)
-  {
-    if (!readEntry(data, readSpec, aname))
-    {
-      std::runtime_error("HDF5 read failure in hdf_archive::read " + aname);
-    }
-  }
-
-  // new version that will use hyperslab rather than stl specific things
-/*
-  template<typename T, typename IC>
-  void read2(T& data, const IC& readSpec, const std::string& aname)
-  {
-    if (!readEntry2(data, readSpec, aname))
-    {
-      std::runtime_error("HDF5 read failure in hdf_archive::read " + aname);
-    }
-  }
-*/
   template<typename T, typename IT, std::size_t DIM>
-  void readHyperslabNew(T& data, const std::array<IT, DIM>& readSpec, const std::string& aname)
+  void readHyperslab(T& data, const std::array<IT, DIM>& readSpec, const std::string& aname)
   {
     std::array<hsize_t, DIM> globals, counts, offsets;
     for(int dim = 0; dim < DIM; dim++)

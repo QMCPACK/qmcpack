@@ -72,7 +72,7 @@ public:
     QMC_WARMUP
   };
 
-  using MCPWalker = MCPopulation::PopulationWalker;
+  using MCPWalker = MCPopulation::MCPWalker;
   using Buffer    = MCPWalker::Buffer_t;
 
   /** bits to classify QMCDriver
@@ -158,7 +158,7 @@ public:
    */
   bool put(xmlNodePtr cur) { return false; };
 
-  /** QMCDriverNew driver ignores cur
+  /** QMCDriverNew driver will eventuall ignore cur
    *
    *  This is the shared entry point
    *  from QMCMain so cannot be updated yet
@@ -180,14 +180,12 @@ protected:
   std::vector<Crowd> crowds_;
   IndexType walkers_per_crowd_;
 
+  std::string h5_file_root_;
+
   ///branch engine
   SimpleFixedNodeBranch* branchEngine;
   ///drift modifer
-  DriftModifierBase* DriftModifier;
-
-  ///randomize it
-  bool reset_random;
-  ///flag to append or restart the run
+  std::unique_ptr<DriftModifierBase> drift_modifier_;
 
   ///the number to delay updates by
   int k_delay;
@@ -218,10 +216,8 @@ protected:
 
   ///type of qmc: assigned by subclasses
   std::string QMCType;
-  ///the root of h5File
-  std::string h5FileRoot;
   ///root of all the output files
-  std::string RootName;
+  std::string root_name_;
 
 
   ///the entire (or on node) walker population
@@ -236,7 +232,7 @@ protected:
   WaveFunctionPool& psiPool;
 
   ///Observables manager
-  EstimatorManagerBase* Estimators;
+  EstimatorManagerBase* estimator_manager_;
 
   ///record engine for walkers
   HDFWalkerOutput* wOut;
@@ -253,9 +249,6 @@ protected:
 
   ///a list of mcwalkerset element
   std::vector<xmlNodePtr> mcwalkerNodePtr;
-
-  ///a list of timers
-  std::vector<NewTimer*> myTimers;
 
   ///temporary storage for drift
   ParticleSet::ParticlePos_t drift;
@@ -298,9 +291,10 @@ public:
 
   bool putQMCInfo(xmlNodePtr cur);
 
-  void addWalkers(int nwalkers);
+  void addWalkers(int nwalkers, const ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>& positions);
 
   int get_num_crowds() { return num_crowds_; }
+  void set_num_crowds(int num_crowds, const std::string& reason);
   /** record the state of the block
    * @param block current block
    *
@@ -318,6 +312,7 @@ public:
   bool finalize(int block, bool dumpwalkers = true);
 
   int rotation;
+  const std::string& get_root_name() const { return root_name_; }
   std::string getRotationName(std::string RootName);
   std::string getLastRotationName(std::string RootName);
 

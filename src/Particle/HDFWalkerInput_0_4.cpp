@@ -135,7 +135,7 @@ bool HDFWalkerInput_0_4::put(xmlNodePtr cur)
 
 bool HDFWalkerInput_0_4::read_hdf5(std::string h5name)
 {
-  int nw_in = 0;
+  size_t nw_in = 0;
 
   h5name.append(hdf::config_ext);
   hdf_archive hin(myComm, false); //everone reads this
@@ -214,7 +214,7 @@ bool HDFWalkerInput_0_4::read_hdf5(std::string h5name)
 
 bool HDFWalkerInput_0_4::read_hdf5_scatter(std::string h5name)
 {
-  int nw_in = 0;
+  size_t nw_in = 0;
   h5name.append(hdf::config_ext);
 
   if (myComm->rank() == 0)
@@ -287,9 +287,9 @@ bool HDFWalkerInput_0_4::read_hdf5_scatter(std::string h5name)
 
 bool HDFWalkerInput_0_4::read_phdf5(std::string h5name)
 {
-  int nw_in = 0;
+  size_t nw_in = 0;
   h5name.append(hdf::config_ext);
-  std::vector<int> woffsets;
+  std::vector<size_t> woffsets;
   int woffsets_size;
   bool success;
 
@@ -353,7 +353,7 @@ bool HDFWalkerInput_0_4::read_phdf5(std::string h5name)
     FairDivideLow(nw_in, myComm->size(), woffsets);
   }
 
-  int nw_loc = woffsets[myComm->rank() + 1] - woffsets[myComm->rank()];
+  size_t nw_loc = woffsets[myComm->rank() + 1] - woffsets[myComm->rank()];
 
   std::array<size_t, 3> counts{nw_loc, targetW.getTotalNum(), OHMMS_DIM};
   std::array<size_t, 3> offsets{woffsets[myComm->rank()], 0, 0};

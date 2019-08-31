@@ -26,36 +26,6 @@ using std::vector;
 using namespace qmcplusplus;
 
 
-/*
-TEST_CASE("hdf_write_reorder", "[hdf]")
-{
-  hdf_archive hd;
-  hd.create("test_write_reorder.hdf");
-
-  vector<double> v{1.1, -2.2, 3.3, -4.4, 5.5, -6.6, 7.7, -8.8, 9.9};
-  vector<hsize_t> dims{3,3};
-  bool okay = hd.writeEntry(v, dims, "array_from_vector");
-  REQUIRE(okay);  
-  hd.close();
-
-  hdf_archive hd2;
-  okay = hd2.open("test_write_reorder.hdf");
-  REQUIRE(okay);
-
-  Tensor<double,3> read_tensor;
-  hd2.read(read_tensor, "array_from_vector");
-  REQUIRE(read_tensor.size() == v.size());
-  for (int i = 0; i < 3; i++)
-  {
-    for (int j = 0; j < 3; j++)
-    {
-      int pos = i*3+j;
-      REQUIRE(v[pos] == read_tensor(i,j));
-    }
-  }
-  hd2.close();
-}
-*/
 
 TEST_CASE("hdf_write_reorder_with_matrix", "[hdf]")
 {
@@ -89,13 +59,9 @@ TEST_CASE("hdf_write_reorder_with_matrix", "[hdf]")
 }
 
 
-// do this in three ways.
-// 1. relying on my overloading in std::vector (do not perfer this, too specific)
-// 2. rely on my understanding of hyperslab_proxy (seems to require you to know
-//          too much about the dimensions in the dataset and is prone to user error)
-// 3. use hyperslab_proxy to handle the back end api, but specify the slice to choose
-//          with a vector and query the dataset to figure out the other needed
-//          parts.  better than #1 because it does not specially call out vector
+// do this in two different ways.
+// 1. directly create a hyperslab_proxy
+// 2. use readHyperslab which will create the hyperslab_proxy for you
 TEST_CASE("hdf_read_partial", "[hdf]")
 {
   hdf_archive hd;
@@ -143,30 +109,7 @@ TEST_CASE("hdf_read_partial", "[hdf]")
   REQUIRE(datashape[1] == 4);
   REQUIRE(datashape[2] == 2);
 
-  // method 1 (relying on vector in hdf_stl)
-  vector<int> readSpec{1, -1};
-  vector<double> readBuffer(4);
-
-  hd2.read(readBuffer, readSpec, "matrix");
-  for (int i = 0; i < 4; i++)
-  {
-    REQUIRE(readBuffer[i] == Approx(allData(1, i)));
-  }
-
-  readSpec[0] = -1;
-  readSpec[1] = 2;
-  hd2.read(readBuffer, readSpec, "matrix");
-  for (int i = 0; i < 3; i++)
-  {
-    REQUIRE(readBuffer[i] == Approx(allData(i, 2)));
-  }
-
-  readSpec[0] = 2;
-  readSpec[1] = 0;
-  hd2.read(readBuffer, readSpec, "matrix");
-  REQUIRE(readBuffer[0] == Approx(allData(2, 0)));
-
-  // method 2 (direct utilization of hyperslab_proxy in client code)
+  // method 1 (direct utilization of hyperslab_proxy in client code)
   Matrix<double> outbuffer1(1, 4);
   Matrix<double> outbuffer2(3, 1);
   Matrix<double> outbuffer3(1, 1);
@@ -222,29 +165,29 @@ TEST_CASE("hdf_read_partial", "[hdf]")
   for (int i = 0; i < 3; i++)
     REQUIRE(outbuffer2(i, 0) == Approx(allData(i, 2)));
 
-  // method 3 here
+  // method 2 here
   Matrix<double> locob1(1, 4);
   Matrix<double> locob2(3, 1);
   Matrix<double> locob3(1, 1);
-  std::array<int, 2> locReadSpec{1, -1};
-  hd2.readHyperslabNew(locob1, locReadSpec, "matrix");
+  std::array<int, 2> readSpec{1, -1};
+  hd2.readHyperslab(locob1, readSpec, "matrix");
   for (int i = 0; i < 4; i++)
   {
     REQUIRE(locob1(0, i) == Approx(allData(1, i)));
   }
 
-  locReadSpec[0] = -1;
-  locReadSpec[1] = 2;
-  hd2.readHyperslabNew(locob2, locReadSpec, "matrix");
+  readSpec[0] = -1;
+  readSpec[1] = 2;
+  hd2.readHyperslab(locob2, readSpec, "matrix");
   for (int i = 0; i < 3; i++)
   {
     REQUIRE(locob2.data()[i] == Approx(allData(i, 2)));
     REQUIRE(locob2(i) == Approx(allData(i,2)));
   }
 
-  locReadSpec[0] = 2;
-  locReadSpec[1] = 0;
-  hd2.readHyperslabNew(locob3, locReadSpec, "matrix");
+  readSpec[0] = 2;
+  readSpec[1] = 0;
+  hd2.readHyperslab(locob3, readSpec, "matrix");
   REQUIRE(locob3.data()[0] == Approx(allData(2, 0)));
   hd2.close();
 }

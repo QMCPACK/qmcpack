@@ -122,6 +122,7 @@ ZeroVarianceForce::Return_t ZeroVarianceForce::evaluate(ParticleSet& P)
   const ParticleScalar_t* restrict Zat = Ions.Z.first_address();
   const ParticleScalar_t* restrict Qat = P.Z.first_address();
   //Loop over distinct eln-ion pairs
+#ifndef ENABLE_SOA
   for (int iat = 0; iat < Nnuc; iat++)
   {
     for (int nn = d_ab.M[iat], jat = 0; nn < d_ab.M[iat + 1]; nn++, jat++)
@@ -133,6 +134,7 @@ ZeroVarianceForce::Return_t ZeroVarianceForce::evaluate(ParticleSet& P)
 
     F_ZV1[iat] = forces[iat];
   }
+#endif
 
   for (int ion = 0; ion < Nnuc; ion++)
   {

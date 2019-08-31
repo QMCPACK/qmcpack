@@ -21,7 +21,6 @@
 #include "Lattice/ParticleBConds.h"
 #include "Particle/ParticleSet.h"
 #include "Particle/DistanceTableData.h"
-#include "Particle/SymmetricDistanceTableData.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "QMCDrivers/CloneManager.h"
 #include "QMCDrivers/QMCUpdateBase.h"

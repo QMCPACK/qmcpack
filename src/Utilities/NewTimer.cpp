@@ -30,9 +30,8 @@ TimerManagerClass TimerManager;
 
 bool timer_max_level_exceeded = false;
 
-void TimerManagerClass::addTimer(NewTimer* t)
+void TimerManagerClass::initializeTimer(NewTimer* t)
 {
-#pragma omp critical
   {
     if (t->get_name().find(TIMER_STACK_SEPARATOR) != std::string::npos)
     {
@@ -63,14 +62,18 @@ void TimerManagerClass::addTimer(NewTimer* t)
     }
     t->set_manager(this);
     t->set_active_by_timer_threshold(timer_threshold);
-    TimerList.push_back(t);
   }
 }
 
 NewTimer* TimerManagerClass::createTimer(const std::string& myname, timer_levels mytimer)
 {
-  NewTimer* t = new NewTimer(myname, mytimer);
-  addTimer(t);
+  NewTimer *t = nullptr;
+  #pragma omp critical
+  {
+    TimerList.push_back(std::make_unique<NewTimer>(myname, mytimer));
+    t = TimerList.back().get();
+    initializeTimer(t);
+  }
   return t;
 }
 
