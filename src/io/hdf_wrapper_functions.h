@@ -113,45 +113,6 @@ inline bool getDataShape(hid_t grp, const std::string& aname, std::vector<IT>& s
   return success;
 }
 
-/** free function to go from spec to dimensionality of memory space and data space
- */
-template<typename IC>
-inline bool getOffsets(hid_t grp,
-                       const std::string& aname,
-                       const IC& readSpec,
-                       std::vector<hsize_t>& offset,
-                       std::vector<hsize_t>& count,
-                       int& numElements)
-{
-  std::vector<hsize_t> space_dims(readSpec.size());
-  get_space(grp, aname, readSpec.size(), space_dims.data());
-
-  // check what is requested is within bounds
-  for (int i = 0; i < readSpec.size(); i++)
-  {
-    if (readSpec[i] < -1 || readSpec[i] >= static_cast<int>(space_dims[i]))
-    {
-      APP_ABORT("Requested an invalid slice of the dataset named " + aname);
-    }
-  }
-
-  offset.resize(readSpec.size());
-  count.resize(readSpec.size());
-  numElements = 1;
-  for (int i = 0; i < readSpec.size(); i++)
-  {
-    offset[i] = readSpec[i];
-    count[i]  = 1;
-    if (readSpec[i] == -1)
-    {
-      offset[i] = 0;
-      count[i]  = space_dims[i];
-      numElements *= space_dims[i];
-    }
-  }
-  return true;
-}
-
 /** return true, if successful */
 template<typename T>
 inline bool h5d_read(hid_t grp, const std::string& aname, T* first, hid_t xfer_plist)

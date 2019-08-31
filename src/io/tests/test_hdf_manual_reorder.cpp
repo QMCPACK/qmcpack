@@ -41,8 +41,8 @@ TEST_CASE("hdf_write_reorder_with_matrix", "[hdf]")
   v[4] = 1.1;
   v[5] = 1.2;
 
-  Matrix<double> matrix_view(v.data(), 2, 3);
-  hd.write(matrix_view, "matrix_from_vector");
+  std::array<size_t, 2> shape{2,3};
+  hd.writeSlabReshaped(v, shape, "matrix_from_vector");
 
   hdf_archive hd2;
   hd2.open("test_write_matrix_reorder.hdf");
@@ -61,7 +61,7 @@ TEST_CASE("hdf_write_reorder_with_matrix", "[hdf]")
 
 // do this in two different ways.
 // 1. directly create a hyperslab_proxy
-// 2. use readHyperslab which will create the hyperslab_proxy for you
+// 2. use readSlabSelection which will create the hyperslab_proxy for you
 TEST_CASE("hdf_read_partial", "[hdf]")
 {
   hdf_archive hd;
@@ -170,7 +170,7 @@ TEST_CASE("hdf_read_partial", "[hdf]")
   Matrix<double> locob2(3, 1);
   Matrix<double> locob3(1, 1);
   std::array<int, 2> readSpec{1, -1};
-  hd2.readHyperslab(locob1, readSpec, "matrix");
+  hd2.readSlabSelection(locob1, readSpec, "matrix");
   for (int i = 0; i < 4; i++)
   {
     REQUIRE(locob1(0, i) == Approx(allData(1, i)));
@@ -178,7 +178,7 @@ TEST_CASE("hdf_read_partial", "[hdf]")
 
   readSpec[0] = -1;
   readSpec[1] = 2;
-  hd2.readHyperslab(locob2, readSpec, "matrix");
+  hd2.readSlabSelection(locob2, readSpec, "matrix");
   for (int i = 0; i < 3; i++)
   {
     REQUIRE(locob2.data()[i] == Approx(allData(i, 2)));
@@ -187,7 +187,7 @@ TEST_CASE("hdf_read_partial", "[hdf]")
 
   readSpec[0] = 2;
   readSpec[1] = 0;
-  hd2.readHyperslab(locob3, readSpec, "matrix");
+  hd2.readSlabSelection(locob3, readSpec, "matrix");
   REQUIRE(locob3.data()[0] == Approx(allData(2, 0)));
   hd2.close();
 }

@@ -142,8 +142,8 @@ public:
   inline hid_t top() const { return group_id.empty() ? is_closed : group_id.top(); }
 
   /** check if any groups are open
-      group stack will have entries if so
-      @return true if any groups are open
+   *  group stack will have entries if so
+   *  @return true if any groups are open
    */
   inline bool open_groups() { return group_id.empty(); }
 
@@ -162,9 +162,9 @@ public:
     H5Gclose(g);
   }
 
-  /* write the data to the group aname and return status
-     use write() for inbuilt error checking
-     @return true if successful
+  /** write the data to the group aname and return status
+   * use write() for inbuilt error checking
+   * @return true if successful
    */
   template<typename T>
   bool writeEntry(T& data, const std::string& aname)
@@ -178,8 +178,8 @@ public:
     return e.write(p, aname, xfer_plist);
   }
 
-  /* write the data to the group aname and check status
-     runtime error is issued on I/O error
+  /** write the data to the group aname and check status
+   * runtime error is issued on I/O error
    */
   template<typename T>
   void write(T& data, const std::string& aname)
@@ -190,8 +190,28 @@ public:
     }
   }
 
-  /* read the filespace shape from the group aname
-     @return true if successful
+  /** write the container data with a specific shape to the group aname and check status
+   * @param data container, linear storage required.
+   * @param shape shape on the hdf file
+   * runtime error is issued on I/O error
+   */
+  template<typename T, typename IT, std::size_t DIM, typename = std::enable_if_t<std::is_unsigned<IT>::value> >
+  void writeSlabReshaped(T& data, const std::array<IT, DIM>& shape, const std::string& aname)
+  {
+    std::array<hsize_t, DIM> globals, counts, offsets;
+    for(int dim = 0; dim < DIM; dim++)
+    {
+      globals[dim] = static_cast<hsize_t>(shape[dim]);
+      counts[dim] = static_cast<hsize_t>(shape[dim]);
+      offsets[dim] = 0;
+    }
+
+    hyperslab_proxy<T, DIM> pxy(data, globals, counts, offsets);
+    write(pxy, aname);
+  }
+
+  /** read the filespace shape from the group aname
+   * @return true if successful
    */
   template<typename T>
   bool getShape(const std::string& aname, std::vector<int>& sizes_out)
@@ -202,9 +222,9 @@ public:
     return getDataShape<T>(p, aname, sizes_out);
   }
 
-  /* read the data from the group aname and return status
-     use read() for inbuilt error checking
-     @return true if successful
+  /** read the data from the group aname and return status
+   * use read() for inbuilt error checking
+   * @return true if successful
    */
   template<typename T>
   bool readEntry(T& data, const std::string& aname)
@@ -216,8 +236,8 @@ public:
     return e.read(p, aname, xfer_plist);
   }
 
-  /* read the data from the group aname and check status
-     runtime error is issued on I/O error
+  /** read the data from the group aname and check status
+   * runtime error is issued on I/O error
    */
   template<typename T>
   void read(T& data, const std::string& aname)
@@ -228,17 +248,17 @@ public:
     }
   }
 
-  /* read a portion of the data from the group aname and check status
-     runtime error is issued on I/O error
-
-     note the vector must have dimensionality corresponding to the dataset,
-     values for a dimension must be [0,num_entries-1] for that dimension to specify
-     which value to hold and a -1 to grab all elements from that dimension
-     for example, if the dataset was [5,2,6] and the vector contained (2,1,-1),
-     this would grab 6 elements corresponding to [2,1,:]
-  */
+  /** read a portion of the data from the group aname and check status
+   * runtime error is issued on I/O error
+   *
+   * note the readSpec array must have dimensionality corresponding to the dataset,
+   * values for a dimension must be [0,num_entries-1] for that dimension to specify
+   * which value to hold and a -1 to grab all elements from that dimension
+   * for example, if the dataset was [5,2,6] and the vector contained (2,1,-1),
+   * this would grab 6 elements corresponding to [2,1,:]
+   */
   template<typename T, typename IT, std::size_t DIM>
-  void readHyperslab(T& data, const std::array<IT, DIM>& readSpec, const std::string& aname)
+  void readSlabSelection(T& data, const std::array<IT, DIM>& readSpec, const std::string& aname)
   {
     std::array<hsize_t, DIM> globals, counts, offsets;
     for(int dim = 0; dim < DIM; dim++)

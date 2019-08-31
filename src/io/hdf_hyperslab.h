@@ -27,7 +27,7 @@ namespace qmcplusplus
 {
 /** class to use file space hyperslab with a serialized container
  * @tparam CT container type, std::vector, Vector, Matrix, Array, boost::multi::array
- * @tparam DIM hyperslab user dimension. The dimensions contributed by T are excluded.
+ * @tparam DIM hyperslab user rank. The dimensions contributed by T are excluded.
  *
  * The container may get resized for sufficient space if
  * the template specialization of container_traits<CT> is available
@@ -150,8 +150,8 @@ struct hyperslab_proxy
       total_size *= selected_space.dims[dim];
     }
 
-    if (total_size != ref_.size())
-      container_traits<CT>::resize(ref_, selected_space.dims, slab_rank);
+    if (total_size != container_traits::getSize(ref_))
+      container_traits::resize(ref_, selected_space.dims, slab_rank);
   }
 };
 
