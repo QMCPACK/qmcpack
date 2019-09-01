@@ -27,7 +27,7 @@ namespace qmcplusplus
  * The container may get resized for sufficient space if
  * the template specialization of container_traits<CT> is available
  * additional restriction:
- * 1D containers can be resized to hold any multi-dimentional data
+ * 1D containers can be resized to hold any multi-dimensional data
  * >1D containers can only be resize to hold data with matching dimensions.
  */
 template<typename CT, unsigned RANK>

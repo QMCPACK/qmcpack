@@ -28,9 +28,9 @@ namespace qmcplusplus
 template<typename T>
 struct h5data_proxy<Vector<T>> : public h5_space_type<T, 1>
 {
-  using Base = h5_space_type<T, 1>;
-  using Base::dims;
-  using Base::get_address;
+  using FileSpace = h5_space_type<T, 1>;
+  using FileSpace::dims;
+  using FileSpace::get_address;
   typedef Vector<T> data_type;
   data_type& ref_;
 
@@ -38,14 +38,14 @@ struct h5data_proxy<Vector<T>> : public h5_space_type<T, 1>
 
   inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
-    if (!get_space(grp, aname, Base::rank, dims))
+    if (!get_space(grp, aname, FileSpace::rank, dims))
       ref_.resize(dims[0]);
     return h5d_read(grp, aname, get_address(ref_.data()), xfer_plist);
   }
 
   inline bool write(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
-    return h5d_write(grp, aname.c_str(), Base::rank, dims, get_address(ref_.data()), xfer_plist);
+    return h5d_write(grp, aname.c_str(), FileSpace::rank, dims, get_address(ref_.data()), xfer_plist);
   }
 };
 
@@ -53,9 +53,9 @@ struct h5data_proxy<Vector<T>> : public h5_space_type<T, 1>
 template<typename T>
 struct h5data_proxy<Matrix<T>> : public h5_space_type<T, 2>
 {
-  using Base = h5_space_type<T, 2>;
-  using Base::dims;
-  using Base::get_address;
+  using FileSpace = h5_space_type<T, 2>;
+  using FileSpace::dims;
+  using FileSpace::get_address;
   typedef Matrix<T> data_type;
   data_type& ref_;
   inline h5data_proxy(data_type& a) : ref_(a)
@@ -65,13 +65,13 @@ struct h5data_proxy<Matrix<T>> : public h5_space_type<T, 2>
   }
   inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
-    if (!get_space(grp, aname, Base::rank, dims))
+    if (!get_space(grp, aname, FileSpace::rank, dims))
       ref_.resize(dims[0], dims[1]);
     return h5d_read(grp, aname, get_address(ref_.data()), xfer_plist);
   }
   inline bool write(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
-    return h5d_write(grp, aname.c_str(), Base::rank, dims, get_address(ref_.data()), xfer_plist);
+    return h5d_write(grp, aname.c_str(), FileSpace::rank, dims, get_address(ref_.data()), xfer_plist);
   }
 };
 
@@ -79,9 +79,9 @@ struct h5data_proxy<Matrix<T>> : public h5_space_type<T, 2>
 template<typename T, unsigned D>
 struct h5data_proxy<Array<T, D>> : public h5_space_type<T, D>
 {
-  using Base = h5_space_type<T, D>;
-  using Base::dims;
-  using Base::get_address;
+  using FileSpace = h5_space_type<T, D>;
+  using FileSpace::dims;
+  using FileSpace::get_address;
   typedef Array<T, D> data_type;
   data_type& ref_;
   inline h5data_proxy(data_type& a) : ref_(a)
@@ -91,13 +91,13 @@ struct h5data_proxy<Array<T, D>> : public h5_space_type<T, D>
   }
   inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
-    if (!get_space(grp, aname, Base::rank, dims))
+    if (!get_space(grp, aname, FileSpace::rank, dims))
       ref_.resize(dims);
     return h5d_read(grp, aname, get_address(ref_.data()), xfer_plist);
   }
   inline bool write(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
-    return h5d_write(grp, aname.c_str(), Base::rank, dims, get_address(ref_.data()), xfer_plist);
+    return h5d_write(grp, aname.c_str(), FileSpace::rank, dims, get_address(ref_.data()), xfer_plist);
   }
 };
 
