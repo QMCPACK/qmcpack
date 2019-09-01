@@ -12,13 +12,14 @@
 
 
 #include "catch.hpp"
-#include "io/hdf_archive.h"
 #include <iostream>
 #include <vector>
 #include <complex>
-#include <OhmmsPETE/OhmmsVector.h>
-#include <OhmmsPETE/OhmmsMatrix.h>
-#include <OhmmsPETE/OhmmsArray.h>
+#include "OhmmsPETE/OhmmsVector.h"
+#include "OhmmsPETE/OhmmsMatrix.h"
+#include "OhmmsPETE/OhmmsArray.h"
+#include "type_traits/container_traits_ohmms.h"
+#include "io/hdf_archive.h"
 
 using namespace qmcplusplus;
 

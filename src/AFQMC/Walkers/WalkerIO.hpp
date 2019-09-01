@@ -16,11 +16,11 @@
 #ifndef AFQMC_WALKERIO_HPP 
 #define AFQMC_WALKERIO_HPP 
 
-#include<cassert>
-#include<cstdlib>
-#include<vector>
-#include<type_traits>
-#include "type_traits/container_proxy_multi.h"
+#include <cassert>
+#include <cstdlib>
+#include <vector>
+#include <type_traits>
+#include "type_traits/container_traits_multi.h"
 
 #include "Configuration.h"
 #include "AFQMC/config.h"

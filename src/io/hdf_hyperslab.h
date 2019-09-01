@@ -12,16 +12,11 @@
 
 #ifndef QMCPLUSPLUS_HDF_HYPERSLAB_IO_H
 #define QMCPLUSPLUS_HDF_HYPERSLAB_IO_H
+
 #include <type_traits/container_traits.h>
 #include <io/hdf_datatype.h>
 #include <io/hdf_dataspace.h>
 #include <io/hdf_dataproxy.h>
-
-#ifdef BUILD_AFQMC
-#ifdef QMC_CUDA
-#include "AFQMC/Memory/CUDA/cuda_gpu_pointer.hpp"
-#endif
-#endif
 
 namespace qmcplusplus
 {

@@ -11,9 +11,11 @@
 
 #ifndef QMCPLUSPLUS_HDF_MULTI_INTERFACE_H
 #define QMCPLUSPLUS_HDF_MULTI_INTERFACE_H
-#include <io/hdf_dataproxy.h>
-#include "multi/array.hpp"
-#include "multi/array_ref.hpp"
+
+#include <multi/array.hpp>
+#include <multi/array_ref.hpp>
+#include "io/hdf_dataproxy.h"
+#include "io/hdf_hyperslab.h"
 
 #ifdef BUILD_AFQMC
 #ifdef ENABLE_CUDA
