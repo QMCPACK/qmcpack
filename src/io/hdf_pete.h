@@ -17,7 +17,6 @@
 #include <OhmmsPETE/OhmmsVector.h>
 #include <OhmmsPETE/OhmmsMatrix.h>
 #include <OhmmsPETE/OhmmsArray.h>
-#include <Utilities/PooledData.h>
 
 namespace qmcplusplus
 {

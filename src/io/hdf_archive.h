@@ -190,9 +190,10 @@ public:
     }
   }
 
-  /** write the container data with a specific shape to the group aname and check status
+  /** write the container data with a specific shape and check status
    * @param data container, linear storage required.
    * @param shape shape on the hdf file
+   * @param aname dataset name in the file
    * runtime error is issued on I/O error
    */
   template<typename T, typename IT, std::size_t RANK, typename = std::enable_if_t<std::is_unsigned<IT>::value> >
@@ -246,6 +247,27 @@ public:
     {
       std::runtime_error("HDF5 read failure in hdf_archive::read " + aname);
     }
+  }
+
+  /** read file dataset with a specific shape into a container and check status
+   * @param data container, linear storage required.
+   * @param shape shape on the hdf file
+   * @param aname dataset name in the file
+   * runtime error is issued on I/O error
+   */
+  template<typename T, typename IT, std::size_t RANK, typename = std::enable_if_t<std::is_unsigned<IT>::value> >
+  void readSlabReshaped(T& data, const std::array<IT, RANK>& shape, const std::string& aname)
+  {
+    std::array<hsize_t, RANK> globals, counts, offsets;
+    for(int dim = 0; dim < RANK; dim++)
+    {
+      globals[dim] = static_cast<hsize_t>(shape[dim]);
+      counts[dim] = static_cast<hsize_t>(shape[dim]);
+      offsets[dim] = 0;
+    }
+
+    hyperslab_proxy<T, RANK> pxy(data, globals, counts, offsets);
+    read(pxy, aname);
   }
 
   /** read a portion of the data from the group aname and check status
