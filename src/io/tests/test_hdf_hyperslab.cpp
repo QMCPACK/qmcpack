@@ -15,6 +15,7 @@
 #include "io/hdf_archive.h"
 #include <iostream>
 #include <vector>
+#include <complex>
 #include <OhmmsPETE/OhmmsVector.h>
 #include <OhmmsPETE/OhmmsMatrix.h>
 #include <OhmmsPETE/OhmmsArray.h>

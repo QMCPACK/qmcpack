@@ -98,7 +98,7 @@ inline bool getDataShape(hid_t grp, const std::string& aname, std::vector<IT>& s
     if (!size_match)
     {
       success = false;
-      throw std::runtime_error("The lower dimensions of " + aname + " dataset do not match the requested data type");
+      throw std::runtime_error("The lower dimensions (container element type) of " + aname + " dataset do not match the requested data type");
     }
     else
     {
