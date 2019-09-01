@@ -67,8 +67,7 @@ TEST_CASE("hdf_write_reshape_with_matrix", "[hdf]")
   REQUIRE(m(1, 2) == Approx(v[5]));
 
   std::vector<double> vec; // reshaped and resized by read
-  std::array<int, 2> spec{-1, -1};
-  hd2.readSlabSelection(vec, spec, "matrix_from_vector");
+  hd2.readSlabReshaped(vec, shape, "matrix_from_vector");
 
   REQUIRE(vec.size() == 6);
   REQUIRE(vec[0] == Approx(v[0]));
@@ -78,7 +77,9 @@ TEST_CASE("hdf_write_reshape_with_matrix", "[hdf]")
   REQUIRE(vec[4] == Approx(v[4]));
   REQUIRE(vec[5] == Approx(v[5]));
 
+  // using hyperslab selection
   Vector<std::complex<float>> vec_cplx; // reshaped and resized by read
+  std::array<int, 2> spec{-1, -1};
   hd2.readSlabSelection(vec_cplx, spec, "matrix_from_vector_cplx");
 
   REQUIRE(vec_cplx.size() == 6);
