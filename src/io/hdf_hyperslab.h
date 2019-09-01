@@ -27,7 +27,7 @@ namespace qmcplusplus
 {
 /** class to use file space hyperslab with a serialized container
  * @tparam CT container type, std::vector, Vector, Matrix, Array, boost::multi::array
- * @tparam DIM hyperslab user rank. The dimensions contributed by T are excluded.
+ * @tparam RANK hyperslab user rank. The dimensions contributed by T are excluded.
  *
  * The container may get resized for sufficient space if
  * the template specialization of container_traits<CT> is available
@@ -35,24 +35,24 @@ namespace qmcplusplus
  * 1D containers can be resized to hold any multi-dimentional data
  * >1D containers can only be resize to hold data with matching dimensions.
  */
-template<typename CT, unsigned DIM>
+template<typename CT, unsigned RANK>
 struct hyperslab_proxy
 {
   ///user rank of a hyperslab
-  static const unsigned int slab_rank = DIM;
+  static const unsigned int slab_rank = RANK;
 
   using element_type = typename container_traits<CT>::element_type;
   /** type alias for h5_space_type
-   * encapsulates both DIM and ranks contributed by element_type
+   * encapsulates both RANK and ranks contributed by element_type
    * for constructing an hdf5 dataspace.
    */
-  using SpaceType = h5_space_type<element_type, DIM>;
+  using SpaceType = h5_space_type<element_type, RANK>;
   ///global dimension of the hyperslab
   SpaceType file_space;
   ///local dimension of the hyperslab
   SpaceType selected_space;
   ///offset of the hyperslab
-  std::array<hsize_t, SpaceType::size()> slab_offset;
+  std::array<hsize_t, SpaceType::rank> slab_offset;
   ///container reference
   CT& ref_;
 
@@ -68,9 +68,9 @@ struct hyperslab_proxy
    */
   template<typename IT>
   inline hyperslab_proxy(CT& a,
-                         const std::array<IT, DIM>& dims_in,
-                         const std::array<IT, DIM>& selected_in,
-                         const std::array<IT, DIM>& offsets_in)
+                         const std::array<IT, RANK>& dims_in,
+                         const std::array<IT, RANK>& selected_in,
+                         const std::array<IT, RANK>& offsets_in)
       : ref_(a)
   {
     for (int i = 0; i < slab_rank; ++i)
@@ -87,14 +87,14 @@ struct hyperslab_proxy
     }
 
     /// element_type related dimensions always have offset 0
-    for (int i = slab_rank; i < SpaceType::size(); ++i)
+    for (int i = slab_rank; i < SpaceType::rank; ++i)
       slab_offset[i] = 0;
   }
 
   /** return the size of the i-th dimension of global space
    * @param i dimension
    */
-  inline hsize_t size(int i) const { return (i > SpaceType::size()) ? 0 : file_space.dims[i]; }
+  inline hsize_t size(int i) const { return (i > SpaceType::rank) ? 0 : file_space.dims[i]; }
 
   /** checks if file_space, elected_space and offset are self-consistent
    */
@@ -155,41 +155,41 @@ struct hyperslab_proxy
   }
 };
 
-template<typename CT, unsigned DIM>
-struct h5data_proxy<hyperslab_proxy<CT, DIM>>
+template<typename CT, unsigned RANK>
+struct h5data_proxy<hyperslab_proxy<CT, RANK>>
 {
-  hyperslab_proxy<CT, DIM>& ref_;
+  hyperslab_proxy<CT, RANK>& ref_;
 
-  h5data_proxy(hyperslab_proxy<CT, DIM>& a) : ref_(a) {}
+  h5data_proxy(hyperslab_proxy<CT, RANK>& a) : ref_(a) {}
 
   inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
     std::vector<hsize_t> sizes_file;
-    getDataShape<typename hyperslab_proxy<CT, DIM>::element_type>(grp, aname, sizes_file);
+    getDataShape<typename hyperslab_proxy<CT, RANK>::element_type>(grp, aname, sizes_file);
     ref_.adaptShape(sizes_file);
     ref_.checkUserRankSizes();
-    return h5d_read(grp, aname.c_str(), ref_.file_space.size(), ref_.file_space.dims, ref_.selected_space.dims,
-                    ref_.slab_offset.data(), hyperslab_proxy<CT, DIM>::SpaceType::get_address(container_traits<CT>::getElementPtr(ref_.ref_)),
+    return h5d_read(grp, aname.c_str(), ref_.file_space.rank, ref_.file_space.dims, ref_.selected_space.dims,
+                    ref_.slab_offset.data(), hyperslab_proxy<CT, RANK>::SpaceType::get_address(container_traits<CT>::getElementPtr(ref_.ref_)),
                     xfer_plist);
   }
 
   inline bool write(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
     ref_.checkUserRankSizes();
-    return h5d_write(grp, aname.c_str(), ref_.file_space.size(), ref_.file_space.dims, ref_.selected_space.dims,
-                     ref_.slab_offset.data(), hyperslab_proxy<CT, DIM>::SpaceType::get_address(container_traits<CT>::getElementPtr(ref_.ref_)),
+    return h5d_write(grp, aname.c_str(), ref_.file_space.rank, ref_.file_space.dims, ref_.selected_space.dims,
+                     ref_.slab_offset.data(), hyperslab_proxy<CT, RANK>::SpaceType::get_address(container_traits<CT>::getElementPtr(ref_.ref_)),
                      xfer_plist);
   }
 };
 
 #ifdef BUILD_AFQMC
 #ifdef QMC_CUDA
-template<typename T, unsigned DIM>
-struct h5data_proxy<hyperslab_proxy<boost::multi::array<T, 2, qmc_cuda::cuda_gpu_allocator<T>>, DIM>>
+template<typename T, unsigned RANK>
+struct h5data_proxy<hyperslab_proxy<boost::multi::array<T, 2, qmc_cuda::cuda_gpu_allocator<T>>, RANK>>
 {
   typedef boost::multi::array<T, 2, qmc_cuda::cuda_gpu_allocator<T>> CT;
-  hyperslab_proxy<CT, DIM>& ref_;
-  h5data_proxy(hyperslab_proxy<CT, DIM>& a) : ref_(a) {}
+  hyperslab_proxy<CT, RANK>& ref_;
+  h5data_proxy(hyperslab_proxy<CT, RANK>& a) : ref_(a) {}
   inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
     if (ref_.use_slab)
@@ -220,12 +220,12 @@ struct h5data_proxy<hyperslab_proxy<boost::multi::array<T, 2, qmc_cuda::cuda_gpu
   }
 };
 
-template<typename T, unsigned DIM>
-struct h5data_proxy<hyperslab_proxy<boost::multi::array_ref<T, 2, qmc_cuda::cuda_gpu_ptr<T>>, DIM>>
+template<typename T, unsigned RANK>
+struct h5data_proxy<hyperslab_proxy<boost::multi::array_ref<T, 2, qmc_cuda::cuda_gpu_ptr<T>>, RANK>>
 {
   typedef boost::multi::array_ref<T, 2, qmc_cuda::cuda_gpu_ptr<T>> CT;
-  hyperslab_proxy<CT, DIM>& ref_;
-  h5data_proxy(hyperslab_proxy<CT, DIM>& a) : ref_(a) {}
+  hyperslab_proxy<CT, RANK>& ref_;
+  h5data_proxy(hyperslab_proxy<CT, RANK>& a) : ref_(a) {}
   inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
     if (ref_.use_slab)

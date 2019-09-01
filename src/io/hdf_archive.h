@@ -195,18 +195,18 @@ public:
    * @param shape shape on the hdf file
    * runtime error is issued on I/O error
    */
-  template<typename T, typename IT, std::size_t DIM, typename = std::enable_if_t<std::is_unsigned<IT>::value> >
-  void writeSlabReshaped(T& data, const std::array<IT, DIM>& shape, const std::string& aname)
+  template<typename T, typename IT, std::size_t RANK, typename = std::enable_if_t<std::is_unsigned<IT>::value> >
+  void writeSlabReshaped(T& data, const std::array<IT, RANK>& shape, const std::string& aname)
   {
-    std::array<hsize_t, DIM> globals, counts, offsets;
-    for(int dim = 0; dim < DIM; dim++)
+    std::array<hsize_t, RANK> globals, counts, offsets;
+    for(int dim = 0; dim < RANK; dim++)
     {
       globals[dim] = static_cast<hsize_t>(shape[dim]);
       counts[dim] = static_cast<hsize_t>(shape[dim]);
       offsets[dim] = 0;
     }
 
-    hyperslab_proxy<T, DIM> pxy(data, globals, counts, offsets);
+    hyperslab_proxy<T, RANK> pxy(data, globals, counts, offsets);
     write(pxy, aname);
   }
 
@@ -257,11 +257,11 @@ public:
    * for example, if the dataset was [5,2,6] and the vector contained (2,1,-1),
    * this would grab 6 elements corresponding to [2,1,:]
    */
-  template<typename T, typename IT, std::size_t DIM>
-  void readSlabSelection(T& data, const std::array<IT, DIM>& readSpec, const std::string& aname)
+  template<typename T, typename IT, std::size_t RANK>
+  void readSlabSelection(T& data, const std::array<IT, RANK>& readSpec, const std::string& aname)
   {
-    std::array<hsize_t, DIM> globals, counts, offsets;
-    for(int dim = 0; dim < DIM; dim++)
+    std::array<hsize_t, RANK> globals, counts, offsets;
+    for(int dim = 0; dim < RANK; dim++)
     {
       globals[dim] = 0;
       if (readSpec[dim] < 0)
@@ -276,7 +276,7 @@ public:
       }
     }
 
-    hyperslab_proxy<T, DIM> pxy(data, globals, counts, offsets);
+    hyperslab_proxy<T, RANK> pxy(data, globals, counts, offsets);
     read(pxy, aname);
   }
 

@@ -25,8 +25,9 @@ namespace qmcplusplus
 template<typename T>
 struct h5data_proxy<std::vector<T>> : public h5_space_type<T, 1>
 {
-  using h5_space_type<T, 1>::dims;
-  using h5_space_type<T, 1>::get_address;
+  using Base = h5_space_type<T, 1>;
+  using Base::dims;
+  using Base::get_address;
   typedef std::vector<T> data_type;
   data_type& ref_;
 
@@ -34,14 +35,14 @@ struct h5data_proxy<std::vector<T>> : public h5_space_type<T, 1>
 
   inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
-    if (!get_space(grp, aname, this->size(), dims))
+    if (!get_space(grp, aname, Base::rank, dims))
       ref_.resize(dims[0]);
     return h5d_read(grp, aname, get_address(&ref_[0]), xfer_plist);
   }
 
   inline bool write(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
-    return h5d_write(grp, aname.c_str(), this->size(), dims, get_address(&ref_[0]), xfer_plist);
+    return h5d_write(grp, aname.c_str(), Base::rank, dims, get_address(&ref_[0]), xfer_plist);
   }
 
   inline bool write(hid_t grp, const std::string& aname, const std::vector<hsize_t>& dvec, hid_t xfer_plist)

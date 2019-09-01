@@ -79,7 +79,7 @@ inline bool getDataShape(hid_t grp, const std::string& aname, std::vector<IT>& s
   hid_t dataspace = H5Dget_space(h1);
   int rank        = H5Sget_simple_extent_ndims(dataspace);
   // check if the rank is sufficient to hold the data type
-  if (rank < TSpaceType::size())
+  if (rank < TSpaceType::rank)
   {
     success = false;
     throw std::runtime_error(aname + " dataset is too small for the requested data type");
@@ -90,7 +90,7 @@ inline bool getDataShape(hid_t grp, const std::string& aname, std::vector<IT>& s
     int status_n = H5Sget_simple_extent_dims(dataspace, sizes_in.data(), NULL);
 
     // check if the lowest dimensions match the data type
-    int user_rank   = rank - TSpaceType::added_size();
+    int user_rank   = rank - TSpaceType::added_rank();
     bool size_match = true;
     for (int dim = user_rank, dim_type = 0; dim < rank; dim++, dim_type++)
       if (sizes_in[dim] != TSpace.dims[dim_type])

@@ -27,9 +27,10 @@ namespace qmcplusplus
 template<typename T>
 struct h5data_proxy : public h5_space_type<T, 0>
 {
-  typedef T data_type;
-  using h5_space_type<T, 0>::dims;
-  using h5_space_type<T, 0>::get_address;
+  using data_type = T;
+  using Base = h5_space_type<T, 0>;
+  using Base::dims;
+  using Base::get_address;
   data_type& ref_;
 
   inline h5data_proxy(data_type& a) : ref_(a) { }
@@ -41,7 +42,7 @@ struct h5data_proxy : public h5_space_type<T, 0>
 
   inline bool write(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
-    return h5d_write(grp, aname.c_str(), this->size(), dims, get_address(&ref_), xfer_plist);
+    return h5d_write(grp, aname.c_str(), Base::rank, dims, get_address(&ref_), xfer_plist);
   }
 
 };
@@ -51,9 +52,10 @@ struct h5data_proxy : public h5_space_type<T, 0>
 template<>
 struct h5data_proxy<bool> : public h5_space_type<int, 0>
 {
-  typedef bool data_type;
-  using h5_space_type<int, 0>::dims;
-  using h5_space_type<int, 0>::get_address;
+  using data_type = bool;
+  using Base = h5_space_type<int, 0>;
+  using Base::dims;
+  using Base::get_address;
   data_type& ref_;
 
   inline h5data_proxy(data_type& a) : ref_(a) { }
@@ -69,7 +71,7 @@ struct h5data_proxy<bool> : public h5_space_type<int, 0>
   inline bool write(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
     int copy = static_cast<int>(ref_);
-    return h5d_write(grp, aname.c_str(), this->size(), dims, get_address(&copy), xfer_plist);
+    return h5d_write(grp, aname.c_str(), Base::rank, dims, get_address(&copy), xfer_plist);
   }
 
 };
