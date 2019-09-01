@@ -3,17 +3,20 @@ C++ wrapper on top of HDF5 library C interfaces
 Users only need `hdf_archive` class to open/close and read/write files.
 
 `hdf_wrapper_functions.h` wraps raw C functions of HDF5.
-`hdf_datatype.h` handles the mapping between C type and HDF5 native type
-`hdf_dataspace.h` handles HDF5 multidimentional dataspace
+
+`hdf_datatype.h` handles the mapping between C type and HDF5 native type.
+
+`hdf_dataspace.h` handles HDF5 multidimentional dataspace.
 
 `hdf_dataproxy` is a tempalte class to support any kind of datatype written to HDF5 file as a single dataset.
 Its specialization are 
-STL containers, including vector, bitset and string, in `hdf_stl.h`
-OhmmsPETE containers, including Vector, Matrix and Array, in `hdf_pete.h`
-Afredo's multi container for multidimentional arrays, in `hdf_multi.h`
+STL containers, including vector, bitset and string, in `hdf_stl.h`;
+OhmmsPETE containers, including Vector, Matrix and Array, in `hdf_pete.h`;
+Afredo's multi container for multidimentional arrays, in `hdf_multi.h`.
 Users are recommended to include the corresponding header if a non-STL data container is used.
 
-`hdf_hyperslab.h` supports hyperslab selection in filespace. In production
+`hdf_hyperslab.h` supports hyperslab selection in filespace. In production.
+
 `hdf_double_hyperslab.h` supports hyperslab selection in both filespace and memory space. Not completed yet due to limited demand.
 
 `hdf_hyperslab` reads from  and writes into data containers which requires `../type_traits/container_traits.h`
