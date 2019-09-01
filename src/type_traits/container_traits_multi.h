@@ -21,13 +21,12 @@
 
 namespace qmcplusplus
 {
-
 // template specialization for functions in container_traits
 template<typename T, boost::multi::dimensionality_type D, class Alloc>
 struct container_traits<boost::multi::array<T, D, Alloc>>
 {
   using element_type = T;
-  using CT = boost::multi::array<T, D, Alloc>;
+  using CT           = boost::multi::array<T, D, Alloc>;
 
   template<typename I>
   inline static void resize(CT& ref, I* n, int d)
@@ -35,12 +34,13 @@ struct container_traits<boost::multi::array<T, D, Alloc>>
     if (d != D)
     {
       std::ostringstream err_msg;
-      err_msg << "boost::multi::array<T, " << D << ", Alloc> cannot be resized. Requested dimension = " << d << std::endl;
+      err_msg << "boost::multi::array<T, " << D << ", Alloc> cannot be resized. Requested dimension = " << d
+              << std::endl;
       throw std::runtime_error(err_msg.str());
     }
     std::array<I, 2> shape;
     for (int i = 0; i < d; ++i)
-      shape[i]= n[i];
+      shape[i] = n[i];
     ref.reextent(shape);
   }
 
@@ -53,7 +53,7 @@ template<typename T, boost::multi::dimensionality_type D>
 struct container_traits<boost::multi::array_ref<T, D>>
 {
   using element_type = T;
-  using CT = boost::multi::array_ref<T, D>;
+  using CT           = boost::multi::array_ref<T, D>;
 
   template<typename I>
   inline static void resize(CT& ref, I* n, int d)
