@@ -43,7 +43,7 @@ struct h5data_proxy<boost::multi::array<T, 1, Alloc>> : public h5_space_type<T, 
   inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
     using iextensions = typename boost::multi::iextensions<1u>;
-    if (!get_space(grp, aname, FileSpace::rank, dims))
+    if (!checkShapeConsistency<T>(grp, aname, FileSpace::rank, dims))
       ref_.reextent(iextensions{dims[0]});
     return h5d_read(grp, aname, get_address(std::addressof(*ref_.origin())), xfer_plist);
   }
@@ -70,7 +70,7 @@ struct h5data_proxy<boost::multi::array<T, 2, Alloc>> : public h5_space_type<T, 
   }
   inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
-    if (!get_space(grp, aname, FileSpace::rank, dims))
+    if (!checkShapeConsistency<T>(grp, aname, FileSpace::rank, dims))
       ref_.reextent({dims[0], dims[1]});
     return h5d_read(grp, aname, get_address(std::addressof(*ref_.origin())), xfer_plist);
   }
@@ -93,7 +93,7 @@ struct h5data_proxy<boost::multi::array_ref<T, 1, Ptr>> : public h5_space_type<T
 
   inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
-    if (!get_space(grp, aname, FileSpace::rank, dims))
+    if (!checkShapeConsistency<T>(grp, aname, FileSpace::rank, dims))
     {
       if (dims[0] > 0)
       {
@@ -127,7 +127,7 @@ struct h5data_proxy<boost::multi::array_ref<T, 2, Ptr>> : public h5_space_type<T
   }
   inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
-    if (!get_space(grp, aname, FileSpace::rank, dims))
+    if (!checkShapeConsistency<T>(grp, aname, FileSpace::rank, dims))
     {
       if (dims[0] * dims[1] > 0)
       {
@@ -162,7 +162,7 @@ struct h5data_proxy<boost::multi::array<T, 1, qmc_cuda::cuda_gpu_allocator<T>>> 
 
   inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
-    if (!get_space(grp, aname, FileSpace::rank, dims))
+    if (!checkShapeConsistency<T>(grp, aname, FileSpace::rank, dims))
       ref_.reextent({dims[0]});
     std::size_t sz    = ref_.num_elements();
     using iextensions = typename boost::multi::iextensions<1u>;
@@ -195,7 +195,7 @@ struct h5data_proxy<boost::multi::array<T, 2, qmc_cuda::cuda_gpu_allocator<T>>> 
   }
   inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
-    if (!get_space(grp, aname, FileSpace::rank, dims))
+    if (!checkShapeConsistency<T>(grp, aname, FileSpace::rank, dims))
       ref_.reextent({dims[0], dims[1]});
     std::size_t sz    = ref_.num_elements();
     using iextensions = typename boost::multi::iextensions<1u>;
@@ -224,7 +224,7 @@ struct h5data_proxy<boost::multi::array_ref<T, 1, qmc_cuda::cuda_gpu_ptr<T>>> : 
 
   inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
-    if (!get_space(grp, aname, FileSpace::rank, dims))
+    if (!checkShapeConsistency<T>(grp, aname, FileSpace::rank, dims))
     {
       if (dims[0] > 0)
       {
@@ -264,7 +264,7 @@ struct h5data_proxy<boost::multi::array_ref<T, 2, qmc_cuda::cuda_gpu_ptr<T>>> : 
   }
   inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
-    if (!get_space(grp, aname, FileSpace::rank, dims))
+    if (!checkShapeConsistency<T>(grp, aname, FileSpace::rank, dims))
     {
       if (dims[0] * dims[1] > 0)
       {
@@ -308,7 +308,7 @@ struct h5data_proxy<hyperslab_proxy<boost::multi::array<T, 2, qmc_cuda::cuda_gpu
     else
     {
       int rank = ref_.slab_rank;
-      if (!get_space(grp, aname, rank, ref_.slab_dims.data(), true))
+      if (!checkShapeConsistency<T>(grp, aname, rank, ref_.slab_dims.data(), true))
       {
         std::cerr << " Disabled hyperslab resize with boost::multi::array<gpu_allocator>.\n";
         return false;
@@ -344,7 +344,7 @@ struct h5data_proxy<hyperslab_proxy<boost::multi::array_ref<T, 2, qmc_cuda::cuda
     else
     {
       int rank = ref_.slab_rank;
-      if (!get_space(grp, aname, rank, ref_.slab_dims.data(), true))
+      if (!checkShapeConsistency<T>(grp, aname, rank, ref_.slab_dims.data(), true))
       {
         std::cerr << " Disabled hyperslab resize with boost::multi::array_ref<gpu_ptr>.\n";
         return false;

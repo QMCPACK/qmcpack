@@ -37,7 +37,7 @@ struct h5data_proxy<Vector<T>> : public h5_space_type<T, 1>
 
   inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
-    if (!get_space(grp, aname, FileSpace::rank, dims))
+    if (!checkShapeConsistency<T>(grp, aname, FileSpace::rank, dims))
       ref_.resize(dims[0]);
     return h5d_read(grp, aname, get_address(ref_.data()), xfer_plist);
   }
@@ -64,7 +64,7 @@ struct h5data_proxy<Matrix<T>> : public h5_space_type<T, 2>
   }
   inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
-    if (!get_space(grp, aname, FileSpace::rank, dims))
+    if (!checkShapeConsistency<T>(grp, aname, FileSpace::rank, dims))
       ref_.resize(dims[0], dims[1]);
     return h5d_read(grp, aname, get_address(ref_.data()), xfer_plist);
   }
@@ -90,7 +90,7 @@ struct h5data_proxy<Array<T, D>> : public h5_space_type<T, D>
   }
   inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
-    if (!get_space(grp, aname, FileSpace::rank, dims))
+    if (!checkShapeConsistency<T>(grp, aname, FileSpace::rank, dims))
       ref_.resize(dims);
     return h5d_read(grp, aname, get_address(ref_.data()), xfer_plist);
   }

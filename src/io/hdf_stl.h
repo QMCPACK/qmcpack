@@ -36,7 +36,7 @@ struct h5data_proxy<std::vector<T>> : public h5_space_type<T, 1>
 
   inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
-    if (!get_space(grp, aname, FileSpace::rank, dims))
+    if (!checkShapeConsistency<T>(grp, aname, FileSpace::rank, dims))
       ref_.resize(dims[0]);
     return h5d_read(grp, aname, get_address(&ref_[0]), xfer_plist);
   }

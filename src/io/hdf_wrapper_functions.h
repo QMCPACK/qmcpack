@@ -25,34 +25,6 @@
 
 namespace qmcplusplus
 {
-/** free function to check dimension
- * @param grp group id
- * @param aname name of the dataspace
- * @param rank rank of the multi-dimensional array
- * @param dims[rank] size for each direction
- * @return true if the dims is the same as the dataspace
- */
-inline bool get_space(hid_t grp, const std::string& aname, int rank, hsize_t* dims, bool fatalerr = true)
-{
-  hid_t h1        = H5Dopen(grp, aname.c_str());
-  hid_t dataspace = H5Dget_space(h1);
-  int rank_in     = H5Sget_simple_extent_ndims(dataspace);
-  if (rank < rank_in && fatalerr)
-  {
-    APP_ABORT(aname + " dataspace does not match ");
-  }
-  std::vector<hsize_t> dims_in(rank);
-  int status_n = H5Sget_simple_extent_dims(dataspace, &dims_in[0], NULL);
-  H5Dclose(h1);
-  bool thesame = true;
-  for (int i = 0; i < rank; ++i)
-  {
-    thesame &= (dims_in[i] == dims[i]);
-    dims[i] = dims_in[i];
-  }
-  return thesame;
-}
-
 /** free template function to read the (user) dimension and shape of the dataset.
  * The dimensions contributed by T is excluded.
  * @tparam T data type supported by h5_space_type
@@ -73,44 +45,75 @@ inline bool getDataShape(hid_t grp, const std::string& aname, std::vector<IT>& s
   using TSpaceType = h5_space_type<T, 0>;
   TSpaceType TSpace;
 
-  bool success = true;
-
   hid_t h1        = H5Dopen(grp, aname.c_str());
   hid_t dataspace = H5Dget_space(h1);
   int rank        = H5Sget_simple_extent_ndims(dataspace);
-  // check if the rank is sufficient to hold the data type
-  if (rank < TSpaceType::rank)
-  {
-    success = false;
-    throw std::runtime_error(aname + " dataset is too small for the requested data type");
-  }
-  else
-  {
-    std::vector<hsize_t> sizes_in(rank);
-    int status_n = H5Sget_simple_extent_dims(dataspace, sizes_in.data(), NULL);
 
-    // check if the lowest dimensions match the data type
-    int user_rank   = rank - TSpaceType::added_rank();
-    bool size_match = true;
-    for (int dim = user_rank, dim_type = 0; dim < rank; dim++, dim_type++)
-      if (sizes_in[dim] != TSpace.dims[dim_type])
-        size_match = false;
-    if (!size_match)
-    {
-      success = false;
-      throw std::runtime_error("The lower dimensions (container element type) of " + aname + " dataset do not match the requested data type");
-    }
+  bool success = false;
+  if (h1 >= 0 && dataspace >= 0 && rank >= 0)
+  {
+    // check if the rank is sufficient to hold the data type
+    if (rank < TSpaceType::rank)
+      throw std::runtime_error(aname + " dataset is too small for the requested data type");
     else
     {
-      // save the sizes of each directions excluding dimensions contributed by the data type
-      sizes_out.resize(user_rank);
-      for (int dim = 0; dim < user_rank; dim++)
-        sizes_out[dim] = static_cast<IT>(sizes_in[dim]);
+      std::vector<hsize_t> sizes_in(rank);
+      int status_n = H5Sget_simple_extent_dims(dataspace, sizes_in.data(), NULL);
+
+      // check if the lowest dimensions match the data type
+      int user_rank   = rank - TSpaceType::added_rank();
+      bool size_match = true;
+      for (int dim = user_rank, dim_type = 0; dim < rank; dim++, dim_type++)
+        if (sizes_in[dim] != TSpace.dims[dim_type])
+          size_match = false;
+      if (!size_match)
+        throw std::runtime_error("The lower dimensions (container element type) of " + aname + " dataset do not match the requested data type");
+      else
+      {
+        // save the sizes of each directions excluding dimensions contributed by the data type
+        sizes_out.resize(user_rank);
+        for (int dim = 0; dim < user_rank; dim++)
+          sizes_out[dim] = static_cast<IT>(sizes_in[dim]);
+        success = true;
+      }
     }
   }
 
+  H5Sclose(dataspace);
   H5Dclose(h1);
   return success;
+}
+
+/** free function to check dimension
+ * @param grp group id
+ * @param aname name of the dataspace
+ * @param rank rank of the multi-dimensional array
+ * @param dims[rank] size for each direction, return the actual size on file
+ * @return true if the dims is the same as the dataspace
+ */
+template<typename T>
+inline bool checkShapeConsistency(hid_t grp, const std::string& aname, int rank, hsize_t* dims)
+{
+  using TSpaceType = h5_space_type<T, 0>;
+  TSpaceType TSpace;
+
+  std::vector<hsize_t> dims_in(rank);
+  if(getDataShape<T>(grp, aname, dims_in))
+  {
+    const int user_rank = rank - TSpaceType::added_rank();
+    if (dims_in.size() != user_rank)
+      throw std::runtime_error(aname + " dataspace rank does not match\n");
+
+    bool is_same = true;
+    for (int i = 0; i < user_rank; ++i)
+    {
+      is_same &= (dims_in[i] == dims[i]);
+      dims[i] = dims_in[i];
+    }
+    return is_same;
+  }
+  else
+    return false;
 }
 
 /** return true, if successful */
