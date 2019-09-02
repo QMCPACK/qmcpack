@@ -61,7 +61,7 @@ struct hyperslab_proxy
    * value 0 in any dimension of dims_in or selected_in is allowed when reading a dataset.
    * The actual size is derived from file dataset.
    */
-  template<typename IT>
+  template<typename IT, typename = std::enable_if_t<std::is_unsigned<IT>::value>>
   inline hyperslab_proxy(CT& a,
                          const std::array<IT, RANK>& dims_in,
                          const std::array<IT, RANK>& selected_in,
@@ -70,14 +70,8 @@ struct hyperslab_proxy
   {
     for (int i = 0; i < slab_rank; ++i)
     {
-      if (dims_in[i] < 0)
-        throw std::runtime_error("Negative size detected in some dimensions of filespace input\n");
       file_space.dims[i] = static_cast<hsize_t>(dims_in[i]);
-      if (selected_in[i] < 0)
-        throw std::runtime_error("Negative size detected in some dimensions of selected space input\n");
       selected_space.dims[i] = static_cast<hsize_t>(selected_in[i]);
-      if (offsets_in[i] < 0)
-        throw std::runtime_error("Negative value detected in some dimensions of offset input\n");
       slab_offset[i] = static_cast<hsize_t>(offsets_in[i]);
     }
 
@@ -95,13 +89,13 @@ struct hyperslab_proxy
    */
   inline void checkUserRankSizes()
   {
-    if (std::any_of(file_space.dims, file_space.dims + slab_rank, [](int i) { return i <= 0; }))
-      throw std::runtime_error("Non-positive size detected in some dimensions of filespace\n");
-    if (std::any_of(selected_space.dims, selected_space.dims + slab_rank, [](int i) { return i <= 0; }))
-      throw std::runtime_error("Non-positive size detected in some dimensions of selected filespace\n");
+    if (std::any_of(file_space.dims, file_space.dims + slab_rank, [](int i) { return i == 0; }))
+      throw std::runtime_error("Zero size detected in some dimensions of filespace\n");
+    if (std::any_of(selected_space.dims, selected_space.dims + slab_rank, [](int i) { return i == 0; }))
+      throw std::runtime_error("Zero size detected in some dimensions of selected filespace\n");
     for (int dim = 0; dim < slab_rank; dim++)
     {
-      if (slab_offset[dim] < 0 || slab_offset[dim] > file_space.dims[dim])
+      if (slab_offset[dim] > file_space.dims[dim])
         throw std::runtime_error("offset outsdie the bound of filespace");
       if (slab_offset[dim] + selected_space.dims[dim] > file_space.dims[dim])
       {

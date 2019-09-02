@@ -87,7 +87,7 @@ public:
 
   inline generator_type& engine() { return uni; }
 
-  inline int state_size() const { return uni.SAVE; }
+  inline size_t state_size() const { return uni.SAVE; }
 
   inline void read(std::istream& rin) { rin >> uni; }
 

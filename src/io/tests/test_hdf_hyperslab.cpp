@@ -79,13 +79,13 @@ TEST_CASE("hdf_read_partial", "[hdf]")
   Matrix<double> outbuffer3(1, 1);
   Matrix<double> outbuffer4;
 
-  std::array<int, 2> dims_unused;
+  std::array<size_t, 2> dims_unused;
   dims_unused[0] = 3;
   dims_unused[1] = 4;
-  std::array<int, 2> dims_local;
+  std::array<size_t, 2> dims_local;
   dims_local[0] = 1;
   dims_local[1] = 4;
-  std::array<int, 2> offsets;
+  std::array<size_t, 2> offsets;
   offsets[0] = 1;
   offsets[1] = 0;
 
