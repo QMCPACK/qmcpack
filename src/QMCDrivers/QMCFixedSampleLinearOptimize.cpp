@@ -106,7 +106,9 @@ QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(MCWalkerConfiguration
     F_eta(.001),
     Gauss_eta(.001),
     CI_eta(.01),
-    Orb_eta(.001)
+    Orb_eta(.001),
+    ramp_eta(false),
+    ramp_num(30)
 {
   IsQMCDriver = false;
   //set the optimization flag
@@ -150,6 +152,9 @@ QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(MCWalkerConfiguration
   m_param.add(CI_eta, "CI_eta", "double");
   m_param.add(Orb_eta, "Orb_eta", "double");
 
+  m_param.add(ramp_etaStr,"Ramp_eta","string");
+  m_param.add(ramp_num,"Ramp_num","int");
+
 #ifdef HAVE_LMY_ENGINE
   //app_log() << "construct QMCFixedSampleLinearOptimize" << endl;
   std::vector<double> shift_scales(3, 1.0);
@@ -191,6 +196,7 @@ QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(MCWalkerConfiguration
 
   lambda = 0;
   stepNum = 0;
+  descentNum = 0;
 
   totalCount = 0;
   descentCount = 0;
@@ -507,6 +513,9 @@ bool QMCFixedSampleLinearOptimize::put(xmlNodePtr q)
   doDescent = (MinMethod == "descent");
   //get whether to use hybrid method
   doHybrid = (MinMethod == "hybrid");
+
+  //get whether to gradually ramp up step sizes
+  ramp_eta = (ramp_etaStr == "yes");
 
   // sanity check
   if (targetExcited && !doAdaptiveThreeShift)
@@ -1349,8 +1358,10 @@ bool QMCFixedSampleLinearOptimize::descent_run() {
   numParams = optTarget->NumParams();
    N = numParams + 1;
 
-  for (int i = 0; i < numParams; i++) {
-    if (stepNum == 0) {
+  for (int i = 0; i < numParams; i++)
+  {
+    if (descentNum == 0) 
+    {
       paramsCopy.push_back(optTarget->Params(i));
     }
   }
@@ -1364,14 +1375,14 @@ bool QMCFixedSampleLinearOptimize::descent_run() {
     std::vector<RealType> lDerivs(numParams);
 
     //Compute Lagragian derivatives needed for parameter updates
-    optTarget->descent_checkConfigurations(lDerivs, mu, targetExcited,
-                                           omega_shift);
+    optTarget->descent_checkConfigurations(lDerivs, mu, targetExcited, omega_shift);
 
     //Store the derivatives and then compute parameter updates
     derivRecords.push_back(lDerivs);
     updateParameters(derivRecords, lambda, taus, derivsSquared, stepNum);
     
     stepNum = stepNum + 1;
+    descentNum = descentNum +1;
   }
 
   finish();
@@ -1380,10 +1391,8 @@ bool QMCFixedSampleLinearOptimize::descent_run() {
 
 
 //Function for updating parameters during descent optimization
-void QMCFixedSampleLinearOptimize::updateParameters(
-    std::vector<std::vector<Return_t>> &derivRecords, double &prevLambda,
-    std::vector<double> &prevTaus, std::vector<Return_t> &derivsSquared,
-    int stepNum) {
+void QMCFixedSampleLinearOptimize::updateParameters( std::vector<std::vector<Return_t>> &derivRecords, double &prevLambda, std::vector<double> &prevTaus, std::vector<Return_t> &derivsSquared, int stepNum) 
+{
   numParams = optTarget->NumParams();
   app_log() << "Number of Parameters: " << numParams << std::endl;
 
@@ -1433,18 +1442,22 @@ void QMCFixedSampleLinearOptimize::updateParameters(
 
     double rho = .9;
 
-    for (int i = 0; i < numParams; i++) {
-      if (stepNum == 0) {
+    for (int i = 0; i < numParams; i++)
+    {
+      if (descentNum == 0)
+      {
         paramsForDiff.push_back(optTarget->Params(i));
       }
       double curSquare = std::pow(curDerivSet.at(i), 2);
 
       // Need to calculate tau for each parameter inside loop
-      if (derivsSquared.size() < numParams) {
+      if (derivsSquared.size() < numParams)
+      {
         curSquare = std::pow(curDerivSet.at(i), 2);
-      } else if (derivsSquared.size() >= numParams) {
-        curSquare = rho * derivsSquared.at(i) +
-                    (1 - rho) * std::pow(curDerivSet.at(i), 2);
+      }
+      else if (derivsSquared.size() >= numParams)
+      {
+        curSquare = rho * derivsSquared.at(i) + (1 - rho) * std::pow(curDerivSet.at(i), 2);
       }
 
       denom = std::sqrt(curSquare + epsilon);
@@ -1461,24 +1474,28 @@ void QMCFixedSampleLinearOptimize::updateParameters(
 
 
 
-      if (prevTaus.size() >= numParams) {
+      if (prevTaus.size() >= numParams)
+      {
         double oldTau = prevTaus.at(i);
 
-        optTarget->Params(i) =
-            (1 - gamma) * (optTarget->Params(i) - tau * curDerivSet.at(i)) +
-            gamma * (paramsCopy.at(i) - oldTau * prevDerivSet.at(i));
-      } else {
+        optTarget->Params(i) = (1 - gamma) * (optTarget->Params(i) - tau * curDerivSet.at(i)) + gamma * (paramsCopy.at(i) - oldTau * prevDerivSet.at(i));
+      }
+      else
+      {
         tau = type_Eta;
 
         optTarget->Params(i) = optTarget->Params(i) - tau * curDerivSet.at(i);
       }
 
-      if (prevTaus.size() < numParams) {
+      if (prevTaus.size() < numParams)
+      {
         // For the first optimization step, need to add to the vectors
         prevTaus.push_back(tau);
         derivsSquared.push_back(curSquare);
 
-      } else {
+      }
+      else
+      {
         // When not on the first step, can overwrite the previous stored values
         prevTaus[i] = tau;
         derivsSquared[i] = curSquare;
@@ -1493,7 +1510,8 @@ void QMCFixedSampleLinearOptimize::updateParameters(
   }
   // Random uses only the sign of the parameter derivatives and takes a step of
   // random size within a range.
-  else if (flavor.compare("Random") == 0) {
+  else if (flavor.compare("Random") == 0)
+  {
     app_log() << "Using Random" << std::endl;
 
     for (int i = 0; i < numParams; i++) {
@@ -1529,15 +1547,16 @@ void QMCFixedSampleLinearOptimize::updateParameters(
         double curSquare = std::pow(curDerivSet.at(i), 2);
         double beta1 = .9;
         double beta2 = .99;
-        if (stepNum == 0) {
+        if (descentNum == 0)
+       	{
           numerRecords.push_back(0);
           denomRecords.push_back(0);
         }
         numer = beta1 * numerRecords[i] + (1 - beta1) * curDerivSet[i];
         v = beta2 * denomRecords[i] + (1 - beta2) * curSquare;
 
-        corNumer = numer / (1 - std::pow(beta1, stepNum + 1));
-        corV = v / (1 - std::pow(beta2, stepNum + 1));
+        corNumer = numer / (1 - std::pow(beta1, descentNum + 1));
+        corV = v / (1 - std::pow(beta2, descentNum + 1));
 
         denom = std::sqrt(corV) + epsilon;
 
@@ -1572,7 +1591,8 @@ void QMCFixedSampleLinearOptimize::updateParameters(
         double curSquare = std::pow(curDerivSet.at(i), 2);
         double beta1 = .9;
         double beta2 = .99;
-        if (stepNum == 0) {
+        if (descentNum == 0)
+       	{
           numerRecords.push_back(0);
           denomRecords.push_back(0);
         }
@@ -1606,7 +1626,7 @@ void QMCFixedSampleLinearOptimize::updateParameters(
     }
   }
 
-  if (doHybrid && ((stepNum + 1) % (descent_len / 5) == 0)) {
+  if (doHybrid && ((descentNum + 1) % (descent_len / 5) == 0)) {
       app_log() << "Step number in macro-iteration is " << stepNum % descent_len
                 << " out of expected total of " << descent_len
                 << " descent steps." << std::endl;
@@ -1654,13 +1674,18 @@ double QMCFixedSampleLinearOptimize::setStepSize(int i) {
       }
 
 
+      if(ramp_eta && descentNum < ramp_num)
+      {
+      type_eta = type_eta*(descentNum+1)/ramp_num;
+      }
+
   return type_eta;
 }
 
 // Helper method for storing vectors of parameter differences over the course of
 // a descent optimization for use in BLM steps of the hybrid method
-void QMCFixedSampleLinearOptimize::storeVectors(
-    std::vector<Return_t> &paramsForDiff) {
+void QMCFixedSampleLinearOptimize::storeVectors(std::vector<Return_t> &paramsForDiff)
+{
 
     int process_rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &process_rank);
@@ -1673,22 +1698,28 @@ void QMCFixedSampleLinearOptimize::storeVectors(
   // iterations before (in the case descent_len = 100) to be stored as input to BLM.
   // The current parameter values are then copied to paramsForDiff to be used
   // another 20 iterations later.
-  for (int i = 0; i < numParams; i++) {
+  for (int i = 0; i < numParams; i++)
+  {
     rowVec[i] = (optTarget->Params(i) - paramsForDiff[i]);
     paramsForDiff[i] = optTarget->Params(i);
   }
 
   // If on first step, clear anything that was in vector
-  if ((stepNum + 1) % descent_len == descent_len / 5) {
+  if ((stepNum + 1) % descent_len == descent_len / 5) 
+  {
     hybridBLM_Input.clear();
     hybridBLM_Input.push_back(rowVec);
-  } else {
+  }
+  else
+  {
     hybridBLM_Input.push_back(rowVec);
   }
 
-  for (int i = 0; i < hybridBLM_Input.size(); i++) {
+  for (int i = 0; i < hybridBLM_Input.size(); i++)
+  {
     std::string entry = "";
-    for (int j = 0; j < hybridBLM_Input.at(i).size(); j++) {
+    for (int j = 0; j < hybridBLM_Input.at(i).size(); j++)
+    {
       entry = entry + std::to_string(hybridBLM_Input.at(i).at(j)) + ",";
     }
     app_log() << "Stored Vector: " << entry << std::endl;

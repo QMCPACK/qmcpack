@@ -696,7 +696,7 @@ bool QMCDriver::putQMCInfo(xmlNodePtr cur)
   {
      int lhs = stepCounter  % (descent_len +blm_len);
       on_hybrid_descent = lhs + blm_len < (descent_len+blm_len);
-  if (lhs == 100 || lhs == 0)
+  if (lhs == descent_len || lhs == 0)
      {
         just_changed = true;
         app_log() << "Just changed to different method" << std::endl;

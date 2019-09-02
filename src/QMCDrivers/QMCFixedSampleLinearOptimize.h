@@ -220,6 +220,9 @@ private:
   //Integer for keeping track of the iteration number
   int stepNum;
 
+  //Integer for keeping track of only number of descent steps taken
+  int descentNum;
+
   //Whether hybrid accelerated descent and linear method will be used
   std::string hybrid;
 
@@ -234,6 +237,13 @@ private:
   double Gauss_eta;
   double CI_eta;
   double Orb_eta;
+
+  //Whether to gradually ramp up step sizes in descent
+  bool ramp_eta;
+  std::string ramp_etaStr;
+  
+  //Number of steps over which to ramp up step size
+  int ramp_num;
 
   //Counters for controlling changes between descent
   //and BLM in hybrid method
