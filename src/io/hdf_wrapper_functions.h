@@ -33,11 +33,11 @@ namespace qmcplusplus
  * @param sizes_out sizes of each direction. For a scalar, sizes_out.size() == 0
  * @return true if sizes_out is extracted successfully
  *
- * For example, if the data on the file is Matrix<TinyVector<std::complex<double>,3>>
- * The dataset on the file has a dimension of 2 (matrix) + 1 (TinyVector) + 1 (std::complex) + 0 (double) = 4
- * getDataShape<TinyVector<std::complex<double>,3>> only returns the first 2 dimension
+ * For example, if the data on the file is Matrix<TinyVector<std::complex<double>, 3>>
+ * The dataset on the file has a rank of 2 (matrix) + 1 (TinyVector) + 1 (std::complex) + 0 (double) = 4
+ * getDataShape<TinyVector<std::complex<double>, 3>> only returns the first 2 dimension
  * getDataShape<std::complex<double>> only returns the first 3 dimension
- * getDataShape<double> returns all the 3 dimension
+ * getDataShape<double> returns all the 4 dimension
  */
 template<typename T, typename IT>
 inline bool getDataShape(hid_t grp, const std::string& aname, std::vector<IT>& sizes_out)

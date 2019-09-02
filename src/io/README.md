@@ -27,3 +27,8 @@ to support features like resizing containers.
 When using `hdf_hyperslab`, users are required to include the corresponding header if a non-STL data container is used.
 
 Although users need to include a few headers to operate a feature with full functionality, it reduces header file entanglement and saves compliation time.
+
+A bit more about multidimensional data. Take a datatype in memory `Matrix<TinyVector<std::complex<double>, 3>>` as an example.
+The dataset on the file has a rank of 2 (Matrix) + 1 (TinyVector) + 1 (std::complex) + 0 (double) = 4
+The Matrix container holds `TinyVector<std::complex<double>, 3>` value type.
+`getShape<TinyVector<std::complex<double>, 3>>` gives the dimensions of a matrix.
