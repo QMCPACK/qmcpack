@@ -124,6 +124,16 @@ struct VariableSet
     return -1;
   }
 
+  /* return the NameAndValue index for the named parameter
+   * @ param vname name of the variable
+   *
+   * Differs from getIndex by not relying on the indices cached in Index
+   * myVars[i] will always return the value of the parameter if it is stored
+   * regardless of whether or not the Index array has been correctly reset
+   *
+   * if vname is not found, return -1
+   *
+   */
   inline int getLoc(const std::string& vname) const
   {
     int loc = 0;

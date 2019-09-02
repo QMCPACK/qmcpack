@@ -677,74 +677,7 @@ void QMCCostFunctionBase::updateXmlNodes()
     // counting jastrow variables
     else if(rname.find("cj_") == 0 )
     {
-      opt_variables_type::iterator vit(OptVariables.begin());
-      // F matrix variables
-      if(rname.find("cj_F") < rname.size())
-      {
-        // get a vector of pairs with f matrix names, values
-        std::vector<Return_rt> f_vals;
-        for(auto vit = OptVariables.begin(); vit != OptVariables.end(); ++vit)
-        {
-          if( (*vit).first.find("F_") == 0)
-            f_vals.push_back( vit->second );
-        }
-        // manually add final element = 0
-        f_vals.push_back(0);
-        // get the dimensions of the f matrix
-        int Fdim = (std::sqrt(1 + 8*f_vals.size()) - 1)/2;
-        std::ostringstream os;
-        std::string pad_str = std::string(14, ' ');
-        os << std::endl;
-        os << std::setprecision(6) << std::scientific;
-        // print out the values with the proper indentation
-        auto fit = f_vals.begin();
-        for(int i = 0; i < Fdim; ++i)
-        {
-          os << pad_str;
-          for(int j = 0; j < Fdim; ++j)
-          {
-            if(j < i) os << pad_str; //print blank
-            else // print value 
-            {
-              os << "  " << (*fit);
-              ++fit;
-            }
-          }
-          // line break
-          if( i < Fdim - 1)
-            os << std::endl;
-        }
-        // assign to tag
-        xmlNodePtr cur = cit->second->children;
-        xmlNodeSetContent(cur, (const xmlChar*)(os.str().c_str()));
-        xmlNodeAddContent(cur, (const xmlChar*)"\n      ");
-      }
-      // gaussian function parameters A, B, C
-      else
-      {
-        std::string var_prefix = rname.substr(3);
-        std::vector<opt_variables_type::pair_type> val_pairs;
-        std::vector<Return_rt> vals;
-
-        for(auto vit = OptVariablesForPsi.begin(); vit != OptVariablesForPsi.end(); ++vit)
-        {
-          if( vit->first.find( var_prefix ) == 0)
-          {
-            vals.push_back( vit->second );
-            val_pairs.push_back(*vit);
-          }
-        }
-        std::ostringstream os;
-        os << std::setprecision(6) << std::scientific;
-        for(int i = 0; i < vals.size(); ++i)
-        {
-          os << vals[i];
-          if( i < vals.size() - 1)
-            os << " ";
-        }
-        xmlNodePtr cur = cit->second->children;
-        xmlNodeSetContent(cur, (const xmlChar*)(os.str().c_str()));
-      }
+      printCJParams(cit, std::string& rname);
     }
     else
     {
@@ -1038,6 +971,79 @@ void QMCCostFunctionBase::addCJParams(xmlXPathContextPtr acontext, const char* c
     }
   }     
   xmlXPathFreeObject(result);
+}
+
+
+void QMCCostFunctionBase::printCJParams(xmlXPathContextPtr acontext, const char* cname) 
+{
+  opt_variables_type::iterator vit(OptVariables.begin());
+  // F matrix variables
+  if(rname.find("cj_F") < rname.size())
+  {
+    // get a vector of pairs with f matrix names, values
+    std::vector<Return_rt> f_vals;
+    for(auto vit = OptVariables.begin(); vit != OptVariables.end(); ++vit)
+    {
+      if( (*vit).first.find("F_") == 0)
+        f_vals.push_back( vit->second );
+    }
+    // manually add final element = 0
+    f_vals.push_back(0);
+    // get the dimensions of the f matrix
+    int Fdim = (std::sqrt(1 + 8*f_vals.size()) - 1)/2;
+    std::ostringstream os;
+    std::string pad_str = std::string(14, ' ');
+    os << std::endl;
+    os << std::setprecision(6) << std::scientific;
+    // print out the values with the proper indentation
+    auto fit = f_vals.begin();
+    for(int i = 0; i < Fdim; ++i)
+    {
+      os << pad_str;
+      for(int j = 0; j < Fdim; ++j)
+      {
+        if(j < i) os << pad_str; //print blank
+        else // print value 
+        {
+          os << "  " << (*fit);
+          ++fit;
+        }
+      }
+      // line break
+      if( i < Fdim - 1)
+        os << std::endl;
+    }
+    // assign to tag
+    xmlNodePtr cur = acontext->second->children;
+    xmlNodeSetContent(cur, (const xmlChar*)(os.str().c_str()));
+    xmlNodeAddContent(cur, (const xmlChar*)"\n      ");
+  }
+  // gaussian function parameters A, B, C
+  else
+  {
+    std::string var_prefix = rname.substr(3);
+    std::vector<opt_variables_type::pair_type> val_pairs;
+    std::vector<Return_rt> vals;
+
+    for(auto vit = OptVariablesForPsi.begin(); vit != OptVariablesForPsi.end(); ++vit)
+    {
+      if( vit->first.find( var_prefix ) == 0)
+      {
+        vals.push_back( vit->second );
+        val_pairs.push_back(*vit);
+      }
+    }
+    std::ostringstream os;
+    os << std::setprecision(6) << std::scientific;
+    for(int i = 0; i < vals.size(); ++i)
+    {
+      os << vals[i];
+      if( i < vals.size() - 1)
+        os << " ";
+    }
+    xmlNodePtr cur = acontext->second->children;
+    xmlNodeSetContent(cur, (const xmlChar*)(os.str().c_str()));
+  }
 }
 
 bool QMCCostFunctionBase::lineoptimization(const std::vector<Return_rt>& x0,
