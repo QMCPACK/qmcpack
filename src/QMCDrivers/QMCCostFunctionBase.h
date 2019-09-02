@@ -127,6 +127,8 @@ public:
 
   void addCoefficients(xmlXPathContextPtr acontext, const char* cname);
 
+  void printCJParams(xmlXPathContextPtr acontext, const char* cname);
+
   void addCJParams(xmlXPathContextPtr acontext, const char* cname);
 
   /** implement the virtual function
