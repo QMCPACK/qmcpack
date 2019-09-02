@@ -180,7 +180,7 @@ public:
       C[I]->restore(iat);
   }
 
-  void reportStatus(std::ostream& os)
+  void reportStatus(std::ostream& os) 
   {
     // print some class variables:
     os << "    Region type: CountingGaussianRegion" << std::endl;
@@ -192,12 +192,21 @@ public:
 
   CountingGaussianRegion* makeClone()
   {
+    // create a new object and clone counting functions
     CountingGaussianRegion* cr = new CountingGaussianRegion(num_els);
     for (int i = 0; i < C.size(); ++i)
     {
       CountingGaussian* Ci = C[i]->makeClone(C_id[i]);
       cr->addFunc(Ci, C_id[i]);
     }
+    // get the index of the reference gaussian
+    cr->Cref_id = Cref_id;
+    auto C_id_it  = std::find(C_id.begin(), C_id.end(), Cref_id);
+    int ref_index = std::distance(C_id.begin(), C_id_it);
+    // initialize each of the counting functions using the reference gaussian
+    cr->Cref = cr->C[ref_index]->makeClone(Cref_id + "_ref");
+    for(auto it = cr->C.begin(); it != cr->C.end(); ++it)
+      (*it)->initialize(cr->Cref);
     cr->initialize();
     return cr;
   }
