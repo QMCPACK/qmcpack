@@ -162,6 +162,20 @@ public:
     H5Gclose(g);
   }
 
+  /** read the shape of multidimensional filespace from the group aname
+   * The dimensions contributed by T is excluded.
+   * this function can be used to query dataset for preparing containers.
+   * @return true if successful
+   */
+  template<typename T>
+  bool getShape(const std::string& aname, std::vector<int>& sizes_out)
+  {
+    if (Mode[NOIO])
+      return true;
+    hid_t p = group_id.empty() ? file_id : group_id.top();
+    return getDataShape<T>(p, aname, sizes_out);
+  }
+
   /** write the data to the group aname and return status
    * use write() for inbuilt error checking
    * @return true if successful
@@ -209,18 +223,6 @@ public:
 
     hyperslab_proxy<T, RANK> pxy(data, globals, counts, offsets);
     write(pxy, aname);
-  }
-
-  /** read the filespace shape from the group aname
-   * @return true if successful
-   */
-  template<typename T>
-  bool getShape(const std::string& aname, std::vector<int>& sizes_out)
-  {
-    if (Mode[NOIO])
-      return true;
-    hid_t p = group_id.empty() ? file_id : group_id.top();
-    return getDataShape<T>(p, aname, sizes_out);
   }
 
   /** read the data from the group aname and return status

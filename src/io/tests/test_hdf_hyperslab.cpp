@@ -130,14 +130,15 @@ TEST_CASE("hdf_read_partial", "[hdf]")
     REQUIRE(outbuffer2(i, 0) == Approx(allData(i, 2)));
 
   // method 2 here
-  Matrix<double> locob1(1, 4);
+  std::vector<double> locob1;
   Matrix<double> locob2(3, 1);
   Matrix<double> locob3(1, 1);
   std::array<int, 2> readSpec{1, -1};
   hd2.readSlabSelection(locob1, readSpec, "matrix");
+  REQUIRE(locob1.size() == 4);
   for (int i = 0; i < 4; i++)
   {
-    REQUIRE(locob1(0, i) == Approx(allData(1, i)));
+    REQUIRE(locob1[i] == Approx(allData(1, i)));
   }
 
   readSpec[0] = -1;
