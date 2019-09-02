@@ -157,7 +157,7 @@ public:
   virtual void engine_checkConfigurations(cqmc::engine::LMYEngine* EngineObj) = 0;
 
 #endif
-  virtual void descent_checkConfigurations(std::vector<Return_t>& LDerivs, double& oldMu, bool& targetExcited,double& omega) = 0;
+  virtual void descent_checkConfigurations(std::vector<Return_t>& LDerivs, bool& targetExcited,double& omega) = 0;
 
 
 

@@ -489,7 +489,7 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine* Engine
 
 //Function for computing Lagrangian derivatives for descent optimization. Similar structure to engine_checkConfigurations but derivatives are computed 
 //from samples within this function instead of passing to the engine as in the linear method.
-void QMCCostFunction::descent_checkConfigurations(std::vector<Return_t>& LDerivs, double& oldMu, bool& targetExcited, double& omega)
+void QMCCostFunction::descent_checkConfigurations(std::vector<Return_t>& LDerivs, bool& targetExcited, double& omega)
 {
 
 
@@ -629,8 +629,6 @@ double eSum = 0;
 
 
 double newE = etemp[0]/etemp[1];
-newE = .99*newE +.01*oldMu;
-oldMu = newE;
 
 for (int i = 0; i < LDerivs.size();i++)
 {

@@ -152,6 +152,7 @@ QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(MCWalkerConfiguration
   m_param.add(CI_eta, "CI_eta", "double");
   m_param.add(Orb_eta, "Orb_eta", "double");
 
+  //Parameters for gradually ramping up step sizes to their input values
   m_param.add(ramp_etaStr,"Ramp_eta","string");
   m_param.add(ramp_num,"Ramp_num","int");
 
@@ -1375,7 +1376,7 @@ bool QMCFixedSampleLinearOptimize::descent_run() {
     std::vector<RealType> lDerivs(numParams);
 
     //Compute Lagragian derivatives needed for parameter updates
-    optTarget->descent_checkConfigurations(lDerivs, mu, targetExcited, omega_shift);
+    optTarget->descent_checkConfigurations(lDerivs, targetExcited, omega_shift);
 
     //Store the derivatives and then compute parameter updates
     derivRecords.push_back(lDerivs);
@@ -1406,7 +1407,8 @@ void QMCFixedSampleLinearOptimize::updateParameters( std::vector<std::vector<Ret
   std::vector<Return_t> curDerivSet = derivRecords.at(derivRecords.size() - 1);
   std::vector<Return_t> prevDerivSet;
 
-  if (!prevTaus.empty()) {
+  if (!prevTaus.empty())
+  {
     // Get set of derivatives for previous (k-1th) optimization step
     prevDerivSet = derivRecords.at(derivRecords.size() - 2);
   }
@@ -1450,7 +1452,8 @@ void QMCFixedSampleLinearOptimize::updateParameters( std::vector<std::vector<Ret
       }
       double curSquare = std::pow(curDerivSet.at(i), 2);
 
-      // Need to calculate tau for each parameter inside loop
+      // Need to calculate step size tau for each parameter inside loop
+      // In RMSprop, the denominator of the step size depends on a a running average of past squares of the parameter derivative
       if (derivsSquared.size() < numParams)
       {
         curSquare = std::pow(curDerivSet.at(i), 2);
@@ -1462,11 +1465,11 @@ void QMCFixedSampleLinearOptimize::updateParameters( std::vector<std::vector<Ret
 
       denom = std::sqrt(curSquare + epsilon);
 
+      //The numerator of the step size is set according to parameter type based on input choices
       type_Eta = this->setStepSize(i);
       tau = type_Eta / denom;
 
-      // Include an additional factor to cause step size to decrease to 0 as
-      // number of steps taken increases
+      // Include an additional factor to cause step size to eventually decrease to 0 as number of steps taken increases
       double stepLambda = .1;
 
       double stepDecayDenom = 1 + stepLambda * stepNum;
@@ -1474,6 +1477,8 @@ void QMCFixedSampleLinearOptimize::updateParameters( std::vector<std::vector<Ret
 
 
 
+    //Update parameter values
+    //If case corresponds to being after the first descent step
       if (prevTaus.size() >= numParams)
       {
         double oldTau = prevTaus.at(i);
@@ -1508,8 +1513,7 @@ void QMCFixedSampleLinearOptimize::updateParameters( std::vector<std::vector<Ret
     prevLambda = curLambda;
 
   }
-  // Random uses only the sign of the parameter derivatives and takes a step of
-  // random size within a range.
+  // Random uses only the sign of the parameter derivatives and takes a step of random size within a range.
   else if (flavor.compare("Random") == 0)
   {
     app_log() << "Using Random" << std::endl;
@@ -1583,10 +1587,12 @@ void QMCFixedSampleLinearOptimize::updateParameters( std::vector<std::vector<Ret
       }
 
     }
-    // AMSGrad method
-    else if (flavor.compare("AMSGrad") == 0) {
+    // AMSGrad method, similar to ADAM except for form of the step size denominator
+    else if (flavor.compare("AMSGrad") == 0)
+    {
       app_log() << "Using AMSGrad" << std::endl;
-      for (int i = 0; i < numParams; i++) {
+      for (int i = 0; i < numParams; i++)
+      {
 
         double curSquare = std::pow(curDerivSet.at(i), 2);
         double beta1 = .9;
@@ -1626,6 +1632,7 @@ void QMCFixedSampleLinearOptimize::updateParameters( std::vector<std::vector<Ret
     }
   }
 
+  //During the hybrid method,store 5 vectors of parameter differences over the course of a descent section
   if (doHybrid && ((descentNum + 1) % (descent_len / 5) == 0)) {
       app_log() << "Step number in macro-iteration is " << stepNum % descent_len
                 << " out of expected total of " << descent_len
@@ -1736,7 +1743,6 @@ bool QMCFixedSampleLinearOptimize::hybrid_run() {
     app_log() << "Should be on descent step# " << descentCount - 1
               << " of macro-iteration. Total steps: " << totalCount
               << std::endl;
-    //optTarget->setNumSamples(hybrid_descent_samples);
     return descent_run();
   }
   else {
