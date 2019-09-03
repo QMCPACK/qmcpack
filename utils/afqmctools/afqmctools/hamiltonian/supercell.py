@@ -245,13 +245,13 @@ def write_info(h5grp, cell, v2cnts, h1size, nmo_tot, numv,
     h5grp.create_dataset("occups", data=occ)
 
     # zero electron energies, including madelung term
-    e0 = cell.energy_nuc()
+    e0 = nkpts * cell.energy_nuc()
     if exxdiv=='ewald':
         madelung = tools.pbc.madelung(cell, kpts)
         e0 += madelung*nelectron * -.5
         print(" # Adding ewald correction to the energy: "
               "{:13.8e}".format(-0.5*madelung*nelectron))
-    h5grp.create_dataset("Energies", data=numpy.array([e0*nkpts, 0]))
+    h5grp.create_dataset("Energies", data=numpy.array([e0, 0]))
 
 
 def generate_grid_shifts(cell):
