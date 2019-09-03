@@ -24,7 +24,7 @@ class CountingGaussian
 {
   using RealType = QMCTraits::RealType;
   using PosType = QMCTraits::PosType;
-  using GradType = QMCTraits::GradType;
+  using GradType = QMCTraits::PosType; // complex not implemented
   using TensorType = QMCTraits::TensorType;
 
   using real_type = optimize::VariableSet::real_type;

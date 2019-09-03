@@ -46,7 +46,7 @@ protected:
 
   // Jastrow intermediate Matrix-vector products
   std::vector<RealType> FCsum;
-  Matrix<GradType> FCgrad;
+  Matrix<PosType> FCgrad;
   Matrix<RealType> FClap;
 
   // grad dot grad and laplacian sums for evaluateDerivatives
@@ -55,17 +55,17 @@ protected:
 
   // Jastrow intermediate Matrix-vector products at proposed position
   std::vector<RealType> FCsum_t;
-  std::vector<GradType> FCgrad_t;
+  std::vector<PosType> FCgrad_t;
   std::vector<RealType> FClap_t;
 
   // Jastrow exponent values and gradients (by particle index)
   RealType Jval;
-  std::vector<GradType> Jgrad;
+  std::vector<PosType> Jgrad;
   std::vector<RealType> Jlap;
 
   // Jastrow exponent values and gradients at proposed position
   RealType Jval_t;
-  std::vector<GradType> Jgrad_t;
+  std::vector<PosType> Jgrad_t;
   std::vector<RealType> Jlap_t;
 
   // containers for counting function derivative quantities
@@ -286,13 +286,13 @@ public:
     os << std::endl << "FCsum: ";
     std::copy(FCsum.begin(), FCsum.end(), std::ostream_iterator<RealType>(os, ", "));
     os << std::endl << "FCgrad: ";
-    std::copy(FCgrad.begin(), FCgrad.end(), std::ostream_iterator<GradType>(os, ", "));
+    std::copy(FCgrad.begin(), FCgrad.end(), std::ostream_iterator<PosType>(os, ", "));
     os << std::endl << "FClap: ";
     std::copy(FClap.begin(), FClap.end(), std::ostream_iterator<RealType>(os, ", "));
     // Jval, Jgrad, Jlap
     os << std::endl << "Jval: " << Jval;
     os << std::endl << "Jgrad: ";
-    std::copy(Jgrad.begin(), Jgrad.end(), std::ostream_iterator<GradType>(os, ", "));
+    std::copy(Jgrad.begin(), Jgrad.end(), std::ostream_iterator<PosType>(os, ", "));
     os << std::endl << "Jlap:  ";
     std::copy(Jlap.begin(), Jlap.end(), std::ostream_iterator<RealType>(os, ", "));
     os << std::endl << std::endl;
@@ -358,13 +358,13 @@ public:
     os << std::endl << "FCsum_t: ";
     std::copy(FCsum_t.begin(), FCsum_t.end(), std::ostream_iterator<RealType>(os, ", "));
     os << std::endl << "FCgrad_t: ";
-    std::copy(FCgrad_t.begin(), FCgrad_t.end(), std::ostream_iterator<GradType>(os, ", "));
+    std::copy(FCgrad_t.begin(), FCgrad_t.end(), std::ostream_iterator<PosType>(os, ", "));
     os << std::endl << "FClap_t: ";
     std::copy(FClap_t.begin(), FClap_t.end(), std::ostream_iterator<RealType>(os, ", "));
     // Jval, Jgrad, Jlap
     os << std::endl << "Jval_t: " << Jval_t;
     os << std::endl << "Jgrad_t: ";
-    std::copy(Jgrad_t.begin(), Jgrad_t.end(), std::ostream_iterator<GradType>(os, ", "));
+    std::copy(Jgrad_t.begin(), Jgrad_t.end(), std::ostream_iterator<PosType>(os, ", "));
     os << std::endl << "Jlap_t:  ";
     std::copy(Jlap_t.begin(), Jlap_t.end(), std::ostream_iterator<RealType>(os, ", "));
     os << std::endl << std::endl;
@@ -377,7 +377,7 @@ public:
     return Jgrad[iat];
   }
 
-  ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
+  ValueType ratioGrad(ParticleSet& P, int iat, PosType& grad_iat)
   {
     evaluateTempExponents(P, iat);
     grad_iat += Jgrad_t[iat];
@@ -494,7 +494,8 @@ public:
         RealType dJF_gg = 0, dJF_lap = 0;
         for (int i = 0; i < num_els; ++i)
         {
-          dJF_gg  += x * (dot(C->grad(I, i), P.G[i]) * C->sum[J] + C->sum[I] * dot(C->grad(J, i), P.G[i]));
+          PosType grad_i(P.G[i]);
+          dJF_gg  += x * (dot(C->grad(I, i), grad_i) * C->sum[J] + C->sum[I] * dot(C->grad(J, i), grad_i));
           dJF_lap += x * (C->lap(I, i) * C->sum[J] + 2 * dot(C->grad(I, i), C->grad(J, i)) + C->lap(J, i) * C->sum[I]);
         }
         dlogpsi[ia]      += dJF_val;
@@ -529,7 +530,8 @@ public:
       {
         for (int i = 0; i < num_els; ++i)
         {
-          FCggsum[I]  += dot(FCgrad(I, i), P.G[i]);
+          PosType grad_i(P.G[i]);
+          FCggsum[I]  += dot(FCgrad(I, i), grad_i);
           FClapsum[I] += FClap(I, i);
         }
       }
@@ -546,9 +548,9 @@ public:
         evaluateExponents_print(app_log(), P);
         app_log() << "== additional counting function terms ==" << std::endl;
         app_log() << "P.G: ";
-        std::copy(P.G.begin(), P.G.end(), std::ostream_iterator<GradType>(app_log(), ", "));
+        std::copy(P.G.begin(), P.G.end(), std::ostream_iterator<PosType>(app_log(), ", "));
         app_log() << std::endl << "FCgrad: ";
-        std::copy(FCgrad.begin(), FCgrad.end(), std::ostream_iterator<GradType>(app_log(), ", "));
+        std::copy(FCgrad.begin(), FCgrad.end(), std::ostream_iterator<PosType>(app_log(), ", "));
         app_log() << std::endl << "FClap: ";
         std::copy(FClap.begin(), FClap.end(), std::ostream_iterator<RealType>(app_log(), ", "));
         app_log() << std::endl << "FCggsum: ";

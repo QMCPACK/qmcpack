@@ -33,7 +33,6 @@ TEST_CASE("Gaussian Functor","[wavefunction]")
 {
   using RealType = QMCTraits::RealType;
   using PosType = QMCTraits::PosType;
-  using GradType = QMCTraits::GradType;
   using TensorType = QMCTraits::TensorType;
 
   CountingGaussian gf_abc("gf_abc");
@@ -66,11 +65,11 @@ TEST_CASE("Gaussian Functor","[wavefunction]")
 
   // return variables
   RealType fval, lval, llap, flap;
-  GradType fgrad, lgrad;
+  PosType fgrad, lgrad;
   opt_variables_type opt_vars;
 
   std::vector<RealType> dfval;
-  std::vector<GradType> dfgrad;
+  std::vector<PosType> dfgrad;
   std::vector<RealType> dflap;
   dfval.resize(10);
   dfgrad.resize(10);
@@ -211,10 +210,10 @@ TEST_CASE("CountingJastrow","[wavefunction]")
   
   // reference for evaluateLog, evalGrad
   RealType Jval_exact = 7.8100074447e+00;
-  GradType Jgrad_exact[] = {GradType(3.6845037054e-04, -4.2882992861e-04, 0),
-                            GradType(2.2032083234e-02, -2.5647245917e-02, 0),
-                            GradType(6.0625112202e-04, -7.0560012380e-04, 0),
-                            GradType(1.0622511249e-01, -1.2363268199e-01, 0)};
+  PosType Jgrad_exact[] = {PosType(3.6845037054e-04, -4.2882992861e-04, 0),
+                            PosType(2.2032083234e-02, -2.5647245917e-02, 0),
+                            PosType(6.0625112202e-04, -7.0560012380e-04, 0),
+                            PosType(1.0622511249e-01, -1.2363268199e-01, 0)};
   RealType Jlap_exact[] = {1.9649428566e-03, -1.1385706794e-01, 3.2312809658e-03, 4.0668060285e-01};
 
 
@@ -223,8 +222,8 @@ TEST_CASE("CountingJastrow","[wavefunction]")
   for(int i = 0; i < num_els; ++i)
   {
     for(int k = 0; k < 3; ++k)
-      REQUIRE( Jgrad_exact[i][k] == Approx(elec.G[i][k]) );
-    REQUIRE( Jlap_exact[i] == Approx(elec.L[i]) );
+      REQUIRE( Jgrad_exact[i][k] == Approx( std::real(elec.G[i][k])) );
+    REQUIRE( Jlap_exact[i] == Approx( std::real(elec.L[i])) );
   }
   REQUIRE( Jval_exact == Approx(logval) );
   
@@ -264,8 +263,8 @@ TEST_CASE("CountingJastrow","[wavefunction]")
   for(int i = 0; i < num_els; ++i)
   {
     for(int k = 0; k < 3; ++k)
-      REQUIRE( Jgrad_exact[i][k] == Approx(elec.G[i][k]) );
-    REQUIRE( Jlap_exact[i] == Approx(elec.L[i]) );
+      REQUIRE( Jgrad_exact[i][k] == Approx( std::real(elec.G[i][k])) );
+    REQUIRE( Jlap_exact[i] == Approx( std::real(elec.L[i])) );
   }
   REQUIRE( Jval_exact == Approx(logval) );
   
@@ -274,7 +273,7 @@ TEST_CASE("CountingJastrow","[wavefunction]")
   {
     GradType Jgrad_iat = cj->evalGrad(elec, iat);
     for(int k = 0; k < 3; ++k)
-      REQUIRE( Jgrad_exact[iat][k] == Approx(Jgrad_iat[k]) );
+      REQUIRE( Jgrad_exact[iat][k] == Approx( std::real(Jgrad_iat[k]) ));
   }
 
   // reference for ratio, ratioGrad, acceptMove
@@ -283,12 +282,12 @@ TEST_CASE("CountingJastrow","[wavefunction]")
                   PosType(0.03517477469, 0.2693941041,  0.16922043039),
                   PosType(0.3851116893,  -0.1387760973,  0.1980082182)};
 
-  ValueType ratioval_exact[] = { 1.00003304765, 0.987624289443, 0.999873210738, 1.09014860194};
+  RealType ratioval_exact[] = { 1.00003304765, 0.987624289443, 0.999873210738, 1.09014860194};
 
-  GradType Jgrad_t_exact[] = {GradType(4.4329270315e-04, -5.1593699287e-04, 0),
-                              GradType(4.8722465115e-02, -5.6707785196e-02, 0),
-                              GradType(3.2691265772e-04, -3.8048525335e-04, 0),
-                              GradType(2.0373800011e-01, -2.3712542045e-01, 0)};
+  PosType Jgrad_t_exact[] = {PosType(4.4329270315e-04, -5.1593699287e-04, 0),
+                              PosType(4.8722465115e-02, -5.6707785196e-02, 0),
+                              PosType(3.2691265772e-04, -3.8048525335e-04, 0),
+                              PosType(2.0373800011e-01, -2.3712542045e-01, 0)};
 
   // test ratio, ratioGrad, acceptMove
   for(int iat = 0; iat < num_els; ++iat)
@@ -296,11 +295,11 @@ TEST_CASE("CountingJastrow","[wavefunction]")
     elec.setActive(iat);
     elec.makeMoveAndCheck(iat,dr[iat]);
   
-    ValueType ratioval = cj->ratio(elec, iat);
-    REQUIRE( ratioval_exact[iat] == Approx(ratioval));
+    RealType ratioval = std::real( cj->ratio(elec, iat) );
+    REQUIRE( ratioval_exact[iat] == Approx(std::real(ratioval)) );
 
-    GradType grad_iat(0,0,0);
-    ValueType gradratioval = cj->ratioGrad(elec, iat, grad_iat);
+    PosType grad_iat(0,0,0);
+    RealType gradratioval = std::real( cj->ratioGrad(elec, iat, grad_iat) );
     REQUIRE( ratioval_exact[iat] == Approx(gradratioval));
     for(int k = 0; k < 3; ++k)
       REQUIRE(Jgrad_t_exact[iat][k] == Approx(grad_iat[k]));
@@ -313,10 +312,10 @@ TEST_CASE("CountingJastrow","[wavefunction]")
                    PosType( 9.7075155012, 7.2984775093, -8.1975111678e-01),
                    PosType( 5.7514912378, 5.2001615327,  6.6673589235e-01),
                    PosType( 8.3805220665, 7.9424368608, -3.5106422506e-02)};
-  GradType G2[] = {GradType( 3.3480105792e-01,  2.1316369526e-01, -4.1812914940e-01),
-                   GradType(-7.0561066397e-01,  1.7863210008e-01,  3.5677994771e-01),
-                   GradType(-9.2302398033e-01, -5.0740272660e-01, -2.6078603626e-01),
-                   GradType(-8.3764545416e-01, -4.9181684009e-01,  1.0675382607e-01)};
+  PosType G2[] = {PosType( 3.3480105792e-01,  2.1316369526e-01, -4.1812914940e-01),
+                   PosType(-7.0561066397e-01,  1.7863210008e-01,  3.5677994771e-01),
+                   PosType(-9.2302398033e-01, -5.0740272660e-01, -2.6078603626e-01),
+                   PosType(-8.3764545416e-01, -4.9181684009e-01,  1.0675382607e-01)};
   for(int i = 0; i < num_els; ++i)
     for(int k = 0; k < 3; ++k)
     {
@@ -325,7 +324,7 @@ TEST_CASE("CountingJastrow","[wavefunction]")
     }
 
   int num_derivs = 39;
-  ValueType dlogpsi_exact[] = { 
+  RealType dlogpsi_exact[] = { 
      7.0982172306e-04, 9.8329357367e-02, 6.6879065207e-03, 1.0670293004e-01, 3.4053136887e+00,
      4.6322726464e-01, 7.3906096412e+00, 1.5753284303e-02, 5.0267496641e-01,-1.3874695168e+00,
     -2.6249136239e+00,-4.2223002567e+00,-3.0798330637e+00, 3.7905326800e+00, 8.4038996349e+00, 
@@ -334,7 +333,7 @@ TEST_CASE("CountingJastrow","[wavefunction]")
     -1.2992491105e+00,-8.5624882767e-01, 9.8686287993e+00, 1.1847431541e+01,-2.5193792283e-01,
     -3.0763224769e-01, 1.2429858182e-01, 1.3295440602e-02, 6.4178676394e-02, 1.2758462324e-01, 
      7.5131761426e-02, 1.1629004831e-01, 3.9639061816e-01, 6.7088705514e-01};
-  ValueType dhpsioverpsi_exact[] = {
+  RealType dhpsioverpsi_exact[] = {
     -1.6695881381e-02,-4.8902571790e-01,-1.2725397012e-01,-6.6714806635e-01, 6.9379259933e+00,
     -4.8393983437e+00, 7.4947765640e+00,-8.8373306290e-01,-6.8244030879e+00, 7.9150085031e-01,
     -1.4313255643e+00, 3.7225112718e+01, 1.7787191536e+01,-1.6672327906e+01,-4.1705496948e+01,
@@ -363,8 +362,8 @@ TEST_CASE("CountingJastrow","[wavefunction]")
   cj->evaluateDerivatives(elec, optVars, dlogpsi, dhpsioverpsi);
   for(int p = 0; p < num_derivs; ++p)
   {
-    CHECK ( dlogpsi_exact[p] == Approx(dlogpsi[p]) );
-    CHECK ( dhpsioverpsi_exact[p] == Approx(dhpsioverpsi[p]) );
+    CHECK ( dlogpsi_exact[p] == Approx(std::real(dlogpsi[p])) );
+    CHECK ( dhpsioverpsi_exact[p] == Approx(std::real(dhpsioverpsi[p])) );
   }
 
 
@@ -387,8 +386,8 @@ TEST_CASE("CountingJastrow","[wavefunction]")
   cj2->evaluateDerivatives(elec, optVars2, dlogpsi, dhpsioverpsi);
   for(int p = 0; p < num_derivs; ++p)
   {
-    REQUIRE ( dlogpsi_exact[p] == Approx(dlogpsi[p]) );
-    REQUIRE ( dhpsioverpsi_exact[p] == Approx(dhpsioverpsi[p]) );
+    REQUIRE ( dlogpsi_exact[p] == Approx(std::real(dlogpsi[p])) );
+    REQUIRE ( dhpsioverpsi_exact[p] == Approx(std::real(dhpsioverpsi[p])) );
   }
 
   // test resetParameters, recompute
