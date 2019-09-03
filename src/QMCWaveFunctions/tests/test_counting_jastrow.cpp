@@ -307,6 +307,7 @@ TEST_CASE("CountingJastrow","[wavefunction]")
     cj->acceptMove(elec, iat);
   }
 
+#ifndef QMC_COMPLEX
   // setup and reference for evaluateDerivatives
   PosType R2[] = { PosType( 4.3280064837, 2.4657709845,  6.3466520181e-01),
                    PosType( 9.7075155012, 7.2984775093, -8.1975111678e-01),
@@ -396,6 +397,7 @@ TEST_CASE("CountingJastrow","[wavefunction]")
   cj->resetParameters(optVars);
   cj->recompute(elec);
   REQUIRE( cj->LogValue == 0 );
+#endif
 
 }
 
