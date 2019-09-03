@@ -375,11 +375,6 @@ TEST_CASE("CountingJastrow","[wavefunction]")
   std::fill(dlogpsi.begin(), dlogpsi.end(), 0);
   std::fill(dhpsioverpsi.begin(), dhpsioverpsi.end(), 0);
 
-  //cj->evaluateExponents(elec);
-  //cj->evaluateExponents_print(app_log(), elec);
-  //cj2->evaluateExponents(elec);
-  //cj2->evaluateExponents_print(app_log(), elec);
-
   // prepare variable set
   VariableSet optVars2;
   optVars2.clear();
@@ -392,8 +387,8 @@ TEST_CASE("CountingJastrow","[wavefunction]")
   cj2->evaluateDerivatives(elec, optVars2, dlogpsi, dhpsioverpsi);
   for(int p = 0; p < num_derivs; ++p)
   {
-    CHECK ( dlogpsi_exact[p] == Approx(dlogpsi[p]) );
-//    CHECK ( dhpsioverpsi_exact[p] == Approx(dhpsioverpsi[p]) );
+    REQUIRE ( dlogpsi_exact[p] == Approx(dlogpsi[p]) );
+    REQUIRE ( dhpsioverpsi_exact[p] == Approx(dhpsioverpsi[p]) );
   }
 
   // test resetParameters, recompute

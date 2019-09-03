@@ -127,7 +127,7 @@ public:
 
   void addCoefficients(xmlXPathContextPtr acontext, const char* cname);
 
-  void printCJParams(xmlXPathContextPtr acontext, const char* cname);
+  void printCJParams(xmlNodePtr cur, std::string& rname);
 
   void addCJParams(xmlXPathContextPtr acontext, const char* cname);
 

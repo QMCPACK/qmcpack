@@ -677,7 +677,7 @@ void QMCCostFunctionBase::updateXmlNodes()
     // counting jastrow variables
     else if(rname.find("cj_") == 0 )
     {
-      printCJParams(cit, std::string& rname);
+      printCJParams(cit->second, rname);
     }
     else
     {
@@ -974,7 +974,7 @@ void QMCCostFunctionBase::addCJParams(xmlXPathContextPtr acontext, const char* c
 }
 
 
-void QMCCostFunctionBase::printCJParams(xmlXPathContextPtr acontext, const char* cname) 
+void QMCCostFunctionBase::printCJParams(xmlNodePtr cur, std::string& rname) 
 {
   opt_variables_type::iterator vit(OptVariables.begin());
   // F matrix variables
@@ -1014,9 +1014,9 @@ void QMCCostFunctionBase::printCJParams(xmlXPathContextPtr acontext, const char*
         os << std::endl;
     }
     // assign to tag
-    xmlNodePtr cur = acontext->second->children;
-    xmlNodeSetContent(cur, (const xmlChar*)(os.str().c_str()));
-    xmlNodeAddContent(cur, (const xmlChar*)"\n      ");
+    xmlNodePtr cur2 = cur->children;
+    xmlNodeSetContent(cur2, (const xmlChar*)(os.str().c_str()));
+    xmlNodeAddContent(cur2, (const xmlChar*)"\n      ");
   }
   // gaussian function parameters A, B, C
   else
@@ -1041,8 +1041,8 @@ void QMCCostFunctionBase::printCJParams(xmlXPathContextPtr acontext, const char*
       if( i < vals.size() - 1)
         os << " ";
     }
-    xmlNodePtr cur = acontext->second->children;
-    xmlNodeSetContent(cur, (const xmlChar*)(os.str().c_str()));
+    xmlNodePtr cur2 = cur->children;
+    xmlNodeSetContent(cur2, (const xmlChar*)(os.str().c_str()));
   }
 }
 
