@@ -135,7 +135,7 @@ bool HDFWalkerInput_0_4::put(xmlNodePtr cur)
 
 bool HDFWalkerInput_0_4::read_hdf5(std::string h5name)
 {
-  size_t nw_in = 0;
+  int nw_in = 0;
 
   h5name.append(hdf::config_ext);
   hdf_archive hin(myComm, false); //everone reads this
@@ -163,7 +163,7 @@ bool HDFWalkerInput_0_4::read_hdf5(std::string h5name)
 
   typedef std::vector<QMCTraits::RealType> Buffer_t;
   Buffer_t posin;
-  std::array<size_t, 3> dims{nw_in, targetW.getTotalNum(), OHMMS_DIM};
+  std::array<int, 3> dims{nw_in, targetW.getTotalNum(), OHMMS_DIM};
   posin.resize(dims[0] * dims[1] * dims[2]);
   hin.readSlabReshaped(posin, dims, hdf::walkers);
 
@@ -212,7 +212,7 @@ bool HDFWalkerInput_0_4::read_hdf5(std::string h5name)
 
 bool HDFWalkerInput_0_4::read_hdf5_scatter(std::string h5name)
 {
-  size_t nw_in = 0;
+  int nw_in = 0;
   h5name.append(hdf::config_ext);
 
   if (myComm->rank() == 0)
@@ -258,7 +258,7 @@ bool HDFWalkerInput_0_4::read_hdf5_scatter(std::string h5name)
   for (int i = 0; i < counts.size(); ++i)
     counts[i] = woffsets[i + 1] - woffsets[i];
 
-  std::array<size_t, 3> dims{nw_in, targetW.getTotalNum(), OHMMS_DIM};
+  std::array<int, 3> dims{nw_in, targetW.getTotalNum(), OHMMS_DIM};
   Buffer_t posin(nw_in * nitems), posout(counts[myComm->rank()]);
 
   if (myComm->rank() == 0)
@@ -284,7 +284,7 @@ bool HDFWalkerInput_0_4::read_hdf5_scatter(std::string h5name)
 
 bool HDFWalkerInput_0_4::read_phdf5(std::string h5name)
 {
-  size_t nw_in = 0;
+  int nw_in = 0;
   h5name.append(hdf::config_ext);
   std::vector<int> woffsets;
   int woffsets_size;
@@ -342,7 +342,7 @@ bool HDFWalkerInput_0_4::read_phdf5(std::string h5name)
 
   typedef std::vector<QMCTraits::RealType> Buffer_t;
   Buffer_t posin;
-  std::array<size_t, 3> dims{nw_in, targetW.getTotalNum(), OHMMS_DIM};
+  std::array<int, 3> dims{nw_in, targetW.getTotalNum(), OHMMS_DIM};
 
   if (woffsets.size() != myComm->size() + 1)
   {
@@ -350,10 +350,10 @@ bool HDFWalkerInput_0_4::read_phdf5(std::string h5name)
     FairDivideLow(nw_in, myComm->size(), woffsets);
   }
 
-  size_t nw_loc = woffsets[myComm->rank() + 1] - woffsets[myComm->rank()];
+  int nw_loc = woffsets[myComm->rank() + 1] - woffsets[myComm->rank()];
 
-  std::array<size_t, 3> counts{nw_loc, targetW.getTotalNum(), OHMMS_DIM};
-  std::array<size_t, 3> offsets{static_cast<size_t>(woffsets[myComm->rank()]), 0, 0};
+  std::array<int, 3> counts{nw_loc, targetW.getTotalNum(), OHMMS_DIM};
+  std::array<int, 3> offsets{woffsets[myComm->rank()], 0, 0};
   posin.resize(nw_loc * dims[1] * dims[2]);
 
   hyperslab_proxy<Buffer_t, 3> slab(posin, dims, counts, offsets);
@@ -450,7 +450,7 @@ bool HDFWalkerInput_0_4::read_adios(xmlNodePtr cur)
       app_error() << "  HDFWalkerInput_0_4::put empty walkers " << std::endl;
       continue;
     }
-    TinyVector<size_t, 3> dims(nw_in, targetW.getTotalNum(), OHMMS_DIM);
+    TinyVector<int, 3> dims(nw_in, targetW.getTotalNum(), OHMMS_DIM);
     if (!myComm->rank())
     {
       posin.resize(dims[0] * dims[1] * dims[2]);

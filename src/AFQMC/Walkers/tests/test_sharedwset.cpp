@@ -228,18 +228,18 @@ void test_hyperslab()
   using Type = std::complex<double>;
   using Matrix = boost::multi::array<Type,2>;
 
-  size_t rank = world.rank();
+  int rank = world.rank();
 
-  size_t nwalk = 9;
-  size_t nprop = 7;
-  size_t nprop_to_safe = 3;
+  int nwalk = 9;
+  int nprop = 7;
+  int nprop_to_safe = 3;
   Matrix Data({nwalk,nprop});
 
   for(int i=0; i<nwalk; i++)
    for(int j=0; j<nprop; j++)
     Data[i][j] = i*10+rank*100+j;
 
-  size_t nwtot = ( world += nwalk );
+  int nwtot = ( world += nwalk );
 
   hdf_archive dump(world,true);
   if(!dump.create("dummy_walkers.h5",H5F_ACC_EXCL)) {
@@ -249,9 +249,9 @@ void test_hyperslab()
   dump.push("WalkerSet");
 
   hyperslab_proxy<Matrix,2> hslab(Data,
-                                  std::array<size_t, 2>{nwtot,nprop},
-                                  std::array<size_t, 2>{nwalk,nprop},
-                                  std::array<size_t, 2>{rank*nwalk,0});
+                                  std::array<int, 2>{nwtot, nprop},
+                                  std::array<int, 2>{nwalk, nprop},
+                                  std::array<int, 2>{rank*nwalk, 0});
   dump.write(hslab,"Walkers");
   dump.close();
   world.barrier();
@@ -267,9 +267,9 @@ void test_hyperslab()
     Matrix DataIn({nwalk,nprop});
 
     hyperslab_proxy<Matrix,2> hslab(DataIn,
-                                  std::array<size_t, 2>{nwtot,nprop},
-                                  std::array<size_t, 2>{nwalk,nprop},
-                                  std::array<size_t, 2>{rank*nwalk,0});
+                                  std::array<int, 2>{nwtot, nprop},
+                                  std::array<int, 2>{nwalk, nprop},
+                                  std::array<int, 2>{rank*nwalk, 0});
     read.read(hslab,"Walkers");
     read.close();
 
@@ -290,18 +290,18 @@ void test_double_hyperslab()
   using Type = std::complex<double>;
   using Matrix = boost::multi::array<Type,2>;
 
-  size_t rank = world.rank();
+  int rank = world.rank();
 
-  size_t nwalk = 9;
-  size_t nprop = 3;
-  size_t nprop_to_safe = 3;
+  int nwalk = 9;
+  int nprop = 3;
+  int nprop_to_safe = 3;
   Matrix Data({nwalk,nprop});
 
   for(int i=0; i<nwalk; i++)
    for(int j=0; j<nprop; j++)
     Data[i][j] = i*10+rank*100+j;
 
-  size_t nwtot = ( world += nwalk );
+  int nwtot = ( world += nwalk );
 
   hdf_archive dump(world,true);
   if(!dump.create("dummy_walkers.h5",H5F_ACC_EXCL)) {
@@ -312,9 +312,9 @@ void test_double_hyperslab()
 
   //double_hyperslab_proxy<Matrix,2> hslab(Data,
   hyperslab_proxy<Matrix,2> hslab(Data,
-                                  std::array<size_t, 2>{nwtot,nprop_to_safe},
-                                  std::array<size_t, 2>{nwalk,nprop_to_safe},
-                                  std::array<size_t, 2>{rank*nwalk,0});//,
+                                  std::array<int, 2>{nwtot, nprop_to_safe},
+                                  std::array<int, 2>{nwalk, nprop_to_safe},
+                                  std::array<int, 2>{rank*nwalk, 0});//,
 
 //                                  std::array<int,2>{nwalk,nprop},
 //                                  std::array<int,2>{nwalk,nprop_to_safe},
@@ -336,9 +336,9 @@ void test_double_hyperslab()
 
     //double_hyperslab_proxy<Matrix,2> hslab(DataIn,
     hyperslab_proxy<Matrix,2> hslab(DataIn,
-                                  std::array<size_t, 2>{nwtot,nprop_to_safe},
-                                  std::array<size_t, 2>{nwalk,nprop_to_safe},
-                                  std::array<size_t, 2>{rank*nwalk,0});//,
+                                  std::array<int, 2>{nwtot, nprop_to_safe},
+                                  std::array<int, 2>{nwalk, nprop_to_safe},
+                                  std::array<int, 2>{rank*nwalk, 0});//,
 //                                  std::array<int,2>{nwalk,nprop},
 //                                  std::array<int,2>{nwalk,nprop_to_safe},
 //                                  std::array<int,2>{0,0});

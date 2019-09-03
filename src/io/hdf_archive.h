@@ -210,7 +210,7 @@ public:
    * @param aname dataset name in the file
    * runtime error is issued on I/O error
    */
-  template<typename T, typename IT, std::size_t RANK, typename = std::enable_if_t<std::is_unsigned<IT>::value> >
+  template<typename T, typename IT, std::size_t RANK>
   void writeSlabReshaped(T& data, const std::array<IT, RANK>& shape, const std::string& aname)
   {
     std::array<hsize_t, RANK> globals, counts, offsets;
@@ -257,7 +257,7 @@ public:
    * @param aname dataset name in the file
    * runtime error is issued on I/O error
    */
-  template<typename T, typename IT, std::size_t RANK, typename = std::enable_if_t<std::is_unsigned<IT>::value> >
+  template<typename T, typename IT, std::size_t RANK>
   void readSlabReshaped(T& data, const std::array<IT, RANK>& shape, const std::string& aname)
   {
     std::array<hsize_t, RANK> globals, counts, offsets;
