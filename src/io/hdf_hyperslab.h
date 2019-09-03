@@ -107,7 +107,28 @@ struct hyperslab_proxy
     }
   }
 
-  /** adjust file_space and selected_space shapes and resize the container when needed
+  /** check if the container is large enough for the selected space and resize if requested
+   * @param resize if true, resize the container
+   */
+  inline void checkContainerCapacity(bool resize)
+  {
+    hsize_t total_size = slab_rank > 0 ? 1 : 0;
+    for (int dim = 0; dim < slab_rank; dim++)
+      total_size *= selected_space.dims[dim];
+
+    bool success = true;
+    if (total_size > container_traits<CT>::getSize(ref_))
+    {
+      if (resize)
+        container_traits<CT>::resize(ref_, selected_space.dims, slab_rank);
+      else
+        success = false;
+    }
+    if (!success)
+      throw std::runtime_error("Not large enough container capacity!\n");
+  }
+
+  /** adjust file_space and selected_space shapes based on sizes_file
    *  @tparam IT integer type
    *  @param sizes_file sizes of all the user dimensions of a dataset
    *
@@ -121,7 +142,6 @@ struct hyperslab_proxy
     if (sizes_file.size() != slab_rank)
       throw std::runtime_error("User specified and filespace dimensions mismatch!\n");
 
-    hsize_t total_size = 1;
     for (int dim = 0; dim < slab_rank; dim++)
     {
       if (file_space.dims[dim] == 0)
@@ -136,12 +156,9 @@ struct hyperslab_proxy
 
       if (selected_space.dims[dim] == 0)
         selected_space.dims[dim] = file_space.dims[dim];
-      total_size *= selected_space.dims[dim];
     }
-
-    if (total_size != container_traits<CT>::getSize(ref_))
-      container_traits<CT>::resize(ref_, selected_space.dims, slab_rank);
   }
+
 };
 
 template<typename CT, unsigned RANK>
@@ -157,6 +174,7 @@ struct h5data_proxy<hyperslab_proxy<CT, RANK>>
     getDataShape<typename hyperslab_proxy<CT, RANK>::element_type>(grp, aname, sizes_file);
     ref_.adaptShape(sizes_file);
     ref_.checkUserRankSizes();
+    ref_.checkContainerCapacity(true);
     return h5d_read(grp, aname.c_str(), ref_.file_space.rank, ref_.file_space.dims, ref_.selected_space.dims,
                     ref_.slab_offset.data(), hyperslab_proxy<CT, RANK>::SpaceType::get_address(container_traits<CT>::getElementPtr(ref_.ref_)),
                     xfer_plist);
@@ -165,6 +183,7 @@ struct h5data_proxy<hyperslab_proxy<CT, RANK>>
   inline bool write(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
     ref_.checkUserRankSizes();
+    ref_.checkContainerCapacity(false);
     return h5d_write(grp, aname.c_str(), ref_.file_space.rank, ref_.file_space.dims, ref_.selected_space.dims,
                      ref_.slab_offset.data(), hyperslab_proxy<CT, RANK>::SpaceType::get_address(container_traits<CT>::getElementPtr(ref_.ref_)),
                      xfer_plist);
