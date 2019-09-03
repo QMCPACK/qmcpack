@@ -6,6 +6,7 @@
 //
 // File developed by: Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //		      Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
+//                    Luke Shulenburger, lshulen@sandia.gov, Sandia National Laboratories
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
@@ -47,6 +48,45 @@ inline bool get_space(hid_t grp, const std::string& aname, int rank, hsize_t* di
   return thesame;
 }
 
+/** free function to go from spec to dimensionality of memory space and data space
+ */
+template<typename IC>
+inline bool getOffsets(hid_t grp,
+		       const std::string& aname,
+		       const IC& readSpec,
+		       std::vector<hsize_t>& offset,
+		       std::vector<hsize_t>& count,
+		       int& numElements)
+{
+  std::vector<hsize_t> space_dims(readSpec.size());
+  get_space(grp, aname, readSpec.size(), space_dims.data());
+
+  // check what is requested is within bounds
+  for (int i = 0; i < readSpec.size(); i++)
+  {
+    if (readSpec[i] < -1 || readSpec[i] >= static_cast<int>(space_dims[i]))
+    {
+      APP_ABORT("Requested an invalid slice of the dataset named " + aname);
+    }
+  }
+
+  offset.resize(readSpec.size());
+  count.resize(readSpec.size());
+  numElements = 1;
+  for (int i = 0; i < readSpec.size(); i++)
+  {
+    offset[i] = readSpec[i];
+    count[i] = 1;
+    if (readSpec[i] == -1) 
+    {
+      offset[i] = 0;
+      count[i] = space_dims[i];
+      numElements *= space_dims[i];
+    }
+  }
+  return true;
+}
+ 
 /** return true, if successful */
 template<typename T>
 inline bool h5d_read(hid_t grp, const std::string& aname, T* first, hid_t xfer_plist)
@@ -417,6 +457,7 @@ struct h5data_proxy : public h5_space_type<T, 1>
   {
     return h5d_write(grp, aname.c_str(), this->size(), dims, get_address(&ref_), xfer_plist);
   }
+
 };
 
 } // namespace qmcplusplus

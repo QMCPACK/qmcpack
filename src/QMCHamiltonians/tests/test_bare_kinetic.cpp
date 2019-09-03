@@ -17,13 +17,17 @@
 #include "Lattice/ParticleBConds.h"
 #include "Particle/ParticleSet.h"
 #include "Particle/DistanceTableData.h"
+#ifndef ENABLE_SOA
 #include "Particle/SymmetricDistanceTableData.h"
+#endif
 #include "QMCApp/ParticleSetPool.h"
 #include "QMCHamiltonians/BareKineticEnergy.h"
 
 #include "QMCWaveFunctions/TrialWaveFunction.h"
+#ifndef ENABLE_SOA
 #include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbital.h"
 #include "QMCWaveFunctions/Jastrow/OneBodyJastrowOrbital.h"
+#endif
 #include "QMCWaveFunctions/Jastrow/RadialJastrowBuilder.h"
 
 
@@ -68,7 +72,11 @@ TEST_CASE("Bare Kinetic Energy", "[hamiltonian]")
   tspecies(massIdx, upIdx)   = 1.0;
   tspecies(massIdx, downIdx) = 1.0;
 
+#ifdef ENABLE_SOA
+  elec.addTable(ions, DT_SOA);
+#else
   elec.addTable(ions, DT_AOS);
+#endif
   elec.update();
 
 

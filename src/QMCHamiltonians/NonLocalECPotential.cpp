@@ -246,6 +246,7 @@ void NonLocalECPotential::evaluate(ParticleSet& P, bool Tmove)
     }
     else
     {
+#ifndef ENABLE_SOA
       for (int iat = 0; iat < NumIons; iat++)
       {
         if (PP[iat] == nullptr)
@@ -261,6 +262,7 @@ void NonLocalECPotential::evaluate(ParticleSet& P, bool Tmove)
           ElecNeighborIons.getNeighborList(iel).push_back(iat);
         }
       }
+#endif
     }
   }
 #if defined(TRACE_CHECK)
@@ -307,12 +309,14 @@ void NonLocalECPotential::computeOneElectronTxy(ParticleSet& P, const int ref_el
   }
   else
   {
+#ifndef ENABLE_SOA
     for (int atom_index = 0; atom_index < NeighborIons.size(); atom_index++)
     {
       const int iat = NeighborIons[atom_index];
       int nn        = myTable.M[iat] + ref_elec;
       PP[iat]->evaluateOne(P, iat, Psi, ref_elec, myTable.r(nn), myTable.dr(nn), true, Txy);
     }
+#endif
   }
 }
 
@@ -415,8 +419,10 @@ void NonLocalECPotential::markAffectedElecs(const DistanceTableData& myTable, in
     }
     else
     {
+#ifndef ENABLE_SOA
       old_distance = myTable.r(myTable.M[iat] + iel);
       new_distance = myTable.Temp[iat].r1;
+#endif
     }
     bool moved = false;
     // move out

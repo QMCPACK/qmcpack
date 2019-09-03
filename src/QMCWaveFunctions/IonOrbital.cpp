@@ -72,6 +72,7 @@ IonOrbital::RealType IonOrbital::evaluateLog(ParticleSet& P,
     RealType a = ParticleAlpha[iat];
     if (a > 0.0)
     {
+#ifndef ENABLE_SOA
       int index     = d_table.M[icent] + iat;
       RealType dist = d_table.r(index);
       PosType disp  = d_table.dr(index);
@@ -79,6 +80,7 @@ IonOrbital::RealType IonOrbital::evaluateLog(ParticleSet& P,
       U[iat] += a * dist * dist;
       G[iat] -= 2.0 * a * disp;
       L[iat] -= 6.0 * a;
+#endif
       icent++;
     }
   }
@@ -95,9 +97,11 @@ ValueType IonOrbital::ratio(ParticleSet& P, int iat)
   int icent           = ParticleCenter[iat];
   if (icent == -1)
     return 1.0;
+#ifndef ENABLE_SOA
   int index        = d_table.M[icent] + iat;
   RealType newdist = d_table.Temp[icent].r1;
   curVal           = ParticleAlpha[iat] * (newdist * newdist);
+#endif
   return std::exp(U[iat] - curVal);
 }
 
@@ -162,6 +166,7 @@ void IonOrbital::evaluateLogAndStore(ParticleSet& P,
     RealType a = ParticleAlpha[iat];
     if (a > 0.0)
     {
+#ifndef ENABLE_SOA
       int index     = d_table.M[icent] + iat;
       RealType dist = d_table.r(index);
       PosType disp  = d_table.dr(index);
@@ -171,6 +176,7 @@ void IonOrbital::evaluateLogAndStore(ParticleSet& P,
       d2U[iat] -= 6.0 * a;
       dG[iat] -= 2.0 * a * disp;
       dL[iat] -= 6.0 * a;
+#endif
       icent++;
     }
   }

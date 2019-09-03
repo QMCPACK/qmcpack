@@ -198,6 +198,7 @@ CoulombPBCAB::Return_t CoulombPBCAB::evaluate_sp(ParticleSet& P)
   Ve_samp                     = 0.0;
   Vi_samp                     = 0.0;
   {
+#ifndef ENABLE_SOA
     //SR
     const DistanceTableData& d_ab(P.getDistTable(myTableIndex));
     RealType pairpot;
@@ -216,6 +217,7 @@ CoulombPBCAB::Return_t CoulombPBCAB::evaluate_sp(ParticleSet& P)
       }
     }
     Vsr *= 2.0;
+#endif
   }
   {
     //LR
@@ -399,6 +401,7 @@ CoulombPBCAB::Return_t CoulombPBCAB::evalSR(ParticleSet& P)
   }
   else
   {
+#ifndef ENABLE_SOA
     //Loop over distinct eln-ion pairs
     for (int iat = 0; iat < NptclA; iat++)
     {
@@ -413,6 +416,7 @@ CoulombPBCAB::Return_t CoulombPBCAB::evalSR(ParticleSet& P)
       //Accumulate pair sums...species charge for atom i.
       res += Zat[iat] * esum;
     }
+#endif
   }
   return res;
 }
@@ -512,12 +516,14 @@ CoulombPBCAB::Return_t CoulombPBCAB::evalSR_old(ParticleSet& P)
   {
     RealType esum       = 0.0;
     RadFunctorType* rVs = Vat[iat];
+#ifndef ENABLE_SOA
     for (int nn = d_ab.M[iat], jat = 0; nn < d_ab.M[iat + 1]; ++nn, ++jat)
     {
       // if(d_ab.r(nn)>=(myRcut-0.1)) continue;
       esum += Qat[jat] * d_ab.rinv(nn) * rVs->splint(d_ab.r(nn));
       ;
     }
+#endif
     //Accumulate pair sums...species charge for atom i.
     res += Zat[iat] * esum;
   }
