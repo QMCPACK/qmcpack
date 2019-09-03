@@ -118,24 +118,11 @@ def setup_basis_map(Xocc, nmo_max, nkpts, nmo_pk, ortho_ao):
     ik2n = -1*numpy.ones((nmo_max,nkpts), dtype=numpy.int32)
     # ik2n[:,:]=-1
     cnt = 0
-    if ortho_ao:
-        for ki in range(nkpts):
-            for i in range(nmo_pk[ki]):
-                ik2n[i,ki] = cnt
-                cnt += 1
-    else:
-        # can safely assume isUHF==False
-        # Why are there two loops
-        for ki in range(nkpts):
-            for i in range(nmo_pk[ki]):
-                if Xocc[ki][i] > 0.9:
-                    ik2n[i,ki] = cnt
-                    cnt += 1
-        for ki in range(nkpts):
-            for i in range(nmo_pk[ki]):
-                if Xocc[ki][i] < 0.9:
-                    ik2n[i,ki] = cnt
-                    cnt += 1
+    # if ortho_ao:
+    for ki in range(nkpts):
+        for i in range(nmo_pk[ki]):
+            ik2n[i,ki] = cnt
+            cnt += 1
     nmo_tot = cnt
     return ik2n, nmo_tot
 
