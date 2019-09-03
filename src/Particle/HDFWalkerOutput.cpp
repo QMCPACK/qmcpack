@@ -226,7 +226,7 @@ void HDFWalkerOutput::write_configuration(MCWalkerConfiguration& W, hdf_archive&
       hout.write(slab, "walker_partition");
     }
     { // write walker configuration
-      std::array<int, 3> counts{W.getActiveWalkers(), number_of_particles, OHMMS_DIM};
+      std::array<int, 3> counts{static_cast<int>(W.getActiveWalkers()), number_of_particles, OHMMS_DIM};
       std::array<int, 3> offsets{W.WalkerOffsets[myComm->rank()], 0, 0};
       hyperslab_proxy<BufferType, 3> slab(*RemoteData[0], gcounts, counts, offsets);
       hout.write(slab, hdf::walkers);

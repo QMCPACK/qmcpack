@@ -42,9 +42,9 @@ class HDFWalkerOutput
    * When the number of walkers per state has changed, NumOfWalkers is used
    * to reallocate the hdf5 group.
    */
-  size_t number_of_walkers;
+  int number_of_walkers;
   /** number of particles */
-  size_t number_of_particles;
+  int number_of_particles;
   ///current number of backups
   int number_of_backups;
   ///current number of backups
