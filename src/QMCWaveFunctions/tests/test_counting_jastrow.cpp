@@ -363,8 +363,8 @@ TEST_CASE("CountingJastrow","[wavefunction]")
   cj->evaluateDerivatives(elec, optVars, dlogpsi, dhpsioverpsi);
   for(int p = 0; p < num_derivs; ++p)
   {
-    CHECK ( dlogpsi_exact[p] == Approx(std::real(dlogpsi[p])) );
-    CHECK ( dhpsioverpsi_exact[p] == Approx(std::real(dhpsioverpsi[p])) );
+    CHECK ( dlogpsi_exact[p] == Approx(std::real(dlogpsi[p])).epsilon(1e-3) );
+    CHECK ( dhpsioverpsi_exact[p] == Approx(std::real(dhpsioverpsi[p])).epsilon(1e-3) );
   }
 
 
@@ -387,8 +387,8 @@ TEST_CASE("CountingJastrow","[wavefunction]")
   cj2->evaluateDerivatives(elec, optVars2, dlogpsi, dhpsioverpsi);
   for(int p = 0; p < num_derivs; ++p)
   {
-    REQUIRE ( dlogpsi_exact[p] == Approx(std::real(dlogpsi[p])) );
-    REQUIRE ( dhpsioverpsi_exact[p] == Approx(std::real(dhpsioverpsi[p])) );
+    REQUIRE ( dlogpsi_exact[p] == Approx(std::real(dlogpsi[p])).epsilon(1e-3) );
+    REQUIRE ( dhpsioverpsi_exact[p] == Approx(std::real(dhpsioverpsi[p])).epsilon(1e-3) );
   }
 
   // test resetParameters, recompute

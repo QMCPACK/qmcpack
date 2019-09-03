@@ -25,7 +25,7 @@ class CountingGaussianRegion
 public:
 
   using RealType = QMCTraits::RealType;
-  using ValueType = QMCTraits::ValueType;
+  //using ValueType = QMCTraits::ValueType;
   using PosType = QMCTraits::PosType;
   using TensorType = QMCTraits::TensorType;
 
@@ -403,7 +403,7 @@ public:
                            int I,
                            Matrix<PosType>& FCgrad,
                            Matrix<RealType>& dNsum,
-                           Matrix<ValueType>& dNggsum,
+                           Matrix<RealType>& dNggsum,
                            Matrix<RealType>& dNlapsum,
                            std::vector<RealType>& dNFNggsum)
   {
@@ -436,8 +436,9 @@ public:
               2 * val(J, i) * dot(dLgrad[p], grad(I, i)) - val(J, i) * dLval[p] * lap(I, i);
           // accumulate
           dLval_saved(I, p, i) = dLval[p];
+          PosType grad_i( std::real(P.G[i][0]), std::real(P.G[i][1]), std::real(P.G[i][2]) );
           dNsum(J, p)    += dNval;
-          dNggsum(J, p)  += dot(dNgrad, P.G[i]);
+          dNggsum(J, p)  += dot(dNgrad, grad_i);
           dNlapsum(J, p) += dNlap;
           dNFNggsum[p]   += dot(dNgrad, FCgrad(J, i));
         }
