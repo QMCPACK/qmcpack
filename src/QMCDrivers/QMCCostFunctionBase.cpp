@@ -985,7 +985,10 @@ void QMCCostFunctionBase::printCJParams(xmlNodePtr cur, std::string& rname)
     for(auto vit = OptVariables.begin(); vit != OptVariables.end(); ++vit)
     {
       if( (*vit).first.find("F_") == 0)
-        f_vals.push_back( vit->second );
+      {
+        Return_rt fval = std::real( vit->second );
+        f_vals.push_back( fval );
+      }
     }
     // manually add final element = 0
     f_vals.push_back(0);
@@ -1022,15 +1025,14 @@ void QMCCostFunctionBase::printCJParams(xmlNodePtr cur, std::string& rname)
   else
   {
     std::string var_prefix = rname.substr(3);
-    std::vector<opt_variables_type::pair_type> val_pairs;
     std::vector<Return_rt> vals;
 
     for(auto vit = OptVariablesForPsi.begin(); vit != OptVariablesForPsi.end(); ++vit)
     {
       if( vit->first.find( var_prefix ) == 0)
       {
-        vals.push_back( vit->second );
-        val_pairs.push_back(*vit);
+        Return_rt val = std::real( vit->second );
+        vals.push_back( val );
       }
     }
     std::ostringstream os;
