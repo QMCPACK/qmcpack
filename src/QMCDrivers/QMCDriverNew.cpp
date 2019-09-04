@@ -68,7 +68,9 @@ QMCDriverNew::QMCDriverNew(QMCDriverInput&& input,
   // Avoids segmentation fault when RandomNumberControl::Children is too small, adds surprising behavior
   if(Concurrency::maxThreads() < input.get_num_crowds())
     set_num_crowds(Concurrency::maxThreads(), "RandomNumberControl's maximum children set to omp_get_max_threads()");
-  
+  else
+    num_crowds_ = input.get_num_crowds();
+ 
   rotation = 0;
 
   checkpointTimer = TimerManager.createTimer("checkpoint::recordBlock", timer_level_medium);
