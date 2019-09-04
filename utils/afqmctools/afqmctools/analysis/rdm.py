@@ -3,7 +3,7 @@ import h5py
 import numpy
 import scipy.stats
 
-def extract_qmc_dm(filename, dm_name='Mixed'):
+def extract_rdm(filename, dm_name='Mixed'):
     """Extract AFQMC 1RDM from file.
 
     Parameters
@@ -39,6 +39,7 @@ def extract_qmc_dm(filename, dm_name='Mixed'):
                 # walker_type == 2: COLLINEAR
                 # walker_type == 1: CLOSED
                 # walker_type == 0: UNKNOWN
+                print(weight)
                 if walker_type == 2:
                     dm = dm.reshape(2,nmo,nmo)
                     if not free_proj:
@@ -46,12 +47,14 @@ def extract_qmc_dm(filename, dm_name='Mixed'):
                 elif walker_type == 1:
                     dm = dm.reshape(nmo,nmo)
                     dm = numpy.array([dm,dm])
+                    print(dm.shape,weight.shape)
                     if not free_proj:
                         dm = dm / weight[:,None,None]
                 else:
                     print("Unknown walker type.")
                     return
                 dms.append(dm)
+    print(len(dm))
     return (numpy.array(dms), numpy.array(weights))
 
 def get_metadata(filename):
@@ -75,9 +78,10 @@ def get_metadata(filename):
         md['nalpha'] = fh5['Metadata/NAEA'][:][0]
         md['nbeta'] = fh5['Metadata/NAEB'][:][0]
         try:
-            md['num_bp']= fh5['Metadata/NumBackProp'][:][0]
-            md['num_av'] = fh5['Metadata/NumAverages'][:][0]
-            md['num_ref'] = fh5['Metadata/NumReferences'][:][0]
+            base = '/Observables/BackPropagated/Metadata/'
+            md['num_bp']= fh5[base+'BackPropSteps'][:][0]
+            md['num_av'] = fh5[base+'NumAverages'][:][0]
+            md['num_ref'] = fh5[base+'NumReferences'][:][0]
         except KeyError:
             md['num_bp'] = None
         md['dt'] = fh5['Metadata/Timestep'][:][0]
@@ -150,7 +154,7 @@ def extract_rdm_single(filename, indx, dm_name='Mixed'):
             return
     return dm, weight[0]
 
-def get_one_rdm_av(filename, skip, name="Mixed"):
+def get_one_rdm_av(filename, skip, dm_name="Mixed"):
     """Helper routine to compute averaged qmc density matrix.
 
     TODO: May want to use extract single if DM gets too big.
@@ -176,7 +180,7 @@ def get_one_rdm_av(filename, skip, name="Mixed"):
             temporal correlations.
     """
     md = get_metadata(filename)
-    dm, weights = extract_qmc_dm(filename, name)
+    dm, weights = extract_rdm(filename, dm_name)
     dm_av = dm[skip:].mean(axis=0)
     if md['free_proj']:
         dm_av /= w.mean()
@@ -202,7 +206,7 @@ def get_qmc_dm_trace(filename, dm_name):
     dmd : :class:`numpy.ndarray`
         Trace of spin down QMC 1RDM as function of sample block.
     """
-    (rdm, weights) = extract_qmc_dm(filename, dm_name)
+    (rdm, weights) = extract_rdm(filename, dm_name)
     dmu = []
     dmd = []
     for dm in rdm:
