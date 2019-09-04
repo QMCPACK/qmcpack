@@ -35,11 +35,16 @@
 #include "OhmmsApp/RandomNumberControl.h"
 #include "HDFVersion.h"
 #include "qmc_common.h"
-
+#include "Concurrency/Info.hpp"
 #include "QMCDrivers/GreenFunctionModifiers/DriftModifierBuilder.h"
 
 namespace qmcplusplus
 {
+/** Has nasty workaround for RandomNumberControl
+ *   
+ *  Num crowds must be less than omp_get_max_threads because RandomNumberControl is global c lib function
+ *  masquerading as a C++ object.
+ */
 QMCDriverNew::QMCDriverNew(QMCDriverInput&& input,
                            MCPopulation&& population,
                            TrialWaveFunction& psi,
@@ -55,14 +60,15 @@ QMCDriverNew::QMCDriverNew(QMCDriverInput&& input,
       psiPool(ppool),
       estimator_manager_(nullptr),
       wOut(0),
-      walkers_per_crowd_(1),
-      num_crowds_(input.get_num_crowds())
+      walkers_per_crowd_(1)
+      // num_crowds_(input.get_num_crowds())
 {
   QMCType = "invalid";
 
-  ////add each QMCHamiltonianBase to W.PropertyList so that averages can be taken
-  //H.add2WalkerProperty(W);
-  //if (storeConfigs) ForwardWalkingHistory.storeConfigsForForwardWalking(w);
+  // Avoids segmentation fault when RandomNumberControl::Children is too small, adds surprising behavior
+  if(Concurrency::maxThreads() < input.get_num_crowds())
+    set_num_crowds(Concurrency::maxThreads(), "RandomNumberControl's maximum children set to omp_get_max_threads()");
+  
   rotation = 0;
 
   checkpointTimer = TimerManager.createTimer("checkpoint::recordBlock", timer_level_medium);
@@ -311,8 +317,9 @@ void QMCDriverNew::addWalkers(int nwalkers, const ParticleAttrib<TinyVector<QMCT
 
 /** Creates Random Number generators for crowds and step contexts
  *
- *  Was first touch but thread safety issue around the `new RandomGenerator_t` appears 
- *  with some gcc openmp implementations. Might be worth understanding.
+ *  This is quite dangerous in that number of crowds can be > omp_get_max_threads()
+ *  This is used instead of actually passing number of threads/crowds
+ *  controlling threads all over RandomNumberControl.
  */
 void QMCDriverNew::createRngsStepContexts()
 {

@@ -38,6 +38,8 @@ VMCBatched::IndexType VMCBatched::calc_default_local_walkers()
 {
   int num_threads(Concurrency::maxThreads<>());
 
+  // Do to a work-around currently in QMCDriverNew::QMCDriverNew this should never be true.
+  // I'm leaving this because this is what should happen for vmc.
   if (num_crowds_ > num_threads)
   {
     std::stringstream error_msg;

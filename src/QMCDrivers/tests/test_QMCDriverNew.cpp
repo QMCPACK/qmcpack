@@ -20,12 +20,16 @@
 #include "QMCApp/tests/MinimalWaveFunctionPool.h"
 #include "QMCApp/tests/MinimalHamiltonianPool.h"
 #include "QMCDrivers/MCPopulation.h"
+#include "Concurrency/Info.hpp"
+#include "Concurrency/UtilityFunctions.hpp"
 
 namespace qmcplusplus
 {
+
 TEST_CASE("QMCDriverNew integration", "[drivers]")
 {
   using namespace testing;
+  Concurrency::OverrideMaxThreads<> override(8);
   Communicate* comm;
   OHMMS::Controller->initialize(0, NULL);
   comm = OHMMS::Controller;
