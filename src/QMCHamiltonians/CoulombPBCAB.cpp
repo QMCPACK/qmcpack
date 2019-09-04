@@ -193,8 +193,8 @@ CoulombPBCAB::Return_t CoulombPBCAB::evaluate_sp(ParticleSet& P)
   RealType Vsr                = 0.0;
   RealType Vlr                = 0.0;
   mRealType& Vc               = myConst;
-  Array<RealType, 1>& Ve_samp = *Ve_sample;
-  Array<RealType, 1>& Vi_samp = *Vi_sample;
+  Array<RealType, 1>& Ve_samp = Ve_samp_tmp;
+  Array<RealType, 1>& Vi_samp = Vi_samp_tmp;
   Ve_samp                     = 0.0;
   Vi_samp                     = 0.0;
   {
@@ -347,6 +347,8 @@ CoulombPBCAB::Return_t CoulombPBCAB::evalConsts(bool report)
   int nelns = Peln.getTotalNum();
   int nions = Pion.getTotalNum();
 #if !defined(REMOVE_TRACEMANAGER)
+  Ve_samp_tmp.resize(nelns);
+  Vi_samp_tmp.resize(nions);
   Ve_const.resize(nelns);
   Vi_const.resize(nions);
   Ve_const = 0.0;
