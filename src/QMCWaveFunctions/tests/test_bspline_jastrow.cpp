@@ -95,7 +95,7 @@ TEST_CASE("BSpline builder Jastrow J2", "[wavefunction]")
   tspecies(chargeIdx, downIdx) = -1;
   elec_.resetGroups();
 
-  TrialWaveFunction psi = TrialWaveFunction(c);
+  TrialWaveFunction psi(c);
 
   const char* particles = "<tmp> \
 <jastrow name=\"J2\" type=\"Two-Body\" function=\"Bspline\" print=\"yes\"> \
@@ -326,7 +326,7 @@ TEST_CASE("BSpline builder Jastrow J1", "[wavefunction]")
   tspecies(chargeIdx, downIdx) = -1;
   elec_.resetGroups();
 
-  TrialWaveFunction psi = TrialWaveFunction(c);
+  TrialWaveFunction psi(c);
 
   const char* particles = "<tmp> \
    <jastrow type=\"One-Body\" name=\"J1\" function=\"bspline\" source=\"ion\" print=\"yes\"> \
@@ -584,7 +584,7 @@ TEST_CASE("BSpline builder Jastrow J1", "[wavefunction]")
 
   xmlNodePtr jas2 = xmlFirstElementChild(root2);
 
-  TrialWaveFunction psi2 = TrialWaveFunction(c);
+  TrialWaveFunction psi2(c);
   RadialJastrowBuilder jastrow2(elec_, psi2, ions_);
   bool build_okay2 = jastrow2.put(jas2);
   REQUIRE(build_okay2);

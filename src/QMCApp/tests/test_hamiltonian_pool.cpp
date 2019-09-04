@@ -77,7 +77,7 @@ TEST_CASE("HamiltonianPool", "[qmcapp]")
   hpool.setParticleSetPool(&pp);
 
   WaveFunctionPool wfp(c);
-  TrialWaveFunction psi = TrialWaveFunction(c);
+  TrialWaveFunction psi(c);
   wfp.setParticleSetPool(&pp);
   wfp.setPrimary(&psi);
 

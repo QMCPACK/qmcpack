@@ -708,5 +708,4 @@ int ParticleSet::addPropertyHistory(int leng)
 //       }
 //     }
 
-
 } // namespace qmcplusplus
