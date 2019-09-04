@@ -276,7 +276,7 @@ bool VMCBatched::run()
     {
       vmc_state.step =  step;
       TasksOneToOne<> crowd_task(num_crowds_);
-      crowd_task(runVMCStep, vmc_state, std::ref(move_contexts_), std::ref(crowds_));
+      crowd_task(runVMCStep, vmc_state, std::ref(step_contexts_), std::ref(crowds_));
     }
   }
 

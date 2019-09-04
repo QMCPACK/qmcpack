@@ -124,7 +124,7 @@ public:
    */
   void add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi);
 
-  void createMoveContexts();
+  void createRngsStepContexts();
   
   void setupWalkers();
 
@@ -254,7 +254,7 @@ protected:
 
   /** Per crowd move contexts, this is where the DistanceTables etc. reside
    */
-  std::vector<std::unique_ptr<ContextForSteps>> move_contexts_;
+  std::vector<std::unique_ptr<ContextForSteps>> step_contexts_;
   
   ///a list of TrialWaveFunctions for multiple method
   std::vector<TrialWaveFunction*> Psi1;

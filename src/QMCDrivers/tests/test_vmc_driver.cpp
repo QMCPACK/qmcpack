@@ -45,7 +45,7 @@ TEST_CASE("VMC", "[drivers][vmc]")
   Communicate* c;
   OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
-
+  c->setName("test");
   ParticleSet ions;
   MCWalkerConfiguration elec;
 
