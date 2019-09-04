@@ -141,7 +141,7 @@ CoulombPBCAA::Return_t CoulombPBCAA::evaluate_sp(ParticleSet& P)
   RealType Vsr               = 0.0;
   RealType Vlr               = 0.0;
   mRealType& Vc              = myConst;
-  Array<RealType, 1>& V_samp = *V_sample;
+  Array<RealType, 1>& V_samp = V_samp_tmp;
   V_samp                     = 0.0;
   {
     //SR
@@ -212,7 +212,7 @@ CoulombPBCAA::Return_t CoulombPBCAA::evaluate_sp(ParticleSet& P)
       }
     }
   }
-  for (int i = 0; i < V_sample->size(); ++i)
+  for (int i = 0; i < V_samp.size(); ++i)
     V_samp(i) += V_const(i);
   Value = Vsr + Vlr + Vc;
 #if defined(TRACE_CHECK)
@@ -279,6 +279,7 @@ void CoulombPBCAA::initBreakup(ParticleSet& P)
 
 #if !defined(REMOVE_TRACEMANAGER)
   V_const.resize(NumCenters);
+  V_samp_tmp.resize(NumCenters);
 #endif
 
   Zat.resize(NumCenters);
