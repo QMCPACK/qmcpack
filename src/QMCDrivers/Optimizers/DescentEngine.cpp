@@ -11,12 +11,9 @@
 namespace qmcplusplus
 {
 
-DescentEngine::DescentEngine(const int numParams, const bool targetExcited, Communicate* comm)
-  : numOptimizables(numParams), engineTargetExcited(targetExcited), myComm(comm)
+DescentEngine::DescentEngine(const bool targetExcited, Communicate* comm)
+  : engineTargetExcited(targetExcited), myComm(comm)
 {
-    avg_le_der_samp.resize(numOptimizables, 0.0);
-    avg_der_rat_samp.resize(numOptimizables, 0.0);
-    LDerivs.resize(numOptimizables, 0.0);
 }
 
 /** Parses the xml input file for parameter definitions for the wavefunction optimization.
@@ -48,6 +45,10 @@ void DescentEngine::take_sample(std::vector<double> & der_rat_samp,
                                           double vgs_samp,
                                           double weight_samp) {
 
+    const size_t numOptimizables = der_rat_samp.size() - 1;
+    avg_le_der_samp.resize(numOptimizables, 0.0);
+    avg_der_rat_samp.resize(numOptimizables, 0.0);
+    LDerivs.resize(numOptimizables, 0.0);
     
   // get the number of threads being used
  // int NumThreads = omp_get_num_threads();

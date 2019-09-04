@@ -17,7 +17,6 @@ class DescentEngine
 
     private:
 
-
     std::vector<double> avg_le_der_samp;
     std::vector<double> avg_der_rat_samp;
     
@@ -27,12 +26,9 @@ class DescentEngine
     double eSquare_sum;
     double eSquare_avg;
 
-    int numOptimizables;
-
     Communicate* myComm;
 
     std::vector<double> LDerivs;
-
 
     bool engineTargetExcited;
 
@@ -40,7 +36,7 @@ class DescentEngine
 
 
     //Constructor for engine
-    DescentEngine(const int numOptimizables, const bool targetExcited, Communicate* comm);
+    DescentEngine(const bool targetExcited, Communicate* comm);
 
 
 ///process xml node
@@ -81,7 +77,7 @@ class DescentEngine
   ////////////////////////////////////////////////////////////////////////////////////////////////////////
   void sample_finish();
 
-  std::vector<double> getAveragedDerivatives()
+  const std::vector<double>& getAveragedDerivatives()
   {
     return LDerivs;
   }

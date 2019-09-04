@@ -159,7 +159,7 @@ public:
   virtual void engine_checkConfigurations(cqmc::engine::LMYEngine* EngineObj) = 0;
 
 #endif
-  virtual void descent_checkConfigurations(std::vector<Return_t>& LDerivs, bool& targetExcited, double omega, DescentEngine& descentEngineObj) = 0;
+  virtual void descent_checkConfigurations(DescentEngine& descentEngineObj) = 0;
 
   void setRng(std::vector<RandomGenerator_t*>& r);
 

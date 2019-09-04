@@ -516,7 +516,7 @@ bool QMCFixedSampleLinearOptimize::put(xmlNodePtr q)
   doHybrid = (MinMethod == "hybrid");
 
   if (doDescent && !descentEngineObj)
-    descentEngineObj = std::make_unique<DescentEngine>(numParams, targetExcited, myComm);
+    descentEngineObj = std::make_unique<DescentEngine>(targetExcited, myComm);
 
   //get whether to gradually ramp up step sizes
   ramp_eta = (ramp_etaStr == "yes");
@@ -1375,15 +1375,10 @@ bool QMCFixedSampleLinearOptimize::descent_run() {
     app_log() << "Iteration: " << Total_iterations << "/" << Max_iterations
               << std::endl;
 
-    std::vector<RealType> lDerivs(numParams);
-
-
     //Compute Lagragian derivatives needed for parameter updates
-    optTarget->descent_checkConfigurations(lDerivs, targetExcited, omega_shift, *descentEngineObj);
+    optTarget->descent_checkConfigurations(*descentEngineObj);
 
-    lDerivs = descentEngineObj->getAveragedDerivatives();
-
-    lDerivs = descentEngineObj->getAveragedDerivatives();
+    auto lDerivs = descentEngineObj->getAveragedDerivatives();
 
     //Store the derivatives and then compute parameter updates
     derivRecords.push_back(lDerivs);
