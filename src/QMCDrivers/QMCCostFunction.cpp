@@ -503,6 +503,7 @@ void QMCCostFunction::descent_checkConfigurations(DescentEngine& descentEngineOb
     std::vector<Return_t> numerTerm2(NumOptimizables+1,0.0);
     std::vector<Return_t> denom(NumOptimizables+1,0.0);
 
+descentEngineObj.clear_samples(NumOptimizables);
 
   RealType et_tot = 0.0;
   RealType e2_tot = 0.0;

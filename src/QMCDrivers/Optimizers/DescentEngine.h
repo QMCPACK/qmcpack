@@ -41,6 +41,7 @@ class DescentEngine
 
 ///process xml node
 //bool processXML(xmlNodePtr cur);
+  void clear_samples(const size_t numOptimizables);
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////////
   /// \brief  Function that Take Sample Data from the Host Code

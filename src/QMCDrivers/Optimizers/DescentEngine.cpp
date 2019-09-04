@@ -29,6 +29,17 @@ bool DescentEngine::parseXML(xmlNodePtr q)
 }
 */
 
+void DescentEngine::clear_samples(const size_t numOptimizables)
+{
+  avg_le_der_samp.resize(numOptimizables);
+  avg_der_rat_samp.resize(numOptimizables);
+  LDerivs.resize(numOptimizables);
+
+  std::fill(avg_le_der_samp.begin(), avg_le_der_samp.end(), 0.0);
+  std::fill(avg_der_rat_samp.begin(), avg_der_rat_samp.end(), 0.0);
+  std::fill(LDerivs.begin(), LDerivs.end(), 0.0);
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// \brief  Function that Take Sample Data from the Host Code
 /// 
@@ -45,10 +56,7 @@ void DescentEngine::take_sample(std::vector<double> & der_rat_samp,
                                           double vgs_samp,
                                           double weight_samp) {
 
-    const size_t numOptimizables = der_rat_samp.size() - 1;
-    avg_le_der_samp.resize(numOptimizables, 0.0);
-    avg_der_rat_samp.resize(numOptimizables, 0.0);
-    LDerivs.resize(numOptimizables, 0.0);
+  const size_t numOptimizables = der_rat_samp.size() - 1;
     
   // get the number of threads being used
  // int NumThreads = omp_get_num_threads();
