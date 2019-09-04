@@ -78,9 +78,10 @@ private:
   // perform optimization using a gradient descent algorithm
   bool descent_run();
 
+#ifdef HAVE_LMY_ENGINE
   // use hybrid approach of descent and blocked linear method for optimization
   bool hybrid_run();
-
+#endif
 
   // helper method for updating parameter values with descent
   void updateParameters(std::vector< std::vector<Return_t> >& Lderivs, double& prevLambda, std::vector<double>& prevTaus,std::vector<Return_t>& derivsSquared, int stepNum);
@@ -191,7 +192,7 @@ private:
 
 
   //Vector for storing parameter values for calcualting differences to be written to a file 
-  std::vector<double> paramsForDiff;
+  std::vector<Return_t> paramsForDiff;
 
   //Vector for storing Lagrangian derivatives from previous optimization steps
   std::vector< std::vector<Return_t> > derivRecords; 
@@ -203,16 +204,13 @@ private:
   std::vector<double> numerRecords;
 
   //Vector for storing the input vectors to the BLM steps of hybrid method
-  std::vector< std::vector<double> > hybridBLM_Input;
+  std::vector< std::vector<Return_t> > hybridBLM_Input;
 
   //Parameter for accelerated descent recursion relation
   double lambda;
 
   //Vector for storing step sizes from previous optimization step.
   std::vector<double> taus;
-
-  //Running average of local energy
-  double mu;
 
   //Vector for storing running average of squares of the derivatives
   std::vector<Return_t> derivsSquared;

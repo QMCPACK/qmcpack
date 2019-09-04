@@ -245,13 +245,13 @@ bool QMCFixedSampleLinearOptimize::run()
   if (doDescent) {
     return descent_run();
   }
+
+#ifdef HAVE_LMY_ENGINE
   if (doHybrid) {
     return hybrid_run();
   }
 
-
   // if requested, perform the update via the adaptive three-shift or single-shift method
-#ifdef HAVE_LMY_ENGINE
   if (doAdaptiveThreeShift)
     return adaptive_three_shift_run();
 #endif
@@ -1735,6 +1735,7 @@ void QMCFixedSampleLinearOptimize::storeVectors(std::vector<Return_t> &paramsFor
 
 //Function for controlling the alternation between sections of descent
 //optimization and BLM optimization.
+#ifdef HAVE_LMY_ENGINE
 bool QMCFixedSampleLinearOptimize::hybrid_run() {
  
     if (descentCount < descent_len) {
@@ -1772,6 +1773,6 @@ bool QMCFixedSampleLinearOptimize::hybrid_run() {
     }
   }
 }
-
+#endif
 
 } // namespace qmcplusplus
