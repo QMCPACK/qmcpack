@@ -122,9 +122,6 @@ SlaterDet::RealType SlaterDet::evaluateLog(ParticleSet& P,
                                            ParticleSet::ParticleGradient_t& G,
                                            ParticleSet::ParticleLaplacian_t& L)
 {
-  //ValueType psi = 1.0;
-  //for(int i=0; i<Dets.size(); i++) psi *= Dets[i]->evaluate(P,G,L);
-  //return LogValue = evaluateLogAndPhase(psi,PhaseValue);
   LogValue   = 0.0;
   PhaseValue = 0.0;
   for (int i = 0; i < Dets.size(); ++i)
@@ -133,6 +130,37 @@ SlaterDet::RealType SlaterDet::evaluateLog(ParticleSet& P,
     PhaseValue += Dets[i]->PhaseValue;
   }
   return LogValue;
+}
+
+void SlaterDet::mw_evaluateLog(const std::vector<WaveFunctionComponent*>& WFC_list,
+                               const std::vector<ParticleSet*>& P_list,
+                               const std::vector<ParticleSet::ParticleGradient_t*>& G_list,
+                               const std::vector<ParticleSet::ParticleLaplacian_t*>& L_list)
+{
+  constexpr RealType czero(0);
+
+  for (int iw = 0; iw < WFC_list.size(); iw++)
+  {
+    WFC_list[iw]->LogValue   = czero;
+    WFC_list[iw]->PhaseValue = czero;
+  }
+
+  std::vector<WaveFunctionComponent*> Det_list;
+  Det_list.reserve(WFC_list.size());
+
+  for (int i = 0; i < Dets.size(); ++i)
+  {
+    Det_list.clear();
+    for (auto WFC : WFC_list)
+      Det_list.push_back(dynamic_cast<SlaterDet*>(WFC)->Dets[i]);
+
+    Dets[i]->mw_evaluateLog(Det_list, P_list, G_list, L_list);
+    for (int iw = 0; iw < WFC_list.size(); iw++)
+    {
+      WFC_list[iw]->LogValue += Det_list[iw]->LogValue;
+      WFC_list[iw]->PhaseValue += Det_list[iw]->PhaseValue;
+    }
+  }
 }
 
 void SlaterDet::recompute(ParticleSet& P)

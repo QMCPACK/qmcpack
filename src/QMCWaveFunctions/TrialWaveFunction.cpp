@@ -353,7 +353,8 @@ void TrialWaveFunction::flex_calcRatio(const std::vector<TrialWaveFunction*>& WF
                                        std::vector<PsiValueType>& ratios,
                                        ComputeType ct) const
 {
-  ratios.resize(WF_list.size(), PsiValueType(1));
+  ratios.resize(WF_list.size());
+  std::fill(ratios.begin(), ratios.end(), PsiValueType(1));
 
   if (WF_list.size() > 1)
   {
@@ -392,7 +393,9 @@ void TrialWaveFunction::flex_evalGrad(const std::vector<TrialWaveFunction*>& WF_
                                       int iat,
                                       std::vector<GradType>& grad_now) const
 {
-  grad_now.resize(WF_list.size(), GradType(0));
+  grad_now.resize(WF_list.size());
+  std::fill(grad_now.begin(), grad_now.end(), GradType(0));
+
   if (WF_list.size() > 1)
   {
     std::vector<GradType> grad_now_z(WF_list.size());
@@ -466,23 +469,21 @@ void TrialWaveFunction::flex_ratioGrad(const std::vector<TrialWaveFunction*>& WF
                                        std::vector<PsiValueType>& ratios,
                                        std::vector<GradType>& grad_new) const
 {
-  grad_new.resize(WF_list.size(), GradType(0));
-  ratios.resize(WF_list.size(), PsiValueType(1));
+  grad_new.resize(WF_list.size());
+  std::fill(grad_new.begin(), grad_new.end(), GradType(0));
+  ratios.resize(WF_list.size());
+  std::fill(ratios.begin(), ratios.end(), PsiValueType(1));
 
   if (WF_list.size() > 1)
   {
-    std::vector<GradType> grad_new_z(WF_list.size());
     std::vector<PsiValueType> ratios_z(WF_list.size());
     for (int i = 0, ii = VGL_TIMER; i < Z.size(); ++i, ii += TIMER_SKIP)
     {
       ScopedTimer local_timer(myTimers[ii]);
       const auto WFC_list(extract_WFC_list(WF_list, i));
-      Z[i]->mw_ratioGrad(WFC_list, P_list, iat, ratios_z, grad_new_z);
+      Z[i]->mw_ratioGrad(WFC_list, P_list, iat, ratios_z, grad_new);
       for (int iw = 0; iw < WF_list.size(); iw++)
-      {
         ratios[iw] *= ratios_z[iw];
-        grad_new[iw] += grad_new_z[iw];
-      }
     }
   }
   else if (WF_list.size() == 1)
@@ -907,6 +908,7 @@ std::vector<WaveFunctionComponent*> TrialWaveFunction::extract_WFC_list(const st
                                                                         int id) const
 {
   std::vector<WaveFunctionComponent*> WFC_list;
+  WFC_list.reserve(WF_list.size());
   for (auto WF : WF_list)
     WFC_list.push_back(WF->Z[id]);
   return WFC_list;
