@@ -708,22 +708,4 @@ int ParticleSet::addPropertyHistory(int leng)
 //       }
 //     }
 
-std::vector<ParticleSet::ParticleGradient_t*>
-extract_G_list(const std::vector<ParticleSet*>& P_list)
-{
-  std::vector<ParticleSet::ParticleGradient_t*> G_list;
-  for (auto pset : P_list)
-    G_list.push_back(&(pset->G));
-  return G_list;
-}
-
-std::vector<ParticleSet::ParticleLaplacian_t*>
-extract_L_list(const std::vector<ParticleSet*>& P_list)
-{
-  std::vector<ParticleSet::ParticleLaplacian_t*> L_list;
-  for (auto pset : P_list)
-    L_list.push_back(&(pset->L));
-  return L_list;
-}
-
 } // namespace qmcplusplus
