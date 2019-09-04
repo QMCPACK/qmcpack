@@ -107,7 +107,7 @@ TEST_CASE("RPA Jastrow", "[wavefunction]")
   // initialize SK
   elec_.createSK();
 
-  TrialWaveFunction psi = TrialWaveFunction(c);
+  TrialWaveFunction psi(c);
 
   xmltext = "<tmp> \
   <jastrow name=\"Jee\" type=\"Two-Body\" function=\"rpa\"/>\

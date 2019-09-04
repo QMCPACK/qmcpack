@@ -50,7 +50,7 @@ public:
 
     wp.put(root);
 
-    TrialWaveFunction psi = TrialWaveFunction(comm_);
+    TrialWaveFunction psi(comm_);
     wp.setPrimary(&psi);
 
     delete doc;
