@@ -45,6 +45,8 @@ struct CoulombPotential : public QMCHamiltonianBase, public ForceBase
   const bool is_AA;
 #if !defined(REMOVE_TRACEMANAGER)
   ///single particle trace samples
+  Array<TraceReal, 1> Va_samp_tmp;
+  Array<TraceReal, 1> Vb_samp_tmp;
   Array<TraceReal, 1>* Va_sample;
   Array<TraceReal, 1>* Vb_sample;
 #endif
@@ -64,6 +66,8 @@ struct CoulombPotential : public QMCHamiltonianBase, public ForceBase
     two_body_quantum_domain(s, s);
     nCenters = s.getTotalNum();
     prefix = "F_AA";
+
+    Va_samp_tmp.resize(s.getTotalNum());
 
     if (!is_active) //precompute the value
     {
@@ -87,6 +91,8 @@ struct CoulombPotential : public QMCHamiltonianBase, public ForceBase
     set_energy_domain(potential);
     two_body_quantum_domain(s, t);
     nCenters = s.getTotalNum();
+    Va_samp_tmp.resize(s.getTotalNum());
+    Vb_samp_tmp.resize(t.getTotalNum());
   }
 
 #if !defined(REMOVE_TRACEMANAGER)
@@ -249,24 +255,22 @@ struct CoulombPotential : public QMCHamiltonianBase, public ForceBase
   inline T evaluate_spAA(const DistanceTableData& d, const ParticleScalar_t* restrict Z)
   {
     T res                 = 0.0;
-#ifndef ENABLE_SOA
-    const int* restrict M = d.M.data();
-    const int* restrict J = d.J.data();
     T pairpot;
-    Array<RealType, 1>& Va_samp = *Va_sample;
+    Array<RealType, 1>& Va_samp = Va_samp_tmp;
     Va_samp                     = 0.0;
-    for (int iat = 0; iat < nCenters; ++iat)
+    for (size_t iat = 1; iat < nCenters; ++iat)
     {
-      T q = Z[iat];
-      for (int nn = M[iat], it = 0; nn < M[iat + 1]; ++nn, it++)
+      const RealType* restrict dist = d.Distances[iat];
+      T q                           = Z[iat];
+      for (size_t j = 0; j < iat; ++j)
       {
-        pairpot = .5 * q * Z[J[nn]] * d.rinv(nn);
+        pairpot = 0.5*q * Z[j] / dist[j];
         Va_samp(iat) += pairpot;
-        Va_samp(it)  += pairpot;
-        res          += 2.0 * pairpot;
+        Va_samp(j)   += pairpot;
+        res          += pairpot;
       }
+      res *= 2.0;
     }
-#endif
 #if defined(TRACE_CHECK)
     T Vnow  = res;
     T Vsum  = Va_samp.sum();
