@@ -6,34 +6,17 @@
 #include<vector>
 #include<string>
 
-#include "descentEngine.h"
+#include "QMCDrivers/Optimizers/DescentEngine.h"
 
-#include <formic/utils/mpi_interface.h>
-#include<formic/utils/openmp.h>
-
-
-//#include "Message/MPIObjectBase.h"
-//#include "Message/CommOperators.h"
-
-
-
-
-
-
-cqmc::engine::descentEngine::descentEngine(const int numParams, const bool targetExcited, Communicate* comm)
+namespace qmcplusplus
 {
 
-    numOptimizables = numParams;
+DescentEngine::DescentEngine(const int numParams, const bool targetExcited, Communicate* comm)
+  : numOptimizables(numParams), engineTargetExcited(targetExcited), myComm(comm)
+{
     avg_le_der_samp.resize(numOptimizables, 0.0);
     avg_der_rat_samp.resize(numOptimizables, 0.0);
-
     LDerivs.resize(numOptimizables, 0.0);
-
-    engineTargetExcited = targetExcited;
-
-    myComm = comm;
-
-
 }
 
 /** Parses the xml input file for parameter definitions for the wavefunction optimization.
@@ -41,7 +24,7 @@ cqmc::engine::descentEngine::descentEngine(const int numParams, const bool targe
  * @return true if successful
  */
 /*
-bool cqmc::engine::descentEngine::parseXML(xmlNodePtr q)
+bool DescentEngine::parseXML(xmlNodePtr q)
 {
 
 
@@ -59,7 +42,7 @@ bool cqmc::engine::descentEngine::parseXML(xmlNodePtr q)
 /// \param[in]  weight_samp    weight for this sample
 ///
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
-void cqmc::engine::descentEngine::take_sample(std::vector<double> & der_rat_samp,
+void DescentEngine::take_sample(std::vector<double> & der_rat_samp,
                                           std::vector<double> & le_der_samp,
                                           std::vector<double> & ls_der_samp,
                                           double vgs_samp,
@@ -96,7 +79,7 @@ void cqmc::engine::descentEngine::take_sample(std::vector<double> & der_rat_samp
 /// \param[in]  weight_samp    weight for this sample
 ///
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
-void cqmc::engine::descentEngine::take_sample(double local_en,
+void DescentEngine::take_sample(double local_en,
                                           double vgs_samp,
                                           double weight_samp) 
 {
@@ -109,10 +92,10 @@ void cqmc::engine::descentEngine::take_sample(double local_en,
 ///         processor
 ///
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
-void cqmc::engine::descentEngine::sample_finish() {
+void DescentEngine::sample_finish() {
   
   // get rank number and number of ranks
-  int my_rank = formic::mpi::rank();
+  int my_rank = myComm->rank();
 //  int num_rank = formic::mpi::size();
 
   // get total number of threads
@@ -159,6 +142,8 @@ if(!engineTargetExcited)
 }
 
 
+
+}
 
 }
 

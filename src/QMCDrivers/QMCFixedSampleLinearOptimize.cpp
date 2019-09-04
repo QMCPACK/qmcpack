@@ -45,8 +45,6 @@
 #include <fstream>
 #include <stdexcept>
 
-#include "descentEngine.h"
-
 /*#include "Message/Communicate.h"*/
 
 namespace qmcplusplus
@@ -516,6 +514,9 @@ bool QMCFixedSampleLinearOptimize::put(xmlNodePtr q)
   doDescent = (MinMethod == "descent");
   //get whether to use hybrid method
   doHybrid = (MinMethod == "hybrid");
+
+  if (doDescent && !descentEngineObj)
+    descentEngineObj = std::make_unique<DescentEngine>(numParams, targetExcited, myComm);
 
   //get whether to gradually ramp up step sizes
   ramp_eta = (ramp_etaStr == "yes");
@@ -1369,8 +1370,6 @@ bool QMCFixedSampleLinearOptimize::descent_run() {
     }
   }
 
-descentEngineObj = new cqmc::engine::descentEngine(numParams,targetExcited,myComm);
-
   while (Total_iterations < Max_iterations) {
     Total_iterations += 1;
     app_log() << "Iteration: " << Total_iterations << "/" << Max_iterations
@@ -1380,7 +1379,7 @@ descentEngineObj = new cqmc::engine::descentEngine(numParams,targetExcited,myCom
 
 
     //Compute Lagragian derivatives needed for parameter updates
-    optTarget->descent_checkConfigurations(lDerivs, targetExcited, omega_shift,descentEngineObj);
+    optTarget->descent_checkConfigurations(lDerivs, targetExcited, omega_shift, *descentEngineObj);
 
     lDerivs = descentEngineObj->getAveragedDerivatives();
 

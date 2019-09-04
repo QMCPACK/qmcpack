@@ -9,11 +9,10 @@
 #include "Message/MPIObjectBase.h"
 #include "Message/CommOperators.h"
 
-namespace cqmc {
+namespace qmcplusplus
+{
 
-namespace engine {
-
-class descentEngine
+class DescentEngine
 {
 
     private:
@@ -41,7 +40,7 @@ class descentEngine
 
 
     //Constructor for engine
-    descentEngine(const int numOptimizables, const bool targetExcited, Communicate* comm);
+    DescentEngine(const int numOptimizables, const bool targetExcited, Communicate* comm);
 
 
 ///process xml node
@@ -90,9 +89,6 @@ class descentEngine
   
 
 };
-
-
-}
 
 }
  #endif

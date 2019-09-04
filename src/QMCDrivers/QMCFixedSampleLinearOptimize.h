@@ -23,8 +23,7 @@
 #include "formic/utils/matrix.h"
 #include "formic/utils/lmyengine/engine.h"
 #endif
-
-#include "descentEngine.h"
+#include "QMCDrivers/Optimizers/DescentEngine.h"
 
 namespace qmcplusplus
 {
@@ -103,8 +102,7 @@ private:
   cqmc::engine::LMYEngine* EngineObj;
 #endif
 
-
-  cqmc::engine::descentEngine* descentEngineObj;
+  std::unique_ptr<DescentEngine> descentEngineObj;
 
   // prepare a vector of shifts to try
   std::vector<double> prepare_shifts(const double central_shift) const;

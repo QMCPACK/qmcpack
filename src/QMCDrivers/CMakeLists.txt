@@ -31,7 +31,7 @@ SET(QMCDRIVERS
   QMCLinearOptimize.cpp
   QMCCorrelatedSamplingLinearOptimize.cpp
   QMCFixedSampleLinearOptimize.cpp
-  descentEngine.cpp
+  Optimizers/DescentEngine.cpp
   QMCCostFunctionBase.cpp
   WaveFunctionTester.cpp
   WalkerControlBase.cpp
