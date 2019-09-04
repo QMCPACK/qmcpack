@@ -37,7 +37,12 @@ void DescentEngine::clear_samples(const size_t numOptimizables)
 
   std::fill(avg_le_der_samp.begin(), avg_le_der_samp.end(), 0.0);
   std::fill(avg_der_rat_samp.begin(), avg_der_rat_samp.end(), 0.0);
-  std::fill(LDerivs.begin(), LDerivs.end(), 0.0);
+
+  w_sum = 0;
+  e_avg = 0;
+  e_sum = 0;
+  eSquare_sum = 0;
+  eSquare_avg = 0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
