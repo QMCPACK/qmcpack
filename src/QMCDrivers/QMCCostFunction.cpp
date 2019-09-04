@@ -489,7 +489,7 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine* Engine
 
 //Function for computing Lagrangian derivatives for descent optimization. Similar structure to engine_checkConfigurations but derivatives are computed 
 //from samples within this function instead of passing to the engine as in the linear method.
-void QMCCostFunction::descent_checkConfigurations(std::vector<Return_t>& LDerivs, bool& targetExcited, double omega)
+void QMCCostFunction::descent_checkConfigurations(std::vector<Return_t>& LDerivs, bool& targetExcited, double omega, cqmc::engine::descentEngine* descentEngineObj)
 {
 
 
@@ -581,6 +581,7 @@ double eSum = 0;
           le_der_samp.at(i + 1) = HDsaved.at(i) + etmp * Dsaved.at(i);
 
      
+	//Move accumulation of derivatives to take_sample of descent engine
      for (int i = 0; i < NumOptimizables; i++)
      {
      
@@ -624,6 +625,11 @@ double eSum = 0;
   app_log() << "  Total weights = " << etemp[1] << std::endl;
 
 
+
+
+
+  /*
+  //Move computation of derivatives here to finish_sample of descentEngine
   myComm->allreduce(avg_le_der_samp); 
   myComm->allreduce(avg_der_rat_samp);
 
@@ -651,6 +657,9 @@ LDerivs.at(i) = 2*avg_le_der_samp.at(i) - newE*(2*avg_der_rat_samp.at(i));
 
 
 }
+*/
+
+
  app_log().flush();
 
   setTargetEnergy(Etarget);

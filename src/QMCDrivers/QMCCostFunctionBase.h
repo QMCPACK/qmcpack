@@ -31,6 +31,8 @@
 #include "formic/utils/lmyengine/engine.h"
 #endif
 
+#include "descentEngine.h"
+
 namespace qmcplusplus
 {
 class MCWalkerConfiguration;
@@ -157,7 +159,7 @@ public:
   virtual void engine_checkConfigurations(cqmc::engine::LMYEngine* EngineObj) = 0;
 
 #endif
-  virtual void descent_checkConfigurations(std::vector<Return_t>& LDerivs, bool& targetExcited,double omega) = 0;
+  virtual void descent_checkConfigurations(std::vector<Return_t>& LDerivs, bool& targetExcited,double omega,cqmc::engine::descentEngine* descentEngineObj) = 0;
 
 
 

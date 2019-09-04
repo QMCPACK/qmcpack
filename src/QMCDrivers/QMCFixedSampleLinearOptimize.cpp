@@ -45,6 +45,8 @@
 #include <fstream>
 #include <stdexcept>
 
+#include "descentEngine.h"
+
 /*#include "Message/Communicate.h"*/
 
 namespace qmcplusplus
@@ -1367,6 +1369,7 @@ bool QMCFixedSampleLinearOptimize::descent_run() {
     }
   }
 
+descentEngineObj = new cqmc::engine::descentEngine(numParams,targetExcited);
 
   while (Total_iterations < Max_iterations) {
     Total_iterations += 1;
@@ -1375,8 +1378,9 @@ bool QMCFixedSampleLinearOptimize::descent_run() {
 
     std::vector<RealType> lDerivs(numParams);
 
+
     //Compute Lagragian derivatives needed for parameter updates
-    optTarget->descent_checkConfigurations(lDerivs, targetExcited, omega_shift);
+    optTarget->descent_checkConfigurations(lDerivs, targetExcited, omega_shift,descentEngineObj);
 
     //Store the derivatives and then compute parameter updates
     derivRecords.push_back(lDerivs);
