@@ -158,6 +158,14 @@ void TrialWaveFunction::flex_evaluateLog(const std::vector<TrialWaveFunction*>& 
         WF_list[iw]->PhaseValue += WFC_list[iw]->PhaseValue;
       }
     }
+
+    for (int iw = 0; iw < WF_list.size(); iw++)
+    {
+      // Ye: temporal workaround to have P.G/L always defined.
+      // remove when KineticEnergy use WF.G/L instead of P.G/L
+      P_list[0]->G = WF_list[iw]->G;
+      P_list[0]->L = WF_list[iw]->L;
+    }
   }
   else if (WF_list.size() == 1)
   {
@@ -707,17 +715,12 @@ void TrialWaveFunction::flex_updateBuffer(const std::vector<TrialWaveFunction*>&
                                           const std::vector<WFBufferType*>& buf_list,
                                           bool fromscratch) const
 {
-  constexpr RealType czero(0);
-  const auto G_list(extract_G_list(WF_list));
-  const auto L_list(extract_L_list(WF_list));
-
   for (int iw = 0; iw < WF_list.size(); iw++)
   {
-    G_list[iw]->resize(P_list[0]->getTotalNum());
-    L_list[iw]->resize(P_list[0]->getTotalNum());
+    constexpr RealType czero(0);
 
-    *G_list[iw]             = czero;
-    *L_list[iw]             = czero;
+    P_list[iw]->G           = czero; // Ye: remove when updateBuffer of all the WFC uses WF.G/L
+    P_list[iw]->L           = czero; // Ye: remove when updateBuffer of all the WFC uses WF.G/L
     WF_list[iw]->LogValue   = czero;
     WF_list[iw]->PhaseValue = czero;
     buf_list[iw]->rewind(WF_list[iw]->BufferCursor, WF_list[iw]->BufferCursor_scalar);
