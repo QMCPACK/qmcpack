@@ -2,12 +2,11 @@
 //Prototype code for an engine to handle descent optimization
 
 
-#ifndef CQMC_DESCENT_ENGINE_HEADER
-#define CQMC_DESCENT_ENGINE_HEADER
+#ifndef QMCPLUSPLUS_DESCENT_ENGINE_HEADER
+#define QMCPLUSPLUS_DESCENT_ENGINE_HEADER
 
 #include <vector>
-#include "Message/MPIObjectBase.h"
-#include "Message/CommOperators.h"
+#include "Message/Communicate.h"
 
 namespace qmcplusplus
 {

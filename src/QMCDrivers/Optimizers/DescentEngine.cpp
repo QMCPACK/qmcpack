@@ -7,6 +7,7 @@
 #include<string>
 
 #include "QMCDrivers/Optimizers/DescentEngine.h"
+#include "Message/CommOperators.h"
 
 namespace qmcplusplus
 {
