@@ -1369,7 +1369,7 @@ bool QMCFixedSampleLinearOptimize::descent_run() {
     }
   }
 
-descentEngineObj = new cqmc::engine::descentEngine(numParams,targetExcited);
+descentEngineObj = new cqmc::engine::descentEngine(numParams,targetExcited,myComm);
 
   while (Total_iterations < Max_iterations) {
     Total_iterations += 1;
@@ -1381,6 +1381,10 @@ descentEngineObj = new cqmc::engine::descentEngine(numParams,targetExcited);
 
     //Compute Lagragian derivatives needed for parameter updates
     optTarget->descent_checkConfigurations(lDerivs, targetExcited, omega_shift,descentEngineObj);
+
+    lDerivs = descentEngineObj->getAveragedDerivatives();
+
+    lDerivs = descentEngineObj->getAveragedDerivatives();
 
     //Store the derivatives and then compute parameter updates
     derivRecords.push_back(lDerivs);

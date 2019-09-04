@@ -582,6 +582,9 @@ double eSum = 0;
 
      
 	//Move accumulation of derivatives to take_sample of descent engine
+
+    descentEngineObj->take_sample(der_rat_samp, le_der_samp, le_der_samp, 1.0, saved[REWEIGHT]);
+	/*
      for (int i = 0; i < NumOptimizables; i++)
      {
      
@@ -592,6 +595,8 @@ double eSum = 0;
 
  
      }   
+
+     */
 
       }
       else
@@ -626,7 +631,7 @@ double eSum = 0;
 
 
 
-
+descentEngineObj->sample_finish();
 
   /*
   //Move computation of derivatives here to finish_sample of descentEngine

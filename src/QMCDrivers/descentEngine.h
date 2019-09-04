@@ -41,7 +41,7 @@ class descentEngine
 
 
     //Constructor for engine
-    descentEngine(const int numOptimizables, const bool targetExcited);
+    descentEngine(const int numOptimizables, const bool targetExcited, Communicate* comm);
 
 
 ///process xml node
@@ -82,6 +82,12 @@ class descentEngine
   ////////////////////////////////////////////////////////////////////////////////////////////////////////
   void sample_finish();
 
+  std::vector<double> getAveragedDerivatives()
+  {
+    return LDerivs;
+  }
+
+  
 
 };
 

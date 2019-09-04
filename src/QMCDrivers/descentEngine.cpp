@@ -8,7 +8,8 @@
 
 #include "descentEngine.h"
 
-//#include<formic/utils/openmp.h>
+#include <formic/utils/mpi_interface.h>
+#include<formic/utils/openmp.h>
 
 
 //#include "Message/MPIObjectBase.h"
@@ -19,7 +20,7 @@
 
 
 
-cqmc::engine::descentEngine::descentEngine(const int numParams, const bool targetExcited)
+cqmc::engine::descentEngine::descentEngine(const int numParams, const bool targetExcited, Communicate* comm)
 {
 
     numOptimizables = numParams;
@@ -29,6 +30,8 @@ cqmc::engine::descentEngine::descentEngine(const int numParams, const bool targe
     LDerivs.resize(numOptimizables, 0.0);
 
     engineTargetExcited = targetExcited;
+
+    myComm = comm;
 
 
 }
@@ -109,17 +112,33 @@ void cqmc::engine::descentEngine::take_sample(double local_en,
 void cqmc::engine::descentEngine::sample_finish() {
   
   // get rank number and number of ranks
-//  int my_rank = formic::mpi::rank();
+  int my_rank = formic::mpi::rank();
 //  int num_rank = formic::mpi::size();
 
   // get total number of threads
  // int NumThreads = omp_get_max_threads();
 
 
+    std::vector<double> etemp(3);
+    
+    etemp[0] = e_sum;
+    etemp[1] = w_sum;
+    etemp[2] = eSquare_sum;
+
+    myComm->allreduce(etemp);
   myComm->allreduce(avg_le_der_samp);
    myComm->allreduce(avg_der_rat_samp);
 
-   e_avg = e_sum/w_sum;
+   e_avg = etemp[0]/etemp[1];
+   eSquare_avg = etemp[2]/etemp[1];
+
+   w_sum = etemp[1];
+
+   if(my_rank == 0)
+   {
+   std::cout << "This is e_avg: " << e_avg << std::endl;
+   std::cout << "This is total weights: " << w_sum << std::endl;
+   }
 
 for (int i = 0; i < LDerivs.size();i++)
 {
@@ -127,9 +146,16 @@ for (int i = 0; i < LDerivs.size();i++)
 avg_le_der_samp.at(i) = avg_le_der_samp.at(i)/w_sum;
 avg_der_rat_samp.at(i) = avg_der_rat_samp.at(i)/w_sum;
 
+if(my_rank == 0)
+{
+std::cout << "Parameter # " << i << " Hamiltonian term: " << avg_le_der_samp.at(i) << std::endl;
+std::cout << "Parameter # " << i <<  " Overlap term: " << avg_der_rat_samp.at(i) << std::endl;
+}
+
 if(!engineTargetExcited)
 {
  LDerivs.at(i) = 2*avg_le_der_samp.at(i) - e_avg*(2*avg_der_rat_samp.at(i));
+ 
 }
 
 
