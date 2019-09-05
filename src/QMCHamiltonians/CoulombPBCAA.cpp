@@ -138,15 +138,14 @@ CoulombPBCAA::Return_t CoulombPBCAA::evaluateWithIonDerivs(ParticleSet& P,
 #if !defined(REMOVE_TRACEMANAGER)
 CoulombPBCAA::Return_t CoulombPBCAA::evaluate_sp(ParticleSet& P)
 {
-  RealType Vsr               = 0.0;
-  RealType Vlr               = 0.0;
+  mRealType Vsr               = 0.0;
+  mRealType Vlr               = 0.0;
   mRealType& Vc              = myConst;
   Array<RealType, 1>& V_samp = V_samp_tmp;
   V_samp                     = 0.0;
   {
     //SR
     const DistanceTableData& d_aa(P.getDistTable(d_aa_ID));
-    RealType pairpot; //energy for single pair
     RealType z;
     if (d_aa.DTType == DT_SOA)
     {
@@ -156,7 +155,7 @@ CoulombPBCAA::Return_t CoulombPBCAA::evaluate_sp(ParticleSet& P)
         const RealType* dist = d_aa.Distances[ipart];
         for (int jpart = 0; jpart < ipart; ++jpart)
         {
-          pairpot = z * Zat[jpart] * rVs->splint(dist[jpart]) / dist[jpart];
+          RealType pairpot = z * Zat[jpart] * rVs->splint(dist[jpart]) / dist[jpart];
           V_samp(ipart) += pairpot;
           V_samp(jpart) += pairpot;
           Vsr           += pairpot;
@@ -171,7 +170,7 @@ CoulombPBCAA::Return_t CoulombPBCAA::evaluate_sp(ParticleSet& P)
         z = .5 * Zat[ipart];
         for (int nn = d_aa.M[ipart], jpart = ipart + 1; nn < d_aa.M[ipart + 1]; nn++, jpart++)
         {
-          pairpot = z * Zat[jpart] * d_aa.rinv(nn) * rVs->splint(d_aa.r(nn));
+          RealType pairpot = z * Zat[jpart] * d_aa.rinv(nn) * rVs->splint(d_aa.r(nn));
           V_samp(ipart) += pairpot;
           V_samp(jpart) += pairpot;
           Vsr           += pairpot;

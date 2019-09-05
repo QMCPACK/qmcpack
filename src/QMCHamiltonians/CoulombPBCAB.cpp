@@ -200,7 +200,6 @@ CoulombPBCAB::Return_t CoulombPBCAB::evaluate_sp(ParticleSet& P)
   {
     //SR
     const DistanceTableData& d_ab(P.getDistTable(myTableIndex));
-    RealType pairpot;
     RealType z;
     //Loop over distinct eln-ion pairs
     if (d_ab.DTType == DT_SOA)
@@ -211,7 +210,7 @@ CoulombPBCAB::Return_t CoulombPBCAB::evaluate_sp(ParticleSet& P)
         const RealType* restrict dist = d_ab.Distances[b];
         for (size_t a = 0; a < NptclA; ++a)
         {
-          pairpot = z * Zat[a] * Vat[a]->splint(dist[a]) / dist[a];
+          Return_t pairpot = z * Zat[a] * Vat[a]->splint(dist[a]) / dist[a];
           Vi_samp(a) += pairpot;
           Ve_samp(b) += pairpot;
           Vsr        += pairpot;
@@ -228,7 +227,7 @@ CoulombPBCAB::Return_t CoulombPBCAB::evaluate_sp(ParticleSet& P)
         RadFunctorType* rVs = Vat[iat];
         for (int nn = d_ab.M[iat], jat = 0; nn < d_ab.M[iat + 1]; ++nn, ++jat)
         {
-          pairpot = z * Qat[jat] * d_ab.rinv(nn) * rVs->splint(d_ab.r(nn));
+          Return_t pairpot = z * Qat[jat] * d_ab.rinv(nn) * rVs->splint(d_ab.r(nn));
           Vi_samp(iat) += pairpot;
           Ve_samp(jat) += pairpot;
           Vsr          += pairpot;

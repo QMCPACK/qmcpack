@@ -207,7 +207,6 @@ void NonLocalECPotential::evaluate(ParticleSet& P, bool Tmove)
   for (int jel = 0; jel < P.getTotalNum(); jel++)
     ElecNeighborIons.getNeighborList(jel).clear();
 
-  RealType pairpot;
   if (ComputeForces)
   {
     forces = 0;
@@ -221,7 +220,7 @@ void NonLocalECPotential::evaluate(ParticleSet& P, bool Tmove)
         for (int iat = 0; iat < NumIons; iat++)
           if (PP[iat] != nullptr && dist[iat] < PP[iat]->getRmax())
           {
-            pairpot = PP[iat]->evaluateOneWithForces(P, iat, Psi, jel, dist[iat], RealType(-1) * displ[iat], forces[iat],
+            RealType pairpot = PP[iat]->evaluateOneWithForces(P, iat, Psi, jel, dist[iat], RealType(-1) * displ[iat], forces[iat],
                                                     Tmove, Txy);
             Value += pairpot;
             NeighborIons.push_back(iat);
@@ -246,7 +245,7 @@ void NonLocalECPotential::evaluate(ParticleSet& P, bool Tmove)
         for (int iat = 0; iat < NumIons; iat++)
           if (PP[iat] != nullptr && dist[iat] < PP[iat]->getRmax())
           {
-            pairpot = PP[iat]->evaluateOne(P, iat, Psi, jel, dist[iat], RealType(-1) * displ[iat], Tmove, Txy);
+            RealType pairpot = PP[iat]->evaluateOne(P, iat, Psi, jel, dist[iat], RealType(-1) * displ[iat], Tmove, Txy);
             Value += pairpot;
             NeighborIons.push_back(iat);
             IonNeighborElecs.getNeighborList(iat).push_back(jel);
@@ -268,7 +267,7 @@ void NonLocalECPotential::evaluate(ParticleSet& P, bool Tmove)
           const RealType r(myTable.r(nn));
           if (r > PP[iat]->getRmax())
             continue;
-          pairpot = PP[iat]->evaluateOne(P, iat, Psi, iel, r, myTable.dr(nn), Tmove, Txy);
+          RealType pairpot = PP[iat]->evaluateOne(P, iat, Psi, iel, r, myTable.dr(nn), Tmove, Txy);
           Value += pairpot;
           NeighborElecs.push_back(iel);
           ElecNeighborIons.getNeighborList(iel).push_back(iat);
