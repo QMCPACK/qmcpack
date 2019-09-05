@@ -145,15 +145,9 @@ void SlaterDet::mw_evaluateLog(const std::vector<WaveFunctionComponent*>& WFC_li
     WFC_list[iw]->PhaseValue = czero;
   }
 
-  std::vector<WaveFunctionComponent*> Det_list;
-  Det_list.reserve(WFC_list.size());
-
   for (int i = 0; i < Dets.size(); ++i)
   {
-    Det_list.clear();
-    for (auto WFC : WFC_list)
-      Det_list.push_back(dynamic_cast<SlaterDet*>(WFC)->Dets[i]);
-
+    const std::vector<WaveFunctionComponent*> Det_list(extract_Det_list(WFC_list, i));
     Dets[i]->mw_evaluateLog(Det_list, P_list, G_list, L_list);
     for (int iw = 0; iw < WFC_list.size(); iw++)
     {

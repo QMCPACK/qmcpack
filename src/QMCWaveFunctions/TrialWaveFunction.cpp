@@ -531,6 +531,21 @@ void TrialWaveFunction::rejectMove(int iat)
   PhaseDiff = 0;
 }
 
+void TrialWaveFunction::flex_rejectMove(const std::vector<TrialWaveFunction*>& WF_list,
+                                        int iat) const
+{
+  if (WF_list.size() > 1)
+  {
+    for (int i = 0; i < Z.size(); i++)
+    {
+      std::vector<WaveFunctionComponent*> WFC_list(extract_WFC_list(WF_list, i));
+      Z[i]->mw_restore(WFC_list, iat);
+    }
+  }
+  else if (WF_list.size() == 1)
+    WF_list[0]->rejectMove(iat);
+}
+
 /** update the state with the new data
  * @param P ParticleSet
  * @param iat index of the particle with a trial move
