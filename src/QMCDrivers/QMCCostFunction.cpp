@@ -356,6 +356,8 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine* Engine
 {
     if(MinMethod == "descent")
     {
+	//Seem to need this line to get non-zero derivatives for traditional Jastrow parameters when using descent.
+	OptVariablesForPsi.setRecompute();
     descentEngineObj.clear_samples(NumOptimizables);
     }
   RealType et_tot = 0.0;
@@ -467,6 +469,22 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine* Engine
     // #pragma omp atomic
     //       eft_tot+=ef;
   }
+
+  //     app_log() << "  VMC Efavg = " << eft_tot/static_cast<Return_t>(wPerNode[NumThreads]) << endl;
+  //Need to sum over the processors
+  std::vector<Return_rt> etemp(3);
+  etemp[0] = et_tot;
+  etemp[1] = static_cast<Return_rt>(wPerNode[NumThreads]);
+  etemp[2] = e2_tot;
+  myComm->allreduce(etemp);
+  Etarget    = static_cast<Return_rt>(etemp[0] / etemp[1]);
+  NumSamples = static_cast<int>(etemp[1]);
+  app_log() << "  VMC Eavg = " << Etarget << std::endl;
+  app_log() << "  VMC Evar = " << etemp[2] / etemp[1] - Etarget * Etarget << std::endl;
+  app_log() << "  Total weights = " << etemp[1] << std::endl;
+
+
+
 #ifdef HAVE_LMY_ENGINE
   // engine finish taking samples
 if(MinMethod == "adaptive")
@@ -481,21 +499,10 @@ if(MinMethod == "adaptive")
 }
 else if (MinMethod == "descent")
 {
+descentEngineObj.setEtemp(etemp);
 descentEngineObj.sample_finish();
 }
 #endif
-  //     app_log() << "  VMC Efavg = " << eft_tot/static_cast<Return_t>(wPerNode[NumThreads]) << endl;
-  //Need to sum over the processors
-  std::vector<Return_rt> etemp(3);
-  etemp[0] = et_tot;
-  etemp[1] = static_cast<Return_rt>(wPerNode[NumThreads]);
-  etemp[2] = e2_tot;
-  myComm->allreduce(etemp);
-  Etarget    = static_cast<Return_rt>(etemp[0] / etemp[1]);
-  NumSamples = static_cast<int>(etemp[1]);
-  app_log() << "  VMC Eavg = " << Etarget << std::endl;
-  app_log() << "  VMC Evar = " << etemp[2] / etemp[1] - Etarget * Etarget << std::endl;
-  app_log() << "  Total weights = " << etemp[1] << std::endl;
 
   app_log().flush();
 

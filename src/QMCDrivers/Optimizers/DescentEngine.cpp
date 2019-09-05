@@ -44,6 +44,25 @@ void DescentEngine::clear_samples(const size_t numOptimizables)
   eSquare_avg = 0;
 }
 
+void DescentEngine::setEtemp(std::vector<double> etemp)
+{
+    e_sum = etemp[0];
+    w_sum = etemp[1];
+    eSquare_sum = etemp[2];
+    e_avg = e_sum/w_sum;
+    eSquare_avg = eSquare_sum/w_sum;
+
+    int my_rank = myComm->rank();
+    if(my_rank == 0)
+    {
+    std::cout << "e_sum: " << e_sum << std::endl;
+    std::cout << "w_sum: " << w_sum << std::endl;
+    std::cout << "e_avg: " << e_avg << std::endl;
+    std::cout << "eSquare_sum: " << eSquare_sum << std::endl;
+    std::cout << "eSquare_avg: " << eSquare_avg << std::endl;
+    }
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// \brief  Function that Take Sample Data from the Host Code
 ///
@@ -63,19 +82,7 @@ void DescentEngine::take_sample(std::vector<double>& der_rat_samp,
   const size_t numOptimizables = der_rat_samp.size() - 1;
 
   
-  // get the number of threads being used
-  // int NumThreads = omp_get_num_threads();
 
-
-  // get the thread number
-  // int myThread = omp_get_thread_num();
-
-
-  e_sum += le_der_samp[0] * vgs_samp * weight_samp;
-
-  eSquare_sum += (le_der_samp[0] * vgs_samp * weight_samp) * (le_der_samp[0] * vgs_samp * weight_samp);
-
-  w_sum += vgs_samp * weight_samp;
 
   for (int i = 0; i < numOptimizables; i++)
   {
@@ -103,32 +110,9 @@ void DescentEngine::sample_finish()
 {
   // get rank number and number of ranks
   int my_rank = myComm->rank();
-  //  int num_rank = formic::mpi::size();
 
-  // get total number of threads
-  // int NumThreads = omp_get_max_threads();
-
-
-  std::vector<double> etemp(3);
-
-  etemp[0] = e_sum;
-  etemp[1] = w_sum;
-  etemp[2] = eSquare_sum;
-
-  myComm->allreduce(etemp);
   myComm->allreduce(avg_le_der_samp);
   myComm->allreduce(avg_der_rat_samp);
-
-  e_avg       = etemp[0] / etemp[1];
-  eSquare_avg = etemp[2] / etemp[1];
-
-  w_sum = etemp[1];
-
-  if (my_rank == 0)
-  {
-    std::cout << "This is e_avg: " << e_avg << std::endl;
-    std::cout << "This is total weights: " << w_sum << std::endl;
-  }
 
   for (int i = 0; i < LDerivs.size(); i++)
   {

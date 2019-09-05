@@ -37,6 +37,8 @@ public:
   //bool processXML(xmlNodePtr cur);
   void clear_samples(const size_t numOptimizables);
 
+  void setEtemp(std::vector<double> etemp);
+
   ////////////////////////////////////////////////////////////////////////////////////////////////////////
   /// \brief  Function that Take Sample Data from the Host Code
   ///
