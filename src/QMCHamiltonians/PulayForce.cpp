@@ -56,7 +56,7 @@ void PulayForce::addObservables(PropertySetType& plist, BufferType& collectables
 
 void PulayForce::registerObservables(std::vector<observable_helper*>& h5list, hid_t gid) const
 {
-  QMCHamiltonianBase::registerObservables(h5list, gid);
+  OperatorBase::registerObservables(h5list, gid);
   std::vector<int> ndim(2);
   ndim[0]                 = Nnuc;
   ndim[1]                 = OHMMS_DIM;
@@ -72,7 +72,7 @@ void PulayForce::registerObservables(std::vector<observable_helper*>& h5list, hi
 
 void PulayForce::setObservables(QMCTraits::PropertySetType& plist)
 {
-  QMCHamiltonianBase::setObservables(plist);
+  OperatorBase::setObservables(plist);
   int index = FirstForceIndex;
   for (int iat = 0; iat < Nnuc; iat++)
   {
@@ -87,7 +87,7 @@ void PulayForce::setObservables(QMCTraits::PropertySetType& plist)
 
 void PulayForce::setParticlePropertyList(QMCTraits::PropertySetType& plist, int offset)
 {
-  QMCHamiltonianBase::setParticlePropertyList(plist, offset);
+  OperatorBase::setParticlePropertyList(plist, offset);
   int index = FirstForceIndex + offset;
   for (int iat = 0; iat < Nnuc; iat++)
   {

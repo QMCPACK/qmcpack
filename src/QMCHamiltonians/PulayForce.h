@@ -16,12 +16,12 @@
 #ifndef QMCPLUSPLUS_PULAY_FOCE_H
 #define QMCPLUSPLUS_PULAY_FOCE_H
 
-#include "QMCHamiltonians/QMCHamiltonianBase.h"
+#include "QMCHamiltonians/OperatorBase.h"
 #include "QMCHamiltonians/ForceBase.h"
 
 namespace qmcplusplus
 {
-struct PulayForce : public QMCHamiltonianBase, public ForceBase
+struct PulayForce : public OperatorBase, public ForceBase
 {
 private:
   const int d_ei_ID;
@@ -45,7 +45,7 @@ public:
 
   bool get(std::ostream& os) const { return true; }
 
-  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi)
   {
     PulayForce* myClone      = new PulayForce(Ions, qp, psi);
     myClone->FirstForceIndex = FirstForceIndex;

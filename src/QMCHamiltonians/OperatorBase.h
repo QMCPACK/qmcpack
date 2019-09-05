@@ -16,8 +16,8 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-/**@file QMCHamiltonianBase.h
- *@brief Declaration of QMCHamiltonianBase
+/**@file OperatorBase.h
+ *@brief Declaration of OperatorBase
  */
 #ifndef QMCPLUSPLUS_HAMILTONIANBASE_H
 #define QMCPLUSPLUS_HAMILTONIANBASE_H
@@ -37,7 +37,7 @@ namespace qmcplusplus
 class MCWalkerConfiguration;
 
 /**@defgroup hamiltonian Hamiltonian group
- * @brief QMCHamiltonian and its component, QMCHamiltonianBase
+ * @brief QMCHamiltonian and its component, OperatorBase
  *
  */
 class DistanceTableData;
@@ -59,7 +59,7 @@ struct NonLocalData : public QMCTraits
  * Return_t is defined as RealTye.
  * The types should be checked when using complex wave functions.
  */
-struct QMCHamiltonianBase : public QMCTraits
+struct OperatorBase : public QMCTraits
 {
   /** type of return value of evaluate
    */
@@ -141,10 +141,10 @@ struct QMCHamiltonianBase : public QMCTraits
 #endif
 
   ///constructor
-  QMCHamiltonianBase();
+  OperatorBase();
 
   ///virtual destructor
-  virtual ~QMCHamiltonianBase() {}
+  virtual ~OperatorBase() {}
 
   ///set energy domain
   void set_energy_domain(energy_domains edomain);
@@ -264,13 +264,13 @@ struct QMCHamiltonianBase : public QMCTraits
     return evaluate(P);
   }
 
-  /** evaluate contribution to local energy  and derivatives w.r.t ionic coordinates from QMCHamiltonianBase.  
+  /** evaluate contribution to local energy  and derivatives w.r.t ionic coordinates from OperatorBase.  
   * @param P target particle set (electrons)
   * @param ions source particle set (ions)
   * @param psi Trial wave function
-  * @param hf_terms  Adds QMCHamiltonianBase's contribution to Re [(dH)Psi]/Psi
-  * @param pulay_terms Adds QMCHamiltonianBase's contribution to Re [(H-E_L)dPsi]/Psi 
-  * @return Contribution of QMCHamiltonianBase to Local Energy.
+  * @param hf_terms  Adds OperatorBase's contribution to Re [(dH)Psi]/Psi
+  * @param pulay_terms Adds OperatorBase's contribution to Re [(H-E_L)dPsi]/Psi 
+  * @return Contribution of OperatorBase to Local Energy.
   */
   virtual Return_t evaluateWithIonDerivs(ParticleSet& P,
                                          ParticleSet& ions,
@@ -292,14 +292,14 @@ struct QMCHamiltonianBase : public QMCTraits
   virtual Return_t getEnsembleAverage() { return 0.0; }
 
   /** read the input parameter
-   * @param cur xml node for a QMCHamiltonianBase object
+   * @param cur xml node for a OperatorBase object
    */
   virtual bool put(xmlNodePtr cur) = 0;
 
   /** write about the class */
   virtual bool get(std::ostream& os) const = 0;
 
-  virtual QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi) = 0;
+  virtual OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi) = 0;
 
   virtual void setRandomGenerator(RandomGenerator_t* rng)
   {
@@ -307,7 +307,7 @@ struct QMCHamiltonianBase : public QMCTraits
   }
 
   virtual void add2Hamiltonian(ParticleSet& qp, TrialWaveFunction& psi, QMCHamiltonian& targetH);
-  //virtual QMCHamiltonianBase* makeDependants(ParticleSet& qp )
+  //virtual OperatorBase* makeDependants(ParticleSet& qp )
   //{
   //  return 0;
   //}
@@ -336,7 +336,7 @@ struct QMCHamiltonianBase : public QMCTraits
   ///collect scalar trace data
   inline void collect_scalar_traces()
   {
-    //app_log()<<"QMCHamiltonianBase::collect_scalar_traces"<< std::endl;
+    //app_log()<<"OperatorBase::collect_scalar_traces"<< std::endl;
     collect_scalar_quantities();
   }
 

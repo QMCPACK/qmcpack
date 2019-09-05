@@ -76,7 +76,7 @@ public:
                            bool usePBC,
                            bool doForces = false);
 
-  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 
   void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy);
   void addEnergy(MCWalkerConfiguration& W,

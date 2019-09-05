@@ -77,10 +77,10 @@ bool QMCHamiltonian::get(std::ostream& os) const
  * @param aname name of h
  * @param physical if true, a physical operator
  */
-void QMCHamiltonian::addOperator(QMCHamiltonianBase* h, const std::string& aname, bool physical)
+void QMCHamiltonian::addOperator(OperatorBase* h, const std::string& aname, bool physical)
 {
   //change UpdateMode[PHYSICAL] of h so that cloning can be done correctly
-  h->UpdateMode[QMCHamiltonianBase::PHYSICAL] = physical;
+  h->UpdateMode[OperatorBase::PHYSICAL] = physical;
   if (physical)
   {
     for (int i = 0; i < H.size(); ++i)
@@ -162,7 +162,7 @@ void QMCHamiltonian::update_source(ParticleSet& s)
  *
  * QMCHamiltonian can add any number of properties to a ParticleSet.
  * Hindex contains the index map to the ParticleSet::PropertyList.
- * This enables assigning the properties evaluated by each QMCHamiltonianBase
+ * This enables assigning the properties evaluated by each OperatorBase
  * object to the correct property column.
  */
 //void
@@ -254,7 +254,7 @@ void QMCHamiltonian::initialize_traces(TraceManager& tm, ParticleSet& P)
     Vloc.push_back(H[i]->myName);
   for (int i = 1; i < H.size(); ++i)
   {
-    QMCHamiltonianBase& h = *H[i];
+    OperatorBase& h = *H[i];
     if (h.is_quantum())
       Vq.push_back(h.myName);
     else if (h.is_classical())
@@ -365,13 +365,13 @@ void QMCHamiltonian::initialize_traces(TraceManager& tm, ParticleSet& P)
     for (int i = 0; i < H.size(); ++i)
     {
       if (trace_log)
-        app_log() << "    QMCHamiltonianBase::checkout_trace_quantities  " << H[i]->myName << std::endl;
+        app_log() << "    OperatorBase::checkout_trace_quantities  " << H[i]->myName << std::endl;
       H[i]->checkout_trace_quantities(tm);
     }
     for (int i = 0; i < auxH.size(); ++i)
     {
       if (trace_log)
-        app_log() << "    QMCHamiltonianBase::checkout_trace_quantities  " << auxH[i]->myName << std::endl;
+        app_log() << "    OperatorBase::checkout_trace_quantities  " << auxH[i]->myName << std::endl;
       auxH[i]->checkout_trace_quantities(tm);
     }
     //setup combined traces that depend on H information
@@ -401,7 +401,7 @@ void QMCHamiltonian::initialize_traces(TraceManager& tm, ParticleSet& P)
     for (int i = 0; i < auxH.size(); ++i)
     {
       if (trace_log)
-        app_log() << "    QMCHamiltonianBase::get_required_traces  " << auxH[i]->myName << std::endl;
+        app_log() << "    OperatorBase::get_required_traces  " << auxH[i]->myName << std::endl;
       auxH[i]->get_required_traces(tm);
     }
     //report
@@ -556,8 +556,8 @@ void QMCHamiltonian::auxHevaluate(ParticleSet& P, Walker_t& ThisWalker, bool do_
 #endif
   for (int i = 0; i < auxH.size(); ++i)
   {
-    bool is_property    = !(auxH[i]->getMode(QMCHamiltonianBase::COLLECTABLE));
-    bool is_collectable = (auxH[i]->getMode(QMCHamiltonianBase::COLLECTABLE));
+    bool is_property    = !(auxH[i]->getMode(OperatorBase::COLLECTABLE));
+    bool is_collectable = (auxH[i]->getMode(OperatorBase::COLLECTABLE));
     if ((is_property && do_properties) || (is_collectable && do_collectables))
     {
       auxH[i]->setHistories(ThisWalker);
@@ -643,7 +643,7 @@ QMCHamiltonian::Return_t QMCHamiltonian::getEnsembleAverage()
  *
  * If not found, return 0
  */
-QMCHamiltonianBase* QMCHamiltonian::getHamiltonian(const std::string& aname)
+OperatorBase* QMCHamiltonian::getHamiltonian(const std::string& aname)
 {
   for (int i = 0; i < H.size(); ++i)
     if (H[i]->myName == aname)

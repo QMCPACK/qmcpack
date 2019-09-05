@@ -20,7 +20,7 @@
 #include "Particle/WalkerSetRef.h"
 #include "Particle/DistanceTableData.h"
 #include "QMCHamiltonians/ForceBase.h"
-#include "QMCHamiltonians/QMCHamiltonianBase.h"
+#include "QMCHamiltonians/OperatorBase.h"
 #include <numeric>
 
 namespace qmcplusplus
@@ -31,7 +31,7 @@ namespace qmcplusplus
  * Hamiltonian operator for the Coulomb interaction for both AA and AB type for open systems.
  */
 template<typename T>
-struct CoulombPotential : public QMCHamiltonianBase, public ForceBase
+struct CoulombPotential : public OperatorBase, public ForceBase
 {
   ///true, if CoulombAA for quantum particleset
   bool is_active;
@@ -438,19 +438,19 @@ struct CoulombPotential : public QMCHamiltonianBase, public ForceBase
 
   void setObservables(PropertySetType& plist)
   {
-    QMCHamiltonianBase::setObservables(plist);
+    OperatorBase::setObservables(plist);
     if (ComputeForces)
       setObservablesF(plist);
   }
 
   void setParticlePropertyList(PropertySetType& plist, int offset)
   {
-    QMCHamiltonianBase::setParticlePropertyList(plist, offset);
+    OperatorBase::setParticlePropertyList(plist, offset);
     if (ComputeForces)
       setParticleSetF(plist, offset);
   }
 
-  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi)
   {
     if (is_AA)
     {

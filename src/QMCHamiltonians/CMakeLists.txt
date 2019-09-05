@@ -19,7 +19,7 @@
     
 SET(HAMSRCS
   ACForce.cpp
-  QMCHamiltonianBase.cpp
+  OperatorBase.cpp
   QMCHamiltonian.cpp
   CoulombPBCAA.cpp
   CoulombPBCAB.cpp
