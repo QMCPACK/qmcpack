@@ -147,6 +147,7 @@ IF (NOT QMC_CUDA)
   ENDIF(BUILD_LMYENGINE_INTERFACE)
 
   LIST(APPEND H4_DESCENT_SCALARS "totenergy" "-2.129752 0.0019")
+  LIST(APPEND H4_REVISED_DESCENT_SCALARS "totenergy" "-2.136347 0.0029")
 
   QMC_RUN_AND_CHECK(short-H4-descent
                     "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
@@ -155,6 +156,14 @@ IF (NOT QMC_CUDA)
                     16 1
                     ${MP_SUCCESS}
                     50 H4_DESCENT_SCALARS
+                    TRUE)
+QMC_RUN_AND_CHECK(short-H4-revised-descent
+                    "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
+                    descent
+                    revised-descent.xml
+                    16 1
+                    ${MP_SUCCESS}
+		    50 H4_REVISED_DESCENT_SCALARS
                     TRUE)
 
   QMC_RUN_AND_CHECK(short-H4-opt-OneShiftOnly
