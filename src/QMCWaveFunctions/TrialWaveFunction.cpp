@@ -37,8 +37,6 @@ typedef enum
 
 TrialWaveFunction::TrialWaveFunction(Communicate* c)
     : MPIObjectBase(c),
-      NumPtcls(0),
-      TotalDim(0),
       BufferCursor(0),
       BufferCursor_scalar(0),
       PhaseValue(0.0),
@@ -135,11 +133,14 @@ void TrialWaveFunction::flex_evaluateLog(const std::vector<TrialWaveFunction*>& 
   if (WF_list.size() > 1)
   {
     constexpr RealType czero(0);
-    const auto G_list(extract_G_list(P_list));
-    const auto L_list(extract_L_list(P_list));
+    const auto G_list(extract_G_list(WF_list));
+    const auto L_list(extract_L_list(WF_list));
 
     for (int iw = 0; iw < WF_list.size(); iw++)
     {
+      G_list[iw]->resize(P_list[0]->getTotalNum());
+      L_list[iw]->resize(P_list[0]->getTotalNum());
+
       *G_list[iw]             = czero;
       *L_list[iw]             = czero;
       WF_list[iw]->LogValue   = czero;
@@ -157,9 +158,23 @@ void TrialWaveFunction::flex_evaluateLog(const std::vector<TrialWaveFunction*>& 
         WF_list[iw]->PhaseValue += WFC_list[iw]->PhaseValue;
       }
     }
+
+    for (int iw = 0; iw < WF_list.size(); iw++)
+    {
+      // Ye: temporal workaround to have P.G/L always defined.
+      // remove when KineticEnergy use WF.G/L instead of P.G/L
+      P_list[0]->G = WF_list[iw]->G;
+      P_list[0]->L = WF_list[iw]->L;
+    }
   }
   else if (WF_list.size() == 1)
+  {
     WF_list[0]->evaluateLog(*P_list[0]);
+    // Ye: temporal workaround to have WF.G/L always defined.
+    // remove when evaluateLog also use G/L instead of P.G/L
+    WF_list[0]->G = P_list[0]->G;
+    WF_list[0]->L = P_list[0]->L;
+  }
 }
 
 void TrialWaveFunction::recompute(ParticleSet& P)
@@ -701,14 +716,12 @@ void TrialWaveFunction::flex_updateBuffer(const std::vector<TrialWaveFunction*>&
                                           const std::vector<WFBufferType*>& buf_list,
                                           bool fromscratch) const
 {
-  constexpr RealType czero(0);
-  const auto G_list(extract_G_list(P_list));
-  const auto L_list(extract_L_list(P_list));
-
   for (int iw = 0; iw < WF_list.size(); iw++)
   {
-    *G_list[iw]             = czero;
-    *L_list[iw]             = czero;
+    constexpr RealType czero(0);
+
+    P_list[iw]->G           = czero; // Ye: remove when updateBuffer of all the WFC uses WF.G/L
+    P_list[iw]->L           = czero; // Ye: remove when updateBuffer of all the WFC uses WF.G/L
     WF_list[iw]->LogValue   = czero;
     WF_list[iw]->PhaseValue = czero;
     buf_list[iw]->rewind(WF_list[iw]->BufferCursor, WF_list[iw]->BufferCursor_scalar);
@@ -913,5 +926,24 @@ std::vector<WaveFunctionComponent*> TrialWaveFunction::extract_WFC_list(const st
     WFC_list.push_back(WF->Z[id]);
   return WFC_list;
 }
+
+std::vector<ParticleSet::ParticleGradient_t*>
+TrialWaveFunction::extract_G_list(const std::vector<TrialWaveFunction*>& WF_list) const
+{
+  std::vector<ParticleSet::ParticleGradient_t*> G_list;
+  for (auto WF : WF_list)
+    G_list.push_back(&(WF->G));
+  return G_list;
+}
+
+std::vector<ParticleSet::ParticleLaplacian_t*>
+TrialWaveFunction::extract_L_list(const std::vector<TrialWaveFunction*>& WF_list) const
+{
+  std::vector<ParticleSet::ParticleLaplacian_t*> L_list;
+  for (auto WF : WF_list)
+    L_list.push_back(&(WF->L));
+  return L_list;
+}
+
 
 } // namespace qmcplusplus

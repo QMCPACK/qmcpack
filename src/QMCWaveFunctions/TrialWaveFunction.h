@@ -304,12 +304,6 @@ public:
   void flex_evaluateGL(const std::vector<TrialWaveFunction*>& WF_list, const std::vector<ParticleSet*>& P_list) const;
 
 private:
-  ///the size of ParticleSet
-  int NumPtcls;
-
-  ///the size of gradient component (QMCTraits::DIM)*the number of particles
-  int TotalDim;
-
   ///starting index of the buffer
   size_t BufferCursor;
 
@@ -336,6 +330,12 @@ private:
 
   // helper function for extrating a list of WaveFunctionComponent from a list of TrialWaveFunction
   std::vector<WaveFunctionComponent*> extract_WFC_list(const std::vector<TrialWaveFunction*>& WF_list, int id) const;
+
+  // helper function for extrating a list of gradients from a list of TrialWaveFunction
+  std::vector<ParticleSet::ParticleGradient_t*> extract_G_list(const std::vector<TrialWaveFunction*>& P_list) const;
+
+  // helper function for extrating a list of laplacian from a list of TrialWaveFunction
+  std::vector<ParticleSet::ParticleLaplacian_t*> extract_L_list(const std::vector<TrialWaveFunction*>& P_list) const;
 
   ///////////////////////////////////////////
   // Vectorized version for GPU evaluation //

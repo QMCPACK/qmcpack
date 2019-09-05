@@ -83,8 +83,16 @@ bool JastrowBuilder::put(xmlNodePtr cur)
 bool JastrowBuilder::addCounting(xmlNodePtr cur)
 {
   ReportEngine PRE(ClassName, "addCounting(xmlNodePtr)");
-  CountingJastrowBuilder cjb(targetPtcl, targetPsi);
-  return cjb.put(cur);
+  CountingJastrowBuilder* cjb;
+  std::map<std::string, ParticleSet*>::iterator pa_it(ptclPool.find(sourceOpt));
+  if (pa_it != ptclPool.end() && sourceOpt != targetPtcl.getName()) // source is not target
+  {
+    ParticleSet* sourcePtcl = (*pa_it).second;
+    cjb = new CountingJastrowBuilder(targetPtcl, targetPsi, *sourcePtcl);
+  }
+  else
+    cjb = new CountingJastrowBuilder(targetPtcl, targetPsi);
+  return cjb->put(cur);
 }
 
 bool JastrowBuilder::addkSpace(xmlNodePtr cur)

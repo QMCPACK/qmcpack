@@ -9,22 +9,28 @@
 // File created by: Brett Van Der Goetz, bvdg@berkeley.edu, University of California at Berkeley
 //////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef QMCPLUSPLUS_COUNTING_FUNCTOR_H
-#define QMCPLUSPLUS_COUNTING_FUNCTOR_H
+#ifndef QMCPLUSPLUS_GAUSSIAN_FUNCTOR_H
+#define QMCPLUSPLUS_GAUSSIAN_FUNCTOR_H
 
 #include "OhmmsData/AttributeSet.h"
+#include "Optimize/VariableSet.h"
 #include <array>
 
 namespace qmcplusplus
 {
-// doesn't inherit from OptimizableFunctorBase since this is a function of the entire position vector
-template<class T>
-class GaussianFunctor : public QMCTraits
-{
-  typedef optimize::VariableSet::real_type real_type;
-  typedef optimize::VariableSet opt_variables_type;
 
-  // enumerations for axes and T parameters
+// doesn't inherit from OptimizableFunctorBase since this is a function of the entire position vector
+class CountingGaussian 
+{
+  using RealType = QMCTraits::RealType;
+  using PosType = QMCTraits::PosType;
+  using GradType = QMCTraits::PosType; // complex not implemented
+  using TensorType = QMCTraits::TensorType;
+
+  using real_type = optimize::VariableSet::real_type;
+  using opt_variables_type = optimize::VariableSet;
+
+  // enumerations for axis parameters
   enum A_vars
   {
     XX,
@@ -43,9 +49,6 @@ class GaussianFunctor : public QMCTraits
     DIM
   };
 
-  TensorType A;
-  PosType B;
-  RealType C;
 
   // opt variables: vector of bools: one for each parameter
   std::vector<bool> opt_A;
@@ -54,71 +57,73 @@ class GaussianFunctor : public QMCTraits
 
   // id string
   std::string id;
+  
+  // reference gaussian
+  CountingGaussian* gref = NULL;
 
   // most recent evaluations
   RealType Fval;
-  PosType Fgrad;
+  GradType Fgrad;
   RealType Flap;
 
 public:
+  TensorType A;
+  PosType B;
+  RealType C;
+
   // optimizable variables
   opt_variables_type myVars;
 
-  GaussianFunctor(std::string fid) { id = fid; }
+  CountingGaussian(std::string fid) { id = fid; }
 
-  void initialize()
+  // constructor for voronoi region
+  CountingGaussian(std::string fid, RealType alpha, PosType r, bool opt)
+  { 
+    id = fid;
+    // set opt flags
+    opt_A.resize(6);
+    opt_B.resize(3);
+    for(auto it = opt_A.begin(); it != opt_A.end(); ++it)
+      *it = opt;
+    for(auto it = opt_B.begin(); it != opt_B.end(); ++it)
+      *it = opt;
+    opt_C = opt;
+    // set A
+    A(0,0) = A(1,1) = A(2,2) = -1.0*alpha;
+    A(0,1) = A(1,0) = A(0,2) = A(2,0) = A(1,2) = A(2,1) = 0;
+    // set B
+    d_to_b(r, A, B);
+    // set C
+    k_to_c(0, A, r, C);
+  }
+  
+  // initialize with another gaussian reference
+  void initialize(CountingGaussian* ref)
   {
     // register and update optimizable variables to current values
-    if (opt_A[XX])
-    {
-      myVars.insert(id + "_A_xx", A(X, X), opt_A[XX], optimize::OTHER_P);
-      myVars[id + "_A_xx"] = A(X, X);
-    }
-    if (opt_A[XY])
-    {
-      myVars.insert(id + "_A_xy", A(X, Y), opt_A[XY], optimize::OTHER_P);
-      myVars[id + "_A_xy"] = A(X, Y);
-    }
-    if (opt_A[XZ])
-    {
-      myVars.insert(id + "_A_xz", A(X, Z), opt_A[XZ], optimize::OTHER_P);
-      myVars[id + "_A_xz"] = A(X, Z);
-    }
-    if (opt_A[YY])
-    {
-      myVars.insert(id + "_A_yy", A(Y, Y), opt_A[YY], optimize::OTHER_P);
-      myVars[id + "_A_yy"] = A(Y, Y);
-    }
-    if (opt_A[YZ])
-    {
-      myVars.insert(id + "_A_yz", A(Y, Z), opt_A[YZ], optimize::OTHER_P);
-      myVars[id + "_A_yz"] = A(Y, Z);
-    }
-    if (opt_A[ZZ])
-    {
-      myVars.insert(id + "_A_zz", A(Z, Z), opt_A[ZZ], optimize::OTHER_P);
-      myVars[id + "_A_zz"] = A(Z, Z);
-    }
-    if (opt_B[X])
-    {
-      myVars.insert(id + "_B_x", B[X], opt_B[X], optimize::OTHER_P);
-      myVars[id + "_B_x"] = B[X];
-    }
-    if (opt_B[Y])
-    {
-      myVars.insert(id + "_B_y", B[Y], opt_B[Y], optimize::OTHER_P);
-      myVars[id + "_B_y"] = B[Y];
-    }
-    if (opt_B[Z])
-    {
-      myVars.insert(id + "_B_z", B[Z], opt_B[Z], optimize::OTHER_P);
-      myVars[id + "_B_z"] = B[Z];
-    }
-    if (opt_C)
-    {
-      myVars.insert(id + "_C", C, opt_C, optimize::OTHER_P);
-      myVars[id + "_C"] = C;
-    }
+    myVars.insert(id + "_A_xx", A(X, X), opt_A[XX], optimize::OTHER_P);
+    myVars[id + "_A_xx"] = A(X, X);
+    myVars.insert(id + "_A_xy", A(X, Y), opt_A[XY], optimize::OTHER_P);
+    myVars[id + "_A_xy"] = A(X, Y);
+    myVars.insert(id + "_A_xz", A(X, Z), opt_A[XZ], optimize::OTHER_P);
+    myVars[id + "_A_xz"] = A(X, Z);
+    myVars.insert(id + "_A_yy", A(Y, Y), opt_A[YY], optimize::OTHER_P);
+    myVars[id + "_A_yy"] = A(Y, Y);
+    myVars.insert(id + "_A_yz", A(Y, Z), opt_A[YZ], optimize::OTHER_P);
+    myVars[id + "_A_yz"] = A(Y, Z);
+    myVars.insert(id + "_A_zz", A(Z, Z), opt_A[ZZ], optimize::OTHER_P);
+    myVars[id + "_A_zz"] = A(Z, Z);
+    myVars.insert(id + "_B_x", B[X], opt_B[X], optimize::OTHER_P);
+    myVars[id + "_B_x"] = B[X];
+    myVars.insert(id + "_B_y", B[Y], opt_B[Y], optimize::OTHER_P);
+    myVars[id + "_B_y"] = B[Y];
+    myVars.insert(id + "_B_z", B[Z], opt_B[Z], optimize::OTHER_P);
+    myVars[id + "_B_z"] = B[Z];
+    myVars.insert(id + "_C", C, opt_C, optimize::OTHER_P);
+    myVars[id + "_C"] = C;
+    // transform according to reference
+    if(gref != NULL)
+      this->divide_eq(gref);
   }
 
   void restore(int iat) {}
@@ -131,65 +136,95 @@ public:
 
   void resetParameters(const opt_variables_type& active)
   {
-    // set myVars from active
-    for (int i = 0; i < myVars.size(); ++i)
-    {
-      int ia = myVars.where(i);
-      if (ia != -1)
-        myVars[i] = active[ia];
-    }
-    // set local variables from myVars
+    int ia;
+    std::string vid;
     if (opt_A[XX])
-      A(0, 0) = std::real(myVars[id + "_A_xx"]);
+    {
+      vid = id + "_A_xx";
+      ia = active.getLoc(vid);
+      myVars[vid] = active[ia];
+      A(0, 0) = std::real(myVars[vid]);
+    }
     if (opt_A[YY])
-      A(1, 1) = std::real(myVars[id + "_A_yy"]);
+    {
+      vid = id + "_A_yy";
+      ia = active.getLoc(vid);
+      myVars[vid] = active[ia];
+      A(1, 1) = std::real(myVars[vid]);
+    }
     if (opt_A[ZZ])
-      A(2, 2) = std::real(myVars[id + "_A_zz"]);
+    {
+      vid = id + "_A_zz";
+      ia = active.getLoc(vid);
+      myVars[vid] = active[ia];
+      A(2, 2) = std::real(myVars[vid]);
+    }
     if (opt_A[XY])
-      A(1, 0) = A(0, 1) = std::real(myVars[id + "_A_xy"]);
+    {
+      vid = id + "_A_xy";
+      ia = active.getLoc(vid);
+      myVars[vid] = active[ia];
+      A(1, 0) = A(0, 1) = std::real(myVars[vid]);
+    }
     if (opt_A[XZ])
-      A(2, 0) = A(0, 2) = std::real(myVars[id + "_A_xz"]);
+    {
+      vid = id + "_A_xz";
+      ia = active.getLoc(vid);
+      myVars[vid] = active[ia];
+      A(2, 0) = A(0, 2) = std::real(myVars[vid]);
+    }
     if (opt_A[YZ])
-      A(2, 1) = A(1, 2) = std::real(myVars[id + "_A_yz"]);
+    {
+      vid = id + "_A_yz";
+      ia = active.getLoc(vid);
+      myVars[vid] = active[ia];
+      A(2, 1) = A(1, 2) = std::real(myVars[vid]);
+    }
     if (opt_B[X])
-      B[X] = std::real(myVars[id + "_B_x"]);
+    {
+      vid = id + "_B_x";
+      ia = active.getLoc(vid);
+      myVars[vid] = active[ia];
+      B[X] = std::real(myVars[vid]);
+    }
     if (opt_B[Y])
-      B[Y] = std::real(myVars[id + "_B_y"]);
+    {
+      vid = id + "_B_y";
+      ia = active.getLoc(vid);
+      myVars[vid] = active[ia];
+      B[Y] = std::real(myVars[vid]);
+    }
     if (opt_B[Z])
-      B[Z] = std::real(myVars[id + "_B_z"]);
+    {
+      vid = id + "_B_z";
+      ia = active.getLoc(vid);
+      myVars[vid] = active[ia];
+      B[Z] = std::real(myVars[vid]);
+    }
     if (opt_C)
-      C = std::real(myVars[id + "_C"]);
+    {
+      vid = id + "_C";
+      ia = active.getLoc(vid);
+      myVars[vid] = active[ia];
+      C = std::real(myVars[vid]);
+    }
+    // transform according to reference
+    if(gref != NULL)
+      this->divide_eq(gref);
   }
 
   void reportStatus(std::ostream& os)
   {
-    os << "GaussianCountingFunctor::reportStatus begin" << std::endl;
-    os << "id: " << id << std::endl;
-    os << "  A: ";
-    for (int I = 0; I < 3; ++I)
-    {
-      os << std::endl;
-      for (int J = 0, IJ = I * 3; J < 3; ++J, ++IJ)
-        os << "  " << A[IJ];
-    }
-    os << std::endl << "  opt_A: ";
-    std::copy(opt_A.begin(), opt_A.end(), std::ostream_iterator<bool>(os, ", "));
-    os << std::endl << "  B: ";
-    for (auto it = B.begin(); it != B.end(); ++it)
-      os << "  " << *it;
-    os << std::endl << "  opt_B: ";
-    std::copy(opt_B.begin(), opt_B.end(), std::ostream_iterator<bool>(os, ", "));
-    os << std::endl << "  C: " << C << std::endl;
-    os << "  opt_C: " << opt_C << std::endl;
-    os << "  registered optimizable variables:" << std::endl;
-    myVars.print(os);
-    os << "GaussianCountingFunctor::reportStatus end" << std::endl;
+    os << "    type: CountingGaussian" << std::endl;
+    os << "    id: " << id << std::endl;
+    app_log() << std::endl;
+    myVars.print(os, 6, true);
+    app_log() << std::endl;
   }
 
-  GaussianFunctor<T>* makeClone(std::string fid) const
+  CountingGaussian* makeClone(std::string fid) const
   {
-    app_log() << "  GaussianCountingFunctor::makeClone" << std::endl;
-    GaussianFunctor<T>* rptr = new GaussianFunctor<T>(fid);
+    CountingGaussian* rptr = new CountingGaussian(fid);
     for (int i = 0; i < A.size(); ++i)
       rptr->A[i] = A[i];
     for (int i = 0; i < B.size(); ++i)
@@ -224,7 +259,7 @@ public:
 
   bool put(xmlNodePtr cur)
   {
-    app_log() << "GaussianCountingFunctor::put" << std::endl;
+    //app_log() << "CountingGaussian::put" << std::endl;
     bool put_A = false, put_B = false, put_C = false, put_D = false, put_K = false;
     // alternate inputs
     std::array<RealType, 6> A_euler;
@@ -294,9 +329,9 @@ public:
     }
     // convert B <=> D
     if (put_B && put_D)
-      APP_ABORT("GaussianCountingFunctor::put: overdetermined: both B and D are specified");
+      APP_ABORT("CountingGaussian::put: overdetermined: both B and D are specified");
     if (put_C && put_K)
-      APP_ABORT("GaussianCountingFunctor::put: overdetermined: both C and K are specified");
+      APP_ABORT("CountingGaussian::put: overdetermined: both C and K are specified");
     // convert D,B using A
     if (put_D)
       d_to_b(D, A, B);
@@ -306,39 +341,25 @@ public:
     if (!(put_A && (put_B || put_D) && (put_C || put_K)))
     {
       std::ostringstream err;
-      err << "GaussianCountingFunctor::put:  required variable unspecified: ";
+      err << "CountingGaussian::put:  required variable unspecified: ";
       err << "put_A: " << put_A << ", put_B: " << put_B << ", put_C: " << put_C << ", put_D: " << put_D
           << ", put_K: " << put_K << std::endl;
       //      APP_ABORT(err.str());
       app_log() << err.str();
     }
-    initialize();
     return true;
   }
 
-
-  void multiply_eq(const GaussianFunctor* rhs)
+  void divide_eq(const CountingGaussian* rhs)
   {
-    A = A + rhs->A;
-    B = B + rhs->B;
-    C = C + rhs->C;
-    initialize();
-  }
-
-
-  void divide_eq(const GaussianFunctor* rhs)
-  {
-    // check that conversion succeeded
-    // calculate product
     A = A - rhs->A;
     B = B - rhs->B;
     C = C - rhs->C;
-    initialize();
   }
 
 
   // f = std::exp(x^T A x - 2B^T x + C)
-  void evaluate(PosType r, RealType& fval, PosType& fgrad, RealType& flap)
+  void evaluate(PosType r, RealType& fval, GradType& fgrad, RealType& flap)
   {
     PosType Ar = dot(A, r);
     RealType x = dot(Ar - 2 * B, r) + C;
@@ -347,7 +368,7 @@ public:
     flap       = 4 * dot(Ar - B, Ar - B) * fval + 2 * trace(A) * fval;
   }
 
-  void evaluateLog(PosType r, RealType& lval, PosType& lgrad, RealType& llap)
+  void evaluateLog(PosType r, RealType& lval, GradType& lgrad, RealType& llap)
   {
     PosType Ar = dot(A, r);
     lval       = dot(Ar - 2 * B, r) + C;
@@ -355,47 +376,47 @@ public:
     llap       = 2 * trace(A);
   }
 
-  void evaluateDerivative_A(A_vars q, PosType r, RealType& dfval, PosType& dfgrad, RealType& dflap)
+  void evaluateDerivative_A(A_vars q, PosType r, RealType& dfval, GradType& dfgrad, RealType& dflap)
   {
     // Fval, Fgrad, Flap are up-to-date function values
     // x correponds to the exponent value: x = ln f; dx are param derivs
     RealType dxval = 0, dxlap = 0;
-    PosType dxgrad = 0;
+    GradType dxgrad = 0;
     if (q == XX)
     {
       dxval  = r[X] * r[X];
-      dxgrad = PosType(2 * r[X], 0, 0);
+      dxgrad = GradType(2 * r[X], 0, 0);
       dxlap  = 2;
     }
     if (q == YY)
     {
       dxval  = r[Y] * r[Y];
-      dxgrad = PosType(0, 2 * r[Y], 0);
+      dxgrad = GradType(0, 2 * r[Y], 0);
       dxlap  = 2;
     }
     if (q == ZZ)
     {
       dxval  = r[Z] * r[Z];
-      dxgrad = PosType(0, 0, 2 * r[Z]);
+      dxgrad = GradType(0, 0, 2 * r[Z]);
       dxlap  = 2;
     }
     // off-diagonal terms: factor of two is since A is symmetric
     if (q == XY)
     {
       dxval  = 2 * r[X] * r[Y];
-      dxgrad = 2 * PosType(r[Y], r[X], 0);
+      dxgrad = 2 * GradType(r[Y], r[X], 0);
       dxlap  = 0;
     }
     if (q == XZ)
     {
       dxval  = 2 * r[X] * r[Z];
-      dxgrad = 2 * PosType(r[Z], 0, r[X]);
+      dxgrad = 2 * GradType(r[Z], 0, r[X]);
       dxlap  = 0;
     }
     if (q == YZ)
     {
       dxval  = 2 * r[Y] * r[Z];
-      dxgrad = 2 * PosType(0, r[Z], r[Y]);
+      dxgrad = 2 * GradType(0, r[Z], r[Y]);
       dxlap  = 0;
     }
     dfval  = Fval * dxval;
@@ -403,26 +424,26 @@ public:
     dflap  = Flap * dxval + 2 * dot(Fgrad, dxgrad) + dxlap * Fval;
   }
 
-  void evaluateDerivative_B(B_vars q, PosType r, RealType& dfval, PosType& dfgrad, RealType& dflap)
+  void evaluateDerivative_B(B_vars q, PosType r, RealType& dfval, GradType& dfgrad, RealType& dflap)
   {
     RealType dxval = 0, dxlap = 0;
-    PosType dxgrad = 0;
+    GradType dxgrad = 0;
     if (q == X)
     {
       dxval  = -2 * r[X];
-      dxgrad = -2 * PosType(1, 0, 0);
+      dxgrad = -2 * GradType(1, 0, 0);
       dxlap  = 0;
     }
     if (q == Y)
     {
       dxval  = -2 * r[Y];
-      dxgrad = -2 * PosType(0, 1, 0);
+      dxgrad = -2 * GradType(0, 1, 0);
       dxlap  = 0;
     }
     if (q == Z)
     {
       dxval  = -2 * r[Z];
-      dxgrad = -2 * PosType(0, 0, 1);
+      dxgrad = -2 * GradType(0, 0, 1);
       dxlap  = 0;
     }
     dfval  = Fval * dxval;
@@ -432,7 +453,7 @@ public:
 
   void evaluateDerivatives(PosType r,
                            std::vector<RealType>& dfval,
-                           std::vector<PosType>& dfgrad,
+                           std::vector<GradType>& dfgrad,
                            std::vector<RealType>& dflap)
   {
     evaluate(r, Fval, Fgrad, Flap);
@@ -494,70 +515,70 @@ public:
   // evaluate parameter derivatives of log of the wavefunction
   void evaluateLogDerivatives(PosType r,
                               std::vector<RealType>& dlval,
-                              std::vector<PosType>& dlgrad,
+                              std::vector<GradType>& dlgrad,
                               std::vector<RealType>& dllap)
   {
     int p = 0;
     if (opt_A[XX])
     {
       dlval[p]  = r[X] * r[X];
-      dlgrad[p] = 2 * PosType(r[X], 0, 0);
+      dlgrad[p] = 2 * GradType(r[X], 0, 0);
       dllap[p]  = 2;
       ++p;
     }
     if (opt_A[XY])
     {
       dlval[p]  = 2 * r[X] * r[Y];
-      dlgrad[p] = 2 * PosType(r[Y], r[X], 0);
+      dlgrad[p] = 2 * GradType(r[Y], r[X], 0);
       dllap[p]  = 0;
       ++p;
     }
     if (opt_A[XZ])
     {
       dlval[p]  = 2 * r[X] * r[Z];
-      dlgrad[p] = 2 * PosType(r[Z], 0, r[X]);
+      dlgrad[p] = 2 * GradType(r[Z], 0, r[X]);
       dllap[p]  = 0;
       ++p;
     }
     if (opt_A[YY])
     {
       dlval[p]  = r[Y] * r[Y];
-      dlgrad[p] = 2 * PosType(0, r[Y], 0);
+      dlgrad[p] = 2 * GradType(0, r[Y], 0);
       dllap[p]  = 2;
       ++p;
     }
     if (opt_A[YZ])
     {
       dlval[p]  = 2 * r[Y] * r[Z];
-      dlgrad[p] = 2 * PosType(0, r[Z], r[Y]);
+      dlgrad[p] = 2 * GradType(0, r[Z], r[Y]);
       dllap[p]  = 0;
       ++p;
     }
     if (opt_A[ZZ])
     {
       dlval[p]  = r[Z] * r[Z];
-      dlgrad[p] = 2 * PosType(0, 0, r[Z]);
+      dlgrad[p] = 2 * GradType(0, 0, r[Z]);
       dllap[p]  = 2;
       ++p;
     }
     if (opt_B[X])
     {
       dlval[p]  = -2 * r[X];
-      dlgrad[p] = -2 * PosType(1, 0, 0);
+      dlgrad[p] = -2 * GradType(1, 0, 0);
       dllap[p]  = 0;
       ++p;
     }
     if (opt_B[Y])
     {
       dlval[p]  = -2 * r[Y];
-      dlgrad[p] = -2 * PosType(0, 1, 0);
+      dlgrad[p] = -2 * GradType(0, 1, 0);
       dllap[p]  = 0;
       ++p;
     }
     if (opt_B[Z])
     {
       dlval[p]  = -2 * r[Z];
-      dlgrad[p] = -2 * PosType(0, 0, 1);
+      dlgrad[p] = -2 * GradType(0, 0, 1);
       dllap[p]  = 0;
       ++p;
     }
@@ -632,11 +653,11 @@ public:
     std::vector<PosType> Ar_vec;
     std::vector<RealType> x_vec;
     std::vector<RealType> fval_vec;
-    std::vector<PosType> fgrad_vec;
+    std::vector<GradType> fgrad_vec;
     std::vector<RealType> flap_vec;
     RealType x, fval, flap;
     PosType Ar, r;
-    PosType fgrad;
+    GradType fgrad;
     for (auto it = P.R.begin(); it != P.R.end(); ++it)
     {
       r     = *it;
@@ -653,7 +674,7 @@ public:
       fgrad_vec.push_back(fgrad);
       flap_vec.push_back(flap);
     }
-    os << "CountingFunctor::evaluate_print: id: " << id << std::endl;
+    os << "CountingGaussian::evaluate_print: id: " << id << std::endl;
     os << "r: ";
     std::copy(r_vec.begin(), r_vec.end(), std::ostream_iterator<PosType>(os, ", "));
     os << std::endl << "Ar: ";
@@ -663,7 +684,7 @@ public:
     os << std::endl << "fval: ";
     std::copy(fval_vec.begin(), fval_vec.end(), std::ostream_iterator<RealType>(os, ", "));
     os << std::endl << "fgrad: ";
-    std::copy(fgrad_vec.begin(), fgrad_vec.end(), std::ostream_iterator<PosType>(os, ", "));
+    std::copy(fgrad_vec.begin(), fgrad_vec.end(), std::ostream_iterator<GradType>(os, ", "));
     os << std::endl << "flap: ";
     std::copy(flap_vec.begin(), flap_vec.end(), std::ostream_iterator<RealType>(os, ", "));
     os << std::endl;
