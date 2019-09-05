@@ -42,7 +42,6 @@ public:
 
   /**  constructor
    * @param targetPtcl target Particleset
-   * @param rn release node
    */
   SlaterDet(ParticleSet& targetPtcl);
 

@@ -37,10 +37,10 @@ class MinimalWaveFunctionPool
 
 public:
   MinimalWaveFunctionPool(Communicate* c) : comm_(c) {}
-  WaveFunctionPool operator()(ParticleSetPool& particle_pool)
+  WaveFunctionPool operator()(ParticleSetPool* particle_pool)
   {
     WaveFunctionPool wp(comm_);
-    wp.setParticleSetPool(&particle_pool);
+    wp.setParticleSetPool(particle_pool);
 
     Libxml2Document* doc = new Libxml2Document;
     bool okay            = doc->parseFromString(wf_input);
@@ -50,7 +50,7 @@ public:
 
     wp.put(root);
 
-    TrialWaveFunction psi = TrialWaveFunction(comm_);
+    TrialWaveFunction psi(comm_);
     wp.setPrimary(&psi);
 
     delete doc;

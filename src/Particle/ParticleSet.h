@@ -636,5 +636,6 @@ protected:
   void computeNewPosDistTablesAndSK(Index_t iat, const SingleParticlePos_t& newpos);
 
 };
+
 } // namespace qmcplusplus
 #endif
