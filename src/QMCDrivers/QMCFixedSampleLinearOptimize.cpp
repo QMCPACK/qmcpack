@@ -1668,7 +1668,7 @@ double QMCFixedSampleLinearOptimize::setStepSize(int i) {
       {
         type_eta = F_eta;
       }
-      else if (name.find("CIcoeff_") != std::string::npos)
+      else if (name.find("CIcoeff_") != std::string::npos || name.find("CSFcoeff_") != std::string::npos)
       {
         type_eta = CI_eta;
       }
@@ -1681,7 +1681,12 @@ double QMCFixedSampleLinearOptimize::setStepSize(int i) {
           //Gaussian parameters are rarely optimized in practice but the descent code allows for it.
         type_eta = Gauss_eta;
       }
-
+      else
+      {
+	  //If there is some other parameter type that isn't in one of the categories with a default/input, use a conservative default step size.
+	type_eta = .001;
+      
+      }
 
       if(ramp_eta && descentNum < ramp_num)
       {
