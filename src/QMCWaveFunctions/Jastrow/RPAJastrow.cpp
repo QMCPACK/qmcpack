@@ -314,6 +314,8 @@ void RPAJastrow::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
     Psi[i]->copyFromBuffer(P, buf);
 }
 
+/** this is a great deal of logic for make clone I'm wondering what is going on
+ */
 WaveFunctionComponent* RPAJastrow::makeClone(ParticleSet& tpq) const
 {
   HandlerType* tempHandler;
@@ -359,4 +361,5 @@ WaveFunctionComponent* RPAJastrow::makeClone(ParticleSet& tpq) const
     myClone->makeShortRange();
   return myClone;
 }
+
 }; // namespace qmcplusplus

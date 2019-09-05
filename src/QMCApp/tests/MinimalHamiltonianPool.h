@@ -30,7 +30,7 @@ class MinimalHamiltonianPool
 
 public:
   MinimalHamiltonianPool(Communicate* c) : comm_(c) {}
-  HamiltonianPool operator()(ParticleSetPool& particle_pool, WaveFunctionPool& wavefunction_pool)
+  HamiltonianPool operator()(ParticleSetPool* particle_pool, WaveFunctionPool* wavefunction_pool)
   {
     HamiltonianPool hpool(comm_);
     Libxml2Document doc;
@@ -38,9 +38,9 @@ public:
 
     xmlNodePtr root = doc.getRoot();
 
-    hpool.setParticleSetPool(&particle_pool);
+    hpool.setParticleSetPool(particle_pool);
 
-    hpool.setWaveFunctionPool(&wavefunction_pool);
+    hpool.setWaveFunctionPool(wavefunction_pool);
     hpool.put(root);
 
     return hpool;

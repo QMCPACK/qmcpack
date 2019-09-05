@@ -23,16 +23,22 @@ class QMCDriverNewTestWrapper : public QMCDriverNew
 {
 public:
   QMCDriverNewTestWrapper(QMCDriverInput&& input,
-                          MCPopulation& population,
+                          MCPopulation&& population,
                           TrialWaveFunction& psi,
                           QMCHamiltonian& h,
                           WaveFunctionPool& ppool,
                           Communicate* comm)
-      : QMCDriverNew(std::move(input), population, psi, h, ppool, comm)
+      : QMCDriverNew(std::move(input), std::move(population), psi, h, ppool, comm)
   {}
 
   QMCRunType getRunType() { return QMCRunType::DUMMY; }
-  IndexType calc_default_local_walkers() { return 0; };
+  // Notice that this is a crap method in that we have to fake all the side effects of the
+  // calculation in the child class.
+  IndexType calc_default_local_walkers()
+  {
+    walkers_per_crowd_ = 4;
+    return 32;
+  }
   bool run() { return false; }
 };
 
