@@ -87,14 +87,10 @@ private:
   //helper method for transfering information on parameter number and types to the descent engine
   void setParamNumAndTypes();
 
-  // helper method for updating parameter values with descent
-  void updateParameters(std::vector< std::vector<Return_t> >& Lderivs, double& prevLambda, std::vector<double>& prevTaus,std::vector<Return_t>& derivsSquared, int stepNum);
 
   //helper method for writing vectors for BLM steps in hybrid method
   void storeVectors(std::vector< Return_t >& paramsForDiff);
 
-  //helper method for seting step sizes for different parameter types in descent optimization
-  double setStepSize(int i);
 
   void solveShiftsWithoutLMYEngine(const std::vector<double>& shifts_i,
                                    const std::vector<double>& shiffts_s,
@@ -192,34 +188,10 @@ private:
   //whether to use hybrid method
   bool doHybrid;
 
-  
-  //Vector for storing parameter values from previous optimization step
-  std::vector<double> paramsCopy;
-
-
-  //Vector for storing parameter values for calculating differences to be given to hybrid method 
-  std::vector<Return_t> paramsForDiff;
-
-  //Vector for storing Lagrangian derivatives from previous optimization steps
-  std::vector< std::vector<Return_t> > derivRecords; 
-
-  //Vector for storing denominator values from previous optimization step
-  std::vector<double>  denomRecords;
-
-  //Vector for storing numerator values from previous optimization step
-  std::vector<double> numerRecords;
 
   //Vector for storing the input vectors to the BLM steps of hybrid method
   std::vector< std::vector<Return_t> > hybridBLM_Input;
 
-  //Parameter for accelerated descent recursion relation
-  double lambda;
-
-  //Vector for storing step sizes from previous optimization step.
-  std::vector<double> taus;
-
-  //Vector for storing running average of squares of the derivatives
-  std::vector<Return_t> derivsSquared;
 
   //Integer for keeping track of the iteration number
   int stepNum;
@@ -230,24 +202,7 @@ private:
   //Whether hybrid accelerated descent and linear method will be used
   std::string hybrid;
 
-  //What variety of gradient descent will be used
-  std::string flavor;
 
-
-  //Step sizes for different types of parameters
-  double TJF_2Body_eta;
-  double TJF_1Body_eta;
-  double F_eta;
-  double Gauss_eta;
-  double CI_eta;
-  double Orb_eta;
-
-  //Whether to gradually ramp up step sizes in descent
-  bool ramp_eta;
-  std::string ramp_etaStr;
-  
-  //Number of steps over which to ramp up step size
-  int ramp_num;
 
   //Counters for controlling changes between descent
   //and BLM in hybrid method

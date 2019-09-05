@@ -42,8 +42,10 @@ private:
   //Vector for storing Lagrangian derivatives from previous optimization steps
   std::vector< std::vector<double> > derivRecords;
 
+  //Vector for storing step size denominator values from previous optimization step
   std::vector<double>  denomRecords;
 
+  //Vector for storing step size numerator values from previous optimization step
   std::vector<double> numerRecords;
 
 
