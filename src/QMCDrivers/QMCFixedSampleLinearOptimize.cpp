@@ -1362,13 +1362,20 @@ bool QMCFixedSampleLinearOptimize::descent_run() {
   numParams = optTarget->NumParams();
    N = numParams + 1;
 
-  for (int i = 0; i < numParams; i++)
+   if(descentNum == 0)
+   { 
+   setParamNumAndTypes();
+   }
+
+  /*
+   for (int i = 0; i < numParams; i++)
   {
     if (descentNum == 0) 
     {
       paramsCopy.push_back(optTarget->Params(i));
     }
   }
+*/
 
   while (Total_iterations < Max_iterations) {
     Total_iterations += 1;
@@ -1381,9 +1388,14 @@ bool QMCFixedSampleLinearOptimize::descent_run() {
 
     auto lDerivs = descentEngineObj->getAveragedDerivatives();
 
+
+    descentEngineObj->storeDerivRecord();
+    //descentEngineObj->updateParameters(derivRecords, lambda, taus, derivsSquared, stepNum,descentNum);
+    
     //Store the derivatives and then compute parameter updates
-    derivRecords.push_back(lDerivs);
-    updateParameters(derivRecords, lambda, taus, derivsSquared, stepNum);
+    //derivRecords.push_back(lDerivs);
+
+    //updateParameters(derivRecords, lambda, taus, derivsSquared, stepNum);
     
     stepNum = stepNum + 1;
     descentNum = descentNum +1;
@@ -1393,7 +1405,24 @@ bool QMCFixedSampleLinearOptimize::descent_run() {
   return (optTarget->getReportCounter() > 0);
 }
 
+void QMCFixedSampleLinearOptimize::setParamNumAndTypes()
+{
+numParams = optTarget->NumParams();
 
+std::vector<std::string> paramNames(numParams);
+std::vector<int> paramTypes(numParams);
+std::vector<double> startParams(numParams);
+
+for (int i =0; i< numParams; i++)
+{
+paramNames[i] = optTarget->getName(i);
+paramTypes[i] = optTarget->getType(i);
+startParams[i] = optTarget->Params(i);
+}
+
+descentEngineObj->setupUpdate(numParams,paramNames,paramTypes,startParams);
+
+}
 //Function for updating parameters during descent optimization
 void QMCFixedSampleLinearOptimize::updateParameters( std::vector<std::vector<Return_t>> &derivRecords, double &prevLambda, std::vector<double> &prevTaus, std::vector<Return_t> &derivsSquared, int stepNum) 
 {

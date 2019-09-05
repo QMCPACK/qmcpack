@@ -84,6 +84,9 @@ private:
   bool hybrid_run();
 #endif
 
+  //helper method for transfering information on parameter number and types to the descent engine
+  void setParamNumAndTypes();
+
   // helper method for updating parameter values with descent
   void updateParameters(std::vector< std::vector<Return_t> >& Lderivs, double& prevLambda, std::vector<double>& prevTaus,std::vector<Return_t>& derivsSquared, int stepNum);
 
@@ -194,7 +197,7 @@ private:
   std::vector<double> paramsCopy;
 
 
-  //Vector for storing parameter values for calcualting differences to be written to a file 
+  //Vector for storing parameter values for calculating differences to be given to hybrid method 
   std::vector<Return_t> paramsForDiff;
 
   //Vector for storing Lagrangian derivatives from previous optimization steps

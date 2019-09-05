@@ -33,6 +33,8 @@
 
 #include "Optimizers/DescentEngine.h"
 
+//class DescentEngine;
+
 namespace qmcplusplus
 {
 class MCWalkerConfiguration;

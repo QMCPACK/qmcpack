@@ -8,6 +8,8 @@
 #include <vector>
 #include "Message/Communicate.h"
 
+
+
 namespace qmcplusplus
 {
 class DescentEngine
@@ -27,6 +29,61 @@ private:
   std::vector<double> LDerivs;
 
   bool engineTargetExcited;
+
+  int numParams;
+
+
+  //Vector for storing parameter values from previous optimization step
+  std::vector<double> paramsCopy;
+  
+//Vector for storing parameter values for current optimization step
+  std::vector<double> currentParams;
+  
+  //Vector for storing Lagrangian derivatives from previous optimization steps
+  std::vector< std::vector<double> > derivRecords;
+
+  std::vector<double>  denomRecords;
+
+  std::vector<double> numerRecords;
+
+
+  //Parameter for accelerated descent recursion relation
+  double lambda;
+  //Vector for storing step sizes from previous optimization step.
+  std::vector<double> taus;
+  //Vector for storing running average of squares of the derivatives
+  std::vector<double> derivsSquared;
+  //Integer for keeping track of the iteration number
+  int stepNum;
+  //Integer for keeping track of only number of descent steps taken
+  int descentNum;
+
+  //What variety of gradient descent will be used
+  std::string flavor;
+
+   //Step sizes for different types of parameters
+  double TJF_2Body_eta;
+  double TJF_1Body_eta;
+  double F_eta;
+  double Gauss_eta;
+  double CI_eta;
+  double Orb_eta;
+
+  //Whether to gradually ramp up step sizes in descent
+  bool ramp_eta;
+  std::string ramp_etaStr;
+
+  //Number of steps over which to ramp up step size
+  int ramp_num;
+
+
+  std::vector<std::string> engineParamNames;
+  
+  std::vector<int> engineParamTypes;
+
+
+//Vector for storing parameter values for calculating differences to be given to hybrid method
+  std::vector<double> paramsForDiff;
 
 public:
   //Constructor for engine
@@ -73,6 +130,16 @@ public:
   void sample_finish();
 
   const std::vector<double>& getAveragedDerivatives() { return LDerivs; }
+
+  // helper method for updating parameter values with descent
+void updateParameters(std::vector< std::vector<double> >& Lderivs, double& prevLambda, std::vector<double>& prevTaus,std::vector<double>& derivsSquared, int stepNum, int descentNum);
+
+//helper method for seting step sizes for different parameter types in descent optimization
+double setStepSize(int i);
+
+void storeDerivRecord() {derivRecords.push_back(LDerivs);}
+
+void setupUpdate(int paramNum,std::vector<std::string> paramNames,std::vector<int> paramTypes,std::vector<double> initialParams);
 };
 
 } // namespace qmcplusplus
