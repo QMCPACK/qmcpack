@@ -479,17 +479,28 @@ bool QMCFixedSampleLinearOptimize::put(xmlNodePtr q)
   block_lm = (block_lmStr == "yes");
 
   
-  // get whether to use the adaptive three-shift version of the update
-  doAdaptiveThreeShift = (MinMethod == "adaptive");
-  doOneShiftOnly = (MinMethod == "OneShiftOnly");
-
-  // get whether to use descent
-  doDescent = (MinMethod == "descent");
   //get whether to use hybrid method
-  doHybrid = (MinMethod == "hybrid");
-
-  if (doDescent && !descentEngineObj)
-    descentEngineObj = std::make_unique<DescentEngine>(targetExcited, myComm);
+  if (MinMethod == "hybrid")
+  {
+    doHybrid = true;
+    // FIXME
+    descentEngineObj = std::make_unique<DescentEngine>(myComm, q);
+    // FIXME adaptive engine
+  }
+  else
+  {
+    // get whether to use the adaptive three-shift version of the update
+    doAdaptiveThreeShift = (MinMethod == "adaptive");
+    // get whether to use OneShiftOnly
+    doOneShiftOnly = (MinMethod == "OneShiftOnly");
+    // get whether to use descent
+    if (MinMethod == "descent")
+    {
+      doDescent = true;
+      if (!descentEngineObj)
+        descentEngineObj = std::make_unique<DescentEngine>(myComm, q);
+    }
+  }
   
   //get whether to gradually ramp up step sizes,move to engine's xml parser
   //ramp_eta = (ramp_etaStr == "yes");

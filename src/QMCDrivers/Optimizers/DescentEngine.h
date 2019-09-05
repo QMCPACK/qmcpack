@@ -6,8 +6,8 @@
 #define QMCPLUSPLUS_DESCENT_ENGINE_HEADER
 
 #include <vector>
+#include <libxml/tree.h>
 #include "Message/Communicate.h"
-
 
 
 namespace qmcplusplus
@@ -35,15 +35,15 @@ private:
 
   //Vector for storing parameter values from previous optimization step
   std::vector<double> paramsCopy;
-  
-//Vector for storing parameter values for current optimization step
+
+  //Vector for storing parameter values for current optimization step
   std::vector<double> currentParams;
-  
+
   //Vector for storing Lagrangian derivatives from previous optimization steps
-  std::vector< std::vector<double> > derivRecords;
+  std::vector<std::vector<double>> derivRecords;
 
   //Vector for storing step size denominator values from previous optimization step
-  std::vector<double>  denomRecords;
+  std::vector<double> denomRecords;
 
   //Vector for storing step size numerator values from previous optimization step
   std::vector<double> numerRecords;
@@ -63,7 +63,7 @@ private:
   //What variety of gradient descent will be used
   std::string flavor;
 
-   //Step sizes for different types of parameters
+  //Step sizes for different types of parameters
   double TJF_2Body_eta;
   double TJF_1Body_eta;
   double F_eta;
@@ -80,20 +80,20 @@ private:
 
 
   std::vector<std::string> engineParamNames;
-  
+
   std::vector<int> engineParamTypes;
 
 
-//Vector for storing parameter values for calculating differences to be given to hybrid method
+  //Vector for storing parameter values for calculating differences to be given to hybrid method
   std::vector<double> paramsForDiff;
+
+  ///process xml node
+  bool processXML(const xmlNodePtr cur);
 
 public:
   //Constructor for engine
-  DescentEngine(const bool targetExcited, Communicate* comm);
+  DescentEngine(Communicate* comm, const xmlNodePtr cur);
 
-
-  ///process xml node
-  //bool processXML(xmlNodePtr cur);
   void clear_samples(const size_t numOptimizables);
 
   void setEtemp(std::vector<double> etemp);
@@ -136,15 +136,17 @@ public:
   // helper method for updating parameter values with descent
   void updateParameters(int stepNum, int descentNum);
 
-//helper method for seting step sizes for different parameter types in descent optimization
-double setStepSize(int i);
+  //helper method for seting step sizes for different parameter types in descent optimization
+  double setStepSize(int i);
 
-void storeDerivRecord() {derivRecords.push_back(LDerivs);}
+  void storeDerivRecord() { derivRecords.push_back(LDerivs); }
 
-void setupUpdate(int& paramNum,std::vector<std::string>& paramNames,std::vector<int>& paramTypes,std::vector<double>& initialParams);
+  void setupUpdate(int& paramNum,
+                   std::vector<std::string>& paramNames,
+                   std::vector<int>& paramTypes,
+                   std::vector<double>& initialParams);
 
-std::vector<double> retrieveNewParams() {return currentParams;}
-
+  std::vector<double> retrieveNewParams() { return currentParams; }
 };
 
 } // namespace qmcplusplus
