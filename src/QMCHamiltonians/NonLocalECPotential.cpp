@@ -251,7 +251,7 @@ void NonLocalECPotential::evaluate(ParticleSet& P, bool Tmove)
             NeighborIons.push_back(iat);
             IonNeighborElecs.getNeighborList(iat).push_back(jel);
             Ve_samp(jel) = 0.5*pairpot;
-            Vi_samp(jel) = 0.5*pairpot;
+            Vi_samp(iat) = 0.5*pairpot;
           }
       }
     }
@@ -273,7 +273,7 @@ void NonLocalECPotential::evaluate(ParticleSet& P, bool Tmove)
           NeighborElecs.push_back(iel);
           ElecNeighborIons.getNeighborList(iel).push_back(iat);
           Ve_samp(iel) = 0.5*pairpot;
-          Vi_samp(iel) = 0.5*pairpot;
+          Vi_samp(iat) = 0.5*pairpot;
         }
       }
 #endif
