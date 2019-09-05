@@ -62,6 +62,7 @@ void DescentEngine::take_sample(std::vector<double>& der_rat_samp,
 {
   const size_t numOptimizables = der_rat_samp.size() - 1;
 
+  
   // get the number of threads being used
   // int NumThreads = omp_get_num_threads();
 

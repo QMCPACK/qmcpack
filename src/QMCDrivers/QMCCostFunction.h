@@ -39,7 +39,7 @@ public:
   void getConfigurations(const std::string& aroot);
   void checkConfigurations();
 #ifdef HAVE_LMY_ENGINE
-  void engine_checkConfigurations(cqmc::engine::LMYEngine* EngineObj);
+  void engine_checkConfigurations(cqmc::engine::LMYEngine* EngineObj,DescentEngine& descentEngineObj,std::string MinMethod);
 #endif
 
   void descent_checkConfigurations(DescentEngine& descentEngineObj);

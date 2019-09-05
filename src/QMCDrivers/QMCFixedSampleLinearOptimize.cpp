@@ -517,7 +517,7 @@ bool QMCFixedSampleLinearOptimize::put(xmlNodePtr q)
 
   if (doDescent && !descentEngineObj)
     descentEngineObj = std::make_unique<DescentEngine>(targetExcited, myComm);
-
+  
   //get whether to gradually ramp up step sizes
   ramp_eta = (ramp_etaStr == "yes");
 
@@ -957,7 +957,7 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
   EngineObj->reset();
 
   // generate samples and compute weights, local energies, and derivative vectors
-  engine_start(EngineObj);
+  engine_start(EngineObj,*descentEngineObj,MinMethod);
 
   // get dimension of the linear method matrices
   N = numParams + 1;
@@ -994,7 +994,7 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
     finish();
 
     // take sample
-    engine_start(EngineObj);
+    engine_start(EngineObj,*descentEngineObj,MinMethod);
   }
 
   // say what we are doing
@@ -1376,7 +1376,8 @@ bool QMCFixedSampleLinearOptimize::descent_run() {
               << std::endl;
 
     //Compute Lagragian derivatives needed for parameter updates
-    optTarget->descent_checkConfigurations(*descentEngineObj);
+    //optTarget->descent_checkConfigurations(*descentEngineObj);
+    engine_start(EngineObj,*descentEngineObj,MinMethod);
 
     auto lDerivs = descentEngineObj->getAveragedDerivatives();
 

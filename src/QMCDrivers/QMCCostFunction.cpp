@@ -349,9 +349,15 @@ void QMCCostFunction::checkConfigurations()
 }
 
 #ifdef HAVE_LMY_ENGINE
-/** evaluate everything before optimization */
-void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine* EngineObj)
+/** evaluate everything before optimization
+ *In future, both the LM and descent engines should be children of some parent engine base class.
+ * */
+void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine* EngineObj,DescentEngine& descentEngineObj,std::string MinMethod)
 {
+    if(MinMethod == "descent")
+    {
+    descentEngineObj.clear_samples(NumOptimizables);
+    }
   RealType et_tot = 0.0;
   RealType e2_tot = 0.0;
 #pragma omp parallel reduction(+ : et_tot, e2_tot)
@@ -434,10 +440,16 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine* Engine
           le_der_samp.at(i + 1) = rHDsaved.at(i) + etmp * rDsaved.at(i);
 
 #ifdef HAVE_LMY_ENGINE
+	if(MinMethod == "adaptive")
+	{
         // pass into engine
         EngineObj->take_sample(der_rat_samp, le_der_samp, le_der_samp, 1.0, saved[REWEIGHT]);
+	}
+	else if(MinMethod == "descent")
+	{
+	descentEngineObj.take_sample(der_rat_samp, le_der_samp, le_der_samp, 1.0, saved[REWEIGHT]);
+	}
 #endif
-
       }
       else
         etmp = hClones[ip]->evaluate(wRef);
@@ -457,14 +469,21 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine* Engine
   }
 #ifdef HAVE_LMY_ENGINE
   // engine finish taking samples
+if(MinMethod == "adaptive")
+{
   EngineObj->sample_finish();
-#endif
 
   if (EngineObj->block_first())
   {
     OptVariablesForPsi.setComputed();
     app_log() << "calling setComputed function" << std::endl;
   }
+}
+else if (MinMethod == "descent")
+{
+descentEngineObj.sample_finish();
+}
+#endif
   //     app_log() << "  VMC Efavg = " << eft_tot/static_cast<Return_t>(wPerNode[NumThreads]) << endl;
   //Need to sum over the processors
   std::vector<Return_rt> etemp(3);

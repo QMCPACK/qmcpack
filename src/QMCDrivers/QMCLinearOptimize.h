@@ -26,6 +26,7 @@
 #ifdef HAVE_LMY_ENGINE
 #include "formic/utils/matrix.h"
 #include "formic/utils/lmyengine/engine.h"
+#include "QMCDrivers/Optimizers/DescentEngine.h"
 #endif
 
 
@@ -169,7 +170,7 @@ public:
   ///common operation to start optimization, used by the derived classes
   void start();
 #ifdef HAVE_LMY_ENGINE
-  void engine_start(cqmc::engine::LMYEngine* EngineObj);
+  void engine_start(cqmc::engine::LMYEngine* EngineObj,DescentEngine& descentEngineObj,std::string MinMethod);
 #endif
   ///common operation to finish optimization, used by the derived classes
   void finish();

@@ -156,7 +156,7 @@ public:
   virtual void checkConfigurations() = 0;
 
 #ifdef HAVE_LMY_ENGINE
-  virtual void engine_checkConfigurations(cqmc::engine::LMYEngine* EngineObj) = 0;
+  virtual void engine_checkConfigurations(cqmc::engine::LMYEngine* EngineObj,DescentEngine& descentEngineObj,std::string MinMethod) = 0;
 
 #endif
   virtual void descent_checkConfigurations(DescentEngine& descentEngineObj) = 0;
