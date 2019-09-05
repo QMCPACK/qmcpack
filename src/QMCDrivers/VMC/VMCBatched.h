@@ -15,7 +15,8 @@
 
 #include "QMCDrivers/QMCDriverNew.h"
 #include "QMCDrivers/VMC/VMCDriverInput.h"
-#include "Particle/MCPopulation.h"
+#include "QMCDrivers/MCPopulation.h"
+#include "QMCDrivers/ContextForSteps.h"
 
 namespace qmcplusplus
 {
@@ -25,16 +26,48 @@ namespace qmcplusplus
 class VMCBatched : public QMCDriverNew
 {
 public:
+  using PosType = QMCTraits::PosType;
+  /** To avoid 10's of arguments to runVMCStep
+   *
+   *  There should be a division between const input to runVMCStep
+   *  And step to step state
+   */
+  struct StateForThread
+  {
+    QMCDriverInput& qmcdrv_input;
+    VMCDriverInput& vmcdrv_input;
+    MCPopulation&   population;
+    IndexType recalculate_properties_period;
+    IndexType step;
+    int block;
+    bool recomputing_blocks;
+    StateForThread(QMCDriverInput&  qmci,
+                   VMCDriverInput& vmci,
+                   MCPopulation&   pop) : qmcdrv_input(qmci), vmcdrv_input(vmci), population(pop) {}
+
+                   
+  };
+
+public:
   /// Constructor.
   VMCBatched(QMCDriverInput&& qmcdriver_input,
              VMCDriverInput&& input,
-             MCPopulation& pop,
+             MCPopulation&& pop,
              TrialWaveFunction& psi,
              QMCHamiltonian& h,
              WaveFunctionPool& ppool,
              Communicate* comm);
-
+ 
   bool run();
+
+  static void advanceWalkers(const StateForThread& sft, Crowd& crowd, ContextForSteps& move_context, bool recompute);
+  
+  // This is the task body executed at crowd scope
+  // it does not have access to object member variables by design
+  static void runVMCStep(int crowd_id,
+                         const StateForThread& sft,
+                         std::vector<std::unique_ptr<ContextForSteps>>& move_context,
+                         std::vector<std::unique_ptr<Crowd>>& crowds);
   void setup();
   //inline std::vector<RandomGenerator_t*>& getRng() { return Rng;}
   IndexType calc_default_local_walkers();

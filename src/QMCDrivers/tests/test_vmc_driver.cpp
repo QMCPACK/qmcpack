@@ -45,7 +45,7 @@ TEST_CASE("VMC", "[drivers][vmc]")
   Communicate* c;
   OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
-
+  c->setName("test");
   ParticleSet ions;
   MCWalkerConfiguration elec;
 
@@ -86,7 +86,7 @@ TEST_CASE("VMC", "[drivers][vmc]")
 
   CloneManager::clear_for_unit_tests();
 
-  TrialWaveFunction psi = TrialWaveFunction(c);
+  TrialWaveFunction psi(c);
   ConstantOrbital* orb  = new ConstantOrbital;
   psi.addComponent(orb, "Constant");
   psi.registerData(elec, elec.WalkerList[0]->DataSet);

@@ -19,7 +19,7 @@
 ;;  following QMCPACK coding conventions and should produce code following
 ;;  the same conventions.
 
-;;  There is more copy pasting than there should be feel free to refactor
+;;  There is more copy pasting than there should be feel, free to refactor
 
 ;;; Code:
 (defun qmcp-leading-indent ()
@@ -47,7 +47,7 @@ The getter functions are written on starting on the line after the REGION."
               (my-var "")
               (getter-line "")
               (first-line (line-beginning-position))
-              (variable-declaration-re "\\( *\\)\\([A-Za-z:]+\\)\\( +\\)\\([A-Za-z_0-9]+\\)_.*;"))
+              (variable-declaration-re "\\( *\\)\\([<>,A-Za-z:]+\\)\\( +\\)\\([A-Za-z_0-9]+\\)_.*;"))
           (setq getters "")
           (while (re-search-forward variable-declaration-re nil t)
             (message "match")
