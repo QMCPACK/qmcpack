@@ -132,14 +132,17 @@ public:
   const std::vector<double>& getAveragedDerivatives() { return LDerivs; }
 
   // helper method for updating parameter values with descent
-void updateParameters(std::vector< std::vector<double> >& Lderivs, double& prevLambda, std::vector<double>& prevTaus,std::vector<double>& derivsSquared, int stepNum, int descentNum);
+  void updateParameters(int stepNum, int descentNum);
 
 //helper method for seting step sizes for different parameter types in descent optimization
 double setStepSize(int i);
 
 void storeDerivRecord() {derivRecords.push_back(LDerivs);}
 
-void setupUpdate(int paramNum,std::vector<std::string> paramNames,std::vector<int> paramTypes,std::vector<double> initialParams);
+void setupUpdate(int& paramNum,std::vector<std::string>& paramNames,std::vector<int>& paramTypes,std::vector<double>& initialParams);
+
+std::vector<double> retrieveNewParams() {return currentParams;}
+
 };
 
 } // namespace qmcplusplus

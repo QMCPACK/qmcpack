@@ -8,13 +8,15 @@
 
 #include "QMCDrivers/Optimizers/DescentEngine.h"
 #include "Message/CommOperators.h"
-//#include "QMCDrivers/QMCCostFunction.h"
+
 #include <cmath>
 
 namespace qmcplusplus
 {
 DescentEngine::DescentEngine(const bool targetExcited, Communicate* comm)
-    : engineTargetExcited(targetExcited), myComm(comm)
+    : engineTargetExcited(targetExcited), myComm(comm),flavor("RMSprop"), TJF_2Body_eta(.01),
+    TJF_1Body_eta(.01),F_eta(.001),Gauss_eta(.001),CI_eta(.2),Orb_eta(.001),ramp_eta(false),
+    ramp_num(30)
 {}
 
 /** Parses the xml input file for parameter definitions for the wavefunction optimization.
@@ -138,8 +140,7 @@ void DescentEngine::sample_finish()
 
 
 //Function for updating parameters during descent optimization
-void DescentEngine::updateParameters( std::vector<std::vector<double>> &derivRecords, double &prevLambda, std::vector<double> &prevTaus,
-       	std::vector<double> &derivsSquared, int stepNum, int descentNum) 
+void DescentEngine::updateParameters(int stepNum, int descentNum)
 {
 
   int my_rank = myComm->rank();  
@@ -157,7 +158,7 @@ void DescentEngine::updateParameters( std::vector<std::vector<double>> &derivRec
   std::vector<double> curDerivSet = derivRecords.at(derivRecords.size() - 1);
   std::vector<double> prevDerivSet;
 
-  if (!prevTaus.empty())
+  if (!taus.empty())
   {
     // Get set of derivatives for previous (k-1th) optimization step
     prevDerivSet = derivRecords.at(derivRecords.size() - 2);
@@ -183,7 +184,7 @@ void DescentEngine::updateParameters( std::vector<std::vector<double>> &derivRec
 
     // To match up with Booth group paper notation, prevLambda is lambda_k-1,
     // curLambda is lambda_k, nextLambda is lambda_k+1
-    double curLambda = .5 + .5 * std::sqrt(1 + 4 * prevLambda*prevLambda);
+    double curLambda = .5 + .5 * std::sqrt(1 + 4 * lambda*lambda);
     double nextLambda = .5 + .5 * std::sqrt(1 + 4 * curLambda*curLambda);
     double gamma = (1 - curLambda) / nextLambda;
 
@@ -205,7 +206,6 @@ void DescentEngine::updateParameters( std::vector<std::vector<double>> &derivRec
         paramsForDiff.push_back(optTarget->Params(i));
       }
 */
-
 
       double curSquare = std::pow(curDerivSet.at(i), 2);
 
@@ -236,9 +236,9 @@ void DescentEngine::updateParameters( std::vector<std::vector<double>> &derivRec
 
     //Update parameter values
     //If case corresponds to being after the first descent step
-      if (prevTaus.size() >= numParams)
+      if (taus.size() >= numParams)
       {
-        double oldTau = prevTaus.at(i);
+        double oldTau = taus.at(i);
 
         currentParams.at(i) = (1 - gamma) * (currentParams.at(i) - tau * curDerivSet.at(i)) + gamma * (paramsCopy.at(i) - oldTau * prevDerivSet.at(i));
       }
@@ -249,25 +249,25 @@ void DescentEngine::updateParameters( std::vector<std::vector<double>> &derivRec
         currentParams.at(i) = currentParams.at(i) - tau * curDerivSet.at(i);
       }
 
-      if (prevTaus.size() < numParams)
+      if (taus.size() < numParams)
       {
         // For the first optimization step, need to add to the vectors
-        prevTaus.push_back(tau);
+        taus.push_back(tau);
         derivsSquared.push_back(curSquare);
 
       }
       else
       {
         // When not on the first step, can overwrite the previous stored values
-        prevTaus[i] = tau;
+        taus[i] = tau;
         derivsSquared[i] = curSquare;
       }
 
       paramsCopy[i] = currentParams[i];
     }
 
-    // Store latest lambda value for next optimization step
-    prevLambda = curLambda;
+    // Store current (kth) lambda value for next optimization step
+    lambda = curLambda;
 
   }
   // Random uses only the sign of the parameter derivatives and takes a step of random size within a range.
@@ -331,15 +331,15 @@ void DescentEngine::updateParameters( std::vector<std::vector<double>> &derivRec
 
         currentParams.at(i) = currentParams.at(i) - tau * corNumer;
 
-        if (prevTaus.size() < numParams) {
+        if (taus.size() < numParams) {
           // For the first optimization step, need to add to the vectors
-          prevTaus.push_back(tau);
+          taus.push_back(tau);
           derivsSquared.push_back(curSquare);
           denomRecords[i] = v;
           numerRecords[i] = numer;
         } else {
           // When not on the first step, can overwrite the previous stored values
-          prevTaus[i] = tau;
+          taus[i] = tau;
           derivsSquared[i] = curSquare;
           denomRecords[i] = v;
           numerRecords[i] = numer;
@@ -378,15 +378,15 @@ void DescentEngine::updateParameters( std::vector<std::vector<double>> &derivRec
 
         currentParams.at(i) = currentParams.at(i) - tau * numer;
 
-        if (prevTaus.size() < numParams) {
+        if (taus.size() < numParams) {
           // For the first optimization step, need to add to the vectors
-          prevTaus.push_back(tau);
+          taus.push_back(tau);
           derivsSquared.push_back(curSquare);
           denomRecords[i] = v;
           numerRecords[i] = numer;
         } else {
           // When not on the first step, can overwrite the previous stored values
-          prevTaus[i] = tau;
+          taus[i] = tau;
           derivsSquared[i] = curSquare;
           denomRecords[i] = v;
           numerRecords[i] = numer;
@@ -465,14 +465,22 @@ double DescentEngine::setStepSize(int i) {
   return type_eta;
 }
 
-void DescentEngine::setupUpdate(int paramNum, std::vector<std::string> paramNames,std::vector<int> paramTypes,std::vector<double> initialParams)
+void DescentEngine::setupUpdate(int& paramNum, std::vector<std::string>& paramNames,std::vector<int>& paramTypes,std::vector<double>& initialParams)
 {
 
 numParams = paramNum;
 
-engineParamNames = paramNames;
-engineParamTypes = paramTypes;
-paramsCopy = initialParams;
+
+for (int i = 0; i < numParams; i++)
+{
+engineParamNames.push_back(paramNames[i]);
+engineParamTypes.push_back(paramTypes[i]);
+paramsCopy.push_back(initialParams[i]);
+currentParams.push_back(initialParams[i]);
+}
+
+
+
 }
 
 

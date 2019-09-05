@@ -1362,40 +1362,36 @@ bool QMCFixedSampleLinearOptimize::descent_run() {
   numParams = optTarget->NumParams();
    N = numParams + 1;
 
-   if(descentNum == 0)
-   { 
-   setParamNumAndTypes();
-   }
-
-  /*
-   for (int i = 0; i < numParams; i++)
-  {
-    if (descentNum == 0) 
-    {
-      paramsCopy.push_back(optTarget->Params(i));
-    }
-  }
-*/
+   
 
   while (Total_iterations < Max_iterations) {
     Total_iterations += 1;
     app_log() << "Iteration: " << Total_iterations << "/" << Max_iterations
               << std::endl;
 
-    //Compute Lagragian derivatives needed for parameter updates
-    //optTarget->descent_checkConfigurations(*descentEngineObj);
+    //Compute Lagragian derivatives needed for parameter updates with engine_checkConfigurations, which is called inside engine_start
     engine_start(EngineObj,*descentEngineObj,MinMethod);
 
-    auto lDerivs = descentEngineObj->getAveragedDerivatives();
 
 
-    descentEngineObj->storeDerivRecord();
-    //descentEngineObj->updateParameters(derivRecords, lambda, taus, derivsSquared, stepNum,descentNum);
-    
+if(descentNum == 0)
+   {
+   setParamNumAndTypes();
+   }
+
     //Store the derivatives and then compute parameter updates
-    //derivRecords.push_back(lDerivs);
+    descentEngineObj->storeDerivRecord();
+  
+   descentEngineObj->updateParameters(stepNum,descentNum);
 
-    //updateParameters(derivRecords, lambda, taus, derivsSquared, stepNum);
+   std::vector<double> results = descentEngineObj->retrieveNewParams();
+
+  for(int i = 0; i < results.size() ; i++)
+  {
+    optTarget->Params(i) = results[i];
+  } 
+
+
     
     stepNum = stepNum + 1;
     descentNum = descentNum +1;

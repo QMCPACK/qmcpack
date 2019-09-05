@@ -259,8 +259,6 @@ private:
 
 
 
-
-
 };
 } // namespace qmcplusplus
 #endif
