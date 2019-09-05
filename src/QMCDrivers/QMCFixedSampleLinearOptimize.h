@@ -50,8 +50,11 @@ public:
 
   ///Run the Optimization algorithm.
   bool run();
-  ///process xml node
+  ///preprocess xml node
   bool put(xmlNodePtr cur);
+  ///process xml node for the actual optimization
+  bool processXML(xmlNodePtr cur, const std::string& vmcMove, bool reportH5);
+
   RealType Func(RealType dl);
 
 private:
