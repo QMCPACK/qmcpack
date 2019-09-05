@@ -139,7 +139,7 @@ StressPBCAA::spevaluate(ParticleSet& P)
   {
     //SR
     const DistanceTableData &d_aa(P.getDistTable(d_ee_ID_));
-    Return_t pairpot; //energy for single pair
+    RealType pairpot; //energy for single pair
     RealType z;
     for(int ipart=0; ipart<NumCenters; ipart++)
     {
