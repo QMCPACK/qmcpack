@@ -481,13 +481,13 @@ bool QMCFixedSampleLinearOptimize::put(xmlNodePtr q)
 
     // look for the optimizer section based on the counter
     xmlNodePtr selected_method_xml = NULL; //hybridEngineObj->getSelectedXML(counter);
-    return processXML(selected_method_xml, vmcMove, reportH5);
+    return processOptXML(selected_method_xml, vmcMove, reportH5);
   }
   else
-    return processXML(q, vmcMove, reportH5);
+    return processOptXML(q, vmcMove, reportH5);
 }
 
-bool QMCFixedSampleLinearOptimize::processXML(xmlNodePtr opt_xml, const std::string& vmcMove, bool reportH5)
+bool QMCFixedSampleLinearOptimize::processOptXML(xmlNodePtr opt_xml, const std::string& vmcMove, bool reportH5)
 {
   m_param.put(opt_xml);
   tolower(targetExcitedStr);

@@ -10,7 +10,8 @@
 
 namespace qmcplusplus
 {
-HybridEngine::HybridEngine(Communicate* comm, const xmlNodePtr cur) : myComm(comm)
+HybridEngine::HybridEngine(Communicate* comm, const xmlNodePtr cur)
+   : myComm(comm), saved_xml_(cur)
 {
   processXML(cur);
 }
@@ -28,6 +29,10 @@ bool HybridEngine::processXML(const xmlNodePtr cur)
 
 
   return true;
+}
+
+  const xmlNodePtr HybridEngine::getSelectedXML(int counter) const
+{
 }
 
 void HybridEngine::getInitialParams(const optimize::VariableSet& myVars)

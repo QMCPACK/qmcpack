@@ -33,10 +33,14 @@ private:
   ///process xml node
   bool processXML(const xmlNodePtr cur);
 
+  ///xml saved node
+  const xmlNodePtr saved_xml_;
+
 public:
   //Constructor for engine
   HybridEngine(Communicate* comm, const xmlNodePtr cur);
 
+  const xmlNodePtr getSelectedXML(int counter) const;
 
 void getInitialParams(const optimize::VariableSet& myVars);
 
