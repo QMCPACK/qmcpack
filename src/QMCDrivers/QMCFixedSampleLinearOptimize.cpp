@@ -476,8 +476,9 @@ bool QMCFixedSampleLinearOptimize::put(xmlNodePtr q)
   if (MinMethod == "hybrid")
   {
     doHybrid = true;
-    //if (!hybridEngineObj)
-    //  hybridEngineObj = std::make_unique<hybridEngine>(myComm, q);
+    if(!hybridEngineObj)
+	hybridEngineObj = std::make_unique<HybridEngine>(myComm, q);
+
     // look for the optimizer section based on the counter
     xmlNodePtr selected_method_xml = NULL; //hybridEngineObj->getSelectedXML(counter);
     return processXML(selected_method_xml, vmcMove, reportH5);
@@ -505,10 +506,8 @@ bool QMCFixedSampleLinearOptimize::processXML(xmlNodePtr opt_xml, const std::str
     doDescent = true;
     if (!descentEngineObj)
       descentEngineObj = std::make_unique<DescentEngine>(myComm, opt_xml);
+
   }
-  
-  //get whether to gradually ramp up step sizes,move to engine's xml parser
-  //ramp_eta = (ramp_etaStr == "yes");
 
   // sanity check
   if (targetExcited && !doAdaptiveThreeShift)
@@ -1341,6 +1340,7 @@ bool QMCFixedSampleLinearOptimize::one_shift_run()
   return (optTarget->getReportCounter() > 0);
 }
 
+#ifdef HAVE_LMY_ENGINE
 //Function for optimizing using gradient descent
 bool QMCFixedSampleLinearOptimize::descent_run() {
 
@@ -1379,7 +1379,16 @@ bool QMCFixedSampleLinearOptimize::descent_run() {
   } 
 
 
-    
+   /* 
+  //During the hybrid method,store 5 vectors of parameter differences over the course of a descent section
+  if (doHybrid && ((descentNum + 1) % (descent_len / 5) == 0)) {
+      app_log() << "Step number in macro-iteration is " << stepNum % descent_len
+                << " out of expected total of " << descent_len
+                << " descent steps." << std::endl;
+    storeVectors(paramsForDiff);
+  }
+  */
+
     stepNum = stepNum + 1;
     descentNum = descentNum +1;
   }
@@ -1387,6 +1396,7 @@ bool QMCFixedSampleLinearOptimize::descent_run() {
   finish();
   return (optTarget->getReportCounter() > 0);
 }
+#endif
 
 // Helper method for storing vectors of parameter differences over the course of
 // a descent optimization for use in BLM steps of the hybrid method

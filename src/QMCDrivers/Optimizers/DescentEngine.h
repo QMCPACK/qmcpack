@@ -10,7 +10,6 @@
 #include "Message/Communicate.h"
 #include "Optimize/VariableSet.h"
 
-
 namespace qmcplusplus
 {
 class DescentEngine
@@ -30,6 +29,7 @@ private:
   std::vector<double> LDerivs;
 
   bool engineTargetExcited;
+  std::string excited;
 
   int numParams;
 
