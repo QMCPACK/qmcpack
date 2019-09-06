@@ -29,10 +29,28 @@ class Crowd
 public:
   using MCPWalker = MCPopulation::MCPWalker;
   using GradType = QMCTraits::GradType;
+  using RealType = QMCTraits::RealType;
   /** This is the data structure for walkers within a crowd
    */
   Crowd(EstimatorManagerBase& emb) : estimator_manager_crowd_(emb) {}
 
+  /** With so many vectors allocate upfront.
+   *
+   *  could be premature optimization
+   */
+  void reserve(int crowd_size)
+  {
+    auto reserveCS = [crowd_size](auto& avector) {
+                       avector.reserve(crowd_size); };
+    reserveCS(mcp_walkers_);
+    reserveCS(walker_elecs_);
+    reserveCS(walker_twfs_);
+    reserveCS(walker_hamiltonians_);
+    reserveCS(grads_now_);
+    reserveCS(grads_new_);
+    reserveCS(ratios_);
+  }
+  
   void startRun() {}
 
   void startBlock(int steps) { estimator_manager_crowd_.startBlock(steps); }
@@ -57,6 +75,8 @@ public:
   std::vector<std::reference_wrapper<QMCHamiltonian>>& get_walker_hamiltonians() { return walker_hamiltonians_; }
 
   std::vector<GradType>& get_grads_now() { return grads_now_; }
+  std::vector<GradType>& get_grads_new() { return grads_new_; }
+  
   int size() const { return mcp_walkers_.size(); }
 
   
@@ -67,9 +87,8 @@ private:
   std::vector<std::reference_wrapper<QMCHamiltonian>> walker_hamiltonians_;
   EstimatorManagerCrowd estimator_manager_crowd_;
   std::vector<GradType> grads_now_;
-
-
-public:
+  std::vector<GradType> grads_new_;
+  std::vector<RealType> ratios_;
 };
 } // namespace qmcplusplus
 #endif

@@ -27,6 +27,7 @@
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/DiffWaveFunctionComponent.h"
 #include "Utilities/NewTimer.h"
+#include "type_traits/template_types.hpp"
 #ifdef QMC_CUDA
 #include "type_traits/CUDATypes.h"
 #endif
@@ -205,12 +206,15 @@ public:
                           TinyVector<ParticleSet::ParticleLaplacian_t, OHMMS_DIM>& lapl_grad);
 
   RealType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
-  /** batched verison of ratioGrad */
-  void flex_ratioGrad(const std::vector<TrialWaveFunction*>& WF_list,
-                      const std::vector<ParticleSet*>& P_list,
+  /** batched verison of ratioGrad 
+   *
+   *  all vector sizes must match
+   */
+  static void flex_ratioGrad(const RefVector<TrialWaveFunction>& WF_list,
+                      const RefVector<ParticleSet>& P_list,
                       int iat,
                       std::vector<PsiValueType>& ratios,
-                      std::vector<GradType>& grad_new) const;
+                      std::vector<GradType>& grad_new);
 
   GradType evalGrad(ParticleSet& P, int iat);
 
@@ -220,9 +224,9 @@ public:
     * is the use of timers.  Otherwise its a pure function.
     */
   void flex_evalGrad(const std::vector<std::reference_wrapper<TrialWaveFunction>>& WF_list,
-                            const std::vector<std::reference_wrapper<ParticleSet>>& P_list,
-                            int iat,
-                            std::vector<GradType>& grad_now) const;
+                     const std::vector<std::reference_wrapper<ParticleSet>>& P_list,
+                     int iat,
+                     std::vector<GradType>& grad_now) const;
 
   void rejectMove(int iat);
   /* flexible batched version of rejectMove */
@@ -336,9 +340,11 @@ private:
   // helper function for extrating a list of WaveFunctionComponent from a list of TrialWaveFunction
   std::vector<WaveFunctionComponent*> extract_WFC_list(const std::vector<TrialWaveFunction*>& WF_list, int id) const;
 
-  static std::vector<std::reference_wrapper<WaveFunctionComponent>> extract_WFC_list(const std::vector<std::reference_wrapper<TrialWaveFunction>>& WF_list, int id);
+  static std::vector<std::reference_wrapper<WaveFunctionComponent>> extract_WFC_list(
+      const std::vector<std::reference_wrapper<TrialWaveFunction>>& WF_list,
+      int id);
 
-  
+
   // helper function for extrating a list of gradients from a list of TrialWaveFunction
   std::vector<ParticleSet::ParticleGradient_t*> extract_G_list(const std::vector<TrialWaveFunction*>& P_list) const;
 

@@ -80,13 +80,19 @@ void VMCBatched::advanceWalkers(const StateForThread& sft, Crowd& crowd, Context
     it_walker_twfs->get().copyFromBuffer(it_walker_elecs->get(), it_mcp_walkers->get().DataSet);
   }
 
+  int num_walkers = crowd.size();
+  int num_particles = sft.population.get_num_particles();
   // Note std::vector<bool> is not like the rest of stl.
-  std::vector<bool> moved(crowd.size(), false);
+  std::vector<bool> moved(num_walkers, false);
   constexpr RealType mhalf(-0.5);
-
+  bool use_drift = sft.vmcdrv_input.get_use_drift();
+  //This generates an entire steps worth of deltas.
   step_context.nextDeltaRs();
   auto it_delta_r = step_context.deltaRsBegin();
+  std::vector<PosType> drifts(num_walkers);
+
   // up and down electrons are "species" within qmpack
+
   for (int ig = 0; ig < step_context.get_num_groups(); ++ig) //loop over species
   {
     RealType tauovermass = sft.qmcdrv_input.get_tau() * sft.population.get_ptclgrp_inv_mass()[ig];
@@ -94,32 +100,40 @@ void VMCBatched::advanceWalkers(const StateForThread& sft, Crowd& crowd, Context
     RealType sqrttau     = std::sqrt(tauovermass);
     int start_index      = step_context.getPtclGroupStart(ig);
     int end_index        = step_context.getPtclGroupEnd(ig);
-    std::vector<PosType> drifts(crowd.size());
     for (int iat = start_index; iat < end_index; ++iat)
     {
-      if (sft.vmcdrv_input.get_use_drift())
+      if (use_drift)
       {
         crowd.get_walker_twfs()[0].get().flex_evalGrad(crowd.get_walker_twfs(), crowd.get_walker_elecs(), iat, crowd.get_grads_now());
         sft.drift_modifier.getDrifts(tauovermass, crowd.get_grads_now(), drifts);
         std::transform(drifts.begin(),drifts.end(),
-                       it_delta_r + iat * sft.population.get_num_particles(), drifts.begin(),
+                       it_delta_r + iat * num_particles * num_walkers, drifts.begin(),
                        [sqrttau](PosType& drift, PosType& delta_r){
                          return drift + (sqrttau * delta_r);});
       }
       else
       {
-        std::transform(drifts.begin(),drifts.end(),it_delta_r + iat * sft.population.get_num_particles(), drifts.begin(),
+        std::transform(drifts.begin(),drifts.end(),it_delta_r + iat * num_particles *num_walkers, drifts.begin(),
                        [sqrttau](auto& drift, auto& delta_r){
                          return sqrttau * delta_r;});
+      }      
+      // avoiding non standard semantics of std::vector<bool>
+      std::vector<short> accept(num_walkers, 1);
+      auto elecs = crowd.get_walker_elecs();
+      for(int i_walker = 0; i_walker < crowd.size(); ++i_walker)
+      {
+        accept[i_walker] = elecs[i_walker].get().makeMoveAndCheck(iat, drifts[i_walker]) ? 1 : 0;
+      }
+      RealType log_gr{1.0};
+      RealType log_gb{1.0};
+      RealType prob;
+
+      // repeated if is quite inelegant;
+      if(use_drift)
+      {
+        
       }
     }
-        // auto it_walker_wfs = crowd.beginTrialWaveFunctions();
-        // while(it_walker_wfs != crowd.endTrialWaveFunctions())
-        // {
-        //   PosType dr;
-        //     if (sft.vmcdrv_input.get_use_drift())
-        //       GradType grad_now = (*it_walker_wfs).evalGrad(iat);
-        // }
   }
 }
 
