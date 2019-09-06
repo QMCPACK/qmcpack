@@ -8,8 +8,7 @@
 #include <vector>
 #include <libxml/tree.h>
 #include "Message/Communicate.h"
-#include "OhmmsData/ParameterSet.h"
-
+#include "Optimize/VariableSet.h"
 
 namespace qmcplusplus
 {
@@ -18,7 +17,6 @@ class HybridEngine
 private:
   Communicate* myComm;
 
-  ParameterSet m_param;
 
 
   //number of steps in a descent section of hybrid method
@@ -29,12 +27,23 @@ private:
   //Vector for storing parameter values for calculating differences to be given to hybrid method
   std::vector<double> paramsForDiff;
 
+  //Vector for storing the input vectors to the BLM steps of hybrid method
+  std::vector<std::vector<double>> hybridBLM_Input;
+
   ///process xml node
   bool processXML(const xmlNodePtr cur);
 
 public:
   //Constructor for engine
   HybridEngine(Communicate* comm, const xmlNodePtr cur);
+
+
+void getInitialParams(const optimize::VariableSet& myVars);
+
+void storeVectors(std::vector<double>& currentParams,int descentCount);
+
+std::vector<std::vector<double>> retrieveHybridBLM_Input() {return  hybridBLM_Input;}
+
 };
 
 } // namespace qmcplusplus

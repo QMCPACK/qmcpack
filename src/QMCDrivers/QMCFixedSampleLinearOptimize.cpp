@@ -1380,16 +1380,7 @@ bool QMCFixedSampleLinearOptimize::descent_run()
     }
 
 
-    /* 
-  //During the hybrid method,store 5 vectors of parameter differences over the course of a descent section
-  if (doHybrid && ((descentNum + 1) % (descent_len / 5) == 0)) {
-      app_log() << "Step number in macro-iteration is " << stepNum % descent_len
-                << " out of expected total of " << descent_len
-                << " descent steps." << std::endl;
-    storeVectors(paramsForDiff);
-  }
-  */
-
+    
     stepNum    = stepNum + 1;
     descentNum = descentNum + 1;
   }
@@ -1399,48 +1390,6 @@ bool QMCFixedSampleLinearOptimize::descent_run()
 }
 #endif
 
-// Helper method for storing vectors of parameter differences over the course of
-// a descent optimization for use in BLM steps of the hybrid method
-void QMCFixedSampleLinearOptimize::storeVectors(std::vector<Return_t>& paramsForDiff)
-{
-  int process_rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, &process_rank);
-
-
-  std::vector<Return_t> rowVec(paramsForDiff.size());
-  std::fill(rowVec.begin(), rowVec.end(), 0.0);
-
-  // Take difference between current parameter values and the values from 20
-  // iterations before (in the case descent_len = 100) to be stored as input to BLM.
-  // The current parameter values are then copied to paramsForDiff to be used
-  // another 20 iterations later.
-  for (int i = 0; i < numParams; i++)
-  {
-    rowVec[i]        = (optTarget->Params(i) - paramsForDiff[i]);
-    paramsForDiff[i] = optTarget->Params(i);
-  }
-
-  // If on first step, clear anything that was in vector
-  if ((stepNum + 1) % descent_len == descent_len / 5)
-  {
-    hybridBLM_Input.clear();
-    hybridBLM_Input.push_back(rowVec);
-  }
-  else
-  {
-    hybridBLM_Input.push_back(rowVec);
-  }
-
-  for (int i = 0; i < hybridBLM_Input.size(); i++)
-  {
-    std::string entry = "";
-    for (int j = 0; j < hybridBLM_Input.at(i).size(); j++)
-    {
-      entry = entry + std::to_string(hybridBLM_Input.at(i).at(j)) + ",";
-    }
-    app_log() << "Stored Vector: " << entry << std::endl;
-  }
-}
 
 //Function for controlling the alternation between sections of descent
 //optimization and BLM optimization.
@@ -1449,11 +1398,30 @@ bool QMCFixedSampleLinearOptimize::hybrid_run()
 {
   if (descentCount < descent_len)
   {
+      if(descentCount = 0)
+      {
+	hybridEngineObj->getInitialParams(optTarget->getOptVariables()); 
+      
+      }
+  //During the hybrid method,store 5 vectors of parameter differences over the course of a descent section
+  if (((descentCount + 1) % (descent_len / 5) == 0))
+  {
+      app_log() << "Step number in macro-iteration is " << stepNum % descent_len
+                << " out of expected total of " << descent_len
+                << " descent steps." << std::endl;
+ 
+      std::vector<double> currentValues = descentEngineObj->retrieveNewParams();
+    hybridEngineObj->storeVectors(currentValues,stepNum);
+
     descentCount++;
     totalCount++;
     app_log() << "Should be on descent step# " << descentCount - 1 << " of macro-iteration. Total steps: " << totalCount
               << std::endl;
     return descent_run();
+ 
+  }
+  
+
   }
   else
   {
@@ -1461,6 +1429,7 @@ bool QMCFixedSampleLinearOptimize::hybrid_run()
     {
       if (blmCount == 0)
       {
+	  std::vector<std::vector<double>> hybridBLM_Input = hybridEngineObj->retrieveHybridBLM_Input();
         //Only need to set input vectors from AD on first BLM step
         EngineObj->setHybridBLM_Input(hybridBLM_Input);
       }

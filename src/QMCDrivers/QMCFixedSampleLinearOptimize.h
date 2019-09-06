@@ -88,9 +88,6 @@ private:
   bool hybrid_run();
 #endif
 
-  //helper method for writing vectors for BLM steps in hybrid method
-  void storeVectors(std::vector<Return_t>& paramsForDiff);
-
 
   void solveShiftsWithoutLMYEngine(const std::vector<double>& shifts_i,
                                    const std::vector<double>& shiffts_s,
@@ -191,24 +188,25 @@ private:
   bool doHybrid;
 
 
-  //Vector for storing the input vectors to the BLM steps of hybrid method
-  std::vector<std::vector<Return_t>> hybridBLM_Input;
-
 
   //Integer for keeping track of the iteration number
   int stepNum;
 
-  //Integer for keeping track of only number of descent steps taken
+  //Integer for keeping track of only the total number of descent steps taken in the entire optimization
   int descentNum;
 
   //Whether hybrid accelerated descent and linear method will be used
   std::string hybrid;
 
 
-  //Counters for controlling changes between descent
-  //and BLM in hybrid method
+  //Counters for controlling changes between descent and BLM in hybrid method
+
   int totalCount;
+  //descentCount tracks thenumber of descent steps taken within one section of descent in the hybrid method
+  //It resets for another section of descent in the hybrid optimization
   int descentCount;
+  //blmCount tracks the number of BLM steps taken within one BLM section of the hybrid method.
+  //Like descentCount, it resets for another BLM section.
   int blmCount;
 
   int hybrid_descent_samples;
