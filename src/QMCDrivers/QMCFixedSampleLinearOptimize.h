@@ -98,8 +98,10 @@ private:
   cqmc::engine::LMYEngine* EngineObj;
 #endif
 
+  //engine for running various gradient descent based algorithms for optimization
   std::unique_ptr<DescentEngine> descentEngineObj;
 
+  //engine for controlling a optimization using a hybrid combination of linear method and descent
   std::unique_ptr<HybridEngine> hybridEngineObj;
 
   // prepare a vector of shifts to try

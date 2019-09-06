@@ -1352,7 +1352,6 @@ bool QMCFixedSampleLinearOptimize::descent_run()
   bool Valid(true);
   int Total_iterations(0);
   numParams = optTarget->getNumParams();
-  N         = numParams + 1;
 
 
   while (Total_iterations < Max_iterations)
@@ -1418,8 +1417,7 @@ bool QMCFixedSampleLinearOptimize::hybrid_run()
 
     descentCount++;
     totalCount++;
-    app_log() << "Should be on descent step# " << descentCount - 1 << " of macro-iteration. Total steps: " << totalCount
-              << std::endl;
+    app_log() << "Should be on descent step# " << descentCount - 1 << " of macro-iteration. Total steps: " << totalCount  << std::endl;
     return descent_run();
  
   }
@@ -1438,8 +1436,7 @@ bool QMCFixedSampleLinearOptimize::hybrid_run()
       }
       blmCount++;
       totalCount++;
-      app_log() << "Should be on blm step# " << blmCount - 1 << " of macro-iteration. Total steps: " << totalCount
-                << std::endl;
+      app_log() << "Should be on blm step# " << blmCount - 1 << " of macro-iteration. Total steps: " << totalCount << std::endl;
       return adaptive_three_shift_run();
     }
     else
@@ -1449,8 +1446,7 @@ bool QMCFixedSampleLinearOptimize::hybrid_run()
       blmCount     = 0;
       descentCount++;
       totalCount++;
-      app_log() << "Should be on descent step# " << descentCount - 1
-                << " of macro-iteration. Total steps: " << totalCount << std::endl;
+      app_log() << "Should be on descent step# " << descentCount - 1 << " of macro-iteration. Total steps: " << totalCount << std::endl;
       return descent_run();
     }
   }

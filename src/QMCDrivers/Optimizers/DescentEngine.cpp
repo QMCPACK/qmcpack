@@ -83,15 +83,11 @@ void DescentEngine::setEtemp(const std::vector<double>& etemp)
   e_avg       = e_sum / w_sum;
   eSquare_avg = eSquare_sum / w_sum;
 
-  int my_rank = myComm->rank();
-  if (my_rank == 0)
-  {
-    std::cout << "e_sum: " << e_sum << std::endl;
-    std::cout << "w_sum: " << w_sum << std::endl;
-    std::cout << "e_avg: " << e_avg << std::endl;
-    std::cout << "eSquare_sum: " << eSquare_sum << std::endl;
-    std::cout << "eSquare_avg: " << eSquare_avg << std::endl;
-  }
+    app_log() << "e_sum: " << e_sum << std::endl;
+    app_log() << "w_sum: " << w_sum << std::endl;
+    app_log() << "e_avg: " << e_avg << std::endl;
+    app_log() << "eSquare_sum: " << eSquare_sum << std::endl;
+    app_log() << "eSquare_avg: " << eSquare_avg << std::endl;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -137,7 +133,6 @@ void DescentEngine::take_sample(double local_en, double vgs_samp, double weight_
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 void DescentEngine::sample_finish()
 {
-  int my_rank = myComm->rank();
 
   myComm->allreduce(avg_le_der_samp);
   myComm->allreduce(avg_der_rat_samp);
@@ -147,11 +142,8 @@ void DescentEngine::sample_finish()
     avg_le_der_samp.at(i)  = avg_le_der_samp.at(i) / w_sum;
     avg_der_rat_samp.at(i) = avg_der_rat_samp.at(i) / w_sum;
 
-    if (my_rank == 0)
-    {
-      std::cout << "Parameter # " << i << " Hamiltonian term: " << avg_le_der_samp.at(i) << std::endl;
-      std::cout << "Parameter # " << i << " Overlap term: " << avg_der_rat_samp.at(i) << std::endl;
-    }
+      app_log() << "Parameter # " << i << " Hamiltonian term: " << avg_le_der_samp.at(i) << std::endl;
+      app_log() << "Parameter # " << i << " Overlap term: " << avg_der_rat_samp.at(i) << std::endl;
 
     if (!engineTargetExcited)
     {
@@ -164,15 +156,11 @@ void DescentEngine::sample_finish()
 //Function for updating parameters during descent optimization
 void DescentEngine::updateParameters(int stepNum, int descentNum)
 {
-  int my_rank = myComm->rank();
-  if (my_rank == 0)
-  {
-    std::cout << "Number of Parameters: " << numParams << std::endl;
+    app_log() << "Number of Parameters: " << numParams << std::endl;
 
-    std::cout << "Parameter Type step sizes: "
+    app_log() << "Parameter Type step sizes: "
               << " TJF_2Body_eta=" << TJF_2Body_eta << " TJF_1Body_eta=" << TJF_1Body_eta << " F_eta=" << F_eta
               << " CI_eta=" << CI_eta << " Orb_eta=" << Orb_eta << std::endl;
-  }
 
   // Get set of derivatives for current (kth) optimization step
   std::vector<double> curDerivSet = derivRecords.at(derivRecords.size() - 1);
@@ -199,8 +187,7 @@ void DescentEngine::updateParameters(int stepNum, int descentNum)
   // RMSprop corresponds to the method used by Booth and co-workers
   if (flavor.compare("RMSprop") == 0)
   {
-    if (my_rank == 0)
-      std::cout << "Using RMSprop" << std::endl;
+      app_log() << "Using RMSprop" << std::endl;
 
     // To match up with Booth group paper notation, prevLambda is lambda_k-1,
     // curLambda is lambda_k, nextLambda is lambda_k+1
@@ -283,17 +270,16 @@ void DescentEngine::updateParameters(int stepNum, int descentNum)
   // Random uses only the sign of the parameter derivatives and takes a step of random size within a range.
   else if (flavor.compare("Random") == 0)
   {
-    if (my_rank == 0)
-      std::cout << "Using Random" << std::endl;
+      app_log() << "Using Random" << std::endl;
 
     for (int i = 0; i < numParams; i++)
     {
       denom        = 1;
       double alpha = ((double)rand() / RAND_MAX);
       double sign  = std::abs(curDerivSet[i]) / curDerivSet[i];
-      if (std::isnan(sign) && my_rank == 0)
+      if (std::isnan(sign))
       {
-        std::cout << "Got a nan, choosing sign randomly with 50-50 probability" << std::endl;
+        app_log() << "Got a nan, choosing sign randomly with 50-50 probability" << std::endl;
 
         double t = ((double)rand() / RAND_MAX);
         if (t > .5)
@@ -305,8 +291,7 @@ void DescentEngine::updateParameters(int stepNum, int descentNum)
           sign = -1;
         }
       }
-      if (my_rank == 0)
-        std::cout << "This is random alpha: " << alpha << " with sign: " << sign << std::endl;
+        app_log() << "This is random alpha: " << alpha << " with sign: " << sign << std::endl;
 
       currentParams.at(i) = currentParams.at(i) - tau * alpha * sign;
     }
@@ -317,8 +302,7 @@ void DescentEngine::updateParameters(int stepNum, int descentNum)
     // ADAM method
     if (flavor.compare("ADAM") == 0)
     {
-      if (my_rank == 0)
-        std::cout << "Using ADAM" << std::endl;
+        app_log() << "Using ADAM" << std::endl;
 
       for (int i = 0; i < numParams; i++)
       {
@@ -366,8 +350,7 @@ void DescentEngine::updateParameters(int stepNum, int descentNum)
     // AMSGrad method, similar to ADAM except for form of the step size denominator
     else if (flavor.compare("AMSGrad") == 0)
     {
-      if (my_rank == 0)
-        std::cout << "Using AMSGrad" << std::endl;
+        app_log() << "Using AMSGrad" << std::endl;
 
 
       for (int i = 0; i < numParams; i++)
