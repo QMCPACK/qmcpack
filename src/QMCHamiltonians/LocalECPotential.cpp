@@ -32,6 +32,8 @@ LocalECPotential::LocalECPotential(const ParticleSet& ions, ParticleSet& els) : 
   PP.resize(NumIons, nullptr);
   Zeff.resize(NumIons, 0.0);
   gZeff.resize(ions.getSpeciesSet().getTotalNum(), 0);
+  Vi_samp_tmp.resize(NumIons);
+  Ve_samp_tmp.resize(els.getTotalNum());
 }
 
 ///destructor
@@ -182,30 +184,54 @@ LocalECPotential::Return_t LocalECPotential::evaluate_sp(ParticleSet& P)
 {
   const DistanceTableData& d_table(P.getDistTable(myTableIndex));
   Value                       = 0.0;
-  Array<RealType, 1>& Ve_samp = *Ve_sample;
-  Array<RealType, 1>& Vi_samp = *Vi_sample;
+  Array<RealType, 1>& Ve_samp = Ve_samp_tmp;
+  Array<RealType, 1>& Vi_samp = Vi_samp_tmp;
   Ve_samp                     = 0.0;
   Vi_samp                     = 0.0;
-  //loop over all the ions
-  for (int iat = 0; iat < NumIons; iat++)
+
+  if (d_table.DTType == DT_SOA)
   {
-    RadialPotentialType* ppot(PP[iat]);
-    if (ppot == 0)
-      continue;
-    Return_t esum(0.0), pairpot;
-#ifndef ENABLE_SOA
-    //loop over all the electrons
-    for (int nn = d_table.M[iat], iel = 0; nn < d_table.M[iat + 1]; ++nn, iel++)
+    const size_t Nelec = P.getTotalNum();
+    for (size_t iel = 0; iel < Nelec; ++iel)
     {
-      pairpot = -.5 * Zeff[iat] * ppot->splint(d_table.r(nn)) * d_table.rinv(nn);
+      const RealType* restrict dist = d_table.Distances[iel];
+      Return_t esum(0), pairpot;
+      for (size_t iat = 0; iat < NumIons; ++iat)
+        if (PP[iat] != nullptr)
+        {
+          pairpot = -0.5 * PP[iat]->splint(dist[iat]) * Zeff[iat] / dist[iat];
+          Vi_samp(iat) += pairpot;
+          Ve_samp(iel) += pairpot;
+          esum         += pairpot;
+        }
+      Value += esum;
+    }
+    Value *= 2.0;
+  }
+  else
+  {
+#ifndef ENABLE_SOA
+    //loop over all the ions
+    for (int iat = 0; iat < NumIons; iat++)
+    {
+      RadialPotentialType* ppot(PP[iat]);
+      if (ppot == 0)
+        continue;
+      Return_t esum(0.0), pairpot;
+      //loop over all the electrons
+      for (int nn = d_table.M[iat], iel = 0; nn < d_table.M[iat + 1]; ++nn, iel++)
+      {
+        pairpot = -.5 * Zeff[iat] * ppot->splint(d_table.r(nn)) * d_table.rinv(nn);
       Vi_samp(iat) += pairpot;
       Ve_samp(iel) += pairpot;
       esum         += pairpot;
+      }
+      Value += esum;
     }
+    Value *= 2.0;
 #endif
-    Value += esum;
   }
-  Value *= 2.0;
+
 #if defined(TRACE_CHECK)
   RealType Vnow  = Value;
   RealType Visum = Vi_samp.sum();
