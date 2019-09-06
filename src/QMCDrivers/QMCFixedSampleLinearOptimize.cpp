@@ -476,6 +476,8 @@ bool QMCFixedSampleLinearOptimize::put(xmlNodePtr q)
   if (MinMethod == "hybrid")
   {
     doHybrid = true;
+    if(!hybridEngineObj)
+	hybridEngineObj = std::make_unique<HybridEngine>(myComm, q);
     // look for the optimizer section based on the counter
     xmlNodePtr selected_method_xml = NULL;
     return processXML(selected_method_xml, vmcMove, reportH5);
