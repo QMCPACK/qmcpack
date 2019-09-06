@@ -90,6 +90,8 @@ from testing import *
 
 
 # tests
+#   versions code
+#   checks of dependency versions
 #   generic logging
 #   generic intrinsics
 #   generic extensions
@@ -563,6 +565,10 @@ class NexusTest(NexusTestBase):
 #===============================================#
 
 
+
+def versions():
+    nunit_all()
+#end def versions
 
 
         
@@ -3310,6 +3316,7 @@ def user_examples(label):
 
 # create labeled tests from simple functions above
 
+NexusTest( versions           )
 NexusTest( generic_logging    )
 NexusTest( generic_intrinsics )
 NexusTest( generic_extensions )

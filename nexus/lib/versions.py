@@ -18,10 +18,6 @@ import importlib
 Current Nexus version.
 '''
 nexus_version = 1,8,0
-assert(len(nexus_version)==3)
-for n in nexus_version:
-    assert(isinstance(n,int))
-#end for
 
 '''
 Current Python family supported.
@@ -33,7 +29,6 @@ python_supported = 'python2'
 Policy for how many years back Nexus will extend support to dependencies.
 '''
 years_supported = 2
-assert(isinstance(years_supported,int))
 
 '''
 Cutoff date for support.
@@ -347,10 +342,11 @@ def version_to_string(version):
 
 class Versions(object):
 
-    python_version_major = 'python2'
+    instances = []
 
     def __init__(self):
         self.initialize()
+        Versions.instances.append(self)
     #end def __init__
 
 
@@ -391,8 +387,6 @@ class Versions(object):
             ordered_dependencies.append(name)
             cur_supp[name] = version
         #end for
-
-        assert(dependencies==set(ordered_dependencies))
 
         optional_dependencies = dependencies-required_dependencies
 
