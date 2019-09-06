@@ -39,7 +39,6 @@ def extract_rdm(filename, dm_name='Mixed'):
                 # walker_type == 2: COLLINEAR
                 # walker_type == 1: CLOSED
                 # walker_type == 0: UNKNOWN
-                print(weight)
                 if walker_type == 2:
                     dm = dm.reshape(2,nmo,nmo)
                     if not free_proj:
@@ -47,14 +46,12 @@ def extract_rdm(filename, dm_name='Mixed'):
                 elif walker_type == 1:
                     dm = dm.reshape(nmo,nmo)
                     dm = numpy.array([dm,dm])
-                    print(dm.shape,weight.shape)
                     if not free_proj:
                         dm = dm / weight[:,None,None]
                 else:
                     print("Unknown walker type.")
                     return
                 dms.append(dm)
-    print(len(dm))
     return (numpy.array(dms), numpy.array(weights))
 
 def get_metadata(filename):
@@ -72,19 +69,19 @@ def get_metadata(filename):
     """
     md = {}
     with h5py.File(filename, 'r') as fh5:
-        md['nmo'] = fh5['Metadata/NMO'][:][0]
-        md['free_proj'] = bool(fh5['Metadata/FreeProjection'][:][0])
-        md['walker_type'] = fh5['Metadata/WalkerType'][:][0]
-        md['nalpha'] = fh5['Metadata/NAEA'][:][0]
-        md['nbeta'] = fh5['Metadata/NAEB'][:][0]
+        md['nmo'] = fh5['Metadata/NMO'][()]
+        md['free_proj'] = bool(fh5['Metadata/FreeProjection'][()])
+        md['walker_type'] = fh5['Metadata/WalkerType'][()]
+        md['nalpha'] = fh5['Metadata/NAEA'][()]
+        md['nbeta'] = fh5['Metadata/NAEB'][()]
         try:
             base = '/Observables/BackPropagated/Metadata/'
-            md['num_bp']= fh5[base+'BackPropSteps'][:][0]
-            md['num_av'] = fh5[base+'NumAverages'][:][0]
-            md['num_ref'] = fh5[base+'NumReferences'][:][0]
+            md['num_bp']= fh5[base+'BackPropSteps'][()]
+            md['num_av'] = fh5[base+'NumAverages'][()]
+            md['num_ref'] = fh5[base+'NumReferences'][()]
         except KeyError:
             md['num_bp'] = None
-        md['dt'] = fh5['Metadata/Timestep'][:][0]
+        md['dt'] = fh5['Metadata/Timestep'][()]
     return md
 
 def get_rdm_len(filename, dm_name='Mixed'):
