@@ -17,13 +17,13 @@
 #ifndef QMCPLUSPLUS_COSTFUNCTIONBASE_H
 #define QMCPLUSPLUS_COSTFUNCTIONBASE_H
 
+#include <deque>
+#include <set>
 #include "Configuration.h"
 #include "Optimize/OptimizeBase.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "Message/MPIObjectBase.h"
-#include <deque>
-#include <set>
 
 #ifdef HAVE_LMY_ENGINE
 //#include "Eigen/Dense"
@@ -31,7 +31,7 @@
 #include "formic/utils/lmyengine/engine.h"
 #endif
 
-#include "Optimizers/DescentEngine.h"
+#include "QMCDrivers/Optimizers/DescentEngine.h"
 
 //class DescentEngine;
 

@@ -472,24 +472,38 @@ bool QMCFixedSampleLinearOptimize::put(xmlNodePtr q)
   oAttrib.put(q);
   m_param.put(q);
 
+  bool reportH5 = ReportToH5 == "yes";
+  if (MinMethod == "hybrid")
+  {
+    doHybrid = true;
+    // look for the optimizer section based on the counter
+    xmlNodePtr selected_method_xml = NULL;
+    return processXML(selected_method_xml, vmcMove, reportH5);
+  }
+  else
+    return processXML(q, vmcMove, reportH5);
+}
+
+bool QMCFixedSampleLinearOptimize::processXML(xmlNodePtr opt_xml, const std::string& vmcMove, bool reportH5)
+{
+  m_param.put(opt_xml);
   tolower(targetExcitedStr);
   targetExcited = (targetExcitedStr == "yes");
 
   tolower(block_lmStr);
   block_lm = (block_lmStr == "yes");
 
-  
   // get whether to use the adaptive three-shift version of the update
   doAdaptiveThreeShift = (MinMethod == "adaptive");
+  // get whether to use OneShiftOnly
   doOneShiftOnly = (MinMethod == "OneShiftOnly");
-
   // get whether to use descent
-  doDescent = (MinMethod == "descent");
-  //get whether to use hybrid method
-  doHybrid = (MinMethod == "hybrid");
-
-  if (doDescent && !descentEngineObj)
-    descentEngineObj = std::make_unique<DescentEngine>(targetExcited, myComm);
+  if (MinMethod == "descent")
+  {
+    doDescent = true;
+    if (!descentEngineObj)
+      descentEngineObj = std::make_unique<DescentEngine>(myComm, opt_xml);
+  }
   
   //get whether to gradually ramp up step sizes,move to engine's xml parser
   //ramp_eta = (ramp_etaStr == "yes");
@@ -531,7 +545,7 @@ bool QMCFixedSampleLinearOptimize::put(xmlNodePtr q)
   if (bestShift_s < 0.0)
     bestShift_s = shift_s_input;
 
-  xmlNodePtr qsave = q;
+  xmlNodePtr qsave = opt_xml;
   xmlNodePtr cur = qsave->children;
   int pid = OHMMS::Controller->rank();
   while (cur != NULL) {
@@ -568,11 +582,11 @@ bool QMCFixedSampleLinearOptimize::put(xmlNodePtr q)
 #endif
       optTarget = new QMCCostFunction(W, Psi, H, myComm);
     optTarget->setStream(&app_log());
-    if (ReportToH5 == "yes")
+    if (reportH5)
       optTarget->reportH5 = true;
-    success = optTarget->put(q);
+    success = optTarget->put(opt_xml);
   }
-  if (ReportToH5 == "yes")
+  if (reportH5)
     optTarget->reportH5 = true;
   return success;
 }
