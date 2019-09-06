@@ -36,7 +36,7 @@
        
        <parameter name="flavor">RMSprop</parameter>
 
-       <parameter name="Ramp_eta">yes</parameter>
+       <parameter name="Ramp_eta">no</parameter>
        <parameter name="Ramp_num">30</parameter>
        
       <parameter name="TJF_2Body_eta">.01</parameter>

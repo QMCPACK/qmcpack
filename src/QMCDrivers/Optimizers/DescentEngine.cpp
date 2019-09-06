@@ -8,7 +8,6 @@
 #include <vector>
 #include <string>
 #include "QMCDrivers/Optimizers/DescentEngine.h"
-#include "OhmmsData/ParameterSet.h"
 #include "Message/CommOperators.h"
 
 namespace qmcplusplus
@@ -16,38 +15,48 @@ namespace qmcplusplus
 DescentEngine::DescentEngine(Communicate* comm, const xmlNodePtr cur)
     : engineTargetExcited(false),
       myComm(comm),
+      excited("no"),
       flavor("RMSprop"),
       TJF_2Body_eta(.01),
       TJF_1Body_eta(.01),
       F_eta(.001),
       Gauss_eta(.001),
-      CI_eta(.2),
+      CI_eta(.01),
       Orb_eta(.001),
       ramp_eta(false),
       ramp_num(30)
 {
+
+  m_param.add(excited, "targetExcited", "string");
+  
+  //Type of descent method being used
+  m_param.add(flavor, "flavor", "string");
+  m_param.add(TJF_2Body_eta, "TJF_2Body_eta", "double");
+   
+  
+  m_param.add(TJF_1Body_eta, "TJF_1Body_eta", "double");
+  m_param.add(F_eta, "F_eta", "double");
+ m_param.add(CI_eta, "CI_eta", "double");
+  m_param.add(Gauss_eta, "Gauss_eta", "double");
+  m_param.add(Orb_eta, "Orb_eta", "double");
+  m_param.add(ramp_etaStr,"Ramp_eta","string");
+  m_param.add(ramp_num,"Ramp_num","int");
+
   processXML(cur);
 }
 
-/** Parses the xml input file for parameter definitions for the wavefunction optimization.
- * @param q current xmlNode
- * @return true if successful
- */
-/*
-bool DescentEngine::parseXML(xmlNodePtr q)
-{
-
-
-
-}
-*/
 
 bool DescentEngine::processXML(const xmlNodePtr cur)
 {
-  std::string excited("no");
-  ParameterSet m_param;
-  m_param.add(excited, "FIXME", "string");
+ 
+ m_param.put(cur);
+
   engineTargetExcited = (excited == "yes");
+ 
+ 
+  ramp_eta = (ramp_etaStr == "yes");
+
+  return true;
 }
 
 void DescentEngine::clear_samples(const size_t numOptimizables)
@@ -212,13 +221,7 @@ void DescentEngine::updateParameters(int stepNum, int descentNum)
 
     for (int i = 0; i < numParams; i++)
     {
-      /*
-      if (descentNum == 0)
-      {
-        paramsForDiff.push_back(optTarget->Params(i));
-      }
-*/
-
+    
       double curSquare = std::pow(curDerivSet.at(i), 2);
 
       // Need to calculate step size tau for each parameter inside loop
@@ -432,7 +435,7 @@ double DescentEngine::setStepSize(int i)
 
 
   std::string name = engineParamNames[i];
-  ;
+  
 
   int type = engineParamTypes[i];
 

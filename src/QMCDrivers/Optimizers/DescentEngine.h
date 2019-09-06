@@ -8,7 +8,7 @@
 #include <vector>
 #include <libxml/tree.h>
 #include "Message/Communicate.h"
-
+#include "OhmmsData/ParameterSet.h"
 
 namespace qmcplusplus
 {
@@ -26,9 +26,13 @@ private:
 
   Communicate* myComm;
 
+  ParameterSet m_param;
+
+
   std::vector<double> LDerivs;
 
   bool engineTargetExcited;
+  std::string excited;
 
   int numParams;
 

@@ -503,10 +503,8 @@ bool QMCFixedSampleLinearOptimize::processXML(xmlNodePtr opt_xml, const std::str
     doDescent = true;
     if (!descentEngineObj)
       descentEngineObj = std::make_unique<DescentEngine>(myComm, opt_xml);
+
   }
-  
-  //get whether to gradually ramp up step sizes,move to engine's xml parser
-  //ramp_eta = (ramp_etaStr == "yes");
 
   // sanity check
   if (targetExcited && !doAdaptiveThreeShift)
@@ -1380,7 +1378,7 @@ if(descentNum == 0)
   } 
 
 
-    
+   /* 
   //During the hybrid method,store 5 vectors of parameter differences over the course of a descent section
   if (doHybrid && ((descentNum + 1) % (descent_len / 5) == 0)) {
       app_log() << "Step number in macro-iteration is " << stepNum % descent_len
@@ -1388,7 +1386,7 @@ if(descentNum == 0)
                 << " descent steps." << std::endl;
     storeVectors(paramsForDiff);
   }
-  
+  */
 
     stepNum = stepNum + 1;
     descentNum = descentNum +1;
