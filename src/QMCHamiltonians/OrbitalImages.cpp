@@ -29,7 +29,7 @@ OrbitalImages::OrbitalImages(ParticleSet& P, PSPool& PSP, Communicate* mpicomm) 
 }
 
 
-QMCHamiltonianBase* OrbitalImages::makeClone(ParticleSet& P, TrialWaveFunction& Psi)
+OperatorBase* OrbitalImages::makeClone(ParticleSet& P, TrialWaveFunction& Psi)
 {
   //cloning shouldn't strictly be necessary, but do it right just in case
   OrbitalImages* clone = new OrbitalImages(*this);

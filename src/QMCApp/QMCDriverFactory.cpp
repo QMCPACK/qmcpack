@@ -241,7 +241,7 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
   ////flux is evaluated only with single-configuration VMC
   //if(curRunType ==QMCRunType::VMC && !curQmcModeBits[MULTIPLE_MODE])
   //{
-  //  QMCHamiltonianBase* flux=primaryH->getHamiltonian("Flux");
+  //  OperatorBase* flux=primaryH->getHamiltonian("Flux");
   //  if(flux == 0) primaryH->addOperator(new ConservedEnergy,"Flux");
   //}
   //else

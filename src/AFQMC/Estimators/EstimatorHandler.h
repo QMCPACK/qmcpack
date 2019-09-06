@@ -228,7 +228,8 @@ class EstimatorHandler: public AFQMCInfo
     dump.write(NMO, "NMO");
     dump.write(NAEA, "NAEA");
     dump.write(NAEB, "NAEB");
-    dump.write(wlk, "WalkerType");
+    int wlk_t_copy = wlk; // the actual data type of enum is implementation-defined. convert to int for file
+    dump.write(wlk_t_copy, "WalkerType");
     dump.write(free_projection, "FreeProjection");
     dump.write(dt, "Timestep");
     dump.pop();
