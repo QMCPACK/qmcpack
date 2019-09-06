@@ -53,6 +53,8 @@ NonLocalECPotential::NonLocalECPotential(ParticleSet& ions,
   PPset.resize(IonConfig.getSpeciesSet().getTotalNum(), 0);
   PulayTerm.resize(NumIons);
   UpdateMode.set(NONLOCAL, 1);
+  Ve_samp_tmp.resize(els.getTotalNum());
+  Vi_samp_tmp.resize(ions.getTotalNum());
 }
 
 ///destructor
@@ -81,8 +83,8 @@ void NonLocalECPotential::checkout_particle_quantities(TraceManager& tm)
       if (PP[iat])
       {
         PP[iat]->streaming_particles = streaming_particles;
-        PP[iat]->Ve_sample           = Ve_sample;
-        PP[iat]->Vi_sample           = Vi_sample;
+        //PP[iat]->Ve_sample           = Ve_sample;
+        //PP[iat]->Vi_sample           = Vi_sample;
       }
     }
   }
@@ -97,8 +99,8 @@ void NonLocalECPotential::delete_particle_quantities()
       if (PP[iat])
       {
         PP[iat]->streaming_particles = false;
-        PP[iat]->Ve_sample           = NULL;
-        PP[iat]->Vi_sample           = NULL;
+        //PP[iat]->Ve_sample           = NULL;
+        //PP[iat]->Vi_sample           = NULL;
       }
     }
     delete Ve_sample;
@@ -189,6 +191,10 @@ void NonLocalECPotential::evaluate(ParticleSet& P, bool Tmove)
     (*Ve_sample) = 0.0;
     (*Vi_sample) = 0.0;
   }
+  auto& Ve_samp = Ve_samp_tmp;
+  auto& Vi_samp = Vi_samp_tmp;
+  Ve_samp = 0.0;
+  Vi_samp = 0.0;
 #endif
   for (int ipp = 0; ipp < PPset.size(); ipp++)
     if (PPset[ipp])
@@ -214,8 +220,9 @@ void NonLocalECPotential::evaluate(ParticleSet& P, bool Tmove)
         for (int iat = 0; iat < NumIons; iat++)
           if (PP[iat] != nullptr && dist[iat] < PP[iat]->getRmax())
           {
-            Value += PP[iat]->evaluateOneWithForces(P, iat, Psi, jel, dist[iat], RealType(-1) * displ[iat], forces[iat],
+            RealType pairpot = PP[iat]->evaluateOneWithForces(P, iat, Psi, jel, dist[iat], RealType(-1) * displ[iat], forces[iat],
                                                     Tmove, Txy);
+            Value += pairpot;
             NeighborIons.push_back(iat);
             IonNeighborElecs.getNeighborList(iat).push_back(jel);
           }
@@ -238,9 +245,12 @@ void NonLocalECPotential::evaluate(ParticleSet& P, bool Tmove)
         for (int iat = 0; iat < NumIons; iat++)
           if (PP[iat] != nullptr && dist[iat] < PP[iat]->getRmax())
           {
-            Value += PP[iat]->evaluateOne(P, iat, Psi, jel, dist[iat], RealType(-1) * displ[iat], Tmove, Txy);
+            RealType pairpot = PP[iat]->evaluateOne(P, iat, Psi, jel, dist[iat], RealType(-1) * displ[iat], Tmove, Txy);
+            Value += pairpot;
             NeighborIons.push_back(iat);
             IonNeighborElecs.getNeighborList(iat).push_back(jel);
+            Ve_samp(jel) = 0.5*pairpot;
+            Vi_samp(iat) = 0.5*pairpot;
           }
       }
     }
@@ -257,14 +267,18 @@ void NonLocalECPotential::evaluate(ParticleSet& P, bool Tmove)
           const RealType r(myTable.r(nn));
           if (r > PP[iat]->getRmax())
             continue;
-          Value += PP[iat]->evaluateOne(P, iat, Psi, iel, r, myTable.dr(nn), Tmove, Txy);
+          RealType pairpot = PP[iat]->evaluateOne(P, iat, Psi, iel, r, myTable.dr(nn), Tmove, Txy);
+          Value += pairpot;
           NeighborElecs.push_back(iel);
           ElecNeighborIons.getNeighborList(iel).push_back(iat);
+          Ve_samp(iel) = 0.5*pairpot;
+          Vi_samp(iat) = 0.5*pairpot;
         }
       }
 #endif
     }
   }
+
 #if defined(TRACE_CHECK)
   if (streaming_particles)
   {
@@ -460,7 +474,11 @@ void NonLocalECPotential::addComponent(int groupID, NonLocalECPComponent* ppot)
 {
   for (int iat = 0; iat < PP.size(); iat++)
     if (IonConfig.GroupID[iat] == groupID)
+    {
       PP[iat] = ppot;
+      ppot->Ve_sample = &Ve_samp_tmp;
+      ppot->Vi_sample = &Vi_samp_tmp;
+    }
   PPset[groupID] = ppot;
 }
 

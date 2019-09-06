@@ -58,6 +58,8 @@ struct LocalECPotential : public QMCHamiltonianBase
   Vector<RealType> PPart;
 #if !defined(REMOVE_TRACEMANAGER)
   ///single particle trace samples
+  Array<TraceReal, 1> Ve_samp_tmp;
+  Array<TraceReal, 1> Vi_samp_tmp;
   Array<TraceReal, 1>* Ve_sample;
   Array<TraceReal, 1>* Vi_sample;
 #endif
