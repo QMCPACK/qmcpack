@@ -1325,6 +1325,7 @@ bool QMCFixedSampleLinearOptimize::one_shift_run()
   return (optTarget->getReportCounter() > 0);
 }
 
+#ifdef HAVE_LMY_ENGINE
 //Function for optimizing using gradient descent
 bool QMCFixedSampleLinearOptimize::descent_run() {
 
@@ -1366,6 +1367,15 @@ if(descentNum == 0)
 
 
     
+  //During the hybrid method,store 5 vectors of parameter differences over the course of a descent section
+  if (doHybrid && ((descentNum + 1) % (descent_len / 5) == 0)) {
+      app_log() << "Step number in macro-iteration is " << stepNum % descent_len
+                << " out of expected total of " << descent_len
+                << " descent steps." << std::endl;
+    storeVectors(paramsForDiff);
+  }
+  
+
     stepNum = stepNum + 1;
     descentNum = descentNum +1;
   }
@@ -1373,6 +1383,7 @@ if(descentNum == 0)
   finish();
   return (optTarget->getReportCounter() > 0);
 }
+#endif
 
 void QMCFixedSampleLinearOptimize::setParamNumAndTypes()
 {
