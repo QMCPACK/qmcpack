@@ -127,9 +127,19 @@ public:
 
   void mw_acceptMove(const std::vector<WaveFunctionComponent*>& WFC_list,
                      const std::vector<ParticleSet*>& P_list,
-                     int iat) override;
+                     int iat) override
+  {
+    for (int iw = 0; iw < WFC_list.size(); iw++)
+      WFC_list[iw]->acceptMove(*P_list[iw], iat);
+  }
 
   void completeUpdates() override;
+
+  void mw_completeUpdates(const std::vector<WaveFunctionComponent*>& WFC_list) override
+  {
+    for (int iw = 0; iw < WFC_list.size(); iw++)
+      WFC_list[iw]->completeUpdates();
+  }
 
   /** move was rejected. copy the real container to the temporary to move on
    */

@@ -153,7 +153,7 @@ void DiracDeterminant<DU_TYPE>::mw_ratioGrad(const std::vector<WaveFunctionCompo
   Phi->mw_evaluateVGL(phi_list, P_list, iat, psi_v_list, dpsi_v_list, d2psi_v_list);
   SPOVGLTimer.stop();
 
-  for (int iw = 0; iw < P_list.size(); iw++)
+  for (int iw = 0; iw < WFC_list.size(); iw++)
     ratios[iw] = static_cast<DiracDeterminant<DU_TYPE>*>(WFC_list[iw])->ratioGrad_compute(iat, grad_new[iw]);
 }
 
@@ -178,15 +178,6 @@ void DiracDeterminant<DU_TYPE>::acceptMove(ParticleSet& P, int iat)
   UpdateTimer.stop();
   curRatio = 1.0;
 }
-
-template<typename DU_TYPE>
-void DiracDeterminant<DU_TYPE>::mw_acceptMove(const std::vector<WaveFunctionComponent*>& WFC_list,
-                                       const std::vector<ParticleSet*>& P_list,
-                                       int iat)
-{
-  for (int iw = 0; iw < P_list.size(); iw++)
-    WFC_list[iw]->acceptMove(*P_list[iw], iat);
-};
 
 /** move was rejected. copy the real container to the temporary to move on
 */
