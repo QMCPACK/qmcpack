@@ -421,7 +421,7 @@ bool MomentumEstimator::putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootN
 
 bool MomentumEstimator::get(std::ostream& os) const { return true; }
 
-QMCHamiltonianBase* MomentumEstimator::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+OperatorBase* MomentumEstimator::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   MomentumEstimator* myclone = new MomentumEstimator(qp, psi);
   myclone->resize(kPoints, M);

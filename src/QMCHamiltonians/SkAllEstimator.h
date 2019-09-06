@@ -18,7 +18,7 @@
  */
 #ifndef QMCPLUSPLUS_SK_ALL_ESTIMATOR_H
 #define QMCPLUSPLUS_SK_ALL_ESTIMATOR_H
-#include <QMCHamiltonians/QMCHamiltonianBase.h>
+#include <QMCHamiltonians/OperatorBase.h>
 #include <vector>
 namespace qmcplusplus
 {
@@ -26,7 +26,7 @@ namespace qmcplusplus
  *
  * <estimator name="sk" type="sk" debug="no"/>
  */
-class SkAllEstimator : public QMCHamiltonianBase
+class SkAllEstimator : public OperatorBase
 {
 public:
   SkAllEstimator(ParticleSet& ions, ParticleSet& elns);
@@ -44,7 +44,7 @@ public:
   void setParticlePropertyList(PropertySetType& plist, int offset);
   bool put(xmlNodePtr cur);
   bool get(std::ostream& os) const;
-  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 
 protected:
   //  ParticleSet *sourcePtcl;

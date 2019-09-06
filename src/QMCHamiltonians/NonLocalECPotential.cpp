@@ -482,7 +482,7 @@ void NonLocalECPotential::addComponent(int groupID, NonLocalECPComponent* ppot)
   PPset[groupID] = ppot;
 }
 
-QMCHamiltonianBase* NonLocalECPotential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+OperatorBase* NonLocalECPotential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   NonLocalECPotential* myclone = new NonLocalECPotential(IonConfig, qp, psi, ComputeForces);
   for (int ig = 0; ig < PPset.size(); ++ig)
@@ -499,7 +499,7 @@ QMCHamiltonianBase* NonLocalECPotential::makeClone(ParticleSet& qp, TrialWaveFun
 
 void NonLocalECPotential::addObservables(PropertySetType& plist, BufferType& collectables)
 {
-  QMCHamiltonianBase::addValue(plist);
+  OperatorBase::addValue(plist);
   if (ComputeForces)
   {
     if (FirstForceIndex < 0)
@@ -521,7 +521,7 @@ void NonLocalECPotential::addObservables(PropertySetType& plist, BufferType& col
 
 void NonLocalECPotential::registerObservables(std::vector<observable_helper*>& h5list, hid_t gid) const
 {
-  QMCHamiltonianBase::registerObservables(h5list, gid);
+  OperatorBase::registerObservables(h5list, gid);
   if (ComputeForces)
   {
     std::vector<int> ndim(2);
@@ -540,7 +540,7 @@ void NonLocalECPotential::registerObservables(std::vector<observable_helper*>& h
 
 void NonLocalECPotential::setObservables(QMCTraits::PropertySetType& plist)
 {
-  QMCHamiltonianBase::setObservables(plist);
+  OperatorBase::setObservables(plist);
   if (ComputeForces)
   {
     int index = FirstForceIndex;
@@ -558,7 +558,7 @@ void NonLocalECPotential::setObservables(QMCTraits::PropertySetType& plist)
 
 void NonLocalECPotential::setParticlePropertyList(QMCTraits::PropertySetType& plist, int offset)
 {
-  QMCHamiltonianBase::setParticlePropertyList(plist, offset);
+  OperatorBase::setParticlePropertyList(plist, offset);
   if (ComputeForces)
   {
     int index = FirstForceIndex + offset;

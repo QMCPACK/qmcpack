@@ -184,7 +184,7 @@ void LatticeDeviationEstimator::addObservables(PropertySetType& plist, BufferTyp
   }
   else
   {
-    myIndex = plist.add(myName); // same as QMCHamiltonianBase::addObservables
+    myIndex = plist.add(myName); // same as OperatorBase::addObservables
   }
 
   // get h5_index for stat.h5
@@ -218,7 +218,7 @@ void LatticeDeviationEstimator::setObservables(PropertySetType& plist)
 
 void LatticeDeviationEstimator::resetTargetParticleSet(ParticleSet& P) {}
 
-QMCHamiltonianBase* LatticeDeviationEstimator::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+OperatorBase* LatticeDeviationEstimator::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   // default constructor does not work with threads
   //LatticeDeviationEstimator* myclone = new LatticeDeviationEstimator(*this);

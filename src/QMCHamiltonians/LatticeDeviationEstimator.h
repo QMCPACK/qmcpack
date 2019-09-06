@@ -14,7 +14,7 @@
 
 #include "Particle/ParticleSet.h"
 #include "Particle/WalkerSetRef.h"
-#include "QMCHamiltonians/QMCHamiltonianBase.h"
+#include "QMCHamiltonians/OperatorBase.h"
 #include "ParticleBase/ParticleAttribOps.h"
 #include <Particle/DistanceTableData.h>
 
@@ -37,7 +37,7 @@ namespace qmcplusplus
 particles, whereas the stat.h5 entries are particle-resolved. The two sets of outputs can be compared
 as a consistency check for the estimator.
  */
-class LatticeDeviationEstimator : public QMCHamiltonianBase
+class LatticeDeviationEstimator : public OperatorBase
 {
 public:
   LatticeDeviationEstimator(ParticleSet& P, ParticleSet& sP, const std::string& tgroup, const std::string& sgroup);
@@ -59,7 +59,7 @@ public:
 
   // pure virtual functions require overrider
   void resetTargetParticleSet(ParticleSet& P);                            // required
-  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi); // required
+  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi); // required
 
 private:
   SpeciesSet& tspecies;       // species table of target particle set

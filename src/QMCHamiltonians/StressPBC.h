@@ -23,7 +23,7 @@
 
 namespace qmcplusplus
 {
-struct StressPBC : public QMCHamiltonianBase, public ForceBase
+struct StressPBC : public OperatorBase, public ForceBase
 {
   typedef LRCoulombSingleton::LRHandlerType LRHandlerType;
   typedef LRCoulombSingleton::GridType GridType;
@@ -135,7 +135,7 @@ struct StressPBC : public QMCHamiltonianBase, public ForceBase
   void resetTargetParticleSet(ParticleSet& P) {}
 
   void setParticlePropertyList(PropertySetType& plist, int offset) { setParticleSetStress(plist, offset); }
-  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
   //  StressPBC* makeStressClone(ParticleSet& qp, TrialWaveFunction& psi);
   bool put(xmlNodePtr cur);
 

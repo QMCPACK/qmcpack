@@ -195,7 +195,7 @@ struct TraceRequest
     return stream;
   }
 
-  //Contributor API (QMCHamiltonianBase and others)
+  //Contributor API (OperatorBase and others)
   //declare that scalars are available for a quantity
   inline void contribute_scalar(const std::string& name, bool default_quantity = false)
   {
@@ -1815,7 +1815,7 @@ public:
   }
 
 
-  //checkout functions to be used by any QMCHamiltonianBase or Estimator
+  //checkout functions to be used by any OperatorBase or Estimator
   //  the array checked out should be updated during evaluate
   //  object calling checkout is responsible for deleting the new array
 
