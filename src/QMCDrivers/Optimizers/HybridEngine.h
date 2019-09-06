@@ -17,7 +17,6 @@ class HybridEngine
 private:
   Communicate* myComm;
 
-
   //number of steps in a descent section of hybrid method
   int descent_len;
   //number of steps in a BLM section of hybrid method
@@ -34,6 +33,9 @@ private:
 
   ///xml saved node
   std::vector<xmlNodePtr> saved_xml_opt_methods_;
+
+  //number of updates in each individual method of hybrid method
+  std::vector<int> num_updates_opt_methods_;
 
 public:
   //Constructor for engine

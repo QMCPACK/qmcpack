@@ -6,6 +6,7 @@
 #include "QMCDrivers/Optimizers/HybridEngine.h"
 #include "OhmmsData/ParameterSet.h"
 #include "Message/CommOperators.h"
+#include "OhmmsData/XMLParsingString.h"
 
 
 namespace qmcplusplus
@@ -15,15 +16,8 @@ HybridEngine::HybridEngine(Communicate* comm, const xmlNodePtr cur) : myComm(com
 
 bool HybridEngine::processXML(const xmlNodePtr opt_xml)
 {
-  ParameterSet m_param;
-  //Number of steps in a descent section of hybrid method
-  m_param.add(descent_len, "descent_length", "int");
-  //Number of steps in a BLM of section of hybrid method
-  m_param.add(blm_len, "BLM_length", "int");
-
-  m_param.put(opt_xml);
-
   saved_xml_opt_methods_.clear();
+  num_updates_opt_methods_.clear();
 
   xmlNodePtr cur = opt_xml->children;
   while (cur != NULL)
@@ -38,8 +32,10 @@ bool HybridEngine::processXML(const xmlNodePtr opt_xml)
 
       if (children_MinMethod.empty())
         throw std::runtime_error("MinMethod must be given!\n");
-      app_log() << "HybridEngine saved MinMethod " << children_MinMethod << std::endl;
+      XMLAttrString updates_string(cur, "num_updates");
+      app_log() << "HybridEngine saved MinMethod " << children_MinMethod << " num_updates = " << updates_string << std::endl;
       saved_xml_opt_methods_.push_back(cur);
+      num_updates_opt_methods_.push_back(std::stoi(updates_string));
     }
     cur = cur->next;
   }
