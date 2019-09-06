@@ -193,7 +193,6 @@ private:
   bool doHybrid;
 
 
-
   //Integer for keeping track of the iteration number
   int stepNum;
 
@@ -213,8 +212,6 @@ private:
   //blmCount tracks the number of BLM steps taken within one BLM section of the hybrid method.
   //Like descentCount, it resets for another BLM section.
   int blmCount;
-
-
 };
 } // namespace qmcplusplus
 #endif

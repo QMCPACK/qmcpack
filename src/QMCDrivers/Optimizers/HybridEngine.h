@@ -18,7 +18,6 @@ private:
   Communicate* myComm;
 
 
-
   //number of steps in a descent section of hybrid method
   int descent_len;
   //number of steps in a BLM section of hybrid method
@@ -42,17 +41,15 @@ public:
 
   xmlNodePtr getSelectedXML(int counter) const;
 
-void getInitialParams(const optimize::VariableSet& myVars);
+  void getInitialParams(const optimize::VariableSet& myVars);
 
-void storeVectors(std::vector<double>& currentParams,int descentCount);
+  void storeVectors(std::vector<double>& currentParams, int descentCount);
 
-const std::vector<std::vector<double>> retrieveHybridBLM_Input() const {return  hybridBLM_Input;}
+  const std::vector<std::vector<double>> retrieveHybridBLM_Input() const { return hybridBLM_Input; }
 
-const int getDescentLen() const {return descent_len;}
+  const int getDescentLen() const { return descent_len; }
 
-const int getBLMLen() const {return blm_len;}
-
-
+  const int getBLMLen() const { return blm_len; }
 };
 
 } // namespace qmcplusplus

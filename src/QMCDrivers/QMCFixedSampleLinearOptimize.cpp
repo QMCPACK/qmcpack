@@ -1377,7 +1377,6 @@ bool QMCFixedSampleLinearOptimize::descent_run()
     }
 
 
-    
     stepNum    = stepNum + 1;
     descentNum = descentNum + 1;
   }
@@ -1392,35 +1391,30 @@ bool QMCFixedSampleLinearOptimize::descent_run()
 #ifdef HAVE_LMY_ENGINE
 bool QMCFixedSampleLinearOptimize::hybrid_run()
 {
-
-    int descent_len = hybridEngineObj->getDescentLen();
-    int blm_len = hybridEngineObj->getBLMLen();
+  int descent_len = hybridEngineObj->getDescentLen();
+  int blm_len     = hybridEngineObj->getBLMLen();
 
   if (descentCount < descent_len)
   {
-      if(descentCount = 0)
-      {
-	hybridEngineObj->getInitialParams(optTarget->getOptVariables()); 
-      
-      }
-  //During the hybrid method,store 5 vectors of parameter differences over the course of a descent section
-  if (((descentCount + 1) % (descent_len / 5) == 0))
-  {
-      app_log() << "Step number in macro-iteration is " << descentCount-1
-                << " out of expected total of " << descent_len
-                << " descent steps." << std::endl;
- 
+    if (descentCount = 0)
+    {
+      hybridEngineObj->getInitialParams(optTarget->getOptVariables());
+    }
+    //During the hybrid method,store 5 vectors of parameter differences over the course of a descent section
+    if (((descentCount + 1) % (descent_len / 5) == 0))
+    {
+      app_log() << "Step number in macro-iteration is " << descentCount - 1 << " out of expected total of "
+                << descent_len << " descent steps." << std::endl;
+
       std::vector<double> currentValues = descentEngineObj->retrieveNewParams();
-    hybridEngineObj->storeVectors(currentValues,descentCount);
+      hybridEngineObj->storeVectors(currentValues, descentCount);
 
-    descentCount++;
-    totalCount++;
-    app_log() << "Should be on descent step# " << descentCount - 1 << " of macro-iteration. Total steps: " << totalCount  << std::endl;
-    return descent_run();
- 
-  }
-  
-
+      descentCount++;
+      totalCount++;
+      app_log() << "Should be on descent step# " << descentCount - 1
+                << " of macro-iteration. Total steps: " << totalCount << std::endl;
+      return descent_run();
+    }
   }
   else
   {
@@ -1428,23 +1422,25 @@ bool QMCFixedSampleLinearOptimize::hybrid_run()
     {
       if (blmCount == 0)
       {
-	  std::vector<std::vector<double>> hybridBLM_Input = hybridEngineObj->retrieveHybridBLM_Input();
+        std::vector<std::vector<double>> hybridBLM_Input = hybridEngineObj->retrieveHybridBLM_Input();
         //Only need to set input vectors from AD on first BLM step
         EngineObj->setHybridBLM_Input(hybridBLM_Input);
       }
       blmCount++;
       totalCount++;
-      app_log() << "Should be on blm step# " << blmCount - 1 << " of macro-iteration. Total steps: " << totalCount << std::endl;
+      app_log() << "Should be on blm step# " << blmCount - 1 << " of macro-iteration. Total steps: " << totalCount
+                << std::endl;
       return adaptive_three_shift_run();
     }
     else
     {
-	//In this case switching back from BLM to descent
+      //In this case switching back from BLM to descent
       descentCount = 0;
       blmCount     = 0;
       descentCount++;
       totalCount++;
-      app_log() << "Should be on descent step# " << descentCount - 1 << " of macro-iteration. Total steps: " << totalCount << std::endl;
+      app_log() << "Should be on descent step# " << descentCount - 1
+                << " of macro-iteration. Total steps: " << totalCount << std::endl;
       return descent_run();
     }
   }

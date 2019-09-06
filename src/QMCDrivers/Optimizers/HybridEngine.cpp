@@ -10,11 +10,7 @@
 
 namespace qmcplusplus
 {
-HybridEngine::HybridEngine(Communicate* comm, const xmlNodePtr cur)
-   : myComm(comm)
-{
-  processXML(cur);
-}
+HybridEngine::HybridEngine(Communicate* comm, const xmlNodePtr cur) : myComm(comm) { processXML(cur); }
 
 
 bool HybridEngine::processXML(const xmlNodePtr opt_xml)
@@ -40,7 +36,7 @@ bool HybridEngine::processXML(const xmlNodePtr opt_xml)
       m_param.add(children_MinMethod, "MinMethod", "string");
       m_param.put(cur);
 
-      if(children_MinMethod.empty())
+      if (children_MinMethod.empty())
         throw std::runtime_error("MinMethod must be given!\n");
       app_log() << "HybridEngine saved MinMethod " << children_MinMethod << std::endl;
       saved_xml_opt_methods_.push_back(cur);
@@ -48,33 +44,26 @@ bool HybridEngine::processXML(const xmlNodePtr opt_xml)
     cur = cur->next;
   }
 
-  if(saved_xml_opt_methods_.size()!=2)
+  if (saved_xml_opt_methods_.size() != 2)
     throw std::runtime_error("MinMethod hybrid needs two optimizer input blocks!\n");
   return true;
 }
 
-xmlNodePtr HybridEngine::getSelectedXML(int counter) const
-{
-  return saved_xml_opt_methods_[0];
-}
+xmlNodePtr HybridEngine::getSelectedXML(int counter) const { return saved_xml_opt_methods_[0]; }
 
 void HybridEngine::getInitialParams(const optimize::VariableSet& myVars)
 {
-
-    for(int i =0; i < myVars.size(); i++)
-    {
-	paramsForDiff.push_back(myVars[i]);
-    }
-
+  for (int i = 0; i < myVars.size(); i++)
+  {
+    paramsForDiff.push_back(myVars[i]);
+  }
 }
 
 
 // Helper method for storing vectors of parameter differences over the course of
 // a descent optimization for use in BLM steps of the hybrid method
-void HybridEngine::storeVectors(std::vector<double>& currentParams,int descentCount)
+void HybridEngine::storeVectors(std::vector<double>& currentParams, int descentCount)
 {
-
-
   std::vector<double> rowVec(currentParams.size());
   std::fill(rowVec.begin(), rowVec.end(), 0.0);
 
