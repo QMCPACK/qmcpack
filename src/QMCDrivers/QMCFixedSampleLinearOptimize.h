@@ -87,10 +87,6 @@ private:
   bool hybrid_run();
 #endif
 
-  //helper method for transfering information on parameter number and types to the descent engine
-  void setParamNumAndTypes();
-
-
   //helper method for writing vectors for BLM steps in hybrid method
   void storeVectors(std::vector< Return_t >& paramsForDiff);
 

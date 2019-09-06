@@ -20,6 +20,7 @@
 #include "Particle/MCWalkerConfiguration.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "Message/CommOperators.h"
+#include "QMCDrivers/Optimizers/DescentEngine.h"
 //#define QMCCOSTFUNCTION_DEBUG
 
 namespace qmcplusplus
@@ -352,7 +353,7 @@ void QMCCostFunction::checkConfigurations()
 /** evaluate everything before optimization
  *In future, both the LM and descent engines should be children of some parent engine base class.
  * */
-void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine* EngineObj,DescentEngine& descentEngineObj,std::string MinMethod)
+void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine* EngineObj, DescentEngine& descentEngineObj,std::string MinMethod)
 {
     if(MinMethod == "descent")
     {
@@ -699,7 +700,7 @@ QMCCostFunction::Return_rt QMCCostFunction::fillOverlapHamiltonianMatrices(Matri
   RealType H2_avg = 1.0 / (curAvg_w * curAvg_w);
   //    RealType H2_avg = 1.0/std::sqrt(curAvg_w*curAvg_w*curAvg2_w);
   RealType V_avg = curAvg2_w - curAvg_w * curAvg_w;
-  std::vector<Return_rt> D_avg(NumParams(), 0.0);
+  std::vector<Return_rt> D_avg(getNumParams(), 0.0);
   Return_rt wgtinv = 1.0 / SumValue[SUM_WGT];
   for (int ip = 0; ip < NumThreads; ip++)
   {
@@ -709,7 +710,7 @@ QMCCostFunction::Return_rt QMCCostFunction::fillOverlapHamiltonianMatrices(Matri
       const Return_rt* restrict saved = (*RecordsOnNode[ip])[iw];
       Return_rt weight                = saved[REWEIGHT] * wgtinv;
       const Return_rt* Dsaved         = (*DerivRecords[ip])[iw];
-      for (int pm = 0; pm < NumParams(); pm++)
+      for (int pm = 0; pm < getNumParams(); pm++)
       {
         D_avg[pm] += Dsaved[pm] * weight;
       }
@@ -729,7 +730,7 @@ QMCCostFunction::Return_rt QMCCostFunction::fillOverlapHamiltonianMatrices(Matri
       const Return_rt* Dsaved         = (*DerivRecords[ip])[iw];
       const Return_rt* HDsaved        = (*HDerivRecords[ip])[iw];
 #pragma omp parallel for
-      for (int pm = 0; pm < NumParams(); pm++)
+      for (int pm = 0; pm < getNumParams(); pm++)
       {
         Return_rt wfe = (HDsaved[pm] + (Dsaved[pm] - D_avg[pm]) * eloc_new) * weight;
         Return_rt wfd = (Dsaved[pm] - D_avg[pm]) * weight;
@@ -745,7 +746,7 @@ QMCCostFunction::Return_rt QMCCostFunction::fillOverlapHamiltonianMatrices(Matri
         //                 Hamiltonian
         Left(0, pm + 1) += (1 - b2) * wfe;
         Left(pm + 1, 0) += (1 - b2) * wfd * eloc_new;
-        for (int pm2 = 0; pm2 < NumParams(); pm2++)
+        for (int pm2 = 0; pm2 < getNumParams(); pm2++)
         {
           //                Hamiltonian
           Left(pm + 1, pm2 + 1) += (1 - b2) * wfd * (HDsaved[pm2] + (Dsaved[pm2] - D_avg[pm2]) * eloc_new);

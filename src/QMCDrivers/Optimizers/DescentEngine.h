@@ -8,6 +8,7 @@
 #include <vector>
 #include <libxml/tree.h>
 #include "Message/Communicate.h"
+#include "Optimize/VariableSet.h"
 
 
 namespace qmcplusplus
@@ -94,9 +95,9 @@ public:
   //Constructor for engine
   DescentEngine(Communicate* comm, const xmlNodePtr cur);
 
-  void clear_samples(const size_t numOptimizables);
+  void clear_samples(const int numOptimizables);
 
-  void setEtemp(std::vector<double> etemp);
+  void setEtemp(const std::vector<double>& etemp);
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////////
   /// \brief  Function that Take Sample Data from the Host Code
@@ -108,9 +109,9 @@ public:
   /// \param[in]  weight_samp    weight for this sample
   ///
   ////////////////////////////////////////////////////////////////////////////////////////////////////////
-  void take_sample(std::vector<double>& der_rat_samp,
-                   std::vector<double>& le_der_samp,
-                   std::vector<double>& ls_der_samp,
+  void take_sample(const std::vector<double>& der_rat_samp,
+                   const std::vector<double>& le_der_samp,
+                   const std::vector<double>& ls_der_samp,
                    double vgs_samp,
                    double weight_samp);
 
@@ -141,10 +142,7 @@ public:
 
   void storeDerivRecord() { derivRecords.push_back(LDerivs); }
 
-  void setupUpdate(int& paramNum,
-                   std::vector<std::string>& paramNames,
-                   std::vector<int>& paramTypes,
-                   std::vector<double>& initialParams);
+  void setupUpdate(const optimize::VariableSet& myVars);
 
   std::vector<double> retrieveNewParams() { return currentParams; }
 };

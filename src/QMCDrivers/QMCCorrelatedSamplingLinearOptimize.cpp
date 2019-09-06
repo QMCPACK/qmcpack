@@ -99,7 +99,7 @@ bool QMCCorrelatedSamplingLinearOptimize::run()
 {
   start();
   //size of matrix
-  numParams = optTarget->NumParams();
+  numParams = optTarget->getNumParams();
   N         = numParams + 1;
   //  solve CSFs and other parameters separately then rescale elements accordingly
   int first, last;

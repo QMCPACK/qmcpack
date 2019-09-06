@@ -89,7 +89,7 @@ public:
   void setTarget(ObjectFuncType* fn)
   {
     TargetFunc = fn;
-    NumParams  = TargetFunc->NumParams();
+    NumParams  = TargetFunc->getNumParams();
     resizeAllArray(NumParams);
     for (int i = 0; i < NumParams; i++)
       Parms[i] = std::real(TargetFunc->Params(i));

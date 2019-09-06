@@ -14,8 +14,9 @@
 namespace qmcplusplus
 {
 DescentEngine::DescentEngine(Communicate* comm, const xmlNodePtr cur)
-    : engineTargetExcited(false),
-      myComm(comm),
+    : myComm(comm),
+      engineTargetExcited(false),
+      numParams(0),
       flavor("RMSprop"),
       TJF_2Body_eta(.01),
       TJF_1Body_eta(.01),
@@ -50,7 +51,7 @@ bool DescentEngine::processXML(const xmlNodePtr cur)
   engineTargetExcited = (excited == "yes");
 }
 
-void DescentEngine::clear_samples(const size_t numOptimizables)
+void DescentEngine::clear_samples(const int numOptimizables)
 {
   avg_le_der_samp.resize(numOptimizables);
   avg_der_rat_samp.resize(numOptimizables);
@@ -68,7 +69,7 @@ void DescentEngine::clear_samples(const size_t numOptimizables)
   eSquare_avg = 0;
 }
 
-void DescentEngine::setEtemp(std::vector<double> etemp)
+void DescentEngine::setEtemp(const std::vector<double>& etemp)
 {
   e_sum       = etemp[0];
   w_sum       = etemp[1];
@@ -97,9 +98,9 @@ void DescentEngine::setEtemp(std::vector<double> etemp)
 /// \param[in]  weight_samp    weight for this sample
 ///
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
-void DescentEngine::take_sample(std::vector<double>& der_rat_samp,
-                                std::vector<double>& le_der_samp,
-                                std::vector<double>& ls_der_samp,
+void DescentEngine::take_sample(const std::vector<double>& der_rat_samp,
+                                const std::vector<double>& le_der_samp,
+                                const std::vector<double>& ls_der_samp,
                                 double vgs_samp,
                                 double weight_samp)
 {
@@ -478,22 +479,16 @@ double DescentEngine::setStepSize(int i)
   return type_eta;
 }
 
-void DescentEngine::setupUpdate(int& paramNum,
-                                std::vector<std::string>& paramNames,
-                                std::vector<int>& paramTypes,
-                                std::vector<double>& initialParams)
+void DescentEngine::setupUpdate(const optimize::VariableSet& myVars)
 {
-  numParams = paramNum;
-
-
+  numParams = myVars.size();
   for (int i = 0; i < numParams; i++)
   {
-    engineParamNames.push_back(paramNames[i]);
-    engineParamTypes.push_back(paramTypes[i]);
-    paramsCopy.push_back(initialParams[i]);
-    currentParams.push_back(initialParams[i]);
+    engineParamNames.push_back(myVars.name(i));
+    engineParamTypes.push_back(myVars.getType(i));
+    paramsCopy.push_back(myVars[i]);
+    currentParams.push_back(myVars[i]);
   }
 }
-
 
 } // namespace qmcplusplus

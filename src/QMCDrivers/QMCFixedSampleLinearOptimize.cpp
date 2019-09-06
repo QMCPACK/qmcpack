@@ -235,7 +235,7 @@ bool QMCFixedSampleLinearOptimize::run()
   bool Valid(true);
   int Total_iterations(0);
   //size of matrix
-  numParams = optTarget->NumParams();
+  numParams = optTarget->getNumParams();
   N         = numParams + 1;
   //   where we are and where we are pointing
   std::vector<RealType> currentParameterDirections(N, 0);
@@ -476,8 +476,10 @@ bool QMCFixedSampleLinearOptimize::put(xmlNodePtr q)
   if (MinMethod == "hybrid")
   {
     doHybrid = true;
+    //if (!hybridEngineObj)
+    //  hybridEngineObj = std::make_unique<hybridEngine>(myComm, q);
     // look for the optimizer section based on the counter
-    xmlNodePtr selected_method_xml = NULL;
+    xmlNodePtr selected_method_xml = NULL; //hybridEngineObj->getSelectedXML(counter);
     return processXML(selected_method_xml, vmcMove, reportH5);
   }
   else
@@ -785,7 +787,7 @@ void QMCFixedSampleLinearOptimize::solveShiftsWithoutLMYEngine(const std::vector
   const int nshifts = shifts_i.size();
 
   // get number of optimizable parameters
-  numParams = optTarget->NumParams();
+  numParams = optTarget->getNumParams();
 
   // get dimension of the linear method matrices
   N = numParams + 1;
@@ -894,7 +896,7 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
   const int central_index = num_shifts / 2;
 
   // get number of optimizable parameters
-  numParams = optTarget->NumParams();
+  numParams = optTarget->getNumParams();
 
   // prepare the shifts that we will try
   const std::vector<double> shifts_i = prepare_shifts(bestShift_i);
@@ -972,7 +974,7 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
   {
     optTarget->setneedGrads(true);
 
-    int numOptParams = optTarget->NumParams();
+    int numOptParams = optTarget->getNumParams();
 
     // reset the engine object
     EngineObj->reset();
@@ -1192,7 +1194,7 @@ bool QMCFixedSampleLinearOptimize::one_shift_run()
   start();
 
   // get number of optimizable parameters
-  numParams = optTarget->NumParams();
+  numParams = optTarget->getNumParams();
 
   // get dimension of the linear method matrices
   N = numParams + 1;
@@ -1346,7 +1348,7 @@ bool QMCFixedSampleLinearOptimize::descent_run() {
   start();
   bool Valid(true);
   int Total_iterations(0);
-  numParams = optTarget->NumParams();
+  numParams = optTarget->getNumParams();
    N = numParams + 1;
 
    
@@ -1361,10 +1363,8 @@ bool QMCFixedSampleLinearOptimize::descent_run() {
 
 
 
-if(descentNum == 0)
-   {
-   setParamNumAndTypes();
-   }
+  if(descentNum == 0)
+     descentEngineObj->setupUpdate(optTarget->getOptVariables());
 
     //Store the derivatives and then compute parameter updates
     descentEngineObj->storeDerivRecord();
@@ -1387,27 +1387,6 @@ if(descentNum == 0)
   finish();
   return (optTarget->getReportCounter() > 0);
 }
-
-void QMCFixedSampleLinearOptimize::setParamNumAndTypes()
-{
-numParams = optTarget->NumParams();
-
-std::vector<std::string> paramNames(numParams);
-std::vector<int> paramTypes(numParams);
-std::vector<double> startParams(numParams);
-
-for (int i =0; i< numParams; i++)
-{
-paramNames[i] = optTarget->getName(i);
-paramTypes[i] = optTarget->getType(i);
-startParams[i] = optTarget->Params(i);
-}
-
-descentEngineObj->setupUpdate(numParams,paramNames,paramTypes,startParams);
-
-}
-
-
 
 // Helper method for storing vectors of parameter differences over the course of
 // a descent optimization for use in BLM steps of the hybrid method
