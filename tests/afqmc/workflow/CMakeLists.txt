@@ -8,7 +8,7 @@ FUNCTION(ADD_AFQMC_PYSCF_WORKFLOW_TEST test_name input_dir TEST_SCALARS TEST_OBS
 
   # 1. Run scf.
   SET(TESTNAME "pyscf_${test_name}")
-  ADD_TEST(NAME ${TESTNAME} COMMAND python ${TESTDIR}/scf.py WORKING_DIRECTORY ${TESTDIR})
+  ADD_TEST(NAME ${TESTNAME} COMMAND python ${TESTDIR}/scf.py gen_test_data WORKING_DIRECTORY ${TESTDIR})
   SET_PROPERTY(TEST ${TESTNAME} APPEND PROPERTY LABELS "converter;afqmc")
 
   # 2. Generate hamiltonian/wavefunction.
@@ -78,7 +78,7 @@ IF(QMC_COMPLEX)
     ADD_AFQMC_PYSCF_WORKFLOW_TEST("04-N2_nomsd"
                                   "${EXAMPLE_DIR}/04-N2_nomsd"
                                   "${TEST_SCALARS_N2_NOMSD}" FALSE 1 -h)
-    LIST(APPEND TEST_SCALARS_N2_PHMSD "EnergyEstim__nume_real" "-109.03298314 0.02153972")
+    LIST(APPEND TEST_SCALARS_N2_PHMSD "EnergyEstim__nume_real" " -109.04700629 0.02153972")
     ADD_AFQMC_PYSCF_WORKFLOW_TEST("05-N2_phmsd"
                                   "${EXAMPLE_DIR}/05-N2_phmsd"
                                   "${TEST_SCALARS_N2_PHMSD}" FALSE 1 -h)
