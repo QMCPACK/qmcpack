@@ -479,9 +479,7 @@ bool QMCFixedSampleLinearOptimize::put(xmlNodePtr q)
     if (!hybridEngineObj)
       hybridEngineObj = std::make_unique<HybridEngine>(myComm, q);
 
-    // look for the optimizer section based on the counter
-    xmlNodePtr selected_method_xml = NULL; //hybridEngineObj->getSelectedXML(counter);
-    return processOptXML(selected_method_xml, vmcMove, reportH5);
+    return processOptXML(hybridEngineObj->getSelectedXML(stepNum), vmcMove, reportH5);
   }
   else
     return processOptXML(q, vmcMove, reportH5);

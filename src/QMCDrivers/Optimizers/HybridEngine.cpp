@@ -11,28 +11,51 @@
 namespace qmcplusplus
 {
 HybridEngine::HybridEngine(Communicate* comm, const xmlNodePtr cur)
-   : myComm(comm), saved_xml_(cur)
+   : myComm(comm)
 {
   processXML(cur);
 }
 
 
-bool HybridEngine::processXML(const xmlNodePtr cur)
+bool HybridEngine::processXML(const xmlNodePtr opt_xml)
 {
-    ParameterSet m_param;
+  ParameterSet m_param;
   //Number of steps in a descent section of hybrid method
   m_param.add(descent_len, "descent_length", "int");
   //Number of steps in a BLM of section of hybrid method
   m_param.add(blm_len, "BLM_length", "int");
 
-  m_param.put(cur);
+  m_param.put(opt_xml);
 
+  saved_xml_opt_methods_.clear();
 
+  xmlNodePtr cur = opt_xml->children;
+  while (cur != NULL)
+  {
+    std::string cname((const char*)(cur->name));
+    if (cname == "optimizer")
+    {
+      std::string children_MinMethod;
+      ParameterSet m_param;
+      m_param.add(children_MinMethod, "MinMethod", "string");
+      m_param.put(cur);
+
+      if(children_MinMethod.empty())
+        throw std::runtime_error("MinMethod must be given!\n");
+      app_log() << "HybridEngine saved MinMethod " << children_MinMethod << std::endl;
+      saved_xml_opt_methods_.push_back(cur);
+    }
+    cur = cur->next;
+  }
+
+  if(saved_xml_opt_methods_.size()!=2)
+    throw std::runtime_error("MinMethod hybrid needs two optimizer input blocks!\n");
   return true;
 }
 
-  const xmlNodePtr HybridEngine::getSelectedXML(int counter) const
+xmlNodePtr HybridEngine::getSelectedXML(int counter) const
 {
+  return saved_xml_opt_methods_[0];
 }
 
 void HybridEngine::getInitialParams(const optimize::VariableSet& myVars)
