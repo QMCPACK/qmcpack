@@ -16,18 +16,17 @@ namespace qmcplusplus
 class HybridEngine
 {
 private:
-  
   Communicate* myComm;
 
-ParameterSet m_param; 
+  ParameterSet m_param;
 
 
-//number of steps in a descent section of hybrid method
-int descent_len;
-//number of steps in a BLM section of hybrid method
-int blm_len;
+  //number of steps in a descent section of hybrid method
+  int descent_len;
+  //number of steps in a BLM section of hybrid method
+  int blm_len;
 
-//Vector for storing parameter values for calculating differences to be given to hybrid method
+  //Vector for storing parameter values for calculating differences to be given to hybrid method
   std::vector<double> paramsForDiff;
 
   ///process xml node
@@ -36,10 +35,6 @@ int blm_len;
 public:
   //Constructor for engine
   HybridEngine(Communicate* comm, const xmlNodePtr cur);
-
-
-  
-
 };
 
 } // namespace qmcplusplus

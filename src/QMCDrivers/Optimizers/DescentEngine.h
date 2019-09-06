@@ -29,7 +29,6 @@ private:
   std::vector<double> LDerivs;
 
   bool engineTargetExcited;
-  std::string excited;
 
   int numParams;
 
@@ -74,7 +73,6 @@ private:
 
   //Whether to gradually ramp up step sizes in descent
   bool ramp_eta;
-  std::string ramp_etaStr;
 
   //Number of steps over which to ramp up step size
   int ramp_num;

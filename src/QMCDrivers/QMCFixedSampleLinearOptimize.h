@@ -89,7 +89,7 @@ private:
 #endif
 
   //helper method for writing vectors for BLM steps in hybrid method
-  void storeVectors(std::vector< Return_t >& paramsForDiff);
+  void storeVectors(std::vector<Return_t>& paramsForDiff);
 
 
   void solveShiftsWithoutLMYEngine(const std::vector<double>& shifts_i,
@@ -102,7 +102,7 @@ private:
 #endif
 
   std::unique_ptr<DescentEngine> descentEngineObj;
-  
+
   std::unique_ptr<HybridEngine> hybridEngineObj;
 
   // prepare a vector of shifts to try
@@ -182,7 +182,7 @@ private:
   ///whether to do the third part of block lm
   bool block_third;
 
-//Variables for alternatives to linear method
+  //Variables for alternatives to linear method
 
   //whether to use accelerated descent
   bool doDescent;
@@ -192,7 +192,7 @@ private:
 
 
   //Vector for storing the input vectors to the BLM steps of hybrid method
-  std::vector< std::vector<Return_t> > hybridBLM_Input;
+  std::vector<std::vector<Return_t>> hybridBLM_Input;
 
 
   //Integer for keeping track of the iteration number
@@ -205,7 +205,6 @@ private:
   std::string hybrid;
 
 
-
   //Counters for controlling changes between descent
   //and BLM in hybrid method
   int totalCount;
@@ -213,9 +212,6 @@ private:
   int blmCount;
 
   int hybrid_descent_samples;
-
-
-
 };
 } // namespace qmcplusplus
 #endif
