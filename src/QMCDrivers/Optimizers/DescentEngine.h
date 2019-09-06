@@ -15,6 +15,8 @@ namespace qmcplusplus
 class DescentEngine
 {
 private:
+
+    //Vectors and scalars used in calculation of averaged derivatives in descent
   std::vector<double> avg_le_der_samp;
   std::vector<double> avg_der_rat_samp;
 
@@ -23,13 +25,17 @@ private:
   double e_sum;
   double eSquare_sum;
   double eSquare_avg;
-
-  Communicate* myComm;
-
+  
   std::vector<double> LDerivs;
 
+  //Communicator handles MPI reduction
+  Communicate* myComm;
+  
+  //Whether to target excited state
+  //Currently only ground state optimization is implemented
   bool engineTargetExcited;
 
+  //Number of optimizable parameters
   int numParams;
 
 
@@ -78,8 +84,8 @@ private:
   int ramp_num;
 
 
+//Vectors of parameter names and types, used in the assignment of step sizes
   std::vector<std::string> engineParamNames;
-
   std::vector<int> engineParamTypes;
 
 
@@ -138,8 +144,10 @@ public:
   //helper method for seting step sizes for different parameter types in descent optimization
   double setStepSize(int i);
 
+  //stores derivatives so they can be used in accelerated descent algorithm on later iterations
   void storeDerivRecord() { derivRecords.push_back(LDerivs); }
 
+  //helper method for transferring information on parameter names and types to the engine
   void setupUpdate(const optimize::VariableSet& myVars);
 
   const std::vector<double> retrieveNewParams() const { return currentParams; }

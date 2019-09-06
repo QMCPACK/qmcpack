@@ -68,7 +68,7 @@ QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(MCWalkerConfiguration
       stabilizerScale(2.0),
       bigChange(50),
       w_beta(0.0),
-      // MinMethod("OneShiftOnly"),
+      MinMethod("OneShiftOnly"),
       GEVtype("mixed"),
       StabilizerMethod("best"),
       GEVSplit("no"),
@@ -1350,7 +1350,6 @@ bool QMCFixedSampleLinearOptimize::descent_run()
   bool Valid(true);
   int Total_iterations(0);
   numParams = optTarget->getNumParams();
-  N         = numParams + 1;
 
 
   while (Total_iterations < Max_iterations)
@@ -1393,6 +1392,10 @@ bool QMCFixedSampleLinearOptimize::descent_run()
 #ifdef HAVE_LMY_ENGINE
 bool QMCFixedSampleLinearOptimize::hybrid_run()
 {
+
+    int descent_len = hybridEngineObj->getDescentLen();
+    int blm_len = hybridEngineObj->getBLMLen();
+
   if (descentCount < descent_len)
   {
       if(descentCount = 0)
@@ -1412,8 +1415,7 @@ bool QMCFixedSampleLinearOptimize::hybrid_run()
 
     descentCount++;
     totalCount++;
-    app_log() << "Should be on descent step# " << descentCount - 1 << " of macro-iteration. Total steps: " << totalCount
-              << std::endl;
+    app_log() << "Should be on descent step# " << descentCount - 1 << " of macro-iteration. Total steps: " << totalCount  << std::endl;
     return descent_run();
  
   }
@@ -1432,8 +1434,7 @@ bool QMCFixedSampleLinearOptimize::hybrid_run()
       }
       blmCount++;
       totalCount++;
-      app_log() << "Should be on blm step# " << blmCount - 1 << " of macro-iteration. Total steps: " << totalCount
-                << std::endl;
+      app_log() << "Should be on blm step# " << blmCount - 1 << " of macro-iteration. Total steps: " << totalCount << std::endl;
       return adaptive_three_shift_run();
     }
     else
@@ -1443,8 +1444,7 @@ bool QMCFixedSampleLinearOptimize::hybrid_run()
       blmCount     = 0;
       descentCount++;
       totalCount++;
-      app_log() << "Should be on descent step# " << descentCount - 1
-                << " of macro-iteration. Total steps: " << totalCount << std::endl;
+      app_log() << "Should be on descent step# " << descentCount - 1 << " of macro-iteration. Total steps: " << totalCount << std::endl;
       return descent_run();
     }
   }

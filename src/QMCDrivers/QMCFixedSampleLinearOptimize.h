@@ -98,8 +98,10 @@ private:
   cqmc::engine::LMYEngine* EngineObj;
 #endif
 
+  //engine for running various gradient descent based algorithms for optimization
   std::unique_ptr<DescentEngine> descentEngineObj;
 
+  //engine for controlling a optimization using a hybrid combination of linear method and descent
   std::unique_ptr<HybridEngine> hybridEngineObj;
 
   // prepare a vector of shifts to try
@@ -181,6 +183,9 @@ private:
 
   //Variables for alternatives to linear method
 
+  //type of optimization method
+  std::string MinMethod;
+
   //whether to use accelerated descent
   bool doDescent;
 
@@ -209,7 +214,7 @@ private:
   //Like descentCount, it resets for another BLM section.
   int blmCount;
 
-  int hybrid_descent_samples;
+
 };
 } // namespace qmcplusplus
 #endif
