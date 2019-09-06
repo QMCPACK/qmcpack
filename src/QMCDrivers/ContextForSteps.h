@@ -34,6 +34,7 @@ class ContextForSteps
 {
 public:
   using ParticlePositions = PtclOnLatticeTraits::ParticlePos_t;
+  using PosType = QMCTraits::PosType;
   using MCPWalker  = Walker<QMCTraits, PtclOnLatticeTraits>;
   using RealType = QMCTraits::RealType;
 
@@ -47,17 +48,15 @@ public:
   std::vector<std::unique_ptr<ParticlePositions>>& get_walker_positions() { return walker_positions_; }
 
   int get_num_groups() const { return particle_group_indexes_.size(); }
+  RandomGenerator_t& get_random_gen() { return random_gen_; }
 
   void nextDeltaRs() {
-      std::for_each(walker_deltas_.begin(),
-                walker_deltas_.end(),
-                [this](auto& deltaR) {
-                        makeGaussRandomWithEngine(*deltaR, random_gen_);
-                });
+    makeGaussRandomWithEngine(walker_deltas_, random_gen_);
   }
   
-  std::vector<std::unique_ptr<ParticlePositions>>& get_walker_deltas() { return walker_deltas_; }
-
+  std::vector<PosType>& get_walker_deltas() { return walker_deltas_; }
+  auto deltaRsBegin() { return walker_deltas_.begin(); };
+  
   int getPtclGroupStart(int group) const { return particle_group_indexes_[group].first; }
   int getPtclGroupEnd(int group) const { return particle_group_indexes_[group].first; }
   
@@ -69,7 +68,7 @@ protected:
   ///SoA copy of R
   std::vector<std::unique_ptr<VectorSoaContainer<RealType, OHMMS_DIM>>> positions_soa_;
 
-  std::vector<std::unique_ptr<ParticlePositions>> walker_deltas_;
+  std::vector<PosType> walker_deltas_;
    
   /** indexes of start and stop of each particle group;
    *
@@ -91,6 +90,10 @@ protected:
   std::vector<std::string> distTableDescriptions;
 
   RandomGenerator_t& random_gen_;
+
+
+
+
 };
 
 }

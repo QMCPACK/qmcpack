@@ -403,8 +403,8 @@ TrialWaveFunction::GradType TrialWaveFunction::evalGrad(ParticleSet& P, int iat)
   return grad_iat;
 }
 
-void TrialWaveFunction::flex_evalGrad(const std::vector<TrialWaveFunction*>& WF_list,
-                                      const std::vector<ParticleSet*>& P_list,
+void TrialWaveFunction::flex_evalGrad(const std::vector<std::reference_wrapper<TrialWaveFunction>>& WF_list,
+                                      const std::vector<std::reference_wrapper<ParticleSet>>& P_list,
                                       int iat,
                                       std::vector<GradType>& grad_now) const
 {
@@ -424,7 +424,7 @@ void TrialWaveFunction::flex_evalGrad(const std::vector<TrialWaveFunction*>& WF_
     }
   }
   else if (WF_list.size() == 1)
-    grad_now[0] = WF_list[0]->evalGrad(*P_list[0], iat);
+    grad_now[0] = WF_list[0].get().evalGrad(P_list[0], iat);
 }
 
 
@@ -930,6 +930,15 @@ void TrialWaveFunction::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<Value
       ratios[j] *= t[j];
     myTimers[ii]->stop();
   }
+}
+
+std::vector<std::reference_wrapper<WaveFunctionComponent>> TrialWaveFunction::extract_WFC_list(const std::vector<std::reference_wrapper<TrialWaveFunction>>& wf_list, int id)
+{
+  std::vector<std::reference_wrapper<WaveFunctionComponent>> wfc_list;
+  wfc_list.reserve(wf_list.size());
+  for (auto wf : wf_list)
+    wfc_list.push_back(*(wf.get().Z[id]));
+  return wfc_list;
 }
 
 std::vector<WaveFunctionComponent*> TrialWaveFunction::extract_WFC_list(const std::vector<TrialWaveFunction*>& WF_list,

@@ -32,8 +32,7 @@ ContextForSteps::ContextForSteps(int num_walkers,
 
   walker_positions_.resize(num_walkers);
   std::for_each(walker_positions_.begin(), walker_positions_.end(), constructT);
-  walker_deltas_.resize(num_walkers);
-  std::for_each(walker_deltas_.begin(), walker_deltas_.end(), constructT);
+  walker_deltas_.resize(num_walkers * num_particles);
   positions_soa_.resize(num_walkers);
   std::for_each(positions_soa_.begin(), positions_soa_.end(), constructT);
 }

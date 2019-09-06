@@ -28,6 +28,7 @@ class Crowd
 {
 public:
   using MCPWalker = MCPopulation::MCPWalker;
+  using GradType = QMCTraits::GradType;
   /** This is the data structure for walkers within a crowd
    */
   Crowd(EstimatorManagerBase& emb) : estimator_manager_crowd_(emb) {}
@@ -50,15 +51,23 @@ public:
   auto endTrialWaveFunctions() { return walker_twfs_.end(); }
   auto beginElectrons() { return walker_elecs_.begin(); }
   auto endElectrons() { return walker_elecs_.end(); }
-  
+
+  std::vector<std::reference_wrapper<ParticleSet>>& get_walker_elecs() { return walker_elecs_; }
+  std::vector<std::reference_wrapper<TrialWaveFunction>>& get_walker_twfs() { return walker_twfs_; }
+  std::vector<std::reference_wrapper<QMCHamiltonian>>& get_walker_hamiltonians() { return walker_hamiltonians_; }
+
+  std::vector<GradType>& get_grads_now() { return grads_now_; }
   int size() const { return mcp_walkers_.size(); }
 
+  
 private:
   std::vector<std::reference_wrapper<MCPWalker>> mcp_walkers_;
   std::vector<std::reference_wrapper<ParticleSet>> walker_elecs_;
   std::vector<std::reference_wrapper<TrialWaveFunction>> walker_twfs_;
   std::vector<std::reference_wrapper<QMCHamiltonian>> walker_hamiltonians_;
   EstimatorManagerCrowd estimator_manager_crowd_;
+  std::vector<GradType> grads_now_;
+
 
 public:
 };
