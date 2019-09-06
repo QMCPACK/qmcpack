@@ -9,30 +9,37 @@
 // File created by: Brett Van Der Goetz, bvdg@berkeley.edu, University of California at Berkeley
 //////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef QMC_PLUS_PLUS_COUNTING_FUNCTOR_H
-#define QMC_PLUS_PLUS_COUNTING_FUNCTOR_H
+#ifndef QMCPLUSPLUS_NORMALIZED_GAUSSIAN_REGION_H
+#define QMCPLUSPLUS_NORMALIZED_GAUSSIAN_REGION_H
 
 #include "Configuration.h"
-#include "QMCWaveFunctions/Jastrow/CountingFunctor.h"
+#include "QMCWaveFunctions/Jastrow/CountingGaussian.h"
+#include "Optimize/VariableSet.h"
 #include "Particle/ParticleSet.h"
 
 namespace qmcplusplus
 {
-// T is precision
 
-template<class T>
-class NormalizedGaussianRegion : public QMCTraits
+class CountingGaussianRegion
 {
 public:
-  typedef GaussianFunctor<T> FunctorType;
+
+  using RealType = QMCTraits::RealType;
+  //using ValueType = QMCTraits::ValueType;
+  using PosType = QMCTraits::PosType;
+  using TensorType = QMCTraits::TensorType;
+
+  using real_type = optimize::VariableSet::real_type;
+  using opt_variables_type = optimize::VariableSet;
+
   // counting function pointers
-  std::vector<FunctorType*> C;
+  std::vector<CountingGaussian*> C;
 
   RealType Nval_t;
 
   // reference gaussian id, pointer
   std::string Cref_id;
-  FunctorType* Cref;
+  CountingGaussian* Cref;
 
   // number of electrons
   int num_els;
@@ -70,15 +77,25 @@ public:
 
 
 public:
-  NormalizedGaussianRegion(ParticleSet& P) { num_els = P.getTotalNum(); }
+  CountingGaussianRegion(ParticleSet& P) { num_els = P.getTotalNum(); }
+  CountingGaussianRegion(int n) : num_els(n) { }
 
-  const bool normalized = true; // flag for normalized regions
   int size() const { return num_regions; }
+
   const opt_variables_type& getVars(int I) { return C[I]->myVars; }
+
+  int total_num_derivs()
+  {
+    int tnd = 0;
+    for(int I = 0; I < C.size(); ++I)
+      tnd += getVars(I).size_of_active();
+    return tnd;
+  }
+
   int max_num_derivs() const
   {
-    auto comp         = [](FunctorType* a, FunctorType* b) { return a->myVars.size() < b->myVars.size(); };
-    FunctorType* Cmax = *(std::max_element(C.begin(), C.end(), comp));
+    auto comp = [](CountingGaussian* a, CountingGaussian* b) { return a->myVars.size_of_active() < b->myVars.size_of_active(); };
+    CountingGaussian* Cmax = *(std::max_element(C.begin(), C.end(), comp));
     return Cmax->myVars.size();
   }
 
@@ -87,7 +104,7 @@ public:
     return _dLval_saved[I * max_num_derivs() * num_els + p * num_els + i];
   }
 
-  void addFunc(FunctorType* func, std::string fid)
+  void addFunc(CountingGaussian* func, std::string fid)
   {
     C_id.push_back(fid);
     C.push_back(func);
@@ -95,8 +112,8 @@ public:
 
   void initialize()
   {
-    app_log() << "NormalizedGaussianRegion::initialize" << std::endl;
     num_regions = C.size();
+
     // resize arrays
     val.resize(num_regions, num_els);
     sum.resize(num_regions);
@@ -120,6 +137,8 @@ public:
 
     // store log derivative values for single particle moves
     _dLval_saved.resize(max_num_derivs() * num_regions * num_els);
+    for(int I = 0; I < C.size(); ++I)
+      C[I]->myVars.resetIndex();
   }
 
   void checkInVariables(opt_variables_type& active)
@@ -161,26 +180,33 @@ public:
       C[I]->restore(iat);
   }
 
-  void reportStatus(std::ostream& os)
+  void reportStatus(std::ostream& os) 
   {
     // print some class variables:
-    os << "NormalizedGaussianRegion::reportStatus begin" << std::endl;
-    os << "num_els: " << num_els << ", num_regions: " << num_regions << std::endl;
-    os << "Normalized: " << (normalized ? "true" : "false") << std::endl;
-    os << "Counting Functions: " << std::endl;
+    os << "    Region type: CountingGaussianRegion" << std::endl;
+    os << "    Region optimizable parameters: " << total_num_derivs()  << std::endl << std::endl;
+    os << "    Counting Functions: " << std::endl;
     for (int I = 0; I < C.size(); ++I)
       C[I]->reportStatus(os);
-    os << "NormalizedGaussianRegion::reportStatus end" << std::endl;
   }
 
-  NormalizedGaussianRegion* makeClone()
+  CountingGaussianRegion* makeClone()
   {
-    NormalizedGaussianRegion* cr = new NormalizedGaussianRegion(num_els);
+    // create a new object and clone counting functions
+    CountingGaussianRegion* cr = new CountingGaussianRegion(num_els);
     for (int i = 0; i < C.size(); ++i)
     {
-      FunctorType* Ci = C[i]->makeClone(C_id[i]);
+      CountingGaussian* Ci = C[i]->makeClone(C_id[i]);
       cr->addFunc(Ci, C_id[i]);
     }
+    // get the index of the reference gaussian
+    cr->Cref_id = Cref_id;
+    auto C_id_it  = std::find(C_id.begin(), C_id.end(), Cref_id);
+    int ref_index = std::distance(C_id.begin(), C_id_it);
+    // initialize each of the counting functions using the reference gaussian
+    cr->Cref = cr->C[ref_index]->makeClone(Cref_id + "_ref");
+    for(auto it = cr->C.begin(); it != cr->C.end(); ++it)
+      (*it)->initialize(cr->Cref);
     cr->initialize();
     return cr;
   }
@@ -189,24 +215,20 @@ public:
   {
     // get the reference function
     OhmmsAttributeSet rAttrib;
-    Cref_id = "none";
+    Cref_id = "g0";
     rAttrib.add(Cref_id, "reference_id");
     rAttrib.put(cur);
     // loop through array, find where Cref is
     auto C_id_it  = std::find(C_id.begin(), C_id.end(), Cref_id);
     int ref_index = std::distance(C_id.begin(), C_id_it);
-    if (Cref_id == "none" || C_id_it == C_id.end())
-      APP_ABORT("NormalizedGaussianRegion::put: reference function not found:" +
+    if (C_id_it == C_id.end())
+      APP_ABORT("CountingGaussianRegion::put: reference function not found:" +
                 (Cref_id == "none" ? " Cref not specified" : "\"" + Cref_id + "\""));
     // make a copy of the reference gaussian
     Cref = C[ref_index]->makeClone(Cref_id + "_ref");
-
-
-    // divide all gaussians by the reference
-    for (auto it = C.begin(); it != C.end(); ++it)
-    {
-      (*it)->divide_eq(Cref);
-    }
+    // initialize with reference gaussian
+    for(auto it = C.begin(); it != C.end(); ++it)
+      (*it)->initialize(Cref);
     initialize();
     return true;
   }
@@ -268,7 +290,7 @@ public:
   {
     for (auto it = C.begin(); it != C.end(); ++it)
       (*it)->evaluate_print(os, P);
-    os << "NormalizedGaussianRegions::evaluate_print" << std::endl;
+    os << "CountingGaussianRegions::evaluate_print" << std::endl;
     os << "val: ";
     std::copy(val.begin(), val.end(), std::ostream_iterator<RealType>(os, ", "));
     os << std::endl << "sum: ";
@@ -337,7 +359,7 @@ public:
 
   void evaluateTemp_print(std::ostream& os, ParticleSet& P)
   {
-    os << "NormalizedGaussianRegion::evaluateTemp_print" << std::endl;
+    os << "CountingGaussianRegion::evaluateTemp_print" << std::endl;
     os << "val_t: ";
     std::copy(val_t.begin(), val_t.end(), std::ostream_iterator<RealType>(os, ", "));
     os << std::endl << "sum_t: ";
@@ -381,7 +403,7 @@ public:
                            int I,
                            Matrix<PosType>& FCgrad,
                            Matrix<RealType>& dNsum,
-                           Matrix<ValueType>& dNggsum,
+                           Matrix<RealType>& dNggsum,
                            Matrix<RealType>& dNlapsum,
                            std::vector<RealType>& dNFNggsum)
   {
@@ -414,8 +436,9 @@ public:
               2 * val(J, i) * dot(dLgrad[p], grad(I, i)) - val(J, i) * dLval[p] * lap(I, i);
           // accumulate
           dLval_saved(I, p, i) = dLval[p];
+          PosType grad_i( std::real(P.G[i][0]), std::real(P.G[i][1]), std::real(P.G[i][2]) );
           dNsum(J, p)    += dNval;
-          dNggsum(J, p)  += dot(dNgrad, P.G[i]);
+          dNggsum(J, p)  += dot(dNgrad, grad_i);
           dNlapsum(J, p) += dNlap;
           dNFNggsum[p]   += dot(dNgrad, FCgrad(J, i));
         }

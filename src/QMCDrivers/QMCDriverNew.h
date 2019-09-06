@@ -36,7 +36,7 @@
 #include "QMCDrivers/SimpleFixedNodeBranch.h"
 #include "QMCDrivers/BranchIO.h"
 #include "QMCDrivers/QMCDriverInput.h"
-#include "QMCDrivers/MoveContext.h"
+#include "QMCDrivers/ContextForSteps.h"
 
 class Communicate;
 
@@ -124,7 +124,7 @@ public:
    */
   void add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi);
 
-  void createMoveContexts();
+  void createRngsStepContexts();
   
   void setupWalkers();
 
@@ -254,7 +254,7 @@ protected:
 
   /** Per crowd move contexts, this is where the DistanceTables etc. reside
    */
-  std::vector<std::unique_ptr<MoveContext>> move_contexts_;
+  std::vector<std::unique_ptr<ContextForSteps>> step_contexts_;
   
   ///a list of TrialWaveFunctions for multiple method
   std::vector<TrialWaveFunction*> Psi1;
@@ -267,9 +267,6 @@ protected:
 
   ///a list of mcwalkerset element
   std::vector<xmlNodePtr> mcwalkerNodePtr;
-
-  ///a list of timers
-  std::vector<NewTimer*> myTimers;
 
   ///temporary storage for drift
   ParticleSet::ParticlePos_t drift;

@@ -17,7 +17,6 @@
 #include "Lattice/ParticleBConds.h"
 #include "Particle/ParticleSet.h"
 #include "Particle/DistanceTableData.h"
-#include "Particle/SymmetricDistanceTableData.h"
 #include "QMCApp/ParticleSetPool.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
@@ -84,12 +83,16 @@ TEST_CASE("PlaneWave SPO from HDF for BCC H", "[wavefunction]")
   tspecies(chargeIdx, upIdx)   = -1;
   tspecies(chargeIdx, downIdx) = -1;
 
+#ifdef ENABLE_SOA
+  elec.addTable(ions, DT_SOA);
+#else
   elec.addTable(ions, DT_AOS);
+#endif
   elec.resetGroups();
   elec.update();
 
 
-  TrialWaveFunction psi = TrialWaveFunction(c);
+  TrialWaveFunction psi(c);
   // Need 1 electron and 1 proton, somehow
   //ParticleSet target = ParticleSet();
   ParticleSetPool ptcl = ParticleSetPool(c);
@@ -235,12 +238,16 @@ TEST_CASE("PlaneWave SPO from HDF for LiH arb", "[wavefunction]")
   tspecies(chargeIdx, upIdx)   = -1;
   tspecies(chargeIdx, downIdx) = -1;
 
+#ifdef ENABLE_SOA
+  elec.addTable(ions, DT_SOA);
+#else
   elec.addTable(ions, DT_AOS);
+#endif
   elec.resetGroups();
   elec.update();
 
 
-  TrialWaveFunction psi = TrialWaveFunction(c);
+  TrialWaveFunction psi(c);
   // Need 1 electron and 1 proton, somehow
   //ParticleSet target = ParticleSet();
   ParticleSetPool ptcl = ParticleSetPool(c);

@@ -12,7 +12,7 @@
 #include "catch.hpp"
 
 #include "Configuration.h"
-#include "QMCDrivers/MoveContext.h"
+#include "QMCDrivers/ContextForSteps.h"
 #include "QMCApp/tests/MinimalWaveFunctionPool.h"
 #include "QMCApp/tests/MinimalParticlePool.h"
 #include "QMCApp/tests/MinimalHamiltonianPool.h"
@@ -73,11 +73,11 @@ TEST_CASE("MoveContext::loadWalker", "[particle]")
 
   RandomGenerator_t random_gen;
 
-  MoveContext move_context(crowd.size(), num_particles, particle_group_indexes, random_gen);
+  ContextForSteps move_context(crowd.size(), num_particles, particle_group_indexes, random_gen);
 
   move_context.loadCrowd(crowd);
 
-  using WalkerParticlePositions = std::vector<std::unique_ptr<MoveContext::ParticlePositions>>;
+  using WalkerParticlePositions = std::vector<std::unique_ptr<ContextForSteps::ParticlePositions>>;
   auto returnWalkerPosition     = [](WalkerParticlePositions& vec_up_ppos, int w_index,
                                  int pos_index) -> TinyVector<double, 3> {
     return (*(vec_up_ppos[w_index]))[pos_index];

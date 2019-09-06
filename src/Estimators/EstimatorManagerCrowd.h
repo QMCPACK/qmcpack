@@ -38,9 +38,6 @@ class CollectablesEstimator;
 class EstimatorManagerCrowd : public EstimatorManagerInterface
 {
 public:
-  typedef QMCTraits::FullPrecRealType RealType;
-  typedef ScalarEstimatorBase EstimatorType;
-  typedef std::vector<RealType> BufferType;
   //enum { WEIGHT_INDEX=0, BLOCK_CPU_INDEX, ACCEPT_RATIO_INDEX, TOTAL_INDEX};
 
   ///name of the primary estimator name

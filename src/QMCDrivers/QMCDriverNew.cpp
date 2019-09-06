@@ -35,11 +35,16 @@
 #include "OhmmsApp/RandomNumberControl.h"
 #include "HDFVersion.h"
 #include "qmc_common.h"
-
+#include "Concurrency/Info.hpp"
 #include "QMCDrivers/GreenFunctionModifiers/DriftModifierBuilder.h"
 
 namespace qmcplusplus
 {
+/** Has nasty workaround for RandomNumberControl
+ *   
+ *  Num crowds must be less than omp_get_max_threads because RandomNumberControl is global c lib function
+ *  masquerading as a C++ object.
+ */
 QMCDriverNew::QMCDriverNew(QMCDriverInput&& input,
                            MCPopulation&& population,
                            TrialWaveFunction& psi,
@@ -55,14 +60,17 @@ QMCDriverNew::QMCDriverNew(QMCDriverInput&& input,
       psiPool(ppool),
       estimator_manager_(nullptr),
       wOut(0),
-      walkers_per_crowd_(1),
-      num_crowds_(input.get_num_crowds())
+      walkers_per_crowd_(1)
+      // num_crowds_(input.get_num_crowds())
 {
   QMCType = "invalid";
 
-  ////add each QMCHamiltonianBase to W.PropertyList so that averages can be taken
-  //H.add2WalkerProperty(W);
-  //if (storeConfigs) ForwardWalkingHistory.storeConfigsForForwardWalking(w);
+  // Avoids segmentation fault when RandomNumberControl::Children is too small, adds surprising behavior
+  if(Concurrency::maxThreads() < input.get_num_crowds())
+    set_num_crowds(Concurrency::maxThreads(), "RandomNumberControl's maximum children set to omp_get_max_threads()");
+  else
+    num_crowds_ = input.get_num_crowds();
+ 
   rotation = 0;
 
   checkpointTimer = TimerManager.createTimer("checkpoint::recordBlock", timer_level_medium);
@@ -107,7 +115,7 @@ void QMCDriverNew::process(xmlNodePtr cur)
   // if (qmcdriver_input_.get_reset_random() || RandomNumberControl)
   // {
 
-  // if seeds are not made neither are the children and then when MoveContexts are created a segfault occurs.
+  // if seeds are not made then neither are the children. So when MoveContexts are created a segfault occurs.
   // For now it is unclear whether get_reset_random should always be true on the first run or what.
   app_log() << "  Regenerate random seeds." << std::endl;
   RandomNumberControl::make_seeds();
@@ -151,7 +159,7 @@ void QMCDriverNew::process(xmlNodePtr cur)
   }//  crowds_.push_back(
                         
   // Once they are created move contexts can be created.
-  createMoveContexts();
+  createRngsStepContexts();
 
   // if (wOut == 0)
   //   wOut = new HDFWalkerOutput(W, root_name_, myComm);
@@ -309,23 +317,26 @@ void QMCDriverNew::addWalkers(int nwalkers, const ParticleAttrib<TinyVector<QMCT
   // ////myComm->allreduce(nw);
 }
 
-/** Creates MoveContexts doing first touch in their crowd (thread) context
+/** Creates Random Number generators for crowds and step contexts
+ *
+ *  This is quite dangerous in that number of crowds can be > omp_get_max_threads()
+ *  This is used instead of actually passing number of threads/crowds
+ *  controlling threads all over RandomNumberControl.
  */
-void QMCDriverNew::createMoveContexts()
+void QMCDriverNew::createRngsStepContexts()
 {
-  move_contexts_.resize(num_crowds_);
+  step_contexts_.resize(num_crowds_);
 
   TasksOneToOne<> do_per_crowd(num_crowds_);
 
   Rng.resize(num_crowds_);
-  
-  auto firstTouchCreateMoveContexts = [this](int crowd_index) {
-    Rng[crowd_index].reset(new RandomGenerator_t(*(RandomNumberControl::Children[crowd_index])));
-    move_contexts_[crowd_index] =
-        std::make_unique<MoveContext>(crowds_[crowd_index]->size(), population_.get_num_particles(),
-                                      population_.get_particle_group_indexes(), *(Rng[crowd_index]));
-  };
-  do_per_crowd(firstTouchCreateMoveContexts);
+
+  for(int i = 0; i < num_crowds_; ++i)
+  {
+    Rng[i].reset(new RandomGenerator_t(*(RandomNumberControl::Children[i])));
+    step_contexts_[i].reset(new ContextForSteps(crowds_[i]->size(), population_.get_num_particles(),
+                                            population_.get_particle_group_indexes(), *(Rng[i])));
+  }
 }
 
 

@@ -24,20 +24,20 @@ namespace qmcplusplus
 {
 
 class MCPopulation;
-class DistanceTableData;
+struct DistanceTableData;
 /** Thread local context for moving walkers
  *
- *  created on the stack once per driver per crowd
- *  refactored out of ParticleSet, only the minimum
+ *  created once per driver per crowd
+ *  might be merged with Crowd
  */
-class MoveContext
+class ContextForSteps
 {
 public:
   using ParticlePositions = PtclOnLatticeTraits::ParticlePos_t;
   using MCPWalker  = Walker<QMCTraits, PtclOnLatticeTraits>;
   using RealType = QMCTraits::RealType;
 
-  MoveContext(int num_walkers,
+  ContextForSteps(int num_walkers,
               int num_particles,
               std::vector<std::pair<int,int>> particle_group_indexes,
               RandomGenerator_t& random_gen);

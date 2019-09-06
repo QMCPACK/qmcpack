@@ -95,7 +95,8 @@ class full1rdm: public AFQMCInfo
       dump.write(NMO, "NMO");
       dump.write(NAEA, "NUP");
       dump.write(NAEB, "NDOWN");
-      dump.write(walker_type, "WalkerType");
+      int wlk_t_copy = walker_type; // the actual data type of enum is implementation-defined. convert to int for file
+      dump.write(wlk_t_copy, "WalkerType");
       dump.pop();
       dump.pop();
       dump.close();
@@ -237,7 +238,7 @@ class full1rdm: public AFQMCInfo
                 std::string(n_zero-std::to_string(iblock).length(),'0')+std::to_string(iblock);
           stdCVector_ref DMAverage_( to_address(DMAverage[i].origin()), {dm_size});
           dump.write(DMAverage_, "one_rdm_"+padded_iblock);
-          dump.write(Wsum, "denominator_"+padded_iblock);
+          dump.write(Wsum[i], "denominator_"+padded_iblock);
           dump.pop();
         }
         dump.pop();

@@ -19,8 +19,11 @@ namespace qmcplusplus
   
 class EstimatorManagerInterface
 {
-  using RealType = QMCTraits::RealType;
 public:
+  using RealType = QMCTraits::FullPrecRealType;
+  using EstimatorType =  ScalarEstimatorBase;
+  using BufferType = std::vector<RealType>;
+
   virtual bool is_manager() const = 0;
   ///return the number of ScalarEstimators
   virtual int size() const = 0;

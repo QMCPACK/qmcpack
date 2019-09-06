@@ -38,6 +38,8 @@ VMCBatched::IndexType VMCBatched::calc_default_local_walkers()
 {
   int num_threads(Concurrency::maxThreads<>());
 
+  // Do to a work-around currently in QMCDriverNew::QMCDriverNew this should never be true.
+  // I'm leaving this because this is what should happen for vmc.
   if (num_crowds_ > num_threads)
   {
     std::stringstream error_msg;
@@ -65,7 +67,7 @@ VMCBatched::IndexType VMCBatched::calc_default_local_walkers()
   return local_walkers;
 }
 
-void VMCBatched::advanceWalkers(const StateForThread& sft, Crowd& crowd, MoveContext& move_context, bool recompute)
+void VMCBatched::advanceWalkers(const StateForThread& sft, Crowd& crowd, ContextForSteps& move_context, bool recompute)
 {
   move_context.loadCrowd(crowd);
 
@@ -180,7 +182,7 @@ void VMCBatched::advanceWalkers(const StateForThread& sft, Crowd& crowd, MoveCon
  */
 void VMCBatched::runVMCStep(int crowd_id,
                             const StateForThread& sft,
-                            std::vector<std::unique_ptr<MoveContext>>& move_contexts,
+                            std::vector<std::unique_ptr<ContextForSteps>>& move_contexts,
                             std::vector<std::unique_ptr<Crowd>>& crowds)
 {
   int nAccept              = 0;
@@ -271,7 +273,7 @@ bool VMCBatched::run()
     {
       vmc_state.step =  step;
       TasksOneToOne<> crowd_task(num_crowds_);
-      crowd_task(runVMCStep, vmc_state, std::ref(move_contexts_), std::ref(crowds_));
+      crowd_task(runVMCStep, vmc_state, std::ref(step_contexts_), std::ref(crowds_));
     }
   }
 

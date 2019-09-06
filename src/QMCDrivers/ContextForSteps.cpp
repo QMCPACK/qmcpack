@@ -10,12 +10,12 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 #include <type_traits>
-#include "QMCDrivers/MoveContext.h"
+#include "QMCDrivers/ContextForSteps.h"
 #include "QMCDrivers/MCPopulation.h"
 
 namespace qmcplusplus
 {
-MoveContext::MoveContext(int num_walkers,
+ContextForSteps::ContextForSteps(int num_walkers,
                          int num_particles,
                          std::vector<std::pair<int, int>> particle_group_indexes,
                          RandomGenerator_t& random_gen)
@@ -38,7 +38,7 @@ MoveContext::MoveContext(int num_walkers,
   std::for_each(positions_soa_.begin(), positions_soa_.end(), constructT);
 }
 
-void MoveContext::loadCrowd(Crowd& crowd)
+void ContextForSteps::loadCrowd(Crowd& crowd)
 {
   auto it_walker        = crowd.beginWalkers();
   auto it_positions     = walker_positions_.begin();

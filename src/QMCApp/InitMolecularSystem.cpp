@@ -147,6 +147,7 @@ void InitMolecularSystem::initMolecule(ParticleSet* ions, ParticleSet* els)
   }
   else
   {
+#ifndef ENABLE_SOA
     for (int iat = 0; iat < Centers; iat++)
     {
       cm += ions->R[iat];
@@ -169,6 +170,7 @@ void InitMolecularSystem::initMolecule(ParticleSet* ions, ParticleSet* els)
           els->R[ndown_tot++] = ions->R[iat] + sep * chi[item++];
       }
     }
+#endif
   }
 
   // mmorales: changed order of spin assignment to help with spin
