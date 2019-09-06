@@ -130,7 +130,7 @@ public:
   ////////////////////////////////////////////////////////////////////////////////////////////////////////
   void sample_finish();
 
-  const std::vector<double>& getAveragedDerivatives() { return LDerivs; }
+  const std::vector<double>& getAveragedDerivatives() const { return LDerivs; }
 
   // helper method for updating parameter values with descent
   void updateParameters(int stepNum, int descentNum);
@@ -142,7 +142,7 @@ public:
 
   void setupUpdate(const optimize::VariableSet& myVars);
 
-  std::vector<double> retrieveNewParams() { return currentParams; }
+  const std::vector<double> retrieveNewParams() const { return currentParams; }
 };
 
 } // namespace qmcplusplus

@@ -1391,8 +1391,7 @@ bool QMCFixedSampleLinearOptimize::descent_run()
 #endif
 
 
-//Function for controlling the alternation between sections of descent
-//optimization and BLM optimization.
+//Function for controlling the alternation between sections of descent optimization and BLM optimization.
 #ifdef HAVE_LMY_ENGINE
 bool QMCFixedSampleLinearOptimize::hybrid_run()
 {
@@ -1406,12 +1405,12 @@ bool QMCFixedSampleLinearOptimize::hybrid_run()
   //During the hybrid method,store 5 vectors of parameter differences over the course of a descent section
   if (((descentCount + 1) % (descent_len / 5) == 0))
   {
-      app_log() << "Step number in macro-iteration is " << stepNum % descent_len
+      app_log() << "Step number in macro-iteration is " << descentCount-1
                 << " out of expected total of " << descent_len
                 << " descent steps." << std::endl;
  
       std::vector<double> currentValues = descentEngineObj->retrieveNewParams();
-    hybridEngineObj->storeVectors(currentValues,stepNum);
+    hybridEngineObj->storeVectors(currentValues,descentCount);
 
     descentCount++;
     totalCount++;
@@ -1441,6 +1440,7 @@ bool QMCFixedSampleLinearOptimize::hybrid_run()
     }
     else
     {
+	//In this case switching back from BLM to descent
       descentCount = 0;
       blmCount     = 0;
       descentCount++;
