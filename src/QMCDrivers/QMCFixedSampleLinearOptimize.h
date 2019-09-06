@@ -181,6 +181,9 @@ private:
 
   //Variables for alternatives to linear method
 
+  //type of optimization method
+  std::string MinMethod;
+
   //whether to use accelerated descent
   bool doDescent;
 
@@ -209,7 +212,7 @@ private:
   //Like descentCount, it resets for another BLM section.
   int blmCount;
 
-  int hybrid_descent_samples;
+
 };
 } // namespace qmcplusplus
 #endif

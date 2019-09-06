@@ -68,7 +68,7 @@ QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(MCWalkerConfiguration
       stabilizerScale(2.0),
       bigChange(50),
       w_beta(0.0),
-      // MinMethod("OneShiftOnly"),
+      MinMethod("OneShiftOnly"),
       GEVtype("mixed"),
       StabilizerMethod("best"),
       GEVSplit("no"),
@@ -1395,6 +1395,10 @@ bool QMCFixedSampleLinearOptimize::descent_run()
 #ifdef HAVE_LMY_ENGINE
 bool QMCFixedSampleLinearOptimize::hybrid_run()
 {
+
+    int descent_len = hybridEngineObj->getDescentLen();
+    int blm_len = hybridEngineObj->getBLMLen();
+
   if (descentCount < descent_len)
   {
       if(descentCount = 0)

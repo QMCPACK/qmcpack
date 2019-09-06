@@ -15,6 +15,8 @@ namespace qmcplusplus
 class DescentEngine
 {
 private:
+
+    //Vectors and scalars used in calculation of averaged derivatives in descent
   std::vector<double> avg_le_der_samp;
   std::vector<double> avg_der_rat_samp;
 
@@ -23,13 +25,17 @@ private:
   double e_sum;
   double eSquare_sum;
   double eSquare_avg;
-
-  Communicate* myComm;
-
+  
   std::vector<double> LDerivs;
 
+  //Communicator handles MPI reduction
+  Communicate* myComm;
+  
+  //Whether to target excited state
+  //Currently only ground state optimization is implemented
   bool engineTargetExcited;
 
+  //Number of optimizable parameters
   int numParams;
 
 

@@ -42,7 +42,12 @@ void getInitialParams(const optimize::VariableSet& myVars);
 
 void storeVectors(std::vector<double>& currentParams,int descentCount);
 
-std::vector<std::vector<double>> retrieveHybridBLM_Input() {return  hybridBLM_Input;}
+const std::vector<std::vector<double>> retrieveHybridBLM_Input() const {return  hybridBLM_Input;}
+
+const int getDescentLen() const {return descent_len;}
+
+const int getBLMLen() const {return blm_len;}
+
 
 };
 
