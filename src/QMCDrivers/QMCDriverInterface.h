@@ -39,7 +39,7 @@ public:
   virtual void recordBlock(int block) = 0;
 
   ///return the random generators
-  virtual std::vector<RandomGenerator_t*>& getRng() = 0;
+  //virtual std::vector<RandomGenerator_t*>& getRng() = 0;
 
   ///return the i-th random generator
   virtual RandomGenerator_t& getRng(int i) = 0;

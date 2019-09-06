@@ -17,6 +17,7 @@
 #include "Particle/MCWalkerConfiguration.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Estimators/EstimatorManagerBase.h"
+#include "Estimators/tests/FakeEstimator.h"
 #include "Estimators/ScalarEstimatorBase.h"
 
 
@@ -25,16 +26,6 @@
 
 namespace qmcplusplus
 {
-class FakeEstimator : public ScalarEstimatorBase
-{
-  virtual void accumulate(const MCWalkerConfiguration& W, WalkerIterator first, WalkerIterator last, RealType wgt) {}
-
-  virtual void add2Record(RecordNamedProperty<RealType>& record) {}
-
-  virtual void registerObservables(std::vector<observable_helper*>& h5dec, hid_t gid) {}
-
-  virtual ScalarEstimatorBase* clone() { return new FakeEstimator; }
-};
 
 TEST_CASE("EstimatorManagerBase", "[estimators]")
 {

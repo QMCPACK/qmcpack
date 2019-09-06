@@ -24,6 +24,7 @@
 SET(QMCDRIVERS 
   SimpleFixedNodeBranch.cpp
   BranchIO.cpp
+  MCPopulation.cpp
   QMCDriver.cpp
   QMCDriverInput.cpp
   QMCDriverNew.cpp
@@ -35,6 +36,7 @@ SET(QMCDRIVERS
   WaveFunctionTester.cpp
   WalkerControlBase.cpp
   CloneManager.cpp
+  ContextForSteps.cpp
   QMCUpdateBase.cpp
   GreenFunctionModifiers/DriftModifierBuilder.cpp
   GreenFunctionModifiers/DriftModifierUNR.cpp
@@ -61,6 +63,7 @@ SET(QMCDRIVERS
   ../Estimators/LocalEnergyEstimator.cpp
   ../Estimators/RMCLocalEnergyEstimator.cpp
   ../Estimators/EstimatorManagerBase.cpp
+  ../Estimators/EstimatorManagerCrowd.cpp
   ../Estimators/CollectablesEstimator.cpp
 )
 

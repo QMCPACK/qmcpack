@@ -9,24 +9,34 @@
 // File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
-
 #include "catch.hpp"
+
 #include "Configuration.h"
-#include "OhmmsPETE/TinyVector.h"
-#include "Particle/MCPopulation.h"
+#include "Message/Communicate.h"
+#include "QMCDrivers/Crowd.h"
+#include "Estimators/tests/FakeEstimator.h"
 
 namespace qmcplusplus
 {
-
-TEST_CASE("MCPopulation::createWalkers", "[particle][population]")
+TEST_CASE("Crowd integration", "[drivers]")
 {
-  MCPopulation population(4, 2);
-  ParticleAttrib<TinyVector<QMCTraits::RealType, 3>> some_pos(2);
-  some_pos[0] = TinyVector<double,3>(1.0,0.0,0.0);
-  some_pos[1] = TinyVector<double,3>(0.0,1.0,0.0);
-  
-  population.createWalkers(8, some_pos);
-  REQUIRE(population.get_walkers().size() == 8);
-}
+  OHMMS::Controller->initialize(0, NULL);
+  Communicate* comm = OHMMS::Controller;
 
+  EstimatorManagerBase em(comm);
+
+  FakeEstimator* fake_est = new FakeEstimator;
+
+  em.add(fake_est, "fake");
+
+  ScalarEstimatorBase* est2 = em.getEstimator("fake");
+  FakeEstimator* fake_est2  = dynamic_cast<FakeEstimator*>(est2);
+  REQUIRE(fake_est2 != NULL);
+  REQUIRE(fake_est2 == fake_est);
+
+  Crowd crowd(em);
+
+  
+}
+  
 }

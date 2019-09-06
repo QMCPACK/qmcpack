@@ -238,7 +238,7 @@ class full1rdm: public AFQMCInfo
                 std::string(n_zero-std::to_string(iblock).length(),'0')+std::to_string(iblock);
           stdCVector_ref DMAverage_( to_address(DMAverage[i].origin()), {dm_size});
           dump.write(DMAverage_, "one_rdm_"+padded_iblock);
-          dump.write(Wsum, "denominator_"+padded_iblock);
+          dump.write(Wsum[i], "denominator_"+padded_iblock);
           dump.pop();
         }
         dump.pop();

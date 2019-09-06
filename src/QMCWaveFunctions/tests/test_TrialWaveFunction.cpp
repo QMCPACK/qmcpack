@@ -25,7 +25,9 @@
 namespace qmcplusplus
 {
 
-using LogValueType = WaveFunctionComponent::LogValueType;
+using LogValueType = TrialWaveFunction::LogValueType;
+using PsiValueType = TrialWaveFunction::PsiValueType;
+using GradType = TrialWaveFunction::GradType;
 
 TEST_CASE("TrialWaveFunction", "[wavefunction]")
 {
@@ -203,6 +205,7 @@ TEST_CASE("TrialWaveFunction", "[wavefunction]")
   REQUIRE(psi.getLogPsi() == Approx(-0.63650297977845492));
 #endif
 
+  // testing batched interfaces
   std::vector<ParticleSet*> P_list(2, nullptr);
   P_list[0] = &elec_;
   P_list[1] = &elec_clone;
@@ -219,6 +222,110 @@ TEST_CASE("TrialWaveFunction", "[wavefunction]")
   REQUIRE(std::complex<RealType>(WF_list[0]->getLogPsi(), WF_list[0]->getPhase()) == ComplexApprox(std::complex<RealType>(-0.6365029797784554, 3.141592653589793)));
   REQUIRE(std::complex<RealType>(WF_list[1]->getLogPsi(), WF_list[1]->getPhase()) == ComplexApprox(std::complex<RealType>(-1.471840358291562, 3.141592653589793)));
 #endif
+
+  P_list[0]->setActive(moved_elec_id);
+  P_list[1]->setActive(moved_elec_id);
+
+  std::vector<GradType> grad_old(2);
+
+  grad_old[0] = WF_list[0]->evalGrad(*P_list[0], moved_elec_id);
+  grad_old[1] = WF_list[1]->evalGrad(*P_list[1], moved_elec_id);
+
+  std::cout << "evalGrad " << std::setprecision(14)
+            << grad_old[0][0] << " " << grad_old[0][1] << " " << grad_old[0][2] << " "
+            << grad_old[1][0] << " " << grad_old[1][1] << " " << grad_old[1][2]
+            << std::endl;
+
+  psi.flex_evalGrad(WF_list, P_list, moved_elec_id, grad_old);
+#if defined(QMC_COMPLEX)
+  REQUIRE(grad_old[0][0] == ComplexApprox(ValueType(18.817970466022, -6.5837500306076)));
+  REQUIRE(grad_old[0][1] == ComplexApprox(ValueType(-22.840838391977, 3.9963373883645)));
+  REQUIRE(grad_old[0][2] == ComplexApprox(ValueType(3.8805320617146, 1.5825508129169)));
+  REQUIRE(grad_old[1][0] == ComplexApprox(ValueType(47.387717528888, -8.7703065253151e-06)));
+  REQUIRE(grad_old[1][1] == ComplexApprox(ValueType(-54.671696901113, -7.3126138879524)));
+  REQUIRE(grad_old[1][2] == ComplexApprox(ValueType(6.6288917088321,7.3126230586018)));
+#else
+  REQUIRE(grad_old[0][0] == Approx(14.77249702264));
+  REQUIRE(grad_old[0][1] == Approx(-20.385235323777));
+  REQUIRE(grad_old[0][2] == Approx(4.8529516184558));
+  REQUIRE(grad_old[1][0] == Approx(47.38770710732));
+  REQUIRE(grad_old[1][1] == Approx(-63.361119579044));
+  REQUIRE(grad_old[1][2] == Approx(15.318325284049));
+#endif
+
+  PosType delta_zero(0, 0, 0);
+  P_list[0]->makeMove(moved_elec_id, delta_zero);
+  P_list[1]->makeMove(moved_elec_id, delta);
+
+  std::vector<PsiValueType> ratios(2);
+  psi.flex_calcRatio(WF_list, P_list, moved_elec_id, ratios);
+  std::cout << "calcRatio " << std::setprecision(14) << ratios[0] << " " << ratios[1] << std::endl;
+#if defined(QMC_COMPLEX)
+  REQUIRE(ratios[0] == ComplexApprox(PsiValueType(1, 0)));
+  REQUIRE(ratios[1] == ComplexApprox(PsiValueType(1.6538214581548,0.54849918598717)));
+#else
+  REQUIRE(ratios[0] == Approx(1));
+  REQUIRE(ratios[1] == Approx(2.3055913093424));
+#endif
+
+  std::fill(ratios.begin(), ratios.end(), 0);
+  std::vector<GradType> grad_new(2);
+
+  ratios[0] = WF_list[0]->ratioGrad(*P_list[0], moved_elec_id, grad_new[0]);
+  ratios[1] = WF_list[1]->ratioGrad(*P_list[1], moved_elec_id, grad_new[1]);
+
+  std::cout << "ratioGrad " << std::setprecision(14)
+            << grad_new[0][0] << " " << grad_new[0][1] << " " << grad_new[0][2] << " "
+            << grad_new[1][0] << " " << grad_new[1][1] << " " << grad_new[1][2]
+            << std::endl;
+
+  psi.flex_ratioGrad(WF_list, P_list, moved_elec_id, ratios, grad_new);
+#if defined(QMC_COMPLEX)
+  REQUIRE(ratios[0] == ComplexApprox(ValueType(1, 0)));
+  REQUIRE(grad_new[0][0] == ComplexApprox(ValueType(18.817970466022, -6.5837500306076)));
+  REQUIRE(grad_new[0][1] == ComplexApprox(ValueType(-22.840838391977, 3.9963373883645)));
+  REQUIRE(grad_new[0][2] == ComplexApprox(ValueType(3.8805320617146, 1.5825508129169)));
+  REQUIRE(ratios[1] == ComplexApprox(ValueType(1.6538214581548,0.54849918598717)));
+  REQUIRE(grad_new[1][0] == ComplexApprox(ValueType(18.817970466022, -6.5837500306076)));
+  REQUIRE(grad_new[1][1] == ComplexApprox(ValueType(-22.840838391977, 3.9963373883645)));
+  REQUIRE(grad_new[1][2] == ComplexApprox(ValueType(3.8805320617146, 1.5825508129169)));
+#else
+  REQUIRE(ratios[0] == Approx(1));
+  REQUIRE(grad_new[0][0] == Approx(14.77249702264));
+  REQUIRE(grad_new[0][1] == Approx(-20.385235323777));
+  REQUIRE(grad_new[0][2] == Approx(4.8529516184558));
+  REQUIRE(ratios[1] == Approx(2.3055913093424));
+  REQUIRE(grad_new[1][0] == Approx(14.77249702264));
+  REQUIRE(grad_new[1][1] == Approx(-20.385235323777));
+  REQUIRE(grad_new[1][2] == Approx(4.8529516184558));
+#endif
+
+  psi.flex_acceptMove(WF_list, P_list, moved_elec_id);
+#if defined(QMC_COMPLEX)
+  REQUIRE(std::complex<RealType>(WF_list[0]->getLogPsi(), WF_list[0]->getPhase()) == ComplexApprox(std::complex<RealType>(0.4351202455204972, 6.665972664860828)));
+  REQUIRE(std::complex<RealType>(WF_list[1]->getLogPsi(), WF_list[1]->getPhase()) == ComplexApprox(std::complex<RealType>(0.4351202455204972, 6.665972664860828)));
+#else
+  REQUIRE(std::complex<RealType>(WF_list[0]->getLogPsi(), WF_list[0]->getPhase()) == ComplexApprox(std::complex<RealType>(-0.6365029797784554, 3.141592653589793)));
+  REQUIRE(std::complex<RealType>(WF_list[1]->getLogPsi(), WF_list[1]->getPhase()) == ComplexApprox(std::complex<RealType>(-0.6365029797784554, 3.141592653589793)));
+#endif
+
+  psi.flex_evalGrad(WF_list, P_list, moved_elec_id, grad_old);
+#if defined(QMC_COMPLEX)
+  REQUIRE(grad_old[0][0] == ComplexApprox(ValueType(18.817970466022, -6.5837500306076)));
+  REQUIRE(grad_old[0][1] == ComplexApprox(ValueType(-22.840838391977, 3.9963373883645)));
+  REQUIRE(grad_old[0][2] == ComplexApprox(ValueType(3.8805320617146, 1.5825508129169)));
+  REQUIRE(grad_old[1][0] == ComplexApprox(ValueType(18.817970466022, -6.5837500306076)));
+  REQUIRE(grad_old[1][1] == ComplexApprox(ValueType(-22.840838391977, 3.9963373883645)));
+  REQUIRE(grad_old[1][2] == ComplexApprox(ValueType(3.8805320617146, 1.5825508129169)));
+#else
+  REQUIRE(grad_old[0][0] == Approx(14.77249702264));
+  REQUIRE(grad_old[0][1] == Approx(-20.385235323777));
+  REQUIRE(grad_old[0][2] == Approx(4.8529516184558));
+  REQUIRE(grad_old[1][0] == Approx(14.77249702264));
+  REQUIRE(grad_old[1][1] == Approx(-20.385235323777));
+  REQUIRE(grad_old[1][2] == Approx(4.8529516184558));
+#endif
+
 
   //FIXME more thinking and fix about ownership and schope are needed for exiting clean
   delete psi_clone;
