@@ -1391,7 +1391,20 @@ bool QMCFixedSampleLinearOptimize::descent_run()
 #ifdef HAVE_LMY_ENGINE
 bool QMCFixedSampleLinearOptimize::hybrid_run()
 {
-  int descent_len = hybridEngineObj->getDescentLen();
+
+  if(doDescent)
+  {
+
+    descent_run();
+  
+  }
+  else if(doAdaptiveThreeShift)
+  {
+    adaptive_three_shift_run();
+  
+  }
+  /*
+    int descent_len = hybridEngineObj->getDescentLen();
   int blm_len     = hybridEngineObj->getBLMLen();
 
   if (descentCount < descent_len)
@@ -1444,6 +1457,8 @@ bool QMCFixedSampleLinearOptimize::hybrid_run()
       return descent_run();
     }
   }
+  */
+
 }
 #endif
 

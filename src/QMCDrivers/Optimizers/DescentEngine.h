@@ -149,6 +149,8 @@ public:
   //helper method for transferring information on parameter names and types to the engine
   void setupUpdate(const optimize::VariableSet& myVars);
 
+void storeVectors(std::vector<double>& currentParams, int descentCount);
+
   const std::vector<double> retrieveNewParams() const { return currentParams; }
 };
 
