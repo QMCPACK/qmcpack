@@ -289,8 +289,8 @@ bool ParticleSet::get(std::ostream& os) const
     os << "    Particles are not grouped by species in the input file. Algorithms may not be optimal!" << std::endl;
   os << std::endl;
 
-  const int maxParticlesToPrint = 10;
-  int numToPrint                = std::min(TotalNum, maxParticlesToPrint);
+  const size_t maxParticlesToPrint = 10;
+  size_t numToPrint                = std::min(TotalNum, maxParticlesToPrint);
 
   for (int i = 0; i < numToPrint; i++)
   {

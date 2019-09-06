@@ -1,4 +1,3 @@
-
 //////////////////////////////////////////////////////////////////////////////////////
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
@@ -51,8 +50,12 @@ TEST_CASE("hdf_archive_simple_data", "[hdf]")
 {
   hdf_archive hd;
   hd.create("test_simple_data.hdf");
-  int i     = 23;
-  bool okay = hd.writeEntry(i, "int");
+  bool b = true;
+  bool okay = hd.writeEntry(b, "bool");
+  REQUIRE(okay);
+
+  int i = 23;
+  okay  = hd.writeEntry(i, "int");
   REQUIRE(okay);
 
   float f = -2.3;
@@ -73,6 +76,7 @@ TEST_CASE("hdf_archive_simple_data", "[hdf]")
 
   hdf_archive hd3;
   hd3.create("test_simple_data.hdf");
+  hd3.write(b, "bool");
   hd3.write(i, "int");
   hd3.write(f, "float");
   hd3.write(d, "double");
@@ -83,6 +87,11 @@ TEST_CASE("hdf_archive_simple_data", "[hdf]")
 
   hdf_archive hd2;
   hd2.open("test_simple_data.hdf");
+  bool b2 = false;
+  okay = hd2.readEntry(b2, "bool");
+  REQUIRE(okay);
+  REQUIRE(b == b2);
+
   int i2;
   okay = hd2.readEntry(i2, "int");
   REQUIRE(okay);
@@ -115,6 +124,10 @@ TEST_CASE("hdf_archive_simple_data", "[hdf]")
 
   hdf_archive hd4;
   hd4.open("test_simple_data.hdf");
+  bool b4 = false;
+  hd4.read(b4, "bool");
+  REQUIRE(b == b4);
+
   int i4;
   hd4.read(i4, "int");
   REQUIRE(i == i4);
@@ -131,6 +144,21 @@ TEST_CASE("hdf_archive_simple_data", "[hdf]")
   std::complex<float> cf4;
   hd4.read(cf4, "complex float");
   REQUIRE(cf == cf4);
+
+  //read scalar
+  std::vector<int> datashape;
+  okay = hd4.getShape<double>("double", datashape);
+  REQUIRE(okay);
+  REQUIRE(datashape.size() == 0);
+
+  okay = hd4.getShape<std::complex<float>>("complex float", datashape);
+  REQUIRE(okay);
+  REQUIRE(datashape.size() == 0);
+
+  okay = hd4.getShape<float>("complex float", datashape);
+  REQUIRE(okay);
+  REQUIRE(datashape.size() == 1);
+  REQUIRE(datashape[0] == 2);
 
   hd4.close();
 }
@@ -202,17 +230,50 @@ TEST_CASE("hdf_archive_group", "[hdf]")
   hd2.close();
 }
 
+TEST_CASE("hdf_archive_scalar_convert", "[hdf]")
+{
+  hdf_archive hd;
+  hd.create("test_scalar_convert.hdf");
+
+  TinyVector<double, 1> v0(1);
+  bool okay = hd.writeEntry(v0, "tiny_vector_one");
+  REQUIRE(okay);
+
+  double v1(1);
+  okay = hd.writeEntry(v1, "tiny_scalar_one");
+  REQUIRE(okay);
+
+  hd.close();
+
+  hdf_archive hd2;
+  hd2.open("test_scalar_convert.hdf");
+
+  TinyVector<double, 1> v2(0);
+  okay = hd2.readEntry(v2, "tiny_scalar_one");
+  REQUIRE(okay);
+
+  double v3(0);
+  okay = hd2.readEntry(v3, "tiny_vector_one");
+  REQUIRE(okay);
+
+  REQUIRE(v0[0] == v3);
+  REQUIRE(v1 == v2[0]);
+}
+
 TEST_CASE("hdf_archive_tiny_vector", "[hdf]")
 {
   hdf_archive hd;
   hd.create("test_tiny_vector.hdf");
 
   TinyVector<double, 2> v(2);
+  TinyVector<std::complex<double>, 2> v_cplx(2);
 
-  v[0] = 1.2;
-  v[1] = 1.3;
+  v_cplx[0] = v[0] = 1.2;
+  v_cplx[1] = v[1] = 1.3;
 
   bool okay = hd.writeEntry(v, "tiny_vector_double");
+  REQUIRE(okay);
+  okay = hd.writeEntry(v_cplx, "tiny_vector_complex_double");
   REQUIRE(okay);
 
   hd.close();
@@ -221,11 +282,15 @@ TEST_CASE("hdf_archive_tiny_vector", "[hdf]")
   hd2.open("test_tiny_vector.hdf");
 
   TinyVector<double, 2> v2;
+  TinyVector<std::complex<double>, 2> v2_cplx(2);
   okay = hd2.readEntry(v2, "tiny_vector_double");
+  REQUIRE(okay);
+  okay = hd2.readEntry(v2_cplx, "tiny_vector_complex_double");
   REQUIRE(okay);
   for (int i = 0; i < v.size(); i++)
   {
     REQUIRE(v[i] == v2[i]);
+    REQUIRE(v_cplx[i] == v2_cplx[i]);
   }
 }
 
