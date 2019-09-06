@@ -53,16 +53,13 @@ SET(JASTROW_SRCS
   Jastrow/kSpaceJastrowBuilder.cpp
   Jastrow/RadialJastrowBuilder.cpp
   Jastrow/CountingJastrowBuilder.cpp
+  Jastrow/RPAJastrow.cpp
   IonOrbital.cpp
   IonOrbitalBuilder.cpp
   OptimizableSPOBuilder.cpp
   Fermion/SPOSetProxy.cpp
   Fermion/SPOSetProxyForMSD.cpp
   )
-
-IF(NOT QMC_UNIFIED_DRIVER)
-SET(JASTROW_SRCS ${JASTROW_SRCS} Jastrow/RPAJastrow.cpp)
-ENDIF(NOT QMC_UNIFIED_DRIVER)
 
 IF(QMC_COMPLEX)
   SET(FERMION_SRCS ${FERMION_SRCS}
