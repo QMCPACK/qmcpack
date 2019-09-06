@@ -19,13 +19,17 @@
 #include "QMCApp/tests/MinimalParticlePool.h"
 #include "QMCApp/tests/MinimalWaveFunctionPool.h"
 #include "QMCApp/tests/MinimalHamiltonianPool.h"
-#include "Particle/MCPopulation.h"
+#include "QMCDrivers/MCPopulation.h"
+#include "Concurrency/Info.hpp"
+#include "Concurrency/UtilityFunctions.hpp"
 
 namespace qmcplusplus
 {
-TEST_CASE("QMCDriverNew", "[drivers]")
+
+TEST_CASE("QMCDriverNew integration", "[drivers]")
 {
   using namespace testing;
+  Concurrency::OverrideMaxThreads<> override(8);
   Communicate* comm;
   OHMMS::Controller->initialize(0, NULL);
   comm = OHMMS::Controller;
@@ -39,11 +43,13 @@ TEST_CASE("QMCDriverNew", "[drivers]")
   MinimalParticlePool mpp;
   ParticleSetPool particle_pool = mpp(comm);
   MinimalWaveFunctionPool wfp(comm);
-  WaveFunctionPool wavefunction_pool = wfp(particle_pool);
+  WaveFunctionPool wavefunction_pool = wfp(&particle_pool);
+  wavefunction_pool.setPrimary(wavefunction_pool.getWaveFunction("psi0"));
+  
   MinimalHamiltonianPool mhp(comm);
-  HamiltonianPool hamiltonian_pool = mhp(particle_pool, wavefunction_pool);
-  MCPopulation population(4, 2);
-  QMCDriverNewTestWrapper qmcdriver(std::move(qmcdriver_input), population, *(wavefunction_pool.getPrimary()),
+  HamiltonianPool hamiltonian_pool = mhp(&particle_pool, &wavefunction_pool);
+  MCPopulation population(4, particle_pool.getParticleSet("e"), wavefunction_pool.getPrimary(), hamiltonian_pool.getPrimary());
+  QMCDriverNewTestWrapper qmcdriver(std::move(qmcdriver_input), std::move(population), *(wavefunction_pool.getPrimary()),
                                     *(hamiltonian_pool.getPrimary()), wavefunction_pool, comm);
 
   // setStatus must be called before process
@@ -56,8 +62,9 @@ TEST_CASE("QMCDriverNew", "[drivers]")
   // changes to it over time.
   REQUIRE(qmcdriver.getBranchEngine() == nullptr);
   qmcdriver.process(node);
-  // I'm pretty sure after process more than this is expected.
   REQUIRE(qmcdriver.getBranchEngine() != nullptr);
+  REQUIRE(qmcdriver.get_living_walkers() == 32);
+  // What else should we expect after process
 }
 
 } // namespace qmcplusplus

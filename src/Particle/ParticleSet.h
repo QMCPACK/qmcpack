@@ -475,9 +475,9 @@ public:
    */
   inline const std::string& species_from_index(int i) { return mySpecies.speciesName[GroupID[i]]; }
 
-  inline int getTotalNum() const { return TotalNum; }
+  inline size_t getTotalNum() const { return TotalNum; }
 
-  inline void resize(int numPtcl)
+  inline void resize(size_t numPtcl)
   {
     TotalNum = numPtcl;
 
@@ -623,7 +623,7 @@ protected:
   std::string ParentName;
 
   ///total number of particles
-  int TotalNum;
+  size_t TotalNum;
 
   ///array to handle a group of distinct particles per species
   ParticleIndex_t SubPtcl;
@@ -636,5 +636,6 @@ protected:
   void computeNewPosDistTablesAndSK(Index_t iat, const SingleParticlePos_t& newpos);
 
 };
+
 } // namespace qmcplusplus
 #endif
