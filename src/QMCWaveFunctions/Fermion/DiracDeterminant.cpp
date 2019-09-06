@@ -133,7 +133,7 @@ void DiracDeterminant<DU_TYPE>::mw_ratioGrad(const std::vector<WaveFunctionCompo
                        const std::vector<ParticleSet*>& P_list,
                        int iat,
                        std::vector<PsiValueType>& ratios,
-                       std::vector<PosType>& grad_new)
+                       std::vector<GradType>& grad_new)
 {
   SPOVGLTimer.start();
   std::vector<SPOSet*> phi_list; phi_list.reserve(WFC_list.size());
