@@ -246,7 +246,7 @@ struct OperatorBase : public QMCTraits
    */
   virtual Return_t evaluate(ParticleSet& P) = 0;
   /** Evaluate the contribution of this component of multiple walkers */
-  void mw_evaluate(const std::vector<OperatorBase*>& O_list, const std::vector<ParticleSet*>& P_list) const
+  void mw_evaluate(const std::vector<OperatorBase*>& O_list, const std::vector<ParticleSet*>& P_list)
   {
     #pragma omp parallel for
     for (int iw = 0; iw < O_list.size(); iw++)
