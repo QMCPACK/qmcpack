@@ -40,7 +40,8 @@ FUNCTION(ADD_AFQMC_PYSCF_WORKFLOW_TEST test_name input_dir TEST_SCALARS TEST_OBS
   SET_PROPERTY(TEST ${TESTNAME}-16-1 APPEND PROPERTY LABELS "converter;afqmc")
   IF(TEST_OBS)
     SET(TESTNAME "qmcpack_obs_${test_name}")
-    ADD_TEST(NAME ${TESTNAME} COMMAND reference/diff.py ${TESTDIR}/qmc.s000.scalar.h5)
+    ADD_TEST(NAME ${TESTNAME} COMMAND python ${TESTDIR}/reference/test_obs.py
+             WORKING_DIRECTORY ${TESTDIR})
     SET_TESTS_PROPERTIES(${TESTNAME} PROPERTIES  DEPENDS "qmcpack_${test_name}-16-1")
     SET_PROPERTY(TEST ${TESTNAME} APPEND PROPERTY LABELS "converter;afqmc")
   ENDIF()
@@ -55,16 +56,17 @@ ELSE()
 ENDIF()
 
 IF(NOT ENABLE_CUDA)
-  LIST(APPEND TEST_SCALARS_NEON "EnergyEstim__nume_real" "-128.702807 0.007712")
+  LIST(APPEND TEST_SCALARS_NEON "EnergyEstim__nume_real" "-128.71175210 0.00361907")
   ADD_AFQMC_PYSCF_WORKFLOW_TEST("01-neon_atom"
                                 "${EXAMPLE_DIR}/01-neon_atom"
                                 "${TEST_SCALARS_NEON}" FALSE 1
                                 -v -t 1e-5 ${REAL_FLAG} -i reference/scf_ref.chk -o afqmc.h5)
+  LIST(APPEND TEST_SCALARS_NEON "EnergyEstim__nume_real" "-128.70956768 0.00469893")
   ADD_AFQMC_PYSCF_WORKFLOW_TEST("02-neon_frozen_core"
                                 "${EXAMPLE_DIR}/02-neon_frozen_core"
                                 "${TEST_SCALARS_NEON}" FALSE 1
                                 -v -t 1e-5 ${REAL_FLAG} -i reference/scf_ref.chk -o afqmc.h5 -c 8,22)
-  LIST(APPEND TEST_SCALARS_C "EnergyEstim__nume_real" "-37.78514217 0.00864725")
+  LIST(APPEND TEST_SCALARS_C "EnergyEstim__nume_real" " -37.78271861 0.00287917")
   ADD_AFQMC_PYSCF_WORKFLOW_TEST("03-carbon_triplet_uhf"
                                 "${EXAMPLE_DIR}/03-carbon_triplet_uhf"
                                 "${TEST_SCALARS_C}" FALSE 1
@@ -74,15 +76,15 @@ IF(QMC_COMPLEX)
   IF(NOT ENABLE_CUDA)
     # Avoid pyscf_to_afqmc to generate the hamiltonian for examples 4 and 5.
     # Due to test setup can't test real build.
-    LIST(APPEND TEST_SCALARS_N2_NOMSD "EnergyEstim__nume_real" "-108.97780146 0.02463098")
+    LIST(APPEND TEST_SCALARS_N2_NOMSD "EnergyEstim__nume_real" "-109.01813744 0.01562922")
     ADD_AFQMC_PYSCF_WORKFLOW_TEST("04-N2_nomsd"
                                   "${EXAMPLE_DIR}/04-N2_nomsd"
                                   "${TEST_SCALARS_N2_NOMSD}" FALSE 1 -h)
-    LIST(APPEND TEST_SCALARS_N2_PHMSD "EnergyEstim__nume_real" " -109.04700629 0.02153972")
+    LIST(APPEND TEST_SCALARS_N2_PHMSD "EnergyEstim__nume_real" "-109.04700629 0.01610529")
     ADD_AFQMC_PYSCF_WORKFLOW_TEST("05-N2_phmsd"
                                   "${EXAMPLE_DIR}/05-N2_phmsd"
                                   "${TEST_SCALARS_N2_PHMSD}" FALSE 1 -h)
-    LIST(APPEND TEST_SCALARS_BP "EnergyEstim__nume_real" "-39.79178553 0.00775393")
+    LIST(APPEND TEST_SCALARS_BP "EnergyEstim__nume_real" "-39.80583013 0.00134888")
     ADD_AFQMC_PYSCF_WORKFLOW_TEST("06-methane_converge_back_prop"
                                   "${EXAMPLE_DIR}/06-methane_converge_back_prop"
                                   "${TEST_SCALARS_BP}" TRUE 1
