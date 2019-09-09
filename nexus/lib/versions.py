@@ -3,9 +3,9 @@
 ##################################################################
 
 
-'''
+"""
 Track versions of dependencies supported by Nexus.
-'''
+"""
 
 import sys
 from platform import python_version
@@ -14,42 +14,39 @@ from dateutil.relativedelta import relativedelta
 import importlib
 
 
-'''
-Current Nexus version.
-'''
 nexus_version = 1,8,0
+"""
+Current Nexus version.
+"""
 
-'''
-Current Python family supported.
-'''
 python_supported = 'python2'
+"""
+Current Python family supported.
+"""
 
 
-'''
-Policy for how many years back Nexus will extend support to dependencies.
-'''
 years_supported = 2
+"""
+Policy for how many years back Nexus will extend support to dependencies.
+"""
 
-'''
-Cutoff date for support.
-'''
 support_cutoff_date = (datetime.datetime.now()-relativedelta(years=years_supported)).date()
+"""
+Cutoff date for support.
+"""
 
+current_date = datetime.datetime.now().date()
 """
 Current date.
 """
-current_date = datetime.datetime.now().date()
 
 
-'''
-Required dependencies for Nexus.
-'''
 required_dependencies = set([python_supported,'numpy'])
+"""
+Required dependencies for Nexus.
+"""
 
 
-'''
-Currently supported versions of Nexus dependencies.
-'''
 currently_supported = [
     ('python2'    , (2,  7, 13) ),
     ('numpy'      , (1, 13,  1) ),
@@ -61,15 +58,15 @@ currently_supported = [
     ('seekpath'   , (1,  4,  0) ), # optional
     ('pycifrw'    , (4,  3,  0) ), # optional
     ]
+"""
+Currently supported versions of Nexus dependencies.
+"""
 
 
 import_aliases  = dict(
     pycifrw = 'CifFile',
     )
 
-'''
-Version and date information for Nexus dependencies.
-'''
 raw_version_data = dict(
     # python 2 releases
     #   https://www.python.org/dev/peps/pep-0373/
@@ -293,20 +290,55 @@ raw_version_data = dict(
         1.9.3  2019-09-03
         ''',
     )
+"""
+Version and date information for Nexus dependencies.
+"""
 
 
 class VersionError(Exception):
+    """
+    (`Internal API`) Exception unique to versions module.
+    """
     None
 #end class VersionError
 
 
 def version_error(msg):
+    """
+    (`Internal API`) Print an error message and raise VersionError.
+
+    Parameters
+    ----------
+    msg : `str`
+        The error message to be printed.
+    """
     print('\nVersion error:\n  '+msg.replace('\n','\n  ')+'\nexiting.\n')
     raise(VersionError)
 #end def version_error
 
 
 def time_ago(date,months=False):
+    """
+    (`Internal API`) Compute time in years from current date.
+
+    Parameters
+    ----------
+    date : `datetime.date`
+        A date prior to today's date.
+    months : `bool, optional, default False`
+        Return months in addition to years.
+
+    Returns
+    -------
+    years_ago : `float or int`
+        Number of years separating today's date from date of interest.
+        Floating point value includes months as fraction if months are 
+        not requested for separate return.  Returns integer number of 
+        years otherwise.
+    months_ago : `int`
+        Number of months in addition to rounded down number of years. 
+        Returned only if `months=True`.
+    """
     rdelta = relativedelta(current_date,date)
     if not months:
         return float(rdelta.years)+float(rdelta.months)/12
@@ -318,6 +350,20 @@ def time_ago(date,months=False):
 
 
 def process_version(*version):
+    """
+    (`Internal API`) Process version number from a range of inputted formats.
+
+    Parameters
+    ----------
+    *version : `int or str or tuple(str) or tuple(int)
+        Version number as string (e.g. `"1.0.0"`) tuple ( `('1','0','0')` or 
+        `(1,0,0)` or `(1,0)`, etc.) or int (e.g. `1`). 
+
+    Returns
+    -------
+    version : `tuple(int)`
+        Version tuple with at least 3 entries.
+    """
     if len(version)==1:
         version = version[0]
     #end if
@@ -336,22 +382,53 @@ def process_version(*version):
 
 
 def version_to_string(version):
+    """
+    (`Internal API`) Convert version tuple to string.
+    """
     vs = '{}.{}.{}'.format(*version)
     return vs
 #end def version_to_string
 
 
+
 class Versions(object):
+    """
+    Handles version information for Nexus dependencies.
+
+    Used to produce printed summaries of currently supported versions 
+    for Nexus dependencies as well as versions supported by the current 
+    age policy.  Also used to print summarized information about versions 
+    of dependencies detected on the current machine and recommendations 
+    for Nexus users regarding the state of the their installation.
+
+    The main data items for consumption by this class are 
+    `support_cutoff_date`, `required_dependencies`, `currently_supported`, 
+    and `raw_version_data`.
+
+    This class is not intended for direct use by Nexus users.  See the 
+    three main API functions `check_versions`, `current_versions`, and 
+    `policy_versions` below.
+
+    This class follows a singleton pattern.
+    """
 
     instances = []
 
     def __init__(self):
         self.initialize()
+        if len(Versions.instances)>0:
+            self.error('Only one Versions object can be instantiated!')
+        #end if
         Versions.instances.append(self)
     #end def __init__
 
 
     def initialize(self):
+        """
+        (`Internal API`)  Parse version data and determine status of 
+        module dependencies on the current machine via attempted import.
+        """
+
         self.__dict__.clear()
 
         # parse raw version data
@@ -448,16 +525,25 @@ class Versions(object):
 
 
     def error(self,msg):
+        """
+        (`Internal API`) Raise an error.
+        """
         version_error(msg)
     #end def error
 
 
     def is_dependency(self,name):
+        """
+        (`Internal API`) Return whether a name corresponds to a Nexus dependency.
+        """
         return name.lower() in self.dependencies
     #end def is_dependency
 
 
     def check_dependency(self,name):
+        """
+        (`Internal API`) Check whether a name corresponds to a Nexus dependency, and raise an error if it doesn't. 
+        """
         name = name.lower()
         if name not in self.dependencies:
             self.error('"{}" is not a dependency of Nexus'.format(name))
@@ -467,12 +553,20 @@ class Versions(object):
 
 
     def available(self,name):
+        """
+        (`Internal API`) Return whether a Nexus dependency is available 
+        on the current machine.
+        """
         name = self.check_dependency(name)
         return self.dependency_available[name]
     #end def available
 
 
     def supported(self,name,version=None):
+        """
+        (`Internal API`) Return whether a Nexus dependency on the current 
+        machine has a version that is currently supported.
+        """
         name = self.check_dependency(name)
         if version is not None:
             version = process_version(version)
@@ -489,6 +583,10 @@ class Versions(object):
 
 
     def policy_supported_version(self,name=None):
+        """
+        (`Internal API`) Determine versions of Nexus dependencies that 
+        comply with the age policy relative to today's date.
+        """
         if name is not None:
             name = name.lower()
             if name not in self.dependencies:
@@ -517,6 +615,9 @@ class Versions(object):
 
 
     def write_supplied_versions(self,supplied_versions,age=True,opt_req=False):
+        """
+        (`Internal API`) Write information about a set of dependencies.
+        """
         write_age = age
         s = ''
         for name in self.ordered_dependencies:
@@ -545,6 +646,9 @@ class Versions(object):
 
 
     def write_current_versions(self,age=True,opt_req=False,header=None):
+        """
+        (`Internal API`) Write information about currently supported versions of Nexus dependencies. 
+        """
         supported_versions = self.currently_supported
         if header is None:
             s = '\nNexus dependencies currently supported:\n'.format(years_supported)
@@ -557,6 +661,9 @@ class Versions(object):
 
 
     def write_policy_versions(self):
+        """
+        (`Internal API`) Write information about versions of Nexus dependencies current with the age policy as of today.
+        """
         supported_versions = self.policy_supported_version()
         s = '\nNexus dependencies for {} year policy:\n'.format(years_supported)
         s += self.write_supplied_versions(supported_versions)
@@ -565,6 +672,9 @@ class Versions(object):
 
 
     def write_available_versions(self,status=True,opt_req=False):
+        """
+        (`Internal API`) Write information about versions of Nexus dependencies that are available on the current machine.
+        """
         available_versions = self.dependency_version
         s = '\nNexus dependencies available on current machine:\n'.format(years_supported)
         for name in self.ordered_dependencies:
@@ -601,21 +711,33 @@ class Versions(object):
 
 
     def print_current_versions(self):
+        """
+        (`Internal API`) Print information about currently supported versions of Nexus dependencies. 
+        """
         print(self.write_current_versions())
     #end def print_current_versions
 
 
     def print_policy_versions(self):
+        """
+        (`Internal API`) Print information about versions of Nexus dependencies current with the age policy as of today.
+        """
         print(self.write_policy_versions())
     #end def print_policy_versions
 
 
     def print_available_versions(self,status=True):
+        """
+        (`Internal API`) Print information about versions of Nexus dependencies that are available on the current machine.
+        """
         print(self.write_available_versions(status=status))
     #end def print_available_versions
 
 
     def check(self,write=True,exit=False,full=False,n=0,pad='  '):
+        """
+        (`Internal API`) Check whether all required Nexus dependencies are present on the current machine.  Optionally write detailed information for the Nexus user about the status of their installation.
+        """
         serr = ''
         header ='\nChecking for Nexus dependencies on the current machine...\n'
         s = versions.write_available_versions(status=False,opt_req=True)
@@ -773,6 +895,10 @@ except:
 
 
 def check_versions(write=True,exit=False):
+    """
+    (`User API`)  Print detailed information about the status of Nexus 
+    dependencies on the current machine.
+    """
     if versions is None:
         print('\nProblem encountered in Nexus version checking code.\nThis is a developer error.\nPlease run the Nexus tests via the nxs-test script for more details and report this issue to the developers.')
         error = True
@@ -784,6 +910,10 @@ def check_versions(write=True,exit=False):
 
 
 def current_versions():
+    """
+    (`User API`)  Print information about currently supported versions of 
+    Nexus dependencies.
+    """
     if versions is None:
         print('\nProblem encountered in Nexus version checking code.\nThis is a developer error.\nPlease run the Nexus tests via the nxs-test script for more details and report this issue to the developers.')
     else:
@@ -793,6 +923,10 @@ def current_versions():
 
 
 def policy_versions():
+    """
+    (`User API`)  Print information about versions of Nexus dependencies 
+    that meet the age policy for today's date.
+    """
     if versions is None:
         print('\nProblem encountered in Nexus version checking code.\nThis is a developer error.\nPlease run the Nexus tests via the nxs-test script for more details and report this issue to the developers.')
     else:
