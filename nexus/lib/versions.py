@@ -700,14 +700,14 @@ class Versions(object):
                     for name in opt_missing:
                         s += '  {:<10} is missing.  Consider installing version {} or greater.\n'.format(name,version_to_string(self.currently_supported[name]))
                     #end for
-                    s += '\nOptional dependencies benefitting from user check or update:\n'
-                    for name in opt_unknown:
-                        s += '  {:<10} version is unknown.  Consider checking for version {} or greater.\n'.format(name,version_to_string(self.currently_supported[name]))
-                    #end for
-                    for name in opt_unsupported:
-                        s += '  {:<10} version {} is outdated.  Consider updating to {} or greater.\n'.format(name,version_to_string(self.dependency_version[name]),version_to_string(self.currently_supported[name]))
-                    #end for
                 #end if
+                s += '\nOptional dependencies benefitting from user check or update:\n'
+                for name in opt_unknown:
+                    s += '  {:<10} version is unknown.  Consider checking for version {} or greater.\n'.format(name,version_to_string(self.currently_supported[name]))
+                #end for
+                for name in opt_unsupported:
+                    s += '  {:<10} version {} is outdated.  Consider updating to {} or greater.\n'.format(name,version_to_string(self.dependency_version[name]),version_to_string(self.currently_supported[name]))
+                #end for
             #end if
         #end if
         s = n*pad+header+s.replace('\n','\n'+(n+1)*pad)
