@@ -239,7 +239,16 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
       std::map<std::string, SPOSetPtr>::iterator iter;
       for (iter = spomap.begin(); iter != spomap.end(); iter++)
       {
-        slaterdet_0->add(iter->second, iter->first);
+        app_log() << "SDP slaterdet_0->add(second, first)\n";
+//testing renaming here 
+iter->second->objectName = iter->first;
+//
+        RotationHelper* rot_helper;
+        rot_helper = new RotationHelper(iter->second);
+        slaterdet_0->add(rot_helper, iter->first);
+
+//        slaterdet_0->add(iter->second, iter->first);
+
       }
       size_t spin_group = 0;
       xmlNodePtr tcur   = cur->children;
@@ -572,12 +581,12 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
     else
     {
 
-      RotationHelper* rot_helper;
-      rot_helper = new RotationHelper(psi);
+//      RotationHelper* rot_helper;
+//      rot_helper = new RotationHelper(psi);
 
       app_log() << "Using DiracDeterminant with DelayedUpdate engine" << std::endl;
-      adet = new DiracDeterminant<>(rot_helper, firstIndex);
-//      adet = new DiracDeterminant<>(psi, firstIndex);
+//      adet = new DiracDeterminant<>(rot_helper, firstIndex);
+      adet = new DiracDeterminant<>(psi, firstIndex);
     }
 #endif
   }

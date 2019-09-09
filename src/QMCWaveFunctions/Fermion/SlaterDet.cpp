@@ -42,6 +42,8 @@ SlaterDet::~SlaterDet()
 ///add a new SPOSet to the list of determinants
 void SlaterDet::add(SPOSet* sposet, const std::string& aname)
 {
+std::cout <<"SDP SlaterDet::add with aname called\n";
+std::cout <<" aname = " << aname << std::endl;
   if (mySPOSet.find(aname) == mySPOSet.end())
   {
     mySPOSet[aname]    = sposet;
@@ -56,6 +58,7 @@ void SlaterDet::add(SPOSet* sposet, const std::string& aname)
 ///add a new DiracDeterminant to the list of determinants
 void SlaterDet::add(Determinant_t* det, int ispin)
 {
+std::cout <<"SDP SlaterDet::add with ispin called\n";
   if (Dets[ispin] != nullptr)
   {
     APP_ABORT("SlaterDet::add(Determinant_t* det, int ispin) is alreaded instantiated.");
@@ -192,6 +195,7 @@ void SlaterDet::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 
 WaveFunctionComponentPtr SlaterDet::makeClone(ParticleSet& tqp) const
 {
+std::cout << "SDP SlaterDet makeClone called \n";
   SlaterDet* myclone   = new SlaterDet(tqp);
   myclone->Optimizable = Optimizable;
   if (mySPOSet.size() > 1)
@@ -213,6 +217,9 @@ WaveFunctionComponentPtr SlaterDet::makeClone(ParticleSet& tqp) const
           Determinant_t* newD = Dets[i]->makeCopy(spo_clone);
           newD->resetTargetParticleSet(tqp);
           myclone->add(newD, i);
+        }
+        else{
+          std::cout << "SDP SHOULD ABORT!\n"; 
         }
       }
       Mit++;

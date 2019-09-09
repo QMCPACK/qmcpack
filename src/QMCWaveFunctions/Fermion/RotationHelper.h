@@ -45,7 +45,7 @@ public:
 
   bool IsCloned;
 
-  SPOSet* makeClone();
+  SPOSet* makeClone() const;
 
   // myG_temp (myL_temp) is the Gradient (Laplacian) value of of the Determinant part of the wfn
   // myG_J is the Gradient of the all other parts of the wavefunction (typically just the Jastrow). 

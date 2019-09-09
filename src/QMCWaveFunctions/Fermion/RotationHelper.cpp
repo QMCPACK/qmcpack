@@ -854,7 +854,7 @@ $
 
 
 
-SPOSet* RotationHelper::makeClone()
+SPOSet* RotationHelper::makeClone() const
 {
   app_log() << "SDP MakeClone called \n";
   RotationHelper* myclone   = new RotationHelper(Phi->makeClone());

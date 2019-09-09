@@ -281,13 +281,13 @@ void cqmc::engine::HamOvlpBuilderHD::finish_sample(const double total_weight)
   //std::cout << "netering matrix build finish_sample5" << std::endl;
 
   // print the matrix if requested
-  if ( _print_matrix && my_rank == 0 ) {
+  if ( my_rank == 0 ) {
 
     // hamiltonian 
-    //output << _hmat.print("%12.6f", "hamiltonian");
+    std::cout << _hmat.print("%12.6f", "hamiltonian");
 
     // overlap
-    //output << _smat.print("%12.6f", "overlap");
+    std::cout << _smat.print("%12.6f", "overlap");
   }
 }
 
