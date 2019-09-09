@@ -673,7 +673,7 @@ class Versions(object):
             serr = 'Some required Nexus dependencies are missing.\nMissing dependencies: {}\nPlease check your Python installation.'.format(req_missing)
             s += '\nRequired dependencies are missing:\n'
             for name in req_missing:
-                s += '  {} is missing.  Please install version {} or greater.\n'.format(name,version_to_string(self.currently_supported[name]))
+                s += '  {} is missing.  Install {} or greater.\n'.format(name,version_to_string(self.currently_supported[name]))
             #end for
             s += '\nNexus will not work.\n  Please install the missing dependencies above.\n'
         else:
@@ -682,35 +682,35 @@ class Versions(object):
             elif all_req_supported:
                 s += '\nAll required Nexus dependencies are met.\n  Core workflow features should work.\n  Some optional features may not.\n  See below for more information.\n'
             else:
-                s += '\nRequired dependencies are present, but some versions are unsupported.\n  Core workflow features may still work.\n  Please install updated versions detailed below if problems are encountered.\n'
+                s += '\nRequired dependencies are present, but some are unsupported.\n  Core workflow features may still work.\n  Please install updated versions if problems are encountered.\n'
             #end if
             if not all_req_supported:
                 s += '\nRequired dependencies in need of user check or update:\n'
                 for name in req_unknown:
-                    s += '  {} version is unknown.  Please check for version {} or greater.\n'.format(name,version_to_string(self.currently_supported[name]))
+                    s += '  {} version is unknown.  Check for {} or greater.\n'.format(name,version_to_string(self.currently_supported[name]))
                 #end for
                 for name in req_unsupported:
-                    s += '  {} version {} is outdated.  Please update to {} or greater.\n'.format(name,version_to_string(self.dependency_version[name]),version_to_string(self.currently_supported[name]))
+                    s += '  {} version {} is outdated.  Update to {} or greater.\n'.format(name,version_to_string(self.dependency_version[name]),version_to_string(self.currently_supported[name]))
                 #end for
             #end if
             if not all_opt_supported:
-                s += '\nSome optional dependencies are missing or would benefit from an update.\n  Please note that these modules are not needed for core workflow operation.\n  Optional features related to outdated modules may still work.\n  Please install updated versions detailed below if problems are encountered.\n'
+                s += '\nSome optional dependencies are missing or merit an update.\n  These modules are not needed for core workflow operation.\n  Optional features related to outdated modules may still work.\n  Please install updated versions if problems are encountered.\n'
                 if len(opt_missing)>0:
                     s += '\nOptional dependencies that are missing:\n'
                     for name in opt_missing:
-                        s += '  {:<10} is missing.  Consider installing version {} or greater.\n'.format(name,version_to_string(self.currently_supported[name]))
+                        s += '  {:<10} is missing.  Install {} or greater.\n'.format(name,version_to_string(self.currently_supported[name]))
                     #end for
                 #end if
                 s += '\nOptional dependencies benefitting from user check or update:\n'
                 for name in opt_unknown:
-                    s += '  {:<10} version is unknown.  Consider checking for version {} or greater.\n'.format(name,version_to_string(self.currently_supported[name]))
+                    s += '  {:<10} version is unknown.  Check for {} or greater.\n'.format(name,version_to_string(self.currently_supported[name]))
                 #end for
                 for name in opt_unsupported:
-                    s += '  {:<10} version {} is outdated.  Consider updating to {} or greater.\n'.format(name,version_to_string(self.dependency_version[name]),version_to_string(self.currently_supported[name]))
+                    s += '  {:<10} version {} is outdated.  Update to {} or greater.\n'.format(name,version_to_string(self.dependency_version[name]),version_to_string(self.currently_supported[name]))
                 #end for
             #end if
         #end if
-        s = n*pad+header+s.replace('\n','\n'+(n+1)*pad)
+        s = n*pad+header+s.replace('\n','\n'+(n+1)*pad)+'\n'
         if write:
             print(s)
         #end if
