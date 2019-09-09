@@ -63,16 +63,16 @@ def main(args):
     """
     options = parse_args(args)
     (hcore, eri, ecore, nelec) = read_ascii_integrals(options.input_file,
-                                                      symmetry=options.symm,  
+                                                      symmetry=options.symm,
                                                       verbose=options.verbose)
     nelec = (nelec//2,nelec//2)
     norb = hcore.shape[-1]
-    
+
     if options.symm == 4: # assuming complex
         eri = numpy.transpose(eri,(0,1,3,2))
 
     chol = modified_cholesky_direct(eri.reshape(norb**2,norb**2),
-                                    options.thresh, options.verbose).T
+                                    options.thresh, options.verbose).T.copy()
     write_qmcpack_cholesky(hcore, scipy.sparse.csr_matrix(chol),
                            nelec, norb, e0=ecore,
                            real_chol=(not options.complex_chol),

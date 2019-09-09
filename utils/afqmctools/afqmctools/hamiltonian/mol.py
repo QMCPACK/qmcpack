@@ -518,14 +518,19 @@ def read_ascii_integrals(filename, symmetry=8, verbose=True):
         # each line contains v_{ijkl} i k j l
         # Note (ik|jl) = <ij|kl>.
         # Assuming real integrals
-        try:
-            integral = float(s[0])
-        except ValueError:
-            ig = ast.literal_eval(s[0].strip())
-            # Hack for the moment, not dealing with complex fcidumps, just
-            # the format
-            integral = ig[0]
+        if len(s) == 6:
+            integral = float(s[0]) #+ 1j*float(s[1])
+            s = s[1:]
+        else:
+            try:
+                integral = float(s[0])
+            except ValueError:
+                ig = ast.literal_eval(s[0].strip())
+                # Hack for the moment, not dealing with complex fcidumps, just
+                # the format
+                integral = ig[0]
         i, k, j, l = [int(x) for x in s[1:]]
+        # print(integral,i,k,j,l)
         if i == j == k == l == 0:
             ecore = integral
         elif j == 0 and l == 0:
