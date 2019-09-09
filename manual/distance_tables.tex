@@ -10,8 +10,7 @@ In the future the interface may change to use functions to set and retrieve posi
 so the SoA transformation of the particle data can happen automatically.
 
 A particular distance table is retrieved with \texttt{getDistTable}.
-The first table in the list is the table for like particles (electron-electron or ion-ion), and is always present.
-Use \texttt{addTable} to add a different \texttt{ParticleSet} and return the index of the distance table.
+Use \texttt{addTable} to add a \texttt{ParticleSet} and return the index of the distance table.
 If the table already exists the index of the existing table will be returned.
 
 The mass and charge of each particle is stored in \texttt{Mass} and \texttt{Z}.
@@ -38,23 +37,22 @@ Code can be written to only handle the grouped case, but put an assert or failur
 \subsection{Distance tables}
 
 Distance tables store distances between particles.
-There are symmetric (AA) tables for distance between like particles (electron-electron or ion-ion) and asymmetric (BA) tables for distance between unlike particles (ion-electron)
+There are symmetric (AA) tables for distance between like particles (electron-electron or ion-ion) and asymmetric (BA) tables for distance between unlike particles (electron-ion)
 
 The \texttt{Distances} and \texttt{Displacements} members contain the data.
-Individual elements are accessed with with the \texttt{()} operator.
 The indexing order is target index first, then source.
-For ion-electron tables, the sources are the ions and the targets are the electrons.
+For electron-ion tables, the sources are the ions and the targets are the electrons.
 
 \subsection{Looping over particles}
 
-Some sample code on how to loop over all the particles in an ion-electron distance table:
+Some sample code on how to loop over all the particles in an electron-ion distance table:
 \begin{verbatim}
 
-// d_table is an ion-electron distance table
+// d_table is an electron-ion distance table
 
 for (int jat = 0; j < d_table.targets(); jat++) { // Loop over electrons
   for (int iat = 0; i < d_table.sources(); iat++) { // Loop over ions
-     d_table.Distances(jat, iat);
+     d_table.Distances[jat][iat];
   }
 }
 \end{verbatim}
