@@ -50,10 +50,13 @@ namespace qmcplusplus
  *for the value, gradient and laplacian values.
  *
  * flex_ prefix is a function name signature indicating it is for handling
- * a batch of TrialWaveFunction objects in a lock-step fashion.
- * It dispatched mw_ functions of WaveFunctionComponent or single walker functions
- * based on the number of objects in the list to faciliate different parallelization
- * schemes to maximize performance.
+ * a batch of TrialWaveFunction objects in a lock-step fashion. These functions
+ * are defined statically because they should not have access to a
+ * concrete TWF object except through the passed RefVector<TWF>&.
+ *
+ * It dispatches to mw_ functions of WaveFunctionComponent or single walker functions
+ * based on the number of objects WFC in the input. This accomidates openmp's implicit detection
+ * of nested parallelism.
  */
 class TrialWaveFunction : public MPIObjectBase
 {
@@ -175,12 +178,13 @@ public:
   *   is complex. It differs from the ratio(ParticleSet& P, int iat) function in the way that the ratio
   *   function takes the absolute value of psi(R_new) / psi(R_current). */
   ValueType calcRatio(ParticleSet& P, int iat, ComputeType ct = ComputeType::ALL);
+
   /** batched verison of calcRatio */
-  void flex_calcRatio(const std::vector<TrialWaveFunction*>& WF_list,
-                      const std::vector<ParticleSet*>& P_list,
+  static void flex_calcRatio(const RefVector<TrialWaveFunction>& WF_list,
+                      const RefVector<ParticleSet>& P_list,
                       int iat,
                       std::vector<PsiValueType>& ratios,
-                      ComputeType ct = ComputeType::ALL) const;
+                      ComputeType ct = ComputeType::ALL);
 
   /** compulte multiple ratios to handle non-local moves and other virtual moves
    */
@@ -220,13 +224,13 @@ public:
 
   /** batched verison of evalGrad
     *
-    * The only reason this needs to be in the single trial wave function class
-    * is the use of timers.  Otherwise its a pure function.
+    * This is static because it should have no direct access
+    * to any TWF.
     */
-  void flex_evalGrad(const std::vector<std::reference_wrapper<TrialWaveFunction>>& WF_list,
+  static void flex_evalGrad(const std::vector<std::reference_wrapper<TrialWaveFunction>>& WF_list,
                      const std::vector<std::reference_wrapper<ParticleSet>>& P_list,
                      int iat,
-                     std::vector<GradType>& grad_now) const;
+                     std::vector<GradType>& grad_now);
 
   void rejectMove(int iat);
   /* flexible batched version of rejectMove */
@@ -312,6 +316,7 @@ public:
    */
   void flex_evaluateGL(const std::vector<TrialWaveFunction*>& WF_list, const std::vector<ParticleSet*>& P_list) const;
 
+  std::vector<NewTimer*>& get_timers() { return myTimers; }
 private:
   ///starting index of the buffer
   size_t BufferCursor;

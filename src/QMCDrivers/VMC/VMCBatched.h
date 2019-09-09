@@ -65,6 +65,11 @@ public:
  
   bool run();
 
+  /** Refactor of VMCUpdatePbyP in crowd context
+   *
+   *  MCWalkerConfiguration layer removed.
+   *  Obfuscation of state changes via buffer and MCWalkerconfiguration require this be tested well
+   */
   static void advanceWalkers(const StateForThread& sft, Crowd& crowd, ContextForSteps& move_context, bool recompute);
   
   // This is the task body executed at crowd scope

@@ -76,19 +76,42 @@ public:
 
   std::vector<GradType>& get_grads_now() { return grads_now_; }
   std::vector<GradType>& get_grads_new() { return grads_new_; }
+  std::vector<TrialWaveFunction::PsiValueType>& get_ratios() { return ratios_; }
   
   int size() const { return mcp_walkers_.size(); }
 
+
+  std::vector<RealType>& get_log_gf() { return log_gf_; }
+  std::vector<RealType>& get_log_gb() { return log_gb_; }
+  std::vector<RealType>& get_prob() { return prob_; }
+  
+  void start()
+  {
+    // These were cleared to 1.0 each loop by VMCUpdatePbyP advance walker
+    // refactored code may depend on this initial value.
+    std::fill(log_gf_.begin(), log_gf_.end(), 1.0);
+    std::fill(log_gb_.begin(), log_gb_.end(), 1.0);
+  }
   
 private:
   std::vector<std::reference_wrapper<MCPWalker>> mcp_walkers_;
   std::vector<std::reference_wrapper<ParticleSet>> walker_elecs_;
   std::vector<std::reference_wrapper<TrialWaveFunction>> walker_twfs_;
   std::vector<std::reference_wrapper<QMCHamiltonian>> walker_hamiltonians_;
+  /** @name Work Buffers
+   *  @{
+   *  There are many "local" variables in execution of the driver that are convenient to 
+   *  place in a stl containers to use <alogorithm> style calls with.
+   *  Eventually this will also us to allow some sort of appropriate parallel policy for these calls.
+   */
   EstimatorManagerCrowd estimator_manager_crowd_;
   std::vector<GradType> grads_now_;
   std::vector<GradType> grads_new_;
-  std::vector<RealType> ratios_;
+  std::vector<TrialWaveFunction::PsiValueType> ratios_;
+  std::vector<RealType> log_gf_;
+  std::vector<RealType> log_gb_;
+  std::vector<RealType> prob_;
+  /** }@ */
 };
 } // namespace qmcplusplus
 #endif

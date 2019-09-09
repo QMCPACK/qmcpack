@@ -49,17 +49,10 @@ void ContextForSteps::loadCrowd(Crowd& crowd)
     ++it_walker;
     ++it_positions;
     ++it_positions_soa;
+    // Here ParticleSet loads the G and L
+    // Here Particleset updates its dist tables.
+    // Here Particleset clears activePtcl
   }
-  //positions_soa_.copyIn(positions_);
-  // in certain cases, full tables must be ready
-  // for (int i = 0; i < DistTables.size(); i++)
-  //     if (DistTables[i]->DTType == DT_AOS || DistTables[i]->Need_full_table_loadWalker)
-  //       DistTables[i]->evaluate(*this);
-  //   //computed so that other objects can use them, e.g., kSpaceJastrow
-  //   if (SK && SK->DoUpdate)
-  //     SK->UpdateAllPart(*this);
-
-  // activePtcl = -1;
 }
 
 } // namespace qmcplusplus

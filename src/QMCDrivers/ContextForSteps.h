@@ -59,15 +59,18 @@ public:
   
   int getPtclGroupStart(int group) const { return particle_group_indexes_[group].first; }
   int getPtclGroupEnd(int group) const { return particle_group_indexes_[group].first; }
-  
+
+  void incReject() { ++n_reject; }
+  void incAccept() { ++n_accept; }
 protected:
-// only one of these should exist
+/** @{ */
   ///Positions
   std::vector<std::unique_ptr<ParticlePositions>> walker_positions_;
 
-  ///SoA copy of R
+  ///SoA copy of walker_positions
   std::vector<std::unique_ptr<VectorSoaContainer<RealType, OHMMS_DIM>>> positions_soa_;
-
+/** }@ */
+  
   std::vector<PosType> walker_deltas_;
    
   /** indexes of start and stop of each particle group;
@@ -89,6 +92,9 @@ protected:
   /// Descriptions from distance table creation.  Same order as DistTables.
   std::vector<std::string> distTableDescriptions;
 
+  unsigned long n_reject = 0;
+  unsigned long n_accept = 0;
+  
   RandomGenerator_t& random_gen_;
 
 

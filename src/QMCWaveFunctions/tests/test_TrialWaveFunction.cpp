@@ -260,11 +260,11 @@ TEST_CASE("TrialWaveFunction", "[wavefunction]")
 #endif
 
   PosType delta_zero(0, 0, 0);
-  P_list[0]->makeMove(moved_elec_id, delta_zero);
-  P_list[1]->makeMove(moved_elec_id, delta);
+  p_list_ref[0].get().makeMove(moved_elec_id, delta_zero);
+  p_list_ref[1].get().makeMove(moved_elec_id, delta);
 
   std::vector<PsiValueType> ratios(2);
-  psi.flex_calcRatio(WF_list, P_list, moved_elec_id, ratios);
+  psi.flex_calcRatio(wf_list_ref, p_list_ref, moved_elec_id, ratios);
   std::cout << "calcRatio " << std::setprecision(14) << ratios[0] << " " << ratios[1] << std::endl;
 #if defined(QMC_COMPLEX)
   REQUIRE(ratios[0] == ComplexApprox(PsiValueType(1, 0)));

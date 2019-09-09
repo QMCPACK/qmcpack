@@ -102,39 +102,102 @@ void VMCBatched::advanceWalkers(const StateForThread& sft, Crowd& crowd, Context
     int end_index        = step_context.getPtclGroupEnd(ig);
     for (int iat = start_index; iat < end_index; ++iat)
     {
+      crowd.start();
+      // step_context.deltaRsBegin returns an iterator to a flat series of PosTypes
+      // fastest in walkers then particles
+      auto delta_r_start = it_delta_r + iat * num_particles * num_walkers;
       if (use_drift)
       {
-        crowd.get_walker_twfs()[0].get().flex_evalGrad(crowd.get_walker_twfs(), crowd.get_walker_elecs(), iat, crowd.get_grads_now());
+        TrialWaveFunction::flex_evalGrad(crowd.get_walker_twfs(), crowd.get_walker_elecs(), iat, crowd.get_grads_now());
         sft.drift_modifier.getDrifts(tauovermass, crowd.get_grads_now(), drifts);
         std::transform(drifts.begin(),drifts.end(),
-                       it_delta_r + iat * num_particles * num_walkers, drifts.begin(),
+                       delta_r_start, drifts.begin(),
                        [sqrttau](PosType& drift, PosType& delta_r){
                          return drift + (sqrttau * delta_r);});
       }
       else
       {
-        std::transform(drifts.begin(),drifts.end(),it_delta_r + iat * num_particles *num_walkers, drifts.begin(),
+        std::transform(drifts.begin(),drifts.end(),delta_r_start, drifts.begin(),
                        [sqrttau](auto& drift, auto& delta_r){
                          return sqrttau * delta_r;});
-      }      
+      }
       // avoiding non standard semantics of std::vector<bool>
       std::vector<short> accept(num_walkers, 1);
+      // for now we skip no evaluations based on this as it breaks the simple std::transform pattern.
+      // best solution would be an algorithm that was like std::transform with a mask.
       auto elecs = crowd.get_walker_elecs();
       for(int i_walker = 0; i_walker < crowd.size(); ++i_walker)
       {
         accept[i_walker] = elecs[i_walker].get().makeMoveAndCheck(iat, drifts[i_walker]) ? 1 : 0;
+        step_context.incReject();
       }
-      RealType log_gr{1.0};
-      RealType log_gb{1.0};
-      RealType prob;
-
-      // repeated if is quite inelegant;
+      // This is inelegant
       if(use_drift)
       {
+        TrialWaveFunction::flex_ratioGrad(crowd.get_walker_twfs(),crowd.get_walker_elecs(), iat, crowd.get_ratios(), crowd.get_grads_new());
+        auto delta_r_end = it_delta_r + iat * num_particles * num_walkers + num_walkers;
+        std::transform(delta_r_start,
+                       delta_r_end,
+                       crowd.get_log_gf().begin(),
+                       [mhalf](auto& delta_r){ return mhalf * dot(delta_r, delta_r); });
+        sft.drift_modifier.getDrifts(sft.qmcdrv_input.get_tau(), crowd.get_grads_new(), drifts);
         
+        std::transform(crowd.beginElectrons(), crowd.endElectrons(),
+                       drifts.begin(), drifts.begin(),
+                       [iat](auto& elecs, auto& drift){
+                         return elecs.get().R[iat] - elecs.get().activePos - drift; });
+
+        std::transform(drifts.begin(),
+                       drifts.end(),
+                       crowd.get_log_gb().begin(),
+                       [oneover2tau](auto& drift){ return - oneover2tau * dot(drift, drift);});        
+      }
+      else
+      {
+        TrialWaveFunction::flex_calcRatio(crowd.get_walker_twfs(), crowd.get_walker_elecs(),
+                                      iat, crowd.get_ratios());
+      }
+      std::transform(crowd.get_ratios().begin(),
+                     crowd.get_ratios().end(),
+                     crowd.get_prob().begin(),
+                     [](auto ratio){ return ratio * ratio; });
+      for(int i_accept = 0; i_accept < num_walkers; ++i_accept)
+      {
+        TrialWaveFunction& walker_twf = crowd.get_walker_twfs()[i_accept].get();
+        ParticleSet& walker_elecs = crowd.get_walker_elecs()[i_accept].get();
+        auto prob = crowd.get_prob()[i_accept];
+        auto log_gf = crowd.get_log_gf()[i_accept];
+        auto log_gb = crowd.get_log_gb()[i_accept];
+          
+        if (accept[i_accept] && prob >= std::numeric_limits<RealType>::epsilon()
+            && step_context.get_random_gen()() < prob * std::exp(log_gf - log_gb))
+        {
+          step_context.incAccept();
+          walker_twf.acceptMove(walker_elecs, iat);
+          walker_elecs.acceptMove(iat);
+        }
+        else
+        {
+          step_context.incReject();
+          walker_elecs.rejectMove(iat);
+          walker_twf.rejectMove(iat);
+        }
       }
     }
   }
+  std::for_each(crowd.get_walker_twfs().begin(),
+                crowd.get_walker_twfs().end(),
+                [](auto& twf){twf.get().completeUpdates();});
+  std::for_each(crowd.get_walker_elecs().begin(),
+                crowd.get_walker_elecs().end(),
+                [](auto& elecs){elecs.get().donePbyP();});
+  // TODO:
+  //  update the buffer.
+  //  save the walkers
+  //  evaluate the Hamiltonian
+  //  accumulate
+  //  check if all moves failed
+
 }
 
 /** Thread body for VMC block
