@@ -741,7 +741,7 @@ class Versions(object):
         serr = ''
         header ='\nChecking for Nexus dependencies on the current machine...\n'
         s = versions.write_available_versions(status=False,opt_req=True)
-        wcv = '\nNexus dependencies needed for full functionality:\n'
+        wcv = '\nNexus dependencies recommended for full functionality:\n'
         s += versions.write_current_versions(age=False,opt_req=True,header=wcv)
         available_dependencies = set()
         unavailable_dependencies = set()
