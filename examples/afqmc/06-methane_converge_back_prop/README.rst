@@ -67,13 +67,13 @@ steps used to construct the desired estimator
 
 .. code-block:: python
 
-    dm, weights = rdm.extract_qmc_dm(filename, dm_name='BackPropagated/FullOneRDM/Average_0')
+    dm, weights = rdm.extract_rdm(filename, dm_name='BackPropagated/FullOneRDM/Average_0')
 
 which extracts the 1RDM for each block and finally,
 
 .. code-block:: python
 
-    dm, weight = rdm.extract_qmc_dm_single(filename, index, dm_name='BackPropagated/FullOneRDM/Average_0')
+    dm, weight = rdm.extract_rdm_single(filename, index, dm_name='BackPropagated/FullOneRDM/Average_0')
 
 which extracts a single density matrix for block `index`.
 
