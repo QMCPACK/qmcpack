@@ -134,13 +134,17 @@ def get_occupied(det, nel, nmo):
         pos += 1
     return occs
 
-def read_qmcpack_ci_wavefunction(input_file, ndets=None):
+def read_qmcpack_ci_wavefunction(input_file, nelec, nmo, ndets=None):
     if ndets is None:
         ndets = -1
+    na, nb = nelec
     with h5py.File(input_file) as fh5:
-        nmo = fh5['parameters/numMO'][:][0]
-        na = fh5['parameters/NbAlpha'][:][0]
-        nb = fh5['parameters/NbBeta'][:][0]
+        try:
+            nmo = fh5['parameters/numMO'][:][0]
+            na = fh5['parameters/NbAlpha'][:][0]
+            nb = fh5['parameters/NbBeta'][:][0]
+        except KeyError:
+            pass
         ci_a = fh5['MultiDet/CI_Alpha'][:]
         ci_b = fh5['MultiDet/CI_Beta'][:]
         coeffs = fh5['MultiDet/Coeff'][:][:ndets]
