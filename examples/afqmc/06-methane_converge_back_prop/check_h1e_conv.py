@@ -2,6 +2,9 @@
 import glob
 import h5py
 import numpy
+import matplotlib as mpl
+mpl.use('Agg')
+import matplotlib.pyplot as plt
 import scipy.stats
 from afqmctools.analysis import rdm
 
@@ -45,16 +48,12 @@ def plot_convergence(filename):
         tau_bps.append(t*metadata['dt'])
         assert(e1b-e1b_series < 1e-12)
 
-    try:
-        import matplotlib.pyplot as plt
-        # Finally plot the one-body energy and check the estimator is converged with
-        # respect to back propagation time.
-        plt.errorbar(tau_bps, energies, yerr=errs, fmt='o')
-        plt.xlabel(r'$\tau_{BP}$')
-        plt.ylabel(r'$E_{1B}$ (Ha)')
-        plt.savefig('h1e_conv.pdf', fmt='pdf', bbox_inches='tight')
-    except ImportError:
-        pass
+    # Finally plot the one-body energy and check the estimator is converged with
+    # respect to back propagation time.
+    plt.errorbar(tau_bps, energies, yerr=errs, fmt='o')
+    plt.xlabel(r'$\tau_{BP}$')
+    plt.ylabel(r'$E_{1B}$ (Ha)')
+    plt.savefig('h1e_conv.pdf', fmt='pdf', bbox_inches='tight')
 
 if __name__ == '__main__':
     plot_convergence('qmc.s000.scalar.h5')
