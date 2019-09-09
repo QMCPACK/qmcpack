@@ -169,7 +169,7 @@ public:
   ///common operation to start optimization, used by the derived classes
   void start();
 #ifdef HAVE_LMY_ENGINE
-  void engine_start(cqmc::engine::LMYEngine* EngineObj);
+  void engine_start(cqmc::engine::LMYEngine<ValueType>* EngineObj);
 #endif
   ///common operation to finish optimization, used by the derived classes
   void finish();

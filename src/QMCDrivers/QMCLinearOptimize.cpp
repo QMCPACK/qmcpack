@@ -119,7 +119,7 @@ void QMCLinearOptimize::start()
 }
 
 #ifdef HAVE_LMY_ENGINE
-void QMCLinearOptimize::engine_start(cqmc::engine::LMYEngine* EngineObj)
+void QMCLinearOptimize::engine_start(cqmc::engine::LMYEngine<ValueType>* EngineObj)
 {
   app_log() << "entering engine_start function" << std::endl;
 

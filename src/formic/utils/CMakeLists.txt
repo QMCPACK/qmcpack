@@ -66,19 +66,14 @@ add_library(formic_utils matrix.cpp
                          random.cpp
                          timing.cpp
                          ${FORMIC_BINARY_DIR}/src/formic/utils/mpi_interface.cpp
-                         lmyengine/davidson_solver.cpp
                          lmyengine/block_mat.cpp
                          lmyengine/block_alg.cpp
                          lmyengine/block_detail.cpp
                          lmyengine/energy_target.cpp
-                         lmyengine/energy_target_accu.cpp
                          lmyengine/engine.cpp
                          lmyengine/engine_numeric.cpp
                          lmyengine/engine_timing.cpp
-                         lmyengine/eom.cpp
-                         lmyengine/matrix_builder.cpp
                          lmyengine/spam_solver.cpp
-                         lmyengine/updater.cpp
                          lmyengine/var_dependencies.cpp)
 
 #target_link_libraries(formic_utils ${FORMIC_LAPACK_BLAS_LIBS})
