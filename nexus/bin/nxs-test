@@ -510,6 +510,7 @@ class NexusTest(NexusTestBase):
         NexusTestBase.current_label = ''
         NexusTestBase.test_count   += 1
         NexusTestBase.label_count   = 0
+        failed = False
         try:
             if self.op_inputs is None:
                 self.operation()
@@ -526,9 +527,10 @@ class NexusTest(NexusTestBase):
             self.exception = e
             self.traceback = tb
             self.status=NexusTest.status_options['failed']
+            failed = True
         #end try
         uncalled_unit_tests = self.unit_tests-self.unit_tests_called
-        if len(uncalled_unit_tests)>0:
+        if not failed and len(uncalled_unit_tests)>0:
             raise NexusTestMisconstructed('not all unit tests were called\n  uncalled unit tests: {}\n  please add these either by calling "nunit" for each of them\n  or by calling "nunit_all" at the end of function "{}"'.format(sorted(uncalled_unit_tests),self.name))
         #end if
     #end def run
@@ -3069,7 +3071,14 @@ def grid_functions():
 
     nunit('imports')
 
+    # supporting functions
     nunit('coord_conversion')
+
+    nunit('unit_grid_points')
+
+    nunit('parallelotope_grid_points')
+
+    nunit('spheroid_grid_points')
 
     # Grid tests
     nunit('grid_initialization')

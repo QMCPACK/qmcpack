@@ -633,10 +633,10 @@ class GBase(PlotHandler):
         )
 
 
-    def __init__(self,**kwargs):
+    def __init__(self,*args,**kwargs):
         self.reset()
 
-        if len(kwargs)>0:
+        if len(args)>0 or len(kwargs)>0:
             self.initialize(**kwargs)
         #end if
     #end def __init__
