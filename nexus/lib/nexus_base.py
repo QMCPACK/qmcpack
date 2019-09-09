@@ -31,7 +31,7 @@ import gc as garbage_collector
 from versions import nexus_version
 from memory import resident
 from generic import obj
-from developer import DevBase
+from developer import DevBase,log
 
 
 # Nexus namespaces
@@ -149,7 +149,7 @@ _____________________________________________________
 _____________________________________________________
           
             '''.format(*nexus_version)
-            print(splash_text)
+            log(splash_text)
             NexusCore.wrote_splash = True
         #end if
     #end def write_splash

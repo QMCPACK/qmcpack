@@ -27,7 +27,7 @@ import os
 from versions import nexus_version,current_versions,policy_versions,check_versions
 
 from generic import obj
-from developer import error
+from developer import error,log
 
 from nexus_base      import NexusCore,nexus_core,nexus_noncore,nexus_core_noncore,restore_nexus_core_defaults,nexus_core_defaults
 from machines        import Job,job,Machine,Supercomputer,get_machine
@@ -180,7 +180,8 @@ class Settings(NexusCore):
         try:
             from versions import versions
             if versions is not None:
-                versions.check()
+                err,s,serr = versions.check(write=False,full=True)
+                self.log(s)
             #end if
         except Exception:
             None
