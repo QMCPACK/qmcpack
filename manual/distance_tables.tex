@@ -1,0 +1,89 @@
+\section{Particles and distance tables}
+\label{sec:distance_tables}
+
+\subsection{ParticleSets}
+The \texttt{ParticleSet} class stores particle positions and attributes (charge, mass, etc).
+
+The \texttt{R} member stores positions.
+For calculations, the \texttt{R} variable needs to be transferred to the structure-of-arrays (SoA) storage in \texttt{RSoA}.   This is done by the \texttt{update} method.
+In the future the interface may change to use functions to set and retrieve positions
+so the SoA transformation of the particle data can happen automatically.
+
+A particular distance table is retrieved with \texttt{getDistTable}.
+Use \texttt{addTable} to add a \texttt{ParticleSet} and return the index of the distance table.
+If the table already exists the index of the existing table will be returned.
+
+The mass and charge of each particle is stored in \texttt{Mass} and \texttt{Z}.
+The flag, \texttt{SameMass}, indicates if all the particles have the same mass (true for electrons).
+
+\subsubsection{Groups}
+
+Particles can belong to different groups.
+For electrons, the groups are up and down spins.
+For ions, the groups are the atomic element.
+The group type for each particle can be accessed through the \texttt{GroupID} member.
+The number of groups is returned from \texttt{groups()}.
+The total number particles is accessed with \texttt{getTotalNum()}.
+The number of particles in a group is \texttt{groupsize(int igroup)}.
+
+The particle indices for each group are found with \texttt{first(int igroup)} and \texttt{last(int igroup)}.
+These functions only work correctly if the particles are packed according to group.
+The flag, \texttt{IsGrouped}, indicates if the particles are grouped or not.
+The particles will not be grouped if the elements are not grouped together in the input file.
+This ordering is usually the responsibility of the converters.
+
+Code can be written to only handle the grouped case, but put an assert or failure check if the particles are not grouped.  Otherwise the code will give wrong answers and it can be time-consuming to debug.
+
+\subsection{Distance tables}
+
+Distance tables store distances between particles.
+There are symmetric (AA) tables for distance between like particles (electron-electron or ion-ion) and asymmetric (BA) tables for distance between unlike particles (electron-ion)
+
+The \texttt{Distances} and \texttt{Displacements} members contain the data.
+The indexing order is target index first, then source.
+For electron-ion tables, the sources are the ions and the targets are the electrons.
+
+\subsection{Looping over particles}
+
+Some sample code on how to loop over all the particles in an electron-ion distance table:
+\begin{verbatim}
+
+// d_table is an electron-ion distance table
+
+for (int jat = 0; j < d_table.targets(); jat++) { // Loop over electrons
+  for (int iat = 0; i < d_table.sources(); iat++) { // Loop over ions
+     d_table.Distances[jat][iat];
+  }
+}
+\end{verbatim}
+
+Interactions sometimes depend on the type of group of the particles.
+The code can loop over all particles and use \texttt{GroupID[idx]} to choose the interaction.
+Alternately, the code can loop over the number of groups and then loop from the first to last index for those groups.  This method can attain higher performance by effectively hoisting tests for group ID out of the loop.
+
+An example of the first approach is
+\begin{verbatim}
+
+// P is a ParticleSet
+
+for (int iat = 0; iat < P.getTotalNum(); iat++) {
+  int group_idx = P.GroupID[iat];
+  // Code that depends on the group index
+}
+\end{verbatim}
+
+
+An example of the second approach is
+\begin{verbatim}
+// P is a ParticleSet
+assert(P.IsGrouped == true); // ensure particles are grouped
+
+for (int ig = 0; ig < P.groups(); ig++) { // loop over groups
+  for (int iat = P.first(ig); iat < P.last(ig); iat++) { // loop over elements in each group
+     // Code that depends on group
+  }
+}
+
+\end{verbatim}
+
+
