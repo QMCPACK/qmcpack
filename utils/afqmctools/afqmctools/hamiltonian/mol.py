@@ -518,6 +518,7 @@ def read_ascii_integrals(filename, symmetry=8, verbose=True):
         # each line contains v_{ijkl} i k j l
         # Note (ik|jl) = <ij|kl>.
         if len(s) == 6:
+            # FCIDUMP from quantum package.
             integral = float(s[0]) + 1j*float(s[1])
             s = s[1:]
         else:
@@ -525,8 +526,6 @@ def read_ascii_integrals(filename, symmetry=8, verbose=True):
                 integral = float(s[0])
             except ValueError:
                 ig = ast.literal_eval(s[0].strip())
-                # Hack for the moment, not dealing with complex fcidumps, just
-                # the format
                 integral = ig[0] + 1j*ig[1]
         i, k, j, l = [int(x) for x in s[1:]]
         if i == j == k == l == 0:
