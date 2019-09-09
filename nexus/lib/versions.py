@@ -322,6 +322,7 @@ def process_version(*version):
         version = version[0]
     #end if
     if isinstance(version,str):
+        version = version.replace('+','').replace('-','')
         version = version.split('.')
     elif isinstance(version,int):
         version = (version,)
@@ -745,6 +746,7 @@ pydot_supported      = False
 spglib_supported     = False
 pycifrw_supported    = False
 seekpath_supported   = False
+
 try: # versioning info is never worth failure
     versions = Versions()
 
