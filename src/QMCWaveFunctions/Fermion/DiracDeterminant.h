@@ -66,9 +66,6 @@ public:
    */
   void set(int first, int nel, int delay = 1) override final;
 
-  ///invert psiM or its copies
-  void invertPsiM(const ValueMatrix_t& logdetT, ValueMatrix_t& invMat);
-
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& active,
                            std::vector<ValueType>& dlogpsi,
@@ -97,13 +94,11 @@ public:
   //                  int iat,
   //                  std::vector<PsiValueType>& ratios) override;
 
-      /** compute multiple ratios for a particle move
+  /** compute multiple ratios for a particle move
    */
-      void evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios) override;
+  void evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios) override;
 
   ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
-
-  ValueType ratioGrad_compute(int iat, GradType& grad_iat);
 
   void mw_ratioGrad(const std::vector<WaveFunctionComponent*>& WFC_list,
                     const std::vector<ParticleSet*>& P_list,
@@ -146,7 +141,9 @@ public:
   void restore(int iat) override;
 
   ///evaluate log of a determinant for a particle set
-  RealType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L) override;
+  RealType evaluateLog(ParticleSet& P,
+                       ParticleSet::ParticleGradient_t& G,
+                       ParticleSet::ParticleLaplacian_t& L) override;
 
   //Ye: TODO, good performance needs batched SPO evaluation.
   //void mw_evaluateLog(const std::vector<WaveFunctionComponent*>& WFC_list,
@@ -215,9 +212,14 @@ public:
   ValueType* LastAddressOfdV;
 
 private:
-  /** Resize all temporary arrays required for force computation.
-  */
+  /// invert psiM or its copies
+  void invertPsiM(const ValueMatrix_t& logdetT, ValueMatrix_t& invMat);
+
+  /// Resize all temporary arrays required for force computation.
   void resizeScratchObjectsForIonDerivs();
+
+  /// internal function computing ratio and gradients after computing the SPOs, used by ratioGrad.
+  ValueType ratioGrad_compute(int iat, GradType& grad_iat);
 };
 
 
