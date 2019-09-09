@@ -89,13 +89,13 @@ IF(QMC_COMPLEX)
                                   "${EXAMPLE_DIR}/06-methane_converge_back_prop"
                                   "${TEST_SCALARS_BP}" TRUE 1
                                   -v -t 1e-5 -i reference/scf_ref.chk -o afqmc.h5)
-    LIST(APPEND TEST_SCALARS_SC "EnergyEstim__nume_real" "-88.42905969 0.04946675")
+    LIST(APPEND TEST_SCALARS_SC "EnergyEstim__nume_real" "-88.43097328 0.04224239")
     ADD_AFQMC_PYSCF_WORKFLOW_TEST("07-diamond_2x2x2_supercell"
                                   "${EXAMPLE_DIR}/07-diamond_2x2x2_supercell"
                                   "${TEST_SCALARS_SC}" FALSE 8
                                   -v -t 1e-5 -i reference/scf_ref.chk -o afqmc.h5)
     # Only kpoint-symmetric factorization has cuda build.
-    LIST(APPEND TEST_SCALARS_SC "EnergyEstim__nume_real" "-88.32702734 0.03800539")
+    LIST(APPEND TEST_SCALARS_SC "EnergyEstim__nume_real" "-88.44303023 0.04425413")
     ADD_AFQMC_PYSCF_WORKFLOW_TEST("08-diamond_2x2x2_kpoint_sym"
                                   "${EXAMPLE_DIR}/08-diamond_2x2x2_kpoint_sym"
                                   "${TEST_SCALARS_SC}" FALSE 8
