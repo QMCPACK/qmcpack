@@ -97,6 +97,6 @@ IF(NOT ENABLE_CUDA)
       ADD_AFQMC_PYSCF_WORKFLOW_TEST("08-diamond_2x2x2_kpoint_sym"
                                     "${EXAMPLE_DIR}/08-diamond_2x2x2_kpoint_sym"
                                     "${TEST_SCALARS_SC}" FALSE 8
-                                    -v -t 1e-5 -k -a -i reference/scf.chk -o afqmc.h5)
+                                    -v -t 1e-5 -k -a -i reference/scf_ref.chk -o afqmc.h5)
   ENDIF()
 ENDIF()
