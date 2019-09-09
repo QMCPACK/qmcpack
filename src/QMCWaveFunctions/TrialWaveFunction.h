@@ -151,7 +151,7 @@ public:
   /** evalaute the log (internally gradients and laplacian) of the trial wavefunction. gold reference */
   RealType evaluateLog(ParticleSet& P);
 
-  /** batched verison of evaluateLog. gold reference */
+  /** batched version of evaluateLog. gold reference */
   void flex_evaluateLog(const std::vector<TrialWaveFunction*>& WF_list, const std::vector<ParticleSet*>& P_list) const;
 
   /** recompute the value of the orbitals which require critical accuracy */
@@ -174,7 +174,7 @@ public:
   *   is complex. It differs from the ratio(ParticleSet& P, int iat) function in the way that the ratio
   *   function takes the absolute value of psi(R_new) / psi(R_current). */
   ValueType calcRatio(ParticleSet& P, int iat, ComputeType ct = ComputeType::ALL);
-  /** batched verison of calcRatio */
+  /** batched version of calcRatio */
   void flex_calcRatio(const std::vector<TrialWaveFunction*>& WF_list,
                       const std::vector<ParticleSet*>& P_list,
                       int iat,
@@ -205,7 +205,7 @@ public:
                           TinyVector<ParticleSet::ParticleLaplacian_t, OHMMS_DIM>& lapl_grad);
 
   RealType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
-  /** batched verison of ratioGrad */
+  /** batched version of ratioGrad */
   void flex_ratioGrad(const std::vector<TrialWaveFunction*>& WF_list,
                       const std::vector<ParticleSet*>& P_list,
                       int iat,
@@ -213,7 +213,7 @@ public:
                       std::vector<GradType>& grad_new) const;
 
   GradType evalGrad(ParticleSet& P, int iat);
-  /** batched verison of evalGrad */
+  /** batched version of evalGrad */
   void flex_evalGrad(const std::vector<TrialWaveFunction*>& WF_list,
                      const std::vector<ParticleSet*>& P_list,
                      int iat,
@@ -328,13 +328,13 @@ private:
   std::vector<NewTimer*> myTimers;
   std::vector<RealType> myTwist;
 
-  // helper function for extrating a list of WaveFunctionComponent from a list of TrialWaveFunction
+  // helper function for extracting a list of WaveFunctionComponent from a list of TrialWaveFunction
   std::vector<WaveFunctionComponent*> extract_WFC_list(const std::vector<TrialWaveFunction*>& WF_list, int id) const;
 
-  // helper function for extrating a list of gradients from a list of TrialWaveFunction
+  // helper function for extracting a list of gradients from a list of TrialWaveFunction
   std::vector<ParticleSet::ParticleGradient_t*> extract_G_list(const std::vector<TrialWaveFunction*>& P_list) const;
 
-  // helper function for extrating a list of laplacian from a list of TrialWaveFunction
+  // helper function for extracting a list of laplacian from a list of TrialWaveFunction
   std::vector<ParticleSet::ParticleLaplacian_t*> extract_L_list(const std::vector<TrialWaveFunction*>& P_list) const;
 
   ///////////////////////////////////////////
