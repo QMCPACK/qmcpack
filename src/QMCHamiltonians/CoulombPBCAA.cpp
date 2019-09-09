@@ -694,7 +694,7 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalConsts_old(bool report)
 }
 
 
-QMCHamiltonianBase* CoulombPBCAA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+OperatorBase* CoulombPBCAA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   if (is_active)
     return new CoulombPBCAA(qp, is_active, ComputeForces);

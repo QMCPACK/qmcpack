@@ -153,7 +153,7 @@ bool ForceCeperley::put(xmlNodePtr cur)
   return true;
 }
 
-QMCHamiltonianBase* ForceCeperley::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+OperatorBase* ForceCeperley::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   return new ForceCeperley(*this);
 }

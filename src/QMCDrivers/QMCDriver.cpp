@@ -153,7 +153,7 @@ QMCDriver::QMCDriver(MCWalkerConfiguration& w,
 #endif
   m_param.add(nBlocksBetweenRecompute, "blocks_between_recompute", "int");
   QMCType = "invalid";
-  ////add each QMCHamiltonianBase to W.PropertyList so that averages can be taken
+  ////add each OperatorBase to W.PropertyList so that averages can be taken
   //H.add2WalkerProperty(W);
   //if (storeConfigs) ForwardWalkingHistory.storeConfigsForForwardWalking(w);
   rotation = 0;

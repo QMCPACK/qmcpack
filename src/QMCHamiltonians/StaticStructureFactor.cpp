@@ -44,7 +44,7 @@ void StaticStructureFactor::reset()
 }
 
 
-QMCHamiltonianBase* StaticStructureFactor::makeClone(ParticleSet& P, TrialWaveFunction& Psi)
+OperatorBase* StaticStructureFactor::makeClone(ParticleSet& P, TrialWaveFunction& Psi)
 {
   return new StaticStructureFactor(*this);
 }

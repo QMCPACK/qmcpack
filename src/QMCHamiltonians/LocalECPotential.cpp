@@ -15,7 +15,7 @@
 
 #include "Particle/ParticleSet.h"
 #include "Particle/DistanceTableData.h"
-#include "QMCHamiltonians/QMCHamiltonianBase.h"
+#include "QMCHamiltonians/OperatorBase.h"
 #include "QMCHamiltonians/LocalECPotential.h"
 #include "Utilities/IteratorUtility.h"
 
@@ -286,7 +286,7 @@ LocalECPotential::Return_t LocalECPotential::evaluate_orig(ParticleSet& P)
   return Value;
 }
 
-QMCHamiltonianBase* LocalECPotential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+OperatorBase* LocalECPotential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   LocalECPotential* myclone = new LocalECPotential(IonConfig, qp);
   for (int ig = 0; ig < PPset.size(); ++ig)
