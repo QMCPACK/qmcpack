@@ -41,6 +41,8 @@ void Crowd::loadWalkers()
   while (it_walker != mcp_walkers_.end())
   {
     (*it_walker_elecs).get().loadWalker(*it_walker, true);
+    ++it_walker;
+    ++it_walker_elecs;
   }
 }
 
