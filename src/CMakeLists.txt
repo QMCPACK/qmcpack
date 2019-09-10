@@ -159,14 +159,6 @@ IF (IS_GIT_PROJECT)
   SET(UTILITIES "${UTILITIES};${GITREV_TMP}")
 ENDIF()
 
-  IF(QMC_ADIOS)
-    SET(UTILITIES ${UTILITIES}
-      ADIOS/ADIOS_verify.cpp
-      ADIOS/ADIOS_config.h
-      ADIOS/ADIOS_config.cpp
-      )
-  ENDIF(QMC_ADIOS)
-
   IF(QMC_CUDA)
     SET(UTILITIES ${UTILITIES} 
       Numerics/CUDA/cuda_inverse.cu 
@@ -236,23 +228,18 @@ ENDIF()
     ParticleIO/ParticleIOUtility.cpp 
     )
 
-  IF(HAVE_LIBHDF5 OR HAVE_ADIOS)
+  IF(HAVE_LIBHDF5)
     SET(PARTICLEIO ${PARTICLEIO}
       Particle/HDFWalkerOutput.cpp
       Particle/HDFWalkerInput_0_0.cpp
       Particle/HDFWalkerInput_0_4.cpp
       )
-    IF(HAVE_ADIOS)
-      SET(PARTICLEIO ${PARTICLEIO}
-        ADIOS/ADIOS_verify.cpp
-      )
-    ENDIF(HAVE_ADIOS)
 
     IF(OHMMS_DIM  MATCHES 3)
       SET(PARTICLEIO ${PARTICLEIO} ParticleIO/ESHDFParticleParser.cpp)
     ENDIF(OHMMS_DIM  MATCHES 3)
 
-  ENDIF(HAVE_LIBHDF5 OR HAVE_ADIOS)
+  ENDIF(HAVE_LIBHDF5)
 
   #Need to add this if nothing else but miniapps is compiled
   if(QMC_BUILD_SANDBOX_ONLY)
@@ -275,19 +262,7 @@ ENDIF()
 
   else() #{{{
 
-  #############################
-  # Creating ADIOS
-  #############################
-
   SET(ADIOS ADIOS/ADIOS_config.cpp)
-  IF(HAVE_ADIOS)
-    SET(ADIOS ${ADIOS}
-    Particle/AdiosWalkerInput.cpp
-    ADIOS/ADIOS_profile.cpp
-    ADIOS/ADIOS_verify.cpp
-    ADIOS/ADIOSTrace.cpp
-    )
-  ENDIF(HAVE_ADIOS)
 
   ADD_LIBRARY(adios_config ${ADIOS})
 
