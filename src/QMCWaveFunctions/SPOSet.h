@@ -150,6 +150,11 @@ public:
   /// create optimizable orbital rotation parameters
   virtual void buildOptVariables(const std::vector<std::pair<int, int>>& rotations) {}
 
+  virtual void returnMemberVariables(ValueMatrix_t& C_original,
+                                     std::shared_ptr<ValueMatrix_t>& C_sposet,
+                                     bool& params_supplied,
+                                     std::vector<RealType>& params)
+  { APP_ABORT("SPOSet does not have a way to pass member variables to Rotation Helper class\n"); }
   /// reset parameters to the values from optimizer
   virtual void resetParameters(const opt_variables_type& optVariables) = 0;
 

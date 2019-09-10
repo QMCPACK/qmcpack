@@ -608,6 +608,23 @@ void LCAOrbitalSet::evaluateThirdDeriv(const ParticleSet& P, int first, int last
 {
   APP_ABORT("LCAOrbitalSet::evaluateThirdDeriv(P,istart,istop,ggg_logdet) not implemented\n");
 }
+void LCAOrbitalSet::returnMemberVariables(ValueMatrix_t& C_original,
+                                          std::shared_ptr<ValueMatrix_t>& C_sposet,
+                                          bool& params_supplied,
+                                          std::vector<RealType>& params)
+{
+//std::cout << "SDP returnMemberVariables called\n";
+//  if(!IsCloned)
+  if(true)
+  {
+//    std::cout << "  SDP if !IsCloned conditional found \n";
+    C_original      = *C;
+    C_sposet        = C;
+    params          = this->params;
+    params_supplied = this->params_supplied;
+//    IsCloned        = this->IsCloned;
+  }
+}
 
 void LCAOrbitalSet::buildOptVariables(const std::vector<std::pair<int, int>>& rotations)
 {

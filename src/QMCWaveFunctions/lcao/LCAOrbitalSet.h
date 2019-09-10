@@ -79,6 +79,14 @@ public:
 
   SPOSet* makeClone() const;
 
+  //RotationHelper uses this function that make a hard copy of this SPOset's C matrix as
+  // C_original, and then sets a shared pointer to the C matrix as C_sposet.   
+  // The values of the read in parameters, and IsCloned status is also returned.
+  void returnMemberVariables(ValueMatrix_t& C_original,
+                             std::shared_ptr<ValueMatrix_t>& C_sposet,
+                             bool& params_supplied,
+                             std::vector<RealType>& params);
+
   /// create optimizable orbital rotation parameters
   void buildOptVariables(const std::vector<std::pair<int, int>>& rotations);
 
