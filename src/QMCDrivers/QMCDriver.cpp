@@ -30,7 +30,6 @@
 #include <limits>
 #include <typeinfo>
 
-#include <ADIOS/ADIOS_config.cpp>
 #include "QMCDrivers/GreenFunctionModifiers/DriftModifierBuilder.h"
 #if !defined(REMOVE_TRACEMANAGER)
 #include "Estimators/TraceManager.h"
@@ -319,27 +318,12 @@ std::string QMCDriver::getLastRotationName(std::string RootName)
   return r_RootName;
 }
 
-void QMCDriver::adiosCheckpoint(int block)
-{
-}
-
-void QMCDriver::adiosCheckpointFinal(int block, bool dumpwalkers)
-{
-}
-
 void QMCDriver::recordBlock(int block)
 {
   if (DumpConfig && block % Period4CheckPoint == 0)
   {
     checkpointTimer->start();
-    if (ADIOS::useADIOS())
-    {
-      adiosCheckpoint(block);
-    }
-    if (ADIOS::useHDF5())
-    {
-      wOut->dump(W, block);
-    }
+    wOut->dump(W, block);
     branchEngine->write(RootName, true); //save energy_history
     RandomNumberControl::write(RootName, myComm);
     checkpointTimer->stop();
@@ -348,23 +332,14 @@ void QMCDriver::recordBlock(int block)
 
 bool QMCDriver::finalize(int block, bool dumpwalkers)
 {
-  if (ADIOS::useADIOS())
-  {
-    adiosCheckpointFinal(block, dumpwalkers);
-  }
-
-  if (ADIOS::useHDF5())
-  {
-    if (DumpConfig && dumpwalkers)
-      wOut->dump(W, block);
-    delete wOut;
-    wOut = 0;
-    //Estimators->finalize();
-    nTargetWalkers = W.getActiveWalkers();
-    MyCounter++;
-    infoSummary.flush();
-    infoLog.flush();
-  }
+  if (DumpConfig && dumpwalkers)
+    wOut->dump(W, block);
+  delete wOut;
+  wOut = 0;
+  nTargetWalkers = W.getActiveWalkers();
+  MyCounter++;
+  infoSummary.flush();
+  infoLog.flush();
 
   branchEngine->finalize(W);
 
