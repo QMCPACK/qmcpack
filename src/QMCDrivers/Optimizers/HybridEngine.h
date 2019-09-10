@@ -9,6 +9,8 @@
 #include <libxml/tree.h>
 #include "Message/Communicate.h"
 #include "Optimize/VariableSet.h"
+#include "QMCDrivers/Optimizers/OptimizerTypes.h"
+
 
 namespace qmcplusplus
 {
@@ -30,6 +32,9 @@ private:
 
   ///process xml node
   bool processXML(const xmlNodePtr cur);
+
+  ///list of methods known by hybrid
+  std::vector<OptimizerType> opt_methods_;
 
   ///xml saved node
   std::vector<xmlNodePtr> saved_xml_opt_methods_;

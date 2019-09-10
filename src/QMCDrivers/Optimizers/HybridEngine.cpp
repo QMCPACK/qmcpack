@@ -34,6 +34,10 @@ bool HybridEngine::processXML(const xmlNodePtr opt_xml)
         throw std::runtime_error("MinMethod must be given!\n");
       XMLAttrString updates_string(cur, "num_updates");
       app_log() << "HybridEngine saved MinMethod " << children_MinMethod << " num_updates = " << updates_string << std::endl;
+      auto iter = OptimizerNames.find(children_MinMethod);
+      if (iter == OptimizerNames.end())
+        throw std::runtime_error("Unknown MinMethod!\n");
+      opt_methods_.push_back(iter->second);
       saved_xml_opt_methods_.push_back(cur);
       num_updates_opt_methods_.push_back(std::stoi(updates_string));
     }
@@ -42,6 +46,7 @@ bool HybridEngine::processXML(const xmlNodePtr opt_xml)
 
   if (saved_xml_opt_methods_.size() != 2)
     throw std::runtime_error("MinMethod hybrid needs two optimizer input blocks!\n");
+
   return true;
 }
 

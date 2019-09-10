@@ -132,10 +132,6 @@ private:
   int eigCG;
   /// total number of cg steps per iterations
   int TotalCGSteps;
-  /// whether to use the adaptive three-shift scheme
-  bool doAdaptiveThreeShift;
-  /// whether to use the single-shift scheme
-  bool doOneShiftOnly;
   /// the previous best identity shift
   RealType bestShift_i;
   /// the previous best overlap shift
@@ -183,25 +179,20 @@ private:
 
   //Variables for alternatives to linear method
 
-  //type of optimization method
+  //name of the current optimization method, updated by processOptXML before run
   std::string MinMethod;
 
-  //whether to use accelerated descent
-  bool doDescent;
+  //type of the current optimization method, updated by processOptXML before run
+  OptimizerType current_optimizer_type_;
 
   //whether to use hybrid method
   bool doHybrid;
-
 
   //Integer for keeping track of the iteration number
   int stepNum;
 
   //Integer for keeping track of only the total number of descent steps taken in the entire optimization
   int descentNum;
-
-  //Whether hybrid accelerated descent and linear method will be used
-  std::string hybrid;
-
 
   //Counters for controlling changes between descent and BLM in hybrid method
 

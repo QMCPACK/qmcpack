@@ -69,11 +69,11 @@ QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(MCWalkerConfiguration
       bigChange(50),
       w_beta(0.0),
       MinMethod("OneShiftOnly"),
+      current_optimizer_type_(OptimizerType::ONESHIFTONLY),
       GEVtype("mixed"),
       StabilizerMethod("best"),
       GEVSplit("no"),
       stepsize(0.25),
-      doAdaptiveThreeShift(false),
       targetExcitedStr("no"),
       targetExcited(false),
       block_lmStr("no"),
@@ -82,7 +82,6 @@ QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(MCWalkerConfiguration
       bestShift_s(-1.0),
       shift_i_input(0.01),
       shift_s_input(1.00),
-      doOneShiftOnly(false),
       shift_s_base(4.0),
       accept_history(3),
       num_shifts(3),
@@ -212,12 +211,6 @@ QMCFixedSampleLinearOptimize::RealType QMCFixedSampleLinearOptimize::Func(RealTy
 
 bool QMCFixedSampleLinearOptimize::run()
 {
-  //Can perform update using either accelerated descent or the hybrid method
-  if (doDescent)
-  {
-    return descent_run();
-  }
-
 #ifdef HAVE_LMY_ENGINE
   if (doHybrid)
   {
@@ -225,10 +218,14 @@ bool QMCFixedSampleLinearOptimize::run()
   }
 
   // if requested, perform the update via the adaptive three-shift or single-shift method
-  if (doAdaptiveThreeShift)
+  if (current_optimizer_type_ == OptimizerType::ADAPTIVE)
     return adaptive_three_shift_run();
 #endif
-  if (doOneShiftOnly)
+  //Can perform update using either accelerated descent or the hybrid method
+  if (current_optimizer_type_ == OptimizerType::DESCENT)
+    return descent_run();
+
+  if (current_optimizer_type_ == OptimizerType::ONESHIFTONLY)
     return one_shift_run();
 
   start();
@@ -494,24 +491,20 @@ bool QMCFixedSampleLinearOptimize::processOptXML(xmlNodePtr opt_xml, const std::
   tolower(block_lmStr);
   block_lm = (block_lmStr == "yes");
 
-  // get whether to use the adaptive three-shift version of the update
-  doAdaptiveThreeShift = (MinMethod == "adaptive");
-  // get whether to use OneShiftOnly
-  doOneShiftOnly = (MinMethod == "OneShiftOnly");
-  // get whether to use descent
-  if (MinMethod == "descent")
-  {
-    doDescent = true;
-    if (!descentEngineObj)
-      descentEngineObj = std::make_unique<DescentEngine>(myComm, opt_xml);
-  }
+  auto iter = OptimizerNames.find(MinMethod);
+  if (iter == OptimizerNames.end())
+    throw std::runtime_error("Unknown MinMethod!\n");
+  current_optimizer_type_ = OptimizerNames.at(MinMethod);
+
+  if (current_optimizer_type_ == OptimizerType::DESCENT && !descentEngineObj)
+    descentEngineObj = std::make_unique<DescentEngine>(myComm, opt_xml);
 
   // sanity check
-  if (targetExcited && !doAdaptiveThreeShift)
+  if (targetExcited && current_optimizer_type_ != OptimizerType::ADAPTIVE)
     APP_ABORT("targetExcited = \"yes\" requires that MinMethod = \"adaptive");
 
 #ifdef ENABLE_OPENMP
-  if (doAdaptiveThreeShift && (omp_get_max_threads() > 1))
+  if (current_optimizer_type_ == OptimizerType::ADAPTIVE && (omp_get_max_threads() > 1))
   {
     // throw std::runtime_error("OpenMP threading not enabled with AdaptiveThreeShift optimizer. Use MPI for parallelism instead, and set OMP_NUM_THREADS to 1.");
     app_log() << "test version of OpenMP threading with AdaptiveThreeShift optimizer" << std::endl;
@@ -537,9 +530,9 @@ bool QMCFixedSampleLinearOptimize::processOptXML(xmlNodePtr opt_xml, const std::
     throw std::runtime_error("cost_increase_tol must be non-negative in QMCFixedSampleLinearOptimize::put");
 
   // if this is the first time this function has been called, set the initial shifts
-  if (bestShift_i < 0.0 && (doAdaptiveThreeShift || doHybrid))
+  if (bestShift_i < 0.0 && (current_optimizer_type_ == OptimizerType::ADAPTIVE || doHybrid))
     bestShift_i = shift_i_input;
-  if (doOneShiftOnly)
+  if (current_optimizer_type_ == OptimizerType::ONESHIFTONLY)
     bestShift_i = shift_i_input;
   if (bestShift_s < 0.0)
     bestShift_s = shift_s_input;
