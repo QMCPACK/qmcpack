@@ -43,7 +43,7 @@ struct LocalECPotential_CUDA : public LocalECPotential
 
   void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy);
 
-  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 
   LocalECPotential_CUDA(ParticleSet& ions, ParticleSet& elns);
 };

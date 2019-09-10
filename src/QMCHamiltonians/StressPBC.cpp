@@ -463,7 +463,7 @@ bool StressPBC::put(xmlNodePtr cur)
   return true;
 }
 
-QMCHamiltonianBase* StressPBC::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+OperatorBase* StressPBC::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   StressPBC* tmp       = new StressPBC(PtclA, qp, psi, false);
   tmp->targetconsts    = targetconsts;

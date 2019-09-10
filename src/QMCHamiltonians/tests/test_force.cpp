@@ -237,7 +237,7 @@ TEST_CASE("Chiesa Force", "[hamiltonian]")
   // to ensure all the members are copied/set up/tested.
 
   TrialWaveFunction psi(c);
-  QMCHamiltonianBase* base_force2 = force.makeClone(elec, psi);
+  OperatorBase* base_force2 = force.makeClone(elec, psi);
   ForceChiesaPBCAA* force2        = dynamic_cast<ForceChiesaPBCAA*>(base_force2);
   REQUIRE(force2 != NULL);
 
@@ -394,9 +394,9 @@ TEST_CASE("Ion-ion Force", "[hamiltonian]")
   elecSpecies(uMembersizeIdx, upIdx)   = 2;
   elec.resetGroups();
 
-  CoulombPotential<QMCHamiltonianBase::Return_t> ionForce(ions, false, true);
-  CoulombPotential<QMCHamiltonianBase::Return_t> elecIonForce(elec, ions, true); // Should be zero
-  CoulombPotential<QMCHamiltonianBase::Return_t> elecForce(elec, true, true); // Should be zero
+  CoulombPotential<OperatorBase::Return_t> ionForce(ions, false, true);
+  CoulombPotential<OperatorBase::Return_t> elecIonForce(elec, ions, true); // Should be zero
+  CoulombPotential<OperatorBase::Return_t> elecForce(elec, true, true); // Should be zero
 
   double coeff0[3] = {-0.60355339059, -0.35355339059, 0.0};
   double coeff1[3] = { 0.60355339059, -0.35355339059, 0.0};

@@ -47,7 +47,7 @@ CoulombPBCAB::CoulombPBCAB(ParticleSet& ions, ParticleSet& elns, bool computeFor
   app_log() << "  Number of k vectors " << AB->Fk.size() << std::endl;
 }
 
-QMCHamiltonianBase* CoulombPBCAB::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+OperatorBase* CoulombPBCAB::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   CoulombPBCAB* myclone    = new CoulombPBCAB(PtclA, qp, ComputeForces);
   myclone->FirstForceIndex = FirstForceIndex;
@@ -196,31 +196,49 @@ CoulombPBCAB::Return_t CoulombPBCAB::evaluate_sp(ParticleSet& P)
   RealType Vsr                = 0.0;
   RealType Vlr                = 0.0;
   mRealType& Vc               = myConst;
-  Array<RealType, 1>& Ve_samp = *Ve_sample;
-  Array<RealType, 1>& Vi_samp = *Vi_sample;
+  Array<RealType, 1>& Ve_samp = Ve_samp_tmp;
+  Array<RealType, 1>& Vi_samp = Vi_samp_tmp;
   Ve_samp                     = 0.0;
   Vi_samp                     = 0.0;
   {
-#ifndef ENABLE_SOA
     //SR
     const DistanceTableData& d_ab(P.getDistTable(myTableIndex));
-    RealType pairpot;
     RealType z;
     //Loop over distinct eln-ion pairs
-    for (int iat = 0; iat < NptclA; iat++)
+    if (d_ab.DTType == DT_SOA)
     {
-      z                   = .5 * Zat[iat];
-      RadFunctorType* rVs = Vat[iat];
-      for (int nn = d_ab.M[iat], jat = 0; nn < d_ab.M[iat + 1]; ++nn, ++jat)
+      for (size_t b = 0; b < NptclB; ++b)
       {
-        pairpot = z * Qat[jat] * d_ab.rinv(nn) * rVs->splint(d_ab.r(nn));
-        Vi_samp(iat) += pairpot;
-        Ve_samp(jat) += pairpot;
-        Vsr          += pairpot;
+        z = 0.5*Qat[b];
+        const RealType* restrict dist = d_ab.Distances[b];
+        for (size_t a = 0; a < NptclA; ++a)
+        {
+          Return_t pairpot = z * Zat[a] * Vat[a]->splint(dist[a]) / dist[a];
+          Vi_samp(a) += pairpot;
+          Ve_samp(b) += pairpot;
+          Vsr        += pairpot;
+        }
       }
+      Vsr *= 2.0;
     }
-    Vsr *= 2.0;
+    else
+    {
+#ifndef ENABLE_SOA
+      for (int iat = 0; iat < NptclA; iat++)
+      {
+        z                   = .5 * Zat[iat];
+        RadFunctorType* rVs = Vat[iat];
+        for (int nn = d_ab.M[iat], jat = 0; nn < d_ab.M[iat + 1]; ++nn, ++jat)
+        {
+          Return_t pairpot = z * Qat[jat] * d_ab.rinv(nn) * rVs->splint(d_ab.r(nn));
+          Vi_samp(iat) += pairpot;
+          Ve_samp(jat) += pairpot;
+          Vsr          += pairpot;
+        }
+      }
+      Vsr *= 2.0;
 #endif
+    }
   }
   {
     //LR
@@ -350,6 +368,8 @@ CoulombPBCAB::Return_t CoulombPBCAB::evalConsts(bool report)
   int nelns = Peln.getTotalNum();
   int nions = Pion.getTotalNum();
 #if !defined(REMOVE_TRACEMANAGER)
+  Ve_samp_tmp.resize(nelns);
+  Vi_samp_tmp.resize(nions);
   Ve_const.resize(nelns);
   Vi_const.resize(nions);
   Ve_const = 0.0;

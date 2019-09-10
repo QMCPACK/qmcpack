@@ -15,11 +15,11 @@
 #ifndef QMCPLUSPLUS_SPIN_DENSITY_H
 #define QMCPLUSPLUS_SPIN_DENSITY_H
 
-#include <QMCHamiltonians/QMCHamiltonianBase.h>
+#include <QMCHamiltonians/OperatorBase.h>
 
 namespace qmcplusplus
 {
-class SpinDensity : public QMCHamiltonianBase
+class SpinDensity : public OperatorBase
 {
 public:
   typedef ParticleSet::ParticleLayout_t Lattice_t;
@@ -43,7 +43,7 @@ public:
   ~SpinDensity() {}
 
   //standard interface
-  QMCHamiltonianBase* makeClone(ParticleSet& P, TrialWaveFunction& psi);
+  OperatorBase* makeClone(ParticleSet& P, TrialWaveFunction& psi);
   bool put(xmlNodePtr cur);
   Return_t evaluate(ParticleSet& P);
 

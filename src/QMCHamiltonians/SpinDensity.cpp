@@ -53,7 +53,7 @@ void SpinDensity::reset()
 }
 
 
-QMCHamiltonianBase* SpinDensity::makeClone(ParticleSet& P, TrialWaveFunction& Psi) { return new SpinDensity(*this); }
+OperatorBase* SpinDensity::makeClone(ParticleSet& P, TrialWaveFunction& Psi) { return new SpinDensity(*this); }
 
 
 bool SpinDensity::put(xmlNodePtr cur)

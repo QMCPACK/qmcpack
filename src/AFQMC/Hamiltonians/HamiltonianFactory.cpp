@@ -154,7 +154,7 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
     ValueType FrozenCoreEnergy(0);
 
     if(head) {
-      std::vector<ValueType> Rdata(2);
+      std::vector<RealType> Rdata(2);
       if(!dump.readEntry(Rdata,"Energies")) {
         app_error()<<" Error in HamiltonianFactory::fromHDF5(): Problems reading  dataset. \n";
         APP_ABORT(" ");
