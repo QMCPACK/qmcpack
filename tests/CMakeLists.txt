@@ -40,6 +40,10 @@ ELSE()
   SET(MP_SUCCESS TRUE)
 ENDIF()
 
+IF(BUILD_AFQMC)
+  SUBDIRS("afqmc/workflow")
+ENDIF()
+
 #
 #
 if(NOT ${QMCAPP_ERR} STREQUAL "")
