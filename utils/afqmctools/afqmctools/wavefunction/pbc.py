@@ -91,7 +91,7 @@ def generate_orbitals(fock, X, nmo_pk, rediag, ortho_ao,
         if verbose:
             print(" # Generating trial wavefunction for kpoint: "
                   "{:d}".format(k))
-        if rediag and ortho_ao:
+        if ortho_ao:
             start = time.time()
             ea, orb_a = rediag_fock(fock[0,k], X[k][:,:nmo_pk[k]])
             full_mo_a.append(orb_a)
@@ -105,7 +105,7 @@ def generate_orbitals(fock, X, nmo_pk, rediag, ortho_ao,
             if verbose:
                 print(" # Time to rediagonalise fock: "
                       "  {:13.8e} s".format(time.time()-start))
-        elif not rediag and not ortho_ao:
+        else:
             if uhf:
                 print("WARNING: UHF wavefunction with ortho_ao = False not "
                       "allowed.")
@@ -116,9 +116,8 @@ def generate_orbitals(fock, X, nmo_pk, rediag, ortho_ao,
             full_mo_a.append(orb_a)
             ks.append([k]*len(ea))
             bands.append([i for i in range(len(ea))])
-        elif ortho_ao and not rediag:
-            print("WARNING: ortho_ao = True and rediag = False not implemented.")
-            sys.exit()
+            eigs_b = eigs_a
+            foll_mo_b = full_mo_b
     return ((eigs_a,eigs_b), (full_mo_a,full_mo_b), ks, bands)
 
 def create_wavefunction(orbs, occs, nmo_pk, nelec, uhf, verbose):
