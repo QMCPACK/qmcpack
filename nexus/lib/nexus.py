@@ -24,8 +24,10 @@
 
 import os
 
+from versions import nexus_version,current_versions,policy_versions,check_versions
+
 from generic import obj
-from developer import error
+from developer import error,log
 
 from nexus_base      import NexusCore,nexus_core,nexus_noncore,nexus_core_noncore,restore_nexus_core_defaults,nexus_core_defaults
 from machines        import Job,job,Machine,Supercomputer,get_machine
@@ -155,10 +157,6 @@ class Settings(NexusCore):
     def __call__(self,**kwargs):
         kwargs = obj(**kwargs)
 
-        NexusCore.write_splash()
-
-        self.log('Applying user settings')
-
         # guard against invalid settings
         not_allowed = set(kwargs.keys()) - Settings.allowed_vars
         if len(not_allowed)>0:
@@ -175,6 +173,21 @@ class Settings(NexusCore):
         if nexus_core.command_line:
             self.process_command_line_settings(kwargs)
         #end if
+
+        NexusCore.write_splash()
+
+        # print version information
+        try:
+            from versions import versions
+            if versions is not None:
+                err,s,serr = versions.check(write=False,full=True)
+                self.log(s)
+            #end if
+        except Exception:
+            None
+        #end try
+
+        self.log('Applying user settings')
 
         # assign simple variables
         for name in Settings.core_assign_vars:
@@ -243,7 +256,8 @@ class Settings(NexusCore):
     def process_command_line_settings(self,script_settings):
         from optparse import OptionParser
         usage = '''usage: %prog [options]'''
-        parser = OptionParser(usage=usage,add_help_option=True,version='%prog 1.7.0')
+        version = '{}.{}.{}'.format(*nexus_version)
+        parser = OptionParser(usage=usage,add_help_option=True,version='%prog '+version)
 
         parser.add_option('--status_only',dest='status_only',
                           action='store_true',default=False,
