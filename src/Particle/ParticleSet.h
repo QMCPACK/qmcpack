@@ -301,6 +301,9 @@ public:
    */
   void setActive(int iat);
 
+  /// batched version of setActive
+  void flex_setActive(const std::vector<ParticleSet*>& P_list, int iat) const;
+
   /** return the position of the active particle
    *
    * activePtcl=-1 is used to flag non-physical moves
@@ -315,6 +318,8 @@ public:
    * Evaluate the related distance table data DistanceTableData::Temp.
    */
   void makeMove(Index_t iat, const SingleParticlePos_t& displ);
+  /// batched version of makeMove
+  void flex_makeMove(const std::vector<ParticleSet*>& P_list, int iat, const std::vector<SingleParticlePos_t>& displs) const;
 
   /** move the iat-th particle to activePos
    * @param iat the index of the particle to be moved
@@ -365,10 +370,22 @@ public:
    *@param iat the index of the particle whose position and other attributes to be updated
    */
   void acceptMove(Index_t iat);
+  /// batched version of acceptMove
+  void flex_acceptMove(const std::vector<ParticleSet*>& P_list, Index_t iat) const
+  {
+    for (int iw = 0; iw < P_list.size(); iw++)
+      P_list[iw]->acceptMove(iat);
+  }
 
   /** reject the move
    */
   void rejectMove(Index_t iat) { activePtcl = -1; }
+  /// batched version of rejectMove
+  void flex_rejectMove(const std::vector<ParticleSet*>& P_list, Index_t iat) const
+  {
+    for (int iw = 0; iw < P_list.size(); iw++)
+      P_list[iw]->rejectMove(iat);
+  }
 
   void initPropertyList();
   inline int addProperty(const std::string& pname) { return PropertyList.add(pname.c_str()); }
@@ -412,6 +429,12 @@ public:
    * activePtcl is more of a safety measure probably not needed.
    */
   void donePbyP();
+  /// batched version of donePbyP
+  void flex_donePbyP(const std::vector<ParticleSet*>& P_list) const
+  {
+    for (int iw = 0; iw < P_list.size(); iw++)
+      P_list[iw]->donePbyP();
+  }
 
   ///return the address of the values of Hamiltonian terms
   inline FullPrecRealType* restrict getPropertyBase() { return Properties.data(); }
@@ -634,6 +657,15 @@ protected:
    * @param newpos a new particle position
    */
   void computeNewPosDistTablesAndSK(Index_t iat, const SingleParticlePos_t& newpos);
+
+
+  /** compute temporal DistTables and SK for a new particle position for each walker in a batch
+   *
+   * @param P_list the list of ParticleSet pointers in a walker batch
+   * @param iat the particle that is moved on a sphere
+   * @param newpos a new particle position
+   */
+  void mw_computeNewPosDistTablesAndSK(const std::vector<ParticleSet*>& P_list, Index_t iat, const std::vector<SingleParticlePos_t>& new_positions) const;
 
 };
 
