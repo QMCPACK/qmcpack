@@ -24,12 +24,6 @@ private:
   //number of steps in a BLM section of hybrid method
   int blm_len;
 
-  //Vector for storing parameter values for calculating differences to be given to hybrid method
-  std::vector<double> paramsForDiff;
-
-  //Vector for storing the input vectors to the BLM steps of hybrid method
-  std::vector<std::vector<double>> hybridBLM_Input;
-
   ///process xml node
   bool processXML(const xmlNodePtr cur);
 
@@ -42,21 +36,25 @@ private:
   //number of updates in each individual method of hybrid method
   std::vector<int> num_updates_opt_methods_;
 
+  //inidividual methods used in hybrid optimization
+  std::vector<std::string> saved_opt_method_types_;
+
+  int identifyMethodIndex(int counter) const;
+
 public:
   //Constructor for engine
   HybridEngine(Communicate* comm, const xmlNodePtr cur);
 
   xmlNodePtr getSelectedXML(int counter) const;
 
-  void getInitialParams(const optimize::VariableSet& myVars);
-
-  void storeVectors(std::vector<double>& currentParams, int descentCount);
-
-  const std::vector<std::vector<double>> retrieveHybridBLM_Input() const { return hybridBLM_Input; }
-
   const int getDescentLen() const { return descent_len; }
 
   const int getBLMLen() const { return blm_len; }
+
+  const bool queryStore(int counter,int store_num,std::string methodType) const;
+
+  const std::string queryMethod(int counter);
+
 };
 
 } // namespace qmcplusplus

@@ -170,10 +170,6 @@ QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(MCWalkerConfiguration
   stepNum    = 0;
   descentNum = 0;
 
-  totalCount   = 0;
-  descentCount = 0;
-  blmCount     = 0;
-
 
   //   stale parameters
   //   m_param.add(eigCG,"eigcg","int");
@@ -214,6 +210,7 @@ bool QMCFixedSampleLinearOptimize::run()
 #ifdef HAVE_LMY_ENGINE
   if (doHybrid)
   {
+    app_log() << "Doing hybrid run" << std::endl;
     return hybrid_run();
   }
 
@@ -221,7 +218,7 @@ bool QMCFixedSampleLinearOptimize::run()
   if (current_optimizer_type_ == OptimizerType::ADAPTIVE)
     return adaptive_three_shift_run();
 #endif
-  //Can perform update using either accelerated descent or the hybrid method
+
   if (current_optimizer_type_ == OptimizerType::DESCENT)
     return descent_run();
 
@@ -1173,6 +1170,7 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
   optTarget->setNumSamples(init_num_samp);
   nTargetSamples = init_num_samp;
 
+  stepNum = stepNum + 1;
   //app_log() << "block first second third end " << block_first << block_second << block_third << endl;
   // return whether the cost function's report counter is positive
   return (optTarget->getReportCounter() > 0);
@@ -1369,6 +1367,15 @@ bool QMCFixedSampleLinearOptimize::descent_run()
       optTarget->Params(i) = results[i];
     }
 
+    if (doHybrid)
+    {
+      int store_num = descentEngineObj->retrieveStoreFrequency();
+      bool store    = hybridEngineObj->queryStore(stepNum, store_num, "descent");
+      if (store)
+      {
+        descentEngineObj->storeVectors(results);
+      }
+    }
 
     stepNum    = stepNum + 1;
     descentNum = descentNum + 1;
@@ -1384,59 +1391,23 @@ bool QMCFixedSampleLinearOptimize::descent_run()
 #ifdef HAVE_LMY_ENGINE
 bool QMCFixedSampleLinearOptimize::hybrid_run()
 {
-  int descent_len = hybridEngineObj->getDescentLen();
-  int blm_len     = hybridEngineObj->getBLMLen();
+  app_log() << "This is methodName: " << MinMethod << std::endl;
 
-  if (descentCount < descent_len)
+  // if requested, perform the update via the adaptive three-shift or single-shift method
+  if (current_optimizer_type_ == OptimizerType::ADAPTIVE)
   {
-    if (descentCount = 0)
+    // FIXME if(doDescent)
     {
-      hybridEngineObj->getInitialParams(optTarget->getOptVariables());
+      std::vector<std::vector<double>> hybridBLM_Input = descentEngineObj->retrieveHybridBLM_Input();
+      EngineObj->setHybridBLM_Input(hybridBLM_Input);
     }
-    //During the hybrid method,store 5 vectors of parameter differences over the course of a descent section
-    if (((descentCount + 1) % (descent_len / 5) == 0))
-    {
-      app_log() << "Step number in macro-iteration is " << descentCount - 1 << " out of expected total of "
-                << descent_len << " descent steps." << std::endl;
-
-      std::vector<double> currentValues = descentEngineObj->retrieveNewParams();
-      hybridEngineObj->storeVectors(currentValues, descentCount);
-
-      descentCount++;
-      totalCount++;
-      app_log() << "Should be on descent step# " << descentCount - 1
-                << " of macro-iteration. Total steps: " << totalCount << std::endl;
-      return descent_run();
-    }
+    adaptive_three_shift_run();
   }
-  else
-  {
-    if (blmCount < blm_len)
-    {
-      if (blmCount == 0)
-      {
-        std::vector<std::vector<double>> hybridBLM_Input = hybridEngineObj->retrieveHybridBLM_Input();
-        //Only need to set input vectors from AD on first BLM step
-        EngineObj->setHybridBLM_Input(hybridBLM_Input);
-      }
-      blmCount++;
-      totalCount++;
-      app_log() << "Should be on blm step# " << blmCount - 1 << " of macro-iteration. Total steps: " << totalCount
-                << std::endl;
-      return adaptive_three_shift_run();
-    }
-    else
-    {
-      //In this case switching back from BLM to descent
-      descentCount = 0;
-      blmCount     = 0;
-      descentCount++;
-      totalCount++;
-      app_log() << "Should be on descent step# " << descentCount - 1
-                << " of macro-iteration. Total steps: " << totalCount << std::endl;
-      return descent_run();
-    }
-  }
+
+  if (current_optimizer_type_ == OptimizerType::DESCENT)
+    descent_run();
+
+  return (optTarget->getReportCounter() > 0);
 }
 #endif
 

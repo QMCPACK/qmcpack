@@ -25,8 +25,10 @@ DescentEngine::DescentEngine(Communicate* comm, const xmlNodePtr cur)
       CI_eta(.01),
       Orb_eta(.001),
       ramp_eta(false),
-      ramp_num(30)
+      ramp_num(30),
+      store_num(5)
 {
+    store_count = 0;
   processXML(cur);
 }
 
@@ -48,6 +50,7 @@ bool DescentEngine::processXML(const xmlNodePtr cur)
   m_param.add(Orb_eta, "Orb_eta", "double");
   m_param.add(ramp_etaStr, "Ramp_eta", "string");
   m_param.add(ramp_num, "Ramp_num", "int");
+  m_param.add(store_num,"Stored_Vectors","int");
   m_param.put(cur);
 
   engineTargetExcited = (excited == "yes");
@@ -396,15 +399,8 @@ void DescentEngine::updateParameters(int stepNum, int descentNum)
   }
 
 
-  /*
-  //During the hybrid method,store 5 vectors of parameter differences over the course of a descent section
-  if (doHybrid && ((descentNum + 1) % (descent_len / 5) == 0)) {
-      app_log() << "Step number in macro-iteration is " << stepNum % descent_len
-                << " out of expected total of " << descent_len
-                << " descent steps." << std::endl;
-    storeVectors(paramsForDiff);
-  }
-  */
+  
+  
 }
 
 // Helper method for setting step size according parameter type.
@@ -460,6 +456,7 @@ double DescentEngine::setStepSize(int i)
   return type_eta;
 }
 
+//Method for retrieving parameter values, names, and types from the VariableSet before the first descent optimization step
 void DescentEngine::setupUpdate(const optimize::VariableSet& myVars)
 {
   numParams = myVars.size();
@@ -469,7 +466,48 @@ void DescentEngine::setupUpdate(const optimize::VariableSet& myVars)
     engineParamTypes.push_back(myVars.getType(i));
     paramsCopy.push_back(myVars[i]);
     currentParams.push_back(myVars[i]);
+    paramsForDiff.push_back(myVars[i]);
   }
+}
+
+// Helper method for storing vectors of parameter differences over the course of
+// a descent optimization for use in BLM steps of the hybrid method
+void DescentEngine::storeVectors(std::vector<double>& currentParams)
+{
+  std::vector<double> rowVec(currentParams.size());
+  std::fill(rowVec.begin(), rowVec.end(), 0.0);
+
+  // Take difference between current parameter values and the values from 20
+  // iterations before (in the case descent_len = 100) to be stored as input to BLM.
+  // The current parameter values are then copied to paramsForDiff to be used
+  // another 20 iterations later.
+  for (int i = 0; i < currentParams.size(); i++)
+  {
+    rowVec[i]        = currentParams[i] - paramsForDiff[i];
+    paramsForDiff[i] = currentParams[i];
+  }
+
+  // If on first store of descent section, clear anything that was in vector
+  if (store_count == 0)
+  {
+    hybridBLM_Input.clear();
+    hybridBLM_Input.push_back(rowVec);
+  }
+  else
+  {
+    hybridBLM_Input.push_back(rowVec);
+  }
+
+  for (int i = 0; i < hybridBLM_Input.size(); i++)
+  {
+    std::string entry = "";
+    for (int j = 0; j < hybridBLM_Input.at(i).size(); j++)
+    {
+      entry = entry + std::to_string(hybridBLM_Input.at(i).at(j)) + ",";
+    }
+    app_log() << "Stored Vector: " << entry << std::endl;
+  }
+  store_count++;
 }
 
 } // namespace qmcplusplus

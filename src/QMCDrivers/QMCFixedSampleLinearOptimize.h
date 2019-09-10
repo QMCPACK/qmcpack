@@ -194,15 +194,6 @@ private:
   //Integer for keeping track of only the total number of descent steps taken in the entire optimization
   int descentNum;
 
-  //Counters for controlling changes between descent and BLM in hybrid method
-
-  int totalCount;
-  //descentCount tracks thenumber of descent steps taken within one section of descent in the hybrid method
-  //It resets for another section of descent in the hybrid optimization
-  int descentCount;
-  //blmCount tracks the number of BLM steps taken within one BLM section of the hybrid method.
-  //Like descentCount, it resets for another BLM section.
-  int blmCount;
 };
 } // namespace qmcplusplus
 #endif
