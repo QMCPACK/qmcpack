@@ -171,10 +171,6 @@ QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(MCWalkerConfiguration
   stepNum    = 0;
   descentNum = 0;
 
-  totalCount   = 0;
-  descentCount = 0;
-  blmCount     = 0;
-
 
   //   stale parameters
   //   m_param.add(eigCG,"eigcg","int");
@@ -1417,6 +1413,13 @@ bool QMCFixedSampleLinearOptimize::hybrid_run()
     }
     else if(methodName.compare("adaptive") == 0)
     {
+	//In this case, must have just changed from descent to BLM and need to transfer stored vectors to LM engine
+	if(doDescent)
+	{
+	    std::vector<std::vector<double>> hybridBLM_Input = descentEngineObj->retrieveHybridBLM_Input();
+	    EngineObj->setHybridBLM_Input(hybridBLM_Input);
+	}
+
 	doAdaptiveThreeShift = true;
 	doDescent = false;
     }
