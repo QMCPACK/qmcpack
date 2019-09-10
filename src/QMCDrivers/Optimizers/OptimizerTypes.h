@@ -4,6 +4,7 @@ namespace qmcplusplus
 {
 enum class OptimizerType
 {
+  NONE,
   LEGACY,
   ONESHIFTONLY,
   ADAPTIVE,

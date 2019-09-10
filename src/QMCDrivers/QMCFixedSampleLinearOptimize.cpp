@@ -69,7 +69,8 @@ QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(MCWalkerConfiguration
       bigChange(50),
       w_beta(0.0),
       MinMethod("OneShiftOnly"),
-      current_optimizer_type_(OptimizerType::ONESHIFTONLY),
+      previous_optimizer_type_(OptimizerType::NONE),
+      current_optimizer_type_(OptimizerType::NONE),
       GEVtype("mixed"),
       StabilizerMethod("best"),
       GEVSplit("no"),
@@ -491,6 +492,7 @@ bool QMCFixedSampleLinearOptimize::processOptXML(xmlNodePtr opt_xml, const std::
   auto iter = OptimizerNames.find(MinMethod);
   if (iter == OptimizerNames.end())
     throw std::runtime_error("Unknown MinMethod!\n");
+  previous_optimizer_type_ = current_optimizer_type_;
   current_optimizer_type_ = OptimizerNames.at(MinMethod);
 
   if (current_optimizer_type_ == OptimizerType::DESCENT && !descentEngineObj)
@@ -1396,7 +1398,7 @@ bool QMCFixedSampleLinearOptimize::hybrid_run()
   // if requested, perform the update via the adaptive three-shift or single-shift method
   if (current_optimizer_type_ == OptimizerType::ADAPTIVE)
   {
-    // FIXME if(doDescent)
+    if(previous_optimizer_type_ == OptimizerType::DESCENT)
     {
       std::vector<std::vector<double>> hybridBLM_Input = descentEngineObj->retrieveHybridBLM_Input();
       EngineObj->setHybridBLM_Input(hybridBLM_Input);
