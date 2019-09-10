@@ -92,6 +92,7 @@ def test_coord_conversion():
 #end def test_coord_conversion
 
 
+
 def test_unit_grid_points():
     import numpy as np
 
@@ -179,6 +180,7 @@ def test_unit_grid_points():
 #end def test_unit_grid_points
 
 
+
 def test_parallelotope_grid_points():
 
     import numpy as np
@@ -239,6 +241,7 @@ def test_parallelotope_grid_points():
         #end for
     #end for
 #end def test_parallelotope_grid_points
+
 
 
 def test_spheroid_grid_points():
@@ -314,9 +317,168 @@ def test_spheroid_grid_points():
 #end def test_spheroid_grid_points
 
 
-def test_grid_initialization():
 
-    from testing import object_eq
+
+grid_objects = dict()
+
+
+def get_grids():
+    """
+    Generate a variety of grids.
+    """
+
+    from generic import obj
+    from grid_functions import ParallelotopeGrid
+    from grid_functions import SpheroidGrid
+    from grid_functions import SpheroidSurfaceGrid
+
+    grids = grid_objects
+
+    if len(grids)==0:
+
+        cells = {
+            1 : (5,),     # 5x    grid cells
+            2 : (5,5),    # 5x5   grid cells
+            3 : (5,5,5),  # 5x5x5 grid cells
+            }
+
+        axes = {
+            # 1d grid in 1d space
+            (1,1,False) : [[1]],      # unsheared
+            (1,1,True ) : [[1]],      #   sheared
+            # 1d grid in 2d space
+            (1,2,False) : [[1,1]],    # unsheared
+            (1,2,True ) : [[1,1]],    #   sheared
+            # 1d grid in 3d space
+            (1,3,False) : [[1,1,1]],  # unsheared
+            (1,3,True ) : [[1,1,1]],  #   sheared
+            # 2d grid in 2d space
+            (2,2,False) : [[1,0],[0,1]], # unsheared
+            (2,2,True ) : [[1,0],[1,1]], #   sheared
+            # 2d grid in 3d space
+            (2,3,False) : [[1,0,0],[0,1,0]], # unsheared
+            (2,3,True ) : [[1,0,0],[1,1,1]], #   sheared
+            # 3d grid in 3d space
+            (3,3,False) : [[1,0,0],[0,1,0],[0,0,1]], # unsheared
+            (3,3,True ) : [[1,0,0],[1,1,0],[1,1,1]], #   sheared
+            }
+
+        bconds = { # combinations of open/periodic bc's
+            1 : 'o p'.split(),
+            2 : 'oo op po pp'.split(),
+            3 : 'ooo oop opo poo opp pop ppo ppp'.split(),
+            }
+
+        grid_types = obj(
+            parallelotope    = ParallelotopeGrid,
+            spheroid         = SpheroidGrid,
+            spheroid_surface = SpheroidSurfaceGrid,
+            )
+
+        supported = obj(
+            parallelotope    = obj(dims=set([(1,1),(1,2),(1,3),(2,2),(2,3),(3,3)])),
+            spheroid         = obj(dims=set([(2,2),(2,3),(3,3)])),
+            spheroid_surface = obj(dims=set([(1,2),(1,3),(2,3)])),
+            )
+
+        gdict = dict(
+            parallelotope    = 'p',
+            spheroid         = 's',
+            spheroid_surface = 'c',
+            )
+
+        # centering label dictionary
+        cdict = {False:'',True:'c'}
+        # shearing label dictionary
+        sdict = {False:'',True:'s'}
+        # translation label dictionary
+        tdict = {False:'',True:'t'}
+        for grid_name in sorted(grid_types.keys()):
+            for grid_dim,space_dim,sheared in sorted(axes.keys()):
+                if (grid_dim,space_dim) in supported[grid_name].dims:
+                    for centered in (False,True):
+                        for translated in (False,True):
+                            attrib = sdict[sheared]+cdict[centered]+tdict[translated]
+                            label = gdict[grid_name]+str(grid_dim)+str(space_dim)+attrib
+                            cell_grid_dim = grid_dim
+                            axes_grid_dim = grid_dim
+                            if grid_name=='spheroid_surface':
+                                axes_grid_dim += 1
+                            #end if
+                            grid_inputs = obj(
+                                cells    = cells[cell_grid_dim],
+                                axes     = axes[axes_grid_dim,space_dim,sheared],
+                                centered = centered,
+                                )
+                            if translated:
+                                grid_inputs.origin = space_dim*(1,)
+                            #end if
+
+                            g = grid_types[grid_name](**grid_inputs)
+                            grids[label] = g
+
+                            if grid_name=='parallelotope':
+                                for bc in bconds[grid_dim]:
+                                    label_bc = label+'_'+bc
+                                    grid_inputs_bc = obj(
+                                        bconds = tuple(bc),
+                                        **grid_inputs
+                                        )
+                                    g = grid_types[grid_name](**grid_inputs_bc)
+                                    grids[label_bc] = g
+                                    if 'p' not in bc:
+                                        grids[label] = g
+                                    #end if
+                                #end for
+                            #end if
+
+                    #end for
+                #end if
+            #end for
+        #end for
+
+    #end if
+    return obj(grids)
+#end def get_grids
+
+
+def properties_from_name(grid_name):
+    from generic import obj
+    grid_types = dict(
+        p = 'parallelotope',
+        s = 'spheroid',
+        c = 'spheroid_surface',
+        )
+    grid_type = grid_types[grid_name[0]]
+    grid_dim  = int(grid_name[1])
+    space_dim = int(grid_name[2])
+    extra_prop = grid_name[3:]
+    bconds = None
+    if '_' in extra_prop:
+        extra_prop,bc = extra_prop.split('_')
+        bconds = tuple(bc)
+    #end if
+    centered   = 'c' in extra_prop
+    sheared    = 's' in extra_prop
+    translated = 't' in extra_prop
+    properties = obj(
+        type       = grid_type,
+        grid_dim   = grid_dim,
+        space_dim  = space_dim,
+        centered   = centered,
+        sheared    = sheared,
+        translated = translated,
+        bconds     = bconds,
+        cells      = grid_dim*(5,),
+        )
+    return properties
+#end def properties_from_name
+
+
+
+def test_grid_initialization():
+    import numpy as np
+    from testing import object_eq,value_eq
     from grid_functions import Grid,StructuredGrid,StructuredGridWithAxes
     from grid_functions import ParallelotopeGrid
     from grid_functions import SpheroidGrid
@@ -337,55 +499,223 @@ def test_grid_initialization():
         assert(not g.valid())
     #end for
 
+    grids = get_grids()
+
+    # check validity
+    for g in grids:
+        assert(g.valid())
+    #end for
+
+    # check properties
+    bcs = set(tuple('op'))
+    for name in sorted(grids.keys()):
+        g = grids[name]
+        p = properties_from_name(name)
+        assert(g.initialized)
+        assert(g.cell_grid_shape==p.cells)
+        cells = np.array(p.cells,dtype=int)
+        shape = np.array(g.grid_shape,dtype=int)
+        assert(np.abs(shape-cells).max()<=1)
+        npoints = shape.prod()
+        ncells  = cells.prod()
+        assert(g.shape==g.grid_shape)
+        assert(len(g.points)==npoints)
+        assert(g.npoints==npoints)
+        assert(g.ncells==ncells)
+        assert(id(g.r)==id(g.points))
+        assert(g.space_dim==p.space_dim)
+        assert(g.grid_dim==p.grid_dim)
+        assert(g.centered==p.centered)
+        assert(g.surface==(p.type=='spheroid_surface'))
+        assert(g.flat_points_shape==(npoints,p.space_dim))
+        assert(g.full_points_shape==g.shape+(p.space_dim,))
+        assert(len(set(g.bconds)-bcs)==0)
+        if not p.translated:
+            assert(value_eq(g.origin,np.zeros((p.space_dim,))))
+        else:
+            assert(value_eq(g.origin,np.ones((p.space_dim,))))
+        #end if
+        if p.type!='spheroid_surface':
+            assert(g.axes.shape==(p.grid_dim,p.space_dim))
+        else:
+            assert(g.axes.shape==(p.grid_dim+1,p.space_dim))
+        #end if
+        if p.type=='parallelotope':
+            assert(value_eq(g.corner,g.origin))
+            center = g.corner + g.axes.sum(axis=0)/2
+            assert(value_eq(g.center,center))
+        elif 'spheroid' in p.type:
+            assert(value_eq(g.center,g.origin))
+            if not p.sheared:
+                assert(g.isotropic)
+            #end if
+        #end if
+    #end for
+
+#end def test_grid_initialization
+
+
+
+def test_parallelotope_grid_initialization():
+
+    from testing import object_eq
+    from grid_functions import ParallelotopeGrid
+
+    pgrids = []
+
     p1 = ParallelotopeGrid(
         shape = (6,),
         axes  = [[1]],
         )
-    grids.append(p1)
+    pgrids.append(p1)
 
     p2 = ParallelotopeGrid(
         cells = (5,),
         axes  = [[1]],
         )
-    grids.append(p2)
+    pgrids.append(p2)
 
     p3 = ParallelotopeGrid(
         dr    = (0.2,),
         axes  = [[1]],
         )
-    grids.append(p2)
+    pgrids.append(p2)
 
     p4 = ParallelotopeGrid(
         shape = (5,),
         axes  = [[1]],
         centered = True,
         )
-    grids.append(p4)
+    pgrids.append(p4)
 
     p5 = ParallelotopeGrid(
         cells = (5,),
         axes  = [[1]],
         centered = True,
         )
-    grids.append(p5)
+    pgrids.append(p5)
 
     p6 = ParallelotopeGrid(
         dr    = (0.2,),
         axes  = [[1]],
         centered = True,
         )
-    grids.append(p6)
+    pgrids.append(p6)
 
     assert(object_eq(p1,p2))
     assert(object_eq(p1,p3))
 
     assert(object_eq(p4,p5))
     assert(object_eq(p4,p6))
+#end def test_parallelotope_grid_initialization
 
-    for g in grids:
-        assert(g.valid())
+
+
+def test_grid_reset():
+    from testing import object_eq
+    from generic import obj
+    from grid_functions import ParallelotopeGrid
+    from grid_functions import SpheroidGrid
+    from grid_functions import SpheroidSurfaceGrid
+    
+    grid_inputs = [
+        ( ParallelotopeGrid   , obj(cells=(5,6),axes=[[1,0,0],[1,1,0]]) ),
+        ( SpheroidGrid        , obj(cells=(5,6),axes=[[1,0,0],[1,1,0]]) ),
+        ( SpheroidSurfaceGrid , obj(cells=(5,6),axes=[[1,0,0],[1,1,0],[1,1,1]]) ),
+        ]
+
+    for grid_type,inputs in grid_inputs:
+        empty_grid = grid_type()
+        grid = grid_type(**inputs)
+        grid_copy = grid.copy()
+        grid.reset()
+        assert(object_eq(grid,empty_grid))
+        grid.initialize(**inputs)
+        assert(object_eq(grid,grid_copy))
     #end for
-#end def test_grid_initialization
+#end def test_grid_reset
+
+
+
+def test_grid_set_operations():
+    import numpy as np
+    from generic import obj
+    from testing import value_eq
+
+    grids = get_grids()
+
+    grids_check = 'p22c s22c c23c'.split()
+
+    props = obj()
+    for name in grids_check:
+        props[name] = properties_from_name(name)
+    #end for
+
+    # set points
+    points = np.linspace(0,1,2*10)
+    points.shape = 10,2
+    for name in grids_check:
+        g = grids[name].copy()
+        g.set_points(points)
+        assert(value_eq(g.points,points))
+        assert(id(g.points)!=id(points))
+        g.set_points(points,copy=False)
+        assert(value_eq(g.points,points))
+        assert(id(g.points)==id(points))
+    #end for
+
+    # set shape
+    for name in grids_check:
+        p = props[name]
+        g = grids[name].copy()
+        g.set_shape(p.cells)
+        assert(g.shape==p.cells)
+    #end for
+
+    # set bconds
+    for name in grids_check:
+        p = props[name]
+        g = grids[name].copy()
+        bcs = tuple('oo')
+        g.set_bconds(bcs)
+        assert(tuple(g.bconds)==bcs)
+        assert(id(g.bconds)!=id(bcs))
+        g.set_bconds('oo')
+        assert(tuple(g.bconds)==bcs)
+    #end for
+
+    # set axes
+    for name in grids_check:
+        p = props[name]
+        g = grids[name].copy()
+        dim = p.grid_dim
+        if g.surface:
+            dim += 1
+        #end if
+        axes = np.eye(dim,dtype=float)
+        g.set_axes(axes)
+        assert(value_eq(g.axes,axes))
+        assert(id(g.axes)!=id(axes))
+    #end for
+
+    # set origin
+    for name in grids_check:
+        p = props[name]
+        g = grids[name].copy()
+        go = g.copy()
+        origin = np.array(p.space_dim*(4.5,))
+        g.set_origin(origin)
+        assert(value_eq(g.origin,origin))
+        assert(id(g.origin)!=id(origin))
+        shift = origin-go.origin
+        dpoints = g.points-go.points
+        for dp in dpoints:
+            assert(value_eq(dp,shift))
+        #end for
+    #end for
+
+#end def test_grid_set_operations
+
 
 
 def test_cell_indices_2d():

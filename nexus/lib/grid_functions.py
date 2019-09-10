@@ -48,7 +48,7 @@ def polar_to_cartesian(points,surface=False):
     #end if
     npoints,dim = points.shape
     if dim!=2-int(surface):
-        error('dimension of points must be {}\ndimension of provided points: {}'.format(req_dim,dim),'polar_to_cartesian')
+        error('dimension of points must be {}\ndimension of provided points: {}'.format(2-int(surface),dim),'polar_to_cartesian')
     #end if
     if surface:
         r   = 1.0
@@ -1216,6 +1216,12 @@ class StructuredGrid(Grid):
         if not isinstance(shape,(tuple,list,np.ndarray)):
             self.error('cannot set shape from data with type "{}"\nplease use tuple, list, or array for inputted shape'.format(shape.__class__.__name__))
         #end if
+        if 'points' in self and self.points is not None:
+            npoints = np.array(shape,dtype=int).prod()
+            if npoints!=len(self.points):
+                self.error('cannot set shape\ngrid shape provided does not match the number of points in the grid\npoints in grid: {}\npoints from shape: {}'.format(len(self.points),npoints))
+            #end if
+        #end if
         self.shape = tuple(shape)
     #end def set_shape
 
@@ -1771,8 +1777,8 @@ class StructuredGridWithAxes(StructuredGrid):
             shift = origin-self.origin
         else:
             shift = origin
+            self.origin = 0*origin
         #end if
-        self.origin = origin
         self.translate(shift)
     #end def set_origin
 
@@ -2031,7 +2037,9 @@ class ParallelotopeGrid(StructuredGridWithAxes):
         #end if
 
         kwargs['axes']     = axes
-        kwargs['origin']   = corner
+        if corner is not None:
+            kwargs['origin']   = corner
+        #end if
         kwargs['shape']    = shape
         kwargs['centered'] = centered
         kwargs['points']   = points
@@ -2278,7 +2286,9 @@ class SpheroidGrid(StructuredGridWithAxes):
         points,shape = spheroid_grid_points(axes,shape=shape,cells=cells,centered=centered,endpoint=endpoint,return_shape=True)
 
         kwargs['axes']     = axes
-        kwargs['origin']   = center
+        if center is not None:
+            kwargs['origin']   = center
+        #end if
         kwargs['shape']    = shape
         kwargs['centered'] = centered
         kwargs['bconds']   = bconds
@@ -2636,7 +2646,9 @@ class SpheroidSurfaceGrid(StructuredGridWithAxes):
         points,shape = spheroid_surface_grid_points(axes,shape=shape,cells=cells,centered=centered,endpoint=endpoint,return_shape=True)
 
         kwargs['axes']     = axes
-        kwargs['origin']   = center
+        if center is not None:
+            kwargs['origin']   = center
+        #end if
         kwargs['shape']    = shape
         kwargs['centered'] = centered
         kwargs['bconds']   = bconds

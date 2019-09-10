@@ -3083,6 +3083,12 @@ def grid_functions():
     # Grid tests
     nunit('grid_initialization')
 
+    nunit('parallelotope_grid_initialization')
+
+    nunit('grid_reset')
+
+    nunit('grid_set_operations')
+
     nunit('cell_indices_2d')
 
     # GridFunction tests
