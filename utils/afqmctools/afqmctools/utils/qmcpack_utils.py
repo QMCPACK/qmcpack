@@ -2,7 +2,8 @@ import h5py
 import xml.etree.ElementTree as et
 from afqmctools.wavefunction.mol import read_qmcpack_wfn
 
-def write_xml_input(qmc_in, hamil_file, wfn_file, series=0, options=None):
+def write_xml_input(qmc_in, hamil_file, wfn_file, series=0,
+                    rng_seed=None, options=None):
     """Generate template input file from hamiltonian and wavefunction.
 
     Parameters
@@ -28,7 +29,11 @@ def write_xml_input(qmc_in, hamil_file, wfn_file, series=0, options=None):
                             'ortho': 1,
                             'nskip': 8,
                             'block_size': 100,
-                            'nsteps': 1000
+                            'nsteps': 1000,
+                            'obs': {
+                                'OneRDM': {}
+                                }
+                            }
                         }
                     }
                 },
@@ -58,7 +63,10 @@ def write_xml_input(qmc_in, hamil_file, wfn_file, series=0, options=None):
 
     base = '''<simulation method="afqmc">
     <project id="qmc" series="{:d}"/>
-    <AFQMCInfo name="info0">
+    '''.format(series)
+    if rng_seed is not None:
+        base += '''<random seed="{:d}"/>'''.format(rng_seed)
+    base += '''<AFQMCInfo name="info0">
         <parameter name="NMO">{:d}</parameter>
         <parameter name="NAEA">{:d}</parameter>
         <parameter name="NAEB">{:d}</parameter>
@@ -80,7 +88,7 @@ def write_xml_input(qmc_in, hamil_file, wfn_file, series=0, options=None):
     </Propagator>
     <execute wset="wset0" ham="ham0" wfn="wfn0" prop="prop0" info="info0">
    </execute>
-</simulation>'''.format(series, nmo, nalpha, nbeta,
+</simulation>'''.format(nmo, nalpha, nbeta,
                         hamil_file, wfn_type, wfn_file,
                         walker_type)
     basic = {
@@ -117,12 +125,25 @@ def add_param(root, block, name, val):
     param.text = str(val)
     node.append(param)
 
-def add_estimator(root, name, vals):
-    node = root.find('execute')
-    param = et.Element('Estimator', name=name)
+def add_estimator(root, name, vals, block='execute', est_name='Estimator'):
+    node = root.find(block)
+    if name is None:
+        param = et.Element(est_name)
+    else:
+        param = et.Element(est_name, name=name)
     node.append(param)
+    bname = "execute/Estimator[@name='{:s}']".format(name)
     for k, v in vals.items():
-        add_param(root, 'execute/Estimator', k, v)
+        # Add list of observables
+        if k == 'obs':
+            for o, p in v.items():
+                add_estimator(root, None, p,
+                          block=bname,
+                          est_name=o)
+        else:
+            if est_name != 'Estimator':
+                bname += '/'+est_name
+            add_param(root, bname, k, v)
 
 def indent(elem, ilevel=0):
     # Stackoverflow.
