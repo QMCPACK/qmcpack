@@ -83,6 +83,12 @@ private:
   int ramp_num;
 
 
+  //Number of parameter difference vectors stored when descent is used in a hybrid optimization
+  int store_num;
+
+  //Counter of how many vectors have been stored so far
+  int store_count;
+
   //Vectors of parameter names and types, used in the assignment of step sizes
   std::vector<std::string> engineParamNames;
   std::vector<int> engineParamTypes;
@@ -90,6 +96,9 @@ private:
 
   //Vector for storing parameter values for calculating differences to be given to hybrid method
   std::vector<double> paramsForDiff;
+
+  //Vector for storing the input vectors to the BLM steps of hybrid method
+   std::vector<std::vector<double>> hybridBLM_Input;
 
   ///process xml node
   bool processXML(const xmlNodePtr cur);
@@ -149,7 +158,11 @@ public:
   //helper method for transferring information on parameter names and types to the engine
   void setupUpdate(const optimize::VariableSet& myVars);
 
-void storeVectors(std::vector<double>& currentParams, int descentCount);
+void storeVectors(std::vector<double>& currentParams);
+
+const int retrieveStoreFrequency() const {return store_num;}
+
+const std::vector<std::vector<double>> retrieveHybridBLM_Input() const { return hybridBLM_Input; }
 
   const std::vector<double> retrieveNewParams() const { return currentParams; }
 };

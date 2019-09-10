@@ -11,7 +11,10 @@
 
 namespace qmcplusplus
 {
-HybridEngine::HybridEngine(Communicate* comm, const xmlNodePtr cur) : myComm(comm) { processXML(cur); }
+HybridEngine::HybridEngine(Communicate* comm, const xmlNodePtr cur) : myComm(comm)
+{
+    processXML(cur);
+}
 
 
 bool HybridEngine::processXML(const xmlNodePtr opt_xml)
@@ -36,6 +39,7 @@ bool HybridEngine::processXML(const xmlNodePtr opt_xml)
       app_log() << "HybridEngine saved MinMethod " << children_MinMethod << " num_updates = " << updates_string << std::endl;
       saved_xml_opt_methods_.push_back(cur);
       num_updates_opt_methods_.push_back(std::stoi(updates_string));
+      saved_opt_method_types_.push_back(children_MinMethod);
     }
     cur = cur->next;
   }
@@ -45,55 +49,78 @@ bool HybridEngine::processXML(const xmlNodePtr opt_xml)
   return true;
 }
 
-xmlNodePtr HybridEngine::getSelectedXML(int counter) const { return saved_xml_opt_methods_[0]; }
-
-void HybridEngine::getInitialParams(const optimize::VariableSet& myVars)
+xmlNodePtr HybridEngine::getSelectedXML(int counter) const
 {
-  for (int i = 0; i < myVars.size(); i++)
-  {
-    paramsForDiff.push_back(myVars[i]);
-  }
+   int selectIdx = identifyMethodIndex(counter); 
+
+
+    return saved_xml_opt_methods_[selectIdx]; 
+
+
 }
 
 
-// Helper method for storing vectors of parameter differences over the course of
-// a descent optimization for use in BLM steps of the hybrid method
-void HybridEngine::storeVectors(std::vector<double>& currentParams, int descentCount)
+const bool HybridEngine::queryStore(int counter,int store_num,std::string methodType) const
 {
-  std::vector<double> rowVec(currentParams.size());
-  std::fill(rowVec.begin(), rowVec.end(), 0.0);
+    bool store = false;
 
-  // Take difference between current parameter values and the values from 20
-  // iterations before (in the case descent_len = 100) to be stored as input to BLM.
-  // The current parameter values are then copied to paramsForDiff to be used
-  // another 20 iterations later.
-  for (int i = 0; i < currentParams.size(); i++)
+   int idx = 0;
+  for(int i = 0 ; i < saved_opt_method_types_.size(); i++)
   {
-    rowVec[i]        = currentParams[i] - paramsForDiff[i];
-    paramsForDiff[i] = currentParams[i];
-  }
-
-  // If on first step, clear anything that was in vector
-  if ((descentCount + 1) % descent_len == descent_len / 5)
-  {
-    hybridBLM_Input.clear();
-    hybridBLM_Input.push_back(rowVec);
-  }
-  else
-  {
-    hybridBLM_Input.push_back(rowVec);
-  }
-
-  for (int i = 0; i < hybridBLM_Input.size(); i++)
-  {
-    std::string entry = "";
-    for (int j = 0; j < hybridBLM_Input.at(i).size(); j++)
+    if(saved_opt_method_types_[i].compare(methodType) == 0)
     {
-      entry = entry + std::to_string(hybridBLM_Input.at(i).at(j)) + ",";
+	idx = i;
+	break;
     }
-    app_log() << "Stored Vector: " << entry << std::endl;
+  } 
+
+
+  int pos = counter % num_updates_opt_methods_[idx];
+  int interval = num_updates_opt_methods_[idx] / store_num;
+
+  if((pos+1) % interval == 0)
+  {
+    store = true;
   }
+
+  return store;
 }
 
+const std::string HybridEngine::queryMethod(int counter)
+{
+
+    int methodIdx = identifyMethodIndex(counter);
+
+    std::string methodName = saved_opt_method_types_[methodIdx];
+
+    return methodName;
+}
+
+int HybridEngine::identifyMethodIndex(int counter) const
+{
+
+    int numMethods = num_updates_opt_methods_.size();
+
+    int totMicroIt = std::accumulate(num_updates_opt_methods_.begin(),num_updates_opt_methods_.end(),0);
+
+    int pos = counter % totMicroIt;
+
+    int runSum = 0;
+
+    int selectIdx = 0;
+
+    //Compare counter to running sum of microiterations of different methods to determine which method is being used 
+    for(int i = 0; i < numMethods; i++)
+    {
+	runSum += num_updates_opt_methods_[i];
+       if(runSum > counter)
+       {
+	    selectIdx = i;
+	    break;	    
+       }	   
+    }
+
+    return selectIdx;
+}
 
 } // namespace qmcplusplus
