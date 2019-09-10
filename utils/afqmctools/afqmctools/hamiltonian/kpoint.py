@@ -118,13 +118,14 @@ def write_basic(comm, cell, kpts, hcore, h5file, X, nmo_pk, qk_to_k2, kminus,
 
     # zero electron energies, including madelung term
     if comm.rank == 0:
-        e0 = cell.energy_nuc()
+        e0 = nkpts * cell.energy_nuc()
         if exxdiv == 'ewald':
             madelung = tools.pbc.madelung(cell, kpts)
             emad = -0.5*nelectron*madelung
             e0 += emad
             if verbose:
-                print(" # Adding ewald correction to the energy: {}".format(emad))
+                print(" # Adding ewald correction to the energy:"
+                      " {}".format(emad))
         sys.stdout.flush()
 
     comm.barrier()
@@ -137,7 +138,7 @@ def write_basic(comm, cell, kpts, hcore, h5file, X, nmo_pk, qk_to_k2, kminus,
     kminus_ = h5file.grp.create_dataset("MinusK", (nkpts,), dtype=numpy.int32)
     if comm.rank == 0:
         dims_[:] = numpy.array([0, 0, nkpts, nmo_tot, nup, ndown, 0, 0])
-        et_[:] = numpy.array([e0*nkpts, 0])
+        et_[:] = numpy.array([e0, 0])
         kp_[:,:] = kpts[:,:]
         nmo_pk_[:] = nmo_pk[:]
         kminus_[:] = kminus[:]

@@ -355,7 +355,7 @@ private:
     return id;
   }
 
-  // helper function for extrating a list of WaveFunctionComponent from a list of TrialWaveFunction
+  // helper function for extracting a list of WaveFunctionComponent from a list of TrialWaveFunction
   std::vector<WaveFunctionComponent*> extract_Det_list(const std::vector<WaveFunctionComponent*>& WFC_list, int det_id) const
   {
     std::vector<WaveFunctionComponent*> Det_list;

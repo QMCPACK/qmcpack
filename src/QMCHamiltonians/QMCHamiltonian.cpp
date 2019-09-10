@@ -488,6 +488,43 @@ QMCHamiltonian::Return_t QMCHamiltonian::evaluate(ParticleSet& P)
   return LocalEnergy;
 }
 
+void QMCHamiltonian::flex_evaluate(const std::vector<QMCHamiltonian*>& H_list, const std::vector<ParticleSet*>& P_list, std::vector<Return_t>& LocalEnergies) const
+{
+  if (H_list.size() > 1)
+  {
+    for (int iw = 0; iw < H_list.size(); iw++)
+      H_list[iw]->LocalEnergy = 0.0;
+
+    for (int i = 0; i < H.size(); ++i)
+    {
+      ScopedTimer local_timer(myTimers[i]);
+      const auto HC_list(extract_HC_list(H_list, i));
+      H[i]->mw_evaluate(HC_list, P_list);
+      for (int iw = 0; iw < H_list.size(); iw++)
+      {
+        if (std::isnan(HC_list[iw]->Value))
+          APP_ABORT("QMCHamiltonian::evaluate component " + H[i]->myName + " returns NaN\n");
+        H_list[iw]->LocalEnergy += HC_list[iw]->Value;
+        HC_list[iw]->setObservables(H_list[iw]->Observables);
+#if !defined(REMOVE_TRACEMANAGER)
+        HC_list[iw]->collect_scalar_traces();
+#endif
+        HC_list[iw]->setParticlePropertyList(P_list[iw]->PropertyList, myIndex);
+      }
+    }
+
+    for (int iw = 0; iw < H_list.size(); iw++)
+    {
+      const auto HC_list(extract_HC_list(H_list, 0));
+      H_list[iw]->KineticEnergy                = HC_list[iw]->Value;
+      P_list[iw]->PropertyList[LOCALENERGY]    = H_list[iw]->LocalEnergy;
+      P_list[iw]->PropertyList[LOCALPOTENTIAL] = H_list[iw]->LocalEnergy - H_list[iw]->KineticEnergy;
+    }
+  }
+  else if (H_list.size() == 1)
+    H_list[0]->evaluate(*P_list[0]);
+}
+
 QMCHamiltonian::RealType QMCHamiltonian::evaluateValueAndDerivatives(ParticleSet& P,
                                                                       const opt_variables_type& optvars,
                                                                       std::vector<ValueType>& dlogpsi,
@@ -778,4 +815,15 @@ void QMCHamiltonian::evaluate(MCWalkerConfiguration& W,
                               std::vector<std::vector<NonLocalData>>& Txy)
 {}
 #endif
+
+std::vector<OperatorBase*> QMCHamiltonian::extract_HC_list(const std::vector<QMCHamiltonian*>& H_list,
+                                                                        int id) const
+{
+  std::vector<OperatorBase*> HC_list;
+  HC_list.reserve(H_list.size());
+  for (auto H : H_list)
+    HC_list.push_back(H->H[id]);
+  return HC_list;
+}
+
 } // namespace qmcplusplus
