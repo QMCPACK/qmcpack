@@ -1370,7 +1370,7 @@ bool QMCFixedSampleLinearOptimize::descent_run()
     if (doHybrid)
     {
       int store_num = descentEngineObj->retrieveStoreFrequency();
-      bool store    = hybridEngineObj->queryStore(stepNum, store_num, "descent");
+      bool store    = hybridEngineObj->queryStore(stepNum, store_num, OptimizerType::DESCENT);
       if (store)
       {
         descentEngineObj->storeVectors(results);

@@ -98,7 +98,7 @@ private:
   std::vector<double> paramsForDiff;
 
   //Vector for storing the input vectors to the BLM steps of hybrid method
-   std::vector<std::vector<double>> hybridBLM_Input;
+  std::vector<std::vector<double>> hybridBLM_Input;
 
   ///process xml node
   bool processXML(const xmlNodePtr cur);
@@ -158,11 +158,11 @@ public:
   //helper method for transferring information on parameter names and types to the engine
   void setupUpdate(const optimize::VariableSet& myVars);
 
-void storeVectors(std::vector<double>& currentParams);
+  void storeVectors(std::vector<double>& currentParams);
 
-const int retrieveStoreFrequency() const {return store_num;}
+  const int retrieveStoreFrequency() const { return store_num; }
 
-const std::vector<std::vector<double>> retrieveHybridBLM_Input() const { return hybridBLM_Input; }
+  const std::vector<std::vector<double>> retrieveHybridBLM_Input() const { return hybridBLM_Input; }
 
   const std::vector<double> retrieveNewParams() const { return currentParams; }
 };

@@ -36,9 +36,6 @@ private:
   //number of updates in each individual method of hybrid method
   std::vector<int> num_updates_opt_methods_;
 
-  //inidividual methods used in hybrid optimization
-  std::vector<std::string> saved_opt_method_types_;
-
   int identifyMethodIndex(int counter) const;
 
 public:
@@ -47,14 +44,7 @@ public:
 
   xmlNodePtr getSelectedXML(int counter) const;
 
-  const int getDescentLen() const { return descent_len; }
-
-  const int getBLMLen() const { return blm_len; }
-
-  const bool queryStore(int counter,int store_num,std::string methodType) const;
-
-  const std::string queryMethod(int counter);
-
+  bool queryStore(int counter, int store_num, OptimizerType methodType) const;
 };
 
 } // namespace qmcplusplus

@@ -11,14 +11,12 @@
 
 namespace qmcplusplus
 {
-HybridEngine::HybridEngine(Communicate* comm, const xmlNodePtr cur) : myComm(comm)
-{
-    processXML(cur);
-}
+HybridEngine::HybridEngine(Communicate* comm, const xmlNodePtr cur) : myComm(comm) { processXML(cur); }
 
 
 bool HybridEngine::processXML(const xmlNodePtr opt_xml)
 {
+  opt_methods_.clear();
   saved_xml_opt_methods_.clear();
   num_updates_opt_methods_.clear();
 
@@ -36,14 +34,14 @@ bool HybridEngine::processXML(const xmlNodePtr opt_xml)
       if (children_MinMethod.empty())
         throw std::runtime_error("MinMethod must be given!\n");
       XMLAttrString updates_string(cur, "num_updates");
-      app_log() << "HybridEngine saved MinMethod " << children_MinMethod << " num_updates = " << updates_string << std::endl;
+      app_log() << "HybridEngine saved MinMethod " << children_MinMethod << " num_updates = " << updates_string
+                << std::endl;
       auto iter = OptimizerNames.find(children_MinMethod);
       if (iter == OptimizerNames.end())
         throw std::runtime_error("Unknown MinMethod!\n");
       opt_methods_.push_back(iter->second);
       saved_xml_opt_methods_.push_back(cur);
       num_updates_opt_methods_.push_back(std::stoi(updates_string));
-      saved_opt_method_types_.push_back(children_MinMethod);
     }
     cur = cur->next;
   }
@@ -56,34 +54,27 @@ bool HybridEngine::processXML(const xmlNodePtr opt_xml)
 
 xmlNodePtr HybridEngine::getSelectedXML(int counter) const
 {
-   int selectIdx = identifyMethodIndex(counter); 
-
-
-    return saved_xml_opt_methods_[selectIdx]; 
-
-
+  return saved_xml_opt_methods_[identifyMethodIndex(counter)];
 }
 
-
-const bool HybridEngine::queryStore(int counter,int store_num,std::string methodType) const
+bool HybridEngine::queryStore(int counter, int store_num, const OptimizerType method) const
 {
-    bool store = false;
+  bool store = false;
 
-   int idx = 0;
-  for(int i = 0 ; i < saved_opt_method_types_.size(); i++)
+  int idx = 0;
+  for (int i = 0; i < opt_methods_.size(); i++)
   {
-    if(saved_opt_method_types_[i].compare(methodType) == 0)
+    if (opt_methods_[i] == method)
     {
-	idx = i;
-	break;
+      idx = i;
+      break;
     }
-  } 
+  }
 
-
-  int pos = counter % num_updates_opt_methods_[idx];
+  int pos      = counter % num_updates_opt_methods_[idx];
   int interval = num_updates_opt_methods_[idx] / store_num;
 
-  if((pos+1) % interval == 0)
+  if ((pos + 1) % interval == 0)
   {
     store = true;
   }
@@ -91,41 +82,26 @@ const bool HybridEngine::queryStore(int counter,int store_num,std::string method
   return store;
 }
 
-const std::string HybridEngine::queryMethod(int counter)
-{
-
-    int methodIdx = identifyMethodIndex(counter);
-
-    std::string methodName = saved_opt_method_types_[methodIdx];
-
-    return methodName;
-}
-
 int HybridEngine::identifyMethodIndex(int counter) const
 {
+  const int totMicroIt = std::accumulate(num_updates_opt_methods_.begin(), num_updates_opt_methods_.end(), 0);
+  const int pos = counter % totMicroIt;
 
-    int numMethods = num_updates_opt_methods_.size();
+  int runSum = 0;
+  int selectIdx = 0;
 
-    int totMicroIt = std::accumulate(num_updates_opt_methods_.begin(),num_updates_opt_methods_.end(),0);
-
-    int pos = counter % totMicroIt;
-
-    int runSum = 0;
-
-    int selectIdx = 0;
-
-    //Compare counter to running sum of microiterations of different methods to determine which method is being used 
-    for(int i = 0; i < numMethods; i++)
+  //Compare pos to running sum of microiterations of different methods to determine which method is being used
+  for (int i = 0; i < num_updates_opt_methods_.size(); i++)
+  {
+    runSum += num_updates_opt_methods_[i];
+    if (runSum > pos)
     {
-	runSum += num_updates_opt_methods_[i];
-       if(runSum > counter)
-       {
-	    selectIdx = i;
-	    break;	    
-       }	   
+      selectIdx = i;
+      break;
     }
+  }
 
-    return selectIdx;
+  return selectIdx;
 }
 
 } // namespace qmcplusplus

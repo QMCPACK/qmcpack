@@ -28,7 +28,7 @@ DescentEngine::DescentEngine(Communicate* comm, const xmlNodePtr cur)
       ramp_num(30),
       store_num(5)
 {
-    store_count = 0;
+  store_count = 0;
   processXML(cur);
 }
 
@@ -50,7 +50,7 @@ bool DescentEngine::processXML(const xmlNodePtr cur)
   m_param.add(Orb_eta, "Orb_eta", "double");
   m_param.add(ramp_etaStr, "Ramp_eta", "string");
   m_param.add(ramp_num, "Ramp_num", "int");
-  m_param.add(store_num,"Stored_Vectors","int");
+  m_param.add(store_num, "Stored_Vectors", "int");
   m_param.put(cur);
 
   engineTargetExcited = (excited == "yes");
@@ -397,10 +397,6 @@ void DescentEngine::updateParameters(int stepNum, int descentNum)
       }
     }
   }
-
-
-  
-  
 }
 
 // Helper method for setting step size according parameter type.
