@@ -38,31 +38,16 @@ public:
    *
    *  could be premature optimization
    */
-  void reserve(int crowd_size)
-  {
-    auto reserveCS = [crowd_size](auto& avector) {
-                       avector.reserve(crowd_size); };
-    reserveCS(mcp_walkers_);
-    reserveCS(walker_elecs_);
-    reserveCS(walker_twfs_);
-    reserveCS(walker_hamiltonians_);
-    reserveCS(grads_now_);
-    reserveCS(grads_new_);
-    reserveCS(ratios_);
-  }
+  void reserve(int crowd_size);
   
   void startRun() {}
 
   void startBlock(int steps) { estimator_manager_crowd_.startBlock(steps); }
 
-  void addWalker(MCPWalker& walker, ParticleSet& elecs, TrialWaveFunction& twf, QMCHamiltonian& hamiltonian)
-  {
-    mcp_walkers_.push_back(walker);
-    walker_elecs_.push_back(elecs);
-    walker_twfs_.push_back(twf);
-    walker_hamiltonians_.push_back(hamiltonian);
-  };
+  void addWalker(MCPWalker& walker, ParticleSet& elecs, TrialWaveFunction& twf, QMCHamiltonian& hamiltonian);
 
+  void loadWalkers();
+  
   auto beginWalkers() { return mcp_walkers_.begin(); }
   auto endWalkers() { return mcp_walkers_.end(); }
   auto beginTrialWaveFunctions() { return walker_twfs_.begin(); }
@@ -76,15 +61,13 @@ public:
 
   std::vector<GradType>& get_grads_now() { return grads_now_; }
   std::vector<GradType>& get_grads_new() { return grads_new_; }
-  std::vector<TrialWaveFunction::PsiValueType>& get_ratios() { return ratios_; }
-  
-  int size() const { return mcp_walkers_.size(); }
-
-
+  std::vector<TrialWaveFunction::PsiValueType>& get_ratios() { return ratios_; }  
   std::vector<RealType>& get_log_gf() { return log_gf_; }
   std::vector<RealType>& get_log_gb() { return log_gb_; }
   std::vector<RealType>& get_prob() { return prob_; }
-  
+
+  int size() const { return mcp_walkers_.size(); }
+
   void start()
   {
     // These were cleared to 1.0 each loop by VMCUpdatePbyP advance walker

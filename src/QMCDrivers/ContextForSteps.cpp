@@ -37,22 +37,4 @@ ContextForSteps::ContextForSteps(int num_walkers,
   std::for_each(positions_soa_.begin(), positions_soa_.end(), constructT);
 }
 
-void ContextForSteps::loadCrowd(Crowd& crowd)
-{
-  auto it_walker        = crowd.beginWalkers();
-  auto it_positions     = walker_positions_.begin();
-  auto it_positions_soa = positions_soa_.begin();
-  while (it_walker != crowd.endWalkers())
-  {
-    **it_positions = it_walker->get().R;
-    (*it_positions_soa)->copyIn(**it_positions);
-    ++it_walker;
-    ++it_positions;
-    ++it_positions_soa;
-    // Here ParticleSet loads the G and L
-    // Here Particleset updates its dist tables.
-    // Here Particleset clears activePtcl
-  }
-}
-
 } // namespace qmcplusplus

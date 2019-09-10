@@ -70,8 +70,8 @@ VMCBatched::IndexType VMCBatched::calc_default_local_walkers()
 
 void VMCBatched::advanceWalkers(const StateForThread& sft, Crowd& crowd, ContextForSteps& step_context, bool recompute)
 {
-  step_context.loadCrowd(crowd);
-
+  //step_context.loadCrowd(crowd);
+  crowd.loadWalkers();
   auto it_walker_twfs  = crowd.beginTrialWaveFunctions();
   auto it_mcp_walkers  = crowd.beginWalkers();
   auto it_walker_elecs = crowd.beginElectrons();
@@ -160,7 +160,7 @@ void VMCBatched::advanceWalkers(const StateForThread& sft, Crowd& crowd, Context
       std::transform(crowd.get_ratios().begin(),
                      crowd.get_ratios().end(),
                      crowd.get_prob().begin(),
-                     [](auto ratio){ return ratio * ratio; });
+                     [](auto ratio){ return std::real(ratio * ratio); });
       for(int i_accept = 0; i_accept < num_walkers; ++i_accept)
       {
         TrialWaveFunction& walker_twf = crowd.get_walker_twfs()[i_accept].get();
