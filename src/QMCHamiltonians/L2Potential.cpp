@@ -132,7 +132,7 @@ L2Potential::Return_t L2Potential::evaluate(ParticleSet& P)
 }
 
 
-QMCHamiltonianBase* L2Potential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+OperatorBase* L2Potential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   L2Potential* myclone = new L2Potential(IonConfig, qp, psi);
   for (int ig = 0; ig < PPset.size(); ++ig)

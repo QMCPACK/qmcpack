@@ -73,13 +73,13 @@ public:
   virtual void setBF(BackflowTransformation* BFTrans) {}
 
   ///optimizations  are disabled
-  virtual inline void checkInVariables(opt_variables_type& active)
+  virtual inline void checkInVariables(opt_variables_type& active) override
   {
     Phi->checkInVariables(active);
     Phi->checkInVariables(myVars);
   }
 
-  virtual inline void checkOutVariables(const opt_variables_type& active)
+  virtual inline void checkOutVariables(const opt_variables_type& active) override
   {
     Phi->checkOutVariables(active);
     myVars.clear();
@@ -87,7 +87,7 @@ public:
     myVars.getIndex(active);
   }
 
-  virtual void resetParameters(const opt_variables_type& active)
+  virtual void resetParameters(const opt_variables_type& active) override
   {
     Phi->resetParameters(active);
     for (int i = 0; i < myVars.size(); ++i)
@@ -99,17 +99,18 @@ public:
   }
 
   // To be removed with AoS
-  void resetTargetParticleSet(ParticleSet& P) final
+  void resetTargetParticleSet(ParticleSet& P) override final
   {
     Phi->resetTargetParticleSet(P);
     targetPtcl = &P;
   }
 
-  inline void reportStatus(std::ostream& os) final {}
+  inline void reportStatus(std::ostream& os) override final {}
 
   // expose CPU interfaces
   using WaveFunctionComponent::evaluateDerivatives;
   using WaveFunctionComponent::evaluateLog;
+  using WaveFunctionComponent::mw_evaluateLog;
   using WaveFunctionComponent::recompute;
 
   using WaveFunctionComponent::copyFromBuffer;
@@ -117,11 +118,17 @@ public:
   using WaveFunctionComponent::updateBuffer;
 
   using WaveFunctionComponent::acceptMove;
+  using WaveFunctionComponent::mw_acceptMove;
   using WaveFunctionComponent::completeUpdates;
+  using WaveFunctionComponent::mw_completeUpdates;
   using WaveFunctionComponent::evalGrad;
+  using WaveFunctionComponent::mw_evalGrad;
   using WaveFunctionComponent::ratio;
+  using WaveFunctionComponent::mw_calcRatio;
   using WaveFunctionComponent::ratioGrad;
+  using WaveFunctionComponent::mw_ratioGrad;
   using WaveFunctionComponent::restore;
+  using WaveFunctionComponent::mw_restore;
 
   using WaveFunctionComponent::evalGradSource;
   using WaveFunctionComponent::evaluateHessian;
@@ -140,7 +147,7 @@ public:
   }
 
   // Stop makeClone
-  WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const final
+  WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const override final
   {
     APP_ABORT(" Illegal action. Cannot use DiracDeterminantBase::makeClone");
     return 0;

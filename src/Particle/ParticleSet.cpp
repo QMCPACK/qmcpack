@@ -289,8 +289,8 @@ bool ParticleSet::get(std::ostream& os) const
     os << "    Particles are not grouped by species in the input file. Algorithms may not be optimal!" << std::endl;
   os << std::endl;
 
-  const int maxParticlesToPrint = 10;
-  int numToPrint                = std::min(TotalNum, maxParticlesToPrint);
+  const size_t maxParticlesToPrint = 10;
+  size_t numToPrint                = std::min(TotalNum, maxParticlesToPrint);
 
   for (int i = 0; i < numToPrint; i++)
   {
@@ -372,11 +372,48 @@ void ParticleSet::setActive(int iat)
       DistTables[i]->evaluate(*this, iat);
 }
 
+void ParticleSet::flex_setActive(const std::vector<ParticleSet*>& P_list, int iat) const
+{
+  if (P_list.size() > 1)
+  {
+    ScopedTimer local_timer(myTimers[PS_setActive]);
+    #pragma omp parallel
+    {
+      for (size_t i = 0; i < DistTables.size(); i++)
+      {
+        #pragma omp for
+        for (int iw = 0; iw < P_list.size(); iw++)
+          P_list[iw]->DistTables[i]->evaluate(*P_list[iw], iat);
+      }
+    }
+  } else if (P_list.size()==1)
+    P_list[0]->setActive(iat);
+}
+
 void ParticleSet::makeMove(Index_t iat, const SingleParticlePos_t& displ)
 {
   activePtcl = iat;
   activePos  = R[iat] + displ;
   computeNewPosDistTablesAndSK(iat, activePos);
+}
+
+void ParticleSet::flex_makeMove(const std::vector<ParticleSet*>& P_list, Index_t iat, const std::vector<SingleParticlePos_t>& displs) const
+{
+  if (P_list.size() > 1)
+  {
+    std::vector<SingleParticlePos_t> new_positions;
+    new_positions.reserve(displs.size());
+
+    for (int iw = 0; iw < P_list.size(); iw++)
+    {
+      P_list[iw]->activePtcl = iat;
+      P_list[iw]->activePos  = P_list[iw]->R[iat] + displs[iw];
+      new_positions.push_back(P_list[iw]->activePos);
+    }
+
+    mw_computeNewPosDistTablesAndSK(P_list, iat, new_positions);
+  } else if (P_list.size()==1)
+    P_list[0]->makeMove(iat, displs[0]);
 }
 
 bool ParticleSet::makeMoveAndCheck(Index_t iat, const SingleParticlePos_t& displ)
@@ -409,6 +446,29 @@ void ParticleSet::computeNewPosDistTablesAndSK(Index_t iat, const SingleParticle
   if (SK && SK->DoUpdate)
     SK->makeMove(iat, newpos);
 }
+
+void ParticleSet::mw_computeNewPosDistTablesAndSK(const std::vector<ParticleSet*>& P_list, Index_t iat, const std::vector<SingleParticlePos_t>& new_positions) const
+{
+  ScopedTimer compute_newpos_scope(myTimers[PS_newpos]);
+
+  #pragma omp parallel
+  {
+    for (int i = 0; i < DistTables.size(); ++i)
+    {
+      #pragma omp for
+      for (int iw = 0; iw < P_list.size(); iw++)
+        P_list[iw]->DistTables[i]->move(*P_list[iw], new_positions[iw]);
+    }
+
+    if (SK && SK->DoUpdate)
+    {
+      #pragma omp for
+      for (int iw = 0; iw < P_list.size(); iw++)
+        P_list[iw]->SK->makeMove(iat, new_positions[iw]);
+    }
+  }
+}
+
 
 bool ParticleSet::makeMoveAllParticles(const Walker_t& awalker, const ParticlePos_t& deltaR, RealType dt)
 {

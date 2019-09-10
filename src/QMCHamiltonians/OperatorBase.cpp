@@ -13,16 +13,16 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-/**@file QMCHamiltonianBase.cpp
- *@brief Definition of QMCHamiltonianBase
+/**@file OperatorBase.cpp
+ *@brief Definition of OperatorBase
  */
 #include "Message/Communicate.h"
-#include <QMCHamiltonians/QMCHamiltonianBase.h>
+#include <QMCHamiltonians/OperatorBase.h>
 #include <QMCHamiltonians/QMCHamiltonian.h>
 
 namespace qmcplusplus
 {
-QMCHamiltonianBase::QMCHamiltonianBase() : myIndex(-1), Value(0.0), Dependants(0), tWalker(0)
+OperatorBase::OperatorBase() : myIndex(-1), Value(0.0), Dependants(0), tWalker(0)
 {
   quantum_domain = no_quantum_domain;
   energy_domain  = no_energy_domain;
@@ -35,7 +35,7 @@ QMCHamiltonianBase::QMCHamiltonianBase() : myIndex(-1), Value(0.0), Dependants(0
   UpdateMode.set(PRIMARY, 1);
 }
 
-void QMCHamiltonianBase::set_energy_domain(energy_domains edomain)
+void OperatorBase::set_energy_domain(energy_domains edomain)
 {
   if (energy_domain_valid(edomain))
     energy_domain = edomain;
@@ -43,7 +43,7 @@ void QMCHamiltonianBase::set_energy_domain(energy_domains edomain)
     APP_ABORT("QMCHamiltonainBase::set_energy_domain\n  input energy domain is invalid");
 }
 
-void QMCHamiltonianBase::set_quantum_domain(quantum_domains qdomain)
+void OperatorBase::set_quantum_domain(quantum_domains qdomain)
 {
   if (quantum_domain_valid(qdomain))
     quantum_domain = qdomain;
@@ -51,27 +51,27 @@ void QMCHamiltonianBase::set_quantum_domain(quantum_domains qdomain)
     APP_ABORT("QMCHamiltonainBase::set_quantum_domain\n  input quantum domain is invalid");
 }
 
-void QMCHamiltonianBase::one_body_quantum_domain(const ParticleSet& P)
+void OperatorBase::one_body_quantum_domain(const ParticleSet& P)
 {
   if (P.is_classical())
     quantum_domain = classical;
   else if (P.is_quantum())
     quantum_domain = quantum;
   else
-    APP_ABORT("QMCHamiltonianBase::one_body_quantum_domain\n  quantum domain of input particles is invalid");
+    APP_ABORT("OperatorBase::one_body_quantum_domain\n  quantum domain of input particles is invalid");
 }
 
-void QMCHamiltonianBase::two_body_quantum_domain(const ParticleSet& P)
+void OperatorBase::two_body_quantum_domain(const ParticleSet& P)
 {
   if (P.is_classical())
     quantum_domain = classical_classical;
   else if (P.is_quantum())
     quantum_domain = quantum_quantum;
   else
-    APP_ABORT("QMCHamiltonianBase::two_body_quantum_domain(P)\n  quantum domain of input particles is invalid");
+    APP_ABORT("OperatorBase::two_body_quantum_domain(P)\n  quantum domain of input particles is invalid");
 }
 
-void QMCHamiltonianBase::two_body_quantum_domain(const ParticleSet& P1, const ParticleSet& P2)
+void OperatorBase::two_body_quantum_domain(const ParticleSet& P1, const ParticleSet& P2)
 {
   bool c1 = P1.is_classical();
   bool c2 = P2.is_classical();
@@ -84,19 +84,19 @@ void QMCHamiltonianBase::two_body_quantum_domain(const ParticleSet& P1, const Pa
   else if (q1 && q2)
     quantum_domain = quantum_quantum;
   else
-    APP_ABORT("QMCHamiltonianBase::two_body_quantum_domain(P1,P2)\n  quantum domain of input particles is invalid");
+    APP_ABORT("OperatorBase::two_body_quantum_domain(P1,P2)\n  quantum domain of input particles is invalid");
 }
 
-bool QMCHamiltonianBase::quantum_domain_valid(quantum_domains qdomain) { return qdomain != no_quantum_domain; }
+bool OperatorBase::quantum_domain_valid(quantum_domains qdomain) { return qdomain != no_quantum_domain; }
 
-void QMCHamiltonianBase::add2Hamiltonian(ParticleSet& qp, TrialWaveFunction& psi, QMCHamiltonian& targetH)
+void OperatorBase::add2Hamiltonian(ParticleSet& qp, TrialWaveFunction& psi, QMCHamiltonian& targetH)
 {
-  QMCHamiltonianBase* myclone = makeClone(qp, psi);
+  OperatorBase* myclone = makeClone(qp, psi);
   if (myclone)
     targetH.addOperator(myclone, myName, UpdateMode[PHYSICAL]);
 }
 
-void QMCHamiltonianBase::registerObservables(std::vector<observable_helper*>& h5desc, hid_t gid) const
+void OperatorBase::registerObservables(std::vector<observable_helper*>& h5desc, hid_t gid) const
 {
   bool collect = UpdateMode.test(COLLECTABLE);
   //exclude collectables
@@ -110,7 +110,7 @@ void QMCHamiltonianBase::registerObservables(std::vector<observable_helper*>& h5
   }
 }
 
-void QMCHamiltonianBase::addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy)
+void OperatorBase::addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy)
 {
   APP_ABORT("Need specialization for " + myName +
             "::addEnergy(MCWalkerConfiguration &W).\n Required functionality not implemented\n");
