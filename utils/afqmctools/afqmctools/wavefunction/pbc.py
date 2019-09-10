@@ -232,21 +232,24 @@ def reoccupy(mo_occ, mo_energy, uhf, verbose, low=0.25,
         nalpha = int(round(numpy.sum(re_occ_a)))
         nbeta = int(round(numpy.sum(re_occ_b)))
         re_occ = [re_occ_a, re_occ_b]
-        occs_a, occs_b = zip(*itertools.product(msd_a,msd_b))
-        pdets = numpy.outer(p_a,p_b).ravel()
-        srt_det = pdets.argsort()
         srt = (srt_a,srt_b)
         isrt = (isrt_a,isrt_b)
-        msd_coeff = (pdets/sum(pdets))**0.5
-        if ndet_max is not None:
-            if verbose:
-                print(" # Truncating MSD expansion at {}"
-                      " determinants.".format(ndet_max))
-            nd = min(len(occs_a),ndet_max)
-            sd = srt_det[:nd]
-            trial = (msd_coeff[sd], numpy.array(occs_a)[sd], numpy.array(occs_b)[sd])
+        if msd_a is not None and msd_b is not None:
+            occs_a, occs_b = zip(*itertools.product(msd_a,msd_b))
+            pdets = numpy.outer(p_a,p_b).ravel()
+            srt_det = pdets.argsort()
+            msd_coeff = (pdets/sum(pdets))**0.5
+            if ndet_max is not None:
+                if verbose:
+                    print(" # Truncating MSD expansion at {}"
+                          " determinants.".format(ndet_max))
+                nd = min(len(occs_a),ndet_max)
+                sd = srt_det[:nd]
+                trial = (msd_coeff[sd], numpy.array(occs_a)[sd], numpy.array(occs_b)[sd])
+            else:
+                trial = (msd_coeff, occs_a, occs_b)
         else:
-            trial = (msd_coeff, occs_a, occs_b)
+            trial = None
     else:
         re_occ, ndeg, msd, srt, isrt, p = (
                 determine_occupancies(mo_occ,
