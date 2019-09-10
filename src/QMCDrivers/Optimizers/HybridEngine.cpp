@@ -74,6 +74,11 @@ bool HybridEngine::queryStore(int counter, int store_num, const OptimizerType me
   int pos      = counter % num_updates_opt_methods_[idx];
   int interval = num_updates_opt_methods_[idx] / store_num;
 
+  if(interval == 0)
+  {
+    app_log() << "Requested Number of Stored Vectors greater than number of descent steps. Storing a vector on each step." << std::endl;
+    interval = 1;
+  }
   if ((pos + 1) % interval == 0)
   {
     store = true;
