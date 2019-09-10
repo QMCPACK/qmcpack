@@ -1444,11 +1444,9 @@ public:
   bool verbose;
   std::string format;
   bool hdf_format;
-  bool adios_format;
   std::string file_root;
   Communicate* communicator;
   hdf_archive* hdf_file;
-  xmlNodePtr adios_options;
 
   TraceManager(Communicate* comm = 0) : hdf_file(0), verbose(false)
   {
@@ -1464,7 +1462,6 @@ public:
     int_buffer.set_samples(int_samples);
     real_buffer.set_samples(real_samples);
     real_buffer.set_samples(comp_samples);
-    adios_options = 0;
   }
 
 
@@ -1492,9 +1489,7 @@ public:
     verbose              = tm.verbose;
     format               = tm.format;
     hdf_format           = tm.hdf_format;
-    adios_format         = tm.adios_format;
     default_domain       = tm.default_domain;
-    adios_options = tm.adios_options;
   }
 
 
@@ -1515,7 +1510,6 @@ public:
     writing_traces       = false;
     verbose              = false;
     hdf_format           = false;
-    adios_format         = false;
     request.reset();
   }
 
@@ -1607,10 +1601,6 @@ public:
             putContent(array_list, element);
             array_requests.insert(array_list.begin(), array_list.end());
           }
-        }
-        else if (name == "adios_options")
-        {
-          adios_options = element;
         }
         else if (name != "text")
         {
@@ -1944,10 +1934,6 @@ public:
         {
           write_buffers_hdf(clones);
         }
-        if (adios_format)
-        {
-          APP_ABORT("TraceManager::write_buffers (adios) ADIOS is not found");
-        }
       }
     }
     else
@@ -1969,10 +1955,6 @@ public:
         {
           open_hdf_file(clones);
         }
-        if (adios_format)
-        {
-          APP_ABORT("TraceManager::open_file (adios) ADIOS is not found");
-        }
       }
     }
     else
@@ -1991,10 +1973,6 @@ public:
         if (hdf_format)
         {
           close_hdf_file();
-        }
-        if (adios_format)
-        {
-          APP_ABORT("TraceManager::close_file (adios) ADIOS is not found");
         }
       }
     }
@@ -2058,7 +2036,6 @@ public:
     app_log() << pad2 << "writing_traces          = " << writing_traces << std::endl;
     app_log() << pad2 << "format                  = " << format << std::endl;
     app_log() << pad2 << "hdf format              = " << hdf_format << std::endl;
-    app_log() << pad2 << "adios format            = " << adios_format << std::endl;
     app_log() << pad2 << "default_domain          = " << default_domain << std::endl;
     int_buffer.write_summary(pad2);
     real_buffer.write_summary(pad2);
