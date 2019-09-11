@@ -134,7 +134,6 @@ public:
 
   void checkInVariables(opt_variables_type& active)
   {
-//    Phi->checkInVariables(active);
     if (Optimizable && !IsCloned)
     {
       if (myVars.size())
@@ -147,7 +146,6 @@ public:
 
   void checkOutVariables(const opt_variables_type& active)
   {
-//    Phi->checkOutVariables(active);
     if (Optimizable && !IsCloned)
     {
       myVars.getIndex(active);
@@ -158,9 +156,7 @@ public:
   ///reset
   void resetParameters(const opt_variables_type& active)
   {
-//    Phi->resetParameters(active);
-#if !defined(QMC_COMPLEX)
-    if (Optimizable)
+    if (Optimizable && !IsCloned)
     {
       std::vector<RealType> param(m_act_rot_inds.size());
       for (int i = 0; i < m_act_rot_inds.size(); i++)
@@ -170,7 +166,6 @@ public:
       }
       apply_rotation(param);
     }
-#endif
   }
   //*********************************************************************************
   //the following functions simply call Phi's corresponding functions

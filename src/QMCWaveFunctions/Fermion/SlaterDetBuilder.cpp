@@ -239,7 +239,15 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
       std::map<std::string, SPOSetPtr>::iterator iter;
       for (iter = spomap.begin(); iter != spomap.end(); iter++)
       {
-        slaterdet_0->add(iter->second, iter->first);
+        // This line is added here so that the spo get its object name before a RotationHelper object is instantiated
+        // this is necessary because the constructor of rotationhelper will ask to build the variables and uses
+        // spo->objectname inorder to name the variables.
+        iter->second->objectName = iter->first;
+
+        RotationHelper* rot_helper;
+        rot_helper = new RotationHelper(iter->second);
+        slaterdet_0->add(rot_helper, iter->first);
+
       }
       size_t spin_group = 0;
       xmlNodePtr tcur   = cur->children;

@@ -613,17 +613,10 @@ void LCAOrbitalSet::returnMemberVariables(ValueMatrix_t& C_original,
                                           bool& params_supplied,
                                           std::vector<RealType>& params)
 {
-//std::cout << "SDP returnMemberVariables called\n";
-//  if(!IsCloned)
-  if(true)
-  {
-//    std::cout << "  SDP if !IsCloned conditional found \n";
     C_original      = *C;
     C_sposet        = C;
     params          = this->params;
     params_supplied = this->params_supplied;
-//    IsCloned        = this->IsCloned;
-  }
 }
 
 void LCAOrbitalSet::buildOptVariables(const std::vector<std::pair<int, int>>& rotations)

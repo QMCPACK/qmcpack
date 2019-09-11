@@ -11,17 +11,13 @@ RotationHelper::RotationHelper(SPOSet* spos)
       params_supplied(false),
       IsCloned(false)
 {
-  app_log() << "SDP RotationHelper Constructor called. \n";
   Optimizable = spos->Optimizable; 
-  spos->returnMemberVariables(C_original, C_sposet, params_supplied, params);
   OrbitalSetSize = Phi->OrbitalSetSize;
-  app_log() << "SDP Current value of IsCloned is ..." << IsCloned << " \n";
+  spos->returnMemberVariables(C_original, C_sposet, params_supplied, params);
 }
 
 RotationHelper::~RotationHelper()
-{
-  app_log() << "SDP RotationHelper Destructor called. \n";
-}
+{}
 
 void RotationHelper::buildOptVariables(const size_t& nel) 
 {
@@ -225,8 +221,6 @@ void RotationHelper::evaluateDerivatives(ParticleSet& P,
                          const int& FirstIndex,
                          const int& LastIndex)
 {
-//perform derivative here...
-//  Phi->evaluateDerivatives(P, optvars, dlogpsi, dhpsioverpsi, FirstIndex, LastIndex);
   const size_t nel = LastIndex - FirstIndex;
   const size_t nmo = Phi->getOrbitalSetSize();
 
@@ -312,7 +306,7 @@ void RotationHelper::evaluateDerivatives(ParticleSet& P,
     int kk = myVars.where(i);
     const int p = m_act_rot_inds.at(i).first;
     const int q = m_act_rot_inds.at(i).second;
-    dlogpsi.at(kk)       = T(p,q);; 
+    dlogpsi.at(kk)       = T(p,q); 
     dhpsioverpsi.at(kk)  = ValueType(-0.5) * Y4(p,q);
   }
 }

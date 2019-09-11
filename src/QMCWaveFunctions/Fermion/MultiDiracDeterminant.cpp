@@ -355,6 +355,7 @@ MultiDiracDeterminant::MultiDiracDeterminant(const MultiDiracDeterminant& s)
   detData              = s.detData;
   uniquePairs          = s.uniquePairs;
   DetSigns             = s.DetSigns;
+  Optimizable          = s.Optimizable;
 
   registerTimers();
   Phi = (s.Phi->makeClone());
