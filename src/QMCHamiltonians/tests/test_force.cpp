@@ -225,7 +225,7 @@ TEST_CASE("Chiesa Force", "[hamiltonian]")
   std::cout << " Force = " << force.forces << std::endl;
 
   // Unvalidated externally
-  REQUIRE(force.forces[0][0] == Approx(3.186559306));
+  REQUIRE(force.forces[0][0] == Approx(3.186386530));
   REQUIRE(force.forces[0][1] == Approx(3.352572459));
   REQUIRE(force.forces[0][2] == Approx(0.0));
 

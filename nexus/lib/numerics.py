@@ -251,6 +251,13 @@ def morse_rDw_fit(re,De,w,m1,m2=None,Einf=0.0,Dunit='eV'):
 #end def morse_rDw_fit
 
 
+# morse_force returns the negative gradient of the morse fit w.r.t. radius
+def morse_force(re,pf):
+    f = - 2*pf[2]/pf[1] * exp(-(re - pf[0])/pf[1]) * ( exp(-(re - pf[0])/pf[1]) - 1 )
+    return f
+#end def morse_force
+
+
 # morse_fit computes a morse potential fit to r,E data
 #  fitting through means, E is one dimensional
 #    pf    = morse_fit(r,E)                           returns fitted parameters

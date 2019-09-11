@@ -295,7 +295,10 @@ void CoulombPBCAA::initBreakup(ParticleSet& P)
     SpeciesID[iat] = P.GroupID[iat];
     Zat[iat]       = Zspec[P.GroupID[iat]];
   }
-  AA = LRCoulombSingleton::getHandler(P);
+  if ( ComputeForces )
+    AA = LRCoulombSingleton::getDerivHandler(P);
+  else
+    AA = LRCoulombSingleton::getHandler(P);
   //AA->initBreakup(*PtclRef);
   myConst = evalConsts();
   myRcut  = AA->get_rc(); //Basis.get_rc();
