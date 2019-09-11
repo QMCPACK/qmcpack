@@ -611,3 +611,4 @@ def from_qmcpack_cholesky(filename):
         chol_vecs = scipy.sparse.csr_matrix((h2, (row_ix, col_ix)),
                                             shape=(nmo*nmo,nchol))
         return (hcore, chol_vecs, enuc, int(nmo), (int(nalpha), int(nbeta)))
+

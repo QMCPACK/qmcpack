@@ -563,3 +563,32 @@ def write_kp_h1(h5grp, ki, nmo, h1):
             for j in range(h1.shape[1]):
                 H1[i,j,0] = h1[i,j].real
                 H1[i,j,1] = h1[i,j].imag
+
+def from_qmcpack_cholesky_kpoint(filename):
+    with h5py.File(filename, 'r') as fh5:
+        enuc = fh5['Hamiltonian/Energies'][:].view(numpy.complex128).ravel()[0]
+        dims = fh5['Hamiltonian/dims'][:]
+        nmo_tot = dims[3]
+        nkp = dims[2]
+        nmo_pk = fh5['Hamiltonian/NMOPerKP'][:]
+        nchol_pk = fh5['Hamiltonian/NCholPerKP'][:]
+        hcore = []
+        nalpha = dims[4]
+        nbeta = dims[6]
+        for i in range(0, nkp):
+            hk = fh5['Hamiltonian/H1_kp{}'.format(i)][:]
+            nmo = nmo_pk[i]
+            hcore.append(hk.view(numpy.complex128).reshape(nmo,nmo))
+        chol_vecs = []
+        for i in range(0, nkp):
+            Lk = fh5['Hamiltonian/KPFactorized/L{}'.format(i)][:]
+            nmo = nmo_pk[i]
+            nchol = nchol_pk[i]
+            chol_vecs.append(Lk.view(numpy.complex128).reshape(nkp,nmo*nmo,nchol))
+
+        return (hcore, chol_vecs, enuc, int(nmo_tot), (int(nalpha), int(nbeta)))
+
+def write_fcidump_kpoint(hcore, chol, enuc, nmo_tot, nelec):
+    for lq in chol:
+        for ki in range(nkp):
+            for kl in range(nkp):
