@@ -191,7 +191,9 @@ def cartesian_to_spherical(points,surface=False):
     y = points[:,1]
     z = points[:,2]
     r     = np.linalg.norm(points,axis=1)
-    theta = np.arccos(z/r)
+    theta = np.zeros(r.shape,dtype=points.dtype)
+    rfinite = r>1e-12
+    theta[rfinite] = np.arccos(z[rfinite]/r[rfinite])
     phi   = np.arctan2(y,x)
     phi[np.abs(phi)<1e-12] = 0.0
     phi[phi<0] += 2*np.pi
@@ -937,7 +939,7 @@ class Grid(GBase):
 
         Parameters
         ----------
-        shift : `array_like, float, shape (d,) or (1,d)`
+        shift : `array_like, float, shape (d,)`
             Vector displacement used to translate the grid points.
         """
         self.points += shift
@@ -1318,7 +1320,7 @@ class StructuredGrid(Grid):
     #end def reshape_flat
 
 
-    def unit_points(self,points=None):
+    def unit_points(self,points=None,project=False):
         """
         (`User API`) Map a set of points into the unit cube.
 
@@ -1337,8 +1339,17 @@ class StructuredGrid(Grid):
         """
         if points is None:
             points = self.r
+        else:
+            points = self.check_valid_points(points,self.space_dim,'unit_points')
         #end if
         upoints = self.unit_points_bare(points)
+        if project:
+            for d in range(self.grid_dim):
+                if self.bconds[d]==self.bcond_types.periodic:
+                    upoints[:,d] -= np.floor(upoints[:,d])
+                #end if
+            #end for
+        #end if
         return upoints
     #end def unit_points
 
@@ -1366,7 +1377,7 @@ class StructuredGrid(Grid):
     #end def unit_metric
 
 
-    def cell_indices(self,points=None):
+    def cell_indices(self,points=None,project=True):
         """
         (`User API`) Given a set of points, find the index of the grid cell 
         bounding each point.
@@ -1383,7 +1394,7 @@ class StructuredGrid(Grid):
         ipoints : `ndarray, int, shape (N,)`
             Array of cell indices.  `N` is the number of points.
         """
-        upoints = self.unit_points(points)
+        upoints = self.unit_points(points,project=project)
         shape = np.array(self.cell_grid_shape,dtype=int)
         ipoints = upoints*shape
         ipoints = np.array(np.floor(ipoints),dtype=int)
@@ -1453,12 +1464,7 @@ class StructuredGrid(Grid):
             Array of points projected onto the grid domain where possible.
         """
         points = self.check_valid_points(points,self.space_dim,'project')
-        upoints = self.unit_points(points)
-        for d in range(self.grid_dim):
-            if self.bconds[d]==self.bcond_types.periodic:
-                upoints[:,d] -= np.floor(upoints[:,d])
-            #end if
-        #end for
+        upoints = self.unit_points(points,project=True)
         return self.points_from_unit(upoints)
     #end def project
 
@@ -2406,9 +2412,9 @@ class SpheroidGrid(StructuredGridWithAxes):
         umetric = np.zeros((len(upoints),),dtype=self.dtype)
         r = upoints[:,0]
         if dim==2:
-            umetric += r # r
+            umetric += 2*np.pi*r # r
         elif dim==3:
-            umetric += r**2*np.sin(np.pi*upoints[:,1]) # r^2 sin(theta)
+            umetric += 2*np.pi**2*r**2*np.sin(np.pi*upoints[:,1]) # r^2 sin(theta)
         else:
             self.error('unit_metric not supported for dim={}'.format(dim))
         #end if
@@ -2771,13 +2777,12 @@ class SpheroidSurfaceGrid(StructuredGridWithAxes):
         umetric = np.zeros((len(upoints),),dtype=self.dtype)
         r = self.radius()
         if dim==1:
-            umetric += r
+            umetric += 2*np.pi*r
         elif dim==2:
-            umetric += r**2*np.sin(np.pi*upoints[:,1]) # r^2 sin(theta)
+            umetric += 2*np.pi**2*r**2*np.sin(np.pi*upoints[:,1]) # r^2 sin(theta)
         else:
             self.error('unit_metric not supported for dim={}'.format(dim))
         #end if
-        umetric *= self.axes_volume()
         return umetric
     #end def unit_metric_bare
 
@@ -3627,11 +3632,11 @@ if __name__=='__main__':
     demos = obj(
         plot_grids         = 0,
         plot_inside        = 0,
-        plot_projection    = 0,
+        plot_projection    = 1,
         cell_volumes       = 0,
         plot_contours      = 0,
         plot_surface       = 0,
-        plot_isosurface    = 1,
+        plot_isosurface    = 0,
         )
 
     shapes = {

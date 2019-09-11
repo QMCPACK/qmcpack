@@ -320,6 +320,40 @@ def test_spheroid_grid_points():
 
 
 grid_objects = dict()
+grid_properties = dict()
+
+
+def properties_from_name(grid_name):
+    from generic import obj
+    grid_types = dict(
+        p = 'parallelotope',
+        s = 'spheroid',
+        c = 'spheroid_surface',
+        )
+    grid_type = grid_types[grid_name[0]]
+    grid_dim  = int(grid_name[1])
+    space_dim = int(grid_name[2])
+    extra_prop = grid_name[3:]
+    bconds = None
+    if '_' in extra_prop:
+        extra_prop,bc = extra_prop.split('_')
+        bconds = tuple(bc)
+    #end if
+    centered   = 'c' in extra_prop
+    sheared    = 's' in extra_prop
+    translated = 't' in extra_prop
+    properties = obj(
+        type       = grid_type,
+        grid_dim   = grid_dim,
+        space_dim  = space_dim,
+        centered   = centered,
+        sheared    = sheared,
+        translated = translated,
+        bconds     = bconds,
+        cells      = grid_dim*(5,),
+        )
+    return properties
+#end def properties_from_name
 
 
 def get_grids():
@@ -333,6 +367,7 @@ def get_grids():
     from grid_functions import SpheroidSurfaceGrid
 
     grids = grid_objects
+    props = grid_properties
 
     if len(grids)==0:
 
@@ -437,42 +472,20 @@ def get_grids():
             #end for
         #end for
 
+        for name,grid in grids.items():
+            props[name] = properties_from_name(name)
+        #end for
+
     #end if
     return obj(grids)
 #end def get_grids
 
 
-def properties_from_name(grid_name):
+def get_props():
     from generic import obj
-    grid_types = dict(
-        p = 'parallelotope',
-        s = 'spheroid',
-        c = 'spheroid_surface',
-        )
-    grid_type = grid_types[grid_name[0]]
-    grid_dim  = int(grid_name[1])
-    space_dim = int(grid_name[2])
-    extra_prop = grid_name[3:]
-    bconds = None
-    if '_' in extra_prop:
-        extra_prop,bc = extra_prop.split('_')
-        bconds = tuple(bc)
-    #end if
-    centered   = 'c' in extra_prop
-    sheared    = 's' in extra_prop
-    translated = 't' in extra_prop
-    properties = obj(
-        type       = grid_type,
-        grid_dim   = grid_dim,
-        space_dim  = space_dim,
-        centered   = centered,
-        sheared    = sheared,
-        translated = translated,
-        bconds     = bconds,
-        cells      = grid_dim*(5,),
-        )
-    return properties
-#end def properties_from_name
+    get_grids()
+    return obj(grid_properties)
+#end def get_props
 
 
 
@@ -500,6 +513,7 @@ def test_grid_initialization():
     #end for
 
     grids = get_grids()
+    props = get_props()
 
     # check validity
     for g in grids:
@@ -510,7 +524,7 @@ def test_grid_initialization():
     bcs = set(tuple('op'))
     for name in sorted(grids.keys()):
         g = grids[name]
-        p = properties_from_name(name)
+        p = props[name]
         assert(g.initialized)
         assert(g.cell_grid_shape==p.cells)
         cells = np.array(p.cells,dtype=int)
@@ -643,13 +657,9 @@ def test_grid_set_operations():
     from testing import value_eq
 
     grids = get_grids()
+    props = get_props()
 
     grids_check = 'p22c s22c c23c'.split()
-
-    props = obj()
-    for name in grids_check:
-        props[name] = properties_from_name(name)
-    #end for
 
     # set points
     points = np.linspace(0,1,2*10)
@@ -718,9 +728,165 @@ def test_grid_set_operations():
 
 
 
-def test_cell_indices_2d():
+def test_grid_copy():
+    from copy import deepcopy
+    from testing import object_eq
+
+    grids = get_grids()
+
+    grids_check = 'p22c s22c c23c'.split()
+
+    for name in grids_check:
+        g = grids[name]
+        gc = deepcopy(g)
+        assert(object_eq(gc,g))
+        assert(id(gc.points)!=id(g.points))
+        gc = g.copy()
+        assert(object_eq(gc,g))
+        assert(id(gc.points)!=id(g.points))
+        gc = g.copy(shallow=True)
+        assert(object_eq(gc,g))
+        assert(id(gc.points)==id(g.points))
+    #end for
+#end def test_grid_copy
+
+
+
+def test_grid_translate():
+    import numpy as np
+    from testing import value_eq
+
+    grids = get_grids()
+    props = get_props()
+
+    grids_check = 'p22c s22c c23c'.split()
+
+    def translate_and_check(g,shift):
+        gt = g.copy()
+        gt.translate(shift)
+        shift = np.array(shift).ravel()
+        assert(value_eq(gt.origin-g.origin,shift))
+        dpoints = gt.points-g.points
+        for dp in dpoints:
+            assert(value_eq(dp,shift))
+        #end for
+    #end def translate_and_check
+
+    for name in grids_check:
+        p = props[name]
+        g = grids[name].copy()
+        shift = p.space_dim*(6.7,)
+        translate_and_check(g,shift)
+        shift = np.array(shift)
+        shift.shape = (p.space_dim,)
+        translate_and_check(g,shift)
+    #end for
+#end def test_grid_translate
+
+
+
+def test_grid_reshape():
+    from testing import object_eq
+
+    grids = get_grids()
+    props = get_props()
+
+    for name in sorted(grids.keys()):
+        p = props[name]
+        if p.bconds is None and p.sheared and p.translated:
+            g = grids[name].copy()
+            gref = g.copy()
+            points_shape = tuple(list(g.points.shape))
+            grid_shape   = tuple(list(g.shape))
+            g.reshape_full()
+            assert(g.shape==gref.shape)
+            assert(g.points.shape==gref.shape+(p.space_dim,))
+            if p.grid_dim>1:
+                assert(g.points.shape!=gref.points.shape)
+            #end if
+            g.reshape_flat()
+            assert(object_eq(g,gref))
+            assert(g.points.shape==(gref.npoints,p.space_dim))
+        #end if
+    #end for
+#end def test_grid_reshape
+
+
+
+def test_grid_unit_points():
+    import numpy as np
+    from testing import value_eq,object_eq
+    
+    def make_1d(x):
+        p = x.copy()
+        p.shape = len(p),1
+        return p
+    #end def make_1d
+
+    def make_2d(x,y):
+        p = []
+        for xv in x:
+            for yv in y:
+                p.append((xv,yv))
+            #end for
+        #ed for
+        p = np.array(p)
+        return p
+    #end def make_2d
+
+    def make_3d(x,y,z):
+        p = []
+        for xv in x:
+            for yv in y:
+                for zv in z:
+                    p.append((xv,yv,zv))
+                #end for
+            #end for
+        #ed for
+        p = np.array(p)
+        return p
+    #end def make_3d
+
+    # 5x centered linear grid
+    u = np.array([0.1,0.3,0.5,0.7,0.9])
+
+    ugrids = {
+        1 : make_1d(u),
+        2 : make_2d(u,u),
+        3 : make_3d(u,u,u),
+        }
+
+    grids = get_grids()
+    props = get_props()
+
+    # Check that the points resident in the grid map as expected.
+    #   Further tests are necessary to verify correct tranformation 
+    #   of general points (perhaps those falling outside the grid 
+    #   domain) onto the unit space.
+    for name in sorted(grids.keys()):
+        g = grids[name].copy()
+        p = props[name]
+        if p.centered:
+            gref = g.copy()
+            upoints_ref = ugrids[p.grid_dim]
+            upoints = g.unit_points()
+            assert(value_eq(upoints,upoints_ref))
+
+            points = g.points_from_unit(upoints)
+            assert(value_eq(points,gref.points))
+
+            assert(object_eq(g,gref))
+        #end if
+    #end for
+
+#end def grid_unit_points
+
+
+
+def test_grid_cell_indices():
 
     import numpy as np
+    from testing import value_eq,object_eq
     from grid_functions import ParallelotopeGrid
     from grid_functions import SpheroidGrid
     from grid_functions import SpheroidSurfaceGrid
@@ -763,4 +929,369 @@ def test_cell_indices_2d():
     assert((s.cell_indices(sc.r)==imap).all())
     assert((cc.cell_indices()==imap).all())
     assert((c.cell_indices(cc.r)==imap).all())
-#end def test_cell_indices_2d
+
+    indices = {
+        1 : np.arange(5   ,dtype=int),
+        2 : np.arange(5**2,dtype=int),
+        3 : np.arange(5**3,dtype=int),
+        }
+
+    grids = get_grids()
+    props = get_props()
+    for name in sorted(grids.keys()):
+        p = props[name]
+        if p.centered:
+            g = grids[name].copy()
+            gref = g.copy()
+            assert(value_eq(g.cell_indices(),indices[p.grid_dim]))
+            assert(object_eq(g,gref))
+        #end if
+    #end for
+
+#end def test_grid_cell_indices
+
+
+
+def test_grid_inside():
+    from testing import value_eq,object_eq
+    from grid_functions import ParallelotopeGrid
+    from grid_functions import SpheroidGrid
+    from grid_functions import SpheroidSurfaceGrid
+
+    grids = get_grids()
+    props = get_props()
+
+    def shift_and_test_inside(g,p,upoints,d,sign):
+        us = upoints.copy()
+        us[:,d] += ushift
+        ps = g.points_from_unit(us)
+        ps_ref = ps.copy()
+        inside = g.inside(ps)
+        assert(value_eq(ps,ps_ref))
+        if isinstance(g,SpheroidSurfaceGrid):
+            assert(inside.all())
+        elif isinstance(g,SpheroidGrid):
+            if d==0:
+                assert(not inside.any()) # radial coord
+            else:
+                assert(inside.all()) # angular coords
+            #end if
+        elif isinstance(g,ParallelotopeGrid):
+            if g.bconds[d]=='o':
+                assert(not inside.any())
+            elif g.bconds[d]=='p':
+                assert(inside.all())
+            else:
+                assert(1==0)
+            #end if
+        else:
+            assert(1==0)
+        #end if
+    #end def shift_and_test_inside
+
+    for name in sorted(grids.keys()):
+        p = props[name]
+        g = grids[name].copy()
+        gref = g.copy()
+
+        # all grid points should be in the domain
+        points = g.points
+        assert(g.inside(points).all())
+
+        # points shifted out of the domain should be outside
+        ushift = 1.0
+        if not p.centered:
+            ushift += 1e-6
+        #end if
+        upoints = g.unit_points()
+        for d in range(p.grid_dim):
+            shift_and_test_inside(g,p,upoints,d, 1)
+            shift_and_test_inside(g,p,upoints,d,-1)
+        #end for
+
+        # object should not change
+        assert(object_eq(g,gref))
+    #end for
+#end def test_grid_inside
+
+
+
+def test_grid_project():
+    import numpy as np
+    from testing import value_eq,object_eq
+    
+    def make_1d(x):
+        p = x.copy()
+        p.shape = len(p),1
+        return p
+    #end def make_1d
+
+    def make_2d(x,y):
+        p = []
+        for xv in x:
+            for yv in y:
+                p.append((xv,yv))
+            #end for
+        #ed for
+        p = np.array(p)
+        return p
+    #end def make_2d
+
+    def make_3d(x,y,z):
+        p = []
+        for xv in x:
+            for yv in y:
+                for zv in z:
+                    p.append((xv,yv,zv))
+                #end for
+            #end for
+        #ed for
+        p = np.array(p)
+        return p
+    #end def make_3d
+
+    # linear grid including interior, boundary, and exterior points
+    open = [0.0,0.2,0.4,0.6,0.8,1.0]
+    ulin = dict(
+        o = np.array(open),
+        p = np.array([-0.4,-0.2]+open+[1.2,1.4]),
+        )
+
+    ugrid_funcs = {
+        1 : make_1d,
+        2 : make_2d,
+        3 : make_3d,
+        }
+
+    grids = get_grids()
+    props = get_props()
+
+    for name in sorted(grids.keys()):
+        p = props[name]
+        g = grids[name].copy()
+        gref = g.copy()
+
+        ugrids = []
+        for bc in g.bconds:
+            ugrids.append(ulin[bc])
+        #end for
+        ugrid = ugrid_funcs[p.grid_dim](*ugrids)
+
+        points = g.points_from_unit(ugrid)
+        points = g.project(points)
+        assert(g.inside(points).all())
+        assert(object_eq(g,gref))
+    #end for
+#end def test_grid_project
+
+
+
+def test_grid_radius():
+    from testing import value_eq
+    from grid_functions import SpheroidGrid,SpheroidSurfaceGrid
+    grids = get_grids()
+    for name in sorted(grids.keys()):
+        g = grids[name]
+        if isinstance(g,(SpheroidGrid,SpheroidSurfaceGrid)):
+            if g.isotropic:
+                assert(value_eq(g.radius(),1.0))
+            #end if
+        #end if
+    #end for
+#end def test_grid_radius
+
+
+
+def test_grid_axes_volume():
+    import numpy as np
+    from testing import value_eq
+
+    grids = get_grids()
+    props = get_props()
+
+    for name in sorted(grids.keys()):
+        g = grids[name]
+        p = props[name]
+
+        gd,sd = g.grid_dim,g.space_dim
+        gsd = gd,sd
+
+        embedded = gd!=sd
+
+        axvol = g.axes_volume()
+
+        if not g.surface and not embedded:
+            assert(value_eq(axvol,1.0))
+        elif g.surface:
+            if gsd==(1,3) and p.sheared:
+                assert(value_eq(axvol,np.sqrt(2.0)))
+            else:
+                assert(value_eq(axvol,1.0))
+            #end if
+        else: # embedded
+            if gsd==(1,2):
+                assert(value_eq(axvol,np.sqrt(2.0)))
+            elif gsd==(1,3):
+                assert(value_eq(axvol,np.sqrt(3.0)))
+            elif gsd==(2,3):
+                if p.sheared:
+                    assert(value_eq(axvol,np.sqrt(2.0)))
+                else:
+                    assert(value_eq(axvol,1.0))
+                #end if
+            else:
+                assert(1==0)
+            #end if
+        #end if
+        
+    #end for
+#end def test_grid_axes_volume
+
+
+
+def test_grid_volume():
+    import numpy as np
+    from testing import value_eq
+    from grid_functions import ParallelotopeGrid
+    from grid_functions import SpheroidGrid
+    from grid_functions import SpheroidSurfaceGrid
+    
+    grids = get_grids()
+    props = get_props()
+
+    for name in sorted(grids.keys()):
+        g = grids[name]
+        p = props[name]
+
+        gd,sd = g.grid_dim,g.space_dim
+
+        if isinstance(g,ParallelotopeGrid):
+            vratio = g.volume()/g.axes_volume()
+            assert(value_eq(vratio,1.0))
+        elif isinstance(g,SpheroidGrid):
+            volume = g.volume()
+            if not g.isotropic:
+                vratio = volume/g.axes_volume()
+                if gd==2:
+                    assert(value_eq(vratio,np.pi*r**2))
+                elif gd==3:
+                    assert(value_eq(vratio,4*np.pi/3*r**3))
+                else:
+                    assert(1==0)
+                #end if
+            else:
+                r = g.radius()
+                if gd==2:
+                    assert(value_eq(volume,np.pi*r**2))
+                elif gd==3:
+                    assert(value_eq(volume,4*np.pi/3*r**3))
+                else:
+                    assert(1==0)
+                #end if
+        elif isinstance(g,SpheroidSurfaceGrid):
+            if g.isotropic:
+                volume = g.volume()
+                r = g.radius()
+                if gd==1:
+                    assert(value_eq(volume,2*np.pi*r))
+                elif gd==2:
+                    assert(value_eq(volume,4*np.pi*r**2))
+                else:
+                    assert(1==0)
+                #end if
+            else:
+                None # not supported
+            #end if
+        else:
+            assert(1==0)
+        #end if
+    #end for
+#end def test_grid_volume
+
+
+
+def test_grid_cell_volumes():
+    from testing import value_eq
+    from grid_functions import SpheroidSurfaceGrid
+
+    grids = get_grids()
+
+    for name in sorted(grids.keys()):
+        g = grids[name]
+        if not isinstance(g,SpheroidSurfaceGrid) or g.isotropic:
+            assert(value_eq(g.volume(),g.cell_volumes().sum()))
+        else:
+            None # not supported
+        #end if
+    #end for
+#end def test_grid_cell_volumes
+
+
+
+def test_grid_unit_metric():
+    import numpy as np
+    from testing import value_eq
+    from grid_functions import unit_grid_points
+    from grid_functions import ParallelotopeGrid
+    from grid_functions import SpheroidGrid
+    from grid_functions import SpheroidSurfaceGrid
+    
+    grids = get_grids()
+
+    # test parallelotope grids
+    for name in sorted(grids.keys()):
+        g = grids[name]
+        if isinstance(g,ParallelotopeGrid):
+            du = 1.0/g.npoints
+            vol = g.volume()
+            vol_metric = (g.unit_metric()*du).sum()
+            assert(value_eq(vol,vol_metric))
+        #end if
+    #end for
+
+    n = 20
+    u1 = unit_grid_points((n,),centered=True)
+    u2 = unit_grid_points((n,n),centered=True)
+    u3 = unit_grid_points((n,n,n),centered=True)
+
+    def test_umetric(g,upoints,tol):
+        du = 1.0/len(upoints)
+        umetric = g.unit_metric(upoints)
+        vol = g.volume()
+        vol_metric = (umetric*du).sum()
+        relerr = np.abs((vol_metric-vol)/vol)
+        assert(relerr<tol)
+    #end def test_umetric
+
+    s22l = SpheroidGrid(
+        axes  = [[3,0],[0,5]],
+        cells = (5,5),
+        )
+    s33l = SpheroidGrid(
+        axes  = [[3,0,0],[0,5,0],[0,0,7]],
+        cells = (5,5,5),
+        )
+
+    c12l = SpheroidSurfaceGrid(
+        axes  = [[3,0],[0,3]],
+        cells = (5,),
+        )
+    c23l = SpheroidSurfaceGrid(
+        axes  = [[3,0,0],[0,3,0],[0,0,3]],
+        cells = (5,5),
+        )
+
+    # test spheroid grids
+    test_umetric(grids.s22,u2,1e-6)
+    test_umetric(     s22l,u2,1e-6)
+    test_umetric(grids.s33,u3,4e-3)
+    test_umetric(     s33l,u3,4e-3)
+
+    # test spheroid surface grids
+    test_umetric(grids.c12,u1,1e-6)
+    test_umetric(     c12l,u1,1e-6)
+    test_umetric(grids.c23,u2,1.1e-3)
+    test_umetric(     c23l,u2,1.1e-3)
+
+#end def test_grid_unit_metric
+
