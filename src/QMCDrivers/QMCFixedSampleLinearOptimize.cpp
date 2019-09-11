@@ -529,21 +529,18 @@ bool QMCFixedSampleLinearOptimize::put(xmlNodePtr q)
   vmcEngine->process(qsave);
 
   bool success = true;
-  if (optTarget == 0)
-  {
+  //allways reset optTarget
 #if defined(QMC_CUDA)
-    if (useGPU == "yes")
-      optTarget = new QMCCostFunctionCUDA(W, Psi, H, myComm);
-    else
+  if (useGPU == "yes")
+    optTarget = std::make_unique<QMCCostFunctionCUDA>(W, Psi, H, myComm);
+  else
 #endif
-      optTarget = new QMCCostFunction(W, Psi, H, myComm);
-    optTarget->setStream(&app_log());
-    if (ReportToH5 == "yes")
-      optTarget->reportH5 = true;
-    success = optTarget->put(q);
-  }
+    optTarget = std::make_unique<QMCCostFunction>(W, Psi, H, myComm);
+  optTarget->setStream(&app_log());
   if (ReportToH5 == "yes")
     optTarget->reportH5 = true;
+  success = optTarget->put(q);
+
   return success;
 }
 
