@@ -478,8 +478,7 @@ void DescentEngine::setupUpdate(const optimize::VariableSet& myVars)
 // a descent optimization for use in BLM steps of the hybrid method
 void DescentEngine::storeVectors(std::vector<double>& currentParams)
 {
-  std::vector<double> rowVec(currentParams.size());
-  std::fill(rowVec.begin(), rowVec.end(), 0.0);
+    std::vector<double> rowVec(currentParams.size(), 0.0);
 
   // Take difference between current parameter values and the values from 20
   // iterations before (in the case descent_len = 100) to be stored as input to BLM.

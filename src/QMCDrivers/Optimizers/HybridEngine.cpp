@@ -68,15 +68,14 @@ bool HybridEngine::queryStore(int store_num, const OptimizerType method) const
   bool store = false;
 
   int idx = 0;
-  for (int i = 0; i < opt_methods_.size(); i++)
-  {
-    if (opt_methods_[i] == method)
-    {
-      idx = i;
-      break;
-    }
-  }
 
+  auto iter = std::find(opt_methods_.begin(),opt_methods_.end(),method);
+  if (iter == opt_methods_.end())
+      throw std::runtime_error("Unknown MinMethod!\n");
+  else
+    idx = std::distance(opt_methods_.begin(),iter);
+
+    
   const int totMicroIt = std::accumulate(num_updates_opt_methods_.begin(), num_updates_opt_methods_.end(), 0);
   const int pos        = step_num_ % totMicroIt;
   int interval         = num_updates_opt_methods_[idx] / store_num;
