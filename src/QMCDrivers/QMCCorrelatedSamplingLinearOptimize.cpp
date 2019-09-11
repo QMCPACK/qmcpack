@@ -341,17 +341,17 @@ bool QMCCorrelatedSamplingLinearOptimize::put(xmlNodePtr q)
   vmcEngine->setStatus(RootName, h5FileRoot, AppendRun);
   vmcEngine->process(qsave);
   bool success = true;
-  if (optTarget == 0)
-  {
+  //allways reset optTarget
 #if defined(QMC_CUDA)
-    optTarget = new QMCCostFunctionCUDA(W, Psi, H, myComm);
-#else
-    optTarget               = new QMCCostFunction(W, Psi, H, myComm);
+  if (useGPU == "yes")
+    optTarget = std::make_unique<QMCCostFunctionCUDA>(W, Psi, H, myComm);
+  else
 #endif
-    optTarget->setneedGrads(false);
-    optTarget->setStream(&app_log());
-    success = optTarget->put(qsave);
-  }
+    optTarget = std::make_unique<QMCCostFunction>(W, Psi, H, myComm);
+  optTarget->setneedGrads(false);
+  optTarget->setStream(&app_log());
+  success = optTarget->put(q);
+
   return success;
 }
 
