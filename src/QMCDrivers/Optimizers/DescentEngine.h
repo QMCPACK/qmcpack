@@ -60,7 +60,7 @@ private:
   std::vector<double> taus;
   //Vector for storing running average of squares of the derivatives
   std::vector<double> derivsSquared;
-  
+
   //Integer for keeping track of only number of descent steps taken
   int descent_num_;
 
@@ -159,14 +159,13 @@ public:
 
   void storeVectors(std::vector<double>& currentParams);
 
-  const int retrieveStoreFrequency() const { return store_num; }
+  int retrieveStoreFrequency() const { return store_num; }
 
   const std::vector<std::vector<double>>& retrieveHybridBLM_Input() const { return hybridBLM_Input; }
 
-  const std::vector<double> retrieveNewParams() const { return currentParams; }
-  
-  const int getDescentNum() const {return descent_num_;}
+  const std::vector<double>& retrieveNewParams() const { return currentParams; }
 
+  int getDescentNum() const { return descent_num_; }
 };
 
 } // namespace qmcplusplus

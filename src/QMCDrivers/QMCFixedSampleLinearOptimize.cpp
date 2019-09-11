@@ -491,7 +491,7 @@ bool QMCFixedSampleLinearOptimize::processOptXML(xmlNodePtr opt_xml, const std::
   if (iter == OptimizerNames.end())
     throw std::runtime_error("Unknown MinMethod!\n");
   previous_optimizer_type_ = current_optimizer_type_;
-  current_optimizer_type_ = OptimizerNames.at(MinMethod);
+  current_optimizer_type_  = OptimizerNames.at(MinMethod);
 
   if (current_optimizer_type_ == OptimizerType::DESCENT && !descentEngineObj)
     descentEngineObj = std::make_unique<DescentEngine>(myComm, opt_xml);
@@ -1336,38 +1336,37 @@ bool QMCFixedSampleLinearOptimize::one_shift_run()
 //Function for optimizing using gradient descent
 bool QMCFixedSampleLinearOptimize::descent_run()
 {
-
   start();
 
-    //Compute Lagrangian derivatives needed for parameter updates with engine_checkConfigurations, which is called inside engine_start
-    engine_start(EngineObj, *descentEngineObj, MinMethod);
+  //Compute Lagrangian derivatives needed for parameter updates with engine_checkConfigurations, which is called inside engine_start
+  engine_start(EngineObj, *descentEngineObj, MinMethod);
 
-    int descent_num = descentEngineObj->getDescentNum();
+  int descent_num = descentEngineObj->getDescentNum();
 
-    if (descent_num == 0)
-      descentEngineObj->setupUpdate(optTarget->getOptVariables());
+  if (descent_num == 0)
+    descentEngineObj->setupUpdate(optTarget->getOptVariables());
 
-    //Store the derivatives and then compute parameter updates
-    descentEngineObj->storeDerivRecord();
+  //Store the derivatives and then compute parameter updates
+  descentEngineObj->storeDerivRecord();
 
-    descentEngineObj->updateParameters();
+  descentEngineObj->updateParameters();
 
-    std::vector<double> results = descentEngineObj->retrieveNewParams();
+  std::vector<double> results = descentEngineObj->retrieveNewParams();
 
-    for (int i = 0; i < results.size(); i++)
+  for (int i = 0; i < results.size(); i++)
+  {
+    optTarget->Params(i) = results[i];
+  }
+
+  if (doHybrid)
+  {
+    int store_num = descentEngineObj->retrieveStoreFrequency();
+    bool store    = hybridEngineObj->queryStore(store_num, OptimizerType::DESCENT);
+    if (store)
     {
-      optTarget->Params(i) = results[i];
+      descentEngineObj->storeVectors(results);
     }
-
-    if (doHybrid)
-    {
-      int store_num = descentEngineObj->retrieveStoreFrequency();
-      bool store    = hybridEngineObj->queryStore(store_num, OptimizerType::DESCENT);
-      if (store)
-      {
-        descentEngineObj->storeVectors(results);
-      }
-    }
+  }
 
   finish();
   return (optTarget->getReportCounter() > 0);
@@ -1384,7 +1383,7 @@ bool QMCFixedSampleLinearOptimize::hybrid_run()
   // if requested, perform the update via the adaptive three-shift or single-shift method
   if (current_optimizer_type_ == OptimizerType::ADAPTIVE)
   {
-    if(previous_optimizer_type_ == OptimizerType::DESCENT)
+    if (previous_optimizer_type_ == OptimizerType::DESCENT)
     {
       std::vector<std::vector<double>> hybridBLM_Input = descentEngineObj->retrieveHybridBLM_Input();
       EngineObj->setHybridBLM_Input(hybridBLM_Input);

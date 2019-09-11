@@ -12,10 +12,10 @@
 namespace qmcplusplus
 {
 HybridEngine::HybridEngine(Communicate* comm, const xmlNodePtr cur) : myComm(comm)
-    {
-	step_num_= -1;       
-	processXML(cur);
-    }
+{
+  step_num_ = -1;
+  processXML(cur);
+}
 
 
 bool HybridEngine::processXML(const xmlNodePtr opt_xml)
@@ -56,9 +56,8 @@ bool HybridEngine::processXML(const xmlNodePtr opt_xml)
   return true;
 }
 
-xmlNodePtr HybridEngine::getSelectedXML() 
+xmlNodePtr HybridEngine::getSelectedXML()
 {
-
   step_num_++;
 
   return saved_xml_opt_methods_[identifyMethodIndex()];
@@ -79,12 +78,14 @@ bool HybridEngine::queryStore(int store_num, const OptimizerType method) const
   }
 
   const int totMicroIt = std::accumulate(num_updates_opt_methods_.begin(), num_updates_opt_methods_.end(), 0);
-  const int pos = step_num_ % totMicroIt;
-  int interval = num_updates_opt_methods_[idx] / store_num;
+  const int pos        = step_num_ % totMicroIt;
+  int interval         = num_updates_opt_methods_[idx] / store_num;
 
-  if(interval == 0)
+  if (interval == 0)
   {
-    app_log() << "Requested Number of Stored Vectors greater than number of descent steps. Storing a vector on each step." << std::endl;
+    app_log()
+        << "Requested Number of Stored Vectors greater than number of descent steps. Storing a vector on each step."
+        << std::endl;
     interval = 1;
   }
   if ((pos + 1) % interval == 0)
@@ -98,9 +99,9 @@ bool HybridEngine::queryStore(int store_num, const OptimizerType method) const
 int HybridEngine::identifyMethodIndex() const
 {
   const int totMicroIt = std::accumulate(num_updates_opt_methods_.begin(), num_updates_opt_methods_.end(), 0);
-  const int pos = step_num_ % totMicroIt;
+  const int pos        = step_num_ % totMicroIt;
 
-  int runSum = 0;
+  int runSum    = 0;
   int selectIdx = 0;
 
   //Compare pos to running sum of microiterations of different methods to determine which method is being used

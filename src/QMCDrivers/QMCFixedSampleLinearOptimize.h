@@ -190,8 +190,6 @@ private:
 
   //whether to use hybrid method
   bool doHybrid;
-
-
 };
 } // namespace qmcplusplus
 #endif
