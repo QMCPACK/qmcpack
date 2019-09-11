@@ -13,6 +13,7 @@
 #ifndef QMCPLUSPLUS_HDF_HYPERSLAB_IO_H
 #define QMCPLUSPLUS_HDF_HYPERSLAB_IO_H
 
+#include <array>
 #include <type_traits/container_traits.h>
 #include <io/hdf_datatype.h>
 #include <io/hdf_dataspace.h>
