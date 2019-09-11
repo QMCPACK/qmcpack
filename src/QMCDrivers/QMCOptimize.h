@@ -18,6 +18,7 @@
 #ifndef QMCPLUSPLUS_QMCOPTIMIZATION_VMCSINGLE_H
 #define QMCPLUSPLUS_QMCOPTIMIZATION_VMCSINGLE_H
 
+#include <memory>
 #include "QMCDrivers/QMCDriver.h"
 #include "Optimize/OptimizeBase.h"
 
@@ -73,7 +74,7 @@ private:
   HamiltonianPool& hamPool;
   ///target cost function to optimize
   //QMCCostFunction* optTarget;
-  QMCCostFunctionBase* optTarget;
+  std::unique_ptr<QMCCostFunctionBase> optTarget;
   ///solver
   MinimizerBase<RealType>* optSolver;
   ///vmc engine

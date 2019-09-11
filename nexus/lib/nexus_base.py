@@ -28,9 +28,10 @@
 import os
 import traceback
 import gc as garbage_collector
+from versions import nexus_version
 from memory import resident
 from generic import obj
-from developer import DevBase
+from developer import DevBase,log
 
 
 # Nexus namespaces
@@ -134,25 +135,21 @@ class NexusCore(DevBase):
 
     @staticmethod
     def write_splash():
-        return # don't do this yet
         if not NexusCore.wrote_splash:
             splash_text = '''
 _____________________________________________________
-   _         _______                       _______   
-  | \    /| |  ____ \ |\     /| |\     /| |  ____ \  
-  |  \  | | | |    \/ | \   / | | |   | | | |    \/  
-  |   \ | | | |__      \ \_/ /  | |   | | | |_____   
-  | |\ \| | |  __|      | _ |   | |   | | |_____  |  
-  | | \   | | |        / / \ \  | |   | |       | |  
-  | |  \  | | |____/\ | /   \ | | |___| | /\____| |  
-  |/    \_| |_______/ |/     \| |_______| \_______|  
+
+                     Nexus {}.{}.{}
+
+        (c) Copyright 2012-  Nexus developers
+
+                     Please cite:
+  J. T. Krogel Comput. Phys. Commun. 198 154 (2016)
+     https://doi.org/10.1016/j.cpc.2015.08.012
 _____________________________________________________
-                                               
-            Main author: Jaron T. Krogel            
-            ____________________________
           
-            '''
-            print splash_text
+            '''.format(*nexus_version)
+            log(splash_text)
             NexusCore.wrote_splash = True
         #end if
     #end def write_splash
@@ -164,7 +161,7 @@ _____________________________________________________
 _____________________________________________________
 _____________________________________________________
             '''
-        print splash_text
+        print(splash_text)
     #end def write_end_splash
 
     def mem_usage(self):

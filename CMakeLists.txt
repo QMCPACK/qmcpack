@@ -203,7 +203,6 @@ CHECK_INCLUDE_FILE(unistd.h HAVE_UNISTD_H)
 # BUILD_QMCTOOLS   build utility programs
 # MPIP_PROFILE     profile mpi performance
 ######################################################################
-SET(QMC_ADIOS 0 CACHE BOOL "Build with ADIOS")
 SET(BUILD_UNIT_TESTS 1 CACHE BOOL "Build unit tests")
 SET(BUILD_LMYENGINE_INTERFACE 1 CACHE BOOL "Build LMY engine")
 IF (QMC_CUDA AND BUILD_LMYENGINE_INTERFACE)
@@ -254,27 +253,6 @@ SET(MAC_VECLIB 0)
 # Directory where customize cmake files reside
 ######################################################
 SET (PROJECT_CMAKE ${qmcpack_SOURCE_DIR}/CMake)
-
-######################################################
-# set ADIOS flags
-######################################################
-IF(QMC_ADIOS)
-  IF(NOT HAVE_ADIOS)
-    SET (ADIOS_FOUND 0)
-    INCLUDE(${PROJECT_CMAKE}/FindADIOS.cmake)
-    IF (${ADIOS_FOUND} EQUAL 1)
-      INCLUDE_DIRECTORIES(${ADIOS_INCLUDES})
-      MESSAGE(STATUS "Found ADIOS")
-      LINK_LIBRARIES(${ADIOS_LIBRARIES})
-      ADD_DEFINITIONS(-DHAVE_ADIOS)
-    ELSE()
-      MESSAGE(STATUS "Couldn't find required library ADIOS")
-      MESSAGE(FATAL_ERROR "ADIOS_HOME: export ADIOS_HOME=/path/to/adios")
-    ENDIF()
-  ELSE()
-    ADD_DEFINITIONS(-DHAVE_ADIOS)
-  ENDIF()
-ENDIF(QMC_ADIOS)
 
 SET(QMCPACK_UNIT_TEST_DIR ${qmcpack_BINARY_DIR}/tests/bin)
 
@@ -866,16 +844,6 @@ INSTALL(FILES ${qmcpack_BINARY_DIR}/bin/qmcpack.settings DESTINATION bin)
 IF(INSTALL_NEXUS)
   INSTALL(CODE "EXECUTE_PROCESS(COMMAND ${qmcpack_SOURCE_DIR}/nexus/install --leave_paths ${CMAKE_INSTALL_PREFIX}/bin)")
 ENDIF()
-
-#########################
-# add definitions for adios profile
-# add definitions for adios verification
-########################
-IF(QMC_ADIOS)
-  #ADD_DEFINITIONS(-DIO_PROFILE)
-  #ADD_DEFINITIONS(-DADIOS_VERIFY)
-  ADD_DEFINITIONS(-DWRITE_GLOBAL)
-ENDIF(QMC_ADIOS)
 
 SUBDIRS(src)
 

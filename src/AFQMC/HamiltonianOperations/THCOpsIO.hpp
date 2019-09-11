@@ -18,7 +18,7 @@
 
 #include<fstream>
 
-#include "type_traits/container_proxy_multi.h"
+#include "type_traits/container_traits_multi.h"
 #include "io/hdf_multi.h"
 #include "io/hdf_archive.h"
 

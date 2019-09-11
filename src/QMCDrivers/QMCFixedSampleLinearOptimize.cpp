@@ -465,17 +465,16 @@ bool QMCFixedSampleLinearOptimize::put(xmlNodePtr q)
   m_param.put(q);
 
   app_log() << "Called put" << std::endl;
-  bool reportH5 = ReportToH5 == "yes";
   if (MinMethod == "hybrid")
   {
     doHybrid = true;
     if (!hybridEngineObj)
       hybridEngineObj = std::make_unique<HybridEngine>(myComm, q);
 
-    return processOptXML(hybridEngineObj->getSelectedXML(), vmcMove, reportH5);
+    return processOptXML(hybridEngineObj->getSelectedXML(), vmcMove, ReportToH5 == "yes");
   }
   else
-    return processOptXML(q, vmcMove, reportH5);
+    return processOptXML(q, vmcMove, ReportToH5 == "yes");
 }
 
 bool QMCFixedSampleLinearOptimize::processOptXML(xmlNodePtr opt_xml, const std::string& vmcMove, bool reportH5)
@@ -566,21 +565,18 @@ bool QMCFixedSampleLinearOptimize::processOptXML(xmlNodePtr opt_xml, const std::
   vmcEngine->process(qsave);
 
   bool success = true;
-  if (optTarget == 0)
-  {
+  //allways reset optTarget
 #if defined(QMC_CUDA)
-    if (useGPU == "yes")
-      optTarget = new QMCCostFunctionCUDA(W, Psi, H, myComm);
-    else
+  if (useGPU == "yes")
+    optTarget = std::make_unique<QMCCostFunctionCUDA>(W, Psi, H, myComm);
+  else
 #endif
-      optTarget = new QMCCostFunction(W, Psi, H, myComm);
-    optTarget->setStream(&app_log());
-    if (reportH5)
-      optTarget->reportH5 = true;
-    success = optTarget->put(opt_xml);
-  }
+    optTarget = std::make_unique<QMCCostFunction>(W, Psi, H, myComm);
+  optTarget->setStream(&app_log());
   if (reportH5)
     optTarget->reportH5 = true;
+  success = optTarget->put(qsave);
+
   return success;
 }
 

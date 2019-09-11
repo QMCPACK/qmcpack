@@ -25,7 +25,6 @@
 #include "Utilities/RunTimeManager.h"
 #include <qmc_common.h>
 //#define ENABLE_VMC_OMP_MASTER
-#include "ADIOS/ADIOS_profile.h"
 #include "Utilities/FairDivide.h"
 #if !defined(REMOVE_TRACEMANAGER)
 #include "Estimators/TraceManager.h"

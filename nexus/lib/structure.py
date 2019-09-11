@@ -30,7 +30,7 @@ import os
 import numpy as np
 from copy import deepcopy
 from random import randint
-from numpy import abs,all,append,arange,around,array,atleast_2d,ceil,cos,cross,cross,diag,dot,empty,exp,flipud,floor,gcd,identity,isclose,logical_not,mgrid,mod,ndarray,ones,pi,round,sign,sin,sqrt,uint64,zeros
+from numpy import abs,all,append,arange,around,array,atleast_2d,ceil,cos,cross,cross,diag,dot,empty,exp,flipud,floor,identity,isclose,logical_not,mgrid,mod,ndarray,ones,pi,round,sign,sin,sqrt,uint64,zeros
 from numpy.linalg import inv,det,norm
 from types import NoneType
 from unit_converter import convert
@@ -5051,10 +5051,10 @@ def get_band_tiling(
                     n1     = a_1
                     n2     = a_2
                     n3     = a_3
-                    g12    = gcd.reduce([n1,n2])
-                    g13    = gcd.reduce([n1,n3])
-                    g23    = gcd.reduce([n2,n3])
-                    g123   = gcd.reduce([n1, n2, n3])
+                    g12    = np.gcd.reduce([n1,n2])
+                    g13    = np.gcd.reduce([n1,n3])
+                    g23    = np.gcd.reduce([n2,n3])
+                    g123   = np.gcd.reduce([n1, n2, n3])
                     volfac = n1*n2*n3*g123/(g12*g13*g23)
                     if volfac < cur_volfac: #min_volfac <= volfac and  and volfac <= max_volfac:
                         vars = [[n1, n2, n3, g12, g13, g23, g123]]

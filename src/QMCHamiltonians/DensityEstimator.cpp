@@ -180,7 +180,7 @@ bool DensityEstimator::get(std::ostream& os) const
   return true;
 }
 
-QMCHamiltonianBase* DensityEstimator::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+OperatorBase* DensityEstimator::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   //default constructor is sufficient
   return new DensityEstimator(*this);

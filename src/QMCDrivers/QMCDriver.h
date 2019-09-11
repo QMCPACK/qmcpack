@@ -359,8 +359,6 @@ protected:
   bool finalize(int block, bool dumpwalkers = true);
 
   int rotation;
-  void adiosCheckpoint(int block);
-  void adiosCheckpointFinal(int block, bool dumpwalkers);
   std::string getRotationName(std::string RootName);
   std::string getLastRotationName(std::string RootName);
   const std::string& get_root_name() const { return RootName; }

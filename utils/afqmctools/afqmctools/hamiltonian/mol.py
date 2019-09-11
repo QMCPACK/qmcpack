@@ -509,44 +509,46 @@ def read_ascii_integrals(filename, symmetry=8, verbose=True):
     if verbose:
         print("# Number of orbitals: {}".format(nbasis))
         print("# Number of electrons: {}".format(nelec))
-    h1e = numpy.zeros((nbasis, nbasis))
-    h2e = numpy.zeros((nbasis, nbasis, nbasis, nbasis))
+    h1e = numpy.zeros((nbasis, nbasis), dtype=numpy.complex128)
+    h2e = numpy.zeros((nbasis, nbasis, nbasis, nbasis), dtype=numpy.complex128)
     lines = f.readlines()
     for l in lines:
         s = l.split()
         # ascii fcidump uses Chemist's notation for integrals.
         # each line contains v_{ijkl} i k j l
         # Note (ik|jl) = <ij|kl>.
-        # Assuming real integrals
-        try:
-            integral = float(s[0])
-        except ValueError:
-            ig = ast.literal_eval(s[0].strip())
-            # Hack for the moment, not dealing with complex fcidumps, just
-            # the format
-            integral = ig[0]
+        if len(s) == 6:
+            # FCIDUMP from quantum package.
+            integral = float(s[0]) + 1j*float(s[1])
+            s = s[1:]
+        else:
+            try:
+                integral = float(s[0])
+            except ValueError:
+                ig = ast.literal_eval(s[0].strip())
+                integral = ig[0] + 1j*ig[1]
         i, k, j, l = [int(x) for x in s[1:]]
         if i == j == k == l == 0:
             ecore = integral
         elif j == 0 and l == 0:
             # <i|k> = <k|i>
             h1e[i-1,k-1] = integral
-            h1e[k-1,i-1] = integral
+            h1e[k-1,i-1] = integral.conjugate()
         elif i > 0  and j > 0 and k > 0 and l > 0:
             # Assuming 8 fold symmetry in integrals.
             # <ij|kl> = <ji|lk> = <kl|ij> = <lk|ji> =
             # <kj|il> = <li|jk> = <il|kj> = <jk|li>
             # (ik|jl)
             h2e[i-1,k-1,j-1,l-1] = integral
-            if symmetry == 1: 
+            if symmetry == 1:
                 continue
             # (jl|ik)
             h2e[j-1,l-1,i-1,k-1] = integral
             # (ki|lj)
-            h2e[k-1,i-1,l-1,j-1] = integral
+            h2e[k-1,i-1,l-1,j-1] = integral.conjugate()
             # (lj|ki)
-            h2e[l-1,j-1,k-1,i-1] = integral
-            if symmetry == 4: 
+            h2e[l-1,j-1,k-1,i-1] = integral.conjugate()
+            if symmetry == 4:
                 continue
             # (ki|jl)
             h2e[k-1,i-1,j-1,l-1] = integral
@@ -556,6 +558,13 @@ def read_ascii_integrals(filename, symmetry=8, verbose=True):
             h2e[i-1,k-1,l-1,j-1] = integral
             # (jl|ki)
             h2e[j-1,l-1,k-1,i-1] = integral
+    if symmetry == 8:
+        if numpy.any(numpy.abs(h1e.imag)) > 1e-18:
+            print("# Found complex numbers in one-body Hamiltonian but 8-fold"
+                  " symmetry specified.")
+        if numpy.any(numpy.abs(h2e.imag)) > 1e-18:
+            print("# Found complex numbers in two-body Hamiltonian but 8-fold"
+                  " symmetry specified.")
     return h1e, h2e, ecore, nelec
 
 def from_qmcpack_cholesky(filename):

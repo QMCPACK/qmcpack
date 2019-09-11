@@ -19,6 +19,7 @@
 #ifndef QMCPLUSPLUS_QMCLINEAROPTIMIZATION_VMCSINGLE_H
 #define QMCPLUSPLUS_QMCLINEAROPTIMIZATION_VMCSINGLE_H
 
+#include <memory>
 #include "QMCDrivers/QMCDriver.h"
 #include "Optimize/OptimizeBase.h"
 #include "QMCApp/WaveFunctionPool.h"
@@ -80,7 +81,7 @@ public:
   ///need to know HamiltonianPool to use OMP
   HamiltonianPool& hamPool;
   ///target cost function to optimize
-  QMCCostFunctionBase* optTarget;
+  std::unique_ptr<QMCCostFunctionBase> optTarget;
   ///Dimension of matrix and number of parameters
   int N, numParams;
   ///vmc engine
