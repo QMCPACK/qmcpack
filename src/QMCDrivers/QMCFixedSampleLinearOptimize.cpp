@@ -467,6 +467,7 @@ bool QMCFixedSampleLinearOptimize::put(xmlNodePtr q)
   oAttrib.put(q);
   m_param.put(q);
 
+  app_log() << "Called put" << std::endl;
   bool reportH5 = ReportToH5 == "yes";
   if (MinMethod == "hybrid")
   {
@@ -1339,18 +1340,15 @@ bool QMCFixedSampleLinearOptimize::one_shift_run()
 //Function for optimizing using gradient descent
 bool QMCFixedSampleLinearOptimize::descent_run()
 {
+
   start();
-  bool Valid(true);
-  int Total_iterations(0);
-  numParams = optTarget->getNumParams();
-
-
 
     //Compute Lagrangian derivatives needed for parameter updates with engine_checkConfigurations, which is called inside engine_start
     engine_start(EngineObj, *descentEngineObj, MinMethod);
 
+    int descent_num = descentEngineObj->getDescentNum();
 
-    if (descentNum == 0)
+    if (descent_num == 0)
       descentEngineObj->setupUpdate(optTarget->getOptVariables());
 
     //Store the derivatives and then compute parameter updates
@@ -1376,7 +1374,6 @@ bool QMCFixedSampleLinearOptimize::descent_run()
     }
 
     stepNum    = stepNum + 1;
-
   finish();
   return (optTarget->getReportCounter() > 0);
 }
@@ -1403,6 +1400,7 @@ bool QMCFixedSampleLinearOptimize::hybrid_run()
   if (current_optimizer_type_ == OptimizerType::DESCENT)
     descent_run();
 
+  app_log() << "Finished a hybrid step" << std::endl;
   return (optTarget->getReportCounter() > 0);
 }
 #endif

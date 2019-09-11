@@ -164,6 +164,9 @@ public:
   const std::vector<std::vector<double>>& retrieveHybridBLM_Input() const { return hybridBLM_Input; }
 
   const std::vector<double> retrieveNewParams() const { return currentParams; }
+  
+  const int getDescentNum() const {return descent_num_;}
+
 };
 
 } // namespace qmcplusplus

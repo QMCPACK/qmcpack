@@ -53,12 +53,15 @@ bool HybridEngine::processXML(const xmlNodePtr opt_xml)
   if (saved_xml_opt_methods_.size() != 2)
     throw std::runtime_error("MinMethod hybrid needs two optimizer input blocks!\n");
 
-  step_num_++;
   return true;
 }
 
-xmlNodePtr HybridEngine::getSelectedXML(int counter) const
+xmlNodePtr HybridEngine::getSelectedXML(int counter) 
 {
+
+  step_num_++;
+  app_log() << "step_num_: " << step_num_ << std::endl;
+
   return saved_xml_opt_methods_[identifyMethodIndex(counter)];
 }
 

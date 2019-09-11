@@ -41,9 +41,12 @@ public:
   //Constructor for engine
   HybridEngine(Communicate* comm, const xmlNodePtr cur);
 
-  xmlNodePtr getSelectedXML(int counter) const;
+  xmlNodePtr getSelectedXML(int counter);
 
   bool queryStore(int counter, int store_num, OptimizerType methodType) const;
+
+  //const int getStepNum() const {return step_num_;}
+
 };
 
 } // namespace qmcplusplus

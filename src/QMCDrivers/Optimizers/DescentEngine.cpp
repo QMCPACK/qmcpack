@@ -28,7 +28,7 @@ DescentEngine::DescentEngine(Communicate* comm, const xmlNodePtr cur)
       ramp_num(30),
       store_num(5)
 {
-    descent_num_ = -1;
+    descent_num_ = 0;
   store_count = 0;
   processXML(cur);
 }
@@ -58,7 +58,6 @@ bool DescentEngine::processXML(const xmlNodePtr cur)
 
   ramp_eta = (ramp_etaStr == "yes");
 
-  descent_num_++;
 
   return true;
 }
@@ -161,6 +160,8 @@ void DescentEngine::sample_finish()
 //Function for updating parameters during descent optimization
 void DescentEngine::updateParameters()
 {
+
+    
   app_log() << "Number of Parameters: " << numParams << std::endl;
 
   app_log() << "Parameter Type step sizes: "
@@ -400,6 +401,14 @@ void DescentEngine::updateParameters()
       }
     }
   }
+
+
+    descent_num_++;
+  
+  
+  app_log() << "descent_num_: " << descent_num_ << std::endl;
+
+
 }
 
 // Helper method for setting step size according parameter type.
