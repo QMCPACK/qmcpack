@@ -15,6 +15,7 @@ namespace qmcplusplus
 class DescentEngine
 {
 private:
+  //Vectors and scalars used in calculation of averaged derivatives in descent
   std::vector<double> avg_le_der_samp;
   std::vector<double> avg_der_rat_samp;
 
@@ -24,12 +25,16 @@ private:
   double eSquare_sum;
   double eSquare_avg;
 
-  Communicate* myComm;
-
   std::vector<double> LDerivs;
 
+  //Communicator handles MPI reduction
+  Communicate* myComm;
+
+  //Whether to target excited state
+  //Currently only ground state optimization is implemented
   bool engineTargetExcited;
 
+  //Number of optimizable parameters
   int numParams;
 
 
@@ -55,10 +60,9 @@ private:
   std::vector<double> taus;
   //Vector for storing running average of squares of the derivatives
   std::vector<double> derivsSquared;
-  //Integer for keeping track of the iteration number
-  int stepNum;
+
   //Integer for keeping track of only number of descent steps taken
-  int descentNum;
+  int descent_num_;
 
   //What variety of gradient descent will be used
   std::string flavor;
@@ -78,13 +82,22 @@ private:
   int ramp_num;
 
 
-  std::vector<std::string> engineParamNames;
+  //Number of parameter difference vectors stored when descent is used in a hybrid optimization
+  int store_num;
 
+  //Counter of how many vectors have been stored so far
+  int store_count;
+
+  //Vectors of parameter names and types, used in the assignment of step sizes
+  std::vector<std::string> engineParamNames;
   std::vector<int> engineParamTypes;
 
 
   //Vector for storing parameter values for calculating differences to be given to hybrid method
   std::vector<double> paramsForDiff;
+
+  //Vector for storing the input vectors to the BLM steps of hybrid method
+  std::vector<std::vector<double>> hybridBLM_Input;
 
   ///process xml node
   bool processXML(const xmlNodePtr cur);
@@ -130,19 +143,29 @@ public:
   ////////////////////////////////////////////////////////////////////////////////////////////////////////
   void sample_finish();
 
-  const std::vector<double>& getAveragedDerivatives() { return LDerivs; }
+  const std::vector<double>& getAveragedDerivatives() const { return LDerivs; }
 
   // helper method for updating parameter values with descent
-  void updateParameters(int stepNum, int descentNum);
+  void updateParameters();
 
   //helper method for seting step sizes for different parameter types in descent optimization
   double setStepSize(int i);
 
+  //stores derivatives so they can be used in accelerated descent algorithm on later iterations
   void storeDerivRecord() { derivRecords.push_back(LDerivs); }
 
+  //helper method for transferring information on parameter names and types to the engine
   void setupUpdate(const optimize::VariableSet& myVars);
 
-  std::vector<double> retrieveNewParams() { return currentParams; }
+  void storeVectors(std::vector<double>& currentParams);
+
+  int retrieveStoreFrequency() const { return store_num; }
+
+  const std::vector<std::vector<double>>& retrieveHybridBLM_Input() const { return hybridBLM_Input; }
+
+  const std::vector<double>& retrieveNewParams() const { return currentParams; }
+
+  int getDescentNum() const { return descent_num_; }
 };
 
 } // namespace qmcplusplus

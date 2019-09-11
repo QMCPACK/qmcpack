@@ -146,10 +146,6 @@ bool VMC::run()
 void VMC::resetRun()
 {
   
-if((MinMethod == "hybrid") && on_hybrid_descent)
-{
-nTargetPopulation = otherTargetPopulation;
-}
 
     ////only VMC can overwrite this
   if (nTargetPopulation > 0)
@@ -321,11 +317,8 @@ bool VMC::put(xmlNodePtr q)
   app_log() << "\n<vmc function=\"put\">"
             << "\n  qmc_counter=" << qmc_common.qmc_counter << "  my_counter=" << MyCounter << std::endl;
  
-//Need to know whether hybrid method is being used and if a change has been made from AD to BLM or vice versa
-//in order to change number of samples being taken  
- bool onHybridAndChanged = (MinMethod == "hybrid") && just_changed;
 
- if (qmc_common.qmc_counter && MyCounter && (! onHybridAndChanged))
+ if (qmc_common.qmc_counter && MyCounter)
   {
     nSteps               = prevSteps;
     nStepsBetweenSamples = prevStepsBetweenSamples;
@@ -337,11 +330,6 @@ bool VMC::put(xmlNodePtr q)
     int Nthreads = omp_get_max_threads();
     int Nprocs   = myComm->size();
     
-  //Also overwrite nSamplesPerThread so you can switch back to lower samples on AD after BLM
-  if((MinMethod == "hybrid") && on_hybrid_descent)
-  {
-   nSamplesPerThread = nTargetSamples / Nprocs / Nthreads;
-  }
  
 
     //target samples set by samples or samplesperthread/dmcwalkersperthread

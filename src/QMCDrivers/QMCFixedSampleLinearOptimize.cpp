@@ -68,12 +68,13 @@ QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(MCWalkerConfiguration
       stabilizerScale(2.0),
       bigChange(50),
       w_beta(0.0),
-      // MinMethod("OneShiftOnly"),
+      MinMethod("OneShiftOnly"),
+      previous_optimizer_type_(OptimizerType::NONE),
+      current_optimizer_type_(OptimizerType::NONE),
       GEVtype("mixed"),
       StabilizerMethod("best"),
       GEVSplit("no"),
       stepsize(0.25),
-      doAdaptiveThreeShift(false),
       targetExcitedStr("no"),
       targetExcited(false),
       block_lmStr("no"),
@@ -82,7 +83,6 @@ QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(MCWalkerConfiguration
       bestShift_s(-1.0),
       shift_i_input(0.01),
       shift_s_input(1.00),
-      doOneShiftOnly(false),
       shift_s_base(4.0),
       accept_history(3),
       num_shifts(3),
@@ -168,13 +168,6 @@ QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(MCWalkerConfiguration
                                           shift_scales, app_log());
 #endif
 
-  stepNum    = 0;
-  descentNum = 0;
-
-  totalCount   = 0;
-  descentCount = 0;
-  blmCount     = 0;
-
 
   //   stale parameters
   //   m_param.add(eigCG,"eigcg","int");
@@ -212,23 +205,22 @@ QMCFixedSampleLinearOptimize::RealType QMCFixedSampleLinearOptimize::Func(RealTy
 
 bool QMCFixedSampleLinearOptimize::run()
 {
-  //Can perform update using either accelerated descent or the hybrid method
-  if (doDescent)
-  {
-    return descent_run();
-  }
-
 #ifdef HAVE_LMY_ENGINE
   if (doHybrid)
   {
+    app_log() << "Doing hybrid run" << std::endl;
     return hybrid_run();
   }
 
   // if requested, perform the update via the adaptive three-shift or single-shift method
-  if (doAdaptiveThreeShift)
+  if (current_optimizer_type_ == OptimizerType::ADAPTIVE)
     return adaptive_three_shift_run();
 #endif
-  if (doOneShiftOnly)
+
+  if (current_optimizer_type_ == OptimizerType::DESCENT)
+    return descent_run();
+
+  if (current_optimizer_type_ == OptimizerType::ONESHIFTONLY)
     return one_shift_run();
 
   start();
@@ -472,6 +464,7 @@ bool QMCFixedSampleLinearOptimize::put(xmlNodePtr q)
   oAttrib.put(q);
   m_param.put(q);
 
+  app_log() << "Called put" << std::endl;
   bool reportH5 = ReportToH5 == "yes";
   if (MinMethod == "hybrid")
   {
@@ -479,15 +472,13 @@ bool QMCFixedSampleLinearOptimize::put(xmlNodePtr q)
     if (!hybridEngineObj)
       hybridEngineObj = std::make_unique<HybridEngine>(myComm, q);
 
-    // look for the optimizer section based on the counter
-    xmlNodePtr selected_method_xml = NULL; //hybridEngineObj->getSelectedXML(counter);
-    return processXML(selected_method_xml, vmcMove, reportH5);
+    return processOptXML(hybridEngineObj->getSelectedXML(), vmcMove, reportH5);
   }
   else
-    return processXML(q, vmcMove, reportH5);
+    return processOptXML(q, vmcMove, reportH5);
 }
 
-bool QMCFixedSampleLinearOptimize::processXML(xmlNodePtr opt_xml, const std::string& vmcMove, bool reportH5)
+bool QMCFixedSampleLinearOptimize::processOptXML(xmlNodePtr opt_xml, const std::string& vmcMove, bool reportH5)
 {
   m_param.put(opt_xml);
   tolower(targetExcitedStr);
@@ -496,24 +487,21 @@ bool QMCFixedSampleLinearOptimize::processXML(xmlNodePtr opt_xml, const std::str
   tolower(block_lmStr);
   block_lm = (block_lmStr == "yes");
 
-  // get whether to use the adaptive three-shift version of the update
-  doAdaptiveThreeShift = (MinMethod == "adaptive");
-  // get whether to use OneShiftOnly
-  doOneShiftOnly = (MinMethod == "OneShiftOnly");
-  // get whether to use descent
-  if (MinMethod == "descent")
-  {
-    doDescent = true;
-    if (!descentEngineObj)
-      descentEngineObj = std::make_unique<DescentEngine>(myComm, opt_xml);
-  }
+  auto iter = OptimizerNames.find(MinMethod);
+  if (iter == OptimizerNames.end())
+    throw std::runtime_error("Unknown MinMethod!\n");
+  previous_optimizer_type_ = current_optimizer_type_;
+  current_optimizer_type_  = OptimizerNames.at(MinMethod);
+
+  if (current_optimizer_type_ == OptimizerType::DESCENT && !descentEngineObj)
+    descentEngineObj = std::make_unique<DescentEngine>(myComm, opt_xml);
 
   // sanity check
-  if (targetExcited && !doAdaptiveThreeShift)
+  if (targetExcited && current_optimizer_type_ != OptimizerType::ADAPTIVE)
     APP_ABORT("targetExcited = \"yes\" requires that MinMethod = \"adaptive");
 
 #ifdef ENABLE_OPENMP
-  if (doAdaptiveThreeShift && (omp_get_max_threads() > 1))
+  if (current_optimizer_type_ == OptimizerType::ADAPTIVE && (omp_get_max_threads() > 1))
   {
     // throw std::runtime_error("OpenMP threading not enabled with AdaptiveThreeShift optimizer. Use MPI for parallelism instead, and set OMP_NUM_THREADS to 1.");
     app_log() << "test version of OpenMP threading with AdaptiveThreeShift optimizer" << std::endl;
@@ -539,9 +527,9 @@ bool QMCFixedSampleLinearOptimize::processXML(xmlNodePtr opt_xml, const std::str
     throw std::runtime_error("cost_increase_tol must be non-negative in QMCFixedSampleLinearOptimize::put");
 
   // if this is the first time this function has been called, set the initial shifts
-  if (bestShift_i < 0.0 && (doAdaptiveThreeShift || doHybrid))
+  if (bestShift_i < 0.0 && (current_optimizer_type_ == OptimizerType::ADAPTIVE || doHybrid))
     bestShift_i = shift_i_input;
-  if (doOneShiftOnly)
+  if (current_optimizer_type_ == OptimizerType::ONESHIFTONLY)
     bestShift_i = shift_i_input;
   if (bestShift_s < 0.0)
     bestShift_s = shift_s_input;
@@ -1349,49 +1337,35 @@ bool QMCFixedSampleLinearOptimize::one_shift_run()
 bool QMCFixedSampleLinearOptimize::descent_run()
 {
   start();
-  bool Valid(true);
-  int Total_iterations(0);
-  numParams = optTarget->getNumParams();
-  N         = numParams + 1;
 
+  //Compute Lagrangian derivatives needed for parameter updates with engine_checkConfigurations, which is called inside engine_start
+  engine_start(EngineObj, *descentEngineObj, MinMethod);
 
-  while (Total_iterations < Max_iterations)
+  int descent_num = descentEngineObj->getDescentNum();
+
+  if (descent_num == 0)
+    descentEngineObj->setupUpdate(optTarget->getOptVariables());
+
+  //Store the derivatives and then compute parameter updates
+  descentEngineObj->storeDerivRecord();
+
+  descentEngineObj->updateParameters();
+
+  std::vector<double> results = descentEngineObj->retrieveNewParams();
+
+  for (int i = 0; i < results.size(); i++)
   {
-    Total_iterations += 1;
-    app_log() << "Iteration: " << Total_iterations << "/" << Max_iterations << std::endl;
-
-    //Compute Lagragian derivatives needed for parameter updates with engine_checkConfigurations, which is called inside engine_start
-    engine_start(EngineObj, *descentEngineObj, MinMethod);
-
-
-    if (descentNum == 0)
-      descentEngineObj->setupUpdate(optTarget->getOptVariables());
-
-    //Store the derivatives and then compute parameter updates
-    descentEngineObj->storeDerivRecord();
-
-    descentEngineObj->updateParameters(stepNum, descentNum);
-
-    std::vector<double> results = descentEngineObj->retrieveNewParams();
-
-    for (int i = 0; i < results.size(); i++)
-    {
-      optTarget->Params(i) = results[i];
-    }
-
-
-    /* 
-  //During the hybrid method,store 5 vectors of parameter differences over the course of a descent section
-  if (doHybrid && ((descentNum + 1) % (descent_len / 5) == 0)) {
-      app_log() << "Step number in macro-iteration is " << stepNum % descent_len
-                << " out of expected total of " << descent_len
-                << " descent steps." << std::endl;
-    storeVectors(paramsForDiff);
+    optTarget->Params(i) = results[i];
   }
-  */
 
-    stepNum    = stepNum + 1;
-    descentNum = descentNum + 1;
+  if (doHybrid)
+  {
+    int store_num = descentEngineObj->retrieveStoreFrequency();
+    bool store    = hybridEngineObj->queryStore(store_num, OptimizerType::DESCENT);
+    if (store)
+    {
+      descentEngineObj->storeVectors(results);
+    }
   }
 
   finish();
@@ -1399,88 +1373,29 @@ bool QMCFixedSampleLinearOptimize::descent_run()
 }
 #endif
 
-// Helper method for storing vectors of parameter differences over the course of
-// a descent optimization for use in BLM steps of the hybrid method
-void QMCFixedSampleLinearOptimize::storeVectors(std::vector<Return_t>& paramsForDiff)
-{
-  int process_rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, &process_rank);
 
-
-  std::vector<Return_t> rowVec(paramsForDiff.size());
-  std::fill(rowVec.begin(), rowVec.end(), 0.0);
-
-  // Take difference between current parameter values and the values from 20
-  // iterations before (in the case descent_len = 100) to be stored as input to BLM.
-  // The current parameter values are then copied to paramsForDiff to be used
-  // another 20 iterations later.
-  for (int i = 0; i < numParams; i++)
-  {
-    rowVec[i]        = (optTarget->Params(i) - paramsForDiff[i]);
-    paramsForDiff[i] = optTarget->Params(i);
-  }
-
-  // If on first step, clear anything that was in vector
-  if ((stepNum + 1) % descent_len == descent_len / 5)
-  {
-    hybridBLM_Input.clear();
-    hybridBLM_Input.push_back(rowVec);
-  }
-  else
-  {
-    hybridBLM_Input.push_back(rowVec);
-  }
-
-  for (int i = 0; i < hybridBLM_Input.size(); i++)
-  {
-    std::string entry = "";
-    for (int j = 0; j < hybridBLM_Input.at(i).size(); j++)
-    {
-      entry = entry + std::to_string(hybridBLM_Input.at(i).at(j)) + ",";
-    }
-    app_log() << "Stored Vector: " << entry << std::endl;
-  }
-}
-
-//Function for controlling the alternation between sections of descent
-//optimization and BLM optimization.
+//Function for controlling the alternation between sections of descent optimization and BLM optimization.
 #ifdef HAVE_LMY_ENGINE
 bool QMCFixedSampleLinearOptimize::hybrid_run()
 {
-  if (descentCount < descent_len)
+  app_log() << "This is methodName: " << MinMethod << std::endl;
+
+  // if requested, perform the update via the adaptive three-shift or single-shift method
+  if (current_optimizer_type_ == OptimizerType::ADAPTIVE)
   {
-    descentCount++;
-    totalCount++;
-    app_log() << "Should be on descent step# " << descentCount - 1 << " of macro-iteration. Total steps: " << totalCount
-              << std::endl;
-    return descent_run();
-  }
-  else
-  {
-    if (blmCount < blm_len)
+    if (previous_optimizer_type_ == OptimizerType::DESCENT)
     {
-      if (blmCount == 0)
-      {
-        //Only need to set input vectors from AD on first BLM step
-        EngineObj->setHybridBLM_Input(hybridBLM_Input);
-      }
-      blmCount++;
-      totalCount++;
-      app_log() << "Should be on blm step# " << blmCount - 1 << " of macro-iteration. Total steps: " << totalCount
-                << std::endl;
-      return adaptive_three_shift_run();
+      std::vector<std::vector<double>> hybridBLM_Input = descentEngineObj->retrieveHybridBLM_Input();
+      EngineObj->setHybridBLM_Input(hybridBLM_Input);
     }
-    else
-    {
-      descentCount = 0;
-      blmCount     = 0;
-      descentCount++;
-      totalCount++;
-      app_log() << "Should be on descent step# " << descentCount - 1
-                << " of macro-iteration. Total steps: " << totalCount << std::endl;
-      return descent_run();
-    }
+    adaptive_three_shift_run();
   }
+
+  if (current_optimizer_type_ == OptimizerType::DESCENT)
+    descent_run();
+
+  app_log() << "Finished a hybrid step" << std::endl;
+  return (optTarget->getReportCounter() > 0);
 }
 #endif
 

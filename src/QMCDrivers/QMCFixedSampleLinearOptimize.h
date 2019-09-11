@@ -53,8 +53,8 @@ public:
   bool run();
   ///preprocess xml node
   bool put(xmlNodePtr cur);
-  ///process xml node for the actual optimization
-  bool processXML(xmlNodePtr cur, const std::string& vmcMove, bool reportH5);
+  ///process xml node value (parameters for both VMC and OPT) for the actual optimization
+  bool processOptXML(xmlNodePtr cur, const std::string& vmcMove, bool reportH5);
 
   RealType Func(RealType dl);
 
@@ -88,9 +88,6 @@ private:
   bool hybrid_run();
 #endif
 
-  //helper method for writing vectors for BLM steps in hybrid method
-  void storeVectors(std::vector<Return_t>& paramsForDiff);
-
 
   void solveShiftsWithoutLMYEngine(const std::vector<double>& shifts_i,
                                    const std::vector<double>& shiffts_s,
@@ -101,8 +98,10 @@ private:
   cqmc::engine::LMYEngine* EngineObj;
 #endif
 
+  //engine for running various gradient descent based algorithms for optimization
   std::unique_ptr<DescentEngine> descentEngineObj;
 
+  //engine for controlling a optimization using a hybrid combination of linear method and descent
   std::unique_ptr<HybridEngine> hybridEngineObj;
 
   // prepare a vector of shifts to try
@@ -133,10 +132,6 @@ private:
   int eigCG;
   /// total number of cg steps per iterations
   int TotalCGSteps;
-  /// whether to use the adaptive three-shift scheme
-  bool doAdaptiveThreeShift;
-  /// whether to use the single-shift scheme
-  bool doOneShiftOnly;
   /// the previous best identity shift
   RealType bestShift_i;
   /// the previous best overlap shift
@@ -184,34 +179,17 @@ private:
 
   //Variables for alternatives to linear method
 
-  //whether to use accelerated descent
-  bool doDescent;
+  //name of the current optimization method, updated by processOptXML before run
+  std::string MinMethod;
+
+  //type of the previous optimization method, updated by processOptXML before run
+  OptimizerType previous_optimizer_type_;
+
+  //type of the current optimization method, updated by processOptXML before run
+  OptimizerType current_optimizer_type_;
 
   //whether to use hybrid method
   bool doHybrid;
-
-
-  //Vector for storing the input vectors to the BLM steps of hybrid method
-  std::vector<std::vector<Return_t>> hybridBLM_Input;
-
-
-  //Integer for keeping track of the iteration number
-  int stepNum;
-
-  //Integer for keeping track of only number of descent steps taken
-  int descentNum;
-
-  //Whether hybrid accelerated descent and linear method will be used
-  std::string hybrid;
-
-
-  //Counters for controlling changes between descent
-  //and BLM in hybrid method
-  int totalCount;
-  int descentCount;
-  int blmCount;
-
-  int hybrid_descent_samples;
 };
 } // namespace qmcplusplus
 #endif

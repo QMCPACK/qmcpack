@@ -25,8 +25,11 @@ DescentEngine::DescentEngine(Communicate* comm, const xmlNodePtr cur)
       CI_eta(.01),
       Orb_eta(.001),
       ramp_eta(false),
-      ramp_num(30)
+      ramp_num(30),
+      store_num(5)
 {
+  descent_num_ = 0;
+  store_count  = 0;
   processXML(cur);
 }
 
@@ -48,11 +51,13 @@ bool DescentEngine::processXML(const xmlNodePtr cur)
   m_param.add(Orb_eta, "Orb_eta", "double");
   m_param.add(ramp_etaStr, "Ramp_eta", "string");
   m_param.add(ramp_num, "Ramp_num", "int");
+  m_param.add(store_num, "Stored_Vectors", "int");
   m_param.put(cur);
 
   engineTargetExcited = (excited == "yes");
 
   ramp_eta = (ramp_etaStr == "yes");
+
 
   return true;
 }
@@ -83,15 +88,11 @@ void DescentEngine::setEtemp(const std::vector<double>& etemp)
   e_avg       = e_sum / w_sum;
   eSquare_avg = eSquare_sum / w_sum;
 
-  int my_rank = myComm->rank();
-  if (my_rank == 0)
-  {
-    std::cout << "e_sum: " << e_sum << std::endl;
-    std::cout << "w_sum: " << w_sum << std::endl;
-    std::cout << "e_avg: " << e_avg << std::endl;
-    std::cout << "eSquare_sum: " << eSquare_sum << std::endl;
-    std::cout << "eSquare_avg: " << eSquare_avg << std::endl;
-  }
+  app_log() << "e_sum: " << e_sum << std::endl;
+  app_log() << "w_sum: " << w_sum << std::endl;
+  app_log() << "e_avg: " << e_avg << std::endl;
+  app_log() << "eSquare_sum: " << eSquare_sum << std::endl;
+  app_log() << "eSquare_avg: " << eSquare_avg << std::endl;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -137,8 +138,6 @@ void DescentEngine::take_sample(double local_en, double vgs_samp, double weight_
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 void DescentEngine::sample_finish()
 {
-  int my_rank = myComm->rank();
-
   myComm->allreduce(avg_le_der_samp);
   myComm->allreduce(avg_der_rat_samp);
 
@@ -147,11 +146,8 @@ void DescentEngine::sample_finish()
     avg_le_der_samp.at(i)  = avg_le_der_samp.at(i) / w_sum;
     avg_der_rat_samp.at(i) = avg_der_rat_samp.at(i) / w_sum;
 
-    if (my_rank == 0)
-    {
-      std::cout << "Parameter # " << i << " Hamiltonian term: " << avg_le_der_samp.at(i) << std::endl;
-      std::cout << "Parameter # " << i << " Overlap term: " << avg_der_rat_samp.at(i) << std::endl;
-    }
+    app_log() << "Parameter # " << i << " Hamiltonian term: " << avg_le_der_samp.at(i) << std::endl;
+    app_log() << "Parameter # " << i << " Overlap term: " << avg_der_rat_samp.at(i) << std::endl;
 
     if (!engineTargetExcited)
     {
@@ -162,17 +158,13 @@ void DescentEngine::sample_finish()
 
 
 //Function for updating parameters during descent optimization
-void DescentEngine::updateParameters(int stepNum, int descentNum)
+void DescentEngine::updateParameters()
 {
-  int my_rank = myComm->rank();
-  if (my_rank == 0)
-  {
-    std::cout << "Number of Parameters: " << numParams << std::endl;
+  app_log() << "Number of Parameters: " << numParams << std::endl;
 
-    std::cout << "Parameter Type step sizes: "
-              << " TJF_2Body_eta=" << TJF_2Body_eta << " TJF_1Body_eta=" << TJF_1Body_eta << " F_eta=" << F_eta
-              << " CI_eta=" << CI_eta << " Orb_eta=" << Orb_eta << std::endl;
-  }
+  app_log() << "Parameter Type step sizes: "
+            << " TJF_2Body_eta=" << TJF_2Body_eta << " TJF_1Body_eta=" << TJF_1Body_eta << " F_eta=" << F_eta
+            << " CI_eta=" << CI_eta << " Orb_eta=" << Orb_eta << std::endl;
 
   // Get set of derivatives for current (kth) optimization step
   std::vector<double> curDerivSet = derivRecords.at(derivRecords.size() - 1);
@@ -199,8 +191,7 @@ void DescentEngine::updateParameters(int stepNum, int descentNum)
   // RMSprop corresponds to the method used by Booth and co-workers
   if (flavor.compare("RMSprop") == 0)
   {
-    if (my_rank == 0)
-      std::cout << "Using RMSprop" << std::endl;
+    app_log() << "Using RMSprop" << std::endl;
 
     // To match up with Booth group paper notation, prevLambda is lambda_k-1,
     // curLambda is lambda_k, nextLambda is lambda_k+1
@@ -212,7 +203,7 @@ void DescentEngine::updateParameters(int stepNum, int descentNum)
     // small value of d corresponds to quick damping and effectively using
     // steepest descent
     double d           = 100;
-    double decayFactor = std::exp(-(1 / d) * (stepNum));
+    double decayFactor = std::exp(-(1 / d) * (descent_num_));
     gamma              = gamma * decayFactor;
 
     double rho = .9;
@@ -241,7 +232,7 @@ void DescentEngine::updateParameters(int stepNum, int descentNum)
       // Include an additional factor to cause step size to eventually decrease to 0 as number of steps taken increases
       double stepLambda = .1;
 
-      double stepDecayDenom = 1 + stepLambda * stepNum;
+      double stepDecayDenom = 1 + stepLambda * descent_num_;
       tau                   = tau / stepDecayDenom;
 
 
@@ -283,17 +274,16 @@ void DescentEngine::updateParameters(int stepNum, int descentNum)
   // Random uses only the sign of the parameter derivatives and takes a step of random size within a range.
   else if (flavor.compare("Random") == 0)
   {
-    if (my_rank == 0)
-      std::cout << "Using Random" << std::endl;
+    app_log() << "Using Random" << std::endl;
 
     for (int i = 0; i < numParams; i++)
     {
       denom        = 1;
       double alpha = ((double)rand() / RAND_MAX);
       double sign  = std::abs(curDerivSet[i]) / curDerivSet[i];
-      if (std::isnan(sign) && my_rank == 0)
+      if (std::isnan(sign))
       {
-        std::cout << "Got a nan, choosing sign randomly with 50-50 probability" << std::endl;
+        app_log() << "Got a nan, choosing sign randomly with 50-50 probability" << std::endl;
 
         double t = ((double)rand() / RAND_MAX);
         if (t > .5)
@@ -305,8 +295,7 @@ void DescentEngine::updateParameters(int stepNum, int descentNum)
           sign = -1;
         }
       }
-      if (my_rank == 0)
-        std::cout << "This is random alpha: " << alpha << " with sign: " << sign << std::endl;
+      app_log() << "This is random alpha: " << alpha << " with sign: " << sign << std::endl;
 
       currentParams.at(i) = currentParams.at(i) - tau * alpha * sign;
     }
@@ -317,15 +306,14 @@ void DescentEngine::updateParameters(int stepNum, int descentNum)
     // ADAM method
     if (flavor.compare("ADAM") == 0)
     {
-      if (my_rank == 0)
-        std::cout << "Using ADAM" << std::endl;
+      app_log() << "Using ADAM" << std::endl;
 
       for (int i = 0; i < numParams; i++)
       {
         double curSquare = std::pow(curDerivSet.at(i), 2);
         double beta1     = .9;
         double beta2     = .99;
-        if (descentNum == 0)
+        if (descent_num_ == 0)
         {
           numerRecords.push_back(0);
           denomRecords.push_back(0);
@@ -333,8 +321,8 @@ void DescentEngine::updateParameters(int stepNum, int descentNum)
         numer = beta1 * numerRecords[i] + (1 - beta1) * curDerivSet[i];
         v     = beta2 * denomRecords[i] + (1 - beta2) * curSquare;
 
-        corNumer = numer / (1 - std::pow(beta1, descentNum + 1));
-        corV     = v / (1 - std::pow(beta2, descentNum + 1));
+        corNumer = numer / (1 - std::pow(beta1, descent_num_ + 1));
+        corV     = v / (1 - std::pow(beta2, descent_num_ + 1));
 
         denom = std::sqrt(corV) + epsilon;
 
@@ -366,8 +354,7 @@ void DescentEngine::updateParameters(int stepNum, int descentNum)
     // AMSGrad method, similar to ADAM except for form of the step size denominator
     else if (flavor.compare("AMSGrad") == 0)
     {
-      if (my_rank == 0)
-        std::cout << "Using AMSGrad" << std::endl;
+      app_log() << "Using AMSGrad" << std::endl;
 
 
       for (int i = 0; i < numParams; i++)
@@ -375,7 +362,7 @@ void DescentEngine::updateParameters(int stepNum, int descentNum)
         double curSquare = std::pow(curDerivSet.at(i), 2);
         double beta1     = .9;
         double beta2     = .99;
-        if (descentNum == 0)
+        if (descent_num_ == 0)
         {
           numerRecords.push_back(0);
           denomRecords.push_back(0);
@@ -414,15 +401,10 @@ void DescentEngine::updateParameters(int stepNum, int descentNum)
   }
 
 
-  /*
-  //During the hybrid method,store 5 vectors of parameter differences over the course of a descent section
-  if (doHybrid && ((descentNum + 1) % (descent_len / 5) == 0)) {
-      app_log() << "Step number in macro-iteration is " << stepNum % descent_len
-                << " out of expected total of " << descent_len
-                << " descent steps." << std::endl;
-    storeVectors(paramsForDiff);
-  }
-  */
+  descent_num_++;
+
+
+  app_log() << "descent_num_: " << descent_num_ << std::endl;
 }
 
 // Helper method for setting step size according parameter type.
@@ -470,14 +452,15 @@ double DescentEngine::setStepSize(int i)
     type_eta = .001;
   }
 
-  if (ramp_eta && descentNum < ramp_num)
+  if (ramp_eta && descent_num_ < ramp_num)
   {
-    type_eta = type_eta * (descentNum + 1) / ramp_num;
+    type_eta = type_eta * (descent_num_ + 1) / ramp_num;
   }
 
   return type_eta;
 }
 
+//Method for retrieving parameter values, names, and types from the VariableSet before the first descent optimization step
 void DescentEngine::setupUpdate(const optimize::VariableSet& myVars)
 {
   numParams = myVars.size();
@@ -487,7 +470,48 @@ void DescentEngine::setupUpdate(const optimize::VariableSet& myVars)
     engineParamTypes.push_back(myVars.getType(i));
     paramsCopy.push_back(myVars[i]);
     currentParams.push_back(myVars[i]);
+    paramsForDiff.push_back(myVars[i]);
   }
+}
+
+// Helper method for storing vectors of parameter differences over the course of
+// a descent optimization for use in BLM steps of the hybrid method
+void DescentEngine::storeVectors(std::vector<double>& currentParams)
+{
+  std::vector<double> rowVec(currentParams.size());
+  std::fill(rowVec.begin(), rowVec.end(), 0.0);
+
+  // Take difference between current parameter values and the values from 20
+  // iterations before (in the case descent_len = 100) to be stored as input to BLM.
+  // The current parameter values are then copied to paramsForDiff to be used
+  // another 20 iterations later.
+  for (int i = 0; i < currentParams.size(); i++)
+  {
+    rowVec[i]        = currentParams[i] - paramsForDiff[i];
+    paramsForDiff[i] = currentParams[i];
+  }
+
+  // If on first store of descent section, clear anything that was in vector
+  if (store_count == 0)
+  {
+    hybridBLM_Input.clear();
+    hybridBLM_Input.push_back(rowVec);
+  }
+  else
+  {
+    hybridBLM_Input.push_back(rowVec);
+  }
+
+  for (int i = 0; i < hybridBLM_Input.size(); i++)
+  {
+    std::string entry = "";
+    for (int j = 0; j < hybridBLM_Input.at(i).size(); j++)
+    {
+      entry = entry + std::to_string(hybridBLM_Input.at(i).at(j)) + ",";
+    }
+    app_log() << "Stored Vector: " << entry << std::endl;
+  }
+  store_count++;
 }
 
 } // namespace qmcplusplus
