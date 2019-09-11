@@ -899,7 +899,7 @@ void cqmc::engine::LMYEngine::shift_update(std::vector<double> & new_shift) {
 
 
 //Transfers the vectors from descent to the engine's LMBlocker object during the hybrid method.
-void cqmc::engine::LMYEngine::setHybridBLM_Input(std::vector< std::vector<double>> &from_descent) 
+void cqmc::engine::LMYEngine::setHybridBLM_Input(std::vector< std::vector<double>>& from_descent) 
 {
 
     //Change the LMBlocker object's hybrid variable to true so input vectors will be used later on

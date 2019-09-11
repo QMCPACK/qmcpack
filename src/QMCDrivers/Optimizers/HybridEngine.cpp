@@ -11,7 +11,11 @@
 
 namespace qmcplusplus
 {
-HybridEngine::HybridEngine(Communicate* comm, const xmlNodePtr cur) : myComm(comm) { processXML(cur); }
+HybridEngine::HybridEngine(Communicate* comm, const xmlNodePtr cur) : myComm(comm)
+    {
+	step_num_= -1;       
+	processXML(cur);
+    }
 
 
 bool HybridEngine::processXML(const xmlNodePtr opt_xml)
@@ -49,6 +53,7 @@ bool HybridEngine::processXML(const xmlNodePtr opt_xml)
   if (saved_xml_opt_methods_.size() != 2)
     throw std::runtime_error("MinMethod hybrid needs two optimizer input blocks!\n");
 
+  step_num_++;
   return true;
 }
 
@@ -71,9 +76,14 @@ bool HybridEngine::queryStore(int counter, int store_num, const OptimizerType me
     }
   }
 
-  int pos      = counter % num_updates_opt_methods_[idx];
+  const int totMicroIt = std::accumulate(num_updates_opt_methods_.begin(), num_updates_opt_methods_.end(), 0);
+  //const int pos = counter % totMicroIt;
+  const int pos = step_num_ % totMicroIt;
+    //int pos      = counter % num_updates_opt_methods_[idx];
   int interval = num_updates_opt_methods_[idx] / store_num;
 
+  app_log() << "Pos: " << pos << std::endl;
+  app_log() << "Interval: " << interval << std::endl;
   if(interval == 0)
   {
     app_log() << "Requested Number of Stored Vectors greater than number of descent steps. Storing a vector on each step." << std::endl;
@@ -90,7 +100,8 @@ bool HybridEngine::queryStore(int counter, int store_num, const OptimizerType me
 int HybridEngine::identifyMethodIndex(int counter) const
 {
   const int totMicroIt = std::accumulate(num_updates_opt_methods_.begin(), num_updates_opt_methods_.end(), 0);
-  const int pos = counter % totMicroIt;
+  //const int pos = counter % totMicroIt;
+  const int pos = step_num_ % totMicroIt;
 
   int runSum = 0;
   int selectIdx = 0;

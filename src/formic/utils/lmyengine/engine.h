@@ -482,7 +482,7 @@ public:
   cqmc::engine::LMBlocker & LMBlocker() {return _lmb;}
   
   //function that transfers vectors from descent to the LMBlocker object
-  void setHybridBLM_Input(std::vector< std::vector<double> > &from_descent);
+  void setHybridBLM_Input(std::vector< std::vector<double> >& from_descent);
   
   ////////////////////////////////////////////////////////////////////////////////////////////////////////
   ///

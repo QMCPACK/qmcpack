@@ -882,6 +882,7 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
   // remember what the cost function grads flag was
   const bool saved_grads_flag = optTarget->getneedGrads();
 
+  stepNum = stepNum + 1;
   // remember the initial number of samples
   const int init_num_samp = optTarget->getNumSamples();
 
@@ -1172,7 +1173,6 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
   optTarget->setNumSamples(init_num_samp);
   nTargetSamples = init_num_samp;
 
-  stepNum = stepNum + 1;
   //app_log() << "block first second third end " << block_first << block_second << block_third << endl;
   // return whether the cost function's report counter is positive
   return (optTarget->getReportCounter() > 0);
@@ -1345,12 +1345,8 @@ bool QMCFixedSampleLinearOptimize::descent_run()
   numParams = optTarget->getNumParams();
 
 
-  while (Total_iterations < Max_iterations)
-  {
-    Total_iterations += 1;
-    app_log() << "Iteration: " << Total_iterations << "/" << Max_iterations << std::endl;
 
-    //Compute Lagragian derivatives needed for parameter updates with engine_checkConfigurations, which is called inside engine_start
+    //Compute Lagrangian derivatives needed for parameter updates with engine_checkConfigurations, which is called inside engine_start
     engine_start(EngineObj, *descentEngineObj, MinMethod);
 
 
@@ -1360,7 +1356,7 @@ bool QMCFixedSampleLinearOptimize::descent_run()
     //Store the derivatives and then compute parameter updates
     descentEngineObj->storeDerivRecord();
 
-    descentEngineObj->updateParameters(stepNum, descentNum);
+    descentEngineObj->updateParameters();
 
     std::vector<double> results = descentEngineObj->retrieveNewParams();
 
@@ -1380,8 +1376,6 @@ bool QMCFixedSampleLinearOptimize::descent_run()
     }
 
     stepNum    = stepNum + 1;
-    descentNum = descentNum + 1;
-  }
 
   finish();
   return (optTarget->getReportCounter() > 0);

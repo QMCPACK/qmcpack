@@ -28,6 +28,7 @@ DescentEngine::DescentEngine(Communicate* comm, const xmlNodePtr cur)
       ramp_num(30),
       store_num(5)
 {
+    descent_num_ = -1;
   store_count = 0;
   processXML(cur);
 }
@@ -56,6 +57,8 @@ bool DescentEngine::processXML(const xmlNodePtr cur)
   engineTargetExcited = (excited == "yes");
 
   ramp_eta = (ramp_etaStr == "yes");
+
+  descent_num_++;
 
   return true;
 }
@@ -156,7 +159,7 @@ void DescentEngine::sample_finish()
 
 
 //Function for updating parameters during descent optimization
-void DescentEngine::updateParameters(int stepNum, int descentNum)
+void DescentEngine::updateParameters()
 {
   app_log() << "Number of Parameters: " << numParams << std::endl;
 
@@ -201,7 +204,7 @@ void DescentEngine::updateParameters(int stepNum, int descentNum)
     // small value of d corresponds to quick damping and effectively using
     // steepest descent
     double d           = 100;
-    double decayFactor = std::exp(-(1 / d) * (stepNum));
+    double decayFactor = std::exp(-(1 / d) * (descent_num_));
     gamma              = gamma * decayFactor;
 
     double rho = .9;
@@ -230,7 +233,7 @@ void DescentEngine::updateParameters(int stepNum, int descentNum)
       // Include an additional factor to cause step size to eventually decrease to 0 as number of steps taken increases
       double stepLambda = .1;
 
-      double stepDecayDenom = 1 + stepLambda * stepNum;
+      double stepDecayDenom = 1 + stepLambda * descent_num_;
       tau                   = tau / stepDecayDenom;
 
 
@@ -311,7 +314,7 @@ void DescentEngine::updateParameters(int stepNum, int descentNum)
         double curSquare = std::pow(curDerivSet.at(i), 2);
         double beta1     = .9;
         double beta2     = .99;
-        if (descentNum == 0)
+        if (descent_num_ == 0)
         {
           numerRecords.push_back(0);
           denomRecords.push_back(0);
@@ -319,8 +322,8 @@ void DescentEngine::updateParameters(int stepNum, int descentNum)
         numer = beta1 * numerRecords[i] + (1 - beta1) * curDerivSet[i];
         v     = beta2 * denomRecords[i] + (1 - beta2) * curSquare;
 
-        corNumer = numer / (1 - std::pow(beta1, descentNum + 1));
-        corV     = v / (1 - std::pow(beta2, descentNum + 1));
+        corNumer = numer / (1 - std::pow(beta1, descent_num_ + 1));
+        corV     = v / (1 - std::pow(beta2, descent_num_ + 1));
 
         denom = std::sqrt(corV) + epsilon;
 
@@ -360,7 +363,7 @@ void DescentEngine::updateParameters(int stepNum, int descentNum)
         double curSquare = std::pow(curDerivSet.at(i), 2);
         double beta1     = .9;
         double beta2     = .99;
-        if (descentNum == 0)
+        if (descent_num_ == 0)
         {
           numerRecords.push_back(0);
           denomRecords.push_back(0);
@@ -444,9 +447,9 @@ double DescentEngine::setStepSize(int i)
     type_eta = .001;
   }
 
-  if (ramp_eta && descentNum < ramp_num)
+  if (ramp_eta && descent_num_ < ramp_num)
   {
-    type_eta = type_eta * (descentNum + 1) / ramp_num;
+    type_eta = type_eta * (descent_num_ + 1) / ramp_num;
   }
 
   return type_eta;

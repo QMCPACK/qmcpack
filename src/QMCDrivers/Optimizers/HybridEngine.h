@@ -19,10 +19,9 @@ class HybridEngine
 private:
   Communicate* myComm;
 
-  //number of steps in a descent section of hybrid method
-  int descent_len;
-  //number of steps in a BLM section of hybrid method
-  int blm_len;
+
+  ///number of optimization steps taken
+  int step_num_;
 
   ///process xml node
   bool processXML(const xmlNodePtr cur);

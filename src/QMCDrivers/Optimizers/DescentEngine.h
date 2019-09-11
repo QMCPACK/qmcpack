@@ -60,10 +60,9 @@ private:
   std::vector<double> taus;
   //Vector for storing running average of squares of the derivatives
   std::vector<double> derivsSquared;
-  //Integer for keeping track of the iteration number
-  int stepNum;
+  
   //Integer for keeping track of only number of descent steps taken
-  int descentNum;
+  int descent_num_;
 
   //What variety of gradient descent will be used
   std::string flavor;
@@ -147,7 +146,7 @@ public:
   const std::vector<double>& getAveragedDerivatives() const { return LDerivs; }
 
   // helper method for updating parameter values with descent
-  void updateParameters(int stepNum, int descentNum);
+  void updateParameters();
 
   //helper method for seting step sizes for different parameter types in descent optimization
   double setStepSize(int i);
@@ -162,7 +161,7 @@ public:
 
   const int retrieveStoreFrequency() const { return store_num; }
 
-  const std::vector<std::vector<double>> retrieveHybridBLM_Input() const { return hybridBLM_Input; }
+  const std::vector<std::vector<double>>& retrieveHybridBLM_Input() const { return hybridBLM_Input; }
 
   const std::vector<double> retrieveNewParams() const { return currentParams; }
 };
