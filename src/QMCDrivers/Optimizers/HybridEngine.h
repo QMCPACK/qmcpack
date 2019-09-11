@@ -35,17 +35,15 @@ private:
   //number of updates in each individual method of hybrid method
   std::vector<int> num_updates_opt_methods_;
 
-  int identifyMethodIndex(int counter) const;
+  int identifyMethodIndex() const;
 
 public:
   //Constructor for engine
   HybridEngine(Communicate* comm, const xmlNodePtr cur);
 
-  xmlNodePtr getSelectedXML(int counter);
+  xmlNodePtr getSelectedXML();
 
-  bool queryStore(int counter, int store_num, OptimizerType methodType) const;
-
-  //const int getStepNum() const {return step_num_;}
+  bool queryStore(int store_num, OptimizerType methodType) const;
 
 };
 

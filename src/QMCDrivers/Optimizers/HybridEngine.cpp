@@ -56,16 +56,15 @@ bool HybridEngine::processXML(const xmlNodePtr opt_xml)
   return true;
 }
 
-xmlNodePtr HybridEngine::getSelectedXML(int counter) 
+xmlNodePtr HybridEngine::getSelectedXML() 
 {
 
   step_num_++;
-  app_log() << "step_num_: " << step_num_ << std::endl;
 
-  return saved_xml_opt_methods_[identifyMethodIndex(counter)];
+  return saved_xml_opt_methods_[identifyMethodIndex()];
 }
 
-bool HybridEngine::queryStore(int counter, int store_num, const OptimizerType method) const
+bool HybridEngine::queryStore(int store_num, const OptimizerType method) const
 {
   bool store = false;
 
@@ -80,13 +79,9 @@ bool HybridEngine::queryStore(int counter, int store_num, const OptimizerType me
   }
 
   const int totMicroIt = std::accumulate(num_updates_opt_methods_.begin(), num_updates_opt_methods_.end(), 0);
-  //const int pos = counter % totMicroIt;
   const int pos = step_num_ % totMicroIt;
-    //int pos      = counter % num_updates_opt_methods_[idx];
   int interval = num_updates_opt_methods_[idx] / store_num;
 
-  app_log() << "Pos: " << pos << std::endl;
-  app_log() << "Interval: " << interval << std::endl;
   if(interval == 0)
   {
     app_log() << "Requested Number of Stored Vectors greater than number of descent steps. Storing a vector on each step." << std::endl;
@@ -100,10 +95,9 @@ bool HybridEngine::queryStore(int counter, int store_num, const OptimizerType me
   return store;
 }
 
-int HybridEngine::identifyMethodIndex(int counter) const
+int HybridEngine::identifyMethodIndex() const
 {
   const int totMicroIt = std::accumulate(num_updates_opt_methods_.begin(), num_updates_opt_methods_.end(), 0);
-  //const int pos = counter % totMicroIt;
   const int pos = step_num_ % totMicroIt;
 
   int runSum = 0;

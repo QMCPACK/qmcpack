@@ -168,9 +168,6 @@ QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(MCWalkerConfiguration
                                           shift_scales, app_log());
 #endif
 
-  stepNum    = 0;
-  descentNum = 0;
-
 
   //   stale parameters
   //   m_param.add(eigCG,"eigcg","int");
@@ -475,7 +472,7 @@ bool QMCFixedSampleLinearOptimize::put(xmlNodePtr q)
     if (!hybridEngineObj)
       hybridEngineObj = std::make_unique<HybridEngine>(myComm, q);
 
-    return processOptXML(hybridEngineObj->getSelectedXML(stepNum), vmcMove, reportH5);
+    return processOptXML(hybridEngineObj->getSelectedXML(), vmcMove, reportH5);
   }
   else
     return processOptXML(q, vmcMove, reportH5);
@@ -883,7 +880,6 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
   // remember what the cost function grads flag was
   const bool saved_grads_flag = optTarget->getneedGrads();
 
-  stepNum = stepNum + 1;
   // remember the initial number of samples
   const int init_num_samp = optTarget->getNumSamples();
 
@@ -1366,14 +1362,13 @@ bool QMCFixedSampleLinearOptimize::descent_run()
     if (doHybrid)
     {
       int store_num = descentEngineObj->retrieveStoreFrequency();
-      bool store    = hybridEngineObj->queryStore(stepNum, store_num, OptimizerType::DESCENT);
+      bool store    = hybridEngineObj->queryStore(store_num, OptimizerType::DESCENT);
       if (store)
       {
         descentEngineObj->storeVectors(results);
       }
     }
 
-    stepNum    = stepNum + 1;
   finish();
   return (optTarget->getReportCounter() > 0);
 }

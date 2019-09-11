@@ -191,11 +191,6 @@ private:
   //whether to use hybrid method
   bool doHybrid;
 
-  //Integer for keeping track of the iteration number
-  int stepNum;
-
-  //Integer for keeping track of only the total number of descent steps taken in the entire optimization
-  int descentNum;
 
 };
 } // namespace qmcplusplus
