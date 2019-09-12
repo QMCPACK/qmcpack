@@ -464,7 +464,8 @@ bool QMCFixedSampleLinearOptimize::put(xmlNodePtr q)
   oAttrib.put(q);
   m_param.put(q);
 
-  app_log() << "Called put" << std::endl;
+  doHybrid = false;
+
   if (MinMethod == "hybrid")
   {
     doHybrid = true;
@@ -1348,6 +1349,7 @@ bool QMCFixedSampleLinearOptimize::descent_run()
   descentEngineObj->updateParameters();
 
   std::vector<double> results = descentEngineObj->retrieveNewParams();
+
 
   for (int i = 0; i < results.size(); i++)
   {

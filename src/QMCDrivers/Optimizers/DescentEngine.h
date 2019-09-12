@@ -16,8 +16,11 @@ class DescentEngine
 {
 private:
   //Vectors and scalars used in calculation of averaged derivatives in descent
-  std::vector<double> avg_le_der_samp;
-  std::vector<double> avg_der_rat_samp;
+  std::vector<double> avg_le_der_samp_;
+  std::vector<std::vector<double> > thread_le_der_samp_;
+  
+  std::vector<double> avg_der_rat_samp_;
+  std::vector<std::vector<double> > thread_der_rat_samp_;
 
   double w_sum;
   double e_avg;

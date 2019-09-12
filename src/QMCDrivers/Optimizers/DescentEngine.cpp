@@ -7,6 +7,7 @@
 #include <cmath>
 #include <vector>
 #include <string>
+#include <omp.h>
 #include "QMCDrivers/Optimizers/DescentEngine.h"
 #include "OhmmsData/ParameterSet.h"
 #include "Message/CommOperators.h"
@@ -28,6 +29,14 @@ DescentEngine::DescentEngine(Communicate* comm, const xmlNodePtr cur)
       ramp_num(30),
       store_num(5)
 {
+    int num_threads = omp_get_max_threads();
+
+if(thread_le_der_samp_.size() != num_threads)
+    thread_le_der_samp_.resize(num_threads);
+
+if(thread_der_rat_samp_.size() != num_threads)
+    thread_der_rat_samp_.resize(num_threads);
+
   descent_num_ = 0;
   store_count  = 0;
   processXML(cur);
@@ -64,14 +73,25 @@ bool DescentEngine::processXML(const xmlNodePtr cur)
 
 void DescentEngine::clear_samples(const int numOptimizables)
 {
-  avg_le_der_samp.resize(numOptimizables);
-  avg_der_rat_samp.resize(numOptimizables);
+  avg_le_der_samp_.resize(numOptimizables);
+  avg_der_rat_samp_.resize(numOptimizables);
   LDerivs.resize(numOptimizables);
 
   numParams = numOptimizables;
 
-  std::fill(avg_le_der_samp.begin(), avg_le_der_samp.end(), 0.0);
-  std::fill(avg_der_rat_samp.begin(), avg_der_rat_samp.end(), 0.0);
+  std::fill(avg_le_der_samp_.begin(), avg_le_der_samp_.end(), 0.0);
+  std::fill(avg_der_rat_samp_.begin(), avg_der_rat_samp_.end(), 0.0);
+
+  int num_threads = omp_get_max_threads();
+  for(int i = 0; i < num_threads; i++)
+  {
+    thread_le_der_samp_[i].resize(numOptimizables);
+    std::fill(thread_le_der_samp_[i].begin(), thread_le_der_samp_[i].end(),0.0);
+
+    thread_der_rat_samp_[i].resize(numOptimizables);
+    std::fill(thread_der_rat_samp_[i].begin(),thread_der_rat_samp_[i].end(),0.0);
+  
+  }
 
   w_sum       = 0;
   e_avg       = 0;
@@ -113,11 +133,15 @@ void DescentEngine::take_sample(const std::vector<double>& der_rat_samp,
 {
   const size_t numOptimizables = der_rat_samp.size() - 1;
 
+int myThread = omp_get_thread_num();
+
 
   for (int i = 0; i < numOptimizables; i++)
   {
-    avg_le_der_samp.at(i) += le_der_samp.at(i + 1);
-    avg_der_rat_samp.at(i) += der_rat_samp.at(i + 1);
+    thread_le_der_samp_[myThread].at(i) += le_der_samp.at(i + 1);
+    thread_der_rat_samp_[myThread].at(i) += der_rat_samp.at(i + 1);
+
+
   }
 }
 
@@ -138,22 +162,40 @@ void DescentEngine::take_sample(double local_en, double vgs_samp, double weight_
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 void DescentEngine::sample_finish()
 {
-  myComm->allreduce(avg_le_der_samp);
-  myComm->allreduce(avg_der_rat_samp);
+
+
+    int num_threads = thread_le_der_samp_.size();
+
+    for(int i = 0; i < num_threads; i++)
+    {
+	for(int j = 0 ; j < LDerivs.size();j++)
+	{
+	    avg_le_der_samp_[j] += thread_le_der_samp_[i].at(j);
+	    avg_der_rat_samp_[j] += thread_der_rat_samp_[i].at(j);
+	}
+    }
+
+
+  myComm->allreduce(avg_le_der_samp_);
+  myComm->allreduce(avg_der_rat_samp_);
 
   for (int i = 0; i < LDerivs.size(); i++)
   {
-    avg_le_der_samp.at(i)  = avg_le_der_samp.at(i) / w_sum;
-    avg_der_rat_samp.at(i) = avg_der_rat_samp.at(i) / w_sum;
+    avg_le_der_samp_.at(i)  = avg_le_der_samp_.at(i) / w_sum;
+    avg_der_rat_samp_.at(i) = avg_der_rat_samp_.at(i) / w_sum;
 
-    app_log() << "Parameter # " << i << " Hamiltonian term: " << avg_le_der_samp.at(i) << std::endl;
-    app_log() << "Parameter # " << i << " Overlap term: " << avg_der_rat_samp.at(i) << std::endl;
+    app_log() << "Parameter # " << i << " Hamiltonian term: " << avg_le_der_samp_.at(i) << std::endl;
+    app_log() << "Parameter # " << i << " Overlap term: " << avg_der_rat_samp_.at(i) << std::endl;
 
+    //Computation of averaged derivatives for excited state functional will be added in future
     if (!engineTargetExcited)
     {
-      LDerivs.at(i) = 2 * avg_le_der_samp.at(i) - e_avg * (2 * avg_der_rat_samp.at(i));
+      LDerivs.at(i) = 2 * avg_le_der_samp_.at(i) - e_avg * (2 * avg_der_rat_samp_.at(i));
     }
   }
+
+
+
 }
 
 
@@ -404,7 +446,6 @@ void DescentEngine::updateParameters()
   descent_num_++;
 
 
-  app_log() << "descent_num_: " << descent_num_ << std::endl;
 }
 
 // Helper method for setting step size according parameter type.
