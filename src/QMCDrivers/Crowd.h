@@ -28,6 +28,8 @@ class Crowd
 {
 public:
   using MCPWalker = MCPopulation::MCPWalker;
+  // This is getting a bit eh.
+  using WFBuffer = MCPopulation::MCPWalker::WFBuffer_t;
   using GradType = QMCTraits::GradType;
   using RealType = QMCTraits::RealType;
   /** This is the data structure for walkers within a crowd
@@ -65,6 +67,7 @@ public:
   std::vector<RealType>& get_log_gf() { return log_gf_; }
   std::vector<RealType>& get_log_gb() { return log_gb_; }
   std::vector<RealType>& get_prob() { return prob_; }
+  RefVector<WFBuffer> get_mcp_wfbuffers() { return mcp_wfbuffers_; }
 
   int size() const { return mcp_walkers_.size(); }
 
@@ -72,6 +75,8 @@ public:
   
 private:
   std::vector<std::reference_wrapper<MCPWalker>> mcp_walkers_;
+  RefVector<WFBuffer> mcp_wfbuffers_;
+
   std::vector<std::reference_wrapper<ParticleSet>> walker_elecs_;
   std::vector<std::reference_wrapper<TrialWaveFunction>> walker_twfs_;
   std::vector<std::reference_wrapper<QMCHamiltonian>> walker_hamiltonians_;

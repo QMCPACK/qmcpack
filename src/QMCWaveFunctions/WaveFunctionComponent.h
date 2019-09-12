@@ -499,14 +499,14 @@ struct WaveFunctionComponent : public QMCTraits
    * @param fromscratch request recomputing the precision critical
    *        pieces of wavefunction from scratch
    */
-  virtual void mw_updateBuffer(const std::vector<WaveFunctionComponent*>& WFC_list,
-                               const std::vector<ParticleSet*>& P_list,
-                               const std::vector<WFBufferType*>& buf_list,
+  virtual void mw_updateBuffer(const RefVector<WaveFunctionComponent>& WFC_list,
+                               const RefVector<ParticleSet>& P_list,
+                               const RefVector<WFBufferType>& buf_list,
                                bool fromscratch = false)
   {
     #pragma omp parallel for
     for (int iw = 0; iw < WFC_list.size(); iw++)
-      WFC_list[iw]->updateBuffer(*P_list[iw], *buf_list[iw], fromscratch);
+      WFC_list[iw].get().updateBuffer(P_list[iw], buf_list[iw], fromscratch);
   }
 
   /** For particle-by-particle move. Copy data or attach memory

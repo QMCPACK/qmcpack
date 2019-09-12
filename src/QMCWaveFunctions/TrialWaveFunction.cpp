@@ -742,39 +742,46 @@ TrialWaveFunction::RealType TrialWaveFunction::updateBuffer(ParticleSet& P, WFBu
   return LogValue;
 }
 
-void TrialWaveFunction::flex_updateBuffer(const std::vector<TrialWaveFunction*>& WF_list,
-                                          const std::vector<ParticleSet*>& P_list,
-                                          const std::vector<WFBufferType*>& buf_list,
-                                          bool fromscratch) const
+/** updates "buffer" for multiple wavefunctions SIDEFFECT: reduces wfc values and phases to TWFs
+ *
+ *  NO UNIT TEST
+ */
+void TrialWaveFunction::flex_updateBuffer(const RefVector<TrialWaveFunction>& wf_list,
+                                          const RefVector<ParticleSet>& p_list,
+                                          const RefVector<WFBufferType>& buf_list,
+                                          bool fromscratch)
 {
-  for (int iw = 0; iw < WF_list.size(); iw++)
+  for (int iw = 0; iw < wf_list.size(); iw++)
   {
     constexpr RealType czero(0);
 
-    P_list[iw]->G           = czero; // Ye: remove when updateBuffer of all the WFC uses WF.G/L
-    P_list[iw]->L           = czero; // Ye: remove when updateBuffer of all the WFC uses WF.G/L
-    WF_list[iw]->LogValue   = czero;
-    WF_list[iw]->PhaseValue = czero;
-    buf_list[iw]->rewind(WF_list[iw]->BufferCursor, WF_list[iw]->BufferCursor_scalar);
+    p_list[iw].get().G           = czero; // Ye: remove when updateBuffer of all the WFC uses WF.G/L
+    p_list[iw].get().L           = czero; // Ye: remove when updateBuffer of all the WFC uses WF.G/L
+    wf_list[iw].get().LogValue   = czero;
+    wf_list[iw].get().PhaseValue = czero;
+    buf_list[iw].get().rewind(wf_list[iw].get().BufferCursor, wf_list[iw].get().BufferCursor_scalar);
   }
 
-  for (int i = 0, ii = BUFFER_TIMER; i < Z.size(); ++i, ii += TIMER_SKIP)
+  auto& wavefunction_components = wf_list[0].get().Z;  
+  int num_wfc = wavefunction_components.size();
+
+  for (int i = 0, ii = BUFFER_TIMER; i < num_wfc; ++i, ii += TIMER_SKIP)
   {
-    ScopedTimer local_timer(myTimers[ii]);
-    const auto WFC_list(extract_WFC_list(WF_list, i));
-    Z[i]->mw_updateBuffer(WFC_list, P_list, buf_list, fromscratch);
-    for (int iw = 0; iw < WF_list.size(); iw++)
+    ScopedTimer local_timer(wf_list[0].get().myTimers[ii]);
+    const auto wfc_list(extract_WFC_list(wf_list, i));
+    wavefunction_components[i]->mw_updateBuffer(wfc_list, p_list, buf_list, fromscratch);
+    for (int iw = 0; iw < wf_list.size(); iw++)
     {
-      WF_list[iw]->LogValue += WFC_list[iw]->LogValue;
-      WF_list[iw]->PhaseValue += WFC_list[iw]->PhaseValue;
+      wf_list[iw].get().LogValue += wfc_list[iw].get().LogValue;
+      wf_list[iw].get().PhaseValue += wfc_list[iw].get().PhaseValue;
     }
   }
 
-  for (int iw = 0; iw < WF_list.size(); iw++)
+  for (int iw = 0; iw < wf_list.size(); iw++)
   {
-    buf_list[iw]->put(WF_list[iw]->PhaseValue);
-    buf_list[iw]->put(WF_list[iw]->LogValue);
-    assert(buf_list[iw]->size() == buf_list[iw]->current() + buf_list[iw]->current_scalar() * sizeof(double));
+    buf_list[iw].get().put(wf_list[iw].get().PhaseValue);
+    buf_list[iw].get().put(wf_list[iw].get().LogValue);
+    assert(buf_list[iw].get().size() == buf_list[iw].get().current() + buf_list[iw].get().current_scalar() * sizeof(double));
   }
 }
 

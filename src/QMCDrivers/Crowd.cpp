@@ -37,6 +37,7 @@ void Crowd::reserve(int crowd_size)
 void Crowd::addWalker(MCPWalker& walker, ParticleSet& elecs, TrialWaveFunction& twf, QMCHamiltonian& hamiltonian)
 {
   mcp_walkers_.push_back(walker);
+  mcp_wfbuffers_.push_back(walker.DataSet);
   walker_elecs_.push_back(elecs);
   walker_twfs_.push_back(twf);
   walker_hamiltonians_.push_back(hamiltonian);

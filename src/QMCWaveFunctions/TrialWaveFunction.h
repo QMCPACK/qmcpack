@@ -260,10 +260,10 @@ public:
   /* flexible batched version of updateBuffer. 
    * Ye: perhaps it doesn't need to be flexible but just operates on all the walkers
    */
-  void flex_updateBuffer(const std::vector<TrialWaveFunction*>& WF_list,
-                         const std::vector<ParticleSet*>& P_list,
-                         const std::vector<WFBufferType*>& buf_list,
-                         bool fromscratch = false) const;
+  static void flex_updateBuffer(const RefVector<TrialWaveFunction>& WF_list,
+                         const RefVector<ParticleSet>& P_list,
+                         const RefVector<WFBufferType>& buf_list,
+                         bool fromscratch = false);
 
   /** copy all the wavefunction components from buffer.
    *  See WaveFunctionComponent::updateBuffer for more detail */

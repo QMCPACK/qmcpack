@@ -188,8 +188,11 @@ void VMCBatched::advanceWalkers(const StateForThread& sft, Crowd& crowd, Context
   std::for_each(crowd.get_walker_elecs().begin(),
                 crowd.get_walker_elecs().end(),
                 [](auto& elecs){elecs.get().donePbyP();});
+
+  TrialWaveFunction::flex_updateBuffer(crowd.get_walker_twfs(), crowd.get_walker_elecs(),
+                                       crowd.get_mcp_wfbuffers());
+
   // TODO:
-  //  update the buffer.
   //  save the walkers
   //  evaluate the Hamiltonian
   //  accumulate
