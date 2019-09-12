@@ -70,7 +70,6 @@ VMCBatched::IndexType VMCBatched::calc_default_local_walkers()
 
 void VMCBatched::advanceWalkers(const StateForThread& sft, Crowd& crowd, ContextForSteps& step_context, bool recompute)
 {
-  //step_context.loadCrowd(crowd);
   crowd.loadWalkers();
   auto it_walker_twfs  = crowd.beginTrialWaveFunctions();
   auto it_mcp_walkers  = crowd.beginWalkers();
@@ -102,10 +101,12 @@ void VMCBatched::advanceWalkers(const StateForThread& sft, Crowd& crowd, Context
     int end_index        = step_context.getPtclGroupEnd(ig);
     for (int iat = start_index; iat < end_index; ++iat)
     {
-      crowd.start();
+      crowd.clearResults();
+      ParticleSet::flex_setActive(crowd.get_walker_elecs(), iat);
       // step_context.deltaRsBegin returns an iterator to a flat series of PosTypes
       // fastest in walkers then particles
       auto delta_r_start = it_delta_r + iat * num_particles * num_walkers;
+
       if (use_drift)
       {
         TrialWaveFunction::flex_evalGrad(crowd.get_walker_twfs(), crowd.get_walker_elecs(), iat, crowd.get_grads_now());
@@ -121,16 +122,10 @@ void VMCBatched::advanceWalkers(const StateForThread& sft, Crowd& crowd, Context
                        [sqrttau](auto& drift, auto& delta_r){
                          return sqrttau * delta_r;});
       }
-      // avoiding non standard semantics of std::vector<bool>
-      std::vector<short> accept(num_walkers, 1);
-      // for now we skip no evaluations based on this as it breaks the simple std::transform pattern.
-      // best solution would be an algorithm that was like std::transform with a mask.
+
       auto elecs = crowd.get_walker_elecs();
-      for(int i_walker = 0; i_walker < crowd.size(); ++i_walker)
-      {
-        accept[i_walker] = elecs[i_walker].get().makeMoveAndCheck(iat, drifts[i_walker]) ? 1 : 0;
-        step_context.incReject();
-      }
+      ParticleSet::flex_makeMove(crowd.get_walker_elecs(), iat, drifts);
+
       // This is inelegant
       if(use_drift)
       {
@@ -157,10 +152,12 @@ void VMCBatched::advanceWalkers(const StateForThread& sft, Crowd& crowd, Context
         TrialWaveFunction::flex_calcRatio(crowd.get_walker_twfs(), crowd.get_walker_elecs(),
                                       iat, crowd.get_ratios());
       }
+
       std::transform(crowd.get_ratios().begin(),
                      crowd.get_ratios().end(),
                      crowd.get_prob().begin(),
-                     [](auto ratio){ return std::real(ratio * ratio); });
+                     [](auto ratio){ return std::real(ratio) * std::real(ratio); });
+
       for(int i_accept = 0; i_accept < num_walkers; ++i_accept)
       {
         TrialWaveFunction& walker_twf = crowd.get_walker_twfs()[i_accept].get();
@@ -169,7 +166,7 @@ void VMCBatched::advanceWalkers(const StateForThread& sft, Crowd& crowd, Context
         auto log_gf = crowd.get_log_gf()[i_accept];
         auto log_gb = crowd.get_log_gb()[i_accept];
           
-        if (accept[i_accept] && prob >= std::numeric_limits<RealType>::epsilon()
+        if (prob >= std::numeric_limits<RealType>::epsilon()
             && step_context.get_random_gen()() < prob * std::exp(log_gf - log_gb))
         {
           step_context.incAccept();

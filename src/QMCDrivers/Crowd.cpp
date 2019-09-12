@@ -12,6 +12,15 @@
 namespace qmcplusplus
 {
 
+void Crowd::clearResults()
+{
+  // These were cleared to 1.0 each loop by VMCUpdatePbyP advance walker
+  // refactored code may depend on this initial value.
+  std::fill(log_gf_.begin(), log_gf_.end(), 1.0);
+  std::fill(log_gb_.begin(), log_gb_.end(), 1.0);
+}
+
+
 void Crowd::reserve(int crowd_size)
 {
   auto reserveCS = [crowd_size](auto& avector) {
@@ -44,6 +53,7 @@ void Crowd::loadWalkers()
     ++it_walker;
     ++it_walker_elecs;
   }
+
 }
 
 }

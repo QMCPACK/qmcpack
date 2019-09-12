@@ -68,13 +68,7 @@ public:
 
   int size() const { return mcp_walkers_.size(); }
 
-  void start()
-  {
-    // These were cleared to 1.0 each loop by VMCUpdatePbyP advance walker
-    // refactored code may depend on this initial value.
-    std::fill(log_gf_.begin(), log_gf_.end(), 1.0);
-    std::fill(log_gb_.begin(), log_gb_.end(), 1.0);
-  }
+  void clearResults();
   
 private:
   std::vector<std::reference_wrapper<MCPWalker>> mcp_walkers_;

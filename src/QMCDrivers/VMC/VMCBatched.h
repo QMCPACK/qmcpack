@@ -78,6 +78,7 @@ public:
                          const StateForThread& sft,
                          std::vector<std::unique_ptr<ContextForSteps>>& move_context,
                          std::vector<std::unique_ptr<Crowd>>& crowds);
+
   void setup();
   //inline std::vector<RandomGenerator_t*>& getRng() { return Rng;}
   IndexType calc_default_local_walkers();
