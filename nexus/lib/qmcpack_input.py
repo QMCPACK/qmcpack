@@ -138,19 +138,18 @@ import inspect
 import keyword
 from numpy import fromstring,empty,array,float64,\
     loadtxt,ndarray,dtype,sqrt,pi,arange,exp,eye,\
-    ceil,mod,dot,abs,identity,floor
+    ceil,mod,dot,abs,identity,floor,linalg,where,isclose
 from StringIO import StringIO
 from superstring import string2val
 from generic import obj,hidden
 from xmlreader import XMLreader,XMLelement
 from developer import DevBase,error
 from periodic_table import is_element
-from structure import Structure,Jellium
+from structure import Structure,Jellium,get_kpath
 from physical_system import PhysicalSystem
 from simulation import SimulationInput,SimulationInputTemplate
 from pwscf_input import array_to_string as pwscf_array_string
 from debug import ci as interact
-
 
 yesno_dict     = {True:'yes' ,False:'no'}
 truefalse_dict = {True:'true',False:'false'}
@@ -4515,19 +4514,32 @@ def generate_determinantset_old(type           = 'bspline',
         format_failed = False
         if not isinstance(excitation,(tuple,list)):
             QmcpackInput.class_error('excitation must be a tuple or list\nyou provided type: {0}\nwith value: {1}'.format(excitation.__class__.__name__,excitation))
-        elif len(excitation)!=2 or excitation[0] not in ('up','down') or not isinstance(excitation[1],str):
+        elif excitation[0] not in ('up','down') or not isinstance(excitation[1],str):
             format_failed = True
         else:
-            try:
-                tmp = array(excitation[1].split(),dtype=int)
-            except:
+            #There are three types of input:
+            #1. excitation=['up','0 45 3 46'] 
+            #2. excitation=['up','-215 216']  
+            #3. excitation=['up', 'L vb F cb']
+            if len(excitation) == 2: #Type 1 or 2 
+                if 'cb' not in excitation[1] and 'vb' not in excitation[1]:
+                    try:
+                        tmp = array(excitation[1].split(),dtype=int)
+                    except:
+                        format_failed = True
+                    #end try
+                #end if
+            else:
                 format_failed = True
-            #end try
+            #end if
         #end if
         if format_failed:
+            #Should be modified
             QmcpackInput.class_error('excitation must be a tuple or list with with two elements\nthe first element must be either "up" or "down"\nand the second element must be integers separated by spaces, e.g. "-216 +217"\nyou provided: {0}'.format(excitation))
         #end if
+        
         spin_channel,excitation = excitation
+        
         if spin_channel=='up':
             det = dset.get('updet')
         elif spin_channel=='down':
@@ -4537,10 +4549,89 @@ def generate_determinantset_old(type           = 'bspline',
 	occ.pairs    = 1
         occ.mode     = 'excited'
         occ.contents = '\n'+excitation+'\n'
-        if '-' in excitation or '+' in excitation:
+        # add new input format
+        if 'cb' in excitation or 'vb' in excitation: #Type 3
+            # assume excitation of form 'gamma vb k cb' or 'gamma vb-1 k cb+1'
+            excitation = excitation.upper().split(' ')
+            if len(excitation) == 4:
+                k_1, band_1, k_2, band_2 = excitation
+            else:
+                QmcpackInput.class_error('excitation with vb-cb band format works only with special k-points')
+            #end if
+            
+            vb = int(det.size / abs(linalg.det(tilematrix))) -1  # Separate for each spin channel
+            cb = vb+1
+            # Convert band_1, band_2 to band indexes
+            bands = [band_1, band_2]
+            for bnum, b in enumerate(bands):
+                if 'CB' in b:
+                    if '-' in b:
+                        b = b.split('-')
+                        bands[bnum] = cb - int(b[1])
+                    elif '+' in b:
+                        b = b.split('+')
+                        bands[bnum] = cb + int(b[1])
+                    else:
+                        bands[bnum] = cb
+                    #end if
+                elif 'VB' in b:
+                    if '-' in b:
+                        b = b.split('-')
+                        bands[bnum] = vb - int(b[1])
+                    elif '+' in b:
+                        b = b.split('+')
+                        bands[bnum] = vb + int(b[1])
+                    else:
+                        bands[bnum] = vb
+                    #end if
+                else:
+                    QmcpackInput.class_error('{0} in excitation has the wrong formatting'.format(b))
+                #end if
+            #end for
+            band_1, band_2 = bands
+            
+            # Convert k_1 k_2 to wavevector indexes
+            structure   = system.structure.folded_structure.copy()
+            structure.change_units('A')
+            kpath       = get_kpath(structure=structure)
+            kpath_label = array(kpath['explicit_kpoints_labels'])
+            kpath_rel   = kpath['explicit_kpoints_rel']
+            
+            k1_in = k_1
+            k2_in = k_2
+            if k_1 in kpath_label and k_2 in kpath_label:   
+                k_1 = kpath_rel[where(kpath_label == k_1)][0]
+                k_2 = kpath_rel[where(kpath_label == k_2)][0]
+
+                #kpts = nscf.input.k_points.kpoints
+                kpts = structure.kpoints_unit()
+                found_k1 = False
+                found_k2 = False
+                for knum, k in enumerate(kpts):
+                    if isclose(k_1, k).all():
+                        k_1 = knum
+                        found_k1 = True
+                    #end if
+                    if isclose(k_2, k).all():
+                        k_2 = knum
+                        found_k2 = True
+                    #end if
+                #end for
+                if not found_k1 or not found_k2:
+                    QmcpackInput.class_error('Requested special kpoint is not in the tiled cell\nRequested "{}", present={}\nRequested "{}", present={}\nAvailable kpoints: {}'.format(k1_in,found_k1,k2_in,found_k2,sorted(set(kpath_label))))
+                #end if
+            else:
+                QmcpackInput.class_error('Excitation wavevectors are not found in the kpath\nlabels requested: {} {}\nlabels present: {}'.format(k_1,k_2,sorted(set(kpath_label))))
+            #end if
+
+            #Write everything in band (ti,bi) format
+            occ.contents = '\n'+str(k_1)+' '+str(band_1)+' '+str(k_2)+' '+str(band_2)+'\n'
+            occ.format = 'band'
+            
+        elif '-' in excitation or '+' in excitation: #Type 2
             # assume excitation of form '-216 +217'
             occ.format = 'energy'
-        else:
+        else: #Type 1
             # assume excitation of form '6 36 6 37'
             occ.format   = 'band'
         #end if

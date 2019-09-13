@@ -19,7 +19,7 @@
 ;;  following QMCPACK coding conventions and should produce code following
 ;;  the same conventions.
 
-;;  There is more copy pasting than there should be feel free to refactor
+;;  There is more copy pasting than there should be feel, free to refactor
 
 ;;; Code:
 (defun qmcp-leading-indent ()
@@ -31,6 +31,8 @@ a correction string"
       (if (not(= (point) (line-beginning-position)))
           (make-string (- (point) (line-beginning-position)) ? )
         "")))
+
+(setq qmcp-variable-declaration-re "\\( *\\)\\([<>,A-Za-z:_&\\*]+\\)\\( +\\)\\([A-Za-z_0-9]+\\)_.*;")
 
 (defun qmcp-add-getters()
   "For each C++ variable declaration in REGION write getter.
@@ -47,9 +49,10 @@ The getter functions are written on starting on the line after the REGION."
               (my-var "")
               (getter-line "")
               (first-line (line-beginning-position))
-              (variable-declaration-re "\\( *\\)\\([A-Za-z:]+\\)\\( +\\)\\([A-Za-z_0-9]+\\)_.*;"))
+              ;; (variable-declaration-re "\\( *\\)\\([<>,A-Za-z:_]+\\)\\( +\\)\\([A-Za-z_0-9]+\\)_.*;")
+              )
           (setq getters "")
-          (while (re-search-forward variable-declaration-re nil t)
+          (while (re-search-forward qmcp-variable-declaration-re nil t)
             (message "match")
             (setq indent (match-string 1))
             (when (= first-line (line-beginning-position))
@@ -77,9 +80,10 @@ The getter functions are written on starting on the line after the REGION."
           (my-var "")
           (setter-line "")
           (first-line (line-beginning-position))
-          (variable-declaration-re "\\( *\\)\\([A-Za-z:]+\\)\\( +\\)\\([A-Za-z_0-9]+\\)_.*;"))
+          ;; (variable-declaration-re "\\( *\\)\\([A-Za-z:]+\\)\\( +\\)\\([A-Za-z_0-9]+\\)_.*;")
+          )
       (setq setters "")
-      (while (re-search-forward variable-declaration-re nil t)
+      (while (re-search-forward qmcp-variable-declaration-re nil t)
         (setq indent (match-string 1))
         (when (= first-line (line-beginning-position))
           (setq indent (concat indent leading-indent)))

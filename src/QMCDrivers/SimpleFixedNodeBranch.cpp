@@ -25,12 +25,6 @@
 #include "Estimators/EstimatorManagerBase.h"
 #include "QMCDrivers/BranchIO.h"
 #include "Particle/Reptile.h"
-#ifdef HAVE_ADIOS
-#include <adios.h>
-#endif
-
-
-//#include <boost/archive/text_oarchive.hpp>
 
 namespace qmcplusplus
 {
@@ -44,7 +38,7 @@ enum
 };
 
 SimpleFixedNodeBranch::SimpleFixedNodeBranch(RealType tau, int nideal)
-    : vParam(1.0), WalkerController(0), BackupWalkerController(0), MyEstimator(0) //, PopHist(5), DMCEnergyHist(5)
+    : vParam(1.0), MyEstimator(0) //, PopHist(5), DMCEnergyHist(5)
 {
   BranchMode.set(B_DMCSTAGE, 0);     //warmup stage
   BranchMode.set(B_POPCONTROL, 1);   //use standard DMC
@@ -81,7 +75,6 @@ SimpleFixedNodeBranch::SimpleFixedNodeBranch(const SimpleFixedNodeBranch& abranc
     : BranchMode(abranch.BranchMode),
       iParam(abranch.iParam),
       vParam(abranch.vParam),
-      WalkerController(0),
       MyEstimator(0),
       sParam(abranch.sParam),
       branching_cutoff_scheme(abranch.branching_cutoff_scheme)
@@ -137,7 +130,7 @@ int SimpleFixedNodeBranch::initWalkerController(MCWalkerConfiguration& walkers, 
   int nwtot_now = walkers.getGlobalNumWalkers();
 
   //this is the first time DMC is used
-  if (WalkerController == 0)
+  if (WalkerController == nullptr)
   {
     if (iParam[B_TARGETWALKERS] == 0)
     {
@@ -152,7 +145,7 @@ int SimpleFixedNodeBranch::initWalkerController(MCWalkerConfiguration& walkers, 
       walkers.setWalkerOffsets(nwoff);
       iParam[B_TARGETWALKERS] = nwoff[ncontexts];
     }
-    WalkerController = createWalkerController(iParam[B_TARGETWALKERS], MyEstimator->getCommunicator(), myNode);
+    WalkerController.reset(createWalkerController(iParam[B_TARGETWALKERS], MyEstimator->getCommunicator(), myNode));
     if (!BranchMode[B_RESTART])
     {
       fromscratch = true;
@@ -165,9 +158,9 @@ int SimpleFixedNodeBranch::initWalkerController(MCWalkerConfiguration& walkers, 
       if (!fixW && sParam[MIXDMCOPT] == "yes")
       {
         app_log() << "Warmup DMC is done with a fixed population " << iParam[B_TARGETWALKERS] << std::endl;
-        BackupWalkerController = WalkerController; //save the main controller
-        WalkerController =
-            createWalkerController(iParam[B_TARGETWALKERS], MyEstimator->getCommunicator(), myNode, true);
+        BackupWalkerController = std::move(WalkerController); //save the main controller
+        WalkerController.reset(
+            createWalkerController(iParam[B_TARGETWALKERS], MyEstimator->getCommunicator(), myNode, true));
         BranchMode.set(B_POPCONTROL, 0);
       }
       //PopHist.clear();
@@ -358,8 +351,7 @@ void SimpleFixedNodeBranch::branch(int iter, MCWalkerConfiguration& walkers)
       {
         app_log() << "Switching to DMC with fluctuating populations" << std::endl;
         BranchMode.set(B_POPCONTROL, 1); //use standard DMC
-        delete WalkerController;
-        WalkerController       = BackupWalkerController;
+        WalkerController       = std::move(BackupWalkerController);
         BackupWalkerController = 0;
         vParam[B_ETRIAL]       = vParam[B_EREF];
         app_log() << "  Etrial     = " << vParam[B_ETRIAL] << std::endl;
@@ -582,7 +574,7 @@ int SimpleFixedNodeBranch::resetRun(xmlNodePtr cur)
     return 1;
   }
 
-  if (WalkerController == 0)
+  if (WalkerController == nullptr)
   {
     APP_ABORT("SimpleFixedNodeBranch::resetRun cannot initialize WalkerController");
   }
@@ -591,8 +583,7 @@ int SimpleFixedNodeBranch::resetRun(xmlNodePtr cur)
   {
     app_log() << "Destroy WalkerController. Existing method " << WalkerController->MyMethod << std::endl;
     ;
-    delete WalkerController;
-    WalkerController = createWalkerController(iParam[B_TARGETWALKERS], MyEstimator->getCommunicator(), myNode);
+    WalkerController.reset(createWalkerController(iParam[B_TARGETWALKERS], MyEstimator->getCommunicator(), myNode));
     app_log().flush();
 
     BranchMode[B_POPCONTROL] = (WalkerController->MyMethod == 0);
@@ -752,19 +743,6 @@ void SimpleFixedNodeBranch::write(const std::string& fname, bool overwrite)
   }
 }
 
-#ifdef HAVE_ADIOS
-void SimpleFixedNodeBranch::save_energy()
-{
-  if (MyEstimator->is_manager())
-  {
-    //\since 2008-06-24
-    vParam[B_ACC_ENERGY]  = EnergyHist.result();
-    vParam[B_ACC_SAMPLES] = EnergyHist.count();
-  }
-}
-#endif
-
-
 void SimpleFixedNodeBranch::read(const std::string& fname)
 {
   BranchMode.set(B_RESTART, 0);
@@ -793,39 +771,8 @@ void SimpleFixedNodeBranch::read(const std::string& fname)
     }
   }
 
-  //char fname2[128];
-  //sprintf(fname2,"%s.p%03d.config",fname.c_str(),OHMMS::Controller->rank());
-  //ofstream fout(fname2);
-  //fout << "    Restarting, cummulative properties:"
-  //          << "\n      energy     = " << EnergyHist.mean()
-  //          << "\n      variance   = " << VarianceHist.mean()
-  //          << "\n      r2accepted = " << R2Accepted.mean()
-  //          << "\n      r2proposed = " << R2Proposed.mean()
-  //          << std::endl;
   app_log().flush();
 }
-
-//   void SimpleFixedNodeBranch::storeConfigsForForwardWalking(MCWalkerConfiguration& w)
-//   {
-//     WalkerController->storeConfigsForForwardWalking(w);
-//   }
-//
-//   void SimpleFixedNodeBranch::clearConfigsForForwardWalking( )
-//   {
-//     WalkerController->clearConfigsForForwardWalking( );
-//   }
-//
-//   void SimpleFixedNodeBranch::debugFWconfig()
-//   {
-//     std::cout <<"FW size "<<WalkerController->sizeOfConfigsForForwardWalking()<< std::endl;
-//     for(int i=0;i<WalkerController->ForwardWalkingHistory.size();i++) {
-//       std::cout <<" Next Gen "<<i<< std::endl;
-//       for(int j=0;j<WalkerController->ForwardWalkingHistory[i].size();j++)
-//       {
-//         std::cout <<j<<" "<<WalkerController->ForwardWalkingHistory[i][j].ID<<" "<<WalkerController->ForwardWalkingHistory[i][j].ParentID<< std::endl;
-//       }
-//     }
-//   }
 
 void SimpleFixedNodeBranch::setBranchCutoff(FullPrecRealType variance,
                                             FullPrecRealType targetSigma,

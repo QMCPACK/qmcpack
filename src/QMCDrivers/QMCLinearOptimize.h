@@ -19,6 +19,7 @@
 #ifndef QMCPLUSPLUS_QMCLINEAROPTIMIZATION_VMCSINGLE_H
 #define QMCPLUSPLUS_QMCLINEAROPTIMIZATION_VMCSINGLE_H
 
+#include <memory>
 #include "QMCDrivers/QMCDriver.h"
 #include "Optimize/OptimizeBase.h"
 #include "QMCApp/WaveFunctionPool.h"
@@ -34,6 +35,7 @@ namespace qmcplusplus
 ///forward declaration of a cost function
 class QMCCostFunctionBase;
 class HamiltonianPool;
+
 
 /** @ingroup QMCDrivers
  * @brief Implements wave-function optimization
@@ -78,7 +80,7 @@ public:
   ///need to know HamiltonianPool to use OMP
   HamiltonianPool& hamPool;
   ///target cost function to optimize
-  QMCCostFunctionBase* optTarget;
+  std::unique_ptr<QMCCostFunctionBase> optTarget;
   ///Dimension of matrix and number of parameters
   int N, numParams;
   ///vmc engine
@@ -189,10 +191,13 @@ public:
   bool nonLinearRescale(std::vector<RealType>& dP, Matrix<RealType>& S);
   RealType getNonLinearRescale(std::vector<RealType>& dP, Matrix<RealType>& S);
   void generateSamples();
-  void add_timers(std::vector<NewTimer*>& timers);
 
   virtual QMCRunType getRunType() { return QMCRunType::LINEAR_OPTIMIZE; }
-  std::vector<NewTimer*> myTimers;
+  NewTimer& generate_samples_timer_;
+  NewTimer& initialize_timer_;
+  NewTimer& eigenvalue_timer_;
+  NewTimer& line_min_timer_;
+  NewTimer& cost_function_timer_;
   Timer t1;
 };
 } // namespace qmcplusplus

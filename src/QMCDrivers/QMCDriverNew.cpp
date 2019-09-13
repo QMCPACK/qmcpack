@@ -35,36 +35,42 @@
 #include "OhmmsApp/RandomNumberControl.h"
 #include "HDFVersion.h"
 #include "qmc_common.h"
-
+#include "Concurrency/Info.hpp"
 #include "QMCDrivers/GreenFunctionModifiers/DriftModifierBuilder.h"
 
 namespace qmcplusplus
 {
+/** Has nasty workaround for RandomNumberControl
+ *   
+ *  Num crowds must be less than omp_get_max_threads because RandomNumberControl is global c lib function
+ *  masquerading as a C++ object.
+ */
 QMCDriverNew::QMCDriverNew(QMCDriverInput&& input,
-                           MCPopulation& population,
+                           MCPopulation&& population,
                            TrialWaveFunction& psi,
                            QMCHamiltonian& h,
                            WaveFunctionPool& ppool,
                            Communicate* comm)
     : MPIObjectBase(comm),
       qmcdriver_input_(input),
-      num_crowds_(input.get_num_crowds()),
-      branchEngine(0),
-      DriftModifier(0),
-      population_(population),
+      branchEngine(nullptr),
+      population_(std::move(population)),
       Psi(psi),
       H(h),
       psiPool(ppool),
-      Estimators(0),
-      wOut(0)
+      estimator_manager_(nullptr),
+      wOut(0),
+      walkers_per_crowd_(1)
+      // num_crowds_(input.get_num_crowds())
 {
-  reset_random = false;
-
   QMCType = "invalid";
 
-  ////add each QMCHamiltonianBase to W.PropertyList so that averages can be taken
-  //H.add2WalkerProperty(W);
-  //if (storeConfigs) ForwardWalkingHistory.storeConfigsForForwardWalking(w);
+  // Avoids segmentation fault when RandomNumberControl::Children is too small, adds surprising behavior
+  if(Concurrency::maxThreads() < input.get_num_crowds())
+    set_num_crowds(Concurrency::maxThreads(), "RandomNumberControl's maximum children set to omp_get_max_threads()");
+  else
+    num_crowds_ = input.get_num_crowds();
+ 
   rotation = 0;
 
   checkpointTimer = TimerManager.createTimer("checkpoint::recordBlock", timer_level_medium);
@@ -72,21 +78,16 @@ QMCDriverNew::QMCDriverNew(QMCDriverInput&& input,
 
 int QMCDriverNew::addObservable(const std::string& aname)
 {
-  if (Estimators)
-    return Estimators->addObservable(aname.c_str());
+  if (estimator_manager_)
+    return estimator_manager_->addObservable(aname.c_str());
   else
     return -1;
 }
 
-QMCDriverNew::RealType QMCDriverNew::getObservable(int i) { return Estimators->getObservable(i); }
+QMCDriverNew::RealType QMCDriverNew::getObservable(int i) { return estimator_manager_->getObservable(i); }
 
 
-QMCDriverNew::~QMCDriverNew()
-{
-  delete_iter(Rng.begin(), Rng.end());
-  if (DriftModifier)
-    delete DriftModifier;
-}
+QMCDriverNew::~QMCDriverNew() {}
 
 void QMCDriverNew::add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi)
 {
@@ -111,65 +112,85 @@ void QMCDriverNew::add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi)
  */
 void QMCDriverNew::process(xmlNodePtr cur)
 {
-  //  deltaR.resize(W.getTotalNum());
-  //  drift.resize(W.getTotalNum());
+  // if (qmcdriver_input_.get_reset_random() || RandomNumberControl)
+  // {
 
-  if (!qmcdriver_input_.get_append_run())
-    current_step_ = 0;
-  else
-    current_step_ = qmcdriver_input_.get_starting_step();
+  // if seeds are not made then neither are the children. So when MoveContexts are created a segfault occurs.
+  // For now it is unclear whether get_reset_random should always be true on the first run or what.
+  app_log() << "  Regenerate random seeds." << std::endl;
+  RandomNumberControl::make_seeds();
+  // }
+  
+  setupWalkers();
 
+  // If you really want to persist the MCPopulation it is not the business of QMCDriver to reset it.
+  // It could tell it we are starting a new section but shouldn't be pulling internal strings.
   //int numCopies = (H1.empty()) ? 1 : H1.size();
   //W.resetWalkerProperty(numCopies);
 
-  //create branchEngine first
-  if (branchEngine == 0)
+  if (!branchEngine)
   {
     branchEngine = new SimpleFixedNodeBranch(qmcdriver_input_.get_tau(), population_.get_num_global_walkers());
   }
 
   //create and initialize estimator
-  Estimators = branchEngine->getEstimatorManager();
-  if (Estimators == 0)
+  estimator_manager_ = branchEngine->getEstimatorManager();
+  if (!estimator_manager_)
   {
-    Estimators = new EstimatorManagerBase(myComm);
-    branchEngine->setEstimatorManager(Estimators);
-    branchEngine->read(h5FileRoot);
+    estimator_manager_ = new EstimatorManagerBase(myComm);
+    branchEngine->setEstimatorManager(estimator_manager_);
+    // This used to get updated as a side effect of setStatus
+    branchEngine->read(h5_file_root_);
   }
-  if (DriftModifier == 0)
-    DriftModifier = createDriftModifier(cur, myComm);
-  DriftModifier->parseXML(cur);
+
+  if (!drift_modifier_)
+    drift_modifier_.reset(createDriftModifier(qmcdriver_input_));
+
   branchEngine->put(cur);
-  // Estimators->put(W, H, cur);
-  // if (wOut == 0)
-  //   wOut = new HDFWalkerOutput(W, RootName, myComm);
-  branchEngine->start(RootName);
-  branchEngine->write(RootName);
-  //use new random seeds
-  if (reset_random)
+  estimator_manager_->put(H, cur);
+
+  crowds_.resize(num_crowds_);
+  // at this point we can finally construct the Crowd objects.
+  // neglecting first touch for the moment
+  // because em cloning is not threadsafe
+  for(int i = 0; i < num_crowds_; ++i)
   {
-    app_log() << "  Regenerate random seeds." << std::endl;
-    RandomNumberControl::make_seeds();
-    reset_random = false;
-  }
-  //flush the std::ostreams
-  infoSummary.flush();
-  infoLog.flush();
-  //increment QMCCounter of the branch engine
+    crowds_[i].reset(new Crowd(*estimator_manager_));
+  }//  crowds_.push_back(
+                        
+  // Once they are created move contexts can be created.
+  createRngsStepContexts();
+
+  // if (wOut == 0)
+  //   wOut = new HDFWalkerOutput(W, root_name_, myComm);
+  branchEngine->start(root_name_);
+  branchEngine->write(root_name_);
+
+  // PD: not really sure what the point of this is.  Seems to just go to output
   branchEngine->advanceQMCCounter();
 }
 
+/** QMCDriverNew ignores h5name if you want to read and h5 config you have to explicitly
+ *  do so.
+ */
 void QMCDriverNew::setStatus(const std::string& aname, const std::string& h5name, bool append)
 {
-  RootName = aname;
+  root_name_ = aname;
   app_log() << "\n========================================================="
-            << "\n  Start " << QMCType << "\n  File Root " << RootName;
+            << "\n  Start " << QMCType << "\n  File Root " << root_name_;
   app_log() << "\n=========================================================" << std::endl;
+
   if (h5name.size())
-    h5FileRoot = h5name;
+    h5_file_root_ = h5name;
 }
 
-
+void QMCDriverNew::set_num_crowds(int num_crowds, const std::string& reason)
+{
+  num_crowds_ = num_crowds;
+  app_warning() << " [INPUT OVERIDDEN] The number of crowds has been set to :  " << num_crowds << '\n';
+  app_warning() << " Overiding the input of value of " << qmcdriver_input_.get_num_crowds() << " because " << reason
+                << std::endl;
+}
 /** Read walker configurations from *.config.h5 files
  * @param wset list of xml elements containing mcwalkerset
  *
@@ -210,31 +231,31 @@ void QMCDriverNew::putWalkers(std::vector<xmlNodePtr>& wset)
   //   qmc_common.is_restart = false;
 }
 
-std::string QMCDriverNew::getRotationName(std::string RootName)
+std::string QMCDriverNew::getRotationName(std::string root_name)
 {
   std::string r_RootName;
   if (rotation % 2 == 0)
   {
-    r_RootName = RootName;
+    r_RootName = root_name;
   }
   else
   {
-    r_RootName = RootName + ".bk";
+    r_RootName = root_name + ".bk";
   }
   rotation++;
   return r_RootName;
 }
 
-std::string QMCDriverNew::getLastRotationName(std::string RootName)
+std::string QMCDriverNew::getLastRotationName(std::string root_name)
 {
   std::string r_RootName;
   if ((rotation - 1) % 2 == 0)
   {
-    r_RootName = RootName;
+    r_RootName = root_name;
   }
   else
   {
-    r_RootName = RootName + ".bk";
+    r_RootName = root_name + ".bk";
   }
   return r_RootName;
 }
@@ -244,8 +265,8 @@ void QMCDriverNew::recordBlock(int block)
   if (qmcdriver_input_.get_dump_config() && block % qmcdriver_input_.get_check_point_period().period == 0)
   {
     checkpointTimer->start();
-    branchEngine->write(RootName, true); //save energy_history
-    RandomNumberControl::write(RootName, myComm);
+    branchEngine->write(root_name_, true); //save energy_history
+    RandomNumberControl::write(root_name_, myComm);
     checkpointTimer->stop();
   }
 }
@@ -255,7 +276,7 @@ bool QMCDriverNew::finalize(int block, bool dumpwalkers)
   //  branchEngine->finalize(W);
 
   if (qmcdriver_input_.get_dump_config())
-    RandomNumberControl::write(RootName, myComm);
+    RandomNumberControl::write(root_name_, myComm);
 
   return true;
 }
@@ -265,51 +286,25 @@ bool QMCDriverNew::finalize(int block, bool dumpwalkers)
  */
 void QMCDriverNew::setupWalkers()
 {
-  //if walkers are initialized via <mcwalkerset/>, use the existing one
-  if (qmcdriver_input_.get_qmc_section_count() > 0 || qmc_common.is_restart)
-  {
-    app_log() << "Using existing walkers " << std::endl;
-  }
-  else
-  { // always reset the walkers
-    // Here we do some minimal fixing of walker numbers
-    int num_threads(Concurrency::maxThreads<>());
-    if (qmcdriver_input_.get_num_crowds() <= 0)
-      num_crowds_ = num_threads;
-    if (num_crowds_ > num_threads)
-    {
-      std::stringstream error_msg;
-      error_msg << "Bad Input: num_crowds (" << qmcdriver_input_.get_num_crowds() << ") > num_threads (" << num_threads
-                << ")\n";
-      throw std::runtime_error(error_msg.str());
-    }
-
-    // Finding the equal groups that will fit the inputs request
-
-    IndexType local_walkers = calc_default_local_walkers();
-    addWalkers(local_walkers);
-  }
+  IndexType local_walkers = calc_default_local_walkers();
+  // side effect updates walkers_per_crowd_;
+  addWalkers(local_walkers, ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>(population_.get_num_particles()));
+  //now give walkers references to their walkers
+  auto crowd_start = crowds_.begin();
+  auto crowd_end   = crowds_.end();
+  std::for_each(crowd_start,
+                crowd_end,
+                [this](std::unique_ptr<Crowd>& crowd) { crowd->reserve(walkers_per_crowd_); });
+  population_.distributeWalkers(crowd_start, crowd_end, walkers_per_crowd_);
 }
 
 /** Add walkers to the end of the ensemble of walkers.
  * @param nwalkers number of walkers to add
  *
  */
-void QMCDriverNew::addWalkers(int nwalkers)
+void QMCDriverNew::addWalkers(int nwalkers, const ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>& positions)
 {
-  // if (nwalkers > 0)
-  // {
-  //   //add nwalkers walkers to the end of the ensemble
-  //   int nold = W.getActiveWalkers();
-  //   app_log() << "  Adding " << nwalkers << " walkers to " << nold << " existing sets" << std::endl;
-  //   W.createWalkers(nwalkers);
-  //   if (nold)
-  //   {
-  //     int iw = nold;
-  //     for (MCWalkerConfiguration::iterator it = W.begin() + nold; it != W.end(); ++it, ++iw)
-  //       (*it)->R = W[iw % nold]->R; //assign existing walker configurations when the number of walkers change
-  //   }
-  // }
+  population_.createWalkers(nwalkers, positions);
   // else if (nwalkers < 0)
   // {
   //   W.destroyWalkers(-nwalkers);
@@ -325,6 +320,29 @@ void QMCDriverNew::addWalkers(int nwalkers)
   // ////int nw=W.getActiveWalkers();
   // ////myComm->allreduce(nw);
 }
+
+/** Creates Random Number generators for crowds and step contexts
+ *
+ *  This is quite dangerous in that number of crowds can be > omp_get_max_threads()
+ *  This is used instead of actually passing number of threads/crowds
+ *  controlling threads all over RandomNumberControl.
+ */
+void QMCDriverNew::createRngsStepContexts()
+{
+  step_contexts_.resize(num_crowds_);
+
+  TasksOneToOne<> do_per_crowd(num_crowds_);
+
+  Rng.resize(num_crowds_);
+
+  for(int i = 0; i < num_crowds_; ++i)
+  {
+    Rng[i].reset(new RandomGenerator_t(*(RandomNumberControl::Children[i])));
+    step_contexts_[i].reset(new ContextForSteps(crowds_[i]->size(), population_.get_num_particles(),
+                                            population_.get_particle_group_indexes(), *(Rng[i])));
+  }
+}
+
 
 void QMCDriverNew::setWalkerOffsets()
 {

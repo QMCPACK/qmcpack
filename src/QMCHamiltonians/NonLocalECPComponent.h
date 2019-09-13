@@ -16,7 +16,7 @@
 
 #ifndef QMCPLUSPLUS_NONLOCAL_ECPOTENTIAL_COMPONENT_H
 #define QMCPLUSPLUS_NONLOCAL_ECPOTENTIAL_COMPONENT_H
-#include "QMCHamiltonians/QMCHamiltonianBase.h"
+#include "QMCHamiltonians/OperatorBase.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "Numerics/OneDimGridBase.h"
 #include "Numerics/OneDimGridFunctor.h"
@@ -60,7 +60,7 @@ private:
   ///weight of the spherical grid
   std::vector<RealType> sgridweight_m;
   ///Working arrays
-  std::vector<RealType> wvec, Amat, dAmat;
+  std::vector<ValueType> wvec, Amat, dAmat;
 
   //Position delta for virtual moves.
   std::vector<PosType> deltaV;
@@ -69,11 +69,11 @@ private:
   //Array for P'_l[cos(theta)]
   std::vector<RealType> dlpol;
   //Array for v_l(r).
-  std::vector<RealType> vrad;
+  std::vector<ValueType> vrad;
   //Array for (2l+1)*v'_l(r)/r.
   std::vector<RealType> dvrad;
   //$\Psi(...q...)/\Psi(...r...)$ for all quadrature points q.
-  std::vector<RealType> psiratio;
+  std::vector<ValueType> psiratio;
   //$\nabla \Psi(...q...)/\Psi(...r...)$ for all quadrature points q.
   //  $\nabla$ is w.r.t. the electron coordinates involved in the quadrature.
   std::vector<PosType> gradpsiratio;
@@ -214,8 +214,8 @@ public:
                                        int iat,
                                        TrialWaveFunction& psi,
                                        const opt_variables_type& optvars,
-                                       const std::vector<RealType>& dlogpsi,
-                                       std::vector<RealType>& dhpsioverpsi,
+                                       const std::vector<ValueType>& dlogpsi,
+                                       std::vector<ValueType>& dhpsioverpsi,
                                        const int myTableIndex);
 
   void print(std::ostream& os);

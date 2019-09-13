@@ -61,6 +61,8 @@ void QMCDriverInput::readXML(xmlNodePtr cur)
   parameter_set.add(tau_, "tau", "AU");
   parameter_set.add(max_cpu_secs_, "maxcpusecs", "real");
   parameter_set.add(blocks_between_recompute_, "blocks_between_recompute", "int");
+  parameter_set.add(drift_modifier_, "drift_modifier", "string");
+  parameter_set.add(drift_modifier_unr_a_, "drift_UNR_a", "double");
 
   OhmmsAttributeSet aAttrib;
 

@@ -288,8 +288,8 @@ protected:
   ////////////
   // Timers //
   ////////////
-  NewTimer ValueTimer, VGLTimer, VGLMatTimer;
-  NewTimer EinsplineTimer;
+  NewTimer &ValueTimer, &VGLTimer, &VGLMatTimer;
+  NewTimer &EinsplineTimer;
 
 #ifdef QMC_CUDA
   // Cuda equivalents of the above
@@ -497,10 +497,10 @@ public:
   SPOSet* makeClone() const;
 
   EinsplineSetExtended()
-      : ValueTimer("EinsplineSetExtended::ValueOnly"),
-        VGLTimer("EinsplineSetExtended::VGL"),
-        VGLMatTimer("EinsplineSetExtended::VGLMatrix"),
-        EinsplineTimer("libeinspline"),
+      : ValueTimer(*TimerManager.createTimer("EinsplineSetExtended::ValueOnly")),
+        VGLTimer(*TimerManager.createTimer("EinsplineSetExtended::VGL")),
+        VGLMatTimer(*TimerManager.createTimer("EinsplineSetExtended::VGLMatrix")),
+        EinsplineTimer(*TimerManager.createTimer("libeinspline")),
         MultiSpline(NULL)
 #ifdef QMC_CUDA
         ,
@@ -522,10 +522,6 @@ public:
 #endif
   {
     className = "EinsplineSetExtended";
-    TimerManager.addTimer(&ValueTimer);
-    TimerManager.addTimer(&VGLTimer);
-    TimerManager.addTimer(&VGLMatTimer);
-    TimerManager.addTimer(&EinsplineTimer);
     for (int i = 0; i < OHMMS_DIM; i++)
       HalfG[i] = 0;
   }

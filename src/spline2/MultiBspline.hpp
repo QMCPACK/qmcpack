@@ -28,7 +28,7 @@ namespace qmcplusplus
 {
 /** container class to hold a 3D multi spline pointer and BsplineAllocator
  * @tparam T the precision of splines
- * @tparam ALIGN the alignment of the orbital dimention
+ * @tparam ALIGN the alignment of the orbital dimension
  * @tparam ALLOC memory allocator
  *
  * This class contains a pointer to a C object, copy and assign of this class is forbidden.

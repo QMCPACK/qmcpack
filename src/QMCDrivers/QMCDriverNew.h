@@ -29,13 +29,15 @@
 #include "QMCApp/WaveFunctionPool.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Estimators/EstimatorManagerBase.h"
-#include "Particle/MCPopulation.h"
+#include "QMCDrivers/MCPopulation.h"
 #include "QMCDrivers/Crowd.h"
 #include "QMCDrivers/QMCDriverInterface.h"
 #include "QMCDrivers/GreenFunctionModifiers/DriftModifierBase.h"
 #include "QMCDrivers/SimpleFixedNodeBranch.h"
 #include "QMCDrivers/BranchIO.h"
 #include "QMCDrivers/QMCDriverInput.h"
+#include "QMCDrivers/ContextForSteps.h"
+
 class Communicate;
 
 namespace qmcplusplus
@@ -72,7 +74,7 @@ public:
     QMC_WARMUP
   };
 
-  using MCPWalker = MCPopulation::PopulationWalker;
+  using MCPWalker = MCPopulation::MCPWalker;
   using Buffer    = MCPWalker::Buffer_t;
 
   /** bits to classify QMCDriver
@@ -81,7 +83,7 @@ public:
    * - qmc_driver_mode[QMC_MULTIPLE]? multiple H/Psi : single H/Psi
    * - qmc_driver_mode[QMC_OPTIMIZE]? optimization : vmc/dmc/rmc
    */
-  std::bitset<QMC_MODE_MAX> qmc_driver_mode;
+  std::bitset<QMC_MODE_MAX> qmc_driver_mode_;
 
   /// whether to allow traces
   bool allow_traces;
@@ -90,7 +92,7 @@ public:
 
   /// Constructor.
   QMCDriverNew(QMCDriverInput&& input,
-               MCPopulation& population,
+               MCPopulation&& population,
                TrialWaveFunction& psi,
                QMCHamiltonian& h,
                WaveFunctionPool& ppool,
@@ -122,6 +124,8 @@ public:
    */
   void add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi);
 
+  void createRngsStepContexts();
+  
   void setupWalkers();
 
   void putWalkers(std::vector<xmlNodePtr>& wset);
@@ -132,6 +136,10 @@ public:
   ///return BranchEngineType*
   SimpleFixedNodeBranch* getBranchEngine() { return branchEngine; }
 
+  /** This would be better than the many side effects calc_default_local_walkers has 
+   *
+   * struct WalkerDistribution
+   */
   virtual IndexType calc_default_local_walkers() = 0;
 
   int addObservable(const std::string& aname);
@@ -141,24 +149,27 @@ public:
   ///set global offsets of the walkers
   void setWalkerOffsets();
 
-  //virtual std::vector<RandomGenerator_t*>& getRng() {}
+  inline std::vector<RandomGenerator_t*>& getRng() { return RngCompatibility; }
 
-  ///return the random generators
-  inline std::vector<RandomGenerator_t*>& getRng() { return Rng; }
+  // ///return the random generators
+  //       inline std::vector<std::unique_ptr RandomGenerator_t*>& getRng() { return Rng; }
 
   ///return the i-th random generator
   inline RandomGenerator_t& getRng(int i) { return (*Rng[i]); }
 
   std::string getEngineName() { return QMCType; }
-  unsigned long getDriverMode() { return qmc_driver_mode.to_ulong(); }
+  unsigned long getDriverMode() { return qmc_driver_mode_.to_ulong(); }
   IndexType get_walkers_per_crowd() const { return walkers_per_crowd_; }
+  IndexType get_living_walkers() const { return population_.get_active_walkers(); }
+
+  MCPopulation&& releasePopulation() { return std::move(population_); }
 
   /** @ingroup Legacy interface to be dropped
    *  @{
    */
   bool put(xmlNodePtr cur) { return false; };
 
-  /** QMCDriverNew driver ignores cur
+  /** QMCDriverNew driver will eventuall ignore cur
    *
    *  This is the shared entry point
    *  from QMCMain so cannot be updated yet
@@ -168,7 +179,7 @@ public:
   /** should be set in input don't see a reason to set individually
    * @param pbyp if true, use particle-by-particle update
    */
-  inline void setUpdateMode(bool pbyp) { qmc_driver_mode[QMC_UPDATE_MODE] = pbyp; }
+  inline void setUpdateMode(bool pbyp) { qmc_driver_mode_[QMC_UPDATE_MODE] = pbyp; }
 
   void putTraces(xmlNodePtr txml) {}
   void requestTraces(bool allow_traces) {}
@@ -177,17 +188,15 @@ public:
 protected:
   QMCDriverInput qmcdriver_input_;
 
-  std::vector<Crowd> crowds_;
+  std::vector<std::unique_ptr<Crowd>> crowds_;
   IndexType walkers_per_crowd_;
+
+  std::string h5_file_root_;
 
   ///branch engine
   SimpleFixedNodeBranch* branchEngine;
   ///drift modifer
-  DriftModifierBase* DriftModifier;
-
-  ///randomize it
-  bool reset_random;
-  ///flag to append or restart the run
+  std::unique_ptr<DriftModifierBase> drift_modifier_;
 
   ///the number to delay updates by
   int k_delay;
@@ -218,14 +227,12 @@ protected:
 
   ///type of qmc: assigned by subclasses
   std::string QMCType;
-  ///the root of h5File
-  std::string h5FileRoot;
   ///root of all the output files
-  std::string RootName;
+  std::string root_name_;
 
 
   ///the entire (or on node) walker population
-  MCPopulation& population_;
+  MCPopulation population_;
 
   ///trial function
   TrialWaveFunction& Psi;
@@ -235,13 +242,20 @@ protected:
 
   WaveFunctionPool& psiPool;
 
-  ///Observables manager
-  EstimatorManagerBase* Estimators;
+  /** Observables manager
+   *  Has very problematic owner ship and life cycle.
+   *  Can be transfered via branch manager one driver to the next indefinitely
+   *  TODO:  Modify Branch manager and others to clear this up.
+   */
+  EstimatorManagerBase* estimator_manager_;
 
   ///record engine for walkers
   HDFWalkerOutput* wOut;
 
-
+  /** Per crowd move contexts, this is where the DistanceTables etc. reside
+   */
+  std::vector<std::unique_ptr<ContextForSteps>> step_contexts_;
+  
   ///a list of TrialWaveFunctions for multiple method
   std::vector<TrialWaveFunction*> Psi1;
 
@@ -249,13 +263,10 @@ protected:
   std::vector<QMCHamiltonian*> H1;
 
   ///Random number generators
-  std::vector<RandomGenerator_t*> Rng;
+  std::vector<std::unique_ptr<RandomGenerator_t>> Rng;
 
   ///a list of mcwalkerset element
   std::vector<xmlNodePtr> mcwalkerNodePtr;
-
-  ///a list of timers
-  std::vector<NewTimer*> myTimers;
 
   ///temporary storage for drift
   ParticleSet::ParticlePos_t drift;
@@ -290,6 +301,8 @@ protected:
   // int check_point_period_;
 
   /** }@ */
+
+        std::vector<RandomGenerator_t*> RngCompatibility;
 public:
   ///Copy Constructor (disabled).
   QMCDriverNew(const QMCDriverNew&) = delete;
@@ -298,9 +311,11 @@ public:
 
   bool putQMCInfo(xmlNodePtr cur);
 
-  void addWalkers(int nwalkers);
+  void addWalkers(int nwalkers, const ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>& positions);
 
   int get_num_crowds() { return num_crowds_; }
+  void set_num_crowds(int num_crowds, const std::string& reason);
+  DriftModifierBase& get_drift_modifier() const { return *drift_modifier_; }
   /** record the state of the block
    * @param block current block
    *
@@ -318,9 +333,10 @@ public:
   bool finalize(int block, bool dumpwalkers = true);
 
   int rotation;
+  const std::string& get_root_name() const { return root_name_; }
   std::string getRotationName(std::string RootName);
   std::string getLastRotationName(std::string RootName);
-
+  
   NewTimer* checkpointTimer;
 
 private:

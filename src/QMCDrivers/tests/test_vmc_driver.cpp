@@ -19,7 +19,6 @@
 #include "Lattice/ParticleBConds.h"
 #include "Particle/ParticleSet.h"
 #include "Particle/DistanceTableData.h"
-#include "Particle/SymmetricDistanceTableData.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "QMCApp/ParticleSetPool.h"
 #include "QMCApp/HamiltonianPool.h"
@@ -46,7 +45,7 @@ TEST_CASE("VMC", "[drivers][vmc]")
   Communicate* c;
   OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
-
+  c->setName("test");
   ParticleSet ions;
   MCWalkerConfiguration elec;
 
@@ -87,7 +86,7 @@ TEST_CASE("VMC", "[drivers][vmc]")
 
   CloneManager::clear_for_unit_tests();
 
-  TrialWaveFunction psi = TrialWaveFunction(c);
+  TrialWaveFunction psi(c);
   ConstantOrbital* orb  = new ConstantOrbital;
   psi.addComponent(orb, "Constant");
   psi.registerData(elec, elec.WalkerList[0]->DataSet);
@@ -142,5 +141,6 @@ TEST_CASE("VMC", "[drivers][vmc]")
   REQUIRE(elec.R[1][0] == Approx(0.0));
   REQUIRE(elec.R[1][1] == Approx(-0.372329741105903));
   REQUIRE(elec.R[1][2] == Approx(1.0));
+  delete doc;
 }
 } // namespace qmcplusplus

@@ -147,7 +147,7 @@ struct pointer;
 using address = MPI_Aint;
 using intptr_t = MPI_Aint;
 using size_t = MPI_Aint;
-
+using ptrdiff_t = std::make_signed_t<size_t>;
 struct request;
 
 struct send_request;
@@ -350,6 +350,8 @@ public:
 	bool operator!=(communicator const& other) const{return not (*this == other);}
 	explicit operator bool() const{return not is_null();}
 	impl_t operator&() const{return impl_;}
+	auto get() const{return impl_;}
+
 	~communicator(){
 		if(impl_ != MPI_COMM_WORLD and impl_ != MPI_COMM_NULL and impl_ != MPI_COMM_SELF){
 		//	if(std::current_exception()) std::cerr << "exception during destruction" << std::endl; 

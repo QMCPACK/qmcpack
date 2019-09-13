@@ -182,11 +182,13 @@ SymTensor<StressPBC::RealType, OHMMS_DIM> StressPBC::evaluateSR_AB(ParticleSet& 
   {
     SymTensor<RealType, OHMMS_DIM> esum = 0.0;
     // RadFunctorType* rVs=Vat[iat];
+#ifndef ENABLE_SOA
     for (int nn = d_ab.M[iat], jat = 0; nn < d_ab.M[iat + 1]; ++nn, ++jat)
     {
       // if(d_ab.r(nn)>=(myRcut-0.1)) continue;
       esum += Qat[jat] * AA->evaluateSR_dstrain(d_ab.dr(nn), d_ab.r(nn));
     }
+#endif
     //Accumulate pair sums...species charge for atom i.
     res += Zat[iat] * esum;
   }
@@ -220,10 +222,12 @@ SymTensor<StressPBC::RealType, OHMMS_DIM> StressPBC::evaluateSR_AA(ParticleSet& 
   for (int ipart = 0; ipart < P.getTotalNum(); ipart++)
   {
     SymTensor<RealType, OHMMS_DIM> esum = 0.0;
+#ifndef ENABLE_SOA
     for (int nn = d_aa.M[ipart], jpart = ipart + 1; nn < d_aa.M[ipart + 1]; nn++, jpart++)
     {
       esum += P.Z[jpart] * AA->evaluateSR_dstrain(d_aa.dr(nn), d_aa.r(nn));
     }
+#endif
     stress += P.Z[ipart] * esum;
   }
 
@@ -459,7 +463,7 @@ bool StressPBC::put(xmlNodePtr cur)
   return true;
 }
 
-QMCHamiltonianBase* StressPBC::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+OperatorBase* StressPBC::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   StressPBC* tmp       = new StressPBC(PtclA, qp, psi, false);
   tmp->targetconsts    = targetconsts;

@@ -9,7 +9,23 @@ namespace Catch {
 class ComplexApprox
 {
 public:
-    ComplexApprox(std::complex<double> value) : m_value(value), m_compare_real_only(false) {
+    ComplexApprox(const std::complex<double> &value) : m_value(value), m_compare_real_only(false) {
+      init_epsilon();
+    }
+
+    ComplexApprox(const std::complex<float> &value) : m_value(value), m_compare_real_only(false) {
+      init_epsilon();
+    }
+
+    ComplexApprox(const double &value) : m_value(value), m_compare_real_only(false) {
+      init_epsilon();
+    }
+
+    ComplexApprox(const float &value) : m_value(value), m_compare_real_only(false) {
+      init_epsilon();
+    }
+
+   void init_epsilon() {
       // Copied from catch.hpp - would be better to copy it from Approx object
       m_epsilon = std::numeric_limits<float>::epsilon()*100;
     }

@@ -17,7 +17,6 @@
 #include "Lattice/ParticleBConds.h"
 #include "Particle/ParticleSet.h"
 #include "Particle/DistanceTableData.h"
-#include "Particle/SymmetricDistanceTableData.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCWaveFunctions/Jastrow/RPAJastrow.h"
@@ -108,7 +107,7 @@ TEST_CASE("RPA Jastrow", "[wavefunction]")
   // initialize SK
   elec_.createSK();
 
-  TrialWaveFunction psi = TrialWaveFunction(c);
+  TrialWaveFunction psi(c);
 
   xmltext = "<tmp> \
   <jastrow name=\"Jee\" type=\"Two-Body\" function=\"rpa\"/>\

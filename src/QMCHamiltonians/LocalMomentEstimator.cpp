@@ -68,6 +68,7 @@ LocalMomentEstimator::Return_t LocalMomentEstimator::evaluate(ParticleSet& P)
   for (int iat = 0; iat < nag; ++iat)
   {
     int j(0);
+#ifndef ENABLE_SOA
     for (int nn = d_table.M[iat]; nn < d_table.M[iat + 1]; ++nn, j++)
     {
       RealType r = d_table.r(nn);
@@ -75,6 +76,7 @@ LocalMomentEstimator::Return_t LocalMomentEstimator::evaluate(ParticleSet& P)
         continue;
       lm(ion_id[iat], el_id[j]) += el_nrm[el_id[j]];
     }
+#endif
   }
   return 0.0;
 }
@@ -99,7 +101,7 @@ bool LocalMomentEstimator::get(std::ostream& os) const
   return true;
 }
 
-QMCHamiltonianBase* LocalMomentEstimator::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+OperatorBase* LocalMomentEstimator::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   //default constructor is sufficient
   LocalMomentEstimator* myClone = new LocalMomentEstimator(*this);

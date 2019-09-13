@@ -95,6 +95,8 @@ from testing import *
 
 
 # tests
+#   versions code
+#   checks of dependency versions
 #   generic logging
 #   generic intrinsics
 #   generic extensions
@@ -458,7 +460,7 @@ class NexusTest(NexusTestBase):
 
 
     # register the current test object in the global test list
-    def __init__(self,operation,name=None,op_inputs=None,test_dir=None):
+    def __init__(self,operation,name=None,op_inputs=None,test_dir=None,optional=False):
         if not callable(operation):
             raise NexusTestMisconstructed
         #end if
@@ -477,6 +479,7 @@ class NexusTest(NexusTestBase):
         self.operation         = operation
         self.op_inputs         = op_inputs
         self.test_dir          = test_dir
+        self.optional          = optional
         self.exception         = None
         self.status            = NexusTest.status_options['unused']
         self.unit_tests        = set() # complete set of unit tests
@@ -576,6 +579,22 @@ class NexusTest(NexusTestBase):
 #===============================================#
 
 
+
+def versions():
+    nunit_all()
+#end def versions
+
+
+
+def required_dependencies():
+    nunit_all()
+#end def required_dependencies
+
+
+
+def optional_dependencies():
+    nunit_all()
+#end def optional_dependencies
 
 
         
@@ -3066,6 +3085,10 @@ def pwscf_input():
 #end def pwscf_input
 
 
+def qmcpack_input():
+    nunit_all()
+#end def qmcpack_input
+
 
 def grid_functions():
 
@@ -3374,16 +3397,20 @@ def user_examples(label):
 
 # create labeled tests from simple functions above
 
-NexusTest( generic_logging    )
-NexusTest( generic_intrinsics )
-NexusTest( generic_extensions )
-NexusTest( nexus_imports      )
-NexusTest( settings_operation , 'settings' )
-NexusTest( machines           )
-NexusTest( structure          )
-NexusTest( physical_system    )
-NexusTest( pwscf_input        )
-NexusTest( grid_functions     )
+NexusTest( versions              )
+NexusTest( required_dependencies )
+NexusTest( optional_dependencies , optional=True)
+NexusTest( generic_logging       )
+NexusTest( generic_intrinsics    )
+NexusTest( generic_extensions    )
+NexusTest( nexus_imports         )
+NexusTest( settings_operation    , 'settings' )
+NexusTest( machines              )
+NexusTest( structure             )
+NexusTest( physical_system       )
+NexusTest( pwscf_input           )
+NexusTest( qmcpack_input         )
+NexusTest( grid_functions        )
 
 for label in example_information.keys():
     NexusTest(
@@ -3591,6 +3618,10 @@ if __name__=='__main__':
                       action='store_true',default=False,
                       help='List tests in human readable format. (default=%default).'
                       )
+    parser.add_option('--full',dest='full',
+                      action='store_true',default=False,
+                      help='Test optional features (default=%default).'
+                      )
     parser.add_option('--ctestlist',dest='ctestlist',
                       action='store_true',default=False,
                       help='List tests in CMake format. Intended for use within CTest (default=%default).'
@@ -3718,15 +3749,29 @@ if __name__=='__main__':
     if not ctest:
         print('')
     #end if
+    nrunnable = 0
+    for test in tests:
+        if test.optional and not options.full:
+            continue
+        #end if
+        nrunnable += 1
+    #end for
     n=0
     npassed = 0
     nfailed = 0
+    nrun    = 0
     for test in tests:
-        n+=1
         t1 = time()
+
+        # skip optional tests, unless requested
+        if test.optional and not options.full:
+            continue
+        #end if
+        n+=1
 
         # run the test
         test.run()
+        nrun += 1
 
         # print the pass/fail line
         if len(test.name)<40:
@@ -3745,7 +3790,7 @@ if __name__=='__main__':
         #end if
         t2 = time()
         if not ctest:
-            slt = str(len(tests))
+            slt = str(nrunnable)
             sn  = str(n)
             if len(sn)<len(slt):
                 sn = (len(slt)-len(sn))*' '+sn
@@ -3777,7 +3822,7 @@ if __name__=='__main__':
     # print pass/fail and timing summary
     if not ctest:
         print('')
-        print('{0}% tests passed, {1} tests failed out of {2}'.format(int(100*float(npassed)/(1e-16+len(tests))),nfailed,len(tests)))
+        print('{0}% tests passed, {1} tests failed out of {2}'.format(int(100*float(npassed)/(1e-16+nrunnable)),nfailed,nrunnable))
         print('')
         print('Total test time = {0:3.2f} sec'.format(tstop_all-tstart_all))
     #end if

@@ -14,8 +14,7 @@
 #ifndef QMCPLUSPLUS_SIMD_BLAS1_HPP
 #define QMCPLUSPLUS_SIMD_BLAS1_HPP
 
-//#include <Numerics/OhmmsBlas.h>
-//#include <OhmmsPETE/TinyVector.h>
+#include <complex>
 
 namespace qmcplusplus
 {

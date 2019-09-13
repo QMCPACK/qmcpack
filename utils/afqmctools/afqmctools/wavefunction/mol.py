@@ -187,7 +187,7 @@ def write_phmsd(fh5, occa, occb, nelec, norb, init=None, orbmat=None):
         add_dataset(fh5, 'Psi0_alpha',
                     to_qmcpack_complex(init[:,occa[0]].copy()))
         add_dataset(fh5, 'Psi0_beta',
-                    to_qmcpack_complex(init[:,occb[0]-norb].copy()))
+                    to_qmcpack_complex(init[:,occb[0]].copy()))
     if orbmat is not None:
         fh5['type'] = 1
         # Expects conjugate transpose.

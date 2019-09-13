@@ -35,7 +35,7 @@ DensityMatrices1B::DensityMatrices1B(ParticleSet& P, TrialWaveFunction& psi, Par
 
 
 DensityMatrices1B::DensityMatrices1B(DensityMatrices1B& master, ParticleSet& P, TrialWaveFunction& psi)
-    : QMCHamiltonianBase(master), Lattice(P.Lattice), Pq(P), Psi(psi), Pc(master.Pc)
+    : OperatorBase(master), Lattice(P.Lattice), Pq(P), Psi(psi), Pc(master.Pc)
 {
   reset();
   set_state(master);
@@ -53,7 +53,7 @@ DensityMatrices1B::~DensityMatrices1B()
 }
 
 
-QMCHamiltonianBase* DensityMatrices1B::makeClone(ParticleSet& P, TrialWaveFunction& psi)
+OperatorBase* DensityMatrices1B::makeClone(ParticleSet& P, TrialWaveFunction& psi)
 {
   return new DensityMatrices1B(*this, P, psi);
 }
@@ -784,7 +784,7 @@ DensityMatrices1B::Return_t DensityMatrices1B::evaluate_check(ParticleSet& P)
         update_basis(rsamp);
         PosType dr = rsamp - P.R[n];
         P.makeMove(n, dr);
-        Value_t ratio = sample_weights[m] * qmcplusplus::conj(Psi.full_ratio(P, n));
+        Value_t ratio = sample_weights[m] * qmcplusplus::conj(Psi.calcRatio(P, n));
         P.rejectMove(n);
         for (int i = 0; i < basis_size; ++i)
         {
@@ -1205,7 +1205,7 @@ inline void DensityMatrices1B::integrate(ParticleSet& P, int n)
     PosType& rsamp = rsamples[s];
     update_basis(rsamp);
     P.makeMove(n, rsamp - P.R[n]);
-    Value_t ratio = sample_weights[s] * qmcplusplus::conj(Psi.full_ratio(P, n));
+    Value_t ratio = sample_weights[s] * qmcplusplus::conj(Psi.calcRatio(P, n));
     P.rejectMove(n);
     for (int i = 0; i < basis_size; ++i)
       integrated_values[i] += ratio * basis_values[i];

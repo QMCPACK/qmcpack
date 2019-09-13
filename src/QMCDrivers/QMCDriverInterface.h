@@ -39,7 +39,7 @@ public:
   virtual void recordBlock(int block) = 0;
 
   ///return the random generators
-  virtual std::vector<RandomGenerator_t*>& getRng() = 0;
+  //virtual std::vector<RandomGenerator_t*>& getRng() = 0;
 
   ///return the i-th random generator
   virtual RandomGenerator_t& getRng(int i) = 0;
@@ -53,6 +53,7 @@ public:
   virtual void requestTraces(bool allow_traces)                         = 0;
   virtual void process(xmlNodePtr cur)                                  = 0;
   virtual QMCRunType getRunType()                                       = 0;
+  virtual const std::string& get_root_name() const                      = 0;
   virtual void setBranchEngine(BranchEngineType* be)                    = 0;
   virtual BranchEngineType* getBranchEngine()                           = 0;
   virtual std::string getEngineName()                                   = 0;
