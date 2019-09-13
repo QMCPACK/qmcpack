@@ -596,6 +596,12 @@ def memory():
 #end def memory
 
 
+
+def plotting():
+    nunit_all()
+#end def plotting
+
+
         
 def generic_logging():
     from generic import log,message,warn,error
@@ -3344,6 +3350,7 @@ NexusTest( required_dependencies )
 NexusTest( optional_dependencies , optional=True)
 NexusTest( execute               )
 NexusTest( memory                )
+NexusTest( plotting              )
 NexusTest( generic_logging       )
 NexusTest( generic_intrinsics    )
 NexusTest( generic_extensions    )
