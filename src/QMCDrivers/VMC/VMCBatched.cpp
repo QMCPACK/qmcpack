@@ -192,7 +192,9 @@ void VMCBatched::advanceWalkers(const StateForThread& sft, Crowd& crowd, Context
   TrialWaveFunction::flex_updateBuffer(crowd.get_walker_twfs(), crowd.get_walker_elecs(),
                                        crowd.get_mcp_wfbuffers());
 
-  // TODO:
+  
+
+// TODO:
   //  save the walkers
   //  evaluate the Hamiltonian
   //  accumulate

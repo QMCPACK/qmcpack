@@ -216,7 +216,7 @@ public:
    */
   Return_t evaluate(ParticleSet& P);
   /** batched version of evaluate for LocalEnergy */
-  void flex_evaluate(const std::vector<QMCHamiltonian*>& H_list, const std::vector<ParticleSet*>& P_list, std::vector<Return_t>& LocalEnergies) const;
+  static void flex_evaluate(const RefVector<QMCHamiltonian>& H_list, const RefVector<ParticleSet>& P_list , std::vector<Return_t>& LocalEnergies);
 
   /** evaluate Local energy with Toperators updated.
    * @param P ParticleSEt
@@ -352,7 +352,7 @@ private:
   void resetObservables(int start, int ncollects);
 
   // helper function for extracting a list of Hamiltonian components from a list of QMCHamiltonian::H.
-  std::vector<OperatorBase*> extract_HC_list(const std::vector<QMCHamiltonian*>& H_list, int id) const;
+  static RefVector<OperatorBase> extract_HC_list(const RefVector<QMCHamiltonian>& H_list, int id);
 
 #if !defined(REMOVE_TRACEMANAGER)
   ///traces variables
