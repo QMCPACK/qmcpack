@@ -236,7 +236,13 @@ TEST_CASE("TrialWaveFunction", "[wavefunction]")
             << grad_old[1][0] << " " << grad_old[1][1] << " " << grad_old[1][2]
             << std::endl;
 
-  psi.flex_evalGrad(WF_list, P_list, moved_elec_id, grad_old);
+  //Temporary as switch to std::reference_wrapper proceeds
+// testing batched interfaces
+  std::vector<std::reference_wrapper<ParticleSet>> p_list_ref{elec_,elec_clone};
+  std::vector<std::reference_wrapper<TrialWaveFunction>> wf_list_ref{psi, *psi_clone};
+  
+  
+  psi.flex_evalGrad(wf_list_ref, p_list_ref, moved_elec_id, grad_old);
 #if defined(QMC_COMPLEX)
   REQUIRE(grad_old[0][0] == ComplexApprox(ValueType(18.817970466022, -6.5837500306076)));
   REQUIRE(grad_old[0][1] == ComplexApprox(ValueType(-22.840838391977, 3.9963373883645)));
@@ -254,11 +260,11 @@ TEST_CASE("TrialWaveFunction", "[wavefunction]")
 #endif
 
   PosType delta_zero(0, 0, 0);
-  P_list[0]->makeMove(moved_elec_id, delta_zero);
-  P_list[1]->makeMove(moved_elec_id, delta);
+  p_list_ref[0].get().makeMove(moved_elec_id, delta_zero);
+  p_list_ref[1].get().makeMove(moved_elec_id, delta);
 
   std::vector<PsiValueType> ratios(2);
-  psi.flex_calcRatio(WF_list, P_list, moved_elec_id, ratios);
+  psi.flex_calcRatio(wf_list_ref, p_list_ref, moved_elec_id, ratios);
   std::cout << "calcRatio " << std::setprecision(14) << ratios[0] << " " << ratios[1] << std::endl;
 #if defined(QMC_COMPLEX)
   REQUIRE(ratios[0] == ComplexApprox(PsiValueType(1, 0)));
@@ -279,7 +285,10 @@ TEST_CASE("TrialWaveFunction", "[wavefunction]")
             << grad_new[1][0] << " " << grad_new[1][1] << " " << grad_new[1][2]
             << std::endl;
 
-  psi.flex_ratioGrad(WF_list, P_list, moved_elec_id, ratios, grad_new);
+  //Temporary as switch to std::reference_wrapper proceeds
+  // testing batched interfaces
+  
+  psi.flex_ratioGrad(wf_list_ref, p_list_ref, moved_elec_id, ratios, grad_new);
 #if defined(QMC_COMPLEX)
   REQUIRE(ratios[0] == ComplexApprox(ValueType(1, 0)));
   REQUIRE(grad_new[0][0] == ComplexApprox(ValueType(18.817970466022, -6.5837500306076)));
@@ -309,7 +318,7 @@ TEST_CASE("TrialWaveFunction", "[wavefunction]")
   REQUIRE(std::complex<RealType>(WF_list[1]->getLogPsi(), WF_list[1]->getPhase()) == ComplexApprox(std::complex<RealType>(-0.6365029797784554, 3.141592653589793)));
 #endif
 
-  psi.flex_evalGrad(WF_list, P_list, moved_elec_id, grad_old);
+  psi.flex_evalGrad(wf_list_ref, p_list_ref, moved_elec_id, grad_old);
 #if defined(QMC_COMPLEX)
   REQUIRE(grad_old[0][0] == ComplexApprox(ValueType(18.817970466022, -6.5837500306076)));
   REQUIRE(grad_old[0][1] == ComplexApprox(ValueType(-22.840838391977, 3.9963373883645)));

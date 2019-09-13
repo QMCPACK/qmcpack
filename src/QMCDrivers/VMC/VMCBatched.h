@@ -17,6 +17,7 @@
 #include "QMCDrivers/VMC/VMCDriverInput.h"
 #include "QMCDrivers/MCPopulation.h"
 #include "QMCDrivers/ContextForSteps.h"
+#include "QMCDrivers/GreenFunctionModifiers/DriftModifierBase.h"
 
 namespace qmcplusplus
 {
@@ -27,6 +28,8 @@ class VMCBatched : public QMCDriverNew
 {
 public:
   using PosType = QMCTraits::PosType;
+  using ParticlePositions = PtclOnLatticeTraits::ParticlePos_t;
+
   /** To avoid 10's of arguments to runVMCStep
    *
    *  There should be a division between const input to runVMCStep
@@ -41,9 +44,11 @@ public:
     IndexType step;
     int block;
     bool recomputing_blocks;
+    DriftModifierBase& drift_modifier;
     StateForThread(QMCDriverInput&  qmci,
                    VMCDriverInput& vmci,
-                   MCPopulation&   pop) : qmcdrv_input(qmci), vmcdrv_input(vmci), population(pop) {}
+                   DriftModifierBase& drift_mod,
+                   MCPopulation&   pop) : qmcdrv_input(qmci), vmcdrv_input(vmci), drift_modifier(drift_mod), population(pop) {}
 
                    
   };
@@ -60,6 +65,11 @@ public:
  
   bool run();
 
+  /** Refactor of VMCUpdatePbyP in crowd context
+   *
+   *  MCWalkerConfiguration layer removed.
+   *  Obfuscation of state changes via buffer and MCWalkerconfiguration require this be tested well
+   */
   static void advanceWalkers(const StateForThread& sft, Crowd& crowd, ContextForSteps& move_context, bool recompute);
   
   // This is the task body executed at crowd scope
@@ -68,6 +78,7 @@ public:
                          const StateForThread& sft,
                          std::vector<std::unique_ptr<ContextForSteps>>& move_context,
                          std::vector<std::unique_ptr<Crowd>>& crowds);
+
   void setup();
   //inline std::vector<RandomGenerator_t*>& getRng() { return Rng;}
   IndexType calc_default_local_walkers();

@@ -25,6 +25,7 @@
 #include "OhmmsData/RecordProperty.h"
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
 #include "Particle/MCWalkerConfiguration.h"
+#include "type_traits/template_types.hpp"
 #ifdef QMC_CUDA
 #include "type_traits/CUDATypes.h"
 #endif
@@ -264,6 +265,22 @@ struct WaveFunctionComponent : public QMCTraits
       grad_now[iw] = WFC_list[iw]->evalGrad(*P_list[iw], iat);
   }
 
+  /** compute the current gradients for the iat-th particle of multiple walkers
+   * @param WFC_list the list of WaveFunctionComponent pointers of the same component in a walker batch
+   * @param P_list the list of ParticleSet pointers in a walker batch
+   * @param iat particle index
+   * @param grad_now the list of gradients in a walker batch, \f$\nabla\ln\Psi\f$
+   */
+  virtual void mw_evalGrad(const std::vector<std::reference_wrapper<WaveFunctionComponent>>& WFC_list,
+                           const std::vector<std::reference_wrapper<ParticleSet>>& P_list,
+                           int iat,
+                           std::vector<GradType>& grad_now)
+  {
+    #pragma omp parallel for
+    for (int iw = 0; iw < WFC_list.size(); iw++)
+      grad_now[iw] = WFC_list[iw].get().evalGrad(P_list[iw].get(), iat);
+  }
+
   /** return the logarithmic gradient for the iat-th particle
    * of the source particleset
    * @param Pquantum particle set
@@ -324,6 +341,24 @@ struct WaveFunctionComponent : public QMCTraits
     #pragma omp parallel for
     for (int iw = 0; iw < WFC_list.size(); iw++)
       ratios[iw] = WFC_list[iw]->ratioGrad(*P_list[iw], iat, grad_new[iw]);
+  }
+
+  /** compute the ratio of the new to old WaveFunctionComponent value and the new gradient of multiple walkers
+   * @param WFC_list the list of WaveFunctionComponent pointers of the same component in a walker batch
+   * @param P_list the list of ParticleSet pointers in a walker batch
+   * @param iat particle index
+   * @param ratios the list of WF ratios of a walker batch, \f$ \Psi( \{ {\bf R}^{'} \} )/ \Psi( \{ {\bf R}\})\f$
+   * @param grad_now the list of new gradients in a walker batch, \f$\nabla\ln\Psi\f$
+   */
+  virtual void mw_ratioGrad(const RefVector<WaveFunctionComponent>& WFC_list,
+                            const RefVector<ParticleSet>& P_list,
+                            int iat,
+                            std::vector<PsiValueType>& ratios,
+                            std::vector<GradType>& grad_new)
+  {
+    //#pragma omp parallel for
+    for (int iw = 0; iw < WFC_list.size(); iw++)
+      ratios[iw] = WFC_list[iw].get().ratioGrad(P_list[iw], iat, grad_new[iw]);
   }
 
   /** a move for iat-th particle is accepted. Update the current content.
@@ -405,6 +440,22 @@ struct WaveFunctionComponent : public QMCTraits
     #pragma omp parallel for
     for (int iw = 0; iw < WFC_list.size(); iw++)
       ratios[iw] = WFC_list[iw]->ratio(*P_list[iw], iat);
+  }
+
+  /** compute the ratio of the new to old WaveFunctionComponent value of multiple walkers
+   * @param WFC_list the list of WaveFunctionComponent pointers of the same component in a walker batch
+   * @param P_list the list of ParticleSet pointers in a walker batch
+   * @param iat particle index
+   * @param ratios the list of WF ratios of a walker batch, \f$ \Psi( \{ {\bf R}^{'} \} )/ \Psi( \{ {\bf R}\})\f$
+   */
+  virtual void mw_calcRatio(const RefVector<WaveFunctionComponent>& WFC_list,
+                            const RefVector<ParticleSet>& P_list,
+                            int iat,
+                            std::vector<PsiValueType>& ratios)
+  {
+    //#pragma omp parallel for
+    for (int iw = 0; iw < WFC_list.size(); iw++)
+      ratios[iw] = WFC_list[iw].get().ratio(P_list[iw], iat);
   }
 
   /** For particle-by-particle move. Requests space in the buffer

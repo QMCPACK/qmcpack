@@ -16,6 +16,7 @@
 #include "Concurrency/Info.hpp"
 #include "Utilities/RunTimeManager.h"
 #include "ParticleBase/RandomSeqGenerator.h"
+#include <boost/range/combine.hpp>
 
 namespace qmcplusplus
 {
@@ -67,175 +68,162 @@ VMCBatched::IndexType VMCBatched::calc_default_local_walkers()
   return local_walkers;
 }
 
-void VMCBatched::advanceWalkers(const StateForThread& sft, Crowd& crowd, ContextForSteps& move_context, bool recompute)
+void VMCBatched::advanceWalkers(const StateForThread& sft, Crowd& crowd, ContextForSteps& step_context, bool recompute)
 {
-  move_context.loadCrowd(crowd);
-
-  auto it_walker_twfs = crowd.beginTrialWaveFunctions();
-  auto it_mcp_walkers = crowd.beginWalkers();
+  crowd.loadWalkers();
+  auto it_walker_twfs  = crowd.beginTrialWaveFunctions();
+  auto it_mcp_walkers  = crowd.beginWalkers();
   auto it_walker_elecs = crowd.beginElectrons();
-  while(it_walker_twfs != crowd.endTrialWaveFunctions())
+  while (it_walker_twfs != crowd.endTrialWaveFunctions())
   {
     it_walker_twfs->get().copyFromBuffer(it_walker_elecs->get(), it_mcp_walkers->get().DataSet);
-  }                
-//   Walker_t::WFBuffer_t& w_buffer(thisWalker.DataSet);
-//   Psi.copyFromBuffer(W, w_buffer);
-//   myTimers[0]->stop();
-  
-//   // start PbyP moves
-//   myTimers[1]->start();
+  }
 
-  bool moved = false;
+  int num_walkers = crowd.size();
+  int num_particles = sft.population.get_num_particles();
+  // Note std::vector<bool> is not like the rest of stl.
+  std::vector<bool> moved(num_walkers, false);
   constexpr RealType mhalf(-0.5);
+  bool use_drift = sft.vmcdrv_input.get_use_drift();
+  //This generates an entire steps worth of deltas.
+  step_context.nextDeltaRs();
+  auto it_delta_r = step_context.deltaRsBegin();
+  std::vector<PosType> drifts(num_walkers);
 
   // up and down electrons are "species" within qmpack
-  for (int ig = 0; ig < move_context.get_num_groups(); ++ig) //loop over species
+
+  for (int ig = 0; ig < step_context.get_num_groups(); ++ig) //loop over species
   {
     RealType tauovermass = sft.qmcdrv_input.get_tau() * sft.population.get_ptclgrp_inv_mass()[ig];
     RealType oneover2tau = 0.5 / (tauovermass);
     RealType sqrttau     = std::sqrt(tauovermass);
-
-    int start_index = move_context.getPtclGroupStart(ig);
-    int end_index = move_context.getPtclGroupEnd(ig);
-    for(int iat = start_index; iat < end_index; ++iat)
+    int start_index      = step_context.getPtclGroupStart(ig);
+    int end_index        = step_context.getPtclGroupEnd(ig);
+    for (int iat = start_index; iat < end_index; ++iat)
     {
-      PosType dr;
-      // if (sft.vmcdrv_input.get_use_drift())
-      //   GradType grad_now = Psi.
+      crowd.clearResults();
+      ParticleSet::flex_setActive(crowd.get_walker_elecs(), iat);
+      // step_context.deltaRsBegin returns an iterator to a flat series of PosTypes
+      // fastest in walkers then particles
+      auto delta_r_start = it_delta_r + iat * num_particles * num_walkers;
+
+      if (use_drift)
+      {
+        TrialWaveFunction::flex_evalGrad(crowd.get_walker_twfs(), crowd.get_walker_elecs(), iat, crowd.get_grads_now());
+        sft.drift_modifier.getDrifts(tauovermass, crowd.get_grads_now(), drifts);
+        std::transform(drifts.begin(),drifts.end(),
+                       delta_r_start, drifts.begin(),
+                       [sqrttau](PosType& drift, PosType& delta_r){
+                         return drift + (sqrttau * delta_r);});
+      }
+      else
+      {
+        std::transform(drifts.begin(),drifts.end(),delta_r_start, drifts.begin(),
+                       [sqrttau](auto& drift, auto& delta_r){
+                         return sqrttau * delta_r;});
+      }
+
+      auto elecs = crowd.get_walker_elecs();
+      ParticleSet::flex_makeMove(crowd.get_walker_elecs(), iat, drifts);
+
+      // This is inelegant
+      if(use_drift)
+      {
+        TrialWaveFunction::flex_ratioGrad(crowd.get_walker_twfs(),crowd.get_walker_elecs(), iat, crowd.get_ratios(), crowd.get_grads_new());
+        auto delta_r_end = it_delta_r + iat * num_particles * num_walkers + num_walkers;
+        std::transform(delta_r_start,
+                       delta_r_end,
+                       crowd.get_log_gf().begin(),
+                       [mhalf](auto& delta_r){ return mhalf * dot(delta_r, delta_r); });
+        sft.drift_modifier.getDrifts(sft.qmcdrv_input.get_tau(), crowd.get_grads_new(), drifts);
+        
+        std::transform(crowd.beginElectrons(), crowd.endElectrons(),
+                       drifts.begin(), drifts.begin(),
+                       [iat](auto& elecs, auto& drift){
+                         return elecs.get().R[iat] - elecs.get().activePos - drift; });
+
+        std::transform(drifts.begin(),
+                       drifts.end(),
+                       crowd.get_log_gb().begin(),
+                       [oneover2tau](auto& drift){ return - oneover2tau * dot(drift, drift);});        
+      }
+      else
+      {
+        TrialWaveFunction::flex_calcRatio(crowd.get_walker_twfs(), crowd.get_walker_elecs(),
+                                      iat, crowd.get_ratios());
+      }
+
+      std::transform(crowd.get_ratios().begin(),
+                     crowd.get_ratios().end(),
+                     crowd.get_prob().begin(),
+                     [](auto ratio){ return std::real(ratio) * std::real(ratio); });
+
+      for(int i_accept = 0; i_accept < num_walkers; ++i_accept)
+      {
+        TrialWaveFunction& walker_twf = crowd.get_walker_twfs()[i_accept].get();
+        ParticleSet& walker_elecs = crowd.get_walker_elecs()[i_accept].get();
+        auto prob = crowd.get_prob()[i_accept];
+        auto log_gf = crowd.get_log_gf()[i_accept];
+        auto log_gb = crowd.get_log_gb()[i_accept];
+          
+        if (prob >= std::numeric_limits<RealType>::epsilon()
+            && step_context.get_random_gen()() < prob * std::exp(log_gf - log_gb))
+        {
+          step_context.incAccept();
+          walker_twf.acceptMove(walker_elecs, iat);
+          walker_elecs.acceptMove(iat);
+        }
+        else
+        {
+          step_context.incReject();
+          walker_elecs.rejectMove(iat);
+          walker_twf.rejectMove(iat);
+        }
+      }
     }
   }
+  std::for_each(crowd.get_walker_twfs().begin(),
+                crowd.get_walker_twfs().end(),
+                [](auto& twf){twf.get().completeUpdates();});
+  std::for_each(crowd.get_walker_elecs().begin(),
+                crowd.get_walker_elecs().end(),
+                [](auto& elecs){elecs.get().donePbyP();});
+  // TODO:
+  //  update the buffer.
+  //  save the walkers
+  //  evaluate the Hamiltonian
+  //  accumulate
+  //  check if all moves failed
+
 }
-//    for(int iat = move_context
-//       for (int iat = W.first(ig); iat < W.last(ig); ++iat)
-//       {
-//         W.setActive(iat);
-//         PosType dr;
-//         if (UseDrift)
-//         {
-//           GradType grad_now = Psi.evalGrad(W, iat);
-//           DriftModifier->getDrift(tauovermass, grad_now, dr);
-//           dr += sqrttau * deltaR[iat];
-//         }
-//         else
-//         {
-//           dr = sqrttau * deltaR[iat];
-//         }
-//         if (!W.makeMoveAndCheck(iat, dr))
-//         {
-//           ++nReject;
-//           continue;
-//         }
-//         RealType logGf(1), logGb(1), prob;
-//         if (UseDrift)
-//         {
-//           GradType grad_new;
-//           RealType ratio = Psi.ratioGrad(W, iat, grad_new);
-//           prob           = ratio * ratio;
-//           logGf          = mhalf * dot(deltaR[iat], deltaR[iat]);
-//           DriftModifier->getDrift(tauovermass, grad_new, dr);
-//           dr    = W.R[iat] - W.activePos - dr;
-//           logGb = -oneover2tau * dot(dr, dr);
-//         }
-//         else
-//         {
-//           RealType ratio = Psi.ratio(W, iat);
-//           prob           = ratio * ratio;
-//         }
-//         if (prob >= std::numeric_limits<RealType>::epsilon() && RandomGen() < prob * std::exp(logGb - logGf))
-//         {
-//           moved = true;
-//           ++nAccept;
-//           Psi.acceptMove(W, iat);
-//           W.acceptMove(iat);
-//         }
-//         else
-//         {
-//           ++nReject;
-//           W.rejectMove(iat);
-//           Psi.rejectMove(iat);
-//         }
-//       }
-//     }
-//     Psi.completeUpdates();
-//   }
-//   W.donePbyP();
-//   myTimers[1]->stop();
-//   myTimers[0]->start();
-//   RealType logpsi = Psi.updateBuffer(W, w_buffer, recompute);
-//   W.saveWalker(thisWalker);
-//   myTimers[0]->stop();
-//   // end PbyP moves
-//   myTimers[2]->start();
-//   FullPrecRealType eloc = H.evaluate(W);
-//   thisWalker.resetProperty(logpsi, Psi.getPhase(), eloc);
-//   myTimers[2]->stop();
-//   myTimers[3]->start();
-//   H.auxHevaluate(W, thisWalker);
-//   H.saveProperty(thisWalker.getPropertyBase());
-//   myTimers[3]->stop();
-// #if !defined(REMOVE_TRACEMANAGER)
-//   Traces->buffer_sample(W.current_step);
-// #endif
-//   if (!moved)
-//     ++nAllRejected;
-  
 
 /** Thread body for VMC block
  *
  *  Things to consider:
  *  - should qmcdriver_input be a copy local to the core in Crowd
  */
-void VMCBatched::runVMCStep(int crowd_id,
-                            const StateForThread& sft,
-                            std::vector<std::unique_ptr<ContextForSteps>>& move_contexts,
-                            std::vector<std::unique_ptr<Crowd>>& crowds)
-{
-  int nAccept              = 0;
-  int nReject              = 0;
-  int nAllRejected         = 0;
-  int nNodeCrossing        = 0;
-  int NonLocalMoveAccepted = 0;
+    void VMCBatched::runVMCStep(int crowd_id, const StateForThread& sft,
+                                std::vector<std::unique_ptr<ContextForSteps>>& context_for_steps,
+                                std::vector<std::unique_ptr<Crowd>>& crowds)
+    {
+      int nAccept              = 0;
+      int nReject              = 0;
+      int nAllRejected         = 0;
+      int nNodeCrossing        = 0;
+      int NonLocalMoveAccepted = 0;
 
-  Crowd& crowd = *(crowds[crowd_id]);
-  crowd.startBlock(sft.qmcdrv_input.get_max_steps());
-  
-  int max_steps = sft.qmcdrv_input.get_max_steps();
-  bool is_recompute_block = sft.recomputing_blocks ? (1 + sft.block) % sft.qmcdrv_input.get_blocks_between_recompute() == 0 : false;
-  RealType cnorm = 1.0 / static_cast<RealType>(crowd.size());
-  IndexType step = sft.step;
-  // Are we entering the the last step of a block to recompute at?
-  bool recompute_this_step = (is_recompute_block && (step + 1) == max_steps );
-  advanceWalkers(sft, crowd, *move_contexts[crowd_id], recompute_this_step);
-  
-  //       Movers[crowd_id]->advanceWalkers(wit, wit_end, recompute);
-  //       if (has_collectables)
-  //         wClones[crowd_id]->Collectables *= cnorm;
-  //       Movers[crowd_id]->accumulate(wit, wit_end);
-  //       ++now_loc;
-  //       if (Period4WalkerDump && now_loc % Period4WalkerDump == 0)
-  //         wClones[crowd_id]->saveEnsemble(wit, wit_end);
-  //       //           if(storeConfigs && (now_loc%storeConfigs == 0))
-  //       //             ForwardWalkingHistory.storeConfigsForForwardWalking(*wClones[crowd_id]);
-  //     }
-  //     Movers[crowd_id]->stopBlock(false);
-  //   } //end-of-parallel for
-  //   //Estimators->accumulateCollectables(wClones,nSteps);
-  //   CurrentStep += nSteps;
-  //   Estimators->stopBlock(estimatorClones);
-  // #if !defined(REMOVE_TRACEMANAGER)
-  //   Traces->write_buffers(traceClones, block);
-  // #endif
-  //   if (storeConfigs)
-  //     recordBlock(block);
-  //   vmc_loop.stop();
-  //   enough_time_for_next_iteration = runtimeControl.enough_time_for_next_iteration(vmc_loop);
-  //   myComm->bcast(enough_time_for_next_iteration);
-  //   if (!enough_time_for_next_iteration)
-  //   {
-  //     app_log() << runtimeControl.time_limit_message("VMC", block);
-  //     break;
-  //   }
-}
+      Crowd& crowd = *(crowds[crowd_id]);
+      crowd.startBlock(sft.qmcdrv_input.get_max_steps());
+
+      int max_steps = sft.qmcdrv_input.get_max_steps();
+      bool is_recompute_block =
+          sft.recomputing_blocks ? (1 + sft.block) % sft.qmcdrv_input.get_blocks_between_recompute() == 0 : false;
+      RealType cnorm = 1.0 / static_cast<RealType>(crowd.size());
+      IndexType step = sft.step;
+      // Are we entering the the last step of a block to recompute at?
+      bool recompute_this_step = (is_recompute_block && (step + 1) == max_steps);
+      advanceWalkers(sft, crowd, *context_for_steps[crowd_id], recompute_this_step);
+    }
 
 /** Runs the actual VMC section
  *
@@ -249,64 +237,39 @@ void VMCBatched::runVMCStep(int crowd_id,
  *  If does consider giving more to the thread by value that should
  *  end up thread local. (I think)
  */
-bool VMCBatched::run()
-{
-  IndexType num_blocks = qmcdriver_input_.get_max_blocks();
-  //start the main estimator
-  estimator_manager_->start(num_blocks);
-
-  StateForThread vmc_state(qmcdriver_input_,
-                           vmcdriver_input_,
-                           population_);
-
-  LoopTimer vmc_loop;
-  RunTimeControl runtimeControl(RunTimeManager, MaxCPUSecs);
-
-  // TODO: Do collectables need to be rethought
-  //   const bool has_collectables = W.Collectables.size();
-
-  for (int block = 0; block < num_blocks; ++block)
-  {
-    vmc_loop.start();
-    vmc_state.recalculate_properties_period =
-        (qmc_driver_mode_[QMC_UPDATE_MODE]) ? qmcdriver_input_.get_recalculate_properties_period() : 0;
-    vmc_state.recomputing_blocks = qmcdriver_input_.get_blocks_between_recompute();
-
-    estimator_manager_->startBlock(qmcdriver_input_.get_max_steps());
-
-    for(int step = 0; step < qmcdriver_input_.get_max_steps(); ++step)
+    bool VMCBatched::run()
     {
-      vmc_state.step =  step;
-      TasksOneToOne<> crowd_task(num_crowds_);
-      crowd_task(runVMCStep, vmc_state, std::ref(step_contexts_), std::ref(crowds_));
+      IndexType num_blocks = qmcdriver_input_.get_max_blocks();
+      //start the main estimator
+      estimator_manager_->start(num_blocks);
+
+      StateForThread vmc_state(qmcdriver_input_, vmcdriver_input_, *drift_modifier_, population_);
+
+      LoopTimer vmc_loop;
+      RunTimeControl runtimeControl(RunTimeManager, MaxCPUSecs);
+
+      // TODO: Do collectables need to be rethought
+      //   const bool has_collectables = W.Collectables.size();
+
+      for (int block = 0; block < num_blocks; ++block)
+      {
+        vmc_loop.start();
+        vmc_state.recalculate_properties_period =
+            (qmc_driver_mode_[QMC_UPDATE_MODE]) ? qmcdriver_input_.get_recalculate_properties_period() : 0;
+        vmc_state.recomputing_blocks = qmcdriver_input_.get_blocks_between_recompute();
+
+        estimator_manager_->startBlock(qmcdriver_input_.get_max_steps());
+
+        for (int step = 0; step < qmcdriver_input_.get_max_steps(); ++step)
+        {
+          vmc_state.step = step;
+          TasksOneToOne<> crowd_task(num_crowds_);
+          crowd_task(runVMCStep, vmc_state, std::ref(step_contexts_), std::ref(crowds_));
+        }
+      }
+
+      return false;
     }
-  }
-
-  //   } //block
-  //   Estimators->stop(estimatorClones);
-  //   for (int crowd_id = 0; crowd_id < NumThreads; ++crowd_id)
-  //     Movers[crowd_id]->stopRun2();
-  // #if !defined(REMOVE_TRACEMANAGER)
-  //   Traces->stopRun();
-  // #endif
-  //   //copy back the random states
-  // #ifndef USE_FAKE_RNG
-  //   for (int crowd_id = 0; crowd_id < NumThreads; ++crowd_id)
-  //     *(RandomNumberControl::Children[crowd_id]) = *(Rng[crowd_id]);
-  // #endif
-  //   ///write samples to a file
-  //   bool wrotesamples = DumpConfig;
-  //   if (DumpConfig)
-  //   {
-  //     wrotesamples = W.dumpEnsemble(wClones, wOut, myComm->size(), nBlocks);
-  //     if (wrotesamples)
-  //       app_log() << "  samples are written to the config.h5" << std::endl;
-  //   }
-  //   //finalize a qmc section
-  //   return finalize(nBlocks, !wrotesamples);
-  // }
-  return false;
-}
 
 
-} // namespace qmcplusplus
+  } // namespace qmcplusplus

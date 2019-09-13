@@ -287,10 +287,14 @@ bool QMCDriverNew::finalize(int block, bool dumpwalkers)
 void QMCDriverNew::setupWalkers()
 {
   IndexType local_walkers = calc_default_local_walkers();
+  // side effect updates walkers_per_crowd_;
   addWalkers(local_walkers, ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>(population_.get_num_particles()));
   //now give walkers references to their walkers
   auto crowd_start = crowds_.begin();
   auto crowd_end   = crowds_.end();
+  std::for_each(crowd_start,
+                crowd_end,
+                [this](std::unique_ptr<Crowd>& crowd) { crowd->reserve(walkers_per_crowd_); });
   population_.distributeWalkers(crowd_start, crowd_end, walkers_per_crowd_);
 }
 
