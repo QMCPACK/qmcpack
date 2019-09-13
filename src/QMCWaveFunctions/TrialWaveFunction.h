@@ -344,6 +344,17 @@ private:
   // helper function for extracting a list of WaveFunctionComponent from a list of TrialWaveFunction
   std::vector<WaveFunctionComponent*> extract_WFC_list(const std::vector<TrialWaveFunction*>& WF_list, int id) const;
 
+  // temporal helper function
+  template<class T>
+  static std::vector<T*> convert_ref_to_ptr_list(const std::vector<std::reference_wrapper<T>>& ref_list)
+  {
+    std::vector<T*> ptr_list;
+    ptr_list.reserve(ref_list.size());
+    for (auto& ref : ref_list)
+    ptr_list.push_back(&ref.get());
+    return ptr_list;
+  }
+
   static std::vector<std::reference_wrapper<WaveFunctionComponent>> extract_WFC_list(
       const std::vector<std::reference_wrapper<TrialWaveFunction>>& WF_list,
       int id);
