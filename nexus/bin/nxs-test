@@ -584,6 +584,12 @@ def optional_dependencies():
 #end def optional_dependencies
 
 
+
+def execute():
+    nunit_all()
+#end def execute
+
+
         
 def generic_logging():
     from generic import log,message,warn,error
@@ -3330,6 +3336,7 @@ def user_examples(label):
 NexusTest( versions              )
 NexusTest( required_dependencies )
 NexusTest( optional_dependencies , optional=True)
+NexusTest( execute               )
 NexusTest( generic_logging       )
 NexusTest( generic_intrinsics    )
 NexusTest( generic_extensions    )
