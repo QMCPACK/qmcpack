@@ -1,3 +1,84 @@
+##################################################################
+##  (c) Copyright 2015-  by Jaron T. Krogel                     ##
+##################################################################
+
+"""
+The :py:mod:`grid_functions` module provides generic capabilities to 
+handle function data that are represented on discrete grids of points.  
+
+Spatial grids currently supported by the classes in this module include 
+sheared parallelotope (simulation cell), spherical, and spherical surface 
+grids.  Grids of arbitrary dimension are supported within parallelotope 
+domains while 2D (disk) and 3D (ball) grids are supported for 
+spherical domains.  Grids over `N`-sphere surfaces are supported in 1D 
+(circles) and 2D (spheres). Grids of lower dimension may reside in 
+spaces of higher dimension, for example lines, planar plaquettes, and 
+disks may all reside in a 3D space.  Both periodic and open boundary 
+conditions are supported for parallelotope grids.
+
+Discrete functions are defined as sets of values over these grids.  
+Supported functions may be scalar valued, vector valued, or tensor valued. 
+For each of these cases, this module aims to support plotting, 
+interpolation, integration, and differentiation.
+
+The main classes intended for instantiation and use are 
+:py:class:`ParallelotopeGridFunction`, :py:class:`SpheroidGridFunction`, 
+and :py:class:`SpheroidSurfaceGridFunction`.  The point grid classes 
+corresponding to these grid functions may also be instantiated and used 
+directly.  See :py:class:`ParallelotopeGrid`, :py:class:`SpheroidGrid`, 
+and :py:class:`SpheroidSurfaceGrid`. 
+
+
+List of module contents
+-----------------------
+
+Coordinate conversion functions:
+
+* :py:func:`polar_to_cartesian`
+* :py:func:`cartesian_to_polar`
+* :py:func:`spherical_to_cartesian`
+* :py:func:`cartesian_to_spherical`
+
+Grid generation functions:
+
+* :py:func:`unit_grid_points`
+* :py:func:`parallelotope_grid_points`
+* :py:func:`spheroid_grid_points`
+* :py:func:`spheroid_surface_grid_points`
+
+Base classes for :py:class:`Grid` and :py:class:`GridFunction` classes:
+
+* :py:class:`PlotHandler`
+* :py:class:`GBase`
+
+Abstract :py:class:`Grid` classes:
+
+* :py:class:`Grid`
+* :py:class:`StructuredGrid`
+* :py:class:`StructuredGridWithAxes`
+
+Abstract :py:class:`GridFunction` classes:
+
+* :py:class:`GridFunction`
+* :py:class:`StructuredGridFunction`
+* :py:class:`StructuredGridFunctionWithAxes`
+
+Concrete :py:class:`Grid` classes:
+
+* :py:class:`ParallelotopeGrid` 
+* :py:class:`SpheroidGrid`
+* :py:class:`SpheroidSurfaceGrid`
+
+Concrete :py:class:`GridFunction` classes:
+
+* :py:class:`ParallelotopeGridFunction` 
+* :py:class:`SpheroidGridFunction`
+* :py:class:`SpheroidSurfaceGridFunction`
+
+
+Module contents
+---------------
+"""
 
 from generic import obj
 from developer import DevBase,ci,message,error,unavailable
