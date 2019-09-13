@@ -646,7 +646,7 @@ class GBase(PlotHandler):
 
     def reset(self):
         """
-        (`User API`) Reset all attributes to default values.
+        (`External API`) Reset all attributes to default values.
         """
         cls = self.__class__
         for name,(dtype,default) in cls.persistent_data_types.items():
@@ -685,7 +685,7 @@ class GBase(PlotHandler):
 
     def valid(self):
         """
-        (`User API`) Return the validity status of a Grid object.
+        (`External API`) Return the validity status of a Grid object.
 
         Returns
         -------
@@ -698,7 +698,7 @@ class GBase(PlotHandler):
 
     def check_valid(self,exit=True):
         """
-        (`User API`) Check the validity of a Grid object.  
+        (`External API`) Check the validity of a Grid object.  
 
         Parameters
         ----------
@@ -911,7 +911,7 @@ class Grid(GBase):
 
     def copy(self,shallow=False):
         """
-        (`User API`) Return a copy of the grid instance.
+        (`External API`) Return a copy of the grid instance.
 
         Parameters
         ----------
@@ -935,7 +935,7 @@ class Grid(GBase):
 
     def translate(self,shift):
         """
-        (`User API`)  Translate all points in the grid by a vector.
+        (`External API`)  Translate all points in the grid by a vector.
 
         Parameters
         ----------
@@ -1007,7 +1007,7 @@ class Grid(GBase):
 
     def plot_points(self,points=None,fig=True,show=True,default_marker='.',**kwargs):
         """
-        (`User API`)  Make a scatter plot of a set of points in 2D or 3D.
+        (`External API`)  Make a scatter plot of a set of points in 2D or 3D.
 
         By default, the set of grid points is plotted.
 
@@ -1322,7 +1322,7 @@ class StructuredGrid(Grid):
 
     def unit_points(self,points=None,project=False):
         """
-        (`User API`) Map a set of points into the unit cube.
+        (`External API`) Map a set of points into the unit cube.
 
         Parameters
         ----------
@@ -1356,7 +1356,7 @@ class StructuredGrid(Grid):
 
     def unit_metric(self,upoints=None):
         """
-        (`User API`)  Compute the integration metric in the unit coordinate 
+        (`External API`)  Compute the integration metric in the unit coordinate 
         space for a set of points defined there.
 
         Parameters
@@ -1379,7 +1379,7 @@ class StructuredGrid(Grid):
 
     def cell_indices(self,points=None,project=True):
         """
-        (`User API`) Given a set of points, find the index of the grid cell 
+        (`External API`) Given a set of points, find the index of the grid cell 
         bounding each point.
 
         Parameters
@@ -1411,7 +1411,7 @@ class StructuredGrid(Grid):
 
     def inside(self,points,tol=1e-12):
         """
-        (`User API`)  Given a set of points, determine which are inside the 
+        (`External API`)  Given a set of points, determine which are inside the 
         boundary of the grid.
 
         Parameters
@@ -1441,7 +1441,7 @@ class StructuredGrid(Grid):
 
     def project(self,points):
         """
-        (`User API`) Project a set of points into the grid domain, if possible.
+        (`External API`) Project a set of points into the grid domain, if possible.
 
         The points are first projected into the unit cube and then, if in 
         periodic boundary conditions, folded back into the unit cube.  Note 
@@ -1530,7 +1530,7 @@ class StructuredGrid(Grid):
 
     def plot_boundary(self,n=200,fig=True,show=True):
         """
-        (`User API`) Plot the edges of the boundary in the full space.
+        (`External API`) Plot the edges of the boundary in the full space.
 
         Parameters
         ----------
@@ -1557,7 +1557,7 @@ class StructuredGrid(Grid):
 
     def plot_unit_points(self,points=None,fig=True,show=True,default_marker='.',**kwargs):
         """
-        (`User API`) Make a scatter plot of a set of points in unit 
+        (`External API`) Make a scatter plot of a set of points in unit 
         coordinates.
 
         The inputted points are projected into the unit cube before plotting.  
@@ -1603,7 +1603,7 @@ class StructuredGrid(Grid):
 
     def plot_unit_boundary(self,n=200,fig=True,show=True):
         """
-        (`User API`) Plot the edges of the boundary in the unit space.
+        (`External API`) Plot the edges of the boundary in the unit space.
 
         Parameters
         ----------
@@ -1640,7 +1640,7 @@ class StructuredGrid(Grid):
 
     def points_from_unit(self,upoints):
         """
-        (`User API`) Map points from the unit space back into the full space.
+        (`External API`) Map points from the unit space back into the full space.
 
         Parameters
         ----------
@@ -1669,7 +1669,7 @@ class StructuredGrid(Grid):
 
     def volume(self):
         """
-        (`User API`)  Compute the volume of the space bounding the grid.
+        (`External API`)  Compute the volume of the space bounding the grid.
 
         Returns
         -------
@@ -1682,7 +1682,7 @@ class StructuredGrid(Grid):
 
     def cell_volumes(self):
         """
-        (`User API`) Compute the volumes of the grid cells.
+        (`External API`) Compute the volumes of the grid cells.
 
         Returns
         -------
@@ -1791,7 +1791,7 @@ class StructuredGridWithAxes(StructuredGrid):
 
     def translate(self,shift):
         """
-        (`User API`)  Translate all points in the grid by a vector.
+        (`External API`)  Translate all points in the grid by a vector.
 
         Parameters
         ----------
@@ -2069,7 +2069,7 @@ class ParallelotopeGrid(StructuredGridWithAxes):
 
     def points_from_unit(self,upoints):
         """
-        (`User API`) Map points from the unit space back into the full space.
+        (`External API`) Map points from the unit space back into the full space.
 
         Parameters
         ----------
@@ -2104,7 +2104,7 @@ class ParallelotopeGrid(StructuredGridWithAxes):
 
     def volume(self):
         """
-        (`User API`)  Compute the volume of the parallelotope bounding the 
+        (`External API`)  Compute the volume of the parallelotope bounding the 
         grid.
 
         Returns
@@ -2118,7 +2118,7 @@ class ParallelotopeGrid(StructuredGridWithAxes):
 
     def cell_volumes(self):
         """
-        (`User API`) Compute the volumes of the parallelotope grid cells.
+        (`External API`) Compute the volumes of the parallelotope grid cells.
 
         Returns
         -------
@@ -2367,7 +2367,7 @@ class SpheroidGrid(StructuredGridWithAxes):
 
     def points_from_unit(self,upoints):
         """
-        (`User API`) Map points from the unit space back into the full space.
+        (`External API`) Map points from the unit space back into the full space.
 
         Parameters
         ----------
@@ -2425,7 +2425,7 @@ class SpheroidGrid(StructuredGridWithAxes):
 
     def radius(self):
         """
-        (`User API`) Return the radius of the spheroid, if isotropic. 
+        (`External API`) Return the radius of the spheroid, if isotropic. 
         """
         if not self.isotropic:
             self.error('radius is not supported for anisotropic spheroid surface grids')
@@ -2436,7 +2436,7 @@ class SpheroidGrid(StructuredGridWithAxes):
 
     def volume(self):
         """
-        (`User API`) Compute the volume of the spheroid bounding the grid.
+        (`External API`) Compute the volume of the spheroid bounding the grid.
 
         Returns
         -------
@@ -2457,7 +2457,7 @@ class SpheroidGrid(StructuredGridWithAxes):
 
     def cell_volumes(self):
         """
-        (`User API`) Compute the volumes of the spheroid grid cells.
+        (`External API`) Compute the volumes of the spheroid grid cells.
 
         Returns
         -------
@@ -2729,7 +2729,7 @@ class SpheroidSurfaceGrid(StructuredGridWithAxes):
 
     def points_from_unit(self,upoints):
         """
-        (`User API`) Map points from the unit space back into the full space.
+        (`External API`) Map points from the unit space back into the full space.
 
         Parameters
         ----------
@@ -2789,7 +2789,7 @@ class SpheroidSurfaceGrid(StructuredGridWithAxes):
 
     def radius(self):
         """
-        (`User API`) Return the radius of the spheroid, if isotropic. 
+        (`External API`) Return the radius of the spheroid, if isotropic. 
         """
         if not self.isotropic:
             self.error('radius is not supported for anisotropic spheroid surface grids')
@@ -2800,7 +2800,7 @@ class SpheroidSurfaceGrid(StructuredGridWithAxes):
 
     def volume(self):
         """
-        (`User API`) Compute the area of the spheroid surface containing the 
+        (`External API`) Compute the area of the spheroid surface containing the 
         grid (isotropic only).
 
         Returns
@@ -2826,7 +2826,7 @@ class SpheroidSurfaceGrid(StructuredGridWithAxes):
 
     def cell_volumes(self):
         """
-        (`User API`) Compute the areas of the spheroid surface grid cells 
+        (`External API`) Compute the areas of the spheroid surface grid cells 
         (isotropic only).
 
         Returns
@@ -3158,7 +3158,7 @@ class StructuredGridFunction(GridFunction):
 
     def plot_unit_contours(self,boundary=False,fig=True,show=True,**kwargs):
         """
-        (`User API`) Make 2D contour plots in the unit coordinate space.
+        (`External API`) Make 2D contour plots in the unit coordinate space.
 
         Parameters
         ----------
@@ -3194,7 +3194,7 @@ class StructuredGridFunction(GridFunction):
 
     def plot_unit_surface(self,fig=True,show=True,**kwargs):
         """
-        (`User API`) Make 2D surface plots in the unit coordinate space.
+        (`External API`) Make 2D surface plots in the unit coordinate space.
 
         Parameters
         ----------
@@ -3225,7 +3225,7 @@ class StructuredGridFunction(GridFunction):
 
     def plot_unit_isosurface(self,level=None,fig=True,show=True,**kwargs):
         """
-        (`User API`) Make 3D isosurface plots in the unit coordinate space.
+        (`External API`) Make 3D isosurface plots in the unit coordinate space.
 
         Parameters
         ----------
@@ -3279,7 +3279,7 @@ class StructuredGridFunctionWithAxes(StructuredGridFunction):
 
     def plot_contours(self,boundary=False,fig=True,show=True,**kwargs):
         """
-        (`User API`) Make 2D contour plots in the full coordinate space.
+        (`External API`) Make 2D contour plots in the full coordinate space.
 
         Parameters
         ----------
@@ -3318,7 +3318,7 @@ class StructuredGridFunctionWithAxes(StructuredGridFunction):
 
     def plot_surface(self,fig=True,show=True,**kwargs):
         """
-        (`User API`) Make 2D surface plots in the full coordinate space.
+        (`External API`) Make 2D surface plots in the full coordinate space.
 
         Parameters
         ----------
@@ -3349,7 +3349,7 @@ class StructuredGridFunctionWithAxes(StructuredGridFunction):
 
     def plot_isosurface(self,level=None,fig=True,show=True,**kwargs):
         """
-        (`User API`) Make 3D isosurface plots in the full coordinate space.
+        (`External API`) Make 3D isosurface plots in the full coordinate space.
 
         Parameters
         ----------
