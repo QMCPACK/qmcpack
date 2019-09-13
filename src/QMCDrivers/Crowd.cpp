@@ -41,6 +41,7 @@ void Crowd::addWalker(MCPWalker& walker, ParticleSet& elecs, TrialWaveFunction& 
   walker_elecs_.push_back(elecs);
   walker_twfs_.push_back(twf);
   walker_hamiltonians_.push_back(hamiltonian);
+
 };
 
 void Crowd::loadWalkers()

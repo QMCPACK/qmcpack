@@ -471,13 +471,16 @@ struct WaveFunctionComponent : public QMCTraits
    * @param P_list the list of ParticleSet pointers in a walker batch
    * @param buf_list Anonymous storage
    */
-  virtual void mw_registerData(const std::vector<WaveFunctionComponent*>& WFC_list,
-                               const std::vector<ParticleSet*>& P_list,
-                               const std::vector<WFBufferType*>& buf_list)
+  virtual void mw_registerData(const RefVector<WaveFunctionComponent>& WFC_list,
+                               const RefVector<ParticleSet>& P_list,
+                               const RefVector<WFBufferType>& buf_list)
   {
-    //#pragma omp parallel for
+    // We can't make this static but we can use a lambda with no capture to
+    // restrict access to *this scope
+    auto registerComponentData = [](WaveFunctionComponent& wfc, ParticleSet& pset, WFBufferType& wfb){
+      wfc.registerData(pset,wfb);};
     for (int iw = 0; iw < WFC_list.size(); iw++)
-      WFC_list[iw]->registerData(*P_list[iw], *buf_list[iw]);
+      registerComponentData(WFC_list[iw],P_list[iw],buf_list[iw]);
   }
 
   /** For particle-by-particle move. Put the objects of this class

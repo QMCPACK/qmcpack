@@ -32,6 +32,7 @@ class MCPopulation
 {
 public:
   using MCPWalker  = Walker<QMCTraits, PtclOnLatticeTraits>;
+  using WFBuffer   = MCPWalker::WFBuffer_t;
   using RealType   = QMCTraits::RealType;
   using Properties = MCPWalker::PropertyContainer_t;
   using IndexType  = QMCTraits::IndexType;

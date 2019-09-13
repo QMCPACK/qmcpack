@@ -71,12 +71,18 @@ VMCBatched::IndexType VMCBatched::calc_default_local_walkers()
 void VMCBatched::advanceWalkers(const StateForThread& sft, Crowd& crowd, ContextForSteps& step_context, bool recompute)
 {
   crowd.loadWalkers();
+
+  // Consider favoring lambda followed by for over walkers
+  // more compact, descriptive and less error prone.
   auto it_walker_twfs  = crowd.beginTrialWaveFunctions();
   auto it_mcp_walkers  = crowd.beginWalkers();
   auto it_walker_elecs = crowd.beginElectrons();
   while (it_walker_twfs != crowd.endTrialWaveFunctions())
   {
     it_walker_twfs->get().copyFromBuffer(it_walker_elecs->get(), it_mcp_walkers->get().DataSet);
+    ++it_walker_twfs;
+    ++it_mcp_walkers;
+    ++it_walkers_elecs;
   }
 
   int num_walkers = crowd.size();
@@ -265,6 +271,8 @@ void VMCBatched::advanceWalkers(const StateForThread& sft, Crowd& crowd, Context
 
         estimator_manager_->startBlock(qmcdriver_input_.get_max_steps());
 
+        TasksOneToOne<> block_start_task(num_crowds_);
+        block_start_task(initialLogEvaluation, std::ref(crowds_))
         for (int step = 0; step < qmcdriver_input_.get_max_steps(); ++step)
         {
           vmc_state.step = step;

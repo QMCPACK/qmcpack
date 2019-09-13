@@ -26,6 +26,8 @@ MCPopulation::MCPopulation(MCWalkerConfiguration& mcwc,
   num_global_walkers_ = mcwc.GlobalNumWalkers;
   num_local_walkers_  = mcwc.LocalNumWalkers;
   num_particles_      = mcwc.getParticleNum();
+  size_dataset        = mcwc.DataSet.size();
+  
   // MCWalkerConfiguration doesn't give actual number of groups
   num_groups_ = mcwc.groups();
   particle_group_indexes_.resize(num_groups_);
@@ -56,6 +58,10 @@ void MCPopulation::createWalkers()
 }
 
 /** Creates walkers with starting positions pos and a clone of the electron particle set and trial wavefunction
+ *  
+ *  Needed
+ *  in: DataSet.size()
+ *  in.
  */
 void MCPopulation::createWalkers(IndexType num_walkers,
                                  const ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>& positions)
@@ -66,6 +72,7 @@ void MCPopulation::createWalkers(IndexType num_walkers,
     walker_ptr = std::make_unique<MCPWalker>(num_particles_);
     walker_ptr->R.resize(num_particles_);
     walker_ptr->R = positions;
+    walker_ptr->registerData();
   });
 
   // Sadly the wfc makeClone interface depends on the full particle set as a way to not to keep track
@@ -92,12 +99,35 @@ void MCPopulation::createWalkers(IndexType num_walkers,
     ++it_wtw;
     ++it_ham;
   }
+
+  RefVector<WFBuffer> mcp_wfbuffers;
+  mcp_wfbuffers.reserve(num_walkers);
+  std::for_each(walkers_.begin(),
+                walkers_.end(),
+                [&mcp_wfbuffers](auto& walker) {
+                  mcp_wfbuffers.push_back((**walker).DataSet);
+                });
+  
+  TrialWaveFunction::flex_registerData(walker_trial_wavefunctions_,
+                                       walker_elec_particle_sets_,
+                                       mcp_wfbuffers);
+
+  std::for_each(walkers_.begin(),
+                walkers_.end(),
+                [](auto& walker) {
+                  (**walker).DataSet.allocate();
+                });
+
+  
+
 }
+
 
 /** Creates walkers doing their first touch in their crowd (thread) context
  *
  *  This is basically premature optimization but I wanted to check if this sort of thing
- *  would work.  It seems to.
+ *  would work.  It seems to. This sort of structure not an #omp parallel section must be used in the driver.
+ *  No new bare openmp directives should be added to code with updated design.
  */
 // void MCPopulation::createWalkers(int num_crowds,
 //                                  int walkers_per_crowd,

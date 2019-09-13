@@ -304,6 +304,7 @@ void QMCDriverNew::setupWalkers()
  */
 void QMCDriverNew::addWalkers(int nwalkers, const ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>& positions)
 {
+  
   population_.createWalkers(nwalkers, positions);
   // else if (nwalkers < 0)
   // {
@@ -343,6 +344,33 @@ void QMCDriverNew::createRngsStepContexts()
   }
 }
 
+void QMCDriverNew::initialLogEvaluation(int crowd_id, std::vector<std::unique_ptr>>& crowds)
+{
+  auto it_walker_twfs  = crowd.beginTrialWaveFunctions();
+  auto it_mcp_walkers  = crowd.beginWalkers();
+  auto it_walker_elecs = crowd.beginElectrons();
+  auto copyBuffer = [](){
+                      it_walker_twfs->get().copyFromBuffer(it_walker_elecs->get(), it_mcp_walkers->get().DataSet);
+                    };
+  for (int iw = 0; iw < crowd.size(); ++iw)
+    
+  while (it_walker_twfs != crowd.endTrialWaveFunctions())
+  {
+    
+  }
+
+  TrialWaveFunction:::flex_evaluateLog(crowd.get_walker_twfs(), crowd.get_walker_elecs());
+    RealType logpsi = Psi.updateBuffer(W, awalker.DataSet, false);
+    W.saveWalker(awalker);
+    RealType eloc = H.evaluate(W);
+    BadState |= std::isnan(eloc);
+    awalker.resetProperty(logpsi, Psi.getPhase(), eloc);
+    H.auxHevaluate(W, awalker);
+    H.saveProperty(awalker.getPropertyBase());
+    awalker.ReleasedNodeAge    = 0;
+    awalker.ReleasedNodeWeight = 0;
+    awalker.Weight             = 1;
+}
 
 void QMCDriverNew::setWalkerOffsets()
 {

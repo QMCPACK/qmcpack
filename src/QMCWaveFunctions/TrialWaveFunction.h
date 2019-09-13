@@ -156,7 +156,8 @@ public:
   RealType evaluateLog(ParticleSet& P);
 
   /** batched version of evaluateLog. gold reference */
-  void flex_evaluateLog(const std::vector<TrialWaveFunction*>& WF_list, const std::vector<ParticleSet*>& P_list) const;
+  static void flex_evaluateLog(const RefVector<TrialWaveFunction>& WF_list,
+                        const RefVector<ParticleSet>& P_list);
 
   /** recompute the value of the orbitals which require critical accuracy */
   void recompute(ParticleSet& P);
@@ -250,9 +251,9 @@ public:
   /* flexible batched version of registerData. 
    * Ye: perhaps it doesn't need to be flexible but just operates on all the walkers
    */
-  void flex_registerData(const std::vector<TrialWaveFunction*>& WF_list,
-                         const std::vector<ParticleSet*>& P_list,
-                         const std::vector<WFBufferType*>& buf_list) const;
+  static void flex_registerData(const RefVector<TrialWaveFunction>& WF_list,
+                         const RefVector<ParticleSet>& P_list,
+                         const RefVector<WFBufferType>& buf_list);
 
   /** update all the wavefunction components in buffer.
    *  See WaveFunctionComponent::updateBuffer for more detail */
@@ -340,9 +341,6 @@ private:
 
   std::vector<NewTimer*> myTimers;
   std::vector<RealType> myTwist;
-
-  // helper function for extracting a list of WaveFunctionComponent from a list of TrialWaveFunction
-  std::vector<WaveFunctionComponent*> extract_WFC_list(const std::vector<TrialWaveFunction*>& WF_list, int id) const;
 
   static std::vector<std::reference_wrapper<WaveFunctionComponent>> extract_WFC_list(
       const std::vector<std::reference_wrapper<TrialWaveFunction>>& WF_list,
