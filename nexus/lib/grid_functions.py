@@ -3084,7 +3084,7 @@ class GridFunction(GBase):
         #end if
         self.grid.local_validity_checks(msgs)
         if len(self.values)!=self.npoints:
-            msgs.append('number of function values and number of gird points do not match\nnumber of grid points: {}\nnumber of function values: {}'.format(self.npoints,len(self.values)))
+            msgs.append('number of function values and number of grid points do not match\nnumber of grid points: {}\nnumber of function values: {}'.format(self.npoints,len(self.values)))
         #end if
         if len(self.values.shape)!=2:
             msgs.append('function values has incorrect shape\nexpected shape is (# of points, # of function values at each point)\nshape received: {}'.format(self.values.shape))
@@ -3632,9 +3632,9 @@ if __name__=='__main__':
     demos = obj(
         plot_grids         = 0,
         plot_inside        = 0,
-        plot_projection    = 1,
+        plot_projection    = 0,
         cell_volumes       = 0,
-        plot_contours      = 0,
+        plot_contours      = 1,
         plot_surface       = 0,
         plot_isosurface    = 0,
         )

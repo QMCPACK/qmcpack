@@ -1295,3 +1295,121 @@ def test_grid_unit_metric():
 
 #end def test_grid_unit_metric
 
+
+
+def test_grid_function_initialization():
+    import numpy as np
+    from testing import object_eq
+    from grid_functions import unit_grid_points
+    from grid_functions import ParallelotopeGrid
+    from grid_functions import SpheroidGrid
+    from grid_functions import SpheroidSurfaceGrid
+    from grid_functions import GridFunction
+    from grid_functions import StructuredGridFunction
+    from grid_functions import StructuredGridFunctionWithAxes
+    from grid_functions import ParallelotopeGridFunction
+    from grid_functions import SpheroidGridFunction
+    from grid_functions import SpheroidSurfaceGridFunction
+
+    abstract_gftypes = [
+        GridFunction,
+        StructuredGridFunction,
+        StructuredGridFunctionWithAxes,
+        ] 
+
+    gftypes = [
+        ParallelotopeGridFunction,
+        SpheroidGridFunction,
+        SpheroidSurfaceGridFunction,
+        ]
+
+    gfmap = dict(
+        ParallelotopeGrid   = ParallelotopeGridFunction,
+        SpheroidGrid        = SpheroidGridFunction,
+        SpheroidSurfaceGrid = SpheroidSurfaceGridFunction,
+        )
+
+    for gftype in gftypes+abstract_gftypes:
+        f = gftype()
+        assert(not f.initialized)
+        assert(not f.valid())
+    #end for
+    
+    def unit_function(u,fdim=None):
+        values = np.cos(2*np.pi*(u-1)).sum(axis=1)
+        if fdim is not None:
+            vals = values
+            values = np.empty(vals.shape+(fdim,),dtype=vals.dtype)
+            for d in range(fdim):
+                values[:,:,d] = vals + float(d)
+            #end for
+        #end if
+        return values
+    #end def unit_function
+
+    grids = get_grids()
+    props = get_props()
+
+    for name in sorted(grids.keys()):
+        p = props[name]
+        if p.sheared and p.bconds is None and not p.translated:
+            g = grids[name].copy()
+            gftype = gfmap[g.__class__.__name__]
+            f = unit_function(g.unit_points())
+            gf = gftype(
+                grid   = g,
+                values = f,
+                )
+            assert(gf.valid())
+            
+            assert(id(g)!=id(gf.grid))
+            assert(gf.space_dim==g.space_dim)
+            assert(gf.npoints==g.npoints)
+            assert(gf.nvalues==1)
+            assert(id(gf.r)==id(gf.grid.points))
+            assert(id(gf.f)==id(gf.values))
+            assert(gf.grid_dim==g.grid_dim)
+            assert(gf.grid_shape==g.grid_shape)
+            assert(gf.cell_grid_shape==g.cell_grid_shape)
+            assert(gf.ncells==g.ncells)
+            assert(gf.flat_points_shape==g.flat_points_shape)
+            assert(gf.full_points_shape==g.full_points_shape)
+        #end if
+    #end for
+
+
+    gftypes = [
+        ParallelotopeGridFunction,
+        SpheroidGridFunction,
+        ]
+    ugrid = unit_grid_points((5,5,5),centered=True)
+    values = unit_function(ugrid)
+    for gftype in gftypes:
+        grid_inputs = dict(
+            axes    = [[1,0,0],
+                       [1,1,0],
+                       [1,1,1]],
+            cells    = (5,5,5),
+            centered = True,
+            )
+
+        grid = gftype.grid_class(**grid_inputs)
+
+        gf1 = gftype(
+            grid   = grid,
+            values = values,
+            )
+        assert(gf1.valid())
+
+        gf2 = gftype(
+            values = values,
+            **grid_inputs
+            )
+        assert(gf2.valid())
+
+        assert(object_eq(gf1,gf2))
+
+        assert(id(gf1.values)!=id(gf2.values))
+    #end for
+
+#end def test_grid_function_initialization
