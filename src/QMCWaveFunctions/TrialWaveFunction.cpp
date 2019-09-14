@@ -386,7 +386,7 @@ void TrialWaveFunction::flex_calcRatio(const RefVector<TrialWaveFunction>& wf_li
       {
         ScopedTimer local_timer(wf_list[0].get().get_timers()[ii]);
         const auto wfc_list(extract_WFC_list(wf_list, i));
-        wavefunction_components[i]->mw_calcRatio(wfc_list, p_list, iat, ratios_z);
+        wavefunction_components[i]->mw_calcRatio(convert_ref_to_ptr_list(wfc_list), convert_ref_to_ptr_list(p_list), iat, ratios_z);
         for (int iw = 0; iw < wf_list.size(); iw++)
           ratios[iw] *= ratios_z[iw];
       }
@@ -511,8 +511,7 @@ void TrialWaveFunction::flex_ratioGrad(const RefVector<TrialWaveFunction>& wf_li
       ScopedTimer localtimer(wf_list[0].get().get_timers()[ii]);
       //ScopedTimer local_timer(myTimers[ii]);
       const auto wfc_list(extract_WFC_list(wf_list, i));
-      
-      wavefunction_components[i]->mw_ratioGrad(wfc_list, p_list, iat, ratios_z, grad_new);
+      wavefunction_components[i]->mw_ratioGrad(convert_ref_to_ptr_list(wfc_list), convert_ref_to_ptr_list(p_list), iat, ratios_z, grad_new);
       for (int iw = 0; iw < wf_list.size(); iw++)
         ratios[iw] *= ratios_z[iw];
     }

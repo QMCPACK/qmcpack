@@ -1662,8 +1662,6 @@ def generic_extensions():
 
 def nexus_imports():
     import nexus
-
-    import qmcpack_workflows
 #end def nexus_imports
 
 
@@ -3688,13 +3686,13 @@ if __name__=='__main__':
     nfailed = 0
     nrun    = 0
     for test in tests:
-        n+=1
         t1 = time()
 
         # skip optional tests, unless requested
         if test.optional and not options.full:
             continue
         #end if
+        n+=1
 
         # run the test
         test.run()

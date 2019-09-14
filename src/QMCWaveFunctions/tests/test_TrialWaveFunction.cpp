@@ -21,9 +21,14 @@
 #include "QMCWaveFunctions/Fermion/SlaterDet.h"
 #include "QMCWaveFunctions/Jastrow/RadialJastrowBuilder.h"
 
-
 namespace qmcplusplus
 {
+
+#ifdef ENABLE_CUDA
+using DiracDet = DiracDeterminant<DelayedUpdateCUDA<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
+#else
+using DiracDet = DiracDeterminant<DelayedUpdate<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
+#endif
 
 using LogValueType = TrialWaveFunction::LogValueType;
 using PsiValueType = TrialWaveFunction::PsiValueType;
@@ -105,9 +110,9 @@ TEST_CASE("TrialWaveFunction", "[wavefunction]")
   SPOSet* spo = einSet.createSPOSetFromXML(ein1);
   REQUIRE(spo != nullptr);
 
-  auto* det_up = new DiracDeterminant<>(spo);
+  auto* det_up = new DiracDet(spo);
   det_up->set(0, 2);
-  auto* det_dn = new DiracDeterminant<>(spo);
+  auto* det_dn = new DiracDet(spo);
   det_dn->set(2, 2);
 
   auto* slater_det = new SlaterDet(elec_);
