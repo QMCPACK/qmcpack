@@ -46,6 +46,15 @@ struct BsplineSet : public SPOSet, public SplineAdoptor
   ///** default constructor */
   //BsplineSet() { }
 
+  std::vector<SplineAdoptor*>
+  downcast_spo_list(const std::vector<SPOSet*>& spo_list) const
+  {
+    std::vector<SplineAdoptor*> SA_list;
+    for (auto spo : spo_list)
+      SA_list.push_back(dynamic_cast<SplineAdoptor*>(spo));
+    return SA_list;
+  }
+
   SPOSet* makeClone() const { return new BsplineSet<SplineAdoptor>(*this); }
 
   inline void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi) { SplineAdoptor::evaluate_v(P, iat, psi); }
@@ -75,6 +84,16 @@ struct BsplineSet : public SPOSet, public SplineAdoptor
   inline void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
   {
     SplineAdoptor::evaluate_vgl(P, iat, psi, dpsi, d2psi);
+  }
+
+  inline void mw_evaluateVGL(const std::vector<SPOSet*>& spo_list,
+                              const std::vector<ParticleSet*>& P_list,
+                              int iat,
+                              const std::vector<ValueVector_t*>& psi_v_list,
+                              const std::vector<GradVector_t*>& dpsi_v_list,
+                              const std::vector<ValueVector_t*>& d2psi_v_list) override
+  {
+    SplineAdoptor::mw_evaluate_vgl(downcast_spo_list(spo_list), P_list, iat, psi_v_list, dpsi_v_list, d2psi_v_list);
   }
 
   inline void evaluate(const ParticleSet& P,
