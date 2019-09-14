@@ -717,15 +717,6 @@ struct SplineC2ROMP : public SplineAdoptorBase<ST, 3>
   template<typename VV, typename GV>
   inline void evaluate_vgl(const ParticleSet& P, const int iat, VV& psi, GV& dpsi, VV& d2psi)
   {
-    std::vector<SplineC2ROMP*> sa_list; sa_list.push_back(this);
-    std::vector<ParticleSet*> P_list; P_list.push_back(const_cast<ParticleSet*>(&P));
-    std::vector<VV*> psi_v_list; psi_v_list.push_back(&psi);
-    std::vector<GV*> dpsi_v_list; dpsi_v_list.push_back(&dpsi);
-    std::vector<VV*> d2psi_v_list; d2psi_v_list.push_back(&d2psi);
-
-    mw_evaluate_vgl(sa_list, P_list, iat, psi_v_list, dpsi_v_list, d2psi_v_list);
-    return;
-
     const PointType& r = P.activeR(iat);
     PointType ru(PrimLattice.toUnit_floor(r));
 
@@ -809,16 +800,16 @@ struct SplineC2ROMP : public SplineAdoptorBase<ST, 3>
       mw_pos_copy.resize(nwalkers * 6);
 
     // pack particle positions
-    for (int iat = 0; iat < nwalkers; ++iat)
+    for (int iw = 0; iw < nwalkers; ++iw)
     {
-      const PointType& r = P_list[iat]->activeR(iat);
+      const PointType& r = P_list[iw]->activeR(iat);
       PointType ru(PrimLattice.toUnit_floor(r));
-      mw_pos_copy[iat * 6]     = r[0];
-      mw_pos_copy[iat * 6 + 1] = r[1];
-      mw_pos_copy[iat * 6 + 2] = r[2];
-      mw_pos_copy[iat * 6 + 3] = ru[0];
-      mw_pos_copy[iat * 6 + 4] = ru[1];
-      mw_pos_copy[iat * 6 + 5] = ru[2];
+      mw_pos_copy[iw * 6]     = r[0];
+      mw_pos_copy[iw * 6 + 1] = r[1];
+      mw_pos_copy[iw * 6 + 2] = r[2];
+      mw_pos_copy[iw * 6 + 3] = ru[0];
+      mw_pos_copy[iw * 6 + 4] = ru[1];
+      mw_pos_copy[iw * 6 + 5] = ru[2];
     }
 
     const int ChunkSizePerTeam = 128;
@@ -846,7 +837,7 @@ struct SplineC2ROMP : public SplineAdoptorBase<ST, 3>
     PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(NumTeams*nwalkers) thread_limit(ChunkSizePerTeam) \
                     map(always, to: pos_copy_ptr[0:nwalkers*6]) \
                     map(always, from: results_scratch_ptr[0:orb_size*nwalkers*5])")
-    for (int iat = 0; iat < nwalkers; iat++)
+    for (int iw = 0; iw < nwalkers; iw++)
       for (int team_id = 0; team_id < NumTeams; team_id++)
       {
         const int first      = ChunkSizePerTeam * team_id;
@@ -855,12 +846,12 @@ struct SplineC2ROMP : public SplineAdoptorBase<ST, 3>
         const int last_cplx  = orb_size < last / 2 ? orb_size : last / 2;
         const int first_real = first_cplx + std::min(nComplexBands_local, first_cplx);
         const int last_real  = last_cplx + std::min(nComplexBands_local, last_cplx);
-        auto* restrict offload_scratch_iat_ptr = offload_scratch_ptr + padded_size * iat * 10;
-        auto* restrict psi_iat_ptr             = results_scratch_ptr + orb_size * iat * 5;
+        auto* restrict offload_scratch_iw_ptr = offload_scratch_ptr + padded_size * iw * 10;
+        auto* restrict psi_iw_ptr             = results_scratch_ptr + orb_size * iw * 5;
 
         int ix, iy, iz;
         ST a[4], b[4], c[4], da[4], db[4], dc[4], d2a[4], d2b[4], d2c[4];
-        spline2::computeLocationAndFractional(spline_ptr, pos_copy_ptr[iat * 6 + 3], pos_copy_ptr[iat * 6 + 4], pos_copy_ptr[iat * 6 + 5], ix, iy, iz, a, b, c, da, db, dc, d2a, d2b, d2c);
+        spline2::computeLocationAndFractional(spline_ptr, pos_copy_ptr[iw * 6 + 3], pos_copy_ptr[iw * 6 + 4], pos_copy_ptr[iw * 6 + 5], ix, iy, iz, a, b, c, da, db, dc, d2a, d2b, d2c);
 
         const ST G[9] = {PrimLattice_G_ptr[0], PrimLattice_G_ptr[1], PrimLattice_G_ptr[2],
                          PrimLattice_G_ptr[3], PrimLattice_G_ptr[4], PrimLattice_G_ptr[5],
@@ -875,29 +866,29 @@ struct SplineC2ROMP : public SplineAdoptorBase<ST, 3>
                                                a, b, c,
                                                da, db, dc,
                                                d2a, d2b, d2c,
-                                               offload_scratch_iat_ptr + first,
-                                               offload_scratch_iat_ptr + padded_size + first,
-                                               offload_scratch_iat_ptr + padded_size * 4 + first, padded_size, first, last);
-          C2R::assign_vgl(pos_copy_ptr[iat * 6], pos_copy_ptr[iat * 6 + 1], pos_copy_ptr[iat * 6 + 2], psi_iat_ptr, mKK_ptr, orb_size, offload_scratch_iat_ptr, padded_size, symGGt,
+                                               offload_scratch_iw_ptr + first,
+                                               offload_scratch_iw_ptr + padded_size + first,
+                                               offload_scratch_iw_ptr + padded_size * 4 + first, padded_size, first, last);
+          C2R::assign_vgl(pos_copy_ptr[iw * 6], pos_copy_ptr[iw * 6 + 1], pos_copy_ptr[iw * 6 + 2], psi_iw_ptr, mKK_ptr, orb_size, offload_scratch_iw_ptr, padded_size, symGGt,
                           G, myKcart_ptr, myKcart_padded_size, first_spo_local, nComplexBands_local,
                           first / 2, last / 2);
         }
       }
 
     // do the reduction manually
-    for (int iat = 0; iat < nwalkers; ++iat)
+    for (int iw = 0; iw < nwalkers; ++iw)
     {
-      auto* restrict results_iat_ptr = results_scratch_ptr + orb_size * iat * 5;
-      auto& psi_v(*psi_v_list[iat]);
-      auto& dpsi_v(*dpsi_v_list[iat]);
-      auto& d2psi_v(*d2psi_v_list[iat]);
+      auto* restrict results_iw_ptr = results_scratch_ptr + orb_size * iw * 5;
+      auto& psi_v(*psi_v_list[iw]);
+      auto& dpsi_v(*dpsi_v_list[iw]);
+      auto& d2psi_v(*d2psi_v_list[iw]);
       for (size_t i = 0; i < orb_size; i++)
       {
-        psi_v[i]     = results_iat_ptr[i];
-        dpsi_v[i][0] = results_iat_ptr[orb_size + i * 3];
-        dpsi_v[i][1] = results_iat_ptr[orb_size + i * 3 + 1];
-        dpsi_v[i][2] = results_iat_ptr[orb_size + i * 3 + 2];
-        d2psi_v[i]   = results_iat_ptr[orb_size * 4 + i];
+        psi_v[i]     = results_iw_ptr[i];
+        dpsi_v[i][0] = results_iw_ptr[orb_size + i * 3];
+        dpsi_v[i][1] = results_iw_ptr[orb_size + i * 3 + 1];
+        dpsi_v[i][2] = results_iw_ptr[orb_size + i * 3 + 2];
+        d2psi_v[i]   = results_iw_ptr[orb_size * 4 + i];
       }
     }
   }
