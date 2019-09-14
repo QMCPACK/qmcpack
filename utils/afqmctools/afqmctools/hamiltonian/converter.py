@@ -105,6 +105,47 @@ def read_fcidump(filename, symmetry=8, verbose=True):
     nbeta = nalpha - ms2
     return h1e, h2e, ecore, (nalpha, nbeta)
 
+def read_qmcpack_hamiltonian(filename):
+    """Read Hamiltonian from QMCPACK format.
+
+    Parameters
+    ----------
+    filename : string
+        QMPACK Hamiltonian file.
+
+    Returns
+    -------
+    hamil : dict
+        Data read from file.
+    """
+    try:
+        hc, chol, enuc, nmo, nelec, nmok, qkk2 = (
+                read_qmcpack_cholesky_kpoint(filename)
+                )
+        hamil = {
+            'hcore': hc,
+            'chol': chol,
+            'enuc': enuc,
+            'nelec': nelec,
+            'nmo': nmo,
+            'nmo_pk': nmok,
+            'qk_k2': qkk2
+            }
+    except KeyError:
+        try:
+            hc, chol, enuc, nmo, nelec = read_qmcpack_cholesky(filename)
+            hamil = {
+                'hcore': hc,
+                'chol': chol,
+                'enuc': enuc,
+                'nmo': nmo,
+                'nelec': nelec
+                }
+        except KeyError:
+            print("Error reading Hamiltonian file. Hamiltonian not found.")
+            hamil = None
+    return hamil
+
 def read_qmcpack_cholesky(filename):
     """Read in integrals from hdf5.
 
@@ -198,9 +239,12 @@ def check_sym(ikjl, nmo, sym):
         else:
             return (i >= k and j >= l) and ik >= jl
 
-def fmt_integral(intg, i, k, j, l, cplx):
+def fmt_integral(intg, i, k, j, l, cplx, paren=False):
     if cplx:
-        fmt = '  {: 13.8e}    {: 13.8e}  {:4d}  {:4d}  {:4d}  {:4d}\n'
+        if paren:
+            fmt = '  ({: 13.8e}, {: 13.8e}) {:4d}  {:4d}  {:4d}  {:4d}\n'
+        else:
+            fmt = '  {: 13.8e}    {: 13.8e}  {:4d}  {:4d}  {:4d}  {:4d}\n'
         out = fmt.format(intg.real, intg.imag, i+1, k+1, j+1, l+1)
     else:
         fmt = '  {: 13.8e}    {:4d}  {:4d}  {:4d}  {:4d}\n'
@@ -209,7 +253,7 @@ def fmt_integral(intg, i, k, j, l, cplx):
 
 
 def write_fcidump(filename, hcore, chol, enuc, nmo, nelec, tol=1e-8,
-                  sym=1, cplx=True):
+                  sym=1, cplx=True, paren=False):
     """Write FCIDUMP based from Cholesky factorised integrals.
 
     Parameters
@@ -233,6 +277,8 @@ def write_fcidump(filename, hcore, chol, enuc, nmo, nelec, tol=1e-8,
         Optional. Default 1, i.e. print everything.
     cplx : bool
         Write in complex format. Optional. Default : True.
+    paren : bool
+        Write complex numbers in parenthesis.
     """
     header = fcidump_header(sum(nelec), nmo, nelec[0]-nelec[1])
     if cplx and sym > 4:
@@ -250,16 +296,17 @@ def write_fcidump(filename, hcore, chol, enuc, nmo, nelec, tol=1e-8,
                     for l in range(0,nmo):
                         sym_allowed = check_sym((i,k,j,l), nmo, sym)
                         if abs(eris[i,k,l,j]) > tol and sym_allowed:
-                            out = fmt_integral(eris[i,k,l,j], i, k, j, l, cplx)
+                            out = fmt_integral(eris[i,k,l,j], i, k, j, l,
+                                               cplx, paren=paren)
                             f.write(out)
         for i in range(0,nmo):
             for j in range(0,i+1):
                 if abs(hcore[i,j]) > tol:
-                    out = fmt_integral(hcore[i,j], i, j, -1, -1, cplx)
+                    out = fmt_integral(hcore[i,j], i, j, -1, -1,
+                                       cplx, paren=paren)
                     f.write(out)
 
-        fmt = '  {: 13.8e}    {: 13.8e}  {:4d}  {:4d}  {:4d}  {:4d}\n'
-        f.write(fmt.format(enuc.real,enuc.imag,0,0,0,0))
+        f.write(fmt_integral(enuc+0j,-1,-1,-1,-1, cplx, paren=paren))
 
 
 def read_qmcpack_cholesky_kpoint(filename):
@@ -328,7 +375,7 @@ def fcidump_header(nel, norb, spin):
 
 
 def write_fcidump_kpoint(filename, hcore, chol, enuc, nmo_tot, nelec,
-                         nmo_pk, qk_k2, tol=1e-8, sym=1):
+                         nmo_pk, qk_k2, tol=1e-8, sym=1, paren=False):
     """Write FCIDUMP based from Cholesky factorised integrals.
 
     Parameters
@@ -355,6 +402,8 @@ def write_fcidump_kpoint(filename, hcore, chol, enuc, nmo_tot, nelec,
     sym : int
         Controls whether to only print symmetry inequivalent ERIS.
         Optional. Default 1, i.e. print everything.
+    paren : bool
+        Write complex numbers in parenthesis.
     """
     header = fcidump_header(sum(nelec), nmo_tot, nelec[0]-nelec[1])
     nkp = len(nmo_pk)
@@ -384,7 +433,7 @@ def write_fcidump_kpoint(filename, hcore, chol, enuc, nmo_tot, nelec,
                                     if abs(eri[ik,lj]) > tol and sym_allowed:
                                         out = fmt_integral(eri[ik,lj],
                                                            I, K, J, L,
-                                                           True)
+                                                           True, paren=paren)
                                         f.write(out)
                                     lj += 1
                             ik += 1
@@ -395,8 +444,9 @@ def write_fcidump_kpoint(filename, hcore, chol, enuc, nmo_tot, nelec,
                 for j in range(nmo_pk[ik]):
                     J = j + offsets[ik]
                     if I >= J and abs(hk[i,j]) > tol:
-                        out = fmt_integral(hk[i,j], I, J, -1, -1, True)
+                        out = fmt_integral(hk[i,j], I, J, -1, -1,
+                                           True, paren=paren)
                         f.write(out)
 
-        out = fmt_integral(enuc+0j, -1, -1, -1, -1, True)
+        out = fmt_integral(enuc+0j, -1, -1, -1, -1, True, paren=paren)
         f.write(out)
