@@ -249,6 +249,8 @@ struct SplineC2ROMP : public SplineAdoptorBase<ST, 3>
   Vector<TT, OffloadPinnedAllocator<TT>> results_scratch;
   ///psiinv and position scratch space, used to avoid allocation on the fly and faster transfer
   Vector<TT, OffloadPinnedAllocator<TT>> psiinv_pos_copy;
+  ///position scratch space, used to avoid allocation on the fly and faster transfer
+  Vector<ST, OffloadPinnedAllocator<ST>> mw_pos_copy;
   ///the following pointers are used for keep and access the data on device
   ///cloned objects copy the pointer by value without the need of mapping to the device
   ///Thus master_PrimLattice_G_ptr is different from PrimLattice.G.data() in cloned objects
@@ -715,6 +717,15 @@ struct SplineC2ROMP : public SplineAdoptorBase<ST, 3>
   template<typename VV, typename GV>
   inline void evaluate_vgl(const ParticleSet& P, const int iat, VV& psi, GV& dpsi, VV& d2psi)
   {
+    std::vector<SplineC2ROMP*> sa_list; sa_list.push_back(this);
+    std::vector<ParticleSet*> P_list; P_list.push_back(const_cast<ParticleSet*>(&P));
+    std::vector<VV*> psi_v_list; psi_v_list.push_back(&psi);
+    std::vector<GV*> dpsi_v_list; dpsi_v_list.push_back(&dpsi);
+    std::vector<VV*> d2psi_v_list; d2psi_v_list.push_back(&d2psi);
+
+    mw_evaluate_vgl(sa_list, P_list, iat, psi_v_list, dpsi_v_list, d2psi_v_list);
+    return;
+
     const PointType& r = P.activeR(iat);
     PointType ru(PrimLattice.toUnit_floor(r));
 
@@ -793,9 +804,102 @@ struct SplineC2ROMP : public SplineAdoptorBase<ST, 3>
                               const std::vector<GV*>& dpsi_v_list,
                               const std::vector<VV*>& d2psi_v_list)
   {
-    #pragma omp parallel for
-    for (int iw = 0; iw < sa_list.size(); iw++)
-      sa_list[iw]->evaluate_vgl(*P_list[iw], iat, *psi_v_list[iw], *dpsi_v_list[iw], *d2psi_v_list[iw]);
+    const int nwalkers = sa_list.size();
+    if(mw_pos_copy.size() < nwalkers * 6)
+      mw_pos_copy.resize(nwalkers * 6);
+
+    // pack particle positions
+    for (int iat = 0; iat < nwalkers; ++iat)
+    {
+      const PointType& r = P_list[iat]->activeR(iat);
+      PointType ru(PrimLattice.toUnit_floor(r));
+      mw_pos_copy[iat * 6]     = r[0];
+      mw_pos_copy[iat * 6 + 1] = r[1];
+      mw_pos_copy[iat * 6 + 2] = r[2];
+      mw_pos_copy[iat * 6 + 3] = ru[0];
+      mw_pos_copy[iat * 6 + 4] = ru[1];
+      mw_pos_copy[iat * 6 + 5] = ru[2];
+    }
+
+    const int ChunkSizePerTeam = 128;
+    const int NumTeams         = (myV.size() + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
+    const auto padded_size = myV.size();
+    if (offload_scratch.size() < padded_size * nwalkers * 10)
+      offload_scratch.resize(padded_size * nwalkers * 10);
+    const auto orb_size = psi_v_list[0]->size();
+    if (results_scratch.size() < orb_size * nwalkers * 5)
+      results_scratch.resize(orb_size * nwalkers * 5);
+
+    // Ye: need to extract sizes and pointers before entering target region
+    const auto* spline_ptr         = SplineInst->getSplinePtr();
+    auto* pos_copy_ptr             = mw_pos_copy.data();
+    auto* offload_scratch_ptr      = offload_scratch.data();
+    auto* results_scratch_ptr      = results_scratch.data();
+    const auto myKcart_padded_size = myKcart.capacity();
+    auto* mKK_ptr                  = master_mKK_ptr;
+    auto* GGt_ptr                  = master_GGt_ptr;
+    auto* PrimLattice_G_ptr        = master_PrimLattice_G_ptr;
+    auto* myKcart_ptr              = master_myKcart_ptr;
+    const size_t first_spo_local   = first_spo;
+    const int nComplexBands_local  = nComplexBands;
+
+    PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(NumTeams*nwalkers) thread_limit(ChunkSizePerTeam) \
+                    map(always, to: pos_copy_ptr[0:nwalkers*6]) \
+                    map(always, from: results_scratch_ptr[0:orb_size*nwalkers*5])")
+    for (int iat = 0; iat < nwalkers; iat++)
+      for (int team_id = 0; team_id < NumTeams; team_id++)
+      {
+        const int first      = ChunkSizePerTeam * team_id;
+        const int last       = (first + ChunkSizePerTeam) > padded_size ? padded_size : first + ChunkSizePerTeam;
+        const int first_cplx = first / 2;
+        const int last_cplx  = orb_size < last / 2 ? orb_size : last / 2;
+        const int first_real = first_cplx + std::min(nComplexBands_local, first_cplx);
+        const int last_real  = last_cplx + std::min(nComplexBands_local, last_cplx);
+        auto* restrict offload_scratch_iat_ptr = offload_scratch_ptr + padded_size * iat * 10;
+        auto* restrict psi_iat_ptr             = results_scratch_ptr + orb_size * iat * 5;
+
+        int ix, iy, iz;
+        ST a[4], b[4], c[4], da[4], db[4], dc[4], d2a[4], d2b[4], d2c[4];
+        spline2::computeLocationAndFractional(spline_ptr, pos_copy_ptr[iat * 6 + 3], pos_copy_ptr[iat * 6 + 4], pos_copy_ptr[iat * 6 + 5], ix, iy, iz, a, b, c, da, db, dc, d2a, d2b, d2c);
+
+        const ST G[9] = {PrimLattice_G_ptr[0], PrimLattice_G_ptr[1], PrimLattice_G_ptr[2],
+                         PrimLattice_G_ptr[3], PrimLattice_G_ptr[4], PrimLattice_G_ptr[5],
+                         PrimLattice_G_ptr[6], PrimLattice_G_ptr[7], PrimLattice_G_ptr[8]};
+        const ST symGGt[6] = {GGt_ptr[0], GGt_ptr[1] + GGt_ptr[3], GGt_ptr[2] + GGt_ptr[6],
+                              GGt_ptr[4], GGt_ptr[5] + GGt_ptr[7], GGt_ptr[8]};
+
+        PRAGMA_OFFLOAD("omp parallel")
+        {
+          spline2offload::evaluate_vgh_impl_v2(spline_ptr,
+                                               ix, iy, iz,
+                                               a, b, c,
+                                               da, db, dc,
+                                               d2a, d2b, d2c,
+                                               offload_scratch_iat_ptr + first,
+                                               offload_scratch_iat_ptr + padded_size + first,
+                                               offload_scratch_iat_ptr + padded_size * 4 + first, padded_size, first, last);
+          C2R::assign_vgl(pos_copy_ptr[iat * 6], pos_copy_ptr[iat * 6 + 1], pos_copy_ptr[iat * 6 + 2], psi_iat_ptr, mKK_ptr, orb_size, offload_scratch_iat_ptr, padded_size, symGGt,
+                          G, myKcart_ptr, myKcart_padded_size, first_spo_local, nComplexBands_local,
+                          first / 2, last / 2);
+        }
+      }
+
+    // do the reduction manually
+    for (int iat = 0; iat < nwalkers; ++iat)
+    {
+      auto* restrict results_iat_ptr = results_scratch_ptr + orb_size * iat * 5;
+      auto& psi_v(*psi_v_list[iat]);
+      auto& dpsi_v(*dpsi_v_list[iat]);
+      auto& d2psi_v(*d2psi_v_list[iat]);
+      for (size_t i = 0; i < orb_size; i++)
+      {
+        psi_v[i]     = results_iat_ptr[i];
+        dpsi_v[i][0] = results_iat_ptr[orb_size + i * 3];
+        dpsi_v[i][1] = results_iat_ptr[orb_size + i * 3 + 1];
+        dpsi_v[i][2] = results_iat_ptr[orb_size + i * 3 + 2];
+        d2psi_v[i]   = results_iat_ptr[orb_size * 4 + i];
+      }
+    }
   }
 
   template<typename VV, typename GV, typename GGV>
