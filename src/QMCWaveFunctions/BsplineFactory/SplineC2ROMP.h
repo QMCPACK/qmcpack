@@ -200,7 +200,7 @@ inline void assign_vgl(ST x,
 template<typename ST, typename TT>
 struct SplineC2ROMP : public SplineAdoptorBase<ST, 3>
 {
-  static const int ALIGN   = QMC_CLINE;
+  static const int ALIGN = QMC_CLINE;
   template<typename DT>
   using OffloadAllocator = OMPallocator<DT, aligned_allocator<DT>>;
   template<typename DT>
@@ -276,7 +276,7 @@ struct SplineC2ROMP : public SplineAdoptorBase<ST, 3>
     if (SplineInst.use_count() == 1)
     {
       // clean up mapping by the last owner
-      const auto* MultiSpline =  SplineInst->getSplinePtr();
+      const auto* MultiSpline = SplineInst->getSplinePtr();
       PRAGMA_OFFLOAD("omp target exit data map(delete:MultiSpline[0:1])")
       PRAGMA_OFFLOAD("omp target exit data map(delete:master_mKK_ptr[0:mKK.size()])")
       PRAGMA_OFFLOAD("omp target exit data map(delete:master_myKcart_ptr[0:myKcart.capacity()*3])")
@@ -796,7 +796,7 @@ struct SplineC2ROMP : public SplineAdoptorBase<ST, 3>
                               const std::vector<VV*>& d2psi_v_list)
   {
     const int nwalkers = sa_list.size();
-    if(mw_pos_copy.size() < nwalkers * 6)
+    if (mw_pos_copy.size() < nwalkers * 6)
       mw_pos_copy.resize(nwalkers * 6);
 
     // pack particle positions
