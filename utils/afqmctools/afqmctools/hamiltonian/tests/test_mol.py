@@ -3,6 +3,7 @@ import os
 import unittest
 from pyscf import gto, ao2mo, scf, mcscf
 from afqmctools.hamiltonian import mol
+from afqmctools.utils.linalg import modified_cholesky_direct
 
 class TestMol(unittest.TestCase):
 
@@ -11,7 +12,7 @@ class TestMol(unittest.TestCase):
         eri = atom.intor('int2e', aosym='s1')
         self.assertEqual(eri.shape,(5,5,5,5))
         eri = eri.reshape(25,25)
-        chol = mol.modified_cholesky_direct(eri, 1e-5, cmax=20)
+        chol = modified_cholesky_direct(eri, 1e-5, cmax=20)
         Mrecon = numpy.dot(chol.T, chol)
         self.assertTrue(numpy.allclose(Mrecon, eri, atol=1e-8, rtol=1e-6))
 

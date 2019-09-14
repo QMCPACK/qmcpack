@@ -6,10 +6,10 @@ import sys
 import time
 import numpy
 from afqmctools.hamiltonian.mol import (
-        modified_cholesky_direct,
         write_qmcpack_cholesky
         )
 from afqmctools.hamiltonian.converter import read_fcidump
+from afqmctools.utils.linalg import modified_cholesky_direct
 
 
 def parse_args(args):
