@@ -344,32 +344,60 @@ void QMCDriverNew::createRngsStepContexts()
   }
 }
 
-void QMCDriverNew::initialLogEvaluation(int crowd_id, std::vector<std::unique_ptr>>& crowds)
+void QMCDriverNew::initialLogEvaluation(int crowd_id, UPtrVector<Crowd>& crowds)
 {
-  auto it_walker_twfs  = crowd.beginTrialWaveFunctions();
-  auto it_mcp_walkers  = crowd.beginWalkers();
-  auto it_walker_elecs = crowd.beginElectrons();
-  auto copyBuffer = [](){
-                      it_walker_twfs->get().copyFromBuffer(it_walker_elecs->get(), it_mcp_walkers->get().DataSet);
+  Crowd& crowd = *(crowds[crowd_id]);
+  auto& walker_twfs  = crowd.get_walker_twfs();
+  auto& mcp_buffers  = crowd.get_mcp_wfbuffers();
+  auto& walker_elecs = crowd.get_walker_elecs();
+  auto copyFrom = [](TrialWaveFunction& twf, ParticleSet& pset, Crowd::WFBuffer& wfb){
+                      twf.copyFromBuffer(pset,wfb);
                     };
   for (int iw = 0; iw < crowd.size(); ++iw)
-    
-  while (it_walker_twfs != crowd.endTrialWaveFunctions())
-  {
-    
-  }
+    copyFrom(walker_twfs[iw], walker_elecs[iw], mcp_buffers[iw]);
 
-  TrialWaveFunction:::flex_evaluateLog(crowd.get_walker_twfs(), crowd.get_walker_elecs());
-    RealType logpsi = Psi.updateBuffer(W, awalker.DataSet, false);
-    W.saveWalker(awalker);
-    RealType eloc = H.evaluate(W);
-    BadState |= std::isnan(eloc);
-    awalker.resetProperty(logpsi, Psi.getPhase(), eloc);
-    H.auxHevaluate(W, awalker);
-    H.saveProperty(awalker.getPropertyBase());
-    awalker.ReleasedNodeAge    = 0;
-    awalker.ReleasedNodeWeight = 0;
-    awalker.Weight             = 1;
+  TrialWaveFunction::flex_evaluateLog(walker_twfs, walker_elecs);
+
+  TrialWaveFunction::flex_updateBuffer(crowd.get_walker_twfs(),
+                                       crowd.get_walker_elecs(),
+                                       crowd.get_mcp_wfbuffers());
+
+  auto& walkers = crowd.get_walkers();
+  // For consistency this should be in ParticleSet as a flex call, but I think its a problem
+  // in the algorithm logic and should be removed.
+  auto saveElecPosAndGLToWalkers = [](ParticleSet& pset, ParticleSet::Walker_t& walker){
+                                     pset.saveWalker(walker);};
+  for (int iw = 0; iw < crowd.size(); ++iw)
+    saveElecPosAndGLToWalkers(walker_elecs[iw], walkers[iw]);
+
+  auto& local_energies = crowd.get_local_energies();
+  auto& walker_hamiltonians = crowd.get_walker_hamiltonians();
+  QMCHamiltonian::flex_evaluate(walker_hamiltonians, walker_elecs, local_energies);
+  // This is actually only a partial reset of the walkers properties
+  auto resetSigNLocalEnergy = [](MCPWalker& walker, TrialWaveFunction& twf, RealType local_energy){
+                                      walker.resetProperty(0, twf.getPhase(), local_energy);
+                                    };
+  for (int iw = 0; iw < crowd.size(); ++iw)
+    resetSigNLocalEnergy(walkers[iw], walker_twfs[iw], local_energies[iw]);
+
+  auto evaluateNonPhysicalHamiltonianElements = [](QMCHamiltonian& ham, ParticleSet& pset, MCPWalker& walker){
+                                                   ham.auxHevaluate(pset, walker);
+                                                 };
+  for (int iw = 0; iw < crowd.size(); ++iw)
+    evaluateNonPhysicalHamiltonianElements(walker_hamiltonians[iw], walker_elecs[iw], walkers[iw]);
+
+  auto savePropertiesIntoWalker = [](QMCHamiltonian& ham, MCPWalker& walker){
+                                    ham.saveProperty(walker.getPropertyBase());
+                                  };
+  for (int iw = 0; iw < crowd.size(); ++iw)
+    savePropertiesIntoWalker(walker_hamiltonians[iw], walkers[iw]);
+
+  auto doesDoinTheseLastMatter = [](MCPWalker& walker){
+                                   walker.ReleasedNodeAge    = 0;
+    walker.ReleasedNodeWeight = 0;
+    walker.Weight             = 1;};
+  for (int iw = 0; iw < crowd.size(); ++iw)
+    doesDoinTheseLastMatter(walkers[iw]);
 }
 
 void QMCDriverNew::setWalkerOffsets()

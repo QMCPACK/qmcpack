@@ -58,13 +58,15 @@ private:
   std::vector<RealType> ptclgrp_inv_mass_;
   ///1/Mass per particle
   std::vector<RealType> ptcl_inv_mass_;
-
+  size_t size_dataset_;
   // Should be 
   // std::shared_ptr<TrialWaveFunction> trial_wf_;
   // std::shared_ptr<ParticleSet> elec_particle_set_;
   // std::shared_ptr<QMCHamiltonian> hamiltonian_;
   // Are raw pointers. This is necessary if MCPopulation is going to be moved by value into QMCDriverNew
   // and possible moved out into the next driver later.
+  // This is necessary MCPopulation is constructed in a simple call scope in QMCDriverFactory from the legacy MCWalkerConfiguration
+  // MCPopulation should have QMCMain scope eventually and the driver will just have a refrence to it.
   TrialWaveFunction* trial_wf_;
   ParticleSet* elec_particle_set_;
   QMCHamiltonian* hamiltonian_;

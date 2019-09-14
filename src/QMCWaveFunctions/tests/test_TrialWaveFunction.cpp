@@ -214,7 +214,12 @@ TEST_CASE("TrialWaveFunction", "[wavefunction]")
   WF_list[0] = &psi;
   WF_list[1] = psi_clone;
 
-  psi.flex_evaluateLog(WF_list, P_list);
+    //Temporary as switch to std::reference_wrapper proceeds
+// testing batched interfaces
+  RefVector<ParticleSet> p_list_ref{elec_,elec_clone};
+  RefVector<TrialWaveFunction> wf_list_ref{psi, *psi_clone};
+  
+  psi.flex_evaluateLog(wf_list_ref, p_list_ref);
 #if defined(QMC_COMPLEX)
   REQUIRE(std::complex<RealType>(WF_list[0]->getLogPsi(), WF_list[0]->getPhase()) == ComplexApprox(std::complex<RealType>(0.4351202455204972, 6.665972664860828)));
   REQUIRE(std::complex<RealType>(WF_list[1]->getLogPsi(), WF_list[1]->getPhase()) == ComplexApprox(std::complex<RealType>(-0.1201465271523596, 6.345732826640545)));
@@ -234,13 +239,7 @@ TEST_CASE("TrialWaveFunction", "[wavefunction]")
   std::cout << "evalGrad " << std::setprecision(14)
             << grad_old[0][0] << " " << grad_old[0][1] << " " << grad_old[0][2] << " "
             << grad_old[1][0] << " " << grad_old[1][1] << " " << grad_old[1][2]
-            << std::endl;
-
-  //Temporary as switch to std::reference_wrapper proceeds
-// testing batched interfaces
-  std::vector<std::reference_wrapper<ParticleSet>> p_list_ref{elec_,elec_clone};
-  std::vector<std::reference_wrapper<TrialWaveFunction>> wf_list_ref{psi, *psi_clone};
-  
+            << std::endl;  
   
   psi.flex_evalGrad(wf_list_ref, p_list_ref, moved_elec_id, grad_old);
 #if defined(QMC_COMPLEX)

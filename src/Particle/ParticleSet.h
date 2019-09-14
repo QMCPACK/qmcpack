@@ -417,7 +417,10 @@ public:
    * PbyP requires the distance tables and Sk with awalker.R
    */
   void loadWalker(Walker_t& awalker, bool pbyp);
+
   /** save this to awalker
+   *
+   *  just the R, G, and L
    */
   void saveWalker(Walker_t& awalker);
 

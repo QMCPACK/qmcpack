@@ -26,7 +26,6 @@ MCPopulation::MCPopulation(MCWalkerConfiguration& mcwc,
   num_global_walkers_ = mcwc.GlobalNumWalkers;
   num_local_walkers_  = mcwc.LocalNumWalkers;
   num_particles_      = mcwc.getParticleNum();
-  size_dataset        = mcwc.DataSet.size();
   
   // MCWalkerConfiguration doesn't give actual number of groups
   num_groups_ = mcwc.groups();
@@ -105,9 +104,9 @@ void MCPopulation::createWalkers(IndexType num_walkers,
   std::for_each(walkers_.begin(),
                 walkers_.end(),
                 [&mcp_wfbuffers](auto& walker) {
-                  mcp_wfbuffers.push_back((**walker).DataSet);
+                  mcp_wfbuffers.push_back((*walker).DataSet);
                 });
-  
+
   TrialWaveFunction::flex_registerData(walker_trial_wavefunctions_,
                                        walker_elec_particle_sets_,
                                        mcp_wfbuffers);
@@ -115,7 +114,7 @@ void MCPopulation::createWalkers(IndexType num_walkers,
   std::for_each(walkers_.begin(),
                 walkers_.end(),
                 [](auto& walker) {
-                  (**walker).DataSet.allocate();
+                  (*walker).DataSet.allocate();
                 });
 
   

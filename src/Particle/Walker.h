@@ -135,7 +135,10 @@ struct Walker
   ///scalar properties of a walker
   PropertyContainer_t Properties;
 
-  ///Property history vector
+  /** Property history vector
+   *
+   *  these are used as fixed length cyclic traces of a "property"
+   */
   std::vector<std::vector<FullPrecRealType>> PropertyHistory;
   std::vector<int> PHindex;
 

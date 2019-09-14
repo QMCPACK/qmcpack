@@ -74,16 +74,14 @@ void VMCBatched::advanceWalkers(const StateForThread& sft, Crowd& crowd, Context
 
   // Consider favoring lambda followed by for over walkers
   // more compact, descriptive and less error prone.
-  auto it_walker_twfs  = crowd.beginTrialWaveFunctions();
-  auto it_mcp_walkers  = crowd.beginWalkers();
-  auto it_walker_elecs = crowd.beginElectrons();
-  while (it_walker_twfs != crowd.endTrialWaveFunctions())
-  {
-    it_walker_twfs->get().copyFromBuffer(it_walker_elecs->get(), it_mcp_walkers->get().DataSet);
-    ++it_walker_twfs;
-    ++it_mcp_walkers;
-    ++it_walkers_elecs;
-  }
+  auto& walker_twfs  = crowd.get_walker_twfs();
+  auto& walkers = crowd.get_walkers();
+  auto& walker_elecs = crowd.get_walker_elecs();
+  auto copyTWFFromBuffer = [](TrialWaveFunction& twf, ParticleSet& pset, MCPWalker& walker){
+                                 twf.copyFromBuffer(pset, walker.DataSet);
+                           };
+  for (int iw = 0; iw < crowd.size(); ++iw)
+    copyTWFFromBuffer(walker_twfs[iw], walker_elecs[iw], walkers[iw]);
 
   int num_walkers = crowd.size();
   int num_particles = sft.population.get_num_particles();
@@ -272,7 +270,7 @@ void VMCBatched::advanceWalkers(const StateForThread& sft, Crowd& crowd, Context
         estimator_manager_->startBlock(qmcdriver_input_.get_max_steps());
 
         TasksOneToOne<> block_start_task(num_crowds_);
-        block_start_task(initialLogEvaluation, std::ref(crowds_))
+        block_start_task(initialLogEvaluation, std::ref(crowds_));
         for (int step = 0; step < qmcdriver_input_.get_max_steps(); ++step)
         {
           vmc_state.step = step;

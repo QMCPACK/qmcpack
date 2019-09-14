@@ -176,7 +176,7 @@ public:
    */
   void process(xmlNodePtr cur);
 
-  static void initialLogEvaluation();
+  static void initialLogEvaluation(int crowd_id, UPtrVector<Crowd>& crowds);
   
   /** should be set in input don't see a reason to set individually
    * @param pbyp if true, use particle-by-particle update

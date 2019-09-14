@@ -32,6 +32,7 @@ void Crowd::reserve(int crowd_size)
   reserveCS(grads_now_);
   reserveCS(grads_new_);
   reserveCS(ratios_);
+  reserveCS(local_energies_);
 }
 
 void Crowd::addWalker(MCPWalker& walker, ParticleSet& elecs, TrialWaveFunction& twf, QMCHamiltonian& hamiltonian)

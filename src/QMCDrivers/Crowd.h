@@ -32,6 +32,7 @@ public:
   using WFBuffer = MCPopulation::WFBuffer;
   using GradType = QMCTraits::GradType;
   using RealType = QMCTraits::RealType;
+  using FullPrecRealType = QMCTraits::FullPrecRealType;
   /** This is the data structure for walkers within a crowd
    */
   Crowd(EstimatorManagerBase& emb) : estimator_manager_crowd_(emb) {}
@@ -57,6 +58,7 @@ public:
   auto beginElectrons() { return walker_elecs_.begin(); }
   auto endElectrons() { return walker_elecs_.end(); }
 
+  RefVector<MCPWalker>& get_walkers() { return mcp_walkers_; }
   std::vector<std::reference_wrapper<ParticleSet>>& get_walker_elecs() { return walker_elecs_; }
   std::vector<std::reference_wrapper<TrialWaveFunction>>& get_walker_twfs() { return walker_twfs_; }
   std::vector<std::reference_wrapper<QMCHamiltonian>>& get_walker_hamiltonians() { return walker_hamiltonians_; }
@@ -67,8 +69,8 @@ public:
   std::vector<RealType>& get_log_gf() { return log_gf_; }
   std::vector<RealType>& get_log_gb() { return log_gb_; }
   std::vector<RealType>& get_prob() { return prob_; }
-  RefVector<WFBuffer> get_mcp_wfbuffers() { return mcp_wfbuffers_; }
-
+  RefVector<WFBuffer>& get_mcp_wfbuffers() { return mcp_wfbuffers_; }
+  std::vector<FullPrecRealType>& get_local_energies() { return local_energies_; }
   int size() const { return mcp_walkers_.size(); }
 
   void clearResults();
@@ -93,6 +95,8 @@ private:
   std::vector<RealType> log_gf_;
   std::vector<RealType> log_gb_;
   std::vector<RealType> prob_;
+  std::vector<FullPrecRealType> local_energies_;
+
   /** }@ */
 };
 } // namespace qmcplusplus

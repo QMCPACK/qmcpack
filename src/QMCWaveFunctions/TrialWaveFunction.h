@@ -248,16 +248,21 @@ public:
   /** register all the wavefunction components in buffer.
    *  See WaveFunctionComponent::registerData for more detail */
   void registerData(ParticleSet& P, WFBufferType& buf);
-  /* flexible batched version of registerData. 
+
+  /* flexible batched version of registerData.
+   * 
    * Ye: perhaps it doesn't need to be flexible but just operates on all the walkers
+   * The strange mix of argument types reflect this being called from MCPopulation instead
+   * of Crowd like most of the flex functions.
    */
-  static void flex_registerData(const RefVector<TrialWaveFunction>& WF_list,
-                         const RefVector<ParticleSet>& P_list,
+  static void flex_registerData(const UPtrVector<TrialWaveFunction>& WF_list,
+                         const UPtrVector<ParticleSet>& P_list,
                          const RefVector<WFBufferType>& buf_list);
 
   /** update all the wavefunction components in buffer.
    *  See WaveFunctionComponent::updateBuffer for more detail */
   RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false);
+
   /* flexible batched version of updateBuffer. 
    * Ye: perhaps it doesn't need to be flexible but just operates on all the walkers
    */
@@ -342,15 +347,29 @@ private:
   std::vector<NewTimer*> myTimers;
   std::vector<RealType> myTwist;
 
+  /** @{
+   *  @brief helper function for extracting a list of WaveFunctionComponent from a list of TrialWaveFunction
+   */
+  std::vector<WaveFunctionComponent*> extract_WFC_list(const std::vector<TrialWaveFunction*>& WF_list, int id) const;
+
+  static std::vector<WaveFunctionComponent*> extract_WFC_list(const UPtrVector<TrialWaveFunction>& WF_list, int id);
+
   static std::vector<std::reference_wrapper<WaveFunctionComponent>> extract_WFC_list(
       const std::vector<std::reference_wrapper<TrialWaveFunction>>& WF_list,
       int id);
-
+  /** }@ */
+  
   // helper function for extrating a list of gradients from a list of TrialWaveFunction
-  std::vector<ParticleSet::ParticleGradient_t*> extract_G_list(const std::vector<TrialWaveFunction*>& P_list) const;
+  std::vector<ParticleSet::ParticleGradient_t*> extract_G_list(const std::vector<TrialWaveFunction*>& wf_list) const;
 
   // helper function for extracting a list of laplacian from a list of TrialWaveFunction
-  std::vector<ParticleSet::ParticleLaplacian_t*> extract_L_list(const std::vector<TrialWaveFunction*>& P_list) const;
+  std::vector<ParticleSet::ParticleLaplacian_t*> extract_L_list(const std::vector<TrialWaveFunction*>& wf_list) const;
+
+  // helper function for extrating a list of gradients from a list of TrialWaveFunction
+  static RefVector<ParticleSet::ParticleGradient_t>  extract_g_list(const RefVector<TrialWaveFunction>& wf_list);
+
+  // helper function for extracting a list of laplacian from a list of TrialWaveFunction
+  static RefVector<ParticleSet::ParticleLaplacian_t> extract_l_list(const RefVector<TrialWaveFunction>& wf_list);
 
   ///////////////////////////////////////////
   // Vectorized version for GPU evaluation //
