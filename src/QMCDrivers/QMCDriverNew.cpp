@@ -308,7 +308,7 @@ void QMCDriverNew::setupWalkers()
 void QMCDriverNew::addWalkers(int nwalkers, const ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>& positions)
 {
   
-  population_.createWalkers(nwalkers, positions);
+  population_.createWalkers(nwalkers);
   // else if (nwalkers < 0)
   // {
   //   W.destroyWalkers(-nwalkers);
