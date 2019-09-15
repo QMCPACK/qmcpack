@@ -120,6 +120,7 @@ void QMCDriverNew::process(xmlNodePtr cur)
   app_log() << "  Regenerate random seeds." << std::endl;
   RandomNumberControl::make_seeds();
   // }
+
   
   setupWalkers();
 
@@ -157,7 +158,15 @@ void QMCDriverNew::process(xmlNodePtr cur)
   {
     crowds_[i].reset(new Crowd(*estimator_manager_));
   }//  crowds_.push_back(
-                        
+
+  //now give walkers references to their walkers
+  auto crowd_start = crowds_.begin();
+  auto crowd_end   = crowds_.end();
+  std::for_each(crowd_start,
+                crowd_end,
+                [this](std::unique_ptr<Crowd>& crowd) { crowd->reserve(walkers_per_crowd_); });
+  population_.distributeWalkers(crowd_start, crowd_end, walkers_per_crowd_);
+
   // Once they are created move contexts can be created.
   createRngsStepContexts();
 
@@ -287,15 +296,9 @@ bool QMCDriverNew::finalize(int block, bool dumpwalkers)
 void QMCDriverNew::setupWalkers()
 {
   IndexType local_walkers = calc_default_local_walkers();
+  
   // side effect updates walkers_per_crowd_;
   addWalkers(local_walkers, ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>(population_.get_num_particles()));
-  //now give walkers references to their walkers
-  auto crowd_start = crowds_.begin();
-  auto crowd_end   = crowds_.end();
-  std::for_each(crowd_start,
-                crowd_end,
-                [this](std::unique_ptr<Crowd>& crowd) { crowd->reserve(walkers_per_crowd_); });
-  population_.distributeWalkers(crowd_start, crowd_end, walkers_per_crowd_);
 }
 
 /** Add walkers to the end of the ensemble of walkers.
@@ -375,7 +378,7 @@ void QMCDriverNew::initialLogEvaluation(int crowd_id, UPtrVector<Crowd>& crowds)
   QMCHamiltonian::flex_evaluate(walker_hamiltonians, walker_elecs, local_energies);
   // This is actually only a partial reset of the walkers properties
   auto resetSigNLocalEnergy = [](MCPWalker& walker, TrialWaveFunction& twf, RealType local_energy){
-                                      walker.resetProperty(0, twf.getPhase(), local_energy);
+                                walker.resetProperty(twf.getLogPsi(), twf.getPhase(), local_energy);
                                     };
   for (int iw = 0; iw < crowd.size(); ++iw)
     resetSigNLocalEnergy(walkers[iw], walker_twfs[iw], local_energies[iw]);
@@ -416,7 +419,7 @@ void QMCDriverNew::setWalkerOffsets()
     //    W[iw]->ParentID = id;
   }
   //  app_log() << "  Total number of walkers: " << W.EnsembleProperty.NumSamples << std::endl;
-  //  app_log() << "  Total weight: " << W.EnsembleProperty.Weight << std::endl;
+  //  app_log() << "  Total weight: " << W.EnsembleProperty.Weight << std::endl
 }
 
 std::ostream& operator<<(std::ostream& o_stream, const QMCDriverNew& qmcd)

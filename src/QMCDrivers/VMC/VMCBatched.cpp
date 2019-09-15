@@ -48,8 +48,10 @@ VMCBatched::IndexType VMCBatched::calc_default_local_walkers()
               << ")\n";
     throw std::runtime_error(error_msg.str());
   }
-
   IndexType rw = vmcdriver_input_.get_requested_walkers_per_rank();
+  if (num_crowds_ == 0)
+    num_crowds_ = std::min(num_threads, rw);
+
   if (rw < num_crowds_)
     rw = num_crowds_;
   walkers_per_crowd_      = (rw % num_crowds_) ? rw / num_crowds_ + 1 : rw / num_crowds_;
@@ -196,12 +198,31 @@ void VMCBatched::advanceWalkers(const StateForThread& sft, Crowd& crowd, Context
   TrialWaveFunction::flex_updateBuffer(crowd.get_walker_twfs(), crowd.get_walker_elecs(),
                                        crowd.get_mcp_wfbuffers());
 
+  auto saveElecPosAndGLToWalkers = [](ParticleSet& pset, ParticleSet::Walker_t& walker){
+                                     pset.saveWalker(walker);};
+  for (int iw = 0; iw < crowd.size(); ++iw)
+    saveElecPosAndGLToWalkers(walker_elecs[iw], walkers[iw]);
   
+  auto& local_energies = crowd.get_local_energies();
+  auto& walker_hamiltonians = crowd.get_walker_hamiltonians();
+  QMCHamiltonian::flex_evaluate(walker_hamiltonians, walker_elecs, local_energies);
+  auto resetSigNLocalEnergy = [](MCPWalker& walker, TrialWaveFunction& twf, RealType local_energy){
+                                walker.resetProperty(twf.getLogPsi(), twf.getPhase(), local_energy);
+                                    };
+  for (int iw = 0; iw < crowd.size(); ++iw)
+    resetSigNLocalEnergy(walkers[iw], walker_twfs[iw], local_energies[iw]);
+  auto evaluateNonPhysicalHamiltonianElements = [](QMCHamiltonian& ham, ParticleSet& pset, MCPWalker& walker){
+                                                   ham.auxHevaluate(pset, walker);
+                                                 };
+  for (int iw = 0; iw < crowd.size(); ++iw)
+    evaluateNonPhysicalHamiltonianElements(walker_hamiltonians[iw], walker_elecs[iw], walkers[iw]);
+  auto savePropertiesIntoWalker = [](QMCHamiltonian& ham, MCPWalker& walker){
+                                    ham.saveProperty(walker.getPropertyBase());
+                                  };
+  for (int iw = 0; iw < crowd.size(); ++iw)
+    savePropertiesIntoWalker(walker_hamiltonians[iw], walkers[iw]);
 
 // TODO:
-  //  save the walkers
-  //  evaluate the Hamiltonian
-  //  accumulate
   //  check if all moves failed
 
 }
