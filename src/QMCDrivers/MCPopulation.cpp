@@ -53,7 +53,7 @@ MCPopulation::MCPopulation(MCWalkerConfiguration& mcwc,
  */
 void MCPopulation::createWalkers()
 {
-  createWalkers(num_local_walkers_, ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>(num_particles_));
+  createWalkers(num_local_walkers_);
 }
 
 /** Creates walkers with starting positions pos and a clone of the electron particle set and trial wavefunction
@@ -62,31 +62,28 @@ void MCPopulation::createWalkers()
  *  in: DataSet.size()
  *  in.
  */
-void MCPopulation::createWalkers(IndexType num_walkers,
-                                 const ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>& positions)
+void MCPopulation::createWalkers(IndexType num_walkers)
 {
   // Ye: need to resize walker_t and ParticleSet Properties
   elec_particle_set_->Properties.resize(1, elec_particle_set_->PropertyList.size());
 
   walkers_.resize(num_walkers);
 
-  std::for_each(walkers_.begin(), walkers_.end(), [this, positions](std::unique_ptr<MCPWalker>& walker_ptr) {
+  for (auto& walker_ptr : walkers_)
+  {
     walker_ptr = std::make_unique<MCPWalker>(num_particles_);
-    walker_ptr->R.resize(num_particles_);
-    walker_ptr->R = positions;
+    walker_ptr->R = elec_particle_set_->R;
     walker_ptr->registerData();
     walker_ptr->Properties = elec_particle_set_->Properties;
-  });
+  }
 
   // Sadly the wfc makeClone interface depends on the full particle set as a way to not to keep track
   // of what different wave function components depend on. I'm going to try and create a hollow elec PS
   // with an eye toward removing the ParticleSet dependency of WFC components in the future.
   walker_elec_particle_sets_.resize(num_walkers);
   std::for_each(walker_elec_particle_sets_.begin(), walker_elec_particle_sets_.end(),
-                [this, positions](std::unique_ptr<ParticleSet>& elec_ps_ptr) {
+                [this](std::unique_ptr<ParticleSet>& elec_ps_ptr) {
                   elec_ps_ptr.reset(new ParticleSet(*elec_particle_set_));
-                  
-                  elec_ps_ptr->R = positions;
                 });
 
   auto it_weps = walker_elec_particle_sets_.begin();

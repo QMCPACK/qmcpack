@@ -91,7 +91,7 @@ public:
   MCPopulation& operator=(MCPopulation&&) = default;
   
   void createWalkers();
-  void createWalkers(IndexType num_walkers, const ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>& pos);
+  void createWalkers(IndexType num_walkers);
   void createWalkers(int num_crowds_,
                      int num_walkers_per_crowd_,
                      IndexType num_walkers,
