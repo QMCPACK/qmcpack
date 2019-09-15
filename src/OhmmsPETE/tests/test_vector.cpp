@@ -72,4 +72,29 @@ TEST_CASE("VectorViewer", "[OhmmsPETE]")
   // TODO: add optional bounds checking to accesses via operator[]
 }
 
+TEST_CASE("Vector::Vector(const Vector&)", "[OHMMS]")
+{
+  // Application code like this has previously crashed due to
+  // bad Vector copy constructor code
+  // in the actual case it was TinyVector but avoiding dependency
+  Vector<std::vector<double>> ohmms_vec_of_std_vec(2);
+  std::vector<double> vec1{1.0,0.0,0.0};
+  std::vector<double> vec2{0.0,0.0,1.0};
+
+
+
+
+
+
+  
+  ohmms_vec_of_std_vec[0] = vec1;
+  ohmms_vec_of_std_vec[1] = vec2;
+  Vector<std::vector<double>> ohmms_vec_of_std_vec2(ohmms_vec_of_std_vec);
+  
+  std::vector<Vector<std::vector<double>>> vec_vec_vec;
+  vec_vec_vec.push_back(ohmms_vec_of_std_vec);
+  vec_vec_vec.push_back(ohmms_vec_of_std_vec2);
+  
+}
+
 } // namespace qmcplusplus

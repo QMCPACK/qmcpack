@@ -25,6 +25,7 @@
 #include <type_traits>
 #include <stdexcept>
 #include "PETE/PETE.h"
+#include "type_traits/TypeRequire.hpp"
 #include "simd/allocator_traits.hpp"
 
 namespace qmcplusplus
@@ -55,7 +56,7 @@ public:
 
   /** constructor with an initialized ref */
   explicit inline Vector(T* ref, size_t n) : nLocal(n), nAllocated(0), X(ref) {}
-
+  
   /** copy constructor */
   Vector(const Vector& rhs) : nLocal(rhs.nLocal), nAllocated(0), X(nullptr)
   {
@@ -67,6 +68,10 @@ public:
     }
   }
 
+  // Default move constructor does not work
+  Vector(const Vector&&) = delete;
+  Vector(Vector&&) = delete;
+  
   // default assignment operator
   inline Vector& operator=(const Vector& rhs)
   {
@@ -92,6 +97,9 @@ public:
     return *this;
   }
 
+  Vector& operator=(const Vector&&) = delete;
+  Vector& operator=(Vector&&) = delete;
+  
   // assigment operator to enable PETE
   template<class RHS, typename Allocator = Alloc, typename = IsHostSafe<Allocator>>
   inline Vector& operator=(const RHS& rhs)
