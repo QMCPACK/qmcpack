@@ -65,6 +65,9 @@ void MCPopulation::createWalkers()
 void MCPopulation::createWalkers(IndexType num_walkers,
                                  const ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>& positions)
 {
+  // Ye: need to resize walker_t and ParticleSet Properties
+  elec_particle_set_->Properties.resize(1, elec_particle_set_->PropertyList.size());
+
   walkers_.resize(num_walkers);
 
   std::for_each(walkers_.begin(), walkers_.end(), [this, positions](std::unique_ptr<MCPWalker>& walker_ptr) {
@@ -72,6 +75,7 @@ void MCPopulation::createWalkers(IndexType num_walkers,
     walker_ptr->R.resize(num_particles_);
     walker_ptr->R = positions;
     walker_ptr->registerData();
+    walker_ptr->Properties = elec_particle_set_->Properties;
   });
 
   // Sadly the wfc makeClone interface depends on the full particle set as a way to not to keep track
