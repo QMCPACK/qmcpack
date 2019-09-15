@@ -7,7 +7,6 @@
 #include <cmath>
 #include <vector>
 #include <string>
-#include <omp.h>
 #include "QMCDrivers/Optimizers/DescentEngine.h"
 #include "OhmmsData/ParameterSet.h"
 #include "Message/CommOperators.h"
@@ -29,14 +28,6 @@ DescentEngine::DescentEngine(Communicate* comm, const xmlNodePtr cur)
       ramp_num(30),
       store_num(5)
 {
-    int num_threads = omp_get_max_threads();
-
-if(thread_le_der_samp_.size() != num_threads)
-    thread_le_der_samp_.resize(num_threads);
-
-if(thread_der_rat_samp_.size() != num_threads)
-    thread_der_rat_samp_.resize(num_threads);
-
   descent_num_ = 0;
   store_count  = 0;
   processXML(cur);
@@ -71,26 +62,27 @@ bool DescentEngine::processXML(const xmlNodePtr cur)
   return true;
 }
 
-void DescentEngine::clear_samples(const int numOptimizables)
+void DescentEngine::prepareStorage(const int num_replicas, const int num_optimizables)
 {
-  avg_le_der_samp_.resize(numOptimizables);
-  avg_der_rat_samp_.resize(numOptimizables);
-  LDerivs.resize(numOptimizables);
+  avg_le_der_samp_.resize(num_optimizables);
+  avg_der_rat_samp_.resize(num_optimizables);
+  LDerivs.resize(num_optimizables);
 
-  numParams = numOptimizables;
+  numParams = num_optimizables;
 
   std::fill(avg_le_der_samp_.begin(), avg_le_der_samp_.end(), 0.0);
   std::fill(avg_der_rat_samp_.begin(), avg_der_rat_samp_.end(), 0.0);
 
-  int num_threads = omp_get_max_threads();
-  for(int i = 0; i < num_threads; i++)
-  {
-    thread_le_der_samp_[i].resize(numOptimizables);
-    std::fill(thread_le_der_samp_[i].begin(), thread_le_der_samp_[i].end(),0.0);
+  replica_le_der_samp_.resize(num_replicas);
+  replica_der_rat_samp_.resize(num_replicas);
 
-    thread_der_rat_samp_[i].resize(numOptimizables);
-    std::fill(thread_der_rat_samp_[i].begin(),thread_der_rat_samp_[i].end(),0.0);
-  
+  for (int i = 0; i < num_replicas; i++)
+  {
+    replica_le_der_samp_[i].resize(num_optimizables);
+    std::fill(replica_le_der_samp_[i].begin(), replica_le_der_samp_[i].end(), 0.0);
+
+    replica_der_rat_samp_[i].resize(num_optimizables);
+    std::fill(replica_der_rat_samp_[i].begin(), replica_der_rat_samp_[i].end(), 0.0);
   }
 
   w_sum       = 0;
@@ -125,23 +117,19 @@ void DescentEngine::setEtemp(const std::vector<double>& etemp)
 /// \param[in]  weight_samp    weight for this sample
 ///
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
-void DescentEngine::take_sample(const std::vector<double>& der_rat_samp,
-                                const std::vector<double>& le_der_samp,
-                                const std::vector<double>& ls_der_samp,
-                                double vgs_samp,
-                                double weight_samp)
+void DescentEngine::takeSample(const int replica_id,
+                               const std::vector<double>& der_rat_samp,
+                               const std::vector<double>& le_der_samp,
+                               const std::vector<double>& ls_der_samp,
+                               double vgs_samp,
+                               double weight_samp)
 {
-  const size_t numOptimizables = der_rat_samp.size() - 1;
+  const size_t num_optimizables = der_rat_samp.size() - 1;
 
-int myThread = omp_get_thread_num();
-
-
-  for (int i = 0; i < numOptimizables; i++)
+  for (int i = 0; i < num_optimizables; i++)
   {
-    thread_le_der_samp_[myThread].at(i) += le_der_samp.at(i + 1);
-    thread_der_rat_samp_[myThread].at(i) += der_rat_samp.at(i + 1);
-
-
+    replica_le_der_samp_[replica_id].at(i) += le_der_samp.at(i + 1);
+    replica_der_rat_samp_[replica_id].at(i) += der_rat_samp.at(i + 1);
   }
 }
 
@@ -153,7 +141,7 @@ int myThread = omp_get_thread_num();
 /// \param[in]  weight_samp    weight for this sample
 ///
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
-void DescentEngine::take_sample(double local_en, double vgs_samp, double weight_samp) {}
+void DescentEngine::takeSample(double local_en, double vgs_samp, double weight_samp) {}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// \brief  Function that reduces all vector information from all processors to the root
@@ -162,18 +150,14 @@ void DescentEngine::take_sample(double local_en, double vgs_samp, double weight_
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 void DescentEngine::sample_finish()
 {
-
-
-    int num_threads = thread_le_der_samp_.size();
-
-    for(int i = 0; i < num_threads; i++)
+  for (int i = 0; i < replica_le_der_samp_.size(); i++)
+  {
+    for (int j = 0; j < LDerivs.size(); j++)
     {
-	for(int j = 0 ; j < LDerivs.size();j++)
-	{
-	    avg_le_der_samp_[j] += thread_le_der_samp_[i].at(j);
-	    avg_der_rat_samp_[j] += thread_der_rat_samp_[i].at(j);
-	}
+      avg_le_der_samp_[j] += replica_le_der_samp_[i].at(j);
+      avg_der_rat_samp_[j] += replica_der_rat_samp_[i].at(j);
     }
+  }
 
 
   myComm->allreduce(avg_le_der_samp_);
@@ -193,9 +177,6 @@ void DescentEngine::sample_finish()
       LDerivs.at(i) = 2 * avg_le_der_samp_.at(i) - e_avg * (2 * avg_der_rat_samp_.at(i));
     }
   }
-
-
-
 }
 
 
@@ -444,8 +425,6 @@ void DescentEngine::updateParameters()
 
 
   descent_num_++;
-
-
 }
 
 // Helper method for setting step size according parameter type.
@@ -519,7 +498,7 @@ void DescentEngine::setupUpdate(const optimize::VariableSet& myVars)
 // a descent optimization for use in BLM steps of the hybrid method
 void DescentEngine::storeVectors(std::vector<double>& currentParams)
 {
-    std::vector<double> rowVec(currentParams.size(), 0.0);
+  std::vector<double> rowVec(currentParams.size(), 0.0);
 
   // Take difference between current parameter values and the values from 20
   // iterations before (in the case descent_len = 100) to be stored as input to BLM.

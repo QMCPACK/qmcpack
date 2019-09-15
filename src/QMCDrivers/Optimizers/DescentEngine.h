@@ -17,10 +17,10 @@ class DescentEngine
 private:
   //Vectors and scalars used in calculation of averaged derivatives in descent
   std::vector<double> avg_le_der_samp_;
-  std::vector<std::vector<double> > thread_le_der_samp_;
-  
+  std::vector<std::vector<double>> replica_le_der_samp_;
+
   std::vector<double> avg_der_rat_samp_;
-  std::vector<std::vector<double> > thread_der_rat_samp_;
+  std::vector<std::vector<double>> replica_der_rat_samp_;
 
   double w_sum;
   double e_avg;
@@ -109,7 +109,7 @@ public:
   //Constructor for engine
   DescentEngine(Communicate* comm, const xmlNodePtr cur);
 
-  void clear_samples(const int numOptimizables);
+  void prepareStorage(const int num_replicas, const int num_optimizables);
 
   void setEtemp(const std::vector<double>& etemp);
 
@@ -123,11 +123,12 @@ public:
   /// \param[in]  weight_samp    weight for this sample
   ///
   ////////////////////////////////////////////////////////////////////////////////////////////////////////
-  void take_sample(const std::vector<double>& der_rat_samp,
-                   const std::vector<double>& le_der_samp,
-                   const std::vector<double>& ls_der_samp,
-                   double vgs_samp,
-                   double weight_samp);
+  void takeSample(const int replica_id,
+                  const std::vector<double>& der_rat_samp,
+                  const std::vector<double>& le_der_samp,
+                  const std::vector<double>& ls_der_samp,
+                  double vgs_samp,
+                  double weight_samp);
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////////
   /// \brief  Function that Take Sample Data from the Host Code
@@ -137,7 +138,7 @@ public:
   /// \param[in]  weight_samp    weight for this sample
   ///
   ////////////////////////////////////////////////////////////////////////////////////////////////////////
-  void take_sample(double local_en, double vgs_samp, double weight_samp);
+  void takeSample(double local_en, double vgs_samp, double weight_samp);
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////////
   /// \brief  Function that reduces all vector information from all processors to the root

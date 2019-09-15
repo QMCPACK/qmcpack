@@ -267,7 +267,7 @@ void QMCCostFunction::checkConfigurations()
       }
     }
     OperatorBase* nlpp = (includeNonlocalH == "no") ? 0 : hClones[ip]->getHamiltonian(includeNonlocalH);
-    bool compute_nlpp        = useNLPPDeriv && nlpp;
+    bool compute_nlpp  = useNLPPDeriv && nlpp;
     //set the optimization mode for the trial wavefunction
     psiClones[ip]->startOptimization();
     //    synchronize the random number generator with the node
@@ -299,8 +299,9 @@ void QMCCostFunction::checkConfigurations()
 
 
         //FIXME the ifdef should be removed after the optimizer is made compatible with complex coefficients
-        for (int i=0; i < NumOptimizables; i++) {
-          rDsaved[i] = std::real(Dsaved[i]);
+        for (int i = 0; i < NumOptimizables; i++)
+        {
+          rDsaved[i]  = std::real(Dsaved[i]);
           rHDsaved[i] = std::real(HDsaved[i]);
         }
         copy(rDsaved.begin(), rDsaved.end(), (*DerivRecords[ip])[iw]);
@@ -353,14 +354,16 @@ void QMCCostFunction::checkConfigurations()
 /** evaluate everything before optimization
  *In future, both the LM and descent engines should be children of some parent engine base class.
  * */
-void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine* EngineObj, DescentEngine& descentEngineObj,std::string MinMethod)
+void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine* EngineObj,
+                                                 DescentEngine& descentEngineObj,
+                                                 const std::string& MinMethod)
 {
-    if(MinMethod == "descent")
-    {
-	//Seem to need this line to get non-zero derivatives for traditional Jastrow parameters when using descent.
-	OptVariablesForPsi.setRecompute();
-    descentEngineObj.clear_samples(NumOptimizables);
-    }
+  if (MinMethod == "descent")
+  {
+    //Seem to need this line to get non-zero derivatives for traditional Jastrow parameters when using descent.
+    OptVariablesForPsi.setRecompute();
+    descentEngineObj.prepareStorage(omp_get_max_threads(), NumOptimizables);
+  }
   RealType et_tot = 0.0;
   RealType e2_tot = 0.0;
 #pragma omp parallel reduction(+ : et_tot, e2_tot)
@@ -389,7 +392,7 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine* Engine
       }
     }
     OperatorBase* nlpp = (includeNonlocalH == "no") ? 0 : hClones[ip]->getHamiltonian(includeNonlocalH.c_str());
-    bool compute_nlpp        = useNLPPDeriv && nlpp;
+    bool compute_nlpp  = useNLPPDeriv && nlpp;
     //set the optimization mode for the trial wavefunction
     psiClones[ip]->startOptimization();
     //    synchronize the random number generator with the node
@@ -399,7 +402,7 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine* Engine
     Return_rt e0 = 0.0;
     //       Return_t ef=0.0;
     Return_rt e2 = 0.0;
-  
+
 
     for (int iw = 0, iwg = wPerNode[ip]; iw < wRef.numSamples(); ++iw, ++iwg)
     {
@@ -423,8 +426,9 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine* Engine
 
 
         //FIXME The ifdef should be removed after the optimizer is compatible with complex wave function parameters
-        for (int i=0; i < NumOptimizables; i++) {
-          rDsaved[i] = std::real(Dsaved[i]);
+        for (int i = 0; i < NumOptimizables; i++)
+        {
+          rDsaved[i]  = std::real(Dsaved[i]);
           rHDsaved[i] = std::real(HDsaved[i]);
         }
 
@@ -443,15 +447,15 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine* Engine
           le_der_samp.at(i + 1) = rHDsaved.at(i) + etmp * rDsaved.at(i);
 
 #ifdef HAVE_LMY_ENGINE
-	if(MinMethod == "adaptive")
-	{
-        // pass into engine
-        EngineObj->take_sample(der_rat_samp, le_der_samp, le_der_samp, 1.0, saved[REWEIGHT]);
-	}
-	else if(MinMethod == "descent")
-	{
-	descentEngineObj.take_sample(der_rat_samp, le_der_samp, le_der_samp, 1.0, saved[REWEIGHT]);
-	}
+        if (MinMethod == "adaptive")
+        {
+          // pass into engine
+          EngineObj->take_sample(der_rat_samp, le_der_samp, le_der_samp, 1.0, saved[REWEIGHT]);
+        }
+        else if (MinMethod == "descent")
+        {
+          descentEngineObj.takeSample(ip, der_rat_samp, le_der_samp, le_der_samp, 1.0, saved[REWEIGHT]);
+        }
 #endif
       }
       else
@@ -485,24 +489,23 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine* Engine
   app_log() << "  Total weights = " << etemp[1] << std::endl;
 
 
-
 #ifdef HAVE_LMY_ENGINE
   // engine finish taking samples
-if(MinMethod == "adaptive")
-{
-  EngineObj->sample_finish();
-
-  if (EngineObj->block_first())
+  if (MinMethod == "adaptive")
   {
-    OptVariablesForPsi.setComputed();
-    app_log() << "calling setComputed function" << std::endl;
+    EngineObj->sample_finish();
+
+    if (EngineObj->block_first())
+    {
+      OptVariablesForPsi.setComputed();
+      app_log() << "calling setComputed function" << std::endl;
+    }
   }
-}
-else if (MinMethod == "descent")
-{
-descentEngineObj.setEtemp(etemp);
-descentEngineObj.sample_finish();
-}
+  else if (MinMethod == "descent")
+  {
+    descentEngineObj.setEtemp(etemp);
+    descentEngineObj.sample_finish();
+  }
 #endif
 
   app_log().flush();
@@ -511,10 +514,6 @@ descentEngineObj.sample_finish();
   ReportCounter = 0;
 }
 #endif
-
-
-
-
 
 
 void QMCCostFunction::resetPsi(bool final_reset)
@@ -584,8 +583,9 @@ QMCCostFunction::Return_rt QMCCostFunction::correlatedSampling(bool needGrad)
             saved[ENERGY_FIXED];
         ;
 
-        for (int i = 0; i < NumOptimizables; i++) {
-          rDsaved[i] = std::real(Dsaved[i]);
+        for (int i = 0; i < NumOptimizables; i++)
+        {
+          rDsaved[i]  = std::real(Dsaved[i]);
           rHDsaved[i] = std::real(HDsaved[i]);
         }
 

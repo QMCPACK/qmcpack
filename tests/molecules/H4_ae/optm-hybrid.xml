@@ -1,22 +1,20 @@
 <?xml version="1.0"?>
 <simulation>
-    <project id="hybrid" series="0"/>
+    <project id="H4-hybrid" series="0"/>
   <!--random seed="7819"/-->
   <!-- input from gaussian converter -->
- <include href="H4.ptcl.xml"/>
-
+  <include href="H4.ptcl.xml"/>
   <include href="H4.wfs.xml"/>
 
-
   <hamiltonian name="h0" type="generic" target="e"> 
-      <pairpot name="ElecElec" type="coulomb" source="e" target="e" physical="true"/> 
-<pairpot name="IonElec" type="coulomb" source="ion0" target="e"/>
+    <pairpot name="ElecElec" type="coulomb" source="e" target="e" physical="true"/> 
+    <pairpot name="IonElec" type="coulomb" source="ion0" target="e"/>
     <pairpot name="IonIon" type="coulomb" source="ion0" target="ion0"/> 
   </hamiltonian> 
 
 
   <loop max="32">
-<qmc method="linear" move="pbyp" checkpoint="-1" gpu="no">
+  <qmc method="linear" move="pbyp" checkpoint="-1" gpu="no">
    <parameter name="Minmethod"> hybrid </parameter>
    
    <optimizer num_updates="30">
@@ -57,7 +55,7 @@
        <parameter name="nkept">5</parameter>
 
    </optimizer>
-   </qmc>
+  </qmc>
 </loop>  
    
 <qmc method="vmc" move="pbyp" checkpoint="-1" gpu="no">

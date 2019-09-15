@@ -159,7 +159,9 @@ public:
   virtual void checkConfigurations() = 0;
 
 #ifdef HAVE_LMY_ENGINE
-  virtual void engine_checkConfigurations(cqmc::engine::LMYEngine* EngineObj,DescentEngine& descentEngineObj,std::string MinMethod) = 0;
+  virtual void engine_checkConfigurations(cqmc::engine::LMYEngine* EngineObj,
+                                          DescentEngine& descentEngineObj,
+                                          const std::string& MinMethod) = 0;
 
 #endif
 
@@ -170,7 +172,7 @@ public:
   inline void setneedGrads(bool tf) { needGrads = tf; }
   inline void setDMC() { vmc_or_dmc = 1.0; }
 
-  inline std::string getName(int i) const {return OptVariables.name(i);}
+  inline std::string getName(int i) const { return OptVariables.name(i); }
 
   inline const opt_variables_type& getOptVariables() const { return OptVariables; }
 
