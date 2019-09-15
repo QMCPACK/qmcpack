@@ -496,8 +496,8 @@ void QMCHamiltonian::flex_evaluate(const RefVector<QMCHamiltonian>& H_list,
   {
     for (int iw = 0; iw < H_list.size(); iw++)
       H_list[iw].get().LocalEnergy = 0.0;
-    int num_operators = H_list.size();
-    for (int i = 0; i < num_operators; ++i)
+
+    for (int i = 0; i < H_list[0].get().H.size(); ++i)
     {
       ScopedTimer local_timer(H_list[0].get().myTimers[i]);
       const auto HC_list(extract_HC_list(H_list, i));
@@ -515,11 +515,9 @@ void QMCHamiltonian::flex_evaluate(const RefVector<QMCHamiltonian>& H_list,
         op.setObservables(ham.Observables);
         op.setParticlePropertyList(pset.PropertyList, ham.myIndex);
       };
-      HC_list[i].get().mw_evaluate(HC_list, P_list);
+      HC_list[0].get().mw_evaluate(HC_list, P_list);
       for (int iw = 0; iw < H_list.size(); iw++)
-      {
         updateNonKinetic(HC_list[iw], H_list[iw], P_list[iw]);
-      }
     }
 
     auto updateKinetic = [](OperatorBase& op, QMCHamiltonian& ham, ParticleSet& pset) {
