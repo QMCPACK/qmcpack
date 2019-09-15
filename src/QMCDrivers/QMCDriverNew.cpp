@@ -353,6 +353,12 @@ void QMCDriverNew::initialLogEvaluation(int crowd_id, UPtrVector<Crowd>& crowds)
   auto& walker_twfs  = crowd.get_walker_twfs();
   auto& mcp_buffers  = crowd.get_mcp_wfbuffers();
   auto& walker_elecs = crowd.get_walker_elecs();
+  auto& walkers = crowd.get_walkers();
+
+  crowd.loadWalkers();
+  for (ParticleSet& pset : walker_elecs)
+    pset.update();
+
   auto copyFrom = [](TrialWaveFunction& twf, ParticleSet& pset, Crowd::WFBuffer& wfb){
                       twf.copyFromBuffer(pset,wfb);
                     };
@@ -365,7 +371,6 @@ void QMCDriverNew::initialLogEvaluation(int crowd_id, UPtrVector<Crowd>& crowds)
                                        crowd.get_walker_elecs(),
                                        crowd.get_mcp_wfbuffers());
 
-  auto& walkers = crowd.get_walkers();
   // For consistency this should be in ParticleSet as a flex call, but I think its a problem
   // in the algorithm logic and should be removed.
   auto saveElecPosAndGLToWalkers = [](ParticleSet& pset, ParticleSet::Walker_t& walker){
