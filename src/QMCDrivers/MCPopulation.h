@@ -76,9 +76,10 @@ private:
   std::vector<std::unique_ptr<QMCHamiltonian>> walker_hamiltonians_;
 
 public:
-  //MCPopulation(){};
-  //MCPopulation(int num_ranks) : num_ranks_(num_ranks) {}
-  MCPopulation(MCWalkerConfiguration& mcwc, ParticleSet* elecs, TrialWaveFunction* trial_wf, QMCHamiltonian* hamiltonian_);
+  /** Temporary constructor to deal with MCWalkerConfiguration be the only source of some information
+   *  in QMCDriverFactory.
+   */
+  MCPopulation(int num_ranks, MCWalkerConfiguration& mcwc, ParticleSet* elecs, TrialWaveFunction* trial_wf, QMCHamiltonian* hamiltonian_);
   //MCPopulation(int num_ranks, int num_particles) : num_ranks_(num_ranks), num_particles_(num_particles) {}
   MCPopulation(int num_ranks, ParticleSet* elecs, TrialWaveFunction* trial_wf, QMCHamiltonian* hamiltonian)
       : num_ranks_(num_ranks),

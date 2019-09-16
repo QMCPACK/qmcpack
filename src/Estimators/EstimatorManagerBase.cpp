@@ -329,6 +329,8 @@ void EstimatorManagerBase::collectScalarEstimators(const RefVector<ScalarEstimat
   RealType tnorm = 1.0 / num_est;
 
   AverageCache *= tnorm;
+  
+  collectBlockAverages(num_est);
 }
 
 void EstimatorManagerBase::stopBlock(const std::vector<EstimatorManagerBase*>& est)

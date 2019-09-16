@@ -206,6 +206,7 @@ public:
   }
 
   auto& get_AverageCache() { return AverageCache; }
+  auto& get_SquaredAverageCache() { return SquaredAverageCache; }
 
 protected:
   friend class EstimatorManagerCrowd;

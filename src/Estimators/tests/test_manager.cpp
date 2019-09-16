@@ -95,6 +95,7 @@ TEST_CASE("EstimatorManagerBase::collectScalarEstimators", "[estimators]")
   EstimatorManagerBase em(c);
 
   em.get_AverageCache().resize(4);
+  em.get_SquaredAverageCache().resize(4);
   est_list[0].get().scalars.resize(4);
 
 
@@ -107,6 +108,8 @@ TEST_CASE("EstimatorManagerBase::collectScalarEstimators", "[estimators]")
   double correct_value = (2.0 + ((1.0 + 2.0) / 2)) / 3;
   REQUIRE(em.get_AverageCache()[0] == Approx(correct_value));
 }
+
+
 
 
 TEST_CASE("Estimator adhoc addVector operator", "[estimators]")
