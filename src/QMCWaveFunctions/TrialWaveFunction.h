@@ -156,7 +156,7 @@ public:
   RealType evaluateLog(ParticleSet& P);
 
   /** batched version of evaluateLog. gold reference */
-  void flex_evaluateLog(const std::vector<TrialWaveFunction*>& WF_list, const std::vector<ParticleSet*>& P_list) const;
+  static void flex_evaluateLog(const RefVector<TrialWaveFunction>& WF_list, const RefVector<ParticleSet>& P_list);
 
   /** recompute the value of the orbitals which require critical accuracy */
   void recompute(ParticleSet& P);
@@ -180,10 +180,10 @@ public:
   ValueType calcRatio(ParticleSet& P, int iat, ComputeType ct = ComputeType::ALL);
   /** batched verison of calcRatio */
   static void flex_calcRatio(const RefVector<TrialWaveFunction>& WF_list,
-                      const RefVector<ParticleSet>& P_list,
-                      int iat,
-                      std::vector<PsiValueType>& ratios,
-                      ComputeType ct = ComputeType::ALL);
+                             const RefVector<ParticleSet>& P_list,
+                             int iat,
+                             std::vector<PsiValueType>& ratios,
+                             ComputeType ct = ComputeType::ALL);
 
   /** compulte multiple ratios to handle non-local moves and other virtual moves
    */
@@ -215,10 +215,10 @@ public:
    *  all vector sizes must match
    */
   static void flex_ratioGrad(const RefVector<TrialWaveFunction>& WF_list,
-                      const RefVector<ParticleSet>& P_list,
-                      int iat,
-                      std::vector<PsiValueType>& ratios,
-                      std::vector<GradType>& grad_new);
+                             const RefVector<ParticleSet>& P_list,
+                             int iat,
+                             std::vector<PsiValueType>& ratios,
+                             std::vector<GradType>& grad_new);
 
   GradType evalGrad(ParticleSet& P, int iat);
   /** batched verison of evalGrad
@@ -226,20 +226,20 @@ public:
     * This is static because it should have no direct access
     * to any TWF.
     */
-  static void flex_evalGrad(const std::vector<std::reference_wrapper<TrialWaveFunction>>& WF_list,
-                     const std::vector<std::reference_wrapper<ParticleSet>>& P_list,
-                     int iat,
-                     std::vector<GradType>& grad_now);
+  static void flex_evalGrad(const RefVector<TrialWaveFunction>& WF_list,
+                            const RefVector<ParticleSet>& P_list,
+                            int iat,
+                            std::vector<GradType>& grad_now);
 
   void rejectMove(int iat);
   /* flexible batched version of rejectMove */
-  void flex_rejectMove(const std::vector<TrialWaveFunction*>& WF_list, int iat) const;
+  static void flex_rejectMove(const RefVector<TrialWaveFunction>& wf_list, int iat);
 
   void acceptMove(ParticleSet& P, int iat);
   /* flexible batched version of acceptMove */
-  void flex_acceptMove(const std::vector<TrialWaveFunction*>& WF_list,
-                       const std::vector<ParticleSet*>& P_list,
-                       int iat) const;
+  static void flex_acceptMove(const RefVector<TrialWaveFunction>& wf_list,
+                              const RefVector<ParticleSet>& p_list,
+                              int iat);
   void completeUpdates();
   /* flexible batched version of completeUpdates.  */
   void flex_completeUpdates(const std::vector<TrialWaveFunction*>& WF_list) const;
@@ -247,23 +247,28 @@ public:
   /** register all the wavefunction components in buffer.
    *  See WaveFunctionComponent::registerData for more detail */
   void registerData(ParticleSet& P, WFBufferType& buf);
-  /* flexible batched version of registerData. 
+
+  /* flexible batched version of registerData.
+   * 
    * Ye: perhaps it doesn't need to be flexible but just operates on all the walkers
+   * The strange mix of argument types reflect this being called from MCPopulation instead
+   * of Crowd like most of the flex functions.
    */
-  void flex_registerData(const std::vector<TrialWaveFunction*>& WF_list,
-                         const std::vector<ParticleSet*>& P_list,
-                         const std::vector<WFBufferType*>& buf_list) const;
+  static void flex_registerData(const UPtrVector<TrialWaveFunction>& WF_list,
+                                const UPtrVector<ParticleSet>& P_list,
+                                const RefVector<WFBufferType>& buf_list);
 
   /** update all the wavefunction components in buffer.
    *  See WaveFunctionComponent::updateBuffer for more detail */
   RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false);
+
   /* flexible batched version of updateBuffer. 
    * Ye: perhaps it doesn't need to be flexible but just operates on all the walkers
    */
-  void flex_updateBuffer(const std::vector<TrialWaveFunction*>& WF_list,
-                         const std::vector<ParticleSet*>& P_list,
-                         const std::vector<WFBufferType*>& buf_list,
-                         bool fromscratch = false) const;
+  static void flex_updateBuffer(const RefVector<TrialWaveFunction>& WF_list,
+                                const RefVector<ParticleSet>& P_list,
+                                const RefVector<WFBufferType>& buf_list,
+                                bool fromscratch = false);
 
   /** copy all the wavefunction components from buffer.
    *  See WaveFunctionComponent::updateBuffer for more detail */
@@ -316,6 +321,7 @@ public:
   void flex_evaluateGL(const std::vector<TrialWaveFunction*>& WF_list, const std::vector<ParticleSet*>& P_list) const;
 
   std::vector<NewTimer*>& get_timers() { return myTimers; }
+
 private:
   ///starting index of the buffer
   size_t BufferCursor;
@@ -341,29 +347,29 @@ private:
   std::vector<NewTimer*> myTimers;
   std::vector<RealType> myTwist;
 
-  // helper function for extracting a list of WaveFunctionComponent from a list of TrialWaveFunction
-  std::vector<WaveFunctionComponent*> extract_WFC_list(const std::vector<TrialWaveFunction*>& WF_list, int id) const;
+  /** @{
+   *  @brief helper function for extracting a list of WaveFunctionComponent from a list of TrialWaveFunction
+   */
+  std::vector<WaveFunctionComponent*> extractWFCPtrList(const std::vector<TrialWaveFunction*>& WF_list, int id) const;
 
-  // temporal helper function
-  template<class T>
-  static std::vector<T*> convert_ref_to_ptr_list(const std::vector<std::reference_wrapper<T>>& ref_list)
-  {
-    std::vector<T*> ptr_list;
-    ptr_list.reserve(ref_list.size());
-    for (auto& ref : ref_list)
-    ptr_list.push_back(&ref.get());
-    return ptr_list;
-  }
+  static std::vector<WaveFunctionComponent*> extractWFCPtrList(const UPtrVector<TrialWaveFunction>& WF_list, int id);
 
-  static std::vector<std::reference_wrapper<WaveFunctionComponent>> extract_WFC_list(
+  static std::vector<std::reference_wrapper<WaveFunctionComponent>> extractWFCRefList(
       const std::vector<std::reference_wrapper<TrialWaveFunction>>& WF_list,
       int id);
+  /** }@ */
 
   // helper function for extrating a list of gradients from a list of TrialWaveFunction
-  std::vector<ParticleSet::ParticleGradient_t*> extract_G_list(const std::vector<TrialWaveFunction*>& P_list) const;
+  std::vector<ParticleSet::ParticleGradient_t*> extractGPtrList(const std::vector<TrialWaveFunction*>& wf_list) const;
 
   // helper function for extracting a list of laplacian from a list of TrialWaveFunction
-  std::vector<ParticleSet::ParticleLaplacian_t*> extract_L_list(const std::vector<TrialWaveFunction*>& P_list) const;
+  std::vector<ParticleSet::ParticleLaplacian_t*> extractLPtrList(const std::vector<TrialWaveFunction*>& wf_list) const;
+
+  // helper function for extrating a list of gradients from a list of TrialWaveFunction
+  static RefVector<ParticleSet::ParticleGradient_t> extractGRefList(const RefVector<TrialWaveFunction>& wf_list);
+
+  // helper function for extracting a list of laplacian from a list of TrialWaveFunction
+  static RefVector<ParticleSet::ParticleLaplacian_t> extractLRefList(const RefVector<TrialWaveFunction>& wf_list);
 
   ///////////////////////////////////////////
   // Vectorized version for GPU evaluation //
