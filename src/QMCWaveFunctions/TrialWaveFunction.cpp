@@ -174,6 +174,10 @@ void TrialWaveFunction::flex_evaluateLog(const RefVector<TrialWaveFunction>& wf_
   else if (wf_list.size() == 1)
   {
     wf_list[0].get().evaluateLog(p_list[0]);
+    // Ye: temporal workaround to have WF.G/L always defined.
+    // remove when KineticEnergy use WF.G/L instead of P.G/L
+    wf_list[0].get().G = p_list[0].get().G;
+    wf_list[0].get().L = p_list[0].get().L;
   }
 }
 
