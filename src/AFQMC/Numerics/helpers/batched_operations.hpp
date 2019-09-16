@@ -225,11 +225,12 @@ void vbias_from_v1( int nwalk, int nkpts, int nchol_max, cuda_gpu_ptr<int> Qsym,
 }
 
 template<typename T, typename Q>
-void batched_dot( char TA, char TB, int N, int M, std::complex<T> const alpha,
-                  cuda_gpu_ptr<Q> const* A, int lda, cuda_gpu_ptr<Q> const* B, int ldb,
-                  std::complex<T> const beta, cuda_gpu_ptr<T>* y, int incy)
+void batched_dot( char TA, char TB, int N, int M, T alpha,
+                  cuda_gpu_ptr<Q> A, int lda, cuda_gpu_ptr<Q> B, int ldb,
+                  T beta, cuda_gpu_ptr<T> y, int incy)
 {
-  kernels::batched_dot(TA,TB,N,M,alpha,to_address(A),lda,to_address(B),ldb,beta,to_address(y),incy);
+//  kernels::batched_dot(TA,TB,N,M,alpha,to_address(A),lda,to_address(B),ldb,beta,to_address(y),incy);
+    APP_ABORT(" Error: batched_dot not yet available in gpu.\n");
 }
 
 }

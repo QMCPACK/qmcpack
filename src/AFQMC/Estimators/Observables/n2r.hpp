@@ -237,20 +237,13 @@ class n2r: public AFQMCInfo
       auto&& Gu = G[iw][0];   
       auto&& Orb0N(Orbitals(Orbitals.extension(0),{i0,iN}));
       auto&& T0N(T(T.extension(0),{i0,iN}));    
-/*
-std::cout<<" sizes: " <<Gu.size(0) <<" " <<Gu.size(1) <<" "
-<<Orbitals.size(0) <<" " <<Orbitals.size(1) <<" "
-<<T.size(0) <<" " <<T.size(1) <<" " 
-<<Orb0N.size(0) <<" " <<Orb0N.size(1) <<" "
-<<T0N.size(0) <<" " <<T0N.size(1) <<std::endl;
-*/
       ma::product(Gu,Orb0N,T0N);
-/*
-      ma::batched_dot('H','T',(iN-i0),NMO,ComplexType(1.0),
+      using ma::batched_dot;  
+      batched_dot('H','T',(iN-i0),NMO,ComplexType(1.0),
                         ma::pointer_dispatch(Orb0N.origin()),Orb0N.stride(0),
                         ma::pointer_dispatch(T0N.origin()),T0N.stride(0),
                         ComplexType(0.0),ma::pointer_dispatch(Gr.origin())+i0,1);
-*/
+/*
       fill_n(Gr.origin(),dm_size,ComplexType(0.0,0.0));
       for(int i=0; i<NMO; i++) {
         ComplexType* O_(Orbitals[i].origin());
@@ -259,6 +252,7 @@ std::cout<<" sizes: " <<Gu.size(0) <<" " <<Gu.size(1) <<" "
         for(int j=0; j<dm_size; j++, O_++, T_++, G_++)
           (*G_) += std::conj(*O_) * (*T_); 
       }  
+*/
       using std::copy_n;
       copy_n(ma::pointer_dispatch(Gr.origin())+i0,(iN-i0),Gr_[0].origin());  
         
@@ -271,7 +265,7 @@ std::cout<<" sizes: " <<Gu.size(0) <<" " <<Gu.size(1) <<" "
       } else if(walker_type == COLLINEAR) {
         auto&& Gd = G[iw][1];
         ma::product(Gd,Orb0N,T0N);
-        ma::batched_dot('H','T',(iN-i0),NMO,ComplexType(1.0),
+        batched_dot('H','T',(iN-i0),NMO,ComplexType(1.0),
                         ma::pointer_dispatch(Orb0N.origin()),Orb0N.stride(0),
                         ma::pointer_dispatch(T0N.origin()),T0N.stride(0),
                         ComplexType(0.0),ma::pointer_dispatch(Gr.origin())+i0,1);
