@@ -424,7 +424,7 @@ void QMCDriverNew::setWalkerOffsets()
     //    W[iw]->ParentID = id;
   }
   //  app_log() << "  Total number of walkers: " << W.EnsembleProperty.NumSamples << std::endl;
-  //  app_log() << "  Total weight: " << W.EnsembleProperty.Weight << std::endl
+  //  app_log() << "  Total weight: " << W.EnsembleProperty.Weight << std::endl;
 }
 
 std::ostream& operator<<(std::ostream& o_stream, const QMCDriverNew& qmcd)
