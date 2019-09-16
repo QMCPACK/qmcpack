@@ -602,6 +602,12 @@ def plotting():
 #end def plotting
 
 
+
+def superstring():
+    nunit_all()
+#end def superstring
+
+
         
 def generic_logging():
     from generic import log,message,warn,error
@@ -3351,6 +3357,7 @@ NexusTest( optional_dependencies , optional=True)
 NexusTest( execute               )
 NexusTest( memory                )
 NexusTest( plotting              )
+NexusTest( superstring           )
 NexusTest( generic_logging       )
 NexusTest( generic_intrinsics    )
 NexusTest( generic_extensions    )
