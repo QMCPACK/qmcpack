@@ -297,6 +297,40 @@ void EstimatorManagerBase::stopBlock(RealType accept, bool collectall)
     collectBlockAverages(1);
 }
 
+/** Called at end of block in Unified Driver
+ *
+ *  TODO: Check that normalization isn't needed here, I think it is already applied per walker
+ */
+void EstimatorManagerBase::collectScalarEstimators(const RefVector<ScalarEstimatorBase>& estimators)
+{
+  // One scalar estimator can be accumulating many scalar values
+  int num_est      = estimators.size();
+  int num_scalars  = estimators[0].get().size();
+  using ScalarType = ScalarEstimatorBase::RealType;
+
+  std::vector<ScalarType> averages_work(num_scalars, 0.0);
+  std::vector<ScalarType> averages_sum(num_scalars, 0.0);
+
+  auto accumulateVectorsInPlace = [](auto& vec_a, const auto& vec_b) {
+    for (int i = 0; i < vec_a.size(); ++i)
+      vec_a[i] += vec_b[i];
+  };
+
+  AverageCache = 0.0;
+  if (AverageCache.size() != num_scalars)
+    throw std::runtime_error(
+        "EstimatorManagerBase and Crowd ScalarManagers do not agree on number of scalars being estimated");
+  for (int i = 0; i < num_est; ++i)
+  {
+    estimators[i].get().takeBlockAverage(averages_work.begin());
+    accumulateVectorsInPlace(AverageCache, averages_work);
+  }
+
+  RealType tnorm = 1.0 / num_est;
+
+  AverageCache *= tnorm;
+}
+
 void EstimatorManagerBase::stopBlock(const std::vector<EstimatorManagerBase*>& est)
 {
   //normalized it by the thread

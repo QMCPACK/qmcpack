@@ -38,7 +38,7 @@ class QMCHamiltonian;
 class CollectablesEstimator;
 
 /** Class to manage a set of ScalarEstimators */
-class EstimatorManagerBase
+class EstimatorManagerBase : public EstimatorManagerInterface
 {
 public:
   typedef QMCTraits::FullPrecRealType RealType;
@@ -174,6 +174,10 @@ public:
    */
   void stopBlock(const std::vector<EstimatorManagerBase*>& m);
 
+  /** At end of block collect the scalar estimators for entire rank
+   */
+  void collectScalarEstimators(const RefVector<ScalarEstimatorBase>& scalar_estimators);
+
   /** accumulate the measurements
    * @param W walkers
    */
@@ -200,6 +204,8 @@ public:
   {
     anything.write(h_file, doappend);
   }
+
+  auto& get_AverageCache() { return AverageCache; }
 
 protected:
   friend class EstimatorManagerCrowd;
