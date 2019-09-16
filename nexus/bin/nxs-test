@@ -1695,6 +1695,12 @@ def generic_extensions():
 
 
 
+def developer():
+    nunit_all()
+#end def developer
+
+
+
 
 def nexus_imports():
     import nexus
@@ -3376,6 +3382,7 @@ NexusTest( unit_converter        )
 NexusTest( generic_logging       )
 NexusTest( generic_intrinsics    )
 NexusTest( generic_extensions    )
+NexusTest( developer             )
 NexusTest( nexus_imports         )
 NexusTest( settings_operation    , 'settings' )
 NexusTest( machines              )
