@@ -215,10 +215,11 @@ bool QMCFixedSampleLinearOptimize::run()
   // if requested, perform the update via the adaptive three-shift or single-shift method
   if (current_optimizer_type_ == OptimizerType::ADAPTIVE)
     return adaptive_three_shift_run();
-#endif
 
   if (current_optimizer_type_ == OptimizerType::DESCENT)
     return descent_run();
+
+#endif
 
   if (current_optimizer_type_ == OptimizerType::ONESHIFTONLY)
     return one_shift_run();
@@ -1348,7 +1349,7 @@ bool QMCFixedSampleLinearOptimize::descent_run()
 
   descentEngineObj->updateParameters();
 
-  std::vector<double> results = descentEngineObj->retrieveNewParams();
+  std::vector<ValueType> results = descentEngineObj->retrieveNewParams();
 
 
   for (int i = 0; i < results.size(); i++)
@@ -1383,7 +1384,7 @@ bool QMCFixedSampleLinearOptimize::hybrid_run()
   {
     if (previous_optimizer_type_ == OptimizerType::DESCENT)
     {
-      std::vector<std::vector<double>> hybridBLM_Input = descentEngineObj->retrieveHybridBLM_Input();
+      std::vector<std::vector<ValueType>> hybridBLM_Input = descentEngineObj->retrieveHybridBLM_Input();
       EngineObj->setHybridBLM_Input(hybridBLM_Input);
     }
     adaptive_three_shift_run();
