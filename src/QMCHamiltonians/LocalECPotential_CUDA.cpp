@@ -120,7 +120,7 @@ void LocalECPotential_CUDA::addEnergy(MCWalkerConfiguration& W, std::vector<Real
 }
 
 
-QMCHamiltonianBase* LocalECPotential_CUDA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+OperatorBase* LocalECPotential_CUDA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   LocalECPotential_CUDA* myclone = new LocalECPotential_CUDA(IonRef, qp);
   for (int ig = 0; ig < PPset.size(); ++ig)

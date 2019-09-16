@@ -197,7 +197,7 @@ void QMCCostFunction::getConfigurations(const std::string& aroot)
       H_KE_Node[ip]->addOperator(hClones[ip]->getHamiltonian("Kinetic"), "Kinetic");
       if (includeNonlocalH != "no")
       {
-        QMCHamiltonianBase* a = hClones[ip]->getHamiltonian(includeNonlocalH);
+        OperatorBase* a = hClones[ip]->getHamiltonian(includeNonlocalH);
         if (a)
         {
           app_log() << " Found non-local Hamiltonian element named " << includeNonlocalH << std::endl;
@@ -266,7 +266,7 @@ void QMCCostFunction::checkConfigurations()
         HDerivRecords[ip]->resize(wRef.numSamples(), NumOptimizables);
       }
     }
-    QMCHamiltonianBase* nlpp = (includeNonlocalH == "no") ? 0 : hClones[ip]->getHamiltonian(includeNonlocalH);
+    OperatorBase* nlpp = (includeNonlocalH == "no") ? 0 : hClones[ip]->getHamiltonian(includeNonlocalH);
     bool compute_nlpp        = useNLPPDeriv && nlpp;
     //set the optimization mode for the trial wavefunction
     psiClones[ip]->startOptimization();
@@ -380,7 +380,7 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine<Return_
         //HDerivRecords[ip]->resize(wRef.numSamples(),NumOptimizables);
       }
     }
-    QMCHamiltonianBase* nlpp = (includeNonlocalH == "no") ? 0 : hClones[ip]->getHamiltonian(includeNonlocalH.c_str());
+    OperatorBase* nlpp = (includeNonlocalH == "no") ? 0 : hClones[ip]->getHamiltonian(includeNonlocalH.c_str());
     bool compute_nlpp        = useNLPPDeriv && nlpp;
     //set the optimization mode for the trial wavefunction
     psiClones[ip]->startOptimization();

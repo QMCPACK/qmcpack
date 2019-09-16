@@ -34,7 +34,7 @@ Nightly testing currently includes the following software versions on x86:
 * MPI
   * OpenMPI 4.0.1, 2.1.1
   * Intel MPI 2019.4, 2018.5
-* CUDA 10.0
+* CUDA 10.1.243
 
 # Building with CMake
 
@@ -147,8 +147,8 @@ make -j 8
      ENABLE_TIMERS       Enable fine-grained timers (1:yes, 0:no (default)).
                          Timers are off by default to avoid potential slowdown in small
                          systems. For large systems (100+ electrons) there is no risk.
-     ENABLE_SOA          (Experimental) Enable CPU optimization based on Structure-
-                         of-Array (SoA) datatypes (1:yes, 0:no (default)). ```
+     ENABLE_SOA          Enable CPU optimization based on Structure-
+                         of-Array (SoA) datatypes (1:yes (default), 0:no). ```
 ```
 
  * Additional QMC options

@@ -24,13 +24,6 @@
 #include <Utilities/FairDivide.h>
 #include <fstream>
 
-#ifdef HAVE_ADIOS
-#include <adios.h>
-#include <adios_read.h>
-#include <adios_error.h>
-#include "ADIOS/ADIOS_config.h"
-#endif
-
 #ifdef HAVE_MPI
 #include "mpi3/shared_communicator.hpp"
 #endif
@@ -135,13 +128,6 @@ void Communicate::finalize()
 
   if (!has_finalized)
   {
-#ifdef HAVE_ADIOS
-    if (ADIOS::get_adios_init())
-    {
-      adios_read_finalize_method(ADIOS_READ_METHOD_BP);
-      adios_finalize(OHMMS::Controller->rank());
-    }
-#endif
     has_finalized = true;
   }
 }

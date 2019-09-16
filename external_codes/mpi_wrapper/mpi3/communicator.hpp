@@ -49,6 +49,8 @@
 
 #include <boost/mpl/placeholders.hpp>
 
+#include<boost/any.hpp> // or <any> in C++17
+
 // use this to avoid need for linking -lserialization
 #ifdef _MAKE_BOOST_SERIALIZATION_HEADER_ONLY
 //#include <boost/archive/detail/decl.hpp>
@@ -118,9 +120,21 @@ enum class communicator_type : int{
 	cluster = OMPI_COMM_TYPE_CLUSTER 
 };
 
-//enum constant{
-//	undefined = MPI_UNDEFINED;
-//};
+enum constant{
+	undefined = MPI_UNDEFINED,
+	process_null = MPI_PROC_NULL,
+	any_source = MPI_ANY_SOURCE
+};
+
+enum key{ // for attributes
+	tag_ub = MPI_TAG_UB, 
+	host = MPI_HOST,
+	io = MPI_IO,
+	wtime_is_global = MPI_WTIME_IS_GLOBAL,
+	application_number = MPI_APPNUM,
+	universe_size = MPI_UNIVERSE_SIZE,
+	last_used_code = MPI_LASTUSEDCODE
+};
 
 template<int N = 10> struct overload_priority : overload_priority<N-1>{
 //	using overload_priority<N-1>::overload_priority;
@@ -147,7 +161,7 @@ struct pointer;
 using address = MPI_Aint;
 using intptr_t = MPI_Aint;
 using size_t = MPI_Aint;
-
+using ptrdiff_t = std::make_signed_t<size_t>;
 struct request;
 
 struct send_request;
@@ -168,6 +182,9 @@ struct message_header{
 struct graph_communicator;
 struct shared_communicator; // intracommunicator
 
+using boost::any;
+using boost::any_cast;
+
 class communicator : protected detail::basic_communicator{
 	friend struct detail::package;
 protected:
@@ -179,7 +196,29 @@ protected:
 		return ret;
 	}
 public:
-
+	template<class T = void*>
+	struct keyval{
+		static int delete_fn_(MPI_Comm /*comm*/, int /*keyval*/, void *attr_val, void */*extra_state*/){
+			delete (T*)attr_val; attr_val = nullptr;
+			return MPI_SUCCESS;
+		}
+		static int copy_fn_(
+			MPI_Comm /*oldcomm*/, int /*keyval*/,
+			void * /*extra_state*/, void *attribute_val_in,
+			void *attribute_val_out, int *flag
+		){
+			*(void**)attribute_val_out = (void*)new T{*((T const*)attribute_val_in)};
+			assert(flag); *flag = 1;
+			return MPI_SUCCESS;
+		}
+		using mapped_type = T;
+		int impl_;
+		keyval(){
+			MPI_Comm_create_keyval(copy_fn_, delete_fn_, &impl_, (void *)0);
+		}
+		keyval(keyval const&) = delete;
+		~keyval(){MPI_Comm_free_keyval(&impl_);}
+	};
 	using detail::basic_communicator::send_receive_n;
 	using detail::basic_communicator::matched_probe;
 	template<class It, typename Size>
@@ -350,6 +389,8 @@ public:
 	bool operator!=(communicator const& other) const{return not (*this == other);}
 	explicit operator bool() const{return not is_null();}
 	impl_t operator&() const{return impl_;}
+	auto get() const{return impl_;}
+
 	~communicator(){
 		if(impl_ != MPI_COMM_WORLD and impl_ != MPI_COMM_NULL and impl_ != MPI_COMM_SELF){
 		//	if(std::current_exception()) std::cerr << "exception during destruction" << std::endl; 
@@ -469,25 +510,51 @@ public:
 	void set_error_handler(error_handler const& eh);
 	error_handler get_error_handler() const;
 	template<typename T>
-	void set_attribute(keyval const& kv, int idx, T const& val);
-	void delete_attribute(keyval const& kv, int idx);
-	template<typename T>
-	void get_attribute(keyval const& kv, int idx, T& val);
-	template<typename T>
-	T const& get_attribute_as(keyval const& kv, int idx);
-	bool has_attribute(keyval const& kv, int idx);
+//	void set_attribute(keyval const& kv, int idx, T const& val);
+//	void delete_attribute(keyval const& kv, int idx);
+//	template<typename T>
+//	void get_attribute(keyval const& kv, int idx, T& val);
+//	template<typename T>
+//	T const& get_attribute_as(keyval const& kv, int idx);
+//	bool has_attribute(keyval const& kv, int idx);
 
 	process operator[](int i);
-
-	template<typename T>
-	T const& attribute_as(int TAG) const{
-		int flag = 0;
-		T* p = nullptr;
-		int status = MPI_Comm_get_attr(impl_, TAG, &p, &flag);
-		if(status != MPI_SUCCESS) throw std::runtime_error{"cannot get attr"};
-		assert(flag);
-		return *p;
+protected:
+	template<class T> void set_attribute(int kv_idx, T const& t){
+		MPI_Comm_set_attr(impl_, kv_idx, new T{t});
 	}
+	inline void delete_attribute(int kv_idx){
+		MPI_Comm_delete_attr(impl_, kv_idx);
+	}
+	void* get_attribute(int kvidx) const{
+		void* v = nullptr; int flag = 0;
+		MPI_Comm_get_attr(impl_, kvidx, &v, &flag);
+		if(not flag){assert(!v); return nullptr;}
+		return v;
+	}
+	bool has_attribute(int kvidx) const{
+		void* v = nullptr; int flag = 0;
+		MPI_Comm_get_attr(impl_, kvidx, &v, &flag);
+		if(not flag) return false;
+		return true;
+	}
+public:
+	template<class T, class TT = T> void
+	set_attribute(keyval<T> const& k, TT const& t = {}){set_attribute<T>(k.impl_, t);}
+	template<class T>
+	inline void delete_attribute(keyval<T> const& k){delete_attribute(k.impl_);}
+	template<class T>
+	T const& get_attribute(keyval<T> const& kv) const{return *(T*)get_attribute(kv.impl_);}
+	template<class T>
+	T& get_attribute(keyval<T> const& kv){return *(T*)get_attribute(kv.impl_);}
+	template<class T>
+	bool has_attribute(keyval<T> const& kv) const{return has_attribute(kv.impl_);}
+	template<class T>
+	T& attribute(keyval<T> const& kv){
+		if(not has_attribute(kv)) set_attribute(kv);
+		return get_attribute(kv);
+	}
+	mpi3::any& attribute(std::string const& s);
 
 	void call_error_handler(int errorcode){
 		int status = MPI_Comm_call_errhandler(impl_, errorcode);

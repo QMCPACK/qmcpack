@@ -44,7 +44,7 @@ NonLocalECPotential_CUDA::NonLocalECPotential_CUDA(ParticleSet& ions,
 }
 
 
-QMCHamiltonianBase* NonLocalECPotential_CUDA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+OperatorBase* NonLocalECPotential_CUDA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   NonLocalECPotential_CUDA* myclone = new NonLocalECPotential_CUDA(IonConfig, qp, psi, UsePBC);
   for (int ig = 0; ig < PPset.size(); ++ig)

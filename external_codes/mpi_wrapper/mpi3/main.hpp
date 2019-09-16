@@ -16,15 +16,12 @@ namespace mpi3{
 
 // this definition forces the user to define boost::mpi3::main
 int main(int argc, char* argv[], boost::mpi3::communicator world);
-#else
-int main(int argc, char* argv[], boost::mpi3::environment& env);
-#endif
 
 }}
 
 #ifndef _BOOST_MPI3_MAIN_ENVIRONMENT
 int main(int argc, char* argv[]){
-	boost::mpi3::environment env(argc, argv);
+	boost::mpi3::environment env{argc, argv};
 	try{
 		return boost::mpi3::main(argc, argv, env.world());
 	}catch(std::exception& e){
@@ -35,6 +32,7 @@ int main(int argc, char* argv[]){
 				"terminate called after throwing\n"
 				"  what(): " << e.what() << std::endl
 			;
+			MPI_Abort(MPI_COMM_WORLD, 1);
 		}
 		return 0;
 	}catch(...){
@@ -52,6 +50,7 @@ int main(int argc, char* argv[]){
 	return boost::mpi3::main(argc, argv, env);
 }
 #endif
+#endif
 
 #ifdef _TEST_BOOST_MPI3_MAIN
 
@@ -64,12 +63,9 @@ using std::cout;
 int mpi3::main(int argc, char* argv[], mpi3::communicator world){
 	if(world.rank() == 0) cout << mpi3::version() << '\n';
 	mpi3::communicator duo = world < 2;
-	if(duo){
-		cout << "my rank in comm " << duo.name() << " is " << duo.rank() << '\n';
-	}
+	if(duo) cout <<"my rank in comm "<< duo.name() <<" is "<< duo.rank() <<'\n';
 	return 0;
 }
 
 #endif
-
 
