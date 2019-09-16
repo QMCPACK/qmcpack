@@ -21,7 +21,7 @@ def test_rinscribe():
         tiling    = (4,4,1),
         )
     ri = s.rinscribe()
-    assert(value_eq(ri,4.2643090882345795))
+    assert(value_eq(float(ri),4.2643090882345795))
 #end def test_rinscribe
 
 
