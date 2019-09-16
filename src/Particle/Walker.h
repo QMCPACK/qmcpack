@@ -94,9 +94,13 @@ struct Walker
 
   ///typedef for the property container, fixed size
   typedef Matrix<FullPrecRealType> PropertyContainer_t;
+
+  /** @{
+   * Not really "buffers", rename
+   */
   typedef PooledMemory<OHMMS_PRECISION_FULL> WFBuffer_t;
   typedef PooledData<RealType> Buffer_t;
-
+  /** }@ */
   ///id reserved for forward walking
   long ID;
   ///id reserved for forward walking
@@ -131,7 +135,10 @@ struct Walker
   ///scalar properties of a walker
   PropertyContainer_t Properties;
 
-  ///Property history vector
+  /** Property history vector
+   *
+   *  these are used as fixed length cyclic traces of a "property"
+   */
   std::vector<std::vector<FullPrecRealType>> PropertyHistory;
   std::vector<int> PHindex;
 

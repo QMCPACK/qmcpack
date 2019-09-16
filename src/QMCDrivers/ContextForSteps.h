@@ -58,7 +58,7 @@ public:
   auto deltaRsBegin() { return walker_deltas_.begin(); };
   
   int getPtclGroupStart(int group) const { return particle_group_indexes_[group].first; }
-  int getPtclGroupEnd(int group) const { return particle_group_indexes_[group].first; }
+  int getPtclGroupEnd(int group) const { return particle_group_indexes_[group].second; }
 
   void incReject() { ++n_reject; }
   void incAccept() { ++n_accept; }
