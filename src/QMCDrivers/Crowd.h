@@ -28,7 +28,6 @@ class Crowd
 {
 public:
   using MCPWalker = MCPopulation::MCPWalker;
-  // This is getting a bit eh.
   using WFBuffer = MCPopulation::WFBuffer;
   using GradType = QMCTraits::GradType;
   using RealType = QMCTraits::RealType;

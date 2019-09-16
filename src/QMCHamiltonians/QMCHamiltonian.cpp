@@ -503,7 +503,7 @@ void QMCHamiltonian::flex_evaluate(const RefVector<QMCHamiltonian>& H_list,
       const auto HC_list(extract_HC_list(H_list, i));
 
       // This lambda accomplishes two things
-      // 1. It makes clear T& and not std::reference<T> is desired removing need for gets.
+      // 1. It makes clear T& and not std::reference_wrapper<T> is desired removing need for gets.
       // 2. [] captures nothing insuring that we know these updates only depend on the three object involved.
       auto updateNonKinetic = [](OperatorBase& op, QMCHamiltonian& ham, ParticleSet& pset) {
         // both hamiltonian and operatorbase should have operator<< overides

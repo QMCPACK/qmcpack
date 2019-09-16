@@ -29,10 +29,16 @@ void Crowd::reserve(int crowd_size)
   reserveCS(walker_elecs_);
   reserveCS(walker_twfs_);
   reserveCS(walker_hamiltonians_);
-  reserveCS(grads_now_);
-  reserveCS(grads_new_);
-  reserveCS(ratios_);
-  reserveCS(local_energies_);
+
+  auto resizeCS = [crowd_size](auto& avector) {
+                     avector.resize(crowd_size); };
+  resizeCS(grads_now_);
+  resizeCS(grads_new_);
+  resizeCS(ratios_);
+  resizeCS(log_gf_);
+  resizeCS(log_gb_);
+  resizeCS(prob_);
+  resizeCS(local_energies_);
 }
 
 void Crowd::addWalker(MCPWalker& walker, ParticleSet& elecs, TrialWaveFunction& twf, QMCHamiltonian& hamiltonian)
