@@ -65,8 +65,10 @@ VMCBatched::IndexType VMCBatched::calc_default_local_walkers()
       vmcdriver_input_.get_steps_between_samples() >= 0)
     app_warning() << "VMCBatched currently ignores samples and samplesperthread\n";
 
+  if (local_walkers != rw)
+    app_warning() << "VMCBatched changed the number of walkers to " << local_walkers << ". User input was " << rw << std::endl;
   // TODO: Simplify samples, samples per thread etc in the unified driver
-  // see login in original VMC.cpp
+  // see logic in original VMC.cpp
   return local_walkers;
 }
 
