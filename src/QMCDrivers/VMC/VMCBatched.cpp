@@ -31,6 +31,7 @@ VMCBatched::VMCBatched(QMCDriverInput&& qmcdriver_input,
                        Communicate* comm)
     : QMCDriverNew(std::move(qmcdriver_input), std::move(pop), psi, h, ppool, comm), vmcdriver_input_(input)
 {
+  QMCType  = "VMCBatched";
   // qmc_driver_mode.set(QMC_UPDATE_MODE, 1);
   // qmc_driver_mode.set(QMC_WARMUP, 0);
 }

@@ -875,7 +875,7 @@ TrialWaveFunction* TrialWaveFunction::makeClone(ParticleSet& tqp) const
   myclone->BufferCursor        = BufferCursor;
   myclone->BufferCursor_scalar = BufferCursor_scalar;
   for (int i = 0; i < Z.size(); ++i)
-    myclone->addComponent(Z[i]->makeClone(tqp), "dummy");
+    myclone->addComponent(Z[i]->makeClone(tqp), Z[i]->ClassName);
   myclone->OneOverM = OneOverM;
   return myclone;
 }
