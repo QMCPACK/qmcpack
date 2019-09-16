@@ -57,16 +57,6 @@ TEST_CASE("EstimatorManagerBase", "[estimators]")
   em.reset();
 }
 
-// temporary helper function
-template<class TR, class T>
-static RefVector<TR> makeRefVector(std::vector<T>& vec_list)
-{
-  RefVector<TR> ref_list;
-  ref_list.reserve(vec_list.size());
-  for (int i = 0; i < vec_list.size(); ++i)
-    ref_list.push_back(vec_list[i]);
-  return ref_list;
-}
 
 TEST_CASE("EstimatorManagerBase::collectScalarEstimators", "[estimators]")
 {

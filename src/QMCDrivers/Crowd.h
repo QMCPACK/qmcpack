@@ -72,7 +72,6 @@ public:
   std::vector<RealType>& get_log_gb() { return log_gb_; }
   std::vector<RealType>& get_prob() { return prob_; }
   RefVector<WFBuffer>& get_mcp_wfbuffers() { return mcp_wfbuffers_; }
-  std::vector<FullPrecRealType>& get_local_energies() { return local_energies_; }
   const EstimatorManagerCrowd& get_estimator_manager_crowd() const { return estimator_manager_crowd_; }
   int size() const { return mcp_walkers_.size(); }
 
@@ -98,7 +97,6 @@ private:
   std::vector<RealType> log_gf_;
   std::vector<RealType> log_gb_;
   std::vector<RealType> prob_;
-  std::vector<FullPrecRealType> local_energies_;
 
   /** }@ */
 };

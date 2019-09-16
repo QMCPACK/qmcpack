@@ -215,8 +215,15 @@ public:
    * P.R, P.G and P.L are used to evaluate the LocalEnergy.
    */
   Return_t evaluate(ParticleSet& P);
-  /** batched version of evaluate for LocalEnergy */
-  static void flex_evaluate(const RefVector<QMCHamiltonian>& H_list, const RefVector<ParticleSet>& P_list , std::vector<Return_t>& LocalEnergies);
+  
+  /** batched version of evaluate for LocalEnergy 
+   *
+   *  Encapsulation is ignored for H_list hamiltonians method uses its status as QMCHamiltonian to break encapsulation.
+   *  ParticleSet is also updated.
+   *  Bugs could easily be created by accessing this scope.
+   *  This should be set to static and fixed.
+   */
+  static std::vector<RealType> flex_evaluate(const RefVector<QMCHamiltonian>& H_list, const RefVector<ParticleSet>& P_list);
 
   /** evaluate Local energy with Toperators updated.
    * @param P ParticleSEt
@@ -299,6 +306,8 @@ public:
 
   bool get(std::ostream& os) const;
 
+  RealType get_LocalEnergy() { return LocalEnergy; }
+  
   void setRandomGenerator(RandomGenerator_t* rng);
 
   /** return a clone */
