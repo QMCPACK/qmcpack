@@ -45,7 +45,7 @@ TEST_CASE("QMCHamiltonian::flex_evaluate", "[hamiltonian]")
 
   std::vector<QMCHamiltonian::RealType> local_energies(QMCHamiltonian::flex_evaluate(makeRefVector<QMCHamiltonian>(hamiltonians), makeRefVector<ParticleSet>(elecs)));
 
-  std::cout << local_energies[0] << '\n';
+  //TODO: Would be nice to check some values but I think the system needs a little more setup
 }
 
 } // namespace qmcplusplus
