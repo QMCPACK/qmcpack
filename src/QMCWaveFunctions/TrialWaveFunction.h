@@ -350,26 +350,26 @@ private:
   /** @{
    *  @brief helper function for extracting a list of WaveFunctionComponent from a list of TrialWaveFunction
    */
-  std::vector<WaveFunctionComponent*> extract_WFC_list(const std::vector<TrialWaveFunction*>& WF_list, int id) const;
+  std::vector<WaveFunctionComponent*> extractWFCPtrList(const std::vector<TrialWaveFunction*>& WF_list, int id) const;
 
-  static std::vector<WaveFunctionComponent*> extract_WFC_list(const UPtrVector<TrialWaveFunction>& WF_list, int id);
+  static std::vector<WaveFunctionComponent*> extractWFCPtrList(const UPtrVector<TrialWaveFunction>& WF_list, int id);
 
-  static std::vector<std::reference_wrapper<WaveFunctionComponent>> extract_WFC_list(
+  static std::vector<std::reference_wrapper<WaveFunctionComponent>> extractWFCRefList(
       const std::vector<std::reference_wrapper<TrialWaveFunction>>& WF_list,
       int id);
   /** }@ */
 
   // helper function for extrating a list of gradients from a list of TrialWaveFunction
-  std::vector<ParticleSet::ParticleGradient_t*> extract_G_list(const std::vector<TrialWaveFunction*>& wf_list) const;
+  std::vector<ParticleSet::ParticleGradient_t*> extractGPtrList(const std::vector<TrialWaveFunction*>& wf_list) const;
 
   // helper function for extracting a list of laplacian from a list of TrialWaveFunction
-  std::vector<ParticleSet::ParticleLaplacian_t*> extract_L_list(const std::vector<TrialWaveFunction*>& wf_list) const;
+  std::vector<ParticleSet::ParticleLaplacian_t*> extractLPtrList(const std::vector<TrialWaveFunction*>& wf_list) const;
 
   // helper function for extrating a list of gradients from a list of TrialWaveFunction
-  static RefVector<ParticleSet::ParticleGradient_t> extract_g_list(const RefVector<TrialWaveFunction>& wf_list);
+  static RefVector<ParticleSet::ParticleGradient_t> extractGRefList(const RefVector<TrialWaveFunction>& wf_list);
 
   // helper function for extracting a list of laplacian from a list of TrialWaveFunction
-  static RefVector<ParticleSet::ParticleLaplacian_t> extract_l_list(const RefVector<TrialWaveFunction>& wf_list);
+  static RefVector<ParticleSet::ParticleLaplacian_t> extractLRefList(const RefVector<TrialWaveFunction>& wf_list);
 
   ///////////////////////////////////////////
   // Vectorized version for GPU evaluation //
