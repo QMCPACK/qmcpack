@@ -65,8 +65,10 @@ VMCBatched::IndexType VMCBatched::calc_default_local_walkers()
       vmcdriver_input_.get_steps_between_samples() >= 0)
     app_warning() << "VMCBatched currently ignores samples and samplesperthread\n";
 
+  if (local_walkers != rw)
+    app_warning() << "VMCBatched changed the number of walkers to " << local_walkers << ". User input was " << rw << std::endl;
   // TODO: Simplify samples, samples per thread etc in the unified driver
-  // see login in original VMC.cpp
+  // see logic in original VMC.cpp
   return local_walkers;
 }
 
@@ -111,20 +113,20 @@ void VMCBatched::advanceWalkers(const StateForThread& sft, Crowd& crowd, Context
       ParticleSet::flex_setActive(crowd.get_walker_elecs(), iat);
       // step_context.deltaRsBegin returns an iterator to a flat series of PosTypes
       // fastest in walkers then particles
-      auto delta_r_start = it_delta_r + iat * num_particles * num_walkers;
+      auto delta_r_start = it_delta_r + iat * num_walkers;
 
       if (use_drift)
       {
         TrialWaveFunction::flex_evalGrad(crowd.get_walker_twfs(), crowd.get_walker_elecs(), iat, crowd.get_grads_now());
         sft.drift_modifier.getDrifts(tauovermass, crowd.get_grads_now(), drifts);
-        std::transform(drifts.begin(),drifts.end(),
+        std::transform(drifts.begin(), drifts.end(),
                        delta_r_start, drifts.begin(),
                        [sqrttau](PosType& drift, PosType& delta_r){
                          return drift + (sqrttau * delta_r);});
       }
       else
       {
-        std::transform(drifts.begin(),drifts.end(),delta_r_start, drifts.begin(),
+        std::transform(drifts.begin(), drifts.end(),delta_r_start, drifts.begin(),
                        [sqrttau](auto& drift, auto& delta_r){
                          return sqrttau * delta_r;});
       }
@@ -135,8 +137,8 @@ void VMCBatched::advanceWalkers(const StateForThread& sft, Crowd& crowd, Context
       // This is inelegant
       if(use_drift)
       {
-        TrialWaveFunction::flex_ratioGrad(crowd.get_walker_twfs(),crowd.get_walker_elecs(), iat, crowd.get_ratios(), crowd.get_grads_new());
-        auto delta_r_end = it_delta_r + iat * num_particles * num_walkers + num_walkers;
+        TrialWaveFunction::flex_ratioGrad(crowd.get_walker_twfs(), crowd.get_walker_elecs(), iat, crowd.get_ratios(), crowd.get_grads_new());
+        auto delta_r_end = delta_r_start + num_walkers;
         std::transform(delta_r_start,
                        delta_r_end,
                        crowd.get_log_gf().begin(),
@@ -182,8 +184,8 @@ void VMCBatched::advanceWalkers(const StateForThread& sft, Crowd& crowd, Context
         else
         {
           step_context.incReject();
-          walker_elecs.rejectMove(iat);
           walker_twf.rejectMove(iat);
+          walker_elecs.rejectMove(iat);
         }
       }
     }
