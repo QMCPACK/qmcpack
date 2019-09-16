@@ -46,42 +46,61 @@ struct BsplineSet : public SPOSet, public SplineAdoptor
   ///** default constructor */
   //BsplineSet() { }
 
-  SPOSet* makeClone() const { return new BsplineSet<SplineAdoptor>(*this); }
+  std::vector<SplineAdoptor*>
+  downcast_spo_list(const std::vector<SPOSet*>& spo_list) const
+  {
+    std::vector<SplineAdoptor*> SA_list;
+    for (auto spo : spo_list)
+      SA_list.push_back(dynamic_cast<SplineAdoptor*>(spo));
+    return SA_list;
+  }
 
-  inline void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi) { SplineAdoptor::evaluate_v(P, iat, psi); }
+  SPOSet* makeClone() const override { return new BsplineSet<SplineAdoptor>(*this); }
+
+  inline void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi) override { SplineAdoptor::evaluate_v(P, iat, psi); }
 
   inline void evaluateDetRatios(const VirtualParticleSet& VP,
                                 ValueVector_t& psi,
                                 const ValueVector_t& psiinv,
-                                std::vector<ValueType>& ratios)
+                                std::vector<ValueType>& ratios) override
   {
     assert(psi.size() == psiinv.size());
     SplineAdoptor::evaluateDetRatios(VP, psi, psiinv, ratios);
   }
 
-  inline void finalizeConstruction() { return SplineAdoptor::finalizeConstruction(); }
+  inline void finalizeConstruction() override { return SplineAdoptor::finalizeConstruction(); }
 
-  void resetParameters(const opt_variables_type& active) {}
+  void resetParameters(const opt_variables_type& active) override {}
 
-  void resetTargetParticleSet(ParticleSet& e) {}
+  void resetTargetParticleSet(ParticleSet& e) override {}
 
-  void setOrbitalSetSize(int norbs)
+  void setOrbitalSetSize(int norbs) override
   {
     OrbitalSetSize = norbs;
     //SplineAdoptor::first_spo=0;
     //SplineAdoptor::last_spo=norbs;
   }
 
-  inline void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
+  inline void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi) override
   {
     SplineAdoptor::evaluate_vgl(P, iat, psi, dpsi, d2psi);
+  }
+
+  inline void mw_evaluateVGL(const std::vector<SPOSet*>& spo_list,
+                              const std::vector<ParticleSet*>& P_list,
+                              int iat,
+                              const std::vector<ValueVector_t*>& psi_v_list,
+                              const std::vector<GradVector_t*>& dpsi_v_list,
+                              const std::vector<ValueVector_t*>& d2psi_v_list) override
+  {
+    SplineAdoptor::mw_evaluate_vgl(downcast_spo_list(spo_list), P_list, iat, psi_v_list, dpsi_v_list, d2psi_v_list);
   }
 
   inline void evaluate(const ParticleSet& P,
                        int iat,
                        ValueVector_t& psi,
                        GradVector_t& dpsi,
-                       HessVector_t& grad_grad_psi)
+                       HessVector_t& grad_grad_psi) override
   {
     SplineAdoptor::evaluate_vgh(P, iat, psi, dpsi, grad_grad_psi);
   }
@@ -91,7 +110,7 @@ struct BsplineSet : public SPOSet, public SplineAdoptor
                        ValueVector_t& psi,
                        GradVector_t& dpsi,
                        HessVector_t& grad_grad_psi,
-                       GGGVector_t& grad_grad_grad_psi)
+                       GGGVector_t& grad_grad_grad_psi) override
   {
     SplineAdoptor::evaluate_vghgh(P, iat, psi, dpsi, grad_grad_psi, grad_grad_grad_psi);
   }
@@ -101,7 +120,7 @@ struct BsplineSet : public SPOSet, public SplineAdoptor
                             int last,
                             ValueMatrix_t& logdet,
                             GradMatrix_t& dlogdet,
-                            ValueMatrix_t& d2logdet)
+                            ValueMatrix_t& d2logdet) override
   {
     typedef ValueMatrix_t::value_type value_type;
     typedef GradMatrix_t::value_type grad_type;
@@ -119,7 +138,7 @@ struct BsplineSet : public SPOSet, public SplineAdoptor
                                     int last,
                                     ValueMatrix_t& logdet,
                                     GradMatrix_t& dlogdet,
-                                    HessMatrix_t& grad_grad_logdet)
+                                    HessMatrix_t& grad_grad_logdet) override
   {
     typedef ValueMatrix_t::value_type value_type;
     typedef GradMatrix_t::value_type grad_type;
@@ -139,7 +158,7 @@ struct BsplineSet : public SPOSet, public SplineAdoptor
                                     ValueMatrix_t& logdet,
                                     GradMatrix_t& dlogdet,
                                     HessMatrix_t& grad_grad_logdet,
-                                    GGGMatrix_t& grad_grad_grad_logdet)
+                                    GGGMatrix_t& grad_grad_grad_logdet) override
   {
     typedef ValueMatrix_t::value_type value_type;
     typedef GradMatrix_t::value_type grad_type;
@@ -154,12 +173,13 @@ struct BsplineSet : public SPOSet, public SplineAdoptor
       SplineAdoptor::evaluate_vghgh(P, iat, v, g, h, gh);
     }
   }
+
   virtual void evaluateGradSource(const ParticleSet& P,
                                   int first,
                                   int last,
                                   const ParticleSet& source,
                                   int iat_src,
-                                  GradMatrix_t& gradphi)
+                                  GradMatrix_t& gradphi) override
   {
     //Do nothing, since Einsplines don't explicitly depend on ion positions.
   }
@@ -171,7 +191,7 @@ struct BsplineSet : public SPOSet, public SplineAdoptor
                                   int iat_src,
                                   GradMatrix_t& grad_phi,
                                   HessMatrix_t& grad_grad_phi,
-                                  GradMatrix_t& grad_lapl_phi)
+                                  GradMatrix_t& grad_lapl_phi) override
   {
     //Do nothing, since Einsplines don't explicitly depend on ion positions.
   }

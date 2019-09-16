@@ -120,6 +120,7 @@ void QMCDriverNew::process(xmlNodePtr cur)
   app_log() << "  Regenerate random seeds." << std::endl;
   RandomNumberControl::make_seeds();
   // }
+
   
   setupWalkers();
 
@@ -157,7 +158,15 @@ void QMCDriverNew::process(xmlNodePtr cur)
   {
     crowds_[i].reset(new Crowd(*estimator_manager_));
   }//  crowds_.push_back(
-                        
+
+  //now give walkers references to their walkers
+  auto crowd_start = crowds_.begin();
+  auto crowd_end   = crowds_.end();
+  std::for_each(crowd_start,
+                crowd_end,
+                [this](std::unique_ptr<Crowd>& crowd) { crowd->reserve(walkers_per_crowd_); });
+  population_.distributeWalkers(crowd_start, crowd_end, walkers_per_crowd_);
+
   // Once they are created move contexts can be created.
   createRngsStepContexts();
 
@@ -287,15 +296,9 @@ bool QMCDriverNew::finalize(int block, bool dumpwalkers)
 void QMCDriverNew::setupWalkers()
 {
   IndexType local_walkers = calc_default_local_walkers();
+  
   // side effect updates walkers_per_crowd_;
   addWalkers(local_walkers, ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>(population_.get_num_particles()));
-  //now give walkers references to their walkers
-  auto crowd_start = crowds_.begin();
-  auto crowd_end   = crowds_.end();
-  std::for_each(crowd_start,
-                crowd_end,
-                [this](std::unique_ptr<Crowd>& crowd) { crowd->reserve(walkers_per_crowd_); });
-  population_.distributeWalkers(crowd_start, crowd_end, walkers_per_crowd_);
 }
 
 /** Add walkers to the end of the ensemble of walkers.
@@ -304,7 +307,8 @@ void QMCDriverNew::setupWalkers()
  */
 void QMCDriverNew::addWalkers(int nwalkers, const ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>& positions)
 {
-  population_.createWalkers(nwalkers, positions);
+  
+  population_.createWalkers(nwalkers);
   // else if (nwalkers < 0)
   // {
   //   W.destroyWalkers(-nwalkers);
@@ -343,6 +347,66 @@ void QMCDriverNew::createRngsStepContexts()
   }
 }
 
+void QMCDriverNew::initialLogEvaluation(int crowd_id, UPtrVector<Crowd>& crowds)
+{
+  Crowd& crowd = *(crowds[crowd_id]);
+  auto& walker_twfs  = crowd.get_walker_twfs();
+  auto& mcp_buffers  = crowd.get_mcp_wfbuffers();
+  auto& walker_elecs = crowd.get_walker_elecs();
+  auto& walkers = crowd.get_walkers();
+
+  crowd.loadWalkers();
+  for (ParticleSet& pset : walker_elecs)
+    pset.update();
+
+  auto copyFrom = [](TrialWaveFunction& twf, ParticleSet& pset, Crowd::WFBuffer& wfb){
+                      twf.copyFromBuffer(pset,wfb);
+                    };
+  for (int iw = 0; iw < crowd.size(); ++iw)
+    copyFrom(walker_twfs[iw], walker_elecs[iw], mcp_buffers[iw]);
+
+  TrialWaveFunction::flex_evaluateLog(walker_twfs, walker_elecs);
+
+  TrialWaveFunction::flex_updateBuffer(crowd.get_walker_twfs(),
+                                       crowd.get_walker_elecs(),
+                                       crowd.get_mcp_wfbuffers());
+
+  // For consistency this should be in ParticleSet as a flex call, but I think its a problem
+  // in the algorithm logic and should be removed.
+  auto saveElecPosAndGLToWalkers = [](ParticleSet& pset, ParticleSet::Walker_t& walker){
+                                     pset.saveWalker(walker);};
+  for (int iw = 0; iw < crowd.size(); ++iw)
+    saveElecPosAndGLToWalkers(walker_elecs[iw], walkers[iw]);
+
+  auto& local_energies = crowd.get_local_energies();
+  auto& walker_hamiltonians = crowd.get_walker_hamiltonians();
+  QMCHamiltonian::flex_evaluate(walker_hamiltonians, walker_elecs, local_energies);
+  // This is actually only a partial reset of the walkers properties
+  auto resetSigNLocalEnergy = [](MCPWalker& walker, TrialWaveFunction& twf, RealType local_energy){
+                                walker.resetProperty(twf.getLogPsi(), twf.getPhase(), local_energy);
+                                    };
+  for (int iw = 0; iw < crowd.size(); ++iw)
+    resetSigNLocalEnergy(walkers[iw], walker_twfs[iw], local_energies[iw]);
+
+  auto evaluateNonPhysicalHamiltonianElements = [](QMCHamiltonian& ham, ParticleSet& pset, MCPWalker& walker){
+                                                   ham.auxHevaluate(pset, walker);
+                                                 };
+  for (int iw = 0; iw < crowd.size(); ++iw)
+    evaluateNonPhysicalHamiltonianElements(walker_hamiltonians[iw], walker_elecs[iw], walkers[iw]);
+
+  auto savePropertiesIntoWalker = [](QMCHamiltonian& ham, MCPWalker& walker){
+                                    ham.saveProperty(walker.getPropertyBase());
+                                  };
+  for (int iw = 0; iw < crowd.size(); ++iw)
+    savePropertiesIntoWalker(walker_hamiltonians[iw], walkers[iw]);
+
+  auto doesDoinTheseLastMatter = [](MCPWalker& walker){
+                                   walker.ReleasedNodeAge    = 0;
+    walker.ReleasedNodeWeight = 0;
+    walker.Weight             = 1;};
+  for (int iw = 0; iw < crowd.size(); ++iw)
+    doesDoinTheseLastMatter(walkers[iw]);
+}
 
 void QMCDriverNew::setWalkerOffsets()
 {
