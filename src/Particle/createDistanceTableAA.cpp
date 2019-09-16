@@ -47,7 +47,12 @@ DistanceTableData* createDistanceTable(ParticleSet& s, int dt_type, std::ostream
   }
   else
   {
+#ifdef ENABLE_SOA
+    APP_ABORT("createDistanceTable (AA). Using array-of-structure (AoS) data layout is no longer supported in builds with ENABLE_SOA=1.");
+#else
     o << "    Using array-of-structure (AoS) data layout (less efficient than SoA)" << std::endl;
+#endif
+
   }
 
   if (sc == SUPERCELL_BULK)
