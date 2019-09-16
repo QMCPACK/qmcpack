@@ -100,6 +100,8 @@ ParticleSet::ParticleSet(const ParticleSet& p)
   myTwist = p.myTwist;
 
   RSoA = p.RSoA;
+  G = p.G;
+  L = p.L;
 }
 
 ParticleSet::~ParticleSet()

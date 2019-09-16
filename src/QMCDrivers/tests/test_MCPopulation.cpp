@@ -38,13 +38,7 @@ TEST_CASE("MCPopulation::createWalkers", "[particle][population]")
   TrialWaveFunction twf(comm);
   MCPopulation population(1, particle_pool.getParticleSet("e"), &twf, hamiltonian_pool.getPrimary());
 
-  ParticleAttrib<TinyVector<QMCTraits::RealType, 3>> some_pos(2);
-  some_pos[0] = TinyVector<double, 3>(1.0, 0.0, 0.0);
-  some_pos[1] = TinyVector<double, 3>(0.0, 1.0, 0.0);
-  some_pos[0] = TinyVector<double, 3>(1.0, 0.0, 0.0);
-  some_pos[1] = TinyVector<double, 3>(0.0, 1.0, 0.0);
-
-  population.createWalkers(8, some_pos);
+  population.createWalkers(8);
   REQUIRE(population.get_walkers().size() == 8);
 }
 
@@ -79,11 +73,7 @@ TEST_CASE("MCPopulation::distributeWalkers", "[particle][population]")
   MCPopulation population(1, particle_pool.getParticleSet("e"), wavefunction_pool.getPrimary(),
                           hamiltonian_pool.getPrimary());
 
-  ParticleAttrib<TinyVector<QMCTraits::RealType, 3>> some_pos(2);
-  some_pos[0] = TinyVector<double, 3>(1.0, 0.0, 0.0);
-  some_pos[1] = TinyVector<double, 3>(0.0, 1.0, 0.0);
-
-  population.createWalkers(24, some_pos);
+  population.createWalkers(24);
   REQUIRE(population.get_walkers().size() == 24);
 
   std::vector<std::unique_ptr<WalkerConsumer>> walker_consumers(8);
