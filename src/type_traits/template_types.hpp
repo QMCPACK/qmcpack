@@ -15,17 +15,39 @@
 
 #include <vector>
 #include <functional>
+#include <memory>
 
 namespace qmcplusplus
 {
-
+/** @name Convenience templated type aliases
+ *
+ *  when feasible do not use previous aliases in following
+ *  that way one line can be scanned to understand a single alias
+ *  see: UPtrVector
+ *  @{
+ */
 template<typename T>
 using RefVector = std::vector<std::reference_wrapper<T>>;
 
 template<typename T>
-using UPtrVector = std::vector<std::unique_ptr<T>>;
+using UPtr = std::unique_ptr<T>;
 
-// temporal helper function
+template<typename T>
+using UPtrVector = std::vector<std::unique_ptr<T>>;
+/** }@ */
+
+// temporary helper function
+template<class T>
+static RefVector<T> convertPtrToRefVector(const std::vector<T*>& ptr_list)
+{
+  RefVector<T> ref_list;
+  ref_list.reserve(ptr_list.size());
+  for (auto ptr : ptr_list)
+    ref_list.push_back(*ptr);
+  return ref_list;
+}
+
+// temporary helper function
 template<class T>
 static std::vector<T*> convert_ref_to_ptr_list(const std::vector<std::reference_wrapper<T>>& ref_list)
 {
@@ -36,7 +58,7 @@ static std::vector<T*> convert_ref_to_ptr_list(const std::vector<std::reference_
   return ptr_list;
 }
 
-// temporal helper function
+// temporary helper function
 template<class T>
 static std::vector<T*> convertUPtrToPtrVector(const UPtrVector<T>& uptr_list)
 {
@@ -47,5 +69,5 @@ static std::vector<T*> convertUPtrToPtrVector(const UPtrVector<T>& uptr_list)
   return ptr_list;
 }
 
-}
+} // namespace qmcplusplus
 #endif
