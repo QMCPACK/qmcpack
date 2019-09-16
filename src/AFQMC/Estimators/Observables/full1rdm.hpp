@@ -69,7 +69,7 @@ class full1rdm: public AFQMCInfo
            int nave_=1, int bsize=1):
                 AFQMCInfo(info),TG(tg_),walker_type(wlk),writer(false),
                 block_size(bsize),nave(nave_),counter(0),
-                hdf_walker_output(""),
+                hdf_walker_output(""),nskip_walker_output(0),ncnt_walker_output(0),
                 denom(iextensions<1u>{0},shared_allocator<ComplexType>{TG.TG_local()}),
                 DMWork({0,0},shared_allocator<ComplexType>{TG.TG_local()}),
                 DMAverage({0,0},shared_allocator<ComplexType>{TG.TG_local()})
@@ -80,6 +80,7 @@ class full1rdm: public AFQMCInfo
     if(cur != NULL) {
       ParameterSet m_param;
       m_param.add(hdf_walker_output, "walker_output", "std::string");
+      m_param.add(nskip_walker_output, "nskip_output", "int");
       m_param.put(cur);
     }
 
@@ -175,7 +176,8 @@ class full1rdm: public AFQMCInfo
     int i0,iN;
     std::tie(i0,iN) = FairDivideBoundary(TG.TG_local().rank(),dm_size,TG.TG_local().size());
 
-    if(hdf_walker_output != std::string("")) {
+    if(iav == 0) ncnt_walker_output++; 
+    if(hdf_walker_output != std::string("") && ncnt_walker_output%(nskip_walker_output+1)==0) { 
       const int n_zero = 9;
       for(int iw=0; iw<nw; iw++) 
         ma::scal(ComplexType(1.0,0.0)/denom[iw], DMWork[iw].sliced(i0,iN));
@@ -264,6 +266,10 @@ class full1rdm: public AFQMCInfo
   bool writer;
 
   std::string hdf_walker_output;  
+
+  int nskip_walker_output;
+
+  int ncnt_walker_output;
 
   // DMAverage (nave, spin*x*NMO*x*NMO), x=(1:CLOSED/COLLINEAR, 2:NONCOLLINEAR)
   mpi3CMatrix DMAverage;

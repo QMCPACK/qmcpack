@@ -393,7 +393,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_shared(b
             assert(Psi.size(0) == na);
             boost::multi::array_ref<ComplexType,2> haj_r(to_address(haj[nd*nkpts+K].origin()),
                                                          {na,ni});
-            ma::product(Psi,H1[K]({0,ni},{0,ni}),haj_r);
+            if(na>0) ma::product(Psi,H1[K]({0,ni},{0,ni}),haj_r);
           }
           { // Beta
             auto Psi = get_PsiK<boost::multi::array<ComplexType,2>>(nmo_per_kp,PsiT[2*nd+1],K);
@@ -401,14 +401,14 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_shared(b
             boost::multi::array_ref<ComplexType,2> haj_r(to_address(haj[nd*nkpts+K].origin())+
                                                                         na*ni,
                                                          {nb,ni});
-            ma::product(Psi,H1[K]({0,ni},{0,ni}),haj_r);
+            if(nb>0) ma::product(Psi,H1[K]({0,ni},{0,ni}),haj_r);
           }
         } else {
           auto Psi = get_PsiK<boost::multi::array<ComplexType,2>>(nmo_per_kp,PsiT[nd],K);
           assert(Psi.size(0) == na);
           boost::multi::array_ref<ComplexType,2> haj_r(to_address(haj[nd*nkpts+K].origin()),
                                                        {na,ni});
-          ma::product(ComplexType(2.0),Psi,H1[K]({0,ni},{0,ni}),
+          if(na>0) ma::product(ComplexType(2.0),Psi,H1[K]({0,ni},{0,ni}),
                       ComplexType(0.0),haj_r);
         }
       }
@@ -624,6 +624,8 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_shared(b
           int nb = nocc_per_kp[0][Kb];
           int nk = nmo_per_kp[Kk];
           int na = nocc_per_kp[0][Ka];
+
+          if(na==0 || nb == 0) continue;
 
           SpMatrix_ref Lank(to_address(LQKank[Q][Ka].origin()),
                                            {na*nchol,nk});
@@ -1064,7 +1066,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
             assert(Psi.size(0) == na);
             boost::multi::array_ref<ComplexType,2> haj_r(to_address(haj[nd*nkpts+K].origin()),
                                                          {nocc_max,nmo_max});
-            ma::product(Psi,H1[K]({0,ni},{0,ni}),haj_r({0,na},{0,ni}));
+            if(na > 0)  ma::product(Psi,H1[K]({0,ni},{0,ni}),haj_r({0,na},{0,ni}));
           }
           { // Beta
             auto Psi = get_PsiK<boost::multi::array<ComplexType,2>>(nmo_per_kp,PsiT[2*nd+1],K);
@@ -1072,14 +1074,14 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
             boost::multi::array_ref<ComplexType,2> haj_r(to_address(haj[nd*nkpts+K].origin())+
                                                                         nocc_max*nmo_max,
                                                          {nocc_max,nmo_max});
-            ma::product(Psi,H1[K]({0,ni},{0,ni}),haj_r({0,nb},{0,ni}));
+            if(nb > 0) ma::product(Psi,H1[K]({0,ni},{0,ni}),haj_r({0,nb},{0,ni}));
           }
         } else {
           auto Psi = get_PsiK<boost::multi::array<ComplexType,2>>(nmo_per_kp,PsiT[nd],K);
           assert(Psi.size(0) == na);
           boost::multi::array_ref<ComplexType,2> haj_r(to_address(haj[nd*nkpts+K].origin()),
                                                        {nocc_max,nmo_max});
-          ma::product(ComplexType(2.0),Psi,H1[K]({0,ni},{0,ni}),
+          if(na > 0) ma::product(ComplexType(2.0),Psi,H1[K]({0,ni},{0,ni}),
                       ComplexType(0.0),haj_r({0,na},{0,ni}));
         }
       }
@@ -1322,6 +1324,8 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
           int nb = nocc_per_kp[0][Kb];
           int nk = nmo_per_kp[Kk];
           int na = nocc_per_kp[0][Ka];
+
+          if(na==0 || nb==0) continue;
 
           SpMatrix_ref Lank(to_address(LQKank[Q][Ka].origin()),
                                            {na*nchol_max,nmo_max});
