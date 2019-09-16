@@ -100,27 +100,4 @@ TEST_CASE("walker HDF read and write", "[particle]")
   }
 }
 
-/** Tests Walker life cycle as run by QMCDriverNew
- */
-TEST_CASE("Walker::~Walker", "[Particle]")
-{
-  UPtrVector<Walker_t> walkers;
-  int num_particles = 3;
-  walkers.resize(2);
-
-  using Positions = ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>;
-  Positions some_pos(3);
-  some_pos[0] = TinyVector<double, 3>(1.0, 0.0, 0.0);
-  some_pos[1] = TinyVector<double, 3>(0.0, 1.0, 0.0);
-  some_pos[3] = TinyVector<double, 3>(1.0, 0.0, 1.0);
-
-  std::vector<Positions> positions{some_pos, some_pos};
-  std::for_each(walkers.begin(), walkers.end(), [num_particles,positions](std::unique_ptr<Walker_t>& walker_ptr) {
-    walker_ptr = std::make_unique<Walker_t>(num_particles);
-    walker_ptr->R.resize(num_particles);
-    walker_ptr->R = positions[0];
-    walker_ptr->registerData();
-  });
-}
-
 } // namespace qmcplusplus
