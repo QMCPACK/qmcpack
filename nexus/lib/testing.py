@@ -7,7 +7,7 @@ def value_diff(v1,v2,tol=1e-6,int_as_float=False):
     diff = False
     if int_as_float and isinstance(v1,(int,float)) and isinstance(v2,(int,float)):
         diff = np.abs(float(v1)-float(v2))>tol
-    elif not isinstance(v1,type(v2)):
+    elif not isinstance(v1,type(v2)) or not isinstance(v2,type(v1)):
         diff = True
     elif isinstance(v1,(bool,int,str)):
         diff = v1!=v2
@@ -16,17 +16,33 @@ def value_diff(v1,v2,tol=1e-6,int_as_float=False):
     elif isinstance(v1,(list,tuple)):
         v1 = np.array(v1,dtype=object).ravel()
         v2 = np.array(v2,dtype=object).ravel()
-        for vv1,vv2 in zip(v1,v2):
-            diff |= value_diff(vv1,vv2,tol,int_as_float)
-        #end for
+        if len(v1)!=len(v2):
+            diff = True
+        else:
+            for vv1,vv2 in zip(v1,v2):
+                diff |= value_diff(vv1,vv2,tol,int_as_float)
+            #end for
+        #end if
     elif isinstance(v1,np.ndarray):
         v1 = v1.ravel()
         v2 = v2.ravel()
-        for vv1,vv2 in zip(v1,v2):
-            diff |= value_diff(vv1,vv2,tol,int_as_float)
-        #end for
+        if len(v1)!=len(v2):
+            diff = True
+        else:
+            for vv1,vv2 in zip(v1,v2):
+                diff |= value_diff(vv1,vv2,tol,int_as_float)
+            #end for
+        #end if
     elif isinstance(v1,dict):
-        diff = v1!=v2
+        k1 = v1.keys()
+        k2 = v2.keys()
+        if set(k1)!=set(k2):
+            diff = True
+        else:
+            for k in k1:
+                diff |= value_diff(v1[k],v2[k],tol,int_as_float)
+            #end for
+        #end if
     elif isinstance(v1,set):
         diff = v1!=v2
     elif v1 is None and v2 is None:
@@ -41,13 +57,15 @@ def value_diff(v1,v2,tol=1e-6,int_as_float=False):
 
 
 # determine if two objects differ
-def object_diff(o1,o2,tol=1e-6,full=False,int_as_float=False):
+def object_diff(o1,o2,tol=1e-6,full=False,int_as_float=False,bypass=False):
     diff1 = dict()
     diff2 = dict()
-    o1    = o1._serial()
-    o2    = o2._serial()
-    keys1 = set(o1._keys())
-    keys2 = set(o2._keys())
+    if not bypass:
+        o1 = o1._serial().__dict__
+        o2 = o2._serial().__dict__
+    #end if
+    keys1 = set(o1.keys())
+    keys2 = set(o2.keys())
     ku1   = keys1 - keys2
     ku2   = keys2 - keys1
     km    = keys1 & keys2
@@ -76,7 +94,7 @@ def object_diff(o1,o2,tol=1e-6,full=False,int_as_float=False):
 
 # print the difference between two objects
 def print_diff(o1,o2): # used in debugging, not actual tests
-    from nexus import obj
+    from generic import obj
     print 20*'='
     print o1
     print 20*'='
