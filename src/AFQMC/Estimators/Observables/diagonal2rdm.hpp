@@ -13,8 +13,8 @@
 //    Lawrence Livermore National Laboratory 
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef QMCPLUSPLUS_AFQMC_FULL1RDM_HPP
-#define QMCPLUSPLUS_AFQMC_FULL1RDM_HPP
+#ifndef QMCPLUSPLUS_AFQMC_DIAGONAL2RDM_HPP
+#define QMCPLUSPLUS_AFQMC_DIAGONAL2RDM_HPP
 
 #include "AFQMC/config.h"
 #include <vector>
@@ -37,12 +37,9 @@ namespace afqmc
 {
 
 /* 
- * Observable class that calculates the walker averaged "full" 1 RDM.
- * In this context, "full" means that no contraction over the RDM is
- * being performed. The resulting RDM will be [spin][x*NMO][x*NMO],
- * where x:2 for NONCOLLINEAR and 1 for everything else.
+ * Observable class that calculates the walker averaged diagonal of the 2 RDM 
  */
-class full1rdm: public AFQMCInfo
+class diagonal2rdm: public AFQMCInfo
 {
 
   // allocators
@@ -65,7 +62,7 @@ class full1rdm: public AFQMCInfo
 
   public:
 
-  full1rdm(afqmc::TaskGroup_& tg_, AFQMCInfo& info, xmlNodePtr cur, WALKER_TYPES wlk, 
+  diagonal2rdm(afqmc::TaskGroup_& tg_, AFQMCInfo& info, xmlNodePtr cur, WALKER_TYPES wlk, 
            int nave_=1, int bsize=1):
                 AFQMCInfo(info),TG(tg_),walker_type(wlk),writer(false),
                 block_size(bsize),nave(nave_),counter(0),
@@ -75,7 +72,7 @@ class full1rdm: public AFQMCInfo
                 DMAverage({0,0},shared_allocator<ComplexType>{TG.TG_local()})
   {
 
-    app_log()<<"  --  Adding Back Propagated Full 1RDM (OneRDM) estimator. -- \n";
+    app_log()<<"  --  Adding Back Propagated Diagonal 2RDM (Diag2RDM) estimator. -- \n";
 
     if(cur != NULL) {
       ParameterSet m_param;
@@ -90,7 +87,7 @@ class full1rdm: public AFQMCInfo
         app_log()<<"Problems creating walker output hdf5 file: " << hdf_walker_output <<std::endl;
         APP_ABORT("Problems creating walker output hdf5 file.\n");
       }
-      dump.push("FullOneRDM");
+      dump.push("DiagTwoRDM");
       dump.push("Metadata");
       dump.write(NMO, "NMO");
       dump.write(NAEA, "NUP");
@@ -104,11 +101,9 @@ class full1rdm: public AFQMCInfo
 
     using std::fill_n;
     writer = (TG.getGlobalRank()==0);
-    dm_size=NMO*NMO;
-    if(walker_type == COLLINEAR) 
-      dm_size *= 2; 
-    else if(walker_type == NONCOLLINEAR) 
-      dm_size *= 2; 
+    dm_size=NMO*(2*NMO-1);
+    if(walker_type == CLOSED)
+      dm_size -= NMO*(NMO-1)/2;
 
     DMAverage = std::move(mpi3CMatrix({nave,dm_size},shared_allocator<ComplexType>{TG.TG_local()}));
     fill_n(DMAverage.origin(),DMAverage.num_elements(),ComplexType(0.0,0.0));
@@ -126,7 +121,6 @@ class full1rdm: public AFQMCInfo
     // assumes G[nwalk][spin][M][M]
     int nw(G.size(0));
     assert(G.size(0) == wgt.size(0));
-    assert(G[0].num_elements() == dm_size);
     assert(wgt.size(0) == nw);
     assert(Xw.size(0) == nw);
     assert(ovlp.size(0) >= nw);
@@ -140,7 +134,7 @@ class full1rdm: public AFQMCInfo
                                       shared_allocator<ComplexType>{TG.TG_local()}));
       }   
       if( DMWork.size(0) != nw ||
-          DMWork.size(1) != dm_size ) { 
+          DMWork.size(1) != dm_size ) {
         DMWork = std::move(mpi3CMatrix({nw,dm_size},
                                       shared_allocator<ComplexType>{TG.TG_local()}));
       }
@@ -155,15 +149,44 @@ class full1rdm: public AFQMCInfo
         APP_ABORT(" Error: Invalid state in accumulate_reference. \n\n\n");
     }
 
-    int i0, iN;
+    int i0,iN;
     std::tie(i0,iN) = FairDivideBoundary(TG.TG_local().rank(),dm_size,TG.TG_local().size());
-
-    stdCMatrix_ref G2D( to_address(G_host.origin()), {nw, dm_size});
-    
+  
     for(int iw=0; iw<nw; iw++) {
-      if(TG.TG_local().root()) denom[iw] += Xw[iw];
-      ma::axpy( Xw[iw], G2D[iw].sliced(i0,iN), DMWork[iw].sliced(i0,iN) );
-    }
+      if( iw%TG.TG_local().size() == TG.TG_local().rank() ) {
+        denom[iw] += Xw[iw];
+        ComplexType* ptr(DMWork[iw].origin());
+        if(walker_type == CLOSED) {
+          auto&& Gu_(G_host[iw][0]);
+          for(int i=0, ij=0; i<NMO; i++) {
+            for(int j=i+1; j<NMO; j++, ptr++)
+              *ptr += Xw[iw] * (Gu_[i][i] * Gu_[j][j] - Gu_[i][j] * Gu_[j][i]);
+            for(int j=NMO, j0=0; j<2*NMO; j++, j0++, ptr++)
+              *ptr += Xw[iw] * (Gu_[i][i] * Gu_[j0][j0]);
+          }
+        } else if(walker_type == COLLINEAR) {
+          auto&& Gu_(G_host[iw][0]);
+          auto&& Gd_(G_host[iw][1]);
+          for(int i=0, ij=0; i<2*NMO; i++) {
+            if(i < NMO) {
+              for(int j=i+1; j<NMO; j++, ptr++)
+                *ptr += Xw[iw] * (Gu_[i][i] * Gu_[j][j] - Gu_[i][j] * Gu_[j][i]);    
+              for(int j=NMO, j0=0; j<2*NMO; j++, j0++, ptr++)
+                *ptr += Xw[iw] * (Gu_[i][i] * Gd_[j0][j0]);
+            } else {
+              int i0=i-NMO;
+              for(int j=i+1, j0=i+1-NMO; j<2*NMO; j++, j0++, ptr++)
+                *ptr += Xw[iw] * (Gd_[i0][i0] * Gd_[j0][j0] - Gd_[i0][j0] * Gd_[j0][i0]);; 
+            }
+          }
+        } else { 
+          auto&& G_(G_host[iw][0]);  
+          for(int i=0, ij=0; i<2*NMO; i++)  
+            for(int j=i+1; j<2*NMO; j++, ptr++) 
+              *ptr += Xw[iw] * (G_[i][i] * G_[j][j] - G_[i][j] * G_[j][i]); 
+        }  
+      }
+    } 
     TG.TG_local().barrier();
 
   }
@@ -189,14 +212,14 @@ class full1rdm: public AFQMCInfo
                    << hdf_walker_output <<std::endl;
           APP_ABORT("Problems opening walker output hdf5 file.\n");
         }
-        dump.push("FullOneRDM");
+        dump.push("DiagTwoRDM");
         dump.push(std::string("Group")+std::to_string(TG.TG_heads().rank()));
         dump.push(std::string("Average_")+std::to_string(iav));
         std::string padded_num = std::string(n_zero-std::to_string(counter).length(),'0')+
                                     std::to_string(counter); 
         dump.write(wgt,"weights_"+padded_num);
         stdCMatrix_ref DM(to_address(DMWork.origin()),{nw,dm_size}); 
-        dump.write(DM,"one_rdm_"+padded_num);
+        dump.write(DM,"diag_two_rdm_"+padded_num);
         dump.pop();
         dump.pop();
         dump.pop();
@@ -230,13 +253,13 @@ class full1rdm: public AFQMCInfo
       ma::scal(ComplexType(1.0/block_size),DMAverage);
       TG.TG_heads().reduce_in_place_n(to_address(DMAverage.origin()),DMAverage.num_elements(),std::plus<>(),0);
       if(writer) { 
-        dump.push(std::string("FullOneRDM"));
+        dump.push(std::string("DiagTwoRDM"));
         for(int i=0; i<nave; ++i) {
           dump.push(std::string("Average_")+std::to_string(i));
           std::string padded_iblock = 
                 std::string(n_zero-std::to_string(iblock).length(),'0')+std::to_string(iblock);
           stdCVector_ref DMAverage_( to_address(DMAverage[i].origin()), {dm_size});
-          dump.write(DMAverage_, "one_rdm_"+padded_iblock);
+          dump.write(DMAverage_, "diag_two_rdm_"+padded_iblock);
           dump.write(Wsum[i], "denominator_"+padded_iblock);
           dump.pop();
         }
@@ -265,9 +288,9 @@ class full1rdm: public AFQMCInfo
 
   std::string hdf_walker_output;  
 
-  // DMAverage (nave, spin*x*NMO*x*NMO), x=(1:CLOSED/COLLINEAR, 2:NONCOLLINEAR)
+  // DMAverage (nave, spin*spin*x*NMO*(x*NMO-1)/2 ), x=(1:CLOSED/COLLINEAR, 2:NONCOLLINEAR)
   mpi3CMatrix DMAverage;
-  // DMWork (nwalk, spin*x*NMO*x*NMO), x=(1:CLOSED/COLLINEAR, 2:NONCOLLINEAR)
+  // DMWork (nwalk, spin*spin*x*NMO*(x*NMO-1)/2 ), x=(1:CLOSED/COLLINEAR, 2:NONCOLLINEAR)
   mpi3CMatrix DMWork;
 
   mpi3CVector denom; 
