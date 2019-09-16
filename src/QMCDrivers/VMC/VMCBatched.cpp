@@ -10,8 +10,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 #include "QMCDrivers/VMC/VMCBatched.h"
-#include "QMCDrivers/VMC/VMCUpdatePbyP.h"
-#include "QMCDrivers/VMC/VMCUpdateAll.h"
 #include "Concurrency/TasksOneToOne.hpp"
 #include "Concurrency/Info.hpp"
 #include "Utilities/RunTimeManager.h"
@@ -29,7 +27,9 @@ VMCBatched::VMCBatched(QMCDriverInput&& qmcdriver_input,
                        QMCHamiltonian& h,
                        WaveFunctionPool& ppool,
                        Communicate* comm)
-    : QMCDriverNew(std::move(qmcdriver_input), std::move(pop), psi, h, ppool, comm), vmcdriver_input_(input)
+    : QMCDriverNew(std::move(qmcdriver_input), std::move(pop), psi, h, ppool, comm), vmcdriver_input_(input),
+      run_steps_timer_(*TimerManager.createTimer("VMCBatched::runSteps",timer_level_medium)),
+      init_walkers_timer_(*TimerManager.createTimer("VMCBatched::InitWalkers", timer_level_medium))
 {
   QMCType  = "VMCBatched";
   // qmc_driver_mode.set(QMC_UPDATE_MODE, 1);
@@ -302,8 +302,11 @@ void VMCBatched::advanceWalkers(const StateForThread& sft, Crowd& crowd, Context
       // TODO: Do collectables need to be rethought
       //   const bool has_collectables = W.Collectables.size();
 
-      TasksOneToOne<> block_start_task(num_crowds_);
-      block_start_task(initialLogEvaluation, std::ref(crowds_));
+      { // walker initialization
+        ScopedTimer local_timer(&init_walkers_timer_);
+        TasksOneToOne<> block_start_task(num_crowds_);
+        block_start_task(initialLogEvaluation, std::ref(crowds_));
+      }
 
       for (int block = 0; block < num_blocks; ++block)
       {
@@ -316,6 +319,7 @@ void VMCBatched::advanceWalkers(const StateForThread& sft, Crowd& crowd, Context
 
         for (int step = 0; step < qmcdriver_input_.get_max_steps(); ++step)
         {
+          ScopedTimer local_timer(&run_steps_timer_);
           vmc_state.step = step;
           TasksOneToOne<> crowd_task(num_crowds_);
           crowd_task(runVMCStep, vmc_state, std::ref(step_contexts_), std::ref(crowds_));
