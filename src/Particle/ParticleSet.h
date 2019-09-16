@@ -371,7 +371,7 @@ public:
    */
   void acceptMove(Index_t iat);
   /// batched version of acceptMove
-  static flex_acceptMove(const RefVector<ParticleSet>& P_list, Index_t iat)
+  static void flex_acceptMove(const RefVector<ParticleSet>& P_list, Index_t iat)
   {
     for (int iw = 0; iw < P_list.size(); iw++)
       P_list[iw].get().acceptMove(iat);
@@ -381,7 +381,7 @@ public:
    */
   void rejectMove(Index_t iat) { activePtcl = -1; }
   /// batched version of rejectMove
-  static flex_rejectMove(const RefVector<ParticleSet>& P_list, Index_t iat)
+  static void flex_rejectMove(const RefVector<ParticleSet>& P_list, Index_t iat)
   {
     for (int iw = 0; iw < P_list.size(); iw++)
       P_list[iw].get().rejectMove(iat);
@@ -433,7 +433,7 @@ public:
    */
   void donePbyP();
   /// batched version of donePbyP
-  static flex_donePbyP(const RefVector<ParticleSet>& P_list)
+  static void flex_donePbyP(const RefVector<ParticleSet>& P_list)
   {
     #pragma omp parallel for
     for (int iw = 0; iw < P_list.size(); iw++)

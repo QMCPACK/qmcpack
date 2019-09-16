@@ -102,7 +102,7 @@ void VMCBatched::advanceWalkers(const StateForThread& sft, Crowd& crowd, Context
   std::vector<PosType> drifts(num_walkers);
 
   // local list to handle accept/reject
-  std::vector<std::reference_wrapper<PartialSet>> elec_accept_list, elec_reject_list;
+  std::vector<std::reference_wrapper<ParticleSet>> elec_accept_list, elec_reject_list;
   std::vector<std::reference_wrapper<TrialWaveFunction>> twf_accept_list, twf_reject_list;
   elec_accept_list.reserve(num_walkers);
   elec_reject_list.reserve(num_walkers);
@@ -193,15 +193,19 @@ void VMCBatched::advanceWalkers(const StateForThread& sft, Crowd& crowd, Context
         {
           step_context.incAccept();
           twf_accept_list.push_back(crowd.get_walker_twfs()[i_accept]);
-          elec_accept_list.push_back(crowd.get_walker_elecs()[i_accept].get());
+          elec_accept_list.push_back(crowd.get_walker_elecs()[i_accept]);
         }
         else
         {
           step_context.incReject();
           twf_reject_list.push_back(crowd.get_walker_twfs()[i_accept]);
-          elec_reject_list.push_back(crowd.get_walker_elecs()[i_accept].get());
+          elec_reject_list.push_back(crowd.get_walker_elecs()[i_accept]);
         }
       }
+
+      TrialWaveFunction::flex_acceptMove(twf_accept_list, elec_accept_list, iat);
+      TrialWaveFunction::flex_rejectMove(twf_reject_list, iat);
+
       ParticleSet::flex_acceptMove(elec_accept_list, iat);
       ParticleSet::flex_rejectMove(elec_reject_list, iat);
     }

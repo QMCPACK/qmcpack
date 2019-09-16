@@ -136,36 +136,38 @@ void TrialWaveFunction::flex_evaluateLog(const RefVector<TrialWaveFunction>& wf_
     const auto g_list(TrialWaveFunction::extract_g_list(wf_list));
     const auto l_list(TrialWaveFunction::extract_l_list(wf_list));
 
-    int num_particles =  p_list[0].get().getTotalNum();
-    auto initGandL = [num_particles,czero](TrialWaveFunction& twf, ParticleSet::ParticleGradient_t& grad, ParticleSet::ParticleLaplacian_t& lapl){
+    int num_particles = p_list[0].get().getTotalNum();
+    auto initGandL    = [num_particles, czero](TrialWaveFunction& twf, ParticleSet::ParticleGradient_t& grad,
+                                            ParticleSet::ParticleLaplacian_t& lapl) {
       grad.resize(num_particles);
       lapl.resize(num_particles);
-      grad             = czero;
-      lapl              = czero;
+      grad           = czero;
+      lapl           = czero;
       twf.LogValue   = czero;
       twf.PhaseValue = czero;
-                     };             
+    };
     for (int iw = 0; iw < wf_list.size(); iw++)
       initGandL(wf_list[iw], g_list[iw], l_list[iw]);
 
     auto& wavefunction_components = wf_list[0].get().Z;
-    int num_wfc = wf_list[0].get().Z.size();
+    const int num_wfc             = wf_list[0].get().Z.size();
     for (int i = 0, ii = RECOMPUTE_TIMER; i < num_wfc; ++i, ii += TIMER_SKIP)
     {
       ScopedTimer local_timer(wf_list[0].get().myTimers[ii]);
       const auto wfc_list(extract_WFC_list(wf_list, i));
-      wavefunction_components[i]->mw_evaluateLog(convert_ref_to_ptr_list(wfc_list), convert_ref_to_ptr_list(p_list), convert_ref_to_ptr_list(g_list), convert_ref_to_ptr_list(l_list));
-      auto accumulateLogAndPhase = [](TrialWaveFunction& twf, WaveFunctionComponent& wfc){
-                                     twf.LogValue += wfc.LogValue;
-                                     twf.PhaseValue += wfc.PhaseValue;
-                                   };
+      wavefunction_components[i]->mw_evaluateLog(convert_ref_to_ptr_list(wfc_list), convert_ref_to_ptr_list(p_list),
+                                                 convert_ref_to_ptr_list(g_list), convert_ref_to_ptr_list(l_list));
+      auto accumulateLogAndPhase = [](TrialWaveFunction& twf, WaveFunctionComponent& wfc) {
+        twf.LogValue += wfc.LogValue;
+        twf.PhaseValue += wfc.PhaseValue;
+      };
       for (int iw = 0; iw < wf_list.size(); iw++)
         accumulateLogAndPhase(wf_list[iw], wfc_list[iw]);
     }
-    auto copyToP = [](ParticleSet& pset, TrialWaveFunction& twf){
-                     pset.G = twf.G;
-                     pset.L = twf.L;
-                   };
+    auto copyToP = [](ParticleSet& pset, TrialWaveFunction& twf) {
+      pset.G = twf.G;
+      pset.L = twf.L;
+    };
     // Ye: temporal workaround to have P.G/L always defined.
     // remove when KineticEnergy use WF.G/L instead of P.G/L
     for (int iw = 0; iw < wf_list.size(); iw++)
@@ -372,16 +374,15 @@ void TrialWaveFunction::flex_calcRatio(const RefVector<TrialWaveFunction>& wf_li
                                        std::vector<PsiValueType>& ratios,
                                        ComputeType ct)
 {
-  int num_wf = wf_list.size();
-  int num_wfc = wf_list[0].get().Z.size();
-
+  const int num_wf = wf_list.size();
   ratios.resize(num_wf);
   std::fill(ratios.begin(), ratios.end(), PsiValueType(1));
 
-  auto& wavefunction_components = wf_list[0].get().Z;
-  
   if (num_wf > 1)
   {
+    const int num_wfc             = wf_list[0].get().Z.size();
+    auto& wavefunction_components = wf_list[0].get().Z;
+
     std::vector<PsiValueType> ratios_z(num_wf);
     for (int i = 0, ii = V_TIMER; i < num_wfc; i++, ii += TIMER_SKIP)
     {
@@ -390,7 +391,8 @@ void TrialWaveFunction::flex_calcRatio(const RefVector<TrialWaveFunction>& wf_li
       {
         ScopedTimer local_timer(wf_list[0].get().get_timers()[ii]);
         const auto wfc_list(extract_WFC_list(wf_list, i));
-        wavefunction_components[i]->mw_calcRatio(convert_ref_to_ptr_list(wfc_list), convert_ref_to_ptr_list(p_list), iat, ratios_z);
+        wavefunction_components[i]->mw_calcRatio(convert_ref_to_ptr_list(wfc_list), convert_ref_to_ptr_list(p_list),
+                                                 iat, ratios_z);
         for (int iw = 0; iw < wf_list.size(); iw++)
           ratios[iw] *= ratios_z[iw];
       }
@@ -417,17 +419,17 @@ void TrialWaveFunction::flex_evalGrad(const std::vector<std::reference_wrapper<T
                                       int iat,
                                       std::vector<GradType>& grad_now)
 {
-  int num_wf = wf_list.size();
-  int num_wfc = wf_list[0].get().Z.size();
-
+  const int num_wf = wf_list.size();
   grad_now.resize(num_wf);
   std::fill(grad_now.begin(), grad_now.end(), GradType(0));
 
-  // Right now mw_evalGrad can only be called through an concrete instance of a wavefunctioncomponent
-  auto& wavefunction_components = wf_list[0].get().Z;
-  
+
   if (num_wf > 1)
   {
+    // Right now mw_evalGrad can only be called through an concrete instance of a wavefunctioncomponent
+    const int num_wfc             = wf_list[0].get().Z.size();
+    auto& wavefunction_components = wf_list[0].get().Z;
+
     std::vector<GradType> grad_now_z(num_wf);
     for (int i = 0, ii = VGL_TIMER; i < num_wfc; ++i, ii += TIMER_SKIP)
     {
@@ -499,23 +501,25 @@ void TrialWaveFunction::flex_ratioGrad(const RefVector<TrialWaveFunction>& wf_li
                                        std::vector<PsiValueType>& ratios,
                                        std::vector<GradType>& grad_new)
 {
-  int num_wf = wf_list.size();
+  const int num_wf = wf_list.size();
   grad_new.resize(num_wf);
   std::fill(grad_new.begin(), grad_new.end(), GradType(0));
   grad_new.resize(num_wf);
   std::fill(ratios.begin(), ratios.end(), PsiValueType(1));
 
-  int num_wfc = wf_list[0].get().Z.size();
-  auto& wavefunction_components = wf_list[0].get().Z;
   if (wf_list.size() > 1)
   {
+    const int num_wfc             = wf_list[0].get().Z.size();
+    auto& wavefunction_components = wf_list[0].get().Z;
+
     std::vector<PsiValueType> ratios_z(wf_list.size());
     for (int i = 0, ii = VGL_TIMER; i < num_wfc; ++i, ii += TIMER_SKIP)
     {
       ScopedTimer localtimer(wf_list[0].get().get_timers()[ii]);
       //ScopedTimer local_timer(myTimers[ii]);
       const auto wfc_list(extract_WFC_list(wf_list, i));
-      wavefunction_components[i]->mw_ratioGrad(convert_ref_to_ptr_list(wfc_list), convert_ref_to_ptr_list(p_list), iat, ratios_z, grad_new);
+      wavefunction_components[i]->mw_ratioGrad(convert_ref_to_ptr_list(wfc_list), convert_ref_to_ptr_list(p_list), iat,
+                                               ratios_z, grad_new);
       for (int iw = 0; iw < wf_list.size(); iw++)
         ratios[iw] *= ratios_z[iw];
     }
@@ -550,19 +554,21 @@ void TrialWaveFunction::rejectMove(int iat)
   PhaseDiff = 0;
 }
 
-void TrialWaveFunction::flex_rejectMove(const std::vector<TrialWaveFunction*>& WF_list,
-                                        int iat) const
+void TrialWaveFunction::flex_rejectMove(const RefVector<TrialWaveFunction>& wf_list, int iat)
 {
-  if (WF_list.size() > 1)
+  if (wf_list.size() > 1)
   {
-    for (int i = 0; i < Z.size(); i++)
+    const int num_wfc             = wf_list[0].get().Z.size();
+    auto& wavefunction_components = wf_list[0].get().Z;
+
+    for (int i = 0; i < num_wfc; i++)
     {
-      std::vector<WaveFunctionComponent*> WFC_list(extract_WFC_list(WF_list, i));
-      Z[i]->mw_restore(WFC_list, iat);
+      const auto wfc_list(extract_WFC_list(wf_list, i));
+      wavefunction_components[i]->mw_restore(convert_ref_to_ptr_list(wfc_list), iat);
     }
   }
-  else if (WF_list.size() == 1)
-    WF_list[0]->rejectMove(iat);
+  else if (wf_list.size() == 1)
+    wf_list[0].get().rejectMove(iat);
 }
 
 /** update the state with the new data
@@ -587,31 +593,36 @@ void TrialWaveFunction::acceptMove(ParticleSet& P, int iat)
     LogValue += Z[i]->LogValue;
 }
 
-void TrialWaveFunction::flex_acceptMove(const std::vector<TrialWaveFunction*>& WF_list,
-                                        const std::vector<ParticleSet*>& P_list,
-                                        int iat) const
+void TrialWaveFunction::flex_acceptMove(const RefVector<TrialWaveFunction>& wf_list,
+                                        const RefVector<ParticleSet>& p_list,
+                                        int iat)
 {
-  if (WF_list.size() > 1)
+  if (wf_list.size() > 1)
   {
-    for (int iw = 0; iw < WF_list.size(); iw++)
+    const int num_wfc             = wf_list[0].get().Z.size();
+    auto& wavefunction_components = wf_list[0].get().Z;
+
+    for (int iw = 0; iw < wf_list.size(); iw++)
     {
-      WF_list[iw]->LogValue   = 0;
-      WF_list[iw]->PhaseValue = 0;
+      wf_list[iw].get().LogValue   = 0;
+      wf_list[iw].get().PhaseValue = 0;
     }
-    for (int i = 0, ii = ACCEPT_TIMER; i < Z.size(); i++, ii += TIMER_SKIP)
+
+    for (int i = 0, ii = ACCEPT_TIMER; i < num_wfc; i++, ii += TIMER_SKIP)
     {
-      ScopedTimer local_timer(myTimers[ii]);
-      std::vector<WaveFunctionComponent*> WFC_list(extract_WFC_list(WF_list, i));
-      Z[i]->mw_acceptMove(WFC_list, P_list, iat);
-      for (int iw = 0; iw < WF_list.size(); iw++)
+      ScopedTimer localtimer(wf_list[0].get().get_timers()[ii]);
+      const auto wfc_list(extract_WFC_list(wf_list, i));
+      wavefunction_components[i]->mw_acceptMove(convert_ref_to_ptr_list(wfc_list), convert_ref_to_ptr_list(p_list),
+                                                iat);
+      for (int iw = 0; iw < wf_list.size(); iw++)
       {
-        WF_list[iw]->LogValue += WFC_list[iw]->LogValue;
-        WF_list[iw]->PhaseValue += WFC_list[iw]->PhaseValue;
+        wf_list[iw].get().LogValue += wfc_list[iw].get().LogValue;
+        wf_list[iw].get().PhaseValue += wfc_list[iw].get().PhaseValue;
       }
     }
   }
-  else if (WF_list.size() == 1)
-    WF_list[0]->acceptMove(*P_list[0], iat);
+  else if (wf_list.size() == 1)
+    wf_list[0].get().acceptMove(p_list[0], iat);
 }
 
 void TrialWaveFunction::completeUpdates()
@@ -701,28 +712,29 @@ void TrialWaveFunction::flex_registerData(const UPtrVector<TrialWaveFunction>& w
                                           const RefVector<WFBufferType>& buf_list)
 {
   auto setBufferCursors = [](TrialWaveFunction& twf, WFBufferType& wb) {
-                              twf.BufferCursor = wb.current();
-                              twf.BufferCursor_scalar = wb.current_scalar();
-                            };
+    twf.BufferCursor        = wb.current();
+    twf.BufferCursor_scalar = wb.current_scalar();
+  };
   for (int iw = 0; iw < wf_list.size(); iw++)
   {
     setBufferCursors(*(wf_list[iw]), buf_list[iw]);
   }
 
-  int num_wfc = wf_list[0]->Z.size();
+  const int num_wfc             = wf_list[0]->Z.size();
   auto& wavefunction_components = wf_list[0]->Z;
   for (int i = 0, ii = BUFFER_TIMER; i < num_wfc; i++, ii += TIMER_SKIP)
   {
     ScopedTimer local_timer(wf_list[0]->myTimers[ii]);
     std::vector<WaveFunctionComponent*> wfc_list(extract_WFC_list(wf_list, i));
-    
-    wavefunction_components[i]->mw_registerData(wfc_list, convertUPtrToPtrVector(P_list), convert_ref_to_ptr_list(buf_list));
+
+    wavefunction_components[i]->mw_registerData(wfc_list, convertUPtrToPtrVector(P_list),
+                                                convert_ref_to_ptr_list(buf_list));
   }
 
   auto addPhaseAndLog = [](WFBufferType& wfb, TrialWaveFunction& twf) {
-                          wfb.add(twf.PhaseValue);
-                          wfb.add(twf.LogValue);
-                        };                          
+    wfb.add(twf.PhaseValue);
+    wfb.add(twf.LogValue);
+  };
   for (int iw = 0; iw < wf_list.size(); iw++)
     addPhaseAndLog(buf_list[iw], *(wf_list[iw]));
 }
@@ -771,8 +783,8 @@ void TrialWaveFunction::flex_updateBuffer(const RefVector<TrialWaveFunction>& wf
     buf_list[iw].get().rewind(wf_list[iw].get().BufferCursor, wf_list[iw].get().BufferCursor_scalar);
   }
 
-  auto& wavefunction_components = wf_list[0].get().Z;  
-  int num_wfc = wavefunction_components.size();
+  auto& wavefunction_components = wf_list[0].get().Z;
+  const int num_wfc             = wavefunction_components.size();
 
   for (int i = 0, ii = BUFFER_TIMER; i < num_wfc; ++i, ii += TIMER_SKIP)
   {
@@ -790,7 +802,8 @@ void TrialWaveFunction::flex_updateBuffer(const RefVector<TrialWaveFunction>& wf
   {
     buf_list[iw].get().put(wf_list[iw].get().PhaseValue);
     buf_list[iw].get().put(wf_list[iw].get().LogValue);
-    assert(buf_list[iw].get().size() == buf_list[iw].get().current() + buf_list[iw].get().current_scalar() * sizeof(double));
+    assert(buf_list[iw].get().size() ==
+           buf_list[iw].get().current() + buf_list[iw].get().current_scalar() * sizeof(double));
   }
 }
 
@@ -964,7 +977,9 @@ void TrialWaveFunction::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<Value
   }
 }
 
-std::vector<std::reference_wrapper<WaveFunctionComponent>> TrialWaveFunction::extract_WFC_list(const std::vector<std::reference_wrapper<TrialWaveFunction>>& wf_list, int id)
+std::vector<std::reference_wrapper<WaveFunctionComponent>> TrialWaveFunction::extract_WFC_list(
+    const std::vector<std::reference_wrapper<TrialWaveFunction>>& wf_list,
+    int id)
 {
   std::vector<std::reference_wrapper<WaveFunctionComponent>> wfc_list;
   wfc_list.reserve(wf_list.size());
@@ -973,7 +988,8 @@ std::vector<std::reference_wrapper<WaveFunctionComponent>> TrialWaveFunction::ex
   return wfc_list;
 }
 
-std::vector<WaveFunctionComponent*> TrialWaveFunction::extract_WFC_list(const UPtrVector<TrialWaveFunction>& WF_list, int id)
+std::vector<WaveFunctionComponent*> TrialWaveFunction::extract_WFC_list(const UPtrVector<TrialWaveFunction>& WF_list,
+                                                                        int id)
 {
   std::vector<WaveFunctionComponent*> WFC_list;
   WFC_list.reserve(WF_list.size());
@@ -992,8 +1008,8 @@ std::vector<WaveFunctionComponent*> TrialWaveFunction::extract_WFC_list(const st
   return WFC_list;
 }
 
-std::vector<ParticleSet::ParticleGradient_t*>
-TrialWaveFunction::extract_G_list(const std::vector<TrialWaveFunction*>& WF_list) const
+std::vector<ParticleSet::ParticleGradient_t*> TrialWaveFunction::extract_G_list(
+    const std::vector<TrialWaveFunction*>& WF_list) const
 {
   std::vector<ParticleSet::ParticleGradient_t*> G_list;
   for (auto WF : WF_list)
@@ -1001,8 +1017,8 @@ TrialWaveFunction::extract_G_list(const std::vector<TrialWaveFunction*>& WF_list
   return G_list;
 }
 
-std::vector<ParticleSet::ParticleLaplacian_t*>
-TrialWaveFunction::extract_L_list(const std::vector<TrialWaveFunction*>& WF_list) const
+std::vector<ParticleSet::ParticleLaplacian_t*> TrialWaveFunction::extract_L_list(
+    const std::vector<TrialWaveFunction*>& WF_list) const
 {
   std::vector<ParticleSet::ParticleLaplacian_t*> L_list;
   for (auto WF : WF_list)
@@ -1010,19 +1026,19 @@ TrialWaveFunction::extract_L_list(const std::vector<TrialWaveFunction*>& WF_list
   return L_list;
 }
 
-RefVector<ParticleSet::ParticleGradient_t> 
-TrialWaveFunction::extract_g_list(const RefVector<TrialWaveFunction>& wf_list)
+RefVector<ParticleSet::ParticleGradient_t> TrialWaveFunction::extract_g_list(
+    const RefVector<TrialWaveFunction>& wf_list)
 {
-  RefVector<ParticleSet::ParticleGradient_t>  g_list;
+  RefVector<ParticleSet::ParticleGradient_t> g_list;
   for (TrialWaveFunction& wf : wf_list)
     g_list.push_back(wf.G);
   return g_list;
 }
 
-RefVector<ParticleSet::ParticleLaplacian_t> 
-TrialWaveFunction::extract_l_list(const RefVector<TrialWaveFunction>& wf_list)
+RefVector<ParticleSet::ParticleLaplacian_t> TrialWaveFunction::extract_l_list(
+    const RefVector<TrialWaveFunction>& wf_list)
 {
-  RefVector<ParticleSet::ParticleLaplacian_t>  l_list;
+  RefVector<ParticleSet::ParticleLaplacian_t> l_list;
   for (TrialWaveFunction& wf : wf_list)
     l_list.push_back(wf.L);
   return l_list;
