@@ -281,6 +281,9 @@ void VMCBatched::advanceWalkers(const StateForThread& sft, Crowd& crowd, Context
       // TODO: Do collectables need to be rethought
       //   const bool has_collectables = W.Collectables.size();
 
+      TasksOneToOne<> block_start_task(num_crowds_);
+      block_start_task(initialLogEvaluation, std::ref(crowds_));
+
       for (int block = 0; block < num_blocks; ++block)
       {
         vmc_loop.start();
@@ -290,8 +293,6 @@ void VMCBatched::advanceWalkers(const StateForThread& sft, Crowd& crowd, Context
 
         estimator_manager_->startBlock(qmcdriver_input_.get_max_steps());
 
-        TasksOneToOne<> block_start_task(num_crowds_);
-        block_start_task(initialLogEvaluation, std::ref(crowds_));
         for (int step = 0; step < qmcdriver_input_.get_max_steps(); ++step)
         {
           vmc_state.step = step;

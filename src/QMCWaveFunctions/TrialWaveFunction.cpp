@@ -162,19 +162,19 @@ void TrialWaveFunction::flex_evaluateLog(const RefVector<TrialWaveFunction>& wf_
       for (int iw = 0; iw < wf_list.size(); iw++)
         accumulateLogAndPhase(wf_list[iw], wfc_list[iw]);
     }
+    auto copyToP = [](ParticleSet& pset, TrialWaveFunction& twf){
+                     pset.G = twf.G;
+                     pset.L = twf.L;
+                   };
+    // Ye: temporal workaround to have P.G/L always defined.
+    // remove when KineticEnergy use WF.G/L instead of P.G/L
+    for (int iw = 0; iw < wf_list.size(); iw++)
+      copyToP(p_list[iw], wf_list[iw]);
   }
   else if (wf_list.size() == 1)
   {
     wf_list[0].get().evaluateLog(p_list[0]);
   }
-  auto copyToP = [](ParticleSet& pset, TrialWaveFunction& twf){
-                   pset.G = twf.G;
-                   pset.L = twf.L;
-                 };
-  // Ye: temporal workaround to have P.G/L always defined.
-  // remove when KineticEnergy use WF.G/L instead of P.G/L
-  for (int iw = 0; iw < wf_list.size(); iw++)
-    copyToP(p_list[iw], wf_list[iw]);
 }
 
 void TrialWaveFunction::recompute(ParticleSet& P)
