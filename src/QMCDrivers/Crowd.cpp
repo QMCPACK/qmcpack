@@ -31,7 +31,7 @@ void Crowd::reserve(int crowd_size)
   reserveCS(walker_hamiltonians_);
 
   auto resizeCS = [crowd_size](auto& avector) {
-                     avector.resize(crowd_size, 0); };
+                     avector.resize(crowd_size); };
   resizeCS(grads_now_);
   resizeCS(grads_new_);
   resizeCS(ratios_);
