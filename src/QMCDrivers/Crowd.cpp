@@ -38,7 +38,6 @@ void Crowd::reserve(int crowd_size)
   resizeCS(log_gf_);
   resizeCS(log_gb_);
   resizeCS(prob_);
-  resizeCS(local_energies_);
 }
 
 void Crowd::addWalker(MCPWalker& walker, ParticleSet& elecs, TrialWaveFunction& twf, QMCHamiltonian& hamiltonian)
