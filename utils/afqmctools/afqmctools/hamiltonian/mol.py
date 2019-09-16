@@ -44,11 +44,10 @@ def write_hamil_mol(scf_data, hamil_file, chol_cut,
 def write_qmcpack_cholesky(hcore, chol, nelec, nmo, e0=0.0,
                            filename='hamiltonian.h5', real_chol=False):
     with h5py.File(filename, 'w') as fh5:
+        fh5['Hamiltonian/Energies'] = numpy.array([e0.real,0])
         if real_chol:
-            fh5['Hamiltonian/Energies'] = numpy.array([e0])
             fh5['Hamiltonian/hcore'] = hcore
         else:
-            fh5['Hamiltonian/Energies'] = numpy.array([e0.real, e0.imag])
             shape = hcore.shape
             hcore = hcore.astype(numpy.complex128).view(numpy.float64)
             hcore = hcore.reshape(shape+(2,))

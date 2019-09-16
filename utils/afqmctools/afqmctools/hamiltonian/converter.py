@@ -336,7 +336,7 @@ def read_qmcpack_cholesky_kpoint(filename):
         qk_k2[iQ,ik_i] = i_kk.
     """
     with h5py.File(filename, 'r') as fh5:
-        enuc = fh5['Hamiltonian/Energies'][:].view(numpy.complex128).ravel()[0]
+        enuc = fh5['Hamiltonian/Energies'][:][0]
         dims = fh5['Hamiltonian/dims'][:]
         nmo_tot = dims[3]
         nkp = dims[2]
