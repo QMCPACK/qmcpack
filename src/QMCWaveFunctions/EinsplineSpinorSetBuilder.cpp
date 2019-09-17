@@ -34,6 +34,7 @@ SPOSet* EinsplineSpinorSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   int numOrbs = 0;
   int sortBands(1);
   int spinSet      = 0;
+  int spinSet2     = 1;
   int TwistNum_inp = 0;
 
   SPOSet* UpOrbitalSet;
@@ -146,6 +147,9 @@ SPOSet* EinsplineSpinorSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   if (FullBands[spinSet] == 0)
     FullBands[spinSet] = new std::vector<BandInfo>;
 
+  if (FullBands[spinSet2] == 0)
+    FullBands[spinSet2] = new std::vector<BandInfo>;
+
   // Ensure the first SPO set must be spinSet==0
   // to correctly initialize key data of EinsplineSetBuilder
 //  if (SPOSetMap.size() == 0 && spinSet != 0)
@@ -204,8 +208,8 @@ SPOSet* EinsplineSpinorSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   HasCoreOrbs        = bcastSortBands(spinSet, NumDistinctOrbitals, myComm->rank() == 0);
   SPOSet* bspline_zd_u = MixedSplineReader->create_spline_set(spinSet, spo_cur);
 
-  int spinSet2=1;
   //HasCoreOrbs        = bcastSortBands(spinSet2, NumDistinctOrbitals, myComm->rank() == 0);
+  OccupyBands(spinSet2, sortBands, numOrbs);
   SPOSet* bspline_zd_d = MixedSplineReader->create_spline_set(spinSet2, spo_cur);
   
  // SPOSet* bspline_zd_d = MixedSplineReader->create_spline_set(1, spo_cur);
