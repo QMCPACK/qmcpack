@@ -186,13 +186,13 @@ void VMCBatched::advanceWalkers(const StateForThread& sft, Crowd& crowd, Context
         if (prob >= std::numeric_limits<RealType>::epsilon()
             && step_context.get_random_gen()() < prob * std::exp(log_gb - log_gf))
         {
-          step_context.incAccept();
+          crowd.incAccept();
           twf_accept_list.push_back(crowd.get_walker_twfs()[i_accept]);
           elec_accept_list.push_back(crowd.get_walker_elecs()[i_accept]);
         }
         else
         {
-          step_context.incReject();
+          crowd.incReject();
           twf_reject_list.push_back(crowd.get_walker_twfs()[i_accept]);
           elec_reject_list.push_back(crowd.get_walker_elecs()[i_accept]);
         }
@@ -242,10 +242,8 @@ void VMCBatched::advanceWalkers(const StateForThread& sft, Crowd& crowd, Context
 }
 
 
-/** Thread body for VMC block
+/** Thread body for VMC step
  *
- *  Things to consider:
- *  - should qmcdriver_input be a copy local to the core in Crowd
  */
 void VMCBatched::runVMCStep(int crowd_id,
                             const StateForThread& sft,
@@ -264,6 +262,20 @@ void VMCBatched::runVMCStep(int crowd_id,
   advanceWalkers(sft, crowd, *context_for_steps[crowd_id], recompute_this_step);
   crowd.accumulate(sft.population.get_num_global_walkers());
 }
+
+/** Thread body for VMC step
+ *
+ */
+void VMCBatched::runWarmupSteps(int crowd_id,
+                            const StateForThread& sft,
+                            std::vector<std::unique_ptr<ContextForSteps>>& context_for_steps,
+                            std::vector<std::unique_ptr<Crowd>>& crowds)
+{
+  Crowd& crowd = *(crowds[crowd_id]);
+  for(int i_step = 0; i_step < sft.qmcdrv_input.get_warmup_steps(); ++i_step)
+    advanceWalkers(sft, crowd, *context_for_steps[crowd_id], false);
+}
+
 
 /** Runs the actual VMC section
  *
@@ -293,6 +305,9 @@ bool VMCBatched::run()
     TasksOneToOne<> section_start_task(num_crowds_);
     section_start_task(initialLogEvaluation, std::ref(crowds_));
   }
+  TasksOneToOne<> section_start_task(num_crowds_);
+  section_start_task(runWarmupSteps, vmc_state, std::ref(step_contexts_), std::ref(crowds_));
+
 
   for (int block = 0; block < num_blocks; ++block)
   {
@@ -314,7 +329,8 @@ bool VMCBatched::run()
     }
 
     RefVector<ScalarEstimatorBase> all_scalar_estimators;
-    EstimatorManagerCrowd::RealType total_block_weight = 0.0;
+    FullPrecRealType total_block_weight = 0.0;
+    FullPrecRealType total_accept_ratio = 0.0;
     // Collect all the ScalarEstimatorsFrom EMCrowds
     for (const UPtr<Crowd>& crowd : crowds_)
     {
@@ -322,12 +338,13 @@ bool VMCBatched::run()
       all_scalar_estimators.insert(all_scalar_estimators.end(), std::make_move_iterator(crowd_sc_est.begin()),
                                    std::make_move_iterator(crowd_sc_est.end()));
       total_block_weight += crowd->get_estimator_manager_crowd().get_block_weight();
-      
+      total_accept_ratio += crowd->get_accept_ratio();
     }
-    
+    // Should this be adjusted if crowds have different
+    total_accept_ratio /= crowds_.size();
     estimator_manager_->collectScalarEstimators(all_scalar_estimators,population_.get_num_local_walkers(),total_block_weight);
     // TODO: should be accept rate for block
-    estimator_manager_->stopBlockNew(1.0);
+    estimator_manager_->stopBlockNew(total_accept_ratio);
   }
 
   return false;

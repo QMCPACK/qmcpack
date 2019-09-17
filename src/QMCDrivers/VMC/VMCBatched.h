@@ -27,6 +27,7 @@ namespace qmcplusplus
 class VMCBatched : public QMCDriverNew
 {
 public:
+  using FullPrecRealType = QMCTraits::FullPrecRealType;
   using PosType = QMCTraits::PosType;
   using ParticlePositions = PtclOnLatticeTraits::ParticlePos_t;
 
@@ -71,6 +72,11 @@ public:
    *  Obfuscation of state changes via buffer and MCWalkerconfiguration require this be tested well
    */
   static void advanceWalkers(const StateForThread& sft, Crowd& crowd, ContextForSteps& move_context, bool recompute);
+
+  static void runWarmupSteps(int crowd_id,
+                            const StateForThread& sft,
+                            std::vector<std::unique_ptr<ContextForSteps>>& context_for_steps,
+                             std::vector<std::unique_ptr<Crowd>>& crowds);
   
   // This is the task body executed at crowd scope
   // it does not have access to object member variables by design

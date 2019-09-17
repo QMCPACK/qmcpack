@@ -97,5 +97,24 @@ TEST_CASE("Crowd::loadWalkers", "[particle]")
   //actuall test loadWalkers  
 }
 
+TEST_CASE("Crowd::get_accept_ratio","[Drivers]")
+{
+  using WalkerMCP = Walker<QMCTraits, PtclOnLatticeTraits>;
+
+  OHMMS::Controller->initialize(0, NULL);
+  Communicate* comm = OHMMS::Controller;
+
+  EstimatorManagerBase em(comm);
+  FakeEstimator* fake_est = new FakeEstimator;
+  em.add(fake_est, "fake");
+
+  Crowd crowd(em);
+
+  crowd.incAccept();
+  crowd.incAccept();
+  crowd.incAccept();
+  crowd.incReject();
+  REQUIRE( crowd.get_accept_ratio() == Approx(0.75));
+}
 
 }
