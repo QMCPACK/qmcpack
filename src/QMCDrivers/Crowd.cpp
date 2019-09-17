@@ -11,7 +11,6 @@
 
 namespace qmcplusplus
 {
-
 void Crowd::clearResults()
 {
   // These were cleared to 1.0 each loop by VMCUpdatePbyP advance walker
@@ -23,15 +22,13 @@ void Crowd::clearResults()
 
 void Crowd::reserve(int crowd_size)
 {
-  auto reserveCS = [crowd_size](auto& avector) {
-                     avector.reserve(crowd_size); };
+  auto reserveCS = [crowd_size](auto& avector) { avector.reserve(crowd_size); };
   reserveCS(mcp_walkers_);
   reserveCS(walker_elecs_);
   reserveCS(walker_twfs_);
   reserveCS(walker_hamiltonians_);
 
-  auto resizeCS = [crowd_size](auto& avector) {
-                     avector.resize(crowd_size); };
+  auto resizeCS = [crowd_size](auto& avector) { avector.resize(crowd_size); };
   resizeCS(grads_now_);
   resizeCS(grads_new_);
   resizeCS(ratios_);
@@ -47,21 +44,19 @@ void Crowd::addWalker(MCPWalker& walker, ParticleSet& elecs, TrialWaveFunction& 
   walker_elecs_.push_back(elecs);
   walker_twfs_.push_back(twf);
   walker_hamiltonians_.push_back(hamiltonian);
-
 };
 
 void Crowd::loadWalkers()
 {
-  auto it_walker        = mcp_walkers_.begin();
+  auto it_walker       = mcp_walkers_.begin();
   auto it_walker_elecs = walker_elecs_.begin();
-//flex walkers here
+  //flex walkers here
   while (it_walker != mcp_walkers_.end())
   {
     (*it_walker_elecs).get().loadWalker(*it_walker, true);
     ++it_walker;
     ++it_walker_elecs;
   }
-
 }
 
 void Crowd::startBlock(int num_steps)
@@ -71,4 +66,4 @@ void Crowd::startBlock(int num_steps)
   estimator_manager_crowd_.startBlock(num_steps);
 }
 
-}
+} // namespace qmcplusplus

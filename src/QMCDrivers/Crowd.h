@@ -27,16 +27,16 @@ namespace qmcplusplus
 class Crowd
 {
 public:
-  using MCPWalker = MCPopulation::MCPWalker;
-  using WFBuffer = MCPopulation::WFBuffer;
-  using GradType = QMCTraits::GradType;
-  using RealType = QMCTraits::RealType;
+  using MCPWalker        = MCPopulation::MCPWalker;
+  using WFBuffer         = MCPopulation::WFBuffer;
+  using GradType         = QMCTraits::GradType;
+  using RealType         = QMCTraits::RealType;
   using FullPrecRealType = QMCTraits::FullPrecRealType;
   /** This is the data structure for walkers within a crowd
    */
   Crowd(EstimatorManagerBase& emb) : estimator_manager_crowd_(emb) {}
 
-  /** With so many vectors allocate upfront.
+  /** Because so many vectors allocate them upfront.
    *
    *  could be premature optimization
    */
@@ -49,8 +49,11 @@ public:
 
   void loadWalkers();
 
-  void accumulate(int global_walkers) { estimator_manager_crowd_.accumulate(global_walkers, mcp_walkers_, walker_elecs_); }
-  
+  void accumulate(int global_walkers)
+  {
+    estimator_manager_crowd_.accumulate(global_walkers, mcp_walkers_, walker_elecs_);
+  }
+
   auto beginWalkers() { return mcp_walkers_.begin(); }
   auto endWalkers() { return mcp_walkers_.end(); }
   auto beginTrialWaveFunctions() { return walker_twfs_.begin(); }
@@ -65,7 +68,7 @@ public:
 
   std::vector<GradType>& get_grads_now() { return grads_now_; }
   std::vector<GradType>& get_grads_new() { return grads_new_; }
-  std::vector<TrialWaveFunction::PsiValueType>& get_ratios() { return ratios_; }  
+  std::vector<TrialWaveFunction::PsiValueType>& get_ratios() { return ratios_; }
   std::vector<RealType>& get_log_gf() { return log_gf_; }
   std::vector<RealType>& get_log_gb() { return log_gb_; }
   std::vector<RealType>& get_prob() { return prob_; }
@@ -78,10 +81,11 @@ public:
   void incReject() { ++n_reject; }
   void incAccept() { ++n_accept; }
   FullPrecRealType get_accept_ratio() const
-    {
-      return [](FullPrecRealType accept, FullPrecRealType reject)->FullPrecRealType {
-               return accept / (accept + reject ); }(n_accept, n_reject);
-    }
+  {
+    return [](FullPrecRealType accept, FullPrecRealType reject) -> FullPrecRealType {
+      return accept / (accept + reject);
+    }(n_accept, n_reject);
+  }
 
 private:
   std::vector<std::reference_wrapper<MCPWalker>> mcp_walkers_;
@@ -108,7 +112,6 @@ private:
   /** }@ */
   unsigned long n_reject = 0;
   unsigned long n_accept = 0;
-
 };
 } // namespace qmcplusplus
 #endif
