@@ -30,10 +30,6 @@
 #include <Utilities/NewTimer.h>
 #include <bitset>
 
-#ifdef HAVE_ADIOS
-#include <adios.h>
-#endif
-
 namespace qmcplusplus
 {
 class EstimatorManagerBase;
@@ -390,10 +386,6 @@ struct SimpleFixedNodeBranch : public QMCTraits
    */
   void write(const std::string& fname, bool overwrite = true);
 
-#ifdef HAVE_ADIOS
-  void save_energy();
-#endif
-
   void read(const std::string& fname);
 
   /** create map between the parameter name and variables */
@@ -406,22 +398,9 @@ struct SimpleFixedNodeBranch : public QMCTraits
 
   void setRN(bool rn);
 
-
-  //     void storeConfigsForForwardWalking(MCWalkerConfiguration& w);
-  //     void clearConfigsForForwardWalking( );
-  //     void debugFWconfig();
-  //     WalkerControlBase* getWalkerController()
-  //     {
-  //       return WalkerController;
-  //     }
-
 private:
   ///default constructor (disabled)
   SimpleFixedNodeBranch() {}
-
-  ///disable use by external users
-  //void write(hid_t grp, bool append=false);
-  //void read(hid_t grp);
 
   ///set branch cutoff, max, filter
   void setBranchCutoff(FullPrecRealType variance,

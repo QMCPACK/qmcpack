@@ -15,7 +15,7 @@
 
 #ifndef QMCPLUSPLUS_MPC_H
 #define QMCPLUSPLUS_MPC_H
-#include <QMCHamiltonians/QMCHamiltonianBase.h>
+#include <QMCHamiltonians/OperatorBase.h>
 #include <LongRange/LRCoulombSingleton.h>
 
 #if defined(HAVE_EINSPLINE)
@@ -29,7 +29,7 @@ namespace qmcplusplus
  *\brief Calculates the Model Periodic Coulomb potential using PBCs
  */
 
-class MPC : public QMCHamiltonianBase
+class MPC : public OperatorBase
 {
 protected:
   UBspline_3d_d *VlongSpline, *DensitySpline;
@@ -90,7 +90,7 @@ public:
     return true;
   }
 
-  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 
   void initBreakup();
 };

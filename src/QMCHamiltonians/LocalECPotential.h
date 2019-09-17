@@ -17,7 +17,7 @@
 #ifndef QMCPLUSPLUS_LOCALECPPOTENTIAL_H
 #define QMCPLUSPLUS_LOCALECPPOTENTIAL_H
 #include "Particle/ParticleSet.h"
-#include "QMCHamiltonians/QMCHamiltonianBase.h"
+#include "QMCHamiltonians/OperatorBase.h"
 #include "Numerics/OneDimGridBase.h"
 #include "Numerics/OneDimGridFunctor.h"
 #include "Numerics/OneDimLinearSpline.h"
@@ -30,7 +30,7 @@ namespace qmcplusplus
  * \brief Evaluate the local potentials (either pseudo or full core) around each ion.
  */
 
-struct LocalECPotential : public QMCHamiltonianBase
+struct LocalECPotential : public OperatorBase
 {
   typedef OneDimGridBase<RealType> GridType;
   typedef OneDimCubicSpline<RealType> RadialPotentialType;
@@ -58,6 +58,8 @@ struct LocalECPotential : public QMCHamiltonianBase
   Vector<RealType> PPart;
 #if !defined(REMOVE_TRACEMANAGER)
   ///single particle trace samples
+  Array<TraceReal, 1> Ve_samp_tmp;
+  Array<TraceReal, 1> Vi_samp_tmp;
   Array<TraceReal, 1>* Ve_sample;
   Array<TraceReal, 1>* Vi_sample;
 #endif
@@ -96,7 +98,7 @@ struct LocalECPotential : public QMCHamiltonianBase
     return true;
   }
 
-  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 
   /** Add a RadialPotentialType of a species
    * @param groupID index of the ion species

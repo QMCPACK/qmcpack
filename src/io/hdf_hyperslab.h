@@ -12,202 +12,190 @@
 
 #ifndef QMCPLUSPLUS_HDF_HYPERSLAB_IO_H
 #define QMCPLUSPLUS_HDF_HYPERSLAB_IO_H
-#include <type_traits/container_proxy.h>
+
+#include <array>
+#include <type_traits/container_traits.h>
 #include <io/hdf_datatype.h>
 #include <io/hdf_dataspace.h>
 #include <io/hdf_dataproxy.h>
 
-#ifdef BUILD_AFQMC
-#ifdef QMC_CUDA
-#include "AFQMC/Memory/CUDA/cuda_gpu_pointer.hpp"
-#endif
-#endif
-
 namespace qmcplusplus
 {
-/** class to use hyperslab with a serialized container
+/** class to use file space hyperslab with a serialized container
+ * @tparam CT container type, std::vector, Vector, Matrix, Array, boost::multi::array
+ * @tparam RANK hyperslab user rank. The dimensions contributed by T are excluded.
  *
- * container_proxy<CT> handles the size and datatype
+ * The container may get resized for sufficient space if
+ * the template specialization of container_traits<CT> is available
+ * additional restriction:
+ * 1D containers can be resized to hold any multi-dimensional data
+ * >1D containers can only be resize to hold data with matching dimensions.
  */
-template<typename CT, unsigned MAXDIM>
-struct hyperslab_proxy : public container_proxy<CT>
+template<typename CT, unsigned RANK>
+struct hyperslab_proxy
 {
-  ///determine the size of value_type
-  enum
-  {
-    element_size = container_proxy<CT>::DIM
-  };
-  ///rank of hyperslab
-  int slab_rank;
-  ///true, if hyperslab is used
-  bool use_slab;
+  ///user rank of a hyperslab
+  static const unsigned int slab_rank = RANK;
+
+  using element_type = typename container_traits<CT>::element_type;
+  /** type alias for h5_space_type
+   * encapsulates both RANK and ranks contributed by element_type
+   * for constructing an hdf5 dataspace.
+   */
+  using SpaceType = h5_space_type<element_type, RANK>;
   ///global dimension of the hyperslab
-  TinyVector<hsize_t, MAXDIM + 1> slab_dims;
+  SpaceType file_space;
   ///local dimension of the hyperslab
-  TinyVector<hsize_t, MAXDIM + 1> slab_dims_local;
+  SpaceType selected_space;
   ///offset of the hyperslab
-  TinyVector<hsize_t, MAXDIM + 1> slab_offset;
-  ///1D
-  hyperslab_proxy(CT& a)
-      : container_proxy<CT>(a), slab_rank(a.slab_rank), slab_dims(a.slab_dims), slab_offset(a.slab_offset)
-  {
-    slab_dims_local = slab_dims;
-    use_slab        = false;
-  }
+  std::array<hsize_t, SpaceType::rank> slab_offset;
+  ///container reference
+  CT& ref_;
 
-  template<typename IC>
-  inline hyperslab_proxy(CT& a, const IC& dims_in) : container_proxy<CT>(a)
+  /** constructor
+   * @tparam IT integer type
+   * @param a data containter
+   * @param dims_in dimension sizes of a dataset.
+   * @param selected_in dimension sizes of the selected part of the dataset
+   * @param offsets_in offsets of the selected part of the dataset
+   *
+   * value 0 in any dimension of dims_in or selected_in is allowed when reading a dataset.
+   * The actual size is derived from file dataset.
+   */
+  template<typename IT>
+  inline hyperslab_proxy(CT& a,
+                         const std::array<IT, RANK>& dims_in,
+                         const std::array<IT, RANK>& selected_in,
+                         const std::array<IT, RANK>& offsets_in)
+      : ref_(a)
   {
-    use_slab  = false;
-    slab_rank = dims_in.size();
-    for (int i = 0; i < dims_in.size(); ++i)
-      slab_dims[i] = static_cast<hsize_t>(dims_in[i]);
-    slab_dims_local = slab_dims;
-    if (element_size > 1)
+    for (int i = 0; i < slab_rank; ++i)
     {
-      slab_dims[slab_rank] = element_size;
-      slab_rank += 1;
-    }
-  }
-
-  template<typename IC1, typename IC2, typename IC3>
-  inline hyperslab_proxy(CT& a, const IC1& dims_in, const IC2& dims_loc, const IC3& offsets_in) : container_proxy<CT>(a)
-  {
-    slab_rank = dims_in.size();
-    for (int i = 0; i < dims_in.size(); ++i)
-      slab_dims[i] = static_cast<hsize_t>(dims_in[i]);
-    for (int i = 0; i < dims_loc.size(); ++i)
-      slab_dims_local[i] = static_cast<hsize_t>(dims_loc[i]);
-    for (int i = 0; i < dims_in.size(); ++i)
+      if (dims_in[i] < 0)
+        throw std::runtime_error("Negative size detected in some dimensions of filespace input\n");
+      file_space.dims[i] = static_cast<hsize_t>(dims_in[i]);
+      if (selected_in[i] < 0)
+        throw std::runtime_error("Negative size detected in some dimensions of selected space input\n");
+      selected_space.dims[i] = static_cast<hsize_t>(selected_in[i]);
+      if (offsets_in[i] < 0)
+        throw std::runtime_error("Negative value detected in some dimensions of offset input\n");
       slab_offset[i] = static_cast<hsize_t>(offsets_in[i]);
-    if (element_size > 1)
-    {
-      slab_dims[slab_rank]       = element_size;
-      slab_dims_local[slab_rank] = element_size;
-      slab_offset[slab_rank]     = 0;
-      slab_rank += 1;
     }
-    use_slab = true;
+
+    /// element_type related dimensions always have offset 0
+    for (int i = slab_rank; i < SpaceType::rank; ++i)
+      slab_offset[i] = 0;
   }
 
-  /** return the size of the i-th dimension
+  /** return the size of the i-th dimension of global space
    * @param i dimension
    */
-  inline hsize_t size(int i) const { return (i > MAXDIM) ? 0 : slab_dims[i]; }
+  inline hsize_t size(int i) const { return (i > SpaceType::rank) ? 0 : file_space.dims[i]; }
 
-  inline void change_shape() { this->resize(slab_dims.data(), MAXDIM + 1); }
+  /** checks if file_space, elected_space and offset are self-consistent
+   */
+  inline void checkUserRankSizes()
+  {
+    if (std::any_of(file_space.dims, file_space.dims + slab_rank, [](int i) { return i == 0; }))
+      throw std::runtime_error("Zero size detected in some dimensions of filespace\n");
+    if (std::any_of(selected_space.dims, selected_space.dims + slab_rank, [](int i) { return i == 0; }))
+      throw std::runtime_error("Zero size detected in some dimensions of selected filespace\n");
+    for (int dim = 0; dim < slab_rank; dim++)
+    {
+      if (slab_offset[dim] > file_space.dims[dim])
+        throw std::runtime_error("offset outsdie the bound of filespace");
+      if (slab_offset[dim] + selected_space.dims[dim] > file_space.dims[dim])
+      {
+        std::ostringstream err_msg;
+        err_msg << "dim " << dim << " offset " << slab_offset[dim] << " + selected_space size "
+                << selected_space.dims[dim] << " outsdie the bound of filespace " << file_space.dims[dim] << std::endl;
+        throw std::runtime_error(err_msg.str());
+      }
+    }
+  }
+
+  /** check if the container is large enough for the selected space and resize if requested
+   * @param resize if true, resize the container
+   */
+  inline void checkContainerCapacity(bool resize)
+  {
+    hsize_t total_size = slab_rank > 0 ? 1 : 0;
+    for (int dim = 0; dim < slab_rank; dim++)
+      total_size *= selected_space.dims[dim];
+
+    bool success = true;
+    if (total_size > container_traits<CT>::getSize(ref_))
+    {
+      if (resize)
+        container_traits<CT>::resize(ref_, selected_space.dims, slab_rank);
+      else
+        success = false;
+    }
+    if (!success)
+      throw std::runtime_error("Not large enough container capacity!\n");
+  }
+
+  /** adjust file_space and selected_space shapes based on sizes_file
+   *  @tparam IT integer type
+   *  @param sizes_file sizes of all the user dimensions of a dataset
+   *
+   * This function can only be used when reading a dataset not writing
+   * if the size value of a dimension is 0, use the value based on the dataset on disk
+   */
+  template<typename IT>
+  inline void adaptShape(const std::vector<IT>& sizes_file)
+  {
+    // validate user ranks
+    if (sizes_file.size() != slab_rank)
+      throw std::runtime_error("User specified and filespace dimensions mismatch!\n");
+
+    for (int dim = 0; dim < slab_rank; dim++)
+    {
+      if (file_space.dims[dim] == 0)
+        file_space.dims[dim] = sizes_file[dim];
+      else if (file_space.dims[dim] != sizes_file[dim])
+      {
+        std::ostringstream err_msg;
+        err_msg << "dim " << dim << " user specified size " << file_space.dims[dim] << " filespace size "
+                << sizes_file[dim] << " mismatched!" << std::endl;
+        throw std::runtime_error(err_msg.str());
+      }
+
+      if (selected_space.dims[dim] == 0)
+        selected_space.dims[dim] = file_space.dims[dim];
+    }
+  }
+
 };
 
-template<typename CT, unsigned MAXDIM>
-struct h5data_proxy<hyperslab_proxy<CT, MAXDIM>>
+template<typename CT, unsigned RANK>
+struct h5data_proxy<hyperslab_proxy<CT, RANK>>
 {
-  hyperslab_proxy<CT, MAXDIM>& ref_;
-  h5data_proxy(hyperslab_proxy<CT, MAXDIM>& a) : ref_(a) {}
+  hyperslab_proxy<CT, RANK>& ref_;
+
+  h5data_proxy(hyperslab_proxy<CT, RANK>& a) : ref_(a) {}
+
   inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
-    if (ref_.use_slab)
-    {
-      return h5d_read(grp, aname.c_str(), ref_.slab_rank, ref_.slab_dims.data(), ref_.slab_dims_local.data(),
-                      ref_.slab_offset.data(), ref_.data(), xfer_plist);
-    }
-    else
-    {
-      int rank = ref_.slab_rank;
-      if (!get_space(grp, aname, rank, ref_.slab_dims.data(), true))
-      {
-        ref_.change_shape();
-      }
-      return h5d_read(grp, aname, ref_.data(), xfer_plist);
-    }
+    std::vector<hsize_t> sizes_file;
+    getDataShape<typename hyperslab_proxy<CT, RANK>::element_type>(grp, aname, sizes_file);
+    ref_.adaptShape(sizes_file);
+    ref_.checkUserRankSizes();
+    ref_.checkContainerCapacity(true);
+    return h5d_read(grp, aname.c_str(), ref_.file_space.rank, ref_.file_space.dims, ref_.selected_space.dims,
+                    ref_.slab_offset.data(), hyperslab_proxy<CT, RANK>::SpaceType::get_address(container_traits<CT>::getElementPtr(ref_.ref_)),
+                    xfer_plist);
   }
+
   inline bool write(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
-    if (ref_.use_slab)
-    {
-      return h5d_write(grp, aname.c_str(), ref_.slab_rank, ref_.slab_dims.data(), ref_.slab_dims_local.data(),
-                       ref_.slab_offset.data(), ref_.data(), xfer_plist);
-    }
-    else
-    {
-      return h5d_write(grp, aname.c_str(), ref_.slab_rank, ref_.slab_dims.data(), ref_.data(), xfer_plist);
-    }
+    ref_.checkUserRankSizes();
+    ref_.checkContainerCapacity(false);
+    return h5d_write(grp, aname.c_str(), ref_.file_space.rank, ref_.file_space.dims, ref_.selected_space.dims,
+                     ref_.slab_offset.data(), hyperslab_proxy<CT, RANK>::SpaceType::get_address(container_traits<CT>::getElementPtr(ref_.ref_)),
+                     xfer_plist);
   }
 };
 
-#ifdef BUILD_AFQMC
-#ifdef QMC_CUDA
-template<typename T, unsigned MAXDIM>
-struct h5data_proxy<hyperslab_proxy<boost::multi::array<T, 2, qmc_cuda::cuda_gpu_allocator<T>>, MAXDIM>>
-{
-  typedef boost::multi::array<T, 2, qmc_cuda::cuda_gpu_allocator<T>> CT;
-  hyperslab_proxy<CT, MAXDIM>& ref_;
-  h5data_proxy(hyperslab_proxy<CT, MAXDIM>& a) : ref_(a) {}
-  inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
-  {
-    if (ref_.use_slab)
-    {
-      // later on specialize h5d_read for fancy pointers
-      std::size_t sz = ref_.ref.num_elements();
-      boost::multi::array<T, 1> buf(typename boost::multi::layout_t<1u>::extensions_type{sz});
-      auto ret = h5d_read(grp, aname.c_str(), ref_.slab_rank, ref_.slab_dims.data(), ref_.slab_dims_local.data(),
-                          ref_.slab_offset.data(), buf.origin(), xfer_plist);
-      qmc_cuda::copy_n(buf.data(), sz, ref_.ref.origin());
-      return ret;
-    }
-    else
-    {
-      int rank = ref_.slab_rank;
-      if (!get_space(grp, aname, rank, ref_.slab_dims.data(), true))
-      {
-        std::cerr << " Disabled hyperslab resize with boost::multi::array<gpu_allocator>.\n";
-        return false;
-      }
-      return h5d_read(grp, aname, ref_.data(), xfer_plist);
-    }
-  }
-  inline bool write(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
-  {
-    std::cerr << " Disabled hyperslab write with boost::multi::array<gpu_allocator>.\n";
-    return false;
-  }
-};
-
-template<typename T, unsigned MAXDIM>
-struct h5data_proxy<hyperslab_proxy<boost::multi::array_ref<T, 2, qmc_cuda::cuda_gpu_ptr<T>>, MAXDIM>>
-{
-  typedef boost::multi::array_ref<T, 2, qmc_cuda::cuda_gpu_ptr<T>> CT;
-  hyperslab_proxy<CT, MAXDIM>& ref_;
-  h5data_proxy(hyperslab_proxy<CT, MAXDIM>& a) : ref_(a) {}
-  inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
-  {
-    if (ref_.use_slab)
-    {
-      // later on specialize h5d_read for fancy pointers
-      std::size_t sz = ref_.ref.num_elements();
-      boost::multi::array<T, 1> buf(typename boost::multi::layout_t<1u>::extensions_type{sz});
-      auto ret = h5d_read(grp, aname.c_str(), ref_.slab_rank, ref_.slab_dims.data(), ref_.slab_dims_local.data(),
-                          ref_.slab_offset.data(), buf.origin(), xfer_plist);
-      qmc_cuda::copy_n(buf.data(), sz, ref_.ref.origin());
-      return ret;
-    }
-    else
-    {
-      int rank = ref_.slab_rank;
-      if (!get_space(grp, aname, rank, ref_.slab_dims.data(), true))
-      {
-        std::cerr << " Disabled hyperslab resize with boost::multi::array_ref<gpu_ptr>.\n";
-        return false;
-      }
-      return h5d_read(grp, aname, ref_.data(), xfer_plist);
-    }
-  }
-  inline bool write(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
-  {
-    std::cerr << " Disabled hyperslab write with boost::multi::array_ref<gpu_ptr>.\n";
-    return false;
-  }
-};
-#endif
-#endif
 } // namespace qmcplusplus
 #endif

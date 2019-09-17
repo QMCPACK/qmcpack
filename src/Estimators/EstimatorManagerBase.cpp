@@ -82,6 +82,8 @@ EstimatorManagerBase::EstimatorManagerBase(EstimatorManagerBase& em)
 {
   //inherit communicator
   setCommunicator(em.myComm);
+
+  // Here Estimators are ScalarEstimatorBase
   for (int i = 0; i < em.Estimators.size(); i++)
     Estimators.push_back(em.Estimators[i]->clone());
   MainEstimator = Estimators[EstimatorMap[MainEstimatorName]];
@@ -100,10 +102,13 @@ EstimatorManagerBase::~EstimatorManagerBase()
 
 void EstimatorManagerBase::setCommunicator(Communicate* c)
 {
+  // I think this is actually checking if this is the "Main Estimator"
   if (myComm && myComm == c)
     return;
   myComm = c ? c : OHMMS::Controller;
   //set the default options
+  // This is a flag to tell manager if there is more than one thread
+  // running walkers, its discovered by smelly query of myComm.
   Options.set(COLLECT, myComm->size() > 1);
   Options.set(MANAGE, myComm->rank() == 0);
   if (RemoteData.empty())
@@ -289,7 +294,57 @@ void EstimatorManagerBase::stopBlock(RealType accept, bool collectall)
     Collectables->takeBlockAverage(AverageCache.begin(), SquaredAverageCache.begin());
   }
   if (collectall)
-    collectBlockAverages(1);
+    collectBlockAverages();
+}
+
+void EstimatorManagerBase::stopBlockNew(RealType accept)
+{
+  //take block averages and update properties per block
+  PropertyCache[weightInd] = BlockWeight;
+  PropertyCache[cpuInd]    = MyTimer.elapsed();
+  PropertyCache[acceptInd] = accept;
+
+  collectBlockAverages();
+}
+
+
+
+/** Called at end of block in Unified Driver
+ *
+ */
+void EstimatorManagerBase::collectScalarEstimators(const RefVector<ScalarEstimatorBase>& estimators,
+                                                   const int total_walkers,
+                                                   const RealType block_weight)
+{
+  // One scalar estimator can be accumulating many scalar values
+  int num_est      = estimators.size();
+  int num_scalars  = estimators[0].get().size();
+  using ScalarType = ScalarEstimatorBase::RealType;
+
+  BlockWeight += block_weight;
+  
+  std::vector<ScalarType> averages_work(num_scalars, 0.0);
+  std::vector<ScalarType> averages_sum(num_scalars, 0.0);
+
+  auto accumulateVectorsInPlace = [](auto& vec_a, const auto& vec_b) {
+    for (int i = 0; i < vec_a.size(); ++i)
+      vec_a[i] += vec_b[i];
+  };
+
+  AverageCache = 0.0;
+  if (AverageCache.size() != num_scalars)
+    throw std::runtime_error(
+        "EstimatorManagerBase and Crowd ScalarManagers do not agree on number of scalars being estimated");
+  for (int i = 0; i < num_est; ++i)
+  {
+    estimators[i].get().takeBlockAverage(averages_work.begin());
+    accumulateVectorsInPlace(AverageCache, averages_work);
+  }
+
+  RealType tnorm = 1.0 / num_est;
+
+  AverageCache *= tnorm;
+
 }
 
 void EstimatorManagerBase::stopBlock(const std::vector<EstimatorManagerBase*>& est)
@@ -312,11 +367,11 @@ void EstimatorManagerBase::stopBlock(const std::vector<EstimatorManagerBase*>& e
     PropertyCache[i] *= tnorm;
   //for(int i=0; i<num_threads; ++i)
   //varAccumulator(est[i]->varAccumulator.mean());
-  collectBlockAverages(num_threads);
+  collectBlockAverages();
 }
 
 
-void EstimatorManagerBase::collectBlockAverages(int num_threads)
+void EstimatorManagerBase::collectBlockAverages()
 {
   if (Options[COLLECT])
   {

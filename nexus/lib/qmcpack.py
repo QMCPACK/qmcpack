@@ -37,8 +37,7 @@ from qmcpack_input import loop,linear,cslinear,vmc,dmc,collection,determinantset
 from qmcpack_input import generate_jastrows,generate_jastrow,generate_jastrow1,generate_jastrow2,generate_jastrow3
 from qmcpack_input import generate_opt,generate_opts
 from qmcpack_analyzer import QmcpackAnalyzer
-from qmcpack_converters import Pw2qmcpack,Wfconvert,Convert4qmc
-from sqd import Sqd
+from qmcpack_converters import Pw2qmcpack,Convert4qmc
 from debug import ci,ls,gs
 from developer import unavailable
 from nexus_base import nexus_core
@@ -158,7 +157,7 @@ class Qmcpack(Simulation):
         input = self.input
         system = self.system
         if result_name=='orbitals':
-            if isinstance(sim,Pw2qmcpack) or isinstance(sim,Wfconvert):
+            if isinstance(sim,Pw2qmcpack):
 
                 h5file = result.h5file
 
@@ -176,7 +175,7 @@ class Qmcpack(Simulation):
                 elif 'determinantset' in wf and wf.determinantset.type in ('bspline','einspline'):
                     orb_elem = wf.determinantset
                 else:
-                    self.error('could not incorporate pw2qmcpack/wfconvert orbitals\nbspline sposet_builder and determinantset are both missing')
+                    self.error('could not incorporate pw2qmcpack orbitals\nbspline sposet_builder and determinantset are both missing')
                 #end if
                 if 'href' in orb_elem and isinstance(orb_elem.href,str) and os.path.exists(orb_elem.href):
                     # user specified h5 file for orbitals, bypass orbital dependency
@@ -219,52 +218,6 @@ class Qmcpack(Simulation):
                 elif not has_twist and orb_elem.twistnum is None:
                     orb_elem.twistnum = twistnums[0]
                 #end if
-
-            elif isinstance(sim,Sqd):
-
-                h5file  = os.path.join(result.dir,result.h5file)
-                h5file  = os.path.relpath(h5file,self.locdir)
-
-                sqdxml_loc = os.path.join(result.dir,result.qmcfile)
-                sqdxml = QmcpackInput(sqdxml_loc)
-
-                #sqd sometimes puts the wrong ionic charge
-                #  rather than setting Z to the number of electrons
-                #  set it to the actual atomic number
-                g = sqdxml.qmcsystem.particlesets.atom.group
-                elem = g.name
-                if not elem in periodic_table.elements:
-                    self.error(elem+' is not an element in the periodic table')
-                #end if
-                g.charge = periodic_table.elements[elem].atomic_number
-
-                input = self.input
-                s = input.simulation
-                qsys_old = s.qmcsystem
-                del s.qmcsystem
-                s.qmcsystem = sqdxml.qmcsystem
-                if 'jastrows' in qsys_old.wavefunction:
-                    s.qmcsystem.wavefunction.jastrows = qsys_old.wavefunction.jastrows
-                    for jastrow in s.qmcsystem.wavefunction.jastrows:
-                        if 'type' in jastrow:
-                            jtype = jastrow.type.lower().replace('-','_')
-                            if jtype=='one_body':
-                                jastrow.source = 'atom'
-                            #end if
-                        #end if
-                    #end for
-                #end if
-                s.qmcsystem.hamiltonian = hamiltonian(
-                    name='h0',type='generic',target='e',
-                    pairpots = [
-                        pairpot(name='ElecElec',type='coulomb',source='e',target='e'),
-                        pairpot(name='Coulomb' ,type='coulomb',source='atom',target='e'),
-                        ]
-                    )
-                s.init = init(source='atom',target='e')
-
-                abset = input.get('atomicbasisset')
-                abset.href = h5file
 
             elif isinstance(sim,Convert4qmc):
 
@@ -342,38 +295,6 @@ class Qmcpack(Simulation):
                     #end if
                 #end if
                 del optwf
-            elif isinstance(sim,Sqd):
-                wavefunction = input.get('wavefunction')
-                jastrows = []
-                if 'jastrows' in wavefunction:
-                    for jastrow in wavefunction.jastrows:
-                        jname = jastrow.name
-                        if jname!='J1' and jname!='J2':
-                            jastrows.append(jastrow)
-                        #end if
-                    #end for
-                    del wavefunction.jastrows
-                #end if
-
-                ionps = input.get_ion_particlesets()
-                if ionps is None or len(ionps)==0:
-                    self.error('ion particleset does not seem to exist')
-                elif len(ionps)==1:
-                    ionps_name = list(ionps.keys())[0]
-                else:
-                    self.error('multiple ion species not supported for atomic calculations')
-                #end if
-
-                jastrows.extend([
-                        generate_jastrow('J1','bspline',8,result.rcut,iname=ionps_name,system=self.system),
-                        generate_jastrow('J2','pade',result.B)
-                        ])
-
-                wavefunction.jastrows = collection(jastrows)
-
-            else:
-                self.error('incorporating jastrow from '+sim.__class__.__name__+' has not been implemented')
-            #end if
         elif result_name=='particles':
             if isinstance(sim,Convert4qmc):
                 ptcl_file = result.location

@@ -23,6 +23,8 @@ public:
   using RealType = QMCTraits::RealType;
   using PosType  = QMCTraits::PosType;
 
+  void getDrifts(RealType tau, const std::vector<GradType>& qf, std::vector<PosType>&) const final;
+
   void getDrift(RealType tau, const GradType& qf, PosType& drift) const final;
 
   bool parseXML(xmlNodePtr cur) final;

@@ -71,7 +71,7 @@ public:
   typedef Walker_t::PropertyContainer_t PropertyContainer_t;
   ///container type of Walkers
   typedef std::vector<Walker_t*> WalkerList_t;
-  ///iterator of Walker container
+  /// FIX: a type alias of iterator for an object should not be for just one of many objects it holds.
   typedef WalkerList_t::iterator iterator;
   ///const_iterator of Walker container
   typedef WalkerList_t::const_iterator const_iterator;
@@ -181,11 +181,11 @@ public:
   void sample(iterator it, RealType tauinv);
 
   ///return the number of active walkers
-  inline int getActiveWalkers() const { return WalkerList.size(); }
+  inline size_t getActiveWalkers() const { return WalkerList.size(); }
   ///return the total number of active walkers among a MPI group
-  inline int getGlobalNumWalkers() const { return GlobalNumWalkers; }
+  inline size_t getGlobalNumWalkers() const { return GlobalNumWalkers; }
   ///return the total number of active walkers among a MPI group
-  inline void setGlobalNumWalkers(int nw)
+  inline void setGlobalNumWalkers(size_t nw)
   {
     GlobalNumWalkers            = nw;
     EnsembleProperty.NumSamples = nw;
@@ -404,7 +404,7 @@ protected:
   ///number of walkers on a node
   int LocalNumWalkers;
   ///number of walkers shared by a MPI group
-  int GlobalNumWalkers;
+  size_t GlobalNumWalkers;
   ///update-mode index
   int UpdateMode;
 #ifdef QMC_CUDA

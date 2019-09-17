@@ -35,13 +35,18 @@
 #include "OhmmsApp/RandomNumberControl.h"
 #include "HDFVersion.h"
 #include "qmc_common.h"
-
+#include "Concurrency/Info.hpp"
 #include "QMCDrivers/GreenFunctionModifiers/DriftModifierBuilder.h"
 
 namespace qmcplusplus
 {
+/** Has nasty workaround for RandomNumberControl
+ *   
+ *  Num crowds must be less than omp_get_max_threads because RandomNumberControl is global c lib function
+ *  masquerading as a C++ object.
+ */
 QMCDriverNew::QMCDriverNew(QMCDriverInput&& input,
-                           MCPopulation& population,
+                           MCPopulation&& population,
                            TrialWaveFunction& psi,
                            QMCHamiltonian& h,
                            WaveFunctionPool& ppool,
@@ -49,19 +54,23 @@ QMCDriverNew::QMCDriverNew(QMCDriverInput&& input,
     : MPIObjectBase(comm),
       qmcdriver_input_(input),
       branchEngine(nullptr),
-      population_(population),
+      population_(std::move(population)),
       Psi(psi),
       H(h),
       psiPool(ppool),
       estimator_manager_(nullptr),
       wOut(0),
-      num_crowds_(input.get_num_crowds())
+      walkers_per_crowd_(1)
+      // num_crowds_(input.get_num_crowds())
 {
   QMCType = "invalid";
 
-  ////add each QMCHamiltonianBase to W.PropertyList so that averages can be taken
-  //H.add2WalkerProperty(W);
-  //if (storeConfigs) ForwardWalkingHistory.storeConfigsForForwardWalking(w);
+  // Avoids segmentation fault when RandomNumberControl::Children is too small, adds surprising behavior
+  if(Concurrency::maxThreads() < input.get_num_crowds())
+    set_num_crowds(Concurrency::maxThreads(), "RandomNumberControl's maximum children set to omp_get_max_threads()");
+  else
+    num_crowds_ = input.get_num_crowds();
+ 
   rotation = 0;
 
   checkpointTimer = TimerManager.createTimer("checkpoint::recordBlock", timer_level_medium);
@@ -78,7 +87,7 @@ int QMCDriverNew::addObservable(const std::string& aname)
 QMCDriverNew::RealType QMCDriverNew::getObservable(int i) { return estimator_manager_->getObservable(i); }
 
 
-QMCDriverNew::~QMCDriverNew() { delete_iter(Rng.begin(), Rng.end()); }
+QMCDriverNew::~QMCDriverNew() {}
 
 void QMCDriverNew::add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi)
 {
@@ -103,20 +112,23 @@ void QMCDriverNew::add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi)
  */
 void QMCDriverNew::process(xmlNodePtr cur)
 {
-  //  deltaR.resize(W.getTotalNum());
-  //  drift.resize(W.getTotalNum());
+  // if (qmcdriver_input_.get_reset_random() || RandomNumberControl)
+  // {
 
-  if (!qmcdriver_input_.get_append_run())
-    current_step_ = 0;
-  else
-    current_step_ = qmcdriver_input_.get_starting_step();
+  // if seeds are not made then neither are the children. So when MoveContexts are created a segfault occurs.
+  // For now it is unclear whether get_reset_random should always be true on the first run or what.
+  app_log() << "  Regenerate random seeds." << std::endl;
+  RandomNumberControl::make_seeds();
+  // }
 
-  // If you really wanter to persist the MCPopulation it is not the business of QMCDriver to reset it.
+  
+  setupWalkers();
+
+  // If you really want to persist the MCPopulation it is not the business of QMCDriver to reset it.
   // It could tell it we are starting a new section but shouldn't be pulling internal strings.
   //int numCopies = (H1.empty()) ? 1 : H1.size();
   //W.resetWalkerProperty(numCopies);
 
-  //create branchEngine first
   if (!branchEngine)
   {
     branchEngine = new SimpleFixedNodeBranch(qmcdriver_input_.get_tau(), population_.get_num_global_walkers());
@@ -137,16 +149,31 @@ void QMCDriverNew::process(xmlNodePtr cur)
 
   branchEngine->put(cur);
   estimator_manager_->put(H, cur);
+
+  crowds_.resize(num_crowds_);
+  // at this point we can finally construct the Crowd objects.
+  // neglecting first touch for the moment
+  // because em cloning is not threadsafe
+  for(int i = 0; i < num_crowds_; ++i)
+  {
+    crowds_[i].reset(new Crowd(*estimator_manager_));
+  }//  crowds_.push_back(
+
+  //now give walkers references to their walkers
+  auto crowd_start = crowds_.begin();
+  auto crowd_end   = crowds_.end();
+  std::for_each(crowd_start,
+                crowd_end,
+                [this](std::unique_ptr<Crowd>& crowd) { crowd->reserve(walkers_per_crowd_); });
+  population_.distributeWalkers(crowd_start, crowd_end, walkers_per_crowd_);
+
+  // Once they are created move contexts can be created.
+  createRngsStepContexts();
+
   // if (wOut == 0)
   //   wOut = new HDFWalkerOutput(W, root_name_, myComm);
   branchEngine->start(root_name_);
   branchEngine->write(root_name_);
-
-  if (qmcdriver_input_.get_reset_random())
-  {
-    app_log() << "  Regenerate random seeds." << std::endl;
-    RandomNumberControl::make_seeds();
-  }
 
   // PD: not really sure what the point of this is.  Seems to just go to output
   branchEngine->advanceQMCCounter();
@@ -169,10 +196,9 @@ void QMCDriverNew::setStatus(const std::string& aname, const std::string& h5name
 void QMCDriverNew::set_num_crowds(int num_crowds, const std::string& reason)
 {
   num_crowds_ = num_crowds;
-  app_warning() << " [INPUT OVERIDDEN] The number of crowds has been set to :  " << num_crowds
-                << '\n';
-  app_warning() << " Overiding the input of value of " << qmcdriver_input_.get_num_crowds()
-                << " because " << reason << std::endl;
+  app_warning() << " [INPUT OVERIDDEN] The number of crowds has been set to :  " << num_crowds << '\n';
+  app_warning() << " Overiding the input of value of " << qmcdriver_input_.get_num_crowds() << " because " << reason
+                << std::endl;
 }
 /** Read walker configurations from *.config.h5 files
  * @param wset list of xml elements containing mcwalkerset
@@ -269,17 +295,10 @@ bool QMCDriverNew::finalize(int block, bool dumpwalkers)
  */
 void QMCDriverNew::setupWalkers()
 {
-  //if walkers are initialized via <mcwalkerset/>, use the existing one
-  if (qmcdriver_input_.get_qmc_section_count() > 0 || qmc_common.is_restart)
-  {
-    app_log() << "Using existing walkers " << std::endl;
-  }
-  else
-  { // always reset the walkers
-    // Here we do some minimal fixing of walker numbers
-    IndexType local_walkers = calc_default_local_walkers();
-    addWalkers(local_walkers, ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>(population_.get_num_particles()));
-  }
+  IndexType local_walkers = calc_default_local_walkers();
+  
+  // side effect updates walkers_per_crowd_;
+  addWalkers(local_walkers, ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>(population_.get_num_particles()));
 }
 
 /** Add walkers to the end of the ensemble of walkers.
@@ -288,7 +307,8 @@ void QMCDriverNew::setupWalkers()
  */
 void QMCDriverNew::addWalkers(int nwalkers, const ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>& positions)
 {
-  population_.createWalkers(nwalkers, positions);
+  
+  population_.createWalkers(nwalkers);
   // else if (nwalkers < 0)
   // {
   //   W.destroyWalkers(-nwalkers);
@@ -303,6 +323,88 @@ void QMCDriverNew::addWalkers(int nwalkers, const ParticleAttrib<TinyVector<QMCT
   // ////update the global number of walkers
   // ////int nw=W.getActiveWalkers();
   // ////myComm->allreduce(nw);
+}
+
+/** Creates Random Number generators for crowds and step contexts
+ *
+ *  This is quite dangerous in that number of crowds can be > omp_get_max_threads()
+ *  This is used instead of actually passing number of threads/crowds
+ *  controlling threads all over RandomNumberControl.
+ */
+void QMCDriverNew::createRngsStepContexts()
+{
+  step_contexts_.resize(num_crowds_);
+
+  TasksOneToOne<> do_per_crowd(num_crowds_);
+
+  Rng.resize(num_crowds_);
+
+  for(int i = 0; i < num_crowds_; ++i)
+  {
+    Rng[i].reset(new RandomGenerator_t(*(RandomNumberControl::Children[i])));
+    step_contexts_[i].reset(new ContextForSteps(crowds_[i]->size(), population_.get_num_particles(),
+                                            population_.get_particle_group_indexes(), *(Rng[i])));
+  }
+}
+
+void QMCDriverNew::initialLogEvaluation(int crowd_id, UPtrVector<Crowd>& crowds)
+{
+  Crowd& crowd = *(crowds[crowd_id]);
+  auto& walker_twfs  = crowd.get_walker_twfs();
+  auto& mcp_buffers  = crowd.get_mcp_wfbuffers();
+  auto& walker_elecs = crowd.get_walker_elecs();
+  auto& walkers = crowd.get_walkers();
+
+  crowd.loadWalkers();
+  for (ParticleSet& pset : walker_elecs)
+    pset.update();
+
+  auto copyFrom = [](TrialWaveFunction& twf, ParticleSet& pset, Crowd::WFBuffer& wfb){
+                      twf.copyFromBuffer(pset,wfb);
+                    };
+  for (int iw = 0; iw < crowd.size(); ++iw)
+    copyFrom(walker_twfs[iw], walker_elecs[iw], mcp_buffers[iw]);
+
+  TrialWaveFunction::flex_evaluateLog(walker_twfs, walker_elecs);
+
+  TrialWaveFunction::flex_updateBuffer(crowd.get_walker_twfs(),
+                                       crowd.get_walker_elecs(),
+                                       crowd.get_mcp_wfbuffers());
+
+  // For consistency this should be in ParticleSet as a flex call, but I think its a problem
+  // in the algorithm logic and should be removed.
+  auto saveElecPosAndGLToWalkers = [](ParticleSet& pset, ParticleSet::Walker_t& walker){
+                                     pset.saveWalker(walker);};
+  for (int iw = 0; iw < crowd.size(); ++iw)
+    saveElecPosAndGLToWalkers(walker_elecs[iw], walkers[iw]);
+
+  auto& walker_hamiltonians = crowd.get_walker_hamiltonians();
+  std::vector<QMCHamiltonian::RealType> local_energies(QMCHamiltonian::flex_evaluate(walker_hamiltonians, walker_elecs));
+  // This is actually only a partial reset of the walkers properties
+  auto resetSigNLocalEnergy = [](MCPWalker& walker, TrialWaveFunction& twf, auto local_energy){
+                                walker.resetProperty(twf.getLogPsi(), twf.getPhase(), local_energy);
+                                    };
+  for (int iw = 0; iw < crowd.size(); ++iw)
+    resetSigNLocalEnergy(walkers[iw], walker_twfs[iw], local_energies[iw]);
+
+  auto evaluateNonPhysicalHamiltonianElements = [](QMCHamiltonian& ham, ParticleSet& pset, MCPWalker& walker){
+                                                   ham.auxHevaluate(pset, walker);
+                                                 };
+  for (int iw = 0; iw < crowd.size(); ++iw)
+    evaluateNonPhysicalHamiltonianElements(walker_hamiltonians[iw], walker_elecs[iw], walkers[iw]);
+
+  auto savePropertiesIntoWalker = [](QMCHamiltonian& ham, MCPWalker& walker){
+                                    ham.saveProperty(walker.getPropertyBase());
+                                  };
+  for (int iw = 0; iw < crowd.size(); ++iw)
+    savePropertiesIntoWalker(walker_hamiltonians[iw], walkers[iw]);
+
+  auto doesDoinTheseLastMatter = [](MCPWalker& walker){
+                                   walker.ReleasedNodeAge    = 0;
+    walker.ReleasedNodeWeight = 0;
+    walker.Weight             = 1;};
+  for (int iw = 0; iw < crowd.size(); ++iw)
+    doesDoinTheseLastMatter(walkers[iw]);
 }
 
 void QMCDriverNew::setWalkerOffsets()

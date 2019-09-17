@@ -14,7 +14,7 @@
 #ifndef QMCPLUSPLUS_ORBITAL_IMAGES_H
 #define QMCPLUSPLUS_ORBITAL_IMAGES_H
 
-#include <QMCHamiltonians/QMCHamiltonianBase.h>
+#include <QMCHamiltonians/OperatorBase.h>
 #include <QMCWaveFunctions/SPOSet.h>
 
 namespace qmcplusplus
@@ -103,7 +103,7 @@ namespace qmcplusplus
  *      </estimator>
  *
  */
-class OrbitalImages : public QMCHamiltonianBase
+class OrbitalImages : public OperatorBase
 {
 public:
   enum
@@ -220,7 +220,7 @@ public:
   ~OrbitalImages(){};
 
   //standard interface
-  QMCHamiltonianBase* makeClone(ParticleSet& P, TrialWaveFunction& psi);
+  OperatorBase* makeClone(ParticleSet& P, TrialWaveFunction& psi);
 
   ///read xml input
   bool put(xmlNodePtr cur);

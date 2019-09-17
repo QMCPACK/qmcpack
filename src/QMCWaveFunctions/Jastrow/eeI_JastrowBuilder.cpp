@@ -19,7 +19,9 @@
 #include "QMCWaveFunctions/Jastrow/eeI_JastrowOrbital.h"
 #include "QMCWaveFunctions/Jastrow/JeeIOrbitalSoA.h"
 #include "QMCWaveFunctions/Jastrow/DiffOneBodyJastrowOrbital.h"
+#ifndef ENABLE_SOA
 #include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbital.h"
+#endif
 #include "QMCWaveFunctions/Jastrow/DiffTwoBodyJastrowOrbital.h"
 #include "Utilities/ProgressReportEngine.h"
 #include "QMCWaveFunctions/Jastrow/PolynomialFunctor3D.h"

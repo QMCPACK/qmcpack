@@ -40,14 +40,6 @@
 #include "HDFVersion.h"
 #include "OhmmsData/AttributeSet.h"
 #include "qmc_common.h"
-#ifdef HAVE_ADIOS
-#include "ADIOS/ADIOS_config.h"
-#include <adios_read.h>
-extern "C"
-{
-#include <adios_error.h>
-}
-#endif
 #ifdef BUILD_AFQMC
 #include "AFQMC/AFQMCFactory.h"
 #endif
@@ -355,73 +347,6 @@ bool QMCMain::executeQMCSection(xmlNodePtr cur, bool reuse)
 bool QMCMain::validateXML()
 {
   xmlXPathContextPtr m_context = XmlDocStack.top()->getXPathContext();
-#ifdef HAVE_ADIOS
-  OhmmsXPathObject ai("//adiosinit", m_context);
-  if (ai.empty())
-  {
-    app_warning() << "adiosinit is not defined" << std::endl;
-  }
-  else
-  {
-    xmlAttr* curr     = ai[0]->properties;
-    const char* value = (char*)xmlNodeListGetString(ai[0]->doc, curr->children, 1);
-    if (!strncmp((char*)curr->name, "href", 4))
-    {
-      if (adios_init(value, myComm->getMPI()))
-      {
-        //fprintf(stderr, "Error: %s %s\n", value, adios_get_last_errmsg());
-        APP_ABORT("ADIOS init error. Exiting");
-      }
-      else
-      {
-        if (OHMMS::Controller->rank() == 0)
-          std::cout << "Adios is initialized" << std::endl;
-        ADIOS::set_adios_init(true);
-      }
-      adios_read_init_method(ADIOS_READ_METHOD_BP, myComm->getMPI(), "verbose=3");
-    }
-  }
-  OhmmsXPathObject io("//checkpoint", m_context);
-  if (io.empty())
-  {
-    app_warning() << "checkpoint IO is not defined, no checkpoint will be written out." << std::endl;
-  }
-  else
-  {
-    xmlAttr* curr = io[0]->properties;
-    char* value   = NULL;
-    bool UseADIOS = false;
-    bool UseHDF5  = false;
-    for (curr; curr; curr = curr->next)
-    {
-      value = (char*)xmlNodeListGetString(io[0]->doc, curr->children, 1);
-      if (!strncmp((char*)curr->name, "adios", 6) && !strncmp(value, "yes", 4))
-      {
-        UseADIOS = true;
-      }
-      else if (!strncmp((char*)curr->name, "hdf5", 5) && !strncmp(value, "yes", 4))
-      {
-        UseHDF5 = true;
-      }
-      app_log() << "property: " << curr->name << ", value: " << value << std::endl;
-    }
-    ADIOS::initialize(UseHDF5, UseADIOS);
-  }
-  OhmmsXPathObject rd("//restart", m_context);
-  if (rd.empty())
-  {
-    app_warning() << "Checkpoint restart read method is not defined. frest start." << std::endl;
-  }
-  else
-  {
-    xmlAttr* curr     = rd[0]->properties;
-    const char* value = (char*)xmlNodeListGetString(rd[0]->doc, curr->children, 1);
-    if (!strncmp((char*)curr->name, "method", 6))
-    {
-      ADIOS::initialize(value);
-    }
-  }
-#endif
   OhmmsXPathObject result("//project", m_context);
   myProject.setCommunicator(myComm);
   if (result.empty())

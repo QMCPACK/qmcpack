@@ -147,7 +147,7 @@ void HamiltonianFactory::addCoulombPotential(xmlNodePtr cur)
     if (applyPBC)
       targetH->addOperator(new CoulombPBCAB(*ptclA, *targetPtcl), title);
     else
-      targetH->addOperator(new CoulombPotential<Return_t>(*ptclA, *targetPtcl, true, doForces), title);
+      targetH->addOperator(new CoulombPotential<Return_t>(*ptclA, *targetPtcl, true), title);
 #endif
   }
 }
@@ -377,7 +377,7 @@ void HamiltonianFactory::addCorePolPotential(xmlNodePtr cur)
     return;
   }
   ParticleSet* ion        = (*pit).second;
-  QMCHamiltonianBase* cpp = (new LocalCorePolPotential(*ion, *targetPtcl));
+  OperatorBase* cpp = (new LocalCorePolPotential(*ion, *targetPtcl));
   cpp->put(cur);
   targetH->addOperator(cpp, title);
 #else

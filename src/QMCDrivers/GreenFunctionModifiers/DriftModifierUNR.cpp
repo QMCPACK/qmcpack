@@ -17,14 +17,22 @@ namespace qmcplusplus
 {
 void DriftModifierUNR::getDrift(RealType tau, const GradType& qf, PosType& drift) const
 {
-  // convert the complex WF gradient to real and temporarily store in drift.
+  // convert the complex WF gradient to real
   convert(qf, drift);
   RealType vsq = dot(drift, drift);
   RealType sc  = (vsq < std::numeric_limits<RealType>::epsilon())
       ? tau
       : ((-1.0 + std::sqrt(1.0 + 2.0 * a_ * tau * vsq)) / (a_ * vsq));
-  //Apply the umrigar scaled drift.
+  //Apply the umrigar scaling to drift.
   drift *= sc;
+}
+
+void DriftModifierUNR::getDrifts(RealType tau, const std::vector<GradType>& qf, std::vector<PosType>& drift) const
+{
+  for(int i = 0; i < qf.size(); ++i)
+  {
+    getDrift(tau, qf[i], drift[i]);
+  }
 }
 
 bool DriftModifierUNR::parseXML(xmlNodePtr cur)

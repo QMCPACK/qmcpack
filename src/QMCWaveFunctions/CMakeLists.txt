@@ -51,9 +51,9 @@ SET(JASTROW_SRCS
   Jastrow/JastrowBuilder.cpp
   Jastrow/kSpaceJastrow.cpp
   Jastrow/kSpaceJastrowBuilder.cpp
-  Jastrow/RPAJastrow.cpp
   Jastrow/RadialJastrowBuilder.cpp
   Jastrow/CountingJastrowBuilder.cpp
+  Jastrow/RPAJastrow.cpp
   IonOrbital.cpp
   IonOrbitalBuilder.cpp
   OptimizableSPOBuilder.cpp

@@ -19,7 +19,7 @@
  */
 #ifndef QMCPLUSPLUS_HAMILTONIAN_H
 #define QMCPLUSPLUS_HAMILTONIAN_H
-#include <QMCHamiltonians/QMCHamiltonianBase.h>
+#include <QMCHamiltonians/OperatorBase.h>
 #include "QMCHamiltonians/NonLocalECPotential.h"
 #if !defined(REMOVE_TRACEMANAGER)
 #include <Estimators/TraceManager.h>
@@ -40,12 +40,12 @@ class QMCHamiltonian
   friend class HamiltonianFactory;
 
 public:
-  typedef QMCHamiltonianBase::RealType RealType;
-  typedef QMCHamiltonianBase::ValueType ValueType;
-  typedef QMCHamiltonianBase::Return_t Return_t;
-  typedef QMCHamiltonianBase::PropertySetType PropertySetType;
-  typedef QMCHamiltonianBase::BufferType BufferType;
-  typedef QMCHamiltonianBase::Walker_t Walker_t;
+  typedef OperatorBase::RealType RealType;
+  typedef OperatorBase::ValueType ValueType;
+  typedef OperatorBase::Return_t Return_t;
+  typedef OperatorBase::PropertySetType PropertySetType;
+  typedef OperatorBase::BufferType BufferType;
+  typedef OperatorBase::Walker_t Walker_t;
 
   enum
   {
@@ -59,7 +59,7 @@ public:
   ~QMCHamiltonian();
 
   ///add an operator
-  void addOperator(QMCHamiltonianBase* h, const std::string& aname, bool physical = true);
+  void addOperator(OperatorBase* h, const std::string& aname, bool physical = true);
 
   ///record the name-type pair of an operator
   void addOperatorType(const std::string& name, const std::string& type);
@@ -73,17 +73,17 @@ public:
   ///return the total number of Hamiltonians (physical + aux)
   inline int total_size() const { return H.size() + auxH.size(); }
 
-  /** return QMCHamiltonianBase with the name aname
-   * @param aname name of a QMCHamiltonianBase
+  /** return OperatorBase with the name aname
+   * @param aname name of a OperatorBase
    * @return 0 if aname is not found.
    */
-  QMCHamiltonianBase* getHamiltonian(const std::string& aname);
+  OperatorBase* getHamiltonian(const std::string& aname);
 
-  /** return i-th QMCHamiltonianBase
-   * @param i index of the QMCHamiltonianBase
+  /** return i-th OperatorBase
+   * @param i index of the OperatorBase
    * @return H[i]
    */
-  QMCHamiltonianBase* getHamiltonian(int i) { return H[i]; }
+  OperatorBase* getHamiltonian(int i) { return H[i]; }
 
 #if !defined(REMOVE_TRACEMANAGER)
   ///initialize trace data
@@ -186,7 +186,7 @@ public:
   inline void setPrimary(bool primary)
   {
     for (int i = 0; i < H.size(); i++)
-      H[i]->UpdateMode.set(QMCHamiltonianBase::PRIMARY, primary);
+      H[i]->UpdateMode.set(OperatorBase::PRIMARY, primary);
   }
 
   /////Set Tau inside each of the Hamiltonian elements
@@ -198,13 +198,13 @@ public:
 
   ///** return if WaveFunction Ratio needs to be evaluated
   // *
-  // * This is added to handle orbital-dependent QMCHamiltonianBase during
+  // * This is added to handle orbital-dependent OperatorBase during
   // * orbital optimizations.
   // */
   //inline bool needRatio() {
   //  bool dependOnOrbital=false;
   //  for(int i=0; i< H.size();i++)
-  //    if(H[i]->UpdateMode[QMCHamiltonianBase::RATIOUPDATE]) dependOnOrbital=true;
+  //    if(H[i]->UpdateMode[OperatorBase::RATIOUPDATE]) dependOnOrbital=true;
   //  return dependOnOrbital;
   //}
 
@@ -215,6 +215,15 @@ public:
    * P.R, P.G and P.L are used to evaluate the LocalEnergy.
    */
   Return_t evaluate(ParticleSet& P);
+  
+  /** batched version of evaluate for LocalEnergy 
+   *
+   *  Encapsulation is ignored for H_list hamiltonians method uses its status as QMCHamiltonian to break encapsulation.
+   *  ParticleSet is also updated.
+   *  Bugs could easily be created by accessing this scope.
+   *  This should be set to static and fixed.
+   */
+  static std::vector<RealType> flex_evaluate(const RefVector<QMCHamiltonian>& H_list, const RefVector<ParticleSet>& P_list);
 
   /** evaluate Local energy with Toperators updated.
    * @param P ParticleSEt
@@ -297,6 +306,8 @@ public:
 
   bool get(std::ostream& os) const;
 
+  RealType get_LocalEnergy() const { return LocalEnergy; }
+  
   void setRandomGenerator(RandomGenerator_t* rng);
 
   /** return a clone */
@@ -332,11 +343,11 @@ private:
   ///getName is in the way
   std::string myName;
   ///vector of Hamiltonians
-  std::vector<QMCHamiltonianBase*> H;
+  std::vector<OperatorBase*> H;
   ///pointer to NonLocalECP
   NonLocalECPotential* nlpp_ptr;
   ///vector of Hamiltonians
-  std::vector<QMCHamiltonianBase*> auxH;
+  std::vector<OperatorBase*> auxH;
   ///timers
   std::vector<NewTimer*> myTimers;
   ///types of component operators
@@ -349,6 +360,8 @@ private:
    */
   void resetObservables(int start, int ncollects);
 
+  // helper function for extracting a list of Hamiltonian components from a list of QMCHamiltonian::H.
+  static RefVector<OperatorBase> extract_HC_list(const RefVector<QMCHamiltonian>& H_list, int id);
 
 #if !defined(REMOVE_TRACEMANAGER)
   ///traces variables

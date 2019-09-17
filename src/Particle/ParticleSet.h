@@ -27,7 +27,7 @@
 #include <OhmmsPETE/OhmmsArray.h>
 #include <Utilities/NewTimer.h>
 #include <OhmmsSoA/Container.h>
-
+#include "type_traits/template_types.hpp"
 namespace qmcplusplus
 {
 ///forward declaration of DistanceTableData
@@ -301,6 +301,9 @@ public:
    */
   void setActive(int iat);
 
+  /// batched version of setActive
+  static void flex_setActive(const RefVector<ParticleSet>& P_list, int iat);
+
   /** return the position of the active particle
    *
    * activePtcl=-1 is used to flag non-physical moves
@@ -315,6 +318,8 @@ public:
    * Evaluate the related distance table data DistanceTableData::Temp.
    */
   void makeMove(Index_t iat, const SingleParticlePos_t& displ);
+  /// batched version of makeMove
+  static void flex_makeMove(const RefVector<ParticleSet>& P_list, int iat, const std::vector<SingleParticlePos_t>& displs);
 
   /** move the iat-th particle to activePos
    * @param iat the index of the particle to be moved
@@ -365,10 +370,22 @@ public:
    *@param iat the index of the particle whose position and other attributes to be updated
    */
   void acceptMove(Index_t iat);
+  /// batched version of acceptMove
+  static void flex_acceptMove(const RefVector<ParticleSet>& P_list, Index_t iat)
+  {
+    for (int iw = 0; iw < P_list.size(); iw++)
+      P_list[iw].get().acceptMove(iat);
+  }
 
   /** reject the move
    */
   void rejectMove(Index_t iat) { activePtcl = -1; }
+  /// batched version of rejectMove
+  static void flex_rejectMove(const RefVector<ParticleSet>& P_list, Index_t iat)
+  {
+    for (int iw = 0; iw < P_list.size(); iw++)
+      P_list[iw].get().rejectMove(iat);
+  }
 
   void initPropertyList();
   inline int addProperty(const std::string& pname) { return PropertyList.add(pname.c_str()); }
@@ -400,7 +417,10 @@ public:
    * PbyP requires the distance tables and Sk with awalker.R
    */
   void loadWalker(Walker_t& awalker, bool pbyp);
+
   /** save this to awalker
+   *
+   *  just the R, G, and L
    */
   void saveWalker(Walker_t& awalker);
 
@@ -412,6 +432,13 @@ public:
    * activePtcl is more of a safety measure probably not needed.
    */
   void donePbyP();
+  /// batched version of donePbyP
+  static void flex_donePbyP(const RefVector<ParticleSet>& P_list)
+  {
+    #pragma omp parallel for
+    for (int iw = 0; iw < P_list.size(); iw++)
+      P_list[iw].get().donePbyP();
+  }
 
   ///return the address of the values of Hamiltonian terms
   inline FullPrecRealType* restrict getPropertyBase() { return Properties.data(); }
@@ -475,9 +502,9 @@ public:
    */
   inline const std::string& species_from_index(int i) { return mySpecies.speciesName[GroupID[i]]; }
 
-  inline int getTotalNum() const { return TotalNum; }
+  inline size_t getTotalNum() const { return TotalNum; }
 
-  inline void resize(int numPtcl)
+  inline void resize(size_t numPtcl)
   {
     TotalNum = numPtcl;
 
@@ -623,7 +650,7 @@ protected:
   std::string ParentName;
 
   ///total number of particles
-  int TotalNum;
+  size_t TotalNum;
 
   ///array to handle a group of distinct particles per species
   ParticleIndex_t SubPtcl;
@@ -635,6 +662,16 @@ protected:
    */
   void computeNewPosDistTablesAndSK(Index_t iat, const SingleParticlePos_t& newpos);
 
+
+  /** compute temporal DistTables and SK for a new particle position for each walker in a batch
+   *
+   * @param P_list the list of wrapped ParticleSet references in a walker batch
+   * @param iat the particle that is moved on a sphere
+   * @param new_positions new particle positions
+   */
+  static void mw_computeNewPosDistTablesAndSK(const RefVector<ParticleSet>& P_list, Index_t iat, const std::vector<SingleParticlePos_t>& new_positions);
+
 };
+
 } // namespace qmcplusplus
 #endif

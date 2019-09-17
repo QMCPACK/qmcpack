@@ -130,9 +130,9 @@ bool QMCCorrelatedSamplingLinearOptimize::run()
   RealType startCost(0);
   //    if ((GEVtype!="H2")||(MinMethod!="rescale"))
   //    {
-  myTimers[4]->start();
+  cost_function_timer_.start();
   startCost = lastCost = optTarget->Cost(false);
-  myTimers[4]->stop();
+  cost_function_timer_.stop();
   //    }
   bool apply_inverse(true);
   if (apply_inverse)
@@ -172,7 +172,7 @@ bool QMCCorrelatedSamplingLinearOptimize::run()
     }
     RealType lowestEV(0);
     RealType bigVec(0);
-    myTimers[2]->start();
+    eigenvalue_timer_.start();
     //                     lowestEV =getLowestEigenvector(LeftT,RightT,currentParameterDirections);
     if (GEVtype != "sd")
     {
@@ -190,7 +190,7 @@ bool QMCCorrelatedSamplingLinearOptimize::run()
         currentParameterDirections[i + 1] = LeftT(i + 1, 0) * rscale;
       Lambda = 1.0;
     }
-    myTimers[2]->stop();
+    eigenvalue_timer_.stop();
     for (int i = 0; i < numParams; i++)
       bigVec = std::max(bigVec, std::abs(currentParameterDirections[i + 1]));
     if (std::abs(Lambda * bigVec) > bigChange)
@@ -234,7 +234,7 @@ bool QMCCorrelatedSamplingLinearOptimize::run()
       quadstep         = stepsize / bigVec;
       //                  initial guess for line min bracketing
       LambdaMax = quadstep;
-      myTimers[3]->start();
+      line_min_timer_.start();
       if (MinMethod == "quartic")
       {
         int npts(7);
@@ -244,7 +244,7 @@ bool QMCCorrelatedSamplingLinearOptimize::run()
       }
       else
         lineoptimization2();
-      myTimers[3]->stop();
+      line_min_timer_.stop();
       RealType biggestParameterChange = bigOptVec * std::abs(Lambda);
       if (biggestParameterChange > bigChange)
       {
@@ -341,17 +341,17 @@ bool QMCCorrelatedSamplingLinearOptimize::put(xmlNodePtr q)
   vmcEngine->setStatus(RootName, h5FileRoot, AppendRun);
   vmcEngine->process(qsave);
   bool success = true;
-  if (optTarget == 0)
-  {
+  //allways reset optTarget
 #if defined(QMC_CUDA)
-    optTarget = new QMCCostFunctionCUDA(W, Psi, H, myComm);
-#else
-    optTarget               = new QMCCostFunction(W, Psi, H, myComm);
+  if (useGPU == "yes")
+    optTarget = std::make_unique<QMCCostFunctionCUDA>(W, Psi, H, myComm);
+  else
 #endif
-    optTarget->setneedGrads(false);
-    optTarget->setStream(&app_log());
-    success = optTarget->put(qsave);
-  }
+    optTarget = std::make_unique<QMCCostFunction>(W, Psi, H, myComm);
+  optTarget->setneedGrads(false);
+  optTarget->setStream(&app_log());
+  success = optTarget->put(q);
+
   return success;
 }
 

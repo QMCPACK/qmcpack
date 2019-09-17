@@ -26,6 +26,7 @@
 #include "Utilities/PooledData.h"
 #include "Message/Communicate.h"
 #include "Estimators/ScalarEstimatorBase.h"
+#include "Estimators/EstimatorManagerInterface.h"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsData/HDFAttribIO.h"
 #include <bitset>
@@ -36,8 +37,8 @@ class MCWalkerConifugration;
 class QMCHamiltonian;
 class CollectablesEstimator;
 
-/**Class to manage a set of ScalarEstimators */
-class EstimatorManagerBase
+/** Class to manage a set of ScalarEstimators */
+class EstimatorManagerBase : public EstimatorManagerInterface
 {
 public:
   typedef QMCTraits::FullPrecRealType RealType;
@@ -166,12 +167,27 @@ public:
 
   /** stop a block
    * @param accept acceptance rate of this block
+   * 
+   */
+  void stopBlockNew(RealType accept);
+
+  
+  /** stop a block
+   * @param accept acceptance rate of this block
    */
   void stopBlock(RealType accept, bool collectall = true);
+
   /** stop a block
    * @param m list of estimator which has been collecting data independently
    */
   void stopBlock(const std::vector<EstimatorManagerBase*>& m);
+
+  /** At end of block collect the scalar estimators for the entire rank
+   *   
+   *  Each is currently accumulates on for crowd of 1 or more walkers
+   *  TODO: What is the correct normalization 
+   */
+  void collectScalarEstimators(const RefVector<ScalarEstimatorBase>& scalar_estimators, const int total_walkers, const RealType block_weight);
 
   /** accumulate the measurements
    * @param W walkers
@@ -200,8 +216,12 @@ public:
     anything.write(h_file, doappend);
   }
 
+  auto& get_AverageCache() { return AverageCache; }
+  auto& get_SquaredAverageCache() { return SquaredAverageCache; }
+
 protected:
-  ///use bitset to handle options
+  friend class EstimatorManagerCrowd;
+  //  TODO: fix needless use of bitset instead of clearer more visible booleans
   std::bitset<8> Options;
   ///size of the message buffer
   int BufferSize;
@@ -271,7 +291,7 @@ private:
   //Data for communication
   std::vector<BufferType*> RemoteData;
   ///collect data and write
-  void collectBlockAverages(int num_threads);
+  void collectBlockAverages();
   ///add header to an std::ostream
   void addHeader(std::ostream& o);
   size_t FieldWidth;

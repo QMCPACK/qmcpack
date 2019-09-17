@@ -187,13 +187,25 @@ struct TinyVector
   inline Type_t* end() { return X + D; }
   inline const Type_t* end() const { return X + D; }
 
-  // Comparison operators.
-  //bool operator==(const TinyVector<T,D>& that) const {
-  //  return MetaCompareArrays<T,T,D>::apply(X,that.X);
-  //}
-  //bool operator!=(const TinyVector<T,D>& that) const {
-  //  return !(*this == that);
-  //}
+  /** Elementwise comparison
+   *
+   *  not optimized but useful for testing
+   */
+  bool operator==(const TinyVector<T,D>& that) const {
+    for( int i = 0; i < D; ++i) {
+      if ((*this)[i] != that[i])
+        return false;
+    }
+    return true;
+  }
+  
+  bool operator!=(const TinyVector<T,D>& that) const {
+    for( int i = 0; i < D; ++i) {
+      if ((*this)[i] == that[i])
+        return false;
+    }
+    return true;
+  }
 
   //----------------------------------------------------------------------
   // parallel communication
