@@ -76,7 +76,7 @@ public:
   /** start  a block
    * @param steps number of steps in a block
    */
-  void startBlock(int steps){};
+  void startBlock(int steps){ block_weight_ = 0.0;};
 
   void stopBlock();
 
@@ -94,10 +94,11 @@ public:
     // This seems like it should really be a pset per walker but so far its just used for
     // things that should be a POD argument
     for (int i = 0; i < num_scalar_estimators; ++i)
-      scalar_estimators_[i]->accumulate(global_walkers, walkers, norm);
+      scalar_estimators_[i]->accumulate(global_walkers, walkers, norm);  
   }
 
   RefVector<EstimatorType> get_scalar_estimators() { return convertPtrToRefVector(scalar_estimators_); }
+  RealType get_block_weight() const { return block_weight_; }
 
 protected:
   ///use bitset to handle options
@@ -112,6 +113,7 @@ protected:
   int acceptInd;
   ///total weight accumulated in a block
   RealType block_weight_;
+
   ///file handler to write data
   std::ofstream* Archive;
   ///file handler to write data for debugging

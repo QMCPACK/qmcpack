@@ -306,7 +306,7 @@ public:
 
   bool get(std::ostream& os) const;
 
-  RealType get_LocalEnergy() { return LocalEnergy; }
+  RealType get_LocalEnergy() const { return LocalEnergy; }
   
   void setRandomGenerator(RandomGenerator_t* rng);
 

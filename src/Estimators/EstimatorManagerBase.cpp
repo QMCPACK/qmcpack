@@ -294,20 +294,35 @@ void EstimatorManagerBase::stopBlock(RealType accept, bool collectall)
     Collectables->takeBlockAverage(AverageCache.begin(), SquaredAverageCache.begin());
   }
   if (collectall)
-    collectBlockAverages(1);
+    collectBlockAverages();
 }
+
+void EstimatorManagerBase::stopBlockNew(RealType accept)
+{
+  //take block averages and update properties per block
+  PropertyCache[weightInd] = BlockWeight;
+  PropertyCache[cpuInd]    = MyTimer.elapsed();
+  PropertyCache[acceptInd] = accept;
+
+  collectBlockAverages();
+}
+
+
 
 /** Called at end of block in Unified Driver
  *
- *  TODO: Check that normalization isn't needed here, I think it is already applied per walker
  */
-void EstimatorManagerBase::collectScalarEstimators(const RefVector<ScalarEstimatorBase>& estimators)
+void EstimatorManagerBase::collectScalarEstimators(const RefVector<ScalarEstimatorBase>& estimators,
+                                                   const int total_walkers,
+                                                   const RealType block_weight)
 {
   // One scalar estimator can be accumulating many scalar values
   int num_est      = estimators.size();
   int num_scalars  = estimators[0].get().size();
   using ScalarType = ScalarEstimatorBase::RealType;
 
+  BlockWeight += block_weight;
+  
   std::vector<ScalarType> averages_work(num_scalars, 0.0);
   std::vector<ScalarType> averages_sum(num_scalars, 0.0);
 
@@ -329,8 +344,7 @@ void EstimatorManagerBase::collectScalarEstimators(const RefVector<ScalarEstimat
   RealType tnorm = 1.0 / num_est;
 
   AverageCache *= tnorm;
-  
-  collectBlockAverages(num_est);
+
 }
 
 void EstimatorManagerBase::stopBlock(const std::vector<EstimatorManagerBase*>& est)
@@ -353,11 +367,11 @@ void EstimatorManagerBase::stopBlock(const std::vector<EstimatorManagerBase*>& e
     PropertyCache[i] *= tnorm;
   //for(int i=0; i<num_threads; ++i)
   //varAccumulator(est[i]->varAccumulator.mean());
-  collectBlockAverages(num_threads);
+  collectBlockAverages();
 }
 
 
-void EstimatorManagerBase::collectBlockAverages(int num_threads)
+void EstimatorManagerBase::collectBlockAverages()
 {
   if (Options[COLLECT])
   {
