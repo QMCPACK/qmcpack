@@ -25,10 +25,14 @@ namespace qmcplusplus
 
 class MCPopulation;
 struct DistanceTableData;
+
 /** Thread local context for moving walkers
  *
  *  created once per driver per crowd
- *  might be merged with Crowd
+ *  It's two significant responsibilities are holding the thread local RandomGen_t
+ *  And the particle group indexes.
+ *
+ *  
  */
 class ContextForSteps
 {
@@ -60,8 +64,6 @@ public:
   int getPtclGroupStart(int group) const { return particle_group_indexes_[group].first; }
   int getPtclGroupEnd(int group) const { return particle_group_indexes_[group].second; }
 
-  void incReject() { ++n_reject; }
-  void incAccept() { ++n_accept; }
 protected:
 /** @{ */
   ///Positions
@@ -92,8 +94,6 @@ protected:
   /// Descriptions from distance table creation.  Same order as DistTables.
   std::vector<std::string> distTableDescriptions;
 
-  unsigned long n_reject = 0;
-  unsigned long n_accept = 0;
   
   RandomGenerator_t& random_gen_;
 
