@@ -314,13 +314,20 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
   ParticleSet elec_;
 
   ions_.setName("ion");
-  ions_.create(2);
-  ions_.R[0][0] = 0.0;
-  ions_.R[0][1] = 0.0;
-  ions_.R[0][2] = 0.0;
-  ions_.R[1][0] = 1.68658058;
-  ions_.R[1][1] = 1.68658058;
-  ions_.R[1][2] = 1.68658058;
+  ions_.create(4);
+
+  ions_.R[0][0] =   3.940550000000000;
+  ions_.R[0][1] =   3.940550000000000;
+  ions_.R[0][2] =   3.940550000000000;
+  ions_.R[1][0] =   3.940550000000000;    
+  ions_.R[1][1] =   3.940550000000000;   
+  ions_.R[1][2] =  -3.940550000000000;
+  ions_.R[2][0] =   0.000000000000000;
+  ions_.R[2][1] =   0.000000000000000;
+  ions_.R[2][2] =   0.000000000000000;
+  ions_.R[3][0] =   3.940550000000000;
+  ions_.R[3][1] =   3.940550000000000;
+  ions_.R[3][2] =   0.000000000000000;
 
 
   elec_.setName("elec");
@@ -331,17 +338,16 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
   elec_.R[1][0] = 0.0;
   elec_.R[1][1] = 1.0;
   elec_.R[1][2] = 0.0;
-
   // diamondC_1x1x1
-  elec_.Lattice.R(0, 0) = 3.37316115;
-  elec_.Lattice.R(0, 1) = 3.37316115;
-  elec_.Lattice.R(0, 2) = 0.0;
-  elec_.Lattice.R(1, 0) = 0.0;
-  elec_.Lattice.R(1, 1) = 3.37316115;
-  elec_.Lattice.R(1, 2) = 3.37316115;
-  elec_.Lattice.R(2, 0) = 3.37316115;
-  elec_.Lattice.R(2, 1) = 0.0;
-  elec_.Lattice.R(2, 2) = 3.37316115;
+  elec_.Lattice.R(0, 0) = 3.940550000000000;
+  elec_.Lattice.R(0, 1) = 3.940550000000000;
+  elec_.Lattice.R(0, 2) = 7.881100000000000;
+  elec_.Lattice.R(1, 0) = 0.000000000000000;
+  elec_.Lattice.R(1, 1) = 3.940550000000000;
+  elec_.Lattice.R(1, 2) = -3.940550000000000;
+  elec_.Lattice.R(2, 0) = 3.940550000000000;
+  elec_.Lattice.R(2, 1) = 0.000000000000000;
+  elec_.Lattice.R(2, 2) = -3.940550000000000;
 
   SpeciesSet& tspecies         = elec_.getSpeciesSet();
   int upIdx                    = tspecies.addSpecies("u");
@@ -369,11 +375,11 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
   //diamondC_1x1x1
 
   const char* particles = "<tmp> \
-   <sposet_builder name=\"A\" type=\"bspline\" href=\"pwscf.pwscf.h5\" tilematrix=\"1 0 0 0 1 0 0 0 1\" twistnum=\"0\" source=\"ion0\"> \
+   <spinorset_builder name=\"A\" type=\"bspline\" href=\"NiO-fcc.pwscf.h5\" tilematrix=\"1 0 0 0 1 0 0 0 1\" twistnum=\"0\" source=\"ion\" size=\"8\"> \
      <spinorset name=\"myspo\" size=\"8\"> \
        <occupation mode=\"ground\"/> \
      </spinorset> \
-   </sposet_builder> \
+   </spinorset_builder> \
    </tmp> \
 ";
 
@@ -388,7 +394,23 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
   EinsplineSpinorSetBuilder einSet(elec_,ptcl.getPool(), c, ein1);
  // EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, ein1);
   SPOSet* spo = einSet.createSPOSetFromXML(ein1);
- // REQUIRE(spo != NULL);
+  REQUIRE(spo != NULL);
+
+  // due to the different ordering of bands skip the tests on CUDA+Real builds
+  // checking evaluations, reference values are not independently generated.
+  // for vgl
+  SPOSet::ValueMatrix_t psiM(elec_.R.size(), spo->getOrbitalSetSize());
+  SPOSet::GradMatrix_t dpsiM(elec_.R.size(), spo->getOrbitalSetSize());
+  SPOSet::ValueMatrix_t d2psiM(elec_.R.size(), spo->getOrbitalSetSize());
+  spo->evaluate_notranspose(elec_, 0, elec_.R.size(), psiM, dpsiM, d2psiM);
+  
+  app_log()<<" psiM[0][0] = "<<psiM[0][0]<<std::endl;
+  app_log()<<" psiM[1][0] = "<<psiM[1][0]<<std::endl;
+  app_log()<<" psiM[1][1] = "<<psiM[1][1]<<std::endl;
+ 
+  // value
+//  REQUIRE(psiM[1][0] == ComplexApprox(-0.8886948824).compare_real_only());
+//  REQUIRE(psiM[1][1] == ComplexApprox(1.4194120169).compare_real_only());
 
 }
 

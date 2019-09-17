@@ -24,7 +24,7 @@
 #define QMCPLUSPLUS_EINSPLINE_SPINORSET_BUILDER_H
 
 #include "QMCWaveFunctions/SPOSetBuilder.h"
-
+#include "QMCWaveFunctions/EinsplineSetBuilder.h"
 class Communicate;
 
 namespace qmcplusplus
@@ -32,12 +32,12 @@ namespace qmcplusplus
 
 /** EinsplineSpinorSet builder
  */
-class EinsplineSpinorSetBuilder : public SPOSetBuilder
+class EinsplineSpinorSetBuilder : public EinsplineSetBuilder
 {
   typedef std::map<std::string, ParticleSet*> PtclPoolType;
 public:
   ///constructor
-  EinsplineSpinorSetBuilder(ParticleSet& p, PtclPoolType& psets, Communicate* comm, xmlNodePtr cur):SPOSetBuilder(comm){};
+  EinsplineSpinorSetBuilder(ParticleSet& p, PtclPoolType& psets, Communicate* comm, xmlNodePtr cur):EinsplineSetBuilder(p,psets,comm,cur){};
 
   ///destructor
   ~EinsplineSpinorSetBuilder(){};
