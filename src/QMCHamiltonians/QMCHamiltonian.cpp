@@ -488,19 +488,19 @@ QMCHamiltonian::Return_t QMCHamiltonian::evaluate(ParticleSet& P)
   return LocalEnergy;
 }
 
-void QMCHamiltonian::flex_evaluate(const RefVector<QMCHamiltonian>& H_list,
-                                   const RefVector<ParticleSet>& P_list,
-                                   std::vector<Return_t>& LocalEnergies)
+std::vector<QMCHamiltonian::RealType> QMCHamiltonian::flex_evaluate(const RefVector<QMCHamiltonian>& H_list,
+                                   const RefVector<ParticleSet>& P_list)
 {
-  if (H_list.size() > 1)
-  {
+  // if (H_list.size() > 1)
+  // {
     for (int iw = 0; iw < H_list.size(); iw++)
       H_list[iw].get().LocalEnergy = 0.0;
 
-    for (int i = 0; i < H_list[0].get().H.size(); ++i)
+    int num_ham_operators = H_list[0].get().H.size();
+    for (int i_ham_op = 0; i_ham_op < num_ham_operators; ++i_ham_op)
     {
-      ScopedTimer local_timer(H_list[0].get().myTimers[i]);
-      const auto HC_list(extract_HC_list(H_list, i));
+      ScopedTimer local_timer(H_list[0].get().myTimers[i_ham_op]);
+      const auto HC_list(extract_HC_list(H_list, i_ham_op));
 
       // This lambda accomplishes two things
       // 1. It makes clear T& and not std::reference_wrapper<T> is desired removing need for gets.
@@ -531,9 +531,17 @@ void QMCHamiltonian::flex_evaluate(const RefVector<QMCHamiltonian>& H_list,
       const auto HC_list(extract_HC_list(H_list, 0));
       updateKinetic(HC_list[iw], H_list[iw], P_list[iw]);
     }
-  }
-  else if (H_list.size() == 1)
-    H_list[0].get().evaluate(P_list[0]);
+
+    std::vector<RealType> local_energies(H_list.size(),0.0);
+    for(int iw= 0; iw < H_list.size(); ++iw)
+      local_energies[iw] = H_list[iw].get().get_LocalEnergy();
+    return local_energies;
+    
+    //}
+  // else if (H_list.size() == 1)
+  // {
+  //   H_list[0].get().evaluate(P_list[0]);
+  // }
 }
 
 QMCHamiltonian::RealType QMCHamiltonian::evaluateValueAndDerivatives(ParticleSet& P,

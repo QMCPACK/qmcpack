@@ -16,17 +16,18 @@
 
 namespace qmcplusplus
 {
-MCPopulation::MCPopulation(MCWalkerConfiguration& mcwc,
+MCPopulation::MCPopulation(int num_ranks,
+                           MCWalkerConfiguration& mcwc,
                            ParticleSet* elecs,
                            TrialWaveFunction* trial_wf,
                            QMCHamiltonian* hamiltonian)
-    : trial_wf_(trial_wf), elec_particle_set_(elecs), hamiltonian_(hamiltonian)
+    : num_ranks_(num_ranks), trial_wf_(trial_wf), elec_particle_set_(elecs), hamiltonian_(hamiltonian)
 {
   walker_offsets_     = mcwc.WalkerOffsets;
   num_global_walkers_ = mcwc.GlobalNumWalkers;
   num_local_walkers_  = mcwc.LocalNumWalkers;
   num_particles_      = mcwc.getParticleNum();
-  
+
   // MCWalkerConfiguration doesn't give actual number of groups
   num_groups_ = mcwc.groups();
   particle_group_indexes_.resize(num_groups_);

@@ -378,11 +378,10 @@ void QMCDriverNew::initialLogEvaluation(int crowd_id, UPtrVector<Crowd>& crowds)
   for (int iw = 0; iw < crowd.size(); ++iw)
     saveElecPosAndGLToWalkers(walker_elecs[iw], walkers[iw]);
 
-  auto& local_energies = crowd.get_local_energies();
   auto& walker_hamiltonians = crowd.get_walker_hamiltonians();
-  QMCHamiltonian::flex_evaluate(walker_hamiltonians, walker_elecs, local_energies);
+  std::vector<QMCHamiltonian::RealType> local_energies(QMCHamiltonian::flex_evaluate(walker_hamiltonians, walker_elecs));
   // This is actually only a partial reset of the walkers properties
-  auto resetSigNLocalEnergy = [](MCPWalker& walker, TrialWaveFunction& twf, RealType local_energy){
+  auto resetSigNLocalEnergy = [](MCPWalker& walker, TrialWaveFunction& twf, auto local_energy){
                                 walker.resetProperty(twf.getLogPsi(), twf.getPhase(), local_energy);
                                     };
   for (int iw = 0; iw < crowd.size(); ++iw)

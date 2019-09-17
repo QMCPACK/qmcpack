@@ -46,9 +46,12 @@ public:
 
   void startBlock(int steps) { estimator_manager_crowd_.startBlock(steps); }
 
+  EstimatorManagerCrowd& get_estimator_manager_crowd() { return estimator_manager_crowd_; }
   void addWalker(MCPWalker& walker, ParticleSet& elecs, TrialWaveFunction& twf, QMCHamiltonian& hamiltonian);
 
   void loadWalkers();
+
+  void accumulate(int global_walkers) { estimator_manager_crowd_.accumulate(global_walkers, mcp_walkers_, walker_elecs_); }
   
   auto beginWalkers() { return mcp_walkers_.begin(); }
   auto endWalkers() { return mcp_walkers_.end(); }
@@ -69,7 +72,7 @@ public:
   std::vector<RealType>& get_log_gb() { return log_gb_; }
   std::vector<RealType>& get_prob() { return prob_; }
   RefVector<WFBuffer>& get_mcp_wfbuffers() { return mcp_wfbuffers_; }
-  std::vector<FullPrecRealType>& get_local_energies() { return local_energies_; }
+  const EstimatorManagerCrowd& get_estimator_manager_crowd() const { return estimator_manager_crowd_; }
   int size() const { return mcp_walkers_.size(); }
 
   void clearResults();
@@ -94,7 +97,6 @@ private:
   std::vector<RealType> log_gf_;
   std::vector<RealType> log_gb_;
   std::vector<RealType> prob_;
-  std::vector<FullPrecRealType> local_energies_;
 
   /** }@ */
 };
