@@ -47,7 +47,7 @@ struct VectorSoaContainer
   ///allocator
   Alloc myAlloc;
   ///default constructor
-  VectorSoaContainer() { setDefaults(); }
+  VectorSoaContainer() : nLocal(0), nGhosts(0), nAllocated(0), myData(nullptr) {}
   ///destructor
   ~VectorSoaContainer()
   {
@@ -75,13 +75,14 @@ struct VectorSoaContainer
   }
 
   ///move constructor
-  VectorSoaContainer(VectorSoaContainer&& in) : nLocal(in.nLocal), nGhosts(in.nGhosts)
+  VectorSoaContainer(VectorSoaContainer&& in) : nLocal(in.nLocal), nGhosts(in.nGhosts), nAllocated(in.nAllocated), myData(in.myData)
   {
-    nAllocated    = in.nAllocated;
-    myData        = in.myData;
+    free(myAlloc);
     myAlloc       = std::move(in.myAlloc);
     in.myData     = nullptr;
     in.nAllocated = 0;
+    in.nLocal = 0;
+    in.nGhosts = 0;
   }
 
   /** constructor with size n  without initialization
@@ -139,6 +140,15 @@ struct VectorSoaContainer
     if (nAllocated)
       myAlloc.deallocate(myData, nAllocated);
     nLocal     = n;
+    // Bail out to avoid some allocator implementations returning allocated ptr that
+    // must be freed, breaking the nAllocated scheme.
+    if(n == 0)
+    {
+      nAllocated = 0;
+      nGhosts = 0;
+      myData = nullptr;
+      return;
+    }
     nGhosts    = getAlignedSize<T, ALIGN>(n);
     nAllocated = nGhosts * D;
     myData     = myAlloc.allocate(nAllocated);

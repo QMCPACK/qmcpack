@@ -32,14 +32,21 @@ public:
   {}
 
   QMCRunType getRunType() { return QMCRunType::DUMMY; }
+
+  void set_calc_walker_answers(int walkers_per_crowd, int local_walkers_fake)
+    { walkers_per_crowd_fake_=walkers_per_crowd;
+      local_walkers_fake_ = local_walkers_fake; }
   // Notice that this is a crap method in that we have to fake all the side effects of the
   // calculation in the child class.
   IndexType calc_default_local_walkers()
   {
-    walkers_per_crowd_ = 4;
-    return 32;
+    walkers_per_crowd_ = walkers_per_crowd_fake_;
+    return local_walkers_fake_;
   }
   bool run() { return false; }
+private:
+  int walkers_per_crowd_fake_ = 4;
+  int local_walkers_fake_ = 32;  
 };
 
 } // namespace qmcplusplus
