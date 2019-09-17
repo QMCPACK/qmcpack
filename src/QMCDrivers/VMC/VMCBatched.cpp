@@ -304,8 +304,10 @@ bool VMCBatched::run()
     ScopedTimer local_timer(&init_walkers_timer_);
     TasksOneToOne<> section_start_task(num_crowds_);
     section_start_task(initialLogEvaluation, std::ref(crowds_));
-    section_start_task(runWarmupSteps, vmc_state, std::ref(step_contexts_), std::ref(crowds_));
   }
+  TasksOneToOne<> section_start_task(num_crowds_);
+  section_start_task(runWarmupSteps, vmc_state, std::ref(step_contexts_), std::ref(crowds_));
+
 
   for (int block = 0; block < num_blocks; ++block)
   {
