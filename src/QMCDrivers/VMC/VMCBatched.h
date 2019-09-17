@@ -98,6 +98,10 @@ private:
   VMCBatched(const VMCBatched&) = delete;
   /// Copy operator (disabled).
   VMCBatched& operator=(const VMCBatched&) = delete;
+  /// timer for running each step of VMC.
+  NewTimer& run_steps_timer_;
+  /// timer for walker initialization, it should be moved to QMCDriverNew instead of derived class.
+  NewTimer& init_walkers_timer_;
 };
 
 extern std::ostream& operator<<(std::ostream& o_stream, const VMCBatched& vmc_batched);

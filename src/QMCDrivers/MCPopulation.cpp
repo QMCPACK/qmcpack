@@ -78,6 +78,8 @@ void MCPopulation::createWalkers(IndexType num_walkers)
     walker_ptr->Properties = elec_particle_set_->Properties;
   }
 
+  outputManager.pause();
+
   // Sadly the wfc makeClone interface depends on the full particle set as a way to not to keep track
   // of what different wave function components depend on. I'm going to try and create a hollow elec PS
   // with an eye toward removing the ParticleSet dependency of WFC components in the future.
@@ -100,6 +102,8 @@ void MCPopulation::createWalkers(IndexType num_walkers)
     ++it_wtw;
     ++it_ham;
   }
+
+  outputManager.resume();
 
   RefVector<WFBuffer> mcp_wfbuffers;
   mcp_wfbuffers.reserve(num_walkers);
