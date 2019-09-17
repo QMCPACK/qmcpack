@@ -253,7 +253,6 @@ void VMCBatched::runVMCStep(int crowd_id,
                             std::vector<std::unique_ptr<Crowd>>& crowds)
 {
   Crowd& crowd = *(crowds[crowd_id]);
-  crowd.startBlock(sft.qmcdrv_input.get_max_steps());
 
   int max_steps = sft.qmcdrv_input.get_max_steps();
   bool is_recompute_block =
@@ -289,8 +288,8 @@ bool VMCBatched::run()
   LoopTimer vmc_loop;
   RunTimeControl runtimeControl(RunTimeManager, MaxCPUSecs);
 
-  TasksOneToOne<> block_start_task(num_crowds_);
-  block_start_task(initialLogEvaluation, std::ref(crowds_));
+  TasksOneToOne<> section_start_task(num_crowds_);
+  section_start_task(initialLogEvaluation, std::ref(crowds_));
 
   for (int block = 0; block < num_blocks; ++block)
   {
@@ -301,6 +300,8 @@ bool VMCBatched::run()
 
     estimator_manager_->startBlock(qmcdriver_input_.get_max_steps());
 
+    for(auto& crowd : crowds_)
+      crowd->startBlock(qmcdriver_input_.get_max_steps());
     for (int step = 0; step < qmcdriver_input_.get_max_steps(); ++step)
     {
       vmc_state.step = step;
@@ -309,14 +310,20 @@ bool VMCBatched::run()
     }
 
     RefVector<ScalarEstimatorBase> all_scalar_estimators;
+    EstimatorManagerCrowd::RealType total_block_weight = 0.0;
     // Collect all the ScalarEstimatorsFrom EMCrowds
     for (const UPtr<Crowd>& crowd : crowds_)
     {
       auto crowd_sc_est = crowd->get_estimator_manager_crowd().get_scalar_estimators();
       all_scalar_estimators.insert(all_scalar_estimators.end(), std::make_move_iterator(crowd_sc_est.begin()),
                                    std::make_move_iterator(crowd_sc_est.end()));
+      total_block_weight += crowd->get_estimator_manager_crowd().get_block_weight();
+      
     }
-    estimator_manager_->collectScalarEstimators(all_scalar_estimators);
+    
+    estimator_manager_->collectScalarEstimators(all_scalar_estimators,population_.get_num_local_walkers(),total_block_weight);
+    // TODO: should be accept rate for block
+    estimator_manager_->stopBlockNew(1.0);
   }
 
   return false;

@@ -167,16 +167,27 @@ public:
 
   /** stop a block
    * @param accept acceptance rate of this block
+   * 
+   */
+  void stopBlockNew(RealType accept);
+
+  
+  /** stop a block
+   * @param accept acceptance rate of this block
    */
   void stopBlock(RealType accept, bool collectall = true);
+
   /** stop a block
    * @param m list of estimator which has been collecting data independently
    */
   void stopBlock(const std::vector<EstimatorManagerBase*>& m);
 
-  /** At end of block collect the scalar estimators for entire rank
+  /** At end of block collect the scalar estimators for the entire rank
+   *   
+   *  Each is currently accumulates on for crowd of 1 or more walkers
+   *  TODO: What is the correct normalization 
    */
-  void collectScalarEstimators(const RefVector<ScalarEstimatorBase>& scalar_estimators);
+  void collectScalarEstimators(const RefVector<ScalarEstimatorBase>& scalar_estimators, const int total_walkers, const RealType block_weight);
 
   /** accumulate the measurements
    * @param W walkers
@@ -280,7 +291,7 @@ private:
   //Data for communication
   std::vector<BufferType*> RemoteData;
   ///collect data and write
-  void collectBlockAverages(int num_threads);
+  void collectBlockAverages();
   ///add header to an std::ostream
   void addHeader(std::ostream& o);
   size_t FieldWidth;
