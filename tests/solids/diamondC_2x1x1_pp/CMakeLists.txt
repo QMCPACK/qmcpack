@@ -18,6 +18,15 @@
                     0 DIAMOND2_SCALARS # VMC
                     )
 
+  QMC_RUN_AND_CHECK(short-diamondC_2x1x1_pp-vmcbatch_sdj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+                    qmc_short
+                    qmc_short_vmcbatch.in.xml
+                    1 16
+                    TRUE
+                    0 DIAMOND2_SCALARS # VMC
+                    )
+
   QMC_RUN_AND_CHECK(short-diamondC_2x1x1_pp-delayed_update-vmc_sdj
                     "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
                     qmc_short

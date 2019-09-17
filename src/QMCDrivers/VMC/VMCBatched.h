@@ -37,14 +37,14 @@ public:
    */
   struct StateForThread
   {
-    QMCDriverInput& qmcdrv_input;
-    VMCDriverInput& vmcdrv_input;
-    MCPopulation&   population;
+    const QMCDriverInput& qmcdrv_input;
+    const VMCDriverInput& vmcdrv_input;
+    const MCPopulation&   population;
     IndexType recalculate_properties_period;
     IndexType step;
     int block;
     bool recomputing_blocks;
-    DriftModifierBase& drift_modifier;
+    const DriftModifierBase& drift_modifier;
     StateForThread(QMCDriverInput&  qmci,
                    VMCDriverInput& vmci,
                    DriftModifierBase& drift_mod,

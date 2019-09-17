@@ -262,7 +262,7 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
   else if (das.new_run_type == QMCRunType::VMC_BATCH)
   {
     VMCFactoryNew fac(cur, das.what_to_do[UPDATE_MODE], qmc_common.qmc_counter);
-    MCPopulation qmc_pop(qmc_system, particle_pool.getParticleSet("e"), wavefunction_pool.getPrimary(), hamiltonian_pool.getPrimary());
+    MCPopulation qmc_pop(comm->size(), qmc_system, particle_pool.getParticleSet("e"), wavefunction_pool.getPrimary(), hamiltonian_pool.getPrimary());
     new_driver.reset(
         fac.create(std::move(qmc_pop), *primaryPsi, *primaryH, particle_pool, hamiltonian_pool, wavefunction_pool, comm));
   }
