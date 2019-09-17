@@ -584,6 +584,42 @@ def optional_dependencies():
 #end def optional_dependencies
 
 
+
+def testing():
+    nunit_all()
+#end def testing
+
+
+
+def execute():
+    nunit_all()
+#end def execute
+
+
+
+def memory():
+    nunit_all()
+#end def memory
+
+
+
+def plotting():
+    nunit_all()
+#end def plotting
+
+
+
+def superstring():
+    nunit_all()
+#end def superstring
+
+
+
+def unit_converter():
+    nunit_all()
+#end def unit_converter
+
+
         
 def generic_logging():
     from generic import log,message,warn,error
@@ -1759,6 +1795,7 @@ def settings_operation():
         nassert(isinstance(nexus_core.pseudopotentials,Pseudopotentials))
         nassert(len(nexus_core.pseudopotentials)==0)
         nexus_core.stages_set       = set()
+        nexus_core.stages           = []
         nexus_core.pseudopotentials = None
         nassert(object_eq(nexus_core,nexus_core_defaults))
         # nexus noncore sets Pseudopotentials and BasisSets objects
@@ -3330,6 +3367,12 @@ def user_examples(label):
 NexusTest( versions              )
 NexusTest( required_dependencies )
 NexusTest( optional_dependencies , optional=True)
+NexusTest( testing               )
+NexusTest( execute               )
+NexusTest( memory                )
+NexusTest( plotting              )
+NexusTest( superstring           )
+NexusTest( unit_converter        )
 NexusTest( generic_logging       )
 NexusTest( generic_intrinsics    )
 NexusTest( generic_extensions    )
