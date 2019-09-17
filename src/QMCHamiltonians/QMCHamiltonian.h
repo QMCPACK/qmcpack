@@ -215,8 +215,15 @@ public:
    * P.R, P.G and P.L are used to evaluate the LocalEnergy.
    */
   Return_t evaluate(ParticleSet& P);
-  /** batched version of evaluate for LocalEnergy */
-  void flex_evaluate(const std::vector<QMCHamiltonian*>& H_list, const std::vector<ParticleSet*>& P_list, std::vector<Return_t>& LocalEnergies) const;
+  
+  /** batched version of evaluate for LocalEnergy 
+   *
+   *  Encapsulation is ignored for H_list hamiltonians method uses its status as QMCHamiltonian to break encapsulation.
+   *  ParticleSet is also updated.
+   *  Bugs could easily be created by accessing this scope.
+   *  This should be set to static and fixed.
+   */
+  static std::vector<RealType> flex_evaluate(const RefVector<QMCHamiltonian>& H_list, const RefVector<ParticleSet>& P_list);
 
   /** evaluate Local energy with Toperators updated.
    * @param P ParticleSEt
@@ -299,6 +306,8 @@ public:
 
   bool get(std::ostream& os) const;
 
+  RealType get_LocalEnergy() const { return LocalEnergy; }
+  
   void setRandomGenerator(RandomGenerator_t* rng);
 
   /** return a clone */
@@ -352,7 +361,7 @@ private:
   void resetObservables(int start, int ncollects);
 
   // helper function for extracting a list of Hamiltonian components from a list of QMCHamiltonian::H.
-  std::vector<OperatorBase*> extract_HC_list(const std::vector<QMCHamiltonian*>& H_list, int id) const;
+  static RefVector<OperatorBase> extract_HC_list(const RefVector<QMCHamiltonian>& H_list, int id);
 
 #if !defined(REMOVE_TRACEMANAGER)
   ///traces variables

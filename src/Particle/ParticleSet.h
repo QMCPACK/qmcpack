@@ -371,20 +371,20 @@ public:
    */
   void acceptMove(Index_t iat);
   /// batched version of acceptMove
-  void flex_acceptMove(const std::vector<ParticleSet*>& P_list, Index_t iat) const
+  static void flex_acceptMove(const RefVector<ParticleSet>& P_list, Index_t iat)
   {
     for (int iw = 0; iw < P_list.size(); iw++)
-      P_list[iw]->acceptMove(iat);
+      P_list[iw].get().acceptMove(iat);
   }
 
   /** reject the move
    */
   void rejectMove(Index_t iat) { activePtcl = -1; }
   /// batched version of rejectMove
-  void flex_rejectMove(const std::vector<ParticleSet*>& P_list, Index_t iat) const
+  static void flex_rejectMove(const RefVector<ParticleSet>& P_list, Index_t iat)
   {
     for (int iw = 0; iw < P_list.size(); iw++)
-      P_list[iw]->rejectMove(iat);
+      P_list[iw].get().rejectMove(iat);
   }
 
   void initPropertyList();
@@ -417,7 +417,10 @@ public:
    * PbyP requires the distance tables and Sk with awalker.R
    */
   void loadWalker(Walker_t& awalker, bool pbyp);
+
   /** save this to awalker
+   *
+   *  just the R, G, and L
    */
   void saveWalker(Walker_t& awalker);
 
@@ -430,10 +433,11 @@ public:
    */
   void donePbyP();
   /// batched version of donePbyP
-  void flex_donePbyP(const std::vector<ParticleSet*>& P_list) const
+  static void flex_donePbyP(const RefVector<ParticleSet>& P_list)
   {
+    #pragma omp parallel for
     for (int iw = 0; iw < P_list.size(); iw++)
-      P_list[iw]->donePbyP();
+      P_list[iw].get().donePbyP();
   }
 
   ///return the address of the values of Hamiltonian terms
