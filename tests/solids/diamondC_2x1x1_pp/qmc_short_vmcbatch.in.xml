@@ -82,7 +82,7 @@
          <estimator type="flux" name="Flux"/>
       </hamiltonian>
    </qmcsystem>
-   <qmc method="vmcbatch" move="pbyp">
+   <qmc method="vmc_batch" move="pbyp">
       <parameter name="walkers"             >    16              </parameter>
       <parameter name="blocks"              >    2000            </parameter>
       <parameter name="steps"               >    1.0             </parameter>
