@@ -64,4 +64,11 @@ void Crowd::loadWalkers()
 
 }
 
+void Crowd::startBlock(int num_steps)
+{
+  n_accept = 0;
+  n_reject = 0;
+  estimator_manager_crowd_.startBlock(num_steps);
+}
+
 }
