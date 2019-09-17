@@ -156,7 +156,7 @@ void VMCBatched::advanceWalkers(const StateForThread& sft, Crowd& crowd, Context
                        crowd.get_log_gf().begin(),
                        [mhalf](auto& delta_r){ return mhalf * dot(delta_r, delta_r); });
 
-        sft.drift_modifier.getDrifts(sft.qmcdrv_input.get_tau(), crowd.get_grads_new(), drifts);
+        sft.drift_modifier.getDrifts(tauovermass, crowd.get_grads_new(), drifts);
 
         std::transform(crowd.beginElectrons(), crowd.endElectrons(), drifts.begin(), drifts.begin(),
                        [iat](auto& elecs, auto& drift) { return elecs.get().R[iat] - elecs.get().activePos - drift; });
@@ -184,7 +184,7 @@ void VMCBatched::advanceWalkers(const StateForThread& sft, Crowd& crowd, Context
         auto log_gb = crowd.get_log_gb()[i_accept];
           
         if (prob >= std::numeric_limits<RealType>::epsilon()
-            && step_context.get_random_gen()() < prob * std::exp(log_gf - log_gb))
+            && step_context.get_random_gen()() < prob * std::exp(log_gb - log_gf))
         {
           step_context.incAccept();
           twf_accept_list.push_back(crowd.get_walker_twfs()[i_accept]);
