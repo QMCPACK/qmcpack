@@ -71,7 +71,7 @@ public:
   typedef Walker_t::PropertyContainer_t PropertyContainer_t;
   ///container type of Walkers
   typedef std::vector<Walker_t*> WalkerList_t;
-  ///iterator of Walker container
+  /// FIX: a type alias of iterator for an object should not be for just one of many objects it holds.
   typedef WalkerList_t::iterator iterator;
   ///const_iterator of Walker container
   typedef WalkerList_t::const_iterator const_iterator;

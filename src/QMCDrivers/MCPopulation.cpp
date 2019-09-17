@@ -16,16 +16,18 @@
 
 namespace qmcplusplus
 {
-MCPopulation::MCPopulation(MCWalkerConfiguration& mcwc,
+MCPopulation::MCPopulation(int num_ranks,
+                           MCWalkerConfiguration& mcwc,
                            ParticleSet* elecs,
                            TrialWaveFunction* trial_wf,
                            QMCHamiltonian* hamiltonian)
-    : trial_wf_(trial_wf), elec_particle_set_(elecs), hamiltonian_(hamiltonian)
+    : num_ranks_(num_ranks), trial_wf_(trial_wf), elec_particle_set_(elecs), hamiltonian_(hamiltonian)
 {
   walker_offsets_     = mcwc.WalkerOffsets;
   num_global_walkers_ = mcwc.GlobalNumWalkers;
   num_local_walkers_  = mcwc.LocalNumWalkers;
   num_particles_      = mcwc.getParticleNum();
+
   // MCWalkerConfiguration doesn't give actual number of groups
   num_groups_ = mcwc.groups();
   particle_group_indexes_.resize(num_groups_);
@@ -52,31 +54,39 @@ MCPopulation::MCPopulation(MCWalkerConfiguration& mcwc,
  */
 void MCPopulation::createWalkers()
 {
-  createWalkers(num_local_walkers_, ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>(num_particles_));
+  createWalkers(num_local_walkers_);
 }
 
 /** Creates walkers with starting positions pos and a clone of the electron particle set and trial wavefunction
+ *  
+ *  Needed
+ *  in: DataSet.size()
+ *  in.
  */
-void MCPopulation::createWalkers(IndexType num_walkers,
-                                 const ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>& positions)
+void MCPopulation::createWalkers(IndexType num_walkers)
 {
+  // Ye: need to resize walker_t and ParticleSet Properties
+  elec_particle_set_->Properties.resize(1, elec_particle_set_->PropertyList.size());
+
   walkers_.resize(num_walkers);
 
-  std::for_each(walkers_.begin(), walkers_.end(), [this, positions](std::unique_ptr<MCPWalker>& walker_ptr) {
+  for (auto& walker_ptr : walkers_)
+  {
     walker_ptr = std::make_unique<MCPWalker>(num_particles_);
-    walker_ptr->R.resize(num_particles_);
-    walker_ptr->R = positions;
-  });
+    walker_ptr->R = elec_particle_set_->R;
+    walker_ptr->registerData();
+    walker_ptr->Properties = elec_particle_set_->Properties;
+  }
+
+  outputManager.pause();
 
   // Sadly the wfc makeClone interface depends on the full particle set as a way to not to keep track
   // of what different wave function components depend on. I'm going to try and create a hollow elec PS
   // with an eye toward removing the ParticleSet dependency of WFC components in the future.
   walker_elec_particle_sets_.resize(num_walkers);
   std::for_each(walker_elec_particle_sets_.begin(), walker_elec_particle_sets_.end(),
-                [this, positions](std::unique_ptr<ParticleSet>& elec_ps_ptr) {
+                [this](std::unique_ptr<ParticleSet>& elec_ps_ptr) {
                   elec_ps_ptr.reset(new ParticleSet(*elec_particle_set_));
-                  
-                  elec_ps_ptr->R = positions;
                 });
 
   auto it_weps = walker_elec_particle_sets_.begin();
@@ -92,12 +102,37 @@ void MCPopulation::createWalkers(IndexType num_walkers,
     ++it_wtw;
     ++it_ham;
   }
+
+  outputManager.resume();
+
+  RefVector<WFBuffer> mcp_wfbuffers;
+  mcp_wfbuffers.reserve(num_walkers);
+  std::for_each(walkers_.begin(),
+                walkers_.end(),
+                [&mcp_wfbuffers](auto& walker) {
+                  mcp_wfbuffers.push_back((*walker).DataSet);
+                });
+
+  TrialWaveFunction::flex_registerData(walker_trial_wavefunctions_,
+                                       walker_elec_particle_sets_,
+                                       mcp_wfbuffers);
+
+  std::for_each(walkers_.begin(),
+                walkers_.end(),
+                [](auto& walker) {
+                  (*walker).DataSet.allocate();
+                });
+
+  
+
 }
+
 
 /** Creates walkers doing their first touch in their crowd (thread) context
  *
  *  This is basically premature optimization but I wanted to check if this sort of thing
- *  would work.  It seems to.
+ *  would work.  It seems to. This sort of structure not an #omp parallel section must be used in the driver.
+ *  No new bare openmp directives should be added to code with updated design.
  */
 // void MCPopulation::createWalkers(int num_crowds,
 //                                  int walkers_per_crowd,
