@@ -104,9 +104,6 @@ except:
 #end try
 
 
-def numerics_error(*args,**kwargs):
-    error(*args,**kwargs)
-#end def numerics_error
 # cost functions
 least_squares = lambda p,x,y,f: ((f(p,x)-y)**2).sum()
 absmin        = lambda p,x,y,f: abs(f(p,x)-y).sum()
@@ -122,14 +119,15 @@ cost_functions = obj(
 def curve_fit(x,y,f,p0,cost='least_squares',optimizer='fmin'):
     if isinstance(cost,str):
         if cost not in cost_functions:
-            numerics_error('"{0}" is an invalid cost function\nvalid options are: {1}'.format(cost,sorted(cost_functions.keys())))
+            error('"{0}" is an invalid cost function\nvalid options are: {1}'.format(cost,sorted(cost_functions.keys())))
         #end if
         cost = cost_functions[cost]
     #end if
     if optimizer=='fmin':
         p = fmin(cost,p0,args=(x,y,f),maxiter=10000,maxfun=10000,disp=0)
     else:
-        numerics_error('optimizers other than fmin are not supported yet','curve_fit')
+        error('optimizers other than fmin are not supported yet','curve_fit')
+    #end if
     return p
 #end def curve_fit
 
@@ -307,7 +305,7 @@ def morse_fit(r,E,p0=None,jackknife=False,cost=least_squares,auxfuncs=None,auxre
     perror = None
     if jackknife:
         if Edata is None:
-            numerics_error('cannot perform jackknife fit because blocked data was not provided (only the means are present)','morse_fit')
+            error('cannot perform jackknife fit because blocked data was not provided (only the means are present)','morse_fit')
         #end if
         pmean,perror = numerics_jackknife(data     = Edata,
                                           function = curve_fit,
@@ -419,7 +417,7 @@ eos_param_funcs = obj(
 
 def eos_eval(p,V,type='vinet'):
     if type not in eos_funcs:
-        numerics_error('"{0}" is not a valid EOS type\nvalid options are: {1}'.format(sorted(eos_funcs.keys())))
+        error('"{0}" is not a valid EOS type\nvalid options are: {1}'.format(sorted(eos_funcs.keys())))
     #end if
     return eos_funcs[type](p,V)
 #end def eos_eval
@@ -427,11 +425,11 @@ def eos_eval(p,V,type='vinet'):
 
 def eos_param(p,param,type='vinet'):
     if type not in eos_param_funcs:
-        numerics_error('"{0}" is not a valid EOS type\nvalid options are: {1}'.format(sorted(eos_param_funcs.keys())))
+        error('"{0}" is not a valid EOS type\nvalid options are: {1}'.format(sorted(eos_param_funcs.keys())))
     #end if
     eos_pfuncs = eos_param_funcs[type]
     if param not in eos_pfuncs:
-        numerics_error('"{0}" is not an available parameter for a {1} fit\navailable parameters are: {2}'.format(param,type,sorted(eos_pfuncs.keys())))
+        error('"{0}" is not an available parameter for a {1} fit\navailable parameters are: {2}'.format(param,type,sorted(eos_pfuncs.keys())))
     #end if
     return eos_pfuncs[param](p)
 #end def eos_param
@@ -446,7 +444,7 @@ def eos_fit(V,E,type='vinet',p0=None,cost='least_squares',optimizer='fmin',jackk
     #end if
     
     if type not in eos_funcs:
-        numerics_error('"{0}" is not a valid EOS type\nvalid options are: {1}'.format(sorted(eos_funcs.keys())))
+        error('"{0}" is not a valid EOS type\nvalid options are: {1}'.format(sorted(eos_funcs.keys())))
     #end if
     eos_func = eos_funcs[type]
 
@@ -589,7 +587,7 @@ def jackknife_aux(jsamples,auxfunc,args=None,kwargs=None,position=None,capture=N
         elif len(auxfunc)==4:
             auxfunc,args,kwargs,position = auxfunc
         else:
-            numerics_error('between 1 and 4 fields (auxfunc,args,kwargs,position) can be packed into original auxfunc input, received {0}'.format(len(auxfunc)))
+            error('between 1 and 4 fields (auxfunc,args,kwargs,position) can be packed into original auxfunc input, received {0}'.format(len(auxfunc)))
         #end if
     #end if
 
@@ -652,7 +650,7 @@ def check_jackknife_inputs(args,kwargs,position):
         elif isinstance(position,str):
             kwargpos = True
         else:
-            numerics_error('position must be an integer or keyword, received: {0}'.format(position),'jackknife')
+            error('position must be an integer or keyword, received: {0}'.format(position),'jackknife')
         #end if
     elif args is None and kwargs is None:
         args     = [None]
@@ -662,7 +660,7 @@ def check_jackknife_inputs(args,kwargs,position):
         argpos   = True
         position = 0
     else:
-        numerics_error('function argument position for input data must be provided','jackknife')
+        error('function argument position for input data must be provided','jackknife')
     #end if
     if args is None:
         args = []
@@ -979,6 +977,7 @@ def ttest(m1,e1,n1,m2,e2,n2):
 
 
 
+# test needed
 def surface_normals(x,y,z):
     nu,nv = x.shape
     normals = empty((nu,nv,3))
@@ -1047,6 +1046,7 @@ def surface_normals(x,y,z):
 #end def surface_normals
 
 
+# test needed
 simple_surface_coords = [set(['x','y','z']),set(['r','phi','z']),set(['r','phi','theta'])]
 simple_surface_min = {'x':-1.00000000001,'y':-1.00000000001,'z':-1.00000000001,'r':-0.00000000001,'phi':-0.00000000001,'theta':-0.00000000001}
 def simple_surface(origin,axes,grid):
@@ -1175,8 +1175,8 @@ def simple_surface(origin,axes,grid):
 
 
 
+# test needed
 #least_squares = lambda p,x,y,f: ((f(p,x)-y)**2).sum()
-
 def func_fit(x,y,fitting_function,p0,cost=least_squares):
     f = fitting_function
     p = fmin(cost,p0,args=(x,y,f),maxiter=10000,maxfun=10000)
@@ -1187,13 +1187,16 @@ def func_fit(x,y,fitting_function,p0,cost=least_squares):
 def distance_table(p1,p2,ordering=0):
     n1 = len(p1)
     n2 = len(p2)
+    same = id(p1)==id(p2)
     if not isinstance(p1,ndarray):
-        p1=array(p1)
+        p1=array(p1,dtype=float)
     #end if
-    if not isinstance(p2,ndarray):
-        p2=array(p2)
+    if same:
+        p2 = p1
+    elif not isinstance(p2,ndarray):
+        p2=array(p2,dtype=float)
     #end if
-    dt = zeros((n1,n2))
+    dt = zeros((n1,n2),dtype=float)
     for i1 in xrange(n1):
         for i2 in xrange(n2):
             dt[i1,i2] = norm(p1[i1]-p2[i2])
@@ -1208,8 +1211,7 @@ def distance_table(p1,p2,ordering=0):
             n=n2
             dt=dt.T
         else:
-            print 'distance_table Error: ordering must be 1 or 2,\n  you provided '+str(ordering)+'\nexiting.'
-            exit()
+            error('ordering must be 1 or 2,\nyou provided '+str(ordering),'distance_table')
         #end if
         order = empty(dt.shape,dtype=int)
         for i in xrange(n):
@@ -1236,8 +1238,7 @@ def nearest_neighbors(n,points,qpoints=None,return_distances=False,slow=False):
         #end if
     #end if
     if n>len(qpoints)-extra:
-        print 'nearest_neighbors Error: requested more than the total number of neighbors\n  maximum is: {0}\n  you requested: {1}\nexiting.'.format(len(qpoints)-extra,n)
-        exit()
+        error('requested more than the total number of neighbors\nmaximum is: {0}\nyou requested: {1}\nexiting.'.format(len(qpoints)-extra,n),'nearest_neighbors')
     #end if
     slow = slow or scipy_unavailable
     if not slow:
@@ -1261,11 +1262,13 @@ def nearest_neighbors(n,points,qpoints=None,return_distances=False,slow=False):
 #end def nearest_neighbors
 
 
+
 def voronoi_neighbors(points):
-    vor = Voronoi(points)
+    vor = Voronoi(points,qhull_options='Qbb Qc Qz')
     neighbor_pairs = vor.ridge_points
     return neighbor_pairs
 #end def voronoi_neighbors
+
 
 
 def convex_hull(points,dimension=None,tol=None):
