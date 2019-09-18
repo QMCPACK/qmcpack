@@ -537,7 +537,6 @@ std::vector<QMCHamiltonian::RealType> QMCHamiltonian::flex_evaluate(const RefVec
   }
   else if (H_list.size() == 1)
   {
-    std::vector<RealType> local_energies(1,0.0);
     local_energies[0] = H_list[0].get().evaluate(P_list[0]);
   }
   // Single return is required to have chance for RVO
