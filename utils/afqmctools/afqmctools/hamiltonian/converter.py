@@ -73,8 +73,6 @@ def read_fcidump(filename, symmetry=8, verbose=True):
             # <ij|kl> = <ji|lk> = <kl|ij> = <lk|ji> =
             # <kj|il> = <li|jk> = <il|kj> = <jk|li>
             # (ik|jl)
-            if i == 1 and k == 1 and j == 49 and l == 50:
-                print(integral)
             h2e[i-1,k-1,j-1,l-1] = integral
             if symmetry == 1:
                 continue
@@ -232,11 +230,17 @@ def check_sym(ikjl, nmo, sym):
         return True
     else:
         i, k, j, l = ikjl
-        ik = i + k*nmo
-        jl = j + l*nmo
         if sym == 4:
-            return (i >= k or j >= l) and ik >= jl
+            kilj = (k,i,l,j)
+            jlik = (j,l,i,k)
+            ljki = (l,j,k,i)
+            if (ikjl > jlik) or (ikjl > kilj) or (ikjl > ljki):
+                return False
+            else:
+                return True
         else:
+            ik = i + k*nmo
+            jl = j + l*nmo
             return (i >= k and j >= l) and ik >= jl
 
 def fmt_integral(intg, i, k, j, l, cplx, paren=False):
