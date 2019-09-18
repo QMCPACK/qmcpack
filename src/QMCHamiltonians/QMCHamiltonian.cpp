@@ -491,8 +491,8 @@ QMCHamiltonian::Return_t QMCHamiltonian::evaluate(ParticleSet& P)
 std::vector<QMCHamiltonian::RealType> QMCHamiltonian::flex_evaluate(const RefVector<QMCHamiltonian>& H_list,
                                    const RefVector<ParticleSet>& P_list)
 {
-  // if (H_list.size() > 1)
-  // {
+  if (H_list.size() > 1)
+  {
     for (int iw = 0; iw < H_list.size(); iw++)
       H_list[iw].get().LocalEnergy = 0.0;
 
@@ -537,11 +537,13 @@ std::vector<QMCHamiltonian::RealType> QMCHamiltonian::flex_evaluate(const RefVec
       local_energies[iw] = H_list[iw].get().get_LocalEnergy();
     return local_energies;
     
-    //}
-  // else if (H_list.size() == 1)
-  // {
-  //   H_list[0].get().evaluate(P_list[0]);
-  // }
+  }
+  else if (H_list.size() == 1)
+  {
+    std::vector<RealType> local_energies(1,0.0);
+    local_energies[0] = H_list[0].get().evaluate(P_list[0]);
+    return local_energies;
+  }
 }
 
 QMCHamiltonian::RealType QMCHamiltonian::evaluateValueAndDerivatives(ParticleSet& P,
@@ -826,13 +828,6 @@ void QMCHamiltonian::evaluate(MCWalkerConfiguration& W,
       auxH[i]->addEnergy(W, AuxEnergyVector);
   }
 }
-#else
-void QMCHamiltonian::evaluate(MCWalkerConfiguration& W, std::vector<RealType>& energyVector) {}
-
-void QMCHamiltonian::evaluate(MCWalkerConfiguration& W,
-                              std::vector<RealType>& energyVector,
-                              std::vector<std::vector<NonLocalData>>& Txy)
-{}
 #endif
 
 RefVector<OperatorBase> QMCHamiltonian::extract_HC_list(const RefVector<QMCHamiltonian>& H_list, int id)
