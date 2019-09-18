@@ -42,7 +42,7 @@ struct Mallocator
 
   T* allocate(std::size_t n)
   {
-    if(n ==0)
+    if (n == 0)
       return nullptr;
     void* pt(nullptr);
     std::size_t asize = n * sizeof(T);
