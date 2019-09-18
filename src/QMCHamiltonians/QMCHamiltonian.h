@@ -19,6 +19,7 @@
  */
 #ifndef QMCPLUSPLUS_HAMILTONIAN_H
 #define QMCPLUSPLUS_HAMILTONIAN_H
+#include "Configuration.h"
 #include "type_traits/TypeRequire.hpp"
 #include <QMCHamiltonians/OperatorBase.h>
 #include "QMCHamiltonians/NonLocalECPotential.h"
@@ -43,7 +44,7 @@ class QMCHamiltonian
 public:
   typedef OperatorBase::RealType RealType;
   typedef OperatorBase::ValueType ValueType;
-  typedef OperatorBase::Return_t Return_t;
+  using FullPrecReal = QMCTraits::FullPrecRealType;
   typedef OperatorBase::PropertySetType PropertySetType;
   typedef OperatorBase::BufferType BufferType;
   typedef OperatorBase::Walker_t Walker_t;
@@ -168,9 +169,9 @@ public:
   void update_source(ParticleSet& s);
 
   ////return the LocalEnergy \f$=\sum_i H^{qmc}_{i}\f$
-  inline Return_t getLocalEnergy() { return LocalEnergy; }
+  inline FullPrecReal getLocalEnergy() { return LocalEnergy; }
   ////return the LocalPotential \f$=\sum_i H^{qmc}_{i} - KE\f$
-  inline Return_t getLocalPotential() { return LocalEnergy - KineticEnergy; }
+  inline FullPrecReal getLocalPotential() { return LocalEnergy - KineticEnergy; }
   void auxHevaluate(ParticleSet& P);
   void auxHevaluate(ParticleSet& P, Walker_t& ThisWalker);
   void auxHevaluate(ParticleSet& P, Walker_t& ThisWalker, bool do_properties, bool do_collectables);
@@ -215,7 +216,7 @@ public:
    *
    * P.R, P.G and P.L are used to evaluate the LocalEnergy.
    */
-  Return_t evaluate(ParticleSet& P);
+  FullPrecReal evaluate(ParticleSet& P);
   
   /** batched version of evaluate for LocalEnergy 
    *
@@ -224,13 +225,14 @@ public:
    *  Bugs could easily be created by accessing this scope.
    *  This should be set to static and fixed.
    */
-  static std::vector<RealType> flex_evaluate(const RefVector<QMCHamiltonian>& H_list, const RefVector<ParticleSet>& P_list);
+  static std::vector<QMCHamiltonian::FullPrecReal>
+  flex_evaluate(const RefVector<QMCHamiltonian>& H_list, const RefVector<ParticleSet>& P_list);
 
   /** evaluate Local energy with Toperators updated.
    * @param P ParticleSEt
    * @return Local energy
    */
-  Return_t evaluateWithToperator(ParticleSet& P);
+  FullPrecReal evaluateWithToperator(ParticleSet& P);
 
   /** evaluate energy and derivatives wrt to the variables
    * @param P ParticleSet
@@ -239,7 +241,7 @@ public:
    * @param dhpsioverpsi \f$\partial(\hat{h}\Psi({\bf R})/\Psi({\bf R})) /\partial \alpha \f$
    * @param compute_deriv if true, compute dhpsioverpsi of the non-local potential component
    */
-  RealType evaluateValueAndDerivatives(ParticleSet& P,
+  FullPrecReal evaluateValueAndDerivatives(ParticleSet& P,
                                         const opt_variables_type& optvars,
                                         std::vector<ValueType>& dlogpsi,
                                         std::vector<ValueType>& dhpsioverpsi,
@@ -254,7 +256,7 @@ public:
   * @param wf_grad  Re (dPsi/Psi)
   * @return Local Energy.
   */
-  Return_t evaluateIonDerivs(ParticleSet& P,
+  FullPrecReal evaluateIonDerivs(ParticleSet& P,
                              ParticleSet& ions,
                              TrialWaveFunction& psi,
                              ParticleSet::ParticlePos_t& hf_terms,
@@ -286,13 +288,13 @@ public:
    * @param free_nlpp if true, non-local PP is a variable
    * @return KE + NonLocal potential
    */
-  RealType evaluateVariableEnergy(ParticleSet& P, bool free_nlpp);
+  FullPrecReal evaluateVariableEnergy(ParticleSet& P, bool free_nlpp);
 
   /** return an average value of the LocalEnergy
    *
    * Introduced to get a collective value
    */
-  Return_t getEnsembleAverage();
+  FullPrecReal getEnsembleAverage();
 
   void resetTargetParticleSet(ParticleSet& P);
 
@@ -336,11 +338,11 @@ private:
   ///starting index
   int numCollectables;
   ///Current Local Energy
-  Return_t LocalEnergy;
+  FullPrecReal LocalEnergy;
   ///Current Kinetic Energy
-  Return_t KineticEnergy;
+  FullPrecReal KineticEnergy;
   ///Current Local Energy for the proposed move
-  Return_t NewLocalEnergy;
+  FullPrecReal NewLocalEnergy;
   ///getName is in the way
   std::string myName;
   ///vector of Hamiltonians
