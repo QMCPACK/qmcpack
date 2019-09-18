@@ -220,14 +220,6 @@ private:
     {
       mAllocator.deallocate(X, nAllocated);
     }
-    // when n == 0 std::allocator's return value is unspecified.
-    if(n == 0)
-    {
-      X = nullptr;
-      nLocal = 0;
-      nAllocated = 0;
-      return;
-    }
     X          = mAllocator.allocate(n);
     nLocal     = n;
     nAllocated = n;
