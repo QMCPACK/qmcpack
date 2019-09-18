@@ -1701,6 +1701,12 @@ def developer():
 
 
 
+def periodic_table():
+    nunit_all()
+#end def periodic_table
+
+
+
 
 def nexus_imports():
     import nexus
@@ -3383,6 +3389,7 @@ NexusTest( generic_logging       )
 NexusTest( generic_intrinsics    )
 NexusTest( generic_extensions    )
 NexusTest( developer             )
+NexusTest( periodic_table        )
 NexusTest( nexus_imports         )
 NexusTest( settings_operation    , 'settings' )
 NexusTest( machines              )
