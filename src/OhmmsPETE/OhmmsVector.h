@@ -226,6 +226,7 @@ private:
       X = nullptr;
       nLocal = 0;
       nAllocated = 0;
+      return;
     }
     X          = mAllocator.allocate(n);
     nLocal     = n;
