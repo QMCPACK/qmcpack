@@ -224,7 +224,7 @@ public:
    *  Bugs could easily be created by accessing this scope.
    *  This should be set to static and fixed.
    */
-  static force_rvo<std::vector<RealType>> flex_evaluate(const RefVector<QMCHamiltonian>& H_list, const RefVector<ParticleSet>& P_list);
+  static std::vector<RealType> flex_evaluate(const RefVector<QMCHamiltonian>& H_list, const RefVector<ParticleSet>& P_list);
 
   /** evaluate Local energy with Toperators updated.
    * @param P ParticleSEt

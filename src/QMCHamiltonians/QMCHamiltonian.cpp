@@ -487,10 +487,10 @@ QMCHamiltonian::Return_t QMCHamiltonian::evaluate(ParticleSet& P)
   return LocalEnergy;
 }
 
-force_rvo<std::vector<QMCHamiltonian::RealType>> QMCHamiltonian::flex_evaluate(const RefVector<QMCHamiltonian>& H_list,
+std::vector<QMCHamiltonian::RealType> QMCHamiltonian::flex_evaluate(const RefVector<QMCHamiltonian>& H_list,
                                    const RefVector<ParticleSet>& P_list)
 {
-  force_rvo<std::vector<RealType>> local_energies(H_list.size(),0.0);
+  std::vector<RealType> local_energies(H_list.size(),0.0);
   if (H_list.size() > 1)
   {
     for (int iw = 0; iw < H_list.size(); iw++)
