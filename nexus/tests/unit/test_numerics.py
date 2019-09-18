@@ -299,8 +299,8 @@ if scipy_available:
 
 
 
+import numpy as np
 def random_stream(n):
-    import numpy as np
 
     def rng(m=2**32, a=1103515245, c=12345):
         rng.current = (a*rng.current + c) % m
@@ -314,3 +314,328 @@ def random_stream(n):
 
 
 rstream = random_stream(1000)
+rstream_wide = np.array(10*[rstream])
+
+
+
+def test_simplestats():
+    import numpy as np
+    from testing import value_eq
+    from numerics import simplestats
+
+    m,e = simplestats(rstream)
+
+    m_ref = 0.507154277182
+    e_ref = 0.00916655521114
+
+    assert(value_eq(float(m),m_ref))
+    assert(value_eq(float(e),e_ref))
+
+    m_ref = np.array(10*[m_ref])
+    e_ref = np.array(10*[e_ref])
+
+    m,e = simplestats(rstream_wide)
+
+    assert(value_eq(m,m_ref))
+    assert(value_eq(e,e_ref))
+#end def test_simplestats
+
+
+
+def test_simstats():
+    import numpy as np
+    from testing import value_eq
+    from numerics import simstats
+
+    m,v,e,k = simstats(rstream)
+
+    m_ref = 0.507154277182
+    v_ref = 0.0840257344388
+    e_ref = 0.00949486225214
+    k_ref = 1.07291426596
+
+    assert(value_eq(float(m),m_ref))
+    assert(value_eq(float(v),v_ref))
+    assert(value_eq(float(e),e_ref))
+    assert(value_eq(float(k),k_ref))
+
+    m_ref = np.array(10*[m_ref])
+    v_ref = np.array(10*[v_ref])
+    e_ref = np.array(10*[e_ref])
+    k_ref = np.array(10*[k_ref])
+    
+    m,v,e,k = simstats(rstream_wide)
+    
+    assert(value_eq(m,m_ref))
+    assert(value_eq(v,v_ref))
+    assert(value_eq(e,e_ref))
+    assert(value_eq(k,k_ref))
+#end def test_simstats
+
+
+
+def test_equilibration_length():
+    import numpy as np
+    from numerics import equilibration_length
+
+    eq = equilibration_length(rstream,random=False)
+    assert(eq==0)
+
+    rs = rstream + np.exp(-np.arange(len(rstream),dtype=float)/10)
+
+    eq = equilibration_length(rs,random=False)
+    assert(eq==52)
+#end def test_equilibration_length
+
+
+
+if scipy_available:
+    def test_ttest():
+        import numpy as np
+        from testing import value_eq
+        from numerics import ttest
+
+        p = ttest(0.,1.,100,0.,1.,100)
+        assert(value_eq(float(p),1.0))
+
+        p = ttest(0.,1.,10000,1.,1.,10000)
+        assert(value_eq(float(p),0.479508361523))
+    #end def test_ttest
+#end if
+
+
+
+def test_jackknife():
+    from testing import value_eq
+    from numerics import jackknife
+
+    def value(v):
+        return v
+    #end def value
+
+    jm_ref = np.array(10*[0.50715428],dtype=float)
+    je_ref = np.array(10*[0.00917114],dtype=float)
+
+    jm,je = jackknife(rstream_wide.T,value)
+
+    assert(value_eq(jm,jm_ref))
+    assert(value_eq(je,je_ref))
+#end def test_jackknife
+
+
+
+def test_morse():
+    from testing import value_eq
+    from unit_converter import convert
+    from numerics import morse,morse_re,morse_a,morse_De,morse_Einf,morse_width
+    from numerics import morse_depth,morse_Ee,morse_k,morse_params
+    from numerics import morse_reduced_mass,morse_freq,morse_w,morse_wX
+    from numerics import morse_E0,morse_En,morse_zero_point,morse_harmfreq
+    from numerics import morse_harmonic_potential,morse_spect_fit
+    from numerics import morse_rDw_fit,morse_fit,morse_fit_fine
+
+    rm = morse_reduced_mass('Ti','O')
+    assert(value_eq(rm,21862.2266134))
+
+    r_ref,D_ref,w_ref = 1.620,6.87,1009.18
+    r_ref_A = r_ref
+    p = morse_rDw_fit(r_ref,D_ref,w_ref,'Ti','O',Dunit='eV')
+
+    r_ref = convert(r_ref,'A','B')
+    D_ref = convert(D_ref,'eV','Ha')
+
+    r = morse_re(p)
+    D = morse_De(p)
+    w = morse_w(p,'Ti','O')
+    Einf = morse_Einf(p)
+    assert(value_eq(float(r),r_ref))
+    assert(value_eq(float(D),D_ref))
+    assert(value_eq(float(w),w_ref))
+    assert(value_eq(float(Einf),0.0))
+
+    width_ref = 1.0451690611
+    width = morse_width(p)
+    assert(value_eq(float(width),width_ref))
+
+    depth = morse_depth(p)
+    assert(value_eq(depth,D_ref))
+
+    a = morse_a(p)
+    assert(value_eq(float(a),1/width_ref))
+
+    Ee = morse_Ee(p)
+    assert(value_eq(float(Ee),-D_ref))
+
+    k_ref = 0.462235185922
+    k = morse_k(p)
+    assert(value_eq(float(k),k_ref))
+
+    assert(value_eq(morse_params(r,a,D,Einf),p))
+
+    assert(value_eq(morse_freq(p,'Ti','O'),w))
+
+    #wX_ref = 2.43157675597e-08 # might be buggy
+    #wX = morse_wX(p,'Ti','O')
+    #assert(value_eq(float(wX),wX_ref))
+
+    E0_ref = -0.250174011529
+    E0 = morse_E0(p,'Ti','O')
+    assert(value_eq(float(E0),E0_ref))
+
+    E0 = morse_En(p,0,'Ti','O')
+    assert(value_eq(float(E0),E0_ref))
+
+    En_ref = [-0.250174011529,
+              -0.245617721989,
+              -0.241103305298,
+              -0.236630761457,
+              -0.232200090465]
+
+    for n in range(5):
+        En = morse_En(p,n,'Ti','O')
+        assert(value_eq(float(En),En_ref[n]))
+    #end for
+
+    zp_ref = 0.00229384708885
+    zp = morse_zero_point(p,'Ti','O')
+    assert(value_eq(float(zp),zp_ref))
+
+    # not consistent w/ morse_wX
+    #p_sf = morse_spect_fit(r_ref_A,w_ref,wX_ref,'Ti','O')
+
+    hf_ref = 0.00459816239012
+    hf = morse_harmfreq(p,'Ti','O')
+    assert(value_eq(float(hf),hf_ref))
+
+    E = morse(p,r_ref)
+    assert(value_eq(float(E),-D_ref))
+#end def test_morse
+
+
+
+if scipy_available:
+    def test_morse_fit():
+        import numpy as np
+        from testing import value_eq
+        from unit_converter import convert
+        from numerics import morse
+        from numerics import morse_rDw_fit,morse_fit,morse_fit_fine
+
+        r_ref,D_ref,w_ref = 1.620,6.87,1009.18
+        r_ref_A = r_ref
+        p = morse_rDw_fit(r_ref,D_ref,w_ref,'Ti','O',Dunit='eV')
+
+        r_ref = convert(r_ref,'A','B')
+
+
+        rfine = np.linspace(0.8*r_ref,1.2*r_ref,100)
+        Efine = morse(p,rfine)
+
+        pf = morse_fit(rfine,Efine,p)
+
+        pref = tuple(np.array(p,dtype=float))
+        pf   = tuple(np.array(pf,dtype=float))
+
+        assert(value_eq(pf,pref))
+
+        pf,Ef = morse_fit_fine(rfine,Efine,p,rfine,both=True)
+        pf   = tuple(np.array(pf,dtype=float))
+        assert(value_eq(pf,pref))
+        assert(value_eq(Ef,Efine))
+    #end def test_morse_fit
+#end if
+
+
+
+
+def test_eos():
+    import numpy as np
+    from testing import value_eq
+    from unit_converter import convert
+    from numerics import eos_fit,eos_eval,eos_param
+
+    data = np.array([
+            [0.875, -83.31851261], 
+            [0.900, -83.38085214], 
+            [0.925, -83.42172843], 
+            [0.950, -83.44502216], 
+            [0.975, -83.45476035], 
+            [1.025, -83.44564229], 
+            [1.050, -83.43127254], 
+            [1.000, -83.45412846], 
+            [1.100, -83.39070714], 
+            [1.125, -83.36663810], 
+            ])
+
+    a = 5.539 # lattice constant
+
+    V = (a*data[:,0])**3
+    E = convert(data[:,1],'Ry','eV')
+
+    # done originally to get params below
+    #pf = eos_fit(V,E,'vinet')
+
+    Einf = -1.13547294e+03
+    V0   =  1.62708941e+02
+    B0   =  1.34467867e-01
+    Bp0  =  4.55846963e+00
+
+    pf = Einf,V0,B0,Bp0
+
+    Ef = eos_eval(pf,V,'vinet')
+
+    assert(value_eq(Ef,E,tol=4e-3))
+
+    assert(value_eq(float(eos_param(pf,'Einf','vinet')),Einf))
+    assert(value_eq(float(eos_param(pf,'V','vinet')),V0))
+    assert(value_eq(float(eos_param(pf,'B','vinet')),B0))
+    assert(value_eq(float(eos_param(pf,'Bp','vinet')),Bp0))
+#end def test_eos
+
+
+
+if scipy_available:
+    def test_eos_fit():
+        import numpy as np
+        from testing import value_eq
+        from unit_converter import convert
+        from numerics import eos_fit,eos_eval,eos_param
+
+        data = np.array([
+                [0.875, -83.31851261], 
+                [0.900, -83.38085214], 
+                [0.925, -83.42172843], 
+                [0.950, -83.44502216], 
+                [0.975, -83.45476035], 
+                [1.025, -83.44564229], 
+                [1.050, -83.43127254], 
+                [1.000, -83.45412846], 
+                [1.100, -83.39070714], 
+                [1.125, -83.36663810], 
+                ])
+
+        a = 5.539 # lattice constant
+
+        V = (a*data[:,0])**3
+        E = convert(data[:,1],'Ry','eV')
+
+        # done originally to get params below
+        #pf = eos_fit(V,E,'vinet')
+
+        Einf = -1.13547294e+03
+        V0   =  1.62708941e+02
+        B0   =  1.34467867e-01
+        Bp0  =  4.55846963e+00
+
+        pf = Einf,V0,B0,Bp0
+
+        Ef = eos_eval(pf,V,'vinet')
+
+        pf2 = eos_fit(V,Ef,'vinet')
+
+        pf  = np.array(pf,dtype=float)
+        pf2 = np.array(pf2,dtype=float)
+
+        assert(value_eq(pf,pf2,tol=1e-3))
+    #end def test_eos_fit
+#end if

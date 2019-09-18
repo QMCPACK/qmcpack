@@ -572,6 +572,7 @@ def jackknife(data,function,args=None,kwargs=None,position=None,capture=None):
 numerics_jackknife = jackknife
 
 
+# test needed
 # get jackknife estimate of auxiliary quantities
 #   jsamples is a subset of jsamples data computed by jackknife above
 #   auxfunc is an additional function to get a jackknife sample of a derived quantity
@@ -788,7 +789,7 @@ def ndgrid(*args, **kwargs):
 def simstats(x,dim=None):
     shape = x.shape
     ndim  = len(shape)
-    if dim==None:
+    if dim is None:
         dim=ndim-1
     #end if
     permute = dim!=ndim-1
@@ -893,7 +894,7 @@ def simstats(x,dim=None):
 
 
 def simplestats(x,dim=None):
-    if dim==None:
+    if dim is None:
         dim=len(x.shape)-1
     #end if
     osqrtN = 1.0/sqrt(1.0*x.shape[dim])
@@ -903,7 +904,7 @@ def simplestats(x,dim=None):
 #end def simplestats
 
 
-def equilibration_length(x,tail=.5,plot=False,xlim=None,bounces=2):
+def equilibration_length(x,tail=.5,plot=False,xlim=None,bounces=2,random=True):
     bounces = max(1,bounces)
     eqlen = 0
     nx = len(x)
@@ -919,6 +920,7 @@ def equilibration_length(x,tail=.5,plot=False,xlim=None,bounces=2):
     mean  = xs[int(.5*(nxt-1)+.5)]
     sigma = (abs(xs[int((.5-.341)*nxt+.5)]-mean)+abs(xs[int((.5+.341)*nxt+.5)]-mean))/2
     crossings = bounces*[0,0]
+    bounce = None
     if abs(x[0]-mean)>sigma:
         s = -sign(x[0]-mean)
         ncrossings = 0
@@ -936,7 +938,11 @@ def equilibration_length(x,tail=.5,plot=False,xlim=None,bounces=2):
         bounce = crossings[-2:]
         bounce[1] = max(bounce[1],bounce[0])
         #print len(x),crossings,crossings[1]-crossings[0]+1
-        eqlen = bounce[0]+random.randint(bounce[1]-bounce[0]+1)
+        if random:
+            eqlen = bounce[0]+random.randint(bounce[1]-bounce[0]+1)
+        else:
+            eqlen = (bounce[0]+bounce[1])//2
+        #end if
     #end if
     if plot:
         xlims = xlim
@@ -949,7 +955,9 @@ def equilibration_length(x,tail=.5,plot=False,xlim=None,bounces=2):
         plot([0,nx],[mean+sigma,mean+sigma],'r-')
         plot([0,nx],[mean-sigma,mean-sigma],'r-')
         plot(ix[crossings],x[crossings],'r.')
-        plot(ix[bounce],x[bounce],'ro')
+        if bounce is not None:
+            plot(ix[bounce],x[bounce],'ro')
+        #end if
         plot([ix[eqlen],ix[eqlen]],[x.min(),x.max()],'g-')
         plot(ix[eqlen],x[eqlen],'go')
         if xlims!=None:
@@ -961,6 +969,8 @@ def equilibration_length(x,tail=.5,plot=False,xlim=None,bounces=2):
 #end def equilibration_length
 
 
+
+# probability that two means are from the same distribution
 def ttest(m1,e1,n1,m2,e2,n2):
     m1 = float(m1)
     e1 = float(e1)
@@ -971,7 +981,7 @@ def ttest(m1,e1,n1,m2,e2,n2):
     t  = (m1-m2)/sqrt(v1+v2)
     nu = (v1+v2)**2/(v1**2/(n1-1)+v2**2/(n2-1))
     x = nu/(nu+t**2)
-    p = 1.-betainc(nu/2,.5,x)
+    p = betainc(nu/2,.5,x)
     return p
 #end def ttest
 
