@@ -219,38 +219,98 @@ if scipy_available:
             ]
         points = np.array(points,dtype=float)
 
-        nn_pairs_ref = [[5,7],
-                        [5,4],
-                        [5,1],
-                        [5,3],
-                        [5,6],
-                        [2,0],
-                        [2,3],
-                        [2,6],
-                        [2,4],
+        joggle = np.array(
+            [[0.60801892, 0.68024807, 0.09037058],
+             [0.95800898, 0.43112463, 0.52981569],
+             [0.08862067, 0.69084511, 0.35177345],
+             [0.37363091, 0.57409599, 0.95654043],
+             [0.8310818 , 0.17146777, 0.90490215],
+             [0.17600223, 0.89772462, 0.75582196],
+             [0.7408217 , 0.22768522, 0.64564984],
+             [0.71678216, 0.6409734 , 0.53354209]])
+        joggle *= 1e-8
+
+        points += joggle
+
+        nn_pairs_ref = [[0,1],
+                        [0,2],
                         [0,4],
                         [0,3],
-                        [1,4],
-                        [1,3],
+                        [0,6],
+                        [0,5],
                         [7,3],
+                        [7,5],
                         [7,6],
-                        [3,4],
+                        [3,1],
+                        [3,2],
                         [3,6],
-                        [6,4]]
+                        [3,5],
+                        [1,5],
+                        [5,4],
+                        [5,6],
+                        [6,4],
+                        [6,2]]
         nn_pairs_ref = np.array(nn_pairs_ref,dtype=int)
+
+        d1 = 1.0
+        d2 = float(np.sqrt(2.))
 
         nn_pairs = voronoi_neighbors(points)
 
-        print nn_pairs
-        return
+        dist_ref = 3*[d1]+3*[d2]+5*[d1]+2*[d2]+2*[d1]+[d2]+2*[d1]
 
         assert(isinstance(nn_pairs,np.ndarray))
         nn_pairs = np.array(nn_pairs,dtype=int)
         assert(value_eq(nn_pairs,nn_pairs_ref))
 
-        for i,j in nn_pairs:
-            print i,j
-            print np.linalg.norm(points[i]-points[j])
+        for n,(i,j) in enumerate(nn_pairs):
+            d = np.linalg.norm(points[i]-points[j])
+            assert(value_eq(float(d),dist_ref[n]))
         #end for
+
     #end def test_voronoi_neighbors
+
+
+
+    def test_convex_hull():
+        import numpy as np
+        from testing import value_eq
+        from numerics import convex_hull
+
+        points = [
+            [0,0,0],
+            [1,0,0],
+            [0,1,0],
+            [1,1,0],
+            [0,0,1],
+            [1,0,1],
+            [0,1,1],
+            [1,1,1],
+            ]
+        points = np.array(points,dtype=float)-0.5
+        
+        points = np.append(2*points,points,axis=0)
+
+        hull = convex_hull(points)
+
+        assert(hull==range(8))
+    #end def test_convex_hull
 #end if
+
+
+
+def random_stream(n):
+    import numpy as np
+
+    def rng(m=2**32, a=1103515245, c=12345):
+        rng.current = (a*rng.current + c) % m
+        return float(rng.current)/m
+    #end def rng
+
+    rng.current = 1
+
+    return np.array([rng() for i in range(n)],dtype=float)
+#end def random_stream
+
+
+rstream = random_stream(1000)

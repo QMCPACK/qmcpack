@@ -1264,7 +1264,7 @@ def nearest_neighbors(n,points,qpoints=None,return_distances=False,slow=False):
 
 
 def voronoi_neighbors(points):
-    vor = Voronoi(points,qhull_options='Qbb Qc Qz')
+    vor = Voronoi(points)
     neighbor_pairs = vor.ridge_points
     return neighbor_pairs
 #end def voronoi_neighbors
