@@ -18,6 +18,7 @@
 
 
 #include "QMCWaveFunctions/EinsplineSpinorSetBuilder.h"
+#include "QMCWaveFunctions/SpinorSet.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Message/CommOperators.h"
 #include "Utilities/Timer.h"
@@ -206,16 +207,14 @@ SPOSet* EinsplineSpinorSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   // temporary disable the following function call, Ye Luo
   // RotateBands_ESHDF(spinSet, dynamic_cast<EinsplineSetExtended<std::complex<double> >*>(OrbitalSet));
   HasCoreOrbs        = bcastSortBands(spinSet, NumDistinctOrbitals, myComm->rank() == 0);
-  SPOSet* bspline_zd_u = MixedSplineReader->create_spline_set(spinSet, spo_cur);
+  std::shared_ptr<SPOSet> bspline_zd_u(MixedSplineReader->create_spline_set(spinSet, spo_cur));
 
   //HasCoreOrbs        = bcastSortBands(spinSet2, NumDistinctOrbitals, myComm->rank() == 0);
   OccupyBands(spinSet2, sortBands, numOrbs);
-  SPOSet* bspline_zd_d = MixedSplineReader->create_spline_set(spinSet2, spo_cur);
+  std::shared_ptr<SPOSet> bspline_zd_d(MixedSplineReader->create_spline_set(spinSet2, spo_cur));
+ 
+  SpinorSet* spinor_set = new SpinorSet(); 
   
- // SPOSet* bspline_zd_d = MixedSplineReader->create_spline_set(1, spo_cur);
-  //if (!bspline_zd)
-  //  APP_ABORT_TRACE(__FILE__, __LINE__, "Failed to create SPOSet*");
-  UpOrbitalSet = bspline_zd_u;
-  return bspline_zd_u;
+  return spinor_set;
 };
 }
