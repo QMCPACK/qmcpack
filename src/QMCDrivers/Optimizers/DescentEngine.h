@@ -174,6 +174,9 @@ public:
   const std::vector<ValueType>& retrieveNewParams() const { return currentParams; }
 
   int getDescentNum() const { return descent_num_; }
+
+  ///Function for setting averaged derivatives, currently only used as part of a unit test of the engine's parameter update
+  void setDerivs(std::vector<FullPrecValueType>& testDerivs) {LDerivs = testDerivs;}
 };
 
 } // namespace qmcplusplus
