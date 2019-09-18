@@ -16,7 +16,6 @@
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
 
-
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Particle/WalkerSetRef.h"
 #include "Particle/DistanceTableData.h"
@@ -488,9 +487,10 @@ QMCHamiltonian::Return_t QMCHamiltonian::evaluate(ParticleSet& P)
   return LocalEnergy;
 }
 
-std::vector<QMCHamiltonian::RealType> QMCHamiltonian::flex_evaluate(const RefVector<QMCHamiltonian>& H_list,
+force_rvo<std::vector<QMCHamiltonian::RealType>> QMCHamiltonian::flex_evaluate(const RefVector<QMCHamiltonian>& H_list,
                                    const RefVector<ParticleSet>& P_list)
 {
+  force_rvo<std::vector<RealType>> local_energies(H_list.size(),0.0);
   if (H_list.size() > 1)
   {
     for (int iw = 0; iw < H_list.size(); iw++)
@@ -532,18 +532,16 @@ std::vector<QMCHamiltonian::RealType> QMCHamiltonian::flex_evaluate(const RefVec
       updateKinetic(HC_list[iw], H_list[iw], P_list[iw]);
     }
 
-    std::vector<RealType> local_energies(H_list.size(),0.0);
     for(int iw= 0; iw < H_list.size(); ++iw)
       local_energies[iw] = H_list[iw].get().get_LocalEnergy();
-    return local_energies;
-    
   }
   else if (H_list.size() == 1)
   {
     std::vector<RealType> local_energies(1,0.0);
     local_energies[0] = H_list[0].get().evaluate(P_list[0]);
-    return local_energies;
   }
+  // Single return is required to have chance for RVO
+  return local_energies;
 }
 
 QMCHamiltonian::RealType QMCHamiltonian::evaluateValueAndDerivatives(ParticleSet& P,

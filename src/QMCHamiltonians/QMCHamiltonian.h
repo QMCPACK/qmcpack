@@ -19,6 +19,7 @@
  */
 #ifndef QMCPLUSPLUS_HAMILTONIAN_H
 #define QMCPLUSPLUS_HAMILTONIAN_H
+#include "type_traits/TypeRequire.hpp"
 #include <QMCHamiltonians/OperatorBase.h>
 #include "QMCHamiltonians/NonLocalECPotential.h"
 #if !defined(REMOVE_TRACEMANAGER)
@@ -223,7 +224,7 @@ public:
    *  Bugs could easily be created by accessing this scope.
    *  This should be set to static and fixed.
    */
-  static std::vector<RealType> flex_evaluate(const RefVector<QMCHamiltonian>& H_list, const RefVector<ParticleSet>& P_list);
+  static force_rvo<std::vector<RealType>> flex_evaluate(const RefVector<QMCHamiltonian>& H_list, const RefVector<ParticleSet>& P_list);
 
   /** evaluate Local energy with Toperators updated.
    * @param P ParticleSEt
