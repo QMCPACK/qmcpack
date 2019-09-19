@@ -463,7 +463,7 @@ void QMCHamiltonian::finalize_traces()
  *@param P input configuration containing N particles
  *@return the local energy
  */
-QMCHamiltonian::FullPrecReal QMCHamiltonian::evaluate(ParticleSet& P)
+QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluate(ParticleSet& P)
 {
   LocalEnergy = 0.0;
   for (int i = 0; i < H.size(); ++i)
@@ -487,11 +487,10 @@ QMCHamiltonian::FullPrecReal QMCHamiltonian::evaluate(ParticleSet& P)
   return LocalEnergy;
 }
 
-std::vector<QMCHamiltonian::FullPrecReal>
-QMCHamiltonian::flex_evaluate(const RefVector<QMCHamiltonian>& H_list,
-                              const RefVector<ParticleSet>& P_list)
+std::vector<QMCHamiltonian::FullPrecRealType> QMCHamiltonian::flex_evaluate(const RefVector<QMCHamiltonian>& H_list,
+                                                                            const RefVector<ParticleSet>& P_list)
 {
-  std::vector<FullPrecReal> local_energies(H_list.size(),0.0);
+  std::vector<FullPrecRealType> local_energies(H_list.size(), 0.0);
   if (H_list.size() > 1)
   {
     for (int iw = 0; iw < H_list.size(); iw++)
@@ -533,7 +532,7 @@ QMCHamiltonian::flex_evaluate(const RefVector<QMCHamiltonian>& H_list,
       updateKinetic(HC_list[iw], H_list[iw], P_list[iw]);
     }
 
-    for(int iw= 0; iw < H_list.size(); ++iw)
+    for (int iw = 0; iw < H_list.size(); ++iw)
       local_energies[iw] = H_list[iw].get().get_LocalEnergy();
   }
   else if (H_list.size() == 1)
@@ -544,11 +543,11 @@ QMCHamiltonian::flex_evaluate(const RefVector<QMCHamiltonian>& H_list,
   return local_energies;
 }
 
-QMCHamiltonian::FullPrecReal QMCHamiltonian::evaluateValueAndDerivatives(ParticleSet& P,
-                                                                     const opt_variables_type& optvars,
-                                                                     std::vector<ValueType>& dlogpsi,
-                                                                     std::vector<ValueType>& dhpsioverpsi,
-                                                                     bool compute_deriv)
+QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateValueAndDerivatives(ParticleSet& P,
+                                                                             const opt_variables_type& optvars,
+                                                                             std::vector<ValueType>& dlogpsi,
+                                                                             std::vector<ValueType>& dhpsioverpsi,
+                                                                             bool compute_deriv)
 {
   LocalEnergy = KineticEnergy = H[0]->evaluate(P);
   if (compute_deriv)
@@ -560,7 +559,7 @@ QMCHamiltonian::FullPrecReal QMCHamiltonian::evaluateValueAndDerivatives(Particl
   return LocalEnergy;
 }
 
-QMCHamiltonian::FullPrecReal QMCHamiltonian::evaluateVariableEnergy(ParticleSet& P, bool free_nlpp)
+QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateVariableEnergy(ParticleSet& P, bool free_nlpp)
 {
   RealType nlpp = 0.0;
   RealType ke   = H[0]->evaluate(P);
@@ -643,7 +642,7 @@ void QMCHamiltonian::rejectedMove(ParticleSet& P, Walker_t& ThisWalker)
   }
 }
 
-QMCHamiltonian::FullPrecReal QMCHamiltonian::evaluateWithToperator(ParticleSet& P)
+QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateWithToperator(ParticleSet& P)
 {
   LocalEnergy = 0.0;
   for (int i = 0; i < H.size(); ++i)
@@ -663,12 +662,12 @@ QMCHamiltonian::FullPrecReal QMCHamiltonian::evaluateWithToperator(ParticleSet& 
   return LocalEnergy;
 }
 
-QMCHamiltonian::FullPrecReal QMCHamiltonian::evaluateIonDerivs(ParticleSet& P,
-                                                           ParticleSet& ions,
-                                                           TrialWaveFunction& psi,
-                                                           ParticleSet::ParticlePos_t& hf_term,
-                                                           ParticleSet::ParticlePos_t& pulay_terms,
-                                                           ParticleSet::ParticlePos_t& wf_grad)
+QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateIonDerivs(ParticleSet& P,
+                                                                   ParticleSet& ions,
+                                                                   TrialWaveFunction& psi,
+                                                                   ParticleSet::ParticlePos_t& hf_term,
+                                                                   ParticleSet::ParticlePos_t& pulay_terms,
+                                                                   ParticleSet::ParticlePos_t& wf_grad)
 {
   ParticleSet::ParticleGradient_t wfgradraw_(ions.getTotalNum());
   wfgradraw_           = 0.0;
@@ -685,9 +684,9 @@ QMCHamiltonian::FullPrecReal QMCHamiltonian::evaluateIonDerivs(ParticleSet& P,
   return localEnergy;
 }
 
-QMCHamiltonian::FullPrecReal QMCHamiltonian::getEnsembleAverage()
+QMCHamiltonian::FullPrecRealType QMCHamiltonian::getEnsembleAverage()
 {
-  FullPrecReal sum = 0.0;
+  FullPrecRealType sum = 0.0;
   for (int i = 0; i < H.size(); i++)
     sum += H[i]->getEnsembleAverage();
   return sum;
