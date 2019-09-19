@@ -1707,6 +1707,12 @@ def periodic_table():
 
 
 
+def numerics():
+    nunit_all()
+#end def numerics
+
+
+
 
 def nexus_imports():
     import nexus
@@ -3390,6 +3396,7 @@ NexusTest( generic_intrinsics    )
 NexusTest( generic_extensions    )
 NexusTest( developer             )
 NexusTest( periodic_table        )
+NexusTest( numerics              )
 NexusTest( nexus_imports         )
 NexusTest( settings_operation    , 'settings' )
 NexusTest( machines              )
