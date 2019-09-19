@@ -329,7 +329,7 @@ private:
   /////////////////////
   // Vectorized data //
   /////////////////////
-  std::vector<Return_t> LocalEnergyVector, KineticEnergyVector, AuxEnergyVector;
+  std::vector<QMCHamiltonian::FullPrecRealType> LocalEnergyVector, KineticEnergyVector, AuxEnergyVector;
 #endif
 
 private:
