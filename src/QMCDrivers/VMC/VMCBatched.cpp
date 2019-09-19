@@ -215,7 +215,7 @@ void VMCBatched::advanceWalkers(const StateForThread& sft, Crowd& crowd, Context
     saveElecPosAndGLToWalkers(walker_elecs[iw], walkers[iw]);
 
   auto& walker_hamiltonians = crowd.get_walker_hamiltonians();
-  std::vector<QMCHamiltonian::RealType> local_energies(
+  std::vector<QMCHamiltonian::FullPrecRealType> local_energies(
       QMCHamiltonian::flex_evaluate(walker_hamiltonians, walker_elecs));
   auto resetSigNLocalEnergy = [](MCPWalker& walker, TrialWaveFunction& twf, auto& local_energy) {
     walker.resetProperty(twf.getLogPsi(), twf.getPhase(), local_energy);
