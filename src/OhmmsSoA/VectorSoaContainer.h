@@ -56,9 +56,8 @@ struct VectorSoaContainer
   }
 
   ///default copy constructor
-  VectorSoaContainer(const VectorSoaContainer& in)
+  VectorSoaContainer(const VectorSoaContainer& in) : nLocal(0), nGhosts(0), nAllocated(0), myData(nullptr)
   {
-    setDefaults();
     resize(in.nLocal);
     std::copy_n(in.myData, nGhosts * D, myData);
   }
@@ -75,29 +74,24 @@ struct VectorSoaContainer
   }
 
   ///move constructor
-  VectorSoaContainer(VectorSoaContainer&& in) : nLocal(in.nLocal), nGhosts(in.nGhosts), nAllocated(in.nAllocated), myData(in.myData)
+  VectorSoaContainer(VectorSoaContainer&& in)
+      : nLocal(in.nLocal), nGhosts(in.nGhosts), nAllocated(in.nAllocated), myData(std::move(in.myData))
   {
-    free(myAlloc);
-    myAlloc       = std::move(in.myAlloc);
     in.myData     = nullptr;
     in.nAllocated = 0;
-    in.nLocal = 0;
-    in.nGhosts = 0;
+    in.nLocal     = 0;
+    in.nGhosts    = 0;
   }
 
   /** constructor with size n  without initialization
        */
-  explicit VectorSoaContainer(size_t n)
-  {
-    setDefaults();
-    resize(n);
-  }
+  explicit VectorSoaContainer(size_t n) : nLocal(0), nGhosts(0), nAllocated(0), myData(nullptr) { resize(n); }
 
   /** constructor with ParticleAttrib<T1,D> */
   template<typename T1>
   VectorSoaContainer(const ParticleAttrib<TinyVector<T1, D>>& in)
+      : nLocal(0), nGhosts(0), nAllocated(0), myData(nullptr)
   {
-    setDefaults();
     resize(in.size());
     copyIn(in);
   }
@@ -105,8 +99,7 @@ struct VectorSoaContainer
   template<typename T1>
   VectorSoaContainer& operator=(const ParticleAttrib<TinyVector<T1, D>>& in)
   {
-    if (nLocal != in.size())
-      resize(in.size());
+    resize(in.size());
     copyIn(in);
     return *this;
   }
@@ -120,15 +113,6 @@ struct VectorSoaContainer
     return *this;
   }
 
-  ///initialize the data members
-  __forceinline void setDefaults()
-  {
-    nLocal     = 0;
-    nGhosts    = 0;
-    nAllocated = 0;
-    myData     = nullptr;
-  }
-
   /** resize myData
        * @param n nLocal
        *
@@ -136,34 +120,44 @@ struct VectorSoaContainer
        */
   __forceinline void resize(size_t n)
   {
-    static_assert(std::is_same<Element_t, typename Alloc::value_type>::value, "VectorSoaContainer and Alloc data types must agree!");
-    if (nAllocated)
-      myAlloc.deallocate(myData, nAllocated);
-    nLocal     = n;
-    // Bail out to avoid some allocator implementations returning allocated ptr that
-    // must be freed, breaking the nAllocated scheme.
-    if(n == 0)
+    static_assert(std::is_same<Element_t, typename Alloc::value_type>::value,
+                  "VectorSoaContainer and Alloc data types must agree!");
+    if (n == 0)
     {
-      nAllocated = 0;
-      nGhosts = 0;
-      myData = nullptr;
+      free();
       return;
     }
-    nGhosts    = getAlignedSize<T, ALIGN>(n);
-    nAllocated = nGhosts * D;
-    myData     = myAlloc.allocate(nAllocated);
+    else if (n == nLocal)
+    {
+      nLocal = n;
+    }
+    else
+    {
+      deallocate();
+      nLocal     = n;
+      nGhosts    = getAlignedSize<T, ALIGN>(n);
+      nAllocated = nGhosts * D;
+      myData     = myAlloc.allocate(nAllocated);
+      return;
+    }
   }
 
-  /** free myData
-       */
-  __forceinline void free()
+  // can't just deallocate because of attach ref feature
+  void deallocate()
   {
     if (nAllocated)
       myAlloc.deallocate(myData, nAllocated);
-    nLocal     = 0;
-    nGhosts    = 0;
     nAllocated = 0;
-    myData     = nullptr;
+  }
+
+  /** clear status variables
+       */
+  __forceinline void free()
+  {
+    deallocate();
+    nLocal  = 0;
+    nGhosts = 0;
+    myData  = nullptr;
   }
 
   /** attach to pre-allocated data
@@ -177,6 +171,7 @@ struct VectorSoaContainer
   {
     if (nAllocated)
       throw std::runtime_error("Pointer attaching is not allowed on VectorSoaContainer with allocated memory.");
+    free();
     nAllocated = 0;
     nLocal     = n;
     nGhosts    = n_padded;
@@ -256,7 +251,6 @@ struct VectorSoaContainer
   __forceinline T* end() { return myData + D * nGhosts; }
   ///return the end
   __forceinline const T* end() const { return myData + D * nGhosts; }
-
 };
 
 } // namespace qmcplusplus
