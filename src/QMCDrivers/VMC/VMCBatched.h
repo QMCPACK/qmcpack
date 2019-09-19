@@ -27,6 +27,7 @@ namespace qmcplusplus
 class VMCBatched : public QMCDriverNew
 {
 public:
+  using FullPrecRealType = QMCTraits::FullPrecRealType;
   using PosType = QMCTraits::PosType;
   using ParticlePositions = PtclOnLatticeTraits::ParticlePos_t;
 
@@ -37,14 +38,14 @@ public:
    */
   struct StateForThread
   {
-    QMCDriverInput& qmcdrv_input;
-    VMCDriverInput& vmcdrv_input;
-    MCPopulation&   population;
+    const QMCDriverInput& qmcdrv_input;
+    const VMCDriverInput& vmcdrv_input;
+    const MCPopulation&   population;
     IndexType recalculate_properties_period;
     IndexType step;
     int block;
     bool recomputing_blocks;
-    DriftModifierBase& drift_modifier;
+    const DriftModifierBase& drift_modifier;
     StateForThread(QMCDriverInput&  qmci,
                    VMCDriverInput& vmci,
                    DriftModifierBase& drift_mod,
@@ -71,6 +72,11 @@ public:
    *  Obfuscation of state changes via buffer and MCWalkerconfiguration require this be tested well
    */
   static void advanceWalkers(const StateForThread& sft, Crowd& crowd, ContextForSteps& move_context, bool recompute);
+
+  static void runWarmupSteps(int crowd_id,
+                            const StateForThread& sft,
+                            std::vector<std::unique_ptr<ContextForSteps>>& context_for_steps,
+                             std::vector<std::unique_ptr<Crowd>>& crowds);
   
   // This is the task body executed at crowd scope
   // it does not have access to object member variables by design
@@ -98,6 +104,10 @@ private:
   VMCBatched(const VMCBatched&) = delete;
   /// Copy operator (disabled).
   VMCBatched& operator=(const VMCBatched&) = delete;
+  /// timer for running each step of VMC.
+  NewTimer& run_steps_timer_;
+  /// timer for walker initialization, it should be moved to QMCDriverNew instead of derived class.
+  NewTimer& init_walkers_timer_;
 };
 
 extern std::ostream& operator<<(std::ostream& o_stream, const VMCBatched& vmc_batched);
