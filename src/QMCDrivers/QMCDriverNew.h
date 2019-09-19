@@ -85,6 +85,32 @@ public:
    */
   std::bitset<QMC_MODE_MAX> qmc_driver_mode_;
 
+  /** The timers for the driver.
+   *
+   * This cleans up the driver constructor, and a reference to this structure 
+   * Takes the timers into thread scope.
+   */
+  struct Timers
+  {
+    NewTimer& checkpoint_timer;
+    NewTimer& run_steps_timer;
+    NewTimer& init_walkers_timer;
+    NewTimer& buffer_timer;
+    NewTimer& movepbyp_timer;
+    NewTimer& hamiltonian_timer;
+    NewTimer& collectables_timer;
+    Timers(const std::string& prefix)
+        : checkpoint_timer(*TimerManager.createTimer(prefix + "CheckPoint", timer_level_medium)),
+          run_steps_timer(*TimerManager.createTimer(prefix + "RunSteps", timer_level_medium)),
+          init_walkers_timer(*TimerManager.createTimer(prefix + "InitWalkers", timer_level_medium)),
+          buffer_timer(*TimerManager.createTimer(prefix + "Buffer", timer_level_medium)),
+          movepbyp_timer(*TimerManager.createTimer(prefix + "MovePbyP", timer_level_medium)),
+          hamiltonian_timer(*TimerManager.createTimer(prefix + "Hamiltonian", timer_level_medium)),
+          collectables_timer(*TimerManager.createTimer(prefix + "Collectables", timer_level_medium))
+    {}
+  };
+
+  
   /// whether to allow traces
   bool allow_traces;
   /// traces xml
@@ -96,6 +122,7 @@ public:
                TrialWaveFunction& psi,
                QMCHamiltonian& h,
                WaveFunctionPool& ppool,
+               const std::string timer_prefix,
                Communicate* comm);
 
   virtual ~QMCDriverNew();
@@ -125,7 +152,7 @@ public:
   void add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi);
 
   void createRngsStepContexts();
-  
+
   void setupWalkers();
 
   void putWalkers(std::vector<xmlNodePtr>& wset);
@@ -177,7 +204,7 @@ public:
   void process(xmlNodePtr cur);
 
   static void initialLogEvaluation(int crowd_id, UPtrVector<Crowd>& crowds);
-  
+
   /** should be set in input don't see a reason to set individually
    * @param pbyp if true, use particle-by-particle update
    */
@@ -257,7 +284,7 @@ protected:
   /** Per crowd move contexts, this is where the DistanceTables etc. reside
    */
   std::vector<std::unique_ptr<ContextForSteps>> step_contexts_;
-  
+
   ///a list of TrialWaveFunctions for multiple method
   std::vector<TrialWaveFunction*> Psi1;
 
@@ -304,7 +331,10 @@ protected:
 
   /** }@ */
 
-        std::vector<RandomGenerator_t*> RngCompatibility;
+  std::vector<RandomGenerator_t*> RngCompatibility;
+
+  Timers timers_;
+
 public:
   ///Copy Constructor (disabled).
   QMCDriverNew(const QMCDriverNew&) = delete;
@@ -338,11 +368,10 @@ public:
   const std::string& get_root_name() const { return root_name_; }
   std::string getRotationName(std::string RootName);
   std::string getLastRotationName(std::string RootName);
-  
-  NewTimer* checkpointTimer;
 
 private:
   friend std::ostream& operator<<(std::ostream& o_stream, const QMCDriverNew& qmcd);
+
 };
 /**@}*/
 } // namespace qmcplusplus
