@@ -288,17 +288,20 @@ bool VMCBatched::run()
     section_start_task(initialLogEvaluation, std::ref(crowds_));
   }
 
-  TasksOneToOne<> section_start_task(num_crowds_);
-  auto warmupSteps = [](int crowd_id, StateForThread& sft,
+  TasksOneToOne<> crowd_task(num_crowds_);
+
+  auto runWarmupStep = [](int crowd_id, StateForThread& sft,
                         UPtrVector<ContextForSteps>& context_for_steps,
-                        UPtrVector<Crowd>& crowds, NewTimer* run_steps_timer) {
-    ScopedTimer local_timer(run_steps_timer);
+                        UPtrVector<Crowd>& crowds) {
     Crowd& crowd = *(crowds[crowd_id]);
-    for (int i_step = 0; i_step < sft.qmcdrv_input.get_warmup_steps(); ++i_step)
-      advanceWalkers(sft, crowd, *context_for_steps[crowd_id], false);
+    advanceWalkers(sft, crowd, *context_for_steps[crowd_id], false);
   };
 
-  section_start_task(warmupSteps, vmc_state, std::ref(step_contexts_), std::ref(crowds_), &run_steps_timer_);
+  for (int step = 0; step < qmcdriver_input_.get_warmup_steps(); ++step)
+  {
+    ScopedTimer local_timer(&run_steps_timer_);
+    crowd_task(runWarmupStep, vmc_state, std::ref(step_contexts_), std::ref(crowds_));
+  }
 
   for (int block = 0; block < num_blocks; ++block)
   {
@@ -315,7 +318,6 @@ bool VMCBatched::run()
     {
       ScopedTimer local_timer(&run_steps_timer_);
       vmc_state.step = step;
-      TasksOneToOne<> crowd_task(num_crowds_);
       crowd_task(runVMCStep, vmc_state, std::ref(step_contexts_), std::ref(crowds_));
     }
 
