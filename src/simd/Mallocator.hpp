@@ -43,7 +43,7 @@ struct Mallocator
   T* allocate(std::size_t n)
   {
     if (n == 0)
-      return nullptr;
+      throw std::runtime_error("Mallocator does not accept size 0 allocations.");
     void* pt(nullptr);
     std::size_t asize = n * sizeof(T);
     std::size_t amod  = asize % ALIGN;
