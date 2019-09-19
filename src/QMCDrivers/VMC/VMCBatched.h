@@ -73,11 +73,6 @@ public:
    */
   static void advanceWalkers(const StateForThread& sft, Crowd& crowd, ContextForSteps& move_context, bool recompute);
 
-  static void runWarmupSteps(int crowd_id,
-                            const StateForThread& sft,
-                            std::vector<std::unique_ptr<ContextForSteps>>& context_for_steps,
-                             std::vector<std::unique_ptr<Crowd>>& crowds);
-  
   // This is the task body executed at crowd scope
   // it does not have access to object member variables by design
   static void runVMCStep(int crowd_id,
