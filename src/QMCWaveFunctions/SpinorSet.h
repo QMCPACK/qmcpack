@@ -28,23 +28,24 @@ public:
   /** constructor */
   SpinorSet();
   ~SpinorSet();
-  
+ 
+  void set_spos(std::shared_ptr<SPOSet> up, std::shared_ptr<SPOSet> dn);
   /// reset parameters to the values from optimizer
-  void resetParameters(const opt_variables_type& optVariables);
+  void resetParameters(const opt_variables_type& optVariables) override;
 
   /** reset the target particleset
    *  this is used to reset the pointer to ion-electron distance table needed by LCAO basis set.
    *  Ye: Only AoS needs it, SoA LCAO doesn't need this. Reseting pointers is a state machine very hard to maintain.
    *  This interface should be removed with AOS.
    */
-  void resetTargetParticleSet(ParticleSet& P);
+  void resetTargetParticleSet(ParticleSet& P) override;
 
   /** set the OrbitalSetSize
    * @param norbs number of single-particle orbitals
    * Ye: I prefer to remove this interface in the future. SPOSet builders need to handle the size correctly.
    * It doesn't make sense allowing to set the value at any place in the code.
    */
-  void setOrbitalSetSize(int norbs);
+  void setOrbitalSetSize(int norbs) override;
 
 
   /** evaluate the values of this spinor set
@@ -52,7 +53,7 @@ public:
    * @param iat active particle
    * @param psi values of the SPO
    */
-  void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi);
+  void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi) override;
 
   /** evaluate the values, gradients and laplacians of this single-particle orbital set
    * @param P current ParticleSet
@@ -65,7 +66,7 @@ public:
                         int iat,
                         ValueVector_t& psi,
                         GradVector_t& dpsi,
-                        ValueVector_t& d2psi);
+                        ValueVector_t& d2psi) override;
 
   /** evaluate the values, gradients and laplacians of this single-particle orbital for [first,last) particles
    * @param P current ParticleSet
@@ -81,11 +82,29 @@ public:
                                     int last,
                                     ValueMatrix_t& logdet,
                                     GradMatrix_t& dlogdet,
-                                    ValueMatrix_t& d2logdet);
+                                    ValueMatrix_t& d2logdet) override;
 
 private:
   std::shared_ptr<SPOSet> spo_up;
   std::shared_ptr<SPOSet> spo_dn;
+
+  ValueVector_t psi_work_up;
+  ValueVector_t psi_work_down;
+  
+  GradVector_t dpsi_work_up;
+  GradVector_t dpsi_work_down;
+
+  ValueVector_t d2psi_work_up;
+  ValueVector_t d2psi_work_down;
+
+  ValueMatrix_t logpsi_work_up;
+  ValueMatrix_t logpsi_work_down;
+  
+  GradMatrix_t dlogpsi_work_up;
+  GradMatrix_t dlogpsi_work_down;
+  
+  ValueMatrix_t d2logpsi_work_up;
+  ValueMatrix_t d2logpsi_work_down;
   
 };
 

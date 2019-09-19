@@ -214,7 +214,8 @@ SPOSet* EinsplineSpinorSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   std::shared_ptr<SPOSet> bspline_zd_d(MixedSplineReader->create_spline_set(spinSet2, spo_cur));
  
   SpinorSet* spinor_set = new SpinorSet(); 
-  
+  spinor_set->set_spos(bspline_zd_u,bspline_zd_d); 
   return spinor_set;
+ // return nullptr;
 };
 }
