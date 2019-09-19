@@ -81,7 +81,12 @@ def import_unit_test_module(module_name):
 
 
 def import_from_unit_test_module(module_name,test_name):
-    return import_unit_test_module(module_name)[test_name]
+    module = import_unit_test_module(module_name)
+    if test_name not in module:
+        print('function "{}" is not in module "{}"\nfunctions present: {}'.format(test_name,module_name,sorted(module.keys())))
+        exit(1)
+    #end if
+    return module[test_name]
 #end def import_from_unit_test_module
 
 
@@ -234,6 +239,7 @@ def nlabel(label):
     os.chdir(NexusTestBase.launch_path)
     NexusTestBase.current_label = label
     NexusTestBase.label_count  += 1
+    NexusTestBase.current_test.subtests.append(label)
 #end def nlabel
 
 
@@ -376,7 +382,11 @@ def nassert(result):
 # run a unit test from an external file
 def nunit(test_name):
     module_name = 'test_'+NexusTestBase.current_test.name
+    if not test_name.startswith('test_'):
+        test_name = 'test_'+test_name
+    #end if
     unit_test   = import_from_unit_test_module(module_name,test_name)
+    load_external_unit_tests()
     run_external_unit_test(test_name,unit_test)
 #end def nunit
 
@@ -474,6 +484,7 @@ class NexusTest(NexusTestBase):
         self.status            = NexusTest.status_options['unused']
         self.unit_tests        = set() # complete set of unit tests
         self.unit_tests_called = set() # set of unit tests called so far
+        self.subtests          = []    # list of subtests called
         NexusTest.test_list.append(self)
         NexusTest.test_dict[self.name] = self
     #end def __init__
@@ -502,6 +513,7 @@ class NexusTest(NexusTestBase):
         NexusTestBase.current_label = ''
         NexusTestBase.test_count   += 1
         NexusTestBase.label_count   = 0
+        failed = False
         try:
             if self.op_inputs is None:
                 self.operation()
@@ -518,9 +530,10 @@ class NexusTest(NexusTestBase):
             self.exception = e
             self.traceback = tb
             self.status=NexusTest.status_options['failed']
+            failed = True
         #end try
         uncalled_unit_tests = self.unit_tests-self.unit_tests_called
-        if len(uncalled_unit_tests)>0:
+        if not failed and len(uncalled_unit_tests)>0:
             raise NexusTestMisconstructed('not all unit tests were called\n  uncalled unit tests: {}\n  please add these either by calling "nunit" for each of them\n  or by calling "nunit_all" at the end of function "{}"'.format(sorted(uncalled_unit_tests),self.name))
         #end if
     #end def run
@@ -1704,6 +1717,12 @@ def developer():
 def periodic_table():
     nunit_all()
 #end def periodic_table
+
+
+
+def numerics():
+    nunit_all()
+#end def numerics
 
 
 
@@ -3124,6 +3143,61 @@ def qmcpack_input():
 #end def qmcpack_input
 
 
+def grid_functions():
+
+    nunit('imports')
+
+    # supporting functions
+    nunit('coord_conversion')
+
+    nunit('unit_grid_points')
+
+    nunit('parallelotope_grid_points')
+
+    nunit('spheroid_grid_points')
+
+    # Grid tests
+    nunit('grid_initialization')
+
+    nunit('parallelotope_grid_initialization')
+
+    nunit('grid_reset')
+
+    nunit('grid_set_operations')
+
+    nunit('grid_copy')
+
+    nunit('grid_translate')
+
+    nunit('grid_reshape')
+
+    nunit('grid_unit_points')
+
+    nunit('grid_cell_indices')
+
+    nunit('grid_inside')
+
+    nunit('grid_project')
+
+    nunit('grid_radius')
+
+    nunit('grid_axes_volume')
+
+    nunit('grid_volume')
+
+    nunit('grid_cell_volumes')
+
+    nunit('grid_unit_metric')
+
+    # GridFunction tests
+
+    # any remaining tests
+    nunit_all()
+
+#end def grid_functions
+
+
+
 example_information = dict(
     pwscf_relax_Ge_T = dict(
         path = 'quantum_espresso/relax_Ge_T_vs_kpoints', 
@@ -3390,6 +3464,7 @@ NexusTest( generic_intrinsics    )
 NexusTest( generic_extensions    )
 NexusTest( developer             )
 NexusTest( periodic_table        )
+NexusTest( numerics              )
 NexusTest( nexus_imports         )
 NexusTest( settings_operation    , 'settings' )
 NexusTest( machines              )
@@ -3397,6 +3472,7 @@ NexusTest( structure             )
 NexusTest( physical_system       )
 NexusTest( pwscf_input           )
 NexusTest( qmcpack_input         )
+NexusTest( grid_functions        )
 
 for label in example_information.keys():
     NexusTest(
@@ -3592,6 +3668,10 @@ if __name__=='__main__':
                       action='store_true',default=False,
                       help='Print help information and exit (default=%default).'
                       )
+    parser.add_option('-v','--verbose',dest='verbose',
+                      action='store_true',default=False,
+                      help='Print detailed information (default=%default).'
+                      )
     parser.add_option('-R','--regex',dest='regex',
                       default='none',
                       help='Tests with names matching the regular expression (regex) will be run.  The default behavior is to run all tests (default=%default).'
@@ -3778,6 +3858,12 @@ if __name__=='__main__':
                 sn = (len(slt)-len(sn))*' '+sn
             #end if
             print(' {0}/{1} {2}   {3}  {4:3.2f} sec'.format(sn,slt,title,status,t2-t1))
+            if options.verbose:
+                pad = (len(sn)+len(slt)+5)*' '
+                for subtest in test.subtests:
+                    print(pad+'subtest: '+subtest)
+                #end for
+            #end if
         #end if
         
         # print more information if failed
