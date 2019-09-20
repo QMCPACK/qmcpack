@@ -225,3 +225,50 @@ def setup_unit_test_output_directory(test,subtest):
     assert(os.path.exists(path))
     return path
 #end def setup_unit_test_output_directory
+
+
+# class used to divert log output when desired
+class FakeLog:
+    def __init__(self):
+        self.reset()
+    #end def __init__
+
+    def reset(self):
+        self.s = ''
+    #end def reset
+
+    def write(self,s):
+        self.s+=s
+    #end def write
+
+    def close(self):
+        None
+    #end def close
+#end class FakeLog
+
+
+# dict to temporarily store logger when log output is diverted
+logging_storage = dict()
+
+
+
+# divert nexus log output
+def divert_nexus_log():
+    from generic import generic_settings,object_interface
+    if len(logging_storage)==0:
+        logging_storage['devlog'] = generic_settings.devlog
+        logging_storage['objlog'] = object_interface._logfile 
+        logfile = FakeLog()
+        generic_settings.devlog   = logfile
+        object_interface._logfile = logfile
+    #end if
+#end def divert_nexus_log
+
+
+# restore nexus log output
+def restore_nexus_log():
+    from generic import generic_settings,object_interface
+    generic_settings.devlog   = logging_storage['devlog']
+    object_interface._logfile = logging_storage['objlog']
+    logging_storage.clear()
+#end def restore_nexus_log
