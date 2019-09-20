@@ -50,6 +50,7 @@ QMCDriverNew::QMCDriverNew(QMCDriverInput&& input,
                            TrialWaveFunction& psi,
                            QMCHamiltonian& h,
                            WaveFunctionPool& ppool,
+                           const std::string timer_prefix,
                            Communicate* comm)
     : MPIObjectBase(comm),
       qmcdriver_input_(input),
@@ -60,7 +61,8 @@ QMCDriverNew::QMCDriverNew(QMCDriverInput&& input,
       psiPool(ppool),
       estimator_manager_(nullptr),
       wOut(0),
-      walkers_per_crowd_(1)
+      walkers_per_crowd_(1),
+      timers_(timer_prefix)
       // num_crowds_(input.get_num_crowds())
 {
   QMCType = "invalid";
@@ -72,8 +74,6 @@ QMCDriverNew::QMCDriverNew(QMCDriverInput&& input,
     num_crowds_ = input.get_num_crowds();
  
   rotation = 0;
-
-  checkpointTimer = TimerManager.createTimer("checkpoint::recordBlock", timer_level_medium);
 }
 
 int QMCDriverNew::addObservable(const std::string& aname)
@@ -273,10 +273,10 @@ void QMCDriverNew::recordBlock(int block)
 {
   if (qmcdriver_input_.get_dump_config() && block % qmcdriver_input_.get_check_point_period().period == 0)
   {
-    checkpointTimer->start();
+    timers_.checkpoint_timer.start();
     branchEngine->write(root_name_, true); //save energy_history
     RandomNumberControl::write(root_name_, myComm);
-    checkpointTimer->stop();
+    timers_.checkpoint_timer.stop();
   }
 }
 
