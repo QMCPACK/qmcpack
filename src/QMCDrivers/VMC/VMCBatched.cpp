@@ -27,10 +27,8 @@ VMCBatched::VMCBatched(QMCDriverInput&& qmcdriver_input,
                        QMCHamiltonian& h,
                        WaveFunctionPool& ppool,
                        Communicate* comm)
-    : QMCDriverNew(std::move(qmcdriver_input), std::move(pop), psi, h, ppool, comm),
-      vmcdriver_input_(input),
-      run_steps_timer_(*TimerManager.createTimer("VMCBatched::runSteps", timer_level_medium)),
-      init_walkers_timer_(*TimerManager.createTimer("VMCBatched::InitWalkers", timer_level_medium))
+    : QMCDriverNew(std::move(qmcdriver_input), std::move(pop), psi, h, ppool, "VMCBatched::", comm),
+      vmcdriver_input_(input)
 {
   QMCType = "VMCBatched";
   // qmc_driver_mode.set(QMC_UPDATE_MODE, 1);
@@ -77,8 +75,13 @@ VMCBatched::IndexType VMCBatched::calc_default_local_walkers()
   return local_walkers;
 }
 
-void VMCBatched::advanceWalkers(const StateForThread& sft, Crowd& crowd, ContextForSteps& step_context, bool recompute)
+void VMCBatched::advanceWalkers(const StateForThread& sft,
+                                Crowd& crowd,
+                                QMCDriverNew::DriverTimers& timers,
+                                ContextForSteps& step_context,
+                                bool recompute)
 {
+  timers.buffer_timer.start();
   crowd.loadWalkers();
 
   // Consider favoring lambda followed by for over walkers
@@ -91,9 +94,10 @@ void VMCBatched::advanceWalkers(const StateForThread& sft, Crowd& crowd, Context
   };
   for (int iw = 0; iw < crowd.size(); ++iw)
     copyTWFFromBuffer(walker_twfs[iw], walker_elecs[iw], walkers[iw]);
+  timers.buffer_timer.stop();
 
-  int num_walkers   = crowd.size();
-  int num_particles = sft.population.get_num_particles();
+  timers.movepbyp_timer.start();
+  int num_walkers = crowd.size();
   // Note std::vector<bool> is not like the rest of stl.
   std::vector<bool> moved(num_walkers, false);
   constexpr RealType mhalf(-0.5);
@@ -207,19 +211,26 @@ void VMCBatched::advanceWalkers(const StateForThread& sft, Crowd& crowd, Context
                 [](auto& twf) { twf.get().completeUpdates(); });
 
   ParticleSet::flex_donePbyP(crowd.get_walker_elecs());
+  timers.movepbyp_timer.stop();
 
+  timers.buffer_timer.start();
   TrialWaveFunction::flex_updateBuffer(crowd.get_walker_twfs(), crowd.get_walker_elecs(), crowd.get_mcp_wfbuffers());
 
   auto saveElecPosAndGLToWalkers = [](ParticleSet& pset, ParticleSet::Walker_t& walker) { pset.saveWalker(walker); };
   for (int iw = 0; iw < crowd.size(); ++iw)
     saveElecPosAndGLToWalkers(walker_elecs[iw], walkers[iw]);
+  timers.buffer_timer.stop();
 
+  timers.hamiltonian_timer.start();
   auto& walker_hamiltonians = crowd.get_walker_hamiltonians();
   std::vector<QMCHamiltonian::FullPrecRealType> local_energies(
       QMCHamiltonian::flex_evaluate(walker_hamiltonians, walker_elecs));
   auto resetSigNLocalEnergy = [](MCPWalker& walker, TrialWaveFunction& twf, auto& local_energy) {
     walker.resetProperty(twf.getLogPsi(), twf.getPhase(), local_energy);
   };
+  timers.hamiltonian_timer.stop();
+
+  timers.collectables_timer.start();
   for (int iw = 0; iw < crowd.size(); ++iw)
     resetSigNLocalEnergy(walkers[iw], walker_twfs[iw], local_energies[iw]);
   auto evaluateNonPhysicalHamiltonianElements = [](QMCHamiltonian& ham, ParticleSet& pset, MCPWalker& walker) {
@@ -227,12 +238,13 @@ void VMCBatched::advanceWalkers(const StateForThread& sft, Crowd& crowd, Context
   };
   for (int iw = 0; iw < crowd.size(); ++iw)
     evaluateNonPhysicalHamiltonianElements(walker_hamiltonians[iw], walker_elecs[iw], walkers[iw]);
+
   auto savePropertiesIntoWalker = [](QMCHamiltonian& ham, MCPWalker& walker) {
     ham.saveProperty(walker.getPropertyBase());
   };
   for (int iw = 0; iw < crowd.size(); ++iw)
     savePropertiesIntoWalker(walker_hamiltonians[iw], walkers[iw]);
-
+  timers.collectables_timer.stop();
   // TODO:
   //  check if all moves failed
 }
@@ -243,6 +255,7 @@ void VMCBatched::advanceWalkers(const StateForThread& sft, Crowd& crowd, Context
  */
 void VMCBatched::runVMCStep(int crowd_id,
                             const StateForThread& sft,
+                            DriverTimers& timers,
                             std::vector<std::unique_ptr<ContextForSteps>>& context_for_steps,
                             std::vector<std::unique_ptr<Crowd>>& crowds)
 {
@@ -255,7 +268,7 @@ void VMCBatched::runVMCStep(int crowd_id,
   IndexType step = sft.step;
   // Are we entering the the last step of a block to recompute at?
   bool recompute_this_step = (is_recompute_block && (step + 1) == max_steps);
-  advanceWalkers(sft, crowd, *context_for_steps[crowd_id], recompute_this_step);
+  advanceWalkers(sft, crowd, timers, *context_for_steps[crowd_id], recompute_this_step);
   crowd.accumulate(sft.population.get_num_global_walkers());
 }
 
@@ -283,24 +296,23 @@ bool VMCBatched::run()
   RunTimeControl runtimeControl(RunTimeManager, MaxCPUSecs);
 
   { // walker initialization
-    ScopedTimer local_timer(&init_walkers_timer_);
+    ScopedTimer local_timer(&(timers_.init_walkers_timer));
     TasksOneToOne<> section_start_task(num_crowds_);
     section_start_task(initialLogEvaluation, std::ref(crowds_));
   }
 
   TasksOneToOne<> crowd_task(num_crowds_);
 
-  auto runWarmupStep = [](int crowd_id, StateForThread& sft,
-                        UPtrVector<ContextForSteps>& context_for_steps,
-                        UPtrVector<Crowd>& crowds) {
+  auto runWarmupStep = [](int crowd_id, StateForThread& sft, DriverTimers& timers,
+                          UPtrVector<ContextForSteps>& context_for_steps, UPtrVector<Crowd>& crowds) {
     Crowd& crowd = *(crowds[crowd_id]);
-    advanceWalkers(sft, crowd, *context_for_steps[crowd_id], false);
+    advanceWalkers(sft, crowd, timers, *context_for_steps[crowd_id], false);
   };
 
   for (int step = 0; step < qmcdriver_input_.get_warmup_steps(); ++step)
   {
-    ScopedTimer local_timer(&run_steps_timer_);
-    crowd_task(runWarmupStep, vmc_state, std::ref(step_contexts_), std::ref(crowds_));
+    ScopedTimer local_timer(&(timers_.run_steps_timer));
+    crowd_task(runWarmupStep, vmc_state, std::ref(timers_), std::ref(step_contexts_), std::ref(crowds_));
   }
 
   for (int block = 0; block < num_blocks; ++block)
@@ -316,9 +328,9 @@ bool VMCBatched::run()
       crowd->startBlock(qmcdriver_input_.get_max_steps());
     for (int step = 0; step < qmcdriver_input_.get_max_steps(); ++step)
     {
-      ScopedTimer local_timer(&run_steps_timer_);
+      ScopedTimer local_timer(&(timers_.run_steps_timer));
       vmc_state.step = step;
-      crowd_task(runVMCStep, vmc_state, std::ref(step_contexts_), std::ref(crowds_));
+      crowd_task(runVMCStep, vmc_state, timers_, std::ref(step_contexts_), std::ref(crowds_));
     }
 
     RefVector<ScalarEstimatorBase> all_scalar_estimators;

@@ -5,14 +5,14 @@ import numpy as np
 # determine if two values differ
 def value_diff(v1,v2,tol=1e-6,int_as_float=False):
     diff = False
-    if int_as_float and isinstance(v1,(int,float)) and isinstance(v2,(int,float)):
+    if int_as_float and isinstance(v1,(int,float,np.float64)) and isinstance(v2,(int,float,np.float64)):
         diff = np.abs(float(v1)-float(v2))>tol
+    elif isinstance(v1,(float,np.float64)) and isinstance(v2,(float,np.float64)):
+        diff = np.abs(v1-v2)>tol
     elif not isinstance(v1,type(v2)) or not isinstance(v2,type(v1)):
         diff = True
     elif isinstance(v1,(bool,int,str)):
         diff = v1!=v2
-    elif isinstance(v1,float):
-        diff = np.abs(v1-v2)>tol
     elif isinstance(v1,(list,tuple)):
         v1 = np.array(v1,dtype=object).ravel()
         v2 = np.array(v2,dtype=object).ravel()
