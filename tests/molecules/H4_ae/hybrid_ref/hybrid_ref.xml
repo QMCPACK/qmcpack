@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <simulation>
-    <project id="H4-hybrid" series="0"/>
+    <project id="hybrid_ref" series="0"/>
   <!--random seed="7819"/-->
   <!-- input from gaussian converter -->
   <include href="H4.ptcl.xml"/>
@@ -32,6 +32,9 @@
        <parameter name="TJF_1Body_eta">.01</parameter>
        <parameter name="CI_eta">.1</parameter>
        <parameter name="use_nonlocalpp_deriv">no</parameter>
+
+       <parameter name="Ramp_eta">no</parameter>
+       <parameter name="Ramp_num">10</parameter>
    </optimizer>
 
    <optimizer num_updates="2">
@@ -59,8 +62,8 @@
 </loop>  
    
 <qmc method="vmc" move="pbyp" checkpoint="-1" gpu="no">
-    <parameter name="blocks">100</parameter>
-    <parameter name="steps">500</parameter>
+    <parameter name="blocks">200</parameter>
+    <parameter name="steps">50000</parameter>
     <parameter name="warmupsteps">100</parameter>
     <parameter name="timestep">0.05</parameter>
     <parameter name="useDrift">yes</parameter>

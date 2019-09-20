@@ -166,6 +166,27 @@ IF (NOT QMC_CUDA)
                     50 H4_DESCENT_SCALARS
                     TRUE)
 
+
+  LIST(APPEND H4_HYBRID_SCALARS "totenergy" "-2.139865 0.0026")
+
+  QMC_RUN_AND_CHECK(short-H4-hybrid
+                    "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
+                    H4-hybrid
+                    optm-hybrid.xml
+                    16 1
+                    ${MP_SUCCESS}
+		    62 H4_HYBRID_SCALARS
+                    TRUE)
+
+  QMC_RUN_AND_CHECK(short-H4-hybrid
+                    "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
+                    H4-hybrid
+                    optm-hybrid.xml
+                    1 16
+                    ${MP_SUCCESS}
+		    62 H4_HYBRID_SCALARS
+                    TRUE)
+
   QMC_RUN_AND_CHECK(short-H4-opt-OneShiftOnly
                     "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
                     H4-OneShiftOnly

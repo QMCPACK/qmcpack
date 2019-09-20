@@ -205,6 +205,7 @@ QMCFixedSampleLinearOptimize::RealType QMCFixedSampleLinearOptimize::Func(RealTy
 
 bool QMCFixedSampleLinearOptimize::run()
 {
+
 #ifdef HAVE_LMY_ENGINE
   if (doHybrid)
   {
@@ -551,9 +552,12 @@ bool QMCFixedSampleLinearOptimize::processOptXML(xmlNodePtr opt_xml, const std::
   if (W.getActiveWalkers() == 0)
     addWalkers(omp_get_max_threads());
   NumOfVMCWalkers = W.getActiveWalkers();
+
+
+
   // create VMC engine
-  if (vmcEngine == 0)
-  {
+ // if (vmcEngine == 0)
+ // {
 #if defined(QMC_CUDA)
     if (useGPU == "yes")
       vmcEngine = new VMCcuda(W, Psi, H, psiPool, myComm);
@@ -561,7 +565,8 @@ bool QMCFixedSampleLinearOptimize::processOptXML(xmlNodePtr opt_xml, const std::
 #endif
       vmcEngine = new VMC(W, Psi, H, psiPool, myComm);
     vmcEngine->setUpdateMode(vmcMove[0] == 'p');
-  }
+// }
+
 
   vmcEngine->setStatus(RootName, h5FileRoot, AppendRun);
   vmcEngine->process(qsave);
