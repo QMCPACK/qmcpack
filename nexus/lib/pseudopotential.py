@@ -54,11 +54,6 @@ from basisset import process_gaussian_text,GaussianBasisSet
 from physical_system import PhysicalSystem
 from plotting import *
 from debug import *
-try:
-    from scipy.optimize import curve_fit
-except:
-    curve_fit = unavailable('curve_fit')
-#end try
 
 
 
