@@ -85,32 +85,6 @@ public:
    */
   std::bitset<QMC_MODE_MAX> qmc_driver_mode_;
 
-  /** The timers for the driver.
-   *
-   * This cleans up the driver constructor, and a reference to this structure 
-   * Takes the timers into thread scope.
-   */
-  struct Timers
-  {
-    NewTimer& checkpoint_timer;
-    NewTimer& run_steps_timer;
-    NewTimer& init_walkers_timer;
-    NewTimer& buffer_timer;
-    NewTimer& movepbyp_timer;
-    NewTimer& hamiltonian_timer;
-    NewTimer& collectables_timer;
-    Timers(const std::string& prefix)
-        : checkpoint_timer(*TimerManager.createTimer(prefix + "CheckPoint", timer_level_medium)),
-          run_steps_timer(*TimerManager.createTimer(prefix + "RunSteps", timer_level_medium)),
-          init_walkers_timer(*TimerManager.createTimer(prefix + "InitWalkers", timer_level_medium)),
-          buffer_timer(*TimerManager.createTimer(prefix + "Buffer", timer_level_medium)),
-          movepbyp_timer(*TimerManager.createTimer(prefix + "MovePbyP", timer_level_medium)),
-          hamiltonian_timer(*TimerManager.createTimer(prefix + "Hamiltonian", timer_level_medium)),
-          collectables_timer(*TimerManager.createTimer(prefix + "Collectables", timer_level_medium))
-    {}
-  };
-
-  
   /// whether to allow traces
   bool allow_traces;
   /// traces xml
@@ -215,6 +189,31 @@ public:
   /** }@ */
 
 protected:
+  /** The timers for the driver.
+   *
+   * This cleans up the driver constructor, and a reference to this structure 
+   * Takes the timers into thread scope.
+   */
+  struct DriverTimers
+  {
+    NewTimer& checkpoint_timer;
+    NewTimer& run_steps_timer;
+    NewTimer& init_walkers_timer;
+    NewTimer& buffer_timer;
+    NewTimer& movepbyp_timer;
+    NewTimer& hamiltonian_timer;
+    NewTimer& collectables_timer;
+    DriverTimers(const std::string& prefix)
+        : checkpoint_timer(*TimerManager.createTimer(prefix + "CheckPoint", timer_level_medium)),
+          run_steps_timer(*TimerManager.createTimer(prefix + "RunSteps", timer_level_medium)),
+          init_walkers_timer(*TimerManager.createTimer(prefix + "InitWalkers", timer_level_medium)),
+          buffer_timer(*TimerManager.createTimer(prefix + "Buffer", timer_level_medium)),
+          movepbyp_timer(*TimerManager.createTimer(prefix + "MovePbyP", timer_level_medium)),
+          hamiltonian_timer(*TimerManager.createTimer(prefix + "Hamiltonian", timer_level_medium)),
+          collectables_timer(*TimerManager.createTimer(prefix + "Collectables", timer_level_medium))
+    {}
+  };
+  
   QMCDriverInput qmcdriver_input_;
 
   std::vector<std::unique_ptr<Crowd>> crowds_;
@@ -333,7 +332,7 @@ protected:
 
   std::vector<RandomGenerator_t*> RngCompatibility;
 
-  Timers timers_;
+  DriverTimers timers_;
 
 public:
   ///Copy Constructor (disabled).

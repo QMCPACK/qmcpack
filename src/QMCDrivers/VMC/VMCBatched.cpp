@@ -77,7 +77,7 @@ VMCBatched::IndexType VMCBatched::calc_default_local_walkers()
 
 void VMCBatched::advanceWalkers(const StateForThread& sft,
                                 Crowd& crowd,
-                                QMCDriverNew::Timers& timers,
+                                QMCDriverNew::DriverTimers& timers,
                                 ContextForSteps& step_context,
                                 bool recompute)
 {
@@ -255,7 +255,7 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
  */
 void VMCBatched::runVMCStep(int crowd_id,
                             const StateForThread& sft,
-                            Timers& timers,
+                            DriverTimers& timers,
                             std::vector<std::unique_ptr<ContextForSteps>>& context_for_steps,
                             std::vector<std::unique_ptr<Crowd>>& crowds)
 {
@@ -303,7 +303,7 @@ bool VMCBatched::run()
 
   TasksOneToOne<> crowd_task(num_crowds_);
 
-  auto runWarmupStep = [](int crowd_id, StateForThread& sft, Timers& timers,
+  auto runWarmupStep = [](int crowd_id, StateForThread& sft, DriverTimers& timers,
                           UPtrVector<ContextForSteps>& context_for_steps, UPtrVector<Crowd>& crowds) {
     Crowd& crowd = *(crowds[crowd_id]);
     advanceWalkers(sft, crowd, timers, *context_for_steps[crowd_id], false);
