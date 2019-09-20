@@ -627,12 +627,6 @@ def superstring():
 #end def superstring
 
 
-
-def unit_converter():
-    nunit_all()
-#end def unit_converter
-
-
         
 def generic_logging():
     from generic import log,message,warn,error
@@ -1711,6 +1705,12 @@ def generic_extensions():
 def developer():
     nunit_all()
 #end def developer
+
+
+
+def unit_converter():
+    nunit_all()
+#end def unit_converter
 
 
 
@@ -3482,11 +3482,11 @@ NexusTest( execute               )
 NexusTest( memory                )
 NexusTest( plotting              )
 NexusTest( superstring           )
-NexusTest( unit_converter        )
 NexusTest( generic_logging       )
 NexusTest( generic_intrinsics    )
 NexusTest( generic_extensions    )
 NexusTest( developer             )
+NexusTest( unit_converter        )
 NexusTest( periodic_table        )
 NexusTest( numerics              )
 NexusTest( fileio                )
