@@ -28,7 +28,7 @@ public:
                           QMCHamiltonian& h,
                           WaveFunctionPool& ppool,
                           Communicate* comm)
-      : QMCDriverNew(std::move(input), std::move(population), psi, h, ppool, comm)
+    : QMCDriverNew(std::move(input), std::move(population), psi, h, ppool, "QMCDriverTestWrapper::", comm)
   {}
 
   QMCRunType getRunType() { return QMCRunType::DUMMY; }
