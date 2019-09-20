@@ -1732,6 +1732,12 @@ def fileio():
 
 
 
+def hdfreader():
+    nunit_all()
+#end def hdfreader
+
+
+
 
 def nexus_imports():
     import nexus
@@ -3472,6 +3478,7 @@ NexusTest( developer             )
 NexusTest( periodic_table        )
 NexusTest( numerics              )
 NexusTest( fileio                )
+NexusTest( hdfreader             )
 NexusTest( nexus_imports         )
 NexusTest( settings_operation    , 'settings' )
 NexusTest( machines              )
