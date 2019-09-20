@@ -1438,7 +1438,7 @@ class Structure(Sobj):
         axinv  = inv(self.axes)
         axnew  = dot(self.axes,skew)
         kaxinv = inv(self.kaxes)
-        kaxnew = dot(inv(skew).T,self.kaxes)
+        kaxnew = dot(self.kaxes,inv(skew).T)
         self.pos     = dot(dot(self.pos,axinv),axnew)
         self.center  = dot(dot(self.center,axinv),axnew)
         self.kpoints = dot(dot(self.kpoints,kaxinv),kaxnew)
