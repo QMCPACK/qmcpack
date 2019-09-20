@@ -425,115 +425,6 @@ public:
 
     // get rank number and number of ranks 
     int my_rank = formic::mpi::rank(); 
-    //int num_rank;
-    //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-    //MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
-
-    // compute preconditioning matrix as S^(-1/2)
-  //  if ( _build_lm_matrix ) {
-  //
-  //    // first get the inverse square roots of the overlap's diagonal
-  //    _ovl_diag_neg_half.resize(_smat.rows());
-  //    for (int i = 0; i < _smat.rows(); i++)
-  //      _ovl_diag_neg_half[i] = 1.0 / std::sqrt(std::max(1.0e-10, _smat(i,i)));
-  //
-  //    // transform non-psi block of overlap matrix by these inverse square roots
-  //    formic::Matrix<double> stilde;
-  //    stilde.reset(_smat.rows()-1, _smat.cols()-1);
-  //    for (int i = 0; i < stilde.rows(); i++)
-  //    for (int j = 0; j < stilde.cols(); j++)
-  //      stilde.at(i,j) = _ovl_diag_neg_half[i+1] * _smat.at(i+1,j+1) * _ovl_diag_neg_half[j+1]; // + ( i == j ? 1.0e-3 : 0.0 );
-  //
-  //    // diagonalize this transformed overlap
-  //    formic::Matrix<std::complex<double> > v;
-  //    formic::Matrix<double> v_real;
-  //    formic::ColVec<std::complex<double> > w;
-  //    formic::ColVec<double> w_real;
-  //    stilde.nonsym_eig(w, v);
-  //    w_real.reset(w.size());
-  //    v_real.reset(v.rows(), v.cols());
-  //
-  //    // compute the pseudo-stilde^(-1/2) matrix
-  //    int nonzero_count = 0;
-  //    for (int i = 0; i < w.size(); i++) {
-  //      if ( w.at(i).real() > 1.0e-8 ) {
-  //        nonzero_count++;
-  //        w_real.at(i) = 1.0 / std::sqrt(w.at(i).real());
-  //      } else {
-  //        w_real.at(i) = 0.0;
-  //      }
-  //    }
-  //
-  //    for (int i = 0; i < v.rows(); i++)
-  //    for (int j = 0; j < v.cols(); j++)
-  //      v_real.at(i,j) = v.at(i,j).real();
-  //
-  //    formic::Matrix<double> diagonal_w(v.rows(), v.cols(), 0.0);
-  //    for (int i = 0; i < diagonal_w.cols(); i++)
-  //      diagonal_w.at(i,i) = w_real.at(i);
-  //    formic::Matrix<double> temp = v_real * diagonal_w * v_real.inv();
-  //
-  //    // fill in the preconditioning matrix
-  //    _mmat.reset(_smat.rows(), _smat.cols());
-  //    for (int i = 0; i < _smat.rows(); i++) {
-  //      _mmat.at(i,0) = 0.0;
-  //      _mmat.at(0,i) = 0.0;
-  //    }
-  //    _mmat.at(0,0) = 1.0;
-  //    for (int i = 0; i < stilde.rows(); i++)
-  //    for (int j = 0; j < stilde.cols(); j++)
-  //      //_mmat(i+1,j+1) = ( i == j ? 1.0 : 0.0 );
-  //      _mmat.at(i+1,j+1) = temp.at(i,j);
-
-      //// test that we have preconditioned corrrectly
-      //Eigen::MatrixXd test1;
-      //test1.resize(_smat.rows(), _smat.cols());
-      //for (int i = 0; i < _smat.rows(); i++)
-      //for (int j = 0; j < _smat.cols(); j++)
-      //  test1(i,j) = _ovl_diag_neg_half[i] * _smat(i,j) * _ovl_diag_neg_half[j];
-      //Eigen::MatrixXd test2 = _mmat * test1 * _mmat;
-      //formic::of << std::endl;
-      //formic::of << "test matrix:" << std::endl;
-      //for (int i = 0; i < test2.rows(); i++) {
-      //  for (int j = 0; j < test2.cols(); j++) {
-      //    formic::of << boost::format(" %12.8f") % test2(i,j);
-      //  }
-      //  formic::of << std::endl;
-      //}
-      //formic::of << std::endl;
-
-  //    //Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(_smat);
-  //    //Eigen::VectorXd w = es.eigenvalues();
-  //    //Eigen::MatrixXd v = es.eigenvectors();
-  //    Eigen::JacobiSVD<Eigen::MatrixXd> svd(_smat, Eigen::ComputeThinU | Eigen::ComputeThinV);
-  //    Eigen::VectorXd w = svd.singularValues();
-  //    formic::of << std::endl;
-  //    for (int i = 0; i < w.size(); i++)
-  //      formic::of << boost::format("w( %4i ) = %12.4e") % i % w(i) << std::endl;
-  //    formic::of << std::endl;
-  //    for (int i = 0; i < w.size(); i++)
-  //      w(i) = ( w(i) > 1.0e-8 ? 1.0 / std::max(1.0e-15, w(i)) : 0.0 );
-  //      //w(i) = 1.0 / std::sqrt(std::max(1.0e-10, w(i)));
-  //    //_mmat.resize(_smat.rows(), _smat.cols());
-  //    _mmat = svd.matrixV() * w.asDiagonal() * svd.matrixU().inverse();
-  //    double max_error = 0.0;
-  //    double max_elem = 0.0;
-  //    Eigen::MatrixXd test = _mmat * _smat;
-  //    formic::of << "test matrix:" << std::endl;
-  //    for (int i = 0; i < w.size(); i++) {
-  //      for (int j = 0; j < w.size(); j++) {
-  //        max_error = std::max(max_error, std::abs(test(i,j) - (i==j?1.0:0.0)));
-  //        max_elem  = std::max(max_elem , std::abs(_smat(i,j)));
-  //        formic::of << boost::format(" %12.8f") % test(i,j);
-  //      }
-  //      formic::of << std::endl;
-  //    }
-  //    formic::of << std::endl;
-  //    formic::of << boost::format("w.size() = %i") % w.size() << std::endl;
-  //    formic::of << boost::format("_smat.rows() = %i") % _smat.rows() << std::endl;
-  //    formic::of << boost::format("inverting _smat with max_elem = %.2e gave an error of %.2e") % max_elem % max_error << std::endl;
-
-  //  }
 
     // initialize the eigenvector
     this->_evecs.reset( ( this->_var_deps_use ? 1 + this->_dep_ptr->n_tot() : this->_nfds ), formic::zero(S()) );
@@ -554,9 +445,6 @@ public:
   {
     // get rank number and number of ranks
     int my_rank = formic::mpi::rank();
-    //int num_rank;
-    //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-    //MPI_Comm_rank(MPI_COMM_WORLD, & num_rank);
 
     if ( my_rank == 0 ) {
       
@@ -590,9 +478,6 @@ public:
     
     // get rank number and number of ranks 
     int my_rank = formic::mpi::rank(); 
-    //int num_rank;
-    //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-    //MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
 
     // check vector length
     if (my_rank == 0 && !_build_lm_matrix && v.size() != this->_der_rat.cols())  
@@ -618,7 +503,6 @@ public:
     // if we don't build the matrix, we need to broadcast this vector to all processes
     if ( !_build_lm_matrix ) 
       formic::mpi::bcast(&_wv1.at(0), _wv1.size());
-      //MPI_Bcast(&_wv1.at(0), _wv1.size(), MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
     // temp vector holding normal LM overlap matrix times this vector
     formic::ColVec<S> _wv_temp;
@@ -643,10 +527,7 @@ public:
     formic::ColVec<S> hs(this->_nfds);
     if ( _build_lm_matrix ) {
       if ( my_rank == 0 ) {
-        //this -> MMatVecOp(_wv1, _wvX, 1); // preconditioning
         this -> HMatVecOp(_wv1, hs);
-
-        //this -> MMatVecOp(_wvY,   hs, 0); // preconditioning
       }
     }
     else {
@@ -655,9 +536,6 @@ public:
       formic::ColVec<S> hs_avg(hs.size());
       formic::mpi::reduce(&hs.at(0), &hs_avg.at(0), hs.size(), MPI::SUM);
       hs = hs_avg.clone();
-      //if (my_rank == 0) {
-      //  for (int i = 0; i < hs_avg.size(); i++) 
-      //    std::cout << boost::format("%10.8e ") % h
     }
 
     // modify hamiltonian product to account for "identity" shift 
@@ -746,9 +624,6 @@ public:
   {
 
     int my_rank = formic::mpi::rank(); 
-    //int num_rank;
-    //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-    //MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
 
     // size the resulting vector correctly
     y.reset(x.size());
@@ -762,9 +637,6 @@ public:
 
         // call level-2 blas function
         formic::xgemv('N', _hmat.rows(), _hmat.cols(), formic::unity(S()), &_hmat.at(0, 0), _hmat.rows(), &x.at(0), 1, formic::zero(S()), &y.at(0), 1);
-        //for (int i = 0; i < y.size(); i++) 
-          //std::cout << boost::format("%10.8e ") % y(i);
-        //std::cout << std::endl;
 
         return;
 
@@ -808,12 +680,6 @@ public:
         // call blas level-2 function 
         formic::xgemv('T', Ns, Nind, formic::unity(S()), &this->_der_rat.at(0,0), Ns, &temp.at(0), 1, formic::zero(S()), &y.at(0), 1);
             
-        //if (my_rank == 0) {
-        //  for (int i = 0; i < y.size(); i++) 
-        //    std::cout << boost::format("%10.8e ") % y(i);
-        //  std::cout << std::endl;
-        //}
-
         return;
       }
      
@@ -836,9 +702,6 @@ public:
 
         // left multiply by _der_rat^T
         formic::xgemv('T', Ns, Nind, formic::unity(S()), &this->_der_rat.at(0,0), Ns, &temp1.at(0), 1, formic::zero(S()), &y.at(0), 1);
-        //for (int i = 0; i < y.size(); i++) 
-          //std::cout << boost::format("%10.8e ") % y(i);
-        //std::cout << std::endl;
 
         return;
       }
@@ -887,10 +750,6 @@ public:
         // call level-2 blas function
         formic::xgemv('N', _smat.rows(), _smat.cols(), formic::unity(S()), &_smat.at(0,0), _smat.rows(), &x.at(0), 1, formic::zero(S()), &y.at(0), 1);
 
-        //for (int i = 0; i < y.size(); i++) 
-          //std::cout << boost::format("%10.8e ") % y(i);
-        //std::cout << std::endl;
-
         // return product vector 
         return;
       
@@ -934,10 +793,6 @@ public:
         // call blas level-2 function 
         formic::xgemv('T', Ns, Nind, formic::unity(S()), &this->_der_rat.at(0,0), Ns, &temp.at(0), 1, formic::zero(S()), &y.at(0), 1);
 
-        //for (int i = 0; i < y.size(); i++) 
-          //std::cout << boost::format("%10.8e ") % y(i);
-        //std::cout << std::endl;
-
         return;
       }
      
@@ -969,9 +824,6 @@ public:
 
         // (omega * D^T - L^T) * (omega * D - L) * x
         y -= temp3;
-        //for (int i = 0; i < y.size(); i++) 
-          //std::cout << boost::format("%10.8e ") % y(i);
-        //std::cout << std::endl;
 
         return;
       }
@@ -1005,10 +857,6 @@ public:
 
         // call level-2 blas function
         formic::xgemv('N', _lmsmat.rows(), _lmsmat.cols(), formic::unity(S()), &_lmsmat.at(0,0), _lmsmat.rows(), &x.at(0), 1, formic::zero(S()), &y.at(0), 1);
-
-        //for (int i = 0; i < y.size(); i++) 
-          //std::cout << boost::format("%10.8e ") % y(i);
-        //std::cout << std::endl;
 
         // return product vector 
         return;
@@ -1045,9 +893,6 @@ public:
 
     // get rank number and number of ranks 
     int my_rank = formic::mpi::rank();
-    //int num_rank;
-    //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-    //MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
 
     // get the different between new shift and old shift 
     const double diff_shift_i = new_i_shift - this->_hshift_i;
@@ -1157,9 +1002,6 @@ public:
     
     // get rank number and number of ranks 
     int my_rank = formic::mpi::rank(); 
-    //int num_rank;
-    //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-    //MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
 
     // initialize the solution vector to the unit vector along the first direction
     this->_evecs.reset( ( this->_var_deps_use ? 1 + this->_dep_ptr->n_tot() : this->_nfds ), formic::zero(S()) );
@@ -1359,16 +1201,9 @@ public:
 
 	bool solve(double & eval, std::ostream & output)
   {
-    //if (_spam_use)
-    //	return this -> iterative_solve_outer(eval);
-
-    //if (! _spam_use)
 
     // get rank number and number of ranks 
     int my_rank = formic::mpi::rank(); 
-    //int num_rank;
-    //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-    //MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
 
     if ( !this->_variance_correct ) 
       return this -> iterative_solve(eval, output);
@@ -1410,64 +1245,6 @@ public:
       // return solve result
       return retval;
 
-      //while ( true ) {
-
-      //  // print iteration information
-      //  if ( my_rank == 0 ) 
-      //    output << boost::format("tau iteration %4i: tau = %20.12f") % iter_tau % _tau << std::endl;     
-
-      //  // if tau has converged, stop iteration
-      //  //if ( tau_converged ) 
-      //  //  break;
-
-      //  // if the maximum number of allowed iteration has reached, stop iteration
-      //  if ( iter_tau++ > 0 ) 
-      //    break;
-
-      //  // if not converged and it is not the first iteration, reset the eigensolver and add initial guess
-      //  if ( !tau_converged ) {
-      //    
-      //    // reset eigensolver
-      //    this -> child_reset();
-
-      //    // set the current energy as initial wavefunction's energy
-      //    _energy = _init_energy;
-      //    
-      //    // add initial guess
-      //    // get the dimension of matrix 
-      //    const int N = _hmat.cols();
-      //    Eigen::VectorXd temp(N);
-      //    for (int j = 0; j < temp.size(); j++) 
-      //      temp(j) = (j == 0 ? 1.0 : 0.0);
-      //    this -> add_krylov_vector(temp);
-      //  }
-
-      //  // print iteration information
-      //  if ( my_rank == 0 ) 
-      //    output << boost::format("tau iteration %4i: tau = %20.12f") % iter_tau % _tau << std::endl;
-
-      //  // iteratively solve the generalized eigenvalue problem
-      //  retval = this -> iterative_solve(eval, output);
-
-      //  // re-evaluate tau and correct hamiltonian based on new tau
-      //  this -> tau_and_correct_ham();
-      //  MPI_Bcast(&_tau, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-
-      //  // check if converged
-      //  tau_converged = (_tau_diff < 1.0e-3);
-      //  MPI_Bcast(&tau_converged, 1, MPI::BOOL, 0, MPI_COMM_WORLD);
-
-      //}
-
-      //// print iteration information
-      //if ( tau_converged && my_rank == 0) 
-      //  output << boost::format("tau iteration converged in %10i iterations") % iter_tau << std::endl; 
-
-      //else if (my_rank == 0) 
-      //  output << boost::format("tau iteration did not converge after %10i iterations") % iter_tau << std::endl;
-      //
-      //// return iteration results
-      //return retval;
     }
   }
 	
@@ -1484,31 +1261,6 @@ public:
     return;
 
   }
-
-  //////////////////////////////////////////////////////////////////////////////////////////////
-  // \brief build linear matrix(used when doing debug)
-  //
-  //
-  //
-  //////////////////////////////////////////////////////////////////////////////////////////////
-  
-  //const formic::Matrix<double> debug_build()
-  //{
-  //  formic::Matrix<double> retval(2, 2, 0.0);
-  //  retval.at(0,0) = 1.0;
-  //  retval.at(1,1) = 1.0;
-  //  return retval;
-  //}
-
-	//////////////////////////////////////////////////////////////////////////////////////////////
-	// \brief return the wave function coefficients
-	//
-	//
-	//
-	//////////////////////////////////////////////////////////////////////////////////////////////
-
-	//formic::ColVec<double> wf_coeff();
-	
 
 };
 

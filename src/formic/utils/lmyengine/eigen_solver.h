@@ -31,6 +31,7 @@ namespace cqmc {
   
   namespace engine { 
 
+  // typename S can be real and complex, depending on the type of parameters being optimized
   template<typename S> class EigenSolver {
 
 protected:
@@ -53,7 +54,7 @@ protected:
   /// \brief initial wavefunction's variance
   double _init_variance;
 
-  /// \brief maximum alowed energy change
+  /// \brief maximum allowed energy change
   double _max_energy_change;
 
   /// \brief linear method identity shift applied to the Hamiltonian diagonal 

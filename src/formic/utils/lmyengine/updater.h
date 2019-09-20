@@ -117,10 +117,6 @@ namespace cqmc {
         // get rank number and number of ranks 
         int my_rank = formic::mpi::rank();
         int num_rank = formic::mpi::size();
-        //int my_rank; 
-        //int num_rank;
-        //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-        //MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
 
         // creates matrix builder 
         boost::shared_ptr< cqmc::engine::HamOvlpBuilderHD<S> > mbuilder( new cqmc::engine::HamOvlpBuilderHD<S>(_der_rat, 
@@ -193,29 +189,6 @@ namespace cqmc {
           if (my_rank == 0)
             output << boost::format("solving harmonic davidson linear method for identity shift %.4e, overlap shift %.4e and omega %.4e") % x % y % _omega << std::endl << std::endl;
 
-      // THIS NO LONGER WORKS DUE TO PRECONDITIONING, SO WE JUST RESTART THE KRYLOV SOLVER INSTEAD
-      //    
-      //    // if previous solve succeeds, we only need to update hamiltonian vector product and hamiltonian projection 
-      //    if ( previous_solve && i !=0 && my_rank == 0 ) 
-      //      eigensolver -> update_hvecs_sub(x, y); 
-      //
-      //    // update shift
-      //    eigensolver -> update_lm_shift(x, y);
-      //
-      //    //if ( my_rank == 1 ) 
-      //      //std::cout << boost::format("rank-1 here") << std::endl;
-      //
-      //    // if previous solve fails(imaginary energy) or this is the first shift, add initial guess to the solver(krylov subspace)
-      //    if ( !previous_solve ) { 
-      //      const int m = hamiltonian.cols();
-      //      Eigen::VectorXd temp(m);
-      //      for (int j = 0; j < temp.size(); j++) 
-      //        temp(j) = ( j == 0 ? 1.0 : 0.0);
-      //      //if ( my_rank == 1 ) 
-      //        //std::cout << boost::format("rank-1 here") << std::endl;
-      //      eigensolver -> add_krylov_vector(temp);
-      //    }
-
           // reset the eigensolver for this shift
           eigensolver -> reset();
           eigensolver -> update_lm_shift(x, y);
@@ -228,14 +201,12 @@ namespace cqmc {
 
           // solve the eigenvalue problem
           double davidson_eval;
-          //bool solve_shift = eigensolver -> iterative_solve(davidson_eval, output);
           bool solve_shift = eigensolver -> solve(davidson_eval, output);
 
           // converts the eigenvector to wave function coefficient and set the bad solve flag if the eigensolver found an eigenvector that is not dominated by the current state on root process 
           if (my_rank == 0) {
             eigensolver -> convert_to_wf_coeff();
             formic::ColVec<S> evec_eigen = eigensolver -> wf_coeff();
-            //vf_var.clear();
             double max_update_abs_value = std::abs(evec_eigen.at(1));
             // number of total variables + 1
             int n_tot = (var_deps_use ? (dep_ptr -> n_tot() + 1) : _der_rat.cols());
@@ -263,17 +234,8 @@ namespace cqmc {
 
         }
 
-        //if ( my_rank == 1 ) 
-          //std::cout << boost::format("rank-1 here") << std::endl;
-
-        //std::cout << "before broadcast update vector" << std::endl;
         // save the wavefunction variables resulting from the update 
         formic::mpi::bcast(&vf_var.at(0), vf_var.size());
-        //std::cout << "after broadcast update vector" << std::endl;
-
-        // save the solve results
-        //MPI_Bcast(&good_solve.at(0), good_solve.size(), MPI::BOOL, 0, MPI_COMM_WORLD);
-
 
       }
 
@@ -306,10 +268,6 @@ namespace cqmc {
         // get rank number and number of ranks 
         int my_rank = formic::mpi::rank();
         int num_rank = formic::mpi::size();
-        //int my_rank; 
-        //int num_rank;
-        //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-        //MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
 
         const bool print_mats = false;
 
@@ -368,14 +326,12 @@ namespace cqmc {
 
           // solve the eigenvalue problem
           double davidson_eval;
-          //bool solve_shift = eigensolver -> iterative_solve(davidson_eval, output);
           bool solve_shift = eigensolver -> solve(davidson_eval, output);
 
           // converts the eigenvector to wave function coefficient and set the bad solve flag if the eigensolver found an eigenvector that is not dominated by the current state on root process 
           if (my_rank == 0) {
             eigensolver -> convert_to_wf_coeff();
             formic::ColVec<S> evec_eigen = eigensolver -> wf_coeff();
-            //vf_var.clear();
             double max_update_abs_value = std::abs(std::sqrt(formic::square_norm(evec_eigen.at(1))));
             // number of total variables + 1
             int n_tot = (var_deps_use ? (dep_ptr -> n_tot() + 1) : (dep_ptr -> n_tot() + 1));
@@ -403,10 +359,8 @@ namespace cqmc {
 
         }
 
-        //std::cout << "before broadcast update vector" << std::endl;
         // save the wavefunction variables resulting from the update 
         formic::mpi::bcast(&vf_var.at(0), vf_var.size());
-        //std::cout << "after broadcast update vector" << std::endl;
       }
 
       void engine_update_no_matrix(const formic::VarDeps * dep_ptr,
@@ -434,24 +388,10 @@ namespace cqmc {
         // get rank number and number of ranks 
         int my_rank = formic::mpi::rank();
         int num_rank = formic::mpi::size();
-        //int my_rank; 
-        //int num_rank;
-        //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-        //MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
 
         // get the number of total variables + 1
         const int Ntot = (var_deps_use ? (dep_ptr -> n_tot() + 1) : _der_rat.cols());
 
-        //if ( my_rank == 0 ) {
-        //  for (int i = 0; i < _le_der.rows(); i++) {
-        //    for (int j = 0; j < _le_der.cols(); j++) {
-        //      output << boost::format("%10.8e ") % _le_der(i, j);
-        //    }
-        //    output << std::endl;
-        //  }
-        //}
-
-        
         // creates matrix builder 
         boost::shared_ptr< cqmc::engine::HamOvlpBuilderHD<S> > mbuilder( new cqmc::engine::HamOvlpBuilderHD<S>(_der_rat, 
                                                                                                                _le_der, 
@@ -527,7 +467,6 @@ namespace cqmc {
           // update shift
           eigensolver -> update_lm_shift(x, y);
 
-          //std::cout << boost::format("optimization is here %d") % my_rank << std::endl;
           // if previous solve fails(imaginary energy) or this is the first shift, add initial guess to the solver(krylov subspace)
           if ( !previous_solve ) { 
             const int m = _der_rat.cols();
@@ -545,7 +484,6 @@ namespace cqmc {
           if (my_rank == 0) {
             eigensolver -> convert_to_wf_coeff();
             formic::ColVec<S> evec_eigen = eigensolver -> wf_coeff();
-            //vf_var.clear();
             double max_update_abs_value = std::abs(std::sqrt(formic::square_norm(evec_eigen.at(1))));
 
             for (int k = 0; k < Ntot; k++) {
@@ -565,7 +503,6 @@ namespace cqmc {
           }
 
           // broadcast solve results to all processes
-          //MPI_Bcast(&good_solve, 1, MPI::BOOL, 0, MPI_COMM_WORLD);
           formic::mpi::bcast(&previous_solve, 1);
 
           // if the previous solve fails(imaginary energy gained), reset eigensolver 
@@ -610,10 +547,6 @@ namespace cqmc {
         // get rank number and number of ranks 
         int my_rank = formic::mpi::rank();
         int num_rank = formic::mpi::size();
-        //int my_rank; 
-        //int num_rank;
-        //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-        //MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
 
         // get the number of total variables + 1 
         const int Ntot = ( var_deps_use ? (dep_ptr -> n_tot() + 1) : _der_rat.cols());
@@ -718,7 +651,6 @@ namespace cqmc {
           if (my_rank == 0) {
             eigensolver -> convert_to_wf_coeff();
             formic::ColVec<double> evec_eigen = eigensolver -> wf_coeff();
-            //vf_var.clear();
             double max_update_abs_value = std::abs(evec_eigen.at(1));
 
             for (int k = 0; k < Ntot; k++) {
@@ -739,7 +671,6 @@ namespace cqmc {
 
           
           // broadcast solve results to all processes
-          //MPI_Bcast(&good_solve, 1, MPI::BOOL, 0, MPI_COMM_WORLD);
           formic::mpi::bcast(&previous_solve, 1);
           
           // if the previous solve fails(imaginary energy gained), reset eigensolver 
