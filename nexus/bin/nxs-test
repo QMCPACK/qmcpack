@@ -1726,6 +1726,12 @@ def numerics():
 
 
 
+def fileio():
+    nunit_all()
+#end def fileio
+
+
+
 
 def nexus_imports():
     import nexus
@@ -3465,6 +3471,7 @@ NexusTest( generic_extensions    )
 NexusTest( developer             )
 NexusTest( periodic_table        )
 NexusTest( numerics              )
+NexusTest( fileio                )
 NexusTest( nexus_imports         )
 NexusTest( settings_operation    , 'settings' )
 NexusTest( machines              )
