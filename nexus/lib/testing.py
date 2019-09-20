@@ -123,4 +123,105 @@ def object_eq(*args,**kwargs):
 
 
 
+# find the path to the Nexus directory and other internal paths
+def nexus_path(append=None,location=None):
+    import os
+    testing_path = os.path.realpath(__file__)
 
+    assert(isinstance(testing_path,str))
+    assert(len(testing_path)>0)
+    assert('/' in testing_path)
+
+    tokens = testing_path.split('/')
+
+    assert(len(tokens)>=3)
+    assert(tokens[-1].startswith('testing.py'))
+    assert(tokens[-2]=='lib')
+    assert(tokens[-3]=='nexus')
+
+    path = os.path.dirname(testing_path)
+    path = os.path.dirname(path)
+
+    assert(path.endswith('/nexus'))
+
+    if location is not None:
+        if location=='unit':
+            append = 'tests/unit'
+        else:
+            print('nexus location "{}" is unknown'.format(location))
+            raise ValueError
+        #end if
+    #end if
+    if append is not None:
+        path = os.path.join(path,append)
+    #end if
+
+    assert(os.path.exists(path))
+
+    return path
+#end def nexus_path
+
+
+
+# find the path to a file associated with a unit test
+def unit_test_file_path(test,file=None):
+    import os
+    unit_path  = nexus_path(location='unit')
+    files_dir  = 'test_{}_files'.format(test)
+    path = os.path.join(unit_path,files_dir)
+    if file is not None:
+        path = os.path.join(path,file)
+    #end if
+    assert(os.path.exists(path))
+    return path
+#end def unit_test_file_path
+
+
+
+# collect paths to all files associated with a unit test
+def collect_unit_test_file_paths(test,storage):
+    import os
+    if len(storage)==0:
+        test_files_dir = unit_test_file_path(test)
+        files = os.listdir(test_files_dir)
+        for file in files:
+            filepath = os.path.join(test_files_dir,file)
+            assert(os.path.exists(filepath))
+            storage[file] = filepath
+        #end for
+    #end if
+    return storage
+#end def collect_unit_test_file_paths
+
+
+
+# find the output path for a test
+def unit_test_output_path(test,subtest=None):
+    import os
+    unit_path  = nexus_path(location='unit')
+    files_dir  = 'test_{}_output'.format(test)
+    path = os.path.join(unit_path,files_dir)
+    if subtest is not None:
+        path = os.path.join(path,subtest)
+    #end if
+    return path
+#end def unit_test_output_path
+
+
+
+# setup the output directory for a test
+def setup_unit_test_output_directory(test,subtest):
+    import os
+    import shutil
+    path = unit_test_output_path(test,subtest)
+    assert('nexus' in path)
+    assert('unit' in path)
+    assert(os.path.basename(path).startswith('test_'))
+    assert(path.endswith('/'+subtest))
+    if os.path.exists(path):
+        shutil.rmtree(path)
+    #end if
+    os.makedirs(path)
+    assert(os.path.exists(path))
+    return path
+#end def setup_unit_test_output_directory
