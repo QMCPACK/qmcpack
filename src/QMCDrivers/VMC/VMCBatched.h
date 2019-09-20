@@ -71,12 +71,13 @@ public:
    *  MCWalkerConfiguration layer removed.
    *  Obfuscation of state changes via buffer and MCWalkerconfiguration require this be tested well
    */
-  static void advanceWalkers(const StateForThread& sft, Crowd& crowd, ContextForSteps& move_context, bool recompute);
+  static void advanceWalkers(const StateForThread& sft, Crowd& crowd, DriverTimers& timers, ContextForSteps& move_context, bool recompute);
 
   // This is the task body executed at crowd scope
   // it does not have access to object member variables by design
   static void runVMCStep(int crowd_id,
                          const StateForThread& sft,
+                         DriverTimers& timers,
                          std::vector<std::unique_ptr<ContextForSteps>>& move_context,
                          std::vector<std::unique_ptr<Crowd>>& crowds);
 
@@ -99,10 +100,6 @@ private:
   VMCBatched(const VMCBatched&) = delete;
   /// Copy operator (disabled).
   VMCBatched& operator=(const VMCBatched&) = delete;
-  /// timer for running each step of VMC.
-  NewTimer& run_steps_timer_;
-  /// timer for walker initialization, it should be moved to QMCDriverNew instead of derived class.
-  NewTimer& init_walkers_timer_;
 };
 
 extern std::ostream& operator<<(std::ostream& o_stream, const VMCBatched& vmc_batched);
