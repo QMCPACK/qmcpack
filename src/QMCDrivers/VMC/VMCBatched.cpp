@@ -14,7 +14,6 @@
 #include "Concurrency/Info.hpp"
 #include "Utilities/RunTimeManager.h"
 #include "ParticleBase/RandomSeqGenerator.h"
-#include <boost/range/combine.hpp>
 
 namespace qmcplusplus
 {

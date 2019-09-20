@@ -50,6 +50,8 @@ SET(QMCDRIVERS
   DMC/DMCUpdateAll.cpp
   DMC/DMCUpdatePbyPFast.cpp
   DMC/DMCFactory.cpp
+  DMC/DMCBatched.cpp
+  DMC/DMCDriverInput.cpp
   DMC/WalkerControlFactory.cpp
   DMC/WalkerReconfiguration.cpp
   RMC/RMC.cpp
@@ -75,12 +77,11 @@ IF(QMC_CUDA)
    QMCCostFunctionCUDA.cpp)
 ENDIF(QMC_CUDA)
 
-  SET(QMCDRIVERS ${QMCDRIVERS} 
+SET(QMCDRIVERS ${QMCDRIVERS} 
     VMC/VMC.cpp
     VMC/VMCBatched.cpp
-      VMC/VMCLinearOpt.cpp
-      QMCCostFunction.cpp
-     )
+    VMC/VMCLinearOpt.cpp
+    QMCCostFunction.cpp)
 
 IF(HAVE_MPI) 
   SET(QMCDRIVERS ${QMCDRIVERS} 
