@@ -1750,6 +1750,12 @@ def basisset():
 
 
 
+def pseudopotential():
+    nunit_all()
+#end def pseudopotential
+
+
+
 
 def nexus_imports():
     import nexus
@@ -3493,6 +3499,7 @@ NexusTest( fileio                )
 NexusTest( hdfreader             )
 NexusTest( xmlreader             )
 NexusTest( basisset              )
+NexusTest( pseudopotential       )
 NexusTest( nexus_imports         )
 NexusTest( settings_operation    , 'settings' )
 NexusTest( machines              )
