@@ -444,7 +444,7 @@ class SemilocalPP(Pseudopotential):
     numeric        = False
     interpolatable = True
 
-    formats = ['qmcpack']
+    formats = ['qmcpack','casino']
 
     channel_indices = obj()
     for i,c in enumerate(l_channels):
@@ -1414,6 +1414,7 @@ class GaussianPP(SemilocalPP):
     #end def __init__
 
 
+    # test needed for gaussian and crystal
     def read_text(self,text,format=None,filepath=None):
         lines,basis_lines = process_gaussian_text(text,format)
 
@@ -1564,11 +1565,14 @@ class GaussianPP(SemilocalPP):
     #end def read_text
 
 
+    # test needed for crystal
     def write_text(self,format=None,occ=None):
         text = ''
         format = format.lower()
         if format=='qmcpack':
             return self.write_qmcpack()
+        elif format=='casino':
+            return self.write_casino()
         #end if
         channel_order = [self.local]
         for c in self.l_channels:
@@ -1685,6 +1689,7 @@ class GaussianPP(SemilocalPP):
     #end def write_text
 
 
+    # test needed
     def get_basis(self):
         bs = None
         if self.basis!=None:
@@ -1700,6 +1705,7 @@ class GaussianPP(SemilocalPP):
     #end def set_basis
 
 
+    # test needed
     def uncontract(self):
         if self.basis!=None:
             bs = GaussianBasisSet()
@@ -1710,6 +1716,7 @@ class GaussianPP(SemilocalPP):
     #end def uncontract
 
 
+    # test needed
     def write_basis(self,filepath=None,format=None):
         basis = self.get_basis()
         text = ''
@@ -1752,6 +1759,7 @@ class GaussianPP(SemilocalPP):
     #end def evaluate_comp_rV
 
 
+    # test needed
     def ppconvert(self,outfile,ref,extra=None):
         of = outfile.lower()
         if of.endswith('.xml'):
@@ -1942,5 +1950,21 @@ class CasinoPP(SemilocalPP):
             #end if
         #end for
     #end def read_file
+
+
+    def evaluate_comp_rV(self,r,l,vcomp):
+        if r is not None:
+            if len(r)==len(self.r) and abs( (r[1:]-self.r[1:])/self.r[1:] ).max()<1e-6:
+                r = self.r
+            else:
+                self.error('ability to interpolate at arbitrary r has not been implemented\ncalling evaluate_channel() without specifying r will return the potential on a default grid')
+            #end if
+        else:
+            r = self.r
+        #end if
+        v = vcomp.copy()
+        return v
+    #end def evaluate_comp_rV
+
 #end class CasinoPP
 

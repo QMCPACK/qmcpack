@@ -214,11 +214,14 @@ def test_ppset():
 
 
 def test_pseudopotential_classes():
+    import os
     import numpy as np
     from pseudopotential import SemilocalPP
     from pseudopotential import GaussianPP
     from pseudopotential import QmcpackPP
     from pseudopotential import CasinoPP
+
+    tpath = testing.setup_unit_test_output_directory('pseudopotential','test_pseudopotential_classes')
 
     files = get_files()
 
@@ -363,11 +366,74 @@ r*potential (L=1) in Ha
   4.00000000000000e+00'''
 
     ctext = qpp_fake.write_casino()
+    assert(ctext.strip()==ctext_ref.strip())
 
-    print
-    print
-    gpp = GaussianPP(files['C.BFD.gms'],format='gamess')
-
-    #print gpp
-#end def test_pseudopotential_classes
     
+    # tests for GaussianPP
+    gpp = GaussianPP(files['C.BFD.gms'],format='gamess')
+    assert(gpp.Zcore   == 2   )
+    assert(gpp.Zval    == 4   )
+    assert(gpp.core    == 'He')
+    assert(gpp.element == 'C' )
+    assert(gpp.lmax    == 1   )
+    assert(gpp.local   == 'p' )
+    assert(gpp.name is None)
+    assert(value_eq(gpp.rcut,1.7053,tol=1e-3))
+
+    assert(len(gpp.basis)==20)
+
+    nterms_ref = [9,1,1,1,1,9,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+    nterms = []
+    for n in range(len(gpp.basis)):
+        nterms.append(len(gpp.basis[n].terms))
+    #end for
+    assert(nterms==nterms_ref)
+
+    assert(value_eq(gpp.basis[5].terms[4].coeff,0.289868))
+
+    assert(len(gpp.components.s)==1)
+    assert(len(gpp.components.p)==3)
+
+    assert(value_eq(gpp.components.p[1].expon,4.48361888))
+
+    # check cross-format write/read
+    gamess_file = os.path.join(tpath,'C.BFD.gamess')
+    gpp.write(gamess_file,format='gamess')
+
+    gaussian_file = os.path.join(tpath,'C.BFD.gaussian')
+    gpp.write(gaussian_file,format='gaussian')
+
+    qmcpack_file = os.path.join(tpath,'C.BFD.qmcpack')
+    gpp.write(qmcpack_file,format='qmcpack')
+
+    casino_file = os.path.join(tpath,'C.BFD.casino')
+    gpp.write(casino_file,format='casino')
+
+
+    gpp_gamess = GaussianPP(gamess_file,format='gamess')
+    assert(object_eq(gpp_gamess,gpp))
+
+    gpp_gaussian = GaussianPP(gaussian_file,format='gaussian')
+    assert(object_eq(gpp_gaussian,gpp))
+
+    qpp_qmcpack = QmcpackPP(qmcpack_file)
+    assert(object_eq(qpp_qmcpack,qpp,int_as_float=True))
+
+
+    # tests for CasinoPP
+    cpp = CasinoPP(casino_file)
+
+    qo = qpp.to_obj()
+    co = cpp.to_obj()
+    del qo.rmin
+    del qo.rmax
+    assert(object_eq(co,qo))
+
+    qmcpack_from_casino_file = os.path.join(tpath,'C.BFD.qmcpack_from_casino')
+    cpp.write_qmcpack(qmcpack_from_casino_file)
+
+    qpp_casino = QmcpackPP(qmcpack_from_casino_file)
+    assert(object_eq(qpp_casino,qpp,int_as_float=True))
+
+#end def test_pseudopotential_classes
+
