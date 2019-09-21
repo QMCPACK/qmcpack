@@ -748,44 +748,57 @@ class SemilocalPP(Pseudopotential):
 
     # evaluate r*potential based on a potential component object
     #  component representation is specific to each derived class
-    def evaluate_comp_rV(self,r,vcomp):
+    def evaluate_comp_rV(self,r,l,vcomp):
         self.not_implemented()
     #end def evaluate_comp_rV
 
 
-    # evaluate potential based on a potential component object
-    #  local, nonlocal, and L2 are all represented by separate component objects
-    def evaluate_comp(self,r,vcomp,rpow=0,rmin=0):
-        v = self.evaluate_comp_rV(r,vcomp)
+    def find_r_rng(self,r,rmin):
         if r is None and self.numeric and not self.interpolatable:
             r = self.r
         #end if
+        rng = None
         if rmin>1e-12:
             rng = r>rmin
             r = r[rng]
+        #end if
+        return r,rng
+    #end def find_r_rng
+
+
+    # evaluate potential based on a potential component object
+    #  local, nonlocal, and L2 are all represented by separate component objects
+    def evaluate_comp(self,r,l,vcomp,rpow=0,rmin=0,rret=True):
+        v = self.evaluate_comp_rV(r,l,vcomp)
+        r,rng = self.find_r_rng(r,rmin)
+        if rng is not None:
             v = v[rng]
         #end if
         if rpow!=1:
             v = r**(rpow-1)*v
         #end if
-        return v
+        if rret:
+            return r,v
+        else:
+            return v
+        #end if
     #end def evaluate_comp
 
 
     # evaluate the local component potential only
-    def evaluate_local(self,r=None,rpow=0,rmin=0):
+    def evaluate_local(self,r=None,rpow=0,rmin=0,rret=False):
         l = self.local
         if not self.has_component(l):
             self.error('cannot evaluate local potential\nlocal potential is not present')
         #end if
         vcomp = self.get_component(l)
-        v = self.evaluate_comp(r,vcomp,rpow,rmin)
-        return v
+        ret = self.evaluate_comp(r,l,vcomp,rpow,rmin,rret)
+        return ret
     #end def evaluate_local
 
 
     # evaluate a nonlocal component potential
-    def evaluate_nonlocal(self,r=None,l=None,rpow=0,rmin=0):
+    def evaluate_nonlocal(self,r=None,l=None,rpow=0,rmin=0,rret=False):
         if l==self.local:
             self.error('called evaluate_nonlocal requesting local potential\nthe l index of the local potential is: {0}'.format(self.local))
         elif l=='L2':
@@ -796,31 +809,36 @@ class SemilocalPP(Pseudopotential):
             self.error('cannot evaluate non-local potential\nlocal potential is not present\nrequested potential: {0}'.format(l))
         #end if
         vcomp = self.get_component(l)
-        v = self.evaluate_comp(r,vcomp,rpow,rmin)
-        return v
+        ret = self.evaluate_comp(r,l,vcomp,rpow,rmin,rret)
+        return ret
     #end def evaluate_nonlocal
 
 
     # test needed
     # evaluate the L2 component potential
-    def evaluate_L2(self,r=None,rpow=0,rmin=0):
+    def evaluate_L2(self,r=None,rpow=0,rmin=0,rret=False):
         l = 'L2'
         if not self.has_component(l):
             self.error('cannot evaluate L2 potential\nL2 potential is not present')
         #end if
         vcomp = self.get_component(l)
-        v = self.evaluate_comp(r,vcomp,rpow,rmin)
-        return v
+        ret = self.evaluate_comp(r,l,vcomp,rpow,rmin,rret)
+        return ret
     #end def evaluate_L2
 
 
     # evaluate semilocal potential components in isolation
-    def evaluate_component(self,r=None,l=None,rpow=0,rmin=0,optional=False):
+    def evaluate_component(self,r=None,l=None,rpow=0,rmin=0,rret=False,optional=False):
         vcomp = self.get_component(l)
         if vcomp is not None:
-            return self.evaluate_comp(r,vcomp,rpow,rmin)
+            return self.evaluate_comp(r,l,vcomp,rpow,rmin,rret)
         elif optional:
-            return 0*self.evaluate_local(r,rpow,rmin)
+            z = 0*self.evaluate_local(r,rpow,rmin,rret=False)
+            if rret:
+                return z,z
+            else:
+                return z
+            #end if
         else:
             self.error('requested evaluation of non-existent component\ncomponent requested: {0}'.format(l))
         #end if
@@ -828,14 +846,9 @@ class SemilocalPP(Pseudopotential):
 
 
     # evaluate angular momentum channel of full potential
-    def evaluate_channel(self,r=None,l=None,rpow=0,rmin=0,with_local=True,with_L2=True):
+    def evaluate_channel(self,r=None,l=None,rpow=0,rmin=0,rret=False,with_local=True,with_L2=True):
         if l not in self.l_channels:
             self.error('evaluate_channel must be called with a valid angular momentum label\nvalid options are l=s,p,d,f,...\nyou provided: l={0}'.format(l))
-        #end if
-        if self.numeric and not self.interpolatable:
-            r = None
-        elif r is None and self.interpolatable:
-            r = linspace(0.01,4.0,400)            
         #end if
         eval_any = False
         loc_present = self.has_component(self.local)
@@ -860,19 +873,19 @@ class SemilocalPP(Pseudopotential):
         else:
             vnonloc = 0
         #end if
+        if rret or not eval_any:
+            r,rng = self.find_r_rng(r,rmin)
+        #end if
         if eval_any:
             v = vloc+vL2+vnonloc
         else:
-            if r is None and self.numeric:
-                r = self.r
-            #end if
-            if rmin>1e-12:
-                rng = r>rmin
-                r = r[rng]
-            #end if
             v = 0*r
         #end if
-        return v
+        if rret:
+            return r,v
+        else:
+            return v
+        #end if
     #end def evaluate_channel
 
 
@@ -884,16 +897,9 @@ class SemilocalPP(Pseudopotential):
             r = linspace(rmin,rmax,npts)
         #end if
         if l=='L2':
-            v = self.evaluate_L2(r,rpow,rmin)
+            r,v = self.evaluate_L2(r,rpow,rmin,rret=True)
         else:
-            v = self.evaluate_channel(r,l,rpow,rmin,with_local,with_L2)
-        #end if
-        if r is None:
-            r = self.r
-            if rmin>1e-12:
-                rng = r>rmin
-                r = r[rng]
-            #end if
+            r,v = self.evaluate_channel(r,l,rpow,rmin,rret=True,with_local=with_local,with_L2=with_L2)
         #end if
         return r,v
     #end def numeric_channel
@@ -1729,7 +1735,7 @@ class GaussianPP(SemilocalPP):
     #end def write_basis
 
 
-    def evaluate_comp_rV(self,r,vcomp):
+    def evaluate_comp_rV(self,r,l,vcomp):
         r = array(r)
         v = zeros(r.shape)
         if l==self.local or l==None:
@@ -1833,7 +1839,7 @@ class QmcpackPP(SemilocalPP):
     #end def read
 
 
-    def evaluate_comp_rV(self,r,vcomp):
+    def evaluate_comp_rV(self,r,l,vcomp):
         if r is not None:
             if len(r)==len(self.r) and abs( (r[1:]-self.r[1:])/self.r[1:] ).max()<1e-6:
                 r = self.r

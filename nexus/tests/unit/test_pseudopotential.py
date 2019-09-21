@@ -364,9 +364,10 @@ r*potential (L=1) in Ha
 
     ctext = qpp_fake.write_casino()
 
-
+    print
+    print
     gpp = GaussianPP(files['C.BFD.gms'],format='gamess')
 
-    print gpp
+    #print gpp
 #end def test_pseudopotential_classes
     
