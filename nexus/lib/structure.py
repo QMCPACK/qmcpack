@@ -30,7 +30,7 @@ import os
 import numpy as np
 from copy import deepcopy
 from random import randint
-from numpy import abs,all,append,arange,around,array,atleast_2d,ceil,cos,cross,cross,diag,dot,empty,exp,flipud,floor,identity,isclose,logical_not,mgrid,mod,ndarray,ones,pi,round,sign,sin,sqrt,uint64,zeros
+from numpy import abs,all,allclose,append,arange,around,array,atleast_2d,ceil,cos,cross,cross,diag,dot,empty,exp,flipud,floor,identity,isclose,logical_not,mgrid,mod,ndarray,ones,pi,round,sign,sin,sqrt,uint64,zeros
 from numpy.linalg import inv,det,norm
 from types import NoneType
 from unit_converter import convert
@@ -1433,20 +1433,34 @@ class Structure(Sobj):
         self.skew(d)
     #end def stretch
 
-        
-    def skew(self,skew):
+
+    def rotate(self,R,check=True):
+        if not allclose(dot(A,A.T),identity(A.size)):
+            self.error('rotate must be given a unitary matrix')
+        #end if
+        self.transformation_matrix(R)
+    #end def rotate
+
+
+    def transformation_matrix(self,A):
+        A = A.T
         axinv  = inv(self.axes)
-        axnew  = dot(self.axes,skew)
+        axnew  = dot(self.axes,A)
         kaxinv = inv(self.kaxes)
-        kaxnew = dot(self.kaxes,inv(skew).T)
+        kaxnew = dot(self.kaxes,inv(A).T)
         self.pos     = dot(dot(self.pos,axinv),axnew)
         self.center  = dot(dot(self.center,axinv),axnew)
         self.kpoints = dot(dot(self.kpoints,kaxinv),kaxnew)
         self.axes  = axnew
         self.kaxes = kaxnew
         if self.folded_structure!=None:
-            self.folded_structure.skew(skew)
+            self.folded_structure.transformation_matrix(A)
         #end if
+    #end def transformation_matrix
+
+
+    def skew(self,skew):
+        self.transformation_matrix(skew.T)
     #end def skew
         
     
