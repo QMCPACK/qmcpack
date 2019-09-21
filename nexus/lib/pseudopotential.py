@@ -89,14 +89,11 @@ class PseudoFile(DevBase):
             self.filename = os.path.basename(filepath)
             self.location = os.path.abspath(filepath)
             elem_label,symbol,is_elem = pp_elem_label(self.filename)
-            #elem_label = self.filename.split('.')[0]
-            #is_elem,symbol = is_element(elem_label,symbol=True)
             if not is_elem:
                 self.error('cannot determine element for pseudopotential file: {0}\npseudopotential file names must be prefixed by an atomic symbol or label\n(e.g. Si, Si1, etc)'.format(filepath))
             #end if
             self.element = symbol
             self.element_label = elem_label
-            #self.element  = self.filename[0:2].strip('._-')
             self.read(filepath)
         #end if
     #end def __init__
