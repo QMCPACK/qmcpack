@@ -310,6 +310,8 @@ class PPset(DevBase):
         return label in self.pseudos
     #end def has_set
 
+
+    # test needed
     def get(self,label,code,system):
         if system is None or not system.pseudized:
             return []
@@ -467,6 +469,7 @@ class SemilocalPP(Pseudopotential):
     #end def __init__
 
     
+    # test needed
     def transfer_core_from(self,other):
         self.name  = other.name
         self.rcut  = other.rcut
@@ -492,6 +495,7 @@ class SemilocalPP(Pseudopotential):
     #end def has_component
 
 
+    # test needed
     def set_component(self,l,v,guard=False):
         if guard and l in self.components:
             self.error('cannot set requested component potential\nrequested potential is already present\nrequested potential: {0}'.format(l))
@@ -511,6 +515,7 @@ class SemilocalPP(Pseudopotential):
     #end def get_component
 
 
+    # test needed
     def remove_component(self,l,guard=False):
         if l in self.components:
             del self.components[l]
@@ -562,17 +567,20 @@ class SemilocalPP(Pseudopotential):
     #end def get_nonlocal
 
 
+    # test needed
     def get_L2(self):
         return self.get_component('L2',guard=True)
     #end def get_L2
 
 
+    # test needed
     def add_local(self,l,v):
         self.set_component(l,v,guard=True)
         self.local = l
     #end def add_local
 
 
+    # test needed
     def add_nonlocal(self,l,v):
         if l==self.local:
             self.promote_local()
@@ -581,17 +589,20 @@ class SemilocalPP(Pseudopotential):
     #end def add_nonlocal
 
 
+    # test needed
     def add_L2(self,v):
         self.set_component('L2',guard=True)
     #end def add_L2
 
 
+    # test needed
     def remove_local(self):
         self.remove_component(self.local,guard=True)
         self.local = None
     #end def remove_local
 
 
+    # test needed
     def remove_nonlocal(self,l=None):
         vnl = self.get_nonlocal()
         if l is None:
@@ -606,6 +617,7 @@ class SemilocalPP(Pseudopotential):
     #end def remove_nonlocal
 
 
+    # test needed
     def remove_L2(self):
         self.remove_component('L2',guard=True)
     #end def remove_L2
@@ -618,6 +630,7 @@ class SemilocalPP(Pseudopotential):
     #end def assert_numeric
 
 
+    # test needed
     def change_local(self,local):
         self.assert_numeric('change_local')
         if local==self.local:
@@ -655,6 +668,7 @@ class SemilocalPP(Pseudopotential):
     #end def change_local
 
 
+    # test needed
     def promote_local(self):
         found = False
         for l in self.l_channels:
@@ -673,6 +687,7 @@ class SemilocalPP(Pseudopotential):
     #end def promote_local
 
 
+    # test needed
     # ensure that v_l=<l|vpp|l>==v, while v_l' remains unchanged
     def set_channel(self,l,v):
         self.assert_numeric('set_channel')
@@ -695,6 +710,7 @@ class SemilocalPP(Pseudopotential):
     #end def set_channel
 
 
+    # test needed
     def expand_L2(self,lmax):
         self.assert_numeric('expand_L2')
         if lmax not in self.channel_indices:
@@ -718,6 +734,7 @@ class SemilocalPP(Pseudopotential):
     #end def expand_L2
 
 
+    # test needed
     def angular_channels(self):
         channels = []
         for l in self.l_channels:
@@ -784,6 +801,7 @@ class SemilocalPP(Pseudopotential):
     #end def evaluate_nonlocal
 
 
+    # test needed
     # evaluate the L2 component potential
     def evaluate_L2(self,r=None,rpow=0,rmin=0):
         l = 'L2'

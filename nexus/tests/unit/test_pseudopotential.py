@@ -1,5 +1,6 @@
 
 import testing
+from testing import value_eq,object_eq
 from testing import divert_nexus_log,restore_nexus_log
 
 
@@ -171,3 +172,201 @@ h 1 1.00
     assert(pp.pp_text==pp_ref)
 
 #end def test_pseudopotentials
+
+
+
+def test_ppset():
+    from generic import obj
+    from pseudopotential import ppset
+
+    ppset_ref = obj(
+        pseudos = obj(
+            bfd = obj(
+                gamess  = obj(C='C.BFD.gms'),
+                pwscf   = obj(C='C.BFD.upf'),
+                qmcpack = obj(C='C.BFD.xml'),
+                ),
+            ),
+        )
+
+    ppset(
+        label   = 'bfd',
+        gamess  = ['C.BFD.gms'],
+        pwscf   = ['C.BFD.upf'],
+        qmcpack = ['C.BFD.xml'],
+        )
+
+    o = ppset.to_obj()
+    assert(object_eq(o,ppset_ref))
+
+    assert(ppset.supports_code('pwscf'))
+    assert(ppset.supports_code('gamess'))
+    assert(ppset.supports_code('vasp'))
+    assert(ppset.supports_code('qmcpack'))
+
+    assert(ppset.has_set('bfd'))
+
+
+    # need to add test for get() method
+    #   depends on PhysicalSystem
+#end def test_ppset
+
+
+
+def test_pseudopotential_classes():
+    import numpy as np
+    from pseudopotential import SemilocalPP
+    from pseudopotential import GaussianPP
+    from pseudopotential import QmcpackPP
+    from pseudopotential import CasinoPP
+
+    files = get_files()
+
+    # empty initialization
+    SemilocalPP()
+    GaussianPP()
+    QmcpackPP()
+    CasinoPP()
+
+
+    qpp = QmcpackPP(files['C.BFD.xml'])
+
+    # SemilocalPP attributes/methods
+    assert(qpp.name is None)
+    assert(qpp.rcut is None)
+    assert(qpp.lmax==1)
+    assert(qpp.local=='p')
+
+    assert(qpp.has_component('s'))
+    assert(qpp.has_component('p'))
+
+    assert(isinstance(qpp.get_component('s'),np.ndarray))
+    assert(isinstance(qpp.get_component('p'),np.ndarray))
+
+    assert(qpp.has_local())
+    assert(qpp.has_nonlocal())
+    assert(not qpp.has_L2())
+
+    vnl = qpp.get_nonlocal()
+
+    rc = qpp.find_rcut()
+    assert(value_eq(rc,1.705,tol=1e-3))
+
+    # below follows by virtue of being numeric
+    qpp.assert_numeric('some location')
+    
+    vcomp = qpp.components
+
+    vloc = qpp.evaluate_local(rpow=1)
+    assert(value_eq(vloc,vcomp.p))
+
+    vnonloc = qpp.evaluate_nonlocal(l='s',rpow=1)
+    assert(value_eq(vnonloc,vcomp.s))
+
+    vs = qpp.evaluate_channel(l='s',rpow=1)
+    assert(value_eq(vs,vcomp.s+vcomp.p))
+
+    vp = qpp.evaluate_channel(l='p',rpow=1)
+    assert(value_eq(vp,vcomp.p))
+
+    r,vsn = qpp.numeric_channel(l='s',rpow=1)
+    r,vpn = qpp.numeric_channel(l='p',rpow=1)
+    assert(value_eq(r,qpp.r))
+    assert(value_eq(vsn,vs))
+    assert(value_eq(vpn,vp))
+
+    # QmcpackPP attributes/methods
+    assert(qpp.numeric)
+    assert(qpp.Zcore==2)
+    assert(qpp.Zval==4)
+    assert(qpp.core=='He')
+    assert(qpp.element=='C')
+    assert(value_eq(float(qpp.rmin),0.))
+    assert(value_eq(qpp.rmax,10.))
+    assert(value_eq(qpp.r.min(),0.))
+    assert(value_eq(qpp.r.max(),10.))
+
+    assert(value_eq(qpp.v_at_zero('s'),22.551641791033372))
+    assert(value_eq(qpp.v_at_zero('p'),-19.175372435022126))
+
+    qpp_fake = qpp.copy()
+    r = np.linspace(0,10,6)
+    vloc = 0*r + qpp.Zval
+    vnl  = 0*r
+    qpp_fake.r = r
+    qpp_fake.components.s = vnl
+    qpp_fake.components.p = vloc
+
+    qtext_ref = '''<?xml version="1.0" encoding="UTF-8"?>
+<pseudo version="0.5">
+  <header symbol="C" atomic-number="6" zval="4" relativistic="unknown" 
+   polarized="unknown" creator="Nexus" flavor="unknown" 
+   core-corrections="unknown" xc-functional-type="unknown" 
+   xc-functional-parametrization="unknown"/>
+  <grid type="linear" units="bohr" ri="0.0" rf="10.0" npts="6"/>
+  <semilocal units="hartree" format="r*V" npots-down="2" npots-up="0" l-local="1">
+    <vps principal-n="0" l="s" spin="-1" cutoff="10.0" occupation="unknown">
+      <radfunc>
+        <grid type="linear" units="bohr" ri="0.0" rf="10.0" npts="6"/>
+        <data>
+          4.00000000000000e+00  4.00000000000000e+00  4.00000000000000e+00
+          4.00000000000000e+00  4.00000000000000e+00  4.00000000000000e+00
+        </data>
+      </radfunc>
+    </vps>
+    <vps principal-n="0" l="p" spin="-1" cutoff="10.0" occupation="unknown">
+      <radfunc>
+        <grid type="linear" units="bohr" ri="0.0" rf="10.0" npts="6"/>
+        <data>
+          4.00000000000000e+00  4.00000000000000e+00  4.00000000000000e+00
+          4.00000000000000e+00  4.00000000000000e+00  4.00000000000000e+00
+        </data>
+      </radfunc>
+    </vps>
+  </semilocal>
+</pseudo>'''
+
+    qtext = qpp_fake.write_qmcpack()
+    assert(qtext.strip()==qtext_ref.strip())
+
+    ctext_ref = '''C pseudopotential converted by Nexus
+Atomic number and pseudo-charge
+  6 4.0
+Energy units (rydberg/hartree/ev):
+  hartree
+Angular momentum of local component (0=s,1=p,2=d..)
+  1
+NLRULE override (1) VMC/DMC (2) config gen (0 ==> input/default value)
+  0 0
+Number of grid points
+  6
+R(i) in atomic units
+  0.00000000000000e+00
+  2.00000000000000e+00
+  4.00000000000000e+00
+  6.00000000000000e+00
+  8.00000000000000e+00
+  1.00000000000000e+01
+r*potential (L=0) in Ha
+  4.00000000000000e+00
+  4.00000000000000e+00
+  4.00000000000000e+00
+  4.00000000000000e+00
+  4.00000000000000e+00
+  4.00000000000000e+00
+r*potential (L=1) in Ha
+  4.00000000000000e+00
+  4.00000000000000e+00
+  4.00000000000000e+00
+  4.00000000000000e+00
+  4.00000000000000e+00
+  4.00000000000000e+00'''
+
+    ctext = qpp_fake.write_casino()
+
+
+    gpp = GaussianPP(files['C.BFD.gms'],format='gamess')
+
+    print gpp
+#end def test_pseudopotential_classes
+    
