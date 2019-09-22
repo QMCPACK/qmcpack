@@ -627,12 +627,6 @@ def superstring():
 #end def superstring
 
 
-
-def unit_converter():
-    nunit_all()
-#end def unit_converter
-
-
         
 def generic_logging():
     from generic import log,message,warn,error
@@ -1714,6 +1708,12 @@ def developer():
 
 
 
+def unit_converter():
+    nunit_all()
+#end def unit_converter
+
+
+
 def periodic_table():
     nunit_all()
 #end def periodic_table
@@ -1741,12 +1741,6 @@ def hdfreader():
 def xmlreader():
     nunit_all()
 #end def xmlreader
-
-
-
-def basisset():
-    nunit_all()
-#end def basisset
 
 
 
@@ -2837,6 +2831,18 @@ def physical_system():
 
 
 
+def basisset():
+    nunit_all()
+#end def basisset
+
+
+
+def pseudopotential():
+    nunit_all()
+#end def pseudopotential
+
+
+
 def pwscf_input():
     # divert logging function
     nlog_divert()
@@ -3477,30 +3483,31 @@ def user_examples(label):
 NexusTest( versions              )
 NexusTest( required_dependencies )
 NexusTest( optional_dependencies , optional=True)
+NexusTest( nexus_imports         )
 NexusTest( testing               )
 NexusTest( execute               )
 NexusTest( memory                )
 NexusTest( plotting              )
 NexusTest( superstring           )
-NexusTest( unit_converter        )
 NexusTest( generic_logging       )
 NexusTest( generic_intrinsics    )
 NexusTest( generic_extensions    )
 NexusTest( developer             )
+NexusTest( unit_converter        )
 NexusTest( periodic_table        )
 NexusTest( numerics              )
+NexusTest( grid_functions        )
 NexusTest( fileio                )
 NexusTest( hdfreader             )
 NexusTest( xmlreader             )
-NexusTest( basisset              )
-NexusTest( nexus_imports         )
-NexusTest( settings_operation    , 'settings' )
-NexusTest( machines              )
 NexusTest( structure             )
 NexusTest( physical_system       )
+NexusTest( basisset              )
+NexusTest( pseudopotential       )
+NexusTest( machines              )
 NexusTest( pwscf_input           )
 NexusTest( qmcpack_input         )
-NexusTest( grid_functions        )
+NexusTest( settings_operation    , 'settings' )
 
 for label in example_information.keys():
     NexusTest(

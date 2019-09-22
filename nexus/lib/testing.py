@@ -271,4 +271,5 @@ def restore_nexus_log():
     generic_settings.devlog   = logging_storage['devlog']
     object_interface._logfile = logging_storage['objlog']
     logging_storage.clear()
+    assert(len(logging_storage)==0)
 #end def restore_nexus_log
