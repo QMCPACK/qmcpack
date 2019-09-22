@@ -2551,6 +2551,8 @@ def machines():
 
 def structure():
 
+    nunit('files')
+
     nunit('import')
 
     nunit('empty_init')
@@ -2567,9 +2569,37 @@ def structure():
 
     nunit('matrix_tiling')
 
-    nunit('rinscribe')
+    nunit('gen_molecule')
+
+    nunit('gen_diamond_direct')
+
+    nunit('gen_diamond_lattice')
+
+    nunit('gen_graphene')
+
+    nunit('read_write')
+
+    nunit('bounding_box')
+
+    nunit('opt_tiling')
+
+    nunit('unit_coords')
+
+    nunit('monkhorst_pack_kpoints')
 
     nunit('count_kshells')
+
+    nunit('rinscribe')
+
+    nunit('rwigner')
+
+    nunit('cell_constants')
+
+    nunit('min_image_distances')
+
+    nunit('freeze')
+
+    nunit('interpolate')
 
     nunit_all()
 #end def structure
