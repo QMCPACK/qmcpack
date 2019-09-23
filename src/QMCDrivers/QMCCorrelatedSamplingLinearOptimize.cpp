@@ -61,7 +61,7 @@ QMCCorrelatedSamplingLinearOptimize::QMCCorrelatedSamplingLinearOptimize(MCWalke
 {
   IsQMCDriver = false;
   //set the optimization flag
-  QMCDriverMode.set(QMC_OPTIMIZE, 1);
+  qmc_driver_mode.set(QMC_OPTIMIZE, 1);
   //read to use vmc output (just in case)
   RootName = "pot";
   QMCType  = "QMCCorrelatedSamplingLinearOptimize";
@@ -320,23 +320,6 @@ bool QMCCorrelatedSamplingLinearOptimize::put(xmlNodePtr q)
     {
       mcwalkerNodePtr.push_back(cur);
     }
-    //         else if (cname == "optimizer")
-    //         {
-    //             xmlChar* att= xmlGetProp(cur,(const xmlChar*)"method");
-    //             if (att)
-    //             {
-    //                 optmethod = (const char*)att;
-    //             }
-    //             optNode=cur;
-    //         }
-    //         else if (cname == "optimize")
-    //         {
-    //             xmlChar* att= xmlGetProp(cur,(const xmlChar*)"method");
-    //             if (att)
-    //             {
-    //                 optmethod = (const char*)att;
-    //             }
-    //         }
     cur = cur->next;
   }
   //no walkers exist, add 10

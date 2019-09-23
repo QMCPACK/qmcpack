@@ -8,7 +8,7 @@ if [[ $localonly == "yes" ]]; then
 echo --- Local CMake/Make/CTest only. No cdash drop.
 fi
 
-export GLOBALTCFG="--timeout 3600 -VV"
+export GLOBALTCFG="--timeout 600 -VV"
 export LIMITEDTESTS="-R deterministic -LE unstable -E long"
 export LESSLIMITEDTESTS="-E long -LE unstable"
 #export LESSLIMITEDTESTS="-R 'deterministic|converter|short.*diamondC_.x1x1_pp-.mc_.*'"
@@ -21,16 +21,12 @@ test_dir=${test_path}/QMCPACK_CI_BUILDS_DO_NOT_REMOVE
 export QMC_DATA=/data/pk7/QMC_DATA # Route to directory containing performance test files
 
 # CUDA 10 setup
-export CUDAVER=10.0
+export CUDAVER=10.1
 export PATH=/opt/local/bin:/opt/local/sbin:/usr/local/cuda-${CUDAVER}/bin/:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
 export LD_LIBRARY_PATH=/usr/local/cuda-${CUDAVER}/lib64
 
-# Specify GPUs for testing. Enquire via "nvidia-smi -L"
-# GPU 0: Tesla K40c (UUID: GPU-224da96d-fb1a-955e-b082-a0f2214877e3)
-# GPU 2: Tesla K40c (UUID: GPU-229b6777-2095-3b48-ed2d-50a9f28f5118)
-export OXYGEN_KEPLER=GPU-224da96d-fb1a-955e-b082-a0f2214877e3,GPU-229b6777-2095-3b48-ed2d-50a9f28f5118
-#export OXYGEN_VOLTA=GPU-6bf1c875-b5de-2486-fd0e-ed4bca724ba1
-export CUDA_VISIBLE_DEVICES=$OXYGEN_KEPLER
+# Specify GPUs for testing. Obtain device IDs via "nvidia-smi -L"
+#export CUDA_VISIBLE_DEVICES=
 
 # PGI2019  setup
 export PGI=/opt/pgi
@@ -39,7 +35,7 @@ export LM_LICENSE_FILE=$PGI/license.dat
 export PATH=$PGI/linux86-64/2019/bin:$PATH
 
 # MKL setup used by many builds for BLAS, LAPACK etc.
-source /opt/intel2019/mkl/bin/mklvars.sh intel64
+source /opt/intel2018/mkl/bin/mklvars.sh intel64
 
 # Intel2019.1 MPI configure setting to avoid MPI crash
 # via https://software.intel.com/en-us/forums/intel-clusters-and-hpc-technology/topic/799716
@@ -58,6 +54,7 @@ echo --- End listings
 
 spack load git
 
+module list
 if [ -e ${test_path} ]; then
 
 if [ ! -e ${test_dir} ]; then
@@ -81,13 +78,15 @@ fi
 # Sanity check cmake config file present
 if [ -e qmcpack/CMakeLists.txt ]; then
 
+export PYTHONPATH=${test_dir}/qmcpack/nexus/lib
+echo --- PYTHONPATH=$PYTHONPATH
 #
 # Quantum Espresso setup/download/build
 # Future improvement: use spack version
 #
 
-export QE_VERSION=6.4
-sys=build_intel2019
+export QE_VERSION=6.4.1
+sys=build_intel2018
 # QE version 6.x unpacks to qe-; Older versions 5.x uses espresso-
 export QE_PREFIX=qe-
 export QE_BIN=${test_dir}/${sys}_QE/${QE_PREFIX}${QE_VERSION}/bin
@@ -105,7 +104,7 @@ if [ ! -e ${QE_BIN}/pw.x ]; then
     cd ${QE_PREFIX}${QE_VERSION}
 
 (
-   source /opt/intel2019/bin/compilervars.sh intel64
+   source /opt/intel2018/bin/compilervars.sh intel64
     ./configure CC=mpiicc MPIF90=mpiifort F77=mpiifort --with-scalapack=intel --with-hdf5=/home/pk7/apps/hdf5-1.10.1-intel-mpi
     make pwall # No parallel build due to sometimes broken dependencies in QE build system
 )
@@ -119,7 +118,7 @@ fi
 
 echo --- Starting test builds and tests
 
-for sys in build_intel2019 build_gccnew_mkl build_intel2018 build_clangnew_mkl build_pgi2019_nompi_mkl build_gccnew_mkl_complex build_gccnew_mkl_aos build_gccnew_mkl_complex_aos  build_intel2019_complex build_intel2018_complex build_intel2018_aos build_intel2018_complex_aos build_intel2018_nompi  build_intel2018_mixed build_clangnew_mkl_complex build_clangnew_mkl_nompi build_gccnew_mkl_nompi build_clangcuda build_clangcuda_complex build_clangcuda_full build_gccold_mkl build_clangold_mkl build_gccold_mkl_complex build_gccold_mkl_aos build_gccold_mkl_complex_aos build_clangold_mkl_complex build_clangold_mkl_nompi build_gccold_mkl_nompi
+for sys in build_intel2018 build_gccnew_mkl build_intel2019 build_clangnew_mkl build_pgi2019_nompi_mkl build_gccnew_mkl_complex build_gccnew_mkl_aos build_gccnew_mkl_complex_aos  build_intel2019_complex build_intel2018_complex build_intel2018_aos build_intel2018_complex_aos build_intel2018_nompi  build_intel2018_mixed build_clangnew_mkl_complex build_clangnew_mkl_nompi build_gccnew_mkl_nompi build_clangcuda build_clangcuda_complex build_clangcuda_full build_gccold_mkl build_clangold_mkl build_gccold_mkl_complex build_gccold_mkl_aos build_gccold_mkl_complex_aos build_clangold_mkl_complex build_clangold_mkl_nompi build_gccold_mkl_nompi
 do
 
 echo --- START $sys `date`
@@ -203,11 +202,13 @@ llvm_vcuda=6.0.1 # Released 2018-07-05
 
 spack load git
 
+spack load python@2.7.16%gcc@8.3.0 # Has numpy, h5py, pandas "activated" and available for import
+
 case "$ourenv" in
 gccnewbuild) echo $ourenv
 	spack load boost@$boost_vnew%gcc@$gcc_vnew
 	spack load gcc@$gcc_vnew
-	spack load hdf5@$hdf5_vnew%gcc@$gcc_vnew
+	spack load hdf5@$hdf5_vnew%gcc@$gcc_vnew~mpi
 	spack load cmake@$cmake_vnew%gcc@$gcc_vnew
 	spack load openmpi@$ompi_vnew%gcc@$gcc_vnew
 	spack load libxml2@$libxml2_vnew%gcc@$gcc_vnew
@@ -216,7 +217,7 @@ gccnewbuild) echo $ourenv
 gccoldbuild) echo $ourenv
 	spack load boost@$boost_vold%gcc@$gcc_vold
 	spack load gcc@$gcc_vold
-	spack load hdf5@$hdf5_vold%gcc@$gcc_vold
+	spack load hdf5@$hdf5_vold%gcc@$gcc_vold~mpi
 	spack load cmake@$cmake_vold%gcc@$gcc_vold
 	spack load openmpi@$ompi_vold%gcc@$gcc_vold
 	spack load libxml2@$libxml2_vold%gcc@$gcc_vold
@@ -225,7 +226,7 @@ gccoldbuild) echo $ourenv
 gccintelbuild) echo $ourenv
 	spack load boost@$boost_vnew%gcc@$gcc_vnew
 	spack load gcc@$gcc_vintel # Old enough C++ library for Intel compiler
-	spack load hdf5@$hdf5_vnew%gcc@$gcc_vnew
+	spack load hdf5@$hdf5_vnew%gcc@$gcc_vnew~mpi
 	spack load cmake@$cmake_vnew%gcc@$gcc_vnew
 # Use Intel MPI with Intel builds
 #	spack load openmpi@$ompi_vnew%gcc@$gcc_vnew 
@@ -236,7 +237,7 @@ clangnewbuild) echo $ourenv
 	spack load llvm@$llvm_vnew
 	spack load boost@$boost_vnew%gcc@$gcc_vnew
 	spack load gcc@$gcc_vnew
-	spack load hdf5@$hdf5_vnew%gcc@$gcc_vnew
+	spack load hdf5@$hdf5_vnew%gcc@$gcc_vnew~mpi
 	spack load cmake@$cmake_vnew%gcc@$gcc_vnew
 	spack load openmpi@$ompi_vnew%gcc@$gcc_vnew
 	spack load libxml2@$libxml2_vnew%gcc@$gcc_vnew
@@ -246,7 +247,7 @@ clangoldbuild) echo $ourenv
 	spack load llvm@$llvm_vold%gcc@$gcc_vold
 	spack load boost@$boost_vold%gcc@$gcc_vold
 	spack load gcc@$gcc_vold
-	spack load hdf5@$hdf5_vold%gcc@$gcc_vold
+	spack load hdf5@$hdf5_vold%gcc@$gcc_vold~mpi
 	spack load cmake@$cmake_vold%gcc@$gcc_vold
 	spack load openmpi@$ompi_vold%gcc@$gcc_vold
 	spack load libxml2@$libxml2_vold%gcc@$gcc_vold
@@ -256,7 +257,7 @@ clangcudabuild) echo $ourenv
 	spack load llvm@$llvm_vcuda
 	spack load boost@$boost_vnew%gcc@$gcc_vnew
 	spack load gcc@$gcc_vnew
-	spack load hdf5@$hdf5_vnew%gcc@$gcc_vnew
+	spack load hdf5@$hdf5_vnew%gcc@$gcc_vnew~mpi
 	spack load cmake@$cmake_vnew%gcc@$gcc_vnew
 	spack load openmpi@$ompi_vnew%gcc@$gcc_vnew
 	spack load libxml2@$libxml2_vnew%gcc@$gcc_vnew
@@ -316,6 +317,9 @@ CTCFG="-DCMAKE_C_COMPILER=icc -DCMAKE_CXX_COMPILER=icpc -DQMC_MPI=0"
 else
 QMCPACK_TEST_SUBMIT_NAME=Intel20${compilerversion}
 CTCFG="-DCMAKE_C_COMPILER=mpiicc -DCMAKE_CXX_COMPILER=mpiicpc -DQMC_MPI=1"
+# Add QE to any Intel MPI builds.
+# Do not add to non Intel MPI because ctest will use mpirun from "wrong" MPI
+CTCFG="$CTCFG -DQE_BIN=${QE_BIN}" 
 fi
 fi
 
@@ -348,7 +352,7 @@ fi
 # Complex
 if [[ $sys == *"complex"* ]]; then
 QMCPACK_TEST_SUBMIT_NAME=${QMCPACK_TEST_SUBMIT_NAME}-Complex
-CTCFG="$CTCFG -DQMC_COMPLEX=1 -DBUILD_AFQMC=1"
+CTCFG="$CTCFG -DQMC_COMPLEX=1"
 fi
 
 # Mixed/Full precision
@@ -371,7 +375,7 @@ CTCFG="$CTCFG -DENABLE_SOA=1"
 fi
 
 # Boilerplate for all tests
-CTCFG="$CTCFG -DQMC_DATA=${QMC_DATA} -DQE_BIN=${QE_BIN} -DENABLE_TIMERS=1"
+CTCFG="$CTCFG -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1"
 
 # Selectively enable AFQMC due to more stringent compiler requirements
 if [[ $sys == *"complex"* ]]; then
@@ -413,11 +417,12 @@ echo --- END ctest `date`
 else
 echo --- START ctest `date` 
 echo ctest ${CTCFG} ${GLOBALTCFG} -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release ${THETESTS}
-ctest ${CTCFG} ${GLOBALTCFG} -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release ${THETESTS}
+nice ctest ${CTCFG} ${GLOBALTCFG} -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release ${THETESTS}
 echo --- END ctest `date`
 fi
 
 )
+
 module purge
 
 echo --- END $sys `date`

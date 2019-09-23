@@ -23,11 +23,11 @@ class HamiltonianPool;
 class VMCFactory
 {
 private:
-  int VMCMode;
+  unsigned long VMCMode;
   xmlNodePtr myNode;
 
 public:
-  VMCFactory(int vmode, xmlNodePtr cur) : VMCMode(vmode), myNode(cur) {}
+  VMCFactory(unsigned long vmode, xmlNodePtr cur) : VMCMode(vmode), myNode(cur) {}
 
   QMCDriverInterface* create(MCWalkerConfiguration& w,
                              TrialWaveFunction& psi,

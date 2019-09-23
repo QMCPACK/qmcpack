@@ -35,6 +35,7 @@ namespace qmcplusplus
 class QMCCostFunctionBase;
 class HamiltonianPool;
 
+
 /** @ingroup QMCDrivers
  * @brief Implements wave-function optimization
  *
@@ -189,8 +190,11 @@ public:
   bool nonLinearRescale(std::vector<RealType>& dP, Matrix<RealType>& S);
   RealType getNonLinearRescale(std::vector<RealType>& dP, Matrix<RealType>& S);
   void generateSamples();
-  void add_timers(std::vector<NewTimer*>& timers);
-  std::vector<NewTimer*> myTimers;
+
+  virtual QMCRunType getRunType() { return QMCRunType::LINEAR_OPTIMIZE; }
+  NewTimer& generate_samples_timer_;
+  NewTimer& initialize_timer_;
+  NewTimer& eigenvalue_timer_;
   Timer t1;
 };
 } // namespace qmcplusplus

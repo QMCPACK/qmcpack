@@ -960,13 +960,13 @@ void WavefunctionFactory::computeVariationalEnergyPHMSD(TaskGroup_& TG, Hamilton
 {
   // CI coefficients can in general be complex and want to avoid two mpi communications so
   // keep everything complex even if Hamiltonian matrix elements are real.
-  // TODO: Don't create entire Hamiltonian on each rank/core?
-  boost::multi::array<ComplexType,1> HamBuff;
-  HamBuff.reextent({ndets*ndets+2});
-  boost::multi::array_ref<ComplexType,2> H(HamBuff.origin(), {ndets,ndets});
-  boost::multi::array_ref<ComplexType,1> energy(HamBuff.origin()+ndets*ndets, iextensions<1u>{2});
+  // Allocate H in Node's shared memory, but use as a raw array with proper synchronization 
+  int dim( (recompute_ci?ndets:0) );
+  boost::multi::array<ComplexType,2,shared_allocator<ComplexType>> H({dim,dim},TG.Node());
+  boost::multi::array<ComplexType,1> energy(iextensions<1u>{2});
   using std::fill_n;
-  fill_n(HamBuff.origin(),HamBuff.num_elements(),ComplexType(0.0));
+  fill_n(H.origin(),H.num_elements(),ComplexType(0.0));  // this call synchronizes
+  fill_n(energy.origin(),energy.num_elements(),ComplexType(0.0));  // this call synchronizes
   ValueType enuc = ham.getNuclearCoulombEnergy();
   for(int idet = 0; idet < ndets; idet++) {
     // These should already be sorted.
@@ -976,29 +976,36 @@ void WavefunctionFactory::computeVariationalEnergyPHMSD(TaskGroup_& TG, Hamilton
       // Compute <Di|H|Dj>
       if((idet*ndets+jdet) % TG.Global().size() == TG.Global().rank()) {
         if(idet == jdet) {
-          H[idet][idet] = slaterCondon0(ham, deti, NMO) + enuc;
-          energy[0] += ma::conj(cidet)*cidet*H[idet][idet];
+          ComplexType Hii(0.0);
+          Hii = slaterCondon0(ham, deti, NMO) + enuc;
+          energy[0] += ma::conj(cidet)*cidet*Hii;
           energy[1] += ma::conj(cidet)*cidet;
+          if(recompute_ci) H[idet][idet] = Hii;
         } else {
+          ComplexType Hij(0.0);
           boost::multi::array_ref<int,1> detj(occs[jdet].origin(), {NAEA+NAEB});
           ComplexType cjdet = coeff[jdet];
           int perm = 1;
           std::vector<int> excit;
           int nexcit = getExcitation(deti, detj, excit, perm);
           if(nexcit == 1) {
-            H[idet][jdet] = ComplexType(perm)*slaterCondon1(ham, excit, detj, NMO);
+            Hij = ComplexType(perm)*slaterCondon1(ham, excit, detj, NMO);
           } else if(nexcit == 2) {
-            H[idet][jdet] = ComplexType(perm)*slaterCondon2(ham, excit, NMO);
-          } else {
-            H[idet][jdet] = ComplexType(0.0);
+            Hij = ComplexType(perm)*slaterCondon2(ham, excit, NMO);
           }
-          H[jdet][idet] = ma::conj(H[idet][jdet]);
-          energy[0] += ma::conj(cidet)*cjdet*H[idet][jdet]+ma::conj(cjdet)*cidet*H[jdet][idet];
+          energy[0] += ma::conj(cidet)*cjdet*Hij+ma::conj(cjdet)*cidet*ma::conj(Hij);
+          if(recompute_ci) {
+            H[idet][jdet] = Hij;
+            H[jdet][idet] = ma::conj(Hij);
+          }
         }
       }
     }
   }
-  TG.Global().all_reduce_in_place_n(to_address(HamBuff.origin()),HamBuff.num_elements(),std::plus<>());
+  TG.Node().barrier();
+  if(TG.Node().root())  
+    TG.Cores().all_reduce_in_place_n(to_address(H.origin()),H.num_elements(),std::plus<>());
+  TG.Global().all_reduce_in_place_n(energy.origin(),2,std::plus<>());
   app_log() << " - Variational energy of trial wavefunction: " << std::setprecision(16) << energy[0] / energy[1] << "\n";
   if(recompute_ci) {
     app_log() << " - Diagonalizing CI matrix.\n";
@@ -1006,11 +1013,11 @@ void WavefunctionFactory::computeVariationalEnergyPHMSD(TaskGroup_& TG, Hamilton
     using CMatrix = boost::multi::array<ComplexType,2>;
     // Want a "unique" solution for all cores/nodes.
     if(TG.Global().rank() == 0) {
-      std::pair<RVector,CMatrix> Sol = ma::symEig<RVector,CMatrix>(H);
+      std::pair<RVector,CMatrix> Sol = ma::symEigSelect<RVector,CMatrix>(H,1);
       app_log() << " - Updating CI coefficients. \n";
       app_log() << " - Recomputed coefficient of first determinant: " << Sol.second[0][0] << "\n";
       for(int idet=0; idet < ndets; idet++) {
-        ComplexType ci = Sol.second[idet][0];
+        ComplexType ci = Sol.second[0][idet];
         // Do we want this much output?
         //app_log() << idet << " old: " << coeff[idet] << " new: " << ci << "\n";
         coeff[idet] = ci;

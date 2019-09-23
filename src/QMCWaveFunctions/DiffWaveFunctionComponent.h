@@ -38,13 +38,6 @@ namespace qmcplusplus
  */
 struct DiffWaveFunctionComponent
 {
-  enum
-  {
-    SourceIndex  = WaveFunctionComponent::SourceIndex,
-    VisitorIndex = WaveFunctionComponent::VisitorIndex,
-    WalkerIndex  = WaveFunctionComponent::WalkerIndex
-  };
-
   //@{typedefs inherited from WaveFunctionComponent
   typedef WaveFunctionComponent::RealType RealType;
   typedef WaveFunctionComponent::ValueType ValueType;
@@ -77,12 +70,27 @@ struct DiffWaveFunctionComponent
 
   /** evaluate derivatives at \f$\{R\}\f$
    * @param P current configuration
-   * @param ke0 current kinetic energy
+   * @param optvars optimizable variables
+   * @param dlogpsi derivative of the log of the wavefunction
+   * @param dhpsioverpsi derivative of the local kinetic energy
    */
   virtual void evaluateDerivatives(ParticleSet& P,
                                    const opt_variables_type& optvars,
                                    std::vector<ValueType>& dlogpsi,
                                    std::vector<ValueType>& dhpsioverpsi)=0;
+
+  /** evaluate derivatives at \f$\{R\}\f$
+   * @param P current configuration
+   * @param optvars optimizable variables
+   * @param dlogpsi derivative of the log of the wavefunction
+   */
+  virtual void evaluateDerivativesWF(ParticleSet& P,
+                                     const opt_variables_type& optvars,
+                                     std::vector<ValueType>& dlogpsi) 
+  { 
+    app_error() << "Need specialization of DiffOrbitalBase::evaluateDerivativesWF.\n";
+    abort();
+  }
 
   virtual void evaluateDerivRatios(ParticleSet& VP, const opt_variables_type& optvars, Matrix<ValueType>& dratios);
 

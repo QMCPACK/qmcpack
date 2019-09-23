@@ -53,15 +53,13 @@ DMC::DMC(MCWalkerConfiguration& w,
 {
   RootName = "dmc";
   QMCType  = "DMC";
-  QMCDriverMode.set(QMC_UPDATE_MODE, 1);
+  qmc_driver_mode.set(QMC_UPDATE_MODE, 1);
   m_param.add(KillWalker, "killnode", "string");
   m_param.add(Reconfiguration, "reconfiguration", "string");
   //m_param.add(BranchInterval,"branchInterval","string");
   m_param.add(NonLocalMove, "nonlocalmove", "string");
   m_param.add(NonLocalMove, "nonlocalmoves", "string");
   m_param.add(mover_MaxAge, "MaxAge", "double");
-  //DMC overwrites ConstPopulation
-  ConstPopulation = false;
 }
 
 void DMC::resetUpdateEngines()
@@ -80,7 +78,7 @@ void DMC::resetUpdateEngines()
       W.createWalkers((nw_multi - 1) * W.getActiveWalkers());
       setWalkerOffsets();
     }
-    //if(QMCDriverMode[QMC_UPDATE_MODE]) W.clearAuxDataSet();
+    //if(qmc_driver_mode[QMC_UPDATE_MODE]) W.clearAuxDataSet();
     Movers.resize(NumThreads, 0);
     Rng.resize(NumThreads, 0);
     estimatorClones.resize(NumThreads, 0);
@@ -92,7 +90,7 @@ void DMC::resetUpdateEngines()
       o << "  Initial partition of walkers on a node: ";
       copy(wPerNode.begin(), wPerNode.end(), std::ostream_iterator<int>(o, " "));
       o << "\n";
-      if (QMCDriverMode[QMC_UPDATE_MODE])
+      if (qmc_driver_mode[QMC_UPDATE_MODE])
         o << "  Updates by particle-by-particle moves";
       else
         o << "  Updates by walker moves";
@@ -116,7 +114,7 @@ void DMC::resetUpdateEngines()
       Rng[ip] = new RandomGenerator_t(*RandomNumberControl::Children[ip]);
       hClones[ip]->setRandomGenerator(Rng[ip]);
 #endif
-      if (QMCDriverMode[QMC_UPDATE_MODE])
+      if (qmc_driver_mode[QMC_UPDATE_MODE])
       {
         Movers[ip] = new DMCUpdatePbyPWithRejectionFast(*wClones[ip], *psiClones[ip], *hClones[ip], *Rng[ip]);
         Movers[ip]->put(qmcNode);
@@ -159,7 +157,7 @@ void DMC::resetUpdateEngines()
   {
     if (BranchInterval < 0)
       BranchInterval = 1;
-    int miage = (QMCDriverMode[QMC_UPDATE_MODE]) ? 1 : 5;
+    int miage = (qmc_driver_mode[QMC_UPDATE_MODE]) ? 1 : 5;
     mxage     = (mover_MaxAge < 0) ? miage : mover_MaxAge;
     for (int i = 0; i < NumThreads; ++i)
       Movers[i]->MaxAge = mxage;
@@ -194,7 +192,7 @@ bool DMC::run()
   Traces->startRun(nBlocks, traceClones);
 #endif
   IndexType block        = 0;
-  IndexType updatePeriod = (QMCDriverMode[QMC_UPDATE_MODE]) ? Period4CheckProperties : (nBlocks + 1) * nSteps;
+  IndexType updatePeriod = (qmc_driver_mode[QMC_UPDATE_MODE]) ? Period4CheckProperties : (nBlocks + 1) * nSteps;
   int sample             = 0;
 
   RunTimeControl runtimeControl(RunTimeManager, MaxCPUSecs);
@@ -219,7 +217,7 @@ bool DMC::run()
         int ip = omp_get_thread_num();
         Movers[ip]->set_step(sample);
         bool recompute = (step + 1 == nSteps && nBlocksBetweenRecompute && (1 + block) % nBlocksBetweenRecompute == 0 &&
-                          QMCDriverMode[QMC_UPDATE_MODE]);
+                          qmc_driver_mode[QMC_UPDATE_MODE]);
         wClones[ip]->resetCollectables();
         const size_t nw = W.getActiveWalkers();
 #pragma omp for nowait

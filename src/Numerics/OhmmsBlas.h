@@ -125,6 +125,24 @@ struct BLAS
     sgemv(NOTRANS, m, n, done, amat, m, x, INCX, dzero, y, INCY);
   }
 
+  inline static void gemv(int n,
+                          int m,
+                          const std::complex<double>* restrict amat,
+                          const std::complex<double>* restrict x,
+                          std::complex<double>* restrict y)
+  {
+    zgemv(NOTRANS, m, n, zone, amat, m, x, INCX, zzero, y, INCY);
+  }
+
+  inline static void gemv(int n,
+                          int m,
+                          const std::complex<float>* restrict amat,
+                          const std::complex<float>* restrict x,
+                          std::complex<float>* restrict y)
+  {
+    cgemv(NOTRANS, m, n, cone, amat, m, x, INCX, czero, y, INCY);
+  }
+
   inline static void gemv_trans(int n, int m, const double* restrict amat, const double* restrict x, double* restrict y)
   {
     dgemv(TRANS, m, n, done, amat, m, x, INCX, dzero, y, INCY);
@@ -151,15 +169,6 @@ struct BLAS
                                 std::complex<float>* restrict y)
   {
     cgemv(TRANS, m, n, done, amat, m, x, INCX, dzero, y, INCY);
-  }
-
-  inline static void gemv(int n,
-                          int m,
-                          const std::complex<double>* restrict amat,
-                          const std::complex<double>* restrict x,
-                          std::complex<double>* restrict y)
-  {
-    zgemv(NOTRANS, m, n, zone, amat, m, x, INCX, zzero, y, INCY);
   }
 
   inline static void gemv(char trans_in,

@@ -230,10 +230,10 @@ public:
    * @param compute_deriv if true, compute dhpsioverpsi of the non-local potential component
    */
   RealType evaluateValueAndDerivatives(ParticleSet& P,
-                                       const opt_variables_type& optvars,
-                                       std::vector<RealType>& dlogpsi,
-                                       std::vector<RealType>& dhpsioverpsi,
-                                       bool compute_deriv);
+                                        const opt_variables_type& optvars,
+                                        std::vector<ValueType>& dlogpsi,
+                                        std::vector<ValueType>& dhpsioverpsi,
+                                        bool compute_deriv);
 
   /** evaluate local energy and derivatives w.r.t ionic coordinates.  
   * @param P target particle set (electrons)
