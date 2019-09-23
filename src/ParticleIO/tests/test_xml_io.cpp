@@ -105,7 +105,7 @@ TEST_CASE("read_dynamic_spin_eset_xml", "[particle_io][xml]")
       -1.28   1.0225     -1.709 \
       -2.28   2.0225     -0.709 \
     </attrib> \
-    <attrib name=\"spin\" datatype=\"scalarArray\"> \
+    <attrib name=\"spins\" datatype=\"scalarArray\"> \
       1.0 \
       0.2 \
       3.0 \
@@ -132,8 +132,10 @@ TEST_CASE("read_dynamic_spin_eset_xml", "[particle_io][xml]")
   XMLParticleParser parse_electrons(electrons, tmat);
   parse_electrons.put(part1);
 
-  REQUIRE(electrons.groups() == 2);
-  REQUIRE(electrons.R.size() == 2);
+  REQUIRE(electrons.groups() == 1);
+
+  REQUIRE(electrons.R.size() == 3);
+
   REQUIRE(electrons.R[0][0] == Approx(-0.28));
   REQUIRE(electrons.R[0][1] == Approx(0.0225));
   REQUIRE(electrons.R[0][2] == Approx(-2.709));
@@ -145,6 +147,10 @@ TEST_CASE("read_dynamic_spin_eset_xml", "[particle_io][xml]")
   REQUIRE(electrons.R[2][0] == Approx(-2.28));
   REQUIRE(electrons.R[2][1] == Approx(2.0225));
   REQUIRE(electrons.R[2][2] == Approx(-0.709));
+
+  REQUIRE(electrons.spins[0] == Approx(1.0));
+  REQUIRE(electrons.spins[1] == Approx(0.2));
+  REQUIRE(electrons.spins[2] == Approx(3.0));
 
   REQUIRE(electrons.getName() == "e");
 }
