@@ -12,7 +12,7 @@
 
 #ifndef WRITE_ESHDF_H
 #define WRITE_ESHDF_H
-#include "hdf5.h"
+#include "io/hdf_archive.h"
 #include <string>
 #include <fstream>
 #include <vector>
@@ -25,14 +25,7 @@ class KPoint;
 class EshdfFile 
 {
 private:
-  hid_t file_;
-  herr_t error_;
-
-  bool file_exists (const std::string& name) const
-  {
-    std::ifstream ifile(name.c_str());
-    return (bool)ifile;
-  }
+  qmcplusplus::hdf_archive outfile_;
 
   int wrapped(int i, int size) const;
   int getIntsOnly(const std::string& str) const;
@@ -43,11 +36,11 @@ private:
 
   // helper functions meant for qbox
   void readInEigFcn(const XmlNode& nd, FftContainer& cont);
-  void handleSpinGroup(const XmlNode* nd, hid_t groupLoc, double& nocc, FftContainer& cont);
+  void handleSpinGroup(const XmlNode* nd, double& nocc, FftContainer& cont);
   double getOccupation(const XmlNode* nd) const;
 
   // helper functions meant for espresso
-  void handleDensity(const XmlNode& qeXml, const std::string& dir_name, int spinpol, hid_t el_group);
+  void handleDensity(const XmlNode& qeXml, const std::string& dir_name, int spinpol);
   std::vector<double> getPtvs(const XmlNode& qeXml);
   void processKPts(const XmlNode& band_structure_xml,
 		   const std::vector<double>& ptvs,
@@ -60,9 +53,10 @@ private:
 		       std::vector<double>& weights, int& nup, int& ndn, 
 		       int spinpol, int ncol);
   void handleKpt(int kpt_num, const std::string& dir_name, KPoint& kpt, 
-		 const std::vector<double>& eigenvalues, int ngvecs, int ngvecs_index, 
-		 double weight, int spinpol, int noncol, hid_t electrons_group);
-  hid_t openHdfFileForRead(const std::string& fname);
+		 const std::vector<double>& eigenvalues, int loc_ngvecs,
+		 int tot_ngvecs, double weight, int spinpol, int noncol);
+
+  qmcplusplus::hdf_archive openHdfFileForRead(const std::string& fname);
   
   EshdfFile(const EshdfFile& f); // no copy constructor
   EshdfFile& operator=(const EshdfFile& f); // operator= not allowed

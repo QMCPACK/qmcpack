@@ -12,11 +12,11 @@
 #include "WriteEshdf.h"
 #include "XmlRep.h"
 #include "FftContainer.h"
-#include "HdfHelpers.h"
 #include <sstream>
 #include <map>
 using namespace std;
-using namespace hdfhelper;
+//using namespace hdfhelper;
+using namespace qmcplusplus;
 
 class KPoint 
 {
@@ -57,12 +57,12 @@ public:
 
 EshdfFile::EshdfFile(const string& hdfFileName) 
 {
-  file_ = H5Fcreate(hdfFileName.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+  outfile_.create(hdfFileName);
 }
 
 EshdfFile::~EshdfFile() 
 {
-  H5Fclose(file_);
+  outfile_.close();
 }
 
 
@@ -91,7 +91,8 @@ double EshdfFile::getOccupation(const XmlNode* nd) const
   return result;
 }
 
-void EshdfFile::handleSpinGroup(const XmlNode* nd, hid_t groupLoc, double& nocc, FftContainer& cont) 
+// before you enter here, better be in the a spin group of the hdf file
+void EshdfFile::handleSpinGroup(const XmlNode* nd, double& nocc, FftContainer& cont) 
 {
   nocc = getOccupation(nd);
   int stateCounter = 0;
@@ -104,15 +105,17 @@ void EshdfFile::handleSpinGroup(const XmlNode* nd, hid_t groupLoc, double& nocc,
       //cout << "Working on state " << stateCounter << endl;
       stringstream statess;
       statess << "state_" << stateCounter;
-      hid_t state_group = makeHDFGroup(statess.str(), groupLoc);
+      outfile_.push(statess.str());
       
       // HACK_HACK_HACK!!!
+      // QBOX does not write out the eigenvalues for the states in the
+      // sample file, so just make sure they are treated in ascending order
       eigvals.push_back(-5000.0+stateCounter);
 
       const XmlNode& eigFcnNode = nd->getChild(chIdx);
       readInEigFcn(eigFcnNode, cont);
       // write eigfcn to proper place
-      hsize_t psig_dims[]={static_cast<hsize_t>(cont.fullSize),2};
+      vector<hsize_t> psig_dims{static_cast<hsize_t>(cont.fullSize),2};
 
       vector<double> temp;
       for (int i = 0; i < cont.fullSize; i++) 
@@ -121,12 +124,14 @@ void EshdfFile::handleSpinGroup(const XmlNode* nd, hid_t groupLoc, double& nocc,
 	temp.push_back(cont.kspace[i][1]);
       }
 
-      writeNumsToHDF("psi_g", temp, state_group, 2, psig_dims);
+      outfile_.write(temp, psig_dims, "psi_g");
       stateCounter++;
+      outfile_.pop();
     }
   }
-  writeNumsToHDF("number_of_states", stateCounter, groupLoc);
-  writeNumsToHDF("eigenvalues", eigvals, groupLoc);
+
+  outfile_.write(stateCounter, "number_of_states");
+  outfile_.write(eigvals, "eigenvalues");
 }
 
 void EshdfFile::readInEigFcn(const XmlNode& nd, FftContainer& cont) 
@@ -187,34 +192,34 @@ void EshdfFile::writeApplication(const string& appName, int major, int minor, in
 {
   vector<int> version{major, minor, sub};
 
-  hid_t h_app = makeHDFGroup("application", file_);
-  { 
-    writeStringToHDF("code", appName, h_app);
-    writeNumsToHDF("version", version, h_app);
-  }
+  outfile_.push("application");
+  string str = appName;
+  outfile_.write(str, "code");
+  outfile_.write(version, "version");
+  outfile_.pop();
 }
 
 
 void EshdfFile::writeVersion() 
 {
   vector<int> version{2,1,0};
-  writeNumsToHDF("version", version, file_);
+  outfile_.write(version, "version");
 }
 
 void EshdfFile::writeCreator() 
 {
-  string nameStr("creator");
   vector<int> version{0,1,0};
-  hid_t h_creator = makeHDFGroup("creator", file_);
-  {
-    writeStringToHDF("program_name", "convertpw4qmc", h_creator);
-    writeNumsToHDF("version", version, h_creator);
-  }
+  outfile_.push("creator");
+  string tmp_str = "convertpw4qmc";
+  outfile_.write(tmp_str, "program_name");
+  outfile_.write(version, "version");
+  outfile_.pop();
 }
 
 void EshdfFile::writeFormat() 
 {
-  writeStringToHDF("format", "ES-HDF", file_);
+  string tmp_str = "ES-HDF";
+  outfile_.write(tmp_str, "format");
 }
 
 void EshdfFile::writeQboxBoilerPlate(const XmlNode& qboxSample) 
@@ -258,8 +263,7 @@ int EshdfFile::getIntsOnly(const string& str) const
 void EshdfFile::writeQEBoilerPlate(const XmlNode& qeXml)
 {
   const string appName = "espresso";
-  const XmlNode& generalInfo = qeXml.getChild("general_info");
-  const XmlNode& creatorNode = generalInfo.getChild("creator");
+  const XmlNode& creatorNode = qeXml.getChild("general_info").getChild("creator");
   const string versionStr = creatorNode.getAttribute("VERSION");
   int minor = 0;
   int sub = 0;
@@ -297,17 +301,16 @@ void EshdfFile::writeQboxSupercell(const XmlNode& qboxSample)
   }
 
   // write the ptvs to the supercell group of the hdf file
-  hid_t supercell_group = makeHDFGroup("supercell", file_);
-  hsize_t dims[]={3,3};
-  writeNumsToHDF("primitive_vectors", ptvs, supercell_group, 2, dims);  
+  vector<hsize_t> dims{3,3};
+  outfile_.push("supercell");
+  outfile_.write(ptvs, "ptvs");
+  outfile_.pop();
 }
 
 void EshdfFile::writeQESupercell(const XmlNode& qeXml) 
 {
   // grab the primitive translation vectors the output tag's atomic structure part
-  const XmlNode& output = qeXml.getChild("output");
-  const XmlNode& atomStructure = output.getChild("atomic_structure");
-  const XmlNode& cell = atomStructure.getChild("cell");
+  const XmlNode& cell = qeXml.getChild("output").getChild("atomic_structure").getChild("cell");
   const XmlNode& a = cell.getChild("a1");
   const XmlNode& b = cell.getChild("a2");
   const XmlNode& c = cell.getChild("a3");
@@ -323,18 +326,18 @@ void EshdfFile::writeQESupercell(const XmlNode& qeXml)
   }
 
   // write the ptvs to the supercell group of the hdf file
-  hid_t supercell_group = makeHDFGroup("supercell", file_);
-  hsize_t dims[]={3,3};
-  writeNumsToHDF("primitive_vectors", ptvs, supercell_group, 2, dims);  
+  vector<hsize_t> dims{3,3};
+  outfile_.push("supercell");
+  outfile_.write(ptvs, "ptvs");
+  outfile_.pop();
 }
 
 void EshdfFile::writeQEAtoms(const XmlNode& qeXml) 
 {
-  const XmlNode& output_xml = qeXml.getChild("output");
-  const XmlNode& atomic_species_xml = output_xml.getChild("atomic_species");
+  const XmlNode& atomic_species_xml = qeXml.getChild("output").getChild("atomic_species");
 
   //make group
-  hid_t atoms_group = makeHDFGroup("atoms", file_);
+  outfile_.push("atoms");
   
   map<string, int> species_name_to_int;  
   //go through each species, extract:
@@ -355,16 +358,16 @@ void EshdfFile::writeQEAtoms(const XmlNode& qeXml)
 
       stringstream gname;
       gname << "species_" << species_num;
-      hid_t species_group = makeHDFGroup(gname.str(), atoms_group);
-      writeStringToHDF("name", sp_name, species_group);
-      writeNumsToHDF("mass", mass, species_group);
+      outfile_.push(gname.str());
+      outfile_.write(sp_name, "name");
+      outfile_.write(mass, "mass");
       species_num++;
+      outfile_.pop();
     }
-  }      
-  writeNumsToHDF("number_of_species", species_num, atoms_group);
+  }
+  outfile_.write(species_num, "number_of_species");
 
-  const XmlNode& atomic_structure_xml = output_xml.getChild("atomic_structure");
-  const XmlNode& atomic_positions_xml = atomic_structure_xml.getChild("atomic_positions");
+  const XmlNode& atomic_positions_xml = qeXml.getChild("output").getChild("atomic_structure").getChild("atomic_positions");
   // go through atoms and extract their position and type 
   std::vector<int> species_ids;
   std::vector<double> positions;
@@ -379,10 +382,13 @@ void EshdfFile::writeQEAtoms(const XmlNode& qeXml)
       at_num++;
     }
   }
-  hsize_t dims[]={at_num,3};  
-  writeNumsToHDF("positions", positions, atoms_group, 2, dims);
-  writeNumsToHDF("species_ids", species_ids, atoms_group);
-  writeNumsToHDF("number_of_atoms", static_cast<int>(at_num), atoms_group);
+  vector<hsize_t> dims{at_num,3};
+  outfile_.write(positions, dims, "positions");
+  outfile_.write(species_ids, "species_ids");
+  const int int_at_num = static_cast<int>(at_num);
+  outfile_.write(int_at_num, "number_of_atoms");
+
+  outfile_.pop();
 }
 
 
@@ -391,7 +397,7 @@ void EshdfFile::writeQboxAtoms(const XmlNode& qboxSample)
   const XmlNode& atomset = qboxSample.getChild("atomset");
 
   //make group
-  hid_t atoms_group = makeHDFGroup("atoms", file_);
+  outfile_.push("atoms");
   
   map<string, int> SpeciesNameToInt;  
   //go through each species, extract: 
@@ -417,21 +423,23 @@ void EshdfFile::writeQboxAtoms(const XmlNode& qboxSample)
 
       stringstream gname;
       gname << "species_" << speciesNum;
-      hid_t species_group = makeHDFGroup(gname.str(), atoms_group);
-      writeNumsToHDF("atomic_number", atomic_number, species_group);
-      writeNumsToHDF("mass", mass, species_group);
-      writeNumsToHDF("valence_charge", val_charge, species_group);
-      writeStringToHDF("name", name, species_group);
-      writeStringToHDF("pseudopotential", "unknown", species_group);
+      outfile_.push(gname.str());
+      outfile_.write(atomic_number, "atomic_number");
+      outfile_.write(mass, "mass");
+      outfile_.write(val_charge, "valence_charge");
+      outfile_.write(name, "name");
+      string tmp_str = "unknown";
+      outfile_.write(tmp_str, "pseudopotential");
       speciesNum++;
+      outfile_.pop();
     }
   }
-  writeNumsToHDF("number_of_species", speciesNum, atoms_group);
+  outfile_.write(speciesNum, "number_of_species");
   
   // go through atoms and extract their position and type 
   std::vector<int> species_ids;
   std::vector<double> positions;
-  hsize_t atNum = 0;
+  hsize_t at_num = 0;
   for (int i = 0; i < atomset.getNumChildren(); i++) 
   {
     if (atomset.getChild(i).getName() == "atom") 
@@ -439,29 +447,32 @@ void EshdfFile::writeQboxAtoms(const XmlNode& qboxSample)
       const XmlNode& atNode = atomset.getChild(i);
       species_ids.push_back(SpeciesNameToInt[atNode.getAttribute("species")]);
       atNode.getChild("position").getValue(positions);
-      atNum++;
+      at_num++;
     }
   }
-  hsize_t dims[]={atNum,3};  
-  writeNumsToHDF("positions", positions, atoms_group, 2, dims);
-  writeNumsToHDF("species_ids", species_ids, atoms_group);
-  writeNumsToHDF("number_of_atoms", static_cast<int>(atNum), atoms_group);
+  vector<hsize_t> dims{at_num,3};
+  outfile_.write(positions, dims, "positions");
+  outfile_.write(species_ids, "species_ids");
+  const int int_at_num = static_cast<int>(at_num);
+  outfile_.write(int_at_num, "number_of_atoms");
+  outfile_.pop();
 }
 
-hid_t EshdfFile::openHdfFileForRead(const string& fname)
+hdf_archive EshdfFile::openHdfFileForRead(const string& fname)
 {
-  hid_t file;
-  if (!file_exists(fname)) {
+  hdf_archive file;
+  bool result = file.open(fname);
+  if (!result) {
     cout << "could not find " << fname << ", make sure espresso is" << endl;
     cout << "compiled with hdf support and you do not explicitly set" << endl;
     cout << "wf_collect=.false. in your input" << endl;
     exit(1);
   }
-  file = H5Fopen(fname.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
   return file;
 }
 
-void EshdfFile::handleDensity(const XmlNode& qeXml, const string& dir_name, int spinpol, hid_t el_group)
+// need to be in the electrons group when entering this
+void EshdfFile::handleDensity(const XmlNode& qeXml, const string& dir_name, int spinpol)
 {
   const XmlNode& output_xml = qeXml.getChild("output");
   // read in the grid to put in the charge density 
@@ -479,61 +490,55 @@ void EshdfFile::handleDensity(const XmlNode& qeXml, const string& dir_name, int 
   ngm_xml.getValue(num_dens_gvecs);
 
   // now open the hdf file and read the necessary quantities
-  herr_t status;
-  hid_t file, dset;
   const string dens_fname = dir_name + "charge-density.hdf5";
-  file = openHdfFileForRead(dens_fname);
-  
-  const string gvectors_str ="MillerIndices";
-  int* gvecs = new int[3*num_dens_gvecs];
-  readNumsFromHDF(gvectors_str, gvecs, file);
+  hdf_archive densfile = openHdfFileForRead(dens_fname);
 
-  const string totdens_str = "rhotot_g";
-  double* dens = new double[2*num_dens_gvecs];
-  readNumsFromHDF(totdens_str, dens, file);
-  
-  double* diffdens = new double[2*num_dens_gvecs];
-  if (spinpol == 1) {
-    const string diffdens_str = "rhodiff_g";
-    readNumsFromHDF(diffdens_str, diffdens, file);
+  vector<int> gvecs(3*num_dens_gvecs);
+  vector<int> shape{-1,-1};
+  densfile.read(gvecs, shape, "MillerIndices");
+
+  vector<double> dens(2*num_dens_gvecs);
+  densfile.read(dens,"rhotot_g");
+
+  vector<double> diffdens(2*num_dens_gvecs);
+  if (spinpol == 1)
+  {
+    densfile.read(diffdens, "rhodiff_g");
   }
 
   // now need to write everything out
-  hid_t density_group = makeHDFGroup("density", el_group);
-
-  hsize_t dims[]={static_cast<hsize_t>(num_dens_gvecs),3};
-  writeNumsToHDF("gvectors", gvecs, density_group, 2, dims);
-  delete[] gvecs;
+  outfile_.push("density");
+  vector<hsize_t> dims{static_cast<hsize_t>(num_dens_gvecs),3};
+  outfile_.write(gvecs, dims, "gvectors");
   
-  vector<int> grid;
-  grid.push_back(nr1);
-  grid.push_back(nr2);
-  grid.push_back(nr3);
-  writeNumsToHDF("mesh", grid, density_group);
-  writeNumsToHDF("number_of_gvectors", num_dens_gvecs, density_group);
-  hsize_t dims_dens[]={static_cast<hsize_t>(num_dens_gvecs),2};
+  vector<int> grid{nr1,nr2,nr3};
+  outfile_.write(grid, "mesh");
+  outfile_.write(num_dens_gvecs, "number_of_gvectors");
+
+  vector<hsize_t> dims_dens{static_cast<hsize_t>(num_dens_gvecs),2};
   if (spinpol == 0) {
-    hid_t spin_0_group = makeHDFGroup("spin_0", density_group);
-    writeNumsToHDF("density_g", dens, spin_0_group, 2, dims_dens);
+    outfile_.push("spin_0");
+    outfile_.write(dens, dims_dens, "density_g");
+    outfile_.pop();
   } else {
     // do spin up
-    double* working = new double[2*num_dens_gvecs];
+    vector<double> working(2*num_dens_gvecs);
     for (int i = 0; i < num_dens_gvecs*2; i++) {
       working[i] = (dens[i]+diffdens[i])/2.0;
     }
-    hid_t spin_0_group = makeHDFGroup("spin_0", density_group);
-    writeNumsToHDF("density_g", working, spin_0_group, 2, dims_dens);
-
+    outfile_.push("spin_0");
+    outfile_.write(working, dims_dens, "density_g");
+    outfile_.pop();
+    
     // do spin down
     for (int i = 0; i < num_dens_gvecs*2; i++) {
       working[i] = (dens[i]-diffdens[i])/2.0;
     }
-    hid_t spin_1_group = makeHDFGroup("spin_1", density_group);
-    writeNumsToHDF("density_g", working, spin_1_group, 2, dims_dens);
-    delete[] working;
+    outfile_.push("spin_1");
+    outfile_.write(working, dims_dens, "density_g");
+    outfile_.pop();
   }
-  delete[] dens;
-  delete[] diffdens;
+  outfile_.pop(); // get out of density group
 }
 
 void EshdfFile::processKPts(const XmlNode& band_structure_xml,
@@ -627,70 +632,63 @@ void EshdfFile::getNumElectrons(vector<vector<double> >& occupations,
   ndn = static_cast<int>(round(ndn_flt));
 }
 
+// should already be in the electrons group when you call this
 void EshdfFile::handleKpt(int kpt_num, const std::string& dir_name, KPoint& kpt, 
-			  const std::vector<double>& eigenvalues, int ngvec, int maxgvec_idx,
-			  double weight, int spinpol, int noncol, hid_t electrons_group)
+			  const std::vector<double>& eigenvalues,
+			  int loc_ngvecs, int tot_ngvecs,
+			  double weight, int spinpol, int noncol)
 {
   stringstream ss;
   ss << "kpoint_" << kpt_num;
-  hid_t kpt_group = makeHDFGroup(ss.str(), electrons_group);
-  writeNumsToHDF("weight", weight, kpt_group);
-  vector<double> kpt_vector;
-  kpt_vector.push_back(kpt.kx);
-  kpt_vector.push_back(kpt.ky);
-  kpt_vector.push_back(kpt.kz);
-  writeNumsToHDF("reduced_k", kpt_vector, kpt_group);
+  outfile_.push(ss.str());
+  outfile_.write(weight, "weight");
+
+  vector<double> kpt_vector{kpt.kx,kpt.ky,kpt.kz};
+  outfile_.write(kpt_vector, "reduced_k");
 
   if (kpt_num == 0) 
   {
-    herr_t status;
-    hid_t file, dset;
+    stringstream ss;
     string fname;
     if (spinpol == 1) 
     {
-      stringstream ss;
       ss << dir_name << "wfcup" << (kpt_num+1) << ".hdf5";
       fname = ss.str();
     }
     else 
     {
-      stringstream ss;
       ss << dir_name << "wfc" << (kpt_num+1) << ".hdf5";
       fname = ss.str();
     }
-    file = openHdfFileForRead(fname);
-    int* gvecs = new int[3*ngvec];
-    const string gvectors_str ="MillerIndices";
-    readNumsFromHDF(gvectors_str, gvecs, file);
-    hsize_t dims[]={static_cast<hsize_t>(ngvec),3};
-    writeNumsToHDF("gvectors", gvecs, kpt_group, 2, dims);
-    writeNumsToHDF("number_of_gvectors", ngvec, kpt_group);
-
-    delete[] gvecs;
-    H5Fclose(file);
+    hdf_archive wfc_file = openHdfFileForRead(fname);
+    vector<int> gvecs(3*tot_ngvecs);
+    vector<int> shape{-1,-1};
+    wfc_file.read(gvecs, shape, "MillerIndices");
+    wfc_file.close();
+    
+    vector<hsize_t> dims{static_cast<hsize_t>(tot_ngvecs),3};
+    outfile_.write(gvecs, dims, "gvectors");
+    outfile_.write(tot_ngvecs, "number_of_gvectors");
   }
 
   // now do the non-gvectors related stuff
-  hid_t spin_0_group = makeHDFGroup("spin_0", kpt_group);
-  hid_t spin_1_group;
-  if (spinpol == 1 || noncol == 1) spin_1_group = makeHDFGroup("spin_1", kpt_group);
-  
-  hid_t spin_0_file;
-  hid_t spin_1_file;
+  hdf_archive spin_0_file;
+  hdf_archive spin_1_file;
+
   if (spinpol == 1)
   {
     stringstream ss0;
     ss0 << dir_name << "wfcup" << (kpt_num+1) << ".hdf5";
-    spin_0_file = openHdfFileForRead(ss0.str());
+    spin_0_file.open(ss0.str());
     stringstream ss1;
     ss1 << dir_name << "wfcdw" << (kpt_num+1) << ".hdf5";
-    spin_1_file = openHdfFileForRead(ss1.str());
+    spin_1_file.open(ss1.str());
   }
   else
   {
     stringstream ss0;
     ss0 << dir_name << "wfc" << (kpt_num+1) << ".hdf5";
-    spin_0_file = openHdfFileForRead(ss0.str());
+    spin_0_file.open(ss0.str());
   }
 
   // set up storage space for the coefficients to be read from the file
@@ -698,17 +696,17 @@ void EshdfFile::handleKpt(int kpt_num, const std::string& dir_name, KPoint& kpt,
   vector<double> dncoefs;
   if (spinpol == 0)
   {
-    if (noncol == 0) upcoefs.resize(ngvec*2);
+    if (noncol == 0) upcoefs.resize(tot_ngvecs*2);
     if (noncol == 1)
     {
-      upcoefs.resize(ngvec*4);
-      dncoefs.resize(ngvec*2);
+      upcoefs.resize(tot_ngvecs*4);
+      dncoefs.resize(tot_ngvecs*2);
     }
   }
   else
   {
-    upcoefs.resize(ngvec*2);
-    dncoefs.resize(ngvec*2); 
+    upcoefs.resize(tot_ngvecs*2);
+    dncoefs.resize(tot_ngvecs*2); 
   }
   
   int states_to_loop = eigenvalues.size();
@@ -720,17 +718,15 @@ void EshdfFile::handleKpt(int kpt_num, const std::string& dir_name, KPoint& kpt,
     for (int i = 0; i < dncoefs.size(); i++) dncoefs[i] = 0.0;
 
     // do what is necessary to read only this band's coefficients
-    vector<int> read_from;
-    read_from.push_back(state);
-    read_from.push_back(-1);
+    vector<int> read_from{state,-1};
     if (spinpol == 0)
     {
-      readPortionFromHDF("evc", read_from, &upcoefs[0], spin_0_file);
+      spin_0_file.read(upcoefs, read_from, "evc");
     }
     else
     {
-      readPortionFromHDF("evc", read_from, &upcoefs[0], spin_0_file);
-      readPortionFromHDF("evc", read_from, &dncoefs[0], spin_1_file);
+      spin_0_file.read(upcoefs, read_from, "evc");
+      spin_1_file.read(dncoefs, read_from, "evc");
     }
 
     // once the coefficients are read in, write them out to the appropriate place
@@ -740,46 +736,65 @@ void EshdfFile::handleKpt(int kpt_num, const std::string& dir_name, KPoint& kpt,
     {
       if (noncol == 0)
       {
-	hid_t state_group = makeHDFGroup(ss2.str(), spin_0_group);
-	hsize_t dims[]={static_cast<hsize_t>(ngvec),2};
-	writeNumsToHDF("psi_g", upcoefs, state_group, 2, dims);
+	outfile_.push("spin_0");
+	outfile_.push(ss2.str());
+	vector<hsize_t> dims{static_cast<hsize_t>(tot_ngvecs),2};
+	outfile_.write(upcoefs, dims, "psi_g");
+	outfile_.pop();
+	outfile_.pop();
       }
       else // non-colinear calculation
       {
-	vector<int> dimensionality;
-	getDatasetDimensionality("evc", dimensionality, spin_0_file);
-	size_t stored_num_gvecs = dimensionality[1];
+	outfile_.push("spin_0");
+	outfile_.push(ss2.str());
+	vector<hsize_t> dims{static_cast<hsize_t>(tot_ngvecs),2};
 
-	hid_t state_0_group = makeHDFGroup(ss2.str(), spin_0_group);
-	hsize_t dims[]={static_cast<hsize_t>(ngvec),2};
-	for (int i = 0; i < stored_num_gvecs/2; i++) dncoefs[i] = upcoefs[i];
-	writeNumsToHDF("psi_g", dncoefs, state_0_group, 2, dims);
+	for (int i = 0; i < loc_ngvecs*2; i++) dncoefs[i] = upcoefs[i];
+	outfile_.write(dncoefs, dims, "psi_g");
+	outfile_.pop();
+	outfile_.pop();
 
-	hid_t state_1_group = makeHDFGroup(ss2.str(), spin_1_group);
-	for (int i = 0; i < stored_num_gvecs/2; i++) dncoefs[i] = upcoefs[i+stored_num_gvecs/2];
-	writeNumsToHDF("psi_g", dncoefs, state_1_group, 2, dims);
+	outfile_.push("spin_1");
+	outfile_.push(ss2.str());
+	for (int i = 0; i < loc_ngvecs*2; i++) dncoefs[i] = upcoefs[i+loc_ngvecs*2];
+	outfile_.write(dncoefs, dims, "psi_g");
+	outfile_.pop();
+	outfile_.pop();
       }
     }
     else  // spin polarized case
     {
-      hid_t state_0_group = makeHDFGroup(ss2.str(), spin_0_group);
-      hid_t state_1_group = makeHDFGroup(ss2.str(), spin_1_group);
-      hsize_t dims[]={static_cast<hsize_t>(ngvec),2};
-      writeNumsToHDF("psi_g", upcoefs, state_0_group, 2, dims);
-      writeNumsToHDF("psi_g", dncoefs, state_1_group, 2, dims);
+      vector<hsize_t> dims{static_cast<hsize_t>(tot_ngvecs),2};
+      outfile_.push("spin_0");
+      outfile_.push(ss2.str());
+      outfile_.write(upcoefs, dims, "psi_g");
+      outfile_.pop();
+      outfile_.pop();
+
+      outfile_.push("spin_1");
+      outfile_.push(ss2.str());
+      outfile_.write(dncoefs, dims, "psi_g");
+      outfile_.pop();
+      outfile_.pop();
     }
   }
 
 
   // now all the states are writen, so write out eigenvalues and number of states
+  vector<double> eigval = eigenvalues;
   if (spinpol == 0)
   {
-    writeNumsToHDF("number_of_states", static_cast<int>(eigenvalues.size()), spin_0_group);
-    writeNumsToHDF("eigenvalues", eigenvalues, spin_0_group);
+    outfile_.push("spin_0");
+    int int_eig_sz = static_cast<int>(eigenvalues.size());
+    outfile_.write(int_eig_sz, "number_of_states");
+    outfile_.write(eigval, "eigenvalues");
+    outfile_.pop();
     if (noncol == 1)
     {
-      writeNumsToHDF("number_of_states", static_cast<int>(eigenvalues.size()), spin_1_group);
-      writeNumsToHDF("eigenvalues", eigenvalues, spin_1_group);
+      outfile_.push("spin_1");
+      outfile_.write(int_eig_sz, "number_of_states");
+      outfile_.write(eigval, "eigenvalues");
+      outfile_.pop();
     }
   }
   else // spin polarized case
@@ -787,8 +802,6 @@ void EshdfFile::handleKpt(int kpt_num, const std::string& dir_name, KPoint& kpt,
     int totstates = eigenvalues.size();
     int upstates = totstates / 2;
     int dnstates = totstates / 2;
-    writeNumsToHDF("number_of_states", static_cast<int>(upstates), spin_0_group);
-    writeNumsToHDF("number_of_states", static_cast<int>(dnstates), spin_1_group);
 
     vector<double> upeig;
     vector<double> dneig;
@@ -797,13 +810,22 @@ void EshdfFile::handleKpt(int kpt_num, const std::string& dir_name, KPoint& kpt,
       upeig.push_back(eigenvalues[i]);
       dneig.push_back(eigenvalues[i+upstates]);
     }
-    writeNumsToHDF("eigenvalues", upeig, spin_0_group);
-    writeNumsToHDF("eigenvalues", dneig, spin_1_group);
+
+    outfile_.push("spin_0");
+    outfile_.write(upstates, "number_of_states");
+    outfile_.write(upeig, "eigenvalues");
+    outfile_.pop();
+
+    outfile_.push("spin_1");
+    outfile_.write(dnstates, "number_of_states");
+    outfile_.write(dneig, "eigenvalues");
+    outfile_.pop();
   }
 
-  H5Fclose(spin_0_file);
-  if (spinpol == 1) H5Fclose(spin_1_file);
-  
+  spin_0_file.close();
+  spin_1_file.close();
+
+  outfile_.pop(); // get out of the kpoint_ kpt_num group
 }
 
 vector<double> EshdfFile::getPtvs(const XmlNode& qeXml) {
@@ -833,7 +855,7 @@ vector<double> EshdfFile::getPtvs(const XmlNode& qeXml) {
 
 void EshdfFile::writeQEElectrons(const XmlNode& qeXml, const string& dir_name) {
   // make electrons group in hdf file
-  hid_t electrons_group = makeHDFGroup("electrons", file_);
+  outfile_.push("electrons");
   const XmlNode& output_xml = qeXml.getChild("output");
 
   // need to figure out if this is spin polarized, or if it is noncolinear
@@ -849,7 +871,7 @@ void EshdfFile::writeQEElectrons(const XmlNode& qeXml, const string& dir_name) {
   if (noncolin_string_bool == "true") noncol = 1;
 
   // scrape xml file and associated hdf for density and write out
-  handleDensity(qeXml, dir_name, spinpol, electrons_group);
+  handleDensity(qeXml, dir_name, spinpol);
 
   // read in information about kpts from the xml
   vector<double> ptv = getPtvs(qeXml);
@@ -861,13 +883,15 @@ void EshdfFile::writeQEElectrons(const XmlNode& qeXml, const string& dir_name) {
   processKPts(band_structure_xml, ptv, eigenvals, occupations, kpts, weights, ngvecs);
 
   // write number of kpoints, number of spins and spinors if appropriate
-  writeNumsToHDF("number_of_kpoints", static_cast<int>(kpts.size()), electrons_group);
-  writeNumsToHDF("has_spinors", noncol, electrons_group);
+  int int_kpt_sz = static_cast<int>(kpts.size());
+  outfile_.write(int_kpt_sz, "number_of_kpoints");
+  outfile_.write(noncol, "has_spinors");
+
   if (noncol == 0) 
   {
     int nspins = 1;
     if (spinpol == 1) nspins = 2;
-    writeNumsToHDF("number_of_spins", nspins, electrons_group);
+    outfile_.write(nspins, "number_of_spins");
   }
 
   // figure out how many electrons of each spin and write to file
@@ -877,8 +901,7 @@ void EshdfFile::writeQEElectrons(const XmlNode& qeXml, const string& dir_name) {
   vector<int> nels;
   nels.push_back(nup);
   nels.push_back(ndn);
-  writeNumsToHDF("number_of_electrons", nels, electrons_group);
-
+  outfile_.write(nels, "number_of_electrons");
 
   int maxgvecs = 0;
   int maxgvecs_index = -1;
@@ -893,8 +916,8 @@ void EshdfFile::writeQEElectrons(const XmlNode& qeXml, const string& dir_name) {
   // now read and write the appropriate coefficients to the kpoint_xxx group
   for (int i = 0; i < kpts.size(); i++) 
   {
-    handleKpt(i, dir_name, kpts[i], eigenvals[i], maxgvecs, maxgvecs_index, weights[i], 
-	      spinpol, noncol, electrons_group);
+    handleKpt(i, dir_name, kpts[i], eigenvals[i], ngvecs[i], maxgvecs, weights[i], 
+	      spinpol, noncol);
   }
 }
   
@@ -964,7 +987,7 @@ void EshdfFile::writeQboxElectrons(const XmlNode& qboxSample)
       }
     }
   }
-  hid_t electrons_group = makeHDFGroup("electrons", file_);
+  outfile_.push("electrons");
   if (kpts.size() > 1) 
   {
     std::cerr << "Warning: Due to limitations of the current tool, extreme care" << std::endl;
@@ -972,8 +995,9 @@ void EshdfFile::writeQboxElectrons(const XmlNode& qboxSample)
     std::cerr << "multiple k-points.  Specifically spo eigenvalues are not properly" << std::endl;
     std::cerr << "included, so improper choice of orbitals may result." << std::endl;
   }
-  writeNumsToHDF("number_of_kpoints", static_cast<int>(kpts.size()), electrons_group);
-  writeNumsToHDF("number_of_spins", nspin, electrons_group);
+  const int int_kpts_sz = static_cast<int>(kpts.size());
+  outfile_.write(int_kpts_sz, "number_of_kpoints");
+  outfile_.write(nspin, "number_of_spins");
 
   double avgNup = 0.0;
   double avgNdn = 0.0;
@@ -982,15 +1006,17 @@ void EshdfFile::writeQboxElectrons(const XmlNode& qboxSample)
   {
     stringstream kptElemName;
     kptElemName << "kpoint_" << i;
-    hid_t kpt_group = makeHDFGroup(kptElemName.str(), electrons_group);
+    outfile_.push(kptElemName.str());
+
     vector<double> kvector;
     kvector.push_back(kpts[i].kx);
     kvector.push_back(kpts[i].ky);
     kvector.push_back(kpts[i].kz);
     //writeNumsToHDF("numsym", 1, kpt_group);
     //writeNumsToHDF("symgroup", 1, kpt_group);
-    writeNumsToHDF("reduced_k", kvector, kpt_group);
-    writeNumsToHDF("weight", 1.0/static_cast<double>(kpts.size()), kpt_group); 
+    outfile_.write(kvector, "reduced_k");
+    const double dbl_weight = 1.0/static_cast<double>(kpts.size());
+    outfile_.write(dbl_weight, "weight");
 
     if (i == 0) 
     {
@@ -1010,9 +1036,10 @@ void EshdfFile::writeQboxElectrons(const XmlNode& qboxSample)
 	}
       }    
       
-      hsize_t dims[]={static_cast<hsize_t>(nx*ny*nz),3};
-      writeNumsToHDF("gvectors", gvectors, kpt_group, 2, dims);
-      writeNumsToHDF("number_of_gvectors", nx*ny*nz, kpt_group);
+      vector<hsize_t> dims{static_cast<hsize_t>(nx*ny*nz),3};
+      outfile_.write(gvectors, dims, "gvectors");
+      const int int_tot_num = nx*ny*nz;
+      outfile_.write(int_tot_num, "number_of_gvectors");
     }
 
 
@@ -1023,16 +1050,17 @@ void EshdfFile::writeQboxElectrons(const XmlNode& qboxSample)
     double nup = 0;
     double ndn = 0;
 
-    hid_t up_spin_group = makeHDFGroup("spin_0", kpt_group);
+    outfile_.push("spin_0");
     const XmlNode* upnd = kptToUpNode[kpts[i]];    
-    handleSpinGroup(upnd, up_spin_group, nup, fftCont);
-
+    handleSpinGroup(upnd, nup, fftCont);
+    outfile_.pop();
 
     if (nspin == 2) 
     {
-      hid_t dn_spin_group = makeHDFGroup("spin_1", kpt_group);
+      outfile_.push("spin_1");
       const XmlNode* dnnd = kptToDnNode[kpts[i]];
-      handleSpinGroup(dnnd, dn_spin_group, ndn, fftCont);
+      handleSpinGroup(dnnd, ndn, fftCont);
+      outfile_.pop();
     } 
     else 
     {
@@ -1042,8 +1070,10 @@ void EshdfFile::writeQboxElectrons(const XmlNode& qboxSample)
     avgNup += nup / static_cast<double>(kpts.size());
     avgNdn += ndn / static_cast<double>(kpts.size());
   }
+  outfile_.pop();
   vector<int> nels;
   nels.push_back(static_cast<int>(std::floor(avgNup+0.1)));
   nels.push_back(static_cast<int>(std::floor(avgNdn+0.1)));
-  writeNumsToHDF("number_of_electrons", nels, electrons_group);
+  outfile_.write(nels, "number_of_electrons");
+  outfile_.pop();
 }
