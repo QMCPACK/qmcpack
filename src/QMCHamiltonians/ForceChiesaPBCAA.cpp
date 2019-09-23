@@ -194,6 +194,7 @@ void ForceChiesaPBCAA::evaluateSR(ParticleSet& P)
   }
   else
   {
+#ifndef ENABLE_SOA
     //RealType res=0.0;
     //Loop over distinct eln-ion pairs
     for (int iat = 0; iat < NptclA; iat++)
@@ -218,6 +219,7 @@ void ForceChiesaPBCAA::evaluateSR(ParticleSet& P)
       }
       //std::cout << "debug evaluateSR " << forces[iat] << std::endl;
     }
+#endif
   }
 }
 
@@ -242,6 +244,7 @@ void ForceChiesaPBCAA::evaluateSR_AA()
   }
   else
   {
+#ifndef ENABLE_SOA
     //RealType res=0.0;
     //Loop over distinct eln-ion pairs
     for (int ipart = 0; ipart < NptclA; ipart++)
@@ -258,6 +261,7 @@ void ForceChiesaPBCAA::evaluateSR_AA()
       }
       std::cout << "debug evaluateSR_AA " << forces_IonIon[ipart] << std::endl;
     }
+#endif
   }
 }
 
@@ -353,7 +357,7 @@ void ForceChiesaPBCAA::addObservables(PropertySetType& plist, BufferType& collec
   addObservablesF(plist);
 }
 
-QMCHamiltonianBase* ForceChiesaPBCAA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+OperatorBase* ForceChiesaPBCAA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   //  ForceChiesaPBCAA* tmp = new ForceChiesaPBCAA(*this);
   ForceChiesaPBCAA* tmp = new ForceChiesaPBCAA(PtclA, qp, false);

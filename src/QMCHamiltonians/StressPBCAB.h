@@ -13,7 +13,7 @@
 
 #ifndef QMCPLUSPLUS_STRESSPBCAB_TEMP_H
 #define QMCPLUSPLUS_STRESSPBCAB_TEMP_H
-#include "QMCHamiltonians/QMCHamiltonianBase.h"
+#include "QMCHamiltonians/OperatorBase.h"
 #include "QMCHamiltonians/ForceBase.h"
 #include "LongRange/LRCoulombSingleton.h"
 #include "Numerics/OneDimGridBase.h"
@@ -27,7 +27,7 @@ namespace qmcplusplus
  * Functionally identical to StressPBCAB but uses a templated version of
  * LRHandler.
  */
-struct StressPBCAB : public QMCHamiltonianBase, public ForceBase
+struct StressPBCAB : public OperatorBase, public ForceBase
 {
 private:
   ///locator of the distance table
@@ -131,7 +131,7 @@ public:
     return true;
   }
 
-  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 
   void initBreakup(ParticleSet& P);
 

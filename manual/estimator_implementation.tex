@@ -1,10 +1,10 @@
 \section{Scalar estimator implementation}
-\subsection{Introduction: Life of a specialized QMCHamiltonianBase}
+\subsection{Introduction: Life of a specialized OperatorBase}
 
-Almost all observables in QMCPACK are implemented as specialized derived classes of the QMCHamiltonianBase base class. Each observable is instantiated in HamiltonianFactory and added to QMCHamiltonian for tracking. QMCHamiltonian tracks two types of observables: main and auxiliary. Main observables contribute to the local energy. These observables are elements of the simulated Hamiltonian such as kinetic or potential energy. Auxiliary observables are expectation values of matrix elements that do not contribute to the local energy. These Hamiltonians do not affect the dynamics of the simulation. In the code, the main observables are labeled by ``physical'' flag; the auxiliary observables have ``physical'' set to false.
+Almost all observables in QMCPACK are implemented as specialized derived classes of the OperatorBase base class. Each observable is instantiated in HamiltonianFactory and added to QMCHamiltonian for tracking. QMCHamiltonian tracks two types of observables: main and auxiliary. Main observables contribute to the local energy. These observables are elements of the simulated Hamiltonian such as kinetic or potential energy. Auxiliary observables are expectation values of matrix elements that do not contribute to the local energy. These Hamiltonians do not affect the dynamics of the simulation. In the code, the main observables are labeled by ``physical'' flag; the auxiliary observables have ``physical'' set to false.
 
 \subsubsection{Initialization}
-When an \verb|<estimator type="est_type" name="est_name" other_stuff="value"/>| tag is present in the \verb|<hamiltonian/>| section, it is first read by HamiltonianFactory. In general, the \verb|type| of the estimator will determine which specialization of QMCHamiltonianBase should be instantiated, and a derived class with \verb|myName="est_name"| will be constructed. Then, the put() method of this specific class will be called to read any other parameters in the \verb|<estimator/>| XML node. Sometimes these parameters will instead be read by HamiltonianFactory because it can access more objects than QMCHamiltonianBase.
+When an \verb|<estimator type="est_type" name="est_name" other_stuff="value"/>| tag is present in the \verb|<hamiltonian/>| section, it is first read by HamiltonianFactory. In general, the \verb|type| of the estimator will determine which specialization of OperatorBase should be instantiated, and a derived class with \verb|myName="est_name"| will be constructed. Then, the put() method of this specific class will be called to read any other parameters in the \verb|<estimator/>| XML node. Sometimes these parameters will instead be read by HamiltonianFactory because it can access more objects than OperatorBase.
 
 \subsubsection{Cloning}
 When \verb|OpenMP| threads are spawned, the estimator will be cloned by the \verb|CloneManager|, which is a parent class of many QMC drivers. 
@@ -21,14 +21,14 @@ for(int ip=1; ip<NumThreads; ++ip)
 In the preceding snippet, \verb|ham| is the reference to the estimator on the master thread. If the implemented estimator does not allocate memory for any array, then the default constructor should suffice for the \verb|makeClone| method.
 \begin{lstlisting}[style=C++]
 // In SpeciesKineticEnergy.cpp
-QMCHamiltonianBase* SpeciesKineticEnergy::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+OperatorBase* SpeciesKineticEnergy::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   return new SpeciesKineticEnergy(*this);
 }
 \end{lstlisting}
 If memory is allocated during estimator construction (usually when parsing the XML node in the \verb|put| method), then the \verb|makeClone| method should perform the same initialization on each thread.
 \begin{lstlisting}[style=C++]
-QMCHamiltonianBase* LatticeDeviationEstimator::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+OperatorBase* LatticeDeviationEstimator::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   LatticeDeviationEstimator* myclone = new LatticeDeviationEstimator(qp,spset,tgroup,sgroup);
   myclone->put(input_xml);
@@ -37,7 +37,7 @@ QMCHamiltonianBase* LatticeDeviationEstimator::makeClone(ParticleSet& qp, TrialW
 \end{lstlisting}
 
 \subsubsection{Evaluate}
-After the observable class (derived class of QMCHamiltonianBase) is constructed and prepared (by the put() method), it is ready to be used in a QMCDriver. A QMCDriver will call \verb|H.auxHevaluate(W,thisWalker)| after every accepted move, where H is the QMCHamiltonian that holds all main and auxiliary Hamiltonian elements, W is a MCWalkerConfiguration, and thisWalker is a pointer to the current walker being worked on. As shown in the following, this function goes through each auxiliary Hamiltonian element and evaluates it using the current walker configuration. Under the hood, observables are calculated and dumped to the main particle set's property list for later collection.
+After the observable class (derived class of OperatorBase) is constructed and prepared (by the put() method), it is ready to be used in a QMCDriver. A QMCDriver will call \verb|H.auxHevaluate(W,thisWalker)| after every accepted move, where H is the QMCHamiltonian that holds all main and auxiliary Hamiltonian elements, W is a MCWalkerConfiguration, and thisWalker is a pointer to the current walker being worked on. As shown in the following, this function goes through each auxiliary Hamiltonian element and evaluates it using the current walker configuration. Under the hood, observables are calculated and dumped to the main particle set's property list for later collection.
 
 \begin{lstlisting}[style=C++]
 // In QMCHamiltonian.cpp
@@ -92,12 +92,12 @@ To achieve this, first create a header file ``SpeciesKineticEnergy.h" in the QMC
 #define QMCPLUSPLUS_SPECIESKINETICENERGY_H
 
 #include <Particle/WalkerSetRef.h>
-#include <QMCHamiltonians/QMCHamiltonianBase.h>
+#include <QMCHamiltonians/OperatorBase.h>
 
 namespace qmcplusplus
 {
 
-class SpeciesKineticEnergy: public QMCHamiltonianBase
+class SpeciesKineticEnergy: public OperatorBase
 {
 public:
   
@@ -114,7 +114,7 @@ public:
   
   // pure virtual functions require overrider
   void resetTargetParticleSet(ParticleSet& P) { }                         // required
-  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi); // required
+  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi); // required
 
 private:
   ParticleSet& tpset;
@@ -148,7 +148,7 @@ SpeciesKineticEnergy::Return_t SpeciesKineticEnergy::evaluate(ParticleSet& P)
   return Value;
 }
 
-QMCHamiltonianBase* SpeciesKineticEnergy::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+OperatorBase* SpeciesKineticEnergy::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   // no local array allocated, default constructor should be enough
   return new SpeciesKineticEnergy(*this);
@@ -249,12 +249,12 @@ else if(potType =="specieskinetic")
 \begin{lstlisting}[style=C++]
 // In SpeciesKineticEnergy.h
 #include <Particle/WalkerSetRef.h>
-#include <QMCHamiltonians/QMCHamiltonianBase.h>
+#include <QMCHamiltonians/OperatorBase.h>
 
 namespace qmcplusplus
 {
 
-class SpeciesKineticEnergy: public QMCHamiltonianBase
+class SpeciesKineticEnergy: public OperatorBase
 {
 public:
 
@@ -274,7 +274,7 @@ public:
   
   // pure virtual functions require overrider
   void resetTargetParticleSet(ParticleSet& P) { }                         // required
-  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi); // required
+  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi); // required
   
 private:
   ParticleSet&       tpset; // reference to target particle set
@@ -330,7 +330,7 @@ SpeciesKineticEnergy::Return_t SpeciesKineticEnergy::evaluate(ParticleSet& P)
   return Value;
 }
 
-QMCHamiltonianBase* SpeciesKineticEnergy::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+OperatorBase* SpeciesKineticEnergy::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 { //default constructor
   return new SpeciesKineticEnergy(*this);
 }
@@ -404,9 +404,9 @@ That's it! The SpeciesKineticEnergy estimator no longer needs the ``group'' inpu
 \verb|<estimator type="specieskinetic" name="skinetic"/>| and check that the sum of all columns that start with ``skinetic'' is equal to the default ``Kinetic'' column.
 
 \subsection{HDF5 output}
-If we desire an observable that will output hundreds of scalars per simulation step (e.g., SkEstimator), then it is preferred to output to the \inlinecode{stat.h5} file instead of the \inlinecode{scalar.dat} file for better organization. A large chunk of data to be registered in the \inlinecode{stat.h5} file is called a ``Collectable'' in QMCPACK. In particular, if a QMCHamiltonianBase object is initialized with \verb|UpdateMode.set(COLLECTABLE,1)|, then the ``Collectables'' object carried by the main particle set will be processed and written to the \inlinecode{stat.h5} file, where ``UpdateMode'' is a bit set (i.e., a collection of flags) with the following enumeration:
+If we desire an observable that will output hundreds of scalars per simulation step (e.g., SkEstimator), then it is preferred to output to the \inlinecode{stat.h5} file instead of the \inlinecode{scalar.dat} file for better organization. A large chunk of data to be registered in the \inlinecode{stat.h5} file is called a ``Collectable'' in QMCPACK. In particular, if a OperatorBase object is initialized with \verb|UpdateMode.set(COLLECTABLE,1)|, then the ``Collectables'' object carried by the main particle set will be processed and written to the \inlinecode{stat.h5} file, where ``UpdateMode'' is a bit set (i.e., a collection of flags) with the following enumeration:
 \begin{lstlisting}[style=C++]
-// In QMCHamiltonianBase.h
+// In OperatorBase.h
 ///enum for UpdateMode
 enum {PRIMARY=0,
   OPTIMIZABLE=1,

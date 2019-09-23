@@ -63,7 +63,7 @@ struct CoulombPBCAB_CUDA : public CoulombPBCAB
 
   void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy);
 
-  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 
   CoulombPBCAB_CUDA(ParticleSet& ions, ParticleSet& elns, bool cloning = false);
 };

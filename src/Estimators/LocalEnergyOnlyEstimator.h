@@ -36,6 +36,15 @@ struct LocalEnergyOnlyEstimator : public ScalarEstimatorBase
     }
   }
 
+  inline void accumulate(const int global_walkers, RefVector<MCPWalker>& walkers, RealType wgt)
+  {
+    for (MCPWalker& walker: walkers)
+    {
+      scalars[0](walker.Properties(LOCALENERGY), wgt);
+      scalars[1](walker.Properties(LOCALPOTENTIAL), wgt);
+    }
+  }
+
   void registerObservables(std::vector<observable_helper*>& h5dec, hid_t gid) {}
   /**  add the local energy, variance and all the Hamiltonian components to the scalar record container
    * @param record storage of scalar records (name,value)

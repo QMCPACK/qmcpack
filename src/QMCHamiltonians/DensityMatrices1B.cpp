@@ -35,7 +35,7 @@ DensityMatrices1B::DensityMatrices1B(ParticleSet& P, TrialWaveFunction& psi, Par
 
 
 DensityMatrices1B::DensityMatrices1B(DensityMatrices1B& master, ParticleSet& P, TrialWaveFunction& psi)
-    : QMCHamiltonianBase(master), Lattice(P.Lattice), Pq(P), Psi(psi), Pc(master.Pc)
+    : OperatorBase(master), Lattice(P.Lattice), Pq(P), Psi(psi), Pc(master.Pc)
 {
   reset();
   set_state(master);
@@ -53,7 +53,7 @@ DensityMatrices1B::~DensityMatrices1B()
 }
 
 
-QMCHamiltonianBase* DensityMatrices1B::makeClone(ParticleSet& P, TrialWaveFunction& psi)
+OperatorBase* DensityMatrices1B::makeClone(ParticleSet& P, TrialWaveFunction& psi)
 {
   return new DensityMatrices1B(*this, P, psi);
 }

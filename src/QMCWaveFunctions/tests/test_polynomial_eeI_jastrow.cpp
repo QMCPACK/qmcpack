@@ -17,7 +17,6 @@
 #include "Lattice/ParticleBConds.h"
 #include "Particle/ParticleSet.h"
 #include "Particle/DistanceTableData.h"
-#include "Particle/SymmetricDistanceTableData.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCWaveFunctions/Jastrow/PolynomialFunctor3D.h"
@@ -90,7 +89,7 @@ TEST_CASE("PolynomialFunctor3D Jastrow", "[wavefunction]")
   target_species(chargeIdx, downIdx) = -1;
   //elec_.resetGroups();
 
-  TrialWaveFunction psi = TrialWaveFunction(c);
+  TrialWaveFunction psi(c);
 
   const char* particles = "<tmp> \
     <jastrow name=\"J3\" type=\"eeI\" function=\"polynomial\" source=\"ion\" print=\"yes\"> \

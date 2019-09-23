@@ -18,7 +18,7 @@ SET(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 # Directory where input file is copied to, and working directory for unit test
 SET(UTEST_DIR ${qmcpack_BINARY_DIR}/tests/io/tmp)
 
-SET(UTEST_SRC test_hdf_archive.cpp  test_hdf_parallel.cpp)
+SET(UTEST_SRC test_hdf_archive.cpp  test_hdf_parallel.cpp test_hdf_reshape.cpp test_hdf_hyperslab.cpp)
 IF(BUILD_AFQMC)
   SET(UTEST_SRC ${UTEST_SRC} test_hdf_multiarray.cpp)
 ENDIF(BUILD_AFQMC)

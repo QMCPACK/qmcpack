@@ -324,7 +324,7 @@ void MPC::initBreakup()
   app_log() << "  === MPC interaction initialized === \n\n";
 }
 
-QMCHamiltonianBase* MPC::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+OperatorBase* MPC::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   // return new MPC(qp, Ecut);
   MPC* newMPC = new MPC(*this);
@@ -350,6 +350,7 @@ MPC::Return_t MPC::evalSR(ParticleSet& P) const
   }
   else
   {
+#ifndef ENABLE_SOA
     for (int ipart = 0; ipart < NParticles; ipart++)
     {
       RealType esum = 0.0;
@@ -358,6 +359,7 @@ MPC::Return_t MPC::evalSR(ParticleSet& P) const
       //Accumulate pair sums...species charge for atom i.
       SR += esum;
     }
+#endif
   }
   return SR;
 }

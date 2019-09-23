@@ -49,7 +49,9 @@ class TestSupercell(unittest.TestCase):
         Xocc = mf.mo_occ
         ik2n, nmo_tot = sc.setup_basis_map(Xocc, self.nmo_max, self.nkpts,
                                            self.nmo_pk, False)
-        bench = [140, 172, 204, 236, 268, 300, 332, 364]
+        # Original mapping was broken for MO basis.
+        # bench = [140, 172, 204, 236, 268, 300, 332, 364]
+        bench = [28, 92, 156, 220, 284, 348, 412, 476]
         self.assertTrue(numpy.allclose(sum(ik2n), bench))
         self.assertEqual(nmo_tot, 64)
 

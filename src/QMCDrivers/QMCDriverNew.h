@@ -29,13 +29,15 @@
 #include "QMCApp/WaveFunctionPool.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Estimators/EstimatorManagerBase.h"
-#include "Particle/MCPopulation.h"
+#include "QMCDrivers/MCPopulation.h"
 #include "QMCDrivers/Crowd.h"
 #include "QMCDrivers/QMCDriverInterface.h"
 #include "QMCDrivers/GreenFunctionModifiers/DriftModifierBase.h"
 #include "QMCDrivers/SimpleFixedNodeBranch.h"
 #include "QMCDrivers/BranchIO.h"
 #include "QMCDrivers/QMCDriverInput.h"
+#include "QMCDrivers/ContextForSteps.h"
+
 class Communicate;
 
 namespace qmcplusplus
@@ -81,7 +83,7 @@ public:
    * - qmc_driver_mode[QMC_MULTIPLE]? multiple H/Psi : single H/Psi
    * - qmc_driver_mode[QMC_OPTIMIZE]? optimization : vmc/dmc/rmc
    */
-  std::bitset<QMC_MODE_MAX> qmc_driver_mode;
+  std::bitset<QMC_MODE_MAX> qmc_driver_mode_;
 
   /// whether to allow traces
   bool allow_traces;
@@ -90,10 +92,11 @@ public:
 
   /// Constructor.
   QMCDriverNew(QMCDriverInput&& input,
-               MCPopulation& population,
+               MCPopulation&& population,
                TrialWaveFunction& psi,
                QMCHamiltonian& h,
                WaveFunctionPool& ppool,
+               const std::string timer_prefix,
                Communicate* comm);
 
   virtual ~QMCDriverNew();
@@ -122,6 +125,8 @@ public:
    */
   void add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi);
 
+  void createRngsStepContexts();
+
   void setupWalkers();
 
   void putWalkers(std::vector<xmlNodePtr>& wset);
@@ -132,6 +137,10 @@ public:
   ///return BranchEngineType*
   SimpleFixedNodeBranch* getBranchEngine() { return branchEngine; }
 
+  /** This would be better than the many side effects calc_default_local_walkers has 
+   *
+   * struct WalkerDistribution
+   */
   virtual IndexType calc_default_local_walkers() = 0;
 
   int addObservable(const std::string& aname);
@@ -141,17 +150,20 @@ public:
   ///set global offsets of the walkers
   void setWalkerOffsets();
 
-  //virtual std::vector<RandomGenerator_t*>& getRng() {}
+  inline std::vector<RandomGenerator_t*>& getRng() { return RngCompatibility; }
 
-  ///return the random generators
-  inline std::vector<RandomGenerator_t*>& getRng() { return Rng; }
+  // ///return the random generators
+  //       inline std::vector<std::unique_ptr RandomGenerator_t*>& getRng() { return Rng; }
 
   ///return the i-th random generator
   inline RandomGenerator_t& getRng(int i) { return (*Rng[i]); }
 
   std::string getEngineName() { return QMCType; }
-  unsigned long getDriverMode() { return qmc_driver_mode.to_ulong(); }
+  unsigned long getDriverMode() { return qmc_driver_mode_.to_ulong(); }
   IndexType get_walkers_per_crowd() const { return walkers_per_crowd_; }
+  IndexType get_living_walkers() const { return population_.get_active_walkers(); }
+
+  MCPopulation&& releasePopulation() { return std::move(population_); }
 
   /** @ingroup Legacy interface to be dropped
    *  @{
@@ -165,19 +177,46 @@ public:
    */
   void process(xmlNodePtr cur);
 
+  static void initialLogEvaluation(int crowd_id, UPtrVector<Crowd>& crowds);
+
   /** should be set in input don't see a reason to set individually
    * @param pbyp if true, use particle-by-particle update
    */
-  inline void setUpdateMode(bool pbyp) { qmc_driver_mode[QMC_UPDATE_MODE] = pbyp; }
+  inline void setUpdateMode(bool pbyp) { qmc_driver_mode_[QMC_UPDATE_MODE] = pbyp; }
 
   void putTraces(xmlNodePtr txml) {}
   void requestTraces(bool allow_traces) {}
   /** }@ */
 
 protected:
+  /** The timers for the driver.
+   *
+   * This cleans up the driver constructor, and a reference to this structure 
+   * Takes the timers into thread scope.
+   */
+  struct DriverTimers
+  {
+    NewTimer& checkpoint_timer;
+    NewTimer& run_steps_timer;
+    NewTimer& init_walkers_timer;
+    NewTimer& buffer_timer;
+    NewTimer& movepbyp_timer;
+    NewTimer& hamiltonian_timer;
+    NewTimer& collectables_timer;
+    DriverTimers(const std::string& prefix)
+        : checkpoint_timer(*TimerManager.createTimer(prefix + "CheckPoint", timer_level_medium)),
+          run_steps_timer(*TimerManager.createTimer(prefix + "RunSteps", timer_level_medium)),
+          init_walkers_timer(*TimerManager.createTimer(prefix + "InitWalkers", timer_level_medium)),
+          buffer_timer(*TimerManager.createTimer(prefix + "Buffer", timer_level_medium)),
+          movepbyp_timer(*TimerManager.createTimer(prefix + "MovePbyP", timer_level_medium)),
+          hamiltonian_timer(*TimerManager.createTimer(prefix + "Hamiltonian", timer_level_medium)),
+          collectables_timer(*TimerManager.createTimer(prefix + "Collectables", timer_level_medium))
+    {}
+  };
+  
   QMCDriverInput qmcdriver_input_;
 
-  std::vector<Crowd> crowds_;
+  std::vector<std::unique_ptr<Crowd>> crowds_;
   IndexType walkers_per_crowd_;
 
   std::string h5_file_root_;
@@ -221,7 +260,7 @@ protected:
 
 
   ///the entire (or on node) walker population
-  MCPopulation& population_;
+  MCPopulation population_;
 
   ///trial function
   TrialWaveFunction& Psi;
@@ -231,12 +270,19 @@ protected:
 
   WaveFunctionPool& psiPool;
 
-  ///Observables manager
+  /** Observables manager
+   *  Has very problematic owner ship and life cycle.
+   *  Can be transfered via branch manager one driver to the next indefinitely
+   *  TODO:  Modify Branch manager and others to clear this up.
+   */
   EstimatorManagerBase* estimator_manager_;
 
   ///record engine for walkers
   HDFWalkerOutput* wOut;
 
+  /** Per crowd move contexts, this is where the DistanceTables etc. reside
+   */
+  std::vector<std::unique_ptr<ContextForSteps>> step_contexts_;
 
   ///a list of TrialWaveFunctions for multiple method
   std::vector<TrialWaveFunction*> Psi1;
@@ -245,13 +291,10 @@ protected:
   std::vector<QMCHamiltonian*> H1;
 
   ///Random number generators
-  std::vector<RandomGenerator_t*> Rng;
+  std::vector<std::unique_ptr<RandomGenerator_t>> Rng;
 
   ///a list of mcwalkerset element
   std::vector<xmlNodePtr> mcwalkerNodePtr;
-
-  ///a list of timers
-  std::vector<NewTimer*> myTimers;
 
   ///temporary storage for drift
   ParticleSet::ParticlePos_t drift;
@@ -286,6 +329,11 @@ protected:
   // int check_point_period_;
 
   /** }@ */
+
+  std::vector<RandomGenerator_t*> RngCompatibility;
+
+  DriverTimers timers_;
+
 public:
   ///Copy Constructor (disabled).
   QMCDriverNew(const QMCDriverNew&) = delete;
@@ -298,6 +346,7 @@ public:
 
   int get_num_crowds() { return num_crowds_; }
   void set_num_crowds(int num_crowds, const std::string& reason);
+  DriftModifierBase& get_drift_modifier() const { return *drift_modifier_; }
   /** record the state of the block
    * @param block current block
    *
@@ -319,10 +368,9 @@ public:
   std::string getRotationName(std::string RootName);
   std::string getLastRotationName(std::string RootName);
 
-  NewTimer* checkpointTimer;
-
 private:
   friend std::ostream& operator<<(std::ostream& o_stream, const QMCDriverNew& qmcd);
+
 };
 /**@}*/
 } // namespace qmcplusplus

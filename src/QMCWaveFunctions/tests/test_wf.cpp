@@ -17,7 +17,6 @@
 #include "Lattice/ParticleBConds.h"
 #include "Particle/ParticleSet.h"
 #include "Particle/DistanceTableData.h"
-#include "Particle/SymmetricDistanceTableData.h"
 #include "QMCApp/ParticleSetPool.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
@@ -79,7 +78,7 @@ TEST_CASE("Pade Jastrow", "[wavefunction]")
   tspecies(chargeIdx, upIdx)   = -1;
   tspecies(chargeIdx, downIdx) = -1;
 
-  TrialWaveFunction psi = TrialWaveFunction(c);
+  TrialWaveFunction psi(c);
   // Need 1 electron and 1 proton, somehow
   //ParticleSet target = ParticleSet();
   ParticleSetPool ptcl = ParticleSetPool(c);

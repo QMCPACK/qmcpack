@@ -234,6 +234,7 @@ void QMCUpdateBase::initWalkersForPbyP(WalkerIter_t it, WalkerIter_t it_end)
     awalker.registerData();
     Psi.registerData(W, awalker.DataSet);
     awalker.DataSet.allocate();
+    // This from here on should happen in the scope of the block
     Psi.copyFromBuffer(W, awalker.DataSet);
     Psi.evaluateLog(W);
     RealType logpsi = Psi.updateBuffer(W, awalker.DataSet, false);

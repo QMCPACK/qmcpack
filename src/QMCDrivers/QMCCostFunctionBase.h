@@ -127,6 +127,10 @@ public:
 
   void addCoefficients(xmlXPathContextPtr acontext, const char* cname);
 
+  void printCJParams(xmlNodePtr cur, std::string& rname);
+
+  void addCJParams(xmlXPathContextPtr acontext, const char* cname);
+
   /** implement the virtual function
    * @param x0 current parameters
    * @param gr gradients or conjugate gradients
@@ -248,6 +252,8 @@ protected:
    * is normally the same as OptVariables.
    */
   opt_variables_type OptVariablesForPsi;
+  // unchanged initial checked-in variables
+  opt_variables_type InitVariables;
   /** index mapping for <equal> constraints
    *
    * - equalVarMap[i][0] : index in OptVariablesForPsi

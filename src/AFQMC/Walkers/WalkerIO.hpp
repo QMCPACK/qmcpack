@@ -16,11 +16,11 @@
 #ifndef AFQMC_WALKERIO_HPP 
 #define AFQMC_WALKERIO_HPP 
 
-#include<cassert>
-#include<cstdlib>
-#include<vector>
-#include<type_traits>
-#include "type_traits/container_proxy_multi.h"
+#include <cassert>
+#include <cstdlib>
+#include <vector>
+#include <type_traits>
+#include "type_traits/container_traits_multi.h"
 
 #include "Configuration.h"
 #include "AFQMC/config.h"
@@ -252,9 +252,9 @@ bool restartFromHDF5(WalkerSet& wset, int nW_per_tg, std::string hdf_read_restar
         int nw_ = std::min(ni+wlk_per_blk[bi],nWN) - std::max(ni,nW0);
         Data.reextent({nw_,wlk_nterms});
         hyperslab_proxy<boost::multi::array_ref<ComplexType,2>,2> hslab(Data,
-                                  std::array<int,2>{wlk_per_blk[bi],wlk_nterms},
-                                  std::array<int,2>{nw_,wlk_nterms},
-                                  std::array<int,2>{w0,0});
+                                  std::array<int, 2>{wlk_per_blk[bi], wlk_nterms},
+                                  std::array<int, 2>{nw_,wlk_nterms},
+                                  std::array<int, 2>{w0,0});
         read.read(hslab,std::string("walkers_")+std::to_string(bi));
         for(int n=0; n<nw_; n++, nread++)
           wset.copyFromIO(Data[n],nread);

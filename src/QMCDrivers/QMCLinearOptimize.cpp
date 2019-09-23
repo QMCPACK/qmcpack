@@ -52,14 +52,15 @@ QMCLinearOptimize::QMCLinearOptimize(MCWalkerConfiguration& w,
       NumParts(1),
       WarmupBlocks(10),
       hamPool(hpool),
-      optTarget(0),
       vmcEngine(0),
       wfNode(NULL),
       optNode(NULL),
       param_tol(1e-4),
       generate_samples_timer_(*TimerManager.createTimer("QMCLinearOptimize::GenerateSamples", timer_level_medium)),
       initialize_timer_(*TimerManager.createTimer("QMCLinearOptimize::Initialize", timer_level_medium)),
-      eigenvalue_timer_(*TimerManager.createTimer("QMCLinearOptimize::Eigenvalue", timer_level_medium))
+      eigenvalue_timer_(*TimerManager.createTimer("QMCLinearOptimize::Eigenvalue", timer_level_medium)),
+      line_min_timer_(*TimerManager.createTimer("QMCLinearOptimize::Line_Minimization", timer_level_medium)),
+      cost_function_timer_(*TimerManager.createTimer("QMCLinearOptimize::CostFunction", timer_level_medium))
 {
   IsQMCDriver = false;
   //     //set the optimization flag
@@ -73,7 +74,6 @@ QMCLinearOptimize::QMCLinearOptimize(MCWalkerConfiguration& w,
 QMCLinearOptimize::~QMCLinearOptimize()
 {
   delete vmcEngine;
-  delete optTarget;
 }
 
 /** Add configuration files for the optimization
@@ -780,25 +780,16 @@ bool QMCLinearOptimize::put(xmlNodePtr q)
     addWalkers(omp_get_max_threads());
   NumOfVMCWalkers = W.getActiveWalkers();
   bool success    = true;
-  if (optTarget == 0)
-  {
+  //allways reset optTarget
 #if defined(QMC_CUDA)
-    if (useGPU == "yes")
-      optTarget = new QMCCostFunctionCUDA(W, Psi, H, myComm);
-    else
+  if (useGPU == "yes")
+    optTarget = std::make_unique<QMCCostFunctionCUDA>(W, Psi, H, myComm);
+  else
 #endif
-      optTarget = new QMCCostFunction(W, Psi, H, myComm);
-    //#if defined(ENABLE_OPENMP)
-    //            if (omp_get_max_threads()>1)
-    //            {
-    //                optTarget = new QMCCostFunctionOMP(W,Psi,H,hamPool);
-    //            }
-    //            else
-    //#endif
-    //        optTarget = new QMCCostFunctionSingle(W,Psi,H);
-    optTarget->setStream(&app_log());
-    success = optTarget->put(q);
-  }
+    optTarget = std::make_unique<QMCCostFunction>(W, Psi, H, myComm);
+  optTarget->setStream(&app_log());
+  success = optTarget->put(q);
+
   //create VMC engine
   if (vmcEngine == 0)
   {
