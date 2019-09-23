@@ -115,7 +115,7 @@ void EshdfFile::handleSpinGroup(const XmlNode* nd, double& nocc, FftContainer& c
       const XmlNode& eigFcnNode = nd->getChild(chIdx);
       readInEigFcn(eigFcnNode, cont);
       // write eigfcn to proper place
-      vector<hsize_t> psig_dims{static_cast<hsize_t>(cont.fullSize),2};
+      array<int,2> psig_dims{cont.fullSize,2};
 
       vector<double> temp;
       for (int i = 0; i < cont.fullSize; i++) 
@@ -124,7 +124,7 @@ void EshdfFile::handleSpinGroup(const XmlNode* nd, double& nocc, FftContainer& c
 	temp.push_back(cont.kspace[i][1]);
       }
 
-      outfile_.write(temp, psig_dims, "psi_g");
+      outfile_.writeSlabReshaped(temp, psig_dims, "psi_g");
       stateCounter++;
       outfile_.pop();
     }
@@ -301,9 +301,9 @@ void EshdfFile::writeQboxSupercell(const XmlNode& qboxSample)
   }
 
   // write the ptvs to the supercell group of the hdf file
-  vector<hsize_t> dims{3,3};
+  array<int,2> dims{3,3};
   outfile_.push("supercell");
-  outfile_.write(ptvs, "ptvs");
+  outfile_.writeSlabReshaped(ptvs, dims, "ptvs");
   outfile_.pop();
 }
 
@@ -326,9 +326,9 @@ void EshdfFile::writeQESupercell(const XmlNode& qeXml)
   }
 
   // write the ptvs to the supercell group of the hdf file
-  vector<hsize_t> dims{3,3};
+  array<int,2> dims{3,3};
   outfile_.push("supercell");
-  outfile_.write(ptvs, "ptvs");
+  outfile_.writeSlabReshaped(ptvs, dims, "ptvs");
   outfile_.pop();
 }
 
@@ -371,7 +371,7 @@ void EshdfFile::writeQEAtoms(const XmlNode& qeXml)
   // go through atoms and extract their position and type 
   std::vector<int> species_ids;
   std::vector<double> positions;
-  hsize_t at_num = 0;
+  int at_num = 0;
   for (int i = 0; i < atomic_positions_xml.getNumChildren(); i++) 
   {
     if (atomic_positions_xml.getChild(i).getName() == "atom") 
@@ -382,11 +382,10 @@ void EshdfFile::writeQEAtoms(const XmlNode& qeXml)
       at_num++;
     }
   }
-  vector<hsize_t> dims{at_num,3};
-  outfile_.write(positions, dims, "positions");
+  array<int,2> dims{at_num,3};
+  outfile_.writeSlabReshaped(positions, dims, "positions");
   outfile_.write(species_ids, "species_ids");
-  const int int_at_num = static_cast<int>(at_num);
-  outfile_.write(int_at_num, "number_of_atoms");
+  outfile_.write(at_num, "number_of_atoms");
 
   outfile_.pop();
 }
@@ -439,7 +438,7 @@ void EshdfFile::writeQboxAtoms(const XmlNode& qboxSample)
   // go through atoms and extract their position and type 
   std::vector<int> species_ids;
   std::vector<double> positions;
-  hsize_t at_num = 0;
+  int at_num = 0;
   for (int i = 0; i < atomset.getNumChildren(); i++) 
   {
     if (atomset.getChild(i).getName() == "atom") 
@@ -450,11 +449,10 @@ void EshdfFile::writeQboxAtoms(const XmlNode& qboxSample)
       at_num++;
     }
   }
-  vector<hsize_t> dims{at_num,3};
-  outfile_.write(positions, dims, "positions");
+  array<int,2> dims{at_num,3};
+  outfile_.writeSlabReshaped(positions, dims, "positions");
   outfile_.write(species_ids, "species_ids");
-  const int int_at_num = static_cast<int>(at_num);
-  outfile_.write(int_at_num, "number_of_atoms");
+  outfile_.write(at_num, "number_of_atoms");
   outfile_.pop();
 }
 
@@ -493,14 +491,16 @@ void EshdfFile::handleDensity(const XmlNode& qeXml, const string& dir_name, int 
   const string dens_fname = dir_name + "charge-density.hdf5";
   hdf_archive densfile = openHdfFileForRead(dens_fname);
 
-  vector<int> gvecs(3*num_dens_gvecs);
-  vector<int> shape{-1,-1};
-  densfile.read(gvecs, shape, "MillerIndices");
+  vector<int> readDims;
+  densfile.getShape<int>("MillerIndices", readDims);
+  vector<int> gvecs;
+  array<int,2> shape{readDims[0], readDims[1]};
+  densfile.readSlabReshaped(gvecs, shape, "MillerIndices");
 
-  vector<double> dens(2*num_dens_gvecs);
+  vector<double> dens;
   densfile.read(dens,"rhotot_g");
 
-  vector<double> diffdens(2*num_dens_gvecs);
+  vector<double> diffdens;
   if (spinpol == 1)
   {
     densfile.read(diffdens, "rhodiff_g");
@@ -508,17 +508,17 @@ void EshdfFile::handleDensity(const XmlNode& qeXml, const string& dir_name, int 
 
   // now need to write everything out
   outfile_.push("density");
-  vector<hsize_t> dims{static_cast<hsize_t>(num_dens_gvecs),3};
-  outfile_.write(gvecs, dims, "gvectors");
+  array<int,2> dims{num_dens_gvecs,3};
+  outfile_.writeSlabReshaped(gvecs, dims, "gvectors");
   
   vector<int> grid{nr1,nr2,nr3};
   outfile_.write(grid, "mesh");
   outfile_.write(num_dens_gvecs, "number_of_gvectors");
 
-  vector<hsize_t> dims_dens{static_cast<hsize_t>(num_dens_gvecs),2};
+  array<int,2> dims_dens{num_dens_gvecs,2};
   if (spinpol == 0) {
     outfile_.push("spin_0");
-    outfile_.write(dens, dims_dens, "density_g");
+    outfile_.writeSlabReshaped(dens, dims_dens, "density_g");
     outfile_.pop();
   } else {
     // do spin up
@@ -527,7 +527,7 @@ void EshdfFile::handleDensity(const XmlNode& qeXml, const string& dir_name, int 
       working[i] = (dens[i]+diffdens[i])/2.0;
     }
     outfile_.push("spin_0");
-    outfile_.write(working, dims_dens, "density_g");
+    outfile_.writeSlabReshaped(working, dims_dens, "density_g");
     outfile_.pop();
     
     // do spin down
@@ -535,7 +535,7 @@ void EshdfFile::handleDensity(const XmlNode& qeXml, const string& dir_name, int 
       working[i] = (dens[i]-diffdens[i])/2.0;
     }
     outfile_.push("spin_1");
-    outfile_.write(working, dims_dens, "density_g");
+    outfile_.writeSlabReshaped(working, dims_dens, "density_g");
     outfile_.pop();
   }
   outfile_.pop(); // get out of density group
@@ -661,13 +661,14 @@ void EshdfFile::handleKpt(int kpt_num, const std::string& dir_name, KPoint& kpt,
       fname = ss.str();
     }
     hdf_archive wfc_file = openHdfFileForRead(fname);
-    vector<int> gvecs(3*tot_ngvecs);
-    vector<int> shape{-1,-1};
-    wfc_file.read(gvecs, shape, "MillerIndices");
+    vector<int> readShape;
+    wfc_file.getShape<int>("MillerIndices", readShape);   
+    vector<int> gvecs;
+    array<int,2> shape{readShape[0],readShape[1]};
+    wfc_file.readSlabReshaped(gvecs, shape, "MillerIndices");
     wfc_file.close();
     
-    vector<hsize_t> dims{static_cast<hsize_t>(tot_ngvecs),3};
-    outfile_.write(gvecs, dims, "gvectors");
+    outfile_.writeSlabReshaped(gvecs, shape, "gvectors");
     outfile_.write(tot_ngvecs, "number_of_gvectors");
   }
 
@@ -718,15 +719,15 @@ void EshdfFile::handleKpt(int kpt_num, const std::string& dir_name, KPoint& kpt,
     for (int i = 0; i < dncoefs.size(); i++) dncoefs[i] = 0.0;
 
     // do what is necessary to read only this band's coefficients
-    vector<int> read_from{state,-1};
+    array<int,2> read_from{state,-1};
     if (spinpol == 0)
     {
-      spin_0_file.read(upcoefs, read_from, "evc");
+      spin_0_file.readSlabSelection(upcoefs, read_from, "evc");
     }
     else
     {
-      spin_0_file.read(upcoefs, read_from, "evc");
-      spin_1_file.read(dncoefs, read_from, "evc");
+      spin_0_file.readSlabSelection(upcoefs, read_from, "evc");
+      spin_1_file.readSlabSelection(dncoefs, read_from, "evc");
     }
 
     // once the coefficients are read in, write them out to the appropriate place
@@ -738,8 +739,8 @@ void EshdfFile::handleKpt(int kpt_num, const std::string& dir_name, KPoint& kpt,
       {
 	outfile_.push("spin_0");
 	outfile_.push(ss2.str());
-	vector<hsize_t> dims{static_cast<hsize_t>(tot_ngvecs),2};
-	outfile_.write(upcoefs, dims, "psi_g");
+	array<int,2> dims{tot_ngvecs,2};
+	outfile_.writeSlabReshaped(upcoefs, dims, "psi_g");
 	outfile_.pop();
 	outfile_.pop();
       }
@@ -747,33 +748,33 @@ void EshdfFile::handleKpt(int kpt_num, const std::string& dir_name, KPoint& kpt,
       {
 	outfile_.push("spin_0");
 	outfile_.push(ss2.str());
-	vector<hsize_t> dims{static_cast<hsize_t>(tot_ngvecs),2};
+	array<int,2> dims{tot_ngvecs,2};
 
 	for (int i = 0; i < loc_ngvecs*2; i++) dncoefs[i] = upcoefs[i];
-	outfile_.write(dncoefs, dims, "psi_g");
+	outfile_.writeSlabReshaped(dncoefs, dims, "psi_g");
 	outfile_.pop();
 	outfile_.pop();
 
 	outfile_.push("spin_1");
 	outfile_.push(ss2.str());
 	for (int i = 0; i < loc_ngvecs*2; i++) dncoefs[i] = upcoefs[i+loc_ngvecs*2];
-	outfile_.write(dncoefs, dims, "psi_g");
+	outfile_.writeSlabReshaped(dncoefs, dims, "psi_g");
 	outfile_.pop();
 	outfile_.pop();
       }
     }
     else  // spin polarized case
     {
-      vector<hsize_t> dims{static_cast<hsize_t>(tot_ngvecs),2};
+      array<int,2> dims{tot_ngvecs,2};
       outfile_.push("spin_0");
       outfile_.push(ss2.str());
-      outfile_.write(upcoefs, dims, "psi_g");
+      outfile_.writeSlabReshaped(upcoefs, dims, "psi_g");
       outfile_.pop();
       outfile_.pop();
 
       outfile_.push("spin_1");
       outfile_.push(ss2.str());
-      outfile_.write(dncoefs, dims, "psi_g");
+      outfile_.writeSlabReshaped(dncoefs, dims, "psi_g");
       outfile_.pop();
       outfile_.pop();
     }
@@ -1036,8 +1037,8 @@ void EshdfFile::writeQboxElectrons(const XmlNode& qboxSample)
 	}
       }    
       
-      vector<hsize_t> dims{static_cast<hsize_t>(nx*ny*nz),3};
-      outfile_.write(gvectors, dims, "gvectors");
+      array<int,2> dims{nx*ny*nz,3};
+      outfile_.writeSlabReshaped(gvectors, dims, "gvectors");
       const int int_tot_num = nx*ny*nz;
       outfile_.write(int_tot_num, "number_of_gvectors");
     }

@@ -54,6 +54,7 @@ ADD_EXECUTABLE(convertpw4qmc convertpw4qmc.cpp XmlRep.cpp WriteEshdf.cpp)
 FOREACH(l ${QMC_UTIL_LIBS})		       
   TARGET_LINK_LIBRARIES(convertpw4qmc ${l})
 ENDFOREACH(l ${QMC_UTIL_LIBS})
+TARGET_LINK_LIBRARIES(convertpw4qmc mocommon qmcbase qmcutil)
 
 INSTALL(TARGETS convertpw4qmc
         RUNTIME DESTINATION bin)
