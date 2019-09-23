@@ -92,7 +92,7 @@ class XMLelement(DevBase):
             #end for
         #end if
         return s
-    #end def list
+    #end def _to_string
 
 #    def __str__(self):
 #        return self._to_string()
@@ -118,6 +118,7 @@ class XMLelement(DevBase):
     #end def __init__
 
 
+    # test needed
     def condense(self):
         for name,elem in self._elements.iteritems():
             if isinstance(elem,XMLelement):
@@ -159,6 +160,7 @@ class XMLelement(DevBase):
     #end def condense
 
 
+    # test needed
     def convert_numeric(self):
         for name,attr in self._attributes.iteritems():
             self[name] = string2val(attr)
@@ -280,6 +282,7 @@ class XMLreader(DevBase):
         return
     #end def __init__
 
+    # test needed
     def include_files(self):
         pair = '<include','/>'
         qpair = '<?','?>'
