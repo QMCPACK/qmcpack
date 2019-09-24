@@ -13,17 +13,17 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCWaveFunctions/IonOrbital.h"
+#include "QMCWaveFunctions/LatticeGaussianProduct.h"
 
 namespace qmcplusplus
 {
-typedef IonOrbital::ValueType ValueType;
-typedef IonOrbital::GradType GradType;
+typedef LatticeGaussianProduct::ValueType ValueType;
+typedef LatticeGaussianProduct::GradType GradType;
 
-IonOrbital::IonOrbital(ParticleSet& centers, ParticleSet& ptcls) : CenterRef(centers)
+LatticeGaussianProduct::LatticeGaussianProduct(ParticleSet& centers, ParticleSet& ptcls) : CenterRef(centers)
 {
   Optimizable    = false;
-  ClassName      = "IonOrbital";
+  ClassName      = "LatticeGaussianProduct";
   NumTargetPtcls = ptcls.getTotalNum();
   NumCenters     = centers.getTotalNum();
 #ifdef ENABLE_SOA
@@ -38,14 +38,14 @@ IonOrbital::IonOrbital(ParticleSet& centers, ParticleSet& ptcls) : CenterRef(cen
   LastAddressOfdU  = FirstAddressOfdU + dU.size() * OHMMS_DIM;
 }
 
-IonOrbital::~IonOrbital() {}
+LatticeGaussianProduct::~LatticeGaussianProduct() {}
 
 //evaluate the distance table with P
-void IonOrbital::resetTargetParticleSet(ParticleSet& P) {}
-void IonOrbital::checkInVariables(opt_variables_type& active) {}
-void IonOrbital::checkOutVariables(const opt_variables_type& active) {}
-void IonOrbital::resetParameters(const opt_variables_type& active) {}
-void IonOrbital::reportStatus(std::ostream& os) {}
+void LatticeGaussianProduct::resetTargetParticleSet(ParticleSet& P) {}
+void LatticeGaussianProduct::checkInVariables(opt_variables_type& active) {}
+void LatticeGaussianProduct::checkOutVariables(const opt_variables_type& active) {}
+void LatticeGaussianProduct::resetParameters(const opt_variables_type& active) {}
+void LatticeGaussianProduct::reportStatus(std::ostream& os) {}
 
 /**
      *@param P input configuration containing N particles
@@ -61,7 +61,7 @@ void IonOrbital::reportStatus(std::ostream& os) {}
      *such that \f[ G[i]+={\bf \nabla}_i J({\bf R}) \f]
      *and \f[ L[i]+=\nabla^2_i J({\bf R}). \f]
      */
-IonOrbital::RealType IonOrbital::evaluateLog(ParticleSet& P,
+LatticeGaussianProduct::RealType LatticeGaussianProduct::evaluateLog(ParticleSet& P,
                                              ParticleSet::ParticleGradient_t& G,
                                              ParticleSet::ParticleLaplacian_t& L)
 {
@@ -100,7 +100,7 @@ IonOrbital::RealType IonOrbital::evaluateLog(ParticleSet& P,
  * @param P active particle set
  * @param iat particle that has been moved.
  */
-ValueType IonOrbital::ratio(ParticleSet& P, int iat)
+ValueType LatticeGaussianProduct::ratio(ParticleSet& P, int iat)
 {
   const auto& d_table = P.getDistTable(myTableID);
   int icent           = ParticleCenter[iat];
@@ -116,7 +116,7 @@ ValueType IonOrbital::ratio(ParticleSet& P, int iat)
 }
 
 
-GradType IonOrbital::evalGrad(ParticleSet& P, int iat)
+GradType LatticeGaussianProduct::evalGrad(ParticleSet& P, int iat)
 {
   const auto& d_table = P.getDistTable(myTableID);
   int icent           = ParticleCenter[iat];
@@ -134,14 +134,14 @@ GradType IonOrbital::evalGrad(ParticleSet& P, int iat)
 
 
 //   GradType
-//   IonOrbital::evalGradSource
+//   LatticeGaussianProduct::evalGradSource
 //   (ParticleSet& P, ParticleSet& source, int isrc,
 //    TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM> &grad_grad,
 //    TinyVector<ParticleSet::ParticleLaplacian_t,OHMMS_DIM> &lapl_grad)
 //   {
 //   }
 
-ValueType IonOrbital::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
+ValueType LatticeGaussianProduct::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
 {
   const auto& d_table = P.getDistTable(myTableID);
   int icent           = ParticleCenter[iat];
@@ -161,16 +161,16 @@ ValueType IonOrbital::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
   return std::exp(U[iat] - curVal);
 }
 
-void IonOrbital::restore(int iat) {}
+void LatticeGaussianProduct::restore(int iat) {}
 
-void IonOrbital::acceptMove(ParticleSet& P, int iat)
+void LatticeGaussianProduct::acceptMove(ParticleSet& P, int iat)
 {
   U[iat]   = curVal;
   dU[iat]  = curGrad;
   d2U[iat] = curLap;
 }
 
-void IonOrbital::evaluateLogAndStore(ParticleSet& P,
+void LatticeGaussianProduct::evaluateLogAndStore(ParticleSet& P,
                                      ParticleSet::ParticleGradient_t& dG,
                                      ParticleSet::ParticleLaplacian_t& dL)
 {
@@ -207,7 +207,7 @@ void IonOrbital::evaluateLogAndStore(ParticleSet& P,
 }
 
 /** equivalent to evalaute with additional data management */
-void IonOrbital::registerData(ParticleSet& P, WFBufferType& buf)
+void LatticeGaussianProduct::registerData(ParticleSet& P, WFBufferType& buf)
 {
   evaluateLogAndStore(P, P.G, P.L);
   // Add U, d2U and dU. Keep the order!!!
@@ -216,7 +216,7 @@ void IonOrbital::registerData(ParticleSet& P, WFBufferType& buf)
   buf.add(FirstAddressOfdU, LastAddressOfdU);
 }
 
-IonOrbital::RealType IonOrbital::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false)
+LatticeGaussianProduct::RealType LatticeGaussianProduct::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false)
 {
   evaluateLogAndStore(P, P.G, P.L);
   buf.put(U.first_address(), U.last_address());
@@ -231,16 +231,16 @@ IonOrbital::RealType IonOrbital::updateBuffer(ParticleSet& P, WFBufferType& buf,
  *
  *copyFromBuffer uses the data stored by registerData
  */
-void IonOrbital::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
+void LatticeGaussianProduct::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 {
   buf.get(U.first_address(), U.last_address());
   buf.get(d2U.first_address(), d2U.last_address());
   buf.get(FirstAddressOfdU, LastAddressOfdU);
 }
 
-WaveFunctionComponentPtr IonOrbital::makeClone(ParticleSet& tqp) const
+WaveFunctionComponentPtr LatticeGaussianProduct::makeClone(ParticleSet& tqp) const
 {
-  IonOrbital* j1copy     = new IonOrbital(CenterRef, tqp);
+  LatticeGaussianProduct* j1copy     = new LatticeGaussianProduct(CenterRef, tqp);
   j1copy->ParticleAlpha  = ParticleAlpha;
   j1copy->ParticleCenter = ParticleCenter;
   return j1copy;

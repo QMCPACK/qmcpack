@@ -54,8 +54,8 @@ SET(JASTROW_SRCS
   Jastrow/RadialJastrowBuilder.cpp
   Jastrow/CountingJastrowBuilder.cpp
   Jastrow/RPAJastrow.cpp
-  IonOrbital.cpp
-  IonOrbitalBuilder.cpp
+  LatticeGaussianProduct.cpp
+  LatticeGaussianProductBuilder.cpp
   OptimizableSPOBuilder.cpp
   Fermion/SPOSetProxy.cpp
   Fermion/SPOSetProxyForMSD.cpp
