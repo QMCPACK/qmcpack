@@ -26,7 +26,11 @@ IonOrbital::IonOrbital(ParticleSet& centers, ParticleSet& ptcls) : CenterRef(cen
   ClassName      = "IonOrbital";
   NumTargetPtcls = ptcls.getTotalNum();
   NumCenters     = centers.getTotalNum();
+#ifdef ENABLE_SOA
+  myTableID      = ptcls.addTable(CenterRef, DT_SOA);
+#else
   myTableID      = ptcls.addTable(CenterRef, DT_AOS);
+#endif
   U.resize(NumTargetPtcls);
   dU.resize(NumTargetPtcls);
   d2U.resize(NumTargetPtcls);
@@ -64,6 +68,8 @@ IonOrbital::RealType IonOrbital::evaluateLog(ParticleSet& P,
   const auto& d_table = P.getDistTable(myTableID);
   int icent           = 0;
   LogValue            = 0.0;
+  RealType dist       = 0.0;
+  PosType  disp       = 0.0;
   for (int iat = 0; iat < NumTargetPtcls; iat++)
   {
     U[iat]     = 0.0;
@@ -72,15 +78,18 @@ IonOrbital::RealType IonOrbital::evaluateLog(ParticleSet& P,
     RealType a = ParticleAlpha[iat];
     if (a > 0.0)
     {
-#ifndef ENABLE_SOA
+#ifdef ENABLE_SOA
+      dist = d_table.Distances[iat][icent];
+      disp = d_table.Displacements[iat][icent];
+#else
       int index     = d_table.M[icent] + iat;
-      RealType dist = d_table.r(index);
-      PosType disp  = d_table.dr(index);
+      dist = d_table.r(index);
+      disp = d_table.dr(index);
+#endif
       LogValue -= a * dist * dist;
       U[iat] += a * dist * dist;
       G[iat] -= 2.0 * a * disp;
       L[iat] -= 6.0 * a;
-#endif
       icent++;
     }
   }
@@ -97,11 +106,12 @@ ValueType IonOrbital::ratio(ParticleSet& P, int iat)
   int icent           = ParticleCenter[iat];
   if (icent == -1)
     return 1.0;
-#ifndef ENABLE_SOA
-  int index        = d_table.M[icent] + iat;
+#ifdef ENABLE_SOA
+  RealType newdist = d_table.Temp_r[icent];
+#else
   RealType newdist = d_table.Temp[icent].r1;
-  curVal           = ParticleAlpha[iat] * (newdist * newdist);
 #endif
+  curVal           = ParticleAlpha[iat] * (newdist * newdist);
   return std::exp(U[iat] - curVal);
 }
 
@@ -113,7 +123,11 @@ GradType IonOrbital::evalGrad(ParticleSet& P, int iat)
   if (icent == -1)
     return GradType();
   RealType a      = ParticleAlpha[iat];
+#ifdef ENABLE_SOA
+  PosType newdisp = d_table.Temp_dr[icent];
+#else
   PosType newdisp = d_table.Temp[icent].dr1;
+#endif
   curGrad         = -2.0 * a * newdisp;
   return curGrad;
 }
@@ -134,8 +148,13 @@ ValueType IonOrbital::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
   if (icent == -1)
     return 1.0;
   RealType a       = ParticleAlpha[iat];
+#ifdef ENABLE_SOA
+  RealType newdist = d_table.Temp_r[icent];
+  PosType newdisp = d_table.Temp_dr[icent];
+#else
   RealType newdist = d_table.Temp[icent].r1;
   PosType newdisp  = d_table.Temp[icent].dr1;
+#endif
   curVal           = a * newdist * newdist;
   curGrad          = -2.0 * a * newdisp;
   grad_iat += curGrad;
@@ -156,6 +175,8 @@ void IonOrbital::evaluateLogAndStore(ParticleSet& P,
                                      ParticleSet::ParticleLaplacian_t& dL)
 {
   const auto& d_table = P.getDistTable(myTableID);
+  RealType dist       = 0.0;
+  PosType  disp       = 0.0;
   int icent           = 0;
   LogValue            = 0.0;
   U                   = 0.0;
@@ -166,17 +187,20 @@ void IonOrbital::evaluateLogAndStore(ParticleSet& P,
     RealType a = ParticleAlpha[iat];
     if (a > 0.0)
     {
-#ifndef ENABLE_SOA
+#ifdef ENABLE_SOA
+      dist = d_table.Distances[iat][icent];
+      disp = d_table.Displacements[iat][icent];
+#else
       int index     = d_table.M[icent] + iat;
-      RealType dist = d_table.r(index);
-      PosType disp  = d_table.dr(index);
+      dist = d_table.r(index);
+      disp = d_table.dr(index);
+#endif
       LogValue -= a * dist * dist;
       U[iat] += a * dist * dist;
       dU[iat] -= 2.0 * a * disp;
       d2U[iat] -= 6.0 * a;
       dG[iat] -= 2.0 * a * disp;
       dL[iat] -= 6.0 * a;
-#endif
       icent++;
     }
   }
