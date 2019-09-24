@@ -248,6 +248,17 @@ def test_crystal_init():
 
 
 
+def test_change_units():
+    import numpy as np
+    ref = get_reference_structures()
+    s = ref.diamond_conv.copy()
+    assert(value_eq(s.pos[-1],np.array([2.6775,2.6775,0.8925])))
+    s.change_units('B')
+    assert(value_eq(s.pos[-1],np.array([5.05974172,5.05974172,1.68658057])))
+#end def test_change_units
+
+
+
 def test_diagonal_tiling():
     ref = get_reference_structures()
     diag_tilings = [
