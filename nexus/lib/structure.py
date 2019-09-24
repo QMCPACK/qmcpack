@@ -30,7 +30,7 @@ import os
 import numpy as np
 from copy import deepcopy
 from random import randint
-from numpy import abs,all,allclose,append,arange,around,array,atleast_2d,ceil,cos,cross,cross,diag,dot,empty,exp,flipud,floor,identity,isclose,logical_not,mgrid,mod,ndarray,ones,pi,round,sign,sin,sqrt,uint64,zeros
+from numpy import abs,all,append,arange,around,array,atleast_2d,ceil,cos,cross,cross,diag,dot,empty,exp,flipud,floor,identity,isclose,logical_not,mgrid,mod,ndarray,ones,pi,round,sign,sin,sqrt,uint64,zeros
 from numpy.linalg import inv,det,norm
 from types import NoneType
 from unit_converter import convert
@@ -1434,15 +1434,51 @@ class Structure(Sobj):
     #end def stretch
 
 
-    def rotate(self,R,check=True):
-        if not allclose(dot(A,A.T),identity(A.size)):
-            self.error('rotate must be given a unitary matrix')
+    def rotate(self,r,rp=None,check=True):
+        if rp is not None:
+            latttice_dirmap = dict(a1=0,a2=1,a3=2)
+            cartesian_dirmap = dict(x=[1,0,0],y=[0,1,0],z=[0,0,1])
+            if isinstance(r,str): 
+                if r[0]=='a': # r= 'a1', 'a2', or 'a3'
+                    r = self.axes[lattice_dirmap[r]]/np.linalg.norm(self.axes[lattice_dirmap[r]])
+                else: # r= 'x', 'y', or 'z'
+                    r = cartesian_dirmap[r]
+                #end if
+            else:
+                r = array(r,dtype=float)
+            #end if
+            if isinstance(rp,(int,float)):
+                theta = float(rp)
+            else:
+                if isinstance(rp,str):
+                    if rp[0]=='a': # r= 'a1', 'a2', or 'a3'
+                        rp = self.axes[lattice_dirmap[r]]/np.linalg.norm(self.axes[lattice_dirmap[r]])
+                    else: # r= 'x', 'y', or 'z'
+                        rp = cartesian_dirmap[r]
+                    #end if
+                else:
+                    rp = array(rp,dtype=float)
+                #end if
+                # go from r,rp to r,theta
+                r = np.cross(r,rp)/np.linalg.norm(np.cross(r,rp))
+                theta = np.arccos(np.dot(r,rp)/np.linalg.norm(r)/np.linalg.norm(rp))
+            #end if
+            # make R from r,theta
+            R = [[     np.cos(theta)+r[0]**2.0*(1.0-np.cos(theta)), r[0]*r[1]*(1.0-np.cos(theta))-r[2]*np.sin(theta), r[0]*r[2]*(1.0-np.cos(theta))+r[1]*np.sin(theta)],
+                 [r[1]*r[0]*(1.0-np.cos(theta))+r[2]*np.sin(theta),      np.cos(theta)+r[1]**2.0*(1.0-np.cos(theta)), r[1]*r[2]*(1.0-np.cos(theta))-r[0]*np.sin(theta)],
+                 [r[2]*r[0]*(1.0-np.cos(theta))-r[1]*np.sin(theta), r[2]*r[1]*(1.0-np.cos(theta))+r[0]*np.sin(theta),      np.cos(theta)+r[2]**2.0*(1.0-np.cos(theta))]]
         #end if
-        self.transformation_matrix(R)
+        R = array(R,dtype=float)
+        if check:
+            if not np.allclose(dot(R,R.T),identity(R.size)):
+                self.error('the function, rotate, must be given a unitary matrix')
+            #end if
+        #end if
+        self.matrix_transform(R)
     #end def rotate
 
 
-    def transformation_matrix(self,A):
+    def matrix_transform(self,A): 
         A = A.T
         axinv  = inv(self.axes)
         axnew  = dot(self.axes,A)
@@ -1454,13 +1490,13 @@ class Structure(Sobj):
         self.axes  = axnew
         self.kaxes = kaxnew
         if self.folded_structure!=None:
-            self.folded_structure.transformation_matrix(A)
+            self.folded_structure.matrix_transform(A)
         #end if
-    #end def transformation_matrix
+    #end def matrix_transform
 
 
     def skew(self,skew):
-        self.transformation_matrix(skew.T)
+        self.matrix_transform(skew.T)
     #end def skew
         
     
