@@ -16,7 +16,6 @@
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
 
-
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Particle/WalkerSetRef.h"
 #include "Particle/DistanceTableData.h"
@@ -464,7 +463,7 @@ void QMCHamiltonian::finalize_traces()
  *@param P input configuration containing N particles
  *@return the local energy
  */
-QMCHamiltonian::Return_t QMCHamiltonian::evaluate(ParticleSet& P)
+QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluate(ParticleSet& P)
 {
   LocalEnergy = 0.0;
   for (int i = 0; i < H.size(); ++i)
@@ -488,19 +487,20 @@ QMCHamiltonian::Return_t QMCHamiltonian::evaluate(ParticleSet& P)
   return LocalEnergy;
 }
 
-void QMCHamiltonian::flex_evaluate(const RefVector<QMCHamiltonian>& H_list,
-                                   const RefVector<ParticleSet>& P_list,
-                                   std::vector<Return_t>& LocalEnergies)
+std::vector<QMCHamiltonian::FullPrecRealType> QMCHamiltonian::flex_evaluate(const RefVector<QMCHamiltonian>& H_list,
+                                                                            const RefVector<ParticleSet>& P_list)
 {
+  std::vector<FullPrecRealType> local_energies(H_list.size(), 0.0);
   if (H_list.size() > 1)
   {
     for (int iw = 0; iw < H_list.size(); iw++)
       H_list[iw].get().LocalEnergy = 0.0;
 
-    for (int i = 0; i < H_list[0].get().H.size(); ++i)
+    int num_ham_operators = H_list[0].get().H.size();
+    for (int i_ham_op = 0; i_ham_op < num_ham_operators; ++i_ham_op)
     {
-      ScopedTimer local_timer(H_list[0].get().myTimers[i]);
-      const auto HC_list(extract_HC_list(H_list, i));
+      ScopedTimer local_timer(H_list[0].get().myTimers[i_ham_op]);
+      const auto HC_list(extract_HC_list(H_list, i_ham_op));
 
       // This lambda accomplishes two things
       // 1. It makes clear T& and not std::reference_wrapper<T> is desired removing need for gets.
@@ -531,16 +531,23 @@ void QMCHamiltonian::flex_evaluate(const RefVector<QMCHamiltonian>& H_list,
       const auto HC_list(extract_HC_list(H_list, 0));
       updateKinetic(HC_list[iw], H_list[iw], P_list[iw]);
     }
+
+    for (int iw = 0; iw < H_list.size(); ++iw)
+      local_energies[iw] = H_list[iw].get().get_LocalEnergy();
   }
   else if (H_list.size() == 1)
-    H_list[0].get().evaluate(P_list[0]);
+  {
+    local_energies[0] = H_list[0].get().evaluate(P_list[0]);
+  }
+
+  return local_energies;
 }
 
-QMCHamiltonian::RealType QMCHamiltonian::evaluateValueAndDerivatives(ParticleSet& P,
-                                                                     const opt_variables_type& optvars,
-                                                                     std::vector<ValueType>& dlogpsi,
-                                                                     std::vector<ValueType>& dhpsioverpsi,
-                                                                     bool compute_deriv)
+QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateValueAndDerivatives(ParticleSet& P,
+                                                                             const opt_variables_type& optvars,
+                                                                             std::vector<ValueType>& dlogpsi,
+                                                                             std::vector<ValueType>& dhpsioverpsi,
+                                                                             bool compute_deriv)
 {
   LocalEnergy = KineticEnergy = H[0]->evaluate(P);
   if (compute_deriv)
@@ -552,7 +559,7 @@ QMCHamiltonian::RealType QMCHamiltonian::evaluateValueAndDerivatives(ParticleSet
   return LocalEnergy;
 }
 
-QMCHamiltonian::RealType QMCHamiltonian::evaluateVariableEnergy(ParticleSet& P, bool free_nlpp)
+QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateVariableEnergy(ParticleSet& P, bool free_nlpp)
 {
   RealType nlpp = 0.0;
   RealType ke   = H[0]->evaluate(P);
@@ -635,7 +642,7 @@ void QMCHamiltonian::rejectedMove(ParticleSet& P, Walker_t& ThisWalker)
   }
 }
 
-QMCHamiltonian::Return_t QMCHamiltonian::evaluateWithToperator(ParticleSet& P)
+QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateWithToperator(ParticleSet& P)
 {
   LocalEnergy = 0.0;
   for (int i = 0; i < H.size(); ++i)
@@ -655,12 +662,12 @@ QMCHamiltonian::Return_t QMCHamiltonian::evaluateWithToperator(ParticleSet& P)
   return LocalEnergy;
 }
 
-QMCHamiltonian::Return_t QMCHamiltonian::evaluateIonDerivs(ParticleSet& P,
-                                                           ParticleSet& ions,
-                                                           TrialWaveFunction& psi,
-                                                           ParticleSet::ParticlePos_t& hf_term,
-                                                           ParticleSet::ParticlePos_t& pulay_terms,
-                                                           ParticleSet::ParticlePos_t& wf_grad)
+QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateIonDerivs(ParticleSet& P,
+                                                                   ParticleSet& ions,
+                                                                   TrialWaveFunction& psi,
+                                                                   ParticleSet::ParticlePos_t& hf_term,
+                                                                   ParticleSet::ParticlePos_t& pulay_terms,
+                                                                   ParticleSet::ParticlePos_t& wf_grad)
 {
   ParticleSet::ParticleGradient_t wfgradraw_(ions.getTotalNum());
   wfgradraw_           = 0.0;
@@ -677,9 +684,9 @@ QMCHamiltonian::Return_t QMCHamiltonian::evaluateIonDerivs(ParticleSet& P,
   return localEnergy;
 }
 
-QMCHamiltonian::Return_t QMCHamiltonian::getEnsembleAverage()
+QMCHamiltonian::FullPrecRealType QMCHamiltonian::getEnsembleAverage()
 {
-  Return_t sum = 0.0;
+  FullPrecRealType sum = 0.0;
   for (int i = 0; i < H.size(); i++)
     sum += H[i]->getEnsembleAverage();
   return sum;
@@ -818,13 +825,6 @@ void QMCHamiltonian::evaluate(MCWalkerConfiguration& W,
       auxH[i]->addEnergy(W, AuxEnergyVector);
   }
 }
-#else
-void QMCHamiltonian::evaluate(MCWalkerConfiguration& W, std::vector<RealType>& energyVector) {}
-
-void QMCHamiltonian::evaluate(MCWalkerConfiguration& W,
-                              std::vector<RealType>& energyVector,
-                              std::vector<std::vector<NonLocalData>>& Txy)
-{}
 #endif
 
 RefVector<OperatorBase> QMCHamiltonian::extract_HC_list(const RefVector<QMCHamiltonian>& H_list, int id)

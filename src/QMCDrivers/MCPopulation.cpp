@@ -16,17 +16,18 @@
 
 namespace qmcplusplus
 {
-MCPopulation::MCPopulation(MCWalkerConfiguration& mcwc,
+MCPopulation::MCPopulation(int num_ranks,
+                           MCWalkerConfiguration& mcwc,
                            ParticleSet* elecs,
                            TrialWaveFunction* trial_wf,
                            QMCHamiltonian* hamiltonian)
-    : trial_wf_(trial_wf), elec_particle_set_(elecs), hamiltonian_(hamiltonian)
+    : num_ranks_(num_ranks), trial_wf_(trial_wf), elec_particle_set_(elecs), hamiltonian_(hamiltonian)
 {
   walker_offsets_     = mcwc.WalkerOffsets;
   num_global_walkers_ = mcwc.GlobalNumWalkers;
   num_local_walkers_  = mcwc.LocalNumWalkers;
   num_particles_      = mcwc.getParticleNum();
-  
+
   // MCWalkerConfiguration doesn't give actual number of groups
   num_groups_ = mcwc.groups();
   particle_group_indexes_.resize(num_groups_);
@@ -77,6 +78,8 @@ void MCPopulation::createWalkers(IndexType num_walkers)
     walker_ptr->Properties = elec_particle_set_->Properties;
   }
 
+  outputManager.pause();
+
   // Sadly the wfc makeClone interface depends on the full particle set as a way to not to keep track
   // of what different wave function components depend on. I'm going to try and create a hollow elec PS
   // with an eye toward removing the ParticleSet dependency of WFC components in the future.
@@ -99,6 +102,8 @@ void MCPopulation::createWalkers(IndexType num_walkers)
     ++it_wtw;
     ++it_ham;
   }
+
+  outputManager.resume();
 
   RefVector<WFBuffer> mcp_wfbuffers;
   mcp_wfbuffers.reserve(num_walkers);

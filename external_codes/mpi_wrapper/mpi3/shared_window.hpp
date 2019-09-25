@@ -33,7 +33,9 @@ struct shared_window : window<T>{
 	{}
 	shared_window(shared_window const&) = default;
 	shared_window(shared_window&& other) : window<T>{std::move(other)}, comm_{other.comm_}{}
-	auto get_group() const{return group(*this);}
+		group get_group() const{
+		group r; MPI3_CALL(MPI_Win_get_group)(this->impl_, &(&r)); return r;
+	}
 	shared_communicator& get_communicator() const{return *comm_;}
 	using query_t = std::tuple<mpi3::size_t, int, void*>;
 	query_t query(int rank = MPI_PROC_NULL) const{
