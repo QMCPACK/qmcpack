@@ -26,6 +26,62 @@
 
 #! /usr/bin/env python
 
+"""
+The :py:mod:`structure` module provides support for atomic structure I/O,
+generation, and manipulation.  
+
+
+List of module contents
+-----------------------
+
+Coordinate conversion functions:
+
+* :py:func:`polar_to_cartesian`
+* :py:func:`cartesian_to_polar`
+* :py:func:`spherical_to_cartesian`
+* :py:func:`cartesian_to_spherical`
+
+Grid generation functions:
+
+* :py:func:`unit_grid_points`
+* :py:func:`parallelotope_grid_points`
+* :py:func:`spheroid_grid_points`
+* :py:func:`spheroid_surface_grid_points`
+
+Base classes for :py:class:`Grid` and :py:class:`GridFunction` classes:
+
+* :py:class:`PlotHandler`
+* :py:class:`GBase`
+
+Abstract :py:class:`Grid` classes:
+
+* :py:class:`Grid`
+* :py:class:`StructuredGrid`
+* :py:class:`StructuredGridWithAxes`
+
+Abstract :py:class:`GridFunction` classes:
+
+* :py:class:`GridFunction`
+* :py:class:`StructuredGridFunction`
+* :py:class:`StructuredGridFunctionWithAxes`
+
+Concrete :py:class:`Grid` classes:
+
+* :py:class:`ParallelotopeGrid` 
+* :py:class:`SpheroidGrid`
+* :py:class:`SpheroidSurfaceGrid`
+
+Concrete :py:class:`GridFunction` classes:
+
+* :py:class:`ParallelotopeGridFunction` 
+* :py:class:`SpheroidGridFunction`
+* :py:class:`SpheroidSurfaceGridFunction`
+
+
+Module contents
+---------------
+"""
+
 import os
 import numpy as np
 from copy import deepcopy
@@ -1458,6 +1514,7 @@ class Structure(Sobj):
     #end def stretch
 
 
+    # test needed
     def rotate(self,r,rp=None,check=True):
         if rp is not None:
             latttice_dirmap = dict(a1=0,a2=1,a3=2)
@@ -1521,6 +1578,17 @@ class Structure(Sobj):
 
     # test needed
     def skew(self,skew):
+        """
+        Conversion from polar to Cartesian coordinates.
+
+        Parameters
+        ----------
+        skew  : `array_like, float, shape (N,d)`
+            Real valued points in polar coordinates :math:`(r,\phi)`. `N` is the 
+            number of points and `d` is the dimension of the coordinate system.  
+            The inputted points must satisfy :math:`r=\mathrm{points[:,0]}`, 
+            :math:`\phi=\mathrm{points[:,1]}`, and :math:`\phi\in[0,2\pi)`.
+        """
         self.matrix_transform(skew.T)
     #end def skew
         
