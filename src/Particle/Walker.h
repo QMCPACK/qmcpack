@@ -85,6 +85,8 @@ struct Walker
 #endif
   /** array of particles */
   typedef typename p_traits::ParticlePos_t ParticlePos_t;
+  /** array of scalars */
+  typedef typename p_traits::ParticleScalar_t ParticleScalar_t;
   /** array of gradients */
   typedef typename p_traits::ParticleGradient_t ParticleGradient_t;
   /** array of laplacians */
@@ -126,6 +128,9 @@ struct Walker
   /** The configuration vector (3N-dimensional vector to store
      the positions of all the particles for a single walker)*/
   ParticlePos_t R;
+  
+  //Dynamical spin variable.
+  ParticleScalar_t spins;
 #if !defined(SOA_MEMORY_OPTIMIZED)
   /** \f$ \nabla_i d\log \Psi for the i-th particle */
   ParticleGradient_t G;
@@ -263,6 +268,7 @@ struct Walker
   inline void resize(int nptcl)
   {
     R.resize(nptcl);
+    spins.resize(nptcl);
     G.resize(nptcl);
     L.resize(nptcl);
 #ifdef QMC_CUDA
@@ -287,6 +293,7 @@ struct Walker
     if (R.size() != a.R.size())
       resize(a.R.size());
     R = a.R;
+    spins = a.spins;
 #if !defined(SOA_MEMORY_OPTIMIZED)
     G = a.G;
     L = a.L;

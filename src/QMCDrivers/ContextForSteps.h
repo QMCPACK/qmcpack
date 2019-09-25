@@ -25,10 +25,14 @@ namespace qmcplusplus
 
 class MCPopulation;
 struct DistanceTableData;
+
 /** Thread local context for moving walkers
  *
  *  created once per driver per crowd
- *  might be merged with Crowd
+ *  It's two significant responsibilities are holding the thread local RandomGen_t
+ *  And the particle group indexes.
+ *
+ *  
  */
 class ContextForSteps
 {
@@ -43,10 +47,6 @@ public:
               std::vector<std::pair<int,int>> particle_group_indexes,
               RandomGenerator_t& random_gen);
   
-  void loadCrowd(Crowd& crowd);
-
-  std::vector<std::unique_ptr<ParticlePositions>>& get_walker_positions() { return walker_positions_; }
-
   int get_num_groups() const { return particle_group_indexes_.size(); }
   RandomGenerator_t& get_random_gen() { return random_gen_; }
 
@@ -60,17 +60,7 @@ public:
   int getPtclGroupStart(int group) const { return particle_group_indexes_[group].first; }
   int getPtclGroupEnd(int group) const { return particle_group_indexes_[group].second; }
 
-  void incReject() { ++n_reject; }
-  void incAccept() { ++n_accept; }
 protected:
-/** @{ */
-  ///Positions
-  std::vector<std::unique_ptr<ParticlePositions>> walker_positions_;
-
-  ///SoA copy of walker_positions
-  std::vector<std::unique_ptr<VectorSoaContainer<RealType, OHMMS_DIM>>> positions_soa_;
-/** }@ */
-  
   std::vector<PosType> walker_deltas_;
    
   /** indexes of start and stop of each particle group;
@@ -78,22 +68,6 @@ protected:
    *  Seems like these should be iterators but haven't thought through the implications.
    */
   std::vector<std::pair<int,int>> particle_group_indexes_;
-
-  /** map to handle distance tables
-   *
-   * myDistTableMap[source-particle-tag]= locator in the distance table
-   * myDistTableMap[ObjectTag] === 0
-   */
-  std::map<std::string, int> myDistTableMap;
-
-  /// distance tables that need to be updated by moving this ParticleSet
-  std::vector<DistanceTableData*> DistTables;
-
-  /// Descriptions from distance table creation.  Same order as DistTables.
-  std::vector<std::string> distTableDescriptions;
-
-  unsigned long n_reject = 0;
-  unsigned long n_accept = 0;
   
   RandomGenerator_t& random_gen_;
 

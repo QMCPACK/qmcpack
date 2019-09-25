@@ -5,14 +5,14 @@ import numpy as np
 # determine if two values differ
 def value_diff(v1,v2,tol=1e-6,int_as_float=False):
     diff = False
-    if int_as_float and isinstance(v1,(int,float)) and isinstance(v2,(int,float)):
+    if int_as_float and isinstance(v1,(int,float,np.float64)) and isinstance(v2,(int,float,np.float64)):
         diff = np.abs(float(v1)-float(v2))>tol
+    elif isinstance(v1,(float,np.float64)) and isinstance(v2,(float,np.float64)):
+        diff = np.abs(v1-v2)>tol
     elif not isinstance(v1,type(v2)) or not isinstance(v2,type(v1)):
         diff = True
     elif isinstance(v1,(bool,int,str)):
         diff = v1!=v2
-    elif isinstance(v1,float):
-        diff = np.abs(v1-v2)>tol
     elif isinstance(v1,(list,tuple)):
         v1 = np.array(v1,dtype=object).ravel()
         v2 = np.array(v2,dtype=object).ravel()
@@ -123,4 +123,153 @@ def object_eq(*args,**kwargs):
 
 
 
+# find the path to the Nexus directory and other internal paths
+def nexus_path(append=None,location=None):
+    import os
+    testing_path = os.path.realpath(__file__)
 
+    assert(isinstance(testing_path,str))
+    assert(len(testing_path)>0)
+    assert('/' in testing_path)
+
+    tokens = testing_path.split('/')
+
+    assert(len(tokens)>=3)
+    assert(tokens[-1].startswith('testing.py'))
+    assert(tokens[-2]=='lib')
+    assert(tokens[-3]=='nexus')
+
+    path = os.path.dirname(testing_path)
+    path = os.path.dirname(path)
+
+    assert(path.endswith('/nexus'))
+
+    if location is not None:
+        if location=='unit':
+            append = 'tests/unit'
+        else:
+            print('nexus location "{}" is unknown'.format(location))
+            raise ValueError
+        #end if
+    #end if
+    if append is not None:
+        path = os.path.join(path,append)
+    #end if
+
+    assert(os.path.exists(path))
+
+    return path
+#end def nexus_path
+
+
+
+# find the path to a file associated with a unit test
+def unit_test_file_path(test,file=None):
+    import os
+    unit_path  = nexus_path(location='unit')
+    files_dir  = 'test_{}_files'.format(test)
+    path = os.path.join(unit_path,files_dir)
+    if file is not None:
+        path = os.path.join(path,file)
+    #end if
+    assert(os.path.exists(path))
+    return path
+#end def unit_test_file_path
+
+
+
+# collect paths to all files associated with a unit test
+def collect_unit_test_file_paths(test,storage):
+    import os
+    if len(storage)==0:
+        test_files_dir = unit_test_file_path(test)
+        files = os.listdir(test_files_dir)
+        for file in files:
+            filepath = os.path.join(test_files_dir,file)
+            assert(os.path.exists(filepath))
+            storage[file] = filepath
+        #end for
+    #end if
+    return storage
+#end def collect_unit_test_file_paths
+
+
+
+# find the output path for a test
+def unit_test_output_path(test,subtest=None):
+    import os
+    unit_path  = nexus_path(location='unit')
+    files_dir  = 'test_{}_output'.format(test)
+    path = os.path.join(unit_path,files_dir)
+    if subtest is not None:
+        path = os.path.join(path,subtest)
+    #end if
+    return path
+#end def unit_test_output_path
+
+
+
+# setup the output directory for a test
+def setup_unit_test_output_directory(test,subtest):
+    import os
+    import shutil
+    path = unit_test_output_path(test,subtest)
+    assert('nexus' in path)
+    assert('unit' in path)
+    assert(os.path.basename(path).startswith('test_'))
+    assert(path.endswith('/'+subtest))
+    if os.path.exists(path):
+        shutil.rmtree(path)
+    #end if
+    os.makedirs(path)
+    assert(os.path.exists(path))
+    return path
+#end def setup_unit_test_output_directory
+
+
+# class used to divert log output when desired
+class FakeLog:
+    def __init__(self):
+        self.reset()
+    #end def __init__
+
+    def reset(self):
+        self.s = ''
+    #end def reset
+
+    def write(self,s):
+        self.s+=s
+    #end def write
+
+    def close(self):
+        None
+    #end def close
+#end class FakeLog
+
+
+# dict to temporarily store logger when log output is diverted
+logging_storage = dict()
+
+
+
+# divert nexus log output
+def divert_nexus_log():
+    from generic import generic_settings,object_interface
+    if len(logging_storage)==0:
+        logging_storage['devlog'] = generic_settings.devlog
+        logging_storage['objlog'] = object_interface._logfile 
+        logfile = FakeLog()
+        generic_settings.devlog   = logfile
+        object_interface._logfile = logfile
+    #end if
+#end def divert_nexus_log
+
+
+# restore nexus log output
+def restore_nexus_log():
+    from generic import generic_settings,object_interface
+    generic_settings.devlog   = logging_storage['devlog']
+    object_interface._logfile = logging_storage['objlog']
+    logging_storage.clear()
+    assert(len(logging_storage)==0)
+#end def restore_nexus_log

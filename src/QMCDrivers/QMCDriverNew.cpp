@@ -50,6 +50,7 @@ QMCDriverNew::QMCDriverNew(QMCDriverInput&& input,
                            TrialWaveFunction& psi,
                            QMCHamiltonian& h,
                            WaveFunctionPool& ppool,
+                           const std::string timer_prefix,
                            Communicate* comm)
     : MPIObjectBase(comm),
       qmcdriver_input_(input),
@@ -60,7 +61,8 @@ QMCDriverNew::QMCDriverNew(QMCDriverInput&& input,
       psiPool(ppool),
       estimator_manager_(nullptr),
       wOut(0),
-      walkers_per_crowd_(1)
+      walkers_per_crowd_(1),
+      timers_(timer_prefix)
       // num_crowds_(input.get_num_crowds())
 {
   QMCType = "invalid";
@@ -72,8 +74,6 @@ QMCDriverNew::QMCDriverNew(QMCDriverInput&& input,
     num_crowds_ = input.get_num_crowds();
  
   rotation = 0;
-
-  checkpointTimer = TimerManager.createTimer("checkpoint::recordBlock", timer_level_medium);
 }
 
 int QMCDriverNew::addObservable(const std::string& aname)
@@ -273,10 +273,10 @@ void QMCDriverNew::recordBlock(int block)
 {
   if (qmcdriver_input_.get_dump_config() && block % qmcdriver_input_.get_check_point_period().period == 0)
   {
-    checkpointTimer->start();
+    timers_.checkpoint_timer.start();
     branchEngine->write(root_name_, true); //save energy_history
     RandomNumberControl::write(root_name_, myComm);
-    checkpointTimer->stop();
+    timers_.checkpoint_timer.stop();
   }
 }
 
@@ -379,7 +379,7 @@ void QMCDriverNew::initialLogEvaluation(int crowd_id, UPtrVector<Crowd>& crowds)
     saveElecPosAndGLToWalkers(walker_elecs[iw], walkers[iw]);
 
   auto& walker_hamiltonians = crowd.get_walker_hamiltonians();
-  std::vector<QMCHamiltonian::RealType> local_energies(QMCHamiltonian::flex_evaluate(walker_hamiltonians, walker_elecs));
+  std::vector<QMCHamiltonian::FullPrecRealType> local_energies(QMCHamiltonian::flex_evaluate(walker_hamiltonians, walker_elecs));
   // This is actually only a partial reset of the walkers properties
   auto resetSigNLocalEnergy = [](MCPWalker& walker, TrialWaveFunction& twf, auto local_energy){
                                 walker.resetProperty(twf.getLogPsi(), twf.getPhase(), local_energy);
