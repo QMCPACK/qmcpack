@@ -193,11 +193,31 @@ void QMCDriverNew::setStatus(const std::string& aname, const std::string& h5name
     h5_file_root_ = h5name;
 }
 
+void QMCDriverNew::checkNumCrowdsLTNumThreads()
+{
+  int num_threads(Concurrency::maxThreads<>());
+  if (num_crowds_ > num_threads)
+  {
+    std::stringstream error_msg;
+    error_msg << "Bad Input: num_crowds (" << qmcdriver_input_.get_num_crowds()
+       << ") > num_threads (" << num_threads << ")\n";
+    throw std::runtime_error(error_msg.str());
+  }
+}
+
 void QMCDriverNew::set_num_crowds(int num_crowds, const std::string& reason)
 {
   num_crowds_ = num_crowds;
   app_warning() << " [INPUT OVERIDDEN] The number of crowds has been set to :  " << num_crowds << '\n';
   app_warning() << " Overiding the input of value of " << qmcdriver_input_.get_num_crowds() << " because " << reason
+                << std::endl;
+}
+
+void QMCDriverNew::set_walkers_per_rank(int walkers_per_rank, const std::string& reason)
+{
+  walkers_per_rank_ = walkers_per_rank;
+  app_warning() << " [INPUT OVERIDDEN] The number of crowds has been set to :  " << walkers_per_rank << '\n';
+  app_warning() << " Overiding the input of value of " << qmcdriver_input_.get_walkers_per_rank() << " because " << reason
                 << std::endl;
 }
 /** Read walker configurations from *.config.h5 files
@@ -295,7 +315,7 @@ bool QMCDriverNew::finalize(int block, bool dumpwalkers)
  */
 void QMCDriverNew::setupWalkers()
 {
-  IndexType local_walkers = calc_default_local_walkers();
+  IndexType local_walkers = calc_default_local_walkers(qmcdriver_input_.get_walkers_per_rank());
   
   // side effect updates walkers_per_crowd_;
   addWalkers(local_walkers, ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>(population_.get_num_particles()));

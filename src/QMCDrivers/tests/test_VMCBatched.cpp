@@ -54,15 +54,15 @@ TEST_CASE("VMCBatched::calc_default_local_walkers", "[drivers]")
   auto testWRTWalkersPerRank = [&](int walkers_per_rank) {
     MCPopulation population(num_ranks, particle_pool.getParticleSet("e"), wavefunction_pool.getPrimary(),
                             hamiltonian_pool.getPrimary());
-
     QMCDriverInput qmcdriver_copy(qmcdriver_input);
-    VMCDriverInput vmcdriver_input(walkers_per_rank, "yes");
+    VMCDriverInput vmcdriver_input("yes");
     VMCBatched vmc_batched(std::move(qmcdriver_copy), std::move(vmcdriver_input), std::move(population),
                            *(wavefunction_pool.getPrimary()), *(hamiltonian_pool.getPrimary()), wavefunction_pool,
                            comm);
+    vmc_batched.set_walkers_per_rank(walkers_per_rank, "testing");
     if (num_crowds < 8)
       vmc_batched.set_num_crowds(Concurrency::maxThreads(), "Insufficient threads available to match test input");
-    VMCBatched::IndexType local_walkers       = vmc_batched.calc_default_local_walkers();
+    VMCBatched::IndexType local_walkers       = vmc_batched.calc_default_local_walkers(walkers_per_rank);
     QMCDriverNew::IndexType walkers_per_crowd = vmc_batched.get_walkers_per_crowd();
 
     population = std::move(vmc_batched.releasePopulation());

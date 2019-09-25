@@ -34,38 +34,28 @@ VMCBatched::VMCBatched(QMCDriverInput&& qmcdriver_input,
   // qmc_driver_mode.set(QMC_WARMUP, 0);
 }
 
-VMCBatched::IndexType VMCBatched::calc_default_local_walkers()
+VMCBatched::IndexType VMCBatched::calc_default_local_walkers(IndexType walkers_per_rank)
 {
+  checkNumCrowdsLTNumThreads();
   int num_threads(Concurrency::maxThreads<>());
-
-  // Do to a work-around currently in QMCDriverNew::QMCDriverNew this should never be true.
-  // I'm leaving this because this is what should happen for vmc.
-  if (num_crowds_ > num_threads)
-  {
-    std::stringstream error_msg;
-    error_msg << "Bad Input: num_crowds (" << qmcdriver_input_.get_num_crowds() << ") > num_threads (" << num_threads
-              << ")\n";
-    throw std::runtime_error(error_msg.str());
-  }
-  IndexType rw = vmcdriver_input_.get_requested_walkers_per_rank();
   if (num_crowds_ == 0)
-    num_crowds_ = std::min(num_threads, rw);
+    num_crowds_ = std::min(num_threads, walkers_per_rank);
 
-  if (rw < num_crowds_)
-    rw = num_crowds_;
-  walkers_per_crowd_      = (rw % num_crowds_) ? rw / num_crowds_ + 1 : rw / num_crowds_;
+  if (walkers_per_rank < num_crowds_)
+    walkers_per_rank = num_crowds_;
+  walkers_per_crowd_      = (walkers_per_rank % num_crowds_) ? walkers_per_rank / num_crowds_ + 1 : walkers_per_rank / num_crowds_;
   IndexType local_walkers = walkers_per_crowd_ * num_crowds_;
   population_.set_num_local_walkers(local_walkers);
   population_.set_num_global_walkers(local_walkers * population_.get_num_ranks());
-  if (rw != vmcdriver_input_.get_requested_walkers_per_rank())
+  if (walkers_per_rank != qmcdriver_input_.get_walkers_per_rank())
     app_warning() << "VMCBatched driver has adjusted walkers per rank to: " << local_walkers << '\n';
 
   if (vmcdriver_input_.get_samples() >= 0 || vmcdriver_input_.get_samples_per_thread() >= 0 ||
       vmcdriver_input_.get_steps_between_samples() >= 0)
     app_warning() << "VMCBatched currently ignores samples and samplesperthread\n";
 
-  if (local_walkers != rw)
-    app_warning() << "VMCBatched changed the number of walkers to " << local_walkers << ". User input was " << rw
+  if (local_walkers != walkers_per_rank)
+    app_warning() << "VMCBatched changed the number of walkers to " << local_walkers << ". User input was " << walkers_per_rank
                   << std::endl;
 
   app_log() << "VMCBatched walkers per crowd " << walkers_per_crowd_ << std::endl;

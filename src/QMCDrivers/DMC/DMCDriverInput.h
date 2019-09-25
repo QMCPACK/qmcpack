@@ -42,8 +42,9 @@ protected:
   std::string KillWalker;
   ///input std::string to determine swap walkers among mpi processors
   std::string SwapWalkers;
-  ///input std::string to determine to use reconfiguration
-  std::string Reconfiguration;
+
+  /// reconfiguration flag
+  bool reconfiguration = true;
   ///input std::string to determine to use nonlocal move
   std::string NonLocalMove;
   ///input std::string to use fast gradient

@@ -18,8 +18,9 @@ DMCDriverInput::DMCDriverInput(int walkers_per_rank) {}
 void DMCDriverInput::readXML(xmlNodePtr node)
 {
   ParameterSet parameter_set_;
-  parameter_set_.add(Reconfiguration, "reconfiguration", "string");
-  //parameter_set_.add(BranchInterval,"branchInterval","string");
+  std::string reconfig_str;
+  parameter_set_.add(reconfig_str, "reconfiguration", "string");
+  reconfiguration = (reconfig_str == "yes");
   parameter_set_.add(NonLocalMove, "nonlocalmove", "string");
   parameter_set_.add(NonLocalMove, "nonlocalmoves", "string");
   parameter_set_.add(mover_MaxAge, "MaxAge", "double");

@@ -19,6 +19,8 @@
 #include "QMCDrivers/ContextForSteps.h"
 #include "QMCDrivers/GreenFunctionModifiers/DriftModifierBase.h"
 
+#include "Utilities/Timer.h"
+
 namespace qmcplusplus
 {
 /** @ingroup QMCDrivers  ParticleByParticle
@@ -41,11 +43,12 @@ public:
     const QMCDriverInput& qmcdrv_input;
     const VMCDriverInput& vmcdrv_input;
     const MCPopulation&   population;
+    const DriftModifierBase& drift_modifier;
     IndexType recalculate_properties_period;
     IndexType step;
     int block;
     bool recomputing_blocks;
-    const DriftModifierBase& drift_modifier;
+    
     StateForThread(QMCDriverInput&  qmci,
                    VMCDriverInput& vmci,
                    DriftModifierBase& drift_mod,
@@ -81,9 +84,7 @@ public:
                          std::vector<std::unique_ptr<ContextForSteps>>& move_context,
                          std::vector<std::unique_ptr<Crowd>>& crowds);
 
-  void setup();
-  //inline std::vector<RandomGenerator_t*>& getRng() { return Rng;}
-  IndexType calc_default_local_walkers();
+  IndexType calc_default_local_walkers(IndexType walkers_per_rank);
 
 private:
   int prevSteps;
@@ -92,10 +93,6 @@ private:
   QMCRunType getRunType() { return QMCRunType::VMC_BATCH; }
   ///Ways to set rn constant
   RealType logoffset, logepsilon;
-  ///option to enable/disable drift equation or RN for VMC
-  std::string UseDrift;
-  ///check the run-time environments
-  void resetRun();
   ///copy constructor
   VMCBatched(const VMCBatched&) = delete;
   /// Copy operator (disabled).

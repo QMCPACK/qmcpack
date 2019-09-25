@@ -44,7 +44,7 @@ public:
                              QMCHamiltonian& h,
                              ParticleSetPool& ptclpool,
                              HamiltonianPool& hpool,
-                             WaveFunctionPool& ppool,
+                             WaveFunctionPool& wf_pool,
                              Communicate* comm);
 };
 } // namespace qmcplusplus

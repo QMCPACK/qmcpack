@@ -40,14 +40,14 @@ public:
   {
     const QMCDriverInput& qmcdrv_input;
     const DMCDriverInput& dmcdrv_input;
+    const DriftModifierBase& drift_modifier;
     const MCPopulation& population;
     IndexType recalculate_properties_period;
     IndexType step;
     int block;
     bool recomputing_blocks;
-    const DriftModifierBase& drift_modifier;
-    StateForThread(QMCDriverInput& qmci, DMCDriverInput& vmci, DriftModifierBase& drift_mod, MCPopulation& pop)
-        : qmcdrv_input(qmci), dmcdrv_input(vmci), drift_modifier(drift_mod), population(pop)
+    StateForThread(QMCDriverInput& qmci, DMCDriverInput& dmci, DriftModifierBase& drift_mod, MCPopulation& pop)
+      : qmcdrv_input(qmci), dmcdrv_input(dmci), drift_modifier(drift_mod), population(pop)
     {}
   };
 
@@ -60,7 +60,14 @@ public:
              WaveFunctionPool& ppool,
              Communicate* comm);
 
+  /** The initial number of local walkers
+   *
+   *  Currently substantially the same as VMCBatch so if it doesn't change
+   *  This should be pulled down the QMCDriverNew
+   */
+  IndexType calc_default_local_walkers(IndexType walkers_per_rank);
   bool run();
+  QMCRunType getRunType() { return QMCRunType::DMC_BATCH; }
 
 private:
   DMCDriverInput dmcdriver_input_;

@@ -85,11 +85,6 @@ public:
    */
   std::bitset<QMC_MODE_MAX> qmc_driver_mode_;
 
-  /// whether to allow traces
-  bool allow_traces;
-  /// traces xml
-  xmlNodePtr traces_xml;
-
   /// Constructor.
   QMCDriverNew(QMCDriverInput&& input,
                MCPopulation&& population,
@@ -103,6 +98,10 @@ public:
 
   ///return current step
   inline IndexType current() const { return current_step_; }
+
+    // Do to a work-around currently in QMCDriverNew::QMCDriverNew this should never be true.
+  // I'm leaving this because this is what should happen for vmc.
+  void checkNumCrowdsLTNumThreads();
 
   /** Set the status of the QMCDriver
    * @param aname the root file name
@@ -141,7 +140,10 @@ public:
    *
    * struct WalkerDistribution
    */
-  virtual IndexType calc_default_local_walkers() = 0;
+
+  /** Virtual to deal with VMC and DMC having different default behavior with walker number.
+   */
+  virtual IndexType calc_default_local_walkers(IndexType walkers_per_rank) = 0;
 
   int addObservable(const std::string& aname);
 
@@ -217,8 +219,10 @@ protected:
   QMCDriverInput qmcdriver_input_;
 
   std::vector<std::unique_ptr<Crowd>> crowds_;
+  IndexType walkers_per_rank_;
   IndexType walkers_per_crowd_;
 
+  
   std::string h5_file_root_;
 
   ///branch engine
@@ -346,6 +350,7 @@ public:
 
   int get_num_crowds() { return num_crowds_; }
   void set_num_crowds(int num_crowds, const std::string& reason);
+  void set_walkers_per_rank(int walkers_per_rank, const std::string& reason);
   DriftModifierBase& get_drift_modifier() const { return *drift_modifier_; }
   /** record the state of the block
    * @param block current block

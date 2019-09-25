@@ -38,7 +38,7 @@ public:
       local_walkers_fake_ = local_walkers_fake; }
   // Notice that this is a crap method in that we have to fake all the side effects of the
   // calculation in the child class.
-  IndexType calc_default_local_walkers()
+  IndexType calc_default_local_walkers(IndexType walkers_per_rank)
   {
     walkers_per_crowd_ = walkers_per_crowd_fake_;
     return local_walkers_fake_;
