@@ -38,18 +38,6 @@ public:
         return Approx(lhs).epsilon(m_epsilon) == rhs;
     }
 
-    friend bool operator == (double const& lhs, ComplexApprox const& rhs)
-    {
-        bool is_equal = rhs.approx_compare(lhs, rhs.m_value.real());
-        is_equal &= rhs.approx_compare(0.0, rhs.m_value.imag());
-        return is_equal;
-    }
-
-    friend bool operator == (ComplexApprox const& lhs, double const &rhs)
-    {
-        return operator==( rhs, lhs );
-    }
-
     friend bool operator == (std::complex<double> const& lhs, ComplexApprox const& rhs)
     {
         bool is_equal = rhs.approx_compare(lhs.real(), rhs.m_value.real());
