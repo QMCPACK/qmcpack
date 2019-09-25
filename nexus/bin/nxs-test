@@ -1746,7 +1746,7 @@ def xmlreader():
 
 
 def nexus_imports():
-    import nexus
+    nunit_all()
 #end def nexus_imports
 
 
