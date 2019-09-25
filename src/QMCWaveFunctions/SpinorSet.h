@@ -84,6 +84,13 @@ public:
                                     GradMatrix_t& dlogdet,
                                     ValueMatrix_t& d2logdet) override;
 
+  void evaluate_spin(const ParticleSet& P,
+                        int iat,
+                        ValueVector_t& psi,
+                        ValueVector_t& dpsi,
+                        ValueVector_t& d2psi);
+                   
+
 private:
   std::shared_ptr<SPOSet> spo_up;
   std::shared_ptr<SPOSet> spo_dn;

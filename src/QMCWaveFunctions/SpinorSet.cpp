@@ -61,8 +61,17 @@ void SpinorSet::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
  
   spo_up->evaluate(P,iat,psi_work_up);
   spo_dn->evaluate(P,iat,psi_work_down);
-  
-  psi = psi_work_up+psi_work_down;
+ 
+  RealType s=P.spins[iat];
+
+  RealType coss(0.0),sins(0.0);
+
+  coss=std::cos(s);
+  sins=std::sin(s);
+
+  std::complex<RealType> eis(coss,sins);
+  std::complex<RealType> emis(coss,-sins);
+  psi = eis*psi_work_up+emis*psi_work_down;
   
 }
 
@@ -73,6 +82,26 @@ void SpinorSet::evaluate(const ParticleSet& P,
                       ValueVector_t& d2psi)
 {
 
+  psi_work_up=0.0;
+  psi_work_down=0.0;
+ 
+  spo_up->evaluate(P,iat,psi_work_up,dpsi_work_up,d2psi_work_up);
+  spo_dn->evaluate(P,iat,psi_work_down,dpsi_work_down,d2psi_work_down);
+ 
+  RealType s=P.spins[iat];
+
+  RealType coss(0.0),sins(0.0);
+
+  coss=std::cos(s);
+  sins=std::sin(s);
+
+  std::complex<RealType> eis(coss,sins);
+  std::complex<RealType> emis(coss,-sins);
+
+  psi = eis*psi_work_up+emis*psi_work_down;
+  dpsi = eis*dpsi_work_up+emis*dpsi_work_down;
+  d2psi = eis*d2psi_work_up+emis*d2psi_work_down;
+  
 }
 
 void SpinorSet::evaluate_notranspose(const ParticleSet& P,
@@ -96,10 +125,57 @@ void SpinorSet::evaluate_notranspose(const ParticleSet& P,
   spo_up->evaluate_notranspose(P, first, last, logpsi_work_up, dlogpsi_work_up, d2logpsi_work_up);
   spo_dn->evaluate_notranspose(P, first, last, logpsi_work_down, dlogpsi_work_down, d2logpsi_work_down);
 
-  logdet=logpsi_work_up+logpsi_work_down;
-  dlogdet=dlogpsi_work_up+dlogpsi_work_down;
-  d2logdet=d2logpsi_work_up+d2logpsi_work_down;
+
+  for(int iat=0; iat<nelec; iat++)
+  {
+    RealType s=P.spins[iat];
+
+    RealType coss(0.0),sins(0.0);
+
+    coss=std::cos(s);
+    sins=std::sin(s);
+
+    std::complex<RealType> eis(coss,sins);
+    std::complex<RealType> emis(coss,-sins);
+
+    for(int no=0; no<OrbitalSetSize; no++)
+    {
+      logdet(iat,no)=eis*logpsi_work_up(iat,no)+emis*logpsi_work_down(iat,no);
+      dlogdet(iat,no)=eis*dlogpsi_work_up(iat,no)+emis*dlogpsi_work_down(iat,no);
+      d2logdet(iat,no)=eis*d2logpsi_work_up(iat,no)+emis*d2logpsi_work_down(iat,no);
+    }
+  }
    
+}
+
+
+void SpinorSet::evaluate_spin(const ParticleSet& P,
+                        int iat,
+                        ValueVector_t& psi,
+                        ValueVector_t& dpsi,
+                        ValueVector_t& d2psi)
+{
+  psi_work_up=0.0;
+  psi_work_down=0.0;
+ 
+  spo_up->evaluate(P,iat,psi_work_up);
+  spo_dn->evaluate(P,iat,psi_work_down);
+ 
+  RealType s=P.spins[iat];
+
+  RealType coss(0.0),sins(0.0);
+
+  coss=std::cos(s);
+  sins=std::sin(s);
+
+  std::complex<RealType> eis(coss,sins);
+  std::complex<RealType> emis(coss,-sins);
+  std::complex<RealType> eye(0,1.0);
+
+  psi = eis*psi_work_up+emis*psi_work_down;
+  dpsi = eye*(eis*psi_work_up - emis*psi_work_down);
+  d2psi = -psi;
+  
 }
 
 }
