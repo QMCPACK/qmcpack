@@ -105,7 +105,6 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
   twf_reject_list.reserve(num_walkers);
 
   // up and down electrons are "species" within qmpack
-
   for (int ig = 0; ig < step_context.get_num_groups(); ++ig) //loop over species
   {
     RealType tauovermass = sft.qmcdrv_input.get_tau() * sft.population.get_ptclgrp_inv_mass()[ig];

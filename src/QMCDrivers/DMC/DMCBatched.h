@@ -30,7 +30,6 @@ public:
   using FullPrecRealType  = QMCTraits::FullPrecRealType;
   using PosType           = QMCTraits::PosType;
   using ParticlePositions = PtclOnLatticeTraits::ParticlePos_t;
-
   /** To avoid 10's of arguments to runDMCStep
    *
    *  There should be a division between const input to runVMCStep
@@ -66,7 +65,20 @@ public:
    *  This should be pulled down the QMCDriverNew
    */
   IndexType calc_default_local_walkers(IndexType walkers_per_rank);
+  void resetUpdateEngines();
   bool run();
+
+  static void advanceWalkers(const StateForThread& sft, Crowd& crowd, DriverTimers& timers, ContextForSteps& move_context, bool recompute);
+
+  // This is the task body executed at crowd scope
+  // it does not have access to object members by design
+  static void runDMCStep(int crowd_id,
+                         const StateForThread& sft,
+                         DriverTimers& timers,
+                         std::vector<std::unique_ptr<ContextForSteps>>& move_context,
+                         std::vector<std::unique_ptr<Crowd>>& crowds);
+
+
   QMCRunType getRunType() { return QMCRunType::DMC_BATCH; }
 
 private:

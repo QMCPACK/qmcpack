@@ -29,7 +29,11 @@ public:
   DMCDriverInput(int walkers_per_rank);
   void readXML(xmlNodePtr xml_input);
 
-protected:
+  bool get_reconfiguration() const { return reconfiguration_; }
+  IndexType get_mover_max_age() const { return mover_max_age_; }
+  IndexType get_branch_interval() const { return branch_interval_; }
+
+private:
   /** @ingroup Parameters for DMC Driver
    *  @{
    *  
@@ -37,21 +41,19 @@ protected:
    *  there is are code_generation tools in QMCPACK_ROOT/utils/code_tools
    */
   ///Interval between branching
-  IndexType BranchInterval = -1;
+  IndexType branch_interval_ = 1;
   ///input std::string to determine kill walkers or not
   std::string KillWalker;
   ///input std::string to determine swap walkers among mpi processors
   std::string SwapWalkers;
-
   /// reconfiguration flag
-  bool reconfiguration = true;
+  bool reconfiguration_ = true;
   ///input std::string to determine to use nonlocal move
   std::string NonLocalMove;
   ///input std::string to use fast gradient
   std::string UseFastGrad;
   ///input to control maximum age allowed for walkers.
-  IndexType mover_MaxAge;
-
+  IndexType mover_max_age_ = 0;
 public:
 
   friend std::ostream& operator<<(std::ostream& o_stream, const DMCDriverInput& vmci);

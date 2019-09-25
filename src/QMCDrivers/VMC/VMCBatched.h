@@ -81,7 +81,7 @@ public:
   static void runVMCStep(int crowd_id,
                          const StateForThread& sft,
                          DriverTimers& timers,
-                         std::vector<std::unique_ptr<ContextForSteps>>& move_context,
+                         std::vector<std::unique_ptr<ContextForSteps>>& context_for_steps,
                          std::vector<std::unique_ptr<Crowd>>& crowds);
 
   IndexType calc_default_local_walkers(IndexType walkers_per_rank);

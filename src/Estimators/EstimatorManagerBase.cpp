@@ -479,6 +479,21 @@ void EstimatorManagerBase::getCurrentStatistics(MCWalkerConfiguration& W, RealTy
   var  = tmp[1] / tmp[2] - eavg * eavg;
 }
 
+void EstimatorManagerBase::getCurrentStatistics(const int global_walkers, RefVector<MCPWalker>& walkers, RealType& eavg, RealType& var)
+{
+  LocalEnergyOnlyEstimator energynow;
+  energynow.clear();
+  energynow.accumulate(global_walkers, walkers, 1.0);
+  std::vector<RealType> tmp(3);
+  tmp[0] = energynow.scalars[0].result();
+  tmp[1] = energynow.scalars[0].result2();
+  tmp[2] = energynow.scalars[0].count();
+  myComm->allreduce(tmp);
+  eavg = tmp[0] / tmp[2];
+  var  = tmp[1] / tmp[2] - eavg * eavg;
+}
+
+
 EstimatorManagerBase::EstimatorType* EstimatorManagerBase::getMainEstimator()
 {
   if (MainEstimator == 0)
