@@ -22,7 +22,7 @@
 #include "QMCWaveFunctions/WaveFunctionFactory.h"
 #include "QMCWaveFunctions/Jastrow/JastrowBuilder.h"
 #include "QMCWaveFunctions/Fermion/SlaterDetBuilder.h"
-#include "QMCWaveFunctions/IonOrbitalBuilder.h"
+#include "QMCWaveFunctions/LatticeGaussianProductBuilder.h"
 #include "QMCWaveFunctions/ExampleHeBuilder.h"
 
 #if !defined(QMC_COMPLEX)
@@ -137,7 +137,7 @@ bool WaveFunctionFactory::build(xmlNodePtr cur, bool buildtree)
     }
     else if (cname == WaveFunctionComponentBuilder::ionorb_tag)
     {
-      IonOrbitalBuilder* builder = new IonOrbitalBuilder(*targetPtcl, *targetPsi, ptclPool);
+      LatticeGaussianProductBuilder* builder = new LatticeGaussianProductBuilder(*targetPtcl, *targetPsi, ptclPool);
       success                    = builder->put(cur);
       addNode(builder, cur);
     }
