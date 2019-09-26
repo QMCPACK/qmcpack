@@ -21,12 +21,12 @@ namespace qmcplusplus
    */
 VMCBatched::VMCBatched(QMCDriverInput&& qmcdriver_input,
                        VMCDriverInput&& input,
-                       MCPopulation&& pop,
+                       MCPopulation& pop,
                        TrialWaveFunction& psi,
                        QMCHamiltonian& h,
                        WaveFunctionPool& ppool,
                        Communicate* comm)
-    : QMCDriverNew(std::move(qmcdriver_input), std::move(pop), psi, h, ppool, "VMCBatched::", comm),
+    : QMCDriverNew(std::move(qmcdriver_input), pop, psi, h, ppool, "VMCBatched::", comm),
       vmcdriver_input_(input)
 {
   QMCType = "VMCBatched";

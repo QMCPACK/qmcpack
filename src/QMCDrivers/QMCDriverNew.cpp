@@ -46,7 +46,7 @@ namespace qmcplusplus
  *  masquerading as a C++ object.
  */
 QMCDriverNew::QMCDriverNew(QMCDriverInput&& input,
-                           MCPopulation&& population,
+                           MCPopulation& population,
                            TrialWaveFunction& psi,
                            QMCHamiltonian& h,
                            WaveFunctionPool& ppool,
@@ -55,7 +55,7 @@ QMCDriverNew::QMCDriverNew(QMCDriverInput&& input,
     : MPIObjectBase(comm),
       qmcdriver_input_(input),
       branch_engine_(nullptr),
-      population_(std::move(population)),
+      population_(population),
       Psi(psi),
       H(h),
       psiPool(ppool),

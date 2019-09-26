@@ -90,7 +90,7 @@ public:
   {}
   MCPopulation(MCPopulation&&) = default;
   MCPopulation& operator=(MCPopulation&&) = default;
-  
+
   void createWalkers();
   void createWalkers(IndexType num_walkers);
   void createWalkers(int num_crowds_,

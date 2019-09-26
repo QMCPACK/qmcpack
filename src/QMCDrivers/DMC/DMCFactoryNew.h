@@ -18,6 +18,8 @@
 
 namespace qmcplusplus
 {
+class ParticleSetPool;
+class HamiltonianPool;
 class MCPopulation;
   
 class DMCFactoryNew
@@ -31,7 +33,7 @@ private:
 public:
   DMCFactoryNew(xmlNodePtr cur, const int dmc_mode, const int qmc_counter) : dmc_mode_(dmc_mode), input_node_(cur), qmc_counter_(qmc_counter) {}
 
-  QMCDriverInterface* create(MCPopulation&& pop,
+  QMCDriverInterface* create(MCPopulation& pop,
                              TrialWaveFunction& psi,
                              QMCHamiltonian& h,
                              WaveFunctionPool& wf_pool,

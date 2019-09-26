@@ -86,7 +86,7 @@ public:
 
   /// Constructor.
   QMCDriverNew(QMCDriverInput&& input,
-               MCPopulation&& population,
+               MCPopulation& population,
                TrialWaveFunction& psi,
                QMCHamiltonian& h,
                WaveFunctionPool& ppool,
@@ -163,8 +163,6 @@ public:
   unsigned long getDriverMode() { return qmc_driver_mode_.to_ulong(); }
   IndexType get_walkers_per_crowd() const { return walkers_per_crowd_; }
   IndexType get_living_walkers() const { return population_.get_active_walkers(); }
-
-  MCPopulation&& releasePopulation() { return std::move(population_); }
 
   /** @ingroup Legacy interface to be dropped
    *  @{
@@ -263,7 +261,7 @@ protected:
 
 
   ///the entire (or on node) walker population
-  MCPopulation population_;
+  MCPopulation& population_;
 
   ///trial function
   TrialWaveFunction& Psi;
