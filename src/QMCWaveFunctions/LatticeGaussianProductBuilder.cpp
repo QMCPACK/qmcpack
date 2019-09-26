@@ -12,17 +12,17 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCWaveFunctions/IonOrbitalBuilder.h"
-#include "QMCWaveFunctions/IonOrbital.h"
+#include "QMCWaveFunctions/LatticeGaussianProductBuilder.h"
+#include "QMCWaveFunctions/LatticeGaussianProduct.h"
 #include "OhmmsData/AttributeSet.h"
 
 namespace qmcplusplus
 {
-IonOrbitalBuilder::IonOrbitalBuilder(ParticleSet& p, TrialWaveFunction& psi, PtclPoolType& psets)
+LatticeGaussianProductBuilder::LatticeGaussianProductBuilder(ParticleSet& p, TrialWaveFunction& psi, PtclPoolType& psets)
     : WaveFunctionComponentBuilder(p, psi), ptclPool(psets)
 {}
 
-bool IonOrbitalBuilder::put(xmlNodePtr cur)
+bool LatticeGaussianProductBuilder::put(xmlNodePtr cur)
 {
   ParticleSet& p = targetPtcl;
   // initialize widths to zero; if no user input, then abort
@@ -34,7 +34,7 @@ bool IonOrbitalBuilder::put(xmlNodePtr cur)
   oAttrib.put(cur);
   if (nameOpt == "")
   {
-    app_warning() << "  IonOrbitalBuilder::put does not have name " << std::endl;
+    app_warning() << "  LatticeGaussianProductBuilder::put does not have name " << std::endl;
   }
   std::map<std::string, ParticleSet*>::iterator pa_it(ptclPool.find(sourceOpt));
   if (pa_it == ptclPool.end())
@@ -42,7 +42,7 @@ bool IonOrbitalBuilder::put(xmlNodePtr cur)
     app_error() << "Could not file source ParticleSet " << sourceOpt << " for ion wave function.\n";
   }
   ParticleSet* sourcePtcl = (*pa_it).second;
-  IonOrbital* orb         = new IonOrbital(*sourcePtcl, targetPtcl);
+  LatticeGaussianProduct* orb         = new LatticeGaussianProduct(*sourcePtcl, targetPtcl);
   orb->ParticleAlpha.resize(targetPtcl.getTotalNum());
   orb->ParticleCenter.resize(targetPtcl.getTotalNum());
   int num_nonzero = 0;
