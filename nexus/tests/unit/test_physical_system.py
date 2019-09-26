@@ -4,38 +4,7 @@ import numpy as np
 import testing
 from testing import value_eq,object_eq,object_diff,print_diff
 
-    
-
-def example_structure_h4():
-    # hydrogen at rs=1.31
-    from structure import Structure
-    natom = 4
-    alat = 3.3521298178767225
-    axes = alat*np.eye(3)
-    elem = ['H']*natom
-    pos = np.array([
-      [0, 0, 0], [alat/2., 0, 0], [0, alat/2, 0], [0, 0, alat/2]
-    ])
-    s1 = Structure(axes=axes, elem=elem, pos=pos, units='B')
-    return s1
-#end def example_structure_h4
-
-
-
-def structure_diff(s1,s2):
-    keys = ('units','elem','pos','axes','kpoints','kweights','kaxes')
-    o1 = s1.obj(keys)
-    o2 = s2.obj(keys)
-    return object_diff(o1,o2,full=True)
-#end def structure_diff
-
-
-def structure_same(s1,s2):
-    keys = ('units','elem','pos','axes','kpoints','kweights','kaxes')
-    o1 = s1.obj(keys)
-    o2 = s2.obj(keys)
-    return object_eq(o1,o2)
-#end def structure_same
+from test_structure import structure_same
 
 
 def system_same(s1,s2,pseudized=True,tiled=False):
@@ -535,6 +504,7 @@ def test_tile():
 
 
 def test_kf_rpa():
+    from test_structure import example_structure_h4
     from physical_system import generate_physical_system
     s1 = example_structure_h4()
     ps = generate_physical_system(

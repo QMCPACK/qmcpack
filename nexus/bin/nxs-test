@@ -2593,7 +2593,7 @@ def structure():
 
     nunit('rwigner')
 
-    nunit('cell_constants')
+    nunit('volume')
 
     nunit('min_image_distances')
 
