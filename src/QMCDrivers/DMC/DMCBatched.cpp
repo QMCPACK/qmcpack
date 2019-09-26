@@ -27,8 +27,7 @@ DMCBatched::DMCBatched(QMCDriverInput&& qmcdriver_input,
                        QMCHamiltonian& h,
                        WaveFunctionPool& wf_pool,
                        Communicate* comm)
-    : QMCDriverNew(std::move(qmcdriver_input), pop, psi, h, wf_pool, "DMCBatched::", comm),
-      dmcdriver_input_(input)
+    : QMCDriverNew(std::move(qmcdriver_input), pop, psi, h, wf_pool, "DMCBatched::", comm), dmcdriver_input_(input)
 {
   QMCType = "DMCBatched";
 }
@@ -294,41 +293,43 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
     }
   }
 
-  timers.buffer_timer.start();
-  TrialWaveFunction::flex_updateBuffer(moved.walker_twfs, moved.walker_elecs, moved.walker_mcp_wfbuffers);
-
-  ParticleSet::flex_saveWalker(moved.walker_elecs, moved.walkers);
-  timers.buffer_timer.stop();
-  timers.hamiltonian_timer.start();
-  // std::vector<QMCHamiltonian::FullPrecRealType> local_energies(QMCHamiltonian::flex_evaluate(moved.walker_hamiltonians, moved.walker_elecs));
-  std::vector<QMCHamiltonian::FullPrecRealType> local_energies(
-      QMCHamiltonian::flex_evaluateWithToperator(moved.walker_hamiltonians, moved.walker_elecs));
-  timers.hamiltonian_timer.stop();
-
-  auto resetSigNLocalEnergy = [](MCPWalker& walker, TrialWaveFunction& twf, auto& local_energy) {
-    walker.resetProperty(twf.getLogPsi(), twf.getPhase(), local_energy);
-  };
-  for (int iw = 0; iw < moved.walkers.size(); ++iw)
+  if (moved.walkers.size() > 0)
   {
-    resetSigNLocalEnergy(moved.walkers[iw], moved.walker_twfs[iw], local_energies[iw]);
-    moved.walkers[iw].get().Weight *=
-        sft.branch_engine.branchWeightBare(moved.new_energies[iw], moved.old_energies[iw]);
+    timers.buffer_timer.start();
+    TrialWaveFunction::flex_updateBuffer(moved.walker_twfs, moved.walker_elecs, moved.walker_mcp_wfbuffers);
+
+    ParticleSet::flex_saveWalker(moved.walker_elecs, moved.walkers);
+    timers.buffer_timer.stop();
+    timers.hamiltonian_timer.start();
+    // std::vector<QMCHamiltonian::FullPrecRealType> local_energies(QMCHamiltonian::flex_evaluate(moved.walker_hamiltonians, moved.walker_elecs));
+    std::vector<QMCHamiltonian::FullPrecRealType> local_energies(
+        QMCHamiltonian::flex_evaluateWithToperator(moved.walker_hamiltonians, moved.walker_elecs));
+    timers.hamiltonian_timer.stop();
+
+    auto resetSigNLocalEnergy = [](MCPWalker& walker, TrialWaveFunction& twf, auto& local_energy) {
+      walker.resetProperty(twf.getLogPsi(), twf.getPhase(), local_energy);
+    };
+    for (int iw = 0; iw < moved.walkers.size(); ++iw)
+    {
+      resetSigNLocalEnergy(moved.walkers[iw], moved.walker_twfs[iw], local_energies[iw]);
+      moved.walkers[iw].get().Weight *=
+          sft.branch_engine.branchWeightBare(moved.new_energies[iw], moved.old_energies[iw]);
+    }
+
+    timers.collectables_timer.start();
+    auto evaluateNonPhysicalHamiltonianElements = [](QMCHamiltonian& ham, ParticleSet& pset, MCPWalker& walker) {
+      ham.auxHevaluate(pset, walker);
+    };
+    for (int iw = 0; iw < moved.walkers.size(); ++iw)
+      evaluateNonPhysicalHamiltonianElements(moved.walker_hamiltonians[iw], moved.walker_elecs[iw], moved.walkers[iw]);
+
+    auto savePropertiesIntoWalker = [](QMCHamiltonian& ham, MCPWalker& walker) {
+      ham.saveProperty(walker.getPropertyBase());
+    };
+    for (int iw = 0; iw < moved.walkers.size(); ++iw)
+      savePropertiesIntoWalker(moved.walker_hamiltonians[iw], moved.walkers[iw]);
+    timers.collectables_timer.stop();
   }
-
-  timers.collectables_timer.start();
-  auto evaluateNonPhysicalHamiltonianElements = [](QMCHamiltonian& ham, ParticleSet& pset, MCPWalker& walker) {
-    ham.auxHevaluate(pset, walker);
-  };
-  for (int iw = 0; iw < moved.walkers.size(); ++iw)
-    evaluateNonPhysicalHamiltonianElements(moved.walker_hamiltonians[iw], moved.walker_elecs[iw], moved.walkers[iw]);
-
-  auto savePropertiesIntoWalker = [](QMCHamiltonian& ham, MCPWalker& walker) {
-    ham.saveProperty(walker.getPropertyBase());
-  };
-  for (int iw = 0; iw < moved.walkers.size(); ++iw)
-    savePropertiesIntoWalker(moved.walker_hamiltonians[iw], moved.walkers[iw]);
-  timers.collectables_timer.stop();
-
   for (int iw = 0; iw < stalled.walkers.size(); ++iw)
   {
     MCPWalker& stalled_walker = stalled.walkers[iw];
@@ -367,22 +368,25 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
     }
   }
 
-  DMCPerWalkerRefs moved_nonlocal(num_moved_nonlocal);
-
-  for (int iw = 0; iw < moved.walkers.size(); ++iw)
+  if (num_moved_nonlocal > 0)
   {
-    if (walker_non_local_moves_accepted[iw] > 0)
+    DMCPerWalkerRefs moved_nonlocal(num_moved_nonlocal);
+
+    for (int iw = 0; iw < moved.walkers.size(); ++iw)
     {
-      moved_nonlocal.walkers.push_back(walkers[iw]);
-      moved_nonlocal.walker_twfs.push_back(walker_twfs[iw]);
-      moved_nonlocal.walker_elecs.push_back(walker_elecs[iw]);
-      moved_nonlocal.walker_mcp_wfbuffers.push_back(walker_mcp_wfbuffers[iw]);
+      if (walker_non_local_moves_accepted[iw] > 0)
+      {
+        moved_nonlocal.walkers.push_back(walkers[iw]);
+        moved_nonlocal.walker_twfs.push_back(walker_twfs[iw]);
+        moved_nonlocal.walker_elecs.push_back(walker_elecs[iw]);
+        moved_nonlocal.walker_mcp_wfbuffers.push_back(walker_mcp_wfbuffers[iw]);
+      }
     }
+    TrialWaveFunction::flex_updateBuffer(moved_nonlocal.walker_twfs, moved_nonlocal.walker_elecs,
+                                         moved_nonlocal.walker_mcp_wfbuffers);
+    ParticleSet::flex_saveWalker(moved_nonlocal.walker_elecs, moved_nonlocal.walkers);
+    crowd.incNonlocalAccept(total_moved_nonlocal);
   }
-  TrialWaveFunction::flex_updateBuffer(moved_nonlocal.walker_twfs, moved_nonlocal.walker_elecs,
-                                       moved_nonlocal.walker_mcp_wfbuffers);
-  ParticleSet::flex_saveWalker(moved_nonlocal.walker_elecs, moved_nonlocal.walkers);
-  crowd.incNonlocalAccept(total_moved_nonlocal);
   setMultiplicities(sft.dmcdrv_input, walkers, step_context.get_random_gen());
 }
 
@@ -437,6 +441,13 @@ bool DMCBatched::run()
 
   int sample = 0;
   RunTimeControl runtimeControl(RunTimeManager, MaxCPUSecs);
+
+  { // walker initialization
+    ScopedTimer local_timer(&(timers_.init_walkers_timer));
+    TasksOneToOne<> section_start_task(num_crowds_);
+    section_start_task(initialLogEvaluation, std::ref(crowds_));
+  }
+
 
   TasksOneToOne<> crowd_task(num_crowds_);
 
