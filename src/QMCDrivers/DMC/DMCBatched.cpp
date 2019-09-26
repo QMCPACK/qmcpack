@@ -469,6 +469,8 @@ bool DMCBatched::run()
       ScopedTimer local_timer(&(timers_.run_steps_timer));
       dmc_state.step = step;
       crowd_task(runDMCStep, dmc_state, timers_, std::ref(step_contexts_), std::ref(crowds_));
+      branch_engine_->branch(step, population_);
+      
     }
   }
   return false;

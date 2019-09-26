@@ -365,6 +365,12 @@ struct SimpleFixedNodeBranch : public QMCTraits
    */
   void branch(int iter, MCWalkerConfiguration& w);
 
+  /** perform branching
+   * @param iter current step
+   * @param w Walker configuration
+   */
+  void branch(int iter, MCPopulation& population);
+
   /** update RMC counters and running averages.
    * @param iter the iteration
    * @param w the walker ensemble
