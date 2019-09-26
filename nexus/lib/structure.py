@@ -1515,13 +1515,13 @@ class Structure(Sobj):
 
 
     # test needed
-    def rotate(self,r,rp=None,check=True):
+    def rotate(self,r,rp=None,passive=False,degrees=False,check=True):
         if rp is not None:
-            latttice_dirmap = dict(a1=0,a2=1,a3=2)
+            lattice_dirmap = dict(a1=0,a2=1,a3=2)
             cartesian_dirmap = dict(x=[1,0,0],y=[0,1,0],z=[0,0,1])
             if isinstance(r,str): 
                 if r[0]=='a': # r= 'a1', 'a2', or 'a3'
-                    r = self.axes[lattice_dirmap[r]]/np.linalg.norm(self.axes[lattice_dirmap[r]])
+                    r = self.axes[lattice_dirmap[r]]
                 else: # r= 'x', 'y', or 'z'
                     r = cartesian_dirmap[r]
                 #end if
@@ -1529,29 +1529,36 @@ class Structure(Sobj):
                 r = array(r,dtype=float)
             #end if
             if isinstance(rp,(int,float)):
-                theta = float(rp)
+                if degrees:
+                    theta = float(rp)*np.pi/180.0
+                else:
+                    theta = float(rp)
             else:
                 if isinstance(rp,str):
-                    if rp[0]=='a': # r= 'a1', 'a2', or 'a3'
-                        rp = self.axes[lattice_dirmap[r]]/np.linalg.norm(self.axes[lattice_dirmap[r]])
-                    else: # r= 'x', 'y', or 'z'
-                        rp = cartesian_dirmap[r]
+                    if rp[0]=='a': # rp= 'a1', 'a2', or 'a3'
+                        rp = self.axes[lattice_dirmap[rp]]
+                    else: # rp= 'x', 'y', or 'z'
+                        rp = cartesian_dirmap[rp]
                     #end if
                 else:
                     rp = array(rp,dtype=float)
                 #end if
                 # go from r,rp to r,theta
-                r = np.cross(r,rp)/np.linalg.norm(np.cross(r,rp))
                 theta = np.arccos(np.dot(r,rp)/np.linalg.norm(r)/np.linalg.norm(rp))
+                r = np.cross(r,rp)/np.linalg.norm(np.cross(r,rp))
             #end if
             # make R from r,theta
             R = [[     np.cos(theta)+r[0]**2.0*(1.0-np.cos(theta)), r[0]*r[1]*(1.0-np.cos(theta))-r[2]*np.sin(theta), r[0]*r[2]*(1.0-np.cos(theta))+r[1]*np.sin(theta)],
                  [r[1]*r[0]*(1.0-np.cos(theta))+r[2]*np.sin(theta),      np.cos(theta)+r[1]**2.0*(1.0-np.cos(theta)), r[1]*r[2]*(1.0-np.cos(theta))-r[0]*np.sin(theta)],
                  [r[2]*r[0]*(1.0-np.cos(theta))-r[1]*np.sin(theta), r[2]*r[1]*(1.0-np.cos(theta))+r[0]*np.sin(theta),      np.cos(theta)+r[2]**2.0*(1.0-np.cos(theta))]]
+        else:
+            R = r
         #end if
         R = array(R,dtype=float)
+        if passive:
+            R = R.T
         if check:
-            if not np.allclose(dot(R,R.T),identity(R.size)):
+            if not np.allclose(dot(R,R.T),identity(len(R))):
                 self.error('the function, rotate, must be given a unitary matrix')
             #end if
         #end if
