@@ -38,6 +38,60 @@ def test_import():
 
 
 
+def test_cpu_count():
+    from machines import cpu_count
+    assert(isinstance(cpu_count(),int))
+#end def test_cpu_count
+
+
+
+def test_options():
+    from generic import obj
+    from machines import Options
+
+    # empty init
+    o = Options()
+    assert(len(o)==0)
+
+    # filled init
+    inputs = dict(
+        n = '-n 1',
+        d = '-d 2',
+        exe = '--exe',
+        )
+    oi = Options(**inputs)
+    assert(oi.to_dict()==inputs)
+
+    # add
+    oa = Options()
+    oa.add(**inputs)
+    assert(object_eq(oa,oi))
+
+    # read
+    opts = '-a -b 1 -c=2 --dname="0 1 2" --evar -fval -gval other --hval'
+    ref = obj(
+        a     = '-a',
+        b     = '-b 1',
+        c     = '-c=2',
+        dname = '--dname="0 1 2"',
+        evar  = '--evar',
+        fval  = '-fval',
+        gval  = '-gval other',
+        hval  = '--hval',
+        )
+    o = Options()
+    o.read(opts)
+    assert(object_eq(o.to_obj(),ref))
+
+    # write
+    opts_write = o.write()
+    o2 = Options()
+    o2.read(opts_write)
+    assert(object_eq(o2.to_obj(),ref))
+#end def test_options
+
+
+
 def test_machine_virtuals():
     from machines import Machine
     arg0 = None

@@ -57,7 +57,7 @@ from imp import load_source
 
 
 import re,subprocess
-def  cpu_count():
+def cpu_count():
     """ Number of virtual or physical CPUs on this system, i.e.
     user/real as output by time(1) when called with an optimally scaling
     userspace-only program"""
@@ -90,6 +90,11 @@ class Options(DevBase):
     #end def __init__
 
 
+    def add(self,**kwargs):
+        self.transfer_from(kwargs)
+    #end def add
+
+
     def read(self,options):
         nopts = 0
         intext = False
@@ -117,11 +122,6 @@ class Options(DevBase):
             self[name]=opt
         #end if
     #end def read
-
-
-    def add(self,**kwargs):
-        self.transfer_from(kwargs)
-    #end def add
 
 
     def write(self):
