@@ -135,7 +135,7 @@ class Options(DevBase):
 
 
 
-job_defaults = obj(
+job_defaults_assign = obj(
     name               = 'jobname',
     type               = None,
     directory          = None,
@@ -159,7 +159,6 @@ job_defaults = obj(
     hyperthreads       = None,
     ppn                = None,
     gpus               = None, # number of gpus per node
-    compiler           = None,
     serial             = False, # run job serially, no mpi
     local              = False, # run job locally, no queue submission
     days               = 0,
@@ -183,7 +182,10 @@ job_defaults = obj(
     default_cpus_per_task = False, # optionally bypass typical nexus processing for supermucng
     ntasks_per_core    = None,
     cpus_per_task      = None,
+    )
+
     # these are not assigned directly
+job_defaults_nonassign = obj(
     fake               = False,
     app                = None, # name of/path to application
     machine            = None,
@@ -192,7 +194,10 @@ job_defaults = obj(
     app_options        = None,
     run_options        = None,
     sub_options        = None,
+    skip_machine       = False,
     )
+
+job_defaults = obj(job_defaults_assign,job_defaults_nonassign)
 
 class Job(NexusCore):
 
@@ -208,12 +213,6 @@ class Job(NexusCore):
     state_names = states.inverse()
 
     job_count = 0
-
-
-    intel_compilers = set(['intel','icc','icpc','ifort'])
-    gnu_compilers   = set(['gnu','gcc','g++','gfortran'])
-    pgi_compilers   = set(['pgi'])
-    cray_compilers  = set(['cray'])
 
 
     @staticmethod
@@ -247,15 +246,16 @@ class Job(NexusCore):
         kw.set_optional(**job_defaults)
 
         # extract keywords not assigned
-        app         = kw.delete('app')
-        machine     = kw.delete('machine')
-        options     = kw.delete('options')
-        app_flags   = kw.delete('app_flags')
-        app_options = kw.delete('app_options')
-        run_options = kw.delete('run_options')
-        sub_options = kw.delete('sub_options')
-        env         = kw.delete('env')
-        fake        = kw.delete('fake')
+        app          = kw.delete('app')
+        machine      = kw.delete('machine')
+        options      = kw.delete('options')
+        app_flags    = kw.delete('app_flags')
+        app_options  = kw.delete('app_options')
+        run_options  = kw.delete('run_options')
+        sub_options  = kw.delete('sub_options')
+        env          = kw.delete('env')
+        fake         = kw.delete('fake')
+        skip_machine = kw.delete('skip_machine')
 
         # assign keywords
         self.set(**kw)
@@ -303,37 +303,30 @@ class Job(NexusCore):
         if self.app_props is None:
             self.app_props = []
         #end if
-        if self.compiler is not None:
-            if self.compiler in self.intel_compilers:
-                self.compiler = 'intel'
-            elif self.compiler in self.gnu_compilers:
-                self.compiler = 'gnu'
-            elif self.compiler in self.pgi_compilers:
-                self.compiler = 'pgi'
-            elif self.compiler in self.cray_compilers:
-                self.compiler = 'cray'
-            #end if
-        #end if
 
         if self.serial:
             self.cores = 1
             self.nodes = None
         #end if
 
-        if machine is not None:
+        if skip_machine:
             self.machine = machine
-        #end if
-        if env is not None:
-            self.set_environment(**env)
-        #end if
-        #check that the machine exists and have it complete the job info
-        self.process()
+        else:
+            if machine is not None:
+                self.machine = machine
+            #end if
+            if env is not None:
+                self.set_environment(**env)
+            #end if
+            #check that the machine exists and have it complete the job info
+            self.process()
 
-        machine = self.get_machine() 
-        self.batch_mode = machine.in_batch_mode()
+            machine = self.get_machine() 
+            self.batch_mode = machine.in_batch_mode()
 
-        if self.bundled_jobs is not None and not machine.batch_capable:
-            self.error('running batched/bundled jobs on {0} is either not possible or not yet implemented, sorry.'.format(machine.name))
+            if self.bundled_jobs is not None and not machine.batch_capable:
+                self.error('running batched/bundled jobs on {0} is either not possible or not yet implemented, sorry.'.format(machine.name))
+            #end if
         #end if
 
         self.normalize_time()
@@ -353,6 +346,7 @@ class Job(NexusCore):
     #end def process
 
 
+    # test needed
     def process_options(self,machine=None):
         if machine is None:
             machine = self.get_machine()
@@ -361,6 +355,7 @@ class Job(NexusCore):
     #end def process_options
 
 
+    # test needed
     def initialize(self,sim):
         self.set_id()
         self.identifier = sim.identifier
@@ -420,6 +415,7 @@ class Job(NexusCore):
     #end def initialize
 
 
+    # test needed
     def renew_app_command(self,sim):
         if not self.user_app_command:
             self.app_command = sim.app_command()
@@ -432,6 +428,7 @@ class Job(NexusCore):
     #end def set_id
 
 
+    # remove?
     def set_processes(self):
         if self.processes is None:
             self.error('processes should have been set before now\ncontact the developers and have them fix this','Developer')
@@ -462,10 +459,6 @@ class Job(NexusCore):
 
     def divert_out_err(self):
         self.identifier += '_divert'
-        #prefix,ext = self.outfile.split('.',1)
-        #self.outfile = prefix+'_divert.'+ext
-        #prefix,ext = self.errfile.split('.',1)
-        #self.errfile = prefix+'_divert.'+ext
     #end def divert_out_err
 
 
@@ -498,28 +491,22 @@ class Job(NexusCore):
     #end if
 
 
+    # remove?
     def determine_end_status(self,status):
         if not nexus_core.generate_only:
             self.successful = False # not really implemented yet
-            #errfile = os.path.join(self.directory,self.errfile)
-            #if os.path.exists(errfile):
-            #    fobj = open(errfile,'r')
-            #    errors = fobj.read()
-            #    fobj.close()
-            #    if errors.strip()=='':
-            #        self.successful=True
-            #    #end if
-            ##end if
         #end if
     #end def determine_end_status
 
 
+    # test needed
     def write(self,file=False):
         machine = self.get_machine()
         return machine.write_job(self,file=file)
     #end def write
 
 
+    # test needed
     def submit(self):
         machine = self.get_machine()
         machine.add_job(self)
@@ -527,6 +514,7 @@ class Job(NexusCore):
     #end def submit
 
 
+    # test needed
     def reenter_queue(self):
         machine = self.get_machine()
         machine.requeue_job(self)

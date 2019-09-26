@@ -3,7 +3,9 @@ import testing
 from testing import value_eq,object_eq,failed,TestFailed
 
 
+all_machines = []
 machines_data = dict()
+
 
 def get_machine_data():
     from generic import obj
@@ -27,6 +29,20 @@ def get_machine_data():
     sc = machines_data['sc']
     return ws,sc
 #end def get_machine_data
+
+
+def get_all_machines():
+    if len(all_machines)==0:
+        workstations,supercomputers = get_machine_data()
+        for m in workstations:
+            all_machines.append(m)
+        #end for
+        for m in supercomputers:
+            all_machines.append(m)
+        #end for
+    #end if
+    return all_machines
+#end def get_all_machines
 
 
 
@@ -89,6 +105,185 @@ def test_options():
     o2.read(opts_write)
     assert(object_eq(o2.to_obj(),ref))
 #end def test_options
+
+
+
+def test_job_init():
+    from machines import Job,job
+    from machines import job_defaults
+    from machines import job_defaults_assign,job_defaults_nonassign
+
+    jda  = set(job_defaults_assign.keys())
+    jdna = set(job_defaults_nonassign.keys())
+    jd   = set(job_defaults.keys())
+    assert('nodes' in jda)
+    assert('app' in jdna)
+    assert(len(jda&jdna)==0)
+    assert(jd==(jda|jdna))
+
+    assert(id(job)==id(Job))
+
+    # empty init should fail w/o implicit or explicit machine
+    try:
+        job()
+        raise TestFailed
+    except TestFailed:
+        failed()
+    except:
+        None
+    #end try
+
+    # empty init should succeed if machine is bypassed
+    j = job(skip_machine=True)
+
+    assert(len(jda-set(j.keys()))==0)
+    assert(len(j.app_props)==0)
+    j.app_props = None # set back to default
+    assert(object_eq(j.obj(*jda),job_defaults_assign))
+#end def test_job_init
+
+
+
+def test_job_time():
+    from generic import obj
+    from machines import job,Job
+
+    def check_time(j,d,h,m,s,td,th,tm,ts):
+        t = obj(days=d,hours=h,minutes=m,seconds=s)
+        assert(object_eq(j.get_time(),t))
+        assert(j.total_seconds()==ts)
+        assert(j.total_minutes()==tm)
+        assert(j.total_hours()==th)
+        assert(j.total_days()==td)
+    #end def check_time
+
+    sm = dict(skip_machine=True)
+
+    j1 = job(**sm)
+    j2 = job(hours=4,minutes=30,**sm)
+    j3 = job(days=2,hours=8,**sm)
+    j4 = job(hours=53,minutes=127,**sm)
+
+    check_time(j1, 0, 0,  0, 0, 0,  0,    0,      0)
+    check_time(j2, 0, 4, 30, 0, 0,  4,  270,  16200)
+    check_time(j3, 2, 8,  0, 0, 2, 56, 3360, 201600)
+    check_time(j4, 2, 7,  7, 0, 2, 55, 3307, 198420)
+
+    # pbs walltime
+    assert(j1.pbs_walltime()=='00:00:00')
+    assert(j2.pbs_walltime()=='04:30:00')
+    assert(j3.pbs_walltime()=='2:08:00:00')
+    assert(j4.pbs_walltime()=='2:07:07:00')
+
+    # sbatch walltime
+    assert(j1.sbatch_walltime()=='00:00:00')
+    assert(j2.sbatch_walltime()=='04:30:00')
+    assert(j3.sbatch_walltime()=='56:00:00')
+    assert(j4.sbatch_walltime()=='55:07:00')
+
+    # ll walltime
+    assert(j1.ll_walltime()=='00:00:00')
+    assert(j2.ll_walltime()=='04:30:00')
+    assert(j3.ll_walltime()=='56:00:00')
+    assert(j4.ll_walltime()=='55:07:00')
+
+    # lsf walsftime
+    assert(j1.lsf_walltime()=='00:00')
+    assert(j2.lsf_walltime()=='04:30')
+    assert(j3.lsf_walltime()=='56:00')
+    assert(j4.lsf_walltime()=='55:07')
+
+    t = Job.zero_time()
+    t = j1.max_time(t)
+    t = j2.max_time(t)
+    t = j3.max_time(t)
+    t = j4.max_time(t)
+    assert(object_eq(t,j3.get_time()))
+
+#end def test_job_time
+
+
+
+def test_job_set_id():
+    from machines import job
+
+    j1 = job(skip_machine=True)
+    j2 = job(skip_machine=True)
+
+    j1.set_id()
+    j2.set_id()
+
+    assert(isinstance(j1.internal_id,int))
+    assert(isinstance(j2.internal_id,int))
+    assert(j2.internal_id-j1.internal_id==1)
+#end def test_job_set_id
+
+
+
+def test_job_get_machine():
+    from machines import job
+
+    machines = get_all_machines()
+    for m in machines:
+        j = job(machine=m.name,skip_machine=True)
+        mj = j.get_machine()
+        assert(id(mj)==id(m))
+    #end for
+
+#end def test_job_get_machine
+
+
+
+def test_job_set_environment():
+    from machines import job
+
+    workstations,supercomputers = get_machine_data()
+
+    machines = []
+    machines.append(workstations.first())
+    machines.append(supercomputers.first())
+
+    for m in machines:
+        j = job(machine=m.name,skip_machine=True)
+        j.set_environment(OMP_NUM_THREADS=1)
+        assert(j.env['OMP_NUM_THREADS']=='1')
+    #end for
+
+#end def test_job_set_environment
+
+
+
+def test_job_clone():
+    from machines import job
+
+    j1 = job(skip_machine=True)
+    j1.set_id()
+
+    j2 = j1.clone()
+    assert(id(j2)!=id(j1))
+    assert(j2.internal_id-j1.internal_id==1)
+    del j1.internal_id
+    del j2.internal_id
+    assert(object_eq(j2,j1))
+#end def_test_job_clone
+
+
+
+def test_job_serial_clone():
+    from machines import job
+
+    j1 = job(skip_machine=True)
+    assert(not j1.serial)
+
+    j2 = j1.serial_clone()
+    assert(j2.serial)
+    assert(j2.cores==1)
+    assert(id(j2)!=id(j1))
+    keys = 'serial cores init_info'.split()
+    j1.delete(keys)
+    j2.delete(keys)
+    assert(object_eq(j2,j1))
+#end def test_job_serial_clone
 
 
 
@@ -261,7 +456,7 @@ def test_machine_instantiation():
 
 
 
-def test_machine_process_job():
+def test_process_job():
     from random import randint
     from generic import obj
     from machines import Machine,Job
@@ -427,7 +622,7 @@ def test_machine_process_job():
     #end if
     Machine.allow_warnings = allow_warn
 
-#end def test_machine_process_job
+#end def test_process_job
 
 
 

@@ -1910,6 +1910,20 @@ def machines():
 
     nunit('options')
 
+    nunit('job_init')
+
+    nunit('job_time')
+
+    nunit('job_set_id')
+
+    nunit('job_get_machine')
+
+    nunit('job_set_environment')
+
+    nunit('job_clone')
+
+    nunit('job_serial_clone')
+
     nunit('machine_virtuals')
 
     nunit('machine_list')
@@ -1920,7 +1934,7 @@ def machines():
 
     nunit('machine_instantiation')
 
-    nunit('machine_process_job')
+    nunit('process_job')
 
     nunit('job_run_command')
 
