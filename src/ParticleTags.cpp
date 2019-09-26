@@ -45,6 +45,7 @@ std::string ParticleTags::tensortype_tag = "tensorArray";
 std::string ParticleTags::xmoltype_tag   = "xmolArray";
 
 std::string ParticleTags::position_tag   = "position";
+std::string ParticleTags::spins_tag      = "spins";
 std::string ParticleTags::id_tag         = "id";
 std::string ParticleTags::ionid_tag      = "ionid";
 std::string ParticleTags::trajectory_tag = "trajectory";

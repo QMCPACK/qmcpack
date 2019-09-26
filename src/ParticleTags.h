@@ -83,6 +83,9 @@ struct ParticleTags
    */
   ///the name for position attribute
   static std::string position_tag;
+  
+  ///the name for spins attribute
+  static std::string spins_tag;
 
   ///the name for id attribute
   static std::string id_tag;
