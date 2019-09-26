@@ -2624,6 +2624,22 @@ def pseudopotential():
 
 
 
+def nexus_base():
+    nunit('import')
+
+    nunit('namespaces')
+
+    nunit('empty_init')
+
+    nunit('write_splash')
+
+    nunit('enter_leave')
+
+    nunit_all()
+#end def nexus_base
+
+
+
 def pwscf_input():
     # divert logging function
     nlog_divert()
@@ -3285,6 +3301,7 @@ NexusTest( structure             )
 NexusTest( physical_system       )
 NexusTest( basisset              )
 NexusTest( pseudopotential       )
+NexusTest( nexus_base            )
 NexusTest( machines              )
 NexusTest( pwscf_input           )
 NexusTest( qmcpack_input         )
