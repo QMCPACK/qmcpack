@@ -7,7 +7,7 @@
 
    <jastrow name="Jee" type="Two-Body" function="pade">
       <correlation speciesA="u" speciesB="d">
-        <var id="jud_b" name="B">3.8426920765e-01 </var>
+        <var id="jud_b" name="B">-8.4650968808e-02</var>
       </correlation>
     </jastrow>
 
