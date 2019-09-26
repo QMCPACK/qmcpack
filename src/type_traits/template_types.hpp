@@ -54,7 +54,7 @@ static RefVector<T> convertUPtrToRefVector(const UPtrVector<T>& ptr_list)
 {
   RefVector<T> ref_list;
   ref_list.reserve(ptr_list.size());
-  for (auto ptr : ptr_list)
+  for (const UPtr<T>& ptr : ptr_list)
     ref_list.push_back(*ptr);
   return ref_list;
 }

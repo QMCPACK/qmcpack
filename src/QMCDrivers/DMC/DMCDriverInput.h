@@ -30,7 +30,7 @@ public:
   void readXML(xmlNodePtr xml_input);
 
   bool get_reconfiguration() const { return reconfiguration_; }
-  IndexType get_mover_max_age() const { return mover_max_age_; }
+  IndexType get_max_age() const { return max_age_; }
   IndexType get_branch_interval() const { return branch_interval_; }
 
 private:
@@ -53,7 +53,7 @@ private:
   ///input std::string to use fast gradient
   std::string UseFastGrad;
   ///input to control maximum age allowed for walkers.
-  IndexType mover_max_age_ = 0;
+  IndexType max_age_ = 0;
 public:
 
   friend std::ostream& operator<<(std::ostream& o_stream, const DMCDriverInput& vmci);

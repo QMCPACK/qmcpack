@@ -213,14 +213,16 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
   auto& walker_hamiltonians = crowd.get_walker_hamiltonians();
   std::vector<QMCHamiltonian::FullPrecRealType> local_energies(
       QMCHamiltonian::flex_evaluate(walker_hamiltonians, walker_elecs));
+  timers.hamiltonian_timer.stop();
+
   auto resetSigNLocalEnergy = [](MCPWalker& walker, TrialWaveFunction& twf, auto& local_energy) {
     walker.resetProperty(twf.getLogPsi(), twf.getPhase(), local_energy);
   };
-  timers.hamiltonian_timer.stop();
-
-  timers.collectables_timer.start();
   for (int iw = 0; iw < crowd.size(); ++iw)
     resetSigNLocalEnergy(walkers[iw], walker_twfs[iw], local_energies[iw]);
+
+  // moved to be consistent with DMC
+  timers.collectables_timer.start();
   auto evaluateNonPhysicalHamiltonianElements = [](QMCHamiltonian& ham, ParticleSet& pset, MCPWalker& walker) {
     ham.auxHevaluate(pset, walker);
   };

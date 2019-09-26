@@ -23,7 +23,7 @@ void DMCDriverInput::readXML(xmlNodePtr node)
   reconfiguration_ = (reconfig_str == "yes");
   parameter_set_.add(NonLocalMove, "nonlocalmove", "string");
   parameter_set_.add(NonLocalMove, "nonlocalmoves", "string");
-  parameter_set_.add(mover_max_age_, "MaxAge", "double");
+  parameter_set_.add(max_age_, "MaxAge", "double");
 
   // from DMC.cpp put(xmlNodePtr)
   parameter_set_.add(branch_interval_, "branchInterval", "string");
@@ -34,7 +34,7 @@ void DMCDriverInput::readXML(xmlNodePtr node)
 
   parameter_set_.put(node);
 
-  if(mover_max_age_ < 0)
+  if(max_age_ < 0)
     throw std::runtime_error("Illegal input for MaxAge in DMC input section");
   if(branch_interval_ < 0)
     throw std::runtime_error("Illegal input for branchInterval or substeps in DMC input section");

@@ -41,13 +41,36 @@ public:
     const DMCDriverInput& dmcdrv_input;
     const DriftModifierBase& drift_modifier;
     const MCPopulation& population;
+    BranchEngineType& branch_engine;
     IndexType recalculate_properties_period;
     IndexType step;
     int block;
     bool recomputing_blocks;
-    StateForThread(QMCDriverInput& qmci, DMCDriverInput& dmci, DriftModifierBase& drift_mod, MCPopulation& pop)
-      : qmcdrv_input(qmci), dmcdrv_input(dmci), drift_modifier(drift_mod), population(pop)
+    StateForThread(QMCDriverInput& qmci, DMCDriverInput& dmci, DriftModifierBase& drift_mod, BranchEngineType& branch_eng,  MCPopulation& pop)
+        : qmcdrv_input(qmci), dmcdrv_input(dmci), drift_modifier(drift_mod), population(pop), branch_engine(branch_eng)
     {}
+  };
+
+  struct DMCPerWalkerRefs {
+    RefVector<MCPWalker> walkers;
+    RefVector<TrialWaveFunction> walker_twfs;
+    RefVector<QMCHamiltonian> walker_hamiltonians;
+    RefVector<ParticleSet> walker_elecs;
+    RefVector<WFBuffer> walker_mcp_wfbuffers;
+    RefVector<FullPrecRealType> old_energies;
+    RefVector<FullPrecRealType> new_energies;
+    RefVector<RealType> gf_accs;
+    DMCPerWalkerRefs(int nwalkers)
+    {
+      walkers.reserve(nwalkers);
+      walker_twfs.reserve(nwalkers);
+      walker_hamiltonians.reserve(nwalkers);
+      walker_elecs.reserve(nwalkers);
+      walker_mcp_wfbuffers.reserve(nwalkers);
+      old_energies.reserve(nwalkers);
+      new_energies.reserve(nwalkers);
+      gf_accs.reserve(nwalkers);
+    }
   };
 
   /// Constructor.
@@ -65,16 +88,22 @@ public:
    *  This should be pulled down the QMCDriverNew
    */
   IndexType calc_default_local_walkers(IndexType walkers_per_rank);
-  void resetUpdateEngines();
+
   bool run();
 
-  static void advanceWalkers(const StateForThread& sft, Crowd& crowd, DriverTimers& timers, ContextForSteps& move_context, bool recompute);
+  static void advanceWalkers(const StateForThread& sft,
+                             Crowd& crowd,
+                             DriverTimers& timers,
+//                             DMCTimers& dmc_timers,
+                             ContextForSteps& move_context,
+                             bool recompute);
 
   // This is the task body executed at crowd scope
   // it does not have access to object members by design
   static void runDMCStep(int crowd_id,
                          const StateForThread& sft,
                          DriverTimers& timers,
+//                         DMCTimers& dmc_timers,
                          std::vector<std::unique_ptr<ContextForSteps>>& move_context,
                          std::vector<std::unique_ptr<Crowd>>& crowds);
 
@@ -90,6 +119,17 @@ private:
   DMCBatched(const DMCBatched&) = delete;
   /// Copy operator (disabled).
   DMCBatched& operator=(const DMCBatched&) = delete;
+
+  static void setMultiplicities(const DMCDriverInput& dmcdriver_input,RefVector<MCPWalker>& walkers, RandomGenerator_t& rng);
+  // struct DMCTimers
+  // {
+  //   NewTimer& dmc_movePbyP;
+  //   DriverTimers(const std::string& prefix)
+  //       : dmc_movePbyP(*TimerManager.createTimer(prefix + "DMC_movePbyP", timer_level_medium)),
+  //   {}
+  // };
+
+  // DMCTimers dmc_timers_;
 };
 
 } // namespace qmcplusplus

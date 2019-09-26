@@ -75,8 +75,7 @@ public:
   };
 
   using MCPWalker = MCPopulation::MCPWalker;
-  using Buffer    = MCPWalker::Buffer_t;
-
+  using WFBuffer         = MCPopulation::WFBuffer;
   /** bits to classify QMCDriver
    *
    * - qmc_driver_mode[QMC_UPDATE_MODE]? particle-by-particle: walker-by-walker
@@ -131,10 +130,10 @@ public:
   void putWalkers(std::vector<xmlNodePtr>& wset);
 
   ///set the BranchEngineType
-  void setBranchEngine(SimpleFixedNodeBranch* be) { branchEngine = be; }
+  void setBranchEngine(SimpleFixedNodeBranch* be) { branch_engine_ = be; }
 
   ///return BranchEngineType*
-  SimpleFixedNodeBranch* getBranchEngine() { return branchEngine; }
+  SimpleFixedNodeBranch* getBranchEngine() { return branch_engine_; }
 
   /** This would be better than the many side effects calc_default_local_walkers has 
    *
@@ -226,7 +225,7 @@ protected:
   std::string h5_file_root_;
 
   ///branch engine
-  SimpleFixedNodeBranch* branchEngine;
+  SimpleFixedNodeBranch* branch_engine_;
   ///drift modifer
   std::unique_ptr<DriftModifierBase> drift_modifier_;
 
