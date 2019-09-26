@@ -277,3 +277,20 @@ def restore_nexus_log():
     logging_storage.clear()
     assert(len(logging_storage)==0)
 #end def restore_nexus_log
+
+
+# declare test failure
+#   useful inside try/except blocks
+def failed(msg='Test failed.'):
+    assert False,msg
+#end def failed
+
+
+class TestFailed(Exception):
+    None
+#end class TestFailed
+
+
+global_data = dict(
+    job_ref_table = False,
+    )
