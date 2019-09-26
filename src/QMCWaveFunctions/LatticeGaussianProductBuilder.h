@@ -12,20 +12,20 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#ifndef QMCPLUSPLUS_ION_ORBITAL_BUILDER_H
-#define QMCPLUSPLUS_ION_ORBITAL_BUILDER_H
+#ifndef QMCPLUSPLUS_LATTICE_GAUSSIAN_BUILDER_H
+#define QMCPLUSPLUS_LATTICE_GAUSSIAN_BUILDER_H
 #include "QMCWaveFunctions/WaveFunctionComponentBuilder.h"
 
 namespace qmcplusplus
 {
 class OrbitalConstraintsBase;
 
-/** IonOrbital IonOrbital Builder with constraints
+/** LatticeGaussianProduct LatticeGaussianProduct Builder with constraints
  */
-class IonOrbitalBuilder : public WaveFunctionComponentBuilder
+class LatticeGaussianProductBuilder : public WaveFunctionComponentBuilder
 {
 public:
-  IonOrbitalBuilder(ParticleSet& p, TrialWaveFunction& psi, PtclPoolType& psets);
+  LatticeGaussianProductBuilder(ParticleSet& p, TrialWaveFunction& psi, PtclPoolType& psets);
 
   bool put(xmlNodePtr cur);
 
@@ -33,7 +33,7 @@ private:
   ///particleset pool to get ParticleSet other than the target
   PtclPoolType& ptclPool;
   ///index for the jastrow type: 1, 2, 3
-  int IonOrbitalType;
+  int LatticeGaussianProductType;
   ///name
   std::string nameOpt;
   ///type

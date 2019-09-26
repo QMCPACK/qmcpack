@@ -45,6 +45,18 @@ if (add_test)
   )
 endif()
 
+set(latdev_free_python_reqs numpy;h5py)
+CHECK_PYTHON_REQS(latdev_python_reqs estimator-latdev-free add_test)
+
+if (add_test)
+  SIMPLE_RUN_AND_CHECK(estimator-latdev-free
+    "${CMAKE_SOURCE_DIR}/tests/estimator/latdev/free"
+    two.xml
+    1 16
+    flatdev.py
+  )
+endif()
+
 set(sofk_python_reqs numpy;pandas;h5py)
 CHECK_PYTHON_REQS(sofk_python_reqs estimator-sofk add_test)
 

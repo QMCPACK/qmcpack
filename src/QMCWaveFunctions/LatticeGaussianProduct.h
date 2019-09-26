@@ -12,11 +12,11 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-/** @file IonOrbital.h
+/** @file LatticeGaussianProduct.h
  * @brief Simple gaussian functions used for orbitals for ions
  */
-#ifndef QMCPLUSPLUS_ION_ORBITAL
-#define QMCPLUSPLUS_ION_ORBITAL
+#ifndef QMCPLUSPLUS_LATTICE_GAUSSIAN_PRODUCT
+#define QMCPLUSPLUS_LATTICE_GAUSSIAN_PRODUCT
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "Particle/DistanceTableData.h"
 
@@ -24,7 +24,7 @@ namespace qmcplusplus
 {
 /** A composite Orbital
  */
-struct IonOrbital : public WaveFunctionComponent
+struct LatticeGaussianProduct : public WaveFunctionComponent
 {
 private:
   ParticleAttrib<RealType> U, d2U;
@@ -42,9 +42,9 @@ public:
   std::vector<RealType> ParticleAlpha;
   std::vector<int> ParticleCenter;
 
-  IonOrbital(ParticleSet& centers, ParticleSet& ptcls);
+  LatticeGaussianProduct(ParticleSet& centers, ParticleSet& ptcls);
 
-  ~IonOrbital();
+  ~LatticeGaussianProduct();
 
   /** check out optimizable variables
    */
