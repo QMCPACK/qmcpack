@@ -4,40 +4,34 @@
 //
 // Copyright (c) 2019 QMCPACK developers.
 //
-// File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
-//                    Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
-//                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
-//                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
-//                    Raymond Clay III, j.k.rofling@gmail.com, Lawrence Livermore National Laboratory
+// File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
 //
-// File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
+// Refactored from: DMCFactor.h
 //////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef QMCPLUSPLUS_VMCFACTORYNEW_H
-#define QMCPLUSPLUS_VMCFACTORYNEW_H
+
+#ifndef QMCPLUSPLUS_DMCFACTORYNEW_H
+#define QMCPLUSPLUS_DMCFACTORYNEW_H
 #include "QMCDrivers/QMCDriverInterface.h"
 #include "QMCApp/WaveFunctionPool.h"
 #include "Message/Communicate.h"
-
 
 namespace qmcplusplus
 {
 class ParticleSetPool;
 class HamiltonianPool;
 class MCPopulation;
-
-class VMCFactoryNew
+  
+class DMCFactoryNew
 {
 private:
-  const int vmc_mode_;
-  // const ?
-  xmlNodePtr input_node_;
+  const int dmc_mode_;
   const int qmc_counter_;
+  xmlNodePtr input_node_;
 
+  
 public:
-  VMCFactoryNew(xmlNodePtr cur, const int vmode, const int qmc_counter)
-      : vmc_mode_(vmode), input_node_(cur), qmc_counter_(qmc_counter)
-  {}
+  DMCFactoryNew(xmlNodePtr cur, const int dmc_mode, const int qmc_counter) : dmc_mode_(dmc_mode), input_node_(cur), qmc_counter_(qmc_counter) {}
 
   QMCDriverInterface* create(MCPopulation& pop,
                              TrialWaveFunction& psi,

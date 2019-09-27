@@ -78,15 +78,17 @@ public:
 
   void clearResults();
 
-  void incReject() { ++n_reject; }
-  void incAccept() { ++n_accept; }
+  void incReject() { ++n_reject_; }
+  void incAccept() { ++n_accept_; }
+  void incNonlocalAccept(int n = 1) { n_nonlocal_accept_ += n; }
   FullPrecRealType get_accept_ratio() const
   {
     return [](FullPrecRealType accept, FullPrecRealType reject) -> FullPrecRealType {
       return accept / (accept + reject);
-    }(n_accept, n_reject);
+    }(n_accept_, n_reject_);
   }
 
+  unsigned long get_nonlocal_accept() { return n_nonlocal_accept_; }
 private:
   std::vector<std::reference_wrapper<MCPWalker>> mcp_walkers_;
   RefVector<WFBuffer> mcp_wfbuffers_;
@@ -110,8 +112,9 @@ private:
   std::vector<RealType> log_gb_;
   std::vector<RealType> prob_;
   /** }@ */
-  unsigned long n_reject = 0;
-  unsigned long n_accept = 0;
+  unsigned long n_reject_ = 0;
+  unsigned long n_accept_ = 0;
+  unsigned long n_nonlocal_accept_ = 0;
 };
 } // namespace qmcplusplus
 #endif

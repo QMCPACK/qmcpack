@@ -9,11 +9,11 @@
 // File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
-#include "Message/catch_mpi_main.hpp"
+#include <catch.hpp>
 
 #include "Message/Communicate.h"
-#include "QMCDrivers/VMC/VMCDriverInput.h"
-#include "QMCDrivers/VMC/VMCBatched.h"
+#include "QMCDrivers/DMC/DMCDriverInput.h"
+#include "QMCDrivers/DMC/DMCBatched.h"
 #include "QMCDrivers/tests/ValidQMCInputSections.h"
 #include "QMCApp/tests/MinimalParticlePool.h"
 #include "QMCApp/tests/MinimalWaveFunctionPool.h"
@@ -23,7 +23,7 @@
 
 namespace qmcplusplus
 {
-TEST_CASE("VMCBatched::calc_default_local_walkers", "[drivers]")
+TEST_CASE("DMCBatched::calc_default_local_walkers", "[drivers]")
 {
   using namespace testing;
   Concurrency::OverrideMaxThreads<> override(8);
@@ -32,7 +32,7 @@ TEST_CASE("VMCBatched::calc_default_local_walkers", "[drivers]")
   comm = OHMMS::Controller;
 
   Libxml2Document doc;
-  doc.parseFromString(valid_vmc_input_sections[valid_vmc_input_vmc_batch_index]);
+  doc.parseFromString(valid_dmc_input_sections[valid_dmc_input_dmc_batch_index]);
   xmlNodePtr node = doc.getRoot();
   QMCDriverInput qmcdriver_input(3);
   qmcdriver_input.readXML(node);
@@ -55,35 +55,35 @@ TEST_CASE("VMCBatched::calc_default_local_walkers", "[drivers]")
     MCPopulation population(num_ranks, particle_pool.getParticleSet("e"), wavefunction_pool.getPrimary(),
                             hamiltonian_pool.getPrimary());
     QMCDriverInput qmcdriver_copy(qmcdriver_input);
-    VMCDriverInput vmcdriver_input("yes");
-    VMCBatched vmc_batched(std::move(qmcdriver_copy), std::move(vmcdriver_input), population,
+    DMCDriverInput dmcdriver_input{};
+    DMCBatched dmc_batched(std::move(qmcdriver_copy), std::move(dmcdriver_input), population,
                            *(wavefunction_pool.getPrimary()), *(hamiltonian_pool.getPrimary()), wavefunction_pool,
                            comm);
-    vmc_batched.set_walkers_per_rank(walkers_per_rank, "testing");
+    dmc_batched.set_walkers_per_rank(walkers_per_rank, "testing");
     if (num_crowds < 8)
-      vmc_batched.set_num_crowds(Concurrency::maxThreads(), "Insufficient threads available to match test input");
-    VMCBatched::IndexType local_walkers       = vmc_batched.calc_default_local_walkers(walkers_per_rank);
-    QMCDriverNew::IndexType walkers_per_crowd = vmc_batched.get_walkers_per_crowd();
+      dmc_batched.set_num_crowds(Concurrency::maxThreads(), "Insufficient threads available to match test input");
+    DMCBatched::IndexType local_walkers       = dmc_batched.calc_default_local_walkers(walkers_per_rank);
+    QMCDriverNew::IndexType walkers_per_crowd = dmc_batched.get_walkers_per_crowd();
 
     if (walkers_per_rank < num_crowds)
     {
-      REQUIRE(walkers_per_crowd == 1);
-      REQUIRE(local_walkers == num_crowds);
-      REQUIRE(population.get_num_local_walkers() == num_crowds);
-      REQUIRE(population.get_num_global_walkers() == num_crowds * num_ranks);
+      CHECK(walkers_per_crowd == 1);
+      CHECK(local_walkers == num_crowds);
+      CHECK(population.get_num_local_walkers() == num_crowds);
+      CHECK(population.get_num_global_walkers() == num_crowds * num_ranks);
     }
     else if (walkers_per_rank % num_crowds)
     {
-      REQUIRE(walkers_per_crowd == walkers_per_rank / num_crowds + 1);
-      REQUIRE(local_walkers == walkers_per_crowd * num_crowds);
-      REQUIRE(population.get_num_local_walkers() == walkers_per_crowd * num_crowds);
-      REQUIRE(population.get_num_global_walkers() == walkers_per_crowd * num_crowds * num_ranks);
+      CHECK(walkers_per_crowd == walkers_per_rank / num_crowds + 1);
+      CHECK(local_walkers == walkers_per_crowd * num_crowds);
+      CHECK(population.get_num_local_walkers() == walkers_per_crowd * num_crowds);
+      CHECK(population.get_num_global_walkers() == walkers_per_crowd * num_crowds * num_ranks);
     }
     else
     {
-      REQUIRE(local_walkers == walkers_per_rank);
-      REQUIRE(population.get_num_local_walkers() == walkers_per_rank);
-      REQUIRE(population.get_num_global_walkers() == walkers_per_rank * num_ranks);
+      CHECK(local_walkers == walkers_per_rank);
+      CHECK(population.get_num_local_walkers() == walkers_per_rank);
+      CHECK(population.get_num_global_walkers() == walkers_per_rank * num_ranks);
     }
   };
   testWRTWalkersPerRank(7);
