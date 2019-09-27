@@ -1,3 +1,14 @@
+//////////////////////////////////////////////////////////////////////////////////////
+// This file is distributed under the University of Illinois/NCSA Open Source License.
+// See LICENSE file in top directory for details.
+//
+// Copyright (c) 2019 QMCPACK developers.
+//
+// File developed by: Leon Otis, leon_otis@berkeley.edu University, University of California Berkeley		   
+//		      Ye Luo, yeluo@anl.gov, Argonne National Laboratory
+//
+// File created by: Leon Otis, leon_otis@berkeley.edu University, University of California Berkeley
+//////////////////////////////////////////////////////////////////////////////////////
 
 #include "catch.hpp"
 

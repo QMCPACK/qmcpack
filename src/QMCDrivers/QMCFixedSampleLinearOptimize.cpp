@@ -1362,6 +1362,8 @@ bool QMCFixedSampleLinearOptimize::descent_run()
     optTarget->Params(i) = results[i];
   }
 
+  //If descent is being run as part of a hybrid optimization, need to check if a vector of
+  //parameter differences should be stored.
   if (doHybrid)
   {
     int store_num = descentEngineObj->retrieveStoreFrequency();
@@ -1384,9 +1386,12 @@ bool QMCFixedSampleLinearOptimize::hybrid_run()
 {
   app_log() << "This is methodName: " << MinMethod << std::endl;
 
-  // if requested, perform the update via the adaptive three-shift or single-shift method
+  //Either the adaptive BLM or descent optimization is run
+
   if (current_optimizer_type_ == OptimizerType::ADAPTIVE)
   {
+      //If the optimization just switched to using the BLM, need to transfer a set
+      //of vectors to the BLM engine.
     if (previous_optimizer_type_ == OptimizerType::DESCENT)
     {
       std::vector<std::vector<ValueType>> hybridBLM_Input = descentEngineObj->retrieveHybridBLM_Input();
