@@ -1,6 +1,7 @@
 
 import testing
 from testing import value_eq,object_eq,failed,TestFailed
+from testing import divert_nexus_log,restore_nexus_log
 
 
 all_machines = []
@@ -32,17 +33,15 @@ def get_machine_data():
 
 
 def get_all_machines():
+    from machines import Machine
     if len(all_machines)==0:
-        workstations,supercomputers = get_machine_data()
-        for m in workstations:
-            all_machines.append(m)
-        #end for
-        for m in supercomputers:
+        for m in Machine.machines:
             all_machines.append(m)
         #end for
     #end if
     return all_machines
 #end def get_all_machines
+
 
 
 
@@ -453,6 +452,147 @@ def test_machine_instantiation():
     del Machine.machines.test_machine
     assert(not Machine.exists(test_name))
 #end def test_machine_instantiation
+
+
+
+def test_workstation_init():
+    from generic import obj
+    from machines import Workstation
+
+    ws = Workstation('wsi',16,'mpirun')
+
+    refws = obj(
+        account         = None,
+        app_directories = None,
+        app_directory   = None,
+        app_launcher    = 'mpirun',
+        cores           = 16,
+        finished        = set([]),
+        local_directory = None,
+        name            = 'wsi',
+        process_granularity = 1,
+        queue_size      = 16,
+        running         = set([]),
+        user            = None,
+        waiting         = set([]),
+        jobs            = obj(),
+        processes       = obj(),
+        )
+
+    assert(object_eq(ws.to_obj(),refws))
+
+#end def test_workstation_init
+
+
+# imitate Job.initialize w/o involving simulation object
+def init_job(j,
+             id  = 'job_ident',
+             dir = './',
+             ):
+    import os
+    identifier = id
+    directory  = dir
+    j.set_id()
+    j.identifier  = identifier
+    j.directory   = directory
+    j.abs_dir     = os.path.abspath(directory)
+    j.subdir      = j.directory
+    j.abs_subdir  = j.abs_dir
+    j.name        = identifier
+    j.simid       = j.internal_id+1000
+    j.outfile     = identifier+'.out'
+    j.errfile     = identifier+'.err'
+    j.app_command = 'echo run'
+    j.process()
+#end def init_job
+
+
+
+def test_workstation_scheduling():
+    import time
+    from machines import Workstation
+    from machines import job,Job
+
+    tpath = testing.setup_unit_test_output_directory('machines','test_workstation_scheduling')
+
+    # create workstation for testing
+    ws = Workstation('wss',16,'mpirun')
+
+
+    # test process_job(), process_job_options(), write_job()
+
+    j = job(machine=ws.name,cores=4,threads=2,local=True)
+    assert(j.machine==ws.name)
+    assert(j.cores==4)
+    assert(j.threads==2)
+    assert(j.local)
+    assert(j.processes==2)
+    assert(j.run_options.np=='-np 2')
+    assert(j.batch_mode==False)
+    init_job(j,dir=tpath) # imitate interaction w/ simulation object
+    assert(ws.write_job(j)=='export OMP_NUM_THREADS=2\nmpirun -np 2 echo run')
+
+    j = job(machine=ws.name,serial=True)
+    assert(j.machine==ws.name)
+    assert(j.cores==1)
+    assert(j.threads==1)
+    assert(j.serial)
+    assert(j.processes==1)
+    assert(j.run_options.np=='-np 1')
+    assert(j.batch_mode==False)
+    init_job(j,dir=tpath) # imitate interaction w/ simulation object
+    assert(ws.write_job(j)=='export OMP_NUM_THREADS=1\necho run')
+
+
+    # test add_job()
+    assert(j.status==Job.states.none)
+    assert(not j.submitted)
+    assert(len(ws.waiting)==0)
+
+    j.submit() # calls ws.add_job(j)
+
+    assert(j.status==Job.states.waiting)
+    assert(j.submitted)
+    assert(ws.waiting==set([j.internal_id]))
+    assert(set(ws.jobs.keys())==set([j.internal_id]))
+    assert(id(ws.jobs[j.internal_id])==id(j))
+
+
+    # test submit_jobs() and submit_job()
+    divert_nexus_log()
+    assert(j.system_id is None)
+    assert(len(ws.running)==0)
+    assert(len(ws.processes)==0)
+
+    ws.submit_jobs() # will call system echo
+
+    assert(j.status==Job.states.running)
+    assert(isinstance(j.system_id,int))
+    assert(len(ws.waiting)==0)
+    assert(ws.running==set([j.internal_id]))
+    assert(set(ws.processes.keys())==set([j.system_id]))
+    p = ws.processes[j.system_id]
+    assert(p.popen.pid==j.system_id)
+    assert(id(p.job)==id(j))
+    assert(set(ws.jobs.keys())==set([j.internal_id]))
+    restore_nexus_log()
+
+    # allow a moment for all system calls to resolve
+    time.sleep(0.1)
+
+    # test query_queue()
+    assert(not j.finished)
+
+    ws.query_queue() # echo process complete
+
+    assert(j.finished)
+    assert(j.status==Job.states.finished)
+    assert(len(ws.running)==0)
+    assert(len(ws.processes)==0)
+    assert(ws.finished==set([j.internal_id]))
+    assert(set(ws.jobs.keys())==set([j.internal_id]))
+
+#end def test_workstation_scheduling
 
 
 

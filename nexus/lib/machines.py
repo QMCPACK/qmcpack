@@ -844,6 +844,7 @@ class Machine(NexusCore):
     
     def restore_default_settings(self):
         self.account         = None
+        self.user            = None
         self.local_directory = None
         self.app_directory   = None
         self.app_directories = None
@@ -1231,7 +1232,7 @@ class Supercomputer(Machine):
                  sub_launcher   = None,
                  queue_querier  = None,
                  job_remover    = None,
-                 name           = None
+                 name           = None,
                  ):
         if name is None:
             if self.name is not None:
@@ -3269,7 +3270,6 @@ class Tomcat3(Supercomputer):
 #  workstations
 for cores in range(1,128+1):
     Workstation('ws'+str(cores),cores,'mpirun'),
-    Workstation('node'+str(cores),cores,'mpirun'),
 #end for
 #  supercomputers and clusters
 #            nodes sockets cores ram qslots  qlaunch  qsubmit     qstatus    qdelete

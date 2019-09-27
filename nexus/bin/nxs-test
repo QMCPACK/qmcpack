@@ -1934,6 +1934,10 @@ def machines():
 
     nunit('machine_instantiation')
 
+    nunit('workstation_init')
+
+    nunit('workstation_scheduling')
+
     nunit('process_job')
 
     nunit('job_run_command')
