@@ -50,6 +50,17 @@ IF ( DEFINED QE_BIN )
 ENDIF()
 
 ######################################################################
+# Verify PYSCF package is present
+######################################################################
+IF ( DEFINED PYSCF_BIN )
+  INCLUDE(CMake/python.cmake)
+  TEST_PYTHON_MODULE(pyscf HAVE_PYSCF)
+  IF (NOT HAVE_PYSCF)
+    MESSAGE( FATAL_ERROR "PYSCF_BIN was specified but could not import pyscf." )
+  ENDIF()
+ENDIF()
+
+######################################################################
 # CTest
 ######################################################################
 INCLUDE( "${qmcpack_SOURCE_DIR}/CMake/macros.cmake" )

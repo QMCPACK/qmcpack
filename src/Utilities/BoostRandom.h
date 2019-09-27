@@ -21,7 +21,15 @@
 #include <ctime>
 #include <sstream>
 #include <limits>
+#include <boost/config.hpp>
+#ifdef BOOST_CLANG
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-W#pragma-messages"
+#endif
 #include <boost/random.hpp>
+#ifdef BOOST_CLANG
+#pragma clang diagnostic pop
+#endif
 
 /** random number generator using boost::random
  *

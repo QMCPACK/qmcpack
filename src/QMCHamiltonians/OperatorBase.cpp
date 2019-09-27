@@ -35,6 +35,19 @@ OperatorBase::OperatorBase() : myIndex(-1), Value(0.0), Dependants(0), tWalker(0
   UpdateMode.set(PRIMARY, 1);
 }
 
+/** Take o_list and p_list update evaluation result variables in o_list?
+ *
+ * really should reduce vector of local_energies. matching the ordering and size of o list
+ * the this can be call for 1 or more QMCHamiltonians
+ */
+void OperatorBase::mw_evaluate(const RefVector<OperatorBase>& O_list, const RefVector<ParticleSet>& P_list)
+{
+#pragma omp parallel for
+  for (int iw = 0; iw < O_list.size(); iw++)
+    O_list[iw].get().evaluate(P_list[iw]);
+}
+
+
 void OperatorBase::set_energy_domain(energy_domains edomain)
 {
   if (energy_domain_valid(edomain))
