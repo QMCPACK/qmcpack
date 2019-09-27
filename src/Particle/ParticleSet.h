@@ -110,6 +110,8 @@ public:
   ParticlePos_t R;
   ///SoA copy of R
   VectorSoaContainer<RealType, DIM> RSoA;
+  ///internal spin variables for dynamical spin calculations
+  ParticleScalar_t spins;
   ///gradients of the particles
   ParticleGradient_t G;
   ///laplacians of the particles
@@ -421,8 +423,15 @@ public:
   /** save this to awalker
    *
    *  just the R, G, and L
+   *  More duplicate data that makes code difficult to reason about should be removed.
    */
   void saveWalker(Walker_t& awalker);
+
+  /** batched version of saveWalker
+   *
+   *  just the R, G, and L
+   */
+  static void flex_saveWalker(RefVector<ParticleSet>& psets, RefVector<Walker_t>& walkers);
 
   /** update structure factor and unmark activePtcl
    *
@@ -509,6 +518,7 @@ public:
     TotalNum = numPtcl;
 
     R.resize(numPtcl);
+    spins.resize(numPtcl);
     ID.resize(numPtcl);
     PCID.resize(numPtcl);
     GroupID.resize(numPtcl);
@@ -528,6 +538,7 @@ public:
     TotalNum = 0;
 
     R.clear();
+    spins.clear();
     ID.clear();
     PCID.clear();
     GroupID.clear();
@@ -575,12 +586,15 @@ public:
   {
     R.setTypeName(ParticleTags::postype_tag);
     R.setObjName(ParticleTags::position_tag);
+    spins.setTypeName(ParticleTags::scalartype_tag);
+    spins.setObjName(ParticleTags::spins_tag);
     ID.setTypeName(ParticleTags::indextype_tag);
     ID.setObjName(ParticleTags::id_tag);
     GroupID.setTypeName(ParticleTags::indextype_tag);
     GroupID.setObjName(ParticleTags::ionid_tag);
     //add basic attributes
     AttribList.add(R);
+    AttribList.add(spins);
     AttribList.add(ID);
     AttribList.add(GroupID);
 

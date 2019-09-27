@@ -26,6 +26,8 @@
 #include <Particle/MCWalkerConfiguration.h>
 #include <Estimators/BlockHistogram.h>
 #include <Estimators/accumulators.h>
+#include "type_traits/template_types.hpp"
+#include "Particle/Walker.h"
 #include "QMCDrivers/WalkerControlBase.h"
 #include <Utilities/NewTimer.h>
 #include <bitset>
@@ -48,6 +50,7 @@ class EstimatorManagerBase;
 struct SimpleFixedNodeBranch : public QMCTraits
 {
   typedef SimpleFixedNodeBranch ThisType;
+  using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
 
   /*! enum for booleans
    * \since 2008-05-05
@@ -237,6 +240,10 @@ struct SimpleFixedNodeBranch : public QMCTraits
   /** determine trial and reference energies
    */
   void checkParameters(MCWalkerConfiguration& w);
+
+  /** determine trial and reference energies
+   */
+  void checkParameters(const int global_walkers, RefVector<MCPWalker>& walkers);
 
   /** return the bare branch weight
    *

@@ -244,6 +244,10 @@ class FakeLog:
     def close(self):
         None
     #end def close
+
+    def contents(self):
+        return self.s
+    #end def contents
 #end class FakeLog
 
 
@@ -255,13 +259,13 @@ logging_storage = dict()
 # divert nexus log output
 def divert_nexus_log():
     from generic import generic_settings,object_interface
-    if len(logging_storage)==0:
-        logging_storage['devlog'] = generic_settings.devlog
-        logging_storage['objlog'] = object_interface._logfile 
-        logfile = FakeLog()
-        generic_settings.devlog   = logfile
-        object_interface._logfile = logfile
-    #end if
+    assert(len(logging_storage)==0)
+    logging_storage['devlog'] = generic_settings.devlog
+    logging_storage['objlog'] = object_interface._logfile 
+    logfile = FakeLog()
+    generic_settings.devlog   = logfile
+    object_interface._logfile = logfile
+    return logfile
 #end def divert_nexus_log
 
 
