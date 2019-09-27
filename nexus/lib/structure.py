@@ -34,48 +34,86 @@ generation, and manipulation.
 List of module contents
 -----------------------
 
-Coordinate conversion functions:
+Read cif file functions:
 
-* :py:func:`polar_to_cartesian`
-* :py:func:`cartesian_to_polar`
-* :py:func:`spherical_to_cartesian`
-* :py:func:`cartesian_to_spherical`
+* :py:func:`read_cif_celldata`
+* :py:func:`read_cif_cell`
+* :py:func:`read_cif`
 
-Grid generation functions:
+Operations on logical conditions:
 
-* :py:func:`unit_grid_points`
-* :py:func:`parallelotope_grid_points`
-* :py:func:`spheroid_grid_points`
-* :py:func:`spheroid_surface_grid_points`
+* :py:func:`equate`
+* :py:func:`negate`
 
-Base classes for :py:class:`Grid` and :py:class:`GridFunction` classes:
+Create a Monkhorst-Pack k-point mesh function
 
-* :py:class:`PlotHandler`
-* :py:class:`GBase`
+* :py:func:`kmesh`
 
-Abstract :py:class:`Grid` classes:
+Tile matrix malipulation functions
 
-* :py:class:`Grid`
-* :py:class:`StructuredGrid`
-* :py:class:`StructuredGridWithAxes`
+* :py:func:`reduce_tilematrix`
+* :py:func:`tile_magnetization`
 
-Abstract :py:class:`GridFunction` classes:
+Rotate plane function
 
-* :py:class:`GridFunction`
-* :py:class:`StructuredGridFunction`
-* :py:class:`StructuredGridFunctionWithAxes`
+* :py:func:`rotate_plane`
 
-Concrete :py:class:`Grid` classes:
+Trivial filter function
 
-* :py:class:`ParallelotopeGrid` 
-* :py:class:`SpheroidGrid`
-* :py:class:`SpheroidSurfaceGrid`
+* :py:func:`trivial_filter`
 
-Concrete :py:class:`GridFunction` classes:
+* :py:class:`MaskFilter`
 
-* :py:class:`ParallelotopeGridFunction` 
-* :py:class:`SpheroidGridFunction`
-* :py:class:`SpheroidSurfaceGridFunction`
+* :py:func:`optimal_tilematrix`
+
+Base class for :py:class:`Structure` class:
+
+* :py:class:`Sobj`
+
+Base class for :py:class:`DefectStructure`, :py:class:`Crystal`, and :py:class:`Jellium` classes:
+
+* :py:class:`Structure`
+
+SeeK-path functions
+
+* :py:func:`\_getseekpath`
+* :py:func:`get_conventional_cell`
+* :py:func:`get_primitive_cell`
+* :py:func:`get_kpath`
+* :py:func:`get_symmetry`
+* :py:func:`get_structure_with_bands`
+* :py:func:`get_band_tiling`
+* :py:func:`get_seekpath_full`
+
+Interpolate structures functions
+
+* :py:func:`interpolate_structures`
+
+Animate structures functions
+
+* :py:func:`structure_animation`
+
+Concrete :py:class:`Structure` classes:
+
+* :py:class:`DefectStructure`
+* :py:class:`Crystal`
+* :py:class:`Jellium`
+
+Structure generation functions:
+
+* :py:func:`generate_cell`
+* :py:func:`generate_structure`
+* :py:func:`generate_atom_structure`
+* :py:func:`generate_dimer_structure`
+* :py:func:`generate_trimer_structure`
+* :py:func:`generate_jellium_structure`
+* :py:func:`generate_crystal_structure`
+* :py:func:`generate_defect_structure`
+
+Read structure functions
+
+* :py:func:`read_structure`
+
 
 
 Module contents
@@ -1515,12 +1553,40 @@ class Structure(Sobj):
 
 
     # test needed
-    def rotate(self,r,rp=None,passive=False,degrees=False,check=True):
+    def rotate(self,r,rp=None,passive=False,units="radians",check=True):
+        """
+        Arbitrary rotation of the structure.
+        Parameters
+        ----------
+        r  : `array_like, float, shape (3,3)` or `array_like, float, shape (3)` or `str`
+            If a 3x3 matrix, then code executes rotation consistent with this matrix --
+            it is assumed that the matrix acts on a column-major vector (eg, v'=Rv)
+            If a three-dimensional array, then the operation of the function depends
+            on the input type of rp in the following ways:
+                1. If rp is a scalar, then a rotation of rp is made about the axis 
+                   defined by r
+                2. If rp is a vector, then the rotation is such that r aligns with rp
+                3. If rp is a str, then the rotation is such that r aligns with the
+                   axis given by the str ('x', 'y', 'z', 'a0', 'a1', or 'a2')
+        rp : `array_like, float, shape (3), optional` or `str, optional`
+            Inputted points lie only on a circle or not.  It is the user's 
+            responsibility to guarantee the correctness of this assertion.
+            If `False` (the default), the outputted points are two-dimensional 
+            (`d=2`) with :math:`(r,\phi)` returned.  If `True`, only :math:`\phi` 
+            is returned (`d=1`).
+        passive : `bool, optional, default False`
+            If `True`, perform a passive rotation
+            If `False`, perform an active rotation
+        units : `str, optional, default "radians"`
+            Units of rp, if rp is given as an angle (scalar)
+        check : `bool, optional, default True`
+            Perform a check to verify rotation matrix is orthogonal
+        """
         if rp is not None:
-            lattice_dirmap = dict(a1=0,a2=1,a3=2)
+            lattice_dirmap = dict(a0=0,a1=1,a2=2)
             cartesian_dirmap = dict(x=[1,0,0],y=[0,1,0],z=[0,0,1])
             if isinstance(r,str): 
-                if r[0]=='a': # r= 'a1', 'a2', or 'a3'
+                if r[0]=='a': # r= 'a0', 'a1', or 'a2'
                     r = self.axes[lattice_dirmap[r]]
                 else: # r= 'x', 'y', or 'z'
                     r = cartesian_dirmap[r]
@@ -1529,13 +1595,15 @@ class Structure(Sobj):
                 r = array(r,dtype=float)
             #end if
             if isinstance(rp,(int,float)):
-                if degrees:
-                    theta = float(rp)*np.pi/180.0
-                else:
+                if units=="radians" or units=="rad":
                     theta = float(rp)
+                else:
+                    theta = float(rp)*np.pi/180.0
+                c = np.cos(theta)
+                s = np.sin(theta)
             else:
                 if isinstance(rp,str):
-                    if rp[0]=='a': # rp= 'a1', 'a2', or 'a3'
+                    if rp[0]=='a': # rp= 'a0', 'a1', or 'a2'
                         rp = self.axes[lattice_dirmap[rp]]
                     else: # rp= 'x', 'y', or 'z'
                         rp = cartesian_dirmap[rp]
@@ -1544,13 +1612,18 @@ class Structure(Sobj):
                     rp = array(rp,dtype=float)
                 #end if
                 # go from r,rp to r,theta
-                theta = np.arccos(np.dot(r,rp)/np.linalg.norm(r)/np.linalg.norm(rp))
-                r = np.cross(r,rp)/np.linalg.norm(np.cross(r,rp))
+                c = np.dot(r,rp)/np.linalg.norm(r)/np.linalg.norm(rp)
+                if abs(c-1)<1e-6:
+                    s = 0.0
+                    r = np.array([1,0,0])
+                else:
+                    s = np.dot(np.cross(r,rp),np.cross(r,rp))/np.linalg.norm(r)/np.linalg.norm(rp)/np.linalg.norm(np.cross(r,rp)) 
+                    r = np.cross(r,rp)/np.linalg.norm(np.cross(r,rp))
             #end if
             # make R from r,theta
-            R = [[     np.cos(theta)+r[0]**2.0*(1.0-np.cos(theta)), r[0]*r[1]*(1.0-np.cos(theta))-r[2]*np.sin(theta), r[0]*r[2]*(1.0-np.cos(theta))+r[1]*np.sin(theta)],
-                 [r[1]*r[0]*(1.0-np.cos(theta))+r[2]*np.sin(theta),      np.cos(theta)+r[1]**2.0*(1.0-np.cos(theta)), r[1]*r[2]*(1.0-np.cos(theta))-r[0]*np.sin(theta)],
-                 [r[2]*r[0]*(1.0-np.cos(theta))-r[1]*np.sin(theta), r[2]*r[1]*(1.0-np.cos(theta))+r[0]*np.sin(theta),      np.cos(theta)+r[2]**2.0*(1.0-np.cos(theta))]]
+            R = [[     c+r[0]**2.0*(1.0-c), r[0]*r[1]*(1.0-c)-r[2]*s, r[0]*r[2]*(1.0-c)+r[1]*s],
+                 [r[1]*r[0]*(1.0-c)+r[2]*s,      c+r[1]**2.0*(1.0-c), r[1]*r[2]*(1.0-c)-r[0]*s],
+                 [r[2]*r[0]*(1.0-c)-r[1]*s, r[2]*r[1]*(1.0-c)+r[0]*s,      c+r[2]**2.0*(1.0-c)]]
         else:
             R = r
         #end if
@@ -1559,7 +1632,7 @@ class Structure(Sobj):
             R = R.T
         if check:
             if not np.allclose(dot(R,R.T),identity(len(R))):
-                self.error('the function, rotate, must be given a unitary matrix')
+                self.error('the function, rotate, must be given an orthogonal matrix')
             #end if
         #end if
         self.matrix_transform(R)
