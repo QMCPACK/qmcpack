@@ -1938,6 +1938,10 @@ def machines():
 
     nunit('workstation_scheduling')
 
+    nunit('supercomputer_init')
+
+    nunit('supercomputer_scheduling')
+
     nunit('process_job')
 
     nunit('job_run_command')

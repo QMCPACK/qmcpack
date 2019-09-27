@@ -484,6 +484,7 @@ def test_workstation_init():
 #end def test_workstation_init
 
 
+
 # imitate Job.initialize w/o involving simulation object
 def init_job(j,
              id  = 'job_ident',
@@ -520,7 +521,6 @@ def test_workstation_scheduling():
 
 
     # test process_job(), process_job_options(), write_job()
-
     j = job(machine=ws.name,cores=4,threads=2,local=True)
     assert(j.machine==ws.name)
     assert(j.cores==4)
@@ -593,6 +593,167 @@ def test_workstation_scheduling():
     assert(set(ws.jobs.keys())==set([j.internal_id]))
 
 #end def test_workstation_scheduling
+
+
+
+def test_supercomputer_init():
+    from generic import obj
+    from machines import Theta
+
+    class ThetaInit(Theta):
+        name = 'theta_init'
+    #end class ThetaInit
+
+    sc = ThetaInit(4392,1,64,192,1000,'aprun','qsub','qstata','qdel')
+
+    refsc = obj(
+        account         = None,
+        app_directories = None,
+        app_directory   = None,
+        app_launcher    = 'aprun',
+        cores           = 281088,
+        cores_per_node  = 64,
+        cores_per_proc  = 64,
+        finished        = set([]),
+        job_remover     = 'qdel',
+        local_directory = None,
+        name            = 'theta_init',
+        nodes           = 4392,
+        procs           = 4392,
+        procs_per_node  = 1,
+        queue_querier   = 'qstata',
+        queue_size      = 1000,
+        ram             = 843264,
+        ram_per_node    = 192,
+        running         = set([]),
+        sub_launcher    = 'qsub',
+        user            = None,
+        waiting         = set([]),
+        jobs            = obj(),
+        processes       = obj(),
+        system_queue    = obj(),
+        )
+
+    assert(object_eq(sc.to_obj(),refsc))
+
+#end def test_supercomputer_init
+
+
+
+def test_supercomputer_scheduling():
+    import os
+    import time
+    from generic import obj
+    from machines import Theta
+    from machines import job,Job
+
+    tpath = testing.setup_unit_test_output_directory('machines','test_supercomputer_scheduling')
+
+    # create supercomputer for testing
+    class ThetaSched(Theta):
+        name = 'theta_sched'
+    #end class ThetaSched
+
+    sc = ThetaSched(4392,1,64,192,1000,'aprun','echo','test_query','qdel')
+
+
+    # test process_job() and process_job_options()
+    j = job(machine=sc.name,nodes=2,threads=8,hours=3,minutes=30,account='ABC123')
+    assert(j.machine==sc.name)
+    assert(j.nodes==2)
+    assert(j.threads==8)
+    assert(j.processes==16)
+    assert(j.processes_per_node==8)
+    assert(j.cores==128)
+    assert(j.hours==3)
+    assert(j.minutes==30)
+    assert(j.account=='ABC123')
+    refro = obj(
+        N               = '-N 8',
+        cc              = '-cc depth',
+        d               = '-d 8',
+        e               = '-e OMP_NUM_THREADS=8',
+        j               = '-j 1',
+        n               = '-n 16',
+        )
+    assert(object_eq(j.run_options.to_obj(),refro))
+    assert(j.batch_mode==True)
+
+
+    # test write_job()
+    init_job(j,id='123',dir=tpath) # imitate interaction w/ simulation object
+    ref_wj = '''#!/bin/bash
+#COBALT -q default
+#COBALT -A ABC123
+#COBALT -n 2
+#COBALT -t 210
+#COBALT -O 123
+#COBALT --attrs mcdram=cache:numa=quad
+
+export OMP_NUM_THREADS=8
+aprun -e OMP_NUM_THREADS=8 -d 8 -cc depth -j 1 -n 16 -N 8 echo run'''
+    wj = sc.write_job(j)
+    assert(wj.strip()==ref_wj)
+
+
+    # test add_job()
+    assert(j.status==Job.states.none)
+    assert(not j.submitted)
+    assert(len(sc.waiting)==0)
+
+    j.submit() # calls sc.add_job(j)
+
+    assert(j.status==Job.states.waiting)
+    assert(j.submitted)
+    assert(sc.waiting==set([j.internal_id]))
+    assert(set(sc.jobs.keys())==set([j.internal_id]))
+    assert(id(sc.jobs[j.internal_id])==id(j))
+
+    
+    # test write_job() to file
+    sc.write_job(j,file=True)
+
+    subfile_path = os.path.join(tpath,j.subfile)
+    assert(os.path.exists(subfile_path))
+    assert(open(subfile_path,'r').read().strip()==ref_wj)
+
+
+    # test sub_command()
+    assert(sc.sub_command(j)=='echo 123.echo.in')
+
+
+    # test submit_jobs() and submit_job()
+    divert_nexus_log()
+    assert(j.system_id is None)
+
+    sc.submit_jobs() # will call system echo
+
+    assert(j.status==Job.states.running)
+    assert(j.system_id==123)
+    assert(len(sc.waiting)==0)
+    assert(sc.running==set([j.internal_id]))
+    assert(set(sc.processes.keys())==set([123]))
+    assert(set(sc.jobs.keys())==set([j.internal_id]))
+    restore_nexus_log()
+
+
+    # allow a moment for all system calls to resolve
+    time.sleep(0.1)
+
+
+    # test query_queue()
+    assert(not j.finished)
+
+    sc.query_queue() # echo process complete
+
+    assert(j.finished)
+    assert(j.status==Job.states.finished)
+    assert(len(sc.running)==0)
+    assert(len(sc.processes)==0)
+    assert(sc.finished==set([j.internal_id]))
+    assert(set(sc.jobs.keys())==set([j.internal_id]))
+
+#end def test_supercomputer_scheduling
 
 
 

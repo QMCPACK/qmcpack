@@ -1122,6 +1122,7 @@ class Workstation(Machine):
 
 
 
+# test needed
 class InteractiveCluster(Workstation):
 
     def __init__(self,*args,**kwargs):
@@ -1361,6 +1362,8 @@ class Supercomputer(Machine):
                                  USUSP = 'suspended',
                                  SSUSP = 'suspended',
                                  )
+        elif self.queue_querier=='test_query':
+            None
         else:
             self.error('ability to query queue with '+self.queue_querier+' has not yet been implemented')
         #end if
@@ -1368,11 +1371,13 @@ class Supercomputer(Machine):
     #end def __init__
 
 
+    # test needed
     def interactive_representation(self,cores):
         return InteractiveCluster(self,cores)
     #end def interactive_representation
 
 
+    # test needed
     def requeue_job(self,job):
         if isinstance(job,Job):
             jid = job.internal_id
@@ -1681,6 +1686,11 @@ class Supercomputer(Machine):
                         #end if
                     #end if
                 #end if
+            #end for
+        elif self.queue_querier=='test_query': # for testing
+            # pretend that all jobs have finished
+            for pid in self.processes.keys():
+                self.system_queue[pid] = 'complete'
             #end for
         else:
             self.error('ability to query queue with '+self.queue_querier+' has not yet been implemented')
