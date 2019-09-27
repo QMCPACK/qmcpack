@@ -73,7 +73,7 @@ WalkerControlBase* createWalkerController(int nwtot, Communicate* comm, xmlNodeP
       wc = new WalkerControlBase(comm);
     }
   }
-  wc->MyMethod = fixw;
+  wc->set_method(fixw);
   wc->setMinMax(nwtot, nmax);
   return wc;
 }

@@ -38,6 +38,9 @@ public:
   using IndexType  = QMCTraits::IndexType;
 
 private:
+  // Potential thread safety issue
+  MCDataType<QMCTraits::FullPrecRealType> ensemble_property_;
+  
   int num_ranks_                = 0;
   IndexType num_global_walkers_ = 0;
   IndexType num_local_walkers_  = 0;
@@ -150,6 +153,8 @@ public:
   void set_target(IndexType pop) { target_population_ = pop; }
   void set_target_samples(IndexType samples) { target_samples_ = samples; }
 
+  void set_ensemble_property(const MCDataType<QMCTraits::FullPrecRealType>& ensemble_property) { ensemble_property_ = ensemble_property; }
+  
   UPtrVector<MCPWalker>& get_walkers() { return walkers_; }
   const std::vector<std::pair<int, int>>& get_particle_group_indexes() const { return particle_group_indexes_; }
   const std::vector<RealType>& get_ptclgrp_mass() const { return ptclgrp_mass_; }

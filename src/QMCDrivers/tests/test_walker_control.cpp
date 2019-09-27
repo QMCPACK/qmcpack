@@ -98,6 +98,35 @@ TEST_CASE("Walker control assign walkers", "[drivers][walker_control]")
   }
 }
 
+TEST_CASE("WalkerControl round trip index conversions", "[drivers][walker_control]")
+{
+  std::vector<int> walker_counts; //= {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 23, 37};
+  for (int i = 0; i < 1000; ++i)
+    walker_counts.push_back(i);
+  for (int i = 0; i < 1000000; i += 1000)
+    walker_counts.push_back(i);
+  for (int i = 0; i < 100000000; i += 100000)
+    walker_counts.push_back(i);
+
+  std::vector<QMCTraits::FullPrecRealType> fp_counts(walker_counts.size());
+  std::vector<int> walker_count_results(walker_counts.size());
+  for (int iw = 0; iw < walker_counts.size(); ++iw)
+  {
+    fp_counts[iw] = walker_counts[iw];
+  }
+  for (int iw = 0; iw < fp_counts.size(); ++iw)
+  {
+    walker_count_results[iw] = static_cast<int>(fp_counts[iw]);
+  }
+  bool all_pass = true;
+  for (int iw = 0; iw < walker_counts.size(); ++iw)
+  {
+    all_pass &= (walker_counts[iw] == walker_count_results[iw]);
+  }
+  REQUIRE( all_pass );
+}
+
+
 #ifdef PROPERTY_TESTING
 // Eventually will create some way to build and run property-based tests, which
 // are tests that use random inputs and verify that certain properties hold true.
@@ -173,79 +202,89 @@ TEST_CASE("Walker control assign walkers many", "[drivers][walker_control][prope
 #endif
 
 #ifdef HAVE_MPI
+
+struct WalkerControlMPITest
+{
+  void operator()(bool use_nonblocking)
+  {
+    Communicate* c = OHMMS::Controller;
+    WalkerControlMPI wc(c);
+
+    wc.use_nonblocking = use_nonblocking;
+
+    MCWalkerConfiguration W; // Unused in the function
+    typedef MCWalkerConfiguration::Walker_t Walker_t;
+
+    // Set up Cur_pop
+    // Set up good_w and bad_w
+
+    wc.Cur_pop = c->size();
+    for (int i = 0; i < c->size(); i++)
+    {
+      wc.NumPerNode[i] = 1;
+    }
+    // One walker on every node, should be no swapping
+    wc.good_w.push_back(new Walker_t());
+    wc.good_w[0]->ID = c->rank();
+    wc.ncopy_w.push_back(0);
+
+    wc.swapWalkersSimple(W);
+
+    REQUIRE(wc.good_w.size() == 1);
+    REQUIRE(wc.bad_w.size() == 0);
+
+
+    // 3 walkers on rank 0, 1 walker on others - should redistribute if
+    //   there is more than one rank
+    if (c->rank() == 0)
+    {
+      wc.good_w.push_back(new Walker_t());
+      wc.good_w.push_back(new Walker_t());
+
+      // Use the ID variable to check that the walker content was transmitted
+      wc.good_w[1]->ID = c->size();
+      wc.good_w[2]->ID = c->size() + 1;
+
+      wc.ncopy_w.push_back(0);
+      wc.ncopy_w.push_back(0);
+    }
+    wc.NumPerNode[0] = 3;
+    wc.Cur_pop += 2;
+
+    wc.swapWalkersSimple(W);
+
+    //std::cout << " Rank = " << c->rank() << " good size = " << wc.good_w.size() <<
+    //          " ID = " << wc.good_w[0]->ID << std::endl;
+
+    if (c->size() > 1)
+    {
+      if (c->rank() == c->size() - 2)
+      {
+        REQUIRE(wc.good_w.size() == 2);
+        // This check is a bit too restrictive - no guarantee the last walker was the
+        //  one transmitted
+        bool okay1 = wc.good_w[1]->ID == c->size() || wc.good_w[1]->ID == c->size() + 1;
+        REQUIRE(okay1);
+      }
+      else if (c->rank() == c->size() - 1)
+      {
+        REQUIRE(wc.good_w.size() == 2);
+        bool okay2 = wc.good_w[1]->ID == c->size() || wc.good_w[1]->ID == c->size() + 1;
+        REQUIRE(okay2);
+      }
+      else
+      {
+        REQUIRE(wc.good_w.size() == 1);
+        REQUIRE(wc.good_w[0]->ID == c->rank());
+      }
+    }
+  }
+};
+
 void test_swap_walkers(bool use_nonblocking)
 {
-  Communicate* c = OHMMS::Controller;
-  WalkerControlMPI wc(c);
-
-  wc.use_nonblocking = use_nonblocking;
-
-  MCWalkerConfiguration W; // Unused in the function
-  typedef MCWalkerConfiguration::Walker_t Walker_t;
-
-  // Set up Cur_pop
-  // Set up good_w and bad_w
-
-  wc.Cur_pop = c->size();
-  for (int i = 0; i < c->size(); i++)
-  {
-    wc.NumPerNode[i] = 1;
-  }
-  // One walker on every node, should be no swapping
-  wc.good_w.push_back(new Walker_t());
-  wc.good_w[0]->ID = c->rank();
-  wc.ncopy_w.push_back(0);
-
-  wc.swapWalkersSimple(W);
-
-  REQUIRE(wc.good_w.size() == 1);
-  REQUIRE(wc.bad_w.size() == 0);
-
-
-  // 3 walkers on rank 0, 1 walker on others - should redistribute if
-  //   there is more than one rank
-  if (c->rank() == 0)
-  {
-    wc.good_w.push_back(new Walker_t());
-    wc.good_w.push_back(new Walker_t());
-
-    // Use the ID variable to check that the walker content was transmitted
-    wc.good_w[1]->ID = c->size();
-    wc.good_w[2]->ID = c->size() + 1;
-
-    wc.ncopy_w.push_back(0);
-    wc.ncopy_w.push_back(0);
-  }
-  wc.NumPerNode[0] = 3;
-  wc.Cur_pop += 2;
-
-  wc.swapWalkersSimple(W);
-
-  //std::cout << " Rank = " << c->rank() << " good size = " << wc.good_w.size() <<
-  //          " ID = " << wc.good_w[0]->ID << std::endl;
-
-  if (c->size() > 1)
-  {
-    if (c->rank() == c->size() - 2)
-    {
-      REQUIRE(wc.good_w.size() == 2);
-      // This check is a bit too restrictive - no guarantee the last walker was the
-      //  one transmitted
-      bool okay1 = wc.good_w[1]->ID == c->size() || wc.good_w[1]->ID == c->size() + 1;
-      REQUIRE(okay1);
-    }
-    else if (c->rank() == c->size() - 1)
-    {
-      REQUIRE(wc.good_w.size() == 2);
-      bool okay2 = wc.good_w[1]->ID == c->size() || wc.good_w[1]->ID == c->size() + 1;
-      REQUIRE(okay2);
-    }
-    else
-    {
-      REQUIRE(wc.good_w.size() == 1);
-      REQUIRE(wc.good_w[0]->ID == c->rank());
-    }
-  }
+  WalkerControlMPITest test;
+  test(use_nonblocking);
 }
 
 TEST_CASE("Walker control swap walkers blocking", "[drivers][walker_control]")

@@ -49,6 +49,7 @@ TimerNameList_t<DMC_MPI_Timers> DMCMPITimerNames = {{DMC_MPI_branch, "WalkerCont
  */
 WalkerControlMPI::WalkerControlMPI(Communicate* c) : WalkerControlBase(c)
 {
+  NumWalkersSent = 0;
   SwapMode = 1;
   Cur_min  = 0;
   Cur_max  = 0;
@@ -70,7 +71,7 @@ WalkerControlMPI::WalkerControlMPI(Communicate* c) : WalkerControlBase(c)
  *  this algorithm does not destroy the bad walkers in step 1.
  *  All the bad walkers are recycled as much as possible in step 3/4.
  */
-int WalkerControlMPI::branch(int iter, MCWalkerConfiguration& W, RealType trigger)
+int WalkerControlMPI::branch(int iter, MCWalkerConfiguration& W, FullPrecRealType trigger)
 {
   myTimers[DMC_MPI_branch]->start();
   myTimers[DMC_MPI_prebalance]->start();
@@ -79,6 +80,7 @@ int WalkerControlMPI::branch(int iter, MCWalkerConfiguration& W, RealType trigge
   //use NumWalkersSent from the previous exchange
   curData[SENTWALKERS_INDEX] = NumWalkersSent;
   //update the number of walkers for this node
+  //Causes implicit conversion to FullPrecRealType
   curData[LE_MAX + MyContext] = NumWalkers;
   //myTimers[DMC_MPI_imbalance]->start();
   //myComm->barrier();
@@ -87,8 +89,8 @@ int WalkerControlMPI::branch(int iter, MCWalkerConfiguration& W, RealType trigge
   myComm->allreduce(curData);
   myTimers[DMC_MPI_allreduce]->stop();
   measureProperties(iter);
-  W.EnsembleProperty = EnsembleProperty;
-  for (int i = 0, j = LE_MAX; i < NumContexts; i++, j++)
+  W.EnsembleProperty = ensemble_property_;
+  for (int i = 0, j = LE_MAX; i < num_contexts_; i++, j++)
     NumPerNode[i] = static_cast<int>(curData[j]);
   Cur_pop = applyNmaxNmin();
   myTimers[DMC_MPI_prebalance]->stop();
@@ -111,6 +113,63 @@ int WalkerControlMPI::branch(int iter, MCWalkerConfiguration& W, RealType trigge
   W.setWalkerOffsets(FairOffSet);
 
   myTimers[DMC_MPI_branch]->stop();
+  return Cur_pop;
+}
+
+/** Unified Driver version
+ *
+ *  It takes 5 steps:
+ *    1. calcPopulationAdjustment produces a PopulationAdjustment
+ *    2. allreduce collects the number of good walkers + copies on every rank.
+ *    3. applyNmaxNmin avoids too large or too small global population.
+ *    4. swapWalkersSimple makes a decision of load balancing and send/recv walkers.
+ *       Receiving side recycles bad walkers' memory first.
+ *    5. copyWalkers generates copies of good walkers.
+ *  In order to minimize the memory footprint fluctuation
+ *  the walker copying is placed as the last step.
+ *  In order to reduce the time for allocating walker memory,
+ *  this algorithm does not destroy the bad walkers in step 1.
+ *  All the bad walkers are recycled as much as possible in step 3/4.
+ */
+int WalkerControlMPI::branch(int iter, MCPopulation& pop, FullPrecRealType trigger)
+{
+  myTimers[DMC_MPI_branch]->start();
+  myTimers[DMC_MPI_prebalance]->start();
+  std::fill(curData.begin(), curData.end(), 0);
+  PopulationAdjustment adjust(calcPopulationAdjustment(pop));
+  NumPerNode[0] = 
+  //use NumWalkersSent from the previous exchange
+  curData[SENTWALKERS_INDEX] = NumWalkersSent;
+  //update the number of walkers for this node
+  curData[LE_MAX + MyContext] = adjust.num_walkers;
+  myTimers[DMC_MPI_allreduce]->start();
+  myComm->allreduce(curData);
+  myTimers[DMC_MPI_allreduce]->stop();
+  measureProperties(iter);
+  pop.set_ensemble_property(ensemble_property_);
+  for (int i = 0, j = LE_MAX; i < num_contexts_; i++, j++)
+    NumPerNode[i] = static_cast<int>(curData[j]);
+  Cur_pop = applyNmaxNmin();
+  // myTimers[DMC_MPI_prebalance]->stop();
+  // myTimers[DMC_MPI_loadbalance]->start();
+  // swapWalkersSimple(W);
+  // myTimers[DMC_MPI_loadbalance]->stop();
+  // myTimers[DMC_MPI_copyWalkers]->start();
+  // copyWalkers(W);
+  // myTimers[DMC_MPI_copyWalkers]->stop();
+  // //set Weight and Multiplicity to default values
+  // MCWalkerConfiguration::iterator it(W.begin()), it_end(W.end());
+  // while (it != it_end)
+  // {
+  //   (*it)->Weight       = 1.0;
+  //   (*it)->Multiplicity = 1.0;
+  //   ++it;
+  // }
+  // //update the global number of walkers and offsets
+  // W.setGlobalNumWalkers(Cur_pop);
+  // W.setWalkerOffsets(FairOffSet);
+
+  // myTimers[DMC_MPI_branch]->stop();
   return Cur_pop;
 }
 
@@ -163,7 +222,7 @@ void determineNewWalkerPopulation(int Cur_pop,
 void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W)
 {
   std::vector<int> minus, plus;
-  determineNewWalkerPopulation(Cur_pop, NumContexts, MyContext, NumPerNode, FairOffSet, minus, plus);
+  determineNewWalkerPopulation(Cur_pop, num_contexts_, MyContext, NumPerNode, FairOffSet, minus, plus);
 
   if (good_w.empty() && bad_w.empty())
   {

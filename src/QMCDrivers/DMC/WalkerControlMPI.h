@@ -21,6 +21,7 @@
 namespace qmcplusplus
 {
 class NewTimer;
+class WalkerControlMPITest;
 
 /** Class to handle walker controls with simple global sum
  *
@@ -32,6 +33,9 @@ struct WalkerControlMPI : public WalkerControlBase
   int Cur_max;
   int Cur_min;
   TimerList_t myTimers;
+  ///Number of walkers sent during the exchange
+  IndexType NumWalkersSent;
+
   /** default constructor
    *
    * Set the SwapMode to zero so that instantiation can be done
@@ -39,10 +43,15 @@ struct WalkerControlMPI : public WalkerControlBase
   WalkerControlMPI(Communicate* c = 0);
 
   /** perform branch and swap walkers as required */
-  int branch(int iter, MCWalkerConfiguration& W, RealType trigger);
+  int branch(int iter, MCWalkerConfiguration& W, FullPrecRealType trigger);
+
+  /** perform branch and swap walkers as required */
+  int branch(int iter, MCPopulation& pop, FullPrecRealType trigger);
 
   //current implementations
   void swapWalkersSimple(MCWalkerConfiguration& W);
+
+  friend WalkerControlMPITest;
 };
 } // namespace qmcplusplus
 #endif

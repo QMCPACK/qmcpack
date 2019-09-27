@@ -159,7 +159,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
       std::transform(delta_r_start, delta_r_end, rr.begin(),
                      [tauovermass](auto& delta_r) { return tauovermass * dot(delta_r, delta_r); });
 
-      // in DMC this was done here, changed to match VMCBatched pending factoring into up
+      // in DMC this was done here, changed to match VMCBatched pending factoring to common source
       // if (rr > m_r2max)
       // {
       //   ++nRejectTemp;
