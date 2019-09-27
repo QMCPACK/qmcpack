@@ -542,6 +542,7 @@ class Settings(NexusCore):
 settings = Settings()
 
 
+# test needed
 def run_project(*args,**kwargs):
     if nexus_core.graph_sims:
         graph_sims()
@@ -558,7 +559,7 @@ def run_project(*args,**kwargs):
 
 
 
-
+# test needed
 # read input function
 #   place here for now as it depends on all other input functions
 def read_input(filepath,format=None):
