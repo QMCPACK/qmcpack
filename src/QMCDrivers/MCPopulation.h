@@ -40,7 +40,7 @@ public:
 private:
   // Potential thread safety issue
   MCDataType<QMCTraits::FullPrecRealType> ensemble_property_;
-  
+
   int num_ranks_                = 0;
   IndexType num_global_walkers_ = 0;
   IndexType num_local_walkers_  = 0;
@@ -62,7 +62,7 @@ private:
   ///1/Mass per particle
   std::vector<RealType> ptcl_inv_mass_;
   size_t size_dataset_;
-  // Should be 
+  // Should be
   // std::shared_ptr<TrialWaveFunction> trial_wf_;
   // std::shared_ptr<ParticleSet> elec_particle_set_;
   // std::shared_ptr<QMCHamiltonian> hamiltonian_;
@@ -74,15 +74,19 @@ private:
   ParticleSet* elec_particle_set_;
   QMCHamiltonian* hamiltonian_;
   // At the moment these are "clones" but I think this design pattern smells.
-  std::vector<std::unique_ptr<ParticleSet>> walker_elec_particle_sets_;
-  std::vector<std::unique_ptr<TrialWaveFunction>> walker_trial_wavefunctions_;
-  std::vector<std::unique_ptr<QMCHamiltonian>> walker_hamiltonians_;
+  UPtrVector<ParticleSet> walker_elec_particle_sets_;
+  UPtrVector<TrialWaveFunction> walker_trial_wavefunctions_;
+  UPtrVector<QMCHamiltonian> walker_hamiltonians_;
 
 public:
   /** Temporary constructor to deal with MCWalkerConfiguration be the only source of some information
    *  in QMCDriverFactory.
    */
-  MCPopulation(int num_ranks, MCWalkerConfiguration& mcwc, ParticleSet* elecs, TrialWaveFunction* trial_wf, QMCHamiltonian* hamiltonian_);
+  MCPopulation(int num_ranks,
+               MCWalkerConfiguration& mcwc,
+               ParticleSet* elecs,
+               TrialWaveFunction* trial_wf,
+               QMCHamiltonian* hamiltonian_);
   //MCPopulation(int num_ranks, int num_particles) : num_ranks_(num_ranks), num_particles_(num_particles) {}
   MCPopulation(int num_ranks, ParticleSet* elecs, TrialWaveFunction* trial_wf, QMCHamiltonian* hamiltonian)
       : num_ranks_(num_ranks),
@@ -94,12 +98,24 @@ public:
   MCPopulation(MCPopulation&&) = default;
   MCPopulation& operator=(MCPopulation&&) = default;
 
+  /** @ingroup PopulationControl
+   *
+   *  State Requirement:
+   *   * createWalkers must have been called
+   *  @{
+   */
+  MCPWalker& spawnWalker();
+  void killWalker(MCPWalker&);
+  void createWalkerInplace(UPtr<MCPWalker>& walker_ptr);
+  /** }@ */
+
   void createWalkers();
   void createWalkers(IndexType num_walkers);
   void createWalkers(int num_crowds_,
                      int num_walkers_per_crowd_,
                      IndexType num_walkers,
                      const ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>& pos);
+
 
   /** puts walkers and their "cloned" things into groups in a somewhat general way
    *
@@ -153,13 +169,18 @@ public:
   void set_target(IndexType pop) { target_population_ = pop; }
   void set_target_samples(IndexType samples) { target_samples_ = samples; }
 
-  void set_ensemble_property(const MCDataType<QMCTraits::FullPrecRealType>& ensemble_property) { ensemble_property_ = ensemble_property; }
-  
+  void set_ensemble_property(const MCDataType<QMCTraits::FullPrecRealType>& ensemble_property)
+  {
+    ensemble_property_ = ensemble_property;
+  }
+
   UPtrVector<MCPWalker>& get_walkers() { return walkers_; }
   const std::vector<std::pair<int, int>>& get_particle_group_indexes() const { return particle_group_indexes_; }
   const std::vector<RealType>& get_ptclgrp_mass() const { return ptclgrp_mass_; }
   const std::vector<RealType>& get_ptclgrp_inv_mass() const { return ptclgrp_inv_mass_; }
   const std::vector<RealType>& get_ptcl_inv_mass() const { return ptcl_inv_mass_; }
+
+  void set_walker_offsets(std::vector<IndexType> walker_offsets) { walker_offsets_ = walker_offsets; }
 
   /** }@ */
 };

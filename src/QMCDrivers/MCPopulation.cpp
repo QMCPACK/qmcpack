@@ -57,6 +57,23 @@ void MCPopulation::createWalkers()
   createWalkers(num_local_walkers_);
 }
 
+void MCPopulation::createWalkerInplace(UPtr<MCPWalker>& walker_ptr)
+{
+  walker_ptr = std::make_unique<MCPWalker>(num_particles_);
+  walker_ptr->R = elec_particle_set_->R;
+  walker_ptr->registerData();
+  walker_ptr->Properties = elec_particle_set_->Properties;
+}
+
+/** we could also search for walker_ptr
+ */
+void MCPopulation::allocateWalkerStuffInplace(int walker_index)
+{
+  walker_trial_wavefunctions_[walker_index]->registerData(*(walker_elec_particle_sets_[walker_index]),
+                                                          walkers_[walker_index]->DataSet);
+  walkers_[walker_index]->DataSet.allocate();
+}
+
 /** Creates walkers with starting positions pos and a clone of the electron particle set and trial wavefunction
  *  
  *  Needed
@@ -72,10 +89,7 @@ void MCPopulation::createWalkers(IndexType num_walkers)
 
   for (auto& walker_ptr : walkers_)
   {
-    walker_ptr = std::make_unique<MCPWalker>(num_particles_);
-    walker_ptr->R = elec_particle_set_->R;
-    walker_ptr->registerData();
-    walker_ptr->Properties = elec_particle_set_->Properties;
+    createWalkerInplace(walker_ptr);
   }
 
   outputManager.pause();
@@ -122,11 +136,37 @@ void MCPopulation::createWalkers(IndexType num_walkers)
                 [](auto& walker) {
                   (*walker).DataSet.allocate();
                 });
-
-  
-
 }
 
+
+
+/** creates a walker and returns a reference
+ */
+MCPopulation::MCPWalker& MCPopulation::spawnWalker(const MCPWalker& walker)
+{
+  auto it_walkers = walkers_.begin();
+  while (it_walkers != walkers_.end())
+  {
+    if (*it_walkers == nullptr)
+      
+}
+
+/** Kill a walker
+ */
+void MCPopulation::killWalker(const MCPWalker& walker)
+{
+  // find the walker and null its pointer in the walker vector
+  auto it_walkers = walkers_.begin();
+  while (it_walkers != walkers_.end())
+  {
+    if (&walker == (*it_walkers).get())
+    {
+      (*it_walkers).reset(nullptr);
+      return;
+    }
+  }
+  throw std::runtime_error("Attempt to kill nonexistent walker in MCPopulation!");
+}
 
 /** Creates walkers doing their first touch in their crowd (thread) context
  *
