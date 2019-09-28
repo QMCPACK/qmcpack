@@ -43,6 +43,12 @@ def get_all_machines():
 #end def get_all_machines
 
 
+def get_supercomputers():
+    ws,sc = get_machine_data()
+    return sc
+#end def get_supercomputers
+
+
 
 
 def test_import():
@@ -1160,6 +1166,9 @@ def test_job_run_command():
         ('vesta'          , 'n2_t2_p2'      ) : 'runjob --np 4 -p 2 $LOCARGS --verbose=INFO --envs OMP_NUM_THREADS=2 : test.x',
         })
 
+    if testing.global_data['job_ref_table']:
+        print('\n\n')
+    #end if
     job_inputs_orig = obj(
         n1        = obj(nodes=1),
         n1_p1     = obj(nodes=1,processes_per_node=1),
@@ -1262,3 +1271,545 @@ def test_job_run_command():
 #end def test_job_run_command
 
 
+
+def test_write_job():
+    from generic import obj
+    from machines import Machine,job
+
+    supercomputers = get_supercomputers()
+
+    allow_warn = Machine.allow_warnings
+    Machine.allow_warnings = False
+
+    job_write_ref = dict(
+        amos = '''#!/bin/bash -x
+#SBATCH --export=ALL
+#SBATCH -J None
+#SBATCH -p debug
+#SBATCH -o test.out
+#SBATCH -e test.err
+#SBATCH --nodes 2
+#SBATCH --ntasks-per-node=16
+#SBATCH --cpus-per-task=1
+#SBATCH -t 01:00:00
+
+export OMP_NUM_THREADS=1
+export ENV_VAR=1
+srun test.x''',
+        bluewaters_xe = '''#!/bin/bash
+#PBS -N jobname
+#PBS -l walltime=06:30:00
+#PBS -l nodes=2:ppn=32:xe
+#PBS -o test.out
+#PBS -e test.err
+#PBS -V
+
+echo $PBS_O_WORKDIR
+cd $PBS_O_WORKDIR
+
+export OMP_NUM_THREADS=1
+export ENV_VAR=1
+aprun -n 64 test.x''',
+        bluewaters_xk = '''#!/bin/bash
+#PBS -N jobname
+#PBS -l walltime=06:30:00
+#PBS -l nodes=2:ppn=16:xk
+#PBS -o test.out
+#PBS -e test.err
+#PBS -V
+
+echo $PBS_O_WORKDIR
+cd $PBS_O_WORKDIR
+
+export OMP_NUM_THREADS=1
+export ENV_VAR=1
+aprun -n 32 test.x''',
+        cades = '''#!/bin/bash
+#PBS -A ABC123
+#PBS -W group_list=cades-ABC123
+#PBS -q skylake
+#PBS -N jobname
+#PBS -o test.out
+#PBS -e test.err
+#PBS -l qos=std
+#PBS -l walltime=06:30:00
+#PBS -l nodes=2:ppn=36
+
+echo $PBS_O_WORKDIR
+cd $PBS_O_WORKDIR
+
+export OMP_NUM_THREADS=1
+export ENV_VAR=1
+mpirun -np 72 test.x''',
+        cetus = '''#!/bin/bash
+#COBALT -q default
+#COBALT -A ABC123
+#COBALT -n 2
+#COBALT -t 390
+#COBALT -O None
+
+LOCARGS="--block $COBALT_PARTNAME ${COBALT_CORNER:+--corner} $COBALT_CORNER ${COBALT_SHAPE:+--shape} $COBALT_SHAPE"
+echo "Cobalt location args: $LOCARGS" >&2
+
+
+runjob --np 32 -p 16 $LOCARGS --verbose=INFO --envs OMP_NUM_THREADS=1 ENV_VAR=1 : test.x''',
+        chama = '''#!/bin/bash
+#SBATCH --job-name jobname
+#SBATCH --account=ABC123
+#SBATCH -N 2
+#SBATCH --ntasks-per-node=32
+#SBATCH --cpus-per-task=1
+#SBATCH -t 06:30:00
+#SBATCH -o test.out
+#SBATCH -e test.err
+
+module purge
+module add intel/intel-16.0.1.150
+module add libraries/intel-mkl-16.0.1.150
+module add mvapich2-intel-psm/1.7
+
+export OMP_NUM_THREADS=1
+export ENV_VAR=1
+srun test.x''',
+        cooley = '''#!/bin/bash
+#COBALT -q default
+#COBALT -A ABC123
+#COBALT -n 2
+#COBALT -t 390
+#COBALT -O None
+
+export OMP_NUM_THREADS=1
+export ENV_VAR=1
+mpirun -np 24 test.x''',
+        cori = '''#!/bin/bash
+#SBATCH -p regular
+#SBATCH -C knl
+#SBATCH -J jobname
+#SBATCH -t 06:30:00
+#SBATCH -N 2
+#SBATCH --tasks-per-node=68
+#SBATCH --cpus-per-task=4
+#SBATCH -o test.out
+#SBATCH -e test.err
+#SBATCH --export=ALL
+
+echo $SLURM_SUBMIT_DIR
+cd $SLURM_SUBMIT_DIR
+
+export OMP_NUM_THREADS=1
+export ENV_VAR=1
+srun test.x''',
+        edison = '''#!/bin/bash
+#SBATCH -p regular
+#SBATCH -J jobname
+#SBATCH -t 06:30:00
+#SBATCH -N 2
+#SBATCH --ntasks-per-node=24
+#SBATCH --cpus-per-task=1
+#SBATCH -o test.out
+#SBATCH -e test.err
+#SBATCH --export=ALL
+
+echo $SLURM_SUBMIT_DIR
+cd $SLURM_SUBMIT_DIR
+
+export OMP_NUM_THREADS=1
+export ENV_VAR=1
+srun test.x''',
+        eos = '''#!/bin/bash
+#PBS -A ABC123
+#PBS -q batch
+#PBS -N jobname
+#PBS -o test.out
+#PBS -e test.err
+#PBS -l walltime=06:30:00
+#PBS -l nodes=2
+#PBS -l gres=atlas1
+#PBS -V
+
+echo $PBS_O_WORKDIR
+cd $PBS_O_WORKDIR
+
+export OMP_NUM_THREADS=1
+export ENV_VAR=1
+aprun -n 32 test.x''',
+        jaguar = '''#!/bin/bash
+#PBS -A ABC123
+#PBS -q batch
+#PBS -N jobname
+#PBS -l walltime=06:30:00
+#PBS -l size=32
+#PBS -l gres=widow2%widow3
+#PBS -o test.out
+#PBS -e test.err
+#PBS -V
+
+echo $PBS_O_WORKDIR
+cd $PBS_O_WORKDIR
+export MPICH_PTL_SEND_CREDITS=-1
+export MPICH_MAX_SHORT_MSG_SIZE=1024
+export MPICH_PTL_UNEX_EVENTS=800000
+export MPICH_UNEX_BUFFER_SIZE=16M
+export MPI_MSGS_PER_PROC=32768
+
+export OMP_NUM_THREADS=1
+export ENV_VAR=1
+aprun -n 32 test.x''',
+        komodo = '''#!/bin/bash -x
+#SBATCH --export=ALL
+#SBATCH -J None
+#SBATCH -p defq
+#SBATCH -o test.out
+#SBATCH -e test.err
+#SBATCH --nodes 2
+#SBATCH --ntasks-per-node=12
+#SBATCH --cpus-per-task=1
+#SBATCH -t 06:30:00
+
+export OMP_NUM_THREADS=1
+export ENV_VAR=1
+mpirun -np 24 test.x''',
+        kraken = '''#!/bin/bash
+#PBS -A ABC123
+#PBS -N jobname
+#PBS -l walltime=06:30:00
+#PBS -l size=24
+#PBS -o test.out
+#PBS -e test.err
+#PBS -V
+
+cd $PBS_O_WORKDIR
+export MPICH_PTL_SEND_CREDITS=-1
+export MPICH_MAX_SHORT_MSG_SIZE=1024
+export MPICH_PTL_UNEX_EVENTS=800000
+export MPICH_UNEX_BUFFER_SIZE=16M
+export MPI_MSGS_PER_PROC=32768
+
+export OMP_NUM_THREADS=1
+export ENV_VAR=1
+aprun -n 24 test.x''',
+        lonestar = '''#!/bin/bash
+#$ -q batch
+#$ -N jobname
+#$ -o test.out
+#$ -e test.err
+#$ -l h_rt=06:30:00
+#$ -pe 12way 24
+#$ -cwd
+#$ -V
+
+export OMP_NUM_THREADS=1
+export ENV_VAR=1
+ibrun -n 24 -o 0 test.x''',
+        matisse = '''#!/bin/bash -x
+#SBATCH --export=ALL
+#SBATCH -J None
+#SBATCH -p defq
+#SBATCH -o test.out
+#SBATCH -e test.err
+#SBATCH --nodes 2
+#SBATCH --ntasks-per-node=16
+#SBATCH --cpus-per-task=1
+#SBATCH -t 06:30:00
+
+export OMP_NUM_THREADS=1
+export ENV_VAR=1
+mpirun -np 32 test.x''',
+        mira = '''#!/bin/bash
+#COBALT -q default
+#COBALT -A ABC123
+#COBALT -n 2
+#COBALT -t 390
+#COBALT -O None
+
+LOCARGS="--block $COBALT_PARTNAME ${COBALT_CORNER:+--corner} $COBALT_CORNER ${COBALT_SHAPE:+--shape} $COBALT_SHAPE"
+echo "Cobalt location args: $LOCARGS" >&2
+
+
+runjob --np 32 -p 16 $LOCARGS --verbose=INFO --envs OMP_NUM_THREADS=1 ENV_VAR=1 : test.x''',
+        oic5 = '''#!/bin/bash
+#PBS -q mstqmc13q
+#PBS -N jobname
+#PBS -l walltime=06:30:00
+#PBS -l nodes=2:ppn=32
+#PBS -W x="NACCESSPOLICY:SINGLEJOB"
+#PBS -o test.out
+#PBS -e test.err
+#PBS -V
+
+echo $PBS_O_WORKDIR
+cd $PBS_O_WORKDIR
+
+export OMP_NUM_THREADS=1
+export ENV_VAR=1
+mpirun -np 64 test.x''',
+        redsky = '''#!/bin/bash
+#SBATCH --job-name jobname
+#SBATCH --account=ABC123
+#SBATCH -N 2
+#SBATCH --ntasks-per-node=16
+#SBATCH --cpus-per-task=1
+#SBATCH -t 06:30:00
+#SBATCH -o test.out
+#SBATCH -e test.err
+
+module purge
+module add intel/intel-16.0.1.150
+module add libraries/intel-mkl-16.0.1.150
+module add mvapich2-intel-psm/1.7
+
+export OMP_NUM_THREADS=1
+export ENV_VAR=1
+srun test.x''',
+        serrano = '''#!/bin/bash
+#SBATCH --job-name jobname
+#SBATCH --account=ABC123
+#SBATCH -N 2
+#SBATCH --ntasks-per-node=36
+#SBATCH --cpus-per-task=1
+#SBATCH -t 06:30:00
+#SBATCH -o test.out
+#SBATCH -e test.err
+
+module purge
+module add intel/16.0.3
+module add mkl/16.0
+module add mvapich2-intel-psm2/2.2rc1
+
+export OMP_NUM_THREADS=1
+export ENV_VAR=1
+srun test.x''',
+        skybridge = '''#!/bin/bash
+#SBATCH --job-name jobname
+#SBATCH --account=ABC123
+#SBATCH -N 2
+#SBATCH --ntasks-per-node=32
+#SBATCH --cpus-per-task=1
+#SBATCH -t 06:30:00
+#SBATCH -o test.out
+#SBATCH -e test.err
+
+module purge
+module add intel/intel-16.0.1.150
+module add libraries/intel-mkl-16.0.1.150
+module add mvapich2-intel-psm/1.7
+
+export OMP_NUM_THREADS=1
+export ENV_VAR=1
+srun test.x''',
+        solo = '''#!/bin/bash
+#SBATCH --job-name jobname
+#SBATCH --account=ABC123
+#SBATCH -N 2
+#SBATCH --ntasks-per-node=36
+#SBATCH --cpus-per-task=1
+#SBATCH -t 06:30:00
+#SBATCH -o test.out
+#SBATCH -e test.err
+
+module purge
+module add intel/16.0.3
+module add mkl/16.0
+module add mvapich2-intel-psm2/2.2rc1
+
+export OMP_NUM_THREADS=1
+export ENV_VAR=1
+srun test.x''',
+        stampede2 = '''#!/bin/bash
+#SBATCH --job-name jobname
+#SBATCH --account=ABC123
+#SBATCH -N 2
+#SBATCH --ntasks-per-node=68
+#SBATCH --cpus-per-task=1
+#SBATCH -t 06:30:00
+#SBATCH -o test.out
+#SBATCH -e test.err
+#SBATCH -p normal
+
+
+export OMP_NUM_THREADS=1
+export ENV_VAR=1
+ibrun -n 136 -o 0 test.x''',
+        summit = '''#!/bin/bash
+#BSUB -P ABC123
+#BSUB -J jobname
+#BSUB -o test.out
+#BSUB -e test.err
+#BSUB -W 06:30
+#BSUB -nnodes 2
+#BSUB -alloc_flags "smt1"
+
+export OMP_NUM_THREADS=1
+export ENV_VAR=1
+jsrun -a 7 -r 6 -b rs -c 7 -d packed -n 12 -g 1 test.x''',
+        supermuc = '''#!/bin/bash
+#@ job_name         = jobname
+#@ job_type         = MPICH
+#@ class            = general
+#@ node             = 2
+#@ island_count     = 1,1
+#@ total_tasks      = 56
+#@ wall_clock_limit = 06:30:00
+#@ network.MPI      = sn_all,not_shared,us
+#@ initialdir       = /path/on/supermuc
+#@ output           = test.out
+#@ error            = test.err
+#@ energy_policy_tag = my_energy_tag
+#@ minimize_time_to_solution = yes
+#@ notification     = never
+#@ queue
+. /etc/profile
+. /etc/profile.d/modules.sh
+module unload mpi.ibm
+module load mpi.intel
+
+export OMP_NUM_THREADS=1
+export ENV_VAR=1
+mpiexec -n 56 test.x''',
+        supermucng = '''#!/bin/bash
+#SBATCH --account=ABC123
+#SBATCH --partition=general
+#SBATCH -J jobname
+#SBATCH --time=06:30:00
+#SBATCH -o ./test.out
+#SBATCH -e ./test.err
+#SBATCH --nodes=2
+#SBATCH --ntasks-per-node=48
+#SBATCH --ntasks-per-core=1
+#SBATCH --cpus-per-task=1
+#SBATCH -D ./
+#SBATCH --no-requeue
+#SBATCH --export=NONE
+#SBATCH --get-user-env
+
+export OMP_NUM_THREADS=1
+export ENV_VAR=1
+mpiexec -n 96 test.x''',
+        taub = '''#PBS -q cse
+#PBS -N jobname
+#PBS -l nodes=2:ppn=12
+#PBS -l walltime=06:30:00
+#PBS -e test.err
+#PBS -o test.out
+#PBS -V
+
+cd ${PBS_O_WORKDIR}
+
+
+export OMP_NUM_THREADS=1
+export ENV_VAR=1
+mpirun -np 24 test.x''',
+        theta = '''#!/bin/bash
+#COBALT -q default
+#COBALT -A ABC123
+#COBALT -n 2
+#COBALT -t 390
+#COBALT -O None
+#COBALT --attrs mcdram=cache:numa=quad
+
+export OMP_NUM_THREADS=1
+export ENV_VAR=1
+aprun -e OMP_NUM_THREADS=1 -d 1 -cc depth -j 1 -n 128 -N 64 test.x''',
+        titan = '''#!/bin/bash
+#PBS -A ABC123
+#PBS -q batch
+#PBS -N jobname
+#PBS -o test.out
+#PBS -e test.err
+#PBS -l walltime=06:30:00
+#PBS -l nodes=2
+#PBS -l gres=atlas1
+#PBS -V
+
+echo $PBS_O_WORKDIR
+cd $PBS_O_WORKDIR
+
+export OMP_NUM_THREADS=1
+export ENV_VAR=1
+aprun -n 32 test.x''',
+        tomcat3 = '''#!/bin/bash -l
+#SBATCH -J jobname
+#SBATCH -N 2
+#SBATCH -t 06:30:00
+#SBATCH -p tomcat
+#. /home/rcohen/.bashrc
+unalias cd; source /mnt/beegfs/intel/parallel_studio_xe_2019.3.062/bin/psxevars.sh
+ulimit -a
+
+export OMP_NUM_THREADS=1
+export ENV_VAR=1
+mpirun -np 128 test.x >test.out 2>test.err''',
+        uno = '''#!/bin/bash
+#SBATCH --job-name jobname
+#SBATCH --account=ABC123
+#SBATCH -N 2
+#SBATCH --ntasks-per-node=128
+#SBATCH --cpus-per-task=1
+#SBATCH -t 06:30:00
+#SBATCH -o test.out
+#SBATCH -e test.err
+#SBATCH -p quad
+
+module purge
+module add intel/intel-16.0.1.150
+module add libraries/intel-mkl-16.0.1.150
+module add mvapich2-intel-psm/1.7
+
+export OMP_NUM_THREADS=1
+export ENV_VAR=1
+srun test.x''',
+        vesta = '''#!/bin/bash
+#COBALT -q default
+#COBALT -A ABC123
+#COBALT -n 2
+#COBALT -t 390
+#COBALT -O None
+
+LOCARGS="--block $COBALT_PARTNAME ${COBALT_CORNER:+--corner} $COBALT_CORNER ${COBALT_SHAPE:+--shape} $COBALT_SHAPE"
+echo "Cobalt location args: $LOCARGS" >&2
+
+
+runjob --np 32 -p 16 $LOCARGS --verbose=INFO --envs OMP_NUM_THREADS=1 ENV_VAR=1 : test.x''',
+        )
+
+    if testing.global_data['job_ref_table']:
+        print('\n\n')
+    #end if
+    job_inputs = obj(
+        nodes       = 2,
+        hours       = 6,
+        minutes     = 30,
+        env         = obj(ENV_VAR=1),
+        identifier  = 'test',
+        outfile     = 'test.out',
+        errfile     = 'test.err',
+        app_command = 'test.x',
+        )
+    for name in sorted(supercomputers.keys()):
+        m = supercomputers[name]
+        if m.requires_account:
+            acc = 'ABC123'
+        else:
+            acc = None
+        #end if
+        ji = job_inputs.copy()
+        if name=='summit': # exceptional treatment for summit nodes
+            ji.gpus = 6
+        #end if
+        j = job(
+            machine = name,
+            account = acc,
+            **ji
+            )
+        j.abs_dir = '/path/on/'+name
+        wj = m.write_job(j)
+        if testing.global_data['job_ref_table']:
+            print("        {} = '''{}''',".format(name,wj.strip()))
+            continue
+        #end if
+        ref_wj = job_write_ref[name]
+        assert(wj.strip()==ref_wj)
+    #end for
+
+    Machine.allow_warnings = allow_warn
+#end def test_write_job

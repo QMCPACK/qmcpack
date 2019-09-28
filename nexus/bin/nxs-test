@@ -1946,6 +1946,8 @@ def machines():
 
     nunit('job_run_command')
 
+    nunit('write_job')
+
     nunit_all()
 #end def machines
 
