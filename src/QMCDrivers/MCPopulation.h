@@ -90,7 +90,7 @@ public:
   {}
   MCPopulation(MCPopulation&&) = default;
   MCPopulation& operator=(MCPopulation&&) = default;
-  
+
   void createWalkers();
   void createWalkers(IndexType num_walkers);
   void createWalkers(int num_crowds_,
@@ -150,7 +150,7 @@ public:
   void set_target(IndexType pop) { target_population_ = pop; }
   void set_target_samples(IndexType samples) { target_samples_ = samples; }
 
-  std::vector<std::unique_ptr<MCPWalker>>& get_walkers() { return walkers_; }
+  UPtrVector<MCPWalker>& get_walkers() { return walkers_; }
   const std::vector<std::pair<int, int>>& get_particle_group_indexes() const { return particle_group_indexes_; }
   const std::vector<RealType>& get_ptclgrp_mass() const { return ptclgrp_mass_; }
   const std::vector<RealType>& get_ptclgrp_inv_mass() const { return ptclgrp_inv_mass_; }

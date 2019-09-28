@@ -49,7 +49,7 @@ TEST_CASE("QMCDriverNew tiny case", "[drivers]")
   MinimalHamiltonianPool mhp(comm);
   HamiltonianPool hamiltonian_pool = mhp(&particle_pool, &wavefunction_pool);
   MCPopulation population(1, particle_pool.getParticleSet("e"), wavefunction_pool.getPrimary(), hamiltonian_pool.getPrimary());
-  QMCDriverNewTestWrapper qmcdriver(std::move(qmcdriver_input), std::move(population), *(wavefunction_pool.getPrimary()),
+  QMCDriverNewTestWrapper qmcdriver(std::move(qmcdriver_input), population, *(wavefunction_pool.getPrimary()),
                                     *(hamiltonian_pool.getPrimary()), wavefunction_pool, comm);
 
   // setStatus must be called before process
@@ -93,7 +93,7 @@ TEST_CASE("QMCDriverNew integration", "[drivers]")
   MinimalHamiltonianPool mhp(comm);
   HamiltonianPool hamiltonian_pool = mhp(&particle_pool, &wavefunction_pool);
   MCPopulation population(4, particle_pool.getParticleSet("e"), wavefunction_pool.getPrimary(), hamiltonian_pool.getPrimary());
-  QMCDriverNewTestWrapper qmcdriver(std::move(qmcdriver_input), std::move(population), *(wavefunction_pool.getPrimary()),
+  QMCDriverNewTestWrapper qmcdriver(std::move(qmcdriver_input), population, *(wavefunction_pool.getPrimary()),
                                     *(hamiltonian_pool.getPrimary()), wavefunction_pool, comm);
 
   // setStatus must be called before process

@@ -19,7 +19,7 @@ SET(UTEST_DIR ${qmcpack_BINARY_DIR}/tests/type_traits)
 
 EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E make_directory "${UTEST_DIR}")
 
-SET(TEST_SRCS test_qmctypes.cpp)
+SET(TEST_SRCS test_qmctypes.cpp test_template_types.cpp)
 if(QMC_CUDA)
   SET(TEST_SRCS test_cuda_types.cpp)
 endif(QMC_CUDA)

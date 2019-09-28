@@ -423,8 +423,15 @@ public:
   /** save this to awalker
    *
    *  just the R, G, and L
+   *  More duplicate data that makes code difficult to reason about should be removed.
    */
   void saveWalker(Walker_t& awalker);
+
+  /** batched version of saveWalker
+   *
+   *  just the R, G, and L
+   */
+  static void flex_saveWalker(RefVector<ParticleSet>& psets, RefVector<Walker_t>& walkers);
 
   /** update structure factor and unmark activePtcl
    *

@@ -650,6 +650,29 @@ void SimpleFixedNodeBranch::checkParameters(MCWalkerConfiguration& w)
   app_log().flush();
 }
 
+void SimpleFixedNodeBranch::checkParameters(const int global_walkers, RefVector<MCPWalker>& walkers)
+{
+  std::ostringstream o;
+  if (!BranchMode[B_DMCSTAGE])
+  {
+    FullPrecRealType e, sigma2;
+    MyEstimator->getCurrentStatistics(global_walkers, walkers, e, sigma2);
+    vParam[B_ETRIAL] = vParam[B_EREF] = e;
+    vParam[B_SIGMA2]                  = sigma2;
+    EnergyHist.clear();
+    VarianceHist.clear();
+    //DMCEnergyHist.clear();
+    EnergyHist(vParam[B_EREF]);
+    VarianceHist(vParam[B_SIGMA2]);
+    //DMCEnergyHist(vParam[B_EREF]);
+    o << "SimpleFixedNodeBranch::checkParameters " << std::endl;
+    o << "  Average Energy of a population  = " << e << std::endl;
+    o << "  Energy Variance = " << vParam[B_SIGMA2] << std::endl;
+  }
+  app_log() << o.str() << std::endl;
+  app_log().flush();
+}
+
 void SimpleFixedNodeBranch::finalize(MCWalkerConfiguration& w)
 {
   std::ostringstream o;

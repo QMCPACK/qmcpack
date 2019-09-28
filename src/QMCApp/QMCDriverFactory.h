@@ -22,6 +22,7 @@
 
 #include "OhmmsData/OhmmsElementBase.h"
 #include "QMCDrivers/DriverTraits.h"
+#include "QMCDrivers/MCPopulation.h"
 #include "QMCApp/ParticleSetPool.h"
 
 class Communicate;
@@ -61,6 +62,7 @@ public:
                                                    ParticleSetPool& particle_pool,
                                                    WaveFunctionPool& wave_function_pool,
                                                    HamiltonianPool& hamiltonian_pool,
+                                                   MCPopulation& population,
                                                    Communicate* comm);
 
 private:
@@ -74,6 +76,7 @@ private:
                                                       ParticleSetPool& particle_pool,
                                                       WaveFunctionPool& wave_function_pool,
                                                       HamiltonianPool& hamiltonian_pool,
+                                                      MCPopulation& population,
                                                       Communicate* comm);
 };
 } // namespace qmcplusplus

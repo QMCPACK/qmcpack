@@ -46,7 +46,7 @@ TEST_CASE("VariableSet one", "[optimize]")
   REQUIRE(vs.getIndex("first") == 0);
   REQUIRE(vs.name(0) == "first");
   double first_val_real = 1.123456789;
-  REQUIRE(vs[0] == ComplexApprox(first_val_real).compare_real_only());
+  REQUIRE(std::real(vs[0] ) == Approx(first_val_real));
 
   std::ostringstream o;
   vs.print(o, 0, false);

@@ -93,6 +93,7 @@ void DMC::resetUpdateEngines()
         o << "  Updates by particle-by-particle moves";
       else
         o << "  Updates by walker moves";
+      // Appears to be set in constructor reported here and used nowhere
       if (KillNodeCrossing)
         o << "\n  Walkers are killed when a node crossing is detected";
       else
