@@ -513,8 +513,8 @@ void WalkerControlMPI::swapWalkersSimple(MCPopulation& pop, PopulationAdjustment
       ++messages_incoming;
       if ( adjust.bad_walkers.size() > 0)
       {
-        pop.kill_walker(adjust.bad_walkers.back());
-        adjust.bad_walkers.pop();
+        pop.killWalker(adjust.bad_walkers.back());
+        adjust.bad_walkers.pop_back();
       }
     }
             
@@ -550,7 +550,7 @@ void WalkerControlMPI::swapWalkersSimple(MCPopulation& pop, PopulationAdjustment
   messages_incoming *= 2; // extra message sent for multiplicity
   if( messages_incoming > 0)
   {
-    for( int im = 0 ; im < messasges_incoming; ++im)
+    for( int im = 0 ; im < messages_incoming; ++im)
     {
       WalkerMessage message(pop.spawnWalker(), MyContext);
       receive_requests.push_back(myComm->comm.ireceive_value(message.multiplicity));

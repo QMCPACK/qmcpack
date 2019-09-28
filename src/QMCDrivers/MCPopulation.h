@@ -107,6 +107,7 @@ public:
   MCPWalker& spawnWalker();
   void killWalker(MCPWalker&);
   void createWalkerInplace(UPtr<MCPWalker>& walker_ptr);
+  void allocateWalkerStuffInplace(int walker_index);
   /** }@ */
 
   void createWalkers();

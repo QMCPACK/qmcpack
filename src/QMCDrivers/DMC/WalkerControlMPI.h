@@ -26,12 +26,12 @@ class WalkerControlMPITest;
 
 struct WalkerMessage
 {
-  const WalkerControlBase::MCPWalker& walker;
+  WalkerControlBase::MCPWalker& walker;
   // i.e. MPI rank
   const int target_rank;
   int multiplicity = 1;
   size_t byteSize = 0;
-  WalkerMessage(const WalkerControlBase::MCPWalker& walk, const int target) : walker(walk), target_rank(target){};
+  WalkerMessage(WalkerControlBase::MCPWalker& walk, const int target) : walker(walk), target_rank(target){};
 };
 
 bool operator==(const WalkerMessage& A, const WalkerMessage& B)

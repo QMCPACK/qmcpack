@@ -411,6 +411,8 @@ struct Walker
    */
   inline size_t byteSize()
   {
+    // TODO: fix this! this is a non intuitive side effect for a size call
+    //       breaks a bunch of things that could be const
     if (!DataSet.size())
     {
       registerData();

@@ -142,18 +142,30 @@ void MCPopulation::createWalkers(IndexType num_walkers)
 
 /** creates a walker and returns a reference
  */
-MCPopulation::MCPWalker& MCPopulation::spawnWalker(const MCPWalker& walker)
+MCPopulation::MCPWalker& MCPopulation::spawnWalker()
 {
   auto it_walkers = walkers_.begin();
+  int walker_index;
   while (it_walkers != walkers_.end())
   {
     if (*it_walkers == nullptr)
-      
+    {
+      createWalkerInplace(*it_walkers);
+      allocateWalkerStuffInplace(walker_index);
+      break;
+    }
+    ++walker_index;
+  }
+  // you need to add to all the vectors if no walkers have been killed
+  // for now we throw since this must be implemented
+  if (walker_index == walkers_.size())
+    throw std::runtime_error("Needed to add to population in MCPopulation but it is not implemented.");
+  return **it_walkers;
 }
 
 /** Kill a walker
  */
-void MCPopulation::killWalker(const MCPWalker& walker)
+void MCPopulation::killWalker(MCPWalker& walker)
 {
   // find the walker and null its pointer in the walker vector
   auto it_walkers = walkers_.begin();
