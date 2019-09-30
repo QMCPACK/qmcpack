@@ -141,17 +141,6 @@ class SimulationInput(NexusCore):
         #create a physical system object from input file information
         self.not_implemented()
     #end def return_system
-
-    def incorporate_descriptor(self,descriptor):
-        #take information from a generic simulation descriptor object (ie DFT or QMC)
-        #and fill in input file
-        self.not_implemented()
-    #end def incorporate_descriptor
-
-    def return_descriptor(self):
-        #create a general simulation descriptor object from input file information
-        self.not_implemented()
-    #end def return_descriptor
 #end class SimulationInput
 
 
@@ -280,11 +269,20 @@ class Simulation(NexusCore):
     sim_directories = dict()
     all_sims = []
 
+
+    @classmethod
+    def clear_all_sims(cls):
+        cls.sim_directories.clear()
+        cls.all_sims = []
+        cls.sim_count = 0
+    #end def clear_all_sims
+
     @classmethod
     def code_name(cls):
         return cls.generic_identifier
     #end def code_name
 
+    # test needed
     @classmethod
     def separate_inputs(cls,kwargs,overlapping_kw=-1,copy_pseudos=True):
         if overlapping_kw==-1:
@@ -360,7 +358,7 @@ class Simulation(NexusCore):
 
     def __init__(self,**kwargs):
         #user specified variables
-        self.path          = None   #directory where sim will be run
+        self.path          = ''     #directory where sim will be run
         self.job           = None   #Job object for machine
         self.dependencies  = obj()  #Simulation results on which sim serially depends
         self.restartable   = False  #if True, job can be automatically restarted as deemed appropriate
@@ -547,8 +545,7 @@ class Simulation(NexusCore):
 
 
     def reset_indicators(self):
-        #this is now needed to enable restart support
-        #self.error('remove this error call if you really want to use reset_indicators')
+        #this is needed to support restarts
         self.got_dependencies = False
         self.setup          = False
         self.sent_files     = False
@@ -558,6 +555,7 @@ class Simulation(NexusCore):
         self.got_output     = False
         self.analyzed       = False
     #end def reset_indicators
+
 
     def completed(self):
         completed  = self.setup
@@ -570,6 +568,7 @@ class Simulation(NexusCore):
         return completed
     #end def completed
 
+
     def active(self):
         deps_completed = True
         for dep in self.dependencies:
@@ -578,6 +577,7 @@ class Simulation(NexusCore):
         active = deps_completed and not self.completed()
         return active
     #end def active
+
 
     def ready(self):
         ready = self.active()
@@ -588,6 +588,7 @@ class Simulation(NexusCore):
         ready &= not self.failed
         return ready
     #end def ready
+
 
     def check_result(self,result_name,sim):
         self.not_implemented()
@@ -1335,18 +1336,6 @@ class Simulation(NexusCore):
     #end def traverse_cascade
 
 
-#    def write_dependents(self,n=0,location=False):
-#        n+=1
-#        for sim in self.dependents:
-#            if not location:
-#                self.log(sim.__class__.__name__,sim.identifier,sim.simid,list(sim.dependency_ids),n=n)
-#            else:
-#                self.log(sim.__class__.__name__,sim.identifier,sim.simid,sim.locdir,list(sim.dependency_ids),n=n)
-#            #end if
-#            sim.write_dependents(n=n,location=location)
-#        #end for
-#    #end def write_dependents
-
     def write_dependents(self,n=0,location=False,block_status=False):
         outs = [self.__class__.__name__,self.identifier,self.simid]
         if location:
@@ -1445,14 +1434,6 @@ class NullSimulationInput(SimulationInput):
     def return_system(self):
         self.not_implemented()
     #end def return_system
-
-    def incorporate_descriptor(self,descriptor):
-        None
-    #end def incorporate_descriptor
-
-    def return_descriptor(self):
-        self.not_implemented()
-    #end def return_descriptor
 #end class NullSimulationInput
 
 
@@ -1483,14 +1464,14 @@ class GenericSimulation(Simulation):
             del kwargs['input_type']
         #end if
         if 'analyzer_type' in kwargs:
-            self.input_type = kwargs['analyzer_type']
+            self.analyzer_type = kwargs['analyzer_type']
             del kwargs['analyzer_type']
         #end if
         if 'input' in kwargs:
             self.input_type = kwargs['input'].__class__
         #end if
         if 'analyzer' in kwargs:
-            self.input_type = kwargs['analyzer'].__class__
+            self.analyzer_type = kwargs['analyzer'].__class__
         #end if
         Simulation.__init__(self,**kwargs)
     #end def __init__
@@ -1802,5 +1783,3 @@ def graph_sims(sims=None,savefile=None,useid=False,exit=True,quants=True):
 #end def graph_sims
 
 
-
-#def write_sims(sims,

@@ -2044,6 +2044,23 @@ def nexus_base():
 
 
 
+def simulation():
+
+    nunit('import')
+
+    nunit('simulation_input')
+
+    nunit('simulation_analyzer')
+
+    nunit('simulation_code_name')
+
+    nunit('simulation_init')
+
+    nunit_all()
+#end def simulation
+
+
+
 def pwscf_input():
     # divert logging function
     nlog_divert()
@@ -2707,6 +2724,7 @@ NexusTest( basisset              )
 NexusTest( pseudopotential       )
 NexusTest( nexus_base            )
 NexusTest( machines              )
+NexusTest( simulation            )
 NexusTest( pwscf_input           )
 NexusTest( qmcpack_input         )
 NexusTest( settings_operation    , 'settings' )
