@@ -1676,7 +1676,7 @@ class Structure(Sobj):
         self.axes  = axnew
         self.kaxes = kaxnew
         if self.folded_structure!=None:
-            self.folded_structure.matrix_transform(A)
+            self.folded_structure.matrix_transform(A.T)
         #end if
     #end def matrix_transform
 
