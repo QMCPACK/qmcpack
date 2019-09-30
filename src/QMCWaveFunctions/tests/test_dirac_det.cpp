@@ -351,7 +351,7 @@ TEST_CASE("DiracDeterminant_second", "[wavefunction][fermion]")
   std::cout << "det ratio 2 = " << det_ratio2 << std::endl;
 #endif
   //double det_ratio2_val = 0.178276269185;
-  REQUIRE(std::abs(det_ratio2) == ValueApprox(det_ratio2_val));
+  REQUIRE(std::abs(det_ratio2) == Approx(std::real(det_ratio2_val)));
 
 
   ddb.acceptMove(elec, 1);
@@ -486,7 +486,7 @@ TEST_CASE("DiracDeterminant_delayed_update", "[wavefunction][fermion]")
 #endif
   // check ratio computed directly and the one computed by ddc with no delay
   //double det_ratio2_val = 0.178276269185;
-  REQUIRE(std::abs(det_ratio2) == ValueApprox(det_ratio2_val));
+  REQUIRE(std::abs(det_ratio2) == Approx(std::real(det_ratio2_val)));
 
   // update of Ainv in ddc is delayed
   ddc.acceptMove(elec, 1);

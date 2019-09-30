@@ -62,11 +62,11 @@ TEST_CASE("MultiDiracDeterminantCalculator::evaluate-Small", "[wavefunction][fer
 {
   TestMultiDiracDeterminantCalculator<double> double_test;
   double det_value_expect = -1.1086723208;
-  REQUIRE(double_test.default_evaluate(3) == ValueApprox(det_value_expect));
+  REQUIRE(double_test.default_evaluate(3) == Approx(det_value_expect));
   det_value_expect = -1.3432116824;
-  REQUIRE(double_test.default_evaluate(7) == ValueApprox(det_value_expect));
+  REQUIRE(double_test.default_evaluate(7) == Approx(det_value_expect));
   det_value_expect = -1.3586431786;
-  REQUIRE(double_test.default_evaluate(12) == ValueApprox(det_value_expect));
+  REQUIRE(double_test.default_evaluate(12) == Approx(det_value_expect));
 }
 
 } // namespace qmcplusplus

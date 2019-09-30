@@ -141,7 +141,7 @@ TEST_CASE("PlaneWave SPO from HDF for BCC H", "[wavefunction]")
   SPOSet::ValueVector_t orbs(orbSize);
   spo->evaluate(elec, 0, orbs);
 
-  REQUIRE(orbs[0] == ComplexApprox(-1.2473558998).compare_real_only());
+  REQUIRE(std::real(orbs[0]) == Approx(-1.2473558998));
 
 #if 0
   // Dump values of the orbitals
@@ -296,7 +296,7 @@ TEST_CASE("PlaneWave SPO from HDF for LiH arb", "[wavefunction]")
   SPOSet::ValueVector_t orbs(orbSize);
   spo->evaluate(elec, 0, orbs);
 
-  REQUIRE(orbs[0] == ComplexApprox(-14.3744302974).compare_real_only());
+  REQUIRE(std::real(orbs[0]) == Approx(-14.3744302974));
 
 #if 0
   // Dump values of the orbitals

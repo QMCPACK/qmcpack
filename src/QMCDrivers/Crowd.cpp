@@ -61,8 +61,10 @@ void Crowd::loadWalkers()
 
 void Crowd::startBlock(int num_steps)
 {
-  n_accept = 0;
-  n_reject = 0;
+  n_accept_ = 0;
+  n_reject_ = 0;
+  // VMCBatched does no nonlocal moves
+  n_nonlocal_accept_ = 0;
   estimator_manager_crowd_.startBlock(num_steps);
 }
 

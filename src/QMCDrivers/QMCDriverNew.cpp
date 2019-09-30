@@ -46,7 +46,7 @@ namespace qmcplusplus
  *  masquerading as a C++ object.
  */
 QMCDriverNew::QMCDriverNew(QMCDriverInput&& input,
-                           MCPopulation&& population,
+                           MCPopulation& population,
                            TrialWaveFunction& psi,
                            QMCHamiltonian& h,
                            WaveFunctionPool& ppool,
@@ -54,8 +54,8 @@ QMCDriverNew::QMCDriverNew(QMCDriverInput&& input,
                            Communicate* comm)
     : MPIObjectBase(comm),
       qmcdriver_input_(input),
-      branchEngine(nullptr),
-      population_(std::move(population)),
+      branch_engine_(nullptr),
+      population_(population),
       Psi(psi),
       H(h),
       psiPool(ppool),
@@ -129,25 +129,25 @@ void QMCDriverNew::process(xmlNodePtr cur)
   //int numCopies = (H1.empty()) ? 1 : H1.size();
   //W.resetWalkerProperty(numCopies);
 
-  if (!branchEngine)
+  if (!branch_engine_)
   {
-    branchEngine = new SimpleFixedNodeBranch(qmcdriver_input_.get_tau(), population_.get_num_global_walkers());
+    branch_engine_ = new SimpleFixedNodeBranch(qmcdriver_input_.get_tau(), population_.get_num_global_walkers());
   }
 
   //create and initialize estimator
-  estimator_manager_ = branchEngine->getEstimatorManager();
+  estimator_manager_ = branch_engine_->getEstimatorManager();
   if (!estimator_manager_)
   {
     estimator_manager_ = new EstimatorManagerBase(myComm);
-    branchEngine->setEstimatorManager(estimator_manager_);
+    branch_engine_->setEstimatorManager(estimator_manager_);
     // This used to get updated as a side effect of setStatus
-    branchEngine->read(h5_file_root_);
+    branch_engine_->read(h5_file_root_);
   }
 
   if (!drift_modifier_)
     drift_modifier_.reset(createDriftModifier(qmcdriver_input_));
 
-  branchEngine->put(cur);
+  branch_engine_->put(cur);
   estimator_manager_->put(H, cur);
 
   crowds_.resize(num_crowds_);
@@ -172,11 +172,11 @@ void QMCDriverNew::process(xmlNodePtr cur)
 
   // if (wOut == 0)
   //   wOut = new HDFWalkerOutput(W, root_name_, myComm);
-  branchEngine->start(root_name_);
-  branchEngine->write(root_name_);
+  branch_engine_->start(root_name_);
+  branch_engine_->write(root_name_);
 
   // PD: not really sure what the point of this is.  Seems to just go to output
-  branchEngine->advanceQMCCounter();
+  branch_engine_->advanceQMCCounter();
 }
 
 /** QMCDriverNew ignores h5name if you want to read and h5 config you have to explicitly
@@ -193,11 +193,31 @@ void QMCDriverNew::setStatus(const std::string& aname, const std::string& h5name
     h5_file_root_ = h5name;
 }
 
+void QMCDriverNew::checkNumCrowdsLTNumThreads()
+{
+  int num_threads(Concurrency::maxThreads<>());
+  if (num_crowds_ > num_threads)
+  {
+    std::stringstream error_msg;
+    error_msg << "Bad Input: num_crowds (" << qmcdriver_input_.get_num_crowds()
+       << ") > num_threads (" << num_threads << ")\n";
+    throw std::runtime_error(error_msg.str());
+  }
+}
+
 void QMCDriverNew::set_num_crowds(int num_crowds, const std::string& reason)
 {
   num_crowds_ = num_crowds;
   app_warning() << " [INPUT OVERIDDEN] The number of crowds has been set to :  " << num_crowds << '\n';
   app_warning() << " Overiding the input of value of " << qmcdriver_input_.get_num_crowds() << " because " << reason
+                << std::endl;
+}
+
+void QMCDriverNew::set_walkers_per_rank(int walkers_per_rank, const std::string& reason)
+{
+  walkers_per_rank_ = walkers_per_rank;
+  app_warning() << " [INPUT OVERIDDEN] The number of crowds has been set to :  " << walkers_per_rank << '\n';
+  app_warning() << " Overiding the input of value of " << qmcdriver_input_.get_walkers_per_rank() << " because " << reason
                 << std::endl;
 }
 /** Read walker configurations from *.config.h5 files
@@ -274,7 +294,7 @@ void QMCDriverNew::recordBlock(int block)
   if (qmcdriver_input_.get_dump_config() && block % qmcdriver_input_.get_check_point_period().period == 0)
   {
     timers_.checkpoint_timer.start();
-    branchEngine->write(root_name_, true); //save energy_history
+    branch_engine_->write(root_name_, true); //save energy_history
     RandomNumberControl::write(root_name_, myComm);
     timers_.checkpoint_timer.stop();
   }
@@ -295,7 +315,7 @@ bool QMCDriverNew::finalize(int block, bool dumpwalkers)
  */
 void QMCDriverNew::setupWalkers()
 {
-  IndexType local_walkers = calc_default_local_walkers();
+  IndexType local_walkers = calc_default_local_walkers(qmcdriver_input_.get_walkers_per_rank());
   
   // side effect updates walkers_per_crowd_;
   addWalkers(local_walkers, ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>(population_.get_num_particles()));
@@ -359,7 +379,7 @@ void QMCDriverNew::initialLogEvaluation(int crowd_id, UPtrVector<Crowd>& crowds)
   for (ParticleSet& pset : walker_elecs)
     pset.update();
 
-  auto copyFrom = [](TrialWaveFunction& twf, ParticleSet& pset, Crowd::WFBuffer& wfb){
+  auto copyFrom = [](TrialWaveFunction& twf, ParticleSet& pset, WFBuffer& wfb){
                       twf.copyFromBuffer(pset,wfb);
                     };
   for (int iw = 0; iw < crowd.size(); ++iw)
