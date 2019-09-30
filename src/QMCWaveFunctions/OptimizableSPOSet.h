@@ -86,14 +86,13 @@ public:
   std::vector<std::vector<TinyVector<int, 2>>> ActiveBasis;
 
 
-  OptimizableSPOSet() : N(0), M(0), derivScale(10.0), thr(0.0), GSOrbitals(0), BasisOrbitals(0)
+  OptimizableSPOSet() : SPOSet(false, true), N(0), M(0), derivScale(10.0), thr(0.0), GSOrbitals(0), BasisOrbitals(0)
   {
-    Optimizable = true;
     className   = "OptimizableSPOSet";
   }
 
   OptimizableSPOSet(int num_orbs, SPOSet* gsOrbs, SPOSet* basisOrbs = 0)
-      : GSOrbitals(gsOrbs), BasisOrbitals(basisOrbs), derivScale(10.0)
+      : SPOSet(false, true), GSOrbitals(gsOrbs), BasisOrbitals(basisOrbs), derivScale(10.0)
   {
     N = num_orbs;
     setOrbitalSetSize(N);
@@ -102,7 +101,6 @@ public:
     else
       M = GSOrbitals->getOrbitalSetSize() - N;
     resize(N, M);
-    Optimizable = true;
   }
 
 
