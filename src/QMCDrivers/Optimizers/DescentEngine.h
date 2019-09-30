@@ -4,12 +4,11 @@
 //
 // Copyright (c) 2019 QMCPACK developers.
 //
-// File developed by: Leon Otis, leon_otis@berkeley.edu University, University of California Berkeley              
+// File developed by: Leon Otis, leon_otis@berkeley.edu University, University of California Berkeley
 //                    Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //
 // File created by: Leon Otis, leon_otis@berkeley.edu University, University of California Berkeley
 //////////////////////////////////////////////////////////////////////////////////////
-
 
 
 #ifndef QMCPLUSPLUS_DESCENT_ENGINE_HEADER
@@ -25,11 +24,11 @@ namespace qmcplusplus
 {
 class DescentEngine
 {
+  typedef qmcplusplus::QMCTraits::FullPrecValueType FullPrecValueType;
+  typedef qmcplusplus::QMCTraits::ValueType ValueType;
 
-     typedef qmcplusplus::QMCTraits::FullPrecValueType FullPrecValueType;
-     typedef qmcplusplus::QMCTraits::ValueType ValueType;
 private:
-    //Vectors and scalars used in calculation of averaged derivatives in descent
+  //Vectors and scalars used in calculation of averaged derivatives in descent
   std::vector<FullPrecValueType> avg_le_der_samp_;
   std::vector<std::vector<FullPrecValueType>> replica_le_der_samp_;
 
@@ -195,7 +194,7 @@ public:
   int getDescentNum() const { return descent_num_; }
 
   ///Function for setting averaged derivatives, currently only used as part of a unit test of the engine's parameter update
-  void setDerivs(std::vector<FullPrecValueType>& test_derivs) {lderivs_ = test_derivs;}
+  void setDerivs(std::vector<FullPrecValueType>& test_derivs) { lderivs_ = test_derivs; }
 };
 
 } // namespace qmcplusplus

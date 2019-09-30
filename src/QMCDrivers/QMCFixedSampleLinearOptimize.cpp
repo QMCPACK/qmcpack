@@ -205,7 +205,6 @@ QMCFixedSampleLinearOptimize::RealType QMCFixedSampleLinearOptimize::Func(RealTy
 
 bool QMCFixedSampleLinearOptimize::run()
 {
-
 #ifdef HAVE_LMY_ENGINE
   if (doHybrid)
   {
@@ -554,18 +553,17 @@ bool QMCFixedSampleLinearOptimize::processOptXML(xmlNodePtr opt_xml, const std::
   NumOfVMCWalkers = W.getActiveWalkers();
 
 
-
   // create VMC engine
- // if (vmcEngine == 0)
- // {
+  // if (vmcEngine == 0)
+  // {
 #if defined(QMC_CUDA)
-    if (useGPU == "yes")
-      vmcEngine = new VMCcuda(W, Psi, H, psiPool, myComm);
-    else
+  if (useGPU == "yes")
+    vmcEngine = new VMCcuda(W, Psi, H, psiPool, myComm);
+  else
 #endif
-      vmcEngine = new VMC(W, Psi, H, psiPool, myComm);
-    vmcEngine->setUpdateMode(vmcMove[0] == 'p');
-// }
+    vmcEngine = new VMC(W, Psi, H, psiPool, myComm);
+  vmcEngine->setUpdateMode(vmcMove[0] == 'p');
+  // }
 
 
   vmcEngine->setStatus(RootName, h5FileRoot, AppendRun);
@@ -1390,8 +1388,8 @@ bool QMCFixedSampleLinearOptimize::hybrid_run()
 
   if (current_optimizer_type_ == OptimizerType::ADAPTIVE)
   {
-      //If the optimization just switched to using the BLM, need to transfer a set
-      //of vectors to the BLM engine.
+    //If the optimization just switched to using the BLM, need to transfer a set
+    //of vectors to the BLM engine.
     if (previous_optimizer_type_ == OptimizerType::DESCENT)
     {
       std::vector<std::vector<ValueType>> hybridBLM_Input = descentEngineObj->retrieveHybridBLM_Input();

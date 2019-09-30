@@ -4,7 +4,7 @@
 //
 // Copyright (c) 2019 QMCPACK developers.
 //
-// File developed by: Leon Otis, leon_otis@berkeley.edu University, University of California Berkeley		   
+// File developed by: Leon Otis, leon_otis@berkeley.edu University, University of California Berkeley
 //		      Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //
 // File created by: Leon Otis, leon_otis@berkeley.edu University, University of California Berkeley
@@ -37,7 +37,7 @@ DescentEngine::DescentEngine(Communicate* comm, const xmlNodePtr cur)
       store_num_(5)
 {
   descent_num_ = 0;
-  store_count_  = 0;
+  store_count_ = 0;
   processXML(cur);
 }
 
@@ -94,9 +94,9 @@ void DescentEngine::prepareStorage(const int num_replicas, const int num_optimiz
     std::fill(replica_der_rat_samp_[i].begin(), replica_der_rat_samp_[i].end(), 0.0);
   }
 
-  w_sum_       = 0;
-  e_avg_       = 0;
-  e_sum_       = 0;
+  w_sum_        = 0;
+  e_avg_        = 0;
+  e_sum_        = 0;
   e_square_sum_ = 0;
   e_square_avg_ = 0;
 }
@@ -104,10 +104,10 @@ void DescentEngine::prepareStorage(const int num_replicas, const int num_optimiz
 //Sets the value of the averaged local energy
 void DescentEngine::setEtemp(const std::vector<FullPrecValueType>& etemp)
 {
-  e_sum_       = etemp[0];
-  w_sum_       = etemp[1];
+  e_sum_        = etemp[0];
+  w_sum_        = etemp[1];
   e_square_sum_ = etemp[2];
-  e_avg_       = e_sum_ / w_sum_;
+  e_avg_        = e_sum_ / w_sum_;
   e_square_avg_ = e_square_sum_ / w_sum_;
 
   app_log() << "e_sum: " << e_sum_ << std::endl;
@@ -115,7 +115,7 @@ void DescentEngine::setEtemp(const std::vector<FullPrecValueType>& etemp)
   app_log() << "e_avg: " << e_avg_ << std::endl;
   app_log() << "e_square_sum: " << e_square_sum_ << std::endl;
   app_log() << "e_square_avg: " << e_square_avg_ << std::endl;
-  app_log() << "e_var: " << e_square_avg_ - e_avg_*e_avg_ << std::endl;
+  app_log() << "e_var: " << e_square_avg_ - e_avg_ * e_avg_ << std::endl;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -231,14 +231,14 @@ void DescentEngine::updateParameters()
     // curLambda is lambda_k, nextLambda is lambda_k+1
     ValueType cur_lambda  = .5 + .5 * std::sqrt(1 + 4 * lambda_ * lambda_);
     ValueType next_lambda = .5 + .5 * std::sqrt(1 + 4 * cur_lambda * cur_lambda);
-    ValueType gamma      = (1 - cur_lambda) / next_lambda;
+    ValueType gamma       = (1 - cur_lambda) / next_lambda;
 
     // Define damping factor that turns off acceleration of the algorithm
     // small value of d corresponds to quick damping and effectively using
     // steepest descent
-    ValueType d           = 100;
+    ValueType d            = 100;
     ValueType decay_factor = std::exp(-(1 / d) * (descent_num_));
-    gamma              = gamma * decay_factor;
+    gamma                  = gamma * decay_factor;
 
     ValueType rho = .9;
 
@@ -267,7 +267,7 @@ void DescentEngine::updateParameters()
       ValueType step_lambda = .1;
 
       ValueType step_decay_denom = 1 + step_lambda * descent_num_;
-      tau                   = tau / step_decay_denom;
+      tau                        = tau / step_decay_denom;
 
 
       //Update parameter values
@@ -295,7 +295,7 @@ void DescentEngine::updateParameters()
       else
       {
         // When not on the first step, can overwrite the previous stored values
-        taus_[i]          = tau;
+        taus_[i]           = tau;
         derivs_squared_[i] = cur_square;
       }
 
@@ -312,7 +312,7 @@ void DescentEngine::updateParameters()
 
     for (int i = 0; i < num_params_; i++)
     {
-      denom        = 1;
+      denom           = 1;
       ValueType alpha = ((ValueType)rand() / RAND_MAX);
       ValueType sign  = std::abs(cur_deriv_set[i]) / cur_deriv_set[i];
       if (std::isnan(sign))
@@ -345,8 +345,8 @@ void DescentEngine::updateParameters()
       for (int i = 0; i < num_params_; i++)
       {
         ValueType cur_square = std::pow(cur_deriv_set.at(i), 2);
-        ValueType beta1     = .9;
-        ValueType beta2     = .99;
+        ValueType beta1      = .9;
+        ValueType beta2      = .99;
         if (descent_num_ == 0)
         {
           numer_records_.push_back(0);
@@ -376,7 +376,7 @@ void DescentEngine::updateParameters()
         else
         {
           // When not on the first step, can overwrite the previous stored values
-          taus_[i]          = tau;
+          taus_[i]           = tau;
           derivs_squared_[i] = cur_square;
           denom_records_[i]  = v;
           numer_records_[i]  = numer;
@@ -394,8 +394,8 @@ void DescentEngine::updateParameters()
       for (int i = 0; i < num_params_; i++)
       {
         ValueType cur_square = std::pow(cur_deriv_set.at(i), 2);
-        ValueType beta1     = .9;
-        ValueType beta2     = .99;
+        ValueType beta1      = .9;
+        ValueType beta2      = .99;
         if (descent_num_ == 0)
         {
           numer_records_.push_back(0);
@@ -423,7 +423,7 @@ void DescentEngine::updateParameters()
         else
         {
           // When not on the first step, can overwrite the previous stored values
-          taus_[i]          = tau;
+          taus_[i]           = tau;
           derivs_squared_[i] = cur_square;
           denom_records_[i]  = v;
           numer_records_[i]  = numer;
@@ -517,7 +517,7 @@ void DescentEngine::storeVectors(std::vector<ValueType>& current_params)
   // if storeVectors is called again later in the optimization.
   for (int i = 0; i < current_params.size(); i++)
   {
-    row_vec[i]        = current_params[i] - params_for_diff_[i];
+    row_vec[i]          = current_params[i] - params_for_diff_[i];
     params_for_diff_[i] = current_params[i];
   }
 
