@@ -185,7 +185,7 @@ void DescentEngine::sample_finish()
     //Computation of averaged derivatives for excited state functional will be added in future
     if (!engine_target_excited_)
     {
-      lderivs_.at(i) = 2 * avg_le_der_samp_.at(i) - e_avg_ * (2 * avg_der_rat_samp_.at(i));
+      lderivs_.at(i) = static_cast<FullPrecValueType>(2) * (avg_le_der_samp_.at(i) - e_avg_ * avg_der_rat_samp_.at(i));
     }
   }
 }

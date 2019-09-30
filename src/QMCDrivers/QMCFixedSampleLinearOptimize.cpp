@@ -1393,7 +1393,10 @@ bool QMCFixedSampleLinearOptimize::hybrid_run()
     if (previous_optimizer_type_ == OptimizerType::DESCENT)
     {
       std::vector<std::vector<ValueType>> hybridBLM_Input = descentEngineObj->retrieveHybridBLM_Input();
+#if !defined(QMC_COMPLEX)
+      //FIXME once complex is fixed in BLM engine
       EngineObj->setHybridBLM_Input(hybridBLM_Input);
+#endif
     }
     adaptive_three_shift_run();
   }
