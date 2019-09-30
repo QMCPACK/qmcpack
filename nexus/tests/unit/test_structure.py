@@ -338,19 +338,19 @@ def test_rotate():
     assert(value_eq(s1.pos[-1],s0.pos[-1]))
     assert(value_eq(s1.axes[-1],s0.axes[-1]))
     assert(value_eq(s1.kaxes[-1],s0.kaxes[-1]))
-    # Perform active rotation taking a1-coords to a3-coords
+    # Perform active rotation taking a0-coords to a2-coords
     s1.rotate(s0.axes[0],s0.axes[2])
     assert(value_eq(s1.pos[-1],np.array([-2.15536928,3.46035669,0.86507139])))
     assert(value_eq(s1.axes[-1],np.array([-3.91292278,3.02549423,-1.35344154])))
     assert(value_eq(s1.kaxes[-1],np.array([-0.90768302,0.83458438,-0.15254555])))
-    # Perform active rotation taking a3-coords to a1-coords (original positions should be found)
+    # Perform active rotation taking a2-coords to a0-coords (original positions should be found)
     s1.rotate('a2','a0')
     assert(value_eq(s1.pos,s0.pos))
     assert(value_eq(s1.axes,s0.axes))
     assert(value_eq(s1.kaxes,s0.kaxes))
 
     # Test the case where rp is not given
-    # Perform active rotation taking a3-coords to a1-coords
+    # Perform active rotation taking a2-coords to a0-coords
     R = [[0.2570157723433977, 0.6326366344635742,-0.7305571719594085], 
          [0.4370696746690278, 0.5981289557203555, 0.6717230469572912], 
          [0.8619240060767753,-0.4919478031900122,-0.12277771249328594]]
@@ -360,7 +360,7 @@ def test_rotate():
     assert(value_eq(s1.kaxes[-1],np.array([-0.90768302,0.83458438,-0.15254555])))
 
     # A final test which places the structure back into its original form
-    # Perform active rotation taking a3-coords to a1-coords (original positions should be found)
+    # Perform passive rotation taking a2-coords to a0-coords (original positions should be found)
     s1.rotate([-0.5871158698555267, -0.8034668669004766, -0.09867091342903483],1.7050154439645373,passive=True)
     assert(value_eq(s1.pos,s0.pos))
     assert(value_eq(s1.axes,s0.axes))
