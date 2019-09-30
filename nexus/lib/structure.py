@@ -1559,21 +1559,33 @@ class Structure(Sobj):
         Parameters
         ----------
         r  : `array_like, float, shape (3,3)` or `array_like, float, shape (3)` or `str`
-            If a 3x3 matrix, then code executes rotation consistent with this matrix --
+            If a 3x3 matrix, then code executes rotation consistent with this matrix -- 
             it is assumed that the matrix acts on a column-major vector (eg, v'=Rv)
             If a three-dimensional array, then the operation of the function depends
             on the input type of rp in the following ways:
-                1. If rp is a scalar, then a rotation of rp is made about the axis 
-                   defined by r
-                2. If rp is a vector, then the rotation is such that r aligns with rp
+                1. If rp is a scalar, then rp is assumed to be an angle and a rotation 
+                   of rp is made about the axis defined by r
+                2. If rp is a vector, then rp is assumed to be an axis and a rotation is made 
+                   such that r aligns with rp
+                3. If rp is a str, then the rotation is such that r aligns with the
+                   axis given by the str ('x', 'y', 'z', 'a0', 'a1', or 'a2')
+            If a str then the axis, r, is defined by the input label (e.g. 'x', 'y', 'z', 'a1', 'a2', or 'a3')
+            and the operation of the function depends on the input type of rp in the following
+            ways (same as above):
+                1. If rp is a scalar, then rp is assumed to be an angle and a rotation 
+                   of rp is made about the axis defined by r
+                2. If rp is a vector, then rp is assumed to be an axis and a rotation is made 
+                   such that r aligns with rp
                 3. If rp is a str, then the rotation is such that r aligns with the
                    axis given by the str ('x', 'y', 'z', 'a0', 'a1', or 'a2')
         rp : `array_like, float, shape (3), optional` or `str, optional`
-            Inputted points lie only on a circle or not.  It is the user's 
-            responsibility to guarantee the correctness of this assertion.
-            If `False` (the default), the outputted points are two-dimensional 
-            (`d=2`) with :math:`(r,\phi)` returned.  If `True`, only :math:`\phi` 
-            is returned (`d=1`).
+            If a 3-dimensional vector is given, then rp is assumed to be an axis and a rotation is made
+            such that the axis r is aligned with rp.
+            If a str, then rp is assumed to be an angle and a rotation about the axis defined by r 
+            is made by an angle rp
+            If a str is given, then rp is assumed to be an axis defined by the given label
+            (e.g. 'x', 'y', 'z', 'a1', 'a2', or 'a3') and a rotation is made such that the axis r 
+            is aligned with rp.
         passive : `bool, optional, default False`
             If `True`, perform a passive rotation
             If `False`, perform an active rotation
@@ -1583,16 +1595,18 @@ class Structure(Sobj):
             Perform a check to verify rotation matrix is orthogonal
         """
         if rp is not None:
-            lattice_dirmap = dict(a0=0,a1=1,a2=2)
-            cartesian_dirmap = dict(x=[1,0,0],y=[0,1,0],z=[0,0,1])
+            dirmap = dict(x=[1,0,0],y=[0,1,0],z=[0,0,1])
             if isinstance(r,str): 
                 if r[0]=='a': # r= 'a0', 'a1', or 'a2'
-                    r = self.axes[lattice_dirmap[r]]
+                    r = self.axes[int(r[1])]
                 else: # r= 'x', 'y', or 'z'
-                    r = cartesian_dirmap[r]
+                    r = dirmap[r]
                 #end if
             else:
                 r = array(r,dtype=float)
+                if len(r.shape)>1:
+                    self.error('r must be given as a 1-d vector or string, if rp is not None')
+                #end if
             #end if
             if isinstance(rp,(int,float)):
                 if units=="radians" or units=="rad":
@@ -1604,9 +1618,9 @@ class Structure(Sobj):
             else:
                 if isinstance(rp,str):
                     if rp[0]=='a': # rp= 'a0', 'a1', or 'a2'
-                        rp = self.axes[lattice_dirmap[rp]]
+                        rp = self.axes[int(rp[1])]
                     else: # rp= 'x', 'y', or 'z'
-                        rp = cartesian_dirmap[rp]
+                        rp = dirmap[rp]
                     #end if
                 else:
                     rp = array(rp,dtype=float)
@@ -1639,7 +1653,18 @@ class Structure(Sobj):
     #end def rotate
 
 
+    # test needed
     def matrix_transform(self,A): 
+        """
+        Arbitrary transformation matrix (column-major).
+
+        Parameters
+        ----------
+        skew  : `array_like, float, shape (3,3)`
+            Transform the structure using the matrix skew. It is assumed that
+            skew is in column-major form, i.e., it transforms a vector v as
+            v' = Tv
+        """
         A = A.T
         axinv  = inv(self.axes)
         axnew  = dot(self.axes,A)
@@ -1659,15 +1684,14 @@ class Structure(Sobj):
     # test needed
     def skew(self,skew):
         """
-        Conversion from polar to Cartesian coordinates.
+        Arbitrary transformation matrix (row-major).
 
         Parameters
         ----------
-        skew  : `array_like, float, shape (N,d)`
-            Real valued points in polar coordinates :math:`(r,\phi)`. `N` is the 
-            number of points and `d` is the dimension of the coordinate system.  
-            The inputted points must satisfy :math:`r=\mathrm{points[:,0]}`, 
-            :math:`\phi=\mathrm{points[:,1]}`, and :math:`\phi\in[0,2\pi)`.
+        skew  : `array_like, float, shape (3,3)`
+            Transform the structure using the matrix skew. It is assumed that
+            skew is in row-major form, i.e., it transforms a vector v as
+            v' = vT
         """
         self.matrix_transform(skew.T)
     #end def skew
