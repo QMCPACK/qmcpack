@@ -79,7 +79,7 @@ class MethodAnalyzer(QAanalyzer):
             complete &= 'opt' in files
         #end if
         equil = request.equilibration
-        nblocks_exclude = 0
+        nblocks_exclude = -1
         if isinstance(equil,int):
             nblocks_exclude = equil
         elif isinstance(equil,(dict,obj)):

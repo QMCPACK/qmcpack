@@ -28,7 +28,6 @@ SET(WFBASE_SRCS
   SPOSetInfo.cpp
   SPOSetInputInfo.cpp
   SPOSet.cpp
-  OptimizableSPOSet.cpp
   CompositeSPOSet.cpp
   HarmonicOscillator/SHOSet.cpp
   HarmonicOscillator/SHOSetBuilder.cpp
@@ -56,7 +55,6 @@ SET(JASTROW_SRCS
   Jastrow/RPAJastrow.cpp
   LatticeGaussianProduct.cpp
   LatticeGaussianProductBuilder.cpp
-  OptimizableSPOBuilder.cpp
   Fermion/SPOSetProxy.cpp
   Fermion/SPOSetProxyForMSD.cpp
   )

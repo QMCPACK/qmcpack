@@ -16,11 +16,9 @@
 
 namespace qmcplusplus
 {
-LCAOrbitalSet::LCAOrbitalSet(basis_type* bs)
-    : myBasisSet(nullptr), params_supplied(false), BasisSetSize(0), Identity(true)
+LCAOrbitalSet::LCAOrbitalSet(basis_type* bs, bool optimize)
+    : SPOSet(true, optimize), myBasisSet(nullptr), params_supplied(false), BasisSetSize(0), Identity(true)
 {
-  //This SPOSet has an explicit ion dependence, so set this flag.
-  ionDerivs=true;
   if (bs != nullptr)
     setBasisSet(bs);
 }
