@@ -25,12 +25,6 @@
 #include "Estimators/EstimatorManagerBase.h"
 #include "QMCDrivers/BranchIO.h"
 #include "Particle/Reptile.h"
-#ifdef HAVE_ADIOS
-#include <adios.h>
-#endif
-
-
-//#include <boost/archive/text_oarchive.hpp>
 
 namespace qmcplusplus
 {
@@ -656,6 +650,29 @@ void SimpleFixedNodeBranch::checkParameters(MCWalkerConfiguration& w)
   app_log().flush();
 }
 
+void SimpleFixedNodeBranch::checkParameters(const int global_walkers, RefVector<MCPWalker>& walkers)
+{
+  std::ostringstream o;
+  if (!BranchMode[B_DMCSTAGE])
+  {
+    FullPrecRealType e, sigma2;
+    MyEstimator->getCurrentStatistics(global_walkers, walkers, e, sigma2);
+    vParam[B_ETRIAL] = vParam[B_EREF] = e;
+    vParam[B_SIGMA2]                  = sigma2;
+    EnergyHist.clear();
+    VarianceHist.clear();
+    //DMCEnergyHist.clear();
+    EnergyHist(vParam[B_EREF]);
+    VarianceHist(vParam[B_SIGMA2]);
+    //DMCEnergyHist(vParam[B_EREF]);
+    o << "SimpleFixedNodeBranch::checkParameters " << std::endl;
+    o << "  Average Energy of a population  = " << e << std::endl;
+    o << "  Energy Variance = " << vParam[B_SIGMA2] << std::endl;
+  }
+  app_log() << o.str() << std::endl;
+  app_log().flush();
+}
+
 void SimpleFixedNodeBranch::finalize(MCWalkerConfiguration& w)
 {
   std::ostringstream o;
@@ -749,19 +766,6 @@ void SimpleFixedNodeBranch::write(const std::string& fname, bool overwrite)
   }
 }
 
-#ifdef HAVE_ADIOS
-void SimpleFixedNodeBranch::save_energy()
-{
-  if (MyEstimator->is_manager())
-  {
-    //\since 2008-06-24
-    vParam[B_ACC_ENERGY]  = EnergyHist.result();
-    vParam[B_ACC_SAMPLES] = EnergyHist.count();
-  }
-}
-#endif
-
-
 void SimpleFixedNodeBranch::read(const std::string& fname)
 {
   BranchMode.set(B_RESTART, 0);
@@ -790,39 +794,8 @@ void SimpleFixedNodeBranch::read(const std::string& fname)
     }
   }
 
-  //char fname2[128];
-  //sprintf(fname2,"%s.p%03d.config",fname.c_str(),OHMMS::Controller->rank());
-  //ofstream fout(fname2);
-  //fout << "    Restarting, cummulative properties:"
-  //          << "\n      energy     = " << EnergyHist.mean()
-  //          << "\n      variance   = " << VarianceHist.mean()
-  //          << "\n      r2accepted = " << R2Accepted.mean()
-  //          << "\n      r2proposed = " << R2Proposed.mean()
-  //          << std::endl;
   app_log().flush();
 }
-
-//   void SimpleFixedNodeBranch::storeConfigsForForwardWalking(MCWalkerConfiguration& w)
-//   {
-//     WalkerController->storeConfigsForForwardWalking(w);
-//   }
-//
-//   void SimpleFixedNodeBranch::clearConfigsForForwardWalking( )
-//   {
-//     WalkerController->clearConfigsForForwardWalking( );
-//   }
-//
-//   void SimpleFixedNodeBranch::debugFWconfig()
-//   {
-//     std::cout <<"FW size "<<WalkerController->sizeOfConfigsForForwardWalking()<< std::endl;
-//     for(int i=0;i<WalkerController->ForwardWalkingHistory.size();i++) {
-//       std::cout <<" Next Gen "<<i<< std::endl;
-//       for(int j=0;j<WalkerController->ForwardWalkingHistory[i].size();j++)
-//       {
-//         std::cout <<j<<" "<<WalkerController->ForwardWalkingHistory[i][j].ID<<" "<<WalkerController->ForwardWalkingHistory[i][j].ParentID<< std::endl;
-//       }
-//     }
-//   }
 
 void SimpleFixedNodeBranch::setBranchCutoff(FullPrecRealType variance,
                                             FullPrecRealType targetSigma,

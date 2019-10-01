@@ -32,6 +32,7 @@ class MCPopulation
 {
 public:
   using MCPWalker  = Walker<QMCTraits, PtclOnLatticeTraits>;
+  using WFBuffer   = MCPWalker::WFBuffer_t;
   using RealType   = QMCTraits::RealType;
   using Properties = MCPWalker::PropertyContainer_t;
   using IndexType  = QMCTraits::IndexType;
@@ -57,13 +58,15 @@ private:
   std::vector<RealType> ptclgrp_inv_mass_;
   ///1/Mass per particle
   std::vector<RealType> ptcl_inv_mass_;
-
+  size_t size_dataset_;
   // Should be 
   // std::shared_ptr<TrialWaveFunction> trial_wf_;
   // std::shared_ptr<ParticleSet> elec_particle_set_;
   // std::shared_ptr<QMCHamiltonian> hamiltonian_;
   // Are raw pointers. This is necessary if MCPopulation is going to be moved by value into QMCDriverNew
   // and possible moved out into the next driver later.
+  // This is necessary MCPopulation is constructed in a simple call scope in QMCDriverFactory from the legacy MCWalkerConfiguration
+  // MCPopulation should have QMCMain scope eventually and the driver will just have a refrence to it.
   TrialWaveFunction* trial_wf_;
   ParticleSet* elec_particle_set_;
   QMCHamiltonian* hamiltonian_;
@@ -73,9 +76,10 @@ private:
   std::vector<std::unique_ptr<QMCHamiltonian>> walker_hamiltonians_;
 
 public:
-  //MCPopulation(){};
-  //MCPopulation(int num_ranks) : num_ranks_(num_ranks) {}
-  MCPopulation(MCWalkerConfiguration& mcwc, ParticleSet* elecs, TrialWaveFunction* trial_wf, QMCHamiltonian* hamiltonian_);
+  /** Temporary constructor to deal with MCWalkerConfiguration be the only source of some information
+   *  in QMCDriverFactory.
+   */
+  MCPopulation(int num_ranks, MCWalkerConfiguration& mcwc, ParticleSet* elecs, TrialWaveFunction* trial_wf, QMCHamiltonian* hamiltonian_);
   //MCPopulation(int num_ranks, int num_particles) : num_ranks_(num_ranks), num_particles_(num_particles) {}
   MCPopulation(int num_ranks, ParticleSet* elecs, TrialWaveFunction* trial_wf, QMCHamiltonian* hamiltonian)
       : num_ranks_(num_ranks),
@@ -86,9 +90,9 @@ public:
   {}
   MCPopulation(MCPopulation&&) = default;
   MCPopulation& operator=(MCPopulation&&) = default;
-  
+
   void createWalkers();
-  void createWalkers(IndexType num_walkers, const ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>& pos);
+  void createWalkers(IndexType num_walkers);
   void createWalkers(int num_crowds_,
                      int num_walkers_per_crowd_,
                      IndexType num_walkers,
@@ -146,7 +150,7 @@ public:
   void set_target(IndexType pop) { target_population_ = pop; }
   void set_target_samples(IndexType samples) { target_samples_ = samples; }
 
-  std::vector<std::unique_ptr<MCPWalker>>& get_walkers() { return walkers_; }
+  UPtrVector<MCPWalker>& get_walkers() { return walkers_; }
   const std::vector<std::pair<int, int>>& get_particle_group_indexes() const { return particle_group_indexes_; }
   const std::vector<RealType>& get_ptclgrp_mass() const { return ptclgrp_mass_; }
   const std::vector<RealType>& get_ptclgrp_inv_mass() const { return ptclgrp_inv_mass_; }

@@ -29,7 +29,6 @@
 #include "OhmmsApp/RandomNumberControl.h"
 #include "Utilities/ProgressReportEngine.h"
 #include <qmc_common.h>
-#include "ADIOS/ADIOS_profile.h"
 #include "Utilities/FairDivide.h"
 #if !defined(REMOVE_TRACEMANAGER)
 #include "Estimators/TraceManager.h"
@@ -94,6 +93,7 @@ void DMC::resetUpdateEngines()
         o << "  Updates by particle-by-particle moves";
       else
         o << "  Updates by walker moves";
+      // Appears to be set in constructor reported here and used nowhere
       if (KillNodeCrossing)
         o << "\n  Walkers are killed when a node crossing is detected";
       else

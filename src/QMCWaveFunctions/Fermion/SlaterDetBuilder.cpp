@@ -602,7 +602,7 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
   targetPsi.setndelay(delay_rank);
 #endif
   slaterdet_0->add(adet, spin_group);
-  if (psi->Optimizable)
+  if (psi->isOptimizable())
     slaterdet_0->Optimizable = true;
 
   app_log() << std::endl;

@@ -129,14 +129,14 @@ TEST_CASE("applyCuspInfo", "[wavefunction]")
   REQUIRE(lcob != NULL);
 
 
-  LCAOrbitalSet phi = LCAOrbitalSet(lcob->myBasisSet);
-  phi.setOrbitalSetSize(lcob->OrbitalSetSize);
-  phi.BasisSetSize = lcob->BasisSetSize;
+  LCAOrbitalSet phi = LCAOrbitalSet(lcob->myBasisSet, lcob->isOptimizable());
+  phi.setOrbitalSetSize(lcob->getOrbitalSetSize());
+  phi.BasisSetSize = lcob->getBasisSetSize();
   phi.setIdentity(false);
 
-  LCAOrbitalSet eta = LCAOrbitalSet(lcob->myBasisSet);
-  eta.setOrbitalSetSize(lcob->OrbitalSetSize);
-  eta.BasisSetSize = lcob->BasisSetSize;
+  LCAOrbitalSet eta = LCAOrbitalSet(lcob->myBasisSet, lcob->isOptimizable());
+  eta.setOrbitalSetSize(lcob->getOrbitalSetSize());
+  eta.BasisSetSize = lcob->getBasisSetSize();
   eta.setIdentity(false);
 
   *(eta.C) = *(lcob->C);

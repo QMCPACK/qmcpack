@@ -73,7 +73,7 @@ public:
   /** constructor
      * @param bs pointer to the BasisSet
      */
-  LCAOrbitalSet(basis_type* bs = nullptr);
+  LCAOrbitalSet(basis_type* bs, bool optimize);
 
   LCAOrbitalSet(const LCAOrbitalSet& in) = default;
 
@@ -117,16 +117,11 @@ public:
                            const size_t NP2,
                            const std::vector<std::vector<int>>& lookup_tbl);
 
-
   void checkInVariables(opt_variables_type& active)
   {
     if (Optimizable)
-    {
       if (myVars.size())
         active.insertFrom(myVars);
-      else
-        Optimizable = false;
-    }
   }
 
   void checkOutVariables(const opt_variables_type& active)
@@ -134,7 +129,6 @@ public:
     if (Optimizable)
       myVars.getIndex(active);
   }
-
 
   ///reset
   void resetParameters(const opt_variables_type& active)

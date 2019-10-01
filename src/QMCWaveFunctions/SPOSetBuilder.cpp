@@ -53,7 +53,6 @@ SPOSet* SPOSetBuilder::createSPOSet(xmlNodePtr cur)
   if (sposet)
   {
     //sposet->put(cur); //initialize C and other internal containers
-    sposet->builder_index = sposets.size();
     sposets.push_back(sposet);
   }
   else

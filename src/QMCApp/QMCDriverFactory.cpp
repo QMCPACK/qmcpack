@@ -32,6 +32,7 @@
 #include "QMCDrivers/VMC/VMCFactory.h"
 #include "QMCDrivers/VMC/VMCFactoryNew.h"
 #include "QMCDrivers/DMC/DMCFactory.h"
+#include "QMCDrivers/DMC/DMCFactoryNew.h"
 #include "QMCDrivers/RMC/RMCFactory.h"
 #include "QMCDrivers/QMCOptimize.h"
 #include "QMCDrivers/QMCFixedSampleLinearOptimize.h"
@@ -125,6 +126,10 @@ QMCDriverFactory::DriverAssemblyState QMCDriverFactory::readSection(int curSerie
     {
       das.new_run_type = QMCRunType::VMC;
     }
+    else if (qmc_mode.find("dmc_batch") < nchars) // order matters here
+    {
+      das.new_run_type = QMCRunType::DMC_BATCH;
+    }
     else if (qmc_mode.find("dmc") < nchars)
     {
       das.new_run_type = QMCRunType::DMC;
@@ -149,6 +154,7 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::newQMCDriver(std::unique_p
                                                                    ParticleSetPool& particle_pool,
                                                                    WaveFunctionPool& wavefunction_pool,
                                                                    HamiltonianPool& hamiltonian_pool,
+                                                                   MCPopulation& population,
                                                                    Communicate* comm)
 {
   //initialize to 0
@@ -165,7 +171,7 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::newQMCDriver(std::unique_p
 
   //create a driver
   std::unique_ptr<QMCDriverInterface> new_driver =
-      createQMCDriver(cur, das, qmc_system, particle_pool, wavefunction_pool, hamiltonian_pool, comm);
+      createQMCDriver(cur, das, qmc_system, particle_pool, wavefunction_pool, hamiltonian_pool, population, comm);
   //initialize QMCDriver::myComm
   //branchEngine has to be transferred to a new QMCDriver
   if (branchEngine)
@@ -185,6 +191,7 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
                                                                       ParticleSetPool& particle_pool,
                                                                       WaveFunctionPool& wavefunction_pool,
                                                                       HamiltonianPool& hamiltonian_pool,
+                                                                      MCPopulation& population,
                                                                       Communicate* comm)
 {
   ///////////////////////////////////////////////
@@ -238,6 +245,7 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
   }
   //set primaryH->Primary
   primaryH->setPrimary(true);
+
   ////flux is evaluated only with single-configuration VMC
   //if(curRunType ==QMCRunType::VMC && !curQmcModeBits[MULTIPLE_MODE])
   //{
@@ -262,14 +270,19 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
   else if (das.new_run_type == QMCRunType::VMC_BATCH)
   {
     VMCFactoryNew fac(cur, das.what_to_do[UPDATE_MODE], qmc_common.qmc_counter);
-    MCPopulation qmc_pop(qmc_system, particle_pool.getParticleSet("e"), wavefunction_pool.getPrimary(), hamiltonian_pool.getPrimary());
     new_driver.reset(
-        fac.create(std::move(qmc_pop), *primaryPsi, *primaryH, particle_pool, hamiltonian_pool, wavefunction_pool, comm));
+        fac.create(population, *primaryPsi, *primaryH, wavefunction_pool, comm));
   }
   else if (das.new_run_type == QMCRunType::DMC)
   {
     DMCFactory fac(das.what_to_do[UPDATE_MODE], das.what_to_do[GPU_MODE], cur);
     new_driver.reset(fac.create(qmc_system, *primaryPsi, *primaryH, hamiltonian_pool, wavefunction_pool, comm));
+  }
+  else if (das.new_run_type == QMCRunType::DMC_BATCH)
+  {
+    DMCFactoryNew fac(cur, das.what_to_do[UPDATE_MODE], qmc_common.qmc_counter);
+    new_driver.reset(
+        fac.create(population, *primaryPsi, *primaryH, wavefunction_pool, comm));
   }
   else if (das.new_run_type == QMCRunType::RMC)
   {
