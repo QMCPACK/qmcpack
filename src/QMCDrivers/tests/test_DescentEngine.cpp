@@ -66,8 +66,8 @@ app_log() << "First parameter: " << results[0] << std::endl;
 app_log() << "Second parameter: " << results[1] << std::endl;
 
 //The engine should update the parameters using the generic defualt step size of .001 and obtain these values.
-REQUIRE(results[0] == Approx(.995));
-REQUIRE(results[1] == Approx(-2.001));
+REQUIRE(std::real(results[0]) == Approx(.995));
+REQUIRE(std::real(results[1]) == Approx(-2.001));
 
 }
 

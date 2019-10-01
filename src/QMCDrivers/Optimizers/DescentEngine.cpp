@@ -102,7 +102,7 @@ void DescentEngine::prepareStorage(const int num_replicas, const int num_optimiz
 }
 
 //Sets the value of the averaged local energy
-void DescentEngine::setEtemp(const std::vector<FullPrecValueType>& etemp)
+void DescentEngine::setEtemp(const std::vector<FullPrecRealType>& etemp)
 {
   e_sum_        = etemp[0];
   w_sum_        = etemp[1];
@@ -185,7 +185,7 @@ void DescentEngine::sample_finish()
     //Computation of averaged derivatives for excited state functional will be added in future
     if (!engine_target_excited_)
     {
-      lderivs_.at(i) = static_cast<FullPrecValueType>(2) * (avg_le_der_samp_.at(i) - e_avg_ * avg_der_rat_samp_.at(i));
+      lderivs_.at(i) = 2.0 * (avg_le_der_samp_.at(i) - e_avg_ * avg_der_rat_samp_.at(i));
     }
   }
 }
@@ -229,15 +229,15 @@ void DescentEngine::updateParameters()
 
     // To match up with Booth group paper notation, prevLambda is lambda_k-1,
     // curLambda is lambda_k, nextLambda is lambda_k+1
-    ValueType cur_lambda  = .5 + .5 * std::sqrt(1 + 4 * lambda_ * lambda_);
-    ValueType next_lambda = .5 + .5 * std::sqrt(1 + 4 * cur_lambda * cur_lambda);
-    ValueType gamma       = (1 - cur_lambda) / next_lambda;
+    ValueType cur_lambda  = .5 + .5 * std::sqrt(1.0 + 4.0 * lambda_ * lambda_);
+    ValueType next_lambda = .5 + .5 * std::sqrt(1.0 + 4.0 * cur_lambda * cur_lambda);
+    ValueType gamma       = (1.0 - cur_lambda) / next_lambda;
 
     // Define damping factor that turns off acceleration of the algorithm
     // small value of d corresponds to quick damping and effectively using
     // steepest descent
     ValueType d            = 100;
-    ValueType decay_factor = std::exp(-(1 / d) * (descent_num_));
+    ValueType decay_factor = std::exp(-(1.0 / d) * (static_cast<FullPrecValueType>(descent_num_)));
     gamma                  = gamma * decay_factor;
 
     ValueType rho = .9;
@@ -254,7 +254,7 @@ void DescentEngine::updateParameters()
       }
       else if (derivs_squared_.size() >= num_params_)
       {
-        cur_square = rho * derivs_squared_.at(i) + (1 - rho) * std::pow(cur_deriv_set.at(i), 2);
+        cur_square = rho * derivs_squared_.at(i) + (1.0 - rho) * std::pow(cur_deriv_set.at(i), 2);
       }
 
       denom = std::sqrt(cur_square + epsilon);
@@ -266,7 +266,7 @@ void DescentEngine::updateParameters()
       // Include an additional factor to cause step size to eventually decrease to 0 as number of steps taken increases
       ValueType step_lambda = .1;
 
-      ValueType step_decay_denom = 1 + step_lambda * descent_num_;
+      ValueType step_decay_denom = 1.0 + step_lambda * static_cast<FullPrecValueType>(descent_num_);
       tau                        = tau / step_decay_denom;
 
 
@@ -276,7 +276,7 @@ void DescentEngine::updateParameters()
       {
         ValueType old_tau = taus_.at(i);
 
-        current_params_.at(i) = (1 - gamma) * (current_params_.at(i) - tau * cur_deriv_set.at(i)) +
+        current_params_.at(i) = (1.0 - gamma) * (current_params_.at(i) - tau * cur_deriv_set.at(i)) +
             gamma * (params_copy_.at(i) - old_tau * prev_deriv_set.at(i));
       }
       else
@@ -313,14 +313,14 @@ void DescentEngine::updateParameters()
     for (int i = 0; i < num_params_; i++)
     {
       denom           = 1;
-      ValueType alpha = ((ValueType)rand() / RAND_MAX);
+      ValueType alpha = (static_cast<ValueType>(rand() / RAND_MAX));
       ValueType sign  = std::abs(cur_deriv_set[i]) / cur_deriv_set[i];
-      if (std::isnan(sign))
+      if (std::isnan(std::real(sign)))
       {
         app_log() << "Got a nan, choosing sign randomly with 50-50 probability" << std::endl;
 
-        ValueType t = ((ValueType)rand() / RAND_MAX);
-        if (t > .5)
+        ValueType t = (static_cast<ValueType>(rand() / RAND_MAX));
+        if (std::real(t) > std::real(.5))
         {
           sign = 1;
         }
@@ -352,11 +352,11 @@ void DescentEngine::updateParameters()
           numer_records_.push_back(0);
           denom_records_.push_back(0);
         }
-        numer = beta1 * numer_records_[i] + (1 - beta1) * cur_deriv_set[i];
-        v     = beta2 * denom_records_[i] + (1 - beta2) * cur_square;
+        numer = beta1 * numer_records_[i] + (1.0 - beta1) * cur_deriv_set[i];
+        v     = beta2 * denom_records_[i] + (1.0 - beta2) * cur_square;
 
-        cor_numer = numer / (1 - std::pow(beta1, descent_num_ + 1));
-        cor_v     = v / (1 - std::pow(beta2, descent_num_ + 1));
+        cor_numer = numer / (1.0 - std::pow(beta1, descent_num_ + 1));
+        cor_v     = v / (1.0 - std::pow(beta2, descent_num_ + 1));
 
         denom = std::sqrt(cor_v) + epsilon;
 
@@ -402,9 +402,9 @@ void DescentEngine::updateParameters()
           denom_records_.push_back(0);
         }
 
-        numer = beta1 * numer_records_[i] + (1 - beta1) * cur_deriv_set[i];
-        v     = beta2 * denom_records_[i] + (1 - beta2) * cur_square;
-        v     = std::max(denom_records_[i], v);
+        numer = beta1 * numer_records_[i] + (1.0 - beta1) * cur_deriv_set[i];
+        v     = beta2 * denom_records_[i] + (1.0 - beta2) * cur_square;
+        v     = std::max(std::real(denom_records_[i]), std::real(v));
 
         denom    = std::sqrt(v) + epsilon;
         type_eta = this->setStepSize(i);
@@ -485,7 +485,7 @@ DescentEngine::ValueType DescentEngine::setStepSize(int i)
 
   if (ramp_eta_ && descent_num_ < ramp_num_)
   {
-    type_eta = type_eta * (descent_num_ + 1) / ramp_num_;
+    type_eta = type_eta *static_cast<ValueType>((descent_num_ + 1) /ramp_num_);
   }
 
   return type_eta;
@@ -531,7 +531,7 @@ void DescentEngine::storeVectors(std::vector<ValueType>& current_params)
   {
     hybrid_blm_input_.push_back(row_vec);
   }
-
+/*
   for (int i = 0; i < hybrid_blm_input_.size(); i++)
   {
     std::string entry = "";
@@ -541,6 +541,7 @@ void DescentEngine::storeVectors(std::vector<ValueType>& current_params)
     }
     app_log() << "Stored Vector: " << entry << std::endl;
   }
+  */
   store_count_++;
 }
 

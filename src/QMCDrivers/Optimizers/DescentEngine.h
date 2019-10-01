@@ -26,6 +26,8 @@ class DescentEngine
 {
   typedef qmcplusplus::QMCTraits::FullPrecValueType FullPrecValueType;
   typedef qmcplusplus::QMCTraits::ValueType ValueType;
+  typedef qmcplusplus::QMCTraits::RealType RealType;
+  typedef qmcplusplus::QMCTraits::FullPrecRealType FullPrecRealType;
 
 private:
   //Vectors and scalars used in calculation of averaged derivatives in descent
@@ -127,7 +129,7 @@ public:
   void prepareStorage(const int num_replicas, const int num_optimizables);
 
   //Sets value of average local energy
-  void setEtemp(const std::vector<FullPrecValueType>& etemp);
+  void setEtemp(const std::vector<FullPrecRealType>& etemp);
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////////
   /// \brief  Function that Take Sample Data from the Host Code
