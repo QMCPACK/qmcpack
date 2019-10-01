@@ -43,9 +43,9 @@ public:
         SPOVTimer(*TimerManager.createTimer("DiracDeterminantBase::spoval", timer_level_fine)),
         SPOVGLTimer(*TimerManager.createTimer("DiracDeterminantBase::spovgl", timer_level_fine))
   {
-    Optimizable = Phi->Optimizable;
+    Optimizable  = Phi->isOptimizable();
     is_fermionic = true;
-    ClassName   = "DiracDeterminantBase";
+    ClassName    = "DiracDeterminantBase";
     registerTimers();
   }
 
@@ -76,26 +76,16 @@ public:
   virtual inline void checkInVariables(opt_variables_type& active) override
   {
     Phi->checkInVariables(active);
-    Phi->checkInVariables(myVars);
   }
 
   virtual inline void checkOutVariables(const opt_variables_type& active) override
   {
     Phi->checkOutVariables(active);
-    myVars.clear();
-    myVars.insertFrom(Phi->myVars);
-    myVars.getIndex(active);
   }
 
   virtual void resetParameters(const opt_variables_type& active) override
   {
     Phi->resetParameters(active);
-    for (int i = 0; i < myVars.size(); ++i)
-    {
-      int ii = myVars.Index[i];
-      if (ii >= 0)
-        myVars[i] = active[ii];
-    }
   }
 
   // To be removed with AoS

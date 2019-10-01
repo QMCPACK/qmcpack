@@ -104,7 +104,7 @@ public:
   {
     Psi1     = Phi;
     Psi2     = Eta;
-    int norb = Psi1->OrbitalSetSize;
+    int norb = Psi1->getOrbitalSetSize();
 
     val1.resize(norb);
     grad1.resize(norb);

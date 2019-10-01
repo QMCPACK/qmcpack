@@ -25,7 +25,7 @@ void fillRadFunWithPhiBar(int curOrb_,
 {
   Psi1      = Phi;
   Psi2      = Eta;
-  int norb  = Psi1->OrbitalSetSize;
+  int norb  = Psi1->getOrbitalSetSize();
   curOrb    = curOrb_;
   curCenter = curCenter_;
 
@@ -56,7 +56,7 @@ void fillRadFunWithPhi(int curOrb_,
 {
   Psi1      = Phi;
   Psi2      = Eta;
-  int norb  = Psi1->OrbitalSetSize;
+  int norb  = Psi1->getOrbitalSetSize();
   curOrb    = curOrb_;
   curCenter = curCenter_;
   Z         = Zion;
@@ -177,7 +177,7 @@ RealType execute(int curOrb_,
   bool writeout = (thisFile != "NULL");
   Psi1          = Phi;
   Psi2          = Eta;
-  int norb      = Psi1->OrbitalSetSize;
+  int norb      = Psi1->getOrbitalSetSize();
   ValueVector_t X(5);
   curOrb    = curOrb_;
   curCenter = curCenter_;

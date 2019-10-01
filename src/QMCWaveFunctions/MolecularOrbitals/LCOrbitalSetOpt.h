@@ -274,7 +274,7 @@ public:
       this->setBasisSet(bs);
 
     // initialize number of molecular orbitals as zero
-    this->OrbitalSetSize = 0;
+    setOrbitalSetSize(0);
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -291,7 +291,7 @@ public:
       this->setSPOSet(spo);
 
     // initialize number of molecular orbitals as zero
-    this->OrbitalSetSize = 0;
+    setOrbitalSetSize(0);
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -358,7 +358,7 @@ public:
     m_spo_set = spo;
 
     // extract the number of single particle orbitals in the basis set
-    this->BasisSetSize = m_spo_set->OrbitalSetSize;
+    this->BasisSetSize = m_spo_set->getOrbitalSetSize();
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -380,7 +380,7 @@ public:
       retval = new LCOrbitalSetOpt(m_basis_set->makeClone(), m_report_level);
 
     retval->C = C;
-    retval->setOrbitalSetSize(this->OrbitalSetSize);
+    retval->setOrbitalSetSize(OrbitalSetSize);
     retval->init_LCOrbitalSetOpt(0.0);
 
     retval->m_B      = m_B;
@@ -429,7 +429,7 @@ public:
   void setOrbitalSetSize(int norbs)
   {
     // record the number of linear combinations (i.e. molecular orbitals)
-    this->OrbitalSetSize = norbs;
+    OrbitalSetSize = norbs;
     app_log() << "LCOrbitalSetOpt finished setOrbitalSetSize with norbs = " << norbs << std::endl;
   }
 
@@ -698,7 +698,7 @@ public:
     //app_log() << "this->OrbitalSetSize = " << this->OrbitalSetSize << std::endl;
     // check sanity
     this->check_input_dim("logdet # of columns", "LCOrbitalSetOpt::evaluate_notranspose", logdet.cols(),
-                          this->OrbitalSetSize);
+                          OrbitalSetSize);
     if (logdet.cols() != dlogdet.cols() || logdet.cols() != d2logdet.cols())
       throw std::runtime_error("logdet, dlogdet, and d2logdet should have the same number of columns in "
                                "LCOrbitalSetOpt::evaluate_notranspose");
@@ -724,7 +724,7 @@ public:
   inline void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
   {
     // check input vector dimension
-    this->check_input_dim("psi", "LCOrbitalSetOpt::evaluate", psi.size(), this->OrbitalSetSize);
+    this->check_input_dim("psi", "LCOrbitalSetOpt::evaluate", psi.size(), OrbitalSetSize);
 
     // resize temporary arrays if necessary
     if (m_temp_g.size() != BasisSetSize)
@@ -757,9 +757,9 @@ public:
   inline void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
   {
     // check sanity
-    this->check_input_dim("d2psi", "LCOrbitalSetOpt::evaluate", d2psi.size(), this->OrbitalSetSize);
-    this->check_input_dim("dpsi", "LCOrbitalSetOpt::evaluate", dpsi.size(), this->OrbitalSetSize);
-    this->check_input_dim("psi", "LCOrbitalSetOpt::evaluate", psi.size(), this->OrbitalSetSize);
+    this->check_input_dim("d2psi", "LCOrbitalSetOpt::evaluate", d2psi.size(), OrbitalSetSize);
+    this->check_input_dim("dpsi", "LCOrbitalSetOpt::evaluate", dpsi.size(), OrbitalSetSize);
+    this->check_input_dim("psi", "LCOrbitalSetOpt::evaluate", psi.size(), OrbitalSetSize);
     if (psi.size() != dpsi.size() || psi.size() != d2psi.size())
       throw std::runtime_error("psi, dpsi, and d2psi vectors must be the same length in LCOrbitalSetOpt::evaluate");
 
