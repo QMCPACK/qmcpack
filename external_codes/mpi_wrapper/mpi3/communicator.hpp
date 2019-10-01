@@ -17,6 +17,7 @@
 #include "../mpi3/status.hpp"
 #include "../mpi3/type.hpp"
 #include "../mpi3/error.hpp"
+#include "../mpi3/group.hpp"
 
 #include "../mpi3/detail/basic_communicator.hpp"
 #include "../mpi3/detail/buffer.hpp"
@@ -146,8 +147,6 @@ class group;
 
 using boost::optional;
 
-template<class T = void>
-struct window;
 
 struct error_handler;
 struct keyval;
@@ -184,6 +183,8 @@ struct shared_communicator; // intracommunicator
 
 using boost::any;
 using boost::any_cast;
+
+template<class T> struct window;
 
 class communicator : protected detail::basic_communicator{
 	friend struct detail::package;
