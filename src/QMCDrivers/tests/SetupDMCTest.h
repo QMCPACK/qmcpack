@@ -24,7 +24,7 @@ namespace qmcplusplus
 class SetupDMCTest
 {
 public:
-  SetupDMCTest() : qmcdrv_input(3)
+  SetupDMCTest(int nranks=4) : num_ranks(nranks), qmcdrv_input(3)
   {
     using namespace testing;
 
@@ -78,7 +78,7 @@ public:
 
   QMCDriverInput qmcdrv_input;
   DMCDriverInput dmcdrv_input;
-  int num_ranks  = 4;
+  int num_ranks;
   int num_crowds = 8;
   Communicate* comm;
 };
