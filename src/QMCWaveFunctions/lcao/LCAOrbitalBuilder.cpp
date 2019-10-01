@@ -443,15 +443,19 @@ SPOSet* LCAOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
 
   if (myBasisSet == nullptr)
     PRE.error("Missing basisset.", true);
+
+  if (optimize == "yes")
+    app_log() << "  SPOSet " << spo_name << " is optimizable\n";
+
   LCAOrbitalSet* lcos = nullptr;
 #if !defined(QMC_COMPLEX)
   LCAOrbitalSetWithCorrection* lcwc = nullptr;
   if (doCuspCorrection)
-    lcos = lcwc = new LCAOrbitalSetWithCorrection(sourcePtcl, targetPtcl, myBasisSet);
+    lcos = lcwc = new LCAOrbitalSetWithCorrection(sourcePtcl, targetPtcl, myBasisSet, optimize == "yes");
   else
-    lcos = new LCAOrbitalSet(myBasisSet);
+    lcos = new LCAOrbitalSet(myBasisSet, optimize == "yes");
 #else
-  lcos = new LCAOrbitalSet(myBasisSet);
+  lcos = new LCAOrbitalSet(myBasisSet, optimize == "yes");
 #endif
   loadMO(*lcos, cur);
 
@@ -464,7 +468,7 @@ SPOSet* LCAOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
     if (id == "")
       id = spo_name;
 
-    int orbital_set_size = lcos->OrbitalSetSize;
+    int orbital_set_size = lcos->getOrbitalSetSize();
     Matrix<CuspCorrectionParameters> info(num_centers, orbital_set_size);
 
     bool valid = false;
@@ -493,12 +497,6 @@ SPOSet* LCAOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
     applyCuspCorrection(info, num_centers, orbital_set_size, targetPtcl, sourcePtcl, *lcwc, id);
   }
 #endif
-
-  if (optimize == "yes")
-  {
-    lcos->Optimizable = true;
-    app_log() << "  SPOSet " << spo_name << " is optimizable\n";
-  }
 
   return lcos;
 }

@@ -306,6 +306,70 @@ def test_change_units():
 
 
 
+def test_rotate():
+    import numpy as np
+    ref = get_reference_structures()
+    s0 = ref.CuO_prim.copy()
+    s1 = ref.CuO_prim.copy()
+
+    # Test the various parameter choices in the case that rp is given
+    # Perform rotation taking x-axis to x-axis (original positions should be found)
+    s1.rotate('x','x')
+    assert(value_eq(s1.pos,s0.pos))
+    assert(value_eq(s1.axes,s0.axes))
+    assert(value_eq(s1.kaxes,s0.kaxes))
+    # Perform active rotation taking x-coords to y-coords
+    s1.rotate([1,0,0],[0,1,0])
+    assert(value_eq(s1.pos,np.array([-s0.pos[:,1],s0.pos[:,0],s0.pos[:,2]]).T))
+    assert(value_eq(s1.axes,np.array([-s0.axes[:,1],s0.axes[:,0],s0.axes[:,2]]).T))
+    assert(value_eq(s1.kaxes,np.array([-s0.kaxes[:,1],s0.kaxes[:,0],s0.kaxes[:,2]]).T))
+    # Perform passive rotation taking x-axis to y-axis (original positions should be found)
+    s1.rotate('x','y',passive=True)
+    assert(value_eq(s1.pos,s0.pos))
+    assert(value_eq(s1.axes,s0.axes))
+    assert(value_eq(s1.kaxes,s0.kaxes))
+    # Perform active rotation about z-axis by an angle pi/2
+    s1.rotate('z',np.pi/2.0)
+    assert(value_eq(s1.pos,np.array([-s0.pos[:,1],s0.pos[:,0],s0.pos[:,2]]).T))
+    assert(value_eq(s1.axes,np.array([-s0.axes[:,1],s0.axes[:,0],s0.axes[:,2]]).T))
+    assert(value_eq(s1.kaxes,np.array([-s0.kaxes[:,1],s0.kaxes[:,0],s0.kaxes[:,2]]).T))
+    # Perform active rotation taking y-coords to x-coords (original positions should be found)
+    s1.rotate('y',[1,0,0])
+    assert(value_eq(s1.pos[-1],s0.pos[-1]))
+    assert(value_eq(s1.axes[-1],s0.axes[-1]))
+    assert(value_eq(s1.kaxes[-1],s0.kaxes[-1]))
+    # Perform active rotation taking a0-coords to a2-coords
+    s1.rotate(s0.axes[0],s0.axes[2])
+    assert(value_eq(s1.pos[-1],np.array([-2.15536928,3.46035669,0.86507139])))
+    assert(value_eq(s1.axes[-1],np.array([-3.91292278,3.02549423,-1.35344154])))
+    assert(value_eq(s1.kaxes[-1],np.array([-0.90768302,0.83458438,-0.15254555])))
+    # Perform active rotation taking a2-coords to a0-coords (original positions should be found)
+    s1.rotate('a2','a0')
+    assert(value_eq(s1.pos,s0.pos))
+    assert(value_eq(s1.axes,s0.axes))
+    assert(value_eq(s1.kaxes,s0.kaxes))
+
+    # Test the case where rp is not given
+    # Perform active rotation taking a2-coords to a0-coords
+    R = [[0.2570157723433977, 0.6326366344635742,-0.7305571719594085], 
+         [0.4370696746690278, 0.5981289557203555, 0.6717230469572912], 
+         [0.8619240060767753,-0.4919478031900122,-0.12277771249328594]]
+    s1.rotate(R)
+    assert(value_eq(s1.pos[-1],np.array([-2.15536928,3.46035669,0.86507139])))
+    assert(value_eq(s1.axes[-1],np.array([-3.91292278,3.02549423,-1.35344154])))
+    assert(value_eq(s1.kaxes[-1],np.array([-0.90768302,0.83458438,-0.15254555])))
+
+    # A final test which places the structure back into its original form
+    # Perform passive rotation taking a2-coords to a0-coords (original positions should be found)
+    s1.rotate([-0.5871158698555267, -0.8034668669004766, -0.09867091342903483],1.7050154439645373,passive=True)
+    assert(value_eq(s1.pos,s0.pos))
+    assert(value_eq(s1.axes,s0.axes))
+    assert(value_eq(s1.kaxes,s0.kaxes))
+
+#end def test_change_units
+
+
+
 def test_diagonal_tiling():
     ref = get_reference_structures()
     diag_tilings = [

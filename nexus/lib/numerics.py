@@ -83,9 +83,10 @@
 
 import sys
 import inspect
+import numpy as np
 from numpy import array,ndarray,zeros,linspace,pi,exp,sqrt,polyfit,polyval
 from numpy import sum,abs,arange,empty,sin,cos,dot,atleast_2d,ogrid
-from numpy import ones_like,sign,random,cross,prod
+from numpy import ones_like,sign,cross,prod
 from numpy.linalg import norm
 from generic import obj
 from developer import unavailable,warn,error
@@ -939,7 +940,7 @@ def equilibration_length(x,tail=.5,plot=False,xlim=None,bounces=2,random=True):
         bounce[1] = max(bounce[1],bounce[0])
         #print len(x),crossings,crossings[1]-crossings[0]+1
         if random:
-            eqlen = bounce[0]+random.randint(bounce[1]-bounce[0]+1)
+            eqlen = bounce[0]+np.random.randint(bounce[1]-bounce[0]+1)
         else:
             eqlen = (bounce[0]+bounce[1])//2
         #end if

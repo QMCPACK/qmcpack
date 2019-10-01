@@ -46,8 +46,8 @@ SlaterDetOpt::SlaterDetOpt(ParticleSet& ptcl, SPOSet* spo_ptr, const int up_or_d
 
   resize(m_nel, m_nmo);
 
-  m_nlc = Phi->OrbitalSetSize;
-  m_nb  = Phi->BasisSetSize;
+  m_nlc = Phi->getOrbitalSetSize();
+  m_nb  = Phi->getBasisSetSize();
 
   // make sure we didn't start with a bad m_nlc
   check_index_sanity();
