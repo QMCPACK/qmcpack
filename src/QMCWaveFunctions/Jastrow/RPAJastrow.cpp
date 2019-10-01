@@ -318,7 +318,7 @@ void RPAJastrow::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
  */
 WaveFunctionComponent* RPAJastrow::makeClone(ParticleSet& tpq) const
 {
-  HandlerType* tempHandler;
+  HandlerType* tempHandler = nullptr;
   if (rpafunc == "yukawa" || rpafunc == "breakup")
   {
     tempHandler = new LRHandlerTemp<YukawaBreakup<RealType>,

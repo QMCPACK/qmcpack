@@ -213,20 +213,17 @@ struct AtomicOrbitalSoA
     if (r > rmin)
     {
       rinv  = 1.0 / r;
-      drx   = dr[0];
-      dry   = dr[1];
-      drz   = dr[2];
-      rhatx = drx * rinv;
-      rhaty = dry * rinv;
-      rhatz = drz * rinv;
     }
     else
     {
       rinv = 0;
-      drx  = dr[0];
-      dry  = dr[1];
-      drz  = dr[2];
     }
+    drx   = dr[0];
+    dry   = dr[1];
+    drz   = dr[2];
+    rhatx = drx * rinv;
+    rhaty = dry * rinv;
+    rhatz = drz * rinv;
 
     Ylm.evaluateVGL(drx, dry, drz);
     const ST* restrict Ylm_v  = Ylm[0];

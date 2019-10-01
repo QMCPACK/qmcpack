@@ -39,42 +39,19 @@ void cqmc::engine::SpamLMHD::solve_subspace_nonsymmetric(const bool outer)
   // get rank number and number of rank
   int my_rank = formic::mpi::rank();
   int num_rank = formic::mpi::rank();
-  //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-  //MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
 
   // one in complex form
   const std::complex<double> complex_one(1.0, 0.0);
   const std::complex<double> complex_zero(0.0, 0.0);
 
   //print subspace matrix to debug 
-  //if (my_rank == 0) {
-  //  std::cout << boost::format("subspace S matrix is for rank %d \n") % my_rank << std::endl << std::endl; 
-  //  for (int i = 0; i < _subS.rows(); i++) {
-  //    for (int j = 0; j < _subS.cols(); j++) {
-  //      std::cout << boost::format("%10.8e ") % _subS(i, j);
-  //    }
-  //    std::cout << boost::format("\n");
-  //  }
-  //}
-
-  ////print subspace matrix to debug 
-  //if (my_rank == 0) {
-  //  std::cout << boost::format("subspace H matrix is for rank %d \n") % my_rank << std::endl << std::endl; 
-  //  for (int i = 0; i < _subH.rows(); i++) {
-  //    for (int j = 0; j < _subH.cols(); j++) {
-  //      std::cout << boost::format("%10.8e ") % _subH(i, j);
-  //    }
-  //    std::cout << boost::format("\n");
-  //  }
-  //}
-  // get subspace dimension 
   const int m  = _nkry;
 
   // create vectors and matrices used in svd routine
   formic::Matrix<double> u;
   formic::Matrix<double> vt;
   formic::ColVec<double> sin_vals;
-  int truncate_index;
+  int truncate_index = 0;
 
   // make sure the subspace matrix is not empty
   if ( outer ) {

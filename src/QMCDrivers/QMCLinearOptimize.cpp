@@ -645,7 +645,7 @@ QMCLinearOptimize::RealType QMCLinearOptimize::getSplitEigenvectors(int first,
                                                                     bool& CSF_scaled)
 {
   std::vector<RealType> GEVSplitDirection(N, 0);
-  RealType returnValue;
+  RealType returnValue = 0;
   int N_nonlin = last - first;
   int N_lin    = N - N_nonlin - 1;
   //  matrices are one larger than parameter sets
