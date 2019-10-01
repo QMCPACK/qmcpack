@@ -22,19 +22,22 @@
 namespace qmcplusplus
 {
 class NewTimer;
-class WalkerControlMPITest;
+struct WalkerControlMPITest;
+struct UnifiedDriverWalkerControlMPITest;
 
 struct WalkerMessage
 {
-  WalkerControlBase::MCPWalker& walker;
+  // To deal with duplicate send optimization
+  RefVector<WalkerControlBase::MCPWalker> walker;
   // i.e. MPI rank
+  const int source_rank;
   const int target_rank;
   int multiplicity = 1;
   size_t byteSize = 0;
-  WalkerMessage(WalkerControlBase::MCPWalker& walk, const int target) : walker(walk), target_rank(target){};
+  WalkerMessage(WalkerControlBase::MCPWalker& walk, const int source, const int target) : source_rank(source), target_rank(target){ walker.push_back(walk); };
 };
 
-bool operator==(const WalkerMessage& A, const WalkerMessage& B)
+inline bool operator==(const WalkerMessage& A, const WalkerMessage& B)
 {
   // since all the walker references are to one queue of unique_ptrs in MCPopulation
   // I think this is ok... If not the DataSet.data()?
@@ -84,7 +87,11 @@ struct WalkerControlMPI : public WalkerControlBase
   void swapWalkersSimple(MCWalkerConfiguration& W);
 
   void swapWalkersSimple(MCPopulation& pop, PopulationAdjustment& adjust);
+
+  // Testing wrappers
   friend WalkerControlMPITest;
+  friend UnifiedDriverWalkerControlMPITest;
 };
+
 } // namespace qmcplusplus
 #endif

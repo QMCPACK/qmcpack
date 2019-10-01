@@ -79,6 +79,7 @@ private:
   UPtrVector<QMCHamiltonian> walker_hamiltonians_;
 
 public:
+  MCPopulation() : trial_wf_(nullptr), elec_particle_set_(nullptr), hamiltonian_(nullptr) {}
   /** Temporary constructor to deal with MCWalkerConfiguration be the only source of some information
    *  in QMCDriverFactory.
    */
@@ -95,6 +96,8 @@ public:
         hamiltonian_(hamiltonian),
         num_particles_(elecs->R.size())
   {}
+  
+  MCPopulation(MCPopulation&) = default;
   MCPopulation(MCPopulation&&) = default;
   MCPopulation& operator=(MCPopulation&&) = default;
 

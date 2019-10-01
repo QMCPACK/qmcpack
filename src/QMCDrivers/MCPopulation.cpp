@@ -59,6 +59,7 @@ void MCPopulation::createWalkers()
 
 void MCPopulation::createWalkerInplace(UPtr<MCPWalker>& walker_ptr)
 {
+  //SO this would be where the walker reuse hack would go
   walker_ptr = std::make_unique<MCPWalker>(num_particles_);
   walker_ptr->R = elec_particle_set_->R;
   walker_ptr->registerData();
@@ -82,6 +83,7 @@ void MCPopulation::allocateWalkerStuffInplace(int walker_index)
  */
 void MCPopulation::createWalkers(IndexType num_walkers)
 {
+  num_local_walkers_ = num_walkers;
   // Ye: need to resize walker_t and ParticleSet Properties
   elec_particle_set_->Properties.resize(1, elec_particle_set_->PropertyList.size());
 
@@ -141,9 +143,14 @@ void MCPopulation::createWalkers(IndexType num_walkers)
 
 
 /** creates a walker and returns a reference
+ *
+ *  none of the objects are "reused"
+ *  if an objects allocation is expensive this should be dealt with
+ *  by reusing memory.
  */
 MCPopulation::MCPWalker& MCPopulation::spawnWalker()
 {
+  ++num_local_walkers_;
   auto it_walkers = walkers_.begin();
   int walker_index;
   while (it_walkers != walkers_.end())
@@ -152,21 +159,37 @@ MCPopulation::MCPWalker& MCPopulation::spawnWalker()
     {
       createWalkerInplace(*it_walkers);
       allocateWalkerStuffInplace(walker_index);
-      break;
+      return **it_walkers;
     }
+    ++it_walkers;
     ++walker_index;
   }
-  // you need to add to all the vectors if no walkers have been killed
-  // for now we throw since this must be implemented
-  if (walker_index == walkers_.size())
-    throw std::runtime_error("Needed to add to population in MCPopulation but it is not implemented.");
-  return **it_walkers;
+
+  walkers_.push_back(std::make_unique<MCPWalker>(num_particles_));
+  outputManager.pause();
+
+  walkers_.back()->R = elec_particle_set_->R;
+  walkers_.back()->registerData();
+  walkers_.back()->Properties = elec_particle_set_->Properties;
+  walker_elec_particle_sets_.push_back(std::make_unique<ParticleSet>(*elec_particle_set_));
+  walker_trial_wavefunctions_.push_back(UPtr<TrialWaveFunction>{});
+  walker_trial_wavefunctions_.back().reset(trial_wf_->makeClone(*(walker_elec_particle_sets_.back())));
+  walker_hamiltonians_.push_back(UPtr<QMCHamiltonian>{});
+  walker_hamiltonians_.back().reset(hamiltonian_->makeClone(*(walker_elec_particle_sets_.back()),
+                                                           *(walker_trial_wavefunctions_.back())));
+
+  outputManager.resume();
+
+  walker_trial_wavefunctions_.back()->registerData(*(walker_elec_particle_sets_.back()),
+                                                   walkers_.back()->DataSet);
+  return *(walkers_.back());
 }
 
 /** Kill a walker
  */
 void MCPopulation::killWalker(MCPWalker& walker)
 {
+  --num_local_walkers_;
   // find the walker and null its pointer in the walker vector
   auto it_walkers = walkers_.begin();
   while (it_walkers != walkers_.end())

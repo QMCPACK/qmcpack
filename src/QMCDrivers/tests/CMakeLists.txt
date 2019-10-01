@@ -56,6 +56,10 @@ MAYBE_SYMLINK(${UTEST_HDF_INPUT} ${UTEST_DIR}/pwscf.pwscf.h5)
 
 SET(DRIVER_TEST_SRC test_Crowd.cpp test_MCPopulation.cpp test_ContextForSteps.cpp test_QMCDriverInput.cpp test_QMCDriverNew.cpp test_VMCDriverInput.cpp test_VMCFactoryNew.cpp test_VMCBatched.cpp test_DMCBatched.cpp)
 
+IF(HAVE_MPI)
+  SET(DRIVER_TEST_SRC ${DRIVER_TEST_SRC} test_WalkerControlMPI.cpp)
+ENDIF()
+
 ADD_EXECUTABLE(${UTEST_EXE} ${DRIVER_TEST_SRC})
 
 USE_FAKE_RNG(${UTEST_EXE})

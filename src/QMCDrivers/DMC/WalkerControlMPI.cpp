@@ -476,133 +476,146 @@ void WalkerControlMPI::swapWalkersSimple(MCPopulation& pop, PopulationAdjustment
   if (plus.size() != minus.size())
   {
     app_error() << "Walker send/recv pattern doesn't match. "
-                << "The send size " << plus.size() << " is not equal to the receive size " << minus.size() << " ."
+                << "The send size " << plus.size() << " is not equal to the recv size " << minus.size() << " ."
                 << std::endl;
     throw std::runtime_error("Trying to swap in WalkerControlMPI::swapWalkersSimple with mismatched queues");
   }
-
-  UPtrVector<MCPWalker> new_walkers;
-  std::vector<int> copies_of_each_new_walker;
 
   // sort good walkers by the number of copies
   std::vector<std::pair<int, std::reference_wrapper<MCPWalker>>> sorted_good_walkers;
   for (int iw = 0; iw < ncopy_w.size(); iw++)
     sorted_good_walkers.push_back(std::make_pair(adjust.copies_to_make[iw], adjust.good_walkers[iw]));
   // Sort only on the number of copies
-  std::sort(sorted_good_walkers.begin(), sorted_good_walkers.end(),
-            [](auto& a, auto& b) { return a.first > b.first; });
+  std::sort(sorted_good_walkers.begin(), sorted_good_walkers.end(), [](auto& a, auto& b) { return a.first > b.first; });
 
-  
-  int nsend = 0;
+  //useful counts
+  int nswap       = plus.size();
+  int local_sends = 0;
+  int local_recvs = 0;
 
-  int nswap = plus.size();
-  std::vector<WalkerMessage> message_list(nswap);
-  int messages_incoming = 0;
+  for (int ic = 0; ic < nswap; ic++)
+  {
+    if (plus[ic] == MyContext)
+      ++local_sends;
+    else if (minus[ic] == MyContext)
+      ++local_recvs;
+  }
+
+  std::vector<WalkerMessage> send_message_list;
+  // overallocated by number of duplicate messages but message isn't big.
+  send_message_list.reserve(local_sends);
+  std::vector<WalkerMessage> recv_message_list;
+  recv_message_list.reserve(local_recvs);
+  RefVector<MCPWalker> new_walkers;
+  new_walkers.reserve(local_recvs);
+
   for (int ic = 0; ic < nswap; ic++)
   {
     if (plus[ic] == MyContext)
     {
       // always send the last good walker
-      message_list.push_back(WalkerMessage{sorted_good_walkers.back().second, minus[ic]});
+      send_message_list.push_back(WalkerMessage{sorted_good_walkers.back().second, plus[ic], minus[ic]});
       --(sorted_good_walkers.back().first);
       if (sorted_good_walkers.back().first == 0)
         sorted_good_walkers.pop_back();
     }
-    else if(minus[ic] == MyContext)
+    else if (minus[ic] == MyContext)
     {
-      ++messages_incoming;
-      if ( adjust.bad_walkers.size() > 0)
+      if (adjust.bad_walkers.size() > 0)
       {
         pop.killWalker(adjust.bad_walkers.back());
         adjust.bad_walkers.pop_back();
       }
+      new_walkers.push_back(pop.spawnWalker());
+      recv_message_list.push_back(WalkerMessage{new_walkers.back(), plus[ic], minus[ic]});
     }
-            
-
   }
 
+  //create send requests
   std::vector<mpi3::request> send_requests;
-  if( message_list.size() > 0)
+  if (send_message_list.size() > 0)
   {
-    std::queue<WalkerMessage> message_queue;
-    auto it_walker_messages = message_list.begin();
-    while (it_walker_messages != message_list.end())
+    std::queue<WalkerMessage> send_message_queue;
+    auto it_send_messages = send_message_list.begin();
+    // Doing depublication of messages
+    while (it_send_messages != send_message_list.end())
     {
-      if ((it_walker_messages+1 != message_list.end()) && (*(it_walker_messages + 1) == *it_walker_messages))
-        (it_walker_messages+1)->multiplicity++;
+      if ((it_send_messages + 1 != send_message_list.end()) && (*(it_send_messages + 1) == *it_send_messages))
+        (it_send_messages + 1)->multiplicity++;
       else
-        message_queue.push(*it_walker_messages);
-   
-      ++it_walker_messages;
+        send_message_queue.push(std::move(*it_send_messages));
+      ++it_send_messages;
     }
-    
-    while ( !message_queue.empty() )
+    while (!send_message_queue.empty())
     {
-      WalkerMessage message = message_queue.front();
-      message_queue.pop();
-      send_requests.push_back(myComm->comm.isend_value(message.multiplicity, message.target_rank));
-      size_t byteSize    = message.walker.byteSize();
-      send_requests.push_back(myComm->comm.isend_n(message.walker.DataSet.data(), byteSize, message.target_rank));
-    }
-  }                                                    
-
-  std::vector<mpi3::request> receive_requests;
-  messages_incoming *= 2; // extra message sent for multiplicity
-  if( messages_incoming > 0)
-  {
-    for( int im = 0 ; im < messages_incoming; ++im)
-    {
-      WalkerMessage message(pop.spawnWalker(), MyContext);
-      receive_requests.push_back(myComm->comm.ireceive_value(message.multiplicity));
-      receive_requests.push_back(myComm->comm.ireceive_n(message.walker.DataSet.data(), message.byteSize));
-    }
-    if (use_nonblocking)
-    {
-      std::vector<bool> not_completed(requests.size(), true);
-      bool completed = false;
-      while (!completed)
-      {
-        completed = true;
-        for (int im = 0; im < requests.size(); im++)
-          if (not_completed[im])
-          {
-            if (requests[im].completed())
-            {
-              newW[job_list[im].walkerID]->copyFromBuffer();
-              not_completed[im] = false;
-            }
-            else
-              completed = false;
-          }
-      }
-      requests.clear();
+      WalkerMessage message = send_message_queue.front();
+      send_message_queue.pop();
+      size_t byteSize = message.walker[0].get().byteSize();
+      send_requests.push_back(
+          myComm->comm.isend_n(message.walker[0].get().DataSet.data(), byteSize, message.target_rank));
     }
   }
-  for (int im = 0; im < requests.size(); im++)
+
+  //create recv requests
+  std::vector<mpi3::request> recv_requests;
+  std::vector<WalkerMessage> recv_messages_reduced;
+  if (recv_message_list.size() > 0)
+  {
+    auto it_recv_messages = recv_message_list.begin();
+    // Doing depublication of messages
+    while (it_recv_messages != recv_message_list.end())
+    {
+      if ((it_recv_messages + 1 != recv_message_list.end()) && (*(it_recv_messages + 1) == *it_recv_messages))
+      {
+        (it_recv_messages + 1)->multiplicity++;
+        recv_messages_reduced.back().walker.push_back(std::move((*it_recv_messages).walker[0]));
+      }
+      else
+        recv_messages_reduced.push_back(std::move(*it_recv_messages));
+      ++it_recv_messages;
+    }
+    std::for_each(recv_messages_reduced.begin(), recv_messages_reduced.end(),
+                  [&recv_requests, this](WalkerMessage& message) {
+                    recv_requests.push_back(myComm->comm.ireceive_n(message.walker[0].get().DataSet.data(),
+                                                                    message.byteSize, message.source_rank));
+                  });
+  }
+
+  // Busy until all messages received
+  std::vector<int> done_with_message(recv_requests.size(), 0);
+  while (std::any_of(done_with_message.begin(), done_with_message.end(), [](int i) { return i == 0; }))
+  {
+    for (int im = 0; im < recv_requests.size(); ++im)
+    {
+      if (done_with_message[im] != 1)
+      {
+        if (recv_requests[im].completed())
+        {
+          recv_messages_reduced[im].walker[0].get().copyFromBuffer();
+          for (int iw = 1; iw < recv_messages_reduced[im].multiplicity; ++iw)
+          {
+            std::memcpy(recv_messages_reduced[im].walker[iw].get().DataSet.data(),
+                        recv_messages_reduced[im].walker[0].get().DataSet.data(), recv_messages_reduced[im].byteSize);
+            recv_messages_reduced[im].walker[iw].get().copyFromBuffer();
+          }
+          done_with_message[im] = 1;
+        }
+      }
+    }
+  }
+  recv_requests.clear();
+
+  // After we've got all our receives wait if we're not done sending.
+  for (int im = 0; im < send_requests.size(); im++)
   {
     myTimers[DMC_MPI_send]->start();
-    requests[im].wait();
+    send_requests[im].wait();
     myTimers[DMC_MPI_send]->stop();
   }
-  requests.clear();
+  send_requests.clear();
 
   //save the number of walkers sent
-  NumWalkersSent = nsend;
-  // rebuild good_w and ncopy_w
-  std::vector<Walker_t*> good_w_temp(good_w);
-  good_w.resize(ncopy_pairs.size());
-  ncopy_w.resize(ncopy_pairs.size());
-  for (int iw = 0; iw < ncopy_pairs.size(); iw++)
-  {
-    good_w[iw]  = good_w_temp[ncopy_pairs[iw].second];
-    ncopy_w[iw] = ncopy_pairs[iw].first;
-  }
-  //add walkers from other node
-  if (newW.size())
-  {
-    good_w.insert(good_w.end(), newW.begin(), newW.end());
-    ncopy_w.insert(ncopy_w.end(), ncopy_newW.begin(), ncopy_newW.end());
-  }
+  NumWalkersSent = local_sends;
 }
 
 

@@ -9,10 +9,7 @@
 // File created by: Mark Dewing, mdewing@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
-
 #include "catch.hpp"
-
-
 #include "Utilities/RandomGenerator.h"
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
@@ -26,24 +23,14 @@
 #include "QMCDrivers/DMC/WalkerReconfigurationMPI.h"
 #endif
 
-
 #include <stdio.h>
 #include <string>
 #include <random>
-
 
 using std::string;
 
 namespace qmcplusplus
 {
-// add declaration here so it's accessible for testing
-void determineNewWalkerPopulation(int Cur_pop,
-                                  int NumContexts,
-                                  int MyContext,
-                                  const std::vector<int>& NumPerNode,
-                                  std::vector<int>& FairOffset,
-                                  std::vector<int>& minus,
-                                  std::vector<int>& plus);
 
 void output_vector(const std::string& name, std::vector<int>& vec)
 {
@@ -71,7 +58,7 @@ TEST_CASE("Walker control assign walkers", "[drivers][walker_control]")
     std::vector<int> plus;
 
     //std::cout << "For processor number " << me << std::endl;
-    determineNewWalkerPopulation(Cur_pop, NumContexts, me, NumPerNode, FairOffset, minus, plus);
+    WalkerControlMPI::determineNewWalkerPopulation(Cur_pop, NumContexts, me, NumPerNode, FairOffset, minus, plus);
 
     REQUIRE(minus.size() == plus.size());
     //output_vector("  Minus: ", minus);

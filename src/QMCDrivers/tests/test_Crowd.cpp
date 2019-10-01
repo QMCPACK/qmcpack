@@ -66,11 +66,11 @@ TEST_CASE("Crowd::loadWalkers", "[particle]")
 
   MinimalParticlePool mpp;
   ParticleSetPool particle_pool = mpp(comm);
-  MinimalWaveFunctionPool wfp(comm);
-  WaveFunctionPool wavefunction_pool = wfp(&particle_pool);
+  MinimalWaveFunctionPool wfp;
+  WaveFunctionPool wavefunction_pool = wfp(comm, &particle_pool);
   wavefunction_pool.setPrimary(wavefunction_pool.getWaveFunction("psi0"));
-  MinimalHamiltonianPool mhp(comm);
-  HamiltonianPool hamiltonian_pool = mhp(&particle_pool, &wavefunction_pool);
+  MinimalHamiltonianPool mhp;
+  HamiltonianPool hamiltonian_pool = mhp(comm, &particle_pool, &wavefunction_pool);
   
   ParticleSet pset1(*(particle_pool.getParticleSet("e")));
   pset1.R = pos1;
