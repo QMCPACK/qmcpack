@@ -43,11 +43,11 @@ optimize::VariableSet::value_type second_param(-2.0);
 myVars.insert("first",first_param);
 myVars.insert("second",second_param);
 
-std::vector<FullPrecValueType> LDerivs;
+std::vector<ValueType> LDerivs;
 
 //Corresponding fake derivatives are specified and given to the engine
-FullPrecValueType first_deriv = 5;
-FullPrecValueType second_deriv = 1;
+ValueType first_deriv = 5;
+ValueType second_deriv = 1;
 
 LDerivs.push_back(first_deriv);
 LDerivs.push_back(second_deriv);

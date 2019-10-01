@@ -44,7 +44,7 @@ private:
   FullPrecValueType e_square_avg_;
 
   //Vector that stores the final averaged derivatives of the cost function
-  std::vector<FullPrecValueType> lderivs_;
+  std::vector<ValueType> lderivs_;
 
   //Communicator handles MPI reduction
   Communicate* my_comm_;
@@ -196,7 +196,7 @@ public:
   int getDescentNum() const { return descent_num_; }
 
   ///Function for setting averaged derivatives, currently only used as part of a unit test of the engine's parameter update
-  void setDerivs(std::vector<FullPrecValueType>& test_derivs) { lderivs_ = test_derivs; }
+  void setDerivs(std::vector<ValueType>& test_derivs) { lderivs_ = test_derivs; }
 };
 
 } // namespace qmcplusplus
