@@ -108,14 +108,14 @@ TEST_CASE("CuspCorrection He", "[wavefunction]")
 
   typedef NGOBuilder::CenteredOrbitalType COT;
   OrbType bs_phi(lcob->myBasisSet);
-  bs_phi.setOrbitalSetSize(lcob->OrbitalSetSize);
+  bs_phi.setOrbitalSetSize(lcob->getOrbitalSetSize());
   bs_phi.BasisSetSize = lcob->BasisSetSize;
   bs_phi.setIdentity(false);
 
   *(bs_phi.C) = *(lcob->C);
 
   OrbType bs_eta(lcob->myBasisSet);
-  bs_eta.setOrbitalSetSize(lcob->OrbitalSetSize);
+  bs_eta.setOrbitalSetSize(lcob->getOrbitalSetSize());
   bs_eta.BasisSetSize = lcob->BasisSetSize;
   bs_eta.setIdentity(false);
   *(bs_eta.C) = *(lcob->C);

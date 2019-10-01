@@ -192,7 +192,6 @@ LCOrbitalSet<BS, false>* LCOrbitalSetWithCorrection<BS, false>::clone2LCOrbitalS
   newSPO->C = C;
   newSPO->Occ.resize(Occ.size());
   newSPO->Occ       = Occ;
-  newSPO->className = "LCOrbitalSet";
   return newSPO;
 }
 
