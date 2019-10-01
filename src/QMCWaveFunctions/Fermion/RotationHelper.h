@@ -135,13 +135,8 @@ public:
   void checkInVariables(opt_variables_type& active)
   {
     if (Optimizable && !IsCloned)
-    {
       if (myVars.size())
         active.insertFrom(myVars);
-      else{
-        Optimizable = false;
-      }
-    }
   }
 
   void checkOutVariables(const opt_variables_type& active)

@@ -7,12 +7,12 @@ namespace qmcplusplus
 {
 
 RotationHelper::RotationHelper(SPOSet* spos)
-    : Phi(spos),
+    : SPOSet(false, true),
+      Phi(spos),
       params_supplied(false),
       IsCloned(false)
 {
-  Optimizable = spos->Optimizable; 
-  OrbitalSetSize = Phi->OrbitalSetSize;
+  OrbitalSetSize = Phi->getOrbitalSetSize();
   spos->returnMemberVariables(C_original, C_sposet, params_supplied, params);
 }
 
@@ -858,7 +858,6 @@ SPOSet* RotationHelper::makeClone() const
   myclone->params           = this->params;
   myclone->params_supplied  = this->params_supplied;
   myclone->m_act_rot_inds   = this->m_act_rot_inds;
-  myclone->Optimizable      = this->Optimizable;
   myclone->C_original       = this->C_original;
   myclone->C_sposet         = this->C_sposet;  
   myclone->myVars           = this->myVars;
