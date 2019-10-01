@@ -3383,4 +3383,3 @@ SpaceGrid.count = 0
 SpaceGrid.coord_n2s = SpaceGridBase.coord_n2s
 SpaceGrid.rect = set(['cartesian','cylindrical','spherical'])
  
-W
