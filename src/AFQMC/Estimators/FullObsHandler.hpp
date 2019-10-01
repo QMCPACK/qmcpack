@@ -101,7 +101,7 @@ class FullObsHandler: public AFQMCInfo
         properties.emplace_back(Observable(std::move(full1rdm(TG,info,cur,walker_type,nave,block_size)))); 
       } else if(cname =="diag2rdm") {
         properties.emplace_back(Observable(std::move(diagonal2rdm(TG,info,cur,walker_type,nave,block_size)))); 
-      } else if(cname =="n2r") {
+      } else if(cname =="n2r" || cname =="ontop2rdm") {
 #if defined(ENABLE_CUDA)
         std::string str("false");
         ParameterSet m_param;

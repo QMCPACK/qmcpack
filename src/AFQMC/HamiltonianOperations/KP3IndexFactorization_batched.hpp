@@ -456,6 +456,7 @@ class KP3IndexFactorization_batched
       // components simultaneously
       Sp4Tensor_ref GKK(BTMats.origin()+cnt,
                         {nspin,nkpts,nkpts,nwalk*nmo_max*nocc_max});
+      fill_n(GKK.origin(),GKK.num_elements(),SPComplexType(0.0));
       cnt += GKK.num_elements();
       GKaKjw_to_GKKwaj(G3Da,GKK[0],nelpk[nd].sliced(0,nkpts),dev_nelpk[nd],dev_a0pk[nd]);
       if(walker_type==COLLINEAR)  
@@ -1442,6 +1443,7 @@ class KP3IndexFactorization_batched
       }
     }
 
+    // MAM: nocc_max should be spin dependent 
     template<class MatA, class MatB, class IVec, class IVec2>
     void GKaKjw_to_GKKwaj(MatA const& GKaKj, MatB && GKKaj,IVec && nocc, IVec2 && dev_no, IVec2 && dev_a0)
     {

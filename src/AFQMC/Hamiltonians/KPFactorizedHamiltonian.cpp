@@ -386,7 +386,6 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_shared(b
         int na = nocc_per_kp[nd][K];
         int nb = (nspins==2?nocc_per_kp[nd][nkpts+K]:na);
         int ni = nmo_per_kp[K];
-        int nk = ni; 
         if(type==COLLINEAR) {
           { // Alpha
             auto Psi = get_PsiK<boost::multi::array<ComplexType,2>>(nmo_per_kp,PsiT[2*nd],K);
@@ -555,7 +554,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_shared(b
           using ma::H;
 #if MIXED_PRECISION
           boost::multi::array<SPComplexType,2> v1_({nmo_per_kp[K],nmo_per_kp[K]});
-          ma::product(SPComplexType(-0.5),Likn,H(Likn),SPComplexType(1.0),v1_);
+          ma::product(SPComplexType(-0.5),Likn,H(Likn),SPComplexType(0.0),v1_);
           boost::multi::array<ComplexType,2> v2_(v1_);
           ma::add(ComplexType(1.0),v2_,
                   ComplexType(1.0),vn0[K]({0,nmo_per_kp[K]},{0,nmo_per_kp[K]}),
@@ -578,7 +577,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_shared(b
           using ma::H;
 #if MIXED_PRECISION
           boost::multi::array<SPComplexType,2> v1_({nmo_per_kp[K],nmo_per_kp[K]});
-          ma::product(SPComplexType(-0.5),L_,H(L_),SPComplexType(1.0),v1_);
+          ma::product(SPComplexType(-0.5),L_,H(L_),SPComplexType(0.0),v1_);
           boost::multi::array<ComplexType,2> v2_(v1_);
           ma::add(ComplexType(1.0),v2_,
                   ComplexType(1.0),vn0[K]({0,nmo_per_kp[K]},{0,nmo_per_kp[K]}),
@@ -1096,7 +1095,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
           int Qm = kminus[Q];
           int QK = QKtok2[Q][K];
           int na = nocc_per_kp[nd][K];
-          int nb = (nspins==2?nocc_per_kp[nd][nkpts+QK]:na);
+          int nb = (nspins==2?nocc_per_kp[nd][nkpts+K]:na);
           int ni = nmo_per_kp[K];
           int nk = nmo_per_kp[QK];
           if(type==COLLINEAR) {
@@ -1183,6 +1182,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
           if(type==COLLINEAR) {
             { // Alpha
               auto PsiQK = get_PsiK<boost::multi::array<SPComplexType,2>>(nmo_per_kp,PsiT[2*nd],QK);
+              assert(PsiQK.size(0) == na);
               Sp3Tensor_ref Lbnl(to_address(LQKbnl[nq0+Qmap[Q]-1][QK].origin()),
                                           {nocc_max,nchol_max,nmo_max});
               Sp3Tensor_ref Lbln(to_address(LQKbln[nq0+Qmap[Q]-1][QK].origin()),
@@ -1255,7 +1255,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
           using ma::H;
 #if MIXED_PRECISION
           boost::multi::array<SPComplexType,2> v1_({nmo_max,nmo_max});
-          ma::product(SPComplexType(-0.5),Likn,H(Likn),SPComplexType(1.0),v1_);
+          ma::product(SPComplexType(-0.5),Likn,H(Likn),SPComplexType(0.0),v1_);
           using std::copy_n;
           boost::multi::array<ComplexType,2> v2_(v1_); 
           ma::add(ComplexType(1.0),v2_,ComplexType(1.0),vn0_[K],vn0_[K]);
@@ -1278,7 +1278,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
 #if MIXED_PRECISION
           boost::multi::array<SPComplexType,2> v1_({nmo_max,nmo_max});
           ma::product(SPComplexType(-0.5),L_,H(L_),
-                      SPComplexType(1.0),v1_);
+                      SPComplexType(0.0),v1_);
           boost::multi::array<ComplexType,2> v2_(v1_); 
           ma::add(ComplexType(1.0),v2_,ComplexType(1.0),vn0_[K],vn0_[K]);
 #else
