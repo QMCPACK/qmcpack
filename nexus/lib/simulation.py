@@ -708,7 +708,7 @@ class Simulation(NexusCore):
         for d in dependencies:
             sim = d[0]
             if not isinstance(sim,Simulation):
-                self.error('first element in a dependency tuple must be a Simulation object\n  you provided a '+sim.__class__.__name__)
+                self.error('first element in a dependency tuple must be a Simulation object\nyou provided a '+sim.__class__.__name__)
             #end if
             dep = obj()
             dep.sim = sim
@@ -760,6 +760,7 @@ class Simulation(NexusCore):
     #end def undo_depends
 
 
+    # remove?
     def acquire_dependents(self,sim):
         # acquire the dependents from the other simulation
         dsims = obj(sim.dependents)
@@ -773,6 +774,7 @@ class Simulation(NexusCore):
     #end def acquire_dependents
 
 
+    # remove?
     def eliminate(self):
         # reverse relationship of dependents (downstream)
         dsims = obj(self.dependents)

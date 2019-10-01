@@ -4,6 +4,26 @@ from testing import value_eq,object_eq
 from testing import TestFailed,failed
 
 
+nexus_directories = dict()
+
+def divert_nexus_directories():
+    from nexus_base import nexus_core
+    assert(len(nexus_directories)==0)
+    nexus_directories['local']  = nexus_core.local_directory
+    nexus_directories['remote'] = nexus_core.remote_directory
+#end def divert_nexus_directories
+
+
+def restore_nexus_directories():
+    from nexus_base import nexus_core
+    assert(set(nexus_directories.keys())==set(['local','remote']))
+    nexus_core.local_directory  = nexus_directories['local'] 
+    nexus_core.remote_directory = nexus_directories['remote']
+    nexus_directories.clear()
+#end def restore_nexus_directories
+
+
+
 def get_test_simulation_class():
 
     from simulation import Simulation,SimulationInput,SimulationAnalyzer
@@ -54,6 +74,8 @@ def get_test_simulation_class():
         input_type    = TestSimulationInput
         analyzer_type = TestSimulationAnalyzer
 
+        application_results = set(['quant1','quant2','quant3'])
+
         def check_sim_status(self):
             self.finished = True
         #end def check_sim_status
@@ -67,6 +89,45 @@ def get_test_simulation_class():
 #end def get_test_simulation_class
 
 
+get_sim_simulations = []
+
+def get_sim(**kwargs):
+    from machines import job
+    from simulation import Simulation
+
+    test_job = job(machine='ws1',app_command='test.x')
+
+    n = len(get_sim_simulations)
+
+    sim = Simulation(identifier='sim'+str(n),job=test_job,**kwargs)
+
+    get_sim_simulations.append(sim)
+
+    return sim
+#end def get_sim
+
+
+get_test_sim_simulations = []
+
+def get_test_sim(**kwargs):
+    from machines import job
+
+    test_job = job(machine='ws1',app_command='test.x')
+
+    n = len(get_test_sim_simulations)
+
+    TestSimulation = get_test_simulation_class()
+
+    test_sim = TestSimulation(
+        identifier = 'test_sim'+str(n),
+        job        = test_job,
+        **kwargs
+        )
+
+    get_test_sim_simulations.append(test_sim)
+
+    return test_sim
+#end def get_sim
 
 
 
@@ -80,14 +141,13 @@ def test_import():
     from simulation import SimulationInputMultiTemplate
     from simulation import input_template,multi_input_template
     from simulation import generate_simulation
-
-    print('\nend test')
 #end def test_import
 
 
 
 def test_simulation_input():
     import os
+    from generic import NexusError
     from simulation import SimulationInput
 
     tpath = testing.setup_unit_test_output_directory('simulation','test_simulation_input')
@@ -106,14 +166,13 @@ def test_simulation_input():
     assert(rtext==wtext)
 
     # virtuals
-    cls = SimulationInput
     virts = [
-        cls.is_valid,
-        cls.return_structure,
-        cls.read_text,
-        cls.write_text,
-        (cls.incorporate_system,[None]),
-        cls.return_system,
+        si.is_valid,
+        si.return_structure,
+        (si.read_text,[None]),
+        si.write_text,
+        (si.incorporate_system,[None]),
+        si.return_system,
         ]
     for v in virts:
         args = []
@@ -123,10 +182,12 @@ def test_simulation_input():
         try:
             v(*args)
             raise TestFailed
+        except NexusError:
+            None
         except TestFailed:
             failed(str(v))
-        except:
-            None
+        except Exception as e:
+            failed(str(e))
         #end try
     #end for
 #end def test_simulation_input
@@ -135,6 +196,7 @@ def test_simulation_input():
 
 def test_simulation_analyzer():
     import os
+    from generic import NexusError
     from simulation import SimulationAnalyzer
 
     # empty init
@@ -151,26 +213,28 @@ def test_simulation_analyzer():
     try:
         SimulationAnalyzer(None)
         raise TestFailed
+    except NexusError:
+        None
     except TestFailed:
         failed()
-    except:
-        None
+    except Exception as e:
+        failed(str(e))
     #end try
 #end def test_simulation_analyzer
 
 
 
-def test_simulation_code_name():
+def test_code_name():
     from simulation import Simulation
 
     cn = Simulation.code_name()
     assert(isinstance(cn,str))
     assert(' ' not in cn)
-#end def test_simulation_code_name
+#end def test_code_name
 
 
 
-def test_simulation_init():
+def test_init():
     from generic import obj
     from machines import job,Job
     from simulation import Simulation,SimulationInput
@@ -237,6 +301,9 @@ def test_simulation_init():
     assert(se.simid<Simulation.sim_count)
 
     Simulation.clear_all_sims()
+    assert(len(Simulation.all_sims)==0)
+    assert(len(Simulation.sim_directories)==0)
+    assert(Simulation.sim_count==0)
 
 
     # make a test job
@@ -300,5 +367,536 @@ def test_simulation_init():
         job        = test_job,
         )
 
+    Simulation.clear_all_sims()
 
-#end def test_simulation_init
+#end def test_init
+
+
+
+def test_virtuals():
+    from generic import NexusError
+    from simulation import Simulation
+
+    s = Simulation()
+
+    virts = [
+        (s.check_result,[None,None]),
+        (s.get_result,[None,None]),
+        (s.incorporate_result,[None,None,None]),
+        s.app_command,
+        s.check_sim_status,
+        s.get_output_files,
+        ]
+    for v in virts:
+        args = []
+        if isinstance(v,tuple):
+            v,args = v
+        #end if
+        try:
+            v(*args)
+            raise TestFailed
+        except NexusError:
+            None
+        except TestFailed:
+            failed(str(v))
+        except Exception as e:
+            failed(str(e))
+        #end try
+    #end for
+
+    vacuous_virts = [
+        s.propagate_identifier,
+        s.pre_init,
+        s.post_init,
+        s.pre_create_directories,
+        s.write_prep,
+        (s.pre_write_inputs,[None]),
+        (s.pre_send_files,[None]),
+        s.post_submit,
+        s.pre_check_status,
+        (s.post_analyze,[None]),
+        ]
+    for v in vacuous_virts:
+        args = []
+        if isinstance(v,tuple):
+            v,args = v
+        #end if
+        v(*args)
+    #end for
+
+    Simulation.clear_all_sims()
+
+#end def test_virtuals
+
+
+
+def test_reset_indicators():
+    from simulation import Simulation
+
+    indicators = '''
+        got_dependencies
+        setup     
+        sent_files
+        submitted 
+        finished  
+        failed    
+        got_output
+        analyzed  
+        '''.split()
+
+    s = Simulation()
+
+    for i in indicators:
+        s[i] = True
+    #end for
+
+    s.reset_indicators()
+
+    for i in indicators:
+        ind = s[i]
+        assert(isinstance(ind,bool))
+        assert(not ind)
+    #end for
+
+    Simulation.clear_all_sims()
+#end def test_reset_indicators
+
+
+
+def test_indicator_checks():
+    from machines import job
+    from simulation import Simulation
+
+    def complete(sim):
+        sim.setup      = True
+        sim.sent_files = True
+        sim.submitted  = True
+        sim.finished   = True
+        sim.got_output = True
+        sim.analyzed   = True
+        sim.failed     = False
+    #end def complete
+
+    # test completed()
+    s = Simulation()
+    assert(not s.completed())
+    complete(s)
+    assert(s.completed())
+    s.reset_indicators()
+    Simulation.clear_all_sims()
+
+    # test ready() and active()
+    test_job = job(machine='ws1',app_command='test.x')
+
+    simdeps = []
+    for i in range(5):
+        s = Simulation(identifier='id'+str(i),job=test_job)
+        complete(s)
+        simdeps.append((s,'other'))
+    #end for
+
+    s = Simulation(job=test_job,dependencies=simdeps)
+    assert(s.ready())
+    assert(s.active())
+    s.submitted = True
+    assert(not s.ready())
+    assert(s.active())
+
+    Simulation.clear_all_sims()
+
+#end def test_indicator_checks
+
+
+
+def test_create_directories():
+    import os
+    from nexus_base import nexus_core
+    from simulation import Simulation
+
+    tpath = testing.setup_unit_test_output_directory('simulation','test_create_directories')
+
+    divert_nexus_directories()
+
+    nexus_core.local_directory  = tpath
+    nexus_core.remote_directory = tpath
+
+    s = Simulation()
+
+    assert(not os.path.exists(s.locdir))
+    assert(not os.path.exists(s.imlocdir))
+    assert(not s.created_directories)
+
+    s.create_directories()
+
+    assert(os.path.exists(s.locdir))
+    assert(os.path.exists(s.imlocdir))
+    assert(s.created_directories)
+
+    restore_nexus_directories()
+
+    Simulation.clear_all_sims()
+#end def test_create_directories
+
+
+
+def test_file_text():
+    import os
+    from nexus_base import nexus_core
+    from simulation import Simulation
+
+    tpath = testing.setup_unit_test_output_directory('simulation','test_create_directories')
+
+    divert_nexus_directories()
+
+    nexus_core.local_directory  = tpath
+    nexus_core.remote_directory = tpath
+
+    s = Simulation()
+    s.create_directories()
+
+    outfile = os.path.join(s.locdir,s.outfile)
+    errfile = os.path.join(s.locdir,s.errfile)
+
+    out_text = 'output'
+    err_text = 'error'
+
+    open(outfile,'w').write(out_text)
+    open(errfile,'w').write(err_text)
+
+    assert(s.outfile_text()==out_text)
+    assert(s.errfile_text()==err_text)
+
+    restore_nexus_directories()
+
+    Simulation.clear_all_sims()
+#end def test_file_text
+
+
+
+def check_dependency_objects(*sims,**kwargs):
+    from generic import obj
+    from simulation import Simulation
+    empty    = kwargs.get('empty',False)
+    wait_ids = kwargs.get('wait_ids',True)
+    if len(sims)==1 and isinstance(sims[0],list):
+        sims = sims[0]
+    #end if
+    for sim in sims:
+        if empty:
+            assert(value_eq(sim.ordered_dependencies,[]))
+            assert(isinstance(sim.dependencies,obj))
+            assert(len(sim.dependencies)==0)
+            assert(sim.dependency_ids==set())
+            assert(sim.wait_ids==set())
+        else:
+            # check dependencies object
+            for simid,dep in sim.dependencies.iteritems():
+                assert(isinstance(simid,int))
+                assert(isinstance(dep,obj))
+                assert('result_names' in dep)
+                assert('results' in dep)
+                assert('sim' in dep)
+                assert(len(dep)==3)
+                assert(isinstance(dep.sim,Simulation))
+                assert(simid==dep.sim.simid)
+                assert(isinstance(dep.result_names,list))
+                for name in dep.result_names:
+                    assert(isinstance(name,str))
+                #end for
+                assert(isinstance(dep.results,obj))
+                assert(len(dep.results)==0)
+            #end for
+            # check ordered_dependencies object
+            for dep in sim.ordered_dependencies:
+                dep2 = sim.dependencies[dep.sim.simid]
+                assert(id(dep2)==id(dep))
+            #end for
+            # check dependents object
+            for dsimid,dsim in sim.dependents.items():
+                assert(isinstance(dsimid,int))
+                assert(isinstance(dsim,Simulation))
+                assert(dsimid==dsim.simid)
+                assert(sim.simid in dsim.dependency_ids)
+                assert(sim.simid in dsim.dependencies)
+                assert(id(sim)==id(dsim.dependencies[sim.simid].sim))
+                found = False
+                for s in dsim.ordered_dependencies:
+                    found |= id(s.sim)==id(sim)
+                #end for
+                assert(found)
+            #end for
+            # check dependency_ids
+            for simid in sim.dependency_ids:
+                assert(isinstance(simid,int))
+                assert(simid in sim.dependencies)
+            #end for
+            # check wait_ids
+            if wait_ids:
+                assert(sim.wait_ids==sim.dependency_ids)
+            #end if
+        #end if
+    #end if
+#end def check_dependency_objects
+
+
+def check_dependency(sim2,sim1,quants=['other'],only=False,objects=False):
+    # sim2 depends on sim1 for all quantities
+    if objects:
+        check_dependency_objects(sim1)
+        check_dependency_objects(sim2)
+    #end if
+    assert(sim2.simid in sim1.dependents)
+    assert(id(sim1.dependents[sim2.simid])==id(sim2))
+    assert(sim1.simid in sim2.dependency_ids)
+    assert(sim1.simid in sim2.dependencies)
+    assert(id(sim2.dependencies[sim1.simid].sim)==id(sim1))
+    assert(set(sim2.dependencies[sim1.simid].result_names)==set(quants))
+    if only:
+        assert(len(sim1.dependents)==1)
+        assert(len(sim2.dependency_ids)==1)
+        assert(len(sim2.dependencies)==1)
+        assert(len(sim2.ordered_dependencies)==1)
+    #end if
+#end def check_dependency
+
+
+def test_depends():
+    from generic import NexusError
+    from simulation import Simulation
+
+    # single dependency, single quantity
+    s1 = get_sim()
+    s2 = get_sim()
+
+    check_dependency_objects(s1,empty=True)
+    check_dependency_objects(s2,empty=True)
+
+    s2.depends(s1,'other')
+
+    check_dependency(s2,s1,objects=True,only=True)
+    del s1,s2
+
+    s1 = get_sim()
+    s2 = get_sim()
+    s2.depends((s1,'other'))
+    check_dependency(s2,s1,objects=True,only=True)
+    del s1,s2
+
+    s1 = get_sim()
+    s2 = get_sim(
+        dependencies = (s1,'other'),
+        )
+    check_dependency(s2,s1,objects=True,only=True)
+    del s1,s2
+
+    s1 = get_sim()
+    s2 = get_sim(
+        dependencies = [(s1,'other')],
+        )
+    check_dependency(s2,s1,objects=True,only=True)
+    del s1,s2
+
+
+    # single dependency, multiple quantities
+    s1 = get_test_sim()
+    s2 = get_test_sim()
+
+    quants = ['quant1','quant2','quant3']
+
+    check_dependency_objects(s1,empty=True)
+    check_dependency_objects(s2,empty=True)
+
+    s2.depends(s1,'quant1','quant2','quant3')
+
+    check_dependency(s2,s1,quants,objects=True,only=True)
+    del s1,s2
+
+    s1 = get_test_sim()
+    s2 = get_test_sim()
+    s2.depends(s1,'quant1')
+    s2.depends(s1,'quant2')
+    s2.depends(s1,'quant3')
+    check_dependency(s2,s1,quants,objects=True,only=True)
+    del s1,s2
+
+    s1 = get_test_sim()
+    s2 = get_test_sim()
+    s2.depends(s1,'quant1','quant2')
+    s2.depends(s1,'quant3')
+    check_dependency(s2,s1,quants,objects=True,only=True)
+    del s1,s2
+
+    s1 = get_test_sim()
+    s2 = get_test_sim()
+    s2.depends((s1,'quant1','quant2','quant3'))
+    check_dependency(s2,s1,quants,objects=True,only=True)
+    del s1,s2
+
+    s1 = get_test_sim()
+    s2 = get_test_sim()
+    s2.depends((s1,'quant1'))
+    s2.depends((s1,'quant2'))
+    s2.depends((s1,'quant3'))
+    check_dependency(s2,s1,quants,objects=True,only=True)
+    del s1,s2
+
+    s1 = get_test_sim()
+    s2 = get_test_sim(
+        dependencies = (s1,'quant1','quant2','quant3'),
+        )
+    check_dependency(s2,s1,quants,objects=True,only=True)
+    del s1,s2
+
+    s1 = get_test_sim()
+    s2 = get_test_sim(
+        dependencies = [(s1,'quant1','quant2','quant3')],
+        )
+    check_dependency(s2,s1,quants,objects=True,only=True)
+    del s1,s2
+
+    s1 = get_test_sim()
+    s2 = get_test_sim(
+        dependencies = [
+            (s1,'quant1'),
+            (s1,'quant2'),
+            (s1,'quant3'),
+            ],
+        )
+    check_dependency(s2,s1,quants,objects=True,only=True)
+    del s1,s2
+
+
+    # multiple dependencies
+    s11 = get_test_sim()
+    s12 = get_test_sim()
+    s13 = get_test_sim()
+
+    s21 = get_test_sim(
+        dependencies = [
+            (s11,'quant1'),
+            (s12,'quant2'),
+            ]
+        )
+    s22 = get_test_sim(
+        dependencies = [
+            (s12,'quant2'),
+            (s13,'quant3'),
+            ]
+        )
+
+    s31 = get_test_sim(
+        dependencies = [
+            (s21,'quant1'),
+            (s22,'quant2'),
+            ]
+        )
+    s32 = get_test_sim(
+        dependencies = [
+            (s21,'quant1'),
+            (s22,'quant2'),
+            ]
+        )
+    s33 = get_test_sim(
+        dependencies = [
+            (s21,'quant1'),
+            (s22,'quant2'),
+            ]
+        )
+
+    s41 = get_test_sim(
+        dependencies = [
+            (s11,'quant1'),
+            (s22,'quant2'),
+            (s32,'quant3'),
+            ]
+        )
+
+    check_dependency_objects(s11,s12,s13,s21,s22,s31,s32,s33,s41)
+
+    check_dependency(s21,s11,['quant1'])
+    check_dependency(s21,s12,['quant2'])
+
+    check_dependency(s22,s12,['quant2'])
+    check_dependency(s22,s13,['quant3'])
+
+    check_dependency(s31,s21,['quant1'])
+    check_dependency(s31,s22,['quant2'])
+
+    check_dependency(s32,s21,['quant1'])
+    check_dependency(s32,s22,['quant2'])
+
+    check_dependency(s33,s21,['quant1'])
+    check_dependency(s33,s22,['quant2'])
+
+    check_dependency(s41,s11,['quant1'])
+    check_dependency(s41,s22,['quant2'])
+    check_dependency(s41,s32,['quant3'])
+
+    del s11,s12,s13,s21,s22,s31,s32,s33,s41
+
+
+    # fail when dependency does not exist
+    try:
+        s1 = get_sim()
+        s2 = get_sim(
+            dependencies = [(s1,'quant1')],
+            )
+        raise TestFailed
+    except NexusError:
+        None
+    except:
+        failed()
+    #end try
+
+    try:
+        s1 = get_sim()
+        s2 = get_sim(
+            dependencies = [(s1,'other','quant2')],
+            )
+        raise TestFailed
+    except NexusError:
+        None
+    except:
+        failed()
+    #end try
+
+    try:
+        s1 = get_test_sim()
+        s2 = get_test_sim(
+            dependencies = [(s1,'quant1','apple')],
+            )
+        raise TestFailed
+    except NexusError:
+        None
+    except:
+        failed()
+    #end try
+
+    Simulation.clear_all_sims()
+#end def test_depends
+
+
+
+def test_undo_depends():
+    from simulation import Simulation
+
+    # single dependency, single quantity
+    s1 = get_sim()
+    s2 = get_sim()
+
+    check_dependency_objects(s1,empty=True)
+    check_dependency_objects(s2,empty=True)
+
+    s2.depends(s1,'other')
+
+    check_dependency(s2,s1,objects=True,only=True)
+
+    s2.undo_depends(s1)
+
+    check_dependency_objects(s1,empty=True)
+    check_dependency_objects(s2,empty=True)
+
+    Simulation.clear_all_sims()
+#end def test_undo_depends
+
+

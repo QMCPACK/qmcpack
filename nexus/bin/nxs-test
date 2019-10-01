@@ -2052,9 +2052,23 @@ def simulation():
 
     nunit('simulation_analyzer')
 
-    nunit('simulation_code_name')
+    nunit('code_name')
 
-    nunit('simulation_init')
+    nunit('init')
+
+    nunit('virtuals')
+
+    nunit('reset_indicators')
+
+    nunit('indicator_checks')
+
+    nunit('create_directories')
+
+    nunit('file_text')
+
+    nunit('depends')
+
+    nunit('undo_depends')
 
     nunit_all()
 #end def simulation
