@@ -205,6 +205,93 @@ int SimpleFixedNodeBranch::initWalkerController(MCWalkerConfiguration& walkers, 
   return int(round(double(iParam[B_TARGETWALKERS]) / double(nwtot_now)));
 }
 
+int SimpleFixedNodeBranch::initWalkerController(MCPopulation& population, bool fixW, bool killwalker)
+{
+  BranchMode.set(B_DMC, 1);                               //set DMC
+  BranchMode.set(B_DMCSTAGE, iParam[B_WARMUPSTEPS] == 0); //use warmup
+  //this is not necessary
+  //check if tau is different and set the initial values
+  //vParam[B_TAU]=tau;
+  bool fromscratch     = false;
+  FullPrecRealType tau = vParam[B_TAU];
+
+  int nwtot_now = population.get_num_global_walkers();
+
+  if (WalkerController != nullptr)
+    throw std::runtime_error(
+        "Unified Driver initWalkerController called with existing WalkerController,\n this is a violation of the assumed "
+        "state module for SimpleFixedNodeBranch in the Unified Driver design");
+  if (iParam[B_TARGETWALKERS] == 0)
+  {
+    // has "important" side effect of updating the walker offsets
+    iParam[B_TARGETWALKERS] = population.update_num_global_walkers(MyEstimator->getCommunicator());
+  }
+  WalkerController.reset(createWalkerController(iParam[B_TARGETWALKERS], MyEstimator->getCommunicator(), myNode));
+  if (!BranchMode[B_RESTART])
+  {
+    fromscratch = true;
+    app_log() << "  START ALL OVER " << std::endl;
+    vParam[B_TAUEFF] = tau;
+    BranchMode.set(B_POPCONTROL, !fixW); //fixW -> 0
+    BranchMode.set(B_KILLNODES, killwalker);
+    iParam[B_MAXWALKERS] = WalkerController->get_n_max();
+    iParam[B_MINWALKERS] = WalkerController->get_n_min();
+    if (!fixW && sParam[MIXDMCOPT] == "yes")
+    {
+      app_log() << "Warmup DMC is done with a fixed population " << iParam[B_TARGETWALKERS] << std::endl;
+      BackupWalkerController = std::move(WalkerController); //save the main controller
+      WalkerController.reset(
+          createWalkerController(iParam[B_TARGETWALKERS], MyEstimator->getCommunicator(), myNode, true));
+      BranchMode.set(B_POPCONTROL, 0);
+    }
+    //PopHist.clear();
+    //PopHist.reserve(std::max(iParam[B_ENERGYUPDATEINTERVAL],5));
+  }
+
+  // start used to be buried in the WalkerController initializing MCWC's walkers ID's
+  WalkerController->start();
+
+  //else
+  //{
+  //  BranchMode.set(B_DMCSTAGE,0);//always reset warmup
+  //}
+
+  // EstimatorManager gets touched from too many different places
+  MyEstimator->reset();
+  //update the simulation parameters
+  WalkerController->put(myNode);
+  //assign current Eref and a large number for variance
+  WalkerController->setTrialEnergy(vParam[B_ETRIAL]);
+  this->reset();
+  if (fromscratch)
+  {
+    //determine the branch cutoff to limit wild weights based on the sigma and sigmaBound
+    // Was check MCWC's particle set for number of R which I take to mean number of particles
+    // will this assumption change if various spin freedoms also are added to ParticleSet?
+    setBranchCutoff(vParam[B_SIGMA2], WalkerController->get_target_sigma(), 50, population.get_num_particles());
+    vParam[B_TAUEFF] = tau * R2Accepted.result() / R2Proposed.result();
+  }
+  //reset controller
+  WalkerController->reset();
+  if (BackupWalkerController)
+    BackupWalkerController->reset();
+  app_log() << "  QMC counter      = " << iParam[B_COUNTER] << std::endl;
+  app_log() << "  time step        = " << vParam[B_TAU] << std::endl;
+  app_log() << "  effective time step = " << vParam[B_TAUEFF] << std::endl;
+  app_log() << "  trial energy     = " << vParam[B_ETRIAL] << std::endl;
+  app_log() << "  reference energy = " << vParam[B_EREF] << std::endl;
+  app_log() << "  Feedback = " << vParam[B_FEEDBACK] << std::endl;
+  app_log() << "  reference variance = " << vParam[B_SIGMA2] << std::endl;
+  app_log() << "  target walkers = " << iParam[B_TARGETWALKERS] << std::endl;
+  app_log() << "  branching cutoff scheme " << branching_cutoff_scheme << std::endl;
+  app_log() << "  branch cutoff = " << vParam[B_BRANCHCUTOFF] << " " << vParam[B_BRANCHMAX] << std::endl;
+  app_log() << "  Max and minimum walkers per node= " << iParam[B_MAXWALKERS] << " " << iParam[B_MINWALKERS]
+            << std::endl;
+  app_log() << "  QMC Status (BranchMode) = " << BranchMode << std::endl;
+
+  return int(round(double(iParam[B_TARGETWALKERS]) / double(nwtot_now)));
+}
+
 void SimpleFixedNodeBranch::initReptile(MCWalkerConfiguration& W)
 {
   RealType allowedFlux = 50.0;
@@ -608,7 +695,7 @@ void SimpleFixedNodeBranch::reset()
 
 void SimpleFixedNodeBranch::setRN(bool rn)
 {
-  RN                        = rn;
+  RN = rn;
   WalkerController->set_write_release_nodes(rn);
   WalkerController->start();
 }

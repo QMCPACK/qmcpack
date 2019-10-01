@@ -111,6 +111,11 @@ void WalkerControlBase::setWalkerID(MCWalkerConfiguration& walkers)
   }
 }
 
+void WalkerControlBase::setWalkerID(MCPopulation& population)
+{
+  start(); //do the normal start
+}
+
 /** Depends on alot of state
  *
  *  Does not depend on state refactored to  PopulationAdjustment directly

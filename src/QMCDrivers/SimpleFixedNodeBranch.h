@@ -88,6 +88,7 @@ struct SimpleFixedNodeBranch : public QMCTraits
    * \since 2008-05-05
    *
    * When introducing a new iParam, check if B_IPARAM_MAX is sufficiently large. Use multiples of 8
+   * Why?  Much easier to use bool flags.  Are these ever serialized?
    */
   enum
   {
@@ -153,7 +154,7 @@ struct SimpleFixedNodeBranch : public QMCTraits
   std::unique_ptr<WalkerControlBase> WalkerController;
   ///Backup WalkerController for mixed DMC
   std::unique_ptr<WalkerControlBase> BackupWalkerController;
-  ///EstimatorManager
+  ///TODO: Should not be raw pointer 
   EstimatorManagerBase* MyEstimator;
   ///a simple accumulator for energy
   accumulator_set<FullPrecRealType> EnergyHist;
@@ -228,8 +229,15 @@ struct SimpleFixedNodeBranch : public QMCTraits
    * @param fixW true, if reconfiguration with the fixed number of walkers is used
    * @return number of copies to make in case targetwalkers changed
    */
-  int initWalkerController(MCWalkerConfiguration& w, bool fixW, bool killwalker);
-  //void initWalkerController(MCWalkerConfiguration& w, RealType tau, bool fixW=false, bool killwalker=false);
+  int initWalkerController(MCWalkerConfiguration& mcwc, bool fixW, bool killwalker);
+
+  /** initialize  the WalkerController
+   * @param w Walkers
+   * @param tau timestep
+   * @param fixW true, if reconfiguration with the fixed number of walkers is used
+   * @return number of copies to make in case targetwalkers changed
+   */
+  int initWalkerController(MCPopulation& pop, bool fixW, bool killwalker);
 
   /** initialize reptile stats
    *

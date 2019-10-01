@@ -89,6 +89,12 @@ public:
   /** start controller  and initialize the IDs of walkers*/
   void setWalkerID(MCWalkerConfiguration& walkers);
 
+  /** start controller
+   *
+   *  WalkerID's are initialized by MCPopulation, SOC
+   */
+  void setWalkerID(MCPopulation& population);
+  
   /** take averages and writes to a file */
   void measureProperties(int iter);
 

@@ -20,8 +20,9 @@ MCPopulation::MCPopulation(int num_ranks,
                            MCWalkerConfiguration& mcwc,
                            ParticleSet* elecs,
                            TrialWaveFunction* trial_wf,
-                           QMCHamiltonian* hamiltonian)
-    : num_ranks_(num_ranks), trial_wf_(trial_wf), elec_particle_set_(elecs), hamiltonian_(hamiltonian)
+                           QMCHamiltonian* hamiltonian,
+                          int this_rank)
+    : num_ranks_(num_ranks), trial_wf_(trial_wf), elec_particle_set_(elecs), hamiltonian_(hamiltonian), rank_(this_rank)
 {
   walker_offsets_     = mcwc.WalkerOffsets;
   num_global_walkers_ = mcwc.GlobalNumWalkers;
@@ -94,6 +95,18 @@ void MCPopulation::createWalkers(IndexType num_walkers)
     createWalkerInplace(walker_ptr);
   }
 
+  int num_walkers_created = 0;
+  for(auto& walker_ptr: walkers_)
+  {
+    if( walker_ptr->ID == 0 )
+    {
+      // And so walker ID's start at one because 0 is magic.
+      // TODO: This is C++ all indexes start at 0, make uninitialized ID = -1
+      walker_ptr->ID       = (++num_walkers_created) * num_ranks_ + rank_;
+      walker_ptr->ParentID = walker_ptr->ID;
+    }
+  }
+  
   outputManager.pause();
 
   // Sadly the wfc makeClone interface depends on the full particle set as a way to not to keep track
@@ -201,6 +214,23 @@ void MCPopulation::killWalker(MCPWalker& walker)
     }
   }
   throw std::runtime_error("Attempt to kill nonexistent walker in MCPopulation!");
+}
+
+QMCTraits::IndexType MCPopulation::update_num_global_walkers(Communicate* comm)
+{
+  int ncontexts      = comm->size();
+  std::vector<int> nw(ncontexts, 0);
+  std::vector<int> nwoff(ncontexts + 1, 0);
+    
+  nw[comm->rank()] = num_local_walkers_;
+  comm->allreduce(nw);
+    
+  for (int ip = 0; ip < ncontexts; ++ip)
+    nwoff[ip + 1] = nwoff[ip] + nw[ip];
+
+  num_global_walkers_ = nwoff[ncontexts];
+  walker_offsets_ = nwoff;
+  return num_global_walkers_;
 }
 
 /** Creates walkers doing their first touch in their crowd (thread) context

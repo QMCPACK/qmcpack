@@ -77,7 +77,9 @@ private:
   UPtrVector<ParticleSet> walker_elec_particle_sets_;
   UPtrVector<TrialWaveFunction> walker_trial_wavefunctions_;
   UPtrVector<QMCHamiltonian> walker_hamiltonians_;
-
+  // This should perhaps just be aquired from comm but currently MCPopulation
+  // is innocent of comm, Every object needing a copy is suboptimal.
+  int rank_;
 public:
   MCPopulation() : trial_wf_(nullptr), elec_particle_set_(nullptr), hamiltonian_(nullptr) {}
   /** Temporary constructor to deal with MCWalkerConfiguration be the only source of some information
@@ -87,14 +89,16 @@ public:
                MCWalkerConfiguration& mcwc,
                ParticleSet* elecs,
                TrialWaveFunction* trial_wf,
-               QMCHamiltonian* hamiltonian_);
+               QMCHamiltonian* hamiltonian_,
+              int this_rank=0);
   //MCPopulation(int num_ranks, int num_particles) : num_ranks_(num_ranks), num_particles_(num_particles) {}
-  MCPopulation(int num_ranks, ParticleSet* elecs, TrialWaveFunction* trial_wf, QMCHamiltonian* hamiltonian)
+  MCPopulation(int num_ranks, ParticleSet* elecs, TrialWaveFunction* trial_wf, QMCHamiltonian* hamiltonian, int this_rank=0)
       : num_ranks_(num_ranks),
         trial_wf_(trial_wf),
         elec_particle_set_(elecs),
         hamiltonian_(hamiltonian),
-        num_particles_(elecs->R.size())
+        num_particles_(elecs->R.size()),
+        rank_(this_rank)
   {}
   
   MCPopulation(MCPopulation&) = default;
@@ -154,9 +158,19 @@ public:
   /**@ingroup Accessors
    * @{
    */
+
+  /** The number of cases in which this and get_num_local_walkers is so few that
+   *  I strongly suspect it is a design issue.
+   *
+   *  get_active_walkers is onlyh useful between the setting of num_local_walkers_ and
+   *  creation of walkers.  I would reason this is actually a time over which the MCPopulation object
+   *  is invalid. Ideally MCPopulation not process any calls in this state, next best would be to only
+   *  process calls to become valid.
+   */
   IndexType get_active_walkers() const { return walkers_.size(); }
   int get_num_ranks() const { return num_ranks_; }
   IndexType get_num_global_walkers() const { return num_global_walkers_; }
+  IndexType update_num_global_walkers(Communicate* comm);
   IndexType get_num_local_walkers() const { return num_local_walkers_; }
   IndexType get_num_particles() const { return num_particles_; }
   IndexType get_max_samples() const { return max_samples_; }
