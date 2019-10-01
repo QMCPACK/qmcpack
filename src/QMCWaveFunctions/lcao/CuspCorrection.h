@@ -114,7 +114,7 @@ public:
       : targetPtcl(targetP), sourcePtcl(sourceP), curOrb(0), curCenter(0)
   {
     Psi1     = Phi;
-    int norb = Psi1->OrbitalSetSize;
+    int norb = Psi1->getOrbitalSetSize();
     val1.resize(norb);
     grad1.resize(norb);
     lap1.resize(norb);

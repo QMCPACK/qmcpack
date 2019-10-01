@@ -1,6 +1,8 @@
 # Deterministic test for QMC optimizer 
 
-IF (NOT MIXED_PRECISION)
+IF (MIXED_PRECISION OR (QMC_COMPLEX AND NOT ENABLE_SOA))
+  MESSAGE_VERBOSE("Skipping optimizer deterministic He tests in mixed precision (QMC_MIXED_PRECISION=1) or complex with aos (QMC_COMPLEX=1 and ENABLE_SOA=0)")
+ELSE()
   SIMPLE_RUN_AND_CHECK(
     deterministic-He_ae-opt
     "${CMAKE_SOURCE_DIR}/tests/molecules/He_ae"
@@ -19,7 +21,5 @@ IF (NOT MIXED_PRECISION)
                     TRUE
                     2 He_VMC_SCALARS # VMC
                     )
-ELSE()
-  MESSAGE_VERBOSE("Skipping optimizer deterministic tests in mixed precision (QMC_MIXED_PRECISION=1)")
 ENDIF()
 

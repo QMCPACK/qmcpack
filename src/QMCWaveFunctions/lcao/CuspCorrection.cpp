@@ -163,8 +163,8 @@ void splitPhiEta(int center, const std::vector<bool>& corrCenter, LCAOrbitalSet&
 
   Phi.myBasisSet->queryOrbitalsForSType(correct_this_center, is_s_orbital);
 
-  int nOrbs = Phi.OrbitalSetSize;
-  int bss   = Phi.BasisSetSize;
+  int nOrbs = Phi.getOrbitalSetSize();
+  int bss   = Phi.getBasisSetSize();
 
   for (int i = 0; i < bss; i++)
   {
@@ -191,8 +191,8 @@ void removeSTypeOrbitals(const std::vector<bool>& corrCenter, LCAOrbitalSet& Phi
 
   Phi.myBasisSet->queryOrbitalsForSType(corrCenter, is_s_orbital);
 
-  int nOrbs = Phi.OrbitalSetSize;
-  int bss   = Phi.BasisSetSize;
+  int nOrbs = Phi.getOrbitalSetSize();
+  int bss   = Phi.getBasisSetSize();
 
   for (int i = 0; i < bss; i++)
   {
