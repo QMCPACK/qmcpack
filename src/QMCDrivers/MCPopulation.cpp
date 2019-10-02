@@ -13,6 +13,7 @@
 
 #include "Configuration.h"
 #include "Concurrency/TasksOneToOne.hpp"
+#include "Message/CommOperators.h"
 
 namespace qmcplusplus
 {
