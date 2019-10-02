@@ -427,7 +427,7 @@ struct TraceRequest
     for (it = quantities.begin(); it != quantities.end(); ++it)
     {
       TraceQuantity& q = it->second;
-      bool selected;
+      bool selected = false;
       if (selector == "scalar_available")
         selected = q.scalar_available;
       else if (selector == "array_available")
