@@ -40,7 +40,6 @@
 
 namespace qmcplusplus
 {
-
 QMCLinearOptimize::QMCLinearOptimize(MCWalkerConfiguration& w,
                                      TrialWaveFunction& psi,
                                      QMCHamiltonian& h,
@@ -71,10 +70,7 @@ QMCLinearOptimize::QMCLinearOptimize(MCWalkerConfiguration& w,
 }
 
 /** Clean up the vector */
-QMCLinearOptimize::~QMCLinearOptimize()
-{
-  delete vmcEngine;
-}
+QMCLinearOptimize::~QMCLinearOptimize() { delete vmcEngine; }
 
 /** Add configuration files for the optimization
 * @param a root of a hdf5 configuration file
@@ -117,7 +113,9 @@ void QMCLinearOptimize::start()
 }
 
 #ifdef HAVE_LMY_ENGINE
-void QMCLinearOptimize::engine_start(cqmc::engine::LMYEngine* EngineObj,DescentEngine& descentEngineObj,std::string MinMethod)
+void QMCLinearOptimize::engine_start(cqmc::engine::LMYEngine* EngineObj,
+                                     DescentEngine& descentEngineObj,
+                                     std::string MinMethod)
 {
   app_log() << "entering engine_start function" << std::endl;
 
@@ -141,7 +139,8 @@ void QMCLinearOptimize::engine_start(cqmc::engine::LMYEngine* EngineObj,DescentE
   initialize_timer_.start();
   optTarget->getConfigurations(h5FileRoot);
   optTarget->setRng(vmcEngine->getRng());
-  optTarget->engine_checkConfigurations(EngineObj,descentEngineObj,MinMethod); // computes derivative ratios and pass into engine
+  optTarget->engine_checkConfigurations(EngineObj, descentEngineObj,
+                                        MinMethod); // computes derivative ratios and pass into engine
   initialize_timer_.stop();
   app_log() << "  Execution time = " << std::setprecision(4) << t1.elapsed() << std::endl;
   app_log() << "  </log>" << std::endl;

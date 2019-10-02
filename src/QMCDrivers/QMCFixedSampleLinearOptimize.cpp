@@ -215,10 +215,11 @@ bool QMCFixedSampleLinearOptimize::run()
   // if requested, perform the update via the adaptive three-shift or single-shift method
   if (current_optimizer_type_ == OptimizerType::ADAPTIVE)
     return adaptive_three_shift_run();
-#endif
 
   if (current_optimizer_type_ == OptimizerType::DESCENT)
     return descent_run();
+
+#endif
 
   if (current_optimizer_type_ == OptimizerType::ONESHIFTONLY)
     return one_shift_run();
@@ -550,17 +551,20 @@ bool QMCFixedSampleLinearOptimize::processOptXML(xmlNodePtr opt_xml, const std::
   if (W.getActiveWalkers() == 0)
     addWalkers(omp_get_max_threads());
   NumOfVMCWalkers = W.getActiveWalkers();
+
+
   // create VMC engine
-  if (vmcEngine == 0)
-  {
+  // if (vmcEngine == 0)
+  // {
 #if defined(QMC_CUDA)
-    if (useGPU == "yes")
-      vmcEngine = new VMCcuda(W, Psi, H, psiPool, myComm);
-    else
+  if (useGPU == "yes")
+    vmcEngine = new VMCcuda(W, Psi, H, psiPool, myComm);
+  else
 #endif
-      vmcEngine = new VMC(W, Psi, H, psiPool, myComm);
-    vmcEngine->setUpdateMode(vmcMove[0] == 'p');
-  }
+    vmcEngine = new VMC(W, Psi, H, psiPool, myComm);
+  vmcEngine->setUpdateMode(vmcMove[0] == 'p');
+  // }
+
 
   vmcEngine->setStatus(RootName, h5FileRoot, AppendRun);
   vmcEngine->process(qsave);
@@ -1348,7 +1352,7 @@ bool QMCFixedSampleLinearOptimize::descent_run()
 
   descentEngineObj->updateParameters();
 
-  std::vector<double> results = descentEngineObj->retrieveNewParams();
+  std::vector<ValueType> results = descentEngineObj->retrieveNewParams();
 
 
   for (int i = 0; i < results.size(); i++)
@@ -1356,6 +1360,8 @@ bool QMCFixedSampleLinearOptimize::descent_run()
     optTarget->Params(i) = results[i];
   }
 
+  //If descent is being run as part of a hybrid optimization, need to check if a vector of
+  //parameter differences should be stored.
   if (doHybrid)
   {
     int store_num = descentEngineObj->retrieveStoreFrequency();
@@ -1378,13 +1384,19 @@ bool QMCFixedSampleLinearOptimize::hybrid_run()
 {
   app_log() << "This is methodName: " << MinMethod << std::endl;
 
-  // if requested, perform the update via the adaptive three-shift or single-shift method
+  //Either the adaptive BLM or descent optimization is run
+
   if (current_optimizer_type_ == OptimizerType::ADAPTIVE)
   {
+    //If the optimization just switched to using the BLM, need to transfer a set
+    //of vectors to the BLM engine.
     if (previous_optimizer_type_ == OptimizerType::DESCENT)
     {
-      std::vector<std::vector<double>> hybridBLM_Input = descentEngineObj->retrieveHybridBLM_Input();
+      std::vector<std::vector<ValueType>> hybridBLM_Input = descentEngineObj->retrieveHybridBLM_Input();
+#if !defined(QMC_COMPLEX)
+      //FIXME once complex is fixed in BLM engine
       EngineObj->setHybridBLM_Input(hybridBLM_Input);
+#endif
     }
     adaptive_three_shift_run();
   }

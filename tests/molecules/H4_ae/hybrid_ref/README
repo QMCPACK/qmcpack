@@ -6,7 +6,7 @@ Reference VMC was performed using 100x as many total samples as the test.
 
 Reference files
 
-revised-descent_ref.xml
+hybrid_ref.xml
 H4.ptcl.xml
 H4.wfs.xml
 qmcpack.out

@@ -1,8 +1,16 @@
+//////////////////////////////////////////////////////////////////////////////////////
+// This file is distributed under the University of Illinois/NCSA Open Source License.
+// See LICENSE file in top directory for details.
+//
+// Copyright (c) 2019 QMCPACK developers.
+//
+// File developed by: Leon Otis, leon_otis@berkeley.edu University, University of California Berkeley
+//		      Ye Luo, yeluo@anl.gov, Argonne National Laboratory
+//
+// File created by: Leon Otis, leon_otis@berkeley.edu University, University of California Berkeley
+//////////////////////////////////////////////////////////////////////////////////////
 
-//Prototype code for a descent engine
-//Some functions modeled on those in linear method engine, but trying to avoid use of formic wrappers for things like mpi.
-//Long-term(?) amibition is to eventually get rid of most of formic except for parts essential for the adaptive three shift LM and BLM.
-
+//Code for a descent engine
 
 #include <cmath>
 #include <vector>
@@ -14,22 +22,22 @@
 namespace qmcplusplus
 {
 DescentEngine::DescentEngine(Communicate* comm, const xmlNodePtr cur)
-    : myComm(comm),
-      engineTargetExcited(false),
-      numParams(0),
-      flavor("RMSprop"),
-      TJF_2Body_eta(.01),
-      TJF_1Body_eta(.01),
-      F_eta(.001),
-      Gauss_eta(.001),
-      CI_eta(.01),
-      Orb_eta(.001),
-      ramp_eta(false),
-      ramp_num(30),
-      store_num(5)
+    : my_comm_(comm),
+      engine_target_excited_(false),
+      num_params_(0),
+      flavor_("RMSprop"),
+      tjf_2body_eta_(.01),
+      tjf_1body_eta_(.01),
+      f_eta_(.001),
+      gauss_eta_(.001),
+      ci_eta_(.01),
+      orb_eta_(.001),
+      ramp_eta_(false),
+      ramp_num_(30),
+      store_num_(5)
 {
   descent_num_ = 0;
-  store_count  = 0;
+  store_count_ = 0;
   processXML(cur);
 }
 
@@ -37,38 +45,39 @@ DescentEngine::DescentEngine(Communicate* comm, const xmlNodePtr cur)
 bool DescentEngine::processXML(const xmlNodePtr cur)
 {
   std::string excited("no");
-  std::string ramp_etaStr("no");
+  std::string ramp_eta_str("no");
 
   ParameterSet m_param;
   m_param.add(excited, "targetExcited", "string");
   //Type of descent method being used
-  m_param.add(flavor, "flavor", "string");
-  m_param.add(TJF_2Body_eta, "TJF_2Body_eta", "double");
-  m_param.add(TJF_1Body_eta, "TJF_1Body_eta", "double");
-  m_param.add(F_eta, "F_eta", "double");
-  m_param.add(CI_eta, "CI_eta", "double");
-  m_param.add(Gauss_eta, "Gauss_eta", "double");
-  m_param.add(Orb_eta, "Orb_eta", "double");
-  m_param.add(ramp_etaStr, "Ramp_eta", "string");
-  m_param.add(ramp_num, "Ramp_num", "int");
-  m_param.add(store_num, "Stored_Vectors", "int");
+  m_param.add(flavor_, "flavor", "string");
+  m_param.add(tjf_2body_eta_, "TJF_2Body_eta", "double");
+  m_param.add(tjf_1body_eta_, "TJF_1Body_eta", "double");
+  m_param.add(f_eta_, "F_eta", "double");
+  m_param.add(ci_eta_, "CI_eta", "double");
+  m_param.add(gauss_eta_, "Gauss_eta", "double");
+  m_param.add(orb_eta_, "Orb_eta", "double");
+  m_param.add(ramp_eta_str, "Ramp_eta", "string");
+  m_param.add(ramp_num_, "Ramp_num", "int");
+  m_param.add(store_num_, "Stored_Vectors", "int");
   m_param.put(cur);
 
-  engineTargetExcited = (excited == "yes");
+  engine_target_excited_ = (excited == "yes");
 
-  ramp_eta = (ramp_etaStr == "yes");
+  ramp_eta_ = (ramp_eta_str == "yes");
 
 
   return true;
 }
 
+//Prepare for taking samples to compute averaged derivatives
 void DescentEngine::prepareStorage(const int num_replicas, const int num_optimizables)
 {
   avg_le_der_samp_.resize(num_optimizables);
   avg_der_rat_samp_.resize(num_optimizables);
-  LDerivs.resize(num_optimizables);
+  lderivs_.resize(num_optimizables);
 
-  numParams = num_optimizables;
+  num_params_ = num_optimizables;
 
   std::fill(avg_le_der_samp_.begin(), avg_le_der_samp_.end(), 0.0);
   std::fill(avg_der_rat_samp_.begin(), avg_der_rat_samp_.end(), 0.0);
@@ -85,26 +94,28 @@ void DescentEngine::prepareStorage(const int num_replicas, const int num_optimiz
     std::fill(replica_der_rat_samp_[i].begin(), replica_der_rat_samp_[i].end(), 0.0);
   }
 
-  w_sum       = 0;
-  e_avg       = 0;
-  e_sum       = 0;
-  eSquare_sum = 0;
-  eSquare_avg = 0;
+  w_sum_        = 0;
+  e_avg_        = 0;
+  e_sum_        = 0;
+  e_square_sum_ = 0;
+  e_square_avg_ = 0;
 }
 
-void DescentEngine::setEtemp(const std::vector<double>& etemp)
+//Sets the value of the averaged local energy
+void DescentEngine::setEtemp(const std::vector<FullPrecRealType>& etemp)
 {
-  e_sum       = etemp[0];
-  w_sum       = etemp[1];
-  eSquare_sum = etemp[2];
-  e_avg       = e_sum / w_sum;
-  eSquare_avg = eSquare_sum / w_sum;
+  e_sum_        = etemp[0];
+  w_sum_        = etemp[1];
+  e_square_sum_ = etemp[2];
+  e_avg_        = e_sum_ / w_sum_;
+  e_square_avg_ = e_square_sum_ / w_sum_;
 
-  app_log() << "e_sum: " << e_sum << std::endl;
-  app_log() << "w_sum: " << w_sum << std::endl;
-  app_log() << "e_avg: " << e_avg << std::endl;
-  app_log() << "eSquare_sum: " << eSquare_sum << std::endl;
-  app_log() << "eSquare_avg: " << eSquare_avg << std::endl;
+  app_log() << "e_sum: " << e_sum_ << std::endl;
+  app_log() << "w_sum: " << w_sum_ << std::endl;
+  app_log() << "e_avg: " << e_avg_ << std::endl;
+  app_log() << "e_square_sum: " << e_square_sum_ << std::endl;
+  app_log() << "e_square_avg: " << e_square_avg_ << std::endl;
+  app_log() << "e_var: " << e_square_avg_ - e_avg_ * e_avg_ << std::endl;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -118,11 +129,11 @@ void DescentEngine::setEtemp(const std::vector<double>& etemp)
 ///
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 void DescentEngine::takeSample(const int replica_id,
-                               const std::vector<double>& der_rat_samp,
-                               const std::vector<double>& le_der_samp,
-                               const std::vector<double>& ls_der_samp,
-                               double vgs_samp,
-                               double weight_samp)
+                               const std::vector<FullPrecValueType>& der_rat_samp,
+                               const std::vector<FullPrecValueType>& le_der_samp,
+                               const std::vector<FullPrecValueType>& ls_der_samp,
+                               FullPrecValueType vgs_samp,
+                               FullPrecValueType weight_samp)
 {
   const size_t num_optimizables = der_rat_samp.size() - 1;
 
@@ -141,7 +152,7 @@ void DescentEngine::takeSample(const int replica_id,
 /// \param[in]  weight_samp    weight for this sample
 ///
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
-void DescentEngine::takeSample(double local_en, double vgs_samp, double weight_samp) {}
+void DescentEngine::takeSample(FullPrecValueType local_en, FullPrecValueType vgs_samp, FullPrecValueType weight_samp) {}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// \brief  Function that reduces all vector information from all processors to the root
@@ -152,7 +163,7 @@ void DescentEngine::sample_finish()
 {
   for (int i = 0; i < replica_le_der_samp_.size(); i++)
   {
-    for (int j = 0; j < LDerivs.size(); j++)
+    for (int j = 0; j < lderivs_.size(); j++)
     {
       avg_le_der_samp_[j] += replica_le_der_samp_[i].at(j);
       avg_der_rat_samp_[j] += replica_der_rat_samp_[i].at(j);
@@ -160,21 +171,21 @@ void DescentEngine::sample_finish()
   }
 
 
-  myComm->allreduce(avg_le_der_samp_);
-  myComm->allreduce(avg_der_rat_samp_);
+  my_comm_->allreduce(avg_le_der_samp_);
+  my_comm_->allreduce(avg_der_rat_samp_);
 
-  for (int i = 0; i < LDerivs.size(); i++)
+  for (int i = 0; i < lderivs_.size(); i++)
   {
-    avg_le_der_samp_.at(i)  = avg_le_der_samp_.at(i) / w_sum;
-    avg_der_rat_samp_.at(i) = avg_der_rat_samp_.at(i) / w_sum;
+    avg_le_der_samp_.at(i)  = avg_le_der_samp_.at(i) / w_sum_;
+    avg_der_rat_samp_.at(i) = avg_der_rat_samp_.at(i) / w_sum_;
 
     app_log() << "Parameter # " << i << " Hamiltonian term: " << avg_le_der_samp_.at(i) << std::endl;
     app_log() << "Parameter # " << i << " Overlap term: " << avg_der_rat_samp_.at(i) << std::endl;
 
     //Computation of averaged derivatives for excited state functional will be added in future
-    if (!engineTargetExcited)
+    if (!engine_target_excited_)
     {
-      LDerivs.at(i) = 2 * avg_le_der_samp_.at(i) - e_avg * (2 * avg_der_rat_samp_.at(i));
+      lderivs_.at(i) = 2.0 * (avg_le_der_samp_.at(i) - e_avg_ * avg_der_rat_samp_.at(i));
     }
   }
 }
@@ -183,133 +194,133 @@ void DescentEngine::sample_finish()
 //Function for updating parameters during descent optimization
 void DescentEngine::updateParameters()
 {
-  app_log() << "Number of Parameters: " << numParams << std::endl;
+  app_log() << "Number of Parameters: " << num_params_ << std::endl;
 
   app_log() << "Parameter Type step sizes: "
-            << " TJF_2Body_eta=" << TJF_2Body_eta << " TJF_1Body_eta=" << TJF_1Body_eta << " F_eta=" << F_eta
-            << " CI_eta=" << CI_eta << " Orb_eta=" << Orb_eta << std::endl;
+            << " TJF_2Body_eta=" << tjf_2body_eta_ << " TJF_1Body_eta=" << tjf_1body_eta_ << " F_eta=" << f_eta_
+            << " CI_eta=" << ci_eta_ << " Orb_eta=" << orb_eta_ << std::endl;
 
   // Get set of derivatives for current (kth) optimization step
-  std::vector<double> curDerivSet = derivRecords.at(derivRecords.size() - 1);
-  std::vector<double> prevDerivSet;
+  std::vector<ValueType> cur_deriv_set = deriv_records_.at(deriv_records_.size() - 1);
+  std::vector<ValueType> prev_deriv_set;
 
-  if (!taus.empty())
+  if (!taus_.empty())
   {
     // Get set of derivatives for previous (k-1th) optimization step
-    prevDerivSet = derivRecords.at(derivRecords.size() - 2);
+    prev_deriv_set = deriv_records_.at(deriv_records_.size() - 2);
   }
 
-  double denom;
-  double numer;
-  double v;
-  double corNumer;
-  double corV;
+  ValueType denom;
+  ValueType numer;
+  ValueType v;
+  ValueType cor_numer;
+  ValueType cor_v;
 
-  double epsilon = 1e-8;
-  double type_Eta;
+  ValueType epsilon = 1e-8;
+  ValueType type_eta;
 
-  double tau;
+  ValueType tau;
   // Update parameters according to specified flavor of gradient descent method
 
   // RMSprop corresponds to the method used by Booth and co-workers
-  if (flavor.compare("RMSprop") == 0)
+  if (flavor_.compare("RMSprop") == 0)
   {
     app_log() << "Using RMSprop" << std::endl;
 
     // To match up with Booth group paper notation, prevLambda is lambda_k-1,
     // curLambda is lambda_k, nextLambda is lambda_k+1
-    double curLambda  = .5 + .5 * std::sqrt(1 + 4 * lambda * lambda);
-    double nextLambda = .5 + .5 * std::sqrt(1 + 4 * curLambda * curLambda);
-    double gamma      = (1 - curLambda) / nextLambda;
+    ValueType cur_lambda  = .5 + .5 * std::sqrt(1.0 + 4.0 * lambda_ * lambda_);
+    ValueType next_lambda = .5 + .5 * std::sqrt(1.0 + 4.0 * cur_lambda * cur_lambda);
+    ValueType gamma       = (1.0 - cur_lambda) / next_lambda;
 
     // Define damping factor that turns off acceleration of the algorithm
     // small value of d corresponds to quick damping and effectively using
     // steepest descent
-    double d           = 100;
-    double decayFactor = std::exp(-(1 / d) * (descent_num_));
-    gamma              = gamma * decayFactor;
+    ValueType d            = 100;
+    ValueType decay_factor = std::exp(-(1.0 / d) * (static_cast<FullPrecValueType>(descent_num_)));
+    gamma                  = gamma * decay_factor;
 
-    double rho = .9;
+    ValueType rho = .9;
 
-    for (int i = 0; i < numParams; i++)
+    for (int i = 0; i < num_params_; i++)
     {
-      double curSquare = std::pow(curDerivSet.at(i), 2);
+      ValueType cur_square = std::pow(cur_deriv_set.at(i), 2);
 
       // Need to calculate step size tau for each parameter inside loop
       // In RMSprop, the denominator of the step size depends on a a running average of past squares of the parameter derivative
-      if (derivsSquared.size() < numParams)
+      if (derivs_squared_.size() < num_params_)
       {
-        curSquare = std::pow(curDerivSet.at(i), 2);
+        cur_square = std::pow(cur_deriv_set.at(i), 2);
       }
-      else if (derivsSquared.size() >= numParams)
+      else if (derivs_squared_.size() >= num_params_)
       {
-        curSquare = rho * derivsSquared.at(i) + (1 - rho) * std::pow(curDerivSet.at(i), 2);
+        cur_square = rho * derivs_squared_.at(i) + (1.0 - rho) * std::pow(cur_deriv_set.at(i), 2);
       }
 
-      denom = std::sqrt(curSquare + epsilon);
+      denom = std::sqrt(cur_square + epsilon);
 
       //The numerator of the step size is set according to parameter type based on input choices
-      type_Eta = this->setStepSize(i);
-      tau      = type_Eta / denom;
+      type_eta = this->setStepSize(i);
+      tau      = type_eta / denom;
 
       // Include an additional factor to cause step size to eventually decrease to 0 as number of steps taken increases
-      double stepLambda = .1;
+      ValueType step_lambda = .1;
 
-      double stepDecayDenom = 1 + stepLambda * descent_num_;
-      tau                   = tau / stepDecayDenom;
+      ValueType step_decay_denom = 1.0 + step_lambda * static_cast<FullPrecValueType>(descent_num_);
+      tau                        = tau / step_decay_denom;
 
 
       //Update parameter values
       //If case corresponds to being after the first descent step
-      if (taus.size() >= numParams)
+      if (taus_.size() >= num_params_)
       {
-        double oldTau = taus.at(i);
+        ValueType old_tau = taus_.at(i);
 
-        currentParams.at(i) = (1 - gamma) * (currentParams.at(i) - tau * curDerivSet.at(i)) +
-            gamma * (paramsCopy.at(i) - oldTau * prevDerivSet.at(i));
+        current_params_.at(i) = (1.0 - gamma) * (current_params_.at(i) - tau * cur_deriv_set.at(i)) +
+            gamma * (params_copy_.at(i) - old_tau * prev_deriv_set.at(i));
       }
       else
       {
-        tau = type_Eta;
+        tau = type_eta;
 
-        currentParams.at(i) = currentParams.at(i) - tau * curDerivSet.at(i);
+        current_params_.at(i) = current_params_.at(i) - tau * cur_deriv_set.at(i);
       }
 
-      if (taus.size() < numParams)
+      if (taus_.size() < num_params_)
       {
         // For the first optimization step, need to add to the vectors
-        taus.push_back(tau);
-        derivsSquared.push_back(curSquare);
+        taus_.push_back(tau);
+        derivs_squared_.push_back(cur_square);
       }
       else
       {
         // When not on the first step, can overwrite the previous stored values
-        taus[i]          = tau;
-        derivsSquared[i] = curSquare;
+        taus_[i]           = tau;
+        derivs_squared_[i] = cur_square;
       }
 
-      paramsCopy[i] = currentParams[i];
+      params_copy_[i] = current_params_[i];
     }
 
     // Store current (kth) lambda value for next optimization step
-    lambda = curLambda;
+    lambda_ = cur_lambda;
   }
   // Random uses only the sign of the parameter derivatives and takes a step of random size within a range.
-  else if (flavor.compare("Random") == 0)
+  else if (flavor_.compare("Random") == 0)
   {
     app_log() << "Using Random" << std::endl;
 
-    for (int i = 0; i < numParams; i++)
+    for (int i = 0; i < num_params_; i++)
     {
-      denom        = 1;
-      double alpha = ((double)rand() / RAND_MAX);
-      double sign  = std::abs(curDerivSet[i]) / curDerivSet[i];
-      if (std::isnan(sign))
+      denom           = 1;
+      ValueType alpha = (static_cast<ValueType>(rand() / RAND_MAX));
+      ValueType sign  = std::abs(cur_deriv_set[i]) / cur_deriv_set[i];
+      if (std::isnan(std::real(sign)))
       {
         app_log() << "Got a nan, choosing sign randomly with 50-50 probability" << std::endl;
 
-        double t = ((double)rand() / RAND_MAX);
-        if (t > .5)
+        ValueType t = (static_cast<ValueType>(rand() / RAND_MAX));
+        if (std::real(t) > std::real(.5))
         {
           sign = 1;
         }
@@ -320,105 +331,105 @@ void DescentEngine::updateParameters()
       }
       app_log() << "This is random alpha: " << alpha << " with sign: " << sign << std::endl;
 
-      currentParams.at(i) = currentParams.at(i) - tau * alpha * sign;
+      current_params_.at(i) = current_params_.at(i) - tau * alpha * sign;
     }
   }
 
   else
   {
     // ADAM method
-    if (flavor.compare("ADAM") == 0)
+    if (flavor_.compare("ADAM") == 0)
     {
       app_log() << "Using ADAM" << std::endl;
 
-      for (int i = 0; i < numParams; i++)
+      for (int i = 0; i < num_params_; i++)
       {
-        double curSquare = std::pow(curDerivSet.at(i), 2);
-        double beta1     = .9;
-        double beta2     = .99;
+        ValueType cur_square = std::pow(cur_deriv_set.at(i), 2);
+        ValueType beta1      = .9;
+        ValueType beta2      = .99;
         if (descent_num_ == 0)
         {
-          numerRecords.push_back(0);
-          denomRecords.push_back(0);
+          numer_records_.push_back(0);
+          denom_records_.push_back(0);
         }
-        numer = beta1 * numerRecords[i] + (1 - beta1) * curDerivSet[i];
-        v     = beta2 * denomRecords[i] + (1 - beta2) * curSquare;
+        numer = beta1 * numer_records_[i] + (1.0 - beta1) * cur_deriv_set[i];
+        v     = beta2 * denom_records_[i] + (1.0 - beta2) * cur_square;
 
-        corNumer = numer / (1 - std::pow(beta1, descent_num_ + 1));
-        corV     = v / (1 - std::pow(beta2, descent_num_ + 1));
+        cor_numer = numer / (1.0 - std::pow(beta1, descent_num_ + 1));
+        cor_v     = v / (1.0 - std::pow(beta2, descent_num_ + 1));
 
-        denom = std::sqrt(corV) + epsilon;
+        denom = std::sqrt(cor_v) + epsilon;
 
-        type_Eta = this->setStepSize(i);
-        tau      = type_Eta / denom;
+        type_eta = this->setStepSize(i);
+        tau      = type_eta / denom;
 
-        currentParams.at(i) = currentParams.at(i) - tau * corNumer;
+        current_params_.at(i) = current_params_.at(i) - tau * cor_numer;
 
-        if (taus.size() < numParams)
+        if (taus_.size() < num_params_)
         {
           // For the first optimization step, need to add to the vectors
-          taus.push_back(tau);
-          derivsSquared.push_back(curSquare);
-          denomRecords[i] = v;
-          numerRecords[i] = numer;
+          taus_.push_back(tau);
+          derivs_squared_.push_back(cur_square);
+          denom_records_[i] = v;
+          numer_records_[i] = numer;
         }
         else
         {
           // When not on the first step, can overwrite the previous stored values
-          taus[i]          = tau;
-          derivsSquared[i] = curSquare;
-          denomRecords[i]  = v;
-          numerRecords[i]  = numer;
+          taus_[i]           = tau;
+          derivs_squared_[i] = cur_square;
+          denom_records_[i]  = v;
+          numer_records_[i]  = numer;
         }
 
-        paramsCopy[i] = currentParams.at(i);
+        params_copy_[i] = current_params_.at(i);
       }
     }
     // AMSGrad method, similar to ADAM except for form of the step size denominator
-    else if (flavor.compare("AMSGrad") == 0)
+    else if (flavor_.compare("AMSGrad") == 0)
     {
       app_log() << "Using AMSGrad" << std::endl;
 
 
-      for (int i = 0; i < numParams; i++)
+      for (int i = 0; i < num_params_; i++)
       {
-        double curSquare = std::pow(curDerivSet.at(i), 2);
-        double beta1     = .9;
-        double beta2     = .99;
+        ValueType cur_square = std::pow(cur_deriv_set.at(i), 2);
+        ValueType beta1      = .9;
+        ValueType beta2      = .99;
         if (descent_num_ == 0)
         {
-          numerRecords.push_back(0);
-          denomRecords.push_back(0);
+          numer_records_.push_back(0);
+          denom_records_.push_back(0);
         }
 
-        numer = beta1 * numerRecords[i] + (1 - beta1) * curDerivSet[i];
-        v     = beta2 * denomRecords[i] + (1 - beta2) * curSquare;
-        v     = std::max(denomRecords[i], v);
+        numer = beta1 * numer_records_[i] + (1.0 - beta1) * cur_deriv_set[i];
+        v     = beta2 * denom_records_[i] + (1.0 - beta2) * cur_square;
+        v     = std::max(std::real(denom_records_[i]), std::real(v));
 
         denom    = std::sqrt(v) + epsilon;
-        type_Eta = this->setStepSize(i);
-        tau      = type_Eta / denom;
+        type_eta = this->setStepSize(i);
+        tau      = type_eta / denom;
 
-        currentParams.at(i) = currentParams.at(i) - tau * numer;
+        current_params_.at(i) = current_params_.at(i) - tau * numer;
 
-        if (taus.size() < numParams)
+        if (taus_.size() < num_params_)
         {
           // For the first optimization step, need to add to the vectors
-          taus.push_back(tau);
-          derivsSquared.push_back(curSquare);
-          denomRecords[i] = v;
-          numerRecords[i] = numer;
+          taus_.push_back(tau);
+          derivs_squared_.push_back(cur_square);
+          denom_records_[i] = v;
+          numer_records_[i] = numer;
         }
         else
         {
           // When not on the first step, can overwrite the previous stored values
-          taus[i]          = tau;
-          derivsSquared[i] = curSquare;
-          denomRecords[i]  = v;
-          numerRecords[i]  = numer;
+          taus_[i]           = tau;
+          derivs_squared_[i] = cur_square;
+          denom_records_[i]  = v;
+          numer_records_[i]  = numer;
         }
 
-        paramsCopy[i] = currentParams.at(i);
+        params_copy_[i] = current_params_.at(i);
       }
     }
   }
@@ -428,43 +439,43 @@ void DescentEngine::updateParameters()
 }
 
 // Helper method for setting step size according parameter type.
-double DescentEngine::setStepSize(int i)
+DescentEngine::ValueType DescentEngine::setStepSize(int i)
 {
-  double type_eta;
+  ValueType type_eta;
 
 
-  std::string name = engineParamNames[i];
+  std::string name = engine_param_names_[i];
 
 
-  int type = engineParamTypes[i];
+  int type = engine_param_types_[i];
 
   //Step sizes are assigned according to parameter type identified from the variable name.
   //Other parameter types could be added to this section as other wave function ansatzes are developed.
   if ((name.find("uu") != std::string::npos) || (name.find("ud") != std::string::npos))
   {
-    type_eta = TJF_2Body_eta;
+    type_eta = tjf_2body_eta_;
   }
   //If parameter name doesn't have "uu" or "ud" in it and is of type 1, assume it is a 1 body Jastrow parameter.
   else if (type == 1)
   {
-    type_eta = TJF_1Body_eta;
+    type_eta = tjf_1body_eta_;
   }
   else if (name.find("F_") != std::string::npos)
   {
-    type_eta = F_eta;
+    type_eta = f_eta_;
   }
   else if (name.find("CIcoeff_") != std::string::npos || name.find("CSFcoeff_") != std::string::npos)
   {
-    type_eta = CI_eta;
+    type_eta = ci_eta_;
   }
   else if (name.find("orb_rot_") != std::string::npos)
   {
-    type_eta = Orb_eta;
+    type_eta = orb_eta_;
   }
   else if (name.find("g") != std::string::npos)
   {
     //Gaussian parameters are rarely optimized in practice but the descent code allows for it.
-    type_eta = Gauss_eta;
+    type_eta = gauss_eta_;
   }
   else
   {
@@ -472,65 +483,66 @@ double DescentEngine::setStepSize(int i)
     type_eta = .001;
   }
 
-  if (ramp_eta && descent_num_ < ramp_num)
+  if (ramp_eta_ && descent_num_ < ramp_num_)
   {
-    type_eta = type_eta * (descent_num_ + 1) / ramp_num;
+    type_eta = type_eta *static_cast<ValueType>((descent_num_ + 1) /ramp_num_);
   }
 
   return type_eta;
 }
 
 //Method for retrieving parameter values, names, and types from the VariableSet before the first descent optimization step
-void DescentEngine::setupUpdate(const optimize::VariableSet& myVars)
+void DescentEngine::setupUpdate(const optimize::VariableSet& my_vars)
 {
-  numParams = myVars.size();
-  for (int i = 0; i < numParams; i++)
+  num_params_ = my_vars.size();
+  for (int i = 0; i < num_params_; i++)
   {
-    engineParamNames.push_back(myVars.name(i));
-    engineParamTypes.push_back(myVars.getType(i));
-    paramsCopy.push_back(myVars[i]);
-    currentParams.push_back(myVars[i]);
-    paramsForDiff.push_back(myVars[i]);
+    engine_param_names_.push_back(my_vars.name(i));
+    engine_param_types_.push_back(my_vars.getType(i));
+    params_copy_.push_back(my_vars[i]);
+    current_params_.push_back(my_vars[i]);
+    params_for_diff_.push_back(my_vars[i]);
   }
 }
 
 // Helper method for storing vectors of parameter differences over the course of
 // a descent optimization for use in BLM steps of the hybrid method
-void DescentEngine::storeVectors(std::vector<double>& currentParams)
+void DescentEngine::storeVectors(std::vector<ValueType>& current_params)
 {
-  std::vector<double> rowVec(currentParams.size(), 0.0);
+  std::vector<ValueType> row_vec(current_params.size(), 0.0);
 
-  // Take difference between current parameter values and the values from 20
-  // iterations before (in the case descent_len = 100) to be stored as input to BLM.
-  // The current parameter values are then copied to paramsForDiff to be used
-  // another 20 iterations later.
-  for (int i = 0; i < currentParams.size(); i++)
+  // Take difference between current parameter values and the values from some number of
+  // iterations before to be stored as input to BLM.
+  // The current parameter values are then copied to params_for_diff_ to be used
+  // if storeVectors is called again later in the optimization.
+  for (int i = 0; i < current_params.size(); i++)
   {
-    rowVec[i]        = currentParams[i] - paramsForDiff[i];
-    paramsForDiff[i] = currentParams[i];
+    row_vec[i]          = current_params[i] - params_for_diff_[i];
+    params_for_diff_[i] = current_params[i];
   }
 
   // If on first store of descent section, clear anything that was in vector
-  if (store_count == 0)
+  if (store_count_ == 0)
   {
-    hybridBLM_Input.clear();
-    hybridBLM_Input.push_back(rowVec);
+    hybrid_blm_input_.clear();
+    hybrid_blm_input_.push_back(row_vec);
   }
   else
   {
-    hybridBLM_Input.push_back(rowVec);
+    hybrid_blm_input_.push_back(row_vec);
   }
-
-  for (int i = 0; i < hybridBLM_Input.size(); i++)
+/*
+  for (int i = 0; i < hybrid_blm_input_.size(); i++)
   {
     std::string entry = "";
-    for (int j = 0; j < hybridBLM_Input.at(i).size(); j++)
+    for (int j = 0; j < hybrid_blm_input_.at(i).size(); j++)
     {
-      entry = entry + std::to_string(hybridBLM_Input.at(i).at(j)) + ",";
+      entry = entry + std::to_string(hybrid_blm_input_.at(i).at(j)) + ",";
     }
     app_log() << "Stored Vector: " << entry << std::endl;
   }
-  store_count++;
+  */
+  store_count_++;
 }
 
 } // namespace qmcplusplus

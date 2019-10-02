@@ -1,4 +1,14 @@
-
+//////////////////////////////////////////////////////////////////////////////////////
+// This file is distributed under the University of Illinois/NCSA Open Source License.
+// See LICENSE file in top directory for details.
+//
+// Copyright (c) 2019 QMCPACK developers.
+//
+// File developed by: Leon Otis, leon_otis@berkeley.edu University, University of California Berkeley
+//                    Ye Luo, yeluo@anl.gov, Argonne National Laboratory
+//
+// File created by: Leon Otis, leon_otis@berkeley.edu University, University of California Berkeley
+//////////////////////////////////////////////////////////////////////////////////////
 
 #include <vector>
 #include <string>
@@ -17,7 +27,7 @@ HybridEngine::HybridEngine(Communicate* comm, const xmlNodePtr cur) : myComm(com
   processXML(cur);
 }
 
-
+//Hybrid Engine processes xml input to determine which optimizations are being used and for how many iterations
 bool HybridEngine::processXML(const xmlNodePtr opt_xml)
 {
   opt_methods_.clear();
@@ -56,6 +66,7 @@ bool HybridEngine::processXML(const xmlNodePtr opt_xml)
   return true;
 }
 
+//Retrieves the appropriate XML input for the current optimization method
 xmlNodePtr HybridEngine::getSelectedXML()
 {
   step_num_++;
@@ -63,6 +74,7 @@ xmlNodePtr HybridEngine::getSelectedXML()
   return saved_xml_opt_methods_[identifyMethodIndex()];
 }
 
+//Queries whether information from one optimization method(currently needs to be descent) should be stored.
 bool HybridEngine::queryStore(int store_num, const OptimizerType method) const
 {
   bool store = false;
@@ -76,9 +88,10 @@ bool HybridEngine::queryStore(int store_num, const OptimizerType method) const
     idx = std::distance(opt_methods_.begin(), iter);
 
 
-  const int totMicroIt = std::accumulate(num_updates_opt_methods_.begin(), num_updates_opt_methods_.end(), 0);
-  const int pos        = step_num_ % totMicroIt;
-  int interval         = num_updates_opt_methods_[idx] / store_num;
+  const int tot_micro_it = std::accumulate(num_updates_opt_methods_.begin(), num_updates_opt_methods_.end(), 0);
+  const int pos          = step_num_ % tot_micro_it;
+  //interval is the number of steps between stores based on the number of stores desired
+  int interval =  num_updates_opt_methods_[idx] / store_num;
 
   if (interval == 0)
   {
@@ -95,26 +108,27 @@ bool HybridEngine::queryStore(int store_num, const OptimizerType method) const
   return store;
 }
 
+//Determines what the current optimization method is based on the current step number and returns the associated index
 int HybridEngine::identifyMethodIndex() const
 {
-  const int totMicroIt = std::accumulate(num_updates_opt_methods_.begin(), num_updates_opt_methods_.end(), 0);
-  const int pos        = step_num_ % totMicroIt;
+  const int tot_micro_it = std::accumulate(num_updates_opt_methods_.begin(), num_updates_opt_methods_.end(), 0);
+  const int pos          = step_num_ % tot_micro_it;
 
-  int runSum    = 0;
-  int selectIdx = 0;
+  int run_sum    = 0;
+  int select_idx = 0;
 
   //Compare pos to running sum of microiterations of different methods to determine which method is being used
   for (int i = 0; i < num_updates_opt_methods_.size(); i++)
   {
-    runSum += num_updates_opt_methods_[i];
-    if (runSum > pos)
+    run_sum += num_updates_opt_methods_[i];
+    if (run_sum > pos)
     {
-      selectIdx = i;
+      select_idx = i;
       break;
     }
   }
 
-  return selectIdx;
+  return select_idx;
 }
 
 } // namespace qmcplusplus
