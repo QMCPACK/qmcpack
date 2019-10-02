@@ -425,7 +425,7 @@ void NonLocalECPotential::markAffectedElecs(const DistanceTableData& myTable, in
   {
     if (PP[iat] == nullptr)
       continue;
-    RealType old_distance = 0.0; 
+    RealType old_distance = 0.0;
     RealType new_distance = 0.0;
     if (myTable.DTType == DT_SOA)
     {
