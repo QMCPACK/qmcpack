@@ -9,7 +9,7 @@
 
 //#include "/usr/src/kernels/4.18.16-300.fc29.x86_64/include/linux/getcpu.h"
 #include<sched.h>
-#include<numa.h> // sudo dnf install numactl-devel
+//#include<numa.h> // sudo dnf install numactl-devel
 
 #include <boost/uuid/uuid.hpp>
 #include<boost/uuid/uuid_generators.hpp>
