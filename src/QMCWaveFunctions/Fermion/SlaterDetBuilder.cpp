@@ -476,11 +476,7 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
     {
       //SPOSet[detname]=psi;
       app_log() << "  Create a new SPO set " << sposet << std::endl;
-#if defined(ENABLE_SMARTPOINTER)
-      psi.reset(mySPOSetBuilderFactory->createSPOSet(cur));
-#else
       psi = mySPOSetBuilderFactory->createSPOSet(cur);
-#endif
     }
     //psi->put(cur);
     psi->checkObject();

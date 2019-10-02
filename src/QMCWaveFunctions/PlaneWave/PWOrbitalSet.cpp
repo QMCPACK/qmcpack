@@ -21,12 +21,10 @@ namespace qmcplusplus
 {
 PWOrbitalSet::~PWOrbitalSet()
 {
-#if !defined(ENABLE_SMARTPOINTER)
   if (OwnBasisSet && myBasisSet)
     delete myBasisSet;
   if (!IsCloned && C != nullptr)
     delete C;
-#endif
 }
 
 SPOSet* PWOrbitalSet::makeClone() const

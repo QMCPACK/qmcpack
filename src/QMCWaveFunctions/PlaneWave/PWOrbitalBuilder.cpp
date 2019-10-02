@@ -33,11 +33,8 @@ PWOrbitalBuilder::PWOrbitalBuilder(ParticleSet& els, TrialWaveFunction& psi, Ptc
     : WaveFunctionComponentBuilder(els, psi),
       ptclPool(psets),
       hfileID(-1),
-      rootNode(NULL)
-#if !defined(ENABLE_SMARTPOINTER)
-      ,
-      myBasisSet(0)
-#endif
+      rootNode(NULL),
+      myBasisSet(nullptr)
 {
   myParam = new PWParameterSet(myComm);
 }
@@ -205,17 +202,10 @@ bool PWOrbitalBuilder::createPWBasis(xmlNodePtr cur)
   HDFAttribIO<TinyVector<double, OHMMS_DIM>> hdfobj_twist(TwistAngle_DP);
   hdfobj_twist.read(hfileID, "/electrons/kpoint_0/reduced_k");
   TwistAngle = TwistAngle_DP;
-#if defined(ENABLE_SMARTPOINTER)
-  if (myBasisSet.get() == 0)
-  {
-    myBasisSet.reset(new PWBasis(TwistAngle));
-  }
-#else
-  if (myBasisSet == 0)
+  if (myBasisSet == nullptr)
   {
     myBasisSet = new PWBasis(TwistAngle);
   }
-#endif
   //Read the planewave basisset.
   //Note that the same data is opened here for each twist angle-avoids duplication in the
   //h5 file (which may become very large).
