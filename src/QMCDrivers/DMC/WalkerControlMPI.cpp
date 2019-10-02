@@ -453,7 +453,7 @@ void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W)
  *  I think MPI async is more than two years old
  *
  *  MCPopulation is sufficiently different from MCWalkerConfiguration that this is 
- *  basically a rewrite.  I have not replicated the more ridiculous elements of the original.
+ *  basically a rewrite.  I have not replicated some elements of the original.
  *  For example:
  *   * Sending duplicates to the same reciever rank but resorting good walkers if send-receive pair 
  *     changes.
@@ -483,7 +483,7 @@ void WalkerControlMPI::swapWalkersSimple(MCPopulation& pop, PopulationAdjustment
 
   // sort good walkers by the number of copies
   std::vector<std::pair<int, std::reference_wrapper<MCPWalker>>> sorted_good_walkers;
-  for (int iw = 0; iw < ncopy_w.size(); iw++)
+  for (int iw = 0; iw < adjust.copies_to_make.size(); iw++)
     sorted_good_walkers.push_back(std::make_pair(adjust.copies_to_make[iw], adjust.good_walkers[iw]));
   // Sort only on the number of copies
   std::sort(sorted_good_walkers.begin(), sorted_good_walkers.end(), [](auto& a, auto& b) { return a.first > b.first; });

@@ -75,10 +75,13 @@ struct UnifiedDriverWalkerControlMPITest
     wc.NumPerNode[0] = 3;
     wc.Cur_pop += 2;
 
+    reportWalkersPerRank(dtest.comm, dtest.population);
     wc.swapWalkersSimple(dtest.population, pop_adjust);
 
     //std::cout << " Rank = " << c->rank() << " good size = " << wc.good_w.size() <<
     //          " ID = " << wc.good_w[0]->ID << std::endl;
+
+    reportWalkersPerRank(dtest.comm, dtest.population);
 
     if (dtest.comm->size() > 1)
     {
@@ -121,8 +124,10 @@ struct UnifiedDriverWalkerControlMPITest
       wc.NumPerNode[0] = 6;
       wc.Cur_pop += 5;
 
+      reportWalkersPerRank(dtest.comm, dtest.population);
       wc.swapWalkersSimple(dtest.population, pop_adjust);
-
+      reportWalkersPerRank(dtest.comm, dtest.population);
+      
       // These are unique walkers
       if (dtest.comm->rank() == dtest.comm->size() - 2)
       {
@@ -137,8 +142,23 @@ struct UnifiedDriverWalkerControlMPITest
         CHECK(dtest.population.get_num_local_walkers() == 3);
       }
     }
-
   }
+  private:
+  void reportWalkersPerRank(Communicate* c, MCPopulation& pop)
+  {
+    std::vector<int> rank_walker_count(c->size(), 0);
+    rank_walker_count[c->rank()] = pop.get_num_local_walkers();
+    c->allreduce(rank_walker_count);
+    if (c->rank() == 0)
+    {
+      std::cout << "Walkers Per Rank (Total: " << pop.get_num_global_walkers() << ")\n";
+      for (int i = 0; i < rank_walker_count.size(); ++i)
+      {
+        std::cout << " " << i << "  " << rank_walker_count[i] << "\n";
+      }
+    }
+  }
+
 };
 
 TEST_CASE("MPI Walker Unified Driver swap walkers", "[drivers][walker_control]")
