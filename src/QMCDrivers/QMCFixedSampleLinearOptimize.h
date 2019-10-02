@@ -54,7 +54,7 @@ public:
   ///preprocess xml node
   bool put(xmlNodePtr cur);
   ///process xml node value (parameters for both VMC and OPT) for the actual optimization
-  bool processOptXML(xmlNodePtr cur, const std::string& vmcMove, bool reportH5);
+  bool processOptXML(xmlNodePtr cur, const std::string& vmcMove, bool reportH5, bool useGPU);
 
   RealType Func(RealType dl);
 

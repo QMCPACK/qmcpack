@@ -473,13 +473,13 @@ bool QMCFixedSampleLinearOptimize::put(xmlNodePtr q)
     if (!hybridEngineObj)
       hybridEngineObj = std::make_unique<HybridEngine>(myComm, q);
 
-    return processOptXML(hybridEngineObj->getSelectedXML(), vmcMove, ReportToH5 == "yes");
+    return processOptXML(hybridEngineObj->getSelectedXML(), vmcMove, ReportToH5 == "yes", useGPU == "yes");
   }
   else
-    return processOptXML(q, vmcMove, ReportToH5 == "yes");
+    return processOptXML(q, vmcMove, ReportToH5 == "yes", useGPU == "yes");
 }
 
-bool QMCFixedSampleLinearOptimize::processOptXML(xmlNodePtr opt_xml, const std::string& vmcMove, bool reportH5)
+bool QMCFixedSampleLinearOptimize::processOptXML(xmlNodePtr opt_xml, const std::string& vmcMove, bool reportH5, bool useGPU)
 {
   m_param.put(opt_xml);
   tolower(targetExcitedStr);
@@ -557,7 +557,7 @@ bool QMCFixedSampleLinearOptimize::processOptXML(xmlNodePtr opt_xml, const std::
   // if (vmcEngine == 0)
   // {
 #if defined(QMC_CUDA)
-  if (useGPU == "yes")
+  if (useGPU)
     vmcEngine = new VMCcuda(W, Psi, H, psiPool, myComm);
   else
 #endif
@@ -572,7 +572,7 @@ bool QMCFixedSampleLinearOptimize::processOptXML(xmlNodePtr opt_xml, const std::
   bool success = true;
   //allways reset optTarget
 #if defined(QMC_CUDA)
-  if (useGPU == "yes")
+  if (useGPU)
     optTarget = std::make_unique<QMCCostFunctionCUDA>(W, Psi, H, myComm);
   else
 #endif
