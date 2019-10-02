@@ -51,7 +51,7 @@ class DiffOneBodyJastrowOrbital : public DiffWaveFunctionComponent
 public:
   ///constructor
   DiffOneBodyJastrowOrbital(const ParticleSet& centers, ParticleSet& els)
-    : CenterRef(centers), NumVars(0), myTableIndex(els.addTable(centers, DT_SOA_PREFERRED))
+    : NumVars(0), myTableIndex(els.addTable(centers, DT_SOA_PREFERRED)), CenterRef(centers)
   {
     NumPtcls     = els.getTotalNum();
   }

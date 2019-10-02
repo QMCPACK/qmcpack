@@ -54,7 +54,7 @@ struct AtomicOrbitalSoA
   vContainer_type localV, localG, localL;
 
   AtomicOrbitalSoA(int Lmax)
-      : Ylm(Lmax), lmax(Lmax), lm_tot((Lmax + 1) * (Lmax + 1))
+      : lmax(Lmax), lm_tot((Lmax + 1) * (Lmax + 1)), Ylm(Lmax)
   {
     r_power_minus_l.resize(lm_tot);
     l_vals.resize(lm_tot);
