@@ -3,9 +3,9 @@
     <project id="H4-descent" series="0"/>
   <!--random seed="7819"/-->
   <!-- input from gaussian converter -->
- <include href="h4_descent.structure.xml"/>
+ <include href="H4.ptcl.xml"/>
 
-  <include href="h4_descent.wf.xml"/>
+  <include href="H4.wfs.xml"/>
 
 
   <hamiltonian name="h0" type="generic" target="e"> 

@@ -146,7 +146,7 @@ IF (NOT QMC_CUDA)
    MESSAGE("Skipping H4_ae adaptive optimizer tests because lmyengine interface was not built (BUILD_LMYENGINE_INTERFACE=0)")
   ENDIF(BUILD_LMYENGINE_INTERFACE)
 
-  LIST(APPEND H4_DESCENT_SCALARS "totenergy" "-2.089256 0.003")
+  LIST(APPEND H4_DESCENT_SCALARS "totenergy" "-2.047099 0.005")
 
   QMC_RUN_AND_CHECK(short-H4-descent
                     "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
