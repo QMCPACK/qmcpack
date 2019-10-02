@@ -56,6 +56,7 @@ serial_references = dict()
 def generate_serial_references():
     import numpy as np
 
+    # reference for read/write
     ref = {
         '_metadata/lattice/units' : 'bohr',
         '_metadata/position/condition' : '0',
@@ -329,6 +330,55 @@ def generate_serial_references():
         }
 
     serial_references['VO2_M1_afm.in.xml'] = ref
+
+
+    # reference for generate/read
+    ref = ref.copy()
+    ref['simulation/project/application/name'] = 'qmcpack' # name has been updated
+    for k in list(ref.keys()):
+        if 'jastrow' in k or 'metadata' in k:
+            del ref[k]
+        #end if
+    #end for
+    #  generated initial jastrow rather than optimized one
+    ref['simulation/qmcsystem/wavefunctions/psi0/jastrows/J2/correlations/ud/coefficients/coeff'] = np.array([0.44140587,0.26944819,0.15547533,0.08413778,0.04227037,0.01951441,0.00820536,0.00312028])
+    ref['simulation/qmcsystem/wavefunctions/psi0/jastrows/J2/correlations/ud/coefficients/id'] = 'ud'
+    ref['simulation/qmcsystem/wavefunctions/psi0/jastrows/J2/correlations/ud/coefficients/type'] = 'Array'
+    ref['simulation/qmcsystem/wavefunctions/psi0/jastrows/J2/correlations/ud/rcut'] = 6.651925584744773
+    ref['simulation/qmcsystem/wavefunctions/psi0/jastrows/J2/correlations/ud/size'] = 8
+    ref['simulation/qmcsystem/wavefunctions/psi0/jastrows/J2/correlations/ud/speciesa'] = 'u'
+    ref['simulation/qmcsystem/wavefunctions/psi0/jastrows/J2/correlations/ud/speciesb'] = 'd'
+    ref['simulation/qmcsystem/wavefunctions/psi0/jastrows/J2/correlations/uu/coefficients/coeff'] = np.array([0.31314348,0.21502161,0.13496763,0.07727679,0.04023251,0.01897712,0.00807963,0.00309418])
+    ref['simulation/qmcsystem/wavefunctions/psi0/jastrows/J2/correlations/uu/coefficients/id'] = 'uu'
+    ref['simulation/qmcsystem/wavefunctions/psi0/jastrows/J2/correlations/uu/coefficients/type'] = 'Array'
+    ref['simulation/qmcsystem/wavefunctions/psi0/jastrows/J2/correlations/uu/rcut'] = 6.651925584744773
+    ref['simulation/qmcsystem/wavefunctions/psi0/jastrows/J2/correlations/uu/size'] = 8
+    ref['simulation/qmcsystem/wavefunctions/psi0/jastrows/J2/correlations/uu/speciesa'] = 'u'
+    ref['simulation/qmcsystem/wavefunctions/psi0/jastrows/J2/correlations/uu/speciesb'] = 'u'
+    ref['simulation/qmcsystem/wavefunctions/psi0/jastrows/J2/function'] = 'bspline'
+    ref['simulation/qmcsystem/wavefunctions/psi0/jastrows/J2/name'] = 'J2'
+    ref['simulation/qmcsystem/wavefunctions/psi0/jastrows/J2/print_'] = True
+    ref['simulation/qmcsystem/wavefunctions/psi0/jastrows/J2/type'] = 'Two-Body'
+
+    serial_references['VO2_M1_afm.in.xml gen_read'] = ref
+
+
+    # reference for generate
+    ref = ref.copy()
+    ref['simulation/qmcsystem/simulationcell/bconds'] = tuple('ppp')
+    for k in list(ref.keys()):
+        if 'SpinDensity' in k:
+            del ref[k]
+        #end if
+    #end for
+    ref['simulation/project/application/version'] = '1.0'
+    ref['simulation/qmcsystem/wavefunctions/psi0/sposet_builders/bspline/version'] = '0.10'
+    ref['simulation/qmcsystem/hamiltonians/h0/estimators/0/grid'] = (72, 44, 44)
+    ref['simulation/qmcsystem/hamiltonians/h0/estimators/0/name'] = 'SpinDensity'
+    ref['simulation/qmcsystem/hamiltonians/h0/estimators/0/type'] = 'spindensity'
+
+    serial_references['VO2_M1_afm.in.xml gen'] = ref
+
 #end def generate_serial_references
 
 
@@ -842,6 +892,141 @@ def test_compose():
     check_vs_serial_reference(qi_comp,'VO2_M1_afm.in.xml')
 
 #end def test_compose
+
+
+
+def test_generate():
+    import numpy as np
+    from physical_system import generate_physical_system
+    from qmcpack_input import generate_qmcpack_input,spindensity
+    
+    system = generate_physical_system(
+        units    = 'A',
+        axes     = '''
+                    5.75200000    0.00000000    0.00000000
+                    0.00000000    4.53780000    0.00000000
+                   -2.90357335    0.00000000    4.53217035
+                   ''',
+        elem_pos = '''
+                   V   1.30060289    4.44223393    0.11992123
+                   V   1.54782377    0.09556607    4.41224912
+                   V  -0.15118378    2.36446607    2.38600640
+                   V   2.99961044    2.17333393    2.14616395
+                   O   0.00517700    0.96155982    0.94541073
+                   O   2.84324965    3.57624018    3.58675961
+                   O  -1.44660967    1.30734018    3.21149591
+                   O   4.29503633    3.23045982    1.32067444
+                   O   1.43608828    3.18825828    1.35421250
+                   O   1.41233837    1.34954172    3.17795785
+                   O  -0.01569839    3.61844172    3.62029768
+                   O   2.86412504    0.91935828    0.91187267
+                   ''',
+        tiling = [[ 2,  0,  0],
+                  [ 0,  1, -1],
+                  [ 0,  1,  1]],
+        V = 13,
+        O = 6,
+        )
+
+    tile_pos = np.array([
+        [ 1.30060289e+00,  4.44223393e+00,  1.19921230e-01],
+        [ 4.45139712e+00,  4.63336607e+00, -1.19921230e-01],
+        [ 2.75238957e+00,  6.90226607e+00, -2.14616395e+00],
+        [ 2.99961044e+00,  2.17333393e+00,  2.14616395e+00],
+        [ 5.17700000e-03,  9.61559820e-01,  9.45410730e-01],
+        [ 5.74682300e+00,  8.11404018e+00, -9.45410740e-01],
+        [ 1.45696368e+00,  5.84514018e+00, -1.32067444e+00],
+        [ 4.29503633e+00,  3.23045982e+00,  1.32067444e+00],
+        [ 1.43608828e+00,  3.18825828e+00,  1.35421250e+00],
+        [ 4.31591172e+00,  5.88734172e+00, -1.35421250e+00],
+        [ 2.88787496e+00,  8.15624172e+00, -9.11872670e-01],
+        [ 2.86412504e+00,  9.19358280e-01,  9.11872670e-01],
+        [ 7.05260289e+00,  4.44223393e+00,  1.19921230e-01],
+        [ 1.02033971e+01,  4.63336607e+00, -1.19921230e-01],
+        [ 8.50438957e+00,  6.90226607e+00, -2.14616395e+00],
+        [ 8.75161044e+00,  2.17333393e+00,  2.14616395e+00],
+        [ 5.75717700e+00,  9.61559820e-01,  9.45410730e-01],
+        [ 1.14988230e+01,  8.11404018e+00, -9.45410740e-01],
+        [ 7.20896368e+00,  5.84514018e+00, -1.32067444e+00],
+        [ 1.00470363e+01,  3.23045982e+00,  1.32067444e+00],
+        [ 7.18808828e+00,  3.18825828e+00,  1.35421250e+00],
+        [ 1.00679117e+01,  5.88734172e+00, -1.35421250e+00],
+        [ 8.63987496e+00,  8.15624172e+00, -9.11872670e-01],
+        [ 8.61612504e+00,  9.19358280e-01,  9.11872670e-01],
+        [ 4.20417624e+00,  4.44223393e+00, -4.41224912e+00],
+        [ 1.54782377e+00,  4.63336607e+00,  4.41224912e+00],
+        [ 2.75238957e+00,  2.36446607e+00, -2.14616395e+00],
+        [ 2.99961044e+00,  6.71113393e+00,  2.14616395e+00],
+        [ 5.17700000e-03,  5.49935982e+00,  9.45410730e-01],
+        [ 5.74682300e+00,  3.57624018e+00, -9.45410740e-01],
+        [-1.44660967e+00,  5.84514018e+00,  3.21149591e+00],
+        [ 7.19860968e+00,  3.23045982e+00, -3.21149591e+00],
+        [ 4.33966163e+00,  3.18825828e+00, -3.17795785e+00],
+        [ 1.41233837e+00,  5.88734172e+00,  3.17795785e+00],
+        [ 2.88787496e+00,  3.61844172e+00, -9.11872670e-01],
+        [ 2.86412504e+00,  5.45715828e+00,  9.11872670e-01],
+        [ 9.95617624e+00,  4.44223393e+00, -4.41224912e+00],
+        [ 7.29982377e+00,  4.63336607e+00,  4.41224912e+00],
+        [ 8.50438957e+00,  2.36446607e+00, -2.14616395e+00],
+        [ 8.75161044e+00,  6.71113393e+00,  2.14616395e+00],
+        [ 5.75717700e+00,  5.49935982e+00,  9.45410730e-01],
+        [ 1.14988230e+01,  3.57624018e+00, -9.45410740e-01],
+        [ 4.30539033e+00,  5.84514018e+00,  3.21149591e+00],
+        [ 1.29506097e+01,  3.23045982e+00, -3.21149591e+00],
+        [ 1.00916616e+01,  3.18825828e+00, -3.17795785e+00],
+        [ 7.16433837e+00,  5.88734172e+00,  3.17795785e+00],
+        [ 8.63987496e+00,  3.61844172e+00, -9.11872670e-01],
+        [ 8.61612504e+00,  5.45715828e+00,  9.11872670e-01]],dtype=float)
+
+    s = system.structure
+    if not value_eq(s.pos,tile_pos):
+        tile_elem = np.array([
+            'V','V','V','V','O','O','O','O','O','O','O','O',
+            'V','V','V','V','O','O','O','O','O','O','O','O',
+            'V','V','V','V','O','O','O','O','O','O','O','O',
+            'V','V','V','V','O','O','O','O','O','O','O','O'],dtype=object)
+        s.pos  = tile_pos
+        s.elem = tile_elem
+    #end if
+
+    #system.structure.order_by_species()
+
+    qi = generate_qmcpack_input(
+        input_type      = 'basic',
+        system          = system,
+        pseudos         = ['V.opt.xml','O.opt.xml'],
+        spin_polarized  = True,
+        twistnum        = 0,
+        orbitals_h5     = '../scf/pwscf_output/pwscf.pwscf.h5',
+        estimators      = [spindensity(grid=(72,44,44))],
+        qmc = 'dmc',
+        # vmc inputs
+        vmc_walkers     = 1,
+        vmc_warmupsteps = 20,
+        vmc_blocks      = 70,
+        vmc_steps       = 5,
+        vmc_substeps    = 2,
+        vmc_timestep    = 0.3,
+        vmc_samplesperthread = 2,
+        # dmc inputs
+        eq_dmc          = True,
+        eq_warmupsteps  = 2,
+        eq_blocks       = 80,
+        eq_steps        =  5,
+        eq_timestep     = 0.02,
+        # dmc inputs
+        warmupsteps     = 10,
+        blocks          = 600,
+        steps           =  5,
+        timestep        = 0.005,
+        nonlocalmoves   = 'yes',
+        )
+    
+    qi.pluralize()
+
+    check_vs_serial_reference(qi,'VO2_M1_afm.in.xml gen')
+
+#end def test_generate
 
 
 

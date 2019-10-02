@@ -2376,6 +2376,8 @@ def qmcpack_input():
 
     nunit('compose')
 
+    nunit('generate')
+
     nunit('read')
 
     nunit('write')
