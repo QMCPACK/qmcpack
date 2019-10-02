@@ -22,12 +22,7 @@
 #include "QMCDrivers/QMCCostFunctionBase.h"
 #include "QMCDrivers/QMCCostFunction.h"
 #include "QMCDrivers/VMC/VMC.h"
-#if defined(ENABLE_OPENMP)
-#include "QMCDrivers/VMC/VMC.h"
 #include "QMCDrivers/QMCCostFunction.h"
-#endif
-//#include "QMCDrivers/VMC/VMCSingle.h"
-//#include "QMCDrivers/QMCCostFunctionSingle.h"
 #include "QMCApp/HamiltonianPool.h"
 #include "Numerics/Blasf.h"
 #include "Numerics/MatrixOperators.h"
@@ -558,10 +553,10 @@ bool QMCFixedSampleLinearOptimize::processOptXML(xmlNodePtr opt_xml, const std::
   // {
 #if defined(QMC_CUDA)
   if (useGPU)
-    vmcEngine = new VMCcuda(W, Psi, H, psiPool, myComm);
+    vmcEngine = std::make_unique<VMCcuda>(W, Psi, H, psiPool, myComm);
   else
 #endif
-    vmcEngine = new VMC(W, Psi, H, psiPool, myComm);
+    vmcEngine = std::make_unique<VMC>(W, Psi, H, psiPool, myComm);
   vmcEngine->setUpdateMode(vmcMove[0] == 'p');
   // }
 

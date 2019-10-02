@@ -57,7 +57,7 @@ public:
                     Communicate* comm);
 
   ///Destructor
-  virtual ~QMCLinearOptimize();
+  virtual ~QMCLinearOptimize() = default;
 
   ///Run the Optimization algorithm.
   virtual bool run() = 0;
@@ -85,7 +85,7 @@ public:
   ///Dimension of matrix and number of parameters
   int N, numParams;
   ///vmc engine
-  QMCDriver* vmcEngine;
+  std::unique_ptr<QMCDriver> vmcEngine;
   ///xml node to be dumped
   xmlNodePtr wfNode;
   ///xml node for optimizer

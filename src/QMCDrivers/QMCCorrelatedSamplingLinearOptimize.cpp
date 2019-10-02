@@ -14,6 +14,9 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
+#include <cassert>
+#include <iostream>
+#include <fstream>
 #include "QMCDrivers/QMCCorrelatedSamplingLinearOptimize.h"
 #include "Particle/HDFWalkerIO.h"
 #include "OhmmsData/AttributeSet.h"
@@ -29,13 +32,10 @@
 #include "QMCApp/HamiltonianPool.h"
 #include "Numerics/Blasf.h"
 #include "Numerics/MatrixOperators.h"
-#include <cassert>
 #if defined(QMC_CUDA)
 #include "QMCDrivers/VMC/VMC_CUDA.h"
 #include "QMCDrivers/QMCCostFunctionCUDA.h"
 #endif
-#include <iostream>
-#include <fstream>
 
 /*#include "Message/Communicate.h"*/
 
@@ -330,11 +330,12 @@ bool QMCCorrelatedSamplingLinearOptimize::put(xmlNodePtr q)
   if (vmcEngine == 0)
   {
 #if defined(QMC_CUDA)
-    vmcCSEngine = new VMCcuda(W, Psi, H, psiPool, myComm);
+    vmcEngine = std::make_unique<VMCcuda>(W, Psi, H, psiPool, myComm);
+    vmcCSEngine = dynamic_cast<VMCcuda*>(vmcEngine.get());
     vmcCSEngine->setOpt(true);
-    vmcEngine = vmcCSEngine;
 #else
-    vmcEngine = vmcCSEngine = new VMCLinearOpt(W, Psi, H, hamPool, psiPool, myComm);
+    vmcEngine = std::make_unique<VMCLinearOpt>(W, Psi, H, hamPool, psiPool, myComm);
+    vmcCSEngine = dynamic_cast<VMCLinearOpt*>(vmcEngine.get());
 #endif
     vmcEngine->setUpdateMode(vmcMove[0] == 'p');
   }

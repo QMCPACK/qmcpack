@@ -51,7 +51,6 @@ QMCLinearOptimize::QMCLinearOptimize(MCWalkerConfiguration& w,
       NumParts(1),
       WarmupBlocks(10),
       hamPool(hpool),
-      vmcEngine(0),
       wfNode(NULL),
       optNode(NULL),
       param_tol(1e-4),
@@ -68,9 +67,6 @@ QMCLinearOptimize::QMCLinearOptimize(MCWalkerConfiguration& w,
   m_param.add(param_tol, "alloweddifference", "double");
   //Set parameters for line minimization:
 }
-
-/** Clean up the vector */
-QMCLinearOptimize::~QMCLinearOptimize() { delete vmcEngine; }
 
 /** Add configuration files for the optimization
 * @param a root of a hdf5 configuration file
@@ -794,10 +790,10 @@ bool QMCLinearOptimize::put(xmlNodePtr q)
   {
 #if defined(QMC_CUDA)
     if (useGPU == "yes")
-      vmcEngine = new VMCcuda(W, Psi, H, psiPool, myComm);
+      vmcEngine = std::make_unique<VMCcuda>(W, Psi, H, psiPool, myComm);
     else
 #endif
-      vmcEngine = new VMC(W, Psi, H, psiPool, myComm);
+      vmcEngine = std::make_unique<VMC>(W, Psi, H, psiPool, myComm);
     vmcEngine->setUpdateMode(vmcMove[0] == 'p');
   }
 
