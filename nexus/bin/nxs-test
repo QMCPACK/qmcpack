@@ -2369,9 +2369,16 @@ def pwscf_input():
 #end def pwscf_input
 
 
+
 def qmcpack_input():
+
+    nunit('test_generate_kspace_jastrow')
+
+    nunit('test_excited_state')
+
     nunit_all()
 #end def qmcpack_input
+
 
 
 def grid_functions():
