@@ -85,8 +85,10 @@ struct DistanceTableData
   ///Type of DT
   int DTType;
 
-  int N_targets;
+  const ParticleSet* Origin;
+
   int N_sources;
+  int N_targets;
   int N_walkers;
 
 #ifndef ENABLE_SOA
@@ -344,8 +346,6 @@ struct DistanceTableData
     os << std::endl;
 #endif
   }
-
-  const ParticleSet* Origin;
 
   ///number of pairs
   int npairs_m;

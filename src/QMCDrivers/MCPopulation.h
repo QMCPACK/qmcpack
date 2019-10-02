@@ -94,13 +94,14 @@ public:
   //MCPopulation(int num_ranks, int num_particles) : num_ranks_(num_ranks), num_particles_(num_particles) {}
   MCPopulation(int num_ranks, ParticleSet* elecs, TrialWaveFunction* trial_wf, QMCHamiltonian* hamiltonian, int this_rank=0)
       : num_ranks_(num_ranks),
+        num_particles_(elecs->R.size()),
         trial_wf_(trial_wf),
         elec_particle_set_(elecs),
         hamiltonian_(hamiltonian),
         num_particles_(elecs->R.size()),
         rank_(this_rank)
   {}
-  
+
   MCPopulation(MCPopulation&) = default;
   MCPopulation(MCPopulation&&) = default;
   MCPopulation& operator=(MCPopulation&&) = default;
@@ -129,7 +130,7 @@ public:
    *
    *  Should compile only if ITER is a proper input ITERATOR
    *  Will crash if ITER does point to a std::unique_ptr<WALKER_CONSUMER>
-   *  
+   *
    */
   template<typename ITER, typename = RequireInputIterator<ITER>>
   void distributeWalkers(ITER it_group, ITER group_end, int walkers_per_group)

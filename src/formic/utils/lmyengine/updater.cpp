@@ -30,27 +30,27 @@
 // \param[in]  userinp   user's input options and derivative vectors
 //
 ///////////////////////////////////////////////////////////////////////////////////////////////
-cqmc::engine::HDLinMethodUpdater::HDLinMethodUpdater(formic::Matrix<double> & der_rat,
-                                                     formic::Matrix<double> & le_der, 
-                                                     const std::vector<double> & vgs,
-                                                     const std::vector<double> & weight,
-                                                     const std::vector<double> & shift_scale,
+cqmc::engine::HDLinMethodUpdater::HDLinMethodUpdater(formic::Matrix<double>& der_rat,
+                                                     formic::Matrix<double>& le_der,
+                                                     const std::vector<double>& vgs,
+                                                     const std::vector<double>& weight,
+                                                     const std::vector<double>& shift_scale,
                                                      const double omega,
                                                      const double var_weight,
                                                      const bool ground_state,
                                                      const bool variance_correct,
                                                      const bool build_lm_matrix)
- :_der_rat(der_rat),
- _le_der(le_der),
- _vgs(vgs),
- _weight(weight),
- _shift_scale(shift_scale),
- _omega(omega),
- _var_weight(var_weight),
- _ground_state(ground_state),
- _variance_correct(variance_correct),
- _build_lm_matrix(build_lm_matrix)
- {}
+    : _omega(omega),
+      _var_weight(var_weight),
+      _der_rat(der_rat),
+      _le_der(le_der),
+      _vgs(vgs),
+      _weight(weight),
+      _shift_scale(shift_scale),
+      _ground_state(ground_state),
+      _variance_correct(variance_correct),
+      _build_lm_matrix(build_lm_matrix)
+{}
 
 //////////////////////////////////////////////////////////////////////////////////////////////
 // \brief  performs a harmonic davidson linear method on current wavefunction(used when 
