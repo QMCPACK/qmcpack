@@ -868,7 +868,33 @@ def test_read():
 
 
 def test_write():
+    import os
+    from qmcpack_input import QmcpackInput
+
     tpath = testing.setup_unit_test_output_directory('qmcpack_input','test_write')
+
+    files = get_files()
+
+    ref_file   = 'VO2_M1_afm.in.xml'
+    write_file = os.path.join(tpath,'write_'+ref_file)
+
+    qi_read = QmcpackInput(files[ref_file])
+
+    qi_read.write(write_file)
+
+    qi_write = QmcpackInput(write_file)
+    qi_write.pluralize()
+
+    # remove extraneous data members for purpose of comparison
+    del qi_write._metadata.spo_u
+    del qi_write._metadata.spo_d
+    spob = qi_write.simulation.qmcsystem.wavefunctions.psi0.sposet_builders
+    sposets = spob.bspline.sposets
+    del sposets.spo_u.spos
+    del sposets.spo_d.spos
+
+    check_vs_serial_reference(qi_write,ref_file)
+
 #end def test_write
 
 

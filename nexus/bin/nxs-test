@@ -2378,6 +2378,8 @@ def qmcpack_input():
 
     nunit('read')
 
+    nunit('write')
+
     nunit('generate_kspace_jastrow')
 
     nunit('excited_state')
