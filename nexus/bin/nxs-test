@@ -2372,9 +2372,15 @@ def pwscf_input():
 
 def qmcpack_input():
 
-    nunit('test_generate_kspace_jastrow')
+    nunit('files')
 
-    nunit('test_excited_state')
+    nunit('compose')
+
+    nunit('read')
+
+    nunit('generate_kspace_jastrow')
+
+    nunit('excited_state')
 
     nunit_all()
 #end def qmcpack_input
