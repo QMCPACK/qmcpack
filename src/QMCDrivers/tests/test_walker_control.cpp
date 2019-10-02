@@ -31,7 +31,6 @@ using std::string;
 
 namespace qmcplusplus
 {
-
 void output_vector(const std::string& name, std::vector<int>& vec)
 {
   std::cout << name;
@@ -109,10 +108,10 @@ TEST_CASE("WalkerControl round trip index conversions", "[drivers][walker_contro
   {
     all_pass &= (walker_counts[iw] == walker_count_results[iw]);
   }
-  REQUIRE( all_pass );
+  REQUIRE(all_pass);
 }
 
-  // uncomment the std::cout and output_vector lines to see the walker assignments
+// uncomment the std::cout and output_vector lines to see the walker assignments
 TEST_CASE("Walker control assign walkers odd ranks", "[drivers][walker_control]")
 {
   int Cur_pop                 = 9;
@@ -264,31 +263,30 @@ struct WalkerControlMPITest
     REQUIRE(wc.good_w.size() == 1);
     REQUIRE(wc.bad_w.size() == 0);
 
-    
+
     // 3 walkers on rank 0, 1 walker on others - should redistribute if
     //   there is more than one rank
     if (c->size() > 1)
     {
-    
-    if (c->rank() == 0)
-    {
-      wc.good_w.push_back(new Walker_t());
-      wc.good_w.push_back(new Walker_t());
+      if (c->rank() == 0)
+      {
+        wc.good_w.push_back(new Walker_t());
+        wc.good_w.push_back(new Walker_t());
 
-      // Use the ID variable to check that the walker content was transmitted
-      wc.good_w[1]->ID = c->size();
-      wc.good_w[2]->ID = c->size() + 1;
+        // Use the ID variable to check that the walker content was transmitted
+        wc.good_w[1]->ID = c->size();
+        wc.good_w[2]->ID = c->size() + 1;
 
-      wc.ncopy_w.push_back(0);
-      wc.ncopy_w.push_back(0);
-    }
-    wc.NumPerNode[0] = 3;
-    wc.Cur_pop += 2;
+        wc.ncopy_w.push_back(0);
+        wc.ncopy_w.push_back(0);
+      }
+      wc.NumPerNode[0] = 3;
+      wc.Cur_pop += 2;
 
-    wc.swapWalkersSimple(W);
+      wc.swapWalkersSimple(W);
 
-    //std::cout << " Rank = " << c->rank() << " good size = " << wc.good_w.size() <<
-    //          " ID = " << wc.good_w[0]->ID << std::endl;
+      //std::cout << " Rank = " << c->rank() << " good size = " << wc.good_w.size() <<
+      //          " ID = " << wc.good_w[0]->ID << std::endl;
 
       if (c->rank() == c->size() - 2)
       {
@@ -309,24 +307,23 @@ struct WalkerControlMPITest
         REQUIRE(wc.good_w.size() == 1);
         REQUIRE(wc.good_w[0]->ID == c->rank());
       }
-      wc.NumPerNode[0] = 1;
+      wc.NumPerNode[0]             = 1;
       wc.NumPerNode[c->size() - 1] = 2;
       wc.NumPerNode[c->size() - 2] = 2;
-
     }
 
-    
-        // And now the strange case
+
+    // And now the strange case
     // 6 walkers on rank0, 2 on rank1, 2 on rank2
     if (c->size() > 2)
     {
       if (c->rank() == 0)
       {
-	wc.good_w.push_back(new Walker_t());
-	wc.good_w.push_back(new Walker_t());
+        wc.good_w.push_back(new Walker_t());
+        wc.good_w.push_back(new Walker_t());
         // wc.good_w.push_back(new Walker_t());
         // wc.good_w.push_back(new Walker_t());
-        int nwalkers_rank = wc.good_w.size();
+        int nwalkers_rank                = wc.good_w.size();
         wc.good_w[nwalkers_rank - 1]->ID = c->size() + 5;
         wc.good_w[nwalkers_rank - 2]->ID = c->size() + 4;
         // wc.good_w[nwalkers_rank - 3]->ID = c->size() + 3;
@@ -387,8 +384,6 @@ struct WalkerControlMPITest
       {
         CHECK(walker_count == 3);
       }
-      
-
     }
   }
 

@@ -104,6 +104,40 @@ struct UnifiedDriverWalkerControlMPITest
         REQUIRE(dtest.population.get_walkers()[0]->ID == dtest.comm->rank());
       }
     }
+
+        // And now the strange case
+    // 6 walkers on rank0, 2 on rank1, 2 on rank2
+    if (dtest.comm->size() > 2)
+    {
+      if (dtest.comm->rank() == 0)
+      {
+        pop_adjust.good_walkers.push_back(dtest.population.spawnWalker());
+        pop_adjust.good_walkers.back().get().ID = dtest.comm->size() + 3;
+        pop_adjust.copies_to_make.push_back(2);
+        pop_adjust.good_walkers.push_back(dtest.population.spawnWalker());
+        pop_adjust.good_walkers.back().get().ID = dtest.comm->size() + 2;
+        pop_adjust.copies_to_make.push_back(1);
+      }
+      wc.NumPerNode[0] = 6;
+      wc.Cur_pop += 5;
+
+      wc.swapWalkersSimple(dtest.population, pop_adjust);
+
+      // These are unique walkers
+      if (dtest.comm->rank() == dtest.comm->size() - 2)
+      {
+        CHECK(dtest.population.get_num_local_walkers() == 3);
+      }
+      else if (dtest.comm->rank() == dtest.comm->size() - 1)
+      {
+        CHECK(dtest.population.get_num_local_walkers() == 4);
+      }
+      else
+      {
+        CHECK(dtest.population.get_num_local_walkers() == 3);
+      }
+    }
+
   }
 };
 

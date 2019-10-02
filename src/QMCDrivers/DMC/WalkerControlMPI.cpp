@@ -614,8 +614,8 @@ void WalkerControlMPI::swapWalkersSimple(MCPopulation& pop, PopulationAdjustment
   }
   send_requests.clear();
 
-  //save the number of walkers sent
   NumWalkersSent = local_sends;
+  
 }
 
 
