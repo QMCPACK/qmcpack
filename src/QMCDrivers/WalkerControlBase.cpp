@@ -238,6 +238,82 @@ int WalkerControlBase::doNotBranch(int iter, MCWalkerConfiguration& W)
   return int(curData[WEIGHT_INDEX]);
 }
 
+int WalkerControlBase::doNotBranch(int iter, MCPopulation& pop)
+{
+  RefVector<MCPWalker> walkers(convertUPtrToRefVector(pop.get_walkers()));
+  FullPrecRealType esum = 0.0, e2sum = 0.0, wsum = 0.0, ecum = 0.0, w2sum = 0.0, besum = 0.0, bwgtsum = 0.0;
+  FullPrecRealType r2_accepted = 0.0, r2_proposed = 0.0;
+  int nrn(0), ncr(0), nfn(0), ngoodfn(0), nc(0);
+  for(MCPWalker& walker : walkers)
+  {
+    bool inFN = ((walker.ReleasedNodeAge) == 0);
+    nc        = std::min(static_cast<int>(walker.Multiplicity), MaxCopy);
+    if (write_release_nodes_)
+    {
+      if (walker.ReleasedNodeAge == 1)
+        ncr += 1;
+      else if (walker.ReleasedNodeAge == 0)
+      {
+        nfn += 1;
+        ngoodfn += nc;
+      }
+      r2_accepted += walker.Properties(R2ACCEPTED);
+      r2_proposed += walker.Properties(R2PROPOSED);
+      FullPrecRealType e(walker.Properties(LOCALENERGY));
+      FullPrecRealType bfe(walker.Properties(ALTERNATEENERGY));
+      FullPrecRealType wgt   = (walker.Weight);
+      FullPrecRealType rnwgt = (walker.ReleasedNodeWeight);
+      esum += wgt * rnwgt * e;
+      e2sum += wgt * rnwgt * e * e;
+      wsum += rnwgt * wgt;
+      w2sum += rnwgt * rnwgt * wgt * wgt;
+      ecum += e;
+      besum += bfe * wgt;
+      bwgtsum += wgt;
+    }
+    else
+    {
+      if (nc > 0)
+        nfn++;
+      else
+        ncr++;
+      r2_accepted += walker.Properties(R2ACCEPTED);
+      r2_proposed += walker.Properties(R2PROPOSED);
+      FullPrecRealType e(walker.Properties(LOCALENERGY));
+      // This is a trick to estimate the number of walkers
+      // after the first iterration branching.
+      //RealType wgt=(walker.Weight);
+      FullPrecRealType wgt = FullPrecRealType(nc);
+      esum += wgt * e;
+      e2sum += wgt * e * e;
+      wsum += wgt;
+      w2sum += wgt * wgt;
+      ecum += e;
+    }
+  }
+  //temp is an array to perform reduction operations
+  std::fill(curData.begin(), curData.end(), 0);
+  curData[ENERGY_INDEX]      = esum;
+  curData[ENERGY_SQ_INDEX]   = e2sum;
+  curData[WALKERSIZE_INDEX]  = pop.get_num_global_walkers();
+  curData[WEIGHT_INDEX]      = wsum;
+  curData[EREF_INDEX]        = ecum;
+  curData[R2ACCEPTED_INDEX]  = r2_accepted;
+  curData[R2PROPOSED_INDEX]  = r2_proposed;
+  curData[FNSIZE_INDEX]      = static_cast<FullPrecRealType>(nfn);
+  curData[RNONESIZE_INDEX]   = static_cast<FullPrecRealType>(ncr);
+  curData[RNSIZE_INDEX]      = nrn;
+  curData[B_ENERGY_INDEX]    = besum;
+  curData[B_WGT_INDEX]       = bwgtsum;
+
+  myComm->allreduce(curData);
+  measureProperties(iter);
+  trialEnergy        = ensemble_property_.Energy;
+  pop.set_ensemble_property(ensemble_property_);
+  //return W.getActiveWalkers();
+  return int(curData[WEIGHT_INDEX]);
+}
+
 int WalkerControlBase::branch(int iter, MCWalkerConfiguration& W, FullPrecRealType trigger)
 {
   NumPerNode[0] = sortWalkers(W);
@@ -250,7 +326,8 @@ int WalkerControlBase::branch(int iter, MCWalkerConfiguration& W, FullPrecRealTy
   //accumData[ENERGY_SQ_INDEX]  += curData[ENERGY_SQ_INDEX]*wgtInv;
   //accumData[WALKERSIZE_INDEX] += curData[WALKERSIZE_INDEX];
   //accumData[WEIGHT_INDEX]     += curData[WEIGHT_INDEX];
-  applyNmaxNmin();
+  int current_population = std::accumulate(NumPerNode.begin(), NumPerNode.end(), 0);
+  applyNmaxNmin(current_population);
   int nw_tot = copyWalkers(W);
   //set Weight and Multiplicity to default values
   MCWalkerConfiguration::iterator it(W.begin()), it_end(W.end());
@@ -280,15 +357,33 @@ int WalkerControlBase::branch(int iter, MCPopulation& pop, FullPrecRealType trig
   // More ParticleSet is a set of particles or a collection of particles and sort of both.
   
   pop.set_ensemble_property(ensemble_property_);
-  //un-biased variance but we use the saimple one
-  //W.EnsembleProperty.Variance=(e2sum*wsum-esum*esum)/(wsum*wsum-w2sum);
-  ////add to the accumData for block average: REMOVE THIS
-  //accumData[ENERGY_INDEX]     += curData[ENERGY_INDEX]*wgtInv;
-  //accumData[ENERGY_SQ_INDEX]  += curData[ENERGY_SQ_INDEX]*wgtInv;
-  //accumData[WALKERSIZE_INDEX] += curData[WALKERSIZE_INDEX];
-  //accumData[WEIGHT_INDEX]     += curData[WEIGHT_INDEX];
-  applyNmaxNmin();
-  // int nw_tot = copyWalkers(W);
+
+  applyNmaxNmin(pop.get_num_global_walkers());
+
+  while( ! adjust.bad_walkers.empty() )
+  {
+    pop.killWalker(adjust.bad_walkers.back());
+    adjust.bad_walkers.pop_back();
+  }
+  for( int iw = 0; iw < adjust.good_walkers.size(); ++iw )
+  {
+    for(int i_copies = 0; i_copies < adjust.copies_to_make[iw]; ++i_copies )
+    {
+      auto& walker = pop.spawnWalker();
+      walker = adjust.good_walkers[iw];
+      // IF these are really unique ID's they should be UUID's or something
+      // old algorithm seems to reuse them in a way that I'm not sure avoids
+      // duplicates even at a particular time.
+      walker.ID = pop.get_num_local_walkers();
+      walker.ParentID = adjust.good_walkers[iw].get().ParentID;
+      walker.Weight  = 1.0;
+      walker.Multiplicity = 1.0;
+    }
+  }
+  return pop.get_num_local_walkers();
+}
+
+// int nw_tot = copyWalkers(W);
   // //set Weight and Multiplicity to default values
   // MCWalkerConfiguration::iterator it(W.begin()), it_end(W.end());
   // while (it != it_end)
@@ -306,7 +401,7 @@ int WalkerControlBase::branch(int iter, MCPopulation& pop, FullPrecRealType trig
   //   W.WalkerOffsets[1] = nw_tot;
   // }
   // return nw_tot;
-}
+
 
 void WalkerControlBase::Write2XYZ(MCWalkerConfiguration& W)
 {
@@ -564,9 +659,8 @@ WalkerControlBase::PopulationAdjustment WalkerControlBase::calcPopulationAdjustm
   return adjustment;
 }
 
-int WalkerControlBase::applyNmaxNmin()
+int WalkerControlBase::applyNmaxNmin(int current_population)
 {
-  int current_population = std::accumulate(NumPerNode.begin(), NumPerNode.end(), 0);
 
   // limit Nmax
   int current_max = (current_population + num_contexts_ - 1) / num_contexts_;
@@ -669,12 +763,15 @@ int WalkerControlBase::applyNmaxNmin()
   return current_population;
 }
 
-int WalkerControlBase::adjustPopulation(PopulationAdjustment& adjust)
+/**  Not really sorting so its been rename something more sensible.
+ */
+int WalkerControlBase::adjustPopulation(MCPopulation& population, PopulationAdjustment& adjust)
 {
   // In the unified driver design each ranks MCPopulation knows this and it is not stored a bunch of other places
   int current_population = std::accumulate(NumPerNode.begin(), NumPerNode.end(), 0);
 
   // limit Nmax
+  // TODO:  this seems to be the wrong pace to do this.
   int current_max = (current_population + num_contexts_ - 1) / num_contexts_;
   if (current_max > n_max_)
   {
@@ -890,4 +987,5 @@ void WalkerControlBase::setMinMax(int nw_in, int nmax_in)
     }
   }
 }
+
 } // namespace qmcplusplus

@@ -48,13 +48,13 @@ IF(NOT QMC_CUDA AND ENABLE_SOA)
 SET(UTEST_EXE test_new_${SRC_DIR})
 SET(UTEST_NAME deterministic-unit_test_new_${SRC_DIR})
 
-# test_drivers shouldn't be dependent on wavefunctions
+# test_drivers shouldn't be dependent on tests/wavefunctions 
 SET(UTEST_DIR ${qmcpack_BINARY_DIR}/tests/drivers)
 SET(UTEST_HDF_INPUT ${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp/pwscf.pwscf.h5)
 EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E make_directory "${UTEST_DIR}")
 MAYBE_SYMLINK(${UTEST_HDF_INPUT} ${UTEST_DIR}/pwscf.pwscf.h5)
 
-SET(DRIVER_TEST_SRC test_Crowd.cpp test_MCPopulation.cpp test_ContextForSteps.cpp test_QMCDriverInput.cpp test_QMCDriverNew.cpp test_VMCDriverInput.cpp test_VMCFactoryNew.cpp test_VMCBatched.cpp test_DMCBatched.cpp)
+SET(DRIVER_TEST_SRC SetupPools.cpp test_Crowd.cpp test_MCPopulation.cpp test_ContextForSteps.cpp test_QMCDriverInput.cpp test_QMCDriverNew.cpp test_VMCDriverInput.cpp test_VMCFactoryNew.cpp test_VMCBatched.cpp test_DMCBatched.cpp)
 
 IF(HAVE_MPI)
   SET(DRIVER_TEST_SRC ${DRIVER_TEST_SRC} test_WalkerControlMPI.cpp)

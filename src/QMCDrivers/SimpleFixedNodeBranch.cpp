@@ -455,104 +455,106 @@ void SimpleFixedNodeBranch::branch(int iter, MCWalkerConfiguration& walkers)
   MyEstimator->accumulate(walkers);
 }
 
-void SimpleFixedNodeBranch::branch(int iter, MCPopulation& population)
+void SimpleFixedNodeBranch::branch(int iter, UPtrVector<Crowd>& crowds,  MCPopulation& population)
 {
   //collect the total weights and redistribute the walkers accordingly, using a fixed tolerance
   //RealType pop_now= WalkerController->branch(iter,walkers,0.1);
   RefVector<MCPWalker> walkers(convertUPtrToRefVector(population.get_walkers()));
 
   FullPrecRealType pop_now;
-  if (BranchMode[B_DMCSTAGE] || iter)
+  if (false) // && BranchMode[B_DMCSTAGE] || iter)
     pop_now = WalkerController->branch(iter, population, 0.1);
-  // else
-  //   pop_now = WalkerController->doNotBranch(iter, walkers); //do not branch for the first step of a warmup
-  // //population for trial energy modification should not include any released node walkers.
-  // pop_now -= WalkerController->ensemble_property_.RNSamples;
-  // //current energy
-  // vParam[B_ENOW] = WalkerController->ensemble_property_.Energy;
-  // VarianceHist(WalkerController->ensemble_property_.Variance);
-  // R2Accepted(WalkerController->ensemble_property_.R2Accepted);
-  // R2Proposed(WalkerController->ensemble_property_.R2Proposed);
-  // //PopHist(pop_now);
-  // vParam[B_EREF] = EnergyHist.mean(); //current mean
-  // if (BranchMode[B_USETAUEFF])
-  //   vParam[B_TAUEFF] = vParam[B_TAU] * R2Accepted.result() / R2Proposed.result();
-  // if (BranchMode[B_KILLNODES])
-  //   EnergyHist(vParam[B_ENOW] - std::log(WalkerController->ensemble_property_.LivingFraction) / vParam[B_TAUEFF]);
-  // else
-  //   EnergyHist(vParam[B_ENOW]);
-  // if (BranchMode[B_DMCSTAGE]) // main stage
-  // {
-  //   if (BranchMode[B_POPCONTROL])
-  //   {
-  //     if (ToDoSteps > 0)
-  //       --ToDoSteps;
-  //     else
-  //     {
-  //       vParam[B_ETRIAL] = vParam[B_EREF] + vParam[B_FEEDBACK] * (logN - std::log(pop_now));
-  //       ToDoSteps        = iParam[B_ENERGYUPDATEINTERVAL] - 1;
-  //     }
-  //   }
-  //   else
-  //     vParam[B_ETRIAL] = vParam[B_EREF];
-  // }
-  // else //warmup
-  // {
-  //   if (BranchMode[B_USETAUEFF])
-  //     vParam[B_TAUEFF] = vParam[B_TAU] * R2Accepted.result() / R2Proposed.result();
-  //   if (BranchMode[B_POPCONTROL])
-  //   {
-  //     //RealType emix=((iParam[B_WARMUPSTEPS]-ToDoSteps)<100)?(0.25*vParam[B_EREF]+0.75*vParam[B_ENOW]):vParam[B_EREF];
-  //     //vParam[B_ETRIAL]=emix+Feedback*(logN-std::log(pop_now));
-  //     //vParam[B_ETRIAL]=vParam[B_EREF]+Feedback*(logN-std::log(pop_now));
-  //     if (BranchMode[B_KILLNODES])
-  //       vParam[B_ETRIAL] = (0.00 * vParam[B_EREF] + 1.0 * vParam[B_ENOW]) +
-  //           vParam[B_FEEDBACK] * (logN - std::log(pop_now)) -
-  //           std::log(WalkerController->ensemble_property_.LivingFraction) / vParam[B_TAU];
-  //     else
-  //       vParam[B_ETRIAL] = vParam[B_ENOW] + (logN - std::log(pop_now)) / vParam[B_TAU];
-  //   }
-  //   else
-  //     vParam[B_ETRIAL] = vParam[B_EREF];
-  //   --ToDoSteps;
-  //   if (ToDoSteps == 0) //warmup is done
-  //   {
-  //     vParam[B_SIGMA2] = VarianceHist.mean();
-  //     setBranchCutoff(vParam[B_SIGMA2], WalkerController->targetSigma, 10, walkers.R.size());
-  //     app_log() << "\n Warmup is completed after " << iParam[B_WARMUPSTEPS] << std::endl;
-  //     if (BranchMode[B_USETAUEFF])
-  //       app_log() << "\n  TauEff     = " << vParam[B_TAUEFF] << "\n TauEff/Tau = " << vParam[B_TAUEFF] / vParam[B_TAU];
-  //     else
-  //       app_log() << "\n  TauEff proposed   = " << vParam[B_TAUEFF] * R2Accepted.result() / R2Proposed.result();
-  //     app_log() << "\n  Etrial     = " << vParam[B_ETRIAL] << std::endl;
-  //     app_log() << " Running average of energy = " << EnergyHist.mean() << std::endl;
-  //     app_log() << "                  Variance = " << vParam[B_SIGMA2] << std::endl;
-  //     app_log() << "branch cutoff = " << vParam[B_BRANCHCUTOFF] << " " << vParam[B_BRANCHMAX] << std::endl;
-  //     ToDoSteps             = iParam[B_ENERGYUPDATEINTERVAL] - 1;
-  //     iParam[B_WARMUPSTEPS] = 0;
-  //     BranchMode.set(B_DMCSTAGE, 1); //set BranchModex to main stage
-  //     //reset the histogram
-  //     EnergyHist.clear();
-  //     EnergyHist(vParam[B_ENOW]);
-  //     if (sParam[MIXDMCOPT] == "yes")
-  //     {
-  //       app_log() << "Switching to DMC with fluctuating populations" << std::endl;
-  //       BranchMode.set(B_POPCONTROL, 1); //use standard DMC
-  //       WalkerController       = std::move(BackupWalkerController);
-  //       BackupWalkerController = 0;
-  //       vParam[B_ETRIAL]       = vParam[B_EREF];
-  //       app_log() << "  Etrial     = " << vParam[B_ETRIAL] << std::endl;
-  //       WalkerController->start();
-  //     }
-  //     //This is not necessary
-  //     //EnergyHist(DMCEnergyHist.mean());
-  //   }
-  // }
-  // WalkerController->setTrialEnergy(vParam[B_ETRIAL]);
-  // //accumulate collectables and energies for scalar.dat
-  // FullPrecRealType wgt_inv = WalkerController->num_contexts_ / WalkerController->ensemble_property_.Weight;
-  // walkers.Collectables *= wgt_inv;
-  // MyEstimator->accumulate(walkers);
+  else
+    pop_now = WalkerController->doNotBranch(iter, population); //do not branch for the first step of a warmup
+  //population for trial energy modification should not include any released node walkers.
+  MCDataType<FullPrecRealType>& wc_ensemble_prop = WalkerController->get_ensemble_property();
+  pop_now -= wc_ensemble_prop.RNSamples;
+  //current energy
+  vParam[B_ENOW] = wc_ensemble_prop.Energy;
+  VarianceHist(wc_ensemble_prop.Variance);
+  R2Accepted(wc_ensemble_prop.R2Accepted);
+  R2Proposed(wc_ensemble_prop.R2Proposed);
+  //PopHist(pop_now);
+  vParam[B_EREF] = EnergyHist.mean(); //current mean
+  if (BranchMode[B_USETAUEFF])
+    vParam[B_TAUEFF] = vParam[B_TAU] * R2Accepted.result() / R2Proposed.result();
+  if (BranchMode[B_KILLNODES])
+    EnergyHist(vParam[B_ENOW] - std::log(wc_ensemble_prop.LivingFraction) / vParam[B_TAUEFF]);
+  else
+    EnergyHist(vParam[B_ENOW]);
+  if (BranchMode[B_DMCSTAGE]) // main stage
+  {
+    if (BranchMode[B_POPCONTROL])
+    {
+      if (ToDoSteps > 0)
+        --ToDoSteps;
+      else
+      {
+        vParam[B_ETRIAL] = vParam[B_EREF] + vParam[B_FEEDBACK] * (logN - std::log(pop_now));
+        ToDoSteps        = iParam[B_ENERGYUPDATEINTERVAL] - 1;
+      }
+    }
+    else
+      vParam[B_ETRIAL] = vParam[B_EREF];
+  }
+  else //warmup
+  {
+    if (BranchMode[B_USETAUEFF])
+      vParam[B_TAUEFF] = vParam[B_TAU] * R2Accepted.result() / R2Proposed.result();
+    if (BranchMode[B_POPCONTROL])
+    {
+      //RealType emix=((iParam[B_WARMUPSTEPS]-ToDoSteps)<100)?(0.25*vParam[B_EREF]+0.75*vParam[B_ENOW]):vParam[B_EREF];
+      //vParam[B_ETRIAL]=emix+Feedback*(logN-std::log(pop_now));
+      //vParam[B_ETRIAL]=vParam[B_EREF]+Feedback*(logN-std::log(pop_now));
+      if (BranchMode[B_KILLNODES])
+        vParam[B_ETRIAL] = (0.00 * vParam[B_EREF] + 1.0 * vParam[B_ENOW]) +
+            vParam[B_FEEDBACK] * (logN - std::log(pop_now)) -
+            std::log(wc_ensemble_prop.LivingFraction) / vParam[B_TAU];
+      else
+        vParam[B_ETRIAL] = vParam[B_ENOW] + (logN - std::log(pop_now)) / vParam[B_TAU];
+    }
+    else
+      vParam[B_ETRIAL] = vParam[B_EREF];
+    --ToDoSteps;
+    if (ToDoSteps == 0) //warmup is done
+    {
+      vParam[B_SIGMA2] = VarianceHist.mean();
+      setBranchCutoff(vParam[B_SIGMA2], WalkerController->get_target_sigma(), 10, population.get_num_particles());
+      app_log() << "\n Warmup is completed after " << iParam[B_WARMUPSTEPS] << std::endl;
+      if (BranchMode[B_USETAUEFF])
+        app_log() << "\n  TauEff     = " << vParam[B_TAUEFF] << "\n TauEff/Tau = " << vParam[B_TAUEFF] / vParam[B_TAU];
+      else
+        app_log() << "\n  TauEff proposed   = " << vParam[B_TAUEFF] * R2Accepted.result() / R2Proposed.result();
+      app_log() << "\n  Etrial     = " << vParam[B_ETRIAL] << std::endl;
+      app_log() << " Running average of energy = " << EnergyHist.mean() << std::endl;
+      app_log() << "                  Variance = " << vParam[B_SIGMA2] << std::endl;
+      app_log() << "branch cutoff = " << vParam[B_BRANCHCUTOFF] << " " << vParam[B_BRANCHMAX] << std::endl;
+      ToDoSteps             = iParam[B_ENERGYUPDATEINTERVAL] - 1;
+      iParam[B_WARMUPSTEPS] = 0;
+      BranchMode.set(B_DMCSTAGE, 1); //set BranchModex to main stage
+      //reset the histogram
+      EnergyHist.clear();
+      EnergyHist(vParam[B_ENOW]);
+      if (sParam[MIXDMCOPT] == "yes")
+      {
+        app_log() << "Switching to DMC with fluctuating populations" << std::endl;
+        BranchMode.set(B_POPCONTROL, 1); //use standard DMC
+        WalkerController       = std::move(BackupWalkerController);
+        BackupWalkerController = 0;
+        vParam[B_ETRIAL]       = vParam[B_EREF];
+        app_log() << "  Etrial     = " << vParam[B_ETRIAL] << std::endl;
+        WalkerController->start();
+      }
+      //This is not necessary
+      //EnergyHist(DMCEnergyHist.mean());
+    }
+  }
+  WalkerController->setTrialEnergy(vParam[B_ETRIAL]);
+  //accumulate collectables and energies for scalar.dat
+  FullPrecRealType wgt_inv = WalkerController->get_num_contexts() / wc_ensemble_prop.Weight;
+  //walkers.Collectables *= wgt_inv;
+  for(UPtr<Crowd>& crowd_ptr: crowds)
+    crowd_ptr->accumulate(population.get_num_global_walkers());
 }
 
 /**

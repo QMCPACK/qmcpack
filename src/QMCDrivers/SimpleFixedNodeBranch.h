@@ -29,6 +29,7 @@
 #include "type_traits/template_types.hpp"
 #include "Particle/Walker.h"
 #include "QMCDrivers/WalkerControlBase.h"
+#include "QMCDrivers/Crowd.h"
 #include <Utilities/NewTimer.h>
 #include <bitset>
 
@@ -154,6 +155,7 @@ struct SimpleFixedNodeBranch : public QMCTraits
   std::unique_ptr<WalkerControlBase> WalkerController;
   ///Backup WalkerController for mixed DMC
   std::unique_ptr<WalkerControlBase> BackupWalkerController;
+  
   ///TODO: Should not be raw pointer 
   EstimatorManagerBase* MyEstimator;
   ///a simple accumulator for energy
@@ -377,7 +379,7 @@ struct SimpleFixedNodeBranch : public QMCTraits
    * @param iter current step
    * @param w Walker configuration
    */
-  void branch(int iter, MCPopulation& population);
+  void branch(int iter, UPtrVector<Crowd>& crowds, MCPopulation& population);
 
   /** update RMC counters and running averages.
    * @param iter the iteration

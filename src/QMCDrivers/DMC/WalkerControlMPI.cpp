@@ -94,7 +94,8 @@ int WalkerControlMPI::branch(int iter, MCWalkerConfiguration& W, FullPrecRealTyp
   W.EnsembleProperty = ensemble_property_;
   for (int i = 0, j = LE_MAX; i < num_contexts_; i++, j++)
     NumPerNode[i] = static_cast<int>(curData[j]);
-  Cur_pop = applyNmaxNmin();
+  int current_population = std::accumulate(NumPerNode.begin(), NumPerNode.end(), 0);
+  Cur_pop = applyNmaxNmin(current_population);
   myTimers[DMC_MPI_prebalance]->stop();
   myTimers[DMC_MPI_loadbalance]->start();
   swapWalkersSimple(W);
@@ -151,7 +152,7 @@ int WalkerControlMPI::branch(int iter, MCPopulation& pop, FullPrecRealType trigg
   pop.set_ensemble_property(ensemble_property_);
   for (int i = 0, j = LE_MAX; i < num_contexts_; i++, j++)
     NumPerNode[i] = static_cast<int>(curData[j]);
-  Cur_pop = applyNmaxNmin();
+  Cur_pop = applyNmaxNmin(pop.get_num_global_walkers());
   myTimers[DMC_MPI_prebalance]->stop();
   myTimers[DMC_MPI_loadbalance]->start();
   swapWalkersSimple(pop, adjust);
@@ -551,7 +552,7 @@ void WalkerControlMPI::swapWalkersSimple(MCPopulation& pop, PopulationAdjustment
       WalkerMessage message = send_message_queue.front();
       send_message_queue.pop();
       size_t byteSize = message.walker[0].get().byteSize();
-      send_requests.push_back(
+      send_requests.emplace_back(
           myComm->comm.isend_n(message.walker[0].get().DataSet.data(), byteSize, message.target_rank));
     }
   }
@@ -576,21 +577,24 @@ void WalkerControlMPI::swapWalkersSimple(MCPopulation& pop, PopulationAdjustment
     }
     std::for_each(recv_messages_reduced.begin(), recv_messages_reduced.end(),
                   [&recv_requests, this](WalkerMessage& message) {
-                    recv_requests.push_back(myComm->comm.ireceive_n(message.walker[0].get().DataSet.data(),
+                    recv_requests.emplace_back(myComm->comm.ireceive_n(message.walker[0].get().DataSet.data(),
                                                                     message.byteSize, message.source_rank));
                   });
   }
 
   // Busy until all messages received
   std::vector<int> done_with_message(recv_requests.size(), 0);
-  while (std::any_of(done_with_message.begin(), done_with_message.end(), [](int i) { return i == 0; }))
-  {
+  // while (std::any_of(done_with_message.begin(), done_with_message.end(), [](int i) { return i == 0; }))
+  // {
+  if (local_recvs > 0) {
     for (int im = 0; im < recv_requests.size(); ++im)
     {
-      if (done_with_message[im] != 1)
-      {
-        if (recv_requests[im].completed())
-        {
+      recv_requests[im].start();
+      recv_requests[im].wait();
+      // if (done_with_message[im] != 1)
+      // {
+      //   if (recv_requests[im].completed())
+      //   {
           recv_messages_reduced[im].walker[0].get().copyFromBuffer();
           for (int iw = 1; iw < recv_messages_reduced[im].multiplicity; ++iw)
           {
@@ -598,22 +602,23 @@ void WalkerControlMPI::swapWalkersSimple(MCPopulation& pop, PopulationAdjustment
                         recv_messages_reduced[im].walker[0].get().DataSet.data(), recv_messages_reduced[im].byteSize);
             recv_messages_reduced[im].walker[iw].get().copyFromBuffer();
           }
-          done_with_message[im] = 1;
-        }
-      }
+          //  done_with_message[im] = 1;
+          //}
     }
   }
-  recv_requests.clear();
-
+// }
+  if (local_sends > 0) {
   // After we've got all our receives wait if we're not done sending.
   for (int im = 0; im < send_requests.size(); im++)
   {
     myTimers[DMC_MPI_send]->start();
+    send_requests[im].start();
     send_requests[im].wait();
     myTimers[DMC_MPI_send]->stop();
   }
-  send_requests.clear();
 
+  }
+  
   NumWalkersSent = local_sends;
   
 }

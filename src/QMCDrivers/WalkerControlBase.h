@@ -142,11 +142,16 @@ public:
    */
   PopulationAdjustment calcPopulationAdjustment(MCPopulation& pop);
 
-  int adjustPopulation(PopulationAdjustment& adjust);
+  /** do the actual adjustment
+   *
+   *  unfortunately right now this requires knowledge of the global context, seems unecessary
+   *  but this is why MCPopulation is handed in.
+   */
+  int adjustPopulation(MCPopulation& pop, PopulationAdjustment& adjust);
   
   /** apply per node limit Nmax and Nmin
    */
-  int applyNmaxNmin();
+  int applyNmaxNmin(int current_population);
 
   /** copy good walkers to W
    */
@@ -226,7 +231,7 @@ protected:
   ///Use non-blocking isend/irecv
   bool use_nonblocking;
   
-  ///ensenble properties
+  ///ensemble properties
   MCDataType<FullPrecRealType> ensemble_property_;
 
 
@@ -325,10 +330,6 @@ protected:
   //       for(int i=0;i<ForwardWalkingHistory.size();i++) returnVal[i+1]=ForwardWalkingHistory[i].size();
   //     }
 };
-
-
-;
-
 
 } // namespace qmcplusplus
 #endif

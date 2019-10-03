@@ -23,6 +23,7 @@ namespace qmcplusplus
 {
 TEST_CASE("DMCBatched::calc_default_local_walkers", "[drivers]")
 {
+  using namespace testing;
   SetupDMCTest dtest(1);
 
   Concurrency::OverrideMaxThreads<> override(8);

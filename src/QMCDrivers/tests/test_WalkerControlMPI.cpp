@@ -26,6 +26,8 @@
 
 namespace qmcplusplus
 {
+namespace testing
+{
 /** Once there is only one driver type rename
  */
 struct UnifiedDriverWalkerControlMPITest
@@ -127,7 +129,6 @@ struct UnifiedDriverWalkerControlMPITest
       reportWalkersPerRank(dtest.comm, dtest.population);
       wc.swapWalkersSimple(dtest.population, pop_adjust);
       reportWalkersPerRank(dtest.comm, dtest.population);
-      
       // These are unique walkers
       if (dtest.comm->rank() == dtest.comm->size() - 2)
       {
@@ -160,10 +161,11 @@ struct UnifiedDriverWalkerControlMPITest
   }
 
 };
+}
 
 TEST_CASE("MPI Walker Unified Driver swap walkers", "[drivers][walker_control]")
 {
-  UnifiedDriverWalkerControlMPITest test;
+  testing::UnifiedDriverWalkerControlMPITest test;
   test();
 }
 

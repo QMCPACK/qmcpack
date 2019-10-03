@@ -23,7 +23,11 @@ namespace qmcplusplus
 {
 class NewTimer;
 struct WalkerControlMPITest;
+
+namespace testing
+{
 struct UnifiedDriverWalkerControlMPITest;
+}
 
 struct WalkerMessage
 {
@@ -90,7 +94,7 @@ struct WalkerControlMPI : public WalkerControlBase
 
   // Testing wrappers
   friend WalkerControlMPITest;
-  friend UnifiedDriverWalkerControlMPITest;
+  friend testing::UnifiedDriverWalkerControlMPITest;
 };
 
 } // namespace qmcplusplus
