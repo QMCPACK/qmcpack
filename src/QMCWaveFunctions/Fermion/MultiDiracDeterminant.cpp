@@ -332,20 +332,20 @@ void MultiDiracDeterminant::restore(int iat)
 // this has been fixed
 MultiDiracDeterminant::MultiDiracDeterminant(const MultiDiracDeterminant& s)
     : WaveFunctionComponent(s),
-      NP(0),
-      FirstIndex(s.FirstIndex),
-      ciConfigList(nullptr),
       UpdateTimer(*TimerManager.createTimer("MultiDiracDeterminant::update")),
       RatioTimer(*TimerManager.createTimer("MultiDiracDeterminant::ratio")),
       InverseTimer(*TimerManager.createTimer("MultiDiracDeterminant::inverse")),
       buildTableTimer(*TimerManager.createTimer("MultiDiracDeterminant::buildTable")),
+      readMatTimer(*TimerManager.createTimer("MultiDiracDeterminant::readMat")),
       evalWTimer(*TimerManager.createTimer("MultiDiracDeterminant::evalW")),
       evalOrbTimer(*TimerManager.createTimer("MultiDiracDeterminant::evalOrb")),
       evalOrb1Timer(*TimerManager.createTimer("MultiDiracDeterminant::evalOrbGrad")),
-      readMatTimer(*TimerManager.createTimer("MultiDiracDeterminant::readMat")),
       readMatGradTimer(*TimerManager.createTimer("MultiDiracDeterminant::readMatGrad")),
       buildTableGradTimer(*TimerManager.createTimer("MultiDiracDeterminant::buildTableGrad")),
-      ExtraStuffTimer(*TimerManager.createTimer("MultiDiracDeterminant::ExtraStuff"))
+      ExtraStuffTimer(*TimerManager.createTimer("MultiDiracDeterminant::ExtraStuff")),
+      NP(0),
+      FirstIndex(s.FirstIndex),
+      ciConfigList(nullptr)
 {
   IsCloned = true;
 
@@ -375,22 +375,22 @@ WaveFunctionComponentPtr MultiDiracDeterminant::makeClone(ParticleSet& tqp) cons
  *@param first index of the first particle
  */
 MultiDiracDeterminant::MultiDiracDeterminant(SPOSetPtr const& spos, int first)
-    : NP(0),
-      Phi(spos),
-      FirstIndex(first),
-      ReferenceDeterminant(0),
-      ciConfigList(nullptr),
-      UpdateTimer(*TimerManager.createTimer("MultiDiracDeterminant::update")),
+    : UpdateTimer(*TimerManager.createTimer("MultiDiracDeterminant::update")),
       RatioTimer(*TimerManager.createTimer("MultiDiracDeterminant::ratio")),
       InverseTimer(*TimerManager.createTimer("MultiDiracDeterminant::inverse")),
       buildTableTimer(*TimerManager.createTimer("MultiDiracDeterminant::buildTable")),
+      readMatTimer(*TimerManager.createTimer("MultiDiracDeterminant::readMat")),
       evalWTimer(*TimerManager.createTimer("MultiDiracDeterminant::evalW")),
       evalOrbTimer(*TimerManager.createTimer("MultiDiracDeterminant::evalOrb")),
       evalOrb1Timer(*TimerManager.createTimer("MultiDiracDeterminant::evalOrbGrad")),
-      readMatTimer(*TimerManager.createTimer("MultiDiracDeterminant::readMat")),
       readMatGradTimer(*TimerManager.createTimer("MultiDiracDeterminant::readMatGrad")),
       buildTableGradTimer(*TimerManager.createTimer("MultiDiracDeterminant::buildTableGrad")),
-      ExtraStuffTimer(*TimerManager.createTimer("MultiDiracDeterminant::ExtraStuff"))
+      ExtraStuffTimer(*TimerManager.createTimer("MultiDiracDeterminant::ExtraStuff")),
+      NP(0),
+      FirstIndex(first),
+      Phi(spos),
+      ciConfigList(nullptr),
+      ReferenceDeterminant(0)
 {
   (spos->isOptimizable() == true) ? Optimizable = true : Optimizable = false;
   ClassName                                                      = "MultiDiracDeterminant";

@@ -21,7 +21,7 @@
 
 namespace qmcplusplus
 {
-NonLocalTOperator::NonLocalTOperator(size_t N) : Nelec(N), Tau(0.01), Alpha(0.0), Gamma(0.0) {}
+NonLocalTOperator::NonLocalTOperator(size_t N) : Tau(0.01), Alpha(0.0), Gamma(0.0), Nelec(N) {}
 
 /** process options related to TMoves
  * @return Tmove version
