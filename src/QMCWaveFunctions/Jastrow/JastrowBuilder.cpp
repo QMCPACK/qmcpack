@@ -58,7 +58,7 @@ WaveFunctionComponent* JastrowBuilder::buildComponent(xmlNodePtr cur)
   oAttrib.put(cur);
   if (nameOpt[0] == '0')
   {
-    app_warning() << "  JastrowBuilder::put does not have name " << std::endl;
+    APP_ABORT("  JastrowBuilder::put does not have name!\n");
     return nullptr;
   }
   app_summary() << std::endl;
@@ -119,14 +119,14 @@ WaveFunctionComponent* JastrowBuilder::buildOneBody(xmlNodePtr cur)
   ReportEngine PRE(ClassName, "addOneBody(xmlNodePtr)");
   if (sourceOpt == targetPtcl.getName())
   {
-    PRE.warning("One-Body Jastrow Function needs a source different from " + targetPtcl.getName() +
+    PRE.error("One-Body Jastrow Function needs a source different from " + targetPtcl.getName() +
                 "\nExit JastrowBuilder::buildOneBody.\n");
     return nullptr;
   }
   std::map<std::string, ParticleSet*>::iterator pa_it(ptclPool.find(sourceOpt));
   if (pa_it == ptclPool.end())
   {
-    PRE.warning("JastrowBuilder::buildOneBody failed. " + sourceOpt + " does not exist.");
+    PRE.error("JastrowBuilder::buildOneBody failed. " + sourceOpt + " does not exist.");
     return nullptr;
   }
   ParticleSet* sourcePtcl = (*pa_it).second;

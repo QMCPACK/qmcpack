@@ -39,7 +39,7 @@ RealEGOSet::RealEGOSet(const std::vector<PosType>& k, const std::vector<RealType
 }
 
 ElectronGasOrbitalBuilder::ElectronGasOrbitalBuilder(Communicate* comm, ParticleSet& els)
-    : WaveFunctionComponentBuilder(comm, els), UseBackflow(false), BFTrans(0)
+    : WaveFunctionComponentBuilder(comm, els), UseBackflow(false), BFTrans(nullptr)
 {}
 
 WaveFunctionComponent* ElectronGasOrbitalBuilder::buildComponent(xmlNodePtr cur)
@@ -147,8 +147,8 @@ WaveFunctionComponent* ElectronGasOrbitalBuilder::buildComponent(xmlNodePtr cur)
         downdet->set(nup, ndn);
       }
       PtclPoolType dummy;
-      auto bfbuilder = std::make_unique<BackflowBuilder>(targetPtcl, dummy);
-      BFTrans = bfbuilder->buildBackflowTransformation(BFNode);
+      BackflowBuilder bfbuilder(targetPtcl, dummy);
+      BFTrans = bfbuilder.buildBackflowTransformation(BFNode);
       sdet->add(updet, 0);
       if (ndn > 0)
         sdet->add(downdet, 1);

@@ -386,7 +386,7 @@ WaveFunctionComponent* RadialJastrowBuilder::createJ1(xmlNodePtr cur)
   }
   else
   {
-    PRE.warning("BsplineJastrowBuilder failed to add an One-Body Jastrow.");
+    PRE.error("BsplineJastrowBuilder failed to add an One-Body Jastrow.");
     delete J1;
     delete dJ1;
     return nullptr;

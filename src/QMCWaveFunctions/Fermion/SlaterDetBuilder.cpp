@@ -132,7 +132,7 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
       UseBackflow = true;
       // creating later due to problems with ParticleSets
       //BFTrans = new BackflowTransformation(targetPtcl,ptclPool);
-      BFTrans = NULL;
+      BFTrans = nullptr;
       BFnode  = cur;
       // read xml later, in case some ParticleSets are read from hdf5 file.
       //BFTrans->put(cur);
@@ -339,9 +339,8 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
   // change DistanceTables if using backflow
   if (UseBackflow)
   {
-    BackflowBuilder* bfbuilder = new BackflowBuilder(targetPtcl, ptclPool);
-    BFTrans = bfbuilder->buildBackflowTransformation(BFnode);
-    delete bfbuilder;
+    BackflowBuilder bfbuilder(targetPtcl, ptclPool);
+    BFTrans = bfbuilder.buildBackflowTransformation(BFnode);
     if (multiDet)
     {
       if (FastMSD)
