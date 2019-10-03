@@ -53,7 +53,7 @@ void cqmc::engine::DavidsonLMHD::solve_subspace_nonsymmetric(const bool outer)
   //create vectors and matrices used in svd routine
   formic::Matrix<double> u, v, vt;
   formic::ColVec<double> sin_vals;
-  int truncate_index;
+  int truncate_index = 0;
 
   // make sure the subspace matrix is not empty
   if ( _subS.rows() == 0 || _subH.rows() == 0 ) 
