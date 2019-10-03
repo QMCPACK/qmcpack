@@ -32,10 +32,6 @@
 #include "type_traits/CUDATypes.h"
 #endif
 
-#if defined(ENABLE_SMARTPOINTER)
-#include <boost/shared_ptr.hpp>
-#endif
-
 namespace qmcplusplus
 {
 /** base class for Single-particle orbital sets
@@ -479,11 +475,7 @@ protected:
   std::string className;
 };
 
-#if defined(ENABLE_SMARTPOINTER)
-typedef boost::shared_ptr<SPOSet> SPOSetPtr;
-#else
 typedef SPOSet* SPOSetPtr;
-#endif
 
 } // namespace qmcplusplus
 #endif
