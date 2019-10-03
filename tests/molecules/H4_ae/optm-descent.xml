@@ -28,9 +28,8 @@
      <estimator name="LocalEnergy" hdf5="no"/>
      <parameter name="usebuffer">yes</parameter>
 
-     <cost name="energy">               1.00 </cost>
-      <cost name="unreweightedvariance"> 0.00 </cost>
-       <cost name="reweightedvariance">   0.00 </cost>
+
+<estimator name="LocalEnergy" hdf5="no"/>
        
        <parameter name="flavor">RMSprop</parameter>
        <parameter name="hybrid">no</parameter>
