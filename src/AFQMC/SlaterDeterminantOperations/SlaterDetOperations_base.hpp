@@ -15,6 +15,7 @@
 #include<fstream>
 
 #include "AFQMC/config.h"
+#include "AFQMC/Utilities/Utils.hpp"
 #include "AFQMC/Utilities/type_conversion.hpp"
 #include "AFQMC/Numerics/ma_operations.hpp"
 #include "AFQMC/Numerics/csr_blas.hpp"
@@ -296,8 +297,13 @@ class SlaterDetOperations_base
     TVector TBuff;
 
     void set_buffer(size_t N) {
-      if(TBuff.num_elements() < N) 
-        TBuff = std::move(TVector(iextensions<1u>{N}));
+      if(TBuff.num_elements() < N) {
+        app_log()<<" Resizing buffer space in SlaterDetOperations_base to " <<N*sizeof(T)/1024.0/1024.0 <<" MBs. \n";
+        {
+          TBuff = std::move(TVector(iextensions<1u>{N}));
+        }
+        memory_report();
+      } 
       using std::fill_n;
       fill_n(TBuff.origin(),N,T(0.0));
     }

@@ -31,6 +31,20 @@
 #include "cusolverDn.h"
 #include "curand.h"
 
+#ifdef BUILD_AFQMC_WITH_NCCL
+#include "nccl.h"
+
+#define NCCLCHECK(cmd) do {                         \
+  ncclResult_t r = cmd;                             \
+  if (r!= ncclSuccess) {                            \
+    printf("Failed, NCCL error %s:%d '%s'\n",             \
+        __FILE__,__LINE__,ncclGetErrorString(r));   \
+    exit(EXIT_FAILURE);                             \
+  }                                                 \
+} while(0)
+
+#endif
+
 namespace qmc_cuda {
 
 /*
