@@ -106,9 +106,8 @@ bool JastrowBuilder::addkSpace(xmlNodePtr cur)
   }
   ParticleSet* sourcePtcl = (*pa_it).second;
   app_log() << "\n  Using kSpaceJastrowBuilder for reciprocal-space Jastrows" << std::endl;
-  WaveFunctionComponentBuilder* sBuilder = new kSpaceJastrowBuilder(targetPtcl, targetPsi, *sourcePtcl);
-  Children.push_back(sBuilder);
-  return sBuilder->put(cur);
+  kSpaceJastrowBuilder sBuilder(targetPtcl, targetPsi, *sourcePtcl);
+  return sBuilder.put(cur);
 }
 
 bool JastrowBuilder::addOneBody(xmlNodePtr cur)

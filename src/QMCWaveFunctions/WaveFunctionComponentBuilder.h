@@ -109,9 +109,6 @@ protected:
 
   /// xmlNode operated by this object
   xmlNodePtr myNode;
-
-  /// child builder
-  std::vector<WaveFunctionComponentBuilder*> Children;
 };
 
 } // namespace qmcplusplus
