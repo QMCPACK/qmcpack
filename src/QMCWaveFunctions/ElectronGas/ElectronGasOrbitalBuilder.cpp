@@ -38,11 +38,11 @@ RealEGOSet::RealEGOSet(const std::vector<PosType>& k, const std::vector<RealType
   className      = "EGOSet";
 }
 
-ElectronGasOrbitalBuilder::ElectronGasOrbitalBuilder(ParticleSet& els, TrialWaveFunction& psi)
-    : WaveFunctionComponentBuilder(els, psi), UseBackflow(false), BFTrans(0)
+ElectronGasOrbitalBuilder::ElectronGasOrbitalBuilder(Communicate* comm, ParticleSet& els)
+    : WaveFunctionComponentBuilder(comm, els), UseBackflow(false), BFTrans(0)
 {}
 
-bool ElectronGasOrbitalBuilder::put(xmlNodePtr cur)
+WaveFunctionComponent* ElectronGasOrbitalBuilder::buildComponent(xmlNodePtr cur)
 {
   int nc(0), nc2(-2);
   ValueType bosonic_eps(-999999);
@@ -95,7 +95,7 @@ bool ElectronGasOrbitalBuilder::put(xmlNodePtr cur)
     app_error() << "   " << 2 * egGrid.getNumberOfKpoints(nc) << " for shell " << nc << std::endl;
     app_error() << "   " << 2 * egGrid.getNumberOfKpoints(nc - 1) << " for shell " << nc - 1 << std::endl;
     APP_ABORT("ElectronGasOrbitalBuilder::put");
-    return false;
+    return nullptr;
   }
   int nkpts  = (nup - 1) / 2;
   int nkpts2 = (ndn - 1) / 2;
@@ -147,9 +147,8 @@ bool ElectronGasOrbitalBuilder::put(xmlNodePtr cur)
         downdet->set(nup, ndn);
       }
       PtclPoolType dummy;
-      BackflowBuilder* bfbuilder = new BackflowBuilder(targetPtcl, dummy, targetPsi);
-      bfbuilder->put(BFNode);
-      BFTrans = bfbuilder->getBFTrans();
+      auto bfbuilder = std::make_unique<BackflowBuilder>(targetPtcl, dummy);
+      BFTrans = bfbuilder->buildBackflowTransformation(BFNode);
       sdet->add(updet, 0);
       if (ndn > 0)
         sdet->add(downdet, 1);
@@ -175,9 +174,7 @@ bool ElectronGasOrbitalBuilder::put(xmlNodePtr cur)
         sdet->add(downdet, 1);
     }
   }
-  //add Slater determinant to targetPsi
-  targetPsi.addComponent(sdet, "SlaterDet");
-  return true;
+  return sdet;
 }
 
 ElectronGasSPOBuilder::ElectronGasSPOBuilder(ParticleSet& p, Communicate* comm, xmlNodePtr cur)

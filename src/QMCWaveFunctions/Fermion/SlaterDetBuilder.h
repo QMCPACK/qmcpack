@@ -42,21 +42,18 @@ public:
    * \param psi reference to the wavefunction
    * \param ions reference to the ions
    */
-  SlaterDetBuilder(ParticleSet& els, TrialWaveFunction& psi, PtclPoolType& psets);
-
-  ~SlaterDetBuilder();
+  SlaterDetBuilder(Communicate* comm, ParticleSet& els, PtclPoolType& psets);
 
   /** initialize the Antisymmetric wave function for electrons
    *@param cur the current xml node
    *
    */
-  bool put(xmlNodePtr cur);
-
+  WaveFunctionComponent* buildComponent(xmlNodePtr cur) override;
 
 private:
   ///reference to a PtclPoolType
   PtclPoolType& ptclPool;
-  SPOSetBuilderFactory* mySPOSetBuilderFactory;
+  std::unique_ptr<SPOSetBuilderFactory> mySPOSetBuilderFactory;
   SlaterDeterminant_t* slaterdet_0;
   MultiSlaterDeterminant_t* multislaterdet_0;
   MultiSlaterDeterminantFast* multislaterdetfast_0;

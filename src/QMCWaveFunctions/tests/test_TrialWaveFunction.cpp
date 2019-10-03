@@ -137,9 +137,8 @@ TEST_CASE("TrialWaveFunction", "[wavefunction]")
   xmlNodePtr jas_root = doc.getRoot();
   xmlNodePtr jas1 = xmlFirstElementChild(jas_root);
 
-  RadialJastrowBuilder jb(elec_, psi);
-  bool build_okay = jb.put(jas1);
-  REQUIRE(build_okay);
+  RadialJastrowBuilder jb(c, elec_);
+  psi.addComponent(jb.buildComponent(jas1), "RadialJastrow");
 
 #if !defined(QMC_CUDA)
   // initialize distance tables.

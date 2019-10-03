@@ -50,26 +50,16 @@
 
 namespace qmcplusplus
 {
-SlaterDetBuilder::SlaterDetBuilder(ParticleSet& els, TrialWaveFunction& psi, PtclPoolType& psets)
-    : WaveFunctionComponentBuilder(els, psi),
+SlaterDetBuilder::SlaterDetBuilder(Communicate* comm, ParticleSet& els, PtclPoolType& psets)
+    : WaveFunctionComponentBuilder(comm, els),
       ptclPool(psets),
-      mySPOSetBuilderFactory(0),
       slaterdet_0(nullptr),
-      multislaterdet_0(0),
-      multislaterdetfast_0(0)
+      multislaterdet_0(nullptr),
+      multislaterdetfast_0(nullptr)
 {
   ClassName   = "SlaterDetBuilder";
   BFTrans     = 0;
   UseBackflow = false;
-}
-
-SlaterDetBuilder::~SlaterDetBuilder()
-{
-  DEBUG_MEMORY("SlaterDetBuilder::~SlaterDetBuilder");
-  if (mySPOSetBuilderFactory)
-  {
-    delete mySPOSetBuilderFactory;
-  }
 }
 
 /** process <determinantset>
@@ -81,7 +71,7 @@ SlaterDetBuilder::~SlaterDetBuilder()
  *   - determinant 0..*
  * - ci
  */
-bool SlaterDetBuilder::put(xmlNodePtr cur)
+WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
 {
   ReportEngine PRE(ClassName, "put(xmlNodePtr)");
   ///save the current node
@@ -92,9 +82,9 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
   std::map<std::string, SPOSetPtr> spomap;
   bool multiDet = false;
 
-  if (mySPOSetBuilderFactory == 0)
+  if (!mySPOSetBuilderFactory)
   { //always create one, using singleton and just to access the member functions
-    mySPOSetBuilderFactory = new SPOSetBuilderFactory(targetPtcl, targetPsi, ptclPool);
+    mySPOSetBuilderFactory = std::make_unique<SPOSetBuilderFactory>(myComm, targetPtcl, ptclPool);
     mySPOSetBuilderFactory->createSPOSetBuilder(curRoot);
   }
 
@@ -337,20 +327,19 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
   {
     //fatal
     PRE.error("Failed to create a SlaterDeterminant.", true);
-    return false;
+    return nullptr;
   }
   if (multiDet && (!multislaterdet_0 && !multislaterdetfast_0))
   {
     //fatal
     PRE.error("Failed to create a MultiSlaterDeterminant.", true);
-    return false;
+    return nullptr;
   }
   // change DistanceTables if using backflow
   if (UseBackflow)
   {
-    BackflowBuilder* bfbuilder = new BackflowBuilder(targetPtcl, ptclPool, targetPsi);
-    bfbuilder->put(BFnode);
-    BFTrans = bfbuilder->getBFTrans();
+    BackflowBuilder* bfbuilder = new BackflowBuilder(targetPtcl, ptclPool);
+    BFTrans = bfbuilder->buildBackflowTransformation(BFnode);
     delete bfbuilder;
     if (multiDet)
     {
@@ -379,17 +368,12 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
   if (multiDet)
   {
     if (FastMSD)
-      targetPsi.addComponent(multislaterdetfast_0, "MultiSlaterDeterminantFast");
+      return multislaterdetfast_0;
     else
-      targetPsi.addComponent(multislaterdet_0, "MultiSlaterDeterminant");
+      return multislaterdet_0;
   }
   else
-  {
-    targetPsi.addComponent(slaterdet_0, "SlaterDet");
-  }
-  delete mySPOSetBuilderFactory;
-  mySPOSetBuilderFactory = 0;
-  return success;
+    return slaterdet_0;
 }
 
 
