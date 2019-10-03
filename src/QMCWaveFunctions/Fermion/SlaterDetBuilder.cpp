@@ -50,8 +50,9 @@
 
 namespace qmcplusplus
 {
-SlaterDetBuilder::SlaterDetBuilder(Communicate* comm, ParticleSet& els, PtclPoolType& psets)
+SlaterDetBuilder::SlaterDetBuilder(Communicate* comm, ParticleSet& els, TrialWaveFunction& psi, PtclPoolType& psets)
     : WaveFunctionComponentBuilder(comm, els),
+      targetPsi(psi),
       ptclPool(psets),
       slaterdet_0(nullptr),
       multislaterdet_0(nullptr),
