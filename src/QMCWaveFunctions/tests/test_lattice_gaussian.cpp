@@ -30,6 +30,7 @@ using std::string;
 
 namespace qmcplusplus
 {
+using RealType = QMCTraits::RealType;
 TEST_CASE("lattice gaussian", "[wavefunction]")
 {
   Communicate* c;
@@ -125,9 +126,9 @@ TEST_CASE("lattice gaussian", "[wavefunction]")
   // update all distance tables
   elec_.update();
 
-  double logpsi = psi.evaluateLog(elec_);
+  RealType logpsi = psi.evaluateLog(elec_);
   // check answer
-  double r2 = Dot(elec_.R, elec_.R);
+  RealType r2 = Dot(elec_.R, elec_.R);
   double wfval = std::exp(-alpha*r2);
   REQUIRE(logpsi == Approx(std::log(wfval)));
 }
