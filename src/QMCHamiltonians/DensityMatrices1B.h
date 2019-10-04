@@ -90,8 +90,8 @@ public:
   PosType drift;
   int nindex;
   int eindex;
-  TrialWaveFunction& Psi;
   Lattice_t& Lattice;
+  TrialWaveFunction& Psi;
   ParticleSet& Pq;
   const ParticleSet* Pc;
   TraceSample<TraceReal>* w_trace;

@@ -76,8 +76,8 @@ SimpleFixedNodeBranch::SimpleFixedNodeBranch(const SimpleFixedNodeBranch& abranc
       iParam(abranch.iParam),
       vParam(abranch.vParam),
       MyEstimator(0),
-      sParam(abranch.sParam),
-      branching_cutoff_scheme(abranch.branching_cutoff_scheme)
+      branching_cutoff_scheme(abranch.branching_cutoff_scheme),
+      sParam(abranch.sParam)
 {
   registerParameters();
   reset();

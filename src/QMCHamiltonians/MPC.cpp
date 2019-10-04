@@ -30,8 +30,12 @@ namespace qmcplusplus
 void MPC::resetTargetParticleSet(ParticleSet& ptcl) {}
 
 MPC::MPC(ParticleSet& ptcl, double cutoff)
-    : PtclRef(&ptcl), Ecut(cutoff), FirstTime(true), VlongSpline(0), DensitySpline(0),
-      d_aa_ID(ptcl.addTable(ptcl, DT_SOA_PREFERRED))
+    : VlongSpline(0),
+      DensitySpline(0),
+      Ecut(cutoff),
+      d_aa_ID(ptcl.addTable(ptcl, DT_SOA_PREFERRED)),
+      PtclRef(&ptcl),
+      FirstTime(true)
 {
   initBreakup();
 }
