@@ -1,4 +1,4 @@
-Example 7: 2x2x2 Diamond k-point symmetry
+Example 8: 2x2x2 Diamond k-point symmetry
 ==========================================
 
 In this example we will show how to run an AFQMC simulation that exploits k-point symmetry
@@ -11,7 +11,7 @@ Essentially all that changes in the integral generation step is that we pass the
 
 .. code-block:: bash
 
-    mpirun -n 8 $HOME/apps/qmcpack/qmcpack/utils/afqmctools/bin/pyscf_to_afqmc.py -i ../06-diamond_2x2x2_supercell/scf.chk -o hamil.h5 -t 1e-5 -v -a -k -q afqmc.xml
+    mpirun -n 8 /path/to/qmcpack/utils/afqmctools/bin/pyscf_to_afqmc.py -i ../07-diamond_2x2x2_supercell/scf.chk -o afqmc.h5 -t 1e-5 -v -a -k
 
 You will notice that now the Cholesky decomposition is done for each momentum transfer
 independently and the the form of the hamiltonian file has changed to be k-point dependent.
