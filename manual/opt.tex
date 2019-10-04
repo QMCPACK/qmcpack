@@ -102,13 +102,13 @@ The cost function consists of three components: energy, unreweighted variance, a
 \end{lstlisting}
 
 \subsection{Optimizers}
-QMCPACK implements a few optimizers having different preference aiming for different priorities.
-The optimizers can be switched among  ``OneShiftOnly" (default), ``adaptive," and ``quartic" (old) using the following line in the optimization block:
+QMCPACK implements a number of different optimizers each with different priorities for accuracy, convergence, memory usage, and stability.
+The optimizers can be switched among  ``OneShiftOnly'' (default), ``adaptive,'' ``descent,'' ``hybrid,'' and ``quartic'' (old) using the following line in the optimization block:
 \begin{lstlisting}
 <parameter name="MinMethod"> THE METHOD YOU LIKE </parameter>
 \end{lstlisting}
 
-\subsubsection{OneShiftOnly}
+\subsection{OneShiftOnly Optimizer}
 The OneShiftOnly optimizer targets a fast optimization by moving parameters more aggressively. It works with OpenMP and GPU and can be considered for large systems.
 This method relies on the effective weight of correlated sampling rather than the cost function value to justify a new set of parameters.
 If the effective weight is larger than \ixml{minwalkers}, the new set is taken whether or not the cost function value decreases.
@@ -200,7 +200,7 @@ The new set of parameters is not valid. Revert to the old set!
 Occasional rejection is fine. Frequent rejection indicates potential problems, and users should inspect the VMC calculation or change optimization strategy.
 To track the progress of optimization, use the command \texttt{qmca -q ev *.scalar.dat} to look at the VMC energy and variance for each optimization step.
 
-\subsubsection{adaptive}
+\subsubsection{Adaptive Optimizer}
 
 The default setting of the adaptive optimizer is to construct the linear method Hamiltonian and overlap matrices explicitly and add different shifts to the Hamiltonian matrix 
 as ``stabilizers.''
@@ -349,11 +349,12 @@ Excited state recommendations:
         principle for the excited state creates a bias in favor of the ground state. 
 \end{itemize}
 
-\subsubsection{descent}
+\subsubsection{Descent Optimizer}
 Gradient descent algorithms are an alternative set of optimization methods to the OneShiftOnly and adaptive optimizers based on the linear method.
-These methods use only first derivatives to optimze trial wave functions and convergence can be accelerated by retaining a memory of previous derivative values.
-Multiple flavors of accelerated descent methods are available and may differ in details such as schemes for adaptive adjustment of step sizes.\cite{Otis2019}
-Descent algorithms avoid the construction of matrices that occurs in the linear method and can be applied to larger sets of optimizable parameters.
+These methods use only first derivatives to optimize trial wave functions and convergence can be accelerated by retaining a memory of previous derivative values.
+Multiple flavors of accelerated descent methods are available. They differ in details such as the schemes for adaptive adjustment of step sizes.\cite{Otis2019}
+Descent algorithms avoid the construction of matrices that occurs in the linear method and consequently can be applied to larger sets of
+optimizable parameters.
 Currently, descent optimization is only available for ground state calculations.
 Parameters for descent are shown in the table below.\\
 
@@ -436,10 +437,10 @@ Additional information and recommendations:
  \end{lstlisting}
 
 
-\subsubsection{hybrid}
+\subsubsection{Hybrid Optimizer}
 
 Another optimization option is to use a hybrid combination of accelerated descent and blocked linear method.
-It provides a means to retain the advantages of both individual methods while scaling to large numbers of parameters beyond the traditional 10,000 variable limit of the linear method.\cite{Otis2019}
+It provides a means to retain the advantages of both individual methods while scaling to large numbers of parameters beyond the traditional 10,000 parameter limit of the linear method.\cite{Otis2019}
 In a hybrid optimization, alternating sections of descent and BLM optimization are used.
 Gradient descent is used to identify the previous important directions in parameter space used by the BLM, the number of which is set by the \texttt{nold} input for the BLM.
 Over the course of a section of descent, vectors of parameter differences are stored and then passed to the linear method engine after the optimization changes to the BLM.
@@ -528,7 +529,7 @@ Additional information and recommendations:
 	This approach can achieve a lower statistical uncertainty on the energy for less overall sampling effort compared to what a pure linear method optimization would require.
 \end{itemize}
 
-\subsubsection{quartic}
+\subsubsection{Quartic Optimizer}
 \textit{This is an older optimizer method retained for compatibility. We recommend starting with the newest OneShiftOnly or adaptive optimizers.}
 The quartic optimizer fits a quartic polynomial to 7 values of the cost function obtained using reweighting along the chosen direction and determines the optimal move.
 This optimizer is very robust but is a bit conservative when accepting new steps, especially when large parameters changes are proposed.
@@ -597,11 +598,10 @@ When running the optimization, the new coefficients will be stored in a *.sXXX.o
 
 The opt\_coeffs tag will then reference where the new CI coefficients are stored.\\
 
-When restarting the run with the new optimized coeffs, you need to specify the previous hdf5 containing the basis set, orbitals, and MSD, as well as the new optimized coefficients. The code will read the previous data but will rewrite the coefficients that were optimized with the values found in the *.sXXX.opt.h5 file. 
-\subsection{General recommendations}
-Here are a few recommendations to avoid bad calculations
-\begin{itemize}
-\item CI coefficients are optimized with a set of Jastrows. Make sure you maintain the pair (Jastrows, CI-coefficients) as computed. 
-\end{itemize}
+When restarting the run with the new optimized coeffs, you need to specify the previous hdf5 containing the basis set, orbitals,
+and MSD, as well as the new optimized coefficients. The code will read the previous data but will rewrite the coefficients that
+were optimized with the values found in the *.sXXX.opt.h5 file. Be careful to keep the pair of optimized CI coefficients and
+Jastrow coefficients together to avoid inconsistencies.
+
 
 
