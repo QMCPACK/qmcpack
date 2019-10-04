@@ -24,9 +24,10 @@ namespace qmcplusplus
 TEST_CASE("DMCBatched::calc_default_local_walkers", "[drivers]")
 {
   using namespace testing;
+  Concurrency::OverrideMaxThreads<> override(8);
+
   SetupDMCTest dtest(1);
 
-  Concurrency::OverrideMaxThreads<> override(8);
 
   auto testWRTWalkersPerRank = [&dtest](int walkers_per_rank) {
                                  DMCBatched dmc_batched(std::move(dtest()));
