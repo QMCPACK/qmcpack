@@ -39,11 +39,11 @@ TEST_CASE("VMCBatched::calc_default_local_walkers", "[drivers]")
 
   MinimalParticlePool mpp;
   ParticleSetPool particle_pool = mpp(comm);
-  MinimalWaveFunctionPool wfp(comm);
-  WaveFunctionPool wavefunction_pool = wfp(&particle_pool);
+  MinimalWaveFunctionPool wfp;
+  WaveFunctionPool wavefunction_pool = wfp(comm, &particle_pool);
   wavefunction_pool.setPrimary(wavefunction_pool.getWaveFunction("psi0"));
-  MinimalHamiltonianPool mhp(comm);
-  HamiltonianPool hamiltonian_pool = mhp(&particle_pool, &wavefunction_pool);
+  MinimalHamiltonianPool mhp;
+  HamiltonianPool hamiltonian_pool = mhp(comm, &particle_pool, &wavefunction_pool);
 
   int num_ranks  = 4;
   int num_crowds = 8;

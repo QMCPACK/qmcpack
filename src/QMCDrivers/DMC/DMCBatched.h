@@ -82,6 +82,8 @@ public:
              WaveFunctionPool& ppool,
              Communicate* comm);
 
+  DMCBatched(DMCBatched&&) = default;
+
   /** The initial number of local walkers
    *
    *  Currently substantially the same as VMCBatch so if it doesn't change
