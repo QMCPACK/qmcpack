@@ -76,8 +76,8 @@ void GamesFMOParser::parse(const std::string& fname)
   std::string aline;
   int count;
 
-  IDmer* IDDimer;
-  IDmer* IDTrimer;
+  IDmer* IDDimer = nullptr;
+  IDmer* IDTrimer = nullptr;
 
 
   fin.seekg(pivot_begin);

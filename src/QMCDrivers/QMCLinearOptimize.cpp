@@ -645,7 +645,6 @@ QMCLinearOptimize::RealType QMCLinearOptimize::getSplitEigenvectors(int first,
                                                                     bool& CSF_scaled)
 {
   std::vector<RealType> GEVSplitDirection(N, 0);
-  RealType returnValue;
   int N_nonlin = last - first;
   int N_lin    = N - N_nonlin - 1;
   //  matrices are one larger than parameter sets
@@ -707,7 +706,6 @@ QMCLinearOptimize::RealType QMCLinearOptimize::getSplitEigenvectors(int first,
   //                  as solved in the matrix and opt the Jastrow instead
   if (CSF_Option == "freeze")
   {
-    returnValue = std::min(lowest_J_EV, lowest_CSF_EV);
     //                   Line minimize for the nonlinear components
     for (int i = J_begin; i < J_end; i++)
       GEVSplitDirection[i] = J_parms[i - J_begin + 1];
@@ -717,6 +715,7 @@ QMCLinearOptimize::RealType QMCLinearOptimize::getSplitEigenvectors(int first,
     FullEV[0] = 1.0;
     for (int i = J_begin; i < J_end; i++)
       FullEV[i] = GEVSplitDirection[i];
+    return std::min(lowest_J_EV, lowest_CSF_EV);
   }
   else if (CSF_Option == "rescale")
   {
@@ -736,8 +735,9 @@ QMCLinearOptimize::RealType QMCLinearOptimize::getSplitEigenvectors(int first,
         }
       }
     eigenvalue_timer_.start();
-    returnValue = getLowestEigenvector(FullLeft, FullRight, FullEV);
+    RealType returnValue = getLowestEigenvector(FullLeft, FullRight, FullEV);
     eigenvalue_timer_.stop();
+    return returnValue;
   }
   else if (CSF_Option == "stability")
   {
@@ -746,9 +746,8 @@ QMCLinearOptimize::RealType QMCLinearOptimize::getSplitEigenvectors(int first,
       CSF_scaled = true;
     else
       CSF_scaled = false;
-    returnValue = std::min(lowest_J_EV, lowest_CSF_EV);
+    return std::min(lowest_J_EV, lowest_CSF_EV);
   }
-  return returnValue;
 }
 
 /** Parses the xml input file for parameter definitions for the wavefunction optimization.
