@@ -2,7 +2,7 @@ import h5py
 import xml.etree.ElementTree as et
 from afqmctools.wavefunction.mol import read_qmcpack_wfn
 
-def write_xml_input(qmc_in, hamil_file, wfn_file, series=0,
+def write_xml_input(qmc_in, hamil_file, wfn_file, id_name='qmc', series=0,
                     rng_seed=None, options=None):
     """Generate template input file from hamiltonian and wavefunction.
 
@@ -14,6 +14,8 @@ def write_xml_input(qmc_in, hamil_file, wfn_file, series=0,
         HDF5 file containing Hamiltonian.
     wfn_file : string
         HDF5 file containing Wavefunction.
+    id_name : string
+        xml id for output files. Optional. Default "qmc".
     series : int
         Simulation series number. Optional. Default 0.
     options : dict
@@ -62,8 +64,8 @@ def write_xml_input(qmc_in, hamil_file, wfn_file, series=0,
         walker_type = walker_types[dims[3]]
 
     base = '''<simulation method="afqmc">
-    <project id="qmc" series="{:d}"/>
-    '''.format(series)
+    <project id="{:s}" series="{:d}"/>
+    '''.format(id_name, series)
     if rng_seed is not None:
         base += '''<random seed="{:d}"/>'''.format(rng_seed)
     base += '''<AFQMCInfo name="info0">
