@@ -247,6 +247,9 @@ bool_write_types = set([yesno,onezero,truefalse])
 
 
 class QIobj(DevBase):
+
+    afqmc_mode = False
+
     # user settings
     permissive_read  = False
     permissive_write = False
@@ -445,6 +448,9 @@ class Names(QIobj):
     condensed_names = obj()
     expanded_names = None
 
+    rsqmc_expanded_names = None
+    afqmc_expanded_names = None
+
     escape_names = set(keyword.kwlist+['write'])
     escaped_names = list(escape_names)
     for i in range(len(escaped_names)):
@@ -454,9 +460,25 @@ class Names(QIobj):
 
     @staticmethod
     def set_expanded_names(**kwargs):
-        Names.expanded_names = obj(**kwargs)
+        exnames = obj(**kwargs)
+        Names.expanded_names = exnames
+        Names.rsqmc_expanded_names = exnames
     #end def set_expanded_names
 
+    @staticmethod
+    def set_afqmc_expanded_names(**kwargs):
+        Names.afqmc_expanded_names = obj(**kwargs)
+    #end def set_afqmc_expanded_names
+
+    @staticmethod
+    def use_rsqmc_expanded_names():
+        Names.expanded_names = Names.rsqmc_expanded_names
+    #end def use_rsqmc_expanded_names
+
+    @staticmethod
+    def use_afqmc_expanded_names():
+        Names.expanded_names = Names.afqmc_expanded_names
+    #end def use_afqmc_expanded_names
 
     def expand_name(self,condensed):
         expanded = condensed
@@ -644,7 +666,11 @@ class QIxml(Names):
                     c += param.write(self[a],name=self.expand_name(a),tag='attrib',mode='elem',pad=ip,write_type=write_type)
                 #end if
             #end for
-            for e in self.elements:
+            elements = self.elements
+            if self.afqmc_mode and 'afqmc_order' in self.__class__.__dict__:
+                elements = self.afqmc_order
+            #end if
+            for e in elements:
                 if e in self:
                     elem = self[e]
                     if isinstance(elem,QIxml):
@@ -714,6 +740,9 @@ class QIxml(Names):
         for e,ecap in el.iteritems():
             value = xml._elements[ecap]
             if (isinstance(value,list) or isinstance(value,tuple)) and e in self.plurals_inv.keys():
+                if e not in types:
+                    self.error('input element "{}" is unknown'.format(e))
+                #end if
                 p = self.plurals_inv[e]
                 plist = []
                 for instance in value:
@@ -721,6 +750,9 @@ class QIxml(Names):
                 #end for
                 self[p] = make_collection(plist)
             elif e in self.elements:
+                if e not in types:
+                    self.error('input element "{}" is unknown'.format(e))
+                #end if
                 self[e] = types[e](value)
             elif e in ['parameter','attrib','cost','h5tag']:
                 if isinstance(value,XMLelement):
@@ -1708,7 +1740,15 @@ param = Param()
 
 
 class simulation(QIxml):
-    elements   = ['project','random','include','qmcsystem','particleset','wavefunction','hamiltonian','init','traces','qmc','loop','mcwalkerset','cmc']
+    #            afqmc
+    attributes = ['method']
+    #            rsqmc
+    elements   = ['project','random','include','qmcsystem','particleset',
+                  'wavefunction','hamiltonian','init','traces','qmc','loop',
+                  'mcwalkerset','cmc']+\
+                  ['afqmcinfo','walkerset','propagator','execute'] # afqmc
+    afqmc_order = ['afqmcinfo','hamiltonian','wavefunction','walkerset',
+                   'propagator','execute']
     write_types = obj(random=yesno)
 #end class simulation
 
@@ -1834,7 +1874,10 @@ sposet_builder = QIxmlFactory(
 
 
 class wavefunction(QIxml):
-    attributes = ['name','target','id','ref']
+    #            rsqmc                        afqmc
+    attributes = ['name','target','id','ref']+['info','type']
+    #            afqmc
+    parameters = ['filetype','filename','cutoff']
     elements   = ['sposet_builder','determinantset','jastrow']
     identifier = 'name','id'
 #end class wavefunction
@@ -2029,7 +2072,10 @@ jastrow = QIxmlFactory(
 
 
 class hamiltonian(QIxml):
-    attributes = ['name','type','target','default'] 
+    #            rsqmc                              afqmc
+    attributes = ['name','type','target','default']+['info']
+    #            afqmc
+    parameters = ['filetype','filename']
     elements   = ['pairpot','constant','estimator']
     identifier = 'name'
 #end class hamiltonian
@@ -2250,7 +2296,16 @@ class momentum(QIxml):
     identifier = 'name'
     write_types = obj(hdf5=yesno)
 #end class momentum
-    
+
+# afqmc estimators
+class back_propagation(QIxml):
+    tag = 'estimator'
+    attributes = ['name']
+    parameters = ['naverages','block_size','ortho','nsteps']
+    elements   = ['onerdm']
+    identifier = 'name'
+#end class back_propagation
+
 estimator = QIxmlFactory(
     name  = 'estimator',
     types = dict(localenergy         = localenergy,
@@ -2272,6 +2327,8 @@ estimator = QIxmlFactory(
                  gofr                = gofr,
                  flux                = flux,
                  momentum            = momentum,
+                 # afqmc estimators
+                 back_propagation    = back_propagation,
                  ),
     typekey  = 'type',
     typekey2 = 'name'
@@ -2487,6 +2544,38 @@ class cmc(QIxml):
 
 
 
+# afqmc elements
+
+class afqmcinfo(QIxml):
+    attributes = ['name']
+    parameters = ['nmo','naea','naeb']
+#end class afqmcinfo
+
+class walkerset(QIxml):
+    attributes = ['name','type']
+    parameters = ['walker_type']
+#end class walkerset
+
+class propagator(QIxml):
+    attributes  = ['info','name']
+    parameters  = ['hybrid']
+    write_types = obj(hybrid=yesno)
+#end class propagator
+
+class execute(QIxml):
+    attributes = ['ham','info','prop','wfn','wset']
+    parameters = ['blocks','timestep','steps','ncores','nwalkers']
+    elements   = ['estimator']
+#end class execute
+
+class onerdm(QIxml):
+    None
+#end class onerdm
+
+
+
+
+
 class gen(QIxml):
     attributes = []
     elements   = []
@@ -2509,7 +2598,9 @@ classes = [   #standard classes
     header,local,force,forwardwalking,observable,record,rmc,pressure,dmccorrection,
     nofk,mpc_est,flux,distancetable,cpp,element,spline,setparams,
     backflow,transformation,cubicgrid,molecular_orbital_builder,cmc,sk,skall,gofr,
-    host,date,user,rpa_jastrow,momentum
+    host,date,user,rpa_jastrow,momentum,
+    # afqmc classes
+    afqmcinfo,walkerset,propagator,execute,back_propagation,onerdm
     ]
 types = dict( #simple types and factories
     #host           = param,
@@ -2597,7 +2688,20 @@ Names.set_expanded_names(
     spindependent    = 'spinDependent',
     l_local          = 'l-local',
     pbcimages        = 'PBCimages',
-   )
+    )
+# afqmc names
+Names.set_afqmc_expanded_names(
+    afqmcinfo        = 'AFQMCInfo',
+    nmo              = 'NMO',
+    naea             = 'NAEA',
+    naeb             = 'NAEB',
+    hamiltonian      = 'Hamiltonian',
+    wavefunction     = 'Wavefunction',
+    walkerset        = 'WalkerSet',
+    propagator       = 'Propagator',
+    onerdm           = 'OneRDM',
+    nwalkers         = 'nWalkers',
+    )
 for c in classes:
     c.init_class()
     types[c.__name__] = c
@@ -2799,6 +2903,16 @@ dmc.defaults.set(
 
 
 
+def set_rsqmc_mode():
+    QIobj.afqmc_mode = False
+    Names.use_rsqmc_expanded_names()
+#end def set_rsqmc_mode
+
+def set_afqmc_mode():
+    QIobj.afqmc_mode = True
+    Names.use_afqmc_expanded_names()
+#end def set_afqmc_mode
+
 
 
 
@@ -2860,6 +2974,15 @@ class QmcpackInput(SimulationInput,Names):
         Param.metadata = None
         QIcollections.clear()
     #end def __init__
+
+    def is_afqmc_input(self):
+        is_afqmc = False
+        if 'simulation' in self:
+            sim = self.simulation
+            is_afqmc = 'method' in sim and sim.method.lower()=='afqmc'
+        #end if
+        return is_afqmc
+    #end def is_afqmc_input
 
     def get_base(self):
         elem_names = list(self.keys())
@@ -2935,6 +3058,10 @@ class QmcpackInput(SimulationInput,Names):
 
 
     def write_text(self,filepath=None):
+        set_rsqmc_mode()
+        if self.is_afqmc_input():
+            set_afqmc_mode()
+        #end if
         c = ''
         header = '''<?xml version="1.0"?>
 '''
@@ -2947,6 +3074,7 @@ class QmcpackInput(SimulationInput,Names):
         base = self.get_base()
         c+=base.write(first=True)
         Param.metadata = None
+        set_rsqmc_mode()
         return c
     #end def write_text
 

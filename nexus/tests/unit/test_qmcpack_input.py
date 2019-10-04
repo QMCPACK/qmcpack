@@ -405,6 +405,7 @@ def check_vs_serial_reference(qi,name):
 def test_files():
     filenames = [
         'VO2_M1_afm.in.xml',
+        'CH4_afqmc.in.xml',
         ]
     files = get_files()
     assert(set(filenames)==set(files.keys()))
@@ -1036,7 +1037,9 @@ def test_read():
     files = get_files()
 
     qi_read = QmcpackInput(files['VO2_M1_afm.in.xml'])
+    assert(not qi_read.is_afqmc_input())
     qi_read.pluralize()
+    assert(not qi_read.is_afqmc_input())
 
     # remove extraneous data members for purpose of comparison
     del qi_read._metadata.spo_u
@@ -1047,6 +1050,11 @@ def test_read():
     del sposets.spo_d.spos
 
     check_vs_serial_reference(qi_read,'VO2_M1_afm.in.xml')
+
+
+    # test read for afqmc input file
+    qi = QmcpackInput(files['CH4_afqmc.in.xml'])
+    assert(qi.is_afqmc_input())
 
 #end def test_read
 
