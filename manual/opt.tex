@@ -200,7 +200,7 @@ The new set of parameters is not valid. Revert to the old set!
 Occasional rejection is fine. Frequent rejection indicates potential problems, and users should inspect the VMC calculation or change optimization strategy.
 To track the progress of optimization, use the command \texttt{qmca -q ev *.scalar.dat} to look at the VMC energy and variance for each optimization step.
 
-\subsubsection{Adaptive Optimizer}
+\subsection{Adaptive Optimizer}
 
 The default setting of the adaptive optimizer is to construct the linear method Hamiltonian and overlap matrices explicitly and add different shifts to the Hamiltonian matrix 
 as ``stabilizers.''
@@ -349,7 +349,7 @@ Excited state recommendations:
         principle for the excited state creates a bias in favor of the ground state. 
 \end{itemize}
 
-\subsubsection{Descent Optimizer}
+\subsection{Descent Optimizer}
 Gradient descent algorithms are an alternative set of optimization methods to the OneShiftOnly and adaptive optimizers based on the linear method.
 These methods use only first derivatives to optimize trial wave functions and convergence can be accelerated by retaining a memory of previous derivative values.
 Multiple flavors of accelerated descent methods are available. They differ in details such as the schemes for adaptive adjustment of step sizes.\cite{Otis2019}
@@ -437,7 +437,7 @@ Additional information and recommendations:
  \end{lstlisting}
 
 
-\subsubsection{Hybrid Optimizer}
+\subsection{Hybrid Optimizer}
 
 Another optimization option is to use a hybrid combination of accelerated descent and blocked linear method.
 It provides a means to retain the advantages of both individual methods while scaling to large numbers of parameters beyond the traditional 10,000 parameter limit of the linear method.\cite{Otis2019}
@@ -529,7 +529,7 @@ Additional information and recommendations:
 	This approach can achieve a lower statistical uncertainty on the energy for less overall sampling effort compared to what a pure linear method optimization would require.
 \end{itemize}
 
-\subsubsection{Quartic Optimizer}
+\subsection{Quartic Optimizer}
 \textit{This is an older optimizer method retained for compatibility. We recommend starting with the newest OneShiftOnly or adaptive optimizers.}
 The quartic optimizer fits a quartic polynomial to 7 values of the cost function obtained using reweighting along the chosen direction and determines the optimal move.
 This optimizer is very robust but is a bit conservative when accepting new steps, especially when large parameters changes are proposed.
