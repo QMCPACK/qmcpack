@@ -15,10 +15,11 @@
 #include "Estimators/ScalarEstimatorBase.h"
 namespace qmcplusplus
 {
-
 class FakeEstimator : public ScalarEstimatorBase
 {
   virtual void accumulate(const MCWalkerConfiguration& W, WalkerIterator first, WalkerIterator last, RealType wgt) {}
+
+  virtual void accumulate(const int global_walkers, RefVector<MCPWalker>& walkers, RealType wgt) {}
 
   virtual void add2Record(RecordNamedProperty<RealType>& record) {}
 
@@ -27,5 +28,5 @@ class FakeEstimator : public ScalarEstimatorBase
   virtual ScalarEstimatorBase* clone() { return new FakeEstimator; }
 };
 
-}
+} // namespace qmcplusplus
 #endif

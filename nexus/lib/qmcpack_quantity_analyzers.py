@@ -134,6 +134,7 @@ class DatAnalyzer(QuantityAnalyzer):
         if equilibration!=None and nbe==-1:
             self.load_data()
             nbe = equilibration_length(self.data[equilibration])
+            assert nbe>=0, 'Number of equilibration blocks is negative.'
             self.method_info.nblocks_exclude = nbe
         #end if
     #end def __init__

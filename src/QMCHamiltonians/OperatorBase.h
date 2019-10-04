@@ -246,12 +246,7 @@ struct OperatorBase : public QMCTraits
    */
   virtual Return_t evaluate(ParticleSet& P) = 0;
   /** Evaluate the contribution of this component of multiple walkers */
-  void mw_evaluate(const std::vector<OperatorBase*>& O_list, const std::vector<ParticleSet*>& P_list)
-  {
-    #pragma omp parallel for
-    for (int iw = 0; iw < O_list.size(); iw++)
-      O_list[iw]->evaluate(*P_list[iw]);
-  }
+  virtual void mw_evaluate(const RefVector<OperatorBase>& O_list, const RefVector<ParticleSet>& P_list);
 
   virtual Return_t rejectedMove(ParticleSet& P) { return 0; }
   /** Evaluate the local energy contribution of this component with Toperators updated if requested
@@ -259,6 +254,15 @@ struct OperatorBase : public QMCTraits
    *@return the value of the Hamiltonian component
    */
   virtual Return_t evaluateWithToperator(ParticleSet& P) { return evaluate(P); }
+
+  /** Evaluate the contribution of this component of multiple walkers */
+  virtual void mw_evaluateWithToperator(const RefVector<OperatorBase>& O_list, const RefVector<ParticleSet>& P_list)
+  {
+    for(int iw = 0; iw < O_list.size(); ++iw)
+    {
+      O_list[iw].get().evaluateWithToperator(P_list[iw]);
+    }
+  }
 
   /** evaluate value and derivatives wrt the optimizables
    *

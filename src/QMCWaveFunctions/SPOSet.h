@@ -32,10 +32,6 @@
 #include "type_traits/CUDATypes.h"
 #endif
 
-#if defined(ENABLE_SMARTPOINTER)
-#include <boost/shared_ptr.hpp>
-#endif
-
 namespace qmcplusplus
 {
 /** base class for Single-particle orbital sets
@@ -62,16 +58,6 @@ public:
   typedef ParticleSet::Walker_t Walker_t;
   typedef std::map<std::string, SPOSet*> SPOPool_t;
 
-  ///index in the builder list of sposets
-  int builder_index;
-  ///true if SPO is optimizable
-  bool Optimizable;
-  ///number of Single-particle orbitals
-  IndexType OrbitalSetSize;
-  /// Optimizable variables
-  opt_variables_type myVars;
-  ///name of the class
-  std::string className;
   /** name of the object
    *
    * Several user classes can own SPOSet and use objectName as counter
@@ -96,7 +82,7 @@ public:
 #endif
 
   /** constructor */
-  SPOSet();
+  SPOSet(bool ion_deriv = false, bool optimizable = false);
 
   /** destructor
    *
@@ -109,6 +95,9 @@ public:
       delete C;
 #endif
   }
+
+  // accessor function to Optimizable
+  inline bool isOptimizable() const { return Optimizable; }
 
   /** return the size of the orbital set
    * Ye: this needs to be replaced by getOrbitalSetSize();
@@ -472,15 +461,21 @@ protected:
   bool putFromXML(xmlNodePtr coeff_ptr);
   bool putFromH5(const std::string& fname, xmlNodePtr coeff_ptr);
 #endif
+
+protected:
   ///true, if the derived class has non-zero ionic derivatives.
-  bool ionDerivs;
+  const bool ionDerivs;
+  ///true if SPO is optimizable
+  const bool Optimizable;
+  ///number of Single-particle orbitals
+  IndexType OrbitalSetSize;
+  /// Optimizable variables
+  opt_variables_type myVars;
+  ///name of the class
+  std::string className;
 };
 
-#if defined(ENABLE_SMARTPOINTER)
-typedef boost::shared_ptr<SPOSet> SPOSetPtr;
-#else
 typedef SPOSet* SPOSetPtr;
-#endif
 
 } // namespace qmcplusplus
 #endif

@@ -36,5 +36,11 @@ EstimatorManagerCrowd::EstimatorManagerCrowd(EstimatorManagerBase& em)
     Collectables = em.Collectables->clone();
 }
 
+void EstimatorManagerCrowd::stopBlock()
+{
+  //didn't we already normalize by the global number of walkers?
+  // the main estimator does it some more inside of here.
+}
+
 
 }

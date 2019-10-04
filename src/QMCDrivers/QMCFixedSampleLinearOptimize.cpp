@@ -1268,7 +1268,7 @@ bool QMCFixedSampleLinearOptimize::one_shift_run()
     optTarget->Params(i) = currentParameters.at(i) + parameterDirections.at(i + 1);
 
   RealType largestChange(0);
-  int max_element;
+  int max_element = 0;
   for (int i = 0; i < numParams; i++)
     if (std::abs(parameterDirections.at(i + 1)) > largestChange)
     {

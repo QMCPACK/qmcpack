@@ -46,6 +46,10 @@ public:
    */
   inline void accumulate(const Walker_t& awalker, RealType wgt) {}
 
+  inline void accumulate(const int global_walkers, RefVector<MCPWalker>& walkers, RealType wgt)
+  {
+    throw std::runtime_error("RMC not supported by Unified Driver interfaces");
+  }
   /*@{*/
   inline void accumulate(const MCWalkerConfiguration& W, WalkerIterator first, WalkerIterator last, RealType wgt)
   {

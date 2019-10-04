@@ -86,7 +86,7 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
   ReportEngine PRE(ClassName, "put(xmlNodePtr)");
   ///save the current node
   xmlNodePtr curRoot = cur;
-  xmlNodePtr BFnode;
+  xmlNodePtr BFnode = nullptr;
   bool success = true, FastMSD = true;
   std::string cname, tname;
   std::map<std::string, SPOSetPtr> spomap;
@@ -476,11 +476,7 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
     {
       //SPOSet[detname]=psi;
       app_log() << "  Create a new SPO set " << sposet << std::endl;
-#if defined(ENABLE_SMARTPOINTER)
-      psi.reset(mySPOSetBuilderFactory->createSPOSet(cur));
-#else
       psi = mySPOSetBuilderFactory->createSPOSet(cur);
-#endif
     }
     //psi->put(cur);
     psi->checkObject();
@@ -589,7 +585,7 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
   targetPsi.setndelay(delay_rank);
 #endif
   slaterdet_0->add(adet, spin_group);
-  if (psi->Optimizable)
+  if (psi->isOptimizable())
     slaterdet_0->Optimizable = true;
 
   app_log() << std::endl;
@@ -610,7 +606,7 @@ bool SlaterDetBuilder::createMSDFast(MultiSlaterDeterminantFast* multiSD, xmlNod
   multiSD->initialize();
   //Check id multideterminants are in HDF5
 
-  xmlNodePtr curTemp = cur, DetListNode;
+  xmlNodePtr curTemp = cur, DetListNode = nullptr;
   curTemp            = curTemp->children;
   OhmmsAttributeSet ciAttrib;
   while (curTemp != NULL) //check the basis set
@@ -986,7 +982,7 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
   ciAttrib.add(optCI, "Optimize");
   ciAttrib.put(cur);
   optimizeCI         = (optCI == "yes");
-  xmlNodePtr curRoot = cur, DetListNode;
+  xmlNodePtr curRoot = cur, DetListNode = nullptr;
   std::string cname, cname0;
   cur = curRoot->children;
   while (cur != NULL) //check the basis set
@@ -1393,7 +1389,7 @@ bool SlaterDetBuilder::readDetListH5(xmlNodePtr cur,
   ciAttrib.add(optCI, "optimize");
   ciAttrib.put(cur);
   optimizeCI         = (optCI == "yes");
-  xmlNodePtr curRoot = cur, DetListNode;
+  xmlNodePtr curRoot = cur, DetListNode = nullptr;
   std::string cname, cname0, multidetH5path;
   cur = curRoot->children;
   while (cur != NULL) //check the basis set

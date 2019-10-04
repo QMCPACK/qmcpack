@@ -18,6 +18,15 @@
                     0 DIAMOND2_SCALARS # VMC
                     )
 
+  QMC_RUN_AND_CHECK(short-diamondC_2x1x1_pp-vmcbatch_sdj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+                    qmc_short
+                    qmc_short_vmcbatch.in.xml
+                    1 16
+                    TRUE
+                    0 DIAMOND2_SCALARS # VMC
+                    )
+
   QMC_RUN_AND_CHECK(short-diamondC_2x1x1_pp-delayed_update-vmc_sdj
                     "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
                     qmc_short
@@ -51,6 +60,15 @@ ENDIF()
                     1 DIAMOND2_DMC_SCALARS # DMC
                     )
 
+  QMC_RUN_AND_CHECK(short-diamondC_2x1x1_pp-dmcbatch_sdj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+                    qmc_short
+                    qmc_short_dmcbatch.in.xml
+                    1 16
+                    TRUE
+                    0 DIAMOND2_DMC_SCALARS # DMC
+                    )
+                  
   LIST(APPEND DIAMOND2_DMC_SCALARS "totenergy" "-21.844975 0.00779")
   QMC_RUN_AND_CHECK(short-diamondC_2x1x1_pp-dmc-reconf_sdj
                     "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
@@ -203,6 +221,16 @@ IF(NOT QMC_CUDA)
    LIST(APPEND DET_DIAMOND2_SCALARS "samples" "9.00000000 0.0")
    LIST(APPEND DET_DIAMOND2_SCALARS "flux" "-5.36609515 0.000001")
   ENDIF()
+
+#  QMC_RUN_AND_CHECK(deterministic-diamondC_2x1x1_pp-vmcbatch_sdj
+#                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+#                    det_qmc_short
+#                    det_qmc_short_vmcbatch.in.xml
+#                    1 1
+#                    TRUE
+#                    0 DET_DIAMOND2_SCALARS # VMC
+#                    )
+
  ENDIF()
 
   QMC_RUN_AND_CHECK(deterministic-diamondC_2x1x1_pp-vmc_sdj
