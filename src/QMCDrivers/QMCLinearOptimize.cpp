@@ -40,7 +40,6 @@
 
 namespace qmcplusplus
 {
-
 QMCLinearOptimize::QMCLinearOptimize(MCWalkerConfiguration& w,
                                      TrialWaveFunction& psi,
                                      QMCHamiltonian& h,
@@ -52,7 +51,6 @@ QMCLinearOptimize::QMCLinearOptimize(MCWalkerConfiguration& w,
       NumParts(1),
       WarmupBlocks(10),
       hamPool(hpool),
-      vmcEngine(0),
       wfNode(NULL),
       optNode(NULL),
       param_tol(1e-4),
@@ -68,12 +66,6 @@ QMCLinearOptimize::QMCLinearOptimize(MCWalkerConfiguration& w,
   //read to use vmc output (just in case)
   m_param.add(param_tol, "alloweddifference", "double");
   //Set parameters for line minimization:
-}
-
-/** Clean up the vector */
-QMCLinearOptimize::~QMCLinearOptimize()
-{
-  delete vmcEngine;
 }
 
 /** Add configuration files for the optimization
@@ -117,7 +109,9 @@ void QMCLinearOptimize::start()
 }
 
 #ifdef HAVE_LMY_ENGINE
-void QMCLinearOptimize::engine_start(cqmc::engine::LMYEngine* EngineObj)
+void QMCLinearOptimize::engine_start(cqmc::engine::LMYEngine* EngineObj,
+                                     DescentEngine& descentEngineObj,
+                                     std::string MinMethod)
 {
   app_log() << "entering engine_start function" << std::endl;
 
@@ -141,7 +135,8 @@ void QMCLinearOptimize::engine_start(cqmc::engine::LMYEngine* EngineObj)
   initialize_timer_.start();
   optTarget->getConfigurations(h5FileRoot);
   optTarget->setRng(vmcEngine->getRng());
-  optTarget->engine_checkConfigurations(EngineObj); // computes derivative ratios and pass into engine
+  optTarget->engine_checkConfigurations(EngineObj, descentEngineObj,
+                                        MinMethod); // computes derivative ratios and pass into engine
   initialize_timer_.stop();
   app_log() << "  Execution time = " << std::setprecision(4) << t1.elapsed() << std::endl;
   app_log() << "  </log>" << std::endl;
@@ -794,10 +789,10 @@ bool QMCLinearOptimize::put(xmlNodePtr q)
   {
 #if defined(QMC_CUDA)
     if (useGPU == "yes")
-      vmcEngine = new VMCcuda(W, Psi, H, psiPool, myComm);
+      vmcEngine = std::make_unique<VMCcuda>(W, Psi, H, psiPool, myComm);
     else
 #endif
-      vmcEngine = new VMC(W, Psi, H, psiPool, myComm);
+      vmcEngine = std::make_unique<VMC>(W, Psi, H, psiPool, myComm);
     vmcEngine->setUpdateMode(vmcMove[0] == 'p');
   }
 

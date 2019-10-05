@@ -525,7 +525,7 @@ void cqmc::engine::ETCompute::print_statistics(std::ostream & fout)
       }
     }
     fout << boost::format("              std dev = %20.12f") % std::sqrt(_variance) << std::endl;
-    fout << boost::format("             variance = %20.12f") % _variance << std::endl;
+    fout << boost::format("             le_variance = %20.12f") % _variance << std::endl;
     fout << std::endl;
   } 
 }
