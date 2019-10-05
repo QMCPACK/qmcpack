@@ -33,10 +33,10 @@ The tools work with the following:
 
 # Tests
 
-The easiest way to run the tests is to use nosetest. For example you can type
+To run the unit tests do
 
 ```
-python3 -m nose -v
+python -m unittest discover -v
 ```
 
 in the top level of the afqmctools directory. The tests should take less than three
