@@ -93,6 +93,8 @@ public:
                const std::string timer_prefix,
                Communicate* comm);
 
+  QMCDriverNew(QMCDriverNew&&) = default;
+  
   virtual ~QMCDriverNew();
 
   ///return current step

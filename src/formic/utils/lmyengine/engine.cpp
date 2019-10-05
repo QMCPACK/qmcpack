@@ -895,6 +895,26 @@ void cqmc::engine::LMYEngine::shift_update(std::vector<double> & new_shift) {
 
 }
 
+
+
+
+//Transfers the vectors from descent to the engine's LMBlocker object during the hybrid method.
+void cqmc::engine::LMYEngine::setHybridBLM_Input(std::vector< std::vector<double>>& from_descent) 
+{
+
+    //Change the LMBlocker object's hybrid variable to true so input vectors will be used later on
+    _lmb.setHybrid(true);
+
+    //Clear to avoid retaining old sets of vectors
+    _lmb.getInputVector().clear();
+    
+    for (std::vector<double> v : from_descent)
+    {
+
+	_lmb.getInputVector().push_back(v);
+    }
+}
+
 /////////////////////////////////////////////////////////////////////////////////////////////
 /// \brief harmonic davidson engine call to calculate energy and target function 
 ///
@@ -1270,6 +1290,7 @@ void cqmc::engine::LMYEngine::get_brlm_update_alg_part_one(const formic::VarDeps
   // block_ups[i][j](p,q) refers to the pth element of the qth update vector for the jth shift for the ith block
   //std::vector<std::vector<formic::Matrix<double> > > block_ups(_nblock);
 
+ 
   // compute the useful update directions on root process
   _lmb.solve_for_block_dirs(_dep_ptr, nkps, shift_i, shift_s, shift_scale, _block_ups, output, _hd_lm_shift);
 

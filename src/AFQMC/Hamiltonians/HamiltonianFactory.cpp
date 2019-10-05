@@ -111,7 +111,7 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
       }
     }
 
-    HamiltonianTypes htype;
+    HamiltonianTypes htype = UNKNOWN;
     if(head) htype = peekHamType(dump);
     {
       int htype_ = int(htype);
