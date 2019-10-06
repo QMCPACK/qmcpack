@@ -244,17 +244,17 @@ void DescentEngine::updateParameters()
 
     for (int i = 0; i < num_params_; i++)
     {
-      ValueType cur_square = std::pow(cur_deriv_set.at(i), 2);
+      ValueType cur_square = std::pow(cur_deriv_set.at(i), static_cast<RealType>(2));
 
       // Need to calculate step size tau for each parameter inside loop
       // In RMSprop, the denominator of the step size depends on a a running average of past squares of the parameter derivative
       if (derivs_squared_.size() < num_params_)
       {
-        cur_square = std::pow(cur_deriv_set.at(i), 2);
+        cur_square = std::pow(cur_deriv_set.at(i), static_cast<RealType>(2));
       }
       else if (derivs_squared_.size() >= num_params_)
       {
-        cur_square = rho * derivs_squared_.at(i) + (static_cast<ValueType>(1.0) - rho) * std::pow(cur_deriv_set.at(i), 2);
+        cur_square = rho * derivs_squared_.at(i) + (static_cast<ValueType>(1.0) - rho) * std::pow(cur_deriv_set.at(i), static_cast<RealType>(2));
       }
 
       denom = std::sqrt(cur_square + epsilon);
@@ -344,7 +344,7 @@ void DescentEngine::updateParameters()
 
       for (int i = 0; i < num_params_; i++)
       {
-        ValueType cur_square = std::pow(cur_deriv_set.at(i), 2);
+        ValueType cur_square = std::pow(cur_deriv_set.at(i), static_cast<RealType>(2));
         ValueType beta1      = .9;
         ValueType beta2      = .99;
         if (descent_num_ == 0)
@@ -355,8 +355,8 @@ void DescentEngine::updateParameters()
         numer = beta1 * numer_records_[i] + (static_cast<ValueType>(1.0) - beta1) * cur_deriv_set[i];
         v     = beta2 * denom_records_[i] + (static_cast<ValueType>(1.0) - beta2) * cur_square;
 
-        cor_numer = numer / (static_cast<ValueType>(1.0) - std::pow(beta1, descent_num_ + 1));
-        cor_v     = v / (static_cast<ValueType>(1.0) - std::pow(beta2, descent_num_ + 1));
+        cor_numer = numer / (static_cast<ValueType>(1.0) - std::pow(beta1, static_cast<RealType>(descent_num_ + 1)));
+        cor_v     = v / (static_cast<ValueType>(1.0) - std::pow(beta2, static_cast<RealType>(descent_num_ + 1)));
 
         denom = std::sqrt(cor_v) + epsilon;
 
@@ -393,7 +393,7 @@ void DescentEngine::updateParameters()
 
       for (int i = 0; i < num_params_; i++)
       {
-        ValueType cur_square = std::pow(cur_deriv_set.at(i), 2);
+        ValueType cur_square = std::pow(cur_deriv_set.at(i), static_cast<RealType>(2));
         ValueType beta1      = .9;
         ValueType beta2      = .99;
         if (descent_num_ == 0)
