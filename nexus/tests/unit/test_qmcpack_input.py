@@ -55,6 +55,7 @@ serial_references = dict()
 
 def generate_serial_references():
     import numpy as np
+    from qmcpack_input import onerdm
 
     # reference for read/write
     ref = {
@@ -379,6 +380,90 @@ def generate_serial_references():
 
     serial_references['VO2_M1_afm.in.xml gen'] = ref
 
+
+    ref = {
+        'simulation/afqmcinfo/naea' : 5,
+        'simulation/afqmcinfo/naeb' : 5,
+        'simulation/afqmcinfo/name' : 'info0',
+        'simulation/afqmcinfo/nmo' : 9,
+        'simulation/execute/blocks' : 1000,
+        'simulation/execute/estimator/block_size' : 2,
+        'simulation/execute/estimator/name' : 'back_propagation',
+        'simulation/execute/estimator/naverages' : 4,
+        'simulation/execute/estimator/nsteps' : 200,
+        'simulation/execute/estimator/onerdm' : onerdm(),
+        'simulation/execute/estimator/ortho' : 1,
+        'simulation/execute/ham' : 'ham0',
+        'simulation/execute/info' : 'info0',
+        'simulation/execute/ncores' : 1,
+        'simulation/execute/nwalkers' : 10,
+        'simulation/execute/prop' : 'prop0',
+        'simulation/execute/steps' : 10,
+        'simulation/execute/timestep' : 0.01,
+        'simulation/execute/wfn' : 'wfn0',
+        'simulation/execute/wset' : 'wset0',
+        'simulation/hamiltonian/filename' : 'afqmc.h5',
+        'simulation/hamiltonian/filetype' : 'hdf5',
+        'simulation/hamiltonian/info' : 'info0',
+        'simulation/hamiltonian/name' : 'ham0',
+        'simulation/method' : 'afqmc',
+        'simulation/project/id' : 'qmc',
+        'simulation/project/series' : 0,
+        'simulation/propagator/hybrid' : 'yes',
+        'simulation/propagator/info' : 'info0',
+        'simulation/propagator/name' : 'prop0',
+        'simulation/random/seed' : 7,
+        'simulation/walkerset/name' : 'wset0',
+        'simulation/walkerset/type' : 'shared',
+        'simulation/walkerset/walker_type' : 'CLOSED',
+        'simulation/wavefunction/cutoff' : 1e-08,
+        'simulation/wavefunction/filename' : 'afqmc.h5',
+        'simulation/wavefunction/filetype' : 'hdf5',
+        'simulation/wavefunction/info' : 'info0',
+        'simulation/wavefunction/name' : 'wfn0',
+        'simulation/wavefunction/type' : 'NOMSD',
+        }
+
+
+    serial_references['CH4_afqmc.in.xml read'] = ref
+
+    ref = ref.copy()
+    serial_references['CH4_afqmc.in.xml write'] = ref
+
+    ref = ref.copy()
+    for k in list(ref.keys()):
+        if 'estimator' in k:
+            del ref[k]
+        #end if
+    #end for
+    ref['simulation/execute/estimators/back_propagation/block_size'] = 2
+    ref['simulation/execute/estimators/back_propagation/name'] = 'back_propagation'
+    ref['simulation/execute/estimators/back_propagation/naverages'] = 4
+    ref['simulation/execute/estimators/back_propagation/nsteps'] = 200
+    ref['simulation/execute/estimators/back_propagation/onerdm'] = onerdm()
+    ref['simulation/execute/estimators/back_propagation/ortho'] = 1
+    ref['simulation/propagator/hybrid'] = True
+    serial_references['CH4_afqmc.in.xml compose'] = ref
+
+    ref = ref.copy()
+    serial_references['CH4_afqmc.in.xml gen est'] = ref
+
+    ref = ref.copy()
+    del ref['simulation/random/seed']
+    del ref['simulation/afqmcinfo/naea']
+    del ref['simulation/afqmcinfo/naeb']
+    del ref['simulation/afqmcinfo/nmo']
+    ref['simulation/hamiltonian/filename'] = 'MISSING.h5'
+    ref['simulation/wavefunction/filename'] = 'MISSING.h5'
+    ref['simulation/execute/blocks'] = 10000
+    ref['simulation/execute/timestep'] = 0.005
+    for k in list(ref.keys()):
+        if 'estimator' in k:
+            del ref[k]
+        #end if
+    #end for
+    serial_references['CH4_afqmc.in.xml gen empty'] = ref
+
 #end def generate_serial_references
 
 
@@ -394,7 +479,21 @@ def check_vs_serial_reference(qi,name):
     sr = get_serial_references()[name]
     assert(len(sr)>0)
     sq = qi.serial()
+    extra = set(sq.keys())-set(sr.keys())
+    for k in extra:
+        if not k.startswith('_metadata'):
+            print(k)
+        #end if
+        assert(k.startswith('_metadata'))
+    #end for
     for k in sorted(sr.keys()):
+        if k not in sq:
+            print k
+        elif not value_eq(sq[k],sr[k]):
+            print(k)
+            print(sr[k])
+            print(sq[k])
+        #end if
         assert(k in sq)
         assert(value_eq(sq[k],sr[k]))
     #end for
@@ -892,6 +991,75 @@ def test_compose():
 
     check_vs_serial_reference(qi_comp,'VO2_M1_afm.in.xml')
 
+
+    qi_afqmc = QmcpackInput(
+        meta(),
+        simulation(
+            method = 'afqmc',
+            project = section(
+                id     = 'qmc',
+                series = 0,
+                ),
+            random = section(
+                seed = 7
+                ),
+            afqmcinfo = section(
+                name = 'info0',
+                nmo  = 9,
+                naea = 5,
+                naeb = 5,
+                ),
+            hamiltonian = section(
+                name     = 'ham0',
+                info     = 'info0',
+                filetype = 'hdf5',
+                filename = 'afqmc.h5',
+                ),
+            wavefunction = section(
+                type     = 'NOMSD',
+                name     = 'wfn0',
+                info     = 'info0',
+                filetype = 'hdf5',
+                filename = 'afqmc.h5',
+                cutoff   = 1e-8,
+                ),
+            walkerset = section(
+                type        = 'shared',
+                name        = 'wset0',
+                walker_type = 'CLOSED',
+                ),
+            propagator = section(
+                name   = 'prop0',
+                info   = 'info0',
+                hybrid = True,
+                ),
+            execute = section(
+                info     = 'info0',
+                ham      = 'ham0',
+                wfn      = 'wfn0',
+                wset     = 'wset0',
+                prop     = 'prop0',
+                blocks   = 1000,
+                timestep = 0.01,
+                steps    = 10,
+                ncores   = 1,
+                nwalkers = 10,
+                estimators = [
+                    section(
+                        name       = 'back_propagation',
+                        naverages  = 4,
+                        block_size = 2,
+                        ortho      = 1,
+                        nsteps     = 200,
+                        onerdm     = section(),
+                        )
+                    ],
+                ),
+            )
+        )
+
+    check_vs_serial_reference(qi_afqmc,'CH4_afqmc.in.xml compose')
+
 #end def test_compose
 
 
@@ -900,6 +1068,7 @@ def test_generate():
     import numpy as np
     from physical_system import generate_physical_system
     from qmcpack_input import generate_qmcpack_input,spindensity
+    from qmcpack_input import back_propagation,onerdm
     
     system = generate_physical_system(
         units    = 'A',
@@ -1027,6 +1196,35 @@ def test_generate():
 
     check_vs_serial_reference(qi,'VO2_M1_afm.in.xml gen')
 
+
+    # test afqmc
+    qi = generate_qmcpack_input(
+        input_type = 'basic_afqmc',
+        )
+    check_vs_serial_reference(qi,'CH4_afqmc.in.xml gen empty')
+
+    qi = generate_qmcpack_input(
+        input_type = 'basic_afqmc',
+        seed       = 7,
+        nmo        = 9,
+        naea       = 5,
+        naeb       = 5,
+        ham_file   = 'afqmc.h5',
+        blocks     = 1000,
+        timestep   = 0.01,
+        estimators = [
+            back_propagation(
+                naverages  = 4,
+                block_size = 2,
+                ortho      = 1,
+                nsteps     = 200,
+                onerdm     = onerdm(),
+                ),
+            ],
+        )
+
+    check_vs_serial_reference(qi,'CH4_afqmc.in.xml gen est')
+
 #end def test_generate
 
 
@@ -1055,6 +1253,8 @@ def test_read():
     # test read for afqmc input file
     qi = QmcpackInput(files['CH4_afqmc.in.xml'])
     assert(qi.is_afqmc_input())
+
+    check_vs_serial_reference(qi,'CH4_afqmc.in.xml read')
 
 #end def test_read
 
@@ -1088,6 +1288,19 @@ def test_write():
 
     check_vs_serial_reference(qi_write,ref_file)
 
+
+    # test read for afqmc input file
+    ref_file   = 'CH4_afqmc.in.xml'
+    write_file = os.path.join(tpath,'write_'+ref_file)
+
+    qi_read = QmcpackInput(files[ref_file])
+
+    qi_read.write(write_file)
+
+    qi_write = QmcpackInput(write_file)
+    assert(qi_write.is_afqmc_input())
+
+    check_vs_serial_reference(qi_write,'CH4_afqmc.in.xml write')
 #end def test_write
 
 

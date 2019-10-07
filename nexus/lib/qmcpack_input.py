@@ -1747,8 +1747,8 @@ class simulation(QIxml):
                   'wavefunction','hamiltonian','init','traces','qmc','loop',
                   'mcwalkerset','cmc']+\
                   ['afqmcinfo','walkerset','propagator','execute'] # afqmc
-    afqmc_order = ['afqmcinfo','hamiltonian','wavefunction','walkerset',
-                   'propagator','execute']
+    afqmc_order = ['project','random','afqmcinfo','hamiltonian',
+                   'wavefunction','walkerset','propagator','execute']
     write_types = obj(random=yesno)
 #end class simulation
 
@@ -2557,14 +2557,14 @@ class walkerset(QIxml):
 #end class walkerset
 
 class propagator(QIxml):
-    attributes  = ['info','name']
+    attributes  = ['name','info']
     parameters  = ['hybrid']
     write_types = obj(hybrid=yesno)
 #end class propagator
 
 class execute(QIxml):
-    attributes = ['ham','info','prop','wfn','wset']
-    parameters = ['blocks','timestep','steps','ncores','nwalkers']
+    attributes = ['info','ham','wfn','wset','prop']
+    parameters = ['ncores','nwalkers','blocks','steps','timestep']
     elements   = ['estimator']
 #end class execute
 
@@ -2899,6 +2899,31 @@ dmc.defaults.set(
     #nonlocalmoves = True,
     #estimators = classcollection(localenergy)
     )
+
+
+
+# afqmc defaults
+afqmcinfo.defaults.set(
+    name = 'info0',
+    )
+walkerset.defaults.set(
+    name = 'wset0',
+    )
+propagator.defaults.set(
+    name = 'prop0',
+    info = 'info0',
+    )
+execute.defaults.set(
+    info = 'info0',
+    ham  = 'ham0',
+    wfn  = 'wfn0',
+    wset = 'wset0',
+    prop = 'prop0',
+    )
+back_propagation.defaults.set(
+    name='back_propagation'
+    )
+
 
 
 
@@ -6142,6 +6167,8 @@ def generate_qmcpack_input(**kwargs):
     selector = kwargs.pop('input_type','basic')
     if selector=='basic':
         inp = generate_basic_input(**kwargs)
+    elif selector=='basic_afqmc':
+        inp = generate_basic_afqmc_input(**kwargs)
     elif selector=='opt_jastrow':
         inp = generate_opt_jastrow_input(**kwargs)
     else:
@@ -6474,6 +6501,176 @@ def generate_basic_input(**kwargs):
     return qi
 #end def generate_basic_input
 
+
+
+gen_basic_afqmc_input_defaults = obj(
+    id          = 'qmc',            
+    series      = 0,   
+    seed        = None,
+    nmo         = None,
+    naea        = None,
+    naeb        = None,
+    ham_file    = None,
+    wfn_file    = None,
+    wfn_type    = 'NOMSD',
+    cutoff      = 1e-8,
+    wset_type   = 'shared',
+    walker_type = 'CLOSED',
+    hybrid      = True,
+    ncores      = 1,
+    nwalkers    = 10,
+    blocks      = 10000,
+    steps       = 10,
+    timestep    = 0.005,
+    estimators  = None,
+    info_name   = 'info0',
+    ham_name    = 'ham0',
+    wfn_name    = 'wfn0',
+    wset_name   = 'wset0',
+    prop_name   = 'prop0',
+    system      = None,
+    )
+
+def generate_basic_afqmc_input(**kwargs):
+    # capture inputs
+    kw = obj(kwargs)
+    # apply general defaults
+    kw.set_optional(**gen_basic_afqmc_input_defaults)
+    valid = set(gen_basic_afqmc_input_defaults.keys())
+    # screen for invalid keywords
+    invalid_kwargs = set(kw.keys())-valid
+    if len(invalid_kwargs)>0:
+        QmcpackInput.class_error('invalid input parameters encountered\ninvalid input parameters: {0}\nvalid options are: {1}'.format(sorted(invalid_kwargs),sorted(valid)),'generate_qmcpack_input')
+    #end if
+
+    metadata = meta()
+
+    sim = simulation(
+        method = 'afqmc',
+        )
+
+    sim.project = project(
+        id     = kw.id,
+        series = kw.series,
+        )
+
+    if kw.seed is not None:
+        sim.random = random(seed=kw.seed)
+    #end if
+
+    info = afqmcinfo(
+        name = kw.info_name,
+        )
+    if kw.nmo is not None:
+        info.nmo = kw.nmo
+    #end if
+    if kw.naea is not None:
+        info.naea = kw.naea
+    #end if
+    if kw.naeb is not None:
+        info.naeb = kw.naeb
+    #end if
+    sim.afqmcinfo = info
+
+    if kw.ham_file is None and kw.wfn_file is not None:
+        kw.ham_file = kw.wfn_file
+    elif kw.ham_file is not None and kw.wfn_file is None:
+        kw.wfn_file = kw.ham_file
+    elif kw.ham_file is None and kw.wfn_file is None:
+        kw.ham_file = 'MISSING.h5'
+        kw.wfn_file = 'MISSING.h5'
+    #end if
+    def get_filetype(filename,loc):
+        if filename.endswith('.h5'):
+            filetype = 'hdf5'
+        else:
+            QmcpackInput.class_error('Type of {} file "{}" is unrecognized.\n The following file extensions are allowed: .h5'.format(loc,filename))
+        #end if
+        return filetype
+    #end def get_filetype
+    
+    ham = hamiltonian(
+        name     = kw.ham_name,
+        info     = info.name,
+        filetype = get_filetype(kw.ham_file,'hamiltonian'),
+        filename = kw.ham_file,
+        )
+    sim.hamiltonian = ham
+
+    wfn = wavefunction(
+        name     = kw.wfn_name,
+        info     = info.name,
+        filetype = get_filetype(kw.wfn_file,'wavefunction'),
+        filename = kw.wfn_file,
+        )
+    if kw.wfn_type is not None:
+        wfn.type = kw.wfn_type
+    #end if
+    if kw.cutoff is not None:
+        wfn.cutoff = kw.cutoff
+    #end if
+    sim.wavefunction = wfn
+
+    wset = walkerset(
+        name        = kw.wset_name,
+        )
+    if kw.wset_type is not None:
+        wset.type = kw.wset_type
+    #end if
+    if kw.walker_type is not None:
+        wset.walker_type = kw.walker_type
+    #end if
+    sim.walkerset = wset
+
+    prop = propagator(
+        name = kw.prop_name,
+        info = info.name,
+        )
+    if kw.hybrid is not None:
+        prop.hybrid = kw.hybrid
+    #end if
+    sim.propagator = prop
+
+    exe = execute(
+        info = info.name,
+        ham  = ham.name,
+        wfn  = wfn.name,
+        wset = wset.name,
+        prop = prop.name,
+        )
+    for k in execute.parameters:
+        if k in kw and kw[k] is not None:
+            exe[k] = kw[k]
+        #end if
+    #end for
+    estimators = []
+    valid_estimators = (back_propagation,)
+    if kw.estimators is not None:
+        for est in kw.estimators:
+            invalid = False
+            if isinstance(est,QIxml):
+                est = est.copy()
+            else:
+                invalid = True
+            #end if
+            invalid |= not isinstance(est,valid_estimators)
+            if invalid:
+                valid_names = [e.__class__.__name__ for e in valid_estimators]
+                QmcpackInput.class_error('invalid estimator input encountered\nexpected one of the following: {}\ninputted type: {}\ninputted value: {}'.format(valid_names,est.__class__.__name__,est))
+            #end if
+            est.incorporate_defaults()
+            estimators.append(est)
+        #end for
+    #end if
+    if len(estimators)>0:
+        exe.estimators = make_collection(estimators)
+    #end if
+    sim.execute = exe
+    
+    qi = QmcpackInput(metadata,sim)
+
+    return qi
+#end def generate_basic_afqmc_input
 
 
 
