@@ -36,7 +36,6 @@
 #endif
 #endif
 #include "QMCWaveFunctions/CompositeSPOSet.h"
-#include "QMCWaveFunctions/OptimizableSPOBuilder.h"
 #include "Utilities/ProgressReportEngine.h"
 #include "Utilities/IteratorUtility.h"
 #include "OhmmsData/AttributeSet.h"
@@ -180,11 +179,6 @@ SPOSetBuilder* SPOSetBuilderFactory::createSPOSetBuilder(xmlNodePtr rootNode)
   {
     app_log() << "Harmonic Oscillator SPO set" << std::endl;
     bb = new SHOSetBuilder(targetPtcl, myComm);
-  }
-  else if (type == "linearopt")
-  {
-    //app_log()<<"Optimizable SPO set"<< std::endl;
-    bb = new OptimizableSPOBuilder(targetPtcl, ptclPool, myComm, rootNode);
   }
 #if OHMMS_DIM == 3
   else if (type.find("spline") < type.size())

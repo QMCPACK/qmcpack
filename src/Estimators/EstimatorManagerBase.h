@@ -27,6 +27,7 @@
 #include "Message/Communicate.h"
 #include "Estimators/ScalarEstimatorBase.h"
 #include "Estimators/EstimatorManagerInterface.h"
+#include "Particle/Walker.h"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsData/HDFAttribIO.h"
 #include <bitset>
@@ -44,6 +45,8 @@ public:
   typedef QMCTraits::FullPrecRealType RealType;
   typedef ScalarEstimatorBase EstimatorType;
   typedef std::vector<RealType> BufferType;
+  using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
+
   //enum { WEIGHT_INDEX=0, BLOCK_CPU_INDEX, ACCEPT_RATIO_INDEX, TOTAL_INDEX};
 
   ///name of the primary estimator name
@@ -210,6 +213,10 @@ public:
 
   void getCurrentStatistics(MCWalkerConfiguration& W, RealType& eavg, RealType& var);
 
+  /** Unified walker variant of this method
+   */
+  void getCurrentStatistics(const int global_walkers, RefVector<MCPWalker>& walkers, RealType& eavg, RealType& var);
+  
   template<class CT>
   void write(CT& anything, bool doappend)
   {

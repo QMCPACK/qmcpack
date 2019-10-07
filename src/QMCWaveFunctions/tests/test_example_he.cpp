@@ -110,17 +110,17 @@ TEST_CASE("ExampleHe", "[wavefunction]")
   int iat = 0;
   grad0   = example_he->evalGrad(*elec, iat);
 
-  REQUIRE(grad0[0] == ComplexApprox(all_grad[0][0]));
-  REQUIRE(grad0[1] == ComplexApprox(all_grad[0][1]));
-  REQUIRE(grad0[2] == ComplexApprox(all_grad[0][2]));
+  REQUIRE(grad0[0] == ValueApprox(all_grad[0][0]));
+  REQUIRE(grad0[1] == ValueApprox(all_grad[0][1]));
+  REQUIRE(grad0[2] == ValueApprox(all_grad[0][2]));
 
   ParticleSet::GradType grad1;
   iat   = 1;
   grad1 = example_he->evalGrad(*elec, iat);
 
-  REQUIRE(grad1[0] == ComplexApprox(all_grad[1][0]));
-  REQUIRE(grad1[1] == ComplexApprox(all_grad[1][1]));
-  REQUIRE(grad1[2] == ComplexApprox(all_grad[1][2]));
+  REQUIRE(grad1[0] == ValueApprox(all_grad[1][0]));
+  REQUIRE(grad1[1] == ValueApprox(all_grad[1][1]));
+  REQUIRE(grad1[2] == ValueApprox(all_grad[1][2]));
 
 
   // Compare ratio and ratioGrad with a zero displacement
@@ -130,28 +130,28 @@ TEST_CASE("ExampleHe", "[wavefunction]")
 
 
   ValueType ratio = example_he->ratio(*elec, iat);
-  REQUIRE(ratio == ComplexApprox(1.0));
+  REQUIRE(std::real(ratio) == Approx(1.0));
 
   ratio = example_he->ratioGrad(*elec, iat, grad0);
 
-  REQUIRE(ratio == ComplexApprox(1.0));
+  REQUIRE(std::real(ratio) == Approx(1.0));
 
-  REQUIRE(grad0[0] == ComplexApprox(all_grad[0][0]));
-  REQUIRE(grad0[1] == ComplexApprox(all_grad[0][1]));
-  REQUIRE(grad0[2] == ComplexApprox(all_grad[0][2]));
+  REQUIRE(grad0[0] == ValueApprox(all_grad[0][0]));
+  REQUIRE(grad0[1] == ValueApprox(all_grad[0][1]));
+  REQUIRE(grad0[2] == ValueApprox(all_grad[0][2]));
 
   iat = 1;
   elec->makeMove(iat, zero_displ);
   ratio = example_he->ratio(*elec, iat);
-  REQUIRE(ratio == ComplexApprox(1.0));
+  REQUIRE(std::real(ratio) == Approx(1.0));
 
 
   ratio = example_he->ratioGrad(*elec, iat, grad1);
 
-  REQUIRE(ratio == ComplexApprox(1.0));
-  REQUIRE(grad1[0] == ComplexApprox(all_grad[1][0]));
-  REQUIRE(grad1[1] == ComplexApprox(all_grad[1][1]));
-  REQUIRE(grad1[2] == ComplexApprox(all_grad[1][2]));
+  REQUIRE(std::real(ratio) == Approx(1.0));
+  REQUIRE(grad1[0] == ValueApprox(all_grad[1][0]));
+  REQUIRE(grad1[1] == ValueApprox(all_grad[1][1]));
+  REQUIRE(grad1[2] == ValueApprox(all_grad[1][2]));
 
   // Compare ratio and ratioGrad with a non-zero displacement
   // Should compare more displacements
@@ -173,15 +173,15 @@ TEST_CASE("ExampleHe", "[wavefunction]")
   elec->makeMove(iat, displ);
 
   ratio = example_he->ratio(*elec, iat);
-  REQUIRE(ratio == ComplexApprox(std::exp(new_logpsi - logpsi)));
+  REQUIRE(std::real(ratio) == Approx(std::exp(new_logpsi - logpsi)));
 
   ratio = example_he->ratioGrad(*elec, iat, grad0);
 
-  REQUIRE(ratio == ComplexApprox(std::exp(new_logpsi - logpsi)));
+  REQUIRE(std::real(ratio) == Approx(std::exp(new_logpsi - logpsi)));
 
-  REQUIRE(grad0[0] == ComplexApprox(new_grad[0][0]));
-  REQUIRE(grad0[1] == ComplexApprox(new_grad[0][1]));
-  REQUIRE(grad0[2] == ComplexApprox(new_grad[0][2]));
+  REQUIRE(grad0[0] == ValueApprox(new_grad[0][0]));
+  REQUIRE(grad0[1] == ValueApprox(new_grad[0][1]));
+  REQUIRE(grad0[2] == ValueApprox(new_grad[0][2]));
 
   // Compare parameter derivatives
 
@@ -216,13 +216,13 @@ TEST_CASE("ExampleHe", "[wavefunction]")
   std::vector<ValueType> dhpsioverpsi(nparam);
   example_he->evaluateDerivatives(*elec, var_param, dlogpsi, dhpsioverpsi);
 
-  REQUIRE(dlogpsi[0] == ComplexApprox(fd_logpsi).epsilon(h));
+  REQUIRE(dlogpsi[0] == ValueApprox(fd_logpsi).epsilon(h));
 
   ValueType eloc   = -0.5 * (Sum(all_lap) + Dot(all_grad, all_grad));
   ValueType eloc_h = -0.5 * (Sum(lap_plus_h) + Dot(grad_plus_h, grad_plus_h));
 
   ValueType fd_eloc = (eloc_h - eloc) / h;
 
-  REQUIRE(dhpsioverpsi[0] == ComplexApprox(fd_eloc).epsilon(h));
+  REQUIRE(dhpsioverpsi[0] == ValueApprox(fd_eloc).epsilon(h));
 }
 } // namespace qmcplusplus

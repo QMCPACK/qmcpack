@@ -22,7 +22,12 @@ namespace qmcplusplus
 /** Driver synchronized step context
  * 
  *  assumed to live inside the drivers scope
- *  TODO: Construct and initialize in thread execution space
+ *  Represents the walker contexts exlusively operated on by
+ *  one concurrent "worker" context from a total population
+ *  owned by a MCPopulation 
+ *
+ *  TODO: Maybe construct and initialize in thread execution space
+ *        @ye doubts this is important if rank is confined to one NUMA
  */
 class Crowd
 {
@@ -49,6 +54,23 @@ public:
 
   void loadWalkers();
 
+  /** clears log_gf and log_gb
+   *
+   *  This is a legacy "call"
+   *  TODO: likely remove log_gf and log_gb from crowd
+   *        seems unlikely these should be persistent state.
+   */
+  void clearResults();
+  
+  /** Clears all walker vectors
+   *
+   *  Unless you are _redistributing_ walkers to crowds don't
+   *  call this. Prefer allowing the crowd lifecycle to roll.
+   *  DO NOT move constructor code into here and call from constructor
+   *  That is legacy "reset" pattern is considered deprecated
+   */
+  void clearWalkers();
+  
   void accumulate(int global_walkers)
   {
     estimator_manager_crowd_.accumulate(global_walkers, mcp_walkers_, walker_elecs_);
@@ -76,33 +98,38 @@ public:
   const EstimatorManagerCrowd& get_estimator_manager_crowd() const { return estimator_manager_crowd_; }
   int size() const { return mcp_walkers_.size(); }
 
-  void clearResults();
-
-  void incReject() { ++n_reject; }
-  void incAccept() { ++n_accept; }
+  void incReject() { ++n_reject_; }
+  void incAccept() { ++n_accept_; }
+  void incNonlocalAccept(int n = 1) { n_nonlocal_accept_ += n; }
   FullPrecRealType get_accept_ratio() const
   {
     return [](FullPrecRealType accept, FullPrecRealType reject) -> FullPrecRealType {
       return accept / (accept + reject);
-    }(n_accept, n_reject);
+    }(n_accept_, n_reject_);
   }
-
+  unsigned long get_nonlocal_accept() { return n_nonlocal_accept_; }
 private:
-  std::vector<std::reference_wrapper<MCPWalker>> mcp_walkers_;
+  void resizeResults(int crowd_size);
+  /** @name Walker Vectors
+   *
+   *  A single index into these ordered lists constitue a complete 
+   *  walker context.
+   * @{
+   */
+  RefVector<MCPWalker> mcp_walkers_;
   RefVector<WFBuffer> mcp_wfbuffers_;
-
-  std::vector<std::reference_wrapper<ParticleSet>> walker_elecs_;
-  std::vector<std::reference_wrapper<TrialWaveFunction>> walker_twfs_;
-  std::vector<std::reference_wrapper<QMCHamiltonian>> walker_hamiltonians_;
-
-
+  RefVector<ParticleSet> walker_elecs_;
+  RefVector<TrialWaveFunction> walker_twfs_;
+  RefVector<QMCHamiltonian> walker_hamiltonians_;
+  /** }@ */
+  
+  EstimatorManagerCrowd estimator_manager_crowd_;
   /** @name Work Buffers
    *  @{
    *  There are many "local" variables in execution of the driver that are convenient to 
    *  place in a stl containers to use <alogorithm> style calls with.
    *  Eventually this will also us to allow some sort of appropriate parallel policy for these calls.
    */
-  EstimatorManagerCrowd estimator_manager_crowd_;
   std::vector<GradType> grads_now_;
   std::vector<GradType> grads_new_;
   std::vector<TrialWaveFunction::PsiValueType> ratios_;
@@ -110,8 +137,16 @@ private:
   std::vector<RealType> log_gb_;
   std::vector<RealType> prob_;
   /** }@ */
-  unsigned long n_reject = 0;
-  unsigned long n_accept = 0;
+
+  /** @name Step State
+   * 
+   *  Should be per walker? 
+   *  @{
+   */
+  unsigned long n_reject_ = 0;
+  unsigned long n_accept_ = 0;
+  unsigned long n_nonlocal_accept_ = 0;
+  /** @} */
 };
 } // namespace qmcplusplus
 #endif

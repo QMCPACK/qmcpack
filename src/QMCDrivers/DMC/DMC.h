@@ -40,6 +40,7 @@ public:
 
 private:
   ///Index to determine what to do when node crossing is detected
+  // does not appear to be used
   IndexType KillNodeCrossing;
   ///Interval between branching
   IndexType BranchInterval;

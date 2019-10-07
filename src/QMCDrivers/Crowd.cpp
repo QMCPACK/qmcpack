@@ -19,6 +19,19 @@ void Crowd::clearResults()
   std::fill(log_gb_.begin(), log_gb_.end(), 1.0);
 }
 
+void Crowd::clearWalkers()
+{
+  mcp_walkers_.clear();
+  mcp_wfbuffers_.clear();
+  walker_elecs_.clear();
+  walker_twfs_.clear();
+  walker_hamiltonians_.clear();
+
+  // Think these should also get cleared here.
+  n_reject_ = 0;
+  n_accept_ = 0;
+  n_nonlocal_accept_ = 0;
+}
 
 void Crowd::reserve(int crowd_size)
 {
@@ -28,6 +41,10 @@ void Crowd::reserve(int crowd_size)
   reserveCS(walker_twfs_);
   reserveCS(walker_hamiltonians_);
 
+  resizeResults(crowd_size);
+}
+
+void Crowd::resizeResults(int crowd_size) {
   auto resizeCS = [crowd_size](auto& avector) { avector.resize(crowd_size); };
   resizeCS(grads_now_);
   resizeCS(grads_new_);
@@ -44,6 +61,8 @@ void Crowd::addWalker(MCPWalker& walker, ParticleSet& elecs, TrialWaveFunction& 
   walker_elecs_.push_back(elecs);
   walker_twfs_.push_back(twf);
   walker_hamiltonians_.push_back(hamiltonian);
+  if(mcp_walkers_.size() != grads_now_.size())
+    resizeResults(mcp_walkers_.size());
 };
 
 void Crowd::loadWalkers()
@@ -61,8 +80,10 @@ void Crowd::loadWalkers()
 
 void Crowd::startBlock(int num_steps)
 {
-  n_accept = 0;
-  n_reject = 0;
+  n_accept_ = 0;
+  n_reject_ = 0;
+  // VMCBatched does no nonlocal moves
+  n_nonlocal_accept_ = 0;
   estimator_manager_crowd_.startBlock(num_steps);
 }
 

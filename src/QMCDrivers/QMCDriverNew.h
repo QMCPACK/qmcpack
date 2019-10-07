@@ -75,8 +75,7 @@ public:
   };
 
   using MCPWalker = MCPopulation::MCPWalker;
-  using Buffer    = MCPWalker::Buffer_t;
-
+  using WFBuffer         = MCPopulation::WFBuffer;
   /** bits to classify QMCDriver
    *
    * - qmc_driver_mode[QMC_UPDATE_MODE]? particle-by-particle: walker-by-walker
@@ -85,24 +84,25 @@ public:
    */
   std::bitset<QMC_MODE_MAX> qmc_driver_mode_;
 
-  /// whether to allow traces
-  bool allow_traces;
-  /// traces xml
-  xmlNodePtr traces_xml;
-
   /// Constructor.
   QMCDriverNew(QMCDriverInput&& input,
-               MCPopulation&& population,
+               MCPopulation& population,
                TrialWaveFunction& psi,
                QMCHamiltonian& h,
                WaveFunctionPool& ppool,
                const std::string timer_prefix,
                Communicate* comm);
 
+  QMCDriverNew(QMCDriverNew&&) = default;
+  
   virtual ~QMCDriverNew();
 
   ///return current step
   inline IndexType current() const { return current_step_; }
+
+    // Do to a work-around currently in QMCDriverNew::QMCDriverNew this should never be true.
+  // I'm leaving this because this is what should happen for vmc.
+  void checkNumCrowdsLTNumThreads();
 
   /** Set the status of the QMCDriver
    * @param aname the root file name
@@ -132,16 +132,19 @@ public:
   void putWalkers(std::vector<xmlNodePtr>& wset);
 
   ///set the BranchEngineType
-  void setBranchEngine(SimpleFixedNodeBranch* be) { branchEngine = be; }
+  void setBranchEngine(SimpleFixedNodeBranch* be) { branch_engine_ = be; }
 
   ///return BranchEngineType*
-  SimpleFixedNodeBranch* getBranchEngine() { return branchEngine; }
+  SimpleFixedNodeBranch* getBranchEngine() { return branch_engine_; }
 
   /** This would be better than the many side effects calc_default_local_walkers has 
    *
    * struct WalkerDistribution
    */
-  virtual IndexType calc_default_local_walkers() = 0;
+
+  /** Virtual to deal with VMC and DMC having different default behavior with walker number.
+   */
+  virtual IndexType calc_default_local_walkers(IndexType walkers_per_rank) = 0;
 
   int addObservable(const std::string& aname);
 
@@ -162,8 +165,6 @@ public:
   unsigned long getDriverMode() { return qmc_driver_mode_.to_ulong(); }
   IndexType get_walkers_per_crowd() const { return walkers_per_crowd_; }
   IndexType get_living_walkers() const { return population_.get_active_walkers(); }
-
-  MCPopulation&& releasePopulation() { return std::move(population_); }
 
   /** @ingroup Legacy interface to be dropped
    *  @{
@@ -217,12 +218,14 @@ protected:
   QMCDriverInput qmcdriver_input_;
 
   std::vector<std::unique_ptr<Crowd>> crowds_;
+  IndexType walkers_per_rank_;
   IndexType walkers_per_crowd_;
 
+  
   std::string h5_file_root_;
 
   ///branch engine
-  SimpleFixedNodeBranch* branchEngine;
+  SimpleFixedNodeBranch* branch_engine_;
   ///drift modifer
   std::unique_ptr<DriftModifierBase> drift_modifier_;
 
@@ -260,7 +263,7 @@ protected:
 
 
   ///the entire (or on node) walker population
-  MCPopulation population_;
+  MCPopulation& population_;
 
   ///trial function
   TrialWaveFunction& Psi;
@@ -346,6 +349,7 @@ public:
 
   int get_num_crowds() { return num_crowds_; }
   void set_num_crowds(int num_crowds, const std::string& reason);
+  void set_walkers_per_rank(int walkers_per_rank, const std::string& reason);
   DriftModifierBase& get_drift_modifier() const { return *drift_modifier_; }
   /** record the state of the block
    * @param block current block

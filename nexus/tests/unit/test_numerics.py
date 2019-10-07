@@ -385,6 +385,8 @@ def test_equilibration_length():
 
     eq = equilibration_length(rs,random=False)
     assert(eq==52)
+
+    eq = equilibration_length(rs,random=True)
 #end def test_equilibration_length
 
 

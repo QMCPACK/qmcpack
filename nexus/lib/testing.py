@@ -244,6 +244,10 @@ class FakeLog:
     def close(self):
         None
     #end def close
+
+    def contents(self):
+        return self.s
+    #end def contents
 #end class FakeLog
 
 
@@ -255,13 +259,13 @@ logging_storage = dict()
 # divert nexus log output
 def divert_nexus_log():
     from generic import generic_settings,object_interface
-    if len(logging_storage)==0:
-        logging_storage['devlog'] = generic_settings.devlog
-        logging_storage['objlog'] = object_interface._logfile 
-        logfile = FakeLog()
-        generic_settings.devlog   = logfile
-        object_interface._logfile = logfile
-    #end if
+    assert(len(logging_storage)==0)
+    logging_storage['devlog'] = generic_settings.devlog
+    logging_storage['objlog'] = object_interface._logfile 
+    logfile = FakeLog()
+    generic_settings.devlog   = logfile
+    object_interface._logfile = logfile
+    return logfile
 #end def divert_nexus_log
 
 
@@ -273,3 +277,20 @@ def restore_nexus_log():
     logging_storage.clear()
     assert(len(logging_storage)==0)
 #end def restore_nexus_log
+
+
+# declare test failure
+#   useful inside try/except blocks
+def failed(msg='Test failed.'):
+    assert False,msg
+#end def failed
+
+
+class TestFailed(Exception):
+    None
+#end class TestFailed
+
+
+global_data = dict(
+    job_ref_table = False,
+    )
