@@ -45,12 +45,12 @@ EGOSet::EGOSet(const std::vector<PosType>& k, const std::vector<RealType>& k2, c
   //assign_degeneracies(d);
 }
 
-ElectronGasComplexOrbitalBuilder::ElectronGasComplexOrbitalBuilder(ParticleSet& els, TrialWaveFunction& psi)
-    : WaveFunctionComponentBuilder(els, psi)
+ElectronGasComplexOrbitalBuilder::ElectronGasComplexOrbitalBuilder(Communicate* comm, ParticleSet& els)
+    : WaveFunctionComponentBuilder(comm, els)
 {}
 
 
-bool ElectronGasComplexOrbitalBuilder::put(xmlNodePtr cur)
+WaveFunctionComponent* ElectronGasComplexOrbitalBuilder::buildComponent(xmlNodePtr cur)
 {
   int nc = 0;
   PosType twist(0.0);
@@ -85,9 +85,7 @@ bool ElectronGasComplexOrbitalBuilder::put(xmlNodePtr cur)
   sdet->add(psid, "d");
   sdet->add(updet, 0);
   sdet->add(downdet, 1);
-  //add Slater determinant to targetPsi
-  targetPsi.addComponent(sdet, "SlaterDet");
-  return true;
+  return sdet;
 }
 
 ElectronGasSPOBuilder::ElectronGasSPOBuilder(ParticleSet& p, Communicate* comm, xmlNodePtr cur)

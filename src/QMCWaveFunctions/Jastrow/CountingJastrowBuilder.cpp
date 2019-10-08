@@ -9,16 +9,16 @@
 // File created by: Brett Van Der Goetz, bvdg@berkeley.edu, University of California at Berkeley
 //////////////////////////////////////////////////////////////////////////////////////
 
+#include <iostream>
 #include "QMCWaveFunctions/Jastrow/CountingJastrowBuilder.h"
-#include "QMCWaveFunctions/Jastrow/CountingJastrow.h"
 #include "Utilities/ProgressReportEngine.h"
 #include "OhmmsData/AttributeSet.h"
-#include <iostream>
+#include "QMCWaveFunctions/Jastrow/CountingJastrow.h"
 
 namespace qmcplusplus
 {
-CountingJastrowBuilder::CountingJastrowBuilder(ParticleSet& target, TrialWaveFunction& psi, ParticleSet& source)
-    : WaveFunctionComponentBuilder(target, psi), SourcePtcl(&source)
+CountingJastrowBuilder::CountingJastrowBuilder(Communicate *comm, ParticleSet& target, ParticleSet& source)
+    : WaveFunctionComponentBuilder(comm, target), SourcePtcl(&source)
 {
   ClassName = "CountingJastrowBuilder";
   NameOpt   = "0";
@@ -27,8 +27,8 @@ CountingJastrowBuilder::CountingJastrowBuilder(ParticleSet& target, TrialWaveFun
   SourceOpt = SourcePtcl->getName();
 }
 
-CountingJastrowBuilder::CountingJastrowBuilder(ParticleSet& target, TrialWaveFunction& psi)
-    : WaveFunctionComponentBuilder(target, psi)
+CountingJastrowBuilder::CountingJastrowBuilder(Communicate *comm, ParticleSet& target)
+    : WaveFunctionComponentBuilder(comm, target)
 {
   ClassName = "CountingJastrowBuilder";
   NameOpt   = "0";
@@ -38,7 +38,7 @@ CountingJastrowBuilder::CountingJastrowBuilder(ParticleSet& target, TrialWaveFun
   SourcePtcl = NULL;
 }
 
-bool CountingJastrowBuilder::createCJ(xmlNodePtr cur)
+WaveFunctionComponent* CountingJastrowBuilder::createCJ(xmlNodePtr cur)
 {
   ReportEngine PRE(ClassName, "createCJ(xmlNodePtr)");
   using RegionType    = CountingGaussianRegion;
@@ -211,12 +211,10 @@ bool CountingJastrowBuilder::createCJ(xmlNodePtr cur)
   CJ->initialize();
   CJ->reportStatus(app_log());
 
-  std::string cjname = "CJ_" + RegionOpt;
-  targetPsi.addComponent(CJ, cjname.c_str());
-  return true;
+  return CJ;
 }
 
-bool CountingJastrowBuilder::put(xmlNodePtr cur)
+WaveFunctionComponent* CountingJastrowBuilder::buildComponent(xmlNodePtr cur)
 {
   OhmmsAttributeSet oAttrib;
   oAttrib.add(RegionOpt, "region");

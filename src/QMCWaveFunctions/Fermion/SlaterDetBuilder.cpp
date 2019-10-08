@@ -51,26 +51,17 @@
 
 namespace qmcplusplus
 {
-SlaterDetBuilder::SlaterDetBuilder(ParticleSet& els, TrialWaveFunction& psi, PtclPoolType& psets)
-    : WaveFunctionComponentBuilder(els, psi),
+SlaterDetBuilder::SlaterDetBuilder(Communicate* comm, ParticleSet& els, TrialWaveFunction& psi, PtclPoolType& psets)
+    : WaveFunctionComponentBuilder(comm, els),
+      targetPsi(psi),
       ptclPool(psets),
-      mySPOSetBuilderFactory(0),
       slaterdet_0(nullptr),
-      multislaterdet_0(0),
-      multislaterdetfast_0(0)
+      multislaterdet_0(nullptr),
+      multislaterdetfast_0(nullptr)
 {
   ClassName   = "SlaterDetBuilder";
   BFTrans     = 0;
   UseBackflow = false;
-}
-
-SlaterDetBuilder::~SlaterDetBuilder()
-{
-  DEBUG_MEMORY("SlaterDetBuilder::~SlaterDetBuilder");
-  if (mySPOSetBuilderFactory)
-  {
-    delete mySPOSetBuilderFactory;
-  }
 }
 
 /** process <determinantset>
@@ -82,20 +73,20 @@ SlaterDetBuilder::~SlaterDetBuilder()
  *   - determinant 0..*
  * - ci
  */
-bool SlaterDetBuilder::put(xmlNodePtr cur)
+WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
 {
   ReportEngine PRE(ClassName, "put(xmlNodePtr)");
   ///save the current node
   xmlNodePtr curRoot = cur;
-  xmlNodePtr BFnode;
+  xmlNodePtr BFnode = nullptr;
   bool success = true, FastMSD = true;
   std::string cname, tname;
   std::map<std::string, SPOSetPtr> spomap;
   bool multiDet = false;
 
-  if (mySPOSetBuilderFactory == 0)
+  if (!mySPOSetBuilderFactory)
   { //always create one, using singleton and just to access the member functions
-    mySPOSetBuilderFactory = new SPOSetBuilderFactory(targetPtcl, targetPsi, ptclPool);
+    mySPOSetBuilderFactory = std::make_unique<SPOSetBuilderFactory>(myComm, targetPtcl, ptclPool);
     mySPOSetBuilderFactory->createSPOSetBuilder(curRoot);
   }
 
@@ -142,7 +133,7 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
       UseBackflow = true;
       // creating later due to problems with ParticleSets
       //BFTrans = new BackflowTransformation(targetPtcl,ptclPool);
-      BFTrans = NULL;
+      BFTrans = nullptr;
       BFnode  = cur;
       // read xml later, in case some ParticleSets are read from hdf5 file.
       //BFTrans->put(cur);
@@ -350,21 +341,19 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
   {
     //fatal
     PRE.error("Failed to create a SlaterDeterminant.", true);
-    return false;
+    return nullptr;
   }
   if (multiDet && (!multislaterdet_0 && !multislaterdetfast_0))
   {
     //fatal
     PRE.error("Failed to create a MultiSlaterDeterminant.", true);
-    return false;
+    return nullptr;
   }
   // change DistanceTables if using backflow
   if (UseBackflow)
   {
-    BackflowBuilder* bfbuilder = new BackflowBuilder(targetPtcl, ptclPool, targetPsi);
-    bfbuilder->put(BFnode);
-    BFTrans = bfbuilder->getBFTrans();
-    delete bfbuilder;
+    BackflowBuilder bfbuilder(targetPtcl, ptclPool);
+    BFTrans = bfbuilder.buildBackflowTransformation(BFnode);
     if (multiDet)
     {
       if (FastMSD)
@@ -392,17 +381,12 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
   if (multiDet)
   {
     if (FastMSD)
-      targetPsi.addComponent(multislaterdetfast_0, "MultiSlaterDeterminantFast");
+      return multislaterdetfast_0;
     else
-      targetPsi.addComponent(multislaterdet_0, "MultiSlaterDeterminant");
+      return multislaterdet_0;
   }
   else
-  {
-    targetPsi.addComponent(slaterdet_0, "SlaterDet");
-  }
-  delete mySPOSetBuilderFactory;
-  mySPOSetBuilderFactory = 0;
-  return success;
+    return slaterdet_0;
 }
 
 
@@ -489,11 +473,7 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
     {
       //SPOSet[detname]=psi;
       app_log() << "  Create a new SPO set " << sposet << std::endl;
-#if defined(ENABLE_SMARTPOINTER)
-      psi.reset(mySPOSetBuilderFactory->createSPOSet(cur));
-#else
       psi = mySPOSetBuilderFactory->createSPOSet(cur);
-#endif
     }
     //psi->put(cur);
     psi->checkObject();
@@ -623,7 +603,7 @@ bool SlaterDetBuilder::createMSDFast(MultiSlaterDeterminantFast* multiSD, xmlNod
   multiSD->initialize();
   //Check id multideterminants are in HDF5
 
-  xmlNodePtr curTemp = cur, DetListNode;
+  xmlNodePtr curTemp = cur, DetListNode = nullptr;
   curTemp            = curTemp->children;
   OhmmsAttributeSet ciAttrib;
   while (curTemp != NULL) //check the basis set
@@ -999,7 +979,7 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
   ciAttrib.add(optCI, "Optimize");
   ciAttrib.put(cur);
   optimizeCI         = (optCI == "yes");
-  xmlNodePtr curRoot = cur, DetListNode;
+  xmlNodePtr curRoot = cur, DetListNode = nullptr;
   std::string cname, cname0;
   cur = curRoot->children;
   while (cur != NULL) //check the basis set
@@ -1406,7 +1386,7 @@ bool SlaterDetBuilder::readDetListH5(xmlNodePtr cur,
   ciAttrib.add(optCI, "optimize");
   ciAttrib.put(cur);
   optimizeCI         = (optCI == "yes");
-  xmlNodePtr curRoot = cur, DetListNode;
+  xmlNodePtr curRoot = cur, DetListNode = nullptr;
   std::string cname, cname0, multidetH5path;
   cur = curRoot->children;
   while (cur != NULL) //check the basis set

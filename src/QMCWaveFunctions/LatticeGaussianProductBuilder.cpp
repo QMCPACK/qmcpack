@@ -18,11 +18,11 @@
 
 namespace qmcplusplus
 {
-LatticeGaussianProductBuilder::LatticeGaussianProductBuilder(ParticleSet& p, TrialWaveFunction& psi, PtclPoolType& psets)
-    : WaveFunctionComponentBuilder(p, psi), ptclPool(psets)
+LatticeGaussianProductBuilder::LatticeGaussianProductBuilder(Communicate* comm, ParticleSet& p, PtclPoolType& psets)
+    : WaveFunctionComponentBuilder(comm, p), ptclPool(psets)
 {}
 
-bool LatticeGaussianProductBuilder::put(xmlNodePtr cur)
+WaveFunctionComponent* LatticeGaussianProductBuilder::buildComponent(xmlNodePtr cur)
 {
   ParticleSet& p = targetPtcl;
   // initialize widths to zero; if no user input, then abort
@@ -67,7 +67,7 @@ bool LatticeGaussianProductBuilder::put(xmlNodePtr cur)
     abort();
   }
   assert(num_nonzero == sourcePtcl->getTotalNum());
-  targetPsi.addComponent(orb, nameOpt);
-  return true;
+  return orb;
 }
+
 } // namespace qmcplusplus
