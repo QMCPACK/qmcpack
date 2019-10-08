@@ -22,15 +22,16 @@
 namespace qmcplusplus
 {
 CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces)
-    : AA(0), d_aa_ID(ref.addTable(ref, DT_SOA_PREFERRED)),
+    : ForceBase(ref, ref),
+      AA(0),
       myGrid(0),
       rVs(0),
       is_active(active),
       FirstTime(true),
       myConst(0.0),
       ComputeForces(computeForces),
-      ForceBase(ref, ref),
-      Ps(ref)
+      Ps(ref),
+      d_aa_ID(ref.addTable(ref, DT_SOA_PREFERRED))
 {
   ReportEngine PRE("CoulombPBCAA", "CoulombPBCAA");
   set_energy_domain(potential);

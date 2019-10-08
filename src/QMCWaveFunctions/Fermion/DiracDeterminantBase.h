@@ -31,17 +31,17 @@ public:
    *@param first index of the first particle
    */
   DiracDeterminantBase(SPOSetPtr const spos, int first = 0)
-      : Phi(spos),
-        FirstIndex(first),
-        LastIndex(first + spos->size()),
-        NumPtcls(spos->size()),
-        NumOrbitals(spos->size()),
-        UpdateTimer(*TimerManager.createTimer("DiracDeterminantBase::update", timer_level_fine)),
+      : UpdateTimer(*TimerManager.createTimer("DiracDeterminantBase::update", timer_level_fine)),
         RatioTimer(*TimerManager.createTimer("DiracDeterminantBase::ratio", timer_level_fine)),
         InverseTimer(*TimerManager.createTimer("DiracDeterminantBase::inverse", timer_level_fine)),
         BufferTimer(*TimerManager.createTimer("DiracDeterminantBase::buffer", timer_level_fine)),
         SPOVTimer(*TimerManager.createTimer("DiracDeterminantBase::spoval", timer_level_fine)),
-        SPOVGLTimer(*TimerManager.createTimer("DiracDeterminantBase::spovgl", timer_level_fine))
+        SPOVGLTimer(*TimerManager.createTimer("DiracDeterminantBase::spovgl", timer_level_fine)),
+        Phi(spos),
+        FirstIndex(first),
+        LastIndex(first + spos->size()),
+        NumOrbitals(spos->size()),
+        NumPtcls(spos->size())
   {
     Optimizable  = Phi->isOptimizable();
     is_fermionic = true;

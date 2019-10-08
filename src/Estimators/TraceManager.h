@@ -1448,7 +1448,7 @@ public:
   Communicate* communicator;
   hdf_archive* hdf_file;
 
-  TraceManager(Communicate* comm = 0) : hdf_file(0), verbose(false)
+  TraceManager(Communicate* comm = 0) : verbose(false), hdf_file(0)
   {
     reset_permissions();
     master_copy    = true;

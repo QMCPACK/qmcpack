@@ -36,10 +36,13 @@ public:
   virtual QMCRunType getRunType() { return QMCRunType::RMC; }
 
 private:
-  ///period for walker dump
-  int myPeriod4WalkerDump;
+  int prestepsVMC;
   ///option to enable/disable drift equation for RMC
   std::string rescaleDrift;
+  ///projection time of reptile
+  RealType beta;
+  ///period for walker dump
+  int myPeriod4WalkerDump;
   ///number of beads on the reptile, beta/tau
   int beads;
   //number of reptiles.
@@ -49,13 +52,10 @@ private:
 
   //Calculating the reptiles from scratch or from a previous VMC/DMC/RMC run.
   bool fromScratch;
-  ///projection time of reptile
-  RealType beta;
   //       vector of indices for the action and transprob
   std::vector<int> Action;
   std::vector<int> TransProb;
 
-  int prestepsVMC;
   ///check the run-time environments
   inline void resetVars()
   {

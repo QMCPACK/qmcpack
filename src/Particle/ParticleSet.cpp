@@ -44,15 +44,15 @@ const TimerNameList_t<ParticleSet::PSTimers> ParticleSet::PSTimerNames = {{PS_ne
                                                                           {PS_update, "ParticleSet::update"}};
 
 ParticleSet::ParticleSet()
-    : IsGrouped(true),
-      ThreadID(0),
-      SK(0),
-      ParentName("0"),
-      quantum_domain(classical),
-      TotalNum(0),
+    : quantum_domain(classical),
+      IsGrouped(true),
       SameMass(true),
+      ThreadID(0),
+      activePtcl(-1),
+      SK(0),
       myTwist(0.0),
-      activePtcl(-1)
+      ParentName("0"),
+      TotalNum(0)
 {
   initPropertyList();
   setup_timers(myTimers, PSTimerNames, timer_level_fine);
@@ -60,13 +60,13 @@ ParticleSet::ParticleSet()
 
 ParticleSet::ParticleSet(const ParticleSet& p)
     : IsGrouped(p.IsGrouped),
+      SameMass(true),
       ThreadID(0),
+      activePtcl(-1),
       mySpecies(p.getSpeciesSet()),
       SK(0),
-      ParentName(p.parentName()),
-      SameMass(true),
       myTwist(0.0),
-      activePtcl(-1)
+      ParentName(p.parentName())
 {
   set_quantum_domain(p.quantum_domain);
   assign(p); //only the base is copied, assumes that other properties are not assignable

@@ -38,7 +38,7 @@
 namespace qmcplusplus
 {
 BackflowBuilder::BackflowBuilder(ParticleSet& els, PtclPoolType& pool)
-    : targetPtcl(els), ptclPool(pool), BFTrans(nullptr), cutOff(-1.0)
+    : cutOff(1.0), targetPtcl(els), ptclPool(pool), BFTrans(0)
 {
 }
 

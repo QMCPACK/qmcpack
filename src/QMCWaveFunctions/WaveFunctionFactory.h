@@ -32,10 +32,10 @@ struct WaveFunctionFactory : public MPIObjectBase
   typedef std::map<std::string, ParticleSet*> PtclPoolType;
   ///target ParticleSet
   ParticleSet* targetPtcl;
-  ///many-body wavefunction object
-  TrialWaveFunction* targetPsi;
   ///reference to the PtclPoolType
   PtclPoolType& ptclPool;
+  ///many-body wavefunction object
+  TrialWaveFunction* targetPsi;
   ///input node for a many-body wavefunction
   xmlNodePtr myNode;
   ///builder tree

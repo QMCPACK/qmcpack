@@ -62,7 +62,7 @@ struct J1OrbitalSoA : public WaveFunctionComponent
   std::vector<FT*> F;
 
   J1OrbitalSoA(const ParticleSet& ions, ParticleSet& els)
-    : Ions(ions), myTableID(els.addTable(ions, DT_SOA))
+    : myTableID(els.addTable(ions, DT_SOA)), Ions(ions)
   {
     initialize(els);
     ClassName = "J1OrbitalSoA";
