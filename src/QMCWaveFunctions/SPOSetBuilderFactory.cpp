@@ -35,6 +35,7 @@
 #include "QMCWaveFunctions/EinsplineSetBuilder.h"
 #endif
 #endif
+#include "QMCWaveFunctions/RotationHelper.h"
 #include "QMCWaveFunctions/CompositeSPOSet.h"
 #include "Utilities/ProgressReportEngine.h"
 #include "Utilities/IteratorUtility.h"
@@ -246,10 +247,12 @@ SPOSet* SPOSetBuilderFactory::createSPOSet(xmlNodePtr cur)
   std::string bname("");
   std::string sname("");
   std::string type("");
+  std::string rotation("no");
   OhmmsAttributeSet aAttrib;
   aAttrib.add(bname, "basisset");
   aAttrib.add(sname, "name");
   aAttrib.add(type, "type");
+  aAttrib.add(rotation, "optimize");
   //aAttrib.put(rcur);
   aAttrib.put(cur);
 
@@ -279,7 +282,12 @@ SPOSet* SPOSetBuilderFactory::createSPOSet(xmlNodePtr cur)
   if (bb)
   {
     app_log() << "  Building SPOSet '" << sname << "' with '" << bname << "' basis set." << std::endl;
-    return bb->createSPOSet(cur);
+    SPOSet* spo;
+    spo = bb->createSPOSet(cur);
+    spo->objectName = sname;
+    if (rotation == "yes")
+      spo = new RotationHelper(spo);
+    return spo;
   }
   else
   {

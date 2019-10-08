@@ -22,7 +22,6 @@
 #include "Utilities/ProgressReportEngine.h"
 #include "OhmmsData/AttributeSet.h"
 
-#include "QMCWaveFunctions/Fermion/RotationHelper.h"
 #include "QMCWaveFunctions/Fermion/MultiSlaterDeterminant.h"
 #include "QMCWaveFunctions/Fermion/MultiSlaterDeterminantFast.h"
 #if !defined(QMC_COMPLEX) && !defined(ENABLE_SOA)
@@ -229,17 +228,7 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
       // Copy any entries in sposetmap into slaterdet_0
       std::map<std::string, SPOSetPtr>::iterator iter;
       for (iter = spomap.begin(); iter != spomap.end(); iter++)
-      {
-        // This line is added here so that the spo get its object name before a RotationHelper object is instantiated
-        // this is necessary because the constructor of rotationhelper will ask to build the variables and uses
-        // spo->objectname inorder to name the variables.
-        iter->second->objectName = iter->first;
-
-        RotationHelper* rot_helper;
-        rot_helper = new RotationHelper(iter->second);
-        slaterdet_0->add(rot_helper, iter->first);
-
-      }
+        slaterdet_0->add(iter->second, iter->first);
       size_t spin_group = 0;
       xmlNodePtr tcur   = cur->children;
       while (tcur != NULL)
@@ -301,15 +290,11 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
         app_log() << "Using Bryan's algorithm for MultiSlaterDeterminant expansion. \n";
         MultiDiracDeterminant* up_det = 0;
         MultiDiracDeterminant* dn_det = 0;
-        RotationHelper *rot_helper_up_det, *rot_helper_dn_det;
         app_log() << "Creating base determinant (up) for MSD expansion. \n";
-        rot_helper_up_det     = new RotationHelper((SPOSetPtr)spomap.find(spo_alpha)->second);
-        up_det                = new MultiDiracDeterminant(rot_helper_up_det, 0);
+        up_det = new MultiDiracDeterminant((SPOSetPtr)spomap.find(spo_alpha)->second, 0);
         app_log() << "Creating base determinant (down) for MSD expansion. \n";
-        rot_helper_dn_det    = new RotationHelper((SPOSetPtr)spomap.find(spo_beta)->second);
-        dn_det               = new MultiDiracDeterminant(rot_helper_dn_det, 1);
+        dn_det               = new MultiDiracDeterminant((SPOSetPtr)spomap.find(spo_beta)->second, 1);
         multislaterdetfast_0 = new MultiSlaterDeterminantFast(targetPtcl, up_det, dn_det);
-
         success              = createMSDFast(multislaterdetfast_0, cur);
       }
       else

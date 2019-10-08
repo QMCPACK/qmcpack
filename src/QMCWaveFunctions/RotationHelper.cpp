@@ -1,4 +1,4 @@
-#include "QMCWaveFunctions/Fermion/RotationHelper.h"
+#include "QMCWaveFunctions/RotationHelper.h"
 #include <Numerics/MatrixOperators.h>
 #include "Numerics/OhmmsBlas.h"
 
@@ -12,6 +12,7 @@ RotationHelper::RotationHelper(SPOSet* spos)
       params_supplied(false),
       IsCloned(false)
 {
+  className = "RotationHelper";
   OrbitalSetSize = Phi->getOrbitalSetSize();
   spos->returnMemberVariables(C_original, C_sposet, params_supplied, params);
 }
