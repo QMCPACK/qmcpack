@@ -157,7 +157,7 @@ class EstimatorHandler: public AFQMCInfo
       //out.open(filename.c_str(),std::ios_base::app | std::ios_base::out);
       std::string filename = project_title+".scalar.dat";
       if(hdf_output) {
-        hdf_file = project_title+".scalar.h5";
+        hdf_file = project_title+".stat.h5";
         if(!dump.create(hdf_file)) {
           app_log()<<"Problems opening estimator hdf5 output file: " << hdf_file <<std::endl;
           APP_ABORT("Problems opening estimator hdf5 output file.\n");
