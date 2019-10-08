@@ -63,41 +63,13 @@ QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(MCWalkerConfiguration
       bigChange(50),
       exp0(-16),
       stepsize(0.25),
-      MinMethod("OneShiftOnly"),
-      previous_optimizer_type_(OptimizerType::NONE),
-      current_optimizer_type_(OptimizerType::NONE),
       GEVtype("mixed"),
       StabilizerMethod("best"),
       GEVSplit("no"),
-<<<<<<< HEAD
-      stepsize(0.25),
-      targetExcitedStr("no"),
-      targetExcited(false),
-      block_lmStr("no"),
-      block_lm(false),
-||||||| merged common ancestors
-      stepsize(0.25),
-      doAdaptiveThreeShift(false),
-      targetExcitedStr("no"),
-      targetExcited(false),
-      block_lmStr("no"),
-      block_lm(false),
-=======
-      w_beta(0.0),
-      doAdaptiveThreeShift(false),
-      doOneShiftOnly(false),
->>>>>>> apparently halfway done with -Wreorder
       bestShift_i(-1.0),
       bestShift_s(-1.0),
       shift_i_input(0.01),
       shift_s_input(1.00),
-<<<<<<< HEAD
-      shift_s_base(4.0),
-||||||| merged common ancestors
-      doOneShiftOnly(false),
-      shift_s_base(4.0),
-=======
->>>>>>> apparently halfway done with -Wreorder
       accept_history(3),
       shift_s_base(4.0),
       num_shifts(3),
@@ -116,7 +88,10 @@ QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(MCWalkerConfiguration
       omega_shift(0.0),
       block_first(true),
       block_second(false),
-      block_third(false)
+      block_third(false),
+      MinMethod("OneShiftOnly"),
+      previous_optimizer_type_(OptimizerType::NONE),
+      current_optimizer_type_(OptimizerType::NONE)
 
 {
   IsQMCDriver = false;

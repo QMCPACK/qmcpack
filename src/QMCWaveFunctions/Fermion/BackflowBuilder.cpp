@@ -37,8 +37,8 @@
 
 namespace qmcplusplus
 {
-BackflowBuilder::BackflowBuilder(ParticleSet& els, PtclPoolType& pool, TrialWaveFunction& psi)
-    : cutOff(-1.0), ptclPool(pool), BFTrans(0)
+BackflowBuilder::BackflowBuilder(ParticleSet& els, PtclPoolType& pool)
+    : cutOff(1.0), targetPtcl(els), ptclPool(pool), BFTrans(0)
 {
 }
 

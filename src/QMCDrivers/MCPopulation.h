@@ -80,6 +80,7 @@ private:
   // This should perhaps just be aquired from comm but currently MCPopulation
   // is innocent of comm, Every object needing a copy is suboptimal.
   int rank_;
+
 public:
   MCPopulation() : trial_wf_(nullptr), elec_particle_set_(nullptr), hamiltonian_(nullptr) {}
   /** Temporary constructor to deal with MCWalkerConfiguration be the only source of some information
@@ -90,19 +91,22 @@ public:
                ParticleSet* elecs,
                TrialWaveFunction* trial_wf,
                QMCHamiltonian* hamiltonian_,
-              int this_rank=0);
+               int this_rank = 0);
   //MCPopulation(int num_ranks, int num_particles) : num_ranks_(num_ranks), num_particles_(num_particles) {}
-  MCPopulation(int num_ranks, ParticleSet* elecs, TrialWaveFunction* trial_wf, QMCHamiltonian* hamiltonian, int this_rank=0)
+  MCPopulation(int num_ranks,
+               ParticleSet* elecs,
+               TrialWaveFunction* trial_wf,
+               QMCHamiltonian* hamiltonian,
+               int this_rank = 0)
       : num_ranks_(num_ranks),
         num_particles_(elecs->R.size()),
         trial_wf_(trial_wf),
         elec_particle_set_(elecs),
         hamiltonian_(hamiltonian),
-        num_particles_(elecs->R.size()),
         rank_(this_rank)
   {}
 
-  MCPopulation(MCPopulation&) = default;
+  MCPopulation(MCPopulation&)  = default;
   MCPopulation(MCPopulation&&) = default;
   MCPopulation& operator=(MCPopulation&&) = default;
 
