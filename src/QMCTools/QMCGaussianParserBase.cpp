@@ -28,6 +28,7 @@
 #include "QMCApp/InitMolecularSystem.h"
 #include <sstream>
 #include <bitset>
+#include <iomanip>
 
 
 //std::vector<std::string> QMCGaussianParserBase::IonName;
@@ -1779,7 +1780,7 @@ void QMCGaussianParserBase::dumpPBC(const std::string& psi_tag, const std::strin
       xmlNewProp(detPtr, (const xmlChar*)"transform", (const xmlChar*)"yes");
 
       std::stringstream ss;
-      ss << STwist_Coord[0] << "  " <<  STwist_Coord[1] << "  " <<  STwist_Coord[2];
+      ss << std::setprecision(10)<<STwist_Coord[0] << "  " <<std::setprecision(10)<<  STwist_Coord[1] << "  " <<std::setprecision(10)<<  STwist_Coord[2];
       xmlNewProp(detPtr, (const xmlChar*)"twist", (const xmlChar*)(ss.str()).c_str());
 
       if (DoCusp == true)

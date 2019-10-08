@@ -29,11 +29,14 @@ struct SoaAtomicBasisSet
   typedef ROT RadialOrbital_t;
   using RealType = typename ROT::RealType;
   using GridType = typename ROT::GridType;
+  using ValueType = typename QMCTraits::ValueType;
 
   ///size of the basis set
   int BasisSetSize;
   ///Number of Cell images for the evaluation of the orbital with PBC. If No PBC, should be 0;
   TinyVector<int, 3> PBCImages;
+  ///Coordinates of SuperTwist
+  TinyVector <double,3> SuperTwist; 
   ///Phase Factor array
   std::vector<QMCTraits::ValueType> periodic_image_phase_factors; 
   ///maximum radius of this center
@@ -93,8 +96,8 @@ struct SoaAtomicBasisSet
     return BasisSetSize;
   }
 
-  /// Set the number of periodic image for the evaluation of the orbitals and the phase factor. In the case of Non-PBC, PBCImages=(1,1,1) and the PhaseFactor=1.
-  void setPBCParams(const TinyVector<int, 3>& pbc_images, const std::vector<QMCTraits::ValueType>& PeriodicImagePhaseFactors) { PBCImages = pbc_images; periodic_image_phase_factors=PeriodicImagePhaseFactors;} 
+  /// Set the number of periodic image for the evaluation of the orbitals and the phase factor. In the case of Non-PBC, PBCImages=(1,1,1), SuperTwist(0,0,0) and the PhaseFactor=1.
+  void setPBCParams(const TinyVector<int, 3>& pbc_images, const TinyVector<double, 3> supertwist, const std::vector<QMCTraits::ValueType>& PeriodicImagePhaseFactors) { PBCImages = pbc_images; periodic_image_phase_factors=PeriodicImagePhaseFactors; SuperTwist=supertwist;} 
 
 
   /** implement a BasisSetBase virtual function
@@ -135,7 +138,7 @@ struct SoaAtomicBasisSet
 
 
   template<typename LAT, typename T, typename PosType, typename VGL>
-  inline void evaluateVGL(const LAT& lattice, const T r, const PosType& dr, const size_t offset, VGL& vgl)
+  inline void evaluateVGL(const LAT& lattice, const T r, const PosType& dr, const size_t offset, VGL& vgl,std::vector <double> gendisp)
   {
     int TransX, TransY, TransZ;
 
@@ -172,7 +175,7 @@ struct SoaAtomicBasisSet
       dpsi_z[ib] = 0;
       d2psi[ib]  = 0;
     }
-
+    int iter=-1;
     for (int i = 0; i <= PBCImages[0]; i++) //loop Translation over X
     {
       //Allows to increment cells from 0,1,-1,2,-2,3,-3 etc...
@@ -185,12 +188,16 @@ struct SoaAtomicBasisSet
         {
           //Allows to increment cells from 0,1,-1,2,-2,3,-3 etc...
           TransZ    = ((k % 2) * 2 - 1) * ((k + 1) / 2);
-          dr_new[0] = dr[0] + TransX * lattice.R(0, 0) + TransY * lattice.R(1, 0) + TransZ * lattice.R(2, 0);
-          dr_new[1] = dr[1] + TransX * lattice.R(0, 1) + TransY * lattice.R(1, 1) + TransZ * lattice.R(2, 1);
-          dr_new[2] = dr[2] + TransX * lattice.R(0, 2) + TransY * lattice.R(1, 2) + TransZ * lattice.R(2, 2);
+//          dr_new[0] = dr[0] + TransX * lattice.R(0, 0) + TransY * lattice.R(1, 0) + TransZ * lattice.R(2, 0);
+//          dr_new[1] = dr[1] + TransX * lattice.R(0, 1) + TransY * lattice.R(1, 1) + TransZ * lattice.R(2, 1);
+//          dr_new[2] = dr[2] + TransX * lattice.R(0, 2) + TransY * lattice.R(1, 2) + TransZ * lattice.R(2, 2);
+
+          dr_new[0] = gendisp[0] + (TransX * lattice.R(0, 0) + TransY * lattice.R(1, 0) + TransZ * lattice.R(2, 0));
+          dr_new[1] = gendisp[1] + (TransX * lattice.R(0, 1) + TransY * lattice.R(1, 1) + TransZ * lattice.R(2, 1));
+          dr_new[2] = gendisp[2] + (TransX * lattice.R(0, 2) + TransY * lattice.R(1, 2) + TransZ * lattice.R(2, 2));
           r_new     = std::sqrt(dot(dr_new, dr_new));
 
-          //const size_t ib_max=NL.size();
+          iter++;
           if (r_new >= Rmax)
             continue;
 
@@ -216,12 +223,12 @@ struct SoaAtomicBasisSet
             const T ang_z     = ylm_z[lm];
             const T vr        = phi[nl];
 
-            psi[ib] += ang * vr;
-            dpsi_x[ib] += (ang * gr_x + vr * ang_x);
-            dpsi_y[ib] += (ang * gr_y + vr * ang_y);
-            dpsi_z[ib] += (ang * gr_z + vr * ang_z);
+            psi[ib] += ang * vr * periodic_image_phase_factors[iter];
+            dpsi_x[ib] += (ang * gr_x + vr * ang_x) * periodic_image_phase_factors[iter];
+            dpsi_y[ib] += (ang * gr_y + vr * ang_y) * periodic_image_phase_factors[iter];
+            dpsi_z[ib] += (ang * gr_z + vr * ang_z) * periodic_image_phase_factors[iter];
             d2psi[ib] += (ang * (ctwo * drnloverr + d2phi[nl]) + ctwo * (gr_x * ang_x + gr_y * ang_y + gr_z * ang_z) +
-                vr * ylm_l[lm]);
+                vr * ylm_l[lm]) * periodic_image_phase_factors[iter];
           }
         }
       }
@@ -588,7 +595,7 @@ struct SoaAtomicBasisSet
 
 
   template<typename LAT, typename T, typename PosType, typename VT>
-  inline void evaluateV(const LAT& lattice, const T r, const PosType& dr, VT* restrict psi)
+  inline void evaluateV(const LAT& lattice, const T r, const PosType& dr, VT* restrict psi,std::vector<double> gendisp)
   {
     int TransX, TransY, TransZ;
 
@@ -599,6 +606,7 @@ struct SoaAtomicBasisSet
     //Phase_idx needs to be initialized at -1 as it has to be incremented first to comply with the if statement (r_new >=Rmax) 
     for (size_t ib = 0; ib < BasisSetSize; ++ib)
       psi[ib] = 0;
+    int iter=-1;
     for (int i = 0; i <= PBCImages[0]; i++) //loop Translation over X
     {
       //Allows to increment cells from 0,1,-1,2,-2,3,-3 etc...
@@ -611,18 +619,22 @@ struct SoaAtomicBasisSet
         {
           //Allows to increment cells from 0,1,-1,2,-2,3,-3 etc...
           TransZ    = ((k % 2) * 2 - 1) * ((k + 1) / 2);
-          dr_new[0] = dr[0] + TransX * lattice.R(0, 0) + TransY * lattice.R(1, 0) + TransZ * lattice.R(2, 0);
-          dr_new[1] = dr[1] + TransX * lattice.R(0, 1) + TransY * lattice.R(1, 1) + TransZ * lattice.R(2, 1);
-          dr_new[2] = dr[2] + TransX * lattice.R(0, 2) + TransY * lattice.R(1, 2) + TransZ * lattice.R(2, 2);
+         // dr_new[0] = dr[0] + TransX * lattice.R(0, 0) + TransY * lattice.R(1, 0) + TransZ * lattice.R(2, 0);
+         // dr_new[1] = dr[1] + TransX * lattice.R(0, 1) + TransY * lattice.R(1, 1) + TransZ * lattice.R(2, 1);
+         // dr_new[2] = dr[2] + TransX * lattice.R(0, 2) + TransY * lattice.R(1, 2) + TransZ * lattice.R(2, 2);
+          dr_new[0] = gendisp[0] + (TransX * lattice.R(0, 0) + TransY * lattice.R(1, 0) + TransZ * lattice.R(2, 0));
+          dr_new[1] = gendisp[1] + (TransX * lattice.R(0, 1) + TransY * lattice.R(1, 1) + TransZ * lattice.R(2, 1));
+          dr_new[2] = gendisp[2] + (TransX * lattice.R(0, 2) + TransY * lattice.R(1, 2) + TransZ * lattice.R(2, 2));
 
           r_new = std::sqrt(dot(dr_new, dr_new));
+          iter++;
           if (r_new >= Rmax)
             continue;
 
           Ylm.evaluateV(-dr_new[0], -dr_new[1], -dr_new[2], ylm_v);
           MultiRnl->evaluate(r_new, phi_r);
           for (size_t ib = 0; ib < BasisSetSize; ++ib)
-            psi[ib] += ylm_v[LM[ib]] * phi_r[NL[ib]];
+            psi[ib] += ylm_v[LM[ib]] * phi_r[NL[ib]] * periodic_image_phase_factors[iter];
 
         }
       }
