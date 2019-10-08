@@ -56,7 +56,9 @@ void DMCBatched::resetUpdateEngines()
   ReportEngine PRE("DMC", "resetUpdateEngines");
   Timer init_timer;
   // Here DMC loads "Ensemble of cloned MCWalkerConfigurations"
+  int nw_multi = branch_engine_->initWalkerController(population_,dmcdriver_input_.get_reconfiguration(), false);
   RefVector<MCPWalker> walkers(convertUPtrToRefVector(population_.get_walkers()));
+
   branch_engine_->checkParameters(population_.get_num_global_walkers(), walkers);
 
   std::ostringstream o;
@@ -159,7 +161,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
       std::transform(delta_r_start, delta_r_end, rr.begin(),
                      [tauovermass](auto& delta_r) { return tauovermass * dot(delta_r, delta_r); });
 
-      // in DMC this was done here, changed to match VMCBatched pending factoring into up
+      // in DMC this was done here, changed to match VMCBatched pending factoring to common source
       // if (rr > m_r2max)
       // {
       //   ++nRejectTemp;
@@ -431,6 +433,7 @@ void DMCBatched::runDMCStep(int crowd_id,
 
 bool DMCBatched::run()
 {
+  resetUpdateEngines();
   IndexType num_blocks = qmcdriver_input_.get_max_blocks();
 
   estimator_manager_->setCollectionMode(true);
@@ -469,7 +472,32 @@ bool DMCBatched::run()
       ScopedTimer local_timer(&(timers_.run_steps_timer));
       dmc_state.step = step;
       crowd_task(runDMCStep, dmc_state, timers_, std::ref(step_contexts_), std::ref(crowds_));
+      
+      branch_engine_->branch(step, crowds_, population_);
+      for( auto& crowd_ptr : crowds_)
+        crowd_ptr->clearWalkers();
+      population_.distributeWalkers(crowds_.begin(), crowds_.end(), walkers_per_crowd_);
     }
+
+    RefVector<ScalarEstimatorBase> all_scalar_estimators;
+    FullPrecRealType total_block_weight = 0.0;
+    FullPrecRealType total_accept_ratio = 0.0;
+    // Collect all the ScalarEstimatorsFrom EMCrowds
+    for (const UPtr<Crowd>& crowd : crowds_)
+    {
+      auto crowd_sc_est = crowd->get_estimator_manager_crowd().get_scalar_estimators();
+      all_scalar_estimators.insert(all_scalar_estimators.end(), std::make_move_iterator(crowd_sc_est.begin()),
+                                   std::make_move_iterator(crowd_sc_est.end()));
+      total_block_weight += crowd->get_estimator_manager_crowd().get_block_weight();
+      total_accept_ratio += crowd->get_accept_ratio();
+    }
+    // Should this be adjusted if crowds have different
+    total_accept_ratio /= crowds_.size();
+    estimator_manager_->collectScalarEstimators(all_scalar_estimators, population_.get_num_local_walkers(),
+                                                total_block_weight);
+    // TODO: should be accept rate for block
+    estimator_manager_->stopBlockNew(total_accept_ratio);
+
   }
   return false;
 }

@@ -77,7 +77,7 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
   ReportEngine PRE(ClassName, "put(xmlNodePtr)");
   ///save the current node
   xmlNodePtr curRoot = cur;
-  xmlNodePtr BFnode;
+  xmlNodePtr BFnode = nullptr;
   bool success = true, FastMSD = true;
   std::string cname, tname;
   std::map<std::string, SPOSetPtr> spomap;
@@ -590,7 +590,7 @@ bool SlaterDetBuilder::createMSDFast(MultiSlaterDeterminantFast* multiSD, xmlNod
   multiSD->initialize();
   //Check id multideterminants are in HDF5
 
-  xmlNodePtr curTemp = cur, DetListNode;
+  xmlNodePtr curTemp = cur, DetListNode = nullptr;
   curTemp            = curTemp->children;
   OhmmsAttributeSet ciAttrib;
   while (curTemp != NULL) //check the basis set
@@ -966,7 +966,7 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
   ciAttrib.add(optCI, "Optimize");
   ciAttrib.put(cur);
   optimizeCI         = (optCI == "yes");
-  xmlNodePtr curRoot = cur, DetListNode;
+  xmlNodePtr curRoot = cur, DetListNode = nullptr;
   std::string cname, cname0;
   cur = curRoot->children;
   while (cur != NULL) //check the basis set
@@ -1373,7 +1373,7 @@ bool SlaterDetBuilder::readDetListH5(xmlNodePtr cur,
   ciAttrib.add(optCI, "optimize");
   ciAttrib.put(cur);
   optimizeCI         = (optCI == "yes");
-  xmlNodePtr curRoot = cur, DetListNode;
+  xmlNodePtr curRoot = cur, DetListNode = nullptr;
   std::string cname, cname0, multidetH5path;
   cur = curRoot->children;
   while (cur != NULL) //check the basis set

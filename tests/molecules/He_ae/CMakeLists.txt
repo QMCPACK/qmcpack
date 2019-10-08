@@ -2,6 +2,8 @@
 
 IF (MIXED_PRECISION OR (QMC_COMPLEX AND NOT ENABLE_SOA))
   MESSAGE_VERBOSE("Skipping optimizer deterministic He tests in mixed precision (QMC_MIXED_PRECISION=1) or complex with aos (QMC_COMPLEX=1 and ENABLE_SOA=0)")
+ELSEIF (QMC_CUDA)
+  MESSAGE_VERBOSE("Skipping optimizer deterministic He tests because CUDA is not supported (QMC_CUDA=1)")
 ELSE()
   SIMPLE_RUN_AND_CHECK(
     deterministic-He_ae-opt

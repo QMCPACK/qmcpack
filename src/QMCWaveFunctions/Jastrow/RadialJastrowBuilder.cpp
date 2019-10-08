@@ -429,7 +429,7 @@ WaveFunctionComponent* RadialJastrowBuilder::createJ1<RPAFunctor>(xmlNodePtr cur
   params.put(cur);
   bool Opt(true);
 
-  HandlerType* myHandler;
+  HandlerType* myHandler = nullptr;
   if (Rs < 0)
   {
     Rs = std::pow(3.0 / 4.0 / M_PI * targetPtcl.Lattice.Volume / static_cast<RealType>(targetPtcl.getTotalNum()),

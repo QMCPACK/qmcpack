@@ -75,7 +75,6 @@ WaveFunctionComponent* ElectronGasOrbitalBuilder::buildComponent(xmlNodePtr cur)
   }
   typedef SlaterDet SlaterDeterminant_t;
   HEGGrid<RealType, OHMMS_DIM> egGrid(targetPtcl.Lattice);
-  HEGGrid<RealType, OHMMS_DIM> egGrid2(targetPtcl.Lattice);
   int nat = targetPtcl.getTotalNum();
   if (nc == 0)
     nc = nc2 = egGrid.getShellIndex(nat / 2);
@@ -97,31 +96,23 @@ WaveFunctionComponent* ElectronGasOrbitalBuilder::buildComponent(xmlNodePtr cur)
     APP_ABORT("ElectronGasOrbitalBuilder::put");
     return nullptr;
   }
+
+  //create a E(lectron)G(as)O(rbital)Set
   int nkpts  = (nup - 1) / 2;
-  int nkpts2 = (ndn - 1) / 2;
-  RealEGOSet* psiu;
-  RealEGOSet* psid;
-  if (nup == ndn)
+  egGrid.createGrid(nc, nkpts);
+  RealEGOSet* psiu = new RealEGOSet(egGrid.kpt, egGrid.mk2);
+  RealEGOSet* psid = nullptr;
+  if (ndn > 0)
   {
-    //create a E(lectron)G(as)O(rbital)Set
-    egGrid.createGrid(nc, nkpts);
-    psiu = new RealEGOSet(egGrid.kpt, egGrid.mk2);
+    if (nup != ndn)
+    {
+      int nkpts2 = (ndn - 1) / 2;
+      HEGGrid<RealType, OHMMS_DIM> egGrid2(targetPtcl.Lattice);
+      egGrid2.createGrid(nc2, nkpts2);
+    }
     psid = new RealEGOSet(egGrid.kpt, egGrid.mk2);
   }
-  else if (ndn > 0)
-  {
-    //create a E(lectron)G(as)O(rbital)Set
-    egGrid.createGrid(nc, nkpts);
-    egGrid2.createGrid(nc2, nkpts2);
-    psiu = new RealEGOSet(egGrid.kpt, egGrid.mk2);
-    psid = new RealEGOSet(egGrid.kpt, egGrid.mk2);
-  }
-  else
-  {
-    //create a E(lectron)G(as)O(rbital)Set
-    egGrid.createGrid(nc, nkpts);
-    psiu = new RealEGOSet(egGrid.kpt, egGrid.mk2);
-  }
+
   //create a Slater determinant
   SlaterDeterminant_t* sdet;
   if (UseBackflow)

@@ -272,6 +272,7 @@ protected:
   ///target population
   RealType nTargetPopulation;
 
+
   ///timestep
   RealType Tau;
 
