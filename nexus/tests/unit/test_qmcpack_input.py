@@ -1268,10 +1268,37 @@ def test_write():
 
     files = get_files()
 
+    # test write real space qmc input file
     ref_file   = 'VO2_M1_afm.in.xml'
     write_file = os.path.join(tpath,'write_'+ref_file)
 
     qi_read = QmcpackInput(files[ref_file])
+
+    text = qi_read.write()
+    assert('<simulation>' in text)
+    assert('<project' in text)
+    assert('<application' in text)
+    assert('<qmcsystem>' in text)
+    assert('<simulationcell>' in text)
+    assert('<particleset' in text)
+    assert('<group' in text)
+    assert('<attrib' in text)
+    assert('<wavefunction' in text)
+    assert('<sposet_builder' in text)
+    assert('<determinantset>' in text)
+    assert('<slaterdeterminant>' in text)
+    assert('<determinant' in text)
+    assert('<jastrow' in text)
+    assert('<hamiltonian' in text)
+    assert('<pairpot' in text)
+    assert('<pseudo' in text)
+    assert('<estimator' in text)
+    assert('<qmc' in text)
+    assert('<parameter' in text)
+    assert('LR_dim_cutoff' in text)
+    assert('"posArray"' in text)
+    assert('elementType' in text)
+    assert('type="spindensity"' in text)
 
     qi_read.write(write_file)
 
@@ -1289,11 +1316,35 @@ def test_write():
     check_vs_serial_reference(qi_write,ref_file)
 
 
-    # test read for afqmc input file
+    # test write for afqmc input file
     ref_file   = 'CH4_afqmc.in.xml'
     write_file = os.path.join(tpath,'write_'+ref_file)
 
     qi_read = QmcpackInput(files[ref_file])
+
+    text = qi_read.write()
+    assert('<simulation' in text)
+    assert('<project' in text)
+    assert('<random' in text)
+    assert('<AFQMCInfo' in text)
+    assert('<Hamiltonian' in text)
+    assert('<Wavefunction' in text)
+    assert('<WalkerSet' in text)
+    assert('<Propagator' in text)
+    assert('<execute' in text)
+    assert('<Estimator' in text)
+    assert('<OneRDM/>' in text)
+    assert('<parameter' in text)
+    assert('method="afqmc"' in text)
+    assert('"NMO"' in text)
+    assert('"NAEA"' in text)
+    assert('"NAEB"' in text)
+    assert('nWalkers' in text)
+    assert('name="wfn0"' in text)
+    assert('type="NOMSD"' in text)
+    assert('afqmc.h5' in text)
+    assert('yes' in text)
+    assert('name="back_propagation"' in text)
 
     qi_read.write(write_file)
 

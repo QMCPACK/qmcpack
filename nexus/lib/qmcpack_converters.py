@@ -1011,3 +1011,112 @@ class PyscfToAfqmcAnalyzer(SimulationAnalyzer):
     #end def analyze
 #end class PyscfToAfqmcAnalyzer
 
+
+
+class PyscfToAfqmc(Simulation):
+    input_type             = PyscfToAfqmcInput
+    analyzer_type          = PyscfToAfqmcAnalyzer
+    generic_identifier     = 'pyscf2afqmc'
+    application            = 'pyscf_to_afqmc.py'
+    application_properties = set(['serial'])
+    application_results    = set(['wavefunction','hamiltonian'])
+    renew_app_command      = True
+
+
+    def set_app_name(self,app_name):
+        self.app_name = app_name
+        self.input.set_app_name(app_name)
+    #end def set_app_name
+
+
+    def check_result(self,result_name,sim):
+        calculating_result = False
+        input = self.input
+        if result_name=='wavefunction':
+            calculating_result = input.output is not None
+        elif result_name=='hamiltonian':
+            calculating_result = input.output is not None
+        else:
+            calculating_result = False
+            self.error('ability to check for result '+result_name+' has not been implemented')
+        #end if        
+        return calculating_result
+    #end def check_result
+
+
+    def get_result(self,result_name,sim):
+        result = obj()
+        input = self.input
+        if result_name in ('wavefunction','hamiltonian'):
+            result.h5_file = os.path.join(self.locdir,input.output)
+            if input.qmcpack_input is not None:
+                result.xml = os.path.join(self.locdir,input.qmcpack_input)
+            #end if
+        else:
+            self.error('ability to get result '+result_name+' has not been implemented')
+        #end if        
+        return result
+    #end def get_result
+
+
+    def incorporate_result(self,result_name,result,sim):
+        implemented = True
+        input = self.input
+        if isinstance(sim,Pyscf):
+            if result_name=='wavefunction':
+                chkfile = os.path.relpath(result.chkfile,self.locdir)
+                input.input = chkfile
+            else:
+                implemented = False
+            #end if
+        else:
+            implemented = False
+        #end if
+        if not implemented:
+            self.error('ability to incorporate result "{0}" from {1} has not been implemented'.format(result_name,sim.__class__.__name__))
+        #end if
+    #end def incorporate_result       
+
+
+    def check_sim_status(self):
+        output = open(os.path.join(self.locdir,self.outfile),'r').read()
+
+        success = '# Finished.' in output
+        success &= os.path.exists(os.path.join(self.locdir,self.input.output))
+
+        self.failed = not success
+        self.finished = self.job.finished
+    #end def check_sim_status
+
+
+    def get_output_files(self):
+        output_files = []
+        return output_files
+    #end def get_output_files
+
+
+    def app_command(self):
+        return self.input.app_command()
+    #end def app_command
+#end class PyscfToAfqmc
+
+
+
+def generate_pyscf_to_afqmc(**kwargs):
+    sim_args,inp_args = Simulation.separate_inputs(kwargs)
+    if 'identifier' in sim_args:
+        if 'output' not in inp_args:
+            inp_args.output = '{}.afqmc.h5'.format(sim_args.identifier)
+        #end if
+        if 'qmcpack_input' not in inp_args:
+            inp_args.qmcpack_input = '{}.afqmc.xml'.format(sim_args.identifier)
+        #end if
+    #end if
+
+    if not 'input' in sim_args:
+        sim_args.input = generate_pyscf_to_afqmc_input(**inp_args)
+    #end if
+    sim = PyscfToAfqmc(**sim_args)
+
+    return sim
+#end def generate_pyscf_to_afqmc
