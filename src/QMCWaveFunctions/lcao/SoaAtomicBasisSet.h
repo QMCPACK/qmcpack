@@ -142,12 +142,15 @@ struct SoaAtomicBasisSet
   {
     int TransX, TransY, TransZ;
 
-    PosType dr_new;
+    PosType Tvec, dr_new, ConstDispl;
     T r_new;
     // T psi_new, dpsi_x_new, dpsi_y_new, dpsi_z_new,d2psi_new;
 
-    PosType Tvec;
-
+#if not defined(QMC_COMPLEX)
+    Tvec[0] = Tvec[1] = Tvec[2] = 0.0; 
+    const ValueType correctphase=1;
+    //ASSUMES THAT FOR MOLECULES gendisp[]==dr[]
+#else
     Tvec[0] = std::floor(gendisp[0]/(lattice.R(0, 0)+lattice.R(1, 0)+lattice.R(2, 0)))*(lattice.R(0, 0)+lattice.R(1, 0)+lattice.R(2, 0));
     Tvec[1] = std::floor(gendisp[1]/(lattice.R(0, 1)+lattice.R(1, 1)+lattice.R(2, 1)))*(lattice.R(0, 1)+lattice.R(1, 1)+lattice.R(2, 1));
     Tvec[2] = std::floor(gendisp[2]/(lattice.R(0, 2)+lattice.R(1, 2)+lattice.R(2, 2)))*(lattice.R(0, 2)+lattice.R(1, 2)+lattice.R(2, 2));
@@ -156,10 +159,13 @@ struct SoaAtomicBasisSet
     RealType s, c;
     sincos(-phasearg,&s,&c);
     const ValueType correctphase(c,s);
+#endif
+    for (size_t i = 0; i < 3; ++i)
+      ConstDispl[i]=gendisp[i] - Tvec[i];
 
     constexpr T cone(1);
     constexpr T ctwo(2);
-    //Phase_idx needs to be initialized at -1 as it has to be incremented first to comply with the if statement (r_new >=Rmax) 
+
 
     //one can assert the alignment
     RealType* restrict phi   = tempS.data(0);
@@ -178,9 +184,6 @@ struct SoaAtomicBasisSet
     auto* restrict d2psi    = vgl.data(4) + offset;
     const T* restrict ylm_l = Ylm[4]; //lap
 
-    //std::cout << "gendisp: " << gendisp[0] << " " << gendisp[1] << " " << gendisp[2] << std::endl;
-    //std::cout << "gendisp-Tvec: " << gendisp[0]-Tvec[0] << " " << gendisp[1]-Tvec[1] << " " << gendisp[2]-Tvec[2] << std::endl;
-
     for (size_t ib = 0; ib < BasisSetSize; ++ib)
     {
       psi[ib]    = 0;
@@ -189,6 +192,7 @@ struct SoaAtomicBasisSet
       dpsi_z[ib] = 0;
       d2psi[ib]  = 0;
     }
+    //Phase_idx (iter) needs to be initialized at -1 as it has to be incremented first to comply with the if statement (r_new >=Rmax) 
     int iter=-1;
     for (int i = 0; i <= PBCImages[0]; i++) //loop Translation over X
     {
@@ -202,13 +206,12 @@ struct SoaAtomicBasisSet
         {
           //Allows to increment cells from 0,1,-1,2,-2,3,-3 etc...
           TransZ    = ((k % 2) * 2 - 1) * ((k + 1) / 2);
-//          dr_new[0] = dr[0] + TransX * lattice.R(0, 0) + TransY * lattice.R(1, 0) + TransZ * lattice.R(2, 0);
-//          dr_new[1] = dr[1] + TransX * lattice.R(0, 1) + TransY * lattice.R(1, 1) + TransZ * lattice.R(2, 1);
-//          dr_new[2] = dr[2] + TransX * lattice.R(0, 2) + TransY * lattice.R(1, 2) + TransZ * lattice.R(2, 2);
 
-          dr_new[0] = gendisp[0] - Tvec[0] + (TransX * lattice.R(0, 0) + TransY * lattice.R(1, 0) + TransZ * lattice.R(2, 0));
-          dr_new[1] = gendisp[1] - Tvec[1] + (TransX * lattice.R(0, 1) + TransY * lattice.R(1, 1) + TransZ * lattice.R(2, 1));
-          dr_new[2] = gendisp[2] - Tvec[2] + (TransX * lattice.R(0, 2) + TransY * lattice.R(1, 2) + TransZ * lattice.R(2, 2));
+          dr_new[0] = ConstDispl[0] + (TransX * lattice.R(0, 0) + TransY * lattice.R(1, 0) + TransZ * lattice.R(2, 0));
+          dr_new[1] = ConstDispl[1] + (TransX * lattice.R(0, 1) + TransY * lattice.R(1, 1) + TransZ * lattice.R(2, 1));
+          dr_new[2] = ConstDispl[2] + (TransX * lattice.R(0, 2) + TransY * lattice.R(1, 2) + TransZ * lattice.R(2, 2));
+
+
           r_new     = std::sqrt(dot(dr_new, dr_new));
 
           iter++;
@@ -613,23 +616,34 @@ struct SoaAtomicBasisSet
   {
     int TransX, TransY, TransZ;
 
-    PosType Tvec;
+
+    PosType Tvec, dr_new, ConstDispl;
+    T r_new;
+
+#if not defined(QMC_COMPLEX)
+    Tvec[0] = Tvec[1] = Tvec[2] = 0.0; 
+    const ValueType correctphase=1;
+    //ASSUMES THAT FOR MOLECULES gendisp[]==dr[]
+#else
     Tvec[0] = std::floor(gendisp[0]/(lattice.R(0, 0)+lattice.R(1, 0)+lattice.R(2, 0)))*(lattice.R(0, 0)+lattice.R(1, 0)+lattice.R(2, 0));
     Tvec[1] = std::floor(gendisp[1]/(lattice.R(0, 1)+lattice.R(1, 1)+lattice.R(2, 1)))*(lattice.R(0, 1)+lattice.R(1, 1)+lattice.R(2, 1));
     Tvec[2] = std::floor(gendisp[2]/(lattice.R(0, 2)+lattice.R(1, 2)+lattice.R(2, 2)))*(lattice.R(0, 2)+lattice.R(1, 2)+lattice.R(2, 2));
 
-    RealType phasearg = SuperTwist[0]*Tvec[0]+SuperTwist[1]*Tvec[1]+SuperTwist[2]*Tvec[2]; //ANOUAR
+    RealType phasearg = SuperTwist[0]*Tvec[0]+SuperTwist[1]*Tvec[1]+SuperTwist[2]*Tvec[2]; 
     RealType s, c;
     sincos(-phasearg,&s,&c);
     const ValueType correctphase(c,s);
+#endif
 
-    PosType dr_new;
-    T r_new;
     RealType* restrict ylm_v = tempS.data(0);
     RealType* restrict phi_r = tempS.data(1);
-    //Phase_idx needs to be initialized at -1 as it has to be incremented first to comply with the if statement (r_new >=Rmax) 
+    
+    for (size_t i = 0; i < 3; ++i)
+      ConstDispl[i]=gendisp[i] - Tvec[i];
+
     for (size_t ib = 0; ib < BasisSetSize; ++ib)
       psi[ib] = 0;
+    //Phase_idx (iter) needs to be initialized at -1 as it has to be incremented first to comply with the if statement (r_new >=Rmax) 
     int iter=-1;
     for (int i = 0; i <= PBCImages[0]; i++) //loop Translation over X
     {
@@ -643,12 +657,10 @@ struct SoaAtomicBasisSet
         {
           //Allows to increment cells from 0,1,-1,2,-2,3,-3 etc...
           TransZ    = ((k % 2) * 2 - 1) * ((k + 1) / 2);
-          //dr_new[0] = dr[0] + TransX * lattice.R(0, 0) + TransY * lattice.R(1, 0) + TransZ * lattice.R(2, 0);
-          //dr_new[1] = dr[1] + TransX * lattice.R(0, 1) + TransY * lattice.R(1, 1) + TransZ * lattice.R(2, 1);
-          //dr_new[2] = dr[2] + TransX * lattice.R(0, 2) + TransY * lattice.R(1, 2) + TransZ * lattice.R(2, 2);
-          dr_new[0] = gendisp[0] - Tvec[0] + (TransX * lattice.R(0, 0) + TransY * lattice.R(1, 0) + TransZ * lattice.R(2, 0));
-          dr_new[1] = gendisp[1] - Tvec[1] + (TransX * lattice.R(0, 1) + TransY * lattice.R(1, 1) + TransZ * lattice.R(2, 1));
-          dr_new[2] = gendisp[2] - Tvec[2] + (TransX * lattice.R(0, 2) + TransY * lattice.R(1, 2) + TransZ * lattice.R(2, 2));
+
+          dr_new[0] = ConstDispl[0] + (TransX * lattice.R(0, 0) + TransY * lattice.R(1, 0) + TransZ * lattice.R(2, 0));
+          dr_new[1] = ConstDispl[1] + (TransX * lattice.R(0, 1) + TransY * lattice.R(1, 1) + TransZ * lattice.R(2, 1));
+          dr_new[2] = ConstDispl[2] + (TransX * lattice.R(0, 2) + TransY * lattice.R(1, 2) + TransZ * lattice.R(2, 2));
 
           r_new = std::sqrt(dot(dr_new, dr_new));
           iter++;

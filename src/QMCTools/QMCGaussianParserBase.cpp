@@ -122,9 +122,9 @@ QMCGaussianParserBase::QMCGaussianParserBase(int argc, char** argv)
   std::cout << "Index of ion charge " << IonChargeIndex << std::endl;
   std::cout << "Index of valence charge " << ValenceChargeIndex << std::endl;
   Image.resize(3);
-  Image[0] = 12;
-  Image[1] = 12;
-  Image[2] = 12;
+  Image[0] = 8;
+  Image[1] = 8;
+  Image[2] = 8;
   createGridNode(argc, argv);
 }
 
