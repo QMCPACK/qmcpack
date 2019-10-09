@@ -141,12 +141,15 @@ public:
   virtual void buildOptVariables(const size_t& nel) {}
   // For the MSD case rotations must be created in MultiSlaterFast class
   virtual void buildOptVariables(const std::vector<std::pair<int, int>>& rotations) {}
-
-  virtual void returnMemberVariables(ValueMatrix_t& C_original,
-                                     std::shared_ptr<ValueMatrix_t>& C_sposet,
-                                     bool& params_supplied,
-                                     std::vector<RealType>& params)
-  { APP_ABORT("SPOSet does not have a way to pass member variables to Rotation Helper class\n"); }
+  // store parameters before getting destroyed by rotation.
+  virtual void storeParamsBeforeRotation() {}
+  // apply rotation to all the orbitals
+  virtual void applyRotation(const ValueMatrix_t& rot_mat, bool use_stored_copy = false)
+  {
+    std::ostringstream o;
+    o << "SPOSet::applyRotation is not implemented by " << className << std::endl;
+    APP_ABORT(o.str());
+  }
   /// reset parameters to the values from optimizer
   virtual void resetParameters(const opt_variables_type& optVariables) = 0;
 

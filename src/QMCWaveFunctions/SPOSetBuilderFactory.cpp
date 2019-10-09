@@ -282,11 +282,24 @@ SPOSet* SPOSetBuilderFactory::createSPOSet(xmlNodePtr cur)
   if (bb)
   {
     app_log() << "  Building SPOSet '" << sname << "' with '" << bname << "' basis set." << std::endl;
-    SPOSet* spo;
-    spo = bb->createSPOSet(cur);
+    SPOSet* spo     = bb->createSPOSet(cur);
     spo->objectName = sname;
     if (rotation == "yes")
-      spo = new RotationHelper(spo);
+    {
+      auto* rot_spo   = new RotationHelper(spo);
+      xmlNodePtr tcur = cur->xmlChildrenNode;
+      while (tcur != NULL)
+      {
+        std::string cname((const char*)(tcur->name));
+        if (cname == "opt_vars")
+        {
+          rot_spo->params_supplied = true;
+          putContent(rot_spo->params, tcur);
+        }
+        tcur = tcur->next;
+      }
+      spo = rot_spo;
+    }
     return spo;
   }
   else

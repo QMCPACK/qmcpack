@@ -40,6 +40,8 @@ public:
   IndexType BasisSetSize;
   /// pointer to matrix containing the coefficients
   std::shared_ptr<ValueMatrix_t> C;
+  /// a copy of the original C before orbital rotation is applied;
+  ValueMatrix_t C_copy;
   /// Scratch space for the initial coefficents before the rotation is applied
   ValueMatrix_t m_init_B;
   /// true if SPO parameters (orbital rotation parameters) have been supplied by input
@@ -79,13 +81,9 @@ public:
 
   SPOSet* makeClone() const;
 
-  //RotationHelper uses this function that make a hard copy of this SPOset's C matrix as
-  // C_original, and then sets a shared pointer to the C matrix as C_sposet.   
-  // The values of the read in parameters, and IsCloned status is also returned.
-  void returnMemberVariables(ValueMatrix_t& C_original,
-                             std::shared_ptr<ValueMatrix_t>& C_sposet,
-                             bool& params_supplied,
-                             std::vector<RealType>& params);
+  void storeParamsBeforeRotation() { C_copy = *C; }
+
+  void applyRotation(const ValueMatrix_t& rot_mat, bool use_stored_copy);
 
   /// create optimizable orbital rotation parameters
   void buildOptVariables(const std::vector<std::pair<int, int>>& rotations);

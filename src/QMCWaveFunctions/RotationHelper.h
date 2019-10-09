@@ -21,16 +21,11 @@ public:
   //destructor
   ~RotationHelper();
 
-  //Copy of Original Coefficient Matrix
-  ValueMatrix_t C_original;
-  //access to Coefficient Matrix of SPOSet
-  std::shared_ptr<ValueMatrix_t> C_sposet;
-  
   //vector that contains active orbital rotation parameter indices
   std::vector<std::pair<int, int>> m_act_rot_inds;
 
   //function to perform orbital rotations
-  void apply_rotation(const std::vector<RealType>& param);
+  void apply_rotation(const std::vector<RealType>& param, bool use_stored_copy);
 
   //helper function to apply_rotation
   void exponentiate_antisym_matrix(ValueMatrix_t& mat);
@@ -135,8 +130,11 @@ public:
   void checkInVariables(opt_variables_type& active)
   {
     if (Optimizable && !IsCloned)
+    {
       if (myVars.size())
         active.insertFrom(myVars);
+      Phi->storeParamsBeforeRotation();
+    }
   }
 
   void checkOutVariables(const opt_variables_type& active)
@@ -146,7 +144,6 @@ public:
       myVars.getIndex(active);
     }
   }
-
 
   ///reset
   void resetParameters(const opt_variables_type& active)
@@ -159,7 +156,7 @@ public:
         int loc  = myVars.where(i);
         param[i] = myVars[i] = active[loc];
       }
-      apply_rotation(param);
+      apply_rotation(param, true);
     }
   }
   //*********************************************************************************

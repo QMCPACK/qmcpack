@@ -7,14 +7,13 @@ namespace qmcplusplus
 {
 
 RotationHelper::RotationHelper(SPOSet* spos)
-    : SPOSet(false, true),
+    : SPOSet(spos->hasIonDerivs(), true),
       Phi(spos),
       params_supplied(false),
       IsCloned(false)
 {
   className = "RotationHelper";
   OrbitalSetSize = Phi->getOrbitalSetSize();
-  spos->returnMemberVariables(C_original, C_sposet, params_supplied, params);
 }
 
 RotationHelper::~RotationHelper()
@@ -54,7 +53,7 @@ void RotationHelper::buildOptVariables(const std::vector<std::pair<int, int>>& r
   int nparams_active = m_act_rot_inds.size();
 
   app_log() << "nparams_active: " << nparams_active << " params2.size(): " << params.size() << std::endl;
- if (params_supplied)
+  if (params_supplied)
     if (nparams_active != params.size())
       APP_ABORT("The number of supplied orbital rotation parameters does not match number prdouced by the slater "
                 "expansion. \n");
@@ -87,30 +86,8 @@ void RotationHelper::buildOptVariables(const std::vector<std::pair<int, int>>& r
 
   std::vector<RealType> param(m_act_rot_inds.size());
   for (int i = 0; i < m_act_rot_inds.size(); i++)
-  {
     param[i] = myVars[i];
-  }
-  apply_rotation(param);
-
-  if (params_supplied)
-  {
-    app_log() << "PRINTING MO COEFFICIENTS CREATED BY SUPPLIED PARAMS\n";
-    for (int j = 0; j < nmo; j++)
-    {
-      for (int i = 0; i < nb; i++)
-      {
-        app_log() << " " << std::right << std::fixed << std::setprecision(16) << std::setw(23) << std::scientific
-                  << *(C_sposet->data() + j * nb + i);
-
-        if ((j * nb + i + 1) % 4 == 0)
-        {
-          app_log() << std::endl;
-        }
-      }
-    }
-    app_log() << "\n done printing molecular orbital coefficients\n";
-    app_log() << std::endl;
-  }
+  apply_rotation(param, false);
 
   if (!Optimizable)
   {
@@ -124,12 +101,11 @@ void RotationHelper::buildOptVariables(const std::vector<std::pair<int, int>>& r
 #endif
 }
 
-void RotationHelper::apply_rotation(const std::vector<RealType>& param)
+void RotationHelper::apply_rotation(const std::vector<RealType>& param, bool use_stored_copy)
 {
   assert(param.size() == m_act_rot_inds.size());
 
   const size_t nmo = Phi->getOrbitalSetSize();
-  const size_t nb  = Phi->getBasisSetSize();
   ValueMatrix_t rot_mat(nmo, nmo);
   rot_mat = ValueType(0);
 
@@ -146,8 +122,7 @@ void RotationHelper::apply_rotation(const std::vector<RealType>& param)
 
   exponentiate_antisym_matrix(rot_mat);
 
-  BLAS::gemm('N', 'T', nb, nmo, nmo, RealType(1.0), C_original.data(), nb, rot_mat.data(), nmo, RealType(0.0), C_sposet->data(),
-             nb);
+  Phi->applyRotation(rot_mat, use_stored_copy);
 }
 
 
@@ -859,8 +834,6 @@ SPOSet* RotationHelper::makeClone() const
   myclone->params           = this->params;
   myclone->params_supplied  = this->params_supplied;
   myclone->m_act_rot_inds   = this->m_act_rot_inds;
-  myclone->C_original       = this->C_original;
-  myclone->C_sposet         = this->C_sposet;  
   myclone->myVars           = this->myVars;
   return myclone;
 }

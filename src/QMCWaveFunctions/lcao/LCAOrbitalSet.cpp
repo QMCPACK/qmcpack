@@ -606,15 +606,26 @@ void LCAOrbitalSet::evaluateThirdDeriv(const ParticleSet& P, int first, int last
 {
   APP_ABORT("LCAOrbitalSet::evaluateThirdDeriv(P,istart,istop,ggg_logdet) not implemented\n");
 }
-void LCAOrbitalSet::returnMemberVariables(ValueMatrix_t& C_original,
-                                          std::shared_ptr<ValueMatrix_t>& C_sposet,
-                                          bool& params_supplied,
-                                          std::vector<RealType>& params)
+
+void LCAOrbitalSet::applyRotation(const ValueMatrix_t& rot_mat, bool use_stored_copy)
 {
-    C_original      = *C;
-    C_sposet        = C;
-    params          = this->params;
-    params_supplied = this->params_supplied;
+  if (!use_stored_copy) C_copy = *C;
+  //gemm is out-of-place
+  BLAS::gemm('N', 'T', BasisSetSize, OrbitalSetSize, OrbitalSetSize, RealType(1.0), C_copy.data(),
+             BasisSetSize, rot_mat.data(), OrbitalSetSize, RealType(0.0), C->data(), BasisSetSize);
+
+  /* debugging code
+  app_log() << "PRINTING MO COEFFICIENTS AFTER ROTATION " << objectName << std::endl;
+  for (int j = 0; j < OrbitalSetSize; j++)
+    for (int i = 0; i < BasisSetSize; i++)
+    {
+      app_log() << " " << std::right << std::fixed << std::setprecision(16) << std::setw(23) << std::scientific
+                << *(C->data() + j * BasisSetSize + i);
+
+      if ((j * BasisSetSize + i + 1) % 4 == 0)
+        app_log() << std::endl;
+    }
+  */
 }
 
 void LCAOrbitalSet::buildOptVariables(const std::vector<std::pair<int, int>>& rotations)
