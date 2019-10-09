@@ -299,6 +299,7 @@ SPOSet* SPOSetBuilderFactory::createSPOSet(xmlNodePtr cur)
         tcur = tcur->next;
       }
       spo = rot_spo;
+      spo->objectName = sname;
     }
     return spo;
   }
