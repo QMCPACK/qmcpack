@@ -47,10 +47,10 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
   size_t NumCenters;
   ///number of quantum particles
   size_t NumTargets;
-  ///number of quantum particles
-  const int myTableIndex;
   ///Reference to the center
   const ParticleSet::ParticleIndex_t& IonID;
+  ///number of quantum particles
+  const int myTableIndex;
 
   /** container to store the offsets of the basis functions
    *

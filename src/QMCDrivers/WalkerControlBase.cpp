@@ -25,13 +25,13 @@ namespace qmcplusplus
 {
 WalkerControlBase::WalkerControlBase(Communicate* c, bool rn)
     : MPIObjectBase(c),
-      SwapMode(0),
       n_min_(1),
       n_max_(10),
       MaxCopy(2),
-      NumWalkersCreated(0),
       target_sigma_(10),
       dmcStream(0),
+      NumWalkersCreated(0),
+      SwapMode(0),
       write_release_nodes_(rn)
 {
   method_    = -1; //assign invalid method

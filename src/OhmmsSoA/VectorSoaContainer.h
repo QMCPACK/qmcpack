@@ -194,8 +194,8 @@ struct VectorSoaContainer
   ///helper class for operator ()(size_t i) to assign a value
   struct Accessor
   {
-    size_t M;
     T* _base;
+    size_t M;
     __forceinline Accessor(T* a, size_t ng) : _base(a), M(ng) {}
     template<typename T1>
     __forceinline Accessor& operator=(const TinyVector<T1, D>& rhs)

@@ -108,15 +108,13 @@ void write_spo_builders(const std::string& pad)
  * \param psi reference to the wavefunction
  * \param ions reference to the ions
  */
-SPOSetBuilderFactory::SPOSetBuilderFactory(ParticleSet& els, TrialWaveFunction& psi, PtclPoolType& psets)
-    : WaveFunctionComponentBuilder(els, psi), ptclPool(psets)
+SPOSetBuilderFactory::SPOSetBuilderFactory(Communicate* comm, ParticleSet& els, PtclPoolType& psets)
+    : MPIObjectBase(comm), targetPtcl(els), ptclPool(psets)
 {
   ClassName = "SPOSetBuilderFactory";
 }
 
 SPOSetBuilderFactory::~SPOSetBuilderFactory() { DEBUG_MEMORY("SPOSetBuilderFactory::~SPOSetBuilderFactory"); }
-
-bool SPOSetBuilderFactory::put(xmlNodePtr cur) { return true; }
 
 SPOSetBuilder* SPOSetBuilderFactory::createSPOSetBuilder(xmlNodePtr rootNode)
 {
@@ -325,5 +323,6 @@ void SPOSetBuilderFactory::build_sposet_collection(xmlNodePtr cur)
     APP_ABORT("SPOSetBuilderFactory::build_sposet_collection  no <sposet/> elements found");
 }
 
+std::string SPOSetBuilderFactory::basisset_tag = "basisset";
 
 } // namespace qmcplusplus

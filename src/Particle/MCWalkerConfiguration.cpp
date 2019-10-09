@@ -88,13 +88,12 @@ struct MCSample
 MCWalkerConfiguration::MCWalkerConfiguration()
     : OwnWalkers(true),
       ReadyForPbyP(false),
-      UpdateMode(Update_Walker),
-      Polymer(0),
-
-      MaxSamples(10),
-      CurSampleCount(0),
       GlobalNumWalkers(0),
-      reptile(0)
+      UpdateMode(Update_Walker),
+      reptile(0),
+      Polymer(0),
+      MaxSamples(10),
+      CurSampleCount(0)
 #ifdef QMC_CUDA
       ,
       RList_GPU("MCWalkerConfiguration::RList_GPU"),
@@ -113,9 +112,9 @@ MCWalkerConfiguration::MCWalkerConfiguration()
 MCWalkerConfiguration::MCWalkerConfiguration(const MCWalkerConfiguration& mcw)
     : ParticleSet(mcw),
       OwnWalkers(true),
+      ReadyForPbyP(false),
       GlobalNumWalkers(mcw.GlobalNumWalkers),
       UpdateMode(Update_Walker),
-      ReadyForPbyP(false),
       Polymer(0),
       MaxSamples(mcw.MaxSamples),
       CurSampleCount(0)

@@ -28,13 +28,13 @@ namespace qmcplusplus
 {
 ECPComponentBuilder::ECPComponentBuilder(const std::string& aname, Communicate* c)
     : MPIObjectBase(c),
-      RcutMax(-1),
       NumNonLocal(0),
       Lmax(0),
+      Nrule(4),
       AtomicNumber(0),
       Zeff(0),
+      RcutMax(-1),
       Species(aname),
-      Nrule(4),
       grid_global(0),
       pp_loc(0),
       pp_nonloc(0),

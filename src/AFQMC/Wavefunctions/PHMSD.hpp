@@ -104,7 +104,6 @@ class PHMSD: public AFQMCInfo
           WALKER_TYPES wlk, ValueType nce, int targetNW=1):
                 AFQMCInfo(info),TG(tg_),
                 SDetOp( SlaterDetOperations_shared<ComplexType>(
-                //SDetOp( 
                         ((wlk!=NONCOLLINEAR)?(NMO):(2*NMO)),
                         ((wlk!=NONCOLLINEAR)?(NAEA):(NAEA+NAEB)) )),
                 HamOp(std::move(hop_)),
@@ -112,22 +111,18 @@ class PHMSD: public AFQMCInfo
                 actb2mo(std::move(actb2mo_)),
                 abij(std::move(abij_)),
                 OrbMats(std::move(orbs_)),
-                walker_type(wlk),NuclearCoulombEnergy(nce),
                 shmbuff_for_E(nullptr),
                 mutex(std::make_unique<shared_mutex>(TG.TG_local())),
+                walker_type(wlk),NuclearCoulombEnergy(nce),
                 last_number_extra_tasks(-1),last_task_index(-1),
                 local_group_comm(),
                 shmbuff_for_G(nullptr),
-                req_Gsend(MPI_REQUEST_NULL),
-                req_Grecv(MPI_REQUEST_NULL),
-                req_SMsend(MPI_REQUEST_NULL),
-                req_SMrecv(MPI_REQUEST_NULL),
-                maxnactive(std::max(OrbMats[0].size(0),OrbMats.back().size(0))),
-                max_exct_n(std::max(abij.maximum_excitation_number()[0],
-                                    abij.maximum_excitation_number()[1])),
                 maxn_unique_confg(    
                     std::max(abij.number_of_unique_excitations()[0],
                              abij.number_of_unique_excitations()[1])),
+                maxnactive(std::max(OrbMats[0].size(0),OrbMats.back().size(0))),
+                max_exct_n(std::max(abij.maximum_excitation_number()[0],
+                                    abij.maximum_excitation_number()[1])),
                 unique_overlaps({2,1},shared_allocator<ComplexType>{TG.TG_local()}), 
                 unique_Etot({2,1},shared_allocator<ComplexType>{TG.TG_local()}), 
                 QQ0inv0({1,1},shared_allocator<ComplexType>{TG.TG_local()}),
@@ -149,7 +144,11 @@ class PHMSD: public AFQMCInfo
                 KEright({1,1,1},shared_allocator<ComplexType>{TG.TG_local()}), 
                 KEleft({1,1},shared_allocator<ComplexType>{TG.TG_local()}), 
                 det_couplings{std::move(beta_coupled_to_unique_alpha__),
-                              std::move(alpha_coupled_to_unique_beta__)}
+                              std::move(alpha_coupled_to_unique_beta__)},
+                req_Gsend(MPI_REQUEST_NULL),
+                req_Grecv(MPI_REQUEST_NULL),
+                req_SMsend(MPI_REQUEST_NULL),
+                req_SMrecv(MPI_REQUEST_NULL)
     {
       /* To me, PHMSD is not compatible with walker_type=CLOSED unless
        * the MSD expansion is symmetric with respect to spin. For this, 

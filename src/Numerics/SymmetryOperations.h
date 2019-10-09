@@ -75,9 +75,9 @@ private:
   std::vector<std::vector<double>> Characters;
   std::vector<std::vector<double>> CharacterTableByClass;
   std::vector<int> Classes;
+  std::string name;
   int nClasses;
   int nSymmetries;
-  std::string name;
 };
 
 

@@ -33,16 +33,16 @@ namespace qmcplusplus
 template<typename T>
 struct CoulombPotential : public OperatorBase, public ForceBase
 {
-  ///true, if CoulombAA for quantum particleset
-  bool is_active;
-  ///distance table index
-  const int myTableIndex;
-  ///number of centers
-  int nCenters;
   ///source particle set
   ParticleSet& Pa;
+  ///distance table index
+  const int myTableIndex;
   ///true if the table is AA
   const bool is_AA;
+  ///true, if CoulombAA for quantum particleset
+  bool is_active;
+  ///number of centers
+  int nCenters;
 #if !defined(REMOVE_TRACEMANAGER)
   ///single particle trace samples
   Array<TraceReal, 1> Va_samp_tmp;
@@ -60,7 +60,12 @@ struct CoulombPotential : public OperatorBase, public ForceBase
    * @param computeForces if true, computes forces between inactive species
    */
   inline CoulombPotential(ParticleSet& s, bool active, bool computeForces, bool copy = false)
-      : Pa(s), myTableIndex(s.addTable(s, DT_SOA_PREFERRED)), is_AA(true), is_active(active), ComputeForces(computeForces), ForceBase(s, s)
+      : ForceBase(s, s),
+        Pa(s),
+        myTableIndex(s.addTable(s, DT_SOA_PREFERRED)),
+        is_AA(true),
+        is_active(active),
+        ComputeForces(computeForces)
   {
     set_energy_domain(potential);
     two_body_quantum_domain(s, s);
@@ -86,7 +91,12 @@ struct CoulombPotential : public OperatorBase, public ForceBase
    * @param ComputeForces is not implemented for AB
    */
   inline CoulombPotential(ParticleSet& s, ParticleSet& t, bool active, bool copy = false)
-      : Pa(s), myTableIndex(t.addTable(s, DT_SOA_PREFERRED)), is_AA(false), is_active(active), ComputeForces(false), ForceBase(s, t)
+      : ForceBase(s, t),
+        Pa(s),
+        myTableIndex(t.addTable(s, DT_SOA_PREFERRED)),
+        is_AA(false),
+        is_active(active),
+        ComputeForces(false)
   {
     set_energy_domain(potential);
     two_body_quantum_domain(s, t);
