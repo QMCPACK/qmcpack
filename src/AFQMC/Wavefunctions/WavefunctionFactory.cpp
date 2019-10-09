@@ -625,7 +625,7 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop, TaskGroup_& TGwfn
     recompute_ci = true;
 
   AFQMCInfo& AFinfo = InfoMap[info];
-  ValueType NCE;
+  ValueType NCE = 0.0;
 
   int NMO = AFinfo.NMO;
   int NAEA = AFinfo.NAEA;
@@ -664,7 +664,6 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop, TaskGroup_& TGwfn
       APP_ABORT("");
     }
     std::vector<ComplexType> ci;
-    ValueType NCE = 0.0;
 
     // Read common trial wavefunction input options.
     getCommonInput(dump, NMO, NAEA, NAEB, ndets_to_read, ci,

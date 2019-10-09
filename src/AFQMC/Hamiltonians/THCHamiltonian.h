@@ -86,9 +86,9 @@ class THCHamiltonian: public OneBodyHamiltonian
 
   TaskGroup_& TG;
 
-  std::string fileName;
-
   RealType cutoff_cholesky;
+
+  std::string fileName;
 
   bool useHalfRotatedMuv;
 

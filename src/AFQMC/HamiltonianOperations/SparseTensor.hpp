@@ -431,8 +431,6 @@ class SparseTensor
 
     int global_nCV;
 
-    bool separateEJ;
-
     ValueType E0;
 
     // bare one body hamiltonian
@@ -466,6 +464,8 @@ class SparseTensor
     SpVector Gcloc;
 
     shmSpVector SM_TMats;    
+
+    bool separateEJ;
 
     void set_buffer(size_t N) {
       if(SM_TMats.num_elements() < N) {
