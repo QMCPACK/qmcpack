@@ -64,11 +64,11 @@ public:
   Libxml2Document doc;
   xmlNodePtr node;
 
-  QMCDriverInput qmcdrv_input;
-  DMCDriverInput dmcdrv_input;
-
   int num_ranks;
   int num_crowds = 8;
+
+  QMCDriverInput qmcdrv_input;
+  DMCDriverInput dmcdrv_input;
 
 };
 } // namespace testing

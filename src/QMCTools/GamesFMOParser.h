@@ -77,9 +77,9 @@ public:
   Monomer();
 
 
-  int q, AtomIndex;
   std::string tags;
   double X, Y, Z, ESPq;
+  int q, AtomIndex;
 
   void print_Geometry();
   void parse(const std::string& fname){};
