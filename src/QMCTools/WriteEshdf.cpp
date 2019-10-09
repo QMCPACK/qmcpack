@@ -303,7 +303,7 @@ void EshdfFile::writeQboxSupercell(const XmlNode& qboxSample)
   // write the ptvs to the supercell group of the hdf file
   array<int,2> dims{3,3};
   outfile_.push("supercell");
-  outfile_.writeSlabReshaped(ptvs, dims, "ptvs");
+  outfile_.writeSlabReshaped(ptvs, dims, "primitive_vectors");
   outfile_.pop();
 }
 
@@ -328,7 +328,7 @@ void EshdfFile::writeQESupercell(const XmlNode& qeXml)
   // write the ptvs to the supercell group of the hdf file
   array<int,2> dims{3,3};
   outfile_.push("supercell");
-  outfile_.writeSlabReshaped(ptvs, dims, "ptvs");
+  outfile_.writeSlabReshaped(ptvs, dims, "primitive_vectors");
   outfile_.pop();
 }
 
