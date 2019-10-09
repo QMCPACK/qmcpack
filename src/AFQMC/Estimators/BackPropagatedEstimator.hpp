@@ -61,11 +61,12 @@ class BackPropagatedEstimator: public EstimatorBase
         std::string name, xmlNodePtr cur, WALKER_TYPES wlk, WalkerSet& wset, 
         Wavefunction& wfn, Propagator& prop, bool impsamp_=true) :
                                       EstimatorBase(info),TG(tg_), walker_type(wlk),
+                                      writer(false), 
                                       Refs({0,0,0},shared_allocator<ComplexType>{TG.TG_local()}),
                                       observ0(TG,info,name,cur,wlk,wfn), wfn0(wfn), prop0(prop),
                                       max_nback_prop(10),
-                                      nStabalize(10), path_restoration(false), block_size(1),
-                                      writer(false), importanceSampling(impsamp_),first(true)
+                                      nStabalize(10), block_size(1), path_restoration(false),
+                                      importanceSampling(impsamp_),first(true)
   {
     int nave(1);
     if(cur != NULL) {
@@ -262,8 +263,7 @@ class BackPropagatedEstimator: public EstimatorBase
   bool writer;
   bool accumulated_in_last_block;
 
-  int max_nback_prop;
-  std::vector<int> nback_prop_steps;  
+  mpi3CTensor Refs;
 
   FullObsHandler observ0; 
 
@@ -271,7 +271,9 @@ class BackPropagatedEstimator: public EstimatorBase
 
   Propagator& prop0;
 
-  mpi3CTensor Refs;
+  int max_nback_prop;
+  std::vector<int> nback_prop_steps;  
+
   boost::multi::array<ComplexType,2> detR;
 
   RealType weight, weight_sub;
@@ -281,8 +283,6 @@ class BackPropagatedEstimator: public EstimatorBase
   ComplexType zero = ComplexType(0.0, 0.0);
   ComplexType one = ComplexType(1.0, 0.0);
 
-  int first;
-
   // Frequency of reorthogonalisation.
   int nStabalize;
   // Block size over which RDM will be averaged.
@@ -290,6 +290,8 @@ class BackPropagatedEstimator: public EstimatorBase
   // Whether to restore cosine projection and real local energy apprximation for weights
   // along back propagation path.
   bool path_restoration, importanceSampling;
+
+  int first;
 
   bool write_metadata = true;
 
