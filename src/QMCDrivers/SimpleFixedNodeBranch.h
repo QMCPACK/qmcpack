@@ -418,6 +418,8 @@ struct SimpleFixedNodeBranch : public QMCTraits
   void start(const std::string& froot, bool append = false);
   ///finalize the simulation
   void finalize(MCWalkerConfiguration& w);
+  ///finalize the simulation
+  void finalize(const int global_walkers, RefVector<MCPWalker>& walkers);
 
   void setRN(bool rn);
 

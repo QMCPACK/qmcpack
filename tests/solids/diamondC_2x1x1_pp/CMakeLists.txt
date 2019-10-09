@@ -60,13 +60,13 @@ ENDIF()
                     1 DIAMOND2_DMC_SCALARS # DMC
                     )
 
-  QMC_RUN_AND_CHECK(short-diamondC_2x1x1_pp-dmcbatch_sdj
+  QMC_RUN_AND_CHECK(short-diamondC_2x1x1_pp-vmcbatch_dmcbatch_sdj
                     "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
-                    qmc_short
-                    qmc_short_dmcbatch.in.xml
+                    qmc_short_vmcbatch_dmcbatch
+                    qmc_short_vmcbatch_dmcbatch.in.xml
                     1 16
                     TRUE
-                    0 DIAMOND2_DMC_SCALARS # DMC
+                    0 DIAMOND2_DMC_SCALARS # VMC
                     )
                   
   LIST(APPEND DIAMOND2_DMC_SCALARS "totenergy" "-21.844975 0.00779")

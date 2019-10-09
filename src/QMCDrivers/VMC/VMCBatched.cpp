@@ -343,7 +343,19 @@ bool VMCBatched::run()
     estimator_manager_->stopBlockNew(total_accept_ratio);
   }
 
-  return false;
+  // This is confusing logic from VMC.cpp want this functionality write documentation of this
+  // and clean it up
+  // bool wrotesamples = qmcdriver_input_.get_dump_config();
+  // if (qmcdriver_input_.get_dump_config())
+  // {
+    //wrotesamples = W.dumpEnsemble(wClones, wOut, myComm->size(), nBlocks);
+    //if (wrotesamples)
+    //  app_log() << "  samples are written to the config.h5" << std::endl;
+  // }
+
+  // second argument was !wrotesample so if W.dumpEnsemble returns false or
+  // dump_config is false from input then dump_walkers
+  return finalize(num_blocks, true);
 }
 
 
