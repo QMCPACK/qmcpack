@@ -32,16 +32,16 @@ NonLocalECPotential::NonLocalECPotential(ParticleSet& ions,
                                          TrialWaveFunction& psi,
                                          bool computeForces,
                                          bool useVP)
-    : IonConfig(ions),
-      Psi(psi),
-      UseTMove(TMOVE_OFF),
+    : ForceBase(ions, els),
       myRNG(&Random),
-      nonLocalOps(els.getTotalNum()),
-      ComputeForces(computeForces),
-      IonNeighborElecs(ions),
+      IonConfig(ions),
+      Psi(psi),
+      Peln(els),
       ElecNeighborIons(els),
-      ForceBase(ions, els),
-      Peln(els)
+      IonNeighborElecs(ions),
+      UseTMove(TMOVE_OFF),
+      nonLocalOps(els.getTotalNum()),
+      ComputeForces(computeForces)
 {
   set_energy_domain(potential);
   two_body_quantum_domain(ions, els);

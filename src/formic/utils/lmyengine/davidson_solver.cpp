@@ -274,14 +274,14 @@ cqmc::engine::DavidsonLMHD::DavidsonLMHD(const formic::VarDeps * dep_ptr,
              vgsa,
              der_rat,
              le_der),
-_build_lm_matrix(build_lm_matrix),
 _nkry(0),
 _n_max_iter(lm_krylov_iter),
+_smallest_sin_value(0.0),
 _singular_value_threshold(lm_min_S_eval),
+_build_lm_matrix(build_lm_matrix),
 _hmat(hmat),
 _smat(smat),
-_lmsmat(lmsmat),
-_smallest_sin_value(0.0)
+_lmsmat(lmsmat)
 {
 
   // get rank number and number of ranks 

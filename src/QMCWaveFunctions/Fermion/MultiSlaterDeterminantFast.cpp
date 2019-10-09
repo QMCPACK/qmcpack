@@ -22,22 +22,22 @@ namespace qmcplusplus
 MultiSlaterDeterminantFast::MultiSlaterDeterminantFast(ParticleSet& targetPtcl,
                                                        MultiDiracDeterminant* up,
                                                        MultiDiracDeterminant* dn)
-    : C2node_up(nullptr),
+    : RatioTimer(*TimerManager.createTimer("MultiSlaterDeterminantFast::ratio")),
+      RatioGradTimer(*TimerManager.createTimer("MultiSlaterDeterminantFast::ratioGrad")),
+      RatioAllTimer(*TimerManager.createTimer("MultiSlaterDeterminantFast::ratio(all)")),
+      UpdateTimer(*TimerManager.createTimer("MultiSlaterDeterminantFast::updateBuffer")),
+      EvaluateTimer(*TimerManager.createTimer("MultiSlaterDeterminantFast::evaluate")),
+      Ratio1Timer(*TimerManager.createTimer("MultiSlaterDeterminantFast::detEval_ratio")),
+      Ratio1GradTimer(*TimerManager.createTimer("MultiSlaterDeterminantFast::detEval_ratioGrad")),
+      Ratio1AllTimer(*TimerManager.createTimer("MultiSlaterDeterminantFast::detEval_ratio(all)")),
+      AccRejTimer(*TimerManager.createTimer("MultiSlaterDeterminantFast::Accept_Reject")),
+      IsCloned(false),
+      C2node_up(nullptr),
       C2node_dn(nullptr),
       C(nullptr),
       CSFcoeff(nullptr),
       DetsPerCSF(nullptr),
-      CSFexpansion(nullptr),
-      IsCloned(false),
-      RatioTimer(*TimerManager.createTimer("MultiSlaterDeterminantFast::ratio")),
-      RatioGradTimer(*TimerManager.createTimer("MultiSlaterDeterminantFast::ratioGrad")),
-      RatioAllTimer(*TimerManager.createTimer("MultiSlaterDeterminantFast::ratio(all)")),
-      Ratio1Timer(*TimerManager.createTimer("MultiSlaterDeterminantFast::detEval_ratio")),
-      Ratio1GradTimer(*TimerManager.createTimer("MultiSlaterDeterminantFast::detEval_ratioGrad")),
-      Ratio1AllTimer(*TimerManager.createTimer("MultiSlaterDeterminantFast::detEval_ratio(all)")),
-      UpdateTimer(*TimerManager.createTimer("MultiSlaterDeterminantFast::updateBuffer")),
-      EvaluateTimer(*TimerManager.createTimer("MultiSlaterDeterminantFast::evaluate")),
-      AccRejTimer(*TimerManager.createTimer("MultiSlaterDeterminantFast::Accept_Reject"))
+      CSFexpansion(nullptr)
 {
   registerTimers();
   //Optimizable=true;

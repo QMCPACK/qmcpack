@@ -26,7 +26,7 @@ private:
   xmlNodePtr myNode;
 
 public:
-  DMCFactory(bool pbyp, bool gpu, xmlNodePtr cur) : PbyPUpdate(pbyp), myNode(cur), GPU(gpu) {}
+  DMCFactory(bool pbyp, bool gpu, xmlNodePtr cur) : PbyPUpdate(pbyp), GPU(gpu), myNode(cur) {}
 
   QMCDriver* create(MCWalkerConfiguration& w,
                     TrialWaveFunction& psi,

@@ -17,7 +17,7 @@
 namespace qmcplusplus
 {
 LCAOrbitalSet::LCAOrbitalSet(basis_type* bs, bool optimize)
-    : SPOSet(true, optimize), myBasisSet(nullptr), params_supplied(false), BasisSetSize(0), Identity(true)
+    : SPOSet(true, optimize), myBasisSet(nullptr), BasisSetSize(0), params_supplied(false), Identity(true)
 {
   if (bs != nullptr)
     setBasisSet(bs);

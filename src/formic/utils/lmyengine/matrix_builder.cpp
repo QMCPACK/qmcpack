@@ -29,11 +29,11 @@
 //
 //
 //////////////////////////////////////////////////////////////////////////////////////////////
-cqmc::engine::HamOvlpBuilderHD::HamOvlpBuilderHD(formic::Matrix<double> & der_rat, 
-                                                 formic::Matrix<double> & le_der,
-                                                 formic::Matrix<double> & ls_der,
-                                                 const std::vector<double> & vgs,
-                                                 const std::vector<double> & weight,
+cqmc::engine::HamOvlpBuilderHD::HamOvlpBuilderHD(formic::Matrix<double>& der_rat,
+                                                 formic::Matrix<double>& le_der,
+                                                 formic::Matrix<double>& ls_der,
+                                                 const std::vector<double>& vgs,
+                                                 const std::vector<double>& weight,
                                                  const double hd_shift,
                                                  const int num_params,
                                                  const int appro_degree,
@@ -43,22 +43,21 @@ cqmc::engine::HamOvlpBuilderHD::HamOvlpBuilderHD(formic::Matrix<double> & der_ra
                                                  const bool build_lm_matrix,
                                                  const bool ss_build,
                                                  const bool print_matrix)
-:_der_rat(der_rat),
-_le_der(le_der),
-_ls_der(ls_der),
-_vgs(vgs),
-_weight(weight),
-_hd_shift(hd_shift),
-_num_params(num_params),
-_appro_degree(appro_degree),
-_spam_use(spam_use),
-_ground_state(ground_state),
-_variance_correct(variance_correct),
-_build_lm_matrix(build_lm_matrix),
-_ss_build(ss_build),
-_print_matrix(print_matrix)
+    : _hd_shift(hd_shift),
+      _appro_degree(appro_degree),
+      _num_params(num_params),
+      _der_rat(der_rat),
+      _le_der(le_der),
+      _ls_der(ls_der),
+      _vgs(vgs),
+      _weight(weight),
+      _spam_use(spam_use),
+      _ground_state(ground_state),
+      _variance_correct(variance_correct),
+      _build_lm_matrix(build_lm_matrix),
+      _ss_build(ss_build),
+      _print_matrix(print_matrix)
 {
-  
   // number of threads
   int NumThreads = omp_get_max_threads();
 
@@ -80,7 +79,6 @@ _print_matrix(print_matrix)
     if ( _ss_build ) 
       _ssmat_temp[ip].reset(ndim, ndim, 0.0);
   }
-
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////

@@ -54,6 +54,7 @@ QMCDriverNew::QMCDriverNew(QMCDriverInput&& input,
                            Communicate* comm)
     : MPIObjectBase(comm),
       qmcdriver_input_(input),
+      walkers_per_crowd_(1),
       branch_engine_(nullptr),
       population_(population),
       Psi(psi),
@@ -61,7 +62,6 @@ QMCDriverNew::QMCDriverNew(QMCDriverInput&& input,
       psiPool(ppool),
       estimator_manager_(nullptr),
       wOut(0),
-      walkers_per_crowd_(1),
       timers_(timer_prefix)
       // num_crowds_(input.get_num_crowds())
 {

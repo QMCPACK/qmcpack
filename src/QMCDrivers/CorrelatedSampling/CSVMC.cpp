@@ -39,7 +39,7 @@ CSVMC::CSVMC(MCWalkerConfiguration& w,
              QMCHamiltonian& h,
              WaveFunctionPool& ppool,
              Communicate* comm)
-    : QMCDriver(w, psi, h, ppool, comm), multiEstimator(0), Mover(0), UseDrift("yes")
+    : QMCDriver(w, psi, h, ppool, comm), UseDrift("yes"), multiEstimator(0), Mover(0)
 {
   RootName = "csvmc";
   QMCType  = "CSVMC";
