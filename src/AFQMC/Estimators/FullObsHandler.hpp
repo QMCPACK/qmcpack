@@ -71,8 +71,8 @@ class FullObsHandler: public AFQMCInfo
   FullObsHandler(afqmc::TaskGroup_& tg_, AFQMCInfo& info,
         std::string name_, xmlNodePtr cur, WALKER_TYPES wlk, 
         Wavefunction& wfn):
-                                    AFQMCInfo(info),TG(tg_),name(name_),walker_type(wlk),
-                                    wfn0(wfn), writer(false), block_size(1), nave(1),
+                                    AFQMCInfo(info),TG(tg_),walker_type(wlk),
+                                    wfn0(wfn), writer(false), block_size(1), nave(1),name(name_),
                                     nspins((walker_type==COLLINEAR)?2:1),
                                     Buff(iextensions<1u>{1},make_localTG_allocator<ComplexType>(TG))
   {
@@ -233,25 +233,25 @@ class FullObsHandler: public AFQMCInfo
 
   private:
 
-  int nave;
-
-  int block_size;
-
-  std::string name;
-
   TaskGroup_& TG;
 
   WALKER_TYPES walker_type;
+
+  Wavefunction& wfn0;
+
+  bool writer;
+
+  int block_size;
+
+  int nave;
+
+  std::string name;
 
   int nspins;
   int dm_size;
   std::tuple<int,int> Gdims;
 
-  Wavefunction& wfn0;
-
   std::vector<Observable> properties;
-
-  bool writer;
 
   // denominator (nave, ...)  
   stdCVector denominator;    
