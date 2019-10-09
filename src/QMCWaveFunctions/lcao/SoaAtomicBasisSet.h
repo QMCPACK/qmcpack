@@ -146,6 +146,17 @@ struct SoaAtomicBasisSet
     T r_new;
     // T psi_new, dpsi_x_new, dpsi_y_new, dpsi_z_new,d2psi_new;
 
+    PosType Tvec;
+
+    Tvec[0] = std::floor(gendisp[0]/(lattice.R(0, 0)+lattice.R(1, 0)+lattice.R(2, 0)))*(lattice.R(0, 0)+lattice.R(1, 0)+lattice.R(2, 0));
+    Tvec[1] = std::floor(gendisp[1]/(lattice.R(0, 1)+lattice.R(1, 1)+lattice.R(2, 1)))*(lattice.R(0, 1)+lattice.R(1, 1)+lattice.R(2, 1));
+    Tvec[2] = std::floor(gendisp[2]/(lattice.R(0, 2)+lattice.R(1, 2)+lattice.R(2, 2)))*(lattice.R(0, 2)+lattice.R(1, 2)+lattice.R(2, 2));
+
+    RealType phasearg = SuperTwist[0]*Tvec[0]+SuperTwist[1]*Tvec[1]+SuperTwist[2]*Tvec[2]; //ANOUAR
+    RealType s, c;
+    sincos(-phasearg,&s,&c);
+    const ValueType correctphase(c,s);
+
     constexpr T cone(1);
     constexpr T ctwo(2);
     //Phase_idx needs to be initialized at -1 as it has to be incremented first to comply with the if statement (r_new >=Rmax) 
@@ -166,6 +177,9 @@ struct SoaAtomicBasisSet
     const T* restrict ylm_z = Ylm[3]; //gradZ
     auto* restrict d2psi    = vgl.data(4) + offset;
     const T* restrict ylm_l = Ylm[4]; //lap
+
+    //std::cout << "gendisp: " << gendisp[0] << " " << gendisp[1] << " " << gendisp[2] << std::endl;
+    //std::cout << "gendisp-Tvec: " << gendisp[0]-Tvec[0] << " " << gendisp[1]-Tvec[1] << " " << gendisp[2]-Tvec[2] << std::endl;
 
     for (size_t ib = 0; ib < BasisSetSize; ++ib)
     {
@@ -192,9 +206,9 @@ struct SoaAtomicBasisSet
 //          dr_new[1] = dr[1] + TransX * lattice.R(0, 1) + TransY * lattice.R(1, 1) + TransZ * lattice.R(2, 1);
 //          dr_new[2] = dr[2] + TransX * lattice.R(0, 2) + TransY * lattice.R(1, 2) + TransZ * lattice.R(2, 2);
 
-          dr_new[0] = gendisp[0] + (TransX * lattice.R(0, 0) + TransY * lattice.R(1, 0) + TransZ * lattice.R(2, 0));
-          dr_new[1] = gendisp[1] + (TransX * lattice.R(0, 1) + TransY * lattice.R(1, 1) + TransZ * lattice.R(2, 1));
-          dr_new[2] = gendisp[2] + (TransX * lattice.R(0, 2) + TransY * lattice.R(1, 2) + TransZ * lattice.R(2, 2));
+          dr_new[0] = gendisp[0] - Tvec[0] + (TransX * lattice.R(0, 0) + TransY * lattice.R(1, 0) + TransZ * lattice.R(2, 0));
+          dr_new[1] = gendisp[1] - Tvec[1] + (TransX * lattice.R(0, 1) + TransY * lattice.R(1, 1) + TransZ * lattice.R(2, 1));
+          dr_new[2] = gendisp[2] - Tvec[2] + (TransX * lattice.R(0, 2) + TransY * lattice.R(1, 2) + TransZ * lattice.R(2, 2));
           r_new     = std::sqrt(dot(dr_new, dr_new));
 
           iter++;
@@ -223,12 +237,12 @@ struct SoaAtomicBasisSet
             const T ang_z     = ylm_z[lm];
             const T vr        = phi[nl];
 
-            psi[ib] += ang * vr * periodic_image_phase_factors[iter];
-            dpsi_x[ib] += (ang * gr_x + vr * ang_x) * periodic_image_phase_factors[iter];
-            dpsi_y[ib] += (ang * gr_y + vr * ang_y) * periodic_image_phase_factors[iter];
-            dpsi_z[ib] += (ang * gr_z + vr * ang_z) * periodic_image_phase_factors[iter];
+            psi[ib] += ang * vr * periodic_image_phase_factors[iter] * correctphase;
+            dpsi_x[ib] += (ang * gr_x + vr * ang_x) * periodic_image_phase_factors[iter] * correctphase;
+            dpsi_y[ib] += (ang * gr_y + vr * ang_y) * periodic_image_phase_factors[iter] * correctphase;
+            dpsi_z[ib] += (ang * gr_z + vr * ang_z) * periodic_image_phase_factors[iter] * correctphase;
             d2psi[ib] += (ang * (ctwo * drnloverr + d2phi[nl]) + ctwo * (gr_x * ang_x + gr_y * ang_y + gr_z * ang_z) +
-                vr * ylm_l[lm]) * periodic_image_phase_factors[iter];
+                vr * ylm_l[lm]) * periodic_image_phase_factors[iter] * correctphase;
           }
         }
       }
@@ -599,6 +613,16 @@ struct SoaAtomicBasisSet
   {
     int TransX, TransY, TransZ;
 
+    PosType Tvec;
+    Tvec[0] = std::floor(gendisp[0]/(lattice.R(0, 0)+lattice.R(1, 0)+lattice.R(2, 0)))*(lattice.R(0, 0)+lattice.R(1, 0)+lattice.R(2, 0));
+    Tvec[1] = std::floor(gendisp[1]/(lattice.R(0, 1)+lattice.R(1, 1)+lattice.R(2, 1)))*(lattice.R(0, 1)+lattice.R(1, 1)+lattice.R(2, 1));
+    Tvec[2] = std::floor(gendisp[2]/(lattice.R(0, 2)+lattice.R(1, 2)+lattice.R(2, 2)))*(lattice.R(0, 2)+lattice.R(1, 2)+lattice.R(2, 2));
+
+    RealType phasearg = SuperTwist[0]*Tvec[0]+SuperTwist[1]*Tvec[1]+SuperTwist[2]*Tvec[2]; //ANOUAR
+    RealType s, c;
+    sincos(-phasearg,&s,&c);
+    const ValueType correctphase(c,s);
+
     PosType dr_new;
     T r_new;
     RealType* restrict ylm_v = tempS.data(0);
@@ -619,12 +643,12 @@ struct SoaAtomicBasisSet
         {
           //Allows to increment cells from 0,1,-1,2,-2,3,-3 etc...
           TransZ    = ((k % 2) * 2 - 1) * ((k + 1) / 2);
-         // dr_new[0] = dr[0] + TransX * lattice.R(0, 0) + TransY * lattice.R(1, 0) + TransZ * lattice.R(2, 0);
-         // dr_new[1] = dr[1] + TransX * lattice.R(0, 1) + TransY * lattice.R(1, 1) + TransZ * lattice.R(2, 1);
-         // dr_new[2] = dr[2] + TransX * lattice.R(0, 2) + TransY * lattice.R(1, 2) + TransZ * lattice.R(2, 2);
-          dr_new[0] = gendisp[0] + (TransX * lattice.R(0, 0) + TransY * lattice.R(1, 0) + TransZ * lattice.R(2, 0));
-          dr_new[1] = gendisp[1] + (TransX * lattice.R(0, 1) + TransY * lattice.R(1, 1) + TransZ * lattice.R(2, 1));
-          dr_new[2] = gendisp[2] + (TransX * lattice.R(0, 2) + TransY * lattice.R(1, 2) + TransZ * lattice.R(2, 2));
+          //dr_new[0] = dr[0] + TransX * lattice.R(0, 0) + TransY * lattice.R(1, 0) + TransZ * lattice.R(2, 0);
+          //dr_new[1] = dr[1] + TransX * lattice.R(0, 1) + TransY * lattice.R(1, 1) + TransZ * lattice.R(2, 1);
+          //dr_new[2] = dr[2] + TransX * lattice.R(0, 2) + TransY * lattice.R(1, 2) + TransZ * lattice.R(2, 2);
+          dr_new[0] = gendisp[0] - Tvec[0] + (TransX * lattice.R(0, 0) + TransY * lattice.R(1, 0) + TransZ * lattice.R(2, 0));
+          dr_new[1] = gendisp[1] - Tvec[1] + (TransX * lattice.R(0, 1) + TransY * lattice.R(1, 1) + TransZ * lattice.R(2, 1));
+          dr_new[2] = gendisp[2] - Tvec[2] + (TransX * lattice.R(0, 2) + TransY * lattice.R(1, 2) + TransZ * lattice.R(2, 2));
 
           r_new = std::sqrt(dot(dr_new, dr_new));
           iter++;
@@ -634,7 +658,7 @@ struct SoaAtomicBasisSet
           Ylm.evaluateV(-dr_new[0], -dr_new[1], -dr_new[2], ylm_v);
           MultiRnl->evaluate(r_new, phi_r);
           for (size_t ib = 0; ib < BasisSetSize; ++ib)
-            psi[ib] += ylm_v[LM[ib]] * phi_r[NL[ib]] * periodic_image_phase_factors[iter];
+            psi[ib] += ylm_v[LM[ib]] * phi_r[NL[ib]] * periodic_image_phase_factors[iter] * correctphase;
 
         }
       }

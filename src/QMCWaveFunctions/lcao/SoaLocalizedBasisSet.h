@@ -182,9 +182,9 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
     std::vector<double> gendisp;
     gendisp.resize(3); 
     for (int c = 0; c < NumCenters; c++){
-      gendisp[0]=1.0*(ions_.R[c][0]-coordR[0]);
-      gendisp[1]=1.0*(ions_.R[c][1]-coordR[1]);
-      gendisp[2]=1.0*(ions_.R[c][2]-coordR[2]);
+      gendisp[0]=(ions_.R[c][0]-coordR[0]);
+      gendisp[1]=(ions_.R[c][1]-coordR[1]);
+      gendisp[2]=(ions_.R[c][2]-coordR[2]);
       LOBasisSet[IonID[c]]->evaluateVGL(P.Lattice, dist[c], displ[c], BasisOffset[c], vgl,gendisp);
    }
   }
@@ -245,9 +245,9 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
     std::vector<double> gendisp;
     gendisp.resize(3); 
     for (int c = 0; c < NumCenters; c++){
-      gendisp[0]=1.0*(ions_.R[c][0]-coordR[0]);
-      gendisp[1]=1.0*(ions_.R[c][1]-coordR[1]);
-      gendisp[2]=1.0*(ions_.R[c][2]-coordR[2]);
+      gendisp[0]=(ions_.R[c][0]-coordR[0]);
+      gendisp[1]=(ions_.R[c][1]-coordR[1]);
+      gendisp[2]=(ions_.R[c][2]-coordR[2]);
       LOBasisSet[IonID[c]]->evaluateV(P.Lattice, dist[c], displ[c], vals + BasisOffset[c],gendisp);
    }
 
