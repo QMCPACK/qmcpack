@@ -1,4 +1,4 @@
-#ifndef ROTATION_HELPER_H 
+#ifndef ROTATION_HELPER_H
 #define ROTATION_HELPER_H
 
 #include "QMCWaveFunctions/SPOSet.h"
@@ -9,13 +9,11 @@
 #include "Numerics/DeterminantOperators.h"
 
 
-
 namespace qmcplusplus
 {
-
-class RotationHelper : public SPOSet 
+class RotationHelper : public SPOSet
 {
-public: 
+public:
   //constructor
   RotationHelper(SPOSet* spos);
   //destructor
@@ -30,7 +28,7 @@ public:
   //helper function to apply_rotation
   void exponentiate_antisym_matrix(ValueMatrix_t& mat);
 
-  //A particualr SPOSet used for Orbitals 
+  //A particualr SPOSet used for Orbitals
   SPOSet* Phi;
 
   /// true if SPO parameters (orbital rotation parameters) have been supplied by input
@@ -43,30 +41,30 @@ public:
   SPOSet* makeClone() const;
 
   // myG_temp (myL_temp) is the Gradient (Laplacian) value of of the Determinant part of the wfn
-  // myG_J is the Gradient of the all other parts of the wavefunction (typically just the Jastrow). 
-  //       It represents \frac{\nabla\psi_{J}}{\psi_{J}} 
+  // myG_J is the Gradient of the all other parts of the wavefunction (typically just the Jastrow).
+  //       It represents \frac{\nabla\psi_{J}}{\psi_{J}}
   // myL_J will be used to represent \frac{\nabla^2\psi_{J}}{\psi_{J}} . The Laplacian portion
-  // IMPORTANT NOTE:  The value of P.L holds \nabla^2 ln[\psi] but we need  \frac{\nabla^2 \psi}{\psi} and this is what myL_J will hold 
-  ParticleSet::ParticleGradient_t  myG_temp, myG_J;
+  // IMPORTANT NOTE:  The value of P.L holds \nabla^2 ln[\psi] but we need  \frac{\nabla^2 \psi}{\psi} and this is what myL_J will hold
+  ParticleSet::ParticleGradient_t myG_temp, myG_J;
   ParticleSet::ParticleLaplacian_t myL_temp, myL_J;
 
   ValueMatrix_t Bbar;
   ValueMatrix_t psiM_inv;
   ValueMatrix_t psiM_all;
-  GradMatrix_t  dpsiM_all;
+  GradMatrix_t dpsiM_all;
   ValueMatrix_t d2psiM_all;
 
 
   // Single Slater creation
-  void buildOptVariables(const size_t& nel);                  
-  // For the MSD case rotations must be created in MultiSlaterFast class      
+  void buildOptVariables(const size_t& nel);
+  // For the MSD case rotations must be created in MultiSlaterFast class
   void buildOptVariables(const std::vector<std::pair<int, int>>& rotations);
 
 
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& optvars,
                            std::vector<ValueType>& dlogpsi,
-                           std::vector<ValueType>& dhpsioverpsi, 
+                           std::vector<ValueType>& dhpsioverpsi,
                            const int& FirstIndex,
                            const int& LastIndex);
 
@@ -91,13 +89,13 @@ public:
                            const GradMatrix_t& B_grad,
                            const ValueMatrix_t& B_lapl,
                            const std::vector<int>& detData_up,
-                           const size_t N1, 
+                           const size_t N1,
                            const size_t N2,
                            const size_t NP1,
                            const size_t NP2,
                            const std::vector<std::vector<int>>& lookup_tbl);
-  
-//helper function to evaluatederivative; evaluate orbital rotation parameter derivative using table method
+
+  //helper function to evaluatederivative; evaluate orbital rotation parameter derivative using table method
   void table_method_eval(std::vector<ValueType>& dlogpsi,
                          std::vector<ValueType>& dhpsioverpsi,
                          const ParticleSet::ParticleLaplacian_t& myL_J,
@@ -161,51 +159,50 @@ public:
   }
   //*********************************************************************************
   //the following functions simply call Phi's corresponding functions
-  void resetTargetParticleSet(ParticleSet& P)
-  {Phi->resetTargetParticleSet(P); }
+  void resetTargetParticleSet(ParticleSet& P) { Phi->resetTargetParticleSet(P); }
 
-  void setOrbitalSetSize(int norbs)
-  {Phi->setOrbitalSetSize(norbs); }
+  void setOrbitalSetSize(int norbs) { Phi->setOrbitalSetSize(norbs); }
 
-//  void setBasisSet(basis_type* bs);
+  //  void setBasisSet(basis_type* bs);
 
-  int getBasisSetSize()
-  {return Phi->getBasisSetSize(); }
+  int getBasisSetSize() { return Phi->getBasisSetSize(); }
 
-//  bool setIdentity(bool useIdentity)
-//  {return Phi->setIdentity(useIdentity); }
+  //  bool setIdentity(bool useIdentity)
+  //  {return Phi->setIdentity(useIdentity); }
 
-  void checkObject()
-  {Phi->checkObject(); }
+  void checkObject() { Phi->checkObject(); }
 
-  void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
-  {Phi->evaluate(P, iat, psi); }
+  void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi) { Phi->evaluate(P, iat, psi); }
+
+
+  void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
+  {
+    Phi->evaluate(P, iat, psi, dpsi, d2psi);
+  }
+
+  void evaluateDetRatios(const VirtualParticleSet& VP,
+                         ValueVector_t& psi,
+                         const ValueVector_t& psiinv,
+                         std::vector<ValueType>& ratios)
+  {
+    Phi->evaluateDetRatios(VP, psi, psiinv, ratios);
+  }
+
+  void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, HessVector_t& grad_grad_psi)
+  {
+    Phi->evaluate(P, iat, psi, dpsi, grad_grad_psi);
+  }
 
 
   void evaluate(const ParticleSet& P,
                 int iat,
                 ValueVector_t& psi,
                 GradVector_t& dpsi,
-                ValueVector_t& d2psi)
-  {Phi->evaluate(P, iat, psi, dpsi, d2psi); } 
-
-  void evaluateDetRatios(const VirtualParticleSet& VP,
-                         ValueVector_t& psi,
-                         const ValueVector_t& psiinv,
-                         std::vector<ValueType>& ratios)
-  {Phi->evaluateDetRatios(VP, psi, psiinv, ratios); } 
-
-  void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, HessVector_t& grad_grad_psi)
-  {Phi->evaluate(P, iat, psi, dpsi, grad_grad_psi); } 
-
-
-  void evaluate(const ParticleSet& P, 
-               int iat, 
-               ValueVector_t& psi, 
-               GradVector_t& dpsi, 
-               HessVector_t& grad_grad_psi,
-               GGGVector_t& grad_grad_grad_psi)
-  {Phi->evaluate(P, iat, psi, dpsi, grad_grad_psi, grad_grad_grad_psi); } 
+                HessVector_t& grad_grad_psi,
+                GGGVector_t& grad_grad_grad_psi)
+  {
+    Phi->evaluate(P, iat, psi, dpsi, grad_grad_psi, grad_grad_grad_psi);
+  }
 
 
   void evaluate_notranspose(const ParticleSet& P,
@@ -213,8 +210,10 @@ public:
                             int last,
                             ValueMatrix_t& logdet,
                             GradMatrix_t& dlogdet,
-                            ValueMatrix_t& d2logdet) 
-  {Phi->evaluate_notranspose(P, first, last, logdet, dlogdet, d2logdet); }
+                            ValueMatrix_t& d2logdet)
+  {
+    Phi->evaluate_notranspose(P, first, last, logdet, dlogdet, d2logdet);
+  }
 
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
@@ -222,7 +221,9 @@ public:
                             ValueMatrix_t& logdet,
                             GradMatrix_t& dlogdet,
                             HessMatrix_t& grad_grad_logdet)
-  {Phi->evaluate_notranspose(P, first, last, logdet, dlogdet, grad_grad_logdet); } 
+  {
+    Phi->evaluate_notranspose(P, first, last, logdet, dlogdet, grad_grad_logdet);
+  }
 
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
@@ -231,7 +232,9 @@ public:
                             GradMatrix_t& dlogdet,
                             HessMatrix_t& grad_grad_logdet,
                             GGGMatrix_t& grad_grad_grad_logdet)
-  {Phi->evaluate_notranspose(P, first, last, logdet, dlogdet, grad_grad_logdet, grad_grad_grad_logdet); } 
+  {
+    Phi->evaluate_notranspose(P, first, last, logdet, dlogdet, grad_grad_logdet, grad_grad_grad_logdet);
+  }
 
   void evaluateGradSource(const ParticleSet& P,
                           int first,
@@ -239,7 +242,9 @@ public:
                           const ParticleSet& source,
                           int iat_src,
                           GradMatrix_t& grad_phi)
-  {Phi->evaluateGradSource(P, first, last, source, iat_src, grad_phi); } 
+  {
+    Phi->evaluateGradSource(P, first, last, source, iat_src, grad_phi);
+  }
 
   void evaluateGradSource(const ParticleSet& P,
                           int first,
@@ -249,12 +254,12 @@ public:
                           GradMatrix_t& grad_phi,
                           HessMatrix_t& grad_grad_phi,
                           GradMatrix_t& grad_lapl_phi)
-  {Phi->evaluateGradSource(P, first, last, source, iat_src, grad_phi, grad_grad_phi, grad_lapl_phi); } 
+  {
+    Phi->evaluateGradSource(P, first, last, source, iat_src, grad_phi, grad_grad_phi, grad_lapl_phi);
+  }
 
-//  void evaluateThirdDeriv(const ParticleSet& P, int first, int last, GGGMatrix_t& grad_grad_grad_logdet)
-//  {Phi->evaluateThridDeriv(P, first, last, grad_grad_grad_logdet); }
-
-
+  //  void evaluateThirdDeriv(const ParticleSet& P, int first, int last, GGGMatrix_t& grad_grad_grad_logdet)
+  //  {Phi->evaluateThridDeriv(P, first, last, grad_grad_grad_logdet); }
 };
 
 } //namespace qmcplusplus

@@ -5,21 +5,16 @@
 
 namespace qmcplusplus
 {
-
 RotationHelper::RotationHelper(SPOSet* spos)
-    : SPOSet(spos->hasIonDerivs(), true),
-      Phi(spos),
-      params_supplied(false),
-      IsCloned(false)
+    : SPOSet(spos->hasIonDerivs(), true), Phi(spos), params_supplied(false), IsCloned(false)
 {
-  className = "RotationHelper";
+  className      = "RotationHelper";
   OrbitalSetSize = Phi->getOrbitalSetSize();
 }
 
-RotationHelper::~RotationHelper()
-{}
+RotationHelper::~RotationHelper() {}
 
-void RotationHelper::buildOptVariables(const size_t& nel) 
+void RotationHelper::buildOptVariables(const size_t& nel)
 {
 //  Phi->buildOptVariables(nel);
 #if !defined(QMC_COMPLEX)
@@ -29,9 +24,9 @@ void RotationHelper::buildOptVariables(const size_t& nel)
   std::vector<std::pair<int, int>> created_m_act_rot_inds;
 
   // only core->active rotations created
-  for (int i = 0; i < nel; i++) 
-    for (int j = nel; j < nmo; j++) 
-      created_m_act_rot_inds.push_back(std::pair<int,int>(i,j));
+  for (int i = 0; i < nel; i++)
+    for (int j = nel; j < nmo; j++)
+      created_m_act_rot_inds.push_back(std::pair<int, int>(i, j));
 
   buildOptVariables(created_m_act_rot_inds);
 
@@ -191,128 +186,134 @@ void RotationHelper::exponentiate_antisym_matrix(ValueMatrix_t& mat)
 
 
 void RotationHelper::evaluateDerivatives(ParticleSet& P,
-                         const opt_variables_type& optvars,
-                         std::vector<ValueType>& dlogpsi,
-                         std::vector<ValueType>& dhpsioverpsi, 
-                         const int& FirstIndex,
-                         const int& LastIndex)
+                                         const opt_variables_type& optvars,
+                                         std::vector<ValueType>& dlogpsi,
+                                         std::vector<ValueType>& dhpsioverpsi,
+                                         const int& FirstIndex,
+                                         const int& LastIndex)
 {
   const size_t nel = LastIndex - FirstIndex;
   const size_t nmo = Phi->getOrbitalSetSize();
 
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~PART1
-  myG_temp.resize(nel); myG_J.resize(nel);
-  myL_temp.resize(nel); myL_J.resize(nel);  
+  //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~PART1
+  myG_temp.resize(nel);
+  myG_J.resize(nel);
+  myL_temp.resize(nel);
+  myL_J.resize(nel);
 
-  myG_temp = 0; myG_J = 0;
-  myL_temp = 0; myL_J = 0;
-  
-  Bbar.resize(nel,nmo);
-  psiM_inv.resize(nel,nel);
-  psiM_all.resize(nel,nmo);
-  dpsiM_all.resize(nel,nmo);
-  d2psiM_all.resize(nel,nmo);
+  myG_temp = 0;
+  myG_J    = 0;
+  myL_temp = 0;
+  myL_J    = 0;
 
-  Bbar = 0;
-  psiM_inv = 0;
-  psiM_all = 0;
-  dpsiM_all = 0;
+  Bbar.resize(nel, nmo);
+  psiM_inv.resize(nel, nel);
+  psiM_all.resize(nel, nmo);
+  dpsiM_all.resize(nel, nmo);
+  d2psiM_all.resize(nel, nmo);
+
+  Bbar       = 0;
+  psiM_inv   = 0;
+  psiM_all   = 0;
+  dpsiM_all  = 0;
   d2psiM_all = 0;
 
 
   Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM_all, dpsiM_all, d2psiM_all);
 
-  for (int i=0; i<nel; i++)
-    for(int j=0; j<nel; j++)
-      psiM_inv(i,j) = psiM_all(i,j);
+  for (int i = 0; i < nel; i++)
+    for (int j = 0; j < nel; j++)
+      psiM_inv(i, j) = psiM_all(i, j);
 
   Invert(psiM_inv.data(), nel, nel);
 
-  //current value of Gradient and Laplacian                                                              
+  //current value of Gradient and Laplacian
   // gradient components
   for (int a = 0; a < nel; a++)
     for (int i = 0; i < nel; i++)
       for (int k = 0; k < 3; k++)
         myG_temp[a][k] += psiM_inv(i, a) * dpsiM_all(a, i)[k];
   // laplacian components
-  for (int a = 0; a < nel; a++){
+  for (int a = 0; a < nel; a++)
+  {
     for (int i = 0; i < nel; i++)
       myL_temp[a] += psiM_inv(i, a) * d2psiM_all(a, i);
   }
 
-  // calculation of myG_J which will be used to represent \frac{\nabla\psi_{J}}{\psi_{J}} 
+  // calculation of myG_J which will be used to represent \frac{\nabla\psi_{J}}{\psi_{J}}
   // calculation of myL_J will be used to represent \frac{\nabla^2\psi_{J}}{\psi_{J}}
-  // IMPORTANT NOTE:  The value of P.L holds \nabla^2 ln[\psi] but we need  \frac{\nabla^2 \psi}{\psi} and this is what myL_J will hold 
-  for(int a = 0, iat = FirstIndex; a < nel; a++, iat++){
+  // IMPORTANT NOTE:  The value of P.L holds \nabla^2 ln[\psi] but we need  \frac{\nabla^2 \psi}{\psi} and this is what myL_J will hold
+  for (int a = 0, iat = FirstIndex; a < nel; a++, iat++)
+  {
     myG_J[a] = (P.G[iat] - myG_temp[a]);
-    myL_J[a] = (P.L[iat] + dot(P.G[iat],P.G[iat]) - myL_temp[a]);
+    myL_J[a] = (P.L[iat] + dot(P.G[iat], P.G[iat]) - myL_temp[a]);
   }
-  //possibly replace wit BLAS calls 
-  for(int i = 0; i < nel; i++)
-    for(int j = 0; j < nmo; j++)
-      Bbar(i,j) = d2psiM_all(i,j) + 2*dot(myG_J[i], dpsiM_all(i,j)) + myL_J[i]*psiM_all(i,j);
+  //possibly replace wit BLAS calls
+  for (int i = 0; i < nel; i++)
+    for (int j = 0; j < nmo; j++)
+      Bbar(i, j) = d2psiM_all(i, j) + 2 * dot(myG_J[i], dpsiM_all(i, j)) + myL_J[i] * psiM_all(i, j);
 
 
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~PART2
-  const double* const A(psiM_all.data());  
-  const double* const Ainv(psiM_inv.data());  
-  const double* const B(Bbar.data());  
+  //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~PART2
+  const double* const A(psiM_all.data());
+  const double* const Ainv(psiM_inv.data());
+  const double* const B(Bbar.data());
   SPOSet::ValueMatrix_t T;
   SPOSet::ValueMatrix_t Y1;
   SPOSet::ValueMatrix_t Y2;
   SPOSet::ValueMatrix_t Y3;
   SPOSet::ValueMatrix_t Y4;
-   T.resize(nel,nmo);
-  Y1.resize(nel,nel);
-  Y2.resize(nel,nmo);
-  Y3.resize(nel,nmo);
-  Y4.resize(nel,nmo);
+  T.resize(nel, nmo);
+  Y1.resize(nel, nel);
+  Y2.resize(nel, nmo);
+  Y3.resize(nel, nmo);
+  Y4.resize(nel, nmo);
 
 
-  BLAS::gemm('N','N', nmo, nel, nel, ValueType(1.0),        A, nmo, Ainv,      nel, ValueType(0.0),   T.data(), nmo);
-  BLAS::gemm('N','N', nel, nel, nel, ValueType(1.0),        B, nmo, Ainv,      nel, ValueType(0.0),  Y1.data(), nel);
-  BLAS::gemm('N','N', nmo, nel, nel, ValueType(1.0), T.data(), nmo, Y1.data(), nel, ValueType(0.0),  Y2.data(), nmo);
-  BLAS::gemm('N','N', nmo, nel, nel, ValueType(1.0),        B, nmo, Ainv,      nel, ValueType(0.0),  Y3.data(), nmo);
+  BLAS::gemm('N', 'N', nmo, nel, nel, ValueType(1.0), A, nmo, Ainv, nel, ValueType(0.0), T.data(), nmo);
+  BLAS::gemm('N', 'N', nel, nel, nel, ValueType(1.0), B, nmo, Ainv, nel, ValueType(0.0), Y1.data(), nel);
+  BLAS::gemm('N', 'N', nmo, nel, nel, ValueType(1.0), T.data(), nmo, Y1.data(), nel, ValueType(0.0), Y2.data(), nmo);
+  BLAS::gemm('N', 'N', nmo, nel, nel, ValueType(1.0), B, nmo, Ainv, nel, ValueType(0.0), Y3.data(), nmo);
 
   //possibly replace with BLAS call
   Y4 = Y3 - Y2;
 
   for (int i = 0; i < m_act_rot_inds.size(); i++)
   {
-    int kk = myVars.where(i);
-    const int p = m_act_rot_inds.at(i).first;
-    const int q = m_act_rot_inds.at(i).second;
-    dlogpsi.at(kk)       = T(p,q); 
-    dhpsioverpsi.at(kk)  = ValueType(-0.5) * Y4(p,q);
+    int kk              = myVars.where(i);
+    const int p         = m_act_rot_inds.at(i).first;
+    const int q         = m_act_rot_inds.at(i).second;
+    dlogpsi.at(kk)      = T(p, q);
+    dhpsioverpsi.at(kk) = ValueType(-0.5) * Y4(p, q);
   }
 }
 
-  void RotationHelper::evaluateDerivatives(ParticleSet& P,
-                                           const opt_variables_type& optvars,
-                                           std::vector<ValueType>& dlogpsi,
-                                           std::vector<ValueType>& dhpsioverpsi,
-                                           const ValueType& psiCurrent,
-                                           const std::vector<ValueType>& Coeff,
-                                           const std::vector<size_t>& C2node_up,
-                                           const std::vector<size_t>& C2node_dn,
-                                           const ValueVector_t& detValues_up,
-                                           const ValueVector_t& detValues_dn,
-                                           const GradMatrix_t& grads_up,
-                                           const GradMatrix_t& grads_dn,
-                                           const ValueMatrix_t& lapls_up,
-                                           const ValueMatrix_t& lapls_dn,
-                                           const ValueMatrix_t& M_up,
-                                           const ValueMatrix_t& M_dn,
-                                           const ValueMatrix_t& Minv_up,
-                                           const ValueMatrix_t& Minv_dn,
-                                           const GradMatrix_t& B_grad,
-                                           const ValueMatrix_t& B_lapl,
-                                           const std::vector<int>& detData_up,
-                                           const size_t N1, 
-                                           const size_t N2,
-                                           const size_t NP1,
-                                           const size_t NP2,
-                                           const std::vector<std::vector<int>>& lookup_tbl)
+void RotationHelper::evaluateDerivatives(ParticleSet& P,
+                                         const opt_variables_type& optvars,
+                                         std::vector<ValueType>& dlogpsi,
+                                         std::vector<ValueType>& dhpsioverpsi,
+                                         const ValueType& psiCurrent,
+                                         const std::vector<ValueType>& Coeff,
+                                         const std::vector<size_t>& C2node_up,
+                                         const std::vector<size_t>& C2node_dn,
+                                         const ValueVector_t& detValues_up,
+                                         const ValueVector_t& detValues_dn,
+                                         const GradMatrix_t& grads_up,
+                                         const GradMatrix_t& grads_dn,
+                                         const ValueMatrix_t& lapls_up,
+                                         const ValueMatrix_t& lapls_dn,
+                                         const ValueMatrix_t& M_up,
+                                         const ValueMatrix_t& M_dn,
+                                         const ValueMatrix_t& Minv_up,
+                                         const ValueMatrix_t& Minv_dn,
+                                         const GradMatrix_t& B_grad,
+                                         const ValueMatrix_t& B_lapl,
+                                         const std::vector<int>& detData_up,
+                                         const size_t N1,
+                                         const size_t N2,
+                                         const size_t NP1,
+                                         const size_t NP2,
+                                         const std::vector<std::vector<int>>& lookup_tbl)
 {
   bool recalculate(false);
   for (int k = 0; k < myVars.size(); ++k)
@@ -336,8 +337,8 @@ void RotationHelper::evaluateDerivatives(ParticleSet& P,
     myG_J = 0.0;
     myL_J.resize(NP);
     myL_J            = 0.0;
-    const size_t nmo = Phi->getOrbitalSetSize(); 
-    const size_t nb  = Phi->getBasisSetSize(); 
+    const size_t nmo = Phi->getOrbitalSetSize();
+    const size_t nb  = Phi->getBasisSetSize();
     const size_t nel = P.last(0) - P.first(0);
 
     const RealType* restrict C_p = Coeff.data();
@@ -789,56 +790,56 @@ $
     const int i(m_act_rot_inds[mu].first), j(m_act_rot_inds[mu].second);
     if (i <= nel - 1 && j > nel - 1)
     {
-      dlogpsi[kk] += ValueType( detValues_up[0] * (Table(i, j)) * const0 * (1 / psiCurrent) + (K4T(i, j) - K4T(j, i) - TK4T(i, j)) );
+      dlogpsi[kk] +=
+          ValueType(detValues_up[0] * (Table(i, j)) * const0 * (1 / psiCurrent) + (K4T(i, j) - K4T(j, i) - TK4T(i, j)));
 
-      dhpsioverpsi[kk] += ValueType( -0.5 * Y4(i, j) -
-          0.5 *
-              (-K5T(i, j) + K5T(j, i) + TK5T(i, j) + K2AiB(i, j) - K2AiB(j, i) - TK2AiB(i, j) - K2XA(i, j) +
-               K2XA(j, i) + TK2XA(i, j) - MK2T(i, j) + K1T(i, j) - K1T(j, i) - TK1T(i, j) -
-               const2 / const1 * K2T(i, j) + const2 / const1 * K2T(j, i) + const2 / const1 * TK2T(i, j) + K3T(i, j) -
-               K3T(j, i) - TK3T(i, j) - K2T(i, j) + K2T(j, i) + TK2T(i, j)) );
+      dhpsioverpsi[kk] +=
+          ValueType(-0.5 * Y4(i, j) -
+                    0.5 *
+                        (-K5T(i, j) + K5T(j, i) + TK5T(i, j) + K2AiB(i, j) - K2AiB(j, i) - TK2AiB(i, j) - K2XA(i, j) +
+                         K2XA(j, i) + TK2XA(i, j) - MK2T(i, j) + K1T(i, j) - K1T(j, i) - TK1T(i, j) -
+                         const2 / const1 * K2T(i, j) + const2 / const1 * K2T(j, i) + const2 / const1 * TK2T(i, j) +
+                         K3T(i, j) - K3T(j, i) - TK3T(i, j) - K2T(i, j) + K2T(j, i) + TK2T(i, j)));
     }
     else if (i <= nel - 1 && j <= nel - 1)
     {
-      dlogpsi[kk] += ValueType( detValues_up[0] * (Table(i, j) - Table(j, i)) * const0 * (1 / psiCurrent) +
-          (K4T(i, j) - TK4T(i, j) - K4T(j, i) + TK4T(j, i)) );
+      dlogpsi[kk] += ValueType(detValues_up[0] * (Table(i, j) - Table(j, i)) * const0 * (1 / psiCurrent) +
+                               (K4T(i, j) - TK4T(i, j) - K4T(j, i) + TK4T(j, i)));
 
-      dhpsioverpsi[kk] += ValueType( -0.5 * (Y4(i, j) - Y4(j, i)) -
+      dhpsioverpsi[kk] += ValueType(
+          -0.5 * (Y4(i, j) - Y4(j, i)) -
           0.5 *
               (-K5T(i, j) + K5T(j, i) + TK5T(i, j) - TK5T(j, i) + K2AiB(i, j) - K2AiB(j, i) - TK2AiB(i, j) +
                TK2AiB(j, i) - K2XA(i, j) + K2XA(j, i) + TK2XA(i, j) - TK2XA(j, i) - MK2T(i, j) + MK2T(j, i) +
                K1T(i, j) - K1T(j, i) - TK1T(i, j) + TK1T(j, i) - const2 / const1 * K2T(i, j) +
                const2 / const1 * K2T(j, i) + const2 / const1 * TK2T(i, j) - const2 / const1 * TK2T(j, i) + K3T(i, j) -
-               K3T(j, i) - TK3T(i, j) + TK3T(j, i) - K2T(i, j) + K2T(j, i) + TK2T(i, j) - TK2T(j, i)) );
+               K3T(j, i) - TK3T(i, j) + TK3T(j, i) - K2T(i, j) + K2T(j, i) + TK2T(i, j) - TK2T(j, i)));
     }
     else
     {
-      dlogpsi[kk] += ValueType( (K4T(i, j) - K4T(j, i)) );
+      dlogpsi[kk] += ValueType((K4T(i, j) - K4T(j, i)));
 
-      dhpsioverpsi[kk] += ValueType( -0.5 *
-          (-K5T(i, j) + K5T(j, i) + K2AiB(i, j) - K2AiB(j, i) - K2XA(i, j) + K2XA(j, i)
+      dhpsioverpsi[kk] += ValueType(-0.5 *
+                                    (-K5T(i, j) + K5T(j, i) + K2AiB(i, j) - K2AiB(j, i) - K2XA(i, j) + K2XA(j, i)
 
-           + K1T(i, j) - K1T(j, i) - const2 / const1 * K2T(i, j) + const2 / const1 * K2T(j, i) + K3T(i, j) - K3T(j, i) -
-           K2T(i, j) + K2T(j, i)) );
+                                     + K1T(i, j) - K1T(j, i) - const2 / const1 * K2T(i, j) +
+                                     const2 / const1 * K2T(j, i) + K3T(i, j) - K3T(j, i) - K2T(i, j) + K2T(j, i)));
     }
   }
 }
 
 
-
 SPOSet* RotationHelper::makeClone() const
 {
-  RotationHelper* myclone   = new RotationHelper(Phi->makeClone());
+  RotationHelper* myclone = new RotationHelper(Phi->makeClone());
 
-  myclone->IsCloned         = true;
-  myclone->params           = this->params;
-  myclone->params_supplied  = this->params_supplied;
-  myclone->m_act_rot_inds   = this->m_act_rot_inds;
-  myclone->myVars           = this->myVars;
+  myclone->IsCloned        = true;
+  myclone->params          = this->params;
+  myclone->params_supplied = this->params_supplied;
+  myclone->m_act_rot_inds  = this->m_act_rot_inds;
+  myclone->myVars          = this->myVars;
   return myclone;
 }
-
-
 
 
 } // namespace qmcplusplus
