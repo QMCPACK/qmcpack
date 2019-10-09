@@ -7,14 +7,11 @@ from nexus import generate_pyscf_to_afqmc
 from nexus import generate_qmcpack
 from qmcpack_input import back_propagation,onerdm
 
-
 settings(
-    results    = '',
-    sleep      = 3,
-    machine    = 'ws16',
+    results = '',
+    sleep   = 3,
+    machine = 'ws16',
     )
-
-qmcpack = '/home/j1k/apps/qmcpack/qmcpack/build_afqmc_intel/bin/qmcpack'
 
 system = generate_physical_system(
     units    = 'A',
@@ -51,7 +48,7 @@ p2a = generate_pyscf_to_afqmc(
 qmc = generate_qmcpack(
     identifier   = 'qmc',
     path         = 'afqmc',
-    job          = job(cores=1,app=qmcpack),
+    job          = job(cores=1,app='qmcpack'),
     system       = system,
     input_type   = 'basic_afqmc',
     blocks       = 1000,

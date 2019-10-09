@@ -6,14 +6,11 @@ from nexus import generate_pyscf
 from nexus import generate_pyscf_to_afqmc
 from nexus import generate_qmcpack
 
-
 settings(
-    results    = '',
-    sleep      = 3,
-    machine    = 'ws16',
+    results = '',
+    sleep   = 3,
+    machine = 'ws16',
     )
-
-qmcpack = '/home/j1k/apps/qmcpack/qmcpack/build_afqmc_intel/bin/qmcpack'
 
 a = 3.6
 
@@ -59,7 +56,7 @@ p2a = generate_pyscf_to_afqmc(
 qmc = generate_qmcpack(
     identifier   = 'qmc',
     path         = 'afqmc',
-    job          = job(cores=1,app=qmcpack),
+    job          = job(cores=1,app='qmcpack'),
     system       = system,
     input_type   = 'basic_afqmc',
     blocks       = 100,

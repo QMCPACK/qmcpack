@@ -6,14 +6,11 @@ from nexus import generate_pyscf
 from nexus import generate_pyscf_to_afqmc
 from nexus import generate_qmcpack
 
-
 settings(
-    results    = '',
-    sleep      = 3,
-    machine    = 'ws16',
+    results = '',
+    sleep   = 3,
+    machine = 'ws16',
     )
-
-qmcpack = '/home/j1k/apps/qmcpack/qmcpack/build_afqmc_intel/bin/qmcpack'
 
 system = generate_physical_system(
     units    = 'A',
@@ -22,12 +19,12 @@ system = generate_physical_system(
     )
 
 scf = generate_pyscf(
-    identifier = 'scf',               # log output goes to scf.out
-    path       = 'uhf',               # directory to run in
-    job        = job(serial=True),    # run pyscf serially         
-    template   = './scf_template.py', # pyscf template file
+    identifier = 'scf',
+    path       = 'uhf',
+    job        = job(serial=True),
+    template   = './scf_template.py',
     system     = system,
-    mole       = obj(                 # used to make Mole() inputs
+    mole       = obj(
         verbose  = 4,
         basis    = 'cc-pvtz',
         ),
@@ -47,7 +44,7 @@ p2a = generate_pyscf_to_afqmc(
 qmc = generate_qmcpack(
     identifier   = 'qmc',
     path         = 'afqmc',
-    job          = job(cores=1,app=qmcpack),
+    job          = job(cores=1,app='qmcpack'),
     system       = system,
     input_type   = 'basic_afqmc',
     blocks       = 1000,
