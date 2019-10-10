@@ -195,6 +195,7 @@ public:
 #ifdef ENABLE_SOA
     APP_ABORT("Backflow_eI.h::evaluate(P,QP) not implemented for SoA\n");
 #else
+    RealType du, d2u;
     const auto& myTable = P.getDistTable(myTableIndex_);
     for (int i = 0; i < myTable.sources(); i++)
     {
@@ -211,10 +212,10 @@ public:
 
   inline void evaluate(const ParticleSet& P, ParticleSet& QP, GradVector_t& Bmat, HessMatrix_t& Amat)
   {
-    RealType du, d2u;
 #ifdef ENABLE_SOA
     APP_ABORT("Backflow_eI.h::evaluate(P,QP,Bmat_vec,Amat) not implemented for SoA\n");
 #else
+    RealType du, d2u;
     const auto& myTable = P.getDistTable(myTableIndex_);
     for (int i = 0; i < myTable.sources(); i++)
     {
@@ -302,6 +303,7 @@ public:
 #ifdef ENABLE_SOA
     APP_ABORT("Backflow_eI.h::evaluatePbyP(P,QP,index_vec) not implemented for SoA\n");
 #else
+    RealType du, d2u;
     const auto& myTable = P.getDistTable(myTableIndex_);
     int maxI = myTable.sources();
     int iat  = index[0];
@@ -349,6 +351,7 @@ public:
 #ifdef ENABLE_SOA
     APP_ABORT("Backflow_eI.h::evaluatePbyP(P,QP,index_vec,Amat) not implemented for SoA\n");
 #else
+    RealType du, d2u;
     const auto& myTable = P.getDistTable(myTableIndex_);
     int maxI = myTable.sources();
     int iat  = index[0];
@@ -418,6 +421,7 @@ public:
 #ifdef ENABLE_SOA
     APP_ABORT("Backflow_eI.h::evaluatePbyP(P,QP,index_vec,Bmat,Amat) not implemented for SoA\n");
 #else
+    RealType du, d2u;
     const auto& myTable = P.getDistTable(myTableIndex_);
     int maxI = myTable.sources();
     int iat  = index[0];
@@ -448,6 +452,7 @@ public:
 #ifdef ENABLE_SOA
     APP_ABORT("Backflow_eI.h::evaluatePbyP(P,iat,QP,Bmat,Amat) not implemented for SoA\n");
 #else
+    RealType du, d2u;
     const auto& myTable = P.getDistTable(myTableIndex_);
     int maxI = myTable.sources();
     for (int j = 0; j < maxI; j++)
@@ -476,6 +481,7 @@ public:
 #ifdef ENABLE_SOA
     APP_ABORT("Backflow_eI.h::evaluateBmatOnly(P,QP,Bmat) not implemented for SoA\n");
 #else
+    RealType du, d2u;
     const auto& myTable = P.getDistTable(myTableIndex_);
     for (int i = 0; i < myTable.sources(); i++)
     {
@@ -500,8 +506,6 @@ public:
                                       GradMatrix_t& Ymat,
                                       HessArray_t& Xmat)
   {
-    RealType du, d2u;
-    const auto& myTable = P.getDistTable(myTableIndex_);
 #ifdef ENABLE_SOA
     for (int jel = 0; jel < P.getTotalNum(); jel++)
     {
@@ -539,6 +543,8 @@ public:
     }
 
 #else
+    RealType du, d2u;
+    const auto& myTable = P.getDistTable(myTableIndex_);
     for (int i = 0; i < myTable.sources(); i++)
     {
       for (int nn = myTable.M[i]; nn < myTable.M[i + 1]; nn++)

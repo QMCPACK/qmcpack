@@ -432,6 +432,7 @@ public:
     activeParticle = iat;
     for (int i = 0; i < NumTargets; i++)
       oldQP[i] = newQP[i] = QP.R[i];
+    const auto& myTable = P.getDistTable(myTableIndex_);
 #ifndef ENABLE_SOA
     newQP[iat] += myTable.Temp[iat].dr1;
 #endif
@@ -739,6 +740,7 @@ public:
       dr[1] = 0.05;
       dr[2] = -0.3;
       P.makeMove(iat, dr);
+      const auto& myTable = P.getDistTable(myTableIndex_);
 #ifndef ENABLE_SOA
       app_log() << "Move: " << myTable.Temp[iat].dr1 << std::endl;
       app_log() << "cutOff: " << cutOff << std::endl;
