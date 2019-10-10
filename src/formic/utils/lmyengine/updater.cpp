@@ -424,6 +424,7 @@ void cqmc::engine::HDLinMethodUpdater::engine_update_no_matrix(const formic::Var
 
 
 
+  double prefactor = mbuilder -> MatrixAbsorb();     
   // create eigen solver
   boost::shared_ptr< cqmc::engine::EigenSolver > eigensolver(new cqmc::engine::DavidsonLMHD(dep_ptr,
                                                                                             _der_rat.cols(),

@@ -418,6 +418,10 @@ formic::Matrix<double> cqmc::engine::get_important_brlm_dirs_davidson(const form
     }
 
 
+    // solve the eigenvalue problem
+    double davidson_eval;
+    bool solve_shift = eigensolver -> solve(davidson_eval, output);
+
     // scale the eigenvector so that the initial wavefunction has the unit weight
     if ( my_rank == 0 ) {
       eigensolver -> convert_to_wf_coeff();
