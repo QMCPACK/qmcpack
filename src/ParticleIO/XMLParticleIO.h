@@ -80,7 +80,6 @@ public:
   ParticleAttrib<AT>* getAttribute(const std::string& tname, const std::string& oname, ParticleAttrib<AT>* pa)
   {
     typedef ParticleAttrib<AT> attrib_type;
-    int oid                                          = AttribList.size();
     std::map<std::string, OhmmsObject*>::iterator it = AttribList.find(oname);
     if (it != AttribList.end())
     {
