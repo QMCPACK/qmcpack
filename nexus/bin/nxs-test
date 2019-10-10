@@ -2070,6 +2070,10 @@ def simulation():
 
     nunit('undo_depends')
 
+    nunit('has_generic_input')
+
+    nunit('check_dependencies')
+
     nunit_all()
 #end def simulation
 

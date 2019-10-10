@@ -950,11 +950,6 @@ class Simulation(NexusCore):
             for filepath in filepaths:
                 os.system('mv {0} {1}'.format(filepath,attempt_dir))
             #end for
-            #print self.locdir
-            #os.system('ls '+self.locdir)
-            #print attempt_dir
-            #os.system('ls '+attempt_dir)
-            #exit()
         #end if
     #end def save_attempt
 

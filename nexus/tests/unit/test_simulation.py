@@ -2,6 +2,7 @@
 import testing
 from testing import value_eq,object_eq
 from testing import TestFailed,failed
+from testing import divert_nexus_log,restore_nexus_log
 
 
 nexus_directories = dict()
@@ -83,6 +84,10 @@ def get_test_simulation_class():
         def get_output_files(self):
             return []
         #end def get_output_files
+
+        def check_result(self,result_name,sim):
+            return result_name in self.application_results
+        #end def check_result
     #end class TestSimulation
 
     return TestSimulation
@@ -898,5 +903,138 @@ def test_undo_depends():
 
     Simulation.clear_all_sims()
 #end def test_undo_depends
+
+
+
+def test_has_generic_input():
+    from simulation import Simulation
+    from simulation import SimulationInput,GenericSimulationInput
+
+    s = get_sim()
+    assert(not s.has_generic_input())
+    del s
+
+    class GenInput(SimulationInput,GenericSimulationInput):
+        None
+    #end class GenInput
+
+    s = get_sim(
+        input = GenInput(),
+        )
+    assert(s.has_generic_input())
+    del s
+
+    Simulation.clear_all_sims()
+#end def test_has_generic_input
+
+
+
+def test_check_dependencies():
+    from generic import obj,NexusError
+    from simulation import Simulation
+    from simulation import SimulationInput,GenericSimulationInput
+
+    result = obj()
+    result.dependencies_satisfied = True
+
+    s11 = get_test_sim()
+    s12 = get_test_sim()
+    s13 = get_test_sim()
+
+    s21 = get_test_sim(
+        dependencies = [
+            (s11,'quant1'),
+            (s12,'quant2'),
+            ]
+        )
+    s22 = get_test_sim(
+        dependencies = [
+            (s12,'quant2'),
+            (s13,'quant3'),
+            ]
+        )
+
+    s31 = get_test_sim(
+        dependencies = [
+            (s21,'quant1'),
+            (s22,'quant2'),
+            ]
+        )
+    s32 = get_test_sim(
+        dependencies = [
+            (s21,'quant1'),
+            (s22,'quant2'),
+            ]
+        )
+    s33 = get_test_sim(
+        dependencies = [
+            (s21,'quant1'),
+            (s22,'quant2'),
+            ]
+        )
+
+    s41 = get_test_sim(
+        dependencies = [
+            (s11,'quant1'),
+            (s22,'quant2'),
+            (s32,'quant3'),
+            ]
+        )
+
+    sims = [s11,s12,s13,s21,s22,s31,s32,s33,s41]
+    for s in sims:
+        s.check_dependencies(result)
+    #end for
+    assert(result.dependencies_satisfied)
+
+
+    # non-existent dependency
+    try:
+        s  = get_test_sim()
+        s2 = get_test_sim(dependencies=((s,'nonexistent')))
+        raise TestFailed
+    except NexusError:
+        None
+    except TestFailed:
+        failed()
+    except Exception as e:
+        failed(str(e))
+    #end try
+
+
+    # existent dependency but generic input
+    divert_nexus_log()
+    class GenInput(SimulationInput,GenericSimulationInput):
+        None
+    #end class GenInput
+
+    s = get_test_sim(
+        input = GenInput(),
+        )
+
+    s2 = get_test_sim(
+        input = GenInput(),
+        dependencies = (s,'quant1')
+        )
+
+    result = obj(dependencies_satisfied=True)
+    s.check_dependencies(result)
+    assert(result.dependencies_satisfied)
+
+    try:
+        s2.check_dependencies(result)
+    except NexusError:
+        None
+    except TestFailed:
+        failed()
+    except Exception as e:
+        failed(str(e))
+    #end try
+    restore_nexus_log()
+
+    Simulation.clear_all_sims()
+#end def test_check_dependencies
+
+
 
 
