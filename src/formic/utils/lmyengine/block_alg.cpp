@@ -117,9 +117,6 @@ void cqmc::engine::LMBlocker::mpi_finalize(const double total_weight) {
 /////////////////////////////////////////////////////////////////////////////////////////////////
 void cqmc::engine::LMBlocker::prep_lm_block_plus_other_ou_dd_matrix(const int b, const int x, formic::Matrix<double> & dd) {
   
-  // beginning index of the block
-  const int ibeg = 1 + m_hdata.bb(b);
-
   // block length
   const int len = m_hdata.bl(b);
 
@@ -207,9 +204,6 @@ if(hybrid)
     // loop over shifts
     for (auto s = shift_scale.begin(); s != shift_scale.end(); s++) {
       
-      // beginning index of this block
-      const int ibeg = 1 + m_hdata.bb(b);
-
       // block length
       const int len = m_hdata.bl(b);
 
