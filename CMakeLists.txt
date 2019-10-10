@@ -1,8 +1,8 @@
-PROJECT(qmcpack)
-
-
-#####################################################
+######################################################################
+# CMake version and policies
+######################################################################
 CMAKE_MINIMUM_REQUIRED(VERSION 3.6.0)
+
 IF(COMMAND cmake_policy)
   cmake_policy(SET CMP0003 NEW)
   IF (COMPILING_ON_BGQ)
@@ -33,8 +33,10 @@ ENDIF(COMMAND cmake_policy)
 
 
 ######################################################################
-# Version
+# QMCPACK
 ######################################################################
+PROJECT(qmcpack)
+
 SET(QMCPACK_VERSION_MAJOR 3)
 SET(QMCPACK_VERSION_MINOR 8)
 SET(QMCPACK_VERSION_PATCH 9)
