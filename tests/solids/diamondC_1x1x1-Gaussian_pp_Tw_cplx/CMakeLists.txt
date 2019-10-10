@@ -16,7 +16,7 @@ LIST(APPEND diamondC_1x1x1-Gaussian_pp_Tw_cplx_LONG_SCALARS "nonlocalecp" "1.168
 LIST(APPEND diamondC_1x1x1-Gaussian_pp_Tw_cplx_LONG_SCALARS "ionion" "-12.775667565000 0.000000000000")
 
   QMC_RUN_AND_CHECK(long-diamondC_1x1x1-Gaussian_pp_Tw_cplx
-                    "${CMAKE_SOURCE_DIR}/tests/solids/Al-1x1x1-Gaussian_pp_Tw_cplx"
+                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1-Gaussian_pp_Tw_cplx"
                     vmc_long  
                     vmc_long.in.xml
                     1 16
