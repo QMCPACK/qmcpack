@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<qmcsystem>
+  <simulationcell>
+    <parameter name="lattice">
+  7.63247153628956e+00  0.00000000000000e+00  0.00000000000000e+00                     
+  0.00000000000000e+00  7.63247153628956e+00  0.00000000000000e+00                     
+  0.00000000000000e+00  0.00000000000000e+00  7.63247153628956e+00                     
+</parameter>
+    <parameter name="bconds">p p p</parameter>
+    <parameter name="LR_dim_cutoff">15</parameter>
+  </simulationcell>
+  <particleset name="ion0" size="4">
+    <group name="Al">
+      <parameter name="charge">3</parameter>
+      <parameter name="valence">3</parameter>
+      <parameter name="atomicnumber">13</parameter>
+    </group>
+    <attrib name="position" datatype="posArray">
+  0.0000000000e+00  0.0000000000e+00  0.0000000000e+00
+  3.8162263195e+00  3.8162263195e+00  0.0000000000e+00
+  3.8162263195e+00  0.0000000000e+00  3.8162263195e+00
+  0.0000000000e+00  3.8162263195e+00  3.8162263195e+00
+</attrib>
+    <attrib name="ionid" datatype="stringArray">
+ Al Al Al Al 
+</attrib>
+  </particleset>
+  <particleset name="e" random="yes" randomsrc="ion0">
+    <group name="u" size="6">
+      <parameter name="charge">-1</parameter>
+    </group>
+    <group name="d" size="6">
+      <parameter name="charge">-1</parameter>
+    </group>
+  </particleset>
+</qmcsystem>
