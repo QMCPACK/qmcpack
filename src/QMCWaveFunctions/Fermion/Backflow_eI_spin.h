@@ -240,8 +240,6 @@ public:
    */
   inline void evaluate(const ParticleSet& P, ParticleSet& QP)
   {
-    RealType du, d2u;
-    const auto& myTable = P.getDistTable(myTableIndex_);
     for (int sg = 0; sg < RadFunc.rows(); ++sg)
     {
       for (int iat = s_offset[sg]; iat < s_offset[sg + 1]; ++iat)
@@ -308,8 +306,6 @@ public:
    */
   inline void evaluate(const ParticleSet& P, ParticleSet& QP, GradMatrix_t& Bmat_full, HessMatrix_t& Amat)
   {
-    RealType du, d2u;
-    const auto& myTable = P.getDistTable(myTableIndex_);
     for (int sg = 0; sg < RadFunc.rows(); ++sg)
     {
 #ifndef ENABLE_SOA
@@ -456,8 +452,6 @@ public:
    */
   inline void evaluateBmatOnly(const ParticleSet& P, GradMatrix_t& Bmat_full)
   {
-    RealType du, d2u;
-    const auto& myTable = P.getDistTable(myTableIndex_);
     for (int sg = 0; sg < RadFunc.rows(); ++sg)
     {
 #ifndef ENABLE_SOA
@@ -492,8 +486,6 @@ public:
                                       GradMatrix_t& Ymat,
                                       HessArray_t& Xmat)
   {
-    RealType du, d2u;
-    const auto& myTable = P.getDistTable(myTableIndex_);
     for (int sg = 0; sg < RadFunc.rows(); ++sg)
     {
       for (int iat = s_offset[sg]; iat < s_offset[sg + 1]; ++iat)

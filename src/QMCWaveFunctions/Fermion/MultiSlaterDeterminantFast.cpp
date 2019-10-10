@@ -689,7 +689,6 @@ void MultiSlaterDeterminantFast::evaluateDerivatives(ParticleSet& P,
         ValueType lapl_sum          = 0.0;
         ValueType gg = 0.0, ggP = 0.0;
         myG_temp = 0.0;
-        int num  = laplSum_up.size();
         ValueVector_t::iterator it(laplSum_up.begin());
         ValueVector_t::iterator last(laplSum_up.end());
         ValueType* ptr0 = lapls_up[0];

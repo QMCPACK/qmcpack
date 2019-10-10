@@ -232,7 +232,6 @@ public:
    */
   inline void evaluate(const ParticleSet& P, ParticleSet& QP)
   {
-    RealType du, d2u;
 #ifdef ENABLE_SOA
     APP_ABORT("Backflow_ee.h::evaluate(P,QP) not implemented for SoA\n");
 #else
@@ -305,7 +304,6 @@ public:
 #ifdef ENABLE_SOA
     for (int ig = 0; ig < NumGroups; ++ig)
     {
-      const int igt = ig * NumGroups;
       for (int iat = P.first(ig), last = P.last(ig); iat < last; ++iat)
       {
         const auto& dist  = myTable.Distances[iat];
@@ -391,7 +389,6 @@ public:
    */
   inline void evaluatePbyP(const ParticleSet& P, ParticleSet::ParticlePos_t& newQP, const std::vector<int>& index)
   {
-    RealType du, d2u;
 #ifdef ENABLE_SOA
     APP_ABORT("Backflow_ee.h::evaluatePbyP(P,QP,index_vec) not implemented for SoA\n");
 #else
@@ -459,7 +456,6 @@ public:
                            const std::vector<int>& index,
                            HessMatrix_t& Amat)
   {
-    RealType du, d2u;
 #ifdef ENABLE_SOA
     APP_ABORT("Backflow_ee.h::evaluatePbyP(P,QP,index_vec,Amat) not implemented for SoA\n");
 #else
@@ -605,7 +601,6 @@ public:
                            GradMatrix_t& Bmat,
                            HessMatrix_t& Amat)
   {
-    RealType du, d2u;
 #ifdef ENABLE_SOA
     APP_ABORT("Backflow_ee.h::evaluatePbyP(P,QP,index_vec,Bmat,Amat) not implemented for SoA\n");
 #else
@@ -655,7 +650,6 @@ public:
                            GradMatrix_t& Bmat,
                            HessMatrix_t& Amat)
   {
-    RealType du, d2u;
 #ifdef ENABLE_SOA
     APP_ABORT("Backflow_ee.h::evaluatePbyP(P,iat,QP,Bmat,Amat) not implemented for SoA\n");
 #else
@@ -729,7 +723,6 @@ public:
    */
   inline void evaluateBmatOnly(const ParticleSet& P, GradMatrix_t& Bmat_full)
   {
-    RealType du, d2u;
 #ifdef ENABLE_SOA
     APP_ABORT("Backflow_ee.h::evaluateBmatOnly(P,QP,Bmat_full) not implemented for SoA\n");
 #else
@@ -766,7 +759,6 @@ public:
 #ifdef ENABLE_SOA
     for (int ig = 0; ig < NumGroups; ++ig)
     {
-      const int igt = ig * NumGroups;
       for (int iat = P.first(ig), last = P.last(ig); iat < last; ++iat)
       {
         const auto& dist  = myTable.Distances[iat];

@@ -108,7 +108,6 @@ bool AOBasisBuilder<COT>::put(xmlNodePtr cur)
   aAttrib.add(Normalized, "normalized");
   aAttrib.put(cur);
   PRE.echo(cur);
-  bool tmp_addsignforM = addsignforM;
   if (sph == "spherical")
     addsignforM = 1; //include (-1)^m
   if (Morder == "gaussian")
@@ -175,7 +174,6 @@ bool AOBasisBuilder<COT>::putH5(hdf_archive& hin)
   app_log() << "<input node=\"atomicBasisSet\" name=\"" << basisName << "\" expandYlm=\"" << Morder << "\" angular=\""
             << sph << "\" elementType=\"" << CenterID << "\" normalized=\"" << Normalized << "\" type=\"" << basisType
             << "\" expM=\"" << addsignforM << "\" />" << std::endl;
-  bool tmp_addsignforM = addsignforM;
   if (sph == "spherical")
     addsignforM = 1; //include (-1)^m
   if (Morder == "gaussian")

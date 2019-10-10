@@ -192,7 +192,6 @@ public:
    */
   inline void evaluate(const ParticleSet& P, ParticleSet& QP)
   {
-    RealType du, d2u;
 #ifdef ENABLE_SOA
     APP_ABORT("Backflow_eI.h::evaluate(P,QP) not implemented for SoA\n");
 #else
@@ -300,7 +299,6 @@ public:
    */
   inline void evaluatePbyP(const ParticleSet& P, ParticleSet::ParticlePos_t& newQP, const std::vector<int>& index)
   {
-    RealType du, d2u;
 #ifdef ENABLE_SOA
     APP_ABORT("Backflow_eI.h::evaluatePbyP(P,QP,index_vec) not implemented for SoA\n");
 #else
@@ -348,7 +346,6 @@ public:
                            const std::vector<int>& index,
                            HessMatrix_t& Amat)
   {
-    RealType du, d2u;
 #ifdef ENABLE_SOA
     APP_ABORT("Backflow_eI.h::evaluatePbyP(P,QP,index_vec,Amat) not implemented for SoA\n");
 #else
@@ -418,7 +415,6 @@ public:
                            GradMatrix_t& Bmat_full,
                            HessMatrix_t& Amat)
   {
-    RealType du, d2u;
 #ifdef ENABLE_SOA
     APP_ABORT("Backflow_eI.h::evaluatePbyP(P,QP,index_vec,Bmat,Amat) not implemented for SoA\n");
 #else
@@ -449,7 +445,6 @@ public:
                            GradMatrix_t& Bmat_full,
                            HessMatrix_t& Amat)
   {
-    RealType du, d2u;
 #ifdef ENABLE_SOA
     APP_ABORT("Backflow_eI.h::evaluatePbyP(P,iat,QP,Bmat,Amat) not implemented for SoA\n");
 #else
@@ -478,7 +473,6 @@ public:
    */
   inline void evaluateBmatOnly(const ParticleSet& P, GradMatrix_t& Bmat_full)
   {
-    RealType du, d2u;
 #ifdef ENABLE_SOA
     APP_ABORT("Backflow_eI.h::evaluateBmatOnly(P,QP,Bmat) not implemented for SoA\n");
 #else
