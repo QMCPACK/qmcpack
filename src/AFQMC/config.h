@@ -335,7 +335,6 @@ namespace afqmc
       if(cur == NULL)
         return false;
 
-      xmlNodePtr curRoot=cur;
       OhmmsAttributeSet oAttrib;
       oAttrib.add(name,"name");
       oAttrib.put(cur);
