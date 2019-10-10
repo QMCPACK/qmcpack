@@ -16,7 +16,7 @@ LIST(APPEND Al-1x1x1-Gaussian_pp_Tw_cplx_LONG_SCALARS "localecp" "0.656663039125
 LIST(APPEND Al-1x1x1-Gaussian_pp_Tw_cplx_LONG_SCALARS "nonlocalecp" "1.632289072030 0.019602324152")
 LIST(APPEND Al-1x1x1-Gaussian_pp_Tw_cplx_LONG_SCALARS "ionion" "-10.812685912000 0.000000000000")
   QMC_RUN_AND_CHECK(long-Al-1x1x1-Gaussian-pp-cplx
-                    "${CMAKE_SOURCE_DIR}/tests/solids/Al-1x1x1-Gaussian_pp_Tw_cplx"
+                    "${CMAKE_SOURCE_DIR}/tests/solids/Al-1x1x1-Gaussian_pp_ShiftedTwist"
                     vmc_long 
                     vmc_long.in.xml
                     1 16

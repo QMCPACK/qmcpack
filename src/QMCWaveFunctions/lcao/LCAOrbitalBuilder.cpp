@@ -36,10 +36,6 @@
 #include "Message/CommOperators.h"
 #include "Utilities/ProgressReportEngine.h"
 
-//REMOVE THE FOLLOWING INCLUDE BEFORE MERGE
-#include <complex>
-#include <math.h>
-
 namespace qmcplusplus
 {
 /** traits for a localized basis set; used by createBasisSet
