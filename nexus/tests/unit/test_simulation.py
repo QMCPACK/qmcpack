@@ -24,74 +24,88 @@ def restore_nexus_directories():
 #end def restore_nexus_directories
 
 
+from generic import obj
+from simulation import Simulation,SimulationInput,SimulationAnalyzer
 
-def get_test_simulation_class():
+class TestSimulationInput(SimulationInput):
+    def __init__(self,*args,**kwargs):
+        SimulationInput.__init__(self,*args,**kwargs)
 
-    from simulation import Simulation,SimulationInput,SimulationAnalyzer
+        self.result_data = obj()
+    #end def __init__
 
-    class TestSimulationInput(SimulationInput):
-        def is_valid(self):
-            return True
-        #end def is_valid
+    def is_valid(self):
+        return True
+    #end def is_valid
 
-        def read(self,filepath):
-            None
-        #end def read
+    def read(self,filepath):
+        None
+    #end def read
 
-        def write(self,filepath=None):
-            None
-        #end def write
+    def write(self,filepath=None):
+        None
+    #end def write
 
-        def read_text(self,text,filepath=None):
-            None
-        #end def read_text
+    def read_text(self,text,filepath=None):
+        None
+    #end def read_text
 
-        def write_text(self,filepath=None):
-            None
-        #end def write_text
+    def write_text(self,filepath=None):
+        None
+    #end def write_text
 
-        def incorporate_system(self,system):
-            None
-        #end def incorporate_system
+    def incorporate_system(self,system):
+        None
+    #end def incorporate_system
 
-        def return_system(self):
-            self.not_implemented()
-        #end def return_system
-    #end class TestSimulationInput
-
-
-    class TestSimulationAnalyzer(SimulationAnalyzer):
-        def __init__(self,sim):
-            None
-        #end def __init__
-
-        def analyze(self):
-            None
-        #end def analyze
-    #end class TestSimulationAnalyzer
+    def return_system(self):
+        self.not_implemented()
+    #end def return_system
+#end class TestSimulationInput
 
 
-    class TestSimulation(Simulation):
-        input_type    = TestSimulationInput
-        analyzer_type = TestSimulationAnalyzer
+class TestSimulationAnalyzer(SimulationAnalyzer):
+    def __init__(self,sim):
+        self.analysis_performed = False
+    #end def __init__
 
-        application_results = set(['quant1','quant2','quant3'])
+    def analyze(self):
+        self.analysis_performed = True
+    #end def analyze
+#end class TestSimulationAnalyzer
 
-        def check_sim_status(self):
-            self.finished = True
-        #end def check_sim_status
 
-        def get_output_files(self):
-            return []
-        #end def get_output_files
+class TestSimulation(Simulation):
+    input_type    = TestSimulationInput
+    analyzer_type = TestSimulationAnalyzer
 
-        def check_result(self,result_name,sim):
-            return result_name in self.application_results
-        #end def check_result
-    #end class TestSimulation
+    application_results = set(['quant1','quant2','quant3'])
 
-    return TestSimulation
-#end def get_test_simulation_class
+    def check_sim_status(self):
+        self.finished = True
+    #end def check_sim_status
+
+    def get_output_files(self):
+        return []
+    #end def get_output_files
+
+    def check_result(self,result_name,sim):
+        return result_name in self.application_results
+    #end def check_result
+
+    def get_result(self,result_name,sim):
+        result = obj()
+        result.name  = result_name
+        result.simid = sim.simid
+        return result
+    #end def get_result
+
+    def incorporate_result(self,result_name,result,sim):
+        self.input.result_data[result.simid] = result.name
+    #end def incorporate_result
+#end class TestSimulation
+
+
 
 
 get_sim_simulations = []
@@ -121,8 +135,6 @@ def get_test_sim(**kwargs):
 
     n = len(get_test_sim_simulations)
 
-    TestSimulation = get_test_simulation_class()
-
     test_sim = TestSimulation(
         identifier = 'test_sim'+str(n),
         job        = test_job,
@@ -132,7 +144,7 @@ def get_test_sim(**kwargs):
     get_test_sim_simulations.append(test_sim)
 
     return test_sim
-#end def get_sim
+#end def get_test_sim
 
 
 
@@ -644,6 +656,7 @@ def check_dependency_objects(*sims,**kwargs):
 #end def check_dependency_objects
 
 
+
 def check_dependency(sim2,sim1,quants=['other'],only=False,objects=False):
     # sim2 depends on sim1 for all quantities
     if objects:
@@ -1037,4 +1050,330 @@ def test_check_dependencies():
 
 
 
+def test_get_dependencies():
+    from generic import obj
+    from simulation import Simulation
 
+    simdeps = obj()
+
+    deps = []
+    s11 = get_test_sim()
+    simdeps[s11.simid] = deps
+
+    s12 = get_test_sim()
+    simdeps[s12.simid] = deps
+
+    s13 = get_test_sim()
+    simdeps[s13.simid] = deps
+
+    deps = [
+        (s11,'quant1'),
+        (s12,'quant2'),
+        ]
+    s21 = get_test_sim(dependencies=deps)
+    simdeps[s21.simid] = deps
+
+    deps = [
+        (s12,'quant2'),
+        (s13,'quant3'),
+        ]
+    s22 = get_test_sim(dependencies=deps)
+    simdeps[s22.simid] = deps
+
+    dependencies = [
+        (s21,'quant1'),
+        (s22,'quant2'),
+        ]
+    s31 = get_test_sim(dependencies=deps)
+    simdeps[s31.simid] = deps
+
+    deps = [
+        (s21,'quant1'),
+        (s22,'quant2'),
+        ]
+    s32 = get_test_sim(dependencies=deps)
+    simdeps[s32.simid] = deps
+
+    deps = [
+        (s21,'quant1'),
+        (s22,'quant2'),
+        ]
+    s33 = get_test_sim(dependencies=deps)
+    simdeps[s33.simid] = deps
+
+    deps = [
+        (s11,'quant1'),
+        (s22,'quant2'),
+        (s32,'quant3'),
+        ]
+    s41 = get_test_sim(dependencies=deps)
+    simdeps[s41.simid] = deps
+
+    sims = [s11,s12,s13,s21,s22,s31,s32,s33,s41]
+    assert(len(simdeps)==len(sims))
+    for s in sims:
+        assert(not s.got_dependencies)
+        assert(len(s.input.result_data)==0)
+        s.get_dependencies()
+        resdata = s.input.result_data
+        deps = simdeps[s.simid]
+        for sim,resname in deps:
+            assert(sim.simid in resdata)
+            assert(resdata[sim.simid]==resname)
+        #end for
+    #end for
+
+    Simulation.clear_all_sims()
+#end def test_get_dependencies
+
+
+
+def test_downstream_simids():
+    from generic import obj
+    from simulation import Simulation
+
+    s11 = get_test_sim()
+    s12 = get_test_sim()
+    s13 = get_test_sim()
+
+    s21 = get_test_sim(
+        dependencies = [
+            (s11,'quant1'),
+            (s12,'quant2'),
+            ]
+        )
+    s22 = get_test_sim(
+        dependencies = [
+            (s12,'quant2'),
+            (s13,'quant3'),
+            ]
+        )
+
+    s31 = get_test_sim(
+        dependencies = [
+            (s21,'quant1'),
+            (s22,'quant2'),
+            ]
+        )
+    s32 = get_test_sim(
+        dependencies = [
+            (s21,'quant1'),
+            (s22,'quant2'),
+            ]
+        )
+    s33 = get_test_sim(
+        dependencies = [
+            (s21,'quant1'),
+            (s22,'quant2'),
+            ]
+        )
+
+    s41 = get_test_sim(
+        dependencies = [
+            (s11,'quant1'),
+            (s22,'quant2'),
+            (s32,'quant3'),
+            ]
+        )
+
+    sims = obj(
+        s11 = s11,
+        s12 = s12,
+        s13 = s13,
+        s21 = s21,
+        s22 = s22,
+        s31 = s31,
+        s32 = s32,
+        s33 = s33,
+        s41 = s41,
+        )
+
+    downstream_sims = obj(
+        s11 = [s21,s31,s32,s33,s41],
+        s12 = [s21,s22,s31,s32,s33,s41],
+        s13 = [s22,s31,s32,s33,s41],
+        s21 = [s31,s32,s33,s41],
+        s22 = [s31,s32,s33,s41],
+        s31 = [],
+        s32 = [s41],
+        s33 = [],
+        s41 = [],
+        )
+
+    n = 0
+    for sname in sorted(sims.keys()):
+        s = sims[sname]
+        ds_ids = s.downstream_simids()
+        ds_ids_ref = set([sd.simid for sd in downstream_sims[sname]])
+        assert(ds_ids==ds_ids_ref)
+        n+=1
+    #end for
+    assert(n==9)
+
+    Simulation.clear_all_sims()
+#end def test_downstream_simids
+
+
+
+def test_copy_file():
+    import os
+    from simulation import Simulation
+
+    tpath = testing.setup_unit_test_output_directory('simulation','test_copy_file')
+    
+    opath = os.path.join(tpath,'other')
+    if not os.path.exists(opath):
+        os.makedirs(opath)
+    #end if
+
+    file1 = os.path.join(tpath,'file.txt')
+    file2 = os.path.join(opath,'file.txt')
+
+    open(file1,'w').write('text')
+    assert(os.path.exists(file1))
+
+    s = get_sim()
+
+    s.copy_file(file1,opath)
+
+    assert(os.path.exists(file2))
+    assert(open(file2,'r').read().strip()=='text')
+    
+    Simulation.clear_all_sims()
+#end def test_copy_file
+
+
+
+def test_save_load_image():
+    import os
+    from generic import obj
+    from nexus_base import nexus_core
+    from simulation import Simulation,SimulationImage
+
+    tpath = testing.setup_unit_test_output_directory('simulation','test_save_load_image')
+
+    divert_nexus_directories()
+
+    nexus_core.local_directory  = tpath
+    nexus_core.remote_directory = tpath
+
+    nsave = 30
+    nload = 22
+
+    assert(len(SimulationImage.save_fields)==nsave)
+    assert(len(SimulationImage.load_fields)==nload)
+    assert(len(SimulationImage.save_only_fields&SimulationImage.load_fields)==0)
+
+    sim = get_sim()
+
+    sim.create_directories()
+
+    sim.save_image()
+
+    imagefile = os.path.join(sim.imlocdir,sim.sim_image)
+    assert(os.path.exists(imagefile))
+
+    image = obj()
+    image.load(imagefile)
+    assert(len(image)==nsave)
+    for field in SimulationImage.save_fields:
+        assert(field in image)
+        assert(field in sim)
+        assert(value_eq(image[field],sim[field]))
+    #end for
+
+    orig = obj()
+    for field in SimulationImage.load_fields:
+        orig[field] = sim[field]
+        del sim[field]
+    #end for
+    sim.sim_image = orig.sim_image
+    sim.load_image()
+    for field in SimulationImage.load_fields:
+        assert(field in sim)
+        assert(value_eq(sim[field],orig[field]))
+    #end for
+
+    restore_nexus_directories()
+
+    Simulation.clear_all_sims()
+#end def test_save_load_image
+
+
+
+def test_load_analyzer_image():
+    import os
+    from nexus_base import nexus_core
+    from simulation import Simulation
+
+    tpath = testing.setup_unit_test_output_directory('simulation','test_save_load_analyzer_image')
+
+    divert_nexus_directories()
+
+    nexus_core.local_directory  = tpath
+    nexus_core.remote_directory = tpath
+
+    sim = get_test_sim()
+
+    if not os.path.exists(sim.imresdir):
+        os.makedirs(sim.imresdir)
+    #end if
+
+    analyzer_file = os.path.join(sim.imresdir,sim.analyzer_image)
+
+    a = sim.analyzer_type(None)
+    assert(not a.analysis_performed)
+    a.analyze()
+    assert(a.analysis_performed)
+    a.save(analyzer_file)
+    assert(os.path.exists(analyzer_file))
+
+    a2 = sim.load_analyzer_image()
+    assert(isinstance(a2,sim.analyzer_type))
+    assert(a2.analysis_performed)
+    assert(object_eq(a2,a))
+
+    restore_nexus_directories()
+
+    Simulation.clear_all_sims()
+#end def test_load_analyzer_image
+
+
+
+def test_save_attempt():
+    import os
+    from nexus_base import nexus_core
+    from simulation import Simulation
+
+    tpath = testing.setup_unit_test_output_directory('simulation','test_save_attempt')
+
+    divert_nexus_directories()
+
+    nexus_core.local_directory  = tpath
+    nexus_core.remote_directory = tpath
+
+    sim = get_test_sim()
+
+    sim.create_directories()
+
+    files = (sim.infile,sim.outfile,sim.errfile)
+
+    assert(sim.attempt_files()==files)
+    for file in files:
+        open(os.path.join(sim.locdir,file),'w').write('made an attempt')
+    #end for
+
+    attempt_dir = os.path.join(sim.locdir,'{}_attempt1'.format(sim.identifier))
+    assert(not os.path.exists(attempt_dir))
+    sim.save_attempt()
+    print attempt_dir
+    assert(os.path.exists(attempt_dir))
+    for file in files:
+        assert(not os.path.exists(os.path.join(sim.locdir,file)))
+        assert(os.path.exists(os.path.join(attempt_dir,file)))
+    #end for
+
+    restore_nexus_directories()
+
+    Simulation.clear_all_sims()
+#end def test_save_attempt

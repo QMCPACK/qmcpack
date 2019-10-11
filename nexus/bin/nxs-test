@@ -2074,6 +2074,18 @@ def simulation():
 
     nunit('check_dependencies')
 
+    nunit('get_dependencies')
+
+    nunit('downstream_simids')
+
+    nunit('copy_file')
+
+    nunit('save_load_image')
+
+    nunit('load_analyzer_image')
+
+    nunit('save_attempt')
+
     nunit_all()
 #end def simulation
 
