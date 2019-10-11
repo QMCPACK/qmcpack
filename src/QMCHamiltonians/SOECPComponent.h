@@ -34,6 +34,7 @@ class SOECPComponent : public QMCTraits
 private:
   typedef OneDimGridBase<RealType> GridType;
   typedef OneDimCubicSpline<RealType> RadialPotentialType;
+  typedef std::complex<RealType> ComplexType;
 
   ///Non Local part: angular momentum, potential and grid
   int lmax;
@@ -45,6 +46,11 @@ private:
   aligned_vector<int> angpp_m;
   ///Non-Local part of the pseudo-potential
   std::vector<RadialPotentialType*> sopp_m;
+
+  RealType lmMatrixElements(int l, int m1, int m2,int dim);
+  int kroneckerDelta(int x, int y);
+
+
 
 public:
 
@@ -70,16 +76,12 @@ public:
    *
    * @return RealType Contribution to $\frac{V\Psi_T}{\Psi_T}$ from ion iat and electron iel.
    */
-  inline RealType evaluateOne(ParticleSet& W,
+  RealType evaluateOne(ParticleSet& W,
                        int iat,
                        TrialWaveFunction& Psi,
                        int iel,
                        RealType r,
-                       const PosType& dr)
-                       {
-                         APP_ABORT("evaluateOne not implemented yet\n"); 
-                         return 0.0;
-                       };
+                       const PosType& dr);
 
   // This function needs to be updated to SoA. myTableIndex is introduced temporarily.
   inline RealType evaluateValueAndDerivatives(ParticleSet& P,
