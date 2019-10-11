@@ -333,7 +333,6 @@ bool RadialOrbitalSetBuilder<COT>::addRadialOrbital(xmlNodePtr cur,
   aAttrib.add(m_rcut, "rmax");
   aAttrib.add(dsname, "ds");
   aAttrib.put(cur);
-  int lastRnl = m_orbitals->RnlID.size();
   m_nlms      = nlms;
   if (radtype == "Gaussian" || radtype == "GTO")
   {
@@ -366,7 +365,6 @@ bool RadialOrbitalSetBuilder<COT>::addRadialOrbitalH5(hdf_archive& hin,
     hin.read(radtype, "type");
   myComm->bcast(radtype);
 
-  int lastRnl = m_orbitals->RnlID.size();
   m_nlms      = nlms;
   if (radtype == "Gaussian" || radtype == "GTO")
   {

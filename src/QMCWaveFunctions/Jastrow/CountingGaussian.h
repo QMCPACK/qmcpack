@@ -262,7 +262,6 @@ public:
     //app_log() << "CountingGaussian::put" << std::endl;
     bool put_A = false, put_B = false, put_C = false, put_D = false, put_K = false;
     // alternate inputs
-    std::array<RealType, 6> A_euler;
     std::array<RealType, 6> A_triang;
     PosType D  = 0;
     RealType K = 0;

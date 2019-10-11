@@ -162,11 +162,6 @@ class BackPropagatedEstimator: public EstimatorBase
     if(detR.size(0) != wset.size() || detR.size(1) != nx*nrefs)
       detR.reextent({wset.size(),nrefs*nx}); 
 
-    // temporary!
-    int wpop = wset.GlobalPopulation();
-    int nw = wset.size();  // assuming all groups have the same size
-    int iw0 = wset.getTG().getTGNumber()*nw;
-
     int n0,n1;
     std::tie(n0,n1) = FairDivideBoundary(TG.getLocalTGRank(),int(Refs.size(2)),TG.getNCoresPerTG());
     boost::multi::array_ref<ComplexType,3> Refs_(to_address(Refs.origin()),Refs.extensions());
@@ -218,7 +213,6 @@ class BackPropagatedEstimator: public EstimatorBase
   void print(std::ofstream& out, hdf_archive& dump, WalkerSet& wset)
   {
     // I doubt we will ever collect a billion blocks of data.
-    int n_zero = 9;
     if(writer) {
       out<<std::setprecision(5)
                     <<AFQMCTimers[back_propagate_timer]->get_total() <<" ";
