@@ -271,12 +271,23 @@ public:
   /** set non local moves options
    * @param cur the xml input
    */
-  void setNonLocalMoves(xmlNodePtr cur)
+  [[deprecated]] void setNonLocalMoves(xmlNodePtr cur)
   {
     if (nlpp_ptr != nullptr)
       nlpp_ptr->setNonLocalMoves(cur);
   }
 
+  void setNonLocalMoves(const std::string& non_local_move_option,
+                                        const double tau,
+                                        const double alpha,
+                                        const double gamma)
+  {
+    if (nlpp_ptr != nullptr)
+      nlpp_ptr->setNonLocalMoves(non_local_move_option,
+                                        tau,
+                                        alpha,
+                                        gamma);
+  }
   /** make non local moves
    * @param P particle set
    * @return the number of accepted moves

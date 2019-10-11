@@ -9,6 +9,8 @@
 // File refactored from: DMC.cpp
 //////////////////////////////////////////////////////////////////////////////////////
 
+#include <functional>
+
 #include "QMCDrivers/DMC/DMCBatched.h"
 #include "Concurrency/TasksOneToOne.hpp"
 #include "Concurrency/Info.hpp"
@@ -18,6 +20,8 @@
 
 namespace qmcplusplus
 {
+
+using std::placeholders::_1;
 /** Constructor maintains proper ownership of input parameters
    */
 DMCBatched::DMCBatched(QMCDriverInput&& qmcdriver_input,
@@ -27,7 +31,7 @@ DMCBatched::DMCBatched(QMCDriverInput&& qmcdriver_input,
                        QMCHamiltonian& h,
                        WaveFunctionPool& wf_pool,
                        Communicate* comm)
-    : QMCDriverNew(std::move(qmcdriver_input), pop, psi, h, wf_pool, "DMCBatched::", comm), dmcdriver_input_(input)
+    : QMCDriverNew(std::move(qmcdriver_input), pop, psi, h, wf_pool, "DMCBatched::", comm, std::bind( &DMCBatched::setNonLocalMoveHandler, this, _1)), dmcdriver_input_(input)
 {
   QMCType = "DMCBatched";
 }
@@ -49,6 +53,13 @@ QMCTraits::IndexType DMCBatched::calc_default_local_walkers(IndexType walkers_pe
 
   app_log() << "DMCBatched walkers per crowd " << walkers_per_crowd_ << std::endl;
   return local_walkers;
+}
+
+void DMCBatched::setNonLocalMoveHandler(QMCHamiltonian& golden_hamiltonian)
+{
+  golden_hamiltonian.setNonLocalMoves(dmcdriver_input_.get_non_local_move(), qmcdriver_input_.get_tau(),
+                                      dmcdriver_input_.get_alpha(), dmcdriver_input_.get_gamma());
+  std::cout << "DMC Handler\n";
 }
 
 void DMCBatched::resetUpdateEngines()
@@ -352,7 +363,9 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
     stalled_walker.Weight *= sft.branch_engine.branchWeight(stalled_new_walker_energy, stalled_old_walker_energy);
   }
 
-
+  QMCHamiltonian& db_hamiltonian = walker_hamiltonians[0].get();
+  
+  
   //myTimers[DMC_tmoves]->start();
   std::vector<int> walker_non_local_moves_accepted(
       QMCHamiltonian::flex_makeNonLocalMoves(walker_hamiltonians, walker_elecs));

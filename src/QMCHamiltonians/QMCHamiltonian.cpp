@@ -19,6 +19,7 @@
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Particle/WalkerSetRef.h"
 #include "Particle/DistanceTableData.h"
+#include "QMCHamiltonians/NonLocalECPComponent.h"
 #include "Utilities/NewTimer.h"
 #ifdef QMC_CUDA
 #include "Particle/MCWalkerConfiguration.h"
@@ -782,8 +783,10 @@ void QMCHamiltonian::setRandomGenerator(RandomGenerator_t* rng)
 std::vector<int> QMCHamiltonian::flex_makeNonLocalMoves(RefVector<QMCHamiltonian>& h_list,
                                                         RefVector<ParticleSet>& p_list)
 {
+  QMCHamiltonian& db_hamiltonian = h_list[0].get();
+
   std::vector<int> num_accepts(h_list.size(), 0);
-  if(!(h_list[0].get().nlpp_ptr))
+  if(h_list[0].get().nlpp_ptr)
   {
     if(h_list.size() > 1)
     {

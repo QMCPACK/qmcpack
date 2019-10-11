@@ -51,7 +51,8 @@ QMCDriverNew::QMCDriverNew(QMCDriverInput&& input,
                            QMCHamiltonian& h,
                            WaveFunctionPool& ppool,
                            const std::string timer_prefix,
-                           Communicate* comm)
+                           Communicate* comm,
+                          SetNonLocalMoveHandler snlm_handler)
     : MPIObjectBase(comm),
       qmcdriver_input_(input),
       walkers_per_crowd_(1),
@@ -62,7 +63,8 @@ QMCDriverNew::QMCDriverNew(QMCDriverInput&& input,
       psiPool(ppool),
       estimator_manager_(nullptr),
       wOut(0),
-      timers_(timer_prefix)
+      timers_(timer_prefix),
+      setNonLocalMoveHandler_(snlm_handler)
       // num_crowds_(input.get_num_crowds())
 {
   QMCType = "invalid";
@@ -328,7 +330,7 @@ void QMCDriverNew::setupWalkers()
  */
 void QMCDriverNew::addWalkers(int nwalkers, const ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>& positions)
 {
-  
+  setNonLocalMoveHandler_(population_.get_golden_hamiltonian());
   population_.createWalkers(nwalkers);
   // else if (nwalkers < 0)
   // {
@@ -461,5 +463,8 @@ std::ostream& operator<<(std::ostream& o_stream, const QMCDriverNew& qmcd)
 
   return o_stream;
 }
+
+void QMCDriverNew::defaultSetNonLocalMoveHandler(QMCHamiltonian& ham)
+{}
 
 } // namespace qmcplusplus
