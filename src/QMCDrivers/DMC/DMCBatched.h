@@ -111,8 +111,8 @@ public:
                          const StateForThread& sft,
                          DriverTimers& timers,
                          //                         DMCTimers& dmc_timers,
-                         std::vector<std::unique_ptr<ContextForSteps>>& move_context,
-                         std::vector<std::unique_ptr<Crowd>>& crowds);
+                         UPtrVector<ContextForSteps>& move_context,
+                         UPtrVector<Crowd>& crowds);
 
 
   QMCRunType getRunType() { return QMCRunType::DMC_BATCH; }

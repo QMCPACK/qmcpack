@@ -128,9 +128,9 @@ public:
 
   void resize_warrays(int n, int m, int l);
 
-  void randomize_grid(RNGThreadSafe& myRNG);
+  void randomize_grid(RandomGenerator_t& myRNG);
   template<typename T>
-  void randomize_grid(std::vector<T>& sphere, RNGThreadSafe& myRNG);
+  void randomize_grid(std::vector<T>& sphere, RandomGenerator_t& myRNG);
 
   /** @brief Evaluate the nonlocal pp contribution via randomized quadrature grid
    * to total energy from ion "iat" and electron "iel".

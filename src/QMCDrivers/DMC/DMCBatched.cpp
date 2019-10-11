@@ -20,7 +20,6 @@
 
 namespace qmcplusplus
 {
-
 using std::placeholders::_1;
 /** Constructor maintains proper ownership of input parameters
    */
@@ -31,7 +30,15 @@ DMCBatched::DMCBatched(QMCDriverInput&& qmcdriver_input,
                        QMCHamiltonian& h,
                        WaveFunctionPool& wf_pool,
                        Communicate* comm)
-    : QMCDriverNew(std::move(qmcdriver_input), pop, psi, h, wf_pool, "DMCBatched::", comm, std::bind( &DMCBatched::setNonLocalMoveHandler, this, _1)), dmcdriver_input_(input)
+    : QMCDriverNew(std::move(qmcdriver_input),
+                   pop,
+                   psi,
+                   h,
+                   wf_pool,
+                   "DMCBatched::",
+                   comm,
+                   std::bind(&DMCBatched::setNonLocalMoveHandler, this, _1)),
+      dmcdriver_input_(input)
 {
   QMCType = "DMCBatched";
 }
@@ -67,7 +74,7 @@ void DMCBatched::resetUpdateEngines()
   ReportEngine PRE("DMC", "resetUpdateEngines");
   Timer init_timer;
   // Here DMC loads "Ensemble of cloned MCWalkerConfigurations"
-  int nw_multi = branch_engine_->initWalkerController(population_,dmcdriver_input_.get_reconfiguration(), false);
+  int nw_multi = branch_engine_->initWalkerController(population_, dmcdriver_input_.get_reconfiguration(), false);
   RefVector<MCPWalker> walkers(convertUPtrToRefVector(population_.get_walkers()));
 
   branch_engine_->checkParameters(population_.get_num_global_walkers(), walkers);
@@ -364,8 +371,8 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
   }
 
   QMCHamiltonian& db_hamiltonian = walker_hamiltonians[0].get();
-  
-  
+
+
   //myTimers[DMC_tmoves]->start();
   std::vector<int> walker_non_local_moves_accepted(
       QMCHamiltonian::flex_makeNonLocalMoves(walker_hamiltonians, walker_elecs));
@@ -430,10 +437,16 @@ void DMCBatched::runDMCStep(int crowd_id,
                             const StateForThread& sft,
                             DriverTimers& timers,
                             //                            DMCTimers& dmc_timers,
-                            std::vector<std::unique_ptr<ContextForSteps>>& context_for_steps,
-                            std::vector<std::unique_ptr<Crowd>>& crowds)
+                            UPtrVector<ContextForSteps>& context_for_steps,
+                            UPtrVector<Crowd>& crowds)
 {
-  Crowd& crowd  = *(crowds[crowd_id]);
+  Crowd& crowd                         = *(crowds[crowd_id]);
+  auto setThreadLocalRNGForHamiltonian = [](QMCHamiltonian& ham, ContextForSteps& step_context) {
+    ham.setRandomGenerator(&(step_context.get_random_gen()));
+  };
+  for (int iw = 0; iw < crowd.size(); ++iw)
+    setThreadLocalRNGForHamiltonian(crowd.get_walker_hamiltonians()[iw], *(context_for_steps[iw]));
+
   int max_steps = sft.qmcdrv_input.get_max_steps();
   // This is migraine inducing here and in the original driver, I believe they are the same in
   // VMC(Batched)/DMC(Batched) needs another check and unit test
@@ -461,7 +474,7 @@ bool DMCBatched::run()
   { // walker initialization
     ScopedTimer local_timer(&(timers_.init_walkers_timer));
     TasksOneToOne<> section_start_task(num_crowds_);
-    section_start_task(initialLogEvaluation, std::ref(crowds_));
+    section_start_task(initialLogEvaluation, std::ref(crowds_), std::ref(step_contexts_));
   }
 
 
@@ -485,9 +498,9 @@ bool DMCBatched::run()
       ScopedTimer local_timer(&(timers_.run_steps_timer));
       dmc_state.step = step;
       crowd_task(runDMCStep, dmc_state, timers_, std::ref(step_contexts_), std::ref(crowds_));
-      
+
       branch_engine_->branch(step, crowds_, population_);
-      for( auto& crowd_ptr : crowds_)
+      for (auto& crowd_ptr : crowds_)
         crowd_ptr->clearWalkers();
       population_.distributeWalkers(crowds_.begin(), crowds_.end(), walkers_per_crowd_);
     }
@@ -510,7 +523,6 @@ bool DMCBatched::run()
                                                 total_block_weight);
     // TODO: should be accept rate for block
     estimator_manager_->stopBlockNew(total_accept_ratio);
-
   }
   return false;
 }

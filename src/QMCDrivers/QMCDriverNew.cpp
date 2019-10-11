@@ -370,13 +370,20 @@ void QMCDriverNew::createRngsStepContexts()
   }
 }
 
-void QMCDriverNew::initialLogEvaluation(int crowd_id, UPtrVector<Crowd>& crowds)
+void QMCDriverNew::initialLogEvaluation(int crowd_id, UPtrVector<Crowd>& crowds, UPtrVector<ContextForSteps>& context_for_steps)
 {
   Crowd& crowd = *(crowds[crowd_id]);
   auto& walker_twfs  = crowd.get_walker_twfs();
   auto& mcp_buffers  = crowd.get_mcp_wfbuffers();
   auto& walker_elecs = crowd.get_walker_elecs();
   auto& walkers = crowd.get_walkers();
+  auto& walker_hamiltonians = crowd.get_walker_hamiltonians();
+
+  auto setThreadLocalRNGForHamiltonian = [](QMCHamiltonian& ham, ContextForSteps& step_context) {
+    ham.setRandomGenerator(&(step_context.get_random_gen()));
+  };
+  for (int iw = 0; iw < crowd.size(); ++iw)
+    setThreadLocalRNGForHamiltonian(walker_hamiltonians[iw], *(context_for_steps[iw]));
 
   crowd.loadWalkers();
   for (ParticleSet& pset : walker_elecs)
@@ -401,7 +408,6 @@ void QMCDriverNew::initialLogEvaluation(int crowd_id, UPtrVector<Crowd>& crowds)
   for (int iw = 0; iw < crowd.size(); ++iw)
     saveElecPosAndGLToWalkers(walker_elecs[iw], walkers[iw]);
 
-  auto& walker_hamiltonians = crowd.get_walker_hamiltonians();
   std::vector<QMCHamiltonian::FullPrecRealType> local_energies(QMCHamiltonian::flex_evaluate(walker_hamiltonians, walker_elecs));
   // This is actually only a partial reset of the walkers properties
   auto resetSigNLocalEnergy = [](MCPWalker& walker, TrialWaveFunction& twf, auto local_energy){

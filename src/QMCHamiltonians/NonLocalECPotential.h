@@ -98,7 +98,7 @@ public:
   /** set the internal RNG pointer as the given pointer
    * @param rng input RNG pointer
    */
-  void setRandomGenerator(RNGThreadSafe* rng) { myRNG = rng; }
+  void setRandomGenerator(RandomGenerator_t* rng) { myRNG = rng; }
 
   void addObservables(PropertySetType& plist, BufferType& collectables);
 
@@ -110,7 +110,7 @@ public:
 
 protected:
   ///random number generator
-  RNGThreadSafe* myRNG;
+  RandomGenerator_t* myRNG;
   ///the set of local-potentials (one for each ion)
   std::vector<NonLocalECPComponent*> PP;
   ///unique NonLocalECPComponent to remove

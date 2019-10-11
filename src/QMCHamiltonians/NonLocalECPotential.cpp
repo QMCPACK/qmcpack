@@ -35,7 +35,7 @@ NonLocalECPotential::NonLocalECPotential(ParticleSet& ions,
                                          bool computeForces,
                                          bool useVP)
     : ForceBase(ions, els),
-      myRNG(&Random),
+      myRNG(nullptr),
       IonConfig(ions),
       Psi(psi),
       Peln(els),
