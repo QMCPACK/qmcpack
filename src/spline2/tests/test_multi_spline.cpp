@@ -197,8 +197,6 @@ struct test_splines : public test_splines_base<T, GRID_SIZE, NUM_SPLINES>
 
     REQUIRE(bs.num_splines() == npad);
 
-    double tpi = 2 * M_PI;
-
     BsplineAllocator<double> mAllocator;
     UBspline_3d_d* aspline = mAllocator.allocateUBspline(grid[0], grid[1], grid[2], bc[0], bc[1], bc[2], data.data());
 

@@ -60,7 +60,6 @@ TEST_CASE("TasksOneToOne<OPENMP> nested case", "[concurrency]")
     TasksOneToOne<Threading::OPENMP> test_block2(num_threads);
     test_block2(TestTaskOMP, std::ref(my_count));
   };
-  bool threw = false;
   REQUIRE_THROWS_WITH(test_block(nested_tasks, std::ref(count)),
                       Catch::Contains("TasksOneToOne should not be used for nested openmp threading"));
 }
