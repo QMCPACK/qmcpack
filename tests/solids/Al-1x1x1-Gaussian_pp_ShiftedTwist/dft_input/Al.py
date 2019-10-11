@@ -98,7 +98,7 @@ cell.verbose = 5
 cell.spin =0
 
 cell.build()
-sp_twist=[0.3,0.3,0.3]
+sp_twist=[0.11,0.23,-0.34]
 twist = np.asarray(sp_twist) / 1.0
 kmesh=[1,1,1]
 kpts = cell.make_kpts((1,1,1), with_gamma_point=False,  wrap_around=True, scaled_center=twist)
@@ -106,12 +106,9 @@ kpts = cell.make_kpts((1,1,1), with_gamma_point=False,  wrap_around=True, scaled
 supcell=cell
 mydf = df.GDF(supcell,kpts)
 mydf.auxbasis = 'weigend'
-mydf._cderi_to_save = 'df_ints.h5'   # new
-mydf.build()                         # new
+mydf._cderi_to_save = 'df_ints.h5' 
+mydf.build()         
 mf = scf.KRHF(supcell,kpts).density_fit()
-#mf = dft.KROKS(supcell,kpts).density_fit()
-#mf = dft.KROKS(supcell,kpts)
-#mf.xc="b3lyp"
 
 
 
@@ -119,10 +116,8 @@ mf.with_df._cderi = 'df_ints.h5'
 mf.exxdiv = 'ewald'
 mf.with_df = mydf
 mf.chkfile ='Al-TZ.chk'
-#dm = mf.from_chk('Al-QZ.chk')           # restart
 
-#e_scf=mf.kernel(dm)                     # restart
-e_scf=mf.kernel()                      # new
+e_scf=mf.kernel()    
 
 
 ener = open('e_scf','w')
@@ -132,11 +127,8 @@ ener.close()
 
 title="Al-DZ"
 
-#mycas = list(range(0,4))
 from PyscfToQmcpack import savetoqmcpack
 savetoqmcpack(cell,mf,title=title,kmesh=kmesh,kpts=kpts,sp_twist=kpts)
 
 
-from MolPyscfToQPkpts import pyscf2QP
-pyscf2QP(supcell,mf,kpts=kpts,int_threshold = 1E-15)
 

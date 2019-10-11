@@ -1,4 +1,4 @@
-  Input file(s): qmc_long.in.xml 
+  Input file(s): qmc_short.in.xml 
 
 =====================================================
                     QMCPACK 3.8.9
@@ -30,17 +30,17 @@
 
   Structure-of-arrays (SoA) optimization enabled
 
-  Input XML = qmc_long.in.xml
+  Input XML = qmc_short.in.xml
 
-  Project = qmc_long
-  date    = 2019-10-10 21:51:07 CDT
+  Project = qmc_short
+  date    = 2019-10-10 21:43:29 CDT
   host    = abenali
 
  Random Number
  -------------
-  Offset for the random number seeds based on time: 539
+  Offset for the random number seeds based on time: 81
 
-  Range of prime numbers to use as seeds over processors and threads = 3911-3967
+  Range of prime numbers to use as seeds over processors and threads = 431-467
 
 
  Lattice
@@ -237,7 +237,7 @@ QMCHamiltonian::addOperatorType added type pseudo named PseudoPot
 ParticleSetPool::randomize 
 <init source="ion0" target="e">
 </init>
-  Initialization Execution time = 0.2386 secs
+  Initialization Execution time = 0.2235 secs
 =========================================================
  Summary of QMC systems 
 =========================================================
@@ -245,16 +245,16 @@ ParticleSetPool has:
 
   ParticleSet 'e' contains 12 particles :  u(6) d(6)
 
-    u  9.4809588352e-01  7.1779485890e+00  1.2060361048e+00
-    u  3.0491701865e+00  5.2025990540e+00  7.4097709980e+00
-    u  3.6137490690e+00  6.2665183327e+00  4.6244186287e+00
-    u  3.1913472217e-01  3.4317035822e+00  5.3361918762e+00
-    u  1.2310277646e+00  3.6267575386e-01  9.5552966481e-01
-    u  2.3554635469e+00  7.4449195557e+00  4.4415233503e+00
-    d  7.4940221996e+00  1.5560624936e+00  7.2867819398e+00
-    d  4.2051740561e+00  2.3163181960e+00  7.2337294150e+00
-    d  4.9657776878e+00  2.5917091870e-01  2.7339314952e+00
-    d  6.5587137794e+00  3.3792785005e+00  2.7134476096e+00
+    u  1.0431646964e+00  1.0172304046e+00  6.6109736054e-01
+    u  4.5878280310e+00  3.0851046251e+00  6.4366070511e+00
+    u  3.7928286612e+00  6.4812190787e+00  2.7053391387e+00
+    u  6.8039840871e+00  2.7472468872e+00  2.9613043816e+00
+    u  1.2458850340e+00  1.6273290197e-01  9.9060006289e-01
+    u  3.6837416918e+00  1.4633011476e+00  3.1828247290e+00
+    d  6.2428246930e+00  7.4854112913e-01  7.3706169412e+00
+    d  3.5586307484e+00  2.7466538512e+00  6.4707231742e+00
+    d  4.3465414122e+00  1.4938916329e+00  3.5993076904e+00
+    d  6.5201567345e+00  3.4352479989e+00  2.7310483153e+00
     (... and 2 more particle positions ...)
 
   Distance table for dissimilar particles (A-B):
@@ -291,7 +291,7 @@ ParticleSetPool has:
 
 =========================================================
   Start VMC
-  File Root qmc_long.s000 append = no 
+  File Root qmc_short.s000 append = no 
 =========================================================
 Resetting walkers
   Adding 8 walkers to 0 existing sets
@@ -303,13 +303,13 @@ Resetting walkers
   qmc_counter=0  my_counter=0
   time step      = 1.0000000000e-01
   blocks         = 200
-  steps          = 50
+  steps          = 10
   substeps       = 1
   current        = 0
   target samples = 0.0000000000e+00
   walkers/mpi    = 8
 
-  stepsbetweensamples = 10050
+  stepsbetweensamples = 2010
 <parameter name="blocks" condition="int">200</parameter>
 <parameter name="blocks_between_recompute" condition="int">0</parameter>
 <parameter name="check_properties" condition="int">100</parameter>
@@ -318,14 +318,14 @@ Resetting walkers
 <parameter name="dmcwalkersperthread" condition="real">0.0000000000e+00</parameter>
 <parameter name="maxcpusecs" condition="real">3.6000000000e+05</parameter>
 <parameter name="record_configs" condition="int">0</parameter>
-<parameter name="record_walkers" condition="int">10050</parameter>
+<parameter name="record_walkers" condition="int">2010</parameter>
 <parameter name="recordconfigs" condition="int">0</parameter>
-<parameter name="recordwalkers" condition="int">10050</parameter>
+<parameter name="recordwalkers" condition="int">2010</parameter>
 <parameter name="rewind" condition="int">0</parameter>
 <parameter name="samples" condition="real">0.0000000000e+00</parameter>
 <parameter name="samplesperthread" condition="real">0.0000000000e+00</parameter>
-<parameter name="steps" condition="int">50</parameter>
-<parameter name="stepsbetweensamples" condition="int">10050</parameter>
+<parameter name="steps" condition="int">10</parameter>
+<parameter name="stepsbetweensamples" condition="int">2010</parameter>
 <parameter name="store_configs" condition="int">0</parameter>
 <parameter name="storeconfigs" condition="int">0</parameter>
 <parameter name="sub_steps" condition="int">1</parameter>
@@ -339,18 +339,18 @@ Resetting walkers
 <parameter name="warmup_steps" condition="int">100</parameter>
 <parameter name="warmupsteps" condition="int">100</parameter>
   DumpConfig==false Nothing (configurations, state) will be saved.
-  Walker Samples are dumped every 10050 steps.
+  Walker Samples are dumped every 2010 steps.
 </vmc>
   Set drift_modifier UNR parameter a = 1.0000000000e+00
   Adding a default LocalEnergyEstimator for the MainEstimator 
   CloneManager::makeClones makes 8 clones for W/Psi/H.
   Cloning methods for both Psi and H are used
 ===== Memory Usage before cloning =====
-Available memory on node 0, free + buffers : 17153 MB
+Available memory on node 0, free + buffers : 17212 MB
 Memory footprint by rank 0 on node 0       : 101 MB
 ==================================================
 ===== Memory Usage after cloning =====
-Available memory on node 0, free + buffers : 17151 MB
+Available memory on node 0, free + buffers : 17210 MB
 Memory footprint by rank 0 on node 0       : 105 MB
 ==================================================
   Initial partition of walkers 0 1 2 3 4 5 6 7 8 
@@ -361,7 +361,7 @@ Memory footprint by rank 0 on node 0       : 105 MB
   Walker distribution on root = 0 1 2 3 4 5 6 7 8 
   Using Locality Approximation
 ===== Memory Usage after the buffer registration =====
-Available memory on node 0, free + buffers : 17150 MB
+Available memory on node 0, free + buffers : 17209 MB
 Memory footprint by rank 0 on node 0       : 105 MB
 ==================================================
   Anonymous Buffer size per walker : 7040 Bytes.
@@ -370,11 +370,11 @@ MEMORY increase 0 MB VMC::resetRun
   SimpleFixedNodeBranch::finalize after a VMC block
     QMC counter        = 0
     time step          = 0.1
-    reference energy   = -7.83241
-    reference variance = 0.776627
+    reference energy   = -7.99038
+    reference variance = 1.06759
 ====================================================
-  QMC Execution time = 8.7292e+02 secs
-  Total Execution time = 8.7292e+02 secs
+  QMC Execution time = 1.8168e+02 secs
+  Total Execution time = 1.8168e+02 secs
 
 =========================================================
-  A new xml input file : qmc_long.s000.cont.xml
+  A new xml input file : qmc_short.s000.cont.xml
