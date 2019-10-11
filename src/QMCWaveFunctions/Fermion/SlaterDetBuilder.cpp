@@ -1038,6 +1038,7 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
         OhmmsAttributeSet confAttrib;
         std::string tag, OccString;
         #ifdef QMC_COMPLEX
+          RealType ci_real = 0.0, ci_imag = 0.0;
           confAttrib.add(ci_real,"coeff_real");
           confAttrib.add(ci_imag,"coeff_imag");
         #else
@@ -1241,6 +1242,7 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
         std::string alpha, beta, tag;
         OhmmsAttributeSet confAttrib;
         #ifdef QMC_COMPLEX
+        RealType ci_real = 0.0, ci_imag = 0.0;
         confAttrib.add(ci_real, "coeff_real");
         confAttrib.add(ci_imag, "coeff_imag");
         ValueType ci(ci_real, ci_imag);

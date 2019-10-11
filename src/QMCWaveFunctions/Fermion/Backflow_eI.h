@@ -507,6 +507,8 @@ public:
                                       HessArray_t& Xmat)
   {
 #ifdef ENABLE_SOA
+    RealType du, d2u;
+    const auto& myTable = P.getDistTable(myTableIndex_);
     for (int jel = 0; jel < P.getTotalNum(); jel++)
     {
       const auto& dist  = myTable.Distances[jel];

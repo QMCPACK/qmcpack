@@ -413,6 +413,8 @@ public:
   inline void evaluatePbyP(const ParticleSet& P, int iat, ParticleSet::ParticlePos_t& newQP)
   {
 #ifdef ENABLE_SOA
+    RealType du, d2u;
+    const auto& myTable = P.getDistTable(myTableIndex_);
     for (int i = 0; i < iat; i++)
     {
       // Temp[j].dr1 = (ri - rj)
