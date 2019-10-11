@@ -136,12 +136,24 @@ struct SoaAtomicBasisSet
     }
   }
 
+ /** evaluate VGL
+  * Tvec is a translation vector; In PBC, in order to reduce the number
+  * of images that need to be summed over when generating the AO, Tvec 
+  * is constructed such that it can be subtracted from the electron position 
+  * to bring the electron closer to the primitive cell (Tvec is then necessarily added to the phase afterwards).
+  * 
+  * As it is coded, it actually brings the electron into a box defined 
+  * by x,y,z-projections of the sum of the prim lattice vectors. 
+  * This was easier to implement than bring the electron strictly into the 
+  * primitive cell and also seemed to sufficiently bring down the number of images. 
+  *
+  */
 
   template<typename LAT, typename T, typename PosType, typename VGL>
-  inline void evaluateVGL(const LAT& lattice, const T r, const PosType& dr, const size_t offset, VGL& vgl,std::vector <double> gendisp)
+  inline void evaluateVGL(const LAT& lattice, const T r, const PosType& dr, const size_t offset, VGL& vgl,PosType gendisp)
   {
     int TransX, TransY, TransZ;
-
+    
     PosType Tvec, dr_new, ConstDispl;
     T r_new;
     // T psi_new, dpsi_x_new, dpsi_y_new, dpsi_z_new,d2psi_new;
@@ -150,12 +162,13 @@ struct SoaAtomicBasisSet
     Tvec[0] = Tvec[1] = Tvec[2] = 0.0; 
     const ValueType correctphase=1;
     //ASSUMES THAT FOR MOLECULES gendisp[]==dr[]
+    gendisp=dr;
 #else
     Tvec[0] = std::floor(gendisp[0]/(lattice.R(0, 0)+lattice.R(1, 0)+lattice.R(2, 0)))*(lattice.R(0, 0)+lattice.R(1, 0)+lattice.R(2, 0));
     Tvec[1] = std::floor(gendisp[1]/(lattice.R(0, 1)+lattice.R(1, 1)+lattice.R(2, 1)))*(lattice.R(0, 1)+lattice.R(1, 1)+lattice.R(2, 1));
     Tvec[2] = std::floor(gendisp[2]/(lattice.R(0, 2)+lattice.R(1, 2)+lattice.R(2, 2)))*(lattice.R(0, 2)+lattice.R(1, 2)+lattice.R(2, 2));
 
-    RealType phasearg = SuperTwist[0]*Tvec[0]+SuperTwist[1]*Tvec[1]+SuperTwist[2]*Tvec[2]; //ANOUAR
+    RealType phasearg = SuperTwist[0]*Tvec[0]+SuperTwist[1]*Tvec[1]+SuperTwist[2]*Tvec[2]; 
     RealType s, c;
     sincos(-phasearg,&s,&c);
     const ValueType correctphase(c,s);
@@ -210,7 +223,6 @@ struct SoaAtomicBasisSet
           dr_new[0] = ConstDispl[0] + (TransX * lattice.R(0, 0) + TransY * lattice.R(1, 0) + TransZ * lattice.R(2, 0));
           dr_new[1] = ConstDispl[1] + (TransX * lattice.R(0, 1) + TransY * lattice.R(1, 1) + TransZ * lattice.R(2, 1));
           dr_new[2] = ConstDispl[2] + (TransX * lattice.R(0, 2) + TransY * lattice.R(1, 2) + TransZ * lattice.R(2, 2));
-
 
           r_new     = std::sqrt(dot(dr_new, dr_new));
 
@@ -610,9 +622,20 @@ struct SoaAtomicBasisSet
   
   }
 
-
+ /** evaluate V
+  * Tvec is a translation vector; In PBC, in order to reduce the number
+  * of images that need to be summed over when generating the AO, Tvec 
+  * is constructed such that it can be subtracted from the electron position 
+  * to bring the electron closer to the primitive cell (Tvec is then necessarily added to the phase afterwards).
+  * 
+  * As it is coded, it actually brings the electron into a box defined 
+  * by x,y,z-projections of the sum of the prim lattice vectors. 
+  * This was easier to implement than bring the electron strictly into the 
+  * primitive cell and also seemed to sufficiently bring down the number of images. 
+  *
+  */
   template<typename LAT, typename T, typename PosType, typename VT>
-  inline void evaluateV(const LAT& lattice, const T r, const PosType& dr, VT* restrict psi,std::vector<double> gendisp)
+  inline void evaluateV(const LAT& lattice, const T r, const PosType& dr, VT* restrict psi,PosType gendisp)
   {
     int TransX, TransY, TransZ;
 
@@ -623,7 +646,9 @@ struct SoaAtomicBasisSet
 #if not defined(QMC_COMPLEX)
     Tvec[0] = Tvec[1] = Tvec[2] = 0.0; 
     const ValueType correctphase=1;
+    
     //ASSUMES THAT FOR MOLECULES gendisp[]==dr[]
+    gendisp=dr;
 #else
     Tvec[0] = std::floor(gendisp[0]/(lattice.R(0, 0)+lattice.R(1, 0)+lattice.R(2, 0)))*(lattice.R(0, 0)+lattice.R(1, 0)+lattice.R(2, 0));
     Tvec[1] = std::floor(gendisp[1]/(lattice.R(0, 1)+lattice.R(1, 1)+lattice.R(2, 1)))*(lattice.R(0, 1)+lattice.R(1, 1)+lattice.R(2, 1));

@@ -179,8 +179,8 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
 
     const std::vector <double> coordR {((P.activePtcl == iat) ? P.activePos : P.R[iat])[0],((P.activePtcl == iat) ? P.activePos : P.R[iat])[1],((P.activePtcl == iat) ? P.activePos : P.R[iat])[2]};
 
-    std::vector<double> gendisp;
-    gendisp.resize(3); 
+    PosType gendisp;
+
     for (int c = 0; c < NumCenters; c++){
       gendisp[0]=(ions_.R[c][0]-coordR[0]);
       gendisp[1]=(ions_.R[c][1]-coordR[1]);
@@ -233,6 +233,10 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
   /** compute values for the iat-paricle move
    *
    * Always uses Temp_r and Temp_dr
+   * We Use gendispl as the global distance between electron and ion
+   * in opposition to the dr distance provided by the distance table
+   * Specifically to recover the phase factor for PBC with complex WF
+   * If no PBC, gendisp=dr (enforced in SoaAtomicBasisSet.h). 
    */
   inline void evaluateV(const ParticleSet& P, int iat, ORBT* restrict vals)
   {
@@ -242,8 +246,7 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
     const auto& displ                = (P.activePtcl == iat) ? d_table.Temp_dr : d_table.Displacements[iat];
 
     const std::vector <double> coordR {((P.activePtcl == iat) ? P.activePos : P.R[iat])[0],((P.activePtcl == iat) ? P.activePos : P.R[iat])[1],((P.activePtcl == iat) ? P.activePos : P.R[iat])[2]};
-    std::vector<double> gendisp;
-    gendisp.resize(3); 
+    PosType gendisp;
     for (int c = 0; c < NumCenters; c++){
       gendisp[0]=(ions_.R[c][0]-coordR[0]);
       gendisp[1]=(ions_.R[c][1]-coordR[1]);
@@ -273,8 +276,7 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
     const auto& displ                = (P.activePtcl == iat) ? d_table.Temp_dr : d_table.Displacements[iat];
   
      
-    std::vector<double> gendisp; 
-    gendisp.resize(3);
+    PosType gendisp; 
     gendisp[0]=gendisp[1]=gendisp[2]=0;
     //Since LCAO's are written only in terms of (r-R), ionic derivatives only exist for the atomic center
     //that we wish to take derivatives of.  Moreover, we can obtain an ion derivative by multiplying an electron
