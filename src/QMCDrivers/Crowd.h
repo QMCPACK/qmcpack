@@ -76,6 +76,12 @@ public:
     estimator_manager_crowd_.accumulate(global_walkers, mcp_walkers_, walker_elecs_);
   }
 
+  void setRNGForHamiltonian(RandomGenerator_t& rng)
+  {
+    for ( QMCHamiltonian& ham : walker_hamiltonians_ )
+      ham.setRandomGenerator(&rng);
+  }
+
   auto beginWalkers() { return mcp_walkers_.begin(); }
   auto endWalkers() { return mcp_walkers_.end(); }
   auto beginTrialWaveFunctions() { return walker_twfs_.begin(); }

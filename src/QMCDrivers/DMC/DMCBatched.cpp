@@ -441,11 +441,7 @@ void DMCBatched::runDMCStep(int crowd_id,
                             UPtrVector<Crowd>& crowds)
 {
   Crowd& crowd                         = *(crowds[crowd_id]);
-  auto setThreadLocalRNGForHamiltonian = [](QMCHamiltonian& ham, ContextForSteps& step_context) {
-    ham.setRandomGenerator(&(step_context.get_random_gen()));
-  };
-  for (int iw = 0; iw < crowd.size(); ++iw)
-    setThreadLocalRNGForHamiltonian(crowd.get_walker_hamiltonians()[iw], *(context_for_steps[iw]));
+  crowd.setRNGForHamiltonian(context_for_steps[crowd_id]->get_random_gen());
 
   int max_steps = sft.qmcdrv_input.get_max_steps();
   // This is migraine inducing here and in the original driver, I believe they are the same in
