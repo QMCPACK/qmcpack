@@ -182,9 +182,9 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
     PosType gendisp;
 
     for (int c = 0; c < NumCenters; c++){
-      gendisp[0]=(ions_.R[c][0]-coordR[0]);
-      gendisp[1]=(ions_.R[c][1]-coordR[1]);
-      gendisp[2]=(ions_.R[c][2]-coordR[2]);
+      gendisp[0]=(ions_.R[c][0]-coordR[0])-displ[c][0];
+      gendisp[1]=(ions_.R[c][1]-coordR[1])-displ[c][1]; 
+      gendisp[2]=(ions_.R[c][2]-coordR[2])-displ[c][2]; 
       LOBasisSet[IonID[c]]->evaluateVGL(P.Lattice, dist[c], displ[c], BasisOffset[c], vgl,gendisp);
    }
   }
