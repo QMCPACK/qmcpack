@@ -150,23 +150,13 @@ struct SoaAtomicBasisSet
   */
 
   template<typename LAT, typename T, typename PosType, typename VGL>
-  inline void evaluateVGL(const LAT& lattice, const T r, const PosType& dr, const size_t offset, VGL& vgl,PosType gendisp)
+  inline void evaluateVGL(const LAT& lattice, const T r, const PosType& dr, const size_t offset, VGL& vgl,  QMCTraits::ValueType CorrectedPhase)
   {
     int TransX, TransY, TransZ;
     
     PosType dr_new;
     T r_new;
     // T psi_new, dpsi_x_new, dpsi_y_new, dpsi_z_new,d2psi_new;
-
-#if not defined(QMC_COMPLEX)
-    const ValueType correctphase=1;
-#else
-
-    RealType phasearg = SuperTwist[0]*gendisp[0]+SuperTwist[1]*gendisp[1]+SuperTwist[2]*gendisp[2]; 
-    RealType s, c;
-    sincos(-phasearg,&s,&c);
-    const ValueType correctphase(c,s);
-#endif
 
     constexpr T cone(1);
     constexpr T ctwo(2);
@@ -231,7 +221,7 @@ struct SoaAtomicBasisSet
           const T rinv = cone / r_new;
 
           ///Phase for PBC containing the phase for the general electron position and the correction due to the Distance table. 
-          const ValueType Phase=periodic_image_phase_factors[iter] * correctphase;
+          const ValueType Phase=periodic_image_phase_factors[iter] * CorrectedPhase;
 
           for (size_t ib = 0; ib < BasisSetSize; ++ib)
           {
@@ -630,23 +620,12 @@ struct SoaAtomicBasisSet
   *
   */
   template<typename LAT, typename T, typename PosType, typename VT>
-  inline void evaluateV(const LAT& lattice, const T r, const PosType& dr, VT* restrict psi,PosType gendisp)
+  inline void evaluateV(const LAT& lattice, const T r, const PosType& dr, VT* restrict psi,ValueType CorrectedPhase)
   {
     int TransX, TransY, TransZ;
 
     PosType dr_new;
     T r_new;
-
-#if not defined(QMC_COMPLEX)
-    const ValueType correctphase=1.0;
-#else
-
-    RealType phasearg = SuperTwist[0]*gendisp[0]+SuperTwist[1]*gendisp[1]+SuperTwist[2]*gendisp[2]; 
-    RealType s, c;
-    sincos(-phasearg,&s,&c);
-    const ValueType correctphase(c,s);
-
-#endif
 
     RealType* restrict ylm_v = tempS.data(0);
     RealType* restrict phi_r = tempS.data(1);
@@ -680,7 +659,7 @@ struct SoaAtomicBasisSet
           Ylm.evaluateV(-dr_new[0], -dr_new[1], -dr_new[2], ylm_v);
           MultiRnl->evaluate(r_new, phi_r);
           ///Phase for PBC containing the phase for the general electron position and the correction due to the Distance table. 
-          const ValueType Phase=periodic_image_phase_factors[iter] * correctphase;
+          const ValueType Phase=periodic_image_phase_factors[iter] * CorrectedPhase;
           for (size_t ib = 0; ib < BasisSetSize; ++ib)
             psi[ib] += ylm_v[LM[ib]] * phi_r[NL[ib]] * Phase; 
 

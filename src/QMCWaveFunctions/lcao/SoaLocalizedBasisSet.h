@@ -180,12 +180,22 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
     const std::vector <double> coordR {((P.activePtcl == iat) ? P.activePos : P.R[iat])[0],((P.activePtcl == iat) ? P.activePos : P.R[iat])[1],((P.activePtcl == iat) ? P.activePos : P.R[iat])[2]};
 
     PosType gendisp;
+    RealType si,co,phasearg;
 
     for (int c = 0; c < NumCenters; c++){
+#if not defined(QMC_COMPLEX)
+      QMCTraits::ValueType CorrectedPhase=1;
+#else
+
       gendisp[0]=(ions_.R[c][0]-coordR[0])-displ[c][0];
       gendisp[1]=(ions_.R[c][1]-coordR[1])-displ[c][1]; 
       gendisp[2]=(ions_.R[c][2]-coordR[2])-displ[c][2]; 
-      LOBasisSet[IonID[c]]->evaluateVGL(P.Lattice, dist[c], displ[c], BasisOffset[c], vgl,gendisp);
+
+      phasearg=dot(SuperTwist,gendisp);
+      sincos(-phasearg,&si,&co);
+      QMCTraits::ValueType CorrectedPhase=(co,si);
+#endif
+      LOBasisSet[IonID[c]]->evaluateVGL(P.Lattice, dist[c], displ[c], BasisOffset[c], vgl,CorrectedPhase);
    }
   }
 
@@ -246,12 +256,24 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
     const auto& displ                = (P.activePtcl == iat) ? d_table.Temp_dr : d_table.Displacements[iat];
 
     const std::vector <double> coordR {((P.activePtcl == iat) ? P.activePos : P.R[iat])[0],((P.activePtcl == iat) ? P.activePos : P.R[iat])[1],((P.activePtcl == iat) ? P.activePos : P.R[iat])[2]};
+
     PosType gendisp;
+    RealType si,co,phasearg;
+
     for (int c = 0; c < NumCenters; c++){
+#if not defined(QMC_COMPLEX)
+      QMCTraits::ValueType CorrectedPhase=1;
+#else
+
       gendisp[0]=(ions_.R[c][0]-coordR[0])-displ[c][0];
       gendisp[1]=(ions_.R[c][1]-coordR[1])-displ[c][1]; 
       gendisp[2]=(ions_.R[c][2]-coordR[2])-displ[c][2]; 
-      LOBasisSet[IonID[c]]->evaluateV(P.Lattice, dist[c], displ[c], vals + BasisOffset[c],gendisp);
+
+      phasearg=dot(SuperTwist,gendisp);
+      sincos(-phasearg,&si,&co);
+      QMCTraits::ValueType CorrectedPhase=(co,si);
+#endif
+      LOBasisSet[IonID[c]]->evaluateV(P.Lattice, dist[c], displ[c], vals + BasisOffset[c],CorrectedPhase);
    }
 
   }
@@ -274,14 +296,12 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
     const auto& d_table = P.getDistTable(myTableIndex);
     const RealType* restrict dist    = (P.activePtcl == iat) ? d_table.Temp_r.data() : d_table.Distances[iat];
     const auto& displ                = (P.activePtcl == iat) ? d_table.Temp_dr : d_table.Displacements[iat];
-  
      
-    PosType gendisp; 
-    gendisp[0]=gendisp[1]=gendisp[2]=0;
+    const QMCTraits::ValueType Phase=1.0;
     //Since LCAO's are written only in terms of (r-R), ionic derivatives only exist for the atomic center
     //that we wish to take derivatives of.  Moreover, we can obtain an ion derivative by multiplying an electron
     //derivative by -1.0.  Handling this sign is left to LCAOrbitalSet.  For now, just note this is the electron VGL function.
-    LOBasisSet[IonID[jion]]->evaluateVGL(P.Lattice, dist[jion], displ[jion], BasisOffset[jion], vgl,gendisp);
+    LOBasisSet[IonID[jion]]->evaluateVGL(P.Lattice, dist[jion], displ[jion], BasisOffset[jion], vgl,Phase);
 
   }
 
