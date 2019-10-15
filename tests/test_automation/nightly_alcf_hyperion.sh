@@ -5,6 +5,9 @@ export PATH=/opt/cmake/current/bin:$PATH
 source /opt/rh/devtoolset-6/enable
 source /opt/intel/2018/parallel_studio_xe_2018/psxevars.sh intel64
 
+export N_PROCS_BUILD=64
+export N_PROCS=64
+
 # KNL NUMA + Memory Mode
 # quit if in a hybrid mode, could run out of memory
 if [grep -i hybrid /var/run/hwloc/knl_memoryside_cache]; then
