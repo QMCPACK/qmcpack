@@ -21,6 +21,8 @@
 namespace qmcplusplus
 {
 using std::placeholders::_1;
+
+// clang-format off
 /** Constructor maintains proper ownership of input parameters
    */
 DMCBatched::DMCBatched(QMCDriverInput&& qmcdriver_input,
@@ -30,18 +32,14 @@ DMCBatched::DMCBatched(QMCDriverInput&& qmcdriver_input,
                        QMCHamiltonian& h,
                        WaveFunctionPool& wf_pool,
                        Communicate* comm)
-    : QMCDriverNew(std::move(qmcdriver_input),
-                   pop,
-                   psi,
-                   h,
-                   wf_pool,
-                   "DMCBatched::",
-                   comm,
+    : QMCDriverNew(std::move(qmcdriver_input), pop, psi, h, wf_pool,
+                   "DMCBatched::", comm,
                    std::bind(&DMCBatched::setNonLocalMoveHandler, this, _1)),
       dmcdriver_input_(input)
 {
   QMCType = "DMCBatched";
 }
+// clang-format on
 
 QMCTraits::IndexType DMCBatched::calc_default_local_walkers(IndexType walkers_per_rank)
 {
