@@ -529,7 +529,6 @@ void J2OrbitalSoA<FT>::recompute(ParticleSet& P)
   const auto& d_table = P.getDistTable(my_table_ID_);
   for (int ig = 0; ig < NumGroups; ++ig)
   {
-    const int igt = ig * NumGroups;
     for (int iat = P.first(ig), last = P.last(ig); iat < last; ++iat)
     {
       computeU3(P, iat, d_table.Distances[iat], cur_u.data(), cur_du.data(), cur_d2u.data(), true);

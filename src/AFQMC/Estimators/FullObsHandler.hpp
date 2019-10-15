@@ -117,7 +117,6 @@ class FullObsHandler: public AFQMCInfo
   void print(int iblock, hdf_archive& dump)
   {
     using std::fill_n;
-    const int n_zero = 9;
 
     if( TG.TG_local().root() ) {
       ma::scal(ComplexType(1.0/block_size),denominator);

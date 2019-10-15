@@ -436,7 +436,6 @@ class WalkerSetBase: public AFQMCInfo
     {
       auto kill = itbegin;
       auto keep = itend-1;
-      int nkills=0;
 
       while( keep > kill ) { 
  

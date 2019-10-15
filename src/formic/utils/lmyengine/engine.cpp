@@ -338,11 +338,6 @@ void cqmc::engine::LMYEngine::take_sample(std::vector<double> & der_rat_samp,
                                           double weight_samp) {
 
     
-  // get the number of threads being used
-  int NumThreads = omp_get_num_threads();
-
-  //output << boost::format("entering take_sample function") << std::endl;
-
   // get the thread number 
   int myThread = omp_get_thread_num();
 
@@ -579,9 +574,7 @@ void cqmc::engine::LMYEngine::take_sample(double local_en,
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 void cqmc::engine::LMYEngine::sample_finish() {
   
-  // get rank number and number of ranks
   int my_rank = formic::mpi::rank();
-  int num_rank = formic::mpi::size();
 
   // get total number of threads
   int NumThreads = omp_get_max_threads();
@@ -771,13 +764,6 @@ void cqmc::engine::LMYEngine::energy_target_compute() {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 void cqmc::engine::LMYEngine::wfn_update_prep() {
 
-   // get rank number and number of ranks
-  int my_rank = formic::mpi::rank();
-  int num_rank = formic::mpi::size();
-  //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-  //MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
-  //std::cout << "entering wfn_update_prep on rank " << my_rank << std::endl;
- 
   // if we are not doing block algorithm, do nothing
   if ( !_block_lm ) 
     return;
@@ -951,10 +937,6 @@ void cqmc::engine::LMYEngine::call_engine(const bool exact_sampling,
                                           double & target, 
                                           double & tserr,
                                           std::ostream & output) {
-
-  // get rank number
-  int my_rank = formic::mpi::rank();
-  //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
 
   // simply, just call energy and target function calculation function
   cqmc::engine::et(exact_sampling,
@@ -1196,13 +1178,6 @@ void cqmc::engine::LMYEngine::call_engine(const bool print_matrix,
                                           std::ostream & output)
 {
   
-  
-  // get rank number and number of ranks 
-  int my_rank = formic::mpi::rank();
-  int num_rank = formic::mpi::size();
-  //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-  //MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
-
   // if this calculation is not ground state calculation, EOM will not be performed
   if ( !ground_state )
     return;
@@ -1282,11 +1257,6 @@ void cqmc::engine::LMYEngine::get_brlm_update_alg_part_one(const formic::VarDeps
                                                            std::vector<int> & shift_solved, 
                                                            std::ostream & output) {
 
-
-  // get rank number of number of ranks
-  int my_rank = formic::mpi::rank();
-  int num_rank = formic::mpi::size();
-
   // get the number of threads
   int NumThreads = omp_get_max_threads();
 
@@ -1352,14 +1322,9 @@ void cqmc::engine::LMYEngine::get_brlm_update_alg_part_two(const formic::VarDeps
                                                            std::vector<int> & shift_solved, 
                                                            std::ostream & output) {
 
-  // get rank number and number of ranks
   int my_rank = formic::mpi::rank();
-  int num_rank = formic::mpi::size();
-  //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-  //MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
 
   // size update vector correctly
-  //std::cout << shift_scale.size() << "  " << 1 + _dep_ptr->n_tot() << std::endl;
   updates.assign(shift_scale.size() * ( 1 + _dep_ptr->n_tot()), 0.0);
 
   // get the number of special vectors(initial wfn + old updates)
