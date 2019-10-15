@@ -250,13 +250,7 @@ void VMCBatched::runVMCStep(int crowd_id,
                             std::vector<std::unique_ptr<Crowd>>& crowds)
 {
   Crowd& crowd = *(crowds[crowd_id]);
-
-  auto setThreadLocalRNGForHamiltonian = [](QMCHamiltonian& ham, ContextForSteps& step_context) {
-    ham.setRandomGenerator(&(step_context.get_random_gen()));
-  };
-  for (int iw = 0; iw < crowd.size(); ++iw)
-    setThreadLocalRNGForHamiltonian(crowd.get_walker_hamiltonians()[iw], *(context_for_steps[iw]));
-
+  crowd.setRNGForHamiltonian(context_for_steps[crowd_id]->get_random_gen());
   
   int max_steps = sft.qmcdrv_input.get_max_steps();
   bool is_recompute_block =
