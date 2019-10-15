@@ -1,7 +1,7 @@
 
 IF(ENABLE_SOA)
  IF (NOT QMC_CUDA)
-   IF (NOT QMC_COMPLEX)
+   IF (QMC_COMPLEX)
 
 # VMC long run with no Jastrows 
 # Compare directly to Hartree Fock Energy of: E=-8.072494830814307
@@ -13,7 +13,7 @@ LIST(APPEND Al-1x1x1-Gaussian_pp_Tw_cplx_LONG_SCALARS "potential" "-11.637571841
 LIST(APPEND Al-1x1x1-Gaussian_pp_Tw_cplx_LONG_SCALARS "eeenergy" "-3.109468568661 0.014478131707")
 LIST(APPEND Al-1x1x1-Gaussian_pp_Tw_cplx_LONG_SCALARS "localecp" "0.693022086548 0.015917294909")
 LIST(APPEND Al-1x1x1-Gaussian_pp_Tw_cplx_LONG_SCALARS "nonlocalecp" "1.591560552665 0.016677475370")
-LIST(APPEND Al-1x1x1-Gaussian_pp_Tw_cplx_LONG_SCALARS "ionion" "-10.812685912000 0.000000000000")
+LIST(APPEND Al-1x1x1-Gaussian_pp_Tw_cplx_LONG_SCALARS "ionion" "-10.812685912000 0.020000000000")
   QMC_RUN_AND_CHECK(long-Al-1x1x1-Gaussian-pp-cplx
                     "${CMAKE_SOURCE_DIR}/tests/solids/Al-1x1x1-Gaussian_pp_ShiftedTwist"
                     vmc_long 
@@ -33,7 +33,7 @@ LIST(APPEND Al-1x1x1-Gaussian_pp_Tw_cplx_SHORT_SCALARS "potential" "-11.63757184
 LIST(APPEND Al-1x1x1-Gaussian_pp_Tw_cplx_SHORT_SCALARS "eeenergy" "-3.109468568661 0.026007614629")
 LIST(APPEND Al-1x1x1-Gaussian_pp_Tw_cplx_SHORT_SCALARS "localecp" "0.693022086548 0.049611353506")
 LIST(APPEND Al-1x1x1-Gaussian_pp_Tw_cplx_SHORT_SCALARS "nonlocalecp" "1.591560552665 0.047099343376")
-LIST(APPEND Al-1x1x1-Gaussian_pp_Tw_cplx_SHORT_SCALARS "ionion" "-10.812685912000 0.000000000000")
+LIST(APPEND Al-1x1x1-Gaussian_pp_Tw_cplx_SHORT_SCALARS "ionion" "-10.812685912000 0.020000000000")
   QMC_RUN_AND_CHECK(short-Al-1x1x1-Gaussian-pp-cplx
                     "${CMAKE_SOURCE_DIR}/tests/solids/Al-1x1x1-Gaussian_pp_ShiftedTwist"
                     vmc_short 

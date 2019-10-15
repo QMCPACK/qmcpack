@@ -1,7 +1,7 @@
 
 IF(ENABLE_SOA)
  IF (NOT QMC_CUDA)
-   IF (NOT QMC_COMPLEX)
+   IF (QMC_COMPLEX)
 
 # VMC long run with no Jastrows 
 # Compare directly to Hartree Fock Energy of: E=-11.187187769284947
@@ -13,7 +13,7 @@ LIST(APPEND diamondC_1x1x1-Gaussian_pp_Tw_cplx_LONG_SCALARS "potential" "-20.180
 LIST(APPEND diamondC_1x1x1-Gaussian_pp_Tw_cplx_LONG_SCALARS "eeenergy" "-2.603439510064 0.011081783142")
 LIST(APPEND diamondC_1x1x1-Gaussian_pp_Tw_cplx_LONG_SCALARS "localecp" "-5.969614858813 0.043988176158")
 LIST(APPEND diamondC_1x1x1-Gaussian_pp_Tw_cplx_LONG_SCALARS "nonlocalecp" "1.168712497974 0.012309208368")
-LIST(APPEND diamondC_1x1x1-Gaussian_pp_Tw_cplx_LONG_SCALARS "ionion" "-12.775667565000 0.000000000000")
+LIST(APPEND diamondC_1x1x1-Gaussian_pp_Tw_cplx_LONG_SCALARS "ionion" "-12.775667565000 0.020000000000")
   QMC_RUN_AND_CHECK(long-diamondC_1x1x1-Gaussian_pp_Tw_cplx
                     "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1-Gaussian_pp_Tw_cplx"
                     vmc_long  
@@ -33,7 +33,7 @@ LIST(APPEND diamondC_1x1x1-Gaussian_pp_Tw_cplx_SHORT_SCALARS "potential" "-20.18
 LIST(APPEND diamondC_1x1x1-Gaussian_pp_Tw_cplx_SHORT_SCALARS "eeenergy" "-2.603439510064 0.018396250955")
 LIST(APPEND diamondC_1x1x1-Gaussian_pp_Tw_cplx_SHORT_SCALARS "localecp" "-5.969614858813 0.068868300966")
 LIST(APPEND diamondC_1x1x1-Gaussian_pp_Tw_cplx_SHORT_SCALARS "nonlocalecp" "1.168712497974 0.025981779181")
-LIST(APPEND diamondC_1x1x1-Gaussian_pp_Tw_cplx_SHORT_SCALARS "ionion" "-12.775667565000 0.000000000000")
+LIST(APPEND diamondC_1x1x1-Gaussian_pp_Tw_cplx_SHORT_SCALARS "ionion" "-12.775667565000 0.020000000000")
   QMC_RUN_AND_CHECK(short-diamondC_1x1x1-Gaussian_pp_Tw_cplx
                     "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1-Gaussian_pp_Tw_cplx"
                     vmc_short 
