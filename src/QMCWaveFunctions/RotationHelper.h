@@ -127,6 +127,10 @@ public:
 
   void checkInVariables(opt_variables_type& active)
   {
+    //reset parameters to zero after coefficient matrix has been updated
+    for (int k = 0; k < myVars.size(); ++k)
+      myVars[k] = 0.0;
+
     if (Optimizable && !IsCloned)
     {
       if (myVars.size())

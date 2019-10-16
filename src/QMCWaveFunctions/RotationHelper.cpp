@@ -16,7 +16,6 @@ RotationHelper::~RotationHelper() {}
 
 void RotationHelper::buildOptVariables(const size_t& nel)
 {
-//  Phi->buildOptVariables(nel);
 #if !defined(QMC_COMPLEX)
   const size_t nmo = Phi->getOrbitalSetSize();
 
