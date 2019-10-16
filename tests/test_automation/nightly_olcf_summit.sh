@@ -1,4 +1,13 @@
 #!/bin/bash
+# Begin LSF Directives
+#BSUB -P MAT151
+#BSUB -W 2:00
+#BSUB -nnodes 1
+#BSUB -alloc_flags smt1
+#BSUB -N
+#BSUB -J periodic_qmc
+#BSUB -o periodic_qmc.%J
+#BSUB -e periodic_qmc.%J
 
 echo ""
 echo ""
@@ -33,7 +42,7 @@ export FFTW_HOME=${OLCF_FFTW_ROOT}
 base_dir=/gpfs/alpine/proj-shared/mat151/periodic_qmc #Must be an absolute path
 qmc_data_dir=${base_dir}/h5data
 
-compiler=gcc6.4
+compiler=gcc7.4
 branch=develop
 
 source_dir=${base_dir}/qmcpack-${branch}
@@ -75,19 +84,19 @@ if [ -e ${source_dir}/CMakeLists.txt ]; then
       -DENABLE_TIMERS=1 \
       -DCMAKE_CXX_COMPILER=mpicxx \
       -DCMAKE_C_COMPILER=mpicc \
-      -DMPIEXEC_NUMPROC_FLAG=${source_dir}/tests/scripts/jsrunhelper.sh"
+      -DQMC_OPTIONS='-DMPIEXEC=sh;-DMPIEXEC_NUMPROC_FLAG=${source_dir}/tests/scripts/jsrunhelper.sh'"
 
     [[ ${variant} == *"Complex"* ]] && CTEST_FLAGS="${CTEST_FLAGS} -D QMC_COMPLEX=1"
     [[ ${variant} == *"-SoA"* ]] && CTEST_FLAGS="${CTEST_FLAGS} -D ENABLE_SOA=1"
     [[ ${variant} == *"-Mixed"* ]] && CTEST_FLAGS="${CTEST_FLAGS} -D QMC_MIXED_PRECISION=1"
-    [[ ${variant} == *"-CUDA"* ]] && CTEST_FLAGS="${CTEST_FLAGS} -D ENABLE_CUDA=1"
+    [[ ${variant} == *"-CUDA"* ]] && CTEST_FLAGS="${CTEST_FLAGS} -D QMC_CUDA=1"
 
     export QMCPACK_TEST_SUBMIT_NAME=${compiler}-${variant}-Release
 
     ctest ${CTEST_FLAGS} \
       -S $(pwd)/../CMake/ctest_script.cmake,release \
-      --stop-time $(date --date=now+117mins +%H:%M:%S) \
-      -VV -R 'unit|short|deterministic' -LE 'unstable' --timeout 800 &> \
+      --stop-time $(date --date=now+57mins +%H:%M:%S) \
+      -VV -R 'deterministic|short' -LE 'unstable' --timeout 800 &> \
       ${log_dir}/${QMCPACK_TEST_SUBMIT_NAME}.log
 
     echo --- Finished ${variant} $(date)
@@ -117,16 +126,7 @@ echo ""
 log_dir=${base_dir}/log/$(date --date="tomorrow" +%y_%m_%d)
 mkdir -p ${log_dir}
 
-$ go there to capture the job output file
+# go there to capture the job output file
 cd ${log_dir}
 
-bsub -b ${hour}:${minute} \
-  -P mat151 \
-  -W 2:00 \
-  -nnodes 1 \
-  -alloc_flags smt1 \
-  -N \
-  -J periodic_qmc \
-  -o periodic_qmc.%J \
-  -e periodic_qmc.%J \
-  < ${source_dir}/tests/test_automation/nightly_olcf_summit.sh
+bsub -b ${hour}:${minute} ${source_dir}/tests/test_automation/nightly_olcf_summit.sh
