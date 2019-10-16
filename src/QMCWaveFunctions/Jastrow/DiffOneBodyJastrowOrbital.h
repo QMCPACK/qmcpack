@@ -51,7 +51,7 @@ class DiffOneBodyJastrowOrbital : public DiffWaveFunctionComponent
 public:
   ///constructor
   DiffOneBodyJastrowOrbital(const ParticleSet& centers, ParticleSet& els)
-    : CenterRef(centers), NumVars(0), myTableIndex(els.addTable(centers, DT_SOA_PREFERRED))
+    : NumVars(0), myTableIndex(els.addTable(centers, DT_SOA_PREFERRED)), CenterRef(centers)
   {
     NumPtcls     = els.getTotalNum();
   }
@@ -132,6 +132,36 @@ public:
                            std::vector<ValueType>& dlogpsi,
                            std::vector<ValueType>& dhpsioverpsi)
   {
+    evaluateDerivativesWF(P, active, dlogpsi);
+    bool recalculate(false);
+    std::vector<bool> rcsingles(myVars.size(), false);
+    for (int k = 0; k < myVars.size(); ++k)
+    {
+      int kk = myVars.where(k);
+      if (kk < 0)
+        continue;
+      if (active.recompute(kk))
+        recalculate = true;
+      rcsingles[k] = true;
+    }
+    if (recalculate) {
+      for (int k = 0; k < myVars.size(); ++k)
+      {
+        int kk = myVars.where(k);
+        if (kk < 0)
+          continue;
+        if (rcsingles[k])
+        {
+          dhpsioverpsi[kk] = - RealType(0.5) * ValueType(Sum(*lapLogPsi[k])) - ValueType(Dot(P.G, *gradLogPsi[k]));
+        }
+      }
+    }
+  }
+
+  void evaluateDerivativesWF(ParticleSet& P,
+                             const opt_variables_type& active,
+                             std::vector<ValueType>& dlogpsi)
+  {
     bool recalculate(false);
     std::vector<bool> rcsingles(myVars.size(), false);
     for (int k = 0; k < myVars.size(); ++k)
@@ -157,7 +187,7 @@ public:
       {
         constexpr RealType cone(1);
         constexpr RealType lapfac(OHMMS_DIM - cone);
-        const size_t ns = d_table.size(SourceIndex);
+        const size_t ns = d_table.sources();
         const size_t nt = P.getTotalNum();
 
         aligned_vector<int> iadj(nt);
@@ -199,7 +229,8 @@ public:
       }
       else
       {
-        for (int i = 0; i < d_table.size(SourceIndex); ++i)
+#ifndef ENABLE_SOA
+        for (int i = 0; i < d_table.sources(); ++i)
         {
           FT* func = Fs[i];
           if (func == 0)
@@ -230,6 +261,7 @@ public:
             }
           }
         }
+#endif
       }
       for (int k = 0; k < myVars.size(); ++k)
       {
@@ -239,7 +271,6 @@ public:
         if (rcsingles[k])
         {
           dlogpsi[kk]      = ValueType(dLogPsi[k]);
-          dhpsioverpsi[kk] = - RealType(0.5) * ValueType(Sum(*lapLogPsi[k])) - ValueType(Dot(P.G, *gradLogPsi[k]));
         }
       }
     }

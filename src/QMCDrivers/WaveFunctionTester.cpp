@@ -41,10 +41,10 @@ WaveFunctionTester::WaveFunctionTester(MCWalkerConfiguration& w,
                                        WaveFunctionPool& ppool,
                                        Communicate* comm)
     : QMCDriver(w, psi, h, ppool, comm),
+      PtclPool(ptclPool),
       checkRatio("no"),
       checkClone("no"),
       checkHamPbyP("no"),
-      PtclPool(ptclPool),
       wftricks("no"),
       checkEloc("no"),
       checkBasic("yes"),
@@ -1839,8 +1839,6 @@ void WaveFunctionTester::runDerivNLPPTest()
   int Nvars = wfVars.size();
   std::vector<ValueType> Dsaved(Nvars);
   std::vector<ValueType> HDsaved(Nvars);
-  std::vector<RealType> rDsaved(Nvars);
-  std::vector<RealType> rHDsaved(Nvars);
   std::vector<RealType> PGradient(Nvars);
   std::vector<RealType> HGradient(Nvars);
   Psi.resetParameters(wfVars);
@@ -1853,12 +1851,7 @@ void WaveFunctionTester::runDerivNLPPTest()
   std::vector<RealType> ene(4), ene_p(4), ene_m(4);
   Psi.evaluateDerivatives(W, wfVars, Dsaved, HDsaved);
 
-  for (int i = 0; i < Nvars; i++)
-  {
-    rDsaved[i]  = std::real(Dsaved[i]);
-    rHDsaved[i] = std::real(HDsaved[i]);
-  }
-  ene[0] = H.evaluateValueAndDerivatives(W, wfVars, rDsaved, rHDsaved, true);
+  ene[0] = H.evaluateValueAndDerivatives(W, wfVars, Dsaved, HDsaved, true);
   app_log() << "Check the energy " << eloc << " " << H.getLocalEnergy() << " " << ene[0] << std::endl;
 
   RealType FiniteDiff    = 1e-6;
@@ -1897,10 +1890,10 @@ void WaveFunctionTester::runDerivNLPPTest()
 
   nlout << std::endl << "Deriv  Numeric Analytic" << std::endl;
   for (int i = 0; i < Nvars; i++)
-    nlout << i << "  " << PGradient[i] << "  " << rDsaved[i] << "  " << (PGradient[i] - rDsaved[i]) << std::endl;
+    nlout << i << "  " << PGradient[i] << "  " << Dsaved[i] << "  " << (PGradient[i] - Dsaved[i]) << std::endl;
   nlout << std::endl << "Hderiv  Numeric Analytic" << std::endl;
   for (int i = 0; i < Nvars; i++)
-    nlout << i << "  " << HGradient[i] << "  " << rHDsaved[i] << "  " << (HGradient[i] - rHDsaved[i]) << std::endl;
+    nlout << i << "  " << HGradient[i] << "  " << HDsaved[i] << "  " << (HGradient[i] - HDsaved[i]) << std::endl;
 }
 
 
@@ -2073,9 +2066,9 @@ void WaveFunctionTester::runwftricks()
     kids = kids->next;
   }
   ParticleSet::ParticlePos_t R_cart(1);
-  R_cart.setUnit(PosUnit::CartesianUnit);
+  R_cart.setUnit(PosUnit::Cartesian);
   ParticleSet::ParticlePos_t R_unit(1);
-  R_unit.setUnit(PosUnit::LatticeUnit);
+  R_unit.setUnit(PosUnit::Lattice);
   //       app_log()<<" My crystals basis set is:"<< std::endl;
   //       std::vector<std::vector<RealType> > BasisMatrix(3, std::vector<RealType>(3,0.0));
   //
@@ -2284,9 +2277,9 @@ void WaveFunctionTester::runNodePlot()
     kids = kids->next;
   }
   ParticleSet::ParticlePos_t R_cart(1);
-  R_cart.setUnit(PosUnit::CartesianUnit);
+  R_cart.setUnit(PosUnit::Cartesian);
   ParticleSet::ParticlePos_t R_unit(1);
-  R_unit.setUnit(PosUnit::LatticeUnit);
+  R_unit.setUnit(PosUnit::Lattice);
   Walker_t& thisWalker(**(W.begin()));
   W.loadWalker(thisWalker, true);
   Walker_t::WFBuffer_t& w_buffer(thisWalker.DataSet);

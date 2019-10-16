@@ -147,6 +147,7 @@ void InitMolecularSystem::initMolecule(ParticleSet* ions, ParticleSet* els)
   }
   else
   {
+#ifndef ENABLE_SOA
     for (int iat = 0; iat < Centers; iat++)
     {
       cm += ions->R[iat];
@@ -169,6 +170,7 @@ void InitMolecularSystem::initMolecule(ParticleSet* ions, ParticleSet* els)
           els->R[ndown_tot++] = ions->R[iat] + sep * chi[item++];
       }
     }
+#endif
   }
 
   // mmorales: changed order of spin assignment to help with spin
@@ -224,7 +226,7 @@ void InitMolecularSystem::initMolecule(ParticleSet* ions, ParticleSet* els)
   //put all the electrons in a unit box
   if (els->Lattice.SuperCellEnum != SUPERCELL_OPEN)
   {
-    els->R.setUnit(PosUnit::CartesianUnit);
+    els->R.setUnit(PosUnit::Cartesian);
     els->applyBC(els->R);
     els->update(0);
   }
@@ -250,7 +252,7 @@ void InitMolecularSystem::initWithVolume(ParticleSet* ions, ParticleSet* els)
   TinyVector<RealType, OHMMS_DIM> end(0.0);
 
   ParticleSet::ParticlePos_t Ru(ions->getTotalNum());
-  Ru.setUnit(PosUnit::LatticeUnit);
+  Ru.setUnit(PosUnit::Lattice);
   ions->applyBC(ions->R, Ru);
 
   for (int iat = 0; iat < Ru.size(); iat++)
@@ -298,7 +300,7 @@ void InitMolecularSystem::initWithVolume(ParticleSet* ions, ParticleSet* els)
   makeUniformRandom(Ru);
   for (int iat = 0; iat < Ru.size(); ++iat)
     els->R[iat] = slattice.toCart(Ru[iat]) + shift;
-  els->R.setUnit(PosUnit::CartesianUnit);
+  els->R.setUnit(PosUnit::Cartesian);
 }
 
 bool InitMolecularSystem::put(std::istream& is) { return true; }

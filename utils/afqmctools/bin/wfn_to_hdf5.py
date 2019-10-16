@@ -72,7 +72,7 @@ def main(args):
     nelec = (nalpha, nbeta)
     if options.qmcpack:
         wfn, walker_type, nmo, nelec = (
-                read_qmcpack_ci_wavefunction(input_file, options.ndets)
+                read_qmcpack_ci_wavefunction(input_file, nelec, nmo, options.ndets)
                 )
     else:
         wfn, walker_type = read_qmcpack_ascii_wavefunction(input_file, nmo, nelec)

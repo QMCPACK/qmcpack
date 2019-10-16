@@ -26,7 +26,7 @@ namespace qmcplusplus
 /** @ingroup hamiltonian
  * \brief Evaluate the semi local potentials
  */
-class NonLocalECPotential : public QMCHamiltonianBase, public ForceBase
+class NonLocalECPotential : public OperatorBase, public ForceBase
 {
 public:
   NonLocalECPotential(ParticleSet& ions,
@@ -68,8 +68,8 @@ public:
 
   Return_t evaluateValueAndDerivatives(ParticleSet& P,
                                        const opt_variables_type& optvars,
-                                       const std::vector<RealType>& dlogpsi,
-                                       std::vector<RealType>& dhpsioverpsi);
+                                       const std::vector<ValueType>& dlogpsi,
+                                       std::vector<ValueType>& dhpsioverpsi);
 
   /** Do nothing */
   bool put(xmlNodePtr cur) { return true; }
@@ -80,7 +80,7 @@ public:
     return true;
   }
 
-  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 
   void addComponent(int groupID, NonLocalECPComponent* pp);
 
@@ -132,6 +132,8 @@ private:
   ParticleSet::ParticlePos_t PulayTerm;
 #if !defined(REMOVE_TRACEMANAGER)
   ///single particle trace samples
+  Array<TraceReal, 1> Ve_samp_tmp;
+  Array<TraceReal, 1> Vi_samp_tmp;
   Array<TraceReal, 1>* Ve_sample;
   Array<TraceReal, 1>* Vi_sample;
 #endif

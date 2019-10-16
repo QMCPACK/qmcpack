@@ -44,15 +44,15 @@ const TimerNameList_t<ParticleSet::PSTimers> ParticleSet::PSTimerNames = {{PS_ne
                                                                           {PS_update, "ParticleSet::update"}};
 
 ParticleSet::ParticleSet()
-    : IsGrouped(true),
-      ThreadID(0),
-      SK(0),
-      ParentName("0"),
-      quantum_domain(classical),
-      TotalNum(0),
+    : quantum_domain(classical),
+      IsGrouped(true),
       SameMass(true),
+      ThreadID(0),
+      activePtcl(-1),
+      SK(0),
       myTwist(0.0),
-      activePtcl(-1)
+      ParentName("0"),
+      TotalNum(0)
 {
   initPropertyList();
   setup_timers(myTimers, PSTimerNames, timer_level_fine);
@@ -60,13 +60,13 @@ ParticleSet::ParticleSet()
 
 ParticleSet::ParticleSet(const ParticleSet& p)
     : IsGrouped(p.IsGrouped),
+      SameMass(true),
       ThreadID(0),
+      activePtcl(-1),
       mySpecies(p.getSpeciesSet()),
       SK(0),
-      ParentName(p.parentName()),
-      SameMass(true),
       myTwist(0.0),
-      activePtcl(-1)
+      ParentName(p.parentName())
 {
   set_quantum_domain(p.quantum_domain);
   assign(p); //only the base is copied, assumes that other properties are not assignable
@@ -100,6 +100,8 @@ ParticleSet::ParticleSet(const ParticleSet& p)
   myTwist = p.myTwist;
 
   RSoA = p.RSoA;
+  G = p.G;
+  L = p.L;
 }
 
 ParticleSet::~ParticleSet()
@@ -289,8 +291,8 @@ bool ParticleSet::get(std::ostream& os) const
     os << "    Particles are not grouped by species in the input file. Algorithms may not be optimal!" << std::endl;
   os << std::endl;
 
-  const int maxParticlesToPrint = 10;
-  int numToPrint                = std::min(TotalNum, maxParticlesToPrint);
+  const size_t maxParticlesToPrint = 10;
+  size_t numToPrint                = std::min(TotalNum, maxParticlesToPrint);
 
   for (int i = 0; i < numToPrint; i++)
   {
@@ -372,11 +374,51 @@ void ParticleSet::setActive(int iat)
       DistTables[i]->evaluate(*this, iat);
 }
 
+void ParticleSet::flex_setActive(const RefVector<ParticleSet>& P_list, int iat)
+{
+  if (P_list.size() > 1)
+  {
+    ScopedTimer local_timer(P_list[0].get().myTimers[PS_setActive]);
+    int dist_tables_size = P_list[0].get().DistTables.size();
+    #pragma omp parallel
+    {
+      for (size_t i = 0; i < dist_tables_size; i++)
+      {
+        #pragma omp for
+        for (int iw = 0; iw < P_list.size(); iw++)
+        {
+          P_list[iw].get().DistTables[i]->evaluate(P_list[iw], iat);
+        }
+      }
+    }
+  } else if (P_list.size()==1)
+    P_list[0].get().setActive(iat);
+}
+
 void ParticleSet::makeMove(Index_t iat, const SingleParticlePos_t& displ)
 {
   activePtcl = iat;
   activePos  = R[iat] + displ;
   computeNewPosDistTablesAndSK(iat, activePos);
+}
+
+void ParticleSet::flex_makeMove(const RefVector<ParticleSet>& P_list, Index_t iat, const std::vector<SingleParticlePos_t>& displs)
+{
+  if (P_list.size() > 1)
+  {
+    std::vector<SingleParticlePos_t> new_positions;
+    new_positions.reserve(displs.size());
+
+    for (int iw = 0; iw < P_list.size(); iw++)
+    {
+      P_list[iw].get().activePtcl = iat;
+      P_list[iw].get().activePos  = P_list[iw].get().R[iat] + displs[iw];
+      new_positions.push_back(P_list[iw].get().activePos);
+    }
+
+    mw_computeNewPosDistTablesAndSK(P_list, iat, new_positions);
+  } else if (P_list.size()==1)
+    P_list[0].get().makeMove(iat, displs[0]);
 }
 
 bool ParticleSet::makeMoveAndCheck(Index_t iat, const SingleParticlePos_t& displ)
@@ -409,6 +451,30 @@ void ParticleSet::computeNewPosDistTablesAndSK(Index_t iat, const SingleParticle
   if (SK && SK->DoUpdate)
     SK->makeMove(iat, newpos);
 }
+
+void ParticleSet::mw_computeNewPosDistTablesAndSK(const RefVector<ParticleSet>& P_list, Index_t iat, const std::vector<SingleParticlePos_t>& new_positions)
+{
+  ScopedTimer compute_newpos_scope(P_list[0].get().myTimers[PS_newpos]);
+  int dist_tables_size = P_list[0].get().DistTables.size();
+  #pragma omp parallel
+  {
+    for (int i = 0; i < dist_tables_size; ++i)
+    {
+      #pragma omp for
+      for (int iw = 0; iw < P_list.size(); iw++)
+        P_list[iw].get().DistTables[i]->move(P_list[iw], new_positions[iw]);
+    }
+
+    StructFact* SK = P_list[0].get().SK;
+    if (SK && SK->DoUpdate)
+    {
+      #pragma omp for
+      for (int iw = 0; iw < P_list.size(); iw++)
+        P_list[iw].get().SK->makeMove(iat, new_positions[iw]);
+    }
+  }
+}
+
 
 bool ParticleSet::makeMoveAllParticles(const Walker_t& awalker, const ParticlePos_t& deltaR, RealType dt)
 {
@@ -636,6 +702,21 @@ void ParticleSet::saveWalker(Walker_t& awalker)
   //awalker.DataSet.rewind();
 }
 
+void ParticleSet::flex_saveWalker(RefVector<ParticleSet>& psets, RefVector<Walker_t>& walkers)
+{
+  int num_sets = psets.size();
+  auto saveWalker = [](ParticleSet& pset, Walker_t& walker){
+                      walker.R = pset.R;
+#if !defined(SOA_MEMORY_OPTIMIZED)
+                      walker.G = pset.G;
+                      walker.L = pset.L;
+#endif
+                    };
+  for(int iw = 0; iw < num_sets; ++iw)
+    saveWalker(psets[iw], walkers[iw]);
+}
+
+
 void ParticleSet::initPropertyList()
 {
   PropertyList.clear();
@@ -707,6 +788,5 @@ int ParticleSet::addPropertyHistory(int leng)
 // //       PropertyHistory[dindex].pop_back();
 //       }
 //     }
-
 
 } // namespace qmcplusplus

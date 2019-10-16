@@ -16,7 +16,7 @@ struct dynamic_window : window<T>{
 	dynamic_window() : window<T>{}{}
 	public:
 	dynamic_window(communicator& comm){
-		int s = MPI_Win_create_dynamic(MPI_INFO_NULL, comm.impl_, &(this->impl_));
+		int s = MPI_Win_create_dynamic(MPI_INFO_NULL, comm.get(), &(this->impl_));
 		if(s != MPI_SUCCESS) throw std::runtime_error("cannot create dynamic window");
 	}
 	template<class TT = char>

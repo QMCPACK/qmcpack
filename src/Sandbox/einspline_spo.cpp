@@ -30,7 +30,10 @@ using namespace qmcplusplus;
 int main(int argc, char** argv)
 {
 
-  OHMMS::Controller->initialize(argc,argv);
+#ifdef HAVE_MPI
+  mpi3::environment env(0, NULL);
+  OHMMS::Controller->initialize(env);
+#endif
   if (OHMMS::Controller->rank() != 0)
   {
     outputManager.shutOff();
@@ -162,10 +165,11 @@ int main(int argc, char** argv)
     nptcl=nels;
 
     {//create up/down electrons
-      els.Lattice.BoxBConds=1;   els.Lattice.set(ions.Lattice);
+      els.Lattice.BoxBConds = 1;
+      els.Lattice = ions.Lattice;
       vector<int> ud(2); ud[0]=nels/2; ud[1]=nels-ud[0];
       els.create(ud);
-      els.R.InUnit=1;
+      els.R.InUnit = PosUnit::Lattice;
       random_th.generate_uniform(&els.R[0][0],nels3);
       els.convert2Cart(els.R); // convert to Cartiesian
     }

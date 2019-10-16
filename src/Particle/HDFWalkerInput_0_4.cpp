@@ -19,9 +19,6 @@
 #include <mpi/mpi_datatype.h>
 #include <mpi/collectives.h>
 #include "Utilities/FairDivide.h"
-#ifdef HAVE_ADIOS
-#include "ADIOS/ADIOS_config.h"
-#endif
 
 namespace qmcplusplus
 {
@@ -52,13 +49,6 @@ void HDFWalkerInput_0_4::checkOptions(xmlNodePtr cur)
   if (froot.empty())
     return;
   int ext;
-#ifdef HAVE_ADIOS
-  if (ADIOS::getRdADIOS())
-  {
-    ext = froot.find(".config.bp");
-  }
-  else if (ADIOS::getRdHDF5())
-#endif
   {
     ext = froot.find(hdf::config_ext);
   }
@@ -113,9 +103,6 @@ bool HDFWalkerInput_0_4::put(xmlNodePtr cur)
     app_error() << "  No valid input hdf5 is found." << std::endl;
     return false;
   }
-#ifdef HAVE_ADIOS
-  return read_adios(cur);
-#else
   bool success = true;
   while (FileStack.size())
   {
@@ -130,7 +117,6 @@ bool HDFWalkerInput_0_4::put(xmlNodePtr cur)
 #endif
   }
   return success;
-#endif
 }
 
 bool HDFWalkerInput_0_4::read_hdf5(std::string h5name)
@@ -163,11 +149,9 @@ bool HDFWalkerInput_0_4::read_hdf5(std::string h5name)
 
   typedef std::vector<QMCTraits::RealType> Buffer_t;
   Buffer_t posin;
-  TinyVector<size_t, 3> dims(nw_in, targetW.getTotalNum(), OHMMS_DIM);
+  std::array<int, 3> dims{nw_in, static_cast<int>(targetW.getTotalNum()), OHMMS_DIM};
   posin.resize(dims[0] * dims[1] * dims[2]);
-
-  hyperslab_proxy<Buffer_t, 3> slab(posin, dims);
-  hin.read(slab, hdf::walkers);
+  hin.readSlabReshaped(posin, dims, hdf::walkers);
 
   std::vector<int> woffsets;
   hin.read(woffsets, "walker_partition");
@@ -260,16 +244,15 @@ bool HDFWalkerInput_0_4::read_hdf5_scatter(std::string h5name)
   for (int i = 0; i < counts.size(); ++i)
     counts[i] = woffsets[i + 1] - woffsets[i];
 
-  TinyVector<size_t, 3> dims(nw_in, targetW.getTotalNum(), OHMMS_DIM);
+  std::array<int, 3> dims{nw_in, static_cast<int>(targetW.getTotalNum()), OHMMS_DIM};
   Buffer_t posin(nw_in * nitems), posout(counts[myComm->rank()]);
 
   if (myComm->rank() == 0)
   {
     hdf_archive hin(myComm);
     bool success = hin.open(h5name, H5F_ACC_RDONLY);
-    hyperslab_proxy<Buffer_t, 3> slab(posin, dims);
     hin.push(hdf::main_state);
-    hin.read(slab, hdf::walkers);
+    hin.readSlabReshaped(posin, dims, hdf::walkers);
   }
 
   mpi::scatterv(*myComm, posin, posout, counts, woffsets);
@@ -290,8 +273,8 @@ bool HDFWalkerInput_0_4::read_phdf5(std::string h5name)
   int nw_in = 0;
   h5name.append(hdf::config_ext);
   std::vector<int> woffsets;
-  int woffsets_size;
-  bool success;
+  int woffsets_size = 0;
+  bool success = false;
 
   { // handle small dataset with master rank
     hdf_archive hin(myComm, false);
@@ -345,7 +328,7 @@ bool HDFWalkerInput_0_4::read_phdf5(std::string h5name)
 
   typedef std::vector<QMCTraits::RealType> Buffer_t;
   Buffer_t posin;
-  TinyVector<int, 3> dims(nw_in, targetW.getTotalNum(), OHMMS_DIM);
+  std::array<int, 3> dims{nw_in, static_cast<int>(targetW.getTotalNum()), OHMMS_DIM};
 
   if (woffsets.size() != myComm->size() + 1)
   {
@@ -355,8 +338,8 @@ bool HDFWalkerInput_0_4::read_phdf5(std::string h5name)
 
   int nw_loc = woffsets[myComm->rank() + 1] - woffsets[myComm->rank()];
 
-  TinyVector<int, 3> counts(nw_loc, targetW.getTotalNum(), OHMMS_DIM);
-  TinyVector<int, 3> offsets(woffsets[myComm->rank()], 0, 0);
+  std::array<int, 3> counts{nw_loc, static_cast<int>(targetW.getTotalNum()), OHMMS_DIM};
+  std::array<int, 3> offsets{woffsets[myComm->rank()], 0, 0};
   posin.resize(nw_loc * dims[1] * dims[2]);
 
   hyperslab_proxy<Buffer_t, 3> slab(posin, dims, counts, offsets);
@@ -375,137 +358,6 @@ bool HDFWalkerInput_0_4::read_phdf5(std::string h5name)
       it += nitems;
     }
   }
-  return true;
-}
-bool HDFWalkerInput_0_4::read_adios(xmlNodePtr cur)
-{
-  //this is too messy. cleanup or use read_hdf5
-#ifdef HAVE_ADIOS
-  checkOptions(cur);
-  if (FileStack.empty())
-  {
-    app_error() << "  No valid input hdf5 is found." << std::endl;
-    return false;
-  }
-  //use collective I/O  for parallel runs with a file
-  //i_info.parallel = ((myComm->size()>1) && i_info.collected);
-  while (FileStack.size())
-  {
-    FileName = FileStack.top();
-    FileStack.pop();
-    std::string h5name(FileName);
-    int success = 0;
-    hdf_archive hin(myComm, true);
-    if (ADIOS::getRdADIOS())
-    {
-      h5name.append(".config.bp");
-      success = ADIOS::open(h5name, myComm->getMPI());
-    }
-    else if (ADIOS::getRdHDF5())
-    {
-      h5name.append(hdf::config_ext);
-      success = hin.open(h5name, H5F_ACC_RDONLY);
-    }
-    mpi::bcast(*myComm, success);
-    if (!success)
-    {
-      app_error() << "  HDFWalkerInput_0_4::put Cannot open " << h5name << std::endl;
-      continue;
-    }
-    //check if hdf and xml versions can work together
-    HDFVersion aversion;
-    typedef std::vector<QMCTraits::RealType> Buffer_t;
-    Buffer_t posin;
-    if (ADIOS::getRdHDF5())
-    {
-      hin.read(aversion, hdf::version);
-      mpi::bcast(*myComm, aversion.version);
-      if (aversion < i_info.version)
-      {
-        app_error() << " Mismatched version. xml = " << i_info.version << " hdf = " << aversion << std::endl;
-        continue;
-      }
-      int found_group = hin.is_group(hdf::main_state);
-      mpi::bcast(*myComm, found_group);
-      if (!found_group)
-        continue;
-      hin.push(hdf::main_state);
-    }
-    int nw_in = 0;
-    if (ADIOS::getRdADIOS())
-    {
-      int* data;
-      int index;
-      ADIOS::read_scalar(data, "walker_num", index);
-      for (int i = 0; i < index; i++)
-      {
-        nw_in += data[i];
-      }
-      free(data);
-    }
-    else if (ADIOS::getRdHDF5())
-    {
-      hin.read(nw_in, hdf::num_walkers);
-      mpi::bcast(*myComm, nw_in);
-    }
-    if (nw_in == 0)
-    {
-      app_error() << "  HDFWalkerInput_0_4::put empty walkers " << std::endl;
-      continue;
-    }
-    TinyVector<size_t, 3> dims(nw_in, targetW.getTotalNum(), OHMMS_DIM);
-    if (!myComm->rank())
-    {
-      posin.resize(dims[0] * dims[1] * dims[2]);
-      if (ADIOS::getRdADIOS())
-      {
-        ADIOS::read_walkers(posin, "walkers");
-      }
-      else if (ADIOS::getRdHDF5())
-      {
-        hyperslab_proxy<Buffer_t, 3> slab(posin, dims);
-        hin.read(slab, hdf::walkers);
-      }
-    }
-    if (ADIOS::getRdADIOS())
-    {
-      ADIOS::close();
-    }
-    app_log() << " HDFWalkerInput_0_4::put getting " << dims[0] << " walkers " << posin.size() << std::endl;
-    int nitems    = targetW.getTotalNum() * OHMMS_DIM;
-    int curWalker = targetW.getActiveWalkers();
-    if (myComm->size() == 1)
-    {
-      targetW.createWalkers(nw_in);
-      Buffer_t::iterator it(posin.begin());
-      for (int i = 0, iw = curWalker; i < nw_in; ++i, ++iw)
-      {
-        copy(it, it + nitems, get_first_address(targetW[iw]->R));
-        it += nitems;
-      }
-    }
-    else
-    {
-      std::vector<int> counts(myComm->size()), woffsets(myComm->size() + 1, 0);
-      FairDivideLow(nw_in, myComm->size(), woffsets);
-      //reset the number of walkers
-      nw_in = woffsets[myComm->rank() + 1] - woffsets[myComm->rank()];
-      for (int i = 0; i < woffsets.size(); ++i)
-        woffsets[i] *= nitems;
-      for (int i = 0; i < counts.size(); ++i)
-        counts[i] = woffsets[i + 1] - woffsets[i];
-      Buffer_t posout(nw_in * nitems);
-      mpi::scatterv(*myComm, posin, posout, counts, woffsets);
-      targetW.createWalkers(nw_in);
-      Buffer_t::iterator it(posout.begin());
-      for (int i = 0, iw = curWalker; i < nw_in; ++i, ++iw)
-      {
-        copy(it, it + nitems, get_first_address(targetW[iw]->R));
-        it += nitems;
-      }
-    }
-  }
-#endif
   return true;
 }
 

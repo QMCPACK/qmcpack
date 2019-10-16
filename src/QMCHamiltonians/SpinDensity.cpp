@@ -53,7 +53,7 @@ void SpinDensity::reset()
 }
 
 
-QMCHamiltonianBase* SpinDensity::makeClone(ParticleSet& P, TrialWaveFunction& Psi) { return new SpinDensity(*this); }
+OperatorBase* SpinDensity::makeClone(ParticleSet& P, TrialWaveFunction& Psi) { return new SpinDensity(*this); }
 
 
 bool SpinDensity::put(xmlNodePtr cur)
@@ -85,7 +85,7 @@ bool SpinDensity::put(xmlNodePtr cur)
     std::string ename((const char*)element->name);
     if (ename == "parameter")
     {
-      std::string name((const char*)(xmlGetProp(element, (const xmlChar*)"name")));
+      const XMLAttrString name(element, "name");
       if (name == "dr")
       {
         have_dr = true;

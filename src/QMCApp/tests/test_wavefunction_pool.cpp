@@ -118,5 +118,6 @@ TEST_CASE("WaveFunctionPool", "[qmcapp]")
 
   TrialWaveFunction* psi = wp.getWaveFunction("psi0");
   REQUIRE(psi != NULL);
+  REQUIRE(psi->getOrbitals().size() == 1);
 }
 } // namespace qmcplusplus

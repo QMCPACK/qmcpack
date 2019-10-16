@@ -19,7 +19,7 @@
 namespace qmcplusplus
 {
 ACForce::ACForce(ParticleSet& source, ParticleSet& target, TrialWaveFunction& psi_in, QMCHamiltonian& H)
-    : FirstForceIndex(-1), ions(source), elns(target), psi(psi_in), ham(H), Nions(0)
+    : ions(source), elns(target), psi(psi_in), ham(H), FirstForceIndex(-1), Nions(0)
 {
   prefix = "ACForce";
   myName = prefix;
@@ -29,21 +29,21 @@ ACForce::ACForce(ParticleSet& source, ParticleSet& target, TrialWaveFunction& ps
   wf_grad.resize(Nions);
 };
 
-QMCHamiltonianBase* ACForce::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+OperatorBase* ACForce::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   APP_ABORT("ACForce::makeClone(ParticleSet&,TrialWaveFunction&) shouldn't be called");
   return nullptr;
 }
 
-QMCHamiltonianBase* ACForce::makeClone(ParticleSet& qp, TrialWaveFunction& psi_in, QMCHamiltonian& ham_in)
+OperatorBase* ACForce::makeClone(ParticleSet& qp, TrialWaveFunction& psi_in, QMCHamiltonian& ham_in)
 {
-  QMCHamiltonianBase* myclone = new ACForce(qp, ions, psi_in, ham_in);
+  OperatorBase* myclone = new ACForce(qp, ions, psi_in, ham_in);
   return myclone;
 }
 void ACForce::add2Hamiltonian(ParticleSet& qp, TrialWaveFunction& psi, QMCHamiltonian& ham_in)
 {
   //The following line is modified
-  QMCHamiltonianBase* myclone = makeClone(qp, psi, ham_in);
+  OperatorBase* myclone = makeClone(qp, psi, ham_in);
   if (myclone)
     ham_in.addOperator(myclone, myName, UpdateMode[PHYSICAL]);
 }

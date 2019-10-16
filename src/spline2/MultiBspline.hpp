@@ -28,7 +28,7 @@ namespace qmcplusplus
 {
 /** container class to hold a 3D multi spline pointer and BsplineAllocator
  * @tparam T the precision of splines
- * @tparam ALIGN the alignment of the orbital dimention
+ * @tparam ALIGN the alignment of the orbital dimension
  * @tparam ALLOC memory allocator
  *
  * This class contains a pointer to a C object, copy and assign of this class is forbidden.
@@ -62,8 +62,6 @@ public:
   /** create the einspline as used in the builder
    * @tparam GT grid type
    * @tparam BCT boundary type
-   * @param grid grid parameters
-   * @param bc boundary parameters
    * @param bc num_splines number of splines
    *
    * num_splines must be padded to the aligned size. The caller must be aware of padding and pad all result arrays.

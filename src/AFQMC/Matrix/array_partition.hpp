@@ -368,11 +368,11 @@ struct simple_matrix_partition
   private:
 
   DType cut;
-  IType nrows, ncols;
   IType r0, r1;  // lower and upper bond of row segment
   IType c0, c1;  // lower and upper bound of column segment 
   IType sr0, sr1;  // lower and upper bond of row sub-partition (relative to 0) 
   IType sc0, sc1;  // lower and upper bound of column sub-partition (relative to 0)
+  IType nrows, ncols;
 
 };
   

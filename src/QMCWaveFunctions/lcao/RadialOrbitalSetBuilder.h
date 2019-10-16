@@ -169,12 +169,12 @@ private:
 
 template<typename COT>
 RadialOrbitalSetBuilder<COT>::RadialOrbitalSetBuilder(Communicate* comm, int radial_grid_size)
-    : Normalized(true),
+    : MPIObjectBase(comm),
+      Normalized(true),
       m_orbitals(nullptr),
       input_grid(nullptr),
-      m_rcut(-1.0),
-      MPIObjectBase(comm),
-      radial_grid_size_(radial_grid_size)
+      radial_grid_size_(radial_grid_size),
+      m_rcut(-1.0)
 {}
 
 template<typename COT>
@@ -330,16 +330,9 @@ bool RadialOrbitalSetBuilder<COT>::addRadialOrbital(xmlNodePtr cur,
   std::string dsname("0");
   OhmmsAttributeSet aAttrib;
   aAttrib.add(radtype, "type");
-  //m_rcut doesn't ever have anything useful in it.
-  //Maybe it was once from the xml
-  //const xmlChar *tptr = xmlGetProp(cur,(const xmlChar*)"type");
-  //if(tptr) radtype = (const char*)tptr;
-  //tptr = xmlGetProp(cur,(const xmlChar*)"rmax");
-  //if(tptr) m_rcut = atof((const char*)tptr);
   aAttrib.add(m_rcut, "rmax");
   aAttrib.add(dsname, "ds");
   aAttrib.put(cur);
-  int lastRnl = m_orbitals->RnlID.size();
   m_nlms      = nlms;
   if (radtype == "Gaussian" || radtype == "GTO")
   {
@@ -372,7 +365,6 @@ bool RadialOrbitalSetBuilder<COT>::addRadialOrbitalH5(hdf_archive& hin,
     hin.read(radtype, "type");
   myComm->bcast(radtype);
 
-  int lastRnl = m_orbitals->RnlID.size();
   m_nlms      = nlms;
   if (radtype == "Gaussian" || radtype == "GTO")
   {

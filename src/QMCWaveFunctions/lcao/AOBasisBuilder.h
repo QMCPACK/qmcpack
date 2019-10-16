@@ -77,14 +77,14 @@ public:
 
 template<typename COT>
 AOBasisBuilder<COT>::AOBasisBuilder(const std::string& eName, Communicate* comm)
-    : addsignforM(false),
+    : MPIObjectBase(comm),
+      radFuncBuilder(comm),
+      addsignforM(false),
       expandlm(GAUSSIAN_EXPAND),
       Morder("gaussian"),
       sph("default"),
       basisType("Numerical"),
-      elementType(eName),
-      radFuncBuilder(comm),
-      MPIObjectBase(comm)
+      elementType(eName)
 {
   // mmorales: for "Cartesian Gaussian", m is an integer that maps
   //           the component to Gamess notation, see Numerics/CartesianTensor.h
@@ -108,7 +108,6 @@ bool AOBasisBuilder<COT>::put(xmlNodePtr cur)
   aAttrib.add(Normalized, "normalized");
   aAttrib.put(cur);
   PRE.echo(cur);
-  bool tmp_addsignforM = addsignforM;
   if (sph == "spherical")
     addsignforM = 1; //include (-1)^m
   if (Morder == "gaussian")
@@ -175,7 +174,6 @@ bool AOBasisBuilder<COT>::putH5(hdf_archive& hin)
   app_log() << "<input node=\"atomicBasisSet\" name=\"" << basisName << "\" expandYlm=\"" << Morder << "\" angular=\""
             << sph << "\" elementType=\"" << CenterID << "\" normalized=\"" << Normalized << "\" type=\"" << basisType
             << "\" expM=\"" << addsignforM << "\" />" << std::endl;
-  bool tmp_addsignforM = addsignforM;
   if (sph == "spherical")
     addsignforM = 1; //include (-1)^m
   if (Morder == "gaussian")
@@ -255,7 +253,7 @@ COT* AOBasisBuilder<COT>::createAOSet(xmlNodePtr cur)
     if (cname1 == "basisGroup")
     {
       radGroup.push_back(cur1);
-      int l = atoi((const char*)(xmlGetProp(cur1, (const xmlChar*)"l")));
+      const int l = std::stoi(XMLAttrString{cur1, "l"});
       Lmax  = std::max(Lmax, l);
       //expect that only Rnl is given
       if (expandlm == CARTESIAN_EXPAND)

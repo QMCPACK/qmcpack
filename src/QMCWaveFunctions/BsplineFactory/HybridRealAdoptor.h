@@ -127,7 +127,6 @@ struct HybridRealSoA : public BaseAdoptor, public HybridAdoptorBase<typename Bas
           BaseAdoptor::evaluate_v(VP, iat, psi);
         else if (smooth_factor == cone)
         {
-          const PointType& r = VP.R[iat];
           Vector<ST, aligned_allocator<ST>> myV_one(multi_myV[iat], myV.size());
           BaseAdoptor::assign_v(bc_signs[iat], myV_one, psi, 0, myV.size());
         }
@@ -177,6 +176,19 @@ struct HybridRealSoA : public BaseAdoptor, public HybridAdoptorBase<typename Bas
       BaseAdoptor::evaluate_vgl(P, iat, psi, dpsi, d2psi);
       HybridBase::interpolate_buffer_vgl(psi, dpsi, d2psi, psi_AO, dpsi_AO, d2psi_AO);
     }
+  }
+
+  template<typename VV, typename GV>
+  inline void mw_evaluate_vgl(const std::vector<HybridRealSoA*>& sa_list,
+                              const std::vector<ParticleSet*>& P_list,
+                              int iat,
+                              const std::vector<VV*>& psi_v_list,
+                              const std::vector<GV*>& dpsi_v_list,
+                              const std::vector<VV*>& d2psi_v_list)
+  {
+    #pragma omp parallel for
+    for (int iw = 0; iw < sa_list.size(); iw++)
+      sa_list[iw]->evaluate_vgl(*P_list[iw], iat, *psi_v_list[iw], *dpsi_v_list[iw], *d2psi_v_list[iw]);
   }
 
   template<typename VV, typename GV, typename GGV>

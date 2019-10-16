@@ -17,10 +17,13 @@
 #include "Lattice/ParticleBConds.h"
 #include "Particle/ParticleSet.h"
 #include "Particle/DistanceTableData.h"
+#ifndef ENABLE_SOA
 #include "Particle/SymmetricDistanceTableData.h"
+#endif
 #include "QMCApp/ParticleSetPool.h"
 #include "QMCHamiltonians/ForceChiesaPBCAA.h"
 #include "QMCHamiltonians/ForceCeperley.h"
+#include "QMCHamiltonians/CoulombPotential.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 
 
@@ -81,8 +84,14 @@ TEST_CASE("Bare Force", "[hamiltonian]")
   ion_species(pMembersizeIdx, pIdx) = 1;
 
   ions.resetGroups();
+  // Must update ions first in SoA so ions.RSoA is valid
+  ions.update();
 
+#ifdef ENABLE_SOA
+  elec.addTable(ions, DT_SOA);
+#else
   elec.addTable(ions, DT_AOS);
+#endif
   elec.update();
 
   ParticleSetPool ptcl = ParticleSetPool(c);
@@ -227,8 +236,8 @@ TEST_CASE("Chiesa Force", "[hamiltonian]")
   // copied.  Would be nice if there were a better way than inspection
   // to ensure all the members are copied/set up/tested.
 
-  TrialWaveFunction psi           = TrialWaveFunction(c);
-  QMCHamiltonianBase* base_force2 = force.makeClone(elec, psi);
+  TrialWaveFunction psi(c);
+  OperatorBase* base_force2 = force.makeClone(elec, psi);
   ForceChiesaPBCAA* force2        = dynamic_cast<ForceChiesaPBCAA*>(base_force2);
   REQUIRE(force2 != NULL);
 
@@ -279,6 +288,7 @@ TEST_CASE("Ceperley Force", "[hamiltonian]")
   tspecies(massIdx, upIdx)   = 1.0;
   tspecies(massIdx, downIdx) = 1.0;
 
+
   //elec.Lattice = Lattice;
   //elec.createSK();
 
@@ -324,6 +334,84 @@ TEST_CASE("Ceperley Force", "[hamiltonian]")
   for (int i = 0; i < 6; i++)
   {
     REQUIRE(force.c[i] == Approx(coeff2[i]));
+  }
+}
+
+// Test construction of Coulomb forces in OBC
+TEST_CASE("Ion-ion Force", "[hamiltonian]")
+{
+  Communicate* c;
+  OHMMS::Controller->initialize(0, NULL);
+  c = OHMMS::Controller;
+
+  ParticleSet ions;
+  ParticleSet elec;
+
+  ions.setName("ions");
+  ions.create(3);
+  ions.R[0][0] = 0.0;
+  ions.R[0][1] = 0.0;
+  ions.R[0][2] = 0.0;
+  ions.R[1][0] = 2.0;
+  ions.R[1][1] = 0.0;
+  ions.R[1][2] = 0.0;
+  ions.R[2][0] = 1.0;
+  ions.R[2][1] = 1.0;
+  ions.R[2][2] = 0.0;
+
+  // Add elec
+  elec.setName("elec");
+  elec.create(3);
+  elec.R[0][0] = 0.0;
+  elec.R[0][1] = 1.0;
+  elec.R[0][2] = 0.0;
+  elec.R[1][0] = 2.0;
+  elec.R[1][1] = 1.0;
+  elec.R[1][2] = 0.0;
+  elec.R[2][0] = 1.0;
+  elec.R[2][1] = 0.0;
+  elec.R[2][2] = 0.0;
+
+  SpeciesSet& ionSpecies             = ions.getSpeciesSet();
+  int HIdx                           = ionSpecies.addSpecies("H");
+  int HChargeIdx                     = ionSpecies.addAttribute("charge");
+  int HMembersizeIdx                 = ionSpecies.addAttribute("membersize");
+  ionSpecies(HMembersizeIdx, HIdx)   = 2;
+  ionSpecies(HChargeIdx, HIdx)       = 1;
+  ions.resetGroups();
+
+  SpeciesSet& elecSpecies              = elec.getSpeciesSet();
+  int upIdx                            = elecSpecies.addSpecies("u");
+  int downIdx                          = elecSpecies.addSpecies("d");
+  int massIdx                          = elecSpecies.addAttribute("mass");
+  int eChargeIdx                       = elecSpecies.addAttribute("charge");
+  int uMembersizeIdx                   = elecSpecies.addAttribute("membersize");
+  int dMembersizeIdx                   = elecSpecies.addAttribute("membersize");
+  elecSpecies(eChargeIdx, upIdx)       = -1.0;
+  elecSpecies(eChargeIdx, downIdx)     = -1.0;
+  elecSpecies(massIdx, upIdx)          = 1.0;
+  elecSpecies(massIdx, downIdx)        = 1.0;
+  elecSpecies(uMembersizeIdx, upIdx)   = 2;
+  elec.resetGroups();
+
+  CoulombPotential<OperatorBase::Return_t> ionForce(ions, false, true);
+  CoulombPotential<OperatorBase::Return_t> elecIonForce(elec, ions, true); // Should be zero
+  CoulombPotential<OperatorBase::Return_t> elecForce(elec, true, true); // Should be zero
+
+  double coeff0[3] = {-0.60355339059, -0.35355339059, 0.0};
+  double coeff1[3] = { 0.60355339059, -0.35355339059, 0.0};
+  double coeff2[3] = { 0.00000000000,  0.70710678119, 0.0};
+  for (int i = 0; i < 3; i++)
+  {
+    REQUIRE(ionForce.forces[0][i] == Approx(coeff0[i]));
+    REQUIRE(ionForce.forces[1][i] == Approx(coeff1[i]));
+    REQUIRE(ionForce.forces[2][i] == Approx(coeff2[i]));
+    REQUIRE(elecIonForce.forces[0][i] == Approx(0.0));
+    REQUIRE(elecIonForce.forces[1][i] == Approx(0.0));
+    REQUIRE(elecIonForce.forces[2][i] == Approx(0.0));
+    REQUIRE(elecForce.forces[0][i] == Approx(0.0));
+    REQUIRE(elecForce.forces[1][i] == Approx(0.0));
+    REQUIRE(elecForce.forces[2][i] == Approx(0.0));
   }
 }
 } // namespace qmcplusplus

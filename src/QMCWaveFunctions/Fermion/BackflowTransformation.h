@@ -69,9 +69,6 @@ public:
   /// quasiparticle coordinates
   ParticleSet QP;
 
-  /// Distance Table
-  const int myTableIndex_;
-
   // number of variational parameters
   int numParams;
 
@@ -99,6 +96,9 @@ public:
 
   ParticleSet& targetPtcl;
   //    PtclPoolType& ptclPool;
+
+  /// Distance Table
+  const int myTableIndex_;
 
   // matrix of laplacians
   // /vec{B(i)} = sum_{k} /grad_{k}^2 /vec{x_i}
@@ -151,7 +151,7 @@ public:
   opt_variables_type myVars;
 
   BackflowTransformation(ParticleSet& els)
-    : targetPtcl(els), QP(els), cutOff(0.0),
+    : QP(els), cutOff(0.0), targetPtcl(els),
 #ifdef ENABLE_SOA
       myTableIndex_(els.addTable(els, DT_SOA))
 #else
@@ -433,7 +433,9 @@ public:
     for (int i = 0; i < NumTargets; i++)
       oldQP[i] = newQP[i] = QP.R[i];
     const auto& myTable = P.getDistTable(myTableIndex_);
+#ifndef ENABLE_SOA
     newQP[iat] += myTable.Temp[iat].dr1;
+#endif
     indexQP.clear();
     std::copy(FirstOfA, LastOfA, FirstOfA_temp);
     std::copy(FirstOfB, LastOfB, FirstOfB_temp);
@@ -739,10 +741,12 @@ public:
       dr[2] = -0.3;
       P.makeMove(iat, dr);
       const auto& myTable = P.getDistTable(myTableIndex_);
+#ifndef ENABLE_SOA
       app_log() << "Move: " << myTable.Temp[iat].dr1 << std::endl;
       app_log() << "cutOff: " << cutOff << std::endl;
       for (int jat = 0; jat < NumTargets; jat++)
         app_log() << jat << "  " << myTable.Temp[jat].r1 << std::endl;
+#endif
       //evaluatePbyP(P,iat);
       evaluatePbyPWithGrad(P, iat);
       app_log() << "Moving: ";

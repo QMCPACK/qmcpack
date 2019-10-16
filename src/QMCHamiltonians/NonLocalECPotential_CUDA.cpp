@@ -15,6 +15,7 @@
 
 
 #include "QMCHamiltonians/NonLocalECPotential_CUDA.h"
+#include "QMCHamiltonians/NonLocalECPComponent.h"
 #include "QMCHamiltonians/NLPP.h"
 #include "Particle/MCWalkerConfiguration.h"
 
@@ -44,7 +45,7 @@ NonLocalECPotential_CUDA::NonLocalECPotential_CUDA(ParticleSet& ions,
 }
 
 
-QMCHamiltonianBase* NonLocalECPotential_CUDA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+OperatorBase* NonLocalECPotential_CUDA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   NonLocalECPotential_CUDA* myclone = new NonLocalECPotential_CUDA(IonConfig, qp, psi, UsePBC);
   for (int ig = 0; ig < PPset.size(); ++ig)

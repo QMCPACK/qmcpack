@@ -25,7 +25,6 @@
 #include "Utilities/FairDivide.h"
 #include <qmc_common.h>
 //#define ENABLE_VMC_OMP_MASTER
-#include "ADIOS/ADIOS_profile.h"
 #if !defined(REMOVE_TRACEMANAGER)
 #include "Estimators/TraceManager.h"
 #else
@@ -40,7 +39,7 @@ CSVMC::CSVMC(MCWalkerConfiguration& w,
              QMCHamiltonian& h,
              WaveFunctionPool& ppool,
              Communicate* comm)
-    : QMCDriver(w, psi, h, ppool, comm), multiEstimator(0), Mover(0), UseDrift("yes")
+    : QMCDriver(w, psi, h, ppool, comm), UseDrift("yes"), multiEstimator(0), Mover(0)
 {
   RootName = "csvmc";
   QMCType  = "CSVMC";
@@ -154,10 +153,8 @@ bool CSVMC::run()
   Traces->startRun(nBlocks, traceClones);
 #endif
   const bool has_collectables = W.Collectables.size();
-  ADIOS_PROFILE::profile_adios_init(nBlocks);
   for (int block = 0; block < nBlocks; ++block)
   {
-    ADIOS_PROFILE::profile_adios_start_comp(block);
 #pragma omp parallel
     {
       int ip                 = omp_get_thread_num();
@@ -185,18 +182,12 @@ bool CSVMC::run()
     } //end-of-parallel for
     CurrentStep += nSteps;
     Estimators->stopBlock(estimatorClones);
-    ADIOS_PROFILE::profile_adios_end_comp(block);
-    ADIOS_PROFILE::profile_adios_start_trace(block);
 #if !defined(REMOVE_TRACEMANAGER)
     Traces->write_buffers(traceClones, block);
 #endif
-    ADIOS_PROFILE::profile_adios_end_trace(block);
-    ADIOS_PROFILE::profile_adios_start_checkpoint(block);
     if (storeConfigs)
       recordBlock(block);
-    ADIOS_PROFILE::profile_adios_end_checkpoint(block);
   } //block
-  ADIOS_PROFILE::profile_adios_finalize(myComm, nBlocks);
   Estimators->stop(estimatorClones);
   for (int ip = 0; ip < NumThreads; ++ip)
     CSMovers[ip]->stopRun2();

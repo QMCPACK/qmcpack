@@ -14,13 +14,13 @@
 #ifndef QMCPLUSPLUS_ONE_BODY_DENSITY_MATRICES_H
 #define QMCPLUSPLUS_ONE_BODY_DENSITY_MATRICES_H
 
-#include <QMCHamiltonians/QMCHamiltonianBase.h>
+#include <QMCHamiltonians/OperatorBase.h>
 #include <QMCWaveFunctions/CompositeSPOSet.h>
 #include <ParticleBase/RandomSeqGenerator.h>
 
 namespace qmcplusplus
 {
-class DensityMatrices1B : public QMCHamiltonianBase
+class DensityMatrices1B : public OperatorBase
 {
 protected:
   enum DMTimers
@@ -90,8 +90,8 @@ public:
   PosType drift;
   int nindex;
   int eindex;
-  TrialWaveFunction& Psi;
   Lattice_t& Lattice;
+  TrialWaveFunction& Psi;
   ParticleSet& Pq;
   const ParticleSet* Pc;
   TraceSample<TraceReal>* w_trace;
@@ -160,7 +160,7 @@ public:
   ~DensityMatrices1B();
 
   //standard interface
-  QMCHamiltonianBase* makeClone(ParticleSet& P, TrialWaveFunction& psi);
+  OperatorBase* makeClone(ParticleSet& P, TrialWaveFunction& psi);
   bool put(xmlNodePtr cur);
   Return_t evaluate(ParticleSet& P);
 

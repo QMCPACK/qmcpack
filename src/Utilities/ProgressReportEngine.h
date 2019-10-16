@@ -34,7 +34,7 @@ class ReportEngine
 {
 public:
   inline ReportEngine(const std::string& cname, const std::string& fname, int atype = 1)
-      : ReportType(atype), ClassName(cname), LogBuffer(infoDebug), FuncName(fname)
+      : ReportType(atype), ClassName(cname), FuncName(fname), LogBuffer(infoDebug)
   {
     if (DoOutput)
     {

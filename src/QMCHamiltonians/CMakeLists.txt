@@ -19,7 +19,7 @@
     
 SET(HAMSRCS
   ACForce.cpp
-  QMCHamiltonianBase.cpp
+  OperatorBase.cpp
   QMCHamiltonian.cpp
   CoulombPBCAA.cpp
   CoulombPBCAB.cpp
@@ -60,6 +60,7 @@ IF(OHMMS_DIM MATCHES 3)
     NonLocalECPotential.deriv.cpp
     NonLocalECPotential.cpp
     L2Potential.cpp
+    SOECPComponent.cpp
     ECPotentialBuilder.cpp
     ECPComponentBuilder.cpp
     ECPComponentBuilder.1.cpp

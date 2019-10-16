@@ -16,7 +16,8 @@
 #ifndef QMCPLUSPLUS_NONLOCALECPOTENTIAL_CUDA_H
 #define QMCPLUSPLUS_NONLOCALECPOTENTIAL_CUDA_H
 
-#include "NonLocalECPotential.h"
+#include "QMCHamiltonians/NonLocalECPotential.h"
+#include "QMCWaveFunctions/WaveFunctionComponent.h"
 
 namespace qmcplusplus
 {
@@ -76,7 +77,7 @@ public:
                            bool usePBC,
                            bool doForces = false);
 
-  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 
   void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy);
   void addEnergy(MCWalkerConfiguration& W,

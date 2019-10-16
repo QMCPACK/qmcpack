@@ -102,13 +102,13 @@ The cost function consists of three components: energy, unreweighted variance, a
 \end{lstlisting}
 
 \subsection{Optimizers}
-QMCPACK implements a few optimizers having different preference aiming for different priorities.
-The optimizers can be switched among  ``OneShiftOnly" (default), ``adaptive," and ``quartic" (old) using the following line in the optimization block:
+QMCPACK implements a number of different optimizers each with different priorities for accuracy, convergence, memory usage, and stability.
+The optimizers can be switched among  ``OneShiftOnly'' (default), ``adaptive,'' ``descent,'' ``hybrid,'' and ``quartic'' (old) using the following line in the optimization block:
 \begin{lstlisting}
 <parameter name="MinMethod"> THE METHOD YOU LIKE </parameter>
 \end{lstlisting}
 
-\subsubsection{OneShiftOnly}
+\subsection{OneShiftOnly Optimizer}
 The OneShiftOnly optimizer targets a fast optimization by moving parameters more aggressively. It works with OpenMP and GPU and can be considered for large systems.
 This method relies on the effective weight of correlated sampling rather than the cost function value to justify a new set of parameters.
 If the effective weight is larger than \ixml{minwalkers}, the new set is taken whether or not the cost function value decreases.
@@ -200,7 +200,7 @@ The new set of parameters is not valid. Revert to the old set!
 Occasional rejection is fine. Frequent rejection indicates potential problems, and users should inspect the VMC calculation or change optimization strategy.
 To track the progress of optimization, use the command \texttt{qmca -q ev *.scalar.dat} to look at the VMC energy and variance for each optimization step.
 
-\subsubsection{adaptive}
+\subsection{Adaptive Optimizer}
 
 The default setting of the adaptive optimizer is to construct the linear method Hamiltonian and overlap matrices explicitly and add different shifts to the Hamiltonian matrix 
 as ``stabilizers.''
@@ -349,7 +349,187 @@ Excited state recommendations:
         principle for the excited state creates a bias in favor of the ground state. 
 \end{itemize}
 
-\subsubsection{quartic}
+\subsection{Descent Optimizer}
+Gradient descent algorithms are an alternative set of optimization methods to the OneShiftOnly and adaptive optimizers based on the linear method.
+These methods use only first derivatives to optimize trial wave functions and convergence can be accelerated by retaining a memory of previous derivative values.
+Multiple flavors of accelerated descent methods are available. They differ in details such as the schemes for adaptive adjustment of step sizes.\cite{Otis2019}
+Descent algorithms avoid the construction of matrices that occurs in the linear method and consequently can be applied to larger sets of
+optimizable parameters.
+Currently, descent optimization is only available for ground state calculations.
+Parameters for descent are shown in the table below.\\
+
+\begin{table}[H]
+\begin{center}
+\begin{tabularx}{\textwidth}{l l l l l X }
+\hline
+\multicolumn{6}{l}{\texttt{descent} method} \\
+\hline
+\multicolumn{2}{l}{parameters}  & \multicolumn{4}{l}{}\\
+   &   \bfseries name     & \bfseries datatype & \bfseries values & \bfseries default   & \bfseries description \\
+   &   \texttt{flavor} &  text     & \begin{tabular}{@{}c@{}}RMSprop,Random \\ ADAM,AMSGrad\end{tabular} & RMSprop & Particular type of descent method\\
+   &   \texttt{Ramp\_eta} &  text     & yes,no & no & Whether to gradually ramp up step sizes\\
+   &   \texttt{Ramp\_num} &  integer     & $>0$ & 30 & Number of steps over which to ramp up step size\\
+   &   \texttt{TJF\_2Body\_eta} &  real     & $>0$ & 0.01 & Step size for two body Jastrow parameters\\
+   &   \texttt{TJF\_1Body\_eta} &  real     & $>0$ & 0.01 & Step size for one body Jastrow parameters\\
+   &   \texttt{F\_eta} &  real     & $>0$ & 0.001 & Step size for number counting Jastrow F matrix parameters\\
+   &   \texttt{Gauss\_eta} &  real     & $>0$ & 0.001 & Step size for number counting Jastrow gaussian basis parameters\\
+   &   \texttt{CI\_eta} &  real     & $>0$ & 0.01 & Step size for CI parameters\\
+   &   \texttt{Orb\_eta} &  real     & $>0$ & 0.001 & Step size for orbital parameters\\
+  \hline
+\end{tabularx}
+\end{center}
+\end{table}
+
+Additional information and recommendations:
+\begin{itemize}
+
+    \item It is generally advantageous to set different step sizes for different types of parameters.
+	More nonlinear parameters such as those for number counting Jastrow factors or orbitals typically require
+	smaller steps sizes than those for CI coefficients or traditional Jastrow parameters. There are defaults for 
+	several parameter types and a default of .001 has been chosen for all other parameters.
+    \item The ability to gradually ramp up step sizes to their input values is useful for avoiding spikes in the average local energy
+	during early iterations of descent optimization. This initial rise in the energy occurs as a memory of past gradients is being
+	built up and it may be possible for the energy to recover without ramping if there are enough iterations in the optimization.
+    \item The step sizes chosen can have a substantial influence on the quality of the optimization and the final variational energy achieved.
+	Larger step sizes may be helpful if there is reason to think the descent optimization is not reaching the minimum energy. There are also
+	additional hyperparameters in the descent algorithms with default values.\cite{Otis2019} They seem to have limited influence
+	on the effectiveness of the optimization compared to step sizes, but users can adjust them within the source code of the descent engine if they wish.
+    \item The sampling effort for individual descent steps can be small compared that for linear method iterations as shown in the example input below. Something in the range of 10,000 to 30,000
+	seems sufficient for molecules with tens of electrons. However, descent optimizations may require anywhere from a few hundred to a few thousand iterations.
+    \item In cases where a descent optimization struggles to reach the minimum and a linear method optimization is not possible or unsatisfactory, it may be useful to try
+	the hybrid optimization approach described in the next subsection.
+\end{itemize}
+
+\begin{lstlisting}[style=QMCPXML]
+ 
+ <loop max="100">
+    <qmc method="linear" move="pbyp" checkpoint="-1" gpu="no">
+    
+    <!-- VMC inputs -->
+     <parameter name="blocks">2000</parameter>
+     <parameter name="steps">1</parameter>
+     <parameter name="samples">20000</parameter>
+     <parameter name="warmupsteps">100</parameter>
+     <parameter name="timestep">0.05</parameter>
+
+     <parameter name="MinMethod">descent</parameter>
+     <estimator name="LocalEnergy" hdf5="no"/>
+     <parameter name="usebuffer">yes</parameter>
+
+     <estimator name="LocalEnergy" hdf5="no"/>
+           
+	   <!-- Descent Inputs -->
+       <parameter name="flavor">RMSprop</parameter>
+
+       <parameter name="Ramp_eta">no</parameter>
+       <parameter name="Ramp_num">30</parameter>
+           
+      <parameter name="TJF_2Body_eta">.02</parameter>
+       <parameter name="TJF_1Body_eta">.02</parameter>
+      <parameter name="F_eta">.001</parameter>
+      <parameter name="Gauss_eta">.001</parameter>
+      <parameter name="CI_eta">.1</parameter>
+      <parameter name="Orb_eta">.0001</parameter>
+
+
+    </qmc>
+</loop> 
+ \end{lstlisting}
+
+
+\subsection{Hybrid Optimizer}
+
+Another optimization option is to use a hybrid combination of accelerated descent and blocked linear method.
+It provides a means to retain the advantages of both individual methods while scaling to large numbers of parameters beyond the traditional 10,000 parameter limit of the linear method.\cite{Otis2019}
+In a hybrid optimization, alternating sections of descent and BLM optimization are used.
+Gradient descent is used to identify the previous important directions in parameter space used by the BLM, the number of which is set by the \texttt{nold} input for the BLM.
+Over the course of a section of descent, vectors of parameter differences are stored and then passed to the linear method engine after the optimization changes to the BLM.
+One motivation for including sections of descent is to counteract noise in linear method updates due to uncertainties in its step direction and allow for a smoother movement to the minimum.
+There are two additional parameters used in the hybrid optimization and it requires a slightly different format of input to specify the constituent methods as shown below in the example.
+
+\begin{table}[H]
+\begin{center}
+\begin{tabularx}{\textwidth}{l l l l l X }
+\hline
+\multicolumn{6}{l}{\texttt{descent} method} \\
+\hline
+\multicolumn{2}{l}{parameters}  & \multicolumn{4}{l}{}\\
+   &   \bfseries name     & \bfseries datatype & \bfseries values & \bfseries default   & \bfseries description \\
+   &   \texttt{num\_updates} &  integer     & $>0$ &  & Number of steps for a method\\
+   &   \texttt{Stored\_Vectors} &  integer     & $>0$ & 5 & Number of vectors to transfer to BLM\\
+  \hline
+\end{tabularx}
+\end{center}
+\end{table}
+
+
+\begin{lstlisting}[style=QMCPXML]
+  
+  <loop max="203">
+  <qmc method="linear" move="pbyp" checkpoint="-1" gpu="no">
+   <parameter name="Minmethod"> hybrid </parameter>
+
+   <optimizer num_updates="100">
+
+	<parameter name="blocks">1000</parameter>
+       <parameter name="steps">1</parameter>
+       <parameter name="samples">20000</parameter>
+       <parameter name="warmupsteps">1000</parameter>
+       <parameter name="timestep">0.05</parameter>
+       
+       <estimator name="LocalEnergy" hdf5="no"/>
+       
+       <parameter name="Minmethod"> descent </parameter>
+       <parameter name="Stored_Vectors">5</parameter>
+       <parameter name="flavor">RMSprop</parameter>
+       <parameter name="TJF_2Body_eta">.01</parameter>
+       <parameter name="TJF_1Body_eta">.01</parameter>
+       <parameter name="CI_eta">.1</parameter>
+
+       <parameter name="Ramp_eta">no</parameter>
+       <parameter name="Ramp_num">10</parameter>
+   </optimizer>
+
+   <optimizer num_updates="3">
+       
+       <parameter name="blocks">2000</parameter>
+       <parameter name="steps">1</parameter>
+       <parameter name="samples">1000000</parameter>
+       <parameter name="warmupsteps">1000</parameter>
+       <parameter name="timestep">0.05</parameter>
+       
+       <estimator name="LocalEnergy" hdf5="no"/>
+       
+       <parameter name="Minmethod"> adaptive </parameter>
+       <parameter name="max_relative_cost_change">10.0</parameter>
+       <parameter name="max_param_change">3</parameter>
+       <parameter name="shift_i">0.01</parameter>
+       <parameter name="shift_s">1.00</parameter>
+
+       <parameter name="block_lm">yes</parameter>
+       <parameter name="nblocks">2</parameter>
+       <parameter name="nolds">5</parameter>
+       <parameter name="nkept">5</parameter>
+
+   </optimizer>
+  </qmc>
+</loop>
+ \end{lstlisting}
+
+Additional information and recommendations:
+\begin{itemize}
+
+    \item In the example above, the input for \texttt{loop} gives the total number of steps for the full optimization while the inputs for \texttt{num\_updates} specify
+	the number of steps in the constituent methods. For this case, the optimization would begin with 100 steps of descent using the parameters in the first \texttt{optimizer} block
+	and then switch to the BLM for 3 steps before switching back to descent for the final 100 iterations of the total of 203.
+    \item The design of the hybrid method allows for more than two \texttt{optimizer} blocks to be used and the optimization will cycle through the individual methods. However, the effectiveness
+	of this in terms of the quality of optimization results is unexplored.
+    \item As the descent algorithms are currently only implemented for ground state optimizations, this hybrid combination of them with the BLM is also restricted to the ground state for now.
+    \item It can be useful to follow a hybrid optimization with a section of pure descent optimization and take an average energy over the last few hundred iterations as the final variational energy.
+	This approach can achieve a lower statistical uncertainty on the energy for less overall sampling effort compared to what a pure linear method optimization would require.
+\end{itemize}
+
+\subsection{Quartic Optimizer}
 \textit{This is an older optimizer method retained for compatibility. We recommend starting with the newest OneShiftOnly or adaptive optimizers.}
 The quartic optimizer fits a quartic polynomial to 7 values of the cost function obtained using reweighting along the chosen direction and determines the optimal move.
 This optimizer is very robust but is a bit conservative when accepting new steps, especially when large parameters changes are proposed.
@@ -418,11 +598,10 @@ When running the optimization, the new coefficients will be stored in a *.sXXX.o
 
 The opt\_coeffs tag will then reference where the new CI coefficients are stored.\\
 
-When restarting the run with the new optimized coeffs, you need to specify the previous hdf5 containing the basis set, orbitals, and MSD, as well as the new optimized coefficients. The code will read the previous data but will rewrite the coefficients that were optimized with the values found in the *.sXXX.opt.h5 file. 
-\subsection{General recommendations}
-Here are a few recommendations to avoid bad calculations
-\begin{itemize}
-\item CI coefficients are optimized with a set of Jastrows. Make sure you maintain the pair (Jastrows, CI-coefficients) as computed. 
-\end{itemize}
+When restarting the run with the new optimized coeffs, you need to specify the previous hdf5 containing the basis set, orbitals,
+and MSD, as well as the new optimized coefficients. The code will read the previous data but will rewrite the coefficients that
+were optimized with the values found in the *.sXXX.opt.h5 file. Be careful to keep the pair of optimized CI coefficients and
+Jastrow coefficients together to avoid inconsistencies.
+
 
 

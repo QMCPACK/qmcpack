@@ -34,7 +34,7 @@ public:
   };
 
   using OptVariablesType = optimize::VariableSet;
-
+  using PtclGrpIndexes = QMCTraits::PtclGrpIndexes;
 
   void checkInVariables(OptVariablesType& active) override { active.insertFrom(my_vars_); }
   void checkOutVariables(const OptVariablesType& active) override { my_vars_.getIndex(active); }
@@ -84,8 +84,8 @@ public:
 
 private:
   const ParticleSet& ions_;
-  const int my_table_ei_idx_;
   const int my_table_ee_idx_;
+  const int my_table_ei_idx_;
 
   OptVariablesType my_vars_;
 };

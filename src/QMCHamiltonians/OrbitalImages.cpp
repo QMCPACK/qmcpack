@@ -29,7 +29,7 @@ OrbitalImages::OrbitalImages(ParticleSet& P, PSPool& PSP, Communicate* mpicomm) 
 }
 
 
-QMCHamiltonianBase* OrbitalImages::makeClone(ParticleSet& P, TrialWaveFunction& Psi)
+OperatorBase* OrbitalImages::makeClone(ParticleSet& P, TrialWaveFunction& Psi)
 {
   //cloning shouldn't strictly be necessary, but do it right just in case
   OrbitalImages* clone = new OrbitalImages(*this);
@@ -84,7 +84,7 @@ bool OrbitalImages::put(xmlNodePtr cur)
     std::string ename((const char*)element->name);
     if (ename == "parameter")
     {
-      std::string name((const char*)(xmlGetProp(element, (const xmlChar*)"name")));
+      const XMLAttrString name(element, "name");
       if (name == "sposets")
         putContent(sposet_names, element);
       else if (name == "batch_size")
@@ -136,7 +136,7 @@ bool OrbitalImages::put(xmlNodePtr cur)
     std::string ename((const char*)element->name);
     if (ename == "parameter")
     {
-      std::string name((const char*)(xmlGetProp(element, (const xmlChar*)"name")));
+      const XMLAttrString name(element, "name");
       for (int i = 0; i < sposet_names.size(); ++i)
         if (name == sposet_names[i])
           putContent(*sposet_indices[i], element);
@@ -147,20 +147,18 @@ bool OrbitalImages::put(xmlNodePtr cur)
   for (int i = 0; i < valtypes.size(); ++i)
   {
     const std::string& valtype = valtypes[i];
-    value_types_enum value_type;
     if (valtype == "real")
-      value_type = real_val;
+      value_types.push_back(real_val);
     else if (valtype == "imag")
-      value_type = imag_val;
+      value_types.push_back(imag_val);
     else if (valtype == "abs")
-      value_type = abs_val;
+      value_types.push_back(abs_val);
     else if (valtype == "abs2")
-      value_type = abs2_val;
+      value_types.push_back(abs2_val);
     else
     {
       APP_ABORT("OrbitalImages::put  value type " + valtype + " is unsupported\n  valid options are: value, abs, abs2");
     }
-    value_types.push_back(value_type);
   }
   if (value_types.size() == 0)
     value_types.push_back(real_val);

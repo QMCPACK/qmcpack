@@ -193,7 +193,7 @@ def read_command_line():
 #AFQMC quantities
             eloc    = 'Eloc',
             elocest = 'ElocEstim',
-            enum_real = 'EnergyEstim__nume_real',
+            el = 'EnergyEstim__nume_real',
             )
 
         for qshort in sorted(quantities.keys()):

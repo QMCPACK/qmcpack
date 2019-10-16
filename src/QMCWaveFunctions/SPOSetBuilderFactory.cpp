@@ -36,7 +36,6 @@
 #endif
 #endif
 #include "QMCWaveFunctions/CompositeSPOSet.h"
-#include "QMCWaveFunctions/OptimizableSPOBuilder.h"
 #include "Utilities/ProgressReportEngine.h"
 #include "Utilities/IteratorUtility.h"
 #include "OhmmsData/AttributeSet.h"
@@ -109,15 +108,13 @@ void write_spo_builders(const std::string& pad)
  * \param psi reference to the wavefunction
  * \param ions reference to the ions
  */
-SPOSetBuilderFactory::SPOSetBuilderFactory(ParticleSet& els, TrialWaveFunction& psi, PtclPoolType& psets)
-    : WaveFunctionComponentBuilder(els, psi), ptclPool(psets)
+SPOSetBuilderFactory::SPOSetBuilderFactory(Communicate* comm, ParticleSet& els, PtclPoolType& psets)
+    : MPIObjectBase(comm), targetPtcl(els), ptclPool(psets)
 {
   ClassName = "SPOSetBuilderFactory";
 }
 
 SPOSetBuilderFactory::~SPOSetBuilderFactory() { DEBUG_MEMORY("SPOSetBuilderFactory::~SPOSetBuilderFactory"); }
-
-bool SPOSetBuilderFactory::put(xmlNodePtr cur) { return true; }
 
 SPOSetBuilder* SPOSetBuilderFactory::createSPOSetBuilder(xmlNodePtr rootNode)
 {
@@ -180,11 +177,6 @@ SPOSetBuilder* SPOSetBuilderFactory::createSPOSetBuilder(xmlNodePtr rootNode)
   {
     app_log() << "Harmonic Oscillator SPO set" << std::endl;
     bb = new SHOSetBuilder(targetPtcl, myComm);
-  }
-  else if (type == "linearopt")
-  {
-    //app_log()<<"Optimizable SPO set"<< std::endl;
-    bb = new OptimizableSPOBuilder(targetPtcl, ptclPool, myComm, rootNode);
   }
 #if OHMMS_DIM == 3
   else if (type.find("spline") < type.size())
@@ -331,5 +323,6 @@ void SPOSetBuilderFactory::build_sposet_collection(xmlNodePtr cur)
     APP_ABORT("SPOSetBuilderFactory::build_sposet_collection  no <sposet/> elements found");
 }
 
+std::string SPOSetBuilderFactory::basisset_tag = "basisset";
 
 } // namespace qmcplusplus

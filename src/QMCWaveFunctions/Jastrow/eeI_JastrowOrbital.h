@@ -400,10 +400,12 @@ public:
       IonData& ion = IonDataList[i];
       ion.elecs_inside.clear();
       int iel = 0;
+#ifndef ENABLE_SOA
       if (ion.cutoff_radius > 0.0)
         for (int nn = eI_table.M[i]; nn < eI_table.M[i + 1]; nn++, iel++)
           if (eI_table.r(nn) < ion.cutoff_radius)
             ion.elecs_inside.push_back(iel);
+#endif
     }
     RealType u;
     PosType gradF;
@@ -412,6 +414,7 @@ public:
     for (int i = 0; i < Nion; i++)
     {
       IonData& ion = IonDataList[i];
+#ifndef ENABLE_SOA
       int nn0      = eI_table.M[i];
       for (int j = 0; j < ion.elecs_inside.size(); j++)
       {
@@ -461,6 +464,7 @@ public:
           // 	       + hessF(2,2) + 2.0*r_Ik_inv*gradF[2]);
         }
       }
+#endif
     }
     return LogValue;
     // RealType dudr, d2udr2;
@@ -525,11 +529,12 @@ public:
     IonData& ion                      = IonDataList[isrc];
     ion.elecs_inside.clear();
     int iel = 0;
+    GradType G;
+#ifndef ENABLE_SOA
     if (ion.cutoff_radius > 0.0)
       for (int nn = eI_table.M[isrc]; nn < eI_table.M[isrc + 1]; nn++, iel++)
         if (eI_table.r(nn) < ion.cutoff_radius)
           ion.elecs_inside.push_back(iel);
-    GradType G;
     int nn0 = eI_table.M[isrc];
     RealType u;
     PosType gradF;
@@ -554,6 +559,7 @@ public:
         G += (gradF[1] * r_Ij_inv * dr_Ij + gradF[2] * r_Ik_inv * dr_Ik);
       }
     }
+#endif
     return G;
   }
 
@@ -626,6 +632,7 @@ public:
     const auto& ee_table = P.getDistTable(ee_table_index_);
     const auto& eI_table = P.getDistTable(ei_table_index_);
     GradType G;
+#ifndef ENABLE_SOA
     int nn0 = eI_table.M[isrc];
     RealType u;
     PosType gradF;
@@ -692,6 +699,7 @@ public:
         }
       }
     }
+#endif
     return G;
   }
 
@@ -706,6 +714,7 @@ public:
     const auto& eI_table = VP.getDistTable(ei_table_index_);
     const auto& eI_0     = VP.refPS.getDistTable(ei_table_index_);
 
+#ifndef ENABLE_SOA
     for (int i = 0, nn = 0; i < Nion; i++)
     {
       IonData& ion = IonDataList[i];
@@ -729,6 +738,7 @@ public:
         }
       }
     }
+#endif
     for (int k = 0; k < ratios.size(); ++k)
       ratios[k] = std::exp(newval[k]);
   }
@@ -740,6 +750,7 @@ public:
     curVal                            = 0.0;
     RealType newval                   = 0.0;
     RealType oldval                   = 0.0;
+#ifndef ENABLE_SOA
     int ee0                           = ee_table.M[iat] - (iat + 1);
     for (int i = 0; i < Nion; i++)
     {
@@ -764,6 +775,7 @@ public:
       }
       //if (Fs[i]) curVal += Fs[i]->evaluate(d_table.Temp[i].r1);
     }
+#endif
     for (int jat = 0; jat < Nelec; jat++)
       oldval -= U[iat * Nelec + jat];
     DiffVal = newval - oldval;
@@ -800,8 +812,9 @@ public:
     curLap_j                          = 0.0;
     const auto& ee_table = P.getDistTable(ee_table_index_);
     const auto& eI_table = P.getDistTable(ei_table_index_);
-    int ee0                           = ee_table.M[iat] - (iat + 1);
     DiffVal                           = 0.0;
+#ifndef ENABLE_SOA
+    int ee0                           = ee_table.M[iat] - (iat + 1);
     for (int i = 0; i < Nion; i++)
     {
       IonData& ion      = IonDataList[i];
@@ -844,6 +857,7 @@ public:
         }
       }
     }
+#endif
     for (int jat = 0; jat < Nelec; jat++)
     {
       if (iat != jat)
@@ -896,6 +910,7 @@ public:
     const auto& ee_table = P.getDistTable(ee_table_index_);
     const auto& eI_table = P.getDistTable(ei_table_index_);
     // First, create lists of electrons within the sphere of each ion
+#ifndef ENABLE_SOA
     for (int i = 0; i < Nion; i++)
     {
       IonData& ion = IonDataList[i];
@@ -906,6 +921,7 @@ public:
           if (eI_table.r(nn) < ion.cutoff_radius)
             ion.elecs_inside.push_back(iel);
     }
+#endif
     RealType u;
     PosType gradF;
     Tensor<RealType, 3> hessF;
@@ -916,6 +932,7 @@ public:
       dU[jk]  = PosType();
       d2U[jk] = 0.0;
     }
+#ifndef ENABLE_SOA
     // Now, evaluate three-body term for each ion
     for (int i = 0; i < Nion; i++)
     {
@@ -971,6 +988,7 @@ public:
         }
       }
     }
+#endif
     int iat    = 2;
     PosType G2 = 0.0;
     for (int jat = 0; jat < Nelec; jat++)
@@ -1075,10 +1093,12 @@ public:
       IonData& ion = IonDataList[i];
       ion.elecs_inside.clear();
       int iel = 0;
+#ifndef ENABLE_SOA
       if (ion.cutoff_radius > 0.0)
         for (int nn = eI_table.M[i]; nn < eI_table.M[i + 1]; nn++, iel++)
           if (eI_table.r(nn) < ion.cutoff_radius)
             ion.elecs_inside.push_back(iel);
+#endif
     }
     // for (int i=0; i<IonDataList.size(); i++) {
     // 	RealType nd;
@@ -1148,6 +1168,7 @@ public:
     {
       const auto& ee_table = P.getDistTable(ee_table_index_);
       const auto& eI_table = P.getDistTable(ei_table_index_);
+#ifndef ENABLE_SOA
       // First, create lists of electrons within the sphere of each ion
       for (int i = 0; i < Nion; i++)
       {
@@ -1213,6 +1234,7 @@ public:
           }
         }
       }
+#endif
       for (int k = 0; k < myVars.size(); ++k)
       {
         int kk = myVars.where(k);

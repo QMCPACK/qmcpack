@@ -12,10 +12,11 @@
 
 #ifndef QMCPLUSPLUS_HDF_STL_INTERFACE_H
 #define QMCPLUSPLUS_HDF_STL_INTERFACE_H
+
 #include <vector>
 #include <sstream>
 #include <bitset>
-#include <deque>
+
 namespace qmcplusplus
 {
 /** specialization for std::vector<T>
@@ -25,8 +26,9 @@ namespace qmcplusplus
 template<typename T>
 struct h5data_proxy<std::vector<T>> : public h5_space_type<T, 1>
 {
-  using h5_space_type<T, 1>::dims;
-  using h5_space_type<T, 1>::get_address;
+  using FileSpace = h5_space_type<T, 1>;
+  using FileSpace::dims;
+  using FileSpace::get_address;
   typedef std::vector<T> data_type;
   data_type& ref_;
 
@@ -34,15 +36,21 @@ struct h5data_proxy<std::vector<T>> : public h5_space_type<T, 1>
 
   inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
-    if (!get_space(grp, aname, this->size(), dims))
+    if (!checkShapeConsistency<T>(grp, aname, FileSpace::rank, dims))
       ref_.resize(dims[0]);
     return h5d_read(grp, aname, get_address(&ref_[0]), xfer_plist);
   }
 
   inline bool write(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
-    return h5d_write(grp, aname.c_str(), this->size(), dims, get_address(&ref_[0]), xfer_plist);
+    return h5d_write(grp, aname.c_str(), FileSpace::rank, dims, get_address(&ref_[0]), xfer_plist);
   }
+
+  inline bool write(hid_t grp, const std::string& aname, const std::vector<hsize_t>& dvec, hid_t xfer_plist)
+  {
+    return h5d_write(grp, aname.c_str(), dvec.size(), dvec.data(), get_address(&ref_[0]), xfer_plist);
+  }
+
 };
 
 /** specialization for std::bitset<N>
@@ -144,38 +152,5 @@ struct h5data_proxy<std::ostringstream>
   inline bool read(hid_t grp, const char* name, hid_t xfer_plist = H5P_DEFAULT) { return false; }
 };
 
-///** i/o for deque<T>, internally use std::vector<T>
-// */
-//template<typename T> struct h5data_proxy<deque<T> >
-//  : public h5_space_type<T,1>
-//  {
-//    using h5_space_type<T,1>::dims;
-//    using h5_space_type<T,1>::get_address;
-//    typedef deque<T> data_type;
-//    data_type& ref_;
-
-//    inline h5data_proxy(data_type& a): ref_(a) { dims[0]=ref_.size(); }
-
-//    inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist=H5P_DEFAULT)
-//    {
-//      std::vector<T> temp(ref_.size());
-//      if(!h5d_getspace(grp,aname,temp.size(),dims)) {temp.resize(dims[0]);}
-//      if(h5d_read(grp,aname,get_address(&temp[0]),xfer_plist))
-//      {
-//        ref_.resize(temp.size());
-//        ref_.assign(temp.begin(),temp.end());
-//        return true;
-//      }
-//      else
-//        return false;
-//    }
-
-//    inline bool write(hid_t grp, const std::string& aname, hid_t xfer_plist=H5P_DEFAULT)
-//    {
-//      std::vector<T> temp(ref_.size());
-//      temp.assign(ref_.begin(),ref_.end());
-//      return h5d_write(grp,aname.c_str(),temp.size(),dims,get_address(&temp[0]),xfer_plist);
-//    }
-//  };
 } // namespace qmcplusplus
 #endif

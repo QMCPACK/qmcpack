@@ -1,5 +1,5 @@
-#if COMPILATION_INSTRUCTIONS
-(echo "#include\""$0"\"" > $0x.cpp) && mpic++ -O3 -std=c++14 -Wall -Wfatal-errors -D_TEST_MPI3_SHARED_WINDOW $0x.cpp -o $0x.x && time mpirun -n 3 $0x.x $@ && rm -f $0x.x $0x.cpp; exit
+# if COMPILATION_INSTRUCTIONS
+(echo "#include\""$0"\"" > $0x.cpp) && mpic++ -O3 -std=c++14 -Wall -Wextra -Wpedantic -Wfatal-errors -D_TEST_MPI3_SHARED_WINDOW $0x.cpp -o $0x.x && time mpirun -n 3 $0x.x $@ && rm -f $0x.x $0x.cpp; exit
 #endif
 //  (C) Copyright Alfredo A. Correa 2018.
 #ifndef MPI3_SHARED_WINDOW_HPP
@@ -18,42 +18,50 @@
 namespace boost{
 namespace mpi3{
 
-template<class T /*= void*/>
+template<class T>
 struct shared_window : window<T>{
-	shared_communicator* comm_;
+//	shared_communicator& comm_;
 	shared_window(shared_communicator& comm, mpi3::size_t n, int disp_unit = alignof(T)) : //sizeof(T)) : // here we assume that disp_unit is used for align
-		window<T>(), comm_{std::addressof(comm)}
+		window<T>{}//, comm_{comm}
 	{
 		void* base_ptr = nullptr;
-		int s = MPI_Win_allocate_shared(n*sizeof(T), disp_unit, MPI_INFO_NULL, &comm, &base_ptr, &this->impl_);
-		if(s != MPI_SUCCESS) throw std::runtime_error{"cannot create shared window"};
+		auto e = static_cast<enum error>(
+			MPI_Win_allocate_shared(
+				n*sizeof(T), disp_unit, 
+				MPI_INFO_NULL, comm.get(), &base_ptr, &this->impl_
+			)
+		);
+		if(e != mpi3::error::success) throw std::system_error{e, "cannot win_alloc"};
 	}
 	shared_window(shared_communicator& comm, int disp_unit = alignof(T)) : 
 		shared_window(comm, 0, disp_unit)
 	{}
 	shared_window(shared_window const&) = default;
-	shared_window(shared_window&& other) : window<T>{std::move(other)}, comm_{other.comm_}{}
-	auto get_group() const{return group(*this);}
-	shared_communicator& get_communicator() const{return *comm_;}
-	using query_t = std::tuple<mpi3::size_t, int, void*>;
-	query_t query(int rank = MPI_PROC_NULL) const{
-		query_t ret;
-		MPI_Win_shared_query(this->impl_, rank, &std::get<0>(ret), &std::get<1>(ret), &std::get<2>(ret));
-		return ret;
+	shared_window(shared_window&& other) noexcept : window<T>{std::move(other)}//, comm_{other.comm_}
+	{}
+	group get_group() const{
+		group r; MPI3_CALL(MPI_Win_get_group)(this->impl_, &(&r)); return r;
+	}
+//	shared_communicator& get_communicator() const{return comm_;}
+	struct query_t{
+		mpi3::size_t size;
+		int disp_unit;
+		void* base;
+	};
+	struct query_t query(int rank = MPI_PROC_NULL) const{
+		query_t r;
+		MPI3_CALL(MPI_Win_shared_query)(this->impl_, rank, &r.size, &r.disp_unit, &r.base);
+		return r;
 	}
 	template<class TT = T>
-	mpi3::size_t size(int rank = 0) const{
-		return std::get<0>(query(rank))/sizeof(TT);
-	}
-	int disp_unit(int rank = 0) const{return std::get<1>(query(rank));}
+	mpi3::size_t size(int rank = 0) const{return query(rank).size/sizeof(TT);}
+	int disp_unit(int rank = 0) const{return query(rank).disp_unit;}
 	template<class TT = T>
-	TT* base(int rank = 0) const{return static_cast<TT*>(std::get<2>(query(rank)));}
+	TT* base(int rank = 0) const{return static_cast<TT*>(query(rank).base);}
 };
 
 template<class T /*= char*/> 
-shared_window<T> shared_communicator::make_shared_window(
-	mpi3::size_t size
-){
+shared_window<T> shared_communicator::make_shared_window(mpi3::size_t size){
 	return shared_window<T>(*this, size);
 }
 

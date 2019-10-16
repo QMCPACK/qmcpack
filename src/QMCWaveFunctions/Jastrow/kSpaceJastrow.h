@@ -82,7 +82,8 @@ private:
   // Basic data //
   ////////////////
   RealType CellVolume, NormConstant;
-  int NumElecs, NumSpins;
+  int num_elecs;
+  int NumSpins;
   int NumIons, NumIonSpecies;
 
   // Gvectors included in the summation for the
@@ -135,7 +136,6 @@ private:
   void StructureFactor(PosType G, std::vector<ComplexType>& rho_G);
 
   const ParticleSet& Ions;
-  ParticleSet& Elecs;
   std::string OneBodyID;
   std::string TwoBodyID;
   double Prefactor;
@@ -183,6 +183,9 @@ public:
 
   ///process input file
   bool put(xmlNodePtr cur);
+  ///output jastrow coefficients
+  void printOneBody(std::ostream& os);
+  void printTwoBody(std::ostream& os);
 
   // Implements strict weak ordering with respect to the
   // structure factors.  Used to sort the G-vectors according to
@@ -190,6 +193,8 @@ public:
   bool operator()(PosType G1, PosType G2);
   WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;
 
+  WaveFunctionComponentPtr makeThrScope(PtclGrpIndexes& pgi) const;
+  
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& active,
                            std::vector<ValueType>& dlogpsi,
@@ -201,7 +206,7 @@ public:
 
 private:
   void copyFrom(const kSpaceJastrow& old);
-  kSpaceJastrow(const ParticleSet& ions, ParticleSet& els);
+  kSpaceJastrow(const ParticleSet& ions);
   std::vector<int> TwoBodyVarMap;
   std::vector<int> OneBodyVarMap;
 };

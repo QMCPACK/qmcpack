@@ -1,10 +1,10 @@
-\section{Scalar Estimator Implementation}
-\subsection{Introduction: Life of a Specialized QMCHamiltonianBase}
+\section{Scalar estimator implementation}
+\subsection{Introduction: Life of a specialized OperatorBase}
 
-Almost all observables in QMCPACK are implemented as specialized derived classes of the QMCHamiltonianBase base class. Each observable is instantiated in HamiltonianFactory and added to QMCHamiltonian for tracking. QMCHamiltonian tracks two types of observables: main and auxiliary. Main observables contribute to the local energy. These observables are elements of the simulated Hamiltonian such as kinetic or potential energy. auxiliary observables are expectation values of matrix elements that do not contribute to the local energy. These Hamiltonians do not affect the dynamics of the simulation. In the code, the main observables are labeled by ``physical'' flag, the auxiliary observables have ``physical'' set to false.
+Almost all observables in QMCPACK are implemented as specialized derived classes of the OperatorBase base class. Each observable is instantiated in HamiltonianFactory and added to QMCHamiltonian for tracking. QMCHamiltonian tracks two types of observables: main and auxiliary. Main observables contribute to the local energy. These observables are elements of the simulated Hamiltonian such as kinetic or potential energy. Auxiliary observables are expectation values of matrix elements that do not contribute to the local energy. These Hamiltonians do not affect the dynamics of the simulation. In the code, the main observables are labeled by ``physical'' flag; the auxiliary observables have ``physical'' set to false.
 
 \subsubsection{Initialization}
-When an \verb|<estimator type="est_type" name="est_name" other_stuff="value"/>| tag is present in the \verb|<hamiltonian/>| section, it is first read by HamiltonianFactory. In general, the \verb|type| of the estimator will determine which specialization of QMCHamiltonianBase to be instantiated, and a derived class with \verb|myName="est_name"| will be constructed. Then, the put() method of this specific class will be called to read any other parameters in the \verb|<estimator/>| xml node. Sometimes these parameters will be read by HamiltonianFactory instead, because it can access more objects than QMCHamiltonianBase.
+When an \verb|<estimator type="est_type" name="est_name" other_stuff="value"/>| tag is present in the \verb|<hamiltonian/>| section, it is first read by HamiltonianFactory. In general, the \verb|type| of the estimator will determine which specialization of OperatorBase should be instantiated, and a derived class with \verb|myName="est_name"| will be constructed. Then, the put() method of this specific class will be called to read any other parameters in the \verb|<estimator/>| XML node. Sometimes these parameters will instead be read by HamiltonianFactory because it can access more objects than OperatorBase.
 
 \subsubsection{Cloning}
 When \verb|OpenMP| threads are spawned, the estimator will be cloned by the \verb|CloneManager|, which is a parent class of many QMC drivers. 
@@ -18,17 +18,17 @@ for(int ip=1; ip<NumThreads; ++ip)
   hClones[ip]=ham.makeClone(*wClones[ip],*psiClones[ip]);
 }
 \end{lstlisting}
-In the above snippet, \verb|ham| is the reference to the estimator on the master thread. If the implemented estimator does not allocate memory for any array, then the default constructor should suffice for the \verb|makeClone| method.
+In the preceding snippet, \verb|ham| is the reference to the estimator on the master thread. If the implemented estimator does not allocate memory for any array, then the default constructor should suffice for the \verb|makeClone| method.
 \begin{lstlisting}[style=C++]
 // In SpeciesKineticEnergy.cpp
-QMCHamiltonianBase* SpeciesKineticEnergy::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+OperatorBase* SpeciesKineticEnergy::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   return new SpeciesKineticEnergy(*this);
 }
 \end{lstlisting}
-If memory is allocated during estimator construction (usually when parsing the xml node in the \verb|put| method), then the \verb|makeClone| method should perform the same initialization on each thread.
+If memory is allocated during estimator construction (usually when parsing the XML node in the \verb|put| method), then the \verb|makeClone| method should perform the same initialization on each thread.
 \begin{lstlisting}[style=C++]
-QMCHamiltonianBase* LatticeDeviationEstimator::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+OperatorBase* LatticeDeviationEstimator::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   LatticeDeviationEstimator* myclone = new LatticeDeviationEstimator(qp,spset,tgroup,sgroup);
   myclone->put(input_xml);
@@ -37,7 +37,7 @@ QMCHamiltonianBase* LatticeDeviationEstimator::makeClone(ParticleSet& qp, TrialW
 \end{lstlisting}
 
 \subsubsection{Evaluate}
-After the observable class (derived class of QMCHamiltonianBase) is constructed and prepared (by the put() method), it is ready to be used in a QMCDriver. A QMCDriver will call \verb|H.auxHevaluate(W,thisWalker)| after every accepted move, where H is the QMCHamiltonian that holds all main and auxiliary Hamiltonian elements, W is a MCWalkerConfiguration and thisWalker is a pointer to the current walker being worked on. As shown below, this function goes through each auxiliary Hamiltonian element and evaluate it using the current walker configuration. Under the hood, observables are calculated and dumped to the main particle set's property list for later collection.
+After the observable class (derived class of OperatorBase) is constructed and prepared (by the put() method), it is ready to be used in a QMCDriver. A QMCDriver will call \verb|H.auxHevaluate(W,thisWalker)| after every accepted move, where H is the QMCHamiltonian that holds all main and auxiliary Hamiltonian elements, W is a MCWalkerConfiguration, and thisWalker is a pointer to the current walker being worked on. As shown in the following, this function goes through each auxiliary Hamiltonian element and evaluates it using the current walker configuration. Under the hood, observables are calculated and dumped to the main particle set's property list for later collection.
 
 \begin{lstlisting}[style=C++]
 // In QMCHamiltonian.cpp
@@ -61,7 +61,7 @@ void QMCHamiltonian::auxHevaluate(ParticleSet& P, Walker_t& ThisWalker)
 }
 \end{lstlisting}
 
-For estimators that contribute to the local energy (main observables), the return value of evaluate() is used in accumulating the local energy. For auxiliary estimators, the return value is not used (\verb|sink| local variable above), only the value of Value is recorded property lists by the setObservables() method as shown in the above code snippet. By default, the setObservables() method will transfer \verb|auxH[i]->Value| to \verb|P.PropertyList[auxH[i]->myIndex]|. The same property list is also kept by the particle set being moved by QMCDriver. This list is updated by \verb|auxH[i]->setParticlePropertyList(P.PropertyList,myIndex)|, where myIndex is the starting index of space allocated to this specific auxiliary Hamiltonian in the property list kept by the target particle set P.
+For estimators that contribute to the local energy (main observables), the return value of evaluate() is used in accumulating the local energy. For auxiliary estimators, the return value is not used (\verb|sink| local variable above); only the value of Value is recorded property lists by the setObservables() method as shown in the preceding code snippet. By default, the setObservables() method will transfer \verb|auxH[i]->Value| to \verb|P.PropertyList[auxH[i]->myIndex]|. The same property list is also kept by the particle set being moved by QMCDriver. This list is updated by \verb|auxH[i]->setParticlePropertyList(P.PropertyList,myIndex)|, where myIndex is the starting index of space allocated to this specific auxiliary Hamiltonian in the property list kept by the target particle set P.
 
 \subsubsection{Collection}
 The actual statistics are collected within the QMCDriver, which owns
@@ -71,20 +71,20 @@ multithreading) will be registered with each mover it owns. For each mover
 is made, which by default, makes an accumulate(walkerset) call to the
 EstimatorManager it owns. Since each walker has a property set, EstimatorManager uses that local copy to calculate statistics. The EstimatorManager performs block averaging and file I/O.
 
-\subsection{Single Scalar Estimator Implementation Guide}
-Almost all of the defaults can be utilized for a single scalar observable. With any luck, only the put() and evaluate() methods need to be implemented. As an example, this section will present a step-by-step guide to implement a \verb|SpeciesKineticEnergy| estimator that calculates the kinetic energy of a specific species instead of the entire particle set. For example, a possible input to this estimator can be:
+\subsection{Single scalar estimator implementation guide}
+Almost all of the defaults can be used for a single scalar observable. With any luck, only the put() and evaluate() methods need to be implemented. As an example, this section presents a step-by-step guide for implementing a \verb|SpeciesKineticEnergy| estimator that calculates the kinetic energy of a specific species instead of the entire particle set. For example, a possible input to this estimator can be:
 
 \verb|<estimator type="specieskinetic" name="ukinetic" group="u"/>|
 
-\verb|<estimator type="specieskinetic" name="dkinetic" group="d"/>|.
+\verb|<estimator type="specieskinetic" name="dkinetic" group="d"/>|\:.
 
-This should create two extra columns in the scalar.dat file that contains the kinetic energy of the up and down electrons in two separate columns. If the estimator is properly implemented,then the sum of these two columns should be equal to the default \verb|Kinetic| column.
+This should create two extra columns in the \inlinecode{scalar.dat} file that contains the kinetic energy of the up and down electrons in two separate columns. If the estimator is properly implemented, then the sum of these two columns should be equal to the default \verb|Kinetic| column.
 
 \subsubsection{Barebone}
 
-The first step is to create a barebone class structure for this simple scalar estimator. The goal is to be able to instantiate this scalar estimator with an xml node and have it print out a column of zeros in the scalar.dat file. 
+The first step is to create a barebone class structure for this simple scalar estimator. The goal is to be able to instantiate this scalar estimator with an XML node and have it print out a column of zeros in the \inlinecode{scalar.dat} file. 
 
-To achieve this, first create a header file ``SpeciesKineticEnergy.h" in QMCHamiltonians folder, with only the required functions declared as follows: 
+To achieve this, first create a header file ``SpeciesKineticEnergy.h" in the QMCHamiltonians folder, with only the required functions declared as follows: 
 
 \begin{lstlisting}[style=C++]
 // In SpeciesKineticEnergy.h
@@ -92,12 +92,12 @@ To achieve this, first create a header file ``SpeciesKineticEnergy.h" in QMCHami
 #define QMCPLUSPLUS_SPECIESKINETICENERGY_H
 
 #include <Particle/WalkerSetRef.h>
-#include <QMCHamiltonians/QMCHamiltonianBase.h>
+#include <QMCHamiltonians/OperatorBase.h>
 
 namespace qmcplusplus
 {
 
-class SpeciesKineticEnergy: public QMCHamiltonianBase
+class SpeciesKineticEnergy: public OperatorBase
 {
 public:
   
@@ -114,7 +114,7 @@ public:
   
   // pure virtual functions require overrider
   void resetTargetParticleSet(ParticleSet& P) { }                         // required
-  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi); // required
+  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi); // required
 
 private:
   ParticleSet& tpset;
@@ -125,7 +125,7 @@ private:
 #endif
 \end{lstlisting}
 
-Notice a local reference \verb|tpset| to the target particle set \verb|P| is saved in the constructor. The target particle set carries much information useful for calculating observables. Next, make ``SpeciesKineticEnergy.cpp" and make vacuous definitions
+Notice that a local reference \verb|tpset| to the target particle set \verb|P| is saved in the constructor. The target particle set carries much information useful for calculating observables. Next, make ``SpeciesKineticEnergy.cpp," and make vacuous definitions.
 \begin{lstlisting}[style=C++]
 // In SpeciesKineticEnergy.cpp
 #include <QMCHamiltonians/SpeciesKineticEnergy.h>
@@ -148,7 +148,7 @@ SpeciesKineticEnergy::Return_t SpeciesKineticEnergy::evaluate(ParticleSet& P)
   return Value;
 }
 
-QMCHamiltonianBase* SpeciesKineticEnergy::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+OperatorBase* SpeciesKineticEnergy::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   // no local array allocated, default constructor should be enough
   return new SpeciesKineticEnergy(*this);
@@ -157,7 +157,7 @@ QMCHamiltonianBase* SpeciesKineticEnergy::makeClone(ParticleSet& qp, TrialWaveFu
 } // namespace qmcplusplus
 \end{lstlisting}
 
-Now, head over to Hamiltonian Factory and instantiate this observable if an xml node is found requesting it. Look for ``gofr" in HamiltonianFactory.cpp, for example, and follow the if block
+Now, head over to HamiltonianFactory and instantiate this observable if an XML node is found requesting it. Look for ``gofr" in HamiltonianFactory.cpp, for example, and follow the if block.
 \begin{lstlisting}[style=C++]
 // In HamiltonianFactory.cpp
 #include <QMCHamiltonians/SpeciesKineticEnergy.h>
@@ -168,10 +168,10 @@ else if(potType =="specieskinetic")
   targetH->addOperator(apot,potName,false);
 }
 \end{lstlisting}
-The last argument of addOperator(), i.e. the \verb|false| flag, is \textbf{crucial}. This tells QMCPACK that the observable we implemented is not a physical Hamiltonian, thus it will not contribute to the local energy. Changes to the local energy will alter the dynamics of the simulation. Finally, add ``SpeciesKineticEnergy.cpp" to HAMSRCS in ``CMakeLists.txt" located in the QMCHamiltonians folder. Now, recompile QMCPACK and run it on an input that requests \verb|<estimator type="specieskinetic" name="ukinetic"/>| in the \verb|hamiltonian| block. A columns of zeros should appear in the scalar.dat file under the name ``ukinetic".
+The last argument of addOperator() (i.e., the \verb|false| flag) is \textbf{crucial}. This tells QMCPACK that the observable we implemented is not a physical Hamiltonian; thus, it will not contribute to the local energy. Changes to the local energy will alter the dynamics of the simulation. Finally, add ``SpeciesKineticEnergy.cpp" to HAMSRCS in ``CMakeLists.txt" located in the QMCHamiltonians folder. Now, recompile QMCPACK and run it on an input that requests \verb|<estimator type="specieskinetic" name="ukinetic"/>| in the \verb|hamiltonian| block. A column of zeros should appear in the \inlinecode{scalar.dat} file under the name ``ukinetic."
 
 \subsubsection{Evaluate}
-The evaluate() method is where we perform the calculation of the desired observable. In a first iteration, we will simply hard-code the name and mass of the particles
+The evaluate() method is where we perform the calculation of the desired observable. In a first iteration, we will simply hard-code the name and mass of the particles.
 \begin{lstlisting}[style=C++]
 // In SpeciesKineticEnergy.cpp
 #include <QMCHamiltonians/BareKineticEnergy.h> // laplaician() defined here
@@ -196,10 +196,10 @@ SpeciesKineticEnergy::Return_t SpeciesKineticEnergy::evaluate(ParticleSet& P)
   // Value = -0.5*( Dot(P.G,P.G) + Sum(P.L) );
 }
 \end{lstlisting}
-\textit{Voila}, you should now be able to compile QMCPACK, rerun, and see that the values in the ``ukinetic'' column are no longer zero. Now, the only task left to make this basic observable complete is to read in the extra parameters instead of hard-coding them.
+\textit{Voila}---you should now be able to compile QMCPACK, rerun, and see that the values in the ``ukinetic'' column are no longer zero. Now, the only task left to make this basic observable complete is to read in the extra parameters instead of hard-coding them.
 
-\subsubsection{Parse Extra Input}
-The preferred method to parse extra input parameters in the xml node is to implement the put() function of our specific observable. Suppose we wish to read in a single string that tells us whether to record the kinetic energy of the up electron (group=``u") or the down electron (group=``d"). This is easily achievable using the OhmmsAttributeSet class
+\subsubsection{Parse extra input}
+The preferred method to parse extra input parameters in the XML node is to implement the put() function of our specific observable. Suppose we wish to read in a single string that tells us whether to record the kinetic energy of the up electron (group=``u") or the down electron (group=``d"). This is easily achievable using the OhmmsAttributeSet class,
 \begin{lstlisting}[style=C++]
 // In SpeciesKineticEnergy.cpp
 #include <OhmmsData/AttributeSet.h>
@@ -227,15 +227,15 @@ private:
   std::string  group;
   RealType minus_over_2m;
 \end{lstlisting}
-Notice, the above operations are made possible by the saved reference to the target particle set. Last but not least, compile and run a full example (i.e. a short DMC calculation) with the following xml nodes in your input
+Notice that the previous operations are made possible by the saved reference to the target particle set. Last but not least, compile and run a full example (i.e., a short DMC calculation) with the following XML nodes in your input:
 
 \verb|<estimator type="specieskinetic" name="ukinetic" group="u"/>|
 
-\verb|<estimator type="specieskinetic" name="dkinetic" group="d"/>|.
+\verb|<estimator type="specieskinetic" name="dkinetic" group="d"/>|\:.\\
 
-Make sure the sum of the "ukinetic" and "dkinetic" columns is \textbf{exactly} the same as the Kinetic columns at \textbf{every block}.
+Make sure the sum of the ``ukinetic" and ``dkinetic" columns is \textbf{exactly} the same as the Kinetic columns at \textbf{every block}.
 
-For easy reference, the complete list of changes is summarized bellow
+For easy reference, a summary of the complete list of changes follows:
 \begin{lstlisting}[style=C++]
 // In HamiltonianFactory.cpp
 #include "QMCHamiltonians/SpeciesKineticEnergy.h"
@@ -249,12 +249,12 @@ else if(potType =="specieskinetic")
 \begin{lstlisting}[style=C++]
 // In SpeciesKineticEnergy.h
 #include <Particle/WalkerSetRef.h>
-#include <QMCHamiltonians/QMCHamiltonianBase.h>
+#include <QMCHamiltonians/OperatorBase.h>
 
 namespace qmcplusplus
 {
 
-class SpeciesKineticEnergy: public QMCHamiltonianBase
+class SpeciesKineticEnergy: public OperatorBase
 {
 public:
 
@@ -274,7 +274,7 @@ public:
   
   // pure virtual functions require overrider
   void resetTargetParticleSet(ParticleSet& P) { }                         // required
-  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi); // required
+  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi); // required
   
 private:
   ParticleSet&       tpset; // reference to target particle set
@@ -330,7 +330,7 @@ SpeciesKineticEnergy::Return_t SpeciesKineticEnergy::evaluate(ParticleSet& P)
   return Value;
 }
 
-QMCHamiltonianBase* SpeciesKineticEnergy::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+OperatorBase* SpeciesKineticEnergy::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 { //default constructor
   return new SpeciesKineticEnergy(*this);
 }
@@ -338,8 +338,8 @@ QMCHamiltonianBase* SpeciesKineticEnergy::makeClone(ParticleSet& qp, TrialWaveFu
 } // namespace qmcplusplus
 \end{lstlisting}
 
-\subsection{Multiple Scalars}
-It is fairly straight-forward to created more than one column in the scalar.dat file with a single observable class. For example, if we want a single SpeciesKineticEnergy estimator to record the kinetic energies of all species in the target particle set simultaneously, we only have to write two new methods: addObservables() and setObservables(), then tweak the behavior of evaluate(). Firstly, we will have to override the default behavior of addObservables() to make room for more than one column in the scalar.dat file as follows
+\subsection{Multiple scalars}
+It is fairly straightforward to create more than one column in the \inlinecode{scalar.dat} file with a single observable class. For example, if we want a single SpeciesKineticEnergy estimator to simultaneously record the kinetic energies of all species in the target particle set, we only have to write two new methods: addObservables() and setObservables(), then tweak the behavior of evaluate(). First, we will have to override the default behavior of addObservables() to make room for more than one column in the \inlinecode{scalar.dat} file as follows,
 \begin{lstlisting}[style=C++]
 // In SpeciesKineticEnergy.cpp
 void SpeciesKineticEnergy::addObservables(PropertySetType& plist, BufferType& collectables)
@@ -351,7 +351,7 @@ void SpeciesKineticEnergy::addObservables(PropertySetType& plist, BufferType& co
   }
 }
 \end{lstlisting}
-where ``num\_species'' and ``species\_name'' can be local variables initialized in the constructor. We should also initialize some local arrays to hold temporary data
+where ``num\_species'' and ``species\_name'' can be local variables initialized in the constructor. We should also initialize some local arrays to hold temporary data.
 \begin{lstlisting}[style=C++]
 // In SpeciesKineticEnergy.h
 private:
@@ -376,7 +376,7 @@ SpeciesKineticEnergy::SpeciesKineticEnergy(ParticleSet& P):tpset(P)
   }
 }
 \end{lstlisting}
-Next, we need to override the default behavior of \icode{setObservables()} to transfer multiple values to the property list kept by the main particle set, which eventually go into the scalar.dat file
+Next, we need to override the default behavior of \icode{setObservables()} to transfer multiple values to the property list kept by the main particle set, which eventually goes into the \inlinecode{scalar.dat} file.
 \begin{lstlisting}[style=C++]
 // In SpeciesKineticEnergy.cpp
 void SpeciesKineticEnergy::setObservables(PropertySetType& plist)
@@ -384,7 +384,7 @@ void SpeciesKineticEnergy::setObservables(PropertySetType& plist)
   copy(species_kinetic.begin(),species_kinetic.end(),plist.begin()+myIndex);
 }
 \end{lstlisting}
-Finally, we need to change the behavior of evaluate() to fill the local vector ``species\_kinetic'' with appropriate observable values
+Finally, we need to change the behavior of evaluate() to fill the local vector ``species\_kinetic'' with appropriate observable values.
 \begin{lstlisting}[style=C++]
 SpeciesKineticEnergy::Return_t SpeciesKineticEnergy::evaluate(ParticleSet& P)
 {
@@ -400,13 +400,13 @@ SpeciesKineticEnergy::Return_t SpeciesKineticEnergy::evaluate(ParticleSet& P)
   return Value;
 }
 \end{lstlisting}
-That's it! SpeciesKineticEnergy estimator no longer needs the ``group'' input and will automatically output the kinetic energy of every species in the target particle set in multiple columns. You should now be able to run with 
-\verb|<estimator type="specieskinetic" name="skinetic"/>| and check that the sum of all columns that starts with ``skinetic'' is equal to the default ``Kinetic'' column.
+That's it! The SpeciesKineticEnergy estimator no longer needs the ``group'' input and will automatically output the kinetic energy of every species in the target particle set in multiple columns. You should now be able to run with 
+\verb|<estimator type="specieskinetic" name="skinetic"/>| and check that the sum of all columns that start with ``skinetic'' is equal to the default ``Kinetic'' column.
 
-\subsection{HDF5 Output}
-If we desire an observable that will output hundreds of scalars per simulation step (eg. SkEstimator), then it is preferred to output to the stat.h5 file instead of the scalar.dat file for better organization. A large chunk of data to be registered in the stat.h5 file is called a ``Collectable'' in QMCPACK. In particular, if a QMCHamiltonianBase object is initialized with \verb|UpdateMode.set(COLLECTABLE,1)| then the ``Collectables'' object carried by the main particle set will be processed and written to the stat.h5 file, where ``UpdateMode'' is a bit set (i.e. a collection of flags) with the following enumeration
+\subsection{HDF5 output}
+If we desire an observable that will output hundreds of scalars per simulation step (e.g., SkEstimator), then it is preferred to output to the \inlinecode{stat.h5} file instead of the \inlinecode{scalar.dat} file for better organization. A large chunk of data to be registered in the \inlinecode{stat.h5} file is called a ``Collectable'' in QMCPACK. In particular, if a OperatorBase object is initialized with \verb|UpdateMode.set(COLLECTABLE,1)|, then the ``Collectables'' object carried by the main particle set will be processed and written to the \inlinecode{stat.h5} file, where ``UpdateMode'' is a bit set (i.e., a collection of flags) with the following enumeration:
 \begin{lstlisting}[style=C++]
-// In QMCHamiltonianBase.h
+// In OperatorBase.h
 ///enum for UpdateMode
 enum {PRIMARY=0,
   OPTIMIZABLE=1,
@@ -418,7 +418,7 @@ enum {PRIMARY=0,
 };
 \end{lstlisting}
 
-As a simple example, to put the two columns we produced in the previous section into the stat.h5 file, we will first need to declare that our observable uses ``Collectables''
+As a simple example, to put the two columns we produced in the previous section into the \inlinecode{stat.h5} file, we will first need to declare that our observable uses ``Collectables.''
 \begin{lstlisting}[style=C++]
 // In constructor add: 
 hdf5_out = true;
@@ -434,7 +434,7 @@ if (hdf5_out)
   collectables.add(tmp.begin(),tmp.end());
 }
 \end{lstlisting}
-Next make some room in the stat.h5 file by overriding the registerCollectables() method
+Next, make some room in the \inlinecode{stat.h5} file by overriding the registerCollectables() method.
 \begin{lstlisting}[style=C++]
 // In SpeciesKineticEnergy.cpp
 void SpeciesKineticEnergy::registerCollectables(std::vector<observable_helper*>& h5desc, hid_t gid) const
@@ -468,10 +468,10 @@ SpeciesKineticEnergy::Return_t SpeciesKineticEnergy::evaluate(ParticleSet& P)
   return Value;
 }
 \end{lstlisting}
-That should be it. There should now be a new entry in the stat.h5 file containing the same columns of data as the scalar.dat file. After this check, we should clean up the code by
+There should now be a new entry in the \inlinecode{stat.h5} file containing the same columns of data as the \inlinecode{stat.h5} file. After this check, we should clean up the code by
 \begin{enumerate}
-\item make ``hdf5\_out'' and input flag by editing the put() method
-\item disable output to scalar.dat when ``hdf5\_out'' flag is on
+\item making ``hdf5\_out'' and input flag by editing the put() method and
+\item disabling output to \inlinecode{scalar.dat} when the ``hdf5\_out'' flag is on.
 \end{enumerate}
 
 

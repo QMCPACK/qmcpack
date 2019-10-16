@@ -192,12 +192,12 @@ public:
    */
   inline void evaluate(const ParticleSet& P, ParticleSet& QP)
   {
-    RealType du, d2u;
 #ifdef ENABLE_SOA
     APP_ABORT("Backflow_eI.h::evaluate(P,QP) not implemented for SoA\n");
 #else
+    RealType du, d2u;
     const auto& myTable = P.getDistTable(myTableIndex_);
-    for (int i = 0; i < myTable.size(SourceIndex); i++)
+    for (int i = 0; i < myTable.sources(); i++)
     {
       for (int nn = myTable.M[i]; nn < myTable.M[i + 1]; nn++)
       {
@@ -212,12 +212,12 @@ public:
 
   inline void evaluate(const ParticleSet& P, ParticleSet& QP, GradVector_t& Bmat, HessMatrix_t& Amat)
   {
-    RealType du, d2u;
 #ifdef ENABLE_SOA
     APP_ABORT("Backflow_eI.h::evaluate(P,QP,Bmat_vec,Amat) not implemented for SoA\n");
 #else
+    RealType du, d2u;
     const auto& myTable = P.getDistTable(myTableIndex_);
-    for (int i = 0; i < myTable.size(SourceIndex); i++)
+    for (int i = 0; i < myTable.sources(); i++)
     {
       for (int nn = myTable.M[i]; nn < myTable.M[i + 1]; nn++)
       {
@@ -273,7 +273,7 @@ public:
     }
 
 #else
-    for (int i = 0; i < myTable.size(SourceIndex); i++)
+    for (int i = 0; i < myTable.sources(); i++)
     {
       for (int nn = myTable.M[i]; nn < myTable.M[i + 1]; nn++)
       {
@@ -300,12 +300,12 @@ public:
    */
   inline void evaluatePbyP(const ParticleSet& P, ParticleSet::ParticlePos_t& newQP, const std::vector<int>& index)
   {
-    RealType du, d2u;
 #ifdef ENABLE_SOA
     APP_ABORT("Backflow_eI.h::evaluatePbyP(P,QP,index_vec) not implemented for SoA\n");
 #else
+    RealType du, d2u;
     const auto& myTable = P.getDistTable(myTableIndex_);
-    int maxI = myTable.size(SourceIndex);
+    int maxI = myTable.sources();
     int iat  = index[0];
     for (int j = 0; j < maxI; j++)
     {
@@ -325,7 +325,7 @@ public:
     const auto& myTable = P.getDistTable(myTableIndex_);
 #ifdef ENABLE_SOA
     // APP_ABORT("Backflow_eI.h::evaluatePbyP(P,iat,QP) not implemented for SoA\n");
-    int maxI = myTable.size(SourceIndex);
+    int maxI = myTable.sources();
     for (int j = 0; j < maxI; j++)
     {
       RealType uij = RadFun[j]->evaluate(myTable.Temp_r[j], du, d2u);
@@ -333,7 +333,7 @@ public:
       newQP[iat] += u;
     }
 #else
-    int maxI = myTable.size(SourceIndex);
+    int maxI = myTable.sources();
     for (int j = 0; j < maxI; j++)
     {
       RealType uij = RadFun[j]->evaluate(myTable.Temp[j].r1, du, d2u);
@@ -348,12 +348,12 @@ public:
                            const std::vector<int>& index,
                            HessMatrix_t& Amat)
   {
-    RealType du, d2u;
 #ifdef ENABLE_SOA
     APP_ABORT("Backflow_eI.h::evaluatePbyP(P,QP,index_vec,Amat) not implemented for SoA\n");
 #else
+    RealType du, d2u;
     const auto& myTable = P.getDistTable(myTableIndex_);
-    int maxI = myTable.size(SourceIndex);
+    int maxI = myTable.sources();
     int iat  = index[0];
     for (int j = 0; j < maxI; j++)
     {
@@ -377,7 +377,7 @@ public:
     const auto& myTable = P.getDistTable(myTableIndex_);
 #ifdef ENABLE_SOA
     //     APP_ABORT("Backflow_eI.h::evaluatePbyP(P,iat,QP,Amat) not implemented for SoA\n");
-    int maxI = myTable.size(SourceIndex);
+    int maxI = myTable.sources();
     for (int j = 0; j < maxI; j++)
     {
       if (myTable.Temp_r[j] > 0)
@@ -395,7 +395,7 @@ public:
       }
     }
 #else
-    int maxI = myTable.size(SourceIndex);
+    int maxI = myTable.sources();
     for (int j = 0; j < maxI; j++)
     {
       RealType uij = RadFun[j]->evaluate(myTable.Temp[j].r1, du, d2u);
@@ -418,12 +418,12 @@ public:
                            GradMatrix_t& Bmat_full,
                            HessMatrix_t& Amat)
   {
-    RealType du, d2u;
 #ifdef ENABLE_SOA
     APP_ABORT("Backflow_eI.h::evaluatePbyP(P,QP,index_vec,Bmat,Amat) not implemented for SoA\n");
 #else
+    RealType du, d2u;
     const auto& myTable = P.getDistTable(myTableIndex_);
-    int maxI = myTable.size(SourceIndex);
+    int maxI = myTable.sources();
     int iat  = index[0];
     for (int j = 0; j < maxI; j++)
     {
@@ -449,12 +449,12 @@ public:
                            GradMatrix_t& Bmat_full,
                            HessMatrix_t& Amat)
   {
-    RealType du, d2u;
 #ifdef ENABLE_SOA
     APP_ABORT("Backflow_eI.h::evaluatePbyP(P,iat,QP,Bmat,Amat) not implemented for SoA\n");
 #else
+    RealType du, d2u;
     const auto& myTable = P.getDistTable(myTableIndex_);
-    int maxI = myTable.size(SourceIndex);
+    int maxI = myTable.sources();
     for (int j = 0; j < maxI; j++)
     {
       RealType uij = RadFun[j]->evaluate(myTable.Temp[j].r1, du, d2u);
@@ -478,12 +478,12 @@ public:
    */
   inline void evaluateBmatOnly(const ParticleSet& P, GradMatrix_t& Bmat_full)
   {
-    RealType du, d2u;
 #ifdef ENABLE_SOA
     APP_ABORT("Backflow_eI.h::evaluateBmatOnly(P,QP,Bmat) not implemented for SoA\n");
 #else
+    RealType du, d2u;
     const auto& myTable = P.getDistTable(myTableIndex_);
-    for (int i = 0; i < myTable.size(SourceIndex); i++)
+    for (int i = 0; i < myTable.sources(); i++)
     {
       for (int nn = myTable.M[i]; nn < myTable.M[i + 1]; nn++)
       {
@@ -506,9 +506,9 @@ public:
                                       GradMatrix_t& Ymat,
                                       HessArray_t& Xmat)
   {
+#ifdef ENABLE_SOA
     RealType du, d2u;
     const auto& myTable = P.getDistTable(myTableIndex_);
-#ifdef ENABLE_SOA
     for (int jel = 0; jel < P.getTotalNum(); jel++)
     {
       const auto& dist  = myTable.Distances[jel];
@@ -545,7 +545,9 @@ public:
     }
 
 #else
-    for (int i = 0; i < myTable.size(SourceIndex); i++)
+    RealType du, d2u;
+    const auto& myTable = P.getDistTable(myTableIndex_);
+    for (int i = 0; i < myTable.sources(); i++)
     {
       for (int nn = myTable.M[i]; nn < myTable.M[i + 1]; nn++)
       {
