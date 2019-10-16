@@ -16,7 +16,7 @@ echo ""
 
 module load cmake
 module load git
-module load gcc/6.4.0
+module load gcc/7.4.0
 module load fftw
 module load essl
 module load netlib-lapack
@@ -43,16 +43,12 @@ echo --- Hostname --- $(hostname -f)
 echo --- Checkout for branch ${branch} $(date)
 echo
 
-# get or refresh the source checkout
-if [ ! -e ${source_dir} ]; then
-  mkdir -p ${base_dir} && cd ${base_dir}
-  echo --- Cloning QMCPACK git $(date)
-  git clone --depth 1 https://github.com/QMCPACK/qmcpack.git ${source_dir}
-else
-  echo --- Updating local QMCPACK git $(date)
-  cd ${source_dir}
-  git pull
-fi
+# refresh the source checkout
+mkdir -p ${base_dir}
+cd ${base_dir}
+rm -rf ${source_dir}
+echo --- Cloning QMCPACK git $(date)
+git clone --depth 1 https://github.com/QMCPACK/qmcpack.git ${source_dir}
 
 if [ -e ${source_dir}/CMakeLists.txt ]; then
 
@@ -60,7 +56,7 @@ if [ -e ${source_dir}/CMakeLists.txt ]; then
 
   git checkout ${branch}
 
-  for variant in Real-SoA #Real-Mixed-SoA Complex-SoA Complex-Mixed-SoA
+  for variant in Real-SoA Real-SoA-CUDA #Real-Mixed-SoA Complex-SoA Complex-Mixed-SoA
   do
 
     echo --- Building for ${variant} $(date)
@@ -84,13 +80,14 @@ if [ -e ${source_dir}/CMakeLists.txt ]; then
     [[ ${variant} == *"Complex"* ]] && CTEST_FLAGS="${CTEST_FLAGS} -D QMC_COMPLEX=1"
     [[ ${variant} == *"-SoA"* ]] && CTEST_FLAGS="${CTEST_FLAGS} -D ENABLE_SOA=1"
     [[ ${variant} == *"-Mixed"* ]] && CTEST_FLAGS="${CTEST_FLAGS} -D QMC_MIXED_PRECISION=1"
+    [[ ${variant} == *"-CUDA"* ]] && CTEST_FLAGS="${CTEST_FLAGS} -D ENABLE_CUDA=1"
 
     export QMCPACK_TEST_SUBMIT_NAME=${compiler}-${variant}-Release
 
     ctest ${CTEST_FLAGS} \
       -S $(pwd)/../CMake/ctest_script.cmake,release \
       --stop-time $(date --date=now+117mins +%H:%M:%S) \
-      -VV -E 'long' --timeout 800 &> \
+      -VV -R 'unit|short|deterministic' -LE 'unstable' --timeout 800 &> \
       ${log_dir}/${QMCPACK_TEST_SUBMIT_NAME}.log
 
     echo --- Finished ${variant} $(date)
@@ -115,6 +112,13 @@ echo "submitting job for ${hour}:${minute}"
 echo "=================================================="
 echo ""
 echo ""
+
+# create next log file folder
+log_dir=${base_dir}/log/$(date --date="tomorrow" +%y_%m_%d)
+mkdir -p ${log_dir}
+
+$ go there to capture the job output file
+cd ${log_dir}
 
 bsub -b ${hour}:${minute} \
   -P mat151 \
