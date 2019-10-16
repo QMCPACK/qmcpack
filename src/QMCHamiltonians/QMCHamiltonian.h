@@ -271,7 +271,7 @@ public:
   /** set non local moves options
    * @param cur the xml input
    */
-  [[deprecated]] void setNonLocalMoves(xmlNodePtr cur)
+  void setNonLocalMoves(xmlNodePtr cur)
   {
     if (nlpp_ptr != nullptr)
       nlpp_ptr->setNonLocalMoves(cur);
