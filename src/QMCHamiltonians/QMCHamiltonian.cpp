@@ -778,7 +778,8 @@ void QMCHamiltonian::setRandomGenerator(RandomGenerator_t* rng)
     H[i]->setRandomGenerator(rng);
   for (int i = 0; i < auxH.size(); i++)
     auxH[i]->setRandomGenerator(rng);
-  nlpp_ptr->setRandomGenerator(rng);
+  if(nlpp_ptr)
+    nlpp_ptr->setRandomGenerator(rng);
 }
 
 std::vector<int> QMCHamiltonian::flex_makeNonLocalMoves(RefVector<QMCHamiltonian>& h_list,
