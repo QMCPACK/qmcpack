@@ -16,6 +16,7 @@
 #include "Configuration.h"
 #include "Numerics/Quadrature.h"
 #include "QMCHamiltonians/ECPComponentBuilder.h"
+#include "QMCHamiltonians/NonLocalECPComponent.h"
 
 //for wavefunction
 #include "OhmmsData/Libxml2Doc.h"

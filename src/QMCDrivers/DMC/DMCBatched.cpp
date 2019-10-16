@@ -9,6 +9,8 @@
 // File refactored from: DMC.cpp
 //////////////////////////////////////////////////////////////////////////////////////
 
+#include <functional>
+
 #include "QMCDrivers/DMC/DMCBatched.h"
 #include "Concurrency/TasksOneToOne.hpp"
 #include "Concurrency/Info.hpp"
@@ -18,6 +20,9 @@
 
 namespace qmcplusplus
 {
+using std::placeholders::_1;
+
+// clang-format off
 /** Constructor maintains proper ownership of input parameters
    */
 DMCBatched::DMCBatched(QMCDriverInput&& qmcdriver_input,
@@ -27,10 +32,14 @@ DMCBatched::DMCBatched(QMCDriverInput&& qmcdriver_input,
                        QMCHamiltonian& h,
                        WaveFunctionPool& wf_pool,
                        Communicate* comm)
-    : QMCDriverNew(std::move(qmcdriver_input), pop, psi, h, wf_pool, "DMCBatched::", comm), dmcdriver_input_(input)
+    : QMCDriverNew(std::move(qmcdriver_input), pop, psi, h, wf_pool,
+                   "DMCBatched::", comm,
+                   std::bind(&DMCBatched::setNonLocalMoveHandler, this, _1)),
+      dmcdriver_input_(input)
 {
   QMCType = "DMCBatched";
 }
+// clang-format on
 
 QMCTraits::IndexType DMCBatched::calc_default_local_walkers(IndexType walkers_per_rank)
 {
@@ -51,12 +60,19 @@ QMCTraits::IndexType DMCBatched::calc_default_local_walkers(IndexType walkers_pe
   return local_walkers;
 }
 
+void DMCBatched::setNonLocalMoveHandler(QMCHamiltonian& golden_hamiltonian)
+{
+  golden_hamiltonian.setNonLocalMoves(dmcdriver_input_.get_non_local_move(), qmcdriver_input_.get_tau(),
+                                      dmcdriver_input_.get_alpha(), dmcdriver_input_.get_gamma());
+  std::cout << "DMC Handler\n";
+}
+
 void DMCBatched::resetUpdateEngines()
 {
   ReportEngine PRE("DMC", "resetUpdateEngines");
   Timer init_timer;
   // Here DMC loads "Ensemble of cloned MCWalkerConfigurations"
-  int nw_multi = branch_engine_->initWalkerController(population_,dmcdriver_input_.get_reconfiguration(), false);
+  int nw_multi = branch_engine_->initWalkerController(population_, dmcdriver_input_.get_reconfiguration(), false);
   RefVector<MCPWalker> walkers(convertUPtrToRefVector(population_.get_walkers()));
 
   branch_engine_->checkParameters(population_.get_num_global_walkers(), walkers);
@@ -352,6 +368,8 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
     stalled_walker.Weight *= sft.branch_engine.branchWeight(stalled_new_walker_energy, stalled_old_walker_energy);
   }
 
+  QMCHamiltonian& db_hamiltonian = walker_hamiltonians[0].get();
+
 
   //myTimers[DMC_tmoves]->start();
   std::vector<int> walker_non_local_moves_accepted(
@@ -417,10 +435,12 @@ void DMCBatched::runDMCStep(int crowd_id,
                             const StateForThread& sft,
                             DriverTimers& timers,
                             //                            DMCTimers& dmc_timers,
-                            std::vector<std::unique_ptr<ContextForSteps>>& context_for_steps,
-                            std::vector<std::unique_ptr<Crowd>>& crowds)
+                            UPtrVector<ContextForSteps>& context_for_steps,
+                            UPtrVector<Crowd>& crowds)
 {
-  Crowd& crowd  = *(crowds[crowd_id]);
+  Crowd& crowd                         = *(crowds[crowd_id]);
+  crowd.setRNGForHamiltonian(context_for_steps[crowd_id]->get_random_gen());
+
   int max_steps = sft.qmcdrv_input.get_max_steps();
   // This is migraine inducing here and in the original driver, I believe they are the same in
   // VMC(Batched)/DMC(Batched) needs another check and unit test
@@ -448,7 +468,7 @@ bool DMCBatched::run()
   { // walker initialization
     ScopedTimer local_timer(&(timers_.init_walkers_timer));
     TasksOneToOne<> section_start_task(num_crowds_);
-    section_start_task(initialLogEvaluation, std::ref(crowds_));
+    section_start_task(initialLogEvaluation, std::ref(crowds_), std::ref(step_contexts_));
   }
 
 
@@ -472,9 +492,9 @@ bool DMCBatched::run()
       ScopedTimer local_timer(&(timers_.run_steps_timer));
       dmc_state.step = step;
       crowd_task(runDMCStep, dmc_state, timers_, std::ref(step_contexts_), std::ref(crowds_));
-      
+
       branch_engine_->branch(step, crowds_, population_);
-      for( auto& crowd_ptr : crowds_)
+      for (auto& crowd_ptr : crowds_)
         crowd_ptr->clearWalkers();
       population_.distributeWalkers(crowds_.begin(), crowds_.end(), walkers_per_crowd_);
     }
@@ -497,7 +517,6 @@ bool DMCBatched::run()
                                                 total_block_weight);
     // TODO: should be accept rate for block
     estimator_manager_->stopBlockNew(total_accept_ratio);
-
   }
   return false;
 }

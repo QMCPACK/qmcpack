@@ -17,12 +17,13 @@
 #ifndef QMCPLUSPLUS_NONLOCAL_ECPOTENTIAL_H
 #define QMCPLUSPLUS_NONLOCAL_ECPOTENTIAL_H
 #include "QMCHamiltonians/NonLocalTOperator.h"
-#include "QMCHamiltonians/NonLocalECPComponent.h"
 #include "QMCHamiltonians/ForceBase.h"
 #include "Particle/NeighborLists.h"
 
 namespace qmcplusplus
 {
+
+class NonLocalECPComponent;
 /** @ingroup hamiltonian
  * \brief Evaluate the semi local potentials
  */
@@ -60,6 +61,16 @@ public:
    */
   void setNonLocalMoves(xmlNodePtr cur) { UseTMove = nonLocalOps.put(cur); }
 
+  void setNonLocalMoves(const std::string& non_local_move_option,
+                                        const double tau,
+                                        const double alpha,
+                                        const double gamma)
+  {
+    UseTMove = nonLocalOps.thingsThatShouldBeInMyConstructor(non_local_move_option,
+                                        tau,
+                                        alpha,
+                                        gamma);
+  }
   /** make non local moves with particle-by-particle moves
    * @param P particle set
    * @return the number of accepted moves

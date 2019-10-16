@@ -32,6 +32,9 @@ public:
   bool get_reconfiguration() const { return reconfiguration_; }
   IndexType get_max_age() const { return max_age_; }
   IndexType get_branch_interval() const { return branch_interval_; }
+  std::string& get_non_local_move() { return NonLocalMove; }
+  double get_alpha() const { return alpha_; }
+  double get_gamma() const { return gamma_; }
 
 private:
   /** @ingroup Parameters for DMC Driver
@@ -54,6 +57,8 @@ private:
   std::string UseFastGrad;
   ///input to control maximum age allowed for walkers.
   IndexType max_age_ = 0;
+  double alpha_ = 0.0;
+  double gamma_ = 0.0;
 public:
 
   friend std::ostream& operator<<(std::ostream& o_stream, const DMCDriverInput& vmci);
