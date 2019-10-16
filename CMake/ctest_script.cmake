@@ -8,6 +8,10 @@
 #   N_CONCURRENT_TESTS, or N_PROCS (if not specified)
 #   TEST_SITE_NAME, or HOSTNAME (if not specified)
 
+IF ( NOT DEFINED TEST_SITE_NAME )
+    SITE_NAME( HOSTNAME )
+ENDIF()
+
 # Get the source directory based on the current directory
 IF ( NOT DEFINED QMC_SOURCE_DIR )
     SET( QMC_SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/.." )
