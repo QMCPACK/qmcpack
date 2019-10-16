@@ -18,9 +18,11 @@
 class FakeRandom
 {
 public:
+  using result_type = double;
   FakeRandom();
   typedef unsigned int uint_type;
   double operator()();
+  double rand();
   void set_value(double val);
 
 private:

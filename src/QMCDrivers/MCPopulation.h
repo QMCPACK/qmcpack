@@ -205,6 +205,8 @@ public:
 
   void set_walker_offsets(std::vector<IndexType> walker_offsets) { walker_offsets_ = walker_offsets; }
 
+  // TODO: the fact this is needed is sad remove need for its existence.
+  QMCHamiltonian& get_golden_hamiltonian() { return *hamiltonian_; }
   /** }@ */
 };
 

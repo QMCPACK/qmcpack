@@ -34,7 +34,7 @@ ENDIF()
 ADD_EXECUTABLE(${UTEST_EXE} ${DRIVER_TEST_SRC})
 
 USE_FAKE_RNG(${UTEST_EXE})
-TARGET_LINK_LIBRARIES(${UTEST_EXE} qmc qmcdriver_unit qmcham qmcwfs qmcbase qmcutil qmcfakerng ${QMC_UTIL_LIBS} ${MPI_LIBRARY})
+TARGET_LINK_LIBRARIES(${UTEST_EXE} qmc qmcdriver_unit qmcham_unit qmcwfs qmcbase qmcutil qmcfakerng ${QMC_UTIL_LIBS} ${MPI_LIBRARY})
 
 ADD_UNIT_TEST(${UTEST_NAME} "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
 SET_TESTS_PROPERTIES(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})
@@ -63,7 +63,7 @@ ENDIF()
 ADD_EXECUTABLE(${UTEST_EXE} ${DRIVER_TEST_SRC})
 
 USE_FAKE_RNG(${UTEST_EXE})
-TARGET_LINK_LIBRARIES(${UTEST_EXE} qmc qmcdriver_unit qmcham qmcwfs qmcbase qmcutil qmcfakerng ${QMC_UTIL_LIBS} ${MPI_LIBRARY})
+TARGET_LINK_LIBRARIES(${UTEST_EXE} qmc qmcdriver_unit qmcham_unit qmcwfs qmcbase qmcutil qmcfakerng ${QMC_UTIL_LIBS} ${MPI_LIBRARY})
 
 
 ADD_UNIT_TEST(${UTEST_NAME} "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
