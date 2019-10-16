@@ -1,12 +1,18 @@
-#ifndef ROTATION_HELPER_H
-#define ROTATION_HELPER_H
+//////////////////////////////////////////////////////////////////////////////////////
+//// This file is distributed under the University of Illinois/NCSA Open Source License.
+//// See LICENSE file in top directory for details.
+////
+//// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+////
+//// File developed by: Sergio D. Pineda Flores, sergio_pinedaflores@berkeley.edu, University of California, Berkeley
+////                    Eric Neuscamman, eneuscamman@berkeley.edu, University of California, Berkeley
+////
+//// File created by: Sergio D. Pineda Flores, sergio_pinedaflores@berkeley.edu, University of California, Berkeley
+////////////////////////////////////////////////////////////////////////////////////////
+#ifndef QMCPLUSPLUS_ROTATION_HELPER_H
+#define QMCPLUSPLUS_ROTATION_HELPER_H
 
 #include "QMCWaveFunctions/SPOSet.h"
-#include <memory>
-#include "QMCWaveFunctions/BasisSetBase.h"
-
-#include <Numerics/MatrixOperators.h>
-#include "Numerics/DeterminantOperators.h"
 
 
 namespace qmcplusplus
