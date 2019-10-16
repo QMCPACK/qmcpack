@@ -177,7 +177,7 @@ calculation and will generate the HDF5 similarly to the nonperiodic
 PySCF calculation in Section~\ref{sec:convert4qmc} (convert4qmc). The
 function is distributed with QMCPACK and is located in the
 qmcpack/src/QMCTools directory under the name
-\textit{PyscfToQmcpack.py}. Note that you need to specify the supertwist coordinates that was used with the provided kpoints. It is important for the supertwist to match the coordinates of the K-points for the phase factor correction to the Atomic orbital be accurate. (For more details on how to generate tiling with Pyscf and Nexus, please refere to the Nexus guide or the 2019 QMCPACK Workshop material available on github: \href{https://github.com/QMCPACK/qmcpack_workshop_2019} under \textbf{qmcpack_workshop_2019/day2_nexus/pyscf/04_pyscf_diamond_hf_qmc/}
+\textit{PyscfToQmcpack.py}. Note that you need to specify the supertwist coordinates that was used with the provided kpoints. The supertwist must match the coordinates of the K-points otherwise the phase factor for the atomic orbital will be incorrect and incorrect results will be obtained. (For more details on how to generate tiling with PySCF and Nexus,  refer to the Nexus guide or the 2019 QMCPACK Workshop material available on github: \href{https://github.com/QMCPACK/qmcpack_workshop_2019} under \textbf{qmcpack_workshop_2019/day2_nexus/pyscf/04_pyscf_diamond_hf_qmc/}
 
 For the converter in the script to be called properly, you need
 to specify the path to the file in your PYTHONPATH such as
