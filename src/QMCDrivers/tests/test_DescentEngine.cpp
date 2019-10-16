@@ -30,7 +30,7 @@ TEST_CASE("DescentEngine RMSprop update","[drivers][descent]")
 
 Communicate* myComm;
 
-xmlNodePtr fakeXML;
+xmlNodePtr fakeXML = nullptr;
 
 std::unique_ptr<DescentEngine> descentEngineObj = std::make_unique<DescentEngine>(myComm, fakeXML);
 
