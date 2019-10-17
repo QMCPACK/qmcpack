@@ -17,7 +17,7 @@
 namespace qmcplusplus
 {
 LCAOrbitalSet::LCAOrbitalSet(basis_type* bs, bool optimize)
-    : SPOSet(true, optimize), myBasisSet(nullptr), params_supplied(false), BasisSetSize(0), Identity(true)
+    : SPOSet(true, optimize), myBasisSet(nullptr), BasisSetSize(0), params_supplied(false), Identity(true)
 {
   if (bs != nullptr)
     setBasisSet(bs);
@@ -444,7 +444,6 @@ inline void LCAOrbitalSet::evaluate_ionderiv_vgl_impl(const vghgh_type& temp,
   const ValueType* restrict gh_xxy = temp.data(11);
   const ValueType* restrict gh_xxz = temp.data(12);
   const ValueType* restrict gh_xyy = temp.data(13);
-  const ValueType* restrict gh_xyz = temp.data(14);
   const ValueType* restrict gh_xzz = temp.data(15);
   const ValueType* restrict gh_yyy = temp.data(16);
   const ValueType* restrict gh_yyz = temp.data(17);
@@ -742,7 +741,6 @@ void LCAOrbitalSet::evaluateDerivatives(ParticleSet& P,
     myL_J.resize(NP);
     myL_J            = 0.0;
     const size_t nmo = OrbitalSetSize;
-    const size_t nb  = BasisSetSize;
     const size_t nel = P.last(0) - P.first(0);
 
     const RealType* restrict C_p = Coeff.data();
@@ -1143,11 +1141,12 @@ $
     else
     {
       //Number of rows and cols of P^T
-      const int prows = k;
-      const int pcols = nel;
+      //const int prows = k;
+      //const int pcols = nel;
+
       //Number of rows and cols of Q
-      const int qrows = nmo;
-      const int qcols = k;
+      //const int qrows = nmo;
+      //const int qcols = k;
 
       Y5.resize(nel, k);
       Y6.resize(k, k);

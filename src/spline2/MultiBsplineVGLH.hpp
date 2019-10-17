@@ -69,7 +69,6 @@ inline void evaluate_vgl_impl(const typename qmcplusplus::bspline_traits<T, 3>::
       const T pre20 = d2a[i] * b[j];
       const T pre10 = da[i] * b[j];
       const T pre00 = a[i] * b[j];
-      const T pre11 = da[i] * db[j];
       const T pre01 = a[i] * db[j];
       const T pre02 = a[i] * d2b[j];
 

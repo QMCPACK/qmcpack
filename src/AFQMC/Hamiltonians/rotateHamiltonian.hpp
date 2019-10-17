@@ -217,7 +217,6 @@ inline void rotateHijkl(std::string& type, WALKER_TYPES walker_type, bool addCou
   const int nrow = norb * ((amIAlpha)?NAEA:NAEB);
   const int ncol = nvec;
   int dummy_nrow=nrow, dummy_ncol=ncol;
-  int mat_size = nrow*ncol;
   if(nodeid >= ngrp || sparseQk) 
     dummy_nrow=dummy_ncol=0;
 
@@ -299,7 +298,6 @@ inline void rotateHijkl(std::string& type, WALKER_TYPES walker_type, bool addCou
   std::vector<int> Qksizes;           // number of terms and number of k vectors in block for all nodes
   if(coreid==0) {
     int n_=0, ntcnt=0, n0=0;
-    int NEL = (amIAlpha)?NAEA:NAEB;
     for(int i=0; i<norb; i++) {
       int ntt;
       if(sparseQk)
@@ -603,7 +601,7 @@ template<class Container = std::vector<std::tuple<int,int,SPComplexType>>,
          class PsiT_Type = PsiT_Matrix_t<SPComplexType>>
 inline void rotateHijkl_single_node(std::string& type, WALKER_TYPES walker_type, bool addCoulomb, TaskGroup_& TG, Container& Vijkl, PsiT_Type *Alpha, PsiT_Type *Beta, SpVType_shm_csr_matrix const& V2_fact, const RealType cut, int maximum_buffer_size, bool reserve_to_fit_=true)
 {
-  int nnodes = TG.getTotalNodes(), nodeid = TG.getNodeID();
+  int nnodes = TG.getTotalNodes();
   int ncores = TG.getTotalCores(), coreid = TG.getCoreID();
 
   if(nnodes != 1)
@@ -634,7 +632,6 @@ inline void rotateHijkl_single_node(std::string& type, WALKER_TYPES walker_type,
   //
 
   bool sparseQk = (type == "SD" || type == "SS");
-  bool sparseRl = (type == "SS");
 
   app_log()<<" Calculating half-rotated Hamiltonian using ";
   if(type == "SD")
@@ -701,8 +698,6 @@ inline void rotateHijkl_single_node(std::string& type, WALKER_TYPES walker_type,
   }
 
   TG.node_barrier();
-  // maximum size of Ta
-  int maxnt = std::max(1,static_cast<int>(std::floor(maximum_buffer_size*1024.0*1024.0/sizeof(SPComplexType))));
 
   // set maxnk based on size of Ta
   int maxnk = std::max(1,static_cast<int>(std::floor(1.0*maximum_buffer_size/(NMO*NAEA*NAEA*sizeof(SPComplexType)/1024.0/1024.0))));

@@ -478,6 +478,12 @@ public:
   /// \brief function that returns the |value/guiding|^2 list 
   const std::vector<double> & vgs_list() { return _vg[0]; }
 
+  //function that returns the LMBlocker object _lmb
+  cqmc::engine::LMBlocker & LMBlocker() {return _lmb;}
+  
+  //function that transfers vectors from descent to the LMBlocker object
+  void setHybridBLM_Input(std::vector< std::vector<double> >& from_descent);
+  
   ////////////////////////////////////////////////////////////////////////////////////////////////////////
   ///
   /// \brief  harmonic davidson energy calculation function

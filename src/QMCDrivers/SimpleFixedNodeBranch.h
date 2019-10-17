@@ -29,6 +29,7 @@
 #include "type_traits/template_types.hpp"
 #include "Particle/Walker.h"
 #include "QMCDrivers/WalkerControlBase.h"
+#include "QMCDrivers/Crowd.h"
 #include <Utilities/NewTimer.h>
 #include <bitset>
 
@@ -88,6 +89,7 @@ struct SimpleFixedNodeBranch : public QMCTraits
    * \since 2008-05-05
    *
    * When introducing a new iParam, check if B_IPARAM_MAX is sufficiently large. Use multiples of 8
+   * Why?  Much easier to use bool flags.  Are these ever serialized?
    */
   enum
   {
@@ -153,7 +155,8 @@ struct SimpleFixedNodeBranch : public QMCTraits
   std::unique_ptr<WalkerControlBase> WalkerController;
   ///Backup WalkerController for mixed DMC
   std::unique_ptr<WalkerControlBase> BackupWalkerController;
-  ///EstimatorManager
+  
+  ///TODO: Should not be raw pointer 
   EstimatorManagerBase* MyEstimator;
   ///a simple accumulator for energy
   accumulator_set<FullPrecRealType> EnergyHist;
@@ -228,8 +231,15 @@ struct SimpleFixedNodeBranch : public QMCTraits
    * @param fixW true, if reconfiguration with the fixed number of walkers is used
    * @return number of copies to make in case targetwalkers changed
    */
-  int initWalkerController(MCWalkerConfiguration& w, bool fixW, bool killwalker);
-  //void initWalkerController(MCWalkerConfiguration& w, RealType tau, bool fixW=false, bool killwalker=false);
+  int initWalkerController(MCWalkerConfiguration& mcwc, bool fixW, bool killwalker);
+
+  /** initialize  the WalkerController
+   * @param w Walkers
+   * @param tau timestep
+   * @param fixW true, if reconfiguration with the fixed number of walkers is used
+   * @return number of copies to make in case targetwalkers changed
+   */
+  int initWalkerController(MCPopulation& pop, bool fixW, bool killwalker);
 
   /** initialize reptile stats
    *
@@ -365,6 +375,12 @@ struct SimpleFixedNodeBranch : public QMCTraits
    */
   void branch(int iter, MCWalkerConfiguration& w);
 
+  /** perform branching
+   * @param iter current step
+   * @param w Walker configuration
+   */
+  void branch(int iter, UPtrVector<Crowd>& crowds, MCPopulation& population);
+
   /** update RMC counters and running averages.
    * @param iter the iteration
    * @param w the walker ensemble
@@ -402,6 +418,8 @@ struct SimpleFixedNodeBranch : public QMCTraits
   void start(const std::string& froot, bool append = false);
   ///finalize the simulation
   void finalize(MCWalkerConfiguration& w);
+  ///finalize the simulation
+  void finalize(const int global_walkers, RefVector<MCPWalker>& walkers);
 
   void setRN(bool rn);
 

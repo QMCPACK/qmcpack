@@ -26,10 +26,8 @@ namespace qmcplusplus
 {
 PWRealOrbitalSet::~PWRealOrbitalSet()
 {
-#if !defined(ENABLE_SMARTPOINTER)
   if (OwnBasisSet && myBasisSet)
     delete myBasisSet;
-#endif
 }
 
 SPOSet* PWRealOrbitalSet::makeClone() const

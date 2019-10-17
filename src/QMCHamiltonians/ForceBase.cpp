@@ -27,7 +27,7 @@
 namespace qmcplusplus
 {
 ForceBase::ForceBase(ParticleSet& ions, ParticleSet& elns)
-  : FirstForceIndex(-1), tries(0), Ions(ions), addionion(true)
+  : FirstForceIndex(-1), tries(0), addionion(true), Ions(ions)
 {
   ReportEngine PRE("ForceBase", "ForceBase");
   FirstTime    = true;

@@ -161,7 +161,7 @@ public:
                     int first = 0);
 
   friend class LAPWClass;
-  MuffinTinClass() : RadialSplines(NULL), APWRadius(0.0), NumOrbitals(0), NumCore(0), lMax(0), drMin(1.0e-4) {}
+  MuffinTinClass() : APWRadius(0.0), drMin(1.0e-4), NumOrbitals(0), lMax(0), RadialSplines(NULL), NumCore(0) {}
   ~MuffinTinClass()
   {
     if (RadialSplines)

@@ -145,13 +145,11 @@ TEST_CASE("ham_factory", "[hamiltonian_factory]")
 
 #ifdef ENABLE_CUDA
   auto node = world.split_shared(world.rank());
-  int ngrp(world.size());
 
   qmc_cuda::CUDA_INIT(node);
   using Alloc = qmc_cuda::cuda_gpu_allocator<ComplexType>;
 #else
   auto node = world.split_shared(world.rank());
-  int ngrp(world.size()/node.size());
   using Alloc = shared_allocator<ComplexType>;
 #endif
 
@@ -167,13 +165,11 @@ TEST_CASE("ham_generation_timing_hdf", "[hamiltonian_factory]")
 
 #ifdef ENABLE_CUDA
   auto node = world.split_shared(world.rank());
-  int ngrp(world.size());
 
   qmc_cuda::CUDA_INIT(node);
   using Alloc = qmc_cuda::cuda_gpu_allocator<ComplexType>;
 #else
   auto node = world.split_shared(world.rank());
-  int ngrp(world.size()/node.size());
   using Alloc = shared_allocator<ComplexType>;
 #endif
 

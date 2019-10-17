@@ -80,7 +80,6 @@ void EwaldHandler::fillFk(KContainer& KList)
 #if OHMMS_DIM == 2
     mRealType kgauss       = 1.0 / (4 * Sigma * Sigma);
     mRealType knorm        = 2 * M_PI / Volume;
-    const mRealType acclog = std::abs(std::log(1.0e-10));
     for (int ks = 0, ki = 0; ks < Fk_symm.size(); ks++)
     {
       mRealType t2e = KList.ksq[ki] * kgauss;
@@ -93,7 +92,6 @@ void EwaldHandler::fillFk(KContainer& KList)
 #elif OHMMS_DIM == 3
     mRealType kgauss       = 1.0 / (4 * Sigma * Sigma);
     mRealType knorm        = 4 * M_PI / Volume;
-    const mRealType acclog = std::abs(std::log(1.0e-10));
     for (int ks = 0, ki = 0; ks < Fk_symm.size(); ks++)
     {
       mRealType t2e = KList.ksq[ki] * kgauss;

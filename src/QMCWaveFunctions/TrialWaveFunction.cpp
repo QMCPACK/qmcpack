@@ -40,9 +40,9 @@ TrialWaveFunction::TrialWaveFunction(Communicate* c)
       BufferCursor(0),
       BufferCursor_scalar(0),
       PhaseValue(0.0),
+      PhaseDiff(0.0),
       LogValue(0.0),
-      OneOverM(1.0),
-      PhaseDiff(0.0)
+      OneOverM(1.0)
 {
   ClassName = "TrialWaveFunction";
   myName    = "psi0";

@@ -101,7 +101,7 @@ struct RadialOrbitalSetBuilder<SoaAtomicBasisSet<MultiFunctorAdapter<FN>, SH>> :
   RadialOrbital_t* m_multiset;
 
   ///constructor
-  RadialOrbitalSetBuilder(Communicate* comm) : m_multiset(nullptr), Normalized(true), MPIObjectBase(comm) {}
+  RadialOrbitalSetBuilder(Communicate* comm) : MPIObjectBase(comm), Normalized(true), m_multiset(nullptr) {}
 
   ///implement functions used by AOBasisBuilder
   void setOrbitalSet(COT* oset, const std::string& acenter) { m_orbitals = oset; }

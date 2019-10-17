@@ -27,12 +27,9 @@ WaveFunctionComponent::WaveFunctionComponent()
       UpdateMode(ORB_WALKER),
       LogValue(1.0),
       PhaseValue(0.0),
+      dPsi(0),
       ClassName("WaveFunctionComponent"),
       Bytes_in_WFBuffer(0)
-#if !defined(ENABLE_SMARTPOINTER)
-      ,
-      dPsi(0)
-#endif
 {
 }
 
@@ -50,11 +47,7 @@ WaveFunctionComponent::WaveFunctionComponent()
 
 void WaveFunctionComponent::setDiffOrbital(DiffWaveFunctionComponentPtr d)
 {
-#if defined(ENABLE_SMARTPOINTER)
-  dPsi = DiffWaveFunctionComponentPtr(d);
-#else
   dPsi = d;
-#endif
 }
 
 void WaveFunctionComponent::evaluateDerivatives(ParticleSet& P,
@@ -62,11 +55,7 @@ void WaveFunctionComponent::evaluateDerivatives(ParticleSet& P,
                                       std::vector<ValueType>& dlogpsi, 
                                       std::vector<ValueType>& dhpsioverpsi)
 {
-#if defined(ENABLE_SMARTPOINTER)
-  if (dPsi.get())
-#else
   if (dPsi)
-#endif
     dPsi->evaluateDerivatives(P, active, dlogpsi, dhpsioverpsi);
 }
 
@@ -74,11 +63,7 @@ void WaveFunctionComponent::evaluateDerivativesWF(ParticleSet& P,
                                       const opt_variables_type& active,
                                       std::vector<ValueType>& dlogpsi)
 {
-#if defined(ENABLE_SMARTPOINTER)
-  if (dPsi.get())
-#else
   if (dPsi)
-#endif
     dPsi->evaluateDerivativesWF(P, active, dlogpsi);
 }
 

@@ -303,9 +303,9 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
         attrib.add(source, "source");
         attrib.put(cur);
         PtclPoolType::iterator pit(ptclPool.find(source));
-        ParticleSet* Pc;
+        ParticleSet* Pc = nullptr;
         if (source == "")
-          Pc = NULL;
+          Pc = nullptr;
         else if (pit != ptclPool.end())
           Pc = pit->second;
         else

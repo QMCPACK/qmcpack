@@ -31,7 +31,6 @@ bool readCuspInfo(const std::string& cuspInfoFile,
   bool success = true;
   std::string cname;
   int ncenter = info.rows();
-  int nOrbs   = info.cols();
   app_log() << "Reading cusp info from : " << cuspInfoFile << std::endl;
   Libxml2Document adoc;
   if (!adoc.parse(cuspInfoFile))
@@ -386,7 +385,6 @@ RealType evaluateForPhi0Body(RealType phi0,
   cusp.cparam.sg = phi0 > 0.0 ? 1.0 : -1.0;
   cusp.cparam.C  = (phiAtRc.val * phi0 < 0.0) ? 1.5 * phiAtRc.val : 0.0;
   TinyVector<ValueType, 5> X;
-  ValueType phiBarAtRc; // phiMO.phi(Rc);
   evalX(phiAtRc.val, phiAtRc.grad, phiAtRc.lap, cusp.cparam.Rc, Z, cusp.cparam.C, phi0, etaAtZero, X);
   X2alpha(X, cusp.cparam.Rc, cusp.cparam.alpha);
   RealType Zeff = getZeff(Z, etaAtZero, cusp.phiBar(0.0, phiMO));
@@ -454,7 +452,6 @@ void minimizeForRc(CuspCorrection& cusp,
                    ValueVector_t& ELcurr,
                    ValueVector_t& ELideal)
 {
-  RealType Rc = Rc_init;
   Bracket_min_t<RealType> bracket(Rc_init, 0.0, 0.0, false);
   RealType start_phi0 = phiMO.phi(0.0);
   try

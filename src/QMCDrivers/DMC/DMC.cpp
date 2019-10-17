@@ -46,8 +46,8 @@ DMC::DMC(MCWalkerConfiguration& w,
          Communicate* comm)
     : QMCDriver(w, psi, h, ppool, comm),
       KillNodeCrossing(0),
-      Reconfiguration("no"),
       BranchInterval(-1),
+      Reconfiguration("no"),
       mover_MaxAge(-1)
 {
   RootName = "dmc";

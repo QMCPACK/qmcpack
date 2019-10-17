@@ -33,7 +33,7 @@ namespace qmcplusplus
       ions.Lattice.BoxBConds=1; 
       ions.Lattice.set(graphite);
       ions.create(4);
-      ions.R.InUnit=0;
+      ions.R.InUnit = PosUnit::Cartesian;
       ions.R[0]={0.0,0.0,0.0}; 
       ions.R[1]={0.0,2.68525,0.0}; 
       ions.R[2]={0.0,0.0,6.33805}; 

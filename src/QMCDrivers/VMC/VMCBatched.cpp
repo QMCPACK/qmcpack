@@ -250,7 +250,8 @@ void VMCBatched::runVMCStep(int crowd_id,
                             std::vector<std::unique_ptr<Crowd>>& crowds)
 {
   Crowd& crowd = *(crowds[crowd_id]);
-
+  crowd.setRNGForHamiltonian(context_for_steps[crowd_id]->get_random_gen());
+  
   int max_steps = sft.qmcdrv_input.get_max_steps();
   bool is_recompute_block =
       sft.recomputing_blocks ? (1 + sft.block) % sft.qmcdrv_input.get_blocks_between_recompute() == 0 : false;
@@ -288,7 +289,7 @@ bool VMCBatched::run()
   { // walker initialization
     ScopedTimer local_timer(&(timers_.init_walkers_timer));
     TasksOneToOne<> section_start_task(num_crowds_);
-    section_start_task(initialLogEvaluation, std::ref(crowds_));
+    section_start_task(initialLogEvaluation, std::ref(crowds_), std::ref(step_contexts_));
   }
 
   TasksOneToOne<> crowd_task(num_crowds_);
@@ -343,7 +344,19 @@ bool VMCBatched::run()
     estimator_manager_->stopBlockNew(total_accept_ratio);
   }
 
-  return false;
+  // This is confusing logic from VMC.cpp want this functionality write documentation of this
+  // and clean it up
+  // bool wrotesamples = qmcdriver_input_.get_dump_config();
+  // if (qmcdriver_input_.get_dump_config())
+  // {
+    //wrotesamples = W.dumpEnsemble(wClones, wOut, myComm->size(), nBlocks);
+    //if (wrotesamples)
+    //  app_log() << "  samples are written to the config.h5" << std::endl;
+  // }
+
+  // second argument was !wrotesample so if W.dumpEnsemble returns false or
+  // dump_config is false from input then dump_walkers
+  return finalize(num_blocks, true);
 }
 
 

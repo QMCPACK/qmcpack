@@ -98,10 +98,10 @@ int main(int argc, char** argv)
   {//create up/down electrons
     els.Lattice.BoxBConds=1;   
     els.Lattice.LR_rc=5;
-    els.Lattice.set(ions.Lattice);
+    els.Lattice = ions.Lattice;
     vector<int> ud(2); ud[0]=nels/2; ud[1]=nels-ud[0];
     els.create(ud);
-    els.R.InUnit=1;
+    els.R.InUnit = PosUnit::Lattice;
     random_th.generate_uniform(&els.R[0][0],nels3);
     els.convert2Cart(els.R); // convert to Cartiesian
     els.RSoA=els.R; //this needs to be handled internally

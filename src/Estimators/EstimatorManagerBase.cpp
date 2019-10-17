@@ -52,33 +52,33 @@ enum
 
 //initialize the name of the primary estimator
 EstimatorManagerBase::EstimatorManagerBase(Communicate* c)
-    : RecordCount(0),
+    : MainEstimatorName("LocalEnergy"),
+      RecordCount(0),
       h_file(-1),
-      FieldWidth(20),
-      MainEstimatorName("LocalEnergy"),
       Archive(0),
       DebugArchive(0),
       myComm(0),
       MainEstimator(0),
       Collectables(0),
-      max4ascii(8)
+      max4ascii(8),
+      FieldWidth(20)
 {
   setCommunicator(c);
 }
 
 EstimatorManagerBase::EstimatorManagerBase(EstimatorManagerBase& em)
-    : RecordCount(0),
-      h_file(-1),
-      FieldWidth(20),
-      MainEstimatorName(em.MainEstimatorName),
+    : MainEstimatorName(em.MainEstimatorName),
       Options(em.Options),
+      RecordCount(0),
+      h_file(-1),
       Archive(0),
       DebugArchive(0),
       myComm(0),
       MainEstimator(0),
       Collectables(0),
       EstimatorMap(em.EstimatorMap),
-      max4ascii(em.max4ascii)
+      max4ascii(em.max4ascii),
+      FieldWidth(20)
 {
   //inherit communicator
   setCommunicator(em.myComm);

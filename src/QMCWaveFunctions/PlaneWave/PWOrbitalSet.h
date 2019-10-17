@@ -28,11 +28,7 @@ class PWOrbitalSet : public SPOSet
 {
 public:
   typedef PWBasis BasisSet_t;
-#if defined(ENABLE_SMARTPOINTER)
-  typedef boost::shared_ptr<PWBasis> PWBasisPtr;
-#else
   typedef PWBasis* PWBasisPtr;
-#endif
 
   /** inherit the enum of BasisSet_t */
   enum
@@ -47,7 +43,7 @@ public:
 
   /** default constructor
   */
-  PWOrbitalSet() : OwnBasisSet(false), BasisSetSize(0), IsCloned(false), myBasisSet(nullptr), C(nullptr) 
+  PWOrbitalSet() : OwnBasisSet(false), myBasisSet(nullptr), BasisSetSize(0), C(nullptr), IsCloned(false)
   {
     className = "PWOrbitalSet";
   }
