@@ -497,9 +497,7 @@ bool ParticleSet::makeMoveAllParticles(const Walker_t& awalker, const ParticlePo
     for (int iat = 0; iat < deltaR.size(); ++iat)
       R[iat] = awalker.R[iat] + dt * deltaR[iat];
   }
-#if defined(ENABLE_SOA)
   RSoA.copyIn(R);
-#endif
   for (int i = 0; i < DistTables.size(); i++)
     DistTables[i]->evaluate(*this);
   if (SK)
@@ -529,9 +527,7 @@ bool ParticleSet::makeMoveAllParticles(const Walker_t& awalker, const ParticlePo
     for (int iat = 0; iat < deltaR.size(); ++iat)
       R[iat] = awalker.R[iat] + dt[iat] * deltaR[iat];
   }
-#if defined(ENABLE_SOA)
   RSoA.copyIn(R);
-#endif
   for (int i = 0; i < DistTables.size(); i++)
     DistTables[i]->evaluate(*this);
   if (SK)
@@ -571,9 +567,7 @@ bool ParticleSet::makeMoveAllParticlesWithDrift(const Walker_t& awalker,
     for (int iat = 0; iat < deltaR.size(); ++iat)
       R[iat] = awalker.R[iat] + dt * deltaR[iat] + drift[iat];
   }
-#if defined(ENABLE_SOA)
   RSoA.copyIn(R);
-#endif
   for (int i = 0; i < DistTables.size(); i++)
     DistTables[i]->evaluate(*this);
   if (SK)
@@ -606,10 +600,7 @@ bool ParticleSet::makeMoveAllParticlesWithDrift(const Walker_t& awalker,
     for (int iat = 0; iat < deltaR.size(); ++iat)
       R[iat] = awalker.R[iat] + dt[iat] * deltaR[iat] + drift[iat];
   }
-
-#if defined(ENABLE_SOA)
   RSoA.copyIn(R);
-#endif
 
   for (int i = 0; i < DistTables.size(); i++)
     DistTables[i]->evaluate(*this);
@@ -668,9 +659,7 @@ void ParticleSet::makeVirtualMoves(const SingleParticlePos_t& newpos)
 void ParticleSet::loadWalker(Walker_t& awalker, bool pbyp)
 {
   R = awalker.R;
-#if defined(ENABLE_SOA)
   RSoA.copyIn(R);
-#endif
 #if !defined(SOA_MEMORY_OPTIMIZED)
   G = awalker.G;
   L = awalker.L;
