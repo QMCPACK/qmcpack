@@ -48,10 +48,10 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
   size_t NumCenters;
   ///number of quantum particles
   size_t NumTargets;
-  ///number of quantum particles
-  const int myTableIndex;
   ///ion particle set
   const ParticleSet& ions_;
+  ///number of quantum particles
+  const int myTableIndex;
   ///Global Coordinate of Supertwist read from HDF5
   PosType SuperTwist;
 
@@ -73,7 +73,7 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
    * @param els electronic system
    */
   SoaLocalizedBasisSet(ParticleSet& ions, ParticleSet& els)
-    : ions_(ions), myTableIndex(els.addTable(ions, DT_SOA)),SuperTwist(0.0)
+    : ions_(ions), myTableIndex(els.addTable(ions, DT_SOA)), SuperTwist(0.0)
   {
     NumCenters   = ions.getTotalNum();
     NumTargets   = els.getTotalNum();
