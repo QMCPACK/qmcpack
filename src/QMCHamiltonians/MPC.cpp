@@ -192,7 +192,7 @@ void MPC::init_f_G()
   app_log() << "    Quadratic extrap = " << std::scientific << f_0 << std::endl;
   f_0 += 0.4 * M_PI * L * L * volInv;
   // std::cerr << "f_0 = " << f_0/volInv << std::endl;
-  double worst = 0.0, worstLin, worstQuad;
+  double worst = 0.0, worstLin = 0.0, worstQuad = 0.0;
   int iworst   = 0;
   for (int iG = 0; iG < numG; iG++)
   {

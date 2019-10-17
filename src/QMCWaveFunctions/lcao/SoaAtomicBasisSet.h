@@ -29,11 +29,14 @@ struct SoaAtomicBasisSet
   typedef ROT RadialOrbital_t;
   using RealType = typename ROT::RealType;
   using GridType = typename ROT::GridType;
+  using ValueType = typename QMCTraits::ValueType;
 
   ///size of the basis set
   int BasisSetSize;
   ///Number of Cell images for the evaluation of the orbital with PBC. If No PBC, should be 0;
   TinyVector<int, 3> PBCImages;
+  ///Coordinates of SuperTwist
+  TinyVector <double,3> SuperTwist; 
   ///Phase Factor array
   std::vector<QMCTraits::ValueType> periodic_image_phase_factors; 
   ///maximum radius of this center
@@ -93,8 +96,8 @@ struct SoaAtomicBasisSet
     return BasisSetSize;
   }
 
-  /// Set the number of periodic image for the evaluation of the orbitals and the phase factor. In the case of Non-PBC, PBCImages=(1,1,1) and the PhaseFactor=1.
-  void setPBCParams(const TinyVector<int, 3>& pbc_images, const std::vector<QMCTraits::ValueType>& PeriodicImagePhaseFactors) { PBCImages = pbc_images; periodic_image_phase_factors=PeriodicImagePhaseFactors;} 
+  /// Set the number of periodic image for the evaluation of the orbitals and the phase factor. In the case of Non-PBC, PBCImages=(1,1,1), SuperTwist(0,0,0) and the PhaseFactor=1.
+  void setPBCParams(const TinyVector<int, 3>& pbc_images, const TinyVector<double, 3> supertwist, const std::vector<QMCTraits::ValueType>& PeriodicImagePhaseFactors) { PBCImages = pbc_images; periodic_image_phase_factors=PeriodicImagePhaseFactors; SuperTwist=supertwist;} 
 
 
   /** implement a BasisSetBase virtual function
@@ -133,19 +136,31 @@ struct SoaAtomicBasisSet
     }
   }
 
+ /** evaluate VGL
+  */
 
   template<typename LAT, typename T, typename PosType, typename VGL>
-  inline void evaluateVGL(const LAT& lattice, const T r, const PosType& dr, const size_t offset, VGL& vgl)
+  inline void evaluateVGL(const LAT& lattice, const T r, const PosType& dr, const size_t offset, VGL& vgl,PosType Tv)
   {
     int TransX, TransY, TransZ;
-
+    
     PosType dr_new;
     T r_new;
     // T psi_new, dpsi_x_new, dpsi_y_new, dpsi_z_new,d2psi_new;
 
+#if not defined(QMC_COMPLEX)
+    const ValueType correctphase=1;
+#else
+
+    RealType phasearg = SuperTwist[0]*Tv[0]+SuperTwist[1]*Tv[1]+SuperTwist[2]*Tv[2]; 
+    RealType s, c;
+    sincos(-phasearg,&s,&c);
+    const ValueType correctphase(c,s);
+#endif
+
     constexpr T cone(1);
     constexpr T ctwo(2);
-    //Phase_idx needs to be initialized at -1 as it has to be incremented first to comply with the if statement (r_new >=Rmax) 
+
 
     //one can assert the alignment
     RealType* restrict phi   = tempS.data(0);
@@ -172,7 +187,8 @@ struct SoaAtomicBasisSet
       dpsi_z[ib] = 0;
       d2psi[ib]  = 0;
     }
-
+    //Phase_idx (iter) needs to be initialized at -1 as it has to be incremented first to comply with the if statement (r_new >=Rmax) 
+    int iter=-1;
     for (int i = 0; i <= PBCImages[0]; i++) //loop Translation over X
     {
       //Allows to increment cells from 0,1,-1,2,-2,3,-3 etc...
@@ -185,12 +201,14 @@ struct SoaAtomicBasisSet
         {
           //Allows to increment cells from 0,1,-1,2,-2,3,-3 etc...
           TransZ    = ((k % 2) * 2 - 1) * ((k + 1) / 2);
-          dr_new[0] = dr[0] + TransX * lattice.R(0, 0) + TransY * lattice.R(1, 0) + TransZ * lattice.R(2, 0);
-          dr_new[1] = dr[1] + TransX * lattice.R(0, 1) + TransY * lattice.R(1, 1) + TransZ * lattice.R(2, 1);
-          dr_new[2] = dr[2] + TransX * lattice.R(0, 2) + TransY * lattice.R(1, 2) + TransZ * lattice.R(2, 2);
+
+          dr_new[0] = dr[0] + (TransX * lattice.R(0, 0) + TransY * lattice.R(1, 0) + TransZ * lattice.R(2, 0));
+          dr_new[1] = dr[1] + (TransX * lattice.R(0, 1) + TransY * lattice.R(1, 1) + TransZ * lattice.R(2, 1));
+          dr_new[2] = dr[2] + (TransX * lattice.R(0, 2) + TransY * lattice.R(1, 2) + TransZ * lattice.R(2, 2));
+
           r_new     = std::sqrt(dot(dr_new, dr_new));
 
-          //const size_t ib_max=NL.size();
+          iter++;
           if (r_new >= Rmax)
             continue;
 
@@ -201,6 +219,9 @@ struct SoaAtomicBasisSet
           MultiRnl->evaluate(r_new, phi, dphi, d2phi);
 
           const T rinv = cone / r_new;
+
+          ///Phase for PBC containing the phase for the nearest image displacement and the correction due to the Distance table. 
+          const ValueType Phase=periodic_image_phase_factors[iter] * correctphase;
 
           for (size_t ib = 0; ib < BasisSetSize; ++ib)
           {
@@ -216,12 +237,12 @@ struct SoaAtomicBasisSet
             const T ang_z     = ylm_z[lm];
             const T vr        = phi[nl];
 
-            psi[ib] += ang * vr;
-            dpsi_x[ib] += (ang * gr_x + vr * ang_x);
-            dpsi_y[ib] += (ang * gr_y + vr * ang_y);
-            dpsi_z[ib] += (ang * gr_z + vr * ang_z);
+            psi[ib] += ang * vr * Phase; 
+            dpsi_x[ib] += (ang * gr_x + vr * ang_x) * Phase; 
+            dpsi_y[ib] += (ang * gr_y + vr * ang_y) * Phase; 
+            dpsi_z[ib] += (ang * gr_z + vr * ang_z) * Phase; 
             d2psi[ib] += (ang * (ctwo * drnloverr + d2phi[nl]) + ctwo * (gr_x * ang_x + gr_y * ang_y + gr_z * ang_z) +
-                vr * ylm_l[lm]);
+                vr * ylm_l[lm]) * Phase; 
           }
         }
       }
@@ -578,19 +599,34 @@ struct SoaAtomicBasisSet
   
   }
 
-
+ /** evaluate V
+  */
   template<typename LAT, typename T, typename PosType, typename VT>
-  inline void evaluateV(const LAT& lattice, const T r, const PosType& dr, VT* restrict psi)
+  inline void evaluateV(const LAT& lattice, const T r, const PosType& dr, VT* restrict psi,PosType Tv)
   {
     int TransX, TransY, TransZ;
 
     PosType dr_new;
     T r_new;
+
+#if not defined(QMC_COMPLEX)
+    const ValueType correctphase=1.0;
+#else
+
+    RealType phasearg = SuperTwist[0]*Tv[0]+SuperTwist[1]*Tv[1]+SuperTwist[2]*Tv[2]; 
+    RealType s, c;
+    sincos(-phasearg,&s,&c);
+    const ValueType correctphase(c,s);
+
+#endif
+
     RealType* restrict ylm_v = tempS.data(0);
     RealType* restrict phi_r = tempS.data(1);
-    //Phase_idx needs to be initialized at -1 as it has to be incremented first to comply with the if statement (r_new >=Rmax) 
+    
     for (size_t ib = 0; ib < BasisSetSize; ++ib)
       psi[ib] = 0;
+    //Phase_idx (iter) needs to be initialized at -1 as it has to be incremented first to comply with the if statement (r_new >=Rmax) 
+    int iter=-1;
     for (int i = 0; i <= PBCImages[0]; i++) //loop Translation over X
     {
       //Allows to increment cells from 0,1,-1,2,-2,3,-3 etc...
@@ -603,18 +639,22 @@ struct SoaAtomicBasisSet
         {
           //Allows to increment cells from 0,1,-1,2,-2,3,-3 etc...
           TransZ    = ((k % 2) * 2 - 1) * ((k + 1) / 2);
-          dr_new[0] = dr[0] + TransX * lattice.R(0, 0) + TransY * lattice.R(1, 0) + TransZ * lattice.R(2, 0);
-          dr_new[1] = dr[1] + TransX * lattice.R(0, 1) + TransY * lattice.R(1, 1) + TransZ * lattice.R(2, 1);
-          dr_new[2] = dr[2] + TransX * lattice.R(0, 2) + TransY * lattice.R(1, 2) + TransZ * lattice.R(2, 2);
+
+          dr_new[0] = dr[0] + (TransX * lattice.R(0, 0) + TransY * lattice.R(1, 0) + TransZ * lattice.R(2, 0));
+          dr_new[1] = dr[1] + (TransX * lattice.R(0, 1) + TransY * lattice.R(1, 1) + TransZ * lattice.R(2, 1));
+          dr_new[2] = dr[2] + (TransX * lattice.R(0, 2) + TransY * lattice.R(1, 2) + TransZ * lattice.R(2, 2));
 
           r_new = std::sqrt(dot(dr_new, dr_new));
+          iter++;
           if (r_new >= Rmax)
             continue;
 
           Ylm.evaluateV(-dr_new[0], -dr_new[1], -dr_new[2], ylm_v);
           MultiRnl->evaluate(r_new, phi_r);
+          ///Phase for PBC containing the phase for the nearest image displacement and the correction due to the Distance table. 
+          const ValueType Phase=periodic_image_phase_factors[iter] * correctphase;
           for (size_t ib = 0; ib < BasisSetSize; ++ib)
-            psi[ib] += ylm_v[LM[ib]] * phi_r[NL[ib]];
+            psi[ib] += ylm_v[LM[ib]] * phi_r[NL[ib]] * Phase; 
 
         }
       }
@@ -624,3 +664,4 @@ struct SoaAtomicBasisSet
 
 } // namespace qmcplusplus
 #endif
+
