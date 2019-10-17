@@ -52,7 +52,6 @@ void free_projection_walker_update(Wlk&& w, RealType dt, OMat&& overlap, Mat&& M
     ComplexType old_ovlp = work[3][i];
     ComplexType old_eloc = work[2][i]; 
     ComplexType eloc;
-    RealType scale=1.0;
     ComplexType ratioOverlaps = ComplexType(1.0,0.0);
     eloc = work[5][i]/dt;
     ComplexType factor = std::exp( -dt*( 0.5*( eloc + old_eloc ) - Eshift ));

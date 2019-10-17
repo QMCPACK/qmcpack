@@ -113,9 +113,8 @@ TEST_CASE("BSpline builder Jastrow J2", "[wavefunction]")
 
   xmlNodePtr jas1 = xmlFirstElementChild(root);
 
-  RadialJastrowBuilder jastrow(elec_, psi);
-  bool build_okay = jastrow.put(jas1);
-  REQUIRE(build_okay);
+  RadialJastrowBuilder jastrow(c, elec_);
+  psi.addComponent(jastrow.buildComponent(jas1), "RadialJastrow");
 
   WaveFunctionComponent* orb = psi.getOrbitals()[0];
 
@@ -347,9 +346,8 @@ TEST_CASE("BSpline builder Jastrow J1", "[wavefunction]")
 
   xmlNodePtr jas1 = xmlFirstElementChild(root);
 
-  RadialJastrowBuilder jastrow(elec_, psi, ions_);
-  bool build_okay = jastrow.put(jas1);
-  REQUIRE(build_okay);
+  RadialJastrowBuilder jastrow(c, elec_, ions_);
+  psi.addComponent(jastrow.buildComponent(jas1), "RadialJastrow");
 
   WaveFunctionComponent* orb = psi.getOrbitals()[0];
 
@@ -371,7 +369,6 @@ TEST_CASE("BSpline builder Jastrow J1", "[wavefunction]")
   QMCTraits::GradType gsource(0.0);
   TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM> grad_grad_source;
   TinyVector<ParticleSet::ParticleLaplacian_t, OHMMS_DIM> lapl_grad_source;
-  int nions  = ions_.getTotalNum();
   int nelecs = elec_.getTotalNum();
 
   for (int dim = 0; dim < OHMMS_DIM; dim++)
@@ -585,9 +582,8 @@ TEST_CASE("BSpline builder Jastrow J1", "[wavefunction]")
   xmlNodePtr jas2 = xmlFirstElementChild(root2);
 
   TrialWaveFunction psi2(c);
-  RadialJastrowBuilder jastrow2(elec_, psi2, ions_);
-  bool build_okay2 = jastrow2.put(jas2);
-  REQUIRE(build_okay2);
+  RadialJastrowBuilder jastrow2(c, elec_, ions_);
+  psi2.addComponent(jastrow2.buildComponent(jas2), "RadialJastrow");
 
   WaveFunctionComponent* orb2 = psi2.getOrbitals()[0];
 

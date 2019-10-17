@@ -88,7 +88,6 @@ void CompositeSPOSet::report()
   app_log() << "  components" << std::endl;
   for (int i = 0; i < components.size(); ++i)
   {
-    SPOSet& c = *components[i];
     app_log() << "    " << i << std::endl;
     components[i]->basic_report("      ");
   }

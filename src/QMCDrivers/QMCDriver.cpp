@@ -48,15 +48,15 @@ QMCDriver::QMCDriver(MCWalkerConfiguration& w,
                      WaveFunctionPool& ppool,
                      Communicate* comm)
     : MPIObjectBase(comm),
+      Estimators(0),
+      Traces(0),
       branchEngine(0),
       DriftModifier(0),
+      qmcNode(NULL),
       W(w),
       Psi(psi),
       H(h),
       psiPool(ppool),
-      Estimators(0),
-      Traces(0),
-      qmcNode(NULL),
       wOut(0)
 {
   ResetRandom  = false;
@@ -113,8 +113,12 @@ QMCDriver::QMCDriver(MCWalkerConfiguration& w,
   nSamplesPerThread = 0;
   m_param.add(nSamplesPerThread, "samplesperthread", "real");
   m_param.add(nSamplesPerThread, "dmcwalkersperthread", "real");
+ 
   nTargetPopulation = 0;
+  
   m_param.add(nTargetPopulation, "samples", "real");
+
+
   Tau = 0.1;
   //m_param.add(Tau,"timeStep","AU");
   m_param.add(Tau, "timestep", "AU");
@@ -378,6 +382,7 @@ void QMCDriver::addWalkers(int nwalkers)
     app_log() << "  Using the current " << W.getActiveWalkers() << " walkers." << std::endl;
   }
   setWalkerOffsets();
+
   ////update the global number of walkers
   ////int nw=W.getActiveWalkers();
   ////myComm->allreduce(nw);
@@ -512,13 +517,21 @@ bool QMCDriver::putQMCInfo(xmlNodePtr cur)
   if (!AppendRun)
     CurrentStep = 0;
 
+ 
+
+ 
+
+ 
   //if walkers are initialized via <mcwalkerset/>, use the existing one
+
+
   if (qmc_common.qmc_counter || qmc_common.is_restart)
   {
     app_log() << "Using existing walkers " << std::endl;
   }
   else
-  { //always reset the walkers
+  { 
+      app_log() << "Resetting walkers" << std::endl;
 #ifdef QMC_CUDA
     int nths(1);
 #else
@@ -539,7 +552,7 @@ bool QMCDriver::putQMCInfo(xmlNodePtr cur)
     addWalkers(ndiff);
   }
 
-  return (W.getActiveWalkers() > 0);
+   return (W.getActiveWalkers() > 0);
 }
 
 xmlNodePtr QMCDriver::getQMCNode()
@@ -566,5 +579,7 @@ xmlNodePtr QMCDriver::getQMCNode()
   getContent(CurrentStep, current_ptr);
   return newqmc;
 }
+
+         
 
 } // namespace qmcplusplus

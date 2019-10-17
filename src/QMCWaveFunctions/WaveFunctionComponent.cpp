@@ -27,9 +27,9 @@ WaveFunctionComponent::WaveFunctionComponent()
       UpdateMode(ORB_WALKER),
       LogValue(1.0),
       PhaseValue(0.0),
+      dPsi(0),
       ClassName("WaveFunctionComponent"),
-      Bytes_in_WFBuffer(0),
-      dPsi(0)
+      Bytes_in_WFBuffer(0)
 {
 }
 

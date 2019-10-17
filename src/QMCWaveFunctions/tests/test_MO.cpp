@@ -76,14 +76,12 @@ void test_He(bool transform)
     REQUIRE(okay);
     xmlNodePtr root = doc.getRoot();
 
-    TrialWaveFunction psi(c);
-
     WaveFunctionComponentBuilder::PtclPoolType particle_set_map;
     particle_set_map["e"]    = &elec;
     particle_set_map["ion0"] = &ions;
 
 
-    SPOSetBuilderFactory bf(elec, psi, particle_set_map);
+    SPOSetBuilderFactory bf(c, elec, particle_set_map);
 
     OhmmsXPathObject MO_base("//determinantset", doc.getXPathContext());
     REQUIRE(MO_base.size() == 1);
@@ -202,14 +200,12 @@ void test_Ne(bool transform)
     REQUIRE(okay);
     xmlNodePtr root = doc.getRoot();
 
-    TrialWaveFunction psi(c);
-
     WaveFunctionComponentBuilder::PtclPoolType particle_set_map;
     particle_set_map["e"]    = &elec;
     particle_set_map["ion0"] = &ions;
 
 
-    SPOSetBuilderFactory bf(elec, psi, particle_set_map);
+    SPOSetBuilderFactory bf(c, elec, particle_set_map);
 
     OhmmsXPathObject MO_base("//determinantset", doc.getXPathContext());
     REQUIRE(MO_base.size() == 1);
@@ -339,14 +335,11 @@ void test_HCN(bool transform)
     REQUIRE(okay);
     xmlNodePtr root2 = doc2.getRoot();
 
-    TrialWaveFunction psi(c);
-
     WaveFunctionComponentBuilder::PtclPoolType particle_set_map;
     particle_set_map["e"]    = &elec;
     particle_set_map["ion0"] = &ions;
 
-
-    SPOSetBuilderFactory bf(elec, psi, particle_set_map);
+    SPOSetBuilderFactory bf(c, elec, particle_set_map);
 
     OhmmsXPathObject MO_base("//determinantset", doc2.getXPathContext());
     REQUIRE(MO_base.size() == 1);

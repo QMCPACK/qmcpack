@@ -86,6 +86,8 @@ public:
    */
   std::vector<int> WalkerOffsets;
 
+  MCDataType<FullPrecRealType> EnsembleProperty;
+  
   // Data for GPU-acceleration via CUDA
   // These hold a list of pointers to the positions, gradients, and
   // laplacians for each walker.  These vectors .data() is often
@@ -366,6 +368,7 @@ public:
     for (unsigned int gid = 0; gid < groups(); gid++)
       if (last(gid) > iat)
         return last(gid) - first(gid);
+    return -1;
   }
 
   inline bool update_now(int iat)

@@ -122,7 +122,6 @@ inline SoaSphericalTensor<T>::SoaSphericalTensor(const int l_max, bool addsign) 
 {
   constexpr T czero(0);
   constexpr T cone(1);
-  const T pi     = 4.0 * std::atan(1.0);
   const int ntot = (Lmax + 1) * (Lmax + 1);
   cYlm.resize(ntot);
   cYlm = czero;
@@ -175,7 +174,6 @@ inline void SoaSphericalTensor<T>::evaluate_bare(T x, T y, T z, T* restrict Ylm)
   constexpr T cone(1);
   const T pi       = 4.0 * std::atan(1.0);
   const T omega    = 1.0 / std::sqrt(4.0 * pi);
-  const T sqrt2    = std::sqrt(2.0);
   constexpr T eps2 = std::numeric_limits<T>::epsilon() * std::numeric_limits<T>::epsilon();
 
   /*  Calculate r, cos(theta), sin(theta), cos(phi), sin(phi) from input

@@ -146,6 +146,47 @@ IF (NOT QMC_CUDA)
    MESSAGE("Skipping H4_ae adaptive optimizer tests because lmyengine interface was not built (BUILD_LMYENGINE_INTERFACE=0)")
   ENDIF(BUILD_LMYENGINE_INTERFACE)
 
+  LIST(APPEND H4_DESCENT_SCALARS "totenergy" "-2.047099 0.005")
+
+  QMC_RUN_AND_CHECK(short-H4-descent
+                    "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
+                    H4-descent
+                    optm-descent.xml
+                    16 1
+                    ${MP_SUCCESS}
+                    9 H4_DESCENT_SCALARS
+                    TRUE)
+
+  QMC_RUN_AND_CHECK(short-H4-descent
+                    "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
+                    H4-descent
+                    optm-descent.xml
+                    1 16
+                    ${MP_SUCCESS}
+                    9 H4_DESCENT_SCALARS
+                    TRUE)
+
+
+  LIST(APPEND H4_HYBRID_SCALARS "totenergy" "-2.140736 0.003")
+
+  QMC_RUN_AND_CHECK(short-H4-hybrid
+                    "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
+                    H4-hybrid
+                    optm-hybrid.xml
+                    16 1
+                    ${MP_SUCCESS}
+		    9 H4_HYBRID_SCALARS
+                    TRUE)
+
+  QMC_RUN_AND_CHECK(short-H4-hybrid
+                    "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
+                    H4-hybrid
+                    optm-hybrid.xml
+                    1 16
+                    ${MP_SUCCESS}
+		    9 H4_HYBRID_SCALARS
+                    TRUE)
+
   QMC_RUN_AND_CHECK(short-H4-opt-OneShiftOnly
                     "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
                     H4-OneShiftOnly

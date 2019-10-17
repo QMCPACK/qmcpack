@@ -209,9 +209,8 @@ TEST_CASE("Bare KE Pulay PBC", "[hamiltonian]")
 
   xmlNodePtr jas2 = xmlFirstElementChild(root);
 
-  RadialJastrowBuilder jastrow(elec, psi);
-  bool build_okay = jastrow.put(jas2);
-  REQUIRE(build_okay);
+  RadialJastrowBuilder jastrow(c, elec);
+  psi.addComponent(jastrow.buildComponent(jas2), "RadialJastrow");
   // Done with two body jastrow.
 
   //Add the one body jastrow.
@@ -230,9 +229,8 @@ TEST_CASE("Bare KE Pulay PBC", "[hamiltonian]")
 
   xmlNodePtr jas1 = xmlFirstElementChild(root);
 
-  RadialJastrowBuilder jastrow1bdy(elec, psi, ions);
-  bool build_okay2 = jastrow1bdy.put(jas1);
-  REQUIRE(build_okay2);
+  RadialJastrowBuilder jastrow1bdy(c, elec, ions);
+  psi.addComponent(jastrow1bdy.buildComponent(jas1), "RadialJastrow");
 
   const char* kexml = "<tmp> \
 </tmp> \

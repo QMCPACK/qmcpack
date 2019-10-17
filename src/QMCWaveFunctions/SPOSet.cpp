@@ -27,9 +27,9 @@
 namespace qmcplusplus
 {
 SPOSet::SPOSet(bool ion_deriv, bool optimizable)
-    : OrbitalSetSize(0),
-      ionDerivs(ion_deriv),
-      Optimizable(optimizable)
+    : ionDerivs(ion_deriv),
+      Optimizable(optimizable),
+      OrbitalSetSize(0)
 #if !defined(ENABLE_SOA)
       ,
       Identity(false),

@@ -26,7 +26,7 @@
 namespace qmcplusplus
 {
 EnergyDensityEstimator::EnergyDensityEstimator(PSPool& PSP, const std::string& defaultKE)
-    : psetpool(PSP), w_trace(0), Td_trace(0), Vd_trace(0), Vs_trace(0), Pdynamic(0), Pstatic(0)
+    : psetpool(PSP), Pdynamic(0), Pstatic(0), w_trace(0), Td_trace(0), Vd_trace(0), Vs_trace(0)
 {
   bool write = omp_get_thread_num() == 0;
   if (write)

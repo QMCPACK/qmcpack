@@ -32,19 +32,19 @@ struct WalkerReconfigurationMPI : public WalkerControlBase
   ///ending index of the local walkers
   int LastWalker;
   ///random number [0,1)
-  RealType UnitZeta;
+  FullPrecRealType UnitZeta;
   ///random number [0,1)/number of walkers
-  RealType DeltaStep;
+  FullPrecRealType DeltaStep;
   ///1/(total number of walkers)
-  RealType nwInv;
+  FullPrecRealType nwInv;
   ///the number of extra/missing walkers
   std::vector<IndexType> dN;
   //weight per walker
-  std::vector<RealType> wConf;
+  std::vector<FullPrecRealType> wConf;
   //accumulated weight [0,ip) for each ip
-  std::vector<RealType> wOffset;
+  std::vector<FullPrecRealType> wOffset;
   //local sum of the weights for each ip
-  std::vector<RealType> wSum;
+  std::vector<FullPrecRealType> wSum;
   //comb
   //vector<RealType> Zeta;
 
@@ -55,7 +55,7 @@ struct WalkerReconfigurationMPI : public WalkerControlBase
   WalkerReconfigurationMPI(Communicate* c = 0);
 
   /** perform branch and swap walkers as required */
-  int branch(int iter, MCWalkerConfiguration& W, RealType trigger);
+  int branch(int iter, MCWalkerConfiguration& W, FullPrecRealType trigger);
 
   /** return the surviving Walkers
    */

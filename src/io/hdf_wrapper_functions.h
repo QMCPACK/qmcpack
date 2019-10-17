@@ -95,7 +95,6 @@ template<typename T>
 inline bool checkShapeConsistency(hid_t grp, const std::string& aname, int rank, hsize_t* dims)
 {
   using TSpaceType = h5_space_type<T, 0>;
-  TSpaceType TSpace;
 
   std::vector<hsize_t> dims_in(rank);
   if(getDataShape<T>(grp, aname, dims_in))

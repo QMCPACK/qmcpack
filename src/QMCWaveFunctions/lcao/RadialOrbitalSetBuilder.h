@@ -169,12 +169,12 @@ private:
 
 template<typename COT>
 RadialOrbitalSetBuilder<COT>::RadialOrbitalSetBuilder(Communicate* comm, int radial_grid_size)
-    : Normalized(true),
+    : MPIObjectBase(comm),
+      Normalized(true),
       m_orbitals(nullptr),
       input_grid(nullptr),
-      m_rcut(-1.0),
-      MPIObjectBase(comm),
-      radial_grid_size_(radial_grid_size)
+      radial_grid_size_(radial_grid_size),
+      m_rcut(-1.0)
 {}
 
 template<typename COT>
@@ -333,7 +333,6 @@ bool RadialOrbitalSetBuilder<COT>::addRadialOrbital(xmlNodePtr cur,
   aAttrib.add(m_rcut, "rmax");
   aAttrib.add(dsname, "ds");
   aAttrib.put(cur);
-  int lastRnl = m_orbitals->RnlID.size();
   m_nlms      = nlms;
   if (radtype == "Gaussian" || radtype == "GTO")
   {
@@ -366,7 +365,6 @@ bool RadialOrbitalSetBuilder<COT>::addRadialOrbitalH5(hdf_archive& hin,
     hin.read(radtype, "type");
   myComm->bcast(radtype);
 
-  int lastRnl = m_orbitals->RnlID.size();
   m_nlms      = nlms;
   if (radtype == "Gaussian" || radtype == "GTO")
   {
@@ -416,7 +414,7 @@ void RadialOrbitalSetBuilder<COT>::addGaussianH5(hdf_archive& hin)
   //a class global variable even though it should apply here and
   //similar locations on a function by function basis.
   RealType r0 = find_cutoff(*gset, 100.);
-  m_rcut_safe = std::max(m_rcut_safe, r0);
+  m_rcut_safe = 6*std::max(m_rcut_safe, r0);
   radTemp.push_back(new A2NTransformer<RealType, gto_type>(gset));
   m_orbitals->RnlID.push_back(m_nlms);
 }
