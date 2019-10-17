@@ -62,7 +62,7 @@ private:
   ///Periodic Image Phase Factors. Correspond to the phase from the PBCImages. Computed only once.
   std::vector<ValueType> PeriodicImagePhaseFactors;
   ///Store Lattice parameters from HDF5 to use in PeriodicImagePhaseFactors
-  Matrix<double> Lattice; 
+  Tensor<double, 3> Lattice;
 
   /// Enable cusp correction
   bool doCuspCorrection;
