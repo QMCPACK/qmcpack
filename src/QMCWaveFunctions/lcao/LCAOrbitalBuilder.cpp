@@ -110,7 +110,6 @@ LCAOrbitalBuilder::LCAOrbitalBuilder(ParticleSet& els, ParticleSet& ions, Commun
   ClassName = "LCAOrbitalBuilder";
   ReportEngine PRE(ClassName, "createBasisSet");
 
-  Lattice.resize(3,3);
   std::string keyOpt("NMO");       // Numerical Molecular Orbital
   std::string transformOpt("yes"); // Numerical Molecular Orbital
   std::string cuspC("no");         // cusp correction
