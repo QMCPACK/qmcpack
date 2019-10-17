@@ -256,10 +256,8 @@ struct SoaAtomicBasisSet
 
     PosType dr_new;
     T r_new;
-    // T psi_new, dpsi_x_new, dpsi_y_new, dpsi_z_new,d2psi_new;
 
     constexpr T cone(1);
-    constexpr T ctwo(2);
 
     //one can assert the alignment
     RealType* restrict phi   = tempS.data(0);
@@ -288,9 +286,6 @@ struct SoaAtomicBasisSet
     const T* restrict ylm_yz = Ylm[8];
     auto* restrict dhpsi_zz = vgh.data(9) + offset;
     const T* restrict ylm_zz = Ylm[9];
-
-//    auto* restrict d2psi    = vgh.data(4) + offset;
-//    const T* restrict ylm_l = Ylm[4]; //lap
 
     for (size_t ib = 0; ib < BasisSetSize; ++ib)
     {
@@ -399,10 +394,8 @@ struct SoaAtomicBasisSet
 
     PosType dr_new;
     T r_new;
-    // T psi_new, dpsi_x_new, dpsi_y_new, dpsi_z_new,d2psi_new;
 
     constexpr T cone(1);
-    constexpr T ctwo(2);
 
     //one can assert the alignment
     RealType* restrict phi   = tempS.data(0);
@@ -454,7 +447,6 @@ struct SoaAtomicBasisSet
     auto* restrict dghpsi_zzz = vghgh.data(19) + offset;
     const T* restrict ylm_zzz = Ylm[19];
 
-//    auto* restrict d2psi    = vgh.data(4) + offset;
     for (size_t ib = 0; ib < BasisSetSize; ++ib)
     {
       psi[ib]    = 0;

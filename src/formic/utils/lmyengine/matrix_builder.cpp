@@ -29,11 +29,11 @@
 //
 //
 //////////////////////////////////////////////////////////////////////////////////////////////
-cqmc::engine::HamOvlpBuilderHD::HamOvlpBuilderHD(formic::Matrix<double> & der_rat, 
-                                                 formic::Matrix<double> & le_der,
-                                                 formic::Matrix<double> & ls_der,
-                                                 const std::vector<double> & vgs,
-                                                 const std::vector<double> & weight,
+cqmc::engine::HamOvlpBuilderHD::HamOvlpBuilderHD(formic::Matrix<double>& der_rat,
+                                                 formic::Matrix<double>& le_der,
+                                                 formic::Matrix<double>& ls_der,
+                                                 const std::vector<double>& vgs,
+                                                 const std::vector<double>& weight,
                                                  const double hd_shift,
                                                  const int num_params,
                                                  const int appro_degree,
@@ -43,27 +43,23 @@ cqmc::engine::HamOvlpBuilderHD::HamOvlpBuilderHD(formic::Matrix<double> & der_ra
                                                  const bool build_lm_matrix,
                                                  const bool ss_build,
                                                  const bool print_matrix)
-:_der_rat(der_rat),
-_le_der(le_der),
-_ls_der(ls_der),
-_vgs(vgs),
-_weight(weight),
-_hd_shift(hd_shift),
-_num_params(num_params),
-_appro_degree(appro_degree),
-_spam_use(spam_use),
-_ground_state(ground_state),
-_variance_correct(variance_correct),
-_build_lm_matrix(build_lm_matrix),
-_ss_build(ss_build),
-_print_matrix(print_matrix)
+    : _hd_shift(hd_shift),
+      _appro_degree(appro_degree),
+      _num_params(num_params),
+      _der_rat(der_rat),
+      _le_der(le_der),
+      _ls_der(ls_der),
+      _vgs(vgs),
+      _weight(weight),
+      _spam_use(spam_use),
+      _ground_state(ground_state),
+      _variance_correct(variance_correct),
+      _build_lm_matrix(build_lm_matrix),
+      _ss_build(ss_build),
+      _print_matrix(print_matrix)
 {
-  
   // number of threads
   int NumThreads = omp_get_max_threads();
-
-  // thread number 
-  int myThread = omp_get_thread_num();
 
   // check if matrix vector size matched the number of threads 
   _hmat_temp.resize(NumThreads);
@@ -80,7 +76,6 @@ _print_matrix(print_matrix)
     if ( _ss_build ) 
       _ssmat_temp[ip].reset(ndim, ndim, 0.0);
   }
-
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////
@@ -123,29 +118,6 @@ void cqmc::engine::HamOvlpBuilderHD::get_param(const double hd_shift,
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////
-/// \brief constructor used when we do not have derivative vectors stored in memory
-///
-///
-/////////////////////////////////////////////////////////////////////////////////////////////
-//cqmc::engine::HamOvlpBuilderHD::HamOvlpBuilderHD(const double hd_shift,
-//                                                 const bool ground_state,
-//                                                 const bool ss_build,
-//                                                 const bool print_matrix) 
-//:_hd_shift(hd_shift),
-//_ground_state(ground_state),
-//_ss_build(ss_build),
-//_print_matrix(print_matrix)
-//{
-//  
-//  // intialize derivative vectors
-//  formic::Matrix<double> der_rat(1, 1, 0.0) = _der_rat;
-//  formic::Matrix<double> le_der(1, 1, 0.0)  = _le_der;
-//  formic::Matrix<double> ls_der(1, 1, 0.0)  = _ls_der;
-//  std::vector<double> vgs(1, 1.0) = _vgs;
-//  std::vector<double> weight(1, 1.0) = _weight;
-//}
-
-/////////////////////////////////////////////////////////////////////////////////////////////
 // \brief add contribution to matrix from this sample
 //
 //
@@ -161,9 +133,6 @@ void cqmc::engine::HamOvlpBuilderHD::take_sample(std::vector<double> & der_rat_s
   
   // dimension of matrix 
   const int ndim = der_rat_samp.size();
-
-  // number of threads
-  int NumThreads = omp_get_max_threads();
 
   // thread number 
   int myThread = omp_get_thread_num();
@@ -224,17 +193,12 @@ void cqmc::engine::HamOvlpBuilderHD::take_sample(std::vector<double> & der_rat_s
 void cqmc::engine::HamOvlpBuilderHD::finish_sample(const double total_weight) 
 {
 
-  // get rank number and number of ranks 
   int my_rank = formic::mpi::rank(); 
-  int num_rank = formic::mpi::size();
 
   //std::cout << "netering matrix build finish_sample1" << std::endl;
 
   // get the number of threads 
   int NumThreads = omp_get_max_threads();
-
-  // get thread number 
-  int myThread = omp_get_thread_num();
 
   // sum over threads
   for (int ip = 1; ip < NumThreads; ip++) {
@@ -302,11 +266,7 @@ void cqmc::engine::HamOvlpBuilderHD::finish_sample(const double total_weight)
 void cqmc::engine::HamOvlpBuilderHD::MatrixBuild(std::ostream & output)
 {
 
-  // get rank number and number of ranks 
   int my_rank = formic::mpi::rank(); 
-  int num_rank = formic::mpi::size();
-  //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-  //MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
 
   // before computing the matrix, first combine bare derivative ratio and local energy derivative with respect to harmonic davidson shift 
   formic::Matrix<double> _hle_der;
@@ -620,11 +580,7 @@ void cqmc::engine::HamOvlpBuilderHD::convert_to_ind_var_form(const formic::VarDe
 ////////////////////////////////////////////////////////////////////////////////////
 void cqmc::engine::HamOvlpBuilderHD::d_inv_half_trans()
 {  
-  // get rank number and number of ranks 
   int my_rank = formic::mpi::rank();
-  int num_rank = formic::mpi::size();
-  //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-  //MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
 
   if (my_rank == 0) {
     // first get D^(-1/2) matrix 
@@ -652,11 +608,7 @@ void cqmc::engine::HamOvlpBuilderHD::d_inv_half_trans()
 ////////////////////////////////////////////////////////////////////////////////////
 void cqmc::engine::HamOvlpBuilderHD::proj_ground_out_fder()
 {
-  // get rank number and number of ranks 
   int my_rank = formic::mpi::rank();
-  int num_rank = formic::mpi::size();
-  //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-  //MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
 
   if ( my_rank == 0 ) {
     // get matrix dimension 
@@ -705,11 +657,7 @@ void cqmc::engine::HamOvlpBuilderHD::proj_ground_out_fder()
 formic::Matrix<double> cqmc::engine::HamOvlpBuilderHD::ovlp_pseudo_inv(const double threshold, std::ostream & fout) 
 {
   
-  // get rank number and number of ranks 
   int my_rank = formic::mpi::rank();
-  int num_rank = formic::mpi::size();
-  //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-  //MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
  
   // compute SVD on root process 
   formic::Matrix<double> u;
@@ -743,11 +691,7 @@ formic::Matrix<double> cqmc::engine::HamOvlpBuilderHD::ovlp_pseudo_inv(const dou
 /////////////////////////////////////////////////////////////////////////////////////////////
 void cqmc::engine::HamOvlpBuilderHD::derivative_analyze(std::ostream & fout)
 {
-  // get rank number and number of ranks 
   int my_rank = formic::mpi::rank();
-  int num_rank = formic::mpi::size();
-  //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-  //MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
 
   // analyze derivative vectors on root process
   if ( my_rank == 0 ) {

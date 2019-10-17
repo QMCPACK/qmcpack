@@ -34,7 +34,6 @@ bool eeI_JastrowBuilder::putkids(xmlNodePtr kids, J3type& J3)
   std::string jname = "JeeI";
   SpeciesSet& iSet  = sourcePtcl->getSpeciesSet();
   SpeciesSet& eSet  = targetPtcl.getSpeciesSet();
-  int numiSpecies   = iSet.getTotalNum();
   //read in xml
   while (kids != NULL)
   {
@@ -128,8 +127,6 @@ WaveFunctionComponent* eeI_JastrowBuilder::buildComponent(xmlNodePtr cur)
     tAttrib.add(ftype, "function");
     tAttrib.put(cur);
     SpeciesSet& iSet = sourcePtcl->getSpeciesSet();
-    SpeciesSet& eSet = targetPtcl.getSpeciesSet();
-    int numiSpecies  = iSet.getTotalNum();
     if (ftype == "polynomial")
     {
 #ifdef ENABLE_SOA

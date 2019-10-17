@@ -207,7 +207,7 @@ bool WaveFunctionFactory::addFermionTerm(xmlNodePtr cur)
   }
   else
     detbuilder = new SlaterDetBuilder(myComm, *targetPtcl, *targetPsi, ptclPool);
-  targetPsi->addComponent(detbuilder->buildComponent(cur), "electron-gas/PW");
+  targetPsi->addComponent(detbuilder->buildComponent(cur), "SlaterDet");
   addNode(detbuilder, cur);
   return true;
 }

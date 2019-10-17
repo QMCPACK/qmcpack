@@ -28,9 +28,9 @@ class RMCLocalEnergyEstimator : public ScalarEstimatorBase
 {
   int FirstHamiltonian;
   int SizeOfHamiltonians;
+  const QMCHamiltonian& refH;
   int NObs;
   int RMCSpecificTerms;
-  const QMCHamiltonian& refH;
 
 public:
   /** constructor

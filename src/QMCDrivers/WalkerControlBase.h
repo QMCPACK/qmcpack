@@ -94,7 +94,7 @@ public:
    *  WalkerID's are initialized by MCPopulation, SOC
    */
   void setWalkerID(MCPopulation& population);
-  
+
   /** take averages and writes to a file */
   void measureProperties(int iter);
 
@@ -123,7 +123,7 @@ public:
   int doNotBranch(int iter, MCPopulation& pop);
 
   /** sort Walkers between good and bad and prepare branching
-   *  
+   *
    *  not a sort changes internal state of walkers to copy and how many of each copy
    */
   int sortWalkers(MCWalkerConfiguration& W);
@@ -134,7 +134,7 @@ public:
     std::vector<int> copies_to_make;
     RefVector<MCPWalker> bad_walkers;
   };
-  
+
   /** create data structure needed to do population adjustment
    *
    *  refactored sortWalkers
@@ -148,7 +148,7 @@ public:
    *  but this is why MCPopulation is handed in.
    */
   int adjustPopulation(MCPopulation& pop, PopulationAdjustment& adjust);
-  
+
   /** apply per node limit Nmax and Nmin
    */
   int applyNmaxNmin(int current_population);
@@ -230,105 +230,10 @@ protected:
   bool write_release_nodes_;
   ///Use non-blocking isend/irecv
   bool use_nonblocking;
-  
+
   ///ensemble properties
   MCDataType<FullPrecRealType> ensemble_property_;
 
-
-
-
-  //     struct ForwardWalkingData
-  //     {
-  //       typedef TinyVector<float,DIM>       StoredPosType;
-  //       typedef ParticleAttrib<StoredPosType>       StoredPosVector;
-  //       long ID;
-  //       long ParentID;
-  //       StoredPosVector Pos;
-  //
-  //       inline ForwardWalkingData()
-  //       {
-  //       }
-  //
-  //       inline ForwardWalkingData(const Walker_t& a)
-  //       {
-  //         Pos.resize(a.R.size());
-  //         Pos = a.R;
-  //         ID = a.ID;
-  //         ParentID = a.ParentID;
-  //       }
-  //
-  //       inline ForwardWalkingData(const ForwardWalkingData& a)
-  //       {
-  //         Pos.resize(a.Pos.size());
-  //         Pos = a.Pos;
-  //         ID = a.ID;
-  //         ParentID = a.ParentID;
-  //       }
-  //
-  //       inline ForwardWalkingData(const int a)
-  //       {
-  //         Pos.resize(a);
-  //       }
-  //
-  //       inline ForwardWalkingData& operator=(const Walker_t& a) {
-  //         Pos.resize(a.R.size());
-  //         Pos = a.R;
-  //         ID = a.ID;
-  //         ParentID = a.ParentID;
-  //         return *this;
-  //       }
-  //
-  //       inline ForwardWalkingData& operator=(const ForwardWalkingData& a)
-  //       {
-  //         Pos.resize(a.Pos.size());
-  //         Pos = a.Pos;
-  //         ID = a.ID;
-  //         ParentID = a.ParentID;
-  //         return *this;
-  //       }
-  //
-  //       inline int SizeOf()
-  //       {
-  //         return sizeof(long)*2 + Pos.size()*DIM*sizeof(float);
-  //       }
-  //
-  //     };
-
-
-  //     typedef std::vector<ForwardWalkingData> ForwardWalkingConfiguration;
-  //     std::vector<ForwardWalkingConfiguration> ForwardWalkingHistory;
-  //     inline void storeConfigsForForwardWalking(MCWalkerConfiguration& W)
-  //     {
-  //       std::vector<ForwardWalkingData> ForwardWalkingHere;
-  //
-  //       for(std::vector<Walker_t*>::iterator Wit(W.begin()); Wit != W.end(); Wit++ )
-  //       {
-  //         ForwardWalkingData fwhere( *(*Wit) );
-  //         ForwardWalkingHere.push_back(fwhere);
-  //       }
-  //
-  //       ForwardWalkingHistory.push_back(ForwardWalkingHere);
-  //     }
-  //
-  //     inline void clearConfigsForForwardWalking()
-  //     {
-  //       ForwardWalkingHistory.clear();
-  //     }
-  //
-  //     inline int sizeOfConfigsForForwardWalking()
-  //     {
-  //       int szeFW(0);
-  //       int singleSize = ForwardWalkingHistory[0][0].SizeOf();
-  //       for(int i=0;i<ForwardWalkingHistory.size();i++) szeFW += ForwardWalkingHistory[i].size() * singleSize;
-  //       return szeFW;
-  //     }
-  //
-  //     inline void layoutOfConfigsForForwardWalking(std::vector<int>& returnVal)
-  //     {
-  //       returnVal.resize(ForwardWalkingHistory.size()+1,0);
-  //       returnVal[0]=0;
-  //       for(int i=0;i<ForwardWalkingHistory.size();i++) returnVal[i+1]=ForwardWalkingHistory[i].size();
-  //     }
 };
 
 } // namespace qmcplusplus

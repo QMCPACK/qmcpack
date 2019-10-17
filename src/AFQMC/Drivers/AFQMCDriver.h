@@ -28,15 +28,15 @@ class AFQMCDriver: public AFQMCInfo
         Wavefunction& wfn_, Propagator& prpg_, EstimatorHandler& estim_):
                 AFQMCInfo(info),
 		globalComm(comm),
-		project_title(title),
 		m_series(mser),
+		project_title(title),
+                block0(blk0),
+		step0(stp0),
                 wfn0(wfn_),
 		prop0(prpg_),
 		estim0(estim_),
-                block0(blk0),
-		step0(stp0),
-		Eshift(eshft_),
-                weight_reset_period(0.0)
+                weight_reset_period(0.0),
+		Eshift(eshft_)
     {
       name = "AFQMCDriver";
 

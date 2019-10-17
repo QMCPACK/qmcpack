@@ -177,8 +177,9 @@ void VMC::resetRun()
       Rng[ip] = new FakeRandom();
 #else
       Rng[ip] = new RandomGenerator_t(*(RandomNumberControl::Children[ip]));
-      hClones[ip]->setRandomGenerator(Rng[ip]);
 #endif
+      hClones[ip]->setRandomGenerator(Rng[ip]);
+
       if (qmc_driver_mode[QMC_UPDATE_MODE])
       {
         Movers[ip] = new VMCUpdatePbyP(*wClones[ip], *psiClones[ip], *hClones[ip], *Rng[ip]);

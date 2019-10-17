@@ -48,15 +48,15 @@ QMCDriver::QMCDriver(MCWalkerConfiguration& w,
                      WaveFunctionPool& ppool,
                      Communicate* comm)
     : MPIObjectBase(comm),
+      Estimators(0),
+      Traces(0),
       branchEngine(0),
       DriftModifier(0),
+      qmcNode(NULL),
       W(w),
       Psi(psi),
       H(h),
       psiPool(ppool),
-      Estimators(0),
-      Traces(0),
-      qmcNode(NULL),
       wOut(0)
 {
   ResetRandom  = false;
@@ -579,5 +579,7 @@ xmlNodePtr QMCDriver::getQMCNode()
   getContent(CurrentStep, current_ptr);
   return newqmc;
 }
+
+         
 
 } // namespace qmcplusplus

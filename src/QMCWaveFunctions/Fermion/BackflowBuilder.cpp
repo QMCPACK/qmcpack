@@ -38,13 +38,12 @@
 namespace qmcplusplus
 {
 BackflowBuilder::BackflowBuilder(ParticleSet& els, PtclPoolType& pool)
-    : targetPtcl(els), ptclPool(pool), BFTrans(nullptr), cutOff(-1.0)
+    : cutOff(1.0), targetPtcl(els), ptclPool(pool), BFTrans(0)
 {
 }
 
 BackflowTransformation* BackflowBuilder::buildBackflowTransformation(xmlNodePtr cur)
 {
-  bool success       = true;
   xmlNodePtr curRoot = cur;
   std::string cname;
   BFTrans = new BackflowTransformation(targetPtcl);

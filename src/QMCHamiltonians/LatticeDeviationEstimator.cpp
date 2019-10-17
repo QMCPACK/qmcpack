@@ -20,17 +20,17 @@ LatticeDeviationEstimator::LatticeDeviationEstimator(ParticleSet& P,
                                                      const std::string& sgroup_in)
     : tspecies(P.getSpeciesSet()),
       sspecies(sP.getSpeciesSet()),
-      spset(sP),
       tpset(P),
+      spset(sP),
       tgroup(tgroup_in),
       sgroup(sgroup_in),
-#ifdef ENABLE_SOA
-      myTableID_(P.addTable(sP, DT_SOA)),
-#else
-      myTableID_(P.addTable(sP, DT_AOS)),
-#endif
       hdf5_out(false),
-      per_xyz(false)
+      per_xyz(false),
+#ifdef ENABLE_SOA
+      myTableID_(P.addTable(sP, DT_SOA))
+#else
+      myTableID_(P.addTable(sP, DT_AOS))
+#endif
 {
   // calculate number of source particles to use as lattice sites
   int src_species_id = sspecies.findSpecies(sgroup);

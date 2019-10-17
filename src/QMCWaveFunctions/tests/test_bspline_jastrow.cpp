@@ -369,7 +369,6 @@ TEST_CASE("BSpline builder Jastrow J1", "[wavefunction]")
   QMCTraits::GradType gsource(0.0);
   TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM> grad_grad_source;
   TinyVector<ParticleSet::ParticleLaplacian_t, OHMMS_DIM> lapl_grad_source;
-  int nions  = ions_.getTotalNum();
   int nelecs = elec_.getTotalNum();
 
   for (int dim = 0; dim < OHMMS_DIM; dim++)

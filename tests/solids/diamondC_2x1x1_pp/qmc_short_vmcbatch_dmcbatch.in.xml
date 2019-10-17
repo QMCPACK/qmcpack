@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <simulation>
-   <project id="qmc_short" series="0">
+   <project id="qmc_short_vmcbatch_dmcbatch" series="0">
       <application name="qmcapp" role="molecu" class="serial" version="1.0"/>
    </project>
    <qmcsystem>
@@ -79,13 +79,13 @@
          <pairpot type="pseudo" name="PseudoPot" source="ion0" wavefunction="psi0" format="xml">
             <pseudo elementType="C" href="C.BFD.xml"/>
          </pairpot>
-         <estimator type="flux" name="Flux"/>
+         <!-- <estimator type="flux" name="Flux"/> -->
       </hamiltonian>
-    </qmcsystem>
-    <qmc method="vmc_batch" move="pbyp">
+   </qmcsystem>
+
+   <qmc method="vmc_batch" move="pbyp">
      <estimator name="LocalEnergy" hdf5="no"/>
-     <parameter name="crowds"> 8 </parameter>
-     <parameter name="walkers">    32 </parameter>
+     <parameter name="walkers">    80 </parameter>
      <parameter name="substeps">  1 </parameter>
      <parameter name="warmupSteps">  100 </parameter>
      <parameter name="steps">  1 </parameter>
@@ -93,13 +93,15 @@
      <parameter name="timestep">  1.0 </parameter>
      <parameter name="usedrift">   no </parameter>
    </qmc>
-   <qmc method="dmc_batch" move="pbyp">
-     <parameter name="crowds"> 8 </parameter>
-      <parameter name="walkers"             >    32              </parameter>
-      <parameter name="blocks"              >    10            </parameter>
-      <parameter name="steps"               >    2.0             </parameter>
-      <parameter name="subSteps"            >    2               </parameter>
-      <parameter name="timestep"            >    0.3             </parameter>
-      <parameter name="warmupSteps"         >    100             </parameter>
+   <qmc method="dmc_batch" move="pbyp" checkpoint="-1">
+     <estimator name="LocalEnergy" hdf5="no"/>
+     <parameter name="walkers"> 80 </parameter>
+     <parameter name="reconfiguration">   no </parameter>
+     <parameter name="warmupSteps">  100 </parameter>
+     <parameter name="timestep">  0.005 </parameter>
+     <parameter name="steps">   100 </parameter>
+     <parameter name="blocks">  25 </parameter>
+     <parameter name="nonlocalmoves">  no </parameter>
    </qmc>
+
 </simulation>

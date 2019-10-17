@@ -55,6 +55,7 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
   ///Global Coordinate of Supertwist read from HDF5
   PosType SuperTwist;
 
+
   /** container to store the offsets of the basis functions
    *
    * the number of basis states for center J is BasisOffset[J+1]-Basis[J]

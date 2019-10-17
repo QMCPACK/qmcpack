@@ -76,8 +76,8 @@ SimpleFixedNodeBranch::SimpleFixedNodeBranch(const SimpleFixedNodeBranch& abranc
       iParam(abranch.iParam),
       vParam(abranch.vParam),
       MyEstimator(0),
-      sParam(abranch.sParam),
-      branching_cutoff_scheme(abranch.branching_cutoff_scheme)
+      branching_cutoff_scheme(abranch.branching_cutoff_scheme),
+      sParam(abranch.sParam)
 {
   registerParameters();
   reset();
@@ -462,7 +462,7 @@ void SimpleFixedNodeBranch::branch(int iter, UPtrVector<Crowd>& crowds,  MCPopul
   RefVector<MCPWalker> walkers(convertUPtrToRefVector(population.get_walkers()));
 
   FullPrecRealType pop_now;
-  if (false) // && BranchMode[B_DMCSTAGE] || iter)
+  if (BranchMode[B_DMCSTAGE] || iter)
     pop_now = WalkerController->branch(iter, population, 0.1);
   else
     pop_now = WalkerController->doNotBranch(iter, population); //do not branch for the first step of a warmup
@@ -861,6 +861,64 @@ void SimpleFixedNodeBranch::checkParameters(const int global_walkers, RefVector<
   }
   app_log() << o.str() << std::endl;
   app_log().flush();
+}
+
+void SimpleFixedNodeBranch::finalize(const int global_walkers, RefVector<MCPWalker>& walkers)
+{
+  std::ostringstream o;
+  if (WalkerController)
+  {
+    o << "====================================================";
+    o << "\n  SimpleFixedNodeBranch::finalize after a DMC block";
+    o << "\n    QMC counter                   = " << iParam[B_COUNTER];
+    o << "\n    time step                     = " << vParam[B_TAU];
+    o << "\n    effective time step           = " << vParam[B_TAUEFF];
+    o << "\n    trial energy                  = " << vParam[B_ETRIAL];
+    o << "\n    reference energy              = " << vParam[B_EREF];
+    o << "\n    reference variance            = " << vParam[B_SIGMA2];
+    o << "\n    target walkers                = " << iParam[B_TARGETWALKERS];
+    o << "\n    branch cutoff                 = " << vParam[B_BRANCHCUTOFF] << " " << vParam[B_BRANCHMAX];
+    o << "\n    Max and minimum walkers per node= " << iParam[B_MAXWALKERS] << " " << iParam[B_MINWALKERS];
+    o << "\n    Feedback                      = " << vParam[B_FEEDBACK];
+    o << "\n    QMC Status (BranchMode)       = " << BranchMode;
+    o << "\n====================================================";
+  }
+  //running RMC
+  else if (BranchMode[B_RMC])
+  {
+    o << "====================================================";
+    o << "\n  SimpleFixedNodeBranch::finalize after a RMC block";
+    o << "\n    QMC counter                   = " << iParam[B_COUNTER];
+    o << "\n    time step                     = " << vParam[B_TAU];
+    o << "\n    effective time step           = " << vParam[B_TAUEFF];
+    o << "\n    reference energy              = " << vParam[B_EREF];
+    o << "\n    reference variance            = " << vParam[B_SIGMA2];
+    o << "\n    cutoff energy                 = " << vParam[B_BRANCHCUTOFF] << " " << vParam[B_BRANCHMAX];
+    o << "\n    QMC Status (BranchMode)       = " << BranchMode;
+    o << "\n====================================================";
+  }
+  else
+  {
+    //running VMC
+    FullPrecRealType e, sigma2;
+    //MyEstimator->getEnergyAndWeight(e,w,sigma2);
+    MyEstimator->getCurrentStatistics(global_walkers, walkers , e, sigma2);
+    vParam[B_ETRIAL] = vParam[B_EREF] = e;
+    vParam[B_SIGMA2]                  = sigma2;
+    //this is just to avoid diving by n-1  == 0
+    EnergyHist(vParam[B_EREF]);
+    //add Eref to the DMCEnergyHistory
+    //DMCEnergyHist(vParam[B_EREF]);
+    o << "====================================================";
+    o << "\n  SimpleFixedNodeBranch::finalize after a VMC block";
+    o << "\n    QMC counter        = " << iParam[B_COUNTER];
+    o << "\n    time step          = " << vParam[B_TAU];
+    o << "\n    reference energy   = " << vParam[B_EREF];
+    o << "\n    reference variance = " << vParam[B_SIGMA2];
+    o << "\n====================================================";
+  }
+  app_log() << o.str() << std::endl;
+  write(RootName, true);
 }
 
 void SimpleFixedNodeBranch::finalize(MCWalkerConfiguration& w)

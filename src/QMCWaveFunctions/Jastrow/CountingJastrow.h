@@ -113,7 +113,7 @@ public:
 
   void resetParameters(const opt_variables_type& active)
   {
-    int ia, I, IJ, JI;
+    int ia, IJ, JI;
     std::string id;
     myVars.getIndex(active);
     for (int i = 0; i < myVars.size(); ++i)

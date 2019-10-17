@@ -166,7 +166,7 @@ MCPopulation::MCPWalker& MCPopulation::spawnWalker()
 {
   ++num_local_walkers_;
   auto it_walkers = walkers_.begin();
-  int walker_index;
+  int walker_index = 0;
   while (it_walkers != walkers_.end())
   {
     if (*it_walkers == nullptr)

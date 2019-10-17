@@ -1,45 +1,47 @@
+######################################################################
+# CMake version and policies
+######################################################################
+CMAKE_MINIMUM_REQUIRED(VERSION 3.6.0)
+
+cmake_policy(SET CMP0003 NEW)
+IF(NOT $ENV{CRAYPE_VERSION} MATCHES ".")
+  cmake_policy(SET CMP0056 NEW)
+  # This policy insures that the CMAKE_EXE_LINKER_FLAGS of the calling project
+  # are used in try_compile test cmake projects.
+  # CHECK_CXX_SOURCE_COMPILES and others depend on try_compile
+endif(NOT $ENV{CRAYPE_VERSION} MATCHES ".")
+IF(CMAKE_GENERATOR MATCHES "Ninja")
+  cmake_policy(SET CMP0058 NEW)
+ENDIF(CMAKE_GENERATOR MATCHES "Ninja")
+# CMake find_package will use <PackageName>_ROOT CMake variable
+# and environment variable in search path.
+# various Find<Package>.cmake modules may not follow this policy
+IF(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.12.0")
+  cmake_policy(SET CMP0074 NEW)
+ENDIF(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.12.0")
+
+######################################################################
+# QMCPACK
+######################################################################
 PROJECT(qmcpack)
 
-
-#####################################################
-CMAKE_MINIMUM_REQUIRED(VERSION 3.6.0)
-IF(COMMAND cmake_policy)
-  cmake_policy(SET CMP0003 NEW)
-  IF (COMPILING_ON_BGQ)
-    # On BG/Q, the HDF libraries variable includes some supporting shared libraries
-    # such as libm.so.  With the old behavior of CMP0060, these were converted
-    # to -lm for the linker, which then correctly selects the static version.
-    # With the new behavior of CMP0060, the form of the libraries are left alone
-    # on the link line (eg. /usr/lib64/libm.so), and this causes a linker error
-    # because shared libraries are not allowed with static linking.
-    cmake_policy(SET CMP0060 OLD)
-  ENDIF()
-  IF(NOT $ENV{CRAYPE_VERSION} MATCHES ".")
-    cmake_policy(SET CMP0056 NEW)
-    # This policy insures that the CMAKE_EXE_LINKER_FLAGS of the calling project
-    # are used in try_compile test cmake projects.
-    # CHECK_CXX_SOURCE_COMPILES and others depend on try_compile
-  endif(NOT $ENV{CRAYPE_VERSION} MATCHES ".")
-  IF(CMAKE_GENERATOR MATCHES "Ninja")
-    cmake_policy(SET CMP0058 NEW)
-  ENDIF(CMAKE_GENERATOR MATCHES "Ninja")
-  # CMake find_package will use <PackageName>_ROOT CMake variable
-  # and environment variable in search path.
-  # various Find<Package>.cmake modules may not follow this policy
-  IF(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.12.0") 
-    cmake_policy(SET CMP0074 NEW)
-  ENDIF(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.12.0") 
-ENDIF(COMMAND cmake_policy)
-
-
-######################################################################
-# Version
-######################################################################
 SET(QMCPACK_VERSION_MAJOR 3)
 SET(QMCPACK_VERSION_MINOR 8)
 SET(QMCPACK_VERSION_PATCH 9)
 SET(QMCPACK_VERSION "${QMCPACK_VERSION_MAJOR}.${QMCPACK_VERSION_MINOR}.${QMCPACK_VERSION_PATCH}")
 
+IF (COMPILING_ON_BGQ)
+  # YL: Put this after PROJECT(qmcpack) because COMPILING_ON_BGQ is defined
+  # in BGQ toolchain file which is loaded by PROJECT().
+  # The following issue probably affect all static linking machines.
+  # MD: On BG/Q, the HDF libraries variable includes some supporting shared libraries
+  # such as libm.so.  With the old behavior of CMP0060, these were converted
+  # to -lm for the linker, which then correctly selects the static version.
+  # With the new behavior of CMP0060, the form of the libraries are left alone
+  # on the link line (eg. /usr/lib64/libm.so), and this causes a linker error
+  # because shared libraries are not allowed with static linking.
+  cmake_policy(SET CMP0060 OLD)
+ENDIF()
 
 ######################################################################
 # Verify QE executables present if QE_BIN specified
@@ -604,12 +606,6 @@ IF(HDF5_FOUND)
     ENDIF()
   ENDIF()
   SET(QMC_UTIL_LIBS ${QMC_UTIL_LIBS} ${HDF5_LIBRARIES})
-  if(ZLIB_LIBRARY)
-    SET(QMC_UTIL_LIBS ${QMC_UTIL_LIBS} ${ZLIB_LIBRARY})
-  endif(ZLIB_LIBRARY)
-  #IF(SZLIB_FOUND)
-  #  SET(QMC_UTIL_LIBS ${QMC_UTIL_LIBS} ${SZLIB_LIBRARIES})
-  #ENDIF(SZLIB_FOUND)
   IF(HDF5_IS_PARALLEL)
     IF(ENABLE_PHDF5)
       MESSAGE(STATUS "Using HDF5 parallel collective I/O")

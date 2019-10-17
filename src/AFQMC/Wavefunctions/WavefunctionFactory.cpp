@@ -319,7 +319,6 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop, TaskGroup_& TGwf
     std::vector<PsiT_Matrix> PsiT_MO;
     ph_excitations<int,ComplexType> abij = read_ph_wavefunction(in,ndets_to_read,walker_type,
                   TGwfn.Node(),NMO,NAEA,NAEB,PsiT_MO);
-    int NEL = (walker_type==NONCOLLINEAR)?(NAEA+NAEB):NAEA;
     int N_ = (walker_type==NONCOLLINEAR)?2*NMO:NMO;
     if(wfn_type == "occ") {
       //build PsiT_MO
@@ -454,7 +453,6 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop, TaskGroup_& TGwf
       }
     }
 */
-    WALKER_TYPES reference_type = (PsiT.size()==1?CLOSED:COLLINEAR);
     // is PureSD actually faster??? CHECK!!!
     // NOTE: For UHF reference, treat HOps as a 2 determinant wavefunction of a
     //        CLOSED walker type. This way you can treat alpha/beta sectors independently in
@@ -625,7 +623,7 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop, TaskGroup_& TGwfn
     recompute_ci = true;
 
   AFQMCInfo& AFinfo = InfoMap[info];
-  ValueType NCE;
+  ValueType NCE = 0.0;
 
   int NMO = AFinfo.NMO;
   int NAEA = AFinfo.NAEA;
@@ -664,7 +662,6 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop, TaskGroup_& TGwfn
       APP_ABORT("");
     }
     std::vector<ComplexType> ci;
-    ValueType NCE = 0.0;
 
     // Read common trial wavefunction input options.
     getCommonInput(dump, NMO, NAEA, NAEB, ndets_to_read, ci,
@@ -752,7 +749,6 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop, TaskGroup_& TGwfn
     computeVariationalEnergyPHMSD(TGwfn, h, occs, coeffs, ndets_to_read, NAEA, NAEB, NMO, recompute_ci);
     // 3. Construct Structures.
     ph_excitations<int,ComplexType> abij = build_ph_struct(coeffs, occs, ndets_to_read, TGwfn.Node(), NMO, NAEA, NAEB);
-    int NEL = (walker_type==NONCOLLINEAR)?(NAEA+NAEB):NAEA;
     int N_ = (walker_type==NONCOLLINEAR)?2*NMO:NMO;
     if(wfn_type == "occ") {
       //build PsiT_MO
@@ -861,7 +857,6 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop, TaskGroup_& TGwfn
     }
     TGwfn.node_barrier();
 
-    WALKER_TYPES reference_type = (PsiT.size()==1?CLOSED:COLLINEAR);
     // is PureSD actually faster??? CHECK!!!
     // NOTE: For UHF reference, treat HOps as a 2 determinant wavefunction of a
     //        CLOSED walker type. This way you can treat alpha/beta sectors independently in

@@ -67,7 +67,7 @@ struct CuspCorrectionParameters
   /// Flag to indicate the correction should be recalculated
   int redo;
 
-  CuspCorrectionParameters() : Rc(0.0), C(0.0), sg(1.0), redo(0), alpha(0.0) {}
+  CuspCorrectionParameters() : Rc(0.0), C(0.0), sg(1.0), alpha(0.0), redo(0) {}
 };
 
 
@@ -127,12 +127,6 @@ public:
   }
 
 private:
-  /// Index of atomic center
-  int curCenter;
-
-  /// Index of orbital
-  int curOrb;
-
   /// Temporary storage for real wavefunction values
   ValueVector_t val1;
   GradVector_t grad1;
@@ -142,6 +136,12 @@ private:
   ParticleSet* targetPtcl;
   /// source ParticleSet
   ParticleSet* sourcePtcl;
+
+  /// Index of orbital
+  int curOrb;
+
+  /// Index of atomic center
+  int curCenter;
 
   SPOSetPtr Psi1;
 };

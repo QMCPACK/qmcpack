@@ -19,7 +19,7 @@
 namespace qmcplusplus
 {
 ACForce::ACForce(ParticleSet& source, ParticleSet& target, TrialWaveFunction& psi_in, QMCHamiltonian& H)
-    : FirstForceIndex(-1), ions(source), elns(target), psi(psi_in), ham(H), Nions(0)
+    : ions(source), elns(target), psi(psi_in), ham(H), FirstForceIndex(-1), Nions(0)
 {
   prefix = "ACForce";
   myName = prefix;
