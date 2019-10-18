@@ -100,8 +100,6 @@ TEST_CASE("lattice gaussian", "[wavefunction]")
   // initialize SK
   elec_.createSK();
 
-  TrialWaveFunction psi(c);
-
   const char* particles = "<tmp> \
   <ionwf name=\"ionwf\" source=\"ion\" width=\"0.5 0.5\"/> \
 </tmp> \
