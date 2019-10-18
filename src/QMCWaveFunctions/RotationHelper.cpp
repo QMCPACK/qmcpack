@@ -1,5 +1,17 @@
+//////////////////////////////////////////////////////////////////////////////////////
+//// This file is distributed under the University of Illinois/NCSA Open Source License.
+//// See LICENSE file in top directory for details.
+////
+//// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+////
+//// File developed by: Sergio D. Pineda Flores, sergio_pinedaflores@berkeley.edu, University of California, Berkeley
+////                    Eric Neuscamman, eneuscamman@berkeley.edu, University of California, Berkeley
+////
+//// File created by: Sergio D. Pineda Flores, sergio_pinedaflores@berkeley.edu, University of California, Berkeley
+////////////////////////////////////////////////////////////////////////////////////////
 #include "QMCWaveFunctions/RotationHelper.h"
 #include <Numerics/MatrixOperators.h>
+#include "Numerics/DeterminantOperators.h"
 #include "Numerics/OhmmsBlas.h"
 
 
@@ -16,7 +28,6 @@ RotationHelper::~RotationHelper() {}
 
 void RotationHelper::buildOptVariables(const size_t& nel)
 {
-//  Phi->buildOptVariables(nel);
 #if !defined(QMC_COMPLEX)
   const size_t nmo = Phi->getOrbitalSetSize();
 

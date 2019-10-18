@@ -106,7 +106,7 @@ public:
     }
     const T cone(1);
     const T czero(0);
-    const int norb     = Ainv.cols();
+    const int norb     = Ainv.rows();
     const int lda_Binv = Binv.cols();
     // save Ainv[rowchanged] to invRow
     std::copy_n(Ainv[rowchanged], norb, invRow.data());
