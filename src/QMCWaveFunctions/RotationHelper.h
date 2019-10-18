@@ -44,6 +44,9 @@ public:
 
   bool IsCloned;
 
+  /// the number of electrons of the majority spin
+  size_t nel_major_;
+
   SPOSet* makeClone() const;
 
   // myG_temp (myL_temp) is the Gradient (Laplacian) value of of the Determinant part of the wfn
@@ -62,7 +65,7 @@ public:
 
 
   // Single Slater creation
-  void buildOptVariables(const size_t& nel);
+  void buildOptVariables(const size_t nel);
   // For the MSD case rotations must be created in MultiSlaterFast class
   void buildOptVariables(const std::vector<std::pair<int, int>>& rotations);
 

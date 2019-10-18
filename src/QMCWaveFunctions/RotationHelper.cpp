@@ -18,24 +18,24 @@
 namespace qmcplusplus
 {
 RotationHelper::RotationHelper(SPOSet* spos)
-    : SPOSet(spos->hasIonDerivs(), true), Phi(spos), params_supplied(false), IsCloned(false)
+    : SPOSet(spos->hasIonDerivs(), true), Phi(spos), params_supplied(false), IsCloned(false), nel_major_(0)
 {
   className      = "RotationHelper";
-  OrbitalSetSize = 0;
+  OrbitalSetSize = Phi->getOrbitalSetSize();
 }
 
 RotationHelper::~RotationHelper() {}
 
-void RotationHelper::buildOptVariables(const size_t& nel)
+void RotationHelper::buildOptVariables(const size_t nel)
 {
 #if !defined(QMC_COMPLEX)
   /* Only rebuild optimized variables if more after-rotation orbitals are needed
    * Consider ROHF, there is only one set of SPO for both spin up and down Nup > Ndown.
-   * OrbitalSetSize will be set Nup.
+   * nel_major_ will be set Nup.
    */
-  if (nel > OrbitalSetSize)
+  if (nel > nel_major_)
   {
-    OrbitalSetSize = nel;
+    nel_major_ = nel;
 
     const size_t nmo = Phi->getOrbitalSetSize();
 
