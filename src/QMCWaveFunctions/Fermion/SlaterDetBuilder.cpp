@@ -607,7 +607,6 @@ bool SlaterDetBuilder::createMSDFast(MultiSlaterDeterminantFast* multiSD, xmlNod
   if (HDF5Path != "")
   {
     app_log() << "Found Multideterminants in H5 File" << std::endl;
-//    #ifndef QMC_COMPLEX
     success = readDetListH5(cur,
                             uniqueConfg_up,
                             uniqueConfg_dn,
@@ -618,9 +617,6 @@ bool SlaterDetBuilder::createMSDFast(MultiSlaterDeterminantFast* multiSD, xmlNod
                             optimizeCI,
                             nels_up,
                             nels_dn);
-//     #else
-//      APP_ABORT("Build Multideterminant in H5 File is not implemented for complex CI coefficients");
-//     #endif
   }
   else
     success = readDetList(cur,
@@ -1558,7 +1554,6 @@ bool SlaterDetBuilder::readDetListH5(xmlNodePtr cur,
   std::unordered_map<std::string, int> MyMapDn;
 
   app_log() << " Sorting unique CIs" << std::endl;
-  ///WARNING!!!!! WE ARE SORTING COMPLEX NUMBERS!!!! I DO NOT KNOW WHAT THIS CODE MEANS!!!
   for (int ni = 0; ni < ndets; ni++)
   {
     if (std::abs(CIcoeff[ni]) < cutoff)
