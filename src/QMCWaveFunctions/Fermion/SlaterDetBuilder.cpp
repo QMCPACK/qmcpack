@@ -293,7 +293,8 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
         app_log() << "Creating base determinant (up) for MSD expansion. \n";
         up_det = new MultiDiracDeterminant((SPOSetPtr)spomap.find(spo_alpha)->second, 0);
         app_log() << "Creating base determinant (down) for MSD expansion. \n";
-        dn_det               = new MultiDiracDeterminant((SPOSetPtr)spomap.find(spo_beta)->second, 1);
+        dn_det = new MultiDiracDeterminant((SPOSetPtr)spomap.find(spo_beta)->second, 1);
+
         multislaterdetfast_0 = new MultiSlaterDeterminantFast(targetPtcl, up_det, dn_det);
         success              = createMSDFast(multislaterdetfast_0, cur);
       }
