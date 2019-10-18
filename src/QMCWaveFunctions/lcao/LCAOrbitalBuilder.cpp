@@ -705,9 +705,21 @@ bool LCAOrbitalBuilder::putPBCFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
   spo.setIdentity(false);
   hdf_archive hin(myComm);
 
-  xmlNodePtr curtemp = coeff_ptr->parent->parent->parent;
+  xmlNodePtr curtemp = coeff_ptr;
+
+  std::string xmlTag("determinantset");
+  std::string curname;
+  do{
+     std::stringstream ss;
+     curtemp=curtemp->parent; 
+     ss<<curtemp->name; 
+     ss>>curname;
+  }
+  while (xmlTag != curname);
   aAttrib.add(SuperTwist, "twist");
   aAttrib.put(curtemp);
+  
+
 
   if (myComm->rank() == 0)
   {
@@ -719,6 +731,7 @@ bool LCAOrbitalBuilder::putPBCFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
 
     std::string setname("/Super_Twist/Coord");
     hin.read(SuperTwistH5, setname);
+    
     if (std::abs(SuperTwistH5[0] - SuperTwist[0]) >= 1e-6 || std::abs(SuperTwistH5[1] - SuperTwist[1]) >= 1e-6 ||
         std::abs(SuperTwistH5[2] - SuperTwist[2]) >= 1e-6)
     {

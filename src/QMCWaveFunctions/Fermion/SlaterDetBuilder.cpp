@@ -607,7 +607,7 @@ bool SlaterDetBuilder::createMSDFast(MultiSlaterDeterminantFast* multiSD, xmlNod
   if (HDF5Path != "")
   {
     app_log() << "Found Multideterminants in H5 File" << std::endl;
-    #ifndef QMC_COMPLEX
+//    #ifndef QMC_COMPLEX
     success = readDetListH5(cur,
                             uniqueConfg_up,
                             uniqueConfg_dn,
@@ -618,9 +618,9 @@ bool SlaterDetBuilder::createMSDFast(MultiSlaterDeterminantFast* multiSD, xmlNod
                             optimizeCI,
                             nels_up,
                             nels_dn);
-     #else
-      APP_ABORT("Build Multideterminant in H5 File is not implemented for complex CI coefficients");
-     #endif
+//     #else
+//      APP_ABORT("Build Multideterminant in H5 File is not implemented for complex CI coefficients");
+//     #endif
   }
   else
     success = readDetList(cur,
@@ -1352,7 +1352,7 @@ bool SlaterDetBuilder::readDetListH5(xmlNodePtr cur,
                                      std::vector<size_t>& C2node_up,
                                      std::vector<size_t>& C2node_dn,
                                      std::vector<std::string>& CItags,
-                                     std::vector<RealType>& coeff,
+                                     std::vector<ValueType>& coeff,
                                      bool& optimizeCI,
                                      int nels_up,
                                      int nels_dn)
@@ -1367,7 +1367,7 @@ bool SlaterDetBuilder::readDetListH5(xmlNodePtr cur,
   std::string CICoeffH5path("");
   std::vector<ci_configuration> confgList_up;
   std::vector<ci_configuration> confgList_dn;
-  std::vector<RealType> CIcoeff;
+  std::vector<ValueType> CIcoeff;
   std::vector<std::string> ConfigTag;
   std::string optCI = "no";
   RealType cutoff   = 0.0;
@@ -1393,7 +1393,7 @@ bool SlaterDetBuilder::readDetListH5(xmlNodePtr cur,
   int N_int;
   const int bit_kind  = 64;
   std::string Dettype = "DETS";
-  RealType sumsq      = 0.0;
+  ValueType sumsq      = 0.0;
   OhmmsAttributeSet spoAttrib;
   spoAttrib.add(NCA, "nca");
   spoAttrib.add(NCB, "ncb");
@@ -1446,9 +1446,32 @@ bool SlaterDetBuilder::readDetListH5(xmlNodePtr cur,
 
   hin.read(N_int, "Nbits");
   CIcoeff.resize(ndets);
+
   ConfigTag.resize(ndets);
 
+
+
+#if defined(QMC_COMPLEX)
+  std::vector<RealType> CIcoeff_real;
+  std::vector<RealType> CIcoeff_imag;
+  std::complex <double> im(0,1);
+  CIcoeff_imag.resize(ndets);
+  CIcoeff_real.resize(ndets);
+
+  hin.read(CIcoeff_real, "Coeff");
+  hin.read(CIcoeff_imag, "Coeff_imag");
+
+
+  for (size_t i=0; i<ndets;i++)
+  {
+      CIcoeff[i]=CIcoeff_real[i]+im*CIcoeff_imag[i];
+  }
+
+
+#else
   hin.read(CIcoeff, "Coeff");
+    
+#endif
 
   ///IF OPTIMIZED COEFFICIENTS ARE PRESENT IN opt_coeffs Path
   ///THEY ARE READ FROM DIFFERENT HDF5 the replace the previous coeff
@@ -1459,7 +1482,7 @@ bool SlaterDetBuilder::readDetListH5(xmlNodePtr cur,
   {
 
     int OptCiSize=0;
-    std::vector<RealType> CIcoeffopt;
+    std::vector<ValueType> CIcoeffopt;
     hdf_archive coeffin;
     if (!coeffin.open(CICoeffH5path.c_str(), H5F_ACC_RDONLY))
     {
@@ -1475,7 +1498,27 @@ bool SlaterDetBuilder::readDetListH5(xmlNodePtr cur,
     coeffin.read(OptCiSize, "NbDet");
     CIcoeffopt.resize(OptCiSize);
     
+#if defined(QMC_COMPLEX)
+    std::vector<RealType> CIcoeffopt_real;
+    std::vector<RealType> CIcoeffopt_imag;
+    std::complex <double> im(0,1);
+    CIcoeffopt_imag.resize(ndets);
+    CIcoeffopt_real.resize(ndets);
+  
+    coeffin.read(CIcoeffopt_real, "Coeff");
+    coeffin.read(CIcoeffopt_imag, "Coeff_imag");
+  
+  
+    for (size_t i=0; i<ndets;i++)
+    {
+        CIcoeffopt[i]=CIcoeffopt_real[i]+im*CIcoeffopt_imag[i];
+    }
+  
+
+#else
     coeffin.read(CIcoeffopt, "Coeff");
+    
+#endif
     coeffin.close();
 
     for (int i=0; i<OptCiSize;i++)
@@ -1515,6 +1558,7 @@ bool SlaterDetBuilder::readDetListH5(xmlNodePtr cur,
   std::unordered_map<std::string, int> MyMapDn;
 
   app_log() << " Sorting unique CIs" << std::endl;
+  ///WARNING!!!!! WE ARE SORTING COMPLEX NUMBERS!!!! I DO NOT KNOW WHAT THIS CODE MEANS!!!
   for (int ni = 0; ni < ndets; ni++)
   {
     if (std::abs(CIcoeff[ni]) < cutoff)

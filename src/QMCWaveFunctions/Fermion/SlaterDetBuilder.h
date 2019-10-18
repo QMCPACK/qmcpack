@@ -96,7 +96,7 @@ private:
                      std::vector<size_t>& C2node_up,
                      std::vector<size_t>& C2node_dn,
                      std::vector<std::string>& CItags,
-                     std::vector<RealType>& coeff,
+                     std::vector<ValueType>& coeff,
                      bool& optimizeCI,
                      int nels_up,
                      int nels_dn);
