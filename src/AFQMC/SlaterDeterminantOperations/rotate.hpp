@@ -73,9 +73,7 @@ void halfRotateCholeskyMatrix(WALKER_TYPES type, task_group& TG, int k0, int kN,
   int NMO = Alpha->size(1);
   if(type==COLLINEAR)
     NAEB = Beta->size(0);
-  int NEL = (type==CLOSED)?(NAEA):(NAEA+NAEB);
   int nvec = CholMat.size(1);
-  int nnodes = TG.getTotalNodes(), nodeid = TG.getNodeID();
   int ncores = TG.getTotalCores(), coreid = TG.getCoreID();
 
   assert(CholMat.size(0)==NMO*NMO);
@@ -244,9 +242,7 @@ SpCType_shm_csr_matrix halfRotateCholeskyMatrixForBias(WALKER_TYPES type, task_g
   int NMO = Alpha->size(1);
   if(type!=CLOSED)
     NAEB = Beta->size(0);
-  int NEL = (type==CLOSED)?(NAEA):(NAEA+NAEB);
   int nvec = CholMat.size(1);
-  int nnodes = TG.getTotalNodes(), nodeid = TG.getNodeID();
   int ncores = TG.getTotalCores(), coreid = TG.getCoreID();
 
 // to speed up, generate new communicator for eqv_nodes and split full work among all
@@ -381,9 +377,7 @@ void halfRotateCholeskyMatrix(WALKER_TYPES type, task_group& TG, int k0, int kN,
   int NMO = Alpha->size(1);
   if(type==COLLINEAR)
     NAEB = Beta->size(0);
-  int NEL = (type==CLOSED)?(NAEA):(NAEA+NAEB);
   int nvec = CholMat.size(1);
-  int nnodes = TG.getTotalNodes(), nodeid = TG.getNodeID();
   int ncores = TG.getTotalCores(), coreid = TG.getCoreID();
 
   assert(CholMat.size(0)==NMO*NMO);

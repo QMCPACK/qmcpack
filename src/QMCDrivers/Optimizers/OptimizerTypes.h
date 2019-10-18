@@ -17,14 +17,18 @@ namespace qmcplusplus
 enum class OptimizerType
 {
   NONE,
-  LEGACY,
+  QUARTIC,
+  RESCALE,
+  LINEMIN,
   ONESHIFTONLY,
   ADAPTIVE,
   DESCENT,
   HYBRID
 };
 
-const std::map<std::string, OptimizerType> OptimizerNames = {{"Legacy", OptimizerType::LEGACY},
+const std::map<std::string, OptimizerType> OptimizerNames = {{"quartic", OptimizerType::QUARTIC},
+                                                             {"rescale", OptimizerType::RESCALE},
+                                                             {"linemin", OptimizerType::LINEMIN},
                                                              {"OneShiftOnly", OptimizerType::ONESHIFTONLY},
                                                              {"adaptive", OptimizerType::ADAPTIVE},
                                                              {"descent", OptimizerType::DESCENT},

@@ -156,8 +156,6 @@ bool AFQMCFactory::execute(xmlNodePtr cur)
   if(cur == NULL)
     return false;
 
-  int nproc = gTG.Global().size();
-  int nodeid = gTG.Global().rank();
   int groupid=0; //myComm->getGroupID();
   char fileroot[256];
 

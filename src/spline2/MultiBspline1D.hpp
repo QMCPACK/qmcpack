@@ -127,7 +127,6 @@ inline void MultiBspline1D<T>::evaluate_v_impl(T x, T* restrict vals) const
   spline2::MultiBsplineData<T>::compute_prefactors(a, tx);
 
   const intptr_t xs = spline_m->x_stride;
-  const T dxInv     = spline_m->x_grid.delta_inv;
 
   const T* restrict coefs0 = spline_m->coefs + ((ix)*xs);
   const T* restrict coefs1 = spline_m->coefs + ((ix + 1) * xs);

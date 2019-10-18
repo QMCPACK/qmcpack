@@ -44,7 +44,6 @@ BackflowBuilder::BackflowBuilder(ParticleSet& els, PtclPoolType& pool)
 
 BackflowTransformation* BackflowBuilder::buildBackflowTransformation(xmlNodePtr cur)
 {
-  bool success       = true;
   xmlNodePtr curRoot = cur;
   std::string cname;
   BFTrans = new BackflowTransformation(targetPtcl);

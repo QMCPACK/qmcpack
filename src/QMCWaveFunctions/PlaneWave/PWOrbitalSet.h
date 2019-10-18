@@ -43,7 +43,7 @@ public:
 
   /** default constructor
   */
-  PWOrbitalSet() : OwnBasisSet(false), BasisSetSize(0), IsCloned(false), myBasisSet(nullptr), C(nullptr) 
+  PWOrbitalSet() : OwnBasisSet(false), myBasisSet(nullptr), BasisSetSize(0), C(nullptr), IsCloned(false)
   {
     className = "PWOrbitalSet";
   }

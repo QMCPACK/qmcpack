@@ -89,7 +89,7 @@ WaveFunctionComponent* ElectronGasComplexOrbitalBuilder::buildComponent(xmlNodeP
 }
 
 ElectronGasSPOBuilder::ElectronGasSPOBuilder(ParticleSet& p, Communicate* comm, xmlNodePtr cur)
-    : SPOSetBuilder(comm), egGrid(p.Lattice), unique_twist(-1.0), has_twist(false)
+    : SPOSetBuilder(comm), has_twist(false), unique_twist(-1.0), egGrid(p.Lattice), spo_node(NULL)
 {}
 
 SPOSet* ElectronGasSPOBuilder::createSPOSetFromXML(xmlNodePtr cur)

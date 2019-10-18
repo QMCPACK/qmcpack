@@ -444,7 +444,6 @@ inline void LCAOrbitalSet::evaluate_ionderiv_vgl_impl(const vghgh_type& temp,
   const ValueType* restrict gh_xxy = temp.data(11);
   const ValueType* restrict gh_xxz = temp.data(12);
   const ValueType* restrict gh_xyy = temp.data(13);
-  const ValueType* restrict gh_xyz = temp.data(14);
   const ValueType* restrict gh_xzz = temp.data(15);
   const ValueType* restrict gh_yyy = temp.data(16);
   const ValueType* restrict gh_yyz = temp.data(17);
@@ -627,6 +626,5 @@ void LCAOrbitalSet::applyRotation(const ValueMatrix_t& rot_mat, bool use_stored_
     }
   */
 }
-
 
 } // namespace qmcplusplus

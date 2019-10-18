@@ -16,6 +16,8 @@
 
 #include "Particle/DistanceTableData.h"
 #include "QMCHamiltonians/NonLocalECPotential.h"
+#include "QMCHamiltonians/NonLocalECPComponent.h"
+
 #include "Utilities/IteratorUtility.h"
 
 namespace qmcplusplus
@@ -33,7 +35,7 @@ NonLocalECPotential::NonLocalECPotential(ParticleSet& ions,
                                          bool computeForces,
                                          bool useVP)
     : ForceBase(ions, els),
-      myRNG(&Random),
+      myRNG(nullptr),
       IonConfig(ions),
       Psi(psi),
       Peln(els),

@@ -200,7 +200,6 @@ bool restartFromHDF5(WalkerSet& wset, int nW_per_tg, std::string hdf_read_restar
 
   int nWtot = Idata[0];
   int wlk_nterms = Idata[2];
-  int wlk_sz = Idata[3];
   int NMO = Idata[4];
   int NAEA = Idata[5];
   int NAEB = Idata[6];
@@ -401,7 +400,6 @@ bool dumpToHDF5(WalkerSet& wset, hdf_archive& dump)
         for(int p=0, nt=0; p<TG.TG_heads().size(); p++) {
 
           int n_ = 0;
-          int nn = nt + nW;
           if( ndone+nwlk_tot > nt && ndone < nt+nW ) {
             if(ndone <= nt)
               n_ = std::min(nW,(ndone+nwlk_tot)-nt);

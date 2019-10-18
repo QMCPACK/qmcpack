@@ -1032,10 +1032,11 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
       getNodeName(cname, cur);
       if (cname == "csf")
       {
-        RealType exctLvl, ci_real = 0.0, ci_imag = 0.0, qc_ci = 0.0;
+        RealType exctLvl, qc_ci = 0.0;
         OhmmsAttributeSet confAttrib;
         std::string tag, OccString;
         #ifdef QMC_COMPLEX
+          RealType ci_real = 0.0, ci_imag = 0.0;
           confAttrib.add(ci_real,"coeff_real");
           confAttrib.add(ci_imag,"coeff_imag");
         #else
@@ -1235,10 +1236,11 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
       getNodeName(cname, cur);
       if (cname == "configuration" || cname == "ci")
       {
-        RealType ci_real = 0.0, ci_imag = 0.0, qc_ci = 0.0;
+        RealType qc_ci = 0.0;
         std::string alpha, beta, tag;
         OhmmsAttributeSet confAttrib;
         #ifdef QMC_COMPLEX
+        RealType ci_real = 0.0, ci_imag = 0.0;
         confAttrib.add(ci_real, "coeff_real");
         confAttrib.add(ci_imag, "coeff_imag");
         ValueType ci(ci_real, ci_imag);
@@ -1384,7 +1386,7 @@ bool SlaterDetBuilder::readDetListH5(xmlNodePtr cur,
     }
     cur = cur->next;
   }
-  size_t NCA, NCB, NEA, NEB, nstates, ndets = 0, count = 0, cnt0 = 0;
+  size_t NCA, NCB, NEA, NEB, nstates, ndets = 0;
   size_t H5_ndets, H5_nstates;
   int N_int;
   const int bit_kind  = 64;

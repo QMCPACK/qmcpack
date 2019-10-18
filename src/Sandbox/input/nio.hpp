@@ -32,7 +32,7 @@ Tensor<T, 3> tile_cell(ParticleSet &ions, Tensor<int, 3> &tmat, T scale)
   nio_group[0] = nio_group[1] = 16;
   ions.create(32); // ParticleSet.h:176 "number of particles per group"
   // using lattice coordinates
-  ions.R.InUnit = 1;
+  ions.R.InUnit = PosUnit::Lattice;
 
   ions.R[0]  = {0.5, 0.0, 0.25}; // O
   ions.R[1]  = {0.0, 0.0, 0.75};

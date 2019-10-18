@@ -56,8 +56,8 @@ class EstimatorHandler: public AFQMCInfo
         bool defaultEnergyEstim=false,
         bool impsamp=true):
             AFQMCInfo(info),
-            hdf_output(false),
-            project_title(title)
+            project_title(title),
+            hdf_output(false)
   {
     estimators.reserve(10);
 
