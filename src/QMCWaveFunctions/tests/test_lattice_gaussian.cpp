@@ -113,20 +113,21 @@ TEST_CASE("lattice gaussian", "[wavefunction]")
 
   xmlNodePtr jas1 = xmlFirstElementChild(root);
 
-  LatticeGaussianProductBuilder jastrow(elec_, psi, pp);
-  jastrow.put(jas1);
+  LatticeGaussianProductBuilder jastrow(c, elec_, pp);
+  std::unique_ptr<LatticeGaussianProduct> LGP(dynamic_cast<LatticeGaussianProduct*>(jastrow.buildComponent(jas1)));
   double width = 0.5;
   double alpha = 1./(2*width*width);
-  //// check initialization. Nope, cannot access Psi.Z
-  //for (int i=0; i<2; i++)
-  //{
-  //  REQUIRE(psi.Z[0]->ParticleAlpha[i] == alpha);
-  //}
+  // check initialization. Nope, cannot access Psi.Z
+  for (int i=0; i<2; i++)
+  {
+    REQUIRE(LGP->ParticleAlpha[i] == Approx(alpha));
+  }
 
   // update all distance tables
+  ions_.update();
   elec_.update();
 
-  RealType logpsi = psi.evaluateLog(elec_);
+  RealType logpsi = LGP->evaluateLog(elec_, elec_.G, elec_.L);
   // check answer
   RealType r2 = Dot(elec_.R, elec_.R);
   double wfval = std::exp(-alpha*r2);
