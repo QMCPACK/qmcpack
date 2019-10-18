@@ -70,7 +70,9 @@ void LCAOrbitalSet::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
   {
     Vector<ValueType> vTemp(Temp.data(0), BasisSetSize);
     myBasisSet->evaluateV(P, iat, vTemp.data());
-    simd::gemv(*C, Temp.data(0), psi.data());
+    assert(psi.size() <= OrbitalSetSize);
+    ValueMatrix_t C_partial_view(C->data(), psi.size(), BasisSetSize);
+    simd::gemv(C_partial_view, vTemp.data(), psi.data());
   }
 }
 
@@ -91,17 +93,18 @@ inline void LCAOrbitalSet::evaluate_vgl_impl(const vgl_type& temp,
                                              GradVector_t& dpsi,
                                              ValueVector_t& d2psi) const
 {
-  std::copy_n(temp.data(0), OrbitalSetSize, psi.data());
+  const size_t output_size = psi.size();
+  std::copy_n(temp.data(0), output_size, psi.data());
   const ValueType* restrict gx = temp.data(1);
   const ValueType* restrict gy = temp.data(2);
   const ValueType* restrict gz = temp.data(3);
-  for (size_t j = 0; j < OrbitalSetSize; j++)
+  for (size_t j = 0; j < output_size; j++)
   {
     dpsi[j][0] = gx[j];
     dpsi[j][1] = gy[j];
     dpsi[j][2] = gz[j];
   }
-  std::copy_n(temp.data(4), OrbitalSetSize, d2psi.data());
+  std::copy_n(temp.data(4), output_size, d2psi.data());
 }
 
 inline void LCAOrbitalSet::evaluate_vgh_impl(const vgh_type& temp,
@@ -109,7 +112,8 @@ inline void LCAOrbitalSet::evaluate_vgh_impl(const vgh_type& temp,
                                              GradVector_t& dpsi,
                                              HessVector_t& d2psi) const
 {
-  std::copy_n(temp.data(0), OrbitalSetSize, psi.data());
+  const size_t output_size = psi.size();
+  std::copy_n(temp.data(0), output_size, psi.data());
   const ValueType* restrict gx = temp.data(1);
   const ValueType* restrict gy = temp.data(2);
   const ValueType* restrict gz = temp.data(3);
@@ -120,7 +124,7 @@ inline void LCAOrbitalSet::evaluate_vgh_impl(const vgh_type& temp,
   const ValueType* restrict hyz = temp.data(8);
   const ValueType* restrict hzz = temp.data(9);
 
-  for (size_t j = 0; j < OrbitalSetSize; j++)
+  for (size_t j = 0; j < output_size; j++)
   {
     dpsi[j][0] = gx[j];
     dpsi[j][1] = gy[j];
@@ -142,7 +146,8 @@ inline void LCAOrbitalSet::evaluate_vghgh_impl(const vghgh_type& temp,
                                              HessMatrix_t& d2psi,
                                              GGGMatrix_t& dghpsi) const
 {
-  std::copy_n(temp.data(0), OrbitalSetSize, psi[i]);
+  const size_t output_size = psi.cols();
+  std::copy_n(temp.data(0), output_size, psi[i]);
   const ValueType* restrict gx = temp.data(1);
   const ValueType* restrict gy = temp.data(2);
   const ValueType* restrict gz = temp.data(3);
@@ -163,7 +168,7 @@ inline void LCAOrbitalSet::evaluate_vghgh_impl(const vghgh_type& temp,
   const ValueType* restrict gh_yzz = temp.data(18);
   const ValueType* restrict gh_zzz = temp.data(19);
 
-  for (size_t j = 0; j < OrbitalSetSize; j++)
+  for (size_t j = 0; j < output_size; j++)
   {
     dpsi[i][j][0] = gx[j];
     dpsi[i][j][1] = gy[j];
@@ -214,7 +219,8 @@ inline void LCAOrbitalSet::evaluate_vghgh_impl(const vghgh_type& temp,
                                              HessVector_t& d2psi,
                                              GGGVector_t& dghpsi) const
 {
-  std::copy_n(temp.data(0), OrbitalSetSize, psi.data());
+  const size_t output_size = psi.size();
+  std::copy_n(temp.data(0), output_size, psi.data());
   const ValueType* restrict gx = temp.data(1);
   const ValueType* restrict gy = temp.data(2);
   const ValueType* restrict gz = temp.data(3);
@@ -235,7 +241,7 @@ inline void LCAOrbitalSet::evaluate_vghgh_impl(const vghgh_type& temp,
   const ValueType* restrict gh_yzz = temp.data(18);
   const ValueType* restrict gh_zzz = temp.data(19);
 
-  for (size_t j = 0; j < OrbitalSetSize; j++)
+  for (size_t j = 0; j < output_size; j++)
   {
     dpsi[j][0] = gx[j];
     dpsi[j][1] = gy[j];
@@ -293,7 +299,9 @@ void LCAOrbitalSet::evaluate(const ParticleSet& P,
     evaluate_vgl_impl(Temp, psi, dpsi, d2psi);
   else
   {
-    Product_ABt(Temp, *C, Tempv);
+    assert(psi.size() <= OrbitalSetSize);
+    ValueMatrix_t C_partial_view(C->data(), psi.size(), BasisSetSize);
+    Product_ABt(Temp, C_partial_view, Tempv);
     evaluate_vgl_impl(Tempv, psi, dpsi, d2psi);
   }
 }
@@ -327,7 +335,9 @@ void LCAOrbitalSet::evaluate(const ParticleSet& P,
     evaluate_vgh_impl(Temph, psi, dpsi, dhpsi);
   else
   {
-    Product_ABt(Temph, *C, Temphv);
+    assert(psi.size() <= OrbitalSetSize);
+    ValueMatrix_t C_partial_view(C->data(), psi.size(), BasisSetSize);
+    Product_ABt(Temph, C_partial_view, Temphv);
     evaluate_vgh_impl(Temphv, psi, dpsi, dhpsi);
   }
 }
@@ -347,7 +357,9 @@ void LCAOrbitalSet::evaluate(const ParticleSet& P,
     evaluate_vghgh_impl(Tempgh, psi, dpsi, dhpsi, dghpsi);
   else
   {
-    Product_ABt(Tempgh, *C, Tempghv);
+    assert(psi.size() <= OrbitalSetSize);
+    ValueMatrix_t C_partial_view(C->data(), psi.size(), BasisSetSize);
+    Product_ABt(Tempgh, C_partial_view, Tempghv);
     evaluate_vghgh_impl(Tempghv, psi, dpsi, dhpsi, dghpsi);
   }
 }
@@ -359,17 +371,18 @@ inline void LCAOrbitalSet::evaluate_vgl_impl(const vgl_type& temp,
                                              GradMatrix_t& dlogdet,
                                              ValueMatrix_t& d2logdet) const
 {
-  std::copy_n(temp.data(0), OrbitalSetSize, logdet[i]);
+  const size_t output_size = logdet.cols();
+  std::copy_n(temp.data(0), output_size, logdet[i]);
   const ValueType* restrict gx = temp.data(1);
   const ValueType* restrict gy = temp.data(2);
   const ValueType* restrict gz = temp.data(3);
-  for (size_t j = 0; j < OrbitalSetSize; j++)
+  for (size_t j = 0; j < output_size; j++)
   {
     dlogdet[i][j][0] = gx[j];
     dlogdet[i][j][1] = gy[j];
     dlogdet[i][j][2] = gz[j];
   }
-  std::copy_n(temp.data(4), OrbitalSetSize, d2logdet[i]);
+  std::copy_n(temp.data(4), output_size, d2logdet[i]);
 }
 
 inline void LCAOrbitalSet::evaluate_vgh_impl(const vgh_type& temp,
@@ -378,7 +391,8 @@ inline void LCAOrbitalSet::evaluate_vgh_impl(const vgh_type& temp,
                                              GradMatrix_t& dpsi,
                                              HessMatrix_t& d2psi) const
 {
-  std::copy_n(temp.data(0), OrbitalSetSize, psi[i]);
+  const size_t output_size = psi.cols();
+  std::copy_n(temp.data(0), output_size, psi[i]);
   const ValueType* restrict gx = temp.data(1);
   const ValueType* restrict gy = temp.data(2);
   const ValueType* restrict gz = temp.data(3);
@@ -389,7 +403,7 @@ inline void LCAOrbitalSet::evaluate_vgh_impl(const vgh_type& temp,
   const ValueType* restrict hyz = temp.data(8);
   const ValueType* restrict hzz = temp.data(9);
 
-  for (size_t j = 0; j < OrbitalSetSize; j++)
+  for (size_t j = 0; j < output_size; j++)
   {
     dpsi[i][j][0] = gx[j];
     dpsi[i][j][1] = gy[j];
@@ -490,10 +504,12 @@ void LCAOrbitalSet::evaluate_notranspose(const ParticleSet& P,
   }
   else
   {
+    assert(logdet.cols() <= OrbitalSetSize);
+    ValueMatrix_t C_partial_view(C->data(), logdet.cols(), BasisSetSize);
     for (size_t i = 0, iat = first; iat < last; i++, iat++)
     {
       myBasisSet->evaluateVGL(P, iat, Temp);
-      Product_ABt(Temp, *C, Tempv);
+      Product_ABt(Temp, C_partial_view, Tempv);
       evaluate_vgl_impl(Tempv, i, logdet, dlogdet, d2logdet);
     }
   }
@@ -516,10 +532,12 @@ void LCAOrbitalSet::evaluate_notranspose(const ParticleSet& P,
   }
   else
   {
+    assert(logdet.cols() <= OrbitalSetSize);
+    ValueMatrix_t C_partial_view(C->data(), logdet.cols(), BasisSetSize);
     for (size_t i = 0, iat = first; iat < last; i++, iat++)
     {
       myBasisSet->evaluateVGH(P, iat, Temph);
-      Product_ABt(Temph, *C, Temphv);
+      Product_ABt(Temph, C_partial_view, Temphv);
       evaluate_vgh_impl(Temphv, i, logdet, dlogdet, grad_grad_logdet);
     }
   }
@@ -543,10 +561,12 @@ void LCAOrbitalSet::evaluate_notranspose(const ParticleSet& P,
   }
   else
   {
+    assert(logdet.cols() <= OrbitalSetSize);
+    ValueMatrix_t C_partial_view(C->data(), logdet.cols(), BasisSetSize);
     for (size_t i = 0, iat = first; iat < last; i++, iat++)
     {
       myBasisSet->evaluateVGHGH(P, iat, Tempgh);
-      Product_ABt(Tempgh, *C, Tempghv);
+      Product_ABt(Tempgh, C_partial_view, Tempghv);
       evaluate_vghgh_impl(Tempghv, i, logdet, dlogdet, grad_grad_logdet, grad_grad_grad_logdet);
     }
   }
