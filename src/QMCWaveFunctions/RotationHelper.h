@@ -182,11 +182,16 @@ public:
 
   void checkObject() { Phi->checkObject(); }
 
-  void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi) { Phi->evaluate(P, iat, psi); }
+  void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
+  {
+    assert(psi.size() <= OrbitalSetSize);
+    Phi->evaluate(P, iat, psi);
+  }
 
 
   void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
   {
+    assert(psi.size() <= OrbitalSetSize);
     Phi->evaluate(P, iat, psi, dpsi, d2psi);
   }
 
@@ -200,6 +205,7 @@ public:
 
   void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, HessVector_t& grad_grad_psi)
   {
+    assert(psi.size() <= OrbitalSetSize);
     Phi->evaluate(P, iat, psi, dpsi, grad_grad_psi);
   }
 
