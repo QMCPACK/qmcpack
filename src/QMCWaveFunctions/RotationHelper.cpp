@@ -275,9 +275,9 @@ void RotationHelper::evaluateDerivatives(ParticleSet& P,
 
 
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~PART2
-  const double* const A(psiM_all.data());
-  const double* const Ainv(psiM_inv.data());
-  const double* const B(Bbar.data());
+  const ValueType* const A(psiM_all.data());
+  const ValueType* const Ainv(psiM_inv.data());
+  const ValueType* const B(Bbar.data());
   SPOSet::ValueMatrix_t T;
   SPOSet::ValueMatrix_t Y1;
   SPOSet::ValueMatrix_t Y2;
