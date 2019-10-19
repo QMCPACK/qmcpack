@@ -28,7 +28,6 @@ SET(WFBASE_SRCS
   SPOSetInfo.cpp
   SPOSetInputInfo.cpp
   SPOSet.cpp
-  RotationHelper.cpp
   CompositeSPOSet.cpp
   HarmonicOscillator/SHOSet.cpp
   HarmonicOscillator/SHOSetBuilder.cpp
@@ -38,6 +37,7 @@ SET(WFBASE_SRCS
 
 IF(NOT QMC_COMPLEX)
   SET(WFBASE_SRCS ${WFBASE_SRCS}
+    RotatedSPOs.cpp
     FDLRWfn.cpp
     )
 ENDIF(NOT QMC_COMPLEX)

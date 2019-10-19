@@ -31,11 +31,14 @@
 #endif
 #endif
 
+#if !defined(QMC_COMPLEX)
+#include "QMCWaveFunctions/RotatedSPOs.h"
+#endif
+
 #if defined(HAVE_EINSPLINE)
 #include "QMCWaveFunctions/EinsplineSetBuilder.h"
 #endif
 #endif
-#include "QMCWaveFunctions/RotationHelper.h"
 #include "QMCWaveFunctions/CompositeSPOSet.h"
 #include "Utilities/ProgressReportEngine.h"
 #include "Utilities/IteratorUtility.h"
@@ -286,7 +289,11 @@ SPOSet* SPOSetBuilderFactory::createSPOSet(xmlNodePtr cur)
     spo->objectName = sname;
     if (rotation == "yes")
     {
-      auto* rot_spo   = new RotationHelper(spo);
+#ifdef QMC_COMPLEX
+      app_error() << "Orbital optimization via rotation doesn't support complex wavefunction yet.\n";
+      abort();
+#else
+      auto* rot_spo   = new RotatedSPOs(spo);
       xmlNodePtr tcur = cur->xmlChildrenNode;
       while (tcur != NULL)
       {
@@ -300,6 +307,7 @@ SPOSet* SPOSetBuilderFactory::createSPOSet(xmlNodePtr cur)
       }
       spo = rot_spo;
       spo->objectName = sname;
+#endif
     }
     return spo;
   }

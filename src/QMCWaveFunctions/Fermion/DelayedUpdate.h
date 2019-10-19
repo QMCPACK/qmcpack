@@ -128,7 +128,7 @@ public:
   {
     const T cminusone(-1);
     const T czero(0);
-    const int norb     = Ainv.cols();
+    const int norb     = Ainv.rows();
     const int lda_Binv = Binv.cols();
     std::copy_n(Ainv[rowchanged], norb, V[delay_count]);
     std::copy_n(psiV.data(), norb, U[delay_count]);
@@ -165,7 +165,7 @@ public:
     // update the inverse matrix
     const T cone(1);
     const T czero(0);
-    const int norb = Ainv.cols();
+    const int norb = Ainv.rows();
     if (delay_count == 1)
     {
       // this is a special case invoking the Fahy's variant of Sherman-Morrison update.

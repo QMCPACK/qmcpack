@@ -87,7 +87,16 @@ IF (NOT QMC_CUDA)
     QMC_RUN_AND_CHECK(short-H4-orb-opt
                       "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
                       H4
-                      h4_orb_opt.xml
+                      H4_orb_opt.xml
+                      16 1
+                      ${MP_SUCCESS}
+                      14 H4_ORB_OPT_SCALARS # Final VMC step
+                      TRUE)
+
+    QMC_RUN_AND_CHECK(short-H4-UHF-orb-opt
+                      "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
+                      H4
+                      H4_UHF_orb_opt.xml
                       16 1
                       ${MP_SUCCESS}
                       14 H4_ORB_OPT_SCALARS # Final VMC step
@@ -102,7 +111,7 @@ IF (NOT QMC_CUDA)
     QMC_RUN_AND_CHECK(short-H4-orb-opt-dmc
                       "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
                       H4
-                      h4_orb_opt_dmc.xml
+                      H4_orb_opt_dmc.xml
                       16 1
                       ${MP_SUCCESS}
                       3 H4_ORB_OPT_DMC_SCALARS # Test the DMC results
@@ -111,7 +120,7 @@ IF (NOT QMC_CUDA)
     QMC_RUN_AND_CHECK(short-H4-orb-opt-dmc
                       "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
                       H4
-                      h4_orb_opt_dmc.xml
+                      H4_orb_opt_dmc.xml
                       1 16
                       ${MP_SUCCESS}
                       3 H4_ORB_OPT_DMC_SCALARS # Test the DMC results

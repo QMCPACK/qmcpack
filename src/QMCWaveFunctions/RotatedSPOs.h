@@ -17,13 +17,13 @@
 
 namespace qmcplusplus
 {
-class RotationHelper : public SPOSet
+class RotatedSPOs : public SPOSet
 {
 public:
   //constructor
-  RotationHelper(SPOSet* spos);
+  RotatedSPOs(SPOSet* spos);
   //destructor
-  ~RotationHelper();
+  ~RotatedSPOs();
 
   //vector that contains active orbital rotation parameter indices
   std::vector<std::pair<int, int>> m_act_rot_inds;
@@ -44,6 +44,9 @@ public:
 
   bool IsCloned;
 
+  /// the number of electrons of the majority spin
+  size_t nel_major_;
+
   SPOSet* makeClone() const;
 
   // myG_temp (myL_temp) is the Gradient (Laplacian) value of of the Determinant part of the wfn
@@ -62,7 +65,7 @@ public:
 
 
   // Single Slater creation
-  void buildOptVariables(const size_t& nel);
+  void buildOptVariables(const size_t nel);
   // For the MSD case rotations must be created in MultiSlaterFast class
   void buildOptVariables(const std::vector<std::pair<int, int>>& rotations);
 
@@ -182,11 +185,16 @@ public:
 
   void checkObject() { Phi->checkObject(); }
 
-  void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi) { Phi->evaluate(P, iat, psi); }
+  void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
+  {
+    assert(psi.size() <= OrbitalSetSize);
+    Phi->evaluate(P, iat, psi);
+  }
 
 
   void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
   {
+    assert(psi.size() <= OrbitalSetSize);
     Phi->evaluate(P, iat, psi, dpsi, d2psi);
   }
 
@@ -200,6 +208,7 @@ public:
 
   void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, HessVector_t& grad_grad_psi)
   {
+    assert(psi.size() <= OrbitalSetSize);
     Phi->evaluate(P, iat, psi, dpsi, grad_grad_psi);
   }
 
