@@ -4,7 +4,7 @@
   <random seed="281"/>
   <!-- input from gaussian converter -->
   <include href="H4.ptcl.xml"/>
-  <include href="H4.wfs_2_UHF.xml"/>
+  <include href="H4.wfs_2_RHF.xml"/>
   <hamiltonian name="h0" type="generic" target="e"> 
     <pairpot name="ElecElec" type="coulomb" source="e" target="e"/> 
     <pairpot name="IonElec"  type="coulomb" source="ion0"/>

@@ -12,7 +12,19 @@
           </basisGroup>
         </atomicBasisSet>
       </basisset>
-      <sposet basisset="LCAOBSet" name="spo" size="4" optimize="yes">
+      <sposet basisset="LCAOBSet" name="spo-up" size="4" optimize="yes">
+        <occupation mode="ground"/>
+        <coefficient size="4" id="detC">
+  5.04668000000000e-01  4.50114000000000e-01  3.58423000000000e-01  1.26449000000000e-01
+ -2.40452000000000e-01 -3.20413000000000e-01  4.66777000000000e-01  7.03549000000000e-01
+  8.80080000000000e-02 -5.04842000000000e-01  8.07522000000000e-01 -7.19301000000000e-01
+  1.03323500000000e+00 -8.77213000000000e-01 -3.90492000000000e-01  2.12318000000000e-01
+        </coefficient>
+        <opt_vars size="4">
+          0.2 0.0 0.0 0.0
+        </opt_vars>
+      </sposet>
+      <sposet basisset="LCAOBSet" name="spo-dn" size="4" optimize="yes">
         <occupation mode="ground"/>
         <coefficient size="4" id="detC">
   5.04668000000000e-01  4.50114000000000e-01  3.58423000000000e-01  1.26449000000000e-01
@@ -25,8 +37,8 @@
         </opt_vars>
       </sposet>
       <slaterdeterminant>
-        <determinant id="det_up" sposet="spo"/>
-        <determinant id="det_down" sposet="spo"/>
+        <determinant id="det_up" sposet="spo-up"/>
+        <determinant id="det_down" sposet="spo-dn"/>
       </slaterdeterminant>
     </determinantset>
     <jastrow name="J2" type="Two-Body" function="Bspline" print="yes">

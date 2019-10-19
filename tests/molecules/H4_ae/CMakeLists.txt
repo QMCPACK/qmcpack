@@ -84,6 +84,15 @@ IF (NOT QMC_CUDA)
     #
     LIST(APPEND H4_ORB_OPT_SCALARS "totenergy" "-2.0889 0.001") # total energy
 
+    QMC_RUN_AND_CHECK(short-H4-RHF-orb-opt
+                      "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
+                      H4
+                      H4_RHF_orb_opt.xml
+                      16 1
+                      ${MP_SUCCESS}
+                      14 H4_ORB_OPT_SCALARS # Final VMC step
+                      TRUE)
+
     QMC_RUN_AND_CHECK(short-H4-orb-opt
                       "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
                       H4
@@ -93,11 +102,11 @@ IF (NOT QMC_CUDA)
                       14 H4_ORB_OPT_SCALARS # Final VMC step
                       TRUE)
 
-    QMC_RUN_AND_CHECK(short-H4-UHF-orb-opt
+    QMC_RUN_AND_CHECK(short-H4-orb-opt
                       "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
                       H4
-                      H4_UHF_orb_opt.xml
-                      16 1
+                      H4_orb_opt.xml
+                      1 16
                       ${MP_SUCCESS}
                       14 H4_ORB_OPT_SCALARS # Final VMC step
                       TRUE)
