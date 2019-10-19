@@ -9,7 +9,7 @@
 ////
 //// File created by: Sergio D. Pineda Flores, sergio_pinedaflores@berkeley.edu, University of California, Berkeley
 ////////////////////////////////////////////////////////////////////////////////////////
-#include "QMCWaveFunctions/RotationHelper.h"
+#include "QMCWaveFunctions/RotatedSPOs.h"
 #include <Numerics/MatrixOperators.h>
 #include "Numerics/DeterminantOperators.h"
 #include "Numerics/OhmmsBlas.h"
@@ -17,16 +17,16 @@
 
 namespace qmcplusplus
 {
-RotationHelper::RotationHelper(SPOSet* spos)
+RotatedSPOs::RotatedSPOs(SPOSet* spos)
     : SPOSet(spos->hasIonDerivs(), true), Phi(spos), params_supplied(false), IsCloned(false), nel_major_(0)
 {
-  className      = "RotationHelper";
+  className      = "RotatedSPOs";
   OrbitalSetSize = Phi->getOrbitalSetSize();
 }
 
-RotationHelper::~RotationHelper() {}
+RotatedSPOs::~RotatedSPOs() {}
 
-void RotationHelper::buildOptVariables(const size_t nel)
+void RotatedSPOs::buildOptVariables(const size_t nel)
 {
 #if !defined(QMC_COMPLEX)
   /* Only rebuild optimized variables if more after-rotation orbitals are needed
@@ -52,7 +52,7 @@ void RotationHelper::buildOptVariables(const size_t nel)
 #endif
 }
 
-void RotationHelper::buildOptVariables(const std::vector<std::pair<int, int>>& rotations)
+void RotatedSPOs::buildOptVariables(const std::vector<std::pair<int, int>>& rotations)
 {
 #if !defined(QMC_COMPLEX)
   const size_t nmo = Phi->getOrbitalSetSize();
@@ -116,7 +116,7 @@ void RotationHelper::buildOptVariables(const std::vector<std::pair<int, int>>& r
 #endif
 }
 
-void RotationHelper::apply_rotation(const std::vector<RealType>& param, bool use_stored_copy)
+void RotatedSPOs::apply_rotation(const std::vector<RealType>& param, bool use_stored_copy)
 {
   assert(param.size() == m_act_rot_inds.size());
 
@@ -142,7 +142,7 @@ void RotationHelper::apply_rotation(const std::vector<RealType>& param, bool use
 
 
 // compute exponential of a real, antisymmetric matrix by diagonalizing and exponentiating eigenvalues
-void RotationHelper::exponentiate_antisym_matrix(ValueMatrix_t& mat)
+void RotatedSPOs::exponentiate_antisym_matrix(ValueMatrix_t& mat)
 {
   const int n = mat.rows();
   std::vector<std::complex<RealType>> mat_h(n * n, 0);
@@ -205,7 +205,7 @@ void RotationHelper::exponentiate_antisym_matrix(ValueMatrix_t& mat)
 }
 
 
-void RotationHelper::evaluateDerivatives(ParticleSet& P,
+void RotatedSPOs::evaluateDerivatives(ParticleSet& P,
                                          const opt_variables_type& optvars,
                                          std::vector<ValueType>& dlogpsi,
                                          std::vector<ValueType>& dhpsioverpsi,
@@ -308,7 +308,7 @@ void RotationHelper::evaluateDerivatives(ParticleSet& P,
   }
 }
 
-void RotationHelper::evaluateDerivatives(ParticleSet& P,
+void RotatedSPOs::evaluateDerivatives(ParticleSet& P,
                                          const opt_variables_type& optvars,
                                          std::vector<ValueType>& dlogpsi,
                                          std::vector<ValueType>& dhpsioverpsi,
@@ -399,7 +399,7 @@ void RotationHelper::evaluateDerivatives(ParticleSet& P,
   }
 }
 
-void RotationHelper::table_method_eval(std::vector<ValueType>& dlogpsi,
+void RotatedSPOs::table_method_eval(std::vector<ValueType>& dlogpsi,
                                        std::vector<ValueType>& dhpsioverpsi,
                                        const ParticleSet::ParticleLaplacian_t& myL_J,
                                        const ParticleSet::ParticleGradient_t& myG_J,
@@ -849,9 +849,9 @@ $
 }
 
 
-SPOSet* RotationHelper::makeClone() const
+SPOSet* RotatedSPOs::makeClone() const
 {
-  RotationHelper* myclone = new RotationHelper(Phi->makeClone());
+  RotatedSPOs* myclone = new RotatedSPOs(Phi->makeClone());
 
   myclone->IsCloned        = true;
   myclone->params          = this->params;

@@ -28,8 +28,11 @@
 #include "QMCWaveFunctions/MolecularOrbitals/GTOBuilder.h"
 #include "QMCWaveFunctions/MolecularOrbitals/STOBuilder.h"
 #include "QMCWaveFunctions/MolecularOrbitals/MolecularSPOBuilder.h"
-#include "QMCWaveFunctions/RotationHelper.h"
 #endif
+#endif
+
+#if !defined(QMC_COMPLEX)
+#include "QMCWaveFunctions/RotatedSPOs.h"
 #endif
 
 #if defined(HAVE_EINSPLINE)
@@ -290,7 +293,7 @@ SPOSet* SPOSetBuilderFactory::createSPOSet(xmlNodePtr cur)
       app_error() << "Orbital optimization via rotation doesn't support complex wavefunction yet.\n";
       abort();
 #else
-      auto* rot_spo   = new RotationHelper(spo);
+      auto* rot_spo   = new RotatedSPOs(spo);
       xmlNodePtr tcur = cur->xmlChildrenNode;
       while (tcur != NULL)
       {

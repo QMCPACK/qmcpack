@@ -37,7 +37,7 @@ SET(WFBASE_SRCS
 
 IF(NOT QMC_COMPLEX)
   SET(WFBASE_SRCS ${WFBASE_SRCS}
-    RotationHelper.cpp
+    RotatedSPOs.cpp
     FDLRWfn.cpp
     )
 ENDIF(NOT QMC_COMPLEX)

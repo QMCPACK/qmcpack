@@ -17,13 +17,13 @@
 
 namespace qmcplusplus
 {
-class RotationHelper : public SPOSet
+class RotatedSPOs : public SPOSet
 {
 public:
   //constructor
-  RotationHelper(SPOSet* spos);
+  RotatedSPOs(SPOSet* spos);
   //destructor
-  ~RotationHelper();
+  ~RotatedSPOs();
 
   //vector that contains active orbital rotation parameter indices
   std::vector<std::pair<int, int>> m_act_rot_inds;
