@@ -695,6 +695,7 @@ bool LCAOrbitalBuilder::putPBCFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
   int neigs      = spo.getBasisSetSize();
   int setVal     = -1;
   bool IsComplex = false;
+  bool MultiDet   = false;
   PosType SuperTwist(0.0);
   PosType SuperTwistH5(0.0);
   OhmmsAttributeSet aAttrib;
@@ -708,18 +709,25 @@ bool LCAOrbitalBuilder::putPBCFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
   xmlNodePtr curtemp = coeff_ptr;
 
   std::string xmlTag("determinantset");
+  std::string MSDTag("sposet");
+  std::string SDTag("determinant");
   std::string curname;
+  
   do{
      std::stringstream ss;
      curtemp=curtemp->parent; 
      ss<<curtemp->name; 
      ss>>curname;
+     if (curname == MSDTag)
+             MultiDet=true;   ///Used to know if running an MSD calculation - needed for order of Orbitals.
+     if (curname == SDTag)
+             MultiDet=false;
+
   }
   while (xmlTag != curname);
   aAttrib.add(SuperTwist, "twist");
   aAttrib.put(curtemp);
   
-
 
   if (myComm->rank() == 0)
   {
@@ -745,7 +753,7 @@ bool LCAOrbitalBuilder::putPBCFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
     }
     //SuperTwist=SuperTwistH5;
     Matrix<ValueType> Ctemp(neigs, spo.getBasisSetSize());
-    LoadFullCoefsFromH5(hin, setVal, SuperTwist, Ctemp);
+    LoadFullCoefsFromH5(hin, setVal, SuperTwist, Ctemp,MultiDet);
 
     int n = 0, i = 0;
     while (i < norbs)
@@ -826,14 +834,27 @@ void readRealMatrixFromH5(hdf_archive& hin, const std::string& setname, Matrix<L
 void LCAOrbitalBuilder::LoadFullCoefsFromH5(hdf_archive& hin,
                                             int setVal,
                                             PosType& SuperTwist,
-                                            Matrix<std::complex<RealType>>& Ctemp)
+                                            Matrix<std::complex<RealType>>& Ctemp,
+                                            bool MultiDet)
 {
   Matrix<RealType> Creal(Ctemp.rows(), Ctemp.cols());
   Matrix<RealType> Ccmplx(Ctemp.rows(), Ctemp.cols());
 
   char name[72];
   std::string setname;
-  sprintf(name, "%s%d", "/Super_Twist/eigenset_", setVal);
+  ///When running Single Determinant calculations, MO coeff loaded based on occupation and lowest eingenvalue.
+  ///However, for solids with multideterminants, orbitals are order by kpoints; first all MOs for kpoint 1, then 2 etc
+  /// The multideterminants occupation is specified in the input/HDF5 and theefore as long as there is consistency between 
+  /// the order in which we read the orbitals and the occupation, we are safe. In the case of Multideterminants generated 
+  /// by pyscf and Quantum Package, They are stored in the same order as generated for quantum package and one should use
+  /// the orbitals labled eigenset_unsorted. 
+  
+  if (MultiDet ==false)
+    sprintf(name, "%s%d", "/Super_Twist/eigenset_", setVal);
+  else
+    sprintf(name, "%s%d", "/Super_Twist/eigenset_unsorted_", setVal);
+
+   
   setname = name;
   readRealMatrixFromH5(hin, setname, Creal);
 
@@ -855,7 +876,7 @@ void LCAOrbitalBuilder::LoadFullCoefsFromH5(hdf_archive& hin,
       Ctemp[i][j] = std::complex<RealType>(Creal[i][j], Ccmplx[i][j]);
 }
 
-void LCAOrbitalBuilder::LoadFullCoefsFromH5(hdf_archive& hin, int setVal, PosType& SuperTwist, Matrix<RealType>& Creal)
+void LCAOrbitalBuilder::LoadFullCoefsFromH5(hdf_archive& hin, int setVal, PosType& SuperTwist, Matrix<RealType>& Creal, bool MultiDet)
 {
   bool IsComplex = false;
   //FIXME: need to check the path to IsComplex in h5

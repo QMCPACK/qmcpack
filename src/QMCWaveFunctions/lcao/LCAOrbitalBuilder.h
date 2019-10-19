@@ -86,8 +86,8 @@ private:
   bool putFromXML(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr);
   bool putFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr);
   bool putPBCFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr);
-  void LoadFullCoefsFromH5(hdf_archive& hin, int setVal, PosType& SuperTwist, Matrix<std::complex<RealType>>& Ctemp);
-  void LoadFullCoefsFromH5(hdf_archive& hin, int setVal, PosType& SuperTwist, Matrix<RealType>& Creal);
+  void LoadFullCoefsFromH5(hdf_archive& hin, int setVal, PosType& SuperTwist, Matrix<std::complex<RealType>>& Ctemp,bool MultiDet);
+  void LoadFullCoefsFromH5(hdf_archive& hin, int setVal, PosType& SuperTwist, Matrix<RealType>& Creal, bool Multidet);
   void EvalPeriodicImagePhaseFactors(PosType SuperTwist);
 };
 } // namespace qmcplusplus
