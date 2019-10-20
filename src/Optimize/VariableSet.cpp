@@ -274,7 +274,7 @@ void VariableSet::print(std::ostream& os, int leftPadSpaces, bool printHeader)
        << setw(max_value_len) << NameAndValue[i].second << " " << setw(max_type_len) << ParameterType[i].second << " "
        << setw(max_recompute_len) << Recompute[i].second << " ";
 
-//    os << std::defaultfloat;
+    os << std::defaultfloat;
 
     if (Index[i] < 0)
       os << setw(max_use_len) << "OFF" << std::endl;
