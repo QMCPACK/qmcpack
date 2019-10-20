@@ -317,12 +317,6 @@ public:
    */
   virtual void evaluateThirdDeriv(const ParticleSet& P, int first, int last, GGGMatrix_t& grad_grad_grad_logdet);
 
-  ///////////////////////////////////////////////////////////////////////////////////////////////////
-  /// \brief  returns whether this is an LCOrbitalSetOpt object
-  /// Ye: This should be removed as AoS. On the SoA side, LCAOrbitalSet replace LCOrbitalSet and LCOrbitalSetOpt
-  ///////////////////////////////////////////////////////////////////////////////////////////////////
-  virtual bool is_of_type_LCOrbitalSetOpt() const { return false; }
-
   /** evaluate the values, gradients and laplacians of this single-particle orbital for [first,last) particles
    * @param P current ParticleSet
    * @param first starting index of the particles
@@ -429,16 +423,6 @@ public:
    * after the host side objects are built.
    */
   virtual void finalizeConstruction() {}
-
-  // Routine to set up data for the LCOrbitalSetOpt child class specifically
-  // Should be left empty for other derived classes
-  // Ye: This interface should be removed with AoS.
-  virtual void init_LCOrbitalSetOpt(const double mix_factor = 0.0){};
-
-  // Routine to update internal data for the LCOrbitalSetOpt child class specifically
-  // Should be left empty for other derived classes
-  // Ye: This interface should be removed with AoS.
-  virtual void rotate_B(const std::vector<RealType>& rot_mat){};
 
 #ifdef QMC_CUDA
   using CTS = CUDAGlobalTypes;
