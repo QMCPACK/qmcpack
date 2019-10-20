@@ -2,7 +2,7 @@
 <simulation>
   <project id="det_hf_vmc_LiH-gamma" series="0">
   </project>
-  <random seed="707"/>
+  <random seed="77"/>
 
   <qmcsystem>
    <wavefunction name="psi0" target="e">
