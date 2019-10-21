@@ -38,8 +38,9 @@ int SOECPComponent::kroneckerDelta(int x, int y)
 }
 
 
-ComplexType SOECPComponent::lmMatrixElements(int l, int m1, int m2, int dim)
+SOECPComponent::ComplexType SOECPComponent::lmMatrixElements(int l, int m1, int m2, int dim)
 {
+  ComplexType val;
   switch(dim)
   {
   case 0: //x
@@ -53,7 +54,7 @@ ComplexType SOECPComponent::lmMatrixElements(int l, int m1, int m2, int dim)
   case 2:
     val = ComplexType(m2*kroneckerDelta(m1,m2),0.0);
     return val;
-    break
+    break;
   default:
       APP_ABORT("Invalid operator dimension for lmMatrixElements\n");
       return 0;
@@ -61,9 +62,9 @@ ComplexType SOECPComponent::lmMatrixElements(int l, int m1, int m2, int dim)
   }
 }
 
-RealType SOECPComponent::evaluateOne(ParticleSet& W,
+SOECPComponent::RealType SOECPComponent::evaluateOne(ParticleSet& W,
                        int iat,
-                       TrialWaveFunciton & Psi,
+                       TrialWaveFunction & Psi,
                        int iel,
                        RealType r,
                        const PosType& dr)
@@ -78,7 +79,7 @@ RealType SOECPComponent::evaluateOne(ParticleSet& W,
   for (RealType snew=0.0; snew <= TWOPI; snew += dS)
   {
     ComplexType sx(std::cos(sold+snew),0.0);
-    ComplexType sy(std::std::sin(sold+snew),0.0);
+    ComplexType sy(std::sin(sold+snew),0.0);
     ComplexType sz(0.0,std::sin(sold-snew));
 
     //quadrature sum for angular integral
@@ -87,10 +88,10 @@ RealType SOECPComponent::evaluateOne(ParticleSet& W,
       deltaV[j] = r*rrotsgrid_m[j] - dr;
       W.makeMove(iel,deltaV[j]);
       //W.makeSpinMove(iel,sp);
-      psiratio[j] = psi.calcRatio(W,iel)*sgridweight_m[j];
+      psiratio[j] = Psi.calcRatio(W,iel)*sgridweight_m[j];
       W.rejectMove(iel);
       //W.rejectSpinMove(iep);
-      psi.resetPhaseDiff();
+      Psi.resetPhaseDiff();
     }
 
     // Compute radial potential, do not multiply by (2*l+1)
@@ -112,7 +113,7 @@ RealType SOECPComponent::evaluateOne(ParticleSet& W,
             ldots += lmMatrixElements(l,m1,m2,0)*sx;
             ldots += lmMatrixElements(l,m1,m2,1)*sy;
             ldots += lmMatrixElements(l,m1,m2,2)*sz;
-            msums += std::conjugate(Ylm(l,m1,dr))*Ylm(l,m2,r*rrotsgrid_m[j])*ldots;
+            msums += std::conj(Ylm(l,m1,dr))*Ylm(l,m2,r*rrotsgrid_m[j])*ldots;
           }
         }
         lsum += vrad[l]*msums;
