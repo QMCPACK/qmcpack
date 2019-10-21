@@ -529,11 +529,6 @@ bool LCAOrbitalBuilder::loadMO(LCAOrbitalSet& spo, xmlNodePtr cur)
     {
       coeff_ptr = cur;
     }
-    else if (cname == "opt_vars")
-    {
-      spo.params_supplied = true;
-      putContent(spo.params, cur);
-    }
     cur = cur->next;
   }
   if (coeff_ptr == NULL)
@@ -581,8 +576,6 @@ bool LCAOrbitalBuilder::loadMO(LCAOrbitalSet& spo, xmlNodePtr cur)
               << std::endl;
     app_log() << *spo.C << std::endl;
   }
-
-  //init_LCOrbitalSetOpt(orbital_mix_magnitude);
 
   return success;
 }

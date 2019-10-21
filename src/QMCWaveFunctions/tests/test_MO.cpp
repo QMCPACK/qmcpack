@@ -543,7 +543,7 @@ void test_HCN(bool transform)
     SPOSet::HessMatrix_t diongradpsi(elec.R.size(), sposet->getOrbitalSetSize());
     SPOSet::GradMatrix_t dionlaplpsi(elec.R.size(), sposet->getOrbitalSetSize());
 
-    sposet->evaluateGradSource(elec, 0, elec.R.size(),ions,0, dionpsi,diongradpsi,dionlaplpsi);
+    sposet->evaluateGradSource(elec, 0, elec.R.size(), ions, 0, dionpsi,diongradpsi,dionlaplpsi);
     
   //============== Ion  0  Component  0 ===================
     REQUIRE( dionpsi[0][0][0]       == Approx(   0.0453112082) );  
