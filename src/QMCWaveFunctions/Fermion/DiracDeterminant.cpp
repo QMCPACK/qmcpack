@@ -44,7 +44,11 @@ void DiracDeterminant<DU_TYPE>::set(int first, int nel, int delay)
 {
   FirstIndex = first;
   ndelay     = delay;
+
   resize(nel, nel);
+
+  if(Optimizable)
+    Phi->buildOptVariables(nel);
 }
 
 template<typename DU_TYPE>
@@ -556,7 +560,10 @@ void DiracDeterminant<DU_TYPE>::evaluateDerivatives(ParticleSet& P,
                                                     const opt_variables_type& active,
                                                     std::vector<ValueType>& dlogpsi,
                                                     std::vector<ValueType>& dhpsioverpsi)
-{}
+{
+
+  Phi->evaluateDerivatives(P, active, dlogpsi, dhpsioverpsi, FirstIndex, LastIndex);
+}
 
 template<typename DU_TYPE>
 DiracDeterminant<DU_TYPE>* DiracDeterminant<DU_TYPE>::makeCopy(SPOSetPtr spo) const

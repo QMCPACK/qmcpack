@@ -805,3 +805,318 @@ def generate_convert4qmc(**kwargs):
 
     return convert4qmc
 #end def generate_convert4qmc
+
+
+
+
+
+
+class PyscfToAfqmcInput(SimulationInput):
+
+    input_order = '''
+        help
+        input
+        output
+        wavefunction
+        qmcpack_input
+        cholesky_threshold
+        kpoint
+        gdf
+        ao
+        cas
+        disable_ham
+        num_dets
+        real_ham
+        verbose
+        '''.split()
+
+    input_flags = obj(
+        help               = 'h',
+        input              = 'i',
+        output             = 'o',
+        wavefunction       = 'w',
+        qmcpack_input      = 'q',
+        cholesky_threshold = 't',
+        kpoint             = 'k',
+        gdf                = 'g',
+        ao                 = 'a',
+        cas                = 'c',
+        disable_ham        = 'd',
+        num_dets           = 'n',
+        real_ham           = 'r',
+        verbose            = 'v',
+        )
+
+    input_types = obj(
+        app_name           = str,
+        help               = bool,
+        input              = str,
+        output             = str,
+        wavefunction       = str,
+        qmcpack_input      = str,
+        cholesky_threshold = float,
+        kpoint             = bool,
+        gdf                = bool,
+        ao                 = bool,
+        cas                = tuple,
+        disable_ham        = bool,
+        num_dets           = int,
+        real_ham           = int,
+        verbose            = bool,
+        )
+
+    input_defaults = obj(
+        app_name           = 'pyscf_to_afqmc.py',
+        help               = False,
+        input              = None,
+        output             = None,
+        wavefunction       = None,
+        qmcpack_input      = None,
+        cholesky_threshold = None,
+        kpoint             = False,
+        gdf                = False,
+        ao                 = False,
+        cas                = None,
+        disable_ham        = False,
+        num_dets           = None,
+        real_ham           = None,
+        verbose            = False,
+        )
+
+
+    def __init__(self,**kwargs):
+        # reassign inputs provided via short flag names
+        for k,v in PyscfToAfqmcInput.input_flags.items():
+            if v in kwargs:
+                kwargs[k] = kwargs.pop(v)
+            #end if
+        #end for
+
+        # check that only allowed keyword inputs are provided
+        invalid = set(kwargs.keys())-set(self.input_types.keys())
+        if len(invalid)>0:
+            self.error('invalid inputs encountered\ninvalid keywords: {0}\nvalid keyword inputs are: {1}'.format(sorted(invalid),sorted(self.input_types.keys())))
+        #end if
+
+        # assign inputs
+        self.set(**kwargs)
+
+        # assign default values
+        self.set_optional(**self.input_defaults)
+
+        # check that all keyword inputs are valid
+        self.check_valid()
+    #end def __init__
+
+
+    def check_valid(self,exit=True):
+        valid = True
+        # check that all inputs have valid types and assign them
+        for k,v in self.items():
+            if v is not None and not isinstance(v,self.input_types[k]):
+                valid = False
+                if exit:
+                    self.error('keyword input "{0}" must be of type "{1}"\nyou provided a value of type "{2}"\nplease revise your input and try again'.format(k,self.input_types[k].__name__),v.__class__.__name__)
+                #end if
+                break
+            #end if
+        #end for
+        if 'cas' in self and self.cas is not None:
+            if len(self.cas)!=2:
+                valid = False
+                if exit:
+                    self.error('keyword input "cas" must contain only two elements\nnumber of elements provided: {}\nvalue provided: {}'.format(len(self.cas),self.cas))
+                #end if
+            #end if
+            noninteger = False
+            for v in self.cas:
+                noninteger |= not isinstance(v,int)
+            #end for
+            if noninteger:
+                valid = False
+                if exit:
+                    self.error('keyword input "cas" must contain two integers\nvalue provided: {}'.format(self.cas))
+                #end if
+            #end if
+        #end if
+        return valid
+    #end def check_valid
+
+
+    def is_valid(self):
+        return self.check_valid(exit=False)
+    #end def is_valid
+
+
+    def set_app_name(self,app_name):
+        self.app_name = app_name
+    #end def set_app_name
+
+
+    def app_command(self):
+        self.check_valid()
+        c = self.app_name
+        for k in self.input_order:
+            if k in self:
+                v = self[k]
+                n = self.input_flags[k]
+                if isinstance(v,bool):
+                    if v:
+                        c += ' -{0}'.format(n)
+                    #end if
+                elif isinstance(v,tuple):
+                    vs = ''
+                    for tv in v:
+                        vs += '{},'.format(tv)
+                    #end for
+                    c += ' -{0} {1}'.format(n,vs[:-1])
+                elif v is not None:
+                    c += ' -{0} {1}'.format(n,str(v))
+                #end if
+            #end if
+        #end for
+        return c
+    #end def app_command
+
+
+    def read(self,filepath):
+        None
+    #end def read
+
+
+    def write_text(self,filepath=None):
+        return self.app_command()
+    #end def write_text
+#end class PyscfToAfqmcInput
+
+
+
+def generate_pyscf_to_afqmc_input(**kwargs):
+    return PyscfToAfqmcInput(**kwargs)
+#end def generate_pyscf_to_afqmc_input
+
+
+
+class PyscfToAfqmcAnalyzer(SimulationAnalyzer):
+    def __init__(self,arg0):
+        if isinstance(arg0,Simulation):
+            self.infile = arg0.infile
+        else:
+            self.infile = arg0
+        #end if
+    #end def __init__
+
+    def analyze(self):
+        None
+    #end def analyze
+#end class PyscfToAfqmcAnalyzer
+
+
+
+class PyscfToAfqmc(Simulation):
+    input_type             = PyscfToAfqmcInput
+    analyzer_type          = PyscfToAfqmcAnalyzer
+    generic_identifier     = 'pyscf2afqmc'
+    application            = 'pyscf_to_afqmc.py'
+    application_properties = set(['serial'])
+    application_results    = set(['wavefunction','hamiltonian'])
+    renew_app_command      = True
+
+
+    def set_app_name(self,app_name):
+        self.app_name = app_name
+        self.input.set_app_name(app_name)
+    #end def set_app_name
+
+
+    def check_result(self,result_name,sim):
+        calculating_result = False
+        input = self.input
+        if result_name=='wavefunction':
+            calculating_result = input.output is not None
+        elif result_name=='hamiltonian':
+            calculating_result = input.output is not None
+        else:
+            calculating_result = False
+            self.error('ability to check for result '+result_name+' has not been implemented')
+        #end if        
+        return calculating_result
+    #end def check_result
+
+
+    def get_result(self,result_name,sim):
+        result = obj()
+        input = self.input
+        if result_name in ('wavefunction','hamiltonian'):
+            result.h5_file = os.path.join(self.locdir,input.output)
+            if input.qmcpack_input is not None:
+                result.xml = os.path.join(self.locdir,input.qmcpack_input)
+            #end if
+        else:
+            self.error('ability to get result '+result_name+' has not been implemented')
+        #end if        
+        return result
+    #end def get_result
+
+
+    def incorporate_result(self,result_name,result,sim):
+        implemented = True
+        input = self.input
+        if isinstance(sim,Pyscf):
+            if result_name=='wavefunction':
+                chkfile = os.path.relpath(result.chkfile,self.locdir)
+                input.input = chkfile
+            else:
+                implemented = False
+            #end if
+        else:
+            implemented = False
+        #end if
+        if not implemented:
+            self.error('ability to incorporate result "{0}" from {1} has not been implemented'.format(result_name,sim.__class__.__name__))
+        #end if
+    #end def incorporate_result       
+
+
+    def check_sim_status(self):
+        output = open(os.path.join(self.locdir,self.outfile),'r').read()
+
+        success = '# Finished.' in output
+        success &= os.path.exists(os.path.join(self.locdir,self.input.output))
+
+        self.failed = not success
+        self.finished = self.job.finished
+    #end def check_sim_status
+
+
+    def get_output_files(self):
+        output_files = []
+        return output_files
+    #end def get_output_files
+
+
+    def app_command(self):
+        return self.input.app_command()
+    #end def app_command
+#end class PyscfToAfqmc
+
+
+
+def generate_pyscf_to_afqmc(**kwargs):
+    sim_args,inp_args = Simulation.separate_inputs(kwargs)
+    if 'identifier' in sim_args:
+        if 'output' not in inp_args:
+            inp_args.output = '{}.afqmc.h5'.format(sim_args.identifier)
+        #end if
+        if 'qmcpack_input' not in inp_args:
+            inp_args.qmcpack_input = '{}.afqmc.xml'.format(sim_args.identifier)
+        #end if
+    #end if
+
+    if not 'input' in sim_args:
+        sim_args.input = generate_pyscf_to_afqmc_input(**inp_args)
+    #end if
+    sim = PyscfToAfqmc(**sim_args)
+
+    return sim
+#end def generate_pyscf_to_afqmc

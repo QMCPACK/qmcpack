@@ -2369,9 +2369,41 @@ def pwscf_input():
 #end def pwscf_input
 
 
+
 def qmcpack_input():
+
+    nunit('files')
+
+    nunit('compose')
+
+    nunit('generate')
+
+    nunit('read')
+
+    nunit('write')
+
+    nunit('generate_kspace_jastrow')
+
+    nunit('excited_state')
+
     nunit_all()
 #end def qmcpack_input
+
+
+
+def qmcpack_converters():
+
+    nunit('import')
+
+    nunit('pyscf_to_afqmc_input_init')
+
+    nunit('pyscf_to_afqmc_input_write')
+
+    nunit('pyscf_to_afqmc_analyzer_init')
+
+    nunit_all()
+#end def qmcpack_converters
+
 
 
 def grid_functions():
@@ -2709,6 +2741,7 @@ NexusTest( nexus_base            )
 NexusTest( machines              )
 NexusTest( pwscf_input           )
 NexusTest( qmcpack_input         )
+NexusTest( qmcpack_converters    )
 NexusTest( settings_operation    , 'settings' )
 
 for label in example_information.keys():

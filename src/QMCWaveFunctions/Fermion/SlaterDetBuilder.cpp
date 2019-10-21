@@ -24,13 +24,6 @@
 
 #include "QMCWaveFunctions/Fermion/MultiSlaterDeterminant.h"
 #include "QMCWaveFunctions/Fermion/MultiSlaterDeterminantFast.h"
-#if !defined(QMC_COMPLEX) && !defined(ENABLE_SOA)
-//Cannot use complex with SlaterDetOpt
-#include "QMCWaveFunctions/MolecularOrbitals/NGOBuilder.h"
-#include "QMCWaveFunctions/MolecularOrbitals/LocalizedBasisSet.h"
-#include "QMCWaveFunctions/MolecularOrbitals/LCOrbitalSetOpt.h"
-#include "QMCWaveFunctions/Fermion/SlaterDetOpt.h"
-#endif
 #if defined(QMC_CUDA)
 #include "QMCWaveFunctions/Fermion/DiracDeterminantCUDA.h"
 #endif
@@ -228,9 +221,7 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
       // Copy any entries in sposetmap into slaterdet_0
       std::map<std::string, SPOSetPtr>::iterator iter;
       for (iter = spomap.begin(); iter != spomap.end(); iter++)
-      {
         slaterdet_0->add(iter->second, iter->first);
-      }
       size_t spin_group = 0;
       xmlNodePtr tcur   = cur->children;
       while (tcur != NULL)
@@ -295,7 +286,8 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
         app_log() << "Creating base determinant (up) for MSD expansion. \n";
         up_det = new MultiDiracDeterminant((SPOSetPtr)spomap.find(spo_alpha)->second, 0);
         app_log() << "Creating base determinant (down) for MSD expansion. \n";
-        dn_det               = new MultiDiracDeterminant((SPOSetPtr)spomap.find(spo_beta)->second, 1);
+        dn_det = new MultiDiracDeterminant((SPOSetPtr)spomap.find(spo_beta)->second, 1);
+
         multislaterdetfast_0 = new MultiSlaterDeterminantFast(targetPtcl, up_det, dn_det);
         success              = createMSDFast(multislaterdetfast_0, cur);
       }
@@ -485,58 +477,6 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
 #else
     if (UseBackflow)
       adet = new DiracDeterminantWithBackflow(targetPtcl, psi, BFTrans, firstIndex);
-#ifndef ENABLE_SOA
-    else if (optimize == "yes")
-    {
-#ifdef QMC_COMPLEX
-      app_error() << "Orbital optimization via rotation doesn't support complex wavefunction yet.\n";
-      abort();
-#else
-      std::vector<RealType> params;
-      bool params_supplied = false;
-
-      // Search for the XML tag called "opt_vars", which will specify
-      // initial values for the determinant's optimiziable variables.
-      std::string subdet_name;
-      for (xmlNodePtr subdet_cur = cur->children; subdet_cur != NULL; subdet_cur = subdet_cur->next)
-      {
-        getNodeName(subdet_name, subdet_cur);
-        if (subdet_name == "opt_vars")
-        {
-          params_supplied = true;
-          putContent(params, subdet_cur);
-        }
-      }
-
-      // YE: need check
-      // get a pointer to the single particle orbital set and make sure it is of the correct type
-      if (!psi->is_of_type_LCOrbitalSetOpt())
-      {
-        std::string newname = "LCOrbitalSetOpt_" + psi->objectName;
-        SPOSetPtr newpsi    = get_sposet(newname);
-        if (newpsi == nullptr)
-        {
-          app_log() << "using an existing SPO object " << psi->objectName
-                    << " (not a clone) for the basis of an optimizable SPO set.\n";
-          newpsi = new LCOrbitalSetOpt<LocalizedBasisSet<NGOBuilder::CenteredOrbitalType>>(psi);
-          // YE: FIXME, need to register newpsi
-        }
-        else
-        {
-          psi = newpsi;
-        }
-      }
-
-      // build the optimizable slater determinant
-      SlaterDetOpt* const retval = new SlaterDetOpt(targetPtcl, psi, spin_group);
-
-      // load extra parameters for SlaterDetOpt
-      retval->buildOptVariables(params, params_supplied, true);
-
-      adet = retval;
-#endif
-    }
-#endif
 #if defined(ENABLE_CUDA)
     else if (useGPU == "yes")
     {
