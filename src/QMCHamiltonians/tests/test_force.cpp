@@ -164,6 +164,7 @@ TEST_CASE("Chiesa Force", "[hamiltonian]")
   CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
   Lattice.BoxBConds = true; // periodic
   Lattice.R.diagonal(5.0);
+  Lattice.LR_dim_cutoff = 25;
   Lattice.reset();
 
 
