@@ -5,14 +5,24 @@ import numpy as np
 # determine if two values differ
 def value_diff(v1,v2,tol=1e-6,int_as_float=False):
     diff = False
-    if int_as_float and isinstance(v1,(int,float,np.float64)) and isinstance(v2,(int,float,np.float64)):
+    v1_bool  = isinstance(v1,(bool,np.bool_))
+    v2_bool  = isinstance(v2,(bool,np.bool_))
+    v1_int   = isinstance(v1,(int,np.int_)) and not v1_bool
+    v2_int   = isinstance(v2,(int,np.int_)) and not v2_bool
+    v1_float = isinstance(v1,(float,np.float_))
+    v2_float = isinstance(v2,(float,np.float_))
+    v1_str   = isinstance(v1,(str,np.string_))
+    v2_str   = isinstance(v2,(str,np.string_))
+    if int_as_float and (v1_int or v1_float) and (v2_int or v2_float):
         diff = np.abs(float(v1)-float(v2))>tol
-    elif isinstance(v1,(float,np.float64)) and isinstance(v2,(float,np.float64)):
+    elif v1_float and v2_float:
         diff = np.abs(v1-v2)>tol
+    elif v1_int and v2_int:
+        diff = v1!=v2
+    elif (v1_bool or v1_str) and (v2_bool or v2_str):
+        diff = v1!=v2
     elif not isinstance(v1,type(v2)) or not isinstance(v2,type(v1)):
         diff = True
-    elif isinstance(v1,(bool,int,str)):
-        diff = v1!=v2
     elif isinstance(v1,(list,tuple)):
         v1 = np.array(v1,dtype=object).ravel()
         v2 = np.array(v2,dtype=object).ravel()
@@ -185,9 +195,11 @@ def collect_unit_test_file_paths(test,storage):
         test_files_dir = unit_test_file_path(test)
         files = os.listdir(test_files_dir)
         for file in files:
-            filepath = os.path.join(test_files_dir,file)
-            assert(os.path.exists(filepath))
-            storage[file] = filepath
+            if not file.startswith('.'):
+                filepath = os.path.join(test_files_dir,file)
+                assert(os.path.exists(filepath))
+                storage[file] = filepath
+            #end if
         #end for
     #end if
     return storage

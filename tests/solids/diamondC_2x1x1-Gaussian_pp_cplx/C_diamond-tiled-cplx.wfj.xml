@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<qmcsystem>
+  <wavefunction name="psi0" target="e">
+    <determinantset type="MolecularOrbital" name="LCAOBSet" source="ion0" transform="yes" twist="0.07761248  0.07761248  -0.07761248" href="C_diamond-tiled-cplx.h5" PBCimages="8  8  8">
+      <slaterdeterminant>
+        <determinant id="updet" size="8">
+          <occupation mode="ground"/>
+          <coefficient size="52" spindataset="0"/>
+        </determinant>
+        <determinant id="downdet" size="8">
+          <occupation mode="ground"/>
+          <coefficient size="52" spindataset="0"/>
+        </determinant>
+      </slaterdeterminant>
+    </determinantset>
+  </wavefunction>
+</qmcsystem>
