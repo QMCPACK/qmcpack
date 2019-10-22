@@ -55,6 +55,7 @@ void ECPComponentBuilder::buildSemiLocalAndLocal(std::vector<xmlNodePtr>& semiPt
   aAttrib.add(nup, "npots-up");
   aAttrib.add(Llocal, "l-local");
   aAttrib.add(Nrule, "nrule");
+  aAttrib.add(Srule, "srule");
   aAttrib.add(nso, "npots-so");
 
   xmlNodePtr cur_semilocal = semiPtr[0];

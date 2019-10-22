@@ -23,10 +23,50 @@
 namespace qmcplusplus
 {
 
+SOECPComponent::SOECPComponent() 
+    : lmax(0), nchannel(0), nknot(0), sknot(0), Rmax(-1)
+{
+
+}
+
+SOECPComponent::~SOECPComponent()
+{
+  for (int i=0; i<sopp_m.size(); i++)
+    delete sopp_m[i];
+}
+
+void SOECPComponent::print(std::ostream & os)
+{
+
+}
+
 void SOECPComponent::add(int l, RadialPotentialType* pp)
 {
   angpp_m.push_back(l);
   sopp_m.push_back(pp);
+}
+
+SOECPComponent* SOECPComponent::makeClone(const ParticleSet & qp)
+{
+  SOECPComponent *myclone = new SOECPComponent(*this);
+  for (int i=0; i<sopp_m.size(); i++)
+    myclone->sopp_m[i] = sopp_m[i]->makeClone();
+  return myclone;
+}
+
+void SOECPComponent::resize_warrays(int n, int m, int s)
+{
+  psiratio.resize(n);
+  deltaV.resize(n);
+  vrad.resize(m);
+  rrotsgrid_m.resize(n);
+  nchannel = sopp_m.size();
+  nknot = sgridxyz_m.size();
+  sknot = s;
+  if (m != nchannel) 
+  {
+    APP_ABORT("SOECPComponent::resize_warrays has incorrect number of radial channels\n");
+  }
 }
 
 int SOECPComponent::kroneckerDelta(int x, int y)
@@ -69,14 +109,16 @@ SOECPComponent::RealType SOECPComponent::evaluateOne(ParticleSet& W,
                        RealType r,
                        const PosType& dr)
 {
-  int sknot = 2; //number of spin integral points, needs to be set in input or by default
-  RealType dS = 2*M_PI/sknot; //step size for spin
+  if (sknot < 1)
+    APP_ABORT("Spin knots must be greater than 1\n");
+  RealType dS = TWOPI/sknot; //step size for spin
 
   RealType sold = W.spins[iel];
 
   ComplexType sint(0.0);
-  //spin integral
-  for (RealType snew=0.0; snew <= TWOPI; snew += dS)
+  //spin integral, with trapezoid rule
+  RealType snew(0.0);
+  for (int is = 0; is<= sknot; is++)
   {
     ComplexType sx(std::cos(sold+snew),0.0);
     ComplexType sy(std::sin(sold+snew),0.0);
@@ -120,7 +162,12 @@ SOECPComponent::RealType SOECPComponent::evaluateOne(ParticleSet& W,
       }
       angint += psiratio[j]*lsum;
     }
-    sint += dS*angint;
+    if (is==0 || is==sknot) //trapezoidal rule for endpoints
+      sint += dS*0.5*angint;
+    else
+      sint += dS*angint;
+
+    snew += dS;
   }
   return std::real(sint);
 }

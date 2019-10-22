@@ -33,7 +33,7 @@ struct ECPComponentBuilder : public MPIObjectBase, public QMCTraits
   typedef LocalECPotential::RadialPotentialType RadialPotentialType;
 
   int NumNonLocal;
-  int Lmax, Llocal, Nrule;
+  int Lmax, Llocal, Nrule, Srule;
   int NumSO; //The number of spin-orbit channels.
   int LmaxSO; //The maximum angular momentum of spin-orbit channels.
   int AtomicNumber;

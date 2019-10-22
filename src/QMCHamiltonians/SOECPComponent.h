@@ -40,6 +40,8 @@ private:
   int lmax;
   ///the number of non-local channels
   int nchannel;
+  int nknot; 
+  int sknot;
   ///Maximum cutoff the non-local pseudopotential
   RealType Rmax;
   ///Angular momentum map
@@ -50,8 +52,8 @@ private:
   ComplexType lmMatrixElements(int l, int m1, int m2,int dim);
   int kroneckerDelta(int x, int y);
 
-  int nknot; 
   std::vector<PosType> deltaV;
+  SpherGridType sgridxyz_m;
   SpherGridType rrotsgrid_m;
   std::vector<ValueType> psiratio;
   std::vector<ValueType> vrad;
@@ -60,14 +62,16 @@ private:
 
 public:
 
-  SOECPComponent* makeClone(const ParticleSet& qp)
-  {
-    APP_ABORT("SOECPComponent::makeClone not yet implemented");
-    return nullptr;
-  };
+  SOECPComponent();
+  ~SOECPComponent();
+
+  SOECPComponent* makeClone(const ParticleSet& qp);
 
   ///add a new Spin-Orbit component
   void add(int l, RadialPotentialType* pp);
+ 
+  void resize_warrays(int n, int m, int s);
+
   ///API for accessing the value of an SO radial potential at distance r.  For unit and other testing.
   friend RealType getSplinedSOPot(SOECPComponent* so_pp, int l, double r);
   /** @brief Evaluate the spin orbit pp contribution 
@@ -102,7 +106,7 @@ public:
                                          return 0.0;
                                        };
 
-  void print(std::ostream& os){};
+  void print(std::ostream& os);
 
   //void initVirtualParticle(const ParticleSet& qp){};
 
