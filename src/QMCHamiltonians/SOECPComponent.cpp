@@ -171,4 +171,41 @@ SOECPComponent::RealType SOECPComponent::evaluateOne(ParticleSet& W,
   }
   return std::real(sint);
 }
+
+void SOECPComponent::randomize_grid(RandomGenerator_t& myRNG)
+{
+  RealType phi(TWOPI * myRNG()), psi(TWOPI * myRNG()), cth(myRNG() - 0.5);
+  RealType sph(std::sin(phi)), cph(std::cos(phi)), sth(std::sqrt(1.0 - cth * cth)), sps(std::sin(psi)),
+      cps(std::cos(psi));
+  TensorType rmat(cph * cth * cps - sph * sps, sph * cth * cps + cph * sps, -sth * cps, -cph * cth * sps - sph * cps,
+                  -sph * cth * sps + cph * cps, sth * sps, cph * sth, sph * sth, cth);
+  for (int i = 0; i < sgridxyz_m.size(); i++)
+    rrotsgrid_m[i] = dot(rmat, sgridxyz_m[i]);
+}
+
+template<typename T>
+void SOECPComponent::randomize_grid(std::vector<T>& sphere, RandomGenerator_t& myRNG)
+{
+  RealType phi(TWOPI * myRNG()), psi(TWOPI * myRNG()), cth(myRNG() - 0.5);
+  RealType sph(std::sin(phi)), cph(std::cos(phi)), sth(std::sqrt(1.0 - cth * cth)), sps(std::sin(psi)),
+      cps(std::cos(psi));
+  TensorType rmat(cph * cth * cps - sph * sps, sph * cth * cps + cph * sps, -sth * cps, -cph * cth * sps - sph * cps,
+                  -sph * cth * sps + cph * cps, sth * sps, cph * sth, sph * sth, cth);
+  SpherGridType::iterator it(sgridxyz_m.begin());
+  SpherGridType::iterator it_end(sgridxyz_m.end());
+  SpherGridType::iterator jt(rrotsgrid_m.begin());
+  while (it != it_end)
+  {
+    *jt = dot(rmat, *it);
+    ++it;
+    ++jt;
+  }
+  //copy the randomized grid to sphere
+  for (int i = 0; i < rrotsgrid_m.size(); i++)
+    for (int j = 0; j < OHMMS_DIM; j++)
+      sphere[OHMMS_DIM * i + j] = rrotsgrid_m[i][j];
+}
+
+template void SOECPComponent::randomize_grid(std::vector<float>& sphere, RandomGenerator_t& myRNG);
+template void SOECPComponent::randomize_grid(std::vector<double>& sphere, RandomGenerator_t& myRNG);
 }

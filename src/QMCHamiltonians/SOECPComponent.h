@@ -72,6 +72,10 @@ public:
  
   void resize_warrays(int n, int m, int s);
 
+  void randomize_grid(RandomGenerator_t& myRNG);
+  template<typename T>
+  void randomize_grid(std::vector<T>& sphere, RandomGenerator_t& myRNG);
+
   ///API for accessing the value of an SO radial potential at distance r.  For unit and other testing.
   friend RealType getSplinedSOPot(SOECPComponent* so_pp, int l, double r);
   /** @brief Evaluate the spin orbit pp contribution 
