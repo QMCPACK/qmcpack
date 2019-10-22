@@ -355,10 +355,9 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalSRwithForces(ParticleSet& P)
         RealType rinv = 1.0 / dist[j];
         rV            = rVsforce->splint(dist[j], d_rV_dr, d2_rV_dr2);
         V             = rV * rinv;
-        //esum += Zat[j] * V;
         esum += Zat[j] * rVs->splint(dist[j]) * rinv;
 
-        PosType grad = Zat[j] * Zat[ipart] * (d_rV_dr - V) * rinv * rinv * dr[j];
+        PosType grad = Zat[j] * Zat[ipart] * (d_rV_dr - V) * rinv * rinv * d_aa.Displacements[ipart][j];
         forces[ipart] += grad;
         forces[j] -= grad;
       }
@@ -375,10 +374,10 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalSRwithForces(ParticleSet& P)
         RealType rinv = 1.0 / dist[j];
         rV            = rVsforce->splint(dist[j], d_rV_dr, d2_rV_dr2);
         V             = rV * rinv;
-        //esum += Zat[j] * V;
         esum += Zat[j] * rVs->splint(dist[j]) * rinv;
 
-        PosType grad = Zat[j] * Zat[NumCenters - ipart] * (d_rV_dr - V) * rinv * rinv * dr[j];
+        PosType grad = Zat[j] * Zat[NumCenters - ipart] * (d_rV_dr - V)
+		       * rinv * rinv * d_aa.Displacements[NumCenters-ipart][j];
         forces[NumCenters - ipart] += grad;
         forces[j] -= grad;
       }

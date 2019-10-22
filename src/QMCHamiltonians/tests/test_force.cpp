@@ -24,6 +24,7 @@
 #include "QMCHamiltonians/ForceChiesaPBCAA.h"
 #include "QMCHamiltonians/ForceCeperley.h"
 #include "QMCHamiltonians/CoulombPotential.h"
+#include "QMCHamiltonians/CoulombPBCAA.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 
 
@@ -239,6 +240,11 @@ TEST_CASE("Chiesa Force", "[hamiltonian]")
   REQUIRE(force.forces_IonIon[1][0] == Approx(0.1478626893));
   REQUIRE(force.forces_IonIon[1][1] == Approx(0.0));
   REQUIRE(force.forces_IonIon[1][2] == Approx(0.0));
+
+  // Let's test CoulombPBCAA IonIon forces, too
+  CoulombPBCAA ionForce(ions, false, true);
+  REQUIRE(ionForce.forces[0][0] == Approx(-0.1478626893));
+  REQUIRE(ionForce.forces[1][0] == Approx(0.1478626893));
 
   // It seems a bit silly to test the makeClone method
   // but this class does not use the compiler's copy constructor and
