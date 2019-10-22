@@ -329,11 +329,11 @@ eval_multi_UBspline_2d_s_vgl (const multi_UBspline_2d_s *spline,
   intptr_t xs = spline->x_stride;
   intptr_t ys = spline->y_stride;
 
-  float lapl2[2*spline->num_splines];
+  float* lapl2 = new float[2*spline->num_splines];
   for (int n=0; n<spline->num_splines; n++) {
     vals[n] = 0.0;
     grads[2*n+0] = grads[2*n+1] = 0.0;
-    lapl2[2*n+0] = lapl2[2*n+1] = 0.0;
+    lapl2[2*n+0] = lapl2[2*n+3] = 0.0;
   }
 
   for (int i=0; i<4; i++)
@@ -364,6 +364,7 @@ eval_multi_UBspline_2d_s_vgl (const multi_UBspline_2d_s *spline,
     lapl2[2*n+1] *= dyInv*dyInv;
     lapl[n] = lapl2[2*n+0] + lapl2[2*n+1];
   }
+  delete[] lapl2;
 }
 
 
@@ -1183,7 +1184,7 @@ eval_multi_UBspline_3d_s_vgl (const multi_UBspline_3d_s *spline,
   intptr_t ys = spline->y_stride;
   intptr_t zs = spline->z_stride;
 
-  float lapl3[3*spline->num_splines];
+  float* lapl3 = new float[3*spline->num_splines];
   for (int n=0; n<spline->num_splines; n++) {
     vals[n] = 0.0;
     grads[3*n+0] = grads[3*n+1] = grads[3*n+2] = 0.0;
@@ -1226,6 +1227,7 @@ eval_multi_UBspline_3d_s_vgl (const multi_UBspline_3d_s *spline,
     lapl3[3*n+2] *= dzInv*dzInv;
     lapl[n] = lapl3[3*n+0] + lapl3[3*n+1] + lapl3[3*n+2];
   }
+  delete[] lapl3;
 }
 
 

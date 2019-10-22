@@ -28,7 +28,6 @@ SET(WFBASE_SRCS
   SPOSetInfo.cpp
   SPOSetInputInfo.cpp
   SPOSet.cpp
-  OptimizableSPOSet.cpp
   CompositeSPOSet.cpp
   HarmonicOscillator/SHOSet.cpp
   HarmonicOscillator/SHOSetBuilder.cpp
@@ -38,6 +37,7 @@ SET(WFBASE_SRCS
 
 IF(NOT QMC_COMPLEX)
   SET(WFBASE_SRCS ${WFBASE_SRCS}
+    RotatedSPOs.cpp
     FDLRWfn.cpp
     )
 ENDIF(NOT QMC_COMPLEX)
@@ -51,12 +51,11 @@ SET(JASTROW_SRCS
   Jastrow/JastrowBuilder.cpp
   Jastrow/kSpaceJastrow.cpp
   Jastrow/kSpaceJastrowBuilder.cpp
-  Jastrow/RPAJastrow.cpp
   Jastrow/RadialJastrowBuilder.cpp
   Jastrow/CountingJastrowBuilder.cpp
-  IonOrbital.cpp
-  IonOrbitalBuilder.cpp
-  OptimizableSPOBuilder.cpp
+  Jastrow/RPAJastrow.cpp
+  LatticeGaussianProduct.cpp
+  LatticeGaussianProductBuilder.cpp
   Fermion/SPOSetProxy.cpp
   Fermion/SPOSetProxyForMSD.cpp
   )
@@ -204,12 +203,6 @@ SET(FERMION_SRCS ${FERMION_SRCS}
 IF(ENABLE_CUDA)
   SET(FERMION_SRCS ${FERMION_SRCS} Fermion/delayed_update_helper.cu)
 ENDIF(ENABLE_CUDA)
-
-IF(NOT QMC_COMPLEX AND NOT ENABLE_SOA)
-  SET(FERMION_SRCS ${FERMION_SRCS}
-    Fermion/SlaterDetOpt.cpp
-    )
-ENDIF(NOT QMC_COMPLEX AND NOT ENABLE_SOA)
 
 ####################################
 # create libqmcwfs

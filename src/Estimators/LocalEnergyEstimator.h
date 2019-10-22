@@ -72,6 +72,13 @@ public:
   void registerObservables(std::vector<observable_helper*>& h5desc, hid_t gid);
   ScalarEstimatorBase* clone();
   /*@}*/
+
+  inline void accumulate(const int global_walkers, RefVector<MCPWalker>& walkers, RealType wgt)
+  {
+    for (MCPWalker& walker: walkers)
+      accumulate(walker, wgt);
+  }
+
 };
 } // namespace qmcplusplus
 #endif

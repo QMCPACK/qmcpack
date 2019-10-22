@@ -23,6 +23,7 @@
 #include <random/random.hpp>
 #include <Sandbox/input.hpp>
 #include <Sandbox/pseudo.hpp>
+#include <Utilities/FairDivide.h>
 #include <Utilities/Timer.h>
 #include <Sandbox/common.hpp>
 #include <getopt.h>
@@ -44,10 +45,13 @@ void setWalkerOffsets(MCWalkerConfiguration& W, Communicate* myComm)
 
 int main(int argc, char** argv)
 {
-
-  OHMMS::Controller->initialize(0, NULL);
-  Communicate* myComm=OHMMS::Controller;
+#ifdef HAVE_MPI
+  mpi3::environment env(0, NULL);
+  OHMMS::Controller->initialize(env);
+#endif
+  Communicate* myComm = OHMMS::Controller;
   myComm->setName("restart");
+  myComm->barrier();
 
   typedef QMCTraits::RealType              RealType;
   typedef ParticleSet::ParticlePos_t       ParticlePos_t;
@@ -143,10 +147,11 @@ int main(int argc, char** argv)
     nptcl=nels;
 
     {//create up/down electrons
-      els.Lattice.BoxBConds=1;   els.Lattice.set(ions.Lattice);
+      els.Lattice.BoxBConds = 1;
+      els.Lattice = ions.Lattice;
       vector<int> ud(2); ud[0]=nels/2; ud[1]=nels-ud[0];
       els.create(ud);
-      els.R.InUnit=1;
+      els.R.InUnit = PosUnit::Lattice;
       random_th.generate_uniform(&els.R[0][0],nels3);
       els.convert2Cart(els.R); // convert to Cartiesian
       els.RSoA=els.R;

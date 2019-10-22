@@ -13,7 +13,7 @@
 #define QMCPLUSPLUS_SPECIESKINETICENERGY_H
 
 #include "Particle/WalkerSetRef.h"
-#include "QMCHamiltonians/QMCHamiltonianBase.h"
+#include "QMCHamiltonians/OperatorBase.h"
 
 namespace qmcplusplus
 {
@@ -24,7 +24,7 @@ namespace qmcplusplus
  *  If hdf5="yes", then data will be added to stat.h5 as well.
  * The sum of every column that starts with skinetic should be equivalent to the Kinetic column.
  */
-class SpeciesKineticEnergy : public QMCHamiltonianBase
+class SpeciesKineticEnergy : public OperatorBase
 {
 public:
   SpeciesKineticEnergy(ParticleSet& P);
@@ -36,7 +36,7 @@ public:
 
   // pure virtual functions require overrider
   void resetTargetParticleSet(ParticleSet& P) {}                          // required
-  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi); // required
+  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi); // required
 
   // allocate multiple columns in scalar.dat
   void addObservables(PropertySetType& plist, BufferType& collectables);

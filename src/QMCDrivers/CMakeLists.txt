@@ -2,9 +2,10 @@
 #// This file is distributed under the University of Illinois/NCSA Open Source License.
 #// See LICENSE file in top directory for details.
 #//
-#// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+#// Copyright (c) 2019 QMCPACK developers.
 #//
-#// File developed by: Bryan Clark, bclark@Princeton.edu, Princeton University
+#// File developed by: Peter Doak, , doakpw@ornl.gov, Oak Ridge National Laboratory
+#//                    Bryan Clark, bclark@Princeton.edu, Princeton University
 #//                    Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 #//                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 #//                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
@@ -24,6 +25,7 @@
 SET(QMCDRIVERS 
   SimpleFixedNodeBranch.cpp
   BranchIO.cpp
+  MCPopulation.cpp
   QMCDriver.cpp
   QMCDriverInput.cpp
   QMCDriverNew.cpp
@@ -31,10 +33,14 @@ SET(QMCDRIVERS
   QMCLinearOptimize.cpp
   QMCCorrelatedSamplingLinearOptimize.cpp
   QMCFixedSampleLinearOptimize.cpp
+  Optimizers/DescentEngine.cpp
+  Optimizers/HybridEngine.cpp
   QMCCostFunctionBase.cpp
   WaveFunctionTester.cpp
   WalkerControlBase.cpp
   CloneManager.cpp
+  ContextForSteps.cpp
+  Crowd.cpp
   QMCUpdateBase.cpp
   GreenFunctionModifiers/DriftModifierBuilder.cpp
   GreenFunctionModifiers/DriftModifierUNR.cpp
@@ -47,6 +53,9 @@ SET(QMCDRIVERS
   DMC/DMCUpdateAll.cpp
   DMC/DMCUpdatePbyPFast.cpp
   DMC/DMCFactory.cpp
+  DMC/DMCFactoryNew.cpp
+  DMC/DMCBatched.cpp
+  DMC/DMCDriverInput.cpp
   DMC/WalkerControlFactory.cpp
   DMC/WalkerReconfiguration.cpp
   RMC/RMC.cpp
@@ -61,6 +70,7 @@ SET(QMCDRIVERS
   ../Estimators/LocalEnergyEstimator.cpp
   ../Estimators/RMCLocalEnergyEstimator.cpp
   ../Estimators/EstimatorManagerBase.cpp
+  ../Estimators/EstimatorManagerCrowd.cpp
   ../Estimators/CollectablesEstimator.cpp
 )
 
@@ -71,12 +81,11 @@ IF(QMC_CUDA)
    QMCCostFunctionCUDA.cpp)
 ENDIF(QMC_CUDA)
 
-  SET(QMCDRIVERS ${QMCDRIVERS} 
+SET(QMCDRIVERS ${QMCDRIVERS} 
     VMC/VMC.cpp
     VMC/VMCBatched.cpp
-      VMC/VMCLinearOpt.cpp
-      QMCCostFunction.cpp
-     )
+    VMC/VMCLinearOpt.cpp
+    QMCCostFunction.cpp)
 
 IF(HAVE_MPI) 
   SET(QMCDRIVERS ${QMCDRIVERS} 

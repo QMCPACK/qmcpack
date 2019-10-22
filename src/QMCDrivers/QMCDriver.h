@@ -272,6 +272,7 @@ protected:
   ///target population
   RealType nTargetPopulation;
 
+
   ///timestep
   RealType Tau;
 
@@ -296,18 +297,19 @@ protected:
   ///store any parameter that has to be read from a file
   ParameterSet m_param;
 
-  ///record engine for walkers
-  HDFWalkerOutput* wOut;
   ///walker ensemble
   MCWalkerConfiguration& W;
 
   ///trial function
   TrialWaveFunction& Psi;
 
-  WaveFunctionPool& psiPool;
-
   ///Hamiltonian
   QMCHamiltonian& H;
+
+  WaveFunctionPool& psiPool;
+
+  ///record engine for walkers
+  HDFWalkerOutput* wOut;
 
   ///a list of TrialWaveFunctions for multiple method
   std::vector<TrialWaveFunction*> Psi1;
@@ -320,9 +322,6 @@ protected:
 
   ///a list of mcwalkerset element
   std::vector<xmlNodePtr> mcwalkerNodePtr;
-
-  ///a list of timers
-  std::vector<NewTimer*> myTimers;
 
   ///temporary storage for drift
   ParticleSet::ParticlePos_t drift;
@@ -361,8 +360,6 @@ protected:
   bool finalize(int block, bool dumpwalkers = true);
 
   int rotation;
-  void adiosCheckpoint(int block);
-  void adiosCheckpointFinal(int block, bool dumpwalkers);
   std::string getRotationName(std::string RootName);
   std::string getLastRotationName(std::string RootName);
   const std::string& get_root_name() const { return RootName; }

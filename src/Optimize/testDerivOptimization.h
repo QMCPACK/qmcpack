@@ -64,21 +64,21 @@ public:
   testDerivOptimization(ObjectFuncType* atarget = 0)
       : TargetFunc(atarget),
         Displacement(0),
-        xybisect(0),
-        Failed_Last(false),
         CostTol(1.e-3),
         GradTol(1.e-2),
-        CG_ortho(1),
+        deltaG(1e-5),
         a_linmin_maxits(5),
-        a_lastx(1e-2),
-        a_lastx_default(1e-2),
         a_linmin_g1(2),
         a_linmin_g2(1.0),
         a_linmin_g3(0.5),
-        a_restart(0),
+        a_lastx(1e-2),
+        a_lastx_default(1e-2),
+        CG_ortho(1),
         xycleanup(4),
-        Gfactor(3),
-        deltaG(1e-5)
+        a_restart(0),
+        Failed_Last(false),
+        xybisect(0),
+        Gfactor(3)
   {
     if (atarget)
       setTarget(atarget);
@@ -89,7 +89,7 @@ public:
   void setTarget(ObjectFuncType* fn)
   {
     TargetFunc = fn;
-    NumParams  = TargetFunc->NumParams();
+    NumParams  = TargetFunc->getNumParams();
     resizeAllArray(NumParams);
     for (int i = 0; i < NumParams; i++)
       Parms[i] = std::real(TargetFunc->Params(i));

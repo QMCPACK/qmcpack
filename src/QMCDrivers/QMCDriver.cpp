@@ -30,12 +30,6 @@
 #include <limits>
 #include <typeinfo>
 
-#include <ADIOS/ADIOS_config.cpp>
-#ifdef HAVE_ADIOS
-#include <adios.h>
-#include "Particle/AdiosWalkerInput.h"
-#include <ADIOS/ADIOS_profile.h>
-#endif
 #include "QMCDrivers/GreenFunctionModifiers/DriftModifierBuilder.h"
 #if !defined(REMOVE_TRACEMANAGER)
 #include "Estimators/TraceManager.h"
@@ -54,15 +48,15 @@ QMCDriver::QMCDriver(MCWalkerConfiguration& w,
                      WaveFunctionPool& ppool,
                      Communicate* comm)
     : MPIObjectBase(comm),
+      Estimators(0),
+      Traces(0),
       branchEngine(0),
       DriftModifier(0),
+      qmcNode(NULL),
       W(w),
       Psi(psi),
       H(h),
       psiPool(ppool),
-      Estimators(0),
-      Traces(0),
-      qmcNode(NULL),
       wOut(0)
 {
   ResetRandom  = false;
@@ -119,8 +113,12 @@ QMCDriver::QMCDriver(MCWalkerConfiguration& w,
   nSamplesPerThread = 0;
   m_param.add(nSamplesPerThread, "samplesperthread", "real");
   m_param.add(nSamplesPerThread, "dmcwalkersperthread", "real");
+ 
   nTargetPopulation = 0;
+  
   m_param.add(nTargetPopulation, "samples", "real");
+
+
   Tau = 0.1;
   //m_param.add(Tau,"timeStep","AU");
   m_param.add(Tau, "timestep", "AU");
@@ -153,7 +151,7 @@ QMCDriver::QMCDriver(MCWalkerConfiguration& w,
 #endif
   m_param.add(nBlocksBetweenRecompute, "blocks_between_recompute", "int");
   QMCType = "invalid";
-  ////add each QMCHamiltonianBase to W.PropertyList so that averages can be taken
+  ////add each OperatorBase to W.PropertyList so that averages can be taken
   //H.add2WalkerProperty(W);
   //if (storeConfigs) ForwardWalkingHistory.storeConfigsForForwardWalking(w);
   rotation = 0;
@@ -324,150 +322,12 @@ std::string QMCDriver::getLastRotationName(std::string RootName)
   return r_RootName;
 }
 
-void QMCDriver::adiosCheckpoint(int block)
-{
-#ifdef HAVE_ADIOS
-  int64_t adios_handle;
-  uint64_t adios_groupsize, adios_totalsize;
-  EstimatorManagerBase* myEstimator = branchEngine->getEstimatorManager();
-  if (sizeof(OHMMS_PRECISION) == sizeof(double))
-  {
-    adios_open(&adios_handle, "checkpoint_double", (getRotationName(RootName) + ".config.bp").c_str(), "w",
-               myComm->getMPI());
-  }
-  else
-  {
-    adios_open(&adios_handle, "checkpoint_float", (getRotationName(RootName) + ".config.bp").c_str(), "w",
-               myComm->getMPI());
-  }
-
-  adios_groupsize = wOut->get_group_size(W);
-  adios_group_size(adios_handle, adios_groupsize, &adios_totalsize);
-  wOut->adios_checkpoint(W, adios_handle, block);
-
-  //if (myEstimator->is_manager())
-  //{
-  //  BranchIO hh(*branchEngine,myEstimator->getCommunicator());
-  //  adios_groupsize = hh.get_Checkpoint_size();
-  //  adios_groupsize += RandomNumberControl::get_group_size();
-  //  adios_groupsize += wOut->get_group_size(W);
-  //  adios_group_size(adios_handle, adios_groupsize, &adios_totalsize);
-  //  hh.adios_checkpoint(adios_handle);
-  //  branchEngine->save_energy();
-  //  wOut->adios_checkpoint(W, adios_handle, block);
-  //  RandomNumberControl::adios_checkpoint(adios_handle);
-  //}
-  //else
-  //{
-  //  adios_groupsize = RandomNumberControl::get_group_size();
-  //  adios_groupsize += wOut->get_group_size(W);
-  //  adios_group_size(adios_handle, adios_groupsize, &adios_totalsize);
-  //  wOut->adios_checkpoint(W, adios_handle, block);
-  //  RandomNumberControl::adios_checkpoint(adios_handle);
-  //}
-  adios_close(adios_handle);
-
-#ifdef IO_PROFILE
-  ADIOS_PROFILE::profile_adios_size(myComm, ADIOS_PROFILE::CKPOINT, adios_groupsize, adios_totalsize);
-#endif
-#ifdef ADIOS_VERIFY
-  ADIOS_FILE* fp = adios_read_open_file((getLastRotationName(RootName) + ".config.bp").c_str(), ADIOS_READ_METHOD_BP,
-                                        myComm->getMPI());
-  if (fp == NULL)
-    app_error() << "Fail to open adios file " << (getLastRotationName(RootName) + ".config.bp").c_str() << " Abort. "
-                << std::endl;
-  //if (myEstimator->is_manager())
-  //{
-  //  BranchIO hh(*branchEngine,myEstimator->getCommunicator());
-  //  hh.adios_checkpoint_verify(fp);
-  //}
-  //RandomNumberControl::adios_checkpoint_verify(fp);
-  wOut->adios_checkpoint_verify(W, fp);
-  adios_read_close(fp);
-#endif
-#endif
-}
-
-void QMCDriver::adiosCheckpointFinal(int block, bool dumpwalkers)
-{
-#ifdef HAVE_ADIOS
-  int64_t adios_handle;
-  //string group_name;
-  //get the size of walker related data that we are writing to disk
-  //adios_groupsize += RandomNumberControl::get_group_size();
-  //EstimatorManager* myEstimator = branchEngine->getEstimatorManager();
-  if (DumpConfig && dumpwalkers)
-  {
-    if (sizeof(OHMMS_PRECISION) == sizeof(double))
-    {
-      adios_open(&adios_handle, "checkpoint_double", (getRotationName(RootName) + ".config.bp").c_str(), "w",
-                 myComm->getMPI());
-    }
-    else
-    {
-      adios_open(&adios_handle, "checkpoint_float", (getRotationName(RootName) + ".config.bp").c_str(), "w",
-                 myComm->getMPI());
-    }
-    //if (myEstimator->is_manager())
-    //{
-    //  //Since we are in the main process we need to write out some more information
-    //  BranchIO hh(*branchEngine,myEstimator->getCommunicator());
-    //  //Get the size of the data we are writing out for qmc_status
-    //  adios_groupsize += hh.get_Checkpoint_size();
-    //  //Tell adios how much space we are using for this write out.
-    //  adios_group_size(adios_handle, adios_groupsize, &adios_totalsize);
-    //  //Checkpoint qmc status related data
-    //  branchEngine->save_energy(); //save energy_history
-    //  hh.adios_checkpoint(adios_handle);
-    //}
-    //else
-    //  adios_group_size(adios_handle, adios_groupsize, &adios_totalsize);
-    //Checkpoint the data for RandomNumber Control
-
-    //adios_group_size(adios_handle, adios_groupsize, &adios_totalsize);
-    //RandomNumberControl::adios_checkpoint(adios_handle);
-    wOut->adios_checkpoint(W, adios_handle, block);
-    adios_close(adios_handle);
-  }
-#ifdef ADIOS_VERIFY
-  if (DumpConfig && dumpwalkers)
-  {
-    ADIOS_FILE* fp = adios_read_open_file((getLastRotationName(RootName) + ".config.bp").c_str(), ADIOS_READ_METHOD_BP,
-                                          myComm->getMPI());
-    //if (myEstimator->is_manager())
-    //{
-    //  BranchIO hh(*branchEngine,myEstimator->getCommunicator());
-    //  hh.adios_checkpoint_verify(fp);
-    //}
-    //RandomNumberControl::adios_checkpoint_verify(fp);
-    wOut->adios_checkpoint_verify(W, fp);
-    adios_read_close(fp);
-  }
-#endif
-  //if(!ADIOS::useHDF5()){
-  //  branchEngine->finalize(W);
-  //  delete wOut;
-  //  wOut=0;
-  //  nTargetWalkers = W.getActiveWalkers();
-  //  MyCounter++;
-  //  OhmmsInfo::flush();
-  //}
-#endif
-}
-
 void QMCDriver::recordBlock(int block)
 {
   if (DumpConfig && block % Period4CheckPoint == 0)
   {
     checkpointTimer->start();
-    if (ADIOS::useADIOS())
-    {
-      adiosCheckpoint(block);
-    }
-    if (ADIOS::useHDF5())
-    {
-      wOut->dump(W, block);
-    }
+    wOut->dump(W, block);
     branchEngine->write(RootName, true); //save energy_history
     RandomNumberControl::write(RootName, myComm);
     checkpointTimer->stop();
@@ -476,23 +336,14 @@ void QMCDriver::recordBlock(int block)
 
 bool QMCDriver::finalize(int block, bool dumpwalkers)
 {
-  if (ADIOS::useADIOS())
-  {
-    adiosCheckpointFinal(block, dumpwalkers);
-  }
-
-  if (ADIOS::useHDF5())
-  {
-    if (DumpConfig && dumpwalkers)
-      wOut->dump(W, block);
-    delete wOut;
-    wOut = 0;
-    //Estimators->finalize();
-    nTargetWalkers = W.getActiveWalkers();
-    MyCounter++;
-    infoSummary.flush();
-    infoLog.flush();
-  }
+  if (DumpConfig && dumpwalkers)
+    wOut->dump(W, block);
+  delete wOut;
+  wOut = 0;
+  nTargetWalkers = W.getActiveWalkers();
+  MyCounter++;
+  infoSummary.flush();
+  infoLog.flush();
 
   branchEngine->finalize(W);
 
@@ -531,6 +382,7 @@ void QMCDriver::addWalkers(int nwalkers)
     app_log() << "  Using the current " << W.getActiveWalkers() << " walkers." << std::endl;
   }
   setWalkerOffsets();
+
   ////update the global number of walkers
   ////int nw=W.getActiveWalkers();
   ////myComm->allreduce(nw);
@@ -665,13 +517,21 @@ bool QMCDriver::putQMCInfo(xmlNodePtr cur)
   if (!AppendRun)
     CurrentStep = 0;
 
+ 
+
+ 
+
+ 
   //if walkers are initialized via <mcwalkerset/>, use the existing one
+
+
   if (qmc_common.qmc_counter || qmc_common.is_restart)
   {
     app_log() << "Using existing walkers " << std::endl;
   }
   else
-  { //always reset the walkers
+  { 
+      app_log() << "Resetting walkers" << std::endl;
 #ifdef QMC_CUDA
     int nths(1);
 #else
@@ -692,7 +552,7 @@ bool QMCDriver::putQMCInfo(xmlNodePtr cur)
     addWalkers(ndiff);
   }
 
-  return (W.getActiveWalkers() > 0);
+   return (W.getActiveWalkers() > 0);
 }
 
 xmlNodePtr QMCDriver::getQMCNode()
@@ -719,5 +579,7 @@ xmlNodePtr QMCDriver::getQMCNode()
   getContent(CurrentStep, current_ptr);
   return newqmc;
 }
+
+         
 
 } // namespace qmcplusplus

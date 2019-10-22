@@ -98,6 +98,7 @@ ForceCeperley::Return_t ForceCeperley::evaluate(ParticleSet& P)
   }
   else
   {
+#ifndef ENABLE_SOA
     for (int iat = 0; iat < Nnuc; iat++)
     {
       // electron contribution (special treatment if distance is inside cutoff!)
@@ -123,6 +124,7 @@ ForceCeperley::Return_t ForceCeperley::evaluate(ParticleSet& P)
         }
       }
     }
+#endif
   }
   return 0.0;
 }
@@ -151,7 +153,7 @@ bool ForceCeperley::put(xmlNodePtr cur)
   return true;
 }
 
-QMCHamiltonianBase* ForceCeperley::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+OperatorBase* ForceCeperley::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   return new ForceCeperley(*this);
 }

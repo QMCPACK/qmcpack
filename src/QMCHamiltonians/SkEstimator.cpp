@@ -177,7 +177,7 @@ bool SkEstimator::put(xmlNodePtr cur)
 
 bool SkEstimator::get(std::ostream& os) const { return true; }
 
-QMCHamiltonianBase* SkEstimator::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+OperatorBase* SkEstimator::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   SkEstimator* myclone = new SkEstimator(*this);
   myclone->hdf5_out    = hdf5_out;

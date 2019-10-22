@@ -20,7 +20,9 @@
 #include "LongRange/LRHandlerBase.h"
 #include "QMCWaveFunctions/Jastrow/BsplineFunctor.h"
 #include "QMCWaveFunctions/Jastrow/SplineFunctors.h"
+#ifndef ENABLE_SOA
 #include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbital.h"
+#endif
 #include "QMCWaveFunctions/Jastrow/LRBreakupUtilities.h"
 #include "QMCWaveFunctions/Jastrow/kSpaceJastrow.h"
 

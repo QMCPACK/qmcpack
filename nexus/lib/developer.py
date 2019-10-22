@@ -31,7 +31,7 @@
 #====================================================================#
 
 
-from generic import obj,object_interface,log,error,warn
+from generic import obj,object_interface,log,error,warn,message
 from debug import ci,interact
 
 
@@ -41,37 +41,6 @@ class DevBase(obj):
     #end def not_implemented
 #end class DevBase
 
-
-class enum(object_interface):
-    def __init__(self,*keys):
-        if len(keys)==1 and isinstance(keys[0],(list,tuple)):
-            keys = keys[0]
-        #end if
-        n=0
-        for key in keys:
-            self[key] = n
-            n+=1
-        #end for
-    #end def __init__
-        
-    # override some object interface methods
-    # specifically forbid modification
-    def __setitem__(self,name,value):
-        self._error('attempted to modify immutable enum object')
-    #end def __setitem__
-
-    def __delitem__(self,name):
-        self._error('attempted to modify immutable enum object')
-    #end def __delitem__
-
-    def clear(self):
-        self._error('attempted to modify immutable enum object')
-    #end def clear
-
-    def _clear(self):
-        enum.clear(self)
-    #end def _clear
-#end class enum
 
 
 class Void:

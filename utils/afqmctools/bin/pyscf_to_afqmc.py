@@ -133,6 +133,9 @@ def main(args):
     if comm.rank == 0:
         write_metadata(options, sha1, cwd, date_time)
 
+    if comm.rank == 0:
+        print("\n # Finished.")
+
 if __name__ == '__main__':
 
     main(sys.argv[1:])

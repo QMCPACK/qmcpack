@@ -40,6 +40,15 @@ ELSE()
   SET(MP_SUCCESS TRUE)
 ENDIF()
 
+IF(BUILD_AFQMC)
+  IF(PYSCF_BIN)
+    MESSAGE("PYSCF path specified as: ${PYSCF_BIN}.")
+    SUBDIRS("afqmc/workflow")
+  ELSE()
+    MESSAGE("PYSCF_BIN is not set. AFQMC workflow tests will not be performed.")
+  ENDIF()
+ENDIF()
+
 #
 #
 if(NOT ${QMCAPP_ERR} STREQUAL "")

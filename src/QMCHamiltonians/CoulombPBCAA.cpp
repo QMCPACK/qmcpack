@@ -22,15 +22,16 @@
 namespace qmcplusplus
 {
 CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces)
-    : AA(0), d_aa_ID(ref.addTable(ref, DT_SOA_PREFERRED)),
+    : ForceBase(ref, ref),
+      AA(0),
       myGrid(0),
       rVs(0),
       is_active(active),
       FirstTime(true),
       myConst(0.0),
       ComputeForces(computeForces),
-      ForceBase(ref, ref),
-      Ps(ref)
+      Ps(ref),
+      d_aa_ID(ref.addTable(ref, DT_SOA_PREFERRED))
 {
   ReportEngine PRE("CoulombPBCAA", "CoulombPBCAA");
   set_energy_domain(potential);
@@ -138,15 +139,14 @@ CoulombPBCAA::Return_t CoulombPBCAA::evaluateWithIonDerivs(ParticleSet& P,
 #if !defined(REMOVE_TRACEMANAGER)
 CoulombPBCAA::Return_t CoulombPBCAA::evaluate_sp(ParticleSet& P)
 {
-  RealType Vsr               = 0.0;
-  RealType Vlr               = 0.0;
+  mRealType Vsr               = 0.0;
+  mRealType Vlr               = 0.0;
   mRealType& Vc              = myConst;
-  Array<RealType, 1>& V_samp = *V_sample;
+  Array<RealType, 1>& V_samp = V_samp_tmp;
   V_samp                     = 0.0;
   {
     //SR
     const DistanceTableData& d_aa(P.getDistTable(d_aa_ID));
-    RealType pairpot; //energy for single pair
     RealType z;
     if (d_aa.DTType == DT_SOA)
     {
@@ -156,7 +156,7 @@ CoulombPBCAA::Return_t CoulombPBCAA::evaluate_sp(ParticleSet& P)
         const RealType* dist = d_aa.Distances[ipart];
         for (int jpart = 0; jpart < ipart; ++jpart)
         {
-          pairpot = z * Zat[jpart] * rVs->splint(dist[jpart]) / dist[jpart];
+          RealType pairpot = z * Zat[jpart] * rVs->splint(dist[jpart]) / dist[jpart];
           V_samp(ipart) += pairpot;
           V_samp(jpart) += pairpot;
           Vsr           += pairpot;
@@ -165,17 +165,19 @@ CoulombPBCAA::Return_t CoulombPBCAA::evaluate_sp(ParticleSet& P)
     }
     else
     {
+#ifndef ENABLE_SOA
       for (int ipart = 0; ipart < NumCenters; ipart++)
       {
         z = .5 * Zat[ipart];
         for (int nn = d_aa.M[ipart], jpart = ipart + 1; nn < d_aa.M[ipart + 1]; nn++, jpart++)
         {
-          pairpot = z * Zat[jpart] * d_aa.rinv(nn) * rVs->splint(d_aa.r(nn));
+          RealType pairpot = z * Zat[jpart] * d_aa.rinv(nn) * rVs->splint(d_aa.r(nn));
           V_samp(ipart) += pairpot;
           V_samp(jpart) += pairpot;
           Vsr           += pairpot;
         }
       }
+#endif
     }
     Vsr *= 2.0;
   }
@@ -210,7 +212,7 @@ CoulombPBCAA::Return_t CoulombPBCAA::evaluate_sp(ParticleSet& P)
       }
     }
   }
-  for (int i = 0; i < V_sample->size(); ++i)
+  for (int i = 0; i < V_samp.size(); ++i)
     V_samp(i) += V_const(i);
   Value = Vsr + Vlr + Vc;
 #if defined(TRACE_CHECK)
@@ -277,6 +279,7 @@ void CoulombPBCAA::initBreakup(ParticleSet& P)
 
 #if !defined(REMOVE_TRACEMANAGER)
   V_const.resize(NumCenters);
+  V_samp_tmp.resize(NumCenters);
 #endif
 
   Zat.resize(NumCenters);
@@ -370,6 +373,7 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalSRwithForces(ParticleSet& P)
   }
   else
   {
+#ifndef ENABLE_SOA
     for (int ipart = 0; ipart < NumCenters; ipart++)
     {
       mRealType esum = 0.0;
@@ -386,6 +390,7 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalSRwithForces(ParticleSet& P)
       //Accumulate pair sums...species charge for atom i.
       SR += Zat[ipart] * esum;
     }
+#endif
   }
   return SR;
 }
@@ -476,6 +481,7 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalSR(ParticleSet& P)
   }
   else
   { //this will be removed
+#ifndef ENABLE_SOA
     for (int ipart = 0; ipart < NumCenters; ipart++)
     {
       mRealType esum = 0.0;
@@ -488,6 +494,7 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalSR(ParticleSet& P)
       //Accumulate pair sums...species charge for atom i.
       SR += Zat[ipart] * esum;
     }
+#endif
   }
   return SR;
 }
@@ -599,6 +606,7 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalSR_old(ParticleSet& P)
 {
   const auto& d_aa = P.getDistTable(d_aa_ID);
   RealType SR                   = 0.0;
+#ifndef ENABLE_SOA
   for (int ipart = 0; ipart < NumCenters; ipart++)
   {
     RealType esum = 0.0;
@@ -611,6 +619,7 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalSR_old(ParticleSet& P)
     //Accumulate pair sums...species charge for atom i.
     SR += Zat[ipart] * esum;
   }
+#endif
   return SR;
 }
 
@@ -686,7 +695,7 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalConsts_old(bool report)
 }
 
 
-QMCHamiltonianBase* CoulombPBCAA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+OperatorBase* CoulombPBCAA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   if (is_active)
     return new CoulombPBCAA(qp, is_active, ComputeForces);

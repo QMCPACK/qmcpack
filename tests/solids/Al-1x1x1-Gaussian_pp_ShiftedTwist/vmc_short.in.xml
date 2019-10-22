@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<simulation>
+  <project id="vmc_short" series="0"/>
+  <include href="Al-DZ.structure.xml"/>
+  <include href="Al-DZ.wfj.xml"/>
+  <hamiltonian name="h0" type="generic" target="e">
+    <pairpot name="ElecElec" type="coulomb" source="e" target="e" physical="true"/>
+    <pairpot name="IonIon" type="coulomb" source="ion0" target="ion0"/>
+    <pairpot name="PseudoPot" type="pseudo" source="ion0" wavefunction="psi0" format="xml">
+      <pseudo elementType="Al" href="Al.ccECP.xml"/>
+    </pairpot>
+  </hamiltonian>
+   <qmc method="vmc" move="pbyp">
+      <parameter name="blocks"              >    200             </parameter>
+      <parameter name="steps"               >    10              </parameter>
+      <parameter name="subSteps"            >    1               </parameter>
+      <parameter name="timestep"            >    0.1             </parameter>
+      <parameter name="warmupSteps"         >    100             </parameter>
+   </qmc>
+</simulation>

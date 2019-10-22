@@ -42,8 +42,8 @@ VMCLinearOpt::VMCLinearOpt(MCWalkerConfiguration& w,
       UseDrift("yes"),
       NumOptimizables(0),
       w_beta(0.0),
-      GEVtype("mixed"),
       w_alpha(0.0),
+      GEVtype("mixed"),
       printderivs("no")
 //     myRNWarmupSteps(0), logoffset(2.0), logepsilon(0), beta_errorbars(0), alpha_errorbars(0),
 {

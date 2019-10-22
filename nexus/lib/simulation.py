@@ -29,8 +29,8 @@
 #      classes tailor specific functions such as passing dependency  #
 #      data and checking simulation state to a target simulation     #
 #      code.  Derived classes include Qmcpack, Pwscf, Vasp, Gamess,  #
-#      Opium, Sqd, Convert4qmc, Wfconvert, Pw2qmcpack, Pw2casino,    #
-#      SimulationBundle, and TemplateSimulation.                     #
+#      Convert4qmc, Pw2qmcpack, SimulationBundle, and                #
+#      TemplateSimulation.                                           #
 #                                                                    #
 #    NullSimulationInput                                             #
 #      Simulation input class intended for codes that do not use an  #

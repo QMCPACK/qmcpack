@@ -85,10 +85,13 @@ struct DistanceTableData
   ///Type of DT
   int DTType;
 
-  int N_targets;
+  const ParticleSet* Origin;
+
   int N_sources;
+  int N_targets;
   int N_walkers;
 
+#ifndef ENABLE_SOA
   /** @brief M.size() = N_sources+1
    *
    * M[i+i] - M[i] = the number of connected points to the i-th source
@@ -111,6 +114,7 @@ struct DistanceTableData
 
   /** Locator of the pair  */
   IndexVectorType IJ;
+#endif
 
   /** @brief A NN relation of all the source particles with respect to an activePtcl
    *
@@ -175,11 +179,13 @@ struct DistanceTableData
 
   inline bool is_same_type(int dt_type) const { return DTType == dt_type; }
 
+#ifndef ENABLE_SOA
   //@{access functions to the distance, inverse of the distance and directional consine vector
   inline PosType dr(int j) const { return dr_m[j]; }
   inline RealType r(int j) const { return r_m[j]; }
   inline RealType rinv(int j) const { return rinv_m[j]; }
   //@}
+#endif
 
   ///returns the number of centers
   inline IndexType centers() const { return Origin->getTotalNum(); }
@@ -192,6 +198,7 @@ struct DistanceTableData
 
   inline IndexType getTotNadj() const { return npairs_m; }
 
+#ifndef ENABLE_SOA
   /// return the distance |R[iadj(i,nj)]-R[i]|
   inline RealType distance(int i, int nj) const { return r_m[M[i] + nj]; }
 
@@ -243,6 +250,7 @@ struct DistanceTableData
     }
     return -1;
   }
+#endif
 
   ///evaluate the full Distance Table
   virtual void evaluate(ParticleSet& P) = 0;
@@ -332,16 +340,17 @@ struct DistanceTableData
   inline void print(std::ostream& os)
   {
     os << "Table " << Origin->getName() << std::endl;
+#ifndef ENABLE_SOA
     for (int i = 0; i < r_m.size(); i++)
       os << r_m[i] << " ";
     os << std::endl;
+#endif
   }
-
-  const ParticleSet* Origin;
 
   ///number of pairs
   int npairs_m;
 
+#ifndef ENABLE_SOA
   /**defgroup storage data for nearest-neighbor relations
    */
   /*@{*/
@@ -352,6 +361,7 @@ struct DistanceTableData
   /** displacement vectors \f$dr(i,j) = R(j)-R(i)\f$  */
   std::vector<PosType> dr_m;
   /*@}*/
+#endif
 
   /**resize the storage
    *@param npairs number of pairs which is evaluated by a derived class
@@ -372,9 +382,11 @@ struct DistanceTableData
     N_walkers = nw;
     //if(nw==1)
     {
+#ifndef ENABLE_SOA
       dr_m.resize(npairs);
       r_m.resize(npairs);
       rinv_m.resize(npairs);
+#endif
       Temp.resize(N_sources);
     }
   }

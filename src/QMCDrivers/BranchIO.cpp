@@ -17,14 +17,6 @@
 #include "HDFVersion.h"
 #include "Message/CommOperators.h"
 #include "io/hdf_archive.h"
-#ifdef HAVE_ADIOS
-#include "adios.h"
-#include "adios_read.h"
-#include "ADIOS/ADIOS_config.h"
-#ifdef ADIOS_VERIFY
-#include "ADIOS/ADIOS_verify.h"
-#endif
-#endif
 #if defined(HAVE_LIBBOOST)
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
@@ -260,27 +252,6 @@ bool BranchIO::read(const std::string& fname)
 }
 
 
-bool BranchIO::read_adios(const std::string& fname)
-{ //do not use this
-#ifdef HAVE_ADIOS
-  if (ADIOS::getRdADIOS())
-  {
-    ADIOS::open(fname, myComm->getMPI());
-    /** temporary storage to broadcast restart data */
-    ADIOS::read(ref.vParam.data(), "vparam");
-    ADIOS::read(ref.iParam.data(), "iparam");
-    ADIOS::read(&ref.BranchMode, "branchmode");
-    ADIOS::read(&ref.EnergyHist, "energy");
-    ADIOS::read(&ref.VarianceHist, "variance");
-    ADIOS::read(&ref.R2Accepted, "r2accepted");
-    ADIOS::read(&ref.R2Proposed, "r2proposed");
-    ADIOS::close();
-  }
-  bcast_state();
-#endif
-  return true;
-}
-
 void BranchIO::bcast_state()
 {
   int n = ref.vParam.size() + ref.iParam.size();
@@ -325,49 +296,5 @@ void BranchIO::bcast_state()
     ref.R2Proposed.reset(pdata[ii], pdata[ii + 1], pdata[ii + 2]);
   }
 }
-
-#ifdef HAVE_ADIOS
-int64_t BranchIO::get_Checkpoint_size()
-{
-  int64_t adios_groupsize = 8 + 8 * (4) + 8 * (4) + 8 * (4) + 8 * (4) + 4 * (8) + 8 * (16);
-  return adios_groupsize;
-}
-
-
-void BranchIO::adios_checkpoint(int64_t adios_handle)
-{
-  //append .config.h5 if missing
-  void* vparam             = (void*)ref.vParam.data();
-  void* iparam             = (void*)ref.iParam.data();
-  unsigned long branchmode = ref.BranchMode.to_ulong();
-  RealType* energy         = ref.EnergyHist.properties;
-  RealType* variance       = ref.VarianceHist.properties;
-  RealType* r2accepted     = ref.R2Accepted.properties;
-  RealType* r2proposed     = ref.R2Proposed.properties;
-  adios_write(adios_handle, "branchmode", &branchmode);
-  adios_write(adios_handle, "energy", energy);
-  adios_write(adios_handle, "r2accepted", r2accepted);
-  adios_write(adios_handle, "r2proposed", r2proposed);
-  adios_write(adios_handle, "variance", variance);
-  adios_write(adios_handle, "iparam", iparam);
-  adios_write(adios_handle, "vparam", vparam);
-}
-
-#ifdef ADIOS_VERIFY
-void BranchIO::adios_checkpoint_verify(ADIOS_FILE* fp)
-{
-  unsigned long branchmode = ref.BranchMode.to_ulong();
-  IO_VERIFY::adios_checkpoint_verify_variables(fp, "branchmode", branchmode);
-  IO_VERIFY::adios_checkpoint_verify_variables(fp, "energy", (RealType*)ref.EnergyHist.properties);
-  IO_VERIFY::adios_checkpoint_verify_variables(fp, "variance", (RealType*)ref.VarianceHist.properties);
-  IO_VERIFY::adios_checkpoint_verify_variables(fp, "r2accepted", (RealType*)ref.R2Accepted.properties);
-  IO_VERIFY::adios_checkpoint_verify_variables(fp, "r2proposed", (RealType*)ref.R2Proposed.properties);
-  IO_VERIFY::adios_checkpoint_verify_variables(fp, "iparam", (RealType*)ref.iParam.data());
-  IO_VERIFY::adios_checkpoint_verify_intarray_variables(fp, "vparam", (int*)ref.vParam.data());
-}
-#endif
-
-#endif
-
 
 } // namespace qmcplusplus

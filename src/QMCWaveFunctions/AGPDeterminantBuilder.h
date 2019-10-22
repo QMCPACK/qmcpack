@@ -29,10 +29,10 @@ class AGPDeterminant;
 class AGPDeterminantBuilder : public WaveFunctionComponentBuilder
 {
 public:
-  AGPDeterminantBuilder(ParticleSet& els, TrialWaveFunction& wfs, PtclPoolType& pset);
+  AGPDeterminantBuilder(Communicate* comm, ParticleSet& els, PtclPoolType& pset);
 
   /// process a xml node at cur
-  bool put(xmlNodePtr cur);
+  WaveFunctionComponent* buildComponent(xmlNodePtr cur) override;
 
 protected:
   ///reference to a PtclPoolType

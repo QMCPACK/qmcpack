@@ -21,7 +21,7 @@
 
 namespace qmcplusplus
 {
-struct ForceChiesaPBCAA : public QMCHamiltonianBase, public ForceBase
+struct ForceChiesaPBCAA : public OperatorBase, public ForceBase
 {
   typedef LRCoulombSingleton::LRHandlerType LRHandlerType;
   typedef LRCoulombSingleton::GridType GridType;
@@ -104,13 +104,13 @@ struct ForceChiesaPBCAA : public QMCHamiltonianBase, public ForceBase
 
   void setObservables(PropertySetType& plist)
   {
-    QMCHamiltonianBase::setObservables(plist);
+    OperatorBase::setObservables(plist);
     setObservablesF(plist);
   }
 
   void setParticlePropertyList(PropertySetType& plist, int offset)
   {
-    QMCHamiltonianBase::setParticlePropertyList(plist, offset);
+    OperatorBase::setParticlePropertyList(plist, offset);
     setParticleSetF(plist, offset);
   }
 
@@ -118,7 +118,7 @@ struct ForceChiesaPBCAA : public QMCHamiltonianBase, public ForceBase
   void resetTargetParticleSet(ParticleSet& P);
 
 
-  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 
   bool put(xmlNodePtr cur);
 

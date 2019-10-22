@@ -111,6 +111,7 @@ LocalCorePolPotential::Return_t LocalCorePolPotential::evaluate(ParticleSet& P)
     int iz = Species.addAttribute("charge");
     const auto& d_ii = IonConfig.getDistTable(d_ii_ID);
     //calculate the Core-Core Dipole matrix
+#ifndef ENABLE_SOA
     for (int iat = 0; iat < nCenters; iat++)
     {
       for (int nn = d_ii.M[iat]; nn < d_ii.M[iat + 1]; nn++)
@@ -123,6 +124,7 @@ LocalCorePolPotential::Return_t LocalCorePolPotential::evaluate(ParticleSet& P)
         CoreCoreDipole[jat] += dipole * Species(iz, IonConfig.GroupID[iat]);
       }
     }
+#endif
     RealType corecore(0.0);
     for (int iat = 0; iat < nCenters; iat++)
     {
@@ -142,6 +144,7 @@ LocalCorePolPotential::Return_t LocalCorePolPotential::evaluate(ParticleSet& P)
     if (Centers[iat])
     {
       PosType cc(CoreCoreDipole[iat]);
+#ifndef ENABLE_SOA
       for (int nn = d_ie.M[iat]; nn < d_ie.M[iat + 1]; nn++)
       {
         int eid(d_ie.J[nn]);
@@ -150,13 +153,14 @@ LocalCorePolPotential::Return_t LocalCorePolPotential::evaluate(ParticleSet& P)
         //cc +=  dipole*fcpp(d_ie->r(nn)*r_binv);
         cc += dipole * ((*Centers[iat])(d_ie.r(nn)));
       }
+#endif
       e += Centers[iat]->C * dot(cc, cc);
     }
   }
   return Value = e;
 }
 
-QMCHamiltonianBase* LocalCorePolPotential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+OperatorBase* LocalCorePolPotential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   LocalCorePolPotential* myclone = new LocalCorePolPotential(IonConfig, qp);
   //copy cpp parameters

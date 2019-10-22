@@ -8,15 +8,10 @@
 #include "../mpi3/detail/iterator_traits.hpp"
 #include "../mpi3/detail/strided.hpp"
 #include "../mpi3/equality.hpp"
-#include "../mpi3/communicator.hpp"
-#include "../mpi3/window.hpp"
+#include "../mpi3/error.hpp"
 
 #define OMPI_SKIP_MPICXX 1  // https://github.com/open-mpi/ompi/issues/5157
 #include<mpi.h>
-
-#include<algorithm> // copy_n
-#include<numeric> // iota
-#include<vector>
 
 namespace boost{
 namespace mpi3{
@@ -27,34 +22,18 @@ public:
 	MPI_Group& operator&(){return impl_;}
 	MPI_Group const& operator&() const{return impl_;}
 	group() : impl_{MPI_GROUP_EMPTY}{}
-	group(mpi3::communicator const& c){
-		int s = MPI_Comm_group(&c, &impl_);
-		if(s != MPI_SUCCESS) throw std::runtime_error{"cannot construct group"};
+	group(group&& o) noexcept : impl_{std::exchange(o.impl_, MPI_GROUP_EMPTY)}{}
+	group(group const& o){
+		auto e = static_cast<enum error>(MPI_Group_excl(o.impl_, 0, nullptr, &impl_));
+		if(e != mpi3::error::success) throw std::system_error{e, "cannot copy group"};
 	}
-	group(mpi3::window<> const& w){ // TODO window<void>
-		int s = MPI_Win_get_group(&w, &impl_);
-		if(s != MPI_SUCCESS) throw std::runtime_error{"cannot get group"};
-	}
-	group(group const& d) = delete;
-/*	{
-		std::vector<int> v(d.size());
-		std::iota(v.begin(), v.end(), 0);
-		int s = MPI_Group_incl(d.impl_, v.size(), v.data(), &impl_);
-		if(s != MPI_SUCCESS) throw std::runtime_error{"cannot copy construct"};
-	}*/
-	group(group&& g) : impl_{std::exchange(g.impl_, MPI_GROUP_EMPTY)}{}
-	group& operator=(group const&) = delete;
-	group& operator=(group&& other){
-		swap(other);
-		other.clear();
-		return *this;
-	}
-	void swap(group& other){std::swap(impl_, other.impl_);}
+	void swap(group& other) noexcept{std::swap(impl_, other.impl_);}
+	group& operator=(group const& other){group t{other}; swap(t); return *this;}
+	group& operator=(group&& other){swap(other); other.clear(); return *this;}
 	void clear(){
 		if(impl_ != MPI_GROUP_EMPTY){
-			int s = MPI_Group_free(&impl_);
-			assert( s == MPI_SUCCESS ); // don't want to throw from ctor
-		//	if(s != MPI_SUCCESS) throw std::runtime_error{"cannot free group"};
+			auto e = static_cast<enum error>(MPI_Group_free(&impl_));
+			if(e != mpi3::error::success) throw std::system_error{e, "cannot free group"}; // don't want to throw from dtor
 		}
 		impl_ = MPI_GROUP_EMPTY;
 	}
@@ -80,8 +59,8 @@ public:
 	bool root() const{return (not empty()) and (rank() == 0);}
 	int size() const{
 		int size = -1;
-		int s = MPI_Group_size(impl_, &size);
-		if(s != MPI_SUCCESS) throw std::runtime_error{"rank not available"};
+		auto e = static_cast<enum error>(MPI_Group_size(impl_, &size));
+		if(e != mpi3::error::success) throw std::system_error{e, "cannot group size"};
 		return size;
 	}
 	group sliced(int first, int last, int stride = 1) const{
@@ -91,7 +70,7 @@ public:
 		if(s != MPI_SUCCESS) throw std::runtime_error{"cannot slice"};
 		return ret;
 	}
-	bool empty() const{return size() == 0;}
+	bool empty() const{return size()==0;}
 	friend mpi3::equality compare(group const& self, group const& other){
 		int result;
 		int s = MPI_Group_compare(self.impl_, other.impl_, &result);
@@ -131,20 +110,6 @@ public:
 		return out;
 	}
 };
-
-inline communicator communicator::create(group const& g) const{
-	communicator ret;
-	int s = MPI_Comm_create(impl_, &g, &ret.impl_);
-	if(s != MPI_SUCCESS) throw std::runtime_error{"cannot crate group"};
-	return ret;
-}
-
-inline communicator communicator::create_group(class group const& g, int tag = 0) const{
-	communicator ret;
-	int s = MPI_Comm_create_group(impl_, &g, tag, &ret.impl_);
-	if(s != MPI_SUCCESS) throw std::runtime_error{"cannot create_group"};
-	return ret;
-}
 
 }}
 

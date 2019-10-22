@@ -139,7 +139,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_shared(b
                  <<" Problems reading QKTok2. \n";
       APP_ABORT("");
     }
-    std::vector<ValueType> E_(2);
+    std::vector<RealType> E_(2);
     if(!dump.readEntry(E_,"Energies")) {
       app_error()<<" Error in KPFactorizedHamiltonian::getHamiltonianOperations():"
                  <<" Problems reading Energies. \n";
@@ -787,7 +787,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
                  <<" Problems reading QKTok2. \n";
       APP_ABORT("");
     }
-    std::vector<ValueType> E_(2);
+    std::vector<RealType> E_(2);
     if(!dump.readEntry(E_,"Energies")) {
       app_error()<<" Error in KPFactorizedHamiltonian::getHamiltonianOperations():"
                  <<" Problems reading Energies. \n";

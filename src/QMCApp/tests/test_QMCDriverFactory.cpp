@@ -48,17 +48,22 @@ TEST_CASE("QMCDriverFactory create VMC Driver", "[qmcapp]")
 
   MinimalParticlePool mpp;
   ParticleSetPool particle_pool = mpp(comm);
-  MinimalWaveFunctionPool wfp(comm);
-  WaveFunctionPool wavefunction_pool = wfp(particle_pool);
-  MinimalHamiltonianPool mhp(comm);
-  HamiltonianPool hamiltonian_pool = mhp(particle_pool, wavefunction_pool);
+  MinimalWaveFunctionPool wfp;
+  WaveFunctionPool wavefunction_pool = wfp(comm,&particle_pool);
+  wavefunction_pool.setPrimary(wavefunction_pool.getWaveFunction("psi0"));
+  MinimalHamiltonianPool mhp;
+  HamiltonianPool hamiltonian_pool = mhp(comm,&particle_pool, &wavefunction_pool);
   std::string target("e");
   MCWalkerConfiguration* qmc_system = particle_pool.getWalkerSet(target);
 
   std::unique_ptr<QMCDriverInterface> last_driver;
   std::unique_ptr<QMCDriverInterface> qmc_driver;
+
+  MCPopulation population(comm->size(), particle_pool.getParticleSet("e"), wavefunction_pool.getPrimary(),
+                            hamiltonian_pool.getPrimary());
+
   qmc_driver = driver_factory.newQMCDriver(std::move(last_driver), 0, node, das, *qmc_system, particle_pool,
-                                           wavefunction_pool, hamiltonian_pool, comm);
+                                           wavefunction_pool, hamiltonian_pool, population, comm);
   REQUIRE(qmc_driver != nullptr);
 }
 
@@ -80,17 +85,94 @@ TEST_CASE("QMCDriverFactory create VMCBatched driver", "[qmcapp]")
 
   MinimalParticlePool mpp;
   ParticleSetPool particle_pool = mpp(comm);
-  MinimalWaveFunctionPool wfp(comm);
-  WaveFunctionPool wavefunction_pool = wfp(particle_pool);
-  MinimalHamiltonianPool mhp(comm);
-  HamiltonianPool hamiltonian_pool = mhp(particle_pool, wavefunction_pool);
+  MinimalWaveFunctionPool wfp;
+  WaveFunctionPool wavefunction_pool = wfp(comm, &particle_pool);
+  wavefunction_pool.setPrimary(wavefunction_pool.getWaveFunction("psi0"));
+  MinimalHamiltonianPool mhp;
+  HamiltonianPool hamiltonian_pool = mhp(comm, &particle_pool, &wavefunction_pool);
   std::string target("e");
   MCWalkerConfiguration* qmc_system = particle_pool.getWalkerSet(target);
 
   std::unique_ptr<QMCDriverInterface> last_driver;
   std::unique_ptr<QMCDriverInterface> qmc_driver;
+  MCPopulation population(comm->size(), particle_pool.getParticleSet("e"), wavefunction_pool.getPrimary(),
+                            hamiltonian_pool.getPrimary());
+
   qmc_driver = driver_factory.newQMCDriver(std::move(last_driver), 0, node, das, *qmc_system, particle_pool,
-                                           wavefunction_pool, hamiltonian_pool, comm);
+                                           wavefunction_pool, hamiltonian_pool, population, comm);
   REQUIRE(qmc_driver != nullptr);
 }
+
+TEST_CASE("QMCDriverFactory create DMC driver", "[qmcapp]")
+{
+  using namespace testing;
+  Communicate* comm;
+  OHMMS::Controller->initialize(0, NULL);
+  comm = OHMMS::Controller;
+
+  QMCDriverFactory driver_factory;
+
+  Libxml2Document doc;
+  bool okay = doc.parseFromString(valid_dmc_input_sections[valid_dmc_input_dmc_index]);
+  REQUIRE(okay);
+  xmlNodePtr node                           = doc.getRoot();
+  QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(0, node);
+  REQUIRE(das.new_run_type == QMCRunType::DMC);
+
+  MinimalParticlePool mpp;
+  ParticleSetPool particle_pool = mpp(comm);
+  MinimalWaveFunctionPool wfp;
+  WaveFunctionPool wavefunction_pool = wfp(comm, &particle_pool);
+  wavefunction_pool.setPrimary(wavefunction_pool.getWaveFunction("psi0"));
+  MinimalHamiltonianPool mhp;
+  HamiltonianPool hamiltonian_pool = mhp(comm, &particle_pool, &wavefunction_pool);
+  std::string target("e");
+  MCWalkerConfiguration* qmc_system = particle_pool.getWalkerSet(target);
+
+  std::unique_ptr<QMCDriverInterface> last_driver;
+  std::unique_ptr<QMCDriverInterface> qmc_driver;
+  MCPopulation population(comm->size(), particle_pool.getParticleSet("e"), wavefunction_pool.getPrimary(),
+                            hamiltonian_pool.getPrimary());
+
+  qmc_driver = driver_factory.newQMCDriver(std::move(last_driver), 0, node, das, *qmc_system, particle_pool,
+                                           wavefunction_pool, hamiltonian_pool, population, comm);
+  REQUIRE(qmc_driver != nullptr);
+}
+
+TEST_CASE("QMCDriverFactory create DMCBatched driver", "[qmcapp]")
+{
+  using namespace testing;
+  Communicate* comm;
+  OHMMS::Controller->initialize(0, NULL);
+  comm = OHMMS::Controller;
+
+  QMCDriverFactory driver_factory;
+
+  Libxml2Document doc;
+  bool okay = doc.parseFromString(valid_dmc_input_sections[valid_dmc_input_dmc_batch_index]);
+  REQUIRE(okay);
+  xmlNodePtr node                           = doc.getRoot();
+  QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(0, node);
+  REQUIRE(das.new_run_type == QMCRunType::DMC_BATCH);
+
+  MinimalParticlePool mpp;
+  ParticleSetPool particle_pool = mpp(comm);
+  MinimalWaveFunctionPool wfp;
+  WaveFunctionPool wavefunction_pool = wfp(comm, &particle_pool);
+  wavefunction_pool.setPrimary(wavefunction_pool.getWaveFunction("psi0"));
+  MinimalHamiltonianPool mhp;
+  HamiltonianPool hamiltonian_pool = mhp(comm, &particle_pool, &wavefunction_pool);
+  std::string target("e");
+  MCWalkerConfiguration* qmc_system = particle_pool.getWalkerSet(target);
+
+  std::unique_ptr<QMCDriverInterface> last_driver;
+  std::unique_ptr<QMCDriverInterface> qmc_driver;
+  MCPopulation population(comm->size(), particle_pool.getParticleSet("e"), wavefunction_pool.getPrimary(),
+                            hamiltonian_pool.getPrimary());
+
+  qmc_driver = driver_factory.newQMCDriver(std::move(last_driver), 0, node, das, *qmc_system, particle_pool,
+                                           wavefunction_pool, hamiltonian_pool, population, comm);
+  REQUIRE(qmc_driver != nullptr);
+}
+
 } // namespace qmcplusplus

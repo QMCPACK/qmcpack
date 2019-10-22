@@ -76,12 +76,12 @@ public:
   ///destructor
   ~MultiSlaterDeterminantFast();
 
-  void checkInVariables(opt_variables_type& active);
-  void checkOutVariables(const opt_variables_type& active);
-  void resetParameters(const opt_variables_type& active);
-  void reportStatus(std::ostream& os);
+  void checkInVariables(opt_variables_type& active) override;
+  void checkOutVariables(const opt_variables_type& active) override;
+  void resetParameters(const opt_variables_type& active) override;
+  void reportStatus(std::ostream& os) override;
 
-  void resetTargetParticleSet(ParticleSet& P);
+  void resetTargetParticleSet(ParticleSet& P) override;
 
   //builds orbital rotation parameters using MultiSlater member variables
   void buildOptVariables();
@@ -101,32 +101,31 @@ public:
 
   ValueType evaluate(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
 
-  LogValueType evaluateLog(ParticleSet& P //const DistanceTableData* dtable,
-                       ,
-                       ParticleSet::ParticleGradient_t& G,
-                       ParticleSet::ParticleLaplacian_t& L);
+  LogValueType evaluateLog(ParticleSet& P,
+                           ParticleSet::ParticleGradient_t& G,
+                           ParticleSet::ParticleLaplacian_t& L) override;
 
-  GradType evalGrad(ParticleSet& P, int iat);
-  ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
+  GradType evalGrad(ParticleSet& P, int iat) override;
+  ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
   ValueType evalGrad_impl(ParticleSet& P, int iat, bool newpos, GradType& g_at);
 
-  ValueType ratio(ParticleSet& P, int iat);
+  ValueType ratio(ParticleSet& P, int iat) override;
   ValueType ratio_impl(ParticleSet& P, int iat);
-  void evaluateRatiosAlltoOne(ParticleSet& P, int iat)
+  void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios) override
   {
     // the base class routine may probably work, just never tested.
     // it can also be highly optimized with a specialized implementation.
     APP_ABORT(" Need to implement MultiSlaterDeterminantFast::evaluateRatiosAlltoOne. \n");
   }
 
-  void acceptMove(ParticleSet& P, int iat);
-  void restore(int iat);
+  void acceptMove(ParticleSet& P, int iat) override;
+  void restore(int iat) override;
 
-  void registerData(ParticleSet& P, WFBufferType& buf);
-  LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false);
-  void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
+  void registerData(ParticleSet& P, WFBufferType& buf) override;
+  LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override;
+  void copyFromBuffer(ParticleSet& P, WFBufferType& buf) override;
 
-  WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;
+  WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const override;
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& optvars,
                            std::vector<ValueType>& dlogpsi,

@@ -19,18 +19,18 @@
 namespace qmcplusplus
 {
 MultiSlaterDeterminant::MultiSlaterDeterminant(ParticleSet& targetPtcl, SPOSetProxyPtr upspo, SPOSetProxyPtr dnspo)
-    : spo_up(upspo),
-      spo_dn(dnspo),
-      RatioTimer(*TimerManager.createTimer("MultiSlaterDeterminant::ratio")),
-      Ratio1Timer(*TimerManager.createTimer("MultiSlaterDeterminant::detEval_ratio")),
+    : RatioTimer(*TimerManager.createTimer("MultiSlaterDeterminant::ratio")),
       RatioGradTimer(*TimerManager.createTimer("MultiSlaterDeterminant::ratioGrad")),
-      Ratio1GradTimer(*TimerManager.createTimer("MultiSlaterDeterminant::detEval_ratioGrad")),
       RatioAllTimer(*TimerManager.createTimer("MultiSlaterDeterminant::ratio(all)")),
-      Ratio1AllTimer(*TimerManager.createTimer("MultiSlaterDeterminant::detEval_ratio(all)")),
       UpdateTimer(*TimerManager.createTimer("MultiSlaterDeterminant::updateBuffer")),
-      AccRejTimer(*TimerManager.createTimer("MultiSlaterDeterminant::Accept_Reject")),
       EvaluateTimer(*TimerManager.createTimer("MultiSlaterDeterminant::evaluate")),
-      evalOrbTimer(*TimerManager.createTimer("MultiSlaterDeterminant::evalOrbGrad"))
+      Ratio1Timer(*TimerManager.createTimer("MultiSlaterDeterminant::detEval_ratio")),
+      Ratio1GradTimer(*TimerManager.createTimer("MultiSlaterDeterminant::detEval_ratioGrad")),
+      Ratio1AllTimer(*TimerManager.createTimer("MultiSlaterDeterminant::detEval_ratio(all)")),
+      AccRejTimer(*TimerManager.createTimer("MultiSlaterDeterminant::Accept_Reject")),
+      evalOrbTimer(*TimerManager.createTimer("MultiSlaterDeterminant::evalOrbGrad")),
+      spo_up(upspo),
+      spo_dn(dnspo)
 {
   registerTimers();
   //Optimizable=true;

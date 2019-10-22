@@ -22,4 +22,4 @@ echo "Threads         " $OMP_NUM_THREADS
 echo "Binary          " $2
 echo "Input files     " $ARGS
 
-jsrun -n $1 -c $OMP_NUM_THREADS -b packed:$OMP_NUM_THREADS $2 $ARGS
+jsrun -n $1 -c $OMP_NUM_THREADS -g 1 -b packed:$OMP_NUM_THREADS $2 $ARGS

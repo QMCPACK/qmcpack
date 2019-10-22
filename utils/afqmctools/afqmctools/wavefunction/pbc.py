@@ -91,7 +91,7 @@ def generate_orbitals(fock, X, nmo_pk, rediag, ortho_ao,
         if verbose:
             print(" # Generating trial wavefunction for kpoint: "
                   "{:d}".format(k))
-        if rediag and ortho_ao:
+        if ortho_ao:
             start = time.time()
             ea, orb_a = rediag_fock(fock[0,k], X[k][:,:nmo_pk[k]])
             full_mo_a.append(orb_a)
@@ -105,7 +105,7 @@ def generate_orbitals(fock, X, nmo_pk, rediag, ortho_ao,
             if verbose:
                 print(" # Time to rediagonalise fock: "
                       "  {:13.8e} s".format(time.time()-start))
-        elif not rediag and not ortho_ao:
+        else:
             if uhf:
                 print("WARNING: UHF wavefunction with ortho_ao = False not "
                       "allowed.")
@@ -116,9 +116,8 @@ def generate_orbitals(fock, X, nmo_pk, rediag, ortho_ao,
             full_mo_a.append(orb_a)
             ks.append([k]*len(ea))
             bands.append([i for i in range(len(ea))])
-        elif ortho_ao and not rediag:
-            print("WARNING: ortho_ao = True and rediag = False not implemented.")
-            sys.exit()
+            eigs_b = eigs_a
+            foll_mo_b = full_mo_b
     return ((eigs_a,eigs_b), (full_mo_a,full_mo_b), ks, bands)
 
 def create_wavefunction(orbs, occs, nmo_pk, nelec, uhf, verbose):
@@ -233,21 +232,24 @@ def reoccupy(mo_occ, mo_energy, uhf, verbose, low=0.25,
         nalpha = int(round(numpy.sum(re_occ_a)))
         nbeta = int(round(numpy.sum(re_occ_b)))
         re_occ = [re_occ_a, re_occ_b]
-        occs_a, occs_b = zip(*itertools.product(msd_a,msd_b))
-        pdets = numpy.outer(p_a,p_b).ravel()
-        srt_det = pdets.argsort()
         srt = (srt_a,srt_b)
         isrt = (isrt_a,isrt_b)
-        msd_coeff = (pdets/sum(pdets))**0.5
-        if ndet_max is not None:
-            if verbose:
-                print(" # Truncating MSD expansion at {}"
-                      " determinants.".format(ndet_max))
-            nd = min(len(occs_a),ndet_max)
-            sd = srt_det[:nd]
-            trial = (msd_coeff[sd], numpy.array(occs_a)[sd], numpy.array(occs_b)[sd])
+        if msd_a is not None and msd_b is not None:
+            occs_a, occs_b = zip(*itertools.product(msd_a,msd_b))
+            pdets = numpy.outer(p_a,p_b).ravel()
+            srt_det = pdets.argsort()
+            msd_coeff = (pdets/sum(pdets))**0.5
+            if ndet_max is not None:
+                if verbose:
+                    print(" # Truncating MSD expansion at {}"
+                          " determinants.".format(ndet_max))
+                nd = min(len(occs_a),ndet_max)
+                sd = srt_det[:nd]
+                trial = (msd_coeff[sd], numpy.array(occs_a)[sd], numpy.array(occs_b)[sd])
+            else:
+                trial = (msd_coeff, occs_a, occs_b)
         else:
-            trial = (msd_coeff, occs_a, occs_b)
+            trial = None
     else:
         re_occ, ndeg, msd, srt, isrt, p = (
                 determine_occupancies(mo_occ,

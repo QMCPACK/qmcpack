@@ -68,6 +68,13 @@ struct CSEnergyEstimator : public ScalarEstimatorBase
     for (; first != last; ++first)
       accumulate(**first, wgt);
   }
+
+  inline void accumulate(const int global_walkers, RefVector<MCPWalker>& walkers, RealType wgt)
+  {
+    for (MCPWalker& walker: walkers)
+      accumulate(walker, wgt);
+  }
+
   /**  add the local energy, variance and all the Hamiltonian components to the scalar record container
    *@param record storage of scalar records (name,value)
    */

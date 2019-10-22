@@ -17,16 +17,17 @@
 #ifndef QMCPLUSPLUS_NONLOCAL_ECPOTENTIAL_H
 #define QMCPLUSPLUS_NONLOCAL_ECPOTENTIAL_H
 #include "QMCHamiltonians/NonLocalTOperator.h"
-#include "QMCHamiltonians/NonLocalECPComponent.h"
 #include "QMCHamiltonians/ForceBase.h"
 #include "Particle/NeighborLists.h"
 
 namespace qmcplusplus
 {
+
+class NonLocalECPComponent;
 /** @ingroup hamiltonian
  * \brief Evaluate the semi local potentials
  */
-class NonLocalECPotential : public QMCHamiltonianBase, public ForceBase
+class NonLocalECPotential : public OperatorBase, public ForceBase
 {
 public:
   NonLocalECPotential(ParticleSet& ions,
@@ -60,6 +61,16 @@ public:
    */
   void setNonLocalMoves(xmlNodePtr cur) { UseTMove = nonLocalOps.put(cur); }
 
+  void setNonLocalMoves(const std::string& non_local_move_option,
+                                        const double tau,
+                                        const double alpha,
+                                        const double gamma)
+  {
+    UseTMove = nonLocalOps.thingsThatShouldBeInMyConstructor(non_local_move_option,
+                                        tau,
+                                        alpha,
+                                        gamma);
+  }
   /** make non local moves with particle-by-particle moves
    * @param P particle set
    * @return the number of accepted moves
@@ -80,7 +91,7 @@ public:
     return true;
   }
 
-  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 
   void addComponent(int groupID, NonLocalECPComponent* pp);
 
@@ -132,6 +143,8 @@ private:
   ParticleSet::ParticlePos_t PulayTerm;
 #if !defined(REMOVE_TRACEMANAGER)
   ///single particle trace samples
+  Array<TraceReal, 1> Ve_samp_tmp;
+  Array<TraceReal, 1> Vi_samp_tmp;
   Array<TraceReal, 1>* Ve_sample;
   Array<TraceReal, 1>* Vi_sample;
 #endif

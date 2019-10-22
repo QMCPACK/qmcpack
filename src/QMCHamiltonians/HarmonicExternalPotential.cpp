@@ -54,7 +54,7 @@ bool HarmonicExternalPotential::get(std::ostream& os) const
 }
 
 
-QMCHamiltonianBase* HarmonicExternalPotential::makeClone(ParticleSet& P, TrialWaveFunction& psi)
+OperatorBase* HarmonicExternalPotential::makeClone(ParticleSet& P, TrialWaveFunction& psi)
 {
   return new HarmonicExternalPotential(*this);
 }

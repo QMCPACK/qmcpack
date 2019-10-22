@@ -6,7 +6,7 @@
 #====================================================================#
 #  qmcpack_converters.py                                             #
 #    Nexus interfaces for orbital converter tools of QMCPACK:        #
-#    pw2qmcpack, wfconvert, and convert4qmc                          #
+#    pw2qmcpack and convert4qmc                                      #
 #                                                                    #
 #  Content summary:                                                  #
 #    generate_pw2qmcpack                                             #
@@ -23,19 +23,6 @@
 #                                                                    #
 #    Pw2qmcpackAnalyzer                                              #
 #      SimulationAnalyzer class for pw2qmcpack.                      #
-#                                                                    #
-#                                                                    #
-#    WfconvertInput                                                  #
-#      SimulationInput class for wfconvert.                          #     
-#                                                                    #
-#    WfconvertAnalyzer                                               #
-#      SimulationAnalyzer class for wfconvert.                       #        
-#                                                                    #
-#    Wfconvert                                                       #
-#      Simulation class for wfconvert.                               #
-#                                                                    #
-#    generate_wfconvert                                              #
-#      User-facing function to generate wfconvert simulation objects.#
 #                                                                    #
 #                                                                    #
 #    Convert4qmcInput                                                #
@@ -391,190 +378,6 @@ def generate_pw2qmcpack(**kwargs):
     return pw2qmcpack
 #end def generate_pw2qmcpack
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class WfconvertInput(SimulationInput):
-    def __init__(self,app_name='wfconvert',h5in='MISSING.h5',h5out='wfconvert.h5',spline=False,format='eshdf',factor=None):
-        self.app_name = app_name
-        self.h5in = h5in
-        self.h5out= h5out
-        self.spline = spline
-        self.format = format
-        self.factor = factor
-    #end def __init__
-
-#wfconvert --nospline --eshdf diamond.h5 out/diamond.pwscf.h5 >& diamond-wfconvert.out 
-    def set_app_name(self,app_name):
-        self.app_name = app_name
-    #end def set_app_name
-
-    def app_command(self):
-        c = self.app_name+' '
-        if not self.spline:
-            c+= '--nospline '
-        #end if
-        c+='--'+self.format+' '+self.h5out+' '+self.h5in
-        return c
-    #end def app_command
-        
-
-    def read(self,filepath):
-        None
-    #end def read
-
-    def write_text(self,filepath=None):
-        return self.app_command()
-    #end def write_text
-#end class WfconvertInput
-
-
-def generate_wfconvert_input(app_name='wfconvert',h5in='MISSING.h5',h5out='wfconvert.h5',spline=False,format='eshdf',factor=None):
-    wi = WfconvertInput(
-        app_name = app_name,
-        h5in   = h5in,
-        h5out  = h5out,
-        spline = spline,
-        format = format,
-        factor = factor
-        )
-    return wi
-#end def generate_wfconvert_input
-
-
-class WfconvertAnalyzer(SimulationAnalyzer):
-    def __init__(self,arg0):
-        if isinstance(arg0,Simulation):
-            sim = arg0
-            self.infile = sim.infile
-            self.dir    = sim.locdir
-            self.h5file = os.path.join(sim.locdir,sim.input.h5out)
-        else:
-            self.infile = arg0
-        #end if
-    #end def __init__
-
-    def analyze(self):
-        if False:
-            import h5py
-            self.log('Fixing h5 file',n=5)
-            h = h5py.File(self.h5file)
-            if 'electrons' in h:
-                elec = h['electrons']
-                nkpoints = 0
-                for name,val in elec.iteritems():
-                    if name.startswith('kpoint'):
-                        nkpoints+=1
-                    #end for
-                #end if
-                nkold = elec['number_of_kpoints'][0] 
-                self.log('Were',nkold,'kpoints, now',nkpoints,'kpoints',n=6)
-                elec['number_of_kpoints'][0] = nkpoints
-            #end for        
-        #end if
-    #end def analyze
-#end class WfconvertAnalyzer
-
-
-
-class Wfconvert(Simulation):
-    input_type             = WfconvertInput
-    analyzer_type          = WfconvertAnalyzer
-    generic_identifier     = 'wfconvert'
-    application            = 'wfconvert'
-    application_properties = set(['serial'])
-    application_results    = set(['orbitals'])
-
-    def set_app_name(self,app_name):
-        self.app_name = app_name
-        self.input.set_app_name(app_name)
-    #end def set_app_name
-
-    def check_result(self,result_name,sim):
-        calculating_result = False
-        if result_name=='orbitals':
-            calculating_result = True
-        else:
-            calculating_result = False
-            self.error('ability to check for result '+result_name+' has not been implemented')
-        #end if        
-        return calculating_result
-    #end def check_result
-
-    def get_result(self,result_name,sim):
-        result = obj()
-        if result_name=='orbitals':
-            result.h5file   = os.path.join(self.locdir,self.input.h5out)
-            result.outfile  = os.path.join(self.locdir,self.outfile)
-        else:
-            self.error('ability to get result '+result_name+' has not been implemented')
-        #end if        
-        return result
-    #end def get_result
-
-    def incorporate_result(self,result_name,result,sim):
-        if result_name=='orbitals':
-            self.input.h5in = os.path.relpath(result.h5file,self.locdir)
-            self.job.app_command = self.input.app_command()
-        else:
-            self.error('ability to incorporate result '+result_name+' has not been implemented')
-        #end if                
-    #end def incorporate_result
-
-    def check_sim_status(self):
-        outfile = os.path.join(self.locdir,self.outfile)
-        errfile = os.path.join(self.locdir,self.errfile)
-        fobj = open(outfile,'r')
-        output = fobj.read()
-        fobj.close()
-        fobj = open(errfile,'r')
-        errors = fobj.read()
-        fobj.close()
-        h5file = os.path.join(self.locdir,self.input.h5out)
-        file_exists = os.path.exists(h5file)
-        outfin = 'Successfully read' in errors and 'numSpins' in errors
-        outfin = outfin and 'Writing laplacians' in output
-
-        success = file_exists and outfin
-
-        self.finished = success
-    #end def check_sim_status
-
-    def get_output_files(self):
-        output_files = []
-        return output_files
-    #end def get_output_files
-
-    def app_command(self):
-        # app_name is passed along in post_init
-        return self.input.app_command()
-    #end def app_command
-#end class Wfconvert
-
-
-
-
-def generate_wfconvert(**kwargs):
-    sim_args,inp_args = Simulation.separate_inputs(kwargs)
-
-    if not 'input' in sim_args:
-        sim_args.input = generate_wfconvert_input(**inp_args)
-    #end if
-    wfconvert = Wfconvert(**sim_args)
-
-    return wfconvert
-#end def generate_wfconvert
 
 
 
@@ -1002,3 +805,318 @@ def generate_convert4qmc(**kwargs):
 
     return convert4qmc
 #end def generate_convert4qmc
+
+
+
+
+
+
+class PyscfToAfqmcInput(SimulationInput):
+
+    input_order = '''
+        help
+        input
+        output
+        wavefunction
+        qmcpack_input
+        cholesky_threshold
+        kpoint
+        gdf
+        ao
+        cas
+        disable_ham
+        num_dets
+        real_ham
+        verbose
+        '''.split()
+
+    input_flags = obj(
+        help               = 'h',
+        input              = 'i',
+        output             = 'o',
+        wavefunction       = 'w',
+        qmcpack_input      = 'q',
+        cholesky_threshold = 't',
+        kpoint             = 'k',
+        gdf                = 'g',
+        ao                 = 'a',
+        cas                = 'c',
+        disable_ham        = 'd',
+        num_dets           = 'n',
+        real_ham           = 'r',
+        verbose            = 'v',
+        )
+
+    input_types = obj(
+        app_name           = str,
+        help               = bool,
+        input              = str,
+        output             = str,
+        wavefunction       = str,
+        qmcpack_input      = str,
+        cholesky_threshold = float,
+        kpoint             = bool,
+        gdf                = bool,
+        ao                 = bool,
+        cas                = tuple,
+        disable_ham        = bool,
+        num_dets           = int,
+        real_ham           = int,
+        verbose            = bool,
+        )
+
+    input_defaults = obj(
+        app_name           = 'pyscf_to_afqmc.py',
+        help               = False,
+        input              = None,
+        output             = None,
+        wavefunction       = None,
+        qmcpack_input      = None,
+        cholesky_threshold = None,
+        kpoint             = False,
+        gdf                = False,
+        ao                 = False,
+        cas                = None,
+        disable_ham        = False,
+        num_dets           = None,
+        real_ham           = None,
+        verbose            = False,
+        )
+
+
+    def __init__(self,**kwargs):
+        # reassign inputs provided via short flag names
+        for k,v in PyscfToAfqmcInput.input_flags.items():
+            if v in kwargs:
+                kwargs[k] = kwargs.pop(v)
+            #end if
+        #end for
+
+        # check that only allowed keyword inputs are provided
+        invalid = set(kwargs.keys())-set(self.input_types.keys())
+        if len(invalid)>0:
+            self.error('invalid inputs encountered\ninvalid keywords: {0}\nvalid keyword inputs are: {1}'.format(sorted(invalid),sorted(self.input_types.keys())))
+        #end if
+
+        # assign inputs
+        self.set(**kwargs)
+
+        # assign default values
+        self.set_optional(**self.input_defaults)
+
+        # check that all keyword inputs are valid
+        self.check_valid()
+    #end def __init__
+
+
+    def check_valid(self,exit=True):
+        valid = True
+        # check that all inputs have valid types and assign them
+        for k,v in self.items():
+            if v is not None and not isinstance(v,self.input_types[k]):
+                valid = False
+                if exit:
+                    self.error('keyword input "{0}" must be of type "{1}"\nyou provided a value of type "{2}"\nplease revise your input and try again'.format(k,self.input_types[k].__name__),v.__class__.__name__)
+                #end if
+                break
+            #end if
+        #end for
+        if 'cas' in self and self.cas is not None:
+            if len(self.cas)!=2:
+                valid = False
+                if exit:
+                    self.error('keyword input "cas" must contain only two elements\nnumber of elements provided: {}\nvalue provided: {}'.format(len(self.cas),self.cas))
+                #end if
+            #end if
+            noninteger = False
+            for v in self.cas:
+                noninteger |= not isinstance(v,int)
+            #end for
+            if noninteger:
+                valid = False
+                if exit:
+                    self.error('keyword input "cas" must contain two integers\nvalue provided: {}'.format(self.cas))
+                #end if
+            #end if
+        #end if
+        return valid
+    #end def check_valid
+
+
+    def is_valid(self):
+        return self.check_valid(exit=False)
+    #end def is_valid
+
+
+    def set_app_name(self,app_name):
+        self.app_name = app_name
+    #end def set_app_name
+
+
+    def app_command(self):
+        self.check_valid()
+        c = self.app_name
+        for k in self.input_order:
+            if k in self:
+                v = self[k]
+                n = self.input_flags[k]
+                if isinstance(v,bool):
+                    if v:
+                        c += ' -{0}'.format(n)
+                    #end if
+                elif isinstance(v,tuple):
+                    vs = ''
+                    for tv in v:
+                        vs += '{},'.format(tv)
+                    #end for
+                    c += ' -{0} {1}'.format(n,vs[:-1])
+                elif v is not None:
+                    c += ' -{0} {1}'.format(n,str(v))
+                #end if
+            #end if
+        #end for
+        return c
+    #end def app_command
+
+
+    def read(self,filepath):
+        None
+    #end def read
+
+
+    def write_text(self,filepath=None):
+        return self.app_command()
+    #end def write_text
+#end class PyscfToAfqmcInput
+
+
+
+def generate_pyscf_to_afqmc_input(**kwargs):
+    return PyscfToAfqmcInput(**kwargs)
+#end def generate_pyscf_to_afqmc_input
+
+
+
+class PyscfToAfqmcAnalyzer(SimulationAnalyzer):
+    def __init__(self,arg0):
+        if isinstance(arg0,Simulation):
+            self.infile = arg0.infile
+        else:
+            self.infile = arg0
+        #end if
+    #end def __init__
+
+    def analyze(self):
+        None
+    #end def analyze
+#end class PyscfToAfqmcAnalyzer
+
+
+
+class PyscfToAfqmc(Simulation):
+    input_type             = PyscfToAfqmcInput
+    analyzer_type          = PyscfToAfqmcAnalyzer
+    generic_identifier     = 'pyscf2afqmc'
+    application            = 'pyscf_to_afqmc.py'
+    application_properties = set(['serial'])
+    application_results    = set(['wavefunction','hamiltonian'])
+    renew_app_command      = True
+
+
+    def set_app_name(self,app_name):
+        self.app_name = app_name
+        self.input.set_app_name(app_name)
+    #end def set_app_name
+
+
+    def check_result(self,result_name,sim):
+        calculating_result = False
+        input = self.input
+        if result_name=='wavefunction':
+            calculating_result = input.output is not None
+        elif result_name=='hamiltonian':
+            calculating_result = input.output is not None
+        else:
+            calculating_result = False
+            self.error('ability to check for result '+result_name+' has not been implemented')
+        #end if        
+        return calculating_result
+    #end def check_result
+
+
+    def get_result(self,result_name,sim):
+        result = obj()
+        input = self.input
+        if result_name in ('wavefunction','hamiltonian'):
+            result.h5_file = os.path.join(self.locdir,input.output)
+            if input.qmcpack_input is not None:
+                result.xml = os.path.join(self.locdir,input.qmcpack_input)
+            #end if
+        else:
+            self.error('ability to get result '+result_name+' has not been implemented')
+        #end if        
+        return result
+    #end def get_result
+
+
+    def incorporate_result(self,result_name,result,sim):
+        implemented = True
+        input = self.input
+        if isinstance(sim,Pyscf):
+            if result_name=='wavefunction':
+                chkfile = os.path.relpath(result.chkfile,self.locdir)
+                input.input = chkfile
+            else:
+                implemented = False
+            #end if
+        else:
+            implemented = False
+        #end if
+        if not implemented:
+            self.error('ability to incorporate result "{0}" from {1} has not been implemented'.format(result_name,sim.__class__.__name__))
+        #end if
+    #end def incorporate_result       
+
+
+    def check_sim_status(self):
+        output = open(os.path.join(self.locdir,self.outfile),'r').read()
+
+        success = '# Finished.' in output
+        success &= os.path.exists(os.path.join(self.locdir,self.input.output))
+
+        self.failed = not success
+        self.finished = self.job.finished
+    #end def check_sim_status
+
+
+    def get_output_files(self):
+        output_files = []
+        return output_files
+    #end def get_output_files
+
+
+    def app_command(self):
+        return self.input.app_command()
+    #end def app_command
+#end class PyscfToAfqmc
+
+
+
+def generate_pyscf_to_afqmc(**kwargs):
+    sim_args,inp_args = Simulation.separate_inputs(kwargs)
+    if 'identifier' in sim_args:
+        if 'output' not in inp_args:
+            inp_args.output = '{}.afqmc.h5'.format(sim_args.identifier)
+        #end if
+        if 'qmcpack_input' not in inp_args:
+            inp_args.qmcpack_input = '{}.afqmc.xml'.format(sim_args.identifier)
+        #end if
+    #end if
+
+    if not 'input' in sim_args:
+        sim_args.input = generate_pyscf_to_afqmc_input(**inp_args)
+    #end if
+    sim = PyscfToAfqmc(**sim_args)
+
+    return sim
+#end def generate_pyscf_to_afqmc

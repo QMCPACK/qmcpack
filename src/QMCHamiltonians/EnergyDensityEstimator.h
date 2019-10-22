@@ -13,7 +13,7 @@
 
 #ifndef QMCPLUSPLUS_ENERGY_DENSITY_ESTIMATOR_H
 #define QMCPLUSPLUS_ENERGY_DENSITY_ESTIMATOR_H
-#include <QMCHamiltonians/QMCHamiltonianBase.h>
+#include <QMCHamiltonians/OperatorBase.h>
 #include <OhmmsPETE/OhmmsMatrix.h>
 #include <QMCHamiltonians/ReferencePoints.h>
 #include <QMCHamiltonians/SpaceGrid.h>
@@ -22,7 +22,7 @@
 
 namespace qmcplusplus
 {
-class EnergyDensityEstimator : public QMCHamiltonianBase, public PtclOnLatticeTraits
+class EnergyDensityEstimator : public OperatorBase, public PtclOnLatticeTraits
 {
 public:
   typedef ReferencePoints::Point Point;
@@ -41,7 +41,7 @@ public:
   bool put(xmlNodePtr cur);
   bool put(xmlNodePtr cur, ParticleSet& P);
   bool get(std::ostream& os) const;
-  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 
   void write_description(std::ostream& os);
 

@@ -58,6 +58,7 @@ PairCorrEstimator::PairCorrEstimator(ParticleSet& elns, std::string& sources)
   const DistanceTableData& dii(elns.getDistTable(d_aa_ID_));
   if (dii.DTType == DT_AOS)
   {
+#ifndef ENABLE_SOA
     pair_ids.resize(dii.getTotNadj());
     for (int iat = 0; iat < dii.centers(); ++iat)
     {
@@ -65,6 +66,7 @@ PairCorrEstimator::PairCorrEstimator(ParticleSet& elns, std::string& sources)
       for (int nn = dii.M[iat]; nn < dii.M[iat + 1]; ++nn)
         pair_ids[nn] = pair_map[ig + elns.GroupID[dii.J[nn]]];
     }
+#endif
   }
   // source-target tables
   std::vector<std::string> slist, dlist;
@@ -154,6 +156,7 @@ PairCorrEstimator::Return_t PairCorrEstimator::evaluate(ParticleSet& P)
   }
   else
   {
+#ifndef ENABLE_SOA
     for (int iat = 0; iat < dii.centers(); ++iat)
     {
       for (int nn = dii.M[iat]; nn < dii.M[iat + 1]; ++nn)
@@ -184,6 +187,7 @@ PairCorrEstimator::Return_t PairCorrEstimator::evaluate(ParticleSet& P)
         }
       }
     }
+#endif
   }
   return 0.0;
 }
@@ -305,7 +309,7 @@ bool PairCorrEstimator::get(std::ostream& os) const
   return true;
 }
 
-QMCHamiltonianBase* PairCorrEstimator::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+OperatorBase* PairCorrEstimator::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   //default constructor is sufficient
   return new PairCorrEstimator(*this);

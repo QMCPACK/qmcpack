@@ -18,7 +18,6 @@
 
 #include "QMCWaveFunctions/Jastrow/RPAJastrow.h"
 #include "QMCWaveFunctions/WaveFunctionComponentBuilder.h"
-#include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbital.h"
 #include "QMCWaveFunctions/Jastrow/J2OrbitalSoA.h"
 #include "QMCWaveFunctions/Jastrow/LRBreakupUtilities.h"
 #include "QMCWaveFunctions/Jastrow/SplineFunctors.h"
@@ -315,9 +314,11 @@ void RPAJastrow::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
     Psi[i]->copyFromBuffer(P, buf);
 }
 
+/** this is a great deal of logic for make clone I'm wondering what is going on
+ */
 WaveFunctionComponent* RPAJastrow::makeClone(ParticleSet& tpq) const
 {
-  HandlerType* tempHandler;
+  HandlerType* tempHandler = nullptr;
   if (rpafunc == "yukawa" || rpafunc == "breakup")
   {
     tempHandler = new LRHandlerTemp<YukawaBreakup<RealType>,
@@ -360,4 +361,5 @@ WaveFunctionComponent* RPAJastrow::makeClone(ParticleSet& tpq) const
     myClone->makeShortRange();
   return myClone;
 }
+
 }; // namespace qmcplusplus

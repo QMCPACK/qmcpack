@@ -15,10 +15,12 @@
 #ifndef QMCPLUSPLUS_MPI_CONTAINER_PROXY_H
 #define QMCPLUSPLUS_MPI_CONTAINER_PROXY_H
 
-#include <type_traits/scalar_traits.h>
-#include <OhmmsPETE/Tensor.h>
-#include <OhmmsPETE/OhmmsArray.h>
-#include <Utilities/PooledData.h>
+#include <stdexcept>
+
+#include "type_traits/scalar_traits.h"
+#include "OhmmsPETE/Tensor.h"
+#include "OhmmsPETE/OhmmsArray.h"
+#include "Utilities/PooledData.h"
 
 namespace qmcplusplus
 {
@@ -160,6 +162,27 @@ struct container_proxy<Vector<T>>
   inline void resize(I* n)
   {
     ref.resize(static_cast<size_t>(n[0]));
+  }
+};
+
+template<typename T>
+struct container_proxy<Matrix<T>>
+{
+  enum
+  {
+    DIM = scalar_traits<T>::DIM
+  };
+  typedef typename container_proxy<T>::pointer pointer;
+  Matrix<T>& ref;
+  inline container_proxy(Matrix<T>& a) : ref(a) {}
+  inline size_t size() const { return ref.size(); }
+  inline pointer data() { return scalar_traits<T>::get_address(ref.data()); }
+  template<typename I>
+  inline void resize(I* n, int d)
+  {
+    if ( d != 2 )
+      throw std::runtime_error("OhmmsMatrix can only be resized with int[2].");
+    ref.resize(n[0],n[1]);
   }
 };
 

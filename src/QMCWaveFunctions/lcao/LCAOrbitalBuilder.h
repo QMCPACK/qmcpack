@@ -57,9 +57,12 @@ private:
   std::string h5_path;
   ///Number of periodic Images for Orbital evaluation
   TinyVector<int, 3> PBCImages;
+  ///Coordinates Super Twist
+  PosType SuperTwist; 
   ///Periodic Image Phase Factors. Correspond to the phase from the PBCImages. Computed only once.
   std::vector<ValueType> PeriodicImagePhaseFactors;
-
+  ///Store Lattice parameters from HDF5 to use in PeriodicImagePhaseFactors
+  Tensor<double, 3> Lattice;
 
   /// Enable cusp correction
   bool doCuspCorrection;
@@ -89,3 +92,4 @@ private:
 };
 } // namespace qmcplusplus
 #endif
+

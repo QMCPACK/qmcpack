@@ -26,11 +26,10 @@
 
 namespace qmcplusplus
 {
-SPOSet::SPOSet()
-    : OrbitalSetSize(0),
-      Optimizable(false),
-      ionDerivs(false),
-      builder_index(-1)
+SPOSet::SPOSet(bool ion_deriv, bool optimizable)
+    : ionDerivs(ion_deriv),
+      Optimizable(optimizable),
+      OrbitalSetSize(0)
 #if !defined(ENABLE_SOA)
       ,
       Identity(false),
@@ -159,13 +158,11 @@ bool SPOSet::put(xmlNodePtr cur)
   //initialize the number of orbital by the basis set size
   int norb = BasisSetSize;
   std::string debugc("no");
-  double orbital_mix_magnitude = 0.0;
   bool PBC                     = false;
   OhmmsAttributeSet aAttrib;
   aAttrib.add(norb, "orbitals");
   aAttrib.add(norb, "size");
   aAttrib.add(debugc, "debug");
-  aAttrib.add(orbital_mix_magnitude, "orbital_mix_magnitude");
   aAttrib.put(cur);
   setOrbitalSetSize(norb);
   xmlNodePtr occ_ptr   = NULL;
@@ -226,8 +223,6 @@ bool SPOSet::put(xmlNodePtr cur)
     app_log() << "   Single-particle orbital coefficients dims=" << C->rows() << " x " << C->cols() << std::endl;
     app_log() << C << std::endl;
   }
-
-  init_LCOrbitalSetOpt(orbital_mix_magnitude);
 
   return success && success2;
 }

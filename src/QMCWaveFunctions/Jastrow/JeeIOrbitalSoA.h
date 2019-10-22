@@ -110,7 +110,7 @@ public:
   using FuncType = FT;
 
   JeeIOrbitalSoA(const ParticleSet& ions, ParticleSet& elecs, bool is_master = false)
-    : Ions(ions), NumVars(0), ee_Table_ID_(elecs.addTable(elecs, DT_SOA)), ei_Table_ID_(elecs.addTable(ions, DT_SOA, true))
+    : ee_Table_ID_(elecs.addTable(elecs, DT_SOA)), ei_Table_ID_(elecs.addTable(ions, DT_SOA, true)), Ions(ions), NumVars(0)
   {
     ClassName = "JeeIOrbitalSoA";
     init(elecs);
@@ -632,8 +632,6 @@ public:
                        const RealType* distjk,
                        std::vector<int>& ions_nearby)
   {
-    const DistanceTableData& eI_table = P.getDistTable(ei_Table_ID_);
-
     ions_nearby.clear();
     for (int iat = 0; iat < Nion; ++iat)
       if (distjI[iat] < Ion_cutoff[iat])
@@ -690,8 +688,6 @@ public:
                                gContainer_type& dUk,
                                Vector<valT>& d2Uk)
   {
-    const DistanceTableData& eI_table = P.getDistTable(ei_Table_ID_);
-
     constexpr valT czero(0);
     constexpr valT cone(1);
     constexpr valT ctwo(2);
@@ -934,7 +930,6 @@ public:
       constexpr valT lapfac = OHMMS_DIM - cone;
 
       const DistanceTableData& ee_table = P.getDistTable(ee_Table_ID_);
-      const DistanceTableData& eI_table = P.getDistTable(ei_Table_ID_);
 
       build_compact_list(P);
 
@@ -959,8 +954,6 @@ public:
                 const int kel = elecs_inside(kg, iat)[kind];
                 if (kel < jel)
                 {
-                  const FT& feeI(*F(ig, jg, kg));
-
                   const valT r_Ik     = elecs_inside_dist(kg, iat)[kind];
                   const posT disp_Ik  = cminus * elecs_inside_displ(kg, iat)[kind];
                   const valT r_Ik_inv = cone / r_Ik;

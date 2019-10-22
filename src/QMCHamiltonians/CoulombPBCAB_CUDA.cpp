@@ -227,7 +227,7 @@ void CoulombPBCAB_CUDA::addEnergy(MCWalkerConfiguration& W, std::vector<RealType
 }
 
 
-QMCHamiltonianBase* CoulombPBCAB_CUDA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+OperatorBase* CoulombPBCAB_CUDA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   CoulombPBCAB_CUDA* myclone = new CoulombPBCAB_CUDA(PtclA, qp, true);
   if (myGrid)

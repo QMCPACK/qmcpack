@@ -354,7 +354,6 @@ TEST_CASE("DiracDeterminant_second", "[wavefunction][fermion]")
   //double det_ratio2_val = 0.178276269185;
   REQUIRE(det_ratio2 == ValueApprox(det_ratio2_val));
 
-
   ddb.acceptMove(elec, 1);
 
   ValueType det_ratio3 = ddb.ratioGrad(elec, 2, grad);

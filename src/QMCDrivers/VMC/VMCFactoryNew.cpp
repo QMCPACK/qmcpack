@@ -23,10 +23,7 @@ namespace qmcplusplus
 QMCDriverInterface* VMCFactoryNew::create(MCPopulation& pop,
                                           TrialWaveFunction& psi,
                                           QMCHamiltonian& h,
-
-                                          ParticleSetPool& ptclpool,
-                                          HamiltonianPool& hpool,
-                                          WaveFunctionPool& ppool,
+                                          WaveFunctionPool& wf_pool,
                                           Communicate* comm)
 {
   QMCDriverInput qmcdriver_input(qmc_counter_);
@@ -37,7 +34,7 @@ QMCDriverInterface* VMCFactoryNew::create(MCPopulation& pop,
 
   if (vmc_mode_ == 0 || vmc_mode_ == 1) //(0,0,0) (0,0,1)
   {
-    qmc = new VMCBatched(std::move(qmcdriver_input), std::move(vmcdriver_input), pop, psi, h, ppool, comm);
+    qmc = new VMCBatched(std::move(qmcdriver_input), std::move(vmcdriver_input), pop, psi, h, wf_pool, comm);
   }
   else
   {

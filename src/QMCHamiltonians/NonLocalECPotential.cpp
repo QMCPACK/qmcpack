@@ -16,6 +16,8 @@
 
 #include "Particle/DistanceTableData.h"
 #include "QMCHamiltonians/NonLocalECPotential.h"
+#include "QMCHamiltonians/NonLocalECPComponent.h"
+
 #include "Utilities/IteratorUtility.h"
 
 namespace qmcplusplus
@@ -32,16 +34,16 @@ NonLocalECPotential::NonLocalECPotential(ParticleSet& ions,
                                          TrialWaveFunction& psi,
                                          bool computeForces,
                                          bool useVP)
-    : IonConfig(ions),
+    : ForceBase(ions, els),
+      myRNG(nullptr),
+      IonConfig(ions),
       Psi(psi),
-      UseTMove(TMOVE_OFF),
-      myRNG(&Random),
-      nonLocalOps(els.getTotalNum()),
-      ComputeForces(computeForces),
-      IonNeighborElecs(ions),
+      Peln(els),
       ElecNeighborIons(els),
-      ForceBase(ions, els),
-      Peln(els)
+      IonNeighborElecs(ions),
+      UseTMove(TMOVE_OFF),
+      nonLocalOps(els.getTotalNum()),
+      ComputeForces(computeForces)
 {
   set_energy_domain(potential);
   two_body_quantum_domain(ions, els);
@@ -53,6 +55,8 @@ NonLocalECPotential::NonLocalECPotential(ParticleSet& ions,
   PPset.resize(IonConfig.getSpeciesSet().getTotalNum(), 0);
   PulayTerm.resize(NumIons);
   UpdateMode.set(NONLOCAL, 1);
+  Ve_samp_tmp.resize(els.getTotalNum());
+  Vi_samp_tmp.resize(ions.getTotalNum());
 }
 
 ///destructor
@@ -81,8 +85,8 @@ void NonLocalECPotential::checkout_particle_quantities(TraceManager& tm)
       if (PP[iat])
       {
         PP[iat]->streaming_particles = streaming_particles;
-        PP[iat]->Ve_sample           = Ve_sample;
-        PP[iat]->Vi_sample           = Vi_sample;
+        //PP[iat]->Ve_sample           = Ve_sample;
+        //PP[iat]->Vi_sample           = Vi_sample;
       }
     }
   }
@@ -97,8 +101,8 @@ void NonLocalECPotential::delete_particle_quantities()
       if (PP[iat])
       {
         PP[iat]->streaming_particles = false;
-        PP[iat]->Ve_sample           = NULL;
-        PP[iat]->Vi_sample           = NULL;
+        //PP[iat]->Ve_sample           = NULL;
+        //PP[iat]->Vi_sample           = NULL;
       }
     }
     delete Ve_sample;
@@ -189,6 +193,10 @@ void NonLocalECPotential::evaluate(ParticleSet& P, bool Tmove)
     (*Ve_sample) = 0.0;
     (*Vi_sample) = 0.0;
   }
+  auto& Ve_samp = Ve_samp_tmp;
+  auto& Vi_samp = Vi_samp_tmp;
+  Ve_samp = 0.0;
+  Vi_samp = 0.0;
 #endif
   for (int ipp = 0; ipp < PPset.size(); ipp++)
     if (PPset[ipp])
@@ -214,8 +222,9 @@ void NonLocalECPotential::evaluate(ParticleSet& P, bool Tmove)
         for (int iat = 0; iat < NumIons; iat++)
           if (PP[iat] != nullptr && dist[iat] < PP[iat]->getRmax())
           {
-            Value += PP[iat]->evaluateOneWithForces(P, iat, Psi, jel, dist[iat], RealType(-1) * displ[iat], forces[iat],
+            RealType pairpot = PP[iat]->evaluateOneWithForces(P, iat, Psi, jel, dist[iat], RealType(-1) * displ[iat], forces[iat],
                                                     Tmove, Txy);
+            Value += pairpot;
             NeighborIons.push_back(iat);
             IonNeighborElecs.getNeighborList(iat).push_back(jel);
           }
@@ -238,14 +247,18 @@ void NonLocalECPotential::evaluate(ParticleSet& P, bool Tmove)
         for (int iat = 0; iat < NumIons; iat++)
           if (PP[iat] != nullptr && dist[iat] < PP[iat]->getRmax())
           {
-            Value += PP[iat]->evaluateOne(P, iat, Psi, jel, dist[iat], RealType(-1) * displ[iat], Tmove, Txy);
+            RealType pairpot = PP[iat]->evaluateOne(P, iat, Psi, jel, dist[iat], RealType(-1) * displ[iat], Tmove, Txy);
+            Value += pairpot;
             NeighborIons.push_back(iat);
             IonNeighborElecs.getNeighborList(iat).push_back(jel);
+            Ve_samp(jel) = 0.5*pairpot;
+            Vi_samp(iat) = 0.5*pairpot;
           }
       }
     }
     else
     {
+#ifndef ENABLE_SOA
       for (int iat = 0; iat < NumIons; iat++)
       {
         if (PP[iat] == nullptr)
@@ -256,13 +269,18 @@ void NonLocalECPotential::evaluate(ParticleSet& P, bool Tmove)
           const RealType r(myTable.r(nn));
           if (r > PP[iat]->getRmax())
             continue;
-          Value += PP[iat]->evaluateOne(P, iat, Psi, iel, r, myTable.dr(nn), Tmove, Txy);
+          RealType pairpot = PP[iat]->evaluateOne(P, iat, Psi, iel, r, myTable.dr(nn), Tmove, Txy);
+          Value += pairpot;
           NeighborElecs.push_back(iel);
           ElecNeighborIons.getNeighborList(iel).push_back(iat);
+          Ve_samp(iel) = 0.5*pairpot;
+          Vi_samp(iat) = 0.5*pairpot;
         }
       }
+#endif
     }
   }
+
 #if defined(TRACE_CHECK)
   if (streaming_particles)
   {
@@ -307,12 +325,14 @@ void NonLocalECPotential::computeOneElectronTxy(ParticleSet& P, const int ref_el
   }
   else
   {
+#ifndef ENABLE_SOA
     for (int atom_index = 0; atom_index < NeighborIons.size(); atom_index++)
     {
       const int iat = NeighborIons[atom_index];
       int nn        = myTable.M[iat] + ref_elec;
       PP[iat]->evaluateOne(P, iat, Psi, ref_elec, myTable.r(nn), myTable.dr(nn), true, Txy);
     }
+#endif
   }
 }
 
@@ -407,7 +427,8 @@ void NonLocalECPotential::markAffectedElecs(const DistanceTableData& myTable, in
   {
     if (PP[iat] == nullptr)
       continue;
-    RealType old_distance, new_distance;
+    RealType old_distance = 0.0;
+    RealType new_distance = 0.0;
     if (myTable.DTType == DT_SOA)
     {
       old_distance = myTable.Distances[iel][iat];
@@ -415,8 +436,10 @@ void NonLocalECPotential::markAffectedElecs(const DistanceTableData& myTable, in
     }
     else
     {
+#ifndef ENABLE_SOA
       old_distance = myTable.r(myTable.M[iat] + iel);
       new_distance = myTable.Temp[iat].r1;
+#endif
     }
     bool moved = false;
     // move out
@@ -454,11 +477,15 @@ void NonLocalECPotential::addComponent(int groupID, NonLocalECPComponent* ppot)
 {
   for (int iat = 0; iat < PP.size(); iat++)
     if (IonConfig.GroupID[iat] == groupID)
+    {
       PP[iat] = ppot;
+      ppot->Ve_sample = &Ve_samp_tmp;
+      ppot->Vi_sample = &Vi_samp_tmp;
+    }
   PPset[groupID] = ppot;
 }
 
-QMCHamiltonianBase* NonLocalECPotential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+OperatorBase* NonLocalECPotential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   NonLocalECPotential* myclone = new NonLocalECPotential(IonConfig, qp, psi, ComputeForces);
   for (int ig = 0; ig < PPset.size(); ++ig)
@@ -475,7 +502,7 @@ QMCHamiltonianBase* NonLocalECPotential::makeClone(ParticleSet& qp, TrialWaveFun
 
 void NonLocalECPotential::addObservables(PropertySetType& plist, BufferType& collectables)
 {
-  QMCHamiltonianBase::addValue(plist);
+  OperatorBase::addValue(plist);
   if (ComputeForces)
   {
     if (FirstForceIndex < 0)
@@ -497,7 +524,7 @@ void NonLocalECPotential::addObservables(PropertySetType& plist, BufferType& col
 
 void NonLocalECPotential::registerObservables(std::vector<observable_helper*>& h5list, hid_t gid) const
 {
-  QMCHamiltonianBase::registerObservables(h5list, gid);
+  OperatorBase::registerObservables(h5list, gid);
   if (ComputeForces)
   {
     std::vector<int> ndim(2);
@@ -516,7 +543,7 @@ void NonLocalECPotential::registerObservables(std::vector<observable_helper*>& h
 
 void NonLocalECPotential::setObservables(QMCTraits::PropertySetType& plist)
 {
-  QMCHamiltonianBase::setObservables(plist);
+  OperatorBase::setObservables(plist);
   if (ComputeForces)
   {
     int index = FirstForceIndex;
@@ -534,7 +561,7 @@ void NonLocalECPotential::setObservables(QMCTraits::PropertySetType& plist)
 
 void NonLocalECPotential::setParticlePropertyList(QMCTraits::PropertySetType& plist, int offset)
 {
-  QMCHamiltonianBase::setParticlePropertyList(plist, offset);
+  OperatorBase::setParticlePropertyList(plist, offset);
   if (ComputeForces)
   {
     int index = FirstForceIndex + offset;

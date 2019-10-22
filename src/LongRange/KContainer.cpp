@@ -109,7 +109,6 @@ void KContainer::BuildKLists(ParticleLayout_t& lattice, bool useSphere)
   SContainer_t ksq_tmp;
   // reserve the space for memory efficiency
 #if OHMMS_DIM == 3
-  int numGuess = (2 * mmax[0] + 1) * (2 * mmax[1] + 1) * (2 * mmax[2] + 1);
   if (useSphere)
   {
     //Loop over guesses for valid k-points.
@@ -183,7 +182,6 @@ void KContainer::BuildKLists(ParticleLayout_t& lattice, bool useSphere)
     TempActualMax[2] = mmax[2];
   }
 #elif OHMMS_DIM == 2
-  int numGuess = (2 * mmax[0] + 1) * (2 * mmax[1] + 1);
   if (useSphere)
   {
     //Loop over guesses for valid k-points.

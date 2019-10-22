@@ -40,7 +40,6 @@
 
 namespace qmcplusplus
 {
-
 QMCLinearOptimize::QMCLinearOptimize(MCWalkerConfiguration& w,
                                      TrialWaveFunction& psi,
                                      QMCHamiltonian& h,
@@ -52,14 +51,14 @@ QMCLinearOptimize::QMCLinearOptimize(MCWalkerConfiguration& w,
       NumParts(1),
       WarmupBlocks(10),
       hamPool(hpool),
-      optTarget(0),
-      vmcEngine(0),
       wfNode(NULL),
       optNode(NULL),
       param_tol(1e-4),
       generate_samples_timer_(*TimerManager.createTimer("QMCLinearOptimize::GenerateSamples", timer_level_medium)),
       initialize_timer_(*TimerManager.createTimer("QMCLinearOptimize::Initialize", timer_level_medium)),
-      eigenvalue_timer_(*TimerManager.createTimer("QMCLinearOptimize::Eigenvalue", timer_level_medium))
+      eigenvalue_timer_(*TimerManager.createTimer("QMCLinearOptimize::Eigenvalue", timer_level_medium)),
+      line_min_timer_(*TimerManager.createTimer("QMCLinearOptimize::Line_Minimization", timer_level_medium)),
+      cost_function_timer_(*TimerManager.createTimer("QMCLinearOptimize::CostFunction", timer_level_medium))
 {
   IsQMCDriver = false;
   //     //set the optimization flag
@@ -67,13 +66,6 @@ QMCLinearOptimize::QMCLinearOptimize(MCWalkerConfiguration& w,
   //read to use vmc output (just in case)
   m_param.add(param_tol, "alloweddifference", "double");
   //Set parameters for line minimization:
-}
-
-/** Clean up the vector */
-QMCLinearOptimize::~QMCLinearOptimize()
-{
-  delete vmcEngine;
-  delete optTarget;
 }
 
 /** Add configuration files for the optimization
@@ -117,7 +109,9 @@ void QMCLinearOptimize::start()
 }
 
 #ifdef HAVE_LMY_ENGINE
-void QMCLinearOptimize::engine_start(cqmc::engine::LMYEngine* EngineObj)
+void QMCLinearOptimize::engine_start(cqmc::engine::LMYEngine* EngineObj,
+                                     DescentEngine& descentEngineObj,
+                                     std::string MinMethod)
 {
   app_log() << "entering engine_start function" << std::endl;
 
@@ -141,7 +135,8 @@ void QMCLinearOptimize::engine_start(cqmc::engine::LMYEngine* EngineObj)
   initialize_timer_.start();
   optTarget->getConfigurations(h5FileRoot);
   optTarget->setRng(vmcEngine->getRng());
-  optTarget->engine_checkConfigurations(EngineObj); // computes derivative ratios and pass into engine
+  optTarget->engine_checkConfigurations(EngineObj, descentEngineObj,
+                                        MinMethod); // computes derivative ratios and pass into engine
   initialize_timer_.stop();
   app_log() << "  Execution time = " << std::setprecision(4) << t1.elapsed() << std::endl;
   app_log() << "  </log>" << std::endl;
@@ -645,7 +640,6 @@ QMCLinearOptimize::RealType QMCLinearOptimize::getSplitEigenvectors(int first,
                                                                     bool& CSF_scaled)
 {
   std::vector<RealType> GEVSplitDirection(N, 0);
-  RealType returnValue;
   int N_nonlin = last - first;
   int N_lin    = N - N_nonlin - 1;
   //  matrices are one larger than parameter sets
@@ -707,7 +701,6 @@ QMCLinearOptimize::RealType QMCLinearOptimize::getSplitEigenvectors(int first,
   //                  as solved in the matrix and opt the Jastrow instead
   if (CSF_Option == "freeze")
   {
-    returnValue = std::min(lowest_J_EV, lowest_CSF_EV);
     //                   Line minimize for the nonlinear components
     for (int i = J_begin; i < J_end; i++)
       GEVSplitDirection[i] = J_parms[i - J_begin + 1];
@@ -717,6 +710,7 @@ QMCLinearOptimize::RealType QMCLinearOptimize::getSplitEigenvectors(int first,
     FullEV[0] = 1.0;
     for (int i = J_begin; i < J_end; i++)
       FullEV[i] = GEVSplitDirection[i];
+    return std::min(lowest_J_EV, lowest_CSF_EV);
   }
   else if (CSF_Option == "rescale")
   {
@@ -736,8 +730,9 @@ QMCLinearOptimize::RealType QMCLinearOptimize::getSplitEigenvectors(int first,
         }
       }
     eigenvalue_timer_.start();
-    returnValue = getLowestEigenvector(FullLeft, FullRight, FullEV);
+    RealType returnValue = getLowestEigenvector(FullLeft, FullRight, FullEV);
     eigenvalue_timer_.stop();
+    return returnValue;
   }
   else if (CSF_Option == "stability")
   {
@@ -746,9 +741,8 @@ QMCLinearOptimize::RealType QMCLinearOptimize::getSplitEigenvectors(int first,
       CSF_scaled = true;
     else
       CSF_scaled = false;
-    returnValue = std::min(lowest_J_EV, lowest_CSF_EV);
+    return std::min(lowest_J_EV, lowest_CSF_EV);
   }
-  return returnValue;
 }
 
 /** Parses the xml input file for parameter definitions for the wavefunction optimization.
@@ -780,34 +774,25 @@ bool QMCLinearOptimize::put(xmlNodePtr q)
     addWalkers(omp_get_max_threads());
   NumOfVMCWalkers = W.getActiveWalkers();
   bool success    = true;
-  if (optTarget == 0)
-  {
+  //allways reset optTarget
 #if defined(QMC_CUDA)
-    if (useGPU == "yes")
-      optTarget = new QMCCostFunctionCUDA(W, Psi, H, myComm);
-    else
+  if (useGPU == "yes")
+    optTarget = std::make_unique<QMCCostFunctionCUDA>(W, Psi, H, myComm);
+  else
 #endif
-      optTarget = new QMCCostFunction(W, Psi, H, myComm);
-    //#if defined(ENABLE_OPENMP)
-    //            if (omp_get_max_threads()>1)
-    //            {
-    //                optTarget = new QMCCostFunctionOMP(W,Psi,H,hamPool);
-    //            }
-    //            else
-    //#endif
-    //        optTarget = new QMCCostFunctionSingle(W,Psi,H);
-    optTarget->setStream(&app_log());
-    success = optTarget->put(q);
-  }
+    optTarget = std::make_unique<QMCCostFunction>(W, Psi, H, myComm);
+  optTarget->setStream(&app_log());
+  success = optTarget->put(q);
+
   //create VMC engine
   if (vmcEngine == 0)
   {
 #if defined(QMC_CUDA)
     if (useGPU == "yes")
-      vmcEngine = new VMCcuda(W, Psi, H, psiPool, myComm);
+      vmcEngine = std::make_unique<VMCcuda>(W, Psi, H, psiPool, myComm);
     else
 #endif
-      vmcEngine = new VMC(W, Psi, H, psiPool, myComm);
+      vmcEngine = std::make_unique<VMC>(W, Psi, H, psiPool, myComm);
     vmcEngine->setUpdateMode(vmcMove[0] == 'p');
   }
 

@@ -35,11 +35,6 @@ for d in dirs_check:
 # enforce association between nxs-test executable and Nexus library
 sys.path.insert(0,library_dir)
 
-# global data
-global_data = dict(
-    job_ref_table = False,
-    )
-
 from generic import generic_settings,object_interface,NexusError
 
 generic_settings.raise_error = True
@@ -81,7 +76,12 @@ def import_unit_test_module(module_name):
 
 
 def import_from_unit_test_module(module_name,test_name):
-    return import_unit_test_module(module_name)[test_name]
+    module = import_unit_test_module(module_name)
+    if test_name not in module:
+        print('function "{}" is not in module "{}"\nfunctions present: {}'.format(test_name,module_name,sorted(module.keys())))
+        exit(1)
+    #end if
+    return module[test_name]
 #end def import_from_unit_test_module
 
 
@@ -90,6 +90,8 @@ from testing import *
 
 
 # tests
+#   versions code
+#   checks of dependency versions
 #   generic logging
 #   generic intrinsics
 #   generic extensions
@@ -232,6 +234,7 @@ def nlabel(label):
     os.chdir(NexusTestBase.launch_path)
     NexusTestBase.current_label = label
     NexusTestBase.label_count  += 1
+    NexusTestBase.current_test.subtests.append(label)
 #end def nlabel
 
 
@@ -374,7 +377,11 @@ def nassert(result):
 # run a unit test from an external file
 def nunit(test_name):
     module_name = 'test_'+NexusTestBase.current_test.name
+    if not test_name.startswith('test_'):
+        test_name = 'test_'+test_name
+    #end if
     unit_test   = import_from_unit_test_module(module_name,test_name)
+    load_external_unit_tests()
     run_external_unit_test(test_name,unit_test)
 #end def nunit
 
@@ -448,7 +455,7 @@ class NexusTest(NexusTestBase):
 
 
     # register the current test object in the global test list
-    def __init__(self,operation,name=None,op_inputs=None,test_dir=None):
+    def __init__(self,operation,name=None,op_inputs=None,test_dir=None,optional=False):
         if not callable(operation):
             raise NexusTestMisconstructed
         #end if
@@ -467,10 +474,12 @@ class NexusTest(NexusTestBase):
         self.operation         = operation
         self.op_inputs         = op_inputs
         self.test_dir          = test_dir
+        self.optional          = optional
         self.exception         = None
         self.status            = NexusTest.status_options['unused']
         self.unit_tests        = set() # complete set of unit tests
         self.unit_tests_called = set() # set of unit tests called so far
+        self.subtests          = []    # list of subtests called
         NexusTest.test_list.append(self)
         NexusTest.test_dict[self.name] = self
     #end def __init__
@@ -499,6 +508,7 @@ class NexusTest(NexusTestBase):
         NexusTestBase.current_label = ''
         NexusTestBase.test_count   += 1
         NexusTestBase.label_count   = 0
+        failed = False
         try:
             if self.op_inputs is None:
                 self.operation()
@@ -515,9 +525,10 @@ class NexusTest(NexusTestBase):
             self.exception = e
             self.traceback = tb
             self.status=NexusTest.status_options['failed']
+            failed = True
         #end try
         uncalled_unit_tests = self.unit_tests-self.unit_tests_called
-        if len(uncalled_unit_tests)>0:
+        if not failed and len(uncalled_unit_tests)>0:
             raise NexusTestMisconstructed('not all unit tests were called\n  uncalled unit tests: {}\n  please add these either by calling "nunit" for each of them\n  or by calling "nunit_all" at the end of function "{}"'.format(sorted(uncalled_unit_tests),self.name))
         #end if
     #end def run
@@ -563,6 +574,52 @@ class NexusTest(NexusTestBase):
 #===============================================#
 
 
+
+def versions():
+    nunit_all()
+#end def versions
+
+
+
+def required_dependencies():
+    nunit_all()
+#end def required_dependencies
+
+
+
+def optional_dependencies():
+    nunit_all()
+#end def optional_dependencies
+
+
+
+def testing():
+    nunit_all()
+#end def testing
+
+
+
+def execute():
+    nunit_all()
+#end def execute
+
+
+
+def memory():
+    nunit_all()
+#end def memory
+
+
+
+def plotting():
+    nunit_all()
+#end def plotting
+
+
+
+def superstring():
+    nunit_all()
+#end def superstring
 
 
         
@@ -1640,11 +1697,51 @@ def generic_extensions():
 
 
 
+def developer():
+    nunit_all()
+#end def developer
+
+
+
+def unit_converter():
+    nunit_all()
+#end def unit_converter
+
+
+
+def periodic_table():
+    nunit_all()
+#end def periodic_table
+
+
+
+def numerics():
+    nunit_all()
+#end def numerics
+
+
+
+def fileio():
+    nunit_all()
+#end def fileio
+
+
+
+def hdfreader():
+    nunit_all()
+#end def hdfreader
+
+
+
+def xmlreader():
+    nunit_all()
+#end def xmlreader
+
+
+
 
 def nexus_imports():
-    import nexus
-
-    import qmcpack_workflows
+    nunit_all()
 #end def nexus_imports
 
 
@@ -1742,6 +1839,7 @@ def settings_operation():
         nassert(isinstance(nexus_core.pseudopotentials,Pseudopotentials))
         nassert(len(nexus_core.pseudopotentials)==0)
         nexus_core.stages_set       = set()
+        nexus_core.stages           = []
         nexus_core.pseudopotentials = None
         nassert(object_eq(nexus_core,nexus_core_defaults))
         # nexus noncore sets Pseudopotentials and BasisSets objects
@@ -1805,926 +1903,144 @@ def settings_operation():
 
 
 def machines():
-    # divert logging function
-    nlog_divert()
 
-    nlabel('imports')
-    from random import randint
-    from generic import obj
-    from machines import Machine,Workstation,InteractiveCluster,Supercomputer
-    from machines import Job
-    from machines import get_machine,get_machine_name
+    nunit('import')
 
+    nunit('cpu_count')
 
-    nlabel('unimplemented_base_interface')
-    arg0 = None
-    arg1 = None
-    try:
-        Machine.query_queue(arg0)
-        nfail()
-    except:
-        npass()
-    #end try
-    try:
-        Machine.submit_jobs(arg0)
-        nfail()
-    except:
-        npass()
-    #end try
-    try:
-        Machine.process_job(arg0,arg1)
-        nfail()
-    except:
-        npass()
-    #end try
-    try:
-        Machine.process_job_options(arg0,arg1)
-        nfail()
-    except:
-        npass()
-    #end try
-    try:
-        Machine.write_job(arg0,arg1,file=False)
-        nfail()
-    except:
-        npass()
-    #end try
-    try:
-        Machine.submit_job(arg0,arg1)
-        nfail()
-    except:
-        npass()
-    #end try
+    nunit('options')
 
+    nunit('job_init')
 
-    nlabel('file_setup')
-    nassert(len(Machine.machines)>0)
-    for m in Machine.machines:
-        nassert(isinstance(m,Machine))
-        exists = m.name in Machine.machines
-        nassert(exists)
-        nassert(Machine.exists(m.name))
-        nassert(Machine.is_unique(m))
-        m.validate()
-    #end for
+    nunit('job_time')
 
+    nunit('job_set_id')
 
-    nlabel('add')
-    mtest = Machine.machines.first()
-    nassert(isinstance(mtest,Machine))
-    try:
-        Machine.add(mtest)
-        nfail()
-    except:
-        npass()
-    #end try
-    try:
-        Machine.add('my_machine')
-        nfail()
-    except:
-        npass()
-    #end try
+    nunit('job_get_machine')
 
+    nunit('job_set_environment')
 
-    nlabel('get')
-    m = Machine.get(mtest.name)
-    nassert(isinstance(m,Machine))
-    nassert(id(m)==id(mtest))
-    try:
-        Machine.get(m)
-        nfail()
-    except:
-        npass()
-    #end try
-    try:
-        Machine.get('some_nonexistant_machine')
-        nfail()
-    except:
-        npass()
-    #end try
+    nunit('job_clone')
 
+    nunit('job_serial_clone')
 
-    nlabel('intantiation')
-    # test guards against empty/invalid instantiation
-    try:
-        Machine()
-        nfail()
-    except:
-        npass()
-    #end try
-    try:
-        Machine(123)
-        nfail()
-    except:
-        npass()
-    #end try
-    # test creation of a new machine
-    test_name = 'test_machine'
-    nassert(not Machine.exists(test_name))
-    m = Machine(name=test_name)
-    nassert(isinstance(m,Machine))
-    nassert(Machine.exists(m.name))
-    nassert(Machine.is_unique(m))
-    m.validate()
+    nunit('machine_virtuals')
 
-    # test guards against multiple instantiation
-    try:
-        Machine(name=test_name)
-        nfail()
-    except:
-        npass()
-    #end try
+    nunit('machine_list')
 
-    # remove test machine
-    del Machine.machines.test_machine
-    nassert(not Machine.exists(test_name))
+    nunit('machine_add')
 
+    nunit('machine_get')
 
-    # sort known machines
-    workstations   = obj()
-    supercomputers = obj()
-    for machine in Machine.machines:
-        if isinstance(machine,Workstation):
-            workstations.append(machine)
-        elif isinstance(machine,Supercomputer):
-            supercomputers[machine.name] = machine
-        else:
-            Machine.class_error('unknown machine type encountered: {0}'.format(machine.__class__.__name__),'check_process_job_idempotency')
-        #end if
-    #end for
+    nunit('machine_instantiation')
 
+    nunit('workstation_init')
 
-    nlabel('process_job_idempotency')
-    def check_process_job_idempotency(nw=10,nwj=10,nsj=10,nij=10):
-        allow_warn = Machine.allow_warnings
-        Machine.allow_warnings = False
+    nunit('workstation_scheduling')
 
-        not_idempotent = obj()
+    nunit('supercomputer_init')
 
-        # check workstations
-        nworkstations = nw
-        if nworkstations is None:
-            nworkstations=len(workstations)
-        #end if
-        nworkstations = min(nworkstations,len(workstations))
-        njobs = nwj
-        for nm in range(nworkstations):
-            if nworkstations<len(workstations):
-                machine = workstations.select_random() # select machine at random
-            else:
-                machine = workstations[nm]
-            #end if
-            cores_min     = 1
-            cores_max     = machine.cores
-            processes_min = 1
-            processes_max = machine.cores
-            threads_min   = 1
-            threads_max   = machine.cores
-            job_inputs = []
-            job_inputs_base = []
-            for nj in range(njobs): # vary cores
-                cores   = randint(cores_min,cores_max)
-                threads = randint(threads_min,threads_max)
-                job_inputs_base.append(obj(cores=cores,threads=threads))
-            #end for
-            for nj in range(njobs): # vary processes
-                processes   = randint(processes_min,processes_max)
-                threads = randint(threads_min,threads_max)
-                job_inputs_base.append(obj(processes=processes,threads=threads))
-            #end for
-            job_inputs.extend(job_inputs_base)
-            for job_input in job_inputs_base: # run in serial
-                ji = job_input.copy()
-                ji.serial = True
-                job_inputs.append(ji)
-            #end for
-            # perform idempotency test
-            machine_idempotent = True
-            for job_input in job_inputs:
-                job = Job(machine=machine.name,**job_input)
-                job2 = obj.copy(job)
-                machine.process_job(job2)
-                machine_idempotent &= job==job2
-            #end for
-            if not machine_idempotent:
-                not_idempotent[machine.name] = machine
-            #end if
-        #end for
+    nunit('supercomputer_scheduling')
 
-        # check supercomputers
-        njobs = nsj
-        small_node_ceiling = 20
-        nodes_min   = 1
-        cores_min   = 1
-        threads_min = 1
-        shared_job_inputs = obj(name='some_job',account='some_account')
-        for machine in supercomputers:
-            job_inputs = []
-            job_inputs_base = []
-            threads_max = 2*machine.cores_per_node
-            # sample small number of nodes more heavily
-            nodes_max   = min(small_node_ceiling,machine.nodes)
-            cores_max   = min(small_node_ceiling*machine.cores_per_node,machine.cores)
-            for nj in range(njobs): # nodes alone
-                nodes   = randint(nodes_min,nodes_max)
-                threads = randint(threads_min,threads_max)
-                job_input = obj(nodes=nodes,threads=threads,**shared_job_inputs)
-                job_inputs_base.append(job_input)
-            #end for
-            for nj in range(njobs): # cores alone
-                cores   = randint(cores_min,cores_max)
-                threads = randint(threads_min,threads_max)
-                job_input = obj(cores=cores,threads=threads,**shared_job_inputs)
-                job_inputs_base.append(job_input)
-            #end for
-            for nj in range(njobs): # nodes and cores
-                nodes   = randint(nodes_min,nodes_max)
-                cores   = randint(cores_min,cores_max)
-                threads = randint(threads_min,threads_max)
-                job_input = obj(nodes=nodes,cores=cores,threads=threads,**shared_job_inputs)
-                job_inputs_base.append(job_input)
-            #end for
-            # sample full node set
-            nodes_max = machine.nodes
-            cores_max = machine.cores
-            for nj in range(njobs): # nodes alone
-                nodes   = randint(nodes_min,nodes_max)
-                threads = randint(threads_min,threads_max)
-                job_input = obj(nodes=nodes,threads=threads,**shared_job_inputs)
-                job_inputs_base.append(job_input)
-            #end for
-            for nj in range(njobs): # cores alone
-                cores   = randint(cores_min,cores_max)
-                threads = randint(threads_min,threads_max)
-                job_input = obj(cores=cores,threads=threads,**shared_job_inputs)
-                job_inputs_base.append(job_input)
-            #end for
-            for nj in range(njobs): # nodes and cores
-                nodes   = randint(nodes_min,nodes_max)
-                cores   = randint(cores_min,cores_max)
-                threads = randint(threads_min,threads_max)
-                job_input = obj(nodes=nodes,cores=cores,threads=threads,**shared_job_inputs)
-                job_inputs_base.append(job_input)
-            #end for
-            job_inputs.extend(job_inputs_base)
-            # now add serial jobs
-            for job_input in job_inputs_base:
-                ji = job_input.copy()
-                ji.serial = True
-                job_inputs.append(ji)
-            #end for
-            # now add local, serial jobs
-            for job_input in job_inputs_base:
-                ji = job_input.copy()
-                ji.serial = True
-                ji.local  = True
-                job_inputs.append(ji)
-            #end for
-            # perform idempotency test
-            machine_idempotent = True
-            for job_input in job_inputs:
-                job = Job(machine=machine.name,**job_input)
-                job2 = obj.copy(job)
-                machine.process_job(job2)
-                #job_idempotent = job==job2
-                job_idempotent = object_eq(job,job2)
-                if not job_idempotent:
-                    d,d1,d2 = object_diff(job,job2,full=True)
-                    change = obj(job_before=obj(d1),job_after=obj(d2))
-                    msg = machine.name+'\n'+str(change)
-                    nfail(msg)
-                #end if
-                machine_idempotent &= job_idempotent
-            #end for
-            if not machine_idempotent:
-                not_idempotent[machine.name] = machine
-            #end if
-        #end for
+    nunit('process_job')
 
-        if len(not_idempotent)>0:
-            mlist = ''
-            for name in sorted(not_idempotent.keys()):
-                mlist+= '\n  '+name
-            #end for
-            Machine.class_error('\n\nsome machines failed process_job idempotency test:{0}'.format(mlist))
-        #end if
-        Machine.class_log('done checking idempotency')
-        Machine.allow_warnings = allow_warn
-    #end def check_process_job_idempotency
+    nunit('job_run_command')
 
-    check_process_job_idempotency()
+    nunit('write_job')
 
-
-    # test Job.run_command
-    nlabel('job_run_command')
-    def parse_job_command(command):
-        tokens = command.replace(':',' ').split()
-        launcher = tokens[0]
-        exe = tokens[-1]
-        args = []
-        options = obj()
-        last_option = None
-        for t in tokens[1:-1]:
-            if t.startswith('-'):
-                options[t] = None
-                last_option = t
-            elif last_option is not None:
-                options[last_option] = t
-                last_option = None
-            else:
-                args.append(t)
-            #end if
-        #end for
-        jc = obj(
-            launcher   = launcher,
-            executable = exe,
-            args       = args,
-            options    = options,
-            )
-        return jc
-    #end def parse_job_command
-
-    def job_commands_equal(c1,c2):
-        jc1 = parse_job_command(c1)
-        jc2 = parse_job_command(c2)
-        return object_eq(jc1,jc2)
-    #end def job_command_equal
-
-    job_run_ref = obj({
-        ('amos'           , 'n1'            ) : 'srun test.x',
-        ('amos'           , 'n1_p1'         ) : 'srun test.x',
-        ('amos'           , 'n2'            ) : 'srun test.x',
-        ('amos'           , 'n2_t2'         ) : 'srun test.x',
-        ('amos'           , 'n2_t2_e'       ) : 'srun test.x',
-        ('amos'           , 'n2_t2_p2'      ) : 'srun test.x',
-        ('bluewaters_xe'  , 'n1'            ) : 'aprun -n 32 test.x',
-        ('bluewaters_xe'  , 'n1_p1'         ) : 'aprun -n 1 test.x',
-        ('bluewaters_xe'  , 'n2'            ) : 'aprun -n 64 test.x',
-        ('bluewaters_xe'  , 'n2_t2'         ) : 'aprun -d 2 -n 32 test.x',
-        ('bluewaters_xe'  , 'n2_t2_e'       ) : 'aprun -d 2 -n 32 test.x',
-        ('bluewaters_xe'  , 'n2_t2_p2'      ) : 'aprun -d 2 -n 4 test.x',
-        ('bluewaters_xk'  , 'n1'            ) : 'aprun -n 16 test.x',
-        ('bluewaters_xk'  , 'n1_p1'         ) : 'aprun -n 1 test.x',
-        ('bluewaters_xk'  , 'n2'            ) : 'aprun -n 32 test.x',
-        ('bluewaters_xk'  , 'n2_t2'         ) : 'aprun -d 2 -n 16 test.x',
-        ('bluewaters_xk'  , 'n2_t2_e'       ) : 'aprun -d 2 -n 16 test.x',
-        ('bluewaters_xk'  , 'n2_t2_p2'      ) : 'aprun -d 2 -n 4 test.x',
-        ('cades'          , 'n1'            ) : 'mpirun -np 36 test.x',
-        ('cades'          , 'n1_p1'         ) : 'mpirun -np 1 test.x',
-        ('cades'          , 'n2'            ) : 'mpirun -np 72 test.x',
-        ('cades'          , 'n2_t2'         ) : 'mpirun -np 36 --npersocket 9 test.x',
-        ('cades'          , 'n2_t2_e'       ) : 'mpirun -np 36 --npersocket 9 test.x',
-        ('cades'          , 'n2_t2_p2'      ) : 'mpirun -np 4 --npersocket 1 test.x',
-        ('cetus'          , 'n1'            ) : 'runjob --np 16 -p 16 $LOCARGS --verbose=INFO --envs OMP_NUM_THREADS=1 : test.x',
-        ('cetus'          , 'n1_p1'         ) : 'runjob --np 1 -p 1 $LOCARGS --verbose=INFO --envs OMP_NUM_THREADS=1 : test.x',
-        ('cetus'          , 'n2'            ) : 'runjob --np 32 -p 16 $LOCARGS --verbose=INFO --envs OMP_NUM_THREADS=1 : test.x',
-        ('cetus'          , 'n2_t2'         ) : 'runjob --np 16 -p 8 $LOCARGS --verbose=INFO --envs OMP_NUM_THREADS=2 : test.x',
-        ('cetus'          , 'n2_t2_e'       ) : 'runjob --np 16 -p 8 $LOCARGS --verbose=INFO --envs OMP_NUM_THREADS=2 ENV_VAR=1 : test.x',
-        ('cetus'          , 'n2_t2_p2'      ) : 'runjob --np 4 -p 2 $LOCARGS --verbose=INFO --envs OMP_NUM_THREADS=2 : test.x',
-        ('chama'          , 'n1'            ) : 'srun test.x',
-        ('chama'          , 'n1_p1'         ) : 'srun test.x',
-        ('chama'          , 'n2'            ) : 'srun test.x',
-        ('chama'          , 'n2_t2'         ) : 'srun test.x',
-        ('chama'          , 'n2_t2_e'       ) : 'srun test.x',
-        ('chama'          , 'n2_t2_p2'      ) : 'srun test.x',
-        ('cooley'         , 'n1'            ) : 'mpirun -np 12 test.x',
-        ('cooley'         , 'n1_p1'         ) : 'mpirun -np 1 test.x',
-        ('cooley'         , 'n2'            ) : 'mpirun -np 24 test.x',
-        ('cooley'         , 'n2_t2'         ) : 'mpirun -np 12 test.x',
-        ('cooley'         , 'n2_t2_e'       ) : 'mpirun -np 12 test.x',
-        ('cooley'         , 'n2_t2_p2'      ) : 'mpirun -np 4 test.x',
-        ('cori'           , 'n1'            ) : 'srun test.x',
-        ('cori'           , 'n1_p1'         ) : 'srun test.x',
-        ('cori'           , 'n2'            ) : 'srun test.x',
-        ('cori'           , 'n2_t2'         ) : 'srun test.x',
-        ('cori'           , 'n2_t2_e'       ) : 'srun test.x',
-        ('cori'           , 'n2_t2_p2'      ) : 'srun test.x',
-        ('edison'         , 'n1'            ) : 'srun test.x',
-        ('edison'         , 'n1_p1'         ) : 'srun test.x',
-        ('edison'         , 'n2'            ) : 'srun test.x',
-        ('edison'         , 'n2_t2'         ) : 'srun test.x',
-        ('edison'         , 'n2_t2_e'       ) : 'srun test.x',
-        ('edison'         , 'n2_t2_p2'      ) : 'srun test.x',
-        ('eos'            , 'n1'            ) : 'aprun -n 16 test.x',
-        ('eos'            , 'n1_p1'         ) : 'aprun -n 1 test.x',
-        ('eos'            , 'n2'            ) : 'aprun -n 32 test.x',
-        ('eos'            , 'n2_t2'         ) : 'aprun -ss -cc numa_node -d 2 -n 16 test.x',
-        ('eos'            , 'n2_t2_e'       ) : 'aprun -ss -cc numa_node -d 2 -n 16 test.x',
-        ('eos'            , 'n2_t2_p2'      ) : 'aprun -ss -cc numa_node -d 2 -n 4 test.x',
-        ('jaguar'         , 'n1'            ) : 'aprun -n 16 test.x',
-        ('jaguar'         , 'n1_p1'         ) : 'aprun -n 1 test.x',
-        ('jaguar'         , 'n2'            ) : 'aprun -n 32 test.x',
-        ('jaguar'         , 'n2_t2'         ) : 'aprun -d 2 -n 16 test.x',
-        ('jaguar'         , 'n2_t2_e'       ) : 'aprun -d 2 -n 16 test.x',
-        ('jaguar'         , 'n2_t2_p2'      ) : 'aprun -d 2 -n 4 test.x',
-        ('komodo'         , 'n1'            ) : 'mpirun -np 12 test.x',
-        ('komodo'         , 'n1_p1'         ) : 'mpirun -np 1 test.x',
-        ('komodo'         , 'n2'            ) : 'mpirun -np 24 test.x',
-        ('komodo'         , 'n2_t2'         ) : 'mpirun -np 12 test.x',
-        ('komodo'         , 'n2_t2_e'       ) : 'mpirun -np 12 test.x',
-        ('komodo'         , 'n2_t2_p2'      ) : 'mpirun -np 4 test.x',
-        ('kraken'         , 'n1'            ) : 'aprun -n 12 test.x',
-        ('kraken'         , 'n1_p1'         ) : 'aprun -n 1 test.x',
-        ('kraken'         , 'n2'            ) : 'aprun -n 24 test.x',
-        ('kraken'         , 'n2_t2'         ) : 'aprun -d 2 -n 12 test.x',
-        ('kraken'         , 'n2_t2_e'       ) : 'aprun -d 2 -n 12 test.x',
-        ('kraken'         , 'n2_t2_p2'      ) : 'aprun -d 2 -n 4 test.x',
-        ('lonestar'       , 'n1'            ) : 'ibrun -n 12 -o 0 test.x',
-        ('lonestar'       , 'n1_p1'         ) : 'ibrun -n 1 -o 0 test.x',
-        ('lonestar'       , 'n2'            ) : 'ibrun -n 24 -o 0 test.x',
-        ('lonestar'       , 'n2_t2'         ) : 'ibrun -n 12 -o 0 test.x',
-        ('lonestar'       , 'n2_t2_e'       ) : 'ibrun -n 12 -o 0 test.x',
-        ('lonestar'       , 'n2_t2_p2'      ) : 'ibrun -n 4 -o 0 test.x',
-        ('matisse'        , 'n1'            ) : 'mpirun -np 16 test.x',
-        ('matisse'        , 'n1_p1'         ) : 'mpirun -np 1 test.x',
-        ('matisse'        , 'n2'            ) : 'mpirun -np 32 test.x',
-        ('matisse'        , 'n2_t2'         ) : 'mpirun -np 16 test.x',
-        ('matisse'        , 'n2_t2_e'       ) : 'mpirun -np 16 test.x',
-        ('matisse'        , 'n2_t2_p2'      ) : 'mpirun -np 4 test.x',
-        ('mira'           , 'n1'            ) : 'runjob --np 16 -p 16 $LOCARGS --verbose=INFO --envs OMP_NUM_THREADS=1 : test.x',
-        ('mira'           , 'n1_p1'         ) : 'runjob --np 1 -p 1 $LOCARGS --verbose=INFO --envs OMP_NUM_THREADS=1 : test.x',
-        ('mira'           , 'n2'            ) : 'runjob --np 32 -p 16 $LOCARGS --verbose=INFO --envs OMP_NUM_THREADS=1 : test.x',
-        ('mira'           , 'n2_t2'         ) : 'runjob --np 16 -p 8 $LOCARGS --verbose=INFO --envs OMP_NUM_THREADS=2 : test.x',
-        ('mira'           , 'n2_t2_e'       ) : 'runjob --np 16 -p 8 $LOCARGS --verbose=INFO --envs OMP_NUM_THREADS=2 ENV_VAR=1 : test.x',
-        ('mira'           , 'n2_t2_p2'      ) : 'runjob --np 4 -p 2 $LOCARGS --verbose=INFO --envs OMP_NUM_THREADS=2 : test.x',
-        ('oic5'           , 'n1'            ) : 'mpirun -np 32 test.x',
-        ('oic5'           , 'n1_p1'         ) : 'mpirun -np 1 test.x',
-        ('oic5'           , 'n2'            ) : 'mpirun -np 64 test.x',
-        ('oic5'           , 'n2_t2'         ) : 'mpirun -np 32 test.x',
-        ('oic5'           , 'n2_t2_e'       ) : 'mpirun -np 32 test.x',
-        ('oic5'           , 'n2_t2_p2'      ) : 'mpirun -np 4 test.x',
-        ('redsky'         , 'n1'            ) : 'srun test.x',
-        ('redsky'         , 'n1_p1'         ) : 'srun test.x',
-        ('redsky'         , 'n2'            ) : 'srun test.x',
-        ('redsky'         , 'n2_t2'         ) : 'srun test.x',
-        ('redsky'         , 'n2_t2_e'       ) : 'srun test.x',
-        ('redsky'         , 'n2_t2_p2'      ) : 'srun test.x',
-        ('serrano'        , 'n1'            ) : 'srun test.x',
-        ('serrano'        , 'n1_p1'         ) : 'srun test.x',
-        ('serrano'        , 'n2'            ) : 'srun test.x',
-        ('serrano'        , 'n2_t2'         ) : 'srun test.x',
-        ('serrano'        , 'n2_t2_e'       ) : 'srun test.x',
-        ('serrano'        , 'n2_t2_p2'      ) : 'srun test.x',
-        ('skybridge'      , 'n1'            ) : 'srun test.x',
-        ('skybridge'      , 'n1_p1'         ) : 'srun test.x',
-        ('skybridge'      , 'n2'            ) : 'srun test.x',
-        ('skybridge'      , 'n2_t2'         ) : 'srun test.x',
-        ('skybridge'      , 'n2_t2_e'       ) : 'srun test.x',
-        ('skybridge'      , 'n2_t2_p2'      ) : 'srun test.x',
-        ('solo'           , 'n1'            ) : 'srun test.x',
-        ('solo'           , 'n1_p1'         ) : 'srun test.x',
-        ('solo'           , 'n2'            ) : 'srun test.x',
-        ('solo'           , 'n2_t2'         ) : 'srun test.x',
-        ('solo'           , 'n2_t2_e'       ) : 'srun test.x',
-        ('solo'           , 'n2_t2_p2'      ) : 'srun test.x',
-        ('stampede2'      , 'n1'            ) : 'ibrun -n 68 -o 0 test.x',
-        ('stampede2'      , 'n1_p1'         ) : 'ibrun -n 1 -o 0 test.x',
-        ('stampede2'      , 'n2'            ) : 'ibrun -n 136 -o 0 test.x',
-        ('stampede2'      , 'n2_t2'         ) : 'ibrun -n 68 -o 0 test.x',
-        ('stampede2'      , 'n2_t2_e'       ) : 'ibrun -n 68 -o 0 test.x',
-        ('stampede2'      , 'n2_t2_p2'      ) : 'ibrun -n 4 -o 0 test.x',
-        ('summit'         , 'n1'            ) : 'jsrun -a 21 -r 2 -b rs -c 21 -d packed -n 2 -g 0 test.x',
-        ('summit'         , 'n1_g6'         ) : 'jsrun -a 7 -r 6 -b rs -c 7 -d packed -n 6 -g 1 test.x',
-        ('summit'         , 'n2'            ) : 'jsrun -a 21 -r 2 -b rs -c 21 -d packed -n 4 -g 0 test.x',
-        ('summit'         , 'n2_g6'         ) : 'jsrun -a 7 -r 6 -b rs -c 7 -d packed -n 12 -g 1 test.x',
-        ('summit'         , 'n2_t2'         ) : 'jsrun -a 10 -r 2 -b rs -c 20 -d packed -n 4 -g 0 test.x',
-        ('summit'         , 'n2_t2_e'       ) : 'jsrun -a 10 -r 2 -b rs -c 20 -d packed -n 4 -g 0 test.x',
-        ('summit'         , 'n2_t2_e_g6'    ) : 'jsrun -a 3 -r 6 -b rs -c 6 -d packed -n 12 -g 1 test.x',
-        ('summit'         , 'n2_t2_g6'      ) : 'jsrun -a 3 -r 6 -b rs -c 6 -d packed -n 12 -g 1 test.x',
-        ('supermuc'       , 'n1'            ) : 'mpiexec -n 28 test.x',
-        ('supermuc'       , 'n1_p1'         ) : 'mpiexec -n 1 test.x',
-        ('supermuc'       , 'n2'            ) : 'mpiexec -n 56 test.x',
-        ('supermuc'       , 'n2_t2'         ) : 'mpiexec -n 28 test.x',
-        ('supermuc'       , 'n2_t2_e'       ) : 'mpiexec -n 28 test.x',
-        ('supermuc'       , 'n2_t2_p2'      ) : 'mpiexec -n 4 test.x',
-        ('supermucng'     , 'n1'            ) : 'mpiexec -n 48 test.x',
-        ('supermucng'     , 'n1_p1'         ) : 'mpiexec -n 1 test.x',
-        ('supermucng'     , 'n2'            ) : 'mpiexec -n 96 test.x',
-        ('supermucng'     , 'n2_t2'         ) : 'mpiexec -n 48 test.x',
-        ('supermucng'     , 'n2_t2_e'       ) : 'mpiexec -n 48 test.x',
-        ('supermucng'     , 'n2_t2_p2'      ) : 'mpiexec -n 4 test.x',
-        ('taub'           , 'n1'            ) : 'mpirun -np 12 test.x',
-        ('taub'           , 'n1_p1'         ) : 'mpirun -np 1 test.x',
-        ('taub'           , 'n2'            ) : 'mpirun -np 24 test.x',
-        ('taub'           , 'n2_t2'         ) : 'mpirun -np 12 test.x',
-        ('taub'           , 'n2_t2_e'       ) : 'mpirun -np 12 test.x',
-        ('taub'           , 'n2_t2_p2'      ) : 'mpirun -np 4 test.x',
-        ('theta'          , 'n1'            ) : 'aprun -e OMP_NUM_THREADS=1 -d 1 -cc depth -j 1 -n 64 -N 64 test.x',
-        ('theta'          , 'n1_p1'         ) : 'aprun -e OMP_NUM_THREADS=1 -d 1 -cc depth -j 1 -n 1 -N 1 test.x',
-        ('theta'          , 'n2'            ) : 'aprun -e OMP_NUM_THREADS=1 -d 1 -cc depth -j 1 -n 128 -N 64 test.x',
-        ('theta'          , 'n2_t2'         ) : 'aprun -e OMP_NUM_THREADS=2 -d 2 -cc depth -j 1 -n 64 -N 32 test.x',
-        ('theta'          , 'n2_t2_e'       ) : 'aprun -e OMP_NUM_THREADS=2 -d 2 -cc depth -j 1 -n 64 -N 32 test.x',
-        ('theta'          , 'n2_t2_p2'      ) : 'aprun -e OMP_NUM_THREADS=2 -d 2 -cc depth -j 1 -n 4 -N 2 test.x',
-        ('titan'          , 'n1'            ) : 'aprun -n 16 test.x',
-        ('titan'          , 'n1_p1'         ) : 'aprun -n 1 test.x',
-        ('titan'          , 'n2'            ) : 'aprun -n 32 test.x',
-        ('titan'          , 'n2_t2'         ) : 'aprun -d 2 -n 16 test.x',
-        ('titan'          , 'n2_t2_e'       ) : 'aprun -d 2 -n 16 test.x',
-        ('titan'          , 'n2_t2_p2'      ) : 'aprun -d 2 -n 4 test.x',
-        ('tomcat3'        , 'n1'            ) : 'mpirun -np 64 test.x',
-        ('tomcat3'        , 'n1_p1'         ) : 'mpirun -np 1 test.x',
-        ('tomcat3'        , 'n2'            ) : 'mpirun -np 128 test.x',
-        ('tomcat3'        , 'n2_t2'         ) : 'mpirun -np 64 test.x',
-        ('tomcat3'        , 'n2_t2_e'       ) : 'mpirun -np 64 test.x',
-        ('tomcat3'        , 'n2_t2_p2'      ) : 'mpirun -np 4 test.x',
-        ('uno'            , 'n1'            ) : 'srun test.x',
-        ('uno'            , 'n1_p1'         ) : 'srun test.x',
-        ('uno'            , 'n2'            ) : 'srun test.x',
-        ('uno'            , 'n2_t2'         ) : 'srun test.x',
-        ('uno'            , 'n2_t2_e'       ) : 'srun test.x',
-        ('uno'            , 'n2_t2_p2'      ) : 'srun test.x',
-        ('vesta'          , 'n1'            ) : 'runjob --np 16 -p 16 $LOCARGS --verbose=INFO --envs OMP_NUM_THREADS=1 : test.x',
-        ('vesta'          , 'n1_p1'         ) : 'runjob --np 1 -p 1 $LOCARGS --verbose=INFO --envs OMP_NUM_THREADS=1 : test.x',
-        ('vesta'          , 'n2'            ) : 'runjob --np 32 -p 16 $LOCARGS --verbose=INFO --envs OMP_NUM_THREADS=1 : test.x',
-        ('vesta'          , 'n2_t2'         ) : 'runjob --np 16 -p 8 $LOCARGS --verbose=INFO --envs OMP_NUM_THREADS=2 : test.x',
-        ('vesta'          , 'n2_t2_e'       ) : 'runjob --np 16 -p 8 $LOCARGS --verbose=INFO --envs OMP_NUM_THREADS=2 ENV_VAR=1 : test.x',
-        ('vesta'          , 'n2_t2_p2'      ) : 'runjob --np 4 -p 2 $LOCARGS --verbose=INFO --envs OMP_NUM_THREADS=2 : test.x',
-        })
-
-    job_inputs_orig = obj(
-        n1        = obj(nodes=1),
-        n1_p1     = obj(nodes=1,processes_per_node=1),
-        n2        = obj(nodes=2),
-        n2_t2     = obj(nodes=2,threads=2),
-        n2_t2_p2  = obj(nodes=2,threads=2,processes_per_node=2),
-        n2_t2_e   = obj(nodes=2,threads=2,env=obj(ENV_VAR=1)),
-        )
-    for name in sorted(supercomputers.keys()):
-        m = supercomputers[name]
-        if m.requires_account:
-            acc = 'ABC123'
-        else:
-            acc = None
-        #end if
-        job_inputs = job_inputs_orig
-        if name=='summit': # exceptional treatment for summit nodes
-            job_inputs = job_inputs_orig.copy()
-            jtypes = list(job_inputs.keys())
-            for jtype in jtypes:
-                if 'p' in jtype:
-                    del job_inputs[jtype]
-                else:
-                    jcpu = job_inputs[jtype]
-                    jcpu.gpus = 0
-                    jgpu = jcpu.copy()
-                    jgpu.gpus = 6
-                    job_inputs[jtype+'_g6'] = jgpu
-                #end if
-            #end for
-        #end if
-        for jtype in sorted(job_inputs.keys()):
-            job = Job(app_command = 'test.x',
-                      machine     = name,
-                      account     = acc,
-                      **job_inputs[jtype]
-                      )
-            command = job.run_command()
-            if global_data['job_ref_table']:
-                sname = "'{0}'".format(name)
-                stype = "'{0}'".format(jtype)
-                nlog("        ({0:<16} , {1:<16}) : '{2}',".format(sname,stype,command))
-                continue
-            #end if
-            ref_command = job_run_ref[name,jtype]
-            if not job_commands_equal(command,ref_command):
-                nfail('Job.run_command for machine "{0}" does not match the reference\njob inputs: {1}\nreference command: {2}\nincorrect command: {3}'.format(name,job_inputs[jtype],ref_command,command))
-            #end for
-        #end for
-    #end for
-
-
-    nlabel('Job.split_nodes')
-    for name in sorted(supercomputers.keys()):
-        m = supercomputers[name]
-        if m.app_launcher=='srun': # no slurm support yet
-            continue
-        #end if
-        if name=='summit': # no summit support
-            continue
-        #end if
-        if m.requires_account:
-            acc = 'ABC123'
-        else:
-            acc = None
-        #end if
-        # make a 4 node job
-        job = Job(app_command = 'test.x',
-                  machine     = name,
-                  account     = acc,
-                  nodes       = 4,
-                  threads     = m.cores_per_node,
-                  )
-        # split the job into 1 and 3 nodes
-        job1,job2 = job.split_nodes(1)
-        # get the split run commands
-        rc  = job.run_command()
-        rc1 = job1.run_command()
-        rc2 = job2.run_command()
-        ns  = ' {0} '.format(job.nodes)
-        ns1 = ' {0} '.format(job1.nodes)
-        ns2 = ' {0} '.format(job2.nodes)
-        # verify that node count is in each command
-        nassert(ns  in rc )
-        nassert(ns1 in rc1)
-        nassert(ns2 in rc2)
-        # verify that text on either side of node count 
-        # agrees for original and split commands
-        rcl ,rcr  = rc.split(ns,1)
-        rc1l,rc1r = rc1.split(ns1,1)
-        rc2l,rc2r = rc2.split(ns2,1)
-        rcf  = rcl+' '+rcr
-        rc1f = rc1l+' '+rc1r
-        rc2f = rc2l+' '+rc2r
-        nassert(job_commands_equal(rcf,rc1f))
-        nassert(job_commands_equal(rcf,rc2f))
-    #end for
-
-
-    # restore logging function
-    nlog_restore()
+    nunit_all()
 #end def machines
 
 
 
 def structure():
-    # divert logging function
-    nlog_divert()
 
-    nlabel('imports')
-    import numpy as np
-    from generic import obj
-    from structure import Structure,Crystal
-    from structure import generate_structure
-    from structure import read_structure
+    nunit('files')
 
+    nunit('import')
 
-    nlabel('definitions')
-    def structure_same(s1,s2):
-        keys = ('units','elem','pos','axes','kpoints','kweights','kaxes')
-        o1 = s1.obj(keys)
-        o2 = s2.obj(keys)
-        return object_eq(o1,o2)
-    #end def structure_same
+    nunit('empty_init')
 
-    def structure_diff(s1,s2):
-        keys = ('units','elem','pos','axes','kpoints','kweights','kaxes')
-        o1 = s1.obj(keys)
-        o2 = s2.obj(keys)
-        return object_diff(o1,o2,full=True)
-    #end def structure_diff
+    nunit('reference_inputs')
 
+    nunit('direct_init')
 
-    nlabel('empty_init')
-    s1 = Structure()
-    s2 = generate_structure('empty')
-    nassert(object_eq(s1,s2))
+    nunit('generate_init')
 
+    nunit('crystal_init')
 
-    nlabel('ref_inputs')
-    ref_in = obj()
-    ref_in.diamond_prim = obj(
-        units = 'A',
-        axes  = [[1.785, 1.785, 0.   ],
-                 [0.   , 1.785, 1.785],
-                 [1.785, 0.   , 1.785]],
-        elem  = ['C','C'],
-        pos   = [[0.    , 0.    , 0.    ],
-                 [0.8925, 0.8925, 0.8925]],
-        )
-    ref_in.diamond_conv = obj(
-        units = 'A',
-        axes  = [[3.57, 0   , 0.  ],
-                 [0.  , 3.57, 0.  ],
-                 [0   , 0.  , 3.57]],
-        elem  = ['C','C','C','C','C','C','C','C'],
-        pos   = [[0.0000, 0.0000, 0.0000],
-                 [0.8925, 0.8925, 0.8925],
-                 [0.0000, 1.7850, 1.7850],
-                 [0.8925, 2.6775, 2.6775],
-                 [1.7850, 0.0000, 1.7850],
-                 [2.6775, 0.8925, 2.6775],
-                 [1.7850, 1.7850, 0.0000],
-                 [2.6775, 2.6775, 0.8925]],
-        )
-    ref_in.wurtzite_prim = obj(
-        units = 'A',
-        axes  = [[ 3.350, 0.00000000, 0.00],
-                 [-1.675, 2.90118510, 0.00],
-                 [ 0.000, 0.00000000, 5.22]],
-        elem  = ['Zn','O','Zn','O'],
-        pos   = [[0.00000000e+00, 0.00000000e+00, 3.26250000e+00],
-                 [0.00000000e+00, 0.00000000e+00, 0.00000000e+00],
-                 [1.67500000e+00, 9.67061701e-01, 6.52500000e-01],
-                 [1.67500000e+00, 9.67061701e-01, 2.61000000e+00]],
-        )
-    ref_in.oxygen_prim = obj(
-        units = 'A',
-        axes  = [[ 2.70150000e+00, -1.71450000e+00,  0.00000000e+00],
-                 [ 2.70150000e+00,  1.71450000e+00,  0.00000000e+00],
-                 [-3.43801471e+00,  0.00000000e+00,  3.74799291e+00]],
-        elem  = ['O','O'],
-        pos   = [[ 0.,    0.,     0.575],
-                 [ 0.,    0.,    -0.575]],
-        )
-    ref_in.CuO_prim = obj(
-        units = 'A',
-        axes  = [[ 2.34150000e+00, -1.71100000e+00, 0.00000000e+00],
-                 [ 2.34150000e+00,  1.71100000e+00, 0.00000000e+00],
-                 [-8.49894838e-01,  0.00000000e+00, 5.05708046e+00]],
-        elem  = ['Cu','O','Cu','O'],
-        pos   = [[ 1.17075   ,  0.8555  ,  0.        ],
-                 [-0.21247371,  1.430396,  1.26427011],
-                 [ 0.74580258,  2.5665  ,  2.52854023],
-                 [ 1.70407887,  0.280604,  3.79281034]],
-        )
-    ref_in.Ca2CuO3_prim = obj(
-        units = 'A',
-        axes  = [[ 1.885,  1.625, -6.115],
-                 [-1.885,  1.625,  6.115],
-                 [ 1.885, -1.625,  6.115]],
-        elem  = ['Cu','O','O','O','Ca','Ca'],
-        pos   = [[0.000, 0.000,  0.000],
-                 [1.885, 0.000,  0.000],
-                 [0.000, 0.000,  1.960],
-                 [0.000, 0.000, 10.270],
-                 [0.000, 0.000,  4.290],
-                 [0.000, 0.000,  7.940]],
-        )
-    ref_in.La2CuO4_prim = obj(
-        units = 'A',
-        axes  = [[ 1.9045,  1.9045, -6.5845],
-                 [-1.9045,  1.9045,  6.5845],
-                 [ 1.9045, -1.9045,  6.5845]],
-        elem  = ['Cu','O','O','O','O','La','La'],
-        pos   = [[ 0.      ,  0.      ,  0.      ],
-                 [ 0.95225 ,  0.95225 , -3.29225 ],
-                 [-0.95225 ,  0.95225 ,  3.29225 ],
-                 [ 0.346619, -0.346619,  1.198379],
-                 [-0.346619,  0.346619, -1.198379],
-                 [ 0.689429, -0.689429,  2.383589],
-                 [-0.689429,  0.689429, -2.383589]],
-        )
-    ref_in.graphene_prim = obj(
-        units = 'A',
-        axes  = [[ 2.462, 0.00000000,  0.00],
-                 [-1.231, 2.13215454,  0.00],
-                 [ 0.000, 0.00000000, 15.00]],
-        elem  = ['C','C'],
-        pos   = [[0.   , 0.        , 0. ],
-                 [1.231, 0.71071818, 0. ]],
-        )
+    nunit('diagonal_tiling')
 
+    nunit('matrix_tiling')
 
-    nlabel('direct_init')
-    ref = obj()
-    for name,inputs in ref_in.iteritems():
-        ref[name] = Structure(**inputs)
-    #end for
+    nunit('gen_molecule')
 
+    nunit('gen_diamond_direct')
 
-    nlabel('generate_init')
-    gen = obj()
-    for name,inputs in ref_in.iteritems():
-        gen[name] = generate_structure(**inputs)
-    #end for
+    nunit('gen_diamond_lattice')
 
+    nunit('gen_graphene')
 
-    nlabel('crystal_init')
-    crys = obj()
-    for (latt,cell),inputs in Crystal.known_crystals.iteritems():
-        s = generate_structure(structure=latt,cell=cell)
-        crys[latt+'_'+cell] = s
-    #end for
+    nunit('read_write')
 
+    nunit('bounding_box')
 
-    nlabel('check_generate_init')
-    for name,s in ref.iteritems():
-        nassert(structure_same(s,gen[name]))
-    #end for
+    nunit('opt_tiling')
 
+    nunit('unit_coords')
 
-    nlabel('check_crystal_init')
-    for name,s in ref.iteritems():
-        nassert(structure_same(s,crys[name]))
-    #end for
+    nunit('monkhorst_pack_kpoints')
 
+    nunit('count_kshells')
 
-    nlabel('diagonal_tiling')
-    diag_tilings = [
-        (1, 1, 1),
-        (1, 2, 3),
-        (1, 2, 4),
-        (1, 3, 1),
-        (1, 3, 2),
-        (1, 3, 3),
-        (1, 5, 3),
-        (1, 5, 5),
-        (1, 5, 6),
-        (2, 1, 2),
-        (2, 1, 3),
-        (2, 2, 2),
-        (2, 3, 1),
-        (2, 3, 2),
-        (2, 3, 3),
-        (2, 4, 4),
-        (2, 5, 1),
-        (2, 5, 2),
-        (2, 5, 3),
-        (3, 1, 1),
-        (3, 1, 2),
-        (3, 1, 3),
-        (3, 2, 1),
-        (3, 2, 3),
-        (3, 3, 6),
-        (4, 6, 4),
-        (5, 5, 1),
-        (5, 5, 5),
-        (6, 2, 6),
-        (6, 3, 1),
-        (6, 3, 6),
-        (6, 4, 6),
-        (6, 6, 4),
-        ]
-    for name,s in ref.iteritems():
-        for tvec in diag_tilings:
-            st = s.tile(tvec)
-            st.check_tiling()
-        #end for
-    #end for
+    nunit('rinscribe')
 
+    nunit('rwigner')
 
-    nlabel('matrix_tiling')
-    matrix_tilings = [
-        (-3,-2, 0,-2,-2,-3, 3, 2,-1),
-        (-3,-1, 3, 0, 1, 1,-3, 3,-3),
-        (-3, 0,-2,-3, 0, 3, 2,-3, 0),
-        (-3, 1, 0,-3, 3,-3, 0,-2, 1),
-        (-2,-1, 2, 3,-3,-3,-2, 2,-2),
-        (-2, 0, 3,-2, 1,-1,-3, 0, 1),
-        (-2, 1,-3,-3, 0, 3, 2, 0, 3),
-        (-2, 2,-3,-1, 0, 1,-1,-2, 3),
-        (-1, 3, 2,-3, 2,-2, 3,-3,-1),
-        (-1, 3, 3,-3, 3, 0,-3,-1, 1),
-        ( 0,-1,-2, 2, 3, 1, 3,-2, 0),
-        ( 0, 1, 3,-2, 3, 1, 2, 1, 2),
-        ( 0, 3,-1,-1,-1, 2, 2, 3, 2),
-        ( 1,-3,-3,-3, 3, 0,-2, 2,-2),
-        ( 1,-2, 2, 1, 1, 1, 3, 2,-1),
-        ( 1, 0, 1,-3, 2, 1, 1, 2,-2),
-        ( 1, 2, 1,-2, 1,-1,-2, 3, 2),
-        ( 1, 2, 1, 2, 1,-1, 3, 2, 2),
-        ( 1, 2, 2,-2, 1, 0, 1, 0,-1),
-        ( 1, 2, 2, 1, 0, 1,-3, 0,-2),
-        ( 1, 3,-1, 0, 1,-2, 1, 0, 2),
-        ( 1, 3, 0,-1, 0,-3, 2, 0, 2),
-        ( 1, 3, 0, 0,-2,-2,-1,-1, 1),
-        ( 1, 3, 1,-3, 2, 0, 0, 0, 2),
-        ( 2,-3, 0, 2, 2,-3,-1,-2, 0),
-        ( 2,-2, 1, 3, 3,-2,-2, 1,-3),
-        ( 2,-1, 2,-1, 0,-3, 2, 0, 1),
-        ( 2,-1, 2, 0,-2, 0,-2, 0, 0),
-        ( 2,-1, 3, 2, 1, 2, 1,-1,-3),
-        ( 2, 1, 2, 0,-3,-2,-2,-3,-1),
-        ( 2, 2, 1,-3,-2,-3, 2,-1,-2),
-        ( 2, 3,-3, 1, 3, 1, 2,-2,-1),
-        ( 3,-3, 0, 1,-2, 3, 2, 1, 1),
-        ( 3,-2, 3, 3,-3,-3, 0, 0,-1),
-        ( 3,-1, 2,-3, 2,-2, 3, 2,-1),
-        ( 3, 0,-3, 0, 2,-1, 3,-2,-1),
-        ( 3, 0, 2, 3,-2,-3,-3,-2, 1),
-        ( 3, 1, 1,-2,-1,-3, 3, 1, 0),
-        ( 3, 2,-3,-2, 2, 1, 1, 0,-1),
-        ( 3, 2,-2,-1,-3,-1, 3, 3, 2),
-        ( 3, 2, 3,-1, 2, 2, 0,-1, 0),
-        ( 3, 3,-1, 0,-3, 2,-3,-1, 0),
-        ( 3, 3, 1,-3,-2,-3, 2,-3, 3),
-        ( 3, 3, 1, 1,-2, 2, 2,-2, 0),
-        ]
-    #for name in sorted(ref.keys()):
-    for name in ['diamond_prim']:
-        s = ref[name]
-        npass = 0
-        for tmat in matrix_tilings:
-            tmat = np.array(tmat,dtype=int)
-            tmat.shape = 3,3
-            st = s.tile(tmat)
-            st.check_tiling()
-        #end for
-    #end for
+    nunit('volume')
 
-    # call all unit tests
+    nunit('min_image_distances')
+
+    nunit('freeze')
+
+    nunit('interpolate')
+
     nunit_all()
-
-    # restore logging function
-    nlog_restore()
 #end def structure
 
 
 
 def physical_system():
-    # call all unit tests
     nunit_all()
 #end def physical_system
+
+
+
+def basisset():
+    nunit_all()
+#end def basisset
+
+
+
+def pseudopotential():
+    nunit_all()
+#end def pseudopotential
+
+
+
+def nexus_base():
+    nunit('import')
+
+    nunit('namespaces')
+
+    nunit('empty_init')
+
+    nunit('write_splash')
+
+    nunit('enter_leave')
+
+    nunit_all()
+#end def nexus_base
 
 
 
@@ -3054,6 +2370,97 @@ def pwscf_input():
 
 
 
+def qmcpack_input():
+
+    nunit('files')
+
+    nunit('compose')
+
+    nunit('generate')
+
+    nunit('read')
+
+    nunit('write')
+
+    nunit('generate_kspace_jastrow')
+
+    nunit('excited_state')
+
+    nunit_all()
+#end def qmcpack_input
+
+
+
+def qmcpack_converters():
+
+    nunit('import')
+
+    nunit('pyscf_to_afqmc_input_init')
+
+    nunit('pyscf_to_afqmc_input_write')
+
+    nunit('pyscf_to_afqmc_analyzer_init')
+
+    nunit_all()
+#end def qmcpack_converters
+
+
+
+def grid_functions():
+
+    nunit('imports')
+
+    # supporting functions
+    nunit('coord_conversion')
+
+    nunit('unit_grid_points')
+
+    nunit('parallelotope_grid_points')
+
+    nunit('spheroid_grid_points')
+
+    # Grid tests
+    nunit('grid_initialization')
+
+    nunit('parallelotope_grid_initialization')
+
+    nunit('grid_reset')
+
+    nunit('grid_set_operations')
+
+    nunit('grid_copy')
+
+    nunit('grid_translate')
+
+    nunit('grid_reshape')
+
+    nunit('grid_unit_points')
+
+    nunit('grid_cell_indices')
+
+    nunit('grid_inside')
+
+    nunit('grid_project')
+
+    nunit('grid_radius')
+
+    nunit('grid_axes_volume')
+
+    nunit('grid_volume')
+
+    nunit('grid_cell_volumes')
+
+    nunit('grid_unit_metric')
+
+    # GridFunction tests
+
+    # any remaining tests
+    nunit_all()
+
+#end def grid_functions
+
+
+
 example_information = dict(
     pwscf_relax_Ge_T = dict(
         path = 'quantum_espresso/relax_Ge_T_vs_kpoints', 
@@ -3306,15 +2713,36 @@ def user_examples(label):
 
 # create labeled tests from simple functions above
 
-NexusTest( generic_logging    )
-NexusTest( generic_intrinsics )
-NexusTest( generic_extensions )
-NexusTest( nexus_imports      )
-NexusTest( settings_operation , 'settings' )
-NexusTest( machines           )
-NexusTest( structure          )
-NexusTest( physical_system    )
-NexusTest( pwscf_input        )
+NexusTest( versions              )
+NexusTest( required_dependencies )
+NexusTest( optional_dependencies , optional=True)
+NexusTest( nexus_imports         )
+NexusTest( testing               )
+NexusTest( execute               )
+NexusTest( memory                )
+NexusTest( plotting              )
+NexusTest( superstring           )
+NexusTest( generic_logging       )
+NexusTest( generic_intrinsics    )
+NexusTest( generic_extensions    )
+NexusTest( developer             )
+NexusTest( unit_converter        )
+NexusTest( periodic_table        )
+NexusTest( numerics              )
+NexusTest( grid_functions        )
+NexusTest( fileio                )
+NexusTest( hdfreader             )
+NexusTest( xmlreader             )
+NexusTest( structure             )
+NexusTest( physical_system       )
+NexusTest( basisset              )
+NexusTest( pseudopotential       )
+NexusTest( nexus_base            )
+NexusTest( machines              )
+NexusTest( pwscf_input           )
+NexusTest( qmcpack_input         )
+NexusTest( qmcpack_converters    )
+NexusTest( settings_operation    , 'settings' )
 
 for label in example_information.keys():
     NexusTest(
@@ -3510,6 +2938,10 @@ if __name__=='__main__':
                       action='store_true',default=False,
                       help='Print help information and exit (default=%default).'
                       )
+    parser.add_option('-v','--verbose',dest='verbose',
+                      action='store_true',default=False,
+                      help='Print detailed information (default=%default).'
+                      )
     parser.add_option('-R','--regex',dest='regex',
                       default='none',
                       help='Tests with names matching the regular expression (regex) will be run.  The default behavior is to run all tests (default=%default).'
@@ -3517,6 +2949,10 @@ if __name__=='__main__':
     parser.add_option('--list',dest='list',
                       action='store_true',default=False,
                       help='List tests in human readable format. (default=%default).'
+                      )
+    parser.add_option('--full',dest='full',
+                      action='store_true',default=False,
+                      help='Test optional features (default=%default).'
                       )
     parser.add_option('--ctestlist',dest='ctestlist',
                       action='store_true',default=False,
@@ -3645,15 +3081,29 @@ if __name__=='__main__':
     if not ctest:
         print('')
     #end if
+    nrunnable = 0
+    for test in tests:
+        if test.optional and not options.full:
+            continue
+        #end if
+        nrunnable += 1
+    #end for
     n=0
     npassed = 0
     nfailed = 0
+    nrun    = 0
     for test in tests:
-        n+=1
         t1 = time()
+
+        # skip optional tests, unless requested
+        if test.optional and not options.full:
+            continue
+        #end if
+        n+=1
 
         # run the test
         test.run()
+        nrun += 1
 
         # print the pass/fail line
         if len(test.name)<40:
@@ -3672,12 +3122,18 @@ if __name__=='__main__':
         #end if
         t2 = time()
         if not ctest:
-            slt = str(len(tests))
+            slt = str(nrunnable)
             sn  = str(n)
             if len(sn)<len(slt):
                 sn = (len(slt)-len(sn))*' '+sn
             #end if
             print(' {0}/{1} {2}   {3}  {4:3.2f} sec'.format(sn,slt,title,status,t2-t1))
+            if options.verbose:
+                pad = (len(sn)+len(slt)+5)*' '
+                for subtest in test.subtests:
+                    print(pad+'subtest: '+subtest)
+                #end for
+            #end if
         #end if
         
         # print more information if failed
@@ -3698,7 +3154,7 @@ if __name__=='__main__':
     # print pass/fail and timing summary
     if not ctest:
         print('')
-        print('{0}% tests passed, {1} tests failed out of {2}'.format(int(100*float(npassed)/(1e-16+len(tests))),nfailed,len(tests)))
+        print('{0}% tests passed, {1} tests failed out of {2}'.format(int(100*float(npassed)/(1e-16+nrunnable)),nfailed,nrunnable))
         print('')
         print('Total test time = {0:3.2f} sec'.format(tstop_all-tstart_all))
     #end if

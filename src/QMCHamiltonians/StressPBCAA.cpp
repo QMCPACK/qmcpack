@@ -424,7 +424,7 @@ SymTensor<StressPBCAA::RealType, OHMMS_DIM> StressPBCAA::evalLR(ParticleSet& P)
 }
 
 
-QMCHamiltonianBase* StressPBCAA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+OperatorBase* StressPBCAA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   if (is_active)
     return new StressPBCAA(qp, is_active);

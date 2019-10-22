@@ -118,6 +118,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateValueAndDerivatives
   RealType esum              = 0.0;
   ValueType pairpot;
   ParticleSet::ParticlePos_t deltarV(nknot);
+#ifndef ENABLE_SOA
   for (int nn = myTable.M[iat], iel = 0; nn < myTable.M[iat + 1]; nn++, iel++)
   {
     register RealType r(myTable.r(nn));
@@ -203,6 +204,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateValueAndDerivatives
 
     esum += std::real(pairpot);
   } /* end loop over electron */
+#endif
 
   return esum;
 }

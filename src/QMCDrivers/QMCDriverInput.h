@@ -77,8 +77,8 @@ protected:
   /// period of recording walker positions and IDs for forward walking afterwards
   input::PeriodStride config_dump_period_;
   IndexType starting_step_              = 0;
-  IndexType requested_walkers_per_rank_ = 0;
   IndexType num_crowds_                 = 0;
+  IndexType walkers_per_rank_           = 0;
   IndexType requested_samples_          = 0;
   IndexType sub_steps_                  = 1;
   // max unecessary in this context
@@ -118,6 +118,7 @@ public:
   input::PeriodStride get_config_dump_period() const { return config_dump_period_; }
   IndexType get_starting_step() const { return starting_step_; }
   IndexType get_num_crowds() const { return num_crowds_; }
+  IndexType get_walkers_per_rank() const { return walkers_per_rank_; }
   IndexType get_requested_samples() const { return requested_samples_; }
   IndexType get_sub_steps() const { return sub_steps_; }
   IndexType get_max_blocks() const { return max_blocks_; }

@@ -66,6 +66,9 @@ struct QMCTraits
   typedef QTFull::ValueType FullPrecValueType;
   ///define PropertyList_t
   typedef RecordNamedProperty<FullPrecRealType> PropertySetType;
+
+  // Type for particle group index pairs
+  using PtclGrpIndexes = std::vector<std::pair<int,int>>;
 };
 
 /** Particle traits to use UniformGridLayout for the ParticleLayout.
