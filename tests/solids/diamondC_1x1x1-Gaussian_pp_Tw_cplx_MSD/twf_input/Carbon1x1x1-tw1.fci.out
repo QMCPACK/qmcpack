@@ -1,0 +1,1853 @@
+2019-10-17 11:19:23.951139-05:00
+===============
+Quantum Package
+===============
+
+Git Commit: changed some soft touches to touches
+Git Date  : Mon Apr 8 11:52:55 2019 -0500
+Git SHA1  : b1eae9d8bbc047b07c0137c9bc3efe74029e72cb
+
+
+Task server running : tcp://127.0.1.1:41279
+ Reading n_states
+ 
+.. >>>>> [ WALL TIME:        0.000000 s ] [ CPU  TIME:        0.015401 s ] <<<<< ..
+ 
+ Read  n_states
+ Reading pt2_relative_error
+ 
+.. >>>>> [ WALL TIME:        0.000600 s ] [ CPU  TIME:        0.015704 s ] <<<<< ..
+ 
+ Read  pt2_relative_error
+ Reading threshold_selectors
+ 
+.. >>>>> [ WALL TIME:        0.000600 s ] [ CPU  TIME:        0.015756 s ] <<<<< ..
+ 
+ Read  threshold_selectors
+ Reading n_det_max
+ 
+.. >>>>> [ WALL TIME:        0.000700 s ] [ CPU  TIME:        0.015802 s ] <<<<< ..
+ 
+ Read  n_det_max
+ * mo_label          None
+ Reading read_wf
+ 
+.. >>>>> [ WALL TIME:        0.001600 s ] [ CPU  TIME:        0.015970 s ] <<<<< ..
+ 
+ Read  read_wf
+* Number of determinants                                         1
+ Reading pt2_absolute_error
+ 
+.. >>>>> [ WALL TIME:        0.010600 s ] [ CPU  TIME:        0.060006 s ] <<<<< ..
+ 
+ Read  pt2_absolute_error
+ Reading do_pt2
+ 
+.. >>>>> [ WALL TIME:        0.010600 s ] [ CPU  TIME:        0.060253 s ] <<<<< ..
+ 
+ Read  do_pt2
+* Dimension of the psi arrays                               100000
+ Reading n_det_max_jacobi
+ 
+.. >>>>> [ WALL TIME:        0.012300 s ] [ CPU  TIME:        0.071259 s ] <<<<< ..
+ 
+ Read  n_det_max_jacobi
+* Number of threads for Diagonalization                          8
+ Reading threshold_davidson
+ 
+.. >>>>> [ WALL TIME:        0.012900 s ] [ CPU  TIME:        0.075319 s ] <<<<< ..
+ 
+ Read  threshold_davidson
+ Reading n_states_diag
+ 
+.. >>>>> [ WALL TIME:        0.013100 s ] [ CPU  TIME:        0.076059 s ] <<<<< ..
+ 
+ Read  n_states_diag
+ Reading ao_num
+ 
+.. >>>>> [ WALL TIME:        0.014400 s ] [ CPU  TIME:        0.083726 s ] <<<<< ..
+ 
+ Read  ao_num
+* mo_tot_num                                                    26
+ Read  mo_coef_real
+ Read  mo_coef_imag
+* N_int                                                          1
+ Reading elec_beta_num
+ 
+.. >>>>> [ WALL TIME:        0.028000 s ] [ CPU  TIME:        0.161481 s ] <<<<< ..
+ 
+ Read  elec_beta_num
+ Reading use_kpts
+ 
+.. >>>>> [ WALL TIME:        0.028500 s ] [ CPU  TIME:        0.164418 s ] <<<<< ..
+ 
+ Read  use_kpts
+ Reading elec_alpha_num
+ 
+.. >>>>> [ WALL TIME:        0.028500 s ] [ CPU  TIME:        0.164643 s ] <<<<< ..
+ 
+ Read  elec_alpha_num
+ Reading num_kpts
+ 
+.. >>>>> [ WALL TIME:        0.029200 s ] [ CPU  TIME:        0.168646 s ] <<<<< ..
+ 
+ Read  num_kpts
+ Reading mo_class
+ 
+.. >>>>> [ WALL TIME:        0.044100 s ] [ CPU  TIME:        0.249665 s ] <<<<< ..
+ 
+ Read  mo_class
+ HF_bitmask:
+ |++++------------------------------------------------------------|
+ |++++------------------------------------------------------------|
+           1           2           3           4
+ Reading use_df_mo
+ 
+.. >>>>> [ WALL TIME:        0.046800 s ] [ CPU  TIME:        0.265694 s ] <<<<< ..
+ 
+ Read  use_df_mo
+ Reading disk_access_ao_integrals
+ 
+.. >>>>> [ WALL TIME:        0.046900 s ] [ CPU  TIME:        0.266041 s ] <<<<< ..
+ 
+ Read  disk_access_ao_integrals
+ Reading disk_access_mo_integrals
+ 
+.. >>>>> [ WALL TIME:        0.046900 s ] [ CPU  TIME:        0.266366 s ] <<<<< ..
+ 
+ Read  disk_access_mo_integrals
+ complex MO map initialized:                 228826
+ Reading the MO integrals
+ MO integrals provided
+ Reading disk_access_mo_one_integrals
+ 
+.. >>>>> [ WALL TIME:        0.212400 s ] [ CPU  TIME:        1.295157 s ] <<<<< ..
+ 
+ Read  disk_access_mo_one_integrals
+ Reading disk_access_ao_one_integrals
+ 
+.. >>>>> [ WALL TIME:        0.212500 s ] [ CPU  TIME:        1.295799 s ] <<<<< ..
+ 
+ Read  disk_access_ao_one_integrals
+ AO kinetic integrals read from disk
+ AO N-e integrals read from disk
+ Providing the mono electronic integrals
+ Reading s2_eig
+ 
+.. >>>>> [ WALL TIME:        0.240600 s ] [ CPU  TIME:        1.448465 s ] <<<<< ..
+ 
+ Read  s2_eig
+ Reading disk_access_nuclear_repulsion
+ 
+.. >>>>> [ WALL TIME:        0.242000 s ] [ CPU  TIME:        1.456955 s ] <<<<< ..
+ 
+ Read  disk_access_nuclear_repulsion
+ Reading nucl_num
+ 
+.. >>>>> [ WALL TIME:        0.242000 s ] [ CPU  TIME:        1.457193 s ] <<<<< ..
+ 
+ Read  nucl_num
+ Reading nucl_charge
+ 
+.. >>>>> [ WALL TIME:        0.262900 s ] [ CPU  TIME:        1.580377 s ] <<<<< ..
+ 
+ Read  nucl_charge
+ Reading nucl_label
+ 
+.. >>>>> [ WALL TIME:        0.274200 s ] [ CPU  TIME:        1.641856 s ] <<<<< ..
+ 
+ Read  nucl_label
+ 
+.. >>>>> [ WALL TIME:        0.294400 s ] [ CPU  TIME:        1.753310 s ] <<<<< ..
+ 
+
+Nuclear Coordinates (Angstroms)
+===============================
+
+================ ============ ============ ============ ============
+      Atom          Charge          X            Y            Z 
+================ ============ ============ ============ ============
+He                   0.000000     0.000000     0.000000     0.000000
+He                   0.000000     0.000000     0.000000     0.000000
+================ ============ ============ ============ ============
+
+ Read nuclear_repulsion
+ 
+.. >>>>> [ WALL TIME:        0.294500 s ] [ CPU  TIME:        1.753815 s ] <<<<< ..
+ 
+* Nuclear repulsion energy                          -15.49410366266101    
+ 
+.. >>>>> [ WALL TIME:        0.294500 s ] [ CPU  TIME:        1.753914 s ] <<<<< ..
+ 
+* Energy of state    1                              -11.61150286962909    
+* S^2 of state    1                                  0.000000000000000    
+ Reading threshold_generators
+ 
+.. >>>>> [ WALL TIME:        0.295200 s ] [ CPU  TIME:        1.757046 s ] <<<<< ..
+ 
+ Read  threshold_generators
+ 
+.. >>>>> [ WALL TIME:        0.295700 s ] [ CPU  TIME:        1.760523 s ] <<<<< ..
+ 
+* Energy of state    1                              -11.61150286962909    
+* S^2 of state    1                                  0.000000000000000    
+* Saved determinants                                             1
+ Reading correlation_energy_ratio_max
+ 
+.. >>>>> [ WALL TIME:        0.473200 s ] [ CPU  TIME:        2.691706 s ] <<<<< ..
+ 
+ Read  correlation_energy_ratio_max
+ Reading pt2_max
+ 
+.. >>>>> [ WALL TIME:        0.473200 s ] [ CPU  TIME:        2.691953 s ] <<<<< ..
+ 
+ Read  pt2_max
+--------------------------------------------------------------------------------
+ 
+.. >>>>> [ WALL TIME:        0.473300 s ] [ CPU  TIME:        2.692198 s ] <<<<< ..
+ 
+* Number of generators                                           1
+* N_generators_bitmask                                           1
+* N_generators_bitmask_restart                                   1
+* N_cas_bitmask                                                  1
+ Read CAS bitmask
+* Number of inactive MOs                                         4
+* Number of virtual MOs                                          4
+* Number of core MOs                                             0
+ Reading distributed_davidson
+ 
+.. >>>>> [ WALL TIME:        0.479800 s ] [ CPU  TIME:        2.729804 s ] <<<<< ..
+ 
+ Read  distributed_davidson
+* PT2 Energy denominator                            -11.61150286962909    
+ 
+.. >>>>> [ WALL TIME:        0.488500 s ] [ CPU  TIME:        2.782920 s ] <<<<< ..
+ 
+* Number of selectors                                            1
+ Reading disk_access_kconserv
+ 
+.. >>>>> [ WALL TIME:        0.490200 s ] [ CPU  TIME:        2.789280 s ] <<<<< ..
+ 
+ Read  disk_access_kconserv
+ reading kconserv from disk
+ read kconserv from disk
+ 
+Summary at N_det =            1
+-----------------------------------
+ 
+* Correlation ratio                                 0.9877638224760675    
+ 
+# ============ =============================
+                    State      1
+# ============ =============================
+# E            -11.61150287
+# PT2           -0.19193718     0.00000000
+#
+# E+PT2        -11.80344005     0.00000000
+# ============ =============================
+ 
+ N_det             =            1
+ N_states          =            1
+ correlation_ratio =   0.987763822476068     
+ State            1
+ PT2             =  -0.191937180403391     
+ E               =   -11.6115028696291     
+ E+PT2           =   -11.8034400500325       +/-   0.000000000000000E+000
+ -----
+ 
+.. >>>>> [ WALL TIME:        0.634300 s ] [ CPU  TIME:        3.570511 s ] <<<<< ..
+ 
+* Number of generators                                           1
+ 
+.. >>>>> [ WALL TIME:        0.638300 s ] [ CPU  TIME:        3.592054 s ] <<<<< ..
+ 
+* Number of selectors                                            1
+ 
+.. >>>>> [ WALL TIME:        0.644100 s ] [ CPU  TIME:        3.622925 s ] <<<<< ..
+ 
+* Number of generators                                           1
+* Number of occupation patterns                                  2
+ Added determinants for S^2
+ 
+.. >>>>> [ WALL TIME:        0.644700 s ] [ CPU  TIME:        3.627751 s ] <<<<< ..
+ 
+ 
+.. >>>>> [ WALL TIME:        0.644700 s ] [ CPU  TIME:        3.627980 s ] <<<<< ..
+ 
+* Number of generators                                           1
+* Saved determinants                                             2
+ 
+.. >>>>> [ WALL TIME:        0.852300 s ] [ CPU  TIME:        4.937831 s ] <<<<< ..
+ 
+* Energy of state    1                              -11.61351048519007    
+* S^2 of state    1                                  0.000000000000000    
+* Saved determinants                                             2
+--------------------------------------------------------------------------------
+ 
+.. >>>>> [ WALL TIME:        1.046000 s ] [ CPU  TIME:        6.130895 s ] <<<<< ..
+ 
+* Number of generators                                           2
+* PT2 Energy denominator                            -11.61351048519007    
+ 
+.. >>>>> [ WALL TIME:        1.050800 s ] [ CPU  TIME:        6.162075 s ] <<<<< ..
+ 
+* Number of selectors                                            2
+ 
+Summary at N_det =            2
+-----------------------------------
+ 
+* Correlation ratio                                 0.9879353435663200    
+ 
+# ============ =============================
+                    State      1
+# ============ =============================
+# E            -11.61351049
+# PT2           -0.18923835     0.00000000
+#
+# E+PT2        -11.80274884     0.00000000
+# ============ =============================
+ 
+ N_det             =            2
+ N_states          =            1
+ correlation_ratio =   0.987935343566320     
+ State            1
+ PT2             =  -0.189238354359242     
+ E               =   -11.6135104851901     
+ E+PT2           =   -11.8027488395493       +/-   0.000000000000000E+000
+ -----
+ 
+.. >>>>> [ WALL TIME:        1.236500 s ] [ CPU  TIME:        7.246382 s ] <<<<< ..
+ 
+* Number of generators                                           1
+ 
+.. >>>>> [ WALL TIME:        1.240100 s ] [ CPU  TIME:        7.269692 s ] <<<<< ..
+ 
+* Number of selectors                                            2
+ 
+.. >>>>> [ WALL TIME:        1.251800 s ] [ CPU  TIME:        7.343614 s ] <<<<< ..
+ 
+* Number of generators                                           1
+* Number of occupation patterns                                  4
+ Added determinants for S^2
+ 
+.. >>>>> [ WALL TIME:        1.252600 s ] [ CPU  TIME:        7.349263 s ] <<<<< ..
+ 
+ 
+.. >>>>> [ WALL TIME:        1.252900 s ] [ CPU  TIME:        7.350928 s ] <<<<< ..
+ 
+* Number of generators                                           1
+* Saved determinants                                             4
+ 
+.. >>>>> [ WALL TIME:        1.429400 s ] [ CPU  TIME:        8.349658 s ] <<<<< ..
+ 
+* Energy of state    1                              -11.61651729623069    
+* S^2 of state    1                                  0.000000000000000    
+* Saved determinants                                             4
+--------------------------------------------------------------------------------
+ 
+.. >>>>> [ WALL TIME:        1.595000 s ] [ CPU  TIME:        9.342167 s ] <<<<< ..
+ 
+* Number of generators                                           4
+* PT2 Energy denominator                            -11.61651729623070    
+ 
+.. >>>>> [ WALL TIME:        1.606100 s ] [ CPU  TIME:        9.412444 s ] <<<<< ..
+ 
+* Number of selectors                                            4
+ 
+Summary at N_det =            4
+-----------------------------------
+ 
+* Correlation ratio                                 0.9881674105081908    
+ 
+# ============ =============================
+                    State      1
+# ============ =============================
+# E            -11.61651730
+# PT2           -0.18559072     0.00000000
+#
+# E+PT2        -11.80210802     0.00000000
+# ============ =============================
+ 
+ N_det             =            4
+ N_states          =            1
+ correlation_ratio =   0.988167410508191     
+ State            1
+ PT2             =  -0.185590720646215     
+ E               =   -11.6165172962307     
+ E+PT2           =   -11.8021080168769       +/-   0.000000000000000E+000
+ -----
+
+Extrapolated energies
+------------------------
+
+ 
+ State            1
+ 
+ =========== ===================
+ minimum PT2 Extrapolated energy
+ =========== ===================
+    -0.1892        -11.76950311
+    -0.1919        -11.76348096
+ =========== ===================
+ 
+ 
+.. >>>>> [ WALL TIME:        1.799900 s ] [ CPU  TIME:       10.610623 s ] <<<<< ..
+ 
+* Number of generators                                           1
+ 
+.. >>>>> [ WALL TIME:        1.807600 s ] [ CPU  TIME:       10.661765 s ] <<<<< ..
+ 
+* Number of selectors                                            3
+ 
+.. >>>>> [ WALL TIME:        1.813100 s ] [ CPU  TIME:       10.694344 s ] <<<<< ..
+ 
+* Number of generators                                           1
+* Number of occupation patterns                                  6
+ Added determinants for S^2
+ 
+.. >>>>> [ WALL TIME:        1.813700 s ] [ CPU  TIME:       10.698133 s ] <<<<< ..
+ 
+ 
+.. >>>>> [ WALL TIME:        1.813700 s ] [ CPU  TIME:       10.698324 s ] <<<<< ..
+ 
+* Number of generators                                           1
+* Saved determinants                                             7
+ 
+.. >>>>> [ WALL TIME:        2.018200 s ] [ CPU  TIME:       11.999150 s ] <<<<< ..
+ 
+* Energy of state    1                              -11.61950837740177    
+* S^2 of state    1                                 0.1858907582322558E-29
+* Saved determinants                                             7
+--------------------------------------------------------------------------------
+ 
+.. >>>>> [ WALL TIME:        2.232500 s ] [ CPU  TIME:       13.292619 s ] <<<<< ..
+ 
+* Number of generators                                           7
+* PT2 Energy denominator                            -11.61995069699914    
+ 
+.. >>>>> [ WALL TIME:        2.241900 s ] [ CPU  TIME:       13.354070 s ] <<<<< ..
+ 
+* Number of selectors                                            7
+ 
+Summary at N_det =            7
+-----------------------------------
+ 
+* Correlation ratio                                 0.9884215488180852    
+ 
+# ============ =============================
+                    State      1
+# ============ =============================
+# E            -11.61950838
+# PT2           -0.18159298     0.00000000
+#
+# E+PT2        -11.80110136     0.00000000
+# ============ =============================
+ 
+ N_det             =            7
+ N_states          =            1
+ correlation_ratio =   0.988421548818085     
+ State            1
+ PT2             =  -0.181592979696979     
+ E               =   -11.6195083774018     
+ E+PT2           =   -11.8011013570987       +/-   0.000000000000000E+000
+ -----
+
+Extrapolated energies
+------------------------
+
+ 
+ State            1
+ 
+ =========== ===================
+ minimum PT2 Extrapolated energy
+ =========== ===================
+    -0.1856        -11.75537495
+    -0.1892        -11.76191128
+    -0.1919        -11.76106476
+ =========== ===================
+ 
+ 
+.. >>>>> [ WALL TIME:        2.469000 s ] [ CPU  TIME:       14.762608 s ] <<<<< ..
+ 
+* Number of generators                                           1
+ 
+.. >>>>> [ WALL TIME:        2.477500 s ] [ CPU  TIME:       14.820546 s ] <<<<< ..
+ 
+* Number of selectors                                            5
+ 
+.. >>>>> [ WALL TIME:        2.504500 s ] [ CPU  TIME:       14.974383 s ] <<<<< ..
+ 
+* Number of generators                                           1
+* Number of occupation patterns                                  9
+ Added determinants for S^2
+ 
+.. >>>>> [ WALL TIME:        2.505200 s ] [ CPU  TIME:       14.979127 s ] <<<<< ..
+ 
+ 
+.. >>>>> [ WALL TIME:        2.505200 s ] [ CPU  TIME:       14.979316 s ] <<<<< ..
+ 
+* Number of generators                                           1
+* Saved determinants                                            16
+ 
+.. >>>>> [ WALL TIME:        2.686900 s ] [ CPU  TIME:       16.092875 s ] <<<<< ..
+ 
+* Energy of state    1                              -11.62449743655494    
+* S^2 of state    1                                -0.3153988991385429E-19
+* Saved determinants                                            16
+--------------------------------------------------------------------------------
+ 
+.. >>>>> [ WALL TIME:        2.856600 s ] [ CPU  TIME:       17.139349 s ] <<<<< ..
+ 
+* Number of generators                                          16
+* Size of deterministic set                                      1
+* PT2 Energy denominator                            -11.62492642758994    
+ 
+.. >>>>> [ WALL TIME:        2.862700 s ] [ CPU  TIME:       17.181014 s ] <<<<< ..
+ 
+* Number of selectors                                           16
+ 
+.. >>>>> [ WALL TIME:        2.863300 s ] [ CPU  TIME:       17.185030 s ] <<<<< ..
+ 
+* Number of generators                                          16
+* Size of deterministic set                                      1
+ 
+.. >>>>> [ WALL TIME:        2.863700 s ] [ CPU  TIME:       17.187948 s ] <<<<< ..
+ 
+* Number of selectors                                           16
+ ========== ================= ================= =================
+  Samples        Energy         Stat. Error         Seconds      
+ ========== ================= ================= =================
+ ========== ================= ================= =================
+ 
+.. >>>>> [ WALL TIME:        2.897800 s ] [ CPU  TIME:       17.360183 s ] <<<<< ..
+ 
+* Number of generators                                          16
+* Size of deterministic set                                      1
+ 
+.. >>>>> [ WALL TIME:        2.898300 s ] [ CPU  TIME:       17.363289 s ] <<<<< ..
+ 
+* Number of selectors                                           16
+ 
+Summary at N_det =           16
+-----------------------------------
+ 
+* Correlation ratio                                 0.9888462929553086    
+ 
+# ============ =============================
+                    State      1
+# ============ =============================
+# E            -11.62449744
+# PT2           -0.17491255     0.00000000
+#
+# E+PT2        -11.79940999     0.00000000
+# ============ =============================
+ 
+ N_det             =           16
+ N_states          =            1
+ correlation_ratio =   0.988846292955309     
+ State            1
+ PT2             =  -0.174912554153533     
+ E               =   -11.6244974365549     
+ E+PT2           =   -11.7994099907085       +/-   0.000000000000000E+000
+ -----
+
+Extrapolated energies
+------------------------
+
+ 
+ State            1
+ 
+ =========== ===================
+ minimum PT2 Extrapolated energy
+ =========== ===================
+    -0.1816        -11.75512520
+    -0.1856        -11.75520686
+    -0.1892        -11.75806532
+    -0.1919        -11.75848025
+ =========== ===================
+ 
+ 
+.. >>>>> [ WALL TIME:        3.087400 s ] [ CPU  TIME:       18.476706 s ] <<<<< ..
+ 
+* Number of generators                                           1
+ 
+.. >>>>> [ WALL TIME:        3.093300 s ] [ CPU  TIME:       18.507611 s ] <<<<< ..
+ 
+* Number of selectors                                           12
+ 
+.. >>>>> [ WALL TIME:        3.104400 s ] [ CPU  TIME:       18.567016 s ] <<<<< ..
+ 
+* Number of generators                                           1
+* Number of occupation patterns                                 15
+ Added determinants for S^2
+ 
+.. >>>>> [ WALL TIME:        3.105000 s ] [ CPU  TIME:       18.571552 s ] <<<<< ..
+ 
+ 
+.. >>>>> [ WALL TIME:        3.105300 s ] [ CPU  TIME:       18.573672 s ] <<<<< ..
+ 
+* Number of generators                                           1
+* Saved determinants                                            34
+ 
+.. >>>>> [ WALL TIME:        3.320600 s ] [ CPU  TIME:       19.874159 s ] <<<<< ..
+ 
+* Energy of state    1                              -11.63196502344693    
+* S^2 of state    1                                -0.9479833701779134E-19
+* Saved determinants                                            34
+--------------------------------------------------------------------------------
+ 
+.. >>>>> [ WALL TIME:        3.467700 s ] [ CPU  TIME:       20.783785 s ] <<<<< ..
+ 
+* Number of generators                                          34
+* Size of deterministic set                                      1
+* PT2 Energy denominator                            -11.63232744457770    
+ 
+.. >>>>> [ WALL TIME:        3.468400 s ] [ CPU  TIME:       20.788230 s ] <<<<< ..
+ 
+* Number of selectors                                           34
+ 
+.. >>>>> [ WALL TIME:        3.468700 s ] [ CPU  TIME:       20.790632 s ] <<<<< ..
+ 
+* Number of generators                                          34
+* Size of deterministic set                                      1
+ 
+.. >>>>> [ WALL TIME:        3.468700 s ] [ CPU  TIME:       20.790720 s ] <<<<< ..
+ 
+* Number of selectors                                           34
+ ========== ================= ================= =================
+  Samples        Energy         Stat. Error         Seconds      
+ ========== ================= ================= =================
+ ========== ================= ================= =================
+ 
+.. >>>>> [ WALL TIME:        3.521300 s ] [ CPU  TIME:       21.050628 s ] <<<<< ..
+ 
+* Number of generators                                          34
+* Size of deterministic set                                      1
+ 
+.. >>>>> [ WALL TIME:        3.521400 s ] [ CPU  TIME:       21.051098 s ] <<<<< ..
+ 
+* Number of selectors                                           34
+ 
+Summary at N_det =           34
+-----------------------------------
+ 
+* Correlation ratio                                 0.9894725418493218    
+ 
+# ============ =============================
+                    State      1
+# ============ =============================
+# E            -11.63196502
+# PT2           -0.16506667     0.00000000
+#
+# E+PT2        -11.79703170     0.00000000
+# ============ =============================
+ 
+ N_det             =           34
+ N_states          =            1
+ correlation_ratio =   0.989472541849322     
+ State            1
+ PT2             =  -0.165066674870698     
+ E               =   -11.6319650234469     
+ E+PT2           =   -11.7970316983176       +/-   0.000000000000000E+000
+ -----
+
+Extrapolated energies
+------------------------
+
+ 
+ State            1
+ 
+ =========== ===================
+ minimum PT2 Extrapolated energy
+ =========== ===================
+    -0.1749        -11.75715950
+    -0.1816        -11.75642947
+    -0.1856        -11.75617076
+    -0.1892        -11.75731281
+    -0.1919        -11.75763364
+ =========== ===================
+ 
+ 
+.. >>>>> [ WALL TIME:        3.730200 s ] [ CPU  TIME:       22.383112 s ] <<<<< ..
+ 
+* Number of generators                                           4
+ 
+.. >>>>> [ WALL TIME:        3.737200 s ] [ CPU  TIME:       22.425419 s ] <<<<< ..
+ 
+* Number of selectors                                           24
+ 
+.. >>>>> [ WALL TIME:        3.763700 s ] [ CPU  TIME:       22.577839 s ] <<<<< ..
+ 
+* Number of generators                                           4
+* Number of occupation patterns                                 24
+ Added determinants for S^2
+ 
+.. >>>>> [ WALL TIME:        3.766000 s ] [ CPU  TIME:       22.591504 s ] <<<<< ..
+ 
+ 
+.. >>>>> [ WALL TIME:        3.766100 s ] [ CPU  TIME:       22.592353 s ] <<<<< ..
+ 
+* Number of generators                                           4
+* Saved determinants                                            72
+ 
+.. >>>>> [ WALL TIME:        4.089100 s ] [ CPU  TIME:       24.628980 s ] <<<<< ..
+ 
+* Energy of state    1                              -11.64306945731579    
+* S^2 of state    1                                 0.1464270887070416E-05
+* Saved determinants                                            72
+--------------------------------------------------------------------------------
+ 
+.. >>>>> [ WALL TIME:        4.301500 s ] [ CPU  TIME:       25.953835 s ] <<<<< ..
+ 
+* Number of generators                                          72
+* Size of deterministic set                                      1
+* PT2 Energy denominator                            -11.64344481234193    
+ 
+.. >>>>> [ WALL TIME:        4.324500 s ] [ CPU  TIME:       26.090422 s ] <<<<< ..
+ 
+* Number of selectors                                           72
+ 
+.. >>>>> [ WALL TIME:        4.325000 s ] [ CPU  TIME:       26.093911 s ] <<<<< ..
+ 
+* Number of generators                                          72
+* Size of deterministic set                                      1
+ 
+.. >>>>> [ WALL TIME:        4.325400 s ] [ CPU  TIME:       26.096958 s ] <<<<< ..
+ 
+* Number of selectors                                           72
+ ========== ================= ================= =================
+  Samples        Energy         Stat. Error         Seconds      
+ ========== ================= ================= =================
+  9.00        -11.7941181879         0.646E-05            0.0394                    
+ ========== ================= ================= =================
+ 
+.. >>>>> [ WALL TIME:        4.369800 s ] [ CPU  TIME:       26.264277 s ] <<<<< ..
+ 
+* Number of generators                                          72
+* Size of deterministic set                                      1
+ 
+.. >>>>> [ WALL TIME:        4.369900 s ] [ CPU  TIME:       26.264724 s ] <<<<< ..
+ 
+* Number of selectors                                           72
+ 
+Summary at N_det =           72
+-----------------------------------
+ 
+* Correlation ratio                                 0.9903647739860616    
+ 
+# ============ =============================
+                    State      1
+# ============ =============================
+# E            -11.64306946
+# PT2           -0.15104873     0.00000646
+#
+# E+PT2        -11.79411819     0.00000646
+# ============ =============================
+ 
+ N_det             =           72
+ N_states          =            1
+ correlation_ratio =   0.990364773986062     
+ State            1
+ PT2             =  -0.151048730537832     
+ E               =   -11.6430694573158     
+ E+PT2           =   -11.7941181878536       +/-   6.459604031823348E-006
+ -----
+
+Extrapolated energies
+------------------------
+
+ 
+ State            1
+ 
+ =========== ===================
+ minimum PT2 Extrapolated energy
+ =========== ===================
+    -0.1651        -11.76272399
+    -0.1749        -11.76071243
+    -0.1816        -11.75953731
+    -0.1856        -11.75891781
+    -0.1892        -11.75912385
+    -0.1919        -11.75909951
+ =========== ===================
+ 
+ 
+.. >>>>> [ WALL TIME:        4.595800 s ] [ CPU  TIME:       27.683624 s ] <<<<< ..
+ 
+* Number of generators                                          13
+ 
+.. >>>>> [ WALL TIME:        4.608700 s ] [ CPU  TIME:       27.759918 s ] <<<<< ..
+ 
+* Number of selectors                                           51
+ 
+.. >>>>> [ WALL TIME:        4.620500 s ] [ CPU  TIME:       27.818009 s ] <<<<< ..
+ 
+* Number of generators                                          13
+* Number of occupation patterns                                 44
+ Added determinants for S^2
+ 
+.. >>>>> [ WALL TIME:        4.620800 s ] [ CPU  TIME:       27.820279 s ] <<<<< ..
+ 
+ 
+.. >>>>> [ WALL TIME:        4.621000 s ] [ CPU  TIME:       27.821138 s ] <<<<< ..
+ 
+* Number of generators                                          13
+* Saved determinants                                           152
+ 
+.. >>>>> [ WALL TIME:        4.987900 s ] [ CPU  TIME:       30.208225 s ] <<<<< ..
+ 
+* Energy of state    1                              -11.65776656739175    
+* S^2 of state    1                                 0.1920070372626315E-04
+* Saved determinants                                           152
+--------------------------------------------------------------------------------
+ 
+.. >>>>> [ WALL TIME:        5.162700 s ] [ CPU  TIME:       31.297594 s ] <<<<< ..
+ 
+* Number of generators                                         152
+* Size of deterministic set                                      1
+* PT2 Energy denominator                            -11.65825215281915    
+ 
+.. >>>>> [ WALL TIME:        5.186700 s ] [ CPU  TIME:       31.445036 s ] <<<<< ..
+ 
+* Number of selectors                                          152
+ 
+.. >>>>> [ WALL TIME:        5.187300 s ] [ CPU  TIME:       31.449372 s ] <<<<< ..
+ 
+* Number of generators                                         152
+* Size of deterministic set                                      1
+ 
+.. >>>>> [ WALL TIME:        5.187600 s ] [ CPU  TIME:       31.452043 s ] <<<<< ..
+ 
+* Number of selectors                                          152
+ ========== ================= ================= =================
+  Samples        Energy         Stat. Error         Seconds      
+ ========== ================= ================= =================
+  23.0        -11.7899542280         0.112E-04            0.0614                    
+ ========== ================= ================= =================
+ 
+.. >>>>> [ WALL TIME:        5.254100 s ] [ CPU  TIME:       31.771713 s ] <<<<< ..
+ 
+* Number of generators                                         152
+* Size of deterministic set                                      1
+ 
+.. >>>>> [ WALL TIME:        5.254200 s ] [ CPU  TIME:       31.771903 s ] <<<<< ..
+ 
+* Number of selectors                                          152
+ 
+Summary at N_det =          152
+-----------------------------------
+ 
+* Correlation ratio                                 0.9915656598162166    
+ 
+# ============ =============================
+                    State      1
+# ============ =============================
+# E            -11.65776657
+# PT2           -0.13218766     0.00001119
+#
+# E+PT2        -11.78995423     0.00001119
+# ============ =============================
+ 
+ N_det             =          152
+ N_states          =            1
+ correlation_ratio =   0.991565659816217     
+ State            1
+ PT2             =  -0.132187660596345     
+ E               =   -11.6577665673917     
+ E+PT2           =   -11.7899542279881       +/-   1.119217531787274E-005
+ -----
+
+Extrapolated energies
+------------------------
+
+ 
+ State            1
+ 
+ =========== ===================
+ minimum PT2 Extrapolated energy
+ =========== ===================
+    -0.1510        -11.76077115
+    -0.1651        -11.76148837
+    -0.1749        -11.76091779
+    -0.1816        -11.76032095
+    -0.1856        -11.75991471
+    -0.1892        -11.75992823
+    -0.1919        -11.75985352
+ =========== ===================
+ 
+ 
+.. >>>>> [ WALL TIME:        5.455300 s ] [ CPU  TIME:       32.974030 s ] <<<<< ..
+ 
+* Number of generators                                          33
+ 
+.. >>>>> [ WALL TIME:        5.458400 s ] [ CPU  TIME:       32.993123 s ] <<<<< ..
+ 
+* Number of selectors                                          108
+ 
+.. >>>>> [ WALL TIME:        5.489200 s ] [ CPU  TIME:       33.116600 s ] <<<<< ..
+ 
+* Number of generators                                          33
+* Number of occupation patterns                                 82
+ Added determinants for S^2
+ 
+.. >>>>> [ WALL TIME:        5.489900 s ] [ CPU  TIME:       33.121910 s ] <<<<< ..
+ 
+ 
+.. >>>>> [ WALL TIME:        5.490300 s ] [ CPU  TIME:       33.123861 s ] <<<<< ..
+ 
+* Number of generators                                          33
+* Saved determinants                                           303
+ 
+.. >>>>> [ WALL TIME:        6.052600 s ] [ CPU  TIME:       36.721105 s ] <<<<< ..
+ 
+* Energy of state    1                              -11.67658393804608    
+* S^2 of state    1                                 0.5590926375670738E-04
+* Saved determinants                                           303
+--------------------------------------------------------------------------------
+ 
+.. >>>>> [ WALL TIME:        6.227700 s ] [ CPU  TIME:       37.730373 s ] <<<<< ..
+ 
+* Number of generators                                         303
+* Size of deterministic set                                      1
+* PT2 Energy denominator                            -11.67674118224812    
+ 
+.. >>>>> [ WALL TIME:        6.229400 s ] [ CPU  TIME:       37.741711 s ] <<<<< ..
+ 
+* Number of selectors                                          303
+ 
+.. >>>>> [ WALL TIME:        6.229800 s ] [ CPU  TIME:       37.744514 s ] <<<<< ..
+ 
+* Number of generators                                         303
+* Size of deterministic set                                      1
+ 
+.. >>>>> [ WALL TIME:        6.229800 s ] [ CPU  TIME:       37.744687 s ] <<<<< ..
+ 
+* Number of selectors                                          303
+ ========== ================= ================= =================
+  Samples        Energy         Stat. Error         Seconds      
+ ========== ================= ================= =================
+  55.0        -11.7863949517         0.817E-05            0.1096                    
+ ========== ================= ================= =================
+ 
+.. >>>>> [ WALL TIME:        6.346500 s ] [ CPU  TIME:       38.397391 s ] <<<<< ..
+ 
+* Number of generators                                         303
+* Size of deterministic set                                      1
+ 
+.. >>>>> [ WALL TIME:        6.346500 s ] [ CPU  TIME:       38.397586 s ] <<<<< ..
+ 
+* Number of selectors                                          303
+ 
+Summary at N_det =          303
+-----------------------------------
+ 
+* Correlation ratio                                 0.9929918282305733    
+ 
+# ============ =============================
+                    State      1
+# ============ =============================
+# E            -11.67658394
+# PT2           -0.10981101     0.00000817
+#
+# E+PT2        -11.78639495     0.00000817
+# ============ =============================
+ 
+ N_det             =          303
+ N_states          =            1
+ correlation_ratio =   0.992991828230573     
+ State            1
+ PT2             =  -0.109811013633352     
+ E               =   -11.6765839380461     
+ E+PT2           =   -11.7863949516794       +/-   8.166959519592667E-006
+ -----
+
+Extrapolated energies
+------------------------
+
+ 
+ State            1
+ 
+ =========== ===================
+ minimum PT2 Extrapolated energy
+ =========== ===================
+    -0.1322        -11.76892818
+    -0.1510        -11.76573216
+    -0.1651        -11.76477111
+    -0.1749        -11.76389504
+    -0.1816        -11.76319856
+    -0.1856        -11.76271633
+    -0.1892        -11.76252316
+ =========== ===================
+ 
+ 
+.. >>>>> [ WALL TIME:        6.547500 s ] [ CPU  TIME:       39.665361 s ] <<<<< ..
+ 
+* Number of generators                                          80
+ 
+.. >>>>> [ WALL TIME:        6.551900 s ] [ CPU  TIME:       39.694485 s ] <<<<< ..
+ 
+* Number of selectors                                          216
+ 
+.. >>>>> [ WALL TIME:        6.637100 s ] [ CPU  TIME:       40.124679 s ] <<<<< ..
+ 
+* Number of generators                                          80
+* Number of occupation patterns                                158
+ Added determinants for S^2
+ 
+.. >>>>> [ WALL TIME:        6.638400 s ] [ CPU  TIME:       40.133763 s ] <<<<< ..
+ 
+ 
+.. >>>>> [ WALL TIME:        6.638600 s ] [ CPU  TIME:       40.135183 s ] <<<<< ..
+ 
+* Number of generators                                          80
+* Saved determinants                                           623
+ 
+.. >>>>> [ WALL TIME:        8.685700 s ] [ CPU  TIME:       53.724059 s ] <<<<< ..
+ 
+* Energy of state    1                              -11.69765576767890    
+* S^2 of state    1                                 0.8973238522302095E-04
+* Saved determinants                                           623
+--------------------------------------------------------------------------------
+ 
+.. >>>>> [ WALL TIME:        8.906700 s ] [ CPU  TIME:       55.121693 s ] <<<<< ..
+ 
+* Number of generators                                         623
+* Size of deterministic set                                      1
+* PT2 Energy denominator                            -11.69757696243657    
+ 
+.. >>>>> [ WALL TIME:        8.923700 s ] [ CPU  TIME:       55.220920 s ] <<<<< ..
+ 
+* Number of selectors                                          623
+ 
+.. >>>>> [ WALL TIME:        8.924200 s ] [ CPU  TIME:       55.224026 s ] <<<<< ..
+ 
+* Number of generators                                         623
+* Size of deterministic set                                      1
+ 
+.. >>>>> [ WALL TIME:        8.924300 s ] [ CPU  TIME:       55.224521 s ] <<<<< ..
+ 
+* Number of selectors                                          623
+ ========== ================= ================= =================
+  Samples        Energy         Stat. Error         Seconds      
+ ========== ================= ================= =================
+  117.        -11.7820408875         0.115E-04            0.2457                    
+ ========== ================= ================= =================
+ 
+.. >>>>> [ WALL TIME:        9.178900 s ] [ CPU  TIME:       56.744662 s ] <<<<< ..
+ 
+* Number of generators                                         623
+* Size of deterministic set                                      1
+ 
+.. >>>>> [ WALL TIME:        9.179000 s ] [ CPU  TIME:       56.744969 s ] <<<<< ..
+ 
+* Number of selectors                                          623
+ 
+Summary at N_det =          623
+-----------------------------------
+ 
+* Correlation ratio                                 0.9946130194676668    
+ 
+# ============ =============================
+                    State      1
+# ============ =============================
+# E            -11.69765577
+# PT2           -0.08438512     0.00001150
+#
+# E+PT2        -11.78204089     0.00001150
+# ============ =============================
+ 
+ N_det             =          623
+ N_states          =            1
+ correlation_ratio =   0.994613019467667     
+ State            1
+ PT2             =  -8.438511977877383E-002
+ E               =   -11.6976557676789     
+ E+PT2           =   -11.7820408874577       +/-   1.149556989347483E-005
+ -----
+
+Extrapolated energies
+------------------------
+
+ 
+ State            1
+ 
+ =========== ===================
+ minimum PT2 Extrapolated energy
+ =========== ===================
+    -0.1098        -11.76759033
+    -0.1322        -11.76810590
+    -0.1510        -11.76684806
+    -0.1651        -11.76614443
+    -0.1749        -11.76548380
+    -0.1816        -11.76493570
+    -0.1856        -11.76453402
+ =========== ===================
+ 
+ 
+.. >>>>> [ WALL TIME:        9.452900 s ] [ CPU  TIME:       58.453535 s ] <<<<< ..
+ 
+* Number of generators                                         174
+ 
+.. >>>>> [ WALL TIME:        9.455500 s ] [ CPU  TIME:       58.469379 s ] <<<<< ..
+ 
+* Number of selectors                                          452
+ 
+.. >>>>> [ WALL TIME:        9.572200 s ] [ CPU  TIME:       59.162199 s ] <<<<< ..
+ 
+* Number of generators                                         174
+* Number of occupation patterns                                303
+ Added determinants for S^2
+ 
+.. >>>>> [ WALL TIME:        9.573300 s ] [ CPU  TIME:       59.169034 s ] <<<<< ..
+ 
+ 
+.. >>>>> [ WALL TIME:        9.573600 s ] [ CPU  TIME:       59.171432 s ] <<<<< ..
+ 
+* Number of generators                                         174
+* Saved determinants                                          1225
+ 
+.. >>>>> [ WALL TIME:       17.268900 s ] [ CPU  TIME:      107.702024 s ] <<<<< ..
+ 
+* Energy of state    1                              -11.72006136041705    
+* S^2 of state    1                                 0.1305181694756894E-03
+* Saved determinants                                          1225
+--------------------------------------------------------------------------------
+ 
+.. >>>>> [ WALL TIME:       17.604100 s ] [ CPU  TIME:      109.733176 s ] <<<<< ..
+ 
+* Number of generators                                        1225
+* Size of deterministic set                                     54
+* PT2 Energy denominator                            -11.71980139480790    
+ 
+.. >>>>> [ WALL TIME:       17.610000 s ] [ CPU  TIME:      109.777924 s ] <<<<< ..
+ 
+* Number of selectors                                         1225
+ 
+.. >>>>> [ WALL TIME:       17.610600 s ] [ CPU  TIME:      109.782642 s ] <<<<< ..
+ 
+* Number of generators                                        1225
+* Size of deterministic set                                     54
+ 
+.. >>>>> [ WALL TIME:       17.611000 s ] [ CPU  TIME:      109.785441 s ] <<<<< ..
+ 
+* Number of selectors                                         1225
+ ========== ================= ================= =================
+  Samples        Energy         Stat. Error         Seconds      
+ ========== ================= ================= =================
+  216.        -11.7779666021         0.478E-05            0.6075                    
+ ========== ================= ================= =================
+ 
+.. >>>>> [ WALL TIME:       18.259700 s ] [ CPU  TIME:      113.867130 s ] <<<<< ..
+ 
+* Number of generators                                        1225
+* Size of deterministic set                                     54
+ 
+.. >>>>> [ WALL TIME:       18.259900 s ] [ CPU  TIME:      113.867930 s ] <<<<< ..
+ 
+* Number of selectors                                         1225
+ 
+Summary at N_det =         1225
+-----------------------------------
+ 
+* Correlation ratio                                 0.9963024812461484    
+ 
+# ============ =============================
+                    State      1
+# ============ =============================
+# E            -11.72006136
+# PT2           -0.05790524     0.00000478
+#
+# E+PT2        -11.77796660     0.00000478
+# ============ =============================
+ 
+ N_det             =         1225
+ N_states          =            1
+ correlation_ratio =   0.996302481246148     
+ State            1
+ PT2             =  -5.790524163929552E-002
+ E               =   -11.7200613604171     
+ E+PT2           =   -11.7779666020563       +/-   4.782708118022843E-006
+ -----
+
+Extrapolated energies
+------------------------
+
+ 
+ State            1
+ 
+ =========== ===================
+ minimum PT2 Extrapolated energy
+ =========== ===================
+    -0.0844        -11.76905710
+    -0.1098        -11.76849386
+    -0.1322        -11.76849055
+    -0.1510        -11.76776762
+    -0.1651        -11.76725069
+    -0.1749        -11.76675781
+    -0.1816        -11.76633734
+ =========== ===================
+ 
+ 
+.. >>>>> [ WALL TIME:       18.576500 s ] [ CPU  TIME:      115.804981 s ] <<<<< ..
+ 
+* Number of generators                                         347
+ 
+.. >>>>> [ WALL TIME:       18.586800 s ] [ CPU  TIME:      115.869268 s ] <<<<< ..
+ 
+* Number of selectors                                          891
+ 
+.. >>>>> [ WALL TIME:       18.877500 s ] [ CPU  TIME:      117.563595 s ] <<<<< ..
+ 
+* Number of generators                                         347
+* Number of occupation patterns                                584
+ Added determinants for S^2
+ 
+.. >>>>> [ WALL TIME:       18.879600 s ] [ CPU  TIME:      117.578864 s ] <<<<< ..
+ 
+ 
+.. >>>>> [ WALL TIME:       18.880100 s ] [ CPU  TIME:      117.582112 s ] <<<<< ..
+ 
+* Number of generators                                         347
+* Saved determinants                                          2460
+ Reading davidson_sze_max
+ 
+.. >>>>> [ WALL TIME:       19.276000 s ] [ CPU  TIME:      120.026078 s ] <<<<< ..
+ 
+ Read  davidson_sze_max
+ Reading state_following
+ 
+.. >>>>> [ WALL TIME:       19.276200 s ] [ CPU  TIME:      120.027102 s ] <<<<< ..
+ 
+ Read  state_following
+ 
+.. >>>>> [ WALL TIME:       19.277500 s ] [ CPU  TIME:      120.036914 s ] <<<<< ..
+ 
+
+Davidson Diagonalization
+------------------------
+
+* Number of states                                               1
+* Number of states in diagonalization                            4
+* Number of determinants                                      2460
+* Memory(Gb)                                        0.5693435668945312E-02
+
+===== ================ =========== =========== 
+Iter       Energy          S^2       Residual  
+===== ================ =========== =========== 
+   1    -11.7198050261    0.000133   0.694E-02
+   2    -11.7409356560    0.000008   0.279E-03
+   3    -11.7410202085    0.000002   0.235E-04
+   4    -11.7410309696    0.000000   0.732E-07
+   5    -11.7410311049    0.000000   0.111E-08
+   6    -11.7410311071    0.000000   0.196E-10
+====== ================ =========== ===========
+
+ 
+.. >>>>> [ WALL TIME:       19.489100 s ] [ CPU  TIME:      121.371798 s ] <<<<< ..
+ 
+ 
+.. >>>>> [ WALL TIME:       19.489200 s ] [ CPU  TIME:      121.372112 s ] <<<<< ..
+ 
+* Energy of state    1                              -11.74103110705592    
+* S^2 of state    1                                 0.6735453442716979E-10
+* Saved determinants                                          2460
+--------------------------------------------------------------------------------
+ 
+.. >>>>> [ WALL TIME:       19.826400 s ] [ CPU  TIME:      123.448285 s ] <<<<< ..
+ 
+* Number of generators                                        2460
+* Size of deterministic set                                     31
+* PT2 Energy denominator                            -11.74103110705592    
+ 
+.. >>>>> [ WALL TIME:       19.849800 s ] [ CPU  TIME:      123.607062 s ] <<<<< ..
+ 
+* Number of selectors                                         2460
+ 
+.. >>>>> [ WALL TIME:       19.851300 s ] [ CPU  TIME:      123.616808 s ] <<<<< ..
+ 
+* Number of generators                                        2460
+* Size of deterministic set                                     31
+ 
+.. >>>>> [ WALL TIME:       19.851700 s ] [ CPU  TIME:      123.619403 s ] <<<<< ..
+ 
+* Number of selectors                                         2460
+ ========== ================= ================= =================
+  Samples        Energy         Stat. Error         Seconds      
+ ========== ================= ================= =================
+  507.        -11.7746011655         0.449E-05            1.5468                    
+ ========== ================= ================= =================
+ 
+.. >>>>> [ WALL TIME:       21.449800 s ] [ CPU  TIME:      134.042978 s ] <<<<< ..
+ 
+* Number of generators                                        2460
+* Size of deterministic set                                     31
+ 
+.. >>>>> [ WALL TIME:       21.450000 s ] [ CPU  TIME:      134.043603 s ] <<<<< ..
+ 
+* Number of selectors                                         2460
+ 
+Summary at N_det =         2460
+-----------------------------------
+ 
+* Correlation ratio                                 0.9978559350196059    
+ 
+# ============ =============================
+                    State      1
+# ============ =============================
+# E            -11.74103111
+# PT2           -0.03357006     0.00000449
+#
+# E+PT2        -11.77460117     0.00000449
+# ============ =============================
+ 
+ N_det             =         2460
+ N_states          =            1
+ correlation_ratio =   0.997855935019606     
+ State            1
+ PT2             =  -3.357005841017394E-002
+ E               =   -11.7410311070559     
+ E+PT2           =   -11.7746011654661       +/-   4.492872390448566E-006
+ -----
+
+Extrapolated energies
+------------------------
+
+ 
+ State            1
+ 
+ =========== ===================
+ minimum PT2 Extrapolated energy
+ =========== ===================
+    -0.0579        -11.76995859
+    -0.0844        -11.76961403
+    -0.1098        -11.76920466
+    -0.1322        -11.76906661
+    -0.1510        -11.76857981
+    -0.1651        -11.76819048
+    -0.1749        -11.76781806
+ =========== ===================
+ 
+ 
+.. >>>>> [ WALL TIME:       21.806700 s ] [ CPU  TIME:      136.268662 s ] <<<<< ..
+ 
+* Number of generators                                         611
+ 
+.. >>>>> [ WALL TIME:       21.810700 s ] [ CPU  TIME:      136.294519 s ] <<<<< ..
+ 
+* Number of selectors                                         1731
+ 
+.. >>>>> [ WALL TIME:       22.478600 s ] [ CPU  TIME:      140.321887 s ] <<<<< ..
+ 
+* Number of generators                                         611
+* Number of occupation patterns                               1097
+ Added determinants for S^2
+ 
+.. >>>>> [ WALL TIME:       22.481200 s ] [ CPU  TIME:      140.339430 s ] <<<<< ..
+ 
+ 
+.. >>>>> [ WALL TIME:       22.485100 s ] [ CPU  TIME:      140.362097 s ] <<<<< ..
+ 
+* Number of generators                                         611
+* Saved determinants                                          4676
+ 
+.. >>>>> [ WALL TIME:       22.837400 s ] [ CPU  TIME:      142.533274 s ] <<<<< ..
+ 
+
+Davidson Diagonalization
+------------------------
+
+* Number of states                                               1
+* Number of states in diagonalization                            4
+* Number of determinants                                      4676
+* Memory(Gb)                                        0.1066589355468750E-01
+
+===== ================ =========== =========== 
+Iter       Energy          S^2       Residual  
+===== ================ =========== =========== 
+   1    -11.7410358986    0.000002   0.441E-02
+   2    -11.7569088445    0.000000   0.172E-03
+   3    -11.7569634461    0.000000   0.145E-04
+   4    -11.7569702989    0.000000   0.610E-07
+   5    -11.7569704101    0.000000   0.115E-08
+   6    -11.7569704120    0.000000   0.163E-10
+====== ================ =========== ===========
+
+ 
+.. >>>>> [ WALL TIME:       23.215900 s ] [ CPU  TIME:      145.052735 s ] <<<<< ..
+ 
+ 
+.. >>>>> [ WALL TIME:       23.216100 s ] [ CPU  TIME:      145.054385 s ] <<<<< ..
+ 
+* Energy of state    1                              -11.75697041196350    
+* S^2 of state    1                                 0.4282684283282297E-11
+* Saved determinants                                          4676
+--------------------------------------------------------------------------------
+ 
+.. >>>>> [ WALL TIME:       23.511700 s ] [ CPU  TIME:      146.903080 s ] <<<<< ..
+ 
+* Number of generators                                        4676
+* Size of deterministic set                                     24
+* PT2 Energy denominator                            -11.75697041196349    
+ 
+.. >>>>> [ WALL TIME:       23.569800 s ] [ CPU  TIME:      147.274517 s ] <<<<< ..
+ 
+* Number of selectors                                         4676
+ 
+.. >>>>> [ WALL TIME:       23.571000 s ] [ CPU  TIME:      147.282392 s ] <<<<< ..
+ 
+* Number of generators                                        4676
+* Size of deterministic set                                     24
+ 
+.. >>>>> [ WALL TIME:       23.571600 s ] [ CPU  TIME:      147.285789 s ] <<<<< ..
+ 
+* Number of selectors                                         4676
+ ========== ================= ================= =================
+  Samples        Energy         Stat. Error         Seconds      
+ ========== ================= ================= =================
+ 0.121E+04    -11.7723440037         0.651E-05            3.9448                    
+ ========== ================= ================= =================
+ 
+.. >>>>> [ WALL TIME:       27.544200 s ] [ CPU  TIME:      173.385544 s ] <<<<< ..
+ 
+* Number of generators                                        4676
+* Size of deterministic set                                     24
+ 
+.. >>>>> [ WALL TIME:       27.544900 s ] [ CPU  TIME:      173.389494 s ] <<<<< ..
+ 
+* Number of selectors                                         4676
+ 
+Summary at N_det =         4676
+-----------------------------------
+ 
+* Correlation ratio                                 0.9990179721530651    
+ 
+# ============ =============================
+                    State      1
+# ============ =============================
+# E            -11.75697041
+# PT2           -0.01537359     0.00000651
+#
+# E+PT2        -11.77234400     0.00000651
+# ============ =============================
+ 
+ N_det             =         4676
+ N_states          =            1
+ correlation_ratio =   0.999017972153065     
+ State            1
+ PT2             =  -1.537359173261494E-002
+ E               =   -11.7569704119635     
+ E+PT2           =   -11.7723440036961       +/-   6.506048622076462E-006
+ -----
+
+Extrapolated energies
+------------------------
+
+ 
+ State            1
+ 
+ =========== ===================
+ minimum PT2 Extrapolated energy
+ =========== ===================
+    -0.0336        -11.77043700
+    -0.0579        -11.77025031
+    -0.0844        -11.77000818
+    -0.1098        -11.76971323
+    -0.1322        -11.76956149
+    -0.1510        -11.76921155
+    -0.1651        -11.76891469
+ =========== ===================
+ 
+ 
+.. >>>>> [ WALL TIME:       27.793700 s ] [ CPU  TIME:      174.969686 s ] <<<<< ..
+ 
+* Number of generators                                         915
+ 
+.. >>>>> [ WALL TIME:       27.799300 s ] [ CPU  TIME:      175.000979 s ] <<<<< ..
+ 
+* Number of selectors                                         3099
+ 
+.. >>>>> [ WALL TIME:       29.204000 s ] [ CPU  TIME:      183.717400 s ] <<<<< ..
+ 
+* Number of generators                                         915
+* Number of occupation patterns                               1953
+ Added determinants for S^2
+ 
+.. >>>>> [ WALL TIME:       29.211900 s ] [ CPU  TIME:      183.777104 s ] <<<<< ..
+ 
+ 
+.. >>>>> [ WALL TIME:       29.212700 s ] [ CPU  TIME:      183.783135 s ] <<<<< ..
+ 
+* Number of generators                                         915
+* Saved determinants                                          8484
+ 
+.. >>>>> [ WALL TIME:       29.504700 s ] [ CPU  TIME:      185.577408 s ] <<<<< ..
+ 
+
+Davidson Diagonalization
+------------------------
+
+* Number of states                                               1
+* Number of states in diagonalization                            4
+* Number of determinants                                      8484
+* Memory(Gb)                                        0.1917314529418945E-01
+
+===== ================ =========== =========== 
+Iter       Energy          S^2       Residual  
+===== ================ =========== =========== 
+   1    -11.7569728500    0.000001   0.185E-02
+   2    -11.7641639630    0.000000   0.149E-04
+   3    -11.7641934098    0.000000   0.820E-06
+   4    -11.7641942088    0.000000   0.837E-07
+   5    -11.7641942403    0.000000   0.788E-08
+   6    -11.7641942448    0.000000   0.467E-10
+====== ================ =========== ===========
+
+ 
+.. >>>>> [ WALL TIME:       30.341800 s ] [ CPU  TIME:      191.169454 s ] <<<<< ..
+ 
+ 
+.. >>>>> [ WALL TIME:       30.342100 s ] [ CPU  TIME:      191.171628 s ] <<<<< ..
+ 
+* Energy of state    1                              -11.76419424476554    
+* S^2 of state    1                                 0.9846213295594583E-11
+* Saved determinants                                          8484
+--------------------------------------------------------------------------------
+ 
+.. >>>>> [ WALL TIME:       30.682400 s ] [ CPU  TIME:      193.261194 s ] <<<<< ..
+ 
+* Number of generators                                        8484
+* Size of deterministic set                                     24
+* PT2 Energy denominator                            -11.76419424476552    
+ 
+.. >>>>> [ WALL TIME:       30.813300 s ] [ CPU  TIME:      194.104380 s ] <<<<< ..
+ 
+* Number of selectors                                         8484
+ 
+.. >>>>> [ WALL TIME:       30.814700 s ] [ CPU  TIME:      194.113485 s ] <<<<< ..
+ 
+* Number of generators                                        8484
+* Size of deterministic set                                     24
+ 
+.. >>>>> [ WALL TIME:       30.815000 s ] [ CPU  TIME:      194.115091 s ] <<<<< ..
+ 
+* Number of selectors                                         8484
+ ========== ================= ================= =================
+  Samples        Energy         Stat. Error         Seconds      
+ ========== ================= ================= =================
+ 0.302E+04    -11.7715905630         0.393E-05            9.2323                    
+ ========== ================= ================= =================
+ 
+.. >>>>> [ WALL TIME:       40.090400 s ] [ CPU  TIME:      255.113892 s ] <<<<< ..
+ 
+* Number of generators                                        8484
+* Size of deterministic set                                     24
+ 
+.. >>>>> [ WALL TIME:       40.090600 s ] [ CPU  TIME:      255.115439 s ] <<<<< ..
+ 
+* Number of selectors                                         8484
+ 
+Summary at N_det =         8484
+-----------------------------------
+ 
+* Correlation ratio                                 0.9995275183436066    
+ 
+# ============ =============================
+                    State      1
+# ============ =============================
+# E            -11.76419424
+# PT2           -0.00739632     0.00000393
+#
+# E+PT2        -11.77159056     0.00000393
+# ============ =============================
+ 
+ N_det             =         8484
+ N_states          =            1
+ correlation_ratio =   0.999527518343607     
+ State            1
+ PT2             =  -7.396318261411013E-003
+ E               =   -11.7641942447655     
+ E+PT2           =   -11.7715905630269       +/-   3.928780163017093E-006
+ -----
+
+Extrapolated energies
+------------------------
+
+ 
+ State            1
+ 
+ =========== ===================
+ minimum PT2 Extrapolated energy
+ =========== ===================
+    -0.0154        -11.77089199
+    -0.0336        -11.77065593
+    -0.0579        -11.77048463
+    -0.0844        -11.77029015
+    -0.1098        -11.77005996
+    -0.1322        -11.76992136
+    -0.1510        -11.76965093
+ =========== ===================
+ 
+ 
+.. >>>>> [ WALL TIME:       40.300200 s ] [ CPU  TIME:      256.394875 s ] <<<<< ..
+ 
+* Number of generators                                        1101
+ 
+.. >>>>> [ WALL TIME:       40.304500 s ] [ CPU  TIME:      256.414074 s ] <<<<< ..
+ 
+* Number of selectors                                         4464
+ 
+.. >>>>> [ WALL TIME:       42.681000 s ] [ CPU  TIME:      271.069802 s ] <<<<< ..
+ 
+* Number of generators                                        1101
+* Number of occupation patterns                               3581
+ Added determinants for S^2
+ 
+.. >>>>> [ WALL TIME:       42.720900 s ] [ CPU  TIME:      271.330077 s ] <<<<< ..
+ 
+ 
+.. >>>>> [ WALL TIME:       42.722400 s ] [ CPU  TIME:      271.340096 s ] <<<<< ..
+ 
+* Number of generators                                        1101
+* Saved determinants                                         21133
+ 
+.. >>>>> [ WALL TIME:       43.199400 s ] [ CPU  TIME:      274.330526 s ] <<<<< ..
+ 
+
+Davidson Diagonalization
+------------------------
+
+* Number of states                                               1
+* Number of states in diagonalization                            4
+* Number of determinants                                     21133
+* Memory(Gb)                                        0.4666543006896973E-01
+
+===== ================ =========== =========== 
+Iter       Energy          S^2       Residual  
+===== ================ =========== =========== 
+   1    -11.7641944986    0.000000   0.691E-03
+   2    -11.7665637869    0.000000   0.186E-03
+   3    -11.7666343499    0.000000   0.146E-04
+   4    -11.7666418046    0.000000   0.372E-06
+   5    -11.7666421882    0.000000   0.731E-08
+   6    -11.7666422046    0.000000   0.330E-09
+   7    -11.7666422052    0.000000   0.911E-11
+====== ================ =========== ===========
+
+ 
+.. >>>>> [ WALL TIME:       45.549800 s ] [ CPU  TIME:      289.761807 s ] <<<<< ..
+ 
+ 
+.. >>>>> [ WALL TIME:       45.550600 s ] [ CPU  TIME:      289.766451 s ] <<<<< ..
+ 
+* Energy of state    1                              -11.76664220521756    
+* S^2 of state    1                                 0.2541299396034647E-11
+* Saved determinants                                         21133
+--------------------------------------------------------------------------------
+ 
+.. >>>>> [ WALL TIME:       46.058700 s ] [ CPU  TIME:      292.897350 s ] <<<<< ..
+ 
+* Number of generators                                       21133
+* Size of deterministic set                                     24
+* PT2 Energy denominator                            -11.76664220521756    
+ 
+.. >>>>> [ WALL TIME:       46.366700 s ] [ CPU  TIME:      294.875036 s ] <<<<< ..
+ 
+* Number of selectors                                        21133
+ 
+.. >>>>> [ WALL TIME:       46.371200 s ] [ CPU  TIME:      294.901877 s ] <<<<< ..
+ 
+* Number of generators                                       21133
+* Size of deterministic set                                     24
+ 
+.. >>>>> [ WALL TIME:       46.371700 s ] [ CPU  TIME:      294.905400 s ] <<<<< ..
+ 
+* Number of selectors                                        21133
+ ========== ================= ================= =================
+  Samples        Energy         Stat. Error         Seconds      
+ ========== ================= ================= =================
+  70.0        -11.7718002738         0.115E-04           10.0479                    
+ 0.192E+04    -11.7717945919         0.532E-06           20.0620                    
+ 0.223E+04    -11.7717943362         0.111E-06           20.5155                    
+ ========== ================= ================= =================
+ 
+.. >>>>> [ WALL TIME:       66.976600 s ] [ CPU  TIME:      429.913829 s ] <<<<< ..
+ 
+* Number of generators                                       21133
+* Size of deterministic set                                     24
+ 
+.. >>>>> [ WALL TIME:       66.977400 s ] [ CPU  TIME:      429.918462 s ] <<<<< ..
+ 
+* Number of selectors                                        21133
+ 
+Summary at N_det =        21133
+-----------------------------------
+ 
+* Correlation ratio                                 0.9996708827804439    
+ 
+# ============ =============================
+                    State      1
+# ============ =============================
+# E            -11.76664221
+# PT2           -0.00515213     0.00000011
+#
+# E+PT2        -11.77179434     0.00000011
+# ============ =============================
+ 
+ N_det             =        21133
+ N_states          =            1
+ correlation_ratio =   0.999670882780444     
+ State            1
+ PT2             =  -5.152130998771387E-003
+ E               =   -11.7666422052176     
+ E+PT2           =   -11.7717943362163       +/-   1.111016504788463E-007
+ -----
+
+Extrapolated energies
+------------------------
+
+ 
+ State            1
+ 
+ =========== ===================
+ minimum PT2 Extrapolated energy
+ =========== ===================
+    -0.0074        -11.77226215
+    -0.0154        -11.77130914
+    -0.0336        -11.77095964
+    -0.0579        -11.77076522
+    -0.0844        -11.77058067
+    -0.1098        -11.77037842
+    -0.1322        -11.77024776
+ =========== ===================
+ 
+ 
+.. >>>>> [ WALL TIME:       67.158600 s ] [ CPU  TIME:      431.002345 s ] <<<<< ..
+ 
+* Number of generators                                        1183
+ 
+.. >>>>> [ WALL TIME:       67.163500 s ] [ CPU  TIME:      431.036109 s ] <<<<< ..
+ 
+* Number of selectors                                         5393
+ 
+.. >>>>> [ WALL TIME:       70.187200 s ] [ CPU  TIME:      449.720819 s ] <<<<< ..
+ 
+* Number of generators                                        1183
+* Number of occupation patterns                               7494
+ Added determinants for S^2
+ 
+.. >>>>> [ WALL TIME:       70.286500 s ] [ CPU  TIME:      450.393790 s ] <<<<< ..
+ 
+ 
+.. >>>>> [ WALL TIME:       70.289300 s ] [ CPU  TIME:      450.411009 s ] <<<<< ..
+ 
+* Number of generators                                        1183
+* Saved determinants                                         60399
+ 
+.. >>>>> [ WALL TIME:       71.143100 s ] [ CPU  TIME:      455.381484 s ] <<<<< ..
+ 
+
+Davidson Diagonalization
+------------------------
+
+* Number of states                                               1
+* Number of states in diagonalization                            4
+* Number of determinants                                     60399
+* Memory(Gb)                                        0.1315226554870605    
+
+===== ================ =========== =========== 
+Iter       Energy          S^2       Residual  
+===== ================ =========== =========== 
+   1    -11.7666423205    0.000000   0.485E-03
+   2    -11.7685617329    0.000000   0.167E-03
+   3    -11.7686113132    0.000000   0.537E-05
+   4    -11.7686158505    0.000000   0.170E-06
+   5    -11.7686160438    0.000000   0.641E-08
+   6    -11.7686160564    0.000000   0.376E-09
+   7    -11.7686160571    0.000000   0.266E-10
+====== ================ =========== ===========
+
+ 
+.. >>>>> [ WALL TIME:       80.307200 s ] [ CPU  TIME:      514.065612 s ] <<<<< ..
+ 
+ 
+.. >>>>> [ WALL TIME:       80.308700 s ] [ CPU  TIME:      514.076014 s ] <<<<< ..
+ 
+* Energy of state    1                              -11.76861605705322    
+* S^2 of state    1                                 0.8006240797090046E-11
+* Saved determinants                                         60399
+ 
+.. >>>>> [ WALL TIME:       81.252700 s ] [ CPU  TIME:      518.648808 s ] <<<<< ..
+ 
+* Number of generators                                       60385
+* Size of deterministic set                                     24
+* PT2 Energy denominator                            -11.76861605705322    
+ 
+.. >>>>> [ WALL TIME:       82.375200 s ] [ CPU  TIME:      525.916954 s ] <<<<< ..
+ 
+* Number of selectors                                        60399
+ 
+.. >>>>> [ WALL TIME:       82.395500 s ] [ CPU  TIME:      526.023446 s ] <<<<< ..
+ 
+* Number of generators                                       60385
+* Size of deterministic set                                     24
+ 
+.. >>>>> [ WALL TIME:       82.396800 s ] [ CPU  TIME:      526.031323 s ] <<<<< ..
+ 
+* Number of selectors                                        60399
+ ========== ================= ================= =================
+  Samples        Energy         Stat. Error         Seconds      
+ ========== ================= ================= =================
+  7.00        -11.7722258488         0.595E-04           10.2010                    
+  36.0        -11.7721824812         0.331E-04           20.3310                    
+  169.        -11.7721779194         0.135E-04           30.3403                    
+  615.        -11.7721599368         0.505E-05           40.4519                    
+  705.        -11.7721572616         0.451E-05           41.5614                    
+ ========== ================= ================= =================
+ 
+.. >>>>> [ WALL TIME:      124.202200 s ] [ CPU  TIME:      797.846190 s ] <<<<< ..
+ 
+* Number of generators                                       60385
+* Size of deterministic set                                     24
+ 
+.. >>>>> [ WALL TIME:      124.203700 s ] [ CPU  TIME:      797.856119 s ] <<<<< ..
+ 
+* Number of selectors                                        60399
+ N_det             =        60399
+ N_states          =            1
+ correlation_ratio =   0.999670882780444     
+
+Extrapolated energies
+------------------------
+
+ 
+ State            1
+ 
+ =========== ===================
+ minimum PT2 Extrapolated energy
+ =========== ===================
+    -0.0052        -11.77295506
+    -0.0074        -11.77261673
+    -0.0154        -11.77171907
+    -0.0336        -11.77129033
+    -0.0579        -11.77107164
+    -0.0844        -11.77088727
+    -0.1098        -11.77069911
+ =========== ===================
+ 
+ 
+Summary at N_det =        60399
+-----------------------------------
+ 
+* Correlation ratio                                 0.9996708827804439    
+ 
+ 
+# ============ =============================
+                    State      1
+# ============ =============================
+# E            -11.76861606
+# PT2           -0.00354120     0.00000451
+#
+# E+PT2        -11.77215726     0.00000451
+# ============ =============================
+ 
+Wall time : 2.09828m
+

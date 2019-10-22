@@ -1448,8 +1448,8 @@ bool SlaterDetBuilder::readDetListH5(xmlNodePtr cur,
 
 
 #if defined(QMC_COMPLEX)
-  std::vector<RealType> CIcoeff_real;
-  std::vector<RealType> CIcoeff_imag;
+  std::vector<double> CIcoeff_real;
+  std::vector<double> CIcoeff_imag;
   std::complex <double> im(0,1);
   CIcoeff_imag.resize(ndets);
   CIcoeff_real.resize(ndets);
@@ -1495,8 +1495,8 @@ bool SlaterDetBuilder::readDetListH5(xmlNodePtr cur,
     CIcoeffopt.resize(OptCiSize);
     
 #if defined(QMC_COMPLEX)
-    std::vector<RealType> CIcoeffopt_real;
-    std::vector<RealType> CIcoeffopt_imag;
+    std::vector<double> CIcoeffopt_real;
+    std::vector<double> CIcoeffopt_imag;
     std::complex <double> im(0,1);
     CIcoeffopt_imag.resize(ndets);
     CIcoeffopt_real.resize(ndets);
