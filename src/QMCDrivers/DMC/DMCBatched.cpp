@@ -12,6 +12,7 @@
 #include <functional>
 
 #include "QMCDrivers/DMC/DMCBatched.h"
+#include "QMCDrivers/GreenFunctionModifiers/DriftModifierBase.h"
 #include "Concurrency/TasksOneToOne.hpp"
 #include "Concurrency/Info.hpp"
 #include "Utilities/RunTimeManager.h"

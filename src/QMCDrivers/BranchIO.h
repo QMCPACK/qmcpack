@@ -21,10 +21,11 @@ namespace qmcplusplus
 {
 struct BranchIO
 {
-  typedef SimpleFixedNodeBranch::RealType RealType;
-  typedef SimpleFixedNodeBranch::BranchModeType BranchModeType;
-  typedef SimpleFixedNodeBranch::IParamType IParamType;
-  typedef SimpleFixedNodeBranch::VParamType VParamType;
+  using SFNB = SimpleFixedNodeBranch;
+  using RealType = SFNB::RealType;
+  using BranchModeType = SFNB::BranchModeType;
+  using IParamType = SFNB::IParamType;
+  using VParamType = SFNB::VParamType;
 
   SimpleFixedNodeBranch& ref;
   Communicate* myComm;
@@ -34,6 +35,7 @@ struct BranchIO
   bool read(const std::string& fname);
   void bcast_state();
 
+  // TODO: names should be defined with the enum in SimpleFixedNodeBranch.h
   static std::vector<std::string> vParamName;
   static std::vector<std::string> iParamName;
 
