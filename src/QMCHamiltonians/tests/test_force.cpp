@@ -172,10 +172,13 @@ TEST_CASE("Chiesa Force", "[hamiltonian]")
   ParticleSet elec;
 
   ions.setName("ion");
-  ions.create(1);
+  ions.create(2);
   ions.R[0][0] = 0.0;
   ions.R[0][1] = 0.0;
   ions.R[0][2] = 0.0;
+  ions.R[1][0] = 2.0;
+  ions.R[1][1] = 0.0;
+  ions.R[1][2] = 0.0;
 
   elec.setName("elec");
   elec.create(2);
@@ -224,11 +227,18 @@ TEST_CASE("Chiesa Force", "[hamiltonian]")
   elec.update();
   force.evaluate(elec);
   std::cout << " Force = " << force.forces << std::endl;
+  std::cout << " Forces_IonIon = " << force.forces_IonIon << std::endl;
 
   // Unvalidated externally
   REQUIRE(force.forces[0][0] == Approx(3.186559306));
   REQUIRE(force.forces[0][1] == Approx(3.352572459));
   REQUIRE(force.forces[0][2] == Approx(0.0));
+  REQUIRE(force.forces_IonIon[0][0] == Approx(-0.1478626893));
+  REQUIRE(force.forces_IonIon[0][1] == Approx(0.0));
+  REQUIRE(force.forces_IonIon[0][2] == Approx(0.0));
+  REQUIRE(force.forces_IonIon[0][0] == Approx(0.1478626893));
+  REQUIRE(force.forces_IonIon[0][1] == Approx(0.0));
+  REQUIRE(force.forces_IonIon[0][2] == Approx(0.0));
 
 
   // It seems a bit silly to test the makeClone method
