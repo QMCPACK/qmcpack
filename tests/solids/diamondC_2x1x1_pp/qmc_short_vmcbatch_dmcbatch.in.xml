@@ -101,7 +101,7 @@
      <parameter name="timestep">  0.005 </parameter>
      <parameter name="steps">   100 </parameter>
      <parameter name="blocks">  25 </parameter>
-     <parameter name="nonlocalmoves">  no </parameter>
+     <parameter name="nonlocalmoves">  yes </parameter>
    </qmc>
 
 </simulation>
