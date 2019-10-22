@@ -177,7 +177,7 @@ calculation and will generate the HDF5 similarly to the nonperiodic
 PySCF calculation in Section~\ref{sec:convert4qmc} (convert4qmc). The
 function is distributed with QMCPACK and is located in the
 qmcpack/src/QMCTools directory under the name
-\textit{PyscfToQmcpack.py}. Note that you need to specify the supertwist coordinates that was used with the provided kpoints. The supertwist must match the coordinates of the K-points otherwise the phase factor for the atomic orbital will be incorrect and incorrect results will be obtained. (For more details on how to generate tiling with PySCF and Nexus,  refer to the Nexus guide or the 2019 QMCPACK Workshop material available on github: \href{https://github.com/QMCPACK/qmcpack_workshop_2019} under \textbf{qmcpack_workshop_2019/day2_nexus/pyscf/04_pyscf_diamond_hf_qmc/}
+\textit{PyscfToQmcpack.py}. Note that you need to specify the supertwist coordinates that was used with the provided kpoints. The supertwist must match the coordinates of the K-points otherwise the phase factor for the atomic orbital will be incorrect and incorrect results will be obtained. (For more details on how to generate tiling with PySCF and Nexus,  refer to the Nexus guide or the 2019 QMCPACK Workshop material available on github: \url{https://github.com/QMCPACK/qmcpack_workshop_2019} under \textbf{qmcpack\_workshop\_2019/day2\_nexus/pyscf/04\_pyscf\_diamond\_hf\_qmc/}
 
 For the converter in the script to be called properly, you need
 to specify the path to the file in your PYTHONPATH such as
@@ -275,7 +275,7 @@ $\Gamma$-point or using multiple k-points will work without further
 modification.
 
 Running convert4qmc will generate 3 input files:\\
-\begin{lstlisting}[style=QMCPXML,caption=C_diamond-tiled-cplx.structure.xml. This file contains the geometry of the system.]
+\begin{lstlisting}[style=QMCPXML,caption=C\_diamond-tiled-cplx.structure.xml. This file contains the geometry of the system.]
 <?xml version="1.0"?>
 <qmcsystem>
   <simulationcell>
@@ -315,7 +315,7 @@ Running convert4qmc will generate 3 input files:\\
   \end{lstlisting}
 
   As one can see, for both examples, the two-atom primitive cell has been expanded to contain four atoms in a $2 \times 1 \times 1$ carbon cell.
-\begin{lstlisting}[style=QMCPXML,caption=C_diamond-tiled-cplx.wfj.xml. This file contains the trial wavefunction.]
+\begin{lstlisting}[style=QMCPXML,caption=C\_diamond-tiled-cplx.wfj.xml. This file contains the trial wavefunction.]
 <?xml version="1.0"?>
 <qmcsystem>
   <wavefunction name="psi0" target="e">
