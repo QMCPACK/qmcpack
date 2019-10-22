@@ -236,10 +236,9 @@ TEST_CASE("Chiesa Force", "[hamiltonian]")
   REQUIRE(force.forces_IonIon[0][0] == Approx(-0.1478626893));
   REQUIRE(force.forces_IonIon[0][1] == Approx(0.0));
   REQUIRE(force.forces_IonIon[0][2] == Approx(0.0));
-  REQUIRE(force.forces_IonIon[0][0] == Approx(0.1478626893));
-  REQUIRE(force.forces_IonIon[0][1] == Approx(0.0));
-  REQUIRE(force.forces_IonIon[0][2] == Approx(0.0));
-
+  REQUIRE(force.forces_IonIon[1][0] == Approx(0.1478626893));
+  REQUIRE(force.forces_IonIon[1][1] == Approx(0.0));
+  REQUIRE(force.forces_IonIon[1][2] == Approx(0.0));
 
   // It seems a bit silly to test the makeClone method
   // but this class does not use the compiler's copy constructor and
