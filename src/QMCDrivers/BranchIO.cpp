@@ -120,8 +120,9 @@ bool BranchIO::write(const std::string& fname)
   // Put log filename in property tree
   pt.put("state.branchmode", ref.BranchMode);
 
-  for (int i = 0; i < vParamName.size(); ++i)
-    pt.put("state.vparam." + vParamName[i], ref.vParam[i]);
+  auto it_vparam = ref.vParam.begin();
+  for (auto& name : vParamName)
+    pt.put("state.vparam." + name, *(it_vparam++));
   for (int i = 0; i < iParamName.size(); ++i)
     pt.put("state.iparam." + iParamName[i], ref.iParam[i]);
 
@@ -188,10 +189,10 @@ bool BranchIO::read(const std::string& fname)
       {
         ref.iParam[i++] = v.second.get_value<int>();
       }
-      i = 0;
+      auto it_vparam = ref.vParam.begin();
       BOOST_FOREACH (const ptree::value_type& v, pt.get_child("state.vparam"))
       {
-        ref.vParam[i++] = v.second.get_value<double>();
+        *(it_vparam++) = v.second.get_value<double>();
       }
       found_config = 1;
     }
@@ -278,8 +279,8 @@ void BranchIO::bcast_state()
   if (myComm->rank())
   {
     int ii = 0;
-    for (int i = 0; i < ref.vParam.size(); ++i, ++ii)
-      ref.vParam[i] = pdata[ii];
+    for (auto& vpar : ref.vParam)
+      vpar = pdata[ii++];
     for (int i = 0; i < ref.iParam.size(); ++i, ++ii)
       ref.iParam[i] = static_cast<int>(pdata[ii]);
     ref.BranchMode = static_cast<unsigned long>(pdata[ii]);
