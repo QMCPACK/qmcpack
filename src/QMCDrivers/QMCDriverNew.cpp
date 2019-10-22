@@ -149,6 +149,9 @@ void QMCDriverNew::process(xmlNodePtr cur)
   if (!drift_modifier_)
     drift_modifier_.reset(createDriftModifier(qmcdriver_input_));
 
+  // I don't think its at all good that the branch engine gets mutated here
+  // Carrying the population on is one thing but a branch engine seems like it
+  // should be fresh per section.
   branch_engine_->put(cur);
   estimator_manager_->put(H, cur);
 
@@ -321,27 +324,30 @@ void QMCDriverNew::setupWalkers()
   IndexType local_walkers = calc_default_local_walkers(qmcdriver_input_.get_walkers_per_rank());
   
   // side effect updates walkers_per_crowd_;
-  addWalkers(local_walkers, ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>(population_.get_num_particles()));
+  makeLocalWalkers(local_walkers, ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>(population_.get_num_particles()));
 }
 
-/** Add walkers to the end of the ensemble of walkers.
- * @param nwalkers number of walkers to add
- *
- */
-void QMCDriverNew::addWalkers(int nwalkers, const ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>& positions)
+void QMCDriverNew::makeLocalWalkers(int nwalkers, const ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>& positions)
 {
-  setNonLocalMoveHandler_(population_.get_golden_hamiltonian());
-  population_.createWalkers(nwalkers);
-  // else if (nwalkers < 0)
-  // {
-  //   W.destroyWalkers(-nwalkers);
-  //   app_log() << "  Removed " << -nwalkers << " walkers. Current number of walkers =" << W.getActiveWalkers()
-  //             << std::endl;
-  // }
-  // else
-  // {
-  //   app_log() << "  Using the current " << W.getActiveWalkers() << " walkers." << std::endl;
-  // }
+  if (population_.get_walkers().size() == 0)
+  {
+    population_.createWalkers(nwalkers);
+  }
+  else if(population_.get_walkers().size() < nwalkers)
+  {
+    IndexType num_additional_walkers = nwalkers - population_.get_walkers().size();
+    for(int i = 0; i < num_additional_walkers; ++i)
+      population_.spawnWalker();
+  }
+  else
+  {
+    IndexType num_walkers_to_kill = population_.get_walkers().size() - nwalkers;
+    for(int i = 0; i < num_walkers_to_kill; ++i)
+      population_.killLastWalker();
+  }
+  for(UPtr<QMCHamiltonian>& ham : population_.get_hamiltonians())
+    setNonLocalMoveHandler_(*ham);
+
   // setWalkerOffsets();
   // ////update the global number of walkers
   // ////int nw=W.getActiveWalkers();
