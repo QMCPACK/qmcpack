@@ -53,7 +53,8 @@ private:
   ParticleSet ions_;
   std::vector<IndexType> walker_offsets_;
   // By making this a linked list and creating the crowds at the same time we could get first touch.
-  std::vector<std::unique_ptr<MCPWalker>> walkers_;
+  UPtrVector<MCPWalker> walkers_;
+  UPtrVector<MCPWalker> dead_walkers_;
   std::vector<std::pair<int, int>> particle_group_indexes_;
   SpeciesSet species_set_;
   std::vector<RealType> ptclgrp_mass_;
@@ -118,6 +119,7 @@ public:
    */
   MCPWalker& spawnWalker();
   void killWalker(MCPWalker&);
+  void killLastWalker();
   void createWalkerInplace(UPtr<MCPWalker>& walker_ptr);
   void allocateWalkerStuffInplace(int walker_index);
   /** }@ */
@@ -172,7 +174,7 @@ public:
    *  is invalid. Ideally MCPopulation not process any calls in this state, next best would be to only
    *  process calls to become valid.
    */
-  IndexType get_active_walkers() const { return walkers_.size(); }
+  //IndexType get_active_walkers() const { return walkers_.size(); }
   int get_num_ranks() const { return num_ranks_; }
   IndexType get_num_global_walkers() const { return num_global_walkers_; }
   IndexType update_num_global_walkers(Communicate* comm);
@@ -198,6 +200,7 @@ public:
   }
 
   UPtrVector<MCPWalker>& get_walkers() { return walkers_; }
+  UPtrVector<QMCHamiltonian>& get_hamiltonians() { return walker_hamiltonians_; }
   const std::vector<std::pair<int, int>>& get_particle_group_indexes() const { return particle_group_indexes_; }
   const std::vector<RealType>& get_ptclgrp_mass() const { return ptclgrp_mass_; }
   const std::vector<RealType>& get_ptclgrp_inv_mass() const { return ptclgrp_inv_mass_; }

@@ -2082,7 +2082,7 @@ class hamiltonian(QIxml):
 
 class coulomb(QIxml):
     tag = 'pairpot'
-    attributes  = ['type','name','source','target','physical']
+    attributes  = ['type','name','source','target','physical','forces']
     write_types = obj(physical=yesno)
     identifier  = 'name'
 #end class coulomb
