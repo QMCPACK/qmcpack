@@ -65,7 +65,6 @@ void DMCBatched::setNonLocalMoveHandler(QMCHamiltonian& golden_hamiltonian)
 {
   golden_hamiltonian.setNonLocalMoves(dmcdriver_input_.get_non_local_move(), qmcdriver_input_.get_tau(),
                                       dmcdriver_input_.get_alpha(), dmcdriver_input_.get_gamma());
-  std::cout << "DMC Handler\n";
 }
 
 void DMCBatched::resetUpdateEngines()
@@ -116,6 +115,8 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
   auto copyTWFFromBuffer = [](TrialWaveFunction& twf, ParticleSet& pset, MCPWalker& walker) {
     twf.copyFromBuffer(pset, walker.DataSet);
   };
+  for (int iw = 0; iw < crowd.size(); ++iw)
+    copyTWFFromBuffer(walker_twfs[iw], walker_elecs[iw], walkers[iw]);
   timers.buffer_timer.stop();
 
   timers.movepbyp_timer.start();
