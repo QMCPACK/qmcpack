@@ -2090,6 +2090,10 @@ def simulation():
 
     nunit('save_attempt')
 
+    nunit('write_inputs')
+
+    nunit('send_files')
+
     nunit_all()
 #end def simulation
 

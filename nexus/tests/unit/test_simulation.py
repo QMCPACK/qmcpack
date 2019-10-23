@@ -1648,7 +1648,6 @@ def test_save_attempt():
     attempt_dir = os.path.join(sim.locdir,'{}_attempt1'.format(sim.identifier))
     assert(not os.path.exists(attempt_dir))
     sim.save_attempt()
-    print attempt_dir
     assert(os.path.exists(attempt_dir))
     for file in files:
         assert(not os.path.exists(os.path.join(sim.locdir,file)))
@@ -1659,3 +1658,129 @@ def test_save_attempt():
 
     Simulation.clear_all_sims()
 #end def test_save_attempt
+
+
+
+def test_write_inputs():
+    import os
+    from nexus_base import nexus_core
+    from simulation import Simulation,input_template
+
+    tpath = testing.setup_unit_test_output_directory('simulation','test_write_inputs')
+
+    divert_nexus_directories()
+
+    nexus_core.local_directory  = tpath
+    nexus_core.remote_directory = tpath
+
+    template = '''
+name = "$name"
+a    = $a
+'''
+
+    input_ref = '''
+name = "input_name"
+a    = 1
+'''
+    
+    si = input_template(text=template)
+    si.assign(name='input_name',a=1)
+
+    s = get_test_sim(
+        input = si,
+        )
+    s.create_directories()
+
+    input_file = os.path.join(s.locdir,s.infile)
+    image_file = os.path.join(s.imlocdir,s.sim_image)
+    input_image_file = os.path.join(s.imlocdir,s.input_image)
+
+    assert(not s.setup)
+    assert(not os.path.exists(input_file))
+    assert(not os.path.exists(image_file))
+    assert(not os.path.exists(input_image_file))
+
+    divert_nexus_log()
+    s.write_inputs()
+    restore_nexus_log()
+
+    assert(s.setup)
+    assert(os.path.exists(input_file))
+    assert(os.path.exists(image_file))
+    assert(os.path.exists(input_image_file))
+
+    assert(open(input_file,'r').read()==input_ref)
+
+    s.setup = False
+    s.load_image()
+    assert(s.setup)
+
+    restore_nexus_directories()
+
+    Simulation.clear_all_sims()
+
+#end def test_write_inputs
+
+
+
+def test_send_files():
+    import os
+    from nexus_base import nexus_core
+    from simulation import Simulation
+
+    tpath = testing.setup_unit_test_output_directory('simulation','test_send_files')
+
+    # make fake data files
+    data_file1 = 'data_file1.txt'
+    data_file2 = 'data_file2.txt'
+
+    open(os.path.join(tpath,data_file1),'w').write('data1')
+    open(os.path.join(tpath,data_file2),'w').write('data2')
+
+    data_files = [data_file1,data_file2] 
+
+    divert_nexus_directories()
+    nexus_file_locations = nexus_core.file_locations
+
+    nexus_core.local_directory  = tpath
+    nexus_core.remote_directory = tpath
+    nexus_core.file_locations = nexus_file_locations + [tpath]
+
+    s = get_test_sim(
+        files = data_files,
+        )
+    s.infile = None
+
+    assert(s.locdir==s.remdir)
+    assert(s.files==set(data_files))
+
+    s.create_directories()
+
+    loc_data_file1 = os.path.join(s.locdir,data_file1)
+    loc_data_file2 = os.path.join(s.locdir,data_file2)
+
+    assert(not s.sent_files)
+    assert(not os.path.exists(loc_data_file1))
+    assert(not os.path.exists(loc_data_file2))
+
+    divert_nexus_log()
+    s.send_files()
+    restore_nexus_log()
+
+    assert(s.sent_files)
+    assert(os.path.exists(loc_data_file1))
+    assert(os.path.exists(loc_data_file2))
+
+    assert(open(loc_data_file1,'r').read()=='data1')
+    assert(open(loc_data_file2,'r').read()=='data2')
+
+    s.sent_files = False
+    s.load_image()
+    assert(s.sent_files)
+
+    restore_nexus_directories()
+    nexus_core.file_locations = nexus_file_locations
+
+    Simulation.clear_all_sims()
+
+#end def test_send_files
