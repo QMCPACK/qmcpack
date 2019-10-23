@@ -370,6 +370,7 @@ OperatorBase* ForceChiesaPBCAA::makeClone(ParticleSet& qp, TrialWaveFunction& ps
   tmp->c.resize(N_basis);
   tmp->c         = c; // polynomial coefficients
   tmp->addionion = addionion;
+  tmp->forces_IonIon = forces_IonIon;
   tmp->initBreakup(qp);
 
   return tmp;
