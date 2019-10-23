@@ -397,6 +397,8 @@ void TrialWaveFunction::flex_calcRatio(const RefVector<TrialWaveFunction>& wf_li
           ratios[iw] *= ratios_z[iw];
       }
     }
+    for (int iw = 0; iw < wf_list.size(); iw++)
+      wf_list[iw].get().PhaseDiff = std::imag(std::arg(ratios[iw]));
   }
   else if (wf_list.size() == 1)
     ratios[0] = wf_list[0].get().calcRatio(p_list[0], iat);
