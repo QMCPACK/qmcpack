@@ -17,10 +17,12 @@
 #include "QMCDrivers/DMC/DMCDriverInput.h"
 #include "QMCDrivers/MCPopulation.h"
 #include "QMCDrivers/ContextForSteps.h"
-#include "QMCDrivers/GreenFunctionModifiers/DriftModifierBase.h"
 
 namespace qmcplusplus
 {
+
+class DriverModifierBase;
+
 /** @ingroup QMCDrivers  ParticleByParticle
  * @brief Implements a DMC using particle-by-particle move. Threaded execution.
  */
