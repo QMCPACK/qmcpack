@@ -94,13 +94,9 @@ inline void TansposeSquare(const TIN* restrict in, TOUT* restrict out, size_t n,
 template<typename T, typename T_FP>
 inline void computeLogDet(const T* restrict diag, int n, const int* restrict pivot, std::complex<T_FP>& logdet)
 {
-  logdet = std::complex<T_FP>(1.0);
+  logdet = std::complex<T_FP>();
   for (size_t i = 0; i < n; i++)
-  {
-    logdet *= (pivot[i] == i + 1) ? 1 : -1;
-    logdet *= diag[i];
-  }
-  logdet = std::log(logdet);
+    logdet += std::log(std::complex<T_FP>((pivot[i] == i + 1) ? diag[i] : -diag[i]));
 }
 
 /** helper class to compute matrix inversion and the log value of determinant

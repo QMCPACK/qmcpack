@@ -169,14 +169,10 @@ inline T Invert(T* restrict x, int n, int m)
 template<class T, class T1>
 inline void InvertWithLog(T* restrict x, int n, int m, T* restrict work, int* restrict pivot, std::complex<T1>& logdet)
 {
-  logdet = std::complex<T1>(1.0);
   LUFactorization(n, m, x, n, pivot);
+  logdet = std::complex<T1>();
   for (int i = 0; i < n; i++)
-  {
-    logdet *= (pivot[i] == i + 1) ? 1 : -1;
-    logdet *= x[i * m + i];
-  }
-  logdet = std::log(logdet);
+    logdet += std::log(std::complex<T1>((pivot[i] == i + 1) ? x[i * m + i] : -x[i * m + i]));
   InvertLU(n, x, n, pivot, work, n);
 }
 

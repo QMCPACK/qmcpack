@@ -58,7 +58,7 @@ TEST_CASE("DiracMatrix_identity", "[wavefunction][fermion]")
   m(2, 2) = 1.0;
 
   dm.invert_transpose(m, m_invT, LogValue);
-  REQUIRE(LogValue == ComplexApprox(0.0));
+  REQUIRE(LogValue == PolarApprox(0.0));
 
   Matrix<ValueType> eye;
   eye.resize(3, 3);
@@ -91,7 +91,7 @@ TEST_CASE("DiracMatrix_inverse", "[wavefunction][fermion]")
 
   simd::transpose(a.data(), a.rows(), a.cols(), a_T.data(), a_T.rows(), a_T.cols());
   dm.invert_transpose(a_T, a_inv, LogValue);
-  REQUIRE(LogValue == ComplexApprox(3.78518913425));
+  REQUIRE(LogValue == PolarApprox(3.78518913425));
 
   Matrix<ValueType> b;
   b.resize(3, 3);
