@@ -199,7 +199,7 @@ void TrialWaveFunction::convertRatiosFromComplexToReal(std::vector<ValueType>& p
 
   for (int iw = 0; iw < psi_ratios.size(); iw++)
   {
-    LogValueType logpsi = convertValueToLog(r);
+    LogValueType logpsi = convertValueToLog(psi_ratios[iw]);
     psi_ratios_real[iw] = std::exp(std::real(logpsi));
   }
 }

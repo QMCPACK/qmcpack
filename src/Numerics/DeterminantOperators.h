@@ -180,23 +180,6 @@ inline void InvertWithLog(T* restrict x, int n, int m, T* restrict work, int* re
   InvertLU(n, x, n, pivot, work, n);
 }
 
-/** matrix inversion using log method to avoid numerical over/under-flow
- * @param x starting address of an n-by-m
- * @param n rows
- * @param m cols
- * @param phase output
- * @return |det|
- *
- * Use type-specific InvertWithLog defined above.
- */
-template<typename T, typename RT>
-inline RT InvertWithLog(T* restrict x, int n, int m, RT& phase)
-{
-  std::vector<int> pivot(m);
-  std::vector<T> work(m);
-  return InvertWithLog(x, n, m, work.data(), pivot.data(), phase);
-}
-
 /** invert a matrix
  * \param M a matrix to be inverted
  * \param getdet bool, if true, calculate the determinant
@@ -227,65 +210,6 @@ inline typename MatrixA::value_type invert_matrix(MatrixA& M, bool getdet = true
   return det0;
 }
 
-/** determinant a matrix
- * \param M a matrix to be inverted
- * \return the determinant
- */
-template<class MatrixA>
-inline typename MatrixA::value_type determinant_matrix(MatrixA& M)
-{
-  typedef typename MatrixA::value_type value_type;
-  MatrixA N(M);
-  const int n = N.rows();
-  std::vector<int> pivot(n);
-  LUFactorization(n, n, N.data(), n, pivot.data());
-  value_type det0 = 1.0;
-  int sign        = 1;
-  for (int i = 0; i < n; ++i)
-  {
-    if (pivot[i] != i + 1)
-      sign *= -1;
-    det0 *= M(i, i);
-  }
-  det0 *= static_cast<value_type>(sign);
-  return det0;
-}
-//
-///** invert a matrix
-// * \param M a matrix to be inverted
-// * \param getdet bool, if true, calculate the determinant
-// * \return the determinant
-// */
-//template<class MatrixA>
-//  inline typename MatrixA::value_type
-//invert_matrix_log(MatrixA& M, int &sign_det, bool getdet)
-//{
-//  typedef typename MatrixA::value_type value_type;
-//  std::vector<int> pivot(M.rows());
-//  std::vector<value_type> work(M.rows());
-//  int n(M.rows());
-//  int m(M.cols());
-//  MatrixA Mcopy(M);
-//  LUFactorization(n,m,M.data(),n,&pivot[0]);
-//  value_type logdet = 0.0;
-//  sign_det=1;
-//  if(getdet)
-//  {
-//    for(int i=0; i<n; i++)
-//    {
-//      ////if(pivot[i] != i+1) sign_det *= -1;
-//      sign_det *= (pivot[i] == i+1)?1:-1;
-//      sign_det *= (M(i*m+i)>0)?1:-1;
-//      logdet += std::log(std::abs(M(i*m+i)));
-//    }
-//  }
-//  InvertLU(n,M.data(),m, &pivot[0], &work[0], n);
-//  //value_type det0 = Invert(Mcopy.data(),n,m,&work[0], &pivot[0]);
-//  //double expdetp = sign_det*std::exp(logdet);
-//  //std::cerr <<"DETS ARE NOW "<<det0<<" "<<expdetp<<" "<<logdet<< std::endl;
-//  return logdet;
-//}
-//
 /** determinant ratio with a row substitution
  * @param Minv inverse matrix
  * @param newv row vector
@@ -362,14 +286,6 @@ inline void InverseUpdateByColumn(MatA& Minv,
   //}
   //for(int k=0; k<nrows; k++) Minv(k,colchanged) *= ratio_inv;
 }
-
-// template<class T1, class T2>
-// inline T2
-// dot(const T1* restrict a, const T2* restrict b, int n) {
-//   T2 res;
-//   for(int i=0; i<n; i++) res += a[i]*b[i];
-//   return res;
-// }
 
 } // namespace qmcplusplus
 #endif
