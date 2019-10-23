@@ -128,7 +128,7 @@ struct SimpleFixedNodeBranch : public QMCTraits
    *  Easy serialization is a relatively minor concern compared to the 
    *  annoyance this causes elsewhere.
    */
-  enum class SBVP
+  enum class SimpleBranchVectorParameter
   {
     TAU = 0,
     TAUEFF,
@@ -145,19 +145,20 @@ struct SimpleFixedNodeBranch : public QMCTraits
     FILTERSCALE,
     VPARAM_MAX = 17 // four extra, why? Sloppy or undocumented hack?
   };
-
-  /** controlling parameters of real type
+  using SBVP = SimpleBranchVectorParameter;
+  
+  /** controlling parameters of full precision real type
    *
    * Mostly internal
    */
-  struct VParamType : public std::array<FullPrecRealType, static_cast<size_t>(SBVP::VPARAM_MAX)>
+  template<typename PAR_ENUM>
+  struct VParams : public std::array<FullPrecRealType, static_cast<size_t>(PAR_ENUM::VPARAM_MAX)>
   {
-    using Base = std::array<FullPrecRealType, static_cast<size_t>(SBVP::VPARAM_MAX)>;
-    FullPrecRealType& operator[](SBVP sbvp) { return Base::operator[](static_cast<size_t>(sbvp)); }
-    const FullPrecRealType& operator[](SBVP sbvp) const { return Base::operator[](static_cast<size_t>(sbvp)); }
-    FullPrecRealType& operator[](int sbvp) { return Base::operator[](sbvp); }
-    const FullPrecRealType& operator[](int sbvp) const { return Base::operator[](sbvp); }
+    using Base = std::array<FullPrecRealType, static_cast<size_t>(PAR_ENUM::VPARAM_MAX)>;
+    FullPrecRealType& operator[](PAR_ENUM sbvp) { return Base::operator[](static_cast<size_t>(sbvp)); }
+    const FullPrecRealType& operator[](PAR_ENUM sbvp) const { return Base::operator[](static_cast<size_t>(sbvp)); }
   };
+  using VParamType = VParams<SBVP>;
   VParamType vParam;
 
   /** number of remaning steps for a specific tasks
