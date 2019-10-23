@@ -210,7 +210,7 @@ def unit_test_output_path(test,subtest=None):
 
 
 # setup the output directory for a test
-def setup_unit_test_output_directory(test,subtest):
+def setup_unit_test_output_directory(test,subtest,divert=False):
     import os
     import shutil
     path = unit_test_output_path(test,subtest)
@@ -223,6 +223,12 @@ def setup_unit_test_output_directory(test,subtest):
     #end if
     os.makedirs(path)
     assert(os.path.exists(path))
+    if divert:
+        from nexus_base import nexus_core
+        divert_nexus()
+        nexus_core.local_directory  = path
+        nexus_core.remote_directory = path
+    #end if
     return path
 #end def setup_unit_test_output_directory
 
@@ -254,6 +260,8 @@ class FakeLog:
 # dict to temporarily store logger when log output is diverted
 logging_storage = dict()
 
+# dict to temporarily store nexus directories when directories are diverted
+nexus_directories = dict()
 
 
 # divert nexus log output
@@ -277,6 +285,38 @@ def restore_nexus_log():
     logging_storage.clear()
     assert(len(logging_storage)==0)
 #end def restore_nexus_log
+
+
+# divert nexus directories
+def divert_nexus_directories():
+    from nexus_base import nexus_core
+    assert(len(nexus_directories)==0)
+    nexus_directories['local']  = nexus_core.local_directory
+    nexus_directories['remote'] = nexus_core.remote_directory
+#end def divert_nexus_directories
+
+
+# restore nexus directories
+def restore_nexus_directories():
+    from nexus_base import nexus_core
+    assert(set(nexus_directories.keys())==set(['local','remote']))
+    nexus_core.local_directory  = nexus_directories['local'] 
+    nexus_core.remote_directory = nexus_directories['remote']
+    nexus_directories.clear()
+#end def restore_nexus_directories
+
+
+def divert_nexus():
+    divert_nexus_log()
+    divert_nexus_directories()
+#end def divert_nexus
+
+
+def restore_nexus():
+    restore_nexus_log()
+    restore_nexus_directories()
+#end def restore_nexus
+
 
 
 # declare test failure

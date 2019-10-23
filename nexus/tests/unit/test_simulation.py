@@ -3,25 +3,9 @@ import testing
 from testing import value_eq,object_eq
 from testing import TestFailed,failed
 from testing import divert_nexus_log,restore_nexus_log
+from testing import divert_nexus,restore_nexus
 
-
-nexus_directories = dict()
-
-def divert_nexus_directories():
-    from nexus_base import nexus_core
-    assert(len(nexus_directories)==0)
-    nexus_directories['local']  = nexus_core.local_directory
-    nexus_directories['remote'] = nexus_core.remote_directory
-#end def divert_nexus_directories
-
-
-def restore_nexus_directories():
-    from nexus_base import nexus_core
-    assert(set(nexus_directories.keys())==set(['local','remote']))
-    nexus_core.local_directory  = nexus_directories['local'] 
-    nexus_core.remote_directory = nexus_directories['remote']
-    nexus_directories.clear()
-#end def restore_nexus_directories
+from testing import divert_nexus_directories,restore_nexus_directories
 
 
 from generic import obj
@@ -809,15 +793,9 @@ def test_indicator_checks():
 
 def test_create_directories():
     import os
-    from nexus_base import nexus_core
     from simulation import Simulation
 
-    tpath = testing.setup_unit_test_output_directory('simulation','test_create_directories')
-
-    divert_nexus_directories()
-
-    nexus_core.local_directory  = tpath
-    nexus_core.remote_directory = tpath
+    tpath = testing.setup_unit_test_output_directory('simulation','test_create_directories',divert=True)
 
     s = Simulation()
 
@@ -831,7 +809,7 @@ def test_create_directories():
     assert(os.path.exists(s.imlocdir))
     assert(s.created_directories)
 
-    restore_nexus_directories()
+    restore_nexus()
 
     Simulation.clear_all_sims()
 #end def test_create_directories
@@ -840,15 +818,9 @@ def test_create_directories():
 
 def test_file_text():
     import os
-    from nexus_base import nexus_core
     from simulation import Simulation
 
-    tpath = testing.setup_unit_test_output_directory('simulation','test_create_directories')
-
-    divert_nexus_directories()
-
-    nexus_core.local_directory  = tpath
-    nexus_core.remote_directory = tpath
+    tpath = testing.setup_unit_test_output_directory('simulation','test_create_directories',divert=True)
 
     s = Simulation()
     s.create_directories()
@@ -865,7 +837,7 @@ def test_file_text():
     assert(s.outfile_text()==out_text)
     assert(s.errfile_text()==err_text)
 
-    restore_nexus_directories()
+    restore_nexus()
 
     Simulation.clear_all_sims()
 #end def test_file_text
@@ -1529,15 +1501,9 @@ def test_copy_file():
 def test_save_load_image():
     import os
     from generic import obj
-    from nexus_base import nexus_core
     from simulation import Simulation,SimulationImage
 
-    tpath = testing.setup_unit_test_output_directory('simulation','test_save_load_image')
-
-    divert_nexus_directories()
-
-    nexus_core.local_directory  = tpath
-    nexus_core.remote_directory = tpath
+    tpath = testing.setup_unit_test_output_directory('simulation','test_save_load_image',divert=True)
 
     nsave = 30
     nload = 22
@@ -1576,7 +1542,7 @@ def test_save_load_image():
         assert(value_eq(sim[field],orig[field]))
     #end for
 
-    restore_nexus_directories()
+    restore_nexus()
 
     Simulation.clear_all_sims()
 #end def test_save_load_image
@@ -1585,15 +1551,9 @@ def test_save_load_image():
 
 def test_load_analyzer_image():
     import os
-    from nexus_base import nexus_core
     from simulation import Simulation
 
-    tpath = testing.setup_unit_test_output_directory('simulation','test_save_load_analyzer_image')
-
-    divert_nexus_directories()
-
-    nexus_core.local_directory  = tpath
-    nexus_core.remote_directory = tpath
+    tpath = testing.setup_unit_test_output_directory('simulation','test_save_load_analyzer_image',divert=True)
 
     sim = get_test_sim()
 
@@ -1615,7 +1575,7 @@ def test_load_analyzer_image():
     assert(a2.analysis_performed)
     assert(object_eq(a2,a))
 
-    restore_nexus_directories()
+    restore_nexus()
 
     Simulation.clear_all_sims()
 #end def test_load_analyzer_image
@@ -1624,15 +1584,9 @@ def test_load_analyzer_image():
 
 def test_save_attempt():
     import os
-    from nexus_base import nexus_core
     from simulation import Simulation
 
-    tpath = testing.setup_unit_test_output_directory('simulation','test_save_attempt')
-
-    divert_nexus_directories()
-
-    nexus_core.local_directory  = tpath
-    nexus_core.remote_directory = tpath
+    tpath = testing.setup_unit_test_output_directory('simulation','test_save_attempt',divert=True)
 
     sim = get_test_sim()
 
@@ -1654,7 +1608,7 @@ def test_save_attempt():
         assert(os.path.exists(os.path.join(attempt_dir,file)))
     #end for
 
-    restore_nexus_directories()
+    restore_nexus()
 
     Simulation.clear_all_sims()
 #end def test_save_attempt
@@ -1663,15 +1617,9 @@ def test_save_attempt():
 
 def test_write_inputs():
     import os
-    from nexus_base import nexus_core
     from simulation import Simulation,input_template
 
-    tpath = testing.setup_unit_test_output_directory('simulation','test_write_inputs')
-
-    divert_nexus_directories()
-
-    nexus_core.local_directory  = tpath
-    nexus_core.remote_directory = tpath
+    tpath = testing.setup_unit_test_output_directory('simulation','test_write_inputs',divert=True)
 
     template = '''
 name = "$name"
@@ -1700,9 +1648,7 @@ a    = 1
     assert(not os.path.exists(image_file))
     assert(not os.path.exists(input_image_file))
 
-    divert_nexus_log()
     s.write_inputs()
-    restore_nexus_log()
 
     assert(s.setup)
     assert(os.path.exists(input_file))
@@ -1715,7 +1661,7 @@ a    = 1
     s.load_image()
     assert(s.setup)
 
-    restore_nexus_directories()
+    restore_nexus()
 
     Simulation.clear_all_sims()
 
@@ -1728,7 +1674,7 @@ def test_send_files():
     from nexus_base import nexus_core
     from simulation import Simulation
 
-    tpath = testing.setup_unit_test_output_directory('simulation','test_send_files')
+    tpath = testing.setup_unit_test_output_directory('simulation','test_send_files',divert=True)
 
     # make fake data files
     data_file1 = 'data_file1.txt'
@@ -1739,11 +1685,8 @@ def test_send_files():
 
     data_files = [data_file1,data_file2] 
 
-    divert_nexus_directories()
     nexus_file_locations = nexus_core.file_locations
 
-    nexus_core.local_directory  = tpath
-    nexus_core.remote_directory = tpath
     nexus_core.file_locations = nexus_file_locations + [tpath]
 
     s = get_test_sim(
@@ -1763,9 +1706,7 @@ def test_send_files():
     assert(not os.path.exists(loc_data_file1))
     assert(not os.path.exists(loc_data_file2))
 
-    divert_nexus_log()
     s.send_files()
-    restore_nexus_log()
 
     assert(s.sent_files)
     assert(os.path.exists(loc_data_file1))
@@ -1778,7 +1719,7 @@ def test_send_files():
     s.load_image()
     assert(s.sent_files)
 
-    restore_nexus_directories()
+    restore_nexus()
     nexus_core.file_locations = nexus_file_locations
 
     Simulation.clear_all_sims()
