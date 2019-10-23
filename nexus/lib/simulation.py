@@ -975,7 +975,7 @@ class Simulation(NexusCore):
             self.input.save(os.path.join(self.imlocdir,self.input_image))
         #end if
         #try to also write structure information
-        if self.system!=None:
+        if self.system is not None:
             filebase = os.path.join(self.locdir,self.identifier+'.struct')
             try:
                 self.system.structure.write(filebase+'.xyz')
@@ -1005,7 +1005,7 @@ class Simulation(NexusCore):
         if not os.path.exists(self.imremdir):
             os.makedirs(self.imremdir)
         #end if
-        if self.infile!=None:
+        if self.infile is not None:
             self.files.add(self.infile)
         #end if
         send_files = self.files
@@ -1065,7 +1065,7 @@ class Simulation(NexusCore):
 
 
     def update_process_id(self):
-        if self.process_id is None and self.job.system_id!=None:
+        if self.process_id is None and self.job.system_id is not None:
             self.process_id = self.job.system_id
             self.save_image()
         #end if
@@ -1078,11 +1078,11 @@ class Simulation(NexusCore):
             self.finished = self.job.finished
         elif self.job.finished:
             should_check = True
-            if self.outfile!=None:
+            if self.outfile is not None:
                 outfile = os.path.join(self.locdir,self.outfile)
                 should_check &= os.path.exists(outfile)
             #end if
-            if self.errfile!=None:
+            if self.errfile is not None:
                 errfile = os.path.join(self.locdir,self.errfile)
                 should_check &= os.path.exists(errfile)
             #end if
@@ -1091,9 +1091,6 @@ class Simulation(NexusCore):
             #end if
             if self.failed:
                 self.finished = True
-                # commented out block dependents 15/09/30
-                # try to rely on persistent failed flag instead
-                #self.block_dependents() 
             #end if
         #end if
         if self.finished:

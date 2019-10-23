@@ -5,8 +5,6 @@ from testing import TestFailed,failed
 from testing import divert_nexus_log,restore_nexus_log
 from testing import divert_nexus,restore_nexus
 
-from testing import divert_nexus_directories,restore_nexus_directories
-
 
 from generic import obj
 from simulation import Simulation,SimulationInput,SimulationAnalyzer
@@ -115,7 +113,10 @@ get_test_sim_simulations = []
 def get_test_sim(**kwargs):
     from machines import job
 
-    test_job = job(machine='ws1',app_command='test.x')
+    test_job = kwargs.pop('job',None)
+    if test_job is None:
+        test_job = job(machine='ws1',app_command='test.x')
+    #end if
 
     n = len(get_test_sim_simulations)
 
@@ -1725,3 +1726,108 @@ def test_send_files():
     Simulation.clear_all_sims()
 
 #end def test_send_files
+
+
+
+def test_submit():
+    from machines import job
+    from simulation import Simulation
+
+    tpath = testing.setup_unit_test_output_directory('simulation','test_submit',divert=True)
+
+    s = get_test_sim(
+        job = job(machine='ws1',app_command='echo run'),
+        )
+
+    j = s.job
+    m = j.get_machine()
+
+    s.create_directories()
+
+    assert(not s.submitted)
+    assert(not s.job.submitted)
+    assert(j.internal_id not in m.jobs)
+    assert(j.internal_id not in m.waiting)
+
+    s.submit()
+
+    assert(s.submitted)
+    assert(s.job.submitted)
+    assert(j.internal_id in m.jobs)
+    assert(j.internal_id in m.waiting)
+
+    restore_nexus()
+
+    Simulation.clear_all_sims()
+
+#end def test_submit
+
+
+
+def test_update_process_id():
+    from simulation import Simulation
+
+    tpath = testing.setup_unit_test_output_directory('simulation','test_update_process_id',divert=True)
+
+    s = get_test_sim()
+    j = s.job
+
+    s.create_directories()
+
+    ref_pid = 0
+
+    assert(s.process_id is None)
+    assert(j.system_id is None)
+
+    j.system_id = ref_pid
+
+    s.update_process_id()
+
+    assert(s.process_id==ref_pid)
+
+    s.process_id = None
+    s.load_image()
+    assert(s.process_id==ref_pid)
+
+    restore_nexus()
+
+    Simulation.clear_all_sims()
+
+#end def test_update_process_id
+
+
+
+def test_check_status():
+    import os
+    from simulation import Simulation
+
+    tpath = testing.setup_unit_test_output_directory('simulation','test_check_status',divert=True)
+
+    s = get_test_sim()
+    j = s.job
+
+    assert(not s.finished)
+    assert(not j.finished)
+
+    s.check_status()
+    assert(not s.finished)
+
+    s.create_directories()
+
+    open(os.path.join(s.locdir,s.outfile),'w').write('out')
+    open(os.path.join(s.locdir,s.errfile),'w').write('err')
+    j.finished = True
+
+    s.check_status()
+
+    assert(s.finished)
+
+    s.finished = False
+    s.load_image()
+    assert(s.finished)
+
+    restore_nexus()
+
+    Simulation.clear_all_sims()
+
+#end def test_check_status
