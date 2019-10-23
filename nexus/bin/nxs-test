@@ -2052,6 +2052,10 @@ def simulation():
 
     nunit('simulation_analyzer')
 
+    nunit('simulation_input_template')
+
+    nunit('simulation_input_multi_template')
+
     nunit('code_name')
 
     nunit('init')

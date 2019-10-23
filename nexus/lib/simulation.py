@@ -1528,7 +1528,7 @@ class SimulationInputTemplateDev(SimulationInput):
         try:
             template   = Template(text)
             key_tuples = Template.pattern.findall(text)
-        except Exception,e:
+        except Exception as e:
             self.error('exception encountered during read\nfile: {0}\nexception: {1}'.format(filepath,e))
         #end try
         for ktup in key_tuples:
@@ -1548,7 +1548,7 @@ class SimulationInputTemplateDev(SimulationInput):
         #end if
         try:
             text = self.template.substitute(**self.values)
-        except Exception,e:
+        except Exception as e:
             self.error('exception encountered during write:\n'+str(e))
         #end try
         return text
@@ -1563,40 +1563,29 @@ class SimulationInputTemplateDev(SimulationInput):
 
 
 class SimulationInputMultiTemplateDev(SimulationInput):
-    def __init__(self,delimiter='|',conditionals=None,defaults=None,**file_templates):
+    def __init__(self,**file_templates):
         self.filenames = obj()
         if len(file_templates)>0:
-            self.set_templates(delimiter,conditionals,defaults,**file_templates)
+            self.set_templates(**file_templates)
         #end if
-    #end def __init_
-
-
-    def set_filenames(self,**filenames):
-        self.filenames.set(**filenames)
-    #end def set_filenames
+    #end def __init__
         
 
-    def set_templates(self,delimiter='|',conditionals=None,defaults=None,**file_templates):
-        for name,val in file_templates.iteritems():
+    def set_templates(self,**file_templates):
+        for name,val in file_templates.items():
             if isinstance(val,str):
                 if ' ' in val:
                     self.error('filename cannot have any spaces\nbad filename provided with keyword '+name)
                 #end if
                 self.filenames[name] = val
-            else:
+            elif isinstance(val,tuple) and len(val)==2:
                 filename,template_path = val
-                self[name] = SimulationInputTemplate(
-                    filepath     = template_path,
-                    delimiter    = delimiter,
-                    conditionals = conditionals,
-                    defaults     = defaults
-                    )
+                self[name] = SimulationInputTemplate(template_path)
                 self.filenames[name] = filename
+            else:
+                self.error('keyword inputs must either be all filenames or all filename/filepath pairs')
             #end if
         #end for
-        if len(self)>1 and len(self.filenames)!=len(self)-1:
-            self.error('keyword inputs must either be all filenames or all filename/filepath pairs')
-        #end if
     #end def set_templates
 
 
@@ -1607,8 +1596,9 @@ class SimulationInputMultiTemplateDev(SimulationInput):
         base,filename = os.path.split(filepath)
         filenames = self.filenames
         self.clear()
-        templates = obj()
-        for name,filename in filenames.iteritems():
+        self.filenames = filenames
+        templates = dict()
+        for name,filename in filenames.items():
             templates[name] = filename, os.path.join(base,filename)
         #end for
         self.set_templates(**templates)
@@ -1624,12 +1614,13 @@ class SimulationInputMultiTemplateDev(SimulationInput):
             return contents
         else:
             base,filename = os.path.split(filepath)
-            for name,filename in self.filenames.iteritems():
+            for name,filename in self.filenames.items():
                 self[name].write(os.path.join(base,filename))
             #end for
         #end if
     #end def write
 #end class SimulationInputMultiTemplateDev
+
 
 
 # these are for user access, *Dev are for development

@@ -241,6 +241,288 @@ def test_simulation_analyzer():
 
 
 
+def test_simulation_input_template():
+    import os
+    from string import Template
+    from generic import obj,NexusError
+    from simulation import SimulationInput
+    from simulation import GenericSimulationInput
+    from simulation import SimulationInputTemplate
+    from simulation import input_template
+
+    tpath = testing.setup_unit_test_output_directory('simulation','test_simulation_input_template')
+
+
+    # empty init
+    si_empty = input_template()
+    assert(isinstance(si_empty,SimulationInput))
+    assert(isinstance(si_empty,GenericSimulationInput))
+    assert(isinstance(si_empty,SimulationInputTemplate))
+
+    si_empty_ref = obj(
+        template      = None,
+        keywords      = set(),
+        values        = obj(),
+        allow_not_set = set(),
+        )
+
+    assert(len(si_empty)==4)
+    assert(object_eq(si_empty.to_obj(),si_empty_ref))
+
+
+    # template reference data
+    template_text = '''
+a     = "$a"
+b     = $b
+file1 = "$file.$ext1"
+file2 = "$file.$ext2"
+'''
+
+    template_filepath = os.path.join(tpath,'template_file.txt')
+
+    open(template_filepath,'w').write(template_text)
+
+
+    # read
+    si_read = input_template(template_filepath)
+
+    assert(isinstance(si_read.template,Template))
+    assert(si_read.keywords==set(['a','b','ext1','ext2','file']))
+
+
+    # assign
+    si_assign = input_template()
+    try:
+        si_assign.assign(b=1)
+        raise TestFailed
+    except NexusError:
+        None
+    except TestFailed:
+        failed()
+    except Exception as e:
+        failed(str(e))
+    #end try
+
+    si_assign = input_template(template_filepath)
+    try:
+        si_assign.assign(c=1)
+        raise TestFailed
+    except NexusError:
+        None
+    except TestFailed:
+        failed()
+    except Exception as e:
+        failed(str(e))
+    #end try
+
+    values = obj(
+        a    = 'name',
+        b    = 1,
+        file = 'my_file',
+        ext1 = 'txt',
+        ext2 = 'dat',
+        )
+
+    si_assign.assign(**values)
+
+    assert(object_eq(si_assign.values,values))
+
+
+    # write
+    def try_write(si):
+        try:
+            si.write()
+            raise TestFailed
+        except NexusError:
+            None
+        except TestFailed:
+            failed()
+        except Exception as e:
+            failed(str(e))
+        #end try
+    #end def try_write
+
+    si_write = input_template()
+    try_write(si_write)
+
+    si_write = input_template(template_filepath)
+    try_write(si_write)
+
+    si_write.assign(b=1)
+    try_write(si_write)
+
+
+    text_ref = '''
+a     = "name"
+b     = 1
+file1 = "my_file.txt"
+file2 = "my_file.dat"
+'''
+
+    si_write.assign(**values)
+    text = si_write.write()
+    assert(text==text_ref)
+    
+    input_filepath = os.path.join(tpath,'input_file.txt')
+    si_write.write(input_filepath)
+    assert(open(input_filepath,'r').read()==text_ref)
+
+#end def test_simulation_input_template
+
+
+
+def test_simulation_input_multi_template():
+    import os
+    from string import Template
+    from generic import obj,NexusError
+    from simulation import SimulationInput
+    from simulation import GenericSimulationInput
+    from simulation import SimulationInputMultiTemplate
+    from simulation import multi_input_template
+
+    tpath = testing.setup_unit_test_output_directory('simulation','test_simulation_input_multi_template')
+
+    # make template files
+    template1_filepath = os.path.join(tpath,'template1.txt')
+    template2_filepath = os.path.join(tpath,'template2.txt')
+    template3_filepath = os.path.join(tpath,'template3.txt')
+
+    open(template1_filepath,'w').write('''
+name = "$name"
+a    = $a
+''')
+    open(template2_filepath,'w').write('''
+name = "$name"
+b    = $b
+''')
+    open(template3_filepath,'w').write('''
+name = "$name"
+c    = $c
+''')
+
+    input1_filepath = os.path.join(tpath,'input_file1.txt')
+    input2_filepath = os.path.join(tpath,'input_file2.txt')
+    input3_filepath = os.path.join(tpath,'input_file3.txt')
+
+
+    # empty init
+    si_empty = multi_input_template()
+
+    assert(isinstance(si_empty,SimulationInput))
+    assert(isinstance(si_empty,GenericSimulationInput))
+    assert(isinstance(si_empty,SimulationInputMultiTemplate))
+
+    si_empty_ref = obj(
+        filenames = obj(),
+        )
+
+    assert(len(si_empty)==1)
+    assert(object_eq(si_empty.to_obj(),si_empty_ref))
+
+
+    # filename init
+    filenames = obj(
+        input1 = 'input_file1.txt',
+        input2 = 'input_file2.txt',
+        input3 = 'input_file3.txt',
+        )
+
+    si = multi_input_template(**filenames)
+
+    assert(len(si)==1)
+    assert(len(si.filenames)==3)
+    assert(object_eq(si.filenames,filenames))
+
+    
+    # init read
+    si_init = multi_input_template(
+        input1 = ('input_file1.txt',template1_filepath),
+        input2 = ('input_file2.txt',template2_filepath),
+        input3 = ('input_file3.txt',template3_filepath),
+        )
+    si = si_init
+    assert(len(si)==4)
+    assert(len(si.filenames)==3)
+    assert(object_eq(si.filenames,filenames))
+    keywords_ref = dict(
+        input1 = set(['a', 'name']),
+        input2 = set(['b', 'name']),
+        input3 = set(['c', 'name']),
+        )
+    for name,keyword_set in keywords_ref.items():
+        assert(name in si)
+        sit = si[name]
+        assert(sit.keywords==keyword_set)
+        assert(isinstance(sit.template,Template))
+        assert(object_eq(sit.values,obj()))
+        assert(sit.allow_not_set==set())
+    #end for
+
+
+    # write
+    write_ref = obj(
+        input1 = '''
+name = "name1"
+a    = 1
+''',
+        input2 = '''
+name = "name2"
+b    = 2
+''',
+        input3 = '''
+name = "name3"
+c    = 3
+''',
+        )
+
+    si_write = multi_input_template(
+        input1 = ('input_file1.txt',template1_filepath),
+        input2 = ('input_file2.txt',template2_filepath),
+        input3 = ('input_file3.txt',template3_filepath),
+        )
+    si_write.input1.assign(
+        name = 'name1',
+        a    = 1,
+        )
+    si_write.input2.assign(
+        name = 'name2',
+        b    = 2,
+        )
+    si_write.input3.assign(
+        name = 'name3',
+        c    = 3,
+        )
+    assert(object_eq(si_write.write(),write_ref))
+
+    si_write.write(input1_filepath)
+    assert(os.path.exists(input1_filepath))
+    assert(os.path.exists(input2_filepath))
+    assert(os.path.exists(input3_filepath))
+
+
+    # read
+    si_read = multi_input_template(**filenames)
+
+    si_read.read(input1_filepath)
+
+    si = si_read
+    assert(len(si)==4)
+    assert(len(si.filenames)==3)
+    assert(object_eq(si.filenames,filenames))
+    for name,keyword_set in keywords_ref.items():
+        assert(name in si)
+        sit = si[name]
+        assert(sit.keywords==set())
+        assert(isinstance(sit.template,Template))
+        assert(object_eq(sit.values,obj()))
+        assert(sit.allow_not_set==set())
+    #end for
+    assert(object_eq(si_read.write(),write_ref))
+
+#end def test_simulation_input_multi_template
+
+
+
 def test_code_name():
     from simulation import Simulation
 
