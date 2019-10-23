@@ -148,10 +148,10 @@ LRCoulombSingleton::LRHandlerType* LRCoulombSingleton::getDerivHandler(ParticleS
   //APP_ABORT("SR Coulomb Basis Handler has cloning issues.  Stress also has some kinks");
   if (CoulombDerivHandler == 0)
   {
-    app_log() << "\n  Creating CoulombHandler with the optimal breakup of SR piece. " << std::endl;
-    CoulombDerivHandler = new LRHandlerSRCoulomb<CoulombFunctor<mRealType>, LPQHISRCoulombBasis>(ref);
-    //app_log() << "\n  Creating CoulombDerivHandler with the Ewald3D breakup. " << std::endl;
-    //CoulombDerivHandler= new EwaldHandler3D(ref);
+    //app_log() << "\n  Creating CoulombHandler with the optimal breakup of SR piece. " << std::endl;
+    //CoulombDerivHandler = new LRHandlerSRCoulomb<CoulombFunctor<mRealType>, LPQHISRCoulombBasis>(ref);
+    app_log() << "\n  Creating CoulombDerivHandler with the Ewald3D breakup. " << std::endl;
+    CoulombDerivHandler= new EwaldHandler3D(ref);
     // CoulombDerivHandler = new LRDerivHandler<CoulombFunctor<mRealType>, LPQHIBasis> (ref);
     //CoulombDerivHandler= new EwaldHandler(ref);
     CoulombDerivHandler->initBreakup(ref);

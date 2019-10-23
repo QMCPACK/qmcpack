@@ -53,6 +53,8 @@ DMCcuda::DMCcuda(MCWalkerConfiguration& w,
   //m_param.add(myWarmupSteps,"warmupSteps","int");
   //m_param.add(nTargetSamples,"targetWalkers","int");
   m_param.add(ScaleWeight, "scaleweight", "string");
+
+  H.setRandomGenerator(&Random);
 }
 
 bool DMCcuda::checkBounds(const PosType& newpos)

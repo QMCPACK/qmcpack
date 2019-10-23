@@ -31,6 +31,7 @@ module load essl
 module load netlib-lapack
 module load hdf5
 module load boost
+module load cuda
 
 export TEST_SITE_NAME=summit.olcf.ornl.gov
 export N_PROCS_BUILD=32
