@@ -77,39 +77,32 @@ typedef optimize::VariableSet opt_variables_type;
 ///typedef for a set of variables that can be varied
 typedef optimize::VariableSet::variable_map_type variable_map_type;
 
-
-template<typename T>
-inline T evaluatePhase(T sign_v)
-{
-  return (T)((sign_v > 0) ? 0.0 : M_PI);
-}
-
-template<typename T>
-inline T evaluatePhase(const std::complex<T>& psi)
-{
-  return (T)(std::arg(psi));
-}
-
-/** evaluate the log(|psi|) and phase
+/** evaluate log(psi) as log(|psi|) and phase
  * @param psi real/complex value
- * @param phase phase of psi
- * @return log(|psi|)
+ * @return complex<T>(log(|psi|), arg(psi))
+ *
+ * The return value is always complex regardless of the type of psi.
+ * The sign of of a real psi value is represented in the complex part of the return value.
+ * The phase of std::log(complex) is in range [-pi, pi] defined in C++
  */
-template<class T>
-inline T evaluateLogAndPhase(const T psi, T& phase)
+template<typename T>
+inline std::complex<T> convertValueToLog(const std::complex<T>& logpsi)
 {
-  if (psi < 0.0)
-  {
-    phase = M_PI;
-    return std::log(-psi);
-  }
-  else
-  {
-    phase = 0.0;
-    return std::log(psi);
-  }
+  return std::log(logpsi);
 }
 
+template<typename T>
+inline std::complex<T> convertValueToLog(const T logpsi)
+{
+  return std::log(std::complex<T>(logpsi));
+}
+
+/** evaluate psi based on log(psi)
+ * @param logpsi complex value
+ * @return exp(log(psi))
+ *
+ * LogToValue<ValueType>::convert(complex) is the reverse operation of convertValueToLog(ValueType)
+ */
 template<typename T>
 struct LogToValue
 {
@@ -135,33 +128,6 @@ struct LogToValue<std::complex<T>>
     return std::exp(logpsi);
   }
 };
-
-template<typename T>
-inline std::complex<T> convertValueToLog(const std::complex<T>& logpsi)
-{
-  return std::log(logpsi);
-}
-
-template<typename T>
-inline std::complex<T> convertValueToLog(const T logpsi)
-{
-  return std::log(std::complex<T>(logpsi));
-}
-
-template<class T>
-inline T evaluateLogAndPhase(const std::complex<T>& psi, T& phase)
-{
-  phase = std::arg(psi);
-  if (phase < 0.0)
-    phase += 2.0 * M_PI;
-  return std::log(std::abs(psi));
-  //      return 0.5*std::log(psi.real()*psi.real()+psi.imag()*psi.imag());
-  //return std::log(psi);
-}
-
-inline double evaluatePhase(const double psi) { return (psi < std::numeric_limits<double>::epsilon()) ? M_PI : 0.0; }
-
-inline double evaluatePhase(const std::complex<double>& psi) { return std::arg(psi); }
 
 } // namespace qmcplusplus
 

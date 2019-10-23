@@ -337,14 +337,10 @@ TrialWaveFunction::RealType TrialWaveFunction::ratio(ParticleSet& P, int iat)
     r *= (*it)->ratio(P, iat);
     myTimers[ii]->stop();
   }
-#if defined(QMC_COMPLEX)
-  RealType logr = evaluateLogAndPhase(r, PhaseDiff);
-  return std::exp(logr);
-#else
-  if (r < 0)
-    PhaseDiff = M_PI;
-  return r;
-#endif
+
+  LogValueType logpsi = convertValueToLog(r);
+  PhaseDiff = std::imag(logpsi);
+  return std::exp(std::real(logpsi));
 }
 
 TrialWaveFunction::ValueType TrialWaveFunction::calcRatio(ParticleSet& P, int iat, ComputeType ct)
@@ -478,14 +474,10 @@ TrialWaveFunction::RealType TrialWaveFunction::ratioGrad(ParticleSet& P, int iat
     r *= Z[i]->ratioGrad(P, iat, grad_iat);
     myTimers[ii]->stop();
   }
-#if defined(QMC_COMPLEX)
-  RealType logr = evaluateLogAndPhase(r, PhaseDiff);
-  return std::exp(logr);
-#else
-  if (r < 0)
-    PhaseDiff = M_PI;
-  return r;
-#endif
+
+  LogValueType logpsi = convertValueToLog(r);
+  PhaseDiff = std::imag(logpsi);
+  return std::exp(std::real(logpsi));
 }
 
 void TrialWaveFunction::flex_ratioGrad(const RefVector<TrialWaveFunction>& wf_list,

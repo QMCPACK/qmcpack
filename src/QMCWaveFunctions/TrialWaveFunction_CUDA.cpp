@@ -190,8 +190,6 @@ void TrialWaveFunction::det_lookahead(MCWalkerConfiguration& W,
 void TrialWaveFunction::convertRatiosFromComplexToReal(std::vector<ValueType>& psi_ratios,
                                                        std::vector<RealType>& psi_ratios_real)
 {
-  RealType PhaseValue;
-
   if (psi_ratios.size() != psi_ratios_real.size())
   {
     std::cerr << "Error: In " << __FILE__ << " , line " << __LINE__ << " , "
@@ -201,8 +199,8 @@ void TrialWaveFunction::convertRatiosFromComplexToReal(std::vector<ValueType>& p
 
   for (int iw = 0; iw < psi_ratios.size(); iw++)
   {
-    psi_ratios_real[iw] = evaluateLogAndPhase(psi_ratios[iw], PhaseValue);
-    psi_ratios_real[iw] = std::exp(psi_ratios_real[iw]);
+    LogValueType logpsi = convertValueToLog(r);
+    psi_ratios_real[iw] = std::exp(std::real(logpsi));
   }
 }
 #endif
