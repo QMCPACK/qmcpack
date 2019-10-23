@@ -416,7 +416,7 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
 #else
   std::string useGPU("no");
 #endif
-  int delay_rank(1);
+  int delay_rank(0);
   OhmmsAttributeSet sdAttrib;
   sdAttrib.add(delay_rank, "delay_rank");
   sdAttrib.add(optimize, "optimize");
@@ -480,18 +480,19 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
 #if defined(ENABLE_CUDA)
     else if (useGPU == "yes")
     {
-      app_log() << "Using DiracDeterminant with DelayedUpdateCUDA engine" << std::endl;
+      app_log() << "  Using DiracDeterminant with DelayedUpdateCUDA engine" << std::endl;
       adet = new DiracDeterminant<DelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>>(psi,firstIndex);
     }
 #endif
     else
     {
-      app_log() << "Using DiracDeterminant with DelayedUpdate engine" << std::endl;
+      app_log() << "  Using DiracDeterminant with DelayedUpdate engine" << std::endl;
       adet = new DiracDeterminant<>(psi, firstIndex);
     }
 #endif
   }
-  if (delay_rank <= 0 || delay_rank > lastIndex - firstIndex)
+
+  if (delay_rank < 0 || delay_rank > lastIndex - firstIndex)
   {
     std::ostringstream err_msg;
     err_msg << "SlaterDetBuilder::putDeterminant delay_rank must be positive "
@@ -500,10 +501,19 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
             << "user input " + std::to_string(delay_rank);
     APP_ABORT(err_msg.str());
   }
-  else if (delay_rank > 1)
-    app_log() << "Using rank-" << delay_rank << " delayed update" << std::endl;
+  else if (delay_rank == 0)
+  {
+    app_log() << "  Setting delay_rank by default!" << std::endl;
+    if (lastIndex - firstIndex >= 192)
+      delay_rank = 32;
+    else
+      delay_rank = 1;
+  }
+
+  if (delay_rank > 1)
+    app_log() << "  Using rank-" << delay_rank << " delayed update" << std::endl;
   else
-    app_log() << "Using rank-1 Sherman-Morrison Fahy update" << std::endl;
+    app_log() << "  Using rank-1 Sherman-Morrison Fahy update" << std::endl;
   adet->set(firstIndex, lastIndex - firstIndex, delay_rank);
 #ifdef QMC_CUDA
   targetPsi.setndelay(delay_rank);

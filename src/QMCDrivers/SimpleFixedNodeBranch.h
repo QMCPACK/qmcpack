@@ -21,6 +21,7 @@
 #ifndef QMCPLUSPLUS_SIMPLE_FIXEDNODE_BRANCHER_H
 #define QMCPLUSPLUS_SIMPLE_FIXEDNODE_BRANCHER_H
 
+#include <array>
 #include <Configuration.h>
 #include <OhmmsData/ParameterSet.h>
 #include <Particle/MCWalkerConfiguration.h>
@@ -38,6 +39,12 @@ namespace qmcplusplus
 class EstimatorManagerBase;
 
 /** Manages the state of QMC sections and handles population control for DMCs
+ *
+ * TODO: Remove duplicate reading of Driver XML section with own copies of input
+ *       parameters.
+ * TODO: Rename, it is the only branching class so its name is too much
+ * TODO: Use normal types for data members, don't be clever to be clever
+ *       the parameter enums violate KISS and make debugging annoying
  *
  * QMCDriver object owns a SimpleFixedNodeBranch to keep track of the
  * progress of a qmc section. It implements several methods to control the
@@ -116,30 +123,42 @@ struct SimpleFixedNodeBranch : public QMCTraits
   typedef TinyVector<int, B_IPARAM_MAX> IParamType;
   IParamType iParam;
 
-  /*! enum for vParam */
-  enum
+  /** enum for vParam 
+   *
+   *  Easy serialization is a relatively minor concern compared to the 
+   *  annoyance this causes elsewhere.
+   */
+  enum class SimpleBranchVectorParameter
   {
-    B_TAU = 0,
-    B_TAUEFF,
-    B_ETRIAL,
-    B_EREF,
-    B_ENOW,
-    B_BRANCHMAX,
-    B_BRANCHCUTOFF,
-    B_BRANCHFILTER,
-    B_SIGMA2,
-    B_ACC_ENERGY,
-    B_ACC_SAMPLES,
-    B_FEEDBACK,
-    B_FILTERSCALE,
-    B_VPARAM_MAX = 17
+    TAU = 0,
+    TAUEFF,
+    ETRIAL,
+    EREF,
+    ENOW,
+    BRANCHMAX,
+    BRANCHCUTOFF,
+    BRANCHFILTER,
+    SIGMA2,
+    ACC_ENERGY,
+    ACC_SAMPLES,
+    FEEDBACK,
+    FILTERSCALE,
+    VPARAM_MAX = 17 // four extra, why? Sloppy or undocumented hack?
   };
-
-  /** controlling parameters of real type
+  using SBVP = SimpleBranchVectorParameter;
+  
+  /** controlling parameters of full precision real type
    *
    * Mostly internal
    */
-  typedef TinyVector<FullPrecRealType, B_VPARAM_MAX> VParamType;
+  template<typename PAR_ENUM>
+  struct VParams : public std::array<FullPrecRealType, static_cast<size_t>(PAR_ENUM::VPARAM_MAX)>
+  {
+    using Base = std::array<FullPrecRealType, static_cast<size_t>(PAR_ENUM::VPARAM_MAX)>;
+    FullPrecRealType& operator[](PAR_ENUM sbvp) { return Base::operator[](static_cast<size_t>(sbvp)); }
+    const FullPrecRealType& operator[](PAR_ENUM sbvp) const { return Base::operator[](static_cast<size_t>(sbvp)); }
+  };
+  using VParamType = VParams<SBVP>;
   VParamType vParam;
 
   /** number of remaning steps for a specific tasks
@@ -203,6 +222,7 @@ struct SimpleFixedNodeBranch : public QMCTraits
 
   inline bool phaseChanged(RealType psi0) const
   {
+// TODO: remove ifdef
 #if defined(QMC_COMPLEX)
     return false;
 #else
@@ -261,13 +281,13 @@ struct SimpleFixedNodeBranch : public QMCTraits
    */
   inline RealType branchWeightBare(RealType enew, RealType eold) const
   {
-    return std::exp(vParam[B_TAUEFF] * (vParam[B_ETRIAL] - 0.5 * (enew + eold)));
+    return std::exp(vParam[SBVP::TAUEFF] * (vParam[SBVP::ETRIAL] - 0.5 * (enew + eold)));
   }
 
   inline RealType branchWeightReleasedNode(RealType enew, RealType eold, RealType eref) const
   {
     if (BranchMode[B_DMCSTAGE])
-      return std::exp(vParam[B_TAU] * (eref - 0.5 * (enew + eold)));
+      return std::exp(vParam[SBVP::TAU] * (eref - 0.5 * (enew + eold)));
     else
       return 1.0;
   }
@@ -278,25 +298,25 @@ struct SimpleFixedNodeBranch : public QMCTraits
    */
   inline RealType branchWeight(FullPrecRealType enew, FullPrecRealType eold) const
   {
-    FullPrecRealType taueff_ = vParam[B_TAUEFF] * 0.5;
-    FullPrecRealType x       = std::max(vParam[B_EREF] - enew, vParam[B_EREF] - eold);
-    if (x > vParam[B_BRANCHMAX])
+    FullPrecRealType taueff_ = vParam[SBVP::TAUEFF] * 0.5;
+    FullPrecRealType x       = std::max(vParam[SBVP::EREF] - enew, vParam[SBVP::EREF] - eold);
+    if (x > vParam[SBVP::BRANCHMAX])
       taueff_ = 0.0;
-    else if (x > vParam[B_BRANCHCUTOFF])
-      taueff_ *= (1.0 - (x - vParam[B_BRANCHCUTOFF]) * vParam[B_BRANCHFILTER]);
-    return std::exp(taueff_ * (vParam[B_ETRIAL] * 2.0 - enew - eold));
+    else if (x > vParam[SBVP::BRANCHCUTOFF])
+      taueff_ *= (1.0 - (x - vParam[SBVP::BRANCHCUTOFF]) * vParam[SBVP::BRANCHFILTER]);
+    return std::exp(taueff_ * (vParam[SBVP::ETRIAL] * 2.0 - enew - eold));
   }
 
   inline RealType symLinkAction(RealType logGf, RealType logGb, RealType enew, RealType eold) const
   {
     RealType driftaction = -0.5 * (logGf + logGb);
     //RealType energyaction =
-    RealType taueff_ = vParam[B_TAUEFF] * 0.5;
-    RealType x       = std::max(vParam[B_EREF] - enew, vParam[B_EREF] - eold);
-    if (x > vParam[B_BRANCHMAX])
+    RealType taueff_ = vParam[SBVP::TAUEFF] * 0.5;
+    RealType x       = std::max(vParam[SBVP::EREF] - enew, vParam[SBVP::EREF] - eold);
+    if (x > vParam[SBVP::BRANCHMAX])
       taueff_ = 0.0;
-    else if (x > vParam[B_BRANCHCUTOFF])
-      taueff_ *= (1.0 - (x - vParam[B_BRANCHCUTOFF]) * vParam[B_BRANCHFILTER]);
+    else if (x > vParam[SBVP::BRANCHCUTOFF])
+      taueff_ *= (1.0 - (x - vParam[SBVP::BRANCHCUTOFF]) * vParam[SBVP::BRANCHFILTER]);
     RealType energyaction = taueff_ * (enew + eold);
     return driftaction + energyaction;
   }
@@ -304,7 +324,7 @@ struct SimpleFixedNodeBranch : public QMCTraits
   inline RealType symLinkActionBare(RealType logGf, RealType logGb, RealType enew, RealType eold) const
   {
     RealType driftaction  = -0.5 * (logGf + logGb);
-    RealType taueff_      = vParam[B_TAUEFF] * 0.5;
+    RealType taueff_      = vParam[SBVP::TAUEFF] * 0.5;
     RealType energyaction = taueff_ * (enew + eold);
     // RealType wavefunctionaction= -psinew + psiold;
     return driftaction + energyaction;
@@ -312,12 +332,12 @@ struct SimpleFixedNodeBranch : public QMCTraits
 
   inline RealType DMCLinkAction(RealType enew, RealType eold) const
   {
-    RealType taueff_ = vParam[B_TAUEFF] * 0.5;
-    RealType x       = std::max(vParam[B_EREF] - enew, vParam[B_EREF] - eold);
-    if (x > vParam[B_BRANCHMAX])
+    RealType taueff_ = vParam[SBVP::TAUEFF] * 0.5;
+    RealType x       = std::max(vParam[SBVP::EREF] - enew, vParam[SBVP::EREF] - eold);
+    if (x > vParam[SBVP::BRANCHMAX])
       taueff_ = 0.0;
-    else if (x > vParam[B_BRANCHCUTOFF])
-      taueff_ *= (1.0 - (x - vParam[B_BRANCHCUTOFF]) * vParam[B_BRANCHFILTER]);
+    else if (x > vParam[SBVP::BRANCHCUTOFF])
+      taueff_ *= (1.0 - (x - vParam[SBVP::BRANCHCUTOFF]) * vParam[SBVP::BRANCHFILTER]);
     return taueff_ * (enew + eold);
   }
   /** return the branch weight according to JCP1993 Umrigar et al. Appendix A p=1, q=0
@@ -328,9 +348,9 @@ struct SimpleFixedNodeBranch : public QMCTraits
    */
   inline RealType branchWeight(RealType enew, RealType eold, RealType scnew, RealType scold) const
   {
-    FullPrecRealType s1 = (vParam[B_ETRIAL] - vParam[B_EREF]) + (vParam[B_EREF] - enew) * scnew;
-    FullPrecRealType s0 = (vParam[B_ETRIAL] - vParam[B_EREF]) + (vParam[B_EREF] - eold) * scold;
-    return std::exp(vParam[B_TAUEFF] * 0.5 * (s1 + s0));
+    FullPrecRealType s1 = (vParam[SBVP::ETRIAL] - vParam[SBVP::EREF]) + (vParam[SBVP::EREF] - enew) * scnew;
+    FullPrecRealType s0 = (vParam[SBVP::ETRIAL] - vParam[SBVP::EREF]) + (vParam[SBVP::EREF] - eold) * scold;
+    return std::exp(vParam[SBVP::TAUEFF] * 0.5 * (s1 + s0));
   }
 
   /** return the branch weight according to JCP1993 Umrigar et al. Appendix A
@@ -342,9 +362,9 @@ struct SimpleFixedNodeBranch : public QMCTraits
    */
   inline RealType branchWeight(RealType enew, RealType eold, RealType scnew, RealType scold, RealType p) const
   {
-    FullPrecRealType s1 = (vParam[B_ETRIAL] - vParam[B_EREF]) + (vParam[B_EREF] - enew) * scnew;
-    FullPrecRealType s0 = (vParam[B_ETRIAL] - vParam[B_EREF]) + (vParam[B_EREF] - eold) * scold;
-    return std::exp(vParam[B_TAUEFF] * (p * 0.5 * (s1 - s0) + s0));
+    FullPrecRealType s1 = (vParam[SBVP::ETRIAL] - vParam[SBVP::EREF]) + (vParam[SBVP::EREF] - enew) * scnew;
+    FullPrecRealType s0 = (vParam[SBVP::ETRIAL] - vParam[SBVP::EREF]) + (vParam[SBVP::EREF] - eold) * scold;
+    return std::exp(vParam[SBVP::TAUEFF] * (p * 0.5 * (s1 - s0) + s0));
     //return std::exp(TauEff*(p*0.5*(sp-sq)+sq));
   }
 
@@ -359,15 +379,15 @@ struct SimpleFixedNodeBranch : public QMCTraits
     ScaleSum += scnew + scold;
     ScaleNum += 2;
     FullPrecRealType scavg = (ScaleNum > 10000) ? ScaleSum / (RealType)ScaleNum : 1.0;
-    FullPrecRealType s1    = (vParam[B_ETRIAL] - vParam[B_EREF]) + (vParam[B_EREF] - enew) * scnew / scavg;
-    FullPrecRealType s0    = (vParam[B_ETRIAL] - vParam[B_EREF]) + (vParam[B_EREF] - eold) * scold / scavg;
+    FullPrecRealType s1    = (vParam[SBVP::ETRIAL] - vParam[SBVP::EREF]) + (vParam[SBVP::EREF] - enew) * scnew / scavg;
+    FullPrecRealType s0    = (vParam[SBVP::ETRIAL] - vParam[SBVP::EREF]) + (vParam[SBVP::EREF] - eold) * scold / scavg;
     return std::exp(taueff * 0.5 * (s1 + s0));
   }
 
-  inline RealType getEref() const { return vParam[B_EREF]; }
-  inline RealType getEtrial() const { return vParam[B_ETRIAL]; }
-  inline RealType getTau() const { return vParam[B_TAU]; }
-  inline RealType getTauEff() const { return vParam[B_TAUEFF]; }
+  inline RealType getEref() const { return vParam[SBVP::EREF]; }
+  inline RealType getEtrial() const { return vParam[SBVP::ETRIAL]; }
+  inline RealType getTau() const { return vParam[SBVP::TAU]; }
+  inline RealType getTauEff() const { return vParam[SBVP::TAUEFF]; }
 
   /** perform branching
    * @param iter current step
@@ -433,6 +453,8 @@ private:
                        FullPrecRealType maxSigma,
                        int Nelec = 0);
 };
+
+std::ostream& operator<<(std::ostream& os, SimpleFixedNodeBranch::VParamType& rhs);
 
 } // namespace qmcplusplus
 #endif
