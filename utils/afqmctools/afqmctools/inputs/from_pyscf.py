@@ -20,7 +20,7 @@ from afqmctools.wavefunction.pbc import write_wfn_pbc
 def write_qmcpack(comm, chkfile, hamil_file, threshold,
                   ortho_ao=False, gdf=False, kpoint=False, verbose=False,
                   cas=None, qmc_input=None, wfn_file=None,
-                  write_hamil=True, ndet_max=None, real_chol=False):
+                  write_hamil=True, ndet_max=None, real_chol=False, phdf=False):
     """Dispatching routine dependent on options.
     """
     try:
@@ -38,7 +38,7 @@ def write_qmcpack(comm, chkfile, hamil_file, threshold,
             if kpoint:
                 write_hamil_kpoints(comm, scf_data, hamil_file, threshold,
                                     verbose=verbose, cas=cas,
-                                    ortho_ao=ortho_ao)
+                                    ortho_ao=ortho_ao, phdf=phdf)
             else:
                 write_hamil_supercell(comm, scf_data, hamil_file, threshold,
                                       verbose=verbose, cas=cas,
