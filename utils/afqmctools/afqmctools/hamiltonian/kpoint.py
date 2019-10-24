@@ -94,6 +94,8 @@ def write_hamil_kpoints(comm, scf_data, hamil_file, chol_cut,
         for rk in range(1,comm.size):
             h5f2 = FileHandler(comm,"rank"+str(rk)+"_"+hamil_file,"r",False)
             for Q in range(nkpts):
+                if Q > kminus[Q]:
+                    continue
                 Ldim = h5f2.h5f["/Hamiltonian/KPFactorized/Ldim"+str(Q)][:]
                 nkk = Ldim[0]
                 nij = Ldim[1]
