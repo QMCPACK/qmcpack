@@ -160,7 +160,7 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
       }
 
       std::transform(crowd.get_ratios().begin(), crowd.get_ratios().end(), crowd.get_prob().begin(),
-                     [](auto ratio) { return std::real(ratio) * std::real(ratio); });
+                     [](auto ratio) { return std::norm(ratio); });
 
       twf_accept_list.clear();
       twf_reject_list.clear();
