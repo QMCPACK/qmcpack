@@ -2100,6 +2100,12 @@ def simulation():
 
     nunit('check_status')
 
+    nunit('get_output')
+
+    nunit('analyze')
+
+    nunit('progress')
+
     nunit_all()
 #end def simulation
 

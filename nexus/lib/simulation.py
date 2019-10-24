@@ -1122,13 +1122,13 @@ class Simulation(NexusCore):
             self.log('copying results'+self.idstr(),n=3)
             if not nexus_core.generate_only:
                 output_files = self.get_output_files()
-                if self.infile!=None:
+                if self.infile is not None:
                     output_files.append(self.infile)
                 #end if
-                if self.outfile!=None:
+                if self.outfile is not None:
                     output_files.append(self.outfile)
                 #end if
-                if self.errfile!=None:
+                if self.errfile is not None:
                     output_files.append(self.errfile)
                 #end if
                 files_missing = []
@@ -1154,6 +1154,9 @@ class Simulation(NexusCore):
 
         
     def analyze(self):
+        if not os.path.exists(self.imresdir):
+            os.makedirs(self.imresdir)
+        #end if
         if self.finished:
             self.enter(self.locdir,False,self.simid)
             self.log('analyzing'+self.idstr(),n=3)

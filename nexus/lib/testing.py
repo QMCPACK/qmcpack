@@ -5,7 +5,9 @@ import numpy as np
 # determine if two values differ
 def value_diff(v1,v2,tol=1e-6,int_as_float=False):
     diff = False
-    if int_as_float and isinstance(v1,(int,float,np.float64)) and isinstance(v2,(int,float,np.float64)):
+    if id(v1)==id(v2):
+        None
+    elif int_as_float and isinstance(v1,(int,float,np.float64)) and isinstance(v2,(int,float,np.float64)):
         diff = np.abs(float(v1)-float(v2))>tol
     elif isinstance(v1,(float,np.float64)) and isinstance(v2,(float,np.float64)):
         diff = np.abs(v1-v2)>tol
@@ -228,6 +230,7 @@ def setup_unit_test_output_directory(test,subtest,divert=False):
         divert_nexus()
         nexus_core.local_directory  = path
         nexus_core.remote_directory = path
+        nexus_core.file_locations = nexus_core.file_locations + [path]
     #end if
     return path
 #end def setup_unit_test_output_directory
@@ -260,8 +263,8 @@ class FakeLog:
 # dict to temporarily store logger when log output is diverted
 logging_storage = dict()
 
-# dict to temporarily store nexus directories when directories are diverted
-nexus_directories = dict()
+# dict to temporarily store nexus core attributes when diverted
+nexus_core_storage = dict()
 
 
 # divert nexus log output
@@ -280,41 +283,50 @@ def divert_nexus_log():
 # restore nexus log output
 def restore_nexus_log():
     from generic import generic_settings,object_interface
-    generic_settings.devlog   = logging_storage['devlog']
-    object_interface._logfile = logging_storage['objlog']
-    logging_storage.clear()
+    assert(set(logging_storage.keys())==set(['devlog','objlog']))
+    generic_settings.devlog   = logging_storage.pop('devlog')
+    object_interface._logfile = logging_storage.pop('objlog')
     assert(len(logging_storage)==0)
 #end def restore_nexus_log
 
 
-# divert nexus directories
-def divert_nexus_directories():
+# divert nexus core attributes
+def divert_nexus_core():
     from nexus_base import nexus_core
-    assert(len(nexus_directories)==0)
-    nexus_directories['local']  = nexus_core.local_directory
-    nexus_directories['remote'] = nexus_core.remote_directory
-#end def divert_nexus_directories
+    assert(len(nexus_core_storage)==0)
+    nexus_core_storage['local']          = nexus_core.local_directory
+    nexus_core_storage['remote']         = nexus_core.remote_directory
+    nexus_core_storage['mode']           = nexus_core.mode
+    nexus_core_storage['stages']         = nexus_core.stages
+    nexus_core_storage['stages_set']     = nexus_core.stages_set
+    nexus_core_storage['file_locations'] = nexus_core.file_locations
+#end def divert_nexus_core
 
 
-# restore nexus directories
-def restore_nexus_directories():
+# restore nexus core attributes
+def restore_nexus_core():
     from nexus_base import nexus_core
-    assert(set(nexus_directories.keys())==set(['local','remote']))
-    nexus_core.local_directory  = nexus_directories['local'] 
-    nexus_core.remote_directory = nexus_directories['remote']
-    nexus_directories.clear()
-#end def restore_nexus_directories
+    nckeys = ['local','remote','mode','stages','stages_set','file_locations']
+    assert(set(nexus_core_storage.keys())==set(nckeys))
+    nexus_core.local_directory  = nexus_core_storage.pop('local')
+    nexus_core.remote_directory = nexus_core_storage.pop('remote')
+    nexus_core.mode             = nexus_core_storage.pop('mode')
+    nexus_core.stages           = nexus_core_storage.pop('stages')
+    nexus_core.stages_set       = nexus_core_storage.pop('stages_set')
+    nexus_core.file_locations   = nexus_core_storage.pop('file_locations')
+    assert(len(nexus_core_storage)==0)
+#end def restore_nexus_core
 
 
 def divert_nexus():
     divert_nexus_log()
-    divert_nexus_directories()
+    divert_nexus_core()
 #end def divert_nexus
 
 
 def restore_nexus():
     restore_nexus_log()
-    restore_nexus_directories()
+    restore_nexus_core()
 #end def restore_nexus
 
 

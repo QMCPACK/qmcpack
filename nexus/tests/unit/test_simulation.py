@@ -1640,8 +1640,8 @@ a    = 1
         )
     s.create_directories()
 
-    input_file = os.path.join(s.locdir,s.infile)
-    image_file = os.path.join(s.imlocdir,s.sim_image)
+    input_file       = os.path.join(s.locdir,s.infile)
+    image_file       = os.path.join(s.imlocdir,s.sim_image)
     input_image_file = os.path.join(s.imlocdir,s.input_image)
 
     assert(not s.setup)
@@ -1686,10 +1686,6 @@ def test_send_files():
 
     data_files = [data_file1,data_file2] 
 
-    nexus_file_locations = nexus_core.file_locations
-
-    nexus_core.file_locations = nexus_file_locations + [tpath]
-
     s = get_test_sim(
         files = data_files,
         )
@@ -1721,7 +1717,6 @@ def test_send_files():
     assert(s.sent_files)
 
     restore_nexus()
-    nexus_core.file_locations = nexus_file_locations
 
     Simulation.clear_all_sims()
 
@@ -1831,3 +1826,275 @@ def test_check_status():
     Simulation.clear_all_sims()
 
 #end def test_check_status
+
+
+
+def test_get_output():
+    import os
+    from simulation import Simulation
+
+    tpath = testing.setup_unit_test_output_directory('simulation','test_get_output',divert=True)
+
+    s = get_test_sim()
+
+    s.create_directories()
+
+    remote_image  = os.path.join(s.imremdir,s.sim_image)
+    results_image = os.path.join(s.imresdir,s.sim_image)
+
+    assert(not os.path.exists(remote_image))
+    assert(not os.path.exists(results_image))
+    assert(not s.finished)
+
+    assert(value_eq(s.get_output_files(),[]))
+
+    files = [s.infile,s.outfile,s.errfile]
+
+    loc_files = []
+    res_files = []
+
+    for file in files:
+        loc_files.append(os.path.join(s.locdir,file))
+        res_files.append(os.path.join(s.resdir,file))
+    #end for
+
+    for loc_file in loc_files:
+        open(loc_file,'w').write('contents')
+    #end for
+    s.finished = True
+
+    assert(not s.got_output)
+    for loc_file,res_file in zip(loc_files,res_files):
+        assert(os.path.exists(loc_file))
+        assert(not os.path.exists(res_file))
+    #end for
+
+    s.get_output()
+
+    assert(s.got_output)
+    for loc_file,res_file in zip(loc_files,res_files):
+        assert(os.path.exists(loc_file))
+        assert(os.path.exists(res_file))
+    #end for
+
+    s.got_output = False
+    s.load_image()
+    assert(s.got_output)
+
+    restore_nexus()
+
+    Simulation.clear_all_sims()
+
+#end def test_get_output
+
+
+
+def test_analyze():
+    import os
+    from simulation import Simulation
+
+    tpath = testing.setup_unit_test_output_directory('simulation','test_analyze',divert=True)
+
+    s = get_test_sim()
+
+    s.create_directories()
+
+    assert(not s.finished)
+    s.finished = True
+
+    analyzer_image = os.path.join(s.imresdir,s.analyzer_image)
+
+    assert(not s.analyzed)
+    assert(not os.path.exists(analyzer_image))
+
+    s.analyze()
+
+    assert(s.analyzed)
+    assert(os.path.exists(analyzer_image))
+
+    s.analyzed = False
+    s.load_image()
+    assert(s.analyzed)
+
+    restore_nexus()
+
+    Simulation.clear_all_sims()
+
+#end def test_analyze
+
+
+
+def test_progress():
+    import os
+    from nexus_base import nexus_core
+    from simulation import Simulation,input_template
+
+    tpath = testing.setup_unit_test_output_directory('simulation','test_progress',divert=True)
+
+    assert(nexus_core.mode==nexus_core.modes.stages)
+    assert(len(nexus_core.stages)==0)
+
+    nexus_core.stages     = list(nexus_core.primary_modes)
+    nexus_core.stages_set = set(nexus_core.stages)
+
+    primary_modes = ['setup','send_files','submit','get_output','analyze']
+    assert(value_eq(nexus_core.stages,primary_modes))
+    assert(value_eq(nexus_core.stages_set,set(primary_modes)))
+
+
+    template = '''
+name = "$name"
+a    = $a
+'''
+    si = input_template(text=template)
+    si.assign(name='input_name',a=1)
+
+    s = get_test_sim(input=si)
+
+    indicators = [
+        'created_directories',
+        'got_dependencies',
+        'setup',
+        'sent_files',
+        'submitted',
+        'finished',
+        'failed',
+        'got_output',
+        'analyzed',
+        ]
+
+    inds = obj()
+
+    # first progression
+    #   directory creation
+    #   dependency processing
+    #   input file write
+    #   auxilliary file transfer
+    #   job submission
+    assert(not s.created_directories)
+    assert(not s.got_dependencies)
+    assert(not s.setup)
+    assert(not s.sent_files)
+    assert(not s.submitted)
+    assert(not s.finished)
+    assert(not s.got_output)
+    assert(not s.analyzed)
+    assert(s.files==set())
+    assert(s.job.status==0)
+    assert(not os.path.exists(s.locdir))
+    assert(not os.path.exists(s.remdir))
+    assert(not os.path.exists(s.resdir))
+    assert(not os.path.exists(s.imlocdir))
+    assert(not os.path.exists(s.imremdir))
+    assert(not os.path.exists(s.imresdir))
+
+    s.progress()
+
+    assert(s.created_directories)
+    assert(s.got_dependencies)
+    assert(s.setup)
+    assert(s.sent_files)
+    assert(s.submitted)
+    assert(not s.finished)
+    assert(not s.got_output)
+    assert(not s.analyzed)
+    assert(s.files==set([s.infile]))
+    assert(s.job.status==1)
+    assert(os.path.exists(s.locdir))
+    assert(os.path.exists(s.remdir))
+    assert(os.path.exists(s.imlocdir))
+    assert(os.path.exists(s.imremdir))
+    assert(os.path.exists(os.path.join(s.locdir,s.infile)))
+    assert(os.path.exists(os.path.join(s.imlocdir,s.sim_image)))
+    assert(os.path.exists(os.path.join(s.imlocdir,s.input_image)))
+    assert(not os.path.exists(os.path.join(s.locdir,s.outfile)))
+    assert(not os.path.exists(os.path.join(s.locdir,s.errfile)))
+    assert(not os.path.exists(os.path.join(s.imlocdir,s.analyzer_image)))
+    assert(not os.path.exists(s.resdir))
+    assert(not os.path.exists(s.imresdir))
+    
+    # check image
+    inds.transfer_from(s,indicators)
+    s.reset_indicators()
+    s.load_image()
+    assert(s.setup)
+    assert(s.sent_files)
+    assert(not s.submitted) # submitted is not stored yet
+    assert(not s.finished)
+    assert(not s.got_output)
+    assert(not s.analyzed)
+    s.transfer_from(inds,indicators)
+
+
+    # simulate job completion
+    #   create output and error files
+    #   set job status to finished
+    open(os.path.join(s.locdir,s.outfile),'w').write('out')
+    open(os.path.join(s.locdir,s.errfile),'w').write('err')
+    s.job.finished = True
+
+    assert(os.path.exists(os.path.join(s.locdir,s.outfile)))
+    assert(os.path.exists(os.path.join(s.locdir,s.errfile)))
+
+
+    # second progression
+    #   status check
+    #   output file transfer
+    #   output analysis
+    assert(s.created_directories)
+    assert(s.got_dependencies)
+    assert(s.setup)
+    assert(s.sent_files)
+    assert(s.submitted)
+    assert(not s.finished)
+    assert(not s.got_output)
+    assert(not s.analyzed)
+
+    s.progress()
+
+    assert(s.created_directories)
+    assert(s.got_dependencies)
+    assert(s.setup)
+    assert(s.sent_files)
+    assert(s.submitted)
+    assert(s.finished)
+    assert(s.got_output)
+    assert(s.analyzed)
+    assert(os.path.exists(s.resdir))
+    assert(os.path.exists(s.imresdir))
+    assert(os.path.exists(os.path.join(s.resdir,s.infile)))
+    assert(os.path.exists(os.path.join(s.resdir,s.errfile)))
+    assert(os.path.exists(os.path.join(s.resdir,s.outfile)))
+    assert(os.path.exists(os.path.join(s.imresdir,s.sim_image)))
+    assert(os.path.exists(os.path.join(s.imresdir,s.input_image)))
+    assert(os.path.exists(os.path.join(s.imresdir,s.analyzer_image)))
+    assert(not os.path.exists(os.path.join(s.imlocdir,s.analyzer_image)))
+    
+    # check image
+    inds.transfer_from(s,indicators)
+    s.reset_indicators()
+    s.load_image()
+    assert(s.setup)
+    assert(s.sent_files)
+    assert(s.submitted)
+    assert(s.finished)
+    assert(s.got_output)
+    assert(s.analyzed)
+    s.transfer_from(inds,indicators)
+
+    
+    # attempt third progression
+    #   nothing should happen
+    sbef = s.copy()
+    sbef.input.template = s.input.template
+
+    s.progress()
+
+    assert(object_eq(s,sbef))
+
+
+    restore_nexus()
+
+    Simulation.clear_all_sims()
+
+#end def test_progress
