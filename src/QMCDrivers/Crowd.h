@@ -54,14 +54,6 @@ public:
 
   void loadWalkers();
 
-  /** clears log_gf and log_gb
-   *
-   *  This is a legacy "call"
-   *  TODO: likely remove log_gf and log_gb from crowd
-   *        seems unlikely these should be persistent state.
-   */
-  void clearResults();
-  
   /** Clears all walker vectors
    *
    *  Unless you are _redistributing_ walkers to crowds don't
@@ -94,12 +86,6 @@ public:
   std::vector<std::reference_wrapper<TrialWaveFunction>>& get_walker_twfs() { return walker_twfs_; }
   std::vector<std::reference_wrapper<QMCHamiltonian>>& get_walker_hamiltonians() { return walker_hamiltonians_; }
 
-  std::vector<GradType>& get_grads_now() { return grads_now_; }
-  std::vector<GradType>& get_grads_new() { return grads_new_; }
-  std::vector<TrialWaveFunction::PsiValueType>& get_ratios() { return ratios_; }
-  std::vector<RealType>& get_log_gf() { return log_gf_; }
-  std::vector<RealType>& get_log_gb() { return log_gb_; }
-  std::vector<RealType>& get_prob() { return prob_; }
   RefVector<WFBuffer>& get_mcp_wfbuffers() { return mcp_wfbuffers_; }
   const EstimatorManagerCrowd& get_estimator_manager_crowd() const { return estimator_manager_crowd_; }
   int size() const { return mcp_walkers_.size(); }
@@ -115,7 +101,6 @@ public:
   }
   unsigned long get_nonlocal_accept() { return n_nonlocal_accept_; }
 private:
-  void resizeResults(int crowd_size);
   /** @name Walker Vectors
    *
    *  A single index into these ordered lists constitue a complete 
@@ -130,19 +115,6 @@ private:
   /** }@ */
   
   EstimatorManagerCrowd estimator_manager_crowd_;
-  /** @name Work Buffers
-   *  @{
-   *  There are many "local" variables in execution of the driver that are convenient to 
-   *  place in a stl containers to use <alogorithm> style calls with.
-   *  Eventually this will also us to allow some sort of appropriate parallel policy for these calls.
-   */
-  std::vector<GradType> grads_now_;
-  std::vector<GradType> grads_new_;
-  std::vector<TrialWaveFunction::PsiValueType> ratios_;
-  std::vector<RealType> log_gf_;
-  std::vector<RealType> log_gb_;
-  std::vector<RealType> prob_;
-  /** }@ */
 
   /** @name Step State
    * 

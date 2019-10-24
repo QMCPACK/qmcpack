@@ -86,14 +86,19 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
   timers.buffer_timer.stop();
 
   timers.movepbyp_timer.start();
-  int num_walkers = crowd.size();
+  const int num_walkers = crowd.size();
   // Note std::vector<bool> is not like the rest of stl.
   std::vector<bool> moved(num_walkers, false);
   constexpr RealType mhalf(-0.5);
-  bool use_drift = sft.vmcdrv_input.get_use_drift();
+  const bool use_drift = sft.vmcdrv_input.get_use_drift();
   //This generates an entire steps worth of deltas.
   step_context.nextDeltaRs();
   auto it_delta_r = step_context.deltaRsBegin();
+
+  std::vector<TrialWaveFunction::GradType> grads_now(num_walkers);
+  std::vector<TrialWaveFunction::GradType> grads_new(num_walkers);
+  std::vector<TrialWaveFunction::PsiValueType> ratios(num_walkers);
+
   std::vector<PosType> drifts(num_walkers);
   std::vector<RealType> log_gf(num_walkers);
   std::vector<RealType> log_gb(num_walkers);
@@ -117,7 +122,6 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
     int end_index        = step_context.getPtclGroupEnd(ig);
     for (int iat = start_index; iat < end_index; ++iat)
     {
-      crowd.clearResults();
       ParticleSet::flex_setActive(crowd.get_walker_elecs(), iat);
       // step_context.deltaRsBegin returns an iterator to a flat series of PosTypes
       // fastest in walkers then particles
@@ -126,8 +130,8 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
 
       if (use_drift)
       {
-        TrialWaveFunction::flex_evalGrad(crowd.get_walker_twfs(), crowd.get_walker_elecs(), iat, crowd.get_grads_now());
-        sft.drift_modifier.getDrifts(tauovermass, crowd.get_grads_now(), drifts);
+        TrialWaveFunction::flex_evalGrad(crowd.get_walker_twfs(), crowd.get_walker_elecs(), iat, grads_now);
+        sft.drift_modifier.getDrifts(tauovermass, grads_now, drifts);
 
         std::transform(drifts.begin(), drifts.end(), delta_r_start, drifts.begin(),
                        [sqrttau](const PosType& drift, const PosType& delta_r) { return drift + (sqrttau * delta_r); });
@@ -143,12 +147,12 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
       // This is inelegant
       if (use_drift)
       {
-        TrialWaveFunction::flex_ratioGrad(crowd.get_walker_twfs(), crowd.get_walker_elecs(), iat, crowd.get_ratios(),
-                                          crowd.get_grads_new());
+        TrialWaveFunction::flex_ratioGrad(crowd.get_walker_twfs(), crowd.get_walker_elecs(), iat, ratios,
+                                          grads_new);
         std::transform(delta_r_start, delta_r_end, log_gf.begin(),
                        [mhalf](const PosType& delta_r) { return mhalf * dot(delta_r, delta_r); });
 
-        sft.drift_modifier.getDrifts(tauovermass, crowd.get_grads_new(), drifts);
+        sft.drift_modifier.getDrifts(tauovermass, grads_new, drifts);
 
         std::transform(crowd.beginElectrons(), crowd.endElectrons(), drifts.begin(), drifts.begin(),
                        [iat](const ParticleSet& elecs, const PosType& drift) { return elecs.R[iat] - elecs.activePos - drift; });
@@ -158,10 +162,10 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
       }
       else
       {
-        TrialWaveFunction::flex_calcRatio(crowd.get_walker_twfs(), crowd.get_walker_elecs(), iat, crowd.get_ratios());
+        TrialWaveFunction::flex_calcRatio(crowd.get_walker_twfs(), crowd.get_walker_elecs(), iat, ratios);
       }
 
-      std::transform(crowd.get_ratios().begin(), crowd.get_ratios().end(), prob.begin(),
+      std::transform(ratios.begin(), ratios.end(), prob.begin(),
                      [](auto ratio) { return std::norm(ratio); });
 
       twf_accept_list.clear();
