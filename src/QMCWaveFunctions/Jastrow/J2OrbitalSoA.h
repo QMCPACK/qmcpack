@@ -43,9 +43,9 @@ namespace qmcplusplus
  * - Memory use is O(N). 
  */
 template<class FT>
-struct J2OrbitalSoA : public WaveFunctionComponent
+class J2OrbitalSoA : public WaveFunctionComponent
 {
- public:
+public:
   ///alias FuncType
   using FuncType = FT;
   ///type of each component U, dU, d2U;
@@ -54,7 +54,13 @@ struct J2OrbitalSoA : public WaveFunctionComponent
   using posT = TinyVector<valT, OHMMS_DIM>;
   ///use the same container
   using RowContainer = DistanceTableData::RowContainer;
+  using gContainer_type = VectorSoaContainer<valT, OHMMS_DIM>;
 
+  // Ye: leaving this public is bad but currently used by unit tests.
+  ///Container for \f$F[ig*NumGroups+jg]\f$.
+  std::vector<FT*> F;
+
+private:
   ///number of particles
   size_t N;
   ///number of particles + padded
@@ -70,7 +76,6 @@ struct J2OrbitalSoA : public WaveFunctionComponent
   ///\f$Uat[i] = sum_(j) u_{i,j}\f$
   Vector<valT> Uat;
   ///\f$dUat[i] = sum_(j) du_{i,j}\f$
-  using gContainer_type = VectorSoaContainer<valT, OHMMS_DIM>;
   gContainer_type dUat;
   ///\f$d2Uat[i] = sum_(j) d2u_{i,j}\f$
   Vector<valT> d2Uat;
@@ -79,14 +84,14 @@ struct J2OrbitalSoA : public WaveFunctionComponent
   aligned_vector<valT> old_u, old_du, old_d2u;
   aligned_vector<valT> DistCompressed;
   aligned_vector<int> DistIndice;
-  ///Container for \f$F[ig*NumGroups+jg]\f$
-  std::vector<FT*> F;
   ///Uniquue J2 set for cleanup
   std::map<std::string, FT*> J2Unique;
   /// e-e table ID
   const int my_table_ID_;
 
+  friend class RadialJastrowBuilder;
 
+public:
   J2OrbitalSoA(ParticleSet& p, int tid);
   J2OrbitalSoA(const J2OrbitalSoA& rhs) = delete;
   ~J2OrbitalSoA();
