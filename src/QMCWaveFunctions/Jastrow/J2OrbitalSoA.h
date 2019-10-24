@@ -45,6 +45,7 @@ namespace qmcplusplus
 template<class FT>
 struct J2OrbitalSoA : public WaveFunctionComponent
 {
+ public:
   ///alias FuncType
   using FuncType = FT;
   ///type of each component U, dU, d2U;
@@ -84,6 +85,7 @@ struct J2OrbitalSoA : public WaveFunctionComponent
   std::map<std::string, FT*> J2Unique;
   /// e-e table ID
   const int my_table_ID_;
+
 
   J2OrbitalSoA(ParticleSet& p, int tid);
   J2OrbitalSoA(const J2OrbitalSoA& rhs) = delete;
@@ -163,9 +165,9 @@ struct J2OrbitalSoA : public WaveFunctionComponent
       (*it).second->myVars.print(os);
       ++it;
     }
-    ChiesaKEcorrection();
+   // ChiesaKEcorrection();
   }
-  RealType ChiesaKEcorrection() { return RealType(); }
+//  RealType ChiesaKEcorrection() { return RealType(); }
   /**@} */
 
   WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;
@@ -272,6 +274,8 @@ struct J2OrbitalSoA : public WaveFunctionComponent
     return grad;
   }
   /**@} */
+
+RealType KECorrection() { return KEcorr; }
 };
 
 template<typename FT>
@@ -352,7 +356,7 @@ void J2OrbitalSoA<FT>::addFunc(int ia, int ib, FT* j)
   std::stringstream aname;
   aname << ia << ib;
   J2Unique[aname.str()] = j;
-  //ChiesaKEcorrection();
+//  ChiesaKEcorrection();
   FirstTime = false;
 }
 

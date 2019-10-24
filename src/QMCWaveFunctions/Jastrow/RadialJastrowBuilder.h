@@ -38,6 +38,10 @@ public:
   // two body constructor
   RadialJastrowBuilder(Communicate* comm, ParticleSet& target);
 
+  ParticleSet* PtclRef;
+ 
+  RealType KEcorr;
+
   WaveFunctionComponent* buildComponent(xmlNodePtr cur) override;
 
 private:

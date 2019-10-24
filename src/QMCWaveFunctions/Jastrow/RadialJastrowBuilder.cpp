@@ -46,6 +46,7 @@
 #include "QMCWaveFunctions/Jastrow/ShortRangeCuspFunctor.h"
 #include "QMCWaveFunctions/Jastrow/UserFunctor.h"
 #include <iostream>
+#include <qmc_common.h>
 
 
 namespace qmcplusplus
@@ -283,7 +284,79 @@ WaveFunctionComponent* RadialJastrowBuilder::createJ2(xmlNodePtr cur)
     cur = cur->next;
   }
   J2->dPsi = dJ2;
-  J2->setOptimizable(true);
+  J2->setOptimizable(true);  
+
+//  Chiesa KECorrection for SOA
+   auto& F = J2->F;
+   PtclRef = &targetPtcl;
+
+  #if !defined(QMC_BUILD_SANDBOX_ONLY)
+//  if ((!PtclRef->Lattice.SuperCellEnum))
+//      return 0.0;
+    const int numPoints = 1000;
+    RealType vol        = PtclRef->Lattice.Volume;
+    int nsp             = PtclRef->groups();
+    //FILE *fout=(Write_Chiesa_Correction)?fopen ("uk.dat", "w"):0;
+    FILE* fout = 0;
+//    if (qmc_common.io_node && taskid > -1) //taskid=-1
+    if (myComm->rank() == 0)
+    {
+      char fname[16];
+      sprintf(fname, "uk.g%03d.dat", taskid);
+      fout = fopen(fname, "w");
+    }
+    for (int iG = 0; iG < PtclRef->SK->KLists.ksq.size(); iG++)
+    {
+      RealType Gmag = std::sqrt(PtclRef->SK->KLists.ksq[iG]);
+      RealType sum  = 0.0;
+      RealType uk   = 0.0;
+      for (int i = 0; i < PtclRef->groups(); i++)
+      {
+        int Ni = PtclRef->last(i) - PtclRef->first(i);
+        RealType aparam = 0.0;
+        for (int j = 0; j < PtclRef->groups(); j++)
+        {
+          int Nj = PtclRef->last(j) - PtclRef->first(j);
+          if (F[i * nsp + j])
+          {
+            auto& ufunc = *(F[i * nsp + j]); 
+            RealType radius = ufunc.cutoff_radius;
+            RealType k      = Gmag;
+            RealType dr     = radius / (RealType)(numPoints - 1);
+            for (int ir = 0; ir < numPoints; ir++)
+            {
+              RealType r = dr * (RealType)ir;
+              RealType u = ufunc.evaluate(r);
+#if (OHMMS_DIM == 3)
+              aparam += (1.0 / 4.0) * k * k * 4.0 * M_PI * r * std::sin(k * r) / k * u * dr;
+              uk     += 0.5 * 4.0 * M_PI * r * std::sin(k * r) / k * u * dr * (RealType)Nj / (RealType)(Ni + Nj);
+#endif
+#if (OHMMS_DIM == 2)
+              uk += 0.5 * 2.0 * M_PI * std::sin(k * r) / k * u * dr * (RealType)Nj / (RealType)(Ni + Nj);
+#endif
+              //aparam += 0.25* 4.0*M_PI*r*r*u*dr;
+            }
+          }
+        }
+        //app_log() << "A = " << aparam << std::endl;
+        sum += Ni * aparam / vol;
+      }
+      if (iG == 0)
+      {
+        RealType a = 1.0;
+        for (int iter = 0; iter < 20; iter++)
+          a = uk / (4.0 * M_PI * (1.0 / (Gmag * Gmag) - 1.0 / (Gmag * Gmag + 1.0 / a)));
+        KEcorr = 4.0 * M_PI * a / (4.0 * vol) * PtclRef->getTotalNum();
+      }
+      if (fout)
+        fprintf(fout, "%1.8f %1.12e %1.12e\n", Gmag, uk, sum);
+    }
+    if (fout)
+      fclose(fout);
+#endif
+
+    J2->KEcorr = KEcorr;
+
   return J2;
 }
 
