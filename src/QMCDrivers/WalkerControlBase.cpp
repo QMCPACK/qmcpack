@@ -633,7 +633,7 @@ WalkerControlBase::PopulationAdjustment WalkerControlBase::calcPopulationAdjustm
   //update curData
   curData[ENERGY_INDEX]     = esum;
   curData[ENERGY_SQ_INDEX]  = e2sum;
-  curData[WALKERSIZE_INDEX] = pop.get_active_walkers();
+  curData[WALKERSIZE_INDEX] = pop.get_walkers().size();
   curData[WEIGHT_INDEX]     = wsum;
   curData[EREF_INDEX]       = ecum;
   curData[R2ACCEPTED_INDEX] = r2_accepted;
