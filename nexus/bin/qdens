@@ -426,13 +426,15 @@ class StatFile(QDBase):
         h5._remove_hidden()
         self.spin_density_data = obj()
         for name in h5.keys():
-            if name.lower().startswith('spindensity'):
+            lname = name.lower()
+            if 'spin' in lname and 'density' in lname:
                 self.spin_density_data[name] = h5[name]
             #end if
         #end for
         if len(self.spin_density_data)==0:
             self.error('spin density is not present in stat.h5 file\nfile path: {0}'.format(filepath))
         #end if
+        opt = self.options
         if len(self.spin_density_data)==1 and opt.grids is None and opt.grid is not None:
             opt.grids = obj()
             opt.grids[self.spin_density_data.keys()[0]] = opt.grid
