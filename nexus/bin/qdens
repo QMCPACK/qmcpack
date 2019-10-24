@@ -639,7 +639,7 @@ class QMCDensityProcessor(QDBase):
         #                  )
         parser.add_option('-f','--formats',dest='formats',
                           default='None',
-                          help='Format or list of formats for density file output (default=%default).'
+                          help='Format or list of formats for density file output.  Options: dat, xsf, chgcar (default=%default).'
                           )
         parser.add_option('-e','--equilibration',dest='equilibration',
                           default='0',
@@ -925,7 +925,7 @@ class QMCDensityProcessor(QDBase):
         for filepath in self.file_list:
             path,file = os.path.split(filepath)
             tokens = file.split('.')
-            batch_prefix = path+'/'+tokens[0]
+            batch_prefix = os.path.join(path,tokens[0])
             if batch_prefix not in batch_files:
                 batch_files[batch_prefix] = obj()
             #end if
