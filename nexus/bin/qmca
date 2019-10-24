@@ -1847,6 +1847,10 @@ class DatAnalyzer(QBase):
             v = data.LocalEnergy - data.ElecElec + data.MPC + data.KEcorr
             data.CorrectedEnergy  = v
             stats.CorrectedEnergy = self.stat_value(v[nbe:])
+        elif 'LocalEnergy' in data and 'ElecElec' in data and 'MPC' in data:
+            v = data.LocalEnergy - data.ElecElec + data.MPC
+            data.CorrectedEnergy  = v
+            stats.CorrectedEnergy = self.stat_value(v[nbe:])
         #end if
         if len(data)>0:
             example = data.first()
