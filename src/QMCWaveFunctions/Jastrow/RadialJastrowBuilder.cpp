@@ -288,70 +288,70 @@ WaveFunctionComponent* RadialJastrowBuilder::createJ2(xmlNodePtr cur)
 }
 
 
-  template<class RadFuncType>
-  RadialJastrowBuilder::RealType RadialJastrowBuilder::computeJ2KECorrection(const std::vector<RadFuncType*>& functors)
+template<class RadFuncType>
+RadialJastrowBuilder::RealType RadialJastrowBuilder::computeJ2KECorrection(const std::vector<RadFuncType*>& functors)
+{
+  RealType KEcorr(0);
+  auto PtclRef = &targetPtcl;
+
+  // not needed with open boundary condition
+  if (!PtclRef->Lattice.SuperCellEnum)
+    return 0.0;
+
+  const int numPoints = 1000;
+  RealType vol        = PtclRef->Lattice.Volume;
+  int nsp             = PtclRef->groups();
+  FILE* fout          = 0;
+  if (is_manager())
   {
-    RealType KEcorr(0);
-    auto PtclRef = &targetPtcl;
-
-    // not needed with open boundary condition
-    if (!PtclRef->Lattice.SuperCellEnum)
-      return 0.0;
-
-    const int numPoints = 1000;
-    RealType vol        = PtclRef->Lattice.Volume;
-    int nsp             = PtclRef->groups();
-    FILE* fout = 0;
-    if (is_manager())
+    char fname[16];
+    sprintf(fname, "uk.g%03d.dat", getGroupID());
+    fout = fopen(fname, "w");
+  }
+  for (int iG = 0; iG < PtclRef->SK->KLists.ksq.size(); iG++)
+  {
+    RealType Gmag = std::sqrt(PtclRef->SK->KLists.ksq[iG]);
+    RealType sum  = 0.0;
+    RealType uk   = 0.0;
+    for (int i = 0; i < PtclRef->groups(); i++)
     {
-      char fname[16];
-      sprintf(fname, "uk.g%03d.dat", getGroupID());
-      fout = fopen(fname, "w");
-    }
-    for (int iG = 0; iG < PtclRef->SK->KLists.ksq.size(); iG++)
-    {
-      RealType Gmag = std::sqrt(PtclRef->SK->KLists.ksq[iG]);
-      RealType sum  = 0.0;
-      RealType uk   = 0.0;
-      for (int i = 0; i < PtclRef->groups(); i++)
+      int Ni          = PtclRef->last(i) - PtclRef->first(i);
+      RealType aparam = 0.0;
+      for (int j = 0; j < PtclRef->groups(); j++)
       {
-        int Ni = PtclRef->last(i) - PtclRef->first(i);
-        RealType aparam = 0.0;
-        for (int j = 0; j < PtclRef->groups(); j++)
+        int Nj = PtclRef->last(j) - PtclRef->first(j);
+        if (functors[i * nsp + j])
         {
-          int Nj = PtclRef->last(j) - PtclRef->first(j);
-          if (functors[i * nsp + j])
+          auto& ufunc     = *functors[i * nsp + j];
+          RealType radius = ufunc.cutoff_radius;
+          RealType k      = Gmag;
+          RealType dr     = radius / (RealType)(numPoints - 1);
+          for (int ir = 0; ir < numPoints; ir++)
           {
-            auto& ufunc = *functors[i * nsp + j]; 
-            RealType radius = ufunc.cutoff_radius;
-            RealType k      = Gmag;
-            RealType dr     = radius / (RealType)(numPoints - 1);
-            for (int ir = 0; ir < numPoints; ir++)
-            {
-              RealType r = dr * (RealType)ir;
-              RealType u = ufunc.evaluate(r);
-              aparam += (1.0 / 4.0) * k * k * 4.0 * M_PI * r * std::sin(k * r) / k * u * dr;
-              uk     += 0.5 * 4.0 * M_PI * r * std::sin(k * r) / k * u * dr * (RealType)Nj / (RealType)(Ni + Nj);
-            }
+            RealType r = dr * (RealType)ir;
+            RealType u = ufunc.evaluate(r);
+            aparam += (1.0 / 4.0) * k * k * 4.0 * M_PI * r * std::sin(k * r) / k * u * dr;
+            uk += 0.5 * 4.0 * M_PI * r * std::sin(k * r) / k * u * dr * (RealType)Nj / (RealType)(Ni + Nj);
           }
         }
-        //app_log() << "A = " << aparam << std::endl;
-        sum += Ni * aparam / vol;
       }
-      if (iG == 0)
-      {
-        RealType a = 1.0;
-        for (int iter = 0; iter < 20; iter++)
-          a = uk / (4.0 * M_PI * (1.0 / (Gmag * Gmag) - 1.0 / (Gmag * Gmag + 1.0 / a)));
-        KEcorr = 4.0 * M_PI * a / (4.0 * vol) * PtclRef->getTotalNum();
-      }
-      if (fout)
-        fprintf(fout, "%1.8f %1.12e %1.12e\n", Gmag, uk, sum);
+      //app_log() << "A = " << aparam << std::endl;
+      sum += Ni * aparam / vol;
+    }
+    if (iG == 0)
+    {
+      RealType a = 1.0;
+      for (int iter = 0; iter < 20; iter++)
+        a = uk / (4.0 * M_PI * (1.0 / (Gmag * Gmag) - 1.0 / (Gmag * Gmag + 1.0 / a)));
+      KEcorr = 4.0 * M_PI * a / (4.0 * vol) * PtclRef->getTotalNum();
     }
     if (fout)
-      fclose(fout);
-    return KEcorr;
+      fprintf(fout, "%1.8f %1.12e %1.12e\n", Gmag, uk, sum);
   }
+  if (fout)
+    fclose(fout);
+  return KEcorr;
+}
 
 // specialiation for J2 RPA jastrow.
 template<>
