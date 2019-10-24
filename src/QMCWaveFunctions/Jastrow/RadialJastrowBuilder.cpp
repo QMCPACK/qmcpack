@@ -46,7 +46,6 @@
 #include "QMCWaveFunctions/Jastrow/ShortRangeCuspFunctor.h"
 #include "QMCWaveFunctions/Jastrow/UserFunctor.h"
 #include <iostream>
-#include <qmc_common.h>
 
 
 namespace qmcplusplus
@@ -270,13 +269,10 @@ WaveFunctionComponent* RadialJastrowBuilder::createJ2(xmlNodePtr cur)
       J2->addFunc(ia, ib, functor);
       dJ2->addFunc(ia, ib, functor);
 
-      if (qmc_common.io_node)
+      if (is_manager())
       {
         char fname[32];
-        if (qmc_common.mpi_groups > 1)
-          sprintf(fname, "J2.%s.g%03d.dat", pairType.c_str(), taskid);
-        else
-          sprintf(fname, "J2.%s.dat", pairType.c_str());
+        sprintf(fname, "J2.%s.g%03d.dat", pairType.c_str(), getGroupID());
         std::ofstream os(fname);
         print(*functor, os);
       }
@@ -284,25 +280,32 @@ WaveFunctionComponent* RadialJastrowBuilder::createJ2(xmlNodePtr cur)
     cur = cur->next;
   }
   J2->dPsi = dJ2;
-  J2->setOptimizable(true);  
+  J2->setOptimizable(true);
 
-//  Chiesa KECorrection for SOA
-   auto& F = J2->F;
-   PtclRef = &targetPtcl;
+  // compute Chiesa Correction
+  J2->KEcorr = computeJ2KECorrection(J2->F);
+  return J2;
+}
 
-  #if !defined(QMC_BUILD_SANDBOX_ONLY)
-//  if ((!PtclRef->Lattice.SuperCellEnum))
-//      return 0.0;
+
+  template<class RadFuncType>
+  RadialJastrowBuilder::RealType RadialJastrowBuilder::computeJ2KECorrection(const std::vector<RadFuncType*>& functors)
+  {
+    RealType KEcorr(0);
+    auto PtclRef = &targetPtcl;
+
+    // not needed with open boundary condition
+    if (!PtclRef->Lattice.SuperCellEnum)
+      return 0.0;
+
     const int numPoints = 1000;
     RealType vol        = PtclRef->Lattice.Volume;
     int nsp             = PtclRef->groups();
-    //FILE *fout=(Write_Chiesa_Correction)?fopen ("uk.dat", "w"):0;
     FILE* fout = 0;
-//    if (qmc_common.io_node && taskid > -1) //taskid=-1
-    if (myComm->rank() == 0)
+    if (is_manager())
     {
       char fname[16];
-      sprintf(fname, "uk.g%03d.dat", taskid);
+      sprintf(fname, "uk.g%03d.dat", getGroupID());
       fout = fopen(fname, "w");
     }
     for (int iG = 0; iG < PtclRef->SK->KLists.ksq.size(); iG++)
@@ -317,9 +320,9 @@ WaveFunctionComponent* RadialJastrowBuilder::createJ2(xmlNodePtr cur)
         for (int j = 0; j < PtclRef->groups(); j++)
         {
           int Nj = PtclRef->last(j) - PtclRef->first(j);
-          if (F[i * nsp + j])
+          if (functors[i * nsp + j])
           {
-            auto& ufunc = *(F[i * nsp + j]); 
+            auto& ufunc = *functors[i * nsp + j]; 
             RealType radius = ufunc.cutoff_radius;
             RealType k      = Gmag;
             RealType dr     = radius / (RealType)(numPoints - 1);
@@ -327,14 +330,8 @@ WaveFunctionComponent* RadialJastrowBuilder::createJ2(xmlNodePtr cur)
             {
               RealType r = dr * (RealType)ir;
               RealType u = ufunc.evaluate(r);
-#if (OHMMS_DIM == 3)
               aparam += (1.0 / 4.0) * k * k * 4.0 * M_PI * r * std::sin(k * r) / k * u * dr;
               uk     += 0.5 * 4.0 * M_PI * r * std::sin(k * r) / k * u * dr * (RealType)Nj / (RealType)(Ni + Nj);
-#endif
-#if (OHMMS_DIM == 2)
-              uk += 0.5 * 2.0 * M_PI * std::sin(k * r) / k * u * dr * (RealType)Nj / (RealType)(Ni + Nj);
-#endif
-              //aparam += 0.25* 4.0*M_PI*r*r*u*dr;
             }
           }
         }
@@ -353,12 +350,8 @@ WaveFunctionComponent* RadialJastrowBuilder::createJ2(xmlNodePtr cur)
     }
     if (fout)
       fclose(fout);
-#endif
-
-    J2->KEcorr = KEcorr;
-
-  return J2;
-}
+    return KEcorr;
+  }
 
 // specialiation for J2 RPA jastrow.
 template<>
@@ -377,7 +370,6 @@ WaveFunctionComponent* RadialJastrowBuilder::createJ1(xmlNodePtr cur)
   using J1OrbitalType     = typename JastrowTypeHelper<RadFuncType>::J1OrbitalType;
   using DiffJ1OrbitalType = typename JastrowTypeHelper<RadFuncType>::DiffJ1OrbitalType;
 
-  int taskid             = getGroupID();
   J1OrbitalType* J1      = new J1OrbitalType(*SourcePtcl, targetPtcl);
   DiffJ1OrbitalType* dJ1 = new DiffJ1OrbitalType(*SourcePtcl, targetPtcl);
 
@@ -428,23 +420,13 @@ WaveFunctionComponent* RadialJastrowBuilder::createJ1(xmlNodePtr cur)
       J1->addFunc(ig, functor, jg);
       dJ1->addFunc(ig, functor, jg);
       success = true;
-      if (qmc_common.io_node)
+      if (is_manager())
       {
         char fname[128];
-        if (qmc_common.mpi_groups > 1)
-        {
-          if (speciesB.size())
-            sprintf(fname, "%s.%s%s.g%03d.dat", jname.c_str(), speciesA.c_str(), speciesB.c_str(), taskid);
-          else
-            sprintf(fname, "%s.%s.g%03d.dat", jname.c_str(), speciesA.c_str(), taskid);
-        }
+        if (speciesB.size())
+          sprintf(fname, "%s.%s%s.g%03d.dat", jname.c_str(), speciesA.c_str(), speciesB.c_str(), getGroupID());
         else
-        {
-          if (speciesB.size())
-            sprintf(fname, "%s.%s%s.dat", jname.c_str(), speciesA.c_str(), speciesB.c_str());
-          else
-            sprintf(fname, "%s.%s.dat", jname.c_str(), speciesA.c_str());
-        }
+          sprintf(fname, "%s.%s.g%03d.dat", jname.c_str(), speciesA.c_str(), getGroupID());
         std::ofstream os(fname);
         print(*functor, os);
       }

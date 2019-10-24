@@ -38,10 +38,6 @@ public:
   // two body constructor
   RadialJastrowBuilder(Communicate* comm, ParticleSet& target);
 
-  ParticleSet* PtclRef;
- 
-  RealType KEcorr;
-
   WaveFunctionComponent* buildComponent(xmlNodePtr cur) override;
 
 private:
@@ -65,6 +61,9 @@ private:
 
   template<class RadFuncType>
   void initTwoBodyFunctor(RadFuncType& functor, double fac);
+
+  template<class RadFuncType>
+  RealType computeJ2KECorrection(const std::vector<RadFuncType*>& functors);
 
   void guardAgainstOBC();
   void guardAgainstPBC();
