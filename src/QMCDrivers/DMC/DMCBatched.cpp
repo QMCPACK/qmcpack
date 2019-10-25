@@ -120,11 +120,19 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
   timers.buffer_timer.stop();
 
   timers.movepbyp_timer.start();
-  int num_walkers = crowd.size();
+  const int num_walkers = crowd.size();
   //This generates an entire steps worth of deltas.
   step_context.nextDeltaRs();
   auto it_delta_r = step_context.deltaRsBegin();
+
+  std::vector<TrialWaveFunction::GradType> grads_now(num_walkers);
+  std::vector<TrialWaveFunction::GradType> grads_new(num_walkers);
+  std::vector<TrialWaveFunction::PsiValueType> ratios(num_walkers);
+
   std::vector<PosType> drifts(num_walkers);
+  std::vector<RealType> log_gf(num_walkers);
+  std::vector<RealType> log_gb(num_walkers);
+  std::vector<RealType> prob(num_walkers);
 
   // local list to handle accept/reject
   std::vector<std::reference_wrapper<ParticleSet>> elec_accept_list, elec_reject_list;
@@ -160,15 +168,13 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
     int end_index        = step_context.getPtclGroupEnd(ig);
     for (int iat = start_index; iat < end_index; ++iat)
     {
-      // Correct for DMC as well as VMC?
-      crowd.clearResults();
       ParticleSet::flex_setActive(crowd.get_walker_elecs(), iat);
       auto delta_r_start = it_delta_r + iat * num_walkers;
       auto delta_r_end   = delta_r_start + num_walkers;
 
       //get the displacement
-      TrialWaveFunction::flex_evalGrad(crowd.get_walker_twfs(), crowd.get_walker_elecs(), iat, crowd.get_grads_now());
-      sft.drift_modifier.getDrifts(tauovermass, crowd.get_grads_now(), drifts);
+      TrialWaveFunction::flex_evalGrad(crowd.get_walker_twfs(), crowd.get_walker_elecs(), iat, grads_now);
+      sft.drift_modifier.getDrifts(tauovermass, grads_now, drifts);
 
       std::transform(drifts.begin(), drifts.end(), delta_r_start, drifts.begin(),
                      [sqrttau](PosType& drift, PosType& delta_r) { return drift + (sqrttau * delta_r); });
@@ -188,8 +194,8 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
       auto elecs = crowd.get_walker_elecs();
       ParticleSet::flex_makeMove(crowd.get_walker_elecs(), iat, drifts);
 
-      TrialWaveFunction::flex_ratioGrad(crowd.get_walker_twfs(), crowd.get_walker_elecs(), iat, crowd.get_ratios(),
-                                        crowd.get_grads_new());
+      TrialWaveFunction::flex_ratioGrad(crowd.get_walker_twfs(), crowd.get_walker_elecs(), iat, ratios,
+                                        grads_new);
 
       // This lambda is not nested thread safe due to the nreject, nnode_crossing updates
       auto checkPhaseChanged = [&sft, &iat, &crowd, &nnode_crossing](TrialWaveFunction& twf, ParticleSet& elec,
@@ -215,18 +221,18 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
         //This is just convenient to do here
         rr_proposed[iw] += rr[iw];
       }
-      std::transform(delta_r_start, delta_r_end, crowd.get_log_gf().begin(),
+      std::transform(delta_r_start, delta_r_end, log_gf.begin(),
                      [mhalf](auto& delta_r) { return mhalf * dot(delta_r, delta_r); });
 
-      sft.drift_modifier.getDrifts(tauovermass, crowd.get_grads_new(), drifts);
+      sft.drift_modifier.getDrifts(tauovermass, grads_new, drifts);
 
       std::transform(crowd.beginElectrons(), crowd.endElectrons(), drifts.begin(), drifts.begin(),
                      [iat](auto& elecs, auto& drift) { return elecs.get().R[iat] - elecs.get().activePos - drift; });
 
-      std::transform(drifts.begin(), drifts.end(), crowd.get_log_gb().begin(),
+      std::transform(drifts.begin(), drifts.end(), log_gb.begin(),
                      [oneover2tau](auto& drift) { return -oneover2tau * dot(drift, drift); });
 
-      std::transform(crowd.get_ratios().begin(), crowd.get_ratios().end(), crowd.get_prob().begin(),
+      std::transform(ratios.begin(), ratios.end(), prob.begin(),
                      [](auto ratio) { return std::norm(ratio); });
 
       twf_accept_list.clear();
@@ -237,19 +243,15 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
 
       for (int iw = 0; iw < num_walkers; ++iw)
       {
-        auto prob   = crowd.get_prob()[iw];
-        auto log_gf = crowd.get_log_gf()[iw];
-        auto log_gb = crowd.get_log_gb()[iw];
-
-        if ((!rejects[iw]) && prob >= std::numeric_limits<RealType>::epsilon() &&
-            step_context.get_random_gen()() < prob * std::exp(log_gb - log_gf))
+        if ((!rejects[iw]) && prob[iw] >= std::numeric_limits<RealType>::epsilon() &&
+            step_context.get_random_gen()() < prob[iw] * std::exp(log_gb[iw] - log_gf[iw]))
         {
           did_walker_move[iw] += 1;
           crowd.incAccept();
           twf_accept_list.push_back(crowd.get_walker_twfs()[iw]);
           elec_accept_list.push_back(crowd.get_walker_elecs()[iw]);
           rr_accepted[iw] += rr[iw];
-          gf_acc[iw] *= prob;
+          gf_acc[iw] *= prob[iw];
         }
         else
         {
