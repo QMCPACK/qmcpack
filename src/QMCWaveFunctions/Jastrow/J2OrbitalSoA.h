@@ -88,6 +88,7 @@ private:
   std::map<std::string, FT*> J2Unique;
   /// e-e table ID
   const int my_table_ID_;
+  ParticleSet* PtclRef;
 
   friend class RadialJastrowBuilder;
 
@@ -159,6 +160,7 @@ public:
       if (ii >= 0)
         myVars[i] = active[ii];
     }
+   ChiesaKEcorrection();
   }
 
   /** print the state, e.g., optimizables */
@@ -280,7 +282,45 @@ public:
   }
   /**@} */
 
-RealType KECorrection() { return KEcorr; }
+  RealType ChiesaKEcorrection()
+  {
+    const int numPoints = 1000;
+    RealType vol        = PtclRef->Lattice.Volume;
+    int nsp             = PtclRef->groups();
+    RealType Gmag = std::sqrt(PtclRef->SK->KLists.ksq[0]);
+    RealType uk   = 0.0;
+      for (int i = 0; i < PtclRef->groups(); i++)
+      {
+        int Ni          = PtclRef->last(i) - PtclRef->first(i);
+        for (int j = 0; j < PtclRef->groups(); j++)
+        {
+          int Nj = PtclRef->last(j) - PtclRef->first(j);
+          if (F[i * nsp + j])
+          {
+            FT& ufunc       = *(F[i * nsp + j]);
+            RealType radius = ufunc.cutoff_radius;
+            RealType k      = Gmag;
+            RealType dr     = radius / (RealType)(numPoints - 1);
+            for (int ir = 0; ir < numPoints; ir++)
+            {
+              RealType r = dr * (RealType)ir;
+              RealType u = ufunc.evaluate(r);
+              uk     += 0.5 * 4.0 * M_PI * r * std::sin(k * r) / k * u * dr * (RealType)Nj / (RealType)(Ni + Nj);
+              //aparam += 0.25* 4.0*M_PI*r*r*u*dr;
+            }
+          }
+        }
+        //app_log() << "A = " << aparam << std::endl;
+      }
+      RealType a = 1.0;
+      for (int iter = 0; iter < 20; iter++)
+        a = uk / (4.0 * M_PI * (1.0 / (Gmag * Gmag) - 1.0 / (Gmag * Gmag + 1.0 / a)));
+      KEcorr = 4.0 * M_PI * a / (4.0 * vol) * PtclRef->getTotalNum();
+
+      return KEcorr;
+  }
+
+ RealType KECorrection() { return KEcorr; }
 };
 
 template<typename FT>
@@ -288,6 +328,7 @@ J2OrbitalSoA<FT>::J2OrbitalSoA(ParticleSet& p, int tid)
  : my_table_ID_(p.addTable(p, DT_SOA))
 {
   init(p);
+  PtclRef = &p;
   FirstTime = true;
   KEcorr    = 0.0;
   ClassName = "J2OrbitalSoA";
