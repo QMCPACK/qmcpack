@@ -101,7 +101,9 @@ public:
 
   inline mRealType evaluate(mRealType r, mRealType rinv)
   {
-    mRealType v = myFunc(r, rinv);
+    mRealType v = 0.0;
+    if (r>=LR_rc) return v;
+    v = myFunc(r, rinv);
     for (int n = 0; n < coefs.size(); n++)
       v -= coefs[n] * Basis.h(n, r);
     return v;
@@ -114,7 +116,9 @@ public:
    */
   inline mRealType srDf(mRealType r, mRealType rinv)
   {
-    mRealType df = myFunc.df(r);
+    mRealType df = 0.0;
+    if (r>=LR_rc) return df;
+    df = myFunc.df(r);
     //RealType df = myFunc.df(r, rinv);
     for (int n = 0; n < coefs.size(); n++)
       df -= gcoefs[n] * Basis.dh_dr(n, r);
@@ -127,6 +131,7 @@ public:
   inline mRealType evaluateLR(mRealType r)
   {
     mRealType v = 0.0;
+    if (r>=LR_rc) return 1./r;
     for (int n = 0; n < coefs.size(); n++)
       v += coefs[n] * Basis.h(n, r);
     return v;
