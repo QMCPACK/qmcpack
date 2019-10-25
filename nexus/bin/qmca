@@ -1721,6 +1721,9 @@ class DatAnalyzer(QBase):
 
     energy_sq = set(['Variance','LocalEnergy_sq'])
 
+    non_ee_potentials = ['IonIon','LocalECP','NonLocalECP','ElecIon','IonElec']
+
+
     def __init__(self,filepath,index,type='unknown',units='Ha'):
         self.info  = obj(
             index    = index,
@@ -1842,16 +1845,51 @@ class DatAnalyzer(QBase):
             v = data.LocalEnergy_sq - data.LocalEnergy**2
             data.Variance  = v
             stats.Variance = self.stat_value(v[nbe:])
-        #end if            
-        if 'LocalEnergy' in data and 'ElecElec' in data and 'MPC' in data and 'KEcorr' in data:
-            v = data.LocalEnergy - data.ElecElec + data.MPC + data.KEcorr
-            data.CorrectedEnergy  = v
-            stats.CorrectedEnergy = self.stat_value(v[nbe:])
-        elif 'LocalEnergy' in data and 'ElecElec' in data and 'MPC' in data:
-            v = data.LocalEnergy - data.ElecElec + data.MPC
-            data.CorrectedEnergy  = v
-            stats.CorrectedEnergy = self.stat_value(v[nbe:])
         #end if
+
+        # find finite size corrected energy
+        if 'LocalEnergy' in data and ('MPC' in data or 'KEcorr' in data):
+            ce = None
+            if 'Kinetic' in data:
+                non_ee_energies = self.non_ee_potentials
+                nee = data.Kinetic.copy()
+                for pot in self.non_ee_potentials:
+                    if pot in data:
+                        nee += data[pot]
+                    #end if
+                #end for
+                # allow the correction only if the local energy sum is correct or ElecElec is missing
+                correction_allowed = True
+                if 'ElecElec' in data:
+                    le_ref = data.LocalEnergy.sum()
+                    le_sum = (nee + data.ElecElec).sum()
+                    correction_allowed = abs((le_sum-le_ref)/le_ref)<1e-6
+                #end if
+                if correction_allowed:
+                    ce = nee
+                    if 'MPC' in data:
+                        ce += data.MPC
+                    #end if
+                    if 'KEcorr' in data:
+                        ce += data.KEcorr
+                    #end if
+                #end if
+            #end if
+            if ce is None and 'ElecElec' in data:
+                ce = data.LocalEnergy - data.ElecElec
+                if 'MPC' in data:
+                    ce += data.MPC
+                #end if
+                if 'KEcorr' in data:
+                    ce += data.KEcorr
+                #end if
+            #end if
+            if ce is not None:
+                data.CorrectedEnergy  = ce
+                stats.CorrectedEnergy = self.stat_value(ce[nbe:])
+            #end if
+        #end if
+
         if len(data)>0:
             example = data.first()
             if 'NumOfWalkers' in data:
