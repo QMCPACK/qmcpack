@@ -338,11 +338,17 @@ def failed(msg='Test failed.'):
 #end def failed
 
 
-class TestFailed(Exception):
+class FailedTest(Exception):
     None
-#end class TestFailed
+#end class FailedTest
 
 
 global_data = dict(
     job_ref_table = False,
     )
+
+
+def divert_nexus_errors():
+    from generic import generic_settings
+    generic_settings.raise_error = True
+#end def divert_nexus_errors

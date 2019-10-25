@@ -1,7 +1,7 @@
 
 import testing
 from testing import value_eq,object_eq
-from testing import TestFailed,failed
+from testing import FailedTest,failed
 from testing import divert_nexus_log,restore_nexus_log
 from testing import divert_nexus,restore_nexus
 
@@ -10,7 +10,11 @@ import versions
 from generic import obj
 from simulation import Simulation,SimulationInput,SimulationAnalyzer
 
-class TestSimulationInput(SimulationInput):
+
+testing.divert_nexus_errors()
+
+
+class SimulationInputForTests(SimulationInput):
     def __init__(self,*args,**kwargs):
         SimulationInput.__init__(self,*args,**kwargs)
 
@@ -44,10 +48,10 @@ class TestSimulationInput(SimulationInput):
     def return_system(self):
         self.not_implemented()
     #end def return_system
-#end class TestSimulationInput
+#end class SimulationInputForTests
 
 
-class TestSimulationAnalyzer(SimulationAnalyzer):
+class SimulationAnalyzerForTests(SimulationAnalyzer):
     def __init__(self,sim):
         self.analysis_performed = False
     #end def __init__
@@ -55,12 +59,12 @@ class TestSimulationAnalyzer(SimulationAnalyzer):
     def analyze(self):
         self.analysis_performed = True
     #end def analyze
-#end class TestSimulationAnalyzer
+#end class SimulationAnalyzerForTests
 
 
-class TestSimulation(Simulation):
-    input_type    = TestSimulationInput
-    analyzer_type = TestSimulationAnalyzer
+class SimulationForTests(Simulation):
+    input_type    = SimulationInputForTests
+    analyzer_type = SimulationAnalyzerForTests
 
     application_results = set(['quant1','quant2','quant3'])
 
@@ -86,7 +90,7 @@ class TestSimulation(Simulation):
     def incorporate_result(self,result_name,result,sim):
         self.input.result_data[result.simid] = result.name
     #end def incorporate_result
-#end class TestSimulation
+#end class SimulationForTests
 
 
 
@@ -121,7 +125,7 @@ def get_test_sim(**kwargs):
 
     n = len(get_test_sim_simulations)
 
-    test_sim = TestSimulation(
+    test_sim = SimulationForTests(
         identifier = 'test_sim'+str(n),
         job        = test_job,
         **kwargs
@@ -413,10 +417,10 @@ def test_simulation_input():
         #end if
         try:
             v(*args)
-            raise TestFailed
+            raise FailedTest
         except NexusError:
             None
-        except TestFailed:
+        except FailedTest:
             failed(str(v))
         except Exception as e:
             failed(str(e))
@@ -434,8 +438,8 @@ def test_simulation_analyzer():
     # empty init
     try:
         SimulationAnalyzer()
-        raise TestFailed
-    except TestFailed:
+        raise FailedTest
+    except FailedTest:
         failed()
     except:
         None
@@ -444,10 +448,10 @@ def test_simulation_analyzer():
     # virtuals
     try:
         SimulationAnalyzer(None)
-        raise TestFailed
+        raise FailedTest
     except NexusError:
         None
-    except TestFailed:
+    except FailedTest:
         failed()
     except Exception as e:
         failed(str(e))
@@ -509,10 +513,10 @@ file2 = "$file.$ext2"
     si_assign = input_template()
     try:
         si_assign.assign(b=1)
-        raise TestFailed
+        raise FailedTest
     except NexusError:
         None
-    except TestFailed:
+    except FailedTest:
         failed()
     except Exception as e:
         failed(str(e))
@@ -521,10 +525,10 @@ file2 = "$file.$ext2"
     si_assign = input_template(template_filepath)
     try:
         si_assign.assign(c=1)
-        raise TestFailed
+        raise FailedTest
     except NexusError:
         None
-    except TestFailed:
+    except FailedTest:
         failed()
     except Exception as e:
         failed(str(e))
@@ -547,10 +551,10 @@ file2 = "$file.$ext2"
     def try_write(si):
         try:
             si.write()
-            raise TestFailed
+            raise FailedTest
         except NexusError:
             None
-        except TestFailed:
+        except FailedTest:
             failed()
         except Exception as e:
             failed(str(e))
@@ -850,8 +854,8 @@ def test_init():
             path       = 'same_directory',
             job        = test_job,
             )
-        raise TestFailed
-    except TestFailed:
+        raise FailedTest
+    except FailedTest:
         failed()
     except:
         None
@@ -908,10 +912,10 @@ def test_virtuals():
         #end if
         try:
             v(*args)
-            raise TestFailed
+            raise FailedTest
         except NexusError:
             None
-        except TestFailed:
+        except FailedTest:
             failed(str(v))
         except Exception as e:
             failed(str(e))
@@ -1344,7 +1348,7 @@ def test_depends():
         s2 = get_sim(
             dependencies = [(s1,'quant1')],
             )
-        raise TestFailed
+        raise FailedTest
     except NexusError:
         None
     except:
@@ -1356,7 +1360,7 @@ def test_depends():
         s2 = get_sim(
             dependencies = [(s1,'other','quant2')],
             )
-        raise TestFailed
+        raise FailedTest
     except NexusError:
         None
     except:
@@ -1368,7 +1372,7 @@ def test_depends():
         s2 = get_test_sim(
             dependencies = [(s1,'quant1','apple')],
             )
-        raise TestFailed
+        raise FailedTest
     except NexusError:
         None
     except:
@@ -1490,10 +1494,10 @@ def test_check_dependencies():
     try:
         s  = get_test_sim()
         s2 = get_test_sim(dependencies=((s,'nonexistent')))
-        raise TestFailed
+        raise FailedTest
     except NexusError:
         None
-    except TestFailed:
+    except FailedTest:
         failed()
     except Exception as e:
         failed(str(e))
@@ -1523,7 +1527,7 @@ def test_check_dependencies():
         s2.check_dependencies(result)
     except NexusError:
         None
-    except TestFailed:
+    except FailedTest:
         failed()
     except Exception as e:
         failed(str(e))
@@ -2787,10 +2791,10 @@ def test_generate_simulation():
 
     try:
         sim = generate_simulation(sim_type='unknown')
-        raise TestFailed
+        raise FailedTest
     except NexusError:
         None
-    except TestFailed:
+    except FailedTest:
         failed()
     except Exception as e:
         failed(str(e))
