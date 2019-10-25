@@ -131,7 +131,7 @@ public:
   inline mRealType evaluateLR(mRealType r)
   {
     mRealType v = 0.0;
-    if (r>=LR_rc) return 1./r;
+    if (r>=LR_rc) return myFunc(r, 1./r);
     for (int n = 0; n < coefs.size(); n++)
       v += coefs[n] * Basis.h(n, r);
     return v;
