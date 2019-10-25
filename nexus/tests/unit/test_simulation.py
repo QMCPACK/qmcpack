@@ -5,6 +5,7 @@ from testing import TestFailed,failed
 from testing import divert_nexus_log,restore_nexus_log
 from testing import divert_nexus,restore_nexus
 
+import versions
 
 from generic import obj
 from simulation import Simulation,SimulationInput,SimulationAnalyzer
@@ -130,6 +131,235 @@ def get_test_sim(**kwargs):
 
     return test_sim
 #end def get_test_sim
+
+
+
+n_test_workflows = 9
+
+    
+def generate_network():
+    from numpy.random import randint
+
+    nsims        = 10
+    nconnections = 3
+    nheads       = 3
+
+    sims = []
+
+    for n in range(randint(nheads)+1):
+        sims.append([])
+    #end for
+
+    for isim in range(nsims):
+        deps = []
+        for idep in range(randint(nconnections)+1):
+            if len(sims)>0:
+                i = randint(len(sims))
+                deps.append(i)
+            #end if
+        #end for
+        sims.append(list(sorted(set(deps))))
+    #end for
+
+    sims_dict = {}
+    for i,d in enumerate(sims):
+        sims_dict[i] = d
+    #end for
+
+    return sims_dict
+#end def generate_network
+
+
+def get_test_workflow(index):
+    from generic import obj
+
+    def make_network(network):
+        sims = obj()
+        for i in range(len(network)):
+            s = get_test_sim()
+            for j in network[i]:
+                s.depends((sims['s'+str(j)],'other'))
+            #end for
+            sims['s'+str(i)] = s
+        #end for
+        return sims
+    #end def make_network
+
+    nsims_bef = len(get_test_sim_simulations)
+
+    sims = obj()
+
+    if index==0:
+        # single simulation
+        sims.s = get_test_sim()
+    elif index==1:
+        # linear simulation chain
+        sims.s1 = get_test_sim()
+        sims.s2 = get_test_sim(dependencies=(sims.s1,'other'))
+        sims.s3 = get_test_sim(dependencies=(sims.s2,'other'))
+    elif index==2:
+        # linear chain with split
+        sims.s1  = get_test_sim()
+        sims.s2  = get_test_sim(dependencies=(sims.s1,'other'))
+        sims.s3  = get_test_sim(dependencies=(sims.s2,'other'))
+        sims.s41 = get_test_sim(dependencies=(sims.s3,'other'))
+        sims.s51 = get_test_sim(dependencies=(sims.s41,'other'))
+        sims.s42 = get_test_sim(dependencies=(sims.s3,'other'))
+        sims.s52 = get_test_sim(dependencies=(sims.s42,'other'))
+    elif index==3:
+        # linear chains with join
+        sims.s11 = get_test_sim()
+        sims.s21 = get_test_sim(dependencies=(sims.s11,'other'))
+        sims.s12 = get_test_sim()
+        sims.s22 = get_test_sim(dependencies=(sims.s12,'other'))
+        sims.s3  = get_test_sim(dependencies=[(sims.s21,'other'),(sims.s22,'other')])
+        sims.s4  = get_test_sim(dependencies=(sims.s3,'other'))
+        sims.s5  = get_test_sim(dependencies=(sims.s4,'other'))
+    elif index==4:
+        # net-like workflow
+        sims.s11 = get_test_sim()
+        sims.s12 = get_test_sim()
+        sims.s13 = get_test_sim()
+
+        sims.s21 = get_test_sim(
+            dependencies = [
+                (sims.s11,'other'),
+                (sims.s12,'other'),
+                ]
+            )
+        sims.s22 = get_test_sim(
+            dependencies = [
+                (sims.s12,'other'),
+                (sims.s13,'other'),
+                ]
+            )
+
+        sims.s31 = get_test_sim(
+            dependencies = [
+                (sims.s21,'other'),
+                (sims.s22,'other'),
+                ]
+            )
+        sims.s32 = get_test_sim(
+            dependencies = [
+                (sims.s21,'other'),
+                (sims.s22,'other'),
+                ]
+            )
+        sims.s33 = get_test_sim(
+            dependencies = [
+                (sims.s21,'other'),
+                (sims.s22,'other'),
+                ]
+            )
+
+        sims.s41 = get_test_sim(
+            dependencies = [
+                (sims.s11,'other'),
+                (sims.s22,'other'),
+                (sims.s32,'other'),
+                ]
+            )
+    elif index==5:
+        # random network 1
+        network = {
+            0  : [],
+            1  : [],
+            2  : [1],
+            3  : [2],
+            4  : [1, 2],
+            5  : [0, 4],
+            6  : [4],
+            7  : [1],
+            8  : [7],
+            9  : [5],
+            10 : [0, 3, 9],
+            11 : [4, 5, 7],
+            }
+        sims = make_network(network)
+    elif index==6:
+        # random network 2
+        network = {
+            0  : [],
+            1  : [0],
+            2  : [0],
+            3  : [1, 2],
+            4  : [1, 2, 3],
+            5  : [0, 1, 2],
+            6  : [1, 3],
+            7  : [2],
+            8  : [1, 3, 7],
+            9  : [1, 8],
+            10 : [2, 4],
+            }
+        sims = make_network(network)
+    elif index==7:
+        # random network 3
+        network = {
+            0  : [],
+            1  : [],
+            2  : [],
+            3  : [0, 1, 2],
+            4  : [2, 3],
+            5  : [1],
+            6  : [3, 5],
+            7  : [0],
+            8  : [3],
+            9  : [6],
+            10 : [0],
+            11 : [10],
+            12 : [8, 10, 11],
+            }
+        sims = make_network(network)
+    elif index==8:
+        # larger random network
+        network = {
+            0  : [], 
+            1  : [], 
+            2  : [], 
+            3  : [0], 
+            4  : [2], 
+            5  : [0, 2], 
+            6  : [2, 5], 
+            7  : [1], 
+            8  : [1, 5, 7], 
+            9  : [0, 8], 
+            10 : [5], 
+            11 : [0, 10], 
+            12 : [1], 
+            13 : [6, 9, 11], 
+            14 : [2, 4], 
+            15 : [8, 9, 10, 12], 
+            16 : [3], 
+            17 : [7], 
+            18 : [6, 13], 
+            19 : [7, 11, 14], 
+            20 : [8, 16, 17], 
+            21 : [0, 8], 
+            22 : [14], 
+            23 : [2], 
+            24 : [16], 
+            25 : [13, 16, 22, 24], 
+            26 : [6, 10], 
+            27 : [12, 17, 24], 
+            28 : [8], 
+            29 : [10, 12, 23, 26], 
+            30 : [1], 
+            31 : [28], 
+            32 : [20],
+            }
+        sims = make_network(network)
+    else:
+        failed('index exceeds available workflows')
+    #end if
+
+    nsims_aft = len(get_test_sim_simulations)
+
+    assert(len(sims)==nsims_aft-nsims_bef)
+
+    return sims
+#end def get_test_workflow
+
 
 
 
@@ -2098,3 +2328,491 @@ a    = $a
     Simulation.clear_all_sims()
 
 #end def test_progress
+
+
+
+def test_execute():
+    import os
+    from machines import job
+    from simulation import Simulation
+
+    tpath = testing.setup_unit_test_output_directory('simulation','test_execute',divert=True)
+
+    s = get_test_sim(
+        job = job(machine='ws1',app_command='echo run'),
+        )
+
+    s.create_directories()
+
+    outfile = os.path.join(s.locdir,s.outfile)
+    errfile = os.path.join(s.locdir,s.errfile)
+
+    assert(not s.submitted)
+    assert(not s.job.finished)
+    assert(s.job.status==0)
+    assert(not os.path.exists(outfile))
+    assert(not os.path.exists(errfile))
+
+    s.execute()
+
+    assert(s.submitted)
+    assert(s.job.finished)
+    assert(s.job.status==4)
+    assert(os.path.exists(outfile))
+    assert(os.path.exists(errfile))
+    assert(open(outfile,'r').read().strip()=='run')
+    assert(open(errfile,'r').read().strip()=='')
+
+    restore_nexus()
+
+    Simulation.clear_all_sims()
+
+#end def test_execute
+
+
+
+def test_reset_wait_ids():
+    from simulation import Simulation
+
+    for i in range(n_test_workflows):
+        sims = get_test_workflow(i)
+        for s in sims:
+            s.wait_ids = None
+        #end for
+        for s in sims:
+            if len(s.dependencies)==0:
+                s.reset_wait_ids()
+            #end if
+        #end for
+        for s in sims:
+            assert(isinstance(s.wait_ids,set))
+            assert(s.wait_ids==s.dependency_ids)
+        #end for
+    #end for
+
+    Simulation.clear_all_sims()
+#end def test_reset_wait_ids
+
+
+
+def test_check_subcascade():
+    from simulation import Simulation
+
+    def finish(sim):
+        sim.finished = True
+    #end def finish
+
+    for i in range(n_test_workflows):
+        sims = get_test_workflow(i)
+
+        # no cascades are finished
+        for s in sims:
+            assert(not s.finished)
+        #end for
+        for s in sims:
+            if len(s.dependencies)==0:
+                finished = s.check_subcascade()
+                assert(isinstance(finished,bool))
+                assert(not finished)
+            #end if
+        #end for
+
+        # all cascades are finished
+        for s in sims:
+            s.finished = True
+        #end for
+        for s in sims:
+            if len(s.dependencies)==0:
+                finished = s.check_subcascade()
+            #end if
+        #end for
+
+        # only a single cascade is finished
+        for s in sims:
+            s.finished = False
+        #end for
+        single = None
+        for s in sims:
+            if len(s.dependencies)==0:
+                if single is None:
+                    single = s
+                #end if
+            #end if
+        #end for
+        single.traverse_full_cascade(finish)
+        for s in sims:
+            if len(s.dependencies)==0:
+                finished = s.check_subcascade()
+                if id(s)==id(single):
+                    if not finished:
+                        from simulation import graph_sims
+                        for sim in sims:
+                            if sim.finished:
+                                sim.block = True
+                            #end if
+                        #end for
+                        graph_sims(sims.list())
+                    #end if
+                    assert(finished)
+                else:
+                    assert(not finished)
+                #end if
+            #end if
+        #end for
+
+        # all simulations are finished except one
+        # not all cascades are finished
+        for s in sims:
+            s.finished = True
+        #end for
+        n = 0
+        for key in sorted(sims.keys()):
+            n+=1
+            if 2*n>len(sims):
+                sims[key].finished = False
+            #end if
+        #end for
+        finished = True
+        for s in sims:
+            if len(s.dependencies)==0:
+                finished &= s.check_subcascade()
+            #end if
+        #end for
+        assert(not finished)
+    #end for
+
+    Simulation.clear_all_sims()
+#end def test_check_subcascade
+
+
+
+def test_block_dependents():
+    from simulation import Simulation
+
+    def assert_blocked(sim):
+        assert(sim.block)
+        assert(sim.block_subcascade)
+    #end def assert_blocked
+
+    for i in range(n_test_workflows):
+        sims = get_test_workflow(i)
+        for s in sims:
+            if len(s.dependencies)==0:
+                s.block_dependents()
+                s.traverse_full_cascade(assert_blocked)
+            #end if
+        #end for
+    #end for
+
+    Simulation.clear_all_sims()
+#end def test_block_dependents
+
+
+
+def test_reconstruct_cascade():
+    import os
+    from simulation import Simulation
+
+    tpath = testing.setup_unit_test_output_directory('simulation','test_reconstruct_cascade',divert=True)
+
+    sims = get_test_workflow(2)
+    assert(len(sims)==7)
+
+    for s in sims:
+        imagefile = os.path.join(s.imlocdir,s.sim_image)
+        assert(not os.path.exists(imagefile))
+        assert(not s.loaded)
+        assert(not s.submitted)
+        assert(not s.finished)
+        assert(s.process_id is None)
+        assert(s.job.system_id is None)
+    #end for
+
+    for s in sims:
+        s.create_directories()
+        s.save_image()
+    #end for
+
+    for s in sims:
+        imagefile = os.path.join(s.imlocdir,s.sim_image)
+        assert(os.path.exists(imagefile))
+        assert(not s.loaded)
+        assert(not s.submitted)
+        assert(not s.finished)
+        assert(s.process_id is None)
+        assert(s.job.system_id is None)
+    #end for
+
+    sims.s1.reconstruct_cascade()
+
+    for s in sims:
+        imagefile = os.path.join(s.imlocdir,s.sim_image)
+        assert(os.path.exists(imagefile))
+        assert(s.loaded)
+        assert(not s.submitted)
+        assert(not s.finished)
+        assert(s.process_id is None)
+        assert(s.job.system_id is None)
+    #end for
+
+    Simulation.clear_all_sims()
+
+
+    sims = get_test_workflow(2)
+
+    def get_process_id():
+        get_process_id.current += 1
+        return get_process_id.current
+    #end def get_process_id
+    get_process_id.current = 0
+
+    def finish(s):
+        s.setup            = True
+        s.sent_files       = True
+        s.submitted        = True
+        s.finished         = True
+        s.failed           = True
+        s.got_output       = True
+        s.analyzed         = True
+        s.process_id       = get_process_id()
+    #end def finish
+
+    def clear(s):
+        s.loaded           = False
+        s.setup            = False
+        s.sent_files       = False
+        s.submitted        = False
+        s.finished         = False
+        s.failed           = False
+        s.got_output       = False
+        s.analyzed         = False
+        s.process_id       = None
+        s.job.system_id    = None
+    #end def clear
+
+    def finished(s):
+        f = True
+        f &= s.setup            
+        f &= s.sent_files       
+        f &= s.submitted        
+        f &= s.finished         
+        f &= s.failed           
+        f &= s.got_output       
+        f &= s.analyzed         
+        f &= isinstance(s.process_id,int)
+        return f
+    #end def finished
+
+    def empty(s):
+        e = True
+        e &= not s.setup            
+        e &= not s.sent_files       
+        e &= not s.submitted        
+        e &= not s.finished         
+        e &= not s.failed           
+        e &= not s.got_output       
+        e &= not s.analyzed         
+        e &= s.process_id is None
+        e &= s.job.system_id is None
+        return e
+    #end def empty
+
+    def cleared(s):
+        return empty(s) and not s.loaded
+    #end def cleared
+
+    for s in sims:
+        assert(cleared(s))
+    #end for
+
+    finish(sims.s1)
+    finish(sims.s2)
+    finish(sims.s3)
+
+    s = sims.s41
+    s.got_dependencies = True
+    s.setup            = True
+    s.sent_files       = True
+    s.submitted        = True
+    s.finished         = True
+    s.process_id       = get_process_id()
+
+    s = sims.s42
+    s.got_dependencies = True
+    s.setup            = True
+    s.sent_files       = True
+    s.submitted        = True
+    s.process_id       = get_process_id()
+    
+    for s in sims:
+        s.create_directories()
+        s.save_image()
+        clear(s)
+    #end for
+
+    for s in sims:
+        assert(cleared(s))
+    #end for
+
+    sims.s1.reconstruct_cascade()
+
+    for s in sims:
+        assert(s.loaded)
+    #end for
+
+    assert(finished(sims.s1))
+    assert(finished(sims.s2))
+    assert(finished(sims.s3))
+
+    s = sims.s41
+    assert(not finished(s) and not empty(s))
+    assert(s.got_dependencies)
+    assert(s.setup           )
+    assert(s.sent_files      )
+    assert(s.submitted       )
+    assert(s.finished        )
+    assert(not s.failed      )     
+    assert(not s.got_output  )     
+    assert(not s.analyzed    )
+    assert(s.process_id==4   )
+    assert(s.job.system_id is None )
+
+    s = sims.s42
+    assert(not finished(s) and not empty(s))
+    assert(s.got_dependencies)
+    assert(s.setup           )
+    assert(s.sent_files      )
+    assert(s.submitted       )
+    assert(not s.finished    )
+    assert(not s.failed      )     
+    assert(not s.got_output  )     
+    assert(not s.analyzed    )
+    assert(s.process_id==5   )
+    assert(s.job.system_id==5)
+
+    assert(empty(sims.s51))
+    assert(empty(sims.s52))
+
+    restore_nexus()
+
+    Simulation.clear_all_sims()
+#end def test_reconstruct_cascade
+
+
+
+def test_traverse_cascade():
+    from simulation import Simulation
+
+    def count_visits(sim,visit_counts):
+        i = sim.simid
+        if i not in visit_counts:
+            visit_counts[i] = 1
+        else:
+            visit_counts[i] += 1
+        #end if
+    #end def count_visits
+
+    for i in range(n_test_workflows):
+        sims = get_test_workflow(i)
+        counts = dict()
+        for s in sims:
+            if len(s.dependencies)==0:
+                s.traverse_cascade(count_visits,counts)
+            #end if
+        #end for
+        assert(len(counts)==len(sims))
+        for s in sims:
+            assert(s.simid in counts)
+            assert(counts[s.simid]==1)
+        #end for
+    #end for
+
+    Simulation.clear_all_sims()
+#end def test_traverse_cascade
+
+
+
+def test_traverse_full_cascade():
+    from simulation import Simulation
+
+    def finish(sim):
+        sim.finished = True
+    #end def finish
+
+    for i in range(n_test_workflows):
+        sims = get_test_workflow(i)
+        for s in sims:
+            assert(not s.finished)
+        #end for
+        for s in sims:
+            if len(s.dependencies)==0:
+                s.traverse_full_cascade(finish)
+            #end if
+        #end for
+        for s in sims:
+            assert(s.finished)
+        #end for
+    #end for
+    
+    Simulation.clear_all_sims()
+#end def test_traverse_full_cascade
+
+
+
+def test_write_dependents():
+    from simulation import Simulation
+
+    divert_nexus_log()
+
+    for i in range(n_test_workflows):
+        sims = get_test_workflow(i)
+        for s in sims:
+            if len(s.dependencies)==0:
+                s.write_dependents()
+            #end if
+        #end for
+    #end for
+
+    restore_nexus_log()
+
+    Simulation.clear_all_sims()
+#end def test_write_dependents
+
+
+
+def test_generate_simulation():
+    from generic import NexusError
+    from simulation import Simulation,GenericSimulation
+    from simulation import generate_simulation
+
+    try:
+        sim = generate_simulation(sim_type='unknown')
+        raise TestFailed
+    except NexusError:
+        None
+    except TestFailed:
+        failed()
+    except Exception as e:
+        failed(str(e))
+    #end try
+
+    sim = generate_simulation()
+    assert(isinstance(sim,Simulation))
+    assert(isinstance(sim,GenericSimulation))
+
+    Simulation.clear_all_sims()
+#end def test_generate_simulation
+
+
+
+if versions.matplotlib_available:
+    def test_graph_sims():
+        from simulation import Simulation,graph_sims
+
+        sims = get_test_workflow(3)
+
+        graph_sims(sims.list(),display=False,exit=False)
+
+        Simulation.clear_all_sims()
+    #end def test_graph_sims
+#end if

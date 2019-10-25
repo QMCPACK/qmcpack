@@ -1205,7 +1205,7 @@ class Simulation(NexusCore):
 
 
     def progress(self,dependency_id=None):
-        if dependency_id!=None:
+        if dependency_id is not None:
             self.wait_ids.remove(dependency_id)
         #end if
         if len(self.wait_ids)==0 and not self.block and not self.failed:
@@ -1305,7 +1305,7 @@ class Simulation(NexusCore):
         if os.path.exists(imagefile) and not self.loaded:
             self.load_image()
             # continue from interruption
-            if self.submitted and not self.finished and self.process_id!=None:
+            if self.submitted and not self.finished and self.process_id is not None:
                 self.job.system_id = self.process_id # load process id of job
                 self.job.reenter_queue()
             #end if
@@ -1331,6 +1331,15 @@ class Simulation(NexusCore):
             #end for
         #end if
     #end def traverse_cascade
+
+
+    # used only in tests
+    def traverse_full_cascade(self,operation,*args,**kwargs):
+        operation(self,*args,**kwargs)
+        for sim in self.dependents:
+            sim.traverse_full_cascade(operation,*args,**kwargs)
+        #end for
+    #end def traverse_full_cascade
 
 
     def write_dependents(self,n=0,location=False,block_status=False):
@@ -1385,7 +1394,7 @@ class Simulation(NexusCore):
         #end if
         self.leave()
         self.submitted = True
-        if self.job!=None:
+        if self.job is not None:
             job.status = job.states.finished
             self.job.finished = True
         #end if
@@ -1703,7 +1712,7 @@ except:
 #end try
 import tempfile
 exit_call = sys.exit
-def graph_sims(sims=None,savefile=None,useid=False,exit=True,quants=True):
+def graph_sims(sims=None,savefile=None,useid=False,exit=True,quants=True,display=True):
     if sims is None:
         sims = Simulation.all_sims
     #end if
@@ -1758,7 +1767,7 @@ def graph_sims(sims=None,savefile=None,useid=False,exit=True,quants=True):
     graph.write(savefile,format=fmt,prog='dot')
 
     # display the image
-    if fmt=='png':
+    if fmt=='png' and display:
         imshow(imread(savefile))
         xticks([])
         yticks([])

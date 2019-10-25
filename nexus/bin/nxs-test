@@ -2106,6 +2106,24 @@ def simulation():
 
     nunit('progress')
 
+    nunit('execute')
+
+    nunit('reset_wait_ids')
+
+    nunit('check_subcascade')
+
+    nunit('block_dependents')
+
+    nunit('reconstruct_cascade')
+
+    nunit('traverse_cascade')
+
+    nunit('traverse_full_cascade')
+
+    nunit('test_write_dependents')
+
+    nunit('generate_simulation')
+
     nunit_all()
 #end def simulation
 
