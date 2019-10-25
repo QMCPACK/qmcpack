@@ -1847,10 +1847,15 @@ class DatAnalyzer(QBase):
             stats.Variance = self.stat_value(v[nbe:])
         #end if
 
-        # find finite size corrected energy
+        # Find finite size corrected energy
         if 'LocalEnergy' in data and ('MPC' in data or 'KEcorr' in data):
-            ce = None
+            # Assume there is no correction that can be made
+            ce = None 
+
+            # Attempt to make a correction that is right regardless of whether
+            # ElecElec/MPC are present or "physical" in QMCPACK's parlance.  
             if 'Kinetic' in data:
+                # Attempt to reconstruct the total energy w/o e-e contribution
                 non_ee_energies = self.non_ee_potentials
                 nee = data.Kinetic.copy()
                 for pot in self.non_ee_potentials:
@@ -1858,7 +1863,12 @@ class DatAnalyzer(QBase):
                         nee += data[pot]
                     #end if
                 #end for
-                # allow the correction only if the local energy sum is correct
+
+                # Allow the correction only if the local energy sum is correct.
+                # This might not be possible if the non-e-e potential energy terms 
+                # listed in non_ee_potentials are not comprehensive for whatever 
+                # reason (e.g. the user included a new potential of their own making 
+                # that qmca is not aware of).
                 le_recovered = False
                 le_ref = data.LocalEnergy.sum()
                 for ee in ('ElecElec','MPC'):
@@ -1867,6 +1877,9 @@ class DatAnalyzer(QBase):
                         le_recovered |= abs((le_sum-le_ref)/le_ref)<1e-8
                     #end if
                 #end if
+
+                # Provided the local energy can be recovered, the corrected
+                # local energy is always correct if MPC is used when present.
                 if le_recovered:
                     ce = nee
                     if 'MPC' in data:
@@ -1874,21 +1887,25 @@ class DatAnalyzer(QBase):
                     elif 'ElecElec' in data:
                         ce += data.ElecElec
                     #end if
-                    if 'KEcorr' in data:
-                        ce += data.KEcorr
-                    #end if
                 #end if
             #end if
+
+            # Fall back to using LocalEnergy alone in case attempt above is 
+            # flawed due to imperfect knowledge.  This case represents an 
+            # assumption that MPC is used only as a post-correction.
             if ce is None:
                 ce = data.LocalEnergy.copy()
                 if 'MPC' in data and 'ElecElec' in data:
                     ce += data.MPC - data.ElecElec
                 #end if
+            #end if
+
+            # If a correction is possible, store the data.
+            if ce is not None:
+                # Add in the kinetic energy correction, if present.
                 if 'KEcorr' in data:
                     ce += data.KEcorr
                 #end if
-            #end if
-            if ce is not None:
                 data.CorrectedEnergy  = ce
                 stats.CorrectedEnergy = self.stat_value(ce[nbe:])
             #end if
