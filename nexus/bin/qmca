@@ -1849,8 +1849,7 @@ class DatAnalyzer(QBase):
 
         # Find finite size corrected energy
         if 'LocalEnergy' in data and ('MPC' in data or 'KEcorr' in data):
-            # Assume there is no correction that can be made
-            ce = None 
+            le_recovered = False
 
             # Attempt to make a correction that is right regardless of whether
             # ElecElec/MPC are present or "physical" in QMCPACK's parlance.  
@@ -1869,7 +1868,6 @@ class DatAnalyzer(QBase):
                 # listed in non_ee_potentials are not comprehensive for whatever 
                 # reason (e.g. the user included a new potential of their own making 
                 # that qmca is not aware of).
-                le_recovered = False
                 le_ref = data.LocalEnergy.sum()
                 for ee in ('ElecElec','MPC'):
                     if ee in data:
@@ -1893,22 +1891,19 @@ class DatAnalyzer(QBase):
             # Fall back to using LocalEnergy alone in case attempt above is 
             # flawed due to imperfect knowledge.  This case represents an 
             # assumption that MPC is used only as a post-correction.
-            if ce is None:
+            if not le_recovered:
                 ce = data.LocalEnergy.copy()
                 if 'MPC' in data and 'ElecElec' in data:
                     ce += data.MPC - data.ElecElec
                 #end if
             #end if
 
-            # If a correction is possible, store the data.
-            if ce is not None:
-                # Add in the kinetic energy correction, if present.
-                if 'KEcorr' in data:
-                    ce += data.KEcorr
-                #end if
-                data.CorrectedEnergy  = ce
-                stats.CorrectedEnergy = self.stat_value(ce[nbe:])
+            # Add in the kinetic energy correction, if present.
+            if 'KEcorr' in data:
+                ce += data.KEcorr
             #end if
+            data.CorrectedEnergy  = ce
+            stats.CorrectedEnergy = self.stat_value(ce[nbe:])
         #end if
 
         if len(data)>0:
