@@ -351,8 +351,8 @@ int WalkerControlBase::branch(int iter, MCWalkerConfiguration& W, FullPrecRealTy
 int WalkerControlBase::branch(int iter, MCPopulation& pop, FullPrecRealType trigger)
 {
   PopulationAdjustment adjust(calcPopulationAdjustment(pop));
-    // adjust.num_new_walkers now caries what was stashed in state variable NumPerNode[0]
-
+  // adjust.num_new_walkers now caries what was stashed in state variable NumPerNode[0]
+  pop.set_num_global_walkers(adjustPopulation(pop, adjust));
   measureProperties(iter);
   // More ParticleSet is a set of particles or a collection of particles and sort of both.
   
@@ -550,6 +550,8 @@ WalkerControlBase::PopulationAdjustment WalkerControlBase::calcPopulationAdjustm
   RefVector<MCPWalker> good_walkers;
   std::vector<int> copies_to_make_good_walkers;
 
+  NumPerNode[0] = pop.get_num_local_walkers();
+  
   PopulationAdjustment adjustment;
   adjustment.num_walkers = 0;
   // So many sums and counters

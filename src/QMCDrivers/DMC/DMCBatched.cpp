@@ -326,12 +326,12 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
         QMCHamiltonian::flex_evaluateWithToperator(moved.walker_hamiltonians, moved.walker_elecs));
     timers.hamiltonian_timer.stop();
 
-    auto resetSigNLocalEnergy = [](MCPWalker& walker, TrialWaveFunction& twf, auto& local_energy) {
-      walker.resetProperty(twf.getLogPsi(), twf.getPhase(), local_energy);
+    auto resetSigNLocalEnergy = [](MCPWalker& walker, TrialWaveFunction& twf, auto& local_energy, auto rr_acc, auto rr_prop) {
+                                  walker.resetProperty(twf.getLogPsi(), twf.getPhase(), local_energy, rr_acc, rr_prop, 1.0);
     };
     for (int iw = 0; iw < moved.walkers.size(); ++iw)
     {
-      resetSigNLocalEnergy(moved.walkers[iw], moved.walker_twfs[iw], local_energies[iw]);
+      resetSigNLocalEnergy(moved.walkers[iw], moved.walker_twfs[iw], local_energies[iw], rr_accepted[iw], rr_proposed[iw]);
       moved.walkers[iw].get().Weight *=
           sft.branch_engine.branchWeightBare(moved.new_energies[iw], moved.old_energies[iw]);
     }
@@ -369,9 +369,6 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
     gf_acc                                      = 1.0;
     stalled_walker.Weight *= sft.branch_engine.branchWeight(stalled_new_walker_energy, stalled_old_walker_energy);
   }
-
-  QMCHamiltonian& db_hamiltonian = walker_hamiltonians[0].get();
-
 
   //myTimers[DMC_tmoves]->start();
   std::vector<int> walker_non_local_moves_accepted(

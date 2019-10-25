@@ -153,26 +153,34 @@ MCPopulation::MCPWalker& MCPopulation::spawnWalker()
 {
   ++num_local_walkers_;
   outputManager.pause();
+
+  auto makeDependentObjects = [this]() {
+    walker_elec_particle_sets_.push_back(std::make_unique<ParticleSet>(*elec_particle_set_));
+    walker_trial_wavefunctions_.push_back(UPtr<TrialWaveFunction>{});
+    walker_trial_wavefunctions_.back().reset(trial_wf_->makeClone(*(walker_elec_particle_sets_.back())));
+    walker_hamiltonians_.push_back(UPtr<QMCHamiltonian>{});
+    walker_hamiltonians_.back().reset(
+        hamiltonian_->makeClone(*(walker_elec_particle_sets_.back()), *(walker_trial_wavefunctions_.back())));
+    walker_trial_wavefunctions_.back()->registerData(*(walker_elec_particle_sets_.back()), walkers_.back()->DataSet);
+  };
+  
   if (dead_walkers_.size() > 0)
   {
     walkers_.push_back(std::move(dead_walkers_.back()));
     dead_walkers_.pop_back();
+    makeDependentObjects();
   }
   else
   {
     walkers_.push_back(std::make_unique<MCPWalker>(num_particles_));
     walkers_.back()->R = elec_particle_set_->R;
     walkers_.back()->registerData();
-    walkers_.back()->Properties = elec_particle_set_->Properties;  
+    walkers_.back()->Properties = elec_particle_set_->Properties;
+    makeDependentObjects();
+    walkers_.back()->DataSet.allocate();
   }
-  walker_elec_particle_sets_.push_back(std::make_unique<ParticleSet>(*elec_particle_set_));
-  walker_trial_wavefunctions_.push_back(UPtr<TrialWaveFunction>{});
-  walker_trial_wavefunctions_.back().reset(trial_wf_->makeClone(*(walker_elec_particle_sets_.back())));
-  walker_hamiltonians_.push_back(UPtr<QMCHamiltonian>{});
-  walker_hamiltonians_.back().reset(
-      hamiltonian_->makeClone(*(walker_elec_particle_sets_.back()), *(walker_trial_wavefunctions_.back())));  
   outputManager.resume();
-  walker_trial_wavefunctions_.back()->registerData(*(walker_elec_particle_sets_.back()), walkers_.back()->DataSet);
+
   return *(walkers_.back());
 }
 
