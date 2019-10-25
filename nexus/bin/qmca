@@ -1879,9 +1879,9 @@ class DatAnalyzer(QBase):
                     #end if
                 #end if
             #end if
-            if ce is None and 'ElecElec' in data:
+            if ce is None:
                 ce = data.LocalEnergy
-                if 'MPC' in data:
+                if 'MPC' in data and 'ElecElec' in data:
                     ce += data.MPC - data.ElecElec
                 #end if
                 if 'KEcorr' in data:
