@@ -145,9 +145,9 @@ void MCPopulation::createWalkers(IndexType num_walkers)
 
 /** creates a walker and returns a reference
  *
- *  none of the objects are "reused"
- *  if an objects allocation is expensive this should be dealt with
- *  by reusing memory.
+ *  Walkers are reused
+ *  It would be better if this could be done just by
+ *  reusing memory.
  */
 MCPopulation::MCPWalker& MCPopulation::spawnWalker()
 {
@@ -189,6 +189,7 @@ MCPopulation::MCPWalker& MCPopulation::spawnWalker()
 void MCPopulation::killLastWalker()
 {
   --num_local_walkers_;
+  walkers_.back()->DataSet.clear();
   dead_walkers_.push_back(std::move(walkers_.back()));
   walkers_.pop_back();
   walker_elec_particle_sets_.pop_back();
@@ -209,6 +210,7 @@ void MCPopulation::killWalker(MCPWalker& walker)
   {
     if (&walker == (*it_walkers).get())
     {
+      (*it_walkers)->DataSet.clear();
       dead_walkers_.push_back(std::move(*it_walkers));
       walkers_.erase(it_walkers);
       walker_elec_particle_sets_.erase(it_psets);

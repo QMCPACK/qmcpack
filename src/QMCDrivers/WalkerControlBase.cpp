@@ -661,6 +661,8 @@ WalkerControlBase::PopulationAdjustment WalkerControlBase::calcPopulationAdjustm
   return adjustment;
 }
 
+/** Not yet compatible with MCPopulation
+ */
 int WalkerControlBase::applyNmaxNmin(int current_population)
 {
 
@@ -766,6 +768,8 @@ int WalkerControlBase::applyNmaxNmin(int current_population)
 }
 
 /**  Not really sorting so its been rename something more sensible.
+ *
+ *   Not actually finished.  needs to use adjust's walker vectors
  */
 int WalkerControlBase::adjustPopulation(MCPopulation& population, PopulationAdjustment& adjust)
 {

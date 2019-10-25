@@ -16,9 +16,12 @@
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
 
+#include <strstream>
+#include <stdexcept>
 
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "Utilities/IteratorUtility.h"
+#include "Concurrency/Info.hpp"
 
 namespace qmcplusplus
 {
@@ -806,8 +809,18 @@ void TrialWaveFunction::flex_updateBuffer(const RefVector<TrialWaveFunction>& wf
   {
     buf_list[iw].get().put(wf_list[iw].get().PhaseValue);
     buf_list[iw].get().put(wf_list[iw].get().LogValue);
-    assert(buf_list[iw].get().size() ==
-           buf_list[iw].get().current() + buf_list[iw].get().current_scalar() * sizeof(double));
+#ifndef NDEBUG
+    if (buf_list[iw].get().size() < buf_list[iw].get().current() + buf_list[iw].get().current_scalar() * sizeof(double))
+    {
+      std::strstream assert_message;
+      assert_message << "On thread:" << Concurrency::getThreadId<>()
+                     << "  buf_list[iw].get().size():" << buf_list[iw].get().size()
+                     << " < buf_list[iw].get().current():" << buf_list[iw].get().current()
+                     << " + buf.current_scalar():" << buf_list[iw].get().current_scalar()
+                     << " * sizeof(double):" << sizeof(double) << '\n';
+      throw std::runtime_error(assert_message.str());
+    }
+#endif
   }
 }
 
@@ -823,7 +836,17 @@ void TrialWaveFunction::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
   //get the gradients and laplacians from the buffer
   buf.get(PhaseValue);
   buf.get(LogValue);
-  assert(buf.size() == buf.current() + buf.current_scalar() * sizeof(double));
+
+#ifndef NDEBUG
+  if (buf.size() < buf.current() + buf.current_scalar() * sizeof(double))
+  {
+    std::strstream assert_message;
+    assert_message << "On thread:" << Concurrency::getThreadId<>() << "  buf.size():" << buf.size()
+                   << " < buf.current():" << buf.current() << " + buf.current_scalar():" << buf.current_scalar()
+                   << " * sizeof(double):" << sizeof(double) << '\n';
+    throw std::runtime_error(assert_message.str());
+  }
+#endif
 }
 
 void TrialWaveFunction::flex_copyFromBuffer(const std::vector<TrialWaveFunction*>& WF_list,
@@ -993,7 +1016,7 @@ std::vector<std::reference_wrapper<WaveFunctionComponent>> TrialWaveFunction::ex
 }
 
 std::vector<WaveFunctionComponent*> TrialWaveFunction::extractWFCPtrList(const UPtrVector<TrialWaveFunction>& WF_list,
-                                                                        int id)
+                                                                         int id)
 {
   std::vector<WaveFunctionComponent*> WFC_list;
   WFC_list.reserve(WF_list.size());
@@ -1003,7 +1026,7 @@ std::vector<WaveFunctionComponent*> TrialWaveFunction::extractWFCPtrList(const U
 }
 
 std::vector<WaveFunctionComponent*> TrialWaveFunction::extractWFCPtrList(const std::vector<TrialWaveFunction*>& WF_list,
-                                                                        int id) const
+                                                                         int id) const
 {
   std::vector<WaveFunctionComponent*> WFC_list;
   WFC_list.reserve(WF_list.size());
