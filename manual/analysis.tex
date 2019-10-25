@@ -1180,14 +1180,118 @@ Ha$^{-1}$ point is excluded, the uncertainty grows by 50\% and we obtain an
 estimated value of $-3848.28(7)$ instead.
 
 
+\section{Using the qdens tool to obtain electron densities}
+\label{sec:qdens}
 
-\section{Densities and spin densities}
-\label{sec:densities}
-TBD.
+The \texttt{qdens} tool is provided to post-process the heavy density data 
+produced by QMCPACK and output the mean density (with and without errorbars) 
+in file formats viewable with, e.g.,  XCrysDen or VESTA.  The tool currently 
+works only with the \texttt{SpinDensity} estimator in QMCPACK.
 
-%\section{Energy densities}
-%\label{sec:energydensities}
+Note: this tool is provisional and may be changed or replaced at any time.  
+The planned successor to this tool (\texttt{qstat}) will expand access to 
+other observables and will retain at least the non-plotting capabilities of 
+\texttt{qdens}.
+
+To use \texttt{qdens}, Nexus must be installed along with NumPy and H5Py. 
+A short list of example use cases are covered in the next section.  Current 
+input flags are:
+
+\begin{shade}
+>qdens
+
+Usage: qdens [options] [file(s)]
+
+Options:
+  --version             show program's version number and exit
+  -h, --help            Print help information and exit (default=False).
+  -v, --verbose         Print detailed information (default=False).
+  -f FORMATS, --formats=FORMATS
+                        Format or list of formats for density file output.
+                        Options: dat, xsf, chgcar (default=None).
+  -e EQUILIBRATION, --equilibration=EQUILIBRATION
+                        Equilibration length in blocks (default=0).
+  -r REBLOCK, --reblock=REBLOCK
+                        Block coarsening factor; use estimated autocorrelation
+                        length (default=None).
+  -a, --average         Average over files in each series (default=False).
+  -w WEIGHTS, --weights=WEIGHTS
+                        List of weights for averaging (default=None).
+  -i INPUT, --input=INPUT
+                        QMCPACK input file containing structure and grid
+                        information (default=None).
+  -s STRUCTURE, --structure=STRUCTURE
+                        File containing atomic structure (default=None).
+  -g GRID, --grid=GRID  Density grid dimensions (default=None).
+  -c CELL, --cell=CELL  Simulation cell axes (default=None).
+  --lineplot=LINEPLOT   Produce a line plot along the selected dimension: 0,
+                        1, or 2 (default=None).
+  --noplot              Do not show plots interactively (default=False).
+
+\end{shade}
 
 
+\subsection{Usage examples}
+
+Process a single file, excluding the first 40 blocks, and produce XSF files:
+
+\begin{shade}
+  qdens -v -e 40 -f xsf -i qmc.in.xml qmc.s000.stat.h5
+\end{shade}
+
+Process files for all available series:
+
+\begin{shade}
+  qdens -v -e 40 -f xsf -i qmc.in.xml *stat.h5
+\end{shade}
+
+Combine groups of 10 adjacent statistical blocks together (appropriate if the 
+estimated autocorrelation time is about 10 blocks): 
+
+\begin{shade}
+  qdens -v -e 40 -r 10 -f xsf -i qmc.in.xml qmc.s000.stat.h5
+\end{shade}
+
+Apply different equilibration lengths and reblocking factors to each series 
+(below is appropriate if there are three series, e.g. \texttt{s000}, \texttt{s001}, and \texttt{s002}):
+
+\begin{shade}
+  qdens -v -e '20 20 40' -r '4 4 8' -f xsf -i qmc.in.xml *stat.h5
+\end{shade}
+
+Produce twist averaged densities (also works with multiple series and reblocking):
+
+\begin{shade}
+  qdens -v -a -e 40 -f xsf -i qmc.g000.twistnum_0.in.xml qmc.g*.s000.stat.h5
+\end{shade}
+
+Twist averaging with arbitrary weights can be performed via the \texttt{-w} option in a fashion identical to \texttt{qmca}.
 
 
+\subsection{Files produced}
+
+Look for files with names and extensions similar to:
+
+\begin{shade}
+  qmc.s000.SpinDensity_u.xsf      
+  qmc.s000.SpinDensity_u-err.xsf  
+  qmc.s000.SpinDensity_u+err.xsf  
+
+  qmc.s000.SpinDensity_d.xsf        
+  qmc.s000.SpinDensity_d-err.xsf    
+  qmc.s000.SpinDensity_d+err.xsf    
+
+  qmc.s000.SpinDensity_u+d.xsf    
+  qmc.s000.SpinDensity_u+d-err.xsf  
+  qmc.s000.SpinDensity_u+d+err.xsf
+
+  qmc.s000.SpinDensity_u-d.xsf    
+  qmc.s000.SpinDensity_u-d-err.xsf  
+  qmc.s000.SpinDensity_u-d+err.xsf  
+\end{shade}
+
+Files postfixed with \texttt{u} relate to the up electron density, \texttt{d} to down, \texttt{u+d} to the total charge density, and \texttt{u-d} to the difference between up and down electron densities.
+
+Files without \texttt{err} in the name contain only the mean, whereas files with \texttt{+err}/\texttt{-err} in the name contain the mean plus/minus the estimated error bar.  Please use caution in interpreting the error bars as their accuracy depends crucially on a correct estimation of the autocorrelation time by the user (see \texttt{-r} option) and having a sufficient number of blocks remaining following any reblocking.
+
+When twist averaging, the group tag (e.g. \texttt{g000} or similar) will be replaced with \texttt{avg} in the names of the outputted files.
