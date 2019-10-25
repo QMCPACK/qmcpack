@@ -362,6 +362,13 @@ void QMCDriverNew::createRngsStepContexts()
 
   Rng.resize(num_crowds_);
 
+  if (RandomNumberControl::Children.size() == 0)
+  {
+    app_warning() << "  Initializing global RandomNumberControl! "
+                  << "This message should not be seen in production code but only in unit tests." << std::endl;
+    RandomNumberControl::make_seeds();
+  }
+
   for(int i = 0; i < num_crowds_; ++i)
   {
     Rng[i].reset(RandomNumberControl::Children[i]);
