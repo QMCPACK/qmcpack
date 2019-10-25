@@ -1880,7 +1880,7 @@ class DatAnalyzer(QBase):
                 #end if
             #end if
             if ce is None:
-                ce = data.LocalEnergy
+                ce = data.LocalEnergy.copy()
                 if 'MPC' in data and 'ElecElec' in data:
                     ce += data.MPC - data.ElecElec
                 #end if
