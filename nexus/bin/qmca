@@ -1858,17 +1858,21 @@ class DatAnalyzer(QBase):
                         nee += data[pot]
                     #end if
                 #end for
-                # allow the correction only if the local energy sum is correct or ElecElec is missing
-                correction_allowed = True
-                if 'ElecElec' in data:
-                    le_ref = data.LocalEnergy.sum()
-                    le_sum = (nee + data.ElecElec).sum()
-                    correction_allowed = abs((le_sum-le_ref)/le_ref)<1e-6
+                # allow the correction only if the local energy sum is correct
+                le_recovered = False
+                le_ref = data.LocalEnergy.sum()
+                for ee in ('ElecElec','MPC'):
+                    if ee in data:
+                        le_sum = (nee + data[ee]).sum()
+                        le_recovered |= abs((le_sum-le_ref)/le_ref)<1e-8
+                    #end if
                 #end if
-                if correction_allowed:
+                if le_recovered:
                     ce = nee
                     if 'MPC' in data:
                         ce += data.MPC
+                    elif 'ElecElec' in data:
+                        ce += data.ElecElec
                     #end if
                     if 'KEcorr' in data:
                         ce += data.KEcorr
