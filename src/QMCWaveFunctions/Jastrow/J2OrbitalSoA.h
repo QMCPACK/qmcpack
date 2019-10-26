@@ -69,8 +69,6 @@ private:
   size_t N_padded;
   ///number of groups of the target particleset
   size_t NumGroups;
-  ///Used to compute correction
-  bool FirstTime;
   ///diff value
   RealType DiffVal;
   ///Correction
@@ -327,7 +325,6 @@ J2OrbitalSoA<FT>::J2OrbitalSoA(ParticleSet& p, int tid)
 {
   init(p);
   PtclRef = &p;
-  FirstTime = true;
   KEcorr    = 0.0;
   ClassName = "J2OrbitalSoA";
 }
@@ -400,8 +397,6 @@ void J2OrbitalSoA<FT>::addFunc(int ia, int ib, FT* j)
   std::stringstream aname;
   aname << ia << ib;
   J2Unique[aname.str()] = j;
-//  ChiesaKEcorrection();
-  FirstTime = false;
 }
 
 template<typename FT>
