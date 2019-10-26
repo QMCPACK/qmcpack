@@ -29,6 +29,28 @@
 
 namespace qmcplusplus
 {
+template<class FT>
+class J2KECorrection
+{
+  const size_t num_groups_;
+  std::vector<size_t> num_elec_in_groups_;
+  const RealType vol;
+  RealType G0mag;
+  const std::vector<FT*>& F_;
+public:
+  J2KEcorrection(const ParticleSet& targetPctl, const std::vector<FT*>& F)
+     : num_groups_(targetPctl.groups()), vol(targetPctl.Lattice.Volume), F_(F)
+  {
+    // compute num_elec_in_groups_
+    if CELLENUM
+      G0mag = targetPctl.SK->KLists.ksq[0];
+  }
+
+  computeKEcorr()
+  {
+    if CELLENUM
+  }
+}
 /** @ingroup WaveFunctionComponent
  *  @brief Specialization for two-body Jastrow function using multiple functors
  *
@@ -88,7 +110,8 @@ private:
   std::map<std::string, FT*> J2Unique;
   /// e-e table ID
   const int my_table_ID_;
-  ParticleSet* PtclRef;
+  // helper for compute J2 Chiesa KE correction
+  J2KECorrection<FT> j2_ke_corr_helper;
 
 public:
   J2OrbitalSoA(ParticleSet& p, int tid);
