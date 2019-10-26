@@ -71,8 +71,6 @@ public:
   ///container for the Jastrow functions
   std::vector<FT*> F;
 
-  friend class RadialJastrowBuilder;
-
   TwoBodyJastrowOrbital(ParticleSet& p, int tid)
     : TaskID(tid), KEcorr(0.0), my_table_ID_(p.addTable(p, DT_AOS))
   {

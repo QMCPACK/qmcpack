@@ -282,25 +282,23 @@ WaveFunctionComponent* RadialJastrowBuilder::createJ2(xmlNodePtr cur)
   J2->dPsi = dJ2;
   J2->setOptimizable(true);
 
-  // compute Chiesa Correction
-  J2->KEcorr = computeJ2KECorrection(J2->F);
+  // compute Chiesa Correction based on the current J2 parameters
+  J2->ChiesaKEcorrection();
+
+  // Ye: actually don't know what uk.dat is used for
+  if (targetPtcl.Lattice.SuperCellEnum)
+    computeJ2uk(J2->F);
+
   return J2;
 }
 
 
 template<class RadFuncType>
-RadialJastrowBuilder::RealType RadialJastrowBuilder::computeJ2KECorrection(const std::vector<RadFuncType*>& functors)
+void RadialJastrowBuilder::computeJ2uk(const std::vector<RadFuncType*>& functors)
 {
-  RealType KEcorr(0);
-  auto PtclRef = &targetPtcl;
-
-  // not needed with open boundary condition
-  if (!PtclRef->Lattice.SuperCellEnum)
-    return 0.0;
-
   const int numPoints = 1000;
-  RealType vol        = PtclRef->Lattice.Volume;
-  int nsp             = PtclRef->groups();
+  RealType vol        = targetPtcl.Lattice.Volume;
+  int nsp             = targetPtcl.groups();
   FILE* fout          = 0;
   if (is_manager())
   {
@@ -308,18 +306,18 @@ RadialJastrowBuilder::RealType RadialJastrowBuilder::computeJ2KECorrection(const
     sprintf(fname, "uk.g%03d.dat", getGroupID());
     fout = fopen(fname, "w");
   }
-  for (int iG = 0; iG < PtclRef->SK->KLists.ksq.size(); iG++)
+  for (int iG = 0; iG < targetPtcl.SK->KLists.ksq.size(); iG++)
   {
-    RealType Gmag = std::sqrt(PtclRef->SK->KLists.ksq[iG]);
+    RealType Gmag = std::sqrt(targetPtcl.SK->KLists.ksq[iG]);
     RealType sum  = 0.0;
     RealType uk   = 0.0;
-    for (int i = 0; i < PtclRef->groups(); i++)
+    for (int i = 0; i < targetPtcl.groups(); i++)
     {
-      int Ni          = PtclRef->last(i) - PtclRef->first(i);
+      int Ni          = targetPtcl.last(i) - targetPtcl.first(i);
       RealType aparam = 0.0;
-      for (int j = 0; j < PtclRef->groups(); j++)
+      for (int j = 0; j < targetPtcl.groups(); j++)
       {
-        int Nj = PtclRef->last(j) - PtclRef->first(j);
+        int Nj = targetPtcl.last(j) - targetPtcl.first(j);
         if (functors[i * nsp + j])
         {
           auto& ufunc     = *functors[i * nsp + j];
@@ -338,19 +336,11 @@ RadialJastrowBuilder::RealType RadialJastrowBuilder::computeJ2KECorrection(const
       //app_log() << "A = " << aparam << std::endl;
       sum += Ni * aparam / vol;
     }
-    if (iG == 0)
-    {
-      RealType a = 1.0;
-      for (int iter = 0; iter < 20; iter++)
-        a = uk / (4.0 * M_PI * (1.0 / (Gmag * Gmag) - 1.0 / (Gmag * Gmag + 1.0 / a)));
-      KEcorr = 4.0 * M_PI * a / (4.0 * vol) * PtclRef->getTotalNum();
-    }
     if (fout)
       fprintf(fout, "%1.8f %1.12e %1.12e\n", Gmag, uk, sum);
   }
   if (fout)
     fclose(fout);
-  return KEcorr;
 }
 
 // specialiation for J2 RPA jastrow.

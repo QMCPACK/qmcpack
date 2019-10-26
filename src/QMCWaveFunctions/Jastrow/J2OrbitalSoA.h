@@ -13,6 +13,11 @@
 // -*- C++ -*-
 #ifndef QMCPLUSPLUS_TWOBODYJASTROW_OPTIMIZED_SOA_H
 #define QMCPLUSPLUS_TWOBODYJASTROW_OPTIMIZED_SOA_H
+
+#include <simd/allocator.hpp>
+#include <simd/algorithm.hpp>
+#include <map>
+#include <numeric>
 #include "Configuration.h"
 #if !defined(QMC_BUILD_SANDBOX_ONLY)
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
@@ -20,10 +25,7 @@
 #include <qmc_common.h>
 #endif
 #include "Particle/DistanceTableData.h"
-#include <simd/allocator.hpp>
-#include <simd/algorithm.hpp>
-#include <map>
-#include <numeric>
+#include "LongRange/StructFact.h"
 
 namespace qmcplusplus
 {
@@ -89,8 +91,6 @@ private:
   /// e-e table ID
   const int my_table_ID_;
   ParticleSet* PtclRef;
-
-  friend class RadialJastrowBuilder;
 
 public:
   J2OrbitalSoA(ParticleSet& p, int tid);
@@ -160,8 +160,9 @@ public:
       if (ii >= 0)
         myVars[i] = active[ii];
     }
-   ChiesaKEcorrection();
   }
+
+  void finalizeOptimization() { ChiesaKEcorrection(); }
 
   /** print the state, e.g., optimizables */
   void reportStatus(std::ostream& os)
@@ -172,10 +173,7 @@ public:
       (*it).second->myVars.print(os);
       ++it;
     }
-   // ChiesaKEcorrection();
   }
-//  RealType ChiesaKEcorrection() { return RealType(); }
-  /**@} */
 
   WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;
 

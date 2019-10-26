@@ -63,7 +63,7 @@ private:
   void initTwoBodyFunctor(RadFuncType& functor, double fac);
 
   template<class RadFuncType>
-  RealType computeJ2KECorrection(const std::vector<RadFuncType*>& functors);
+  void computeJ2uk(const std::vector<RadFuncType*>& functors);
 
   void guardAgainstOBC();
   void guardAgainstPBC();
