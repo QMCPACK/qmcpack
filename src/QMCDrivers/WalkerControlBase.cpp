@@ -13,13 +13,14 @@
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
 
+#include <cassert>
+#include <stdexcept>
 
 #include "QMCDrivers/WalkerControlBase.h"
 #include "Particle/HDFWalkerIO.h"
 #include "OhmmsData/ParameterSet.h"
 #include "type_traits/template_types.hpp"
 
-#include <numeric>
 
 namespace qmcplusplus
 {
@@ -34,9 +35,9 @@ WalkerControlBase::WalkerControlBase(Communicate* c, bool rn)
       SwapMode(0),
       write_release_nodes_(rn)
 {
-  method_    = -1; //assign invalid method
+  method_       = -1; //assign invalid method
   num_contexts_ = myComm->size();
-  MyContext   = myComm->rank();
+  MyContext     = myComm->rank();
   curData.resize(LE_MAX + num_contexts_);
   NumPerNode.resize(num_contexts_);
   OffSet.resize(num_contexts_ + 1);
@@ -124,7 +125,7 @@ void WalkerControlBase::measureProperties(int iter)
 {
   //taking average over the walkers
   FullPrecRealType wgtInv(1.0 / curData[WEIGHT_INDEX]);
-  FullPrecRealType eavg                   = curData[ENERGY_INDEX] * wgtInv;
+  FullPrecRealType eavg             = curData[ENERGY_INDEX] * wgtInv;
   ensemble_property_.Energy         = eavg;
   ensemble_property_.Weight         = curData[WEIGHT_INDEX];
   ensemble_property_.Variance       = (curData[ENERGY_SQ_INDEX] * wgtInv - eavg * eavg);
@@ -145,7 +146,8 @@ void WalkerControlBase::measureProperties(int iter)
                  << curData[SENTWALKERS_INDEX] / static_cast<double>(num_contexts_);
     if (write_release_nodes_)
     {
-      (*dmcStream) << std::setw(20) << ensemble_property_.RNSamples << std::setw(20) << ensemble_property_.AlternateEnergy;
+      (*dmcStream) << std::setw(20) << ensemble_property_.RNSamples << std::setw(20)
+                   << ensemble_property_.AlternateEnergy;
     }
     (*dmcStream) << std::setw(20) << trialEnergy << std::setw(20)
                  << ensemble_property_.R2Accepted / ensemble_property_.R2Proposed;
@@ -217,18 +219,18 @@ int WalkerControlBase::doNotBranch(int iter, MCWalkerConfiguration& W)
   }
   //temp is an array to perform reduction operations
   std::fill(curData.begin(), curData.end(), 0);
-  curData[ENERGY_INDEX]      = esum;
-  curData[ENERGY_SQ_INDEX]   = e2sum;
-  curData[WALKERSIZE_INDEX]  = W.getActiveWalkers();
-  curData[WEIGHT_INDEX]      = wsum;
-  curData[EREF_INDEX]        = ecum;
-  curData[R2ACCEPTED_INDEX]  = r2_accepted;
-  curData[R2PROPOSED_INDEX]  = r2_proposed;
-  curData[FNSIZE_INDEX]      = static_cast<FullPrecRealType>(nfn);
-  curData[RNONESIZE_INDEX]   = static_cast<FullPrecRealType>(ncr);
-  curData[RNSIZE_INDEX]      = nrn;
-  curData[B_ENERGY_INDEX]    = besum;
-  curData[B_WGT_INDEX]       = bwgtsum;
+  curData[ENERGY_INDEX]     = esum;
+  curData[ENERGY_SQ_INDEX]  = e2sum;
+  curData[WALKERSIZE_INDEX] = W.getActiveWalkers();
+  curData[WEIGHT_INDEX]     = wsum;
+  curData[EREF_INDEX]       = ecum;
+  curData[R2ACCEPTED_INDEX] = r2_accepted;
+  curData[R2PROPOSED_INDEX] = r2_proposed;
+  curData[FNSIZE_INDEX]     = static_cast<FullPrecRealType>(nfn);
+  curData[RNONESIZE_INDEX]  = static_cast<FullPrecRealType>(ncr);
+  curData[RNSIZE_INDEX]     = nrn;
+  curData[B_ENERGY_INDEX]   = besum;
+  curData[B_WGT_INDEX]      = bwgtsum;
 
   myComm->allreduce(curData);
   measureProperties(iter);
@@ -244,7 +246,7 @@ int WalkerControlBase::doNotBranch(int iter, MCPopulation& pop)
   FullPrecRealType esum = 0.0, e2sum = 0.0, wsum = 0.0, ecum = 0.0, w2sum = 0.0, besum = 0.0, bwgtsum = 0.0;
   FullPrecRealType r2_accepted = 0.0, r2_proposed = 0.0;
   int nrn(0), ncr(0), nfn(0), ngoodfn(0), nc(0);
-  for(MCPWalker& walker : walkers)
+  for (MCPWalker& walker : walkers)
   {
     bool inFN = ((walker.ReleasedNodeAge) == 0);
     nc        = std::min(static_cast<int>(walker.Multiplicity), MaxCopy);
@@ -293,22 +295,22 @@ int WalkerControlBase::doNotBranch(int iter, MCPopulation& pop)
   }
   //temp is an array to perform reduction operations
   std::fill(curData.begin(), curData.end(), 0);
-  curData[ENERGY_INDEX]      = esum;
-  curData[ENERGY_SQ_INDEX]   = e2sum;
-  curData[WALKERSIZE_INDEX]  = pop.get_num_global_walkers();
-  curData[WEIGHT_INDEX]      = wsum;
-  curData[EREF_INDEX]        = ecum;
-  curData[R2ACCEPTED_INDEX]  = r2_accepted;
-  curData[R2PROPOSED_INDEX]  = r2_proposed;
-  curData[FNSIZE_INDEX]      = static_cast<FullPrecRealType>(nfn);
-  curData[RNONESIZE_INDEX]   = static_cast<FullPrecRealType>(ncr);
-  curData[RNSIZE_INDEX]      = nrn;
-  curData[B_ENERGY_INDEX]    = besum;
-  curData[B_WGT_INDEX]       = bwgtsum;
+  curData[ENERGY_INDEX]     = esum;
+  curData[ENERGY_SQ_INDEX]  = e2sum;
+  curData[WALKERSIZE_INDEX] = pop.get_num_global_walkers();
+  curData[WEIGHT_INDEX]     = wsum;
+  curData[EREF_INDEX]       = ecum;
+  curData[R2ACCEPTED_INDEX] = r2_accepted;
+  curData[R2PROPOSED_INDEX] = r2_proposed;
+  curData[FNSIZE_INDEX]     = static_cast<FullPrecRealType>(nfn);
+  curData[RNONESIZE_INDEX]  = static_cast<FullPrecRealType>(ncr);
+  curData[RNSIZE_INDEX]     = nrn;
+  curData[B_ENERGY_INDEX]   = besum;
+  curData[B_WGT_INDEX]      = bwgtsum;
 
   myComm->allreduce(curData);
   measureProperties(iter);
-  trialEnergy        = ensemble_property_.Energy;
+  trialEnergy = ensemble_property_.Energy;
   pop.set_ensemble_property(ensemble_property_);
   //return W.getActiveWalkers();
   return int(curData[WEIGHT_INDEX]);
@@ -351,56 +353,59 @@ int WalkerControlBase::branch(int iter, MCWalkerConfiguration& W, FullPrecRealTy
 int WalkerControlBase::branch(int iter, MCPopulation& pop, FullPrecRealType trigger)
 {
   PopulationAdjustment adjust(calcPopulationAdjustment(pop));
-  // adjust.num_new_walkers now caries what was stashed in state variable NumPerNode[0]
-  pop.set_num_global_walkers(adjustPopulation(pop, adjust));
+
   measureProperties(iter);
-  // More ParticleSet is a set of particles or a collection of particles and sort of both.
-  
+
   pop.set_ensemble_property(ensemble_property_);
 
-  applyNmaxNmin(pop.get_num_global_walkers());
-
-  while( ! adjust.bad_walkers.empty() )
+  // Warning adjustPopulation has many side effects
+  pop.set_num_global_walkers(adjustPopulation(pop, adjust));
+  // We have not yet updated the local number of walkers
+  // This happens as a side effect of killing or spawning walkers
+  while (!adjust.bad_walkers.empty())
   {
     pop.killWalker(adjust.bad_walkers.back());
     adjust.bad_walkers.pop_back();
   }
-  for( int iw = 0; iw < adjust.good_walkers.size(); ++iw )
+  for (int iw = 0; iw < adjust.good_walkers.size(); ++iw)
   {
-    for(int i_copies = 0; i_copies < adjust.copies_to_make[iw]; ++i_copies )
+    for (int i_copies = 0; i_copies < adjust.copies_to_make[iw]; ++i_copies)
     {
       auto& walker = pop.spawnWalker();
-      walker = adjust.good_walkers[iw];
+      walker       = adjust.good_walkers[iw];
       // IF these are really unique ID's they should be UUID's or something
       // old algorithm seems to reuse them in a way that I'm not sure avoids
       // duplicates even at a particular time.
-      walker.ID = pop.get_num_local_walkers();
-      walker.ParentID = adjust.good_walkers[iw].get().ParentID;
-      walker.Weight  = 1.0;
+      walker.ID           = pop.get_num_local_walkers();
+      walker.ParentID     = adjust.good_walkers[iw].get().ParentID;
+      walker.Weight       = 1.0;
       walker.Multiplicity = 1.0;
     }
   }
+
+  pop.syncWalkersPerNode(getCommunicator());
+
   return pop.get_num_local_walkers();
 }
 
 // int nw_tot = copyWalkers(W);
-  // //set Weight and Multiplicity to default values
-  // MCWalkerConfiguration::iterator it(W.begin()), it_end(W.end());
-  // while (it != it_end)
-  // {
-  //   (*it)->Weight       = 1.0;
-  //   (*it)->Multiplicity = 1.0;
-  //   ++it;
-  // }
-  // //set the global number of walkers
-  // W.setGlobalNumWalkers(nw_tot);
-  // // Update offsets in non-MPI case, needed to ensure checkpoint outputs the correct
-  // // number of configurations.
-  // if (W.WalkerOffsets.size() == 2)
-  // {
-  //   W.WalkerOffsets[1] = nw_tot;
-  // }
-  // return nw_tot;
+// //set Weight and Multiplicity to default values
+// MCWalkerConfiguration::iterator it(W.begin()), it_end(W.end());
+// while (it != it_end)
+// {
+//   (*it)->Weight       = 1.0;
+//   (*it)->Multiplicity = 1.0;
+//   ++it;
+// }
+// //set the global number of walkers
+// W.setGlobalNumWalkers(nw_tot);
+// // Update offsets in non-MPI case, needed to ensure checkpoint outputs the correct
+// // number of configurations.
+// if (W.WalkerOffsets.size() == 2)
+// {
+//   W.WalkerOffsets[1] = nw_tot;
+// }
+// return nw_tot;
 
 
 void WalkerControlBase::Write2XYZ(MCWalkerConfiguration& W)
@@ -459,7 +464,7 @@ int WalkerControlBase::sortWalkers(MCWalkerConfiguration& W)
       wsum += rnwgt * wgt;
       w2sum += rnwgt * rnwgt * wgt * wgt;
       ecum += local_energy;
-      besum += alternate_energy* wgt;
+      besum += alternate_energy * wgt;
       bwgtsum += wgt;
     }
     else
@@ -508,13 +513,13 @@ int WalkerControlBase::sortWalkers(MCWalkerConfiguration& W)
   curData[R2ACCEPTED_INDEX] = r2_accepted;
   curData[R2PROPOSED_INDEX] = r2_proposed;
   // This is really an integral type but is implicitly converted
-  curData[FNSIZE_INDEX]     = good_w.size();
+  curData[FNSIZE_INDEX] = good_w.size();
   // This is really an integral type but is implicitly converted
-  curData[RNONESIZE_INDEX]  = ncr;
+  curData[RNONESIZE_INDEX] = ncr;
   // This is really an integral type but is implicitly converted
-  curData[RNSIZE_INDEX]     = nrn;
-  curData[B_ENERGY_INDEX]   = besum;
-  curData[B_WGT_INDEX]      = bwgtsum;
+  curData[RNSIZE_INDEX]   = nrn;
+  curData[B_ENERGY_INDEX] = besum;
+  curData[B_WGT_INDEX]    = bwgtsum;
   ////this should be move
   //W.EnsembleProperty.NumSamples=curData[WALKERSIZE_INDEX];
   //W.EnsembleProperty.Weight=curData[WEIGHT_INDEX];
@@ -538,7 +543,7 @@ int WalkerControlBase::sortWalkers(MCWalkerConfiguration& W)
 
 /** Unified Driver version: evaluate curData and mark the bad/good walkers.
  *
- *  Somehow I don't think this belongs here
+ *  This replaces applynmaxnmin as well.
  *  
  *  Each good walker has a counter registering the
  *  number of copies needed to be generated from this walker.
@@ -550,23 +555,21 @@ WalkerControlBase::PopulationAdjustment WalkerControlBase::calcPopulationAdjustm
   RefVector<MCPWalker> good_walkers;
   std::vector<int> copies_to_make_good_walkers;
 
-  NumPerNode[0] = pop.get_num_local_walkers();
-  
+  // NumPerNode[0] = pop.get_num_local_walkers();
+
   PopulationAdjustment adjustment;
   adjustment.num_walkers = 0;
   // So many sums and counters
   FullPrecRealType esum = 0.0, e2sum = 0.0, wsum = 0.0, ecum = 0.0, w2sum = 0.0, besum = 0.0, bwgtsum = 0.0;
   FullPrecRealType r2_accepted = 0.0, r2_proposed = 0.0;
   int nfn(0), nrn(0), ngoodfn(0), ncr(0);
-  for(MCPWalker& walker : walkers)
+  for (MCPWalker& walker : walkers)
   {
     bool inFN = (walker.ReleasedNodeAge == 0);
 
     // Written as a lambda for emphasis
-    auto calcNumberWalkerCopies = [this](int multiplicity)->int {
-            return std::min(multiplicity, MaxCopy);
-                                  };
-    int nc = calcNumberWalkerCopies(walker.Multiplicity);
+    auto calcNumberWalkerCopies = [this](int multiplicity) -> int { return std::min(multiplicity, MaxCopy); };
+    int nc                      = calcNumberWalkerCopies(walker.Multiplicity);
 
     if (write_release_nodes_)
     {
@@ -654,18 +657,17 @@ WalkerControlBase::PopulationAdjustment WalkerControlBase::calcPopulationAdjustm
       // whatever the point of this is.
       adjustment.good_walkers.push_back(walker);
       adjustment.copies_to_make.push_back(copies);
-                                        };                                          
-    for(int iw = 0; iw < good_walkers.size(); ++iw)
-      addWalkersWithReleaseNodeAge(good_walkers[iw],copies_to_make_good_walkers[iw]);
+    };
+    for (int iw = 0; iw < good_walkers.size(); ++iw)
+      addWalkersWithReleaseNodeAge(good_walkers[iw], copies_to_make_good_walkers[iw]);
   }
   return adjustment;
 }
 
-/** Not yet compatible with MCPopulation
+/** legacy population limiting
  */
 int WalkerControlBase::applyNmaxNmin(int current_population)
 {
-
   // limit Nmax
   int current_max = (current_population + num_contexts_ - 1) / num_contexts_;
   if (current_max > n_max_)
@@ -767,35 +769,61 @@ int WalkerControlBase::applyNmaxNmin(int current_population)
   return current_population;
 }
 
-/**  Not really sorting so its been rename something more sensible.
+std::vector<WalkerControlBase::IndexType> WalkerControlBase::syncFutureWalkersPerRank(Communicate* comm, IndexType n_walkers )
+{
+  int ncontexts = comm->size();
+  
+  std::vector<int> nwoff(ncontexts + 1, 0);
+
+  std::vector<IndexType> future_walkers(ncontexts, 0);
+  future_walkers[comm->rank()] = n_walkers;
+  comm->allreduce(future_walkers);
+
+  return future_walkers;
+}
+
+/**  Not really sorting so its been renamed something more sensible.
  *
  *   Not actually finished.  needs to use adjust's walker vectors
  */
-int WalkerControlBase::adjustPopulation(MCPopulation& population, PopulationAdjustment& adjust)
+int WalkerControlBase::adjustPopulation(MCPopulation& pop, PopulationAdjustment& adjust)
 {
-  // In the unified driver design each ranks MCPopulation knows this and it is not stored a bunch of other places
-  int current_population = std::accumulate(NumPerNode.begin(), NumPerNode.end(), 0);
+  // In the unified driver design each ranks MCPopulation knows this and it is not stored a bunch of other places, i.e. NumPerNode shouldn't be how we know.
+  // Nothing should have touched the walker counts since we synced them at the top of branch
+
+  // What we care about here are the populations we'll have after the adjusts are applied on each rank.
+  // This differs from the legacy implementation which had partially updated state at this point.
+  auto num_per_node = WalkerControlBase::syncFutureWalkersPerRank(this->getCommunicator(), adjust.num_walkers);
+  IndexType current_population = std::accumulate(num_per_node.begin(), num_per_node.end(), 0);
 
   // limit Nmax
   // TODO:  this seems to be the wrong pace to do this.
+  // We assume the difference in number of walkers is no greater than 1
+  // our algorithm currently insures this.
   int current_max = (current_population + num_contexts_ - 1) / num_contexts_;
+
   if (current_max > n_max_)
   {
     app_warning() << "Exceeding Max Walkers per MPI rank : " << n_max_ << ". Ceiling is applied" << std::endl;
-    int nsub = current_population - n_max_ * num_contexts_;
+    int nsub          = current_population - n_max_ * num_contexts_;
+
     for (int inode = 0; inode < num_contexts_; inode++)
-      if (NumPerNode[inode] > n_max_)
+    {
+      if (num_per_node[inode] > n_max_)
       {
-        int n_remove = std::min(nsub, NumPerNode[inode] - n_max_);
-        NumPerNode[inode] -= n_remove;
+        // this seems suspect, a function with unit test is needed
+        int n_remove = std::min(nsub, num_per_node[inode] - n_max_);
+
+        num_per_node[inode] -= n_remove;
         nsub -= n_remove;
 
         if (inode == MyContext)
         {
-          for (int iw = 0; iw < ncopy_w.size(); iw++)
+          // prone to error function with unit test better
+          for (int iw = 0; iw < adjust.copies_to_make.size(); iw++)
           {
-            int n_remove_walker = std::min(ncopy_w[iw], n_remove);
-            ncopy_w[iw] -= n_remove_walker;
+            int n_remove_walker = std::min(adjust.copies_to_make[iw], n_remove);
+            adjust.copies_to_make[iw] -= n_remove_walker;
             n_remove -= n_remove_walker;
             if (n_remove == 0)
               break;
@@ -803,29 +831,34 @@ int WalkerControlBase::adjustPopulation(MCPopulation& population, PopulationAdju
 
           if (n_remove > 0)
           {
+            // Strong assumption that all members of adjust.copies_to_make == 0
             app_warning() << "Removing copies of good walkers is not enough. "
-                          << "Removing good walkers." << std::endl;
+                          << "Removing good walkers." << '\n';
             do
             {
-              bad_w.push_back(good_w.back());
-              good_w.pop_back();
-              ncopy_w.pop_back();
+              adjust.bad_walkers.push_back(adjust.good_walkers.back());
+              adjust.good_walkers.pop_back();
+              adjust.copies_to_make.pop_back();
               --n_remove;
-            } while (n_remove > 0 && !good_w.empty());
+            } while (n_remove > 0 && !adjust.good_walkers.empty());
           }
 
           if (n_remove)
-            APP_ABORT("WalkerControlBase::applyNmaxNmin not able to remove sufficient walkers on a node!");
-          if (std::accumulate(ncopy_w.begin(), ncopy_w.end(), ncopy_w.size()) != NumPerNode[inode])
-            APP_ABORT("WalkerControlBase::applyNmaxNmin walker removal mismatch!");
+            throw std::runtime_error("WalkerControlBase::adjustPopulation can not remove sufficient walkers to reach "
+                                     "max limit for MPI rank!");
+
+          // I think this is more of a debug check
+          assert(std::accumulate(adjust.copies_to_make.begin(), adjust.copies_to_make.end(),
+                                 adjust.copies_to_make.size()) == num_per_node[inode]);
         }
 
         if (nsub == 0)
           break;
       }
-
+    }
     if (nsub)
-      APP_ABORT("WalkerControlBase::applyNmaxNmin not able to remove sufficient walkers overall!");
+      throw std::runtime_error("WalkerControlBase::applyNmaxNmin can not remove"
+                               " sufficient walkers overall!");
   }
 
   // limit Nmin
@@ -835,38 +868,41 @@ int WalkerControlBase::adjustPopulation(MCPopulation& population, PopulationAdju
                   << ". Floor is applied" << std::endl;
     int nadd = n_min_ * num_contexts_ - current_population;
     for (int inode = 0; inode < num_contexts_; inode++)
-      if (NumPerNode[inode] > 0 && NumPerNode[inode] < n_min_)
+    {
+      if (num_per_node[inode] > 0 && num_per_node[inode] < n_min_)
       {
-        int n_insert = std::min(nadd, n_min_ - NumPerNode[inode]);
-        NumPerNode[inode] += n_insert;
+        int n_insert = std::min(nadd, n_min_ - num_per_node[inode]);
+        num_per_node[inode] += n_insert;
         nadd -= n_insert;
 
         if (inode == MyContext)
         {
-          int n_avg_insert_per_walker = (n_insert + ncopy_w.size() - 1) / ncopy_w.size();
-          for (int iw = 0; iw < ncopy_w.size(); iw++)
+          int n_avg_insert_per_walker = (n_insert + adjust.copies_to_make.size() - 1) / adjust.copies_to_make.size();
+          for (int iw = 0; iw < adjust.copies_to_make.size(); iw++)
           {
             int n_insert_walker = std::min(n_avg_insert_per_walker, n_insert);
-            ncopy_w[iw] += n_insert_walker;
+            adjust.copies_to_make[iw] += n_insert_walker;
             n_insert -= n_insert_walker;
             if (n_insert == 0)
               break;
           }
 
-          if (std::accumulate(ncopy_w.begin(), ncopy_w.end(), ncopy_w.size()) != NumPerNode[inode])
-            APP_ABORT("WalkerControlBase::applyNmaxNmin walker insertion mismatch!");
+          assert(std::accumulate(adjust.copies_to_make.begin(), adjust.copies_to_make.end(),
+                                 adjust.copies_to_make.size()) == num_per_node[inode]);
         }
 
         if (nadd == 0)
           break;
       }
-
+    }
     if (nadd)
+      // Why is this a warning when the opposition situation is an abort?
       app_warning() << "WalkerControlBase::applyNmaxNmin not able to add sufficient walkers overall!" << std::endl;
   }
 
   // check current population
-  current_population = std::accumulate(NumPerNode.begin(), NumPerNode.end(), 0);
+  current_population = std::accumulate(num_per_node.begin(), num_per_node.end(), 0);
+  
   // at least one walker after load-balancing
   if (current_population / num_contexts_ == 0)
   {

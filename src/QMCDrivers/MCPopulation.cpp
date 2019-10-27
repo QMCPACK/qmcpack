@@ -23,7 +23,7 @@ MCPopulation::MCPopulation(int num_ranks,
                            TrialWaveFunction* trial_wf,
                            QMCHamiltonian* hamiltonian,
                            int this_rank)
-    : num_ranks_(num_ranks), trial_wf_(trial_wf), elec_particle_set_(elecs), hamiltonian_(hamiltonian), rank_(this_rank)
+    : num_ranks_(num_ranks), num_local_walkers_per_node_(num_ranks, 0), trial_wf_(trial_wf), elec_particle_set_(elecs), hamiltonian_(hamiltonian), rank_(this_rank)
 {
   walker_offsets_     = mcwc.WalkerOffsets;
   num_global_walkers_ = mcwc.GlobalNumWalkers;
@@ -226,21 +226,21 @@ void MCPopulation::killWalker(MCPWalker& walker)
   throw std::runtime_error("Attempt to kill nonexistent walker in MCPopulation!");
 }
 
-QMCTraits::IndexType MCPopulation::update_num_global_walkers(Communicate* comm)
+void MCPopulation::syncWalkersPerNode(Communicate* comm)
 {
   int ncontexts = comm->size();
-  std::vector<int> nw(ncontexts, 0);
+  
   std::vector<int> nwoff(ncontexts + 1, 0);
 
-  nw[comm->rank()] = num_local_walkers_;
-  comm->allreduce(nw);
+  num_local_walkers_per_node_[comm->rank()] = num_local_walkers_;
+  comm->allreduce(num_local_walkers_per_node_);
 
   for (int ip = 0; ip < ncontexts; ++ip)
-    nwoff[ip + 1] = nwoff[ip] + nw[ip];
-
+  {
+    nwoff[ip + 1] = nwoff[ip] + num_local_walkers_per_node_[ip];
+  }
   num_global_walkers_ = nwoff[ncontexts];
-  walker_offsets_     = nwoff;
-  return num_global_walkers_;
+  walker_offsets_     = std::move(nwoff);
 }
 
 /** Creates walkers doing their first touch in their crowd (thread) context

@@ -226,7 +226,8 @@ int SimpleFixedNodeBranch::initWalkerController(MCPopulation& population, bool f
   if (iParam[B_TARGETWALKERS] == 0)
   {
     // has "important" side effect of updating the walker offsets
-    iParam[B_TARGETWALKERS] = population.update_num_global_walkers(MyEstimator->getCommunicator());
+    population.syncWalkersPerNode(MyEstimator->getCommunicator());
+    iParam[B_TARGETWALKERS] = population.get_num_global_walkers();
   }
   WalkerController.reset(createWalkerController(iParam[B_TARGETWALKERS], MyEstimator->getCommunicator(), myNode));
   if (!BranchMode[B_RESTART])
