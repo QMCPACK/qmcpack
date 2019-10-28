@@ -135,6 +135,7 @@ void QMCDriverNew::process(xmlNodePtr cur)
   if (!estimator_manager_)
   {
     estimator_manager_ = new EstimatorManagerBase(myComm);
+    // TODO: remove this when branch engine no longer depends on estimator_mamanger_
     branch_engine_->setEstimatorManager(estimator_manager_);
     // This used to get updated as a side effect of setStatus
     branch_engine_->read(h5_file_root_);

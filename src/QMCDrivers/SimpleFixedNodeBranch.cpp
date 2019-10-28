@@ -2,9 +2,10 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2019 QMCPACK developers.
 //
-// File developed by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
+// File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
+//                    Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //                    Luke Shulenburger, lshulen@sandia.gov, Sandia National Laboratories
 //                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
@@ -259,8 +260,6 @@ int SimpleFixedNodeBranch::initWalkerController(MCPopulation& population, bool f
   //  BranchMode.set(B_DMCSTAGE,0);//always reset warmup
   //}
 
-  // EstimatorManager gets touched from too many different places
-  MyEstimator->reset();
   //update the simulation parameters
   WalkerController->put(myNode);
   //assign current Eref and a large number for variance
@@ -706,7 +705,6 @@ void SimpleFixedNodeBranch::setRN(bool rn)
   WalkerController->start();
 }
 
-
 int SimpleFixedNodeBranch::resetRun(xmlNodePtr cur)
 {
   app_log() << "BRANCH resetRun" << std::endl;
@@ -850,7 +848,7 @@ void SimpleFixedNodeBranch::checkParameters(const int global_walkers, RefVector<
   if (!BranchMode[B_DMCSTAGE])
   {
     FullPrecRealType e, sigma2;
-    MyEstimator->getCurrentStatistics(global_walkers, walkers, e, sigma2);
+    MyEstimator->getCurrentStatistics(global_walkers, walkers, e, sigma2, MyEstimator->getCommunicator());
     vParam[SBVP::ETRIAL] = vParam[SBVP::EREF] = e;
     vParam[SBVP::SIGMA2]                  = sigma2;
     EnergyHist.clear();
@@ -906,7 +904,7 @@ void SimpleFixedNodeBranch::finalize(const int global_walkers, RefVector<MCPWalk
     //running VMC
     FullPrecRealType e, sigma2;
     //MyEstimator->getEnergyAndWeight(e,w,sigma2);
-    MyEstimator->getCurrentStatistics(global_walkers, walkers , e, sigma2);
+    MyEstimator->getCurrentStatistics(global_walkers, walkers , e, sigma2, MyEstimator->getCommunicator());
     vParam[SBVP::ETRIAL] = vParam[SBVP::EREF] = e;
     vParam[SBVP::SIGMA2]                  = sigma2;
     //this is just to avoid diving by n-1  == 0

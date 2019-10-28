@@ -73,6 +73,9 @@ void DMCBatched::resetUpdateEngines()
   Timer init_timer;
   // Here DMC loads "Ensemble of cloned MCWalkerConfigurations"
   int nw_multi = branch_engine_->initWalkerController(population_, dmcdriver_input_.get_reconfiguration(), false);
+
+  estimator_manager_->reset();
+  
   RefVector<MCPWalker> walkers(convertUPtrToRefVector(population_.get_walkers()));
 
   branch_engine_->checkParameters(population_.get_num_global_walkers(), walkers);
@@ -501,6 +504,8 @@ bool DMCBatched::run()
         crowd_ptr->clearWalkers();
       population_.distributeWalkers(crowds_.begin(), crowds_.end(), walkers_per_crowd_);
 
+      // As the legacy does this is done of the population that has been adjusted.
+      // But it is now visible in the algorithm not hidden in the BranchEngine::branch.
       for(UPtr<Crowd>& crowd_ptr: crowds_)
         crowd_ptr->accumulate(population_.get_num_global_walkers());
     }
