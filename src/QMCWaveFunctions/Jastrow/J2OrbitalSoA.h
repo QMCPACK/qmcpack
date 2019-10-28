@@ -29,28 +29,79 @@
 
 namespace qmcplusplus
 {
-template<class FT>
+
+template<typename RT, class FT> 
 class J2KECorrection
 {
-  const size_t num_groups_;
-  std::vector<size_t> num_elec_in_groups_;
-  const RealType vol;
-  RealType G0mag;
-  const std::vector<FT*>& F_;
+
+  size_t num_groups_;
+//  std::vector<size_t> num_elec_in_groups_;
+//  RT num_elec_in_groups;
+  RT vol;
+  RT G0mag;
+  RT KEcorr;
+  ParticleSet* PtclRef;
+  std::vector<FT*> F_;
+
 public:
-  J2KEcorrection(const ParticleSet& targetPctl, const std::vector<FT*>& F)
-     : num_groups_(targetPctl.groups()), vol(targetPctl.Lattice.Volume), F_(F)
+  
+//  J2KECorrection() {}
+
+  J2KECorrection(const ParticleSet& targetPtcl, const std::vector<FT*>& F)
+     : num_groups_(targetPtcl.groups()), vol(targetPtcl.Lattice.Volume), F_(F)
   {
     // compute num_elec_in_groups_
-    if CELLENUM
-      G0mag = targetPctl.SK->KLists.ksq[0];
-  }
+      PtclRef = &targetPtcl;
+      vol = targetPtcl.Lattice.Volume;
+      num_groups_ = targetPtcl.groups();
+//      num_elec_in_groups_ = targetPtcl->getTotalNum();
+      F_ = F;    
 
-  computeKEcorr()
-  {
-    if CELLENUM
-  }
-}
+//    if ((targetPtcl->Lattice.SuperCellEnum))
+//   {
+      G0mag = targetPtcl.SK->KLists.ksq[0];
+//    }
+    }
+ 
+  RT computeKEcorr()
+    {
+//      if CELLENUM
+      const int numPoints = 1000;
+      int nsp = PtclRef->groups();
+      RT uk = 0.0;
+      RT a = 1.0;      
+
+      for (int i = 0; i < num_groups_; i++)
+       {
+         int Ni          = PtclRef->last(i) - PtclRef->first(i);
+          for (int j = 0; j < num_groups_; j++)
+          {
+            int Nj = PtclRef->last(j) - PtclRef->first(j);
+            if (F_[i * nsp + j])
+            {
+              FT& ufunc       = *(F_[i * nsp + j]);
+              RT radius = ufunc.cutoff_radius;
+              RT k      = G0mag;
+              RT dr     = radius / (RT)(numPoints - 1);
+             for (int ir = 0; ir < numPoints; ir++)
+              {
+                RT r = dr * (RT)ir;
+                RT u = ufunc.evaluate(r);
+                uk     += 0.5 * 4.0 * M_PI * r * std::sin(k * r) / k * u * dr * (RT)Nj / (RT)(Ni + Nj);
+              }
+            }
+          }
+        //app_log() << "A = " << aparam << std::endl;
+        }
+        for (int iter = 0; iter < 20; iter++)
+         a = uk / (4.0 * M_PI * (1.0 / (G0mag * G0mag) - 1.0 / (G0mag * G0mag + 1.0 / a)));
+       KEcorr = 4.0 * M_PI * a / (4.0 * vol) * PtclRef->getTotalNum();
+       return KEcorr;
+
+   }
+
+};
+
 /** @ingroup WaveFunctionComponent
  *  @brief Specialization for two-body Jastrow function using multiple functors
  *
@@ -111,12 +162,19 @@ private:
   /// e-e table ID
   const int my_table_ID_;
   // helper for compute J2 Chiesa KE correction
-  J2KECorrection<FT> j2_ke_corr_helper;
+//  J2KECorrection<RealType, FT> j2_ke_corr_helper(ParticleSet& p, std::vector<FT*>& F);
+
+  //Temp
+  ParticleSet* PtclRef;
 
 public:
   J2OrbitalSoA(ParticleSet& p, int tid);
   J2OrbitalSoA(const J2OrbitalSoA& rhs) = delete;
   ~J2OrbitalSoA();
+
+  // helper for compute J2 Chiesa KE correction
+//  J2KECorrection<RealType, FT> j2_ke_corr_helper;
+  J2KECorrection<RealType, FT> j2_ke_corr_helper(ParticleSet& p, std::vector<FT*>& F);
 
   /* initialize storage */
   void init(ParticleSet& p);
@@ -182,8 +240,10 @@ public:
         myVars[i] = active[ii];
     }
   }
+ 
 
-  void finalizeOptimization() { ChiesaKEcorrection(); }
+  void finalizeOptimization() { j2_ke_corr_helper(*PtclRef, F).computeKEcorr(); }
+//  void finalizeOPtimization() { ChiesaKECorrection(); }
 
   /** print the state, e.g., optimizables */
   void reportStatus(std::ostream& os)
