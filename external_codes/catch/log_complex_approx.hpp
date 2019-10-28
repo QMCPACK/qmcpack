@@ -1,5 +1,5 @@
-#ifndef CATCH_POLAR_APPROX
-#define CATCH_POLAR_APPROX
+#ifndef CATCH_LOG_COMPLEX_APPROX
+#define CATCH_LOG_COMPLEX_APPROX
 
 #include <complex>
 #include <cmath>
