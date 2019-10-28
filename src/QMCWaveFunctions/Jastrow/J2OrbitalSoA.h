@@ -35,13 +35,12 @@ class J2KECorrection
 {
 
   size_t num_groups_;
-//  std::vector<size_t> num_elec_in_groups_;
-//  RT num_elec_in_groups;
+  std::vector<size_t> num_elec_in_groups_;
+  RT num_elecs_;
   RT vol;
   RT G0mag;
   RT KEcorr;
-  ParticleSet* PtclRef;
-  std::vector<FT*> F_;
+  const std::vector<FT*>& F_;
 
 public:
   
@@ -51,15 +50,16 @@ public:
      : num_groups_(targetPtcl.groups()), vol(targetPtcl.Lattice.Volume), F_(F)
   {
     // compute num_elec_in_groups_
-      PtclRef = &targetPtcl;
       vol = targetPtcl.Lattice.Volume;
       num_groups_ = targetPtcl.groups();
-//      num_elec_in_groups_ = targetPtcl->getTotalNum();
-      F_ = F;    
+      num_elecs_ = targetPtcl.getTotalNum();
+      num_elec_in_groups_.reserve(3);
+      for (int i = 0; i < num_groups_; i++)
+        num_elec_in_groups_.push_back(targetPtcl.last(i) - targetPtcl.first(i));
 
 //    if ((targetPtcl->Lattice.SuperCellEnum))
 //   {
-      G0mag = targetPtcl.SK->KLists.ksq[0];
+      G0mag = std::sqrt(targetPtcl.SK->KLists.ksq[0]);
 //    }
     }
  
@@ -67,19 +67,18 @@ public:
     {
 //      if CELLENUM
       const int numPoints = 1000;
-      int nsp = PtclRef->groups();
       RT uk = 0.0;
       RT a = 1.0;      
 
       for (int i = 0; i < num_groups_; i++)
        {
-         int Ni          = PtclRef->last(i) - PtclRef->first(i);
+         int Ni          = num_elec_in_groups_[i];
           for (int j = 0; j < num_groups_; j++)
           {
-            int Nj = PtclRef->last(j) - PtclRef->first(j);
-            if (F_[i * nsp + j])
+            int Nj = num_elec_in_groups_[j];
+            if (F_[i * num_groups_ + j])
             {
-              FT& ufunc       = *(F_[i * nsp + j]);
+              FT& ufunc       = *(F_[i * num_groups_ + j]);
               RT radius = ufunc.cutoff_radius;
               RT k      = G0mag;
               RT dr     = radius / (RT)(numPoints - 1);
@@ -95,7 +94,7 @@ public:
         }
         for (int iter = 0; iter < 20; iter++)
          a = uk / (4.0 * M_PI * (1.0 / (G0mag * G0mag) - 1.0 / (G0mag * G0mag + 1.0 / a)));
-       KEcorr = 4.0 * M_PI * a / (4.0 * vol) * PtclRef->getTotalNum();
+       KEcorr = 4.0 * M_PI * a / (4.0 * vol) * num_elecs_;
        return KEcorr;
 
    }
@@ -162,19 +161,12 @@ private:
   /// e-e table ID
   const int my_table_ID_;
   // helper for compute J2 Chiesa KE correction
-//  J2KECorrection<RealType, FT> j2_ke_corr_helper(ParticleSet& p, std::vector<FT*>& F);
-
-  //Temp
-  ParticleSet* PtclRef;
+  J2KECorrection<RealType, FT> j2_ke_corr_helper;
 
 public:
   J2OrbitalSoA(ParticleSet& p, int tid);
   J2OrbitalSoA(const J2OrbitalSoA& rhs) = delete;
   ~J2OrbitalSoA();
-
-  // helper for compute J2 Chiesa KE correction
-//  J2KECorrection<RealType, FT> j2_ke_corr_helper;
-  J2KECorrection<RealType, FT> j2_ke_corr_helper(ParticleSet& p, std::vector<FT*>& F);
 
   /* initialize storage */
   void init(ParticleSet& p);
@@ -242,8 +234,7 @@ public:
   }
  
 
-  void finalizeOptimization() { j2_ke_corr_helper(*PtclRef, F).computeKEcorr(); }
-//  void finalizeOPtimization() { ChiesaKECorrection(); }
+  void finalizeOptimization() { KEcorr = j2_ke_corr_helper.computeKEcorr(); }
 
   /** print the state, e.g., optimizables */
   void reportStatus(std::ostream& os)
@@ -363,51 +354,17 @@ public:
 
   RealType ChiesaKEcorrection()
   {
-    const int numPoints = 1000;
-    RealType vol        = PtclRef->Lattice.Volume;
-    int nsp             = PtclRef->groups();
-    RealType Gmag = std::sqrt(PtclRef->SK->KLists.ksq[0]);
-    RealType uk   = 0.0;
-      for (int i = 0; i < PtclRef->groups(); i++)
-      {
-        int Ni          = PtclRef->last(i) - PtclRef->first(i);
-        for (int j = 0; j < PtclRef->groups(); j++)
-        {
-          int Nj = PtclRef->last(j) - PtclRef->first(j);
-          if (F[i * nsp + j])
-          {
-            FT& ufunc       = *(F[i * nsp + j]);
-            RealType radius = ufunc.cutoff_radius;
-            RealType k      = Gmag;
-            RealType dr     = radius / (RealType)(numPoints - 1);
-            for (int ir = 0; ir < numPoints; ir++)
-            {
-              RealType r = dr * (RealType)ir;
-              RealType u = ufunc.evaluate(r);
-              uk     += 0.5 * 4.0 * M_PI * r * std::sin(k * r) / k * u * dr * (RealType)Nj / (RealType)(Ni + Nj);
-              //aparam += 0.25* 4.0*M_PI*r*r*u*dr;
-            }
-          }
-        }
-        //app_log() << "A = " << aparam << std::endl;
-      }
-      RealType a = 1.0;
-      for (int iter = 0; iter < 20; iter++)
-        a = uk / (4.0 * M_PI * (1.0 / (Gmag * Gmag) - 1.0 / (Gmag * Gmag + 1.0 / a)));
-      KEcorr = 4.0 * M_PI * a / (4.0 * vol) * PtclRef->getTotalNum();
-
-      return KEcorr;
+    return KEcorr = j2_ke_corr_helper.computeKEcorr();
   }
 
- RealType KECorrection() { return KEcorr; }
+   RealType KECorrection() { return KEcorr; }
 };
 
 template<typename FT>
 J2OrbitalSoA<FT>::J2OrbitalSoA(ParticleSet& p, int tid)
- : my_table_ID_(p.addTable(p, DT_SOA))
+ : my_table_ID_(p.addTable(p, DT_SOA)), j2_ke_corr_helper(p, F)
 {
   init(p);
-  PtclRef = &p;
   KEcorr    = 0.0;
   ClassName = "J2OrbitalSoA";
 }
