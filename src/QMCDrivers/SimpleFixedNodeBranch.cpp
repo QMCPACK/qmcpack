@@ -379,10 +379,12 @@ void SimpleFixedNodeBranch::branch(int iter, MCWalkerConfiguration& walkers)
   vParam[SBVP::EREF] = EnergyHist.mean(); //current mean
   if (BranchMode[B_USETAUEFF])
     vParam[SBVP::TAUEFF] = vParam[SBVP::TAU] * R2Accepted.result() / R2Proposed.result();
+  
   if (BranchMode[B_KILLNODES])
     EnergyHist(vParam[SBVP::ENOW] - std::log(WalkerController->get_ensemble_property().LivingFraction) / vParam[SBVP::TAUEFF]);
   else
     EnergyHist(vParam[SBVP::ENOW]);
+  
   if (BranchMode[B_DMCSTAGE]) // main stage
   {
     if (BranchMode[B_POPCONTROL])
@@ -519,6 +521,7 @@ void SimpleFixedNodeBranch::branch(int iter, UPtrVector<Crowd>& crowds,  MCPopul
     else
       vParam[SBVP::ETRIAL] = vParam[SBVP::EREF];
     --ToDoSteps;
+
     if (ToDoSteps == 0) //warmup is done
     {
       vParam[SBVP::SIGMA2] = VarianceHist.mean();
@@ -556,8 +559,6 @@ void SimpleFixedNodeBranch::branch(int iter, UPtrVector<Crowd>& crowds,  MCPopul
   //accumulate collectables and energies for scalar.dat
   FullPrecRealType wgt_inv = WalkerController->get_num_contexts() / wc_ensemble_prop.Weight;
   //walkers.Collectables *= wgt_inv;
-  for(UPtr<Crowd>& crowd_ptr: crowds)
-    crowd_ptr->accumulate(population.get_num_global_walkers());
 }
 
 /**
