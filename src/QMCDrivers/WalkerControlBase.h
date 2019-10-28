@@ -129,7 +129,7 @@ public:
   int sortWalkers(MCWalkerConfiguration& W);
 
   struct PopulationAdjustment {
-    int num_walkers; // This seems neglected I wouldn't trust
+    int num_walkers; // This is the number of walkers we are adjusting to
     RefVector<MCPWalker> good_walkers;
     std::vector<int> copies_to_make;
     RefVector<MCPWalker> bad_walkers;

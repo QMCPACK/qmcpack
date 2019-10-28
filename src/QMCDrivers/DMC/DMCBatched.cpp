@@ -268,6 +268,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
       ParticleSet::flex_rejectMove(elec_reject_list, iat);
     }
   }
+
   std::for_each(crowd.get_walker_twfs().begin(), crowd.get_walker_twfs().end(),
                 [](auto& twf) { twf.get().completeUpdates(); });
 
@@ -352,6 +353,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
       savePropertiesIntoWalker(moved.walker_hamiltonians[iw], moved.walkers[iw]);
     timers.collectables_timer.stop();
   }
+
   for (int iw = 0; iw < stalled.walkers.size(); ++iw)
   {
     MCPWalker& stalled_walker = stalled.walkers[iw];
@@ -367,8 +369,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
     FullPrecRealType& stalled_new_walker_energy = stalled.new_energies[iw];
     FullPrecRealType& stalled_old_walker_energy = stalled.old_energies[iw];
     stalled_new_walker_energy                   = stalled_old_walker_energy;
-    RealType& gf_acc                            = stalled.gf_accs[iw];
-    gf_acc                                      = 1.0;
+    stalled.gf_accs[iw].get()                   = 1.0;
     stalled_walker.Weight *= sft.branch_engine.branchWeight(stalled_new_walker_energy, stalled_old_walker_energy);
   }
 
@@ -495,9 +496,13 @@ bool DMCBatched::run()
       crowd_task(runDMCStep, dmc_state, timers_, std::ref(step_contexts_), std::ref(crowds_));
 
       branch_engine_->branch(step, crowds_, population_);
+
       for (auto& crowd_ptr : crowds_)
         crowd_ptr->clearWalkers();
       population_.distributeWalkers(crowds_.begin(), crowds_.end(), walkers_per_crowd_);
+
+      for(UPtr<Crowd>& crowd_ptr: crowds_)
+        crowd_ptr->accumulate(population_.get_num_global_walkers());
     }
 
     RefVector<ScalarEstimatorBase> all_scalar_estimators;
