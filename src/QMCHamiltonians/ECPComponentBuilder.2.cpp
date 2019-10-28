@@ -211,6 +211,11 @@ void ECPComponentBuilder::buildSemiLocalAndLocal(std::vector<xmlNodePtr>& semiPt
   //If any spinorbit terms are found...
   if(nso>0)
     buildSO(angListSO,vnnso,rmax,1.0);
+  else {
+    //No SO channels found. Delete pp_so
+    delete pp_so;
+    pp_so = 0;
+  }
 
 }
 
@@ -271,7 +276,7 @@ void ECPComponentBuilder::buildSO(const std::vector<int>& angList,
     app->spline();
     pp_so->add(angList[l], app); 
   }
-
+  NumSO = angList.size();
 
 }
 

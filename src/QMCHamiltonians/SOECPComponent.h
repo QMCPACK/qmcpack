@@ -118,6 +118,8 @@ public:
   inline RealType getRmax() const { return Rmax; }
   inline void setLmax(int Lmax) { lmax = Lmax; }
   inline int getLmax() const { return lmax; }
+  inline int getNknot() const { return nknot; }
+  inline int getSknot() const { return sknot; }
 
   friend class ECPComponentBuilder;
 }; 

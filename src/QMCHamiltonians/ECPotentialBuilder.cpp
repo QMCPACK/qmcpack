@@ -41,6 +41,7 @@ ECPotentialBuilder::ECPotentialBuilder(QMCHamiltonian& h,
     : MPIObjectBase(c),
       hasLocalPot(false),
       hasNonLocalPot(false),
+      hasSOPot(false),
       hasL2Pot(false),
       targetH(h),
       IonConfig(ions),
@@ -152,6 +153,26 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
 
     targetH.addOperator(apot, "NonLocalECP");
   }
+  if (hasSOPot)
+  {
+    SOECPotential* apot = new SOECPotential(IonConfig,targetPtcl,targetPsi);
+    int nknot_max = 0;
+    int sknot_max = 0;
+    for (int i=0; i < soPot.size(); i++) 
+    {
+      if (soPot[i])
+      {
+        nknot_max = std::max(nknot_max, soPot[i]->getNknot());
+        sknot_max = std::max(sknot_max, soPot[i]->getSknot());
+        apot->addComponent(i, soPot[i]);
+      }
+    }
+    app_log() << "\n  Using SOECP potential \n"
+              << "    Maximum grid on a sphere for SOECPotential: " << nknot_max << std::endl;
+    app_log() << "    Maximum grid for Simpson's rule for spin integral: " << sknot_max << std::endl;
+    
+    targetH.addOperator(apot, "SOECP"); //default is physical operator
+  }
   if (hasL2Pot)
   {
     L2Potential* apot = new L2Potential(IonConfig, targetPtcl, targetPsi);
@@ -227,6 +248,11 @@ void ECPotentialBuilder::useXmlFormat(xmlNodePtr cur)
           {
             hasNonLocalPot            = true;
             nonLocalPot[speciesIndex] = ecp.pp_nonloc;
+          }
+          if (ecp.pp_so)
+          {
+            hasSOPot = true;
+            soPot[speciesIndex] = ecp.pp_so;
           }
           if (ecp.pp_L2)
           {

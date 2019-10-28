@@ -25,9 +25,7 @@ namespace qmcplusplus
 
 SOECPComponent::SOECPComponent() 
     : lmax(0), nchannel(0), nknot(0), sknot(0), Rmax(-1)
-{
-
-}
+{}
 
 SOECPComponent::~SOECPComponent()
 {
@@ -169,7 +167,10 @@ SOECPComponent::RealType SOECPComponent::evaluateOne(ParticleSet& W,
 
     snew += dS;
   }
-  return std::real(sint);
+
+  RealType pairpot = std::real(sint);
+
+  return pairpot;
 }
 
 void SOECPComponent::randomize_grid(RandomGenerator_t& myRNG)
