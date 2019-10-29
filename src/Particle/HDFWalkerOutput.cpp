@@ -53,10 +53,10 @@ namespace qmcplusplus
 HDFWalkerOutput::HDFWalkerOutput(MCWalkerConfiguration& W, const std::string& aroot, Communicate* c)
     : appended_blocks(0),
       number_of_walkers(0),
-      currentConfigNumber(0),
       number_of_backups(0),
       max_number_of_backups(4),
       myComm(c),
+      currentConfigNumber(0),
       RootName(aroot)
 //       , fw_out(myComm)
 {

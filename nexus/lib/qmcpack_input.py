@@ -247,6 +247,9 @@ bool_write_types = set([yesno,onezero,truefalse])
 
 
 class QIobj(DevBase):
+
+    afqmc_mode = False
+
     # user settings
     permissive_read  = False
     permissive_write = False
@@ -445,6 +448,9 @@ class Names(QIobj):
     condensed_names = obj()
     expanded_names = None
 
+    rsqmc_expanded_names = None
+    afqmc_expanded_names = None
+
     escape_names = set(keyword.kwlist+['write'])
     escaped_names = list(escape_names)
     for i in range(len(escaped_names)):
@@ -454,9 +460,25 @@ class Names(QIobj):
 
     @staticmethod
     def set_expanded_names(**kwargs):
-        Names.expanded_names = obj(**kwargs)
+        exnames = obj(**kwargs)
+        Names.expanded_names = exnames
+        Names.rsqmc_expanded_names = exnames
     #end def set_expanded_names
 
+    @staticmethod
+    def set_afqmc_expanded_names(**kwargs):
+        Names.afqmc_expanded_names = obj(**kwargs)
+    #end def set_afqmc_expanded_names
+
+    @staticmethod
+    def use_rsqmc_expanded_names():
+        Names.expanded_names = Names.rsqmc_expanded_names
+    #end def use_rsqmc_expanded_names
+
+    @staticmethod
+    def use_afqmc_expanded_names():
+        Names.expanded_names = Names.afqmc_expanded_names
+    #end def use_afqmc_expanded_names
 
     def expand_name(self,condensed):
         expanded = condensed
@@ -644,7 +666,11 @@ class QIxml(Names):
                     c += param.write(self[a],name=self.expand_name(a),tag='attrib',mode='elem',pad=ip,write_type=write_type)
                 #end if
             #end for
-            for e in self.elements:
+            elements = self.elements
+            if self.afqmc_mode and 'afqmc_order' in self.__class__.__dict__:
+                elements = self.afqmc_order
+            #end if
+            for e in elements:
                 if e in self:
                     elem = self[e]
                     if isinstance(elem,QIxml):
@@ -714,6 +740,9 @@ class QIxml(Names):
         for e,ecap in el.iteritems():
             value = xml._elements[ecap]
             if (isinstance(value,list) or isinstance(value,tuple)) and e in self.plurals_inv.keys():
+                if e not in types:
+                    self.error('input element "{}" is unknown'.format(e))
+                #end if
                 p = self.plurals_inv[e]
                 plist = []
                 for instance in value:
@@ -721,6 +750,9 @@ class QIxml(Names):
                 #end for
                 self[p] = make_collection(plist)
             elif e in self.elements:
+                if e not in types:
+                    self.error('input element "{}" is unknown'.format(e))
+                #end if
                 self[e] = types[e](value)
             elif e in ['parameter','attrib','cost','h5tag']:
                 if isinstance(value,XMLelement):
@@ -1708,7 +1740,15 @@ param = Param()
 
 
 class simulation(QIxml):
-    elements   = ['project','random','include','qmcsystem','particleset','wavefunction','hamiltonian','init','traces','qmc','loop','mcwalkerset','cmc']
+    #            afqmc
+    attributes = ['method']
+    #            rsqmc
+    elements   = ['project','random','include','qmcsystem','particleset',
+                  'wavefunction','hamiltonian','init','traces','qmc','loop',
+                  'mcwalkerset','cmc']+\
+                  ['afqmcinfo','walkerset','propagator','execute'] # afqmc
+    afqmc_order = ['project','random','afqmcinfo','hamiltonian',
+                   'wavefunction','walkerset','propagator','execute']
     write_types = obj(random=yesno)
 #end class simulation
 
@@ -1834,7 +1874,10 @@ sposet_builder = QIxmlFactory(
 
 
 class wavefunction(QIxml):
-    attributes = ['name','target','id','ref']
+    #            rsqmc                        afqmc
+    attributes = ['name','target','id','ref']+['info','type']
+    #            afqmc
+    parameters = ['filetype','filename','cutoff']
     elements   = ['sposet_builder','determinantset','jastrow']
     identifier = 'name','id'
 #end class wavefunction
@@ -2029,14 +2072,17 @@ jastrow = QIxmlFactory(
 
 
 class hamiltonian(QIxml):
-    attributes = ['name','type','target','default'] 
+    #            rsqmc                              afqmc
+    attributes = ['name','type','target','default']+['info']
+    #            afqmc
+    parameters = ['filetype','filename']
     elements   = ['pairpot','constant','estimator']
     identifier = 'name'
 #end class hamiltonian
 
 class coulomb(QIxml):
     tag = 'pairpot'
-    attributes  = ['type','name','source','target','physical']
+    attributes  = ['type','name','source','target','physical','forces']
     write_types = obj(physical=yesno)
     identifier  = 'name'
 #end class coulomb
@@ -2250,7 +2296,16 @@ class momentum(QIxml):
     identifier = 'name'
     write_types = obj(hdf5=yesno)
 #end class momentum
-    
+
+# afqmc estimators
+class back_propagation(QIxml):
+    tag = 'estimator'
+    attributes = ['name']
+    parameters = ['naverages','block_size','ortho','nsteps']
+    elements   = ['onerdm']
+    identifier = 'name'
+#end class back_propagation
+
 estimator = QIxmlFactory(
     name  = 'estimator',
     types = dict(localenergy         = localenergy,
@@ -2272,6 +2327,8 @@ estimator = QIxmlFactory(
                  gofr                = gofr,
                  flux                = flux,
                  momentum            = momentum,
+                 # afqmc estimators
+                 back_propagation    = back_propagation,
                  ),
     typekey  = 'type',
     typekey2 = 'name'
@@ -2487,6 +2544,38 @@ class cmc(QIxml):
 
 
 
+# afqmc elements
+
+class afqmcinfo(QIxml):
+    attributes = ['name']
+    parameters = ['nmo','naea','naeb']
+#end class afqmcinfo
+
+class walkerset(QIxml):
+    attributes = ['name','type']
+    parameters = ['walker_type']
+#end class walkerset
+
+class propagator(QIxml):
+    attributes  = ['name','info']
+    parameters  = ['hybrid']
+    write_types = obj(hybrid=yesno)
+#end class propagator
+
+class execute(QIxml):
+    attributes = ['info','ham','wfn','wset','prop']
+    parameters = ['ncores','nwalkers','blocks','steps','timestep']
+    elements   = ['estimator']
+#end class execute
+
+class onerdm(QIxml):
+    None
+#end class onerdm
+
+
+
+
+
 class gen(QIxml):
     attributes = []
     elements   = []
@@ -2509,7 +2598,9 @@ classes = [   #standard classes
     header,local,force,forwardwalking,observable,record,rmc,pressure,dmccorrection,
     nofk,mpc_est,flux,distancetable,cpp,element,spline,setparams,
     backflow,transformation,cubicgrid,molecular_orbital_builder,cmc,sk,skall,gofr,
-    host,date,user,rpa_jastrow,momentum
+    host,date,user,rpa_jastrow,momentum,
+    # afqmc classes
+    afqmcinfo,walkerset,propagator,execute,back_propagation,onerdm
     ]
 types = dict( #simple types and factories
     #host           = param,
@@ -2597,7 +2688,21 @@ Names.set_expanded_names(
     spindependent    = 'spinDependent',
     l_local          = 'l-local',
     pbcimages        = 'PBCimages',
-   )
+    )
+# afqmc names
+Names.set_afqmc_expanded_names(
+    afqmcinfo        = 'AFQMCInfo',
+    nmo              = 'NMO',
+    naea             = 'NAEA',
+    naeb             = 'NAEB',
+    hamiltonian      = 'Hamiltonian',
+    wavefunction     = 'Wavefunction',
+    walkerset        = 'WalkerSet',
+    propagator       = 'Propagator',
+    onerdm           = 'OneRDM',
+    nwalkers         = 'nWalkers',
+    estimator        = 'Estimator',
+    )
 for c in classes:
     c.init_class()
     types[c.__name__] = c
@@ -2798,6 +2903,41 @@ dmc.defaults.set(
 
 
 
+# afqmc defaults
+afqmcinfo.defaults.set(
+    name = 'info0',
+    )
+walkerset.defaults.set(
+    name = 'wset0',
+    )
+propagator.defaults.set(
+    name = 'prop0',
+    info = 'info0',
+    )
+execute.defaults.set(
+    info = 'info0',
+    ham  = 'ham0',
+    wfn  = 'wfn0',
+    wset = 'wset0',
+    prop = 'prop0',
+    )
+back_propagation.defaults.set(
+    name='back_propagation'
+    )
+
+
+
+
+
+def set_rsqmc_mode():
+    QIobj.afqmc_mode = False
+    Names.use_rsqmc_expanded_names()
+#end def set_rsqmc_mode
+
+def set_afqmc_mode():
+    QIobj.afqmc_mode = True
+    Names.use_afqmc_expanded_names()
+#end def set_afqmc_mode
 
 
 
@@ -2860,6 +3000,15 @@ class QmcpackInput(SimulationInput,Names):
         Param.metadata = None
         QIcollections.clear()
     #end def __init__
+
+    def is_afqmc_input(self):
+        is_afqmc = False
+        if 'simulation' in self:
+            sim = self.simulation
+            is_afqmc = 'method' in sim and sim.method.lower()=='afqmc'
+        #end if
+        return is_afqmc
+    #end def is_afqmc_input
 
     def get_base(self):
         elem_names = list(self.keys())
@@ -2935,6 +3084,10 @@ class QmcpackInput(SimulationInput,Names):
 
 
     def write_text(self,filepath=None):
+        set_rsqmc_mode()
+        if self.is_afqmc_input():
+            set_afqmc_mode()
+        #end if
         c = ''
         header = '''<?xml version="1.0"?>
 '''
@@ -2947,6 +3100,7 @@ class QmcpackInput(SimulationInput,Names):
         base = self.get_base()
         c+=base.write(first=True)
         Param.metadata = None
+        set_rsqmc_mode()
         return c
     #end def write_text
 
@@ -3259,40 +3413,57 @@ class QmcpackInput(SimulationInput,Names):
         project = self.simulation.project
         prefix = project.id
         series = project.series
-        qmc_ur = self.unroll_calculations(modify=False)
 
         qmc = []
         calctypes = set()
         outfiles = []
-        n=0
-        for qo in qmc_ur:
+
+        if not self.is_afqmc_input():
+            qmc_ur = self.unroll_calculations(modify=False)
+            n=0
+            for qo in qmc_ur:
+                q = obj()
+                q.prefix = prefix
+                q.series = series+n
+                n+=1
+                method = qo.method
+                if method in self.opt_methods:
+                    q.type = 'opt'
+                else:
+                    q.type = method
+                #end if
+                calctypes.add(q.type)
+                q.method = method
+                fprefix = prefix+'.s'+str(q.series).zfill(3)+'.'
+                files = obj()
+                files.scalar = fprefix+'scalar.dat'
+                files.stat   = fprefix+'stat.h5'
+                # apparently this one is no longer generated by default as of r5756
+                #files.config = fprefix+'storeConfig.h5' 
+                if q.type=='opt':
+                    files.opt = fprefix+'opt.xml'
+                elif q.type=='dmc':
+                    files.dmc = fprefix+'dmc.dat'
+                #end if
+                outfiles.extend(files.values())
+                q.files = files
+                qmc.append(q)
+            #end for
+        else:
             q = obj()
             q.prefix = prefix
-            q.series = series+n
-            n+=1
-            method = qo.method
-            if method in self.opt_methods:
-                q.type = 'opt'
-            else:
-                q.type = method
-            #end if
+            q.series = series
+            q.type   = 'afqmc'
+            q.method = 'afqmc'
             calctypes.add(q.type)
-            q.method = method
             fprefix = prefix+'.s'+str(q.series).zfill(3)+'.'
             files = obj()
             files.scalar = fprefix+'scalar.dat'
-            files.stat   = fprefix+'stat.h5'
-            # apparently this one is no longer generated by default as of r5756
-            #files.config = fprefix+'storeConfig.h5' 
-            if q.type=='opt':
-                files.opt = fprefix+'opt.xml'
-            elif q.type=='dmc':
-                files.dmc = fprefix+'dmc.dat'
-            #end if
             outfiles.extend(files.values())
             q.files = files
             qmc.append(q)
-        #end for
+        #end if
+
         res = dict(qmc=qmc,calctypes=calctypes,outfiles=outfiles)
 
         values = []
@@ -3831,10 +4002,14 @@ class QmcpackInput(SimulationInput,Names):
 
         
     def cusp_correction(self):
-        ds = self.get('determinantset')
-        cc_var = ds!=None and 'cuspcorrection' in ds and ds.cuspcorrection==True
-        cc_run = len(self.simulation.calculations)==0
-        return cc_var and cc_run
+        cc = False
+        if not self.is_afqmc_input():
+            ds = self.get('determinantset')
+            cc_var = ds!=None and 'cuspcorrection' in ds and ds.cuspcorrection==True
+            cc_run = len(self.simulation.calculations)==0
+            cc = cc_var and cc_run
+        #end if
+        return cc
     #end def cusp_correction
 
 
@@ -6014,6 +6189,8 @@ def generate_qmcpack_input(**kwargs):
     selector = kwargs.pop('input_type','basic')
     if selector=='basic':
         inp = generate_basic_input(**kwargs)
+    elif selector=='basic_afqmc':
+        inp = generate_basic_afqmc_input(**kwargs)
     elif selector=='opt_jastrow':
         inp = generate_opt_jastrow_input(**kwargs)
     else:
@@ -6346,6 +6523,184 @@ def generate_basic_input(**kwargs):
     return qi
 #end def generate_basic_input
 
+
+
+gen_basic_afqmc_input_defaults = obj(
+    id          = 'qmc',            
+    series      = 0,   
+    seed        = None,
+    nmo         = None,
+    naea        = None,
+    naeb        = None,
+    ham_file    = None,
+    wfn_file    = None,
+    wfn_type    = 'NOMSD',
+    cutoff      = 1e-8,
+    wset_type   = 'shared',
+    walker_type = 'CLOSED',
+    hybrid      = True,
+    ncores      = 1,
+    nwalkers    = 10,
+    blocks      = 10000,
+    steps       = 10,
+    timestep    = 0.005,
+    estimators  = None,
+    info_name   = 'info0',
+    ham_name    = 'ham0',
+    wfn_name    = 'wfn0',
+    wset_name   = 'wset0',
+    prop_name   = 'prop0',
+    system      = None,
+    )
+
+def generate_basic_afqmc_input(**kwargs):
+    # capture inputs
+    kw = obj(kwargs)
+    gen_info = obj()
+    for k,v in kw.items():
+        if not isinstance(v,obj):
+            gen_info[k] = v
+        #end if
+    #end for
+    # apply general defaults
+    kw.set_optional(**gen_basic_afqmc_input_defaults)
+    valid = set(gen_basic_afqmc_input_defaults.keys())
+    # screen for invalid keywords
+    invalid_kwargs = set(kw.keys())-valid
+    if len(invalid_kwargs)>0:
+        QmcpackInput.class_error('invalid input parameters encountered\ninvalid input parameters: {0}\nvalid options are: {1}'.format(sorted(invalid_kwargs),sorted(valid)),'generate_qmcpack_input')
+    #end if
+
+    metadata = meta(
+        generation_info = gen_info.copy(),
+        )
+
+    sim = simulation(
+        method = 'afqmc',
+        )
+
+    sim.project = project(
+        id     = kw.id,
+        series = kw.series,
+        )
+
+    if kw.seed is not None:
+        sim.random = random(seed=kw.seed)
+    #end if
+
+    info = afqmcinfo(
+        name = kw.info_name,
+        )
+    if kw.nmo is not None:
+        info.nmo = kw.nmo
+    #end if
+    if kw.naea is not None:
+        info.naea = kw.naea
+    #end if
+    if kw.naeb is not None:
+        info.naeb = kw.naeb
+    #end if
+    sim.afqmcinfo = info
+
+    if kw.ham_file is None and kw.wfn_file is not None:
+        kw.ham_file = kw.wfn_file
+    elif kw.ham_file is not None and kw.wfn_file is None:
+        kw.wfn_file = kw.ham_file
+    elif kw.ham_file is None and kw.wfn_file is None:
+        kw.ham_file = 'MISSING.h5'
+        kw.wfn_file = 'MISSING.h5'
+    #end if
+    def get_filetype(filename,loc):
+        if filename.endswith('.h5'):
+            filetype = 'hdf5'
+        else:
+            QmcpackInput.class_error('Type of {} file "{}" is unrecognized.\n The following file extensions are allowed: .h5'.format(loc,filename))
+        #end if
+        return filetype
+    #end def get_filetype
+    
+    ham = hamiltonian(
+        name     = kw.ham_name,
+        info     = info.name,
+        filetype = get_filetype(kw.ham_file,'hamiltonian'),
+        filename = kw.ham_file,
+        )
+    sim.hamiltonian = ham
+
+    wfn = wavefunction(
+        name     = kw.wfn_name,
+        info     = info.name,
+        filetype = get_filetype(kw.wfn_file,'wavefunction'),
+        filename = kw.wfn_file,
+        )
+    if kw.wfn_type is not None:
+        wfn.type = kw.wfn_type
+    #end if
+    if kw.cutoff is not None:
+        wfn.cutoff = kw.cutoff
+    #end if
+    sim.wavefunction = wfn
+
+    wset = walkerset(
+        name        = kw.wset_name,
+        )
+    if kw.wset_type is not None:
+        wset.type = kw.wset_type
+    #end if
+    if kw.walker_type is not None:
+        wset.walker_type = kw.walker_type
+    #end if
+    sim.walkerset = wset
+
+    prop = propagator(
+        name = kw.prop_name,
+        info = info.name,
+        )
+    if kw.hybrid is not None:
+        prop.hybrid = kw.hybrid
+    #end if
+    sim.propagator = prop
+
+    exe = execute(
+        info = info.name,
+        ham  = ham.name,
+        wfn  = wfn.name,
+        wset = wset.name,
+        prop = prop.name,
+        )
+    for k in execute.parameters:
+        if k in kw and kw[k] is not None:
+            exe[k] = kw[k]
+        #end if
+    #end for
+    estimators = []
+    valid_estimators = (back_propagation,)
+    if kw.estimators is not None:
+        for est in kw.estimators:
+            invalid = False
+            if isinstance(est,QIxml):
+                est = est.copy()
+            else:
+                invalid = True
+            #end if
+            invalid |= not isinstance(est,valid_estimators)
+            if invalid:
+                valid_names = [e.__class__.__name__ for e in valid_estimators]
+                QmcpackInput.class_error('invalid estimator input encountered\nexpected one of the following: {}\ninputted type: {}\ninputted value: {}'.format(valid_names,est.__class__.__name__,est))
+            #end if
+            est.incorporate_defaults()
+            estimators.append(est)
+        #end for
+    #end if
+    if len(estimators)>0:
+        exe.estimators = make_collection(estimators)
+    #end if
+    sim.execute = exe
+    
+    qi = QmcpackInput(metadata,sim)
+
+    return qi
+#end def generate_basic_afqmc_input
 
 
 

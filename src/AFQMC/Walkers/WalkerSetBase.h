@@ -87,14 +87,15 @@ class WalkerSetBase: public AFQMCInfo
   /// constructor
   WalkerSetBase(afqmc::TaskGroup_& tg_, xmlNodePtr cur, AFQMCInfo& info, 
         RandomGenerator_t* r, Allocator alloc_, BPAllocator bpalloc_):
-                TG(tg_),AFQMCInfo(info),rng(r),
-                walker_memory_usage(0),tot_num_walkers(0),bp_pos(-1),
-                bp_walker_memory_usage(0),bp_walker_size(0),walker_size(1),
+                AFQMCInfo(info),TG(tg_),rng(r),
+                walker_size(1),walker_memory_usage(0),
+                bp_walker_size(0),bp_walker_memory_usage(0),bp_pos(-1),
+                walkerType(UNDEFINED_WALKER_TYPE),
+                tot_num_walkers(0),
 		walker_buffer({0,1},alloc_),
 		bp_buffer({0,0},bpalloc_),
                 load_balance(UNDEFINED_LOAD_BALANCE),
-                pop_control(UNDEFINED_BRANCHING),min_weight(0.05),max_weight(4.0),
-                walkerType(UNDEFINED_WALKER_TYPE)
+                pop_control(UNDEFINED_BRANCHING),min_weight(0.05),max_weight(4.0)
   {
     parse(cur);
     setup(); 
@@ -435,7 +436,6 @@ class WalkerSetBase: public AFQMCInfo
     {
       auto kill = itbegin;
       auto keep = itend-1;
-      int nkills=0;
 
       while( keep > kill ) { 
  
@@ -668,6 +668,8 @@ class WalkerSetBase: public AFQMCInfo
 
   protected:
 
+  afqmc::TaskGroup_& TG;  
+
   RandomGenerator_t* rng;
 
   int walker_size, walker_memory_usage;
@@ -695,8 +697,6 @@ class WalkerSetBase: public AFQMCInfo
   double LogOverlapFactor = 0.0;
 
   TimerList_t Timers;
-
-  afqmc::TaskGroup_& TG;  
 
   // Contains main walker data needed for propagation
   CMatrix walker_buffer;

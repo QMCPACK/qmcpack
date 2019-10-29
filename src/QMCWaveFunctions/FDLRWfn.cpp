@@ -36,7 +36,7 @@ FDLRWfn::FDLRWfn(TrialWaveFunction* const wfn_1,
                  const bool opt_d,
                  const bool singlet_loc,
                  const bool triplet_loc)
-    : m_wfn_xpd(wfn_1), m_wfn_xmd(wfn_2), opt_x_vars(opt_x), opt_d_vars(opt_d)
+    : opt_x_vars(opt_x), opt_d_vars(opt_d), m_wfn_xpd(wfn_1), m_wfn_xmd(wfn_2)
 {
   // Temporary hack: I get very odd results when turning off Optimizable
   // and when using the new optimizer (although OK with the old one),

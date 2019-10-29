@@ -88,7 +88,7 @@ public:
 
   //@{ public data members
   ///property of an ensemble represented by this ParticleSet
-  MCDataType<FullPrecRealType> EnsembleProperty;
+  //MCDataType<FullPrecRealType> EnsembleProperty;
 
   ///ParticleLayout
   ParticleLayout_t Lattice, PrimitiveLattice;
@@ -291,7 +291,7 @@ public:
     }
   }
 
-  inline RealType getTotalWeight() const { return EnsembleProperty.Weight; }
+  //inline RealType getTotalWeight() const { return EnsembleProperty.Weight; }
 
   void resetGroups();
 

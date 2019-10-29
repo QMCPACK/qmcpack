@@ -38,8 +38,6 @@ inline void BasicWalkerData(WlkBucket& wlk, DVec& curData, communicator& comm)
   int nW = wlk.size();
   ComplexType enume = 0, edeno = 0;
   std::vector<double> data(8,0.);
-  RealType sumo=0.0;
-  int wi=0;
   boost::multi::array<ComplexType,2> w_data({nW,3});
   wlk.getProperty(WEIGHT,w_data({0,nW},0));
   wlk.getProperty(OVLP,w_data({0,nW},1));

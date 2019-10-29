@@ -23,6 +23,7 @@
 
 namespace qmcplusplus
 {
+
 WalkerControlBase* createWalkerController(int nwtot, Communicate* comm, xmlNodePtr cur, bool reconfig)
 {
   app_log() << "  Creating WalkerController: target  number of walkers = " << nwtot << std::endl;
@@ -73,7 +74,7 @@ WalkerControlBase* createWalkerController(int nwtot, Communicate* comm, xmlNodeP
       wc = new WalkerControlBase(comm);
     }
   }
-  wc->MyMethod = fixw;
+  wc->set_method(fixw);
   wc->setMinMax(nwtot, nmax);
   return wc;
 }

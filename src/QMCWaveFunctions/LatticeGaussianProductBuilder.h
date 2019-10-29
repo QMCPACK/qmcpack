@@ -18,16 +18,15 @@
 
 namespace qmcplusplus
 {
-class OrbitalConstraintsBase;
 
 /** LatticeGaussianProduct LatticeGaussianProduct Builder with constraints
  */
 class LatticeGaussianProductBuilder : public WaveFunctionComponentBuilder
 {
 public:
-  LatticeGaussianProductBuilder(ParticleSet& p, TrialWaveFunction& psi, PtclPoolType& psets);
+  LatticeGaussianProductBuilder(Communicate* comm, ParticleSet& p, PtclPoolType& psets);
 
-  bool put(xmlNodePtr cur);
+  WaveFunctionComponent* buildComponent(xmlNodePtr cur) override;
 
 private:
   ///particleset pool to get ParticleSet other than the target

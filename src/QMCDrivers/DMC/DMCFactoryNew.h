@@ -26,12 +26,14 @@ class DMCFactoryNew
 {
 private:
   const int dmc_mode_;
-  const int qmc_counter_;
   xmlNodePtr input_node_;
+  const int qmc_counter_;
 
   
 public:
-  DMCFactoryNew(xmlNodePtr cur, const int dmc_mode, const int qmc_counter) : dmc_mode_(dmc_mode), input_node_(cur), qmc_counter_(qmc_counter) {}
+  DMCFactoryNew(xmlNodePtr cur, const int dmc_mode, const int qmc_counter)
+      : dmc_mode_(dmc_mode), input_node_(cur), qmc_counter_(qmc_counter)
+  {}
 
   QMCDriverInterface* create(MCPopulation& pop,
                              TrialWaveFunction& psi,

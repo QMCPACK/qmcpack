@@ -38,7 +38,6 @@ struct SoaDistanceTableBA : public DTD_BConds<T, D, SC>, public DistanceTableDat
     if (N_sources * N_targets == 0)
       return;
 
-    int Ntargets_padded = getAlignedSize<T>(N_targets);
     int Nsources_padded = getAlignedSize<T>(N_sources);
 
     Distances.resize(N_targets, Nsources_padded);

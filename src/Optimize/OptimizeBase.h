@@ -42,7 +42,7 @@ public:
 
   virtual ~CostFunctionBase() {}
 
-  virtual int NumParams() = 0;
+  virtual int getNumParams() const = 0;
 
   virtual Return_t& Params(int i) = 0;
 

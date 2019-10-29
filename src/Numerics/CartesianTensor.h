@@ -127,7 +127,7 @@ CartesianTensor<T, Point_t, Tensor_t, GGG_t>::CartesianTensor(const int l_max) :
   gggXYZ.resize(ntot);
   NormFactor.resize(ntot, 1);
   int p = 0;
-  int a, b, c;
+  int a = 0, b = 0, c = 0;
   const double pi = 4.0 * atan(1.0);
   for (int l = 0; l <= Lmax; l++)
   {

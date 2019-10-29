@@ -60,7 +60,6 @@ THCOps<T> loadTHCOps(hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA, in
   // fix later for multidet case
   std::vector<int> dims(10);
   ValueType E0;
-  int global_ncvecs=0;
   std::size_t gnmu,grotnmu,nmu,rotnmu,nmu0,nmuN,rotnmu0,rotnmuN;
 
   // read from HDF

@@ -497,11 +497,11 @@ public:
   SPOSet* makeClone() const;
 
   EinsplineSetExtended()
-      : ValueTimer(*TimerManager.createTimer("EinsplineSetExtended::ValueOnly")),
+      : MultiSpline(NULL),
+        ValueTimer(*TimerManager.createTimer("EinsplineSetExtended::ValueOnly")),
         VGLTimer(*TimerManager.createTimer("EinsplineSetExtended::VGL")),
         VGLMatTimer(*TimerManager.createTimer("EinsplineSetExtended::VGLMatrix")),
-        EinsplineTimer(*TimerManager.createTimer("libeinspline")),
-        MultiSpline(NULL)
+        EinsplineTimer(*TimerManager.createTimer("libeinspline"))
 #ifdef QMC_CUDA
         ,
         CudaMultiSpline(NULL),

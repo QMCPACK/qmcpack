@@ -112,10 +112,11 @@ int main(int argc, char** argv)
     nptcl=nels;
 
     {//create up/down electrons
-      els.Lattice.BoxBConds=1;   els.Lattice.set(ions.Lattice);
+      els.Lattice.BoxBConds=1;
+      els.Lattice = ions.Lattice;
       vector<int> ud(2); ud[0]=nels/2; ud[1]=nels-ud[0];
       els.create(ud);
-      els.R.InUnit=1;
+      els.R.InUnit = PosUnit::Lattice;
       random_th.generate_uniform(&els.R[0][0],nels3);
       els.convert2Cart(els.R); // convert to Cartiesian
       els.RSoA=els.R;
@@ -280,11 +281,11 @@ int main(int argc, char** argv)
             random_th.generate_uniform(&delta[0][0],nknots*3);
             for(int k=0; k<nknots;++k)
             {
-              els.makeMoveOnSphere(jel,delta[k]);
+              els.makeMove(jel,delta[k]);
               RealType r_soa=J.ratio(els,jel);
               els.rejectMove(jel);
 
-              els_aos.makeMoveOnSphere(jel,delta[k]);
+              els_aos.makeMove(jel,delta[k]);
               RealType r_aos=J_aos.ratio(els_aos,jel);
               els_aos.rejectMove(jel);
               r_ratio += abs(r_soa/r_aos-1);

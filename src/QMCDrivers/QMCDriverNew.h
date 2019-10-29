@@ -75,7 +75,9 @@ public:
   };
 
   using MCPWalker = MCPopulation::MCPWalker;
-  using WFBuffer         = MCPopulation::WFBuffer;
+  using WFBuffer  = MCPopulation::WFBuffer;
+
+  using SetNonLocalMoveHandler = std::function<void(QMCHamiltonian&)>;
   /** bits to classify QMCDriver
    *
    * - qmc_driver_mode[QMC_UPDATE_MODE]? particle-by-particle: walker-by-walker
@@ -91,14 +93,17 @@ public:
                QMCHamiltonian& h,
                WaveFunctionPool& ppool,
                const std::string timer_prefix,
-               Communicate* comm);
+               Communicate* comm,
+               SetNonLocalMoveHandler = &QMCDriverNew::defaultSetNonLocalMoveHandler);
+
+  QMCDriverNew(QMCDriverNew&&) = default;
 
   virtual ~QMCDriverNew();
 
   ///return current step
   inline IndexType current() const { return current_step_; }
 
-    // Do to a work-around currently in QMCDriverNew::QMCDriverNew this should never be true.
+  // Do to a work-around currently in QMCDriverNew::QMCDriverNew this should never be true.
   // I'm leaving this because this is what should happen for vmc.
   void checkNumCrowdsLTNumThreads();
 
@@ -162,7 +167,7 @@ public:
   std::string getEngineName() { return QMCType; }
   unsigned long getDriverMode() { return qmc_driver_mode_.to_ulong(); }
   IndexType get_walkers_per_crowd() const { return walkers_per_crowd_; }
-  IndexType get_living_walkers() const { return population_.get_active_walkers(); }
+  IndexType get_living_walkers() const { return population_.get_walkers().size(); }
 
   /** @ingroup Legacy interface to be dropped
    *  @{
@@ -176,7 +181,8 @@ public:
    */
   void process(xmlNodePtr cur);
 
-  static void initialLogEvaluation(int crowd_id, UPtrVector<Crowd>& crowds);
+  static void initialLogEvaluation(int crowd_id, UPtrVector<Crowd>& crowds, UPtrVector<ContextForSteps>& step_context);
+
 
   /** should be set in input don't see a reason to set individually
    * @param pbyp if true, use particle-by-particle update
@@ -212,14 +218,14 @@ protected:
           collectables_timer(*TimerManager.createTimer(prefix + "Collectables", timer_level_medium))
     {}
   };
-  
+
   QMCDriverInput qmcdriver_input_;
 
   std::vector<std::unique_ptr<Crowd>> crowds_;
   IndexType walkers_per_rank_;
   IndexType walkers_per_crowd_;
 
-  
+
   std::string h5_file_root_;
 
   ///branch engine
@@ -343,12 +349,17 @@ public:
 
   bool putQMCInfo(xmlNodePtr cur);
 
-  void addWalkers(int nwalkers, const ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>& positions);
+  /** Adjust populations local walkers to this number
+  * @param nwalkers number of walkers to add
+  *
+  */
+  void makeLocalWalkers(int nwalkers, const ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>& positions);
 
   int get_num_crowds() { return num_crowds_; }
   void set_num_crowds(int num_crowds, const std::string& reason);
   void set_walkers_per_rank(int walkers_per_rank, const std::string& reason);
   DriftModifierBase& get_drift_modifier() const { return *drift_modifier_; }
+
   /** record the state of the block
    * @param block current block
    *
@@ -373,6 +384,9 @@ public:
 private:
   friend std::ostream& operator<<(std::ostream& o_stream, const QMCDriverNew& qmcd);
 
+  SetNonLocalMoveHandler setNonLocalMoveHandler_;
+
+  static void defaultSetNonLocalMoveHandler(QMCHamiltonian& gold_ham);
 };
 /**@}*/
 } // namespace qmcplusplus

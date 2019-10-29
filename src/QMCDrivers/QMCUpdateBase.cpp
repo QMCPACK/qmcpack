@@ -35,32 +35,32 @@ QMCUpdateBase::QMCUpdateBase(MCWalkerConfiguration& w,
                              TrialWaveFunction& guide,
                              QMCHamiltonian& h,
                              RandomGenerator_t& rg)
-    : W(w),
+    : csoffset(0),
+      Traces(0),
+      W(w),
       Psi(psi),
       Guide(guide),
       H(h),
       RandomGen(rg),
-      DriftModifier(0),
       branchEngine(0),
-      Estimators(0),
-      Traces(0),
-      csoffset(0)
+      DriftModifier(0),
+      Estimators(0)
 {
   setDefaults();
 }
 
 /// Constructor.
 QMCUpdateBase::QMCUpdateBase(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator_t& rg)
-    : W(w),
-      Psi(psi),
-      H(h),
-      Guide(psi),
-      RandomGen(rg),
-      DriftModifier(0),
-      branchEngine(0),
-      Estimators(0),
+    : csoffset(0),
       Traces(0),
-      csoffset(0)
+      W(w),
+      Psi(psi),
+      Guide(psi),
+      H(h),
+      RandomGen(rg),
+      branchEngine(0),
+      DriftModifier(0),
+      Estimators(0)
 {
   setDefaults();
 }

@@ -27,8 +27,8 @@ class BasicEstimator: public EstimatorBase
   BasicEstimator(afqmc::TaskGroup_& tg_, AFQMCInfo info,
         std::string title, xmlNodePtr cur, bool impsamp_):
                 EstimatorBase(info),TG(tg_),
-                timers(false),
-                nwfacts(0),writer(false),importanceSampling(impsamp_)
+                nwfacts(0),writer(false),importanceSampling(impsamp_),
+                timers(false)
   {
 
     if(cur!=NULL)  {
@@ -158,8 +158,6 @@ class BasicEstimator: public EstimatorBase
     data[0] = enume.real()/ncalls;
     data[1] = edeno.real()/ncalls;
 
-    double max_exch_time=0;
-
     if(writer) {
       out<<std::setprecision(6) <<nwalk/ncalls <<" " <<weight/ncalls <<" " <<std::setprecision(16);
       if(nwfacts>0) {
@@ -237,13 +235,14 @@ class BasicEstimator: public EstimatorBase
 
   afqmc::TaskGroup_& TG;
 
+  int nwfacts;
+
   bool writer;
 
   bool importanceSampling;
 
   std::vector<double> data, data2, data3;
 
-  int nwfacts;
   std::queue<ComplexType> weight_factors;
   ComplexType weight_product=ComplexType(1.0,0.0);
 

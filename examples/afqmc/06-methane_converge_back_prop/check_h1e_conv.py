@@ -56,4 +56,4 @@ def plot_convergence(filename):
     plt.savefig('h1e_conv.pdf', fmt='pdf', bbox_inches='tight')
 
 if __name__ == '__main__':
-    plot_convergence('qmc.s000.scalar.h5')
+    plot_convergence('qmc.s000.stat.h5')

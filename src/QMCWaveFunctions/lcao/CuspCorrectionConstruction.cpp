@@ -33,14 +33,14 @@ void applyCuspCorrection(const Matrix<CuspCorrectionParameters>& info,
 
   ScopedTimer cuspApplyTimerWrapper(cuspApplyTimer);
 
-  LCAOrbitalSet phi = LCAOrbitalSet(lcwc.myBasisSet);
-  phi.setOrbitalSetSize(lcwc.OrbitalSetSize);
-  phi.BasisSetSize = lcwc.BasisSetSize;
+  LCAOrbitalSet phi = LCAOrbitalSet(lcwc.myBasisSet, lcwc.isOptimizable());
+  phi.setOrbitalSetSize(lcwc.getOrbitalSetSize());
+  phi.BasisSetSize = lcwc.getBasisSetSize();
   phi.setIdentity(false);
 
-  LCAOrbitalSet eta = LCAOrbitalSet(lcwc.myBasisSet);
-  eta.setOrbitalSetSize(lcwc.OrbitalSetSize);
-  eta.BasisSetSize = lcwc.BasisSetSize;
+  LCAOrbitalSet eta = LCAOrbitalSet(lcwc.myBasisSet, lcwc.isOptimizable());
+  eta.setOrbitalSetSize(lcwc.getOrbitalSetSize());
+  eta.BasisSetSize = lcwc.getBasisSetSize();
   eta.setIdentity(false);
 
 
@@ -201,14 +201,14 @@ void generateCuspInfo(int orbital_set_size,
 
   ScopedTimer createCuspTimerWrapper(cuspCreateTimer);
 
-  LCAOrbitalSet phi = LCAOrbitalSet(lcwc.myBasisSet);
-  phi.setOrbitalSetSize(lcwc.OrbitalSetSize);
-  phi.BasisSetSize = lcwc.BasisSetSize;
+  LCAOrbitalSet phi = LCAOrbitalSet(lcwc.myBasisSet, lcwc.isOptimizable());
+  phi.setOrbitalSetSize(lcwc.getOrbitalSetSize());
+  phi.BasisSetSize = lcwc.getBasisSetSize();
   phi.setIdentity(false);
 
-  LCAOrbitalSet eta = LCAOrbitalSet(lcwc.myBasisSet);
-  eta.setOrbitalSetSize(lcwc.OrbitalSetSize);
-  eta.BasisSetSize = lcwc.BasisSetSize;
+  LCAOrbitalSet eta = LCAOrbitalSet(lcwc.myBasisSet, lcwc.isOptimizable());
+  eta.setOrbitalSetSize(lcwc.getOrbitalSetSize());
+  eta.BasisSetSize = lcwc.getBasisSetSize();
   eta.setIdentity(false);
 
 

@@ -11,14 +11,19 @@
 
 namespace qmcplusplus
 {
-void Crowd::clearResults()
+void Crowd::clearWalkers()
 {
-  // These were cleared to 1.0 each loop by VMCUpdatePbyP advance walker
-  // refactored code may depend on this initial value.
-  std::fill(log_gf_.begin(), log_gf_.end(), 1.0);
-  std::fill(log_gb_.begin(), log_gb_.end(), 1.0);
-}
+  mcp_walkers_.clear();
+  mcp_wfbuffers_.clear();
+  walker_elecs_.clear();
+  walker_twfs_.clear();
+  walker_hamiltonians_.clear();
 
+  // Think these should also get cleared here.
+  n_reject_ = 0;
+  n_accept_ = 0;
+  n_nonlocal_accept_ = 0;
+}
 
 void Crowd::reserve(int crowd_size)
 {
@@ -27,14 +32,6 @@ void Crowd::reserve(int crowd_size)
   reserveCS(walker_elecs_);
   reserveCS(walker_twfs_);
   reserveCS(walker_hamiltonians_);
-
-  auto resizeCS = [crowd_size](auto& avector) { avector.resize(crowd_size); };
-  resizeCS(grads_now_);
-  resizeCS(grads_new_);
-  resizeCS(ratios_);
-  resizeCS(log_gf_);
-  resizeCS(log_gb_);
-  resizeCS(prob_);
 }
 
 void Crowd::addWalker(MCPWalker& walker, ParticleSet& elecs, TrialWaveFunction& twf, QMCHamiltonian& hamiltonian)

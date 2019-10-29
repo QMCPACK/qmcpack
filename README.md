@@ -23,17 +23,17 @@ performance and easiest configuration.
 Nightly testing currently includes the following software versions on x86:
 
 * Compilers
-  * GCC 8.3.0, 7.4.0, 5.5.0
-  * Clang/LLVM 7.0.1, 6.0.1, 4.0.1
-  * Intel 2019.4, 2018.5
-  * PGI 19.4
-* Boost 1.70.0, 1.61.0 
+  * GCC 9.2.0, 7.2.0
+  * Clang/LLVM 9.0.0, 5.0.1
+  * Intel 2019.5, 2018.5 configured to use C++ library from GCC 7.4.0 
+  * PGI 19.4 configured to use C++ library from GCC 8.3.0
+* Boost 1.70.0, 1.65.1
 * HDF5 1.10.5, 1.8.19
 * FFTW 3.3.8, 3.3.4
-* CMake 3.14.4, 3.8.2
+* CMake 3.15.4, 3.8.2
 * MPI
   * OpenMPI 4.0.1, 2.1.1
-  * Intel MPI 2019.4, 2018.5
+  * Intel MPI 2019.5, 2018.5
 * CUDA 10.1.243
 
 # Building with CMake

@@ -17,10 +17,12 @@
 #include "QMCDrivers/DMC/DMCDriverInput.h"
 #include "QMCDrivers/MCPopulation.h"
 #include "QMCDrivers/ContextForSteps.h"
-#include "QMCDrivers/GreenFunctionModifiers/DriftModifierBase.h"
 
 namespace qmcplusplus
 {
+
+class DriverModifierBase;
+
 /** @ingroup QMCDrivers  ParticleByParticle
  * @brief Implements a DMC using particle-by-particle move. Threaded execution.
  */
@@ -46,12 +48,17 @@ public:
     IndexType step;
     int block;
     bool recomputing_blocks;
-    StateForThread(QMCDriverInput& qmci, DMCDriverInput& dmci, DriftModifierBase& drift_mod, BranchEngineType& branch_eng,  MCPopulation& pop)
+    StateForThread(QMCDriverInput& qmci,
+                   DMCDriverInput& dmci,
+                   DriftModifierBase& drift_mod,
+                   BranchEngineType& branch_eng,
+                   MCPopulation& pop)
         : qmcdrv_input(qmci), dmcdrv_input(dmci), drift_modifier(drift_mod), population(pop), branch_engine(branch_eng)
     {}
   };
 
-  struct DMCPerWalkerRefs {
+  struct DMCPerWalkerRefs
+  {
     RefVector<MCPWalker> walkers;
     RefVector<TrialWaveFunction> walker_twfs;
     RefVector<QMCHamiltonian> walker_hamiltonians;
@@ -82,6 +89,8 @@ public:
              WaveFunctionPool& ppool,
              Communicate* comm);
 
+  DMCBatched(DMCBatched&&) = default;
+
   /** The initial number of local walkers
    *
    *  Currently substantially the same as VMCBatch so if it doesn't change
@@ -94,7 +103,7 @@ public:
   static void advanceWalkers(const StateForThread& sft,
                              Crowd& crowd,
                              DriverTimers& timers,
-//                             DMCTimers& dmc_timers,
+                             //                             DMCTimers& dmc_timers,
                              ContextForSteps& move_context,
                              bool recompute);
 
@@ -103,12 +112,14 @@ public:
   static void runDMCStep(int crowd_id,
                          const StateForThread& sft,
                          DriverTimers& timers,
-//                         DMCTimers& dmc_timers,
-                         std::vector<std::unique_ptr<ContextForSteps>>& move_context,
-                         std::vector<std::unique_ptr<Crowd>>& crowds);
+                         //                         DMCTimers& dmc_timers,
+                         UPtrVector<ContextForSteps>& move_context,
+                         UPtrVector<Crowd>& crowds);
 
 
   QMCRunType getRunType() { return QMCRunType::DMC_BATCH; }
+
+  void setNonLocalMoveHandler(QMCHamiltonian& golden_hamiltonian);
 
 private:
   DMCDriverInput dmcdriver_input_;
@@ -120,7 +131,9 @@ private:
   /// Copy operator (disabled).
   DMCBatched& operator=(const DMCBatched&) = delete;
 
-  static void setMultiplicities(const DMCDriverInput& dmcdriver_input,RefVector<MCPWalker>& walkers, RandomGenerator_t& rng);
+  static void setMultiplicities(const DMCDriverInput& dmcdriver_input,
+                                RefVector<MCPWalker>& walkers,
+                                RandomGenerator_t& rng);
   // struct DMCTimers
   // {
   //   NewTimer& dmc_movePbyP;

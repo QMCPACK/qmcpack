@@ -123,12 +123,12 @@ TEST_CASE("PlaneWave SPO from HDF for BCC H", "[wavefunction]")
   xmlNodePtr pw1 = xmlFirstElementChild(root);
 
 
-  PWOrbitalBuilder pw_builder(elec, psi, ptcl.getPool());
-  pw_builder.put(pw1);
+  PWOrbitalBuilder pw_builder(c, elec, ptcl.getPool());
+  WaveFunctionComponent* orb = pw_builder.buildComponent(pw1);
+  psi.addComponent(orb, "PW_SD");
 
   REQUIRE(psi.getOrbitals().size() == 1);
-  WaveFunctionComponent* orb = psi.getOrbitals()[0];
-  SlaterDet* sd              = dynamic_cast<SlaterDet*>(orb);
+  SlaterDet* sd = dynamic_cast<SlaterDet*>(orb);
   REQUIRE(sd != NULL);
   REQUIRE(sd->Dets.size() == 2);
   SPOSetPtr spo = sd->mySPOSet.begin()->second;
@@ -278,12 +278,12 @@ TEST_CASE("PlaneWave SPO from HDF for LiH arb", "[wavefunction]")
   xmlNodePtr pw1 = xmlFirstElementChild(root);
 
 
-  PWOrbitalBuilder pw_builder(elec, psi, ptcl.getPool());
-  pw_builder.put(pw1);
+  PWOrbitalBuilder pw_builder(c, elec, ptcl.getPool());
+  WaveFunctionComponent* orb = pw_builder.buildComponent(pw1);
+  psi.addComponent(orb, "PW_SD");
 
   REQUIRE(psi.getOrbitals().size() == 1);
-  WaveFunctionComponent* orb = psi.getOrbitals()[0];
-  SlaterDet* sd              = dynamic_cast<SlaterDet*>(orb);
+  SlaterDet* sd = dynamic_cast<SlaterDet*>(orb);
   REQUIRE(sd != NULL);
   REQUIRE(sd->Dets.size() == 2);
   SPOSetPtr spo = sd->mySPOSet.begin()->second;

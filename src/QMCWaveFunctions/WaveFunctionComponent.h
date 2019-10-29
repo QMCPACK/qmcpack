@@ -29,9 +29,6 @@
 #ifdef QMC_CUDA
 #include "type_traits/CUDATypes.h"
 #endif
-#if defined(ENABLE_SMARTPOINTER)
-#include <boost/shared_ptr.hpp>
-#endif
 
 /**@file WaveFunctionComponent.h
  *@brief Declaration of WaveFunctionComponent
@@ -53,13 +50,8 @@ class WaveFunctionComponent;
 ///forward declaration of DiffWaveFunctionComponent
 class DiffWaveFunctionComponent;
 
-#if defined(ENABLE_SMARTPOINTER)
-typedef boost::shared_ptr<WaveFunctionComponent> WaveFunctionComponentPtr;
-typedef boost::shared_ptr<DiffWaveFunctionComponent> DiffWaveFunctionComponentPtr;
-#else
 typedef WaveFunctionComponent* WaveFunctionComponentPtr;
 typedef DiffWaveFunctionComponent* DiffWaveFunctionComponentPtr;
-#endif
 
 /**@defgroup WaveFunctionComponent group
  * @brief Classes which constitute a many-body trial wave function
