@@ -2129,6 +2129,30 @@ def simulation():
 
 
 
+def project_manager():
+    nunit('import')
+
+    nunit('init')
+
+    nunit('add_simulations')
+
+    nunit('traverse_cascades')
+
+    nunit('screen_fake_sims')
+
+    nunit('resolve_file_collisions')
+
+    nunit('propagate_blockages')
+
+    nunit('load_cascades')
+    
+    nunit('check_dependencies')
+
+    nunit_all()
+#end def project_manager
+
+
+
 def pwscf_input():
     # divert logging function
     nlog_divert()
@@ -2454,41 +2478,9 @@ def pwscf_input():
 #end def pwscf_input
 
 
-
 def qmcpack_input():
-
-    nunit('files')
-
-    nunit('compose')
-
-    nunit('generate')
-
-    nunit('read')
-
-    nunit('write')
-
-    nunit('generate_kspace_jastrow')
-
-    nunit('excited_state')
-
     nunit_all()
 #end def qmcpack_input
-
-
-
-def qmcpack_converters():
-
-    nunit('import')
-
-    nunit('pyscf_to_afqmc_input_init')
-
-    nunit('pyscf_to_afqmc_input_write')
-
-    nunit('pyscf_to_afqmc_analyzer_init')
-
-    nunit_all()
-#end def qmcpack_converters
-
 
 
 def grid_functions():
@@ -2825,9 +2817,9 @@ NexusTest( pseudopotential       )
 NexusTest( nexus_base            )
 NexusTest( machines              )
 NexusTest( simulation            )
+NexusTest( project_manager       )
 NexusTest( pwscf_input           )
 NexusTest( qmcpack_input         )
-NexusTest( qmcpack_converters    )
 NexusTest( settings_operation    , 'settings' )
 
 for label in example_information.keys():
