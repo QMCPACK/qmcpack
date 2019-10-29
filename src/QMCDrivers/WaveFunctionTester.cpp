@@ -792,9 +792,7 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
 
       LogValueType logpsi0 = orb->evaluateLog(W, tmpG, tmpL);
 #if defined(QMC_COMPLEX)
-      //FIXME: the following line has compilation error with mixed precision
-      //ValueType logpsi = logpsi0;
-      ValueType logpsi;
+      ValueType logpsi(logpsi0.real(), logpsi0.imag());
 #else
       ValueType logpsi = std::real(logpsi0);
 #endif
@@ -843,9 +841,7 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
 
           LogValueType logpsi0 = det->evaluateLog(W, tmpG, tmpL);
 #if defined(QMC_COMPLEX)
-          //FIXME: the following line has compilation error with mixed precision
-          //ValueType logpsi = logpsi0;
-          ValueType logpsi;
+          ValueType logpsi(logpsi0.real(), logpsi0.imag());
 #else
           ValueType logpsi = std::real(logpsi0);
 #endif
