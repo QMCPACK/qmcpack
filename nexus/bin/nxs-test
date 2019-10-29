@@ -2157,6 +2157,16 @@ def project_manager():
 
 
 
+def bundle():
+    nunit('import')
+
+    nunit('bundle')
+
+    nunit_all()
+#end def bundle
+
+
+
 def pwscf_input():
     # divert logging function
     nlog_divert()
@@ -2821,10 +2831,11 @@ NexusTest( pseudopotential       )
 NexusTest( nexus_base            )
 NexusTest( machines              )
 NexusTest( simulation            )
+NexusTest( bundle                )
+NexusTest( settings_operation    , 'settings' )
 NexusTest( project_manager       )
 NexusTest( pwscf_input           )
 NexusTest( qmcpack_input         )
-NexusTest( settings_operation    , 'settings' )
 
 for label in example_information.keys():
     NexusTest(
