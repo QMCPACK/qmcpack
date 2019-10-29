@@ -101,9 +101,9 @@ public:
 
   ValueType evaluate(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
 
-  RealType evaluateLog(ParticleSet& P,
-                       ParticleSet::ParticleGradient_t& G,
-                       ParticleSet::ParticleLaplacian_t& L) override;
+  LogValueType evaluateLog(ParticleSet& P,
+                           ParticleSet::ParticleGradient_t& G,
+                           ParticleSet::ParticleLaplacian_t& L) override;
 
   GradType evalGrad(ParticleSet& P, int iat) override;
   ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
@@ -122,7 +122,7 @@ public:
   void restore(int iat) override;
 
   void registerData(ParticleSet& P, WFBufferType& buf) override;
-  RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override;
+  LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override;
   void copyFromBuffer(ParticleSet& P, WFBufferType& buf) override;
 
   WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const override;
