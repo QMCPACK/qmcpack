@@ -58,7 +58,7 @@ public:
 
   void registerData(ParticleSet& P, WFBufferType& buf);
 
-  ValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false);
+  LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false);
 
   void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
 
@@ -92,7 +92,7 @@ public:
    *contribution of the determinant to G(radient) and L(aplacian)
    *for local energy calculations.
    */
-  ValueType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
+  LogValueType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
 
   WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;
 

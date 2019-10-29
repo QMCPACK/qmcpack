@@ -30,7 +30,7 @@ public:
 
   ConstantOrbital() : FakeGradRatio(1.0) {}
 
-  virtual RealType evaluateLog(ParticleSet& P,
+  virtual LogValueType evaluateLog(ParticleSet& P,
                                ParticleSet::ParticleGradient_t& G,
                                ParticleSet::ParticleLaplacian_t& L) override
   {
@@ -51,7 +51,7 @@ public:
 
   virtual void registerData(ParticleSet& P, WFBufferType& buf) override {}
 
-  virtual RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override { return 0.0; }
+  virtual LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override { return 0.0; }
 
   virtual void copyFromBuffer(ParticleSet& P, WFBufferType& buf) override {}
 

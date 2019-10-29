@@ -68,7 +68,7 @@ public:
 
   virtual void resetTargetParticleSet(ParticleSet& P) override;
 
-  virtual RealType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L) override;
+  virtual LogValueType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L) override;
 
   virtual void mw_evaluateLog(const std::vector<WaveFunctionComponent*>& WFC_list,
                               const std::vector<ParticleSet*>& P_list,
@@ -84,7 +84,7 @@ public:
 
   virtual void registerData(ParticleSet& P, WFBufferType& buf) override;
 
-  virtual RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override;
+  virtual LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override;
 
   virtual void copyFromBuffer(ParticleSet& P, WFBufferType& buf) override;
 
@@ -153,12 +153,8 @@ public:
     Dets[getDetID(iat)]->acceptMove(P, iat);
 
     LogValue   = 0.0;
-    PhaseValue = 0.0;
     for (int i = 0; i < Dets.size(); ++i)
-    {
       LogValue += Dets[i]->LogValue;
-      PhaseValue += Dets[i]->PhaseValue;
-    }
   }
 
   virtual void mw_acceptMove(const std::vector<WaveFunctionComponent*>& WFC_list,
@@ -168,10 +164,7 @@ public:
     constexpr RealType czero(0);
 
     for (int iw = 0; iw < WFC_list.size(); iw++)
-    {
       WFC_list[iw]->LogValue   = czero;
-      WFC_list[iw]->PhaseValue = czero;
-    }
 
     for (int i = 0; i < Dets.size(); ++i)
     {
@@ -181,10 +174,7 @@ public:
         Dets[i]->mw_acceptMove(Det_list, P_list, iat);
 
       for (int iw = 0; iw < WFC_list.size(); iw++)
-      {
         WFC_list[iw]->LogValue += Det_list[iw]->LogValue;
-        WFC_list[iw]->PhaseValue += Det_list[iw]->PhaseValue;
-      }
     }
   }
 
