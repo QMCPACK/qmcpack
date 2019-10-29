@@ -147,7 +147,6 @@ TEST_CASE("Crowd redistribute walkers")
     crowd.addWalker(*crowd_with_walkers.walkers[iw], *crowd_with_walkers.psets[iw], *crowd_with_walkers.twfs[iw],
                     *crowd_with_walkers.hams[iw]);
   REQUIRE(crowd.size() == 3);
-  REQUIRE(crowd.get_grads_new().size() == 3);
 }
 
 } // namespace qmcplusplus

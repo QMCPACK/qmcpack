@@ -66,7 +66,7 @@ ENDIF()
                     qmc_short_vmcbatch_dmcbatch.in.xml
                     1 16
                     TRUE
-                    0 DIAMOND2_DMC_SCALARS # VMC
+                    1 DIAMOND2_DMC_SCALARS # DMC
                     )
                   
   LIST(APPEND DIAMOND2_DMC_SCALARS "totenergy" "-21.844975 0.00779")
