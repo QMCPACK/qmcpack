@@ -13,7 +13,9 @@ def value_diff(v1,v2,tol=1e-6,int_as_float=False):
     v2_float = isinstance(v2,(float,np.float_))
     v1_str   = isinstance(v1,(str,np.string_))
     v2_str   = isinstance(v2,(str,np.string_))
-    if int_as_float and (v1_int or v1_float) and (v2_int or v2_float):
+    if id(v1)==id(v2):
+        None
+    elif int_as_float and (v1_int or v1_float) and (v2_int or v2_float):
         diff = np.abs(float(v1)-float(v2))>tol
     elif v1_float and v2_float:
         diff = np.abs(v1-v2)>tol
@@ -222,7 +224,7 @@ def unit_test_output_path(test,subtest=None):
 
 
 # setup the output directory for a test
-def setup_unit_test_output_directory(test,subtest):
+def setup_unit_test_output_directory(test,subtest,divert=False):
     import os
     import shutil
     path = unit_test_output_path(test,subtest)
@@ -235,6 +237,13 @@ def setup_unit_test_output_directory(test,subtest):
     #end if
     os.makedirs(path)
     assert(os.path.exists(path))
+    if divert:
+        from nexus_base import nexus_core
+        divert_nexus()
+        nexus_core.local_directory  = path
+        nexus_core.remote_directory = path
+        nexus_core.file_locations = nexus_core.file_locations + [path]
+    #end if
     return path
 #end def setup_unit_test_output_directory
 
@@ -266,6 +275,8 @@ class FakeLog:
 # dict to temporarily store logger when log output is diverted
 logging_storage = dict()
 
+# dict to temporarily store nexus core attributes when diverted
+nexus_core_storage = dict()
 
 
 # divert nexus log output
@@ -284,11 +295,52 @@ def divert_nexus_log():
 # restore nexus log output
 def restore_nexus_log():
     from generic import generic_settings,object_interface
-    generic_settings.devlog   = logging_storage['devlog']
-    object_interface._logfile = logging_storage['objlog']
-    logging_storage.clear()
+    assert(set(logging_storage.keys())==set(['devlog','objlog']))
+    generic_settings.devlog   = logging_storage.pop('devlog')
+    object_interface._logfile = logging_storage.pop('objlog')
     assert(len(logging_storage)==0)
 #end def restore_nexus_log
+
+
+# divert nexus core attributes
+def divert_nexus_core():
+    from nexus_base import nexus_core
+    assert(len(nexus_core_storage)==0)
+    nexus_core_storage['local']          = nexus_core.local_directory
+    nexus_core_storage['remote']         = nexus_core.remote_directory
+    nexus_core_storage['mode']           = nexus_core.mode
+    nexus_core_storage['stages']         = nexus_core.stages
+    nexus_core_storage['stages_set']     = nexus_core.stages_set
+    nexus_core_storage['file_locations'] = nexus_core.file_locations
+#end def divert_nexus_core
+
+
+# restore nexus core attributes
+def restore_nexus_core():
+    from nexus_base import nexus_core
+    nckeys = ['local','remote','mode','stages','stages_set','file_locations']
+    assert(set(nexus_core_storage.keys())==set(nckeys))
+    nexus_core.local_directory  = nexus_core_storage.pop('local')
+    nexus_core.remote_directory = nexus_core_storage.pop('remote')
+    nexus_core.mode             = nexus_core_storage.pop('mode')
+    nexus_core.stages           = nexus_core_storage.pop('stages')
+    nexus_core.stages_set       = nexus_core_storage.pop('stages_set')
+    nexus_core.file_locations   = nexus_core_storage.pop('file_locations')
+    assert(len(nexus_core_storage)==0)
+#end def restore_nexus_core
+
+
+def divert_nexus():
+    divert_nexus_log()
+    divert_nexus_core()
+#end def divert_nexus
+
+
+def restore_nexus():
+    restore_nexus_log()
+    restore_nexus_core()
+#end def restore_nexus
+
 
 
 # declare test failure
@@ -298,11 +350,17 @@ def failed(msg='Test failed.'):
 #end def failed
 
 
-class TestFailed(Exception):
+class FailedTest(Exception):
     None
-#end class TestFailed
+#end class FailedTest
 
 
 global_data = dict(
     job_ref_table = False,
     )
+
+
+def divert_nexus_errors():
+    from generic import generic_settings
+    generic_settings.raise_error = True
+#end def divert_nexus_errors
