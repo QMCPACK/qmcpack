@@ -28,6 +28,7 @@
 
 namespace qmcplusplus
 {
+// helper class to activate KEcorr during optimizing Jastrow
 template<typename RT, class FT>
 class J2KECorrection
 {
@@ -81,7 +82,6 @@ public:
           }
         }
       }
-      //app_log() << "A = " << aparam << std::endl;
     }
     for (int iter = 0; iter < 20; iter++)
       a = uk / (4.0 * M_PI * (1.0 / (G0mag * G0mag) - 1.0 / (G0mag * G0mag + 1.0 / a)));
