@@ -2148,6 +2148,10 @@ def project_manager():
     
     nunit('check_dependencies')
 
+    nunit('write_simulation_status')
+
+    nunit('run_project')
+
     nunit_all()
 #end def project_manager
 

@@ -3,6 +3,7 @@ import testing
 from testing import value_eq,object_eq
 from testing import failed,FailedTest
 from testing import divert_nexus_log,restore_nexus_log
+from testing import divert_nexus,restore_nexus
 
 
 def test_import():
@@ -283,3 +284,165 @@ def test_check_dependencies():
 
     Simulation.clear_all_sims()
 #end def test_check_dependencies
+
+
+
+def test_write_simulation_status():
+    from generic import generic_settings
+    from nexus_base import nexus_core
+    from simulation import Simulation
+    from project_manager import ProjectManager
+
+    from test_simulation import get_test_workflow
+
+    divert_nexus()
+
+    log = generic_settings.devlog
+
+    sims = get_test_workflow(3)
+    for id,sim in sims.items():
+        sim.identifier = 'test_sim_'+id
+    #end for
+
+    pm = ProjectManager()
+    pm.add_simulations(sims.list())
+
+    status_modes = nexus_core.status_modes
+
+    def status_log():
+        log.reset()
+        pm.write_simulation_status()
+        s = log.contents()
+        return s
+    #end def status_log
+
+    assert(nexus_core.status==status_modes.none)
+    status_ref = '''
+  cascade status 
+    setup, sent_files, submitted, finished, got_output, analyzed, failed 
+    000000  0  ------    test_sim_s11  ./runs/  
+    000000  0  ------    test_sim_s21  ./runs/  
+    000000  0  ------    test_sim_s12  ./runs/  
+    000000  0  ------    test_sim_s22  ./runs/  
+    000000  0  ------    test_sim_s3  ./runs/  
+    000000  0  ------    test_sim_s4  ./runs/  
+    000000  0  ------    test_sim_s5  ./runs/  
+    setup, sent_files, submitted, finished, got_output, analyzed, failed 
+    '''
+    assert(status_log().strip()==status_ref.strip())
+
+    nexus_core.status = status_modes.standard
+    assert(status_log().strip()==status_ref.strip())
+
+    nexus_core.status = status_modes.active
+    status_ref = '''
+  cascade status 
+    setup, sent_files, submitted, finished, got_output, analyzed, failed 
+    000000  0  ------    test_sim_s11  ./runs/  
+    000000  0  ------    test_sim_s12  ./runs/  
+    setup, sent_files, submitted, finished, got_output, analyzed, failed 
+    '''
+    assert(status_log().strip()==status_ref.strip())
+
+    nexus_core.status = status_modes.ready
+    assert(status_log().strip()==status_ref.strip())
+
+    nexus_core.status = status_modes.failed
+    status_ref = '''
+  cascade status 
+    setup, sent_files, submitted, finished, got_output, analyzed, failed 
+    setup, sent_files, submitted, finished, got_output, analyzed, failed
+    '''
+    assert(status_log().strip()==status_ref.strip())
+
+    restore_nexus()
+
+    Simulation.clear_all_sims()
+#end def test_write_simulation_status
+
+
+
+def test_run_project():
+    from generic import generic_settings
+    from nexus_base import nexus_core
+    from simulation import Simulation,input_template
+    from project_manager import ProjectManager
+
+    from test_simulation import get_test_workflow,n_test_workflows
+
+    tpath = testing.setup_unit_test_output_directory('project_manager','test_run_project',divert=True)
+
+    assert(nexus_core.mode==nexus_core.modes.stages)
+    assert(len(nexus_core.stages)==0)
+
+    nexus_core.stages     = list(nexus_core.primary_modes)
+    nexus_core.stages_set = set(nexus_core.stages)
+
+    primary_modes = ['setup','send_files','submit','get_output','analyze']
+    assert(value_eq(nexus_core.stages,primary_modes))
+    assert(value_eq(nexus_core.stages_set,set(primary_modes)))
+
+    nexus_core.sleep = 0.1
+
+    log = generic_settings.devlog
+
+    flags = ['setup','sent_files','submitted','finished','got_output','analyzed']
+
+    def finished(s):
+        f = True
+        for flag in flags:
+            f &= s[flag]
+        #end for
+        f &= isinstance(s.process_id,int)
+        return f
+    #end def finished
+
+    def empty(s):
+        e = True
+        for flag in flags:
+            e &= not s[flag]
+        #end for
+        e &= s.process_id is None
+        e &= s.job.system_id is None
+        return e
+    #end def empty
+
+    sims = []
+    for n in range(n_test_workflows):
+    #for n in range(1):
+        sims.extend(get_test_workflow(n).list())
+    #end for
+
+    template = '''
+name = "$name"
+a    = $a
+'''
+    for s in sims:
+        si = input_template(text=template)
+        si.assign(name='input_name',a=1)
+        s.input = si
+    #end for
+
+    for s in sims:
+        assert(empty(s))
+    #end for
+
+    pm = ProjectManager()
+    pm.machine = sims[0].job.get_machine()
+    pm.add_simulations(sims)
+
+    #pm.write_simulation_status()
+
+    pm.run_project()
+
+    #pm.write_simulation_status()
+    #print(log.contents())
+
+    for s in sims:
+        assert(finished(s))
+    #end for
+
+    restore_nexus()
+
+    Simulation.clear_all_sims()
+#end def test_run_project
