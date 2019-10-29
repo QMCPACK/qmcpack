@@ -122,7 +122,7 @@ public:
   ///Container for \f$F[ig*NumGroups+jg]\f$.
   std::vector<FT*> F;
 
-private:
+protected:
   ///number of particles
   size_t N;
   ///number of particles + padded
