@@ -14,18 +14,17 @@
 #ifndef QMCPLUSPLUS_TWOBODYJASTROW_OPTIMIZED_SOA_H
 #define QMCPLUSPLUS_TWOBODYJASTROW_OPTIMIZED_SOA_H
 
-#include <simd/allocator.hpp>
-#include <simd/algorithm.hpp>
 #include <map>
 #include <numeric>
 #include "Configuration.h"
 #if !defined(QMC_BUILD_SANDBOX_ONLY)
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/Jastrow/DiffTwoBodyJastrowOrbital.h"
-#include <qmc_common.h>
 #endif
 #include "Particle/DistanceTableData.h"
 #include "LongRange/StructFact.h"
+#include <simd/allocator.hpp>
+#include <simd/algorithm.hpp>
 
 namespace qmcplusplus
 {
