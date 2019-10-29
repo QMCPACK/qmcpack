@@ -134,6 +134,7 @@ TEST_CASE("CountingJastrow","[wavefunction]")
   using RealType = QMCTraits::RealType;
   using ValueType = QMCTraits::ValueType;
   using VariableSet = optimize::VariableSet;
+  using LogValueType = std::complex<QMCTraits::QTFull::RealType>;
 
   Communicate* c;
   OHMMS::Controller->initialize(0, NULL);
@@ -219,14 +220,14 @@ TEST_CASE("CountingJastrow","[wavefunction]")
 
 
   // test evaluateLog for cj
-  RealType logval = cj->evaluateLog(elec, elec.G, elec.L);
+  LogValueType logval = cj->evaluateLog(elec, elec.G, elec.L);
   for(int i = 0; i < num_els; ++i)
   {
     for(int k = 0; k < 3; ++k)
       REQUIRE( Jgrad_exact[i][k] == Approx( std::real(elec.G[i][k])) );
     REQUIRE( Jlap_exact[i] == Approx( std::real(elec.L[i])) );
   }
-  REQUIRE( Jval_exact == Approx(logval) );
+  REQUIRE( ComplexApprox(Jval_exact) == logval );
   
   // test automatic/minimal voronoi generator
   const char * cj_voronoi_xml = "<jastrow name=\"ncjf_voronoi\" type=\"Counting\" source=\"ion0\">\
@@ -265,7 +266,7 @@ TEST_CASE("CountingJastrow","[wavefunction]")
       REQUIRE( Jgrad_exact[i][k] == Approx( std::real(elec.G[i][k])) );
     REQUIRE( Jlap_exact[i] == Approx( std::real(elec.L[i])) );
   }
-  REQUIRE( Jval_exact == Approx(logval) );
+  REQUIRE( ComplexApprox(Jval_exact) == logval );
   
   // test evalGrad
   for(int iat = 0; iat < num_els; ++iat)
@@ -395,7 +396,7 @@ TEST_CASE("CountingJastrow","[wavefunction]")
     optVars[p] = 0;
   cj->resetParameters(optVars);
   cj->recompute(elec);
-  REQUIRE( cj->LogValue == 0 );
+  REQUIRE( cj->LogValue == LogValueType(0) );
 #endif
 
 }

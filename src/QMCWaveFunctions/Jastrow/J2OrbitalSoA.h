@@ -237,7 +237,7 @@ public:
 
   WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;
 
-  RealType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
+  LogValueType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
 
   void evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi);
 
@@ -292,7 +292,7 @@ public:
     d2Uat.attachReference(buf.lendReference<valT>(N), N);
   }
 
-  RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false)
+  LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false)
   {
     evaluateGL(P, P.G, P.L, false);
     buf.forward(Bytes_in_WFBuffer);
@@ -642,7 +642,7 @@ void J2OrbitalSoA<FT>::recompute(ParticleSet& P)
 }
 
 template<typename FT>
-typename J2OrbitalSoA<FT>::RealType J2OrbitalSoA<FT>::evaluateLog(ParticleSet& P,
+typename J2OrbitalSoA<FT>::LogValueType J2OrbitalSoA<FT>::evaluateLog(ParticleSet& P,
                                                                   ParticleSet::ParticleGradient_t& G,
                                                                   ParticleSet::ParticleLaplacian_t& L)
 {
@@ -666,8 +666,7 @@ void J2OrbitalSoA<FT>::evaluateGL(ParticleSet& P,
     L[iat] += d2Uat[iat];
   }
 
-  constexpr valT mhalf(-0.5);
-  LogValue = mhalf * LogValue;
+  LogValue = - LogValue * 0.5;
 }
 
 template<typename FT>
