@@ -62,6 +62,9 @@ private:
   template<class RadFuncType>
   void initTwoBodyFunctor(RadFuncType& functor, double fac);
 
+  template<class RadFuncType>
+  void computeJ2uk(const std::vector<RadFuncType*>& functors);
+
   void guardAgainstOBC();
   void guardAgainstPBC();
 
