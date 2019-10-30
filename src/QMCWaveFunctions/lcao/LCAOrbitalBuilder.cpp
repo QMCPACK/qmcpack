@@ -858,10 +858,11 @@ void LCAOrbitalBuilder::EvalPeriodicImagePhaseFactors(PosType SuperTwist )
 {
 
 #if not defined(QMC_COMPLEX)
-  PeriodicImagePhaseFactors.resize(3);
-  PeriodicImagePhaseFactors[0] = 1.0;
-  PeriodicImagePhaseFactors[1] = 1.0;
-  PeriodicImagePhaseFactors[2] = 1.0;
+  const int NbImages=(PBCImages[0]+1)*(PBCImages[1]+1)*(PBCImages[2]+1);
+  PeriodicImagePhaseFactors.resize(NbImages);
+  for (size_t i=0; i< NbImages; i++)
+     PeriodicImagePhaseFactors[i]=1.0;
+     
 #else
   ///Exp(ik.g) where i is imaginary, k is the supertwist and g is the translation vector PBCImage.
   if (h5_path!="")
