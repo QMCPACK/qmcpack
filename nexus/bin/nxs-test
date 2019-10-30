@@ -593,6 +593,12 @@ def optional_dependencies():
 
 
 
+def nexus_imports():
+    nunit_all()
+#end def nexus_imports
+
+
+
 def testing():
     nunit_all()
 #end def testing
@@ -670,75 +676,6 @@ def hdfreader():
 def xmlreader():
     nunit_all()
 #end def xmlreader
-
-
-
-
-def nexus_imports():
-    nunit_all()
-#end def nexus_imports
-
-
-
-
-def settings_operation():
-    nunit('import')
-
-    nunit('settings')
-
-    nunit_all()
-#end def settings_operation
-
-
-
-def machines():
-
-    nunit('import')
-
-    nunit('cpu_count')
-
-    nunit('options')
-
-    nunit('job_init')
-
-    nunit('job_time')
-
-    nunit('job_set_id')
-
-    nunit('job_get_machine')
-
-    nunit('job_set_environment')
-
-    nunit('job_clone')
-
-    nunit('job_serial_clone')
-
-    nunit('machine_virtuals')
-
-    nunit('machine_list')
-
-    nunit('machine_add')
-
-    nunit('machine_get')
-
-    nunit('machine_instantiation')
-
-    nunit('workstation_init')
-
-    nunit('workstation_scheduling')
-
-    nunit('supercomputer_init')
-
-    nunit('supercomputer_scheduling')
-
-    nunit('process_job')
-
-    nunit('job_run_command')
-
-    nunit('write_job')
-
-    nunit_all()
-#end def machines
 
 
 
@@ -833,6 +770,57 @@ def nexus_base():
 
 
 
+def machines():
+
+    nunit('import')
+
+    nunit('cpu_count')
+
+    nunit('options')
+
+    nunit('job_init')
+
+    nunit('job_time')
+
+    nunit('job_set_id')
+
+    nunit('job_get_machine')
+
+    nunit('job_set_environment')
+
+    nunit('job_clone')
+
+    nunit('job_serial_clone')
+
+    nunit('machine_virtuals')
+
+    nunit('machine_list')
+
+    nunit('machine_add')
+
+    nunit('machine_get')
+
+    nunit('machine_instantiation')
+
+    nunit('workstation_init')
+
+    nunit('workstation_scheduling')
+
+    nunit('supercomputer_init')
+
+    nunit('supercomputer_scheduling')
+
+    nunit('process_job')
+
+    nunit('job_run_command')
+
+    nunit('write_job')
+
+    nunit_all()
+#end def machines
+
+
+
 def simulation():
 
     nunit('import')
@@ -918,6 +906,16 @@ def simulation():
 
 
 
+def bundle():
+    nunit('import')
+
+    nunit('bundle')
+
+    nunit_all()
+#end def bundle
+
+
+
 def project_manager():
     nunit('import')
 
@@ -946,13 +944,13 @@ def project_manager():
 
 
 
-def bundle():
+def settings_operation():
     nunit('import')
 
-    nunit('bundle')
+    nunit('settings')
 
     nunit_all()
-#end def bundle
+#end def settings_operation
 
 
 
@@ -1307,8 +1305,8 @@ NexusTest( nexus_base            )
 NexusTest( machines              )
 NexusTest( simulation            )
 NexusTest( bundle                )
-NexusTest( settings_operation    , 'settings' )
 NexusTest( project_manager       )
+NexusTest( settings_operation    , 'settings' )
 NexusTest( pwscf_input           )
 NexusTest( qmcpack_input         )
 
