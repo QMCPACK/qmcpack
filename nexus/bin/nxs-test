@@ -576,54 +576,116 @@ class NexusTest(NexusTestBase):
 
 
 def versions():
+    nunit('import')
+
+    nunit('constants')
+
+    nunit('time')
+
+    nunit('version_processing')
+
+    nunit('versions_object')
+
     nunit_all()
 #end def versions
 
 
 
 def required_dependencies():
+    nunit('numpy_available')
+
     nunit_all()
 #end def required_dependencies
 
 
 
 def optional_dependencies():
+    nunit('scipy_available')
+
+    nunit('h5py_available')
+
+    nunit('matplotlib_available')
+
+    nunit('pydot_available')
+
+    nunit('spglib_available')
+
+    nunit('pycifrw_available')
+
+    nunit('seekpath_available')
+
     nunit_all()
 #end def optional_dependencies
 
 
 
 def nexus_imports():
+    nunit('imports')
+    
     nunit_all()
 #end def nexus_imports
 
 
 
 def testing():
+    nunit('import')
+
+    nunit('value_checks')
+
+    nunit('object_checks')
+
     nunit_all()
 #end def testing
 
 
 
 def execute():
+    nunit('import')
+
+    nunit('execute')
+
     nunit_all()
 #end def execute
 
 
 
 def memory():
+    nunit('import')
+
+    nunit('memory')
+
+    nunit('resident')
+
+    nunit('stacksize')
+
     nunit_all()
 #end def memory
 
 
 
 def plotting():
+    nunit('import')
+
     nunit_all()
 #end def plotting
 
 
 
 def superstring():
+    nunit('imports')
+
+    nunit('string2val')
+
+    nunit('split_delims')
+
+    nunit('valid_variable_name')
+
+    nunit('find_matching_pair')
+
+    nunit('remove_pair_sections')
+
+    nunit('remove_empty_lines')
+
     nunit_all()
 #end def superstring
 
@@ -632,48 +694,161 @@ def superstring():
 def generic_operation():
     nunit('logging')
 
+    nunit('intrinsics')
+
+    nunit('extensions')
+
     nunit_all()
 #end def generic_operation
 
 
 
 def developer():
+    nunit('import')
+
+    nunit('unavailable')
+
     nunit_all()
 #end def developer
 
 
 
 def unit_converter():
+    nunit('import')
+
+    nunit('convert')
+
+    nunit('convert_scalar_to_all')
+
     nunit_all()
 #end def unit_converter
 
 
 
 def periodic_table():
+    nunit('import')
+
+    nunit('periodic_table')
+
+    nunit('is_element')
+
     nunit_all()
 #end def periodic_table
 
 
 
 def numerics():
+    nunit('import')
+
+    nunit('ndgrid')
+
+    nunit('distance_table')
+
+    nunit('nearest_neighbors')
+
+    nunit('simplestats')
+
+    nunit('simstats')
+
+    nunit('equilibration_length')
+
+    nunit('morse')
+
+    nunit('eos')
+
     nunit_all()
 #end def numerics
 
 
 
+def grid_functions():
+    nunit('imports')
+
+    # supporting functions
+    nunit('coord_conversion')
+
+    nunit('unit_grid_points')
+
+    nunit('parallelotope_grid_points')
+
+    nunit('spheroid_grid_points')
+
+    # Grid tests
+    nunit('grid_initialization')
+
+    nunit('parallelotope_grid_initialization')
+
+    nunit('grid_reset')
+
+    nunit('grid_set_operations')
+
+    nunit('grid_copy')
+
+    nunit('grid_translate')
+
+    nunit('grid_reshape')
+
+    nunit('grid_unit_points')
+
+    nunit('grid_cell_indices')
+
+    nunit('grid_inside')
+
+    nunit('grid_project')
+
+    nunit('grid_radius')
+
+    nunit('grid_axes_volume')
+
+    nunit('grid_volume')
+
+    nunit('grid_cell_volumes')
+
+    nunit('grid_unit_metric')
+
+    # GridFunction tests
+
+    # any remaining tests
+    nunit_all()
+#end def grid_functions
+
+
+
 def fileio():
+    nunit('files')
+
+    nunit('import')
+
+    nunit('textfile')
+
+    nunit('xsffile')
+
+    nunit('xsffile_density')
+
+    nunit('poscar_file')
+
+    nunit('chgcar_file')
+
     nunit_all()
 #end def fileio
 
 
 
 def hdfreader():
+    nunit('import')
+
     nunit_all()
 #end def hdfreader
 
 
 
 def xmlreader():
+    nunit('files')
+
+    nunit('import')
+
+    nunit('read')
+
     nunit_all()
 #end def xmlreader
 
@@ -737,18 +912,54 @@ def structure():
 
 
 def physical_system():
+    nunit('import')
+
+    nunit('particle_initialization')
+
+    nunit('physical_system_initialization')
+
+    nunit('change_units')
+
+    nunit('rename')
+
+    nunit('tile')
+
+    nunit('kf_rpa')
+
     nunit_all()
 #end def physical_system
 
 
 
 def basisset():
+    nunit('files')
+
+    nunit('import')
+
+    nunit('basissets')
+
+    nunit('process_gaussian_text')
+
+    nunit('gaussianbasisset')
+
     nunit_all()
 #end def basisset
 
 
 
 def pseudopotential():
+    nunit('files')
+
+    nunit('import')
+
+    nunit('pp_elem_label')
+
+    nunit('pseudopotentials')
+
+    nunit('ppset')
+
+    nunit('pseudopotential_classes')
+
     nunit_all()
 #end def pseudopotential
 
@@ -967,63 +1178,22 @@ def pwscf_input():
 
 
 def qmcpack_input():
+    nunit('files')
+
+    nunit('import')
+
+    nunit('compose')
+
+    nunit('generate')
+
+    nunit('read')
+
+    nunit('write')
+
+    nunit('generate_kspace_jastrow')
+
     nunit_all()
 #end def qmcpack_input
-
-
-
-def grid_functions():
-
-    nunit('imports')
-
-    # supporting functions
-    nunit('coord_conversion')
-
-    nunit('unit_grid_points')
-
-    nunit('parallelotope_grid_points')
-
-    nunit('spheroid_grid_points')
-
-    # Grid tests
-    nunit('grid_initialization')
-
-    nunit('parallelotope_grid_initialization')
-
-    nunit('grid_reset')
-
-    nunit('grid_set_operations')
-
-    nunit('grid_copy')
-
-    nunit('grid_translate')
-
-    nunit('grid_reshape')
-
-    nunit('grid_unit_points')
-
-    nunit('grid_cell_indices')
-
-    nunit('grid_inside')
-
-    nunit('grid_project')
-
-    nunit('grid_radius')
-
-    nunit('grid_axes_volume')
-
-    nunit('grid_volume')
-
-    nunit('grid_cell_volumes')
-
-    nunit('grid_unit_metric')
-
-    # GridFunction tests
-
-    # any remaining tests
-    nunit_all()
-
-#end def grid_functions
 
 
 
