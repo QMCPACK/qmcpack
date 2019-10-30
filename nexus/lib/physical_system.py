@@ -397,7 +397,8 @@ class PhysicalSystem(Matter):
                 ionp = self.particles[ion]
                 if isinstance(ionp,Ion):
                     self.particles[ion] = ionp.pseudize(valence_charge)
-                    self.pseudized = True
+                    if self.particles[ion].protons > valence_charge:
+                      self.pseudized = True
                 else:
                     self.error(ion+' cannot be pseudized',exit=False)
                 #end if

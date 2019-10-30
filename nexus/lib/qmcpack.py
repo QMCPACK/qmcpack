@@ -284,7 +284,12 @@ class Qmcpack(Simulation):
                     jd = dict()
                     for j in js:
                         jtype = j.type.lower().replace('-','_').replace(' ','_')
-                        jd[jtype] = j
+                        key = jtype + j.name
+                        if key in jd.keys():
+                            msg = 'duplicate jastrow in '+self.__class__.__name__
+                            self.error(msg)
+                        #end if
+                        jd[key] = j
                     #end for
                     return jd
                 #end def process_jastrow
