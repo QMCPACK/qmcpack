@@ -1,6 +1,7 @@
 
 import testing
 from testing import failed,FailedTest
+from testing import value_eq,object_eq
 
 
 def test_import():
@@ -12,6 +13,7 @@ def test_import():
 
 def test_bundle():
     from generic import NexusError
+    from machines import job,get_machine
     from bundle import bundle
     from bundle import SimulationBundle
 
@@ -41,19 +43,26 @@ def test_bundle():
         failed(str(e))
     #end try
 
-    sims = get_test_workflow(7)
+    def get_workflow():
+        machine = get_machine('theta')
+        machine.account = 'ABC123'
+        test_job = job(machine='theta',nodes=1,app_command='test.x')
+        sims = get_test_workflow(7,job=test_job)
 
-    level1 = [sims.s0, sims.s1, sims.s2]
-    level2 = [sims.s3, sims.s5, sims.s7, sims.s10]
-    level3 = [sims.s4, sims.s6, sims.s8, sims.s11]
-    level4 = [sims.s9, sims.s12]
+        levels = []
+        levels.append([sims.s0, sims.s1, sims.s2])
+        levels.append([sims.s3, sims.s5, sims.s7, sims.s10])
+        levels.append([sims.s4, sims.s6, sims.s8, sims.s11])
+        levels.append([sims.s9, sims.s12])
 
-    m = sims.s0.job.get_machine()
-    m.batch_capable = True
+        return sims,levels
+    #end def get_workflow
+
+    sims,levels = get_workflow()
 
     # attempt to bundle sims that depend on each other
     try:
-        bundle(level2+[sims.s8],serial=True)
+        bundle(levels[1]+[sims.s8])
         raise FailedTest
     except NexusError:
         None
@@ -63,7 +72,7 @@ def test_bundle():
         failed(str(e))
     #end try
     try:
-        bundle(level2+[sims.s9],serial=True)
+        bundle(levels[1]+[sims.s9])
         raise FailedTest
     except NexusError:
         None
@@ -73,5 +82,46 @@ def test_bundle():
         failed(str(e))
     #end try
 
-    print '\n end test'
+    sims,levels = get_workflow()
+
+    for n,level in enumerate(levels):
+        for s in level:
+            assert(not s.bundled)
+            assert(s.bundler is None)
+            assert(not s.skip_submit)
+        #end for
+
+        b = bundle(level,identifier='bundle_'+str(n))
+
+        for s in level:
+            assert(s.bundled)
+            assert(id(s.bundler)==id(b))
+            assert(s.skip_submit)
+        #end for
+
+        assert(isinstance(b,SimulationBundle))
+        assert(isinstance(b.sims,list))
+        assert(b.system is None)
+        assert(b.infile is None)
+        assert(not b.allow_create_directories)
+        assert(not b.allow_get_dependencies  )
+        assert(not b.allow_write_inputs      )
+        assert(not b.allow_send_files        )
+        assert(not b.allow_submit            )
+        assert(not b.allow_get_output        )
+        assert(not b.allow_analyze           )
+
+        for sb,s in zip(b.sims,level):
+            assert(id(sb)==id(s))
+        #end for
+
+        bj = b.job
+        j  = level[0].job
+        ns = len(level)
+        assert(bj.nodes==ns*j.nodes)
+        assert(bj.cores==ns*j.cores)
+        assert(object_eq(bj.get_time(),j.get_time()))
+
+    #end for
+
 #end def test_bundle
