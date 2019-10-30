@@ -8,7 +8,7 @@ import scipy.linalg
 from afqmctools.wavefunction.mol import write_qmcpack_wfn, write_nomsd_wfn
 
 def write_wfn_pbc(scf_data, ortho_ao, filename, rediag=True,
-                  verbose=False, ndet_max=None):
+                  verbose=False, ndet_max=None, low=0.1, high=0.95):
     """Generate QMCPACK trial wavefunction for PBC simulation.
 
     Parameters
@@ -56,7 +56,8 @@ def write_wfn_pbc(scf_data, ortho_ao, filename, rediag=True,
     (eigs, orbs, ks, bands) = generate_orbitals(fock, X, nmo_pk, rediag, ortho_ao,
                                                 mo_energy, uhf, verbose=verbose)
     re_occ, trial, ndeg, srt, isrt = reoccupy(mo_occ, eigs, uhf, verbose,
-                                              ndet_max=ndet_max)
+                                              ndet_max=ndet_max, low=low,
+                                              high=high)
     # mo_occs from pyscf is a list of numpy arrays of potentially different
     # length so can't just use numpy.sum.
     nalpha = int(round(sum(sum(occ) for occ in re_occ[0])))
@@ -218,7 +219,8 @@ def reoccupy(mo_occ, mo_energy, uhf, verbose, low=0.25,
                 determine_occupancies(mo_occ[0],
                                       mo_energy[0],
                                       False,
-                                      verbose=verbose>=1)
+                                      verbose=verbose>=1,
+                                      low=low, high=high)
                 )
         if verbose:
             print(" # Determining occupancies for beta electrons.")
@@ -226,7 +228,8 @@ def reoccupy(mo_occ, mo_energy, uhf, verbose, low=0.25,
                 determine_occupancies(mo_occ[1],
                                       mo_energy[1],
                                       False,
-                                      verbose=verbose>=1)
+                                      verbose=verbose>=1,
+                                      low=low, high=high)
                 )
         ndeg = max(ndeg_a,ndeg_b)
         nalpha = int(round(numpy.sum(re_occ_a)))
@@ -255,7 +258,8 @@ def reoccupy(mo_occ, mo_energy, uhf, verbose, low=0.25,
                 determine_occupancies(mo_occ,
                                       mo_energy[0],
                                       True,
-                                      verbose=verbose>=1)
+                                      verbose=verbose>=1,
+                                      low=low, high=high)
                 )
         trial = None
         re_occ = [re_occ/2.0, re_occ/2.0]
