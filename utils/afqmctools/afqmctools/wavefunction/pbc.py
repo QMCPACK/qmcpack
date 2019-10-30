@@ -298,6 +298,13 @@ def determine_occupancies(mo_occ, mo_energy, rhf, low=0.1,
         deg = (mo_order < high) & (mo_order > low)
         poccs = mo_order[deg]
         ndeg = sum(deg)
+        if ndeg == 0:
+            print(" # Error: trying to occupy {} electrons in {} orbitals. Try "
+                  "decreasing low (--low) parameter.".format(nleft, ndeg))
+            print(" # MO occupancies > 0: ")
+            for i, o in enumerate(mo_order[(mo_order<low)&(mo_order>1e-10)]):
+                print(" # {:4d} {:13.8e}".format(i, o))
+            sys.exit()
         # Supercell indexed.
         deg_orb = numpy.where(deg)[0]
         combs = [c for c in itertools.combinations(deg_orb, int(nleft))]
