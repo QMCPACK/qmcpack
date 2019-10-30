@@ -311,6 +311,8 @@ def divert_nexus_core():
     nexus_core_storage['mode']           = nexus_core.mode
     nexus_core_storage['stages']         = nexus_core.stages
     nexus_core_storage['stages_set']     = nexus_core.stages_set
+    nexus_core_storage['status']         = nexus_core.status
+    nexus_core_storage['sleep']          = nexus_core.sleep
     nexus_core_storage['file_locations'] = nexus_core.file_locations
 #end def divert_nexus_core
 
@@ -318,13 +320,13 @@ def divert_nexus_core():
 # restore nexus core attributes
 def restore_nexus_core():
     from nexus_base import nexus_core
-    nckeys = ['local','remote','mode','stages','stages_set','file_locations']
-    assert(set(nexus_core_storage.keys())==set(nckeys))
     nexus_core.local_directory  = nexus_core_storage.pop('local')
     nexus_core.remote_directory = nexus_core_storage.pop('remote')
     nexus_core.mode             = nexus_core_storage.pop('mode')
     nexus_core.stages           = nexus_core_storage.pop('stages')
     nexus_core.stages_set       = nexus_core_storage.pop('stages_set')
+    nexus_core.status           = nexus_core_storage.pop('status')
+    nexus_core.sleep            = nexus_core_storage.pop('sleep')
     nexus_core.file_locations   = nexus_core_storage.pop('file_locations')
     assert(len(nexus_core_storage)==0)
 #end def restore_nexus_core

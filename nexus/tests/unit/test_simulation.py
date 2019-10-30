@@ -120,7 +120,7 @@ def get_test_sim(**kwargs):
 
     test_job = kwargs.pop('job',None)
     if test_job is None:
-        test_job = job(machine='ws1',app_command='test.x')
+        test_job = job(machine='ws128',serial=True,app_command='echo run')
     #end if
 
     n = len(get_test_sim_simulations)
