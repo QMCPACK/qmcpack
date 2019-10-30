@@ -932,10 +932,11 @@ The QMCPACK Spack package inherits the limitations of the underlying
 Spack infrastructure and its dependencies. The main limitation is that installation can fail when building a
 dependency such as HDF5, MPICH, etc. For
 \ishell{spack install qmcpack} to succeed, it is very important to
-leverge preinstalled packages on your computer or supercomputer. The
+leverage preinstalled packages on your computer or supercomputer. The
 other frequently encountered challenge is that the compiler configuration
 is nonintuitive.  This is especially the case with the Intel
-compiler.
+compiler. If you encounter any difficulties, we recommend verifying that one of the less complex packages from spack installs
+correctly on your system.
 
 Here are some additional limitations of the QMCPACK Spack package that
 will be resolved in future releases:
@@ -1488,35 +1489,9 @@ This significantly increases testing time. If you are authorized to change the d
 The QMCPACK developers run automatic tests of QMCPACK on several
 different computer systems,  many on a continuous basis. See the reports at
 \url{https://cdash.qmcpack.org/CDash/index.php?project=QMCPACK}.
-We currently test
-the following combinations nightly (workstations) and weekly (supercomputers):
-
-\begin{itemize}
-\item On a Linux Intel Xeon workstation, combinations of:
-  \begin{itemize}
-  \item GCC 8.2.0, Intel2019, Clang6, Clang7, PGI2018
-  \item No MPI, Intel MPI, and OpenMPI
-  \item CPU and GPU builds using CUDA 10.0
-  \end{itemize}
-\item On a Linux Intel Knight's Landing workstation:
-  \begin{itemize}
-  \item Intel 2017 with Intel MPI and MKL
-  \item GCC 6.3.1 with Intel MPI and MKL
-  \end{itemize}
-\item On Eos, a Cray XC30 Intel machine:
-  \begin{itemize}
-\item The default Intel programming environment and compiler with Cray MPI and Intel MKL
-  \end{itemize}
-\item On Titan, a Cray XK7 CPU+GPU machine:
-  \begin{itemize}
-  \item The GCC programming environment and compiler with Cray MPI and CUDA
-  \item The GCC programming environment and compiler with Cray MPI
-  \end{itemize}
-\item On Cetus, an IBM Blue Gene Q machine:
-\begin{itemize}
-\item Blue Gene Clang
-\end{itemize}
-\end{itemize}
+The combinations that are currently tested can be seen on CDash and are also listed in
+\url{https://github.com/QMCPACK/qmcpack/blob/develop/README.md}. They include GCC, Clang, Intel, and PGI compilers in combinations
+with various library versions and different MPI implementations. NVIDIA GPUs are also tested.
 
 \begin{figure}
   \centering
