@@ -105,7 +105,13 @@ inline bool is_same(const xmlChar* a, const char* b) { return !strcmp((const cha
 
 
 LCAOrbitalBuilder::LCAOrbitalBuilder(ParticleSet& els, ParticleSet& ions, Communicate* comm, xmlNodePtr cur)
-    : SPOSetBuilder(comm), targetPtcl(els), sourcePtcl(ions), myBasisSet(nullptr), h5_path(""), SuperTwist(0.0),  doCuspCorrection(false)
+    : SPOSetBuilder(comm),
+      targetPtcl(els),
+      sourcePtcl(ions),
+      myBasisSet(nullptr),
+      h5_path(""),
+      SuperTwist(0.0),
+      doCuspCorrection(false)
 {
   ClassName = "LCAOrbitalBuilder";
   ReportEngine PRE(ClassName, "createBasisSet");
@@ -688,7 +694,7 @@ bool LCAOrbitalBuilder::putPBCFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
   int neigs      = spo.getBasisSetSize();
   int setVal     = -1;
   bool IsComplex = false;
-  bool MultiDet   = false;
+  bool MultiDet  = false;
   PosType SuperTwist(0.0);
   PosType SuperTwistH5(0.0);
   OhmmsAttributeSet aAttrib;
@@ -705,19 +711,19 @@ bool LCAOrbitalBuilder::putPBCFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
   std::string MSDTag("sposet");
   std::string SDTag("determinant");
   std::string curname;
-  
-  do{
-     std::stringstream ss;
-     curtemp=curtemp->parent; 
-     ss<<curtemp->name; 
-     ss>>curname;
-     if (curname == MSDTag)
-             MultiDet=true;   ///Used to know if running an MSD calculation - needed for order of Orbitals.
-     if (curname == SDTag)
-             MultiDet=false;
 
-  }
-  while (xmlTag != curname);
+  do
+  {
+    std::stringstream ss;
+    curtemp = curtemp->parent;
+    ss << curtemp->name;
+    ss >> curname;
+    if (curname == MSDTag)
+      MultiDet = true; ///Used to know if running an MSD calculation - needed for order of Orbitals.
+    if (curname == SDTag)
+      MultiDet = false;
+
+  } while (xmlTag != curname);
   aAttrib.add(SuperTwist, "twist");
   aAttrib.put(curtemp);
 
@@ -744,7 +750,7 @@ bool LCAOrbitalBuilder::putPBCFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
     }
     //SuperTwist=SuperTwistH5;
     Matrix<ValueType> Ctemp(neigs, spo.getBasisSetSize());
-    LoadFullCoefsFromH5(hin, setVal, SuperTwist, Ctemp,MultiDet);
+    LoadFullCoefsFromH5(hin, setVal, SuperTwist, Ctemp, MultiDet);
 
     int n = 0, i = 0;
     while (i < norbs)
@@ -835,12 +841,12 @@ void LCAOrbitalBuilder::LoadFullCoefsFromH5(hdf_archive& hin,
   std::string setname;
   ///When running Single Determinant calculations, MO coeff loaded based on occupation and lowest eingenvalue.
   ///However, for solids with multideterminants, orbitals are order by kpoints; first all MOs for kpoint 1, then 2 etc
-  /// The multideterminants occupation is specified in the input/HDF5 and theefore as long as there is consistency between 
-  /// the order in which we read the orbitals and the occupation, we are safe. In the case of Multideterminants generated 
+  /// The multideterminants occupation is specified in the input/HDF5 and theefore as long as there is consistency between
+  /// the order in which we read the orbitals and the occupation, we are safe. In the case of Multideterminants generated
   /// by pyscf and Quantum Package, They are stored in the same order as generated for quantum package and one should use
-  /// the orbitals labled eigenset_unsorted. 
-  
-  if (MultiDet ==false)
+  /// the orbitals labled eigenset_unsorted.
+
+  if (MultiDet == false)
     sprintf(name, "%s%d", "/Super_Twist/eigenset_", setVal);
   else
     sprintf(name, "%s%d", "/Super_Twist/eigenset_unsorted_", setVal);
@@ -866,7 +872,11 @@ void LCAOrbitalBuilder::LoadFullCoefsFromH5(hdf_archive& hin,
       Ctemp[i][j] = std::complex<RealType>(Creal[i][j], Ccmplx[i][j]);
 }
 
-void LCAOrbitalBuilder::LoadFullCoefsFromH5(hdf_archive& hin, int setVal, PosType& SuperTwist, Matrix<RealType>& Creal, bool MultiDet)
+void LCAOrbitalBuilder::LoadFullCoefsFromH5(hdf_archive& hin,
+                                            int setVal,
+                                            PosType& SuperTwist,
+                                            Matrix<RealType>& Creal,
+                                            bool MultiDet)
 {
   bool IsComplex = false;
   //FIXME: need to check the path to IsComplex in h5
@@ -885,43 +895,42 @@ void LCAOrbitalBuilder::LoadFullCoefsFromH5(hdf_archive& hin, int setVal, PosTyp
 }
 
 /// Periodic Image Phase Factors computation to be determined
-void LCAOrbitalBuilder::EvalPeriodicImagePhaseFactors(PosType SuperTwist )
+void LCAOrbitalBuilder::EvalPeriodicImagePhaseFactors(PosType SuperTwist)
 {
-
 #if not defined(QMC_COMPLEX)
-  const int NbImages=(PBCImages[0]+1)*(PBCImages[1]+1)*(PBCImages[2]+1);
+  const int NbImages = (PBCImages[0] + 1) * (PBCImages[1] + 1) * (PBCImages[2] + 1);
   PeriodicImagePhaseFactors.resize(NbImages);
-  for (size_t i=0; i< NbImages; i++)
-     PeriodicImagePhaseFactors[i]=1.0;
-     
+  for (size_t i = 0; i < NbImages; i++)
+    PeriodicImagePhaseFactors[i] = 1.0;
+
 #else
   ///Exp(ik.g) where i is imaginary, k is the supertwist and g is the translation vector PBCImage.
-  if (h5_path!="")
+  if (h5_path != "")
   {
-     hdf_archive hin(myComm);
-     if (myComm->rank() == 0)
-     {
-         if (!hin.open(h5_path, H5F_ACC_RDONLY))
-           APP_ABORT("Could not open H5 file");
-         if (!hin.push("Cell"))
-           APP_ABORT("Could not open Cell group in H5; Probably Corrupt H5 file; accessed from LCAOrbitalBuilder");
-         if(!hin.readEntry(Lattice, "LatticeVectors"))
-           APP_ABORT("Could not open Lattice vectors in H5; Probably Corrupt H5 file; accessed from LCAOrbitalBuilder");
-         hin.close();
-     }
-     for (int i=0 ; i<3;i++)
-        for (int j=0;j<3;j++)
-            myComm->bcast(Lattice(i,j));
+    hdf_archive hin(myComm);
+    if (myComm->rank() == 0)
+    {
+      if (!hin.open(h5_path, H5F_ACC_RDONLY))
+        APP_ABORT("Could not open H5 file");
+      if (!hin.push("Cell"))
+        APP_ABORT("Could not open Cell group in H5; Probably Corrupt H5 file; accessed from LCAOrbitalBuilder");
+      if (!hin.readEntry(Lattice, "LatticeVectors"))
+        APP_ABORT("Could not open Lattice vectors in H5; Probably Corrupt H5 file; accessed from LCAOrbitalBuilder");
+      hin.close();
+    }
+    for (int i = 0; i < 3; i++)
+      for (int j = 0; j < 3; j++)
+        myComm->bcast(Lattice(i, j));
   }
   else
   {
-     APP_ABORT("Attempting to run PBC LCAO with no HDF5 support. Behaviour is unknown. Safer to exit");
+    APP_ABORT("Attempting to run PBC LCAO with no HDF5 support. Behaviour is unknown. Safer to exit");
   }
 
   int phase_idx = 0;
   int TransX, TransY, TransZ;
   RealType phase;
-  
+
   for (int i = 0; i <= PBCImages[0]; i++) //loop Translation over X
   {
     TransX = ((i % 2) * 2 - 1) * ((i + 1) / 2);
@@ -932,13 +941,13 @@ void LCAOrbitalBuilder::EvalPeriodicImagePhaseFactors(PosType SuperTwist )
       {
         TransZ = ((k % 2) * 2 - 1) * ((k + 1) / 2);
         RealType s, c;
-        PosType Val; 
-        Val[0] =  TransX * Lattice(0, 0) + TransY * Lattice(1, 0) + TransZ * Lattice(2, 0);               
-        Val[1] =  TransX * Lattice(0, 1) + TransY * Lattice(1, 1) + TransZ * Lattice(2, 1);
-        Val[2] =  TransX * Lattice(0, 2) + TransY * Lattice(1, 2) + TransZ * Lattice(2, 2);               
+        PosType Val;
+        Val[0] = TransX * Lattice(0, 0) + TransY * Lattice(1, 0) + TransZ * Lattice(2, 0);
+        Val[1] = TransX * Lattice(0, 1) + TransY * Lattice(1, 1) + TransZ * Lattice(2, 1);
+        Val[2] = TransX * Lattice(0, 2) + TransY * Lattice(1, 2) + TransZ * Lattice(2, 2);
 
-        phase = dot(SuperTwist,Val);                                                                            
-        sincos(phase, &s, &c);                                                                                      
+        phase = dot(SuperTwist, Val);
+        sincos(phase, &s, &c);
 
         PeriodicImagePhaseFactors.emplace_back(c, s);
       }
@@ -948,4 +957,3 @@ void LCAOrbitalBuilder::EvalPeriodicImagePhaseFactors(PosType SuperTwist )
 #endif
 }
 } // namespace qmcplusplus
-

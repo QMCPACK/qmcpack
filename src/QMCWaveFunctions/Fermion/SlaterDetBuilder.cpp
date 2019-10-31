@@ -70,7 +70,7 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
   ReportEngine PRE(ClassName, "put(xmlNodePtr)");
   ///save the current node
   xmlNodePtr curRoot = cur;
-  xmlNodePtr BFnode = nullptr;
+  xmlNodePtr BFnode  = nullptr;
   bool success = true, FastMSD = true;
   std::string cname, tname;
   std::map<std::string, SPOSetPtr> spomap;
@@ -481,7 +481,7 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
     else if (useGPU == "yes")
     {
       app_log() << "  Using DiracDeterminant with DelayedUpdateCUDA engine" << std::endl;
-      adet = new DiracDeterminant<DelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>>(psi,firstIndex);
+      adet = new DiracDeterminant<DelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>>(psi, firstIndex);
     }
 #endif
     else
@@ -541,7 +541,7 @@ bool SlaterDetBuilder::createMSDFast(MultiSlaterDeterminantFast* multiSD, xmlNod
   //Check id multideterminants are in HDF5
 
   xmlNodePtr curTemp = cur, DetListNode = nullptr;
-  curTemp            = curTemp->children;
+  curTemp = curTemp->children;
   OhmmsAttributeSet ciAttrib;
   while (curTemp != NULL) //check the basis set
   {
@@ -557,32 +557,13 @@ bool SlaterDetBuilder::createMSDFast(MultiSlaterDeterminantFast* multiSD, xmlNod
   if (HDF5Path != "")
   {
     app_log() << "Found Multideterminants in H5 File" << std::endl;
-    success = readDetListH5(cur,
-                            uniqueConfg_up,
-                            uniqueConfg_dn,
-                            *(multiSD->C2node_up),
-                            *(multiSD->C2node_dn),
-                            CItags,
-                            *(multiSD->C),
-                            optimizeCI,
-                            nels_up,
-                            nels_dn);
+    success = readDetListH5(cur, uniqueConfg_up, uniqueConfg_dn, *(multiSD->C2node_up), *(multiSD->C2node_dn), CItags,
+                            *(multiSD->C), optimizeCI, nels_up, nels_dn);
   }
   else
-    success = readDetList(cur,
-                          uniqueConfg_up,
-                          uniqueConfg_dn,
-                          *(multiSD->C2node_up),
-                          *(multiSD->C2node_dn),
-                          CItags,
-                          *(multiSD->C),
-                          optimizeCI,
-                          nels_up,
-                          nels_dn,
-                          *(multiSD->CSFcoeff),
-                          *(multiSD->DetsPerCSF),
-                          *(multiSD->CSFexpansion),
-                          multiSD->usingCSF);
+    success = readDetList(cur, uniqueConfg_up, uniqueConfg_dn, *(multiSD->C2node_up), *(multiSD->C2node_dn), CItags,
+                          *(multiSD->C), optimizeCI, nels_up, nels_dn, *(multiSD->CSFcoeff), *(multiSD->DetsPerCSF),
+                          *(multiSD->CSFexpansion), multiSD->usingCSF);
   if (!success)
     return false;
   // you should choose the det with highest weight for reference
@@ -655,7 +636,7 @@ bool SlaterDetBuilder::createMSDFast(MultiSlaterDeterminantFast* multiSD, xmlNod
       //          multiSD->myVars.insert(CItags[0],multiSD->C[0],false,optimize::LINEAR_P);
       for (int i = 1; i < multiSD->C->size(); i++)
       {
-        multiSD->myVars->insert(CItags[i], (*(multiSD->C))[i], true, optimize::LINEAR_P);         
+        multiSD->myVars->insert(CItags[i], (*(multiSD->C))[i], true, optimize::LINEAR_P);
       }
     }
   }
@@ -760,19 +741,8 @@ bool SlaterDetBuilder::createMSD(MultiSlaterDeterminant* multiSD, xmlNodePtr cur
   bool optimizeCI;
   int nels_up = multiSD->nels_up;
   int nels_dn = multiSD->nels_dn;
-  success     = readDetList(cur,
-                        uniqueConfg_up,
-                        uniqueConfg_dn,
-                        multiSD->C2node_up,
-                        multiSD->C2node_dn,
-                        CItags,
-                        multiSD->C,
-                        optimizeCI,
-                        nels_up,
-                        nels_dn,
-                        multiSD->CSFcoeff,
-                        multiSD->DetsPerCSF,
-                        multiSD->CSFexpansion,
+  success = readDetList(cur, uniqueConfg_up, uniqueConfg_dn, multiSD->C2node_up, multiSD->C2node_dn, CItags, multiSD->C,
+                        optimizeCI, nels_up, nels_dn, multiSD->CSFcoeff, multiSD->DetsPerCSF, multiSD->CSFexpansion,
                         multiSD->usingCSF);
   if (!success)
     return false;
@@ -983,29 +953,29 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
         RealType exctLvl, qc_ci = 0.0;
         OhmmsAttributeSet confAttrib;
         std::string tag, OccString;
-        #ifdef QMC_COMPLEX
-          RealType ci_real = 0.0, ci_imag = 0.0;
-          confAttrib.add(ci_real,"coeff_real");
-          confAttrib.add(ci_imag,"coeff_imag");
-        #else
-          RealType ci = 0.0;
-          confAttrib.add(ci, "coeff");
-        #endif
+#ifdef QMC_COMPLEX
+        RealType ci_real = 0.0, ci_imag = 0.0;
+        confAttrib.add(ci_real, "coeff_real");
+        confAttrib.add(ci_imag, "coeff_imag");
+#else
+        RealType ci = 0.0;
+        confAttrib.add(ci, "coeff");
+#endif
         confAttrib.add(qc_ci, "qchem_coeff");
         confAttrib.add(tag, "id");
         confAttrib.add(OccString, "occ");
         confAttrib.add(exctLvl, "exctLvl");
         confAttrib.put(cur);
         if (qc_ci == 0.0)
-          #ifdef QMC_COMPLEX
-            qc_ci = ci_real;
-          #else
-            qc_ci = ci;
-          #endif
+#ifdef QMC_COMPLEX
+          qc_ci = ci_real;
+#else
+          qc_ci = ci;
+#endif
 
-          #ifdef QMC_COMPLEX
-            ValueType ci(ci_real, ci_imag);
-          #endif
+#ifdef QMC_COMPLEX
+        ValueType ci(ci_real, ci_imag);
+#endif
         //Can discriminate based on any of 3 criterion
         if (((std::abs(qc_ci) < cutoff) && (CSFChoice == "qchem_coeff")) ||
             ((CSFChoice == "exctLvl") && (exctLvl > cutoff)) || ((CSFChoice == "coeff") && (std::abs(ci) < cutoff)))
@@ -1016,11 +986,11 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
         }
         cnt0++;
         if (std::abs(qc_ci) < zero_cutoff)
-          #ifdef QMC_COMPLEX
-            ci_real = 0.0;
-          #else
-            ci = 0.0;
-          #endif
+#ifdef QMC_COMPLEX
+          ci_real = 0.0;
+#else
+          ci    = 0.0;
+#endif
         CSFcoeff.push_back(ci);
         sumsq_qc += qc_ci * qc_ci;
         DetsPerCSF.push_back(0);
@@ -1187,15 +1157,15 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
         RealType qc_ci = 0.0;
         std::string alpha, beta, tag;
         OhmmsAttributeSet confAttrib;
-        #ifdef QMC_COMPLEX
+#ifdef QMC_COMPLEX
         RealType ci_real = 0.0, ci_imag = 0.0;
         confAttrib.add(ci_real, "coeff_real");
         confAttrib.add(ci_imag, "coeff_imag");
         ValueType ci(ci_real, ci_imag);
-        #else
+#else
         RealType ci = 0.0;
         confAttrib.add(ci, "coeff");
-        #endif
+#endif
         confAttrib.add(qc_ci, "qchem_coeff");
         confAttrib.add(alpha, "alpha");
         confAttrib.add(beta, "beta");
@@ -1339,7 +1309,7 @@ bool SlaterDetBuilder::readDetListH5(xmlNodePtr cur,
   int N_int;
   const int bit_kind  = 64;
   std::string Dettype = "DETS";
-  ValueType sumsq      = 0.0;
+  ValueType sumsq     = 0.0;
   OhmmsAttributeSet spoAttrib;
   spoAttrib.add(NCA, "nca");
   spoAttrib.add(NCB, "ncb");
@@ -1397,7 +1367,6 @@ bool SlaterDetBuilder::readDetListH5(xmlNodePtr cur,
 #if defined(QMC_COMPLEX)
   std::vector<double> CIcoeff_real;
   std::vector<double> CIcoeff_imag;
-  std::complex <double> im(0,1);
   CIcoeff_imag.resize(ndets);
   CIcoeff_real.resize(ndets);
 
@@ -1405,26 +1374,23 @@ bool SlaterDetBuilder::readDetListH5(xmlNodePtr cur,
   hin.read(CIcoeff_imag, "Coeff_imag");
 
 
-  for (size_t i=0; i<ndets;i++)
-  {
-      CIcoeff[i]=CIcoeff_real[i]+im*CIcoeff_imag[i];
-  }
+  for (size_t i = 0; i < ndets; i++)
+    CIcoeff[i] = ValueType(CIcoeff_real[i], CIcoeff_imag[i]);
 
 
 #else
   hin.read(CIcoeff, "Coeff");
-    
+
 #endif
 
   ///IF OPTIMIZED COEFFICIENTS ARE PRESENT IN opt_coeffs Path
   ///THEY ARE READ FROM DIFFERENT HDF5 the replace the previous coeff
   ///It is important to still read all old coeffs and only replace the optimized ones
-  ///in order to keep coherence with the cutoff on the number of determinants 
+  ///in order to keep coherence with the cutoff on the number of determinants
   ///REMEMBER!! FIRST COEFF IS FIXED. THEREFORE WE DO NOT REPLACE IT!!!
-  if(CICoeffH5path!="")
+  if (CICoeffH5path != "")
   {
-
-    int OptCiSize=0;
+    int OptCiSize = 0;
     std::vector<ValueType> CIcoeffopt;
     hdf_archive coeffin;
     if (!coeffin.open(CICoeffH5path.c_str(), H5F_ACC_RDONLY))
@@ -1440,33 +1406,31 @@ bool SlaterDetBuilder::readDetListH5(xmlNodePtr cur,
     }
     coeffin.read(OptCiSize, "NbDet");
     CIcoeffopt.resize(OptCiSize);
-    
+
 #if defined(QMC_COMPLEX)
     std::vector<double> CIcoeffopt_real;
     std::vector<double> CIcoeffopt_imag;
-    std::complex <double> im(0,1);
     CIcoeffopt_imag.resize(ndets);
     CIcoeffopt_real.resize(ndets);
-  
+
     coeffin.read(CIcoeffopt_real, "Coeff");
     coeffin.read(CIcoeffopt_imag, "Coeff_imag");
-  
-  
-    for (size_t i=0; i<ndets;i++)
-    {
-        CIcoeffopt[i]=CIcoeffopt_real[i]+im*CIcoeffopt_imag[i];
-    }
-  
+
+
+    for (size_t i = 0; i < ndets; i++)
+      CIcoeffopt[i] = ValueType(CIcoeffopt_real[i], CIcoeffopt_imag[i]);
+
 
 #else
     coeffin.read(CIcoeffopt, "Coeff");
 #endif
     coeffin.close();
 
-    for (int i=0; i<OptCiSize;i++)
-          CIcoeff[i+1]=CIcoeffopt[i];
-  
-    app_log()<<"The first "<<OptCiSize<<" Optimized coefficients were substituted to the original set of coefficients." <<std::endl;
+    for (int i = 0; i < OptCiSize; i++)
+      CIcoeff[i + 1] = CIcoeffopt[i];
+
+    app_log() << "The first " << OptCiSize
+              << " Optimized coefficients were substituted to the original set of coefficients." << std::endl;
   }
 
   Matrix<long int> tempAlpha(ndets, N_int);
