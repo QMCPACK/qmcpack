@@ -6,14 +6,14 @@ IF(ENABLE_SOA)
 # VMC long run with no Jastrows 
 # Compare directly to sCI Energy of: E=-21.43955772
 #Data generated using utils/make_ref_data.sh  diamondC_2x1x1-Gaussian_pp_cplx_MSD_LONG qmc_ref/qmc_long.s000.scalar.dat  qmc_ref/qmc_ref_long.s000.scalar.dat 
-LIST(APPEND diamondC_1x1x1-Gaussian_pp_Tw_cplx_MSD_LONG_SCALARS "totenergy" "-11.76861606 0.007202242728")
-LIST(APPEND diamondC_1x1x1-Gaussian_pp_Tw_cplx_MSD_LONG_SCALARS "variance" "1.000602519743 0.045687701277")
-LIST(APPEND diamondC_1x1x1-Gaussian_pp_Tw_cplx_MSD_LONG_SCALARS "kinetic" "8.081902038337 0.046347290312")
-LIST(APPEND diamondC_1x1x1-Gaussian_pp_Tw_cplx_MSD_LONG_SCALARS "potential" "-19.850035624680 0.047014871698")
-LIST(APPEND diamondC_1x1x1-Gaussian_pp_Tw_cplx_MSD_LONG_SCALARS "eeenergy" "-3.014169096687 0.014078543711")
-LIST(APPEND diamondC_1x1x1-Gaussian_pp_Tw_cplx_MSD_LONG_SCALARS "localecp" "-5.496998282285 0.067595358823")
-LIST(APPEND diamondC_1x1x1-Gaussian_pp_Tw_cplx_MSD_LONG_SCALARS "nonlocalecp" "1.436799319733 0.024004326954")
-LIST(APPEND diamondC_1x1x1-Gaussian_pp_Tw_cplx_MSD_LONG_SCALARS "ionion" "-12.775667565000 0.100000000000")
+LIST(APPEND diamondC_2x1x1-Gaussian_pp_cplx_MSD_LONG_SCALARS "totenergy" "-21.43955772     0.016631586347")
+LIST(APPEND diamondC_2x1x1-Gaussian_pp_cplx_MSD_LONG_SCALARS "variance" "3.940110880232 0.143095003305")
+LIST(APPEND diamondC_2x1x1-Gaussian_pp_cplx_MSD_LONG_SCALARS "kinetic" "19.632464437269 0.067207073331")
+LIST(APPEND diamondC_2x1x1-Gaussian_pp_cplx_MSD_LONG_SCALARS "potential" "-41.072258549452 0.064597662591")
+LIST(APPEND diamondC_2x1x1-Gaussian_pp_cplx_MSD_LONG_SCALARS "eeenergy" "-4.745704876978 0.023930352973")
+LIST(APPEND diamondC_2x1x1-Gaussian_pp_cplx_MSD_LONG_SCALARS "localecp" "-12.898536216985 0.093725944996")
+LIST(APPEND diamondC_2x1x1-Gaussian_pp_cplx_MSD_LONG_SCALARS "nonlocalecp" "2.123309301169 0.027315413153")
+LIST(APPEND diamondC_2x1x1-Gaussian_pp_cplx_MSD_LONG_SCALARS "ionion" "-25.551326757000 0.100000000000")
   QMC_RUN_AND_CHECK(long-diamondC_2x1x1-Gaussian_pp_cplx_MSD
                     "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1-Gaussian_pp_cplx_MSD"
                     vmc_long  
@@ -26,14 +26,14 @@ LIST(APPEND diamondC_1x1x1-Gaussian_pp_Tw_cplx_MSD_LONG_SCALARS "ionion" "-12.77
 # VMC short run with no Jastrows 
 # Compare directly to sCI Energy of: E=-21.43955772
 #Data generated using utils/make_ref_data.sh  diamondC_2x1x1-Gaussian_pp_cplx_MSD_SHORT qmc_ref/qmc_short.s000.scalar.dat  qmc_ref/qmc_ref_long.s000.scalar.dat 
-LIST(APPEND diamondC_1x1x1-Gaussian_pp_Tw_cplx_MSD_SHORT_SCALARS "totenergy" "-11.76861606 0.013373782570")
-LIST(APPEND diamondC_1x1x1-Gaussian_pp_Tw_cplx_MSD_SHORT_SCALARS "variance" "1.000602519743 0.063924769247")
-LIST(APPEND diamondC_1x1x1-Gaussian_pp_Tw_cplx_MSD_SHORT_SCALARS "kinetic" "8.081902038337 0.102927629801")
-LIST(APPEND diamondC_1x1x1-Gaussian_pp_Tw_cplx_MSD_SHORT_SCALARS "potential" "-19.850035624680 0.105507379338")
-LIST(APPEND diamondC_1x1x1-Gaussian_pp_Tw_cplx_MSD_SHORT_SCALARS "eeenergy" "-3.014169096687 0.026116076315")
-LIST(APPEND diamondC_1x1x1-Gaussian_pp_Tw_cplx_MSD_SHORT_SCALARS "localecp" "-5.496998282285 0.140482720505")
-LIST(APPEND diamondC_1x1x1-Gaussian_pp_Tw_cplx_MSD_SHORT_SCALARS "nonlocalecp" "1.436799319733 0.046041270355")
-LIST(APPEND diamondC_1x1x1-Gaussian_pp_Tw_cplx_MSD_SHORT_SCALARS "ionion" "-12.775667565000 0.200000000000")
+LIST(APPEND diamondC_2x1x1-Gaussian_pp_cplx_MSD_SHORT_SCALARS "totenergy" "-21.43955772     0.044296322552")
+LIST(APPEND diamondC_2x1x1-Gaussian_pp_cplx_MSD_SHORT_SCALARS "variance" "3.940110880232 0.290453940902")
+LIST(APPEND diamondC_2x1x1-Gaussian_pp_cplx_MSD_SHORT_SCALARS "kinetic" "19.632464437269 0.214155100497")
+LIST(APPEND diamondC_2x1x1-Gaussian_pp_cplx_MSD_SHORT_SCALARS "potential" "-41.072258549452 0.210512631857")
+LIST(APPEND diamondC_2x1x1-Gaussian_pp_cplx_MSD_SHORT_SCALARS "eeenergy" "-4.745704876978 0.052545086243")
+LIST(APPEND diamondC_2x1x1-Gaussian_pp_cplx_MSD_SHORT_SCALARS "localecp" "-12.898536216985 0.256538864675")
+LIST(APPEND diamondC_2x1x1-Gaussian_pp_cplx_MSD_SHORT_SCALARS "nonlocalecp" "2.123309301169 0.064408195985")
+LIST(APPEND diamondC_2x1x1-Gaussian_pp_cplx_MSD_SHORT_SCALARS "ionion" "-25.551326757000 0.220000000000")
   QMC_RUN_AND_CHECK(short-diamondC_2x1x1-Gaussian_pp_cplx_MSD
                     "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1-Gaussian_pp_cplx_MSD"
                     vmc_short 
