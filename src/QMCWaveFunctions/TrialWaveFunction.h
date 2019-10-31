@@ -114,8 +114,6 @@ public:
   inline void resetPhaseDiff()
   {
     PhaseDiff = 0.0;
-    for (int i = 0; i < Z.size(); i++)
-      Z[i]->resetPhaseDiff();
   }
   inline RealType getLogPsi() const { return LogValue; }
   inline void setLogPsi(RealType LogPsi_new) { LogValue = LogPsi_new; }

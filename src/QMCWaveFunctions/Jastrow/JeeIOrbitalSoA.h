@@ -403,7 +403,7 @@ public:
           }
   }
 
-  RealType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
+  LogValueType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
   {
     evaluateGL(P, G, L, true);
     return LogValue;
@@ -871,7 +871,7 @@ public:
     }
   }
 
-  inline RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false)
+  inline LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false)
   {
     evaluateGL(P, P.G, P.L, false);
     buf.forward(Bytes_in_WFBuffer);
@@ -901,8 +901,7 @@ public:
       L[iat]   += d2Uat[iat];
     }
 
-    constexpr valT mhalf(-0.5);
-    LogValue = mhalf * LogValue;
+    LogValue = - LogValue * 0.5;
   }
 
   void evaluateDerivatives(ParticleSet& P,

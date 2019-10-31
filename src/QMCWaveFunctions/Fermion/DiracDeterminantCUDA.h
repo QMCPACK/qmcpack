@@ -152,7 +152,7 @@ public:
   // safe-guard all CPU interfaces
   DiracDeterminantCUDA* makeCopy(SPOSet* spo) const { APP_ABORT("Calling DiracDeterminantCUDA::makeCopy is illegal!"); }
 
-  RealType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
+  LogValueType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
   {
     APP_ABORT("Calling DiracDeterminantCUDA::evaluateLog is illegal!");
   }
@@ -173,7 +173,7 @@ public:
     APP_ABORT("Calling DiracDeterminantCUDA::registerData is illegal!");
   }
 
-  RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false)
+  LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false)
   {
     APP_ABORT("Calling DiracDeterminantCUDA::updateBuffer is illegal!");
   }

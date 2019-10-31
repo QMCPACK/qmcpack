@@ -164,7 +164,7 @@ int main(int argc, char** argv)
 
       cout << "Check values " << J.LogValue << " " << els.G[12] << " " << els.L[12] << endl;
       cout << "Check values aos " << J_aos.LogValue << " " << els_aos.G[12] << " " << els_aos.L[12] << endl;
-      cout << "evaluateLog::V Error = " << (J.LogValue-J_aos.LogValue)/nels<< endl;
+      cout << "evaluateLog::V Error = " << std::real(J.LogValue-J_aos.LogValue)/nels<< endl;
       {
         double g_err=0.0;
         for(int iel=0; iel<nels; ++iel)
