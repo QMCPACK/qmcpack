@@ -1177,6 +1177,26 @@ def pwscf_input():
 
 
 
+def gamess_input():
+    nunit('files')
+
+    nunit('import')
+
+    nunit('keyspec_groups')
+
+    nunit('empty_init')
+
+    nunit('read')
+
+    nunit('write')
+
+    nunit('generate')
+
+    nunit_all()
+#end def gamess_input
+
+
+
 def qmcpack_input():
     nunit('files')
 
@@ -1486,6 +1506,7 @@ NexusTest( bundle                )
 NexusTest( project_manager       )
 NexusTest( settings_operation    , 'settings' )
 NexusTest( pwscf_input           )
+NexusTest( gamess_input          )
 NexusTest( qmcpack_input         )
 
 for label in example_information.keys():

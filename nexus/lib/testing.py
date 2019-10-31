@@ -224,7 +224,7 @@ def unit_test_output_path(test,subtest=None):
 
 
 # setup the output directory for a test
-def setup_unit_test_output_directory(test,subtest,divert=False):
+def setup_unit_test_output_directory(test,subtest,divert=False,file_sets=None):
     import os
     import shutil
     path = unit_test_output_path(test,subtest)
@@ -237,6 +237,8 @@ def setup_unit_test_output_directory(test,subtest,divert=False):
     #end if
     os.makedirs(path)
     assert(os.path.exists(path))
+
+    # divert nexus paths and output, if requested
     if divert:
         from nexus_base import nexus_core
         divert_nexus()
@@ -244,8 +246,32 @@ def setup_unit_test_output_directory(test,subtest,divert=False):
         nexus_core.remote_directory = path
         nexus_core.file_locations = nexus_core.file_locations + [path]
     #end if
+
+    # transfer files into output directory, if requested
+    if file_sets is not None:
+        assert(isinstance(file_sets,dict))
+        filepaths = dict()
+        collect_unit_test_file_paths(test,filepaths)
+        for fpath,filenames in file_sets.items():
+            assert(len(set(filenames)-set(filepaths.keys()))==0)
+            dest_path = path
+            if fpath is not None:
+                dest_path = os.path.join(dest_path,fpath)
+                if not os.path.exists(dest_path):
+                    os.makedirs(dest_path)
+                #end if
+            #end if
+            assert(os.path.exists(dest_path))
+            for filename in filenames:
+                source_filepath = filepaths[filename]
+                shutil.copy2(source_filepath,dest_path)
+                assert(os.path.exists(dest_path))
+            #end for
+        #end for
+    #end if
     return path
 #end def setup_unit_test_output_directory
+
 
 
 # class used to divert log output when desired
@@ -276,7 +302,8 @@ class FakeLog:
 logging_storage = dict()
 
 # dict to temporarily store nexus core attributes when diverted
-nexus_core_storage = dict()
+nexus_core_storage    = dict()
+nexus_noncore_storage = dict()
 
 
 # divert nexus log output
@@ -304,22 +331,27 @@ def restore_nexus_log():
 
 # divert nexus core attributes
 def divert_nexus_core():
-    from nexus_base import nexus_core
+    from nexus_base import nexus_core,nexus_noncore
     assert(len(nexus_core_storage)==0)
-    nexus_core_storage['local']          = nexus_core.local_directory
-    nexus_core_storage['remote']         = nexus_core.remote_directory
-    nexus_core_storage['mode']           = nexus_core.mode
-    nexus_core_storage['stages']         = nexus_core.stages
-    nexus_core_storage['stages_set']     = nexus_core.stages_set
-    nexus_core_storage['status']         = nexus_core.status
-    nexus_core_storage['sleep']          = nexus_core.sleep
-    nexus_core_storage['file_locations'] = nexus_core.file_locations
+    nexus_core_storage['local']            = nexus_core.local_directory
+    nexus_core_storage['remote']           = nexus_core.remote_directory
+    nexus_core_storage['mode']             = nexus_core.mode
+    nexus_core_storage['stages']           = nexus_core.stages
+    nexus_core_storage['stages_set']       = nexus_core.stages_set
+    nexus_core_storage['status']           = nexus_core.status
+    nexus_core_storage['sleep']            = nexus_core.sleep
+    nexus_core_storage['file_locations']   = nexus_core.file_locations
+    nexus_core_storage['pseudopotentials'] = nexus_core.pseudopotentials
+    assert(len(nexus_noncore_storage)==0)
+    if 'pseudopotentials' in nexus_noncore:
+        nexus_noncore_storage['pseudopotentials'] = nexus_noncore.pseudopotentials
+    #end if
 #end def divert_nexus_core
 
 
 # restore nexus core attributes
 def restore_nexus_core():
-    from nexus_base import nexus_core
+    from nexus_base import nexus_core,nexus_noncore
     nexus_core.local_directory  = nexus_core_storage.pop('local')
     nexus_core.remote_directory = nexus_core_storage.pop('remote')
     nexus_core.mode             = nexus_core_storage.pop('mode')
@@ -328,7 +360,12 @@ def restore_nexus_core():
     nexus_core.status           = nexus_core_storage.pop('status')
     nexus_core.sleep            = nexus_core_storage.pop('sleep')
     nexus_core.file_locations   = nexus_core_storage.pop('file_locations')
+    nexus_core.pseudopotentials = nexus_core_storage.pop('pseudopotentials')
     assert(len(nexus_core_storage)==0)
+    if 'pseudopotentials' in nexus_noncore_storage:
+        nexus_noncore.pseudopotentials = nexus_noncore_storage.pop('pseudopotentials')
+    #end if
+    assert(len(nexus_noncore_storage)==0)
 #end def restore_nexus_core
 
 
