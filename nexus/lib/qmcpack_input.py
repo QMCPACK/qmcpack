@@ -2499,7 +2499,7 @@ class dmc(QIxml):
     tag = 'qmc'
     attributes = ['method','move','gpu','multiple','warp','checkpoint','trace','target','completed','id','continue']
     elements   = ['estimator']
-    parameters = ['walkers','warmupsteps','blocks','steps','timestep','nonlocalmove','nonlocalmoves','pop_control','reconfiguration','targetwalkers','minimumtargetwalkers','sigmabound','energybound','feedback','recordwalkers','fastgrad','popcontrol','branchinterval','usedrift','storeconfigs','en_ref','tau','alpha','gamma','stepsbetweensamples','max_branch','killnode','swap_walkers','swap_trigger']
+    parameters = ['walkers','warmupsteps','blocks','steps','timestep','nonlocalmove','nonlocalmoves','pop_control','reconfiguration','targetwalkers','minimumtargetwalkers','sigmabound','energybound','feedback','recordwalkers','fastgrad','popcontrol','branchinterval','usedrift','storeconfigs','en_ref','tau','alpha','gamma','stepsbetweensamples','max_branch','killnode','swap_walkers','swap_trigger','branching_cutoff_scheme']
     write_types = obj(gpu=yesno,nonlocalmoves=yesnostr,reconfiguration=yesno,fastgrad=yesno,completed=yesno,killnode=yesno,swap_walkers=yesno)
 #end class dmc
 
@@ -5927,29 +5927,30 @@ vmc_noJ_defaults = obj(
     ).set_optional(**vmc_defaults)
 
 dmc_defaults = obj(
-    warmupsteps          = 20,
-    blocks               = 200,
-    steps                = 10,
-    timestep             = 0.01,
-    checkpoint           = -1,
-    vmc_samples          = 2048,
-    vmc_samplesperthread = None, 
-    vmc_walkers          = 1,
-    vmc_warmupsteps      = 30,
-    vmc_blocks           = 40,
-    vmc_steps            = 10,
-    vmc_substeps         = 3,
-    vmc_timestep         = 0.3,
-    vmc_checkpoint       = -1,
-    eq_dmc               = False,
-    eq_warmupsteps       = 20,
-    eq_blocks            = 20,
-    eq_steps             = 5,
-    eq_timestep          = 0.02,
-    eq_checkpoint        = -1,
-    ntimesteps           = 1,
-    timestep_factor      = 0.5,    
-    nonlocalmoves        = None,
+    warmupsteps             = 20,
+    blocks                  = 200,
+    steps                   = 10,
+    timestep                = 0.01,
+    checkpoint              = -1,
+    vmc_samples             = 2048,
+    vmc_samplesperthread    = None, 
+    vmc_walkers             = 1,
+    vmc_warmupsteps         = 30,
+    vmc_blocks              = 40,
+    vmc_steps               = 10,
+    vmc_substeps            = 3,
+    vmc_timestep            = 0.3,
+    vmc_checkpoint          = -1,
+    eq_dmc                  = False,
+    eq_warmupsteps          = 20,
+    eq_blocks               = 20,
+    eq_steps                = 5,
+    eq_timestep             = 0.02,
+    eq_checkpoint           = -1,
+    ntimesteps              = 1,
+    timestep_factor         = 0.5,    
+    nonlocalmoves           = None,
+    branching_cutoff_scheme = None,
     )
 dmc_test_defaults = obj(
     vmc_warmupsteps = 10,
@@ -6095,29 +6096,30 @@ def generate_vmc_calculations(
 
 
 def generate_dmc_calculations(
-    warmupsteps         ,
-    blocks              ,
-    steps               ,
-    timestep            ,
-    checkpoint          ,
-    vmc_samples         ,
-    vmc_samplesperthread, 
-    vmc_walkers         ,
-    vmc_warmupsteps     ,
-    vmc_blocks          ,
-    vmc_steps           ,
-    vmc_substeps        ,
-    vmc_timestep        ,
-    vmc_checkpoint      ,
-    eq_dmc              ,
-    eq_warmupsteps      ,
-    eq_blocks           ,
-    eq_steps            ,
-    eq_timestep         ,
-    eq_checkpoint       ,
-    ntimesteps          ,
-    timestep_factor     ,    
-    nonlocalmoves       ,
+    warmupsteps            ,
+    blocks                 ,
+    steps                  ,
+    timestep               ,
+    checkpoint             ,
+    vmc_samples            ,
+    vmc_samplesperthread   , 
+    vmc_walkers            ,
+    vmc_warmupsteps        ,
+    vmc_blocks             ,
+    vmc_steps              ,
+    vmc_substeps           ,
+    vmc_timestep           ,
+    vmc_checkpoint         ,
+    eq_dmc                 ,
+    eq_warmupsteps         ,
+    eq_blocks              ,
+    eq_steps               ,
+    eq_timestep            ,
+    eq_checkpoint          ,
+    ntimesteps             ,
+    timestep_factor        ,    
+    nonlocalmoves          ,
+    branching_cutoff_scheme,
     loc                 = 'generate_dmc_calculations',
     ):
 
@@ -6167,13 +6169,16 @@ def generate_dmc_calculations(
         tfac *= timestep_factor
     #end for
 
-    if nonlocalmoves is not None:
-        for calc in dmc_calcs:
-            if isinstance(calc,dmc):
+    for calc in dmc_calcs:
+        if isinstance(calc,dmc):
+            if nonlocalmoves is not None:
                 calc.nonlocalmoves = nonlocalmoves
             #end if
-        #end for
-    #end if
+            if branching_cutoff_scheme is not None:
+                calc.branching_cutoff_scheme = branching_cutoff_scheme
+            #end if
+        #end if
+    #end for
     
     return dmc_calcs
 #end def generate_dmc_calculations
