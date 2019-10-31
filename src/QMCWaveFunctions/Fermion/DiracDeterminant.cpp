@@ -55,7 +55,7 @@ template<typename DU_TYPE>
 void DiracDeterminant<DU_TYPE>::invertPsiM(const ValueMatrix_t& logdetT, ValueMatrix_t& invMat)
 {
   InverseTimer.start();
-  updateEng.invert_transpose(logdetT, invMat, LogValue, PhaseValue);
+  updateEng.invert_transpose(logdetT, invMat, LogValue);
   InverseTimer.stop();
 }
 
@@ -168,8 +168,7 @@ template<typename DU_TYPE>
 void DiracDeterminant<DU_TYPE>::acceptMove(ParticleSet& P, int iat)
 {
   const int WorkingIndex = iat - FirstIndex;
-  PhaseValue += evaluatePhase(curRatio);
-  LogValue += std::log(std::abs(curRatio));
+  LogValue += convertValueToLog(curRatio);
   UpdateTimer.start();
   updateEng.acceptRow(psiM, WorkingIndex, psiV);
   // invRow becomes invalid after accepting a move
@@ -253,11 +252,10 @@ void DiracDeterminant<DU_TYPE>::registerData(ParticleSet& P, WFBufferType& buf)
     buf.forward(Bytes_in_WFBuffer);
   }
   buf.add(LogValue);
-  buf.add(PhaseValue);
 }
 
 template<typename DU_TYPE>
-typename DiracDeterminant<DU_TYPE>::RealType DiracDeterminant<DU_TYPE>::updateBuffer(ParticleSet& P,
+typename DiracDeterminant<DU_TYPE>::LogValueType DiracDeterminant<DU_TYPE>::updateBuffer(ParticleSet& P,
                                                                                      WFBufferType& buf,
                                                                                      bool fromscratch)
 {
@@ -272,7 +270,6 @@ typename DiracDeterminant<DU_TYPE>::RealType DiracDeterminant<DU_TYPE>::updateBu
   BufferTimer.start();
   buf.forward(Bytes_in_WFBuffer);
   buf.put(LogValue);
-  buf.put(PhaseValue);
   BufferTimer.stop();
   return LogValue;
 }
@@ -285,7 +282,6 @@ void DiracDeterminant<DU_TYPE>::copyFromBuffer(ParticleSet& P, WFBufferType& buf
   dpsiM.attachReference(buf.lendReference<GradType>(dpsiM.size()));
   d2psiM.attachReference(buf.lendReference<ValueType>(d2psiM.size()));
   buf.get(LogValue);
-  buf.get(PhaseValue);
   // start with invRow labelled invalid
   invRow_id = -1;
   updateEng.initializeInv(psiM);
@@ -510,7 +506,7 @@ typename DiracDeterminant<DU_TYPE>::GradType DiracDeterminant<DU_TYPE>::evalGrad
  *for local energy calculations.
  */
 template<typename DU_TYPE>
-typename DiracDeterminant<DU_TYPE>::RealType DiracDeterminant<DU_TYPE>::evaluateLog(ParticleSet& P,
+typename DiracDeterminant<DU_TYPE>::LogValueType DiracDeterminant<DU_TYPE>::evaluateLog(ParticleSet& P,
                                                                                     ParticleSet::ParticleGradient_t& G,
                                                                                     ParticleSet::ParticleLaplacian_t& L)
 {
@@ -547,7 +543,7 @@ void DiracDeterminant<DU_TYPE>::recompute(ParticleSet& P)
     //CurrentDet=psiM(0,0);
     ValueType det = psiM_temp(0, 0);
     psiM(0, 0)    = RealType(1) / det;
-    LogValue      = evaluateLogAndPhase(det, PhaseValue);
+    LogValue      = convertValueToLog(det);
   }
   else
   {

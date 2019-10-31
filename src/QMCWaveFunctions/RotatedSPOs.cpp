@@ -702,8 +702,8 @@ $
       Vector<IndexType> Piv;
       WS.resize(k);
       Piv.resize(k);
-      RealType PhaseR = 0.0;
-      InvertWithLog(Y6.data(), k, k, WS.data(), Piv.data(), PhaseR);
+      std::complex<RealType> logdet = 0.0;
+      InvertWithLog(Y6.data(), k, k, WS.data(), Piv.data(), logdet);
 
       Y11.resize(nel, k);
       Y23.resize(k, k);
