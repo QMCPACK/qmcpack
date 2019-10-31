@@ -272,7 +272,7 @@ WaveFunctionComponent* RadialJastrowBuilder::createJ2(xmlNodePtr cur)
       if (is_manager())
       {
         char fname[32];
-        sprintf(fname, "J2.%s.g%03d.dat", pairType.c_str(), getGroupID());
+        sprintf(fname, "J2.%s.%s.g%03d.dat", NameOpt.c_str(), pairType.c_str(), getGroupID());
         std::ofstream os(fname);
         print(*functor, os);
       }
@@ -303,7 +303,7 @@ void RadialJastrowBuilder::computeJ2uk(const std::vector<RadFuncType*>& functors
   if (is_manager())
   {
     char fname[16];
-    sprintf(fname, "uk.g%03d.dat", getGroupID());
+    sprintf(fname, "uk.%s.g%03d.dat", NameOpt.c_str(), getGroupID());
     fout = fopen(fname, "w");
   }
   for (int iG = 0; iG < targetPtcl.SK->KLists.ksq.size(); iG++)
@@ -414,9 +414,9 @@ WaveFunctionComponent* RadialJastrowBuilder::createJ1(xmlNodePtr cur)
       {
         char fname[128];
         if (speciesB.size())
-          sprintf(fname, "%s.%s%s.g%03d.dat", jname.c_str(), speciesA.c_str(), speciesB.c_str(), getGroupID());
+          sprintf(fname, "%s.%s.%s%s.g%03d.dat", jname.c_str(), NameOpt.c_str(), speciesA.c_str(), speciesB.c_str(), getGroupID());
         else
-          sprintf(fname, "%s.%s.g%03d.dat", jname.c_str(), speciesA.c_str(), getGroupID());
+          sprintf(fname, "%s.%s.%s.g%03d.dat", jname.c_str(), NameOpt.c_str(), speciesA.c_str(), getGroupID());
         std::ofstream os(fname);
         print(*functor, os);
       }
