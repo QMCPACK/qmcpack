@@ -1182,6 +1182,8 @@ def qmcpack_input():
 
     nunit('import')
 
+    nunit('qixml_class_init')
+
     nunit('compose')
 
     nunit('generate')
@@ -1190,7 +1192,13 @@ def qmcpack_input():
 
     nunit('write')
 
+    nunit('get')
+
+    nunit('incorporate_system')
+
     nunit('generate_kspace_jastrow')
+
+    nunit('excited_state')
 
     nunit_all()
 #end def qmcpack_input
