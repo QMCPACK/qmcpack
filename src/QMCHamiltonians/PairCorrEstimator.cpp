@@ -29,7 +29,7 @@ PairCorrEstimator::PairCorrEstimator(ParticleSet& elns, std::string& sources)
   num_species = elns.groups();
   n_vec.resize(num_species, 0);
   for (int i(0); i < num_species; i++)
-    n_vec[i] = 1.0 / (elns.last(i) - elns.first(i));
+    n_vec[i] = elns.last(i) - elns.first(i);
   N_e = elns.getTotalNum();
   //use the simulation cell radius if any direction is periodic
   if (elns.Lattice.SuperCellEnum)
@@ -128,7 +128,7 @@ PairCorrEstimator::Return_t PairCorrEstimator::evaluate(ParticleSet& P)
         const int loc     = static_cast<int>(DeltaInv * r);
         const int jg      = P.GroupID[j];
         const int pair_id = ig * (ig + 1) / 2 + jg;
-        collectables[pair_id * NumBins + loc + myIndex] += norm_factor(pair_id, loc);
+        collectables[pair_id * NumBins + loc + myIndex] += norm_factor(pair_id + 1, loc);
       }
     }
     for (int k = 0; k < other_ids.size(); ++k)
@@ -240,9 +240,11 @@ void PairCorrEstimator::setParticlePropertyList(PropertySetType& plist, int offs
   //std::copy(gof_r.first_address(),gof_r.last_address(),plist.begin()+myDebugIndex+offset);
 }
 
+
+  // Read xml and setup norm_factor
 bool PairCorrEstimator::put(xmlNodePtr cur)
 {
-  //set resolution
+  // Set internal parameters
   int nbins = (int)std::ceil(Dmax * DeltaInv);
   std::string debug("no");
   OhmmsAttributeSet attrib;
@@ -254,37 +256,86 @@ bool PairCorrEstimator::put(xmlNodePtr cur)
   Delta    = Dmax / static_cast<RealType>(nbins);
   DeltaInv = 1.0 / Delta;
   NumBins  = nbins;
-  norm_factor.resize((num_species * num_species - num_species) / 2 + num_species + 1, NumBins);
-  RealType r  = Delta * 0.5;
-  RealType pf = Volume * DeltaInv / (4 * M_PI);
-  for (int i = 0; i < NumBins; ++i, r += Delta)
-  {
-    RealType rm2      = pf / r / r;
-    norm_factor(0, i) = rm2 / N_e;
-    int indx(1);
-    for (int m(0); m < num_species; m++)
-      for (int n(m); n < num_species; n++)
-      {
-        norm_factor(indx, i) = (m == n ? 2 : 1) * rm2 * n_vec[n] * n_vec[m];
-        indx++;
-      }
-  }
-  //     for(int m(0);m<norm_factor.size1();m++)
-  //     {
-  //       std::cerr <<m<<": ";
-  //       for(int i=0; i<NumBins; ++i)
-  //         std::cerr <<" "<<norm_factor(m,i);
-  //       std::cerr << std::endl;
-  //     }
-  ////resize(nbins);
-  //if(debug == "yes")
-  //  gof_r.resize(gof_r_prefix.size(),NumBins);
 
+  // Set normalization based on updated parameters & report status
+  set_norm_factor();
   report();
 
   return true;
 }
 
+
+  // Called from inside put() after internals are set
+  // Sets the normalization, or norm_factor, for each channel and bin
+  void PairCorrEstimator::set_norm_factor()
+  {
+    // Number of species-pair-specific gofr's to compute
+    // E.g. "uu", "dd", "ud", & etc.
+    // Note the addition +1 bin, which is for the total gofr of the system
+    // (which seems not to get saved to h5 file. Why compute it then?)
+    const RealType n_channels = num_species*(num_species - 1) / 2 + num_species + 1;
+    norm_factor.resize(n_channels, NumBins);
+
+    // Compute the normalization V/Npairs/Nid, with
+    // V the volume of the system
+    // Npairs the number of (unique) pairs of particles of given types
+    // Nid the number of particles expected for a uniformly random distribution
+    // with the same number density
+    RealType r  = 0.;
+    const RealType ftpi = 4./3 * M_PI;
+    const RealType N_tot_pairs = N_e*(N_e - 1) / 2;
+    for ( int i=0; i<NumBins; i++ )
+      {
+	// Separation for current bin
+	r = static_cast<RealType>(i)*Delta;
+
+	// Number density
+	RealType rho = N_tot_pairs / Volume;
+
+	// Volume of shell of thickness Delta
+	RealType bin_volume = ftpi * ( std::pow(r+Delta, 3) - std::pow(r, 3) );
+
+	// Expected number of pairs of particles separated by distance r assuming
+	// they are uniformly randomly distributed (ideal gas-like)
+	RealType nid = rho * bin_volume;
+	norm_factor(0, i) = 1. / nid;
+	int indx(1);
+
+	// Do same as above, but for each unique pair of species
+	// e.g. uu, ud, dd...
+	for (int m(0); m < num_species; m++)
+	  {
+	    const RealType nm = n_vec[m];
+	    for (int n(m); n < num_species; n++)
+	      {
+		const RealType nn = n_vec[n];
+		const RealType npairs = ( m == n ? (nn*(nn-1)/2.) : (nn*nm) );
+		rho = npairs / Volume;
+		nid = rho * bin_volume;
+		norm_factor(indx, i) = 1. / nid;
+		indx++;
+	      }
+	  }
+      }
+
+    // ***DEBUG*** print norm_factor
+    /*
+    std::cout << "norm_factor:\n";
+    std::cout << std::fixed;
+    for( int j=0; j<norm_factor.size2(); j++ )
+      {
+	std::cout << std::setw(4) << j;
+	std::cout << std::setw(8) << std::setprecision(4) << j*Delta;
+	for( int i=0; i<norm_factor.size1(); i++ ) 
+	  {
+	    std::cout << "  " << std::setw(10) << std::setprecision(4) << norm_factor(i,j);
+	  }
+	std::cout << std::endl;
+      }
+    std::cout << std::endl;
+    */
+
+  }
 
 void PairCorrEstimator::report()
 {
@@ -324,7 +375,7 @@ void PairCorrEstimator::resize(int nbins)
     int indx(1);
     for (int m(0); m < num_species; m++)
       for (int n(m); n < num_species; n++, indx++)
-        norm_factor(indx, i) = rm2 * n_vec[n] * n_vec[m];
+        norm_factor(indx, i) = rm2 / n_vec[n] / n_vec[m];
   }
   //     norm_factor.resize(nbins);
   //     RealType r=Delta*0.5;

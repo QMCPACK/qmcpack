@@ -49,9 +49,10 @@ public:
   bool get(std::ostream& os) const;
   QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 
+  void set_norm_factor();
   void report();
 
-private:
+ private:
   ///number of bins
   int NumBins;
   /// maximum distance
@@ -68,11 +69,15 @@ private:
   std::vector<int> other_ids;
   /// offset of the gofr's associated with others_id
   std::vector<int> other_offsets;
-  /////save source indices
-  //vector<int> source_ids;
-  ///normalization factor
+
+  ///normalization factors
   Matrix<RealType> norm_factor;
-  int num_species, N_e;
+  
+  // Number of species
+  int num_species;
+  // Total number of electrons
+  int N_e; 
+  // Number of electrons per species
   std::vector<RealType> n_vec;
   // AA table ID
   const int d_aa_ID_;
