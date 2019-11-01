@@ -18,11 +18,6 @@ void Crowd::clearWalkers()
   walker_elecs_.clear();
   walker_twfs_.clear();
   walker_hamiltonians_.clear();
-
-  // Think these should also get cleared here.
-  n_reject_ = 0;
-  n_accept_ = 0;
-  n_nonlocal_accept_ = 0;
 }
 
 void Crowd::reserve(int crowd_size)

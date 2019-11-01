@@ -100,8 +100,8 @@ ParticleSet::ParticleSet(const ParticleSet& p)
   myTwist = p.myTwist;
 
   RSoA = p.RSoA;
-  G = p.G;
-  L = p.L;
+  G    = p.G;
+  L    = p.L;
 }
 
 ParticleSet::~ParticleSet()
@@ -640,6 +640,12 @@ void ParticleSet::acceptMove(Index_t iat)
   }
 }
 
+void ParticleSet::flex_donePbyP(const RefVector<ParticleSet>& P_list)
+{
+  for (int iw = 0; iw < P_list.size(); iw++)
+    P_list[iw].get().donePbyP();
+}
+
 void ParticleSet::donePbyP()
 {
   ScopedTimer donePbyP_scope(myTimers[PS_donePbyP]);
@@ -693,15 +699,15 @@ void ParticleSet::saveWalker(Walker_t& awalker)
 
 void ParticleSet::flex_saveWalker(RefVector<ParticleSet>& psets, RefVector<Walker_t>& walkers)
 {
-  int num_sets = psets.size();
-  auto saveWalker = [](ParticleSet& pset, Walker_t& walker){
-                      walker.R = pset.R;
+  int num_sets    = psets.size();
+  auto saveWalker = [](ParticleSet& pset, Walker_t& walker) {
+    walker.R = pset.R;
 #if !defined(SOA_MEMORY_OPTIMIZED)
-                      walker.G = pset.G;
-                      walker.L = pset.L;
+    walker.G = pset.G;
+    walker.L = pset.L;
 #endif
-                    };
-  for(int iw = 0; iw < num_sets; ++iw)
+  };
+  for (int iw = 0; iw < num_sets; ++iw)
     saveWalker(psets[iw], walkers[iw]);
 }
 
