@@ -15,7 +15,6 @@
 #include "Lattice/ParticleBConds.h"
 #include "Particle/ParticleSet.h"
 #include "Particle/DistanceTableData.h"
-#include "Particle/SymmetricDistanceTableData.h"
 #include "QMCHamiltonians/PairCorrEstimator.h"
 #include "QMCApp/ParticleSetPool.h"
 
@@ -134,8 +133,13 @@ TEST_CASE("Pair Correlation", "[hamiltonian]")
 
   elec->get(std::cout); // print particleset info to stdout
 
-  // Set up the distance table
+  // Set up the distance table, match expected layout
+#ifdef ENABLE_SOA
+  const int ee_table_id = elec->addTable(*elec, DT_SOA, false);
+#else
   const int ee_table_id = elec->addTable(*elec, DT_AOS, false);
+#endif
+  
   const DistanceTableData& dii(elec->getDistTable(ee_table_id));
   elec->update(); // distance table evaluation here
 
@@ -174,6 +178,11 @@ TEST_CASE("Pair Correlation", "[hamiltonian]")
     } 
 
   // Verify against analytic result.
+  // NB: At the moment the tolerance is fairly loose because there
+  //     is about 0.08-0.01 disagreement between QMCPACK and analytic
+  //     result, depending on the bin. I'm not sure about the source
+  //     of the disagreement because norm_factor is now exact. 
+  //     The only thing left is the distance table (I think)...
   const RealType eps = 1E-01;  // tolerance
 
   // Nearest neighbor peak (ud) | Distance = 1
