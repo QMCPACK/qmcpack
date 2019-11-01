@@ -174,13 +174,13 @@ def generate_network():
 #end def generate_network
 
 
-def get_test_workflow(index):
+def get_test_workflow(index,**kwargs):
     from generic import obj
 
-    def make_network(network):
+    def make_network(network,**kwargs):
         sims = obj()
         for i in range(len(network)):
-            s = get_test_sim()
+            s = get_test_sim(**kwargs)
             for j in network[i]:
                 s.depends((sims['s'+str(j)],'other'))
             #end for
@@ -195,66 +195,71 @@ def get_test_workflow(index):
 
     if index==0:
         # single simulation
-        sims.s = get_test_sim()
+        sims.s = get_test_sim(**kwargs)
     elif index==1:
         # linear simulation chain
-        sims.s1 = get_test_sim()
-        sims.s2 = get_test_sim(dependencies=(sims.s1,'other'))
-        sims.s3 = get_test_sim(dependencies=(sims.s2,'other'))
+        sims.s1 = get_test_sim(**kwargs)
+        sims.s2 = get_test_sim(dependencies=(sims.s1,'other'),**kwargs)
+        sims.s3 = get_test_sim(dependencies=(sims.s2,'other'),**kwargs)
     elif index==2:
         # linear chain with split
-        sims.s1  = get_test_sim()
-        sims.s2  = get_test_sim(dependencies=(sims.s1,'other'))
-        sims.s3  = get_test_sim(dependencies=(sims.s2,'other'))
-        sims.s41 = get_test_sim(dependencies=(sims.s3,'other'))
-        sims.s51 = get_test_sim(dependencies=(sims.s41,'other'))
-        sims.s42 = get_test_sim(dependencies=(sims.s3,'other'))
-        sims.s52 = get_test_sim(dependencies=(sims.s42,'other'))
+        sims.s1  = get_test_sim(**kwargs)
+        sims.s2  = get_test_sim(dependencies=(sims.s1,'other'),**kwargs)
+        sims.s3  = get_test_sim(dependencies=(sims.s2,'other'),**kwargs)
+        sims.s41 = get_test_sim(dependencies=(sims.s3,'other'),**kwargs)
+        sims.s51 = get_test_sim(dependencies=(sims.s41,'other'),**kwargs)
+        sims.s42 = get_test_sim(dependencies=(sims.s3,'other'),**kwargs)
+        sims.s52 = get_test_sim(dependencies=(sims.s42,'other'),**kwargs)
     elif index==3:
         # linear chains with join
-        sims.s11 = get_test_sim()
-        sims.s21 = get_test_sim(dependencies=(sims.s11,'other'))
-        sims.s12 = get_test_sim()
-        sims.s22 = get_test_sim(dependencies=(sims.s12,'other'))
+        sims.s11 = get_test_sim(**kwargs)
+        sims.s21 = get_test_sim(dependencies=(sims.s11,'other'),**kwargs)
+        sims.s12 = get_test_sim(**kwargs)
+        sims.s22 = get_test_sim(dependencies=(sims.s12,'other'),**kwargs)
         sims.s3  = get_test_sim(dependencies=[(sims.s21,'other'),(sims.s22,'other')])
-        sims.s4  = get_test_sim(dependencies=(sims.s3,'other'))
-        sims.s5  = get_test_sim(dependencies=(sims.s4,'other'))
+        sims.s4  = get_test_sim(dependencies=(sims.s3,'other'),**kwargs)
+        sims.s5  = get_test_sim(dependencies=(sims.s4,'other'),**kwargs)
     elif index==4:
         # net-like workflow
-        sims.s11 = get_test_sim()
-        sims.s12 = get_test_sim()
-        sims.s13 = get_test_sim()
+        sims.s11 = get_test_sim(**kwargs)
+        sims.s12 = get_test_sim(**kwargs)
+        sims.s13 = get_test_sim(**kwargs)
 
         sims.s21 = get_test_sim(
             dependencies = [
                 (sims.s11,'other'),
                 (sims.s12,'other'),
-                ]
+                ],
+            **kwargs
             )
         sims.s22 = get_test_sim(
             dependencies = [
                 (sims.s12,'other'),
                 (sims.s13,'other'),
-                ]
+                ],
+            **kwargs
             )
 
         sims.s31 = get_test_sim(
             dependencies = [
                 (sims.s21,'other'),
                 (sims.s22,'other'),
-                ]
+                ],
+            **kwargs
             )
         sims.s32 = get_test_sim(
             dependencies = [
                 (sims.s21,'other'),
                 (sims.s22,'other'),
-                ]
+                ],
+            **kwargs
             )
         sims.s33 = get_test_sim(
             dependencies = [
                 (sims.s21,'other'),
                 (sims.s22,'other'),
-                ]
+                ],
+            **kwargs
             )
 
         sims.s41 = get_test_sim(
@@ -262,7 +267,8 @@ def get_test_workflow(index):
                 (sims.s11,'other'),
                 (sims.s22,'other'),
                 (sims.s32,'other'),
-                ]
+                ],
+            **kwargs
             )
     elif index==5:
         # random network 1
@@ -280,7 +286,7 @@ def get_test_workflow(index):
             10 : [0, 3, 9],
             11 : [4, 5, 7],
             }
-        sims = make_network(network)
+        sims = make_network(network,**kwargs)
     elif index==6:
         # random network 2
         network = {
@@ -296,7 +302,7 @@ def get_test_workflow(index):
             9  : [1, 8],
             10 : [2, 4],
             }
-        sims = make_network(network)
+        sims = make_network(network,**kwargs)
     elif index==7:
         # random network 3
         network = {
@@ -314,7 +320,7 @@ def get_test_workflow(index):
             11 : [10],
             12 : [8, 10, 11],
             }
-        sims = make_network(network)
+        sims = make_network(network,**kwargs)
     elif index==8:
         # larger random network
         network = {
@@ -352,7 +358,7 @@ def get_test_workflow(index):
             31 : [28], 
             32 : [20],
             }
-        sims = make_network(network)
+        sims = make_network(network,**kwargs)
     else:
         failed('index exceeds available workflows')
     #end if
