@@ -1220,6 +1220,14 @@ def gamess_input():
 
 
 def pyscf_input():
+    nunit('import')
+
+    nunit('empty_init')
+
+    nunit('generate')
+
+    nunit('write')
+
     nunit_all()
 #end def pyscf_input
 
