@@ -1172,6 +1172,12 @@ def vasp_input():
 
     nunit('keyword_consistency')
 
+    nunit('empty_init')
+
+    nunit('read')
+
+    nunit('write')
+
     nunit('generate')
 
     nunit_all()
@@ -1193,15 +1199,15 @@ def pwscf_input():
 
 def gamess_input():
     nunit('files')
-
+    
     nunit('import')
-
+    
     nunit('keyspec_groups')
-
+    
     nunit('empty_init')
-
+    
     nunit('read')
-
+    
     nunit('write')
 
     nunit('generate')
@@ -1236,6 +1242,20 @@ def qmcpack_input():
 
     nunit_all()
 #end def qmcpack_input
+
+
+
+def qmcpack_converters():
+    nunit('import')
+
+    nunit('pyscf_to_afqmc_input_init')
+
+    nunit('pyscf_to_afqmc_input_write')
+
+    nunit('pyscf_to_afqmc_analyzer_init')
+
+    nunit_all()
+#end def qmcpack_converters
 
 
 
@@ -1491,6 +1511,7 @@ def user_examples(label):
 
 # create labeled tests from simple functions above
 
+# ordered according to logical dependencies
 NexusTest( versions              )
 NexusTest( required_dependencies )
 NexusTest( optional_dependencies , optional=True)
@@ -1523,6 +1544,42 @@ NexusTest( vasp_input            )
 NexusTest( pwscf_input           )
 NexusTest( gamess_input          )
 NexusTest( qmcpack_input         )
+NexusTest( qmcpack_converters    )
+
+# ordered alphabetically (pytest order)
+#NexusTest( basisset              )
+#NexusTest( bundle                )
+#NexusTest( developer             )
+#NexusTest( execute               )
+#NexusTest( fileio                )
+#NexusTest( gamess_input          )
+#NexusTest( generic_operation     , 'generic' )
+#NexusTest( grid_functions        )
+#NexusTest( hdfreader             )
+#NexusTest( machines              )
+#NexusTest( memory                )
+#NexusTest( nexus_base            )
+#NexusTest( nexus_imports         )
+#NexusTest( numerics              )
+#NexusTest( optional_dependencies , optional=True)
+#NexusTest( periodic_table        )
+#NexusTest( physical_system       )
+#NexusTest( plotting              )
+#NexusTest( project_manager       )
+#NexusTest( pseudopotential       )
+#NexusTest( pwscf_input           )
+#NexusTest( qmcpack_input         )
+#NexusTest( qmcpack_converters    )
+#NexusTest( required_dependencies )
+#NexusTest( settings_operation    , 'settings' )
+#NexusTest( simulation            )
+#NexusTest( structure             )
+#NexusTest( superstring           )
+#NexusTest( testing               )
+#NexusTest( unit_converter        )
+#NexusTest( vasp_input            )
+#NexusTest( versions              )
+#NexusTest( xmlreader             )
 
 for label in example_information.keys():
     NexusTest(
