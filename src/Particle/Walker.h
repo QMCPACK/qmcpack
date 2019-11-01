@@ -100,7 +100,7 @@ struct Walker
   /** @{
    * Not really "buffers", "walker message" also used to serialize walker, rename
    */
-  typedef PooledMemory<OHMMS_PRECISION_FULL> WFBuffer_t;
+  typedef PooledMemory<FullPrecRealType> WFBuffer_t;
   typedef PooledData<RealType> Buffer_t;
   /** }@ */
   
