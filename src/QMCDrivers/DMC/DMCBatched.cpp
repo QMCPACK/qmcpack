@@ -234,9 +234,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
                      [oneover2tau](auto& drift) { return -oneover2tau * dot(drift, drift); });
 
       for (int iw = 0; iw < num_walkers; ++iw)
-      {
         prob[iw] = std::norm(ratios[iw]) * std::exp(log_gb[iw] - log_gf[iw]);
-      }
 
       twf_accept_list.clear();
       twf_reject_list.clear();
