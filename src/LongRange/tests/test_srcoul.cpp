@@ -14,16 +14,27 @@
 #include "Configuration.h"
 #include "Lattice/CrystalLattice.h"
 #include "Particle/ParticleSet.h"
-#include "LongRange/EwaldHandler3D.h"
+#include "LongRange/LRHandlerSRCoulomb.h"
 
 namespace qmcplusplus
 {
 
-using mRealType = EwaldHandler3D::mRealType;
+using mRealType = LRHandlerBase::mRealType;
 
-/** evalaute bare Coulomb using EwaldHandler3D
+struct EslerCoulomb3D
+{ // stripped down version of LRCoulombSingleton::CoulombFunctor for 3D
+  double norm;
+  inline double operator()(double r, double rinv) {return rinv;}
+  inline double Vk(double k) {return 1./(k*k);}
+  inline double dVk_dk(double k) {return -2*norm/(k*k*k);}
+  void reset(ParticleSet& ref) {norm=4.0*M_PI/ref.LRBox.Volume;}
+  void reset(ParticleSet& ref, double rs) {reset(ref);} // ignore rs
+  inline double df(double r) {return -1./(r*r);}
+};
+
+/** evalaute bare Coulomb in 3D
  */
-TEST_CASE("ewald3d", "[lrhandler]")
+TEST_CASE("srcoul", "[lrhandler]")
 {
   CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
   Lattice.BoxBConds = true;
@@ -41,19 +52,15 @@ TEST_CASE("ewald3d", "[lrhandler]")
   ref.LRBox = Lattice;  // !!!! crucial for S(k) update
   StructFact *SK = new StructFact(ref, Lattice.LR_kc);
   ref.SK = SK;
-  EwaldHandler3D handler(ref, Lattice.LR_kc);
+  LRHandlerSRCoulomb<EslerCoulomb3D, LPQHISRCoulombBasis> handler(ref);
 
-  // make sure initBreakup changes the default sigma
-  REQUIRE(handler.Sigma == Approx(Lattice.LR_kc));
   handler.initBreakup(ref);
-  REQUIRE(handler.Sigma == Approx(std::sqrt(Lattice.LR_kc/(2.0*Lattice.LR_rc))));
-
   REQUIRE(handler.MaxKshell == 78);
   REQUIRE(handler.LR_rc == Approx(2.5));
-  REQUIRE(handler.LR_kc == Approx(12));
+  REQUIRE(handler.LR_kc == 12);
 
   mRealType r, dr, rinv;
-  mRealType vsr, vlr;
+  mRealType vsr;
   int nr = 101;
   dr = 5.0/nr;  // L/[# of grid points]
   for (int ir=1;ir<nr;ir++)
@@ -61,17 +68,16 @@ TEST_CASE("ewald3d", "[lrhandler]")
     r = ir*dr;
     rinv = 1./r;
     vsr = handler.evaluate(r, rinv);
-    vlr = handler.evaluateLR(r);
     // short-range part must vanish after rcut
     if (r>2.5) REQUIRE(vsr == Approx(0.0));
-    // sum must recover the Coulomb potential
-    REQUIRE(vsr+vlr == Approx(rinv));
+    //// !!!! SR values not validated, see "srcoul df" test
+    //REQUIRE(vsr == Approx(rinv));
   }
 }
 
-/** evalaute bare Coulomb derivative using EwaldHandler3D
+/** evalaute bare Coulomb derivative in 3D
  */
-TEST_CASE("ewald3d df", "[lrhandler]")
+TEST_CASE("srcoul df", "[lrhandler]")
 {
   CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
   Lattice.BoxBConds = true;
@@ -89,17 +95,15 @@ TEST_CASE("ewald3d df", "[lrhandler]")
   ref.LRBox = Lattice;  // !!!! crucial for S(k) update
   StructFact *SK = new StructFact(ref, Lattice.LR_kc);
   ref.SK = SK;
-  EwaldHandler3D handler(ref, Lattice.LR_kc);
+  LRHandlerSRCoulomb<EslerCoulomb3D, LPQHISRCoulombBasis> handler(ref);
 
-  // make sure initBreakup changes the default sigma
-  REQUIRE(handler.Sigma == Approx(Lattice.LR_kc));
   handler.initBreakup(ref);
-  REQUIRE(handler.Sigma == Approx(std::sqrt(Lattice.LR_kc/(2.0*Lattice.LR_rc))));
-
   REQUIRE(handler.MaxKshell == 78);
   REQUIRE(handler.LR_rc == Approx(2.5));
-  REQUIRE(handler.LR_kc == Approx(12));
+  REQUIRE(handler.LR_kc == 12);
 
+  EslerCoulomb3D fref;
+  fref.reset(ref);
   mRealType r, dr, rinv;
   mRealType rm, rp; // minus (m), plus (p)
   mRealType vsrm, vsrp, dvsr, vlrm, vlrp, dvlr;
@@ -123,6 +127,8 @@ TEST_CASE("ewald3d df", "[lrhandler]")
     // test long-range piece
     dvlr = (vlrp-vlrm)/(2*dr);
     REQUIRE(handler.lrDf(r) == Approx(dvlr));
+    // test total derivative
+    REQUIRE(dvsr+dvlr == Approx(fref.df(r)));
   }
 }
 

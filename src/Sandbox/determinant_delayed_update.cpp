@@ -129,8 +129,8 @@ int main(int argc, char** argv)
     delayedEng.resize(nels,delay);
 
     generate(random_th,psiM.data(),nels*nels);
-    RealType log, phase;
-    detEng.invert_transpose(psiM, psiM_inv, log, phase);
+    std::complex<RealType> logdet;
+    detEng.invert_transpose(psiM, psiM_inv, logdet);
 
     if(debug)
     {

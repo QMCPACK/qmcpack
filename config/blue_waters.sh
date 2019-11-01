@@ -5,7 +5,7 @@
 ##   on Blue Waters, University of Illinois Urbana-Champaign  ##
 ##   highly similar to OLCF Titan build script                ##
 ##                                                            ##
-## Last modified: Apr 18, 2018                                ##
+## Last modified: Oct 25, 2019                                ##
 ################################################################
 
 # Load required modules (assuming default settings have not been modified)
@@ -28,6 +28,7 @@ then
 module unload bwpy                                                              
 fi 
 
+module unload darshan
 # use parallel HDF5 to speed up I/O of large jobs
 module load cray-hdf5-parallel
 
@@ -35,11 +36,15 @@ module load cray-hdf5-parallel
 module load fftw
 
 # miscellaneous
-module load boost
+module load boost/1.63.0
 module load libxml2
-module load cmake
+module load cmake/3.9.4
 #module load bwpy # numpy, h5py libraries are used in ctest
+## 2019-10-25: bwpy conflicts with cmake and boost
 
+# for C++14 support
+module unload gcc
+module load gcc/6.3.0
 
 # always use dynamic linking
 export CRAYPE_LINK_TYPE=dynamic
@@ -71,7 +76,7 @@ echo ""
 echo "building qmcpack for cpu real"
 mkdir build$suffix
 cd build$suffix
-cmake -D ENABLE_SOA=0 $CMAKE_FLAGS ..
+cmake $CMAKE_FLAGS ..
 make -j 32
 cd ..
 ln -s ./build$suffix/bin/qmcpack ./qmcpack$suffix
@@ -83,7 +88,7 @@ echo ""
 echo "building qmcpack for cpu complex"
 mkdir build$suffix
 cd build$suffix
-cmake -D ENABLE_SOA=0 $CMAKE_FLAGS -D QMC_COMPLEX=1 ..
+cmake $CMAKE_FLAGS -D QMC_COMPLEX=1 ..
 make -j 32
 cd ..
 ln -s ./build$suffix/bin/qmcpack ./qmcpack$suffix
@@ -124,8 +129,8 @@ echo ""
 echo "building qmcpack for gpu real"
 mkdir build$suffix
 cd build$suffix
-cmake -D ENABLE_SOA=0 -D QMC_CUDA=1 -DCUDA_HOST_COMPILER=$(which CC) ..
-cmake -D ENABLE_SOA=0 -D QMC_CUDA=1 -DCUDA_HOST_COMPILER=$(which CC) ..
+cmake -D QMC_CUDA=1 -DCUDA_HOST_COMPILER=$(which CC) ..
+cmake -D QMC_CUDA=1 -DCUDA_HOST_COMPILER=$(which CC) ..
 make -j 32
 cd ..
 ln -s ./build$suffix/bin/qmcpack ./qmcpack$suffix
@@ -137,8 +142,8 @@ echo ""
 echo "building qmcpack for gpu real"
 mkdir build$suffix
 cd build$suffix
-cmake -D ENABLE_SOA=0 -D QMC_COMPLEX=1 -D QMC_CUDA=1 -DCUDA_HOST_COMPILER=$(which CC) ..
-cmake -D ENABLE_SOA=0 -D QMC_COMPLEX=1 -D QMC_CUDA=1 -DCUDA_HOST_COMPILER=$(which CC) ..
+cmake -D QMC_COMPLEX=1 -D QMC_CUDA=1 -DCUDA_HOST_COMPILER=$(which CC) ..
+cmake -D QMC_COMPLEX=1 -D QMC_CUDA=1 -DCUDA_HOST_COMPILER=$(which CC) ..
 make -j 32
 cd ..
 ln -s ./build$suffix/bin/qmcpack ./qmcpack$suffix

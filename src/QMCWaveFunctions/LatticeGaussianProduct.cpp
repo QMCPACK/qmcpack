@@ -61,7 +61,7 @@ void LatticeGaussianProduct::reportStatus(std::ostream& os) {}
      *such that \f[ G[i]+={\bf \nabla}_i J({\bf R}) \f]
      *and \f[ L[i]+=\nabla^2_i J({\bf R}). \f]
      */
-LatticeGaussianProduct::RealType LatticeGaussianProduct::evaluateLog(ParticleSet& P,
+LatticeGaussianProduct::LogValueType LatticeGaussianProduct::evaluateLog(ParticleSet& P,
                                              ParticleSet::ParticleGradient_t& G,
                                              ParticleSet::ParticleLaplacian_t& L)
 {
@@ -216,7 +216,7 @@ void LatticeGaussianProduct::registerData(ParticleSet& P, WFBufferType& buf)
   buf.add(FirstAddressOfdU, LastAddressOfdU);
 }
 
-LatticeGaussianProduct::RealType LatticeGaussianProduct::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false)
+LatticeGaussianProduct::LogValueType LatticeGaussianProduct::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false)
 {
   evaluateLogAndStore(P, P.G, P.L);
   buf.put(U.first_address(), U.last_address());
