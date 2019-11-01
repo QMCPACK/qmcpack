@@ -38,7 +38,8 @@ struct PowerOfN<N, 0>
   };
 };
 
-/** generic Boundary condition handler
+/** @defgroup BoundaryHandlers Templates to handle boundary conditions
+ *  @brief generic Boundary condition handler
  *
  * @tparam T real data type
  * @tparam D physical dimension

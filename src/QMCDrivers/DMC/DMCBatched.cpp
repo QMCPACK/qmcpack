@@ -72,6 +72,9 @@ void DMCBatched::resetUpdateEngines()
   ReportEngine PRE("DMC", "resetUpdateEngines");
   Timer init_timer;
   // Here DMC loads "Ensemble of cloned MCWalkerConfigurations"
+  // I'd like to do away with this method in DMCBatched.
+
+  // false indicates we do not support kill at node crossings.
   int nw_multi = branch_engine_->initWalkerController(population_, dmcdriver_input_.get_reconfiguration(), false);
 
   estimator_manager_->reset();
@@ -102,13 +105,17 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
                                 bool recompute)
 {
   timers.buffer_timer.start();
+  // We copy positions from the walkers to elec particles sets for all the crowds walkers
+  // we might have received a few updates over the wire (from MPI)
+  // ** None of the per walker objects have referential integrity step to step **
   crowd.loadWalkers();
 
   int nnode_crossing(0);
-
   auto& walker_twfs      = crowd.get_walker_twfs();
   auto& walkers          = crowd.get_walkers();
   auto& walker_elecs     = crowd.get_walker_elecs();
+
+  // Note this resets the identities of all the walker TWFs
   auto copyTWFFromBuffer = [](TrialWaveFunction& twf, ParticleSet& pset, MCPWalker& walker) {
     twf.copyFromBuffer(pset, walker.DataSet);
   };
@@ -117,15 +124,14 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
   timers.buffer_timer.stop();
 
   timers.movepbyp_timer.start();
-  const int num_walkers = crowd.size();
   //This generates an entire steps worth of deltas.
   step_context.nextDeltaRs();
   auto it_delta_r = step_context.deltaRsBegin();
 
+  const int num_walkers = crowd.size();
   std::vector<TrialWaveFunction::GradType> grads_now(num_walkers);
   std::vector<TrialWaveFunction::GradType> grads_new(num_walkers);
   std::vector<TrialWaveFunction::PsiValueType> ratios(num_walkers);
-
   std::vector<PosType> drifts(num_walkers);
   std::vector<RealType> log_gf(num_walkers);
   std::vector<RealType> log_gb(num_walkers);

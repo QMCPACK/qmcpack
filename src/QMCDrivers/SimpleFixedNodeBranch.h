@@ -250,17 +250,16 @@ struct SimpleFixedNodeBranch : public QMCTraits
   void setEstimatorManager(EstimatorManagerBase* est) { MyEstimator = est; }
 
   /** initialize  the WalkerController
-   * @param w Walkers
-   * @param tau timestep
+   * @param mcwc Walkers
    * @param fixW true, if reconfiguration with the fixed number of walkers is used
    * @return number of copies to make in case targetwalkers changed
    */
   int initWalkerController(MCWalkerConfiguration& mcwc, bool fixW, bool killwalker);
 
   /** initialize  the WalkerController
-   * @param w Walkers
-   * @param tau timestep
+   * @param pop Population of Walkers
    * @param fixW true, if reconfiguration with the fixed number of walkers is used
+   * @param killwalker 
    * @return number of copies to make in case targetwalkers changed
    */
   int initWalkerController(MCPopulation& pop, bool fixW, bool killwalker);

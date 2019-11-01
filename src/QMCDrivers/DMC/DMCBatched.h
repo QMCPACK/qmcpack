@@ -24,7 +24,7 @@ namespace qmcplusplus
 class DriverModifierBase;
 
 /** @ingroup QMCDrivers  ParticleByParticle
- * @brief Implements a DMC using particle-by-particle move. Threaded execution.
+ * @brief Implements a DMC using particle-by-particle threaded and batched moves.
  */
 class DMCBatched : public QMCDriverNew
 {
@@ -77,13 +77,6 @@ public:
 
   bool run();
 
-  static void advanceWalkers(const StateForThread& sft,
-                             Crowd& crowd,
-                             DriverTimers& timers,
-                             //                             DMCTimers& dmc_timers,
-                             ContextForSteps& move_context,
-                             bool recompute);
-
   // This is the task body executed at crowd scope
   // it does not have access to object members by design
   static void runDMCStep(int crowd_id,
@@ -100,13 +93,20 @@ public:
 
 private:
   DMCDriverInput dmcdriver_input_;
-  ///Interval between branching
+  /// Interval between branching
   IndexType branch_interval_;
   void resetUpdateEngines();
   /// Copy Constructor (disabled)
   DMCBatched(const DMCBatched&) = delete;
   /// Copy operator (disabled).
   DMCBatched& operator=(const DMCBatched&) = delete;
+
+  static void advanceWalkers(const StateForThread& sft,
+                             Crowd& crowd,
+                             DriverTimers& timers,
+                             //                             DMCTimers& dmc_timers,
+                             ContextForSteps& move_context,
+                             bool recompute);
 
   static void setMultiplicities(const DMCDriverInput& dmcdriver_input,
                                 RefVector<MCPWalker>& walkers,
@@ -158,16 +158,21 @@ private:
   };
 
   
-  //until C++17 we need a structure to return the split moved and stalled refs
+  /** for the return of DMCPerWalkerRefs split into moved and stalled
+   *
+   *  until C++17 we need a structure to return the split moved and stalled refs
+   *  I find this more readable than the tuple tie pattern
+   */
   struct MovedStalled
   {
     MovedStalled(int num_walkers, int num_moved) : moved(num_moved), stalled(num_walkers - num_moved) {}
     DMCPerWalkerRefs moved;
     DMCPerWalkerRefs stalled;
   };
+  
   static MovedStalled buildMovedStalled(const std::vector<int>& did_walker_move, const DMCPerWalkerRefRefs& refs);
 
-  static void handleMovedWalkers(DMCPerWalkerRefs& stalled, const StateForThread& sft, DriverTimers& timers);
+  static void handleMovedWalkers(DMCPerWalkerRefs& moved, const StateForThread& sft, DriverTimers& timers);
   static void handleStalledWalkers(DMCPerWalkerRefs& stalled, const StateForThread& sft);
 // struct DMCTimers
   // {
