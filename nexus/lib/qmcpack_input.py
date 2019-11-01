@@ -2094,9 +2094,9 @@ class constant(QIxml):
 
 class pseudopotential(QIxml):
     tag = 'pairpot'
-    attributes = ['type','name','source','wavefunction','format','target','forces']
+    attributes = ['type','name','source','wavefunction','format','target','forces','dla']
     elements   = ['pseudo']
-    write_types= obj(forces=yesno)
+    write_types= obj(forces=yesno,dla=yesno)
     identifier = 'name'
 #end class pseudopotential
 
@@ -2688,6 +2688,7 @@ Names.set_expanded_names(
     spindependent    = 'spinDependent',
     l_local          = 'l-local',
     pbcimages        = 'PBCimages',
+    dla              = 'DLA',
     )
 # afqmc names
 Names.set_afqmc_expanded_names(
@@ -4821,10 +4822,11 @@ def generate_hamiltonian(name         = 'h0',
                          ions         = 'ion0',
                          wavefunction = 'psi0',
                          pseudos      = None,
+                         dla          = None,
                          format       = 'xml',
                          estimators   = None,
                          system       = None,
-                         interactions = 'default'
+                         interactions = 'default',
                          ):
     if system is None:
         QmcpackInput.class_error('generate_hamiltonian argument system must not be None')
@@ -4886,6 +4888,9 @@ def generate_hamiltonian(name         = 'h0',
                     pseudos.add(pseudo(elementtype=label,href=ppfile))
                 #end for
                 pp = pseudopotential(name='PseudoPot',type='pseudo',source=iname,wavefunction=wfname,format=format,pseudos=pseudos)
+                if dla is not None:
+                    pp.dla = dla
+                #end if
                 pairpots.append(pp)
             #end if
         #end if
@@ -6231,7 +6236,8 @@ gen_basic_input_defaults = obj(
     orbitals_h5    = 'MISSING.h5',     
     excitation     = None,             
     system         = 'missing',        
-    pseudos        = None,             
+    pseudos        = None,
+    dla            = None,
     jastrows       = 'generateJ12',    
     interactions   = 'all',            
     corrections    = 'default',        
@@ -6452,6 +6458,7 @@ def generate_basic_input(**kwargs):
     hmltn = generate_hamiltonian(
         system       = kw.system,
         pseudos      = kw.pseudos,
+        dla          = kw.dla,
         interactions = kw.interactions,
         estimators   = kw.estimators,
         )
