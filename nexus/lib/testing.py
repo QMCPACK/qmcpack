@@ -2,8 +2,17 @@
 import numpy as np
 
 
+def_atol =  0.0
+def_rtol = 1e-6
+
+# determine if two floats differ
+def float_diff(v1,v2,atol=def_atol,rtol=def_rtol):
+    return np.abs(v1-v2)>atol+rtol*np.abs(v2)
+#end def float_diff
+
+
 # determine if two values differ
-def value_diff(v1,v2,tol=1e-6,int_as_float=False):
+def value_diff(v1,v2,atol=def_atol,rtol=def_rtol,int_as_float=False):
     diff = False
     v1_bool  = isinstance(v1,(bool,np.bool_))
     v2_bool  = isinstance(v2,(bool,np.bool_))
@@ -16,9 +25,9 @@ def value_diff(v1,v2,tol=1e-6,int_as_float=False):
     if id(v1)==id(v2):
         None
     elif int_as_float and (v1_int or v1_float) and (v2_int or v2_float):
-        diff = np.abs(float(v1)-float(v2))>tol
+        diff = float_diff(v1,v2,atol=atol,rtol=rtol)
     elif v1_float and v2_float:
-        diff = np.abs(v1-v2)>tol
+        diff = float_diff(v1,v2,atol=atol,rtol=rtol)
     elif v1_int and v2_int:
         diff = v1!=v2
     elif (v1_bool or v1_str) and (v2_bool or v2_str):
@@ -32,7 +41,7 @@ def value_diff(v1,v2,tol=1e-6,int_as_float=False):
             diff = True
         else:
             for vv1,vv2 in zip(v1,v2):
-                diff |= value_diff(vv1,vv2,tol,int_as_float)
+                diff |= value_diff(vv1,vv2,atol,rtol,int_as_float)
             #end for
         #end if
     elif isinstance(v1,np.ndarray):
@@ -42,7 +51,7 @@ def value_diff(v1,v2,tol=1e-6,int_as_float=False):
             diff = True
         else:
             for vv1,vv2 in zip(v1,v2):
-                diff |= value_diff(vv1,vv2,tol,int_as_float)
+                diff |= value_diff(vv1,vv2,atol,rtol,int_as_float)
             #end for
         #end if
     elif isinstance(v1,dict):
@@ -52,7 +61,7 @@ def value_diff(v1,v2,tol=1e-6,int_as_float=False):
             diff = True
         else:
             for k in k1:
-                diff |= value_diff(v1[k],v2[k],tol,int_as_float)
+                diff |= value_diff(v1[k],v2[k],atol,rtol,int_as_float)
             #end for
         #end if
     elif isinstance(v1,set):
@@ -69,7 +78,7 @@ def value_diff(v1,v2,tol=1e-6,int_as_float=False):
 
 
 # determine if two objects differ
-def object_diff(o1,o2,tol=1e-6,full=False,int_as_float=False,bypass=False):
+def object_diff(o1,o2,atol=def_atol,rtol=def_rtol,int_as_float=False,full=False,bypass=False):
     diff1 = dict()
     diff2 = dict()
     if not bypass:
@@ -90,7 +99,7 @@ def object_diff(o1,o2,tol=1e-6,full=False,int_as_float=False,bypass=False):
     for k in km:
         v1 = o1[k]
         v2 = o2[k]
-        if value_diff(v1,v2,tol,int_as_float):
+        if value_diff(v1,v2,atol,rtol,int_as_float):
             diff1[k] = v1
             diff2[k] = v2
         #end if
@@ -127,12 +136,12 @@ def read_text_tokens(t):
     return tokens
 #end def read_text_tokens
 
-def text_diff(t1,t2,tol=1e-6,full=False,by_line=False):
+def text_diff(t1,t2,atol=def_atol,rtol=def_rtol,int_as_float=False,full=False,by_line=False):
     t1 = t1.replace(',',' , ')
     t2 = t2.replace(',',' , ')
     tokens1 = read_text_tokens(t1)
     tokens2 = read_text_tokens(t2)
-    diff = value_diff(tokens1,tokens2)
+    diff = value_diff(tokens1,tokens2,atol,rtol,int_as_float)
     if not full:
         return diff
     elif not by_line:
@@ -140,7 +149,7 @@ def text_diff(t1,t2,tol=1e-6,full=False,by_line=False):
         diff2 = dict()
         nmin = min(len(tokens1),len(tokens2))
         for n,(v1,v2) in enumerate(zip(tokens1[:nmin],tokens2[:nmin])):
-            if value_diff(v1,v2):
+            if value_diff(v1,v2,atol,rtol,int_as_float):
                 diff1[n] = v1
                 diff2[n] = v2
             #end if
@@ -164,7 +173,7 @@ def text_diff(t1,t2,tol=1e-6,full=False,by_line=False):
         for n,(l1,l2) in enumerate(zip(lines1[:nmin],lines2[:nmin])):
             tokens1 = read_text_tokens(l1)
             tokens2 = read_text_tokens(l2)
-            if value_diff(tokens1,tokens2):
+            if value_diff(tokens1,tokens2,atol,rtol,int_as_float):
                 diff1[n] = l1
                 diff2[n] = l2
             #end if
@@ -186,16 +195,16 @@ def text_diff(t1,t2,tol=1e-6,full=False,by_line=False):
 
 
 # print the difference between two objects
-def print_diff(o1,o2,text=False,by_line=False): # used in debugging, not actual tests
+def print_diff(o1,o2,atol=def_atol,rtol=def_rtol,int_as_float=False,text=False,by_line=False): # used in debugging, not actual tests
     from generic import obj
     print(20*'=')
     print(o1)
     print(20*'=')
     print(o2)
     if not text:
-        diff,diff1,diff2 = object_diff(o1,o2,full=True)
+        diff,diff1,diff2 = object_diff(o1,o2,atol,rtol,int_as_float,full=True)
     else:
-        diff,diff1,diff2 = text_diff(o1,o2,full=True,by_line=by_line)
+        diff,diff1,diff2 = text_diff(o1,o2,atol,rtol,int_as_float,full=True,by_line=by_line)
     #end if
     d1 = obj(diff1)
     d2 = obj(diff2)
