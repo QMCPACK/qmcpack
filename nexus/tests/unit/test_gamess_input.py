@@ -343,13 +343,13 @@ def test_write():
     for infile in input_files:
         write_file = os.path.join(tpath,infile)
 
-        gi_write = GamessInput(files[infile])
+        gi_read = GamessInput(files[infile])
 
-        gi_write.write(write_file)
+        gi_read.write(write_file)
 
-        gi_read = GamessInput(write_file)
+        gi_write = GamessInput(write_file)
 
-        check_vs_serial_reference(gi_read,infile)
+        check_vs_serial_reference(gi_write,infile)
     #end for
 
 #end def test_write

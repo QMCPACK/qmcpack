@@ -341,8 +341,12 @@ def divert_nexus_core():
     nexus_core_storage['status']           = nexus_core.status
     nexus_core_storage['sleep']            = nexus_core.sleep
     nexus_core_storage['file_locations']   = nexus_core.file_locations
+    nexus_core_storage['pseudo_dir']       = nexus_core.pseudo_dir
     nexus_core_storage['pseudopotentials'] = nexus_core.pseudopotentials
     assert(len(nexus_noncore_storage)==0)
+    if 'pseudo_dir' in nexus_noncore:
+        nexus_noncore_storage['pseudo_dir'] = nexus_noncore.pseudo_dir
+    #end if
     if 'pseudopotentials' in nexus_noncore:
         nexus_noncore_storage['pseudopotentials'] = nexus_noncore.pseudopotentials
     #end if
@@ -360,8 +364,12 @@ def restore_nexus_core():
     nexus_core.status           = nexus_core_storage.pop('status')
     nexus_core.sleep            = nexus_core_storage.pop('sleep')
     nexus_core.file_locations   = nexus_core_storage.pop('file_locations')
+    nexus_core.pseudo_dir       = nexus_core_storage.pop('pseudo_dir')
     nexus_core.pseudopotentials = nexus_core_storage.pop('pseudopotentials')
     assert(len(nexus_core_storage)==0)
+    if 'pseudo_dir' in nexus_noncore_storage:
+        nexus_noncore.pseudo_dir = nexus_noncore_storage.pop('pseudo_dir')
+    #end if
     if 'pseudopotentials' in nexus_noncore_storage:
         nexus_noncore.pseudopotentials = nexus_noncore_storage.pop('pseudopotentials')
     #end if

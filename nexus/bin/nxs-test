@@ -1165,6 +1165,20 @@ def settings_operation():
 
 
 
+def vasp_input():
+    nunit('files')
+
+    nunit('import')
+
+    nunit('keyword_consistency')
+
+    nunit('generate')
+
+    nunit_all()
+#end def vasp_input
+
+
+
 def pwscf_input():
     nunit('files')
 
@@ -1505,6 +1519,7 @@ NexusTest( simulation            )
 NexusTest( bundle                )
 NexusTest( project_manager       )
 NexusTest( settings_operation    , 'settings' )
+NexusTest( vasp_input            )
 NexusTest( pwscf_input           )
 NexusTest( gamess_input          )
 NexusTest( qmcpack_input         )
