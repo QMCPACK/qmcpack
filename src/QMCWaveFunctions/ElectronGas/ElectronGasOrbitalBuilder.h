@@ -19,7 +19,7 @@
 
 #include <QMCWaveFunctions/WaveFunctionComponentBuilder.h>
 #include <QMCWaveFunctions/SPOSet.h>
-#include <config/stdlib/math.h>
+#include <config/stdlib/math.hpp>
 
 #include "QMCWaveFunctions/SPOSetBuilder.h"
 #include "QMCWaveFunctions/ElectronGas/HEGGrid.h"
@@ -312,10 +312,10 @@ class ElectronGasOrbitalBuilder : public WaveFunctionComponentBuilder
 {
 public:
   ///constructor
-  ElectronGasOrbitalBuilder(ParticleSet& els, TrialWaveFunction& wfs);
+  ElectronGasOrbitalBuilder(Communicate* comm, ParticleSet& els);
 
   ///implement vritual function
-  bool put(xmlNodePtr cur);
+  WaveFunctionComponent* buildComponent(xmlNodePtr cur) override;
 
   bool UseBackflow;
   BackflowTransformation* BFTrans;

@@ -25,6 +25,7 @@
 
 #include "OpenMP/OMPstd.hpp"
 #include "spline2/MultiBsplineData.hpp"
+#include <spline2/MultiBsplineEval_helper.hpp>
 
 namespace spline2offload
 {
@@ -268,64 +269,27 @@ inline void evaluate_vgh_impl(const typename qmcplusplus::bspline_traits<T, 3>::
 
 template<typename T>
 inline void evaluate_vgh_impl_v2(const typename qmcplusplus::bspline_traits<T, 3>::SplineType* restrict spline_m,
-                                 T x,
-                                 T y,
-                                 T z,
+                                 int ix, int iy, int iz,
+                                 const T a[4], const T b[4], const T c[4],
+                                 const T da[4], const T db[4], const T dc[4],
+                                 const T d2a[4], const T d2b[4], const T d2c[4],
                                  T* restrict vals,
                                  T* restrict grads,
                                  T* restrict hess,
                                  size_t out_offset,
-                                 int first,
-                                 int last)
+                                 const int first,
+                                 const int last)
 {
-  int ix, iy, iz;
-  T tx, ty, tz;
-  T a[4], b[4], c[4], da[4], db[4], dc[4], d2a[4], d2b[4], d2c[4];
-
-  x -= spline_m->x_grid.start;
-  y -= spline_m->y_grid.start;
-  z -= spline_m->z_grid.start;
-  spline2::getSplineBound(x * spline_m->x_grid.delta_inv, tx, ix, spline_m->x_grid.num - 1);
-  spline2::getSplineBound(y * spline_m->y_grid.delta_inv, ty, iy, spline_m->y_grid.num - 1);
-  spline2::getSplineBound(z * spline_m->z_grid.delta_inv, tz, iz, spline_m->z_grid.num - 1);
-
-  spline2::MultiBsplineData<T>::compute_prefactors(a, da, d2a, tx);
-  spline2::MultiBsplineData<T>::compute_prefactors(b, db, d2b, ty);
-  spline2::MultiBsplineData<T>::compute_prefactors(c, dc, d2c, tz);
-
   const intptr_t xs = spline_m->x_stride;
   const intptr_t ys = spline_m->y_stride;
   const intptr_t zs = spline_m->z_stride;
-
-  const int num_splines = last - first;
-
-  T* restrict gxs = grads;
-  T* restrict gys = grads + out_offset;
-  T* restrict gzs = grads + 2 * out_offset;
-
-  T* restrict hxxs = hess;
-  T* restrict hxys = hess + out_offset;
-  T* restrict hxzs = hess + 2 * out_offset;
-  T* restrict hyys = hess + 3 * out_offset;
-  T* restrict hyzs = hess + 4 * out_offset;
-  T* restrict hzzs = hess + 5 * out_offset;
-
-  const T dxInv = spline_m->x_grid.delta_inv;
-  const T dyInv = spline_m->y_grid.delta_inv;
-  const T dzInv = spline_m->z_grid.delta_inv;
-  const T dxx   = dxInv * dxInv;
-  const T dyy   = dyInv * dyInv;
-  const T dzz   = dzInv * dzInv;
-  const T dxy   = dxInv * dyInv;
-  const T dxz   = dxInv * dzInv;
-  const T dyz   = dyInv * dzInv;
 
 #ifdef ENABLE_OFFLOAD
 #pragma omp for
 #else
 #pragma omp simd aligned(vals, gxs, gys, gzs, hxxs, hyys, hzzs, hxys, hxzs, hyzs)
 #endif
-  for (int n = 0; n < num_splines; n++)
+  for (int n = 0; n < last - first; n++)
   {
     T val = T();
     T gx  = T();
@@ -376,15 +340,20 @@ inline void evaluate_vgh_impl_v2(const typename qmcplusplus::bspline_traits<T, 3
 
     // put data back to the result vector
     vals[n] = val;
-    gxs[n]  = gx * dxInv;
-    gys[n]  = gy * dyInv;
-    gzs[n]  = gz * dzInv;
-    hxxs[n] = hxx * dxx;
-    hyys[n] = hyy * dyy;
-    hzzs[n] = hzz * dzz;
-    hxys[n] = hxy * dxy;
-    hxzs[n] = hxz * dxz;
-    hyzs[n] = hyz * dyz;
+
+    const T dxInv = spline_m->x_grid.delta_inv;
+    const T dyInv = spline_m->y_grid.delta_inv;
+    const T dzInv = spline_m->z_grid.delta_inv;
+
+    grads[n]                  = gx * dxInv;
+    grads[n + out_offset]     = gy * dyInv;
+    grads[n + 2 * out_offset] = gz * dzInv;
+    hess[n]                   = hxx * dxInv * dxInv;
+    hess[n + out_offset]      = hxy * dxInv * dyInv;
+    hess[n + 2 * out_offset]  = hxz * dxInv * dzInv;
+    hess[n + 3 * out_offset]  = hyy * dyInv * dyInv;
+    hess[n + 4 * out_offset]  = hyz * dyInv * dzInv;
+    hess[n + 5 * out_offset]  = hzz * dzInv * dzInv;
   }
 }
 

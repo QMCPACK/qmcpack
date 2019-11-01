@@ -19,7 +19,6 @@
 
 #include "Numerics/e2iphi.h"
 #include "simd/vmath.hpp"
-#include "qmc_common.h"
 #include "QMCWaveFunctions/EinsplineSetBuilder.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Message/CommOperators.h"
@@ -99,7 +98,7 @@ void EinsplineSetBuilder::set_metadata(int numOrbs, int TwistNum_inp)
   SuperCell.set(SuperLattice);
   GGt = dot(transpose(PrimCell.G), PrimCell.G);
   for (int iat = 0; iat < AtomicOrbitals.size(); iat++)
-    AtomicOrbitals[iat].Lattice = Lattice;
+    AtomicOrbitals[iat].Lattice.set(Lattice);
 
   // Now, analyze the k-point mesh to figure out the what k-points  are needed
   TwistNum = TwistNum_inp;
@@ -128,9 +127,7 @@ SPOSet* EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   std::string useGPU = "no";
 #endif
   std::string GPUsharing = "no";
-  NewTimer* spo_timer    = new NewTimer("einspline::CreateSPOSetFromXML", timer_level_medium);
-  TimerManager.addTimer(spo_timer);
-  spo_timer->start();
+  ScopedTimer spo_timer_scope(TimerManager.createTimer("einspline::CreateSPOSetFromXML", timer_level_medium));
 
   {
     OhmmsAttributeSet a;
@@ -466,7 +463,6 @@ SPOSet* EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
 #endif
   OrbitalSet->finalizeConstruction();
   SPOSetMap[aset] = OrbitalSet;
-  spo_timer->stop();
   return OrbitalSet;
 }
 

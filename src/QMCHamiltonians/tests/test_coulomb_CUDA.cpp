@@ -17,7 +17,9 @@
 #include "Lattice/ParticleBConds.h"
 #include "Particle/ParticleSet.h"
 #include "Particle/DistanceTableData.h"
+#ifndef ENABLE_SOA
 #include "Particle/SymmetricDistanceTableData.h"
+#endif
 #include "Particle/MCWalkerConfiguration.h"
 #include "QMCApp/ParticleSetPool.h"
 #include "QMCHamiltonians/CoulombPBCAB_CUDA.h"
@@ -58,11 +60,11 @@ TEST_CASE("Coulomb PBC A-B CUDA", "[hamiltonian][CUDA]")
   int pIdx                      = ion_species.addSpecies("H");
   int pChargeIdx                = ion_species.addAttribute("charge");
   ion_species(pChargeIdx, pIdx) = 1;
-  ions.Lattice.copy(Lattice);
+  ions.Lattice = Lattice;
   ions.createSK();
 
 
-  elec.Lattice.copy(Lattice);
+  elec.Lattice = Lattice;
   elec.setName("elec");
   elec.create(1);
   elec.R[0][0] = 0.0;
@@ -81,7 +83,11 @@ TEST_CASE("Coulomb PBC A-B CUDA", "[hamiltonian][CUDA]")
 
   elec.createSK();
 
+#ifdef ENABLE_SOA
+  elec.addTable(ions, DT_SOA);
+#else
   elec.addTable(ions, DT_AOS);
+#endif
   elec.update();
 
 
@@ -130,11 +136,11 @@ TEST_CASE("Coulomb PBC AB CUDA BCC H", "[hamiltonian][CUDA]")
   int pIdx                      = ion_species.addSpecies("H");
   int pChargeIdx                = ion_species.addAttribute("charge");
   ion_species(pChargeIdx, pIdx) = 1;
-  ions.Lattice.copy(Lattice);
+  ions.Lattice = Lattice;
   ions.createSK();
 
 
-  elec.Lattice.copy(Lattice);
+  elec.Lattice = Lattice;
   elec.setName("elec");
   elec.create(2);
   elec.R[0][0] = 0.5;
@@ -157,7 +163,11 @@ TEST_CASE("Coulomb PBC AB CUDA BCC H", "[hamiltonian][CUDA]")
 
   elec.createSK();
 
+#ifdef ENABLE_SOA
+  elec.addTable(ions, DT_SOA);
+#else
   elec.addTable(ions, DT_AOS);
+#endif
   elec.update();
 
 
@@ -208,7 +218,7 @@ TEST_CASE("Coulomb PBC A-A CUDA BCC H", "[hamiltonian][CUDA]")
   //ParticleSet elec;
 
   ions.setName("ion");
-  ions.Lattice.copy(Lattice);
+  ions.Lattice = Lattice;
   std::vector<int> agroup(1);
   agroup[0] = 2;
   ions.create(agroup);
@@ -227,7 +237,7 @@ TEST_CASE("Coulomb PBC A-A CUDA BCC H", "[hamiltonian][CUDA]")
   int pIonMembersizeIdx                = ion_species.addAttribute("membersize");
   ion_species(pChargeIdx, pIdx)        = 1;
   ion_species(pIonMembersizeIdx, pIdx) = 2;
-  ions.Lattice.copy(Lattice);
+  ions.Lattice = Lattice;
   ions.createSK();
   ions.update();
 

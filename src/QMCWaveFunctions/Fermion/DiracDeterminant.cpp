@@ -44,14 +44,18 @@ void DiracDeterminant<DU_TYPE>::set(int first, int nel, int delay)
 {
   FirstIndex = first;
   ndelay     = delay;
+
   resize(nel, nel);
+
+  if(Optimizable)
+    Phi->buildOptVariables(nel);
 }
 
 template<typename DU_TYPE>
 void DiracDeterminant<DU_TYPE>::invertPsiM(const ValueMatrix_t& logdetT, ValueMatrix_t& invMat)
 {
   InverseTimer.start();
-  updateEng.invert_transpose(logdetT, invMat, LogValue, PhaseValue);
+  updateEng.invert_transpose(logdetT, invMat, LogValue);
   InverseTimer.stop();
 }
 
@@ -101,9 +105,16 @@ typename DiracDeterminant<DU_TYPE>::ValueType DiracDeterminant<DU_TYPE>::ratioGr
   SPOVGLTimer.start();
   Phi->evaluate(P, iat, psiV, dpsiV, d2psiV);
   SPOVGLTimer.stop();
+  return ratioGrad_compute(iat, grad_iat);
+}
+
+template<typename DU_TYPE>
+typename DiracDeterminant<DU_TYPE>::ValueType DiracDeterminant<DU_TYPE>::ratioGrad_compute(int iat,
+                                                                                           GradType& grad_iat)
+{
+  UpdateMode             = ORB_PBYP_PARTIAL;
   RatioTimer.start();
   const int WorkingIndex = iat - FirstIndex;
-  UpdateMode             = ORB_PBYP_PARTIAL;
   GradType rv;
 
   // This is an optimization.
@@ -120,14 +131,44 @@ typename DiracDeterminant<DU_TYPE>::ValueType DiracDeterminant<DU_TYPE>::ratioGr
   return curRatio;
 }
 
+
+template<typename DU_TYPE>
+void DiracDeterminant<DU_TYPE>::mw_ratioGrad(const std::vector<WaveFunctionComponent*>& WFC_list,
+                       const std::vector<ParticleSet*>& P_list,
+                       int iat,
+                       std::vector<PsiValueType>& ratios,
+                       std::vector<GradType>& grad_new)
+{
+  SPOVGLTimer.start();
+  std::vector<SPOSet*> phi_list; phi_list.reserve(WFC_list.size());
+  std::vector<ValueVector_t*> psi_v_list; psi_v_list.reserve(WFC_list.size());
+  std::vector<GradVector_t*> dpsi_v_list; dpsi_v_list.reserve(WFC_list.size());
+  std::vector<ValueVector_t*> d2psi_v_list; d2psi_v_list.reserve(WFC_list.size());
+
+  for(auto wfc : WFC_list)
+  {
+    auto det = static_cast<DiracDeterminant<DU_TYPE>*>(wfc);
+    phi_list.push_back(det->Phi);
+    psi_v_list.push_back(&(det->psiV));
+    dpsi_v_list.push_back(&(det->dpsiV));
+    d2psi_v_list.push_back(&(det->d2psiV));
+  }
+
+  Phi->mw_evaluateVGL(phi_list, P_list, iat, psi_v_list, dpsi_v_list, d2psi_v_list);
+  SPOVGLTimer.stop();
+
+  for (int iw = 0; iw < WFC_list.size(); iw++)
+    ratios[iw] = static_cast<DiracDeterminant<DU_TYPE>*>(WFC_list[iw])->ratioGrad_compute(iat, grad_new[iw]);
+}
+
+
 /** move was accepted, update the real container
 */
 template<typename DU_TYPE>
 void DiracDeterminant<DU_TYPE>::acceptMove(ParticleSet& P, int iat)
 {
   const int WorkingIndex = iat - FirstIndex;
-  PhaseValue += evaluatePhase(curRatio);
-  LogValue += std::log(std::abs(curRatio));
+  LogValue += convertValueToLog(curRatio);
   UpdateTimer.start();
   updateEng.acceptRow(psiM, WorkingIndex, psiV);
   // invRow becomes invalid after accepting a move
@@ -211,11 +252,10 @@ void DiracDeterminant<DU_TYPE>::registerData(ParticleSet& P, WFBufferType& buf)
     buf.forward(Bytes_in_WFBuffer);
   }
   buf.add(LogValue);
-  buf.add(PhaseValue);
 }
 
 template<typename DU_TYPE>
-typename DiracDeterminant<DU_TYPE>::RealType DiracDeterminant<DU_TYPE>::updateBuffer(ParticleSet& P,
+typename DiracDeterminant<DU_TYPE>::LogValueType DiracDeterminant<DU_TYPE>::updateBuffer(ParticleSet& P,
                                                                                      WFBufferType& buf,
                                                                                      bool fromscratch)
 {
@@ -230,7 +270,6 @@ typename DiracDeterminant<DU_TYPE>::RealType DiracDeterminant<DU_TYPE>::updateBu
   BufferTimer.start();
   buf.forward(Bytes_in_WFBuffer);
   buf.put(LogValue);
-  buf.put(PhaseValue);
   BufferTimer.stop();
   return LogValue;
 }
@@ -243,7 +282,6 @@ void DiracDeterminant<DU_TYPE>::copyFromBuffer(ParticleSet& P, WFBufferType& buf
   dpsiM.attachReference(buf.lendReference<GradType>(dpsiM.size()));
   d2psiM.attachReference(buf.lendReference<ValueType>(d2psiM.size()));
   buf.get(LogValue);
-  buf.get(PhaseValue);
   // start with invRow labelled invalid
   invRow_id = -1;
   updateEng.initializeInv(psiM);
@@ -468,7 +506,7 @@ typename DiracDeterminant<DU_TYPE>::GradType DiracDeterminant<DU_TYPE>::evalGrad
  *for local energy calculations.
  */
 template<typename DU_TYPE>
-typename DiracDeterminant<DU_TYPE>::RealType DiracDeterminant<DU_TYPE>::evaluateLog(ParticleSet& P,
+typename DiracDeterminant<DU_TYPE>::LogValueType DiracDeterminant<DU_TYPE>::evaluateLog(ParticleSet& P,
                                                                                     ParticleSet::ParticleGradient_t& G,
                                                                                     ParticleSet::ParticleLaplacian_t& L)
 {
@@ -505,7 +543,7 @@ void DiracDeterminant<DU_TYPE>::recompute(ParticleSet& P)
     //CurrentDet=psiM(0,0);
     ValueType det = psiM_temp(0, 0);
     psiM(0, 0)    = RealType(1) / det;
-    LogValue      = evaluateLogAndPhase(det, PhaseValue);
+    LogValue      = convertValueToLog(det);
   }
   else
   {
@@ -518,7 +556,10 @@ void DiracDeterminant<DU_TYPE>::evaluateDerivatives(ParticleSet& P,
                                                     const opt_variables_type& active,
                                                     std::vector<ValueType>& dlogpsi,
                                                     std::vector<ValueType>& dhpsioverpsi)
-{}
+{
+
+  Phi->evaluateDerivatives(P, active, dlogpsi, dhpsioverpsi, FirstIndex, LastIndex);
+}
 
 template<typename DU_TYPE>
 DiracDeterminant<DU_TYPE>* DiracDeterminant<DU_TYPE>::makeCopy(SPOSetPtr spo) const

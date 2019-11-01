@@ -22,26 +22,27 @@ namespace qmcplusplus
 MultiSlaterDeterminantFast::MultiSlaterDeterminantFast(ParticleSet& targetPtcl,
                                                        MultiDiracDeterminant* up,
                                                        MultiDiracDeterminant* dn)
-    : C2node_up(nullptr),
+    : RatioTimer(*TimerManager.createTimer("MultiSlaterDeterminantFast::ratio")),
+      RatioGradTimer(*TimerManager.createTimer("MultiSlaterDeterminantFast::ratioGrad")),
+      RatioAllTimer(*TimerManager.createTimer("MultiSlaterDeterminantFast::ratio(all)")),
+      UpdateTimer(*TimerManager.createTimer("MultiSlaterDeterminantFast::updateBuffer")),
+      EvaluateTimer(*TimerManager.createTimer("MultiSlaterDeterminantFast::evaluate")),
+      Ratio1Timer(*TimerManager.createTimer("MultiSlaterDeterminantFast::detEval_ratio")),
+      Ratio1GradTimer(*TimerManager.createTimer("MultiSlaterDeterminantFast::detEval_ratioGrad")),
+      Ratio1AllTimer(*TimerManager.createTimer("MultiSlaterDeterminantFast::detEval_ratio(all)")),
+      AccRejTimer(*TimerManager.createTimer("MultiSlaterDeterminantFast::Accept_Reject")),
+      IsCloned(false),
+      C2node_up(nullptr),
       C2node_dn(nullptr),
       C(nullptr),
       CSFcoeff(nullptr),
       DetsPerCSF(nullptr),
-      CSFexpansion(nullptr),
-      IsCloned(false),
-      RatioTimer("MultiSlaterDeterminantFast::ratio"),
-      RatioGradTimer("MultiSlaterDeterminantFast::ratioGrad"),
-      RatioAllTimer("MultiSlaterDeterminantFast::ratio(all)"),
-      Ratio1Timer("MultiSlaterDeterminantFast::detEval_ratio"),
-      Ratio1GradTimer("MultiSlaterDeterminantFast::detEval_ratioGrad"),
-      Ratio1AllTimer("MultiSlaterDeterminantFast::detEval_ratio(all)"),
-      UpdateTimer("MultiSlaterDeterminantFast::updateBuffer"),
-      EvaluateTimer("MultiSlaterDeterminantFast::evaluate"),
-      AccRejTimer("MultiSlaterDeterminantFast::Accept_Reject")
+      CSFexpansion(nullptr)
 {
   registerTimers();
   //Optimizable=true;
   Optimizable   = false;
+  is_fermionic  = true;
   ClassName     = "MultiSlaterDeterminantFast";
   usingCSF      = false;
   NP            = targetPtcl.getTotalNum();
@@ -176,7 +177,7 @@ void MultiSlaterDeterminantFast::testMSD(ParticleSet& P, int iat)
   dr[0] = 0.1;
   dr[1] = 0.05;
   dr[2] = -0.01;
-  PosType newpos(P.makeMove(iat, dr));
+  P.makeMove(iat, dr);
   app_log() << "Testing ratio(P,dG,dL). \n";
   G       = 0;
   G0      = 0;
@@ -271,12 +272,11 @@ WaveFunctionComponent::ValueType MultiSlaterDeterminantFast::evaluate(ParticleSe
   return psiCurrent;
 }
 
-WaveFunctionComponent::RealType MultiSlaterDeterminantFast::evaluateLog(ParticleSet& P,
+WaveFunctionComponent::LogValueType MultiSlaterDeterminantFast::evaluateLog(ParticleSet& P,
                                                                         ParticleSet::ParticleGradient_t& G,
                                                                         ParticleSet::ParticleLaplacian_t& L)
 {
-  ValueType psi   = evaluate(P, G, L);
-  return LogValue = evaluateLogAndPhase(psi, PhaseValue);
+  return LogValue = convertValueToLog(evaluate(P, G, L));
 }
 
 WaveFunctionComponent::ValueType MultiSlaterDeterminantFast::evalGrad_impl(ParticleSet& P,
@@ -426,7 +426,7 @@ void MultiSlaterDeterminantFast::registerData(ParticleSet& P, WFBufferType& buf)
 }
 
 // FIX FIX FIX
-WaveFunctionComponent::RealType MultiSlaterDeterminantFast::updateBuffer(ParticleSet& P,
+WaveFunctionComponent::LogValueType MultiSlaterDeterminantFast::updateBuffer(ParticleSet& P,
                                                                          WFBufferType& buf,
                                                                          bool fromscratch)
 {
@@ -444,7 +444,7 @@ WaveFunctionComponent::RealType MultiSlaterDeterminantFast::updateBuffer(Particl
   buf.put(psiCurrent);
 
   UpdateTimer.stop();
-  return LogValue = evaluateLogAndPhase(psiCurrent, PhaseValue);
+  return LogValue = convertValueToLog(psiCurrent);
 }
 
 void MultiSlaterDeterminantFast::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
@@ -549,6 +549,7 @@ void MultiSlaterDeterminantFast::evaluateDerivatives(ParticleSet& P,
                                                      std::vector<ValueType>& dlogpsi,
                                                      std::vector<ValueType>& dhpsioverpsi)
 {
+  evaluateDerivativesWF(P, optvars, dlogpsi);
   if (CI_Optimizable)
   {
     bool recalculate(false);
@@ -643,7 +644,7 @@ void MultiSlaterDeterminantFast::evaluateDerivatives(ParticleSet& P,
             cnt += (*DetsPerCSF)[ip];
             continue;
           }
-          ValueType cdet = 0.0, q0 = 0.0, v1 = 0.0, v2 = 0.0;
+          ValueType q0 = 0.0, v1 = 0.0, v2 = 0.0;
           const RealType* restrict CSFexpansion_p = CSFexpansion->data();
           for (int k = 0; k < (*DetsPerCSF)[ip]; k++)
           {
@@ -651,7 +652,6 @@ void MultiSlaterDeterminantFast::evaluateDerivatives(ParticleSet& P,
             size_t dnC     = (*C2node_dn)[cnt];
             ValueType tmp1 = CSFexpansion_p[cnt] * detValues_dn[dnC] * psiinv;
             ValueType tmp2 = CSFexpansion_p[cnt] * detValues_up[upC] * psiinv;
-            cdet += CSFexpansion_p[cnt] * detValues_up[upC] * detValues_dn[dnC] * psiinv;
             q0 += (tmp1 * laplSum_up[upC] + tmp2 * laplSum_dn[dnC]);
             for (size_t l = 0, j = N1; l < NP1; l++, j++)
               v1 += tmp1 * static_cast<ValueType>(dot(P.G[j], grads_up(upC, l)) - dot(myG_temp[j], grads_up(upC, l)));
@@ -659,13 +659,7 @@ void MultiSlaterDeterminantFast::evaluateDerivatives(ParticleSet& P,
               v2 += tmp2 * static_cast<ValueType>(dot(P.G[j], grads_dn(dnC, l)) - dot(myG_temp[j], grads_dn(dnC, l)));
             cnt++;
           }
-          dlogpsi[kk] = cdet;
-          //convert(cdet, dlogpsi[kk]);
-          ValueType dhpsi = (RealType)-0.5 * (q0 - cdet * lapl_sum) - cdet * gg - v1 - v2;
-          //ValueType dhpsi =  -0.5*(tmp1*laplSum_up[upC]+tmp2*laplSum_dn[dnC]
-          //                         -cdet*lapl_sum)
-          //                   -cdet*gg-(tmp1*v1+tmp2*v2);
-          //convert(dhpsi, dhpsioverpsi[kk]);
+          ValueType dhpsi = (RealType)-0.5 * (q0 - dlogpsi[kk] * lapl_sum) - dlogpsi[kk] * gg - v1 - v2;
           dhpsioverpsi[kk] = dhpsi;
         }
       }
@@ -694,7 +688,6 @@ void MultiSlaterDeterminantFast::evaluateDerivatives(ParticleSet& P,
         ValueType lapl_sum          = 0.0;
         ValueType gg = 0.0, ggP = 0.0;
         myG_temp = 0.0;
-        int num  = laplSum_up.size();
         ValueVector_t::iterator it(laplSum_up.begin());
         ValueVector_t::iterator last(laplSum_up.end());
         ValueType* ptr0 = lapls_up[0];
@@ -740,17 +733,15 @@ void MultiSlaterDeterminantFast::evaluateDerivatives(ParticleSet& P,
             continue;
           const size_t upC = (*C2node_up)[i];
           const size_t dnC = (*C2node_dn)[i];
-          ValueType cdet   = detValues_up[upC] * detValues_dn[dnC] * psiinv;
           ValueType tmp1   = detValues_dn[dnC] * psiinv;
           ValueType tmp2   = detValues_up[upC] * psiinv;
-          dlogpsi[kk] = cdet;
           ValueType v1 = 0.0, v2 = 0.0;
           for (size_t k = 0, j = N1; k < NP1; k++, j++)
             v1 += (dot(P.G[j], grads_up(upC, k)) - dot(myG_temp[j], grads_up(upC, k)));
           for (size_t k = 0, j = N2; k < NP2; k++, j++)
             v2 += (dot(P.G[j], grads_dn(dnC, k)) - dot(myG_temp[j], grads_dn(dnC, k)));
-          ValueType dhpsi = (RealType)-0.5 * (tmp1 * laplSum_up[upC] + tmp2 * laplSum_dn[dnC] - cdet * lapl_sum) -
-              cdet * gg - (tmp1 * v1 + tmp2 * v2);
+          ValueType dhpsi = (RealType)-0.5 * (tmp1 * laplSum_up[upC] + tmp2 * laplSum_dn[dnC] - dlogpsi[kk] * lapl_sum) -
+              dlogpsi[kk] * gg - (tmp1 * v1 + tmp2 * v2);
           dhpsioverpsi[kk] = dhpsi;
         }
       }
@@ -759,6 +750,82 @@ void MultiSlaterDeterminantFast::evaluateDerivatives(ParticleSet& P,
 
   Dets[0]->evaluateDerivatives(P, optvars, dlogpsi, dhpsioverpsi, *Dets[1], psiCurrent, *C, *C2node_up, *C2node_dn);
   Dets[1]->evaluateDerivatives(P, optvars, dlogpsi, dhpsioverpsi, *Dets[0], psiCurrent, *C, *C2node_dn, *C2node_up);
+}
+
+void MultiSlaterDeterminantFast::evaluateDerivativesWF(ParticleSet& P,
+                                                       const opt_variables_type& optvars,
+                                                       std::vector<ValueType>& dlogpsi)
+{
+  if (CI_Optimizable)
+  {
+    bool recalculate(false);
+    for (int k = 0; k < myVars->size(); ++k)
+    {
+      int kk = myVars->where(k);
+      if (kk < 0)
+        continue;
+      if (optvars.recompute(kk))
+        recalculate = true;
+    }
+    // need to modify for CSF later on, right now assume Slater Det basis
+    if (recalculate)
+    {
+      if (usingCSF)
+      {
+        // assume that evaluateLog has been called in opt routine before
+        ValueVector_t& detValues_up = Dets[0]->detValues;
+        ValueVector_t& detValues_dn = Dets[1]->detValues;
+
+        ValueType psiinv   = (RealType)1.0 / psiCurrent;
+
+        int num     = CSFcoeff->size() - 1;
+        int cnt = 0;
+        //        this one is not optable
+        cnt += (*DetsPerCSF)[0];
+        int ip(1);
+        for (int i = 0; i < num; i++, ip++)
+        {
+          int kk = myVars->where(i);
+          if (kk < 0)
+          {
+            cnt += (*DetsPerCSF)[ip];
+            continue;
+          }
+          ValueType cdet = 0.0;
+          const RealType* restrict CSFexpansion_p = CSFexpansion->data();
+          for (int k = 0; k < (*DetsPerCSF)[ip]; k++)
+          {
+            size_t upC     = (*C2node_up)[cnt];
+            size_t dnC     = (*C2node_dn)[cnt];
+            cdet += CSFexpansion_p[cnt] * detValues_up[upC] * detValues_dn[dnC] * psiinv;
+            cnt++;
+          }
+          dlogpsi[kk] = cdet;
+        }
+      }
+      else
+      //usingDETS
+      {
+        ValueVector_t& detValues_up = Dets[0]->detValues;
+        ValueVector_t& detValues_dn = Dets[1]->detValues;
+        ValueType psiinv            = (RealType)1.0 / psiCurrent;
+        for (size_t i = 1; i < C->size(); i++)
+        {
+          int kk = myVars->where(i - 1);
+          if (kk < 0)
+            continue;
+          const size_t upC = (*C2node_up)[i];
+          const size_t dnC = (*C2node_dn)[i];
+          ValueType cdet   = detValues_up[upC] * detValues_dn[dnC] * psiinv;
+          dlogpsi[kk] = cdet;
+        }
+      }
+    }
+  }
+
+  // FIXME this needs to be fixed by SPF to separate evaluateDerivatives and evaluateDerivativesWF for otbital rotation matrix
+  //Dets[0]->evaluateDerivatives(P, optvars, dlogpsi, dhpsioverpsi, *Dets[1], psiCurrent, *C, *C2node_up, *C2node_dn);
+  //Dets[1]->evaluateDerivatives(P, optvars, dlogpsi, dhpsioverpsi, *Dets[0], psiCurrent, *C, *C2node_dn, *C2node_up);
 }
 
 void MultiSlaterDeterminantFast::buildOptVariables()
@@ -778,15 +845,6 @@ void MultiSlaterDeterminantFast::registerTimers()
   UpdateTimer.reset();
   EvaluateTimer.reset();
   AccRejTimer.reset();
-  TimerManager.addTimer(&RatioTimer);
-  TimerManager.addTimer(&RatioGradTimer);
-  TimerManager.addTimer(&RatioAllTimer);
-  TimerManager.addTimer(&Ratio1Timer);
-  TimerManager.addTimer(&Ratio1GradTimer);
-  TimerManager.addTimer(&Ratio1AllTimer);
-  TimerManager.addTimer(&UpdateTimer);
-  TimerManager.addTimer(&EvaluateTimer);
-  TimerManager.addTimer(&AccRejTimer);
 }
 
 

@@ -26,9 +26,9 @@ class OrbitalConstraintsBase;
 class JastrowBuilder : public WaveFunctionComponentBuilder
 {
 public:
-  JastrowBuilder(ParticleSet& p, TrialWaveFunction& psi, PtclPoolType& psets);
+  JastrowBuilder(Communicate* comm, ParticleSet& p, PtclPoolType& psets);
 
-  bool put(xmlNodePtr cur);
+  WaveFunctionComponent* buildComponent(xmlNodePtr cur) override;
 
 private:
   ///particleset pool to get ParticleSet other than the target
@@ -49,16 +49,16 @@ private:
   std::string sourceOpt;
   ///reset the options
   void resetOptions();
-  ///add one-body term
-  bool addOneBody(xmlNodePtr cur);
-  ///add two-body term
-  bool addTwoBody(xmlNodePtr cur);
-  /// add electron-electron ion term
-  bool add_eeI(xmlNodePtr cur);
-  ///add k-Space term
-  bool addkSpace(xmlNodePtr cur);
-  // add number-counting term
-  bool addCounting(xmlNodePtr cur);
+  ///build one-body term
+  WaveFunctionComponent* buildOneBody(xmlNodePtr cur);
+  ///build two-body term
+  WaveFunctionComponent* buildTwoBody(xmlNodePtr cur);
+  /// build electron-electron ion term
+  WaveFunctionComponent* build_eeI(xmlNodePtr cur);
+  ///build k-Space term
+  WaveFunctionComponent* buildkSpace(xmlNodePtr cur);
+  // build number-counting term
+  WaveFunctionComponent* buildCounting(xmlNodePtr cur);
 };
 
 } // namespace qmcplusplus

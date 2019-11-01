@@ -73,7 +73,6 @@ bool DriverFactory::executeAFQMCDriver(std::string title, int m_series, xmlNodeP
   }
   auto& AFinfo = InfoMap[info];
   int NMO = AFinfo.NMO;
-  int NAEA = AFinfo.NAEA;
   int NAEB = AFinfo.NAEB;
 
   std::string hdf_read_restart(""),str1("no");

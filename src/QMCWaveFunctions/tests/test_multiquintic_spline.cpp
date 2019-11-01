@@ -87,9 +87,9 @@ TEST_CASE("MultiQuinticSpline", "[wavefunction][lcao]")
   double d3u[2];
 
   double u1, u2;
-  double du1, du2;
-  double d2u1, d2u2;
-  double d3u1, d3u2;
+  double du1 = 0.0, du2 = 0.0;
+  double d2u1 = 0.0, d2u2 = 0.0;
+  double d3u1 = 0.0, d3u2 = 0.0;
   for (int i = 0; i < 10; i++)
   {
     double r = 0.08 * i + 0.1;

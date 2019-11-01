@@ -36,7 +36,7 @@ FDLRWfn::FDLRWfn(TrialWaveFunction* const wfn_1,
                  const bool opt_d,
                  const bool singlet_loc,
                  const bool triplet_loc)
-    : m_wfn_xpd(wfn_1), m_wfn_xmd(wfn_2), opt_x_vars(opt_x), opt_d_vars(opt_d)
+    : opt_x_vars(opt_x), opt_d_vars(opt_d), m_wfn_xpd(wfn_1), m_wfn_xmd(wfn_2)
 {
   // Temporary hack: I get very odd results when turning off Optimizable
   // and when using the new optimizer (although OK with the old one),
@@ -351,7 +351,7 @@ void FDLRWfn::resetTargetParticleSet(ParticleSet& P)
 /// \return  the log of the FDLR wave function
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////
-FDLRWfn::RealType FDLRWfn::evaluateLog(ParticleSet& P,
+FDLRWfn::LogValueType FDLRWfn::evaluateLog(ParticleSet& P,
                                        ParticleSet::ParticleGradient_t& G,
                                        ParticleSet::ParticleLaplacian_t& L)
 {
@@ -396,7 +396,7 @@ FDLRWfn::RealType FDLRWfn::evaluateLog(ParticleSet& P,
 /// \return  the log of the FDLR wave function
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////
-FDLRWfn::RealType FDLRWfn::evaluateLogFDLR(ParticleSet& P,
+FDLRWfn::LogValueType FDLRWfn::evaluateLogFDLR(ParticleSet& P,
                                            ParticleSet::ParticleGradient_t& G,
                                            ParticleSet::ParticleLaplacian_t& L,
                                            const FDLRWfn::RealType& logpsi_plus,
@@ -408,7 +408,7 @@ FDLRWfn::RealType FDLRWfn::evaluateLogFDLR(ParticleSet& P,
                                            const ParticleSet::ParticleLaplacian_t& L_plus,
                                            const ParticleSet::ParticleLaplacian_t& L_minus)
 {
-  FDLRWfn::ValueType logpsi(0.0), psi(0.0), psi_plus(0.0), psi_minus(0.0);
+  PsiValueType psi(0.0), psi_plus(0.0), psi_minus(0.0);
   FDLRWfn::ValueType scaling_fac_1, scaling_fac_2;
 
   // Temporary space needed for calculating the gradient and the laplacian
@@ -425,8 +425,7 @@ FDLRWfn::RealType FDLRWfn::evaluateLogFDLR(ParticleSet& P,
   psi_plus  = std::exp(logpsi_plus) * std::cos(phasevalue_plus);
   psi_minus = std::exp(logpsi_minus) * std::cos(phasevalue_minus);
   psi       = psi_plus - psi_minus;
-  //psi = std::exp(logpsi_plus)*std::cos(phasevalue_plus) - std::exp(logpsi_minus)*std::cos(phasevalue_minus);
-  logpsi = evaluateLogAndPhase(psi, PhaseValue);
+  LogValue  = convertValueToLog(psi);
 
   // ----Calculating the gradient of the log of the FDLR wave function----
 
@@ -453,9 +452,6 @@ FDLRWfn::RealType FDLRWfn::evaluateLogFDLR(ParticleSet& P,
   L = scaling_fac_1 * L_temp_1 - scaling_fac_2 * L_temp_2 - G_FDLR_mag;
 
   // ---------------------------------------------------------------------
-
-  convert(logpsi, LogValue);
-
   return LogValue;
 }
 
@@ -570,7 +566,6 @@ void FDLRWfn::registerData(ParticleSet& P, WFBufferType& buf)
   buf.add(m_wfn_xmd->L.first_address(), m_wfn_xmd->L.last_address());
 
   buf.add(LogValue);
-  buf.add(PhaseValue);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -586,7 +581,7 @@ void FDLRWfn::registerData(ParticleSet& P, WFBufferType& buf)
 /// \return  the log of the FDLR wave function.
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-FDLRWfn::RealType FDLRWfn::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch)
+FDLRWfn::LogValueType FDLRWfn::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch)
 {
   // Update buffer with data from the "x+d" part of the wave function.
   FDLRWfn::RealType logpsi_plus = m_wfn_xpd->updateBuffer(P, buf, fromscratch);
@@ -606,7 +601,6 @@ FDLRWfn::RealType FDLRWfn::updateBuffer(ParticleSet& P, WFBufferType& buf, bool 
   LogValue = evaluateLogFDLR(P, P.G, P.L, logpsi_plus, logpsi_minus, m_wfn_xpd->getPhase(), m_wfn_xmd->getPhase(),
                              m_wfn_xpd->G, m_wfn_xmd->G, m_wfn_xpd->L, m_wfn_xmd->L);
   buf.put(LogValue);
-  buf.put(PhaseValue);
 
   return LogValue;
 }
@@ -632,7 +626,6 @@ void FDLRWfn::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
   LogValue = evaluateLogFDLR(P, P.G, P.L, m_wfn_xpd->getLogPsi(), m_wfn_xmd->getLogPsi(), m_wfn_xpd->getPhase(),
                              m_wfn_xmd->getPhase(), m_wfn_xpd->G, m_wfn_xmd->G, m_wfn_xpd->L, m_wfn_xmd->L);
   buf.get(LogValue);
-  buf.get(PhaseValue);
 }
 
 FDLRWfn::ValueType FDLRWfn::ratio(ParticleSet& P, int iat)
@@ -674,8 +667,7 @@ void FDLRWfn::acceptMove(ParticleSet& P, int iat)
   m_wfn_xpd->acceptMove(P, iat);
   m_wfn_xmd->acceptMove(P, iat);
 
-  PhaseValue += evaluatePhase(curRatio);
-  LogValue += std::log(std::abs(curRatio));
+  LogValue += convertValueToLog(curRatio);
 
   curRatio = 1.0;
 }

@@ -34,6 +34,7 @@ DiracDeterminantWithBackflow::DiracDeterminantWithBackflow(ParticleSet& ptcl,
     : DiracDeterminantBase(spos, first)
 {
   Optimizable = true;
+  is_fermionic = true;
   ClassName   = "DiracDeterminantWithBackflow";
   registerTimers();
   BFTrans      = BF;
@@ -148,10 +149,9 @@ void DiracDeterminantWithBackflow::registerData(ParticleSet& P, WFBufferType& bu
   buf.add(FirstAddressOfFm, LastAddressOfFm);
   buf.add(psiMinv.first_address(), psiMinv.last_address());
   buf.add(LogValue);
-  buf.add(PhaseValue);
 }
 
-DiracDeterminantWithBackflow::RealType DiracDeterminantWithBackflow::updateBuffer(ParticleSet& P,
+DiracDeterminantWithBackflow::LogValueType DiracDeterminantWithBackflow::updateBuffer(ParticleSet& P,
                                                                                   WFBufferType& buf,
                                                                                   bool fromscratch)
 {
@@ -173,7 +173,6 @@ DiracDeterminantWithBackflow::RealType DiracDeterminantWithBackflow::updateBuffe
   buf.put(FirstAddressOfFm, LastAddressOfFm);
   buf.put(psiMinv.first_address(), psiMinv.last_address());
   buf.put(LogValue);
-  buf.put(PhaseValue);
   UpdateTimer.stop();
   return LogValue;
 }
@@ -188,7 +187,6 @@ void DiracDeterminantWithBackflow::copyFromBuffer(ParticleSet& P, WFBufferType& 
   buf.get(FirstAddressOfFm, LastAddressOfFm);
   buf.get(psiMinv.first_address(), psiMinv.last_address());
   buf.get(LogValue);
-  buf.get(PhaseValue);
   //re-evaluate it for testing
   //Phi.evaluate(P, FirstIndex, LastIndex, psiM, dpsiM, d2psiM);
   //CurrentDet = Invert(psiM.data(),NumPtcls,NumOrbitals);
@@ -219,7 +217,7 @@ DiracDeterminantWithBackflow::ValueType DiracDeterminantWithBackflow::ratio(Part
     }
     int jat    = *it - FirstIndex;
     PosType dr = BFTrans->newQP[*it] - BFTrans->QP.R[*it];
-    BFTrans->QP.makeMoveAndCheck(*it, dr);
+    BFTrans->QP.makeMove(*it, dr);
     Phi->evaluate(BFTrans->QP, *it, psiV);
     for (int orb = 0; orb < psiV.size(); orb++)
       psiM_temp(orb, jat) = psiV[orb];
@@ -230,16 +228,10 @@ DiracDeterminantWithBackflow::ValueType DiracDeterminantWithBackflow::ratio(Part
   psiMinv_temp = psiM_temp;
   // FIX FIX FIX : code Woodbury formula
   InverseTimer.start();
-  RealType NewPhase;
-  RealType NewLog = InvertWithLog(psiMinv_temp.data(), NumPtcls, NumOrbitals, WorkSpace.data(), Pivot.data(), NewPhase);
+  LogValueType NewLog;
+  InvertWithLog(psiMinv_temp.data(), NumPtcls, NumOrbitals, WorkSpace.data(), Pivot.data(), NewLog);
   InverseTimer.stop();
-#if defined(QMC_COMPLEX)
-  RealType ratioMag = std::exp(NewLog - LogValue);
-  return curRatio   = std::complex<OHMMS_PRECISION>(std::cos(NewPhase - PhaseValue) * ratioMag,
-                                                  std::sin(NewPhase - PhaseValue) * ratioMag);
-#else
-  return curRatio = std::cos(NewPhase - PhaseValue) * std::exp(NewLog - LogValue);
-#endif
+  return curRatio = LogToValue<PsiValueType>::convert(NewLog - LogValue);
 }
 
 void DiracDeterminantWithBackflow::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
@@ -297,7 +289,7 @@ DiracDeterminantWithBackflow::ValueType DiracDeterminantWithBackflow::ratioGrad(
     }
     int jat    = *it - FirstIndex;
     PosType dr = BFTrans->newQP[*it] - BFTrans->QP.R[*it];
-    BFTrans->QP.makeMoveAndCheck(*it, dr);
+    BFTrans->QP.makeMove(*it, dr);
     Phi->evaluate(BFTrans->QP, *it, psiV, dpsiV, d2psiV);
     for (int orb = 0; orb < psiV.size(); orb++)
       psiM_temp(orb, jat) = psiV[orb];
@@ -310,8 +302,8 @@ DiracDeterminantWithBackflow::ValueType DiracDeterminantWithBackflow::ratioGrad(
   psiMinv_temp = psiM_temp;
   // FIX FIX FIX : code Woodbury formula
   InverseTimer.start();
-  RealType NewPhase;
-  RealType NewLog = InvertWithLog(psiMinv_temp.data(), NumPtcls, NumOrbitals, WorkSpace.data(), Pivot.data(), NewPhase);
+  LogValueType NewLog;
+  InvertWithLog(psiMinv_temp.data(), NumPtcls, NumOrbitals, WorkSpace.data(), Pivot.data(), NewLog);
   InverseTimer.stop();
   // update Fmatdiag_temp
   for (int j = 0; j < NumPtcls; j++)
@@ -319,13 +311,7 @@ DiracDeterminantWithBackflow::ValueType DiracDeterminantWithBackflow::ratioGrad(
     Fmatdiag_temp[j] = simd::dot(psiMinv_temp[j], dpsiM_temp[j], NumOrbitals);
     grad_iat += dot(BFTrans->Amat_temp(iat, FirstIndex + j), Fmatdiag_temp[j]);
   }
-#if defined(QMC_COMPLEX)
-  RealType ratioMag = std::exp(NewLog - LogValue);
-  return curRatio   = std::complex<OHMMS_PRECISION>(std::cos(NewPhase - PhaseValue) * ratioMag,
-                                                  std::sin(NewPhase - PhaseValue) * ratioMag);
-#else
-  return curRatio = std::cos(NewPhase - PhaseValue) * std::exp(NewLog - LogValue);
-#endif
+  return curRatio = LogToValue<PsiValueType>::convert(NewLog - LogValue);
 }
 
 void DiracDeterminantWithBackflow::testL(ParticleSet& P)
@@ -363,7 +349,7 @@ void DiracDeterminantWithBackflow::testL(ParticleSet& P)
   psiMinv = psiM;
   // invert backflow matrix
   InverseTimer.start();
-  LogValue = InvertWithLog(psiMinv.data(), NumPtcls, NumOrbitals, WorkSpace.data(), Pivot.data(), PhaseValue);
+  InvertWithLog(psiMinv.data(), NumPtcls, NumOrbitals, WorkSpace.data(), Pivot.data(), LogValue);
   InverseTimer.stop();
   // calculate F matrix (gradients wrt bf coordinates)
   // could use dgemv with increments of 3*nCols
@@ -424,7 +410,7 @@ void DiracDeterminantWithBackflow::testL(ParticleSet& P)
       evaluate_SPO(psiM, dpsiM, grad_grad_psiM);
       psiMinv = psiM;
       InverseTimer.start();
-      LogValue = InvertWithLog(psiMinv.data(), NumPtcls, NumOrbitals, WorkSpace.data(), Pivot.data(), PhaseValue);
+      InvertWithLog(psiMinv.data(), NumPtcls, NumOrbitals, WorkSpace.data(), Pivot.data(), LogValue);
       InverseTimer.stop();
       for (int j = 0; j < NumPtcls; j++)
       {
@@ -441,7 +427,7 @@ void DiracDeterminantWithBackflow::testL(ParticleSet& P)
       evaluate_SPO(psiM, dpsiM, grad_grad_psiM);
       psiMinv = psiM;
       InverseTimer.start();
-      LogValue = InvertWithLog(psiMinv.data(), NumPtcls, NumOrbitals, WorkSpace.data(), Pivot.data(), PhaseValue);
+      InvertWithLog(psiMinv.data(), NumPtcls, NumOrbitals, WorkSpace.data(), Pivot.data(), LogValue);
       InverseTimer.stop();
       for (int j = 0; j < NumPtcls; j++)
       {
@@ -504,7 +490,7 @@ void DiracDeterminantWithBackflow::testL(ParticleSet& P)
  *contribution of the determinant to G(radient) and L(aplacian)
  *for local energy calculations.
  */
-DiracDeterminantWithBackflow::RealType DiracDeterminantWithBackflow::evaluateLog(ParticleSet& P,
+DiracDeterminantWithBackflow::LogValueType DiracDeterminantWithBackflow::evaluateLog(ParticleSet& P,
                                                                                  ParticleSet::ParticleGradient_t& G,
                                                                                  ParticleSet::ParticleLaplacian_t& L)
 {
@@ -516,7 +502,7 @@ DiracDeterminantWithBackflow::RealType DiracDeterminantWithBackflow::evaluateLog
   psiMinv = psiM;
   // invert backflow matrix
   InverseTimer.start();
-  LogValue = InvertWithLog(psiMinv.data(), NumPtcls, NumOrbitals, WorkSpace.data(), Pivot.data(), PhaseValue);
+  InvertWithLog(psiMinv.data(), NumPtcls, NumOrbitals, WorkSpace.data(), Pivot.data(), LogValue);
   InverseTimer.stop();
   // calculate F matrix (gradients wrt bf coordinates)
   // could use dgemv with increments of 3*nCols
@@ -587,8 +573,7 @@ DiracDeterminantWithBackflow::RealType DiracDeterminantWithBackflow::evaluateLog
 */
 void DiracDeterminantWithBackflow::acceptMove(ParticleSet& P, int iat)
 {
-  PhaseValue += evaluatePhase(curRatio);
-  LogValue += std::log(std::abs(curRatio));
+  LogValue += convertValueToLog(curRatio);
   UpdateTimer.start();
   switch (UpdateMode)
   {
@@ -646,7 +631,7 @@ void DiracDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
     psiMinv = psiM;
     //       invert backflow matrix
     InverseTimer.start();
-    LogValue = InvertWithLog(psiMinv.data(), NumPtcls, NumOrbitals, WorkSpace.data(), Pivot.data(), PhaseValue);
+    InvertWithLog(psiMinv.data(), NumPtcls, NumOrbitals, WorkSpace.data(), Pivot.data(), LogValue);
     InverseTimer.stop();
     //       calculate F matrix (gradients wrt bf coordinates)
     //       could use dgemv with increments of 3*nCols
@@ -788,7 +773,7 @@ void DiracDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
   psiMinv = psiM;
   // invert backflow matrix
   InverseTimer.start();
-  LogValue = InvertWithLog(psiMinv.data(), NumPtcls, NumOrbitals, WorkSpace.data(), Pivot.data(), PhaseValue);
+  InvertWithLog(psiMinv.data(), NumPtcls, NumOrbitals, WorkSpace.data(), Pivot.data(), LogValue);
   InverseTimer.stop();
   // calculate F matrix (gradients wrt bf coordinates)
   // could use dgemv with increments of 3*nCols
@@ -911,7 +896,7 @@ void DiracDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
   psiMinv = psiM;
   // invert backflow matrix
   InverseTimer.start();
-  LogValue = InvertWithLog(psiMinv.data(), NumPtcls, NumOrbitals, WorkSpace.data(), Pivot.data(), PhaseValue);
+  InvertWithLog(psiMinv.data(), NumPtcls, NumOrbitals, WorkSpace.data(), Pivot.data(), LogValue);
   InverseTimer.stop();
   // calculate F matrix (gradients wrt bf coordinates)
   // could use dgemv with increments of 3*nCols
@@ -1223,7 +1208,7 @@ void DiracDeterminantWithBackflow::testDerivFjj(ParticleSet& P, int pa)
   psiMinv = psiM;
   // invert backflow matrix
   InverseTimer.start();
-  LogValue = InvertWithLog(psiMinv.data(), NumPtcls, NumOrbitals, WorkSpace.data(), Pivot.data(), PhaseValue);
+  InvertWithLog(psiMinv.data(), NumPtcls, NumOrbitals, WorkSpace.data(), Pivot.data(), LogValue);
   InverseTimer.stop();
   // calculate F matrix (gradients wrt bf coordinates)
   // could use dgemv with increments of 3*nCols
@@ -1242,7 +1227,7 @@ void DiracDeterminantWithBackflow::testDerivFjj(ParticleSet& P, int pa)
   psiMinv = psiM;
   // invert backflow matrix
   InverseTimer.start();
-  LogValue = InvertWithLog(psiMinv.data(), NumPtcls, NumOrbitals, WorkSpace.data(), Pivot.data(), PhaseValue);
+  InvertWithLog(psiMinv.data(), NumPtcls, NumOrbitals, WorkSpace.data(), Pivot.data(), LogValue);
   InverseTimer.stop();
   // calculate F matrix (gradients wrt bf coordinates)
   // could use dgemv with increments of 3*nCols
@@ -1260,7 +1245,7 @@ void DiracDeterminantWithBackflow::testDerivFjj(ParticleSet& P, int pa)
   psiMinv = psiM;
   // invert backflow matrix
   InverseTimer.start();
-  LogValue = InvertWithLog(psiMinv.data(), NumPtcls, NumOrbitals, WorkSpace.data(), Pivot.data(), PhaseValue);
+  InvertWithLog(psiMinv.data(), NumPtcls, NumOrbitals, WorkSpace.data(), Pivot.data(), LogValue);
   InverseTimer.stop();
   // calculate F matrix (gradients wrt bf coordinates)
   // could use dgemv with increments of 3*nCols
@@ -1352,7 +1337,7 @@ void DiracDeterminantWithBackflow::dummyEvalLi(ValueType& L1, ValueType& L2, Val
   evaluate_SPO(psiM, dpsiM, grad_grad_psiM);
   psiMinv = psiM;
   InverseTimer.start();
-  LogValue = InvertWithLog(psiMinv.data(), NumPtcls, NumOrbitals, WorkSpace.data(), Pivot.data(), PhaseValue);
+  InvertWithLog(psiMinv.data(), NumPtcls, NumOrbitals, WorkSpace.data(), Pivot.data(), LogValue);
   InverseTimer.stop();
   for (int i = 0; i < NumPtcls; i++)
     for (int j = 0; j < NumPtcls; j++)

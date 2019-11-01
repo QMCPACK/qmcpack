@@ -2,9 +2,16 @@
 
 echo --- Script START `date`
 
-export GLOBALTCFG="-E long --timeout 1800"
-#export GLOBALTCFG="--timeout 7200"
-export DONLY="-R deterministic -LE unstable"
+localonly=no
+
+if [[ $localonly == "yes" ]]; then
+echo --- Local CMake/Make/CTest only. No cdash drop.
+fi
+
+export GLOBALTCFG="--timeout 1200 -VV"
+export LIMITEDTESTS="-R deterministic -LE unstable -E long"
+export LESSLIMITEDTESTS="-E long -LE unstable"
+#export LESSLIMITEDTESTS="-R 'deterministic|converter|short.*diamondC_.x1x1_pp-.mc_.*'"
 
 # Directory in which to run tests. Should be an absolute path and fastest usable filesystem
 test_path=/scratch/${USER}   # RAID FLASH on oxygen
@@ -13,61 +20,22 @@ test_dir=${test_path}/QMCPACK_CI_BUILDS_DO_NOT_REMOVE
 
 export QMC_DATA=/data/pk7/QMC_DATA # Route to directory containing performance test files
 
-if [ -e ${test_path} ]; then
-
-if [ ! -e ${test_dir} ]; then
-mkdir ${test_dir}
-fi
-
-if [ -e ${test_dir} ]; then
-cd ${test_dir}
-
-# Minimize load of GitHub by maintaining a local cloned git used for all builds
-if [ ! -e qmcpack ]; then
-echo --- Cloning QMCPACK git `date`
-git clone https://github.com/QMCPACK/qmcpack.git --depth 1
-else
-cd qmcpack
-echo --- Updating local QMCPACK git `date`
-git pull
-cd ..
-fi
-
-# Sanity check cmake config file present
-if [ -e qmcpack/CMakeLists.txt ]; then
-
-echo --- Starting test builds and tests
-
-# Specify GPUs for testing. Enquire via "nvidia-smi -L"
-# GPU 0: Tesla K40c (UUID: GPU-224da96d-fb1a-955e-b082-a0f2214877e3)
-# GPU 2: Tesla K40c (UUID: GPU-229b6777-2095-3b48-ed2d-50a9f28f5118)
-export OXYGEN_KEPLER=GPU-224da96d-fb1a-955e-b082-a0f2214877e3,GPU-229b6777-2095-3b48-ed2d-50a9f28f5118
-export OXYGEN_VOLTA=GPU-6bf1c875-b5de-2486-fd0e-ed4bca724ba1
-export CUDA_VISIBLE_DEVICES=$OXYGEN_KEPLER
-
-for sys in build_gcc5_mkl build_gcc5_mkl_complex build_gcc5_mkl_soa build_gcc5_mkl_complex_soa build_intel2018 build_intel2018_soa build_intel2018_complex_soa build_intel2018_nompi build_intel2018_nompi_soa build_clang7_nompi build_gcc8_mkl build_gcc8_mkl_complex build_pgi2019_nompi_mkl build_clang6_cuda build_clang6_cuda_complex
-do
-
-echo --- START $sys `date`
-
-cd ${test_dir}
-
-if [ -e $sys ]; then
-rm -r -f $sys
-fi
-mkdir $sys
-cd $sys
-
-#CUDA 10 setup
-export CUDAVER=10.0
+# CUDA 10 setup
+export CUDAVER=10.1
 export PATH=/opt/local/bin:/opt/local/sbin:/usr/local/cuda-${CUDAVER}/bin/:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
 export LD_LIBRARY_PATH=/usr/local/cuda-${CUDAVER}/lib64
+
+# Specify GPUs for testing. Obtain device IDs via "nvidia-smi -L"
+#export CUDA_VISIBLE_DEVICES=
 
 # PGI2019  setup
 export PGI=/opt/pgi
 export MANPATH=$MANPATH:$PGI/linux86-64/2019/man
 export LM_LICENSE_FILE=$PGI/license.dat
 export PATH=$PGI/linux86-64/2019/bin:$PATH
+
+# MKL setup used by many builds for BLAS, LAPACK etc.
+source /opt/intel2018/mkl/bin/mklvars.sh intel64
 
 # Intel2019.1 MPI configure setting to avoid MPI crash
 # via https://software.intel.com/en-us/forums/intel-clusters-and-hpc-technology/topic/799716
@@ -84,820 +52,403 @@ echo --- Modules list
 module list
 echo --- End listings
 
-#Cmake >=3.12.2 is needed for CUDA 10.0 (cublas_device errors result with earlier versions)
-spack load cmake@3.12.2%gcc@4.8.5
+spack load git
 
-case $sys in
-    "build_gcc8")
-        spack load gcc@8.2.0
-        compilerversion=`gcc --version|grep ^gcc|sed 's/^.* //g'`
-        if [ $compilerversion = "8.2.0" ]; then
-        spack load openmpi@3.1.3~cuda%gcc@8.2.0
-        export OMPI_CC=gcc
-        export OMPI_CXX=g++
-	spack load boost@1.70.0
-	export QMCPACK_TEST_SUBMIT_NAME=GCC8-Release
-	export CTCFG="-DENABLE_SOA=0 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBUILD_AFQMC=0 -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
- 	ctest ${CTCFG} ${GLOBALTCFG}
-	spack unload boost@1.70.0
-        spack unload openmpi@3.1.3~cuda%gcc@8.2.0
-        else
-        echo "Did not find expected gcc 8.2.0"
-        fi
-        spack unload gcc@8.2.0
-	;;
-    "build_gcc8_nompi")
-        spack load gcc@8.2.0
-        compilerversion=`gcc --version|grep ^gcc|sed 's/^.* //g'`
-        if [ $compilerversion = "8.2.0" ]; then
-	spack load boost@1.70.0
-	export QMCPACK_TEST_SUBMIT_NAME=GCC8-NoMPI-Release
-	export CTCFG="-DENABLE_SOA=0 -DQMC_MPI=0 -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DBUILD_AFQMC=0 -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
- 	ctest ${CTCFG} ${GLOBALTCFG}
-	spack unload boost@1.70.0
-        else
-        echo "Did not find expected gcc 8.2.0"
-        fi
-        spack unload gcc@8.2.0
-	;;
-    "build_clang6")
-        spack load gcc@8.2.0
-        spack load llvm@6.0.1
-        compilerversion=`clang --version|grep ^clang|sed -e 's/^.* version//g' -e 's/(.*//g'`
-        if [ $compilerversion = "6.0.1" ]; then
-        spack load openmpi@3.1.3~cuda%gcc@8.2.0
-        export OMPI_CC=clang
-        export OMPI_CXX=clang++
-	spack load boost@1.70.0
-	export QMCPACK_TEST_SUBMIT_NAME=CLANG6-Release
-	export CTCFG="-DENABLE_SOA=0 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBUILD_AFQMC=0 -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
- 	ctest ${CTCFG} ${GLOBALTCFG}
-	spack unload boost@1.70.0
-        spack unload openmpi@3.1.3~cuda%gcc@8.2.0
-        spack unload llvm@6.0.1
-        else
-        echo "Did not find expected clang 6.0.1"
-        fi
-	spack unload gcc@8.2.0
-	;;
-    "build_clang6_cuda")
-        spack load gcc@8.2.0
-        spack load llvm@6.0.1
-        compilerversion=`clang --version|grep ^clang|sed -e 's/^.* version//g' -e 's/(.*//g'`
-        if [ $compilerversion = "6.0.1" ]; then
-        spack load openmpi@3.1.3~cuda%gcc@8.2.0
-        export OMPI_CC=clang
-        export OMPI_CXX=clang++
-	spack load boost@1.70.0
-	export QMCPACK_TEST_SUBMIT_NAME=CLANG6-CUDA-Release
-	export OLD_CUDA_VISIBLE_DEVICES=$CUDA_VISIBLE_DEVICES
-	export CUDA_VISIBLE_DEVICES=$OXYGEN_KEPLER
-	export CTCFG="-DENABLE_SOA=0 -DQMC_CUDA=1 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBUILD_AFQMC=0 -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
- 	ctest ${CTCFG} ${GLOBALTCFG}
-	export CUDA_VISIBLE_DEVICES=$OLD_CUDA_VISIBLE_DEVICES	
-	spack unload boost@1.70.0
-        spack unload openmpi@3.1.3~cuda%gcc@8.2.0
-        spack unload llvm@6.0.1
-        else
-        echo "Did not find expected clang 6.0.1"
-        fi
-	;;
-    "build_volta_clang6_cuda")
-        spack load gcc@8.2.0
-        spack load llvm@6.0.1
-        compilerversion=`clang --version|grep ^clang|sed -e 's/^.* version//g' -e 's/(.*//g'`
-        if [ $compilerversion = "6.0.1" ]; then
-        spack load openmpi@3.1.3+cuda%gcc@8.2.0
-        export OMPI_CC=clang
-        export OMPI_CXX=clang++
-	spack load boost@1.70.0
-	export QMCPACK_TEST_SUBMIT_NAME=Volta-CLANG6-CUDA-Release
-	export OLD_CUDA_VISIBLE_DEVICES=$CUDA_VISIBLE_DEVICES
-	export CUDA_VISIBLE_DEVICES=$OXYGEN_VOLTA
-	export CTCFG="-DENABLE_SOA=0 -DQMC_CUDA=1 -DCUDA_ARCH="sm_70" -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBUILD_AFQMC=0 -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
- 	ctest ${CTCFG} ${GLOBALTCFG}
-	export CUDA_VISIBLE_DEVICES=$OLD_CUDA_VISIBLE_DEVICES	
-	spack unload boost@1.70.0
-        spack unload openmpi@3.1.3+cuda%gcc@8.2.0
-        spack unload llvm@6.0.1
-        else
-        echo "Did not find expected clang 6.0.1"
-        fi
-	spack unload gcc@8.2.0
-	;;
-    "build_clang6_cuda_soa")
-        spack load gcc@8.2.0
-        spack load llvm@6.0.1
-        compilerversion=`clang --version|grep ^clang|sed -e 's/^.* version//g' -e 's/(.*//g'`
-        if [ $compilerversion = "6.0.1" ]; then
-        spack load openmpi@3.1.3+cuda%gcc@8.2.0
-        export OMPI_CC=clang
-        export OMPI_CXX=clang++
-	spack load boost@1.70.0
-	export QMCPACK_TEST_SUBMIT_NAME=CLANG6-CUDA-SoA-Release
-	export OLD_CUDA_VISIBLE_DEVICES=$CUDA_VISIBLE_DEVICES
-	export CUDA_VISIBLE_DEVICES=$OXYGEN_KEPLER
-	ctest   -R 'deterministic|performance|short.*diamondC_.x1x1_pp-.mc_.*' -E 'long' --timeout 1800
-	export CTCFG="-DQMC_CUDA=1 -DENABLE_SOA=1 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBUILD_AFQMC=0 -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
- 	ctest ${CTCFG} ${GLOBALTCFG}
-	export CUDA_VISIBLE_DEVICES=$OLD_CUDA_VISIBLE_DEVICES	
-	spack unload boost@1.70.0
-        spack unload openmpi@3.1.3+cuda%gcc@8.2.0
-        spack unload llvm@6.0.1
-        else
-        echo "Did not find expected clang 6.0.1"
-        fi
-	spack unload gcc@8.2.0
-	;;
-    "build_clang6_cuda_complex")
-        spack load gcc@8.2.0
-        spack load llvm@6.0.1
-        compilerversion=`clang --version|grep ^clang|sed -e 's/^.* version//g' -e 's/(.*//g'`
-        if [ $compilerversion = "6.0.1" ]; then
-        spack load openmpi@3.1.3+cuda%gcc@8.2.0
-        export OMPI_CC=clang
-        export OMPI_CXX=clang++
-	spack load boost@1.70.0
-	export QMCPACK_TEST_SUBMIT_NAME=CLANG6-CUDA-Complex-Release
-	export OLD_CUDA_VISIBLE_DEVICES=$CUDA_VISIBLE_DEVICES
-	export CUDA_VISIBLE_DEVICES=$OXYGEN_KEPLER
-	export CTCFG="-DENABLE_SOA=0 -DQMC_CUDA=1 -DQMC_COMPLEX=1 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBUILD_AFQMC=1 -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
- 	ctest ${CTCFG} ${GLOBALTCFG}
-	export CUDA_VISIBLE_DEVICES=$OLD_CUDA_VISIBLE_DEVICES	
-	spack unload boost@1.70.0
-        spack unload openmpi@3.1.3+cuda%gcc@8.2.0
-        spack unload llvm@6.0.1
-        else
-        echo "Did not find expected clang 6.0.1"
-        fi
-	spack unload gcc@8.2.0
-	;;
-    "build_clang6_cuda_full")
-        spack load gcc@8.2.0
-        spack load llvm@6.0.1
-        compilerversion=`clang --version|grep ^clang|sed -e 's/^.* version//g' -e 's/(.*//g'`
-        if [ $compilerversion = "6.0.1" ]; then
-        spack load openmpi@3.1.3+cuda%gcc@8.2.0
-        export OMPI_CC=clang
-        export OMPI_CXX=clang++
-	spack load boost@1.70.0
-	export QMCPACK_TEST_SUBMIT_NAME=CLANG6-CUDA-Full-Release
-	export OLD_CUDA_VISIBLE_DEVICES=$CUDA_VISIBLE_DEVICES
-	export CUDA_VISIBLE_DEVICES=$OXYGEN_KEPLER
-	export CTCFG="-DENABLE_SOA=0 -DQMC_CUDA=1 -DQMC_MIXED_PRECISION=0 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBUILD_AFQMC=0 -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
- 	ctest ${CTCFG} ${GLOBALTCFG}
-	export CUDA_VISIBLE_DEVICES=$OLD_CUDA_VISIBLE_DEVICES	
-	spack unload boost@1.70.0
-        spack unload openmpi@3.1.3+cuda%gcc@8.2.0
-        spack unload llvm@6.0.1
-        else
-        echo "Did not find expected clang 6.0.1"
-        fi
-	spack unload gcc@8.2.0
-	;;
-    "build_clang6_cuda_complex_full")
-        spack load gcc@8.2.0
-        spack load llvm@6.0.1
-        compilerversion=`clang --version|grep ^clang|sed -e 's/^.* version//g' -e 's/(.*//g'`
-        if [ $compilerversion = "6.0.1" ]; then
-        spack load openmpi@3.1.3+cuda%gcc@8.2.0
-        export OMPI_CC=clang
-        export OMPI_CXX=clang++
-	spack load boost@1.70.0
-	export QMCPACK_TEST_SUBMIT_NAME=CLANG6-CUDA-Complex-Full-Release
-	export OLD_CUDA_VISIBLE_DEVICES=$CUDA_VISIBLE_DEVICES
-	export CUDA_VISIBLE_DEVICES=$OXYGEN_KEPLER
-	export CTCFG="-DENABLE_SOA=0 -DQMC_CUDA=1 -DQMC_COMPLEX=1 -DQMC_MIXED_PRECISION=0 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBUILD_AFQMC=1 -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
- 	ctest ${CTCFG} ${GLOBALTCFG}
-	spack unload boost@1.70.0
-	export CUDA_VISIBLE_DEVICES=$OLD_CUDA_VISIBLE_DEVICES	
-        spack unload openmpi@3.1.3+cuda%gcc@8.2.0
-        spack unload llvm@6.0.1
-        else
-        echo "Did not find expected clang 6.0.1"
-        fi
-	spack unload gcc@8.2.0
-	;;
-    "build_clang7")
-        spack load llvm@7.0.0
-        compilerversion=`clang --version|grep ^clang|sed -e 's/^.* version//g' -e 's/(.*//g'`
-        if [ $compilerversion = "7.0.0" ]; then
-        spack load openmpi%gcc@4.8.5
-        export OMPI_CC=clang
-        export OMPI_CXX=clang++
-	spack load boost@1.70.0
-	export QMCPACK_TEST_SUBMIT_NAME=CLANG7-Release
-	export CTCFG="-DENABLE_SOA=0 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBUILD_AFQMC=0 -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
- 	ctest ${CTCFG} ${GLOBALTCFG}
-	spack unload boost@1.70.0
-        spack unload openmpi%gcc@4.8.5
-        spack unload llvm@7.0.0
-        else
-        echo "Did not find expected clang 7.0.0"
-        fi
-	;;
-    "build_clang7_nompi")
-        spack load llvm@7.0.0
-        compilerversion=`clang --version|grep ^clang|sed -e 's/^.* version//g' -e 's/(.*//g'`
-        if [ $compilerversion = "7.0.0" ]; then
-	spack load boost@1.70.0
-	export QMCPACK_TEST_SUBMIT_NAME=CLANG7-NoMPI-Release
-	export CTCFG="-DENABLE_SOA=0 -DQMC_MPI=0 DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DBUILD_AFQMC=0 -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
- 	ctest ${CTCFG} ${GLOBALTCFG}
-	spack unload boost@1.70.0
-        spack unload llvm@7.0.0
-        else
-        echo "Did not find expected clang 7.0.0"
-        fi
-	;;
-    "build_gcc8_mkl")
-	export OLD_PATH=$PATH
-	export OLD_LD_LIBRARY_PATH=$LD_LIBRARY_PATH
-	export OLD_MANPATH=$MANPATH
-	export OLD_NLSPATH=$NLSPATH
-	export OLD_CPATH=$CPATH
-	export OLD_LIBRARY_PATH=$LIBRARY_PATH
-	export OLD_MKLROOT=$MKLROOT
-	source /opt/intel2018/mkl/bin/mklvars.sh intel64
-        spack load gcc@8.2.0
-        compilerversion=`gcc --version|grep ^gcc|sed 's/^.* //g'`
-        if [ $compilerversion = "8.2.0" ]; then
-        spack load openmpi@3.1.3~cuda%gcc@8.2.0
-        export OMPI_CC=gcc
-        export OMPI_CXX=g++
-	spack load boost@1.70.0
-	export QMCPACK_TEST_SUBMIT_NAME=GCC8-MKL-Release
-	export CTCFG="-DENABLE_SOA=0 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBLA_VENDOR=Intel10_64lp_seq -DCMAKE_PREFIX_PATH=$MKLROOT/lib -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
- 	ctest ${CTCFG} ${GLOBALTCFG}
-	spack unload boost@1.70.0
-        spack unload openmpi@3.1.3~cuda%gcc@8.2.0
-        else
-        echo "Did not find expected gcc 8.2.0"
-        fi
-        spack unload gcc@8.2.0
-	export PATH=$OLD_PATH
-	export LD_LIBRARY_PATH=$OLD_LD_LIBRARY_PATH
-	export MANPATH=$OLD_MANPATH
-	export NLSPATH=$OLD_NLSPATH
-	export CPATH=$OLD_CPATH
-	export LIBRARY_PATH=$OLD_LIBRARY_PATH
-	export MKLROOT=$OLD_MKLROOT
-	;;
-    "build_gcc8_mkl_soa")
-	export OLD_PATH=$PATH
-	export OLD_LD_LIBRARY_PATH=$LD_LIBRARY_PATH
-	export OLD_MANPATH=$MANPATH
-	export OLD_NLSPATH=$NLSPATH
-	export OLD_CPATH=$CPATH
-	export OLD_LIBRARY_PATH=$LIBRARY_PATH
-	export OLD_MKLROOT=$MKLROOT
-	source /opt/intel2018/mkl/bin/mklvars.sh intel64
-        spack load gcc@8.2.0
-        compilerversion=`gcc --version|grep ^gcc|sed 's/^.* //g'`
-        if [ $compilerversion = "8.2.0" ]; then
-        spack load openmpi@3.1.3~cuda%gcc@8.2.0
-        export OMPI_CC=gcc
-        export OMPI_CXX=g++
-	spack load boost@1.70.0
-	export QMCPACK_TEST_SUBMIT_NAME=GCC8-MKL-SoA-Release
-	export CTCFG="-DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DENABLE_SOA=1 -DBLA_VENDOR=Intel10_64lp_seq -DCMAKE_PREFIX_PATH=$MKLROOT/lib -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
- 	ctest ${CTCFG} ${GLOBALTCFG}
-	spack unload boost@1.70.0
-        spack unload openmpi@3.1.3~cuda%gcc@8.2.0
-        else
-        echo "Did not find expected gcc 8.2.0"
-        fi
-        spack unload gcc@8.2.0
-	export PATH=$OLD_PATH
-	export LD_LIBRARY_PATH=$OLD_LD_LIBRARY_PATH
-	export MANPATH=$OLD_MANPATH
-	export NLSPATH=$OLD_NLSPATH
-	export CPATH=$OLD_CPATH
-	export LIBRARY_PATH=$OLD_LIBRARY_PATH
-	export MKLROOT=$OLD_MKLROOT
-	;;
-    "build_gcc5_mkl")
-	export OLD_PATH=$PATH
-	export OLD_LD_LIBRARY_PATH=$LD_LIBRARY_PATH
-	export OLD_MANPATH=$MANPATH
-	export OLD_NLSPATH=$NLSPATH
-	export OLD_CPATH=$CPATH
-	export OLD_LIBRARY_PATH=$LIBRARY_PATH
-	export OLD_MKLROOT=$MKLROOT
-	source /opt/intel2018/mkl/bin/mklvars.sh intel64
-        spack load gcc@5.5.0
-        compilerversion=`gcc --version|grep ^gcc|sed 's/^.* //g'`
-        if [ $compilerversion = "5.5.0" ]; then
-        spack load openmpi@3.1.3~cuda%gcc@8.2.0
-        export OMPI_CC=gcc
-        export OMPI_CXX=g++
-	spack load boost@1.61.0
-	export QMCPACK_TEST_SUBMIT_NAME=GCC5-MKL-Release
-	export CTCFG="-DENABLE_SOA=0 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBLA_VENDOR=Intel10_64lp_seq -DCMAKE_PREFIX_PATH=$MKLROOT/lib -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
- 	ctest ${CTCFG} ${DONLY}
-	spack unload boost@1.61.0
-        spack unload openmpi@3.1.3~cuda%gcc@8.2.0
-        else
-        echo "Did not find expected gcc 5.5.0"
-        fi
-        spack unload gcc@5.5.0
-	export PATH=$OLD_PATH
-	export LD_LIBRARY_PATH=$OLD_LD_LIBRARY_PATH
-	export MANPATH=$OLD_MANPATH
-	export NLSPATH=$OLD_NLSPATH
-	export CPATH=$OLD_CPATH
-	export LIBRARY_PATH=$OLD_LIBRARY_PATH
-	export MKLROOT=$OLD_MKLROOT
-	;;
-    "build_gcc5_mkl_complex")
-	export OLD_PATH=$PATH
-	export OLD_LD_LIBRARY_PATH=$LD_LIBRARY_PATH
-	export OLD_MANPATH=$MANPATH
-	export OLD_NLSPATH=$NLSPATH
-	export OLD_CPATH=$CPATH
-	export OLD_LIBRARY_PATH=$LIBRARY_PATH
-	export OLD_MKLROOT=$MKLROOT
-	source /opt/intel2018/mkl/bin/mklvars.sh intel64
-        spack load gcc@5.5.0
-        compilerversion=`gcc --version|grep ^gcc|sed 's/^.* //g'`
-        if [ $compilerversion = "5.5.0" ]; then
-        spack load openmpi@3.1.3~cuda%gcc@8.2.0
-        export OMPI_CC=gcc
-        export OMPI_CXX=g++
-	spack load boost@1.61.0
-	export QMCPACK_TEST_SUBMIT_NAME=GCC5-MKL-Complex-Release
-	export CTCFG="-DENABLE_SOA=0 -DQMC_COMPLEX=1 -DBUILD_AFQMC-1 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBLA_VENDOR=Intel10_64lp_seq -DCMAKE_PREFIX_PATH=$MKLROOT/lib -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
- 	ctest ${CTCFG} ${DONLY}
-	spack unload boost@1.61.0
-        spack unload openmpi@3.1.3~cuda%gcc@8.2.0
-        else
-        echo "Did not find expected gcc 5.5.0"
-        fi
-        spack unload gcc@5.5.0
-	export PATH=$OLD_PATH
-	export LD_LIBRARY_PATH=$OLD_LD_LIBRARY_PATH
-	export MANPATH=$OLD_MANPATH
-	export NLSPATH=$OLD_NLSPATH
-	export CPATH=$OLD_CPATH
-	export LIBRARY_PATH=$OLD_LIBRARY_PATH
-	export MKLROOT=$OLD_MKLROOT
-	;;
-    "build_gcc5_mkl_soa")
-	export OLD_PATH=$PATH
-	export OLD_LD_LIBRARY_PATH=$LD_LIBRARY_PATH
-	export OLD_MANPATH=$MANPATH
-	export OLD_NLSPATH=$NLSPATH
-	export OLD_CPATH=$CPATH
-	export OLD_LIBRARY_PATH=$LIBRARY_PATH
-	export OLD_MKLROOT=$MKLROOT
-	source /opt/intel2018/mkl/bin/mklvars.sh intel64
-        spack load gcc@5.5.0
-        compilerversion=`gcc --version|grep ^gcc|sed 's/^.* //g'`
-        if [ $compilerversion = "5.5.0" ]; then
-        spack load openmpi@3.1.3~cuda%gcc@8.2.0
-        export OMPI_CC=gcc
-        export OMPI_CXX=g++
-	spack load boost@1.61.0
-	export QMCPACK_TEST_SUBMIT_NAME=GCC5-MKL-SoA-Release
-	export CTCFG="-DENABLE_SOA=1 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBLA_VENDOR=Intel10_64lp_seq -DCMAKE_PREFIX_PATH=$MKLROOT/lib -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
- 	ctest ${CTCFG} ${DONLY}
-	spack unload boost@1.61.0
-        spack unload openmpi@3.1.3~cuda%gcc@8.2.0
-        else
-        echo "Did not find expected gcc 5.5.0"
-        fi
-        spack unload gcc@5.5.0
-	export PATH=$OLD_PATH
-	export LD_LIBRARY_PATH=$OLD_LD_LIBRARY_PATH
-	export MANPATH=$OLD_MANPATH
-	export NLSPATH=$OLD_NLSPATH
-	export CPATH=$OLD_CPATH
-	export LIBRARY_PATH=$OLD_LIBRARY_PATH
-	export MKLROOT=$OLD_MKLROOT
-	;;
-    "build_gcc5_mkl_complex_soa")
-	export OLD_PATH=$PATH
-	export OLD_LD_LIBRARY_PATH=$LD_LIBRARY_PATH
-	export OLD_MANPATH=$MANPATH
-	export OLD_NLSPATH=$NLSPATH
-	export OLD_CPATH=$CPATH
-	export OLD_LIBRARY_PATH=$LIBRARY_PATH
-	export OLD_MKLROOT=$MKLROOT
-	source /opt/intel2018/mkl/bin/mklvars.sh intel64
-        spack load gcc@5.5.0
-        compilerversion=`gcc --version|grep ^gcc|sed 's/^.* //g'`
-        if [ $compilerversion = "5.5.0" ]; then
-        spack load openmpi@3.1.3~cuda%gcc@8.2.0
-        export OMPI_CC=gcc
-        export OMPI_CXX=g++
-	spack load boost@1.61.0
-	export QMCPACK_TEST_SUBMIT_NAME=GCC5-MKL-Complex-SoA-Release
-	export CTCFG="-DENABLE_SOA=1 -DQMC_COMPLEX=1 -DBUILD_AFQMC-1 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBLA_VENDOR=Intel10_64lp_seq -DCMAKE_PREFIX_PATH=$MKLROOT/lib -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
- 	ctest ${CTCFG} ${DONLY}
-	spack unload boost@1.61.0
-        spack unload openmpi@3.1.3~cuda%gcc@8.2.0
-        else
-        echo "Did not find expected gcc 5.5.0"
-        fi
-        spack unload gcc@5.5.0
-	export PATH=$OLD_PATH
-	export LD_LIBRARY_PATH=$OLD_LD_LIBRARY_PATH
-	export MANPATH=$OLD_MANPATH
-	export NLSPATH=$OLD_NLSPATH
-	export CPATH=$OLD_CPATH
-	export LIBRARY_PATH=$OLD_LIBRARY_PATH
-	export MKLROOT=$OLD_MKLROOT
-	;;
-    "build_intel2018")
-	export OLD_PATH=$PATH
-	export OLD_LD_LIBRARY_PATH=$LD_LIBRARY_PATH
-	export OLD_MANPATH=$MANPATH
-	export OLD_NLSPATH=$NLSPATH
-	export OLD_CPATH=$CPATH
-	export OLD_LIBRARY_PATH=$LIBRARY_PATH
-	export OLD_MKLROOT=$MKLROOT
-	source /opt/intel2018/bin/compilervars.sh intel64
-        spack load gcc@7.2.0
-	spack load boost@1.70.0
+module list
+if [ -e ${test_path} ]; then
 
-	#For Intel2018 we also setup QE
-	export QE_VERSION=6.4
-        # QE version 6.x unpacks to qe-; Older versions 5.x uses espresso-
-        export QE_PREFIX=qe-
-	export QE_BIN=${test_dir}/${sys}_QE/${QE_PREFIX}${QE_VERSION}/bin
-	echo --- QE_BIN set to ${QE_BIN}
-	if [ ! -e ${QE_BIN}/pw.x ]; then
-	    # Start from clean build if no executable present
-	    if [ -e ${test_dir}/${sys}_QE ]; then
-		rm -r -f ${test_dir}/${sys}_QE
-	    fi
-	    mkdir ${test_dir}/${sys}_QE
+if [ ! -e ${test_dir} ]; then
+mkdir ${test_dir}
+fi
+
+if [ -e ${test_dir} ]; then
+cd ${test_dir}
+
+# Minimize load on GitHub by maintaining a local cloned git used for all builds
+if [ ! -e qmcpack ]; then
+echo --- Cloning QMCPACK git `date`
+git clone https://github.com/QMCPACK/qmcpack.git --depth 1
+else
+cd qmcpack
+echo --- Updating local QMCPACK git `date`
+git pull
+cd ..
+fi
+
+# Sanity check cmake config file present
+if [ -e qmcpack/CMakeLists.txt ]; then
+
+export PYTHONPATH=${test_dir}/qmcpack/nexus/lib
+echo --- PYTHONPATH=$PYTHONPATH
+#
+# Quantum Espresso setup/download/build
+# Future improvement: use spack version
+#
+
+export QE_VERSION=6.4.1
+sys=build_intel2018
+# QE version 6.x unpacks to qe-; Older versions 5.x uses espresso-
+export QE_PREFIX=qe-
+export QE_BIN=${test_dir}/${sys}_QE/${QE_PREFIX}${QE_VERSION}/bin
+echo --- QE_BIN set to ${QE_BIN}
+if [ ! -e ${QE_BIN}/pw.x ]; then
+    # Start from clean build if no executable present
+    if [ -e ${test_dir}/${sys}_QE ]; then
+	rm -r -f ${test_dir}/${sys}_QE
+    fi
+    mkdir ${test_dir}/${sys}_QE
 		
-	    cd ${test_dir}/${sys}_QE
-	    cp -p ../qmcpack/external_codes/quantum_espresso/*${QE_VERSION}* .
-	    ./download_and_patch_qe${QE_VERSION}.sh
-	    cd ${QE_PREFIX}${QE_VERSION}
-            ./configure CC=mpiicc MPIF90=mpiifort F77=mpiifort --with-scalapack=intel --with-hdf5=/home/pk7/apps/hdf5-1.10.1-intel-mpi
-            make pwall # No parallel build due to sometimes broken dependencies in QE build system
-	    cd ..
-	    cd ${test_dir}/${sys}
-	else
-	    echo -- Found existing QE ${QE_VERSION} executable
-	fi
-	export QMCPACK_TEST_SUBMIT_NAME=Intel2018-Release
-	export CTCFG="-DENABLE_SOA=0 -DCMAKE_C_COMPILER=mpiicc -DCMAKE_CXX_COMPILER=mpiicpc -DQE_BIN=${QE_BIN} -DBUILD_AFQMC=0 -DBUILD_LMYENGINE_INTERFACE=1 -DHDF5_ROOT=/home/pk7/apps/hdf5-1.10.1-intel-mpi/ -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
- 	ctest ${CTCFG} ${GLOBALTCFG}
-	spack unload boost@1.70.0
-        spack unload gcc@7.2.0
-	export PATH=$OLD_PATH
-	export LD_LIBRARY_PATH=$OLD_LD_LIBRARY_PATH
-	export MANPATH=$OLD_MANPATH
-	export NLSPATH=$OLD_NLSPATH
-	export CPATH=$OLD_CPATH
-	export LIBRARY_PATH=$OLD_LIBRARY_PATH
-	export MKLROOT=$OLD_MKLROOT
-	;;
-    "build_intel2018_soa")
-	export OLD_PATH=$PATH
-	export OLD_LD_LIBRARY_PATH=$LD_LIBRARY_PATH
-	export OLD_MANPATH=$MANPATH
-	export OLD_NLSPATH=$NLSPATH
-	export OLD_CPATH=$CPATH
-	export OLD_LIBRARY_PATH=$LIBRARY_PATH
-	export OLD_MKLROOT=$MKLROOT
-	source /opt/intel2018/bin/compilervars.sh intel64
-        spack load gcc@7.2.0
-	spack load boost@1.70.0
-	export QMCPACK_TEST_SUBMIT_NAME=Intel2018-SoA-Release
-	export CTCFG="-DCMAKE_C_COMPILER=mpiicc -DCMAKE_CXX_COMPILER=mpiicpc -DBUILD_AFQMC=0 -DENABLE_SOA=1 -DBUILD_LMYENGINE_INTERFACE=1 -DHDF5_ROOT=/home/pk7/apps/hdf5-1.10.1-intel-mpi/ -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
- 	ctest ${CTCFG} ${GLOBALTCFG}
-	spack unload boost@1.70.0
-        spack unload gcc@7.2.0
-	export PATH=$OLD_PATH
-	export LD_LIBRARY_PATH=$OLD_LD_LIBRARY_PATH
-	export MANPATH=$OLD_MANPATH
-	export NLSPATH=$OLD_NLSPATH
-	export CPATH=$OLD_CPATH
-	export LIBRARY_PATH=$OLD_LIBRARY_PATH
-	export MKLROOT=$OLD_MKLROOT
-	;;
-    "build_intel2018_nompi")
-	export OLD_PATH=$PATH
-	export OLD_LD_LIBRARY_PATH=$LD_LIBRARY_PATH
-	export OLD_MANPATH=$MANPATH
-	export OLD_NLSPATH=$NLSPATH
-	export OLD_CPATH=$CPATH
-	export OLD_LIBRARY_PATH=$LIBRARY_PATH
-	export OLD_MKLROOT=$MKLROOT
-	source /opt/intel2018/bin/compilervars.sh intel64
-        spack load gcc@7.2.0
-	spack load boost@1.70.0
-	export QMCPACK_TEST_SUBMIT_NAME=Intel2018-NoMPI-Release
-	export CTCFG="-DENABLE_SOA=0 -DCMAKE_C_COMPILER=icc -DCMAKE_CXX_COMPILER=icpc -DQMC_MPI=0 -DBUILD_AFQMC=0 -DBUILD_LMYENGINE_INTERFACE=1 -DHDF5_ROOT=/home/pk7/apps/hdf5-1.10.1-intel/ -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
- 	ctest ${CTCFG} ${GLOBALTCFG}
-	spack unload boost@1.70.0
-        spack unload gcc@7.2.0
-	export PATH=$OLD_PATH
-	export LD_LIBRARY_PATH=$OLD_LD_LIBRARY_PATH
-	export MANPATH=$OLD_MANPATH
-	export NLSPATH=$OLD_NLSPATH
-	export CPATH=$OLD_CPATH
-	export LIBRARY_PATH=$OLD_LIBRARY_PATH
-	export MKLROOT=$OLD_MKLROOT
-	;;
-    "build_intel2018_nompi_soa")
-	export OLD_PATH=$PATH
-	export OLD_LD_LIBRARY_PATH=$LD_LIBRARY_PATH
-	export OLD_MANPATH=$MANPATH
-	export OLD_NLSPATH=$NLSPATH
-	export OLD_CPATH=$CPATH
-	export OLD_LIBRARY_PATH=$LIBRARY_PATH
-	export OLD_MKLROOT=$MKLROOT
-	source /opt/intel2018/bin/compilervars.sh intel64
-        spack load gcc@7.2.0
-	spack load boost@1.70.0
-	export QMCPACK_TEST_SUBMIT_NAME=Intel2018-NoMPI-SoA-Release
-	export CTCFG="-DCMAKE_C_COMPILER=icc -DCMAKE_CXX_COMPILER=icpc -DQMC_MPI=0 -DENABLE_SOA=1 -DBUILD_AFQMC=0 -DBUILD_LMYENGINE_INTERFACE=1 -DHDF5_ROOT=/home/pk7/apps/hdf5-1.10.1-intel/ -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
- 	ctest ${CTCFG} ${GLOBALTCFG}
-	spack unload boost@1.70.0
-        spack unload gcc@7.2.0
-	export PATH=$OLD_PATH
-	export LD_LIBRARY_PATH=$OLD_LD_LIBRARY_PATH
-	export MANPATH=$OLD_MANPATH
-	export NLSPATH=$OLD_NLSPATH
-	export CPATH=$OLD_CPATH
-	export LIBRARY_PATH=$OLD_LIBRARY_PATH
-	export MKLROOT=$OLD_MKLROOT
-	;;
-    "build_gcc8_complex")
-        spack load gcc@8.2.0
-        compilerversion=`gcc --version|grep ^gcc|sed 's/^.* //g'`
-        if [ $compilerversion = "8.2.0" ]; then
-        spack load openmpi@3.1.3~cuda%gcc@8.2.0
-        export OMPI_CC=gcc
-        export OMPI_CXX=g++
-	spack load boost@1.70.0
-	export QMCPACK_TEST_SUBMIT_NAME=GCC8-Complex-Release
-	export CTCFG="-DENABLE_SOA=0 -DQMC_COMPLEX=1 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -DBUILD_AFQMC=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
- 	ctest ${CTCFG} ${GLOBALTCFG}
-	spack unload boost@1.70.0
-        spack unload openmpi@3.1.3~cuda%gcc@8.2.0
-        else
-        echo "Did not find expected gcc 8.2.0"
-        fi
-        spack unload gcc@8.2.0
-	;;
-    "build_gcc8_mkl_complex")
-	export OLD_PATH=$PATH
-	export OLD_LD_LIBRARY_PATH=$LD_LIBRARY_PATH
-	export OLD_MANPATH=$MANPATH
-	export OLD_NLSPATH=$NLSPATH
-	export OLD_CPATH=$CPATH
-	export OLD_LIBRARY_PATH=$LIBRARY_PATH
-	export OLD_MKLROOT=$MKLROOT
-	source /opt/intel2018/mkl/bin/mklvars.sh intel64
-        spack load gcc@8.2.0
-        compilerversion=`gcc --version|grep ^gcc|sed 's/^.* //g'`
-        if [ $compilerversion = "8.2.0" ]; then
-        spack load openmpi@3.1.3~cuda%gcc@8.2.0
-        export OMPI_CC=gcc
-        export OMPI_CXX=g++
-	spack load boost@1.70.0
-	export QMCPACK_TEST_SUBMIT_NAME=GCC8-MKL-Complex-Release
-	export CTCFG="-DENABLE_SOA=0 -DQMC_COMPLEX=1 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBLA_VENDOR=Intel10_64lp_seq -DCMAKE_PREFIX_PATH=$MKLROOT/lib -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -DBUILD_AFQMC=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
- 	ctest ${CTCFG} ${GLOBALTCFG}
-	spack unload boost@1.70.0
-        spack unload openmpi@3.1.3~cuda%gcc@8.2.0
-        else
-        echo "Did not find expected gcc 8.2.0"
-        fi
-        spack unload gcc@8.2.0
-	export PATH=$OLD_PATH
-	export LD_LIBRARY_PATH=$OLD_LD_LIBRARY_PATH
-	export MANPATH=$OLD_MANPATH
-	export NLSPATH=$OLD_NLSPATH
-	export CPATH=$OLD_CPATH
-	export LIBRARY_PATH=$OLD_LIBRARY_PATH
-	export MKLROOT=$OLD_MKLROOT
-	;;
-    "build_intel2018_complex")
-	export OLD_PATH=$PATH
-	export OLD_LD_LIBRARY_PATH=$LD_LIBRARY_PATH
-	export OLD_MANPATH=$MANPATH
-	export OLD_NLSPATH=$NLSPATH
-	export OLD_CPATH=$CPATH
-	export OLD_LIBRARY_PATH=$LIBRARY_PATH
-	export OLD_MKLROOT=$MKLROOT
-	source /opt/intel2018/bin/compilervars.sh intel64
-        spack load gcc@7.2.0
-	spack load boost@1.70.0
-	export QMCPACK_TEST_SUBMIT_NAME=Intel2018-Complex-Release
-	export CTCFG="-DENABLE_SOA=0 -DQMC_COMPLEX=1 -DCMAKE_C_COMPILER=mpiicc -DCMAKE_CXX_COMPILER=mpiicpc -DQE_BIN=${QE_BIN} -DBUILD_LMYENGINE_INTERFACE=1 -DHDF5_ROOT=/home/pk7/apps/hdf5-1.10.1-intel-mpi/ -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -DBUILD_AFQMC=0 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
- 	ctest ${CTCFG} ${GLOBALTCFG}
-	spack unload boost@1.70.0
-        spack unload gcc@7.2.0
-	export PATH=$OLD_PATH
-	export LD_LIBRARY_PATH=$OLD_LD_LIBRARY_PATH
-	export MANPATH=$OLD_MANPATH
-	export NLSPATH=$OLD_NLSPATH
-	export CPATH=$OLD_CPATH
-	export LIBRARY_PATH=$OLD_LIBRARY_PATH
-	export MKLROOT=$OLD_MKLROOT
-	;;
-    "build_intel2018_complex_soa")
-	export OLD_PATH=$PATH
-	export OLD_LD_LIBRARY_PATH=$LD_LIBRARY_PATH
-	export OLD_MANPATH=$MANPATH
-	export OLD_NLSPATH=$NLSPATH
-	export OLD_CPATH=$CPATH
-	export OLD_LIBRARY_PATH=$LIBRARY_PATH
-	export OLD_MKLROOT=$MKLROOT
-	source /opt/intel2018/bin/compilervars.sh intel64
-        spack load gcc@7.2.0
-	spack load boost@1.70.0
-	export QMCPACK_TEST_SUBMIT_NAME=Intel2018-Complex-SoA-Release
-	export CTCFG="-DQMC_COMPLEX=1 -DENABLE_SOA=1 -DCMAKE_C_COMPILER=mpiicc -DCMAKE_CXX_COMPILER=mpiicpc -DBUILD_LMYENGINE_INTERFACE=1 -DHDF5_ROOT=/home/pk7/apps/hdf5-1.10.1-intel-mpi/ -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -DBUILD_AFQMC=0 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
- 	ctest ${CTCFG} ${GLOBALTCFG}
-	spack unload boost@1.70.0
-        spack unload gcc@7.2.0
-	export PATH=$OLD_PATH
-	export LD_LIBRARY_PATH=$OLD_LD_LIBRARY_PATH
-	export MANPATH=$OLD_MANPATH
-	export NLSPATH=$OLD_NLSPATH
-	export CPATH=$OLD_CPATH
-	export LIBRARY_PATH=$OLD_LIBRARY_PATH
-	export MKLROOT=$OLD_MKLROOT
-	;;
-    "build_intel2018_mixed")
-	export OLD_PATH=$PATH
-	export OLD_LD_LIBRARY_PATH=$LD_LIBRARY_PATH
-	export OLD_MANPATH=$MANPATH
-	export OLD_NLSPATH=$NLSPATH
-	export OLD_CPATH=$CPATH
-	export OLD_LIBRARY_PATH=$LIBRARY_PATH
-	export OLD_MKLROOT=$MKLROOT
-	source /opt/intel2018/bin/compilervars.sh intel64
-        spack load gcc@7.2.0
-	spack load boost@1.70.0
-	export QMCPACK_TEST_SUBMIT_NAME=Intel2018-Mixed-Release
-	export CTCFG="-DENABLE_SOA=0 -DQMC_MIXED_PRECISION=1 -DCMAKE_C_COMPILER=mpiicc -DCMAKE_CXX_COMPILER=mpiicpc -DBUILD_LMYENGINE_INTERFACE=1 -DHDF5_ROOT=/home/pk7/apps/hdf5-1.10.1-intel-mpi/ -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
- 	ctest ${CTCFG} ${GLOBALTCFG}
-	spack unload boost@1.70.0
-        spack unload gcc@7.2.0
-	export PATH=$OLD_PATH
-	export LD_LIBRARY_PATH=$OLD_LD_LIBRARY_PATH
-	export MANPATH=$OLD_MANPATH
-	export NLSPATH=$OLD_NLSPATH
-	export CPATH=$OLD_CPATH
-	export LIBRARY_PATH=$OLD_LIBRARY_PATH
-	export MKLROOT=$OLD_MKLROOT
-	;;
-    "build_intel2018_mixed_soa")
-	export OLD_PATH=$PATH
-	export OLD_LD_LIBRARY_PATH=$LD_LIBRARY_PATH
-	export OLD_MANPATH=$MANPATH
-	export OLD_NLSPATH=$NLSPATH
-	export OLD_CPATH=$CPATH
-	export OLD_LIBRARY_PATH=$LIBRARY_PATH
-	export OLD_MKLROOT=$MKLROOT
-	source /opt/intel2018/bin/compilervars.sh intel64
-        spack load gcc@7.2.0
-	spack load boost@1.70.0
-	export QMCPACK_TEST_SUBMIT_NAME=Intel2018-Mixed-SoA-Release
-	export CTCFG="-DQMC_MIXED_PRECISION=1 -DENABLE_SOA=1 -DCMAKE_C_COMPILER=mpiicc -DCMAKE_CXX_COMPILER=mpiicpc -DBUILD_LMYENGINE_INTERFACE=1 -DHDF5_ROOT=/home/pk7/apps/hdf5-1.10.1-intel-mpi/ -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
- 	ctest ${CTCFG} ${GLOBALTCFG}
-	spack unload boost@1.70.0
-        spack unload gcc@7.2.0
-	export PATH=$OLD_PATH
-	export LD_LIBRARY_PATH=$OLD_LD_LIBRARY_PATH
-	export MANPATH=$OLD_MANPATH
-	export NLSPATH=$OLD_NLSPATH
-	export CPATH=$OLD_CPATH
-	export LIBRARY_PATH=$OLD_LIBRARY_PATH
-	export MKLROOT=$OLD_MKLROOT
-	;;
-    "build_intel2018_complex_mixed")
-	export OLD_PATH=$PATH
-	export OLD_LD_LIBRARY_PATH=$LD_LIBRARY_PATH
-	export OLD_MANPATH=$MANPATH
-	export OLD_NLSPATH=$NLSPATH
-	export OLD_CPATH=$CPATH
-	export OLD_LIBRARY_PATH=$LIBRARY_PATH
-	export OLD_MKLROOT=$MKLROOT
-	source /opt/intel2018/bin/compilervars.sh intel64
-        spack load gcc@7.2.0
-	spack load boost@1.70.0
-	export QMCPACK_TEST_SUBMIT_NAME=Intel2018-Complex-Mixed-Release
-	export CTCFG="-DENABLE_SOA=0 -DQMC_MIXED_PRECISION=1 -DQMC_COMPLEX=1 -DCMAKE_C_COMPILER=mpiicc -DCMAKE_CXX_COMPILER=mpiicpc -DBUILD_LMYENGINE_INTERFACE=1 -DHDF5_ROOT=/home/pk7/apps/hdf5-1.10.1-intel-mpi/ -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
- 	ctest ${CTCFG} ${GLOBALTCFG}
-	spack unload boost@1.70.0
-        spack unload gcc@7.2.0
-	export PATH=$OLD_PATH
-	export LD_LIBRARY_PATH=$OLD_LD_LIBRARY_PATH
-	export MANPATH=$OLD_MANPATH
-	export NLSPATH=$OLD_NLSPATH
-	export CPATH=$OLD_CPATH
-	export LIBRARY_PATH=$OLD_LIBRARY_PATH
-	export MKLROOT=$OLD_MKLROOT
-	;;
-    "build_intel2018_complex_mixed_soa")
-	export OLD_PATH=$PATH
-	export OLD_LD_LIBRARY_PATH=$LD_LIBRARY_PATH
-	export OLD_MANPATH=$MANPATH
-	export OLD_NLSPATH=$NLSPATH
-	export OLD_CPATH=$CPATH
-	export OLD_LIBRARY_PATH=$LIBRARY_PATH
-	export OLD_MKLROOT=$MKLROOT
-	source /opt/intel2018/bin/compilervars.sh intel64
-        spack load gcc@7.2.0
-	spack load boost@1.70.0
-	export QMCPACK_TEST_SUBMIT_NAME=Intel2018-Complex-Mixed-SoA-Release
-	export CTCFG="-DQMC_MIXED_PRECISION=1 -DQMC_COMPLEX=1 -DENABLE_SOA=1 -DCMAKE_C_COMPILER=mpiicc -DCMAKE_CXX_COMPILER=mpiicpc -DBUILD_LMYENGINE_INTERFACE=1 -DHDF5_ROOT=/home/pk7/apps/hdf5-1.10.1-intel-mpi/ -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
- 	ctest ${CTCFG} ${GLOBALTCFG}
-	spack unload boost@1.70.0
-        spack unload gcc@7.2.0
-	export PATH=$OLD_PATH
-	export LD_LIBRARY_PATH=$OLD_LD_LIBRARY_PATH
-	export MANPATH=$OLD_MANPATH
-	export NLSPATH=$OLD_NLSPATH
-	export CPATH=$OLD_CPATH
-	export LIBRARY_PATH=$OLD_LIBRARY_PATH
-	export MKLROOT=$OLD_MKLROOT
-	;;
-    "build_pgi2019_nompi_mkl")
-# On oxygen PGI is setup to use the gcc 8.2.0 c++ library via makelocalrc
-	export OLD_PATH=$PATH
-	export OLD_LD_LIBRARY_PATH=$LD_LIBRARY_PATH
-	export OLD_MANPATH=$MANPATH
-	export OLD_NLSPATH=$NLSPATH
-	export OLD_CPATH=$CPATH
-	export OLD_LIBRARY_PATH=$LIBRARY_PATH
-	export OLD_MKLROOT=$MKLROOT
-	source /opt/intel2018/mkl/bin/mklvars.sh intel64
-        spack load gcc@7.2.0
-        compilerversion=`gcc --version|grep ^gcc|sed 's/^.* //g'`
-        if [ $compilerversion = "7.2.0" ]; then
-#        spack load openmpi@3.1.3~cuda%gcc@8.2.0
-#        export OMPI_CC=gcc
-#        export OMPI_CXX=g++
-	spack load boost@1.70.0
-	export QMCPACK_TEST_SUBMIT_NAME=PGI2019-NoMPI-MKL-Release
-#	export CTCFG="-DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBLA_VENDOR=Intel10_64lp_seq -DCMAKE_PREFIX_PATH=$MKLROOT/lib -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
-	export CTCFG="-DENABLE_SOA=0 -DCMAKE_C_COMPILER=pgcc -DCMAKE_CXX_COMPILER=pgc++ -DQMC_MPI=0 -DBLA_VENDOR=Intel10_64lp_seq -DCMAKE_PREFIX_PATH=$MKLROOT/lib -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
- 	ctest ${CTCFG} ${GLOBALTCFG}
-#        spack unload openmpi@3.1.3~cuda%gcc@8.2.0
-	spack unload boost@1.70.0
-        else
-        echo "Did not find expected gcc 7.2.0"
-        fi
-        spack unload gcc@7.2.0
-	export PATH=$OLD_PATH
-	export LD_LIBRARY_PATH=$OLD_LD_LIBRARY_PATH
-	export MANPATH=$OLD_MANPATH
-	export NLSPATH=$OLD_NLSPATH
-	export CPATH=$OLD_CPATH
-	export LIBRARY_PATH=$OLD_LIBRARY_PATH
-	export MKLROOT=$OLD_MKLROOT
-	;;
-    "build_pgi2019_nompi_soa_mkl")
-# On oxygen PGI is setup to use the gcc 8.2.0 c++ library via makelocalrc
-	export OLD_PATH=$PATH
-	export OLD_LD_LIBRARY_PATH=$LD_LIBRARY_PATH
-	export OLD_MANPATH=$MANPATH
-	export OLD_NLSPATH=$NLSPATH
-	export OLD_CPATH=$CPATH
-	export OLD_LIBRARY_PATH=$LIBRARY_PATH
-	export OLD_MKLROOT=$MKLROOT
-	source /opt/intel2018/mkl/bin/mklvars.sh intel64
-        spack load gcc@7.2.0
-        compilerversion=`gcc --version|grep ^gcc|sed 's/^.* //g'`
-        if [ $compilerversion = "7.2.0" ]; then
-#        spack load openmpi@3.1.3~cuda%gcc@8.2.0
-#        export OMPI_CC=gcc
-#        export OMPI_CXX=g++
-	spack load boost@1.70.0
-	export QMCPACK_TEST_SUBMIT_NAME=PGI2019-NoMPI-SoA-MKL-Release
-#	export CTCFG="-DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBLA_VENDOR=Intel10_64lp_seq -DCMAKE_PREFIX_PATH=$MKLROOT/lib -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
-	export CTCFG="-DCMAKE_C_COMPILER=pgcc -DCMAKE_CXX_COMPILER=pgc++ -DENABLE_SOA=1 -DQMC_MPI=0 -DBLA_VENDOR=Intel10_64lp_seq -DCMAKE_PREFIX_PATH=$MKLROOT/lib -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
- 	ctest ${CTCFG} ${GLOBALTCFG}
-	spack unload boost@1.70.0
-#        spack unload openmpi@3.1.3~cuda%gcc@8.2.0
-        else
-        echo "Did not find expected gcc 7.2.0"
-        fi
-        spack unload gcc@7.2.0
-	export PATH=$OLD_PATH
-	export LD_LIBRARY_PATH=$OLD_LD_LIBRARY_PATH
-	export MANPATH=$OLD_MANPATH
-	export NLSPATH=$OLD_NLSPATH
-	export CPATH=$OLD_CPATH
-	export LIBRARY_PATH=$OLD_LIBRARY_PATH
-	export MKLROOT=$OLD_MKLROOT
-	;;
-    *)
-	echo "ERROR: Unknown build type $sys"
-	;;
+    cd ${test_dir}/${sys}_QE
+    cp -p ../qmcpack/external_codes/quantum_espresso/*${QE_VERSION}* .
+    ./download_and_patch_qe${QE_VERSION}.sh
+    cd ${QE_PREFIX}${QE_VERSION}
+
+(
+   source /opt/intel2018/bin/compilervars.sh intel64
+    ./configure CC=mpiicc MPIF90=mpiifort F77=mpiifort --with-scalapack=intel --with-hdf5=/home/pk7/apps/hdf5-1.10.1-intel-mpi
+    make pwall # No parallel build due to sometimes broken dependencies in QE build system
+)
+    echo -- New QE executable `ls -l bin/pw.x`
+    cd ${test_dir}
+else
+    echo -- Found existing QE ${QE_VERSION} executable
+fi
+# Finished with QE
+
+
+echo --- Starting test builds and tests
+
+# Following line was running 2019-08-27
+#for sys in build_intel2018 build_gccnew_mkl build_intel2019 build_clangnew_mkl build_pgi2019_nompi_mkl build_gccnew_mkl_complex build_gccnew_mkl_aos build_gccnew_mkl_complex_aos  build_intel2019_complex build_intel2018_complex build_intel2018_nompi  build_intel2018_mixed build_clangnew_mkl_complex build_clangnew_mkl_nompi build_gccnew_mkl_nompi build_clangcuda build_clangcuda_complex build_clangcuda_full build_gccold_mkl build_clangold_mkl build_gccold_mkl_complex build_clangold_mkl_complex build_clangold_mkl_nompi build_gccold_mkl_nompi
+for sys in build_intel2018 build_gccnew_mkl build_intel2019 build_clangnew_mkl build_pgi2019_nompi_mkl build_gccnew_mkl_complex build_gccnew_mkl_aos build_gccnew_mkl_complex_aos  build_intel2019_complex build_intel2018_complex build_intel2018_nompi  build_intel2018_mixed build_clangnew_mkl_complex build_clangcuda build_clangcuda_complex build_clangcuda_full build_gccold_mkl build_clangold_mkl build_gccold_mkl_complex build_clangold_mkl_complex build_clangold_mkl_nompi
+do
+
+echo --- START $sys `date`
+
+cd ${test_dir}
+
+if [ -e $sys ]; then
+rm -r -f $sys
+fi
+mkdir $sys
+cd $sys
+
+
+# Set appropriate environment
+if [[ $sys == *"gccnew"* ]]; then
+ourenv=gccnewbuild
+fi
+if [[ $sys == *"gccold"* ]]; then
+ourenv=gccoldbuild
+fi
+if [[ $sys == *"clangnew"* ]]; then
+ourenv=clangnewbuild
+fi
+if [[ $sys == *"clangold"* ]]; then
+ourenv=clangoldbuild
+fi
+if [[ $sys == *"clangcuda"* ]]; then
+ourenv=clangcudabuild
+fi
+if [[ $sys == *"intel"* ]]; then
+ourenv=gccintelbuild
+fi
+if [[ $sys == *"pgi2019"* ]]; then
+ourenv=gccnewbuild
+fi
+
+
+#
+# FUTURE UPGRADE: Use spack environments  
+#
+# 2019-06 Not possible to install a clean environment with e.g. only a single libxml2
+# Load individual modules and treat ambiguities by hand instead 
+#
+#echo Build is $sys using env $ourenv
+#spack env activate $ourenv
+#spack load libxml2
+#spack load cmake
+#spack load openmpi
+#spack load hdf5
+#spack load boost
+
+
+#
+# Versions should be consistent with setup script
+#
+
+# GCC
+# Dates at https://gcc.gnu.org/releases.html
+gcc_vnew=9.2.0 # 2019-08-12
+gcc_vold=7.2.0 # 2017-08-14 
+
+#For Intel:
+#Intel 2019.5
+#Intel 2018.5 
+gcc_vintel=7.4.0 # 2018-12-06
+
+#PGI 19.4
+# makelocalrc configured with 8.3.0 currently
+gcc_vpgi=8.3.0 # 2019-02-22
+
+# LLVM 
+# Dates at http://releases.llvm.org/
+llvm_vnew=9.0.0 # 2019-09-19
+llvm_vold=5.0.1 # 2017-12-21
+# for CUDA 10.1 update 2
+llvm_vcuda=8.0.0 # 2019-03-
+
+# HDF5
+hdf5_vnew=1.10.5 # Releeased 2019-02-28
+hdf5_vold=1.8.19 # Released 2017-06-16
+
+# CMake 
+# Dates at https://cmake.org/files/
+cmake_vnew=3.15.4 # Released 2019-05-15
+cmake_vold=3.8.2 # Released 2017-05-31
+
+# OpenMPI
+# Dates at https://www.open-mpi.org/software/ompi/v4.0/
+ompi_vnew=4.0.1 # Released 2019-03-26
+ompi_vold=2.1.2 # Released 2017-09-20
+
+libxml2_vnew=2.9.9 # Released 2019-01-03 See http://xmlsoft.org/sources/
+libxml2_vold=2.9.1 # Released 2013-04-19
+
+# FFTW
+# Dates at http://www.fftw.org/release-notes.html
+fftw_vnew=3.3.8 # Released 2018-05-28
+fftw_vold=3.3.4 # Released 2014-03-16
+
+# BOOST
+# Dates at https://www.boost.org/users/history/
+boost_vnew=1.70.0 # Released 2019-04-12
+boost_vold=1.65.1 # Released 2016-05-13
+
+spack load git
+
+spack load python@2.7.16%gcc@9.2.0 # Has numpy, h5py, pandas "activated" and available for import
+
+case "$ourenv" in
+gccnewbuild) echo $ourenv
+	spack load boost@$boost_vnew%gcc@$gcc_vnew
+	spack load gcc@$gcc_vnew
+	spack load hdf5@$hdf5_vnew%gcc@$gcc_vnew~mpi
+	spack load cmake@$cmake_vnew
+	spack load openmpi@$ompi_vnew%gcc@$gcc_vnew
+	spack load libxml2@$libxml2_vnew%gcc@$gcc_vnew
+	spack load fftw@$fftw_vnew%gcc@$gcc_vnew
+;;
+gccoldbuild) echo $ourenv
+	spack load boost@$boost_vold%gcc@$gcc_vold
+	spack load gcc@$gcc_vold
+	spack load hdf5@$hdf5_vold%gcc@$gcc_vold~mpi
+	spack load cmake@$cmake_vold%gcc@$gcc_vold
+	spack load openmpi@$ompi_vold%gcc@$gcc_vold
+	spack load libxml2@$libxml2_vold%gcc@$gcc_vold
+	spack load fftw@$fftw_vold%gcc@$gcc_vold
+;;
+gccintelbuild) echo $ourenv
+	spack load boost@$boost_vnew%gcc@$gcc_vnew
+	spack load gcc@$gcc_vintel # Old enough C++ library for Intel compiler
+	spack load hdf5@$hdf5_vnew%gcc@$gcc_vnew~mpi
+	spack load cmake@$cmake_vnew
+# Use Intel MPI with Intel builds
+#	spack load openmpi@$ompi_vnew%gcc@$gcc_vnew 
+	spack load libxml2@$libxml2_vnew%gcc@$gcc_vnew
+	spack load fftw@$fftw_vnew%gcc@$gcc_vnew
+;;
+clangnewbuild) echo $ourenv
+	spack load llvm@$llvm_vnew
+	spack load boost@$boost_vnew%gcc@$gcc_vnew
+	spack load gcc@$gcc_vnew
+	spack load hdf5@$hdf5_vnew%gcc@$gcc_vnew~mpi
+	spack load cmake@$cmake_vnew
+	spack load openmpi@$ompi_vnew%gcc@$gcc_vnew
+	spack load libxml2@$libxml2_vnew%gcc@$gcc_vnew
+	spack load fftw@$fftw_vnew%gcc@$gcc_vnew
+;;
+clangoldbuild) echo $ourenv
+	spack load llvm@$llvm_vold%gcc@$gcc_vold
+	spack load boost@$boost_vold%gcc@$gcc_vold
+	spack load gcc@$gcc_vold
+	spack load hdf5@$hdf5_vold%gcc@$gcc_vold~mpi
+	spack load cmake@$cmake_vold%gcc@$gcc_vold
+	spack load openmpi@$ompi_vold%gcc@$gcc_vold
+	spack load libxml2@$libxml2_vold%gcc@$gcc_vold
+	spack load fftw@$fftw_vold%gcc@$gcc_vold
+;;
+clangcudabuild) echo $ourenv
+	spack load llvm@$llvm_vcuda
+	spack load boost@$boost_vnew%gcc@$gcc_vnew
+	spack load gcc@$gcc_vnew
+	spack load hdf5@$hdf5_vnew%gcc@$gcc_vnew~mpi
+	spack load cmake@$cmake_vnew
+	spack load openmpi@$ompi_vnew%gcc@$gcc_vnew
+	spack load libxml2@$libxml2_vnew%gcc@$gcc_vnew
+	spack load fftw@$fftw_vnew%gcc@$gcc_vnew
+;;
+*) echo "Problems: Unknown build environment"
+	exit 1
+;;
 esac
+module list
+
+# Use subshell to allow Intel compiler setup to contaminate the environment
+(
+
+if [[ $sys == *"intel2019"* ]]; then
+source /opt/intel2019/bin/compilervars.sh intel64
+fi
+if [[ $sys == *"intel2018"* ]]; then
+source /opt/intel2018/bin/compilervars.sh intel64
+fi
+
+# Construct test name and configure flags
+# Compiler and major version, MPI or not
+if [[ $sys == *"gcc"* ]]; then
+compilerversion=`gcc --version|grep ^gcc|sed 's/^.* //g'|sed 's/\..*//g'`
+if [[ $sys == *"nompi"* ]]; then
+QMCPACK_TEST_SUBMIT_NAME=GCC${compilerversion}-NoMPI
+CTCFG="-DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DQMC_MPI=0"
+else
+QMCPACK_TEST_SUBMIT_NAME=GCC${compilerversion}
+CTCFG="-DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DQMC_MPI=1"
+export OMPI_CC=gcc
+export OMPI_CXX=g++
+fi
+fi
+
+#Clang/LLVM
+if [[ $sys == *"clang"* ]]; then
+compilerversion=`clang --version|grep ^clang|sed -e 's/^.* version //g' -e 's/(.*//g'|sed 's/\..*//g'`
+if [[ $sys == *"nompi"* ]]; then
+QMCPACK_TEST_SUBMIT_NAME=Clang${compilerversion}-NoMPI
+CTCFG="-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DQMC_MPI=0"
+else
+QMCPACK_TEST_SUBMIT_NAME=Clang${compilerversion}
+CTCFG="-DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DQMC_MPI=1"
+export OMPI_CC=clang
+export OMPI_CXX=clang++
+fi
+fi
+
+# Intel
+if [[ $sys == *"intel"* ]]; then
+compilerversion=`icc -dumpversion|sed -e 's/\..*//g'`
+if [[ $sys == *"nompi"* ]]; then
+QMCPACK_TEST_SUBMIT_NAME=Intel20${compilerversion}-NoMPI
+CTCFG="-DCMAKE_C_COMPILER=icc -DCMAKE_CXX_COMPILER=icpc -DQMC_MPI=0"
+else
+QMCPACK_TEST_SUBMIT_NAME=Intel20${compilerversion}
+CTCFG="-DCMAKE_C_COMPILER=mpiicc -DCMAKE_CXX_COMPILER=mpiicpc -DQMC_MPI=1"
+# Add QE to any Intel MPI builds.
+# Do not add to non Intel MPI because ctest will use mpirun from "wrong" MPI
+CTCFG="$CTCFG -DQE_BIN=${QE_BIN}" 
+fi
+fi
+
+# PGI
+if [[ $sys == *"pgi"* ]]; then
+compilerversion=`pgcc -V|grep pgcc|sed 's/^pgcc //g'|sed 's/\..*//g'`
+if [[ $sys == *"nompi"* ]]; then
+QMCPACK_TEST_SUBMIT_NAME=PGI20${compilerversion}-NoMPI
+CTCFG="-DCMAKE_C_COMPILER=pgcc -DCMAKE_CXX_COMPILER=pgc++ -DQMC_MPI=0"
+else
+CTCFG="-DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DQMC_MPI=1"
+export OMPI_CC=pgcc
+export OMPI_CXX=pgc++
+fi
+fi
+
+# CUDA
+if [[ $sys == *"cuda"* ]]; then
+QMCPACK_TEST_SUBMIT_NAME=${QMCPACK_TEST_SUBMIT_NAME}-CUDA
+CTCFG="$CTCFG -DQMC_CUDA=1"
+fi
+
+# MKL
+# MKLROOT set in sourced Intel compilervars.sh 
+if [[ $sys == *"mkl"* ]]; then
+QMCPACK_TEST_SUBMIT_NAME=${QMCPACK_TEST_SUBMIT_NAME}-MKL
+CTCFG="$CTCFG -DBLA_VENDOR=Intel10_64lp_seq -DCMAKE_PREFIX_PATH=$MKLROOT/lib"
+fi
+
+# Complex
+if [[ $sys == *"complex"* ]]; then
+QMCPACK_TEST_SUBMIT_NAME=${QMCPACK_TEST_SUBMIT_NAME}-Complex
+CTCFG="$CTCFG -DQMC_COMPLEX=1"
+fi
+
+# Mixed/Full precision
+if [[ $sys == *"mixed"* ]]; then
+QMCPACK_TEST_SUBMIT_NAME=${QMCPACK_TEST_SUBMIT_NAME}-Mixed
+CTCFG="$CTCFG -DQMC_MIXED_PRECISION=1"
+fi
+if [[ $sys == *"full"* ]]; then
+QMCPACK_TEST_SUBMIT_NAME=${QMCPACK_TEST_SUBMIT_NAME}-Full
+CTCFG="$CTCFG -DQMC_MIXED_PRECISION=0"
+fi
+
+# SoA/AoS build (label aos only)
+if [[ $sys == *"aos"* ]]; then
+QMCPACK_TEST_SUBMIT_NAME=${QMCPACK_TEST_SUBMIT_NAME}-AoS
+CTCFG="$CTCFG -DENABLE_SOA=0"
+else
+CTCFG="$CTCFG -DENABLE_SOA=1"
+fi
+
+# Boilerplate for all tests
+CTCFG="$CTCFG -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1"
+
+# Selectively enable AFQMC due to more stringent compiler requirements
+if [[ $sys == *"complex"* ]]; then
+case "$sys" in
+*gccnew*|*clangnew*|*clangcuda*|*intel*) echo "AFQMC is enabled for this complex build"
+CTCFG="$CTCFG -DBUILD_AFQMC=1"
+;;
+*) echo "AFQMC is disabled for this complex build (either unsupported or unchecked)"
+CTCFG="$CTCFG -DBUILD_AFQMC=0"
+;;
+esac
+fi
+
+# Adjust which tests are run to control overall runtime
+#build_intel2018|build_intel2018_complex|build_gccnew_mkl|build_gccnew_mkl_complex|build_llvmnew_mkl_complex) echo "Running full test set for $sys"
+case "$sys" in
+*gccnew_mkl|*gccnew_mkl_complex|*intel2019|*intel2019_complex|*clangnew_mkl|*clangcuda) echo "Running full ("less limited") test set for $sys"
+#*gccnew_mkl|*gccnew_mkl_complex|*intel2018|*intel2018_complex|*intel2019|*intel2019_complex|*clangnew_mkl*|*pgi2019_nompi_mkl|*clangcuda) echo "Running full ("less limited") test set for $sys"
+THETESTS=$LESSLIMITEDTESTS
+;;
+*) echo "Running limited test set for $sys"
+THETESTS=$LIMITEDTESTS
+;;
+esac
+
+export QMCPACK_TEST_SUBMIT_NAME=${QMCPACK_TEST_SUBMIT_NAME}-Release
+
+echo $QMCPACK_TEST_SUBMIT_NAME
+echo $CTCFG
+if [[ $localonly == "yes" ]]; then
+echo --- START cmake `date` 
+cmake ${CTCFG} ${GLOBALTCFG} -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 ../qmcpack/ 
+echo --- END cmake `date`
+echo --- START make `date` 
+make -j 16
+echo --- END make `date`
+echo --- START ctest `date` 
+ctest ${GLOBALTCFG} ${THETESTS}
+echo --- END ctest `date`
+else
+echo --- START ctest `date` 
+echo ctest ${CTCFG} ${GLOBALTCFG} -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release ${THETESTS}
+nice ctest ${CTCFG} ${GLOBALTCFG} -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release ${THETESTS}
+echo --- END ctest `date`
+fi
+
+)
+
+module purge
 
 echo --- END $sys `date`
 done

@@ -67,7 +67,7 @@ struct CuspCorrectionParameters
   /// Flag to indicate the correction should be recalculated
   int redo;
 
-  CuspCorrectionParameters() : Rc(0.0), C(0.0), sg(1.0), redo(0), alpha(0.0) {}
+  CuspCorrectionParameters() : Rc(0.0), C(0.0), sg(1.0), alpha(0.0), redo(0) {}
 };
 
 
@@ -89,8 +89,8 @@ public:
     TinyVector<RealType, 3> dr = 0;
     dr[0]                      = r;
 
-    targetPtcl->R[0]             = sourcePtcl->R[curCenter];
-    TinyVector<RealType, 3> ddr2 = targetPtcl->makeMove(0, dr);
+    targetPtcl->R[0] = sourcePtcl->R[curCenter];
+    targetPtcl->makeMove(0, dr);
     Psi1->evaluate(*targetPtcl, 0, val1);
 
     return val1[curOrb];
@@ -101,8 +101,8 @@ public:
     TinyVector<RealType, 3> dr = 0;
     dr[0]                      = r;
 
-    targetPtcl->R[0]             = sourcePtcl->R[curCenter];
-    TinyVector<RealType, 3> ddr2 = targetPtcl->makeMove(0, dr);
+    targetPtcl->R[0] = sourcePtcl->R[curCenter];
+    targetPtcl->makeMove(0, dr);
     Psi1->evaluate(*targetPtcl, 0, val1, grad1, lap1);
 
     val  = val1[curOrb];
@@ -114,7 +114,7 @@ public:
       : targetPtcl(targetP), sourcePtcl(sourceP), curOrb(0), curCenter(0)
   {
     Psi1     = Phi;
-    int norb = Psi1->OrbitalSetSize;
+    int norb = Psi1->getOrbitalSetSize();
     val1.resize(norb);
     grad1.resize(norb);
     lap1.resize(norb);
@@ -127,12 +127,6 @@ public:
   }
 
 private:
-  /// Index of atomic center
-  int curCenter;
-
-  /// Index of orbital
-  int curOrb;
-
   /// Temporary storage for real wavefunction values
   ValueVector_t val1;
   GradVector_t grad1;
@@ -142,6 +136,12 @@ private:
   ParticleSet* targetPtcl;
   /// source ParticleSet
   ParticleSet* sourcePtcl;
+
+  /// Index of orbital
+  int curOrb;
+
+  /// Index of atomic center
+  int curCenter;
 
   SPOSetPtr Psi1;
 };

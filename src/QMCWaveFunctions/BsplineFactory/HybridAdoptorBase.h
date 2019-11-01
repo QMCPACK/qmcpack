@@ -48,15 +48,13 @@ struct AtomicOrbitalSoA
   SoaSphericalTensor<ST> Ylm;
   vContainer_type l_vals;
   vContainer_type r_power_minus_l;
-  ///expose the pointer to reuse the reader and only assigned with create_spline
-  ///also used as identifier of shallow copy
-  AtomicSplineType* MultiSpline;
-  MultiBspline1D<ST>* SplineInst;
+  ///1D spline of radial functions of all the orbitals
+  std::shared_ptr<MultiBspline1D<ST>> SplineInst;
 
   vContainer_type localV, localG, localL;
 
   AtomicOrbitalSoA(int Lmax)
-      : Ylm(Lmax), MultiSpline(nullptr), SplineInst(nullptr), lmax(Lmax), lm_tot((Lmax + 1) * (Lmax + 1))
+      : lmax(Lmax), lm_tot((Lmax + 1) * (Lmax + 1)), Ylm(Lmax)
   {
     r_power_minus_l.resize(lm_tot);
     l_vals.resize(lm_tot);
@@ -66,12 +64,6 @@ struct AtomicOrbitalSoA
     rmin      = std::exp(std::log(std::numeric_limits<ST>::min()) / std::max(Lmax, 1));
     rmin      = std::max(rmin, std::numeric_limits<ST>::epsilon());
     rmin_sqrt = std::max(rmin, std::sqrt(std::numeric_limits<ST>::epsilon()));
-  }
-
-  ~AtomicOrbitalSoA()
-  {
-    if (MultiSpline != nullptr)
-      delete SplineInst;
   }
 
   inline void resizeStorage(size_t Nb)
@@ -84,9 +76,9 @@ struct AtomicOrbitalSoA
     create_spline();
   }
 
-  void bcast_tables(Communicate* comm) { chunked_bcast(comm, MultiSpline); }
+  void bcast_tables(Communicate* comm) { chunked_bcast(comm, SplineInst->getSplinePtr()); }
 
-  void gather_tables(Communicate* comm, std::vector<int>& offset) { gatherv(comm, MultiSpline, Npad, offset); }
+  void gather_tables(Communicate* comm, std::vector<int>& offset) { gatherv(comm, SplineInst->getSplinePtr(), Npad, offset); }
 
   template<typename PT, typename VT>
   inline void set_info(const PT& R,
@@ -116,9 +108,8 @@ struct AtomicOrbitalSoA
     grid.start = 0.0;
     grid.end   = spline_radius;
     grid.num   = spline_npoints;
-    SplineInst = new MultiBspline1D<ST>();
+    SplineInst = std::make_shared<MultiBspline1D<ST>>();
     SplineInst->create(grid, bc, lm_tot * Npad);
-    MultiSpline = &(SplineInst->spline_m);
   }
 
   inline void flush_zero() { SplineInst->flush_zero(); }
@@ -130,7 +121,7 @@ struct AtomicOrbitalSoA
 
   bool read_splines(hdf_archive& h5f)
   {
-    einspline_engine<AtomicSplineType> bigtable(MultiSpline);
+    einspline_engine<AtomicSplineType> bigtable(SplineInst->getSplinePtr());
     int lmax_in, spline_npoints_in;
     ST spline_radius_in;
     bool success = true;
@@ -153,7 +144,7 @@ struct AtomicOrbitalSoA
     success      = success && h5f.writeEntry(spline_npoints, "spline_npoints");
     success      = success && h5f.writeEntry(lmax, "l_max");
     success      = success && h5f.writeEntry(pos, "position");
-    einspline_engine<AtomicSplineType> bigtable(MultiSpline);
+    einspline_engine<AtomicSplineType> bigtable(SplineInst->getSplinePtr());
     success = success && h5f.writeEntry(bigtable, "radial_spline");
     return success;
   }
@@ -222,20 +213,17 @@ struct AtomicOrbitalSoA
     if (r > rmin)
     {
       rinv  = 1.0 / r;
-      drx   = dr[0];
-      dry   = dr[1];
-      drz   = dr[2];
-      rhatx = drx * rinv;
-      rhaty = dry * rinv;
-      rhatz = drz * rinv;
     }
     else
     {
       rinv = 0;
-      drx  = dr[0];
-      dry  = dr[1];
-      drz  = dr[2];
     }
+    drx   = dr[0];
+    dry   = dr[1];
+    drz   = dr[2];
+    rhatx = drx * rinv;
+    rhaty = dry * rinv;
+    rhatz = drz * rinv;
 
     Ylm.evaluateVGL(drx, dry, drz);
     const ST* restrict Ylm_v  = Ylm[0];
@@ -645,7 +633,7 @@ struct HybridAdoptorBase
   template<typename VV>
   inline void interpolate_buffer_v(VV& psi, const VV& psi_AO) const
   {
-    const RealType cone(1), ctwo(2);
+    const RealType cone(1);
     for (size_t i = 0; i < psi.size(); i++)
       psi[i] = psi_AO[i] * f + psi[i] * (cone - f);
   }

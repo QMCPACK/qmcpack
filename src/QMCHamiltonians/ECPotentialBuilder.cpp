@@ -17,6 +17,7 @@
 #include "QMCHamiltonians/ECPComponentBuilder.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "QMCHamiltonians/CoulombPBCAB.h"
+#include "QMCHamiltonians/NonLocalECPComponent.h"
 #include "QMCHamiltonians/L2Potential.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Numerics/OneDimNumGridFunctor.h"
@@ -63,19 +64,23 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
 #ifdef ENABLE_OFFLOAD
   NLPP_algo = "batched"; // set "batched" as the default
 #endif
+  std::string use_DLA("no");
   std::string pbc("yes");
   std::string forces("no");
+
   OhmmsAttributeSet pAttrib;
   pAttrib.add(ecpFormat, "format");
   pAttrib.add(NLPP_algo, "algorithm");
+  pAttrib.add(use_DLA, "DLA");
   pAttrib.add(pbc, "pbc");
   pAttrib.add(forces, "forces");
   pAttrib.put(cur);
+
   bool doForces = (forces == "yes") || (forces == "true");
-  //const xmlChar* t=xmlGetProp(cur,(const xmlChar*)"format");
-  //if(t != NULL) {
-  //  ecpFormat= (const char*)t;
-  //}
+  if (use_DLA == "yes")
+    app_log() << "    Using determinant localization approximation (DLA)" << std::endl;
+  if (NLPP_algo == "batched" && use_DLA == "yes")
+    myComm->barrier_and_abort("Batched pseudopotential evaluation has not been made available to DLA!");
   if (ecpFormat == "xml")
   {
     useXmlFormat(cur);
@@ -122,30 +127,29 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
   }
   if (hasNonLocalPot)
   {
-    //resize the sphere
-    RealType rc2 = 0.0;
 #ifdef QMC_CUDA
     NonLocalECPotential_CUDA* apot = new NonLocalECPotential_CUDA(IonConfig, targetPtcl, targetPsi, usePBC, doForces);
 #else
     NonLocalECPotential* apot =
-        new NonLocalECPotential(IonConfig, targetPtcl, targetPsi, doForces, NLPP_algo == "batched");
+        new NonLocalECPotential(IonConfig, targetPtcl, targetPsi, doForces);
 #endif
     int nknot_max = 0;
     for (int i = 0; i < nonLocalPot.size(); i++)
     {
       if (nonLocalPot[i])
       {
-        rc2       = std::max(rc2, nonLocalPot[i]->Rmax);
-        nknot_max = std::max(nknot_max, nonLocalPot[i]->nknot);
-        apot->add(i, nonLocalPot[i]);
+        nknot_max = std::max(nknot_max, nonLocalPot[i]->getNknot());
+        if (NLPP_algo == "batched")
+          nonLocalPot[i]->initVirtualParticle(targetPtcl);
+        if (use_DLA == "yes")
+          nonLocalPot[i]->enableDLA();
+        apot->addComponent(i, nonLocalPot[i]);
       }
     }
     app_log() << "\n  Using NonLocalECP potential \n"
               << "    Maximum grid on a sphere for NonLocalECPotential: " << nknot_max << std::endl;
     if (NLPP_algo == "batched")
       app_log() << "    Using batched ratio computing in NonLocalECP" << std::endl;
-
-    targetPtcl.checkBoundBox(2 * rc2);
 
     targetH.addOperator(apot, "NonLocalECP");
   }
@@ -192,7 +196,6 @@ void ECPotentialBuilder::useXmlFormat(xmlNodePtr cur)
       if (speciesIndex < ion_species.getTotalNum())
       {
         app_log() << std::endl << "  Adding pseudopotential for " << ionName << std::endl;
-        RealType rmax = 0.0;
 
         ECPComponentBuilder ecp(ionName, myComm);
         if (format == "xml")
@@ -225,17 +228,12 @@ void ECPotentialBuilder::useXmlFormat(xmlNodePtr cur)
           {
             hasNonLocalPot            = true;
             nonLocalPot[speciesIndex] = ecp.pp_nonloc;
-            rmax                      = std::max(rmax, ecp.pp_nonloc->Rmax);
           }
           if (ecp.pp_L2)
           {
             hasL2Pot            = true;
             L2Pot[speciesIndex] = ecp.pp_L2;
-            // should this be added or not?
-            //rmax=std::max(rmax,ecp.pp_L2->rcut);
           }
-          int rcutIndex                        = ion_species.addAttribute("rmax_core");
-          ion_species(rcutIndex, speciesIndex) = rmax;
           if (chargeIndex == -1)
           {
             app_error() << "  Ion species " << ionName << " needs parameter \'charge\'" << std::endl;
@@ -366,8 +364,8 @@ void ECPotentialBuilder::useSimpleTableFormat()
       }
       if (mynnloc)
       {
-        mynnloc->lmax = lmax;
-        mynnloc->Rmax = rmax;
+        mynnloc->setLmax(lmax);
+        mynnloc->setRmax(rmax);
         app_log() << "    Maximum cutoff of NonLocalECP " << rmax << std::endl;
       }
     }

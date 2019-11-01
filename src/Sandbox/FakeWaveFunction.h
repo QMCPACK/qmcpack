@@ -25,7 +25,7 @@ namespace qmcplusplus
     using valT=OHMMS_PRECISION;
     using posT=TinyVector<OHMMS_PRECISION,OHMMS_DIM>;
 
-    valT LogValue;
+    std::complex<valT> LogValue;
 
     virtual ~FakeWaveFunctionBase(){}
     virtual void evaluateLog(ParticleSet& P)=0;

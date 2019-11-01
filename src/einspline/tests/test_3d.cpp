@@ -22,6 +22,7 @@
 
 #include <stdio.h>
 #include <limits>
+#include "config/stdlib/Constants.h"
 
 TEST_CASE("double_3d_natural","[einspline]")
 {

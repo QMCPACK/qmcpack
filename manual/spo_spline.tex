@@ -40,10 +40,7 @@ the expense of increased memory use, which is easily overcome, however, by the l
 aggregate memory available per node through OpenMP/MPI hybrid QMC.
 
 The input xml block for the spline SPOs is given in Listing~\ref{listing:splineSPOs}. A list of options is given in 
-Table~\ref{table:splineSPOs}. \texttt{QMCPACK} has a very useful command line option \texttt{--save\_wfs}, which allows for dumping 
-the real-space B-spline coefficient table into an h5 file on the disk.
-When the orbital transformation from k space to B-spline requires more than the available amount of scratch memory on the compute nodes, 
-users can perform this step on fat nodes and transfer back the h5 file for QMC calculations.
+Table~\ref{table:splineSPOs}.
 
 \begin{table}[h]
 \begin{center}
@@ -110,6 +107,9 @@ Additional information:
 \item \texttt{precision}. Only effective on CPU versions without mixed precision, ``single" is always imposed with mixed precision. Using single precision not only saves memory use but also speeds up the B-spline evaluation. We recommend using single precision since we saw little chance of really compromising the accuracy of calculation.
 \item \texttt{meshfactor}. The ratio of actual grid spacing of B-splines used in QMC calculation with respect to the original one calculated from h5. A smaller meshfactor saves memory use but reduces accuracy. The effects are similar to reducing plane wave cutoff in DFT calculations. Use with caution! 
 \item \texttt{twistnum}. If positive, it is the index. We recommend not taking this way since the indexing might show some uncertainty. If negative, the super twist is referred by \texttt{twist}.
+\item \texttt{save\_coefs}. If yes, dump the real-space B-spline coefficient table into an h5 file on the disk.
+When the orbital transformation from k space to B-spline requires more than the available amount of scratch memory on the compute nodes,
+users can perform this step on fat nodes and transfer back the h5 file for QMC calculations.
 \item \texttt{gpusharing}. If enabled, spline data is shared across multiple GPUs on a given computational node. For example, on a
 two-GPU-per-node system, each GPU would have half of the
 orbitals. This enables larger overall spline tables than would normally fit in

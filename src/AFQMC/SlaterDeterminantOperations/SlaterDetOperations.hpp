@@ -74,6 +74,14 @@ class SlaterDetOperations:
     }
 
     template<class... Args>
+    void BatchedDensityMatrices(Args&&... args) {
+        boost::apply_visitor(
+            [&](auto&& a){a.BatchedDensityMatrices(std::forward<Args>(args)...);},
+            *this
+        );
+    }
+
+    template<class... Args>
     void BatchedOverlap(Args&&... args) {
         boost::apply_visitor(
             [&](auto&& a){a.BatchedOverlap(std::forward<Args>(args)...);},

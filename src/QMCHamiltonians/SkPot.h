@@ -16,7 +16,7 @@
  */
 #ifndef QMCPLUSPLUS_SK_POT_H
 #define QMCPLUSPLUS_SK_POT_H
-#include <QMCHamiltonians/QMCHamiltonianBase.h>
+#include <QMCHamiltonians/OperatorBase.h>
 #include <LongRange/StructFact.h>
 namespace qmcplusplus
 {
@@ -24,7 +24,7 @@ namespace qmcplusplus
  *
  * <estimator name="sk" type="sk" debug="no"/>
  */
-class SkPot : public QMCHamiltonianBase
+class SkPot : public OperatorBase
 {
 public:
   SkPot(ParticleSet& elns);
@@ -35,7 +35,7 @@ public:
 
   bool put(xmlNodePtr cur);
   bool get(std::ostream& os) const;
-  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 
   inline void FillFk()
   {

@@ -63,6 +63,20 @@ def parse_args(args, comm):
                             type=int, default=None,
                             help='Set upper limit on number of determinants to '
                             'generate.')
+        parser.add_argument('-r', '--real-ham', dest='real_chol',
+                            type=int, default=None,
+                            help='Write integrals as real numbers')
+        parser.add_argument('-p', '--phdf', dest='phdf',
+                            action='store_true', default=False,
+                            help='Use parallel hdf5.')
+        parser.add_argument('--low', dest='low_thresh',
+                            type=float, default=0.1,
+                            help='Lower threshold for non-integer occupancies'
+                            'to include in multi-determinant exansion.')
+        parser.add_argument('--high', dest='high_thresh',
+                            type=float, default=0.95,
+                            help='Upper threshold for non-integer occupancies'
+                            'to include in multi-determinant exansion.')
         parser.add_argument('-v', '--verbose', action='count', default=0,
                             help='Verbose output.')
 
@@ -125,9 +139,16 @@ def main(args):
                   qmc_input=options.qmc_input,
                   wfn_file=options.wfn_file,
                   write_hamil=(not options.disable_ham),
-                  ndet_max=options.ndet_max)
+                  ndet_max=options.ndet_max,
+                  real_chol=options.real_chol,
+                  phdf=options.phdf,
+                  low=options.low_thresh,
+                  high=options.high_thresh)
     if comm.rank == 0:
         write_metadata(options, sha1, cwd, date_time)
+
+    if comm.rank == 0:
+        print("\n # Finished.")
 
 if __name__ == '__main__':
 

@@ -68,10 +68,13 @@ struct SplineAdoptorReader : public BsplineReaderBase
   // transform cG to radial functions
   virtual void create_atomic_centers_Gspace(Vector<std::complex<double>>& cG, Communicate& band_group_comm, int iorb) {}
 
+  /** for exporting data from multi_UBspline_3d_d to multi_UBspline_3d_z
+   *  This is only used by the legacy EinsplineSet class. To be deleted together with EinsplineSet.
+   */
   void export_MultiSpline(multi_UBspline_3d_z** target)
   {
-    *target                                 = new multi_UBspline_3d_z;
-    multi_UBspline_3d_d* source_MultiSpline = (multi_UBspline_3d_d*)bspline->MultiSpline;
+    *target                        = new multi_UBspline_3d_z;
+    const auto* source_MultiSpline = (multi_UBspline_3d_d*)bspline->SplineInst->getSplinePtr();
 
     (*target)->spcode   = MULTI_U3D;
     (*target)->tcode    = DOUBLE_COMPLEX;
@@ -120,7 +123,10 @@ struct SplineAdoptorReader : public BsplineReaderBase
     // (*target)->lapl3 = (complex_double*) malloc (6*sizeof(double)*(*target)->z_stride);
   }
 
-  void export_MultiSpline(multi_UBspline_3d_d** target) { *target = (multi_UBspline_3d_d*)bspline->MultiSpline; }
+  /** for exporting data from multi_UBspline_3d_d to multi_UBspline_3d_z
+   *  This is only used by the legacy EinsplineSet class. To be deleted together with EinsplineSet.
+   */
+  void export_MultiSpline(multi_UBspline_3d_d** target) { *target = (multi_UBspline_3d_d*)bspline->SplineInst->getSplinePtr(); }
 
   SPOSet* create_spline_set(int spin, const BandInfoGroup& bandgroup)
   {

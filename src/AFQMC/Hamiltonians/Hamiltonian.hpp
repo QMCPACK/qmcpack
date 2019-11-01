@@ -61,7 +61,7 @@ class dummy_Hamiltonian
     return 0;
   }
 
-  boost::multi::array<ComplexType,2> getH1() const{ return boost::multi::array<ComplexType,2>{}; }
+  boost::multi::array<ValueType,2> getH1() const{ return boost::multi::array<ValueType,2>{}; }
 
   boost::multi::array<SPComplexType,1> halfRotatedHij(WALKER_TYPES type, PsiT_Matrix *Alpha, PsiT_Matrix *Beta)
   {
@@ -146,7 +146,7 @@ class Hamiltonian: public boost::variant<dummy::dummy_Hamiltonian,
         );
     }
 
-    boost::multi::array<ComplexType,2> getH1() const{
+    boost::multi::array<ValueType,2> getH1() const{
         return boost::apply_visitor(
             [&](auto&& a){return a.getH1();},
             *this

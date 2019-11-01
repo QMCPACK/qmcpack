@@ -36,7 +36,7 @@ class FactorizedSparseHamiltonian: public OneBodyHamiltonian
   using csr_matrix_view = shm_csr_matrix::template matrix_view<int>;
 
 
-  FactorizedSparseHamiltonian(AFQMCInfo const& info, xmlNodePtr cur, boost::multi::array<ComplexType,2>&& h,
+  FactorizedSparseHamiltonian(AFQMCInfo const& info, xmlNodePtr cur, boost::multi::array<ValueType,2>&& h,
                               shm_csr_matrix&& v2_, TaskGroup_& tg_, ValueType nucE=0, ValueType fzcE=0):
                                     OneBodyHamiltonian(info,std::move(h),nucE,fzcE),
                                     TG(tg_),V2_fact(std::move(v2_)),
@@ -52,7 +52,6 @@ class FactorizedSparseHamiltonian: public OneBodyHamiltonian
     if( !distribute_Ham )
       assert(V2_fact.global_origin()[0]==0 && V2_fact.global_origin()[1]==0);
 
-    xmlNodePtr curRoot=cur;
     OhmmsAttributeSet oAttrib;
     oAttrib.add(name,"name");
     oAttrib.put(cur);
@@ -94,7 +93,7 @@ class FactorizedSparseHamiltonian: public OneBodyHamiltonian
   FactorizedSparseHamiltonian& operator=(FactorizedSparseHamiltonian const& other) = delete;
   FactorizedSparseHamiltonian& operator=(FactorizedSparseHamiltonian && other) = default;
 
-  boost::multi::array<ComplexType,2> getH1() const{ return OneBodyHamiltonian::getH1(); }
+  boost::multi::array<ValueType,2> getH1() const{ return OneBodyHamiltonian::getH1(); }
 
   boost::multi::array<ComplexType,1> halfRotatedHij(WALKER_TYPES type, PsiT_Matrix *Alpha, PsiT_Matrix *Beta); 
 

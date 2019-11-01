@@ -21,7 +21,6 @@
 #include <QMCWaveFunctions/BsplineFactory/BsplineReaderBase.h>
 #include "OhmmsData/AttributeSet.h"
 #include "Message/CommOperators.h"
-#include "qmc_common.h"
 
 namespace qmcplusplus
 {
@@ -97,7 +96,7 @@ void BsplineReaderBase::setCommon(xmlNodePtr cur)
     app_log() << "WARNING: disable orbital normalization check!" << std::endl;
     checkNorm = false;
   }
-  saveSplineCoefs = (saveCoefs == "yes" || qmc_common.save_wfs);
+  saveSplineCoefs = saveCoefs == "yes";
 }
 
 SPOSet* BsplineReaderBase::create_spline_set(int spin, xmlNodePtr cur)

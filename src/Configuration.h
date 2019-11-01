@@ -62,9 +62,13 @@ struct QMCTraits
   typedef QTBase::TensorType TensorType;
   ///define other types
   typedef OHMMS_INDEXTYPE IndexType;
-  typedef QTFull::RealType EstimatorRealType;
+  typedef QTFull::RealType FullPrecRealType;
+  typedef QTFull::ValueType FullPrecValueType;
   ///define PropertyList_t
-  typedef RecordNamedProperty<EstimatorRealType> PropertySetType;
+  typedef RecordNamedProperty<FullPrecRealType> PropertySetType;
+
+  // Type for particle group index pairs
+  using PtclGrpIndexes = std::vector<std::pair<int,int>>;
 };
 
 /** Particle traits to use UniformGridLayout for the ParticleLayout.

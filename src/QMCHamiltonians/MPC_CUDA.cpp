@@ -53,7 +53,7 @@ void MPC_CUDA::initBreakup()
   //  app_log() << "    Finished copying MPC spline to GPU memory.\n";
 }
 
-QMCHamiltonianBase* MPC_CUDA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+OperatorBase* MPC_CUDA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   // return new MPC(qp, Ecut);
   MPC_CUDA* newMPC = new MPC_CUDA(*this);

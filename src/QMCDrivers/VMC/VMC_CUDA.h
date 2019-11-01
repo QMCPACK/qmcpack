@@ -65,7 +65,7 @@ private:
   VMCcuda& operator=(const VMCcuda&) = delete;
   ///hide initialization from the main function
   bool checkBounds(std::vector<PosType>& newpos, std::vector<bool>& valid);
-
+  QMCRunType getRunType() { return QMCRunType::VMC; }
   void resetRun();
 
   opt_variables_type dummy;

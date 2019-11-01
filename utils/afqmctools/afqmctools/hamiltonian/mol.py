@@ -13,7 +13,8 @@ from afqmctools.utils.pyscf_utils import load_from_pyscf_chk_mol
 
 
 def write_hamil_mol(scf_data, hamil_file, chol_cut,
-                    verbose=True, cas=None, ortho_ao=False, nelec=None):
+                    verbose=True, cas=None, ortho_ao=False, nelec=None,
+                    real_chol=False):
     """Write QMCPACK hamiltonian from pyscf scf calculation on mol object.
     """
     hcore, chol_vecs, nelec, enuc = generate_hamiltonian(scf_data,
@@ -38,16 +39,15 @@ def write_hamil_mol(scf_data, hamil_file, chol_cut,
                "%f"%(1-float(chol_vecs.nnz)/nelem))
         print(" # Total memory required for ERI tensor: %13.8e GB"%(mem))
     write_qmcpack_cholesky(hcore, chol_vecs, nelec, nbasis, enuc,
-                           filename=hamil_file)
+                           filename=hamil_file, real_chol=real_chol)
 
 def write_qmcpack_cholesky(hcore, chol, nelec, nmo, e0=0.0,
                            filename='hamiltonian.h5', real_chol=False):
     with h5py.File(filename, 'w') as fh5:
+        fh5['Hamiltonian/Energies'] = numpy.array([e0.real,0])
         if real_chol:
-            fh5['Hamiltonian/Energies'] = numpy.array([e0])
             fh5['Hamiltonian/hcore'] = hcore
         else:
-            fh5['Hamiltonian/Energies'] = numpy.array([e0.real, e0.imag])
             shape = hcore.shape
             hcore = hcore.astype(numpy.complex128).view(numpy.float64)
             hcore = hcore.reshape(shape+(2,))
@@ -419,185 +419,3 @@ def gab(A, B):
     inv_O = scipy.linalg.inv((A.conj().T).dot(B))
     GAB = B.dot(inv_O.dot(A.conj().T))
     return GAB
-
-
-def modified_cholesky_direct(M, kappa, verbose=False, cmax=10):
-    """Modified cholesky decomposition of matrix.
-
-    See, e.g. [Motta17]_
-
-    Parameters
-    ----------
-    M : :class:`numpy.ndarray`
-        Positive semi-definite, symmetric matrix.
-    kappa : float
-        Accuracy desired.
-    verbose : bool
-        If true print out convergence progress.
-    cmax : int
-        Number of cholesky vectors to store N_gamma = cmax M.
-
-    Returns
-    -------
-    chol_vecs : :class:`numpy.ndarray`
-        Matrix of cholesky vectors.
-    """
-    # matrix of residuals.
-    delta = numpy.copy(M.diagonal())
-    nchol_max = int(cmax*M.shape[0]**0.5)
-    # index of largest diagonal element of residual matrix.
-    nu = numpy.argmax(numpy.abs(delta))
-    delta_max = delta[nu]
-    if verbose:
-        print ("# max number of cholesky vectors = %d"%nchol_max)
-        header = ['iteration', 'max_residual', 'time']
-        print(format_fixed_width_strings(header))
-        init = [delta_max]
-        print('{:17d} '.format(0)+format_fixed_width_floats(init))
-        # print ("# iteration %d: delta_max = %f"%(0, delta_max.real))
-    # Store for current approximation to input matrix.
-    Mapprox = numpy.zeros(M.shape[0], dtype=M.dtype)
-    chol_vecs = numpy.zeros((nchol_max, M.shape[0]), dtype=M.dtype)
-    nchol = 0
-    chol_vecs[0] = numpy.copy(M[:,nu])/delta_max**0.5
-    while abs(delta_max) > kappa:
-        # Update cholesky vector
-        start = time.time()
-        Mapprox += chol_vecs[nchol]*chol_vecs[nchol].conj()
-        delta = M.diagonal() - Mapprox
-        nu = numpy.argmax(numpy.abs(delta))
-        delta_max = numpy.abs(delta[nu])
-        nchol += 1
-        Munu0 = numpy.dot(chol_vecs[:nchol,nu].conj(), chol_vecs[:nchol,:])
-        chol_vecs[nchol] = (M[:,nu] - Munu0) / (delta_max)**0.5
-        if verbose:
-            step_time = time.time() - start
-            out = [delta_max, step_time]
-            print('{:17d} '.format(nchol)+format_fixed_width_floats(out))
-
-    return numpy.array(chol_vecs[:nchol])
-
-
-def read_ascii_integrals(filename, symmetry=8, verbose=True):
-    """Read in integrals from file.
-
-    Returns
-    -------
-    h1e : :class:`numpy.ndarray`
-        One-body part of the Hamiltonian.
-    h2e : :class:`numpy.ndarray`
-        Two-electron integrals.
-    ecore : float
-        Core contribution to the total energy.
-    nelec : int
-        Number of electrons.
-    """
-    assert(symmetry==1 or symmetry==4 or symmetry==8)
-    if verbose:
-        print ("# Reading integrals in plain text FCIDUMP format.")
-    f = open(filename)
-    while True:
-        line = f.readline()
-        if 'END' in line:
-            break
-        for i in line.split(','):
-            if 'NORB' in i:
-                nbasis = int(i.split('=')[1])
-            elif 'NELEC' in i:
-                nelec = int(i.split('=')[1])
-    if verbose:
-        print("# Number of orbitals: {}".format(nbasis))
-        print("# Number of electrons: {}".format(nelec))
-    h1e = numpy.zeros((nbasis, nbasis))
-    h2e = numpy.zeros((nbasis, nbasis, nbasis, nbasis))
-    lines = f.readlines()
-    for l in lines:
-        s = l.split()
-        # ascii fcidump uses Chemist's notation for integrals.
-        # each line contains v_{ijkl} i k j l
-        # Note (ik|jl) = <ij|kl>.
-        # Assuming real integrals
-        try:
-            integral = float(s[0])
-        except ValueError:
-            ig = ast.literal_eval(s[0].strip())
-            # Hack for the moment, not dealing with complex fcidumps, just
-            # the format
-            integral = ig[0]
-        i, k, j, l = [int(x) for x in s[1:]]
-        if i == j == k == l == 0:
-            ecore = integral
-        elif j == 0 and l == 0:
-            # <i|k> = <k|i>
-            h1e[i-1,k-1] = integral
-            h1e[k-1,i-1] = integral
-        elif i > 0  and j > 0 and k > 0 and l > 0:
-            # Assuming 8 fold symmetry in integrals.
-            # <ij|kl> = <ji|lk> = <kl|ij> = <lk|ji> =
-            # <kj|il> = <li|jk> = <il|kj> = <jk|li>
-            # (ik|jl)
-            h2e[i-1,k-1,j-1,l-1] = integral
-            if symmetry == 1: 
-                continue
-            # (jl|ik)
-            h2e[j-1,l-1,i-1,k-1] = integral
-            # (ki|lj)
-            h2e[k-1,i-1,l-1,j-1] = integral
-            # (lj|ki)
-            h2e[l-1,j-1,k-1,i-1] = integral
-            if symmetry == 4: 
-                continue
-            # (ki|jl)
-            h2e[k-1,i-1,j-1,l-1] = integral
-            # (lj|ik)
-            h2e[l-1,j-1,i-1,k-1] = integral
-            # (ik|lj)
-            h2e[i-1,k-1,l-1,j-1] = integral
-            # (jl|ki)
-            h2e[j-1,l-1,k-1,i-1] = integral
-    return h1e, h2e, ecore, nelec
-
-def from_qmcpack_cholesky(filename):
-    with h5py.File(filename, 'r') as fh5:
-        real_ints = False
-        try:
-            enuc = fh5['Hamiltonian/Energies'][:].view(numpy.complex128).ravel()[0]
-        except ValueError:
-            enuc = fh5['Hamiltonian/Energies'][:][0]
-            real_ints = True
-        dims = fh5['Hamiltonian/dims'][:]
-        nmo = dims[3]
-        try:
-            hcore = fh5['Hamiltonian/hcore'][:]
-            hcore = hcore.view(numpy.complex128).reshape(nmo,nmo)
-        except KeyError:
-            # Old sparse format.
-            hcore = fh5['Hamiltonian/H1'][:].view(numpy.complex128).ravel()
-            idx = fh5['Hamiltonian/H1_indx'][:]
-            row_ix = idx[::2]
-            col_ix = idx[1::2]
-            hcore = scipy.sparse.csr_matrix((hcore, (row_ix, col_ix))).toarray()
-            hcore = numpy.tril(hcore, -1) + numpy.tril(hcore, 0).conj().T
-        except ValueError:
-            # Real format.
-            hcore = fh5['Hamiltonian/hcore'][:]
-            real_ints = True
-        chunks = dims[2]
-        idx = []
-        h2 = []
-        for ic in range(chunks):
-            idx.append(fh5['Hamiltonian/Factorized/index_%i'%ic][:])
-            if real_ints:
-                h2.append(fh5['Hamiltonian/Factorized/vals_%i'%ic][:].ravel())
-            else:
-                h2.append(fh5['Hamiltonian/Factorized/vals_%i'%ic][:].view(numpy.complex128).ravel())
-        idx = numpy.array([i for sub in idx for i in sub])
-        h2 = numpy.array([v for sub in h2 for v in sub])
-        nalpha = dims[4]
-        nbeta = dims[5]
-        nchol = dims[7]
-        row_ix = idx[::2]
-        col_ix = idx[1::2]
-        chol_vecs = scipy.sparse.csr_matrix((h2, (row_ix, col_ix)),
-                                            shape=(nmo*nmo,nchol))
-        return (hcore, chol_vecs, enuc, int(nmo), (int(nalpha), int(nbeta)))

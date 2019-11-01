@@ -81,14 +81,14 @@ class SlaterDetOperations_shared : public SlaterDetOperations_base<std::allocato
 
     // C must live in shared memory for this routine to work as expected
     template<class MatA, class MatB, class MatC>
-    T MixedDensityMatrix(const MatA& hermA, const MatB& B, MatC&& C, T LogOverlapFactor, communicator& comm, bool compact=false) {
-      int NMO = hermA.size(1);
-      int NAEA = hermA.size(0);
+    T MixedDensityMatrix(const MatA& hermA, const MatB& B, MatC&& C, T LogOverlapFactor, communicator& comm, bool compact=false, bool herm=true) {
+      int NMO = (herm?hermA.size(1):hermA.size(0));
+      int NAEA = (herm?hermA.size(0):hermA.size(1));
       set_shm_buffer(comm,NAEA*(NAEA+NMO));
       assert(SM_TMats->num_elements() >= NAEA*(NAEA+NMO));
       boost::multi::array_ref<T,2> TNN(to_address(SM_TMats->origin()), {NAEA,NAEA});
       boost::multi::array_ref<T,2> TNM(to_address(SM_TMats->origin())+NAEA*NAEA, {NAEA,NMO});  
-      return SlaterDeterminantOperations::shm::MixedDensityMatrix<T>(hermA,B,std::forward<MatC>(C),LogOverlapFactor,TNN,TNM,IWORK,WORK,comm,compact);
+      return SlaterDeterminantOperations::shm::MixedDensityMatrix<T>(hermA,B,std::forward<MatC>(C),LogOverlapFactor,TNN,TNM,IWORK,WORK,comm,compact,herm);
     }
 
     template<class integer, class MatA, class MatB, class MatC, class MatQ>
@@ -113,13 +113,13 @@ class SlaterDetOperations_shared : public SlaterDetOperations_base<std::allocato
     }
 
     template<class MatA, class MatB>
-    T Overlap(const MatA& hermA, const MatB& B, T LogOverlapFactor, communicator& comm) { 
-      int NAEA = hermA.size(0);
+    T Overlap(const MatA& hermA, const MatB& B, T LogOverlapFactor, communicator& comm, bool herm=true) { 
+      int NAEA = (herm?hermA.size(0):hermA.size(1));
       set_shm_buffer(comm,2*NAEA*NAEA);
       assert(SM_TMats->num_elements() >= 2*NAEA*NAEA);
       boost::multi::array_ref<T,2> TNN(to_address(SM_TMats->origin()), {NAEA,NAEA});
       boost::multi::array_ref<T,2> TNN2(to_address(SM_TMats->origin())+NAEA*NAEA, {NAEA,NAEA});
-      return SlaterDeterminantOperations::shm::Overlap<T>(hermA,B,LogOverlapFactor,TNN,IWORK,TNN2,comm);
+      return SlaterDeterminantOperations::shm::Overlap<T>(hermA,B,LogOverlapFactor,TNN,IWORK,TNN2,comm,herm);
     }
 
     template<typename integer, class MatA, class MatB, class MatC>
@@ -171,12 +171,17 @@ class SlaterDetOperations_shared : public SlaterDetOperations_base<std::allocato
 
     // C[nwalk, M, N]
     template<class MatA, class MatB, class MatC, class TVec>
-    void BatchedMixedDensityMatrix(const MatA& hermA, std::vector<MatB> &Bi, MatC&& C, T LogOverlapFactor, TVec&& ovlp, bool compact=false) {
+    void BatchedMixedDensityMatrix(const MatA& hermA, std::vector<MatB> &Bi, MatC&& C, T LogOverlapFactor, TVec&& ovlp, bool compact=false, bool herm=true) {
+      APP_ABORT(" Error: Batched routines not compatible with SlaterDetOperations_shared::BatchedMixedDensityMatrix \n");
+    }
+
+    template<class MatA, class MatB, class MatC, class TVec>
+    void BatchedDensityMatrices(const std::vector<MatA>& hermA, std::vector<MatB> &Bi, std::vector<MatC>& C, T LogOverlapFactor, TVec&& ovlp, bool compact=false, bool herm=true) {
       APP_ABORT(" Error: Batched routines not compatible with SlaterDetOperations_shared::BatchedMixedDensityMatrix \n");
     }
 
     template<class MatA, class MatB, class TVec>
-    void BatchedOverlap(const MatA& hermA, std::vector<MatB> &Bi, T LogOverlapFactor, TVec&& ovlp) {
+    void BatchedOverlap(const MatA& hermA, std::vector<MatB> &Bi, T LogOverlapFactor, TVec&& ovlp, bool herm=true) {
       APP_ABORT(" Error: Batched routines not compatible with SlaterDetOperations_shared::BatchedOverlap \n");
     }
 

@@ -44,9 +44,6 @@ inline void count_Qk_x_Rl(WALKER_TYPES walker_type, SPComplexType EJX, TaskGroup
   assert(Qk.size(0) == Ta.size(0));
   assert(Qk.size(1) == Rl.size(0));
   assert(Rl.size(1) == Rl.size(1));
-  int nvec = Qk.size(1);
-  int nk = kN-k0;
-  int norb = lN-l0;
   int ncores = TG.getTotalCores(), coreid = TG.getCoreID();
 
   bool amIAlpha = true;
@@ -123,8 +120,6 @@ inline void count_Qk_x_Rl(WALKER_TYPES walker_type, SPComplexType EJX, TaskGroup
         for(int k=k0, ka=0; k<kN; k++) {
           for(int a=0; a<NAEA; a++, ka++) {
             for(int lb=bl0; lb<blN; lb++) { // lb = (l-l0)*NAEB+b
-              int b = lb%NAEB;
-              int l = lb/NAEB+l0;
               Type qkalb = Ta[ka][lb];  // Ta(ka,lb)
               if(std::abs( EJX*qkalb ) > cut)
                 ++sz[a*NMO+k];
@@ -180,9 +175,6 @@ inline void Qk_x_Rl(WALKER_TYPES walker_type, SPComplexType EJX, TaskGroup_& TG,
   assert(Qk.size(0) == Ta.size(0));
   assert(Qk.size(1) == Rl.size(0));
   assert(Rl.size(1) == Rl.size(1));
-  int nvec = Qk.size(1);
-  int nk = kN-k0;
-  int norb = lN-l0;
   int ncores = TG.getTotalCores(), coreid = TG.getCoreID();
 
   bool amIAlpha = true;
@@ -217,12 +209,13 @@ inline void Qk_x_Rl(WALKER_TYPES walker_type, SPComplexType EJX, TaskGroup_& TG,
           int kb = (k-k0)*NAEA+b;
           Type qkalb = Ta[ka][lb];  // Ta(ka,lb)
           Type qlakb = Ta[kb][la];  // Ta(kb,la)
-          if(std::abs( EJX*four*qkalb - two*qlakb ) > cut)
+          if(std::abs( EJX*four*qkalb - two*qlakb ) > cut) {
             if(a!=b || k<l) {
               emplace(Vijkl,std::forward_as_tuple(a*NMO+k, b*NMO+l, two*(EJX*four*qkalb - two*qlakb)));
             } else if(k==l) {
               emplace(Vijkl,std::forward_as_tuple(a*NMO+k, b*NMO+l, (EJX*four*qkalb - two*qlakb)));
             }
+          }
         }
       }
     }
@@ -249,11 +242,13 @@ inline void Qk_x_Rl(WALKER_TYPES walker_type, SPComplexType EJX, TaskGroup_& TG,
               int kb = (k-k0)*NAEA+b;
               Type qkalb = Ta[ka][lb];  // Ta(ka,lb)
               Type qlakb = Ta[kb][la];  // Ta(kb,la)
-              if(std::abs( EJX*qkalb - qlakb ) > cut)
-                if(a!=b || k<l)
+              if(std::abs( EJX*qkalb - qlakb ) > cut) {
+                if(a!=b || k<l) {
                   emplace(Vijkl, std::forward_as_tuple(a*NMO+k, b*NMO+l, two*(EJX*qkalb - qlakb)) );
-                else if(k==l)
+                } else if(k==l) {
                   emplace(Vijkl, std::forward_as_tuple(a*NMO+k, b*NMO+l, EJX*qkalb - qlakb) );
+                }
+              }
             }
           }
         }
@@ -294,11 +289,13 @@ inline void Qk_x_Rl(WALKER_TYPES walker_type, SPComplexType EJX, TaskGroup_& TG,
               int kb = (k-k0)*NAEB+b;
               Type qkalb = Ta[ka][lb];  // Ta(ka,lb)
               Type qlakb = Ta[kb][la];  // Ta(kb,la)
-              if(std::abs( EJX*qkalb - qlakb ) > cut)
-                if(a!=b || k<l)
+              if(std::abs( EJX*qkalb - qlakb ) > cut) {
+                if(a!=b || k<l) {
                   emplace(Vijkl, std::forward_as_tuple(NMO*NAEA+a*NMO+k-NMO, NMO*NAEA+b*NMO+l-NMO, two*(EJX*qkalb - qlakb)) );
-                else if(k==l)
+                } else if(k==l) {
                   emplace(Vijkl, std::forward_as_tuple(NMO*NAEA+a*NMO+k-NMO, NMO*NAEA+b*NMO+l-NMO, EJX*qkalb - qlakb) );
+                }
+              }
             }
           }
         }

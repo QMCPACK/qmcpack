@@ -1,5 +1,5 @@
 #ifdef COMPILATION_INSTRUCTIONS
-$CXX -O3 -std=c++14 -Wall -Wfatal-errors $0 -o $0.x && time $0.x $@ && rm -f $0.x; exit
+c++ -O3 -std=c++14 -Wall -Wfatal-errors -DBOOST_RESULT_OF_USE_DECLTYPE $0 -o $0.x && $0.x $@ && rm -f $0.x; exit
 #endif
 
 #include "../array_ref.hpp"

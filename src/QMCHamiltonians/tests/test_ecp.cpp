@@ -16,13 +16,12 @@
 #include "Configuration.h"
 #include "Numerics/Quadrature.h"
 #include "QMCHamiltonians/ECPComponentBuilder.h"
+#include "QMCHamiltonians/NonLocalECPComponent.h"
 
 //for wavefunction
 #include "OhmmsData/Libxml2Doc.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
-#include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbital.h"
-#include "QMCWaveFunctions/Jastrow/OneBodyJastrowOrbital.h"
 #include "QMCWaveFunctions/Jastrow/BsplineFunctor.h"
 #include "QMCWaveFunctions/Jastrow/RadialJastrowBuilder.h"
 //for nonlocal moves
@@ -32,12 +31,20 @@
 #include "Lattice/ParticleBConds.h"
 #include "Particle/ParticleSet.h"
 #include "Particle/DistanceTableData.h"
+#ifndef ENABLE_SOA
 #include "Particle/SymmetricDistanceTableData.h"
+#endif
 #include "QMCApp/ParticleSetPool.h"
 #include "LongRange/EwaldHandler3D.h"
 
 namespace qmcplusplus
 {
+
+QMCTraits::RealType getSplinedSOPot(SOECPComponent* so_comp, int l, double r)
+{
+  return so_comp->sopp_m[l]->splint(r); 
+}
+
 TEST_CASE("CheckSphericalIntegration", "[hamiltonian]")
 {
   // Use the built-in quadrature rule check
@@ -100,6 +107,46 @@ TEST_CASE("ReadFileBuffer_ecp", "[hamiltonian]")
   // TODO: add more checks that pseudopotential file was read correctly
 }
 
+TEST_CASE("ReadFileBuffer_sorep", "[hamiltonian]")
+{
+  OHMMS::Controller->initialize(0, NULL);
+  Communicate* c = OHMMS::Controller;
+
+  ECPComponentBuilder ecp("test_read_sorep", c);
+
+  bool okay = ecp.read_pp_file("Zn.ccECP-SO.xml");
+  REQUIRE(okay);
+
+  REQUIRE(ecp.Zeff == 20);
+
+  double rlist[5]={0.001, 0.500, 1.000, 2.000, 10.000};
+  double so_p[5]={0.0614288376917,  0.10399457248,4.85269969439e-06, 4.6722444395e-25,0.000};
+  double so_d[5]={0.0850898886265,0.0029447669325,6.35734161822e-08, 2.8386702794e-27,0.000};
+  double so_f[5]={-0.284560515732,0.0071131554209,6.79818097092e-05,1.64868282163e-15,0.000}; 
+  
+  for(int i=0; i<5; i++)
+  {
+    double r=rlist[i];
+    double so_p_ref=so_p[i];
+    double so_d_ref=so_d[i];
+    double so_f_ref=so_f[i];
+
+    double so_p_val = getSplinedSOPot(ecp.pp_so,0,r);
+    double so_d_val = getSplinedSOPot(ecp.pp_so,1,r);
+    double so_f_val = getSplinedSOPot(ecp.pp_so,2,r);
+
+    REQUIRE(so_p_val == Approx(so_p_ref));
+    REQUIRE(so_d_val == Approx(so_d_ref));
+    REQUIRE(so_f_val == Approx(so_f_ref));
+  }
+
+  // TODO: add more checks that pseudopotential file was read correctly
+}
+
+
+
+
+
 TEST_CASE("ReadFileBuffer_reopen", "[hamiltonian]")
 {
   // Initializing with no Communicate pointer under MPI,
@@ -119,6 +166,11 @@ TEST_CASE("ReadFileBuffer_reopen", "[hamiltonian]")
   read_okay = buf.read_contents();
   REQUIRE(read_okay);
   REQUIRE(buf.length > 14);
+}
+
+void copyGridUnrotatedForTest(NonLocalECPComponent& nlpp)
+{
+  nlpp.rrotsgrid_m = nlpp.sgridxyz_m;
 }
 
 TEST_CASE("Evaluate_ecp", "[hamiltonian]")
@@ -158,11 +210,11 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
   int iatnumber                 = ion_species.addAttribute("atomic_number");
   ion_species(pChargeIdx, pIdx) = 1;
   ion_species(iatnumber, pIdx)  = 11;
-  ions.Lattice.copy(Lattice);
+  ions.Lattice = Lattice;
   ions.createSK();
 
 
-  elec.Lattice.copy(Lattice);
+  elec.Lattice = Lattice;
   elec.setName("e");
   elec.create(2);
   elec.R[0][0] = 2.0;
@@ -194,7 +246,7 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
   elec.resetGroups();
 
   //Cool.  Now to construct a wavefunction with 1 and 2 body jastrow (no determinant)
-  TrialWaveFunction psi = TrialWaveFunction(c);
+  TrialWaveFunction psi(c);
 
   //Add the two body jastrow
   const char* particles = "<tmp> \
@@ -213,9 +265,8 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
 
   xmlNodePtr jas2 = xmlFirstElementChild(root);
 
-  RadialJastrowBuilder jastrow(elec, psi);
-  bool build_okay = jastrow.put(jas2);
-  REQUIRE(build_okay);
+  RadialJastrowBuilder jastrow(c, elec);
+  psi.addComponent(jastrow.buildComponent(jas2), "RadialJastrow");
   // Done with two body jastrow.
 
   //Add the one body jastrow.
@@ -234,9 +285,8 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
 
   xmlNodePtr jas1 = xmlFirstElementChild(root);
 
-  RadialJastrowBuilder jastrow1bdy(elec, psi, ions);
-  bool build_okay2 = jastrow1bdy.put(jas1);
-  REQUIRE(build_okay2);
+  RadialJastrowBuilder jastrow1bdy(c, elec, ions);
+  psi.addComponent(jastrow1bdy.buildComponent(jas1), "RadialJastrow");
 
   //Now we set up the nonlocal ECP component.
   ECPComponentBuilder ecp("test_read_ecp", c);
@@ -248,7 +298,7 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
   //This line is required because the randomized quadrature Lattice is set by
   //random number generator in NonLocalECPotential.  We take the unrotated
   //quadrature Lattice instead...
-  nlpp->rrotsgrid_m = nlpp->sgridxyz_m;
+  copyGridUnrotatedForTest(*nlpp);
 
 
   //Not testing nonlocal moves here, but the PP functions take this as an argument
@@ -284,7 +334,7 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
     const auto& dist  = myTable.Distances[jel];
     const auto& displ = myTable.Displacements[jel];
     for (int iat = 0; iat < ions.getTotalNum(); iat++)
-      if (nlpp != nullptr && dist[iat] < nlpp->Rmax)
+      if (nlpp != nullptr && dist[iat] < nlpp->getRmax())
       {
         Value1 += nlpp->evaluateOne(elec, iat, psi, jel, dist[iat], RealType(-1) * displ[iat], 0, Txy);
 
@@ -353,7 +403,7 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
     for (int nn = myTable.M[iat], iel = 0; nn < myTable.M[iat + 1]; nn++, iel++)
     {
       const RealType r(myTable.r(nn));
-      if (r > nlpp->Rmax)
+      if (r > nlpp->getRmax())
         continue;
       Value1 += nlpp->evaluateOne(elec, iat, psi, iel, r, myTable.dr(nn), 0, Txy);
     }

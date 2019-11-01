@@ -33,10 +33,6 @@ def write_wfn_mol(scf_data, ortho_ao, filename, wfn=None,
     C = scf_data['mo_coeff']
     X = scf_data['X']
     uhf = scf_data['isUHF']
-    if uhf:
-        walker_type = 'uhf'
-    else:
-        walker_type = 'rhf'
     # For RHF only nalpha entries will be filled.
     if uhf:
         norb = C[0].shape[0]
@@ -61,11 +57,12 @@ def write_wfn_mol(scf_data, ortho_ao, filename, wfn=None,
             if uhf:
                 print(" # Warning: UHF trial wavefunction can only be used of "
                       "working in ortho AO basis.")
-    write_qmcpack_wfn(filename, (numpy.array([1.0+0j]),wfn), walker_type,
+    write_qmcpack_wfn(filename, (numpy.array([1.0+0j]),wfn), uhf,
                       nelec, norb, verbose=verbose)
     return nelec
 
-def write_qmcpack_wfn(filename, wfn, walker_type, nelec, norb, init=None,
+#def write_qmcpack_wfn(filename, wfn, walker_type, nelec, norb, init=None,
+def write_qmcpack_wfn(filename, wfn, uhf, nelec, norb, init=None,
                       orbmat=None, verbose=False):
     # User defined wavefunction.
     # PHMSD is a list of tuple of (ci, occa, occb).
@@ -83,14 +80,18 @@ def write_qmcpack_wfn(filename, wfn, walker_type, nelec, norb, init=None,
     fh5 = h5py.File(filename, 'a')
     nalpha, nbeta = nelec
     # TODO: FIX for GHF eventually.
-    if walker_type == 'ghf':
-        walker_type = 3
-    elif walker_type == 'uhf':
+#    if walker_type == 'ghf':
+#        walker_type = 3
+#    elif walker_type == 'uhf':
+#        walker_type = 2
+#        uhf = True
+#    else:
+#        walker_type = 1
+#        uhf = False
+    if uhf:
         walker_type = 2
-        uhf = True
     else:
         walker_type = 1
-        uhf = False
     if wfn_type == 'PHMSD':
         walker_type = 2
     if wfn_type == 'NOMSD':
@@ -186,19 +187,19 @@ def write_phmsd(fh5, occa, occb, nelec, norb, init=None, orbmat=None):
         add_dataset(fh5, 'Psi0_alpha',
                     to_qmcpack_complex(init[:,occa[0]].copy()))
         add_dataset(fh5, 'Psi0_beta',
-                    to_qmcpack_complex(init[:,occb[0]-norb].copy()))
+                    to_qmcpack_complex(init[:,occb[0]].copy()))
     if orbmat is not None:
-        fh5['type'] = numpy.string_(['mixed'])
+        fh5['type'] = 1
         # Expects conjugate transpose.
         oa = scipy.sparse.csr_matrix(orbmat[0].conj().T)
         write_nomsd_single(fh5, oa, 0)
         ob = scipy.sparse.csr_matrix(orbmat[1].conj().T)
         write_nomsd_single(fh5, ob, 1)
     else:
-        fh5['type'] = numpy.string_(['occ'])
+        fh5['type'] = 0
     occs = numpy.zeros((len(occa), na+nb), dtype=numpy.int32)
     occs[:,:na] = numpy.array(occa)
-    occs[:,na:] = numpy.array(occb)
+    occs[:,na:] = norb+numpy.array(occb)
     # Reading 1D array currently in qmcpack.
     fh5['occs'] = occs.ravel()
 

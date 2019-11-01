@@ -195,13 +195,13 @@ public:
    *such that \f[ G[i]+={\bf \nabla}_i J({\bf R}) \f]
    *and \f[ L[i]+=\nabla^2_i J({\bf R}). \f]
    */
-  RealType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
+  LogValueType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
   {
     LogValue                         = 0.0;
     U                                = 0.0;
     const auto& d_table = P.getDistTable(myTableIndex);
     RealType dudr, d2udr2;
-    for (int i = 0; i < d_table.size(SourceIndex); i++)
+    for (int i = 0; i < d_table.sources(); i++)
     {
       FT* func = Fs[i];
       if (func == nullptr)
@@ -232,7 +232,7 @@ public:
     grad_grad_psi = 0.0;
     ident.diagonal(1.0);
 
-    for (int i = 0; i < d_table.size(SourceIndex); i++)
+    for (int i = 0; i < d_table.sources(); i++)
     {
       FT* func = Fs[i];
       if (func == nullptr)
@@ -256,7 +256,7 @@ public:
   {
     const auto& d_table = P.getDistTable(myTableIndex);
     curVal                           = 0.0;
-    for (int i = 0; i < d_table.size(SourceIndex); ++i)
+    for (int i = 0; i < d_table.sources(); ++i)
       if (Fs[i] != nullptr)
         curVal += Fs[i]->evaluate(d_table.Temp[i].r1);
     return std::exp(U[iat] - curVal);
@@ -275,7 +275,7 @@ public:
     //  ratios[k]=std::exp(x-myr[k]);
     std::vector<RealType> myr(ratios.size(), U[VP.refPtcl]);
     const auto& d_table = VP.getDistTable(myTableIndex);
-    for (int i = 0; i < d_table.size(SourceIndex); ++i)
+    for (int i = 0; i < d_table.sources(); ++i)
       if (Fs[i] != nullptr)
         for (int nn = d_table.M[i], j = 0; nn < d_table.M[i + 1]; ++nn, ++j)
           myr[j] -= Fs[i]->evaluate(d_table.r(nn));
@@ -296,10 +296,10 @@ public:
   inline GradType evalGrad(ParticleSet& P, int iat)
   {
     const auto& d_table = P.getDistTable(myTableIndex);
-    int n                            = d_table.size(VisitorIndex);
+    int n                            = d_table.targets();
     curGrad                          = 0.0;
     RealType ur, dudr, d2udr2;
-    for (int i = 0, nn = iat; i < d_table.size(SourceIndex); ++i, nn += n)
+    for (int i = 0, nn = iat; i < d_table.sources(); ++i, nn += n)
     {
       if (Fs[i] != nullptr)
       {
@@ -367,11 +367,11 @@ public:
   inline ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
   {
     const auto& d_table = P.getDistTable(myTableIndex);
-    int n                            = d_table.size(VisitorIndex);
+    int n                            = d_table.targets();
     curVal                           = 0.0;
     curGrad                          = 0.0;
     RealType dudr, d2udr2;
-    for (int i = 0; i < d_table.size(SourceIndex); ++i)
+    for (int i = 0; i < d_table.sources(); ++i)
     {
       if (Fs[i] != nullptr)
       {
@@ -402,7 +402,7 @@ public:
     d2U      = 0.0;
     RealType uij, dudr, d2udr2;
     const auto& d_table = P.getDistTable(myTableIndex);
-    for (int i = 0, ns = d_table.size(SourceIndex); i < ns; i++)
+    for (int i = 0, ns = d_table.sources(); i < ns; i++)
     {
       FT* func = Fs[i];
       if (func == nullptr)
@@ -439,7 +439,7 @@ public:
 
   void evaluateGL(ParticleSet& P) { evaluateLogAndStore(P, P.G, P.L); }
 
-  RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false)
+  LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false)
   {
     evaluateLogAndStore(P, P.G, P.L);
     //LogValue = 0.0;

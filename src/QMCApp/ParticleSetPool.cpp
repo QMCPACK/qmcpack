@@ -31,12 +31,19 @@
 
 namespace qmcplusplus
 {
-ParticleSetPool::ParticleSetPool(Communicate* c, const char* aname) : MPIObjectBase(c), SimulationCell(0), TileMatrix(0)
+ParticleSetPool::ParticleSetPool(Communicate* c, const char* aname) : MPIObjectBase(c), SimulationCell(nullptr), TileMatrix(0)
 {
   TileMatrix.diagonal(1);
   ClassName = "ParticleSetPool";
   myName    = aname;
 }
+
+ParticleSetPool::ParticleSetPool(ParticleSetPool&& other) : MPIObjectBase(other.myComm), SimulationCell(other.SimulationCell), TileMatrix(other.TileMatrix), myPool(std::move(other.myPool))
+{
+  ClassName = other.ClassName;
+  myName    = other.myName;
+}
+
 
 ParticleSet* ParticleSetPool::getParticleSet(const std::string& pname)
 {
@@ -161,7 +168,7 @@ bool ParticleSetPool::put(xmlNodePtr cur)
     if (SimulationCell)
     {
       app_log() << "  Initializing the lattice by the global supercell" << std::endl;
-      pTemp->Lattice.copy(*SimulationCell);
+      pTemp->Lattice = *SimulationCell;
     }
     myPool[id] = pTemp;
     XMLParticleParser pread(*pTemp, TileMatrix);
@@ -335,7 +342,7 @@ ParticleSet* ParticleSetPool::createESParticleSet(xmlNodePtr cur, const std::str
     //create the electrons
     qp = new MCWalkerConfiguration;
     qp->setName(target);
-    qp->Lattice.copy(ions->Lattice);
+    qp->Lattice = ions->Lattice;
 
     app_log() << "  Simulation cell radius = " << qp->Lattice.SimulationCellRadius << std::endl;
     app_log() << "  Wigner-Seitz cell radius = " << qp->Lattice.WignerSeitzRadius << std::endl;
@@ -387,7 +394,7 @@ ParticleSet* ParticleSetPool::createESParticleSet(xmlNodePtr cur, const std::str
     if (qp->Lattice.SuperCellEnum == SUPERCELL_BULK)
     {
       makeUniformRandom(qp->R);
-      qp->R.setUnit(PosUnit::LatticeUnit);
+      qp->R.setUnit(PosUnit::Lattice);
       qp->convert2Cart(qp->R);
     }
     else
@@ -395,7 +402,7 @@ ParticleSet* ParticleSetPool::createESParticleSet(xmlNodePtr cur, const std::str
       //assign non-trivial positions for the quanmtum particles
       InitMolecularSystem mole(this);
       mole.initMolecule(ions, qp);
-      qp->R.setUnit(PosUnit::CartesianUnit);
+      qp->R.setUnit(PosUnit::Cartesian);
     }
     //for(int i=0; i<qp->getTotalNum(); ++i)
     //  std::cout << qp->GroupID[i] << " " << qp->R[i] << std::endl;

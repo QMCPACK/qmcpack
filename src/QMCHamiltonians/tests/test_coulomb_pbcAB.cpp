@@ -17,7 +17,9 @@
 #include "Lattice/ParticleBConds.h"
 #include "Particle/ParticleSet.h"
 #include "Particle/DistanceTableData.h"
+#ifndef ENABLE_SOA
 #include "Particle/SymmetricDistanceTableData.h"
+#endif
 #include "QMCApp/ParticleSetPool.h"
 #include "QMCHamiltonians/CoulombPBCAB.h"
 #include "QMCHamiltonians/CoulombPBCAA.h"
@@ -57,11 +59,11 @@ TEST_CASE("Coulomb PBC A-B", "[hamiltonian]")
   int pIdx                      = ion_species.addSpecies("H");
   int pChargeIdx                = ion_species.addAttribute("charge");
   ion_species(pChargeIdx, pIdx) = 1;
-  ions.Lattice.copy(Lattice);
+  ions.Lattice = Lattice;
   ions.createSK();
 
 
-  elec.Lattice.copy(Lattice);
+  elec.Lattice = Lattice;
   elec.setName("elec");
   elec.create(1);
   elec.R[0][0] = 0.5;
@@ -80,7 +82,11 @@ TEST_CASE("Coulomb PBC A-B", "[hamiltonian]")
 
   elec.createSK();
 
+#ifdef ENABLE_SOA
+  elec.addTable(ions, DT_SOA);
+#else
   elec.addTable(ions, DT_AOS);
+#endif
   elec.update();
 
 
@@ -135,11 +141,11 @@ TEST_CASE("Coulomb PBC A-B BCC H", "[hamiltonian]")
   int pIdx                      = ion_species.addSpecies("H");
   int pChargeIdx                = ion_species.addAttribute("charge");
   ion_species(pChargeIdx, pIdx) = 1;
-  ions.Lattice.copy(Lattice);
+  ions.Lattice = Lattice;
   ions.createSK();
 
 
-  elec.Lattice.copy(Lattice);
+  elec.Lattice = Lattice;
   elec.setName("elec");
   elec.create(2);
   elec.R[0][0] = 0.5;
@@ -161,7 +167,11 @@ TEST_CASE("Coulomb PBC A-B BCC H", "[hamiltonian]")
 
   elec.createSK();
 
+#ifdef ENABLE_SOA
+  elec.addTable(ions, DT_SOA);
+#else
   elec.addTable(ions, DT_AOS);
+#endif
   elec.update();
 
 

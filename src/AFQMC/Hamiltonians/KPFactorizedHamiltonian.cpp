@@ -139,7 +139,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_shared(b
                  <<" Problems reading QKTok2. \n";
       APP_ABORT("");
     }
-    std::vector<ValueType> E_(2);
+    std::vector<RealType> E_(2);
     if(!dump.readEntry(E_,"Energies")) {
       app_error()<<" Error in KPFactorizedHamiltonian::getHamiltonianOperations():"
                  <<" Problems reading Energies. \n";
@@ -542,7 +542,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_shared(b
 // NOTE NOTE NOTE
   TG.Node().barrier();
 
-  // calculate vn0(I,L) = -0.5 sum_K sum_j sum_n L[0][K][i][j][n] conj(L[0][K][l][j][n])
+  // calculate vn0(I,L) = -0.5 sum_K sum_j sum_n L[0][K][i][j][n] ma::conj(L[0][K][l][j][n])
   for(int Q=0; Q<nkpts; Q++) {
     if( Qmap[Q] < 0 ) continue;
     for(int K=0; K<nkpts; K++) {
@@ -572,7 +572,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_shared(b
           for(int i=0; i<nmo_per_kp[K]; i++)
           for(int k=0; k<nmo_per_kp[QK]; k++)
           for(int n=0; n<nchol_per_kp[Qm]; n++)
-            buff3D[i][k][n] = conj(Lkin[k][i][n]);
+            buff3D[i][k][n] = ma::conj(Lkin[k][i][n]);
           boost::multi::array_ref<SPComplexType,2> L_(to_address(buff3D.origin()),
                                                    {nmo_per_kp[K],nmo_per_kp[QK]*nchol_per_kp[Qm]});
           using ma::H;
@@ -640,10 +640,10 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_shared(b
           auto Gbk = get_PsiK<boost::multi::array<SPComplexType,2>>(nmo_per_kp,PsiT[0],Kb);
           for(int a=0; a<na; ++a)
             for(int l=0; l<nl; ++l)
-              Gal[a][l] = conj(Gal[a][l]);
+              Gal[a][l] = ma::conj(Gal[a][l]);
           for(int b=0; b<nb; ++b)
             for(int k=0; k<nk; ++k)
-              Gbk[b][k] = conj(Gbk[b][k]);
+              Gbk[b][k] = ma::conj(Gbk[b][k]);
 
           ma::product(Gal,ma::T(Lbnl),Tabn);
           ma::product(Gbk,ma::T(Lank),Tban);
@@ -787,7 +787,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
                  <<" Problems reading QKTok2. \n";
       APP_ABORT("");
     }
-    std::vector<ValueType> E_(2);
+    std::vector<RealType> E_(2);
     if(!dump.readEntry(E_,"Energies")) {
       app_error()<<" Error in KPFactorizedHamiltonian::getHamiltonianOperations():"
                  <<" Problems reading Energies. \n";
@@ -1239,7 +1239,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
   // local storage seems necessary 
   stdCTensor vn0_({nkpts,nmo_max,nmo_max},ComplexType(0.0));
 
-  // calculate vn0(I,L) = -0.5 sum_K sum_j sum_n L[0][K][i][j][n] conj(L[0][K][l][j][n])
+  // calculate vn0(I,L) = -0.5 sum_K sum_j sum_n L[0][K][i][j][n] ma::conj(L[0][K][l][j][n])
   nt=0;
   for(int Q=0; Q<nkpts; Q++) {
     if( Qmap[Q] < 0 ) continue;
@@ -1269,7 +1269,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
           for(int i=0; i<nmo_max; i++)
           for(int k=0; k<nmo_max; k++)
           for(int n=0; n<nchol_max; n++)
-            buff3D[i][k][n] = conj(Lkin[k][i][n]);
+            buff3D[i][k][n] = ma::conj(Lkin[k][i][n]);
           boost::multi::array_ref<SPComplexType,2> L_(to_address(buff3D.origin()),
                                                    {nmo_max,nmo_max*nchol_max});
           using ma::H;
@@ -1338,10 +1338,10 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
           auto Gbk = get_PsiK<boost::multi::array<SPComplexType,2>>(nmo_per_kp,PsiT[0],Kb);
           for(int a=0; a<na; ++a)
             for(int l=0; l<nl; ++l)
-              Gal[a][l] = conj(Gal[a][l]);
+              Gal[a][l] = ma::conj(Gal[a][l]);
           for(int b=0; b<nb; ++b)
             for(int k=0; k<nk; ++k)
-              Gbk[b][k] = conj(Gbk[b][k]);
+              Gbk[b][k] = ma::conj(Gbk[b][k]);
 
           ma::product(Gal,ma::T(Lbnl),Tabn);
           ma::product(Gbk,ma::T(Lank),Tban);

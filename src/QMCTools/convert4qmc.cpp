@@ -22,7 +22,7 @@
 #include "QMCTools/GamesAsciiParser.h"
 #include "QMCTools/QPParser.h"
 #include "QMCTools/GamesFMOParser.h"
-#include "QMCTools/LCAOH5Parser.h"
+#include "QMCTools/LCAOHDFParser.h"
 #include "QMCTools/BParser.h"
 #include "Message/Communicate.h"
 #include "OhmmsData/FileUtility.h"
@@ -117,7 +117,7 @@ int main(int argc, char** argv)
     }
     else if (a == "-pyscf" || a == "-orbitals")
     {
-      parser  = new LCAOParser(argc, argv);
+      parser  = new LCAOHDFParser(argc, argv);
       in_file = argv[++iargc];
       allH5   = true;
     }

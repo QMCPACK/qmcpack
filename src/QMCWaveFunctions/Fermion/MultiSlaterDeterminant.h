@@ -51,8 +51,8 @@ class MultiSlaterDeterminant : public WaveFunctionComponent
 {
 public:
   void registerTimers();
-  NewTimer RatioTimer, RatioGradTimer, RatioAllTimer, UpdateTimer, EvaluateTimer;
-  NewTimer Ratio1Timer, Ratio1GradTimer, Ratio1AllTimer, AccRejTimer, evalOrbTimer;
+  NewTimer &RatioTimer, &RatioGradTimer, &RatioAllTimer, &UpdateTimer, &EvaluateTimer;
+  NewTimer &Ratio1Timer, &Ratio1GradTimer, &Ratio1AllTimer, &AccRejTimer, &evalOrbTimer;
 
   typedef DiracDeterminantBase* DiracDeterminantBasePtr;
   typedef SPOSet* SPOSetPtr;
@@ -87,7 +87,7 @@ public:
 
   virtual ValueType evaluate(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
 
-  virtual RealType evaluateLog(ParticleSet& P //const DistanceTableData* dtable,
+  virtual LogValueType evaluateLog(ParticleSet& P //const DistanceTableData* dtable,
                                ,
                                ParticleSet::ParticleGradient_t& G,
                                ParticleSet::ParticleLaplacian_t& L);
@@ -99,7 +99,7 @@ public:
   virtual void restore(int iat);
 
   virtual void registerData(ParticleSet& P, WFBufferType& buf);
-  virtual RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false);
+  virtual LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false);
   virtual void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
 
   virtual WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;

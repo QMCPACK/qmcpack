@@ -17,7 +17,6 @@
 #include "Lattice/ParticleBConds.h"
 #include "Particle/ParticleSet.h"
 #include "Particle/DistanceTableData.h"
-#include "Particle/SymmetricDistanceTableData.h"
 #include "QMCApp/ParticleSetPool.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
@@ -100,7 +99,7 @@ TEST_CASE("Einspline SPO from HDF", "[wavefunction]")
   elec_.update();
 
 
-  TrialWaveFunction psi = TrialWaveFunction(c);
+  TrialWaveFunction psi(c);
   // Need 1 electron and 1 proton, somehow
   //ParticleSet target = ParticleSet();
   ParticleSetPool ptcl = ParticleSetPool(c);
@@ -112,9 +111,6 @@ TEST_CASE("Einspline SPO from HDF", "[wavefunction]")
 <determinantset type=\"einspline\" href=\"pwscf.pwscf.h5\" tilematrix=\"1 0 0 0 1 0 0 0 1\" twistnum=\"0\" source=\"ion\" meshfactor=\"1.0\" precision=\"float\" size=\"4\"/> \
 </tmp> \
 ";
-
-  // monoO
-  //<determinantset type=\"einspline\" href=\"pwscf.pwscf.h5\" tilematrix=\"1 0 0 0 1 0 0 0 1\" twistnum=\"0\" source=\"ion\" meshfactor=\"1.0\" precision=\"float\" size=\"6\"/> \
 
   Libxml2Document doc;
   bool okay = doc.parseFromString(particles);
@@ -138,18 +134,18 @@ TEST_CASE("Einspline SPO from HDF", "[wavefunction]")
   spo->evaluate_notranspose(elec_, 0, elec_.R.size(), psiM, dpsiM, d2psiM);
 
   // value
-  REQUIRE(psiM[1][0] == ComplexApprox(-0.8886948824).compare_real_only());
-  REQUIRE(psiM[1][1] == ComplexApprox(1.4194120169).compare_real_only());
+  REQUIRE(std::real(psiM[1][0]) == Approx(-0.8886948824));
+  REQUIRE(std::real(psiM[1][1]) == Approx(1.4194120169));
   // grad
-  REQUIRE(dpsiM[1][0][0] == ComplexApprox(-0.0000183403).compare_real_only());
-  REQUIRE(dpsiM[1][0][1] == ComplexApprox(0.1655139178).compare_real_only());
-  REQUIRE(dpsiM[1][0][2] == ComplexApprox(-0.0000193077).compare_real_only());
-  REQUIRE(dpsiM[1][1][0] == ComplexApprox(-1.3131694794).compare_real_only());
-  REQUIRE(dpsiM[1][1][1] == ComplexApprox(-1.1174004078).compare_real_only());
-  REQUIRE(dpsiM[1][1][2] == ComplexApprox(-0.8462534547).compare_real_only());
+  REQUIRE(std::real(dpsiM[1][0][0]) == Approx(-0.0000183403));
+  REQUIRE(std::real(dpsiM[1][0][1]) == Approx(0.1655139178));
+  REQUIRE(std::real(dpsiM[1][0][2]) == Approx(-0.0000193077));
+  REQUIRE(std::real(dpsiM[1][1][0]) == Approx(-1.3131694794));
+  REQUIRE(std::real(dpsiM[1][1][1]) == Approx(-1.1174004078));
+  REQUIRE(std::real(dpsiM[1][1][2]) == Approx(-0.8462534547));
   // lapl
-  REQUIRE(d2psiM[1][0] == ComplexApprox(1.3313053846).compare_real_only());
-  REQUIRE(d2psiM[1][1] == ComplexApprox(-4.712583065).compare_real_only());
+  REQUIRE(std::real(d2psiM[1][0]) == Approx(1.3313053846));
+  REQUIRE(std::real(d2psiM[1][1]) == Approx(-4.712583065));
 
   // for vgh
   SPOSet::ValueVector_t psiV(psiM[1], spo->getOrbitalSetSize());
@@ -160,15 +156,15 @@ TEST_CASE("Einspline SPO from HDF", "[wavefunction]")
   // Catch default is 100*(float epsilson)
   double eps = 2000 * std::numeric_limits<float>::epsilon();
   //hess
-  REQUIRE(ddpsiV[1](0, 0) == ComplexApprox(-2.3160984034).compare_real_only());
-  REQUIRE(ddpsiV[1](0, 1) == ComplexApprox(1.8089479397).compare_real_only());
-  REQUIRE(ddpsiV[1](0, 2) == ComplexApprox(0.5608575749).compare_real_only());
-  REQUIRE(ddpsiV[1](1, 0) == ComplexApprox(1.8089479397).compare_real_only());
-  REQUIRE(ddpsiV[1](1, 1) == ComplexApprox(-0.07996207476).epsilon(eps).compare_real_only());
-  REQUIRE(ddpsiV[1](1, 2) == ComplexApprox(0.5237969314).compare_real_only());
-  REQUIRE(ddpsiV[1](2, 0) == ComplexApprox(0.5608575749).compare_real_only());
-  REQUIRE(ddpsiV[1](2, 1) == ComplexApprox(0.5237969314).compare_real_only());
-  REQUIRE(ddpsiV[1](2, 2) == ComplexApprox(-2.316497764).compare_real_only());
+  REQUIRE(std::real(ddpsiV[1](0, 0)) == Approx(-2.3160984034));
+  REQUIRE(std::real(ddpsiV[1](0, 1)) == Approx(1.8089479397));
+  REQUIRE(std::real(ddpsiV[1](0, 2)) == Approx(0.5608575749));
+  REQUIRE(std::real(ddpsiV[1](1, 0)) == Approx(1.8089479397));
+  REQUIRE(std::real(ddpsiV[1](1, 1)) == Approx(-0.07996207476).epsilon(eps));
+  REQUIRE(std::real(ddpsiV[1](1, 2)) == Approx(0.5237969314));
+  REQUIRE(std::real(ddpsiV[1](2, 0)) == Approx(0.5608575749));
+  REQUIRE(std::real(ddpsiV[1](2, 1)) == Approx(0.5237969314));
+  REQUIRE(std::real(ddpsiV[1](2, 2)) == Approx(-2.316497764));
 
   SPOSet::HessMatrix_t hesspsiV(elec_.R.size(), spo->getOrbitalSetSize());
   SPOSet::GGGMatrix_t d3psiV(elec_.R.size(), spo->getOrbitalSetSize());
@@ -200,27 +196,27 @@ TEST_CASE("Einspline SPO from HDF", "[wavefunction]")
 */
 
 #if 0 //Enable when finite precision issue on Rhea is found.
-  REQUIRE(d3psiV(1,0)[0][0] ==ComplexApprox(0.0463371276).compare_real_only());
-  REQUIRE(d3psiV(1,0)[0][1] ==ComplexApprox(1.1755813360).compare_real_only());
-  REQUIRE(d3psiV(1,0)[0][2] ==ComplexApprox(0.0660155713).compare_real_only());
-  REQUIRE(d3psiV(1,0)[0][4] ==ComplexApprox(0.0414704382).compare_real_only());
-  REQUIRE(d3psiV(1,0)[0][5] ==ComplexApprox(-0.5167412758).compare_real_only());
-  REQUIRE(d3psiV(1,0)[0][8] ==ComplexApprox(0.0659536421).compare_real_only());
-  REQUIRE(d3psiV(1,0)[1][4] ==ComplexApprox(-4.8771157264).compare_real_only());
-  REQUIRE(d3psiV(1,0)[1][5] ==ComplexApprox(0.0415326356).compare_real_only());
-  REQUIRE(d3psiV(1,0)[1][8] ==ComplexApprox(1.1755810976).compare_real_only());
-  REQUIRE(d3psiV(1,0)[2][8] ==ComplexApprox(0.0463993549).compare_real_only());
+  REQUIRE(std::real(d3psiV(1,0)[0][0] ) == Approx(0.0463371276));
+  REQUIRE(std::real(d3psiV(1,0)[0][1] ) == Approx(1.1755813360));
+  REQUIRE(std::real(d3psiV(1,0)[0][2] ) == Approx(0.0660155713));
+  REQUIRE(std::real(d3psiV(1,0)[0][4] ) == Approx(0.0414704382));
+  REQUIRE(std::real(d3psiV(1,0)[0][5] ) == Approx(-0.5167412758));
+  REQUIRE(std::real(d3psiV(1,0)[0][8] ) == Approx(0.0659536421));
+  REQUIRE(std::real(d3psiV(1,0)[1][4] ) == Approx(-4.8771157264));
+  REQUIRE(std::real(d3psiV(1,0)[1][5] ) == Approx(0.0415326356));
+  REQUIRE(std::real(d3psiV(1,0)[1][8] ) == Approx(1.1755810976));
+  REQUIRE(std::real(d3psiV(1,0)[2][8] ) == Approx(0.0463993549));
   
-  REQUIRE(d3psiV(1,1)[0][0] ==ComplexApprox(6.7155771255).compare_real_only());
-  REQUIRE(d3psiV(1,1)[0][1] ==ComplexApprox(5.5450510978).compare_real_only());
-  REQUIRE(d3psiV(1,1)[0][2] ==ComplexApprox(0.9829711914).compare_real_only());
-  REQUIRE(d3psiV(1,1)[0][4] ==ComplexApprox(-3.1704092025).compare_real_only());
-  REQUIRE(d3psiV(1,1)[0][5] ==ComplexApprox(-1.9537661075).compare_real_only());
-  REQUIRE(d3psiV(1,1)[0][8] ==ComplexApprox(1.9305641651).compare_real_only());
-  REQUIRE(d3psiV(1,1)[1][4] ==ComplexApprox(3.6051378250).compare_real_only());
-  REQUIRE(d3psiV(1,1)[1][5] ==ComplexApprox(-0.7382576465).compare_real_only());
-  REQUIRE(d3psiV(1,1)[1][8] ==ComplexApprox(5.5741839408).compare_real_only());
-  REQUIRE(d3psiV(1,1)[2][8] ==ComplexApprox(3.1312348842).compare_real_only());
+  REQUIRE(std::real(d3psiV(1,1)[0][0] ) == Approx(6.7155771255));
+  REQUIRE(std::real(d3psiV(1,1)[0][1] ) == Approx(5.5450510978));
+  REQUIRE(std::real(d3psiV(1,1)[0][2] ) == Approx(0.9829711914));
+  REQUIRE(std::real(d3psiV(1,1)[0][4] ) == Approx(-3.1704092025));
+  REQUIRE(std::real(d3psiV(1,1)[0][5] ) == Approx(-1.9537661075));
+  REQUIRE(std::real(d3psiV(1,1)[0][8] ) == Approx(1.9305641651));
+  REQUIRE(std::real(d3psiV(1,1)[1][4] ) == Approx(3.6051378250));
+  REQUIRE(std::real(d3psiV(1,1)[1][5] ) == Approx(-0.7382576465));
+  REQUIRE(std::real(d3psiV(1,1)[1][8] ) == Approx(5.5741839408));
+  REQUIRE(std::real(d3psiV(1,1)[2][8] ) == Approx(3.1312348842));
 #endif
 
 #endif

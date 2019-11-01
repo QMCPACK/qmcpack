@@ -23,8 +23,6 @@ namespace qmcplusplus
 template<typename T, unsigned D, int SC>
 struct SoaDistanceTableBA : public DTD_BConds<T, D, SC>, public DistanceTableData
 {
-  int Nsources;
-  int Ntargets;
   int BlockSize;
 
   SoaDistanceTableBA(const ParticleSet& source, ParticleSet& target)
@@ -35,26 +33,25 @@ struct SoaDistanceTableBA : public DTD_BConds<T, D, SC>, public DistanceTableDat
 
   void resize(int ns, int nt)
   {
-    N[SourceIndex] = Nsources = ns;
-    N[VisitorIndex] = Ntargets = nt;
-    if (Nsources * Ntargets == 0)
+    N_sources = ns;
+    N_targets = nt;
+    if (N_sources * N_targets == 0)
       return;
 
-    int Ntargets_padded = getAlignedSize<T>(Ntargets);
-    int Nsources_padded = getAlignedSize<T>(Nsources);
+    int Nsources_padded = getAlignedSize<T>(N_sources);
 
-    Distances.resize(Ntargets, Nsources_padded);
+    Distances.resize(N_targets, Nsources_padded);
 
     BlockSize = Nsources_padded * D;
-    memoryPool.resize(Ntargets * BlockSize);
-    Displacements.resize(Ntargets);
-    for (int i = 0; i < Ntargets; ++i)
-      Displacements[i].attachReference(Nsources, Nsources_padded, memoryPool.data() + i * BlockSize);
+    memoryPool.resize(N_targets * BlockSize);
+    Displacements.resize(N_targets);
+    for (int i = 0; i < N_targets; ++i)
+      Displacements[i].attachReference(N_sources, Nsources_padded, memoryPool.data() + i * BlockSize);
 
     // The padding of Temp_r and Temp_dr is necessary for the memory copy in the update function
     // Temp_r is padded explicitly while Temp_dr is padded internally
     Temp_r.resize(Nsources_padded);
-    Temp_dr.resize(Nsources);
+    Temp_dr.resize(N_sources);
   }
 
   SoaDistanceTableBA()                          = delete;
@@ -67,10 +64,10 @@ struct SoaDistanceTableBA : public DTD_BConds<T, D, SC>, public DistanceTableDat
 #pragma omp parallel
     {
       int first, last;
-      FairDivideAligned(Nsources, getAlignment<T>(), omp_get_num_threads(), omp_get_thread_num(), first, last);
+      FairDivideAligned(N_sources, getAlignment<T>(), omp_get_num_threads(), omp_get_thread_num(), first, last);
 
       //be aware of the sign of Displacement
-      for (int iat = 0; iat < Ntargets; ++iat)
+      for (int iat = 0; iat < N_targets; ++iat)
         DTD_BConds<T, D, SC>::computeDistances(P.R[iat], Origin->RSoA, Distances[iat], Displacements[iat], first, last);
     }
   }
@@ -81,26 +78,21 @@ struct SoaDistanceTableBA : public DTD_BConds<T, D, SC>, public DistanceTableDat
    */
   inline void evaluate(ParticleSet& P, IndexType iat)
   {
-    DTD_BConds<T, D, SC>::computeDistances(P.R[iat], Origin->RSoA, Distances[iat], Displacements[iat], 0, Nsources);
-  }
-
-  inline void moveOnSphere(const ParticleSet& P, const PosType& rnew)
-  {
-    DTD_BConds<T, D, SC>::computeDistances(rnew, Origin->RSoA, Temp_r.data(), Temp_dr, 0, Nsources);
+    DTD_BConds<T, D, SC>::computeDistances(P.R[iat], Origin->RSoA, Distances[iat], Displacements[iat], 0, N_sources);
   }
 
   ///evaluate the temporary pair relations
   inline void move(const ParticleSet& P, const PosType& rnew)
   {
-    DTD_BConds<T, D, SC>::computeDistances(rnew, Origin->RSoA, Temp_r.data(), Temp_dr, 0, Nsources);
+    DTD_BConds<T, D, SC>::computeDistances(rnew, Origin->RSoA, Temp_r.data(), Temp_dr, 0, N_sources);
   }
 
   ///update the stripe for jat-th particle
   inline void update(IndexType iat)
   {
-    std::copy_n(Temp_r.data(), Nsources, Distances[iat]);
+    std::copy_n(Temp_r.data(), N_sources, Distances[iat]);
     for (int idim = 0; idim < D; ++idim)
-      std::copy_n(Temp_dr.data(idim), Nsources, Displacements[iat].data(idim));
+      std::copy_n(Temp_dr.data(idim), N_sources, Displacements[iat].data(idim));
   }
 
   size_t get_neighbors(int iat,
@@ -111,7 +103,7 @@ struct SoaDistanceTableBA : public DTD_BConds<T, D, SC>, public DistanceTableDat
   {
     constexpr T cminus(-1);
     size_t nn = 0;
-    for (int jat = 0; jat < Ntargets; ++jat)
+    for (int jat = 0; jat < N_targets; ++jat)
     {
       const RealType rij = Distances[jat][iat];
       if (rij < rcut)
@@ -131,7 +123,7 @@ struct SoaDistanceTableBA : public DTD_BConds<T, D, SC>, public DistanceTableDat
     int index         = -1;
     if (newpos)
     {
-      for (int jat = 0; jat < Nsources; ++jat)
+      for (int jat = 0; jat < N_sources; ++jat)
         if (Temp_r[jat] < min_dist)
         {
           min_dist = Temp_r[jat];
@@ -145,7 +137,7 @@ struct SoaDistanceTableBA : public DTD_BConds<T, D, SC>, public DistanceTableDat
     }
     else
     {
-      for (int jat = 0; jat < Nsources; ++jat)
+      for (int jat = 0; jat < N_sources; ++jat)
         if (Distances[iat][jat] < min_dist)
         {
           min_dist = Distances[iat][jat];
@@ -163,7 +155,7 @@ struct SoaDistanceTableBA : public DTD_BConds<T, D, SC>, public DistanceTableDat
   size_t get_neighbors(int iat, RealType rcut, RealType* restrict dist) const
   {
     size_t nn = 0;
-    for (int jat = 0; jat < Ntargets; ++jat)
+    for (int jat = 0; jat < N_targets; ++jat)
     {
       const RealType rij = Distances[jat][iat];
       if (rij < rcut)

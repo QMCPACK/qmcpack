@@ -49,8 +49,8 @@ int main(){
 
 	assert( begin(A) < end(A) );
 	assert( cbegin(A) < cend(A) );
-	assert( crbegin(A) < crend(A) );
-	assert( crend(A) > crbegin(A) );
+//	assert( crbegin(A) < crend(A) );
+//	assert( crend(A) > crbegin(A) );
 	assert( end(A) - begin(A) == size(A));
 	assert( rend(A) - rbegin(A) == size(A));
 

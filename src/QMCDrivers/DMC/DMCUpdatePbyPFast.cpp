@@ -61,8 +61,8 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool re
   int nAcceptTemp(0);
   int nRejectTemp(0);
   //copy the old energy and scale factor of drift
-  EstimatorRealType eold(thisWalker.Properties(LOCALENERGY));
-  EstimatorRealType enew(eold);
+  FullPrecRealType eold(thisWalker.Properties(LOCALENERGY));
+  FullPrecRealType enew(eold);
   RealType rr_proposed = 0.0;
   RealType rr_accepted = 0.0;
   RealType gf_acc      = 1.0;
@@ -100,12 +100,12 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool re
       }
       else
       {
-        EstimatorRealType logGf = -0.5 * dot(deltaR[iat], deltaR[iat]);
+        FullPrecRealType logGf = -0.5 * dot(deltaR[iat], deltaR[iat]);
         //Use the force of the particle iat
         DriftModifier->getDrift(tauovermass, grad_iat, dr);
-        dr                      = W.R[iat] - W.activePos - dr;
-        EstimatorRealType logGb = -oneover2tau * dot(dr, dr);
-        RealType prob           = ratio * ratio * std::exp(logGb - logGf);
+        dr                     = W.R[iat] - W.activePos - dr;
+        FullPrecRealType logGb = -oneover2tau * dot(dr, dr);
+        RealType prob          = ratio * ratio * std::exp(logGb - logGf);
         if (RandomGen() < prob)
         {
           ++nAcceptTemp;

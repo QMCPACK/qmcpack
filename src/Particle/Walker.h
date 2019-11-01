@@ -75,7 +75,7 @@ struct Walker
   /** typedef for real data type */
   typedef typename t_traits::RealType RealType;
   /** typedef for estimator real data type */
-  typedef typename t_traits::EstimatorRealType EstimatorRealType;
+  typedef typename t_traits::FullPrecRealType FullPrecRealType;
   /** typedef for value data type. */
   typedef typename t_traits::ValueType ValueType;
 #ifdef QMC_CUDA
@@ -85,6 +85,8 @@ struct Walker
 #endif
   /** array of particles */
   typedef typename p_traits::ParticlePos_t ParticlePos_t;
+  /** array of scalars */
+  typedef typename p_traits::ParticleScalar_t ParticleScalar_t;
   /** array of gradients */
   typedef typename p_traits::ParticleGradient_t ParticleGradient_t;
   /** array of laplacians */
@@ -93,10 +95,15 @@ struct Walker
   typedef typename p_traits::SingleParticleValue_t SingleParticleValue_t;
 
   ///typedef for the property container, fixed size
-  typedef Matrix<EstimatorRealType> PropertyContainer_t;
+  typedef Matrix<FullPrecRealType> PropertyContainer_t;
+
+  /** @{
+   * Not really "buffers", "walker message" also used to serialize walker, rename
+   */
   typedef PooledMemory<OHMMS_PRECISION_FULL> WFBuffer_t;
   typedef PooledData<RealType> Buffer_t;
-
+  /** }@ */
+  
   ///id reserved for forward walking
   long ID;
   ///id reserved for forward walking
@@ -108,7 +115,7 @@ struct Walker
   ///Age of this walker age is incremented when a walker is not moved after a sweep
   int ReleasedNodeAge;
   ///Weight of the walker
-  EstimatorRealType Weight;
+  FullPrecRealType Weight;
   ///Weight of the walker
   RealType ReleasedNodeWeight;
   /** Number of copies for branching
@@ -122,6 +129,9 @@ struct Walker
   /** The configuration vector (3N-dimensional vector to store
      the positions of all the particles for a single walker)*/
   ParticlePos_t R;
+  
+  //Dynamical spin variable.
+  ParticleScalar_t spins;
 #if !defined(SOA_MEMORY_OPTIMIZED)
   /** \f$ \nabla_i d\log \Psi for the i-th particle */
   ParticleGradient_t G;
@@ -131,8 +141,11 @@ struct Walker
   ///scalar properties of a walker
   PropertyContainer_t Properties;
 
-  ///Property history vector
-  std::vector<std::vector<EstimatorRealType>> PropertyHistory;
+  /** Property history vector
+   *
+   *  these are used as fixed length cyclic traces of a "property"
+   */
+  std::vector<std::vector<FullPrecRealType>> PropertyHistory;
   std::vector<int> PHindex;
 
   ///buffer for the data for particle-by-particle update
@@ -216,7 +229,7 @@ struct Walker
     }
   }
 
-  inline void addPropertyHistoryPoint(int index, EstimatorRealType data)
+  inline void addPropertyHistoryPoint(int index, FullPrecRealType data)
   {
     PropertyHistory[index][PHindex[index]] = (data);
     PHindex[index]++;
@@ -225,10 +238,10 @@ struct Walker
     //       PropertyHistory[index].pop_back();
   }
 
-  inline EstimatorRealType getPropertyHistorySum(int index, int endN)
+  inline FullPrecRealType getPropertyHistorySum(int index, int endN)
   {
-    EstimatorRealType mean = 0.0;
-    typename std::vector<EstimatorRealType>::const_iterator phStart;
+    FullPrecRealType mean = 0.0;
+    typename std::vector<FullPrecRealType>::const_iterator phStart;
     phStart = PropertyHistory[index].begin() + PHindex[index];
     for (int i = 0; i < endN; phStart++, i++)
     {
@@ -256,6 +269,7 @@ struct Walker
   inline void resize(int nptcl)
   {
     R.resize(nptcl);
+    spins.resize(nptcl);
     G.resize(nptcl);
     L.resize(nptcl);
 #ifdef QMC_CUDA
@@ -280,6 +294,7 @@ struct Walker
     if (R.size() != a.R.size())
       resize(a.R.size());
     R = a.R;
+    spins = a.spins;
 #if !defined(SOA_MEMORY_OPTIMIZED)
     G = a.G;
     L = a.L;
@@ -301,16 +316,16 @@ struct Walker
   }
 
   //return the address of the values of Hamiltonian terms
-  inline EstimatorRealType* restrict getPropertyBase() { return Properties.data(); }
+  inline FullPrecRealType* restrict getPropertyBase() { return Properties.data(); }
 
   //return the address of the values of Hamiltonian terms
-  inline const EstimatorRealType* restrict getPropertyBase() const { return Properties.data(); }
+  inline const FullPrecRealType* restrict getPropertyBase() const { return Properties.data(); }
 
   ///return the address of the i-th properties
-  inline EstimatorRealType* restrict getPropertyBase(int i) { return Properties[i]; }
+  inline FullPrecRealType* restrict getPropertyBase(int i) { return Properties[i]; }
 
   ///return the address of the i-th properties
-  inline const EstimatorRealType* restrict getPropertyBase(int i) const { return Properties[i]; }
+  inline const FullPrecRealType* restrict getPropertyBase(int i) const { return Properties[i]; }
 
 
   /** reset the property of a walker
@@ -321,7 +336,7 @@ struct Walker
    *Assign the values and reset the age
    * but leave the weight and multiplicity
    */
-  inline void resetProperty(EstimatorRealType logpsi, EstimatorRealType sigN, EstimatorRealType ene)
+  inline void resetProperty(FullPrecRealType logpsi, FullPrecRealType sigN, FullPrecRealType ene)
   {
     Age = 0;
     //Weight=1.0;
@@ -330,15 +345,15 @@ struct Walker
     Properties(LOCALENERGY) = ene;
   }
 
-  inline void resetReleasedNodeProperty(EstimatorRealType localenergy,
-                                        EstimatorRealType alternateEnergy,
-                                        EstimatorRealType altR)
+  inline void resetReleasedNodeProperty(FullPrecRealType localenergy,
+                                        FullPrecRealType alternateEnergy,
+                                        FullPrecRealType altR)
   {
     Properties(ALTERNATEENERGY) = alternateEnergy;
     Properties(LOCALENERGY)     = localenergy;
     Properties(SIGN)            = altR;
   }
-  inline void resetReleasedNodeProperty(EstimatorRealType localenergy, EstimatorRealType alternateEnergy)
+  inline void resetReleasedNodeProperty(FullPrecRealType localenergy, FullPrecRealType alternateEnergy)
   {
     Properties(ALTERNATEENERGY) = alternateEnergy;
     Properties(LOCALENERGY)     = localenergy;
@@ -354,12 +369,12 @@ struct Walker
    *Assign the values and reset the age
    * but leave the weight and multiplicity
    */
-  inline void resetProperty(EstimatorRealType logpsi,
-                            EstimatorRealType sigN,
-                            EstimatorRealType ene,
-                            EstimatorRealType r2a,
-                            EstimatorRealType r2p,
-                            EstimatorRealType vq)
+  inline void resetProperty(FullPrecRealType logpsi,
+                            FullPrecRealType sigN,
+                            FullPrecRealType ene,
+                            FullPrecRealType r2a,
+                            FullPrecRealType r2p,
+                            FullPrecRealType vq)
   {
     Age                     = 0;
     Properties(LOGPSI)      = logpsi;
@@ -397,6 +412,8 @@ struct Walker
    */
   inline size_t byteSize()
   {
+    // TODO: fix this! this is a non intuitive side effect for a size call
+    //       breaks a bunch of things that could be const
     if (!DataSet.size())
     {
       registerData();

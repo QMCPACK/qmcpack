@@ -105,13 +105,13 @@ class SlaterDetOperations_base
     SlaterDetOperations_base& operator=(SlaterDetOperations_base&& other) = default;
 
     template<class MatA, class MatB, class MatC>
-    T MixedDensityMatrix(const MatA& hermA, const MatB& B, MatC&& C, T LogOverlapFactor, bool compact) {
-      int NMO = hermA.size(1);
-      int NAEA = hermA.size(0);
+    T MixedDensityMatrix(const MatA& hermA, const MatB& B, MatC&& C, T LogOverlapFactor, bool compact, bool herm=true) {
+      int NMO = (herm?hermA.size(1):hermA.size(0));
+      int NAEA = (herm?hermA.size(0):hermA.size(1));
       set_buffer(NAEA*NAEA + NAEA*NMO);
       TMatrix_ref TNN(TBuff.data(), {NAEA,NAEA});
       TMatrix_ref TNM(TBuff.data()+TNN.num_elements(), {NAEA,NMO});
-      return SlaterDeterminantOperations::base::MixedDensityMatrix<T>(hermA,B,std::forward<MatC>(C),LogOverlapFactor,TNN,TNM,IWORK,WORK,compact);
+      return SlaterDeterminantOperations::base::MixedDensityMatrix<T>(hermA,B,std::forward<MatC>(C),LogOverlapFactor,TNN,TNM,IWORK,WORK,compact,herm);
     }
 
     template<class MatA, class MatC>
@@ -121,7 +121,7 @@ class SlaterDetOperations_base
       set_buffer(NAEA*NAEA + NAEA*NMO);
       TMatrix_ref TNN(TBuff.data(), {NAEA,NAEA});
       TMatrix_ref TNM(TBuff.data()+TNN.num_elements(), {NAEA,NMO});
-      return SlaterDeterminantOperations::base::MixedDensityMatrix_noHerm<T>(A,A,std::forward<MatC>(C),LogOverlapFactor,TNN,TNM,IWORK,WORK,compact);
+      return SlaterDeterminantOperations::base::MixedDensityMatrix<T>(A,A,std::forward<MatC>(C),LogOverlapFactor,TNN,TNM,IWORK,WORK,compact,false);
     }
 
     template<class MatA, class MatB, class MatC>
@@ -180,16 +180,16 @@ class SlaterDetOperations_base
       set_buffer(2*NAEA*NAEA);
       TMatrix_ref TNN(TBuff.data(), {NAEA,NAEA});
       TMatrix_ref TNN2(TBuff.data()+TNN.num_elements(), {NAEA,NAEA});
-      return SlaterDeterminantOperations::base::Overlap_noHerm<T>(A,A,LogOverlapFactor,TNN,IWORK,TNN2);
+      return SlaterDeterminantOperations::base::Overlap<T>(A,A,LogOverlapFactor,TNN,IWORK,TNN2,false);
     }
 
     template<class MatA, class MatB>
-    T Overlap(const MatA& hermA, const MatB& B, T LogOverlapFactor) {
-      int NAEA = hermA.size(0);
+    T Overlap(const MatA& hermA, const MatB& B, T LogOverlapFactor, bool herm=true) {
+      int NAEA = (herm?hermA.size(0):hermA.size(1));
       set_buffer(2*NAEA*NAEA);
       TMatrix_ref TNN(TBuff.data(), {NAEA,NAEA});
       TMatrix_ref TNN2(TBuff.data()+TNN.num_elements(), {NAEA,NAEA});
-      return SlaterDeterminantOperations::base::Overlap<T>(hermA,B,LogOverlapFactor,TNN,IWORK,TNN2);
+      return SlaterDeterminantOperations::base::Overlap<T>(hermA,B,LogOverlapFactor,TNN,IWORK,TNN2,herm);
     } 
 
     template<class MatA, class MatB>
@@ -198,7 +198,7 @@ class SlaterDetOperations_base
       set_buffer(2*NAEA*NAEA);
       TMatrix_ref TNN(TBuff.data(), {NAEA,NAEA});
       TMatrix_ref TNN2(TBuff.data()+TNN.num_elements(), {NAEA,NAEA});
-      return SlaterDeterminantOperations::base::Overlap_noHerm<T>(A,B,LogOverlapFactor,TNN,IWORK,TNN2);
+      return SlaterDeterminantOperations::base::Overlap<T>(A,B,LogOverlapFactor,TNN,IWORK,TNN2,false);
     }
 
     // routines for PHMSD

@@ -139,6 +139,11 @@ class dummy_wavefunction
     throw std::runtime_error("calling visitor on dummy_wavefunction object");  
   }
 
+  template<class... Args>
+  void DensityMatrix(Args&&... args) {
+    throw std::runtime_error("calling visitor on dummy_wavefunction object");  
+  }
+
   template<class WlkSet, class TVec>
   void Overlap(const WlkSet& wset, TVec&& Ov) {
     throw std::runtime_error("calling visitor on dummy_wavefunction object");  
@@ -152,6 +157,11 @@ class dummy_wavefunction
   template<class WlkSet>
   void Orthogonalize(WlkSet& wset, bool impSamp) {
     throw std::runtime_error("calling visitor on dummy_wavefunction object");  
+  }
+
+  ComplexType getReferenceWeight(int i) {
+    throw std::runtime_error("calling visitor on dummy_wavefunction object");  
+    return ComplexType(0.0,0.0);
   }
 
   template<class Mat>
@@ -295,6 +305,14 @@ class Wavefunction: public boost::variant<dummy::dummy_wavefunction,NOMSD,PHMSD>
     }
 
     template<class... Args>
+    void DensityMatrix(Args&&... args) {
+        boost::apply_visitor(
+            [&](auto&& a){a.DensityMatrix(std::forward<Args>(args)...);},
+            *this
+        );
+    }
+
+    template<class... Args>
     void MixedDensityMatrix(Args&&... args) {
         boost::apply_visitor(
             [&](auto&& a){a.MixedDensityMatrix(std::forward<Args>(args)...);},
@@ -322,6 +340,14 @@ class Wavefunction: public boost::variant<dummy::dummy_wavefunction,NOMSD,PHMSD>
     void Orthogonalize(Args&&... args) {
         boost::apply_visitor(
             [&](auto&& a){a.Orthogonalize(std::forward<Args>(args)...);},
+            *this
+        );
+    }
+
+    template<class... Args>
+    ComplexType getReferenceWeight(Args&&... args) {
+        return boost::apply_visitor(
+            [&](auto&& a){return a.getReferenceWeight(std::forward<Args>(args)...);},
             *this
         );
     }

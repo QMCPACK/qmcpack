@@ -50,15 +50,15 @@ bool LatticeParser::put(xmlNodePtr cur)
     std::string cname((const char*)cur->name);
     if (cname == "parameter")
     {
-      std::string aname((const char*)(xmlGetProp(cur, (const xmlChar*)"name")));
+      const XMLAttrString aname(cur, "name");
       if (aname == "scale")
       {
         putContent(a0, cur);
       }
       else if (aname == "lattice")
       {
-        const char* units_prop = (const char*)(xmlGetProp(cur, (const xmlChar*)"units"));
-        if (units_prop && std::string(units_prop) != "bohr")
+        const XMLAttrString units_prop(cur, "units");
+        if (!units_prop.empty() && units_prop != "bohr")
         {
           APP_ABORT("LatticeParser::put. Only atomic units (bohr) supported for lattice units. Input file uses: "
                     << std::string(units_prop));
@@ -131,19 +131,10 @@ bool LatticeParser::put(xmlNodePtr cur)
     }
   }
   else
-  {
     if (boxsum == 0)
-    {
       app_log() << "  Lattice is not specified for the Open BC. Add a huge box." << std::endl;
-      lattice_in = 0;
-      for (int idir = 0; idir < DIM; idir++)
-        lattice_in(idir, idir) = 1e5;
-    }
     else
-    {
       APP_ABORT(" LatticeParser::put \n   Mixed boundary is supported only when a lattice is specified!");
-    }
-  }
   //special heg processing
   if (rs > 0.0)
   {
@@ -181,8 +172,11 @@ bool LatticeParser::put(xmlNodePtr cur)
     a0 = 1.0;
   }
 
-  lattice_in *= a0;
-  ref_.set(lattice_in);
+  if(lattice_defined)
+  {
+    lattice_in *= a0;
+    ref_.set(lattice_in);
+  }
   if (ref_.SuperCellEnum == SUPERCELL_OPEN)
     ref_.WignerSeitzRadius = ref_.SimulationCellRadius;
   std::string unit_name = "bohr";

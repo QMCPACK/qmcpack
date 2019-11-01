@@ -18,7 +18,7 @@
 #define QMCPLUSPLUS_BAREKINETICENERGY_H
 #include "Particle/ParticleSet.h"
 #include "Particle/WalkerSetRef.h"
-#include "QMCHamiltonians/QMCHamiltonianBase.h"
+#include "QMCHamiltonians/OperatorBase.h"
 #include "ParticleBase/ParticleAttribOps.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #ifdef QMC_CUDA
@@ -102,7 +102,7 @@ inline std::string int2string(const int& i)
 
 
 template<typename T>
-struct BareKineticEnergy : public QMCHamiltonianBase
+struct BareKineticEnergy : public OperatorBase
 {
   ///true, if all the species have the same mass
   bool SameMass;
@@ -217,8 +217,14 @@ struct BareKineticEnergy : public QMCHamiltonianBase
 #endif
         if (SameMass)
     {
+      //app_log() << "Here" << std::endl;
+      #ifdef QMC_COMPLEX  
+      Value = std::real( CplxDot(P.G, P.G) + CplxSum(P.L) );
+      Value *= -OneOver2M;
+      #else
       Value = Dot(P.G, P.G) + Sum(P.L);
       Value *= -OneOver2M;
+      #endif
     }
     else
     {
@@ -236,7 +242,7 @@ struct BareKineticEnergy : public QMCHamiltonianBase
 
   /**@brief Function to compute the value, direct ionic gradient terms, and pulay terms for the local kinetic energy.
  *  
- *  This general function represents the QMCHamiltonianBase interface for computing.  For an operator \hat{O}, this
+ *  This general function represents the OperatorBase interface for computing.  For an operator \hat{O}, this
  *  function will return \frac{\hat{O}\Psi_T}{\Psi_T},  \frac{\partial(\hat{O})\Psi_T}{\Psi_T}, and 
  *  \frac{\hat{O}\partial\Psi_T}{\Psi_T} - \frac{\hat{O}\Psi_T}{\Psi_T}\frac{\partial \Psi_T}{\Psi_T}.  These are 
  *  referred to as Value, HF term, and pulay term respectively.
@@ -452,7 +458,7 @@ struct BareKineticEnergy : public QMCHamiltonianBase
     return true;
   }
 
-  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi) { return new BareKineticEnergy(*this); }
+  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi) { return new BareKineticEnergy(*this); }
 
 #ifdef QMC_CUDA
   ////////////////////////////////

@@ -28,14 +28,14 @@ using MatrixOperators::product_AtB;
 
 
 DensityMatrices1B::DensityMatrices1B(ParticleSet& P, TrialWaveFunction& psi, ParticleSet* Pcl)
-    : Lattice(P.Lattice), Pq(P), Psi(psi), Pc(Pcl)
+    : Lattice(P.Lattice), Psi(psi), Pq(P), Pc(Pcl)
 {
   reset();
 }
 
 
 DensityMatrices1B::DensityMatrices1B(DensityMatrices1B& master, ParticleSet& P, TrialWaveFunction& psi)
-    : QMCHamiltonianBase(master), Lattice(P.Lattice), Pq(P), Psi(psi), Pc(master.Pc)
+    : OperatorBase(master), Lattice(P.Lattice), Psi(psi), Pq(P), Pc(master.Pc)
 {
   reset();
   set_state(master);
@@ -53,7 +53,7 @@ DensityMatrices1B::~DensityMatrices1B()
 }
 
 
-QMCHamiltonianBase* DensityMatrices1B::makeClone(ParticleSet& P, TrialWaveFunction& psi)
+OperatorBase* DensityMatrices1B::makeClone(ParticleSet& P, TrialWaveFunction& psi)
 {
   return new DensityMatrices1B(*this, P, psi);
 }
@@ -147,7 +147,7 @@ void DensityMatrices1B::set_state(xmlNodePtr cur)
     std::string ename((const char*)element->name);
     if (ename == "parameter")
     {
-      std::string name((const char*)(xmlGetProp(element, (const xmlChar*)"name")));
+      const XMLAttrString name(element, "name");
       if (name == "basis")
         putContent(sposets, element);
       else if (name == "energy_matrix")
@@ -312,6 +312,7 @@ void DensityMatrices1B::initialize()
 
   rsamples.resize(samples);
   sample_weights.resize(samples);
+  psi_ratios.resize(nparticles);
 
   if (evaluator == matrix)
   {
@@ -358,6 +359,16 @@ void DensityMatrices1B::initialize()
   {
     normalize();
   }
+
+  const TimerNameList_t<DMTimers>
+    DMTimerNames = {{DM_eval              , "DensityMatrices1B::evaluate"},
+                    {DM_gen_samples       , "DensityMatrices1B::generate_samples"},
+                    {DM_gen_sample_basis  , "DensityMatrices1B::generate_sample_basis"},
+                    {DM_gen_sample_ratios , "DensityMatrices1B::generate_sample_ratios"},
+                    {DM_gen_particle_basis, "DensityMatrices1B::generate_particle_basis"},
+                    {DM_matrix_products   , "DensityMatrices1B::evaluate_matrix_products"},
+                    {DM_accumulate        , "DensityMatrices1B::evaluate_matrix_accum"}};
+  setup_timers(timers,DMTimerNames,timer_level_fine);
 
   initialized = true;
 }
@@ -576,6 +587,7 @@ void DensityMatrices1B::warmup_sampling()
 
 DensityMatrices1B::Return_t DensityMatrices1B::evaluate(ParticleSet& P)
 {
+  ScopedTimer t(timers[DM_eval]);
   if (have_required_traces || !energy_mat)
   {
     if (check_derivatives)
@@ -612,6 +624,7 @@ DensityMatrices1B::Return_t DensityMatrices1B::evaluate_matrix(ParticleSet& P)
   generate_sample_ratios(Psi_NM);     // conj(Psi ratio) : particles x samples
   generate_particle_basis(P, Phi_NB); // conj(basis)     : particles x basis_size
   // perform integration via matrix products
+  timers[DM_matrix_products]->start();
   for (int s = 0; s < nspecies; ++s)
   {
     Matrix_t& Psi_nm     = *Psi_NM[s];
@@ -627,7 +640,9 @@ DensityMatrices1B::Return_t DensityMatrices1B::evaluate_matrix(ParticleSet& P)
       product_AtB(Phi_nb, Phi_Psi_nb, *E_BB[s]); // (energies*conj(basis))^T*ratio*basis
     }
   }
+  timers[DM_matrix_products]->stop();
   // accumulate data into collectables
+  timers[DM_accumulate]->start();
   const int basis_size2 = basis_size * basis_size;
   int ij                = nindex;
   for (int s = 0; s < nspecies; ++s)
@@ -664,6 +679,7 @@ DensityMatrices1B::Return_t DensityMatrices1B::evaluate_matrix(ParticleSet& P)
       }
     }
   }
+  timers[DM_accumulate]->stop();
 
 
   // jtk come back to this
@@ -768,7 +784,7 @@ DensityMatrices1B::Return_t DensityMatrices1B::evaluate_check(ParticleSet& P)
         update_basis(rsamp);
         PosType dr = rsamp - P.R[n];
         P.makeMove(n, dr);
-        Value_t ratio = sample_weights[m] * qmcplusplus::conj(Psi.full_ratio(P, n));
+        Value_t ratio = sample_weights[m] * qmcplusplus::conj(Psi.calcRatio(P, n));
         P.rejectMove(n);
         for (int i = 0; i < basis_size; ++i)
         {
@@ -874,6 +890,7 @@ DensityMatrices1B::Return_t DensityMatrices1B::evaluate_loop(ParticleSet& P)
 
 inline void DensityMatrices1B::generate_samples(RealType weight, int steps)
 {
+  ScopedTimer t(timers[DM_gen_samples]);
   RandomGenerator_t& rng = *uniform_random;
   bool save              = false;
   if (steps == 0)
@@ -1128,6 +1145,7 @@ void DensityMatrices1B::get_energies(std::vector<Vector_t*>& E_n)
 
 void DensityMatrices1B::generate_sample_basis(Matrix_t& Phi_mb)
 {
+  ScopedTimer t(timers[DM_gen_sample_basis]);
   int mb = 0;
   for (int m = 0; m < samples; ++m)
   {
@@ -1140,19 +1158,21 @@ void DensityMatrices1B::generate_sample_basis(Matrix_t& Phi_mb)
 
 void DensityMatrices1B::generate_sample_ratios(std::vector<Matrix_t*> Psi_nm)
 {
-  int p = 0;
-  for (int s = 0; s < nspecies; ++s)
+  ScopedTimer t(timers[DM_gen_sample_ratios]);
+  for (int m = 0; m < samples; ++m)
   {
-    int nm         = 0;
-    Matrix_t& P_nm = *Psi_nm[s];
-    for (int n = 0; n < species_size[s]; ++n, ++p)
+    // get N ratios for the current sample point
+    Pq.makeVirtualMoves(rsamples[m]);
+    Psi.evaluateRatiosAlltoOne(Pq, psi_ratios);
+
+    // collect ratios into per-species matrices
+    int p = 0;
+    for (int s = 0; s < nspecies; ++s)
     {
-      PosType& Rp = Pq.R[p];
-      for (int m = 0; m < samples; ++m, ++nm)
+      Matrix_t& P_nm = *Psi_nm[s];
+      for (int n = 0; n < species_size[s]; ++n, ++p)
       {
-        Pq.makeMove(p, rsamples[m] - Rp);
-        P_nm(nm) = qmcplusplus::conj(Psi.full_ratio(Pq, p));
-        Pq.rejectMove(p);
+        P_nm(n,m) = qmcplusplus::conj(psi_ratios[p]);
       }
     }
   }
@@ -1161,6 +1181,7 @@ void DensityMatrices1B::generate_sample_ratios(std::vector<Matrix_t*> Psi_nm)
 
 void DensityMatrices1B::generate_particle_basis(ParticleSet& P, std::vector<Matrix_t*>& Phi_nb)
 {
+  ScopedTimer t(timers[DM_gen_particle_basis]);
   int p = 0;
   for (int s = 0; s < nspecies; ++s)
   {
@@ -1184,7 +1205,7 @@ inline void DensityMatrices1B::integrate(ParticleSet& P, int n)
     PosType& rsamp = rsamples[s];
     update_basis(rsamp);
     P.makeMove(n, rsamp - P.R[n]);
-    Value_t ratio = sample_weights[s] * qmcplusplus::conj(Psi.full_ratio(P, n));
+    Value_t ratio = sample_weights[s] * qmcplusplus::conj(Psi.calcRatio(P, n));
     P.rejectMove(n);
     for (int i = 0; i < basis_size; ++i)
       integrated_values[i] += ratio * basis_values[i];

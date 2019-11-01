@@ -16,7 +16,7 @@
 
 #ifndef QMCPLUSPLUS_COULOMBPBCAA_TEMP_H
 #define QMCPLUSPLUS_COULOMBPBCAA_TEMP_H
-#include "QMCHamiltonians/QMCHamiltonianBase.h"
+#include "QMCHamiltonians/OperatorBase.h"
 #include "QMCHamiltonians/ForceBase.h"
 #include "LongRange/LRCoulombSingleton.h"
 #include "Particle/DistanceTableData.h"
@@ -29,7 +29,7 @@ namespace qmcplusplus
  * Functionally identical to CoulombPBCAA but uses a templated version of
  * LRHandler.
  */
-struct CoulombPBCAA : public QMCHamiltonianBase, public ForceBase
+struct CoulombPBCAA : public OperatorBase, public ForceBase
 {
   typedef LRCoulombSingleton::LRHandlerType LRHandlerType;
   typedef LRCoulombSingleton::GridType GridType;
@@ -38,9 +38,14 @@ struct CoulombPBCAA : public QMCHamiltonianBase, public ForceBase
 
   typedef DistanceTableData::RowContainer RowContainerType;
 
+  // energy-optimized
   LRHandlerType* AA;
   GridType* myGrid;
   RadFunctorType* rVs;
+  // force-optimized
+  LRHandlerType* dAA;
+  GridType* myGridforce;
+  RadFunctorType* rVsforce;
 
   bool is_active;
   bool FirstTime;
@@ -68,6 +73,7 @@ struct CoulombPBCAA : public QMCHamiltonianBase, public ForceBase
   //single particle trace sample
   Array<TraceReal, 1>* V_sample;
   Array<TraceReal, 1> V_const;
+  Array<TraceReal, 1> V_samp_tmp;
 #endif
   ParticleSet& Ps;
 
@@ -97,7 +103,7 @@ struct CoulombPBCAA : public QMCHamiltonianBase, public ForceBase
     return true;
   }
 
-  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 
   void initBreakup(ParticleSet& P);
 
@@ -123,14 +129,14 @@ struct CoulombPBCAA : public QMCHamiltonianBase, public ForceBase
 
   void setObservables(PropertySetType& plist)
   {
-    QMCHamiltonianBase::setObservables(plist);
+    OperatorBase::setObservables(plist);
     if (ComputeForces)
       setObservablesF(plist);
   }
 
   void setParticlePropertyList(PropertySetType& plist, int offset)
   {
-    QMCHamiltonianBase::setParticlePropertyList(plist, offset);
+    OperatorBase::setParticlePropertyList(plist, offset);
     if (ComputeForces)
       setParticleSetF(plist, offset);
   }

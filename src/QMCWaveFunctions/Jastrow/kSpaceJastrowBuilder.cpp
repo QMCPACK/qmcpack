@@ -15,13 +15,14 @@
 
 #include "QMCWaveFunctions/Jastrow/kSpaceJastrowBuilder.h"
 #include "OhmmsData/AttributeSet.h"
+#include <qmc_common.h>
 
 namespace qmcplusplus
 {
 template<class T>
 inline bool putContent2(std::vector<T>& a, xmlNodePtr cur)
 {
-  std::istringstream stream((const char*)(xmlNodeListGetString(cur->doc, cur->xmlChildrenNode, 1)));
+  std::istringstream stream(XMLNodeString{cur});
   T temp;
   a.clear();
   while (!stream.eof())
@@ -36,7 +37,7 @@ inline bool putContent2(std::vector<T>& a, xmlNodePtr cur)
 }
 
 
-bool kSpaceJastrowBuilder::put(xmlNodePtr cur)
+WaveFunctionComponent* kSpaceJastrowBuilder::buildComponent(xmlNodePtr cur)
 {
   xmlNodePtr kids = cur->xmlChildrenNode;
   kSpaceJastrow::SymmetryType oneBodySymm, twoBodySymm;
@@ -137,8 +138,33 @@ bool kSpaceJastrowBuilder::put(xmlNodePtr cur)
                                              id2_opt,
                                              spin2_opt == "yes");
   jastrow->setCoefficients(oneBodyCoefs, twoBodyCoefs);
+  if (qmc_common.io_node) outputJastrow(jastrow);
   //jastrow->addOptimizables(targetPsi.VarList);
-  targetPsi.addOrbital(jastrow, "kSpace");
-  return true;
+  return jastrow;
+}
+
+
+void
+kSpaceJastrowBuilder::outputJastrow(kSpaceJastrow* jastrow)
+{
+  char fname[32];
+  int taskid = is_manager() ? getGroupID():-1;
+  std::ofstream fout;
+
+  // output one-body jastrow
+  if (qmc_common.mpi_groups>1) sprintf(fname,"Jk1.g%03d.dat",taskid);
+  else sprintf(fname,"Jk1.dat");
+  fout.open(fname);
+  fout << "#  kx  ky  kz  coeff_real  coeff_imag" << std::endl;
+  jastrow->printOneBody(fout);
+  fout.close();
+
+  // output two-body jastrow
+  if (qmc_common.mpi_groups>1) sprintf(fname,"Jk2.g%03d.dat",taskid);
+  else sprintf(fname,"Jk2.dat");
+  fout.open(fname);
+  fout << "#  kx  ky  kz  coeff_real  coeff_imag" << std::endl;
+  jastrow->printTwoBody(fout);
+  fout.close();
 }
 } // namespace qmcplusplus

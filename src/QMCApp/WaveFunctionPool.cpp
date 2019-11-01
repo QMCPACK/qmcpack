@@ -22,7 +22,7 @@
 
 namespace qmcplusplus
 {
-WaveFunctionPool::WaveFunctionPool(Communicate* c, const char* aname) : MPIObjectBase(c)
+WaveFunctionPool::WaveFunctionPool(Communicate* c, const char* aname) : MPIObjectBase(c), primary_psi_(nullptr), ptcl_pool_(nullptr)
 {
   ClassName = "WaveFunctionPool";
   myName    = aname;
@@ -49,7 +49,7 @@ bool WaveFunctionPool::put(xmlNodePtr cur)
   pAttrib.add(target, "ref");
   pAttrib.add(role, "role");
   pAttrib.put(cur);
-  ParticleSet* qp = ptclPool->getParticleSet(target);
+  ParticleSet* qp = ptcl_pool_->getParticleSet(target);
 
   { //check ESHDF should be used to initialize both target and associated ionic system
     xmlNodePtr tcur = cur->children;
@@ -58,7 +58,7 @@ bool WaveFunctionPool::put(xmlNodePtr cur)
       std::string cname((const char*)tcur->name);
       if (cname == WaveFunctionComponentBuilder::detset_tag || cname == "sposet_builder")
       {
-        qp = ptclPool->createESParticleSet(tcur, target, qp);
+        qp = ptcl_pool_->createESParticleSet(tcur, target, qp);
       }
       tcur = tcur->next;
     }
@@ -72,7 +72,7 @@ bool WaveFunctionPool::put(xmlNodePtr cur)
   bool isPrimary                  = true;
   if (pit == myPool.end())
   {
-    psiFactory = new WaveFunctionFactory(qp, ptclPool->getPool(), myComm);
+    psiFactory = new WaveFunctionFactory(qp, ptcl_pool_->getPool(), myComm);
     psiFactory->setName(id);
     isPrimary  = (myPool.empty() || role == "primary");
     myPool[id] = psiFactory;
@@ -87,7 +87,7 @@ bool WaveFunctionPool::put(xmlNodePtr cur)
   bool success = psiFactory->put(cur);
   if (success && isPrimary)
   {
-    primaryPsi = psiFactory->targetPsi;
+    primary_psi_ = psiFactory->targetPsi;
   }
   return success;
 }

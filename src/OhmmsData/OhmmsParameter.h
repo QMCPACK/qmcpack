@@ -158,8 +158,8 @@ public:
   inline bool put(xmlNodePtr cur)
   {
     node_          = cur;
-    const char* ac = (const char*)(xmlNodeListGetString(cur->doc, cur->xmlChildrenNode, 1));
-    if (ac)
+    const XMLNodeString ac(cur);
+    if (!ac.empty())
     {
       std::istringstream stream(ac);
       //return stream >> ref_;

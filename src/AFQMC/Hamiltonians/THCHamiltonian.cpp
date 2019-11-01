@@ -214,14 +214,14 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
 
     // since generating v0 takes some effort and temporary space,
     // v0(i,l) = -0.5*sum_j <i,j|j,l>
-    //         = -0.5 sum_j,u,v conj(Piu(i,u)) conj(Piu(j,v)) Muv Piu(j,u) Piu(l,v)
-    //         = -0.5 sum_u,v conj(Piu(i,u)) W(u,v) Piu(l,u), where
-    // W(u,v) = Muv(u,v) * sum_j Piu(j,u) conj(Piu(j,v))
+    //         = -0.5 sum_j,u,v ma::conj(Piu(i,u)) ma::conj(Piu(j,v)) Muv Piu(j,u) Piu(l,v)
+    //         = -0.5 sum_u,v ma::conj(Piu(i,u)) W(u,v) Piu(l,u), where
+    // W(u,v) = Muv(u,v) * sum_j Piu(j,u) ma::conj(Piu(j,v))
     ma::product(H(Piu__.get()),Piu__.get()({0,long(NMO)},{long(c0),long(cN)}),Tuv);
     auto itM = Muv.origin();
     auto itT = Tuv.origin();
     for(size_t i=0; i<Muv.num_elements(); ++i, ++itT, ++itM)
-      *(itT) = conj(*itT)*(*itM);
+      *(itT) = ma::conj(*itT)*(*itM);
     boost::multi::array<ComplexType,2> T_({Tuv.size(1),size_t(NMO)});
     ma::product(T(Tuv),H(Piu__.get()),T_);
     ma::product(-0.5,T(T_),T(Piu__.get()({0,long(NMO)},{long(c0),long(cN)})),0.0,v0);
@@ -254,14 +254,14 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
 
     // since generating v0 takes some effort and temporary space,
     // v0(i,l) = -0.5*sum_j <i,j|j,l>
-    //         = -0.5 sum_j,u,v conj(Piu(i,u)) conj(Piu(j,v)) Muv Piu(j,u) Piu(l,v)
-    //         = -0.5 sum_u,v conj(Piu(i,u)) W(u,v) Piu(l,u), where
-    // W(u,v) = Muv(u,v) * sum_j Piu(j,u) conj(Piu(j,v))
+    //         = -0.5 sum_j,u,v ma::conj(Piu(i,u)) ma::conj(Piu(j,v)) Muv Piu(j,u) Piu(l,v)
+    //         = -0.5 sum_u,v ma::conj(Piu(i,u)) W(u,v) Piu(l,u), where
+    // W(u,v) = Muv(u,v) * sum_j Piu(j,u) ma::conj(Piu(j,v))
     ma::product(H(Piu.get()),Piu.get()({0,long(NMO)},{long(c0),long(cN)}),Tuv);
     auto itM = Muv.origin();
     auto itT = Tuv.origin();
     for(size_t i=0; i<Muv.num_elements(); ++i, ++itT, ++itM)
-      *(itT) = conj(*itT)*(*itM);
+      *(itT) = ma::conj(*itT)*(*itM);
     boost::multi::array<ComplexType,2> T_({Tuv.size(1),size_t(NMO)});
     ma::product(T(Tuv),H(Piu.get()),T_);
     ma::product(-0.5,T(T_),T(Piu.get()({0,long(NMO)},{long(c0),long(cN)})),0.0,v0);
@@ -286,7 +286,7 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
       boost::multi::array<ComplexType,2> A({NMO,naea_});
       boost::multi::array<ComplexType,2> B({NMO,naeb_});
       for(int i=0; i<ndet; i++) {
-        // cPua = H(Piu) * conj(A)
+        // cPua = H(Piu) * ma::conj(A)
         csr::CSR2MA('T',PsiT[2*i],A);
         ma::product(H(Piu.get()),A,
                     cPua[i].get()({0,long(nmu)},{0,long(naea_)}));
@@ -304,7 +304,7 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
       boost::multi::array<ComplexType,2> A({PsiT[0].size(1),PsiT[0].size(0)});
       for(int i=0; i<ndet; i++) {
         csr::CSR2MA('T',PsiT[i],A);
-        // cPua = H(Piu) * conj(A)
+        // cPua = H(Piu) * ma::conj(A)
         ma::product(H(Piu.get()),A,cPua[i].get());
         if(not test_Luv)
           ma::product(H(rotPiu.get()),A,rotcPua[i].get());

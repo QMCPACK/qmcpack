@@ -20,7 +20,7 @@
 namespace qmcplusplus
 {
 LocalMomentEstimator::LocalMomentEstimator(ParticleSet& elns, ParticleSet& srcs)
-  : ions(srcs), d_table_ID(elns.addTable(ions, DT_AOS))
+  : ions(srcs), d_table_ID(elns.addTable(srcs, DT_AOS))
 {
   int num_species = elns.groups();
   const SpeciesSet& e_species(elns.getSpeciesSet());
@@ -68,6 +68,7 @@ LocalMomentEstimator::Return_t LocalMomentEstimator::evaluate(ParticleSet& P)
   for (int iat = 0; iat < nag; ++iat)
   {
     int j(0);
+#ifndef ENABLE_SOA
     for (int nn = d_table.M[iat]; nn < d_table.M[iat + 1]; ++nn, j++)
     {
       RealType r = d_table.r(nn);
@@ -75,6 +76,7 @@ LocalMomentEstimator::Return_t LocalMomentEstimator::evaluate(ParticleSet& P)
         continue;
       lm(ion_id[iat], el_id[j]) += el_nrm[el_id[j]];
     }
+#endif
   }
   return 0.0;
 }
@@ -99,7 +101,7 @@ bool LocalMomentEstimator::get(std::ostream& os) const
   return true;
 }
 
-QMCHamiltonianBase* LocalMomentEstimator::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+OperatorBase* LocalMomentEstimator::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   //default constructor is sufficient
   LocalMomentEstimator* myClone = new LocalMomentEstimator(*this);

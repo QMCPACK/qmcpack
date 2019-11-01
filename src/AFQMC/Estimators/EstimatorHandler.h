@@ -10,9 +10,7 @@
 #include "AFQMC/Estimators/EnergyEstimator.h"
 #include "AFQMC/Estimators/BasicEstimator.h"
 #include "AFQMC/Estimators/MixedRDMEstimator.h"
-#include "AFQMC/Estimators/BackPropagatedEstimator.h"
-//#include "AFQMC/Estimators/WalkerDMEstimator.h"
-
+#include "AFQMC/Estimators/BackPropagatedEstimator.hpp"
 #include "AFQMC/Walkers/WalkerSet.hpp"
 #include "AFQMC/Hamiltonians/HamiltonianFactory.h"
 #include "AFQMC/Wavefunctions/WavefunctionFactory.h"
@@ -28,6 +26,16 @@ namespace qmcplusplus
 namespace afqmc
 {
 
+/* 
+ * Manager class for all estimators/observables.
+ * This class contains and manages a list of estimator objects.
+ * An arbitrary combination of estimators can be used simultaneously
+ * during a simulation, including: 
+ *   1) mixed distribution estimators,  
+ *   2) back propagated estimators, 
+ *   3) any number of 1),2), 
+ *   4) each with independent wavefunctions.
+ */
 class EstimatorHandler: public AFQMCInfo
 {
 
@@ -48,8 +56,8 @@ class EstimatorHandler: public AFQMCInfo
         bool defaultEnergyEstim=false,
         bool impsamp=true):
             AFQMCInfo(info),
-            hdf_output(false),
-            project_title(title)
+            project_title(title),
+            hdf_output(false)
   {
     estimators.reserve(10);
 
@@ -98,8 +106,6 @@ class EstimatorHandler: public AFQMCInfo
         if(name == "basic" || name == "Basic" || name == "standard") {
         // do nothing
         // first process estimators that do not need a wfn
-        } else if (name == "walker_density_matrix") {
-//          estimators.emplace_back(static_cast<EstimPtr>(std::make_shared<WalkerDMEstimator>(TGgen.getTG(1),info,title,cur)));
         } else {
         // now do those that do
 
@@ -151,7 +157,7 @@ class EstimatorHandler: public AFQMCInfo
       //out.open(filename.c_str(),std::ios_base::app | std::ios_base::out);
       std::string filename = project_title+".scalar.dat";
       if(hdf_output) {
-        hdf_file = project_title+".scalar.h5";
+        hdf_file = project_title+".stat.h5";
         if(!dump.create(hdf_file)) {
           app_log()<<"Problems opening estimator hdf5 output file: " << hdf_file <<std::endl;
           APP_ABORT("Problems opening estimator hdf5 output file.\n");
@@ -222,7 +228,8 @@ class EstimatorHandler: public AFQMCInfo
     dump.write(NMO, "NMO");
     dump.write(NAEA, "NAEA");
     dump.write(NAEB, "NAEB");
-    dump.write(wlk, "WalkerType");
+    int wlk_t_copy = wlk; // the actual data type of enum is implementation-defined. convert to int for file
+    dump.write(wlk_t_copy, "WalkerType");
     dump.write(free_projection, "FreeProjection");
     dump.write(dt, "Timestep");
     dump.pop();

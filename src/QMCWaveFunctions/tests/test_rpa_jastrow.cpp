@@ -17,7 +17,6 @@
 #include "Lattice/ParticleBConds.h"
 #include "Particle/ParticleSet.h"
 #include "Particle/DistanceTableData.h"
-#include "Particle/SymmetricDistanceTableData.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCWaveFunctions/Jastrow/RPAJastrow.h"
@@ -104,11 +103,11 @@ TEST_CASE("RPA Jastrow", "[wavefunction]")
   LatticeParser lp(*SimulationCell);
   lp.put(part1);
   SimulationCell->print(app_log(), 0);
-  elec_.Lattice.copy(*SimulationCell);
+  elec_.Lattice = *SimulationCell;
   // initialize SK
   elec_.createSK();
 
-  TrialWaveFunction psi = TrialWaveFunction(c);
+  TrialWaveFunction psi(c);
 
   xmltext = "<tmp> \
   <jastrow name=\"Jee\" type=\"Two-Body\" function=\"rpa\"/>\
@@ -123,7 +122,7 @@ TEST_CASE("RPA Jastrow", "[wavefunction]")
   RPAJastrow* jas = new RPAJastrow(elec_, is_manager);
   jas->put(root);
 
-  psi.addOrbital(jas, "Jee", false);
+  psi.addComponent(jas, "Jee");
 
   // update all distance tables
   elec_.update();

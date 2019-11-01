@@ -59,9 +59,12 @@ public:
   /** copy constructor */
   Vector(const Vector& rhs) : nLocal(rhs.nLocal), nAllocated(0), X(nullptr)
   {
-    resize_impl(rhs.nLocal);
-    if (allocator_traits<Alloc>::is_host_accessible)
-      std::copy_n(rhs.data(), nLocal, X);
+    if (nLocal)
+    {
+      resize_impl(rhs.nLocal);
+      if (allocator_traits<Alloc>::is_host_accessible)
+        std::copy_n(rhs.data(), nLocal, X);
+    }
   }
 
   // default assignment operator
@@ -100,10 +103,7 @@ public:
   //! Destructor
   virtual ~Vector()
   {
-    if (nAllocated)
-    {
-      mAllocator.deallocate(X, nAllocated);
-    }
+    free();
   }
 
   // Attach to pre-allocated memory
@@ -211,6 +211,7 @@ private:
   ///allocator
   Alloc mAllocator;
 
+  ///a dumb resize, always free existing memory and resize to n. n must be protected positive
   inline void resize_impl(size_t n)
   {
     if (nAllocated)

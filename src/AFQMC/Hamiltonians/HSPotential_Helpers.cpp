@@ -22,7 +22,7 @@
 /********************************************************************
 *  You get 2 potentials per Cholesky std::vector
 *
-*    vn(+-)_{i,k} = 0.5*( L^n_{i,k} +- conj(L^n_{k,i}) )
+*    vn(+-)_{i,k} = 0.5*( L^n_{i,k} +- ma::conj(L^n_{k,i}) )
 ********************************************************************/
 
 namespace qmcplusplus
@@ -37,8 +37,8 @@ namespace HamHelper
 namespace
 {
 
-//inline double const& conj(double const& d){return d;}
-//inline float const& conj(float const& f){return f;}
+//inline double const& ma::conj(double const& d){return d;}
+//inline float const& ma::conj(float const& f){return f;}
 
 void count_over_cholvec(double cut, std::vector<std::size_t>& count, int c0, int c1, SpVType_shm_csr_matrix::reference const& Lik, SpVType_shm_csr_matrix::reference const& Lki)
 {
@@ -72,8 +72,8 @@ void count_over_cholvec(double cut, std::vector<std::size_t>& count, int c0, int
   using std::size_t;
   while( cik!=cik_end && cki!=cki_end ) {
     if( *cik == *cki ) { // both Lik and Lki have components on Chol Vec *cik==*cki
-      if(abs(*vik + conj(*vki)) > cut) count[2*(*cik)]+=size_t(2); // Lik + Lki* and Lki + Lik*
-      if(abs(*vik - conj(*vki)) > cut) count[2*(*cik)+1]+=size_t(2); // Lik - Lki* and Lki - Lik*
+      if(abs(*vik + ma::conj(*vki)) > cut) count[2*(*cik)]+=size_t(2); // Lik + Lki* and Lki + Lik*
+      if(abs(*vik - ma::conj(*vki)) > cut) count[2*(*cik)+1]+=size_t(2); // Lik - Lki* and Lki - Lik*
       ++cik;
       ++vik;
       ++cki;
@@ -141,9 +141,9 @@ void count_over_cholvec(double cut, std::vector<std::size_t>& count, int c0, int
   using std::abs;
   using std::size_t;
   while( ci!=ci_end ) {
-    if(abs(*vi + conj(*vi)) > cut) ++count[2*(*ci)];   // Lii + Lii*
+    if(abs(*vi + ma::conj(*vi)) > cut) ++count[2*(*ci)];   // Lii + Lii*
 #if defined(QMC_COMPLEX)
-    if(abs(*vi - conj(*vi)) > cut) ++count[2*(*ci)+1]; // Lii - Lii*
+    if(abs(*vi - ma::conj(*vi)) > cut) ++count[2*(*ci)+1]; // Lii - Lii*
 #endif
     ++ci;
     ++vi;
@@ -184,10 +184,10 @@ void count_nnz(double cut, std::size_t& nik, std::size_t& nki, int c0, int c1, S
   // ignoring factor of 0.5 to keep it consistent with the old code for now
   while( cik!=cik_end && cki!=cki_end ) {
     if( *cik == *cki ) { // both Lik and Lki have components on Chol Vec *cik==*cki
-      if(abs(*vik + conj(*vki)) > cut && // Lik + Lki* and Lki + Lik*
+      if(abs(*vik + ma::conj(*vki)) > cut && // Lik + Lki* and Lki + Lik*
           2*(*cik)>=c0 && 2*(*cik)<c1) { nik++; nki++; }
 #if defined(QMC_COMPLEX)
-      if(abs(*vik - conj(*vki)) > cut && // Lik - Lki* and Lki - Lik*
+      if(abs(*vik - ma::conj(*vki)) > cut && // Lik - Lki* and Lki - Lik*
           2*(*cik)+1>=c0 && 2*(*cik)+1<c1) { nik++; nki++; }
 #endif
       ++cik;
@@ -265,9 +265,9 @@ void count_nnz(double cut, size_t& ni, int c0, int c1, SpVType_shm_csr_matrix::r
 
   // ignoring factor of 0.5 to keep it consistent with the old code for now
   while( ci!=ci_end ) {
-    if(abs(*vi + conj(*vi)) > cut && 2*(*ci)>=c0 && 2*(*ci)<c1) ++ni; // Lii + Lii*
+    if(abs(*vi + ma::conj(*vi)) > cut && 2*(*ci)>=c0 && 2*(*ci)<c1) ++ni; // Lii + Lii*
 #if defined(QMC_COMPLEX)
-    if(abs(*vi - conj(*vi)) > cut && 2*(*ci)+1>=c0 && 2*(*ci)+1<c1) ++ni; // Lii - Lii*
+    if(abs(*vi - ma::conj(*vi)) > cut && 2*(*ci)+1>=c0 && 2*(*ci)+1<c1) ++ni; // Lii - Lii*
 #endif
     ++ci;
     ++vi;
@@ -296,18 +296,18 @@ void add_to_vn(SpVType_shm_csr_matrix& vn, std::vector<int> const& map_, double 
   SPValueType half(0.5);
   SPComplexType im(0.0,1.0);
   while( ci!=ci_end ) {
-    if(abs(*vi + conj(*vi)) > cut && 2*(*ci)>=c0 && 2*(*ci)<c1 ) {
+    if(abs(*vi + ma::conj(*vi)) > cut && 2*(*ci)>=c0 && 2*(*ci)<c1 ) {
         assert(map_[2*(*ci)] >= 0);
         assert(map_[2*(*ci)]-c_origin < vn.size(1));
         vn.emplace_back({ik,(map_[2*(*ci)]-c_origin)},
-                static_cast<SPValueType>(half*(*vi+conj(*vi)))); // Lii + Lii*
+                static_cast<SPValueType>(half*(*vi+ma::conj(*vi)))); // Lii + Lii*
     }
 #if defined(QMC_COMPLEX)
-    if(abs(*vi - conj(*vi)) > cut && 2*(*ci)+1>=c0 && 2*(*ci)+1<c1) {
+    if(abs(*vi - ma::conj(*vi)) > cut && 2*(*ci)+1>=c0 && 2*(*ci)+1<c1) {
         assert(map_[2*(*ci)+1] >= 0);
         assert(map_[2*(*ci)+1]-c_origin < vn.size(1));
         vn.emplace_back({ik,(map_[2*(*ci)+1]-c_origin)},
-                static_cast<SPValueType>(half*im*(*vi-conj(*vi)))); // Lii - Lii*
+                static_cast<SPValueType>(half*im*(*vi-ma::conj(*vi)))); // Lii - Lii*
     }
 #endif
     ++ci;
@@ -349,25 +349,25 @@ void add_to_vn(SpVType_shm_csr_matrix& vn, std::vector<int> const& map_, double 
   int c_origin = vn.global_origin()[1];
   while( cik!=cik_end && cki!=cki_end ) {
     if( *cik == *cki ) { // both Lik and Lki have components on Chol Vec *cik==*cki
-      if(abs(*vik + conj(*vki)) > cut) { // Lik + Lki* and Lki + Lik*
+      if(abs(*vik + ma::conj(*vki)) > cut) { // Lik + Lki* and Lki + Lik*
           if(2*(*cik)>=c0 && 2*(*cik)<c1) {
             assert(map_[2*(*cik)] >= 0);
             assert(map_[2*(*cik)]-c_origin < vn.size(1));
             vn.emplace_back({ik,(map_[2*(*cik)]-c_origin)},
-                  static_cast<SPValueType>(half*(*vik+conj(*vki)))); // Lik + Lki*
+                  static_cast<SPValueType>(half*(*vik+ma::conj(*vki)))); // Lik + Lki*
             vn.emplace_back({ki,(map_[2*(*cki)]-c_origin)},
-                  static_cast<SPValueType>(half*(*vki+conj(*vik)))); // Lki + Lik*
+                  static_cast<SPValueType>(half*(*vki+ma::conj(*vik)))); // Lki + Lik*
           }
       }
 #if defined(QMC_COMPLEX)
-      if(abs(*vik - conj(*vki)) > cut) { // Lik - Lki* and Lki - Lik*
+      if(abs(*vik - ma::conj(*vki)) > cut) { // Lik - Lki* and Lki - Lik*
           if(2*(*cik)+1>=c0 && 2*(*cik)+1<c1) {
             assert(map_[2*(*cik)+1] >= 0);
             assert(map_[2*(*cik)+1]-c_origin < vn.size(1));
             vn.emplace_back({ik,(map_[2*(*cik)+1]-c_origin)},
-                  static_cast<SPValueType>(half*im*(*vik-conj(*vki)))); // Lik - Lki*
+                  static_cast<SPValueType>(half*im*(*vik-ma::conj(*vki)))); // Lik - Lki*
             vn.emplace_back({ki,(map_[2*(*cki)+1]-c_origin)},
-                  static_cast<SPValueType>(half*im*(*vki-conj(*vik)))); // Lki - Lik*
+                  static_cast<SPValueType>(half*im*(*vki-ma::conj(*vik)))); // Lki - Lik*
         }
       }
 #endif
@@ -383,7 +383,7 @@ void add_to_vn(SpVType_shm_csr_matrix& vn, std::vector<int> const& map_, double 
             vn.emplace_back({ik,(map_[2*(*cik)]-c_origin)},
                   static_cast<SPValueType>(half*(*vik))); // Lik + 0
             vn.emplace_back({ki,(map_[2*(*cik)]-c_origin)},
-                  static_cast<SPValueType>(half*conj(*vik))); // Lik + 0
+                  static_cast<SPValueType>(half*ma::conj(*vik))); // Lik + 0
           }
 #if defined(QMC_COMPLEX)
           if(2*(*cik)+1>=c0 && 2*(*cik)+1<c1) {
@@ -392,7 +392,7 @@ void add_to_vn(SpVType_shm_csr_matrix& vn, std::vector<int> const& map_, double 
             vn.emplace_back({ik,(map_[2*(*cik)+1]-c_origin)},
                   static_cast<SPValueType>(half*im*(*vik))); // Lik - 0
             vn.emplace_back({ki,(map_[2*(*cik)+1]-c_origin)},
-                  static_cast<SPValueType>(-half*im*conj(*vik))); // Lik - 0
+                  static_cast<SPValueType>(-half*im*ma::conj(*vik))); // Lik - 0
           }
 #endif
       }
@@ -404,7 +404,7 @@ void add_to_vn(SpVType_shm_csr_matrix& vn, std::vector<int> const& map_, double 
             assert(map_[2*(*cki)] >= 0);
             assert(map_[2*(*cki)]-c_origin < vn.size(1));
             vn.emplace_back({ik,(map_[2*(*cki)]-c_origin)},
-                  static_cast<SPValueType>(half*conj(*vki))); // Lki + 0
+                  static_cast<SPValueType>(half*ma::conj(*vki))); // Lki + 0
             vn.emplace_back({ki,(map_[2*(*cki)]-c_origin)},
                   static_cast<SPValueType>(half*(*vki))); // Lki + 0
           }
@@ -413,7 +413,7 @@ void add_to_vn(SpVType_shm_csr_matrix& vn, std::vector<int> const& map_, double 
             assert(map_[2*(*cki)+1] >= 0);
             assert(map_[2*(*cki)+1]-c_origin < vn.size(1));
             vn.emplace_back({ik,(map_[2*(*cki)+1]-c_origin)},
-                  static_cast<SPValueType>(-half*im*conj(*vki))); // Lki - 0
+                  static_cast<SPValueType>(-half*im*ma::conj(*vki))); // Lki - 0
             vn.emplace_back({ki,(map_[2*(*cki)+1]-c_origin)},
                   static_cast<SPValueType>(half*im*(*vki))); // Lki - 0
           }
@@ -431,7 +431,7 @@ void add_to_vn(SpVType_shm_csr_matrix& vn, std::vector<int> const& map_, double 
           vn.emplace_back({ik,(map_[2*(*cik)]-c_origin)},
                 static_cast<SPValueType>(half*(*vik))); // Lik + 0
           vn.emplace_back({ki,(map_[2*(*cik)]-c_origin)},
-                static_cast<SPValueType>(half*conj(*vik))); // Lik + 0
+                static_cast<SPValueType>(half*ma::conj(*vik))); // Lik + 0
         }
 #if defined(QMC_COMPLEX)
         if(2*(*cik)+1>=c0 && 2*(*cik)+1<c1) {
@@ -440,7 +440,7 @@ void add_to_vn(SpVType_shm_csr_matrix& vn, std::vector<int> const& map_, double 
           vn.emplace_back({ik,(map_[2*(*cik)+1]-c_origin)},
                 static_cast<SPValueType>(half*im*(*vik))); // Lik - 0
           vn.emplace_back({ki,(map_[2*(*cik)+1]-c_origin)},
-                static_cast<SPValueType>(-half*im*conj(*vik))); // Lik - 0
+                static_cast<SPValueType>(-half*im*ma::conj(*vik))); // Lik - 0
         }
 #endif
     }
@@ -453,7 +453,7 @@ void add_to_vn(SpVType_shm_csr_matrix& vn, std::vector<int> const& map_, double 
           assert(map_[2*(*cki)] >= 0);
           assert(map_[2*(*cki)]-c_origin < vn.size(1));
           vn.emplace_back({ik,(map_[2*(*cki)]-c_origin)},
-                static_cast<SPValueType>(half*conj(*vki))); // Lki + 0
+                static_cast<SPValueType>(half*ma::conj(*vki))); // Lki + 0
           vn.emplace_back({ki,(map_[2*(*cki)]-c_origin)},
                 static_cast<SPValueType>(half*(*vki))); // Lki + 0
         }
@@ -462,7 +462,7 @@ void add_to_vn(SpVType_shm_csr_matrix& vn, std::vector<int> const& map_, double 
           assert(map_[2*(*cki)+1] >= 0);
           assert(map_[2*(*cki)+1]-c_origin < vn.size(1));
           vn.emplace_back({ik,(map_[2*(*cki)+1]-c_origin)},
-                static_cast<SPValueType>(-half*im*conj(*vki))); // Lki - 0
+                static_cast<SPValueType>(-half*im*ma::conj(*vki))); // Lki - 0
           vn.emplace_back({ki,(map_[2*(*cki)+1]-c_origin)},
                 static_cast<SPValueType>(half*im*(*vki))); // Lki - 0
         }
@@ -479,9 +479,6 @@ std::vector<std::size_t> count_nnz_per_cholvec(double cut, TaskGroup_& TG, SpVTy
 {
   if(TG.getNumberOfTGs() > 1)
     APP_ABORT("Error: count_nnz_per_cholvec is not designed for distributed CholMat. \n");
-
-  int nnodes = TG.getTotalNodes(), nodeid = TG.getNodeID();
-  int ncores = TG.getTotalCores(), coreid = TG.getCoreID();
 
   if(V2.size(0) != NMO*NMO)
     APP_ABORT(" Error in count_nnz_per_cholvec: V2.size(0) ! NMO*NMO \n");
@@ -513,7 +510,6 @@ std::vector<std::size_t> count_nnz_per_ik(double cut, TaskGroup_& TG, SpVType_sh
   if(TG.getNumberOfTGs() > 1)
     APP_ABORT("Error: count_nnz_per_ik is not designed for distributed CholMat. \n");
 
-  int nnodes = TG.getTotalNodes(), nodeid = TG.getNodeID();
   int ncores = TG.getTotalCores(), coreid = TG.getCoreID();
 
   if(V2.size(0) != NMO*NMO)
@@ -526,7 +522,6 @@ std::vector<std::size_t> count_nnz_per_ik(double cut, TaskGroup_& TG, SpVType_sh
   if(cut < 1e-12) cut=1e-12;
   std::vector<std::size_t> counts(V2.size(0));
 
-  std::size_t nik,nki;
   for(int i=0, cnt=0; i<NMO; i++)
     for(int k=i; k<NMO; k++, cnt++) {
       if(cnt < ik0) continue;
@@ -550,7 +545,6 @@ void generateHSPotential(SpVType_shm_csr_matrix& vn, std::vector<int> const& map
   if(TG.getNumberOfTGs() > 1)
     APP_ABORT("Error: generateHSPotential is not designed for distributed CholMat. \n");
 
-  int nnodes = TG.getTotalNodes(), nodeid = TG.getNodeID();
   int ncores = TG.getTotalCores(), coreid = TG.getCoreID();
 
   if(V2.size(0) != NMO*NMO)

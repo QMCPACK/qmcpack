@@ -22,7 +22,6 @@ namespace qmcplusplus
 template<typename T, unsigned D, int SC>
 struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableData
 {
-  int Ntargets;
   int Ntargets_padded;
 
   SoaDistanceTableAA(ParticleSet& target) : DTD_BConds<T, D, SC>(target.Lattice), DistanceTableData(target, target)
@@ -43,48 +42,42 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableDat
 
   void resize(int n)
   {
-    N[SourceIndex] = N[VisitorIndex] = Ntargets = n;
+    N_sources = N_targets = n;
     Ntargets_padded                             = getAlignedSize<T>(n);
-    Distances.resize(Ntargets, Ntargets_padded);
-    const size_t total_size = compute_size(Ntargets);
+    Distances.resize(N_targets, Ntargets_padded);
+    const size_t total_size = compute_size(N_targets);
     memoryPool.resize(total_size * D);
-    Displacements.resize(Ntargets);
-    for (int i = 0; i < Ntargets; ++i)
+    Displacements.resize(N_targets);
+    for (int i = 0; i < N_targets; ++i)
       Displacements[i].attachReference(i, total_size, memoryPool.data() + compute_size(i));
 
     // The padding of Temp_r and Temp_dr is necessary for the memory copy in the update function
     // Temp_r is padded explicitly while Temp_dr is padded internally
     Temp_r.resize(Ntargets_padded);
-    Temp_dr.resize(Ntargets);
+    Temp_dr.resize(N_targets);
   }
 
   inline void evaluate(ParticleSet& P)
   {
     constexpr T BigR = std::numeric_limits<T>::max();
     //P.RSoA.copyIn(P.R);
-    for (int iat = 0; iat < Ntargets; ++iat)
+    for (int iat = 0; iat < N_targets; ++iat)
     {
-      DTD_BConds<T, D, SC>::computeDistances(P.R[iat], P.RSoA, Distances[iat], Displacements[iat], 0, Ntargets, iat);
+      DTD_BConds<T, D, SC>::computeDistances(P.R[iat], P.RSoA, Distances[iat], Displacements[iat], 0, N_targets, iat);
       Distances[iat][iat] = BigR; //assign big distance
     }
   }
 
   inline void evaluate(ParticleSet& P, IndexType jat)
   {
-    DTD_BConds<T, D, SC>::computeDistances(P.R[jat], P.RSoA, Distances[jat], Displacements[jat], 0, Ntargets, jat);
+    DTD_BConds<T, D, SC>::computeDistances(P.R[jat], P.RSoA, Distances[jat], Displacements[jat], 0, N_targets, jat);
     Distances[jat][jat] = std::numeric_limits<T>::max(); //assign a big number
-  }
-
-  inline void moveOnSphere(const ParticleSet& P, const PosType& rnew)
-  {
-    DTD_BConds<T, D, SC>::computeDistances(rnew, P.RSoA, Temp_r.data(), Temp_dr, 0, Ntargets, P.activePtcl);
   }
 
   ///evaluate the temporary pair relations
   inline void move(const ParticleSet& P, const PosType& rnew)
   {
-    //#pragma omp master
-    moveOnSphere(P, rnew);
+    DTD_BConds<T, D, SC>::computeDistances(rnew, P.RSoA, Temp_r.data(), Temp_dr, 0, N_targets, P.activePtcl);
   }
 
   int get_first_neighbor(IndexType iat, RealType& r, PosType& dr, bool newpos) const
@@ -93,7 +86,7 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableDat
     int index         = -1;
     if (newpos)
     {
-      for (int jat = 0; jat < Ntargets; ++jat)
+      for (int jat = 0; jat < N_targets; ++jat)
         if (Temp_r[jat] < min_dist && jat != iat)
         {
           min_dist = Temp_r[jat];
@@ -104,7 +97,7 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableDat
     }
     else
     {
-      for (int jat = 0; jat < Ntargets; ++jat)
+      for (int jat = 0; jat < N_targets; ++jat)
         if (Distances[iat][jat] < min_dist && jat != iat)
         {
           min_dist = Distances[iat][jat];

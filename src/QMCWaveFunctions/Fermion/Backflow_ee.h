@@ -232,12 +232,12 @@ public:
    */
   inline void evaluate(const ParticleSet& P, ParticleSet& QP)
   {
-    RealType du, d2u;
 #ifdef ENABLE_SOA
     APP_ABORT("Backflow_ee.h::evaluate(P,QP) not implemented for SoA\n");
 #else
+    RealType du, d2u;
     const auto& myTable = P.getDistTable(myTableIndex_);
-    for (int i = 0; i < myTable.size(SourceIndex); i++)
+    for (int i = 0; i < myTable.sources(); i++)
     {
       for (int nn = myTable.M[i]; nn < myTable.M[i + 1]; nn++)
       {
@@ -261,7 +261,7 @@ public:
     APP_ABORT("Backflow_ee.h::evaluate(P,QP,Bmat_vec,Amat) not implemented for SoA\n");
 #else
     const auto& myTable = P.getDistTable(myTableIndex_);
-    for (int i = 0; i < myTable.size(SourceIndex); i++)
+    for (int i = 0; i < myTable.sources(); i++)
     {
       for (int nn = myTable.M[i]; nn < myTable.M[i + 1]; nn++)
       {
@@ -305,7 +305,6 @@ public:
 #ifdef ENABLE_SOA
     for (int ig = 0; ig < NumGroups; ++ig)
     {
-      const int igt = ig * NumGroups;
       for (int iat = P.first(ig), last = P.last(ig); iat < last; ++iat)
       {
         const auto& dist  = myTable.Distances[iat];
@@ -348,7 +347,7 @@ public:
       }
     }
 #else
-    for (int i = 0; i < myTable.size(SourceIndex); i++)
+    for (int i = 0; i < myTable.sources(); i++)
     {
       for (int nn = myTable.M[i]; nn < myTable.M[i + 1]; nn++)
       {
@@ -391,10 +390,10 @@ public:
    */
   inline void evaluatePbyP(const ParticleSet& P, ParticleSet::ParticlePos_t& newQP, const std::vector<int>& index)
   {
-    RealType du, d2u;
 #ifdef ENABLE_SOA
     APP_ABORT("Backflow_ee.h::evaluatePbyP(P,QP,index_vec) not implemented for SoA\n");
 #else
+    RealType du, d2u;
     const auto& myTable = P.getDistTable(myTableIndex_);
     int maxI = index.size();
     int iat  = index[0];
@@ -413,9 +412,9 @@ public:
    */
   inline void evaluatePbyP(const ParticleSet& P, int iat, ParticleSet::ParticlePos_t& newQP)
   {
+#ifdef ENABLE_SOA
     RealType du, d2u;
     const auto& myTable = P.getDistTable(myTableIndex_);
-#ifdef ENABLE_SOA
     for (int i = 0; i < iat; i++)
     {
       // Temp[j].dr1 = (ri - rj)
@@ -433,6 +432,8 @@ public:
       newQP[i] -= u;
     }
 #else
+    RealType du, d2u;
+    const auto& myTable = P.getDistTable(myTableIndex_);
     for (int i = 0; i < iat; i++)
     {
       // Temp[j].dr1 = (ri - rj)
@@ -459,10 +460,10 @@ public:
                            const std::vector<int>& index,
                            HessMatrix_t& Amat)
   {
-    RealType du, d2u;
 #ifdef ENABLE_SOA
     APP_ABORT("Backflow_ee.h::evaluatePbyP(P,QP,index_vec,Amat) not implemented for SoA\n");
 #else
+    RealType du, d2u;
     const auto& myTable = P.getDistTable(myTableIndex_);
     int maxI = index.size();
     int iat  = index[0];
@@ -605,10 +606,10 @@ public:
                            GradMatrix_t& Bmat,
                            HessMatrix_t& Amat)
   {
-    RealType du, d2u;
 #ifdef ENABLE_SOA
     APP_ABORT("Backflow_ee.h::evaluatePbyP(P,QP,index_vec,Bmat,Amat) not implemented for SoA\n");
 #else
+    RealType du, d2u;
     const auto& myTable = P.getDistTable(myTableIndex_);
     int maxI                                                = index.size();
     int iat                                                 = index[0];
@@ -655,10 +656,10 @@ public:
                            GradMatrix_t& Bmat,
                            HessMatrix_t& Amat)
   {
-    RealType du, d2u;
 #ifdef ENABLE_SOA
     APP_ABORT("Backflow_ee.h::evaluatePbyP(P,iat,QP,Bmat,Amat) not implemented for SoA\n");
 #else
+    RealType du, d2u;
     const auto& myTable = P.getDistTable(myTableIndex_);
     const std::vector<DistanceTableData::TempDistType>& TMP = myTable.Temp;
     for (int j = 0; j < iat; j++)
@@ -729,12 +730,12 @@ public:
    */
   inline void evaluateBmatOnly(const ParticleSet& P, GradMatrix_t& Bmat_full)
   {
-    RealType du, d2u;
 #ifdef ENABLE_SOA
     APP_ABORT("Backflow_ee.h::evaluateBmatOnly(P,QP,Bmat_full) not implemented for SoA\n");
 #else
+    RealType du, d2u;
     const auto& myTable = P.getDistTable(myTableIndex_);
-    for (int i = 0; i < myTable.size(SourceIndex); i++)
+    for (int i = 0; i < myTable.sources(); i++)
     {
       for (int nn = myTable.M[i]; nn < myTable.M[i + 1]; nn++)
       {
@@ -766,7 +767,6 @@ public:
 #ifdef ENABLE_SOA
     for (int ig = 0; ig < NumGroups; ++ig)
     {
-      const int igt = ig * NumGroups;
       for (int iat = P.first(ig), last = P.last(ig); iat < last; ++iat)
       {
         const auto& dist  = myTable.Distances[iat];
@@ -837,7 +837,7 @@ public:
       }
     }
 #else
-    for (int i = 0; i < myTable.size(SourceIndex); i++)
+    for (int i = 0; i < myTable.sources(); i++)
     {
       for (int nn = myTable.M[i]; nn < myTable.M[i + 1]; nn++)
       {

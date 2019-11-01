@@ -21,7 +21,6 @@
 #include "Lattice/ParticleBConds.h"
 #include "Particle/ParticleSet.h"
 #include "Particle/DistanceTableData.h"
-#include "Particle/SymmetricDistanceTableData.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "QMCDrivers/CloneManager.h"
 #include "QMCDrivers/QMCUpdateBase.h"
@@ -54,7 +53,6 @@ TEST_CASE("QMCUpdate", "[drivers]")
 
   MCWalkerConfiguration elec;
   elec.setName("e");
-  elec.setBoundBox(false);
   elec.create(1);
   elec.createWalkers(1);
 

@@ -28,10 +28,13 @@ class ExampleHeComponent : public WaveFunctionComponent
 public:
 
   ExampleHeComponent(const ParticleSet& ions, ParticleSet& els)
-    : ions_(ions), my_table_ee_idx_(els.addTable(els, DT_SOA)), my_table_ei_idx_(els.addTable(ions, DT_SOA)) { };
+    : ions_(ions), my_table_ee_idx_(els.addTable(els, DT_SOA)), my_table_ei_idx_(els.addTable(ions, DT_SOA))
+  {
+    ClassName = "ExampleHeComponent";
+  };
 
   using OptVariablesType = optimize::VariableSet;
-
+  using PtclGrpIndexes = QMCTraits::PtclGrpIndexes;
 
   void checkInVariables(OptVariablesType& active) override { active.insertFrom(my_vars_); }
   void checkOutVariables(const OptVariablesType& active) override { my_vars_.getIndex(active); }
@@ -42,7 +45,7 @@ public:
 
   void resetTargetParticleSet(ParticleSet& P) override {}
 
-  RealType evaluateLog(ParticleSet& P,
+  LogValueType evaluateLog(ParticleSet& P,
                        ParticleSet::ParticleGradient_t& G,
                        ParticleSet::ParticleLaplacian_t& L) override;
 
@@ -64,7 +67,7 @@ public:
 
   void registerData(ParticleSet& P, WFBufferType& buf) override {}
 
-  RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override;
+  LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override;
 
   void copyFromBuffer(ParticleSet& P, WFBufferType& buf) override {}
 
@@ -81,8 +84,8 @@ public:
 
 private:
   const ParticleSet& ions_;
-  const int my_table_ei_idx_;
   const int my_table_ee_idx_;
+  const int my_table_ei_idx_;
 
   OptVariablesType my_vars_;
 };

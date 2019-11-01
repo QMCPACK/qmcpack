@@ -22,7 +22,8 @@
 #ifndef OHMMS_CRYSTALLATTICE_H
 #define OHMMS_CRYSTALLATTICE_H
 #include <limits>
-#include <config/stdlib/math.h>
+#include <iostream>
+#include <config/stdlib/math.hpp>
 #include <OhmmsPETE/TinyVector.h>
 #include <OhmmsPETE/Tensor.h>
 #include <Lattice/LRBreakupParameters.h>
@@ -42,19 +43,24 @@ enum
   SOA_OFFSET     = 32 /*!< const to differentiate AoS and SoA */
 };
 
-/** class to assist copy and unit conversion operations on position vectors
+/** enum class to assist copy and unit conversion operations on position vectors
 */
-struct PosUnit
+enum class PosUnit
 {
-  /** enumeraton for the unit of position types.
-  */
-  enum
-  {
-    CartesianUnit = 0, /*!< indicates that the values are in Cartesian units*/
-    LatticeUnit        /*!< indicates that the values are in Lattice units*/
-  };
+  Cartesian = 0, /*!< indicates that the values are in Cartesian units*/
+  Lattice        /*!< indicates that the values are in Lattice units*/
 };
-
+/** write unit type in human readable format
+ *
+ *  This could break tools if they rely on parsing log.
+ */
+std::ostream& operator<<(std::ostream& o_stream, PosUnit pos_unit);
+/** Read unit type recorded in int
+ *
+ *  This should really be human readable
+ *  TODO: support both until going to string only.
+ */
+std::istream& operator>>(std::istream& i_stream, PosUnit& pos_unit);
 
 /** a class that defines a supercell in D-dimensional Euclean space.
  *
@@ -65,8 +71,11 @@ struct PosUnit
  *Lattice Unit vice versa.
  */
 template<class T, unsigned D>
-struct CrystalLattice: public LRBreakupParameters<T, D>
+struct CrystalLattice : public LRBreakupParameters<T, D>
 {
+  /// alias to the base class
+  using Base = LRBreakupParameters<T, D>;
+
   ///enumeration for the dimension of the lattice
   enum
   {
@@ -134,6 +143,8 @@ struct CrystalLattice: public LRBreakupParameters<T, D>
   //@}
   //angles between the two lattice vectors
   SingleParticlePos_t ABC;
+  ///true, the lattice is defined by the input instead of an artificial default
+  bool explicitly_defined;
 
   ///default constructor, assign a huge supercell
   CrystalLattice();
@@ -209,7 +220,7 @@ struct CrystalLattice: public LRBreakupParameters<T, D>
   {
     if (SuperCellEnum)
     {
-      TinyVector<T, D>  u = dot(c, G);
+      TinyVector<T, D> u = dot(c, G);
       for (int i = 0; i < D; ++i)
         u[i] = u[i] - round(u[i]);
       c = dot(u, R);
@@ -224,56 +235,39 @@ struct CrystalLattice: public LRBreakupParameters<T, D>
    @note The distance between two cartesian vectors are handled
    *by dot function defined in OhmmsPETE/TinyVector.h
    */
-  inline T Dot(const SingleParticlePos_t& ra, const SingleParticlePos_t& rb) const
-  {
-    return dot(ra, dot(M, rb));
-  }
+  inline T Dot(const SingleParticlePos_t& ra, const SingleParticlePos_t& rb) const { return dot(ra, dot(M, rb)); }
 
   /** conversion of a reciprocal-vector
    *@param kin an input reciprocal vector in the Reciprocal-vector unit
    *@return k(reciprocal vector) in cartesian unit
   */
-  inline SingleParticlePos_t k_cart(const SingleParticlePos_t& kin) const
-  {
-    return TWOPI * dot(G, kin);
-  }
+  inline SingleParticlePos_t k_cart(const SingleParticlePos_t& kin) const { return TWOPI * dot(G, kin); }
 
   /** conversion of a caresian reciprocal-vector to unit k-vector
    *@param kin an input reciprocal vector in cartesian form
    *@return k(reciprocal vector) as unit vector
   */
-  inline SingleParticlePos_t k_unit(const SingleParticlePos_t& kin) const
-  {
-    return dot(R, kin) / TWOPI;
-  }
+  inline SingleParticlePos_t k_unit(const SingleParticlePos_t& kin) const { return dot(R, kin) / TWOPI; }
 
   /** evaluate \f$k^2\f$
    *
    *@param kin an input reciprocal vector in reciprocal-vector unit
    *@return \f$k_{in}^2\f$
    */
-  inline T ksq(const SingleParticlePos_t& kin) const
-  {
-    return dot(kin, dot(Mg, kin));
-  }
+  inline T ksq(const SingleParticlePos_t& kin) const { return dot(kin, dot(Mg, kin)); }
 
   ///assignment operator
   template<typename T1>
   CrystalLattice<T, D>& operator=(const CrystalLattice<T1, D>& rhs)
   {
-    BoxBConds = rhs.BoxBConds;
-    R         = rhs.R;
-    reset();
-    return *this;
-  }
+    Base::LR_dim_cutoff = rhs.LR_dim_cutoff;
+    Base::LR_kc         = rhs.LR_kc;
+    Base::LR_rc         = rhs.LR_rc;
 
-  /** assignment operator
-   *@param rhs a tensor representing a unit cell
-   */
-  template<typename T1>
-  CrystalLattice<T, D>& operator=(const Tensor<T1, D>& rhs)
-  {
-    R = rhs;
+    explicitly_defined = rhs.explicitly_defined;
+    BoxBConds          = rhs.BoxBConds;
+    VacuumScale        = rhs.VacuumScale;
+    R                  = rhs.R;
     reset();
     return *this;
   }
@@ -285,33 +279,6 @@ struct CrystalLattice: public LRBreakupParameters<T, D>
   CrystalLattice<T, D>& operator*=(T sc);
 
   /** set the lattice vector from the command-line options
-   *@param argc the number of arguments
-   *@param argv the argument lists
-   *
-   *This function is to provide a simple interface for testing.
-   */
-  void set(int argc, char** argv);
-
-  /** set the lattice vector from the command-line options stored in a vector
-   *@param argv the argument lists
-   *
-   *This function is to provide a simple interface for testing.
-   */
-  void set(std::vector<std::string>& argv);
-
-  /** set the lattice vector by an array containing DxD T
-   *@param sc a scalar to scale the input lattice parameters
-   *@param lat the starting address of DxD T-elements representing a supercell
-   */
-  void set(T sc, T* lat = 0);
-
-  /** set the lattice vector by a CrystalLattice and expand it by integers
-   *@param oldlat An input supercell to be copied.
-   *@param uc An array to expand a supercell.
-   */
-  void set(const CrystalLattice<T, D>& oldlat, int* uc = 0);
-
-  /** set the lattice vector from the command-line options
    *@param lat a tensor representing a supercell
    */
   template<class TT>
@@ -320,15 +287,6 @@ struct CrystalLattice: public LRBreakupParameters<T, D>
   /** Evaluate the reciprocal vectors, volume and metric tensor
    */
   void reset();
-
-  void copy(const CrystalLattice<T, D>& pl)
-  {
-    using base_t = LRBreakupParameters<T, D>;
-    base_t::LR_dim_cutoff  = pl.LR_dim_cutoff;
-    base_t::LR_kc          = pl.LR_kc;
-    base_t::LR_rc          = pl.LR_rc;
-    set(pl);
-  }
 
   //  //@{
   //  /* Copy functions with unit conversion*/

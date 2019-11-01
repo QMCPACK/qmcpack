@@ -19,13 +19,14 @@
 #include <OhmmsData/RecordProperty.h>
 #include <OhmmsData/HDFAttribIO.h>
 #include <Estimators/accumulators.h>
+#include "QMCDrivers/MCPopulation.h"
 #if !defined(REMOVE_TRACEMANAGER)
 #include <Estimators/TraceManager.h>
 #endif
 
 namespace qmcplusplus
 {
-class observable_helper;
+struct observable_helper;
 
 /** Abstract class for an estimator of a scalar operator.
  *
@@ -37,9 +38,10 @@ class observable_helper;
  */
 struct ScalarEstimatorBase
 {
-  typedef QMCTraits::EstimatorRealType RealType;
+  typedef QMCTraits::FullPrecRealType RealType;
   typedef accumulator_set<RealType> accumulator_type;
   typedef MCWalkerConfiguration::Walker_t Walker_t;
+  using MCPWalker = MCPopulation::MCPWalker;
   typedef MCWalkerConfiguration::const_iterator WalkerIterator;
   typedef RecordNamedProperty<RealType> RecordListType;
 
@@ -65,7 +67,7 @@ struct ScalarEstimatorBase
   inline std::pair<RealType, RealType> operator[](int i) const { return scalars[i].mean_and_variance(); }
 
   ///return the size of scalars it manages
-  inline int size() const { return scalars.size(); }
+  virtual inline int size() const { return scalars.size(); }
 
   ///clear the scalars to collect
   inline void clear()
@@ -114,6 +116,14 @@ struct ScalarEstimatorBase
    * Pass W along with the iterators so that the properties of W can be utilized.
    */
   virtual void accumulate(const MCWalkerConfiguration& W, WalkerIterator first, WalkerIterator last, RealType wgt) = 0;
+
+   /** a virtual function to accumulate observables or collectables
+   * @param global_walkers_ walkers per ranks or walkers total?
+   * @param RefVector of MCPWalkers
+   * @param wgt weight or maybe norm
+   *
+   */
+  virtual void accumulate(const int global_walkers, RefVector<MCPWalker>&, RealType wgt) = 0;
 
   /** add the content of the scalar estimator to the record
    * @param record scalar data list

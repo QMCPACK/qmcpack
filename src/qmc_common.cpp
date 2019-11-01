@@ -26,7 +26,6 @@ QMCState::QMCState()
   is_restart             = false;
   use_density            = false;
   dryrun                 = false;
-  save_wfs               = false;
   io_node                = true;
   mpi_groups             = 1;
   use_ewald              = false;
@@ -52,10 +51,9 @@ void QMCState::initialize(int argc, char** argv)
     {
       if (io_node)
         std::cerr << std::endl
-                  << "WARNING: command line option --save_wfs has been deprecated "
-                  << "and will be removed in the next release. "
+                  << "ERROR: command line option --save_wfs has been removed."
                   << "Use save_coefs input tag as described in the manual." << std::endl;
-      save_wfs = (c.find("no") >= c.size());
+      stopit = true;
     }
     else if (c.find("--help") < c.size())
     {
@@ -89,7 +87,7 @@ void QMCState::initialize(int argc, char** argv)
               << "QMCPACK version " << QMCPACK_VERSION_MAJOR << "." << QMCPACK_VERSION_MINOR << "."
               << QMCPACK_VERSION_PATCH << " built on " << __DATE__ << std::endl;
     print_git_info_if_present(std::cerr);
-    std::cerr << std::endl << "Usage: qmcpack input [--dryrun --save_wfs[=no] --gpu]" << std::endl << std::endl;
+    std::cerr << std::endl << "Usage: qmcpack input [--dryrun --gpu]" << std::endl << std::endl;
   }
   if (stopit)
   {
@@ -103,8 +101,6 @@ void QMCState::print_options(std::ostream& os)
   os << "  Global options " << std::endl;
   if (dryrun)
     os << "  dryrun : qmc sections will be ignored." << std::endl;
-  if (save_wfs)
-    os << "  save_wfs=1 : save wavefunctions in hdf5. " << std::endl;
 }
 
 void QMCState::print_memory_change(const std::string& who, size_t before)

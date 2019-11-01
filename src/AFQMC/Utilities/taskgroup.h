@@ -406,9 +406,9 @@ class TaskGroupHandler {
 
   private: 
 
-  int ncores;
-
   afqmc::GlobalTaskGroup& gTG_;
+
+  int ncores;
 
   std::map<int,afqmc::TaskGroup_> TGMap;  
 

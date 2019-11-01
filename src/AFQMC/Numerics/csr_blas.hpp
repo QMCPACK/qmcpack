@@ -30,11 +30,6 @@ using std::complex;
 
 namespace csr{
 
-namespace{
-inline double const& conj(double const& d){return d;}
-inline float const& conj(float const& f){return f;}
-}
-
 // y = a*x + y
 // y satisfies a 1D multi-array concept
 // x satisfies a 1D sparse-array concept
@@ -53,7 +48,7 @@ MultiArray1D axpy(char TA, T a, SparseArray1D&& x, MultiArray1D&& y){
         if(TA=='C')
             for(std::size_t i=0, iend=x.num_non_zero_elements(); i<iend; ++i, ++vals, ++cols) {
                 assert(*cols >=0 && *cols < y.size(0));
-                y[*cols] += conj(*vals)*a;
+                y[*cols] += ma::conj(*vals)*a;
             }
         else
             for(std::size_t i=0, iend=x.num_non_zero_elements(); i<iend; ++i, ++vals, ++cols) {
@@ -82,7 +77,7 @@ MultiArray1D axpby(char TA, T a, SparseArray1D&& x, T b, MultiArray1D&& y){
         if(TA=='C')
             for(std::size_t i=0, iend=x.num_non_zero_elements(); i<iend; ++i, ++vals, ++cols) {
                 assert(*cols >=0 && *cols < y.size(0));
-                y[*cols] += conj(*vals)*a;
+                y[*cols] += ma::conj(*vals)*a;
             }
         else
             for(std::size_t i=0, iend=x.num_non_zero_elements(); i<iend; ++i, ++vals, ++cols) {
@@ -125,7 +120,7 @@ inline T csrvv(char TA, char TB, std::tuple<integer,VPtr,JPtr> const& V1, std::t
       else if( *(indx2+j) < *(indx1+i) )
         ++j;
       else {
-        res += *(A1+i) * conj(*(A2+j));
+        res += *(A1+i) * ma::conj(*(A2+j));
         ++i;++j;
       }
     }
@@ -136,7 +131,7 @@ inline T csrvv(char TA, char TB, std::tuple<integer,VPtr,JPtr> const& V1, std::t
       else if( *(indx2+j) < *(indx1+i) )
         ++j;
       else {
-        res += conj(*(A1+i)) * (*(A2+j));
+        res += ma::conj(*(A1+i)) * (*(A2+j));
         ++i;++j;
       }
     }
@@ -147,7 +142,7 @@ inline T csrvv(char TA, char TB, std::tuple<integer,VPtr,JPtr> const& V1, std::t
       else if( *(indx2+j) < *(indx1+i) )
         ++j;
       else {
-        res += conj(*(A1+i)) * conj(*(A2+j));
+        res += ma::conj(*(A1+i)) * ma::conj(*(A2+j));
         ++i;++j;
       }
     }
@@ -189,7 +184,7 @@ qmcplusplus::app_log()<<" /**********************************\n";
   } else if(TA=='Z') {
     for(int i=0; i<A.size(0); i++)
       for(int_type ip=pbegin[i], ipend=pend[i]; ip<ipend; ip++)
-        M[i][c0[ip-p0]] = conj(Type(v0[ip-p0]));
+        M[i][c0[ip-p0]] = ma::conj(Type(v0[ip-p0]));
   } else if(TA=='T') {
     for(int i=0; i<A.size(0); i++)
       for(int_type ip=pbegin[i], ipend=pend[i]; ip<ipend; ip++)
@@ -197,7 +192,7 @@ qmcplusplus::app_log()<<" /**********************************\n";
   } else if(TA=='H') {
     for(int i=0; i<A.size(0); i++)
       for(int_type ip=pbegin[i], ipend=pend[i]; ip<ipend; ip++)
-        M[c0[ip-p0]][i] = conj(Type(v0[ip-p0]));
+        M[c0[ip-p0]][i] = ma::conj(Type(v0[ip-p0]));
   }
 }
 
@@ -233,7 +228,7 @@ qmcplusplus::app_log()<<" /**********************************\n";
   } else if(TA=='Z') {
     for(int i=0; i<A.size(0); i++)
       for(int_type ip=pbegin[i], ipend=pend[i]; ip<ipend; ip++)
-        M[i][c0[ip-p0]] = conj(Type(v0[ip-p0]));
+        M[i][c0[ip-p0]] = ma::conj(Type(v0[ip-p0]));
   } else if(TA=='T') {
     for(int i=0; i<A.size(0); i++)
       for(int_type ip=pbegin[i], ipend=pend[i]; ip<ipend; ip++)
@@ -241,7 +236,7 @@ qmcplusplus::app_log()<<" /**********************************\n";
   } else if(TA=='H') {
     for(int i=0; i<A.size(0); i++)
       for(int_type ip=pbegin[i], ipend=pend[i]; ip<ipend; ip++)
-        M[c0[ip-p0]][i] = conj(Type(v0[ip-p0]));
+        M[c0[ip-p0]][i] = ma::conj(Type(v0[ip-p0]));
   }
 }
 
@@ -284,7 +279,7 @@ void CSR2MA(char TA, CSR const& A, MultiArray2D& M, Vector const& occups)
       assert(occups[i] >= 0 && occups[i] < A.size(0));
       int ik = occups[i];
       for(int ip=pbegin[ik]; ip<pend[ik]; ip++)
-        M[i][c0[ip-p0]] = static_cast<Type>(conj(v0[ip-p0]));
+        M[i][c0[ip-p0]] = static_cast<Type>(ma::conj(v0[ip-p0]));
     }
   } else if(TA=='T') {
     for(int i=0; i<nrows; i++) {
@@ -298,7 +293,7 @@ void CSR2MA(char TA, CSR const& A, MultiArray2D& M, Vector const& occups)
       assert(occups[i] >= 0 && occups[i] < A.size(0));  
       int ik = occups[i];  
       for(int ip=pbegin[ik]; ip<pend[ik]; ip++)
-        M[c0[ip-p0]][i] = static_cast<Type>(conj(v0[ip-p0]));
+        M[c0[ip-p0]][i] = static_cast<Type>(ma::conj(v0[ip-p0]));
     }    
   }
 }

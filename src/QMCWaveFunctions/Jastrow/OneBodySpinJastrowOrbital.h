@@ -205,12 +205,13 @@ public:
     }
   }
 
-  RealType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
+  LogValueType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
   {
     LogValue                         = 0.0;
     U                                = 0.0;
     const auto& d_table = P.getDistTable(myTableIndex);
     RealType dudr, d2udr2;
+#ifndef ENABLE_SOA
     for (int sg = 0; sg < F.rows(); ++sg)
     {
       for (int iat = s_offset[sg]; iat < s_offset[sg + 1]; ++iat)
@@ -234,6 +235,7 @@ public:
         }
       }
     }
+#endif
     return LogValue;
   }
 
@@ -262,6 +264,7 @@ public:
     std::vector<RealType> myr(ratios.size(), U[VP.refPtcl]);
     const auto& d_table = VP.getDistTable(myTableIndex);
     int tg                           = VP.GroupID[VP.refPtcl];
+#ifndef ENABLE_SOA
     for (int sg = 0; sg < F.rows(); ++sg)
     {
       FT* func = F(sg, tg);
@@ -272,6 +275,7 @@ public:
             myr[j] -= func->evaluate(d_table.r(nn));
       }
     }
+#endif
     for (int k = 0; k < ratios.size(); ++k)
       ratios[k] = std::exp(myr[k]);
     //RealType x=U[VP.refPtcl];
@@ -285,6 +289,7 @@ public:
   {
     std::fill(ratios.begin(), ratios.end(), 0.0);
     const auto& d_table = P.getDistTable(myTableIndex);
+#ifndef ENABLE_SOA
     for (int sg = 0; sg < F.rows(); ++sg)
     {
       for (int iat = s_offset[sg]; iat < s_offset[sg + 1]; ++iat)
@@ -304,6 +309,7 @@ public:
         }
       }
     }
+#endif
 
 
     for (int i = 0; i < ratios.size(); ++i)
@@ -314,11 +320,12 @@ public:
   inline GradType evalGrad(ParticleSet& P, int iat)
   {
     const auto& d_table = P.getDistTable(myTableIndex);
-    int n                            = d_table.size(VisitorIndex);
+    int n                            = d_table.targets();
     int tg                           = P.GroupID[iat];
     curGrad                          = 0.0;
     RealType ur, dudr, d2udr2;
     int nn = iat;
+#ifndef ENABLE_SOA
     for (int sg = 0; sg < F.rows(); ++sg)
     {
       FT* func = F(sg, tg);
@@ -332,6 +339,7 @@ public:
       else
         nn += n * (s_offset[sg + 1] - s_offset[sg]);
     }
+#endif
     return curGrad;
   }
 
@@ -391,6 +399,7 @@ public:
     d2U                              = 0.0;
     const auto& d_table = P.getDistTable(myTableIndex);
     RealType uij, dudr, d2udr2;
+#ifndef ENABLE_SOA
     for (int ig = 0; ig < F.rows(); ++ig)
     {
       for (int iat = s_offset[ig]; iat < s_offset[ig + 1]; ++iat)
@@ -416,14 +425,15 @@ public:
         }
       }
     }
+#endif
   }
 
   /** equivalent to evalaute with additional data management */
   void registerData(ParticleSet& P, WFBufferType& buf)
   {
     const auto& d_table = P.getDistTable(myTableIndex);
-    d2U.resize(d_table.size(VisitorIndex));
-    dU.resize(d_table.size(VisitorIndex));
+    d2U.resize(d_table.targets());
+    dU.resize(d_table.targets());
     FirstAddressOfdU = &(dU[0][0]);
     LastAddressOfdU  = FirstAddressOfdU + dU.size() * DIM;
     evaluateLogAndStore(P, P.G, P.L);
@@ -435,7 +445,7 @@ public:
     DEBUG_PSIBUFFER(" OneBodySpinJastrow::registerData ", buf.current());
   }
 
-  RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false)
+  LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false)
   {
     evaluateLogAndStore(P, P.G, P.L);
     DEBUG_PSIBUFFER(" OneBodySpinJastrow::updateBuffer ", buf.current());

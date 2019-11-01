@@ -20,11 +20,11 @@
 
 namespace qmcplusplus
 {
-ExampleHeBuilder::ExampleHeBuilder(ParticleSet& p, TrialWaveFunction& psi, PtclPoolType& psets)
-    : WaveFunctionComponentBuilder(p, psi), ptclPool(psets), els(p)
+ExampleHeBuilder::ExampleHeBuilder(Communicate* comm, ParticleSet& p, PtclPoolType& psets)
+    : WaveFunctionComponentBuilder(comm, p), ptclPool(psets), els(p)
 {}
 
-bool ExampleHeBuilder::put(xmlNodePtr cur)
+WaveFunctionComponent* ExampleHeBuilder::buildComponent(xmlNodePtr cur)
 {
   std::string ion_name = "ion0";
   OhmmsAttributeSet oAttrib;
@@ -39,9 +39,7 @@ bool ExampleHeBuilder::put(xmlNodePtr cur)
   }
   auto* WF = new ExampleHeComponent(*(ion_it->second), els);
   WF->put(cur);
-  targetPsi.addOrbital(WF, "example_he");
-  return true;
+  return WF;
 }
-
 
 } // namespace qmcplusplus

@@ -46,9 +46,9 @@ public:
   }
 
   SPOMapType& SPOMap;
+  ParticleSet& target;
   PtclPoolType& PtclPool;
   ParticleSet* ions;
-  ParticleSet& target;
 
   // construction/destruction
   SPOSetScanner(SPOMapType& spomap, ParticleSet& targetPtcl, PtclPoolType& psets)
@@ -167,7 +167,7 @@ public:
       target.R[ind][0] = (to_pos[0] - from_pos[0]) * Delta * icount + from_pos[0];
       target.R[ind][1] = (to_pos[1] - from_pos[1]) * Delta * icount + from_pos[1];
       target.R[ind][2] = (to_pos[2] - from_pos[2]) * Delta * icount + from_pos[2];
-      target.makeMoveAndCheck(ind, zero_pos);
+      target.makeMove(ind, zero_pos);
       mySPOSet->evaluate(target, ind, SPO_v, SPO_g, SPO_l);
       std::ostringstream o;
       o << "x_y_z  " << std::fixed << std::setprecision(7) << target.R[ind][0] << " " << target.R[ind][1] << " "

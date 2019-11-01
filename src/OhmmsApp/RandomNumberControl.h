@@ -14,10 +14,11 @@
 
 #ifndef OHMMS_RANDOMNUMBERCONTROL_H__
 #define OHMMS_RANDOMNUMBERCONTROL_H__
+#include <libxml/xpath.h>
 #include "OhmmsData/OhmmsElementBase.h"
 #include "Utilities/RandomGenerator.h"
 #include "Utilities/PrimeNumberSet.h"
-#include <io/hdf_archive.h>
+#include "io/hdf_archive.h"
 
 class Communicate;
 

@@ -5,11 +5,36 @@
 #ifndef MULTI_INDEX_RANGE_HPP
 #define MULTI_INDEX_RANGE_HPP
 
-#include<boost/iterator/iterator_facade.hpp>
+//#include<boost/iterator/iterator_facade.hpp>
 
 #include<iterator> // std::random_iterator_tag // std::reverse_iterator
 
 namespace boost{
+
+namespace multi{
+
+template<class Self, typename ValueType, class AccessCategory, typename Reference = ValueType&,  typename DifferenceType = typename std::pointer_traits<ValueType*>::difference_type, typename Pointer = ValueType*>
+class iterator_facade{
+	using self_type = Self;
+	self_type& self(){return *this;}
+	self_type const& self() const{return static_cast<Self const&>(*this);}
+public:
+	using value_type = ValueType;
+	using reference = Reference;
+	using pointer = Pointer;
+	using difference_type = DifferenceType;
+	using iterator_category = AccessCategory;
+	auto operator!=(self_type const& o) const
+//	->decltype(not(o == self()))
+	{	return not(o == self());}
+//	Self& operator++(){return ++self(); return *this;}
+	self_type operator+(difference_type n) const{self_type r = self(); r += n; return r;}
+	self_type operator-(difference_type n) const{self_type r = self(); r -= n; return r;}
+};
+
+//class iterator_core_access{};
+}
+
 namespace multi{
 
 template<class IndexType>
@@ -30,7 +55,7 @@ public:
 	constexpr range(value_type fl) : first_{fl}, last_{fl + 1}{}
 	constexpr range(value_type f, value_type l) : first_{f}, last_{l}{}
 	class const_iterator 
-		: public boost::iterator_facade<const_iterator, 
+		: public boost::multi::iterator_facade<const_iterator, 
 			value_type, std::random_access_iterator_tag, 
 			const_reference, difference_type
 		>
@@ -43,7 +68,12 @@ public:
 		auto distance_to(const_iterator const& z) const{return z.curr_-curr_;}
 		constexpr const_iterator(value_type current) : curr_(current){}
 		friend class range;
-	    friend class boost::iterator_core_access;
+	 //   friend class boost::iterator_core_access;
+	public:
+		auto operator==(const_iterator const& y) const{return curr_ == y.curr_;}
+		const_iterator& operator++(){++curr_; return *this;}
+		const_iterator& operator--(){--curr_; return *this;}
+		typename const_iterator::reference operator*() const{return curr_;}
 	};
 	using iterator = const_iterator;
 	using reverse_iterator = std::reverse_iterator<iterator>;
@@ -90,6 +120,7 @@ public:
 		if(first < last) return {first, last};
 		return {};
 	}
+	bool contains(value_type const& v) const{return (v >= first() and v < last())?true:false;}
 };
 
 //using index_range = range<index>;
@@ -174,9 +205,10 @@ int main(){
 	cout << intersection(multi::range<int>{5, 12}, multi::range<int>{14, 16}) << '\n';
 //	for(auto const& i : intersection(multi::range<int>{5, 12}, multi::range<int>{8, 16})) cout<< i <<' ';
 //	cout <<'\n';
-
 	
 	multi::range<int> rr{5, 12};
+	assert( rr.contains(6) );
+	assert( not rr.contains(12) );
 	for(auto it = rr.begin(); it != rr.end(); ++it) cout<< *it <<' ';
 	cout<<'\n';
 	for(auto it = rr.rbegin(); it != rr.rend(); ++it) cout<< *it <<' ';

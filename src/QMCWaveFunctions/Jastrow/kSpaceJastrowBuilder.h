@@ -27,8 +27,8 @@ struct kSpaceJastrowBuilder : public WaveFunctionComponentBuilder
   ParticleSet sourcePtcl;
   std::map<std::string, kSpaceJastrow::SymmetryType> SymmMap;
   // One-body constructor
-  kSpaceJastrowBuilder(ParticleSet& target, TrialWaveFunction& psi, ParticleSet& source)
-      : WaveFunctionComponentBuilder(target, psi), sourcePtcl(source)
+  kSpaceJastrowBuilder(Communicate *comm, ParticleSet& target, ParticleSet& source)
+      : WaveFunctionComponentBuilder(comm, target), sourcePtcl(source)
   {
     // nothing for now
     SymmMap["crystal"]   = kSpaceJastrow::CRYSTAL;
@@ -36,7 +36,8 @@ struct kSpaceJastrowBuilder : public WaveFunctionComponentBuilder
     SymmMap["none"]      = kSpaceJastrow::NOSYMM;
   }
 
-  bool put(xmlNodePtr cur);
+  WaveFunctionComponent* buildComponent(xmlNodePtr cur) override;
+  void outputJastrow(kSpaceJastrow* jastrow);
 };
 
 } // namespace qmcplusplus

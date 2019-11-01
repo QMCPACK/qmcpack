@@ -26,11 +26,10 @@
 
 namespace qmcplusplus
 {
-SPOSet::SPOSet()
-    : OrbitalSetSize(0),
-      Optimizable(false),
-      ionDerivs(false),
-      builder_index(-1)
+SPOSet::SPOSet(bool ion_deriv, bool optimizable)
+    : ionDerivs(ion_deriv),
+      Optimizable(optimizable),
+      OrbitalSetSize(0)
 #if !defined(ENABLE_SOA)
       ,
       Identity(false),
@@ -148,26 +147,22 @@ bool SPOSet::put(xmlNodePtr cur)
   H5checkAttrib.add(MOtype, "type");
   H5checkAttrib.add(MOhref, "href");
   H5checkAttrib.put(curtemp);
-  xmlChar* MOhreftemp;
+  std::string MOhref2;
   if (MOtype == "MolecularOrbital" && MOhref != "")
   {
-    MOhreftemp = xmlGetProp(curtemp, (xmlChar*)"href");
-    H5file     = true;
+    MOhref2 = XMLAttrString(curtemp, "href");
+    H5file  = true;
     PRE.echo(curtemp);
   }
-
-  const char* MOhref2((const char*)MOhreftemp);
 
   //initialize the number of orbital by the basis set size
   int norb = BasisSetSize;
   std::string debugc("no");
-  double orbital_mix_magnitude = 0.0;
   bool PBC                     = false;
   OhmmsAttributeSet aAttrib;
   aAttrib.add(norb, "orbitals");
   aAttrib.add(norb, "size");
   aAttrib.add(debugc, "debug");
-  aAttrib.add(orbital_mix_magnitude, "orbital_mix_magnitude");
   aAttrib.put(cur);
   setOrbitalSetSize(norb);
   xmlNodePtr occ_ptr   = NULL;
@@ -229,8 +224,6 @@ bool SPOSet::put(xmlNodePtr cur)
     app_log() << C << std::endl;
   }
 
-  init_LCOrbitalSetOpt(orbital_mix_magnitude);
-
   return success && success2;
 }
 
@@ -285,7 +278,7 @@ bool SPOSet::putFromXML(xmlNodePtr coeff_ptr)
  * @param fname hdf5 file name
  * @param coeff_ptr xmlnode for coefficients
  */
-bool SPOSet::putFromH5(const char* fname, xmlNodePtr coeff_ptr)
+bool SPOSet::putFromH5(const std::string& fname, xmlNodePtr coeff_ptr)
 {
 #if defined(HAVE_LIBHDF5)
   int norbs  = OrbitalSetSize;
@@ -354,9 +347,9 @@ bool SPOSet::putOccupation(xmlNodePtr occ_ptr)
   }
   else
   {
-    const xmlChar* o = xmlGetProp(occ_ptr, (const xmlChar*)"mode");
-    if (o)
-      occ_mode = (const char*)o;
+    const XMLAttrString o(occ_ptr, "mode");
+    if (!o.empty())
+      occ_mode = o;
   }
   //Do nothing if mode == ground
   if (occ_mode == "excited")

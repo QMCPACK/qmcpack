@@ -153,7 +153,7 @@ HamiltonianOperations KPTHCHamiltonian::getHamiltonianOperations(bool pureSD,
       }
     }
 #endif
-    std::vector<ValueType> E_(2);
+    std::vector<RealType> E_(2);
     if(!dump.readEntry(E_,"Energies")) {
       app_error()<<" Error in KPTHCHamiltonian::getHamiltonianOperations():"
                  <<" Problems reading Energies. \n";
@@ -257,7 +257,7 @@ HamiltonianOperations KPTHCHamiltonian::getHamiltonianOperations(bool pureSD,
         auto LQ(to_address(LQGun[Q].origin()));
         auto LQm(to_address(LQGun[Qm].origin()));
         for(int Gun=0; Gun<LQGun[Q].num_elements(); Gun++, ++LQ, ++LQm)
-          (*LQ) = conj(*LQm);
+          (*LQ) = ma::conj(*LQm);
       } else
 #endif
       {
@@ -473,7 +473,7 @@ HamiltonianOperations KPTHCHamiltonian::getHamiltonianOperations(bool pureSD,
   TG.Node().barrier();
 
 /*
-  // calculate (only Q=0) vn0(I,L) = -0.5 sum_K sum_j sum_n L[0][K][i][j][n] conj(L[0][K][l][j][n])
+  // calculate (only Q=0) vn0(I,L) = -0.5 sum_K sum_j sum_n L[0][K][i][j][n] ma::conj(L[0][K][l][j][n])
   for(int K=0; K<nkpts; K++) {
     if(K%TG.Node().size() == TG.Node().rank()) {
       boost::multi::array_ref<SPComplexType,2> Likn(to_address(LQKikn[0][K].origin()),
@@ -561,7 +561,7 @@ HamiltonianOperations KPTHCHamiltonian::getHamiltonianOperations(bool pureSD,
           auto&& uJ(Piu[nj0+j]);
           auto LIJ_(LIJ[KI][KJ][i][j].origin());
           for(int u=0; u<nmu; u++) {
-            ComplexType uij = conj(uI[u])*uJ[u];
+            ComplexType uij = ma::conj(uI[u])*uJ[u];
             auto lq(to_address(LQGun[Q][nmu*G1+u].origin()));
             for(int n=0; n<nchol_per_kp[Q]; n++)
               LIJ_[n] += uij * lq[n];
@@ -671,7 +671,7 @@ HamiltonianOperations KPTHCHamiltonian::getHamiltonianOperations(bool pureSD,
               auto&& uJ(Piu[nj0+j]);
               auto LIJ_(LQKikn[Q][KI].origin()+ij*nchol_per_kp[Q]);
               for(int u=0; u<nmu; u++) {
-                ComplexType uij = conj(uI[u])*uJ[u];
+                ComplexType uij = ma::conj(uI[u])*uJ[u];
                 auto lq(to_address(LQGun[Q][nmu*G1+u].origin()));
                 for(int n=0; n<nchol_per_kp[Q]; n++)
                   LIJ_[n] += uij * lq[n];
@@ -692,7 +692,7 @@ HamiltonianOperations KPTHCHamiltonian::getHamiltonianOperations(bool pureSD,
             for(int i=0; i<ni; i++)
               for(int j=0; j<nj; j++)
                 for(int n=0; n<nchol_per_kp[Q]; n++)
-                  LQJ[j][i][n] = conj(LQI[i][j][n]);
+                  LQJ[j][i][n] = ma::conj(LQI[i][j][n]);
           }
         }
       } else if(kminus[Q] < Q) {
@@ -710,7 +710,7 @@ HamiltonianOperations KPTHCHamiltonian::getHamiltonianOperations(bool pureSD,
               auto LQ_n(LQ[j][i].origin());
               auto LQm_n(LQm[i][j].origin());
               for(int n=0; n<nchol_per_kp[Qm]; n++, ++LQ_n, ++LQm_n)
-                (*LQ_n) = conj(*LQm_n);
+                (*LQ_n) = ma::conj(*LQm_n);
             }
         }
       } else {
@@ -725,7 +725,7 @@ HamiltonianOperations KPTHCHamiltonian::getHamiltonianOperations(bool pureSD,
               auto&& uJ(Piu[nj0+j]);
               auto LIJ_(LQKikn[Q][KI].origin()+ij*nchol_per_kp[Q]);
               for(int u=0; u<nmu; u++) {
-                ComplexType uij = conj(uI[u])*uJ[u];
+                ComplexType uij = ma::conj(uI[u])*uJ[u];
                 auto lq(to_address(LQGun[Q][nmu*G1+u].origin()));
                 for(int n=0; n<nchol_per_kp[Q]; n++)
                   LIJ_[n] += uij * lq[n];
@@ -790,7 +790,7 @@ HamiltonianOperations KPTHCHamiltonian::getHamiltonianOperations(bool pureSD,
                     for(int j=0, jn=0; j<nmo_per_kp[QKtok2[Q0][K]]; ++j, ++psi_bj) {
                       auto Llbn_lbn = Llbn[l][b].origin();
                       for(int n=0; n<nchol_per_kp[0]; ++n, ++Likn_jn, ++Llbn_lbn)
-                        (*Llbn_lbn) += (*psi_bj) * conj(*Likn_jn);
+                        (*Llbn_lbn) += (*psi_bj) * ma::conj(*Likn_jn);
                     }
                   }
                 }
@@ -820,7 +820,7 @@ HamiltonianOperations KPTHCHamiltonian::getHamiltonianOperations(bool pureSD,
                     for(int j=0, jn=0; j<nmo_per_kp[QKtok2[Q0][K]]; ++j, ++psi_bj) {
                       auto Llbn_lbn = Llbn[l][b].origin();
                       for(int n=0; n<nchol_per_kp[Q0]; ++n, ++Likn_jn, ++Llbn_lbn)
-                        (*Llbn_lbn) += (*psi_bj) * conj(*Likn_jn);
+                        (*Llbn_lbn) += (*psi_bj) * ma::conj(*Likn_jn);
                     }
                   }
                 }
@@ -849,7 +849,7 @@ HamiltonianOperations KPTHCHamiltonian::getHamiltonianOperations(bool pureSD,
                   for(int j=0, jn=0; j<nmo_per_kp[QKtok2[Q0][K]]; ++j, ++psi_bj) {
                     auto Llbn_lbn = Llbn[l][b].origin();
                     for(int n=0; n<nchol_per_kp[Q0]; ++n, ++Likn_jn, ++Llbn_lbn)
-                      (*Llbn_lbn) += (*psi_bj) * conj(*Likn_jn);
+                      (*Llbn_lbn) += (*psi_bj) * ma::conj(*Likn_jn);
                   }
                 }
               }
@@ -943,7 +943,7 @@ HamiltonianOperations KPTHCHamiltonian::getHamiltonianOperations(bool pureSD,
   TG.Node().barrier();
 */
 // /*
-  // calculate (only Q=0) vn0(I,L) = -0.5 sum_K sum_j sum_n L[0][K][i][j][n] conj(L[0][K][l][j][n])
+  // calculate (only Q=0) vn0(I,L) = -0.5 sum_K sum_j sum_n L[0][K][i][j][n] ma::conj(L[0][K][l][j][n])
   for(int K=0; K<nkpts; K++) {
     if(K%TG.Node().size() == TG.Node().rank()) {
       boost::multi::array_ref<SPComplexType,2> Likn(to_address(LQKikn[0][K].origin()),
@@ -1015,7 +1015,7 @@ HamiltonianOperations KPTHCHamiltonian::getHamiltonianOperations(bool pureSD,
             for(int i=0; i<ni; i++)
               for(int j=0; j<nj; j++)
                 for(int n=0; n<nchol_per_kp_[Q]; n++)
-                  LQJ[j][i][n] = conj(LQI[i][j][n]);
+                  LQJ[j][i][n] = ma::conj(LQI[i][j][n]);
           }
         }
       } else if(kminus[Q] < Q) {
@@ -1033,7 +1033,7 @@ HamiltonianOperations KPTHCHamiltonian::getHamiltonianOperations(bool pureSD,
               auto LQ_n(LQ[j][i].origin());
               auto LQm_n(LQm[i][j].origin());
               for(int n=0; n<nchol_per_kp_[Qm]; n++, ++LQ_n, ++LQm_n)
-                (*LQ_n) = conj(*LQm_n);
+                (*LQ_n) = ma::conj(*LQm_n);
             }
         }
       } else

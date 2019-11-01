@@ -41,7 +41,7 @@ class THCHamiltonian: public OneBodyHamiltonian
 
   public:
 
-  THCHamiltonian(AFQMCInfo const& info, xmlNodePtr cur, boost::multi::array<ComplexType,2>&& h,
+  THCHamiltonian(AFQMCInfo const& info, xmlNodePtr cur, boost::multi::array<ValueType,2>&& h,
                  TaskGroup_& tg_, ValueType nucE=0, ValueType fzcE=0):
                             OneBodyHamiltonian(info,std::move(h),nucE,fzcE),
                             TG(tg_),cutoff_cholesky(1e-6),fileName(""),
@@ -67,7 +67,7 @@ class THCHamiltonian: public OneBodyHamiltonian
 
   ValueType getNuclearCoulombEnergy() const { return OneBodyHamiltonian::NuclearCoulombEnergy; }
 
-  boost::multi::array<ComplexType,2> getH1() const{ return OneBodyHamiltonian::getH1(); }
+  boost::multi::array<ValueType,2> getH1() const{ return OneBodyHamiltonian::getH1(); }
 
   HamiltonianOperations getHamiltonianOperations(bool pureSD, bool addCoulomb, WALKER_TYPES type,
             std::vector<PsiT_Matrix>& PsiT, double cutvn, double cutv2,
@@ -86,9 +86,9 @@ class THCHamiltonian: public OneBodyHamiltonian
 
   TaskGroup_& TG;
 
-  std::string fileName;
-
   RealType cutoff_cholesky;
+
+  std::string fileName;
 
   bool useHalfRotatedMuv;
 

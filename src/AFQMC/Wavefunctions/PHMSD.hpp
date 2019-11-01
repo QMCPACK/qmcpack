@@ -104,7 +104,6 @@ class PHMSD: public AFQMCInfo
           WALKER_TYPES wlk, ValueType nce, int targetNW=1):
                 AFQMCInfo(info),TG(tg_),
                 SDetOp( SlaterDetOperations_shared<ComplexType>(
-                //SDetOp( 
                         ((wlk!=NONCOLLINEAR)?(NMO):(2*NMO)),
                         ((wlk!=NONCOLLINEAR)?(NAEA):(NAEA+NAEB)) )),
                 HamOp(std::move(hop_)),
@@ -112,22 +111,18 @@ class PHMSD: public AFQMCInfo
                 actb2mo(std::move(actb2mo_)),
                 abij(std::move(abij_)),
                 OrbMats(std::move(orbs_)),
-                walker_type(wlk),NuclearCoulombEnergy(nce),
                 shmbuff_for_E(nullptr),
                 mutex(std::make_unique<shared_mutex>(TG.TG_local())),
+                walker_type(wlk),NuclearCoulombEnergy(nce),
                 last_number_extra_tasks(-1),last_task_index(-1),
                 local_group_comm(),
                 shmbuff_for_G(nullptr),
-                req_Gsend(MPI_REQUEST_NULL),
-                req_Grecv(MPI_REQUEST_NULL),
-                req_SMsend(MPI_REQUEST_NULL),
-                req_SMrecv(MPI_REQUEST_NULL),
-                maxnactive(std::max(OrbMats[0].size(0),OrbMats.back().size(0))),
-                max_exct_n(std::max(abij.maximum_excitation_number()[0],
-                                    abij.maximum_excitation_number()[1])),
                 maxn_unique_confg(    
                     std::max(abij.number_of_unique_excitations()[0],
                              abij.number_of_unique_excitations()[1])),
+                maxnactive(std::max(OrbMats[0].size(0),OrbMats.back().size(0))),
+                max_exct_n(std::max(abij.maximum_excitation_number()[0],
+                                    abij.maximum_excitation_number()[1])),
                 unique_overlaps({2,1},shared_allocator<ComplexType>{TG.TG_local()}), 
                 unique_Etot({2,1},shared_allocator<ComplexType>{TG.TG_local()}), 
                 QQ0inv0({1,1},shared_allocator<ComplexType>{TG.TG_local()}),
@@ -149,7 +144,11 @@ class PHMSD: public AFQMCInfo
                 KEright({1,1,1},shared_allocator<ComplexType>{TG.TG_local()}), 
                 KEleft({1,1},shared_allocator<ComplexType>{TG.TG_local()}), 
                 det_couplings{std::move(beta_coupled_to_unique_alpha__),
-                              std::move(alpha_coupled_to_unique_beta__)}
+                              std::move(alpha_coupled_to_unique_beta__)},
+                req_Gsend(MPI_REQUEST_NULL),
+                req_Grecv(MPI_REQUEST_NULL),
+                req_SMsend(MPI_REQUEST_NULL),
+                req_SMrecv(MPI_REQUEST_NULL)
     {
       /* To me, PHMSD is not compatible with walker_type=CLOSED unless
        * the MSD expansion is symmetric with respect to spin. For this, 
@@ -341,6 +340,40 @@ class PHMSD: public AFQMCInfo
     template<class WlkSet, class MatG, class TVec>
     void MixedDensityMatrix(const WlkSet& wset, MatG&& G, TVec&& Ov, bool compact=true, bool transpose=false);
 
+    /*
+     * Calculates the density matrix with respect to a given Reference
+     * for all walkers in the walker set. 
+     */
+    template<class WlkSet, class MatA, class MatB, class MatG, class TVec>
+    void DensityMatrix(const WlkSet& wset, MatA&& RefA, MatB&& RefB, MatG&& G,
+                        TVec&& Ov, bool herm, bool compact, bool transposed)
+    {
+/*
+      if(nbatch != 0)
+        DensityMatrix_batched(wset,std::forward<MatA>(RefA),std::forward<MatB>(RefB),
+                                std::forward<MatG>(G),std::forward<TVec>(Ov),
+                                herm,compact,transposed);
+      else
+*/
+        DensityMatrix_shared(wset,std::forward<MatA>(RefA),std::forward<MatB>(RefB),
+                                std::forward<MatG>(G),std::forward<TVec>(Ov),
+                                herm,compact,transposed);
+    }
+
+    template<class MatA, class MatB, class MatG, class TVec>
+    void DensityMatrix(std::vector<MatA>& Left, std::vector<MatB>& Right, std::vector<MatG>& G,
+                        TVec&& Ov, double LogOverlapFactor, bool herm, bool compact)
+    {
+/*
+      if(nbatch != 0)
+        DensityMatrix_batched(Left,Right,G,std::forward<TVec>(Ov),LogOverlapFactor,
+                                herm,compact);
+      else
+*/
+        DensityMatrix_shared(Left,Right,G,std::forward<TVec>(Ov),LogOverlapFactor,
+                                herm,compact);
+    }
+
     template<class WlkSet, class MatG, class CVec1, class CVec2, class Mat1, class Mat2>
     void WalkerAveragedDensityMatrix(const WlkSet& wset, CVec1& wgt, MatG& G, CVec2& denom, Mat1 &&Ovlp, Mat2&& DMsum, bool free_projection=false, boost::multi::array_ref<ComplexType,3>* Refs=nullptr, boost::multi::array<ComplexType,2>* detR=nullptr); 
 
@@ -406,6 +439,8 @@ class PHMSD: public AFQMCInfo
     int number_of_references_for_back_propagation() const {
       return 0; 
     }
+
+    ComplexType getReferenceWeight(int i) {return ComplexType(0.0,0.0);}
 
     /*
      * Returns the reference Slater Matrices needed for back propagation.  
@@ -520,6 +555,31 @@ class PHMSD: public AFQMCInfo
      */
     template<class WlkSet, class Mat, class TVec>
     void Energy_distributed(const WlkSet& wset, Mat&& E, TVec&& Ov); 
+
+    /* 
+     * Computes the density matrix with respect to a given reference. 
+     * Intended to be used in combination with the energy evaluation routine.
+     * G and Ov are expected to be in shared memory.
+     */
+    template<class WlkSet, class MatA, class MatB, class MatG, class TVec>
+    void DensityMatrix_shared(const WlkSet& wset, MatA&& RefsA, MatB&& RefsB, MatG&& G,
+                                TVec&& Ov, bool herm, bool compact, bool transposed);
+
+/*
+    template<class WlkSet, class MatA, class MatB, class MatG, class TVec>
+    void DensityMatrix_batched(const WlkSet& wset, MatA&& RefsA, MatB&& RefsB, MatG&& G,
+                                TVec&& Ov, bool herm, bool compact, bool transposed);
+*/
+
+    template<class MatA, class MatB, class MatG, class TVec>
+    void DensityMatrix_shared(std::vector<MatA>& Left, std::vector<MatB>& Right, std::vector<MatG>& G,
+                        TVec&& Ov, double LogOverlapFactor, bool herm, bool compact);
+
+/*
+    template<class MatA, class MatB, class MatG, class TVec>
+    void DensityMatrix_batched(std::vector<MatA>& Left, std::vector<MatB>& Right, std::vector<MatG>& G,
+                        TVec&& Ov, double LogOverlapFactor, bool herm, bool compact);
+*/
 
     int dm_size(bool full) const {
       switch(walker_type) {

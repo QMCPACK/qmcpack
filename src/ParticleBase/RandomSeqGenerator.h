@@ -21,6 +21,7 @@
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "ParticleBase/ParticleAttrib.h"
 #include "Utilities/RandomGenerator.h"
+#include "config/stdlib/Constants.h"
 
 /*!\fn template<class T> void assignGaussRand(T* restrict a, unsigned n)
   *\param a the starting pointer

@@ -113,7 +113,7 @@ namespace afqmc
   //  J1a = <il|kj>
   //  J2a = <ik|lj>
   //  J3a = <il|jk>
-  //    In this case, make sure you use the fact that: <ij|kl> = conj( <kl|ij> )
+  //    In this case, make sure you use the fact that: <ij|kl> = ma::conj( <kl|ij> )
   inline void find_all_contributions_to_hamiltonian_closed_shell(int NMO, OrbitalType i, OrbitalType j, OrbitalType k, OrbitalType l, ValueType J1, ValueType J2, ValueType J3, ValueType J1a, ValueType J2a, ValueType J3a, double cut, std::vector<s4D<ValueType> >& v)
   {
     // simple algorithm for now
@@ -138,34 +138,34 @@ namespace afqmc
     ValueType J1J2 = 4.0*J1-2.0*J2;
     if(std::abs(J1J2) > cut) {
       push_ijkl( NMO,i,j,k,l,J1J2,v);
-      push_ijkl( NMO,k,l,i,j,conj(J1J2),v);
+      push_ijkl( NMO,k,l,i,j,ma::conj(J1J2),v);
     }
     ValueType J1J3 = 4.0*J1a-2.0*J3a;
     if(std::abs(J1J3) > cut) {
       push_ijkl( NMO,i,l,k,j,J1J3,v);
-      push_ijkl( NMO,j,k,l,i,conj(J1J3),v);
+      push_ijkl( NMO,j,k,l,i,ma::conj(J1J3),v);
     }
 
     ValueType J2J1 = 4.0*J2-2.0*J1;
     if(std::abs(J2J1) > cut) {
       push_ijkl( NMO,i,j,l,k,J2J1,v);
-      push_ijkl( NMO,k,l,j,i,conj(J2J1),v);
+      push_ijkl( NMO,k,l,j,i,ma::conj(J2J1),v);
     }
     ValueType J2J3 = 4.0*J2a-2.0*J3;
     if(std::abs(J2J3) > cut) {
       push_ijkl( NMO,i,k,l,j,J2J3,v);
-      push_ijkl( NMO,j,l,k,i,conj(J2J3),v);
+      push_ijkl( NMO,j,l,k,i,ma::conj(J2J3),v);
     }
 
     ValueType J3J1 = 4.0*J3a-2.0*J1a;
     if(std::abs(J3J1) > cut) {
       push_ijkl( NMO,i,l,j,k,J3J1,v);
-      push_ijkl( NMO,k,j,l,i,conj(J3J1),v);
+      push_ijkl( NMO,k,j,l,i,ma::conj(J3J1),v);
     }
     ValueType J3J2 = 4.0*J3-2.0*J2a;
     if(std::abs(J3J2) > cut) {
       push_ijkl( NMO,i,k,j,l,J3J2,v);
-      push_ijkl( NMO,l,j,k,i,conj(J3J2),v);
+      push_ijkl( NMO,l,j,k,i,ma::conj(J3J2),v);
     }
 
     // order to remove consecutive repreated
@@ -494,7 +494,7 @@ namespace afqmc
   }
 
   // looks for all equivalent terms associated with Vijkl
-  // Applies std::complex conjugate when needed
+  // Applies std::complex ma::conjugate when needed
   // Quite inefficient, so don't use outside initialization
   inline void find_equivalent_OneBar_for_integral_list(s4D<ValueType> Vijkl, std::vector<s4D<ValueType> >& v)
   {
@@ -514,8 +514,8 @@ namespace afqmc
 
       v.push_back(Vijkl);
       if( jilk != ijkl ) v.push_back(std::make_tuple(j,i,l,k,V));
-      if( klij != ijkl && klij != jilk ) v.push_back(std::make_tuple(k,l,i,j,conj(V)));
-      if( lkji != ijkl && lkji != jilk && lkji != klij ) v.push_back(std::make_tuple(l,k,j,i,conj(V)));
+      if( klij != ijkl && klij != jilk ) v.push_back(std::make_tuple(k,l,i,j,ma::conj(V)));
+      if( lkji != ijkl && lkji != jilk && lkji != klij ) v.push_back(std::make_tuple(l,k,j,i,ma::conj(V)));
       // order, not needed but good measure
       std::sort (v.begin(), v.end(),
       [](const s4D<ValueType>& lhs, const s4D<ValueType>& rhs)
@@ -580,15 +580,15 @@ namespace afqmc
 
       if( klij != ijkl && klij != jilk ) {
 
-        // need to add klij as conj(V). How do I add it?
+        // need to add klij as ma::conj(V). How do I add it?
         if(klij != lkji) {  // add once with factor of 2
-          v.push_back(std::make_tuple(k,l,i,j,conj(static_cast<RealType>(2.0)*V)));
+          v.push_back(std::make_tuple(k,l,i,j,ma::conj(static_cast<RealType>(2.0)*V)));
           if(ijkl == lkji)  {
             std::cerr<<" Error in find_equivalent_OneBar_for_hamiltonian_generation: Not sure how you got here. (ijkl == lkji): " <<i <<" " <<j <<" " <<k <<" " <<l <<"  " <<V  <<std::endl;
             APP_ABORT("Error in find_equivalent_OneBar_for_hamiltonian_generation: Not sure how you got here. (ijkl == lkji) \n");
           }
         } else
-          v.push_back(std::make_tuple(k,l,i,j,conj(V)));
+          v.push_back(std::make_tuple(k,l,i,j,ma::conj(V)));
 
       } else {
         // just checking
@@ -682,17 +682,17 @@ namespace afqmc
     if( ijkl != jilk )
       v.push_back(std::make_tuple(j,i,l,k,V));
     if( klij != ijkl && klij != jilk )
-      v.push_back(std::make_tuple(k,l,i,j,conj(V)));
+      v.push_back(std::make_tuple(k,l,i,j,ma::conj(V)));
     if( lkji != ijkl && lkji != jilk && lkji != klij )
-      v.push_back(std::make_tuple(l,k,j,i,conj(V)));
+      v.push_back(std::make_tuple(l,k,j,i,ma::conj(V)));
     if( ijlk != lkji && ijlk != ijkl && ijlk != jilk && ijlk != klij )
       v.push_back(std::make_tuple(i,j,l,k,static_cast<RealType>(-1.0)*V));
     if( jikl != ijlk && jikl != lkji && jikl != ijkl && jikl != jilk && jikl != klij )
       v.push_back(std::make_tuple(j,i,k,l,static_cast<RealType>(-1.0)*V));
     if( lkij != jikl && lkij != ijlk && lkij != lkji && lkij != ijkl && lkij != jilk && lkij != klij )
-      v.push_back(std::make_tuple(l,k,i,j,conj(static_cast<RealType>(-1.0)*V)));
+      v.push_back(std::make_tuple(l,k,i,j,ma::conj(static_cast<RealType>(-1.0)*V)));
     if( klji != lkij && klji != jikl && klji != ijlk && klji != lkji && klji != ijkl && klji != jilk && klji != klij )
-      v.push_back(std::make_tuple(k,l,j,i,conj(static_cast<RealType>(-1.0)*V)));
+      v.push_back(std::make_tuple(k,l,j,i,ma::conj(static_cast<RealType>(-1.0)*V)));
 
 
     // just in case
@@ -747,13 +747,13 @@ namespace afqmc
     bool t=false;
     if( klij != ijkl && klij != jilk ) {
       t=true;
-      v.push_back(std::make_tuple(k,l,i,j,conj(V)));
+      v.push_back(std::make_tuple(k,l,i,j,ma::conj(V)));
     }
     if( lkji != ijkl && lkji != jilk && lkji != klij ) {
       if(t)
         std::get<4>(v.back()) *= static_cast<RealType>(2.0);
       else
-        v.push_back(std::make_tuple(l,k,j,i,conj(V)));
+        v.push_back(std::make_tuple(l,k,j,i,ma::conj(V)));
     }
 
     t=false;
@@ -771,13 +771,13 @@ namespace afqmc
     t=false;
     if( lkij != jikl && lkij != ijlk && lkij != lkji && lkij != ijkl && lkij != jilk && lkij != klij ) {
       t=true;
-      v.push_back(std::make_tuple(l,k,i,j,conj(static_cast<RealType>(-1.0)*V)));
+      v.push_back(std::make_tuple(l,k,i,j,ma::conj(static_cast<RealType>(-1.0)*V)));
     }
     if( klji != lkij && klji != jikl && klji != ijlk && klji != lkji && klji != ijkl && klji != jilk && klji != klij ) {
       if(t)
         std::get<4>(v.back()) *= static_cast<RealType>(2.0);
       else
-        v.push_back(std::make_tuple(k,l,j,i,conj(static_cast<RealType>(-1.0)*V)));
+        v.push_back(std::make_tuple(k,l,j,i,ma::conj(static_cast<RealType>(-1.0)*V)));
     }
 
     std::sort (v.begin(), v.end(),

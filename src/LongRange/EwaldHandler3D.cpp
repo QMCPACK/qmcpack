@@ -63,7 +63,6 @@ void EwaldHandler3D::fillFk(KContainer& KList)
   kMag.resize(MaxKshell);
   mRealType kgauss       = 1.0 / (4 * Sigma * Sigma);
   mRealType knorm        = 4 * M_PI / Volume;
-  const mRealType acclog = std::abs(std::log(1.0e-10));
   for (int ks = 0, ki = 0; ks < Fk_symm.size(); ks++)
   {
     mRealType t2e = KList.ksq[ki] * kgauss;

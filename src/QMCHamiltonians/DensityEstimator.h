@@ -16,7 +16,7 @@
 
 #ifndef QMCPLUSPLUS_DENSITY_HAMILTONIAN_H
 #define QMCPLUSPLUS_DENSITY_HAMILTONIAN_H
-#include <QMCHamiltonians/QMCHamiltonianBase.h>
+#include <QMCHamiltonians/OperatorBase.h>
 #include <OhmmsPETE/OhmmsArray.h>
 #include "LongRange/LRCoulombSingleton.h"
 namespace qmcplusplus
@@ -25,7 +25,7 @@ typedef LRCoulombSingleton::LRHandlerType LRHandlerType;
 typedef LRCoulombSingleton::GridType GridType;
 typedef LRCoulombSingleton::RadFunctorType RadFunctorType;
 
-class DensityEstimator : public QMCHamiltonianBase
+class DensityEstimator : public OperatorBase
 {
 public:
   DensityEstimator(ParticleSet& elns);
@@ -42,7 +42,7 @@ public:
   void setParticlePropertyList(PropertySetType& plist, int offset);
   bool put(xmlNodePtr cur);
   bool get(std::ostream& os) const;
-  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 
   inline int getGridIndex(int i, int j, int k) const { return myIndex + k + NumGrids[2] * (j + NumGrids[1] * i); }
 

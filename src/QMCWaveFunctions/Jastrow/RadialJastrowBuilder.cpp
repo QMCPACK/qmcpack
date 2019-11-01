@@ -43,14 +43,15 @@
 #include "QMCWaveFunctions/Jastrow/LRBreakupUtilities.h"
 #include "QMCWaveFunctions/Jastrow/BsplineFunctor.h"
 #include "QMCWaveFunctions/Jastrow/PadeFunctors.h"
+#include "QMCWaveFunctions/Jastrow/ShortRangeCuspFunctor.h"
 #include "QMCWaveFunctions/Jastrow/UserFunctor.h"
 #include <iostream>
 
 
 namespace qmcplusplus
 {
-RadialJastrowBuilder::RadialJastrowBuilder(ParticleSet& target, TrialWaveFunction& psi, ParticleSet& source)
-    : WaveFunctionComponentBuilder(target, psi), SourcePtcl(&source)
+RadialJastrowBuilder::RadialJastrowBuilder(Communicate* comm, ParticleSet& target, ParticleSet& source)
+    : WaveFunctionComponentBuilder(comm, target), SourcePtcl(&source)
 {
   ClassName    = "RadialJastrowBuilder";
   NameOpt      = "0";
@@ -59,8 +60,8 @@ RadialJastrowBuilder::RadialJastrowBuilder(ParticleSet& target, TrialWaveFunctio
   SpinOpt      = "no";
 }
 
-RadialJastrowBuilder::RadialJastrowBuilder(ParticleSet& target, TrialWaveFunction& psi)
-    : WaveFunctionComponentBuilder(target, psi), SourcePtcl(NULL)
+RadialJastrowBuilder::RadialJastrowBuilder(Communicate* comm, ParticleSet& target)
+    : WaveFunctionComponentBuilder(comm, target), SourcePtcl(NULL)
 {
   ClassName    = "RadialJastrowBuilder";
   NameOpt      = "0";
@@ -176,7 +177,7 @@ void RadialJastrowBuilder::initTwoBodyFunctor(BsplineFunctor<RealType>& bfunc, d
 
 
 template<class RadFuncType>
-bool RadialJastrowBuilder::createJ2(xmlNodePtr cur)
+WaveFunctionComponent* RadialJastrowBuilder::createJ2(xmlNodePtr cur)
 {
   ReportEngine PRE(ClassName, "createJ2(xmlNodePtr)");
   using RT                = typename RadFuncType::real_type;
@@ -185,7 +186,7 @@ bool RadialJastrowBuilder::createJ2(xmlNodePtr cur)
 
   std::string j2name = "J2_" + Jastfunction;
   SpeciesSet& species(targetPtcl.getSpeciesSet());
-  int taskid = (targetPsi.is_manager()) ? targetPsi.getGroupID() : -1;
+  int taskid = is_manager() ? getGroupID() : -1;
   auto* J2   = new J2OrbitalType(targetPtcl, taskid);
   auto* dJ2  = new DiffJ2OrbitalType(targetPtcl);
 
@@ -268,13 +269,10 @@ bool RadialJastrowBuilder::createJ2(xmlNodePtr cur)
       J2->addFunc(ia, ib, functor);
       dJ2->addFunc(ia, ib, functor);
 
-      if (qmc_common.io_node)
+      if (is_manager())
       {
         char fname[32];
-        if (qmc_common.mpi_groups > 1)
-          sprintf(fname, "J2.%s.g%03d.dat", pairType.c_str(), taskid);
-        else
-          sprintf(fname, "J2.%s.dat", pairType.c_str());
+        sprintf(fname, "J2.%s.%s.g%03d.dat", NameOpt.c_str(), pairType.c_str(), getGroupID());
         std::ofstream os(fname);
         print(*functor, os);
       }
@@ -282,30 +280,86 @@ bool RadialJastrowBuilder::createJ2(xmlNodePtr cur)
     cur = cur->next;
   }
   J2->dPsi = dJ2;
-  targetPsi.addOrbital(J2, j2name.c_str());
   J2->setOptimizable(true);
-  return true;
+
+  // compute Chiesa Correction based on the current J2 parameters
+  J2->ChiesaKEcorrection();
+
+  // Ye: actually don't know what uk.dat is used for
+  if (targetPtcl.Lattice.SuperCellEnum)
+    computeJ2uk(J2->F);
+
+  return J2;
+}
+
+
+template<class RadFuncType>
+void RadialJastrowBuilder::computeJ2uk(const std::vector<RadFuncType*>& functors)
+{
+  const int numPoints = 1000;
+  RealType vol        = targetPtcl.Lattice.Volume;
+  int nsp             = targetPtcl.groups();
+  FILE* fout          = 0;
+  if (is_manager())
+  {
+    char fname[16];
+    sprintf(fname, "uk.%s.g%03d.dat", NameOpt.c_str(), getGroupID());
+    fout = fopen(fname, "w");
+  }
+  for (int iG = 0; iG < targetPtcl.SK->KLists.ksq.size(); iG++)
+  {
+    RealType Gmag = std::sqrt(targetPtcl.SK->KLists.ksq[iG]);
+    RealType sum  = 0.0;
+    RealType uk   = 0.0;
+    for (int i = 0; i < targetPtcl.groups(); i++)
+    {
+      int Ni          = targetPtcl.last(i) - targetPtcl.first(i);
+      RealType aparam = 0.0;
+      for (int j = 0; j < targetPtcl.groups(); j++)
+      {
+        int Nj = targetPtcl.last(j) - targetPtcl.first(j);
+        if (functors[i * nsp + j])
+        {
+          auto& ufunc     = *functors[i * nsp + j];
+          RealType radius = ufunc.cutoff_radius;
+          RealType k      = Gmag;
+          RealType dr     = radius / (RealType)(numPoints - 1);
+          for (int ir = 0; ir < numPoints; ir++)
+          {
+            RealType r = dr * (RealType)ir;
+            RealType u = ufunc.evaluate(r);
+            aparam += (1.0 / 4.0) * k * k * 4.0 * M_PI * r * std::sin(k * r) / k * u * dr;
+            uk += 0.5 * 4.0 * M_PI * r * std::sin(k * r) / k * u * dr * (RealType)Nj / (RealType)(Ni + Nj);
+          }
+        }
+      }
+      //app_log() << "A = " << aparam << std::endl;
+      sum += Ni * aparam / vol;
+    }
+    if (fout)
+      fprintf(fout, "%1.8f %1.12e %1.12e\n", Gmag, uk, sum);
+  }
+  if (fout)
+    fclose(fout);
 }
 
 // specialiation for J2 RPA jastrow.
 template<>
-bool RadialJastrowBuilder::createJ2<RPAFunctor>(xmlNodePtr cur)
+WaveFunctionComponent* RadialJastrowBuilder::createJ2<RPAFunctor>(xmlNodePtr cur)
 {
-  RPAJastrow* rpajastrow = new RPAJastrow(targetPtcl, targetPsi.is_manager());
+  RPAJastrow* rpajastrow = new RPAJastrow(targetPtcl, is_manager());
   rpajastrow->put(cur);
-  targetPsi.addOrbital(rpajastrow, NameOpt);
-  return true;
+  return rpajastrow;
 }
 
 template<class RadFuncType>
-bool RadialJastrowBuilder::createJ1(xmlNodePtr cur)
+WaveFunctionComponent* RadialJastrowBuilder::createJ1(xmlNodePtr cur)
 {
   ReportEngine PRE(ClassName, "createJ1(xmlNodePtr)");
   using RT                = typename RadFuncType::real_type;
   using J1OrbitalType     = typename JastrowTypeHelper<RadFuncType>::J1OrbitalType;
   using DiffJ1OrbitalType = typename JastrowTypeHelper<RadFuncType>::DiffJ1OrbitalType;
 
-  int taskid             = targetPsi.getGroupID();
   J1OrbitalType* J1      = new J1OrbitalType(*SourcePtcl, targetPtcl);
   DiffJ1OrbitalType* dJ1 = new DiffJ1OrbitalType(*SourcePtcl, targetPtcl);
 
@@ -356,23 +410,13 @@ bool RadialJastrowBuilder::createJ1(xmlNodePtr cur)
       J1->addFunc(ig, functor, jg);
       dJ1->addFunc(ig, functor, jg);
       success = true;
-      if (qmc_common.io_node)
+      if (is_manager())
       {
         char fname[128];
-        if (qmc_common.mpi_groups > 1)
-        {
-          if (speciesB.size())
-            sprintf(fname, "%s.%s%s.g%03d.dat", jname.c_str(), speciesA.c_str(), speciesB.c_str(), taskid);
-          else
-            sprintf(fname, "%s.%s.g%03d.dat", jname.c_str(), speciesA.c_str(), taskid);
-        }
+        if (speciesB.size())
+          sprintf(fname, "%s.%s.%s%s.g%03d.dat", jname.c_str(), NameOpt.c_str(), speciesA.c_str(), speciesB.c_str(), getGroupID());
         else
-        {
-          if (speciesB.size())
-            sprintf(fname, "%s.%s%s.dat", jname.c_str(), speciesA.c_str(), speciesB.c_str());
-          else
-            sprintf(fname, "%s.%s.dat", jname.c_str(), speciesA.c_str());
-        }
+          sprintf(fname, "%s.%s.%s.g%03d.dat", jname.c_str(), NameOpt.c_str(), speciesA.c_str(), getGroupID());
         std::ofstream os(fname);
         print(*functor, os);
       }
@@ -382,22 +426,21 @@ bool RadialJastrowBuilder::createJ1(xmlNodePtr cur)
   if (success)
   {
     J1->dPsi = dJ1;
-    targetPsi.addOrbital(J1, jname.c_str());
     J1->setOptimizable(Opt);
-    return true;
+    return J1;
   }
   else
   {
-    PRE.warning("BsplineJastrowBuilder failed to add an One-Body Jastrow.");
+    PRE.error("BsplineJastrowBuilder failed to add an One-Body Jastrow.");
     delete J1;
     delete dJ1;
-    return false;
+    return nullptr;
   }
 }
 
 // specialiation for J1 RPA jastrow.  Note that the long range part is not implemented
 template<>
-bool RadialJastrowBuilder::createJ1<RPAFunctor>(xmlNodePtr cur)
+WaveFunctionComponent* RadialJastrowBuilder::createJ1<RPAFunctor>(xmlNodePtr cur)
 {
   using RT               = RealType;
   using SplineEngineType = CubicBspline<RT, LINEAR_1DGRID, FIRSTDERIV_CONSTRAINTS>;
@@ -431,7 +474,7 @@ bool RadialJastrowBuilder::createJ1<RPAFunctor>(xmlNodePtr cur)
   params.put(cur);
   bool Opt(true);
 
-  HandlerType* myHandler;
+  HandlerType* myHandler = nullptr;
   if (Rs < 0)
   {
     Rs = std::pow(3.0 / 4.0 / M_PI * targetPtcl.Lattice.Volume / static_cast<RealType>(targetPtcl.getTotalNum()),
@@ -476,13 +519,12 @@ bool RadialJastrowBuilder::createJ1<RPAFunctor>(xmlNodePtr cur)
 
   J1->dPsi          = dJ1;
   std::string jname = "J1_" + Jastfunction;
-  targetPsi.addOrbital(J1, jname.c_str());
   J1->setOptimizable(Opt);
-  return true;
+  return J1;
 }
 
 
-bool RadialJastrowBuilder::put(xmlNodePtr cur)
+WaveFunctionComponent* RadialJastrowBuilder::buildComponent(xmlNodePtr cur)
 {
   ReportEngine PRE(ClassName, "put(xmlNodePtr)");
   OhmmsAttributeSet aAttrib;
@@ -496,8 +538,6 @@ bool RadialJastrowBuilder::put(xmlNodePtr cur)
   tolower(Jastfunction);
   tolower(SpinOpt);
 
-  bool success = false;
-
   SpeciesSet& species(targetPtcl.getSpeciesSet());
   int chargeInd = species.addAttribute("charge");
 
@@ -506,16 +546,21 @@ bool RadialJastrowBuilder::put(xmlNodePtr cur)
     // it's a one body jastrow factor
     if (Jastfunction == "bspline")
     {
-      success = createJ1<BsplineFunctor<RealType>>(cur);
+      return createJ1<BsplineFunctor<RealType>>(cur);
     }
     else if (Jastfunction == "pade")
     {
       guardAgainstPBC();
-      success = createJ1<PadeFunctor<RealType>>(cur);
+      return createJ1<PadeFunctor<RealType>>(cur);
+    }
+    else if (Jastfunction == "shortrangecusp")
+    {
+      //guardAgainstPBC(); // is this needed?
+      return createJ1<ShortRangeCuspFunctor<RealType>>(cur);
     }
     else if (Jastfunction == "user")
     {
-      success = createJ1<UserFunctor<RealType>>(cur);
+      return createJ1<UserFunctor<RealType>>(cur);
     }
     else if (Jastfunction == "rpa")
     {
@@ -525,46 +570,44 @@ bool RadialJastrowBuilder::put(xmlNodePtr cur)
       guardAgainstOBC();
 #if defined(ENABLE_SOA)
       app_error() << "one body RPA jastrow is not compatible with SOA at the moment\n";
-      success = false;
 #else
-      success = createJ1<RPAFunctor>(cur);
+      return createJ1<RPAFunctor>(cur);
 #endif
     }
     else
-    {
       app_error() << "Unknown one jastrow body function: " << Jastfunction << ".\n";
-    }
   }
   else if (TypeOpt.find("two") < TypeOpt.size())
   {
     // it's a two body jastrow factor
     if (Jastfunction == "bspline")
     {
-      success = createJ2<BsplineFunctor<RealType>>(cur);
+      return createJ2<BsplineFunctor<RealType>>(cur);
     }
     else if (Jastfunction == "pade")
     {
       guardAgainstPBC();
-      success = createJ2<PadeFunctor<RealType>>(cur);
+      return createJ2<PadeFunctor<RealType>>(cur);
     }
     else if (Jastfunction == "user")
     {
-      success = createJ2<UserFunctor<RealType>>(cur);
+      return createJ2<UserFunctor<RealType>>(cur);
     }
     else if (Jastfunction == "rpa" || Jastfunction == "yukawa")
     {
 #if !(OHMMS_DIM == 3)
       app_error() << "RPA for one-body jastrow is only available for 3D\n";
-#endif
+#else
       guardAgainstOBC();
-      success = createJ2<RPAFunctor>(cur);
+      return createJ2<RPAFunctor>(cur);
+#endif
     }
     else
-    {
-      app_error() << "Unknown two body jastrow function: " << Jastfunction << ".\n";
-    }
+      app_error() << "Unknown two jastrow body function: " << Jastfunction << ".\n";
   }
-  return success;
+
+  APP_ABORT("RadialJastrowBuilder::buildComponent not able to create Jastrow!\n");
+  return nullptr;
 }
 
 } // namespace qmcplusplus

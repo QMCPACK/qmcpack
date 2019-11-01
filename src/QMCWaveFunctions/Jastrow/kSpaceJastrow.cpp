@@ -234,12 +234,12 @@ kSpaceJastrow::kSpaceJastrow(ParticleSet& ions,
                              RealType twoBodyCutoff,
                              std::string twobodyid,
                              bool twoBodySpin)
-    : Ions(ions), Elecs(elecs), OneBodyID(onebodyid), TwoBodyID(twobodyid)
+    : Ions(ions), OneBodyID(onebodyid), TwoBodyID(twobodyid)
 {
   Optimizable   = true;
   Prefactor     = 1.0 / elecs.Lattice.Volume;
   NumIonSpecies = 0;
-  NumElecs      = elecs.getTotalNum();
+  num_elecs      = elecs.getTotalNum();
   for (int iat = 0; iat < ions.getTotalNum(); iat++)
     NumIonSpecies = std::max(NumIonSpecies, ions.GroupID[iat] + 1);
   if (oneBodyCutoff > 0.0)
@@ -281,14 +281,14 @@ kSpaceJastrow::kSpaceJastrow(ParticleSet& ions,
   OneBodyPhase.resize(nOne);
   OneBody_e2iGr.resize(nOne);
   int nTwo   = TwoBodyGvecs.size();
-  int nElecs = Elecs.getTotalNum();
+  int nelecs = elecs.getTotalNum();
   TwoBodyCoefs.resize(nTwo);
   TwoBody_rhoG.resize(nTwo);
   TwoBodyPhase.resize(nTwo);
   TwoBody_e2iGr_new.resize(nTwo);
   TwoBody_e2iGr_old.resize(nTwo);
-  Delta_e2iGr.resize(nElecs, nTwo);
-  for (int iat = 0; iat < nElecs; iat++)
+  Delta_e2iGr.resize(nelecs, nTwo);
+  for (int iat = 0; iat < nelecs; iat++)
     for (int i = 0; i < nTwo; i++)
       Delta_e2iGr(iat, i) = ComplexType();
   // Set Ion_rhoG
@@ -361,7 +361,7 @@ void kSpaceJastrow::resetTargetParticleSet(ParticleSet& P)
   for (int i = 0; i < TwoBodyGvecs.size(); i++)
   {
     TwoBody_rhoG[i] = ComplexType();
-    for (int iat = 0; iat < NumElecs; iat++)
+    for (int iat = 0; iat < num_elecs; iat++)
     {
       RealType phase, s, c;
       phase = dot(TwoBodyGvecs[i], P.R[iat]);
@@ -375,7 +375,7 @@ void kSpaceJastrow::resetTargetParticleSet(ParticleSet& P)
 //                  Evaluation functions                     //
 ///////////////////////////////////////////////////////////////
 
-kSpaceJastrow::RealType kSpaceJastrow::evaluateLog(ParticleSet& P,
+kSpaceJastrow::LogValueType kSpaceJastrow::evaluateLog(ParticleSet& P,
                                                    ParticleSet::ParticleGradient_t& G,
                                                    ParticleSet::ParticleLaplacian_t& L)
 {
@@ -654,7 +654,7 @@ void kSpaceJastrow::registerData(ParticleSet& P, WFBufferType& buf)
   // return LogValue;
 }
 
-kSpaceJastrow::RealType kSpaceJastrow::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch)
+kSpaceJastrow::LogValueType kSpaceJastrow::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch)
 {
   LogValue = evaluateLog(P, P.G, P.L);
   // for(int iat=0; iat<NumPtcls; iat++)
@@ -671,7 +671,7 @@ void kSpaceJastrow::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 {
   for (int i = 0; i < TwoBodyCoefs.size(); i++)
     TwoBody_rhoG[i] = ComplexType();
-  for (int iat = 0; iat < NumElecs; iat++)
+  for (int iat = 0; iat < num_elecs; iat++)
   {
     for (int i = 0; i < TwoBodyCoefs.size(); i++)
       TwoBodyPhase[i] = dot(TwoBodyGvecs[i], P.R[iat]);
@@ -770,7 +770,7 @@ bool kSpaceJastrow::put(xmlNodePtr cur) { return true; }
 
 WaveFunctionComponentPtr kSpaceJastrow::makeClone(ParticleSet& tqp) const
 {
-  kSpaceJastrow* kj = new kSpaceJastrow(Ions, tqp);
+  kSpaceJastrow* kj = new kSpaceJastrow(Ions);
   kj->copyFrom(*this);
   // kSpaceJastrow *kj = new kSpaceJastrow(*this);
   // kj->VarMap.clear();
@@ -789,15 +789,37 @@ WaveFunctionComponentPtr kSpaceJastrow::makeClone(ParticleSet& tqp) const
   return kj;
 }
 
-/** constructor to initialize Ions and Elecs
+WaveFunctionComponentPtr kSpaceJastrow::makeThrScope(PtclGrpIndexes& pgi) const
+{
+  // It looks to me like the els dependence is gone and the particle set is passed with evals.
+  kSpaceJastrow* kj = new kSpaceJastrow(Ions);
+  kj->copyFrom(*this);
+  // kSpaceJastrow *kj = new kSpaceJastrow(*this);
+  // kj->VarMap.clear();
+  // for (int i=0; i<OneBodySymmCoefs.size(); i++) {
+  //   std::stringstream name_real, name_imag;
+  //   name_real << OneBodyID << "_" << 2*i;
+  //   name_imag << OneBodyID << "_" << 2*i+1;
+  //   kj->VarMap[name_real.str()] = &(kj->OneBodySymmCoefs[i].cG.real());
+  //   kj->VarMap[name_imag.str()] = &(kj->OneBodySymmCoefs[i].cG.imag());
+  // }
+  // for (int i=0; i<TwoBodySymmCoefs.size(); i++) {
+  //   std::stringstream name;
+  //   name << TwoBodyID << "_" << i;
+  //   kj->VarMap[name.str()] = &(kj->TwoBodySymmCoefs[i].cG);
+  // }
+  return kj;
+}
+
+/** constructor to initialize Ions
  */
-kSpaceJastrow::kSpaceJastrow(const ParticleSet& ions, ParticleSet& els) : Ions(ions), Elecs(els) {}
+kSpaceJastrow::kSpaceJastrow(const ParticleSet& ions) : Ions(ions) {}
 
 void kSpaceJastrow::copyFrom(const kSpaceJastrow& old)
 {
   CellVolume        = old.CellVolume;
   NormConstant      = old.NormConstant;
-  NumElecs          = old.NumElecs;
+  num_elecs         = old.num_elecs;
   NumSpins          = old.NumSpins;
   NumIons           = old.NumIons;
   NumIonSpecies     = old.NumIonSpecies;
@@ -932,6 +954,38 @@ void kSpaceJastrow::evaluateDerivatives(ParticleSet& P,
         }
       }
     }
+  }
+}
+
+void kSpaceJastrow::printOneBody(std::ostream& os)
+{
+  for (int i=0;i<OneBodyCoefs.size();i++)
+  {
+    PosType     gvec  = OneBodyGvecs[i];
+    ComplexType coeff = OneBodyCoefs[i];
+    os <<std::fixed << std::setprecision( 6 )
+       << std::setw( 12 ) << gvec[0]
+       << std::setw( 12 ) << gvec[1]
+       << std::setw( 12 ) << gvec[2]
+       << std::setw( 24 ) << coeff.real()
+       << std::setw( 24 ) << coeff.imag()
+       << std::endl;
+  }
+}
+
+void kSpaceJastrow::printTwoBody(std::ostream& os)
+{
+  for (int i=0;i<TwoBodyCoefs.size();i++)
+  {
+    PosType     gvec  = TwoBodyGvecs[i];
+    ComplexType coeff = TwoBodyCoefs[i];
+    os <<std::fixed << std::setprecision( 6 )
+       << std::setw( 12 ) << gvec[0]
+       << std::setw( 12 ) << gvec[1]
+       << std::setw( 12 ) << gvec[2]
+       << std::setw( 24 ) << coeff.real()
+       << std::setw( 24 ) << coeff.imag()
+       << std::endl;
   }
 }
 

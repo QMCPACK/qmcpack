@@ -70,8 +70,6 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
     int NAEA = AFinfo.NAEA;
     int NAEB = AFinfo.NAEB;
 
-    xmlNodePtr curRoot=cur;
-
     // defaults
     double cutoff1bar = 1e-8;
     std::string fileName = "";
@@ -90,7 +88,6 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
     TaskGroup_& TG = getTG(gTG,number_of_TGs);
 
     // processor info
-    int nnodes = TG.getTotalNodes(), nodeid = TG.getNodeID();
     int ncores = TG.getTotalCores(), coreid = TG.getCoreID();
     int nread = (n_reading_cores<=0)?(ncores):(std::min(n_reading_cores,ncores));
     int head = TG.getGlobalRank() == 0;
@@ -111,7 +108,7 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
       }
     }
 
-    HamiltonianTypes htype;
+    HamiltonianTypes htype = UNKNOWN;
     if(head) htype = peekHamType(dump);
     {
       int htype_ = int(htype);
@@ -154,7 +151,7 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
     ValueType FrozenCoreEnergy(0);
 
     if(head) {
-      std::vector<ValueType> Rdata(2);
+      std::vector<RealType> Rdata(2);
       if(!dump.readEntry(Rdata,"Energies")) {
         app_error()<<" Error in HamiltonianFactory::fromHDF5(): Problems reading  dataset. \n";
         APP_ABORT(" ");
@@ -203,9 +200,9 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
           // keep i<=j by default
           if(ivec[i] <= ivec[i]) {
               H1[ivec[2*i]][ivec[2*i+1]] = vvec[i]; 
-              H1[ivec[2*i+1]][ivec[2*i]] = conj(vvec[i]); 
+              H1[ivec[2*i+1]][ivec[2*i]] = ma::conj(vvec[i]); 
           } else {
-              H1[ivec[2*i]][ivec[2*i+1]] = conj(vvec[i]); 
+              H1[ivec[2*i]][ivec[2*i+1]] = ma::conj(vvec[i]); 
               H1[ivec[2*i+1]][ivec[2*i]] = vvec[i]; 
           }
         }
@@ -291,10 +288,12 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
       TG.global_barrier();
 
       return Hamiltonian(FactorizedSparseHamiltonian(AFinfo,cur,std::move(H1),std::move(V2_fact),TG,NuclearCoulombEnergy,FrozenCoreEnergy));
-    } else {
-      app_error()<<" Error in HamiltonianFactory::fromHDF5(): Unknown Hamiltonian Type. \n";
-      APP_ABORT("");
-    }
+    } 
+
+    app_error()<<" Error in HamiltonianFactory::fromHDF5(): Unknown Hamiltonian Type. \n";
+    APP_ABORT("");
+    return Hamiltonian{};
+   
 
 }
 }  // afqmc

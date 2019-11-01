@@ -137,6 +137,12 @@ class dummy_HOps
     return false;
   }
 
+  boost::multi::array<ComplexType,2> getHSPotentials()
+  {
+    throw std::runtime_error("calling visitor on dummy_HOps object");
+    return boost::multi::array<ComplexType,2>{};
+  }
+
 };
 
 }
@@ -323,6 +329,14 @@ class HamiltonianOperations:
     bool fast_ph_energy() const {
         return boost::apply_visitor(
             [&](auto&& a){return a.fast_ph_energy();},
+            *this
+        );
+    }
+
+    template<class... Args>
+    boost::multi::array<ComplexType,2> getHSPotentials() {
+        return boost::apply_visitor(
+            [&](auto&& a){return a.getHSPotentials();},
             *this
         );
     }

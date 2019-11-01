@@ -57,6 +57,7 @@ size_t find_excitation(Vector const& abij, Vector& v)
   for(typename Vector::iterator it=v.begin(); it<v.end(); it+=n, loc++) 
     if( std::equal(abij.begin(),abij.end(),it) ) return loc;
   APP_ABORT("Error: Sequence not found in find_excitation.\n");
+  return 0;
 }
 
 template<class excitations>

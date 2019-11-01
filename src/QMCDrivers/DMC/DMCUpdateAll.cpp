@@ -53,7 +53,7 @@ void DMCUpdateAllWithRejection::advanceWalker(Walker_t& thisWalker, bool recompu
   RealType rr_proposed = 0.0;
   RealType logpsi;
 
-  if (W.makeMoveWithDrift(thisWalker, drift, deltaR, SqrtTauOverMass))
+  if (W.makeMoveAllParticlesWithDrift(thisWalker, drift, deltaR, SqrtTauOverMass))
   {
     //evaluate the new wave function
     logpsi = Psi.evaluateLog(W);
@@ -153,8 +153,8 @@ void DMCUpdateAllWithKill::advanceWalker(Walker_t& thisWalker, bool recompute)
   RealType nodecorr = setScaledDriftPbyPandNodeCorr(Tau, MassInvP, W.G, drift);
   //create a 3N-Dimensional Gaussian with variance=1
   makeGaussRandomWithEngine(deltaR, RandomGen);
-  //if(!W.makeMoveWithDrift(thisWalker,drift,deltaR, m_sqrttau))
-  if (!W.makeMoveWithDrift(thisWalker, drift, deltaR, SqrtTauOverMass))
+  //if(!W.makeMoveAllParticlesWithDrift(thisWalker,drift,deltaR, m_sqrttau))
+  if (!W.makeMoveAllParticlesWithDrift(thisWalker, drift, deltaR, SqrtTauOverMass))
   {
     H.rejectedMove(W, thisWalker);
     return;

@@ -2,6 +2,59 @@
 
 Notable changes to QMCPACK are documented in this file.
 
+## [3.8.0] - 2019-07-23
+
+### Notes
+
+This release includes Quantum Espresso v6.4.1 support, new examples
+for adding wavefunctions and Jastrow functions, and many updates to the
+AFQMC code functionality. Additionally, all the updated scripts and
+functionality utilized during the [2019 QMCPACK
+workshop](https://github.com/QMCPACK/qmcpack_workshop_2019) are
+provided; this link also includes several new tutorials. A large
+number of feature refinements, bugfixes, testing improvements and
+source code cleanup have also been performed.
+
+* Quantum Espresso v6.4.1 support [\#1732](https://github.com/QMCPACK/qmcpack/pull/1732).
+* New tutorial for adding a simple wavefunction (He) [\#1621](https://github.com/QMCPACK/qmcpack/pull/1621).
+* New tutorial and capability for adding Jastrow functors from symbolic expressions written in Python [\#1557](https://github.com/QMCPACK/qmcpack/pull/1557).
+* [Updated compiler and library support policy](https://github.com/QMCPACK/qmcpack#prerequisites), and matching testing. We aim to support open source compilers and
+  libraries within two years of release. Use of older software is discouraged and untested. Support for closed source compilers over the same period may require use of an exact version.
+* Many updates to AFQMC code to support more compilers and libraries.
+* Newly expanded deterministic test set should now pass on all platforms and be usable as an.
+  installation check. Recommend to run "ctest -L deterministic" after building QMCPACK.
+* AFQMC code now only reads HDF5 format data to improve I/O performance and storage utilization.
+* K-point AFQMC code usable in production (e.g. bug fix [\#1524](https://github.com/QMCPACK/qmcpack/pull/1524)).
+* Updated AFQMC workflow scripts for interfacing with PySCF.
+* Faster initial cusp correction calculation for all-electron calculations, e.g. [\#1643](https://github.com/QMCPACK/qmcpack/pull/1643).
+* Improved stability of cusp correction calculation [\#1594](https://github.com/QMCPACK/qmcpack/pull/1594).
+* New short-ranged e-n Jastrow [\#1680](https://github.com/QMCPACK/qmcpack/pull/1680).
+* Substantially faster 1-body reduced density matrix (1DRDM) estimator [\#1672](https://github.com/QMCPACK/qmcpack/pull/1672).
+* Performance tests added for LCAO code and Gaussian basis sets [\#1639](https://github.com/QMCPACK/qmcpack/pull/1639).
+* Reduced configuration output by default. Use -DQMC_VERBOSE_CONFIGURATION=1 on CMake line for greater detail.
+* Partial support for forces in LCAO basis e.g. [\#1559](https://github.com/QMCPACK/qmcpack/pull/1559). See details given at
+  2019 QMCPACK Workshop and in manual.
+* Improved human-readable Jastrow output [\#1525](https://github.com/QMCPACK/qmcpack/pull/1525).
+* Improved MPI implementation. QMCPACK is now compatible with OpenMPI v4.
+* Majority of the manual has been professionally edited.
+
+### Known bugs
+
+See [list of open bugs](https://github.com/QMCPACK/qmcpack/issues?q=is%3Aissue+is%3Aopen+label%3Abug).
+
+* There is a general problem with MVAPICH2 involving aligned memory allocations that will cause
+  QMCPACK to crash if MVAPICH is compiled using defaults. See  [\#1703](https://github.com/QMCPACK/qmcpack/issues/1703) for details and workaround.
+
+### NEXUS
+
+* Examples added of PySCF molecular and solid-state workflows [\#1552](https://github.com/QMCPACK/qmcpack/pull/1552).
+* Update support for Quantum Package 2.0 [\#1538](https://github.com/QMCPACK/qmcpack/pull/1538).
+* Support for additional machines including SuperMUC-NG [\#1665](https://github.com/QMCPACK/qmcpack/pull/1665).
+* Support for ghost atoms [\#1653](https://github.com/QMCPACK/qmcpack/pull/1653).
+* Update outdated cubic specifier to alat for QE [\#1642](https://github.com/QMCPACK/qmcpack/pull/1642).
+* K-point grids are symmetrized with spglib [\#1544](https://github.com/QMCPACK/qmcpack/pull/1544).
+* Bundling of jobs at NERSC [\#1748](https://github.com/QMCPACK/qmcpack/pull/1748).
+
 ## [3.7.0] - 2019-03-29
 
 ### Notes

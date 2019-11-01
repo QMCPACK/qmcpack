@@ -5,7 +5,7 @@
 #// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 #//
 #// File developed by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
-#//                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign  
+#//                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 #//                    Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 #//                    Cynthia Gu, zg1@ornl.gov, Oak Ridge National Laboratory
 #//                    Norbert Podhorszki, pnorbert@ornl.gov, Oak Ridge National Laboratory
@@ -63,7 +63,7 @@ IF (IS_GIT_PROJECT)
   else ( SED_ERROR MATCHES ".*invalid.*" )
     MESSAGE("sed supports -E")
   endif ( SED_ERROR MATCHES ".*invalid.*" )
-    
+
   ADD_CUSTOM_COMMAND(
     OUTPUT ${GITREV_TMP}
     COMMAND ${CMAKE_COMMAND} -E echo_append "#define GIT_BRANCH_RAW " > ${GITREV_TMP}
@@ -130,10 +130,10 @@ endif()
   ####################################
   SET(UTILITIES
     qmc_common.cpp
-    Utilities/RandomGenerator.cpp 
-    Utilities/OhmmsObject.cpp 
-    Utilities/SpeciesSet.cpp 
-    Utilities/SimpleParser.cpp 
+    Utilities/RandomGenerator.cpp
+    Utilities/OhmmsObject.cpp
+    Utilities/SpeciesSet.cpp
+    Utilities/SimpleParser.cpp
     Utilities/InfoStream.cpp
     Utilities/OutputManager.cpp
     Utilities/NewTimer.cpp
@@ -149,8 +149,8 @@ endif()
     Platforms/sysutil.cpp
     Platforms/accelerators.cpp
     QMCFactory/OneDimGridFactory.cpp
-    Message/Communicate.cpp 
-    Message/MPIObjectBase.cpp 
+    Message/Communicate.cpp
+    Message/MPIObjectBase.cpp
     Optimize/VariableSet.cpp
     io/hdf_archive.cpp
     spline2/MultiBsplineData.cpp
@@ -159,17 +159,9 @@ IF (IS_GIT_PROJECT)
   SET(UTILITIES "${UTILITIES};${GITREV_TMP}")
 ENDIF()
 
-  IF(QMC_ADIOS)
-    SET(UTILITIES ${UTILITIES}
-      ADIOS/ADIOS_verify.cpp
-      ADIOS/ADIOS_config.h
-      ADIOS/ADIOS_config.cpp
-      )
-  ENDIF(QMC_ADIOS)
-
   IF(QMC_CUDA)
-    SET(UTILITIES ${UTILITIES} 
-      Numerics/CUDA/cuda_inverse.cu 
+    SET(UTILITIES ${UTILITIES}
+      Numerics/CUDA/cuda_inverse.cu
       CUDA/gpu_vector.cpp
       CUDA/gpu_misc.cpp
       Particle/accept_kernel.cu)
@@ -179,7 +171,7 @@ ENDIF()
     CUDA_ADD_LIBRARY(qmcutil ${UTILITIES})
     CUDA_ADD_CUBLAS_TO_TARGET(qmcutil)
   ELSE(QMC_CUDA)
-    ADD_LIBRARY(qmcutil ${UTILITIES} ${ADIOS})
+    ADD_LIBRARY(qmcutil ${UTILITIES})
   ENDIF(QMC_CUDA)
 
   IF(HAVE_CUDA)
@@ -194,8 +186,8 @@ ENDIF()
   # Put the fake RNG in a separate library so production code doesn't
   # accidentally link to it
   SET(UNIT_TEST_UTILITIES
-    Utilities/FakeRandom.cpp 
-  ) 
+    Utilities/FakeRandom.cpp
+  )
   ADD_LIBRARY(qmcfakerng ${UNIT_TEST_UTILITIES})
 
   #IF(QMC_BUILD_STATIC)
@@ -205,13 +197,13 @@ ENDIF()
   #ENDIF(QMC_BUILD_STATIC)
 
   ####################################
-  # create libqmcbase 
+  # create libqmcbase
   ####################################
   SET(PARTICLE ${PARTICLE}
-    Particle/ParticleSet.cpp 
+    Particle/ParticleSet.cpp
     Particle/VirtualParticleSet.cpp
-    Particle/ParticleSet.BC.cpp 
-    Particle/MCWalkerConfiguration.cpp 
+    Particle/ParticleSet.BC.cpp
+    Particle/MCWalkerConfiguration.cpp
     Particle/createDistanceTableAA.cpp
     Particle/createDistanceTableAB.cpp
     Particle/HDFWalkerInputManager.cpp
@@ -230,36 +222,31 @@ ENDIF()
 
 
   SET(PARTICLEIO
-    ParticleTags.cpp 
-    ParticleIO/ParticleLayoutIO.cpp 
-    ParticleIO/XMLParticleIO.cpp 
-    ParticleIO/ParticleIOUtility.cpp 
+    ParticleTags.cpp
+    ParticleIO/ParticleLayoutIO.cpp
+    ParticleIO/XMLParticleIO.cpp
+    ParticleIO/ParticleIOUtility.cpp
     )
 
-  IF(HAVE_LIBHDF5 OR HAVE_ADIOS)
+  IF(HAVE_LIBHDF5)
     SET(PARTICLEIO ${PARTICLEIO}
       Particle/HDFWalkerOutput.cpp
       Particle/HDFWalkerInput_0_0.cpp
       Particle/HDFWalkerInput_0_4.cpp
       )
-    IF(HAVE_ADIOS)
-      SET(PARTICLEIO ${PARTICLEIO}
-        ADIOS/ADIOS_verify.cpp
-      )
-    ENDIF(HAVE_ADIOS)
 
     IF(OHMMS_DIM  MATCHES 3)
       SET(PARTICLEIO ${PARTICLEIO} ParticleIO/ESHDFParticleParser.cpp)
     ENDIF(OHMMS_DIM  MATCHES 3)
 
-  ENDIF(HAVE_LIBHDF5 OR HAVE_ADIOS)
+  ENDIF(HAVE_LIBHDF5)
 
   #Need to add this if nothing else but miniapps is compiled
   if(QMC_BUILD_SANDBOX_ONLY)
     set(PARTICLE  ${PARTICLE} QMCWaveFunctions/WaveFunctionComponent.cpp)
   endif()
 
-  ADD_LIBRARY(qmcbase ${PARTICLE}  ${PARTICLEIO}) 
+  ADD_LIBRARY(qmcbase ${PARTICLE}  ${PARTICLEIO})
 
   #IF(QMC_BUILD_STATIC)
   #  ADD_LIBRARY(qmcbase STATIC ${PARTICLE}  ${PARTICLEIO})
@@ -274,22 +261,6 @@ ENDIF()
     SUBDIRS(Sandbox)
 
   else() #{{{
-
-  #############################
-  # Creating ADIOS
-  #############################
-
-  SET(ADIOS ADIOS/ADIOS_config.cpp)
-  IF(HAVE_ADIOS)
-    SET(ADIOS ${ADIOS}
-    Particle/AdiosWalkerInput.cpp
-    ADIOS/ADIOS_profile.cpp
-    ADIOS/ADIOS_verify.cpp
-    ADIOS/ADIOSTrace.cpp
-    )
-  ENDIF(HAVE_ADIOS)
-
-  ADD_LIBRARY(adios_config ${ADIOS})
 
   SUBDIRS(QMCWaveFunctions)
   SUBDIRS(QMCHamiltonians)
@@ -319,9 +290,11 @@ ENDIF()
     SUBDIRS(Utilities/tests)
     SUBDIRS(einspline/tests)
     SUBDIRS(spline2/tests)
+    SUBDIRS(Concurrency/tests)
     SUBDIRS(OhmmsData/tests)
     SUBDIRS(io/tests)
     SUBDIRS(Lattice/tests)
+    SUBDIRS(LongRange/tests)
     SUBDIRS(Particle/tests)
     SUBDIRS(ParticleIO/tests)
     SUBDIRS(QMCWaveFunctions/tests)
@@ -332,6 +305,7 @@ ENDIF()
     SUBDIRS(QMCDrivers/tests)
     SUBDIRS(QMCApp/tests)
     SUBDIRS(Message/tests)
+    SUBDIRS(CUDA/tests)
     SUBDIRS(OpenMP/tests)
     SUBDIRS(Optimize/tests)
   endif() #}

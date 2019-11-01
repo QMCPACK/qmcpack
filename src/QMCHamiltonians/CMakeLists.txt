@@ -19,7 +19,7 @@
     
 SET(HAMSRCS
   ACForce.cpp
-  QMCHamiltonianBase.cpp
+  OperatorBase.cpp
   QMCHamiltonian.cpp
   CoulombPBCAA.cpp
   CoulombPBCAB.cpp
@@ -60,6 +60,7 @@ IF(OHMMS_DIM MATCHES 3)
     NonLocalECPotential.deriv.cpp
     NonLocalECPotential.cpp
     L2Potential.cpp
+    SOECPComponent.cpp
     ECPotentialBuilder.cpp
     ECPComponentBuilder.cpp
     ECPComponentBuilder.1.cpp
@@ -100,10 +101,15 @@ ENDIF(OHMMS_DIM MATCHES 3)
 
 IF(QMC_CUDA)
   CUDA_ADD_LIBRARY(qmcham ${HAMSRCS})
+  CUDA_ADD_LIBRARY(qmcham_unit ${HAMSRCS})
 ELSE(QMC_CUDA)
   ADD_LIBRARY(qmcham ${HAMSRCS})
+  ADD_LIBRARY(qmcham_unit ${HAMSRCS})
 ENDIF(QMC_CUDA)
 
+USE_FAKE_RNG(qmcham_unit)
+target_link_libraries(qmcham_unit qmcfakerng)
+#IF(QMC_BUILD_STATIC)
 
 #IF(QMC_BUILD_STATIC)
 #  ADD_LIBRARY(qmcham STATIC ${HAMSRCS})

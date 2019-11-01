@@ -30,8 +30,6 @@ struct QMCState
   bool use_density;
   ///true, if it is a dryrun
   bool dryrun;
-  ///true, if wave functions are stored for next runs
-  bool save_wfs;
   ///true, print out file
   bool io_node;
   ///true, use Ewald instead of optimal breakup for the Coulomb

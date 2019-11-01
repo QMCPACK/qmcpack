@@ -98,9 +98,6 @@
 /* Define if sincos function exists */
 #cmakedefine HAVE_SINCOS @HAVE_SINCOS@
 
-/* Define if iszero function exists */
-#cmakedefine HAVE_ISZERO @HAVE_ISZERO@
-
 /* Define if einspline lib exists */
 #cmakedefine HAVE_EINSPLINE @HAVE_EINSPLINE@
 

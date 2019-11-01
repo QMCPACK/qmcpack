@@ -18,7 +18,7 @@
 
 #include<fstream>
 
-#include "type_traits/container_proxy_multi.h"
+#include "type_traits/container_traits_multi.h"
 #include "io/hdf_multi.h"
 #include "io/hdf_archive.h"
 
@@ -60,7 +60,6 @@ THCOps<T> loadTHCOps(hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA, in
   // fix later for multidet case
   std::vector<int> dims(10);
   ValueType E0;
-  int global_ncvecs=0;
   std::size_t gnmu,grotnmu,nmu,rotnmu,nmu0,nmuN,rotnmu0,rotnmuN;
 
   // read from HDF
@@ -133,7 +132,7 @@ THCOps<T> loadTHCOps(hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA, in
   }
 
   // read 1-body hamiltonian and exchange potential (v0)
-  boost::multi::array<ComplexType,2> H1({NMO,NMO});
+  boost::multi::array<ValueType,2> H1({NMO,NMO});
   boost::multi::array<ComplexType,2> v0({NMO,NMO});
   if(TGwfn.Global().root()) {
     if(!dump.readEntry(H1,"H1")) {
@@ -259,7 +258,7 @@ template<class shm_Vmatrix,
          class shm_Cmatrix>
 inline void writeTHCOps(hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA, int NAEB, int ndet,
                               TaskGroup_& TGprop, TaskGroup_& TGwfn,
-                              boost::multi::array<ComplexType,2> & H1,
+                              boost::multi::array<ValueType,2> & H1,
                               shm_Cmatrix & rotPiu,
                               shm_Vmatrix & rotMuv,
                               shm_Cmatrix & Piu,

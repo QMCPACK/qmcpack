@@ -15,7 +15,7 @@
 
 #ifndef QMCPLUSPLUS_PAIRCOOR_HAMILTONIAN_H
 #define QMCPLUSPLUS_PAIRCOOR_HAMILTONIAN_H
-#include <QMCHamiltonians/QMCHamiltonianBase.h>
+#include <QMCHamiltonians/OperatorBase.h>
 #include <OhmmsPETE/OhmmsMatrix.h>
 
 namespace qmcplusplus
@@ -24,7 +24,7 @@ namespace qmcplusplus
  *
  * Compute pair correlation function for the target particle set and optionally any source particles
  */
-class PairCorrEstimator : public QMCHamiltonianBase
+class PairCorrEstimator : public OperatorBase
 {
 public:
   /** constructor
@@ -47,7 +47,7 @@ public:
   void setParticlePropertyList(PropertySetType& plist, int offset);
   bool put(xmlNodePtr cur);
   bool get(std::ostream& os) const;
-  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 
   void report();
 

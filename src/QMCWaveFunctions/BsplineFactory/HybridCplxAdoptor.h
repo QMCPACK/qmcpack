@@ -174,6 +174,19 @@ struct HybridCplxSoA : public BaseAdoptor, public HybridAdoptorBase<typename Bas
     }
   }
 
+  template<typename VV, typename GV>
+  inline void mw_evaluate_vgl(const std::vector<HybridCplxSoA*>& sa_list,
+                              const std::vector<ParticleSet*>& P_list,
+                              int iat,
+                              const std::vector<VV*>& psi_v_list,
+                              const std::vector<GV*>& dpsi_v_list,
+                              const std::vector<VV*>& d2psi_v_list)
+  {
+    #pragma omp parallel for
+    for (int iw = 0; iw < sa_list.size(); iw++)
+      sa_list[iw]->evaluate_vgl(*P_list[iw], iat, *psi_v_list[iw], *dpsi_v_list[iw], *d2psi_v_list[iw]);
+  }
+
   template<typename VV, typename GV, typename GGV>
   inline void evaluate_vgh(const ParticleSet& P, const int iat, VV& psi, GV& dpsi, GGV& grad_grad_psi)
   {

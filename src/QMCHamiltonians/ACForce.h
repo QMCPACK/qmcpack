@@ -16,13 +16,13 @@
 #ifndef QMCPLUSPLUS_ACFORCE_H
 #define QMCPLUSPLUS_ACFORCE_H
 
-#include "QMCHamiltonians/QMCHamiltonianBase.h"
+#include "QMCHamiltonians/OperatorBase.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 
 namespace qmcplusplus
 {
-struct ACForce : public QMCHamiltonianBase
+struct ACForce : public OperatorBase
 {
   typedef ParticleSet::ParticlePos_t Force_t;
   /** Constructor **/
@@ -38,9 +38,9 @@ struct ACForce : public QMCHamiltonianBase
 
   /** Cloning **/
   //We don't actually use this makeClone method.  We just put an APP_ABORT here
-  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
   //Not derived from base class.  But we need it to properly set the Hamiltonian reference.
-  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi, QMCHamiltonian& H);
+  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi, QMCHamiltonian& H);
 
   /** Initialization/assignment **/
   void resetTargetParticleSet(ParticleSet& P){};
@@ -57,9 +57,9 @@ struct ACForce : public QMCHamiltonianBase
   //** Internal variables **/
   //  I'm assuming that psi, ions, elns, and the hamiltonian are bound to this
   //  instantiation.  Making sure no crosstalk happens is the job of whatever clones this.
-  TrialWaveFunction& psi;
   ParticleSet& ions;
   ParticleSet& elns;
+  TrialWaveFunction& psi;
   QMCHamiltonian& ham;
 
   //For indexing observables
@@ -73,7 +73,7 @@ struct ACForce : public QMCHamiltonianBase
 
   //Class info.
   std::string prefix;
-  //We also set the following from the QMCHamiltonianBase class.
+  //We also set the following from the OperatorBase class.
   //std::string myName;
 };
 

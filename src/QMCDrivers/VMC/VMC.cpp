@@ -25,7 +25,6 @@
 #include "Utilities/RunTimeManager.h"
 #include <qmc_common.h>
 //#define ENABLE_VMC_OMP_MASTER
-#include "ADIOS/ADIOS_profile.h"
 #include "Utilities/FairDivide.h"
 #if !defined(REMOVE_TRACEMANAGER)
 #include "Estimators/TraceManager.h"
@@ -45,8 +44,8 @@ VMC::VMC(MCWalkerConfiguration& w,
 {
   RootName = "vmc";
   QMCType  = "VMC";
-  QMCDriverMode.set(QMC_UPDATE_MODE, 1);
-  QMCDriverMode.set(QMC_WARMUP, 0);
+  qmc_driver_mode.set(QMC_UPDATE_MODE, 1);
+  qmc_driver_mode.set(QMC_WARMUP, 0);
   m_param.add(UseDrift, "useDrift", "string");
   m_param.add(UseDrift, "usedrift", "string");
   m_param.add(UseDrift, "use_drift", "string");
@@ -77,8 +76,8 @@ bool VMC::run()
 #pragma omp parallel
     {
       int ip = omp_get_thread_num();
-      //IndexType updatePeriod=(QMCDriverMode[QMC_UPDATE_MODE])?Period4CheckProperties:(nBlocks+1)*nSteps;
-      IndexType updatePeriod = (QMCDriverMode[QMC_UPDATE_MODE]) ? Period4CheckProperties : 0;
+      //IndexType updatePeriod=(qmc_driver_mode[QMC_UPDATE_MODE])?Period4CheckProperties:(nBlocks+1)*nSteps;
+      IndexType updatePeriod = (qmc_driver_mode[QMC_UPDATE_MODE]) ? Period4CheckProperties : 0;
       //assign the iterators and resuse them
       MCWalkerConfiguration::iterator wit(W.begin() + wPerNode[ip]), wit_end(W.begin() + wPerNode[ip + 1]);
       Movers[ip]->startBlock(nSteps);
@@ -90,7 +89,7 @@ bool VMC::run()
         //collectables are reset, it is accumulated while advancing walkers
         wClones[ip]->resetCollectables();
         bool recompute = (nBlocksBetweenRecompute && (step + 1) == nSteps &&
-                          (1 + block) % nBlocksBetweenRecompute == 0 && QMCDriverMode[QMC_UPDATE_MODE]);
+                          (1 + block) % nBlocksBetweenRecompute == 0 && qmc_driver_mode[QMC_UPDATE_MODE]);
         Movers[ip]->advanceWalkers(wit, wit_end, recompute);
         if (has_collectables)
           wClones[ip]->Collectables *= cnorm;
@@ -145,7 +144,9 @@ bool VMC::run()
 
 void VMC::resetRun()
 {
-  ////only VMC can overwrite this
+  
+
+    ////only VMC can overwrite this
   if (nTargetPopulation > 0)
     branchEngine->iParam[SimpleFixedNodeBranch::B_TARGETWALKERS] = static_cast<int>(std::ceil(nTargetPopulation));
   makeClones(W, Psi, H);
@@ -176,9 +177,10 @@ void VMC::resetRun()
       Rng[ip] = new FakeRandom();
 #else
       Rng[ip] = new RandomGenerator_t(*(RandomNumberControl::Children[ip]));
-      hClones[ip]->setRandomGenerator(Rng[ip]);
 #endif
-      if (QMCDriverMode[QMC_UPDATE_MODE])
+      hClones[ip]->setRandomGenerator(Rng[ip]);
+
+      if (qmc_driver_mode[QMC_UPDATE_MODE])
       {
         Movers[ip] = new VMCUpdatePbyP(*wClones[ip], *psiClones[ip], *hClones[ip], *Rng[ip]);
       }
@@ -201,7 +203,7 @@ void VMC::resetRun()
     }
   }
 #endif
-  if (QMCDriverMode[QMC_UPDATE_MODE])
+  if (qmc_driver_mode[QMC_UPDATE_MODE])
   {
     app_log() << "  Using Particle by Particle moves" << std::endl;
   }
@@ -236,7 +238,7 @@ void VMC::resetRun()
     //int ip=omp_get_thread_num();
     Movers[ip]->put(qmcNode);
     Movers[ip]->resetRun(branchEngine, estimatorClones[ip], traceClones[ip], DriftModifier);
-    if (QMCDriverMode[QMC_UPDATE_MODE])
+    if (qmc_driver_mode[QMC_UPDATE_MODE])
       Movers[ip]->initWalkersForPbyP(W.begin() + wPerNode[ip], W.begin() + wPerNode[ip + 1]);
     else
       Movers[ip]->initWalkers(W.begin() + wPerNode[ip], W.begin() + wPerNode[ip + 1]);
@@ -314,7 +316,9 @@ bool VMC::put(xmlNodePtr q)
 
   app_log() << "\n<vmc function=\"put\">"
             << "\n  qmc_counter=" << qmc_common.qmc_counter << "  my_counter=" << MyCounter << std::endl;
-  if (qmc_common.qmc_counter && MyCounter)
+ 
+
+ if (qmc_common.qmc_counter && MyCounter)
   {
     nSteps               = prevSteps;
     nStepsBetweenSamples = prevStepsBetweenSamples;
@@ -325,6 +329,9 @@ bool VMC::put(xmlNodePtr q)
     //compute samples and overwrite steps for the given samples
     int Nthreads = omp_get_max_threads();
     int Nprocs   = myComm->size();
+    
+ 
+
     //target samples set by samples or samplesperthread/dmcwalkersperthread
     nTargetPopulation = std::max(nTargetPopulation, nSamplesPerThread * Nprocs * Nthreads);
     nTargetSamples    = static_cast<int>(std::ceil(nTargetPopulation));

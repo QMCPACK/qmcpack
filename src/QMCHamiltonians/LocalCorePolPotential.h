@@ -16,7 +16,7 @@
 #define QMCPLUSPLUS_LOCAL_COREPOLPOTENTIAL_H
 #include "Particle/ParticleSet.h"
 #include "Particle/WalkerSetRef.h"
-#include "QMCHamiltonians/QMCHamiltonianBase.h"
+#include "QMCHamiltonians/OperatorBase.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 
 namespace qmcplusplus
@@ -51,7 +51,7 @@ namespace qmcplusplus
    \right|^2 \;\;\; \right\}
    \f}
 */
-struct LocalCorePolPotential : public QMCHamiltonianBase
+struct LocalCorePolPotential : public OperatorBase
 {
   /** core-polarization parameters for each species
    */
@@ -121,7 +121,7 @@ struct LocalCorePolPotential : public QMCHamiltonianBase
     return true;
   }
 
-  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
   //inline RealType fcpp(RealType z) {
   //  return pow((1.0-exp(-1.0*z*z)),2);
   //}

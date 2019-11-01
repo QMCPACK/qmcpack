@@ -38,11 +38,11 @@ RealEGOSet::RealEGOSet(const std::vector<PosType>& k, const std::vector<RealType
   className      = "EGOSet";
 }
 
-ElectronGasOrbitalBuilder::ElectronGasOrbitalBuilder(ParticleSet& els, TrialWaveFunction& psi)
-    : WaveFunctionComponentBuilder(els, psi), UseBackflow(false), BFTrans(0)
+ElectronGasOrbitalBuilder::ElectronGasOrbitalBuilder(Communicate* comm, ParticleSet& els)
+    : WaveFunctionComponentBuilder(comm, els), UseBackflow(false), BFTrans(nullptr)
 {}
 
-bool ElectronGasOrbitalBuilder::put(xmlNodePtr cur)
+WaveFunctionComponent* ElectronGasOrbitalBuilder::buildComponent(xmlNodePtr cur)
 {
   int nc(0), nc2(-2);
   ValueType bosonic_eps(-999999);
@@ -75,7 +75,6 @@ bool ElectronGasOrbitalBuilder::put(xmlNodePtr cur)
   }
   typedef SlaterDet SlaterDeterminant_t;
   HEGGrid<RealType, OHMMS_DIM> egGrid(targetPtcl.Lattice);
-  HEGGrid<RealType, OHMMS_DIM> egGrid2(targetPtcl.Lattice);
   int nat = targetPtcl.getTotalNum();
   if (nc == 0)
     nc = nc2 = egGrid.getShellIndex(nat / 2);
@@ -95,33 +94,25 @@ bool ElectronGasOrbitalBuilder::put(xmlNodePtr cur)
     app_error() << "   " << 2 * egGrid.getNumberOfKpoints(nc) << " for shell " << nc << std::endl;
     app_error() << "   " << 2 * egGrid.getNumberOfKpoints(nc - 1) << " for shell " << nc - 1 << std::endl;
     APP_ABORT("ElectronGasOrbitalBuilder::put");
-    return false;
+    return nullptr;
   }
+
+  //create a E(lectron)G(as)O(rbital)Set
   int nkpts  = (nup - 1) / 2;
-  int nkpts2 = (ndn - 1) / 2;
-  RealEGOSet* psiu;
-  RealEGOSet* psid;
-  if (nup == ndn)
+  egGrid.createGrid(nc, nkpts);
+  RealEGOSet* psiu = new RealEGOSet(egGrid.kpt, egGrid.mk2);
+  RealEGOSet* psid = nullptr;
+  if (ndn > 0)
   {
-    //create a E(lectron)G(as)O(rbital)Set
-    egGrid.createGrid(nc, nkpts);
-    psiu = new RealEGOSet(egGrid.kpt, egGrid.mk2);
+    if (nup != ndn)
+    {
+      int nkpts2 = (ndn - 1) / 2;
+      HEGGrid<RealType, OHMMS_DIM> egGrid2(targetPtcl.Lattice);
+      egGrid2.createGrid(nc2, nkpts2);
+    }
     psid = new RealEGOSet(egGrid.kpt, egGrid.mk2);
   }
-  else if (ndn > 0)
-  {
-    //create a E(lectron)G(as)O(rbital)Set
-    egGrid.createGrid(nc, nkpts);
-    egGrid2.createGrid(nc2, nkpts2);
-    psiu = new RealEGOSet(egGrid.kpt, egGrid.mk2);
-    psid = new RealEGOSet(egGrid.kpt, egGrid.mk2);
-  }
-  else
-  {
-    //create a E(lectron)G(as)O(rbital)Set
-    egGrid.createGrid(nc, nkpts);
-    psiu = new RealEGOSet(egGrid.kpt, egGrid.mk2);
-  }
+
   //create a Slater determinant
   SlaterDeterminant_t* sdet;
   if (UseBackflow)
@@ -147,9 +138,8 @@ bool ElectronGasOrbitalBuilder::put(xmlNodePtr cur)
         downdet->set(nup, ndn);
       }
       PtclPoolType dummy;
-      BackflowBuilder* bfbuilder = new BackflowBuilder(targetPtcl, dummy, targetPsi);
-      bfbuilder->put(BFNode);
-      BFTrans = bfbuilder->getBFTrans();
+      BackflowBuilder bfbuilder(targetPtcl, dummy);
+      BFTrans = bfbuilder.buildBackflowTransformation(BFNode);
       sdet->add(updet, 0);
       if (ndn > 0)
         sdet->add(downdet, 1);
@@ -175,9 +165,7 @@ bool ElectronGasOrbitalBuilder::put(xmlNodePtr cur)
         sdet->add(downdet, 1);
     }
   }
-  //add Slater determinant to targetPsi
-  targetPsi.addOrbital(sdet, "SlaterDet", true);
-  return true;
+  return sdet;
 }
 
 ElectronGasSPOBuilder::ElectronGasSPOBuilder(ParticleSet& p, Communicate* comm, xmlNodePtr cur)

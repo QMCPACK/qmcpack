@@ -61,7 +61,7 @@ bool ExampleHeComponent::put(xmlNodePtr cur)
   return true;
 }
 
-ExampleHeComponent::RealType ExampleHeComponent::evaluateLog(ParticleSet& P,
+ExampleHeComponent::LogValueType ExampleHeComponent::evaluateLog(ParticleSet& P,
                                                              ParticleSet::ParticleGradient_t& G,
                                                              ParticleSet::ParticleLaplacian_t& L)
 {
@@ -72,7 +72,7 @@ ExampleHeComponent::RealType ExampleHeComponent::evaluateLog(ParticleSet& P,
 
   const auto& ei_table = P.getDistTable(my_table_ei_idx_);
 
-  // First index is ions, second index is electrons
+  // First index is electron, second index is ion
   double r1 = ei_table.Distances[0][0];
   double r2 = ei_table.Distances[1][0];
 
@@ -107,13 +107,13 @@ ExampleHeComponent::RealType ExampleHeComponent::evaluateLog(ParticleSet& P,
 
 ExampleHeComponent::ValueType ExampleHeComponent::ratio(ParticleSet& P, int iat)
 {
-  int jat = 0;
-  if (iat == 0)
-    jat = 1;
+  const int jat = (iat == 0 ? 1 : 0);
 
   const auto& ee_table = P.getDistTable(my_table_ee_idx_);
 
-  double r12_old = ee_table.Distances[1][0];
+  // during p-by-p move iat-th row of Distances and Displacements[iat] are up-to-date
+  // because setActive is called before ratio
+  double r12_old = ee_table.Distances[iat][jat];
   double r12_new = ee_table.Temp_r[jat];
 
   const auto& ei_table = P.getDistTable(my_table_ei_idx_);
@@ -134,41 +134,32 @@ ExampleHeComponent::GradType ExampleHeComponent::evalGrad(ParticleSet& P, int ia
 {
   const auto& ei_table = P.getDistTable(my_table_ei_idx_);
 
-  double r1 = ei_table.Distances[0][0];
-  double r2 = ei_table.Distances[1][0];
-
-  auto rhat1 = ei_table.Displacements[0][0] / r1;
-  auto rhat2 = ei_table.Displacements[1][0] / r2;
+  double r  = ei_table.Distances[iat][0];
+  auto rhat = ei_table.Displacements[iat][0] / r;
 
   const auto& ee_table = P.getDistTable(my_table_ee_idx_);
 
-  double r12  = ee_table.Distances[1][0];
-  auto rhat12 = ee_table.Displacements[1][0] / r12;
-  double du   = A / ((B * r12 + 1) * (B * r12 + 1));
+  const int jat = (iat == 0 ? 1 : 0);
 
-  GradType G(0.0);
-  if (iat == 0)
-  {
-    double df = -Z;
-    G         = -df * rhat1 - rhat12 * du;
-  }
-  if (iat == 1)
-  {
-    double df = -Z;
-    G         = -df * rhat2 + rhat12 * du;
-  }
-  return G;
+  // during p-by-p move iat-th row of Distances and Displacements[iat] are up-to-date
+  // because setActive is called before evalGrad
+  double r12  = ee_table.Distances[iat][jat];
+  auto rhat12 = ee_table.Displacements[iat][jat] / r12;
+
+  double du = A / ((B * r12 + 1) * (B * r12 + 1));
+
+  return Z * rhat + rhat12 * du;
 }
 
 ExampleHeComponent::ValueType ExampleHeComponent::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
 {
   const auto& ee_table = P.getDistTable(my_table_ee_idx_);
 
-  int jat = 0;
-  if (iat == 0)
-    jat = 1;
+  const int jat = (iat == 0 ? 1 : 0);
 
-  double r12_old = ee_table.Distances[1][0];
+  // during p-by-p move iat-th row of Distances and Displacements[iat] are up-to-date
+  // because setActive is called before ratioGrad
+  double r12_old = ee_table.Distances[iat][jat];
   double r12_new = ee_table.Temp_r[jat];
 
   auto rhat12 = ee_table.Temp_dr[jat] / r12_new;
@@ -194,7 +185,7 @@ ExampleHeComponent::ValueType ExampleHeComponent::ratioGrad(ParticleSet& P, int 
 }
 
 
-ExampleHeComponent::RealType ExampleHeComponent::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch)
+ExampleHeComponent::LogValueType ExampleHeComponent::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch)
 {
   return evaluateLog(P, P.G, P.L);
 }
@@ -228,8 +219,8 @@ void ExampleHeComponent::evaluateDerivatives(ParticleSet& P,
   double tmpB = std::real(optvars[0]);
 
   const auto& ee_table = P.getDistTable(my_table_ee_idx_);
-  double r12                        = ee_table.Distances[1][0];
-  auto rhat12                       = ee_table.Displacements[1][0] / r12;
+  double r12           = ee_table.Distances[1][0];
+  auto rhat12          = ee_table.Displacements[1][0] / r12;
 
   const auto& ei_table = P.getDistTable(my_table_ei_idx_);
 

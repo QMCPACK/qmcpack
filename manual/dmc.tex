@@ -1,6 +1,6 @@
 \section{Diffusion Monte Carlo}
 \label{sec:dmc}
-\pagebreak
+
 \begin{table}[h]
 \begin{center}
 \begin{tabularx}{\textwidth}{l l l l l X }
@@ -9,45 +9,44 @@
 \hline
 \multicolumn{2}{l}{parameters}  & \multicolumn{4}{l}{}\\
    &   \bfseries name     & \bfseries datatype & \bfseries values & \bfseries default   & \bfseries description \\
-   &   \texttt{targetwalkers             } &  integer  & $> 0$ & dep.   & overall total number of walkers \\
-   &   \texttt{blocks              } &  integer  & $\ge 0$ & 1   & number of blocks            \\
-   &   \texttt{steps               } &  integer  & $\ge 0$ & 1   & number of steps per block   \\
-   &   \texttt{warmupsteps         } &  integer  & $\ge 0$ & 0   & number of steps for warming up\\
-   &   \texttt{timestep            } &  real     & $> 0$ & 0.1 & time step for each electron move \\
+   &   \texttt{targetwalkers             } &  integer  & $> 0$ & dep.   & Overall total number of walkers \\
+   &   \texttt{blocks              } &  integer  & $\ge 0$ & 1   & Number of blocks            \\
+   &   \texttt{steps               } &  integer  & $\ge 0$ & 1   & Number of steps per block   \\
+   &   \texttt{warmupsteps         } &  integer  & $\ge 0$ & 0   & Number of steps for warming up\\
+   &   \texttt{timestep            } &  real     & $> 0$ & 0.1 & Time step for each electron move \\
   % &   \texttt{samples             } &  real  & $\ge 0$ & 0   & total number of samples \\
 %   &   \texttt{stepsbetweensamples } &  integer  & $> 0$ & 1   & period of the sample accumulation\\
 %   &   \texttt{samplesperthread    } &  real  & $\ge 0$ & 0   & number of samples per thread  \\
 %   &   \texttt{rewind              } &  integer  & $\ge 0$ & 0   & number of blocks to roll back   \\
 %   &   \texttt{storeconfigs        } &  integer  & $\ge 0$ & 0   & whether to store samples  \\
-   &   \texttt{checkproperties     } &  integer  & $\ge 0$ & 100   & number of steps between walker updates  \\
+   &   \texttt{checkproperties     } &  integer  & $\ge 0$ & 100   & Number of steps between walker updates  \\
 %  &   \texttt{recordwalkers       } &  integer  & $\ge 0$ & 0   & number of steps between saving a sample configuration. (only for VMC)  \\
 %   &   \texttt{recordconfigs       } &  integer  & $\ge 0$ & 0   & number of steps between dumping a configuration to h5  \\
 %   &   \texttt{current             } &  integer  & $\ge 0$ & 0   & current step (only used in optimization runs)  \\
 %   &   \texttt{dmcwalkersperthread } &  real  & $\ge 0$ & 0   & number of samples per thread  \\
-   &   \texttt{maxcpusecs          } &  real  & $\ge 0$ & 3.6e5   & maximum allowed walltime in seconds \\
-   &   \texttt{energyUpdateInterval} &  integer  & $\ge 0$ & 0   & trial energy update interval \\
-   &   \texttt{refEnergy           } &  AU  & all values & dep.   & reference energy  \\
-   &   \texttt{feedback            } &  double  & $\ge 0$ & 1.0   & population feedback on the trial energy \\
-   &   \texttt{useBareTau          } &  option  & yes,no & 0   & do not use effective time step  \\
-   &   \texttt{warmupByReconfiguration} &  option  & yes,no & 0   & warm up with a fixed population  \\
+   &   \texttt{maxcpusecs          } &  real  & $\ge 0$ & 3.6e5   & Maximum allowed walltime in seconds \\
+   &   \texttt{energyUpdateInterval} &  integer  & $\ge 0$ & 0   & Trial energy update interval \\
+   &   \texttt{refEnergy           } &  AU  & all values & dep.   & Reference energy  \\
+   &   \texttt{feedback            } &  double  & $\ge 0$ & 1.0   & Population feedback on the trial energy \\
+   &   \texttt{warmupByReconfiguration} &  option  & yes,no & 0   & Warm up with a fixed population  \\
  %  &   \texttt{energyBound         } &  double  & $\ge 0$ & 0   & number of samples per thread  \\
-   &   \texttt{sigmaBound          } &  double  & $\ge 0$  & 10   & parameter to cutoff large weights  \\
-   &   \texttt{killnode            } &  string  & yes/other & no   & kill or reject walkers that cross nodes  \\
+   &   \texttt{sigmaBound          } &  double  & $\ge 0$  & 10   & Parameter to cutoff large weights  \\
+   &   \texttt{killnode            } &  string  & yes/other & no   & Kill or reject walkers that cross nodes  \\
   % &   \texttt{benchmark           } &  string  & $\ge 0$ & 0   & number of sample \\
-   &   \texttt{reconfiguration     } &  string  & yes/pure/other & no   & fixed population technique  \\
-   &   \texttt{branchInterval      } &  integer  & $\ge 0$ & 1   & branching interval \\
-   &   \texttt{substeps            } &  integer  & $\ge 0$ & 1   & branching interval \\
-   &   \texttt{nonlocalmoves       } &  string  & yes,no,v0,v1,v3 & no   & run with T-moves  \\
-   &   \texttt{scaleweight         } &  string  & yes/other & yes   & scale weights (CUDA only)  \\
-   &   \texttt{MaxAge              } &  double  & $\ge 0$ & 10   & kill persistent walkers  \\
-    &   \texttt{MaxCopy             } &  double  & $\ge 0$ &2   & limit population growth \\
+   &   \texttt{reconfiguration     } &  string  & yes/pure/other & no   & Fixed population technique  \\
+   &   \texttt{branchInterval      } &  integer  & $\ge 0$ & 1   & Branching interval \\
+   &   \texttt{substeps            } &  integer  & $\ge 0$ & 1   & Branching interval \\
+   &   \texttt{nonlocalmoves       } &  string  & yes,no,v0,v1,v3 & no   & Run with T-moves  \\
+   &   \texttt{scaleweight         } &  string  & yes/other & yes   & Scale weights (CUDA only)  \\
+   &   \texttt{MaxAge              } &  double  & $\ge 0$ & 10   & Kill persistent walkers  \\
+    &   \texttt{MaxCopy             } &  double  & $\ge 0$ &2   & Limit population growth \\
+   &   \texttt{fastgrad            } &  text  & yes/other & yes   & Fast gradients  \\
  %  &   \texttt{printderivs         } &  text  & $\ge 0$ & 0   & number of samples per  thread  \\
  %  &   \texttt{wlen                } &  integer  & $\ge 0$ & 0   & number of samples per  thread  \\
-   &   \texttt{maxDisplSq      } &  real  & all values & -1   & maximum particle move  \\
-   &   \texttt{storeconfigs        } &  integer  & all values & 0   & store configurations  \\
-   &   \texttt{use\_nonblocking    } &  string  & yes/no & yes   & using non-blocking send/recv \\
-   &   \texttt{blocks\_between\_recompute} &  integer  & $\ge 0$ & dep.  & wavefunction recompute frequency  \\
-   &   \texttt{drift\_modifier} &  string  & UNR & UNR  & drift modification scheme  \\
+   &   \texttt{maxDisplSq      } &  real  & all values & -1   & Maximum particle move  \\
+   &   \texttt{storeconfigs        } &  integer  & all values & 0   & Store configurations  \\
+   &   \texttt{use\_nonblocking    } &  string  & yes/no & yes   & Using nonblocking send/recv \\
+   &   \texttt{blocks\_between\_recompute} &  integer  & $\ge 0$ & dep.  & Wavefunction recompute frequency  \\
   \hline
 \end{tabularx}
 \end{center}
@@ -55,79 +54,77 @@
 
 Additional information:
 \begin{itemize}
-\item \texttt{targetwalkers}.  A DMC run can be considered a restart run or a new run.  A restart run is considered to be any method block beyond the first one, such as when a DMC method block that follows a VMC block.  Alternatively,  if the user reads in configurations from disk it is also considered a restart run.  In the case of a restart run, the DMC driver will use the configurations from the previous run, and this variable will not be used.  For a new run, if the number of walkers is less than the number of threads, then the number of walkers will be set equal to the number of threads.  
+\item \texttt{targetwalkers}:  A DMC run can be considered a restart run or a new run.  A restart run is considered to be any method block beyond the first one, such as when a DMC method block follows a VMC block.  Alternatively,  a user reading in configurations from disk would also considered a restart run.  In the case of a restart run, the DMC driver will use the configurations from the previous run, and this variable will not be used.  For a new run, if the number of walkers is less than the number of threads, then the number of walkers will be set equal to the number of threads.  
 
-\item \texttt{blocks}. Number of blocks run during an DMC method block.  A block consists of a number of DMC steps (steps), after which all the statistics accumulated in the block are written to disk.
+\item \texttt{blocks}: This is the number of blocks run during a DMC method block.  A block consists of a number of DMC steps (steps), after which all the statistics accumulated in the block are written to disk.
 
-\item \texttt{steps}. Number of diffusion Monte Carlo steps in a block.
+\item \texttt{steps}: This is the number of DMC steps in a block.
 
-\item \texttt{warmupsteps}. Warm-up steps are steps at the beginning of a DMC run in which the 
+\item \texttt{warmupsteps}: These are the steps at the beginning of a DMC run in which the 
 instantaneous average energy is used to update the trial energy.  During regular steps, E$_{ref}$ is used.
 
-\item \texttt{timestep}. The timestep determines the accuracy of the imaginary time propagator.  Generally, multiple time steps are used to extrapolate to the infinite time step limit.   A good range of timesteps  in which to perform time step extrapolation will typically have  a minimum of 99\% acceptance probability for each step.
+\item \texttt{timestep}: The \texttt{timestep} determines the accuracy of the imaginary time propagator.  Generally, multiple time steps are used to extrapolate to the infinite time step limit.   A good range of time steps  in which to perform time step extrapolation will typically have a minimum of 99\% acceptance probability for each step.
 
-\item \texttt{checkproperties}.  When using particle by particle driver, this variable specifies how often to reset all the variables kept in the buffer.
+\item \texttt{checkproperties}:  When using a particle-by-particle driver, this variable specifies how often to reset all the variables kept in the buffer.
 
-\item \texttt{maxcpusecs}. The default is 100 hours. Once the specified time has elapsed, the program will finalize the simulation even if not all blocks are completed.
+\item \texttt{maxcpusecs}: The default is 100 hours. Once the specified time has elapsed, the program will finalize the simulation even if all blocks are not  completed.
 
-\item \texttt{energyUpdateInterval}. The default is to update the trial energy at every step. Otherwise the trial energy is updated every \texttt{energyUpdateInterval} steps.
+\item \texttt{energyUpdateInterval}: The default is to update the trial energy at every step. Otherwise the trial energy is updated every \texttt{energyUpdateInterval} step.
 
 \[
 E_{\text{trial}}=
-\textrm{refEnergy}+\textrm{feedback}\cdot(\ln\textrm{targetWalkers}-\ln N)
+\textrm{refEnergy}+\textrm{feedback}\cdot(\ln\texttt{targetWalkers}-\ln N)\:,
 \]
 where $N$ is the current population.
 
-\item \texttt{refEnergy}. The default reference energy is taken from the VMC run that precedes the DMC run. This value is updated to the current mean whenever branching happens.
+\item \texttt{refEnergy}: The default reference energy is taken from the VMC run that precedes the DMC run. This value is updated to the current mean whenever branching happens.
 
-\item \texttt{feedback}. Variable used to determine how strong to react to population fluctuations when doing population control.  See the equation in energyUpdateInterval for more details.
+\item \texttt{feedback}: This variable is used to determine how strong to react to population fluctuations when doing population control.  See the equation in energyUpdateInterval for more details.
 
-\item \texttt{useBareTau}. The same time step is used whether a move is rejected to not. The default is to use an effective time step when a move is rejected.
+\item \texttt{useBareTau}: The same time step is used whether or not a move is rejected. The default is to use an effective time step when a move is rejected.
 
-\item \texttt{warmupByReconfiguration}.  Warmup DMC is done with a fixed population
+\item \texttt{warmupByReconfiguration}:  Warmup DMC is done with a fixed population.
 
-\item \texttt{sigmaBound}.  Determine the branch cutoff to limit wild weights based on the sigma and sigmaBound
+\item \texttt{sigmaBound}:  This determines the branch cutoff to limit wild weights based on the sigma and \texttt{sigmaBound}.
 
-\item \texttt{killnode}.  When running fixed-node, if a walker attempts to cross a node, the move will normally be rejected.  If killnode = "yes", then walkers are destroyed when they cross a node.
+\item \texttt{killnode}:  When running fixed-node, if a walker attempts to cross a node, the move will normally be rejected.  If \texttt{killnode} = ``yes," then walkers are destroyed when they cross a node.
 
 %\item \texttt{benchmark}. 
 
-\item \texttt{reconfiguration}.  If reconfiguration is "yes", then run with a fixed walker population using the reconfiguration technique.  
+\item \texttt{reconfiguration}:  If \texttt{reconfiguration} is ``yes," then run with a fixed walker population using the reconfiguration technique.  
 
-\item \texttt{branchInterval}. Number of steps between branching.  The total number of DMC steps in a block will be BranchInterval*Steps.   
+\item \texttt{branchInterval}: This is the number of steps between branching.  The total number of DMC steps in a block will be \texttt{BranchInterval}*Steps.   
 
-\item \texttt{substeps}.  Same as BranchInterval.
+\item \texttt{substeps}:  This is the same as \texttt{BranchInterval}.
 
 
-\item \texttt{nonlocalmoves}. Evaluate pseudopotentials using one of the nonlocal move algorithms such as T-moves.
+\item \texttt{nonlocalmoves}: Evaluate pseudopotentials using one of the nonlocal move algorithms such as T-moves.
 \begin{itemize}
-\item no(default): imposes the locality approximation.
-\item yes/v0: implements the algorithm in the 2006 Casula paper~\cite{Casula2006}
-\item v1: implements the v1 algorithm in the 2010 Casula paper~\cite{Casula2010}.
-\item v2: is \textbf{not implemented} and \textbf{skipped} due to the existence of the v2 algorithm in the 2010 Casula paper~\cite{Casula2010}.
-\item v3: (Experimental) implements an algorithm similar to v1 but is much faster. v1 computes the transition probability before each single electron T-move selection due to the acceptance of previous T-moves. v3 mostly reuses the transition probability computed during the evaluation of non-local pseudopotentials for the local energy, namely before accepting any T-moves, and only recomputes the transition probability of the electrons within the same pseudopotential region of any electrons touched by T-moves. This is an approximation to v1, and results in a slightly different time step error, but significantly reduces the computational cost. v1 and v3 agrees at zero time step. This faster algorithm will be the topic of a paper currently in preparation.
+\item no(default): Imposes the locality approximation.
+\item yes/v0: Implements the algorithm in the 2006 Casula paper~\cite{Casula2006}
+\item v1: Implements the v1 algorithm in the 2010 Casula paper~\cite{Casula2010}.
+\item v2: Is \textbf{not implemented} and is \textbf{skipped} baususe of the existence of the v2 algorithm in the 2010 Casula paper~\cite{Casula2010}.
+\item v3: (Experimental) Implements an algorithm similar to v1 but that is much faster. v1 computes the transition probability before each single electron T-move selection because of the acceptance of previous T-moves. v3 mostly reuses the transition probability computed during the evaluation of nonlocal pseudopotentials for the local energy, namely before accepting any T-moves, and only recomputes the transition probability of the electrons within the same pseudopotential region of any electrons touched by T-moves. This is an approximation to v1 and results in a slightly different time step error, but it significantly reduces the computational cost. v1 and v3 agree at zero time step. This faster algorithm is the topic of a paper in preparation.
 \end{itemize}
-The v1 and v3 algorithms are size-consistent and important advances over the previous v0 non-size-consistent algorithm. Investigating the importance of size consistency is highly recommended.
+The v1 and v3 algorithms are size-consistent and are important advances over the previous v0 non-size-consistent algorithm. We highly recommend investigating the importance of size-consistency.
 
-\item \texttt{scaleweight}. Scaling weight per Umrigar/Nightengale.  CUDA only.
+\item \texttt{scaleweight}: This is the scaling weight per Umrigar/Nightengale.  CUDA only.
 
-\item \texttt{MaxAge}. Set the weight of a walker to min(currentweight,0.5) after a walker has not moved for MaxAge steps.  Needed if persistent walkers appear during the course of a run.
+\item \texttt{MaxAge}: Set the weight of a walker to min(currentweight,0.5) after a walker has not moved for \texttt{MaxAge} steps.  Needed if persistent walkers appear during the course of a run.
 
-\item \texttt{MaxCopy}. When determining the number of copies of a walker to branch, set the number of copies equal to min(Multiplicity,MaxCopy).
+\item \texttt{MaxCopy}: When determining the number of copies of a walker to branch, set the number of copies equal to min(Multiplicity,MaxCopy).
 
-\item \texttt{fastgrad}. Calculates gradients with either the fast version or the full-ratio version.
+\item \texttt{fastgrad}: This calculates gradients with either the fast version or the full-ratio version.
 
-\item \texttt{maxDisplSq}.  When running a DMC calculation with particle by particle, this sets the maximum displacement allowed for a single particle move.  All distance displacements larger than the max is rejected.  If initialized to a negative value, it becomes equal to Lattice(LR/rc).
+\item \texttt{maxDisplSq}:  When running a DMC calculation with particle by particle, this sets the maximum displacement allowed for a single particle move.  All distance displacements larger than the max are rejected.  If initialized to a negative value, it becomes equal to Lattice(LR/rc).
 
-\item \texttt{sigmaBound}.  Determine the branch cutoff to limit wild weights based on the sigma and sigmaBound
+\item \texttt{sigmaBound}:  This determines the branch cutoff to limit wild weights based on the sigma and \texttt{sigmaBound}.
 
 %\item \texttt{rewind}. \textit{This input is recorded by QMCDriver.cpp, but is never used anywhere else.}
 
-\item \texttt{storeconfigs}. If storeconfigs is set to a non-zero value, then electron configurations during the DMC run will be saved. This option is disabled for the OpenMP version of DMC.
+\item \texttt{storeconfigs}: If \texttt{storeconfigs} is set to a nonzero value, then electron configurations during the DMC run will be saved. This option is disabled for the OpenMP version of DMC.
 
-\item \texttt{blocks\_between\_recompute}. See details in VMC section~\ref{sec:vmc}.
-
-\item \texttt{drift\_modifier}. Drift modification schemes. `UNR' corresponds to eq.~(35) in~\cite{Umrigar1993}. The parameter `a' can be modified by setting \texttt{drift\_modifier\_UNR\_a} (default 1.0).
+\item \texttt{blocks\_between\_recompute}: See details in Section~\ref{sec:vmc}, Variational Monte Carlo.
 
 %\item \texttt{recordwalkers}. In VMC this is equivalent for \texttt{stepsbetweensamples}. \textit{This input is not used in DMC.}
 
@@ -166,29 +163,29 @@ The v1 and v3 algorithms are size-consistent and important advances over the pre
     <parameter name="warmupsteps">100</parameter>
   </qmc>
 \end{lstlisting}
-The time step should be adjusted for each problem individually.  Please refer to the theory section
+The time step should be individually adjusted for each problem.  Please refer to the theory section
 on diffusion Monte Carlo.
 
 
-\begin{lstlisting}[style=QMCPXML,caption=The following is an example of running a simulation that can be restarted . ]
+\begin{lstlisting}[style=QMCPXML,caption=The following is an example of running a simulation that can be restarted. ]
   <qmc method="dmc" move="pbyp"  checkpoint="0">
     <parameter name="timestep">         0.004  </parameter>
     <parameter name="blocks">           100   </parameter>
     <parameter name="steps">            400    </parameter>
   </qmc>
 \end{lstlisting}
-The checkpoint flag instructs qmcpack to output walker configurations.  This also
-works in Variational Monte Carlo.  This will output an h5 file with the name "projectid"."run-number".config.h5.
+The checkpoint flag instructs QMCPACK to output walker configurations.  This also
+works in VMC.  This will output an h5 file with the name \texttt{projectid.run-number.config.h5}.
 Check that this file exists before attempting a restart.
 To read in this file for a continuation run, specify the following:
 \begin{lstlisting}[caption=Restart (read walkers from previous run) ]
  <mcwalkerset fileroot="BH.s002" version="0 6" collected="yes"/>
 \end{lstlisting}
-BH is the project id and s002 is the calculation number to read in the walkers from the previous run.\\
+BH is the project id, and s002 is the calculation number to read in the walkers from the previous run.\\
 
-Combining VMC and DMC in a single run (and wave function optimization can be combined in this way too) is the standard way in which QMCPACK is typical run.   There is no need to run two separate jobs, as method sections can be stacked, and walkers are transferred between them.
+Combining VMC and DMC in a single run (wavefunction optimization can be combined in this way too) is the standard way in which QMCPACK is typically run.   There is no need to run two separate jobs since method sections can be stacked and walkers are transferred between them.
 
-\begin{lstlisting}[style=QMCPXML,caption=Combined VMC and DMC run ]
+\begin{lstlisting}[style=QMCPXML,caption=Combined VMC and DMC run. ]
   <qmc method="vmc" move="pbyp" target="e">
     <parameter name="blocks">100</parameter>
     <parameter name="steps">4000</parameter>

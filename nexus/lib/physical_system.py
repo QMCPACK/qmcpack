@@ -33,6 +33,7 @@
 #====================================================================#
 
 
+import numpy as np
 from numpy import dot,array
 from numpy.linalg import inv
 from generic import obj
@@ -96,7 +97,7 @@ class Ion(Particle):
         ps.core_electrons    = ps.protons - valence
         return ps
     #end def pseudize
-#end class
+#end class Ion
 
 
 class PseudoIon(Ion):
@@ -140,6 +141,7 @@ class Particles(Matter):
         return p
     #end def get_particle
 
+    # test needed
     def get(self,quantity):
         q = obj()
         for name,particle in self.iteritems():
@@ -456,6 +458,11 @@ class PhysicalSystem(Matter):
     #end def check_consistent
 
 
+    def is_valid(self):
+        return self.check_consistent(exit=False)
+    #end def is_valid
+
+
     def change_units(self,units):
         self.structure.change_units(units,folded=False)
         if self.folded_system!=None:
@@ -572,47 +579,7 @@ class PhysicalSystem(Matter):
     #end def get_smallest
 
 
-    def folded_representation(self,arg0,arg1=None):
-        self.error('folded_representation needs a developers attention to make it equivalent with tile')
-        if isinstance(arg0,PhysicalSystem):
-            folded_system = arg0
-        elif isinstance(arg0,str):
-            shape = arg0
-            tiling    = arg1
-            if tiling is None:
-                tiling = (1,1,1)
-            #end if
-            if not 'generation_info' in self:
-                self.error('system was not formed with generate_physical_system, cannot form folded representation')
-            #end if
-            structure,element,scale,units,net_charge,net_spin,particles,valency = \
-                self.generation_info.tuple('structure','element','scale','units', \
-                                               'net_charge','net_spin','particles','valency')
-            folded_system = generate_physical_system(
-                structure  = structure,
-                shape      = shape,
-                element    = element,
-                tiling     = tiling,
-                scale      = scale,
-                units      = units,
-                net_charge = net_charge,
-                net_spin   = net_spin,
-                particles  = particles,
-                **valency
-                )
-        else:
-            self.error('unrecognized inputs in folded_representation')
-        #end if
-        tilematrix,kmap = self.structure.fold(folded_system.structure,'tilematrix','kmap')
-        self.set(
-            folded_system = folded_system,
-            tilematrix    = tilematrix,
-            kmap          = kmap
-            )
-        return folded_system
-    #end def folded_representation
-
-
+    # test needed
     def large_Zeff_elem(self,Zmin):
         elem = []
         for atom,Zeff in self.valency.iteritems():
@@ -624,6 +591,7 @@ class PhysicalSystem(Matter):
     #end def large_Zeff_elem
 
 
+    # test needed
     def ae_pp_species(self):
         species = set(self.structure.elem)
         if self.pseudized:
@@ -635,7 +603,17 @@ class PhysicalSystem(Matter):
         #end if
         return ae_species,pp_species
     #end def ae_pp_species
+
+
+    def kf_rpa(self):
+      nelecs = self.particles.electron_counts()
+      volume = self.structure.volume()
+      kvol1 = (2*np.pi)**3/volume  # k-space volume per particle
+      kfs = [(3*nelec*kvol1/(4*np.pi))**(1./3) for nelec in nelecs]
+      return np.array(kfs)
+    #end def kf_rpa
 #end class PhysicalSystem
+
 
 
 import os
@@ -790,26 +768,11 @@ def generate_physical_system(**kwargs):
 #end def generate_physical_system
 
 
+
+# test needed
 def ghost_atoms(*particles):
     for particle in particles:
         Matter.particle_collection.add_particles(Ion(name=particle,mass=0,charge=0,spin=0,protons=0,neutrons=0))
     #end for
 #end def ghost_atoms
 
-
-if __name__=='__main__':
-    
-    from structure import generate_structure
-
-    ps = PhysicalSystem(
-        structure = generate_structure('diamond','sc','Ge',(2,2,2),scale=5.639,units='A'),
-        net_charge = 1,
-        net_spin   = 1,
-        Ge = 4
-        )
-
-    print 'net_charge',ps.net_charge
-    print 'net_spin  ',ps.net_spin
-    print ps.particles
-
-#end if
