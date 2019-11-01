@@ -634,6 +634,8 @@ def testing():
 
     nunit('object_checks')
 
+    nunit('text_checks')
+
     nunit_all()
 #end def testing
 
@@ -1217,6 +1219,12 @@ def gamess_input():
 
 
 
+def pyscf_input():
+    nunit_all()
+#end def pyscf_input
+
+
+
 def qmcpack_input():
     nunit('files')
 
@@ -1543,6 +1551,7 @@ NexusTest( settings_operation    , 'settings' )
 NexusTest( vasp_input            )
 NexusTest( pwscf_input           )
 NexusTest( gamess_input          )
+NexusTest( pyscf_input           )
 NexusTest( qmcpack_input         )
 NexusTest( qmcpack_converters    )
 

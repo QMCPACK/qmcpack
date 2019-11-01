@@ -104,20 +104,105 @@ def object_diff(o1,o2,tol=1e-6,full=False,int_as_float=False,bypass=False):
 #end def object_diff
 
 
+# determine if two text blocks differ
+def read_text_value(s):
+    v = s
+    try:
+        vi = int(s)
+    except:
+        try:
+            v = float(s)
+        except:
+            None
+        #end try
+    #end try
+    return v
+#end def read_text_value
+
+def read_text_tokens(t):
+    tokens = []
+    for v in t.split():
+        tokens.append(read_text_value(v))
+    #end for
+    return tokens
+#end def read_text_tokens
+
+def text_diff(t1,t2,tol=1e-6,full=False,by_line=False):
+    t1 = t1.replace(',',' , ')
+    t2 = t2.replace(',',' , ')
+    tokens1 = read_text_tokens(t1)
+    tokens2 = read_text_tokens(t2)
+    diff = value_diff(tokens1,tokens2)
+    if not full:
+        return diff
+    elif not by_line:
+        diff1 = dict()
+        diff2 = dict()
+        nmin = min(len(tokens1),len(tokens2))
+        for n,(v1,v2) in enumerate(zip(tokens1[:nmin],tokens2[:nmin])):
+            if value_diff(v1,v2):
+                diff1[n] = v1
+                diff2[n] = v2
+            #end if
+        #end for
+        if len(tokens1)>len(tokens2):
+            for n,v in enumerate(tokens1[nmin:]):
+                diff1[nmin+n] = v
+                diff2[nmin+n] = None
+            #end for
+        elif len(tokens2)>len(tokens1):
+            for n,v in enumerate(tokens2[nmin:]):
+                diff1[nmin+n] = None
+                diff2[nmin+n] = v
+            #end for
+        #end if
+        return diff,diff1,diff2
+    else:
+        lines1 = t1.splitlines()
+        lines2 = t2.splitlines()
+        nmin = min(len(lines1),len(lines2))
+        for n,(l1,l2) in enumerate(zip(lines1[:nmin],lines2[:nmin])):
+            tokens1 = read_text_tokens(l1)
+            tokens2 = read_text_tokens(l2)
+            if value_diff(tokens1,tokens2):
+                diff1[n] = l1
+                diff2[n] = l2
+            #end if
+        #end for
+        if len(lines1)>len(lines2):
+            for n,l in enumerate(lines1[nmin:]):
+                diff1[nmin+n] = l
+                diff2[nmin+n] = None
+            #end for
+        elif len(lines2)>len(lines1):
+            for n,l in enumerate(lines2[nmin:]):
+                diff1[nmin+n] = None
+                diff2[nmin+n] = l
+            #end for
+        #end if
+        return diff,diff1,diff2
+    #end if
+#end def text_diff
+
+
 # print the difference between two objects
-def print_diff(o1,o2): # used in debugging, not actual tests
+def print_diff(o1,o2,text=False,by_line=False): # used in debugging, not actual tests
     from generic import obj
-    print 20*'='
-    print o1
-    print 20*'='
-    print o2
-    diff,diff1,diff2 = object_diff(o1,o2,full=True)
+    print(20*'=')
+    print(o1)
+    print(20*'=')
+    print(o2)
+    if not text:
+        diff,diff1,diff2 = object_diff(o1,o2,full=True)
+    else:
+        diff,diff1,diff2 = text_diff(o1,o2,full=True,by_line=by_line)
+    #end if
     d1 = obj(diff1)
     d2 = obj(diff2)
-    print 20*'='
-    print d1
-    print 20*'='
-    print d2
+    print(20*'=')
+    print(d1)
+    print(20*'=')
+    print(d2)
 #end def print_diff
 
 
@@ -133,6 +218,10 @@ def object_eq(*args,**kwargs):
     return not object_neq(*args,**kwargs)
 #end def object_eq
 
+text_neq = text_diff
+def text_eq(*args,**kwargs):
+    return not text_neq(*args,**kwargs)
+#end def text_eq
 
 
 # find the path to the Nexus directory and other internal paths
