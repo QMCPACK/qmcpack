@@ -63,6 +63,7 @@ class TrialWaveFunction : public MPIObjectBase
 public:
   // derived types from WaveFunctionComponent
   typedef WaveFunctionComponent::RealType RealType;
+  using FullPrecRealType = WaveFunctionComponent::FullPrecRealType;
   typedef WaveFunctionComponent::ValueType ValueType;
   typedef WaveFunctionComponent::PosType PosType;
   typedef WaveFunctionComponent::GradType GradType;
@@ -274,9 +275,9 @@ public:
   /* flexible batched version of copyFromBuffer. 
    * Ye: perhaps it doesn't need to be flexible but just operates on all the walkers
    */
-  void flex_copyFromBuffer(const std::vector<TrialWaveFunction*>& WF_list,
-                           const std::vector<ParticleSet*>& P_list,
-                           const std::vector<WFBufferType*>& buf_list) const;
+  void flex_copyFromBuffer(const RefVector<TrialWaveFunction>& WF_list,
+                           const RefVector<ParticleSet>& P_list,
+                           const RefVector<WFBufferType>& buf_list) const;
 
   RealType KECorrection() const;
 
@@ -321,6 +322,8 @@ public:
   std::vector<NewTimer*>& get_timers() { return myTimers; }
 
 private:
+  static void debugOnlyCheckBuffer(WFBufferType& buffer);
+
   ///starting index of the buffer
   size_t BufferCursor;
 

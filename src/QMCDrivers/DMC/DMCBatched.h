@@ -66,6 +66,8 @@ public:
     RefVector<WFBuffer> walker_mcp_wfbuffers;
     RefVector<FullPrecRealType> old_energies;
     RefVector<FullPrecRealType> new_energies;
+    RefVector<RealType> rr_proposed;
+    RefVector<RealType> rr_accepted;
     RefVector<RealType> gf_accs;
     DMCPerWalkerRefs(int nwalkers)
     {
@@ -76,6 +78,8 @@ public:
       walker_mcp_wfbuffers.reserve(nwalkers);
       old_energies.reserve(nwalkers);
       new_energies.reserve(nwalkers);
+      rr_proposed.reserve(nwalkers);
+      rr_accepted.reserve(nwalkers);
       gf_accs.reserve(nwalkers);
     }
   };
