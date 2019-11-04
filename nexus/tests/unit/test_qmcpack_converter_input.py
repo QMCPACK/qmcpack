@@ -24,7 +24,7 @@ pw2qmcpack_in = '''&inputpp
 /
 '''
 
-def test_pw2qmcpack_empty_init():
+def test_pw2qmcpack_input_empty_init():
     from qmcpack_converters import Pw2qmcpackInput
     from qmcpack_converters import generate_pw2qmcpack_input
 
@@ -32,16 +32,16 @@ def test_pw2qmcpack_empty_init():
 
     pi = generate_pw2qmcpack_input()
     assert(isinstance(pi,Pw2qmcpackInput))
-#end def test_pw2qmcpack_empty_init
+#end def test_pw2qmcpack_input_empty_init
 
 
 
-def test_pw2qmcpack_read():
+def test_pw2qmcpack_input_read():
     import os
     from generic import obj
     from qmcpack_converters import Pw2qmcpackInput
 
-    tpath = testing.setup_unit_test_output_directory('qmcpack_converter_input','test_pw2qmcpack_read')
+    tpath = testing.setup_unit_test_output_directory('qmcpack_converter_input','test_pw2qmcpack_input_read')
 
     infile_path = os.path.join(tpath,'p2q.in')
     open(infile_path,'w').write(pw2qmcpack_in)
@@ -56,16 +56,16 @@ def test_pw2qmcpack_read():
         )
 
     assert(object_eq(pi.to_obj(),pi_ref))
-#end def test_pw2qmcpack_read
+#end def test_pw2qmcpack_input_read
 
 
 
-def test_pw2qmcpack_write():
+def test_pw2qmcpack_input_write():
     import os
     from generic import obj
     from qmcpack_converters import Pw2qmcpackInput
 
-    tpath = testing.setup_unit_test_output_directory('qmcpack_converter_input','test_pw2qmcpack_write')
+    tpath = testing.setup_unit_test_output_directory('qmcpack_converter_input','test_pw2qmcpack_input_write')
 
     infile_path = os.path.join(tpath,'p2q.in')
     open(infile_path,'w').write(pw2qmcpack_in)
@@ -85,11 +85,11 @@ def test_pw2qmcpack_write():
         )
 
     assert(object_eq(pi_read.to_obj(),pi_ref))
-#end def test_pw2qmcpack_write
+#end def test_pw2qmcpack_input_write
 
 
 
-def test_pw2qmcpack_generate():
+def test_pw2qmcpack_input_generate():
     from generic import obj
     from qmcpack_converters import generate_pw2qmcpack_input
 
@@ -107,7 +107,119 @@ def test_pw2qmcpack_generate():
         )
 
     assert(object_eq(pi.to_obj(),pi_ref))
-#end def test_pw2qmcpack_generate
+#end def test_pw2qmcpack_input_generate
+
+
+
+def test_convert4qmc_input_empty_init():
+    from qmcpack_converters import Convert4qmcInput
+    from qmcpack_converters import generate_convert4qmc_input
+
+    ci = Convert4qmcInput()
+
+    ci = generate_convert4qmc_input()
+    assert(isinstance(ci,Convert4qmcInput))
+#end def test_convert4qmc_input_empty_init
+
+
+
+def test_convert4qmc_input_generate():
+    from generic import obj
+    from qmcpack_converters import generate_convert4qmc_input
+
+    ci = generate_convert4qmc_input(
+        gamess = 'gamess.out',
+        hdf5   = True,
+        )
+
+    ci_ref = obj(
+        add_3body_J        = False,
+        add_cusp           = False,
+        app_name           = 'convert4qmc',
+        casino             = None,
+        ci                 = None,
+        first              = None,
+        gamess             = 'gamess.out',
+        gamess_ascii       = None,
+        gamess_fmo         = None,
+        gamess_xml         = None,
+        gaussian           = None,
+        gridtype           = None,
+        hdf5               = True,
+        ion_tag            = None,
+        last               = None,
+        multidet           = None,
+        natural_orbitals   = None,
+        no_jastrow         = False,
+        opt_det_coeffs     = False,
+        orbitals           = None,
+        prefix             = None,
+        production         = False,
+        psi_tag            = None,
+        pyscf              = None,
+        qp                 = None,
+        read_initial_guess = None,
+        size               = None,
+        target_state       = None,
+        threshold          = None,
+        vsvb               = None,
+        zero_ci            = False,
+        )
+
+    assert(object_eq(ci.to_obj(),ci_ref))
+#end def test_convert4qmc_input_generate
+
+
+
+def test_convert4qmc_input_write():
+    from qmcpack_converters import generate_convert4qmc_input
+
+    ci = generate_convert4qmc_input(
+        gamess = 'gamess.out',
+        hdf5   = True,
+        )
+    assert(ci.write()=='convert4qmc -gamess gamess.out -hdf5')
+
+    ci = generate_convert4qmc_input(
+        orbitals = 'C2.h5',
+        multidet = 'C2.h5',
+        )
+    assert(ci.write()=='convert4qmc -orbitals C2.h5 -multidet C2.h5')
+
+    ci = generate_convert4qmc_input(
+        pyscf = 'LiH.h5',
+        )
+    assert(ci.write()=='convert4qmc -pyscf LiH.h5')
+
+    ci = generate_convert4qmc_input(
+        qp = 'run.dump',
+        )
+    assert(ci.write()=='convert4qmc -QP run.dump')
+
+    ci = generate_convert4qmc_input(
+        qp   = 'run.dump',
+        hdf5 = True,
+        )
+    assert(ci.write()=='convert4qmc -QP run.dump -hdf5')
+
+    ci = generate_convert4qmc_input(
+        gamess_ascii = 'singledet.out',
+        )
+    assert(ci.write()=='convert4qmc -gamessAscii singledet.out')
+
+    ci = generate_convert4qmc_input(
+        gamess_ascii = 'orbitals_multidet.out',
+        ci           = 'cicoeff_multidet.out',
+        )
+    assert(ci.write()=='convert4qmc -gamessAscii orbitals_multidet.out -ci cicoeff_multidet.out')
+
+    ci = generate_convert4qmc_input(
+        gamess_ascii       = 'multidet.out',
+        ci                 = 'multidet.out',
+        read_initial_guess = 42,
+        )
+    assert(ci.write()=='convert4qmc -gamessAscii multidet.out -ci multidet.out -readInitialGuess 42')
+#end def test_convert4qmc_input_write
 
 
 

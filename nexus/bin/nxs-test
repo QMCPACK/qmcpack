@@ -1265,13 +1265,19 @@ def quantum_package_input():
 def qmcpack_converter_input():
     nunit('import')
 
-    nunit('pw2qmcpack_empty_init')
+    nunit('pw2qmcpack_input_empty_init')
 
-    nunit('pw2qmcpack_read')
+    nunit('pw2qmcpack_input_read')
 
-    nunit('pw2qmcpack_write')
+    nunit('pw2qmcpack_input_write')
 
-    nunit('pw2qmcpack_generate')
+    nunit('pw2qmcpack_input_generate')
+
+    nunit('convert4qmc_input_empty_init')
+
+    nunit('convert4qmc_input_generate')
+
+    nunit('convert4qmc_input_write')
 
     nunit('pyscf_to_afqmc_input_init')
 

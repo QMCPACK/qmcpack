@@ -99,12 +99,16 @@ class Pw2qmcpackInput(SimulationInput):
     var_types = dict()
     for v in ints:
         var_types[v]=int
+    #end for
     for v in floats:
         var_types[v]=float
+    #end for
     for v in strs:
         var_types[v]=str
+    #end for
     for v in bools:
         var_types[v]=bool
+    #end for
 
     allowed = set(ints+floats+strs+bools)
 
@@ -410,6 +414,12 @@ class Convert4qmcInput(SimulationInput):
         ion_tag            
         no_jastrow         
         production         
+        orbitals
+        multidet
+        gridtype
+        first
+        last
+        size
         ci                 
         read_initial_guess 
         target_state       
@@ -417,7 +427,7 @@ class Convert4qmcInput(SimulationInput):
         threshold          
         opt_det_coeffs
         zero_ci            
-        add_3body_J        
+        add_3body_J
         '''.split()
 
     input_aliases = obj(
@@ -437,6 +447,12 @@ class Convert4qmcInput(SimulationInput):
         ion_tag            = 'ion_tag',
         no_jastrow         = 'nojastrow',
         production         = 'production',
+        orbitals           = 'orbitals',
+        multidet           = 'multidet',
+        gridtype           = 'gridtype',
+        first              = 'first',
+        last               = 'last',
+        size               = 'size',
         ci                 = 'ci',
         read_initial_guess = 'readInitialGuess',
         target_state       = 'TargetState',
@@ -465,6 +481,12 @@ class Convert4qmcInput(SimulationInput):
         ion_tag            = str, # particeset tag
         no_jastrow         = bool,
         production         = bool,
+        orbitals           = str,
+        multidet           = str,
+        gridtype           = str,
+        first              = float,
+        last               = float,
+        size               = int,
         ci                 = str, # file path
         read_initial_guess = int,
         target_state       = int,
@@ -493,6 +515,12 @@ class Convert4qmcInput(SimulationInput):
         ion_tag            = None,
         no_jastrow         = False,
         production         = False,
+        orbitals           = None,
+        multidet           = None,
+        gridtype           = None,
+        first              = None,
+        last               = None,
+        size               = None,
         ci                 = None, # gamess specific below
         read_initial_guess = None,
         target_state       = None,
@@ -508,7 +536,7 @@ class Convert4qmcInput(SimulationInput):
         # check that only allowed keyword inputs are provided
         invalid = set(kwargs.keys())-set(self.input_types.keys())
         if len(invalid)>0:
-            self.error('invalid inputs encountered\nvalid keyword inputs are: {0}'.format(sorted(self.input_types.keys())))
+            self.error('invalid inputs encountered\ninvalid keywords: {0}\nvalid keyword inputs are: {1}'.format(sorted(invalid),sorted(self.input_types.keys())))
         #end if
 
         # assign inputs
