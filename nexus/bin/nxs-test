@@ -1316,6 +1316,18 @@ def qmcpack_input():
 
 
 
+def vasp_analyzer():
+    nunit('files')
+
+    nunit('import')
+
+    nunit('analyze')
+
+    nunit_all()
+#end def vasp_analyzer
+
+
+
 def qmcpack_converters():
     nunit('import')
 
@@ -1615,6 +1627,7 @@ NexusTest( pyscf_input               )
 NexusTest( quantum_package_input     )
 NexusTest( qmcpack_converter_input   )
 NexusTest( qmcpack_input             )
+NexusTest( vasp_analyzer             )
 NexusTest( qmcpack_converters        )
 
 # ordered alphabetically (pytest order)

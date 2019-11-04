@@ -50,7 +50,7 @@ class VXML(DevBase):
         self._lines = []
         self._attr  = None
         self._value = None
-        if attr!=None and len(attr)>0:
+        if attr is not None and len(attr)>0:
             self._attr = obj()
             tokens = attr.split('"')
             next=0
@@ -90,7 +90,7 @@ class VXML(DevBase):
         for name in list(self.keys()):
             value = self[name]
             if isinstance(value,VXML):
-                if value._attr!=None and 'name' in value._attr:
+                if value._attr is not None and 'name' in value._attr:
                     del self[name]
                     self[value._attr.name] = value
                     del value._attr.name
@@ -98,7 +98,7 @@ class VXML(DevBase):
                     for n in list(value.keys()):
                         v = value[n]
                         if isinstance(v,VXML):
-                            if v._attr!=None and 'name' in v._attr:
+                            if v._attr is not None and 'name' in v._attr:
                                 del value[n]
                                 self[v._attr.name] = v
                                 del v._attr.name
@@ -147,13 +147,13 @@ class VXML(DevBase):
         # if sub-objects resolve to a value, replace with that value
         for name in list(self.keys()):
             value = self[name]
-            if isinstance(value,VXML) and value._value!=None: 
+            if isinstance(value,VXML) and value._value is not None: 
                 self[name] = value._value
             #end if
         #end for
 
         # assign attributes
-        if self._attr!=None:
+        if self._attr is not None:
             if 'type' in self._attr:
                 del self._attr.type
             #end if
@@ -191,7 +191,7 @@ class VXML(DevBase):
                     #end if
                 #end if
             #end for
-            if arr!=None:
+            if arr is not None:
                 self._value = array(arr)
             #end if
         #end if
@@ -524,7 +524,7 @@ def read_outcar_fermi_energy(vlines,odata):
 def read_outcar_bands(vlines,odata):
     bands = obj()
     line = vlines.advance_token('spin component')
-    if line!=None:
+    if line is not None:
         last_empty = True
         n  = 0
         for line in vlines.remainder():
@@ -713,7 +713,7 @@ class OutcarData(DevBase):
     read_outcar_functions = any_functions + elast_functions + ilast_functions
 
     def __init__(self,filepath=None,lines=None):
-        if filepath!=None:
+        if filepath is not None:
             if not os.path.exists(filepath):
                 self.error('file {0} does not exist'.format(filepath))
             #end if
@@ -764,7 +764,7 @@ class VaspAnalyzer(SimulationAnalyzer):
             sim = arg0
             file = sim.infile
             path   = sim.locdir
-        elif arg0!=None:
+        elif arg0 is not None:
             path,file = os.path.split(arg0)
         else:
             file = ''
@@ -792,7 +792,7 @@ class VaspAnalyzer(SimulationAnalyzer):
         incar = None
         incar_path = os.path.join(path,incar_file)
         neb = False
-        if incar_file!=None and os.path.exists(incar_path):
+        if incar_file is not None and os.path.exists(incar_path):
             incar = Incar(incar_path)
             if 'images' in incar:
                 neb = True
@@ -828,13 +828,13 @@ class VaspAnalyzer(SimulationAnalyzer):
             return
         #end if
             
-        if outcar is None and self.info.outcar_file!=None:
+        if outcar is None and self.info.outcar_file is not None:
             outcar = os.path.join(self.info.path,self.info.outcar_file)
         #ned if
         if self.info.xml:
             self.xmldata = read_vxml(os.path.join(self.info.path,self.info.xml_file))
         #end if
-        if outcar!=None:
+        if outcar is not None:
             self.analyze_outcar(outcar)
         #end if
     #end def analyze
