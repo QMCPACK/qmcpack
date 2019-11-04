@@ -57,7 +57,7 @@ struct LRHandlerBase
 
 
   //constructor
-  explicit LRHandlerBase(mRealType kc) : LR_kc(kc), ClassName("LRHandlerBase") {}
+  explicit LRHandlerBase(mRealType kc) : MaxKshell(0), LR_kc(kc), LR_rc(0), ClassName("LRHandlerBase") {}
 
   // virtual destructor
   virtual ~LRHandlerBase() {}
