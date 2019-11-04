@@ -15,7 +15,7 @@
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
 
-
+#include <type_traits>
 #include "QMCWaveFunctions/SPOSetBuilderFactory.h"
 #include "QMCWaveFunctions/SPOSetScanner.h"
 #include "QMCWaveFunctions/Fermion/SlaterDetBuilder.h"
@@ -1364,25 +1364,8 @@ bool SlaterDetBuilder::readDetListH5(xmlNodePtr cur,
   CIcoeff.resize(ndets);
   ConfigTag.resize(ndets);
 
-#if defined(QMC_COMPLEX)
-  std::vector<double> CIcoeff_real;
-  std::vector<double> CIcoeff_imag;
-  CIcoeff_imag.resize(ndets);
-  CIcoeff_real.resize(ndets);
-
-  hin.read(CIcoeff_real, "Coeff");
-  hin.read(CIcoeff_imag, "Coeff_imag");
-
-
-  for (size_t i = 0; i < ndets; i++)
-    CIcoeff[i] = ValueType(CIcoeff_real[i], CIcoeff_imag[i]);
-
-
-#else
-  hin.read(CIcoeff, "Coeff");
-
-#endif
-
+  readCoeffs(hin, CIcoeff, ndets);
+  
   ///IF OPTIMIZED COEFFICIENTS ARE PRESENT IN opt_coeffs Path
   ///THEY ARE READ FROM DIFFERENT HDF5 the replace the previous coeff
   ///It is important to still read all old coeffs and only replace the optimized ones
@@ -1407,23 +1390,8 @@ bool SlaterDetBuilder::readDetListH5(xmlNodePtr cur,
     coeffin.read(OptCiSize, "NbDet");
     CIcoeffopt.resize(OptCiSize);
 
-#if defined(QMC_COMPLEX)
-    std::vector<double> CIcoeffopt_real;
-    std::vector<double> CIcoeffopt_imag;
-    CIcoeffopt_imag.resize(ndets);
-    CIcoeffopt_real.resize(ndets);
+    readCoeffs(coeffin, CIcoeffopt, ndets);
 
-    coeffin.read(CIcoeffopt_real, "Coeff");
-    coeffin.read(CIcoeffopt_imag, "Coeff_imag");
-
-
-    for (size_t i = 0; i < ndets; i++)
-      CIcoeffopt[i] = ValueType(CIcoeffopt_real[i], CIcoeffopt_imag[i]);
-
-
-#else
-    coeffin.read(CIcoeffopt, "Coeff");
-#endif
     coeffin.close();
 
     for (int i = 0; i < OptCiSize; i++)
