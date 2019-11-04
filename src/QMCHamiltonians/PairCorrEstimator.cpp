@@ -110,85 +110,88 @@ PairCorrEstimator::PairCorrEstimator(ParticleSet& elns, std::string& sources)
 
 void PairCorrEstimator::resetTargetParticleSet(ParticleSet& P) {}
 
-  PairCorrEstimator::Return_t PairCorrEstimator::evaluate(ParticleSet& P)
-  {
-    BufferType& collectables(P.Collectables);
-    const DistanceTableData& dii(P.getDistTable(d_aa_ID_));
-    if (dii.DTType == DT_SOA)
-      {
-	// std::cerr << "PairCorrEstimator::evaluate() is in SOA mode\n";
-	for (int iat = 1; iat < dii.centers(); ++iat)
-	  {
-	    const RealType* restrict dist = dii.Distances[iat];
-	    const int ig                  = P.GroupID[iat];
-	    for (int j = 0; j < iat; ++j)
-	      {
-		const RealType r = dist[j];
-		if (r >= Dmax)
-		  continue;
-		const int loc     = static_cast<int>(DeltaInv * r);
-		const int jg      = P.GroupID[j];
-		const int pair_id = ig * (ig + 1) / 2 + jg;
-		collectables[pair_id * NumBins + loc + myIndex] += norm_factor(pair_id + 1, loc);
-	      }
-	  }
-	for (int k = 0; k < other_ids.size(); ++k)
-	  {
-	    const DistanceTableData& d1(P.getDistTable(other_ids[k]));
-	    const ParticleSet::ParticleIndex_t& gid(d1.origin().GroupID);
-	    int koff        = other_offsets[k];
-	    RealType overNI = 1.0 / d1.centers();
-	    for (int iat = 0; iat < d1.targets(); ++iat)
-	      {
-		const RealType* restrict dist = d1.Distances[iat];
-		for (int j = 0; j < d1.centers(); ++j)
-		  {
-		    const RealType r = dist[j];
-		    if (r >= Dmax)
-		      continue;
-		    int toff = (gid[j] + koff) * NumBins;
-		    int loc  = static_cast<int>(DeltaInv * r);
-		    collectables[toff + loc + myIndex] += norm_factor(0, loc) * overNI;
-		  }
-	      }
-	  }
-      }
-    else
-      {
-	// std::cerr << "PairCorrEstimator::evaluate() is in AOS mode\n";
-	for (int iat = 0; iat < dii.centers(); ++iat)
-	  {
-	    for (int nn = dii.M[iat]; nn < dii.M[iat + 1]; ++nn)
-	      {
-		RealType r = dii.r(nn);
-		if (r >= Dmax)
-		  continue;
-		int loc = static_cast<int>(DeltaInv * r);
-		collectables[pair_ids[nn] * NumBins + loc + myIndex] += norm_factor(pair_ids[nn] + 1, loc);
-	      }
-	  }
-	for (int k = 0; k < other_ids.size(); ++k)
-	  {
-	    const DistanceTableData& d1(P.getDistTable(other_ids[k]));
-	    const ParticleSet::ParticleIndex_t& gid(d1.origin().GroupID);
-	    int koff = other_offsets[k];
-	    for (int iat = 0; iat < d1.centers(); ++iat)
-	      {
-		RealType overNI = 1.0 / d1.centers();
-		int toff        = (gid[iat] + koff) * NumBins;
-		for (int nn = d1.M[iat]; nn < d1.M[iat + 1]; ++nn)
-		  {
-		    RealType r = dii.r(nn);
-		    if (r >= Dmax)
-		      continue;
-		    int loc = static_cast<int>(DeltaInv * r);
-		    collectables[toff + loc + myIndex] += norm_factor(0, loc) * overNI;
-		  }
-	      }
-	  }
-      }
-    return 0.0;
-  }
+PairCorrEstimator::Return_t PairCorrEstimator::evaluate(ParticleSet& P)
+{
+  BufferType& collectables(P.Collectables);
+  const DistanceTableData& dii(P.getDistTable(d_aa_ID_));
+  if ( dii.DTType == DT_SOA )  // SoA eval
+    {
+      for ( int iat=1; iat<dii.centers(); ++iat )
+	{
+	  const RealType* restrict dist = dii.Distances[iat];
+	  const int ig                  = P.GroupID[iat];
+	  for (int j = 0; j < iat; ++j)
+	    {
+	      const RealType r = dist[j];
+	      if ( r < Dmax )
+		{
+		  const int loc     = static_cast<int>(DeltaInv * r);
+		  const int jg      = P.GroupID[j];
+		  const int pair_id = ig * (ig + 1) / 2 + jg;
+		  collectables[pair_id * NumBins + loc + myIndex] += norm_factor(pair_id + 1, loc);
+		}
+	    }
+	}
+      for ( int k=0; k<other_ids.size(); ++k )
+	{
+	  const DistanceTableData& d1(P.getDistTable(other_ids[k]));
+	  const ParticleSet::ParticleIndex_t& gid(d1.origin().GroupID);
+	  int koff        = other_offsets[k];
+	  RealType overNI = 1.0 / d1.centers();
+	  for ( int iat=0; iat<d1.targets(); ++iat )
+	    {
+	      const RealType* restrict dist = d1.Distances[iat];
+	      for (int j = 0; j < d1.centers(); ++j)
+		{
+		  const RealType r = dist[j];
+		  if ( r < Dmax )
+		    {
+		      int toff = (gid[j] + koff) * NumBins;
+		      int loc  = static_cast<int>(DeltaInv * r);
+		      collectables[toff + loc + myIndex] += norm_factor(0, loc) * overNI;
+		    }
+		}
+	    }
+	}
+    }
+  else  // AoS eval
+    {
+      for ( int iat=0; iat<dii.centers(); ++iat )
+	{
+	  for ( int nn=dii.M[iat]; nn<dii.M[iat + 1]; ++nn )
+	    {
+	      RealType r = dii.r(nn);
+	      if ( r < Dmax )
+		{
+		  int loc = static_cast<int>(DeltaInv * r);
+		  collectables[pair_ids[nn] * NumBins + loc + myIndex] += norm_factor(pair_ids[nn] + 1, loc);
+		}
+	    }
+	}
+      for ( int k=0; k<other_ids.size(); ++k )
+	{
+	  const DistanceTableData& d1(P.getDistTable(other_ids[k]));
+	  const ParticleSet::ParticleIndex_t& gid(d1.origin().GroupID);
+	  int koff = other_offsets[k];
+	  for ( int iat=0; iat<d1.centers(); ++iat )
+	    {
+	      RealType overNI = 1.0 / d1.centers();
+	      int toff        = (gid[iat] + koff) * NumBins;
+	      for (int nn = d1.M[iat]; nn < d1.M[iat + 1]; ++nn)
+		{
+		  RealType r = dii.r(nn);
+		  if ( r < Dmax )
+		    {
+		      int loc = static_cast<int>(DeltaInv * r);
+		      collectables[toff + loc + myIndex] += norm_factor(0, loc) * overNI;
+		    }
+		}
+	    }
+	}
+    }
+  return 0.0;
+}
+
 
 void PairCorrEstimator::registerCollectables(std::vector<observable_helper*>& h5list, hid_t gid) const
 {
@@ -267,34 +270,38 @@ bool PairCorrEstimator::put(xmlNodePtr cur)
 }
 
 
-  // Called from inside put() after internals are set
-  // Sets the normalization, or norm_factor, for each channel and bin
-  void PairCorrEstimator::set_norm_factor()
-  {
-    // Number of species-pair-specific gofr's to compute
-    // E.g. "uu", "dd", "ud", & etc.
-    // Note the addition +1 bin, which is for the total gofr of the system
-    // (which seems not to get saved to h5 file. Why compute it then?)
-    const RealType n_channels = num_species*(num_species - 1) / 2 + num_species + 1;
-    norm_factor.resize(n_channels, NumBins);
+// Called from inside put() after internals are set
+// Sets the normalization, or norm_factor, for each channel and bin
+void PairCorrEstimator::set_norm_factor()
+{
+  /* 
+     Number of species-pair-specific gofr's to compute
+     E.g. "uu", "dd", "ud", & etc.
+     Note the addition +1 bin, which is for the total gofr of the system
+     (which seems not to get saved to h5 file. Why compute it then?)
+  */
+  const RealType n_channels = num_species*(num_species - 1) / 2 + num_species + 1;
+  norm_factor.resize(n_channels, NumBins);
 
-    // Compute the normalization V/Npairs/Nid, with
-    // V the volume of the system
-    // Npairs the number of (unique) pairs of particles of given types
-    // Nid the number of particles expected for a uniformly random distribution
-    // with the same number density
-    RealType r  = 0.;
-    const RealType ftpi = 4./3 * M_PI;
-    const RealType N_tot_pairs = N_e*(N_e - 1) / 2;
-    for ( int i=0; i<NumBins; i++ )
-      {
+  /* 
+     Compute the normalization V/Npairs/Nid, with
+     V the volume of the system
+     Npairs the number of (unique) pairs of particles of given types
+     Nid the number of particles expected for a uniformly random distribution
+     with the same number density
+  */
+  RealType r  = 0.;
+  const RealType ftpi = 4./3 * M_PI;
+  const RealType N_tot_pairs = N_e*(N_e - 1) / 2;
+  for ( int i=0; i<NumBins; i++ )
+    {
 	// Separation for current bin
 	r = static_cast<RealType>(i)*Delta;
 
-	// Number density
+	// Number density of pairs
 	RealType rho = N_tot_pairs / Volume;
 
-	// Volume of shell of thickness Delta
+	// Volume of spherical shell of thickness Delta
 	RealType bin_volume = ftpi * ( std::pow(r+Delta, 3) - std::pow(r, 3) );
 
 	// Expected number of pairs of particles separated by distance r assuming
@@ -318,14 +325,14 @@ bool PairCorrEstimator::put(xmlNodePtr cur)
 		indx++;
 	      }
 	  }
-      }
+    }
 
-    // ***DEBUG*** print norm_factor
-    /*
-    std::cout << "norm_factor:\n";
-    std::cout << std::fixed;
-    for( int j=0; j<norm_factor.size2(); j++ )
-      {
+  // ***DEBUG*** print norm_factor
+  /*
+  std::cout << "norm_factor:\n";
+  std::cout << std::fixed;
+  for( int j=0; j<norm_factor.size2(); j++ )
+    {
 	std::cout << std::setw(4) << j;
 	std::cout << std::setw(8) << std::setprecision(4) << j*Delta;
 	for( int i=0; i<norm_factor.size1(); i++ ) 
@@ -333,11 +340,11 @@ bool PairCorrEstimator::put(xmlNodePtr cur)
 	    std::cout << "  " << std::setw(10) << std::setprecision(4) << norm_factor(i,j);
 	  }
 	std::cout << std::endl;
-      }
-    std::cout << std::endl;
-    */
+    }
+  std::cout << std::endl;
+  */
 
-  }
+}
 
 void PairCorrEstimator::report()
 {
