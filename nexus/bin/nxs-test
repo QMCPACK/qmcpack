@@ -1262,6 +1262,26 @@ def quantum_package_input():
 
 
 
+def qmcpack_converter_input():
+    nunit('import')
+
+    nunit('pw2qmcpack_empty_init')
+
+    nunit('pw2qmcpack_read')
+
+    nunit('pw2qmcpack_write')
+
+    nunit('pw2qmcpack_generate')
+
+    nunit('pyscf_to_afqmc_input_init')
+
+    nunit('pyscf_to_afqmc_input_write')
+
+    nunit_all()
+#end def qmcpack_converter_input
+
+
+
 def qmcpack_input():
     nunit('files')
 
@@ -1292,10 +1312,6 @@ def qmcpack_input():
 
 def qmcpack_converters():
     nunit('import')
-
-    nunit('pyscf_to_afqmc_input_init')
-
-    nunit('pyscf_to_afqmc_input_write')
 
     nunit('pyscf_to_afqmc_analyzer_init')
 
@@ -1591,6 +1607,7 @@ NexusTest( pwscf_postprocessor_input )
 NexusTest( gamess_input              )
 NexusTest( pyscf_input               )
 NexusTest( quantum_package_input     )
+NexusTest( qmcpack_converter_input   )
 NexusTest( qmcpack_input             )
 NexusTest( qmcpack_converters        )
 
@@ -1618,8 +1635,9 @@ NexusTest( qmcpack_converters        )
 #NexusTest( pwscf_input               )
 #NexusTest( pwscf_postprocessor_input )
 #NexusTest( pyscf_input               )
-#NexusTest( qmcpack_input             )
+#NexusTest( qmcpack_converter_input   )
 #NexusTest( qmcpack_converters        )
+#NexusTest( qmcpack_input             )
 #NexusTest( quantum_package_input     )
 #NexusTest( required_dependencies     )
 #NexusTest( settings_operation        , 'settings' )

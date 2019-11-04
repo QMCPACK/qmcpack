@@ -141,6 +141,7 @@ class Pw2qmcpackInput(SimulationInput):
         #end for
     #end def read_text
 
+
     def write_text(self,filepath=None):
         contents = ''
         for sname,section in self.iteritems():
