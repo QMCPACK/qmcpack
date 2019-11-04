@@ -152,15 +152,15 @@ class SimulationBundle(Simulation):
 
 
     def bundle_jobs(self,relative=False,serial=False):
-        jobs = []
-        job0 = self.sims[0].job
-        time    = Job.zero_time()
-        nodes   = 0
-        cores   = 0
-        constraint = None
-        thread_set = set()
-        queue_set  = set()
-        presub_set = set()
+        jobs        = []
+        job0        = self.sims[0].job
+        time        = Job.zero_time()
+        nodes       = 0
+        cores       = 0
+        constraint  = None
+        thread_set  = set()
+        queue_set   = set()
+        presub_set  = set()
         machine_set = set()
         for sim in self.sims:
             job = sim.job
@@ -172,8 +172,8 @@ class SimulationBundle(Simulation):
                 cores += job.cores
             #end if
             constraint = job.constraint
-            time    = job.max_time(time)
-            machine = job.get_machine()
+            time       = job.max_time(time)
+            machine    = job.get_machine()
             machine_set.add(machine.name)
             thread_set.add(job.threads)
             queue_set.add(job.queue)
@@ -235,7 +235,7 @@ class SimulationBundle(Simulation):
 
 
     def progress(self,dependency_id=None):
-        if dependency_id!=None and dependency_id in self.wait_ids:
+        if dependency_id is not None and dependency_id in self.wait_ids:
             self.wait_ids.remove(dependency_id)
         #end if
         if len(self.wait_ids)==0 and not self.block and not self.failed:

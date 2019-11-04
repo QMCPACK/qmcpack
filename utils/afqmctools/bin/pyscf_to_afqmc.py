@@ -69,6 +69,14 @@ def parse_args(args, comm):
         parser.add_argument('-p', '--phdf', dest='phdf',
                             action='store_true', default=False,
                             help='Use parallel hdf5.')
+        parser.add_argument('--low', dest='low_thresh',
+                            type=float, default=0.1,
+                            help='Lower threshold for non-integer occupancies'
+                            'to include in multi-determinant exansion.')
+        parser.add_argument('--high', dest='high_thresh',
+                            type=float, default=0.95,
+                            help='Upper threshold for non-integer occupancies'
+                            'to include in multi-determinant exansion.')
         parser.add_argument('-v', '--verbose', action='count', default=0,
                             help='Verbose output.')
 
@@ -133,7 +141,9 @@ def main(args):
                   write_hamil=(not options.disable_ham),
                   ndet_max=options.ndet_max,
                   real_chol=options.real_chol,
-                  phdf=options.phdf)
+                  phdf=options.phdf,
+                  low=options.low_thresh,
+                  high=options.high_thresh)
     if comm.rank == 0:
         write_metadata(options, sha1, cwd, date_time)
 

@@ -8,6 +8,14 @@
 namespace Catch {
 class ComplexApprox
 {
+    std::complex<double> m_value;
+    double m_epsilon;
+
+    bool approx_compare(const double lhs, const double rhs) const
+    {
+        return Approx(lhs).epsilon(m_epsilon) == rhs;
+    }
+
 public:
     ComplexApprox(const std::complex<double> &value) : m_value(value) {
       init_epsilon();
@@ -30,12 +38,15 @@ public:
       m_epsilon = std::numeric_limits<float>::epsilon()*100;
     }
 
-    std::complex<double> m_value;
-    double m_epsilon;
-
-    bool approx_compare(const double lhs, const double rhs) const
+    ComplexApprox& epsilon(double new_epsilon)
     {
-        return Approx(lhs).epsilon(m_epsilon) == rhs;
+      m_epsilon = new_epsilon;
+      return *this;
+    }
+
+    double epsilon() const
+    {
+      return m_epsilon;
     }
 
     friend bool operator == (std::complex<double> const& lhs, ComplexApprox const& rhs)
@@ -60,17 +71,6 @@ public:
     friend bool operator == (ComplexApprox const &lhs, std::complex<float> const& rhs)
     {
         return operator==( rhs, lhs );
-    }
-
-    ComplexApprox &epsilon(double new_epsilon)
-    {
-      m_epsilon = new_epsilon;
-      return *this;
-    }
-
-    double epsilon() const
-    {
-      return m_epsilon;
     }
 
     std::string toString() const {

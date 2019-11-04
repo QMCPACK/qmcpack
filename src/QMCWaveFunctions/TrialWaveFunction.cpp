@@ -116,18 +116,15 @@ TrialWaveFunction::RealType TrialWaveFunction::evaluateLog(ParticleSet& P)
 {
   P.G = 0.0;
   P.L = 0.0;
-  ValueType logpsi(0.0);
-  PhaseValue = 0.0;
+  LogValueType logpsi(0.0);
   for (int i = 0, ii = RECOMPUTE_TIMER; i < Z.size(); ++i, ii += TIMER_SKIP)
   {
     ScopedTimer local_timer(myTimers[ii]);
     logpsi += Z[i]->evaluateLog(P, P.G, P.L);
-    PhaseValue += Z[i]->PhaseValue;
   }
-
-  convert(logpsi, LogValue);
+  LogValue = std::real(logpsi);
+  PhaseValue = std::imag(logpsi);
   return LogValue;
-  //return LogValue=real(logpsi);
 }
 
 void TrialWaveFunction::flex_evaluateLog(const RefVector<TrialWaveFunction>& wf_list,
@@ -161,8 +158,8 @@ void TrialWaveFunction::flex_evaluateLog(const RefVector<TrialWaveFunction>& wf_
       wavefunction_components[i]->mw_evaluateLog(convert_ref_to_ptr_list(wfc_list), convert_ref_to_ptr_list(p_list),
                                                  convert_ref_to_ptr_list(g_list), convert_ref_to_ptr_list(l_list));
       auto accumulateLogAndPhase = [](TrialWaveFunction& twf, WaveFunctionComponent& wfc) {
-        twf.LogValue += wfc.LogValue;
-        twf.PhaseValue += wfc.PhaseValue;
+        twf.LogValue += std::real(wfc.LogValue);
+        twf.PhaseValue += std::imag(wfc.LogValue);
       };
       for (int iw = 0; iw < wf_list.size(); iw++)
         accumulateLogAndPhase(wf_list[iw], wfc_list[iw]);
@@ -192,9 +189,8 @@ void TrialWaveFunction::recompute(ParticleSet& P)
   std::vector<WaveFunctionComponent*>::iterator it_end(Z.end());
   for (int ii = RECOMPUTE_TIMER; it != it_end; ++it, ii += TIMER_SKIP)
   {
-    myTimers[ii]->start();
+    ScopedTimer local_timer(myTimers[ii]);
     (*it)->recompute(P);
-    myTimers[ii]->stop();
   }
 }
 
@@ -218,8 +214,7 @@ TrialWaveFunction::RealType TrialWaveFunction::evaluateDeltaLog(ParticleSet& P, 
 {
   P.G = 0.0;
   P.L = 0.0;
-  ValueType logpsi(0.0);
-  PhaseValue = 0.0;
+  LogValueType logpsi(0.0);
   std::vector<WaveFunctionComponent*>::iterator it(Z.begin());
   std::vector<WaveFunctionComponent*>::iterator it_end(Z.end());
   int ii = RECOMPUTE_TIMER;
@@ -229,10 +224,11 @@ TrialWaveFunction::RealType TrialWaveFunction::evaluateDeltaLog(ParticleSet& P, 
     if ((*it)->Optimizable)
     {
       logpsi += (*it)->evaluateLog(P, P.G, P.L);
-      PhaseValue += (*it)->PhaseValue;
     }
     myTimers[ii]->stop();
   }
+  LogValue = std::real(logpsi);
+  PhaseValue = std::imag(logpsi);
 
   //In case we need to recompute orbitals, initialize dummy vectors for G and L.
   //evaluateLog dumps into these variables, and logPsi contribution is discarded.
@@ -252,7 +248,6 @@ TrialWaveFunction::RealType TrialWaveFunction::evaluateDeltaLog(ParticleSet& P, 
                            dummyL); //update orbitals if its not flagged optimizable, AND recomputeall is true
     }
   }
-  convert(logpsi, LogValue);
   return LogValue;
 }
 
@@ -280,8 +275,8 @@ void TrialWaveFunction::evaluateDeltaLog(ParticleSet& P,
   P.L    = 0.0;
   fixedL = 0.0;
   fixedG = 0.0;
-  ValueType logpsi_fixed(0.0);
-  ValueType logpsi_opt(0.0);
+  LogValueType logpsi_fixed(0.0);
+  LogValueType logpsi_opt(0.0);
   std::vector<WaveFunctionComponent*>::iterator it(Z.begin());
   std::vector<WaveFunctionComponent*>::iterator it_end(Z.end());
   int ii = RECOMPUTE_TIMER;
@@ -298,8 +293,6 @@ void TrialWaveFunction::evaluateDeltaLog(ParticleSet& P,
   P.L += fixedL;
   convert(logpsi_fixed, logpsi_fixed_r);
   convert(logpsi_opt, logpsi_opt_r);
-  //logpsi_fixed_r = real(logpsi_fixed);
-  //logpsi_opt_r = real(logpsi_opt);
 }
 
 /*void TrialWaveFunction::evaluateHessian(ParticleSet & P, int iat, HessType& grad_grad_psi)
@@ -347,14 +340,10 @@ TrialWaveFunction::RealType TrialWaveFunction::ratio(ParticleSet& P, int iat)
     r *= (*it)->ratio(P, iat);
     myTimers[ii]->stop();
   }
-#if defined(QMC_COMPLEX)
-  RealType logr = evaluateLogAndPhase(r, PhaseDiff);
-  return std::exp(logr);
-#else
-  if (r < 0)
-    PhaseDiff = M_PI;
-  return r;
-#endif
+
+  LogValueType logpsi = convertValueToLog(r);
+  PhaseDiff = std::imag(logpsi);
+  return std::exp(std::real(logpsi));
 }
 
 TrialWaveFunction::ValueType TrialWaveFunction::calcRatio(ParticleSet& P, int iat, ComputeType ct)
@@ -490,14 +479,10 @@ TrialWaveFunction::RealType TrialWaveFunction::ratioGrad(ParticleSet& P, int iat
     r *= Z[i]->ratioGrad(P, iat, grad_iat);
     myTimers[ii]->stop();
   }
-#if defined(QMC_COMPLEX)
-  RealType logr = evaluateLogAndPhase(r, PhaseDiff);
-  return std::exp(logr);
-#else
-  if (r < 0)
-    PhaseDiff = M_PI;
-  return r;
-#endif
+
+  LogValueType logpsi = convertValueToLog(r);
+  PhaseDiff = std::imag(logpsi);
+  return std::exp(std::real(logpsi));
 }
 
 void TrialWaveFunction::flex_ratioGrad(const RefVector<TrialWaveFunction>& wf_list,
@@ -597,7 +582,7 @@ void TrialWaveFunction::acceptMove(ParticleSet& P, int iat)
   PhaseDiff = 0.0;
   LogValue  = 0;
   for (int i = 0; i < Z.size(); i++)
-    LogValue += Z[i]->LogValue;
+    LogValue += std::real(Z[i]->LogValue);
 }
 
 void TrialWaveFunction::flex_acceptMove(const RefVector<TrialWaveFunction>& wf_list,
@@ -623,8 +608,8 @@ void TrialWaveFunction::flex_acceptMove(const RefVector<TrialWaveFunction>& wf_l
                                                 iat);
       for (int iw = 0; iw < wf_list.size(); iw++)
       {
-        wf_list[iw].get().LogValue += wfc_list[iw].get().LogValue;
-        wf_list[iw].get().PhaseValue += wfc_list[iw].get().PhaseValue;
+        wf_list[iw].get().LogValue += std::real(wfc_list[iw].get().LogValue);
+        wf_list[iw].get().PhaseValue += std::imag(wfc_list[iw].get().LogValue);
       }
     }
   }
@@ -686,7 +671,7 @@ void TrialWaveFunction::getLogs(std::vector<RealType>& lvals)
   lvals.resize(Z.size(), 0);
   for (int i = 0; i < Z.size(); i++)
   {
-    lvals[i] = Z[i]->LogValue;
+    lvals[i] = std::real(Z[i]->LogValue);
   }
 }
 
@@ -695,7 +680,7 @@ void TrialWaveFunction::getPhases(std::vector<RealType>& pvals)
   pvals.resize(Z.size(), 0);
   for (int i = 0; i < Z.size(); i++)
   {
-    pvals[i] = Z[i]->PhaseValue;
+    pvals[i] = std::imag(Z[i]->LogValue);
   }
 }
 
@@ -746,27 +731,41 @@ void TrialWaveFunction::flex_registerData(const UPtrVector<TrialWaveFunction>& w
     addPhaseAndLog(buf_list[iw], *(wf_list[iw]));
 }
 
+void TrialWaveFunction::debugOnlyCheckBuffer(WFBufferType& buffer)
+{
+#ifndef NDEBUG
+  if (buffer.size() < buffer.current() + buffer.current_scalar() * sizeof(FullPrecRealType))
+  {
+    std::strstream assert_message;
+    assert_message << "On thread:" << Concurrency::getThreadId<>() << "  buf_list[iw].get().size():" << buffer.size()
+                   << " < buf_list[iw].get().current():" << buffer.current()
+                   << " + buf.current_scalar():" << buffer.current_scalar()
+                   << " * sizeof(FullPrecRealType):" << sizeof(FullPrecRealType) << '\n';
+    throw std::runtime_error(assert_message.str());
+  }
+#endif
+}
+
 TrialWaveFunction::RealType TrialWaveFunction::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch)
 {
   P.G = 0.0;
   P.L = 0.0;
   buf.rewind(BufferCursor, BufferCursor_scalar);
-  ValueType logpsi(0.0);
-  PhaseValue = 0.0;
+  LogValueType logpsi(0.0);
   for (int i = 0, ii = BUFFER_TIMER; i < Z.size(); ++i, ii += TIMER_SKIP)
   {
     myTimers[ii]->start();
     logpsi += Z[i]->updateBuffer(P, buf, fromscratch);
-    PhaseValue += Z[i]->PhaseValue;
     myTimers[ii]->stop();
   }
+
+  LogValue = std::real(logpsi);
+  PhaseValue = std::imag(logpsi);
   //printGL(P.G,P.L);
-  convert(logpsi, LogValue);
-  //LogValue=real(logpsi);
   buf.put(PhaseValue);
   buf.put(LogValue);
   // Ye: temperal added check, to be removed
-  assert(buf.size() == buf.current() + buf.current_scalar() * sizeof(double));
+  debugOnlyCheckBuffer(buf);
   return LogValue;
 }
 
@@ -800,8 +799,8 @@ void TrialWaveFunction::flex_updateBuffer(const RefVector<TrialWaveFunction>& wf
     wavefunction_components[i]->mw_updateBuffer(wfc_list, p_list, buf_list, fromscratch);
     for (int iw = 0; iw < wf_list.size(); iw++)
     {
-      wf_list[iw].get().LogValue += wfc_list[iw].get().LogValue;
-      wf_list[iw].get().PhaseValue += wfc_list[iw].get().PhaseValue;
+      wf_list[iw].get().LogValue += std::real(wfc_list[iw].get().LogValue);
+      wf_list[iw].get().PhaseValue +=  std::imag(wfc_list[iw].get().LogValue);
     }
   }
 
@@ -809,20 +808,10 @@ void TrialWaveFunction::flex_updateBuffer(const RefVector<TrialWaveFunction>& wf
   {
     buf_list[iw].get().put(wf_list[iw].get().PhaseValue);
     buf_list[iw].get().put(wf_list[iw].get().LogValue);
-#ifndef NDEBUG
-    if (buf_list[iw].get().size() < buf_list[iw].get().current() + buf_list[iw].get().current_scalar() * sizeof(double))
-    {
-      std::strstream assert_message;
-      assert_message << "On thread:" << Concurrency::getThreadId<>()
-                     << "  buf_list[iw].get().size():" << buf_list[iw].get().size()
-                     << " < buf_list[iw].get().current():" << buf_list[iw].get().current()
-                     << " + buf.current_scalar():" << buf_list[iw].get().current_scalar()
-                     << " * sizeof(double):" << sizeof(double) << '\n';
-      throw std::runtime_error(assert_message.str());
-    }
-#endif
+    debugOnlyCheckBuffer(buf_list[iw]);
   }
 }
+
 
 void TrialWaveFunction::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 {
@@ -836,39 +825,33 @@ void TrialWaveFunction::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
   //get the gradients and laplacians from the buffer
   buf.get(PhaseValue);
   buf.get(LogValue);
-
-#ifndef NDEBUG
-  if (buf.size() < buf.current() + buf.current_scalar() * sizeof(double))
-  {
-    std::strstream assert_message;
-    assert_message << "On thread:" << Concurrency::getThreadId<>() << "  buf.size():" << buf.size()
-                   << " < buf.current():" << buf.current() << " + buf.current_scalar():" << buf.current_scalar()
-                   << " * sizeof(double):" << sizeof(double) << '\n';
-    throw std::runtime_error(assert_message.str());
-  }
-#endif
+  debugOnlyCheckBuffer(buf);
 }
 
-void TrialWaveFunction::flex_copyFromBuffer(const std::vector<TrialWaveFunction*>& WF_list,
-                                            const std::vector<ParticleSet*>& P_list,
-                                            const std::vector<WFBufferType*>& buf_list) const
+void TrialWaveFunction::flex_copyFromBuffer(const RefVector<TrialWaveFunction>& wf_list,
+                                            const RefVector<ParticleSet>& p_list,
+                                            const RefVector<WFBufferType>& buf_list) const
 {
-  for (int iw = 0; iw < WF_list.size(); iw++)
-    buf_list[iw]->rewind(WF_list[iw]->BufferCursor, WF_list[iw]->BufferCursor_scalar);
+  auto rewind = [](WFBufferType& buf, TrialWaveFunction& twf) {
+    buf.rewind(twf.BufferCursor, twf.BufferCursor_scalar);
+  };
+  for (int iw = 0; iw < wf_list.size(); iw++)
+    rewind(buf_list[iw], wf_list[iw]);
 
   for (int i = 0, ii = BUFFER_TIMER; i < Z.size(); ++i, ii += TIMER_SKIP)
   {
     ScopedTimer local_timer(myTimers[ii]);
-    const auto WFC_list(extractWFCPtrList(WF_list, i));
-    Z[i]->mw_copyFromBuffer(WFC_list, P_list, buf_list);
+    const auto wfc_list(extractWFCRefList(wf_list, i));
+    Z[i]->mw_copyFromBuffer(wfc_list, p_list, buf_list);
   }
 
-  for (int iw = 0; iw < WF_list.size(); iw++)
-  {
-    buf_list[iw]->get(WF_list[iw]->PhaseValue);
-    buf_list[iw]->get(WF_list[iw]->LogValue);
-    assert(buf_list[iw]->size() == buf_list[iw]->current() + buf_list[iw]->current_scalar() * sizeof(double));
-  }
+  auto bufGetTwfLog = [](WFBufferType& buf, TrialWaveFunction& twf) {
+    buf.get(twf.PhaseValue);
+    buf.get(twf.LogValue);
+    debugOnlyCheckBuffer(buf);
+  };
+  for (int iw = 0; iw < wf_list.size(); iw++)
+    bufGetTwfLog(buf_list[iw], wf_list[iw]);
 }
 
 void TrialWaveFunction::evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios)

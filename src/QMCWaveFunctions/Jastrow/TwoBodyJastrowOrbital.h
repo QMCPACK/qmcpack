@@ -249,7 +249,7 @@ public:
    *@note The DistanceTableData contains only distinct pairs of the
    *particles belonging to one set, e.g., SymmetricDTD.
    */
-  RealType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
+  LogValueType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
   {
     evaluateLogAndStore(P, G, L);
     return LogValue;
@@ -453,12 +453,12 @@ public:
     DEBUG_PSIBUFFER(" TwoBodyJastrow::registerData ", buf.current());
   }
 
-  inline void evaluateGL(ParticleSet& P) { RealType t = evaluateLog(P, P.G, P.L); }
+  inline void evaluateGL(ParticleSet& P) { LogValueType t = evaluateLog(P, P.G, P.L); }
 
-  inline RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false)
+  inline LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false)
   {
     evaluateLogAndStore(P, P.G, P.L);
-    U[NN] = LogValue;
+    U[NN] = std::real(LogValue);
     DEBUG_PSIBUFFER(" TwoBodyJastrow::updateBuffer ", buf.current());
     buf.put(U.begin(), U.end());
     buf.put(d2U.begin(), d2U.end());

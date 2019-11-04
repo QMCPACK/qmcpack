@@ -44,6 +44,10 @@ struct DiffWaveFunctionComponent
   typedef WaveFunctionComponent::PosType PosType;
   typedef ParticleSet::ParticleGradient_t GradVectorType;
   typedef ParticleSet::ParticleLaplacian_t ValueVectorType;
+  // the value type for log(psi)
+  using LogValueType = std::complex<QMCTraits::QTFull::RealType>;
+  // the value type for psi(r')/psi(r)
+  using PsiValueType = QMCTraits::QTFull::ValueType;
   //@}
   /** list of reference orbitals which contribute to the derivatives
    */
@@ -97,19 +101,11 @@ struct DiffWaveFunctionComponent
   virtual void multiplyDerivsByOrbR(std::vector<ValueType>& dlogpsi)
   {
     for (int i = 0; i < refOrbital.size(); ++i)
-    {
-      #ifdef QMC_COMPLEX
-      std::complex<RealType> eit(std::cos(refOrbital[i]->PhaseValue), std::sin(refOrbital[i]->PhaseValue));
-      ValueType myrat = std::exp(refOrbital[i]->LogValue) * eit;
-      #else
-      RealType myrat = std::exp(refOrbital[i]->LogValue) * std::cos(refOrbital[i]->PhaseValue);
-      #endif
       for(int j=0; j<refOrbital[i]->myVars.size(); j++)
       {
         int loc = refOrbital[j]->myVars.where(j);
-        dlogpsi[loc] *= myrat;
+        dlogpsi[loc] *= refOrbital[i]->getValue();
       }
-    }
   };
 
   /** check out optimizable variables
