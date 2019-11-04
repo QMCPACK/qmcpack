@@ -1352,6 +1352,16 @@ def gamess_analyzer():
 
 
 
+def pyscf_analyzer():
+    nunit('import')
+
+    nunit('empty_init')
+
+    nunit_all()
+#end def pyscf_analyzer
+
+
+
 def qmcpack_converters():
     nunit('import')
 
@@ -1654,6 +1664,7 @@ NexusTest( qmcpack_input             )
 NexusTest( vasp_analyzer             )
 NexusTest( pwscf_analyzer            )
 NexusTest( gamess_analyzer           )
+NexusTest( pyscf_analyzer            )
 NexusTest( qmcpack_converters        )
 
 # ordered alphabetically (pytest order)
@@ -1679,6 +1690,7 @@ NexusTest( qmcpack_converters        )
 #NexusTest( project_manager           )
 #NexusTest( pseudopotential           )
 #NexusTest( pwscf_analyzer            )
+#NexusTest( pyscf_analyzer            )
 #NexusTest( pwscf_input               )
 #NexusTest( pwscf_postprocessor_input )
 #NexusTest( pyscf_input               )
