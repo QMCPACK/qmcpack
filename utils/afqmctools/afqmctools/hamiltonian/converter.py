@@ -1,6 +1,7 @@
 import h5py
 import numpy
 import scipy.sparse
+import sys
 
 def read_fcidump(filename, symmetry=8, verbose=True):
     """Read in integrals from file.
@@ -300,6 +301,10 @@ def write_fcidump(filename, hcore, chol, enuc, nmo, nelec, tol=1e-8,
                     for l in range(0,nmo):
                         sym_allowed = check_sym((i,k,j,l), nmo, sym)
                         if abs(eris[i,k,l,j]) > tol and sym_allowed:
+                            if not cplx:
+                                if abs(eris[i,k,l,j].imag > 1e-12):
+                                    print("# Found complex integrals with cplx==False.")
+                                    sys.exit()
                             out = fmt_integral(eris[i,k,l,j], i, k, j, l,
                                                cplx, paren=paren)
                             f.write(out)
@@ -379,7 +384,8 @@ def fcidump_header(nel, norb, spin):
 
 
 def write_fcidump_kpoint(filename, hcore, chol, enuc, nmo_tot, nelec,
-                         nmo_pk, qk_k2, tol=1e-8, sym=1, paren=False):
+                         nmo_pk, qk_k2, tol=1e-8, sym=1, paren=False,
+                         cplx=True):
     """Write FCIDUMP based from Cholesky factorised integrals.
 
     Parameters
@@ -414,12 +420,17 @@ def write_fcidump_kpoint(filename, hcore, chol, enuc, nmo_tot, nelec,
     offsets = numpy.zeros(nkp, dtype=numpy.int32)
     for i in range(1,nkp):
         offsets[i] = offsets[i-1] + nmo_pk[i-1]
+
     with open(filename, 'w') as f:
         f.write(header)
         for iq, lq in enumerate(chol):
             for ki in range(nkp):
                 for kl in range(nkp):
                     eri = numpy.dot(lq[ki], lq[kl].conj().T)
+                    if not cplx:
+                        if len(numpy.where(numpy.abs(eri.imag) > 1e-12)) > 0:
+                            print("# Found complex integrals with cplx==False.")
+                            sys.exit()
                     ik = 0
                     for i in range(0, nmo_pk[ki]):
                         kk = qk_k2[iq,ki]
@@ -437,7 +448,7 @@ def write_fcidump_kpoint(filename, hcore, chol, enuc, nmo_tot, nelec,
                                     if abs(eri[ik,lj]) > tol and sym_allowed:
                                         out = fmt_integral(eri[ik,lj],
                                                            I, K, J, L,
-                                                           True, paren=paren)
+                                                           cplx, paren=paren)
                                         f.write(out)
                                     lj += 1
                             ik += 1
@@ -449,8 +460,8 @@ def write_fcidump_kpoint(filename, hcore, chol, enuc, nmo_tot, nelec,
                     J = j + offsets[ik]
                     if I >= J and abs(hk[i,j]) > tol:
                         out = fmt_integral(hk[i,j], I, J, -1, -1,
-                                           True, paren=paren)
+                                           cplx, paren=paren)
                         f.write(out)
 
-        out = fmt_integral(enuc+0j, -1, -1, -1, -1, True, paren=paren)
+        out = fmt_integral(enuc+0j, -1, -1, -1, -1, cplx, paren=paren)
         f.write(out)

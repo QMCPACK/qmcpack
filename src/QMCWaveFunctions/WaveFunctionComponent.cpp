@@ -25,9 +25,8 @@ WaveFunctionComponent::WaveFunctionComponent()
       Optimizable(true),
       is_fermionic(false),
       UpdateMode(ORB_WALKER),
-      LogValue(1.0),
-      PhaseValue(0.0),
-      dPsi(0),
+      LogValue(0.0),
+      dPsi(nullptr),
       ClassName("WaveFunctionComponent"),
       Bytes_in_WFBuffer(0)
 {

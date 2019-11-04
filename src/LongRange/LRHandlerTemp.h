@@ -116,6 +116,7 @@ public:
    */
   inline mRealType srDf(mRealType r, mRealType rinv)
   {
+    APP_ABORT("LRHandlerTemp::srDF not implemented (missing gcoefs)");
     mRealType df = 0.0;
     if (r>=LR_rc) return df;
     df = myFunc.df(r);
@@ -140,6 +141,7 @@ public:
    */
   inline mRealType lrDf(mRealType r)
   {
+    APP_ABORT("LRHandlerTemp::lrDF not implemented (missing gcoefs)");
     mRealType dv = 0.0;
     if (r < LR_rc)
     {
