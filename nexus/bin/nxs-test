@@ -1328,6 +1328,18 @@ def vasp_analyzer():
 
 
 
+def pwscf_analyzer():
+    nunit('import')
+
+    nunit('empty_init')
+
+    nunit('analyze')
+
+    nunit_all()
+#end def pwscf_analyzer
+
+
+
 def qmcpack_converters():
     nunit('import')
 
@@ -1628,6 +1640,7 @@ NexusTest( quantum_package_input     )
 NexusTest( qmcpack_converter_input   )
 NexusTest( qmcpack_input             )
 NexusTest( vasp_analyzer             )
+NexusTest( pwscf_analyzer            )
 NexusTest( qmcpack_converters        )
 
 # ordered alphabetically (pytest order)
@@ -1651,6 +1664,7 @@ NexusTest( qmcpack_converters        )
 #NexusTest( plotting                  )
 #NexusTest( project_manager           )
 #NexusTest( pseudopotential           )
+#NexusTest( pwscf_analyzer            )
 #NexusTest( pwscf_input               )
 #NexusTest( pwscf_postprocessor_input )
 #NexusTest( pyscf_input               )
