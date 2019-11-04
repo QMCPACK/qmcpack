@@ -1233,6 +1233,20 @@ def pyscf_input():
 
 
 
+def quantum_package_input():
+    nunit('import')
+
+    nunit('empty_init')
+
+    nunit('read')
+
+    nunit('generate')
+
+    nunit_all()
+#end def quantum_package_input
+
+
+
 def qmcpack_input():
     nunit('files')
 
@@ -1560,6 +1574,7 @@ NexusTest( vasp_input            )
 NexusTest( pwscf_input           )
 NexusTest( gamess_input          )
 NexusTest( pyscf_input           )
+NexusTest( quantum_package_input )
 NexusTest( qmcpack_input         )
 NexusTest( qmcpack_converters    )
 
@@ -1585,8 +1600,10 @@ NexusTest( qmcpack_converters    )
 #NexusTest( project_manager       )
 #NexusTest( pseudopotential       )
 #NexusTest( pwscf_input           )
+#NexusTest( pyscf_input           )
 #NexusTest( qmcpack_input         )
 #NexusTest( qmcpack_converters    )
+#NexusTest( quantum_package_input )
 #NexusTest( required_dependencies )
 #NexusTest( settings_operation    , 'settings' )
 #NexusTest( simulation            )

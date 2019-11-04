@@ -325,6 +325,7 @@ def unit_test_output_path(test,subtest=None):
 def setup_unit_test_output_directory(test,subtest,divert=False,file_sets=None):
     import os
     import shutil
+    from subprocess import Popen,PIPE
     path = unit_test_output_path(test,subtest)
     assert('nexus' in path)
     assert('unit' in path)
@@ -347,6 +348,9 @@ def setup_unit_test_output_directory(test,subtest,divert=False,file_sets=None):
 
     # transfer files into output directory, if requested
     if file_sets is not None:
+        if isinstance(file_sets,list):
+            file_sets = {'':file_sets}
+        #end if
         assert(isinstance(file_sets,dict))
         filepaths = dict()
         collect_unit_test_file_paths(test,filepaths)
@@ -362,7 +366,13 @@ def setup_unit_test_output_directory(test,subtest,divert=False,file_sets=None):
             assert(os.path.exists(dest_path))
             for filename in filenames:
                 source_filepath = filepaths[filename]
-                shutil.copy2(source_filepath,dest_path)
+                if os.path.isdir(source_filepath):
+                    command = 'rsync -a {} {}'.format(source_filepath,dest_path)
+                    process = Popen(command,shell=True,stdout=PIPE,stderr=PIPE,close_fds=True)
+                    out,err = process.communicate()
+                else:
+                    shutil.copy2(source_filepath,dest_path)
+                #end if
                 assert(os.path.exists(dest_path))
             #end for
         #end for
