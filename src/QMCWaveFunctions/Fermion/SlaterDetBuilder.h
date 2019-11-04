@@ -102,12 +102,17 @@ private:
                      int nels_up,
                      int nels_dn);
 
-  template<typename VT, std::enable_if_t<std::is_floating_point<VT>::value, int> = 0>
+  // clang-format off
+  template<typename VT,
+           std::enable_if_t<(std::is_same<VT, ValueType>::value) &&
+                            (std::is_floating_point<VT>::value), int> = 0>
   void readCoeffs(hdf_archive& hin, std::vector<VT>& ci_coeff, size_t n_dets)
   {
     hin.read(ci_coeff, "Coeff");
   }
-  template<typename VT, std::enable_if_t<std::is_same<VT, std::complex<typename VT::value_type>>::value, int> = 0>
+  template<typename VT,
+           std::enable_if_t<(std::is_same<VT, ValueType>::value) &&
+                            (std::is_same<VT, std::complex<typename VT::value_type>>::value), int> = 0>
   void readCoeffs(hdf_archive& hin, std::vector<VT>& ci_coeff, size_t n_dets)
   {
     std::vector<double> CIcoeff_real;
@@ -121,6 +126,7 @@ private:
     for (size_t i = 0; i < n_dets; i++)
       ci_coeff[i] = VT(CIcoeff_real[i], CIcoeff_imag[i]);
   }
+  // clang-format on
 };
 
 } // namespace qmcplusplus
