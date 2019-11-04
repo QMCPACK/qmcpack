@@ -57,33 +57,6 @@ public:
     {}
   };
 
-  struct DMCPerWalkerRefs
-  {
-    RefVector<MCPWalker> walkers;
-    RefVector<TrialWaveFunction> walker_twfs;
-    RefVector<QMCHamiltonian> walker_hamiltonians;
-    RefVector<ParticleSet> walker_elecs;
-    RefVector<WFBuffer> walker_mcp_wfbuffers;
-    RefVector<FullPrecRealType> old_energies;
-    RefVector<FullPrecRealType> new_energies;
-    RefVector<RealType> rr_proposed;
-    RefVector<RealType> rr_accepted;
-    RefVector<RealType> gf_accs;
-    DMCPerWalkerRefs(int nwalkers)
-    {
-      walkers.reserve(nwalkers);
-      walker_twfs.reserve(nwalkers);
-      walker_hamiltonians.reserve(nwalkers);
-      walker_elecs.reserve(nwalkers);
-      walker_mcp_wfbuffers.reserve(nwalkers);
-      old_energies.reserve(nwalkers);
-      new_energies.reserve(nwalkers);
-      rr_proposed.reserve(nwalkers);
-      rr_accepted.reserve(nwalkers);
-      gf_accs.reserve(nwalkers);
-    }
-  };
-
   /// Constructor.
   DMCBatched(QMCDriverInput&& qmcdriver_input,
              DMCDriverInput&& input,
@@ -138,7 +111,65 @@ private:
   static void setMultiplicities(const DMCDriverInput& dmcdriver_input,
                                 RefVector<MCPWalker>& walkers,
                                 RandomGenerator_t& rng);
-  // struct DMCTimers
+
+  /** Allows us to build complete reference set for walkers.
+   */
+  struct DMCPerWalkerRefs
+  {
+    RefVector<MCPWalker> walkers;
+    RefVector<TrialWaveFunction> walker_twfs;
+    RefVector<QMCHamiltonian> walker_hamiltonians;
+    RefVector<ParticleSet> walker_elecs;
+    RefVector<WFBuffer> walker_mcp_wfbuffers;
+    RefVector<FullPrecRealType> old_energies;
+    RefVector<FullPrecRealType> new_energies;
+    RefVector<RealType> rr_proposed;
+    RefVector<RealType> rr_accepted;
+    RefVector<RealType> gf_accs;
+    DMCPerWalkerRefs(int nwalkers)
+    {
+      walkers.reserve(nwalkers);
+      walker_twfs.reserve(nwalkers);
+      walker_hamiltonians.reserve(nwalkers);
+      walker_elecs.reserve(nwalkers);
+      walker_mcp_wfbuffers.reserve(nwalkers);
+      old_energies.reserve(nwalkers);
+      new_energies.reserve(nwalkers);
+      rr_proposed.reserve(nwalkers);
+      rr_accepted.reserve(nwalkers);
+      gf_accs.reserve(nwalkers);
+    }
+  };
+
+  /** To allow breaking up implementation without creating giant function signature.
+   */
+  struct DMCPerWalkerRefRefs
+  {
+    RefVector<MCPWalker>& walkers;
+    RefVector<TrialWaveFunction>& walker_twfs;
+    RefVector<QMCHamiltonian>& walker_hamiltonians;
+    RefVector<ParticleSet>& walker_elecs;
+    RefVector<WFBuffer>& walker_mcp_wfbuffers;
+    std::vector<FullPrecRealType>& old_energies;
+    std::vector<FullPrecRealType>& new_energies;
+    std::vector<RealType>& rr_proposed;
+    std::vector<RealType>& rr_accepted;
+    std::vector<RealType>& gf_accs;
+  };
+
+  
+  //until C++17 we need a structure to return the split moved and stalled refs
+  struct MovedStalled
+  {
+    MovedStalled(int num_walkers, int num_moved) : moved(num_moved), stalled(num_walkers - num_moved) {}
+    DMCPerWalkerRefs moved;
+    DMCPerWalkerRefs stalled;
+  };
+  static MovedStalled buildMovedStalled(const std::vector<int>& did_walker_move, const DMCPerWalkerRefRefs& refs);
+
+  static void handleMovedWalkers(DMCPerWalkerRefs& stalled, const StateForThread& sft, DriverTimers& timers);
+  static void handleStalledWalkers(DMCPerWalkerRefs& stalled, const StateForThread& sft);
+// struct DMCTimers
   // {
   //   NewTimer& dmc_movePbyP;
   //   DriverTimers(const std::string& prefix)
