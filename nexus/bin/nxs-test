@@ -1362,6 +1362,16 @@ def pyscf_analyzer():
 
 
 
+def quantum_package_analyzer():
+    nunit('import')
+
+    nunit('empty_init')
+
+    nunit_all()
+#end def quantum_package_analyzer
+
+
+
 def qmcpack_converters():
     nunit('import')
 
@@ -1665,6 +1675,7 @@ NexusTest( vasp_analyzer             )
 NexusTest( pwscf_analyzer            )
 NexusTest( gamess_analyzer           )
 NexusTest( pyscf_analyzer            )
+NexusTest( quantum_package_analyzer  )
 NexusTest( qmcpack_converters        )
 
 # ordered alphabetically (pytest order)
@@ -1697,6 +1708,7 @@ NexusTest( qmcpack_converters        )
 #NexusTest( qmcpack_converter_input   )
 #NexusTest( qmcpack_converters        )
 #NexusTest( qmcpack_input             )
+#NexusTest( quantum_package_analyzer  )
 #NexusTest( quantum_package_input     )
 #NexusTest( required_dependencies     )
 #NexusTest( settings_operation        , 'settings' )
