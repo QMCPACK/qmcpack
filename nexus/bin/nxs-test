@@ -1340,6 +1340,18 @@ def pwscf_analyzer():
 
 
 
+def gamess_analyzer():
+    nunit('import')
+
+    nunit('empty_init')
+
+    nunit('analyze')
+
+    nunit_all()
+#end def gamess_analyzer
+
+
+
 def qmcpack_converters():
     nunit('import')
 
@@ -1641,6 +1653,7 @@ NexusTest( qmcpack_converter_input   )
 NexusTest( qmcpack_input             )
 NexusTest( vasp_analyzer             )
 NexusTest( pwscf_analyzer            )
+NexusTest( gamess_analyzer           )
 NexusTest( qmcpack_converters        )
 
 # ordered alphabetically (pytest order)
@@ -1649,6 +1662,7 @@ NexusTest( qmcpack_converters        )
 #NexusTest( developer                 )
 #NexusTest( execute                   )
 #NexusTest( fileio                    )
+#NexusTest( gamess_analyzer           )
 #NexusTest( gamess_input              )
 #NexusTest( generic_operation         , 'generic' )
 #NexusTest( grid_functions            )
