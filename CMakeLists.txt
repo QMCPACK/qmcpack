@@ -18,6 +18,7 @@ ENDIF(CMAKE_GENERATOR MATCHES "Ninja")
 # various Find<Package>.cmake modules may not follow this policy
 IF(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.12.0")
   cmake_policy(SET CMP0074 NEW)
+  cmake_policy(SET CMP0075 NEW)
 ENDIF(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.12.0")
 
 ######################################################################
@@ -195,11 +196,30 @@ SET(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/CMake" ${CMAKE_MODULE_PATH})
 # add macros to compile einspline if necessary
 ######################################################################
 INCLUDE(${CMAKE_ROOT}/Modules/CheckFunctionExists.cmake)
+INCLUDE(${CMAKE_ROOT}/Modules/CheckCXXSymbolExists.cmake)
 INCLUDE(${CMAKE_ROOT}/Modules/CheckIncludeFile.cmake)
 INCLUDE(${CMAKE_ROOT}/Modules/CheckTypeSize.cmake)
 INCLUDE(${CMAKE_ROOT}/Modules/CheckCXXSourceCompiles.cmake)
 
-CHECK_FUNCTION_EXISTS(sincos HAVE_SINCOS)
+SET(ENABLE_MASS FALSE CACHE BOOL "ENABLE MASS math libraries for Power architecture")
+# This needs to go before HAVE_SINCOS
+IF(ENABLE_MASS)
+  INCLUDE(CMake/FindMASS.cmake)
+  IF(HAVE_MASS)
+    SET(CMAKE_REQUIRED_INCLUDES "${MASS_INCLUDE_DIRECTORIES} ${CMAKE_REQUIRED_INCLUDES}")
+    SET(CMAKE_REQUIRED_LINK_OPTIONS "${MASS_LINKER_FLAGS}")
+    SET(CMAKE_REQUIRED_LIBRARIES "${MASS_LIBRARIES}")
+  ENDIF(HAVE_MASS)
+ENDIF(ENABLE_MASS)
+
+MESSAGE("CMAKE_REQUIRED_INCLUDES: ${CMAKE_REQUIRED_INCLUDES}")
+
+IF(HAVE_MASS)
+  # CMake/FindMASS checks for sincos as well
+  SET(HAVE_SINCOS 1)
+ELSE(HAVE_MASS)
+  CHECK_FUNCTION_EXISTS(sincos HAVE_SINCOS)
+ENDIF()
 CHECK_FUNCTION_EXISTS(posix_memalign HAVE_POSIX_MEMALIGN)
 
 CHECK_INCLUDE_FILE(dlfcn.h HAVE_DLFCN_H)
@@ -552,6 +572,13 @@ INCLUDE(${CMAKE_ROOT}/Modules/FindThreads.cmake)
 # list of libraries to be linked with the main applications using I/O
 
 SET(QMC_UTIL_LIBS ${LAPACK_LIBRARY} ${BLAS_LIBRARY})
+
+IF(HAVE_MASS)
+  SET(CMAKE_CXX_FLAGS ${MASS_FLAGS} ${CMAKE_CXX_FLAGS})
+  SET(CMAKE_C_FLAGS ${MASS_FLAGS} ${CMAKE_C_FLAGS})
+  SET(MASS_LIBRARY "${MASS_LINKER_FLAGS} ${MASS_LIBRARIES}")
+  SET(QMC_UTIL_LIBS ${MASS_LIBRARY} ${QMC_UTIL_LIBS})
+ENDIF(HAVE_MASS)
 
 SET( FFTW_FOUND 0 )
 IF ( HAVE_MKL )
