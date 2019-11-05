@@ -1401,6 +1401,22 @@ def qmcpack_converter_analyzers():
 
 
 
+def qmcpack_analyzer():
+    nunit('import')
+
+    nunit('empty_init')
+
+    nunit('vmc_dmc_analysis')
+
+    nunit('optimization_analysis')
+
+    nunit('twist_average_analysis')
+
+    nunit_all()
+#end def qmcpack_analyzer
+
+
+
 def qmcpack_converters():
     nunit('import')
 
@@ -1705,6 +1721,7 @@ NexusTest( gamess_analyzer               )
 NexusTest( pyscf_analyzer                )
 NexusTest( quantum_package_analyzer      )
 NexusTest( qmcpack_converter_analyzers   )
+NexusTest( qmcpack_analyzer              )
 NexusTest( qmcpack_converters            )
 
 # ordered alphabetically (pytest order)
@@ -1735,6 +1752,7 @@ NexusTest( qmcpack_converters            )
 #NexusTest( pwscf_postprocessor_analyzers )
 #NexusTest( pwscf_postprocessor_input     )
 #NexusTest( pyscf_input                   )
+#NexusTest( qmcpack_analyzer              )
 #NexusTest( qmcpack_converter_analyzers   )
 #NexusTest( qmcpack_converter_input       )
 #NexusTest( qmcpack_converters            )
