@@ -1,6 +1,7 @@
 
 import versions
 import testing
+from testing import divert_nexus_log,restore_nexus_log
 from testing import value_eq,object_eq,text_eq
 
 
@@ -239,6 +240,8 @@ def test_optimization_analysis():
         file_sets = ['diamond_gamma'],
         )
 
+    divert_nexus_log()
+
     infile = os.path.join(tpath,'diamond_gamma/opt/opt.in.xml')
 
     qa = QmcpackAnalyzer(infile,analyze=True,equilibration=5)
@@ -363,6 +366,7 @@ def test_optimization_analysis():
 
     assert(object_eq(opt.to_obj(),opt_ref,atol=1e-8))
 
+    restore_nexus_log()
 #end def test_optimization_analysis
 
 
