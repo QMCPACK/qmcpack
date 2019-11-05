@@ -86,39 +86,39 @@ def test_value_checks():
         ( 3.14  , 3.14+shift  ),
         ( 3.14  , 3.14-shift  ),
         # tuples of simple types
-        ( tuple()                   , tuple()                   ),
-        ( (3,True,'abc',3.14)       , (3,True,'abc',3.14)       ),
-        ( (3,True,'abc',3.14)       , (3,True,'abc',3.14+shift) ),
-        ( (3,True,'abc',3.14)       , (3,True,'abc',3.14-shift) ),
-        # lists of simple types
-        ( []                        , []                        ),
-        ( [3,True,'abc',3.14]       , [3,True,'abc',3.14]       ),
-        ( [3,True,'abc',3.14]       , [3,True,'abc',3.14+shift] ),
-        ( [3,True,'abc',3.14]       , [3,True,'abc',3.14-shift] ),
+        ( tuple()                    , tuple()                   ),
+        ( (3,True,'abc',3.14)        , (3,True,'abc',3.14)       ),
+        ( (3,True,'abc',3.14)        , (3,True,'abc',3.14+shift) ),
+        ( (3,True,'abc',3.14)        , (3,True,'abc',3.14-shift) ),
+        # lists of simple types      
+        ( []                         , []                        ),
+        ( [3,True,'abc',3.14]        , [3,True,'abc',3.14]       ),
+        ( [3,True,'abc',3.14]        , [3,True,'abc',3.14+shift] ),
+        ( [3,True,'abc',3.14]        , [3,True,'abc',3.14-shift] ),
         # nested lists of simple types
-        ( [1,0,0,1,1,0,1,1,1]       , [[1,0,0],[1,1,0],[1,1,1]] ),
-        ( [1,0,0,1,1,0,1,1,1]       , [[[1],[0],[0]],[[1],[1],[0]],[[1],[1],[1]]] ),
-        ( [1,0,0,1,1,0,1,1,1.]      , [[1,0,0],[1,1,0],[1,1,1.+shift]] ),
-        ( [1,0,0,1,1,0,1,1,1]       , [(1,0,0),(1,1,0),(1,1,1)] ),
-        # arrays of simple types
-        ( np.array([])              , np.array([])                    ),
-        ( np.arange(10,dtype=int)   , np.arange(10,dtype=int)         ),
-        ( np.arange(10,dtype=float) , np.arange(10,dtype=float)       ),
-        ( np.arange(10,dtype=float) , np.arange(10,dtype=float)+shift ),
-        ( np.arange(10,dtype=float) , np.arange(10,dtype=float)-shift ),
-        ( np.eye(3,3,dtype=int)     , np.eye(3,3,dtype=int).ravel()   ),
-        ( np.eye(3,3,dtype=float)   , np.eye(3,3,dtype=float).ravel() ),
-        ( np.array([1,2,3.])        , np.array([1,2.,3])              ),
-        ( np.array([1,2,3.])        , np.array([1,2,3],dtype=float)   ),
-        ( np.array(tuple('abc'))    , np.array(tuple('abc'))          ),
-        # sets of simple types
-        ( set()                     , set()                     ),
-        ( set([1,2,3])              , set([1,2,3])              ),
-        ( set([3,True,'abc',3.14])  , set([3,True,'abc',3.14])  ),
+        ( [1,0,0,1,1,0,1,1,1]        , [[1,0,0],[1,1,0],[1,1,1]] ),
+        ( [1,0,0,1,1,0,1,1,1]        , [[[1],[0],[0]],[[1],[1],[0]],[[1],[1],[1]]] ),
+        ( [1,0,0,1,1,0,1,1,1.]       , [[1,0,0],[1,1,0],[1,1,1.+shift]] ),
+        ( [1,0,0,1,1,0,1,1,1]        , [(1,0,0),(1,1,0),(1,1,1)] ),
+        # arrays of simple types     
+        ( np.array([])               , np.array([])                    ),
+        ( np.arange(10,dtype=int)    , np.arange(10,dtype=int)         ),
+        ( np.arange(10,dtype=float)  , np.arange(10,dtype=float)       ),
+        ( np.arange(1,10,dtype=float), np.arange(1,10,dtype=float)+shift ),
+        ( np.arange(1,10,dtype=float), np.arange(1,10,dtype=float)-shift ),
+        ( np.eye(3,3,dtype=int)      , np.eye(3,3,dtype=int).ravel()   ),
+        ( np.eye(3,3,dtype=float)    , np.eye(3,3,dtype=float).ravel() ),
+        ( np.array([1,2,3.])         , np.array([1,2.,3])              ),
+        ( np.array([1,2,3.])         , np.array([1,2,3],dtype=float)   ),
+        ( np.array(tuple('abc'))     , np.array(tuple('abc'))          ),
+        # sets of simple types       
+        ( set()                      , set()                     ),
+        ( set([1,2,3])               , set([1,2,3])              ),
+        ( set([3,True,'abc',3.14])   , set([3,True,'abc',3.14])  ),
         # nested sets of simple types
-        ( set(['abc',(1,2,3)])      , set(['abc',(1,2,3)])      ),
-        # dicts of simple types
-        ( dict()                    , dict()                    ),
+        ( set(['abc',(1,2,3)])       , set(['abc',(1,2,3)])      ),
+        # dicts of simple types      
+        ( dict()                     , dict()                    ),
         ( dict(a=3,b=True,c='abc',d=3.14) , dict(a=3,b=True,c='abc',d=3.14) ),
         ( dict(a=3,b=True,c='abc',d=3.14) , dict(a=3,b=True,c='abc',d=3.14+shift) ),
         ( { 3:'a',True:'b','abc':'c',3.14:'d'} , { 3:'a',True:'b','abc':'c',3.14:'d'} ),
@@ -300,10 +300,180 @@ def test_object_checks():
     distinct = list(distinct.values())
     for i1,o1 in enumerate(distinct):
         for i2,o2 in enumerate(distinct):
-            if i1!=i2 and False:
+            if i1!=i2:
                 check_disagree(o1,o2)
             #end if
         #end for
     #end for
 
 #end def test_object_checks
+
+
+
+def test_text_checks():
+    from testing import text_diff,text_eq,text_neq,value_diff
+
+    assert(id(text_diff)==id(text_neq))
+
+    should_agree    = []
+    should_disagree = []
+
+    shift = 1e-8
+
+    # aphorism test set
+    aphorism = 'Genius is {} percent inspiration and {} percent perspiration.'
+
+    stretched_aphorism = '''
+        Genius   is 
+    {}   percent inspiration    and 
+       {}      percent              perspiration.
+        '''
+
+    aphorisms = [aphorism,stretched_aphorism]
+    ovals = ['one',1,1.0,1.00001]
+    nvals = ['ninety-nine',99,99.0,99.00001]
+
+    nbef = len(should_agree)
+    for a1 in aphorisms:
+        for a2 in aphorisms:
+            for o in ovals:
+                for n in nvals:
+                    t1 = a1.format(o,n)
+                    t2 = a2.format(o,n)
+                    should_agree.append((t1,t2))
+                    if isinstance(o,float) or isinstance(n,float):
+                        if isinstance(o,float):
+                            o += shift
+                        #end if
+                        if isinstance(n,float):
+                            n += shift
+                        #end if
+                        t12 = a1.format(o,n)
+                        t22 = a2.format(o,n)
+                        should_agree.append((t1,t12))
+                        should_agree.append((t2,t22))
+                        should_agree.append((t12,t22))
+                    #end if
+                #end for
+            #end for
+        #end for
+    #end for
+    naft = len(should_agree)
+    assert(naft-nbef==208)
+
+    nbef = len(should_disagree)
+    for a1 in aphorisms:
+        for a2 in aphorisms:
+            for o1,n1 in zip(ovals,nvals):
+                for o2,n2 in zip(ovals,nvals):
+                    if value_diff((o1,n1),(o2,n2)):
+                        t1 = a1.format(o1,n1)
+                        t2 = a2.format(o2,n2)
+                        should_disagree.append((t1,t2))
+                    #end if
+                #end for
+            #end for
+        #end for
+    #end for
+    naft = len(should_disagree)
+    assert(naft-nbef==48)
+
+
+    # matrix test set
+    identical_matrices = [
+        '''
+        [[ 1.0,2.,3.0 ],
+         [ 4.,5.0,6.  ],
+         [ 7.0,8. ,9. ]]
+        ''',
+        '''
+        [[ 1.000, 2.000, 3.000 ],
+         [ 4.000, 5.000, 6.000 ],
+         [ 7.000, 8.000, 9.000 ]]
+        ''',
+        '''
+        [[ 1.0e+00, 2.0, 3.0e+00 ],
+         [ 4.0e+00, 5.0, 6.0e+00 ],
+         [ 7.0e+00, 8.0, 9.0e+00 ]]
+        ''',
+        '''
+        [[ 0.1e+01  , 200E-02  , 30e-01   ],
+         [ 0.04E+02 , 5.       , 0.6e+01  ],
+         [ 7.       , 0.008e+03, 9000E-03 ]]
+        ''',
+        '''
+        [[ 0.999999998, 2.000000236, 3.000000239 ],
+         [ 4.000000234, 5.000000328, 5.999999013 ],
+         [ 7.000000145, 8.000000100, 9.000000000 ]]
+        ''',
+        ]
+    nbef = len(should_agree)
+    for m1 in identical_matrices:
+        for m2 in identical_matrices:
+            should_agree.append((m1,m2))
+        #end for
+    #end for
+    naft = len(should_agree)
+    assert(naft-nbef==25)
+
+    distinct_matrices = [
+        '''
+        [[ 1.0,2.,3.0 ],
+         [ 4.,5.0,6.  ],
+         [ 7.0,8. ,9. ]]
+        ''',
+        '''
+        [[ 1.0,2.,3.0 ],
+         [ 4.,5.0,6   ],
+         [ 7.0,8. ,9. ]]
+        ''',
+        '''
+        [[ 1.0,2.,3.0 ],
+         [ 4.,5.0,6.  ],
+         [ 7.0,8. ,9. ]],
+        ''',
+        '''
+        [[ 1.000, 2.000, 3.000 ],
+         [ 4.000, 5.000, 6.000 ],
+         [ 7.000, 8.001, 9.000 ]]
+        ''',
+        '''
+        [[ 1.0e+00, 2.0, 3.0e+00 ],
+         [ 4.0e+00, 5.0, 6.0e+01 ],
+         [ 7.0e+00, 8.0, 9.0e+00 ]]
+        ''',
+        '''
+        [[ 0.1e+01  , 200E-02  , 30e-01   ],
+         [ 0.04E+02 , 5.       , 0.6e+01  ],
+         [ 7.       , 0.008e+03, 9001E-03 ]]
+        ''',
+        '''
+        [[ 0.999999998, 2.000000236, 3.000000239 ],
+         [ 4.000004234, 5.000000328, 5.999999013 ],
+         [ 7.000000145, 8.000000100, 9.000000000 ]]
+        ''',
+        ]
+    nbef = len(should_disagree)
+    for m1 in distinct_matrices:
+        for m2 in distinct_matrices:
+            if id(m1)!=id(m2):
+                should_disagree.append((m1,m2))
+            #end if
+        #end for
+    #end for
+    naft = len(should_disagree)
+    assert(naft-nbef==42)
+
+
+    # test text_eq functionality
+    for t1,t2 in should_agree:
+        assert(text_eq(t1,t2))
+        assert(not text_neq(t1,t2))
+    #end for
+
+    for t1,t2 in should_disagree:
+        assert(not text_eq(t1,t2))
+        assert(text_neq(t1,t2))
+    #end for
+    
+#end def test_text_checks

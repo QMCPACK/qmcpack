@@ -52,6 +52,8 @@ private:
   //Properties properties_;
   ParticleSet ions_;
   std::vector<IndexType> walker_offsets_;
+  std::vector<IndexType> num_local_walkers_per_node_;
+  
   // By making this a linked list and creating the crowds at the same time we could get first touch.
   UPtrVector<MCPWalker> walkers_;
   UPtrVector<MCPWalker> dead_walkers_;
@@ -63,12 +65,11 @@ private:
   ///1/Mass per particle
   std::vector<RealType> ptcl_inv_mass_;
   size_t size_dataset_;
-  // Should be
+  // could be
   // std::shared_ptr<TrialWaveFunction> trial_wf_;
   // std::shared_ptr<ParticleSet> elec_particle_set_;
   // std::shared_ptr<QMCHamiltonian> hamiltonian_;
-  // Are raw pointers. This is necessary if MCPopulation is going to be moved by value into QMCDriverNew
-  // and possible moved out into the next driver later.
+
   // This is necessary MCPopulation is constructed in a simple call scope in QMCDriverFactory from the legacy MCWalkerConfiguration
   // MCPopulation should have QMCMain scope eventually and the driver will just have a refrence to it.
   TrialWaveFunction* trial_wf_;
@@ -101,6 +102,7 @@ public:
                int this_rank = 0)
       : num_ranks_(num_ranks),
         num_particles_(elecs->R.size()),
+        num_local_walkers_per_node_(num_ranks, 0),
         trial_wf_(trial_wf),
         elec_particle_set_(elecs),
         hamiltonian_(hamiltonian),
@@ -177,7 +179,6 @@ public:
   //IndexType get_active_walkers() const { return walkers_.size(); }
   int get_num_ranks() const { return num_ranks_; }
   IndexType get_num_global_walkers() const { return num_global_walkers_; }
-  IndexType update_num_global_walkers(Communicate* comm);
   IndexType get_num_local_walkers() const { return num_local_walkers_; }
   IndexType get_num_particles() const { return num_particles_; }
   IndexType get_max_samples() const { return max_samples_; }
@@ -187,7 +188,8 @@ public:
   const SpeciesSet& get_species_set() const { return species_set_; }
   const ParticleSet& get_ions() const { return ions_; }
   const std::vector<int>& get_walker_offsets() const { return walker_offsets_; }
-
+  std::vector<IndexType> get_num_local_walkers_per_node() const { return num_local_walkers_per_node_; }
+  void syncWalkersPerNode(Communicate* comm);
   void set_num_global_walkers(IndexType num_global_walkers) { num_global_walkers_ = num_global_walkers; }
   void set_num_local_walkers(IndexType num_local_walkers) { num_local_walkers_ = num_local_walkers; }
 

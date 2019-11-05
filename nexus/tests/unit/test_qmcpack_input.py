@@ -1,6 +1,7 @@
 
 import versions
 import testing
+from testing import divert_nexus_log,restore_nexus_log
 from testing import value_eq,object_eq
 
 associated_files = dict()
@@ -488,7 +489,7 @@ def check_vs_serial_reference(qi,name):
     #end for
     for k in sorted(sr.keys()):
         if k not in sq:
-            print k
+            print(k)
         elif not value_eq(sq[k],sr[k]):
             print(k)
             print(sr[k])
@@ -509,6 +510,83 @@ def test_files():
     files = get_files()
     assert(set(filenames)==set(files.keys()))
 #end def test_files
+
+
+
+def test_import():
+    from qmcpack_input import QmcpackInput
+    from qmcpack_input import simulation,meta,section
+#end def test_import
+
+
+
+def test_qixml_class_init():
+    from generic import obj
+    from qmcpack_input import classes
+
+    attr_types = obj(
+        tag            = str,
+        identifier     = (str,tuple),
+        attributes     = list,
+        elements       = list,
+        text           = str,
+        parameters     = list,
+        attribs        = list,
+        costs          = list,
+        h5tags         = list,
+        types          = obj,
+        write_types    = obj,
+        attr_types     = obj,
+        precision      = str,
+        defaults       = obj,
+        collection_id  = str,
+        exp_names      = obj,
+        params         = list,
+        plurals_inv    = obj,
+        plurals        = obj,
+        expanded_names = obj,
+        afqmc_order    = list,
+        )
+    optional = set(['expanded_names','afqmc_order'])
+    assert(len(attr_types)==21)
+
+    def valid_name(s):
+        v = True
+        v &= isinstance(s,str)
+        v &= ' ' not in s and '-' not in s
+        v &= s.lower()==s
+        return v
+    #end def valid_name
+
+    for cls in classes:
+        c = obj()
+        d = cls.__dict__
+        for k,v in d.items():
+            if not k.startswith('__'):
+                c[k] = v
+            #end if
+        #end for
+        for name,type in attr_types.items():
+            if name not in optional:
+                assert(name in c)
+            #end if
+            if name in c:
+                v = c[name]
+                if v is not None:
+                    assert(isinstance(v,type))
+                    if isinstance(v,str):
+                        assert(valid_name(v))
+                    elif isinstance(v,list):
+                        for vv in v:
+                            assert(valid_name(vv) or vv=='atomic-number')
+                        #end for
+                    #end if
+                #end if
+            #end if
+        #end for
+    #end for
+
+#end def test_qixml_class_init
 
 
 
@@ -1356,6 +1434,358 @@ def test_write():
 
 
 
+def test_get():
+    from qmcpack_input import QmcpackInput
+
+    files = get_files()
+
+    qi = QmcpackInput(files['VO2_M1_afm.in.xml'])
+
+    s    = qi.simulation
+    p    = s.project
+    qs   = s.qmcsystem
+    sc   = qs.simulationcell
+    pss  = qs.particlesets
+    pse  = pss.e
+    psi  = pss.ion0
+    u    = pse.groups.u
+    d    = pse.groups.d
+    V    = psi.groups.V
+    O    = psi.groups.O
+    wf   = qs.wavefunction
+    sb   = wf.sposet_builder
+    spos = sb.sposets
+    spou = spos.spo_u
+    spod = spos.spo_d
+    ds   = wf.determinantset
+    sd   = ds.slaterdeterminant
+    du   = sd.determinants.updet
+    dd   = sd.determinants.downdet
+    js   = wf.jastrows
+    J1   = js.J1
+    J2   = js.J2
+    J3   = js.J3
+    h   = qs.hamiltonian
+    pps  = h.pairpots
+    ee   = pps.ElecElec
+    ii   = pps.IonIon
+    ecp  = pps.PseudoPot
+    ecps = ecp.pseudos
+    mpc  = pps.MPC
+    ests = h.estimators
+    sdens= ests.SpinDensity
+    kec  = ests.KEcorr
+    vmc  = s.calculations[0]
+    dmc1 = s.calculations[1]
+    dmc2 = s.calculations[2]
+
+    search_map = dict(
+        simulation        = s,
+        project           = p,
+        qmcsystem         = qs,
+        simulationcell    = sc,
+        particleset       = pss,
+        e                 = pse,
+        ion0              = psi,
+        u                 = u,
+        d                 = d,
+        #V                 = V, # can find group or pseudo
+        #O                 = O,
+        wavefunction      = wf,
+        sposet_builder    = sb,
+        sposet            = spos,
+        spo_u             = spou,
+        spo_d             = spod,
+        determinantset    = ds,
+        slaterdeterminant = sd,
+        updet             = du,
+        downdet           = dd,
+        jastrow           = js,
+        J1                = J1,
+        J2                = J2,
+        J3                = J3,
+        hamiltonian       = h,
+        pairpot           = pps,
+        ElecElec          = ee,
+        IonIon            = ii,
+        PseudoPot         = ecp,
+        pseudo            = ecps,
+        MPC               = mpc,
+        estimator         = ests,
+        SpinDensity       = sdens,
+        KEcorr            = kec,
+        series            = p.series,
+        lattice           = sc.lattice,
+        bconds            = sc.bconds,
+        lr_dim_cutoff     = sc.lr_dim_cutoff,
+        random            = pse.random,
+        tilematrix        = sb.tilematrix,
+        twistnum          = sb.twistnum,
+        meshfactor        = sb.meshfactor,
+        precision         = sb.precision,
+        truncate          = sb.truncate,
+        format            = ecp.format,
+        ecut              = mpc.ecut,
+        physical          = mpc.physical,
+        grid              = sdens.grid,
+        psi               = kec.psi,
+        )
+
+    missing = 'a b c'.split()
+
+
+    for k,vref in search_map.items():
+        v = qi.get(k)
+        assert(v is not None)
+        assert(id(v)==id(vref))
+    #end for
+
+    for k in missing:
+        v = qi.get(k)
+        assert(v is None)
+    #end for
+
+
+    qi.pluralize()
+
+    s    = qi.simulation
+    p    = s.project
+    qs   = s.qmcsystem
+    sc   = qs.simulationcell
+    pss  = qs.particlesets
+    pse  = pss.e
+    psi  = pss.ion0
+    u    = pse.groups.u
+    d    = pse.groups.d
+    V    = psi.groups.V
+    O    = psi.groups.O
+    wfs  = qs.wavefunctions
+    wf   = wfs.psi0
+    sbs  = wf.sposet_builders
+    sb   = sbs.bspline
+    spos = sb.sposets
+    spou = spos.spo_u
+    spod = spos.spo_d
+    ds   = wf.determinantset
+    sd   = ds.slaterdeterminant
+    du   = sd.determinants.updet
+    dd   = sd.determinants.downdet
+    js   = wf.jastrows
+    J1   = js.J1
+    J2   = js.J2
+    J3   = js.J3
+    hs   = qs.hamiltonians
+    h    = hs.h0
+    pps  = h.pairpots
+    ee   = pps.ElecElec
+    ii   = pps.IonIon
+    ecp  = pps.PseudoPot
+    ecps = ecp.pseudos
+    mpc  = pps.MPC
+    ests = h.estimators
+    sdens= ests.SpinDensity
+    kec  = ests.KEcorr
+    vmc  = s.calculations[0]
+    dmc1 = s.calculations[1]
+    dmc2 = s.calculations[2]
+
+    search_map = dict(
+        simulation        = s,
+        project           = p,
+        qmcsystem         = qs,
+        simulationcell    = sc,
+        particleset       = pss,
+        e                 = pse,
+        ion0              = psi,
+        u                 = u,
+        d                 = d,
+        #V                 = V, # can find group or pseudo
+        #O                 = O,
+        wavefunction      = wfs,
+        sposet_builder    = sbs,
+        psi0              = wf,
+        sposet            = spos,
+        spo_u             = spou,
+        spo_d             = spod,
+        determinantset    = ds,
+        slaterdeterminant = sd,
+        updet             = du,
+        downdet           = dd,
+        jastrow           = js,
+        J1                = J1,
+        J2                = J2,
+        J3                = J3,
+        hamiltonian       = hs,
+        h0                = h,
+        pairpot           = pps,
+        ElecElec          = ee,
+        IonIon            = ii,
+        PseudoPot         = ecp,
+        pseudo            = ecps,
+        MPC               = mpc,
+        estimator         = ests,
+        SpinDensity       = sdens,
+        KEcorr            = kec,
+        series            = p.series,
+        lattice           = sc.lattice,
+        bconds            = sc.bconds,
+        lr_dim_cutoff     = sc.lr_dim_cutoff,
+        random            = pse.random,
+        tilematrix        = sb.tilematrix,
+        twistnum          = sb.twistnum,
+        meshfactor        = sb.meshfactor,
+        precision         = sb.precision,
+        truncate          = sb.truncate,
+        format            = ecp.format,
+        ecut              = mpc.ecut,
+        physical          = mpc.physical,
+        grid              = sdens.grid,
+        psi               = kec.psi,
+        )
+
+    for k,vref in search_map.items():
+        v = qi.get(k)
+        assert(v is not None)
+        assert(id(v)==id(vref))
+    #end for
+
+    for k in missing:
+        v = qi.get(k)
+        assert(v is None)
+    #end for
+
+
+    qi = QmcpackInput(files['CH4_afqmc.in.xml'])
+
+    s  = qi.simulation
+    pr = s.project
+    r  = s.random
+    ai = s.afqmcinfo
+    h  = s.hamiltonian
+    wf = s.wavefunction
+    ws = s.walkerset
+    p  = s.propagator
+    e  = s.execute
+    bp = e.estimator
+    dm = bp.onerdm
+
+    search_map = dict(
+        simulation   = s,
+        project      = pr,
+        random       = r,
+        afqmcinfo    = ai,
+        hamiltonian  = h,
+        wavefunction = wf,
+        walkerset    = ws,
+        propagator   = p,
+        execute      = e,
+        estimator    = bp,
+        onerdm       = dm,
+        id           = pr.id,
+        series       = pr.series,
+        seed         = r.seed,
+        cutoff       = wf.cutoff,
+        walker_type  = ws.walker_type,
+        hybrid       = p.hybrid,
+        blocks       = e.blocks,
+        timestep     = e.timestep,
+        steps        = e.steps,
+        ncores       = e.ncores,
+        nwalkers     = e.nwalkers,
+        naverages    = bp.naverages,
+        block_size   = bp.block_size,
+        ortho        = bp.ortho,
+        nsteps       = bp.nsteps,
+        )
+
+    for k,vref in search_map.items():
+        v = qi.get(k)
+        assert(v is not None)
+        assert(id(v)==id(vref))
+    #end for
+
+    for k in missing:
+        v = qi.get(k)
+        assert(v is None)
+    #end for
+
+#end def test_get
+
+
+
+def test_incorporate_system():
+    from physical_system import generate_physical_system
+    from qmcpack_input import generate_qmcpack_input
+
+    divert_nexus_log()
+
+    system = generate_physical_system(
+        units    = 'A',
+        axes     = '''
+                    5.75200000    0.00000000    0.00000000
+                    0.00000000    4.53780000    0.00000000
+                   -2.90357335    0.00000000    4.53217035
+                   ''',
+        elem_pos = '''
+                   V   1.30060289    4.44223393    0.11992123
+                   V   1.54782377    0.09556607    4.41224912
+                   V  -0.15118378    2.36446607    2.38600640
+                   V   2.99961044    2.17333393    2.14616395
+                   O   0.00517700    0.96155982    0.94541073
+                   O   2.84324965    3.57624018    3.58675961
+                   O  -1.44660967    1.30734018    3.21149591
+                   O   4.29503633    3.23045982    1.32067444
+                   O   1.43608828    3.18825828    1.35421250
+                   O   1.41233837    1.34954172    3.17795785
+                   O  -0.01569839    3.61844172    3.62029768
+                   O   2.86412504    0.91935828    0.91187267
+                   ''',
+        V = 13,
+        O = 6,
+        )
+
+    qi = generate_qmcpack_input(
+        input_type      = 'basic',
+        system          = system,
+        pseudos         = ['V.opt.xml','O.opt.xml'],
+        spin_polarized  = True,
+        twistnum        = 0,
+        orbitals_h5     = 'scf.pwscf.h5',
+        qmc = 'dmc',
+        )
+
+    qi_ref = qi.copy()
+
+    shift = 0.1
+    s = system.structure
+    s.axes += shift
+    s.pos  += shift
+
+    qi.incorporate_system(system)
+
+    axes_ref = qi_ref.get('lattice')
+    psi_ref  = qi_ref.get('ion0')
+
+    axes     = qi.get('lattice')
+    psi      = qi.get('ion0')
+    
+    assert(value_eq(axes-shift,axes_ref))
+    assert(value_eq(psi.groups.V.position-shift,psi_ref.groups.V.position))
+    assert(value_eq(psi.groups.O.position-shift,psi_ref.groups.O.position))
+
+    del qi_ref.get('simulationcell').lattice
+    del qi_ref.get('qmcsystem').particlesets
+    del qi.get('simulationcell').lattice
+    del qi.get('qmcsystem').particlesets
+
+    assert(object_eq(qi,qi_ref))
+
+    restore_nexus_log()
+
+#end def test_incorporate_system
+
+
+
 def test_generate_kspace_jastrow():
     from qmcpack_input import generate_kspace_jastrow
     kjas = generate_kspace_jastrow(1.0, 2.0, 2, 4)
@@ -1375,7 +1805,6 @@ def test_generate_kspace_jastrow():
     text = kjas.write()
     assert text == expect
 #end def test_generate_kspace_jastrow
-
 
 
 

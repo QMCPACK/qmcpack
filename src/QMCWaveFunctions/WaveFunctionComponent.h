@@ -509,13 +509,13 @@ struct WaveFunctionComponent : public QMCTraits
    * @param P particle set
    * @param buf Anonymous storage
    */
-  virtual void mw_copyFromBuffer(const std::vector<WaveFunctionComponent*>& WFC_list,
-                                 const std::vector<ParticleSet*>& P_list,
-                                 const std::vector<WFBufferType*>& buf_list)
+  virtual void mw_copyFromBuffer(const RefVector<WaveFunctionComponent>& wfc_list,
+                                 const RefVector<ParticleSet>& p_list,
+                                 const RefVector<WFBufferType>& buf_list)
   {
 #pragma omp parallel for
-    for (int iw = 0; iw < WFC_list.size(); iw++)
-      WFC_list[iw]->copyFromBuffer(*P_list[iw], *buf_list[iw]);
+    for (int iw = 0; iw < wfc_list.size(); iw++)
+      wfc_list[iw].get().copyFromBuffer(p_list[iw], buf_list[iw]);
   }
 
   /** make clone

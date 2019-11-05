@@ -61,6 +61,7 @@ def remove_comment(sval):
     return sval
 #end def remove_comment
 
+
 def expand_array(sval):
     sarr = []
     for v in sval.split():
@@ -74,15 +75,18 @@ def expand_array(sval):
     return sarr
 #end def expand_array
 
+
 def read_int(sval):
     sval = remove_comment(sval)
     return int(sval)
 #end def read_int
 
+
 def read_real(sval):
     sval = remove_comment(sval)
     return float(sval.replace('d','e'))
 #end def read_real
+
 
 bool_dict = dict(true=True,false=False)
 def read_bool(sval):
@@ -90,17 +94,21 @@ def read_bool(sval):
     return bool_dict[sval.lower().strip('.')]
 #end def read_bool
 
+
 def read_string(sval):
     return sval
 #end def read_string
+
 
 def read_int_array(sval):
     return array(expand_array(sval),dtype=int)
 #end def read_int_array
 
+
 def read_real_array(sval):
     return array(expand_array(sval),dtype=float)
 #end def read_real_array
+
 
 bool_array_dict = dict(T=True,F=False)
 def read_bool_array(sval):
@@ -111,13 +119,16 @@ def read_bool_array(sval):
     return array(barr,dtype=bool)
 #end def read_bool_array
 
+
 def write_int(v):
     return str(v)
 #end def write_int
 
+
 def write_real(v):
     return str(v)
 #end def write_real
+
 
 def write_bool(v):
     if v:
@@ -127,17 +138,21 @@ def write_bool(v):
     #end if
 #end def write_bool
 
+
 def write_string(v):
     return v
 #end def write_string
+
 
 def equality(a,b):
     return a==b
 #end def equality
 
+
 def real_equality(a,b):
     return abs(a-b)<=1e-6*(abs(a)+abs(b))/2
 #end def real_equality
+
 
 def render_bool(v):
     if v:
@@ -146,6 +161,7 @@ def render_bool(v):
         return 'F'
     #end if
 #end def render_bool
+
 
 def write_array(arr,same=equality,render=str,max_repeat=3):
     value_counts = []
@@ -178,22 +194,27 @@ def write_array(arr,same=equality,render=str,max_repeat=3):
     return s
 #end def write_array
 
+
 def write_int_array(a):
     return write_array(a)
 #end def write_int_array
+
 
 def write_real_array(a):
     return write_array(a,same=real_equality)
 #end def write_real_array
 
+
 def write_bool_array(a):
     return write_array(a,render=render_bool)
 #end def write_bool_array
+
 
 assign_bool_map = {True:True,False:False,1:True,0:False}
 def assign_bool(v):
     return assign_bool_map[v]
 #end def assign_bool
+
 
 def assign_string(v):
     if isinstance(v,str):
@@ -203,6 +224,7 @@ def assign_string(v):
     #end if
 #end def assign_string
 
+
 def assign_int_array(a):
     if isinstance(a,(tuple,list,ndarray)):
         return array(a,dtype=int)
@@ -210,6 +232,7 @@ def assign_int_array(a):
         raise ValueError('value must be a tuple, list, or array')
     #end if
 #end def assign_int_array
+
 
 def assign_real_array(a):
     if isinstance(a,(tuple,list,ndarray)):
@@ -219,6 +242,7 @@ def assign_real_array(a):
     #end if
 #end def assign_real_array
 
+
 def assign_bool_array(a):
     if isinstance(a,(tuple,list,ndarray)):
         return array(a,dtype=bool)
@@ -227,13 +251,16 @@ def assign_bool_array(a):
     #end if
 #end def assign_bool_array
 
+
 #utility functions to convert from VASP internal objects to 
 #nexus objects:
 def vasp_to_nexus_elem(elem,elem_count):
-  syselem=[]
-  for x,count in zip(elem,elem_count):
-    syselem+=[x for i in xrange(0,count)]
-  return array(syselem)
+    syselem=[]
+    for x,count in zip(elem,elem_count):
+        syselem+=[x for i in xrange(0,count)]
+    #end for
+    return array(syselem)
+#end def vasp_to_nexus_elem
 
 
 read_value_functions = obj(
@@ -288,10 +315,11 @@ class Vobj(DevBase):
 
 class VFile(Vobj):
     def __init__(self,filepath=None):
-        if filepath!=None:
+        if filepath is not None:
             self.read(filepath)
         #end if
     #end def __init__
+
 
     def read(self,filepath):
         if not os.path.exists(filepath):
@@ -302,21 +330,25 @@ class VFile(Vobj):
         return text
     #end def read
 
+
     def write(self,filepath=None):
         text = self.write_text(filepath)
-        if filepath!=None:
+        if filepath is not None:
             open(filepath,'w').write(text)
         #end if
         return text
     #end def write
 
+
     def read_text(self,text,filepath=''):
         self.not_implemented()
     #end def read_text
 
+
     def write_text(self,filepath=''):
         self.not_implemented()
     #end def write_text
+
 
     def remove_comment(self,line):
         cloc1 = line.find('!')
@@ -348,6 +380,9 @@ class VKeywordFile(VFile):
 
     @classmethod
     def class_init(cls):
+        cls.kw_scalars = VKeywordFile.kw_scalars
+        cls.kw_arrays  = VKeywordFile.kw_arrays
+        cls.kw_fields  = VKeywordFile.kw_fields
         for kw_field in cls.kw_fields:
             if not cls.class_has(kw_field):
                 cls.class_set_single(kw_field,set())
@@ -377,27 +412,31 @@ class VKeywordFile(VFile):
         #end for
     #end def class_init
 
+
     @classmethod
     def check_consistency(cls):
-        fail = False
         msg  = ''
+        all_unknown = set()
         types = cls.kw_scalars+cls.kw_arrays
-        untyped = cls.keywords 
+        untyped = set(cls.keywords)
         for type in types:
             untyped -= cls.class_get(type)
         #end for
         if len(untyped)>0:
-            fail = True
-            msg += 'variables without a type: {0}\n'.format(sorted(untyped))
+            msg += '\nvariables without a type:\n  {0}\n'.format(sorted(untyped))
         #end if
         for type in types:
             unknown = cls.class_get(type)-cls.keywords
             if len(unknown)>0:
-                fail = True
-                msg += 'unknown {0}: {1}\n'.format(type,sorted(unknown))
+                msg += '\nunknown {0}:\n  {1}\n'.format(type,sorted(unknown))
+                all_unknown |= unknown
             #end if
         #end for
-        if fail:
+        if len(all_unknown)>0:
+            msg += '\nall unknown names:\n  {0}\n'.format(sorted(all_unknown))
+            msg += '\nall known names:\n  {0}\n'.format(sorted(cls.keywords))
+        #end if
+        if len(msg)>0:
             cls.class_error(msg)
         #end if
     #end def check_consistency
@@ -437,7 +476,7 @@ class VKeywordFile(VFile):
                                 try:
                                     value = self.read_value[name](value)
                                     self[name] = value
-                                except Exception,e:
+                                except Exception as e:
                                     self.error('read failed for keyword {0}\nkeyword type: {1}\ninput text: {2}\nexception:\n{3}'.format(name,self.type[name],token,e))
                                 #end try
                             elif name in self.unsupported:
@@ -501,6 +540,7 @@ class VFormattedFile(VFile):
         return lines
     #end def read_lines
 
+
     def join(self,lines,first_line,last_line):
         joined = ''
         for iline in xrange(first_line,last_line):
@@ -509,6 +549,7 @@ class VFormattedFile(VFile):
         joined += lines[last_line]
         return joined
     #end def join
+
 
     def is_empty(self,lines,start=None,end=None):
         if start is None:
@@ -531,47 +572,6 @@ class Incar(VKeywordFile):
 
     # VTST extensions:  http://theory.cm.utexas.edu/vtsttools/index.html
     #   ichain lclimb ltangentold ldneb lnebcell jacobian timestep
-
-    keywords = set('''
-      addgrid aexx aggac aggax aldac algo amin amix amix_mag andersen_prob apaco 
-      bmix bmix_mag 
-      clnt cln cll clz cmbj cshift
-      deper dimer_dist dipol dq
-      ebreak eint ediff ediffg efield efield_pead elmin emax emin enaug encut 
-      encutfock encutgw encutgwsoft enmax enmin epsilon evenonly evenonlygw
-      ferdo ferwe findiff
-      gga gga_compat
-      hfscreen hflmaxf hills_bin hills_h hills_w 
-      ialgo iband ibrion ichain icharg ichibare i_constrained_m icorelevel idipol 
-      igpar images imix increm inimix iniwav ipead isif ismear ispin istart 
-      isym ivdw iwavpr 
-      jacobian
-      kblock kgamma kpar kpuse kspacing 
-      lambda langevin_gamma langevin_gamma_l lasph lasync lattice_constraints 
-      lberry lblueout lcalceps lcalcpol lcharg lchimag lclimb lcorr ldau ldauj ldaul 
-      ldauprint ldautype ldauu ldiag ldipol ldneb lefg lelf lepsilon lhfcalc lhyperfine 
-      lkproj lmaxfock lmaxfockae lmaxfockmp2 lmaxmix lmaxmp2 lmaxpaw lmaxtau 
-      lmixtau lmono lnabla lnebcell lnmr_sym_red lnoncollinear loptics lorbit lpard 
-      lpead lplane lreal lrpa lscalapack lscaler0 lscalu lscsgrad lselfenergy 
-      lsepb lsepk lspectral lsorbit ltangentold lthomas luse_vdw lvdw lvdw_ewald lvdwscs 
-      lvhar lvtot lwave 
-      magmom maxmem maxmix mbja mbjb m_constr mdalgo metagga minrot mixpre 
-      nbands nbandsgw nblk nblock nbmod ncore nedos nelect nelm nelmdl nelmin 
-      nfree ngx ngxf ngy ngyf ngz ngzf nkred nkredx nkredy nkredz nlspline 
-      nmaxfockae nomega nomegar npaco npar nppstr nsim nsw nsubsys nupdown 
-      nwrite
-      oddonly oddonlygw ofield_a ofield_kappa ofield_q6_far ofield_q6_near 
-      omegamax omegamin omegatl
-      param1 param2 pmass pomass potim prec precfock pstress psubsys
-      random_seed ropt rwigs 
-      saxis scsrad shakemaxiter shaketol sigma skip_edotp smass spring step_max 
-      step_size symprec system 
-      tebeg teend time timestep tsubsys
-      value_max value_min vdw_a1 vdw_a2 vdw_alpha vdw_cnradius vdw_c6 vdw_c6au 
-      vdw_d vdw_radius vdw_r0 vdw_r0au vdw_scaling vdw_sr vdw_s6 vdw_s8 voskown 
-      wc weimin 
-      zab_vdw zval  
-      '''.split()) # only used to check consistency of typed names below
 
     # some of these are mixed type arrays or other oddly formatted fields
     unsupported = set('quad_efg'.split())
@@ -825,7 +825,7 @@ class Kpoints(VFormattedFile):
             elif self.centering=='gamma' or self.centering=='monkhorst-pack':
                 text+='{0}\n'.format(self.centering)
                 text+=' {0:d} {1:d} {2:d}\n'.format(*self.kgrid)
-                if self.kshift!=None:
+                if self.kshift is not None:
                     text+=' {0} {1} {2}\n'.format(*self.kshift)
                 #end if
             else:
@@ -1051,7 +1051,7 @@ class Poscar(VFormattedFile):
         for a in self.axes:
             text += ' {0:18.14f} {1:18.14f} {2:18.14f}\n'.format(*a)
         #end for
-        if self.elem!=None:
+        if self.elem is not None:
             for e in self.elem:
                 iselem,symbol = is_element(e,symbol=True)
                 if not iselem:
@@ -1065,7 +1065,7 @@ class Poscar(VFormattedFile):
             text += ' {0}'.format(ec)
         #end for
         text += '\n'
-        if self.dynamic!=None:
+        if self.dynamic is not None:
             text += 'selective dynamics\n'
         #end if
         text += self.coord+'\n'
@@ -1081,7 +1081,7 @@ class Poscar(VFormattedFile):
                 text += ' {0:18.14f} {1:18.14f} {2:18.14f}  {3}  {4}  {5}\n'.format(p[0],p[1],p[2],bm[d[0]],bm[d[1]],bm[d[2]])
             #end for
         #end if
-        if self.vel!=None:
+        if self.vel is not None:
             text += self.vel_coord+'\n'
             for v in self.vel:
                 text += ' {0:18.14f} {1:18.14f} {2:18.14f}\n'.format(*v)
@@ -1108,7 +1108,7 @@ class Poscar(VFormattedFile):
         if self.pos is None:
             msg += 'pos is missing\n'
         #end if
-        if self.vel!=None and self.vel_coord is None:
+        if self.vel is not None and self.vel_coord is None:
             msg += 'vel_coord is missing\n'
         #end if
         if exit:
@@ -1134,6 +1134,7 @@ class NebPoscars(Vobj):
             #end if
         #end for
     #end def read
+
 
     def write(self,filepath):
         path = self.get_path(filepath)
@@ -1195,7 +1196,7 @@ class Potcar(VFormattedFile):
             for i in range(len(self.pseudos)):
                 text += self.pseudos[i]
             #end for
-        elif self.filepath!=None and self.files!=None:
+        elif self.filepath is not None and self.files is not None:
             for file in self.files:
                 text += open(os.path.join(self.filepath,file),'r').read()
             #end for
@@ -1208,7 +1209,7 @@ class Potcar(VFormattedFile):
         pot_info = obj()
         if len(self.pseudos)>0:
             pots = self.pseudos
-        elif self.filepath!=None and self.files!=None:
+        elif self.filepath is not None and self.files is not None:
             pots = obj()
             for file in self.files:
                 pots.append(open(os.path.join(self.filepath,file),'r').read())
@@ -1250,7 +1251,7 @@ class Potcar(VFormattedFile):
 
     def load(self):
         self.pseudos.clear()
-        if self.filepath!=None and self.files!=None:
+        if self.filepath is not None and self.files is not None:
             for file in self.files:
                 self.pseudos.append(open(os.path.join(self.filepath,file),'r').read())
             #end for
@@ -1298,7 +1299,7 @@ class VaspInput(SimulationInput,Vobj):
     vasp_save_files = all_inputs + all_outputs
 
     def __init__(self,filepath=None,prefix='',postfix=''):
-        if filepath!=None:
+        if filepath is not None:
             self.read(filepath,prefix,postfix)
         #end if
     #end def __init__
@@ -1307,9 +1308,16 @@ class VaspInput(SimulationInput,Vobj):
     def read(self,filepath,prefix='',postfix=''):
         path = self.get_path(filepath)
         for file in os.listdir(path):
-            name = file.lower()
+            name = str(file)
+            if len(prefix)>0 and name.startswith(prefix):
+                name = name.split(prefix,1)[1]
+            #end if
+            if len(postfix)>0 and name.endswith(postfix):
+                name = name.rsplit(postfix,1)[0]
+            #end if
+            name = name.lower()
             if name in self.input_files:
-                filepath = os.path.join(path,prefix+file+postfix)
+                filepath = os.path.join(path,file)
                 self[name] = self.input_files[name](filepath)
             #end if
         #end for
@@ -1323,6 +1331,7 @@ class VaspInput(SimulationInput,Vobj):
             vfile.write(filepath)
         #end for
     #end def write
+
 
     def incorporate_system(self,system,incorp_kpoints=True,coord='cartesian'):
         structure = system.structure
@@ -1357,7 +1366,7 @@ class VaspInput(SimulationInput,Vobj):
             else:
                 self.error('coord must be either direct or cartesian\nyou provided: {0}'.format(coord))
             #end if
-            if s.frozen!=None:
+            if s.frozen is not None:
                 poscar.dynamic = s.frozen==False
             #end if
             self.poscar = poscar
@@ -1372,51 +1381,48 @@ class VaspInput(SimulationInput,Vobj):
 
 
     def return_system(self,structure_only=False,**valency):
-        axes=self.poscar.axes
-        scale=self.poscar.scale
-        axes=scale*axes
-        scale=1.0
+        axes  = self.poscar.axes
+        scale = self.poscar.scale
+        axes  = scale*axes
+        scale = 1.0
  
-        velem=self.poscar.elem
-        velem_count=self.poscar.elem_count
-        elem=vasp_to_nexus_elem(velem,velem_count)
+        velem       = self.poscar.elem
+        velem_count = self.poscar.elem_count
+        elem        = vasp_to_nexus_elem(velem,velem_count)
  
         self.poscar.change_specifier('cartesian',self)
         pos=self.poscar.pos
         
         center=axes.sum(0)/2.0
         
-        kpoints=None
-        kweights=None
-        kgrid=None
-        kshift=None
+        kpoints  = None
+        kweights = None
+        kgrid    = None
+        kshift   = None
 
         if self.kpoints.mode=="auto":
-         
-          kshift=self.kpoints.kshift
-          if self.kpoints.centering=="monkhorst-pack":
-            kshift=kshift+array([0.5,0.5,0.5])
-          elif self.kpoints.centering=="gamma":
-            pass
-          #end if
-        #endif   
-          kgrid=self.kpoints.kgrid
-         
+            kshift=self.kpoints.kshift
+            if self.kpoints.centering=="monkhorst-pack":
+                kshift=kshift+array([0.5,0.5,0.5])
+            elif self.kpoints.centering=="gamma":
+                pass
+            #end if
+            kgrid=self.kpoints.kgrid
         else:
-          raise Exception("VaspInput.return_system:  Error, system generation doesn't currently\
-                                                          work with manually specified k-points")
+            self.error('system generation does not currently work with manually specified k-points')
+        #end if
         structure = Structure(
-                      axes    = axes,
-                      elem    = elem,
-                      scale   = scale,
-                      pos     = pos,
-                      center  = center,
-                      kpoints = kpoints,
-                      kweights = kweights,
-                      kgrid   = kgrid,
-                      kshift  = kshift,
-                      units   = 'A',
-                      rescale = False
+            axes     = axes,
+            elem     = elem,
+            scale    = scale,
+            pos      = pos,
+            center   = center,
+            kpoints  = kpoints,
+            kweights = kweights,
+            kgrid    = kgrid,
+            kshift   = kshift,
+            units    = 'A',
+            rescale  = False,
             )
          
         structure.zero_corner()
@@ -1427,7 +1433,7 @@ class VaspInput(SimulationInput,Vobj):
         #end if
 
         ion_charge = 0
-        atoms   = list(elem)
+        atoms      = list(elem)
         for atom in atoms:
             if not atom in valency:
                 self.error('valence charge for atom {0} has not been defined\nplease provide the valence charge as an argument to return_system()'.format(atom))
@@ -1436,13 +1442,19 @@ class VaspInput(SimulationInput,Vobj):
         #end for
 
         ####WARNING:  Assuming that the netcharge and netspin are ZERO. 
-        net_charge=0
-        net_spin=0
+        net_charge = 0
+        net_spin   = 0
 
-        system = PhysicalSystem(structure,net_charge,net_spin,**valency)
+        system = PhysicalSystem(
+            structure  = structure,
+            net_charge = net_charge,
+            net_spin   = net_spin,
+            **valency
+            )
  
         return system
     #end def return_system
+
 
     def set_potcar(self,pseudos,species=None):
         if species is None:
@@ -1631,17 +1643,17 @@ def generate_any_vasp_input(**kwargs):
 
     # incorporate system information
     species = None
-    if vf.system!=None:
+    if vf.system is not None:
         species = vi.incorporate_system(vf.system,gen_kpoints,vf.coord)
     #end if
 
     # set potcar
-    if vf.pseudos!=None:
+    if vf.pseudos is not None:
         vi.set_potcar(vf.pseudos,species)
     #end if
 
     # add kpoints information (override anything provided by system)
-    if gen_kpoints and (vf.kpoints!=None or vf.kweights!=None or vf.kbasis!=None or vf.kgrid!=None or vf.kcenter!=None or vf.kendpoints!=None):
+    if gen_kpoints and (vf.kpoints is not None or vf.kweights is not None or vf.kbasis is not None or vf.kgrid is not None or vf.kcenter is not None or vf.kendpoints is not None):
         if 'kpoints' in vi:
             kp = vi.kpoints
             kp.clear()
@@ -1649,21 +1661,21 @@ def generate_any_vasp_input(**kwargs):
             kp = Kpoints()
             vi.kpoints = kp
         #end if
-        if vf.kpoints!=None:
+        if vf.kpoints is not None:
             kp.mode     = 'explicit'
             kp.kpoints  = vf.kpoints
             kp.kweights = vf.kweights
             kp.coord    = vf.kcoord
-        elif vf.kgrid!=None:
+        elif vf.kgrid is not None:
             kp.mode      = 'auto'
             kp.centering = vf.kcenter
-            if vf.kgrid!=None:
+            if vf.kgrid is not None:
                 kp.kgrid = vf.kgrid
             #end if
-            if vf.kshift!=None:
+            if vf.kshift is not None:
                 kp.kshift = vf.kshift
             #end if
-        elif vf.kendpoints!=None:
+        elif vf.kendpoints is not None:
             kp.mode       = 'line'
             kp.coord      = vf.kcoord
             kp.kinsert    = vf.kinsert
@@ -1674,12 +1686,12 @@ def generate_any_vasp_input(**kwargs):
     #end if
 
     # create many poscars if doing nudged elastic band
-    if vf.neb!=None:
+    if vf.neb is not None:
         vi.setup_neb(*vf.neb,**vf.neb_args)
     #end if
 
     # handle 'system' name collision
-    if system_str!=None:
+    if system_str is not None:
         vi.incar.system = system_str
     #end if
 
@@ -1707,7 +1719,7 @@ def generate_poscar(structure,coord='cartesian'):
     else:
         error('coord must be either direct or cartesian\nyou provided: {0}'.format(coord),'generate_poscar')
     #end if
-    if s.frozen!=None:
+    if s.frozen is not None:
         poscar.dynamic = s.frozen==False
     #end if
     return poscar

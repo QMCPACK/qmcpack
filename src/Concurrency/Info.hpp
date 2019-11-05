@@ -43,6 +43,16 @@ inline unsigned int maxThreads<Threading::OPENMP>()
   return omp_get_max_threads();
 }
 
+template<Threading TT = Threading::OPENMP>
+unsigned int getThreadId();
+
+template<>
+inline unsigned int getThreadId<Threading::OPENMP>()
+{
+  return omp_get_thread_num();
+}
+
+
 #ifdef QMC_EXP_THREADING
 template<>
 inline unsigned int maxThreads<Threading::STD>()
