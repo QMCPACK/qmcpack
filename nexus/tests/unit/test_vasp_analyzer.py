@@ -43,6 +43,14 @@ def test_import():
 
 
 
+def test_empty_init():
+    from vasp_analyzer import VaspAnalyzer
+
+    va = VaspAnalyzer(None)
+#end def test_empty_init
+
+
+
 def test_analyze():
     import os
     from numpy import array,ndarray

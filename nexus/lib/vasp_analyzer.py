@@ -755,11 +755,12 @@ class OutcarData(DevBase):
 
 class VaspAnalyzer(SimulationAnalyzer):
     def __init__(self,arg0=None,xml=False,analyze=False):
-        path    = None
-        prefix  = None
-        incar   = None
-        outcar  = None
+        path     = None
+        prefix   = None
+        incar    = None
+        outcar   = None
         xml_file = None
+        neb      = False
         if isinstance(arg0,Simulation):
             sim = arg0
             file = sim.infile
@@ -789,13 +790,15 @@ class VaspAnalyzer(SimulationAnalyzer):
         #end if
         incar_file  = incar
         outcar_file = outcar
-        incar = None
-        incar_path = os.path.join(path,incar_file)
-        neb = False
-        if incar_file is not None and os.path.exists(incar_path):
-            incar = Incar(incar_path)
-            if 'images' in incar:
-                neb = True
+        if incar_file is not None:
+            incar = None
+            incar_path = os.path.join(path,incar_file)
+            neb = False
+            if incar_file is not None and os.path.exists(incar_path):
+                incar = Incar(incar_path)
+                if 'images' in incar:
+                    neb = True
+                #end if
             #end if
         #end if
         self.info = obj(
@@ -806,7 +809,7 @@ class VaspAnalyzer(SimulationAnalyzer):
             incar        = incar,
             xml_file     = xml_file,
             xml          = xml,
-            neb          = neb
+            neb          = neb,
             )
         if analyze:
             self.analyze()

@@ -1321,6 +1321,8 @@ def vasp_analyzer():
 
     nunit('import')
 
+    nunit('empty_init')
+
     nunit('analyze')
 
     nunit_all()
