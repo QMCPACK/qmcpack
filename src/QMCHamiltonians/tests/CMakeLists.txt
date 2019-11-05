@@ -24,7 +24,7 @@ MAYBE_SYMLINK(${UTEST_HDF_INPUT} ${UTEST_DIR}/pwscf.pwscf.h5)
 
 
 SET(SRCS test_bare_kinetic.cpp test_coulomb_pbcAB.cpp test_coulomb_pbcAB_ewald.cpp test_coulomb_pbcAA.cpp
-         test_coulomb_pbcAA_ewald.cpp test_force.cpp test_force_ewald.cpp test_ecp.cpp test_hamiltonian_factory.cpp)
+         test_coulomb_pbcAA_ewald.cpp test_force.cpp test_force_ewald.cpp test_ecp.cpp test_hamiltonian_factory.cpp test_paircorr.cpp)
 IF(QMC_CUDA)
   SET(SRCS ${SRCS}
       test_coulomb_CUDA.cpp 
