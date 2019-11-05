@@ -97,7 +97,7 @@ struct makelattice<CrystalLattice<T, 2>>
   }
 };
 
-/** Specialization of makelattice<CL> for CrystalLattice<T,3>&/
+/** Specialization of makelattice<CL> for CrystalLattice<T,3> */
 template<class T>
 struct makelattice<CrystalLattice<T, 3>>
 {
