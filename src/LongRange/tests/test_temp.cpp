@@ -42,11 +42,11 @@ TEST_CASE("temp3d", "[lrhandler]")
   Lattice.LR_dim_cutoff = 30.;
   Lattice.R.diagonal(5.0);
   Lattice.reset();
-  REQUIRE(Lattice.Volume == Approx(125));
+  REQUIRE(Approx(Lattice.Volume) == 125);
   Lattice.SetLRCutoffs(Lattice.Rv);
   //Lattice.printCutoffs(app_log());
-  REQUIRE(Lattice.LR_rc == Approx(2.5));
-  REQUIRE(Lattice.LR_kc == Approx(12));
+  REQUIRE(Approx(Lattice.LR_rc) == 2.5);
+  REQUIRE(Approx(Lattice.LR_kc) == 12);
 
   ParticleSet ref; // handler needs ref.SK.KLists
   ref.Lattice = Lattice;  // !!!! crucial for access to Volume
@@ -57,8 +57,8 @@ TEST_CASE("temp3d", "[lrhandler]")
 
   handler.initBreakup(ref);
   REQUIRE(handler.MaxKshell == 78);
-  REQUIRE(handler.LR_rc == Approx(2.5));
-  REQUIRE(handler.LR_kc == 12);
+  REQUIRE(Approx(handler.LR_rc) == 2.5);
+  REQUIRE(Approx(handler.LR_kc) == 12);
 
   mRealType r, dr, rinv;
   mRealType vsr, vlr;
@@ -71,7 +71,7 @@ TEST_CASE("temp3d", "[lrhandler]")
     vsr = handler.evaluate(r, rinv);
     vlr = handler.evaluateLR(r);
     // short-range part must vanish after rcut
-    if (r>2.5) REQUIRE(vsr == Approx(0.0));
+    if (r>2.5) REQUIRE(Approx(vsr) == 0.0);
     // sum must recover the Coulomb potential
     REQUIRE(vsr+vlr == Approx(rinv));
   }

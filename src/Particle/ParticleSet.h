@@ -442,12 +442,7 @@ public:
    */
   void donePbyP();
   /// batched version of donePbyP
-  static void flex_donePbyP(const RefVector<ParticleSet>& P_list)
-  {
-    #pragma omp parallel for
-    for (int iw = 0; iw < P_list.size(); iw++)
-      P_list[iw].get().donePbyP();
-  }
+  static void flex_donePbyP(const RefVector<ParticleSet>& P_list);
 
   ///return the address of the values of Hamiltonian terms
   inline FullPrecRealType* restrict getPropertyBase() { return Properties.data(); }

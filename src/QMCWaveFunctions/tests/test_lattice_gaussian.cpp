@@ -31,6 +31,8 @@ using std::string;
 namespace qmcplusplus
 {
 using RealType = QMCTraits::RealType;
+using LogValueType = std::complex<QMCTraits::QTFull::RealType>;
+
 TEST_CASE("lattice gaussian", "[wavefunction]")
 {
   Communicate* c;
@@ -125,10 +127,10 @@ TEST_CASE("lattice gaussian", "[wavefunction]")
   ions_.update();
   elec_.update();
 
-  RealType logpsi = LGP->evaluateLog(elec_, elec_.G, elec_.L);
+  LogValueType logpsi = LGP->evaluateLog(elec_, elec_.G, elec_.L);
   // check answer
   RealType r2 = Dot(elec_.R, elec_.R);
   double wfval = std::exp(-alpha*r2);
-  REQUIRE(logpsi == Approx(std::log(wfval)));
+  REQUIRE(logpsi == ComplexApprox(std::log(wfval)));
 }
 } // namespace qmcplusplus

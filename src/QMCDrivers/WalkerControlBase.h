@@ -129,11 +129,13 @@ public:
   int sortWalkers(MCWalkerConfiguration& W);
 
   struct PopulationAdjustment {
-    int num_walkers;
+    int num_walkers; // This is the number of walkers we are adjusting to
     RefVector<MCPWalker> good_walkers;
     std::vector<int> copies_to_make;
     RefVector<MCPWalker> bad_walkers;
   };
+
+  static std::vector<IndexType> syncFutureWalkersPerRank(Communicate* comm, IndexType n_walkers );
 
   /** create data structure needed to do population adjustment
    *
