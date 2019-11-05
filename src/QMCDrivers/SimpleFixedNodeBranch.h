@@ -250,17 +250,17 @@ struct SimpleFixedNodeBranch : public QMCTraits
   void setEstimatorManager(EstimatorManagerBase* est) { MyEstimator = est; }
 
   /** initialize  the WalkerController
-   * @param w Walkers
-   * @param tau timestep
+   * @param mcwc Walkers
    * @param fixW true, if reconfiguration with the fixed number of walkers is used
+   * @param killwalker 
    * @return number of copies to make in case targetwalkers changed
    */
   int initWalkerController(MCWalkerConfiguration& mcwc, bool fixW, bool killwalker);
 
   /** initialize  the WalkerController
-   * @param w Walkers
-   * @param tau timestep
+   * @param pop Population of Walkers
    * @param fixW true, if reconfiguration with the fixed number of walkers is used
+   * @param killwalker 
    * @return number of copies to make in case targetwalkers changed
    */
   int initWalkerController(MCPopulation& pop, bool fixW, bool killwalker);
@@ -377,6 +377,7 @@ struct SimpleFixedNodeBranch : public QMCTraits
    * @param eold old energy
    * @param scnew  \f$ V_{sc}(R_{new})/V(R_{new}) \f$
    * @param scold  \f$ V_{sc}(R_{old})/V(R_{old}) \f$
+   * @param taueff
    */
   inline RealType branchWeightTau(RealType enew, RealType eold, RealType scnew, RealType scold, RealType taueff)
   {
@@ -408,7 +409,6 @@ struct SimpleFixedNodeBranch : public QMCTraits
   /** update RMC counters and running averages.
    * @param iter the iteration
    * @param w the walker ensemble
-   * @param clones of the branch engine for OpenMP threads
    */
   void collect(int iter, MCWalkerConfiguration& w);
 

@@ -14,9 +14,13 @@
 #include "Configuration.h"
 #include "Concurrency/TasksOneToOne.hpp"
 #include "Message/CommOperators.h"
+#include "QMCHamiltonians/QMCHamiltonian.h"
 
 namespace qmcplusplus
 {
+
+MCPopulation::MCPopulation() : trial_wf_(nullptr), elec_particle_set_(nullptr), hamiltonian_(nullptr) {}
+ 
 MCPopulation::MCPopulation(int num_ranks,
                            MCWalkerConfiguration& mcwc,
                            ParticleSet* elecs,
@@ -51,6 +55,21 @@ MCPopulation::MCPopulation(int num_ranks,
       ptcl_inv_mass_[iat] = ptclgrp_inv_mass_[ig];
   }
 }
+
+MCPopulation::MCPopulation(int num_ranks,
+             ParticleSet* elecs,
+             TrialWaveFunction* trial_wf,
+             QMCHamiltonian* hamiltonian,
+             int this_rank)
+    : num_ranks_(num_ranks),
+      num_particles_(elecs->R.size()),
+      num_local_walkers_per_node_(num_ranks, 0),
+      trial_wf_(trial_wf),
+      elec_particle_set_(elecs),
+      hamiltonian_(hamiltonian),
+      rank_(this_rank)
+{}
+
 
 /** Default creates walkers equal to num_local_walkers_ and zeroed positions
  */

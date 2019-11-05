@@ -24,10 +24,12 @@
 #include "Particle/Walker.h"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
-#include "QMCHamiltonians/QMCHamiltonian.h"
 
 namespace qmcplusplus
 {
+
+class QMCHamiltonian;
+
 class MCPopulation
 {
 public:
@@ -84,7 +86,7 @@ private:
   int rank_;
 
 public:
-  MCPopulation() : trial_wf_(nullptr), elec_particle_set_(nullptr), hamiltonian_(nullptr) {}
+  MCPopulation();
   /** Temporary constructor to deal with MCWalkerConfiguration be the only source of some information
    *  in QMCDriverFactory.
    */
@@ -94,20 +96,12 @@ public:
                TrialWaveFunction* trial_wf,
                QMCHamiltonian* hamiltonian_,
                int this_rank = 0);
-  //MCPopulation(int num_ranks, int num_particles) : num_ranks_(num_ranks), num_particles_(num_particles) {}
+
   MCPopulation(int num_ranks,
                ParticleSet* elecs,
                TrialWaveFunction* trial_wf,
                QMCHamiltonian* hamiltonian,
-               int this_rank = 0)
-      : num_ranks_(num_ranks),
-        num_particles_(elecs->R.size()),
-        num_local_walkers_per_node_(num_ranks, 0),
-        trial_wf_(trial_wf),
-        elec_particle_set_(elecs),
-        hamiltonian_(hamiltonian),
-        rank_(this_rank)
-  {}
+               int this_rank = 0);
 
   MCPopulation(MCPopulation&)  = default;
   MCPopulation(MCPopulation&&) = default;

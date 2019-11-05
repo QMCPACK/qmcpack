@@ -13,7 +13,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-/**@file ThreeBodyGeminalBuilder.cpp
+/**@file
  *@brief definition of three-body jastrow of Geminal functions
  */
 #include "QMCWaveFunctions/AGPDeterminant.h"
