@@ -8,6 +8,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 #include "QMCDrivers/Crowd.h"
+#include "QMCHamiltonians/QMCHamiltonian.h"
 
 namespace qmcplusplus
 {
@@ -49,6 +50,12 @@ void Crowd::loadWalkers()
     ++it_walker;
     ++it_walker_elecs;
   }
+}
+
+void Crowd::setRNGForHamiltonian(RandomGenerator_t& rng)
+{
+  for ( QMCHamiltonian& ham : walker_hamiltonians_ )
+    ham.setRandomGenerator(&rng);
 }
 
 void Crowd::startBlock(int num_steps)
