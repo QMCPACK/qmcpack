@@ -41,9 +41,13 @@ public:
   WaveFunctionComponent* buildComponent(xmlNodePtr cur) override;
 
 private:
+  /// \xmla{jastrow,name}
   std::string NameOpt;
+  /// \xmla{jastrow,type}
   std::string TypeOpt;
+  /// \xmla{jastrow,function}
   std::string Jastfunction;
+  /// \xmla{jastrow,spin}
   std::string SpinOpt;
   ///particle set for source particle
   ParticleSet* SourcePtcl;

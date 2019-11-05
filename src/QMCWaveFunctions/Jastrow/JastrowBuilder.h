@@ -35,11 +35,17 @@ private:
   PtclPoolType& ptclPool;
   ///index for the jastrow type: 1, 2, 3
   int JastrowType;
+  /// \xmla{jastrow,name}
   std::string nameOpt;
+  /// \xmla{jastrow,type}
   std::string typeOpt;
+  /// \xmla{jastrow,function}
   std::string funcOpt;
+  /// \xmla{jastrow,spin}
   std::string spinOpt;
+  /// \xmla{jastrow,transform}
   std::string transformOpt;
+  /// \xmla{jastrow,source}
   std::string sourceOpt;
   ///reset the options
   void resetOptions();
