@@ -11,7 +11,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-/** @file PWOribitalBuilder.h
+/** @file
  * @brief Declaration of a builder class for PWOrbitalSet
  *
  */

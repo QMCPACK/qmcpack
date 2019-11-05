@@ -14,7 +14,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-/** @file SplineAdoptorReader.h
+/** @file
  *
  * The most general reader class for SplineAdoptor using the full single grid for the supercell
  * - SplineR2RAdoptor

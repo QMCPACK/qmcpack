@@ -982,7 +982,6 @@ void SimpleFixedNodeBranch::finalize(MCWalkerConfiguration& w)
 
 /**  Parse the xml file for parameters
  *@param cur current xmlNode
- *@param LogOut std::ostream to which the run-time report is sent
  *
  * Few important parameters are:
  * <ul>
