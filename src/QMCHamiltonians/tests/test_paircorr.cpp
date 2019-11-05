@@ -146,16 +146,16 @@ namespace qmcplusplus
     
     // Make a PairCorrEstimator, call put() to set up internals
     std::string name = elec->getName();
-    PairCorrEstimator* paircorr = new PairCorrEstimator(*elec, name);
+    PairCorrEstimator paircorr(*elec, name);
     bool gofr_okay = doc.parseFromString(gofr_xml);
     REQUIRE(gofr_okay);
     xmlNodePtr gofr_xml_root = doc.getRoot();
-    paircorr->put(gofr_xml_root);
-    paircorr->addObservables( elec->PropertyList, elec->Collectables );
+    paircorr.put(gofr_xml_root);
+    paircorr.addObservables( elec->PropertyList, elec->Collectables );
     
     // Compute g(r) then print it to stdout
     // NB: Hardcoded to match hardcoded xml above. ***Fragile!!!***
-    paircorr->evaluate(*elec);
+    paircorr.evaluate(*elec);
     
     auto gofr = elec->Collectables;
     std::cout << "\n";
@@ -201,7 +201,6 @@ namespace qmcplusplus
     REQUIRE( std::fabs( gofr[37] - 0.50103 ) < eps );
     REQUIRE( std::fabs( gofr[57] - 0.00000 ) < eps );
     
-    delete paircorr;
     std::cout << "test_paircorr:: STOP\n";
   }
 } // namespace qmcplusplus

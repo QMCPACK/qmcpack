@@ -29,9 +29,7 @@ PairCorrEstimator::PairCorrEstimator(ParticleSet& elns, std::string& sources)
   num_species = elns.groups();
   n_vec.resize(num_species, 0);
   for ( int i=0; i<num_species; i++ )
-    {
-      n_vec[i] = elns.last(i) - elns.first(i);
-    }
+    n_vec[i] = elns.last(i) - elns.first(i);
   N_e = elns.getTotalNum();
 
   // use the simulation cell radius if any direction is periodic
@@ -41,9 +39,7 @@ PairCorrEstimator::PairCorrEstimator(ParticleSet& elns, std::string& sources)
     Volume = elns.Lattice.Volume;
   }
   else  // Open BC's
-    {
-      Volume = 1.0;
-    }
+    Volume = 1.0;
   NumBins  = static_cast<int>(Dmax / Delta);
   Delta    = Dmax / static_cast<RealType>(NumBins);
   DeltaInv = 1.0 / Delta;
