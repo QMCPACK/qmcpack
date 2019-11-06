@@ -199,32 +199,7 @@ class Pw2qmcpackAnalyzer(SimulationAnalyzer):
     #end def __init__
 
     def analyze(self):
-        if False:
-            import h5py
-            self.log('Fixing h5 file',n=5)
-
-            path = os.path.split(self.h5file)[0]
-            print os.getcwd()
-            print os.listdir('./')
-            if os.path.exists(path):
-                print os.listdir(path)
-            #end if
-            print self.h5file
-
-            h = h5py.File(self.h5file)
-            if 'electrons' in h:
-                elec = h['electrons']
-                nkpoints = 0
-                for name,val in elec.iteritems():
-                    if name.startswith('kpoint'):
-                        nkpoints+=1
-                    #end for
-                #end if
-                nkold = elec['number_of_kpoints'][0] 
-                self.log('Were',nkold,'kpoints, now',nkpoints,'kpoints',n=6)
-                elec['number_of_kpoints'][0] = nkpoints
-            #end for        
-        #end if
+        None
     #end def analyze
 
     def get_result(self,result_name):
