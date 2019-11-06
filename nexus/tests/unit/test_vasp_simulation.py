@@ -1,6 +1,6 @@
 
 import testing
-from testing import divert_nexus,restore_nexus
+from testing import divert_nexus,restore_nexus,clear_all_sims
 from testing import failed,FailedTest
 from testing import value_eq,object_eq,text_eq
 
@@ -83,6 +83,8 @@ def test_minimal_init():
         )
 
     assert(isinstance(sim,Vasp))
+
+    clear_all_sims()
 #end def test_minimal_init
 
 
@@ -96,6 +98,7 @@ def test_check_result():
 
     assert(sim.check_result('structure',None))
 
+    clear_all_sims()
     restore_nexus()
 #end def test_check_result
 
@@ -181,6 +184,7 @@ def test_get_result():
 
     assert(object_eq(result,result_ref))
 
+    clear_all_sims()
     restore_nexus()
 #end def test_get_result
 
@@ -249,6 +253,7 @@ def test_incorporate_result():
 
     assert(object_eq(sim2.input.poscar.to_obj(),poscar_ref))
 
+    clear_all_sims()
     restore_nexus()
 #end def test_incorporate_result
 
@@ -283,6 +288,7 @@ def test_check_sim_status():
     assert(sim.finished)
     assert(not sim.failed)
 
+    clear_all_sims()
     restore_nexus()
 #end def test_check_sim_status
 
@@ -310,5 +316,6 @@ def test_get_output_files():
         assert(os.path.exists(os.path.join(tpath,sim.identifier+'.'+vfile)))
     #end for
 
+    clear_all_sims()
     restore_nexus()
 #end def test_get_output_files

@@ -580,3 +580,9 @@ def divert_nexus_errors():
     from generic import generic_settings
     generic_settings.raise_error = True
 #end def divert_nexus_errors
+
+
+def clear_all_sims():
+    from simulation import Simulation
+    Simulation.clear_all_sims()
+#end def clear_all_sims

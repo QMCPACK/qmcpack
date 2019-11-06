@@ -1416,14 +1416,15 @@ def qmcpack_analyzer():
 #end def qmcpack_analyzer
 
 
+
 def vasp_simulation():
     nunit('import')
 
     nunit('minimal_init')
 
-    nunit('get_result')
-
     nunit('check_result')
+
+    nunit('get_result')
 
     nunit('incorporate_result')
 
@@ -1433,6 +1434,24 @@ def vasp_simulation():
 
     nunit_all()
 #end def vasp_simulation
+
+
+
+def pwscf_simulation():
+    nunit('import')
+
+    nunit('minimal_init')
+    
+    nunit('check_result')
+    
+    nunit('get_result')
+    
+    nunit('incorporate_result')
+    
+    nunit('check_sim_status')
+    
+    nunit_all()
+#end def pwscf_simulation
 
 
 
@@ -1742,6 +1761,7 @@ NexusTest( quantum_package_analyzer      )
 NexusTest( qmcpack_converter_analyzers   )
 NexusTest( qmcpack_analyzer              )
 NexusTest( vasp_simulation               )
+NexusTest( pwscf_simulation              )
 NexusTest( qmcpack_converters            )
 
 # ordered alphabetically (pytest order)
@@ -1771,6 +1791,7 @@ NexusTest( qmcpack_converters            )
 #NexusTest( pwscf_input                   )
 #NexusTest( pwscf_postprocessor_analyzers )
 #NexusTest( pwscf_postprocessor_input     )
+#NexusTest( pwscf_simulation              )
 #NexusTest( pyscf_input                   )
 #NexusTest( qmcpack_analyzer              )
 #NexusTest( qmcpack_converter_analyzers   )
@@ -1786,6 +1807,7 @@ NexusTest( qmcpack_converters            )
 #NexusTest( superstring                   )
 #NexusTest( testing                       )
 #NexusTest( unit_converter                )
+#NexusTest( vasp_analyzer                 )
 #NexusTest( vasp_simulation               )
 #NexusTest( vasp_input                    )
 #NexusTest( versions                      )
