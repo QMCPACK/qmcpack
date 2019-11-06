@@ -54,8 +54,10 @@ public:
   ///typedef of IndexType
   typedef QMCTraits::IndexType IndexType;
 
-  ///@enum enumeration to access curData and accumData for reduction
-  // curData is larger than this //LE_MAX + n_node * T
+  /** An enum to access curData and accumData for reduction
+   *
+   * curData is larger than this //LE_MAX + n_node * T
+   */
   enum
   {
     ENERGY_INDEX = 0,

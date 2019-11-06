@@ -16,9 +16,12 @@
 #include "QMCDrivers/MCPopulation.h"
 #include "Estimators/EstimatorManagerBase.h"
 #include "Estimators/EstimatorManagerCrowd.h"
+#include "Utilities/RandomGenerator.h"
 
 namespace qmcplusplus
 {
+
+
 /** Driver synchronized step context
  * 
  *  assumed to live inside the drivers scope
@@ -68,11 +71,7 @@ public:
     estimator_manager_crowd_.accumulate(global_walkers, mcp_walkers_, walker_elecs_);
   }
 
-  void setRNGForHamiltonian(RandomGenerator_t& rng)
-  {
-    for ( QMCHamiltonian& ham : walker_hamiltonians_ )
-      ham.setRandomGenerator(&rng);
-  }
+  void setRNGForHamiltonian(RandomGenerator_t& rng);
 
   auto beginWalkers() { return mcp_walkers_.begin(); }
   auto endWalkers() { return mcp_walkers_.end(); }
