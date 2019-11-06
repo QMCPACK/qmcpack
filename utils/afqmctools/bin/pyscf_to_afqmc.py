@@ -60,7 +60,7 @@ def parse_args(args, comm):
                             action='store_true', default=False,
                             help='Disable hamiltonian generation.')
         parser.add_argument('-n', '--num-dets', dest='ndet_max',
-                            type=int, default=None,
+                            type=int, default=1,
                             help='Set upper limit on number of determinants to '
                             'generate.')
         parser.add_argument('-r', '--real-ham', dest='real_chol',
