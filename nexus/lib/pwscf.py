@@ -195,7 +195,11 @@ class Pwscf(Simulation):
             struct  = structs[len(structs)-1]
             pos   = struct.positions
             atoms = struct.atoms
-            scale = self.input.system['celldm(1)']
+            if 'celldm(1)' in self.input.system:
+                scale = self.input.system['celldm(1)']
+            else:
+                scale = 1.0
+            #end if
             pos   = scale*array(pos)
             
             structure = self.system.structure.copy()

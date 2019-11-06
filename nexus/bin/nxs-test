@@ -1198,6 +1198,7 @@ def pwscf_input():
 #end def pwscf_input
 
 
+
 def pwscf_postprocessor_input():
     nunit('import')
 
@@ -1316,10 +1317,108 @@ def qmcpack_input():
 
 
 
-def qmcpack_converters():
+def vasp_analyzer():
+    nunit('files')
+
     nunit('import')
 
+    nunit('empty_init')
+
+    nunit('analyze')
+
+    nunit_all()
+#end def vasp_analyzer
+
+
+
+def pwscf_analyzer():
+    nunit('import')
+
+    nunit('empty_init')
+
+    nunit('analyze')
+
+    nunit_all()
+#end def pwscf_analyzer
+
+
+
+def pwscf_postprocessor_analyzers():
+    nunit('import')
+
+    nunit('empty_init')
+
+    nunit('projwfc_analyzer')
+
+    nunit_all()
+#end def pwscf_postprocessor_analyzers
+
+
+
+def gamess_analyzer():
+    nunit('import')
+
+    nunit('empty_init')
+
+    nunit('analyze')
+
+    nunit_all()
+#end def gamess_analyzer
+
+
+
+def pyscf_analyzer():
+    nunit('import')
+
+    nunit('empty_init')
+
+    nunit_all()
+#end def pyscf_analyzer
+
+
+
+def quantum_package_analyzer():
+    nunit('import')
+
+    nunit('empty_init')
+
+    nunit_all()
+#end def quantum_package_analyzer
+
+
+
+def qmcpack_converter_analyzers():
+    nunit('import')
+
+    nunit('pw2qmcpack_analyzer_init')
+
+    nunit('convert4qmc_analyzer_init')
+
     nunit('pyscf_to_afqmc_analyzer_init')
+
+    nunit_all()
+#end def qmcpack_converter_analyzers
+
+
+
+def qmcpack_analyzer():
+    nunit('import')
+
+    nunit('empty_init')
+
+    nunit('vmc_dmc_analysis')
+
+    nunit('optimization_analysis')
+
+    nunit('twist_average_analysis')
+
+    nunit_all()
+#end def qmcpack_analyzer
+
+
+
+def qmcpack_converters():
+    nunit('import')
 
     nunit_all()
 #end def qmcpack_converters
@@ -1579,82 +1678,97 @@ def user_examples(label):
 # create labeled tests from simple functions above
 
 # ordered according to logical dependencies
-NexusTest( versions                  )
-NexusTest( required_dependencies     )
-NexusTest( optional_dependencies     , optional=True)
-NexusTest( nexus_imports             )
-NexusTest( testing                   )
-NexusTest( execute                   )
-NexusTest( memory                    )
-NexusTest( plotting                  )
-NexusTest( superstring               )
-NexusTest( generic_operation         , 'generic' )
-NexusTest( developer                 )
-NexusTest( unit_converter            )
-NexusTest( periodic_table            )
-NexusTest( numerics                  )
-NexusTest( grid_functions            )
-NexusTest( fileio                    )
-NexusTest( hdfreader                 )
-NexusTest( xmlreader                 )
-NexusTest( structure                 )
-NexusTest( physical_system           )
-NexusTest( basisset                  )
-NexusTest( pseudopotential           )
-NexusTest( nexus_base                )
-NexusTest( machines                  )
-NexusTest( simulation                )
-NexusTest( bundle                    )
-NexusTest( project_manager           )
-NexusTest( settings_operation        , 'settings' )
-NexusTest( vasp_input                )
-NexusTest( pwscf_input               )
-NexusTest( pwscf_postprocessor_input )
-NexusTest( gamess_input              )
-NexusTest( pyscf_input               )
-NexusTest( quantum_package_input     )
-NexusTest( qmcpack_converter_input   )
-NexusTest( qmcpack_input             )
-NexusTest( qmcpack_converters        )
+NexusTest( versions                      )
+NexusTest( required_dependencies         )
+NexusTest( optional_dependencies         , optional=True)
+NexusTest( nexus_imports                 )
+NexusTest( testing                       )
+NexusTest( execute                       )
+NexusTest( memory                        )
+NexusTest( plotting                      )
+NexusTest( superstring                   )
+NexusTest( generic_operation             , 'generic' )
+NexusTest( developer                     )
+NexusTest( unit_converter                )
+NexusTest( periodic_table                )
+NexusTest( numerics                      )
+NexusTest( grid_functions                )
+NexusTest( fileio                        )
+NexusTest( hdfreader                     )
+NexusTest( xmlreader                     )
+NexusTest( structure                     )
+NexusTest( physical_system               )
+NexusTest( basisset                      )
+NexusTest( pseudopotential               )
+NexusTest( nexus_base                    )
+NexusTest( machines                      )
+NexusTest( simulation                    )
+NexusTest( bundle                        )
+NexusTest( project_manager               )
+NexusTest( settings_operation            , 'settings' )
+NexusTest( vasp_input                    )
+NexusTest( pwscf_input                   )
+NexusTest( pwscf_postprocessor_input     )
+NexusTest( gamess_input                  )
+NexusTest( pyscf_input                   )
+NexusTest( quantum_package_input         )
+NexusTest( qmcpack_converter_input       )
+NexusTest( qmcpack_input                 )
+NexusTest( vasp_analyzer                 )
+NexusTest( pwscf_analyzer                )
+NexusTest( pwscf_postprocessor_analyzers )
+NexusTest( gamess_analyzer               )
+NexusTest( pyscf_analyzer                )
+NexusTest( quantum_package_analyzer      )
+NexusTest( qmcpack_converter_analyzers   )
+NexusTest( qmcpack_analyzer              )
+NexusTest( qmcpack_converters            )
 
 # ordered alphabetically (pytest order)
-#NexusTest( basisset                  )
-#NexusTest( bundle                    )
-#NexusTest( developer                 )
-#NexusTest( execute                   )
-#NexusTest( fileio                    )
-#NexusTest( gamess_input              )
-#NexusTest( generic_operation         , 'generic' )
-#NexusTest( grid_functions            )
-#NexusTest( hdfreader                 )
-#NexusTest( machines                  )
-#NexusTest( memory                    )
-#NexusTest( nexus_base                )
-#NexusTest( nexus_imports             )
-#NexusTest( numerics                  )
-#NexusTest( optional_dependencies     , optional=True)
-#NexusTest( periodic_table            )
-#NexusTest( physical_system           )
-#NexusTest( plotting                  )
-#NexusTest( project_manager           )
-#NexusTest( pseudopotential           )
-#NexusTest( pwscf_input               )
-#NexusTest( pwscf_postprocessor_input )
-#NexusTest( pyscf_input               )
-#NexusTest( qmcpack_converter_input   )
-#NexusTest( qmcpack_converters        )
-#NexusTest( qmcpack_input             )
-#NexusTest( quantum_package_input     )
-#NexusTest( required_dependencies     )
-#NexusTest( settings_operation        , 'settings' )
-#NexusTest( simulation                )
-#NexusTest( structure                 )
-#NexusTest( superstring               )
-#NexusTest( testing                   )
-#NexusTest( unit_converter            )
-#NexusTest( vasp_input                )
-#NexusTest( versions                  )
-#NexusTest( xmlreader                 )
+#NexusTest( basisset                      )
+#NexusTest( bundle                        )
+#NexusTest( developer                     )
+#NexusTest( execute                       )
+#NexusTest( fileio                        )
+#NexusTest( gamess_analyzer               )
+#NexusTest( gamess_input                  )
+#NexusTest( generic_operation             , 'generic' )
+#NexusTest( grid_functions                )
+#NexusTest( hdfreader                     )
+#NexusTest( machines                      )
+#NexusTest( memory                        )
+#NexusTest( nexus_base                    )
+#NexusTest( nexus_imports                 )
+#NexusTest( numerics                      )
+#NexusTest( optional_dependencies         , optional=True)
+#NexusTest( periodic_table                )
+#NexusTest( physical_system               )
+#NexusTest( plotting                      )
+#NexusTest( project_manager               )
+#NexusTest( pseudopotential               )
+#NexusTest( pwscf_analyzer                )
+#NexusTest( pyscf_analyzer                )
+#NexusTest( pwscf_input                   )
+#NexusTest( pwscf_postprocessor_analyzers )
+#NexusTest( pwscf_postprocessor_input     )
+#NexusTest( pyscf_input                   )
+#NexusTest( qmcpack_analyzer              )
+#NexusTest( qmcpack_converter_analyzers   )
+#NexusTest( qmcpack_converter_input       )
+#NexusTest( qmcpack_converters            )
+#NexusTest( qmcpack_input                 )
+#NexusTest( quantum_package_analyzer      )
+#NexusTest( quantum_package_input         )
+#NexusTest( required_dependencies         )
+#NexusTest( settings_operation            , 'settings' )
+#NexusTest( simulation                    )
+#NexusTest( structure                     )
+#NexusTest( superstring                   )
+#NexusTest( testing                       )
+#NexusTest( unit_converter                )
+#NexusTest( vasp_input                    )
+#NexusTest( versions                      )
+#NexusTest( xmlreader                     )
 
 for label in example_information.keys():
     NexusTest(
