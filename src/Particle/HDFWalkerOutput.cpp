@@ -14,7 +14,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-/** @file HDFWalkerOuput.cpp
+/** @file
  * @brief definition  of HDFWalkerOuput  and other support class and functions
  */
 #include "Particle/HDFWalkerOutput.h"

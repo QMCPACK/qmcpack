@@ -9,17 +9,6 @@
 // File refactored from: QMCDriver.cpp
 //////////////////////////////////////////////////////////////////////////////////////
 
-/** \file
- * Clean base class for Unified driver
- *  
- * This driver base class should be generic with respect to precision,
- * value type, device execution, and ...
- * It should contain no typdefs not related to compiler bugs or platform workarounds
- *
- * Some integer math is done in non performance critical areas in the clear and
- * not optimized way. Leave these alone.
- */
-
 #include <limits>
 #include <typeinfo>
 #include <cmath>

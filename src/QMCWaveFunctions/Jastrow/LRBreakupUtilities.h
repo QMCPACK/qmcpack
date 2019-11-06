@@ -13,7 +13,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-/** @file LRJastrowSingleton.h
+/** @file
  * @brief Define a LRHandler with two template parameters
  */
 #ifndef QMCPLUSPLUS_LONGRANGEJASTROW_BREAKUPUTILITY_H

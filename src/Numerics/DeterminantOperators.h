@@ -14,7 +14,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-/** @file DeterminantOperator.h
+/** @file
  * @brief Define determinant operators
  */
 #ifndef OHMMS_NUMERIC_DETERMINANT_H
