@@ -13,7 +13,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-/** @file PWOribitalBuilder.cpp
+/** @file
  * @brief Definition of a builder class for PWOrbitalSet
  */
 #include "QMCWaveFunctions/PlaneWave/PWOrbitalBuilder.h"

@@ -211,9 +211,6 @@ int SimpleFixedNodeBranch::initWalkerController(MCPopulation& population, bool f
 {
   BranchMode.set(B_DMC, 1);                               //set DMC
   BranchMode.set(B_DMCSTAGE, iParam[B_WARMUPSTEPS] == 0); //use warmup
-  //this is not necessary
-  //check if tau is different and set the initial values
-  //vParam[SBVP::TAU]=tau;
   bool fromscratch     = false;
   FullPrecRealType tau = vParam[SBVP::TAU];
 
@@ -224,6 +221,7 @@ int SimpleFixedNodeBranch::initWalkerController(MCPopulation& population, bool f
         "Unified Driver initWalkerController called with existing WalkerController\n"
         "this is a violation SimpleFixedNodeBranch is created to a valid state only\n"
         "once in the Unified Driver design.");
+
   if (iParam[B_TARGETWALKERS] == 0)
   {
     // has "important" side effect of updating the walker offsets
@@ -984,7 +982,6 @@ void SimpleFixedNodeBranch::finalize(MCWalkerConfiguration& w)
 
 /**  Parse the xml file for parameters
  *@param cur current xmlNode
- *@param LogOut std::ostream to which the run-time report is sent
  *
  * Few important parameters are:
  * <ul>

@@ -20,7 +20,6 @@
 #ifndef QMCPLUSPLUS_HAMILTONIAN_H
 #define QMCPLUSPLUS_HAMILTONIAN_H
 #include "Configuration.h"
-#include "type_traits/TypeRequire.hpp"
 #include <QMCHamiltonians/OperatorBase.h>
 #include "QMCHamiltonians/NonLocalECPotential.h"
 #if !defined(REMOVE_TRACEMANAGER)

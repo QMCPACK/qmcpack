@@ -3,9 +3,36 @@
 import numpy as np
 import versions
 import testing
-from testing import value_eq,object_eq,object_diff
+from testing import value_eq as value_eq_orig
+from testing import object_eq as object_eq_orig
+from testing import object_diff as object_diff_orig
 
-associated_files = dict()
+
+struct_atol = 1e-10
+
+def value_eq(*args,**kwargs):
+    if 'atol' not in kwargs:
+        kwargs['atol'] = struct_atol
+    #end if
+    return value_eq_orig(*args,**kwargs)
+#end def value_eq
+
+def object_eq(*args,**kwargs):
+    if 'atol' not in kwargs:
+        kwargs['atol'] = struct_atol
+    #end if
+    return object_eq_orig(*args,**kwargs)
+#end def object_eq
+
+def object_diff(*args,**kwargs):
+    if 'atol' not in kwargs:
+        kwargs['atol'] = struct_atol
+    #end if
+    return object_diff_orig(*args,**kwargs)
+#end def object_diff
+
+
+associated_files     = dict()
 reference_inputs     = dict()
 reference_structures = dict()
 generated_structures = dict()
@@ -643,6 +670,7 @@ def test_read_write():
 
     # Read a POSCAR file
     d8_poscar = read_structure(poscar_file)
+
     assert(structure_same(d8_poscar,d8))
 #end def test_read_write
 

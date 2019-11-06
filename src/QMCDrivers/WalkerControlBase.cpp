@@ -15,12 +15,12 @@
 
 #include <cassert>
 #include <stdexcept>
+#include <numeric>
 
 #include "QMCDrivers/WalkerControlBase.h"
 #include "Particle/HDFWalkerIO.h"
 #include "OhmmsData/ParameterSet.h"
 #include "type_traits/template_types.hpp"
-
 
 namespace qmcplusplus
 {
@@ -50,7 +50,6 @@ WalkerControlBase::~WalkerControlBase()
   if (dmcStream)
     delete dmcStream;
 }
-
 
 //disable it: everything is done by a constructor
 //void WalkerControlBase::setCommunicator(Communicate* c)
