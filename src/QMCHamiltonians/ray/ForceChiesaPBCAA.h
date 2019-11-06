@@ -18,6 +18,7 @@
 #include "Numerics/OneDimGridBase.h"
 #include "Numerics/OneDimGridFunctor.h"
 #include "Numerics/OneDimCubicSpline.h"
+#include "Particle/DistanceTableData.h"
 
 namespace qmcplusplus
 {
@@ -26,7 +27,9 @@ struct ForceChiesaPBCAA : public OperatorBase, public ForceBase
   typedef LRCoulombSingleton::LRHandlerType LRHandlerType;
   typedef LRCoulombSingleton::GridType GridType;
   typedef LRCoulombSingleton::RadFunctorType RadFunctorType;
+  typedef LRHandlerType::mRealType mRealType;
 
+  typedef DistanceTableData::RowContainer RowContainerType;
 
   RealType Rcut;         // parameter: radial distance within which estimator is used
   int m_exp;             // parameter: exponent in polynomial fit
@@ -80,7 +83,7 @@ struct ForceChiesaPBCAA : public OperatorBase, public ForceBase
 
   ParticleSet::ParticlePos_t forces_ShortRange;
 
-  ForceChiesaPBCAA(ParticleSet& ions, ParticleSet& elns, bool firsttime = true, std::string lrmethod="ewald");
+  ForceChiesaPBCAA(ParticleSet& ions, ParticleSet& elns, bool firsttime = true);
 
   Return_t evaluate(ParticleSet& P);
 
@@ -135,7 +138,6 @@ private:
   // AA table ID
   const int d_aa_ID;
   const int d_ei_ID;
-  std::string lrmethod;
 };
 
 } // namespace qmcplusplus

@@ -22,8 +22,8 @@
 
 namespace qmcplusplus
 {
-ForceChiesaPBCAA::ForceChiesaPBCAA(ParticleSet& ions, ParticleSet& elns, bool firsttime, std::string lrmethod_in)
-    : ForceBase(ions, elns), PtclA(ions), first_time(firsttime), d_aa_ID(ions.addTable(ions, DT_SOA_PREFERRED)), d_ei_ID(elns.addTable(ions, DT_SOA_PREFERRED)), lrmethod(lrmethod_in)
+ForceChiesaPBCAA::ForceChiesaPBCAA(ParticleSet& ions, ParticleSet& elns, bool firsttime)
+    : ForceBase(ions, elns), PtclA(ions), first_time(firsttime), d_aa_ID(ions.addTable(ions, DT_SOA_PREFERRED)), d_ei_ID(elns.addTable(ions, DT_SOA_PREFERRED))
 {
   ReportEngine PRE("ForceChiesaPBCAA", "ForceChiesaPBCAA");
   myName = "Chiesa_Force_Base_PBCAB";
@@ -132,7 +132,7 @@ void ForceChiesaPBCAA::initBreakup(ParticleSet& P)
   minkc       = std::min(PtclA.Lattice.LR_kc, P.Lattice.LR_kc);
   //AB->initBreakup(*PtclB);
   //initBreakup is called only once
-  dAB = LRCoulombSingleton::getDerivHandler(P, lrmethod);
+  dAB = LRCoulombSingleton::getDerivHandler(P);
   //  myConst=evalConsts();
   myRcut = dAB->get_rc(); //Basis.get_rc();
   // create the spline function for the short-range part assuming pure potential
@@ -162,7 +162,7 @@ void ForceChiesaPBCAA::evaluateLR(ParticleSet& P)
     dAB->evaluateGrad(PtclA, P, j, Zat, grad);
     for (int iat = 0; iat < grad.size(); iat++)
     {
-      forces[iat] += Qspec[j] * grad[iat];
+      forces[iat] += Qspec[j] * Zat[iat] * grad[iat];
       //  app_log()<<"Qspec["<<j<<"] = "<<Qspec[j]<< std::endl;
       //    app_log()<<"Grad["<<iat<<"] = "<<grad[iat]<< std::endl;
     }
@@ -174,7 +174,7 @@ void ForceChiesaPBCAA::evaluateSR(ParticleSet& P)
   const DistanceTableData& d_ab(P.getDistTable(d_ei_ID));
   if (d_ab.DTType == DT_SOA)
   {
-    for (size_t jat = 0; jat < NptclB; ++jat)
+   /* for (size_t jat = 0; jat < NptclB; ++jat)
     {
       const RealType* restrict dist = d_ab.Distances[jat];
 
@@ -187,9 +187,24 @@ void ForceChiesaPBCAA::evaluateSR(ParticleSet& P)
         PosType drhat       = rinv * d_ab.Displacements[jat][iat];
         forces[iat] += g_f * Zat[iat] * Qat[jat] * V * drhat;
       }
-    }
+    }*/
     //for(size_t a=0; a<NptclA; ++a)
     //  std::cout << "debug evaluateSR " << forces[a] << std::endl;
+    for (size_t b = 0; b < NptclB; ++b)
+    {
+      const RealType* restrict dist = d_ab.Distances[b];
+      const RowContainerType dr     = d_ab.Displacements[b];
+      for (size_t a = 0; a < NptclA; ++a)
+      {
+        //Low hanging SIMD fruit here.  See J1/J2 grad computation.
+        RealType rinv = 1.0 / dist[a];
+        RealType dvdr = Qat[b] * Zat[a] * -dAB->srDf(dist[a],1.0/dist[a]);
+        RealType g_f        = g_filter(dist[a]);
+        forces[a][0] += g_f * dvdr * dr[a][0] * rinv;
+        forces[a][1] += g_f * dvdr * dr[a][1] * rinv;
+        forces[a][2] += g_f * dvdr * dr[a][2] * rinv;
+      }
+    }
   }
   else
   {
@@ -296,9 +311,16 @@ ForceChiesaPBCAA::Return_t ForceChiesaPBCAA::evaluate(ParticleSet& P)
 
   evaluateSR(P);
   //  app_log()<<"LR+SR eI FORCE\n";
-  //  app_log()<<forces<< std::endl;
+//    app_log()<<forces<< std::endl;
+//    app_log()<<" @()@#(DSF \n "<<forces_IonIon<<std::endl<<std::endl;
+//    app_log()<<"ion ion = "<<addionion<<std::endl;
   if (addionion == true)
+  {
     forces = forces + forces_IonIon;
+//    app_log()<<"Ok, at least we made it here\b";
+  }
+
+//   app_log()<<" Weeee after :\n"<<forces<<std::endl<<std::endl;
   return 0.0;
 }
 
@@ -330,7 +352,7 @@ bool ForceChiesaPBCAA::put(xmlNodePtr cur)
   addionion = (ionionforce == "yes") || (ionionforce == "true");
   app_log() << "ionionforce = " << ionionforce << std::endl;
   app_log() << "addionion=" << addionion << std::endl;
-  app_log() << "lrmethod= " << lrmethod << std::endl;
+  app_log() << "FirstTime= " << FirstTime << std::endl;
   ParameterSet fcep_param_set;
   fcep_param_set.add(Rcut, "rcut", "real");
   fcep_param_set.add(N_basis, "nbasis", "int");
@@ -370,7 +392,6 @@ OperatorBase* ForceChiesaPBCAA::makeClone(ParticleSet& qp, TrialWaveFunction& ps
   tmp->c.resize(N_basis);
   tmp->c         = c; // polynomial coefficients
   tmp->addionion = addionion;
-  tmp->forces_IonIon = forces_IonIon;
   tmp->initBreakup(qp);
 
   return tmp;
