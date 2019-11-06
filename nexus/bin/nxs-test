@@ -519,6 +519,7 @@ class NexusTest(NexusTestBase):
             else:
                 raise NexusTestMisconstructed
             #end if
+            check_final_state()
             self.status=NexusTest.status_options['passed']
         except Exception as e:
             t,v,tb = sys.exc_info()
@@ -1460,6 +1461,7 @@ def qmcpack_converters():
 
     nunit_all()
 #end def qmcpack_converters
+
 
 
 

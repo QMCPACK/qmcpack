@@ -530,7 +530,8 @@ def divert_nexus_core():
 
 # restore nexus core attributes
 def restore_nexus_core():
-    from nexus_base import nexus_core,nexus_noncore
+    from nexus_base import nexus_core,nexus_noncore,nexus_core_noncore
+    from nexus_base import nexus_noncore_defaults
     for key in core_keys:
         nexus_core[key] = nexus_core_storage.pop(key)
     #end for
@@ -542,6 +543,12 @@ def restore_nexus_core():
             del nexus_noncore[key]
         #end if
     #end for
+    for key in list(nexus_noncore.keys()):
+        if key not in nexus_noncore_defaults:
+            del nexus_noncore[key]
+        #end if
+    #end for
+    nexus_core_noncore.pseudopotentials = None
     assert(len(nexus_noncore_storage)==0)
 #end def restore_nexus_core
 
@@ -586,3 +593,25 @@ def clear_all_sims():
     from simulation import Simulation
     Simulation.clear_all_sims()
 #end def clear_all_sims
+
+
+
+def check_final_state():
+    from nexus_base import nexus_core,nexus_core_defaults
+    from nexus_base import nexus_noncore,nexus_noncore_defaults
+    from nexus_base import nexus_core_noncore,nexus_core_noncore_defaults
+    
+    assert('runs' in nexus_core_defaults)
+    assert('basis_dir' in nexus_noncore_defaults)
+    assert('pseudo_dir' in nexus_core_noncore_defaults)
+
+    assert(object_eq(nexus_core,nexus_core_defaults))
+    assert(object_eq(nexus_noncore,nexus_noncore_defaults))
+    assert(object_eq(nexus_core_noncore,nexus_core_noncore_defaults))
+
+    from simulation import Simulation
+
+    assert(Simulation.sim_count==0)
+    assert(len(Simulation.all_sims)==0)
+    assert(len(Simulation.sim_directories)==0)
+#end def check_final_state
