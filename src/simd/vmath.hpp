@@ -85,8 +85,9 @@ inline void inv_sqrt(const float* restrict in, float* restrict out, int n) { vsI
 #elif defined(HAVE_MASSV)
 inline void sqrt(double* restrict in, double* restrict out, int n) { vsqrt(out, in, &n); }
 inline void sqrt(float* restrict in, float* restrict out, int n) { vssqrt(out, in, &n); }
+inline void inv(const double* restrict in, double* restrict out, int n) { vrec(out, in, &n); }
+inline void inv(const float* restrict in, float* restrict out, int n) { vsrec(out, in, &n); }
 inline void inv_sqrt(double* restrict in, double* restrict out, int n) { vrsqrt(out, in, &n); }
-
 inline void inv_sqrt(float* restrict in, float* restrict out, int n) { vsrsqrt(out, in, &n); }
 #endif
 
