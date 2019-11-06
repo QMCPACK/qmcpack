@@ -33,39 +33,19 @@ ForceChiesaPBCAA::ForceChiesaPBCAA(ParticleSet& ions, ParticleSet& elns, bool fi
   m_exp   = 2;
   N_basis = 4;
   forces  = 0.0;
-  forces_ShortRange.resize(Nnuc);
-  forces_ShortRange = 0.0;
   forces_IonIon     = 0.0;
   ions.turnOnPerParticleSK();
   //This sets up the long range breakups.
   initBreakup(elns);
-  // app_log()<< "IonIon Force" << std::endl;
-  // app_log()<<forces_IonIon<< std::endl;
   if (first_time == true)
-  {
+  { // calculate ion-ion forces and print in output
     ions.update();
     evaluateLR_AA();
-    // app_log()<< "IonIon Force" << std::endl;
-    // app_log()<<forces_IonIon<< std::endl;
     evaluateSR_AA();
     app_log() << "IonIon Force" << std::endl;
     app_log() << forces_IonIon << std::endl;
     first_time = false;
   }
-  // forces=0.0;
-  // evaluateLR(elns);
-  // app_log()<<"LR eI FORCE\n";
-  // app_log()<<forces<< std::endl;
-
-  // evaluateSR(elns);
-  // app_log()<<"LR+SR eI FORCE\n";
-  // app_log()<<forces<< std::endl;
-
-
-  // app_log() << "  Maximum K shell " << AB->MaxKshell << std::endl;
-  // app_log() << "  Number of k vectors " << AB->Fk.size() << std::endl;
-
-  ///////////////////////////////////////////////////////////////
 }
 
 void ForceChiesaPBCAA::InitMatrix()
@@ -104,17 +84,13 @@ void ForceChiesaPBCAA::initBreakup(ParticleSet& P)
   Zspec.resize(NumSpeciesA);
   Qat.resize(NptclB);
   Qspec.resize(NumSpeciesB);
-  NofSpeciesA.resize(NumSpeciesA);
-  NofSpeciesB.resize(NumSpeciesB);
   for (int spec = 0; spec < NumSpeciesA; spec++)
   {
     Zspec[spec]       = tspeciesA(ChargeAttribIndxA, spec);
-    NofSpeciesA[spec] = static_cast<int>(tspeciesA(MemberAttribIndxA, spec));
   }
   for (int spec = 0; spec < NumSpeciesB; spec++)
   {
     Qspec[spec]       = tspeciesB(ChargeAttribIndxB, spec);
-    NofSpeciesB[spec] = static_cast<int>(tspeciesB(MemberAttribIndxB, spec));
   }
   RealType totQ = 0.0;
   for (int iat = 0; iat < NptclA; iat++)
@@ -289,7 +265,6 @@ void ForceChiesaPBCAA::resetTargetParticleSet(ParticleSet& P)
 void ForceChiesaPBCAA::addObservables(PropertySetType& plist, BufferType& collectables)
 {
   myIndex = plist.add(myName.c_str());
-  //  if (ComputeForces)
   addObservablesF(plist);
 }
 
@@ -308,7 +283,6 @@ OperatorBase* ForceChiesaPBCAA::makeClone(ParticleSet& qp, TrialWaveFunction& ps
   tmp->addionion = addionion;
   tmp->forces_IonIon = forces_IonIon;
   tmp->initBreakup(qp);
-
   return tmp;
 }
 } // namespace qmcplusplus
