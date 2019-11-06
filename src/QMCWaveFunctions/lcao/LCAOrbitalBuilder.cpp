@@ -151,7 +151,7 @@ LCAOrbitalBuilder::LCAOrbitalBuilder(ParticleSet& els, ParticleSet& ions, Commun
   if (cuspC == "yes")
     doCuspCorrection = true;
   //Evaluate the Phase factor. Equals 1 for OBC.
-  EvalPeriodicImagePhaseFactors(SuperTwist);
+  EvalPeriodicImagePhaseFactors(SuperTwist, PeriodicImagePhaseFactors);
   // no need to wait but load the basis set
   if (h5_path != "")
     loadBasisSetFromH5();
@@ -710,6 +710,7 @@ bool LCAOrbitalBuilder::putPBCFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
   std::string xmlTag("determinantset");
   std::string MSDTag("sposet");
   std::string SDTag("determinant");
+  std::string EndTag("qmcsystem");
   std::string curname;
 
   do
@@ -723,7 +724,11 @@ bool LCAOrbitalBuilder::putPBCFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
     if (curname == SDTag)
       MultiDet = false;
 
-  } while (xmlTag != curname);
+  } while ((xmlTag != curname) && (curname != EndTag));
+  if (curname == EndTag)
+    APP_ABORT(
+        "Could not find in wf file the \"sposet\" or \"determinant\" tags. Please verify input or contact developers");
+
   aAttrib.add(SuperTwist, "twist");
   aAttrib.put(curtemp);
 
@@ -895,15 +900,18 @@ void LCAOrbitalBuilder::LoadFullCoefsFromH5(hdf_archive& hin,
 }
 
 /// Periodic Image Phase Factors computation to be determined
-void LCAOrbitalBuilder::EvalPeriodicImagePhaseFactors(PosType SuperTwist)
+void LCAOrbitalBuilder::EvalPeriodicImagePhaseFactors(PosType SuperTwist,
+                                                      std::vector<RealType>& LocPeriodicImagePhaseFactors)
 {
-#if not defined(QMC_COMPLEX)
   const int NbImages = (PBCImages[0] + 1) * (PBCImages[1] + 1) * (PBCImages[2] + 1);
-  PeriodicImagePhaseFactors.resize(NbImages);
+  LocPeriodicImagePhaseFactors.resize(NbImages);
   for (size_t i = 0; i < NbImages; i++)
-    PeriodicImagePhaseFactors[i] = 1.0;
+    LocPeriodicImagePhaseFactors[i] = 1.0;
+}
 
-#else
+void LCAOrbitalBuilder::EvalPeriodicImagePhaseFactors(PosType SuperTwist,
+                                                      std::vector<std::complex<RealType>>& LocPeriodicImagePhaseFactors)
+{
   ///Exp(ik.g) where i is imaginary, k is the supertwist and g is the translation vector PBCImage.
   if (h5_path != "")
   {
@@ -949,11 +957,9 @@ void LCAOrbitalBuilder::EvalPeriodicImagePhaseFactors(PosType SuperTwist)
         phase = dot(SuperTwist, Val);
         sincos(phase, &s, &c);
 
-        PeriodicImagePhaseFactors.emplace_back(c, s);
+        LocPeriodicImagePhaseFactors.emplace_back(c, s);
       }
     }
   }
-
-#endif
 }
 } // namespace qmcplusplus

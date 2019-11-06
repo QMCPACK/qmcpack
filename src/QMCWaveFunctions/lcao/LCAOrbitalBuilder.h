@@ -92,7 +92,9 @@ private:
                            Matrix<std::complex<RealType>>& Ctemp,
                            bool MultiDet);
   void LoadFullCoefsFromH5(hdf_archive& hin, int setVal, PosType& SuperTwist, Matrix<RealType>& Creal, bool Multidet);
-  void EvalPeriodicImagePhaseFactors(PosType SuperTwist);
+  void EvalPeriodicImagePhaseFactors(PosType SuperTwist, std::vector<RealType>& LocPeriodicImagePhaseFactors);
+  void EvalPeriodicImagePhaseFactors(PosType SuperTwist,
+                                     std::vector<std::complex<RealType>>& LocPeriodicImagePhaseFactors);
 };
 } // namespace qmcplusplus
 #endif
