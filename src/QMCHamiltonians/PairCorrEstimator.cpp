@@ -49,7 +49,6 @@ PairCorrEstimator::PairCorrEstimator(ParticleSet& elns, std::string& sources)
   std::map<int, int> pair_map;
   int npairs = 0;
   for (int i = 0; i < num_species; ++i)
-  {
     for (int j = i; j < num_species; ++j)
     {
       std::ostringstream os;
@@ -58,7 +57,7 @@ PairCorrEstimator::PairCorrEstimator(ParticleSet& elns, std::string& sources)
       pair_map[i * num_species + j] = npairs;
       ++npairs;
     }
-  }
+
   const DistanceTableData& dii(elns.getDistTable(d_aa_ID_));
   if (dii.DTType == DT_AOS)
   {
@@ -77,10 +76,8 @@ PairCorrEstimator::PairCorrEstimator(ParticleSet& elns, std::string& sources)
   std::vector<std::string> slist, dlist;
   const int ntables = elns.getNumDistTables();
   for (int k = 0; k < ntables; ++k)
-  {
     if (elns.getName() != elns.getDistTable(k).origin().getName())
       dlist.push_back(elns.getDistTable(k).origin().getName());
-  }
   parsewords(sources.c_str(), slist);
   std::set<int> others_sorted;
   for (int i = 0; i < slist.size(); ++i)
