@@ -253,7 +253,7 @@ def test_pseudopotential_classes():
     vnl = qpp.get_nonlocal()
 
     rc = qpp.find_rcut()
-    assert(value_eq(rc,1.705,tol=1e-3))
+    assert(value_eq(rc,1.705,atol=1e-3))
 
     # below follows by virtue of being numeric
     qpp.assert_numeric('some location')
@@ -378,7 +378,7 @@ r*potential (L=1) in Ha
     assert(gpp.lmax    == 1   )
     assert(gpp.local   == 'p' )
     assert(gpp.name is None)
-    assert(value_eq(gpp.rcut,1.7053,tol=1e-3))
+    assert(value_eq(gpp.rcut,1.7053,atol=1e-3))
 
     assert(len(gpp.basis)==20)
 
@@ -417,7 +417,7 @@ r*potential (L=1) in Ha
     assert(object_eq(gpp_gaussian,gpp))
 
     qpp_qmcpack = QmcpackPP(qmcpack_file)
-    assert(object_eq(qpp_qmcpack,qpp,int_as_float=True))
+    assert(object_eq(qpp_qmcpack,qpp,int_as_float=True,atol=1e-12))
 
 
     # tests for CasinoPP
@@ -427,13 +427,13 @@ r*potential (L=1) in Ha
     co = cpp.to_obj()
     del qo.rmin
     del qo.rmax
-    assert(object_eq(co,qo))
+    assert(object_eq(co,qo,atol=1e-12))
 
     qmcpack_from_casino_file = os.path.join(tpath,'C.BFD.qmcpack_from_casino')
     cpp.write_qmcpack(qmcpack_from_casino_file)
 
     qpp_casino = QmcpackPP(qmcpack_from_casino_file)
-    assert(object_eq(qpp_casino,qpp,int_as_float=True))
+    assert(object_eq(qpp_casino,qpp,int_as_float=True,atol=1e-12))
 
 #end def test_pseudopotential_classes
 

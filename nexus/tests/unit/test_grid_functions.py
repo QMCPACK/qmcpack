@@ -873,7 +873,7 @@ def test_grid_unit_points():
             assert(value_eq(upoints,upoints_ref))
 
             points = g.points_from_unit(upoints)
-            assert(value_eq(points,gref.points))
+            assert(value_eq(points,gref.points,atol=1e-8))
 
             assert(object_eq(g,gref))
         #end if

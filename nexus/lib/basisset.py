@@ -433,7 +433,7 @@ class GaussianBasisSet(DevBase):
                 text += line + '\n'
                 for it in xrange(len(b.terms)):
                     t = b.terms[it]
-                    text += '{0} {1:12.8f} {2: 12.8f}\n'.format(it+1,t.expon,t.coeff)
+                    text += '{0:<4} {1:12.8E} {2: 12.8E}\n'.format(it+1,t.expon,t.coeff)
                 #end for
             #end for
         elif format=='gaussian':
@@ -447,7 +447,7 @@ class GaussianBasisSet(DevBase):
                 text += line + '\n'
                 for it in xrange(len(b.terms)):
                     t = b.terms[it]
-                    text += '{0:12.8f}{1: 12.8f}\n'.format(t.expon,t.coeff)
+                    text += '{0:12.8E} {1: 12.8E}\n'.format(t.expon,t.coeff)
                 #end for
             #end for
         elif format=='crystal':
@@ -469,7 +469,7 @@ class GaussianBasisSet(DevBase):
                 text += line + '\n'
                 for it in xrange(len(b.terms)):
                     t = b.terms[it]
-                    text += '{0:12.8f}{1: 12.8f}\n'.format(t.expon,t.coeff)
+                    text += '{0:12.8E} {1: 12.8E}\n'.format(t.expon,t.coeff)
                 #end for
             #end for
         else:
