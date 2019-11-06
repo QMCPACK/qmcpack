@@ -726,8 +726,10 @@ bool LCAOrbitalBuilder::putPBCFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
 
   } while ((xmlTag != curname) && (curname != EndTag));
   if (curname == EndTag)
+  {
     APP_ABORT(
         "Could not find in wf file the \"sposet\" or \"determinant\" tags. Please verify input or contact developers");
+  }
 
   aAttrib.add(SuperTwist, "twist");
   aAttrib.put(curtemp);
