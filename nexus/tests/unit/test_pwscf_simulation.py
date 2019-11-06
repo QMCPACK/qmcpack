@@ -1,7 +1,7 @@
 
 import testing
 from testing import divert_nexus,restore_nexus,clear_all_sims
-from testing import failed
+from testing import failed,FailedTest
 from testing import value_eq,object_eq,text_eq
 
 
@@ -110,9 +110,22 @@ def test_check_result():
 
 
 def test_get_result():
+    from generic import NexusError
+
     tpath = testing.setup_unit_test_output_directory('pwscf_simulation','test_get_result',**pseudo_inputs)
 
     sim = get_pwscf_sim('scf')
+
+    try:
+        sim.get_result('unknown',None)
+        raise FailedTest
+    except NexusError:
+        None
+    except FailedTest:
+        failed()
+    except Exception as e:
+        failed(str(e))
+    #end try
 
     result  = sim.get_result('charge_density',None)
     result2 = sim.get_result('restart',None)

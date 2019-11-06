@@ -1444,7 +1444,7 @@ def pwscf_simulation():
     nunit('minimal_init')
     
     nunit('check_result')
-    
+
     nunit('get_result')
     
     nunit('incorporate_result')
@@ -1453,6 +1453,22 @@ def pwscf_simulation():
     
     nunit_all()
 #end def pwscf_simulation
+
+
+
+def gamess_simulation():
+    nunit('import')
+
+    nunit('minimal_init')
+
+    nunit('check_result')
+
+    nunit('get_result')
+
+    nunit('incorporate_result')
+    
+    nunit_all()
+#end def gamess_simulation
 
 
 
@@ -1764,6 +1780,7 @@ NexusTest( qmcpack_converter_analyzers   )
 NexusTest( qmcpack_analyzer              )
 NexusTest( vasp_simulation               )
 NexusTest( pwscf_simulation              )
+NexusTest( gamess_simulation             )
 NexusTest( qmcpack_converters            )
 
 # ordered alphabetically (pytest order)
@@ -1774,6 +1791,7 @@ NexusTest( qmcpack_converters            )
 #NexusTest( fileio                        )
 #NexusTest( gamess_analyzer               )
 #NexusTest( gamess_input                  )
+#NexusTest( gamess_simulation             )
 #NexusTest( generic_operation             , 'generic' )
 #NexusTest( grid_functions                )
 #NexusTest( hdfreader                     )
