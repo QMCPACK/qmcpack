@@ -11,7 +11,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-/** @file Vector.h
+/** @file
  *
  *  Declaraton of Vector<T,Alloc>
  *  Manage memory through Alloc directly and allow referencing an existing memory.

@@ -14,6 +14,7 @@
 
 
 #include "QMCDrivers/DMC/WalkerReconfigurationMPI.h"
+#include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Utilities/IteratorUtility.h"
 #include "Utilities/FairDivide.h"
 #include "Utilities/RandomGenerator.h"

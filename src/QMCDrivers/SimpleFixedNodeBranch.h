@@ -2,9 +2,10 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2019 QMCPACK developers.
 //
-// File developed by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
+// File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
+//                    Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //                    Raymond Clay III, j.k.rofling@gmail.com, Lawrence Livermore National Laboratory
 //                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
@@ -40,6 +41,8 @@ class EstimatorManagerBase;
 
 /** Manages the state of QMC sections and handles population control for DMCs
  *
+ * TODO: Remove Estimator dependency, only has come dependency. Express accumulate in
+ *       the actual DMC algorithm (i.e. in DMCBatched.cpp)
  * TODO: Remove duplicate reading of Driver XML section with own copies of input
  *       parameters.
  * TODO: Rename, it is the only branching class so its name is too much
@@ -242,21 +245,22 @@ struct SimpleFixedNodeBranch : public QMCTraits
 
   /** set the EstimatorManager
    * @param est estimator created by the first QMCDriver
+   * this assumes estimator managers are reused section to section
    * */
   void setEstimatorManager(EstimatorManagerBase* est) { MyEstimator = est; }
 
   /** initialize  the WalkerController
-   * @param w Walkers
-   * @param tau timestep
+   * @param mcwc Walkers
    * @param fixW true, if reconfiguration with the fixed number of walkers is used
+   * @param killwalker 
    * @return number of copies to make in case targetwalkers changed
    */
   int initWalkerController(MCWalkerConfiguration& mcwc, bool fixW, bool killwalker);
 
   /** initialize  the WalkerController
-   * @param w Walkers
-   * @param tau timestep
+   * @param pop Population of Walkers
    * @param fixW true, if reconfiguration with the fixed number of walkers is used
+   * @param killwalker 
    * @return number of copies to make in case targetwalkers changed
    */
   int initWalkerController(MCPopulation& pop, bool fixW, bool killwalker);
@@ -373,6 +377,7 @@ struct SimpleFixedNodeBranch : public QMCTraits
    * @param eold old energy
    * @param scnew  \f$ V_{sc}(R_{new})/V(R_{new}) \f$
    * @param scold  \f$ V_{sc}(R_{old})/V(R_{old}) \f$
+   * @param taueff
    */
   inline RealType branchWeightTau(RealType enew, RealType eold, RealType scnew, RealType scold, RealType taueff)
   {
@@ -404,7 +409,6 @@ struct SimpleFixedNodeBranch : public QMCTraits
   /** update RMC counters and running averages.
    * @param iter the iteration
    * @param w the walker ensemble
-   * @param clones of the branch engine for OpenMP threads
    */
   void collect(int iter, MCWalkerConfiguration& w);
 
@@ -418,6 +422,8 @@ struct SimpleFixedNodeBranch : public QMCTraits
 
   /** reset the internal parameters
    * @return new target population over old target population
+   *
+   * only used by CUDA legacy
    */
   int resetRun(xmlNodePtr cur);
 
