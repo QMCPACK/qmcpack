@@ -322,10 +322,13 @@ def unit_test_output_path(test,subtest=None):
 
 
 # setup the output directory for a test
-def setup_unit_test_output_directory(test,subtest,divert=False,file_sets=None):
+def setup_unit_test_output_directory(test,subtest,divert=False,file_sets=None,pseudo_dir=None,pseudo_files=None,pseudo_files_create=None):
     import os
     import shutil
     from subprocess import Popen,PIPE
+
+    divert |= pseudo_dir is not None
+
     path = unit_test_output_path(test,subtest)
     assert('nexus' in path)
     assert('unit' in path)
@@ -377,6 +380,59 @@ def setup_unit_test_output_directory(test,subtest,divert=False,file_sets=None):
             #end for
         #end for
     #end if
+
+    # create pseudopotential directory and set internal nexus data structures
+    if pseudo_dir is not None:
+        from nexus_base import nexus_noncore
+        pseudo_path = os.path.join(path,pseudo_dir)
+        if not os.path.exists(pseudo_path):
+            os.makedirs(pseudo_path)
+        #end if
+        assert(os.path.exists(pseudo_path))
+        pseudo_filepaths = []
+        if pseudo_files is not None:
+            assert(isinstance(pseudo_files,list))
+            for src_file in pseudo_files:
+                assert(os.path.exists(src_file))
+                assert(os.path.isfile(src_file))
+                pp_filename = os.path.basename(src_file)
+                pp_file = os.path.join(pseudo_path,pp_filename)
+                shutil.copy2(src_file,pseudo_path)
+                assert(os.path.exists(pp_file))
+                assert(os.path.isfile(pp_file))
+                pseudo_filepaths.append(pp_file)
+            #end for
+        #end if
+        if pseudo_files_create is not None:
+            assert(isinstance(pseudo_files_create,list))
+            for pp_filename in pseudo_files_create:
+                pp_contents = ''
+                if isinstance(pp_filename,tuple):
+                    pp_filename,pp_contents = pp_filename
+                #end if
+                pp_file = os.path.join(pseudo_path,pp_filename)
+                f = open(pp_file,'w')
+                f.write(pp_contents)
+                f.close()
+                assert(os.path.exists(pp_file))
+                assert(os.path.isfile(pp_file))
+                pseudo_filepaths.append(pp_file)
+            #end for
+        #end if
+        if len(pseudo_filepaths)>0:
+            from pseudopotential import Pseudopotentials
+            for pp_file in pseudo_filepaths:
+                assert(os.path.exists(pp_file))
+                assert(os.path.isfile(pp_file))
+            #end for
+            pps = Pseudopotentials(pseudo_filepaths)
+            nexus_core.pseudopotentials    = pps
+            nexus_noncore.pseudopotentials = pps
+        #end if
+        nexus_core.pseudo_dir    = pseudo_path
+        nexus_noncore.pseudo_dir = pseudo_path
+    #end if
+
     return path
 #end def setup_unit_test_output_directory
 
@@ -448,6 +504,8 @@ core_keys = [
     'file_locations',
     'pseudo_dir',
     'pseudopotentials',
+    'runs',
+    'results',
     ]
 noncore_keys = [
     'pseudo_dir',
