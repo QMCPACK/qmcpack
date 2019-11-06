@@ -36,9 +36,6 @@ struct ForceChiesaPBCAA : public OperatorBase, public ForceBase
   Vector<RealType> c;    // polynomial coefficients
   // container for short-range force estimator
 
-  bool kcdifferent;
-  RealType minkc;
-
   ///source particle set
   ParticleSet& PtclA;
   ///long-range Handler
@@ -52,12 +49,8 @@ struct ForceChiesaPBCAA : public OperatorBase, public ForceBase
   ///number of particles of B
   int NptclB;
 
-  ///cutoff radius of the short-range part
-  RealType myRcut;
   ///radial grid
   GridType* myGrid;
-  ///Always mave a radial functor for the bare coulomb
-  RadFunctorType* V0;
 
   ///number of particles per species of A
   std::vector<int> NofSpeciesA;
