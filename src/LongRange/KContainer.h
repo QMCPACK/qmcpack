@@ -29,7 +29,7 @@ class KContainer : public QMCTraits
 {
 private:
   //Function to return a unique number for each kVector
-  inline long long GetHashOfVec(const TinyVector<int, 3>& inpv, int hashparam)
+/*  inline long long GetHashOfVec(const TinyVector<int, 3>& inpv, int hashparam)
   {
     long long hashp_long = static_cast<long long>(hashparam);
     return static_cast<long long>(inpv[2]) + hashp_long * (static_cast<long long>(inpv[1]) + hashp_long * static_cast<long long>(inpv[0]));
@@ -38,7 +38,7 @@ private:
   inline long long GetHashOfVec(const TinyVector<int, 2>& inpv, int hashparam) { return (static_cast<long long>(inpv[1]) + static_cast<long long>(hashparam) * static_cast<long long>(inpv[0])); }
 
   inline long long GetHashOfVec(const TinyVector<int, 1>& inpv, int hashparam) { return inpv[0]; }
-
+*/
   /// The cutoff up to which k-vectors are generated.
   RealType kcutoff;
   /// kcutoff*kcutoff
