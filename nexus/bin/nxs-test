@@ -1466,6 +1466,8 @@ def gamess_simulation():
     nunit('get_result')
 
     nunit('incorporate_result')
+
+    nunit('check_sim_status')
     
     nunit_all()
 #end def gamess_simulation
@@ -1485,6 +1487,24 @@ def pyscf_simulation():
     
     nunit_all()
 #end def pyscf_simulation
+
+
+
+def quantum_package_simulation():
+    nunit('import')
+
+    nunit('minimal_init')
+
+    nunit('check_result')
+
+    nunit('get_result')
+
+    nunit('incorporate_result')
+
+    nunit('check_sim_status')
+
+    nunit_all()
+#end def quantum_package_simulation
 
 
 
@@ -1798,6 +1818,7 @@ NexusTest( vasp_simulation               )
 NexusTest( pwscf_simulation              )
 NexusTest( gamess_simulation             )
 NexusTest( pyscf_simulation              )
+NexusTest( quantum_package_simulation    )
 NexusTest( qmcpack_converters            )
 
 # ordered alphabetically (pytest order)
@@ -1838,6 +1859,7 @@ NexusTest( qmcpack_converters            )
 #NexusTest( qmcpack_input                 )
 #NexusTest( quantum_package_analyzer      )
 #NexusTest( quantum_package_input         )
+#NexusTest( quantum_package_simulation    )
 #NexusTest( required_dependencies         )
 #NexusTest( settings_operation            , 'settings' )
 #NexusTest( simulation                    )

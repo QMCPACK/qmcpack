@@ -175,3 +175,47 @@ def test_incorporate_result():
 
     clear_all_sims()
 #end def test_incorporate_result
+
+
+
+def test_check_sim_status():
+    import os
+    from generic import NexusError,obj
+    from nexus_base import nexus_core
+
+    tpath = testing.setup_unit_test_output_directory('gamess_simulation','test_check_sim_status',divert=True)
+
+    nexus_core.runs = ''
+
+    sim = get_gamess_sim('rhf')
+
+    assert(sim.locdir.rstrip('/')==os.path.join(tpath,'rhf').rstrip('/'))
+
+    assert(not sim.finished)
+    assert(not sim.failed)
+
+    try:
+        sim.check_sim_status()
+        raise FailedTest
+    except IOError:
+        None
+    except Exception as e:
+        failed(str(e))
+    #end try
+
+    sim.create_directories()
+    outfile = os.path.join(sim.locdir,sim.outfile)
+    outfile_text = 'EXECUTION OF GAMESS TERMINATED NORMALLY'
+    out = open(outfile,'w')
+    out.write(outfile_text)
+    out.close()
+    assert(outfile_text in open(outfile,'r').read())
+
+    sim.check_sim_status()
+
+    assert(sim.finished)
+    assert(not sim.failed)
+
+    clear_all_sims()
+    restore_nexus()
+#end def test_check_sim_status
