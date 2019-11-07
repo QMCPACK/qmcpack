@@ -13,9 +13,11 @@ endif(NOT $ENV{CRAYPE_VERSION} MATCHES ".")
 IF(CMAKE_GENERATOR MATCHES "Ninja")
   cmake_policy(SET CMP0058 NEW)
 ENDIF(CMAKE_GENERATOR MATCHES "Ninja")
-# CMake find_package will use <PackageName>_ROOT CMake variable
+# CMP0074: CMake find_package will use <PackageName>_ROOT CMake variable
 # and environment variable in search path.
 # various Find<Package>.cmake modules may not follow this policy
+# CMP0075: check_include_file_cxx and other follow CMAKE_REQUIRED_LIBRARIES
+# when doing link check
 IF(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.12.0")
   cmake_policy(SET CMP0074 NEW)
   cmake_policy(SET CMP0075 NEW)
@@ -204,7 +206,7 @@ INCLUDE(${CMAKE_ROOT}/Modules/CheckCXXSourceCompiles.cmake)
 SET(ENABLE_MASS FALSE CACHE BOOL "ENABLE MASS math libraries for Power architecture")
 # This needs to go before HAVE_SINCOS
 IF(ENABLE_MASS)
-  INCLUDE(CMake/FindMASS.cmake)
+  INCLUDE(CMake/FindIBMMass.cmake)
   IF(HAVE_MASS)
     SET(CMAKE_REQUIRED_INCLUDES "${MASS_INCLUDE_DIRECTORIES} ${CMAKE_REQUIRED_INCLUDES}")
     SET(CMAKE_REQUIRED_LINK_OPTIONS "${MASS_LINKER_FLAGS}")
