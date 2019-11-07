@@ -1570,6 +1570,24 @@ def qmcpack_converter_simulations():
 
 
 
+def qmcpack_simulation():
+    nunit('import')
+
+    nunit('minimal_init')
+
+    nunit('check_result')
+
+    nunit('get_result')
+
+    nunit('incorporate_result')
+
+    nunit('check_sim_status')
+
+    nunit_all()
+#end def qmcpack_simulation
+
+
+
 
 example_information = dict(
     pwscf_relax_Ge_T = dict(
@@ -1875,6 +1893,7 @@ NexusTest( pyscf_simulation                )
 NexusTest( quantum_package_simulation      )
 NexusTest( pwscf_postprocessor_simulations )
 NexusTest( qmcpack_converter_simulations   )
+NexusTest( qmcpack_simulation              )
 
 # ordered alphabetically (pytest order)
 #NexusTest( basisset                        )
@@ -1913,6 +1932,7 @@ NexusTest( qmcpack_converter_simulations   )
 #NexusTest( qmcpack_converter_input         )
 #NexusTest( qmcpack_converter_simulations   )
 #NexusTest( qmcpack_input                   )
+#NexusTest( qmcpack_simulation              )
 #NexusTest( quantum_package_analyzer        )
 #NexusTest( quantum_package_input           )
 #NexusTest( quantum_package_simulation      )

@@ -135,8 +135,6 @@ class Qmcpack(Simulation):
             calculating_result = 'opt' in calctypes
         elif result_name=='cuspcorr':
             calculating_result = self.input.cusp_correction()
-        else:
-            self.error('ability to check for result '+result_name+' has not been implemented')
         #end if        
         return calculating_result
     #end def check_result
@@ -221,7 +219,7 @@ class Qmcpack(Simulation):
                 #end if
                     
                 if not os.path.exists(h5file):
-                    self.error('wavefunction file not found:  \n'+h5file)
+                    self.error('wavefunction file not found:\n'+h5file)
                 #end if
 
                 twistnums = range(len(structure.kpoints))
@@ -327,13 +325,13 @@ class Qmcpack(Simulation):
             ds = self.input.get('determinantset')
             ds.cuspcorrection = True
             try: # multideterminant
-              ds.sposets['spo-up'].cuspinfo = os.path.relpath(result.spo_up_cusps,self.locdir)
-              ds.sposets['spo-dn'].cuspinfo = os.path.relpath(result.spo_dn_cusps,self.locdir)
+                ds.sposets['spo-up'].cuspinfo = os.path.relpath(result.spo_up_cusps,self.locdir)
+                ds.sposets['spo-dn'].cuspinfo = os.path.relpath(result.spo_dn_cusps,self.locdir)
             except: # single determinant
-              sd = ds.slaterdeterminant
-              sd.determinants['updet'].cuspinfo = os.path.relpath(result.updet_cusps,self.locdir)
-              sd.determinants['downdet'].cuspinfo = os.path.relpath(result.dndet_cusps,self.locdir)
-            # end try
+                sd = ds.slaterdeterminant
+                sd.determinants['updet'].cuspinfo = os.path.relpath(result.updet_cusps,self.locdir)
+                sd.determinants['downdet'].cuspinfo = os.path.relpath(result.dndet_cusps,self.locdir)
+            #end try
 
         elif result_name=='wavefunction':
             if isinstance(sim,Qmcpack):
@@ -413,9 +411,9 @@ class Qmcpack(Simulation):
             #end for
 
             if ran_to_end and not files_exist:
-                self.warn('run finished successfully, but output files do not seem to exist')
-                print outfiles
-                print os.listdir(self.locdir)
+                self.warn('run finished successfully, but output files do not exist')
+                self.log(outfiles)
+                self.log(os.listdir(self.locdir))
             #end if
         #end if
 
