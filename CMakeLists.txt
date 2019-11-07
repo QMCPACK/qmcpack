@@ -33,6 +33,14 @@ SET(QMCPACK_VERSION_MINOR 8)
 SET(QMCPACK_VERSION_PATCH 9)
 SET(QMCPACK_VERSION "${QMCPACK_VERSION_MAJOR}.${QMCPACK_VERSION_MINOR}.${QMCPACK_VERSION_PATCH}")
 
+######################################################
+# Directory where customize cmake files reside
+######################################################
+SET (PROJECT_CMAKE ${qmcpack_SOURCE_DIR}/CMake)
+
+SET(QMCPACK_UNIT_TEST_DIR ${qmcpack_BINARY_DIR}/tests/bin)
+
+
 IF (COMPILING_ON_BGQ)
   # YL: Put this after PROJECT(qmcpack) because COMPILING_ON_BGQ is defined
   # in BGQ toolchain file which is loaded by PROJECT().
@@ -201,27 +209,9 @@ INCLUDE(${CMAKE_ROOT}/Modules/CheckFunctionExists.cmake)
 INCLUDE(${CMAKE_ROOT}/Modules/CheckCXXSymbolExists.cmake)
 INCLUDE(${CMAKE_ROOT}/Modules/CheckIncludeFile.cmake)
 INCLUDE(${CMAKE_ROOT}/Modules/CheckTypeSize.cmake)
-INCLUDE(${CMAKE_ROOT}/Modules/CheckCXXSourceCompiles.cmake)
 
-SET(ENABLE_MASS FALSE CACHE BOOL "ENABLE MASS math libraries for Power architecture")
-# This needs to go before HAVE_SINCOS
-IF(ENABLE_MASS)
-  INCLUDE(CMake/FindIBMMass.cmake)
-  IF(HAVE_MASS)
-    SET(CMAKE_REQUIRED_INCLUDES "${MASS_INCLUDE_DIRECTORIES} ${CMAKE_REQUIRED_INCLUDES}")
-    SET(CMAKE_REQUIRED_LINK_OPTIONS "${MASS_LINKER_FLAGS}")
-    SET(CMAKE_REQUIRED_LIBRARIES "${MASS_LIBRARIES}")
-  ENDIF(HAVE_MASS)
-ENDIF(ENABLE_MASS)
+INCLUDE(${PROJECT_CMAKE}/CheckSincos.cmake)
 
-MESSAGE("CMAKE_REQUIRED_INCLUDES: ${CMAKE_REQUIRED_INCLUDES}")
-
-IF(HAVE_MASS)
-  # CMake/FindMASS checks for sincos as well
-  SET(HAVE_SINCOS 1)
-ELSE(HAVE_MASS)
-  CHECK_FUNCTION_EXISTS(sincos HAVE_SINCOS)
-ENDIF()
 CHECK_FUNCTION_EXISTS(posix_memalign HAVE_POSIX_MEMALIGN)
 
 CHECK_INCLUDE_FILE(dlfcn.h HAVE_DLFCN_H)
@@ -283,13 +273,6 @@ SET(HAVE_LIBSPRNG 0)
 SET(HAVE_LIBBLITZ 0)
 SET(HAVE_LIBGSL 0)
 SET(MAC_VECLIB 0)
-
-######################################################
-# Directory where customize cmake files reside
-######################################################
-SET (PROJECT_CMAKE ${qmcpack_SOURCE_DIR}/CMake)
-
-SET(QMCPACK_UNIT_TEST_DIR ${qmcpack_BINARY_DIR}/tests/bin)
 
 ######################################################
 # Git information (see src/CMakeLists.txt for the
@@ -575,6 +558,7 @@ INCLUDE(${CMAKE_ROOT}/Modules/FindThreads.cmake)
 
 SET(QMC_UTIL_LIBS ${LAPACK_LIBRARY} ${BLAS_LIBRARY})
 
+# This needs a better place to live. as does all the IF( HAVE_MKL ) stuff
 IF(HAVE_MASS)
   SET(CMAKE_CXX_FLAGS ${MASS_FLAGS} ${CMAKE_CXX_FLAGS})
   SET(CMAKE_C_FLAGS ${MASS_FLAGS} ${CMAKE_C_FLAGS})

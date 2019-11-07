@@ -23,10 +23,12 @@ if (MASS_LINK_DIRECTORIES-NOTFOUND)
     "not found in MASS_ROOT/(${SUFFIXES})")
 endif (MASS_LINK_DIRECTORIES-NOTFOUND)
 message("MASS_LINK_DIRECTORIES: ${MASS_LINK_DIRECTORIES}")
-set(MASS_LINKER_FLAGS "-L${MASS_LINK_DIRECTORIES} -Wl,-rpath,${MASS_LINK_DIRECTORIES}")
-set(MASS_LIBRARIES "-lmassp9 -lmass_simdp9 -lmassvp9")
-
-# Check for mkl.h
+set(MASS_LINKER_FLAGS -L${MASS_LINK_DIRECTORIES} -Wl,-rpath,${MASS_LINK_DIRECTORIES})
+if (CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL ppc64le)
+  set(MASS_LIBRARIES "-lmassp9 -lmass_simdp9 -lmassvp9")
+else (CMAKE_HOST_SYSTEM_PROCESSOR ppc64le)
+  set(MASS_LIBRARIES "-lmass -lmass_simd -lmassv")
+endif ()
 FILE( WRITE "${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/src_mass.cxx"
   "#include <math.h>
 #include <mass.h>
@@ -63,6 +65,7 @@ IF ( HAVE_MASS )
   include_directories( ${MASS_INCLUDE_DIRECTORIES} )
   set( HAVE_VECTOR_MATH 1 )
   set( HAVE_MASSV 1 )
+  set( SINCOS_INCLUDE mass.h )
   MESSAGE(STATUS "MASS found: HAVE_MASS=${HAVE_MASS}, HAVE_MASS_VML=${HAVE_MASS}")
 ELSE( HAVE_MASS )
   SET( MASS_FOUND 0 )
