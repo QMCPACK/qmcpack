@@ -306,7 +306,7 @@ void KContainer::BuildKLists(ParticleLayout_t& lattice, bool useSphere)
   //Now fill the array that returns the index of -k when given the index of k.
   minusk.resize(numk);
   // Create a map from the hash value for each k vector to the index
-  std::map<int, int> hashToIndex;
+  std::map<long long, int> hashToIndex;
   for (int ki = 0; ki < numk; ki++)
   {
     hashToIndex[GetHashOfVec(kpts[ki], numk)] = ki;
