@@ -257,6 +257,8 @@ def nexus_path(append=None,location=None):
     if location is not None:
         if location=='unit':
             append = 'tests/unit'
+        elif location=='bin':
+            append = 'bin'
         else:
             print('nexus location "{}" is unknown'.format(location))
             raise ValueError
@@ -615,3 +617,43 @@ def check_final_state():
     assert(len(Simulation.all_sims)==0)
     assert(len(Simulation.sim_directories)==0)
 #end def check_final_state
+
+
+
+def executable_path(exe_name):
+    import os
+    # nexus bin directory
+    nexus_bin = nexus_path(location='bin')
+    # path to exe
+    exe_path = os.path.join(nexus_bin,exe_name)
+    # exe file exists
+    assert(os.path.isfile(exe_path))
+    # exe file is executable
+    assert(os.access(exe_path,os.X_OK))
+    return exe_path
+#end def executable_path
+
+
+
+def create_file(filename,path,contents=''):
+    import os
+    filepath = os.path.join(path,filename)
+    f = open(filepath,'w')
+    f.write(contents)
+    f.close()
+    assert(os.path.isfile(filepath))
+    return filepath
+#end def create_file
+
+
+
+def create_path(path,basepath=None):
+    import os
+    if basepath is not None:
+        path = os.path.join(basepath,path)
+    #end if
+    if not os.path.exists(path):
+        os.makedirs(path)
+    #end if
+    assert(os.path.isdir(path))
+#end def create_path

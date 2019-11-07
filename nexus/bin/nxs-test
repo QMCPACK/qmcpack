@@ -1588,6 +1588,12 @@ def qmcpack_simulation():
 
 
 
+def nxs_redo():
+    nunit_all()
+#end def nxs_redo
+
+
+
 
 example_information = dict(
     pwscf_relax_Ge_T = dict(
@@ -1894,6 +1900,7 @@ NexusTest( quantum_package_simulation      )
 NexusTest( pwscf_postprocessor_simulations )
 NexusTest( qmcpack_converter_simulations   )
 NexusTest( qmcpack_simulation              )
+NexusTest( nxs_redo                        )
 
 # ordered alphabetically (pytest order)
 #NexusTest( basisset                        )
@@ -1912,6 +1919,7 @@ NexusTest( qmcpack_simulation              )
 #NexusTest( nexus_base                      )
 #NexusTest( nexus_imports                   )
 #NexusTest( numerics                        )
+#NexusTest( nxs_redo                        )
 #NexusTest( optional_dependencies           , optional=True)
 #NexusTest( periodic_table                  )
 #NexusTest( physical_system                 )
