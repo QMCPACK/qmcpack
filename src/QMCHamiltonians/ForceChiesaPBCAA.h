@@ -114,6 +114,7 @@ private:
   // AA table ID
   const int d_aa_ID;
   const int d_ei_ID;
+  // long-range breakup method ("ewald" or "srcoul")
   std::string lrmethod;
 };
 
