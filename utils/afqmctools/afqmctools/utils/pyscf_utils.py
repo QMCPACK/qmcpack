@@ -72,12 +72,15 @@ def load_from_pyscf_chk(chkfile,hcore=None,orthoAO=False):
         quit()
 
     if orthoAO:
-        X = numpy.asarray(lib.chkfile.load(chkfile, 'scf/orthoAORot')).reshape(nkpts,nao,-1)
-        assert(X is not None)
+        X_ = numpy.asarray(lib.chkfile.load(chkfile, 'scf/orthoAORot')).reshape(nkpts,nao,-1)
+        assert(X_ is not None)
         nmo_pk = numpy.asarray(lib.chkfile.load(chkfile, 'scf/nmo_per_kpt'))
         # do this properly!!!
         if len(nmo_pk.shape) == 0:
             nmo_pk = numpy.asarray([nmo_pk])
+        X = []
+        for k in range(len(nmo_pk)):
+            X.append(X_[k][:,0:nmo_pk[k]])
         assert(nmo_pk is not None)
     else:
         # can safely assume isUHF == False
