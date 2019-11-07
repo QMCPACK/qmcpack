@@ -1526,11 +1526,47 @@ def pwscf_postprocessor_simulations():
 
 
 
-def qmcpack_converters():
-    nunit('import')
+def qmcpack_converter_simulations():
+    nunit('pw2qmcpack_import')
+
+    nunit('pw2qmcpack_minimal_init')
+
+    nunit('pw2qmcpack_check_result')
+
+    nunit('pw2qmcpack_get_result')
+
+    nunit('pw2qmcpack_incorporate_result')
+
+    nunit('pw2qmcpack_check_sim_status')
+
+
+    nunit('convert4qmc_import')
+
+    nunit('convert4qmc_minimal_init')
+
+    nunit('convert4qmc_check_result')
+
+    nunit('convert4qmc_get_result')
+
+    nunit('convert4qmc_incorporate_result')
+
+    nunit('convert4qmc_check_sim_status')
+
+
+    nunit('pyscf_to_afqmc_import')
+
+    nunit('pyscf_to_afqmc_minimal_init')
+
+    nunit('pyscf_to_afqmc_check_result')
+
+    nunit('pyscf_to_afqmc_get_result')
+
+    nunit('pyscf_to_afqmc_incorporate_result')
+
+    nunit('pyscf_to_afqmc_check_sim_status')
 
     nunit_all()
-#end def qmcpack_converters
+#end def qmcpack_converter_simulations
 
 
 
@@ -1838,7 +1874,7 @@ NexusTest( gamess_simulation               )
 NexusTest( pyscf_simulation                )
 NexusTest( quantum_package_simulation      )
 NexusTest( pwscf_postprocessor_simulations )
-NexusTest( qmcpack_converters              )
+NexusTest( qmcpack_converter_simulations   )
 
 # ordered alphabetically (pytest order)
 #NexusTest( basisset                        )
@@ -1875,7 +1911,7 @@ NexusTest( qmcpack_converters              )
 #NexusTest( qmcpack_analyzer                )
 #NexusTest( qmcpack_converter_analyzers     )
 #NexusTest( qmcpack_converter_input         )
-#NexusTest( qmcpack_converters              )
+#NexusTest( qmcpack_converter_simulations   )
 #NexusTest( qmcpack_input                   )
 #NexusTest( quantum_package_analyzer        )
 #NexusTest( quantum_package_input           )

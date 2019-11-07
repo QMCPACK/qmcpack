@@ -21,7 +21,6 @@ import os
 from numpy import array
 from generic import obj
 from physical_system import PhysicalSystem
-from qmcpack_converters import Pw2qmcpack
 from simulation import Simulation
 from pwscf_input import PwscfInput,generate_pwscf_input
 from pwscf_analyzer import PwscfAnalyzer
