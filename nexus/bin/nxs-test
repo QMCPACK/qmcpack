@@ -1589,8 +1589,18 @@ def qmcpack_simulation():
 
 
 def nxs_redo():
+    nunit('test_redo')
+
     nunit_all()
 #end def nxs_redo
+
+
+
+def nxs_sim():
+    nunit('test_sim')
+
+    nunit_all()
+#end def nxs_sim
 
 
 
@@ -1901,6 +1911,7 @@ NexusTest( pwscf_postprocessor_simulations )
 NexusTest( qmcpack_converter_simulations   )
 NexusTest( qmcpack_simulation              )
 NexusTest( nxs_redo                        )
+NexusTest( nxs_sim                         )
 
 # ordered alphabetically (pytest order)
 #NexusTest( basisset                        )
@@ -1920,6 +1931,7 @@ NexusTest( nxs_redo                        )
 #NexusTest( nexus_imports                   )
 #NexusTest( numerics                        )
 #NexusTest( nxs_redo                        )
+#NexusTest( nxs_sim                         )
 #NexusTest( optional_dependencies           , optional=True)
 #NexusTest( periodic_table                  )
 #NexusTest( physical_system                 )
