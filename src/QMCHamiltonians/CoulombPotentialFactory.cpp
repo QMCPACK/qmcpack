@@ -181,6 +181,7 @@ void HamiltonianFactory::addForceHam(xmlNodePtr cur)
 {
 #if OHMMS_DIM == 3
   std::string a("ion0"), targetName("e"), title("ForceBase"), pbc("yes"), PsiName = "psi0";
+  std::string lrmethod("ewald");
   OhmmsAttributeSet hAttrib;
   std::string mode("bare");
   //hAttrib.add(title,"id");
@@ -189,6 +190,7 @@ void HamiltonianFactory::addForceHam(xmlNodePtr cur)
   hAttrib.add(targetName, "target");
   hAttrib.add(pbc, "pbc");
   hAttrib.add(mode, "mode");
+  hAttrib.add(lrmethod, "lrmethod");
   hAttrib.add(PsiName, "psi");
   hAttrib.put(cur);
   app_log() << "HamFac forceBase mode " << mode << std::endl;
@@ -222,7 +224,7 @@ void HamiltonianFactory::addForceHam(xmlNodePtr cur)
   {
     if (applyPBC == true)
     {
-      ForceChiesaPBCAA* force_chi = new ForceChiesaPBCAA(*source, *target);
+      ForceChiesaPBCAA* force_chi = new ForceChiesaPBCAA(*source, *target, true, lrmethod);
       force_chi->put(cur);
       targetH->addOperator(force_chi, title, false);
     }
