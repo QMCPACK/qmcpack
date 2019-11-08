@@ -1618,6 +1618,34 @@ def qdens():
 
 
 
+def qmca():
+    nunit('help')
+
+    nunit('examples')
+
+    nunit('unit_conversion')
+
+    nunit('selected_quantities')
+
+    nunit('all_quantities')
+
+    nunit('energy_variance')
+
+    nunit('multiple_equilibration')
+
+    nunit('join')
+
+    nunit('multiple_directories')
+
+    nunit('twist_average')
+
+    nunit('weighted_twist_average')
+
+    nunit_all()
+#end def qmca
+
+
+
 
 example_information = dict(
     pwscf_relax_Ge_T = dict(
@@ -1926,6 +1954,7 @@ NexusTest( qmcpack_converter_simulations   )
 NexusTest( qmcpack_simulation              )
 NexusTest( nxs_redo                        )
 NexusTest( nxs_sim                         )
+NexusTest( qmca                            )
 NexusTest( qmc_fit                         )
 NexusTest( qdens                           )
 
@@ -1965,6 +1994,7 @@ NexusTest( qdens                           )
 #NexusTest( pyscf_simulation                )
 #NexusTest( qdens                           )
 #NexusTest( qmc_fit                         )
+#NexusTest( qmca                            )
 #NexusTest( qmcpack_analyzer                )
 #NexusTest( qmcpack_converter_analyzers     )
 #NexusTest( qmcpack_converter_input         )
