@@ -143,10 +143,6 @@ void check_force_copy(ForceChiesaPBCAA& force, ForceChiesaPBCAA& force2)
   REQUIRE(force2.NumSpeciesB == force.NumSpeciesB);
   REQUIRE(force2.NptclA == force.NptclA);
   REQUIRE(force2.NptclB == force.NptclB);
-  REQUIRE(force2.myRcut == Approx(force.myRcut));
-
-  REQUIRE(force2.NofSpeciesA.size() == force.NofSpeciesA.size());
-  REQUIRE(force2.NofSpeciesB.size() == force.NofSpeciesB.size());
   REQUIRE(force2.Zat.size() == force.Zat.size());
   REQUIRE(force2.Qat.size() == force.Qat.size());
   REQUIRE(force2.Zspec.size() == force.Zspec.size());

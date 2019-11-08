@@ -16,7 +16,13 @@
  *
  * This will replace QMCDriver once unified drivers are finished
  * the general documentation from QMCDriver.h must be moved before then
+ *  
+ * This driver base class should be generic with respect to precision,
+ * value type, device execution, and ...
+ * It should contain no typdefs not related to compiler bugs or platform workarounds
+ *
  */
+
 #ifndef QMCPLUSPLUS_QMCDRIVERNEW_H
 #define QMCPLUSPLUS_QMCDRIVERNEW_H
 
@@ -50,10 +56,10 @@ class TraceManager;
  * @{
  * @brief QMCDriverNew Base class for Unified Drivers
  *
- * General Principals
- * Parameters unchanged from input by driver are not copied into class state
- * The driver state machine should be simple.
- *
+ * # General Principals
+ * * Parameters used unchanged from input object are not copied into class state
+ * * The driver state machine should be as minimal as possible.
+ * * In non performance critical areas favor clarity over clever optimizations.
  */
 class QMCDriverNew : public QMCDriverInterface, public MPIObjectBase
 {

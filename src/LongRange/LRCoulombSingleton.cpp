@@ -143,15 +143,26 @@ LRCoulombSingleton::LRHandlerType* LRCoulombSingleton::getHandler(ParticleSet& r
     return CoulombHandler->makeClone(ref);
   }
 }
-LRCoulombSingleton::LRHandlerType* LRCoulombSingleton::getDerivHandler(ParticleSet& ref)
+LRCoulombSingleton::LRHandlerType* LRCoulombSingleton::getDerivHandler(ParticleSet& ref, std::string method)
 {
+#if OHMMS_DIM != 3
+  APP_ABORT("energy derivative implemented for 3D only");
+#endif
   //APP_ABORT("SR Coulomb Basis Handler has cloning issues.  Stress also has some kinks");
   if (CoulombDerivHandler == 0)
   {
-    //app_log() << "\n  Creating CoulombHandler with the optimal breakup of SR piece. " << std::endl;
-    //CoulombDerivHandler = new LRHandlerSRCoulomb<CoulombFunctor<mRealType>, LPQHISRCoulombBasis>(ref);
-    app_log() << "\n  Creating CoulombDerivHandler with the Ewald3D breakup. " << std::endl;
-    CoulombDerivHandler= new EwaldHandler3D(ref);
+    if (method == "ewald")
+    {
+      app_log() << "\n  Creating CoulombDerivHandler with the Ewald3D breakup. " << std::endl;
+      CoulombDerivHandler= new EwaldHandler3D(ref);
+    } else if (method == "srcoul")
+    {
+      app_log() << "\n  Creating CoulombHandler with the optimal breakup of SR piece. " << std::endl;
+      CoulombDerivHandler = new LRHandlerSRCoulomb<CoulombFunctor<mRealType>, LPQHISRCoulombBasis>(ref);
+    } else
+    {
+      APP_ABORT("unknown derivative breakup method: "+method);
+    }
     // CoulombDerivHandler = new LRDerivHandler<CoulombFunctor<mRealType>, LPQHIBasis> (ref);
     //CoulombDerivHandler= new EwaldHandler(ref);
     CoulombDerivHandler->initBreakup(ref);

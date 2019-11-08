@@ -27,13 +27,9 @@ public:
   WaveFunctionComponent* buildComponent(xmlNodePtr cur) override;
 
 private:
-  ///jastrow/@name
   std::string NameOpt;
-  ///jastrow/@type
   std::string TypeOpt;
-  ///jastrow/@region
   std::string RegionOpt;
-  ///jastrow/@source
   std::string SourceOpt;
 
   ParticleSet* SourcePtcl;

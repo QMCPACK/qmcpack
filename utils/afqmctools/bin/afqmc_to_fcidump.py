@@ -35,6 +35,9 @@ def parse_args(args):
     parser.add_argument('-t', '--tol', dest='tol',
                         type=float, default=1e-12,
                         help='Cutoff for integrals.')
+    parser.add_argument('-c', '--complex', dest='cplx',
+                        action='store_true', default=False,
+                        help='Whether to write integrals as complex numbers.')
     parser.add_argument('--complex-paren', dest='cplx_paren',
                         action='store_true', default=False,
                         help='Whether to write FORTRAN format complex numbers.')
@@ -72,6 +75,7 @@ def main(args):
                       hamil['nelec'],
                       tol=options.tol,
                       sym=options.symm,
+                      cplx=options.cplx,
                       paren=options.cplx_paren)
     else:
         write_fcidump_kpoint(options.output_file,
@@ -84,6 +88,7 @@ def main(args):
                              hamil['qk_k2'],
                              tol=options.tol,
                              sym=options.symm,
+                             cplx=options.cplx,
                              paren=options.cplx_paren)
 
 if __name__ == '__main__':

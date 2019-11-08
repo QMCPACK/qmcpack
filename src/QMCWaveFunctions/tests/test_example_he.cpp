@@ -20,8 +20,11 @@
 
 namespace qmcplusplus
 {
-typedef WaveFunctionComponent::RealType RealType;
-typedef WaveFunctionComponent::ValueType ValueType;
+
+using RealType = QMCTraits::RealType;
+using ValueType = QMCTraits::ValueType;
+using LogValueType = std::complex<QMCTraits::QTFull::RealType>;
+using PsiValueType = QMCTraits::QTFull::ValueType;
 
 TEST_CASE("ExampleHe", "[wavefunction]")
 {
@@ -99,7 +102,7 @@ TEST_CASE("ExampleHe", "[wavefunction]")
   all_lap.resize(nelec);
 
   // Set the base expectations for wavefunction value and derivatives
-  RealType logpsi = example_he->evaluateLog(*elec, all_grad, all_lap);
+  LogValueType logpsi = example_he->evaluateLog(*elec, all_grad, all_lap);
 
 
   // Comparisons are performed at a single set of electron coordinates.  This should be expanded.
@@ -165,7 +168,7 @@ TEST_CASE("ExampleHe", "[wavefunction]")
   new_lap.resize(nelec);
 
   // wavefunction value and derivatives at new position
-  RealType new_logpsi = example_he->evaluateLog(*elec, new_grad, new_lap);
+  LogValueType new_logpsi = example_he->evaluateLog(*elec, new_grad, new_lap);
   elec->R[0]          = oldpos;
   elec->update();
 
@@ -173,11 +176,11 @@ TEST_CASE("ExampleHe", "[wavefunction]")
   elec->makeMove(iat, displ);
 
   ratio = example_he->ratio(*elec, iat);
-  REQUIRE(std::real(ratio) == Approx(std::exp(new_logpsi - logpsi)));
+  REQUIRE(ValueApprox(ratio) == LogToValue<PsiValueType>::convert(new_logpsi - logpsi));
 
   ratio = example_he->ratioGrad(*elec, iat, grad0);
 
-  REQUIRE(std::real(ratio) == Approx(std::exp(new_logpsi - logpsi)));
+  REQUIRE(ValueApprox(ratio) == LogToValue<PsiValueType>::convert(new_logpsi - logpsi));
 
   REQUIRE(grad0[0] == ValueApprox(new_grad[0][0]));
   REQUIRE(grad0[1] == ValueApprox(new_grad[0][1]));
@@ -206,17 +209,19 @@ TEST_CASE("ExampleHe", "[wavefunction]")
   grad_plus_h.resize(nelec);
   lap_plus_h.resize(nelec);
 
-  RealType logpsi_plus_h = example_he->evaluateLog(*elec, grad_plus_h, lap_plus_h);
+  LogValueType logpsi_plus_h = example_he->evaluateLog(*elec, grad_plus_h, lap_plus_h);
 
+  //phase change is not allowed in finite difference
+  REQUIRE(std::imag(logpsi_plus_h) == std::imag(logpsi));
 
   // Finite difference derivative approximation
-  RealType fd_logpsi = (logpsi_plus_h - logpsi) / h;
+  LogValueType fd_logpsi = (logpsi_plus_h - logpsi) / LogValueType(h);
 
   std::vector<ValueType> dlogpsi(nparam);
   std::vector<ValueType> dhpsioverpsi(nparam);
   example_he->evaluateDerivatives(*elec, var_param, dlogpsi, dhpsioverpsi);
 
-  REQUIRE(dlogpsi[0] == ValueApprox(fd_logpsi).epsilon(h));
+  REQUIRE(dlogpsi[0] == ValueApprox(std::real(fd_logpsi)).epsilon(h));
 
   ValueType eloc   = -0.5 * (Sum(all_lap) + Dot(all_grad, all_grad));
   ValueType eloc_h = -0.5 * (Sum(lap_plus_h) + Dot(grad_plus_h, grad_plus_h));

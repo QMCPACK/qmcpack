@@ -269,13 +269,10 @@ WaveFunctionComponent* RadialJastrowBuilder::createJ2(xmlNodePtr cur)
       J2->addFunc(ia, ib, functor);
       dJ2->addFunc(ia, ib, functor);
 
-      if (qmc_common.io_node)
+      if (is_manager())
       {
         char fname[32];
-        if (qmc_common.mpi_groups > 1)
-          sprintf(fname, "J2.%s.g%03d.dat", pairType.c_str(), taskid);
-        else
-          sprintf(fname, "J2.%s.dat", pairType.c_str());
+        sprintf(fname, "J2.%s.%s.g%03d.dat", NameOpt.c_str(), pairType.c_str(), getGroupID());
         std::ofstream os(fname);
         print(*functor, os);
       }
@@ -284,7 +281,66 @@ WaveFunctionComponent* RadialJastrowBuilder::createJ2(xmlNodePtr cur)
   }
   J2->dPsi = dJ2;
   J2->setOptimizable(true);
+
+  // compute Chiesa Correction based on the current J2 parameters
+  J2->ChiesaKEcorrection();
+
+  // Ye: actually don't know what uk.dat is used for
+  if (targetPtcl.Lattice.SuperCellEnum)
+    computeJ2uk(J2->F);
+
   return J2;
+}
+
+
+template<class RadFuncType>
+void RadialJastrowBuilder::computeJ2uk(const std::vector<RadFuncType*>& functors)
+{
+  const int numPoints = 1000;
+  RealType vol        = targetPtcl.Lattice.Volume;
+  int nsp             = targetPtcl.groups();
+  FILE* fout          = 0;
+  if (is_manager())
+  {
+    char fname[16];
+    sprintf(fname, "uk.%s.g%03d.dat", NameOpt.c_str(), getGroupID());
+    fout = fopen(fname, "w");
+  }
+  for (int iG = 0; iG < targetPtcl.SK->KLists.ksq.size(); iG++)
+  {
+    RealType Gmag = std::sqrt(targetPtcl.SK->KLists.ksq[iG]);
+    RealType sum  = 0.0;
+    RealType uk   = 0.0;
+    for (int i = 0; i < targetPtcl.groups(); i++)
+    {
+      int Ni          = targetPtcl.last(i) - targetPtcl.first(i);
+      RealType aparam = 0.0;
+      for (int j = 0; j < targetPtcl.groups(); j++)
+      {
+        int Nj = targetPtcl.last(j) - targetPtcl.first(j);
+        if (functors[i * nsp + j])
+        {
+          auto& ufunc     = *functors[i * nsp + j];
+          RealType radius = ufunc.cutoff_radius;
+          RealType k      = Gmag;
+          RealType dr     = radius / (RealType)(numPoints - 1);
+          for (int ir = 0; ir < numPoints; ir++)
+          {
+            RealType r = dr * (RealType)ir;
+            RealType u = ufunc.evaluate(r);
+            aparam += (1.0 / 4.0) * k * k * 4.0 * M_PI * r * std::sin(k * r) / k * u * dr;
+            uk += 0.5 * 4.0 * M_PI * r * std::sin(k * r) / k * u * dr * (RealType)Nj / (RealType)(Ni + Nj);
+          }
+        }
+      }
+      //app_log() << "A = " << aparam << std::endl;
+      sum += Ni * aparam / vol;
+    }
+    if (fout)
+      fprintf(fout, "%1.8f %1.12e %1.12e\n", Gmag, uk, sum);
+  }
+  if (fout)
+    fclose(fout);
 }
 
 // specialiation for J2 RPA jastrow.
@@ -304,7 +360,6 @@ WaveFunctionComponent* RadialJastrowBuilder::createJ1(xmlNodePtr cur)
   using J1OrbitalType     = typename JastrowTypeHelper<RadFuncType>::J1OrbitalType;
   using DiffJ1OrbitalType = typename JastrowTypeHelper<RadFuncType>::DiffJ1OrbitalType;
 
-  int taskid             = getGroupID();
   J1OrbitalType* J1      = new J1OrbitalType(*SourcePtcl, targetPtcl);
   DiffJ1OrbitalType* dJ1 = new DiffJ1OrbitalType(*SourcePtcl, targetPtcl);
 
@@ -355,23 +410,13 @@ WaveFunctionComponent* RadialJastrowBuilder::createJ1(xmlNodePtr cur)
       J1->addFunc(ig, functor, jg);
       dJ1->addFunc(ig, functor, jg);
       success = true;
-      if (qmc_common.io_node)
+      if (is_manager())
       {
         char fname[128];
-        if (qmc_common.mpi_groups > 1)
-        {
-          if (speciesB.size())
-            sprintf(fname, "%s.%s%s.g%03d.dat", jname.c_str(), speciesA.c_str(), speciesB.c_str(), taskid);
-          else
-            sprintf(fname, "%s.%s.g%03d.dat", jname.c_str(), speciesA.c_str(), taskid);
-        }
+        if (speciesB.size())
+          sprintf(fname, "%s.%s.%s%s.g%03d.dat", jname.c_str(), NameOpt.c_str(), speciesA.c_str(), speciesB.c_str(), getGroupID());
         else
-        {
-          if (speciesB.size())
-            sprintf(fname, "%s.%s%s.dat", jname.c_str(), speciesA.c_str(), speciesB.c_str());
-          else
-            sprintf(fname, "%s.%s.dat", jname.c_str(), speciesA.c_str());
-        }
+          sprintf(fname, "%s.%s.%s.g%03d.dat", jname.c_str(), NameOpt.c_str(), speciesA.c_str(), getGroupID());
         std::ofstream os(fname);
         print(*functor, os);
       }

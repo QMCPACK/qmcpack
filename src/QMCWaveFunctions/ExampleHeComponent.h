@@ -45,7 +45,7 @@ public:
 
   void resetTargetParticleSet(ParticleSet& P) override {}
 
-  RealType evaluateLog(ParticleSet& P,
+  LogValueType evaluateLog(ParticleSet& P,
                        ParticleSet::ParticleGradient_t& G,
                        ParticleSet::ParticleLaplacian_t& L) override;
 
@@ -67,7 +67,7 @@ public:
 
   void registerData(ParticleSet& P, WFBufferType& buf) override {}
 
-  RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override;
+  LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override;
 
   void copyFromBuffer(ParticleSet& P, WFBufferType& buf) override {}
 
