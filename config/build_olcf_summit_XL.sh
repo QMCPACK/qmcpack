@@ -1,4 +1,10 @@
 #!/bin/bash
+
+echo "----------------------- WARNING ------------------------------------"
+echo "This is **not** production ready and intended for development only!!"
+echo "Use config/build_olcf_summit.sh for production on Summit."
+echo "----------------------- WARNING ------------------------------------"
+
 echo "Purging current module set"
 module purge
 echo "Loading QMCPACK dependency modules for summit"
