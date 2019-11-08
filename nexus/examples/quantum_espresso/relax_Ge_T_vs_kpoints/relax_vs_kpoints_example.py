@@ -60,7 +60,7 @@ for kgrid in supercell_kgrids:          # loop over supercell kgrids
 
 
 # perform the simulations
-run_project(relaxations)
+run_project()
 
 
 # analyze the results

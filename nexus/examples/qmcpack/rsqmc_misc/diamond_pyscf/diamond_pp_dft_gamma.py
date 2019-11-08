@@ -7,7 +7,7 @@ from nexus import generate_convert4qmc
 from nexus import generate_qmcpack
 
 settings(
-    pseudo_dir = '../pseudopotentials',
+    pseudo_dir = '../../pseudopotentials',
     results    = '',
     sleep      = 3,
     machine    = 'ws16',

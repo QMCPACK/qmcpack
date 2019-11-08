@@ -10,11 +10,11 @@ from nexus import loop,linear,vmc,dmc
 
 # general settings for nexus
 settings(
-    pseudo_dir    = '../pseudopotentials',# directory with all pseudopotentials
-    sleep         = 3,                    # check on runs every 'sleep' seconds
-    generate_only = 0,                    # only make input files
-    status_only   = 0,                    # only show status of runs
-    machine       = 'ws16',               # local machine is 16 core workstation
+    pseudo_dir    = '../../pseudopotentials',# directory with all pseudopotentials
+    sleep         = 3,                       # check on runs every 'sleep' seconds
+    generate_only = 0,                       # only make input files
+    status_only   = 0,                       # only show status of runs
+    machine       = 'ws16',                  # local machine is 16 core workstation
     )
 
 

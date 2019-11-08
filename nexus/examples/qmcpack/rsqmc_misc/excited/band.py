@@ -8,7 +8,7 @@ from nexus import generate_qmcpack,vmc
 from structure import *
 
 settings(
-    pseudo_dir    = '../pseudopotentials',
+    pseudo_dir    = '../../pseudopotentials',
     status_only   = 0,
     generate_only = 0,
     sleep         = 3,
@@ -80,11 +80,15 @@ band = generate_pwscf(
     verbosity    = 'high', #verbosity must be set to high
     pseudos      = ['C.BFD.upf'], 
     dependencies = (scf, 'charge_density'),
-)
-run_project(scf,band)
-from pwscf_analyzer import PwscfAnalyzer
-p = PwscfAnalyzer(band)
-p.analyze()
-p.plot_bandstructure()
-print "VBM: {0}".format(p.bands.vbm) 
-print "CBM: {0}".format(p.bands.cbm)
+    )
+
+run_project()
+
+if band.finished:
+    from pwscf_analyzer import PwscfAnalyzer
+    p = PwscfAnalyzer(band)
+    p.analyze()
+    p.plot_bandstructure()
+    print "VBM: {0}".format(p.bands.vbm) 
+    print "CBM: {0}".format(p.bands.cbm)
+#end if

@@ -3,7 +3,7 @@
 from nexus import *
 
 settings(
-    pseudo_dir    = '../pseudopotentials',
+    pseudo_dir    = '../../pseudopotentials',
     status_only   = 0,
     generate_only = 0,
     sleep         = 3,
@@ -50,4 +50,4 @@ scf = generate_pwscf(
     dependencies = (relax,'structure')
     )
 
-run_project(relax,scf)
+run_project()

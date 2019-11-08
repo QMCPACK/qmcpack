@@ -10,7 +10,7 @@ from nexus import loop,linear,vmc,dmc
 
 # nexus settings
 settings(
-    pseudo_dir    = '../pseudopotentials',
+    pseudo_dir    = '../../pseudopotentials',
     runs          = '',
     results       = '',
     status_only   = 0,

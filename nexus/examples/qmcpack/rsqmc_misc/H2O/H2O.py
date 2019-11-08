@@ -10,7 +10,7 @@ from nexus import generate_qmcpack,vmc,loop,linear,dmc
 
 # General Settings (Directories For I/O, Machine Type, etc.)
 settings(
-    pseudo_dir      = '../pseudopotentials',
+    pseudo_dir      = '../../pseudopotentials',
     runs            = 'runs',
     results         = '',
     sleep           = 3,

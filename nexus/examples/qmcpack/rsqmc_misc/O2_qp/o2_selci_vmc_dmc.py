@@ -7,7 +7,7 @@ from nexus import generate_convert4qmc
 from nexus import generate_cusp_correction
 from nexus import generate_qmcpack
 
-# note: you will must source the QP config file before running this script
+# note: you must source the QP config file before running this script
 #   source /your/path/to/quantum_package.rc
 
 settings(

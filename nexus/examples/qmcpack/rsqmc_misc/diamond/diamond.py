@@ -7,7 +7,7 @@ from nexus import generate_pw2qmcpack
 from nexus import generate_qmcpack,vmc
 
 settings(
-    pseudo_dir    = '../pseudopotentials',
+    pseudo_dir    = '../../pseudopotentials',
     status_only   = 0,
     generate_only = 0,
     sleep         = 3,
@@ -72,4 +72,4 @@ qmc = generate_qmcpack(
     dependencies = (conv,'orbitals'),
     )
 
-run_project(scf,conv,qmc)
+run_project()
