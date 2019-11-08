@@ -1676,7 +1676,7 @@ example_information = dict(
             ],
         ),
     qmcpack_H2O = dict(
-        path = 'qmcpack/H2O',
+        path = 'qmcpack/rsqmc_misc/H2O',
         scripts = [
             'H2O.py',
             ],
@@ -1688,7 +1688,7 @@ example_information = dict(
             ],
         ),
     qmcpack_LiH = dict(
-        path = 'qmcpack/LiH',
+        path = 'qmcpack/rsqmc_misc/LiH',
         scripts = [
             'LiH.py',
             ],
@@ -1701,7 +1701,7 @@ example_information = dict(
             ],
         ),
     qmcpack_c20 = dict(
-        path = 'qmcpack/c20',
+        path = 'qmcpack/rsqmc_misc/c20',
         scripts = [
             'c20.py',
             ],
@@ -1713,7 +1713,7 @@ example_information = dict(
             ],
         ),
     qmcpack_diamond = dict(
-        path = 'qmcpack/diamond',
+        path = 'qmcpack/rsqmc_misc/diamond',
         scripts = [
             'diamond.py',
             'diamond_vacancy.py',
@@ -1727,7 +1727,7 @@ example_information = dict(
             ],
         ),
     qmcpack_graphene = dict(
-        path = 'qmcpack/graphene',
+        path = 'qmcpack/rsqmc_misc/graphene',
         scripts = [
             'graphene.py',
             ],
@@ -1742,7 +1742,7 @@ example_information = dict(
             ],
         ),
     qmcpack_oxygen_dimer = dict(
-        path = 'qmcpack/oxygen_dimer',
+        path = 'qmcpack/rsqmc_misc/oxygen_dimer',
         scripts = [
             'oxygen_dimer.py',
             ],
