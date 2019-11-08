@@ -8,7 +8,7 @@ import scipy.linalg
 from afqmctools.wavefunction.mol import write_qmcpack_wfn, write_nomsd_wfn
 
 def write_wfn_pbc(scf_data, ortho_ao, filename, rediag=True,
-                  verbose=False, ndet_max=None, low=0.1, high=0.95):
+                  verbose=False, ndet_max=1, low=0.1, high=0.95):
     """Generate QMCPACK trial wavefunction for PBC simulation.
 
     Parameters
@@ -211,7 +211,7 @@ def rediag_fock(fock, X):
     return e, c
 
 def reoccupy(mo_occ, mo_energy, uhf, verbose, low=0.25,
-             high=0.95, ndet_max=None):
+             high=0.95, ndet_max=1):
     if uhf:
         if verbose:
             print(" # Determining occupancies for alpha electrons.")
@@ -238,19 +238,21 @@ def reoccupy(mo_occ, mo_energy, uhf, verbose, low=0.25,
         srt = (srt_a,srt_b)
         isrt = (isrt_a,isrt_b)
         if msd_a is not None and msd_b is not None:
-            occs_a, occs_b = zip(*itertools.product(msd_a,msd_b))
-            pdets = numpy.outer(p_a,p_b).ravel()
-            srt_det = pdets.argsort()
-            msd_coeff = (pdets/sum(pdets))**0.5
-            if ndet_max is not None:
-                if verbose:
-                    print(" # Truncating MSD expansion at {}"
-                          " determinants.".format(ndet_max))
+            if verbose:
+                print(" # Maximum number of determinants: "
+                      " {}".format(len(msd_a)*len(msd_b)))
+            if ndet_max == 1:
+                trial = (1.0, msd_a[0], msd_b[0])
+            else:
+                occs_a, occs_b = zip(*itertools.product(msd_a,msd_b))
+                pdets = numpy.outer(p_a,p_b).ravel()
+                srt_det = pdets.argsort()
+                msd_coeff = (pdets/sum(pdets))**0.5
                 nd = min(len(occs_a),ndet_max)
                 sd = srt_det[:nd]
-                trial = (msd_coeff[sd], numpy.array(occs_a)[sd], numpy.array(occs_b)[sd])
-            else:
-                trial = (msd_coeff, occs_a, occs_b)
+                trial = (msd_coeff[sd],
+                         numpy.array(occs_a)[sd],
+                         numpy.array(occs_b)[sd])
         else:
             trial = None
     else:
@@ -317,7 +319,6 @@ def determine_occupancies(mo_occ, mo_energy, rhf, low=0.1,
         pcomb = numpy.array([numpy.prod(poccs[numpy.array(c)-nocc]) for c in combs])
         if verbose:
             print(" # Distributing {} electrons in {} orbitals.".format(nleft,ndeg))
-            print(" # Number of determinants: {}.".format(len(combs)))
         core = list(numpy.where(mo_order > high)[0])
         core = [c for c in core]
         msd = [core + list(d) for d in combs]
