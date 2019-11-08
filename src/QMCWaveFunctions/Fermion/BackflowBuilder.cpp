@@ -21,9 +21,7 @@
 #include "QMCWaveFunctions/Fermion/Backflow_ee.h"
 #include "QMCWaveFunctions/Fermion/Backflow_ee_kSpace.h"
 #include "QMCWaveFunctions/Fermion/Backflow_eI.h"
-#ifndef ENABLE_SOA
 #include "QMCWaveFunctions/Fermion/Backflow_eI_spin.h"
-#endif
 #include "QMCWaveFunctions/Jastrow/BsplineFunctor.h"
 #include "QMCWaveFunctions/Jastrow/LRBreakupUtilities.h"
 #include "QMCWaveFunctions/Jastrow/SplineFunctors.h"
@@ -129,7 +127,7 @@ void BackflowBuilder::addOneBody(xmlNodePtr cur)
   {
 #ifdef ENABLE_SOA
     APP_ABORT("Spin one body backflow not supported on SOA");
-#else
+#endif
     if (funct != "Bspline")
       APP_ABORT("DON'T KNOW WHAT TO DO YET"); //will template this
     Backflow_eI_spin<BsplineFunctor<RealType>>* tbf1 =
@@ -185,7 +183,6 @@ void BackflowBuilder::addOneBody(xmlNodePtr cur)
     tbf1->resetParameters(tbf1->myVars);
     tbf1->derivs.resize(tbf1->numParams);
     tbf = tbf1;
-#endif
   }
   else //keep original implementation
   {
