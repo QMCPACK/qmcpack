@@ -2017,7 +2017,7 @@ NexusTest( qdens                           )
 #NexusTest( versions                        )
 #NexusTest( xmlreader                       )
 
-for label in example_information.keys():
+for label in sorted(example_information.keys()):
     NexusTest(
         name      = 'example_'+label,  # individually label tests
         operation = user_examples,     # all tests call the same test function
