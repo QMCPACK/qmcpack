@@ -47,6 +47,7 @@
 import os
 from generic import obj
 from simulation import Simulation,SimulationInput,SimulationAnalyzer
+from pwscf import Pwscf
 from gamess import Gamess
 from pyscf_sim import Pyscf
 from quantum_package import QuantumPackage
@@ -218,15 +219,12 @@ class Pw2qmcpack(Simulation):
 
     def check_result(self,result_name,sim):
         calculating_result = False
-        inputpp = self.input.inputpp
         if result_name=='orbitals':
             calculating_result = True
-        else:
-            calculating_result = False
-            self.error('ability to check for result '+result_name+' has not been implemented')
         #end if        
         return calculating_result
     #end def check_result
+
 
     def get_result(self,result_name,sim):
         result = obj()
@@ -252,44 +250,60 @@ class Pw2qmcpack(Simulation):
         return result
     #end def get_result
 
+
     def incorporate_result(self,result_name,result,sim):
+        implemented = True
         if result_name=='orbitals':
-            pwin = sim.input.control
-            p2in = self.input.inputpp
-            pwprefix = 'pwscf'
-            p2prefix = 'pwscf'
-            pwoutdir = './'
-            p2outdir = './'
-            if 'prefix' in pwin:
-                pwprefix = pwin.prefix
-            if 'prefix' in p2in:
-                p2prefix = p2in.prefix
-            if 'outdir' in pwin:
-                pwoutdir = pwin.outdir
-            if 'outdir' in p2in:
-                p2outdir = p2in.outdir
-            if pwoutdir.startswith('./'):
-                pwoutdir = pwoutdir[2:]
-            if p2outdir.startswith('./'):
-                p2outdir = p2outdir[2:]
-            pwdir = os.path.abspath(os.path.join(sim.locdir ,pwoutdir))
-            p2dir = os.path.abspath(os.path.join(self.locdir,p2outdir))
-            errors = False
-            if pwdir!=p2dir:
-                self.error('to use orbitals, '+self.generic_identifier+' must have the same outdir as pwscf\n  pwscf outdir: '+pwdir+'\n  '+self.generic_identifier+' outdir: '+p2dir,exit=False)
-                errors = True
-            #end if
-            if pwprefix!=p2prefix:
-                self.error('to use orbitals, '+self.generic_identifier+' must have the same prefix as pwscf\n  pwscf prefix: '+pwprefix+'\n  '+self.generic_identifier+' prefix: '+p2prefix,exit=False)
-                errors = True
-            #end if
-            if errors:
-                self.error(self.generic_identifier+' cannot use orbitals from pwscf')
+            if isinstance(sim,Pwscf):
+                pwin = sim.input.control
+                p2in = self.input.inputpp
+                pwprefix = 'pwscf'
+                p2prefix = 'pwscf'
+                pwoutdir = './'
+                p2outdir = './'
+                if 'prefix' in pwin:
+                    pwprefix = pwin.prefix
+                #end if
+                if 'prefix' in p2in:
+                    p2prefix = p2in.prefix
+                #end if
+                if 'outdir' in pwin:
+                    pwoutdir = pwin.outdir
+                #end if
+                if 'outdir' in p2in:
+                    p2outdir = p2in.outdir
+                #end if
+                if pwoutdir.startswith('./'):
+                    pwoutdir = pwoutdir[2:]
+                #end if
+                if p2outdir.startswith('./'):
+                    p2outdir = p2outdir[2:]
+                #end if
+                pwdir = os.path.abspath(os.path.join(sim.locdir ,pwoutdir))
+                p2dir = os.path.abspath(os.path.join(self.locdir,p2outdir))
+                errors = False
+                if pwdir!=p2dir:
+                    self.error('to use orbitals, '+self.generic_identifier+' must have the same outdir as pwscf\n  pwscf outdir: '+pwdir+'\n  '+self.generic_identifier+' outdir: '+p2dir,exit=False)
+                    errors = True
+                #end if
+                if pwprefix!=p2prefix:
+                    self.error('to use orbitals, '+self.generic_identifier+' must have the same prefix as pwscf\n  pwscf prefix: '+pwprefix+'\n  '+self.generic_identifier+' prefix: '+p2prefix,exit=False)
+                    errors = True
+                #end if
+                if errors:
+                    self.error(self.generic_identifier+' cannot use orbitals from pwscf')
+                #end if
+            else:
+                implemented = False
             #end if
         else:
-            self.error('ability to incorporate result '+result_name+' has not been implemented')
+            implemented = False
+        #end if
+        if not implemented:
+            self.error('ability to incorporate result "{0}" from {1} has not been implemented'.format(result_name,sim.__class__.__name__))
         #end if                
     #end def incorporate_result
+
 
     def check_sim_status(self):
         outfile = os.path.join(self.locdir,self.outfile)
@@ -334,10 +348,12 @@ class Pw2qmcpack(Simulation):
         self.finished = files_exist and self.job.finished
     #end def check_sim_status
 
+
     def get_output_files(self):
         output_files = []
         return output_files
     #end def get_output_files
+
 
     def app_command(self):
         return self.app_name+'<'+self.infile
@@ -692,9 +708,6 @@ class Convert4qmc(Simulation):
             calculating_result = True
         elif result_name=='particles':
             calculating_result = True
-        else:
-            calculating_result = False
-            self.error('ability to check for result '+result_name+' has not been implemented')
         #end if        
         return calculating_result
     #end def check_result
@@ -1035,14 +1048,10 @@ class PyscfToAfqmc(Simulation):
 
     def check_result(self,result_name,sim):
         calculating_result = False
-        input = self.input
         if result_name=='wavefunction':
-            calculating_result = input.output is not None
+            calculating_result = self.input.output is not None
         elif result_name=='hamiltonian':
-            calculating_result = input.output is not None
-        else:
-            calculating_result = False
-            self.error('ability to check for result '+result_name+' has not been implemented')
+            calculating_result = self.input.output is not None
         #end if        
         return calculating_result
     #end def check_result

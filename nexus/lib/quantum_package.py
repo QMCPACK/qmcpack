@@ -204,7 +204,6 @@ class QuantumPackage(Simulation):
 
 
     def check_sim_status(self):
-
         # get the run type
         input = self.input
         rc = self.input.run_control
