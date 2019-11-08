@@ -217,8 +217,9 @@ class OptimizationAnalyzer(ResultAnalyzer):
 
             self.failed = failed
             self.optimal_series = opt_series
-            self.optimal_file = opts[opt_series].info.files.opt
-            self.optimal_wavefunction = opts[opt_series].wavefunction.info.wfn_xml.copy()
+            # optimal input was produced by the previous series
+            self.optimal_file = opts[max(opt_series-1,0)].info.files.opt
+            self.optimal_wavefunction = opts[max(opt_series-1,0)].wavefunction.info.wfn_xml.copy()
         #end if
     #end def analyze_local
 
