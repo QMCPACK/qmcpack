@@ -1604,6 +1604,12 @@ def nxs_sim():
 
 
 
+def qmc_fit():
+    nunit_all()
+#end def nxs_sim
+
+
+
 
 example_information = dict(
     pwscf_relax_Ge_T = dict(
@@ -1912,6 +1918,7 @@ NexusTest( qmcpack_converter_simulations   )
 NexusTest( qmcpack_simulation              )
 NexusTest( nxs_redo                        )
 NexusTest( nxs_sim                         )
+NexusTest( qmc_fit                         )
 
 # ordered alphabetically (pytest order)
 #NexusTest( basisset                        )
@@ -1947,6 +1954,7 @@ NexusTest( nxs_sim                         )
 #NexusTest( pyscf_analyzer                  )
 #NexusTest( pyscf_input                     )
 #NexusTest( pyscf_simulation                )
+#NexusTest( qmc_fit                         )
 #NexusTest( qmcpack_analyzer                )
 #NexusTest( qmcpack_converter_analyzers     )
 #NexusTest( qmcpack_converter_input         )
