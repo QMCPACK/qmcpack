@@ -60,8 +60,13 @@ class OptimizationAnalyzer(ResultAnalyzer):
             optin = opts_in[-1] #take cost info from the last optimization section
             curv,crv,ce = optin.get(['unreweightedvariance','reweightedvariance','energy'])
             if curv is None and crv is None and ce is None:
-                ce  = 0.9 # qmcpack defaults
-                crv = 0.1
+                if optin.minmethod.lower().startswith('oneshift'):
+                    ce  = 1.0 # energy-only for oneshift
+                    crv = 0.0
+                else:
+                    ce  = 0.9 # qmcpack defaults
+                    crv = 0.1
+                #end if
             #end if
             if vw is None:
                 vw = 0
@@ -94,9 +99,12 @@ class OptimizationAnalyzer(ResultAnalyzer):
     def analyze_local(self):
         input = QAanalyzer.run_info.input
         self.info.system = QAanalyzer.run_info.system
-        opts  = self.opts
+        opts  = obj(self.opts)
         ew    = self.energy_weight
         vw    = self.variance_weight
+        if 0 in opts:
+           del opts[0]
+        #end if
 
         Efail        = 1e6
         Vfail        = 1e3
@@ -216,10 +224,11 @@ class OptimizationAnalyzer(ResultAnalyzer):
             failed = abs(en[index])>Efail or abs(va[index])>Vfail or abs(va[index]/en[index])>EVratio_soft_fail 
 
             self.failed = failed
+            # In QMCPACK series the optimal parameters are off by 1 index
+            opt_series -= 1
             self.optimal_series = opt_series
-            # optimal input was produced by the previous series
-            self.optimal_file = opts[max(opt_series-1,0)].info.files.opt
-            self.optimal_wavefunction = opts[max(opt_series-1,0)].wavefunction.info.wfn_xml.copy()
+            self.optimal_file = opts[opt_series].info.files.opt
+            self.optimal_wavefunction = opts[opt_series].wavefunction.info.wfn_xml.copy()
         #end if
     #end def analyze_local
 
