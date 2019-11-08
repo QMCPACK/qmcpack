@@ -1597,7 +1597,7 @@ def nxs_redo():
 
 
 def nxs_sim():
-    nunit('test_sim')
+    nunit('sim')
 
     nunit_all()
 #end def nxs_sim
@@ -1606,7 +1606,15 @@ def nxs_sim():
 
 def qmc_fit():
     nunit_all()
-#end def nxs_sim
+#end def qmc_fit
+
+
+
+def qdens():
+    nunit('density')
+
+    nunit_all()
+#end def qdens
 
 
 
@@ -1919,6 +1927,7 @@ NexusTest( qmcpack_simulation              )
 NexusTest( nxs_redo                        )
 NexusTest( nxs_sim                         )
 NexusTest( qmc_fit                         )
+NexusTest( qdens                           )
 
 # ordered alphabetically (pytest order)
 #NexusTest( basisset                        )
@@ -1954,6 +1963,7 @@ NexusTest( qmc_fit                         )
 #NexusTest( pyscf_analyzer                  )
 #NexusTest( pyscf_input                     )
 #NexusTest( pyscf_simulation                )
+#NexusTest( qdens                           )
 #NexusTest( qmc_fit                         )
 #NexusTest( qmcpack_analyzer                )
 #NexusTest( qmcpack_converter_analyzers     )
