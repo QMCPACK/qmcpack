@@ -44,14 +44,14 @@ inline T laplacian(const TinyVector<std::complex<T>, D>& g, const std::complex<T
   return l.real() + OTCDot<T, T, D>::apply(g, g);
 }
 
-/** Convenience function to compute  \Re( \nabla^2_i \partial \Psi_T/\Psi_T)
- * @param g OHMMS_DIM dimensional vector for \nabla_i \ln \Psi_T .  
- * @param l A number, representing \nabla^2_i \ln \Psi_T .
- * @param gg OHMMS_DIM dimensional vector containing \nabla_i \partial \ln \Psi_T . 
- * @param gl A number, representing \nabla^2_i \partial \ln \Psi_T
- * @param ideriv A number, representing \partial \ln \Psi_T
+/** Convenience function to compute \f$\Re( \nabla^2_i \partial \Psi_T/\Psi_T)\f$
+ * @param g OHMMS_DIM dimensional vector for \f$\nabla_i \ln \Psi_T\f$ .  
+ * @param l A number, representing \f$\nabla^2_i \ln \Psi_T\f$ .
+ * @param gg OHMMS_DIM dimensional vector containing \f$\nabla_i \partial \ln \Psi_T\f$ . 
+ * @param gl A number, representing \f$\nabla^2_i \partial \ln \Psi_T\f$
+ * @param ideriv A number, representing \f$\partial \ln \Psi_T\f$
  *
- * @return A number corresponding to \Re( \nabla^2_i \partial \Psi_T/\Psi_T)
+ * @return A number corresponding to \f$\Re( \nabla^2_i \partial \Psi_T/\Psi_T)\f$
  */
 
 template<typename T, unsigned D>

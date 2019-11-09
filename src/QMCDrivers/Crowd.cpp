@@ -8,6 +8,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 #include "QMCDrivers/Crowd.h"
+#include "QMCHamiltonians/QMCHamiltonian.h"
 
 namespace qmcplusplus
 {
@@ -18,11 +19,6 @@ void Crowd::clearWalkers()
   walker_elecs_.clear();
   walker_twfs_.clear();
   walker_hamiltonians_.clear();
-
-  // Think these should also get cleared here.
-  n_reject_ = 0;
-  n_accept_ = 0;
-  n_nonlocal_accept_ = 0;
 }
 
 void Crowd::reserve(int crowd_size)
@@ -54,6 +50,12 @@ void Crowd::loadWalkers()
     ++it_walker;
     ++it_walker_elecs;
   }
+}
+
+void Crowd::setRNGForHamiltonian(RandomGenerator_t& rng)
+{
+  for ( QMCHamiltonian& ham : walker_hamiltonians_ )
+    ham.setRandomGenerator(&rng);
 }
 
 void Crowd::startBlock(int num_steps)

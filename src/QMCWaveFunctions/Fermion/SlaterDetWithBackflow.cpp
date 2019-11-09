@@ -50,18 +50,14 @@ void SlaterDetWithBackflow::resetTargetParticleSet(ParticleSet& P)
   }
 }
 
-SlaterDetWithBackflow::RealType SlaterDetWithBackflow::evaluateLog(ParticleSet& P,
+SlaterDetWithBackflow::LogValueType SlaterDetWithBackflow::evaluateLog(ParticleSet& P,
                                                                    ParticleSet::ParticleGradient_t& G,
                                                                    ParticleSet::ParticleLaplacian_t& L)
 {
   BFTrans->evaluate(P);
   LogValue   = 0.0;
-  PhaseValue = 0.0;
   for (int i = 0; i < Dets.size(); ++i)
-  {
     LogValue += Dets[i]->evaluateLog(P, G, L);
-    PhaseValue += Dets[i]->PhaseValue;
-  }
   return LogValue;
 }
 
@@ -72,18 +68,14 @@ void SlaterDetWithBackflow::registerData(ParticleSet& P, WFBufferType& buf)
     Dets[i]->registerData(P, buf);
 }
 
-SlaterDetWithBackflow::RealType SlaterDetWithBackflow::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch)
+SlaterDetWithBackflow::LogValueType SlaterDetWithBackflow::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch)
 {
   //BFTrans->updateBuffer(P,buf,fromscratch);
   BFTrans->updateBuffer(P, buf, fromscratch);
   //BFTrans->evaluate(P);
   LogValue   = 0.0;
-  PhaseValue = 0.0;
   for (int i = 0; i < Dets.size(); ++i)
-  {
     LogValue += Dets[i]->updateBuffer(P, buf, fromscratch);
-    PhaseValue += Dets[i]->PhaseValue;
-  }
   return LogValue;
 }
 
@@ -172,8 +164,8 @@ void SlaterDetWithBackflow::testDerivGL(ParticleSet& P)
   L0.resize(P.getTotalNum());
   L1.resize(P.getTotalNum());
   L2.resize(P.getTotalNum());
-  ValueType psi1 = 1.0;
-  ValueType psi2 = 1.0;
+  LogValueType psi1 = 1.0;
+  LogValueType psi2 = 1.0;
   RealType dh    = 0.00001;
   for (int k = 0; k < Dets.size(); k++)
   {

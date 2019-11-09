@@ -17,7 +17,6 @@
 #define QMCPLUSPLUS_DISTANCETABLEDATAIMPL_H
 
 #include "Particle/ParticleSet.h"
-#include "Utilities/PooledData.h"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "simd/allocator.hpp"

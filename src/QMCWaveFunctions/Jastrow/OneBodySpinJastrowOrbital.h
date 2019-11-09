@@ -205,7 +205,7 @@ public:
     }
   }
 
-  RealType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
+  LogValueType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
   {
     LogValue                         = 0.0;
     U                                = 0.0;
@@ -445,7 +445,7 @@ public:
     DEBUG_PSIBUFFER(" OneBodySpinJastrow::registerData ", buf.current());
   }
 
-  RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false)
+  LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false)
   {
     evaluateLogAndStore(P, P.G, P.L);
     DEBUG_PSIBUFFER(" OneBodySpinJastrow::updateBuffer ", buf.current());

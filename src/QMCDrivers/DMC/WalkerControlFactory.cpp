@@ -16,6 +16,7 @@
 #include "OhmmsData/ParameterSet.h"
 #include "QMCDrivers/DMC/WalkerControlFactory.h"
 #include "QMCDrivers/DMC/WalkerReconfiguration.h"
+#include "QMCHamiltonians/QMCHamiltonian.h"
 #if defined(HAVE_MPI)
 #include "QMCDrivers/DMC/WalkerControlMPI.h"
 #include "QMCDrivers/DMC/WalkerReconfigurationMPI.h"
