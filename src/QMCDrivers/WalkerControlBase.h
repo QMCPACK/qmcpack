@@ -54,8 +54,10 @@ public:
   ///typedef of IndexType
   typedef QMCTraits::IndexType IndexType;
 
-  ///@enum enumeration to access curData and accumData for reduction
-  // curData is larger than this //LE_MAX + n_node * T
+  /** An enum to access curData and accumData for reduction
+   *
+   * curData is larger than this //LE_MAX + n_node * T
+   */
   enum
   {
     ENERGY_INDEX = 0,
@@ -129,11 +131,13 @@ public:
   int sortWalkers(MCWalkerConfiguration& W);
 
   struct PopulationAdjustment {
-    int num_walkers;
+    int num_walkers; // This is the number of walkers we are adjusting to
     RefVector<MCPWalker> good_walkers;
     std::vector<int> copies_to_make;
     RefVector<MCPWalker> bad_walkers;
   };
+
+  static std::vector<IndexType> syncFutureWalkersPerRank(Communicate* comm, IndexType n_walkers );
 
   /** create data structure needed to do population adjustment
    *

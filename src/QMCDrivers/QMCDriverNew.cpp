@@ -9,17 +9,6 @@
 // File refactored from: QMCDriver.cpp
 //////////////////////////////////////////////////////////////////////////////////////
 
-/** \file
- * Clean base class for Unified driver
- *  
- * This driver base class should be generic with respect to precision,
- * value type, device execution, and ...
- * It should contain no typdefs not related to compiler bugs or platform workarounds
- *
- * Some integer math is done in non performance critical areas in the clear and
- * not optimized way. Leave these alone.
- */
-
 #include <limits>
 #include <typeinfo>
 #include <cmath>
@@ -135,6 +124,7 @@ void QMCDriverNew::process(xmlNodePtr cur)
   if (!estimator_manager_)
   {
     estimator_manager_ = new EstimatorManagerBase(myComm);
+    // TODO: remove this when branch engine no longer depends on estimator_mamanger_
     branch_engine_->setEstimatorManager(estimator_manager_);
     // This used to get updated as a side effect of setStatus
     branch_engine_->read(h5_file_root_);

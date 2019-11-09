@@ -195,7 +195,7 @@ public:
    *such that \f[ G[i]+={\bf \nabla}_i J({\bf R}) \f]
    *and \f[ L[i]+=\nabla^2_i J({\bf R}). \f]
    */
-  RealType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
+  LogValueType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
   {
     LogValue                         = 0.0;
     U                                = 0.0;
@@ -439,7 +439,7 @@ public:
 
   void evaluateGL(ParticleSet& P) { evaluateLogAndStore(P, P.G, P.L); }
 
-  RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false)
+  LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false)
   {
     evaluateLogAndStore(P, P.G, P.L);
     //LogValue = 0.0;

@@ -14,7 +14,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-/** @file common.cpp
+/** @file
  *
  * Instantiates the static data
  * Implements member functions of EinsplineSetBuilder

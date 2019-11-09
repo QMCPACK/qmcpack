@@ -28,16 +28,6 @@ namespace qmcplusplus
 class KContainer : public QMCTraits
 {
 private:
-  //Function to return a unique number for each kVector
-  inline long GetHashOfVec(const TinyVector<int, 3>& inpv, int hashparam)
-  {
-    return inpv[2] + hashparam * (inpv[1] + hashparam * inpv[0]);
-  }
-
-  inline long GetHashOfVec(const TinyVector<int, 2>& inpv, int hashparam) { return (inpv[1] + hashparam * inpv[0]); }
-
-  inline long GetHashOfVec(const TinyVector<int, 1>& inpv, int hashparam) { return inpv[0]; }
-
   /// The cutoff up to which k-vectors are generated.
   RealType kcutoff;
   /// kcutoff*kcutoff
