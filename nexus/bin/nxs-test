@@ -1588,6 +1588,64 @@ def qmcpack_simulation():
 
 
 
+def nxs_redo():
+    nunit('test_redo')
+
+    nunit_all()
+#end def nxs_redo
+
+
+
+def nxs_sim():
+    nunit('sim')
+
+    nunit_all()
+#end def nxs_sim
+
+
+
+def qmc_fit():
+    nunit_all()
+#end def qmc_fit
+
+
+
+def qdens():
+    nunit('density')
+
+    nunit_all()
+#end def qdens
+
+
+
+def qmca():
+    nunit('help')
+
+    nunit('examples')
+
+    nunit('unit_conversion')
+
+    nunit('selected_quantities')
+
+    nunit('all_quantities')
+
+    nunit('energy_variance')
+
+    nunit('multiple_equilibration')
+
+    nunit('join')
+
+    nunit('multiple_directories')
+
+    nunit('twist_average')
+
+    nunit('weighted_twist_average')
+
+    nunit_all()
+#end def qmca
+
+
+
 
 example_information = dict(
     pwscf_relax_Ge_T = dict(
@@ -1894,6 +1952,11 @@ NexusTest( quantum_package_simulation      )
 NexusTest( pwscf_postprocessor_simulations )
 NexusTest( qmcpack_converter_simulations   )
 NexusTest( qmcpack_simulation              )
+NexusTest( nxs_redo                        )
+NexusTest( nxs_sim                         )
+NexusTest( qmca                            )
+NexusTest( qmc_fit                         )
+NexusTest( qdens                           )
 
 # ordered alphabetically (pytest order)
 #NexusTest( basisset                        )
@@ -1912,6 +1975,8 @@ NexusTest( qmcpack_simulation              )
 #NexusTest( nexus_base                      )
 #NexusTest( nexus_imports                   )
 #NexusTest( numerics                        )
+#NexusTest( nxs_redo                        )
+#NexusTest( nxs_sim                         )
 #NexusTest( optional_dependencies           , optional=True)
 #NexusTest( periodic_table                  )
 #NexusTest( physical_system                 )
@@ -1927,6 +1992,9 @@ NexusTest( qmcpack_simulation              )
 #NexusTest( pyscf_analyzer                  )
 #NexusTest( pyscf_input                     )
 #NexusTest( pyscf_simulation                )
+#NexusTest( qdens                           )
+#NexusTest( qmc_fit                         )
+#NexusTest( qmca                            )
 #NexusTest( qmcpack_analyzer                )
 #NexusTest( qmcpack_converter_analyzers     )
 #NexusTest( qmcpack_converter_input         )
