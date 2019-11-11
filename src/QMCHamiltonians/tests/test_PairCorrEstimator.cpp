@@ -57,7 +57,7 @@ const char* pset_xml = "<particleset name=\"e\" random=\"yes\"> \
                         </particleset>";
 
 // PairCorrEstimator block
-const char* gofr_xml = "<estimator type=\"gofr\" name=\"gofr\" rmax=\"2.0\" num_bin=\"20\" />";
+const char* gofr_xml = "<estimator type=\"gofr\" name=\"gofr\" rmax=\"2.0\" num_bin=\"99\" />";
 
 
 namespace qmcplusplus
@@ -157,6 +157,12 @@ TEST_CASE("Pair Correlation", "[hamiltonian]")
   // NB: Hardcoded to match hardcoded xml above. ***Fragile!!!***
   paircorr.evaluate(*elec);
 
+  // Hardcoded gofr parameters - MUST match xml input for PairCorrEstimator!!!
+  // This might cause a segfault if it does not match xml input!
+  const RealType Rmax   = 2.0;
+  const int Nbins       = 99;
+  const RealType deltaR = Rmax / static_cast<RealType>(Nbins);
+
   auto gofr = elec->Collectables;
   std::cout << "\n";
   std::cout << "gofr:\n";
@@ -169,10 +175,11 @@ TEST_CASE("Pair Correlation", "[hamiltonian]")
             << "  " << std::setw(12) << "dd"
             << "\n";
   std::cout << "============================================================\n";
-  for (int i(0); i < 20; i++)
+
+  for (int i = 0; i < Nbins; i++)
   {
-    std::cout << std::setw(4) << i << "  " << std::setw(12) << i * 0.10 << "  " << std::setw(12) << gofr[i] << "  "
-              << std::setw(12) << gofr[i + 20] << "  " << std::setw(12) << gofr[i + 40] << "\n";
+    std::cout << std::setw(4) << i << "  " << std::setw(12) << i * deltaR << "  " << std::setw(12) << gofr[i] << "  "
+              << std::setw(12) << gofr[i + Nbins] << "  " << std::setw(12) << gofr[i + 2 * Nbins] << "\n";
   }
 
   // Verify against analytic result.
@@ -181,22 +188,24 @@ TEST_CASE("Pair Correlation", "[hamiltonian]")
   //     result, depending on the bin. I'm not sure about the source
   //     of the disagreement because norm_factor is now exact.
   //     The only thing left is the distance table (I think)...
-  const RealType eps = 1E-01; // tolerance
+  const RealType eps = 1E-02; // tolerance
 
   // Nearest neighbor peak (ud) | Distance = 1
-  REQUIRE(std::fabs(gofr[10] - 0.00000) < eps);
-  REQUIRE(std::fabs(gofr[30] - 4.32744) < eps);
-  REQUIRE(std::fabs(gofr[50] - 0.00000) < eps);
+  const int bin_nn = 49;
+  REQUIRE(std::fabs(gofr[49] - 0.00000000) < eps);
+  REQUIRE(std::fabs(gofr[148] - 23.6361163) < eps);
+  REQUIRE(std::fabs(gofr[247] - 0.00000000) < eps);
 
   // 2nd-nearest neighbor peak (uu/dd) | Distance = sqrt(2)
-  REQUIRE(std::fabs(gofr[14] - 2.96827) < eps);
-  REQUIRE(std::fabs(gofr[34] - 0.00000) < eps);
-  REQUIRE(std::fabs(gofr[54] - 2.96827) < eps);
+  const int bin_2n = 70;
+  REQUIRE(std::fabs(gofr[70] - 15.536547) < eps);
+  REQUIRE(std::fabs(gofr[169] - 0.0000000) < eps);
+  REQUIRE(std::fabs(gofr[268] - 15.536547) < eps);
 
   // 3rd-nearest neighbor peak (ud) | Distance = sqrt(3)
-  REQUIRE(std::fabs(gofr[17] - 0.00000) < eps);
-  REQUIRE(std::fabs(gofr[37] - 0.50103) < eps);
-  REQUIRE(std::fabs(gofr[57] - 0.00000) < eps);
+  REQUIRE(std::fabs(gofr[85] - 0.00000000) < eps);
+  REQUIRE(std::fabs(gofr[184] - 2.6408410) < eps);
+  REQUIRE(std::fabs(gofr[283] - 0.0000000) < eps);
 
   std::cout << "test_paircorr:: STOP\n";
 }
