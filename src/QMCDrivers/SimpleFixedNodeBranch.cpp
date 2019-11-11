@@ -1,4 +1,4 @@
-//////////////////////////////////////////////////////////////////////////////////////
+ //////////////////////////////////////////////////////////////////////////////////////
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
@@ -119,6 +119,8 @@ void SimpleFixedNodeBranch::start(const std::string& froot, bool append)
   MyEstimator->reset();
 }
 
+/** Step ? in the SimpleFixedNodeBranch state machine.
+ */
 int SimpleFixedNodeBranch::initWalkerController(MCWalkerConfiguration& walkers, bool fixW, bool killwalker)
 {
   BranchMode.set(B_DMC, 1);                               //set DMC
@@ -147,6 +149,7 @@ int SimpleFixedNodeBranch::initWalkerController(MCWalkerConfiguration& walkers, 
       walkers.setWalkerOffsets(nwoff);
       iParam[B_TARGETWALKERS] = nwoff[ncontexts];
     }
+    // \todo reparsing XML nodes is an antipattern, remove.
     WalkerController.reset(createWalkerController(iParam[B_TARGETWALKERS], MyEstimator->getCommunicator(), myNode));
     if (!BranchMode[B_RESTART])
     {
@@ -161,6 +164,7 @@ int SimpleFixedNodeBranch::initWalkerController(MCWalkerConfiguration& walkers, 
       {
         app_log() << "Warmup DMC is done with a fixed population " << iParam[B_TARGETWALKERS] << std::endl;
         BackupWalkerController = std::move(WalkerController); //save the main controller
+        // \todo: Not likely to be ok to call reset on a moved from WalkerController!
         WalkerController.reset(
             createWalkerController(iParam[B_TARGETWALKERS], MyEstimator->getCommunicator(), myNode, true));
         BranchMode.set(B_POPCONTROL, 0);
