@@ -8,7 +8,7 @@ echo "Sourcing file: $BUILD_MODULES to build QMCPACK"
 
 . $BUILD_MODULES
 
-echo "Either source $BUILD_MODULES or load these same modules ti run QMCPACK"
+echo "Either source $BUILD_MODULES or load these same modules to run QMCPACK"
 
 declare -A builds=( ["cpu"]="-DENABLE_MASS=1 -DMASS_ROOT=/sw/summit/xl/16.1.1-5/xlmass/9.1.1" \
                     ["complex_cpu"]="-DQMC_COMPLEX=1 -DENABLE_MASS=1 -DMASS_ROOT=/sw/summit/xl/16.1.1-5/xlmass/9.1.1" \
