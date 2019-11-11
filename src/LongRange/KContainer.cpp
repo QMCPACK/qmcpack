@@ -305,16 +305,25 @@ void KContainer::BuildKLists(ParticleLayout_t& lattice, bool useSphere)
   }
   //Now fill the array that returns the index of -k when given the index of k.
   minusk.resize(numk);
+
+  //Assigns a unique hash value to each kpoint. 
+  auto getHashOfVec = [](const auto& inpv, int hashparam)->long long{
+    long long hash = 0; // this will cause integral promotion below
+    for(int i = 0; i < inpv.Size; ++i)
+      hash += inpv[i] + hash * hashparam;
+    return hash;
+  };
+
   // Create a map from the hash value for each k vector to the index
-  std::map<int, int> hashToIndex;
+  std::map<long long, int> hashToIndex;
   for (int ki = 0; ki < numk; ki++)
   {
-    hashToIndex[GetHashOfVec(kpts[ki], numk)] = ki;
+    hashToIndex[getHashOfVec(kpts[ki], numk)] = ki;
   }
   // Use the map to find the index of -k from the index of k
   for (int ki = 0; ki < numk; ki++)
   {
-    minusk[ki] = hashToIndex[GetHashOfVec(-1 * kpts[ki], numk)];
+    minusk[ki] = hashToIndex[getHashOfVec(-1 * kpts[ki], numk)];
   }
 }
 

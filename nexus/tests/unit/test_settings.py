@@ -1,6 +1,6 @@
 
 import testing
-from testing import divert_nexus_log,restore_nexus_log
+from testing import divert_nexus,restore_nexus
 from testing import value_eq,object_eq
 
 
@@ -24,10 +24,12 @@ def test_settings():
     from pwscf import Pwscf
     from quantum_package import QuantumPackage
 
+    testing.check_final_state()
+
     tpath = testing.setup_unit_test_output_directory('settings','test_settings')
 
     # divert logging function
-    divert_nexus_log()
+    divert_nexus()
 
     def aux_defaults():
         # check that Job and ProjectManager settings are at default values
@@ -169,5 +171,5 @@ def test_settings():
     check_empty_settings()
 
     # restore logging function
-    restore_nexus_log()
+    restore_nexus()
 #end def test_settings

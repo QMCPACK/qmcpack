@@ -519,6 +519,7 @@ class NexusTest(NexusTestBase):
             else:
                 raise NexusTestMisconstructed
             #end if
+            check_final_state()
             self.status=NexusTest.status_options['passed']
         except Exception as e:
             t,v,tb = sys.exc_info()
@@ -1417,11 +1418,232 @@ def qmcpack_analyzer():
 
 
 
-def qmcpack_converters():
+def vasp_simulation():
     nunit('import')
 
+    nunit('minimal_init')
+
+    nunit('check_result')
+
+    nunit('get_result')
+
+    nunit('incorporate_result')
+
+    nunit('check_sim_status')
+
+    nunit('get_output_files')
+
     nunit_all()
-#end def qmcpack_converters
+#end def vasp_simulation
+
+
+
+def pwscf_simulation():
+    nunit('import')
+
+    nunit('minimal_init')
+    
+    nunit('check_result')
+
+    nunit('get_result')
+    
+    nunit('incorporate_result')
+    
+    nunit('check_sim_status')
+    
+    nunit_all()
+#end def pwscf_simulation
+
+
+
+def gamess_simulation():
+    nunit('import')
+
+    nunit('minimal_init')
+
+    nunit('check_result')
+
+    nunit('get_result')
+
+    nunit('incorporate_result')
+
+    nunit('check_sim_status')
+    
+    nunit_all()
+#end def gamess_simulation
+
+
+
+def pyscf_simulation():
+    nunit('import')
+
+    nunit('minimal_init')
+
+    nunit('check_result')
+
+    nunit('get_result')
+    
+    nunit('check_sim_status')
+    
+    nunit_all()
+#end def pyscf_simulation
+
+
+
+def quantum_package_simulation():
+    nunit('import')
+
+    nunit('minimal_init')
+
+    nunit('check_result')
+
+    nunit('get_result')
+
+    nunit('incorporate_result')
+
+    nunit('check_sim_status')
+
+    nunit_all()
+#end def quantum_package_simulation
+
+
+
+def pwscf_postprocessor_simulations():
+    nunit('import')
+
+    nunit('minimal_init')
+
+    nunit('check_result')
+
+    nunit('get_result')
+
+    nunit('incorporate_result')
+
+    nunit('check_sim_status')
+
+    nunit_all()
+#end def pwscf_postprocessor_simulations
+
+
+
+def qmcpack_converter_simulations():
+    nunit('pw2qmcpack_import')
+
+    nunit('pw2qmcpack_minimal_init')
+
+    nunit('pw2qmcpack_check_result')
+
+    nunit('pw2qmcpack_get_result')
+
+    nunit('pw2qmcpack_incorporate_result')
+
+    nunit('pw2qmcpack_check_sim_status')
+
+
+    nunit('convert4qmc_import')
+
+    nunit('convert4qmc_minimal_init')
+
+    nunit('convert4qmc_check_result')
+
+    nunit('convert4qmc_get_result')
+
+    nunit('convert4qmc_incorporate_result')
+
+    nunit('convert4qmc_check_sim_status')
+
+
+    nunit('pyscf_to_afqmc_import')
+
+    nunit('pyscf_to_afqmc_minimal_init')
+
+    nunit('pyscf_to_afqmc_check_result')
+
+    nunit('pyscf_to_afqmc_get_result')
+
+    nunit('pyscf_to_afqmc_incorporate_result')
+
+    nunit('pyscf_to_afqmc_check_sim_status')
+
+    nunit_all()
+#end def qmcpack_converter_simulations
+
+
+
+def qmcpack_simulation():
+    nunit('import')
+
+    nunit('minimal_init')
+
+    nunit('check_result')
+
+    nunit('get_result')
+
+    nunit('incorporate_result')
+
+    nunit('check_sim_status')
+
+    nunit_all()
+#end def qmcpack_simulation
+
+
+
+def nxs_redo():
+    nunit('test_redo')
+
+    nunit_all()
+#end def nxs_redo
+
+
+
+def nxs_sim():
+    nunit('sim')
+
+    nunit_all()
+#end def nxs_sim
+
+
+
+def qmc_fit():
+    nunit_all()
+#end def qmc_fit
+
+
+
+def qdens():
+    nunit('density')
+
+    nunit_all()
+#end def qdens
+
+
+
+def qmca():
+    nunit('help')
+
+    nunit('examples')
+
+    nunit('unit_conversion')
+
+    nunit('selected_quantities')
+
+    nunit('all_quantities')
+
+    nunit('energy_variance')
+
+    nunit('multiple_equilibration')
+
+    nunit('join')
+
+    nunit('multiple_directories')
+
+    nunit('twist_average')
+
+    nunit('weighted_twist_average')
+
+    nunit_all()
+#end def qmca
+
 
 
 
@@ -1454,7 +1676,7 @@ example_information = dict(
             ],
         ),
     qmcpack_H2O = dict(
-        path = 'qmcpack/H2O',
+        path = 'qmcpack/rsqmc_misc/H2O',
         scripts = [
             'H2O.py',
             ],
@@ -1466,7 +1688,7 @@ example_information = dict(
             ],
         ),
     qmcpack_LiH = dict(
-        path = 'qmcpack/LiH',
+        path = 'qmcpack/rsqmc_misc/LiH',
         scripts = [
             'LiH.py',
             ],
@@ -1479,7 +1701,7 @@ example_information = dict(
             ],
         ),
     qmcpack_c20 = dict(
-        path = 'qmcpack/c20',
+        path = 'qmcpack/rsqmc_misc/c20',
         scripts = [
             'c20.py',
             ],
@@ -1491,7 +1713,7 @@ example_information = dict(
             ],
         ),
     qmcpack_diamond = dict(
-        path = 'qmcpack/diamond',
+        path = 'qmcpack/rsqmc_misc/diamond',
         scripts = [
             'diamond.py',
             'diamond_vacancy.py',
@@ -1505,7 +1727,7 @@ example_information = dict(
             ],
         ),
     qmcpack_graphene = dict(
-        path = 'qmcpack/graphene',
+        path = 'qmcpack/rsqmc_misc/graphene',
         scripts = [
             'graphene.py',
             ],
@@ -1520,7 +1742,7 @@ example_information = dict(
             ],
         ),
     qmcpack_oxygen_dimer = dict(
-        path = 'qmcpack/oxygen_dimer',
+        path = 'qmcpack/rsqmc_misc/oxygen_dimer',
         scripts = [
             'oxygen_dimer.py',
             ],
@@ -1678,99 +1900,124 @@ def user_examples(label):
 # create labeled tests from simple functions above
 
 # ordered according to logical dependencies
-NexusTest( versions                      )
-NexusTest( required_dependencies         )
-NexusTest( optional_dependencies         , optional=True)
-NexusTest( nexus_imports                 )
-NexusTest( testing                       )
-NexusTest( execute                       )
-NexusTest( memory                        )
-NexusTest( plotting                      )
-NexusTest( superstring                   )
-NexusTest( generic_operation             , 'generic' )
-NexusTest( developer                     )
-NexusTest( unit_converter                )
-NexusTest( periodic_table                )
-NexusTest( numerics                      )
-NexusTest( grid_functions                )
-NexusTest( fileio                        )
-NexusTest( hdfreader                     )
-NexusTest( xmlreader                     )
-NexusTest( structure                     )
-NexusTest( physical_system               )
-NexusTest( basisset                      )
-NexusTest( pseudopotential               )
-NexusTest( nexus_base                    )
-NexusTest( machines                      )
-NexusTest( simulation                    )
-NexusTest( bundle                        )
-NexusTest( project_manager               )
-NexusTest( settings_operation            , 'settings' )
-NexusTest( vasp_input                    )
-NexusTest( pwscf_input                   )
-NexusTest( pwscf_postprocessor_input     )
-NexusTest( gamess_input                  )
-NexusTest( pyscf_input                   )
-NexusTest( quantum_package_input         )
-NexusTest( qmcpack_converter_input       )
-NexusTest( qmcpack_input                 )
-NexusTest( vasp_analyzer                 )
-NexusTest( pwscf_analyzer                )
-NexusTest( pwscf_postprocessor_analyzers )
-NexusTest( gamess_analyzer               )
-NexusTest( pyscf_analyzer                )
-NexusTest( quantum_package_analyzer      )
-NexusTest( qmcpack_converter_analyzers   )
-NexusTest( qmcpack_analyzer              )
-NexusTest( qmcpack_converters            )
+NexusTest( versions                        )
+NexusTest( required_dependencies           )
+NexusTest( optional_dependencies           , optional=True)
+NexusTest( nexus_imports                   )
+NexusTest( testing                         )
+NexusTest( execute                         )
+NexusTest( memory                          )
+NexusTest( plotting                        )
+NexusTest( superstring                     )
+NexusTest( generic_operation               , 'generic' )
+NexusTest( developer                       )
+NexusTest( unit_converter                  )
+NexusTest( periodic_table                  )
+NexusTest( numerics                        )
+NexusTest( grid_functions                  )
+NexusTest( fileio                          )
+NexusTest( hdfreader                       )
+NexusTest( xmlreader                       )
+NexusTest( structure                       )
+NexusTest( physical_system                 )
+NexusTest( basisset                        )
+NexusTest( pseudopotential                 )
+NexusTest( nexus_base                      )
+NexusTest( machines                        )
+NexusTest( simulation                      )
+NexusTest( bundle                          )
+NexusTest( project_manager                 )
+NexusTest( settings_operation              , 'settings' )
+NexusTest( vasp_input                      )
+NexusTest( pwscf_input                     )
+NexusTest( pwscf_postprocessor_input       )
+NexusTest( gamess_input                    )
+NexusTest( pyscf_input                     )
+NexusTest( quantum_package_input           )
+NexusTest( qmcpack_converter_input         )
+NexusTest( qmcpack_input                   )
+NexusTest( vasp_analyzer                   )
+NexusTest( pwscf_analyzer                  )
+NexusTest( pwscf_postprocessor_analyzers   )
+NexusTest( gamess_analyzer                 )
+NexusTest( pyscf_analyzer                  )
+NexusTest( quantum_package_analyzer        )
+NexusTest( qmcpack_converter_analyzers     )
+NexusTest( qmcpack_analyzer                )
+NexusTest( vasp_simulation                 )
+NexusTest( pwscf_simulation                )
+NexusTest( gamess_simulation               )
+NexusTest( pyscf_simulation                )
+NexusTest( quantum_package_simulation      )
+NexusTest( pwscf_postprocessor_simulations )
+NexusTest( qmcpack_converter_simulations   )
+NexusTest( qmcpack_simulation              )
+NexusTest( nxs_redo                        )
+NexusTest( nxs_sim                         )
+NexusTest( qmca                            )
+NexusTest( qmc_fit                         )
+NexusTest( qdens                           )
 
 # ordered alphabetically (pytest order)
-#NexusTest( basisset                      )
-#NexusTest( bundle                        )
-#NexusTest( developer                     )
-#NexusTest( execute                       )
-#NexusTest( fileio                        )
-#NexusTest( gamess_analyzer               )
-#NexusTest( gamess_input                  )
-#NexusTest( generic_operation             , 'generic' )
-#NexusTest( grid_functions                )
-#NexusTest( hdfreader                     )
-#NexusTest( machines                      )
-#NexusTest( memory                        )
-#NexusTest( nexus_base                    )
-#NexusTest( nexus_imports                 )
-#NexusTest( numerics                      )
-#NexusTest( optional_dependencies         , optional=True)
-#NexusTest( periodic_table                )
-#NexusTest( physical_system               )
-#NexusTest( plotting                      )
-#NexusTest( project_manager               )
-#NexusTest( pseudopotential               )
-#NexusTest( pwscf_analyzer                )
-#NexusTest( pyscf_analyzer                )
-#NexusTest( pwscf_input                   )
-#NexusTest( pwscf_postprocessor_analyzers )
-#NexusTest( pwscf_postprocessor_input     )
-#NexusTest( pyscf_input                   )
-#NexusTest( qmcpack_analyzer              )
-#NexusTest( qmcpack_converter_analyzers   )
-#NexusTest( qmcpack_converter_input       )
-#NexusTest( qmcpack_converters            )
-#NexusTest( qmcpack_input                 )
-#NexusTest( quantum_package_analyzer      )
-#NexusTest( quantum_package_input         )
-#NexusTest( required_dependencies         )
-#NexusTest( settings_operation            , 'settings' )
-#NexusTest( simulation                    )
-#NexusTest( structure                     )
-#NexusTest( superstring                   )
-#NexusTest( testing                       )
-#NexusTest( unit_converter                )
-#NexusTest( vasp_input                    )
-#NexusTest( versions                      )
-#NexusTest( xmlreader                     )
+#NexusTest( basisset                        )
+#NexusTest( bundle                          )
+#NexusTest( developer                       )
+#NexusTest( execute                         )
+#NexusTest( fileio                          )
+#NexusTest( gamess_analyzer                 )
+#NexusTest( gamess_input                    )
+#NexusTest( gamess_simulation               )
+#NexusTest( generic_operation               , 'generic' )
+#NexusTest( grid_functions                  )
+#NexusTest( hdfreader                       )
+#NexusTest( machines                        )
+#NexusTest( memory                          )
+#NexusTest( nexus_base                      )
+#NexusTest( nexus_imports                   )
+#NexusTest( numerics                        )
+#NexusTest( nxs_redo                        )
+#NexusTest( nxs_sim                         )
+#NexusTest( optional_dependencies           , optional=True)
+#NexusTest( periodic_table                  )
+#NexusTest( physical_system                 )
+#NexusTest( plotting                        )
+#NexusTest( project_manager                 )
+#NexusTest( pseudopotential                 )
+#NexusTest( pwscf_analyzer                  )
+#NexusTest( pwscf_input                     )
+#NexusTest( pwscf_postprocessor_analyzers   )
+#NexusTest( pwscf_postprocessor_input       )
+#NexusTest( pwscf_postprocessor_simulations )
+#NexusTest( pwscf_simulation                )
+#NexusTest( pyscf_analyzer                  )
+#NexusTest( pyscf_input                     )
+#NexusTest( pyscf_simulation                )
+#NexusTest( qdens                           )
+#NexusTest( qmc_fit                         )
+#NexusTest( qmca                            )
+#NexusTest( qmcpack_analyzer                )
+#NexusTest( qmcpack_converter_analyzers     )
+#NexusTest( qmcpack_converter_input         )
+#NexusTest( qmcpack_converter_simulations   )
+#NexusTest( qmcpack_input                   )
+#NexusTest( qmcpack_simulation              )
+#NexusTest( quantum_package_analyzer        )
+#NexusTest( quantum_package_input           )
+#NexusTest( quantum_package_simulation      )
+#NexusTest( required_dependencies           )
+#NexusTest( settings_operation              , 'settings' )
+#NexusTest( simulation                      )
+#NexusTest( structure                       )
+#NexusTest( superstring                     )
+#NexusTest( testing                         )
+#NexusTest( unit_converter                  )
+#NexusTest( vasp_analyzer                   )
+#NexusTest( vasp_simulation                 )
+#NexusTest( vasp_input                      )
+#NexusTest( versions                        )
+#NexusTest( xmlreader                       )
 
-for label in example_information.keys():
+for label in sorted(example_information.keys()):
     NexusTest(
         name      = 'example_'+label,  # individually label tests
         operation = user_examples,     # all tests call the same test function
