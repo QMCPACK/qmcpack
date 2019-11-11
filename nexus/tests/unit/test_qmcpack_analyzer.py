@@ -364,6 +364,8 @@ def test_optimization_analysis():
         variance_weight = None,
         )
 
+    testing.print_diff(opt.to_obj(),opt_ref,atol=1e-8)
+
     assert(object_eq(opt.to_obj(),opt_ref,atol=1e-8))
 
     restore_nexus_log()
