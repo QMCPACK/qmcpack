@@ -356,6 +356,7 @@ public:
    */
   inline void evaluatePbyP(const ParticleSet& P, int iat, ParticleSet::ParticlePos_t& newQP)
   {
+#ifndef ENABLE_SOA
     RealType du, d2u;
     const auto& myTable = P.getDistTable(myTableIndex_);
     int tg = P.GroupID[iat]; //species of this particle
@@ -372,6 +373,7 @@ public:
         }
       }
     }
+#endif
   }
 
   inline void evaluatePbyP(const ParticleSet& P,
@@ -384,6 +386,7 @@ public:
 
   inline void evaluatePbyP(const ParticleSet& P, int iat, ParticleSet::ParticlePos_t& newQP, HessMatrix_t& Amat)
   {
+#ifndef ENABLE_SOA
     RealType du, d2u;
     const auto& myTable = P.getDistTable(myTableIndex_);
     int tg = P.GroupID[iat]; //species of this particle
@@ -407,6 +410,7 @@ public:
         }
       }
     }
+#endif
   }
 
   inline void evaluatePbyP(const ParticleSet& P,
@@ -424,6 +428,7 @@ public:
                            GradMatrix_t& Bmat_full,
                            HessMatrix_t& Amat)
   {
+#ifndef ENABLE_SOA
     RealType du, d2u;
     const auto& myTable = P.getDistTable(myTableIndex_);
     int tg = P.GroupID[iat]; //species of this particle
@@ -449,6 +454,7 @@ public:
         }
       }
     }
+#endif
   }
 
   /** calculate only Bmat
