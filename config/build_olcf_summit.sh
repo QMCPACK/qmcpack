@@ -1,14 +1,19 @@
 #!/bin/bash
+
+BUILD_MODULES=config/load_olcf_summit_modules.sh
+
 module purge
 echo "Purging current module set"
+echo "Sourcing file: $BUILD_MODULES to build QMCPACK"
 
-. config/load_summit_modules.sh
+. $BUILD_MODULES
+
+echo "Either source $BUILD_MODULES or load these same modules ti run QMCPACK"
 
 declare -A builds=( ["cpu"]="-DENABLE_MASS=1 -DMASS_ROOT=/sw/summit/xl/16.1.1-5/xlmass/9.1.1" \
                     ["complex_cpu"]="-DQMC_COMPLEX=1 -DENABLE_MASS=1 -DMASS_ROOT=/sw/summit/xl/16.1.1-5/xlmass/9.1.1" \
                     ["legacy_gpu"]="-DQMC_CUDA=1 -DCUDA_ARCH=sm_70 " \
-		    ["complex_legacy_gpu"]="-DQMC_CUDA=1 -DQMC_COMPLEX=1 -DCUDA_ARCH=sm_70 " \
-		    ["enable_cuda"]="-DENABLE_CUDA=1 -DENABLE_MASS=1 -DMASS_ROOT=/sw/summit/xl/16.1.1-5/xlmass/9.1.1")
+		    ["complex_legacy_gpu"]="-DQMC_CUDA=1 -DQMC_COMPLEX=1 -DCUDA_ARCH=sm_70 " )
 
 mkdir bin
 
