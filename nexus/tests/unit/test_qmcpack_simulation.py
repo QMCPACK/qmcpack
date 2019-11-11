@@ -164,7 +164,7 @@ def test_get_result():
 
     qa = QmcpackAnalyzer(opt_infile,analyze=True,equilibration=5)
 
-    assert(qa.results.optimization.optimal_file=='opt.s004.opt.xml')
+    assert(qa.results.optimization.optimal_file=='opt.s003.opt.xml')
 
     sim.create_directories()
 
@@ -173,7 +173,7 @@ def test_get_result():
     result = sim.get_result('jastrow',None)
 
     result_ref = obj(
-        opt_file = 'opt.s004.opt.xml',
+        opt_file = 'opt.s003.opt.xml',
         )
 
     assert(set(result.keys())==set(result_ref.keys()))
@@ -223,16 +223,21 @@ def test_incorporate_result():
 
     ion0 = sim.input.get('ion0')
     c = ion0.groups.C
+    cp0 = c.position[0].copy()
+    s = result.structure.copy()
+    s.change_units('B')
+    rp0 = s.pos[0]
     zero = array([0,0,0],dtype=float)
-    assert(value_eq(c.position[0],zero,atol=1e-8))
+    assert(value_eq(c.position[0],cp0,atol=1e-8))
     c.position[0] += 0.1
-    assert(not value_eq(c.position[0],zero,atol=1e-8))
+    assert(not value_eq(c.position[0],cp0,atol=1e-8))
+    assert(not value_eq(c.position[0],rp0,atol=1e-8))
 
     sim.incorporate_result('structure',result,vasp_struct)
 
     ion0 = sim.input.get('ion0')
     c = ion0.groups.C
-    assert(value_eq(c.position[0],zero,atol=1e-8))
+    assert(value_eq(c.position[0],rp0,atol=1e-8))
 
 
     # incorporate pw2qmcpack orbitals

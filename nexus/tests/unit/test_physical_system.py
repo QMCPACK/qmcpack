@@ -141,7 +141,8 @@ def test_physical_system_initialization():
         [0.25, 0.75, 0.75],
         [0.5 , 0.  , 0.5 ],
         [0.75, 0.25, 0.75]])
-    assert(value_eq(d8_tile.pos_unit(),d8_tile_pos_ref))
+
+    assert(value_eq(d8_tile.pos_unit(),d8_tile_pos_ref,atol=1e-8))
 
 
     direct_notile = generate_physical_system(
