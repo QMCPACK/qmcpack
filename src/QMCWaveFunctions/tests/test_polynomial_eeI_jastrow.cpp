@@ -20,8 +20,11 @@
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCWaveFunctions/Jastrow/PolynomialFunctor3D.h"
-#include "QMCWaveFunctions/Jastrow/eeI_JastrowOrbital.h"
+#ifdef ENABLE_SOA
 #include "QMCWaveFunctions/Jastrow/JeeIOrbitalSoA.h"
+#else
+#include "QMCWaveFunctions/Jastrow/eeI_JastrowOrbital.h"
+#endif
 #include "QMCWaveFunctions/Jastrow/eeI_JastrowBuilder.h"
 #include "ParticleBase/ParticleAttribOps.h"
 
