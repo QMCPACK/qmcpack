@@ -20,6 +20,7 @@
 import os
 from generic import obj
 from execute import execute
+from nexus_base import nexus_core
 from simulation import Simulation
 from quantum_package_input import QuantumPackageInput,generate_quantum_package_input,read_qp_value
 from quantum_package_analyzer import QuantumPackageAnalyzer
@@ -50,7 +51,7 @@ class QuantumPackage(Simulation):
     def settings(qprc=None):
         # path to quantum_package.rc file
         QuantumPackage.qprc = qprc
-        if qprc is not None:
+        if qprc is not None and not nexus_core.status_only:
             if not isinstance(qprc,str):
                 QuantumPackage.class_error('settings input "qprc" must be a path\nreceived type: {0}\nwith value: {1}'.format(qprc.__class__.__name__,qprc))
             elif not os.path.exists(qprc):
