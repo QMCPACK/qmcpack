@@ -18,16 +18,20 @@
 
 namespace qmcplusplus
 {
-
 MCPopulation::MCPopulation() : trial_wf_(nullptr), elec_particle_set_(nullptr), hamiltonian_(nullptr) {}
- 
+
 MCPopulation::MCPopulation(int num_ranks,
                            MCWalkerConfiguration& mcwc,
                            ParticleSet* elecs,
                            TrialWaveFunction* trial_wf,
                            QMCHamiltonian* hamiltonian,
                            int this_rank)
-    : num_ranks_(num_ranks), num_local_walkers_per_node_(num_ranks, 0), trial_wf_(trial_wf), elec_particle_set_(elecs), hamiltonian_(hamiltonian), rank_(this_rank)
+    : num_ranks_(num_ranks),
+      num_local_walkers_per_node_(num_ranks, 0),
+      trial_wf_(trial_wf),
+      elec_particle_set_(elecs),
+      hamiltonian_(hamiltonian),
+      rank_(this_rank)
 {
   walker_offsets_     = mcwc.WalkerOffsets;
   num_global_walkers_ = mcwc.GlobalNumWalkers;
@@ -57,10 +61,10 @@ MCPopulation::MCPopulation(int num_ranks,
 }
 
 MCPopulation::MCPopulation(int num_ranks,
-             ParticleSet* elecs,
-             TrialWaveFunction* trial_wf,
-             QMCHamiltonian* hamiltonian,
-             int this_rank)
+                           ParticleSet* elecs,
+                           TrialWaveFunction* trial_wf,
+                           QMCHamiltonian* hamiltonian,
+                           int this_rank)
     : num_ranks_(num_ranks),
       num_particles_(elecs->R.size()),
       num_local_walkers_per_node_(num_ranks, 0),
@@ -75,15 +79,6 @@ MCPopulation::MCPopulation(int num_ranks,
  */
 void MCPopulation::createWalkers() { createWalkers(num_local_walkers_); }
 
-void MCPopulation::createWalkerInplace(UPtr<MCPWalker>& walker_ptr)
-{
-  //SO this would be where the walker reuse hack would go
-  walker_ptr    = std::make_unique<MCPWalker>(num_particles_);
-  walker_ptr->R = elec_particle_set_->R;
-  walker_ptr->registerData();
-  walker_ptr->Properties = elec_particle_set_->Properties;
-}
-
 /** we could also search for walker_ptr
  */
 void MCPopulation::allocateWalkerStuffInplace(int walker_index)
@@ -93,24 +88,24 @@ void MCPopulation::allocateWalkerStuffInplace(int walker_index)
   walkers_[walker_index]->DataSet.allocate();
 }
 
-/** Creates walkers with starting positions pos and a clone of the electron particle set and trial wavefunction
- *  
- *  Needed
- *  in: DataSet.size()
- *  in.
- */
 void MCPopulation::createWalkers(IndexType num_walkers)
 {
   num_local_walkers_ = num_walkers;
   // Ye: need to resize walker_t and ParticleSet Properties
   elec_particle_set_->Properties.resize(1, elec_particle_set_->PropertyList.size());
 
+  // This pattern is begging for a micro benchmark, is this really better
+  // than the simpler walkers_.pushback;
   walkers_.resize(num_walkers);
-
+  auto createWalker = [this](UPtr<MCPWalker>& walker_ptr) {
+    walker_ptr    = std::make_unique<MCPWalker>(num_particles_);
+    walker_ptr->R = elec_particle_set_->R;
+    walker_ptr->registerData();
+    walker_ptr->Properties = elec_particle_set_->Properties;
+  };
+  
   for (auto& walker_ptr : walkers_)
-  {
-    createWalkerInplace(walker_ptr);
-  }
+    createWalker(walker_ptr);
 
   int num_walkers_created = 0;
   for (auto& walker_ptr : walkers_)
@@ -182,7 +177,7 @@ MCPopulation::MCPWalker& MCPopulation::spawnWalker()
         hamiltonian_->makeClone(*(walker_elec_particle_sets_.back()), *(walker_trial_wavefunctions_.back())));
     walker_trial_wavefunctions_.back()->registerData(*(walker_elec_particle_sets_.back()), walkers_.back()->DataSet);
   };
-  
+
   if (dead_walkers_.size() > 0)
   {
     walkers_.push_back(std::move(dead_walkers_.back()));
@@ -248,7 +243,7 @@ void MCPopulation::killWalker(MCPWalker& walker)
 void MCPopulation::syncWalkersPerNode(Communicate* comm)
 {
   int ncontexts = comm->size();
-  
+
   std::vector<int> nwoff(ncontexts + 1, 0);
 
   num_local_walkers_per_node_[comm->rank()] = num_local_walkers_;

@@ -121,7 +121,11 @@ public:
   /** }@ */
 
   void createWalkers();
+  /** Creates walkers with a clone of the golden electron particle set and golden trial wavefunction
+   */
   void createWalkers(IndexType num_walkers);
+
+  
   void createWalkers(int num_crowds_,
                      int num_walkers_per_crowd_,
                      IndexType num_walkers,
