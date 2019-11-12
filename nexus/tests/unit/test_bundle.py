@@ -124,4 +124,5 @@ def test_bundle():
 
     #end for
 
+    testing.clear_all_sims()
 #end def test_bundle

@@ -18,6 +18,8 @@
 #else
 #include "QMCWaveFunctions/Jastrow/OneBodyJastrowOrbital.h"
 #include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbital.h"
+#include "QMCWaveFunctions/Jastrow/OneBodySpinJastrowOrbital.h"
+#include "QMCWaveFunctions/Jastrow/DiffOneBodySpinJastrowOrbital.h"
 #endif
 
 #if defined(QMC_CUDA)
@@ -31,9 +33,7 @@
 #endif
 
 #include "QMCWaveFunctions/Jastrow/DiffOneBodyJastrowOrbital.h"
-#include "QMCWaveFunctions/Jastrow/DiffOneBodySpinJastrowOrbital.h"
 #include "QMCWaveFunctions/Jastrow/DiffTwoBodyJastrowOrbital.h"
-#include "QMCWaveFunctions/Jastrow/OneBodySpinJastrowOrbital.h"
 
 #include "QMCWaveFunctions/Jastrow/RPAJastrow.h"
 #include "LongRange/LRHandlerBase.h"
@@ -105,12 +105,12 @@ public:
 #else
   using J1OrbitalType = OneBodyJastrowOrbital<RadFuncType>;
   using J2OrbitalType = TwoBodyJastrowOrbital<RadFuncType>;
-#endif
-  using DiffJ1OrbitalType = DiffOneBodyJastrowOrbital<RadFuncType>;
-  using DiffJ2OrbitalType = DiffTwoBodyJastrowOrbital<RadFuncType>;
   // spin polarized J1
   using J1OrbitalTypeSpin     = OneBodySpinJastrowOrbital<RadFuncType>;
   using DiffJ1OrbitalTypeSpin = DiffOneBodyJastrowOrbital<RadFuncType>;
+#endif
+  using DiffJ1OrbitalType = DiffOneBodyJastrowOrbital<RadFuncType>;
+  using DiffJ2OrbitalType = DiffTwoBodyJastrowOrbital<RadFuncType>;
 };
 
 template<>
@@ -133,12 +133,12 @@ public:
 #if !defined(QMC_CUDA) && !defined(ENABLE_SOA)
   using J1OrbitalType = OneBodyJastrowOrbital<RadFuncType>;
   using J2OrbitalType = TwoBodyJastrowOrbital<RadFuncType>;
-#endif
-  using DiffJ1OrbitalType = DiffOneBodyJastrowOrbital<RadFuncType>;
-  using DiffJ2OrbitalType = DiffTwoBodyJastrowOrbital<RadFuncType>;
   // spin polarized J1
   using J1OrbitalTypeSpin     = OneBodySpinJastrowOrbital<RadFuncType>;
   using DiffJ1OrbitalTypeSpin = DiffOneBodyJastrowOrbital<RadFuncType>;
+#endif
+  using DiffJ1OrbitalType = DiffOneBodyJastrowOrbital<RadFuncType>;
+  using DiffJ2OrbitalType = DiffTwoBodyJastrowOrbital<RadFuncType>;
 };
 
 template<class RadFuncType>

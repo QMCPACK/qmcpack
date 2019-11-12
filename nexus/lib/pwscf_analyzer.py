@@ -42,6 +42,7 @@ def is_number(s):
         return True
     except ValueError:
         return False
+    #end try
 #end def is_number
 
 
@@ -641,7 +642,12 @@ class PwscfAnalyzer(SimulationAnalyzer):
             try:
                 cont = self.input.control
                 datadir = os.path.join(self.path,cont.outdir,cont.prefix+'.save')
-                data = read_qexml(os.path.join(datadir,'data-file.xml'))
+                data_file = os.path.join(datadir,'data-file.xml')
+                if not os.path.exists(data_file):
+                    datadir = os.path.join(self.path,cont.outdir)
+                    data_file = os.path.join(datadir,cont.prefix+'.xml')
+                #end if
+                data = read_qexml(data_file)
                 kpdata = data.root.eigenvalues.k_point
                 kpoints = obj()
                 for ki,kpd in kpdata.iteritems():

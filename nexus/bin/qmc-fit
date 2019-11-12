@@ -1441,6 +1441,10 @@ def timestep_fit():
                           default=None,
                           help='Reblocking factors corresponding to scalar files, excluding any prior to --series_start.  Can be a single value for all files.  If not provided, reblocking factors will be estimated.'
                       )
+    parser.add_option('--noplot',dest='noplot',
+                      action='store_true',default=False,
+                      help='Do not show plots. (default=%default).'
+                      )
 
     options,args = parser.parse_args()
     scalar_files = list(sorted(args[1:]))
@@ -1492,7 +1496,7 @@ def timestep_fit():
     #end for
 
     # plot the fit (if available)
-    if plots_available:
+    if plots_available and not opt.noplot:
         lw = 2
         ms = 10
 

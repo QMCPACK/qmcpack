@@ -257,6 +257,8 @@ def nexus_path(append=None,location=None):
     if location is not None:
         if location=='unit':
             append = 'tests/unit'
+        elif location=='bin':
+            append = 'bin'
         else:
             print('nexus location "{}" is unknown'.format(location))
             raise ValueError
@@ -322,10 +324,13 @@ def unit_test_output_path(test,subtest=None):
 
 
 # setup the output directory for a test
-def setup_unit_test_output_directory(test,subtest,divert=False,file_sets=None):
+def setup_unit_test_output_directory(test,subtest,divert=False,file_sets=None,pseudo_dir=None,pseudo_files=None,pseudo_files_create=None):
     import os
     import shutil
     from subprocess import Popen,PIPE
+
+    divert |= pseudo_dir is not None
+
     path = unit_test_output_path(test,subtest)
     assert('nexus' in path)
     assert('unit' in path)
@@ -377,6 +382,59 @@ def setup_unit_test_output_directory(test,subtest,divert=False,file_sets=None):
             #end for
         #end for
     #end if
+
+    # create pseudopotential directory and set internal nexus data structures
+    if pseudo_dir is not None:
+        from nexus_base import nexus_noncore
+        pseudo_path = os.path.join(path,pseudo_dir)
+        if not os.path.exists(pseudo_path):
+            os.makedirs(pseudo_path)
+        #end if
+        assert(os.path.exists(pseudo_path))
+        pseudo_filepaths = []
+        if pseudo_files is not None:
+            assert(isinstance(pseudo_files,list))
+            for src_file in pseudo_files:
+                assert(os.path.exists(src_file))
+                assert(os.path.isfile(src_file))
+                pp_filename = os.path.basename(src_file)
+                pp_file = os.path.join(pseudo_path,pp_filename)
+                shutil.copy2(src_file,pseudo_path)
+                assert(os.path.exists(pp_file))
+                assert(os.path.isfile(pp_file))
+                pseudo_filepaths.append(pp_file)
+            #end for
+        #end if
+        if pseudo_files_create is not None:
+            assert(isinstance(pseudo_files_create,list))
+            for pp_filename in pseudo_files_create:
+                pp_contents = ''
+                if isinstance(pp_filename,tuple):
+                    pp_filename,pp_contents = pp_filename
+                #end if
+                pp_file = os.path.join(pseudo_path,pp_filename)
+                f = open(pp_file,'w')
+                f.write(pp_contents)
+                f.close()
+                assert(os.path.exists(pp_file))
+                assert(os.path.isfile(pp_file))
+                pseudo_filepaths.append(pp_file)
+            #end for
+        #end if
+        if len(pseudo_filepaths)>0:
+            from pseudopotential import Pseudopotentials
+            for pp_file in pseudo_filepaths:
+                assert(os.path.exists(pp_file))
+                assert(os.path.isfile(pp_file))
+            #end for
+            pps = Pseudopotentials(pseudo_filepaths)
+            nexus_core.pseudopotentials    = pps
+            nexus_noncore.pseudopotentials = pps
+        #end if
+        nexus_core.pseudo_dir    = pseudo_path
+        nexus_noncore.pseudo_dir = pseudo_path
+    #end if
+
     return path
 #end def setup_unit_test_output_directory
 
@@ -448,6 +506,8 @@ core_keys = [
     'file_locations',
     'pseudo_dir',
     'pseudopotentials',
+    'runs',
+    'results',
     ]
 noncore_keys = [
     'pseudo_dir',
@@ -472,7 +532,8 @@ def divert_nexus_core():
 
 # restore nexus core attributes
 def restore_nexus_core():
-    from nexus_base import nexus_core,nexus_noncore
+    from nexus_base import nexus_core,nexus_noncore,nexus_core_noncore
+    from nexus_base import nexus_noncore_defaults
     for key in core_keys:
         nexus_core[key] = nexus_core_storage.pop(key)
     #end for
@@ -484,6 +545,12 @@ def restore_nexus_core():
             del nexus_noncore[key]
         #end if
     #end for
+    for key in list(nexus_noncore.keys()):
+        if key not in nexus_noncore_defaults:
+            del nexus_noncore[key]
+        #end if
+    #end for
+    nexus_core_noncore.pseudopotentials = None
     assert(len(nexus_noncore_storage)==0)
 #end def restore_nexus_core
 
@@ -522,3 +589,71 @@ def divert_nexus_errors():
     from generic import generic_settings
     generic_settings.raise_error = True
 #end def divert_nexus_errors
+
+
+def clear_all_sims():
+    from simulation import Simulation
+    Simulation.clear_all_sims()
+#end def clear_all_sims
+
+
+
+def check_final_state():
+    from nexus_base import nexus_core,nexus_core_defaults
+    from nexus_base import nexus_noncore,nexus_noncore_defaults
+    from nexus_base import nexus_core_noncore,nexus_core_noncore_defaults
+    
+    assert('runs' in nexus_core_defaults)
+    assert('basis_dir' in nexus_noncore_defaults)
+    assert('pseudo_dir' in nexus_core_noncore_defaults)
+
+    assert(object_eq(nexus_core,nexus_core_defaults))
+    assert(object_eq(nexus_noncore,nexus_noncore_defaults))
+    assert(object_eq(nexus_core_noncore,nexus_core_noncore_defaults))
+
+    from simulation import Simulation
+
+    assert(Simulation.sim_count==0)
+    assert(len(Simulation.all_sims)==0)
+    assert(len(Simulation.sim_directories)==0)
+#end def check_final_state
+
+
+
+def executable_path(exe_name):
+    import os
+    # nexus bin directory
+    nexus_bin = nexus_path(location='bin')
+    # path to exe
+    exe_path = os.path.join(nexus_bin,exe_name)
+    # exe file exists
+    assert(os.path.isfile(exe_path))
+    # exe file is executable
+    assert(os.access(exe_path,os.X_OK))
+    return exe_path
+#end def executable_path
+
+
+
+def create_file(filename,path,contents=''):
+    import os
+    filepath = os.path.join(path,filename)
+    f = open(filepath,'w')
+    f.write(contents)
+    f.close()
+    assert(os.path.isfile(filepath))
+    return filepath
+#end def create_file
+
+
+
+def create_path(path,basepath=None):
+    import os
+    if basepath is not None:
+        path = os.path.join(basepath,path)
+    #end if
+    if not os.path.exists(path):
+        os.makedirs(path)
+    #end if
+    assert(os.path.isdir(path))
+#end def create_path
