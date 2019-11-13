@@ -138,17 +138,23 @@
 
 #endif /* HAVE_EINSPLINE_EXT */
 
-/* Find mkl library */
+/* Find MKL library */
 #cmakedefine HAVE_MKL @HAVE_MKL@
 
 /* Find mkl/vml library */
 #cmakedefine HAVE_MKL_VML @HAVE_MKL_VML@
 
-/* Find essl library */
+/* Find ESSL library */
 #cmakedefine HAVE_ESSL @HAVE_ESSL@
 
-/* Fund acml library */
+/* Find acml library */
 #cmakedefine HAVE_ACML @HAVE_ACML@
+
+/* Find MASS library */
+#cmakedefine HAVE_MASS @HAVE_MASS@
+
+/* Find MASSV library */
+#cmakedefine HAVE_MASSV @HAVE_MASSV@
 
 /* Using CUDA for GPU execution */
 #cmakedefine QMC_CUDA @QMC_CUDA@
@@ -177,7 +183,7 @@
 #cmakedefine REMOVE_TRACEMANAGER @REMOVE_TRACEMANAGER@
 
 /* Use SOA version of AA distance table */
-#cmakedefine ENABLE_SOA  @ENABLE_SOA@
+#cmakedefine ENABLE_SOA @ENABLE_SOA@
 
 #if defined(__cplusplus)
   #if defined(__INTEL_COMPILER)

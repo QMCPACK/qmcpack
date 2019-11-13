@@ -1,7 +1,7 @@
 # Simple file to find IBM MASS (if available)
 INCLUDE( CheckCXXSourceCompiles )
 
-MESSAGE("Looking for IBM MASS libraries")
+MESSAGE(STATUS "Looking for IBM MASS libraries")
 # Finding and setting the MASS_INCLUDE_DIRECTORIES
 set(SUFFIXES include)
 find_path(MASS_INCLUDE_DIRECTORIES name "mass.h" HINTS ${MASS_ROOT}
@@ -64,7 +64,7 @@ IF ( HAVE_MASS )
   set( HAVE_VECTOR_MATH 1 )
   set( HAVE_MASSV 1 )
   set( SINCOS_INCLUDE mass.h )
-  MESSAGE(STATUS "MASS found: HAVE_MASS=${HAVE_MASS}, HAVE_MASS_VML=${HAVE_MASS}")
+  MESSAGE(STATUS "MASS found: HAVE_MASS=${HAVE_MASS}, HAVE_MASSV=${HAVE_MASSV}")
 ELSE( HAVE_MASS )
   SET( MASS_FOUND 0 )
   SET( MASS_FLAGS )
