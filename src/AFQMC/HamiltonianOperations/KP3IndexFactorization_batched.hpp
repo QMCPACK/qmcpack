@@ -398,7 +398,7 @@ class KP3IndexFactorization_batched
       set_buffer(mem_needs);
 
       // messy
-      sp_pointer Krptr, Klptr; 
+      sp_pointer Krptr(nullptr), Klptr(nullptr); 
       long Knr=0, Knc=0;
       if(addEJ) {
         Knr=nwalk;
