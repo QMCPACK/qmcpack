@@ -24,7 +24,6 @@
 #if defined(HAVE_MKL_VML)
 #include <mkl_vml_functions.h>
 #elif defined(HAVE_MASSV)
-#include <mass.h>
 #include <massv.h>
 #endif
 
