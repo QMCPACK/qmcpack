@@ -64,7 +64,7 @@ def parse_args(args, comm):
                             help='Set upper limit on number of determinants to '
                             'generate.')
         parser.add_argument('-r', '--real-ham', dest='real_chol',
-                            type=int, default=None,
+                            action='store_true', default=None,
                             help='Write integrals as real numbers')
         parser.add_argument('-p', '--phdf', dest='phdf',
                             action='store_true', default=False,
@@ -77,6 +77,9 @@ def parse_args(args, comm):
                             type=float, default=0.95,
                             help='Upper threshold for non-integer occupancies'
                             'to include in multi-determinant exansion.')
+        parser.add_argument('--dense', dest='dense',
+                            action='store_true',
+                            help='Write dense Hamiltonian.')
         parser.add_argument('-v', '--verbose', action='count', default=0,
                             help='Verbose output.')
 
@@ -143,7 +146,8 @@ def main(args):
                   real_chol=options.real_chol,
                   phdf=options.phdf,
                   low=options.low_thresh,
-                  high=options.high_thresh)
+                  high=options.high_thresh,
+                  dense=options.dense)
     if comm.rank == 0:
         write_metadata(options, sha1, cwd, date_time)
 
