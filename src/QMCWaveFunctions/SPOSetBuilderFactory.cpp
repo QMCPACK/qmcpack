@@ -33,6 +33,7 @@
 
 #if defined(HAVE_EINSPLINE)
 #include "QMCWaveFunctions/EinsplineSetBuilder.h"
+#include "QMCWaveFunctions/EinsplineSpinorSetBuilder.h"
 #endif
 #endif
 #include "QMCWaveFunctions/CompositeSPOSet.h"
@@ -186,7 +187,8 @@ SPOSetBuilder* SPOSetBuilderFactory::createSPOSetBuilder(xmlNodePtr rootNode)
     name = type_in;
 #if defined(HAVE_EINSPLINE)
     PRE << "EinsplineSetBuilder:  using libeinspline for B-spline orbitals.\n";
-    bb = new EinsplineSetBuilder(targetPtcl, ptclPool, myComm, rootNode);
+   // bb = new EinsplineSetBuilder(targetPtcl, ptclPool, myComm, rootNode);
+    bb = new EinsplineSpinorSetBuilder(targetPtcl, ptclPool, myComm, rootNode);
 #else
     PRE.error("Einspline is missing for B-spline orbitals", true);
 #endif

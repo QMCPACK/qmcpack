@@ -91,6 +91,11 @@ bool WaveFunctionFactory::build(xmlNodePtr cur, bool buildtree)
       SPOSetBuilderFactory basisFactory(*targetPtcl, *targetPsi, ptclPool);
       basisFactory.build_sposet_collection(cur);
     }
+    else if (cname == "spinorset_builder")
+    {
+      SPOSetBuilderFactory basisFactory(*targetPtcl, *targetPsi, ptclPool);
+      basisFactory.build_sposet_collection(cur);
+    }
     else if (cname == WaveFunctionComponentBuilder::detset_tag)
     {
       success = addFermionTerm(cur);
