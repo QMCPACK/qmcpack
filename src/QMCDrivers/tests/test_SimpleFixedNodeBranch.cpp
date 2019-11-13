@@ -17,7 +17,7 @@
 #include "Particle/MCWalkerConfiguration.h"
 #include "Particle/Walker.h"
 #include "Estimators/EstimatorManagerBase.h"
-
+#include "Estimators/tests/FakeEstimator.h"
 #include "QMCDrivers/SimpleFixedNodeBranch.h"
 #include "QMCDrivers/MCPopulation.h"
 #include "QMCDrivers/Crowd.h"
@@ -38,6 +38,9 @@ public:
   {
     comm_ = comm;
     emb_ = std::make_unique<EstimatorManagerBase>(comm_);
+    FakeEstimator* fake_est = new FakeEstimator;
+    emb_->add(fake_est, "fake");
+
   }
 
   SetupSimpleFixedNodeBranch()
@@ -116,15 +119,16 @@ private:
 
   void createMyNode(SimpleFixedNodeBranch& sfnb, const char* xml)
   {
-    Libxml2Document doc;
-    doc.parseFromString(xml);
-    sfnb.myNode = doc.getRoot();
+    doc_ = std::make_unique<Libxml2Document>();
+    doc_->parseFromString(xml);
+    sfnb.myNode = doc_->getRoot();
   }
   
   Communicate* comm_;
   UPtr<EstimatorManagerBase> emb_;
   UPtr<MCPopulation> pop_;
-
+  UPtr<Libxml2Document> doc_;
+  
   RealType tau_           = 1.0;
   int num_global_walkers_ = 16;
 
