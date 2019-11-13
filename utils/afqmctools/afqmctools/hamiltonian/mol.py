@@ -7,7 +7,8 @@ import sys
 import time
 from afqmctools.utils.io import (
         format_fixed_width_floats,
-        format_fixed_width_strings
+        format_fixed_width_strings,
+        to_qmcpack_complex
         )
 from afqmctools.utils.pyscf_utils import load_from_pyscf_chk_mol
 
@@ -25,24 +26,15 @@ def write_hamil_mol(scf_data, hamil_file, chol_cut,
                                                          nelec=nelec)
     nbasis = hcore.shape[-1]
     msq = nbasis * nbasis
-    # Why did I transpose everything?
-    # QMCPACK expects [M^2, N_chol]
-    # Internally store [N_chol, M^2]
+    # Want L_{(ik),n}
     chol_vecs = chol_vecs.T
-    chol_vecs = scipy.sparse.csr_matrix(chol_vecs)
-    mem = 64*chol_vecs.nnz/(1024.0**3)
-    if verbose:
-        print(" # Total number of non-zero elements in sparse cholesky ERI"
-               " tensor: %d"%chol_vecs.nnz)
-        nelem = chol_vecs.shape[0]*chol_vecs.shape[1]
-        print(" # Sparsity of ERI Cholesky tensor: "
-               "%f"%(1-float(chol_vecs.nnz)/nelem))
-        print(" # Total memory required for ERI tensor: %13.8e GB"%(mem))
     write_qmcpack_cholesky(hcore, chol_vecs, nelec, nbasis, enuc,
-                           filename=hamil_file, real_chol=real_chol)
+                           filename=hamil_file, real_chol=real_chol,
+                           verbose=verbose)
 
 def write_qmcpack_cholesky(hcore, chol, nelec, nmo, e0=0.0,
-                           filename='hamiltonian.h5', real_chol=False):
+                           filename='hamiltonian.h5', real_chol=False,
+                           verbose=False):
     with h5py.File(filename, 'w') as fh5:
         fh5['Hamiltonian/Energies'] = numpy.array([e0.real,0])
         if real_chol:
@@ -52,15 +44,26 @@ def write_qmcpack_cholesky(hcore, chol, nelec, nmo, e0=0.0,
             hcore = hcore.astype(numpy.complex128).view(numpy.float64)
             hcore = hcore.reshape(shape+(2,))
             fh5['Hamiltonian/hcore'] = hcore
-        # Number of non zero elements for two-body
-        nnz = chol.nnz
         # number of cholesky vectors
         nchol_vecs = chol.shape[-1]
+        ix, vals = to_sparse(chol)
+        nnz = len(vals)
+        mem = (8 if real_chol else 16) * nnz / (1024.0**3)
+        if verbose:
+            print(" # Total number of non-zero elements in sparse cholesky ERI"
+                   " tensor: %d"%nnz)
+            nelem = chol.shape[0]*chol.shape[1]
+            print(" # Sparsity of ERI Cholesky tensor: "
+                   "%f"%(1-float(nnz)/nelem))
+            print(" # Total memory required for ERI tensor: %13.8e GB"%(mem))
         fh5['Hamiltonian/Factorized/block_sizes'] = numpy.array([nnz])
-        (chol_unpacked, idx) = to_qmcpack_index(scipy.sparse.csr_matrix(chol),
-                                                real_chol=real_chol)
-        fh5['Hamiltonian/Factorized/index_0'] = numpy.array(idx)
-        fh5['Hamiltonian/Factorized/vals_0'] = numpy.array(chol_unpacked)
+        fh5['Hamiltonian/Factorized/index_0'] = numpy.array(ix)
+        if real_chol:
+            fh5['Hamiltonian/Factorized/vals_0'] = numpy.array(vals)
+        else:
+            fh5['Hamiltonian/Factorized/vals_0'] = (
+                    to_qmcpack_complex(numpy.array(vals, dtype=numpy.complex128))
+                    )
         # Number of integral blocks used for chunked HDF5 storage.
         # Currently hardcoded for simplicity.
         nint_block = 1
@@ -72,6 +75,14 @@ def write_qmcpack_cholesky(hcore, chol, nelec, nmo, e0=0.0,
         occups = [i for i in range(0, nalpha)]
         occups += [i+nmo for i in range(0, nbeta)]
         fh5['Hamiltonian/occups'] = numpy.array(occups)
+
+def to_sparse(vals, cutoff=1e-8):
+    nz = numpy.where(numpy.abs(vals) > cutoff)
+    ix = numpy.empty(nz[0].size+nz[1].size, dtype=numpy.int32)
+    ix[0::2] = nz[0]
+    ix[1::2] = nz[1]
+    vals = vals[nz]
+    return ix, vals
 
 def generate_hamiltonian(scf_data, chol_cut=1e-5, verbose=False, cas=None,
                          ortho_ao=False, nelec=None):
@@ -290,36 +301,6 @@ def write_qmcpack_wfn_single(out, mos, nao):
             val = mos[i,j]
             out.write('(%.10e,%.10e) '%(val.real, val.imag))
         out.write('\n')
-
-
-def to_qmcpack_index(matrix, real_chol=True, offset=0):
-    try:
-        indptr = matrix.indptr
-        indices = matrix.indices
-        data = matrix.data
-    except AttributeError:
-        matrix = scipy.sparse.csr_matrix(matrix)
-        indptr = matrix.indptr
-        indices = matrix.indices
-        data = matrix.data
-    # QMCPACK expects ([i,j], m_{ij}) pairs
-    unpacked = []
-    idx = []
-    counter = 0
-    if real_chol:
-        for row in range(0, len(indptr)-1):
-            idx += [[row, i+offset] for i in indices[indptr[row]:indptr[row+1]]]
-            unpacked += [v.real for v in data[indptr[row]:indptr[row+1]]]
-            if len(data[indptr[row]:indptr[row+1]]) > 0:
-                counter = counter + 1
-    else:
-        for row in range(0, len(indptr)-1):
-            idx += [[row, i+offset] for i in indices[indptr[row]:indptr[row+1]]]
-            unpacked += [[v.real, v.imag] for v in data[indptr[row]:indptr[row+1]]]
-            if len(data[indptr[row]:indptr[row+1]]) > 0:
-                counter = counter + 1
-    return (unpacked, numpy.array(idx).flatten())
-
 
 def local_energy_generic_cholesky(h1e, chol_vecs, G, ecore):
     r"""Calculate local for generic two-body hamiltonian.

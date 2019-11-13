@@ -168,11 +168,7 @@ def read_qmcpack_cholesky(filename):
     """
     with h5py.File(filename, 'r') as fh5:
         real_ints = False
-        try:
-            enuc = fh5['Hamiltonian/Energies'][:].view(numpy.complex128).ravel()[0]
-        except ValueError:
-            enuc = fh5['Hamiltonian/Energies'][:][0]
-            real_ints = True
+        enuc = fh5['Hamiltonian/Energies'][:][0]
         dims = fh5['Hamiltonian/dims'][:]
         nmo = dims[3]
         try:
@@ -191,21 +187,29 @@ def read_qmcpack_cholesky(filename):
             hcore = fh5['Hamiltonian/hcore'][:]
             real_ints = True
         chunks = dims[2]
-        idx = []
-        h2 = []
-        for ic in range(chunks):
-            idx.append(fh5['Hamiltonian/Factorized/index_%i'%ic][:])
+        block_sizes = fh5['Hamiltonian/Factorized/block_sizes'][:]
+        nchol = dims[7]
+        nval = sum(block_sizes)
+        if real_ints:
+            vals = numpy.zeros(nval, dtype=numpy.float64)
+        else:
+            vals = numpy.zeros(nval, dtype=numpy.complex128)
+        row_ix = numpy.zeros(nval, dtype=numpy.int32)
+        col_ix = numpy.zeros(nval, dtype=numpy.int32)
+        s = 0
+        for ic, bs in enumerate(block_sizes):
+            ixs = fh5['Hamiltonian/Factorized/index_%i'%ic][:]
+            row_ix[s:s+bs] = ixs[::2]
+            col_ix[s:s+bs] = ixs[1::2]
             if real_ints:
-                h2.append(fh5['Hamiltonian/Factorized/vals_%i'%ic][:].ravel())
+                vals[s:s+bs] = fh5['Hamiltonian/Factorized/vals_%i'%ic][:].ravel()
             else:
-                h2.append(fh5['Hamiltonian/Factorized/vals_%i'%ic][:].view(numpy.complex128).ravel())
-        idx = numpy.array([i for sub in idx for i in sub])
-        h2 = numpy.array([v for sub in h2 for v in sub])
+                vals[s:s+bs] = fh5['Hamiltonian/Factorized/vals_%i'%ic][:].view(numpy.complex128).ravel()
+            s += bs
         nalpha = dims[4]
         nbeta = dims[5]
-        nchol = dims[7]
-        row_ix = idx[::2]
-        col_ix = idx[1::2]
+        chol_vecs = scipy.sparse.csr_matrix((vals, (row_ix, col_ix)),
+                                            shape=(nmo*nmo,nchol))
         chol_vecs = scipy.sparse.csr_matrix((h2, (row_ix, col_ix)),
                                             shape=(nmo*nmo,nchol))
         return (hcore, chol_vecs, enuc, int(nmo), (int(nalpha), int(nbeta)))
