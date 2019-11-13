@@ -93,7 +93,7 @@ bool WaveFunctionFactory::build(xmlNodePtr cur, bool buildtree)
     }
     else if (cname == "spinorset_builder")
     {
-      SPOSetBuilderFactory basisFactory(*targetPtcl, *targetPsi, ptclPool);
+      SPOSetBuilderFactory basisFactory(myComm, *targetPtcl, ptclPool);
       basisFactory.build_sposet_collection(cur);
     }
     else if (cname == WaveFunctionComponentBuilder::detset_tag)
