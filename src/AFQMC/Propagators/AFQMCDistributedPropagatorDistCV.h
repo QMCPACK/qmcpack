@@ -138,8 +138,6 @@ class AFQMCDistributedPropagatorDistCV: public AFQMCBasePropagator
     bool buffer_reallocated_bp=false;
     bool low_memory_step=false;
 
-    mpi3CVector bpX;
-
     MPI_Request req_Gsend, req_Grecv;
     MPI_Request req_vsend, req_vrecv;
 
