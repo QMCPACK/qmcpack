@@ -1,14 +1,14 @@
 # Simple file to find IBM MASS (if available)
 INCLUDE( CheckCXXSourceCompiles )
 
-MESSAGE("Looking for IBM mass libraries")
+MESSAGE("Looking for IBM MASS libraries")
 # Finding and setting the MASS_INCLUDE_DIRECTORIES
 set(SUFFIXES include)
 find_path(MASS_INCLUDE_DIRECTORIES name "mass.h" HINTS ${MASS_ROOT}
   PATH_SUFFIXES ${SUFFIXES})
-if (MASS_INCLUDE_DIRECTORIES-NOTFOUND)
+if (NOT MASS_INCLUDE_DIRECTORIES)
   message(FATAL_ERROR "MASS_INCLUDE_DIRECTORIES not set. \"mass.h\" not found in MASS_ROOT/(${SUFFIXES})")
-endif (MASS_INCLUDE_DIRECTORIES-NOTFOUND)
+endif (NOT MASS_INCLUDE_DIRECTORIES)
 message("MASS_INCLUDE_DIRECTORIES: ${MASS_INCLUDE_DIRECTORIES}")
 
   # Finding and setting the MASS_LINK_DIRECTORIES
@@ -18,17 +18,15 @@ set(MASS_FIND_LIB "libmass${CMAKE_STATIC_LIBRARY_SUFFIX}")
 set(SUFFIXES lib lib64)
 find_path(MASS_LINK_DIRECTORIES name "${MASS_FIND_LIB}" HINTS ${MASS_ROOT}
   PATH_SUFFIXES ${SUFFIXES})
-if (MASS_LINK_DIRECTORIES-NOTFOUND)
+if (NOT MASS_LINK_DIRECTORIES)
   message(FATAL_ERROR "MASS_LINK_DIRECTORIES not set. ${MASS_FIND_LIB} "
     "not found in MASS_ROOT/(${SUFFIXES})")
-endif (MASS_LINK_DIRECTORIES-NOTFOUND)
+endif (NOT MASS_LINK_DIRECTORIES)
 message("MASS_LINK_DIRECTORIES: ${MASS_LINK_DIRECTORIES}")
+
 set(MASS_LINKER_FLAGS -L${MASS_LINK_DIRECTORIES} -Wl,-rpath,${MASS_LINK_DIRECTORIES})
-if (CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL ppc64le)
-  set(MASS_LIBRARIES "-lmassp9 -lmass_simdp9 -lmassvp9")
-else (CMAKE_HOST_SYSTEM_PROCESSOR ppc64le)
-  set(MASS_LIBRARIES "-lmass -lmass_simd -lmassv")
-endif ()
+set(MASS_LIBRARIES "-lmass -lmassv")
+
 FILE( WRITE "${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/src_mass.cxx"
   "#include <math.h>
 #include <mass.h>
