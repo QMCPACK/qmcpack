@@ -85,6 +85,8 @@ struct Walker
 #endif
   /** array of particles */
   typedef typename p_traits::ParticlePos_t ParticlePos_t;
+  /** array of scalars */
+  typedef typename p_traits::ParticleScalar_t ParticleScalar_t;
   /** array of gradients */
   typedef typename p_traits::ParticleGradient_t ParticleGradient_t;
   /** array of laplacians */
@@ -94,9 +96,14 @@ struct Walker
 
   ///typedef for the property container, fixed size
   typedef Matrix<FullPrecRealType> PropertyContainer_t;
-  typedef PooledMemory<OHMMS_PRECISION_FULL> WFBuffer_t;
-  typedef PooledData<RealType> Buffer_t;
 
+  /** @{
+   * Not really "buffers", "walker message" also used to serialize walker, rename
+   */
+  typedef PooledMemory<FullPrecRealType> WFBuffer_t;
+  typedef PooledData<RealType> Buffer_t;
+  /** }@ */
+  
   ///id reserved for forward walking
   long ID;
   ///id reserved for forward walking
@@ -122,6 +129,9 @@ struct Walker
   /** The configuration vector (3N-dimensional vector to store
      the positions of all the particles for a single walker)*/
   ParticlePos_t R;
+  
+  //Dynamical spin variable.
+  ParticleScalar_t spins;
 #if !defined(SOA_MEMORY_OPTIMIZED)
   /** \f$ \nabla_i d\log \Psi for the i-th particle */
   ParticleGradient_t G;
@@ -131,7 +141,10 @@ struct Walker
   ///scalar properties of a walker
   PropertyContainer_t Properties;
 
-  ///Property history vector
+  /** Property history vector
+   *
+   *  these are used as fixed length cyclic traces of a "property"
+   */
   std::vector<std::vector<FullPrecRealType>> PropertyHistory;
   std::vector<int> PHindex;
 
@@ -256,6 +269,7 @@ struct Walker
   inline void resize(int nptcl)
   {
     R.resize(nptcl);
+    spins.resize(nptcl);
     G.resize(nptcl);
     L.resize(nptcl);
 #ifdef QMC_CUDA
@@ -280,6 +294,7 @@ struct Walker
     if (R.size() != a.R.size())
       resize(a.R.size());
     R = a.R;
+    spins = a.spins;
 #if !defined(SOA_MEMORY_OPTIMIZED)
     G = a.G;
     L = a.L;
@@ -397,6 +412,8 @@ struct Walker
    */
   inline size_t byteSize()
   {
+    // TODO: fix this! this is a non intuitive side effect for a size call
+    //       breaks a bunch of things that could be const
     if (!DataSet.size())
     {
       registerData();

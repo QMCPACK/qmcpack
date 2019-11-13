@@ -7,7 +7,7 @@ electrons. The following only currently works for RHF/ROHF trial wavefunctions.
 
 .. code-block:: bash
 
-    mpirun -n 1 $HOME/apps/qmcpack/qmcpack/utils/afqmctools/bin/pyscf_to_afqmc.py -i scf.chk -o hamil.h5 -t 1e-5 -v -c 8,22
+    mpirun -n 1 /path/to/qmcpack/utils/afqmctools/bin/pyscf_to_afqmc.py -i scf.chk -o afqmc.h5 -t 1e-5 -v -c 8,22
 
 Again, run gen_input.py to generate the input file `afqmc.xml`.
 

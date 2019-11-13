@@ -21,6 +21,7 @@
 
 namespace qmcplusplus
 {
+
 ///writes info about contained sposets to stdout
 void write_spo_builders(const std::string& pad = "");
 
@@ -30,12 +31,11 @@ void write_spo_builders(const std::string& pad = "");
    */
 SPOSet* get_sposet(const std::string& name);
 
-
-/** derived class from WaveFunctionComponentBuilder
- */
-class SPOSetBuilderFactory : public WaveFunctionComponentBuilder
+class SPOSetBuilderFactory : public MPIObjectBase
 {
 public:
+  typedef std::map<std::string, ParticleSet*> PtclPoolType;
+
   ///set of basis set builders resolved by type
   static std::map<std::string, SPOSetBuilder*> spo_builders;
 
@@ -43,14 +43,13 @@ public:
   static void clear();
 
   /** constructor
+   * \param comm communicator
    * \param els reference to the electrons
-   * \param psi reference to the wavefunction
    * \param ions reference to the ions
    */
-  SPOSetBuilderFactory(ParticleSet& els, TrialWaveFunction& psi, PtclPoolType& psets);
+  SPOSetBuilderFactory(Communicate* comm, ParticleSet& els, PtclPoolType& psets);
 
   ~SPOSetBuilderFactory();
-  bool put(xmlNodePtr cur);
 
   SPOSetBuilder* createSPOSetBuilder(xmlNodePtr rootNode);
 
@@ -64,8 +63,13 @@ private:
   ///store the last builder, use if type not provided
   static SPOSetBuilder* last_builder;
 
+  ///reference to the target particle
+  ParticleSet& targetPtcl;
+
   ///reference to the particle pool
   PtclPoolType& ptclPool;
+
+  static std::string basisset_tag;
 };
 } // namespace qmcplusplus
 #endif

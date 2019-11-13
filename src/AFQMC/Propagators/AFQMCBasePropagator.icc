@@ -555,7 +555,6 @@ void AFQMCBasePropagator::apply_propagators_batched(char TA, WSet& wset, int ni,
   void AFQMCBasePropagator::Orthogonalize_shared(WlkSet& wset, CMat&& detR) {
     if(new_overlaps.size() < 1)
       new_overlaps.reextent(iextensions<1u>{1});
-    int nwalk = wset.size();
     auto walker_type = wset.getWalkerType();
     double LogOverlapFactor(wset.getLogOverlapFactor());
     if(walker_type != COLLINEAR) {

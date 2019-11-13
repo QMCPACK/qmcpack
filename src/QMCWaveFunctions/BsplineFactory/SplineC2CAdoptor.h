@@ -10,7 +10,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-/** @file SplineC2CSoA.h
+/** @file
  *
  * Adoptor classes to handle complex-to-(real,complex) with arbitrary precision
  */
@@ -386,6 +386,19 @@ struct SplineC2CSoA : public SplineAdoptorBase<ST, 3>
       spline2::evaluate3d_vgh(SplineInst->getSplinePtr(), ru, myV, myG, myH, first, last);
       assign_vgl(r, psi, dpsi, d2psi, first / 2, last / 2);
     }
+  }
+
+  template<typename VV, typename GV>
+  inline void mw_evaluate_vgl(const std::vector<SplineC2CSoA*>& sa_list,
+                              const std::vector<ParticleSet*>& P_list,
+                              int iat,
+                              const std::vector<VV*>& psi_v_list,
+                              const std::vector<GV*>& dpsi_v_list,
+                              const std::vector<VV*>& d2psi_v_list)
+  {
+    #pragma omp parallel for
+    for (int iw = 0; iw < sa_list.size(); iw++)
+      sa_list[iw]->evaluate_vgl(*P_list[iw], iat, *psi_v_list[iw], *dpsi_v_list[iw], *d2psi_v_list[iw]);
   }
 
   template<typename VV, typename GV, typename GGV>

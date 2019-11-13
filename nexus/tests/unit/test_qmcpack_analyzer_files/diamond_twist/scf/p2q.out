@@ -1,0 +1,49 @@
+
+     Program pw2qmcpack v.6.3MaX starts on  5Nov2019 at 11:51:41 
+
+     This program is part of the open-source Quantum ESPRESSO suite
+     for quantum simulation of materials; please cite
+         "P. Giannozzi et al., J. Phys.:Condens. Matter 21 395502 (2009);
+         "P. Giannozzi et al., J. Phys.:Condens. Matter 29 465901 (2017);
+          URL http://www.quantum-espresso.org", 
+     in publications or presentations arising from this work. More details at
+     http://www.quantum-espresso.org/quote
+
+     Parallel version (MPI), running on     1 processors
+
+     MPI processes distributed on     1 nodes
+
+     Reading data from directory:
+     pwscf_output/pwscf.save/
+
+     IMPORTANT: XC functional enforced from input :
+     Exchange-correlation      = PZ ( 1  1  0  0 0 0)
+     Any further DFT definition will be discarded
+     Please, verify this is what you really want
+
+               file C.BFD.upf: wavefunction(s)  0s 0p renormalized
+
+     G-vector sticks info
+     --------------------
+     sticks:   dense  smooth     PW     G-vecs:    dense   smooth      PW
+     Sum        1261    1261    361                29363    29363    4477
+
+esh5 create pwscf_output/pwscf.pwscf.h5
+
+     compute_qmcp :      0.01s CPU      0.01s WALL (       1 calls)
+
+     Called by read_file_lite:
+
+     Called by compute_qmcpack:
+     big_loop     :      0.00s CPU      0.00s WALL (       1 calls)
+     write_h5     :      0.00s CPU      0.00s WALL (       1 calls)
+     glue_h5      :      0.00s CPU      0.00s WALL (       1 calls)
+
+     pw2qmcpack   :     0.10s CPU         0.10s WALL
+
+
+   This run was terminated on:  11:51:41   5Nov2019            
+
+=------------------------------------------------------------------------------=
+   JOB DONE.
+=------------------------------------------------------------------------------=

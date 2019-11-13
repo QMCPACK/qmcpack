@@ -14,7 +14,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-/** @file QMCUpdateBase
+/** @file
  * @brief Declare QMCUpdateBase class
  */
 #ifndef QMCPLUSPLUS_QMCUPDATE_BASE_H
@@ -43,7 +43,7 @@ public:
   typedef MCWalkerConfiguration::iterator WalkerIter_t;
   typedef SimpleFixedNodeBranch BranchEngineType;
 
-  ///If true, terminate the simulation
+  ///If true, terminate the simulation, but it is never checked
   bool BadState;
   ///number of steps per measurement
   int nSubSteps;

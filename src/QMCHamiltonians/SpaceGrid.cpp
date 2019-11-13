@@ -201,7 +201,7 @@ bool SpaceGrid::initialize_rectilinear(xmlNodePtr cur, std::string& coord, std::
   //loop over spacegrid xml elements
   xmlNodePtr element    = cur->children;
   std::string undefined = "";
-  int iaxis;
+  int iaxis       = 0;
   int naxes       = 0;
   bool has_origin = false;
   origin          = points["zero"];
@@ -513,7 +513,7 @@ bool SpaceGrid::initialize_rectilinear(xmlNodePtr cur, std::string& coord, std::
     //  app_log()<<"    "<<i<<" "<<interval_centers[d][i]<< std::endl;
   }
   Point du, uc, ubc, rc;
-  RealType vol;
+  RealType vol = 0.0;
   RealType vol_tot = 0.0;
   RealType vscale  = std::abs(det(axes));
   for (int i = 0; i < dimensions[0]; i++)

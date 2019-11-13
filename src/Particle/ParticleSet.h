@@ -27,7 +27,7 @@
 #include <OhmmsPETE/OhmmsArray.h>
 #include <Utilities/NewTimer.h>
 #include <OhmmsSoA/Container.h>
-
+#include "type_traits/template_types.hpp"
 namespace qmcplusplus
 {
 ///forward declaration of DistanceTableData
@@ -69,11 +69,11 @@ struct MCDataType
 class ParticleSet : public QMCTraits, public OhmmsElementBase, public PtclOnLatticeTraits
 {
 public:
-  ///@typedef walker type
+  /// walker type
   typedef Walker<QMCTraits, PtclOnLatticeTraits> Walker_t;
-  ///@typedef container type to store the property
+  /// container type to store the property
   typedef Walker_t::PropertyContainer_t PropertyContainer_t;
-  ///@typedef buffer type for a serialized buffer
+  /// buffer type for a serialized buffer
   typedef PooledData<RealType> Buffer_t;
 
   enum quantum_domains
@@ -88,7 +88,7 @@ public:
 
   //@{ public data members
   ///property of an ensemble represented by this ParticleSet
-  MCDataType<FullPrecRealType> EnsembleProperty;
+  //MCDataType<FullPrecRealType> EnsembleProperty;
 
   ///ParticleLayout
   ParticleLayout_t Lattice, PrimitiveLattice;
@@ -110,6 +110,8 @@ public:
   ParticlePos_t R;
   ///SoA copy of R
   VectorSoaContainer<RealType, DIM> RSoA;
+  ///internal spin variables for dynamical spin calculations
+  ParticleScalar_t spins;
   ///gradients of the particles
   ParticleGradient_t G;
   ///laplacians of the particles
@@ -289,7 +291,7 @@ public:
     }
   }
 
-  inline RealType getTotalWeight() const { return EnsembleProperty.Weight; }
+  //inline RealType getTotalWeight() const { return EnsembleProperty.Weight; }
 
   void resetGroups();
 
@@ -302,7 +304,7 @@ public:
   void setActive(int iat);
 
   /// batched version of setActive
-  void flex_setActive(const std::vector<ParticleSet*>& P_list, int iat) const;
+  static void flex_setActive(const RefVector<ParticleSet>& P_list, int iat);
 
   /** return the position of the active particle
    *
@@ -319,7 +321,7 @@ public:
    */
   void makeMove(Index_t iat, const SingleParticlePos_t& displ);
   /// batched version of makeMove
-  void flex_makeMove(const std::vector<ParticleSet*>& P_list, int iat, const std::vector<SingleParticlePos_t>& displs) const;
+  static void flex_makeMove(const RefVector<ParticleSet>& P_list, int iat, const std::vector<SingleParticlePos_t>& displs);
 
   /** move the iat-th particle to activePos
    * @param iat the index of the particle to be moved
@@ -371,20 +373,20 @@ public:
    */
   void acceptMove(Index_t iat);
   /// batched version of acceptMove
-  void flex_acceptMove(const std::vector<ParticleSet*>& P_list, Index_t iat) const
+  static void flex_acceptMove(const RefVector<ParticleSet>& P_list, Index_t iat)
   {
     for (int iw = 0; iw < P_list.size(); iw++)
-      P_list[iw]->acceptMove(iat);
+      P_list[iw].get().acceptMove(iat);
   }
 
   /** reject the move
    */
   void rejectMove(Index_t iat) { activePtcl = -1; }
   /// batched version of rejectMove
-  void flex_rejectMove(const std::vector<ParticleSet*>& P_list, Index_t iat) const
+  static void flex_rejectMove(const RefVector<ParticleSet>& P_list, Index_t iat)
   {
     for (int iw = 0; iw < P_list.size(); iw++)
-      P_list[iw]->rejectMove(iat);
+      P_list[iw].get().rejectMove(iat);
   }
 
   void initPropertyList();
@@ -417,9 +419,19 @@ public:
    * PbyP requires the distance tables and Sk with awalker.R
    */
   void loadWalker(Walker_t& awalker, bool pbyp);
+
   /** save this to awalker
+   *
+   *  just the R, G, and L
+   *  More duplicate data that makes code difficult to reason about should be removed.
    */
   void saveWalker(Walker_t& awalker);
+
+  /** batched version of saveWalker
+   *
+   *  just the R, G, and L
+   */
+  static void flex_saveWalker(RefVector<ParticleSet>& psets, RefVector<Walker_t>& walkers);
 
   /** update structure factor and unmark activePtcl
    *
@@ -430,11 +442,7 @@ public:
    */
   void donePbyP();
   /// batched version of donePbyP
-  void flex_donePbyP(const std::vector<ParticleSet*>& P_list) const
-  {
-    for (int iw = 0; iw < P_list.size(); iw++)
-      P_list[iw]->donePbyP();
-  }
+  static void flex_donePbyP(const RefVector<ParticleSet>& P_list);
 
   ///return the address of the values of Hamiltonian terms
   inline FullPrecRealType* restrict getPropertyBase() { return Properties.data(); }
@@ -505,6 +513,7 @@ public:
     TotalNum = numPtcl;
 
     R.resize(numPtcl);
+    spins.resize(numPtcl);
     ID.resize(numPtcl);
     PCID.resize(numPtcl);
     GroupID.resize(numPtcl);
@@ -524,6 +533,7 @@ public:
     TotalNum = 0;
 
     R.clear();
+    spins.clear();
     ID.clear();
     PCID.clear();
     GroupID.clear();
@@ -571,12 +581,15 @@ public:
   {
     R.setTypeName(ParticleTags::postype_tag);
     R.setObjName(ParticleTags::position_tag);
+    spins.setTypeName(ParticleTags::scalartype_tag);
+    spins.setObjName(ParticleTags::spins_tag);
     ID.setTypeName(ParticleTags::indextype_tag);
     ID.setObjName(ParticleTags::id_tag);
     GroupID.setTypeName(ParticleTags::indextype_tag);
     GroupID.setObjName(ParticleTags::ionid_tag);
     //add basic attributes
     AttribList.add(R);
+    AttribList.add(spins);
     AttribList.add(ID);
     AttribList.add(GroupID);
 
@@ -661,11 +674,11 @@ protected:
 
   /** compute temporal DistTables and SK for a new particle position for each walker in a batch
    *
-   * @param P_list the list of ParticleSet pointers in a walker batch
+   * @param P_list the list of wrapped ParticleSet references in a walker batch
    * @param iat the particle that is moved on a sphere
-   * @param newpos a new particle position
+   * @param new_positions new particle positions
    */
-  void mw_computeNewPosDistTablesAndSK(const std::vector<ParticleSet*>& P_list, Index_t iat, const std::vector<SingleParticlePos_t>& new_positions) const;
+  static void mw_computeNewPosDistTablesAndSK(const RefVector<ParticleSet>& P_list, Index_t iat, const std::vector<SingleParticlePos_t>& new_positions);
 
 };
 

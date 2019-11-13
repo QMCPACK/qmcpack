@@ -11,7 +11,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-/** @file Vector.h
+/** @file
  *
  *  Declaraton of Vector<T,Alloc>
  *  Manage memory through Alloc directly and allow referencing an existing memory.
@@ -103,10 +103,7 @@ public:
   //! Destructor
   virtual ~Vector()
   {
-    if (nAllocated)
-    {
-      mAllocator.deallocate(X, nAllocated);
-    }
+    free();
   }
 
   // Attach to pre-allocated memory
@@ -214,6 +211,7 @@ private:
   ///allocator
   Alloc mAllocator;
 
+  ///a dumb resize, always free existing memory and resize to n. n must be protected positive
   inline void resize_impl(size_t n)
   {
     if (nAllocated)

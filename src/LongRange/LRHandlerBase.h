@@ -57,7 +57,7 @@ struct LRHandlerBase
 
 
   //constructor
-  explicit LRHandlerBase(mRealType kc) : LR_kc(kc), ClassName("LRHandlerBase") {}
+  explicit LRHandlerBase(mRealType kc) : MaxKshell(0), LR_kc(kc), LR_rc(0), ClassName("LRHandlerBase") {}
 
   // virtual destructor
   virtual ~LRHandlerBase() {}
@@ -286,6 +286,7 @@ struct DummyLRHandler : public LRHandlerBase
 
   void initBreakup(ParticleSet& ref)
   {
+    mRealType norm = 4.0 * M_PI / ref.Lattice.Volume;
     mRealType kcsq = LR_kc * LR_kc;
     KContainer& KList(ref.SK->KLists);
     int maxshell = KList.kshell.size() - 1;
@@ -300,10 +301,9 @@ struct DummyLRHandler : public LRHandlerBase
     MaxKshell = ksh;
     Fk_symm.resize(MaxKshell);
     Fk.resize(KList.kpts_cart.size());
-    mRealType u0 = 4.0 * M_PI / ref.Lattice.Volume;
     for (ksh = 0, ik = 0; ksh < MaxKshell; ksh++, ik++)
     {
-      mRealType v  = u0 * myFunc(kk[ik]); //rpa=u0/kk[ik];
+      mRealType v = norm * myFunc(kk[KList.kshell[ksh]]); //rpa=u0/kk[ik];
       Fk_symm[ksh] = v;
       for (; ik < KList.kshell[ksh + 1]; ik++)
         Fk[ik] = v;
@@ -313,6 +313,9 @@ struct DummyLRHandler : public LRHandlerBase
   mRealType evaluate(mRealType r, mRealType rinv) { return 0.0; }
   mRealType evaluateLR(mRealType r) { return 0.0; }
   mRealType srDf(mRealType r, mRealType rinv) { return 0.0; }
+  void Breakup(ParticleSet& ref, mRealType rs_in) {}
+  void resetTargetParticleSet(ParticleSet& ref)   {}
+  virtual LRHandlerBase* makeClone(ParticleSet& ref){return new DummyLRHandler<Func>(LR_kc);}
 };
 
 } // namespace qmcplusplus

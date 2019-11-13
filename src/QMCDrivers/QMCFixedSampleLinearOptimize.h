@@ -23,6 +23,8 @@
 #include "formic/utils/matrix.h"
 #include "formic/utils/lmyengine/engine.h"
 #endif
+#include "QMCDrivers/Optimizers/DescentEngine.h"
+#include "QMCDrivers/Optimizers/HybridEngine.h"
 
 namespace qmcplusplus
 {
@@ -49,8 +51,11 @@ public:
 
   ///Run the Optimization algorithm.
   bool run();
-  ///process xml node
+  ///preprocess xml node
   bool put(xmlNodePtr cur);
+  ///process xml node value (parameters for both VMC and OPT) for the actual optimization
+  bool processOptXML(xmlNodePtr cur, const std::string& vmcMove, bool reportH5, bool useGPU);
+
   RealType Func(RealType dl);
 
 private:
@@ -75,6 +80,15 @@ private:
   // perform the single-shift update, no sample regeneration
   bool one_shift_run();
 
+  // perform optimization using a gradient descent algorithm
+  bool descent_run();
+
+#ifdef HAVE_LMY_ENGINE
+  // use hybrid approach of descent and blocked linear method for optimization
+  bool hybrid_run();
+#endif
+
+
   void solveShiftsWithoutLMYEngine(const std::vector<double>& shifts_i,
                                    const std::vector<double>& shiffts_s,
                                    std::vector<std::vector<RealType>>& parameterDirections);
@@ -83,6 +97,12 @@ private:
   formic::VarDeps vdeps;
   cqmc::engine::LMYEngine* EngineObj;
 #endif
+
+  //engine for running various gradient descent based algorithms for optimization
+  std::unique_ptr<DescentEngine> descentEngineObj;
+
+  //engine for controlling a optimization using a hybrid combination of linear method and descent
+  std::unique_ptr<HybridEngine> hybridEngineObj;
 
   // prepare a vector of shifts to try
   std::vector<double> prepare_shifts(const double central_shift) const;
@@ -106,16 +126,12 @@ private:
   int Max_iterations;
   int nstabilizers;
   RealType stabilizerScale, bigChange, exp0, exp1, stepsize, savedQuadstep;
-  std::string MinMethod, GEVtype, StabilizerMethod, GEVSplit;
+  std::string GEVtype, StabilizerMethod, GEVSplit;
   RealType w_beta;
   /// number of previous steps to orthogonalize to.
   int eigCG;
   /// total number of cg steps per iterations
   int TotalCGSteps;
-  /// whether to use the adaptive three-shift scheme
-  bool doAdaptiveThreeShift;
-  /// whether to use the single-shift scheme
-  bool doOneShiftOnly;
   /// the previous best identity shift
   RealType bestShift_i;
   /// the previous best overlap shift
@@ -158,8 +174,22 @@ private:
   bool block_first;
   ///whether to do the second part of block lm
   bool block_second;
-  ///whethe to do the third part of blocl lm
+  ///whether to do the third part of block lm
   bool block_third;
+
+  //Variables for alternatives to linear method
+
+  //name of the current optimization method, updated by processOptXML before run
+  std::string MinMethod;
+
+  //type of the previous optimization method, updated by processOptXML before run
+  OptimizerType previous_optimizer_type_;
+
+  //type of the current optimization method, updated by processOptXML before run
+  OptimizerType current_optimizer_type_;
+
+  //whether to use hybrid method
+  bool doHybrid;
 };
 } // namespace qmcplusplus
 #endif

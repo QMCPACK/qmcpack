@@ -62,7 +62,7 @@ struct J1OrbitalSoA : public WaveFunctionComponent
   std::vector<FT*> F;
 
   J1OrbitalSoA(const ParticleSet& ions, ParticleSet& els)
-    : Ions(ions), myTableID(els.addTable(ions, DT_SOA))
+    : myTableID(els.addTable(ions, DT_SOA)), Ions(ions)
   {
     initialize(els);
     ClassName = "J1OrbitalSoA";
@@ -118,7 +118,7 @@ struct J1OrbitalSoA : public WaveFunctionComponent
     }
   }
 
-  RealType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
+  LogValueType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
   {
     evaluateGL(P, G, L, true);
     return LogValue;
@@ -360,7 +360,7 @@ struct J1OrbitalSoA : public WaveFunctionComponent
     }
   }
 
-  inline RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false)
+  inline LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false)
   {
     evaluateGL(P, P.G, P.L, false);
     buf.forward(Bytes_in_WFBuffer);

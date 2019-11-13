@@ -44,7 +44,6 @@ QMCOptimize::QMCOptimize(MCWalkerConfiguration& w,
       WarmupBlocks(10),
       SkipSampleGeneration("no"),
       hamPool(hpool),
-      optTarget(0),
       optSolver(0),
       vmcEngine(0),
       wfNode(NULL),
@@ -67,7 +66,6 @@ QMCOptimize::~QMCOptimize()
 {
   delete vmcEngine;
   delete optSolver;
-  delete optTarget;
 }
 
 /** Add configuration files for the optimization
@@ -110,7 +108,7 @@ bool QMCOptimize::run()
   app_log() << "  <log>" << std::endl;
   optTarget->setTargetEnergy(branchEngine->getEref());
   t1.restart();
-  bool success = optSolver->optimize(optTarget);
+  bool success = optSolver->optimize(optTarget.get());
   //     W.reset();
   //     branchEngine->flush(0);
   //     branchEngine->reset();
@@ -184,7 +182,8 @@ bool QMCOptimize::put(xmlNodePtr q)
     else if (cname.find("optimize") < cname.size())
     {
       const XMLAttrString att(cur, "method");
-      if (!att.empty()) optmethod = att;
+      if (!att.empty())
+        optmethod = att;
       optNode = cur;
     }
     cur = cur->next;
@@ -241,25 +240,16 @@ bool QMCOptimize::put(xmlNodePtr q)
   else
     optSolver->put(optNode);
   bool success = true;
-  if (optTarget == 0)
-  {
+  //allways reset optTarget
 #if defined(QMC_CUDA)
-    if (useGPU == "yes")
-      optTarget = new QMCCostFunctionCUDA(W, Psi, H, myComm);
-    else
+  if (useGPU == "yes")
+    optTarget = std::make_unique<QMCCostFunctionCUDA>(W, Psi, H, myComm);
+  else
 #endif
-      optTarget = new QMCCostFunction(W, Psi, H, myComm);
-    //#if defined(ENABLE_OPENMP)
-    //	if(true /*omp_get_max_threads()>1*/)
-    //      {
-    //        optTarget = new QMCCostFunctionOMP(W,Psi,H,hamPool);
-    //      }
-    //      else
-    //#endif
-    //        optTarget = new QMCCostFunctionSingle(W,Psi,H);
-    optTarget->setStream(&app_log());
-    success = optTarget->put(q);
-  }
+    optTarget = std::make_unique<QMCCostFunction>(W, Psi, H, myComm);
+  optTarget->setStream(&app_log());
+  success = optTarget->put(q);
+
   return success;
 }
 } // namespace qmcplusplus

@@ -22,7 +22,7 @@
 
 namespace qmcplusplus
 {
-OperatorBase::OperatorBase() : myIndex(-1), Value(0.0), Dependants(0), tWalker(0)
+OperatorBase::OperatorBase() : myIndex(-1), Dependants(0), Value(0.0), tWalker(0)
 {
   quantum_domain = no_quantum_domain;
   energy_domain  = no_energy_domain;
@@ -34,6 +34,19 @@ OperatorBase::OperatorBase() : myIndex(-1), Value(0.0), Dependants(0), tWalker(0
 #endif
   UpdateMode.set(PRIMARY, 1);
 }
+
+/** Take o_list and p_list update evaluation result variables in o_list?
+ *
+ * really should reduce vector of local_energies. matching the ordering and size of o list
+ * the this can be call for 1 or more QMCHamiltonians
+ */
+void OperatorBase::mw_evaluate(const RefVector<OperatorBase>& O_list, const RefVector<ParticleSet>& P_list)
+{
+#pragma omp parallel for
+  for (int iw = 0; iw < O_list.size(); iw++)
+    O_list[iw].get().evaluate(P_list[iw]);
+}
+
 
 void OperatorBase::set_energy_domain(energy_domains edomain)
 {

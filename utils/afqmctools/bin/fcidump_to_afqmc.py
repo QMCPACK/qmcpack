@@ -6,10 +6,10 @@ import sys
 import time
 import numpy
 from afqmctools.hamiltonian.mol import (
-        read_ascii_integrals,
-        modified_cholesky_direct,
         write_qmcpack_cholesky
         )
+from afqmctools.hamiltonian.converter import read_fcidump
+from afqmctools.utils.linalg import modified_cholesky_direct
 
 
 def parse_args(args):
@@ -32,7 +32,7 @@ def parse_args(args):
     parser.add_argument('-o', '--output', dest='output_file',
                         type=str, default='fcidump.h5',
                         help='Output file name for PAUXY data.')
-    parser.add_argument('-c', '--complex', dest='complex_chol',
+    parser.add_argument('--write-complex', dest='write_complex',
                         action='store_true', default=False,
                         help='Output integrals in complex format.')
     parser.add_argument('-t', '--cholesky-threshold', dest='thresh',
@@ -62,22 +62,24 @@ def main(args):
         command-line arguments.
     """
     options = parse_args(args)
-    (hcore, eri, ecore, nelec) = read_ascii_integrals(options.input_file,
-                                                      symmetry=options.symm,
-                                                      verbose=options.verbose)
-    nelec = (nelec//2,nelec//2)
+    (hcore, eri, ecore, nelec) = read_fcidump(options.input_file,
+                                              symmetry=options.symm,
+                                              verbose=options.verbose)
     norb = hcore.shape[-1]
 
-    if options.symm == 4: # assuming complex
-        eri = numpy.transpose(eri,(0,1,3,2))
+    # If the ERIs are complex then we need to form M_{(ik),(lj}} which is
+    # Hermitian. For real integrals we will have 8-fold symmetry so trasposing
+    # will have no effect.
+    eri = numpy.transpose(eri,(0,1,3,2))
 
     chol = modified_cholesky_direct(eri.reshape(norb**2,norb**2),
-                                    options.thresh, options.verbose).T.copy()
+                                    options.thresh, options.verbose,
+                                    cmax=20).T.copy()
+    cplx_chol = options.write_complex or numpy.any(abs(eri.imag)>1e-14)
     write_qmcpack_cholesky(hcore, scipy.sparse.csr_matrix(chol),
                            nelec, norb, e0=ecore,
-                           real_chol=(not options.complex_chol),
+                           real_chol=(not cplx_chol),
                            filename=options.output_file)
 
 if __name__ == '__main__':
-
     main(sys.argv[1:])

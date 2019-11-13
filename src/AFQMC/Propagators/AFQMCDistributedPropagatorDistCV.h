@@ -60,10 +60,10 @@ class AFQMCDistributedPropagatorDistCV: public AFQMCBasePropagator
             req_Grecv(MPI_REQUEST_NULL),
             req_vsend(MPI_REQUEST_NULL),
             req_vrecv(MPI_REQUEST_NULL),
-            req_X2send(MPI_REQUEST_NULL),
-            req_X2recv(MPI_REQUEST_NULL),
             req_Xsend(MPI_REQUEST_NULL),
             req_Xrecv(MPI_REQUEST_NULL),
+            req_X2send(MPI_REQUEST_NULL),
+            req_X2recv(MPI_REQUEST_NULL),
             req_bpvsend(MPI_REQUEST_NULL),
             req_bpvrecv(MPI_REQUEST_NULL)
     {
@@ -137,6 +137,8 @@ class AFQMCDistributedPropagatorDistCV: public AFQMCBasePropagator
     bool buffer_reallocated=false;
     bool buffer_reallocated_bp=false;
     bool low_memory_step=false;
+
+    mpi3CVector bpX;
 
     MPI_Request req_Gsend, req_Grecv;
     MPI_Request req_vsend, req_vrecv;

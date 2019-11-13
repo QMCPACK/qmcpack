@@ -730,7 +730,6 @@ void AFQMCDistributedPropagatorDistCV::BackPropagate(int nbpsteps, int nStabaliz
   const int localnCV = wfn.local_number_of_cholesky_vectors();
   const int global_origin = wfn.global_origin_cholesky_vector();
   const int nnodes = TG.getNGroupsPerTG();  
-  const int node_number = TG.getLocalGroupNumber();
 
   int vhs_nr = NMO*NMO, vhs_nc = nwalk;
   if(transposed_vHS_) std::swap(vhs_nr,vhs_nc);

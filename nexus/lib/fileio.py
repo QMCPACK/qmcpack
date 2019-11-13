@@ -316,6 +316,7 @@ class XsfFile(StandardFile):
     #end def add_to_image
 
 
+    # test needed for axsf and bxsf
     def read_text(self,text):
         lines = text.splitlines()
         i=0
@@ -549,6 +550,7 @@ class XsfFile(StandardFile):
     #end def read_text
 
 
+    # test needed for axsf and bxsf
     def write_text(self):
         c=''
         if self.filetype=='xsf':    # only write structure/datagrid if present
@@ -769,6 +771,7 @@ class XsfFile(StandardFile):
     #end def validity_checks
 
 
+    # test needed
     def incorporate_structure(self,structure):
         s = structure.copy()
         s.change_units('A')
@@ -849,6 +852,7 @@ class XsfFile(StandardFile):
     #end def get_density
 
 
+    # test needed
     def change_units(self,in_unit,out_unit):
         fac = 1.0/convert(1.0,in_unit,out_unit)**3
         density = self.get_density()
@@ -859,6 +863,7 @@ class XsfFile(StandardFile):
     #end def change_units
 
 
+    # test needed
     def remove_ghost(self,density=None):
         if density is None:
             density = self.get_density()
@@ -878,6 +883,7 @@ class XsfFile(StandardFile):
     #end def remove_ghost
 
     
+    # test needed
     def norm(self,density=None,vnorm=True):
         if density is None:
             density = self.get_density()
@@ -895,6 +901,7 @@ class XsfFile(StandardFile):
     #end def norm
 
 
+    # test needed
     def line_data(self,dim,density=None):
         if density is None:
             density = self.get_density()
@@ -1193,7 +1200,9 @@ class ChgcarFile(StandardFile):
         elif (self.grid<1).sum()>0:
             msgs.append('all grid entries must be greater than zero')
         #end if
-        ng = self.grid.prod()
+        if self.grid is not None:
+            ng = self.grid.prod()
+        #end if
         if self.charge_density is None:
             msgs.append('charge_density is missing')
         elif not isinstance(self.charge_density,ndarray):
@@ -1298,7 +1307,7 @@ def read_poscar_chgcar(host,text):
     nlines = len(lines)
     min_lines = 8
     if nlines<min_lines:
-        host.error('file {0} must have at least {1} lines\nonly {2} lines found'.format(filepath,min_lines,nlines))
+        host.error('file {0} must have at least {1} lines\nonly {2} lines found'.format(host.filepath,min_lines,nlines))
     #end if
     description = lines[0]
     dim = 3
@@ -1322,7 +1331,7 @@ def read_poscar_chgcar(host,text):
         c = lines[lcur].lower()[0]
         lcur+=1
     else:
-        host.error('file {0} is incomplete (missing positions)'.format(filepath))
+        host.error('file {0} is incomplete (missing positions)'.format(host.filepath))
     #end if
     selective_dynamics = c=='s'
     if selective_dynamics: # Selective dynamics
@@ -1330,7 +1339,7 @@ def read_poscar_chgcar(host,text):
             c = lines[lcur].lower()[0]
             lcur+=1
         else:
-            host.error('file {0} is incomplete (missing positions)'.format(filepath))
+            host.error('file {0} is incomplete (missing positions)'.format(host.filepath))
         #end if
     #end if
     cartesian = c=='c' or c=='k'
@@ -1341,7 +1350,7 @@ def read_poscar_chgcar(host,text):
     #end if
     npos = counts.sum()
     if lcur+npos>len(lines):
-        host.error('file {0} is incomplete (missing positions)'.format(filepath))
+        host.error('file {0} is incomplete (missing positions)'.format(host.filepath))
     #end if
     spos = []
     for i in range(npos):
@@ -1377,7 +1386,7 @@ def read_poscar_chgcar(host,text):
         cline = lines[lcur].lower()
         lcur+=1
         if lcur+npos>len(lines):
-            host.error('file {0} is incomplete (missing velocities)'.format(filepath))
+            host.error('file {0} is incomplete (missing velocities)'.format(host.filepath))
         #end if
         cartesian = len(cline)>0 and (cline[0]=='c' or cline[0]=='k')
         if cartesian:
@@ -1403,7 +1412,7 @@ def read_poscar_chgcar(host,text):
             grid = array(lines[lcur].split(),dtype=int)
             lcur+=1
         else:
-            host.error('file {0} is incomplete (missing grid)'.format(filepath))
+            host.error('file {0} is incomplete (missing grid)'.format(host.filepath))
         #end if
         if lcur<len(lines):
             ng = grid.prod()
@@ -1422,12 +1431,15 @@ def read_poscar_chgcar(host,text):
                 #end def is_float
                 # remove anything but the densities (e.g. augmentation charges)
                 n=0
-                while is_float(density[n]) and n+ng<len(density):
+                while is_float(density[n]):
                     n+=ng
+                    if n+ng>=len(density):
+                        break
+                    #end if
                 #end while
                 density = array(density[:n],dtype=float)
             else:
-                host.error('file {0} is incomplete (missing density)'.format(filepath))
+                host.error('file {0} is incomplete (missing density)'.format(host.filepath))
             #end if
             if density.size%ng!=0:
                 host.error('number of density data entries is not a multiple of the grid\ngrid shape: {0}\ngrid size: {1}\ndensity size: {2}'.format(grid,ng,density.size))
@@ -1446,10 +1458,10 @@ def read_poscar_chgcar(host,text):
                     spin_density[:,i] = density[(i+1)*ng:(i+2)*ng]
                 #end for
             else:
-                host.error('density data must be present for one of the following situations\n  1) charge density only (1 density)\n2) charge and collinear spin densities (2 densities)\n  3) charge and non-collinear spin densities (4 densities)\nnumber of densities found: {0}'.format(ndens))
+                host.error('density data must be present for one of the following situations\n  1) charge density only (1 density)\n  2) charge and collinear spin densities (2 densities)\n  3) charge and non-collinear spin densities (4 densities)\nnumber of densities found: {0}'.format(ndens))
             #end if
         else:
-            host.error('file {0} is incomplete (missing density)'.format(filepath))
+            host.error('file {0} is incomplete (missing density)'.format(host.filepath))
         #end if
     #end if
 

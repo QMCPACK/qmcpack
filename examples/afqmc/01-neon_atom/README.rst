@@ -46,7 +46,7 @@ this we do (assuming afqmctools is in your PYTHONPATH):
 
 .. code-block:: bash
 
-    $HOME/apps/qmcpack/qmcpack/utils/afqmctools/bin/pyscf_to_afqmc.py -i scf.chk -o afqmc.h5 -t 1e-5 -v
+    /path/to/qmcpack/utils/afqmctools/bin/pyscf_to_afqmc.py -i scf.chk -o afqmc.h5 -t 1e-5 -v
 
 which will peform the necessary AO to MO transformation of the one and two electron
 integrals and perform a modified cholesky transormation of the two electron integrals. A

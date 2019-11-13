@@ -35,11 +35,6 @@ for d in dirs_check:
 # enforce association between nxs-test executable and Nexus library
 sys.path.insert(0,library_dir)
 
-# global data
-global_data = dict(
-    job_ref_table = False,
-    )
-
 from generic import generic_settings,object_interface,NexusError
 
 generic_settings.raise_error = True
@@ -81,7 +76,12 @@ def import_unit_test_module(module_name):
 
 
 def import_from_unit_test_module(module_name,test_name):
-    return import_unit_test_module(module_name)[test_name]
+    module = import_unit_test_module(module_name)
+    if test_name not in module:
+        print('function "{}" is not in module "{}"\nfunctions present: {}'.format(test_name,module_name,sorted(module.keys())))
+        exit(1)
+    #end if
+    return module[test_name]
 #end def import_from_unit_test_module
 
 
@@ -234,6 +234,7 @@ def nlabel(label):
     os.chdir(NexusTestBase.launch_path)
     NexusTestBase.current_label = label
     NexusTestBase.label_count  += 1
+    NexusTestBase.current_test.subtests.append(label)
 #end def nlabel
 
 
@@ -376,7 +377,11 @@ def nassert(result):
 # run a unit test from an external file
 def nunit(test_name):
     module_name = 'test_'+NexusTestBase.current_test.name
+    if not test_name.startswith('test_'):
+        test_name = 'test_'+test_name
+    #end if
     unit_test   = import_from_unit_test_module(module_name,test_name)
+    load_external_unit_tests()
     run_external_unit_test(test_name,unit_test)
 #end def nunit
 
@@ -474,6 +479,7 @@ class NexusTest(NexusTestBase):
         self.status            = NexusTest.status_options['unused']
         self.unit_tests        = set() # complete set of unit tests
         self.unit_tests_called = set() # set of unit tests called so far
+        self.subtests          = []    # list of subtests called
         NexusTest.test_list.append(self)
         NexusTest.test_dict[self.name] = self
     #end def __init__
@@ -502,6 +508,7 @@ class NexusTest(NexusTestBase):
         NexusTestBase.current_label = ''
         NexusTestBase.test_count   += 1
         NexusTestBase.label_count   = 0
+        failed = False
         try:
             if self.op_inputs is None:
                 self.operation()
@@ -512,15 +519,17 @@ class NexusTest(NexusTestBase):
             else:
                 raise NexusTestMisconstructed
             #end if
+            check_final_state()
             self.status=NexusTest.status_options['passed']
         except Exception as e:
             t,v,tb = sys.exc_info()
             self.exception = e
             self.traceback = tb
             self.status=NexusTest.status_options['failed']
+            failed = True
         #end try
         uncalled_unit_tests = self.unit_tests-self.unit_tests_called
-        if len(uncalled_unit_tests)>0:
+        if not failed and len(uncalled_unit_tests)>0:
             raise NexusTestMisconstructed('not all unit tests were called\n  uncalled unit tests: {}\n  please add these either by calling "nunit" for each of them\n  or by calling "nunit_all" at the end of function "{}"'.format(sorted(uncalled_unit_tests),self.name))
         #end if
     #end def run
@@ -568,2513 +577,1074 @@ class NexusTest(NexusTestBase):
 
 
 def versions():
+    nunit('import')
+
+    nunit('constants')
+
+    nunit('time')
+
+    nunit('version_processing')
+
+    nunit('versions_object')
+
     nunit_all()
 #end def versions
 
 
 
 def required_dependencies():
+    nunit('numpy_available')
+
     nunit_all()
 #end def required_dependencies
 
 
 
 def optional_dependencies():
+    nunit('scipy_available')
+
+    nunit('h5py_available')
+
+    nunit('matplotlib_available')
+
+    nunit('pydot_available')
+
+    nunit('spglib_available')
+
+    nunit('pycifrw_available')
+
+    nunit('seekpath_available')
+
     nunit_all()
 #end def optional_dependencies
 
 
-        
-def generic_logging():
-    from generic import log,message,warn,error
-
-    # send messages to object rather than stdout
-    devlog  = generic_settings.devlog
-    logfile = FakeLog()
-    generic_settings.devlog = logfile
-
-    # test log
-    nlabel('log')
-    #   simple message
-    s = 'simple message'
-    logfile.reset()
-    log(s)
-    nassert(logfile.s==s+'\n')
-
-    #   list of items
-    items = ['a','b','c',1,2,3]
-    logfile.reset()
-    log(*items)
-    nassert(logfile.s=='a b c 1 2 3 \n')
-
-    #   message with indentation
-    s = 'a message\nwith indentation'
-    logfile.reset()
-    log(s,indent='  ')
-    nassert(logfile.s=='  a message\n  with indentation\n')
-
-    logfile.reset()
-    log(s,indent='msg: ')
-    nassert(logfile.s=='msg: a message\nmsg: with indentation\n')
-    
-    #   writing to separate log files
-    logfile2 = FakeLog()
-    s1 = 'message to log 1'
-    s2 = 'message to log 2'
-    logfile.reset()
-    logfile2.reset()
-    log(s1)
-    nassert(logfile.s==s1+'\n')
-    nassert(logfile2.s=='')
-
-    logfile.reset()
-    logfile2.reset()
-    log(s2,logfile=logfile2)
-    nassert(logfile.s=='')
-    nassert(logfile2.s==s2+'\n')
-    
-
-    # test warn
-    nlabel('warn')
-    logfile.reset()
-    s = 'this is a warning'
-    warn(s)
-    so = '''
-  warning:
-    this is a warning
-'''
-    nassert(logfile.s==so)
-    logfile.reset()
-    s = 'this is a warning'
-    warn(s,header='Special')
-    so = '''
-  Special warning:
-    this is a warning
-'''
-    nassert(logfile.s==so)
-
-    # test error
-    nlabel('error')
-    #   in testing environment, should raise an error
-    try:
-        error('testing environment')
-        nfail()
-    except NexusError:
-        npass()
-    #end try
-    #   in standard/user environment, should print message
-    generic_settings.raise_error = False
-    logfile.reset()
-    error('this is an error',header='User',exit=False)
-    so = '''
-  User error:
-    this is an error
-'''
-    nassert(logfile.s==so)
-    generic_settings.raise_error = True
-    #   in testing environment, should raise an error
-    try:
-        error('testing environment')
-        nfail()
-    except NexusError:
-        npass()
-    #end try
-
-
-    # restore logging function
-    generic_settings.devlog = devlog
-#end def generic_logging
-
-
-
-def generic_intrinsics():
-    # test object_interface functions
-    from generic import obj
-    from generic import object_interface
-    from numpy import array,bool_
-
-    nlabel('object_set_get')
-    # make a simple object
-    o = obj()
-    o.a = 1
-    o.b = 'b'
-    o['c'] = (1,1,1)
-    o[3,4,5] = (5,6,7)
-
-    # test member values
-    nassert(o.a==1)
-    nassert(o.b=='b')
-    nassert(o.c==(1,1,1))
-    nassert(o[3,4,5]==(5,6,7))
-
-    # test member presence and length
-    nassert('a' in o)
-    nassert(2 not in o)
-    nassert(len(o)==4)
-    del o.a
-    nassert('a' not in o)
-    nassert(len(o)==3)
-    try:
-        del o.d
-        nfail()
-    except AttributeError:
-        npass()
-    #end try
-
-    # test add/access failures
-    try: # add unhashable type
-        o[{1:2,3:4}] = 5
-        nfail()
-    except TypeError:
-        npass()
-    #end try
-    try: # access missing member
-        v = o.d
-        nfail()
-    except AttributeError:
-        npass()
-    #end try
-    try: # access missing member
-        v = o['d']
-        nfail()
-    except KeyError:
-        npass()
-    #end try
-
-    nlabel('iterability')
-    # test list-like iterability
-    l = list()
-    for v in o:
-        l.append(v)
-    #end for
-    l = sorted(l)
-    l2 = ['b', (1, 1, 1), (5, 6, 7)]
-    nassert(l2==l)
-
-    # test dict-like iterability
-    d = dict()
-    for k,v in o.iteritems():
-        d[k] = v
-    #end for
-    o2 = obj()
-    o2.__dict__ = d
-    nassert(object_eq(o,o2))
-    nassert(sorted(o.keys())==sorted(d.keys()))
-    nassert(sorted(o.values())==sorted(d.values()))
-    nassert(sorted(o.items())==sorted(d.items()))
-
-    # test repr
-    nlabel('repr')
-    ro = '''
-  b                     str                 
-  c                     tuple               
-  (3, 4, 5)             tuple               
-'''
-    nassert(repr(o)==ro[1:])
-    o2 = obj(
-        a = obj(a1=1,a2=2,a3=3),
-        b = obj(b1='b1',b2='b2'),
-        c = obj(c1=5,c2=('a',3,4)),
-        d = array([3,4,5],dtype=int),
-        )
-    ro2 = '''
-  a                     obj                 
-  b                     obj                 
-  c                     obj                 
-  d                     ndarray             
-'''
-    nassert(repr(o2)==ro2[1:])
-
-    # test str
-    nlabel('str')
-    so = '''
-  b               = b
-  c               = (1, 1, 1)
-  (3, 4, 5)       = (5, 6, 7)
-'''
-    nassert(str(o)==so[1:])
-    so2 = '''
-  d               = [3 4 5]
-  a
-    a1              = 1
-    a2              = 2
-    a3              = 3
-  end a
-  b
-    b1              = b1
-    b2              = b2
-  end b
-  c
-    c1              = 5
-    c2              = ('a', 3, 4)
-  end c
-'''
-    nassert(str(o2)==so2[1:])
-    o3 = o2
-
-    # test tree
-    nlabel('tree')
-    #   not committed to output, only check execution
-    nassert(isinstance(o2.tree(),str))
-    nassert(isinstance(o2.tree(depth=1),str))
-    nassert(isinstance(o2.tree(types=True),str))
-    nassert(isinstance(o2.tree(all=True),str))
-    nassert(isinstance(o2.tree(nindent=2),str))
-
-    # test deepcopy
-    nlabel('deepcopy')
-    o2 = o.copy()
-    nassert(id(o)!=id(o2))
-    nassert(object_eq(o,o2))
-    o2.a=1
-    nassert(object_neq(o,o2))
-    
-    # test eq
-    nlabel('equality')
-    nassert(o==o2)
-    o4 = o3.copy()
-    v = o3==o4
-    nassert(isinstance(v,bool_))
-    nassert(bool(v))
-    nassert(object_eq(o3,o4))
-
-    # test clear
-    nlabel('clear')
-    o2.clear()
-    nassert(len(o2)==0)
-    nassert('a' not in o2)
-
-    # test save/load
-    nlabel('save_load')
-    nenter()
-    o.save('o.p')
-    o2 = obj()
-    o2.load('o.p')
-    nassert(object_eq(o,o2))
-
-    # test class-level set/get methods
-    nlabel('class_set_get')
-    class objint(object_interface):
-        a = 1
-        b = 'b'
-        c = (1,1,1)
-    #end class objint
-
-    # test class_has
-    nassert(objint.class_has('c'))
-
-    # test class_get
-    nassert(objint.class_get('c')==(1,1,1))
-    try:
-        val = objint.class_get('d')
-        nfail()
-    except AttributeError:
-        npass()
-    #end try
-
-    # test class_keys
-    ck = objint.class_keys()
-    for v in 'abc':
-        nassert(v in ck)
-    #end for
-
-    # test class_set_single
-    objint.class_set_single('d',1.34)
-    nassert(objint.class_has('d'))
-
-    # test class_set
-    objint.class_set(
-        e = 45,
-        f = 'a phrase',
-        g = {4:6,'a':2}
-        )
-    for v in 'efg':
-        nassert(objint.class_has(v))
-    #end for
-
-    # test class_set_optional
-    objint.class_set_optional(h=2)
-    nassert(objint.class_has('h'))
-    nassert(objint.class_get('h')==2)
-    objint.class_set_optional(a=6)
-    nassert(objint.class_get('a')==1)
-    
-
-    # test logging functions
-    nlabel('logging')
-
-    # test open log, write, close log
-    o = obj()
-    o.open_log('log.out')
-    s = 'log output'
-    o.write(s)
-    o.close_log()
-    f = open('log.out','r')
-    so = f.read()
-    f.close()
-    os.remove('log.out')
-    nassert(so==s)
-
-    # send messages to object rather than stdout
-    devlog  = object_interface._logfile
-    logfile = FakeLog()
-    object_interface._logfile = logfile
-
-    #   simple message
-    class DerivedObj(obj):
-        None
-    #end class DerivedObj
-    o = DerivedObj()
-    s = 'simple message'
-    logfile.reset()
-    o.log(s)
-    nassert(logfile.s==s+'\n')
-
-    #   list of items
-    items = ['a','b','c',1,2,3]
-    logfile.reset()
-    o.log(*items)
-    nassert(logfile.s=='a b c 1 2 3 \n')
-
-    #   message with indentation
-    s = 'a message\nwith indentation'
-    logfile.reset()
-    o.log(s,indent='  ')
-    nassert(logfile.s=='  a message\n  with indentation\n')
-
-    logfile.reset()
-    o.log(s,indent='msg: ')
-    nassert(logfile.s=='msg: a message\nmsg: with indentation\n')
-    
-    #   writing to separate log files
-    logfile2 = FakeLog()
-    s1 = 'message to log 1'
-    s2 = 'message to log 2'
-    logfile.reset()
-    logfile2.reset()
-    o.log(s1)
-    nassert(logfile.s==s1+'\n')
-    nassert(logfile2.s=='')
-
-    logfile.reset()
-    logfile2.reset()
-    o.log(s2,logfile=logfile2)
-    nassert(logfile.s=='')
-    nassert(logfile2.s==s2+'\n')
-    
-
-    # test warn
-    logfile.reset()
-    s = 'this is a warning'
-    o.warn(s)
-    so = '''
-  DerivedObj warning:
-    this is a warning
-'''
-    nassert(logfile.s==so)
-    logfile.reset()
-    s = 'this is a warning'
-    o.warn(s,header='Special')
-    so = '''
-  Special warning:
-    this is a warning
-'''
-    nassert(logfile.s==so)
-
-    # test error
-    #   in testing environment, should raise an error
-    try:
-        o.error('testing environment')
-        nfail()
-    except NexusError:
-        npass()
-    #end try
-    #   in standard/user environment, should print message
-    generic_settings.raise_error = False
-    logfile.reset()
-    o.error('this is an error',exit=False)
-    so = '''
-  DerivedObj error:
-    this is an error
-'''
-    nassert(logfile.s==so)
-    logfile.reset()
-    o.error('this is an error',header='User',exit=False)
-    so = '''
-  User error:
-    this is an error
-'''
-    nassert(logfile.s==so)
-    generic_settings.raise_error = True
-    #   in testing environment, should raise an error
-    try:
-        o.error('testing environment')
-        nfail()
-    except NexusError:
-        npass()
-    #end try
-
-
-    # restore logging function
-    object_interface._logfile = devlog
-
-#end def generic_intrinsics
-
-
-
-def generic_extensions():
-    # test obj functions
-    from generic import obj
-
-    # make a simple object
-    o = obj(
-        a = 1,
-        b = 'b',
-        c = (1,1,1),
-        )
-    o[3,4,5] = (5,6,7)
-
-    # test member values
-    nassert(o.a==1)
-    nassert(o.b=='b')
-    nassert(o.c==(1,1,1))
-    nassert(o[3,4,5]==(5,6,7))
-
-    # test member presence and length
-    nassert('a' in o)
-    nassert(2 not in o)
-    nassert(len(o)==4)
-
-    # test list interface
-    nlabel('list_interface')
-    vals = [3,'t',6.4,(4,3,2)]
-    l = list()
-    lo = obj()
-    for v in vals:
-        l.append(v)
-        lo.append(v)
-    #end for
-    nassert(len(l)==len(lo))
-    for i in range(len(l)):
-        nassert(l[i]==lo[i])
-    #end for
-
-
-    # test representations
-    nlabel('representations')
-    # test list representation
-    l2 = lo.list()
-    nassert(isinstance(l2,list))
-    nassert(l==l2)
-    l2 = lo.list_optional(1,3)
-    nassert(l2==['t',(4,3,2)])
-    l2 = o.list_optional('b',(3,4,5))
-    nassert(l2==['b',(5,6,7)])
-
-    # test tuple representation
-    t = lo.tuple()
-    nassert(isinstance(t,tuple))
-    nassert(t==tuple(l))
-    d = dict(
-        a = 1,
-        b = 'b',
-        c = (1,1,1),
-        )
-    d[3,4,5] = (5,6,7)
-
-    # test dict representation
-    do = o.dict()
-    nassert(isinstance(do,dict))
-    nassert(do==d)
-    d2 = d.copy()
-    d2['d'] = d
-    o2 = o.copy()
-    o2.d = o
-    d2o = o2.to_dict()
-    nassert(d2o==d2)
-
-    # test obj representation
-    o2 = o.obj()
-    nassert(isinstance(o2,obj))
-    nassert(id(o2)!=id(o))
-    nassert(object_eq(o2,o))
-    o2 = o.copy().to_obj()
-    nassert(object_eq(o2,o))
-    
-    # test list extensions
-    nlabel('list_extensions')
-    # test first
-    nassert(lo.first()==lo[0])
-
-    # test last
-    nassert(lo.last()==lo[3])
-
-    # test select_random
-    v = lo.select_random()
-    nassert(v in lo.list())
-
-
-    # test dict extensions
-    nlabel('dict_extensions')
-    # test random_key
-    k = o.random_key()
-    nassert(k in o)
-    o2 = obj()
-    nassert(o2.random_key() is None)
-
-    # test set
-    o2 = o.copy()
-    o2.set(
-        b = 'b2',
-        d = ('a','b','c'),
-        )
-    nassert(o2.b=='b2')
-    nassert(o2.d==tuple('abc'))
-    o1 = obj(a=1,b=2)
-    o2 = obj(c=3,d=4)
-    o3 = obj(e=5,f=6)
-    o4 = obj()
-    o4.set(o1,o2,o3)
-    for on in (o1,o2,o3):
-        for k,v in on.iteritems():
-            nassert(o4[k]==v)
-        #end for
-    #end for
-
-    # test set optional
-    o2 = o.copy()
-    o2.set_optional(
-        b = 'b2',
-        d = ('a','b','c'),
-        )
-    nassert(o2.b=='b')
-    nassert(o2.d==tuple('abc'))
-    o1 = obj(a=1,b=2)
-    o2 = obj(c=3,d=4)
-    o3 = obj(e=5,f=6)
-    o4 = obj()
-    o4.set_optional(o1,o2,o3)
-    for on in (o1,o2,o3):
-        for k,v in on.iteritems():
-            nassert(o4[k]==v)
-        #end for
-    #end for
-
-    # test get
-    nassert(o.get('c')==(1,1,1))
-    nassert('d' not in o)
-    nassert(o.get('d') is None)
-
-    # test get optional (identical to get)
-    nassert(o.get_optional('c')==(1,1,1))
-    nassert(o.get_optional('d') is None)
-
-    # test get required
-    nassert(o.get_required('c')==(1,1,1))
-    try:
-        val = o.get_required('d')
-        nfail()
-    except NexusError:
-        npass()
-    #end try
-
-    # test delete
-    o2 = o.copy()
-    nassert(o2.delete('c')==(1,1,1))
-    nassert('c' not in o2)
-    keys = 'a','b','c',(3,4,5)
-    vals = [1,'b',(1,1,1),(5,6,7)]
-    o2 = o.copy()
-    nassert(o2.delete(*keys)==vals)
-    nassert(len(o2)==0)
-    for k in keys:
-        nassert(k not in o2)
-    #end for
-    o2 = o.copy()
-    nassert(o2.delete(keys)==vals)
-    nassert(len(o2)==0)
-    for k in keys:
-        nassert(k not in o2)
-    #end for
-    o2 = o.copy()
-    try:
-        o2.delete('a','d')
-        nfail()
-    except KeyError:
-        npass()
-    #end try
-
-    # test delete optional
-    o2 = o.copy()
-    o2.delete_optional('c')
-    nassert('c' not in o2)
-    nassert('d' not in o2)
-    o2.delete_optional('d')
-    nassert('d' not in o2)
-
-    # test delete required
-    o2 = o.copy()
-    o2.delete_required('c')
-    nassert('c' not in o2)
-    try:
-        o2.delete_required('d')
-        nfail()
-    except NexusError:
-        npass()
-    #end try
-
-    # test add
-    o2 = obj()
-    o2.add('a',1)
-    try: # add unhashable type
-        o2.add([3,4,5],6)
-        nfail()
-    except TypeError:
-        npass()
-    #end if
-    
-    # test add optional
-    o2 = obj(a=1)
-    o2.add_optional('a',2)
-    o2.add_optional('b',3)
-    nassert(o2.a==1)
-    nassert(o2.b==3)
-
-
-    # test transfer/copy/move functions
-    nlabel('transfer_copy_move')
-    dref = dict(
-        a = 1,
-        b = 'b',
-        c = (1,1,1),
-        d = dict(
-            e = 5.4,
-            f = [3.3,4.5],
-            ),
-        )
-    dref[3,4,5] = (5,6,7)
-
-    # test transfer from
-    o = obj()
-    o.transfer_from(dref)
-    nassert(o.to_dict()==dref)
-    nassert(id(o.d)==id(dref['d']))
-
-    o = obj()
-    o.transfer_from(dref,copy=True)
-    nassert(o.to_dict()==dref)
-    nassert(id(o.d)!=id(dref['d']))
-
-    osmall = obj(b='b',c=(1,1,1))
-    osmall[3,4,5] = (5,6,7)
-    o = obj()
-    oref = obj(dref)
-    nassert(oref.to_dict()==dref)
-    o.transfer_from(oref,keys=['b','c',(3,4,5)])
-    nassert(object_eq(o,osmall))
-
-    o = obj(a=6,b=7)
-    o.transfer_from(oref,overwrite=False)
-    nassert(object_neq(o,oref))
-    o.transfer_from(oref,overwrite=True)
-    nassert(object_eq(o,oref))
-    nassert(o.to_dict()==dref)
-
-    o = obj()
-    try:
-        o.transfer_from(oref,keys=['a','x'])
-        nfail()
-    except KeyError:
-        npass()
-    #end try
-
-    # test transfer to
-    o = obj()
-    oref.transfer_to(o)
-    nassert(object_eq(o,oref))
-    nassert(id(o.d)==id(oref.d))
-
-    o = obj()
-    oref.transfer_to(o,copy=True)
-    nassert(object_eq(o,oref))
-    nassert(id(o.d)!=id(oref.d))
-
-    o = obj()
-    oref.transfer_to(o,keys=['b','c',(3,4,5)])
-    nassert(object_eq(o,osmall))
-
-    o = obj(a=6,b=7)
-    oref.transfer_to(o,overwrite=False)
-    nassert(object_neq(o,oref))
-    oref.transfer_to(o,overwrite=True)
-    nassert(object_eq(o,oref))
-
-    o = obj()
-    try:
-        oref.transfer_to(o,keys=['a','x'])
-        nfail()
-    except KeyError:
-        npass()
-    #end try
-
-    # test move from
-    d2 = dref.copy()
-    o = obj()
-    o.move_from(d2)
-    nassert(len(d2)==0)
-    nassert(object_eq(o,oref))
-
-    o2 = oref.copy()
-    o = obj()
-    o.move_from(o2)
-    nassert(len(o2)==0)
-    nassert(object_eq(o,oref))
-
-    osmall2 = oref.copy()
-    del osmall2.b
-    del osmall2.c
-    del osmall2[3,4,5]
-    o2 = oref.copy()
-    o = obj()
-    o.move_from(o2,keys=['b','c',(3,4,5)])
-    nassert(object_eq(o,osmall))
-    nassert(object_eq(o2,osmall2))
-
-    o2 = oref.copy()
-    o = obj()
-    o.move_from_optional(o2,keys=['b','c',(3,4,5),'alpha','beta'])
-    nassert(object_eq(o,osmall))
-    nassert(object_eq(o2,osmall2))
-
-    o2 = oref.copy()
-    o = obj()
-    try:
-        o.move_from(o2,keys=['a','x'])
-        nfail()
-    except KeyError:
-        npass()
-    #end try
-
-    # test move to
-    o2 = oref.copy()
-    d = dict()
-    o2.move_to(d)
-    nassert(len(o2)==0)
-    nassert(d==dref)
-
-    o2 = oref.copy()
-    o = obj()
-    o2.move_to(o)
-    nassert(len(o2)==0)
-    nassert(object_eq(o,oref))
-
-    o2 = oref.copy()
-    o = obj()
-    o2.move_to(o,keys=['b','c',(3,4,5)])
-    nassert(object_eq(o,osmall))
-    nassert(object_eq(o2,osmall2))
-
-    o2 = oref.copy()
-    o = obj()
-    o2.move_to_optional(o,keys=['b','c',(3,4,5),'alpha','beta'])
-    nassert(object_eq(o,osmall))
-    nassert(object_eq(o2,osmall2))
-
-    o2 = oref.copy()
-    o = obj()
-    try:
-        o2.move_to(o,keys=['a','x'])
-        nfail()
-    except KeyError:
-        npass()
-    #end try
-
-    # test copy from
-    o = obj()
-    o.copy_from(dref)
-    nassert(o.to_dict()==dref)
-    nassert(id(o.d)!=id(dref['d']))
-
-    o = obj()
-    o.copy_from(dref,deep=False)
-    nassert(o.to_dict()==dref)
-    nassert(id(o.d)==id(dref['d']))
-
-    osmall = obj(b='b',c=(1,1,1))
-    osmall[3,4,5] = (5,6,7)
-    o = obj()
-    oref = obj(dref)
-    nassert(oref.to_dict()==dref)
-    o.copy_from(oref,keys=['b','c',(3,4,5)])
-    nassert(object_eq(o,osmall))
-
-    o = obj()
-    try:
-        o.copy_from(oref,keys=['a','x'])
-        nfail()
-    except KeyError:
-        npass()
-    #end try
-
-    # test copy to
-    o = obj()
-    oref.copy_to(o)
-    nassert(object_eq(o,oref))
-    nassert(id(o.d)!=id(oref.d))
-
-    o = obj()
-    oref.copy_to(o,deep=False)
-    nassert(object_eq(o,oref))
-    nassert(id(o.d)==id(oref.d))
-
-    o = obj()
-    oref.copy_to(o,keys=['b','c',(3,4,5)])
-    nassert(object_eq(o,osmall))
-
-    o = obj()
-    try:
-        oref.copy_to(o,keys=['a','x'])
-        nfail()
-    except KeyError:
-        npass()
-    #end try
-
-    # test extract
-    nlabel('extract')
-    o = oref.copy()
-    o2 = o.extract()
-    nassert(len(o)==0)
-    nassert(object_eq(o2,oref))
-
-    o = oref.copy()
-    o2 = o.extract(['b','c',(3,4,5)])
-    nassert(object_eq(o2,osmall))
-    nassert(object_eq(o,osmall2))
-
-    o = oref.copy()
-    o2 = o.extract_optional(['b','c',(3,4,5),'alpha','beta'])
-    nassert(object_eq(o2,osmall))
-    nassert(object_eq(o,osmall2))
-
-
-    # test check_required
-    nlabel('check_required')
-    oref.check_required(['a','d',(3,4,5)])
-    try:
-        oref.check_required(['alpha','beta'])
-        nfail()
-    except:
-        npass()
-    #end try
-
-    # test check_types
-    nlabel('check_types')
-    types = dict(
-        a = int,
-        b = str,
-        c = tuple,
-        d = dict,
-        )
-    types[3,4,5] = tuple
-    oref.check_types(types)
-
-    types['b'] = int
-    try:
-        oref.check_types(types)
-        nfail()
-    except:
-        npass()
-    #end try
-
-    types['b'] = str
-    types['alpha'] = float
-    types['beta'] = list
-    try:
-        oref.check_types_optional(types)
-        npass()
-    except:
-        nfail()
-    #end try
-
-    # test shallow_copy
-    nlabel('shallow_copy')
-    class DerivedObj(obj):
-        None
-    #end class DerivedObj
-    do = DerivedObj(
-        a = 1,
-        b = 'b',
-        c = (1,1,1),
-        )
-    do[3,4,5] = (5,6,7)
-    do2 = do.shallow_copy()
-    nassert(isinstance(do2,DerivedObj))
-    nassert(object_eq(do2,do))
-    nassert(id(do2.c)==id(do.c))
-
-    # test inverse
-    nlabel('inverse')
-    oi = do.inverse()
-    nassert(sorted(oi.keys())==sorted(do.values()))
-    nassert(sorted(oi.values())==sorted(do.keys()))
-
-    nassert(oi[1]=='a')
-    nassert(oi.b=='b')
-    nassert(oi[1,1,1]=='c')
-    nassert(oi[5,6,7]==(3,4,5))
-
-    # test path operations
-    nlabel('path_operations')
-    # test path exists
-    o2 = obj()
-    o2.this = obj()
-    o2.this.new = obj()
-    o2.this.new.variable = 'here'
-    path1 = ['this','new','variable']
-    path2 = 'this/new/variable'
-    nassert(o2.path_exists(path1))
-    nassert(o2.path_exists(path2))
-
-    # test set path
-    o3 = obj()
-    o3.set_path(path1,'here')
-    nassert(o3.path_exists(path1))
-    nassert(o3.path_exists(path2))
-    nassert(object_eq(o2,o3))
-    o4 = obj()
-    o4.set_path(path2,'here')
-    nassert(o4.path_exists(path1))
-    nassert(o4.path_exists(path2))
-    nassert(object_eq(o3,o4))
-    
-    # test get path
-    nassert(o2.get_path(path1)=='here')
-    nassert(o2.get_path(path2)=='here')
-
-    # test serial
-    nlabel('serialization')
-    o = obj(
-        a = obj(
-            a0 = 0,
-            a1 = obj(
-                a10 = 1,
-                ),
-            ),
-        b = obj(
-            b0 = 0,
-            b1 = obj(
-                b10 = 1,
-                ),
-            b2 = obj(
-                b20 = obj(
-                    b200 = 2,
-                    ),
-                b21 = obj(
-                    b210 = obj(
-                        b2100 = 3,
-                        ),
-                    ),
-                ),
-            ),
-        c = obj(
-            c0 = 0,
-            c1 = obj(
-                c10 = 1,
-                ),
-            c2 = obj(
-                c20 = obj(
-                    c200 = 2,
-                    ),
-                c21 = obj(
-                    c210 = obj(
-                        c2100 = 3,
-                        ),
-                    ),
-                ),
-            c3 = obj(
-                c30 = obj(
-                    c300 = obj(
-                        c3000 = obj(
-                            c30000 = 4,
-                            ),
-                        ),
-                    c301 = obj(
-                        c3010 = obj(
-                            c30100 = obj(
-                                c301000 = 5,
-                                ),
-                            ),
-                        ),
-                    ),
-                c31 = obj(
-                    c310 = obj(
-                        c3100 = obj(
-                            c31000 = obj(
-                                c310000 = obj(
-                                    c3100000 = 6,
-                                    ),
-                                ),
-                            ),
-                        ),
-                    c311 = obj(
-                        c3110 = obj(
-                            c31100 = obj(
-                                c311000 = obj(
-                                    c3110000 = obj(
-                                        c3110000 = 7,
-                                        )
-                                    ),
-                                ),
-                            ),
-                        ),
-                    ),
-                ),
-            ),
-        )
-
-    oref = obj({
-        'a/a0':0,
-        'a/a1/a10':1,
-        'b/b0':0,
-        'b/b1/b10':1,
-        'b/b2/b20/b200':2,
-        'b/b2/b21/b210/b2100':3,
-        'c/c0':0,
-        'c/c1/c10':1,
-        'c/c2/c20/c200':2,
-        'c/c2/c21/c210/c2100':3,
-        'c/c3/c30/c300/c3000/c30000':4,
-        'c/c3/c30/c301/c3010/c30100/c301000':5,
-        'c/c3/c31/c310/c3100/c31000/c310000/c3100000':6,
-        'c/c3/c31/c311/c3110/c31100/c311000/c3110000/c3110000':7,
-        })
-
-    for k,v in oref.iteritems():
-        nassert(o.get_path(k)==v)
-    #end for
-    o2 = o.serial()
-    nassert(object_eq(o2,oref))
-
-#end def generic_extensions
-
-
-
 
 def nexus_imports():
-    import nexus
-
-    import qmcpack_workflows
+    nunit('imports')
+    
+    nunit_all()
 #end def nexus_imports
 
 
 
+def testing():
+    nunit('import')
 
-def settings_operation():
-    # divert logging function
-    nlog_divert()
+    nunit('value_checks')
 
-    nlabel('imports')
-    from nexus import settings,Settings,obj
-    from nexus_base import nexus_core,nexus_core_defaults
-    from nexus_base import nexus_noncore,nexus_noncore_defaults
-    from nexus_base import nexus_core_noncore,nexus_core_noncore_defaults
-    from pseudopotential import Pseudopotentials
-    from basisset import BasisSets
-    from machines import Job,Workstation
-    from project_manager import ProjectManager
-    from gamess import Gamess
-    from pwscf import Pwscf
-    from quantum_package import QuantumPackage
+    nunit('object_checks')
 
-    def aux_defaults():
-        # check that Job and ProjectManager settings are at default values
-        nassert(Job.machine is None)
-        nassert(ProjectManager.machine is None)
+    nunit('text_checks')
 
-        # check that Gamess, Pwscf, and Quantum Package settings are at default values
-        nassert(Gamess.ericfmt is None)
-        nassert(Gamess.mcppath is None)
-        nassert(Pwscf.vdw_table is None)
-        nassert(QuantumPackage.qprc is None)
-    #end def aux_defaults
-
-    def check_settings_core_noncore():
-        nckeys_check = set([
-                'command_line','debug', 'dependent_modes', 'emulate',
-                'file_locations', 'generate_only', 'graph_sims', 'indent',
-                'load_images', 'local_directory', 'mode', 'modes', 'monitor',
-                'primary_modes', 'progress_tty', 'pseudo_dir',
-                'pseudopotentials', 'remote_directory', 'results', 'runs',
-                'skip_submit', 'sleep', 'stages', 'stages_set', 'status',
-                'status_modes', 'status_only', 'trace', 'verbose'
-                ])
-        nnckeys_check = set([
-                'basis_dir', 'basissets', 'pseudo_dir', 'pseudopotentials'
-                ])
-        setkeys_check = set([
-                'command_line','basis_dir', 'basissets', 'debug',
-                'dependent_modes', 'emulate', 'file_locations', 'generate_only',
-                'graph_sims', 'indent', 'load_images', 'local_directory', 'mode',
-                'modes', 'monitor', 'primary_modes', 'progress_tty',
-                'pseudo_dir', 'pseudopotentials', 'remote_directory', 'results',
-                'runs', 'skip_submit', 'sleep', 'stages', 'stages_set', 'status',
-                'status_modes', 'status_only', 'trace', 'verbose'
-                ])
-        setkeys_allowed = setkeys_check | Settings.allowed_vars
-
-        nckeys  = set(nexus_core.keys())
-        nnckeys = set(nexus_noncore.keys())
-        setkeys = set(settings.keys())
-        
-        nassert(nckeys==nckeys_check)
-        nassert(nnckeys==nnckeys_check)
-        nassert(setkeys>=setkeys_check)
-        nassert(setkeys<=setkeys_allowed)
-
-        pairs = [(settings,nexus_core),
-                 (settings,nexus_noncore),
-                 (nexus_core,nexus_noncore)
-                 ]
-        for o1,o2 in pairs:
-            shared_keys = set(o1.keys()) & set(o2.keys())
-            for k in shared_keys:
-                v1 = o1[k]
-                v2 = o2[k]
-                if isinstance(v1,obj):
-                    nassert(object_eq(v1,v2))
-                else:
-                    nassert(value_eq(v1,v2))
-                #end if
-            #end for
-        #end for
-    #end check_settings_core_noncore
-
-    def check_empty_settings():
-        settings(
-            command_line = False,
-            )
-        settings.command_line   = True
-        nexus_core.command_line = True
-        check_settings_core_noncore()
-        # nexus core sets basic run stages and Pseudopotentials object
-        nassert(nexus_core.stages_set==set(nexus_core_defaults.primary_modes))
-        nassert(isinstance(nexus_core.pseudopotentials,Pseudopotentials))
-        nassert(len(nexus_core.pseudopotentials)==0)
-        nexus_core.stages_set       = set()
-        nexus_core.pseudopotentials = None
-        nassert(object_eq(nexus_core,nexus_core_defaults))
-        # nexus noncore sets Pseudopotentials and BasisSets objects
-        nassert(isinstance(nexus_noncore.pseudopotentials,Pseudopotentials))
-        nassert(len(nexus_noncore.pseudopotentials)==0)
-        nassert(isinstance(nexus_noncore.basissets,BasisSets))
-        nassert(len(nexus_noncore.basissets)==0)
-        nnc_defaults = obj(nexus_noncore_defaults,nexus_core_noncore_defaults)
-        nexus_noncore.pseudopotentials = None
-        nexus_noncore.basissets        = None
-        nassert(object_eq(nexus_noncore,nnc_defaults))
-        # other settings objects should be at default also
-        aux_defaults()
-    #end def_check_empty_settings
-    
-    
-    # check that core settings are at default values
-    nlabel('pre_settings')
-    nassert(object_eq(nexus_core,nexus_core_defaults))
-    nassert(object_eq(nexus_noncore,nexus_noncore_defaults))
-    nassert(object_eq(nexus_core_noncore,nexus_core_noncore_defaults))
-    aux_defaults()
-
-    # core settings remain almost at default with empty settings
-    nlabel('empty_settings')
-    check_empty_settings()
-
-    # check that a few basic user settings are applied appropriately
-    nlabel('basic_settings')
-    nenter()
-    dft_pseudos = ['Ni.opt.upf','O.opt.upf']
-    qmc_pseudos = ['Ni.opt.xml','O.opt.xml']
-    pseudos = dft_pseudos+qmc_pseudos
-    ncreate_dir('pseudopotentials',pseudos)
-    settings(
-        pseudo_dir    = './pseudopotentials',
-        status_only   = 0,
-        generate_only = 1,
-        machine       = 'ws16',
-        command_line  = False,
-        )
-    check_settings_core_noncore()
-    nassert(nexus_core.status_only==0)
-    nassert(nexus_core.generate_only==1)
-    nassert(nexus_core.pseudo_dir=='./pseudopotentials')
-    nassert(len(nexus_core.pseudopotentials)==4)
-    nassert(set(nexus_core.pseudopotentials.keys())==set(pseudos))
-    nassert(settings.machine=='ws16')
-    nassert(Job.machine=='ws16')
-    nassert(isinstance(ProjectManager.machine,Workstation))
-    nassert(ProjectManager.machine.name=='ws16')
-
-    # check that a new empty settings works following basic
-    nlabel('repeat_empty_settings')
-    check_empty_settings()
-
-    # restore logging function
-    nlog_restore()
-#end def settings_operation
+    nunit_all()
+#end def testing
 
 
 
-def machines():
-    # divert logging function
-    nlog_divert()
+def execute():
+    nunit('import')
 
-    nlabel('imports')
-    from random import randint
-    from generic import obj
-    from machines import Machine,Workstation,InteractiveCluster,Supercomputer
-    from machines import Job
-    from machines import get_machine,get_machine_name
+    nunit('execute')
+
+    nunit_all()
+#end def execute
 
 
-    nlabel('unimplemented_base_interface')
-    arg0 = None
-    arg1 = None
-    try:
-        Machine.query_queue(arg0)
-        nfail()
-    except:
-        npass()
-    #end try
-    try:
-        Machine.submit_jobs(arg0)
-        nfail()
-    except:
-        npass()
-    #end try
-    try:
-        Machine.process_job(arg0,arg1)
-        nfail()
-    except:
-        npass()
-    #end try
-    try:
-        Machine.process_job_options(arg0,arg1)
-        nfail()
-    except:
-        npass()
-    #end try
-    try:
-        Machine.write_job(arg0,arg1,file=False)
-        nfail()
-    except:
-        npass()
-    #end try
-    try:
-        Machine.submit_job(arg0,arg1)
-        nfail()
-    except:
-        npass()
-    #end try
+
+def memory():
+    nunit('import')
+
+    nunit('memory')
+
+    nunit('resident')
+
+    nunit('stacksize')
+
+    nunit_all()
+#end def memory
 
 
-    nlabel('file_setup')
-    nassert(len(Machine.machines)>0)
-    for m in Machine.machines:
-        nassert(isinstance(m,Machine))
-        exists = m.name in Machine.machines
-        nassert(exists)
-        nassert(Machine.exists(m.name))
-        nassert(Machine.is_unique(m))
-        m.validate()
-    #end for
+
+def plotting():
+    nunit('import')
+
+    nunit_all()
+#end def plotting
 
 
-    nlabel('add')
-    mtest = Machine.machines.first()
-    nassert(isinstance(mtest,Machine))
-    try:
-        Machine.add(mtest)
-        nfail()
-    except:
-        npass()
-    #end try
-    try:
-        Machine.add('my_machine')
-        nfail()
-    except:
-        npass()
-    #end try
+
+def superstring():
+    nunit('imports')
+
+    nunit('string2val')
+
+    nunit('split_delims')
+
+    nunit('valid_variable_name')
+
+    nunit('find_matching_pair')
+
+    nunit('remove_pair_sections')
+
+    nunit('remove_empty_lines')
+
+    nunit_all()
+#end def superstring
 
 
-    nlabel('get')
-    m = Machine.get(mtest.name)
-    nassert(isinstance(m,Machine))
-    nassert(id(m)==id(mtest))
-    try:
-        Machine.get(m)
-        nfail()
-    except:
-        npass()
-    #end try
-    try:
-        Machine.get('some_nonexistant_machine')
-        nfail()
-    except:
-        npass()
-    #end try
+
+def generic_operation():
+    nunit('logging')
+
+    nunit('intrinsics')
+
+    nunit('extensions')
+
+    nunit_all()
+#end def generic_operation
 
 
-    nlabel('intantiation')
-    # test guards against empty/invalid instantiation
-    try:
-        Machine()
-        nfail()
-    except:
-        npass()
-    #end try
-    try:
-        Machine(123)
-        nfail()
-    except:
-        npass()
-    #end try
-    # test creation of a new machine
-    test_name = 'test_machine'
-    nassert(not Machine.exists(test_name))
-    m = Machine(name=test_name)
-    nassert(isinstance(m,Machine))
-    nassert(Machine.exists(m.name))
-    nassert(Machine.is_unique(m))
-    m.validate()
 
-    # test guards against multiple instantiation
-    try:
-        Machine(name=test_name)
-        nfail()
-    except:
-        npass()
-    #end try
+def developer():
+    nunit('import')
 
-    # remove test machine
-    del Machine.machines.test_machine
-    nassert(not Machine.exists(test_name))
+    nunit('unavailable')
+
+    nunit_all()
+#end def developer
 
 
-    # sort known machines
-    workstations   = obj()
-    supercomputers = obj()
-    for machine in Machine.machines:
-        if isinstance(machine,Workstation):
-            workstations.append(machine)
-        elif isinstance(machine,Supercomputer):
-            supercomputers[machine.name] = machine
-        else:
-            Machine.class_error('unknown machine type encountered: {0}'.format(machine.__class__.__name__),'check_process_job_idempotency')
-        #end if
-    #end for
+
+def unit_converter():
+    nunit('import')
+
+    nunit('convert')
+
+    nunit('convert_scalar_to_all')
+
+    nunit_all()
+#end def unit_converter
 
 
-    nlabel('process_job_idempotency')
-    def check_process_job_idempotency(nw=10,nwj=10,nsj=10,nij=10):
-        allow_warn = Machine.allow_warnings
-        Machine.allow_warnings = False
 
-        not_idempotent = obj()
+def periodic_table():
+    nunit('import')
 
-        # check workstations
-        nworkstations = nw
-        if nworkstations is None:
-            nworkstations=len(workstations)
-        #end if
-        nworkstations = min(nworkstations,len(workstations))
-        njobs = nwj
-        for nm in range(nworkstations):
-            if nworkstations<len(workstations):
-                machine = workstations.select_random() # select machine at random
-            else:
-                machine = workstations[nm]
-            #end if
-            cores_min     = 1
-            cores_max     = machine.cores
-            processes_min = 1
-            processes_max = machine.cores
-            threads_min   = 1
-            threads_max   = machine.cores
-            job_inputs = []
-            job_inputs_base = []
-            for nj in range(njobs): # vary cores
-                cores   = randint(cores_min,cores_max)
-                threads = randint(threads_min,threads_max)
-                job_inputs_base.append(obj(cores=cores,threads=threads))
-            #end for
-            for nj in range(njobs): # vary processes
-                processes   = randint(processes_min,processes_max)
-                threads = randint(threads_min,threads_max)
-                job_inputs_base.append(obj(processes=processes,threads=threads))
-            #end for
-            job_inputs.extend(job_inputs_base)
-            for job_input in job_inputs_base: # run in serial
-                ji = job_input.copy()
-                ji.serial = True
-                job_inputs.append(ji)
-            #end for
-            # perform idempotency test
-            machine_idempotent = True
-            for job_input in job_inputs:
-                job = Job(machine=machine.name,**job_input)
-                job2 = obj.copy(job)
-                machine.process_job(job2)
-                machine_idempotent &= job==job2
-            #end for
-            if not machine_idempotent:
-                not_idempotent[machine.name] = machine
-            #end if
-        #end for
+    nunit('periodic_table')
 
-        # check supercomputers
-        njobs = nsj
-        small_node_ceiling = 20
-        nodes_min   = 1
-        cores_min   = 1
-        threads_min = 1
-        shared_job_inputs = obj(name='some_job',account='some_account')
-        for machine in supercomputers:
-            job_inputs = []
-            job_inputs_base = []
-            threads_max = 2*machine.cores_per_node
-            # sample small number of nodes more heavily
-            nodes_max   = min(small_node_ceiling,machine.nodes)
-            cores_max   = min(small_node_ceiling*machine.cores_per_node,machine.cores)
-            for nj in range(njobs): # nodes alone
-                nodes   = randint(nodes_min,nodes_max)
-                threads = randint(threads_min,threads_max)
-                job_input = obj(nodes=nodes,threads=threads,**shared_job_inputs)
-                job_inputs_base.append(job_input)
-            #end for
-            for nj in range(njobs): # cores alone
-                cores   = randint(cores_min,cores_max)
-                threads = randint(threads_min,threads_max)
-                job_input = obj(cores=cores,threads=threads,**shared_job_inputs)
-                job_inputs_base.append(job_input)
-            #end for
-            for nj in range(njobs): # nodes and cores
-                nodes   = randint(nodes_min,nodes_max)
-                cores   = randint(cores_min,cores_max)
-                threads = randint(threads_min,threads_max)
-                job_input = obj(nodes=nodes,cores=cores,threads=threads,**shared_job_inputs)
-                job_inputs_base.append(job_input)
-            #end for
-            # sample full node set
-            nodes_max = machine.nodes
-            cores_max = machine.cores
-            for nj in range(njobs): # nodes alone
-                nodes   = randint(nodes_min,nodes_max)
-                threads = randint(threads_min,threads_max)
-                job_input = obj(nodes=nodes,threads=threads,**shared_job_inputs)
-                job_inputs_base.append(job_input)
-            #end for
-            for nj in range(njobs): # cores alone
-                cores   = randint(cores_min,cores_max)
-                threads = randint(threads_min,threads_max)
-                job_input = obj(cores=cores,threads=threads,**shared_job_inputs)
-                job_inputs_base.append(job_input)
-            #end for
-            for nj in range(njobs): # nodes and cores
-                nodes   = randint(nodes_min,nodes_max)
-                cores   = randint(cores_min,cores_max)
-                threads = randint(threads_min,threads_max)
-                job_input = obj(nodes=nodes,cores=cores,threads=threads,**shared_job_inputs)
-                job_inputs_base.append(job_input)
-            #end for
-            job_inputs.extend(job_inputs_base)
-            # now add serial jobs
-            for job_input in job_inputs_base:
-                ji = job_input.copy()
-                ji.serial = True
-                job_inputs.append(ji)
-            #end for
-            # now add local, serial jobs
-            for job_input in job_inputs_base:
-                ji = job_input.copy()
-                ji.serial = True
-                ji.local  = True
-                job_inputs.append(ji)
-            #end for
-            # perform idempotency test
-            machine_idempotent = True
-            for job_input in job_inputs:
-                job = Job(machine=machine.name,**job_input)
-                job2 = obj.copy(job)
-                machine.process_job(job2)
-                #job_idempotent = job==job2
-                job_idempotent = object_eq(job,job2)
-                if not job_idempotent:
-                    d,d1,d2 = object_diff(job,job2,full=True)
-                    change = obj(job_before=obj(d1),job_after=obj(d2))
-                    msg = machine.name+'\n'+str(change)
-                    nfail(msg)
-                #end if
-                machine_idempotent &= job_idempotent
-            #end for
-            if not machine_idempotent:
-                not_idempotent[machine.name] = machine
-            #end if
-        #end for
+    nunit('is_element')
 
-        if len(not_idempotent)>0:
-            mlist = ''
-            for name in sorted(not_idempotent.keys()):
-                mlist+= '\n  '+name
-            #end for
-            Machine.class_error('\n\nsome machines failed process_job idempotency test:{0}'.format(mlist))
-        #end if
-        Machine.class_log('done checking idempotency')
-        Machine.allow_warnings = allow_warn
-    #end def check_process_job_idempotency
-
-    check_process_job_idempotency()
+    nunit_all()
+#end def periodic_table
 
 
-    # test Job.run_command
-    nlabel('job_run_command')
-    def parse_job_command(command):
-        tokens = command.replace(':',' ').split()
-        launcher = tokens[0]
-        exe = tokens[-1]
-        args = []
-        options = obj()
-        last_option = None
-        for t in tokens[1:-1]:
-            if t.startswith('-'):
-                options[t] = None
-                last_option = t
-            elif last_option is not None:
-                options[last_option] = t
-                last_option = None
-            else:
-                args.append(t)
-            #end if
-        #end for
-        jc = obj(
-            launcher   = launcher,
-            executable = exe,
-            args       = args,
-            options    = options,
-            )
-        return jc
-    #end def parse_job_command
 
-    def job_commands_equal(c1,c2):
-        jc1 = parse_job_command(c1)
-        jc2 = parse_job_command(c2)
-        return object_eq(jc1,jc2)
-    #end def job_command_equal
+def numerics():
+    nunit('import')
 
-    job_run_ref = obj({
-        ('amos'           , 'n1'            ) : 'srun test.x',
-        ('amos'           , 'n1_p1'         ) : 'srun test.x',
-        ('amos'           , 'n2'            ) : 'srun test.x',
-        ('amos'           , 'n2_t2'         ) : 'srun test.x',
-        ('amos'           , 'n2_t2_e'       ) : 'srun test.x',
-        ('amos'           , 'n2_t2_p2'      ) : 'srun test.x',
-        ('bluewaters_xe'  , 'n1'            ) : 'aprun -n 32 test.x',
-        ('bluewaters_xe'  , 'n1_p1'         ) : 'aprun -n 1 test.x',
-        ('bluewaters_xe'  , 'n2'            ) : 'aprun -n 64 test.x',
-        ('bluewaters_xe'  , 'n2_t2'         ) : 'aprun -d 2 -n 32 test.x',
-        ('bluewaters_xe'  , 'n2_t2_e'       ) : 'aprun -d 2 -n 32 test.x',
-        ('bluewaters_xe'  , 'n2_t2_p2'      ) : 'aprun -d 2 -n 4 test.x',
-        ('bluewaters_xk'  , 'n1'            ) : 'aprun -n 16 test.x',
-        ('bluewaters_xk'  , 'n1_p1'         ) : 'aprun -n 1 test.x',
-        ('bluewaters_xk'  , 'n2'            ) : 'aprun -n 32 test.x',
-        ('bluewaters_xk'  , 'n2_t2'         ) : 'aprun -d 2 -n 16 test.x',
-        ('bluewaters_xk'  , 'n2_t2_e'       ) : 'aprun -d 2 -n 16 test.x',
-        ('bluewaters_xk'  , 'n2_t2_p2'      ) : 'aprun -d 2 -n 4 test.x',
-        ('cades'          , 'n1'            ) : 'mpirun -np 36 test.x',
-        ('cades'          , 'n1_p1'         ) : 'mpirun -np 1 test.x',
-        ('cades'          , 'n2'            ) : 'mpirun -np 72 test.x',
-        ('cades'          , 'n2_t2'         ) : 'mpirun -np 36 --npersocket 9 test.x',
-        ('cades'          , 'n2_t2_e'       ) : 'mpirun -np 36 --npersocket 9 test.x',
-        ('cades'          , 'n2_t2_p2'      ) : 'mpirun -np 4 --npersocket 1 test.x',
-        ('cetus'          , 'n1'            ) : 'runjob --np 16 -p 16 $LOCARGS --verbose=INFO --envs OMP_NUM_THREADS=1 : test.x',
-        ('cetus'          , 'n1_p1'         ) : 'runjob --np 1 -p 1 $LOCARGS --verbose=INFO --envs OMP_NUM_THREADS=1 : test.x',
-        ('cetus'          , 'n2'            ) : 'runjob --np 32 -p 16 $LOCARGS --verbose=INFO --envs OMP_NUM_THREADS=1 : test.x',
-        ('cetus'          , 'n2_t2'         ) : 'runjob --np 16 -p 8 $LOCARGS --verbose=INFO --envs OMP_NUM_THREADS=2 : test.x',
-        ('cetus'          , 'n2_t2_e'       ) : 'runjob --np 16 -p 8 $LOCARGS --verbose=INFO --envs OMP_NUM_THREADS=2 ENV_VAR=1 : test.x',
-        ('cetus'          , 'n2_t2_p2'      ) : 'runjob --np 4 -p 2 $LOCARGS --verbose=INFO --envs OMP_NUM_THREADS=2 : test.x',
-        ('chama'          , 'n1'            ) : 'srun test.x',
-        ('chama'          , 'n1_p1'         ) : 'srun test.x',
-        ('chama'          , 'n2'            ) : 'srun test.x',
-        ('chama'          , 'n2_t2'         ) : 'srun test.x',
-        ('chama'          , 'n2_t2_e'       ) : 'srun test.x',
-        ('chama'          , 'n2_t2_p2'      ) : 'srun test.x',
-        ('cooley'         , 'n1'            ) : 'mpirun -np 12 test.x',
-        ('cooley'         , 'n1_p1'         ) : 'mpirun -np 1 test.x',
-        ('cooley'         , 'n2'            ) : 'mpirun -np 24 test.x',
-        ('cooley'         , 'n2_t2'         ) : 'mpirun -np 12 test.x',
-        ('cooley'         , 'n2_t2_e'       ) : 'mpirun -np 12 test.x',
-        ('cooley'         , 'n2_t2_p2'      ) : 'mpirun -np 4 test.x',
-        ('cori'           , 'n1'            ) : 'srun test.x',
-        ('cori'           , 'n1_p1'         ) : 'srun test.x',
-        ('cori'           , 'n2'            ) : 'srun test.x',
-        ('cori'           , 'n2_t2'         ) : 'srun test.x',
-        ('cori'           , 'n2_t2_e'       ) : 'srun test.x',
-        ('cori'           , 'n2_t2_p2'      ) : 'srun test.x',
-        ('edison'         , 'n1'            ) : 'srun test.x',
-        ('edison'         , 'n1_p1'         ) : 'srun test.x',
-        ('edison'         , 'n2'            ) : 'srun test.x',
-        ('edison'         , 'n2_t2'         ) : 'srun test.x',
-        ('edison'         , 'n2_t2_e'       ) : 'srun test.x',
-        ('edison'         , 'n2_t2_p2'      ) : 'srun test.x',
-        ('eos'            , 'n1'            ) : 'aprun -n 16 test.x',
-        ('eos'            , 'n1_p1'         ) : 'aprun -n 1 test.x',
-        ('eos'            , 'n2'            ) : 'aprun -n 32 test.x',
-        ('eos'            , 'n2_t2'         ) : 'aprun -ss -cc numa_node -d 2 -n 16 test.x',
-        ('eos'            , 'n2_t2_e'       ) : 'aprun -ss -cc numa_node -d 2 -n 16 test.x',
-        ('eos'            , 'n2_t2_p2'      ) : 'aprun -ss -cc numa_node -d 2 -n 4 test.x',
-        ('jaguar'         , 'n1'            ) : 'aprun -n 16 test.x',
-        ('jaguar'         , 'n1_p1'         ) : 'aprun -n 1 test.x',
-        ('jaguar'         , 'n2'            ) : 'aprun -n 32 test.x',
-        ('jaguar'         , 'n2_t2'         ) : 'aprun -d 2 -n 16 test.x',
-        ('jaguar'         , 'n2_t2_e'       ) : 'aprun -d 2 -n 16 test.x',
-        ('jaguar'         , 'n2_t2_p2'      ) : 'aprun -d 2 -n 4 test.x',
-        ('komodo'         , 'n1'            ) : 'mpirun -np 12 test.x',
-        ('komodo'         , 'n1_p1'         ) : 'mpirun -np 1 test.x',
-        ('komodo'         , 'n2'            ) : 'mpirun -np 24 test.x',
-        ('komodo'         , 'n2_t2'         ) : 'mpirun -np 12 test.x',
-        ('komodo'         , 'n2_t2_e'       ) : 'mpirun -np 12 test.x',
-        ('komodo'         , 'n2_t2_p2'      ) : 'mpirun -np 4 test.x',
-        ('kraken'         , 'n1'            ) : 'aprun -n 12 test.x',
-        ('kraken'         , 'n1_p1'         ) : 'aprun -n 1 test.x',
-        ('kraken'         , 'n2'            ) : 'aprun -n 24 test.x',
-        ('kraken'         , 'n2_t2'         ) : 'aprun -d 2 -n 12 test.x',
-        ('kraken'         , 'n2_t2_e'       ) : 'aprun -d 2 -n 12 test.x',
-        ('kraken'         , 'n2_t2_p2'      ) : 'aprun -d 2 -n 4 test.x',
-        ('lonestar'       , 'n1'            ) : 'ibrun -n 12 -o 0 test.x',
-        ('lonestar'       , 'n1_p1'         ) : 'ibrun -n 1 -o 0 test.x',
-        ('lonestar'       , 'n2'            ) : 'ibrun -n 24 -o 0 test.x',
-        ('lonestar'       , 'n2_t2'         ) : 'ibrun -n 12 -o 0 test.x',
-        ('lonestar'       , 'n2_t2_e'       ) : 'ibrun -n 12 -o 0 test.x',
-        ('lonestar'       , 'n2_t2_p2'      ) : 'ibrun -n 4 -o 0 test.x',
-        ('matisse'        , 'n1'            ) : 'mpirun -np 16 test.x',
-        ('matisse'        , 'n1_p1'         ) : 'mpirun -np 1 test.x',
-        ('matisse'        , 'n2'            ) : 'mpirun -np 32 test.x',
-        ('matisse'        , 'n2_t2'         ) : 'mpirun -np 16 test.x',
-        ('matisse'        , 'n2_t2_e'       ) : 'mpirun -np 16 test.x',
-        ('matisse'        , 'n2_t2_p2'      ) : 'mpirun -np 4 test.x',
-        ('mira'           , 'n1'            ) : 'runjob --np 16 -p 16 $LOCARGS --verbose=INFO --envs OMP_NUM_THREADS=1 : test.x',
-        ('mira'           , 'n1_p1'         ) : 'runjob --np 1 -p 1 $LOCARGS --verbose=INFO --envs OMP_NUM_THREADS=1 : test.x',
-        ('mira'           , 'n2'            ) : 'runjob --np 32 -p 16 $LOCARGS --verbose=INFO --envs OMP_NUM_THREADS=1 : test.x',
-        ('mira'           , 'n2_t2'         ) : 'runjob --np 16 -p 8 $LOCARGS --verbose=INFO --envs OMP_NUM_THREADS=2 : test.x',
-        ('mira'           , 'n2_t2_e'       ) : 'runjob --np 16 -p 8 $LOCARGS --verbose=INFO --envs OMP_NUM_THREADS=2 ENV_VAR=1 : test.x',
-        ('mira'           , 'n2_t2_p2'      ) : 'runjob --np 4 -p 2 $LOCARGS --verbose=INFO --envs OMP_NUM_THREADS=2 : test.x',
-        ('oic5'           , 'n1'            ) : 'mpirun -np 32 test.x',
-        ('oic5'           , 'n1_p1'         ) : 'mpirun -np 1 test.x',
-        ('oic5'           , 'n2'            ) : 'mpirun -np 64 test.x',
-        ('oic5'           , 'n2_t2'         ) : 'mpirun -np 32 test.x',
-        ('oic5'           , 'n2_t2_e'       ) : 'mpirun -np 32 test.x',
-        ('oic5'           , 'n2_t2_p2'      ) : 'mpirun -np 4 test.x',
-        ('redsky'         , 'n1'            ) : 'srun test.x',
-        ('redsky'         , 'n1_p1'         ) : 'srun test.x',
-        ('redsky'         , 'n2'            ) : 'srun test.x',
-        ('redsky'         , 'n2_t2'         ) : 'srun test.x',
-        ('redsky'         , 'n2_t2_e'       ) : 'srun test.x',
-        ('redsky'         , 'n2_t2_p2'      ) : 'srun test.x',
-        ('serrano'        , 'n1'            ) : 'srun test.x',
-        ('serrano'        , 'n1_p1'         ) : 'srun test.x',
-        ('serrano'        , 'n2'            ) : 'srun test.x',
-        ('serrano'        , 'n2_t2'         ) : 'srun test.x',
-        ('serrano'        , 'n2_t2_e'       ) : 'srun test.x',
-        ('serrano'        , 'n2_t2_p2'      ) : 'srun test.x',
-        ('skybridge'      , 'n1'            ) : 'srun test.x',
-        ('skybridge'      , 'n1_p1'         ) : 'srun test.x',
-        ('skybridge'      , 'n2'            ) : 'srun test.x',
-        ('skybridge'      , 'n2_t2'         ) : 'srun test.x',
-        ('skybridge'      , 'n2_t2_e'       ) : 'srun test.x',
-        ('skybridge'      , 'n2_t2_p2'      ) : 'srun test.x',
-        ('solo'           , 'n1'            ) : 'srun test.x',
-        ('solo'           , 'n1_p1'         ) : 'srun test.x',
-        ('solo'           , 'n2'            ) : 'srun test.x',
-        ('solo'           , 'n2_t2'         ) : 'srun test.x',
-        ('solo'           , 'n2_t2_e'       ) : 'srun test.x',
-        ('solo'           , 'n2_t2_p2'      ) : 'srun test.x',
-        ('stampede2'      , 'n1'            ) : 'ibrun -n 68 -o 0 test.x',
-        ('stampede2'      , 'n1_p1'         ) : 'ibrun -n 1 -o 0 test.x',
-        ('stampede2'      , 'n2'            ) : 'ibrun -n 136 -o 0 test.x',
-        ('stampede2'      , 'n2_t2'         ) : 'ibrun -n 68 -o 0 test.x',
-        ('stampede2'      , 'n2_t2_e'       ) : 'ibrun -n 68 -o 0 test.x',
-        ('stampede2'      , 'n2_t2_p2'      ) : 'ibrun -n 4 -o 0 test.x',
-        ('summit'         , 'n1'            ) : 'jsrun -a 21 -r 2 -b rs -c 21 -d packed -n 2 -g 0 test.x',
-        ('summit'         , 'n1_g6'         ) : 'jsrun -a 7 -r 6 -b rs -c 7 -d packed -n 6 -g 1 test.x',
-        ('summit'         , 'n2'            ) : 'jsrun -a 21 -r 2 -b rs -c 21 -d packed -n 4 -g 0 test.x',
-        ('summit'         , 'n2_g6'         ) : 'jsrun -a 7 -r 6 -b rs -c 7 -d packed -n 12 -g 1 test.x',
-        ('summit'         , 'n2_t2'         ) : 'jsrun -a 10 -r 2 -b rs -c 20 -d packed -n 4 -g 0 test.x',
-        ('summit'         , 'n2_t2_e'       ) : 'jsrun -a 10 -r 2 -b rs -c 20 -d packed -n 4 -g 0 test.x',
-        ('summit'         , 'n2_t2_e_g6'    ) : 'jsrun -a 3 -r 6 -b rs -c 6 -d packed -n 12 -g 1 test.x',
-        ('summit'         , 'n2_t2_g6'      ) : 'jsrun -a 3 -r 6 -b rs -c 6 -d packed -n 12 -g 1 test.x',
-        ('supermuc'       , 'n1'            ) : 'mpiexec -n 28 test.x',
-        ('supermuc'       , 'n1_p1'         ) : 'mpiexec -n 1 test.x',
-        ('supermuc'       , 'n2'            ) : 'mpiexec -n 56 test.x',
-        ('supermuc'       , 'n2_t2'         ) : 'mpiexec -n 28 test.x',
-        ('supermuc'       , 'n2_t2_e'       ) : 'mpiexec -n 28 test.x',
-        ('supermuc'       , 'n2_t2_p2'      ) : 'mpiexec -n 4 test.x',
-        ('supermucng'     , 'n1'            ) : 'mpiexec -n 48 test.x',
-        ('supermucng'     , 'n1_p1'         ) : 'mpiexec -n 1 test.x',
-        ('supermucng'     , 'n2'            ) : 'mpiexec -n 96 test.x',
-        ('supermucng'     , 'n2_t2'         ) : 'mpiexec -n 48 test.x',
-        ('supermucng'     , 'n2_t2_e'       ) : 'mpiexec -n 48 test.x',
-        ('supermucng'     , 'n2_t2_p2'      ) : 'mpiexec -n 4 test.x',
-        ('taub'           , 'n1'            ) : 'mpirun -np 12 test.x',
-        ('taub'           , 'n1_p1'         ) : 'mpirun -np 1 test.x',
-        ('taub'           , 'n2'            ) : 'mpirun -np 24 test.x',
-        ('taub'           , 'n2_t2'         ) : 'mpirun -np 12 test.x',
-        ('taub'           , 'n2_t2_e'       ) : 'mpirun -np 12 test.x',
-        ('taub'           , 'n2_t2_p2'      ) : 'mpirun -np 4 test.x',
-        ('theta'          , 'n1'            ) : 'aprun -e OMP_NUM_THREADS=1 -d 1 -cc depth -j 1 -n 64 -N 64 test.x',
-        ('theta'          , 'n1_p1'         ) : 'aprun -e OMP_NUM_THREADS=1 -d 1 -cc depth -j 1 -n 1 -N 1 test.x',
-        ('theta'          , 'n2'            ) : 'aprun -e OMP_NUM_THREADS=1 -d 1 -cc depth -j 1 -n 128 -N 64 test.x',
-        ('theta'          , 'n2_t2'         ) : 'aprun -e OMP_NUM_THREADS=2 -d 2 -cc depth -j 1 -n 64 -N 32 test.x',
-        ('theta'          , 'n2_t2_e'       ) : 'aprun -e OMP_NUM_THREADS=2 -d 2 -cc depth -j 1 -n 64 -N 32 test.x',
-        ('theta'          , 'n2_t2_p2'      ) : 'aprun -e OMP_NUM_THREADS=2 -d 2 -cc depth -j 1 -n 4 -N 2 test.x',
-        ('titan'          , 'n1'            ) : 'aprun -n 16 test.x',
-        ('titan'          , 'n1_p1'         ) : 'aprun -n 1 test.x',
-        ('titan'          , 'n2'            ) : 'aprun -n 32 test.x',
-        ('titan'          , 'n2_t2'         ) : 'aprun -d 2 -n 16 test.x',
-        ('titan'          , 'n2_t2_e'       ) : 'aprun -d 2 -n 16 test.x',
-        ('titan'          , 'n2_t2_p2'      ) : 'aprun -d 2 -n 4 test.x',
-        ('tomcat3'        , 'n1'            ) : 'mpirun -np 64 test.x',
-        ('tomcat3'        , 'n1_p1'         ) : 'mpirun -np 1 test.x',
-        ('tomcat3'        , 'n2'            ) : 'mpirun -np 128 test.x',
-        ('tomcat3'        , 'n2_t2'         ) : 'mpirun -np 64 test.x',
-        ('tomcat3'        , 'n2_t2_e'       ) : 'mpirun -np 64 test.x',
-        ('tomcat3'        , 'n2_t2_p2'      ) : 'mpirun -np 4 test.x',
-        ('uno'            , 'n1'            ) : 'srun test.x',
-        ('uno'            , 'n1_p1'         ) : 'srun test.x',
-        ('uno'            , 'n2'            ) : 'srun test.x',
-        ('uno'            , 'n2_t2'         ) : 'srun test.x',
-        ('uno'            , 'n2_t2_e'       ) : 'srun test.x',
-        ('uno'            , 'n2_t2_p2'      ) : 'srun test.x',
-        ('vesta'          , 'n1'            ) : 'runjob --np 16 -p 16 $LOCARGS --verbose=INFO --envs OMP_NUM_THREADS=1 : test.x',
-        ('vesta'          , 'n1_p1'         ) : 'runjob --np 1 -p 1 $LOCARGS --verbose=INFO --envs OMP_NUM_THREADS=1 : test.x',
-        ('vesta'          , 'n2'            ) : 'runjob --np 32 -p 16 $LOCARGS --verbose=INFO --envs OMP_NUM_THREADS=1 : test.x',
-        ('vesta'          , 'n2_t2'         ) : 'runjob --np 16 -p 8 $LOCARGS --verbose=INFO --envs OMP_NUM_THREADS=2 : test.x',
-        ('vesta'          , 'n2_t2_e'       ) : 'runjob --np 16 -p 8 $LOCARGS --verbose=INFO --envs OMP_NUM_THREADS=2 ENV_VAR=1 : test.x',
-        ('vesta'          , 'n2_t2_p2'      ) : 'runjob --np 4 -p 2 $LOCARGS --verbose=INFO --envs OMP_NUM_THREADS=2 : test.x',
-        })
+    nunit('ndgrid')
 
-    job_inputs_orig = obj(
-        n1        = obj(nodes=1),
-        n1_p1     = obj(nodes=1,processes_per_node=1),
-        n2        = obj(nodes=2),
-        n2_t2     = obj(nodes=2,threads=2),
-        n2_t2_p2  = obj(nodes=2,threads=2,processes_per_node=2),
-        n2_t2_e   = obj(nodes=2,threads=2,env=obj(ENV_VAR=1)),
-        )
-    for name in sorted(supercomputers.keys()):
-        m = supercomputers[name]
-        if m.requires_account:
-            acc = 'ABC123'
-        else:
-            acc = None
-        #end if
-        job_inputs = job_inputs_orig
-        if name=='summit': # exceptional treatment for summit nodes
-            job_inputs = job_inputs_orig.copy()
-            jtypes = list(job_inputs.keys())
-            for jtype in jtypes:
-                if 'p' in jtype:
-                    del job_inputs[jtype]
-                else:
-                    jcpu = job_inputs[jtype]
-                    jcpu.gpus = 0
-                    jgpu = jcpu.copy()
-                    jgpu.gpus = 6
-                    job_inputs[jtype+'_g6'] = jgpu
-                #end if
-            #end for
-        #end if
-        for jtype in sorted(job_inputs.keys()):
-            job = Job(app_command = 'test.x',
-                      machine     = name,
-                      account     = acc,
-                      **job_inputs[jtype]
-                      )
-            command = job.run_command()
-            if global_data['job_ref_table']:
-                sname = "'{0}'".format(name)
-                stype = "'{0}'".format(jtype)
-                nlog("        ({0:<16} , {1:<16}) : '{2}',".format(sname,stype,command))
-                continue
-            #end if
-            ref_command = job_run_ref[name,jtype]
-            if not job_commands_equal(command,ref_command):
-                nfail('Job.run_command for machine "{0}" does not match the reference\njob inputs: {1}\nreference command: {2}\nincorrect command: {3}'.format(name,job_inputs[jtype],ref_command,command))
-            #end for
-        #end for
-    #end for
+    nunit('distance_table')
+
+    nunit('nearest_neighbors')
+
+    nunit('simplestats')
+
+    nunit('simstats')
+
+    nunit('equilibration_length')
+
+    nunit('morse')
+
+    nunit('eos')
+
+    nunit_all()
+#end def numerics
 
 
-    nlabel('Job.split_nodes')
-    for name in sorted(supercomputers.keys()):
-        m = supercomputers[name]
-        if m.app_launcher=='srun': # no slurm support yet
-            continue
-        #end if
-        if name=='summit': # no summit support
-            continue
-        #end if
-        if m.requires_account:
-            acc = 'ABC123'
-        else:
-            acc = None
-        #end if
-        # make a 4 node job
-        job = Job(app_command = 'test.x',
-                  machine     = name,
-                  account     = acc,
-                  nodes       = 4,
-                  threads     = m.cores_per_node,
-                  )
-        # split the job into 1 and 3 nodes
-        job1,job2 = job.split_nodes(1)
-        # get the split run commands
-        rc  = job.run_command()
-        rc1 = job1.run_command()
-        rc2 = job2.run_command()
-        ns  = ' {0} '.format(job.nodes)
-        ns1 = ' {0} '.format(job1.nodes)
-        ns2 = ' {0} '.format(job2.nodes)
-        # verify that node count is in each command
-        nassert(ns  in rc )
-        nassert(ns1 in rc1)
-        nassert(ns2 in rc2)
-        # verify that text on either side of node count 
-        # agrees for original and split commands
-        rcl ,rcr  = rc.split(ns,1)
-        rc1l,rc1r = rc1.split(ns1,1)
-        rc2l,rc2r = rc2.split(ns2,1)
-        rcf  = rcl+' '+rcr
-        rc1f = rc1l+' '+rc1r
-        rc2f = rc2l+' '+rc2r
-        nassert(job_commands_equal(rcf,rc1f))
-        nassert(job_commands_equal(rcf,rc2f))
-    #end for
+
+def grid_functions():
+    nunit('imports')
+
+    # supporting functions
+    nunit('coord_conversion')
+
+    nunit('unit_grid_points')
+
+    nunit('parallelotope_grid_points')
+
+    nunit('spheroid_grid_points')
+
+    # Grid tests
+    nunit('grid_initialization')
+
+    nunit('parallelotope_grid_initialization')
+
+    nunit('grid_reset')
+
+    nunit('grid_set_operations')
+
+    nunit('grid_copy')
+
+    nunit('grid_translate')
+
+    nunit('grid_reshape')
+
+    nunit('grid_unit_points')
+
+    nunit('grid_cell_indices')
+
+    nunit('grid_inside')
+
+    nunit('grid_project')
+
+    nunit('grid_radius')
+
+    nunit('grid_axes_volume')
+
+    nunit('grid_volume')
+
+    nunit('grid_cell_volumes')
+
+    nunit('grid_unit_metric')
+
+    # GridFunction tests
+
+    # any remaining tests
+    nunit_all()
+#end def grid_functions
 
 
-    # restore logging function
-    nlog_restore()
-#end def machines
+
+def fileio():
+    nunit('files')
+
+    nunit('import')
+
+    nunit('textfile')
+
+    nunit('xsffile')
+
+    nunit('xsffile_density')
+
+    nunit('poscar_file')
+
+    nunit('chgcar_file')
+
+    nunit_all()
+#end def fileio
+
+
+
+def hdfreader():
+    nunit('import')
+
+    nunit_all()
+#end def hdfreader
+
+
+
+def xmlreader():
+    nunit('files')
+
+    nunit('import')
+
+    nunit('read')
+
+    nunit_all()
+#end def xmlreader
 
 
 
 def structure():
-    # divert logging function
-    nlog_divert()
 
-    nlabel('imports')
-    import numpy as np
-    from generic import obj
-    from structure import Structure,Crystal
-    from structure import generate_structure
-    from structure import read_structure
+    nunit('files')
 
+    nunit('import')
 
-    nlabel('definitions')
-    def structure_same(s1,s2):
-        keys = ('units','elem','pos','axes','kpoints','kweights','kaxes')
-        o1 = s1.obj(keys)
-        o2 = s2.obj(keys)
-        return object_eq(o1,o2)
-    #end def structure_same
+    nunit('empty_init')
 
-    def structure_diff(s1,s2):
-        keys = ('units','elem','pos','axes','kpoints','kweights','kaxes')
-        o1 = s1.obj(keys)
-        o2 = s2.obj(keys)
-        return object_diff(o1,o2,full=True)
-    #end def structure_diff
+    nunit('reference_inputs')
 
+    nunit('direct_init')
 
-    nlabel('empty_init')
-    s1 = Structure()
-    s2 = generate_structure('empty')
-    nassert(object_eq(s1,s2))
+    nunit('generate_init')
 
+    nunit('crystal_init')
 
-    nlabel('ref_inputs')
-    ref_in = obj()
-    ref_in.diamond_prim = obj(
-        units = 'A',
-        axes  = [[1.785, 1.785, 0.   ],
-                 [0.   , 1.785, 1.785],
-                 [1.785, 0.   , 1.785]],
-        elem  = ['C','C'],
-        pos   = [[0.    , 0.    , 0.    ],
-                 [0.8925, 0.8925, 0.8925]],
-        )
-    ref_in.diamond_conv = obj(
-        units = 'A',
-        axes  = [[3.57, 0   , 0.  ],
-                 [0.  , 3.57, 0.  ],
-                 [0   , 0.  , 3.57]],
-        elem  = ['C','C','C','C','C','C','C','C'],
-        pos   = [[0.0000, 0.0000, 0.0000],
-                 [0.8925, 0.8925, 0.8925],
-                 [0.0000, 1.7850, 1.7850],
-                 [0.8925, 2.6775, 2.6775],
-                 [1.7850, 0.0000, 1.7850],
-                 [2.6775, 0.8925, 2.6775],
-                 [1.7850, 1.7850, 0.0000],
-                 [2.6775, 2.6775, 0.8925]],
-        )
-    ref_in.wurtzite_prim = obj(
-        units = 'A',
-        axes  = [[ 3.350, 0.00000000, 0.00],
-                 [-1.675, 2.90118510, 0.00],
-                 [ 0.000, 0.00000000, 5.22]],
-        elem  = ['Zn','O','Zn','O'],
-        pos   = [[0.00000000e+00, 0.00000000e+00, 3.26250000e+00],
-                 [0.00000000e+00, 0.00000000e+00, 0.00000000e+00],
-                 [1.67500000e+00, 9.67061701e-01, 6.52500000e-01],
-                 [1.67500000e+00, 9.67061701e-01, 2.61000000e+00]],
-        )
-    ref_in.oxygen_prim = obj(
-        units = 'A',
-        axes  = [[ 2.70150000e+00, -1.71450000e+00,  0.00000000e+00],
-                 [ 2.70150000e+00,  1.71450000e+00,  0.00000000e+00],
-                 [-3.43801471e+00,  0.00000000e+00,  3.74799291e+00]],
-        elem  = ['O','O'],
-        pos   = [[ 0.,    0.,     0.575],
-                 [ 0.,    0.,    -0.575]],
-        )
-    ref_in.CuO_prim = obj(
-        units = 'A',
-        axes  = [[ 2.34150000e+00, -1.71100000e+00, 0.00000000e+00],
-                 [ 2.34150000e+00,  1.71100000e+00, 0.00000000e+00],
-                 [-8.49894838e-01,  0.00000000e+00, 5.05708046e+00]],
-        elem  = ['Cu','O','Cu','O'],
-        pos   = [[ 1.17075   ,  0.8555  ,  0.        ],
-                 [-0.21247371,  1.430396,  1.26427011],
-                 [ 0.74580258,  2.5665  ,  2.52854023],
-                 [ 1.70407887,  0.280604,  3.79281034]],
-        )
-    ref_in.Ca2CuO3_prim = obj(
-        units = 'A',
-        axes  = [[ 1.885,  1.625, -6.115],
-                 [-1.885,  1.625,  6.115],
-                 [ 1.885, -1.625,  6.115]],
-        elem  = ['Cu','O','O','O','Ca','Ca'],
-        pos   = [[0.000, 0.000,  0.000],
-                 [1.885, 0.000,  0.000],
-                 [0.000, 0.000,  1.960],
-                 [0.000, 0.000, 10.270],
-                 [0.000, 0.000,  4.290],
-                 [0.000, 0.000,  7.940]],
-        )
-    ref_in.La2CuO4_prim = obj(
-        units = 'A',
-        axes  = [[ 1.9045,  1.9045, -6.5845],
-                 [-1.9045,  1.9045,  6.5845],
-                 [ 1.9045, -1.9045,  6.5845]],
-        elem  = ['Cu','O','O','O','O','La','La'],
-        pos   = [[ 0.      ,  0.      ,  0.      ],
-                 [ 0.95225 ,  0.95225 , -3.29225 ],
-                 [-0.95225 ,  0.95225 ,  3.29225 ],
-                 [ 0.346619, -0.346619,  1.198379],
-                 [-0.346619,  0.346619, -1.198379],
-                 [ 0.689429, -0.689429,  2.383589],
-                 [-0.689429,  0.689429, -2.383589]],
-        )
-    ref_in.graphene_prim = obj(
-        units = 'A',
-        axes  = [[ 2.462, 0.00000000,  0.00],
-                 [-1.231, 2.13215454,  0.00],
-                 [ 0.000, 0.00000000, 15.00]],
-        elem  = ['C','C'],
-        pos   = [[0.   , 0.        , 0. ],
-                 [1.231, 0.71071818, 0. ]],
-        )
+    nunit('diagonal_tiling')
 
+    nunit('matrix_tiling')
 
-    nlabel('direct_init')
-    ref = obj()
-    for name,inputs in ref_in.iteritems():
-        ref[name] = Structure(**inputs)
-    #end for
+    nunit('gen_molecule')
 
+    nunit('gen_diamond_direct')
 
-    nlabel('generate_init')
-    gen = obj()
-    for name,inputs in ref_in.iteritems():
-        gen[name] = generate_structure(**inputs)
-    #end for
+    nunit('gen_diamond_lattice')
 
+    nunit('gen_graphene')
 
-    nlabel('crystal_init')
-    crys = obj()
-    for (latt,cell),inputs in Crystal.known_crystals.iteritems():
-        s = generate_structure(structure=latt,cell=cell)
-        crys[latt+'_'+cell] = s
-    #end for
+    nunit('read_write')
 
+    nunit('bounding_box')
 
-    nlabel('check_generate_init')
-    for name,s in ref.iteritems():
-        nassert(structure_same(s,gen[name]))
-    #end for
+    nunit('opt_tiling')
 
+    nunit('unit_coords')
 
-    nlabel('check_crystal_init')
-    for name,s in ref.iteritems():
-        nassert(structure_same(s,crys[name]))
-    #end for
+    nunit('monkhorst_pack_kpoints')
 
+    nunit('count_kshells')
 
-    nlabel('diagonal_tiling')
-    diag_tilings = [
-        (1, 1, 1),
-        (1, 2, 3),
-        (1, 2, 4),
-        (1, 3, 1),
-        (1, 3, 2),
-        (1, 3, 3),
-        (1, 5, 3),
-        (1, 5, 5),
-        (1, 5, 6),
-        (2, 1, 2),
-        (2, 1, 3),
-        (2, 2, 2),
-        (2, 3, 1),
-        (2, 3, 2),
-        (2, 3, 3),
-        (2, 4, 4),
-        (2, 5, 1),
-        (2, 5, 2),
-        (2, 5, 3),
-        (3, 1, 1),
-        (3, 1, 2),
-        (3, 1, 3),
-        (3, 2, 1),
-        (3, 2, 3),
-        (3, 3, 6),
-        (4, 6, 4),
-        (5, 5, 1),
-        (5, 5, 5),
-        (6, 2, 6),
-        (6, 3, 1),
-        (6, 3, 6),
-        (6, 4, 6),
-        (6, 6, 4),
-        ]
-    for name,s in ref.iteritems():
-        for tvec in diag_tilings:
-            st = s.tile(tvec)
-            st.check_tiling()
-        #end for
-    #end for
+    nunit('rinscribe')
 
+    nunit('rwigner')
 
-    nlabel('matrix_tiling')
-    matrix_tilings = [
-        (-3,-2, 0,-2,-2,-3, 3, 2,-1),
-        (-3,-1, 3, 0, 1, 1,-3, 3,-3),
-        (-3, 0,-2,-3, 0, 3, 2,-3, 0),
-        (-3, 1, 0,-3, 3,-3, 0,-2, 1),
-        (-2,-1, 2, 3,-3,-3,-2, 2,-2),
-        (-2, 0, 3,-2, 1,-1,-3, 0, 1),
-        (-2, 1,-3,-3, 0, 3, 2, 0, 3),
-        (-2, 2,-3,-1, 0, 1,-1,-2, 3),
-        (-1, 3, 2,-3, 2,-2, 3,-3,-1),
-        (-1, 3, 3,-3, 3, 0,-3,-1, 1),
-        ( 0,-1,-2, 2, 3, 1, 3,-2, 0),
-        ( 0, 1, 3,-2, 3, 1, 2, 1, 2),
-        ( 0, 3,-1,-1,-1, 2, 2, 3, 2),
-        ( 1,-3,-3,-3, 3, 0,-2, 2,-2),
-        ( 1,-2, 2, 1, 1, 1, 3, 2,-1),
-        ( 1, 0, 1,-3, 2, 1, 1, 2,-2),
-        ( 1, 2, 1,-2, 1,-1,-2, 3, 2),
-        ( 1, 2, 1, 2, 1,-1, 3, 2, 2),
-        ( 1, 2, 2,-2, 1, 0, 1, 0,-1),
-        ( 1, 2, 2, 1, 0, 1,-3, 0,-2),
-        ( 1, 3,-1, 0, 1,-2, 1, 0, 2),
-        ( 1, 3, 0,-1, 0,-3, 2, 0, 2),
-        ( 1, 3, 0, 0,-2,-2,-1,-1, 1),
-        ( 1, 3, 1,-3, 2, 0, 0, 0, 2),
-        ( 2,-3, 0, 2, 2,-3,-1,-2, 0),
-        ( 2,-2, 1, 3, 3,-2,-2, 1,-3),
-        ( 2,-1, 2,-1, 0,-3, 2, 0, 1),
-        ( 2,-1, 2, 0,-2, 0,-2, 0, 0),
-        ( 2,-1, 3, 2, 1, 2, 1,-1,-3),
-        ( 2, 1, 2, 0,-3,-2,-2,-3,-1),
-        ( 2, 2, 1,-3,-2,-3, 2,-1,-2),
-        ( 2, 3,-3, 1, 3, 1, 2,-2,-1),
-        ( 3,-3, 0, 1,-2, 3, 2, 1, 1),
-        ( 3,-2, 3, 3,-3,-3, 0, 0,-1),
-        ( 3,-1, 2,-3, 2,-2, 3, 2,-1),
-        ( 3, 0,-3, 0, 2,-1, 3,-2,-1),
-        ( 3, 0, 2, 3,-2,-3,-3,-2, 1),
-        ( 3, 1, 1,-2,-1,-3, 3, 1, 0),
-        ( 3, 2,-3,-2, 2, 1, 1, 0,-1),
-        ( 3, 2,-2,-1,-3,-1, 3, 3, 2),
-        ( 3, 2, 3,-1, 2, 2, 0,-1, 0),
-        ( 3, 3,-1, 0,-3, 2,-3,-1, 0),
-        ( 3, 3, 1,-3,-2,-3, 2,-3, 3),
-        ( 3, 3, 1, 1,-2, 2, 2,-2, 0),
-        ]
-    #for name in sorted(ref.keys()):
-    for name in ['diamond_prim']:
-        s = ref[name]
-        npass = 0
-        for tmat in matrix_tilings:
-            tmat = np.array(tmat,dtype=int)
-            tmat.shape = 3,3
-            st = s.tile(tmat)
-            st.check_tiling()
-        #end for
-    #end for
+    nunit('volume')
 
-    # call all unit tests
+    nunit('min_image_distances')
+
+    nunit('freeze')
+
+    nunit('interpolate')
+
     nunit_all()
-
-    # restore logging function
-    nlog_restore()
 #end def structure
 
 
 
 def physical_system():
-    # call all unit tests
+    nunit('import')
+
+    nunit('particle_initialization')
+
+    nunit('physical_system_initialization')
+
+    nunit('change_units')
+
+    nunit('rename')
+
+    nunit('tile')
+
+    nunit('kf_rpa')
+
     nunit_all()
 #end def physical_system
 
 
 
+def basisset():
+    nunit('files')
+
+    nunit('import')
+
+    nunit('basissets')
+
+    nunit('process_gaussian_text')
+
+    nunit('gaussianbasisset')
+
+    nunit_all()
+#end def basisset
+
+
+
+def pseudopotential():
+    nunit('files')
+
+    nunit('import')
+
+    nunit('pp_elem_label')
+
+    nunit('pseudopotentials')
+
+    nunit('ppset')
+
+    nunit('pseudopotential_classes')
+
+    nunit_all()
+#end def pseudopotential
+
+
+
+def nexus_base():
+    nunit('import')
+
+    nunit('namespaces')
+
+    nunit('empty_init')
+
+    nunit('write_splash')
+
+    nunit('enter_leave')
+
+    nunit_all()
+#end def nexus_base
+
+
+
+def machines():
+
+    nunit('import')
+
+    nunit('cpu_count')
+
+    nunit('options')
+
+    nunit('job_init')
+
+    nunit('job_time')
+
+    nunit('job_set_id')
+
+    nunit('job_get_machine')
+
+    nunit('job_set_environment')
+
+    nunit('job_clone')
+
+    nunit('job_serial_clone')
+
+    nunit('machine_virtuals')
+
+    nunit('machine_list')
+
+    nunit('machine_add')
+
+    nunit('machine_get')
+
+    nunit('machine_instantiation')
+
+    nunit('workstation_init')
+
+    nunit('workstation_scheduling')
+
+    nunit('supercomputer_init')
+
+    nunit('supercomputer_scheduling')
+
+    nunit('process_job')
+
+    nunit('job_run_command')
+
+    nunit('write_job')
+
+    nunit_all()
+#end def machines
+
+
+
+def simulation():
+
+    nunit('import')
+
+    nunit('simulation_input')
+
+    nunit('simulation_analyzer')
+
+    nunit('simulation_input_template')
+
+    nunit('simulation_input_multi_template')
+
+    nunit('code_name')
+
+    nunit('init')
+
+    nunit('virtuals')
+
+    nunit('reset_indicators')
+
+    nunit('indicator_checks')
+
+    nunit('create_directories')
+
+    nunit('file_text')
+
+    nunit('depends')
+
+    nunit('undo_depends')
+
+    nunit('has_generic_input')
+
+    nunit('check_dependencies')
+
+    nunit('get_dependencies')
+
+    nunit('downstream_simids')
+
+    nunit('copy_file')
+
+    nunit('save_load_image')
+
+    nunit('load_analyzer_image')
+
+    nunit('save_attempt')
+
+    nunit('write_inputs')
+
+    nunit('send_files')
+
+    nunit('submit')
+
+    nunit('update_process_id')
+
+    nunit('check_status')
+
+    nunit('get_output')
+
+    nunit('analyze')
+
+    nunit('progress')
+
+    nunit('execute')
+
+    nunit('reset_wait_ids')
+
+    nunit('check_subcascade')
+
+    nunit('block_dependents')
+
+    nunit('reconstruct_cascade')
+
+    nunit('traverse_cascade')
+
+    nunit('traverse_full_cascade')
+
+    nunit('test_write_dependents')
+
+    nunit('generate_simulation')
+
+    nunit_all()
+#end def simulation
+
+
+
+def bundle():
+    nunit('import')
+
+    nunit('bundle')
+
+    nunit_all()
+#end def bundle
+
+
+
+def project_manager():
+    nunit('import')
+
+    nunit('init')
+
+    nunit('add_simulations')
+
+    nunit('traverse_cascades')
+
+    nunit('screen_fake_sims')
+
+    nunit('resolve_file_collisions')
+
+    nunit('propagate_blockages')
+
+    nunit('load_cascades')
+    
+    nunit('check_dependencies')
+
+    nunit('write_simulation_status')
+
+    nunit('run_project')
+
+    nunit_all()
+#end def project_manager
+
+
+
+def settings_operation():
+    nunit('import')
+
+    nunit('settings')
+
+    nunit_all()
+#end def settings_operation
+
+
+
+def vasp_input():
+    nunit('files')
+
+    nunit('import')
+
+    nunit('keyword_consistency')
+
+    nunit('empty_init')
+
+    nunit('read')
+
+    nunit('write')
+
+    nunit('generate')
+
+    nunit_all()
+#end def vasp_input
+
+
+
 def pwscf_input():
-    # divert logging function
-    nlog_divert()
- 
-    nlabel('directories')
-    loc_test_dir      = os.path.join(test_dir,'pwscf_input')
-    sample_inputs     = os.path.join(loc_test_dir,'sample_inputs')
-    sample_structures = os.path.join(loc_test_dir,'sample_structures')
+    nunit('files')
 
+    nunit('import')
 
-    nlabel('definitions')
-    def check_pw_same(pw1_,pw2_,l1='pw1',l2='pw2'):
-        pw_same = object_eq(pw1_,pw2_,int_as_float=True)
-        if not pw_same:
-            d,d1,d2 = object_diff(pw1_,pw2_,full=True,int_as_float=True)
-            diff = obj({l1:obj(d1),l2:obj(d2)})
-            nfail(str(diff))
-        #end if
-    #end def check_pw_same
+    nunit('input')
 
-
-    nlabel('imports')
-    import numpy as np
-    import pwscf_input as pwi
-    from generic import obj
-    from structure import read_structure
-    from physical_system import generate_physical_system
-    from pwscf_input import check_new_variables,check_section_classes
-    from pwscf_input import PwscfInput,generate_pwscf_input
-
-
-    nlabel('internal_spec')
-    check_new_variables(exit=False)
-    check_section_classes(exit=False)
-
-
-    nlabel('compose')
-    compositions = obj()
-
-    # based on sample_inputs/Fe_start_ns_eig.in
-    pw = PwscfInput()
-    pw.control.set(
-        calculation   = 'scf' ,
-        restart_mode  = 'from_scratch' ,
-        wf_collect    = True ,
-        outdir        = './output' ,
-        pseudo_dir    = '../pseudo/' ,
-        prefix        = 'fe' ,
-        etot_conv_thr = 1.0e-9 ,
-        forc_conv_thr = 1.0e-6 ,
-        tstress       = True ,
-        tprnfor       = True ,
-        )
-    pw.system.set(
-        ibrav           = 1,
-        nat             = 2,
-        ntyp            = 1,
-        ecutwfc         = 100 ,
-        ecutrho         = 300 ,
-        nbnd            = 18,
-        occupations     = 'smearing',
-        degauss         = 0.0005 ,
-        smearing        = 'methfessel-paxton' ,
-        nspin           = 2 ,
-        assume_isolated = 'martyna-tuckerman',
-        lda_plus_u      = True ,
-        )
-    pw.system.set({
-        'celldm(1)' : 15,
-        'starting_magnetization(1)' : 0.9,
-        'hubbard_u(1)' : 3.1,
-        'starting_ns_eigenvalue(1,2,1)' : 0.0,
-        'starting_ns_eigenvalue(2,2,1)' : 0.0476060,
-        'starting_ns_eigenvalue(3,2,1)' : 0.0476060,
-        'starting_ns_eigenvalue(4,2,1)' : 0.9654373,
-        'starting_ns_eigenvalue(5,2,1)' : 0.9954307,
-        })
-    pw.electrons.set(
-        conv_thr        = 1.0e-9 ,
-        mixing_beta     = 0.7 ,
-        diagonalization = 'david' ,
-        mixing_fixed_ns = 500,
-        )
-    pw.atomic_species.set(
-        atoms            = ['Fe'],
-        masses           = obj(Fe=58.69000),
-        pseudopotentials = obj(Fe='Fe.pbe-nd-rrkjus.UPF'),
-        )
-    pw.atomic_positions.set(
-        specifier = 'angstrom',
-        atoms     = ['Fe','Fe'],
-        positions = np.array([
-            [2.070000000,   0.000000000,   0.000000000],   
-            [0.000000000,   0.000000000,   0.000000000], 
-            ]),
-        )
-    pw.k_points.set(
-        specifier = 'automatic',
-        grid      = np.array((1,1,1)),
-        shift     = np.array((1,1,1)),
-        )
-
-    compositions['Fe_start_ns_eig.in'] = pw
-
-
-    nlabel('read')
-    infile = 'Fe_start_ns_eig.in'
-    input_file = os.path.join(sample_inputs,infile)
-    pwr = PwscfInput(input_file)
-    pwc = pw.copy()
-    pwc.standardize_types()
-    check_pw_same(pwc,pwr,'compose','read')
-
-
-    nlabel('write')
-    nenter()
-    pw.write('pwscf.in')
-    pw2 = PwscfInput()
-    pw2.read('pwscf.in')
-    check_pw_same(pw2,pwr)
-
-
-    nlabel('read/write/read')
-    nenter()
-    reads = obj()
-    infiles = os.listdir(sample_inputs)
-    for infile in infiles:
-        input_file = os.path.join(sample_inputs,infile)
-        pw = PwscfInput(input_file)
-        pw.write(infile)
-        pw2 = PwscfInput(infile)
-        check_pw_same(pw,pw2,'read','write/read')
-        reads[infile] = pw
-    #end for
-
-
-    nlabel('generate')
-    nenter()
-    generations = obj()
-
-    # based on sample_inputs/VO2_M1_afm.in
-    infile = 'VO2_M1_afm.in'
-    struct_file = os.path.join(sample_structures,'VO2_M1_afm.xsf')
-    input_file  = os.path.join(sample_inputs,infile)
-
-    s = read_structure(struct_file)
-    s.elem[0] = 'V1'
-    s.elem[1] = 'V2'
-    s.elem[2] = 'V1'
-    s.elem[3] = 'V2'
-
-    vo2 = generate_physical_system(
-        structure = s,
-        V1        = 13,
-        V2        = 13,
-        O         =  6,
-        )
-
-    pw = generate_pwscf_input(
-        selector         = 'generic',
-        calculation      = 'scf',
-        disk_io          = 'low',
-        verbosity        = 'high',
-        wf_collect       = True,
-        input_dft        = 'lda',
-        hubbard_u        = obj(V1=3.5,V2=3.5),
-        ecutwfc          = 350,
-        bandfac          = 1.3,
-        nosym            = True,
-        occupations      = 'smearing',
-        smearing         = 'fermi-dirac',
-        degauss          = 0.0001,
-        nspin            = 2,
-        start_mag        = obj(V1=1.0,V2=-1.0),
-        diagonalization  = 'david',
-        conv_thr         = 1e-8,
-        mixing_beta      = 0.2,
-        electron_maxstep = 1000,
-        system           = vo2,
-        pseudos          = ['V.opt.upf','O.opt.upf'],
-        kgrid            = (6,6,6),
-        kshift           = (0,0,0),
-        # added for reverse compatibility
-        celldm           = {1:1.0},
-        cell_option      = 'alat',
-        positions_option = 'alat',
-        )
-
-    generations[infile] = pw
-
-    pw.write(infile)
-    pw2 = PwscfInput(infile)
-    pw3 = PwscfInput(input_file)
-    check_pw_same(pw2,pw3,'generate','read')
-
-    # based on sample_inputs/Fe_start_ns_eig.in
-    infile = 'Fe_start_ns_eig.in'
-
-    pw = generate_pwscf_input(
-        selector        = 'generic',
-        calculation     = 'scf',
-        restart_mode    = 'from_scratch',
-        wf_collect      = True,
-        outdir          = './output',
-        pseudo_dir      = '../pseudo/',
-        prefix          = 'fe',
-        etot_conv_thr   = 1.0e-9,
-        forc_conv_thr   = 1.0e-6,
-        tstress         = True,
-        tprnfor         = True,
-        ibrav           = 1,
-        nat             = 2,
-        ntyp            = 1,
-        ecutwfc         = 100,
-        ecutrho         = 300,
-        nbnd            = 18,
-        occupations     = 'smearing',
-        degauss         = 0.0005,
-        smearing        = 'methfessel-paxton',
-        nspin           = 2,
-        assume_isolated = 'martyna-tuckerman',
-        lda_plus_u      = True,
-        conv_thr        = 1.0e-9,
-        mixing_beta     = 0.7,
-        diagonalization = 'david',
-        mixing_fixed_ns = 500,
-        mass            = obj(Fe=58.69000),
-        pseudos         = ['Fe.pbe-nd-rrkjus.UPF'],
-        elem            = ['Fe','Fe'],
-        pos             = [[2.070000000, 0.000000000, 0.000000000],    
-                           [0.000000000, 0.000000000, 0.000000000]],
-        pos_specifier   = 'angstrom',
-        kgrid           = np.array((1,1,1)),
-        kshift          = np.array((1,1,1)),
-        )
-    pw.system.set({
-        'celldm(1)' : 15,
-        'starting_magnetization(1)' : 0.9,
-        'hubbard_u(1)' : 3.1,
-        'starting_ns_eigenvalue(1,2,1)' : 0.0,
-        'starting_ns_eigenvalue(2,2,1)' : 0.0476060,
-        'starting_ns_eigenvalue(3,2,1)' : 0.0476060,
-        'starting_ns_eigenvalue(4,2,1)' : 0.9654373,
-        'starting_ns_eigenvalue(5,2,1)' : 0.9954307,
-        })
-
-    generations[infile] = pw
-
-    pw2 = compositions[infile]
-    check_pw_same(pw,pw2,'generate','compose')
-    pw.write(infile)
-    pw3 = PwscfInput(infile)
-    pw4 = reads[infile]
-    check_pw_same(pw3,pw4,'generate','read')
-
-
-
-    # based on sample_inputs/Fe_start_ns_eig.in
-    #  variant that uses direct pwscf array input
-    pw = generate_pwscf_input(
-        selector        = 'generic',
-        calculation     = 'scf',
-        restart_mode    = 'from_scratch',
-        wf_collect      = True,
-        outdir          = './output',
-        pseudo_dir      = '../pseudo/',
-        prefix          = 'fe',
-        etot_conv_thr   = 1.0e-9,
-        forc_conv_thr   = 1.0e-6,
-        tstress         = True,
-        tprnfor         = True,
-        ibrav           = 1,
-        nat             = 2,
-        ntyp            = 1,
-        ecutwfc         = 100,
-        ecutrho         = 300,
-        nbnd            = 18,
-        occupations     = 'smearing',
-        degauss         = 0.0005,
-        smearing        = 'methfessel-paxton',
-        nspin           = 2,
-        assume_isolated = 'martyna-tuckerman',
-        lda_plus_u      = True,
-        conv_thr        = 1.0e-9,
-        mixing_beta     = 0.7,
-        diagonalization = 'david',
-        mixing_fixed_ns = 500,
-        mass            = obj(Fe=58.69000),
-        pseudos         = ['Fe.pbe-nd-rrkjus.UPF'],
-        elem            = ['Fe','Fe'],
-        pos             = [[2.070000000, 0.000000000, 0.000000000],    
-                           [0.000000000, 0.000000000, 0.000000000]],
-        pos_specifier   = 'angstrom',
-        kgrid           = np.array((1,1,1)),
-        kshift          = np.array((1,1,1)),
-        starting_ns_eigenvalue = {(1,2,1) : 0.0,
-                                  (2,2,1) : 0.0476060,
-                                  (3,2,1) : 0.0476060,
-                                  (4,2,1) : 0.9654373,
-                                  (5,2,1) : 0.9954307,},
-        celldm                 = {1 : 15 },
-        starting_magnetization = {1 : 0.9},
-        hubbard_u              = {1 : 3.1},
-        )
-
-    pwg = pw.copy()
-    pwg.standardize_types()
-
-    generations[infile] = pw
-
-    pw2 = compositions[infile].copy()
-    pw2.standardize_types()
-    check_pw_same(pwg,pw2,'generate','compose')
-    pw3 = reads[infile]
-    check_pw_same(pwg,pw3,'generate','read')
-    pw.write(infile)
-    pw4 = PwscfInput(infile)
-    check_pw_same(pwg,pw3,'generate','write')
-
-
-    # restore logging function
-    nlog_restore()
+    nunit_all()
 #end def pwscf_input
 
 
+
+def pwscf_postprocessor_input():
+    nunit('import')
+
+    nunit('empty_init')
+
+    nunit('read')
+
+    nunit('write')
+
+    nunit('generate')
+
+    nunit_all()
+#end def pwscf_postprocessor_input
+
+
+
+def gamess_input():
+    nunit('files')
+    
+    nunit('import')
+    
+    nunit('keyspec_groups')
+    
+    nunit('empty_init')
+    
+    nunit('read')
+    
+    nunit('write')
+
+    nunit('generate')
+
+    nunit_all()
+#end def gamess_input
+
+
+
+def pyscf_input():
+    nunit('import')
+
+    nunit('empty_init')
+
+    nunit('generate')
+
+    nunit('write')
+
+    nunit_all()
+#end def pyscf_input
+
+
+
+def quantum_package_input():
+    nunit('import')
+
+    nunit('empty_init')
+
+    nunit('read')
+
+    nunit('generate')
+
+    nunit_all()
+#end def quantum_package_input
+
+
+
+def qmcpack_converter_input():
+    nunit('import')
+
+    nunit('pw2qmcpack_input_empty_init')
+
+    nunit('pw2qmcpack_input_read')
+
+    nunit('pw2qmcpack_input_write')
+
+    nunit('pw2qmcpack_input_generate')
+
+    nunit('convert4qmc_input_empty_init')
+
+    nunit('convert4qmc_input_generate')
+
+    nunit('convert4qmc_input_write')
+
+    nunit('pyscf_to_afqmc_input_init')
+
+    nunit('pyscf_to_afqmc_input_write')
+
+    nunit_all()
+#end def qmcpack_converter_input
+
+
+
 def qmcpack_input():
+    nunit('files')
+
+    nunit('import')
+
+    nunit('qixml_class_init')
+
+    nunit('compose')
+
+    nunit('generate')
+
+    nunit('read')
+
+    nunit('write')
+
+    nunit('get')
+
+    nunit('incorporate_system')
+
+    nunit('generate_kspace_jastrow')
+
+    nunit('excited_state')
+
     nunit_all()
 #end def qmcpack_input
+
+
+
+def vasp_analyzer():
+    nunit('files')
+
+    nunit('import')
+
+    nunit('empty_init')
+
+    nunit('analyze')
+
+    nunit_all()
+#end def vasp_analyzer
+
+
+
+def pwscf_analyzer():
+    nunit('import')
+
+    nunit('empty_init')
+
+    nunit('analyze')
+
+    nunit_all()
+#end def pwscf_analyzer
+
+
+
+def pwscf_postprocessor_analyzers():
+    nunit('import')
+
+    nunit('empty_init')
+
+    nunit('projwfc_analyzer')
+
+    nunit_all()
+#end def pwscf_postprocessor_analyzers
+
+
+
+def gamess_analyzer():
+    nunit('import')
+
+    nunit('empty_init')
+
+    nunit('analyze')
+
+    nunit_all()
+#end def gamess_analyzer
+
+
+
+def pyscf_analyzer():
+    nunit('import')
+
+    nunit('empty_init')
+
+    nunit_all()
+#end def pyscf_analyzer
+
+
+
+def quantum_package_analyzer():
+    nunit('import')
+
+    nunit('empty_init')
+
+    nunit_all()
+#end def quantum_package_analyzer
+
+
+
+def qmcpack_converter_analyzers():
+    nunit('import')
+
+    nunit('pw2qmcpack_analyzer_init')
+
+    nunit('convert4qmc_analyzer_init')
+
+    nunit('pyscf_to_afqmc_analyzer_init')
+
+    nunit_all()
+#end def qmcpack_converter_analyzers
+
+
+
+def qmcpack_analyzer():
+    nunit('import')
+
+    nunit('empty_init')
+
+    nunit('vmc_dmc_analysis')
+
+    nunit('optimization_analysis')
+
+    nunit('twist_average_analysis')
+
+    nunit_all()
+#end def qmcpack_analyzer
+
+
+
+def vasp_simulation():
+    nunit('import')
+
+    nunit('minimal_init')
+
+    nunit('check_result')
+
+    nunit('get_result')
+
+    nunit('incorporate_result')
+
+    nunit('check_sim_status')
+
+    nunit('get_output_files')
+
+    nunit_all()
+#end def vasp_simulation
+
+
+
+def pwscf_simulation():
+    nunit('import')
+
+    nunit('minimal_init')
+    
+    nunit('check_result')
+
+    nunit('get_result')
+    
+    nunit('incorporate_result')
+    
+    nunit('check_sim_status')
+    
+    nunit_all()
+#end def pwscf_simulation
+
+
+
+def gamess_simulation():
+    nunit('import')
+
+    nunit('minimal_init')
+
+    nunit('check_result')
+
+    nunit('get_result')
+
+    nunit('incorporate_result')
+
+    nunit('check_sim_status')
+    
+    nunit_all()
+#end def gamess_simulation
+
+
+
+def pyscf_simulation():
+    nunit('import')
+
+    nunit('minimal_init')
+
+    nunit('check_result')
+
+    nunit('get_result')
+    
+    nunit('check_sim_status')
+    
+    nunit_all()
+#end def pyscf_simulation
+
+
+
+def quantum_package_simulation():
+    nunit('import')
+
+    nunit('minimal_init')
+
+    nunit('check_result')
+
+    nunit('get_result')
+
+    nunit('incorporate_result')
+
+    nunit('check_sim_status')
+
+    nunit_all()
+#end def quantum_package_simulation
+
+
+
+def pwscf_postprocessor_simulations():
+    nunit('import')
+
+    nunit('minimal_init')
+
+    nunit('check_result')
+
+    nunit('get_result')
+
+    nunit('incorporate_result')
+
+    nunit('check_sim_status')
+
+    nunit_all()
+#end def pwscf_postprocessor_simulations
+
+
+
+def qmcpack_converter_simulations():
+    nunit('pw2qmcpack_import')
+
+    nunit('pw2qmcpack_minimal_init')
+
+    nunit('pw2qmcpack_check_result')
+
+    nunit('pw2qmcpack_get_result')
+
+    nunit('pw2qmcpack_incorporate_result')
+
+    nunit('pw2qmcpack_check_sim_status')
+
+
+    nunit('convert4qmc_import')
+
+    nunit('convert4qmc_minimal_init')
+
+    nunit('convert4qmc_check_result')
+
+    nunit('convert4qmc_get_result')
+
+    nunit('convert4qmc_incorporate_result')
+
+    nunit('convert4qmc_check_sim_status')
+
+
+    nunit('pyscf_to_afqmc_import')
+
+    nunit('pyscf_to_afqmc_minimal_init')
+
+    nunit('pyscf_to_afqmc_check_result')
+
+    nunit('pyscf_to_afqmc_get_result')
+
+    nunit('pyscf_to_afqmc_incorporate_result')
+
+    nunit('pyscf_to_afqmc_check_sim_status')
+
+    nunit_all()
+#end def qmcpack_converter_simulations
+
+
+
+def qmcpack_simulation():
+    nunit('import')
+
+    nunit('minimal_init')
+
+    nunit('check_result')
+
+    nunit('get_result')
+
+    nunit('incorporate_result')
+
+    nunit('check_sim_status')
+
+    nunit_all()
+#end def qmcpack_simulation
+
+
+
+def nxs_redo():
+    nunit('test_redo')
+
+    nunit_all()
+#end def nxs_redo
+
+
+
+def nxs_sim():
+    nunit('sim')
+
+    nunit_all()
+#end def nxs_sim
+
+
+
+def qmc_fit():
+    nunit_all()
+#end def qmc_fit
+
+
+
+def qdens():
+    nunit('density')
+
+    nunit_all()
+#end def qdens
+
+
+
+def qmca():
+    nunit('help')
+
+    nunit('examples')
+
+    nunit('unit_conversion')
+
+    nunit('selected_quantities')
+
+    nunit('all_quantities')
+
+    nunit('energy_variance')
+
+    nunit('multiple_equilibration')
+
+    nunit('join')
+
+    nunit('multiple_directories')
+
+    nunit('twist_average')
+
+    nunit('weighted_twist_average')
+
+    nunit_all()
+#end def qmca
+
+
 
 
 example_information = dict(
@@ -3106,7 +1676,7 @@ example_information = dict(
             ],
         ),
     qmcpack_H2O = dict(
-        path = 'qmcpack/H2O',
+        path = 'qmcpack/rsqmc_misc/H2O',
         scripts = [
             'H2O.py',
             ],
@@ -3118,7 +1688,7 @@ example_information = dict(
             ],
         ),
     qmcpack_LiH = dict(
-        path = 'qmcpack/LiH',
+        path = 'qmcpack/rsqmc_misc/LiH',
         scripts = [
             'LiH.py',
             ],
@@ -3131,7 +1701,7 @@ example_information = dict(
             ],
         ),
     qmcpack_c20 = dict(
-        path = 'qmcpack/c20',
+        path = 'qmcpack/rsqmc_misc/c20',
         scripts = [
             'c20.py',
             ],
@@ -3143,7 +1713,7 @@ example_information = dict(
             ],
         ),
     qmcpack_diamond = dict(
-        path = 'qmcpack/diamond',
+        path = 'qmcpack/rsqmc_misc/diamond',
         scripts = [
             'diamond.py',
             'diamond_vacancy.py',
@@ -3157,7 +1727,7 @@ example_information = dict(
             ],
         ),
     qmcpack_graphene = dict(
-        path = 'qmcpack/graphene',
+        path = 'qmcpack/rsqmc_misc/graphene',
         scripts = [
             'graphene.py',
             ],
@@ -3172,7 +1742,7 @@ example_information = dict(
             ],
         ),
     qmcpack_oxygen_dimer = dict(
-        path = 'qmcpack/oxygen_dimer',
+        path = 'qmcpack/rsqmc_misc/oxygen_dimer',
         scripts = [
             'oxygen_dimer.py',
             ],
@@ -3329,21 +1899,125 @@ def user_examples(label):
 
 # create labeled tests from simple functions above
 
-NexusTest( versions              )
-NexusTest( required_dependencies )
-NexusTest( optional_dependencies , optional=True)
-NexusTest( generic_logging       )
-NexusTest( generic_intrinsics    )
-NexusTest( generic_extensions    )
-NexusTest( nexus_imports         )
-NexusTest( settings_operation    , 'settings' )
-NexusTest( machines              )
-NexusTest( structure             )
-NexusTest( physical_system       )
-NexusTest( pwscf_input           )
-NexusTest( qmcpack_input         )
+# ordered according to logical dependencies
+NexusTest( versions                        )
+NexusTest( required_dependencies           )
+NexusTest( optional_dependencies           , optional=True)
+NexusTest( nexus_imports                   )
+NexusTest( testing                         )
+NexusTest( execute                         )
+NexusTest( memory                          )
+NexusTest( plotting                        )
+NexusTest( superstring                     )
+NexusTest( generic_operation               , 'generic' )
+NexusTest( developer                       )
+NexusTest( unit_converter                  )
+NexusTest( periodic_table                  )
+NexusTest( numerics                        )
+NexusTest( grid_functions                  )
+NexusTest( fileio                          )
+NexusTest( hdfreader                       )
+NexusTest( xmlreader                       )
+NexusTest( structure                       )
+NexusTest( physical_system                 )
+NexusTest( basisset                        )
+NexusTest( pseudopotential                 )
+NexusTest( nexus_base                      )
+NexusTest( machines                        )
+NexusTest( simulation                      , 'simulation_module' )
+NexusTest( bundle                          )
+NexusTest( project_manager                 )
+NexusTest( settings_operation              , 'settings' )
+NexusTest( vasp_input                      )
+NexusTest( pwscf_input                     )
+NexusTest( pwscf_postprocessor_input       )
+NexusTest( gamess_input                    )
+NexusTest( pyscf_input                     )
+NexusTest( quantum_package_input           )
+NexusTest( qmcpack_converter_input         )
+NexusTest( qmcpack_input                   )
+NexusTest( vasp_analyzer                   )
+NexusTest( pwscf_analyzer                  )
+NexusTest( pwscf_postprocessor_analyzers   )
+NexusTest( gamess_analyzer                 )
+NexusTest( pyscf_analyzer                  )
+NexusTest( quantum_package_analyzer        )
+NexusTest( qmcpack_converter_analyzers     )
+NexusTest( qmcpack_analyzer                )
+NexusTest( vasp_simulation                 )
+NexusTest( pwscf_simulation                )
+NexusTest( gamess_simulation               )
+NexusTest( pyscf_simulation                )
+NexusTest( quantum_package_simulation      )
+NexusTest( pwscf_postprocessor_simulations )
+NexusTest( qmcpack_converter_simulations   )
+NexusTest( qmcpack_simulation              )
+NexusTest( nxs_redo                        )
+NexusTest( nxs_sim                         )
+NexusTest( qmca                            )
+NexusTest( qmc_fit                         )
+NexusTest( qdens                           )
 
-for label in example_information.keys():
+# ordered alphabetically (pytest order)
+#NexusTest( basisset                        )
+#NexusTest( bundle                          )
+#NexusTest( developer                       )
+#NexusTest( execute                         )
+#NexusTest( fileio                          )
+#NexusTest( gamess_analyzer                 )
+#NexusTest( gamess_input                    )
+#NexusTest( gamess_simulation               )
+#NexusTest( generic_operation               , 'generic' )
+#NexusTest( grid_functions                  )
+#NexusTest( hdfreader                       )
+#NexusTest( machines                        )
+#NexusTest( memory                          )
+#NexusTest( nexus_base                      )
+#NexusTest( nexus_imports                   )
+#NexusTest( numerics                        )
+#NexusTest( nxs_redo                        )
+#NexusTest( nxs_sim                         )
+#NexusTest( optional_dependencies           , optional=True)
+#NexusTest( periodic_table                  )
+#NexusTest( physical_system                 )
+#NexusTest( plotting                        )
+#NexusTest( project_manager                 )
+#NexusTest( pseudopotential                 )
+#NexusTest( pwscf_analyzer                  )
+#NexusTest( pwscf_input                     )
+#NexusTest( pwscf_postprocessor_analyzers   )
+#NexusTest( pwscf_postprocessor_input       )
+#NexusTest( pwscf_postprocessor_simulations )
+#NexusTest( pwscf_simulation                )
+#NexusTest( pyscf_analyzer                  )
+#NexusTest( pyscf_input                     )
+#NexusTest( pyscf_simulation                )
+#NexusTest( qdens                           )
+#NexusTest( qmc_fit                         )
+#NexusTest( qmca                            )
+#NexusTest( qmcpack_analyzer                )
+#NexusTest( qmcpack_converter_analyzers     )
+#NexusTest( qmcpack_converter_input         )
+#NexusTest( qmcpack_converter_simulations   )
+#NexusTest( qmcpack_input                   )
+#NexusTest( qmcpack_simulation              )
+#NexusTest( quantum_package_analyzer        )
+#NexusTest( quantum_package_input           )
+#NexusTest( quantum_package_simulation      )
+#NexusTest( required_dependencies           )
+#NexusTest( settings_operation              , 'settings' )
+#NexusTest( simulation                      )
+#NexusTest( structure                       )
+#NexusTest( superstring                     )
+#NexusTest( testing                         )
+#NexusTest( unit_converter                  )
+#NexusTest( vasp_analyzer                   )
+#NexusTest( vasp_simulation                 )
+#NexusTest( vasp_input                      )
+#NexusTest( versions                        )
+#NexusTest( xmlreader                       )
+
+for label in sorted(example_information.keys()):
     NexusTest(
         name      = 'example_'+label,  # individually label tests
         operation = user_examples,     # all tests call the same test function
@@ -3537,6 +2211,10 @@ if __name__=='__main__':
                       action='store_true',default=False,
                       help='Print help information and exit (default=%default).'
                       )
+    parser.add_option('-v','--verbose',dest='verbose',
+                      action='store_true',default=False,
+                      help='Print detailed information (default=%default).'
+                      )
     parser.add_option('-R','--regex',dest='regex',
                       default='none',
                       help='Tests with names matching the regular expression (regex) will be run.  The default behavior is to run all tests (default=%default).'
@@ -3688,13 +2366,13 @@ if __name__=='__main__':
     nfailed = 0
     nrun    = 0
     for test in tests:
-        n+=1
         t1 = time()
 
         # skip optional tests, unless requested
         if test.optional and not options.full:
             continue
         #end if
+        n+=1
 
         # run the test
         test.run()
@@ -3723,6 +2401,12 @@ if __name__=='__main__':
                 sn = (len(slt)-len(sn))*' '+sn
             #end if
             print(' {0}/{1} {2}   {3}  {4:3.2f} sec'.format(sn,slt,title,status,t2-t1))
+            if options.verbose:
+                pad = (len(sn)+len(slt)+5)*' '
+                for subtest in test.subtests:
+                    print(pad+'subtest: '+subtest)
+                #end for
+            #end if
         #end if
         
         # print more information if failed

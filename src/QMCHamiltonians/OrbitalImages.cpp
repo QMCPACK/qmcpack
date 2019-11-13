@@ -147,20 +147,18 @@ bool OrbitalImages::put(xmlNodePtr cur)
   for (int i = 0; i < valtypes.size(); ++i)
   {
     const std::string& valtype = valtypes[i];
-    value_types_enum value_type;
     if (valtype == "real")
-      value_type = real_val;
+      value_types.push_back(real_val);
     else if (valtype == "imag")
-      value_type = imag_val;
+      value_types.push_back(imag_val);
     else if (valtype == "abs")
-      value_type = abs_val;
+      value_types.push_back(abs_val);
     else if (valtype == "abs2")
-      value_type = abs2_val;
+      value_types.push_back(abs2_val);
     else
     {
       APP_ABORT("OrbitalImages::put  value type " + valtype + " is unsupported\n  valid options are: value, abs, abs2");
     }
-    value_types.push_back(value_type);
   }
   if (value_types.size() == 0)
     value_types.push_back(real_val);

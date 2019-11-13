@@ -245,7 +245,6 @@ void WalkerSetBase<Alloc,Ptr>::popControl(std::vector<ComplexType>& curData)
 {
   Timers[Branching_t]->start();
   ComplexType minus = ComplexType(-1.0,0.0);
-  bool needsLoadBalance = true;
 
   curData.resize(7);
   using std::fill;  

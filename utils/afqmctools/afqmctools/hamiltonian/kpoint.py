@@ -105,9 +105,9 @@ def write_hamil_kpoints(comm, scf_data, hamil_file, chol_cut,
                 numv = Ldim[5]
                 LQ2 = h5f2.h5f["/Hamiltonian/KPFactorized/L"+str(Q)][:]
                 LQ2 = numpy.reshape(LQ2,(nkk,nij*numv,2))
-                h5file.grp_v2["L"+str(Q)][kk0:kk0+nkk,ij0*numv:ijN*numv,:] = LQ2[:,:,:] 
+                h5file.grp_v2["L"+str(Q)][kk0:kk0+nkk,ij0*numv:ijN*numv,:] = LQ2[:,:,:]
             h5f2.close()
-            os.remove("rank"+str(rk)+"_"+hamil_file) 
+            os.remove("rank"+str(rk)+"_"+hamil_file)
         h5file.close()
     else:
         h5file.close()
@@ -531,17 +531,11 @@ class KPCholesky(object):
                     T_ = to_qmcpack_complex(cholvecs[kk,:,0:numv].copy())
                     T_ = numpy.reshape(T_,(-1,2))/math.sqrt(nkpts*1.0)
                     LQ[kk+part.kk0,part.ij0*numv:part.ijN*numv,:] = T_
-#                    T_ = cholvecs[kk,:,0:numv].real.copy()
-#                    T_ = numpy.reshape(T_,(-1))/math.sqrt(nkpts*1.0)
-#                    LQ[kk+part.kk0,part.ij0*numv:part.ijN*numv,0] = T_
-#                    T_ = cholvecs[kk,:,0:numv].imag.copy()
-#                    T_ = numpy.reshape(T_,(-1))/math.sqrt(nkpts*1.0)
-#                    LQ[kk+part.kk0,part.ij0*numv:part.ijN*numv,1] = T_
                     T_ = None
             else:
                 Ldim = h5file.grp_v2.create_dataset("Ldim"+str(Q),
                                 data=numpy.array([part.nkk,part.nij,part.kk0,
-                                                part.ij0,part.ijN,numv],dtype=numpy.int32)) 
+                                                part.ij0,part.ijN,numv],dtype=numpy.int32))
                 LQ = h5file.grp_v2.create_dataset("L"+str(Q),
                                               (part.nkk,part.nij*numv,2),
                                               dtype=numpy.float64)
@@ -551,7 +545,6 @@ class KPCholesky(object):
                     T_ = numpy.reshape(T_,(-1,2))/math.sqrt(nkpts*1.0)
                     LQ[kk,:,:] = T_
                     T_ = None
-                
             comm.barrier()
 
         h5file.grp.create_dataset("NCholPerKP", data=num_cholvecs)

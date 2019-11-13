@@ -158,6 +158,8 @@ def read_qmcpack_ci_wavefunction(input_file, nelec, nmo, ndets=None):
         ci_b = fh5['MultiDet/CI_Beta'][:]
         nbs = fh5['MultiDet/Nbits'][()]
         coeffs = fh5['MultiDet/Coeff'][:][:ndets]
+        coeffs_imag = fh5['MultiDet/Coeff_imag'][:][:ndets]
+        coeffs = coeffs + 1j*coeffs_imag
         occa = []
         occb = []
         for i, (ca, cb) in enumerate(zip(ci_a[:ndets], ci_b[:ndets])):

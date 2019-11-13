@@ -27,6 +27,7 @@
 #include "Message/Communicate.h"
 #include "Estimators/ScalarEstimatorBase.h"
 #include "Estimators/EstimatorManagerInterface.h"
+#include "Particle/Walker.h"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsData/HDFAttribIO.h"
 #include <bitset>
@@ -38,12 +39,14 @@ class QMCHamiltonian;
 class CollectablesEstimator;
 
 /** Class to manage a set of ScalarEstimators */
-class EstimatorManagerBase
+class EstimatorManagerBase : public EstimatorManagerInterface
 {
 public:
   typedef QMCTraits::FullPrecRealType RealType;
   typedef ScalarEstimatorBase EstimatorType;
   typedef std::vector<RealType> BufferType;
+  using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
+
   //enum { WEIGHT_INDEX=0, BLOCK_CPU_INDEX, ACCEPT_RATIO_INDEX, TOTAL_INDEX};
 
   ///name of the primary estimator name
@@ -167,12 +170,27 @@ public:
 
   /** stop a block
    * @param accept acceptance rate of this block
+   * 
+   */
+  void stopBlockNew(RealType accept);
+
+  
+  /** stop a block
+   * @param accept acceptance rate of this block
    */
   void stopBlock(RealType accept, bool collectall = true);
+
   /** stop a block
    * @param m list of estimator which has been collecting data independently
    */
   void stopBlock(const std::vector<EstimatorManagerBase*>& m);
+
+  /** At end of block collect the scalar estimators for the entire rank
+   *   
+   *  Each is currently accumulates on for crowd of 1 or more walkers
+   *  TODO: What is the correct normalization 
+   */
+  void collectScalarEstimators(const RefVector<ScalarEstimatorBase>& scalar_estimators, const int total_walkers, const RealType block_weight);
 
   /** accumulate the measurements
    * @param W walkers
@@ -195,11 +213,26 @@ public:
 
   void getCurrentStatistics(MCWalkerConfiguration& W, RealType& eavg, RealType& var);
 
+  /** Unified walker variant of this method
+   *
+   *  This only makes sense to call on the whole population with the current DMC algorithm
+   *
+   *  This is about to be refactored out of EstimatorManagerBase
+   *
+   *  I think it would probably be cleaner and remove alot of reset issues to have the eavg and var
+   *  from the previous section passed in
+   *  rather than retaining the estimator manager to get them.
+   */
+  static void getCurrentStatistics(const int global_walkers, RefVector<MCPWalker>& walkers, RealType& eavg, RealType& var, Communicate* comm);
+  
   template<class CT>
   void write(CT& anything, bool doappend)
   {
     anything.write(h_file, doappend);
   }
+
+  auto& get_AverageCache() { return AverageCache; }
+  auto& get_SquaredAverageCache() { return SquaredAverageCache; }
 
 protected:
   friend class EstimatorManagerCrowd;
@@ -273,7 +306,7 @@ private:
   //Data for communication
   std::vector<BufferType*> RemoteData;
   ///collect data and write
-  void collectBlockAverages(int num_threads);
+  void collectBlockAverages();
   ///add header to an std::ostream
   void addHeader(std::ostream& o);
   size_t FieldWidth;

@@ -35,22 +35,6 @@
 #include <set>
 #include <algorithm>
 
-#ifdef HAVE_ADIOS
-#include "ADIOS/ADIOSTrace.h"
-#include <std::string.h>
-//#include "adios.h"
-//#include "adios_read.h"
-//#include "ADIOS/ADIOS_config.h"
-#include <boost/lexical_cast.hpp>
-//#ifdef IO_PROFILE
-//#include "ADIOS/ADIOS_profile.h"
-//#endif
-//#ifdef ADIOS_VERIFY
-//#include "ADIOS/ADIOS_verify.h"
-//#endif
-#endif
-
-
 namespace qmcplusplus
 {
 //#define TRACE_CHECK
@@ -443,7 +427,7 @@ struct TraceRequest
     for (it = quantities.begin(); it != quantities.end(); ++it)
     {
       TraceQuantity& q = it->second;
-      bool selected;
+      bool selected = false;
       if (selector == "scalar_available")
         selected = q.scalar_available;
       else if (selector == "array_available")
@@ -1028,83 +1012,6 @@ struct TraceSamples
   }
 
 
-#ifdef HAVE_ADIOS
-  // determine what adios type to use for output (of one variable)
-  inline std::string get_adios_type(std::string type, std::string domain, std::string name, bool complex = 0)
-  {
-    /* If we keep double/float, do this */
-    /*
-        if (!type.compare("real") && sizeof(T) == sizeof(double))
-            vartype = "double";
-        else
-            vartype = type;
-
-        if (complex) { 
-            if (!type.compare("real") && sizeof(T) == sizeof(std::complex<double>))
-                vartype = "complex double";
-            else
-                vartype = "complex";
-        }
-        */
-    std::string vartype;
-    if (domain == "scalars")
-    {
-      /* /scalars/... variables keep their types */
-      if (type == "real" && sizeof(T) == sizeof(double))
-        vartype = "double";
-      else
-        vartype = type;
-    }
-    else if (complex)
-    {
-      vartype = "complex"; /* complex float even if TraceCompl is std::complex<double> */
-    }
-    else
-    {
-      vartype = type; /* int or real (i.e. 4 byte ADIOS types, even if TraceReal is double */
-    }
-    return vartype;
-  }
-
-  inline void register_adios_data(ADIOS::Trace& at, std::string type, bool complex = 0)
-  {
-    std::string varpath;
-    std::string vartype;
-    int dims[4] = {0, 0, 0, 0};
-
-    for (int i = 0; i < ordered_samples.size(); ++i)
-    {
-      const struct TraceSample<T>& s = *ordered_samples[i];
-      /*
-        app_log()<<"domain         = "<< s.domain        << std::endl;
-        app_log()<<"name           = "<< s.name          << std::endl;
-        app_log()<<"index          = "<< s.index         << std::endl;
-        app_log()<<"array_trace    = "<< s.array_trace<< std::endl;
-        app_log()<<"dimension      = "<< s.dimension     << std::endl;
-        app_log()<<"size           = "<< s.size          << std::endl;
-        app_log()<<"unit_size      = "<< s.unit_size     << std::endl;
-        app_log()<<"data_size      = "<< s.data_size     << std::endl;
-        app_log()<<"shape          = "<< s.shape         << std::endl;
-        app_log()<<"buffer range   = ["<<s.buffer_start<<","<<s.buffer_end<<")"<< std::endl;
-        */
-
-      //jtk: attempt to restrict adios writes in the correct way, please check!
-      if (s.write)
-      {
-        varpath = "/" + s.domain + "/" + s.name;
-        for (int j = 0; j < s.dimension; j++)
-        {
-          dims[j] = s.shape[j]; // * s.unit_size;
-        }
-
-        vartype = get_adios_type(type, s.domain, s.name, complex);
-        at.define_var(varpath, s.dimension, dims, vartype);
-      }
-    }
-  }
-#endif
-
-
   inline void write_summary(std::string type, std::string pad = "  ")
   {
     std::string pad2 = pad + "  ";
@@ -1368,18 +1275,6 @@ struct TraceBuffer
   }
 
 
-#ifdef HAVE_ADIOS
-  inline void register_adios_data(ADIOS::Trace& at)
-  {
-    samples->register_adios_data(at, type, false);
-    if (has_complex)
-    {
-      complex_samples->register_adios_data(at, type, true);
-    }
-  }
-#endif
-
-
   inline void write_hdf(hdf_archive& f) { write_hdf(f, hdf_file_pointer); }
 
 
@@ -1549,16 +1444,11 @@ public:
   bool verbose;
   std::string format;
   bool hdf_format;
-  bool adios_format;
   std::string file_root;
   Communicate* communicator;
   hdf_archive* hdf_file;
-#ifdef HAVE_ADIOS
-  ADIOS::Trace* adios_trace;
-#endif
-  xmlNodePtr adios_options;
 
-  TraceManager(Communicate* comm = 0) : hdf_file(0), verbose(false)
+  TraceManager(Communicate* comm = 0) : verbose(false), hdf_file(0)
   {
     reset_permissions();
     master_copy    = true;
@@ -1572,10 +1462,6 @@ public:
     int_buffer.set_samples(int_samples);
     real_buffer.set_samples(real_samples);
     real_buffer.set_samples(comp_samples);
-#ifdef HAVE_ADIOS
-    adios_trace = 0;
-#endif
-    adios_options = 0;
   }
 
 
@@ -1603,12 +1489,7 @@ public:
     verbose              = tm.verbose;
     format               = tm.format;
     hdf_format           = tm.hdf_format;
-    adios_format         = tm.adios_format;
     default_domain       = tm.default_domain;
-#ifdef HAVE_ADIOS
-    adios_trace = tm.adios_trace;
-#endif
-    adios_options = tm.adios_options;
   }
 
 
@@ -1629,7 +1510,6 @@ public:
     writing_traces       = false;
     verbose              = false;
     hdf_format           = false;
-    adios_format         = false;
     request.reset();
   }
 
@@ -1681,28 +1561,10 @@ public:
       {
         hdf_format = true;
       }
-#ifdef HAVE_ADIOS
-      else if (format == "adios")
-      {
-        adios_format = true;
-      }
-      else if (format == "both")
-      {
-        adios_format = true;
-        hdf_format   = true;
-      }
-      else
-      {
-        APP_ABORT("TraceManager::put " + format +
-                  " is not a valid file format for traces\n  valid options are: hdf, adios, both");
-      }
-#else
       else
       {
         APP_ABORT("TraceManager::put " + format + " is not a valid file format for traces\n  valid options is: hdf");
       }
-#endif
-
 
       //read scalar and array elements
       //  each requests that certain traces be computed
@@ -1739,10 +1601,6 @@ public:
             putContent(array_list, element);
             array_requests.insert(array_list.begin(), array_list.end());
           }
-        }
-        else if (name == "adios_options")
-        {
-          adios_options = element;
         }
         else if (name != "text")
         {
@@ -2076,16 +1934,6 @@ public:
         {
           write_buffers_hdf(clones);
         }
-        if (adios_format)
-        {
-#ifdef HAVE_ADIOS
-          write_buffers_adios(clones, block);
-#else
-          APP_ABORT("TraceManager::write_buffers (adios) ADIOS is not found");
-#endif
-          //app_log()<<"TraceManager::write_buffers (adios) has not yet been implemented"<< std::endl;
-          //app_log()<<" write_buffers() total time "<<MPI_Wtime()-tstart<< std::endl;
-        }
       }
     }
     else
@@ -2107,14 +1955,6 @@ public:
         {
           open_hdf_file(clones);
         }
-        if (adios_format)
-        {
-#ifdef HAVE_ADIOS
-          initialize_adios(clones);
-#else
-          APP_ABORT("TraceManager::open_file (adios) ADIOS is not found");
-#endif
-        }
       }
     }
     else
@@ -2133,14 +1973,6 @@ public:
         if (hdf_format)
         {
           close_hdf_file();
-        }
-        if (adios_format)
-        {
-#ifdef HAVE_ADIOS
-          finalize_adios();
-#else
-          APP_ABORT("TraceManager::close_file (adios) ADIOS is not found");
-#endif
         }
       }
     }
@@ -2204,7 +2036,6 @@ public:
     app_log() << pad2 << "writing_traces          = " << writing_traces << std::endl;
     app_log() << pad2 << "format                  = " << format << std::endl;
     app_log() << pad2 << "hdf format              = " << hdf_format << std::endl;
-    app_log() << pad2 << "adios format            = " << adios_format << std::endl;
     app_log() << pad2 << "default_domain          = " << default_domain << std::endl;
     int_buffer.write_summary(pad2);
     real_buffer.write_summary(pad2);
@@ -2274,484 +2105,7 @@ public:
     }
   }
 
-
   inline void close_hdf_file() { delete hdf_file; }
-
-
-#ifdef HAVE_ADIOS /* Norbert's new code */
-
-  template<typename TraceT, typename ADIOST>
-  void convert_and_write_adios(ADIOS::Trace& at,
-                               std::vector<TraceManager*>& clones,
-                               TraceSample<TraceT> s,
-                               std::string type,
-                               int max_nrows,
-                               int ncols)
-  {
-    int dims[4]         = {0, 0, 0, 0};
-    std::string varpath = "/" + s.domain + "/" + s.name;
-    int nelems          = 1;
-    for (int j = 0; j < s.dimension; j++)
-    {
-      dims[j] = s.shape[j];
-      nelems *= dims[j];
-    }
-
-    int bs = s.buffer_start; // start offset of this variable in int samples
-    //app_log()<<"      variable "<<varpath<<" nelems="<<nelems<<" buffer offset="<<bs<< std::endl;
-
-    ADIOST* datap;
-    if (type == "complex")
-    {
-      /* nelems is the total number of COMPLEX values 
-             * i.e. 2x as many real values are in the REAL buffer
-             * ADIOST is a real type in this case, need to double the allocation here */
-      datap = (ADIOST*)calloc(2 * nelems * max_nrows, sizeof(ADIOST));
-    }
-    else
-    {
-      datap = (ADIOST*)calloc(nelems * max_nrows, sizeof(ADIOST));
-    }
-
-    int row_start = 0; // cumulative row count
-    for (int i = 0; i < clones.size(); i++)
-    {
-      TraceManager& tmc = *clones[i];
-      int nrows;
-      if (type == "int")
-      {
-        Array<TraceInt, 2>& buffer = tmc.int_buffer.buffer;
-        nrows                      = buffer.size(0);
-        for (int j = 0; j < buffer.size(0); j++)
-        {
-          for (int k = 0; k < nelems; k++)
-          {
-            // trace[j,k] -> adios[k, j+row_start]
-            datap[(row_start + j) * nelems + k] = buffer(j * ncols + bs + k);
-          }
-        }
-      }
-      else if (type == "complex")
-      {
-        // The TraceComp type sample is stored in the TraceReal typed array
-        Array<TraceReal, 2>& buffer = tmc.real_buffer.buffer;
-        nrows                       = buffer.size(0);
-        for (int j = 0; j < buffer.size(0); j++)
-        {
-          for (int k = 0; k < nelems; k++)
-          {
-            // trace[j,k] -> adios[k, j+row_start]
-            datap[(row_start + j) * 2 * nelems + 2 * k]     = buffer(j * ncols + bs + 2 * k);
-            datap[(row_start + j) * 2 * nelems + 2 * k + 1] = buffer(j * ncols + bs + 2 * k + 1);
-          }
-        }
-      }
-      else
-      {
-        Array<TraceReal, 2>& buffer = tmc.real_buffer.buffer;
-        nrows                       = buffer.size(0);
-        for (int j = 0; j < buffer.size(0); j++)
-        {
-          for (int k = 0; k < nelems; k++)
-          {
-            // trace[j,k] -> adios[k, j+row_start]
-            datap[(row_start + j) * nelems + k] = buffer(j * ncols + bs + k);
-          }
-        }
-      }
-
-      row_start += nrows;
-    }
-    adios_trace->write(varpath, datap);
-    free(datap);
-  }
-
-  /* Called once at each QMC application run (i.e. a few times during the run)
-     * Here we define an ADIOS group of variables for output
-     * Name of the group is same as file_root, e.g. bench.s000
-     */
-  inline void initialize_adios(std::vector<TraceManager*>& clones)
-  {
-    TraceManager& tm = *clones[0];
-
-    //double tstart = MPI_Wtime();
-    if (verbose)
-      app_log() << "TraceManager::initialize_adios " << master_copy << std::endl;
-
-    adios_trace = new ADIOS::Trace(file_root.c_str(), communicator->getMPI(), adios_options);
-
-    tm.int_buffer.register_adios_data(*adios_trace);
-    tm.real_buffer.register_adios_data(*adios_trace);
-    //app_log()<<"TraceManager::initialize_adios() total time="<<MPI_Wtime()-tstart<< std::endl;
-  }
-
-
-  inline void write_buffers_adios(std::vector<TraceManager*>& clones, int block)
-  {
-    if (verbose)
-      app_log() << "TraceManager::write_buffers_adios " << master_copy << std::endl;
-    int64_t f;
-    MPI_Comm comm = communicator->getMPI();
-
-    /* I. open the file, so if that's threaded, we can prepare the 
-         * buffering concurrently */
-    std::string s         = boost::lexical_cast<std::string>(block);
-    std::string file_name = file_root + ".b" + s + ".bp";
-    //double io_open_start = MPI_Wtime();
-    adios_trace->open(file_name);
-    //app_log()<<" io open time on rank 0: "<<MPI_Wtime()-io_open_start<< std::endl;
-
-    int actual_nrows_local = 0; // number of rows in this process' tables
-    int max_nrows          = 0; // max of local nrows numbers
-    int nrows_total;            // number of rows in the global output
-    int offset;                 // this process' offset in global output of samples
-
-    /* II. Get the maximum number of rows present in any process.
-         * Each process will pad it's output arrays with 0 to have the same size
-         */
-    for (int ip = 0; ip < clones.size(); ip++)
-    {
-      TraceManager& tmc = *clones[ip];
-      actual_nrows_local += tmc.real_buffer.buffer.size(0);
-      if (tmc.int_buffer.buffer.size(0) != tmc.real_buffer.buffer.size(0))
-      {
-        std::cerr << "ERROR in ADIOS trace assumptions: number of rows in the integer"
-                     "vs real trace tables do not match on process "
-                  << communicator->rank() << ": clone=" << ip << " int_nrows=" << tmc.int_buffer.buffer.size(0)
-                  << " real_nrows=" << tmc.real_buffer.buffer.size(0) << std::endl;
-      }
-    }
-    //double comm_start = MPI_Wtime();
-    MPI_Allreduce(&actual_nrows_local, &max_nrows, 1, MPI_INT, MPI_MAX, comm);
-    //app_log()<<" Allreduce comm time for nrows "<<MPI_Wtime()-comm_start<< std::endl;
-
-    nrows_total = max_nrows * communicator->size();
-    offset      = max_nrows * communicator->rank();
-
-    /* III. Calculate adios group size */
-    //double io_group_start = MPI_Wtime();
-    adios_trace->set_group_size(max_nrows);
-    //app_log()<<" io group time on rank 0: "<<MPI_Wtime()-io_group_start<< std::endl;
-
-    /* IV. Write known adios scalars */
-    //double io_write_start = MPI_Wtime();
-    adios_trace->write("/aux/max_nrows", &max_nrows);
-    adios_trace->write("/aux/actual_nrows_local", &actual_nrows_local);
-    adios_trace->write("/aux/offset", &offset);
-    adios_trace->write("nrows", &nrows_total);
-
-    /* V. prepare and write output variables 
-         * We need to a buffering each entity separately here to have contiguous 
-         * pieces for each trace variable. 
-         */
-    TraceManager& tm = *clones[0];
-    int int_cols     = tm.int_buffer.buffer.size(1);  // number of columns in int table
-    int real_cols    = tm.real_buffer.buffer.size(1); // number of columns in real table
-
-    /* 
-         * process INTEGER data 
-         */
-    //app_log()<<"    Copy integer buffer to ADIOS variables..."<< std::endl;
-    struct TraceSamples<TraceInt>& int_samples = *tm.int_buffer.samples;
-    for (int i = 0; i < int_samples.ordered_samples.size(); ++i)
-    {
-      const struct TraceSample<TraceInt>& s = *int_samples.ordered_samples[i];
-      //jtk: attempt to restrict adios writes in the correct way, please check!
-      if (s.write)
-      {
-        convert_and_write_adios<TraceInt, int>(*adios_trace, clones, s, "int", max_nrows, int_cols);
-      }
-    }
-
-    /* 
-         * process REAL data 
-         */
-#define ADIOSTraceReal float
-    //#define ADIOSTraceReal TraceReal
-    //app_log()<<"    Copy real buffer to ADIOS variables..."<< std::endl;
-    struct TraceSamples<TraceReal>& real_samples = *tm.real_buffer.samples;
-    for (int i = 0; i < real_samples.ordered_samples.size(); ++i)
-    {
-      const struct TraceSample<TraceReal>& s = *real_samples.ordered_samples[i];
-      //jtk: attempt to restrict adios writes in the correct way, please check!
-      if (s.write)
-      {
-        std::string vartype = real_samples.get_adios_type("real", s.domain, s.name, false);
-        // we may write some variables as doubles (/scalars/*)
-        if (vartype == "double")
-        {
-          convert_and_write_adios<TraceReal, double>(*adios_trace, clones, s, "real", max_nrows, real_cols);
-        }
-        else
-        {
-          convert_and_write_adios<TraceReal, ADIOSTraceReal>(*adios_trace, clones, s, "real", max_nrows, real_cols);
-        }
-      }
-    }
-
-
-    /* 
-         * process COMPLEX data 
-         */
-    //app_log()<<"    Copy complex buffer to ADIOS variables..."<< std::endl;
-    struct TraceSamples<TraceComp>& complex_samples = *tm.real_buffer.complex_samples;
-    for (int i = 0; i < complex_samples.ordered_samples.size(); ++i)
-    {
-      const struct TraceSample<TraceComp>& s = *complex_samples.ordered_samples[i];
-      //jtk: attempt to restrict adios writes in the correct way, please check!
-      if (s.write)
-      {
-        convert_and_write_adios<TraceComp, ADIOSTraceReal>(*adios_trace, clones, s, "complex", max_nrows, real_cols);
-      }
-    }
-
-
-    //app_log()<<" io write time on rank 0: "<<MPI_Wtime()-io_write_start<< std::endl;
-    //double io_close_start = MPI_Wtime();
-    adios_trace->close();
-    //app_log()<<" io close time on rank 0: "<<MPI_Wtime()-io_close_start<< std::endl;
-  }
-
-  inline void finalize_adios()
-  {
-    if (verbose)
-      app_log() << "TraceManager::finalize_adios " << std::endl;
-    delete (adios_trace);
-  }
-
-#else
-#ifdef HAVE_ADIOS_OLD
-
-
-  inline void initialize_adios(std::vector<TraceManager*>& clones)
-  {
-    //adios_init("qmc_adios.xml", communicator->getMPI());
-    TraceManager& tm = *clones[0];
-    //tm.int_buffer.register_adios_data("w");
-    //tm.real_buffer.register_adios_data("a");
-  }
-
-
-  inline void print_adios(std::vector<TraceManager*>& clones)
-  {
-    app_log() << "TraceManager::write_buffers_adios " << master_copy << std::endl;
-    for (int ip = 0; ip < clones.size(); ++ip)
-    {
-      TraceManager& tm = *clones[ip];
-      //tm.int_buffer.write_summary();
-      //tm.real_buffer.write_summary();
-      app_log() << "Type: " << tm.real_buffer.type << std::endl;
-      app_log() << "Buffer Size: " << tm.real_buffer.buffer.size() << " | " << tm.real_buffer.buffer.size(0) << "|"
-                << tm.real_buffer.buffer.size(1) << std::endl;
-    }
-  }
-
-  inline void write_buffers_adios(std::vector<TraceManager*>& clones, int block)
-  {
-    MPI_Comm comm = communicator->getMPI();
-
-    static bool write_global;
-#if (defined WRITE_GLOBAL) //passed from CMakeList file to switch between local array and global array
-    write_global = true;
-#else
-    write_global = false;
-#endif
-
-    if (write_global)
-    {
-      //preparing data to be written out
-      int rows[] = {0, 0};
-      int cols[] = {0, 0};
-      for (int ip = 0; ip < clones.size(); ip++)
-      {
-        TraceManager& tm = *clones[ip];
-        rows[0] += tm.int_buffer.buffer.size(0);
-        rows[1] += tm.real_buffer.buffer.size(0);
-        cols[0] = tm.int_buffer.buffer.size(1);
-        cols[1] = tm.real_buffer.buffer.size(1);
-      }
-      int allreduced_rows[2];
-      int total_rows[2];
-      //double comm_start = MPI_Wtime();
-      MPI_Allreduce(rows, allreduced_rows, 2, MPI_INT, MPI_MAX, comm);
-      //app_log()<<" comm time "<<MPI_Wtime()-comm_start<< std::endl;
-      //double prep_start = MPI_Wtime();
-
-      int int_max_rows = allreduced_rows[0];
-      int int_rows_total = int_max_rows * communicator->size();
-      int int_offset_rows = communicator->rank() * int_max_rows;
-      int int_cols = cols[0];
-
-      int real_max_rows = allreduced_rows[1];
-      int real_rows_total = real_max_rows * communicator->size();
-      int real_offset_rows = communicator->rank() * real_max_rows;
-      int real_cols = cols[1];
-
-      int* int_buffer = (int*)malloc(int_max_rows * int_cols * sizeof(int));
-      double* real_buffer = (double*)malloc(real_max_rows * real_cols * sizeof(double));
-      if (!int_buffer || !real_buffer)
-      {
-        APP_ABORT("not enough memory\n");
-      }
-      bzero(int_buffer, int_max_rows * int_cols * sizeof(int));
-      bzero(real_buffer, real_max_rows * real_cols * sizeof(double));
-
-      int row_count = 0;
-      for (int i = 0; i < clones.size(); i++)
-      {
-        TraceManager& tm = *clones[i];
-        int rows = tm.int_buffer.buffer.size(0);
-        for (int j = 0; j < rows; j++)
-        {
-          for (int k = 0; k < int_cols; k++)
-          {
-            int_buffer[row_count * int_cols + k] = tm.int_buffer.buffer(j * int_cols + k);
-          }
-          row_count++;
-        }
-      }
-
-      row_count = 0;
-      for (int i = 0; i < clones.size(); ++i)
-      {
-        TraceManager& tm = *clones[i];
-        int rows = tm.real_buffer.buffer.size(0);
-        for (int j = 0; j < rows; j++)
-        {
-          for (int k = 0; k < real_cols; k++)
-          {
-            real_buffer[row_count * real_cols + k] = tm.real_buffer.buffer(j * real_cols + k);
-          }
-          row_count++;
-        }
-      }
-      //app_log()<<" preparation time "<<MPI_Wtime()-prep_start<< std::endl;
-
-      //open adios file, create adios group, write out variable, close adios file
-      int err;
-      uint64_t group_size, total_size;
-      int64_t handle;
-      std::string file_name = file_root;
-      char* fileName = (char*)file_name.c_str();
-
-#if 0
-          /* Current trunk */
-          //string s = boost::lexical_cast<std::string>(block);
-          //file_name = file_name + ".b"+s+".trace.bp";
-          //double io_open_start = MPI_Wtime();
-          if(ADIOS::getFirstOpen())
-          {
-              if(!ADIOS::get_adios_init()){
-                  APP_ABORT("adios is not properly initialized, check adiosinit in XML");
-              }
-              adios_open(&handle, "Traces-global", ADIOS::getTraceFileName().c_str(), "w", comm);
-              ADIOS::setFirstOpen(false);
-          } 
-          else 
-          {
-              adios_open(&handle, "Traces-global", ADIOS::getTraceFileName().c_str(), "a", comm);
-          }
-#else
-      /* Norbert */
-      std::string s = boost::lexical_cast<std::string>(block);
-      file_name     = "trace." + s + ".bp";
-      //double io_open_start = MPI_Wtime();
-      adios_open(&handle, "Traces-global", file_name.c_str(), "w", comm);
-#endif
-      //app_log()<<" io open time "<<MPI_Wtime()-io_open_start<< std::endl;
-
-      //double io_group_start = MPI_Wtime();
-      group_size = strlen(fileName) + 8 * sizeof(int) + int_max_rows * int_cols * sizeof(int) +
-          real_max_rows * real_cols * sizeof(double);
-      adios_group_size(handle, group_size, &total_size);
-      //app_log()<<" io group time "<<MPI_Wtime()-io_group_start<< std::endl;
-
-      //double io_write_start = MPI_Wtime();
-      adios_write(handle, "filename", fileName);
-      adios_write(handle, "int_rows_total", &int_rows_total);
-      adios_write(handle, "int_max_rows", &int_max_rows);
-      adios_write(handle, "int_offset_rows", &int_offset_rows);
-      adios_write(handle, "int_cols", &int_cols);
-      adios_write(handle, "real_rows_total", &real_rows_total);
-      adios_write(handle, "real_max_rows", &real_max_rows);
-      adios_write(handle, "real_offset_rows", &real_offset_rows);
-      adios_write(handle, "real_cols", &real_cols);
-      adios_write(handle, "int_buffer", int_buffer);
-      adios_write(handle, "real_buffer", real_buffer);
-      //app_log()<<" io write time "<<MPI_Wtime()-io_write_start<< std::endl;
-      //double io_close_start = MPI_Wtime();
-      adios_close(handle);
-      //app_log()<<" io close time "<<MPI_Wtime()-io_close_start<< std::endl;
-
-
-      free(int_buffer);
-      free(real_buffer);
-#ifdef IO_PROFILE
-      ADIOS_PROFILE::profile_adios_size(communicator, ADIOS_PROFILE::TRACES, group_size, total_size);
-#endif
-#ifdef ADIOS_VERIFY
-#endif
-      //cout<<"write global"<<rows[0]<<" "<<rows[1]<< std::endl;
-      //cout<<"allreduced"<<int_max_rows<<" "<<real_max_rows<<" "<<int_rows_total<<" "<<real_rows_total<<" "<<int_offset_rows<<" "<<real_offset_rows<<" "<<int_cols<<" "<<real_cols<< std::endl;
-      //cout<<"###############################"<<block<< std::endl;
-    }
-    else
-    {
-      //write in local arrays. Can use the aggregate method
-      int total_size = 0;
-      for (int ip = 0; ip < clones.size(); ++ip)
-      {
-        TraceManager& tm = *clones[ip];
-        total_size += tm.real_buffer.buffer.size();
-      }
-      double* adios_buffer = (double*)malloc(total_size * sizeof(double));
-      if (!adios_buffer)
-      {
-        APP_ABORT("not enough memory\n");
-      }
-      int curr_pos = 0;
-      for (int ip = 0; ip < clones.size(); ++ip)
-      {
-        TraceManager& tm = *clones[ip];
-        for (std::vector<TraceReal>::iterator iter = tm.real_buffer.buffer.begin(); iter != tm.real_buffer.buffer.end();
-             iter++)
-        {
-          adios_buffer[curr_pos++] = *iter;
-        }
-      }
-      int adios_err;
-      uint64_t adios_groupsize, adios_totalsize;
-      int64_t adios_handle;
-      std::string file_name = file_root;
-      std::string s = boost::lexical_cast<std::string>(block);
-      file_name = file_name + ".b" + s + ".trace.bp";
-      adios_open(&adios_handle, "Traces", file_name.c_str(), "w", comm);
-      adios_groupsize = 4 + (total_size * 8);
-      adios_group_size(adios_handle, adios_groupsize, &adios_totalsize);
-      adios_write(adios_handle, "total_size", &total_size);
-      adios_write(adios_handle, "buffer_contents", adios_buffer);
-      adios_close(adios_handle);
-      free(adios_buffer);
-#ifdef IO_PROFILE
-      ADIOS_PROFILE::profile_adios_size(communicator, ADIOS_PROFILE::TRACES, adios_groupsize, adios_totalsize);
-#endif
-#ifdef ADIOS_VERIFY
-      ADIOS_FILE* fp = adios_read_open_file(file_name.c_str(), ADIOS_READ_METHOD_BP, OHMMS::Controller->getMPI());
-      IO_VERIFY::adios_checkpoint_verify_variables(fp, "total_size", &total_size);
-      IO_VERIFY::adios_trace_verify_local_variables(fp, "buffer_contents", adios_buffer);
-      adios_read_close(fp);
-#endif
-    }
-  }
-
-
-  inline void finalize_adios()
-  {
-    //adios_finalize(communicator->rank());
-  }
-
-#endif /* HAVE_ADIOS_OLD */
-#endif /* HAVE_ADIOS */
 };
 
 

@@ -46,9 +46,9 @@ public:
   }
 
   SPOMapType& SPOMap;
+  ParticleSet& target;
   PtclPoolType& PtclPool;
   ParticleSet* ions;
-  ParticleSet& target;
 
   // construction/destruction
   SPOSetScanner(SPOMapType& spomap, ParticleSet& targetPtcl, PtclPoolType& psets)

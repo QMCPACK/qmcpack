@@ -323,19 +323,19 @@ class full1rdm: public AFQMCInfo
 
   private:
 
+  TaskGroup_& TG;
+
+  WALKER_TYPES walker_type;
+
+  bool writer;
+
   int block_size;  
 
   int nave;
 
   int counter;
 
-  TaskGroup_& TG;
-
-  WALKER_TYPES walker_type;
-
   int dm_size;
-
-  bool writer;
 
   std::string hdf_walker_output;  
 
@@ -352,12 +352,12 @@ class full1rdm: public AFQMCInfo
 
   mpi3IMatrix index_list;
 
+  mpi3CVector denom; 
+
   // DMAverage (nave, spin*x*NMO*x*NMO), x=(1:CLOSED/COLLINEAR, 2:NONCOLLINEAR)
   mpi3CMatrix DMAverage;
   // DMWork (nwalk, spin*x*NMO*x*NMO), x=(1:CLOSED/COLLINEAR, 2:NONCOLLINEAR)
   mpi3CMatrix DMWork;
-
-  mpi3CVector denom; 
 
   // buffer space
   CVector Buff;

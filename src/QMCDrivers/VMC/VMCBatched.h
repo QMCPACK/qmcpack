@@ -17,6 +17,9 @@
 #include "QMCDrivers/VMC/VMCDriverInput.h"
 #include "QMCDrivers/MCPopulation.h"
 #include "QMCDrivers/ContextForSteps.h"
+#include "QMCDrivers/GreenFunctionModifiers/DriftModifierBase.h"
+
+#include "Utilities/Timer.h"
 
 namespace qmcplusplus
 {
@@ -26,7 +29,10 @@ namespace qmcplusplus
 class VMCBatched : public QMCDriverNew
 {
 public:
+  using FullPrecRealType = QMCTraits::FullPrecRealType;
   using PosType = QMCTraits::PosType;
+  using ParticlePositions = PtclOnLatticeTraits::ParticlePos_t;
+
   /** To avoid 10's of arguments to runVMCStep
    *
    *  There should be a division between const input to runVMCStep
@@ -34,25 +40,25 @@ public:
    */
   struct StateForThread
   {
-    QMCDriverInput& qmcdrv_input;
-    VMCDriverInput& vmcdrv_input;
-    MCPopulation&   population;
+    const QMCDriverInput& qmcdrv_input;
+    const VMCDriverInput& vmcdrv_input;
+    const DriftModifierBase& drift_modifier;
+    const MCPopulation&   population;
     IndexType recalculate_properties_period;
     IndexType step;
     int block;
     bool recomputing_blocks;
-    StateForThread(QMCDriverInput&  qmci,
-                   VMCDriverInput& vmci,
-                   MCPopulation&   pop) : qmcdrv_input(qmci), vmcdrv_input(vmci), population(pop) {}
 
-                   
+    StateForThread(QMCDriverInput& qmci, VMCDriverInput& vmci, DriftModifierBase& drift_mod, MCPopulation& pop)
+        : qmcdrv_input(qmci), vmcdrv_input(vmci), drift_modifier(drift_mod), population(pop)
+    {}
   };
 
 public:
   /// Constructor.
   VMCBatched(QMCDriverInput&& qmcdriver_input,
              VMCDriverInput&& input,
-             MCPopulation&& pop,
+             MCPopulation& pop,
              TrialWaveFunction& psi,
              QMCHamiltonian& h,
              WaveFunctionPool& ppool,
@@ -60,17 +66,22 @@ public:
  
   bool run();
 
-  static void advanceWalkers(const StateForThread& sft, Crowd& crowd, ContextForSteps& move_context, bool recompute);
-  
+  /** Refactor of VMCUpdatePbyP in crowd context
+   *
+   *  MCWalkerConfiguration layer removed.
+   *  Obfuscation of state changes via buffer and MCWalkerconfiguration require this be tested well
+   */
+  static void advanceWalkers(const StateForThread& sft, Crowd& crowd, DriverTimers& timers, ContextForSteps& move_context, bool recompute);
+
   // This is the task body executed at crowd scope
   // it does not have access to object member variables by design
   static void runVMCStep(int crowd_id,
                          const StateForThread& sft,
-                         std::vector<std::unique_ptr<ContextForSteps>>& move_context,
+                         DriverTimers& timers,
+                         std::vector<std::unique_ptr<ContextForSteps>>& context_for_steps,
                          std::vector<std::unique_ptr<Crowd>>& crowds);
-  void setup();
-  //inline std::vector<RandomGenerator_t*>& getRng() { return Rng;}
-  IndexType calc_default_local_walkers();
+
+  IndexType calc_default_local_walkers(IndexType walkers_per_rank);
 
 private:
   int prevSteps;
@@ -79,10 +90,6 @@ private:
   QMCRunType getRunType() { return QMCRunType::VMC_BATCH; }
   ///Ways to set rn constant
   RealType logoffset, logepsilon;
-  ///option to enable/disable drift equation or RN for VMC
-  std::string UseDrift;
-  ///check the run-time environments
-  void resetRun();
   ///copy constructor
   VMCBatched(const VMCBatched&) = delete;
   /// Copy operator (disabled).

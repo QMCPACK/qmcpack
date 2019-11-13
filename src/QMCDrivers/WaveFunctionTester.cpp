@@ -41,10 +41,10 @@ WaveFunctionTester::WaveFunctionTester(MCWalkerConfiguration& w,
                                        WaveFunctionPool& ppool,
                                        Communicate* comm)
     : QMCDriver(w, psi, h, ppool, comm),
+      PtclPool(ptclPool),
       checkRatio("no"),
       checkClone("no"),
       checkHamPbyP("no"),
-      PtclPool(ptclPool),
       wftricks("no"),
       checkEloc("no"),
       checkBasic("yes"),
@@ -776,7 +776,7 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
     ParticleSet::ParticleLaplacian_t L(nat), tmpL(nat), L1(nat);
 
 
-    RealType logpsi1 = orb->evaluateLog(W, G, L);
+    LogValueType logpsi1 = orb->evaluateLog(W, G, L);
 
     fail_log << "WaveFunctionComponent " << iorb << " " << orb->ClassName << " log psi = " << logpsi1 << std::endl;
 
@@ -790,12 +790,11 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
       ParticleSet::SingleParticlePos_t zeroR;
       W.makeMove(it->index, zeroR);
 
-      RealType logpsi0 = orb->evaluateLog(W, tmpG, tmpL);
+      LogValueType logpsi0 = orb->evaluateLog(W, tmpG, tmpL);
 #if defined(QMC_COMPLEX)
-      RealType phase0  = orb->PhaseValue;
-      ValueType logpsi = std::complex<OHMMS_PRECISION>(logpsi0, phase0);
+      ValueType logpsi(logpsi0.real(), logpsi0.imag());
 #else
-      ValueType logpsi = logpsi0;
+      ValueType logpsi = std::real(logpsi0);
 #endif
       logpsi_vals.push_back(logpsi);
       W.rejectMove(it->index);
@@ -823,12 +822,12 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
         ParticleSet::ParticleGradient_t G(nat), tmpG(nat), G1(nat);
         ParticleSet::ParticleLaplacian_t L(nat), tmpL(nat), L1(nat);
         DiracDeterminantBase* det = sd->Dets[isd];
-        RealType logpsi2          = det->evaluateLog(W, G, L); // this won't work with backflow
+        LogValueType logpsi2          = det->evaluateLog(W, G, L); // this won't work with backflow
         fail_log << "  Slater Determiant " << isd << " (for particles " << det->getFirstIndex() << " to "
                  << det->getLastIndex() << ") log psi = " << logpsi2 << std::endl;
         // Should really check the condition number on the matrix determinant.
         // For now, just ignore values that too small.
-        if (logpsi2 < -40.0)
+        if (std::real(logpsi2) < -40.0)
         {
           ignore = true;
         }
@@ -840,12 +839,11 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
           W.R[it->index] = it->r;
           W.update();
 
-          RealType logpsi0 = det->evaluateLog(W, tmpG, tmpL);
+          LogValueType logpsi0 = det->evaluateLog(W, tmpG, tmpL);
 #if defined(QMC_COMPLEX)
-          RealType phase0  = det->PhaseValue;
-          ValueType logpsi = std::complex<OHMMS_PRECISION>(logpsi0, phase0);
+          ValueType logpsi(logpsi0.real(), logpsi0.imag());
 #else
-          ValueType logpsi = logpsi0;
+          ValueType logpsi = std::real(logpsi0);
 #endif
           logpsi_vals.push_back(logpsi);
 

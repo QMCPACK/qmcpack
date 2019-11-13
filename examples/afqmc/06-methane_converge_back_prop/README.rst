@@ -1,4 +1,4 @@
-Example 5: Back Propagation
+Example 6: Back Propagation
 ===========================
 
 The basic estimators printed out in the qmcpack `*.scalar.dat` files are *mixed*
@@ -11,7 +11,7 @@ As before run scf.py and generate the integrals using `pyscf_to_afmqc.py`:
 
 .. code-block:: bash
 
-    mpirun -n 1 pyscf_to_afqmc.py -i scf.chk -o hamil.h5 -t 1e-5 -v
+    mpirun -n 1 /path/to/qmcpack/utils/afqmctools/bin/pyscf_to_afqmc.py -i scf.chk -o afqmc.h5 -t 1e-5 -v
 
 Note we are working in the MO basis. The input file is generated using `gen_input.py` and
 comparing to the previous examples we can now see the estimator block:

@@ -101,8 +101,8 @@ TEST_CASE("Pade Jastrow", "[wavefunction]")
 
   // cusp = -0.25
   // r_ee = 3.42050023755
-  RadialJastrowBuilder jastrow(elec_, psi);
-  jastrow.put(jas1);
+  RadialJastrowBuilder jastrow(c, elec_);
+  psi.addComponent(jastrow.buildComponent(jas1), "RadialJastrow");
 
   // update all distance tables
   elec_.update();

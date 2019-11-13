@@ -14,7 +14,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-/** @file HDFWalkerOuput.cpp
+/** @file
  * @brief definition  of HDFWalkerOuput  and other support class and functions
  */
 #include "Particle/HDFWalkerOutput.h"
@@ -27,10 +27,6 @@
 #include <Message/Communicate.h>
 #include <mpi/collectives.h>
 #include <io/hdf_hyperslab.h>
-#if defined(HAVE_ADIOS) && defined(ADIOS_VERIFY)
-#include <adios.h>
-#include "ADIOS/ADIOS_verify.h"
-#endif
 
 namespace qmcplusplus
 {
@@ -57,10 +53,10 @@ namespace qmcplusplus
 HDFWalkerOutput::HDFWalkerOutput(MCWalkerConfiguration& W, const std::string& aroot, Communicate* c)
     : appended_blocks(0),
       number_of_walkers(0),
-      currentConfigNumber(0),
       number_of_backups(0),
       max_number_of_backups(4),
       myComm(c),
+      currentConfigNumber(0),
       RootName(aroot)
 //       , fw_out(myComm)
 {
@@ -86,69 +82,6 @@ HDFWalkerOutput::~HDFWalkerOutput()
   //     fw_out.close();
   delete_iter(RemoteData.begin(), RemoteData.end());
 }
-
-#ifdef HAVE_ADIOS
-uint64_t HDFWalkerOutput::get_group_size(MCWalkerConfiguration& W)
-{
-  int walker_num   = W.getActiveWalkers();
-  int particle_num = number_of_particles;
-  return sizeof(int) * 4 + sizeof(OHMMS_PRECISION) * walker_num * particle_num * OHMMS_DIM;
-}
-
-bool HDFWalkerOutput::adios_checkpoint(MCWalkerConfiguration& W, int64_t adios_handle, int nblock)
-{
-  //Need 4 * 3 bytes for storing integers and then storage
-  //for all the walkers
-  if (RemoteData.empty())
-    RemoteData.push_back(new BufferType);
-  int walker_num     = W.getActiveWalkers();
-  int particle_num   = number_of_particles;
-  int walker_dim_num = OHMMS_DIM;
-  if (nblock > block)
-  {
-    //This is just another wrapper for vector
-    RemoteData[0]->resize(walker_num * particle_num * walker_dim_num);
-    //Copy over all the walkers into one chunk of contigous memory
-    W.putConfigurations(RemoteData[0]->begin());
-    block = nblock;
-  }
-  void* walkers = RemoteData[0]->data();
-  uint64_t adios_groupsize, adios_totalsize;
-  adios_groupsize = sizeof(int) * 3 + sizeof(*(RemoteData[0]->data()));
-  adios_group_size(adios_handle, adios_groupsize, &adios_totalsize);
-  adios_write(adios_handle, "walker_num", &walker_num);
-  adios_write(adios_handle, "particle_num", &particle_num);
-  int walker_size = walker_num * particle_num * walker_dim_num;
-  adios_write(adios_handle, "walker_size", &walker_size);
-  adios_write(adios_handle, "walkers", walkers);
-  return true;
-}
-
-#ifdef ADIOS_VERIFY
-
-void HDFWalkerOutput::adios_checkpoint_verify(MCWalkerConfiguration& W, ADIOS_FILE* fp)
-{
-  if (RemoteData.empty())
-  {
-    APP_ABORT_TRACE(__FILE__, __LINE__, "empty RemoteData. Not possible");
-  }
-
-  //RemoteData.push_back(new BufferType);
-  int walker_num     = W.getActiveWalkers();
-  int particle_num   = number_of_particles;
-  int walker_dim_num = OHMMS_DIM;
-  //RemoteData[0]->resize(walker_num * particle_num * walker_dim_num);
-  //W.putConfigurations(RemoteData[0]->begin());
-  void* walkers = RemoteData[0]->data();
-  IO_VERIFY::adios_checkpoint_verify_variables(fp, "walker_num", &walker_num);
-  IO_VERIFY::adios_checkpoint_verify_variables(fp, "particle_num", &particle_num);
-  int walker_size = walker_num * particle_num * walker_dim_num;
-  IO_VERIFY::adios_checkpoint_verify_variables(fp, "walker_size", &walker_size);
-  IO_VERIFY::adios_checkpoint_verify_local_variables(fp, "walkers", (OHMMS_PRECISION*)walkers);
-}
-#endif
-#endif
-
 
 /** Write the set of walker configurations to the HDF5 file.
  * @param W set of walker configurations

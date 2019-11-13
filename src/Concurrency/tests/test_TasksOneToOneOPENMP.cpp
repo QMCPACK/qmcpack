@@ -26,16 +26,16 @@ void TestTaskOMP(const int ip, int& counter)
 
 TEST_CASE("TasksOneToOne<OPENMP> function case", "[concurrency]")
 {
-  int num_threads = 8;
+  const int num_threads = omp_get_max_threads();
   TasksOneToOne<Threading::OPENMP> test_block(num_threads);
   int count(0);
   test_block(TestTaskOMP, std::ref(count));
-  REQUIRE(count == 8);
+  REQUIRE(count == num_threads);
 }
 
 TEST_CASE("TasksOneToOne<OPENMP> lambda case", "[concurrency]")
 {
-  int num_threads = 8;
+  const int num_threads = omp_get_max_threads();
   TasksOneToOne<Threading::OPENMP> test_block(num_threads);
   int count(0);
   test_block(
@@ -44,7 +44,7 @@ TEST_CASE("TasksOneToOne<OPENMP> lambda case", "[concurrency]")
         c++;
       },
       std::ref(count));
-  REQUIRE(count == 8);
+  REQUIRE(count == num_threads);
 }
 
 // Sadly this test case is not straight forward with openmp
@@ -60,7 +60,6 @@ TEST_CASE("TasksOneToOne<OPENMP> nested case", "[concurrency]")
     TasksOneToOne<Threading::OPENMP> test_block2(num_threads);
     test_block2(TestTaskOMP, std::ref(my_count));
   };
-  bool threw = false;
   REQUIRE_THROWS_WITH(test_block(nested_tasks, std::ref(count)),
                       Catch::Contains("TasksOneToOne should not be used for nested openmp threading"));
 }

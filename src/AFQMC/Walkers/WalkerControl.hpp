@@ -6,13 +6,13 @@
 //
 // File developed by: Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory
 //
-// File created by: Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory 
+// File created by: Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
 #ifndef QMCPLUSPLUS_AFQMC_WALKERCONTROL_HPP
 #define QMCPLUSPLUS_AFQMC_WALKERCONTROL_HPP
-    
-    
+
+
 #include<tuple>
 #include<cassert>
 #include <memory>
@@ -38,30 +38,30 @@ namespace afqmc
  * The algorithm ensures that the load per node can differ only by one walker.
  * The communication is one-dimensional.
  * Wexcess is an object with multi::array concept which contains walkers beyond the expected
- * pupolation target. 
+ * pupolation target.
  */
-template<class WlkBucket, 
+template<class WlkBucket,
          class Mat,
          class IVec = std::vector<int>
          >
 inline int swapWalkersSimple(WlkBucket& wset, Mat&& Wexcess, IVec& CurrNumPerNode, IVec& NewNumPerNode, communicator& comm)
 {
-  
+
   int wlk_size = wset.single_walker_size()+wset.single_walker_bp_size();
-  int NumContexts, MyContext; 
+  int NumContexts, MyContext;
   NumContexts = comm.size();
-  MyContext = comm.rank();  
+  MyContext = comm.rank();
   static_assert(std::decay<Mat>::type::dimensionality==2, "Wrong dimensionality");
   if(wlk_size != Wexcess.size(1))
     throw std::runtime_error("Array dimension error in swapWalkersSimple().");
-  if(1 != Wexcess.stride(1)) 
+  if(1 != Wexcess.stride(1))
     throw std::runtime_error("Array shape error in swapWalkersSimple().");
   if(CurrNumPerNode.size() < NumContexts || NewNumPerNode.size() < NumContexts)
     throw std::runtime_error("Array dimension error in swapWalkersSimple().");
   if(wset.capacity() < NewNumPerNode[MyContext])
     throw std::runtime_error("Insufficient capacity in swapWalkersSimple().");
   std::vector<int> minus, plus;
-  int deltaN;
+  int deltaN = 0;
   for(int ip=0; ip<NumContexts; ip++)
   {
     int dn=CurrNumPerNode[ip]-NewNumPerNode[ip];
@@ -81,7 +81,7 @@ inline int swapWalkersSimple(WlkBucket& wset, Mat&& Wexcess, IVec& CurrNumPerNod
   int nsend=0;
   if(deltaN <=0 && wset.size() != CurrNumPerNode[MyContext])
     throw std::runtime_error("error in swapWalkersSimple().");
-  if(deltaN > 0 && 
+  if(deltaN > 0 &&
     (wset.size() != NewNumPerNode[MyContext] || int(Wexcess.size(0)) != deltaN))
     throw std::runtime_error("error in swapWalkersSimple().");
   std::vector<ComplexType> buff;
@@ -100,7 +100,7 @@ inline int swapWalkersSimple(WlkBucket& wset, Mat&& Wexcess, IVec& CurrNumPerNod
       wset.push_walkers(boost::multi::array_ref<ComplexType,2>(buff.data(),{1,wlk_size}));
     }
   }
-  return nswap; 
+  return nswap;
 }
 
 /** swap Walkers with Irecv/Send
@@ -108,7 +108,7 @@ inline int swapWalkersSimple(WlkBucket& wset, Mat&& Wexcess, IVec& CurrNumPerNod
  * The algorithm ensures that the load per node can differ only by one walker.
  * The communication is one-dimensional.
  */
-template<class WlkBucket, 
+template<class WlkBucket,
          class Mat,
          class IVec = std::vector<int>
          >
@@ -118,19 +118,19 @@ inline int swapWalkersAsync(WlkBucket& wset, Mat&& Wexcess, IVec& CurrNumPerNode
   int wlk_size = wset.single_walker_size()+wset.single_walker_bp_size();
   int NumContexts, MyContext;
   NumContexts = comm.size();
-  MyContext = comm.rank();  
+  MyContext = comm.rank();
   static_assert(std::decay<Mat>::type::dimensionality==2, "Wrong dimensionality");
   if(wlk_size != Wexcess.size(1))
     throw std::runtime_error("Array dimension error in swapWalkersAsync().");
-  if(1 != Wexcess.stride(1) || 
-     (Wexcess.size(0) > 0 && Wexcess.size(1) != Wexcess.stride(0))) 
+  if(1 != Wexcess.stride(1) ||
+     (Wexcess.size(0) > 0 && Wexcess.size(1) != Wexcess.stride(0)))
     throw std::runtime_error("Array shape error in swapWalkersAsync().");
   if(CurrNumPerNode.size() < NumContexts || NewNumPerNode.size() < NumContexts)
     throw std::runtime_error("Array dimension error in swapWalkersAsync().");
   if(wset.capacity() < NewNumPerNode[MyContext])
     throw std::runtime_error("Insufficient capacity in swapWalkersAsync().");
   std::vector<int> minus, plus;
-  int deltaN;
+  int deltaN = 0;
   for(int ip=0; ip<NumContexts; ip++)
   {
     int dn=CurrNumPerNode[ip]-NewNumPerNode[ip];
@@ -205,8 +205,8 @@ inline int swapWalkersAsync(WlkBucket& wset, Mat&& Wexcess, IVec& CurrNumPerNode
 }
 
 
-/** 
- * Implements Cafarrel's minimum branching algorithm. 
+/**
+ * Implements Cafarrel's minimum branching algorithm.
  *   - buff: array of walker info (weight,num).
  */
 template<class Random
@@ -216,8 +216,8 @@ inline void min_branch(std::vector<std::pair<double,int>>& buff, Random& rng, do
   APP_ABORT(" Error: min_branch not implemented yet. \n\n\n");
 }
 
-/** 
- * Implements Cafarrel's minimum branching algorithm. 
+/**
+ * Implements Cafarrel's minimum branching algorithm.
  *   - buff: array of walker info (weight,num).
  */
 template<class Random
@@ -227,25 +227,25 @@ inline void serial_comb(std::vector<std::pair<double,int>>& buff, Random& rng)
   APP_ABORT(" Error: serial_comb not implemented yet. \n\n\n");
 }
 
-/** 
+/**
  * Implements the paired branching algorithm on a popultion of walkers,
- * given a list of walker weights. For each walker in the list, returns the weight 
- * and number of times the walker should appear in the new list. 
+ * given a list of walker weights. For each walker in the list, returns the weight
+ * and number of times the walker should appear in the new list.
  *   - buff: array of walker info (weight,num).
- */ 
-template<class Random 
+ */
+template<class Random
          >
 inline void pair_branch(std::vector<std::pair<double,int>>& buff, Random& rng, double max_c, double min_c)
 {
-  typedef std::tuple<double,int,int>  tp; 
-  typedef std::vector<tp>::iterator  tp_it; 
+  typedef std::tuple<double,int,int>  tp;
+  typedef std::vector<tp>::iterator  tp_it;
 // slow for now, not efficient!!!
   int nw = buff.size();
   std::vector<tp> wlks(nw);
-  for(int i=0,sz=0,ni=0; i<nw; i++) 
+  for(int i=0; i<nw; i++)
     wlks[i] = tp{buff[i].first,1,i};
 
-  std::sort( wlks.begin(), wlks.end(),  
+  std::sort( wlks.begin(), wlks.end(),
              [] (const tp& a, const tp& b) {
                return std::get<0>(a) < std::get<0>(b);
              }
@@ -253,26 +253,26 @@ inline void pair_branch(std::vector<std::pair<double,int>>& buff, Random& rng, d
 
   tp_it it_s = wlks.begin();
   tp_it it_l = wlks.end()-1;
- 
+
   while( it_s < it_l ) {
 
     if( std::abs(std::get<0>(*it_s)) < min_c || std::abs(std::get<0>(*it_l)) > max_c) {
-      double w12 = std::get<0>(*it_s) + std::get<0>(*it_l); 
+      double w12 = std::get<0>(*it_s) + std::get<0>(*it_l);
       if(rng() < std::get<0>(*it_l)/w12) {
         std::get<0>(*it_l) = 0.5*w12;
         std::get<0>(*it_s) = 0.0;
-        std::get<1>(*it_l) = 2;      
-        std::get<1>(*it_s) = 0;      
+        std::get<1>(*it_l) = 2;
+        std::get<1>(*it_s) = 0;
       } else {
         std::get<0>(*it_s) = 0.5*w12;
         std::get<0>(*it_l) = 0.0;
-        std::get<1>(*it_s) = 2;      
-        std::get<1>(*it_l) = 0;      
+        std::get<1>(*it_s) = 2;
+        std::get<1>(*it_l) = 0;
       }
       it_s++;
       it_l--;
-    } else 
-      break;    
+    } else
+      break;
 
   }
 
@@ -295,16 +295,16 @@ inline void pair_branch(std::vector<std::pair<double,int>>& buff, Random& rng, d
 
 }
 
-/** 
- * Implements the serial branching algorithm on the set of walkers. 
+/**
+ * Implements the serial branching algorithm on the set of walkers.
  * Serial branch involves gathering the list of weights on the root node
- * and making the decisions locally. The new list of walker weights is then bcasted. 
- * This implementation requires contiguous walkers and fixed population walker sets. 
+ * and making the decisions locally. The new list of walker weights is then bcasted.
+ * This implementation requires contiguous walkers and fixed population walker sets.
  */
 template<class WalkerSet,
          class Mat,
          class Random,
-         typename = typename std::enable_if<(WalkerSet::contiguous_walker)>::type, 
+         typename = typename std::enable_if<(WalkerSet::contiguous_walker)>::type,
          typename = typename std::enable_if<(WalkerSet::fixed_population)>::type
          >
 inline void SerialBranching(WalkerSet& wset, BRANCHING_ALGORITHM type, double min_, double max_, std::vector<int>& wlk_counts, Mat& Wexcess, Random& rng, communicator& comm)
@@ -316,7 +316,7 @@ inline void SerialBranching(WalkerSet& wset, BRANCHING_ALGORITHM type, double mi
 
   // using global weight list, use pair branching algorithm
   if(comm.root()) {
-    if(type == PAIR) 
+    if(type == PAIR)
       pair_branch(buffer,rng,max_,min_);
     else if(type == MIN_BRANCH)
       min_branch(buffer,rng,max_,min_);
@@ -333,11 +333,11 @@ inline void SerialBranching(WalkerSet& wset, BRANCHING_ALGORITHM type, double mi
   wlk_counts.resize(comm.size());
   for(int i=0, p=0; i<comm.size(); i++) {
     int cnt=0;
-    for(int k=0; k<target; k++, p++) 
+    for(int k=0; k<target; k++, p++)
       cnt += buffer[p].second;
     wlk_counts[i]=cnt;
   }
-  if(wset.get_global_target_population() != 
+  if(wset.get_global_target_population() !=
       std::accumulate(wlk_counts.begin(),wlk_counts.end(),0)) {
     app_error()<<" Error: targetN != nwold: " <<target <<" "
              <<std::accumulate(wlk_counts.begin(),wlk_counts.end(),0)
@@ -351,14 +351,14 @@ inline void SerialBranching(WalkerSet& wset, BRANCHING_ALGORITHM type, double mi
                       wset.single_walker_size()+wset.single_walker_bp_size()});
 
   // perform local branching
-  // walkers beyond target go in Wexcess  
+  // walkers beyond target go in Wexcess
   wset.branch(buffer.begin()+target*comm.rank(),
              buffer.begin()+target*(comm.rank()+1),
              Wexcess);
-}  
+}
 
-/** 
- * Implements the distributed comb branching algorithm. 
+/**
+ * Implements the distributed comb branching algorithm.
  */
 template<class WalkerSet,
          class Mat,
@@ -368,7 +368,7 @@ template<class WalkerSet,
          >
 inline void CombBranching(WalkerSet& wset, BRANCHING_ALGORITHM type, std::vector<int>& wlk_counts, Mat& Wexcess, Random& rng, communicator& comm)
 {
-  APP_ABORT("Error: comb not implemented yet. \n"); 
+  APP_ABORT("Error: comb not implemented yet. \n");
 }
 
 }

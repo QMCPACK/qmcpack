@@ -62,7 +62,7 @@ struct h5data_proxy<bool> : public h5_space_type<int, 0>
 
   inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
-    int copy;
+    int copy = static_cast<int>(ref_);
     bool okay = h5d_read(grp, aname, get_address(&copy), xfer_plist);
     ref_ = static_cast<bool>(copy);
     return okay;

@@ -19,6 +19,7 @@ from subprocess import Popen,PIPE
 
 def execute(command,verbose=False,skip=False):
     out,err = '',''
+    returncode = 0
     if skip:
         if verbose:
             print 'Would have executed:\n  '+command
@@ -29,6 +30,7 @@ def execute(command,verbose=False,skip=False):
         #end if
         process = Popen(command,shell=True,stdout=PIPE,stderr=PIPE,close_fds=True)
         out,err = process.communicate()
+        returncode = process.returncode
     #end if
-    return out,err,process.returncode
+    return out,err,returncode
 #end def execute

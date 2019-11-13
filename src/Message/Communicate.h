@@ -192,7 +192,7 @@ public:
 #ifdef HAVE_MPI
   inline void split_comm(int key, MPI_Comm& comm)
   {
-    int myrank = rank(), nprocs = size();
+    int myrank = rank();
     MPI_Comm_split(myMPI, key, myrank, &comm);
   }
 #endif
