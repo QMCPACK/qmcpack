@@ -119,12 +119,12 @@ inline T dotProduct(const std::vector<T>& a, const std::vector<T>& b)
 template<class T>
 CGOptimization<T>::CGOptimization(ObjectFuncType* atarget)
     : TargetFunc(atarget),
-      RestartCG(true),
       NumSteps(100),
       Displacement(1e-6),
       CostTol(1.e-6),
+      GammaTol(1.e-7), // GammaTol was set to 1e-4 originally
       GradTol(1.e-6),
-      GammaTol(1.e-7) // GammaTol was set to 1e-4 originally
+      RestartCG(true)
 {
   curCost = prevCost = 1.0e13;
 }

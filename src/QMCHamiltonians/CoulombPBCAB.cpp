@@ -22,18 +22,18 @@
 namespace qmcplusplus
 {
 CoulombPBCAB::CoulombPBCAB(ParticleSet& ions, ParticleSet& elns, bool computeForces)
-    : PtclA(ions),
+    : ForceBase(ions, elns),
+      PtclA(ions),
+      myTableIndex(elns.addTable(ions, DT_SOA_PREFERRED)),
       myConst(0.0),
       myGrid(nullptr),
       V0(nullptr),
       fV0(nullptr),
       dfV0(nullptr),
       ComputeForces(computeForces),
-      ForceBase(ions, elns),
       MaxGridPoints(10000),
-      Pion(ions),
       Peln(elns),
-      myTableIndex(elns.addTable(ions, DT_SOA_PREFERRED))
+      Pion(ions)
 {
   ReportEngine PRE("CoulombPBCAB", "CoulombPBCAB");
   set_energy_domain(potential);

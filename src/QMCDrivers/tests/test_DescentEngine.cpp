@@ -12,7 +12,7 @@
 
 #include "catch.hpp"
 
-#include <libxml/tree.h>
+#include "OhmmsData/Libxml2Doc.h"
 #include "QMCDrivers/Optimizers/DescentEngine.h"
 #include "Optimize/VariableSet.h"
 #include "Configuration.h"
@@ -28,11 +28,17 @@ typedef qmcplusplus::QMCTraits::ValueType ValueType;
 TEST_CASE("DescentEngine RMSprop update","[drivers][descent]")
 {
 
-Communicate* myComm;
+  Communicate myComm;
 
-xmlNodePtr fakeXML;
+  const std::string engine_input("<tmp> </tmp>");
 
-std::unique_ptr<DescentEngine> descentEngineObj = std::make_unique<DescentEngine>(myComm, fakeXML);
+  Libxml2Document doc;
+  bool okay = doc.parseFromString(engine_input);
+  REQUIRE(okay);
+
+  xmlNodePtr fakeXML = doc.getRoot();
+
+std::unique_ptr<DescentEngine> descentEngineObj = std::make_unique<DescentEngine>(&myComm, fakeXML);
 
 optimize::VariableSet myVars;
 

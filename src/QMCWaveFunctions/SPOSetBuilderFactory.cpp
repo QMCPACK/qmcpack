@@ -31,6 +31,10 @@
 #endif
 #endif
 
+#if !defined(QMC_COMPLEX)
+#include "QMCWaveFunctions/RotatedSPOs.h"
+#endif
+
 #if defined(HAVE_EINSPLINE)
 #include "QMCWaveFunctions/EinsplineSetBuilder.h"
 #include "QMCWaveFunctions/EinsplineSpinorSetBuilder.h"
@@ -109,15 +113,13 @@ void write_spo_builders(const std::string& pad)
  * \param psi reference to the wavefunction
  * \param ions reference to the ions
  */
-SPOSetBuilderFactory::SPOSetBuilderFactory(ParticleSet& els, TrialWaveFunction& psi, PtclPoolType& psets)
-    : WaveFunctionComponentBuilder(els, psi), ptclPool(psets)
+SPOSetBuilderFactory::SPOSetBuilderFactory(Communicate* comm, ParticleSet& els, PtclPoolType& psets)
+    : MPIObjectBase(comm), targetPtcl(els), ptclPool(psets)
 {
   ClassName = "SPOSetBuilderFactory";
 }
 
 SPOSetBuilderFactory::~SPOSetBuilderFactory() { DEBUG_MEMORY("SPOSetBuilderFactory::~SPOSetBuilderFactory"); }
-
-bool SPOSetBuilderFactory::put(xmlNodePtr cur) { return true; }
 
 SPOSetBuilder* SPOSetBuilderFactory::createSPOSetBuilder(xmlNodePtr rootNode)
 {
@@ -250,10 +252,12 @@ SPOSet* SPOSetBuilderFactory::createSPOSet(xmlNodePtr cur)
   std::string bname("");
   std::string sname("");
   std::string type("");
+  std::string rotation("no");
   OhmmsAttributeSet aAttrib;
   aAttrib.add(bname, "basisset");
   aAttrib.add(sname, "name");
   aAttrib.add(type, "type");
+  aAttrib.add(rotation, "optimize");
   //aAttrib.put(rcur);
   aAttrib.put(cur);
 
@@ -283,7 +287,31 @@ SPOSet* SPOSetBuilderFactory::createSPOSet(xmlNodePtr cur)
   if (bb)
   {
     app_log() << "  Building SPOSet '" << sname << "' with '" << bname << "' basis set." << std::endl;
-    return bb->createSPOSet(cur);
+    SPOSet* spo     = bb->createSPOSet(cur);
+    spo->objectName = sname;
+    if (rotation == "yes")
+    {
+#ifdef QMC_COMPLEX
+      app_error() << "Orbital optimization via rotation doesn't support complex wavefunction yet.\n";
+      abort();
+#else
+      auto* rot_spo   = new RotatedSPOs(spo);
+      xmlNodePtr tcur = cur->xmlChildrenNode;
+      while (tcur != NULL)
+      {
+        std::string cname((const char*)(tcur->name));
+        if (cname == "opt_vars")
+        {
+          rot_spo->params_supplied = true;
+          putContent(rot_spo->params, tcur);
+        }
+        tcur = tcur->next;
+      }
+      spo = rot_spo;
+      spo->objectName = sname;
+#endif
+    }
+    return spo;
   }
   else
   {
@@ -327,5 +355,6 @@ void SPOSetBuilderFactory::build_sposet_collection(xmlNodePtr cur)
     APP_ABORT("SPOSetBuilderFactory::build_sposet_collection  no <sposet/> elements found");
 }
 
+std::string SPOSetBuilderFactory::basisset_tag = "basisset";
 
 } // namespace qmcplusplus

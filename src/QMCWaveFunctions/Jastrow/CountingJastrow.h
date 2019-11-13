@@ -113,7 +113,7 @@ public:
 
   void resetParameters(const opt_variables_type& active)
   {
-    int ia, I, IJ, JI;
+    int ia, IJ, JI;
     std::string id;
     myVars.getIndex(active);
     for (int i = 0; i < myVars.size(); ++i)
@@ -212,7 +212,7 @@ public:
   void resetTargetParticleSet(ParticleSet& P) {}
 
 
-  RealType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
+  LogValueType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
   {
     evaluateExponents(P);
     for (int i = 0; i < num_els; ++i)
@@ -415,7 +415,7 @@ public:
 
   void registerData(ParticleSet& P, WFBufferType& buf)
   {
-    RealType logValue     = evaluateLog(P, P.G, P.L);
+    LogValueType logValue     = evaluateLog(P, P.G, P.L);
     RealType* Jlap_begin  = &Jlap[0];
     RealType* Jlap_end    = Jlap_begin + Jlap.size();
     RealType* Jgrad_begin = &Jgrad[0][0];
@@ -427,9 +427,9 @@ public:
     DEBUG_PSIBUFFER(" CountingJastrow::registerData", buf.current());
   }
 
-  RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false)
+  LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false)
   {
-    RealType logValue     = evaluateLog(P, P.G, P.L);
+    LogValueType logValue     = evaluateLog(P, P.G, P.L);
     RealType* Jlap_begin  = &Jlap[0];
     RealType* Jlap_end    = Jlap_begin + Jlap.size();
     RealType* Jgrad_begin = &Jgrad[0][0];

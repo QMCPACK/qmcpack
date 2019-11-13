@@ -38,6 +38,7 @@ SET(WFBASE_SRCS
 
 IF(NOT QMC_COMPLEX)
   SET(WFBASE_SRCS ${WFBASE_SRCS}
+    RotatedSPOs.cpp
     FDLRWfn.cpp
     )
 ENDIF(NOT QMC_COMPLEX)
@@ -204,12 +205,6 @@ SET(FERMION_SRCS ${FERMION_SRCS}
 IF(ENABLE_CUDA)
   SET(FERMION_SRCS ${FERMION_SRCS} Fermion/delayed_update_helper.cu)
 ENDIF(ENABLE_CUDA)
-
-IF(NOT QMC_COMPLEX AND NOT ENABLE_SOA)
-  SET(FERMION_SRCS ${FERMION_SRCS}
-    Fermion/SlaterDetOpt.cpp
-    )
-ENDIF(NOT QMC_COMPLEX AND NOT ENABLE_SOA)
 
 ####################################
 # create libqmcwfs

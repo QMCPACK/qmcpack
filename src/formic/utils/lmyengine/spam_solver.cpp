@@ -36,10 +36,6 @@
 void cqmc::engine::SpamLMHD::solve_subspace_nonsymmetric(const bool outer)
 {
 
-  // get rank number and number of rank
-  int my_rank = formic::mpi::rank();
-  int num_rank = formic::mpi::rank();
-
   // one in complex form
   const std::complex<double> complex_one(1.0, 0.0);
   const std::complex<double> complex_zero(0.0, 0.0);
@@ -319,11 +315,7 @@ void cqmc::engine::SpamLMHD::solve_subspace(const bool outer)
 void cqmc::engine::SpamLMHD::add_krylov_vector_inner(const formic::ColVec<double> & v)
 {
 
-  // get rank number and number of rank
   int my_rank = formic::mpi::rank();
-  int num_rank = formic::mpi::size();
-  //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-  //MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
 
   // check vector length
   if (my_rank == 0 && v.size() != _der_rat.cols())
@@ -469,9 +461,7 @@ void cqmc::engine::SpamLMHD::add_krylov_vector_inner(const formic::ColVec<double
 void cqmc::engine::SpamLMHD::add_krylov_vectors_outer(const formic::Matrix<double> & m)
 {
 
-  // get rank number and number of ranks
   int my_rank = formic::mpi::rank();
-  int num_rank = formic::mpi::size();
 
   // check matrix size
   if (my_rank == 0 && m.rows() != _der_rat.cols())
@@ -619,13 +609,6 @@ void cqmc::engine::SpamLMHD::add_krylov_vectors_outer(const formic::Matrix<doubl
 
 void cqmc::engine::SpamLMHD::HMatVecOp(const formic::ColVec<double> & x, formic::ColVec<double> & y, const bool transpose, const bool approximate)
 {
-
-
-  int my_rank = formic::mpi::rank();
-  int num_rank = formic::mpi::size();
-  //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-  //MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
-
   // size the resulting vector correctly
   y.reset(x.size());
 
@@ -831,13 +814,6 @@ void cqmc::engine::SpamLMHD::HMatVecOp(const formic::ColVec<double> & x, formic:
 
 void cqmc::engine::SpamLMHD::HMatMatOp(const formic::Matrix<double> & x, formic::Matrix<double> & y, const bool transpose, const bool approximate)
 {
-
-  int my_rank = formic::mpi::rank();
-  int num_rank = formic::mpi::size();
-  //int my_rank;
-  //int num_rank;
-  //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-  //MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
 
   // size the resulting matrix correctly
   y.reset(x.rows(), x.cols());
@@ -1102,14 +1078,6 @@ void cqmc::engine::SpamLMHD::SMatVecOp(const formic::ColVec<double> & x, formic:
 
 void cqmc::engine::SpamLMHD::SMatMatOp(const formic::Matrix<double> & x, formic::Matrix<double> & y, const bool approximate)
 {
-
-  int my_rank = formic::mpi::rank();
-  int num_rank = formic::mpi::size();
-  //int my_rank;
-  //int num_rank;
-  //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-  //MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
-
   // size the resulting matrix correctly
   y.reset(x.rows(), x.cols());
 
@@ -1187,7 +1155,7 @@ void cqmc::engine::SpamLMHD::SMatMatOp(const formic::Matrix<double> & x, formic:
 //
 /////////////////////////////////////////////////////////////////////////////////
 
-cqmc::engine::SpamLMHD::SpamLMHD(const formic::VarDeps * dep_ptr,
+cqmc::engine::SpamLMHD::SpamLMHD(const formic::VarDeps* dep_ptr,
                                  const int nfds,
                                  const int lm_krylov_iter,
                                  const int inner_maxIter,
@@ -1200,58 +1168,50 @@ cqmc::engine::SpamLMHD::SpamLMHD(const formic::VarDeps * dep_ptr,
                                  const bool chase_lowest,
                                  const bool chase_closest,
                                  const bool ground,
-                                 const std::vector<double> & vf,
+                                 const std::vector<double>& vf,
                                  const double init_energy,
                                  const double hd_shift,
                                  const double lm_max_e_change,
                                  const double total_weight,
                                  const double vgsa,
-                                 formic::Matrix<double> & der_rat,
-                                 formic::Matrix<double> & le_der,
-                                 formic::Matrix<double> & der_rat_appro,
-                                 formic::Matrix<double> & le_der_appro)
-:EigenSolver(dep_ptr,
-             nfds,
-             lm_eigen_thresh,
-             var_deps_use,
-             chase_lowest,
-             chase_closest,
-             ground,
-             false,
-             vf,
-             init_energy,
-             0.0,
-             hd_shift,
-             0.0,
-             lm_max_e_change,
-             total_weight,
-             vgsa,
-             der_rat,
-             le_der),
-_nkry(0),
-_nkry_full(0),
-_appro_degree(appro_degree),
-_n_max_iter(lm_krylov_iter),
-_inner_maxIter(inner_maxIter),
-_inner_print(inner_print),
-_singular_value_threshold(lm_min_S_eval),
-_appro_factor(appro_factor),
-_init_energy(init_energy),
-_energy_outer(init_energy),
-_energy_inner(init_energy),
-_der_rat_appro(der_rat_appro),
-_le_der_appro(le_der_appro),
-_smallest_sin_value_inner(0.0),
-_smallest_sin_value_outer(0.0)
+                                 formic::Matrix<double>& der_rat,
+                                 formic::Matrix<double>& le_der,
+                                 formic::Matrix<double>& der_rat_appro,
+                                 formic::Matrix<double>& le_der_appro)
+    : EigenSolver(dep_ptr,
+                  nfds,
+                  lm_eigen_thresh,
+                  var_deps_use,
+                  chase_lowest,
+                  chase_closest,
+                  ground,
+                  false,
+                  vf,
+                  init_energy,
+                  0.0,
+                  hd_shift,
+                  0.0,
+                  lm_max_e_change,
+                  total_weight,
+                  vgsa,
+                  der_rat,
+                  le_der),
+      _nkry(0),
+      _nkry_full(0),
+      _n_max_iter(lm_krylov_iter),
+      _inner_maxIter(inner_maxIter),
+      _appro_degree(appro_degree),
+      _inner_print(inner_print),
+      _smallest_sin_value_inner(0.0),
+      _smallest_sin_value_outer(0.0),
+      _singular_value_threshold(lm_min_S_eval),
+      _init_energy(init_energy),
+      _energy_outer(init_energy),
+      _energy_inner(init_energy),
+      _appro_factor(appro_factor),
+      _der_rat_appro(der_rat_appro),
+      _le_der_appro(le_der_appro)
 {
-  // get rank number and number of ranks
-  int my_rank = formic::mpi::rank();
-  int num_rank = formic::mpi::size();
-  //int my_rank;
-  //int num_rank;
-  //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-  //MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
-
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -1264,13 +1224,7 @@ _smallest_sin_value_outer(0.0)
 bool cqmc::engine::SpamLMHD::iterative_solve(double & eval, std::ostream & output)
 {
 
-  // get rank number and number of rank
   int my_rank = formic::mpi::rank();
-  int num_rank = formic::mpi::size();
-  //int my_rank;
-  //int num_rank;
-  //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-  //MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
 
   // initialize the solution vector to the unit vector along the first direction
   _evecs.reset( ( _var_deps_use ? 1 + _dep_ptr->n_tot() : _nfds ), 0.0 );
@@ -1594,12 +1548,7 @@ bool cqmc::engine::SpamLMHD::solve(double & eval, std::ostream & output)
 
 void cqmc::engine::SpamLMHD::update_hvecs_sub(const double new_i_shift, const double new_s_shift)
 {
-
-  // get rank number and number of ranks
   int my_rank = formic::mpi::rank();
-  int num_rank = formic::mpi::size();
-  //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-  //MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
 
   // get the different between new shift and old shift
   const double diff_shift_i = new_i_shift - _hshift_i;

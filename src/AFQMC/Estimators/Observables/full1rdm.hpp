@@ -71,8 +71,8 @@ class full1rdm: public AFQMCInfo
                 block_size(bsize),nave(nave_),counter(0),
                 hdf_walker_output(""),
                 denom(iextensions<1u>{0},shared_allocator<ComplexType>{TG.TG_local()}),
-                DMWork({0,0,0},shared_allocator<ComplexType>{TG.TG_local()}),
-                DMAverage({0,0},shared_allocator<ComplexType>{TG.TG_local()})
+                DMAverage({0,0},shared_allocator<ComplexType>{TG.TG_local()}),
+                DMWork({0,0,0},shared_allocator<ComplexType>{TG.TG_local()})
   {
 
     app_log()<<"  --  Adding Back Propagated Full 1RDM (OneRDM) estimator. -- \n ";
@@ -250,21 +250,23 @@ class full1rdm: public AFQMCInfo
 
   private:
 
+  TaskGroup_& TG;
+
+  WALKER_TYPES walker_type;
+
+  bool writer;
+
   int block_size;  
 
   int nave;
 
   int counter;
 
-  TaskGroup_& TG;
-
-  WALKER_TYPES walker_type;
-
   int dm_size;
 
-  bool writer;
-
   std::string hdf_walker_output;  
+
+  mpi3CVector denom; 
 
   // DMAverage (nave, spin*x*NMO*x*NMO), x=(1:CLOSED/COLLINEAR, 2:NONCOLLINEAR)
   mpi3CMatrix DMAverage;
@@ -272,8 +274,6 @@ class full1rdm: public AFQMCInfo
   // k:0 communication buffer
   //   1 accumulate over references 
   mpi3CTensor DMWork;
-
-  mpi3CVector denom; 
 
   // buffer space
   CVector Buff;

@@ -83,7 +83,6 @@ if [ -e qmcpack/CMakeLists.txt ]; then
 
 export PYTHONPATH=${test_dir}/qmcpack/nexus/lib
 echo --- PYTHONPATH=$PYTHONPATH
-
 #
 # Quantum Espresso setup/download/build
 # Future improvement: use spack version
@@ -123,7 +122,8 @@ fi
 echo --- Starting test builds and tests
 
 #for sys in build_intel2018 build_gccnew_mkl build_intel2019 build_clangnew_mkl build_pgi2019_nompi_mkl build_gccnew_mkl_complex build_gccnew_mkl_aos build_gccnew_mkl_complex_aos  build_intel2019_complex build_intel2018_complex build_intel2018_aos build_intel2018_complex_aos build_intel2018_nompi  build_intel2018_mixed build_clangnew_mkl_complex build_clangnew_mkl_nompi build_gccnew_mkl_nompi build_clangcuda build_clangcuda_complex build_clangcuda_full build_gccold_mkl build_clangold_mkl build_gccold_mkl_complex build_gccold_mkl_aos build_gccold_mkl_complex_aos build_clangold_mkl_complex build_clangold_mkl_nompi build_gccold_mkl_nompi
-for sys in build_intel2019 build_intel2019_complex build_gccnew_mkl build_clangnew_mkl
+#for sys in build_intel2019 build_intel2019_complex build_gccnew_mkl build_clangnew_mkl
+for sys in build_intel2019 build_intel2019_complex
 do
 
 echo --- START $sys `date`
@@ -179,42 +179,65 @@ fi
 #
 # Versions should be consistent with setup script
 #
-boost_vnew=1.70.0 # Released 2019-04-12
-boost_vold=1.61.0 # Released 2016-05-13
 
-gcc_vnew=8.3.0 # Released 2019-02-22 See https://www.gnu.org/software/gcc/releases.html
-gcc_vold=5.5.0 # Released 2017-10-27
-gcc_vintel=7.4.0 # Released 2018-12-06
+# GCC
+# Dates at https://gcc.gnu.org/releases.html
+gcc_vnew=9.2.0 # 2019-08-12
+gcc_vold=7.2.0 # 2017-08-14 
 
+#For Intel:
+#Intel 2019.5
+#Intel 2018.5 
+gcc_vintel=7.4.0 # 2018-12-06
+
+#PGI 19.4
+# makelocalrc configured with 8.3.0 currently
+gcc_vpgi=8.3.0 # 2019-02-22
+
+# LLVM 
+# Dates at http://releases.llvm.org/
+llvm_vnew=9.0.0 # 2019-09-19
+llvm_vold=5.0.1 # 2017-12-21
+# for CUDA 10.1 update 2
+llvm_vcuda=8.0.0 # 2019-03-
+
+# HDF5
 hdf5_vnew=1.10.5 # Releeased 2019-02-28
 hdf5_vold=1.8.19 # Released 2017-06-16
 
-cmake_vnew=3.14.4 # Released 2019-05-15
+# CMake 
+# Dates at https://cmake.org/files/
+cmake_vnew=3.15.4 # Released 2019-05-15
 cmake_vold=3.8.2 # Released 2017-05-31
 
+# OpenMPI
+# Dates at https://www.open-mpi.org/software/ompi/v4.0/
 ompi_vnew=4.0.1 # Released 2019-03-26
-ompi_vold=2.1.1 # Released 2017-05-10
+ompi_vold=2.1.2 # Released 2017-09-20
 
 libxml2_vnew=2.9.9 # Released 2019-01-03 See http://xmlsoft.org/sources/
-libxml2_vold=2.9.1 # Released 2013-04-19 On oxygen /lib64 RHELv7.5 Maipo
+libxml2_vold=2.9.1 # Released 2013-04-19
 
+# FFTW
+# Dates at http://www.fftw.org/release-notes.html
 fftw_vnew=3.3.8 # Released 2018-05-28
 fftw_vold=3.3.4 # Released 2014-03-16
 
-llvm_vnew=7.0.1 # Released 2018-12-21
-llvm_vold=4.0.1 # Released 2017-07-04
-llvm_vcuda=6.0.1 # Released 2018-07-05
+# BOOST
+# Dates at https://www.boost.org/users/history/
+boost_vnew=1.70.0 # Released 2019-04-12
+boost_vold=1.65.1 # Released 2016-05-13
 
 spack load git
 
-spack load python@2.7.16%gcc@8.3.0 # Has numpy, h5py, pandas "activated" and available for import
+spack load python@2.7.16%gcc@9.2.0 # Has numpy, h5py, pandas "activated" and available for import
 
 case "$ourenv" in
 gccnewbuild) echo $ourenv
 	spack load boost@$boost_vnew%gcc@$gcc_vnew
 	spack load gcc@$gcc_vnew
 	spack load hdf5@$hdf5_vnew%gcc@$gcc_vnew~mpi
-	spack load cmake@$cmake_vnew%gcc@$gcc_vnew
+	spack load cmake@$cmake_vnew
 	spack load openmpi@$ompi_vnew%gcc@$gcc_vnew
 	spack load libxml2@$libxml2_vnew%gcc@$gcc_vnew
 	spack load fftw@$fftw_vnew%gcc@$gcc_vnew
@@ -232,7 +255,7 @@ gccintelbuild) echo $ourenv
 	spack load boost@$boost_vnew%gcc@$gcc_vnew
 	spack load gcc@$gcc_vintel # Old enough C++ library for Intel compiler
 	spack load hdf5@$hdf5_vnew%gcc@$gcc_vnew~mpi
-	spack load cmake@$cmake_vnew%gcc@$gcc_vnew
+	spack load cmake@$cmake_vnew
 # Use Intel MPI with Intel builds
 #	spack load openmpi@$ompi_vnew%gcc@$gcc_vnew 
 	spack load libxml2@$libxml2_vnew%gcc@$gcc_vnew
@@ -243,7 +266,7 @@ clangnewbuild) echo $ourenv
 	spack load boost@$boost_vnew%gcc@$gcc_vnew
 	spack load gcc@$gcc_vnew
 	spack load hdf5@$hdf5_vnew%gcc@$gcc_vnew~mpi
-	spack load cmake@$cmake_vnew%gcc@$gcc_vnew
+	spack load cmake@$cmake_vnew
 	spack load openmpi@$ompi_vnew%gcc@$gcc_vnew
 	spack load libxml2@$libxml2_vnew%gcc@$gcc_vnew
 	spack load fftw@$fftw_vnew%gcc@$gcc_vnew
@@ -263,7 +286,7 @@ clangcudabuild) echo $ourenv
 	spack load boost@$boost_vnew%gcc@$gcc_vnew
 	spack load gcc@$gcc_vnew
 	spack load hdf5@$hdf5_vnew%gcc@$gcc_vnew~mpi
-	spack load cmake@$cmake_vnew%gcc@$gcc_vnew
+	spack load cmake@$cmake_vnew
 	spack load openmpi@$ompi_vnew%gcc@$gcc_vnew
 	spack load libxml2@$libxml2_vnew%gcc@$gcc_vnew
 	spack load fftw@$fftw_vnew%gcc@$gcc_vnew
@@ -364,11 +387,10 @@ fi
 if [[ $sys == *"mixed"* ]]; then
 QMCPACK_TEST_SUBMIT_NAME=${QMCPACK_TEST_SUBMIT_NAME}-Mixed
 CTCFG="$CTCFG -DQMC_MIXED_PRECISION=1"
-else
+fi
 if [[ $sys == *"full"* ]]; then
 QMCPACK_TEST_SUBMIT_NAME=${QMCPACK_TEST_SUBMIT_NAME}-Full
 CTCFG="$CTCFG -DQMC_MIXED_PRECISION=0"
-fi
 fi
 
 # SoA/AoS build (label aos only)
@@ -397,7 +419,8 @@ fi
 # Adjust which tests are run to control overall runtime
 #build_intel2018|build_intel2018_complex|build_gccnew_mkl|build_gccnew_mkl_complex|build_llvmnew_mkl_complex) echo "Running full test set for $sys"
 case "$sys" in
-*gccnew_mkl|*gccnew_mkl_complex|*intel2018|*intel2018_complex|*intel2019|*intel2019_complex|*clangnew_mkl*|*pgi2019_nompi_mkl|*clangcuda) echo "Running full ("less limited") test set for $sys"
+*gccnew_mkl|*gccnew_mkl_complex|*intel2019|*intel2019_complex|*clangnew_mkl|*clangcuda) echo "Running full ("less limited") test set for $sys"
+#*gccnew_mkl|*gccnew_mkl_complex|*intel2018|*intel2018_complex|*intel2019|*intel2019_complex|*clangnew_mkl*|*pgi2019_nompi_mkl|*clangcuda) echo "Running full ("less limited") test set for $sys"
 THETESTS=$LESSLIMITEDTESTS
 ;;
 *) echo "Running limited test set for $sys"
@@ -422,7 +445,7 @@ echo --- END ctest `date`
 else
 echo --- START ctest `date` 
 echo ctest ${CTCFG} ${GLOBALTCFG} -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release ${THETESTS}
-ctest ${CTCFG} ${GLOBALTCFG} -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release ${THETESTS}
+nice ctest ${CTCFG} ${GLOBALTCFG} -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release ${THETESTS}
 echo --- END ctest `date`
 fi
 

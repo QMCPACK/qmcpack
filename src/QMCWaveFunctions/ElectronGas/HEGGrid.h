@@ -72,7 +72,7 @@ struct HEGGrid<T, 3>
   int nctmp;
 
 
-  HEGGrid(PL_t& lat) : Lattice(lat), twist(0.0), nctmp(-1), kpoints_grid(0)
+  HEGGrid(PL_t& lat) : Lattice(lat), twist(0.0), kpoints_grid(0), nctmp(-1)
   {
     n_within_shell.resize(31);
     n_within_shell[0]  = 1;

@@ -217,9 +217,9 @@ void DescentEngine::updateParameters()
   ValueType cor_v;
 
   ValueType epsilon = 1e-8;
-  ValueType type_eta;
+  ValueType type_eta = 0;
 
-  ValueType tau;
+  ValueType tau = 0;
   // Update parameters according to specified flavor of gradient descent method
 
   // RMSprop corresponds to the method used by Booth and co-workers

@@ -24,13 +24,14 @@ struct eeI_JastrowBuilder : public WaveFunctionComponentBuilder
 {
   ParticleSet* sourcePtcl;
   // Two-body constructor
-  eeI_JastrowBuilder(ParticleSet& target, TrialWaveFunction& psi, ParticleSet& source)
-      : WaveFunctionComponentBuilder(target, psi), sourcePtcl(&source)
+  eeI_JastrowBuilder(Communicate *comm, ParticleSet& target, ParticleSet& source)
+      : WaveFunctionComponentBuilder(comm, target), sourcePtcl(&source)
   {
     ClassName = "eeI_JastrowBuilder";
   }
 
-  bool put(xmlNodePtr cur);
+  WaveFunctionComponent* buildComponent(xmlNodePtr cur) override;
+
   template<typename J3type>
   bool putkids(xmlNodePtr kids, J3type& J3);
 };

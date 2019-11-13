@@ -892,7 +892,6 @@ void EinsplineSetExtended<StorageType>::evaluate_notranspose(const ParticleSet& 
         if (need2blend)
         {
           disp      = MuffinTins[tin].disp(r);
-          double dr = std::sqrt(dot(disp, disp));
         }
         break;
       }

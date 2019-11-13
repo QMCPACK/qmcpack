@@ -42,19 +42,16 @@ public:
   {
     const QMCDriverInput& qmcdrv_input;
     const VMCDriverInput& vmcdrv_input;
-    const MCPopulation&   population;
     const DriftModifierBase& drift_modifier;
+    const MCPopulation&   population;
     IndexType recalculate_properties_period;
     IndexType step;
     int block;
     bool recomputing_blocks;
-    
-    StateForThread(QMCDriverInput&  qmci,
-                   VMCDriverInput& vmci,
-                   DriftModifierBase& drift_mod,
-                   MCPopulation&   pop) : qmcdrv_input(qmci), vmcdrv_input(vmci), drift_modifier(drift_mod), population(pop) {}
 
-                   
+    StateForThread(QMCDriverInput& qmci, VMCDriverInput& vmci, DriftModifierBase& drift_mod, MCPopulation& pop)
+        : qmcdrv_input(qmci), vmcdrv_input(vmci), drift_modifier(drift_mod), population(pop)
+    {}
   };
 
 public:

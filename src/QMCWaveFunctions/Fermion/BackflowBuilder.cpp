@@ -37,17 +37,13 @@
 
 namespace qmcplusplus
 {
-BackflowBuilder::BackflowBuilder(ParticleSet& els, PtclPoolType& pool, TrialWaveFunction& psi)
-    : WaveFunctionComponentBuilder(els, psi), ptclPool(pool), BFTrans(0), cutOff(-1.0)
+BackflowBuilder::BackflowBuilder(ParticleSet& els, PtclPoolType& pool)
+    : cutOff(1.0), targetPtcl(els), ptclPool(pool), BFTrans(0)
 {
-  ClassName = "BackflowBuilder";
 }
 
-BackflowBuilder::~BackflowBuilder() {}
-
-bool BackflowBuilder::put(xmlNodePtr cur)
+BackflowTransformation* BackflowBuilder::buildBackflowTransformation(xmlNodePtr cur)
 {
-  bool success       = true;
   xmlNodePtr curRoot = cur;
   std::string cname;
   BFTrans = new BackflowTransformation(targetPtcl);
@@ -92,7 +88,7 @@ bool BackflowBuilder::put(xmlNodePtr cur)
     cur = cur->next;
   }
   BFTrans->cutOff = cutOff;
-  return success;
+  return BFTrans;
 }
 
 void BackflowBuilder::addOneBody(xmlNodePtr cur)
@@ -129,6 +125,9 @@ void BackflowBuilder::addOneBody(xmlNodePtr cur)
   int numSpecies            = sSet.getTotalNum();
   if (spin == "yes")
   {
+#ifdef ENABLE_SOA
+    APP_ABORT("Spin one body backflow not supported on SOA");
+#endif
     if (funct != "Bspline")
       APP_ABORT("DON'T KNOW WHAT TO DO YET"); //will template this
     Backflow_eI_spin<BsplineFunctor<RealType>>* tbf1 =

@@ -80,6 +80,7 @@
          <pairpot type="pseudo" name="PseudoPot" source="ion0" wavefunction="psi0" format="xml">
             <pseudo elementType="C" href="C.BFD.xml"/>
          </pairpot>
+         <estimator name="KEcorr" type="chiesa" source="e" psi="psi0"/>
          <estimator type="flux" name="Flux"/>
       </hamiltonian>
    </qmcsystem>

@@ -114,8 +114,8 @@ TEST_CASE("kspace jastrow", "[wavefunction]")
   root = doc.getRoot();
   xmlNodePtr jas1 = xmlFirstElementChild(root);
 
-  kSpaceJastrowBuilder jastrow(elec_, psi, ions_);
-  jastrow.put(jas1);
+  kSpaceJastrowBuilder jastrow(c, elec_, ions_);
+  psi.addComponent(jastrow.buildComponent(jas1), "kSpaceJastrow");
 
   // update all distance tables
   elec_.update();

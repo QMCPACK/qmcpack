@@ -37,11 +37,11 @@ Communicate* OHMMS::Controller = new Communicate;
 
 //default constructor: ready for a serial execution
 Communicate::Communicate()
-    : d_mycontext(0),
+    : myMPI(MPI_COMM_NULL),
+      d_mycontext(0),
       d_ncontexts(1),
       d_groupid(0),
       d_ngroups(1),
-      myMPI(MPI_COMM_NULL),
       GroupLeaderComm(nullptr)
 {}
 

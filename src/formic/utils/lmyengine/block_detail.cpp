@@ -343,9 +343,6 @@ formic::Matrix<double> cqmc::engine::get_important_brlm_dirs_davidson(const form
   formic::mpi::bcast(&nd, 1);
   //MPI_Bcast(&nd, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
-  // get the flag that whether we will use variable dependency system
-  const bool use_var_deps = ( dep_ptr->n_ind() != dep_ptr->n_tot() );
-
   // get the flag that whether the calculation is ground or targeted excited 
   bool ground = true;
   if ( my_rank == 0 ) 

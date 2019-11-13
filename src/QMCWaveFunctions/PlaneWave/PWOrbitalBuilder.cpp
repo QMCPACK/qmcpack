@@ -13,7 +13,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-/** @file PWOribitalBuilder.cpp
+/** @file
  * @brief Definition of a builder class for PWOrbitalSet
  */
 #include "QMCWaveFunctions/PlaneWave/PWOrbitalBuilder.h"
@@ -29,8 +29,8 @@
 
 namespace qmcplusplus
 {
-PWOrbitalBuilder::PWOrbitalBuilder(ParticleSet& els, TrialWaveFunction& psi, PtclPoolType& psets)
-    : WaveFunctionComponentBuilder(els, psi),
+PWOrbitalBuilder::PWOrbitalBuilder(Communicate* comm, ParticleSet& els, PtclPoolType& psets)
+    : WaveFunctionComponentBuilder(comm, els),
       ptclPool(psets),
       hfileID(-1),
       rootNode(NULL),
@@ -42,8 +42,9 @@ PWOrbitalBuilder::PWOrbitalBuilder(ParticleSet& els, TrialWaveFunction& psi, Ptc
 PWOrbitalBuilder::~PWOrbitalBuilder() { delete myParam; }
 
 //All data parsing is handled here, outside storage classes.
-bool PWOrbitalBuilder::put(xmlNodePtr cur)
+WaveFunctionComponent* PWOrbitalBuilder::buildComponent(xmlNodePtr cur)
 {
+  WaveFunctionComponent* slater_det = nullptr;
   //save the parent
   rootNode = cur;
   //
@@ -82,11 +83,11 @@ bool PWOrbitalBuilder::put(xmlNodePtr cur)
         hfileID = getH5(cur, "href");
       if (hfileID < 0)
       {
-        app_error() << "  Cannot create a SlaterDet due to missing h5 file" << std::endl;
+        APP_ABORT("  Cannot create a SlaterDet due to missing h5 file\n");
         OHMMS::Controller->abort();
       }
       success = createPWBasis(cur);
-      success = putSlaterDet(cur);
+      slater_det = putSlaterDet(cur);
     }
     else if (cname == sposcanner_tag)
     {
@@ -96,11 +97,10 @@ bool PWOrbitalBuilder::put(xmlNodePtr cur)
     cur = cur->next;
   }
   H5Fclose(hfileID);
-  return success;
+  return slater_det;
 }
 
-
-bool PWOrbitalBuilder::putSlaterDet(xmlNodePtr cur)
+WaveFunctionComponent* PWOrbitalBuilder::putSlaterDet(xmlNodePtr cur)
 {
   //catch parameters
   myParam->put(cur);
@@ -151,15 +151,12 @@ bool PWOrbitalBuilder::putSlaterDet(xmlNodePtr cur)
     }
     cur = cur->next;
   }
+
   if (spin_group)
-  {
-    targetPsi.addComponent(sdet, "SlaterDet");
-  }
-  else
-  {
-    APP_ABORT(" Failed to create a SlaterDet at PWOrbitalBuilder::putSlaterDet ");
-  }
-  return true;
+    return sdet;
+
+  APP_ABORT(" Failed to create a SlaterDet at PWOrbitalBuilder::putSlaterDet ");
+  return nullptr;
 }
 
 /** The read routine - get data from XML and H5. Process it and build orbitals.

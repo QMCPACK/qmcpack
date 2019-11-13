@@ -1,6 +1,6 @@
 
 import testing
-from testing import value_eq,object_eq,failed,TestFailed
+from testing import value_eq,object_eq,failed,FailedTest
 from testing import divert_nexus_log,restore_nexus_log
 
 
@@ -131,8 +131,8 @@ def test_job_init():
     # empty init should fail w/o implicit or explicit machine
     try:
         job()
-        raise TestFailed
-    except TestFailed:
+        raise FailedTest
+    except FailedTest:
         failed()
     except:
         None
@@ -298,48 +298,48 @@ def test_machine_virtuals():
     arg1 = None
     try:
         Machine.query_queue(arg0)
-        raise TestFailed
-    except TestFailed:
+        raise FailedTest
+    except FailedTest:
         failed()
     except:
         None
     #end try
     try:
         Machine.submit_jobs(arg0)
-        raise TestFailed
-    except TestFailed:
+        raise FailedTest
+    except FailedTest:
         failed()
     except:
         None
     #end try
     try:
         Machine.process_job(arg0,arg1)
-        raise TestFailed
-    except TestFailed:
+        raise FailedTest
+    except FailedTest:
         failed()
     except:
         None
     #end try
     try:
         Machine.process_job_options(arg0,arg1)
-        raise TestFailed
-    except TestFailed:
+        raise FailedTest
+    except FailedTest:
         failed()
     except:
         None
     #end try
     try:
         Machine.write_job(arg0,arg1,file=False)
-        raise TestFailed
-    except TestFailed:
+        raise FailedTest
+    except FailedTest:
         failed()
     except:
         None
     #end try
     try:
         Machine.submit_job(arg0,arg1)
-        raise TestFailed
-    except TestFailed:
+        raise FailedTest
+    except FailedTest:
         failed()
     except:
         None
@@ -370,16 +370,16 @@ def test_machine_add():
     assert(isinstance(mtest,Machine))
     try:
         Machine.add(mtest)
-        raise TestFailed
-    except TestFailed:
+        raise FailedTest
+    except FailedTest:
         failed()
     except:
         None
     #end try
     try:
         Machine.add('my_machine')
-        raise TestFailed
-    except TestFailed:
+        raise FailedTest
+    except FailedTest:
         failed()
     except:
         None
@@ -398,16 +398,16 @@ def test_machine_get():
     assert(id(m)==id(mtest))
     try:
         Machine.get(m)
-        raise TestFailed
-    except TestFailed:
+        raise FailedTest
+    except FailedTest:
         failed()
     except:
         None
     #end try
     try:
         Machine.get('some_nonexistant_machine')
-        raise TestFailed
-    except TestFailed:
+        raise FailedTest
+    except FailedTest:
         failed()
     except:
         None
@@ -421,16 +421,16 @@ def test_machine_instantiation():
     # test guards against empty/invalid instantiation
     try:
         Machine()
-        raise TestFailed
-    except TestFailed:
+        raise FailedTest
+    except FailedTest:
         failed()
     except:
         None
     #end try
     try:
         Machine(123)
-        raise TestFailed
-    except TestFailed:
+        raise FailedTest
+    except FailedTest:
         failed()
     except:
         None
@@ -447,8 +447,8 @@ def test_machine_instantiation():
     # test guards against multiple instantiation
     try:
         Machine(name=test_name)
-        raise TestFailed
-    except TestFailed:
+        raise FailedTest
+    except FailedTest:
         failed()
     except:
         None

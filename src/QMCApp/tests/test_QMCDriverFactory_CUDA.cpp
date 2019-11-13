@@ -13,7 +13,7 @@
  *  Temporary DriverRactory test for legacy CUDA.
  * 
  *  Since there is not any plan to have the new batch driver and the legacy CUDA variant co-compile.
- *  This avoids polluting the new test code and new batch drivers with #ifdef QMC_CUDA
+ *  This avoids polluting the new test code and new batch drivers with \#ifdef QMC_CUDA
  *  The new driver sources are simply not part of the build at all for the legacy CUDA
  *  variant.
  */

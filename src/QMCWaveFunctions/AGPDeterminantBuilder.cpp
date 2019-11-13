@@ -13,7 +13,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-/**@file ThreeBodyGeminalBuilder.cpp
+/**@file
  *@brief definition of three-body jastrow of Geminal functions
  */
 #include "QMCWaveFunctions/AGPDeterminant.h"
@@ -23,8 +23,8 @@
 
 namespace qmcplusplus
 {
-AGPDeterminantBuilder::AGPDeterminantBuilder(ParticleSet& els, TrialWaveFunction& wfs, PtclPoolType& pset)
-    : WaveFunctionComponentBuilder(els, wfs), ptclPool(pset), mySPOSetBuilderFactory(0), agpDet(0)
+AGPDeterminantBuilder::AGPDeterminantBuilder(Communicate* comm, ParticleSet& els, PtclPoolType& pset)
+    : WaveFunctionComponentBuilder(comm, els), ptclPool(pset), mySPOSetBuilderFactory(0), agpDet(0)
 {}
 
 template<class BasisBuilderT>
@@ -99,12 +99,12 @@ bool AGPDeterminantBuilder::createAGP(BasisBuilderT* abuilder, xmlNodePtr cur)
   return true;
 }
 
-bool AGPDeterminantBuilder::put(xmlNodePtr cur)
+WaveFunctionComponent* AGPDeterminantBuilder::buildComponent(xmlNodePtr cur)
 {
   if (agpDet)
   {
-    app_error() << "  AGPDeterminantBuilder::put exits. AGPDeterminant has been already created." << std::endl;
-    return false;
+    APP_ABORT("  AGPDeterminantBuilder::put exits. AGPDeterminant has been already created.\n");
+    return nullptr;
   }
   app_log() << "  AGPDeterminantBuilder Creating AGPDeterminant." << std::endl;
   xmlNodePtr curRoot = cur;
@@ -137,13 +137,15 @@ bool AGPDeterminantBuilder::put(xmlNodePtr cur)
   }
   if (bPtr == NULL || cPtr == NULL)
   {
-    app_error() << "  AGPDeterminantBuilder::put Cannot create AGPDeterminant. " << std::endl;
-    app_error() << "    Missing <basisset/> or <coefficients/>" << std::endl;
-    return false;
+    std::ostringstream err_msg;
+    err_msg << "  AGPDeterminantBuilder::put Cannot create AGPDeterminant." << std::endl
+            << "    Missing <basisset/> or <coefficients/>" << std::endl;
+    APP_ABORT(err_msg.str());
+    return nullptr;
   }
   if (mySPOSetBuilderFactory == 0)
   {
-    mySPOSetBuilderFactory = new SPOSetBuilderFactory(targetPtcl, targetPsi, ptclPool);
+    mySPOSetBuilderFactory = new SPOSetBuilderFactory(myComm, targetPtcl, ptclPool);
     mySPOSetBuilderFactory->createSPOSetBuilder(curRoot);
     mySPOSetBuilderFactory->loadBasisSetFromXML(bPtr);
   }
@@ -192,7 +194,10 @@ bool AGPDeterminantBuilder::put(xmlNodePtr cur)
     app_log() << agpDet->LambdaUP << std::endl;
   }
   if (agpDet)
-    targetPsi.addComponent(agpDet, "AGP");
-  return success;
+    return agpDet;
+
+  APP_ABORT("failed to create an AGP determinant!\n");
+  return nullptr;
 }
+
 } // namespace qmcplusplus

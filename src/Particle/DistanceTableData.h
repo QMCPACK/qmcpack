@@ -17,7 +17,6 @@
 #define QMCPLUSPLUS_DISTANCETABLEDATAIMPL_H
 
 #include "Particle/ParticleSet.h"
-#include "Utilities/PooledData.h"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "simd/allocator.hpp"
@@ -27,6 +26,7 @@
 
 namespace qmcplusplus
 {
+#ifndef ENABLE_SOA
 /** @defgroup nnlist Distance-table group
  * @brief class to manage a set of data for distance relations between ParticleSet objects.
  */
@@ -47,6 +47,7 @@ struct TempDisplacement
     dr1   = 0.0;
   }
 };
+#endif
 
 /** enumerator for DistanceTableData::DTType
  *
@@ -78,15 +79,19 @@ struct DistanceTableData
   using RealType        = QMCTraits::RealType;
   using PosType         = QMCTraits::PosType;
   using IndexVectorType = aligned_vector<IndexType>;
+  using RowContainer    = VectorSoaContainer<RealType, DIM>;
+#ifndef ENABLE_SOA
   using TempDistType    = TempDisplacement<RealType, DIM>;
   using ripair          = std::pair<RealType, IndexType>;
-  using RowContainer    = VectorSoaContainer<RealType, DIM>;
+#endif
 
   ///Type of DT
   int DTType;
 
-  int N_targets;
+  const ParticleSet* Origin;
+
   int N_sources;
+  int N_targets;
   int N_walkers;
 
 #ifndef ENABLE_SOA
@@ -112,7 +117,6 @@ struct DistanceTableData
 
   /** Locator of the pair  */
   IndexVectorType IJ;
-#endif
 
   /** @brief A NN relation of all the source particles with respect to an activePtcl
    *
@@ -122,6 +126,7 @@ struct DistanceTableData
    * If the move is rejected, nothing is done and new data will be overwritten.
    */
   std::vector<TempDistType> Temp;
+#endif
 
   /**defgroup SoA data */
   /*@{*/
@@ -293,6 +298,7 @@ struct DistanceTableData
     return 0;
   }
 
+#ifndef ENABLE_SOA
   /** build a compact list of a neighbor for the iat source
    * @param iat source particle id
    * @param rcut cutoff radius
@@ -334,6 +340,7 @@ struct DistanceTableData
       APP_ABORT("DistanceTableData::check_neighbor_size  distance/index vector length is not equal to the number of "
                 "neighbor particles");
   }
+#endif
 
   inline void print(std::ostream& os)
   {
@@ -344,8 +351,6 @@ struct DistanceTableData
     os << std::endl;
 #endif
   }
-
-  const ParticleSet* Origin;
 
   ///number of pairs
   int npairs_m;
@@ -386,8 +391,8 @@ struct DistanceTableData
       dr_m.resize(npairs);
       r_m.resize(npairs);
       rinv_m.resize(npairs);
-#endif
       Temp.resize(N_sources);
+#endif
     }
   }
 

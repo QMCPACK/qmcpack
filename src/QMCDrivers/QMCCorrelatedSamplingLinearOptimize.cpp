@@ -51,13 +51,13 @@ QMCCorrelatedSamplingLinearOptimize::QMCCorrelatedSamplingLinearOptimize(MCWalke
                                                                          WaveFunctionPool& ppool,
                                                                          Communicate* comm)
     : QMCLinearOptimize(w, psi, h, hpool, ppool, comm),
-      exp0(-16),
       nstabilizers(3),
       stabilizerScale(2.0),
       bigChange(3),
-      w_beta(0.0),
+      exp0(-16),
       MinMethod("quartic"),
-      GEVtype("mixed")
+      GEVtype("mixed"),
+      w_beta(0.0)
 {
   IsQMCDriver = false;
   //set the optimization flag

@@ -30,27 +30,27 @@
 // \param[in]  userinp   user's input options and derivative vectors
 //
 ///////////////////////////////////////////////////////////////////////////////////////////////
-cqmc::engine::HDLinMethodUpdater::HDLinMethodUpdater(formic::Matrix<double> & der_rat,
-                                                     formic::Matrix<double> & le_der, 
-                                                     const std::vector<double> & vgs,
-                                                     const std::vector<double> & weight,
-                                                     const std::vector<double> & shift_scale,
+cqmc::engine::HDLinMethodUpdater::HDLinMethodUpdater(formic::Matrix<double>& der_rat,
+                                                     formic::Matrix<double>& le_der,
+                                                     const std::vector<double>& vgs,
+                                                     const std::vector<double>& weight,
+                                                     const std::vector<double>& shift_scale,
                                                      const double omega,
                                                      const double var_weight,
                                                      const bool ground_state,
                                                      const bool variance_correct,
                                                      const bool build_lm_matrix)
- :_der_rat(der_rat),
- _le_der(le_der),
- _vgs(vgs),
- _weight(weight),
- _shift_scale(shift_scale),
- _omega(omega),
- _var_weight(var_weight),
- _ground_state(ground_state),
- _variance_correct(variance_correct),
- _build_lm_matrix(build_lm_matrix)
- {}
+    : _omega(omega),
+      _var_weight(var_weight),
+      _der_rat(der_rat),
+      _le_der(le_der),
+      _vgs(vgs),
+      _weight(weight),
+      _shift_scale(shift_scale),
+      _ground_state(ground_state),
+      _variance_correct(variance_correct),
+      _build_lm_matrix(build_lm_matrix)
+{}
 
 //////////////////////////////////////////////////////////////////////////////////////////////
 // \brief  performs a harmonic davidson linear method on current wavefunction(used when 
@@ -83,14 +83,7 @@ void cqmc::engine::HDLinMethodUpdater::engine_update_build_matrix(const formic::
                                                                   std::ostream & output)
 
 {
-
-  // get rank number and number of ranks 
   int my_rank = formic::mpi::rank();
-  int num_rank = formic::mpi::size();
-  //int my_rank; 
-  //int num_rank;
-  //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-  //MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
 
   // creates matrix builder 
   boost::shared_ptr< cqmc::engine::HamOvlpBuilderHD > mbuilder( new cqmc::engine::HamOvlpBuilderHD(_der_rat, 
@@ -279,13 +272,7 @@ void cqmc::engine::HDLinMethodUpdater::engine_update_build_matrix(const formic::
 
 {
 
-  // get rank number and number of ranks 
   int my_rank = formic::mpi::rank();
-  int num_rank = formic::mpi::size();
-  //int my_rank; 
-  //int num_rank;
-  //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-  //MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
 
   boost::shared_ptr< cqmc::engine::EigenSolver > eigensolver(new cqmc::engine::DavidsonLMHD(dep_ptr,
                                                                                             hh.cols(),
@@ -413,28 +400,11 @@ void cqmc::engine::HDLinMethodUpdater::engine_update_no_matrix(const formic::Var
                                                                std::ostream & output)
 
 {
-
-  // get rank number and number of ranks 
   int my_rank = formic::mpi::rank();
-  int num_rank = formic::mpi::size();
-  //int my_rank; 
-  //int num_rank;
-  //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-  //MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
 
   // get the number of total variables + 1
   const int Ntot = (var_deps_use ? (dep_ptr -> n_tot() + 1) : _der_rat.cols());
 
-  //if ( my_rank == 0 ) {
-  //  for (int i = 0; i < _le_der.rows(); i++) {
-  //    for (int j = 0; j < _le_der.cols(); j++) {
-  //      output << boost::format("%10.8e ") % _le_der(i, j);
-  //    }
-  //    output << std::endl;
-  //  }
-  //}
-
-  
   // creates matrix builder 
   boost::shared_ptr< cqmc::engine::HamOvlpBuilderHD > mbuilder( new cqmc::engine::HamOvlpBuilderHD(_der_rat, 
                                                                                                    _le_der, 
@@ -454,10 +424,7 @@ void cqmc::engine::HDLinMethodUpdater::engine_update_no_matrix(const formic::Var
 
 
 
-  // since we don't build linear method matrix, modify derivative vector matrix and evaluate total weight and average of |value/guiding|^2 values 
   double prefactor = mbuilder -> MatrixAbsorb();     
-		
-
   // create eigen solver
   boost::shared_ptr< cqmc::engine::EigenSolver > eigensolver(new cqmc::engine::DavidsonLMHD(dep_ptr,
                                                                                             _der_rat.cols(),
@@ -598,14 +565,7 @@ void cqmc::engine::HDLinMethodUpdater::engine_update_spam(const formic::VarDeps 
                                                           std::ostream & output)
 
 {
-
-  // get rank number and number of ranks 
   int my_rank = formic::mpi::rank();
-  int num_rank = formic::mpi::size();
-  //int my_rank; 
-  //int num_rank;
-  //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-  //MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
 
   // get the number of total variables + 1 
   const int Ntot = ( var_deps_use ? (dep_ptr -> n_tot() + 1) : _der_rat.cols());

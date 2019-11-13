@@ -20,8 +20,11 @@
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCWaveFunctions/Jastrow/PolynomialFunctor3D.h"
-#include "QMCWaveFunctions/Jastrow/eeI_JastrowOrbital.h"
+#ifdef ENABLE_SOA
 #include "QMCWaveFunctions/Jastrow/JeeIOrbitalSoA.h"
+#else
+#include "QMCWaveFunctions/Jastrow/eeI_JastrowOrbital.h"
+#endif
 #include "QMCWaveFunctions/Jastrow/eeI_JastrowBuilder.h"
 #include "ParticleBase/ParticleAttribOps.h"
 
@@ -110,11 +113,9 @@ TEST_CASE("PolynomialFunctor3D Jastrow", "[wavefunction]")
 
   xmlNodePtr jas_eeI = xmlFirstElementChild(root);
 
-  eeI_JastrowBuilder jastrow(elec_, psi, ions_);
-  bool build_okay = jastrow.put(jas_eeI);
-  REQUIRE(build_okay);
-
-  WaveFunctionComponent* orb = psi.getOrbitals()[0];
+  eeI_JastrowBuilder jastrow(c, elec_, ions_);
+  WaveFunctionComponent* orb = jastrow.buildComponent(jas_eeI);
+  psi.addComponent(orb, "eeI_Jastrow");
 
 #ifdef ENABLE_SOA
   typedef JeeIOrbitalSoA<PolynomialFunctor3D> J3Type;
@@ -122,7 +123,7 @@ TEST_CASE("PolynomialFunctor3D Jastrow", "[wavefunction]")
   typedef eeI_JastrowOrbital<PolynomialFunctor3D> J3Type;
 #endif
   J3Type* j3 = dynamic_cast<J3Type*>(orb);
-  REQUIRE(j3 != NULL);
+  REQUIRE(j3 != nullptr);
 
   // update all distance tables
   elec_.update();

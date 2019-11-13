@@ -76,9 +76,9 @@ private:
   std::vector<int> ion_id, el_id;
   std::vector<RealType> el_nrm;
   int nag;
+  ParticleSet& ions;
   const int d_table_ID;
   std::vector<std::string> names;
-  ParticleSet& ions;
 };
 
 } // namespace qmcplusplus

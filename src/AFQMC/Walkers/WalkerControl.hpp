@@ -242,7 +242,7 @@ inline void pair_branch(std::vector<std::pair<double,int>>& buff, Random& rng, d
 // slow for now, not efficient!!!
   int nw = buff.size();
   std::vector<tp> wlks(nw);
-  for(int i=0,sz=0,ni=0; i<nw; i++)
+  for(int i=0; i<nw; i++)
     wlks[i] = tp{buff[i].first,1,i};
 
   std::sort( wlks.begin(), wlks.end(),

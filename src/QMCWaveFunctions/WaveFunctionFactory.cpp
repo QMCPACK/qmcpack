@@ -88,8 +88,8 @@ bool WaveFunctionFactory::build(xmlNodePtr cur, bool buildtree)
     std::string cname((const char*)(cur->name));
     if (cname == "sposet_builder")
     {
-      SPOSetBuilderFactory basisFactory(*targetPtcl, *targetPsi, ptclPool);
-      basisFactory.build_sposet_collection(cur);
+      SPOSetBuilderFactory factory(myComm, *targetPtcl, ptclPool);
+      factory.build_sposet_collection(cur);
     }
     else if (cname == "spinorset_builder")
     {
@@ -128,39 +128,45 @@ bool WaveFunctionFactory::build(xmlNodePtr cur, bool buildtree)
     }
     else if (cname == WaveFunctionComponentBuilder::jastrow_tag)
     {
-      WaveFunctionComponentBuilder* jbuilder = new JastrowBuilder(*targetPtcl, *targetPsi, ptclPool);
-      success                                = jbuilder->put(cur);
+      WaveFunctionComponentBuilder* jbuilder = new JastrowBuilder(myComm, *targetPtcl, ptclPool);
+      targetPsi->addComponent(jbuilder->buildComponent(cur), WaveFunctionComponentBuilder::jastrow_tag);
+      success = true;
       addNode(jbuilder, cur);
     }
     else if (cname == WaveFunctionComponentBuilder::fdlrwfn_tag)
     {
 #ifdef QMC_COMPLEX
       APP_ABORT("FDLR wave functions are not implemented with QMC_COMPLEX enabled.");
+      success = false;
 #else
       success = addFDLRTerm(cur);
 #endif
     }
     else if (cname == WaveFunctionComponentBuilder::ionorb_tag)
     {
-      LatticeGaussianProductBuilder* builder = new LatticeGaussianProductBuilder(*targetPtcl, *targetPsi, ptclPool);
-      success                    = builder->put(cur);
+      LatticeGaussianProductBuilder* builder = new LatticeGaussianProductBuilder(myComm, *targetPtcl, ptclPool);
+      targetPsi->addComponent(builder->buildComponent(cur), WaveFunctionComponentBuilder::ionorb_tag);
+      success = true;
       addNode(builder, cur);
     }
     else if ((cname == "Molecular") || (cname == "molecular"))
     {
       APP_ABORT("  Removed Helium Molecular terms from qmcpack ");
+      success = false;
     }
     else if (cname == "example_he")
     {
-      WaveFunctionComponentBuilder* exampleHe_builder = new ExampleHeBuilder(*targetPtcl, *targetPsi, ptclPool);
-      success                                         = exampleHe_builder->put(cur);
+      WaveFunctionComponentBuilder* exampleHe_builder = new ExampleHeBuilder(myComm, *targetPtcl, ptclPool);
+      targetPsi->addComponent(exampleHe_builder->buildComponent(cur), "example_he");
+      success = true;
       addNode(exampleHe_builder, cur);
     }
 #if !defined(QMC_COMPLEX) && OHMMS_DIM == 3
     else if (cname == "agp")
     {
-      AGPDeterminantBuilder* agpbuilder = new AGPDeterminantBuilder(*targetPtcl, *targetPsi, ptclPool);
-      success                           = agpbuilder->put(cur);
+      AGPDeterminantBuilder* agpbuilder = new AGPDeterminantBuilder(myComm, *targetPtcl, ptclPool);
+      targetPsi->addComponent(agpbuilder->buildComponent(cur), "agp");
+      success = true;
       addNode(agpbuilder, cur);
     }
 #endif
@@ -195,18 +201,18 @@ bool WaveFunctionFactory::addFermionTerm(xmlNodePtr cur)
   if (orbtype == "electron-gas")
   {
 #if defined(QMC_COMPLEX)
-    detbuilder = new ElectronGasComplexOrbitalBuilder(*targetPtcl, *targetPsi);
+    detbuilder = new ElectronGasComplexOrbitalBuilder(myComm, *targetPtcl);
 #else
-    detbuilder = new ElectronGasOrbitalBuilder(*targetPtcl, *targetPsi);
+    detbuilder = new ElectronGasOrbitalBuilder(myComm, *targetPtcl);
 #endif
   }
   else if (orbtype == "PWBasis" || orbtype == "PW" || orbtype == "pw")
   {
-    detbuilder = new PWOrbitalBuilder(*targetPtcl, *targetPsi, ptclPool);
+    detbuilder = new PWOrbitalBuilder(myComm, *targetPtcl, ptclPool);
   }
   else
-    detbuilder = new SlaterDetBuilder(*targetPtcl, *targetPsi, ptclPool);
-  detbuilder->put(cur);
+    detbuilder = new SlaterDetBuilder(myComm, *targetPtcl, *targetPsi, ptclPool);
+  targetPsi->addComponent(detbuilder->buildComponent(cur), "SlaterDet");
   addNode(detbuilder, cur);
   return true;
 }
