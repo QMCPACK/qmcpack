@@ -16,6 +16,7 @@ SET (AFQMC_SRCS
   Hamiltonians/HSPotential_Helpers.cpp
   Hamiltonians/FactorizedSparseHamiltonian.cpp
   Hamiltonians/KPFactorizedHamiltonian.cpp
+  Hamiltonians/RealDenseHamiltonian.cpp
 #  Hamiltonians/KPTHCHamiltonian.cpp
   Hamiltonians/HamiltonianFactory_Helper.cpp
   Hamiltonians/HamiltonianFactory.cpp

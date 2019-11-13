@@ -148,7 +148,6 @@ class AFQMCDistributedPropagatorDistCV: public AFQMCBasePropagator
     MPI_Request req_bpvsend, req_bpvrecv;
 
     std::vector<int> bpx_counts, bpx_displ;
-    mpi3CVector bpX;
 
     template<class WlkSet>
     void step(int steps, WlkSet& wset, RealType E1, RealType dt);

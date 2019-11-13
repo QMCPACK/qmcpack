@@ -26,6 +26,8 @@
 #ifdef QMC_COMPLEX
 #include "AFQMC/Hamiltonians/KPFactorizedHamiltonian.h"
 //#include "AFQMC/Hamiltonians/KPTHCHamiltonian.h"
+#else
+#include "AFQMC/Hamiltonians/RealDenseHamiltonian.h"
 #endif
 #include "AFQMC/HamiltonianOperations/HamiltonianOperations.hpp"
 
@@ -107,7 +109,7 @@ class Hamiltonian: public boost::variant<dummy::dummy_Hamiltonian,
 #else
 class Hamiltonian: public boost::variant<dummy::dummy_Hamiltonian,
                                          FactorizedSparseHamiltonian,
-                                         THCHamiltonian
+                                         THCHamiltonian,RealDenseHamiltonian
                                         >
 #endif
 {
@@ -124,6 +126,8 @@ class Hamiltonian: public boost::variant<dummy::dummy_Hamiltonian,
 #ifdef QMC_COMPLEX
     explicit Hamiltonian(KPFactorizedHamiltonian&& other) : variant(std::move(other)) {}
 //    explicit Hamiltonian(KPTHCHamiltonian&& other) : variant(std::move(other)) {}
+#else
+    explicit Hamiltonian(RealDenseHamiltonian&& other) : variant(std::move(other)) {}
 #endif
 
     explicit Hamiltonian(THCHamiltonian const& other) = delete;
@@ -131,6 +135,8 @@ class Hamiltonian: public boost::variant<dummy::dummy_Hamiltonian,
 #ifdef QMC_COMPLEX
     explicit Hamiltonian(KPFactorizedHamiltonian const& other) = delete;
 //    explicit Hamiltonian(KPTHCHamiltonian const& other) = delete;
+#else
+    explicit Hamiltonian(RealDenseHamiltonian const& other) = delete;
 #endif
 
     Hamiltonian(Hamiltonian const& other) = delete;
