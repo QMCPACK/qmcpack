@@ -82,12 +82,12 @@ inline void eval_e2iphi(int n, float* restrict phi, float* restrict c, float* re
 
 inline void eval_e2iphi(int n, double* restrict phi, std::complex<double>* restrict z)
 {
-  vcosisin(z, phi, &n);
+  vcosisin((double _Complex*)z, phi, &n);
 }
 
 inline void eval_e2iphi(int n, float* restrict phi, std::complex<float>* restrict z)
 {
-  vscosisin(z, phi, &n);
+  vscosisin((float _Complex*)z, phi, &n);
 }
 #elif defined(HAVE_MKL_VML)
 #include <mkl_vml_functions.h>
