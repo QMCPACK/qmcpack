@@ -89,9 +89,6 @@
 /* Define to 1 if precision is mixed, only for the CPU code */
 #cmakedefine MIXED_PRECISION @MIXED_PRECISION@
 
-/* Define to 1 if precision is mixed, only for AFQMC code */
-#cmakedefine AFQMC_MIXED_PRECISION @AFQMC_MIXED_PRECISION@
-
 /* Define to 1 if complex wavefunctions are used */
 #cmakedefine QMC_COMPLEX @QMC_COMPLEX@
 
@@ -164,6 +161,9 @@
 
 /* For AFQMC compilation  */
 #cmakedefine BUILD_AFQMC @BUILD_AFQMC@
+
+/* For AFQMC compilation  */
+#cmakedefine BUILD_AFQMC_WITH_NCCL @BUILD_AFQMC_WITH_NCCL@
 
 /* For FCIQMC compilation  */
 #cmakedefine BUILD_FCIQMC @BUILD_FCIQMC@

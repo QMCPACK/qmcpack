@@ -196,7 +196,7 @@ class KP3IndexFactorization
             P1[I][J] += H1[K][i][j] + vn0[K][i][j];
             P1[J][I] += H1[K][j][i] + vn0[K][j][i];
             // This is really cutoff dependent!!!
-#if AFQMC_MIXED_PRECISION
+#if MIXED_PRECISION
             if( std::abs(P1[I][J]-ma::conj(P1[J][I]))*2.0 > 1e-5 ) {
 #else
             if( std::abs(P1[I][J]-ma::conj(P1[J][I]))*2.0 > 1e-6 ) {
@@ -324,6 +324,7 @@ class KP3IndexFactorization
                                                         G3Da.num_elements()*(nspin-1),
                                                         {noccb_tot,nmo_tot,nwalk} );
 
+
       // with yet another mapping, it is possible to reduce the memory usage here!
       // avoiding for now!
       Sp4Tensor_ref GKK(to_address(SM_TMats.origin())+cnt,
@@ -422,8 +423,8 @@ class KP3IndexFactorization
                 SpMatrix_ref Twabn(Twban.origin()+Twban.num_elements(),{nwalk*na,nb*nchol});
                 Sp4Tensor_ref T4Dwabn(Twban.origin()+Twban.num_elements(),{nwalk,na,nb,nchol});
 
-                ma::product(Gwal,ma::T(Lbnl),Twabn);
-                ma::product(Gwbk,ma::T(Lank),Twban);
+                if(na > 0 && nb > 0) ma::product(Gwal,ma::T(Lbnl),Twabn);
+                if(na > 0 && nb > 0) ma::product(Gwbk,ma::T(Lank),Twban);
 
                 for(int n=0; n<nwalk; ++n) {
                   SPComplexType E_(0.0);
@@ -472,8 +473,8 @@ class KP3IndexFactorization
                   SpMatrix_ref Twabn(Twban.origin()+Twban.num_elements(),{nwalk*na,nb*nchol});
                   Sp4Tensor_ref T4Dwabn(Twban.origin()+Twban.num_elements(),{nwalk,na,nb,nchol});
 
-                  ma::product(Gwal,ma::T(Lbnl),Twabn);
-                  ma::product(Gwbk,ma::T(Lank),Twban);
+                  if(na > 0 && nb > 0) ma::product(Gwal,ma::T(Lbnl),Twabn);
+                  if(na > 0 && nb > 0) ma::product(Gwbk,ma::T(Lank),Twban);
 
                   for(int n=0; n<nwalk; ++n) {
                     SPComplexType E_(0.0);
@@ -760,8 +761,8 @@ class KP3IndexFactorization
                   SpMatrix_ref Tabn(Tban.origin()+Tban.num_elements(),{na,nb*nchol});
                   Sp3Tensor_ref T3Dabn(Tban.origin()+Tban.num_elements(),{na,nb,nchol});
 
-                  ma::product(Gal,ma::T(Lbnl),Tabn);
-                  ma::product(Gbk,ma::T(Lank),Tban);
+                  if(na > 0 && nb > 0) ma::product(Gal,ma::T(Lbnl),Tabn);
+                  if(na > 0 && nb > 0) ma::product(Gbk,ma::T(Lank),Tban);
 
                   SPComplexType E_(0.0);
                   for(int a=0; a<na; ++a)
@@ -796,8 +797,8 @@ class KP3IndexFactorization
                     SpMatrix_ref Tabn(Tban.origin()+Tban.num_elements(),{na,nb*nchol});
                     Sp3Tensor_ref T3Dabn(Tban.origin()+Tban.num_elements(),{na,nb,nchol});
 
-                    ma::product(Gal,ma::T(Lbnl),Tabn);
-                    ma::product(Gbk,ma::T(Lank),Tban);
+                    if(na > 0 && nb > 0) ma::product(Gal,ma::T(Lbnl),Tabn);
+                    if(na > 0 && nb > 0) ma::product(Gbk,ma::T(Lank),Tban);
 
                     SPComplexType E_(0.0);
                     for(int a=0; a<na; ++a)

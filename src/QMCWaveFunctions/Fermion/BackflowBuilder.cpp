@@ -125,6 +125,9 @@ void BackflowBuilder::addOneBody(xmlNodePtr cur)
   int numSpecies            = sSet.getTotalNum();
   if (spin == "yes")
   {
+#ifdef ENABLE_SOA
+    APP_ABORT("Spin one body backflow not supported on SOA");
+#endif
     if (funct != "Bspline")
       APP_ABORT("DON'T KNOW WHAT TO DO YET"); //will template this
     Backflow_eI_spin<BsplineFunctor<RealType>>* tbf1 =
