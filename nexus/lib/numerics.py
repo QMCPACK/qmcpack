@@ -894,14 +894,19 @@ def simstats(x,dim=None):
 
 
 
-def simplestats(x,dim=None):
+def simplestats(x,dim=None,full=False):
     if dim is None:
         dim=len(x.shape)-1
     #end if
     osqrtN = 1.0/sqrt(1.0*x.shape[dim])
     mean   = x.mean(dim)
-    error  = x.std(dim)*osqrtN
-    return (mean,error)
+    var    = x.var(dim)
+    error  = sqrt(var)*osqrtN
+    if not full:
+        return (mean,error)
+    else:
+        return (mean,var,error,1.0)
+    #end if
 #end def simplestats
 
 
