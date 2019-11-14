@@ -4,6 +4,7 @@
 # Initial version only for MKL VML. Works for gcc+MKL case. libm and massv detection required.
 #
 
+IF(NOT HAVE_MASS)
 SET( HAVE_VECTOR_MATH 0 )
 
 IF ( HAVE_MKL_VML )
@@ -33,7 +34,7 @@ ELSE()
     ENDIF()
   ENDIF()
 ENDIF()
-
+ENDIF()
 IF ( NOT HAVE_VECTOR_MATH )
   MESSAGE(STATUS "No usable vector math library detected.")
 ENDIF()
