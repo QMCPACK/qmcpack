@@ -8,7 +8,6 @@ from optparse import OptionParser
 def find_nexus_modules():
     import sys
     nexus_lib = os.path.abspath(os.path.join(__file__,'..','..','lib'))
-    print nexus_lib
     assert(os.path.exists(nexus_lib))
     sys.path.append(nexus_lib)
 #end def find_nexus_modules
@@ -33,9 +32,9 @@ def import_nexus_module(module_name,full=False,mod_only=False):
 #end def import_nexus_module
 
 
-# Load nexus modules
+# Load Nexus modules
 try:
-    # Attempt specialized path-based load.
+    # Attempt specialized path-based imports.
     #  (The executable should still work even if Nexus is not installed)
     find_nexus_modules()
 
@@ -58,7 +57,7 @@ try:
     equilibration_length = numerics['equilibration_length']
     del numerics
 except:
-    # Failing path-based load, attempt load based on installed Nexus modules.
+    # Failing path-based imports, import installed Nexus modules.
     from generic import obj
     from developer import DevBase,unavailable
     from unit_converter import convert
@@ -71,11 +70,6 @@ try:
     import numpy as np
 except (ImportError,RuntimeError):
     np = unavailable('numpy')
-#end try
-try:
-    import numpy.random as random
-except:
-    random = unavailable('numpy.random','random')
 #end try
 
 
