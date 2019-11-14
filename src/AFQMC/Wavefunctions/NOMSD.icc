@@ -638,7 +638,7 @@ namespace afqmc
         Ai.clear();
         for(int ni=0; ni<nb; ni++) Ai.emplace_back(wset[iw+ni].SlaterMatrix(Beta));
         SDetOp.BatchedMixedDensityMatrix(RefB,Ai,
-                          GB3D_.sliced(0,nb),LogOverlapFactor,ovlp2.sliced(nb,2*nb),compact,herm);
+                          GB3D_.sliced(0,nb),LogOverlapFactor,ovlp2.sliced(0,nb),compact,herm);
         for(int ib=0; ib<nb; ++ib) {
           if(transposed) {
             ma::copy(GB2D_[ib],G[iw+ib].sliced(GAdims.first*GAdims.second,G.size(1)));
@@ -1280,7 +1280,6 @@ namespace afqmc
     double LogOverlapFactor(wset.getLogOverlapFactor());
     auto wlk_dims = wset.walker_dims();
     // Transposed temporaries for back propagation.
-    int max_nel = std::max(NAEA,NAEB);
     if(G.size(1) != G.stride(0))
       APP_ABORT(" Error: FIX FIX FIX need strided fill_n\n");
     using std::fill_n;
@@ -1440,7 +1439,6 @@ namespace afqmc
     auto wlk_dims = wset.walker_dims();
     double LogOverlapFactor(wset.getLogOverlapFactor());
     // Transposed temporaries for back propagation.
-    int max_nel = std::max(NAEA,NAEB);
     if(G.size(1) != G.stride(0))
       APP_ABORT(" Error: FIX FIX FIX need strided fill_n\n");
     using std::fill_n;
@@ -1851,7 +1849,6 @@ namespace afqmc
   {
     if(localGbuff.size() < 1)
       localGbuff.reextent(iextensions<1u>{1});
-    pointer d_(localGbuff.origin());
     if(walker_type == NONCOLLINEAR)  
       APP_ABORT(" Error: OrthogonalizeExcited not implemented with NONCOLLINEAR.\n");
     if(spin==Alpha) {

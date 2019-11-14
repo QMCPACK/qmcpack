@@ -616,21 +616,21 @@ gen_inputs = set('''
 added_inputs = run_inputs | gen_inputs
 added_types = obj(
     # run inputs
-    prefix                = str,
-    run_type              = str,
-    frozen_core           = bool,
-    cis_loop              = (bool,int),
-    converge_dets         = bool,
-    sleep                 = (int,float),
-    slave                 = str,
-    postprocess           = (tuple,list),
-    four_idx_transform    = bool,
-    save_natorb           = bool,
-    save_for_qmcpack      = bool,
+    prefix             = str,
+    run_type           = str,
+    frozen_core        = bool,
+    cis_loop           = (bool,int),
+    converge_dets      = bool,
+    sleep              = (int,float),
+    slave              = str,
+    postprocess        = (tuple,list),
+    four_idx_transform = bool,
+    save_natorb        = bool,
+    save_for_qmcpack   = bool,
     # gen inputs
-    system                = PhysicalSystem,
-    defaults              = str,
-    validate              = bool,
+    system             = PhysicalSystem,
+    defaults           = str,
+    validate           = bool,
     )
 added_required = set('''
     system
@@ -641,12 +641,12 @@ added_required = set('''
 qp_defaults_version = 'v1'
 shared_defaults = obj(
     # run inputs
-    postprocess           = [],
-    four_idx_transform    = False,
-    save_natorb           = False,
-    save_for_qmcpack      = False,
+    postprocess        = [],
+    four_idx_transform = False,
+    save_natorb        = False,
+    save_for_qmcpack   = False,
     # gen inputs
-    validate              = True,
+    validate           = True,
     )
 qp_defaults = obj(
     none = obj(

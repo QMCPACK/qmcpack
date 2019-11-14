@@ -51,10 +51,10 @@ public:
   Matrix<RealType> RatioIJ;
   ///multiple estimator
   CSEnergyEstimator* multiEstimator;
-  ///a list of TrialWaveFunctions for multiple method
-  std::vector<TrialWaveFunction*> Psi1;
   ///a list of QMCHamiltonians for multiple method
   std::vector<QMCHamiltonian*> H1;
+  ///a list of TrialWaveFunctions for multiple method
+  std::vector<TrialWaveFunction*> Psi1;
 
   std::vector<ParticleSet::ParticleGradient_t*> G1;
   std::vector<ParticleSet::ParticleLaplacian_t*> L1;

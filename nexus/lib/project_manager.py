@@ -45,8 +45,8 @@ class ProjectManager(NexusCore):
         self.simulations = obj()
         self.cascades = obj()
         self.progressing_cascades = obj()
-        self.operations = []
     #end def __init__
+
 
     def add_simulations(self,*simulations):
         if len(simulations)==0:
@@ -65,30 +65,12 @@ class ProjectManager(NexusCore):
         #end for
     #end def add_simulations
 
+
     def add_cascade(self,cascade):
         cid = cascade.simid
         self.cascades[cid]=cascade
         self.progressing_cascades[cid]=cascade
     #end def add_cascade
-
-
-    def init_cascades(self):
-        self.screen_fake_sims()
-        self.resolve_file_collisions()
-        self.propagate_blockages()
-        self.log('loading cascade images',n=1)
-        if nexus_core.load_images:
-            self.load_cascades()
-        else:
-            self.log('cascades',n=1)
-        #end if
-        for c in self.progressing_cascades:
-            self.log('cascade',c.simid,'checking in',n=2)
-        #end for
-        self.perform_operations()
-        #self.write_cascade_status()
-        self.check_dependencies()
-    #end def init_cascades
 
 
     def run_project(self,status=False,status_only=False):
@@ -137,58 +119,22 @@ class ProjectManager(NexusCore):
         NexusCore.write_end_splash()
     #end def run_project
 
-    
-    def load_cascades(self):
-        cascades = obj()
-        progressing_cascades = obj()
-        for cid,cascade in self.cascades.iteritems():
-            rc = cascade.reconstruct_cascade()
-            cascades[rc.simid] = rc 
-            progressing_cascades[rc.simid] = rc
+
+    def init_cascades(self):
+        self.screen_fake_sims()
+        self.resolve_file_collisions()
+        self.propagate_blockages()
+        self.log('loading cascade images',n=1)
+        if nexus_core.load_images:
+            self.load_cascades()
+        else:
+            self.log('cascades',n=1)
+        #end if
+        for c in self.progressing_cascades:
+            self.log('cascade',c.simid,'checking in',n=2)
         #end for
-        self.cascades = cascades
-        self.progressing_cascades = progressing_cascades
-    #end def load_cascades
-
-
-    def perform_operations(self):
-        for op in self.operations:
-            operation = op.operation
-            sims      = op.sims
-            for sim in sims:
-                operation(sim)
-            #end for
-        #end for
-        self.operations = []
-    #end def perform_operations
-
-
-    def reset_indicators(self,sims):
-        op = obj(
-            operation = Simulation.reset_indicators,
-            sims = sims
-            )
-        self.operations.append(op)
-    #end def reset_indicators
-
-                    
-    def traverse_cascades(self,operation=trivial,*args,**kwargs):
-        for cascade in self.cascades:
-            cascade.reset_wait_ids()
-        #end for
-        for cascade in self.cascades:
-            cascade.traverse_cascade(operation,*args,**kwargs)
-        #end for
-        return
-    #end def traverse_cascades
-
-
-    def save_cascades(self):
-        def save(sim):
-            sim.save_image()
-        #end def save
-        self.traverse_cascades(save)
-    #end def save_cascades
+        self.check_dependencies()
+    #end def init_cascades
 
 
     def screen_fake_sims(self):
@@ -207,167 +153,6 @@ class ProjectManager(NexusCore):
             self.error(msg)
         #end if
     #end def screen_fake_sims
-
-
-    def propagate_blockages(self):
-        def collect_blocked(sim,blocked):
-            if sim.block or sim.block_subcascade:
-                blocked.append(sim)
-            #end if
-        #end def collect_blocks
-        blocked=[]
-        self.traverse_cascades(collect_blocked,blocked)
-        for sim in blocked:
-            sim.block_dependents(block_self=False)
-        #end for
-    #end def propagate_blockages
-
-            
-    def propagate_values(self,**values):
-        def set_values(sim,**values):
-            for name,value in values.iteritems():
-                sim[name] = value
-            #end for
-        #end def set_values
-        self.traverse_cascades(set_values,**values)
-    #end def propagate_values
-
-        
-    def status_line(self,sim,extra=''):
-        indicators = ('setup','sent_files','submitted','finished','got_output','analyzed')
-        stats = sim.tuple(*indicators)
-        status = ''
-        for stat in stats:
-            status+=str(int(stat))
-        #end for
-        if sim.process_id is None:
-            pid = '------'
-        else:
-            pid = sim.process_id
-        #end if
-        sline = '{0}  {1}  {2:<8}  {3:<6}  {4}'.format(status,str(int(sim.failed)),pid,sim.identifier,sim.locdir)
-        self.log(sline,extra,n=2)
-
-        #os.system('ls '+sim.locdir)
-        #os.system('redo '+sim.locdir)
-    #end def status_line
-
-    def write_simulation_status(self):
-        status       = nexus_core.status
-        status_modes = nexus_core.status_modes
-        self.log('\ncascade status',n=1)
-        self.log('setup, sent_files, submitted, finished, got_output, analyzed, failed',n=2)
-        all_sids = set()
-        for sim in self.simulations:
-            add = False
-            if status==status_modes.active:
-                add = sim.active()
-            elif status==status_modes.ready:
-                add = sim.ready()
-            elif status==status_modes.failed:
-                add = sim.failed
-            else:
-                add = True
-            #end if
-            if add:
-                all_sids.add(sim.simid)
-            #end if
-        #end for
-        sids = set()
-        for isim in sorted(all_sids):
-            sim = self.simulations[isim]
-            if not sim.bundled:
-                if status==status_modes.active and not sim.active():
-                    continue
-                #end if
-                self.status_line(sim)
-                sids.add(sim.simid)
-                if sim.is_bundle:
-                    for s in sim.sims:
-                        self.status_line(s)
-                        sids.add(s.simid)
-                    #end for
-                #end if
-            #end if
-        #end for
-        sids = all_sids-sids
-        if len(sids)>0:
-            self.log('==== sims missed, part of bundles? ====',n=2)
-            for isim in sorted(sids):
-                sim = self.simulations[isim]
-                self.status_line(sim)
-            #end for
-            #self.log('==== bundles for missed sims ====',n=2)
-            #bsids = set()
-            #for isim in sorted(sids):
-            #    sim = self.simulations[isim]
-            #    if sim.bundled and sim.simid not in bsids:
-            #        bsim = sim.bundler
-            #        self.status_line(bsim)
-            #        bsids.add(bsim.simid)
-            #        for s in bsim.sims:
-            #            self.status_line(s)
-            #            bsids.add(s.simid)
-            #        #end for
-            #    #end if
-            ##end for
-        #end if
-        self.log('setup, sent_files, submitted, finished, got_output, analyzed, failed',n=2)
-    #end def write_simulation_status
-
-
-    def write_cascade_status(self):
-        self.log('\ncascade status',n=1)
-
-        self.log('setup, sent_files, submitted, finished, got_output, analyzed',n=2)
-        def write_status(sim):
-            indicators = ('setup','sent_files','submitted','finished','got_output','analyzed')
-            stats = sim.tuple(*indicators)
-            status = ''
-            for stat in stats:
-                status+=str(int(stat))
-            #end for
-            self.log('{0}  {1}  {2}'.format(status,sim.identifier,sim.locdir),n=2)
-            #self.log(str(sim.simid)+' '+str(sim.identifier),n=2)
-            #self.log('setup      = '+str(sim.setup     ),n=4)
-            #self.log('sent_files = '+str(sim.sent_files),n=4)
-            #self.log('submitted  = '+str(sim.submitted ),n=4)
-            #self.log('finished   = '+str(sim.finished  ),n=4)
-            #self.log('got_output = '+str(sim.got_output),n=4)
-            #self.log('analyzed   = '+str(sim.analyzed  ),n=4)
-        #end def write_status
-        self.traverse_cascades(write_status)
-        self.log('setup, sent_files, submitted, finished, got_output, analyzed',n=2)
-    #end def write_cascade_status
-
-
-    def write_sim_dependencies(self,idkey=None):
-        for simid in sorted(self.simulations.keys()):
-            sim = self.simulations[simid]
-            if idkey is None or sim.identifier==idkey:
-                self.log('\n{0} {1} {2}'.format(sim.identifier,simid,sim.locdir))
-                for did in sorted(sim.dependencies.keys()):
-                    dep = sim.dependencies[did]
-                    dsim  = dep.sim
-                    names = dep.result_names
-                    self.log('  {0} {1} {2} {3}'.format(dsim.identifier,dsim.simid,names,dsim.locdir))
-                #end for
-            #end if
-        #end for
-    #end def write_sim_dependencies
-
-
-    def write_cascade_dependents(self):
-        self.log('cascade dependents',n=1)
-        for cascade in self.cascades:
-            cascade.reset_wait_ids()
-        #end for
-        for cascade in self.cascades:
-            self.log(cascade.__class__.__name__+' '+str(cascade.simid),n=2)
-            cascade.write_dependents(n=2)
-        #end for
-        return
-    #end def write_cascade_dependents
 
 
     def resolve_file_collisions(self):
@@ -418,6 +203,34 @@ class ProjectManager(NexusCore):
         #end if
     #end def resolve_file_collisions
 
+
+    def propagate_blockages(self):
+        def collect_blocked(sim,blocked):
+            if sim.block or sim.block_subcascade:
+                blocked.append(sim)
+            #end if
+        #end def collect_blocks
+        blocked=[]
+        self.traverse_cascades(collect_blocked,blocked)
+        for sim in blocked:
+            sim.block_dependents(block_self=False)
+        #end for
+    #end def propagate_blockages
+
+    
+    def load_cascades(self):
+        cascades = obj()
+        progressing_cascades = obj()
+        for cid,cascade in self.cascades.iteritems():
+            rc = cascade.reconstruct_cascade()
+            cascades[rc.simid] = rc 
+            progressing_cascades[rc.simid] = rc
+        #end for
+        self.cascades = cascades
+        self.progressing_cascades = progressing_cascades
+    #end def load_cascades
+
+
     def check_dependencies(self):
         self.log('checking cascade dependencies',n=1)
         result = obj()
@@ -429,6 +242,85 @@ class ProjectManager(NexusCore):
             self.error('some simulation dependecies are not satisfied')
         #end if
     #end def check_dependencies
+
+                    
+    def traverse_cascades(self,operation=trivial,*args,**kwargs):
+        for cascade in self.cascades:
+            cascade.reset_wait_ids()
+        #end for
+        for cascade in self.cascades:
+            cascade.traverse_cascade(operation,*args,**kwargs)
+        #end for
+        return
+    #end def traverse_cascades
+
+
+    def write_simulation_status(self):
+        status       = nexus_core.status
+        status_modes = nexus_core.status_modes
+        self.log('\ncascade status',n=1)
+        self.log('setup, sent_files, submitted, finished, got_output, analyzed, failed',n=2)
+        all_sids = set()
+        for sim in self.simulations:
+            add = False
+            if status==status_modes.active:
+                add = sim.active()
+            elif status==status_modes.ready:
+                add = sim.ready()
+            elif status==status_modes.failed:
+                add = sim.failed
+            else:
+                add = True
+            #end if
+            if add:
+                all_sids.add(sim.simid)
+            #end if
+        #end for
+        sids = set()
+        for isim in sorted(all_sids):
+            sim = self.simulations[isim]
+            if not sim.bundled:
+                if status==status_modes.active and not sim.active():
+                    continue
+                #end if
+                self.status_line(sim)
+                sids.add(sim.simid)
+                if sim.is_bundle:
+                    for s in sim.sims:
+                        self.status_line(s)
+                        sids.add(s.simid)
+                    #end for
+                #end if
+            #end if
+        #end for
+        sids = all_sids-sids
+        if len(sids)>0:
+            self.log('==== sims missed, part of bundles? ====',n=2)
+            for isim in sorted(sids):
+                sim = self.simulations[isim]
+                self.status_line(sim)
+            #end for
+        #end if
+        self.log('setup, sent_files, submitted, finished, got_output, analyzed, failed',n=2)
+    #end def write_simulation_status
+
+        
+    def status_line(self,sim,extra=''):
+        indicators = ('setup','sent_files','submitted','finished','got_output','analyzed')
+        stats = sim.tuple(*indicators)
+        status = ''
+        for stat in stats:
+            status+=str(int(stat))
+        #end for
+        if sim.process_id is None:
+            pid = '------'
+        else:
+            pid = sim.process_id
+        #end if
+        sline = '{0}  {1}  {2:<8}  {3:<6}  {4}'.format(status,str(int(sim.failed)),pid,sim.identifier,sim.locdir)
+        self.log(sline,extra,n=2)
+    #end def status_line
+
 
     def progress_cascades(self):
         NexusCore.gc.collect()
@@ -457,6 +349,37 @@ class ProjectManager(NexusCore):
             sim.update_process_id()
         #end for
     #end def update_process_ids
+
+
+    # test needed
+    def write_sim_dependencies(self,idkey=None):
+        for simid in sorted(self.simulations.keys()):
+            sim = self.simulations[simid]
+            if idkey is None or sim.identifier==idkey:
+                self.log('\n{0} {1} {2}'.format(sim.identifier,simid,sim.locdir))
+                for did in sorted(sim.dependencies.keys()):
+                    dep = sim.dependencies[did]
+                    dsim  = dep.sim
+                    names = dep.result_names
+                    self.log('  {0} {1} {2} {3}'.format(dsim.identifier,dsim.simid,names,dsim.locdir))
+                #end for
+            #end if
+        #end for
+    #end def write_sim_dependencies
+
+
+    # test needed
+    def write_cascade_dependents(self):
+        self.log('cascade dependents',n=1)
+        for cascade in self.cascades:
+            cascade.reset_wait_ids()
+        #end for
+        for cascade in self.cascades:
+            self.log(cascade.__class__.__name__+' '+str(cascade.simid),n=2)
+            cascade.write_dependents(n=2)
+        #end for
+        return
+    #end def write_cascade_dependents
 #end class ProjectManager
 
 

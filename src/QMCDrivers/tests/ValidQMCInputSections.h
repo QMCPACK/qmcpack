@@ -73,7 +73,7 @@ constexpr int valid_vmc_input_vmc_index       = 0;
 constexpr int valid_vmc_input_vmc_batch_index = 1;
 constexpr int valid_vmc_input_vmc_tiny_index = 2;
 
-constexpr std::array<const char*, 1> valid_dmc_input_sections{
+constexpr std::array<const char*, 2> valid_dmc_input_sections{
     R"(
   <qmc method="dmc" move="pbyp" gpu="yes">
     <estimator name="LocalEnergy" hdf5="no" />
@@ -85,7 +85,24 @@ constexpr std::array<const char*, 1> valid_dmc_input_sections{
     <parameter name="reconfiguration">       no </parameter>
     <parameter name="nonlocalmoves">         no </parameter>
   </qmc>
+)",
+     R"(
+  <qmc method="dmc_batch" move="pbyp">
+    <parameter name="crowds">                 8 </parameter>
+    <estimator name="LocalEnergy" hdf5="no" />
+    <parameter name="walkers">                32 </parameter>
+    <parameter name="warmupSteps">            5 </parameter>
+    <parameter name="substeps">               5 </parameter>
+    <parameter name="steps">                  1 </parameter>
+    <parameter name="blocks">                 2 </parameter>
+    <parameter name="timestep">             1.0 </parameter>
+    <parameter name="usedrift">              no </parameter>
+  </qmc>
 )"};
+
+// to avoid creating a situation where section test xml is in two places
+constexpr int valid_dmc_input_dmc_index       = 0;
+constexpr int valid_dmc_input_dmc_batch_index = 1;
 
 // clang-format: on
 } // namespace testing

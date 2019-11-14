@@ -20,7 +20,6 @@
 #ifndef QMCPLUSPLUS_HAMILTONIAN_H
 #define QMCPLUSPLUS_HAMILTONIAN_H
 #include "Configuration.h"
-#include "type_traits/TypeRequire.hpp"
 #include <QMCHamiltonians/OperatorBase.h>
 #include "QMCHamiltonians/NonLocalECPotential.h"
 #if !defined(REMOVE_TRACEMANAGER)
@@ -234,6 +233,12 @@ public:
    */
   FullPrecRealType evaluateWithToperator(ParticleSet& P);
 
+  /** batched version of evaluate Local energy with Toperators updated.
+   */
+  static std::vector<QMCHamiltonian::FullPrecRealType> flex_evaluateWithToperator(RefVector<QMCHamiltonian>& H_list,
+                                                                                  RefVector<ParticleSet>& P_list);
+
+
   /** evaluate energy and derivatives wrt to the variables
    * @param P ParticleSet
    * @param optvars current optimiable variables
@@ -271,6 +276,17 @@ public:
       nlpp_ptr->setNonLocalMoves(cur);
   }
 
+  void setNonLocalMoves(const std::string& non_local_move_option,
+                                        const double tau,
+                                        const double alpha,
+                                        const double gamma)
+  {
+    if (nlpp_ptr != nullptr)
+      nlpp_ptr->setNonLocalMoves(non_local_move_option,
+                                        tau,
+                                        alpha,
+                                        gamma);
+  }
   /** make non local moves
    * @param P particle set
    * @return the number of accepted moves
@@ -283,6 +299,7 @@ public:
       return nlpp_ptr->makeNonLocalMovesPbyP(P);
   }
 
+  static std::vector<int> flex_makeNonLocalMoves(RefVector<QMCHamiltonian>& h_list, RefVector<ParticleSet>& p_list);
   /** evaluate energy 
    * @param P quantum particleset
    * @param free_nlpp if true, non-local PP is a variable
@@ -313,6 +330,9 @@ public:
 
   void setRandomGenerator(RandomGenerator_t* rng);
 
+  static void updateNonKinetic(OperatorBase& op, QMCHamiltonian& ham, ParticleSet& pset);
+  static void updateKinetic(OperatorBase& op, QMCHamiltonian& ham, ParticleSet& pset);
+  
   /** return a clone */
   QMCHamiltonian* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 

@@ -245,7 +245,7 @@ void RPAJastrow::resetTargetParticleSet(ParticleSet& P)
     Psi[i]->resetTargetParticleSet(P);
 }
 
-RPAJastrow::RealType RPAJastrow::evaluateLog(ParticleSet& P,
+RPAJastrow::LogValueType RPAJastrow::evaluateLog(ParticleSet& P,
                                              ParticleSet::ParticleGradient_t& G,
                                              ParticleSet::ParticleLaplacian_t& L)
 {
@@ -300,7 +300,7 @@ void RPAJastrow::registerData(ParticleSet& P, WFBufferType& buf)
     Psi[i]->registerData(P, buf);
 }
 
-RPAJastrow::RealType RPAJastrow::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch)
+RPAJastrow::LogValueType RPAJastrow::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch)
 {
   LogValue = 0.0;
   for (int i = 0; i < Psi.size(); i++)
@@ -318,7 +318,7 @@ void RPAJastrow::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
  */
 WaveFunctionComponent* RPAJastrow::makeClone(ParticleSet& tpq) const
 {
-  HandlerType* tempHandler;
+  HandlerType* tempHandler = nullptr;
   if (rpafunc == "yukawa" || rpafunc == "breakup")
   {
     tempHandler = new LRHandlerTemp<YukawaBreakup<RealType>,

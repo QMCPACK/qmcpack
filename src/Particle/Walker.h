@@ -98,11 +98,12 @@ struct Walker
   typedef Matrix<FullPrecRealType> PropertyContainer_t;
 
   /** @{
-   * Not really "buffers", rename
+   * Not really "buffers", "walker message" also used to serialize walker, rename
    */
-  typedef PooledMemory<OHMMS_PRECISION_FULL> WFBuffer_t;
+  typedef PooledMemory<FullPrecRealType> WFBuffer_t;
   typedef PooledData<RealType> Buffer_t;
   /** }@ */
+  
   ///id reserved for forward walking
   long ID;
   ///id reserved for forward walking
@@ -411,6 +412,8 @@ struct Walker
    */
   inline size_t byteSize()
   {
+    // TODO: fix this! this is a non intuitive side effect for a size call
+    //       breaks a bunch of things that could be const
     if (!DataSet.size())
     {
       registerData();

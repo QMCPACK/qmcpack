@@ -28,8 +28,11 @@ using std::string;
 namespace qmcplusplus
 {
 
-typedef QMCTraits::RealType RealType;
-typedef QMCTraits::ValueType ValueType;
+using RealType = QMCTraits::RealType;
+using ValueType = QMCTraits::ValueType;
+using LogValueType = std::complex<QMCTraits::QTFull::RealType>;
+using PsiValueType = QMCTraits::QTFull::ValueType;
+
 #ifdef ENABLE_CUDA
 typedef DiracDeterminant<DelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>> DetType;
 #else
@@ -323,10 +326,9 @@ TEST_CASE("DiracDeterminant_second", "[wavefunction][fermion]")
   ValueType det_ratio = ddb.ratioGrad(elec, 0, grad);
 
   simd::transpose(a_update1.data(), a_update1.rows(), a_update1.cols(), scratchT.data(), scratchT.rows(), scratchT.cols());
-  RealType det_update1, phase;
-  dm.invert_transpose(scratchT, a_update1, det_update1, phase);
-  ValueType log_ratio1  = det_update1 - ddb.LogValue;
-  ValueType det_ratio1  = std::exp(log_ratio1);
+  LogValueType det_update1;
+  dm.invert_transpose(scratchT, a_update1, det_update1);
+  ValueType det_ratio1  = LogToValue<ValueType>::convert(det_update1 - ddb.LogValue);
 #ifdef DUMP_INFO
   std::cout << "det 0 = " << std::exp(ddb.LogValue) << std::endl;
   std::cout << "det 1 = " << std::exp(det_update1) << std::endl;
@@ -340,28 +342,25 @@ TEST_CASE("DiracDeterminant_second", "[wavefunction][fermion]")
 
 
   ValueType det_ratio2 = ddb.ratioGrad(elec, 1, grad);
-  RealType det_update2;
+  LogValueType det_update2;
   simd::transpose(a_update2.data(), a_update2.rows(), a_update2.cols(), scratchT.data(), scratchT.rows(), scratchT.cols());
-  dm.invert_transpose(scratchT, a_update2, det_update2, phase);
-  ValueType log_ratio2     = det_update2 - det_update1;
-  ValueType det_ratio2_val = std::exp(log_ratio2);
+  dm.invert_transpose(scratchT, a_update2, det_update2);
+  ValueType det_ratio2_val = LogToValue<ValueType>::convert(det_update2 - det_update1);
 #ifdef DUMP_INFO
   std::cout << "det 1 = " << std::exp(ddb.LogValue) << std::endl;
   std::cout << "det 2 = " << std::exp(det_update2) << std::endl;
   std::cout << "det ratio 2 = " << det_ratio2 << std::endl;
 #endif
   //double det_ratio2_val = 0.178276269185;
-  REQUIRE(std::abs(det_ratio2) == ValueApprox(det_ratio2_val));
-
+  REQUIRE(det_ratio2 == ValueApprox(det_ratio2_val));
 
   ddb.acceptMove(elec, 1);
 
   ValueType det_ratio3 = ddb.ratioGrad(elec, 2, grad);
-  RealType det_update3;
+  LogValueType det_update3;
   simd::transpose(a_update3.data(), a_update3.rows(), a_update3.cols(), scratchT.data(), scratchT.rows(), scratchT.cols());
-  dm.invert_transpose(scratchT, a_update3, det_update3, phase);
-  ValueType log_ratio3     = det_update3 - det_update2;
-  ValueType det_ratio3_val = std::exp(log_ratio3);
+  dm.invert_transpose(scratchT, a_update3, det_update3);
+  ValueType det_ratio3_val = LogToValue<ValueType>::convert(det_update3 - det_update2);
 #ifdef DUMP_INFO
   std::cout << "det 2 = " << std::exp(ddb.LogValue) << std::endl;
   std::cout << "det 3 = " << std::exp(det_update3) << std::endl;
@@ -374,7 +373,7 @@ TEST_CASE("DiracDeterminant_second", "[wavefunction][fermion]")
   ddb.completeUpdates();
 
   simd::transpose(orig_a.data(), orig_a.rows(), orig_a.cols(), scratchT.data(), scratchT.rows(), scratchT.cols());
-  dm.invert_transpose(scratchT, orig_a, det_update3, phase);
+  dm.invert_transpose(scratchT, orig_a, det_update3);
 
 #ifdef DUMP_INFO
   std::cout << "original " << std::endl;
@@ -454,10 +453,9 @@ TEST_CASE("DiracDeterminant_delayed_update", "[wavefunction][fermion]")
   ValueType det_ratio = ddc.ratioGrad(elec, 0, grad);
 
   simd::transpose(a_update1.data(), a_update1.rows(), a_update1.cols(), scratchT.data(), scratchT.rows(), scratchT.cols());
-  RealType det_update1, phase;
-  dm.invert_transpose(scratchT, a_update1, det_update1, phase);
-  ValueType log_ratio1  = det_update1 - ddc.LogValue;
-  ValueType det_ratio1  = std::exp(log_ratio1);
+  LogValueType det_update1;
+  dm.invert_transpose(scratchT, a_update1, det_update1);
+  ValueType det_ratio1  = LogToValue<ValueType>::convert(det_update1 - ddc.LogValue);
 #ifdef DUMP_INFO
   std::cout << "det 0 = " << std::exp(ddc.LogValue) << std::endl;
   std::cout << "det 1 = " << std::exp(det_update1) << std::endl;
@@ -475,10 +473,9 @@ TEST_CASE("DiracDeterminant_delayed_update", "[wavefunction][fermion]")
   grad                 = ddc.evalGrad(elec, 1);
   ValueType det_ratio2 = ddc.ratioGrad(elec, 1, grad);
   simd::transpose(a_update2.data(), a_update2.rows(), a_update2.cols(), scratchT.data(), scratchT.rows(), scratchT.cols());
-  RealType det_update2;
-  dm.invert_transpose(scratchT, a_update2, det_update2, phase);
-  ValueType log_ratio2     = det_update2 - det_update1;
-  ValueType det_ratio2_val = std::exp(log_ratio2);
+  LogValueType det_update2;
+  dm.invert_transpose(scratchT, a_update2, det_update2);
+  ValueType det_ratio2_val = LogToValue<ValueType>::convert(det_update2 - det_update1);
 #ifdef DUMP_INFO
   std::cout << "det 1 = " << std::exp(ddc.LogValue) << std::endl;
   std::cout << "det 2 = " << std::exp(det_update2) << std::endl;
@@ -486,7 +483,7 @@ TEST_CASE("DiracDeterminant_delayed_update", "[wavefunction][fermion]")
 #endif
   // check ratio computed directly and the one computed by ddc with no delay
   //double det_ratio2_val = 0.178276269185;
-  REQUIRE(std::abs(det_ratio2) == ValueApprox(det_ratio2_val));
+  REQUIRE(det_ratio2 == ValueApprox(det_ratio2_val));
 
   // update of Ainv in ddc is delayed
   ddc.acceptMove(elec, 1);
@@ -494,10 +491,9 @@ TEST_CASE("DiracDeterminant_delayed_update", "[wavefunction][fermion]")
   grad                 = ddc.evalGrad(elec, 2);
   ValueType det_ratio3 = ddc.ratioGrad(elec, 2, grad);
   simd::transpose(a_update3.data(), a_update3.rows(), a_update3.cols(), scratchT.data(), scratchT.rows(), scratchT.cols());
-  RealType det_update3;
-  dm.invert_transpose(scratchT, a_update3, det_update3, phase);
-  ValueType log_ratio3     = det_update3 - det_update2;
-  ValueType det_ratio3_val = std::exp(log_ratio3);
+  LogValueType det_update3;
+  dm.invert_transpose(scratchT, a_update3, det_update3);
+  ValueType det_ratio3_val = LogToValue<ValueType>::convert(det_update3 - det_update2);
 #ifdef DUMP_INFO
   std::cout << "det 2 = " << std::exp(ddc.LogValue) << std::endl;
   std::cout << "det 3 = " << std::exp(det_update3) << std::endl;
@@ -513,7 +509,7 @@ TEST_CASE("DiracDeterminant_delayed_update", "[wavefunction][fermion]")
 
   // fresh invert orig_a
   simd::transpose(orig_a.data(), orig_a.rows(), orig_a.cols(), scratchT.data(), scratchT.rows(), scratchT.cols());
-  dm.invert_transpose(scratchT, orig_a, det_update3, phase);
+  dm.invert_transpose(scratchT, orig_a, det_update3);
 
 #ifdef DUMP_INFO
   std::cout << "original " << std::endl;

@@ -46,8 +46,8 @@ DMC::DMC(MCWalkerConfiguration& w,
          Communicate* comm)
     : QMCDriver(w, psi, h, ppool, comm),
       KillNodeCrossing(0),
-      Reconfiguration("no"),
       BranchInterval(-1),
+      Reconfiguration("no"),
       mover_MaxAge(-1)
 {
   RootName = "dmc";
@@ -93,6 +93,7 @@ void DMC::resetUpdateEngines()
         o << "  Updates by particle-by-particle moves";
       else
         o << "  Updates by walker moves";
+      // Appears to be set in constructor reported here and used nowhere
       if (KillNodeCrossing)
         o << "\n  Walkers are killed when a node crossing is detected";
       else

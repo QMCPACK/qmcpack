@@ -49,6 +49,7 @@ from pyscf_sim import Pyscf, PyscfInput, PyscfAnalyzer, generate_pyscf_input, ge
 
 from qmcpack_converters import Pw2qmcpack , Pw2qmcpackInput , Pw2qmcpackAnalyzer , generate_pw2qmcpack_input , generate_pw2qmcpack
 from qmcpack_converters import Convert4qmc, Convert4qmcInput, Convert4qmcAnalyzer, generate_convert4qmc_input, generate_convert4qmc
+from qmcpack_converters import PyscfToAfqmc, PyscfToAfqmcInput, PyscfToAfqmcAnalyzer, generate_pyscf_to_afqmc_input, generate_pyscf_to_afqmc
 
 from pwscf_postprocessors import PP      , PPInput      , PPAnalyzer      , generate_pp_input      , generate_pp
 from pwscf_postprocessors import Dos     , DosInput     , DosAnalyzer     , generate_dos_input     , generate_dos
@@ -542,6 +543,7 @@ class Settings(NexusCore):
 settings = Settings()
 
 
+# test needed
 def run_project(*args,**kwargs):
     if nexus_core.graph_sims:
         graph_sims()
@@ -558,7 +560,7 @@ def run_project(*args,**kwargs):
 
 
 
-
+# test needed
 # read input function
 #   place here for now as it depends on all other input functions
 def read_input(filepath,format=None):

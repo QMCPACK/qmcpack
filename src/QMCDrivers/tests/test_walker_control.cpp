@@ -9,10 +9,7 @@
 // File created by: Mark Dewing, mdewing@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
-
 #include "catch.hpp"
-
-
 #include "Utilities/RandomGenerator.h"
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
@@ -26,25 +23,14 @@
 #include "QMCDrivers/DMC/WalkerReconfigurationMPI.h"
 #endif
 
-
 #include <stdio.h>
 #include <string>
 #include <random>
-
 
 using std::string;
 
 namespace qmcplusplus
 {
-// add declaration here so it's accessible for testing
-void determineNewWalkerPopulation(int Cur_pop,
-                                  int NumContexts,
-                                  int MyContext,
-                                  const std::vector<int>& NumPerNode,
-                                  std::vector<int>& FairOffset,
-                                  std::vector<int>& minus,
-                                  std::vector<int>& plus);
-
 void output_vector(const std::string& name, std::vector<int>& vec)
 {
   std::cout << name;
@@ -60,7 +46,6 @@ TEST_CASE("Walker control assign walkers", "[drivers][walker_control]")
 {
   int Cur_pop                 = 8;
   int NumContexts             = 4;
-  int MyContext               = 0;
   std::vector<int> NumPerNode = {4, 4, 0, 0};
   std::vector<int> FairOffset(NumContexts + 1);
 
@@ -71,7 +56,77 @@ TEST_CASE("Walker control assign walkers", "[drivers][walker_control]")
     std::vector<int> plus;
 
     //std::cout << "For processor number " << me << std::endl;
-    determineNewWalkerPopulation(Cur_pop, NumContexts, me, NumPerNode, FairOffset, minus, plus);
+    WalkerControlMPI::determineNewWalkerPopulation(Cur_pop, NumContexts, me, NumPerNode, FairOffset, minus, plus);
+
+    REQUIRE(minus.size() == plus.size());
+    //output_vector("  Minus: ", minus);
+
+    //output_vector("  Plus: ", plus);
+
+    for (int i = 0; i < plus.size(); i++)
+    {
+      if (me == plus[i])
+        NewNum[plus[i]]--;
+    }
+    for (int i = 0; i < minus.size(); i++)
+    {
+      if (me == minus[i])
+        NewNum[minus[i]]++;
+    }
+  }
+  //output_vector("New num per node: ", NewNum);
+
+  for (int i = 0; i < NewNum.size(); i++)
+  {
+    int num = FairOffset[i + 1] - FairOffset[i];
+    REQUIRE(NewNum[i] == num);
+  }
+}
+
+TEST_CASE("WalkerControl round trip index conversions", "[drivers][walker_control]")
+{
+  std::vector<int> walker_counts; //= {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 23, 37};
+  for (int i = 0; i < 1000; ++i)
+    walker_counts.push_back(i);
+  for (int i = 0; i < 1000000; i += 1000)
+    walker_counts.push_back(i);
+  for (int i = 0; i < 100000000; i += 100000)
+    walker_counts.push_back(i);
+
+  std::vector<QMCTraits::FullPrecRealType> fp_counts(walker_counts.size());
+  std::vector<int> walker_count_results(walker_counts.size());
+  for (int iw = 0; iw < walker_counts.size(); ++iw)
+  {
+    fp_counts[iw] = walker_counts[iw];
+  }
+  for (int iw = 0; iw < fp_counts.size(); ++iw)
+  {
+    walker_count_results[iw] = static_cast<int>(fp_counts[iw]);
+  }
+  bool all_pass = true;
+  for (int iw = 0; iw < walker_counts.size(); ++iw)
+  {
+    all_pass &= (walker_counts[iw] == walker_count_results[iw]);
+  }
+  REQUIRE(all_pass);
+}
+
+// uncomment the std::cout and output_vector lines to see the walker assignments
+TEST_CASE("Walker control assign walkers odd ranks", "[drivers][walker_control]")
+{
+  int Cur_pop                 = 9;
+  int NumContexts             = 3;
+  std::vector<int> NumPerNode = {5, 2, 2};
+  std::vector<int> FairOffset(NumContexts + 1);
+
+  std::vector<int> NewNum = NumPerNode;
+  for (int me = 0; me < NumContexts; me++)
+  {
+    std::vector<int> minus;
+    std::vector<int> plus;
+
+    //std::cout << "For processor number " << me << std::endl;
+    WalkerControlMPI::determineNewWalkerPopulation(Cur_pop, NumContexts, me, NumPerNode, FairOffset, minus, plus);
 
     REQUIRE(minus.size() == plus.size());
     //output_vector("  Minus: ", minus);
@@ -173,79 +228,186 @@ TEST_CASE("Walker control assign walkers many", "[drivers][walker_control][prope
 #endif
 
 #ifdef HAVE_MPI
+
+struct WalkerControlMPITest
+{
+  /** Currently only passes for 1,2, or 3 ranks
+   */
+  void operator()(bool use_nonblocking)
+  {
+    Communicate* c = OHMMS::Controller;
+    WalkerControlMPI wc(c);
+
+    wc.use_nonblocking = use_nonblocking;
+
+    MCWalkerConfiguration W; // Unused in the function
+    typedef MCWalkerConfiguration::Walker_t Walker_t;
+
+    //UPtrVector<Walker_t> walkers;
+    // Set up Cur_pop
+    // Set up good_w and bad_w
+
+    wc.Cur_pop = c->size();
+    for (int i = 0; i < c->size(); i++)
+    {
+      wc.NumPerNode[i] = 1;
+    }
+    // One walker on every node, should be no swapping
+    //walkers.push_back(std::make_unique<Walker_t>());
+    wc.good_w.push_back(new Walker_t());
+    wc.good_w[0]->ID = c->rank();
+    wc.ncopy_w.push_back(0);
+
+    wc.swapWalkersSimple(W);
+
+    REQUIRE(wc.good_w.size() == 1);
+    REQUIRE(wc.bad_w.size() == 0);
+
+
+    // 3 walkers on rank 0, 1 walker on others - should redistribute if
+    //   there is more than one rank
+    if (c->size() > 1)
+    {
+      if (c->rank() == 0)
+      {
+        wc.good_w.push_back(new Walker_t());
+        wc.good_w.push_back(new Walker_t());
+
+        // Use the ID variable to check that the walker content was transmitted
+        wc.good_w[1]->ID = c->size();
+        wc.good_w[2]->ID = c->size() + 1;
+
+        wc.ncopy_w.push_back(0);
+        wc.ncopy_w.push_back(0);
+      }
+      wc.NumPerNode[0] = 3;
+      wc.Cur_pop += 2;
+
+      wc.swapWalkersSimple(W);
+
+      //std::cout << " Rank = " << c->rank() << " good size = " << wc.good_w.size() <<
+      //          " ID = " << wc.good_w[0]->ID << std::endl;
+
+      if (c->rank() == c->size() - 2)
+      {
+        REQUIRE(wc.good_w.size() == 2);
+        // This check is a bit too restrictive - no guarantee the last walker was the
+        //  one transmitted
+        bool okay1 = wc.good_w[1]->ID == c->size() || wc.good_w[1]->ID == c->size() + 1;
+        REQUIRE(okay1);
+      }
+      else if (c->rank() == c->size() - 1)
+      {
+        REQUIRE(wc.good_w.size() == 2);
+        bool okay2 = wc.good_w[1]->ID == c->size() || wc.good_w[1]->ID == c->size() + 1;
+        REQUIRE(okay2);
+      }
+      else
+      {
+        REQUIRE(wc.good_w.size() == 1);
+        REQUIRE(wc.good_w[0]->ID == c->rank());
+      }
+      wc.NumPerNode[0]             = 1;
+      wc.NumPerNode[c->size() - 1] = 2;
+      wc.NumPerNode[c->size() - 2] = 2;
+    }
+
+
+    // And now the strange case
+    // 6 walkers on rank0, 2 on rank1, 2 on rank2
+    if (c->size() > 2)
+    {
+      if (c->rank() == 0)
+      {
+        wc.good_w.push_back(new Walker_t());
+        wc.good_w.push_back(new Walker_t());
+        // wc.good_w.push_back(new Walker_t());
+        // wc.good_w.push_back(new Walker_t());
+        int nwalkers_rank                = wc.good_w.size();
+        wc.good_w[nwalkers_rank - 1]->ID = c->size() + 5;
+        wc.good_w[nwalkers_rank - 2]->ID = c->size() + 4;
+        // wc.good_w[nwalkers_rank - 3]->ID = c->size() + 3;
+        // wc.good_w[nwalkers_rank - 4]->ID = c->size() + 2;
+
+        wc.ncopy_w.push_back(2);
+        wc.ncopy_w.push_back(1);
+        // wc.ncopy_w.push_back(0);
+        // wc.ncopy_w.push_back(0);
+      }
+      else if (c->rank() == 1)
+      {
+        //wc.bad_w.push_back(wc.good_w[0]);
+        //wc.bad_w.push_back(wc.good_w[1]);
+        int nwalkers_rank = wc.good_w.size();
+        //wc.good_w.pop_back();
+        //wc.good_w.pop_back();
+        //wc.ncopy_w.pop_back();
+        //wc.ncopy_w.pop_back();
+      }
+      wc.NumPerNode[0] = 6;
+      wc.Cur_pop += 5;
+
+      reportWalkersPerRank(c, wc);
+
+      wc.swapWalkersSimple(W);
+
+      reportWalkersPerRank(c, wc);
+
+
+      // These are unique walkers
+      if (c->rank() == c->size() - 2)
+      {
+        CHECK(wc.good_w.size() == 3);
+      }
+      else if (c->rank() == c->size() - 1)
+      {
+        CHECK(wc.good_w.size() == 3);
+      }
+      else
+      {
+        CHECK(wc.good_w.size() == 2);
+      }
+
+      int walker_count = wc.copyWalkers(W);
+
+      reportWalkersPerRank(c, wc);
+
+      if (c->rank() == c->size() - 2)
+      {
+        CHECK(walker_count == 3);
+      }
+      else if (c->rank() == c->size() - 1)
+      {
+        CHECK(walker_count == 4);
+      }
+      else
+      {
+        CHECK(walker_count == 3);
+      }
+    }
+  }
+
+private:
+  void reportWalkersPerRank(Communicate* c, WalkerControlMPI& wc)
+  {
+    std::vector<int> rank_walker_count(c->size(), 0);
+    rank_walker_count[c->rank()] = wc.good_w.size();
+    c->allreduce(rank_walker_count);
+    if (c->rank() == 0)
+    {
+      std::cout << "Walkers Per Rank (Total: " << wc.Cur_pop << ")\n";
+      for (int i = 0; i < rank_walker_count.size(); ++i)
+      {
+        std::cout << " " << i << "  " << rank_walker_count[i] << "\n";
+      }
+    }
+  }
+};
+
 void test_swap_walkers(bool use_nonblocking)
 {
-  Communicate* c = OHMMS::Controller;
-  WalkerControlMPI wc(c);
-
-  wc.use_nonblocking = use_nonblocking;
-
-  MCWalkerConfiguration W; // Unused in the function
-  typedef MCWalkerConfiguration::Walker_t Walker_t;
-
-  // Set up Cur_pop
-  // Set up good_w and bad_w
-
-  wc.Cur_pop = c->size();
-  for (int i = 0; i < c->size(); i++)
-  {
-    wc.NumPerNode[i] = 1;
-  }
-  // One walker on every node, should be no swapping
-  wc.good_w.push_back(new Walker_t());
-  wc.good_w[0]->ID = c->rank();
-  wc.ncopy_w.push_back(0);
-
-  wc.swapWalkersSimple(W);
-
-  REQUIRE(wc.good_w.size() == 1);
-  REQUIRE(wc.bad_w.size() == 0);
-
-
-  // 3 walkers on rank 0, 1 walker on others - should redistribute if
-  //   there is more than one rank
-  if (c->rank() == 0)
-  {
-    wc.good_w.push_back(new Walker_t());
-    wc.good_w.push_back(new Walker_t());
-
-    // Use the ID variable to check that the walker content was transmitted
-    wc.good_w[1]->ID = c->size();
-    wc.good_w[2]->ID = c->size() + 1;
-
-    wc.ncopy_w.push_back(0);
-    wc.ncopy_w.push_back(0);
-  }
-  wc.NumPerNode[0] = 3;
-  wc.Cur_pop += 2;
-
-  wc.swapWalkersSimple(W);
-
-  //std::cout << " Rank = " << c->rank() << " good size = " << wc.good_w.size() <<
-  //          " ID = " << wc.good_w[0]->ID << std::endl;
-
-  if (c->size() > 1)
-  {
-    if (c->rank() == c->size() - 2)
-    {
-      REQUIRE(wc.good_w.size() == 2);
-      // This check is a bit too restrictive - no guarantee the last walker was the
-      //  one transmitted
-      bool okay1 = wc.good_w[1]->ID == c->size() || wc.good_w[1]->ID == c->size() + 1;
-      REQUIRE(okay1);
-    }
-    else if (c->rank() == c->size() - 1)
-    {
-      REQUIRE(wc.good_w.size() == 2);
-      bool okay2 = wc.good_w[1]->ID == c->size() || wc.good_w[1]->ID == c->size() + 1;
-      REQUIRE(okay2);
-    }
-    else
-    {
-      REQUIRE(wc.good_w.size() == 1);
-      REQUIRE(wc.good_w[0]->ID == c->rank());
-    }
-  }
+  WalkerControlMPITest test;
+  test(use_nonblocking);
 }
 
 TEST_CASE("Walker control swap walkers blocking", "[drivers][walker_control]")

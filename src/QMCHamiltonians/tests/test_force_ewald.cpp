@@ -135,4 +135,217 @@ TEST_CASE("Chiesa Force BCC H Ewald3D", "[hamiltonian]")
   LRCoulombSingleton::CoulombDerivHandler = 0;
 }
 
+// test SR and LR pieces separately
+TEST_CASE("fccz sr lr clone", "[hamiltonian]")
+{
+  Communicate* c;
+  OHMMS::Controller->initialize(0, NULL);
+  c = OHMMS::Controller;
+
+  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
+  Lattice.BoxBConds = true; // periodic
+  Lattice.R.diagonal(3.77945227);
+  Lattice.LR_dim_cutoff = 40;
+  Lattice.reset();
+
+  ParticleSet ions;
+  ParticleSet elec;
+
+  ions.setName("ion");
+  ions.create(2);
+  ions.R[0][0] = 0.0;
+  ions.R[0][1] = 0.0;
+  ions.R[0][2] = 0.0;
+  ions.R[1][0] = 1.6;
+  ions.R[1][1] = 1.6;
+  ions.R[1][2] = 1.88972614;
+
+  SpeciesSet& ion_species       = ions.getSpeciesSet();
+  int pIdx                      = ion_species.addSpecies("H");
+  int pChargeIdx                = ion_species.addAttribute("charge");
+  ion_species(pChargeIdx, pIdx) = 1;
+  ions.Lattice = Lattice;
+  ions.createSK();
+
+
+  elec.setName("elec");
+  elec.create(2);
+  elec.R[0][0] = 0.5;
+  elec.R[0][1] = 0.0;
+  elec.R[0][2] = 0.0;
+  elec.R[1][0] = 0.0;
+  elec.R[1][1] = 0.5;
+  elec.R[1][2] = 0.0;
+
+  SpeciesSet& tspecies         = elec.getSpeciesSet();
+  int upIdx                    = tspecies.addSpecies("u");
+  int downIdx                  = tspecies.addSpecies("d");
+  int chargeIdx                = tspecies.addAttribute("charge");
+  int massIdx                  = tspecies.addAttribute("mass");
+  tspecies(chargeIdx, upIdx)   = -1;
+  tspecies(chargeIdx, downIdx) = -1;
+  tspecies(massIdx, upIdx)     = 1.0;
+  tspecies(massIdx, downIdx)   = 1.0;
+  elec.Lattice = Lattice;
+  elec.createSK();
+
+  // The call to resetGroups is needed transfer the SpeciesSet
+  // settings to the ParticleSet
+  ions.resetGroups();
+  elec.resetGroups();
+
+  LRCoulombSingleton::CoulombHandler = new EwaldHandler3D(ions);
+  LRCoulombSingleton::CoulombHandler->initBreakup(ions);
+  LRCoulombSingleton::CoulombDerivHandler = new EwaldHandler3D(ions);
+  LRCoulombSingleton::CoulombDerivHandler->initBreakup(ions);
+
+  ForceChiesaPBCAA force(ions, elec);
+  force.addionion = false;
+  force.InitMatrix();
+
+  elec.update();
+  // test SR part
+  force.evaluateSR(elec);
+  REQUIRE(force.forces[0][0] == Approx(1.6938118975));
+  REQUIRE(force.forces[0][1] == Approx(1.6938118975));
+  REQUIRE(force.forces[0][2] == Approx(0.000000000));
+  REQUIRE(force.forces[1][0] == Approx(0.000000000));
+  REQUIRE(force.forces[1][1] == Approx(0.000000000));
+  REQUIRE(force.forces[1][2] == Approx(0.000000000));
+  // test LR part
+  force.forces = 0;
+  force.evaluateLR(elec);
+  REQUIRE(force.forces[0][0] == Approx(2.2653670795));
+  REQUIRE(force.forces[0][1] == Approx(2.2653670795));
+  REQUIRE(force.forces[0][2] == Approx(0.000000000));
+  REQUIRE(force.forces[1][0] == Approx(-0.078308730));
+  REQUIRE(force.forces[1][1] == Approx(-0.078308730));
+  REQUIRE(force.forces[1][2] == Approx(0.000000000));
+
+  // test cloning !!!! makeClone is not testable
+  // example call path:
+  //  QMCDrivers/CloneManager::makeClones
+  //  QMCHamiltonian::makeClone
+  //  OperatorBase::add2Hamiltonian -> ForceChiesaPBCAA::makeClone
+  TrialWaveFunction psi(c);
+  std::unique_ptr<ForceChiesaPBCAA> clone(
+    dynamic_cast<ForceChiesaPBCAA*>(force.makeClone(elec,psi))
+  );
+  clone->evaluate(elec);
+  REQUIRE(clone->addionion == force.addionion);
+  REQUIRE(clone->forces_IonIon[0][0] == Approx(-0.0228366));
+  REQUIRE(clone->forces_IonIon[0][1] == Approx(-0.0228366));
+  REQUIRE(clone->forces_IonIon[0][2] == Approx(0.0000000));
+  REQUIRE(clone->forces_IonIon[1][0] == Approx(0.0228366));
+  REQUIRE(clone->forces_IonIon[1][1] == Approx(0.0228366));
+  REQUIRE(clone->forces_IonIon[1][2] == Approx(0.0000000));
+
+  delete LRCoulombSingleton::CoulombHandler;
+  LRCoulombSingleton::CoulombHandler = 0;
+
+  delete LRCoulombSingleton::CoulombDerivHandler;
+  LRCoulombSingleton::CoulombDerivHandler = 0;
+}
+
+// 3 H atoms randomly distributed in a box
+TEST_CASE("fccz h3", "[hamiltonian]")
+{
+  Communicate* c;
+  OHMMS::Controller->initialize(0, NULL);
+  c = OHMMS::Controller;
+
+  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
+  Lattice.BoxBConds = true; // periodic
+  Lattice.R.diagonal(3.77945227);
+  Lattice.LR_dim_cutoff = 40;
+  Lattice.reset();
+
+  ParticleSet ions;
+  ParticleSet elec;
+
+  ions.setName("ion");
+  ions.create(3);
+  ions.R[0][0] = 0.0;
+  ions.R[0][1] = 0.0;
+  ions.R[0][2] = 0.0;
+  ions.R[1][0] = 1.6;
+  ions.R[1][1] = 1.6;
+  ions.R[1][2] = 1.88972614;
+  ions.R[2][0] = 1.4;
+  ions.R[2][1] = 0.0;
+  ions.R[2][2] = 0.0;
+
+  SpeciesSet& ion_species       = ions.getSpeciesSet();
+  int pIdx                      = ion_species.addSpecies("H");
+  int pChargeIdx                = ion_species.addAttribute("charge");
+  ion_species(pChargeIdx, pIdx) = 1;
+  ions.Lattice = Lattice;
+  ions.createSK();
+
+  elec.setName("elec");
+  elec.create(2);
+  elec.R[0][0] = 0.5;
+  elec.R[0][1] = 0.0;
+  elec.R[0][2] = 0.0;
+  elec.R[1][0] = 0.0;
+  elec.R[1][1] = 0.5;
+  elec.R[1][2] = 0.0;
+
+  SpeciesSet& tspecies         = elec.getSpeciesSet();
+  int upIdx                    = tspecies.addSpecies("u");
+  int downIdx                  = tspecies.addSpecies("d");
+  int chargeIdx                = tspecies.addAttribute("charge");
+  int massIdx                  = tspecies.addAttribute("mass");
+  tspecies(chargeIdx, upIdx)   = -1;
+  tspecies(chargeIdx, downIdx) = -1;
+  tspecies(massIdx, upIdx)     = 1.0;
+  tspecies(massIdx, downIdx)   = 1.0;
+  elec.Lattice = Lattice;
+  elec.createSK();
+
+  // The call to resetGroups is needed transfer the SpeciesSet
+  // settings to the ParticleSet
+  ions.resetGroups();
+  elec.resetGroups();
+
+  LRCoulombSingleton::CoulombHandler = new EwaldHandler3D(ions);
+  LRCoulombSingleton::CoulombHandler->initBreakup(ions);
+  LRCoulombSingleton::CoulombDerivHandler = new EwaldHandler3D(ions);
+  LRCoulombSingleton::CoulombDerivHandler->initBreakup(ions);
+
+  ForceChiesaPBCAA force(ions, elec);
+  force.addionion = false;
+
+  //Ion-Ion forces are validated against Quantum Espresso's ewald method:
+  REQUIRE(force.forces_IonIon[0][0] == Approx(-0.37660901));
+  REQUIRE(force.forces_IonIon[0][1] == Approx(-0.02283659));
+  REQUIRE(force.forces_IonIon[0][2] == Approx(0.0000000));
+  REQUIRE(force.forces_IonIon[1][0] == Approx(0.04012282));
+  REQUIRE(force.forces_IonIon[1][1] == Approx(0.066670175));
+  REQUIRE(force.forces_IonIon[1][2] == Approx(0.0000000));
+  REQUIRE(force.forces_IonIon[2][0] == Approx(0.336486185));
+  REQUIRE(force.forces_IonIon[2][1] == Approx(-0.04383358));
+  REQUIRE(force.forces_IonIon[2][2] == Approx(0.0000000));
+
+  elec.update();
+  force.InitMatrix();
+  force.evaluate(elec);
+  //Electron-Ion forces are unvalidated externally:
+  REQUIRE(force.forces[0][0] == Approx(3.959178977));
+  REQUIRE(force.forces[0][1] == Approx(3.959178977));
+  REQUIRE(force.forces[0][2] == Approx(0.000000000));
+  REQUIRE(force.forces[1][0] == Approx(-0.078308730));
+  REQUIRE(force.forces[1][1] == Approx(-0.078308730));
+  REQUIRE(force.forces[1][2] == Approx(0.000000000));
+  REQUIRE(force.forces[2][0] == Approx(-1.4341388802));
+  REQUIRE(force.forces[2][1] == Approx(0.1379375923));
+  REQUIRE(force.forces[2][2] == Approx(0.000000000));
+
+  delete LRCoulombSingleton::CoulombHandler;
+  LRCoulombSingleton::CoulombHandler = 0;
+
+  delete LRCoulombSingleton::CoulombDerivHandler;
+  LRCoulombSingleton::CoulombDerivHandler = 0;
+}
+
 } // namespace qmcplusplus

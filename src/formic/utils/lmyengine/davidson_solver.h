@@ -519,7 +519,7 @@ public:
       this -> SMatVecOp(_wv1, _wv2);
       // reduce the result vector
       formic::ColVec<S> _wv2_avg(_wv2.size());
-      formic::mpi::reduce(&_wv2.at(0), &_wv2_avg.at(0), _wv2.size(), MPI::SUM);
+      formic::mpi::reduce(&_wv2.at(0), &_wv2_avg.at(0), _wv2.size(), MPI_SUM);
       _wv2 = _wv2_avg.clone();
     }
 
@@ -534,7 +534,7 @@ public:
       this -> HMatVecOp(_wv1, hs);
       // reduce the result vector 
       formic::ColVec<S> hs_avg(hs.size());
-      formic::mpi::reduce(&hs.at(0), &hs_avg.at(0), hs.size(), MPI::SUM);
+      formic::mpi::reduce(&hs.at(0), &hs_avg.at(0), hs.size(), MPI_SUM);
       hs = hs_avg.clone();
     }
 

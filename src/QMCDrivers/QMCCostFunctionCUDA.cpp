@@ -515,7 +515,7 @@ QMCCostFunctionCUDA::Return_rt QMCCostFunctionCUDA::fillOverlapHamiltonianMatric
   Return_rt curAvg2_w = SumValue[SUM_ESQ_WGT] / SumValue[SUM_WGT];
   RealType H2_avg     = 1.0 / (curAvg_w * curAvg_w);
   RealType V_avg      = curAvg2_w - curAvg_w * curAvg_w;
-  std::vector<Return_rt> D_avg(NumParams(), 0);
+  std::vector<Return_rt> D_avg(getNumParams(), 0);
   Return_rt wgtinv = 1.0 / SumValue[SUM_WGT];
   int nw           = W.getActiveWalkers();
   for (int iw = 0; iw < nw; iw++)
@@ -523,7 +523,7 @@ QMCCostFunctionCUDA::Return_rt QMCCostFunctionCUDA::fillOverlapHamiltonianMatric
     const Return_rt* restrict saved      = &(Records(iw, 0));
     Return_rt weight                     = saved[REWEIGHT] * wgtinv;
     const std::vector<Return_rt>& Dsaved = TempDerivRecords[iw];
-    for (int pm = 0; pm < NumParams(); pm++)
+    for (int pm = 0; pm < getNumParams(); pm++)
     {
       D_avg[pm] += Dsaved[pm] * weight;
     }
@@ -537,7 +537,7 @@ QMCCostFunctionCUDA::Return_rt QMCCostFunctionCUDA::fillOverlapHamiltonianMatric
     const std::vector<Return_rt>& Dsaved  = TempDerivRecords[iw];
     const std::vector<Return_rt>& HDsaved = TempHDerivRecords[iw];
 /*
-    for (int pm=0; pm<NumParams(); pm++)
+    for (int pm=0; pm<getNumParams(); pm++)
     {
       Return_rt wfe = (HDsaved[pm] + Dsaved[pm]*(eloc_new - curAvg_w) )*weight;
       Return_rt wfm = (HDsaved[pm] - 2.0*Dsaved[pm]*(eloc_new - curAvg_w) )*weight;
@@ -552,7 +552,7 @@ QMCCostFunctionCUDA::Return_rt QMCCostFunctionCUDA::fillOverlapHamiltonianMatric
       //                 Hamiltonian
       Left(0,pm+1) += (1-b2)*wfe;
       Left(pm+1,0) += (1-b2)*wfd*(eloc_new-curAvg_w);
-      for (int pm2=0; pm2<NumParams(); pm2++)
+      for (int pm2=0; pm2<getNumParams(); pm2++)
       {
         //                   Hamiltonian
         Left(pm+1,pm2+1) += (1-b2)*wfd*(HDsaved[pm2]+ Dsaved[pm2]*(eloc_new-curAvg_w));
@@ -567,7 +567,7 @@ QMCCostFunctionCUDA::Return_rt QMCCostFunctionCUDA::fillOverlapHamiltonianMatric
       }
     } */
 #pragma omp parallel for
-    for (int pm = 0; pm < NumParams(); pm++)
+    for (int pm = 0; pm < getNumParams(); pm++)
     {
       Return_rt wfe = (HDsaved[pm] + (Dsaved[pm] - D_avg[pm]) * eloc_new) * weight;
       Return_rt wfd = (Dsaved[pm] - D_avg[pm]) * weight;
@@ -583,7 +583,7 @@ QMCCostFunctionCUDA::Return_rt QMCCostFunctionCUDA::fillOverlapHamiltonianMatric
       //                 Hamiltonian
       Left(0, pm + 1) += (1 - b2) * wfe;
       Left(pm + 1, 0) += (1 - b2) * wfd * eloc_new;
-      for (int pm2 = 0; pm2 < NumParams(); pm2++)
+      for (int pm2 = 0; pm2 < getNumParams(); pm2++)
       {
         //                Hamiltonian
         Left(pm + 1, pm2 + 1) += (1 - b2) * wfd * (HDsaved[pm2] + (Dsaved[pm2] - D_avg[pm2]) * eloc_new);

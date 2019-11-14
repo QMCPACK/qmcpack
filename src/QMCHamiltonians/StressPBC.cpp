@@ -25,8 +25,13 @@
 namespace qmcplusplus
 {
 StressPBC::StressPBC(ParticleSet& ions, ParticleSet& elns, TrialWaveFunction& Psi0, bool firsttime)
-    : ForceBase(ions, elns), PtclTarg(elns), PtclA(ions), Psi(Psi0), first_time(firsttime),
-      ei_table_index(elns.addTable(ions, DT_AOS)), ee_table_index(elns.addTable(elns, DT_AOS))
+    : ForceBase(ions, elns),
+      Psi(Psi0),
+      PtclTarg(elns),
+      PtclA(ions),
+      ei_table_index(elns.addTable(ions, DT_AOS)),
+      ee_table_index(elns.addTable(elns, DT_AOS)),
+      first_time(firsttime)
 {
   ReportEngine PRE("StressPBC", "StressPBC");
   myName = "StressPBC";

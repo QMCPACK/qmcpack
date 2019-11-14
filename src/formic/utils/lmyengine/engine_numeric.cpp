@@ -139,8 +139,8 @@ template<typename S, typename T> void cqmc::mpi_unbiased_ratio_of_means(const in
   }
   S z[8];
   double total_norm = 0.0;
-  formic::mpi::allreduce(&y[0], &z[0], 8, MPI::SUM);
-  formic::mpi::allreduce(&norm, &total_norm, 1, MPI::SUM);
+  formic::mpi::allreduce(&y[0], &z[0], 8, MPI_SUM);
+  formic::mpi::allreduce(&norm, &total_norm, 1, MPI_SUM);
 
   const S mf = z[1] / total_norm; // mean of numerator
   const S mg = z[2] / total_norm; // mean of denominator

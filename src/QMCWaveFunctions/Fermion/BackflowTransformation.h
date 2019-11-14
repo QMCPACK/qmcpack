@@ -69,9 +69,6 @@ public:
   /// quasiparticle coordinates
   ParticleSet QP;
 
-  /// Distance Table
-  const int myTableIndex_;
-
   // number of variational parameters
   int numParams;
 
@@ -99,6 +96,9 @@ public:
 
   ParticleSet& targetPtcl;
   //    PtclPoolType& ptclPool;
+
+  /// Distance Table
+  const int myTableIndex_;
 
   // matrix of laplacians
   // /vec{B(i)} = sum_{k} /grad_{k}^2 /vec{x_i}
@@ -151,7 +151,7 @@ public:
   opt_variables_type myVars;
 
   BackflowTransformation(ParticleSet& els)
-    : targetPtcl(els), QP(els), cutOff(0.0),
+    : QP(els), cutOff(0.0), targetPtcl(els),
 #ifdef ENABLE_SOA
       myTableIndex_(els.addTable(els, DT_SOA))
 #else

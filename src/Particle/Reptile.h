@@ -52,10 +52,10 @@ public:
 
   RealType tau;
 
-  IndexType direction, headindex, nbeads;
   MCWalkerConfiguration& w;
-  Walker_t* prophead;
   WalkerIter_t repstart, repend;
+  IndexType direction, headindex, nbeads;
+  Walker_t* prophead;
 
   inline Reptile(MCWalkerConfiguration& W, WalkerIter_t start, WalkerIter_t end)
       : w(W),

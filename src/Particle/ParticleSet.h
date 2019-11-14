@@ -69,11 +69,11 @@ struct MCDataType
 class ParticleSet : public QMCTraits, public OhmmsElementBase, public PtclOnLatticeTraits
 {
 public:
-  ///@typedef walker type
+  /// walker type
   typedef Walker<QMCTraits, PtclOnLatticeTraits> Walker_t;
-  ///@typedef container type to store the property
+  /// container type to store the property
   typedef Walker_t::PropertyContainer_t PropertyContainer_t;
-  ///@typedef buffer type for a serialized buffer
+  /// buffer type for a serialized buffer
   typedef PooledData<RealType> Buffer_t;
 
   enum quantum_domains
@@ -88,7 +88,7 @@ public:
 
   //@{ public data members
   ///property of an ensemble represented by this ParticleSet
-  MCDataType<FullPrecRealType> EnsembleProperty;
+  //MCDataType<FullPrecRealType> EnsembleProperty;
 
   ///ParticleLayout
   ParticleLayout_t Lattice, PrimitiveLattice;
@@ -291,7 +291,7 @@ public:
     }
   }
 
-  inline RealType getTotalWeight() const { return EnsembleProperty.Weight; }
+  //inline RealType getTotalWeight() const { return EnsembleProperty.Weight; }
 
   void resetGroups();
 
@@ -423,8 +423,15 @@ public:
   /** save this to awalker
    *
    *  just the R, G, and L
+   *  More duplicate data that makes code difficult to reason about should be removed.
    */
   void saveWalker(Walker_t& awalker);
+
+  /** batched version of saveWalker
+   *
+   *  just the R, G, and L
+   */
+  static void flex_saveWalker(RefVector<ParticleSet>& psets, RefVector<Walker_t>& walkers);
 
   /** update structure factor and unmark activePtcl
    *
@@ -435,12 +442,7 @@ public:
    */
   void donePbyP();
   /// batched version of donePbyP
-  static void flex_donePbyP(const RefVector<ParticleSet>& P_list)
-  {
-    #pragma omp parallel for
-    for (int iw = 0; iw < P_list.size(); iw++)
-      P_list[iw].get().donePbyP();
-  }
+  static void flex_donePbyP(const RefVector<ParticleSet>& P_list);
 
   ///return the address of the values of Hamiltonian terms
   inline FullPrecRealType* restrict getPropertyBase() { return Properties.data(); }

@@ -26,6 +26,100 @@
 
 #! /usr/bin/env python
 
+"""
+The :py:mod:`structure` module provides support for atomic structure I/O,
+generation, and manipulation.  
+
+
+List of module contents
+-----------------------
+
+Read cif file functions:
+
+* :py:func:`read_cif_celldata`
+* :py:func:`read_cif_cell`
+* :py:func:`read_cif`
+
+Operations on logical conditions:
+
+* :py:func:`equate`
+* :py:func:`negate`
+
+Create a Monkhorst-Pack k-point mesh function
+
+* :py:func:`kmesh`
+
+Tile matrix malipulation functions
+
+* :py:func:`reduce_tilematrix`
+* :py:func:`tile_magnetization`
+
+Rotate plane function
+
+* :py:func:`rotate_plane`
+
+Trivial filter function
+
+* :py:func:`trivial_filter`
+
+* :py:class:`MaskFilter`
+
+* :py:func:`optimal_tilematrix`
+
+Base class for :py:class:`Structure` class:
+
+* :py:class:`Sobj`
+
+Base class for :py:class:`DefectStructure`, :py:class:`Crystal`, and :py:class:`Jellium` classes:
+
+* :py:class:`Structure`
+
+SeeK-path functions
+
+* :py:func:`\_getseekpath`
+* :py:func:`get_conventional_cell`
+* :py:func:`get_primitive_cell`
+* :py:func:`get_kpath`
+* :py:func:`get_symmetry`
+* :py:func:`get_structure_with_bands`
+* :py:func:`get_band_tiling`
+* :py:func:`get_seekpath_full`
+
+Interpolate structures functions
+
+* :py:func:`interpolate_structures`
+
+Animate structures functions
+
+* :py:func:`structure_animation`
+
+Concrete :py:class:`Structure` classes:
+
+* :py:class:`DefectStructure`
+* :py:class:`Crystal`
+* :py:class:`Jellium`
+
+Structure generation functions:
+
+* :py:func:`generate_cell`
+* :py:func:`generate_structure`
+* :py:func:`generate_atom_structure`
+* :py:func:`generate_dimer_structure`
+* :py:func:`generate_trimer_structure`
+* :py:func:`generate_jellium_structure`
+* :py:func:`generate_crystal_structure`
+* :py:func:`generate_defect_structure`
+
+Read structure functions
+
+* :py:func:`read_structure`
+
+
+
+Module contents
+---------------
+"""
+
 import os
 import numpy as np
 from copy import deepcopy
@@ -1457,21 +1551,149 @@ class Structure(Sobj):
         self.skew(d)
     #end def stretch
 
-        
+
     # test needed
-    def skew(self,skew):
+    def rotate(self,r,rp=None,passive=False,units="radians",check=True):
+        """
+        Arbitrary rotation of the structure.
+        Parameters
+        ----------
+        r  : `array_like, float, shape (3,3)` or `array_like, float, shape (3)` or `str`
+            If a 3x3 matrix, then code executes rotation consistent with this matrix -- 
+            it is assumed that the matrix acts on a column-major vector (eg, v'=Rv)
+            If a three-dimensional array, then the operation of the function depends
+            on the input type of rp in the following ways:
+                1. If rp is a scalar, then rp is assumed to be an angle and a rotation 
+                   of rp is made about the axis defined by r
+                2. If rp is a vector, then rp is assumed to be an axis and a rotation is made 
+                   such that r aligns with rp
+                3. If rp is a str, then the rotation is such that r aligns with the
+                   axis given by the str ('x', 'y', 'z', 'a0', 'a1', or 'a2')
+            If a str then the axis, r, is defined by the input label (e.g. 'x', 'y', 'z', 'a1', 'a2', or 'a3')
+            and the operation of the function depends on the input type of rp in the following
+            ways (same as above):
+                1. If rp is a scalar, then rp is assumed to be an angle and a rotation 
+                   of rp is made about the axis defined by r
+                2. If rp is a vector, then rp is assumed to be an axis and a rotation is made 
+                   such that r aligns with rp
+                3. If rp is a str, then the rotation is such that r aligns with the
+                   axis given by the str ('x', 'y', 'z', 'a0', 'a1', or 'a2')
+        rp : `array_like, float, shape (3), optional` or `str, optional`
+            If a 3-dimensional vector is given, then rp is assumed to be an axis and a rotation is made
+            such that the axis r is aligned with rp.
+            If a str, then rp is assumed to be an angle and a rotation about the axis defined by r 
+            is made by an angle rp
+            If a str is given, then rp is assumed to be an axis defined by the given label
+            (e.g. 'x', 'y', 'z', 'a1', 'a2', or 'a3') and a rotation is made such that the axis r 
+            is aligned with rp.
+        passive : `bool, optional, default False`
+            If `True`, perform a passive rotation
+            If `False`, perform an active rotation
+        units : `str, optional, default "radians"`
+            Units of rp, if rp is given as an angle (scalar)
+        check : `bool, optional, default True`
+            Perform a check to verify rotation matrix is orthogonal
+        """
+        if rp is not None:
+            dirmap = dict(x=[1,0,0],y=[0,1,0],z=[0,0,1])
+            if isinstance(r,str): 
+                if r[0]=='a': # r= 'a0', 'a1', or 'a2'
+                    r = self.axes[int(r[1])]
+                else: # r= 'x', 'y', or 'z'
+                    r = dirmap[r]
+                #end if
+            else:
+                r = array(r,dtype=float)
+                if len(r.shape)>1:
+                    self.error('r must be given as a 1-d vector or string, if rp is not None')
+                #end if
+            #end if
+            if isinstance(rp,(int,float)):
+                if units=="radians" or units=="rad":
+                    theta = float(rp)
+                else:
+                    theta = float(rp)*np.pi/180.0
+                c = np.cos(theta)
+                s = np.sin(theta)
+            else:
+                if isinstance(rp,str):
+                    if rp[0]=='a': # rp= 'a0', 'a1', or 'a2'
+                        rp = self.axes[int(rp[1])]
+                    else: # rp= 'x', 'y', or 'z'
+                        rp = dirmap[rp]
+                    #end if
+                else:
+                    rp = array(rp,dtype=float)
+                #end if
+                # go from r,rp to r,theta
+                c = np.dot(r,rp)/np.linalg.norm(r)/np.linalg.norm(rp)
+                if abs(c-1)<1e-6:
+                    s = 0.0
+                    r = np.array([1,0,0])
+                else:
+                    s = np.dot(np.cross(r,rp),np.cross(r,rp))/np.linalg.norm(r)/np.linalg.norm(rp)/np.linalg.norm(np.cross(r,rp)) 
+                    r = np.cross(r,rp)/np.linalg.norm(np.cross(r,rp))
+            #end if
+            # make R from r,theta
+            R = [[     c+r[0]**2.0*(1.0-c), r[0]*r[1]*(1.0-c)-r[2]*s, r[0]*r[2]*(1.0-c)+r[1]*s],
+                 [r[1]*r[0]*(1.0-c)+r[2]*s,      c+r[1]**2.0*(1.0-c), r[1]*r[2]*(1.0-c)-r[0]*s],
+                 [r[2]*r[0]*(1.0-c)-r[1]*s, r[2]*r[1]*(1.0-c)+r[0]*s,      c+r[2]**2.0*(1.0-c)]]
+        else:
+            R = r
+        #end if
+        R = array(R,dtype=float)
+        if passive:
+            R = R.T
+        if check:
+            if not np.allclose(dot(R,R.T),identity(len(R))):
+                self.error('the function, rotate, must be given an orthogonal matrix')
+            #end if
+        #end if
+        self.matrix_transform(R)
+    #end def rotate
+
+
+    # test needed
+    def matrix_transform(self,A): 
+        """
+        Arbitrary transformation matrix (column-major).
+
+        Parameters
+        ----------
+        skew  : `array_like, float, shape (3,3)`
+            Transform the structure using the matrix skew. It is assumed that
+            skew is in column-major form, i.e., it transforms a vector v as
+            v' = Tv
+        """
+        A = A.T
         axinv  = inv(self.axes)
-        axnew  = dot(self.axes,skew)
+        axnew  = dot(self.axes,A)
         kaxinv = inv(self.kaxes)
-        kaxnew = dot(self.kaxes,inv(skew).T)
+        kaxnew = dot(self.kaxes,inv(A).T)
         self.pos     = dot(dot(self.pos,axinv),axnew)
         self.center  = dot(dot(self.center,axinv),axnew)
         self.kpoints = dot(dot(self.kpoints,kaxinv),kaxnew)
         self.axes  = axnew
         self.kaxes = kaxnew
         if self.folded_structure!=None:
-            self.folded_structure.skew(skew)
+            self.folded_structure.matrix_transform(A.T)
         #end if
+    #end def matrix_transform
+
+
+    # test needed
+    def skew(self,skew):
+        """
+        Arbitrary transformation matrix (row-major).
+
+        Parameters
+        ----------
+        skew  : `array_like, float, shape (3,3)`
+            Transform the structure using the matrix skew. It is assumed that
+            skew is in row-major form, i.e., it transforms a vector v as
+            v' = vT
+        """
+        self.matrix_transform(skew.T)
     #end def skew
         
     

@@ -16,6 +16,7 @@
 #include "Configuration.h"
 #include "Numerics/Quadrature.h"
 #include "QMCHamiltonians/ECPComponentBuilder.h"
+#include "QMCHamiltonians/NonLocalECPComponent.h"
 
 //for wavefunction
 #include "OhmmsData/Libxml2Doc.h"
@@ -264,9 +265,8 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
 
   xmlNodePtr jas2 = xmlFirstElementChild(root);
 
-  RadialJastrowBuilder jastrow(elec, psi);
-  bool build_okay = jastrow.put(jas2);
-  REQUIRE(build_okay);
+  RadialJastrowBuilder jastrow(c, elec);
+  psi.addComponent(jastrow.buildComponent(jas2), "RadialJastrow");
   // Done with two body jastrow.
 
   //Add the one body jastrow.
@@ -285,9 +285,8 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
 
   xmlNodePtr jas1 = xmlFirstElementChild(root);
 
-  RadialJastrowBuilder jastrow1bdy(elec, psi, ions);
-  bool build_okay2 = jastrow1bdy.put(jas1);
-  REQUIRE(build_okay2);
+  RadialJastrowBuilder jastrow1bdy(c, elec, ions);
+  psi.addComponent(jastrow1bdy.buildComponent(jas1), "RadialJastrow");
 
   //Now we set up the nonlocal ECP component.
   ECPComponentBuilder ecp("test_read_ecp", c);

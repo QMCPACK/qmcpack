@@ -40,12 +40,8 @@ public:
   IndexType BasisSetSize;
   /// pointer to matrix containing the coefficients
   std::shared_ptr<ValueMatrix_t> C;
-  /// Scratch space for the initial coefficents before the rotation is applied
-  ValueMatrix_t m_init_B;
-  /// true if SPO parameters (orbital rotation parameters) have been supplied by input
-  bool params_supplied;
-  /// list of supplied orbital rotation parameters
-  std::vector<RealType> params;
+  /// a copy of the original C before orbital rotation is applied;
+  ValueMatrix_t C_copy;
 
   ///true if C is an identity matrix
   bool Identity;
@@ -68,81 +64,33 @@ public:
   //Nbasis x [1(value)+3(gradient)+6(hessian)+10(grad_hessian)]
   vghgh_type Tempghv;
 
-  //vector that contains active orbital rotation parameter indices
-  std::vector<std::pair<int, int>> m_act_rot_inds;
   /** constructor
      * @param bs pointer to the BasisSet
      */
-  LCAOrbitalSet(basis_type* bs = nullptr);
+  LCAOrbitalSet(basis_type* bs, bool optimize);
 
   LCAOrbitalSet(const LCAOrbitalSet& in) = default;
 
   SPOSet* makeClone() const;
 
-  /// create optimizable orbital rotation parameters
-  void buildOptVariables(const std::vector<std::pair<int, int>>& rotations);
+  void storeParamsBeforeRotation() { C_copy = *C; }
 
-  void evaluateDerivatives(ParticleSet& P,
-                           const opt_variables_type& optvars,
-                           std::vector<ValueType>& dlogpsi,
-                           std::vector<ValueType>& dhpsioverpsi,
-                           const ValueType& psiCurrent,
-                           const std::vector<ValueType>& Coeff,
-                           const std::vector<size_t>& C2node_up,
-                           const std::vector<size_t>& C2node_dn,
-                           const ValueVector_t& detValues_up,
-                           const ValueVector_t& detValues_dn,
-                           const GradMatrix_t& grads_up,
-                           const GradMatrix_t& grads_dn,
-                           const ValueMatrix_t& lapls_up,
-                           const ValueMatrix_t& lapls_dn,
-                           const ValueMatrix_t& M_up,
-                           const ValueMatrix_t& M_dn,
-                           const ValueMatrix_t& Minv_up,
-                           const ValueMatrix_t& Minv_dn,
-                           const GradMatrix_t& B_grad,
-                           const ValueMatrix_t& B_lapl,
-                           const std::vector<int>& detData_up,
-                           const size_t N1,
-                           const size_t N2,
-                           const size_t NP1,
-                           const size_t NP2,
-                           const std::vector<std::vector<int>>& lookup_tbl);
-
+  void applyRotation(const ValueMatrix_t& rot_mat, bool use_stored_copy);
 
   void checkInVariables(opt_variables_type& active)
   {
-    if (Optimizable)
-    {
-      if (myVars.size())
-        active.insertFrom(myVars);
-      else
-        Optimizable = false;
-    }
+    APP_ABORT("LCAOrbitalSet should not call checkInVariables");
   }
 
   void checkOutVariables(const opt_variables_type& active)
   {
-    if (Optimizable)
-      myVars.getIndex(active);
+    APP_ABORT("LCAOrbitalSet should not call checkOutVariables");
   }
-
 
   ///reset
   void resetParameters(const opt_variables_type& active)
   {
-#if !defined(QMC_COMPLEX)
-    if (Optimizable)
-    {
-      std::vector<RealType> param(m_act_rot_inds.size());
-      for (int i = 0; i < m_act_rot_inds.size(); i++)
-      {
-        int loc  = myVars.where(i);
-        param[i] = myVars[i] = active[loc];
-      }
-      apply_rotation(param);
-    }
-#endif
+    APP_ABORT("LCAOrbitalSet should not call resetParameters");
   }
 
   ///reset the target particleset
@@ -333,44 +281,6 @@ private:
                          GradMatrix_t& dllogdet) const;
   
 
-#if !defined(QMC_COMPLEX)
-  //function to perform orbital rotations
-  void apply_rotation(const std::vector<RealType>& param);
-
-  //helper function to apply_rotation
-  void exponentiate_antisym_matrix(ValueMatrix_t& mat);
-
-
-  //helper function to evaluatederivative; evaluate orbital rotation parameter derivative using table method
-  void table_method_eval(std::vector<ValueType>& dlogpsi,
-                         std::vector<ValueType>& dhpsioverpsi,
-                         const ParticleSet::ParticleLaplacian_t& myL_J,
-                         const ParticleSet::ParticleGradient_t& myG_J,
-                         const size_t nel,
-                         const size_t nmo,
-                         const ValueType& psiCurrent,
-                         const std::vector<RealType>& Coeff,
-                         const std::vector<size_t>& C2node_up,
-                         const std::vector<size_t>& C2node_dn,
-                         const ValueVector_t& detValues_up,
-                         const ValueVector_t& detValues_dn,
-                         const GradMatrix_t& grads_up,
-                         const GradMatrix_t& grads_dn,
-                         const ValueMatrix_t& lapls_up,
-                         const ValueMatrix_t& lapls_dn,
-                         const ValueMatrix_t& M_up,
-                         const ValueMatrix_t& M_dn,
-                         const ValueMatrix_t& Minv_up,
-                         const ValueMatrix_t& Minv_dn,
-                         const GradMatrix_t& B_grad,
-                         const ValueMatrix_t& B_lapl,
-                         const std::vector<int>& detData_up,
-                         const size_t N1,
-                         const size_t N2,
-                         const size_t NP1,
-                         const size_t NP2,
-                         const std::vector<std::vector<int>>& lookup_tbl);
-#endif
 };
 } // namespace qmcplusplus
 #endif

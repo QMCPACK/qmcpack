@@ -57,9 +57,9 @@ struct ACForce : public OperatorBase
   //** Internal variables **/
   //  I'm assuming that psi, ions, elns, and the hamiltonian are bound to this
   //  instantiation.  Making sure no crosstalk happens is the job of whatever clones this.
-  TrialWaveFunction& psi;
   ParticleSet& ions;
   ParticleSet& elns;
+  TrialWaveFunction& psi;
   QMCHamiltonian& ham;
 
   //For indexing observables

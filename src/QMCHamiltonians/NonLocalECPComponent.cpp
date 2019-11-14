@@ -620,6 +620,7 @@ void NonLocalECPComponent::randomize_grid(std::vector<T>& sphere, RandomGenerato
       sphere[OHMMS_DIM * i + j] = rrotsgrid_m[i][j];
 }
 
+/// \relates NonLocalEcpComponent
 template void NonLocalECPComponent::randomize_grid(std::vector<float>& sphere, RandomGenerator_t& myRNG);
 template void NonLocalECPComponent::randomize_grid(std::vector<double>& sphere, RandomGenerator_t& myRNG);
 

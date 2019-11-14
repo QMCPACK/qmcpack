@@ -1,6 +1,7 @@
 import h5py
 import numpy
 import scipy.sparse
+import sys
 
 def read_fcidump(filename, symmetry=8, verbose=True):
     """Read in integrals from file.
@@ -28,70 +29,70 @@ def read_fcidump(filename, symmetry=8, verbose=True):
     assert(symmetry==1 or symmetry==4 or symmetry==8)
     if verbose:
         print ("# Reading integrals in plain text FCIDUMP format.")
-    f = open(filename)
-    while True:
-        line = f.readline()
-        if 'END' in line or '/' in line:
-            break
-        for i in line.split(','):
-            if 'NORB' in i:
-                nbasis = int(i.split('=')[1])
-            elif 'NELEC' in i:
-                nelec = int(i.split('=')[1])
-            elif 'MS2' in i:
-                ms2 = int(i.split('=')[1])
-    if verbose:
-        print("# Number of orbitals: {}".format(nbasis))
-        print("# Number of electrons: {}".format(nelec))
-    h1e = numpy.zeros((nbasis, nbasis), dtype=numpy.complex128)
-    h2e = numpy.zeros((nbasis, nbasis, nbasis, nbasis), dtype=numpy.complex128)
-    lines = f.readlines()
-    for l in lines:
-        s = l.split()
-        # ascii fcidump uses Chemist's notation for integrals.
-        # each line contains v_{ijkl} i k j l
-        # Note (ik|jl) = <ij|kl>.
-        if len(s) == 6:
-            # FCIDUMP from quantum package.
-            integral = float(s[0]) + 1j*float(s[1])
-            s = s[1:]
-        else:
-            try:
-                integral = float(s[0])
-            except ValueError:
-                ig = ast.literal_eval(s[0].strip())
-                integral = ig[0] + 1j*ig[1]
-        i, k, j, l = [int(x) for x in s[1:]]
-        if i == j == k == l == 0:
-            ecore = integral
-        elif j == 0 and l == 0:
-            # <i|k> = <k|i>
-            h1e[i-1,k-1] = integral
-            h1e[k-1,i-1] = integral.conjugate()
-        elif i > 0  and j > 0 and k > 0 and l > 0:
-            # Assuming 8 fold symmetry in integrals.
-            # <ij|kl> = <ji|lk> = <kl|ij> = <lk|ji> =
-            # <kj|il> = <li|jk> = <il|kj> = <jk|li>
-            # (ik|jl)
-            h2e[i-1,k-1,j-1,l-1] = integral
-            if symmetry == 1:
-                continue
-            # (jl|ik)
-            h2e[j-1,l-1,i-1,k-1] = integral
-            # (ki|lj)
-            h2e[k-1,i-1,l-1,j-1] = integral.conjugate()
-            # (lj|ki)
-            h2e[l-1,j-1,k-1,i-1] = integral.conjugate()
-            if symmetry == 4:
-                continue
-            # (ki|jl)
-            h2e[k-1,i-1,j-1,l-1] = integral
-            # (lj|ik)
-            h2e[l-1,j-1,i-1,k-1] = integral
-            # (ik|lj)
-            h2e[i-1,k-1,l-1,j-1] = integral
-            # (jl|ki)
-            h2e[j-1,l-1,k-1,i-1] = integral
+    with open(filename) as f:
+        while True:
+            line = f.readline()
+            if 'END' in line or '/' in line:
+                break
+            for i in line.split(','):
+                if 'NORB' in i:
+                    nbasis = int(i.split('=')[1])
+                elif 'NELEC' in i:
+                    nelec = int(i.split('=')[1])
+                elif 'MS2' in i:
+                    ms2 = int(i.split('=')[1])
+        if verbose:
+            print("# Number of orbitals: {}".format(nbasis))
+            print("# Number of electrons: {}".format(nelec))
+        h1e = numpy.zeros((nbasis, nbasis), dtype=numpy.complex128)
+        h2e = numpy.zeros((nbasis, nbasis, nbasis, nbasis), dtype=numpy.complex128)
+        lines = f.readlines()
+        for l in lines:
+            s = l.split()
+            # ascii fcidump uses Chemist's notation for integrals.
+            # each line contains v_{ijkl} i k j l
+            # Note (ik|jl) = <ij|kl>.
+            if len(s) == 6:
+                # FCIDUMP from quantum package.
+                integral = float(s[0]) + 1j*float(s[1])
+                s = s[1:]
+            else:
+                try:
+                    integral = float(s[0])
+                except ValueError:
+                    ig = ast.literal_eval(s[0].strip())
+                    integral = ig[0] + 1j*ig[1]
+            i, k, j, l = [int(x) for x in s[1:]]
+            if i == j == k == l == 0:
+                ecore = integral
+            elif j == 0 and l == 0:
+                # <i|k> = <k|i>
+                h1e[i-1,k-1] = integral
+                h1e[k-1,i-1] = integral.conjugate()
+            elif i > 0  and j > 0 and k > 0 and l > 0:
+                # Assuming 8 fold symmetry in integrals.
+                # <ij|kl> = <ji|lk> = <kl|ij> = <lk|ji> =
+                # <kj|il> = <li|jk> = <il|kj> = <jk|li>
+                # (ik|jl)
+                h2e[i-1,k-1,j-1,l-1] = integral
+                if symmetry == 1:
+                    continue
+                # (jl|ik)
+                h2e[j-1,l-1,i-1,k-1] = integral
+                # (ki|lj)
+                h2e[k-1,i-1,l-1,j-1] = integral.conjugate()
+                # (lj|ki)
+                h2e[l-1,j-1,k-1,i-1] = integral.conjugate()
+                if symmetry == 4:
+                    continue
+                # (ki|jl)
+                h2e[k-1,i-1,j-1,l-1] = integral
+                # (lj|ik)
+                h2e[l-1,j-1,i-1,k-1] = integral
+                # (ik|lj)
+                h2e[i-1,k-1,l-1,j-1] = integral
+                # (jl|ki)
+                h2e[j-1,l-1,k-1,i-1] = integral
     if symmetry == 8:
         if numpy.any(numpy.abs(h1e.imag)) > 1e-18:
             print("# Found complex numbers in one-body Hamiltonian but 8-fold"
@@ -167,11 +168,7 @@ def read_qmcpack_cholesky(filename):
     """
     with h5py.File(filename, 'r') as fh5:
         real_ints = False
-        try:
-            enuc = fh5['Hamiltonian/Energies'][:].view(numpy.complex128).ravel()[0]
-        except ValueError:
-            enuc = fh5['Hamiltonian/Energies'][:][0]
-            real_ints = True
+        enuc = fh5['Hamiltonian/Energies'][:][0]
         dims = fh5['Hamiltonian/dims'][:]
         nmo = dims[3]
         try:
@@ -190,22 +187,28 @@ def read_qmcpack_cholesky(filename):
             hcore = fh5['Hamiltonian/hcore'][:]
             real_ints = True
         chunks = dims[2]
-        idx = []
-        h2 = []
-        for ic in range(chunks):
-            idx.append(fh5['Hamiltonian/Factorized/index_%i'%ic][:])
+        block_sizes = fh5['Hamiltonian/Factorized/block_sizes'][:]
+        nchol = dims[7]
+        nval = sum(block_sizes)
+        if real_ints:
+            vals = numpy.zeros(nval, dtype=numpy.float64)
+        else:
+            vals = numpy.zeros(nval, dtype=numpy.complex128)
+        row_ix = numpy.zeros(nval, dtype=numpy.int32)
+        col_ix = numpy.zeros(nval, dtype=numpy.int32)
+        s = 0
+        for ic, bs in enumerate(block_sizes):
+            ixs = fh5['Hamiltonian/Factorized/index_%i'%ic][:]
+            row_ix[s:s+bs] = ixs[::2]
+            col_ix[s:s+bs] = ixs[1::2]
             if real_ints:
-                h2.append(fh5['Hamiltonian/Factorized/vals_%i'%ic][:].ravel())
+                vals[s:s+bs] = fh5['Hamiltonian/Factorized/vals_%i'%ic][:].ravel()
             else:
-                h2.append(fh5['Hamiltonian/Factorized/vals_%i'%ic][:].view(numpy.complex128).ravel())
-        idx = numpy.array([i for sub in idx for i in sub])
-        h2 = numpy.array([v for sub in h2 for v in sub])
+                vals[s:s+bs] = fh5['Hamiltonian/Factorized/vals_%i'%ic][:].view(numpy.complex128).ravel()
+            s += bs
         nalpha = dims[4]
         nbeta = dims[5]
-        nchol = dims[7]
-        row_ix = idx[::2]
-        col_ix = idx[1::2]
-        chol_vecs = scipy.sparse.csr_matrix((h2, (row_ix, col_ix)),
+        chol_vecs = scipy.sparse.csr_matrix((vals, (row_ix, col_ix)),
                                             shape=(nmo*nmo,nchol))
         return (hcore, chol_vecs, enuc, int(nmo), (int(nalpha), int(nbeta)))
 
@@ -300,6 +303,10 @@ def write_fcidump(filename, hcore, chol, enuc, nmo, nelec, tol=1e-8,
                     for l in range(0,nmo):
                         sym_allowed = check_sym((i,k,j,l), nmo, sym)
                         if abs(eris[i,k,l,j]) > tol and sym_allowed:
+                            if not cplx:
+                                if abs(eris[i,k,l,j].imag > 1e-12):
+                                    print("# Found complex integrals with cplx==False.")
+                                    sys.exit()
                             out = fmt_integral(eris[i,k,l,j], i, k, j, l,
                                                cplx, paren=paren)
                             f.write(out)
@@ -379,7 +386,8 @@ def fcidump_header(nel, norb, spin):
 
 
 def write_fcidump_kpoint(filename, hcore, chol, enuc, nmo_tot, nelec,
-                         nmo_pk, qk_k2, tol=1e-8, sym=1, paren=False):
+                         nmo_pk, qk_k2, tol=1e-8, sym=1, paren=False,
+                         cplx=True):
     """Write FCIDUMP based from Cholesky factorised integrals.
 
     Parameters
@@ -414,12 +422,17 @@ def write_fcidump_kpoint(filename, hcore, chol, enuc, nmo_tot, nelec,
     offsets = numpy.zeros(nkp, dtype=numpy.int32)
     for i in range(1,nkp):
         offsets[i] = offsets[i-1] + nmo_pk[i-1]
+
     with open(filename, 'w') as f:
         f.write(header)
         for iq, lq in enumerate(chol):
             for ki in range(nkp):
                 for kl in range(nkp):
                     eri = numpy.dot(lq[ki], lq[kl].conj().T)
+                    if not cplx:
+                        if len(numpy.where(numpy.abs(eri.imag) > 1e-12)) > 0:
+                            print("# Found complex integrals with cplx==False.")
+                            sys.exit()
                     ik = 0
                     for i in range(0, nmo_pk[ki]):
                         kk = qk_k2[iq,ki]
@@ -437,7 +450,7 @@ def write_fcidump_kpoint(filename, hcore, chol, enuc, nmo_tot, nelec,
                                     if abs(eri[ik,lj]) > tol and sym_allowed:
                                         out = fmt_integral(eri[ik,lj],
                                                            I, K, J, L,
-                                                           True, paren=paren)
+                                                           cplx, paren=paren)
                                         f.write(out)
                                     lj += 1
                             ik += 1
@@ -449,8 +462,8 @@ def write_fcidump_kpoint(filename, hcore, chol, enuc, nmo_tot, nelec,
                     J = j + offsets[ik]
                     if I >= J and abs(hk[i,j]) > tol:
                         out = fmt_integral(hk[i,j], I, J, -1, -1,
-                                           True, paren=paren)
+                                           cplx, paren=paren)
                         f.write(out)
 
-        out = fmt_integral(enuc+0j, -1, -1, -1, -1, True, paren=paren)
+        out = fmt_integral(enuc+0j, -1, -1, -1, -1, cplx, paren=paren)
         f.write(out)

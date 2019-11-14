@@ -52,7 +52,6 @@ class FactorizedSparseHamiltonian: public OneBodyHamiltonian
     if( !distribute_Ham )
       assert(V2_fact.global_origin()[0]==0 && V2_fact.global_origin()[1]==0);
 
-    xmlNodePtr curRoot=cur;
     OhmmsAttributeSet oAttrib;
     oAttrib.add(name,"name");
     oAttrib.put(cur);

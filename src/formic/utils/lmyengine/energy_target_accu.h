@@ -231,7 +231,7 @@ template<typename S> class ETCompute {
       // compute avergae of each block across all processes
       std::vector<double> full_avgs; 
       full_avgs.assign(nblocks, 0.0);
-      formic::mpi::reduce(&avgs.at(0), &full_avgs.at(0), nblocks, MPI::SUM);
+      formic::mpi::reduce(&avgs.at(0), &full_avgs.at(0), nblocks, MPI_SUM);
       for (int i = 0; i < nblocks; i++) {
         full_avgs.at(i) /= static_cast<double>(rank_num);
       }

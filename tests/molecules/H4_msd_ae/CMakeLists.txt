@@ -1,6 +1,6 @@
 
 IF (NOT QMC_CUDA)
- IF (NOT QMC_COMPLEX)
+ IF (NOT QMC_COMPLEX AND ENABLE_SOA)
 
     # 4 H atom cluster gaussian tests, all electron
     #

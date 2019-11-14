@@ -22,22 +22,22 @@ namespace qmcplusplus
 MultiSlaterDeterminantFast::MultiSlaterDeterminantFast(ParticleSet& targetPtcl,
                                                        MultiDiracDeterminant* up,
                                                        MultiDiracDeterminant* dn)
-    : C2node_up(nullptr),
+    : RatioTimer(*TimerManager.createTimer("MultiSlaterDeterminantFast::ratio")),
+      RatioGradTimer(*TimerManager.createTimer("MultiSlaterDeterminantFast::ratioGrad")),
+      RatioAllTimer(*TimerManager.createTimer("MultiSlaterDeterminantFast::ratio(all)")),
+      UpdateTimer(*TimerManager.createTimer("MultiSlaterDeterminantFast::updateBuffer")),
+      EvaluateTimer(*TimerManager.createTimer("MultiSlaterDeterminantFast::evaluate")),
+      Ratio1Timer(*TimerManager.createTimer("MultiSlaterDeterminantFast::detEval_ratio")),
+      Ratio1GradTimer(*TimerManager.createTimer("MultiSlaterDeterminantFast::detEval_ratioGrad")),
+      Ratio1AllTimer(*TimerManager.createTimer("MultiSlaterDeterminantFast::detEval_ratio(all)")),
+      AccRejTimer(*TimerManager.createTimer("MultiSlaterDeterminantFast::Accept_Reject")),
+      IsCloned(false),
+      C2node_up(nullptr),
       C2node_dn(nullptr),
       C(nullptr),
       CSFcoeff(nullptr),
       DetsPerCSF(nullptr),
-      CSFexpansion(nullptr),
-      IsCloned(false),
-      RatioTimer(*TimerManager.createTimer("MultiSlaterDeterminantFast::ratio")),
-      RatioGradTimer(*TimerManager.createTimer("MultiSlaterDeterminantFast::ratioGrad")),
-      RatioAllTimer(*TimerManager.createTimer("MultiSlaterDeterminantFast::ratio(all)")),
-      Ratio1Timer(*TimerManager.createTimer("MultiSlaterDeterminantFast::detEval_ratio")),
-      Ratio1GradTimer(*TimerManager.createTimer("MultiSlaterDeterminantFast::detEval_ratioGrad")),
-      Ratio1AllTimer(*TimerManager.createTimer("MultiSlaterDeterminantFast::detEval_ratio(all)")),
-      UpdateTimer(*TimerManager.createTimer("MultiSlaterDeterminantFast::updateBuffer")),
-      EvaluateTimer(*TimerManager.createTimer("MultiSlaterDeterminantFast::evaluate")),
-      AccRejTimer(*TimerManager.createTimer("MultiSlaterDeterminantFast::Accept_Reject"))
+      CSFexpansion(nullptr)
 {
   registerTimers();
   //Optimizable=true;
@@ -272,12 +272,11 @@ WaveFunctionComponent::ValueType MultiSlaterDeterminantFast::evaluate(ParticleSe
   return psiCurrent;
 }
 
-WaveFunctionComponent::RealType MultiSlaterDeterminantFast::evaluateLog(ParticleSet& P,
+WaveFunctionComponent::LogValueType MultiSlaterDeterminantFast::evaluateLog(ParticleSet& P,
                                                                         ParticleSet::ParticleGradient_t& G,
                                                                         ParticleSet::ParticleLaplacian_t& L)
 {
-  ValueType psi   = evaluate(P, G, L);
-  return LogValue = evaluateLogAndPhase(psi, PhaseValue);
+  return LogValue = convertValueToLog(evaluate(P, G, L));
 }
 
 WaveFunctionComponent::ValueType MultiSlaterDeterminantFast::evalGrad_impl(ParticleSet& P,
@@ -427,7 +426,7 @@ void MultiSlaterDeterminantFast::registerData(ParticleSet& P, WFBufferType& buf)
 }
 
 // FIX FIX FIX
-WaveFunctionComponent::RealType MultiSlaterDeterminantFast::updateBuffer(ParticleSet& P,
+WaveFunctionComponent::LogValueType MultiSlaterDeterminantFast::updateBuffer(ParticleSet& P,
                                                                          WFBufferType& buf,
                                                                          bool fromscratch)
 {
@@ -445,7 +444,7 @@ WaveFunctionComponent::RealType MultiSlaterDeterminantFast::updateBuffer(Particl
   buf.put(psiCurrent);
 
   UpdateTimer.stop();
-  return LogValue = evaluateLogAndPhase(psiCurrent, PhaseValue);
+  return LogValue = convertValueToLog(psiCurrent);
 }
 
 void MultiSlaterDeterminantFast::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
@@ -689,7 +688,6 @@ void MultiSlaterDeterminantFast::evaluateDerivatives(ParticleSet& P,
         ValueType lapl_sum          = 0.0;
         ValueType gg = 0.0, ggP = 0.0;
         myG_temp = 0.0;
-        int num  = laplSum_up.size();
         ValueVector_t::iterator it(laplSum_up.begin());
         ValueVector_t::iterator last(laplSum_up.end());
         ValueType* ptr0 = lapls_up[0];
