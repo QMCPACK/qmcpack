@@ -28,7 +28,7 @@ set(MASS_LINKER_FLAGS -L${MASS_LINK_DIRECTORIES} -Wl,-rpath,${MASS_LINK_DIRECTOR
 set(MASS_LIBRARIES "-lmass -lmassv")
 
 FILE( WRITE "${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/src_mass.cxx"
-  "#include <math.h>
+  "#include <cmath>
 #include <mass.h>
 #include <massv.h>
 #include <iostream>
