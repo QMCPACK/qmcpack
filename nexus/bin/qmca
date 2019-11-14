@@ -5,13 +5,68 @@ import sys
 from optparse import OptionParser
 
 
-from generic import obj
-from developer import DevBase,unavailable
-from unit_converter import convert
-from numerics import simstats,simplestats,equilibration_length
+def find_nexus_modules():
+    import sys
+    nexus_lib = os.path.abspath(os.path.join(__file__,'..','..','lib'))
+    print nexus_lib
+    assert(os.path.exists(nexus_lib))
+    sys.path.append(nexus_lib)
+#end def find_nexus_modules
 
 
+def import_nexus_module(module_name,full=False,mod_only=False):
+    import inspect
+    import importlib
+    members = dict()
+    module = importlib.import_module(module_name)
+    for name,member in inspect.getmembers(module):
+        members[name] = member
+    #end for
+    assert(len(members)>0)
+    if mod_only:
+        return module
+    elif full:
+        return module,members
+    else:
+        return members
+    #end if
+#end def import_nexus_module
 
+
+# Load nexus modules
+try:
+    # Attempt specialized path-based load.
+    #  (The executable should still work even if Nexus is not installed)
+    find_nexus_modules()
+
+    generic = import_nexus_module('generic')
+    obj = generic['obj']
+    del generic
+
+    developer = import_nexus_module('developer')
+    DevBase     = developer['DevBase']
+    unavailable = developer['unavailable']
+    del developer
+
+    unit_converter = import_nexus_module('unit_converter')
+    convert = unit_converter['convert']
+    del unit_converter
+
+    numerics = import_nexus_module('numerics')
+    simstats             = numerics['simstats']
+    simplestats          = numerics['simplestats']
+    equilibration_length = numerics['equilibration_length']
+    del numerics
+except:
+    # Failing path-based load, attempt load based on installed Nexus modules.
+    from generic import obj
+    from developer import DevBase,unavailable
+    from unit_converter import convert
+    from numerics import simstats,simplestats,equilibration_length
+#end try
+
+
+# numpy imports
 try:
     import numpy as np
 except (ImportError,RuntimeError):
@@ -24,9 +79,7 @@ except:
 #end try
 
 
-
-
-
+# matplotlib imports
 success = False
 try:
     import matplotlib
@@ -54,6 +107,7 @@ if not success:
 #end if
 
 
+
 def sigfig_round(some_float, nsigfig):
     if nsigfig >= 1 and nsigfig == int(nsigfig):
         return round(some_float, nsigfig - int(np.floor(np.log10(abs(some_float))))-1) 
@@ -61,7 +115,6 @@ def sigfig_round(some_float, nsigfig):
         QMCA.class_error("Number of significant figures must be a whole number\nreceived {0}".format(nsigfig))
     #end if
 #end sigfig_round
-
 
 
 
