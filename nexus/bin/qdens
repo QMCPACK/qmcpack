@@ -1,50 +1,126 @@
 #! /usr/bin/env python
 
 import gc
-from numpy import ceil,sqrt,dot,ndarray,arange,savetxt
-from numpy.linalg import norm
-from generic import obj
-from developer import DevBase,error,ci,unavailable
-import memory
-from hdfreader import HDFreader
-from fileio import XsfFile,ChgcarFile
-from structure import read_structure,Structure
-from numerics import simplestats,simstats
-from qmcpack_input import QmcpackInput
-from qmcpack_input import spindensity as spindensity_xml
-from plotting import *
-
 import os
+from optparse import OptionParser
 
+
+def find_nexus_modules():
+    import sys
+    nexus_lib = os.path.abspath(os.path.join(__file__,'..','..','lib'))
+    assert(os.path.exists(nexus_lib))
+    sys.path.append(nexus_lib)
+#end def find_nexus_modules
+
+
+def import_nexus_module(module_name):
+    import importlib
+    return importlib.import_module(module_name)
+#end def import_nexus_module
+
+
+# Load Nexus modules
 try:
-    from optparse import OptionParser
+    # Attempt specialized path-based imports.
+    #  (The executable should still work even if Nexus is not installed)
+    find_nexus_modules()
+
+    generic = import_nexus_module('generic')
+    obj = generic.obj
+    del generic
+
+    developer = import_nexus_module('developer')
+    DevBase     = developer.DevBase
+    error       = developer.error
+    ci          = developer.ci
+    unavailable = developer.unavailable
+    del developer
+
+    memory = import_nexus_module('memory')
+
+    hdfreader = import_nexus_module('hdfreader')
+    HDFreader = hdfreader.HDFreader
+    del hdfreader
+
+    fileio = import_nexus_module('fileio')
+    XsfFile    = fileio.XsfFile
+    ChgcarFile = fileio.ChgcarFile
+    del fileio
+
+    structure = import_nexus_module('structure')
+    read_structure = structure.read_structure
+    Structure      = structure.Structure
+    del structure
+
+    numerics = import_nexus_module('numerics')
+    simplestats = numerics.simplestats
+    simstats    = numerics.simstats
+    del numerics
+
+    qmcpack_input = import_nexus_module('qmcpack_input')
+    QmcpackInput    = qmcpack_input.QmcpackInput
+    spindensity_xml = qmcpack_input.spindensity
+    del qmcpack_input
 except:
-    OptionParser = unavailable('optparse','OptionParser')
+    from generic import obj
+    from developer import DevBase,error,ci,unavailable
+    import memory
+    from hdfreader import HDFreader
+    from fileio import XsfFile,ChgcarFile
+    from structure import read_structure,Structure
+    from numerics import simplestats,simstats
+    from qmcpack_input import QmcpackInput
+    from qmcpack_input import spindensity as spindensity_xml
 #end try
+
+
 try:
     import h5py
 except:
     h5py = unavailable('h5py')
 #end try
 try:
-    from numpy import array,ones
+    import numpy as np
 except:
-    array,ones = unavailable('numpy','array','ones')
+    np = unavailable('numpy')
+#end try
+
+
+try:
+    import matplotlib
+    gui_envs = ['GTKAgg','TKAgg','Qt4Agg','WXAgg']
+    for gui in gui_envs:
+        try:
+            matplotlib.use(gui,warn=False, force=True)
+            from matplotlib import pyplot
+            success = True
+            break
+        except:
+            continue
+        #end try
+    #end for
+    import matplotlib.pyplot as plt
+    params = {'legend.fontsize':14,'figure.facecolor':'white','figure.subplot.hspace':0.,
+          'axes.labelsize':16,'xtick.labelsize':14,'ytick.labelsize':14}
+    plt.rcParams.update(params)
+except:
+    plt = unavailable('matplotlib.pyplot')
 #end try
 
 
 
 
+
 def h5_int(val):
-    return int(array(val))
+    return int(np.array(val))
 #end def h5_int
 
 def h5_float(val):
-    return float(array(val))
+    return float(np.array(val))
 #end def h5_float
 
 def h5_array(val):
-    return array(val)
+    return np.array(val)
 #end def h5_array
 
 
@@ -102,7 +178,7 @@ def get_grid(s,dr):
     grid = []
     n = 0
     for a in s.axes:
-        grid.append(int(ceil(sqrt(dot(a,a))/dr[n])))
+        grid.append(int(np.ceil(np.sqrt(np.dot(a,a))/dr[n])))
         n+=1
     #end for
     return tuple(grid)
@@ -204,23 +280,23 @@ class SingleDensity(QDBase):
             self.read(filepath,format)
         #end if
         # check that inputted types meet expectations
-        self.check_type('mean'     ,mean     ,'list/ndarray'      ,(list,ndarray))
-        self.check_type('error'    ,error    ,'list/ndarray'      ,(list,ndarray))
-        self.check_type('grid'     ,grid     ,'tuple/list/ndarray',(tuple,list,ndarray))
+        self.check_type('mean'     ,mean     ,'list/ndarray'      ,(list,np.ndarray))
+        self.check_type('error'    ,error    ,'list/ndarray'      ,(list,np.ndarray))
+        self.check_type('grid'     ,grid     ,'tuple/list/ndarray',(tuple,list,np.ndarray))
         self.check_type('structure',structure,'Structure'         ,Structure)
         self.check_type('extension',extension,'string'            ,str)
         # process other inputs
         if mean is not None:
-            self.mean = array(mean,dtype=float)
+            self.mean = np.array(mean,dtype=float)
         #end if
         if error is not None:
-            self.error = array(error,dtype=float)
+            self.error = np.array(error,dtype=float)
         #end if
         if grid is not None:
             if len(grid)!=3:
                 self._error('inputted grid must have length 3, received {0}'.format(grid))
             #end if
-            self.grid = array(grid,dtype=int)
+            self.grid = np.array(grid,dtype=int)
         #end if
         if structure is not None:
             self.structure = structure.copy()
@@ -257,7 +333,7 @@ class SingleDensity(QDBase):
 
 
     def analyze(self,data):
-        self.check_type('data',data,'list/ndarray',(list,ndarray),False)
+        self.check_type('data',data,'list/ndarray',(list,np.ndarray),False)
         self.mean,self.error = simplestats(data,dim=0)
     #end def analyze
 
@@ -571,7 +647,7 @@ class StatFile(QDBase):
         if opt.structure is not None:
             s = opt.structure.copy()
             s.change_units('A')
-            rmax = norm(s.axes[dim])
+            rmax = np.linalg.norm(s.axes[dim])
         else:
             rmax = None
         #end if
@@ -592,26 +668,26 @@ class StatFile(QDBase):
             data = data.sum(2)
             lmean,lvar,lerror,lkappa = simstats(data,dim=0)
             if rmax is None:
-                r = arange(len(lmean))
+                r = np.arange(len(lmean))
                 xlab = 'bin number'
                 ylab = '$N_e$/bin'
             else:
                 dr = rmax/len(lmean)
-                r = dr/2+dr*arange(len(lmean),dtype=float)
+                r = dr/2+dr*np.arange(len(lmean),dtype=float)
                 lmean/=dr
                 lerror/=dr
                 xlab = sdim+' ($\AA$)'.format(dim)
                 ylab = '$N_e/\AA$'
             #end if
-            figure(tight_layout=True)
-            errorbar(r,lmean,lerror,fmt='b.-')
-            xlabel(xlab)
-            ylabel(ylab)
-            title('{0}  (axis {1})  {2}'.format(name,dim,os.path.split(self.file_prefix)[1]))
+            plt.figure(tight_layout=True)
+            plt.errorbar(r,lmean,lerror,fmt='b.-')
+            plt.xlabel(xlab)
+            plt.ylabel(ylab)
+            plt.title('{0}  (axis {1})  {2}'.format(name,dim,os.path.split(self.file_prefix)[1]))
             self.vlog('        creating file {0}.pdf'.format(prefix))
-            savefig(prefix+'.pdf')
+            plt.savefig(prefix+'.pdf')
             self.vlog('        creating file {0}.dat'.format(prefix))
-            savetxt(prefix+'.dat',array(zip(r,lmean,lerror)))
+            np.savetxt(prefix+'.dat',np.array(zip(r,lmean,lerror)))
         #end for
     #end def line_plot
 #end class StatFile
@@ -738,7 +814,7 @@ class QMCDensityProcessor(QDBase):
                 if isinstance(ei,int):
                     e = ei
                 elif isinstance(ei,(list,tuple)):
-                    ei = array(ei,dtype=int)
+                    ei = np.array(ei,dtype=int)
                     for s in range(len(ei)):
                         e[s] = ei[s]
                     #end for
@@ -769,7 +845,7 @@ class QMCDensityProcessor(QDBase):
                     if isinstance(ei,int):
                         e = ei
                     elif isinstance(ei,(list,tuple)):
-                        ei = array(ei,dtype=int)
+                        ei = np.array(ei,dtype=int)
                         for s in range(len(ei)):
                             e[s] = ei[s]
                         #end for
@@ -794,7 +870,7 @@ class QMCDensityProcessor(QDBase):
                 weight_failed = False
                 try:
                     w = comma_list(ws)
-                    w = array(eval(w),dtype=float)
+                    w = np.array(eval(w),dtype=float)
                     opt.weights = w
                     weight_failed = len(w.shape)!=1
                 except:
@@ -862,7 +938,7 @@ class QMCDensityProcessor(QDBase):
         if opt.cell is not None:
             cell = input_list(opt.cell)
             try:
-                cell = array(cell,dtype=float)
+                cell = np.array(cell,dtype=float)
             except:
                 self.error('--cell input misformatted\nexpected a list of real values\nreceived: {0}'.format(cell))
             #end try
@@ -879,7 +955,7 @@ class QMCDensityProcessor(QDBase):
         if opt.grid is not None:
             grid = input_list(opt.grid)
             try:
-                grid = array(grid,dtype=int)
+                grid = np.array(grid,dtype=int)
             except:
                 self.error('--grid input misformatted\nexpected a list of integers\nreceived: {0}'.format(grid))
             #end try
@@ -978,7 +1054,7 @@ class QMCDensityProcessor(QDBase):
                     sfiles = stat_files[series]
                     if len(sfiles)>1:
                         if opt.weights is None:
-                            weights = ones((len(sfiles),),dtype=float)
+                            weights = np.ones((len(sfiles),),dtype=float)
                         else:
                             if len(sfiles)!=len(opt.weights):
                                 self.error('weights provided do not match number of files in series {0}\nnumber of weights provided: {1}\nnumber of files in series {0}: {2}\nfiles in series {0}:\n{3}'.format(series,len(opt.weights),len(sfiles),sfiles))
@@ -1040,7 +1116,7 @@ class QMCDensityProcessor(QDBase):
             #end if
         #end for
         if not opt.noplot and opt.lineplot is not None:
-            show()
+            plt.show()
         #end if
     #end def process
 #end class QMCDensityProcessor

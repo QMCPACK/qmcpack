@@ -46,22 +46,10 @@ def find_nexus_modules():
 #end def find_nexus_modules
 
 
-def import_nexus_module(module_name,full=False,mod_only=False):
+def import_nexus_module(module_name):
     import inspect
     import importlib
-    members = dict()
-    module = importlib.import_module(module_name)
-    for name,member in inspect.getmembers(module):
-        members[name] = member
-    #end for
-    assert(len(members)>0)
-    if mod_only:
-        return module
-    elif full:
-        return module,members
-    else:
-        return members
-    #end if
+    return importlib.import_module(module_name)
 #end def import_nexus_module
 
 
@@ -72,23 +60,23 @@ try:
     find_nexus_modules()
 
     generic = import_nexus_module('generic')
-    obj   = generic['obj']
-    log   = generic['log']
-    warn  = generic['warn']
-    error = generic['error']
+    obj   = generic.obj
+    log   = generic.log
+    warn  = generic.warn
+    error = generic.error
     del generic
 
     developer = import_nexus_module('developer')
-    DevBase = developer['DevBase']
+    DevBase = developer.DevBase
     del developer
 
     numerics = import_nexus_module('numerics')
-    jackknife            = numerics['jackknife']
-    jackknife_aux        = numerics['jackknife_aux']
-    simstats             = numerics['simstats']
-    equilibration_length = numerics['equilibration_length']
-    curve_fit            = numerics['curve_fit']
-    least_squares        = numerics['least_squares']
+    jackknife            = numerics.jackknife
+    jackknife_aux        = numerics.jackknife_aux
+    simstats             = numerics.simstats
+    equilibration_length = numerics.equilibration_length
+    curve_fit            = numerics.curve_fit
+    least_squares        = numerics.least_squares
     del numerics
 except:
     # Failing path-based imports, import installed Nexus modules.
