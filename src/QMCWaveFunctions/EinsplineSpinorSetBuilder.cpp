@@ -38,6 +38,15 @@ SPOSet* EinsplineSpinorSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   int spinSet2     = 1;
   int TwistNum_inp = 0;
 
+  app_log()<<"TargetPtcl.groups() = "<<TargetPtcl.groups()<<std::endl;
+  delete_iter(states.begin(), states.end());
+  states.clear();
+  states.resize(2, 0);
+    
+  //create vectors with nullptr
+    FullBands.resize(2, 0);
+  //
+
   SPOSet* UpOrbitalSet;
   std::string sourceName;
   std::string spo_prec("double");
