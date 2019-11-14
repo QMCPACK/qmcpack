@@ -638,7 +638,7 @@ namespace afqmc
         Ai.clear();
         for(int ni=0; ni<nb; ni++) Ai.emplace_back(wset[iw+ni].SlaterMatrix(Beta));
         SDetOp.BatchedMixedDensityMatrix(RefB,Ai,
-                          GB3D_.sliced(0,nb),LogOverlapFactor,ovlp2.sliced(nb,2*nb),compact,herm);
+                          GB3D_.sliced(0,nb),LogOverlapFactor,ovlp2.sliced(0,nb),compact,herm);
         for(int ib=0; ib<nb; ++ib) {
           if(transposed) {
             ma::copy(GB2D_[ib],G[iw+ib].sliced(GAdims.first*GAdims.second,G.size(1)));
