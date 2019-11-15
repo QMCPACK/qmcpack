@@ -19,7 +19,9 @@
 #if defined(ENABLE_CUDA)
 #include "AFQMC/Memory/CUDA/cuda_gpu_pointer.hpp"
 #include "AFQMC/Numerics/detail/CUDA/Kernels/batched_dot_wabn_wban.cuh"
+#include "AFQMC/Numerics/detail/CUDA/Kernels/dot_wabn.cuh"
 #include "AFQMC/Numerics/detail/CUDA/Kernels/batched_Tab_to_Klr.cuh"
+#include "AFQMC/Numerics/detail/CUDA/Kernels/Tab_to_Kl.cuh"
 #include "AFQMC/Numerics/detail/CUDA/Kernels/vbias_from_v1.cuh"
 #endif
 
@@ -44,6 +46,23 @@ void batched_dot_wabn_wban( int nbatch, int nwalk, int nocc, int nchol,
           E_ += ma::dot(nchol,A_+(a*nocc+b)*nchol,1,B_+(b*nocc+a)*nchol,1);
       y[w*incy] += static_cast<std::complex<T>>(alpha[batch]*E_);
     }
+  }
+}
+
+template<typename T, typename Q>
+void dot_wabn( int nwalk, int nocc, int nchol,
+                    std::complex<Q> alpha, std::complex<Q> const* Tab,
+                    std::complex<T>* y, int incy)
+{
+  int nocc2nc = nocc*nocc*nchol;
+  for(int w=0; w<nwalk; ++w) {
+    std::complex<Q> E_(0.0);
+    auto A_(Tab + w*nocc2nc);
+    using ma::dot;
+    for(int a=0; a<nocc; ++a)
+      for(int b=0; b<nocc; ++b)
+        E_ += ma::dot(nchol,A_+(a*nocc+b)*nchol,1,A_+(b*nocc+a)*nchol,1);
+    y[w*incy] += static_cast<std::complex<T>>(alpha*E_);
   }
 }
 
@@ -73,6 +92,19 @@ void batched_Tab_to_Klr(int nterms, int nwalk, int nocc, int nchol_max,
         for(int c=0; c<ncholQ; ++c)
           Kl_[c] += static_cast<T>(Tab_[c]);
       }
+    }
+  }
+}
+
+template<typename T, typename Q>
+void Tab_to_Kl(int nwalk, int nocc, int nchol, Q const* Tab, T*  Kl) 
+{
+  for(int w=0; w<nwalk; ++w) {
+    for(int a=0; a<nocc; a++) {
+      auto Tab_(Tab + ((w*nocc+a)*nocc + a)*nchol);
+      auto Kl_(Kl + w*nchol);
+      for(int c=0; c<nchol; ++c)
+        Kl_[c] += static_cast<T>(Tab_[c]);
     }
   }
 }
@@ -205,6 +237,13 @@ void batched_Tab_to_Klr(int nterms, int nwalk, int nocc, int nchol_max,
                              to_address(Kl), to_address(Kr));
 }
 
+template<typename T, typename Q>
+void Tab_to_Kl(int nwalk, int nocc, int nchol,
+                    cuda_gpu_ptr<Q> Tab, cuda_gpu_ptr<T>  Kl)
+{
+  kernels::Tab_to_Kl(nwalk,nocc,nchol,to_address(Tab),to_address(Kl));
+}
+
 template<typename T, typename Q, typename R>
 void batched_dot_wabn_wban( int nbatch, int nwalk, int nocc, int nchol,
                     cuda_gpu_ptr<R> alpha, cuda_gpu_ptr<Q> Tab,
@@ -212,7 +251,13 @@ void batched_dot_wabn_wban( int nbatch, int nwalk, int nocc, int nchol,
 {
   kernels::batched_dot_wabn_wban(nbatch,nwalk,nocc,nchol,to_address(alpha),to_address(Tab),
                                  y,incy);
+}
 
+template<typename T, typename Q, typename R>
+void dot_wabn( int nwalk, int nocc, int nchol, R alpha, cuda_gpu_ptr<Q> Tab,
+                    T* y , int incy)
+{
+  kernels::dot_wabn(nwalk,nocc,nchol,alpha,to_address(Tab),y,incy);
 }
 
 template<typename T, typename Q, typename R>

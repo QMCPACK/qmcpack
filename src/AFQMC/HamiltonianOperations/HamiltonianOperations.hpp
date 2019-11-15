@@ -30,7 +30,7 @@
 //#include "AFQMC/HamiltonianOperations/KPTHCOps.hpp"
 #else
 #include "AFQMC/HamiltonianOperations/Real3IndexFactorization.hpp"
-//#include "AFQMC/HamiltonianOperations/Real3IndexFactorization_batched.hpp"
+#include "AFQMC/HamiltonianOperations/Real3IndexFactorization_batched.hpp"
 #endif
 
 namespace qmcplusplus
@@ -168,8 +168,8 @@ class HamiltonianOperations:
                                   SparseTensor<RealType,ComplexType>,
                                   SparseTensor<ComplexType,RealType>,
                                   SparseTensor<ComplexType,ComplexType>,
-                                  Real3IndexFactorization
-//                                  ,Real3IndexFactorization_batched
+                                  Real3IndexFactorization,
+                                  Real3IndexFactorization_batched
                              >
 #endif
 {
@@ -188,7 +188,7 @@ class HamiltonianOperations:
     explicit HamiltonianOperations(STRC&& other) : variant(std::move(other)) {}
     explicit HamiltonianOperations(STCR&& other) : variant(std::move(other)) {}
     explicit HamiltonianOperations(Real3IndexFactorization&& other) : variant(std::move(other)) {}
-//    explicit HamiltonianOperations(Real3IndexFactorization_batched&& other) : variant(std::move(other)) {}
+    explicit HamiltonianOperations(Real3IndexFactorization_batched&& other) : variant(std::move(other)) {}
 #else
     explicit HamiltonianOperations(KP3IndexFactorization&& other) : variant(std::move(other)) {}
     explicit HamiltonianOperations(KP3IndexFactorization_batched&& other) : variant(std::move(other)) {}
@@ -203,7 +203,7 @@ class HamiltonianOperations:
     explicit HamiltonianOperations(STRC const& other) = delete;
     explicit HamiltonianOperations(STCR const& other) = delete;
     explicit HamiltonianOperations(Real3IndexFactorization const& other) = delete;
-//    explicit HamiltonianOperations(Real3IndexFactorization_batched const& other) = delete;
+    explicit HamiltonianOperations(Real3IndexFactorization_batched const& other) = delete;
 #else
     explicit HamiltonianOperations(KP3IndexFactorization const& other) = delete;
     explicit HamiltonianOperations(KP3IndexFactorization_batched const& other) = delete;
