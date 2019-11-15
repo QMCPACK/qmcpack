@@ -57,6 +57,7 @@ struct OTDot
 // TinyVectorTensorOps.h  binary operators for TinyVector and Tensor combinations
 // TinyMatrixOps.h        assignment/unary and binary operators  for TinyMatrix
 ////////////////////////////////////////////////////////////////////////////////
+#include<cassert>
 #define PAssert(condition) assert(condition)
 #include "OhmmsPETE/TinyVectorOps.h"
 #include "OhmmsPETE/TensorOps.h"
