@@ -244,9 +244,9 @@ inline void MTRand::seed(uint_type* const bigSeed, const uint_type seedLength)
   // in each element are discarded.
   // Just call seed() if you want to get array from /dev/urandom
   initialize(19650218UL);
-  int i       = 1;
+  int i                = 1;
   register uint_type j = 0;
-  int k       = (N > seedLength ? N : seedLength);
+  int k                = (N > seedLength ? N : seedLength);
   for (; k; --k)
   {
     state[i] = state[i] ^ ((state[i - 1] ^ (state[i - 1] >> 30)) * 1664525UL);
@@ -289,7 +289,7 @@ inline void MTRand::seed()
   {
     uint_type bigSeed[N];
     register uint_type* s = bigSeed;
-    int i        = N;
+    int i                 = N;
     register bool success = true;
     while (success && i--)
       success = fread(s++, sizeof(uint_type), 1, urandom);
@@ -313,7 +313,7 @@ inline void MTRand::initialize(const uint_type seed)
   // only MSBs of the state array.  Modified 9 Jan 2002 by Makoto Matsumoto.
   register uint_type* s = state;
   register uint_type* r = state;
-  int i        = 1;
+  int i                 = 1;
   *s++                  = seed & 0xffffffffUL;
   for (; i < N; ++i)
   {
@@ -366,7 +366,7 @@ inline void MTRand::save(uint_type* saveArray) const
 {
   register uint_type* sa      = saveArray;
   register const uint_type* s = state;
-  int i              = N;
+  int i                       = N;
   for (; i--; *sa++ = *s++) {}
   *sa = left;
 }
@@ -376,7 +376,7 @@ inline void MTRand::load(uint_type* const loadArray)
 {
   register uint_type* s  = state;
   register uint_type* la = loadArray;
-  int i         = N;
+  int i                  = N;
   for (; i--; *s++ = *la++) {}
   left  = *la;
   pNext = &state[N - left];
@@ -386,7 +386,7 @@ inline void MTRand::load(uint_type* const loadArray)
 inline std::ostream& operator<<(std::ostream& os, const MTRand& mtrand)
 {
   register const MTRand::uint_type* s = mtrand.state;
-  int i                      = mtrand.N;
+  int i                               = mtrand.N;
   for (; i--; os << *s++ << " ") {}
   return os << mtrand.left;
 }
@@ -395,7 +395,7 @@ inline std::ostream& operator<<(std::ostream& os, const MTRand& mtrand)
 inline std::istream& operator>>(std::istream& is, MTRand& mtrand)
 {
   register MTRand::uint_type* s = mtrand.state;
-  int i                = mtrand.N;
+  int i                         = mtrand.N;
   for (; i--; is >> *s++) {}
   is >> mtrand.left;
   mtrand.pNext = &mtrand.state[mtrand.N - mtrand.left];
