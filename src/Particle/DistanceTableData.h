@@ -70,6 +70,25 @@ enum DistTableType
  * @brief Abstract class to manage pair data between two ParticleSets.
  *
  * Each DistanceTableData object is fined by Source and Target of ParticleSet types.
+ *
+ * Ye: tests needs to be made correspond to call to ParticleSet
+ *
+ * case 1: during PbyP
+ * intial value should be made irralevent.
+ * do
+ * setActive()
+ * use current_ values
+ * makeMove()
+ * use Temp_ values
+ * accept or reject (fast mode, only row operation)
+ * loop
+
+ * case 2: after PbyP during Hamiltonian or estimator.
+ * full table up-to-date.
+ * use current_ values, need to extract from stored values.
+ * makeMove()
+ * use Temp_ values
+ * accept(slow mode)
  */
 struct DistanceTableData
 {
@@ -150,6 +169,12 @@ struct DistanceTableData
 
   ///actual memory for Displacements
   aligned_vector<RealType> memoryPool;
+
+  /** current_r, probably only needed by AA */
+  aligned_vector<RealType> current_r;
+
+  /** current_dr, probably only needed by AA */
+  RowContainer current_dr;
 
   /** temp_r */
   aligned_vector<RealType> Temp_r;
@@ -255,17 +280,44 @@ struct DistanceTableData
   }
 #endif
 
-  ///evaluate the full Distance Table
+  /** evaluate the full Distance Table
+   * Ye: need a better name. evalauteAllPairs?
+   */
   virtual void evaluate(ParticleSet& P) = 0;
 
-  /// evaluate the Distance Table for a given electron
+  /** evaluate the Distance Table for a given electron in-place
+   * Ye: This is used by setActive. In-place evaluation makes AA evaluation very unsafe.
+   * Plan to rename it as evaluateCurrent and store values in current_r and current_dr
+   */
   virtual void evaluate(ParticleSet& P, int jat) = 0;
 
-  ///evaluate the temporary pair relations
+  /** evaluate the temporary pair relations when a move is proposed
+   * Ye: This is used by makeMove. makeMove must be paired with setActive.
+   */
   virtual void move(const ParticleSet& P, const PosType& rnew) = 0;
 
-  ///update the distance table by the pair relations
+  /** update the distance table by the pair relations if a move is accepted
+   * Ye: plan to have two modes controled by an extra argument or two functions (updateRow?).
+   * Default slow and safe mode, update both a row and a column in the lower triangle.
+   * Fast mode used during PbyP moves, only the row is updated in AA.
+   */
   virtual void update(IndexType jat) = 0;
+
+  /** refresh the distance table based on the current value.
+   * Ye: this operation overwrites the distance table by the current_ values.
+   * This is will be used by rejectMove and only supports fast mode.
+   * A PbyP move in fast mode either call update or refreshRow.
+   * in a safe/slow mode, there is no need to call this function.
+   */
+  //virtual void refreshRow(IndexType jat) = 0;
+
+  /* access function to current_r/dr and Temp_r/dr
+   * Ye: they are safe to used only during the PbyP moves.
+   * Some safety mechanism may be needed to prevent
+   * 1. accessing current_ without calling update(setActive)
+   * 2. accessing Temp_ without calling move(makeMove)
+   * Where is a better place for safe guards? ParticleSet or invidual DTs?
+   */
 
   /** build a compact list of a neighbor for the iat source
    * @param iat source particle id
