@@ -424,7 +424,7 @@ void AFQMCDistributedPropagatorDistCV::step_collective(int nsteps_, WlkSet& wset
   // 0. Allocate memory and set shared memory structures
   if(buffer.num_elements() < memory_needs ) {
     {
-      buffer = std::move(CVector(iextensions<1u>{memory_needs}));
+      buffer = std::move(sharedCVector(iextensions<1u>{memory_needs},aux_alloc_));
     }
     if(TG.TG_local().root()) fill_n(buffer.origin(),buffer.num_elements(),ComplexType(0.0));
     buffer_reallocated=true;

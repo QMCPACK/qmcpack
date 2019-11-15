@@ -21,8 +21,8 @@ namespace mpi3{
 template<class T>
 struct shared_window : window<T>{
 //	shared_communicator& comm_;
-	shared_window(shared_communicator& comm, mpi3::size_t n, int disp_unit = alignof(T)) : //sizeof(T)) : // here we assume that disp_unit is used for align
-		window<T>{}//, comm_{comm}
+	shared_window(shared_communicator& comm, mpi3::size_t n, int disp_unit = alignof(T)) //: //sizeof(T)) : // here we assume that disp_unit is used for align
+		//window<T>{}//, comm_{comm}
 	{
 		void* base_ptr = nullptr;
 		auto e = static_cast<enum error>(

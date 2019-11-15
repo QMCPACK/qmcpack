@@ -192,7 +192,7 @@ namespace afqmc
                                 ma::sparse::is_root>;
 #endif
 
-  enum HamiltonianTypes {Factorized,THC,KPTHC,KPFactorized,UNKNOWN};
+  enum HamiltonianTypes {Factorized,THC,KPTHC,KPFactorized,RealDenseFactorized,UNKNOWN};
 
   template<std::ptrdiff_t D> 
   using iextensions = typename boost::multi::iextensions<D>;
