@@ -79,13 +79,13 @@ namespace cqmc {
                          const bool ground_state,
                          const bool variance_correct,
                          const bool build_lm_matrix)
-      :_der_rat(der_rat),
+      :_omega(omega),
+      _var_weight(var_weight),
+      _der_rat(der_rat),
       _le_der(le_der),
       _vgs(vgs),
       _weight(weight),
       _shift_scale(shift_scale),
-      _omega(omega),
-      _var_weight(var_weight),
       _ground_state(ground_state),
       _variance_correct(variance_correct),
       _build_lm_matrix(build_lm_matrix)

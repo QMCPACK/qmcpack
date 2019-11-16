@@ -123,8 +123,8 @@ namespace cqmc {
         _n_sites(n_sites),
         _n_pm(n_pm),
         _n_pm_zero(0),
-        _n_jas_zero(0),
         _n_jas(n_jas),
+        _n_jas_zero(0),
         _inv_threshold(inv_threshold)
         {
 

@@ -142,8 +142,6 @@ template<typename S> class ETCompute {
       _exact_sampling(exact_sampling),
       _ground_state(ground_state),
       _variance_correct(variance_correct),
-      _hd_shift(hd_shift),
-      _var_weight(var_weight),
       _energy(0.0),
       _energy_s(0.0),
       _target_fn_val(0.0),
@@ -152,7 +150,9 @@ template<typename S> class ETCompute {
       _serr(-1.0),
       _tnserr(-1.0),
       _tdserr(-1.0),
-      _tserr(-1.0)
+      _tserr(-1.0),
+      _hd_shift(hd_shift),
+      _var_weight(var_weight)
     {
       // initialize all list based on the input vector 
       this -> history_initialize();
