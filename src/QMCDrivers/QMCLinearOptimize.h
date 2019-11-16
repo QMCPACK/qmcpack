@@ -179,14 +179,6 @@ public:
   RealType getLowestEigenvector(Matrix<RealType>& A, Matrix<RealType>& B, std::vector<RealType>& ev);
   //asymmetric EV
   RealType getLowestEigenvector(Matrix<RealType>& A, std::vector<RealType>& ev);
-  RealType getSplitEigenvectors(int first,
-                                int last,
-                                Matrix<RealType>& FullLeft,
-                                Matrix<RealType>& FullRight,
-                                std::vector<RealType>& FullEV,
-                                std::vector<RealType>& LocalEV,
-                                std::string CSF_Option,
-                                bool& CSF_scaled);
   void getNonLinearRange(int& first, int& last);
   void orthoScale(std::vector<RealType>& dP, Matrix<RealType>& S);
   bool nonLinearRescale(std::vector<RealType>& dP, Matrix<RealType>& S);
