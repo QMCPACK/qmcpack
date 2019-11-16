@@ -283,7 +283,7 @@ namespace ma
       dgemm('N','T',2,n,m,alpha,reinterpret_cast<double const*>(x),2*incx,amat,lda,
                           beta,reinterpret_cast<double*>(y),2*incy);      
     else if(trans_in == 't' || trans_in == 'T')
-      dgemm('N','N',2,n,m,alpha,reinterpret_cast<double const*>(x),2*incx,amat,lda,
+      dgemm('N','N',2,m,n,alpha,reinterpret_cast<double const*>(x),2*incx,amat,lda,
                           beta,reinterpret_cast<double*>(y),2*incy);      
     else {
       print_stacktrace
@@ -304,7 +304,7 @@ namespace ma
       sgemm('N','T',2,n,m,alpha,reinterpret_cast<float const*>(x),2*incx,amat,lda,
                           beta,reinterpret_cast<float*>(y),2*incy);
     else if(trans_in == 't' || trans_in == 'T')
-      sgemm('N','N',2,n,m,alpha,reinterpret_cast<float const*>(x),2*incx,amat,lda,
+      sgemm('N','N',2,m,n,alpha,reinterpret_cast<float const*>(x),2*incx,amat,lda,
                           beta,reinterpret_cast<float*>(y),2*incy);
     else {
       print_stacktrace

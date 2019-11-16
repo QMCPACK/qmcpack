@@ -331,7 +331,7 @@ namespace cublas {
                            A,lda,&beta,
                            reinterpret_cast<float *>(y),2*incy);
     else if(Atrans == 't' || Atrans == 'T')
-      sucess = cublasSgemm(handle,cublasOperation(Nt),cublasOperation(Nt),2,M,N,&alpha,
+      sucess = cublasSgemm(handle,cublasOperation(Nt),cublasOperation(Nt),2,N,M,&alpha,
                            reinterpret_cast<float const*>(x),2*incx,
                            A,lda,&beta,
                            reinterpret_cast<float *>(y),2*incy);
@@ -358,7 +358,7 @@ namespace cublas {
                            A,lda,&beta,
                            reinterpret_cast<double *>(y),2*incy);
     else if(Atrans == 't' || Atrans == 'T')
-      sucess = cublasDgemm(handle,cublasOperation(Nt),cublasOperation(Nt),2,M,N,&alpha,
+      sucess = cublasDgemm(handle,cublasOperation(Nt),cublasOperation(Nt),2,N,M,&alpha,
                            reinterpret_cast<double const*>(x),2*incx,
                            A,lda,&beta,
                            reinterpret_cast<double *>(y),2*incy);
