@@ -29,6 +29,8 @@ public:
   SpinorSet();
   ~SpinorSet();
  
+  //This class is initialized by separately building the up and down channels of the spinor set and
+  //then registering them.  
   void set_spos(std::shared_ptr<SPOSet> up, std::shared_ptr<SPOSet> dn);
   /// reset parameters to the values from optimizer
   void resetParameters(const opt_variables_type& optVariables) override;
@@ -42,8 +44,6 @@ public:
 
   /** set the OrbitalSetSize
    * @param norbs number of single-particle orbitals
-   * Ye: I prefer to remove this interface in the future. SPOSet builders need to handle the size correctly.
-   * It doesn't make sense allowing to set the value at any place in the code.
    */
   void setOrbitalSetSize(int norbs) override;
 
@@ -83,7 +83,14 @@ public:
                                     ValueMatrix_t& logdet,
                                     GradMatrix_t& dlogdet,
                                     ValueMatrix_t& d2logdet) override;
-
+  /** Evaluate the values, spin gradients, and spin laplacians of single particle spinors corresponding to electron iat.
+   *  @param P current particle set.
+   *  @param iat electron index.
+   *  @param spinor values.
+   *  @param spin gradient values. d/ds phi(r,s).
+   *  @param spin laplacian values. d^2/ds^2 phi(r,s). 
+   *
+   */
   void evaluate_spin(const ParticleSet& P,
                         int iat,
                         ValueVector_t& psi,
@@ -92,18 +99,23 @@ public:
                    
 
 private:
+  //Sposet for the up and down channels of our spinors.  
   std::shared_ptr<SPOSet> spo_up;
   std::shared_ptr<SPOSet> spo_dn;
 
+  //temporary arrays for holding the values of the up and down channels respectively.
   ValueVector_t psi_work_up;
   ValueVector_t psi_work_down;
   
+  //temporary arrays for holding the gradients of the up and down channels respectively.
   GradVector_t dpsi_work_up;
   GradVector_t dpsi_work_down;
 
+  //temporary arrays for holding the laplacians of the up and down channels respectively.
   ValueVector_t d2psi_work_up;
   ValueVector_t d2psi_work_down;
 
+  //Same as above, but these are the full matrices containing all spinor/particle combinations.
   ValueMatrix_t logpsi_work_up;
   ValueMatrix_t logpsi_work_down;
   
