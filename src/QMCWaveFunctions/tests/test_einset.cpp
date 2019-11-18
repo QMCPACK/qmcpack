@@ -294,7 +294,7 @@ TEST_CASE("EinsplineSetBuilder CheckLattice", "[wavefunction]")
   REQUIRE_FALSE(esb.CheckLattice());
 }
 
-//Now we test the spinor sets.
+//Now we test the spinor set with Einspline orbitals from HDF.
 #ifdef QMC_COMPLEX
 TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
 {
@@ -409,14 +409,25 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
 
 
   //These reference values were generated as follows:
+  // 1.) Non-Collinear O2 calculation in PBC's performed using Quantum Espresso.  
+  // 2.) Spinor wavefunction converted to HDF5 using convertpw4qmc tool.  Mainly, this places the up channel in the spin_0 slot, and spin down in spin_1.  
+  // 3.) The HDF5 metadata was hacked by hand to correspond to a fictional but consistent spin-polarized set of orbitals.
+  // 4.) A spin polarized QMCPACK run was done using the electron and ion configuration specified in this block.  Orbital values, gradients, and laplacians were calculated
+  //     for both "spin up" and "spin down" orbitals. This is where the psiM_up(down), d2psiM_up(down) values come from.   
+  // 5.) By hand, the reference values, gradients, and laplacians are calculated by using the formula for a spinor e^is phi_up + e^{-is} phi_down.
+  // 6.) These are compared against the integrated initialization/parsing/evaluation of the Einspline Spinor object.  
+  
+  //Reference values for spin up component.
   psiM_up[0][0]=ValueType(2.8696985245e+00,-2.8696982861e+00); psiM_up[0][1]=ValueType(1.1698637009e+00,-1.1698638201e+00); psiM_up[0][2]=ValueType(-2.6149117947e+00,2.6149117947e+00);
   psiM_up[1][0]=ValueType(2.8670933247e+00,-2.8670933247e+00); psiM_up[1][1]=ValueType(1.1687355042e+00,-1.1687356234e+00); psiM_up[1][2]=ValueType(-2.6131081581e+00,2.6131081581e+00);
   psiM_up[2][0]=ValueType(4.4833350182e+00,-4.4833350182e+00); psiM_up[2][1]=ValueType(1.8927993774e+00,-1.8927993774e+00); psiM_up[2][2]=ValueType(-8.3977413177e-01,8.3977431059e-01);
 
+  //Reference values for spin down component.
   psiM_down[0][0]=ValueType(1.1886650324e+00,-1.1886655092e+00); psiM_down[0][1]=ValueType(-2.8243079185e+00,2.8243076801e+00); psiM_down[0][2]=ValueType(-1.0831292868e+00,1.0831292868e+00);
   psiM_down[1][0]=ValueType(1.1875861883e+00,-1.1875866652e+00); psiM_down[1][1]=ValueType(-2.8215842247e+00,2.8215837479e+00); psiM_down[1][2]=ValueType(-1.0823822021e+00,1.0823823214e+00);
   psiM_down[2][0]=ValueType(1.8570541143e+00,-1.8570543528e+00); psiM_down[2][1]=ValueType(-4.5696320534e+00,4.5696320534e+00); psiM_down[2][2]=ValueType(-3.4784498811e-01,3.4784474969e-01);
 
+  //And the laplacians...
   d2psiM_up[0][0]=ValueType(-6.1587309837e+00,6.1587429047e+00); d2psiM_up[0][1]=ValueType(-2.4736759663e+00,2.4736781120e+00); d2psiM_up[0][2]=ValueType(2.1381640434e-01,-2.1381306648e-01);
   d2psiM_up[1][0]=ValueType(-5.0561609268e+00,5.0561575890e+00); d2psiM_up[1][1]=ValueType(-2.0328726768e+00,2.0328762531e+00); d2psiM_up[1][2]=ValueType(-7.4090242386e-01,7.4090546370e-01);
   d2psiM_up[2][0]=ValueType(-1.8970542908e+01,1.8970539093e+01); d2psiM_up[2][1]=ValueType(-8.2134075165e+00,8.2134037018e+00); d2psiM_up[2][2]=ValueType(1.0161912441e+00,-1.0161914825e+00);
@@ -435,7 +446,8 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
 
     ValueType eis(coss,sins);
     ValueType emis(coss,-sins);
-
+    //Using the reference values for the up and down channels invdividually, we build the total reference spinor value
+    //consistent with the current spin value of particle iat.
     psiM_ref[iat][0]=eis*psiM_up[iat][0]+emis*psiM_down[iat][0];
     psiM_ref[iat][1]=eis*psiM_up[iat][1]+emis*psiM_down[iat][1];
     psiM_ref[iat][2]=eis*psiM_up[iat][2]+emis*psiM_down[iat][2];
