@@ -76,8 +76,7 @@ def main(args):
                                     options.thresh, options.verbose,
                                     cmax=20).T.copy()
     cplx_chol = options.write_complex or numpy.any(abs(eri.imag)>1e-14)
-    write_qmcpack_cholesky(hcore, scipy.sparse.csr_matrix(chol),
-                           nelec, norb, e0=ecore,
+    write_qmcpack_cholesky(hcore, chol, nelec, norb, e0=ecore,
                            real_chol=(not cplx_chol),
                            filename=options.output_file)
 

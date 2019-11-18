@@ -61,6 +61,11 @@ class EstimatorHandler: public AFQMCInfo
   {
     estimators.reserve(10);
 
+    app_log()<<"\n****************************************************\n"
+           <<"               Initializing Estimators \n"
+           <<"****************************************************\n"
+           <<std::endl;
+
     std::string overwrite_default_energy("no");
     xmlNodePtr curRoot = cur;
     xmlNodePtr curBasic = NULL;

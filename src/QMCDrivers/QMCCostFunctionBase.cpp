@@ -803,7 +803,7 @@ void QMCCostFunctionBase::addCJParams(xmlXPathContextPtr acontext, const char* c
 
       // count the total number of registered F matrix variables
       opt_variables_type::iterator oit(OptVariables.begin()), oit_end(OptVariables.end());
-      for (oit; oit != oit_end; ++oit)
+      for (; oit != oit_end; ++oit)
       {
         const std::string& oname((*oit).first);
         if (oname.find("F_") == 0)

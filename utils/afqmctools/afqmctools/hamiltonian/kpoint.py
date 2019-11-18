@@ -545,7 +545,6 @@ class KPCholesky(object):
                     T_ = numpy.reshape(T_,(-1,2))/math.sqrt(nkpts*1.0)
                     LQ[kk,:,:] = T_
                     T_ = None
-
             comm.barrier()
 
         h5file.grp.create_dataset("NCholPerKP", data=num_cholvecs)

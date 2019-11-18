@@ -1,6 +1,6 @@
 #!/bin/bash
 echo "Loading QMCPACK dependency modules for summit"
-module load gcc
+module load gcc/7.4.0
 module load spectrum-mpi
 module load essl
 module load netlib-lapack
