@@ -20,6 +20,12 @@
 #include "QMCWaveFunctions/SPOSetBuilder.h"
 #include "QMCWaveFunctions/SPOSetBuilderFactory.h"
 
+/** @file SpinorSetBuilderFactory.h
+ *  This class derives from SPOSetBuilderFactory.  It's purpose is to override createSPOSetBuilder so that 
+ *   spinor appropriate factories can be parsed and called.  Example, <spinorset_builder> knows to route einspline
+ *   construction through EinsplineSpinorSetBuilder as oppposed to EinsplineSetBuilder. 
+ */
+
 namespace qmcplusplus
 {
 
@@ -28,34 +34,12 @@ class SpinorSetBuilderFactory  : public SPOSetBuilderFactory
 public:
   typedef std::map<std::string, ParticleSet*> PtclPoolType;
 
-  ///set of basis set builders resolved by type
-//  static std::map<std::string, SPOSetBuilder*> spo_builders;
-
-  /// Reset the map and last_builder pointers.  Mostly for unit tests.
-//  static void clear();
 
   SpinorSetBuilderFactory(Communicate* comm, ParticleSet& els, PtclPoolType& psets);
 
   ~SpinorSetBuilderFactory(){};
   SPOSetBuilder* createSPOSetBuilder(xmlNodePtr rootNode);
 
-//  void loadBasisSetFromXML(xmlNodePtr cur) { last_builder->loadBasisSetFromXML(cur); }
-//
-//  SPOSet* createSPOSet(xmlNodePtr cur);
-
-//  void build_sposet_collection(xmlNodePtr cur);
-//
-//private:
-  ///store the last builder, use if type not provided
-//  static SPOSetBuilder* last_builder;
-
-  ///reference to the target particle
- // ParticleSet& targetPtcl;
-
-  ///reference to the particle pool
-//  PtclPoolType& ptclPool;
-
-//  static std::string basisset_tag; 
 };
 } // namespace qmcplusplus
 #endif

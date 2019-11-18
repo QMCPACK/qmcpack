@@ -38,14 +38,13 @@ SPOSet* EinsplineSpinorSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   int spinSet2     = 1;
   int TwistNum_inp = 0;
 
-  app_log()<<"TargetPtcl.groups() = "<<TargetPtcl.groups()<<std::endl;
+  //There have to be two "spin states"...  one for the up channel and one for the down channel.
+  // We force this for spinors and manually resize states and FullBands.
   delete_iter(states.begin(), states.end());
   states.clear();
   states.resize(2, 0);
     
-  //create vectors with nullptr
-    FullBands.resize(2, 0);
-  //
+  FullBands.resize(2, 0);
 
   SPOSet* UpOrbitalSet;
   std::string sourceName;
@@ -76,17 +75,6 @@ SPOSet* EinsplineSpinorSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
     a.add(spinSet, "group");
     a.put(cur);
   }
-
-  app_log()<<" H5Filename = "<<H5FileName<<std::endl;
-  app_log()<<" TileFactor = "<<TileFactor<<std::endl;
-  app_log()<<" sortBands  = "<<sortBands<<std::endl;
-  app_log()<<" TileMatrix = "<<TileMatrix<<std::endl;
-  app_log()<<" TwistNum_b = "<<TwistNum_inp<<std::endl;
-  app_log()<<" Twist      = "<<givenTwist<<std::endl;
-  app_log()<<" sourceName = "<<sourceName<<std::endl;
-  app_log()<<" MeshFactor = "<<MeshFactor<<std::endl;
-  app_log()<<" numOrbs = "<<numOrbs<<std::endl;
-  app_log()<<" spinSet = "<<spinSet<<std::endl;
 
   SourcePtcl = ParticleSets[sourceName];
   if (SourcePtcl == 0)
@@ -160,17 +148,8 @@ SPOSet* EinsplineSpinorSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   if (FullBands[spinSet2] == 0)
     FullBands[spinSet2] = new std::vector<BandInfo>;
 
-  // Ensure the first SPO set must be spinSet==0
-  // to correctly initialize key data of EinsplineSetBuilder
-//  if (SPOSetMap.size() == 0 && spinSet != 0)
-//  {
-//    app_error() << "The first SPO set must have spindataset=\"0\"" << std::endl;
-//    abort();
-//  }
-
-  // set the internal parameters
-//  if (spinSet == 0)
-
+  //This is to skip checks on ion-ID's, spin types, etc.  If we've made it here, we assume we know better
+  //than Einspline on what the data means...
   bool skipChecks = true;
 
   set_metadata(numOrbs, TwistNum_inp, skipChecks);
@@ -194,7 +173,6 @@ SPOSet* EinsplineSpinorSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
 #if !defined(QMC_COMPLEX)
   if (UseRealOrbitals)
   {
-    //if(TargetPtcl.Lattice.SuperCellEnum != SUPERCELL_BULK && truncate=="yes")
     if (MixedSplineReader == 0)
     {
       if (use_single)
@@ -216,16 +194,18 @@ SPOSet* EinsplineSpinorSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   }
 
   MixedSplineReader->setCommon(XMLRoot);
+  //Norm for spinor wavefunctions is different from SPO's by a factor of sqrt(2).  Disable the unit norm check.
   MixedSplineReader->setCheckNorm(false);
-  // temporary disable the following function call, Ye Luo
-  // RotateBands_ESHDF(spinSet, dynamic_cast<EinsplineSetExtended<std::complex<double> >*>(OrbitalSet));
+
+  //Make the up spin set.
   HasCoreOrbs        = bcastSortBands(spinSet, NumDistinctOrbitals, myComm->rank() == 0);
   std::shared_ptr<SPOSet> bspline_zd_u(MixedSplineReader->create_spline_set(spinSet, spo_cur));
 
-  //HasCoreOrbs        = bcastSortBands(spinSet2, NumDistinctOrbitals, myComm->rank() == 0);
+  //Make the down spin set.  
   OccupyBands(spinSet2, sortBands, numOrbs, skipChecks);
   std::shared_ptr<SPOSet> bspline_zd_d(MixedSplineReader->create_spline_set(spinSet2, spo_cur));
  
+  //register with spin set and we're off to the races.
   SpinorSet* spinor_set = new SpinorSet(); 
   spinor_set->set_spos(bspline_zd_u,bspline_zd_d); 
   return spinor_set;

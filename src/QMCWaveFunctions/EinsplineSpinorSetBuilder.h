@@ -4,21 +4,17 @@
 //
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
-// File developed by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
-//                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
-//                    Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
-//                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
-//                    Ye Luo, yeluo@anl.gov, Argonne National Laboratory
-//                    Raymond Clay III, j.k.rofling@gmail.com, Lawrence Livermore National Laboratory
-//                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+// File developed by:   Raymond Clay III, rclay@sandia.gov, Sandia National Laboratories
 //
-// File created by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
+// File created by:    Raymond Clay III, rclay@sandia.gov, Sandia National Laboratories
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-/** @file EinsplineSetBuilder.h
+/** @file EinsplineSpinorSetBuilder.h
+ * 
+ * Derives EinsplineSetBuilder.  Overrides the createSPOSetFromXML method to read an up and down channel from hdf5
+ *   and then construct an appropriate einspline spinor set object.
  *
- * Builder class for einspline-based SPOSet objects.
  */
 #ifndef QMCPLUSPLUS_EINSPLINE_SPINORSET_BUILDER_H
 #define QMCPLUSPLUS_EINSPLINE_SPINORSET_BUILDER_H
@@ -30,8 +26,6 @@ class Communicate;
 namespace qmcplusplus
 {
 
-/** EinsplineSpinorSet builder
- */
 class EinsplineSpinorSetBuilder : public EinsplineSetBuilder
 {
   typedef std::map<std::string, ParticleSet*> PtclPoolType;
