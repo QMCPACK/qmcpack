@@ -27,6 +27,7 @@
 #ifdef HAVE_LMY_ENGINE
 #include "formic/utils/matrix.h"
 #include "formic/utils/lmyengine/engine.h"
+#include "QMCDrivers/Optimizers/DescentEngine.h"
 #endif
 
 
@@ -56,7 +57,7 @@ public:
                     Communicate* comm);
 
   ///Destructor
-  virtual ~QMCLinearOptimize();
+  virtual ~QMCLinearOptimize() = default;
 
   ///Run the Optimization algorithm.
   virtual bool run() = 0;
@@ -84,7 +85,7 @@ public:
   ///Dimension of matrix and number of parameters
   int N, numParams;
   ///vmc engine
-  QMCDriver* vmcEngine;
+  std::unique_ptr<QMCDriver> vmcEngine;
   ///xml node to be dumped
   xmlNodePtr wfNode;
   ///xml node for optimizer
@@ -170,7 +171,7 @@ public:
   ///common operation to start optimization, used by the derived classes
   void start();
 #ifdef HAVE_LMY_ENGINE
-  void engine_start(cqmc::engine::LMYEngine* EngineObj);
+  void engine_start(cqmc::engine::LMYEngine* EngineObj, DescentEngine& descentEngineObj, std::string MinMethod);
 #endif
   ///common operation to finish optimization, used by the derived classes
   void finish();
@@ -178,14 +179,6 @@ public:
   RealType getLowestEigenvector(Matrix<RealType>& A, Matrix<RealType>& B, std::vector<RealType>& ev);
   //asymmetric EV
   RealType getLowestEigenvector(Matrix<RealType>& A, std::vector<RealType>& ev);
-  RealType getSplitEigenvectors(int first,
-                                int last,
-                                Matrix<RealType>& FullLeft,
-                                Matrix<RealType>& FullRight,
-                                std::vector<RealType>& FullEV,
-                                std::vector<RealType>& LocalEV,
-                                std::string CSF_Option,
-                                bool& CSF_scaled);
   void getNonLinearRange(int& first, int& last);
   void orthoScale(std::vector<RealType>& dP, Matrix<RealType>& S);
   bool nonLinearRescale(std::vector<RealType>& dP, Matrix<RealType>& S);

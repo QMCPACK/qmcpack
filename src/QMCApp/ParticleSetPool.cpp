@@ -31,12 +31,19 @@
 
 namespace qmcplusplus
 {
-ParticleSetPool::ParticleSetPool(Communicate* c, const char* aname) : MPIObjectBase(c), SimulationCell(0), TileMatrix(0)
+ParticleSetPool::ParticleSetPool(Communicate* c, const char* aname) : MPIObjectBase(c), SimulationCell(nullptr), TileMatrix(0)
 {
   TileMatrix.diagonal(1);
   ClassName = "ParticleSetPool";
   myName    = aname;
 }
+
+ParticleSetPool::ParticleSetPool(ParticleSetPool&& other) : MPIObjectBase(other.myComm), SimulationCell(other.SimulationCell), TileMatrix(other.TileMatrix), myPool(std::move(other.myPool))
+{
+  ClassName = other.ClassName;
+  myName    = other.myName;
+}
+
 
 ParticleSet* ParticleSetPool::getParticleSet(const std::string& pname)
 {

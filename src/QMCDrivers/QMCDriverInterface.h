@@ -22,7 +22,7 @@ namespace qmcplusplus
 {
 class QMCHamiltonian;
 class TrialWaveFunction;
-class SimpleFixedNodeBranch;
+struct SimpleFixedNodeBranch;
 
 /** Creates a common base class pointer for QMCDriver and QMCDriverNew
  *  to share.

@@ -17,13 +17,13 @@
 #ifndef QMCPLUSPLUS_COSTFUNCTIONBASE_H
 #define QMCPLUSPLUS_COSTFUNCTIONBASE_H
 
+#include <deque>
+#include <set>
 #include "Configuration.h"
 #include "Optimize/OptimizeBase.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "Message/MPIObjectBase.h"
-#include <deque>
-#include <set>
 
 #ifdef HAVE_LMY_ENGINE
 //#include "Eigen/Dense"
@@ -34,6 +34,7 @@
 namespace qmcplusplus
 {
 class MCWalkerConfiguration;
+class DescentEngine;
 
 /** @ingroup QMCDrivers
  * @brief Implements wave-function optimization
@@ -86,7 +87,7 @@ public:
   Return_t& Params(int i) { return OptVariables[i]; }
   ///return optimization parameter i
   Return_t Params(int i) const { return OptVariables[i]; }
-  int getType(int i) { return OptVariables.getType(i); }
+  int getType(int i) const { return OptVariables.getType(i); }
   ///return the cost value for CGMinimization
   Return_rt Cost(bool needGrad = true);
 
@@ -98,9 +99,9 @@ public:
                         const std::vector<Return_rt>& PM,
                         Return_rt FiniteDiff = 0){};
   ///return the number of optimizable parameters
-  inline int NumParams() { return OptVariables.size(); }
+  inline int getNumParams() const { return OptVariables.size(); }
   ///return the number of optimizable parameters
-  inline int getNumSamples() { return NumSamples; }
+  inline int getNumSamples() const { return NumSamples; }
   inline void setNumSamples(int newNumSamples) { NumSamples = newNumSamples; }
   ///reset the wavefunction
   virtual void resetPsi(bool final_reset = false) = 0;
@@ -158,7 +159,10 @@ public:
   virtual void checkConfigurations() = 0;
 
 #ifdef HAVE_LMY_ENGINE
-  virtual void engine_checkConfigurations(cqmc::engine::LMYEngine* EngineObj) = 0;
+  virtual void engine_checkConfigurations(cqmc::engine::LMYEngine* EngineObj,
+                                          DescentEngine& descentEngineObj,
+                                          const std::string& MinMethod) = 0;
+
 #endif
 
   void setRng(std::vector<RandomGenerator_t*>& r);
@@ -167,6 +171,10 @@ public:
 
   inline void setneedGrads(bool tf) { needGrads = tf; }
   inline void setDMC() { vmc_or_dmc = 1.0; }
+
+  inline std::string getName(int i) const { return OptVariables.name(i); }
+
+  inline const opt_variables_type& getOptVariables() const { return OptVariables; }
 
 protected:
   ///walker ensemble

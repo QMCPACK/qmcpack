@@ -160,8 +160,6 @@ void balance_partition_ordered_set(integer N, IType const* indx, std::vector<ITy
     IType iN = N;
     while( *(indx + i0) == *(indx + i0 + 1) ) i0++;
     while( *(indx + iN - 1) == *(indx + iN) ) iN--;
-    int64_t avNpc = (iN-i0)/nsets;
-    int64_t extra = (iN-i0)%nsets;
     avg = static_cast<int64_t>(*(indx+iN)) - static_cast<int64_t>(*(indx+i0));
     avg /= nsets;
 

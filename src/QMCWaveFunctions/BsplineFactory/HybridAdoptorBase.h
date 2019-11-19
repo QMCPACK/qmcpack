@@ -54,7 +54,7 @@ struct AtomicOrbitalSoA
   vContainer_type localV, localG, localL;
 
   AtomicOrbitalSoA(int Lmax)
-      : Ylm(Lmax), lmax(Lmax), lm_tot((Lmax + 1) * (Lmax + 1))
+      : lmax(Lmax), lm_tot((Lmax + 1) * (Lmax + 1)), Ylm(Lmax)
   {
     r_power_minus_l.resize(lm_tot);
     l_vals.resize(lm_tot);
@@ -213,20 +213,17 @@ struct AtomicOrbitalSoA
     if (r > rmin)
     {
       rinv  = 1.0 / r;
-      drx   = dr[0];
-      dry   = dr[1];
-      drz   = dr[2];
-      rhatx = drx * rinv;
-      rhaty = dry * rinv;
-      rhatz = drz * rinv;
     }
     else
     {
       rinv = 0;
-      drx  = dr[0];
-      dry  = dr[1];
-      drz  = dr[2];
     }
+    drx   = dr[0];
+    dry   = dr[1];
+    drz   = dr[2];
+    rhatx = drx * rinv;
+    rhaty = dry * rinv;
+    rhatz = drz * rinv;
 
     Ylm.evaluateVGL(drx, dry, drz);
     const ST* restrict Ylm_v  = Ylm[0];
@@ -636,7 +633,7 @@ struct HybridAdoptorBase
   template<typename VV>
   inline void interpolate_buffer_v(VV& psi, const VV& psi_AO) const
   {
-    const RealType cone(1), ctwo(2);
+    const RealType cone(1);
     for (size_t i = 0; i < psi.size(); i++)
       psi[i] = psi_AO[i] * f + psi[i] * (cone - f);
   }

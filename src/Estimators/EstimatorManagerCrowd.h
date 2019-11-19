@@ -38,6 +38,7 @@ class CollectablesEstimator;
 class EstimatorManagerCrowd : public EstimatorManagerInterface
 {
 public:
+  using MCPWalker = MCPopulation::MCPWalker;
   //enum { WEIGHT_INDEX=0, BLOCK_CPU_INDEX, ACCEPT_RATIO_INDEX, TOTAL_INDEX};
 
   ///name of the primary estimator name
@@ -51,7 +52,7 @@ public:
   ///copy constructor
   EstimatorManagerCrowd(EstimatorManagerBase& em);
   ///destructor
-  virtual ~EstimatorManagerCrowd() {};
+  virtual ~EstimatorManagerCrowd(){};
 
   inline bool is_manager() const { return false; }
 
@@ -65,17 +66,19 @@ public:
    * Replace reportHeader and reset functon.
    */
   void start(int blocks, bool record = true) {}
+
   /** stop a qmc run
    *
    * Replace finalize();
    */
   void stop() {}
 
-
   /** start  a block
    * @param steps number of steps in a block
    */
-  void startBlock(int steps) {};
+  void startBlock(int steps){ block_weight_ = 0.0;};
+
+  void stopBlock();
 
   void setNumberOfBlocks(int blocks)
   {
@@ -83,11 +86,19 @@ public:
       scalar_estimators_[i]->setNumberOfBlocks(blocks);
   }
 
-  /** stop a block
-   * @param accept acceptance rate of this block
-   */
-  void stopBlock(RealType accept, bool collectall = true) {}
+  void accumulate(int global_walkers, RefVector<MCPWalker>& walkers, RefVector<ParticleSet>& psets)
+  {
+    block_weight_ += walkers.size();
+    RealType norm             = 1.0 / global_walkers;
+    int num_scalar_estimators = scalar_estimators_.size();
+    // This seems like it should really be a pset per walker but so far its just used for
+    // things that should be a POD argument
+    for (int i = 0; i < num_scalar_estimators; ++i)
+      scalar_estimators_[i]->accumulate(global_walkers, walkers, norm);  
+  }
 
+  RefVector<EstimatorType> get_scalar_estimators() { return convertPtrToRefVector(scalar_estimators_); }
+  RealType get_block_weight() const { return block_weight_; }
 
 protected:
   ///use bitset to handle options
@@ -101,7 +112,8 @@ protected:
   ///index for the acceptance rate PropertyCache(acceptInd)
   int acceptInd;
   ///total weight accumulated in a block
-  RealType BlockWeight;
+  RealType block_weight_;
+
   ///file handler to write data
   std::ofstream* Archive;
   ///file handler to write data for debugging

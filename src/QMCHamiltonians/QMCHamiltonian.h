@@ -19,6 +19,7 @@
  */
 #ifndef QMCPLUSPLUS_HAMILTONIAN_H
 #define QMCPLUSPLUS_HAMILTONIAN_H
+#include "Configuration.h"
 #include <QMCHamiltonians/OperatorBase.h>
 #include "QMCHamiltonians/NonLocalECPotential.h"
 #if !defined(REMOVE_TRACEMANAGER)
@@ -42,7 +43,7 @@ class QMCHamiltonian
 public:
   typedef OperatorBase::RealType RealType;
   typedef OperatorBase::ValueType ValueType;
-  typedef OperatorBase::Return_t Return_t;
+  using FullPrecRealType = QMCTraits::FullPrecRealType;
   typedef OperatorBase::PropertySetType PropertySetType;
   typedef OperatorBase::BufferType BufferType;
   typedef OperatorBase::Walker_t Walker_t;
@@ -167,9 +168,9 @@ public:
   void update_source(ParticleSet& s);
 
   ////return the LocalEnergy \f$=\sum_i H^{qmc}_{i}\f$
-  inline Return_t getLocalEnergy() { return LocalEnergy; }
+  inline FullPrecRealType getLocalEnergy() { return LocalEnergy; }
   ////return the LocalPotential \f$=\sum_i H^{qmc}_{i} - KE\f$
-  inline Return_t getLocalPotential() { return LocalEnergy - KineticEnergy; }
+  inline FullPrecRealType getLocalPotential() { return LocalEnergy - KineticEnergy; }
   void auxHevaluate(ParticleSet& P);
   void auxHevaluate(ParticleSet& P, Walker_t& ThisWalker);
   void auxHevaluate(ParticleSet& P, Walker_t& ThisWalker, bool do_properties, bool do_collectables);
@@ -214,15 +215,29 @@ public:
    *
    * P.R, P.G and P.L are used to evaluate the LocalEnergy.
    */
-  Return_t evaluate(ParticleSet& P);
-  /** batched version of evaluate for LocalEnergy */
-  void flex_evaluate(const std::vector<QMCHamiltonian*>& H_list, const std::vector<ParticleSet*>& P_list, std::vector<Return_t>& LocalEnergies) const;
+  FullPrecRealType evaluate(ParticleSet& P);
+
+  /** batched version of evaluate for LocalEnergy 
+   *
+   *  Encapsulation is ignored for H_list hamiltonians method uses its status as QMCHamiltonian to break encapsulation.
+   *  ParticleSet is also updated.
+   *  Bugs could easily be created by accessing this scope.
+   *  This should be set to static and fixed.
+   */
+  static std::vector<QMCHamiltonian::FullPrecRealType> flex_evaluate(const RefVector<QMCHamiltonian>& H_list,
+                                                                     const RefVector<ParticleSet>& P_list);
 
   /** evaluate Local energy with Toperators updated.
    * @param P ParticleSEt
    * @return Local energy
    */
-  Return_t evaluateWithToperator(ParticleSet& P);
+  FullPrecRealType evaluateWithToperator(ParticleSet& P);
+
+  /** batched version of evaluate Local energy with Toperators updated.
+   */
+  static std::vector<QMCHamiltonian::FullPrecRealType> flex_evaluateWithToperator(RefVector<QMCHamiltonian>& H_list,
+                                                                                  RefVector<ParticleSet>& P_list);
+
 
   /** evaluate energy and derivatives wrt to the variables
    * @param P ParticleSet
@@ -231,11 +246,11 @@ public:
    * @param dhpsioverpsi \f$\partial(\hat{h}\Psi({\bf R})/\Psi({\bf R})) /\partial \alpha \f$
    * @param compute_deriv if true, compute dhpsioverpsi of the non-local potential component
    */
-  RealType evaluateValueAndDerivatives(ParticleSet& P,
-                                        const opt_variables_type& optvars,
-                                        std::vector<ValueType>& dlogpsi,
-                                        std::vector<ValueType>& dhpsioverpsi,
-                                        bool compute_deriv);
+  FullPrecRealType evaluateValueAndDerivatives(ParticleSet& P,
+                                               const opt_variables_type& optvars,
+                                               std::vector<ValueType>& dlogpsi,
+                                               std::vector<ValueType>& dhpsioverpsi,
+                                               bool compute_deriv);
 
   /** evaluate local energy and derivatives w.r.t ionic coordinates.  
   * @param P target particle set (electrons)
@@ -246,12 +261,12 @@ public:
   * @param wf_grad  Re (dPsi/Psi)
   * @return Local Energy.
   */
-  Return_t evaluateIonDerivs(ParticleSet& P,
-                             ParticleSet& ions,
-                             TrialWaveFunction& psi,
-                             ParticleSet::ParticlePos_t& hf_terms,
-                             ParticleSet::ParticlePos_t& pulay_terms,
-                             ParticleSet::ParticlePos_t& wf_grad);
+  FullPrecRealType evaluateIonDerivs(ParticleSet& P,
+                                     ParticleSet& ions,
+                                     TrialWaveFunction& psi,
+                                     ParticleSet::ParticlePos_t& hf_terms,
+                                     ParticleSet::ParticlePos_t& pulay_terms,
+                                     ParticleSet::ParticlePos_t& wf_grad);
   /** set non local moves options
    * @param cur the xml input
    */
@@ -261,6 +276,17 @@ public:
       nlpp_ptr->setNonLocalMoves(cur);
   }
 
+  void setNonLocalMoves(const std::string& non_local_move_option,
+                                        const double tau,
+                                        const double alpha,
+                                        const double gamma)
+  {
+    if (nlpp_ptr != nullptr)
+      nlpp_ptr->setNonLocalMoves(non_local_move_option,
+                                        tau,
+                                        alpha,
+                                        gamma);
+  }
   /** make non local moves
    * @param P particle set
    * @return the number of accepted moves
@@ -273,18 +299,19 @@ public:
       return nlpp_ptr->makeNonLocalMovesPbyP(P);
   }
 
+  static std::vector<int> flex_makeNonLocalMoves(RefVector<QMCHamiltonian>& h_list, RefVector<ParticleSet>& p_list);
   /** evaluate energy 
    * @param P quantum particleset
    * @param free_nlpp if true, non-local PP is a variable
    * @return KE + NonLocal potential
    */
-  RealType evaluateVariableEnergy(ParticleSet& P, bool free_nlpp);
+  FullPrecRealType evaluateVariableEnergy(ParticleSet& P, bool free_nlpp);
 
   /** return an average value of the LocalEnergy
    *
    * Introduced to get a collective value
    */
-  Return_t getEnsembleAverage();
+  FullPrecRealType getEnsembleAverage();
 
   void resetTargetParticleSet(ParticleSet& P);
 
@@ -299,11 +326,17 @@ public:
 
   bool get(std::ostream& os) const;
 
+  RealType get_LocalEnergy() const { return LocalEnergy; }
+
   void setRandomGenerator(RandomGenerator_t* rng);
 
+  static void updateNonKinetic(OperatorBase& op, QMCHamiltonian& ham, ParticleSet& pset);
+  static void updateKinetic(OperatorBase& op, QMCHamiltonian& ham, ParticleSet& pset);
+  
   /** return a clone */
   QMCHamiltonian* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 
+#ifdef QMC_CUDA
   ////////////////////////////////////////////
   // Vectorized evaluation routines for GPU //
   ////////////////////////////////////////////
@@ -312,12 +345,11 @@ public:
                 std::vector<RealType>& energyVector,
                 std::vector<std::vector<NonLocalData>>& Txy);
 
-#ifdef QMC_CUDA
 private:
   /////////////////////
   // Vectorized data //
   /////////////////////
-  std::vector<Return_t> LocalEnergyVector, KineticEnergyVector, AuxEnergyVector;
+  std::vector<QMCHamiltonian::FullPrecRealType> LocalEnergyVector, KineticEnergyVector, AuxEnergyVector;
 #endif
 
 private:
@@ -326,11 +358,11 @@ private:
   ///starting index
   int numCollectables;
   ///Current Local Energy
-  Return_t LocalEnergy;
+  FullPrecRealType LocalEnergy;
   ///Current Kinetic Energy
-  Return_t KineticEnergy;
+  FullPrecRealType KineticEnergy;
   ///Current Local Energy for the proposed move
-  Return_t NewLocalEnergy;
+  FullPrecRealType NewLocalEnergy;
   ///getName is in the way
   std::string myName;
   ///vector of Hamiltonians
@@ -352,7 +384,7 @@ private:
   void resetObservables(int start, int ncollects);
 
   // helper function for extracting a list of Hamiltonian components from a list of QMCHamiltonian::H.
-  std::vector<OperatorBase*> extract_HC_list(const std::vector<QMCHamiltonian*>& H_list, int id) const;
+  static RefVector<OperatorBase> extract_HC_list(const RefVector<QMCHamiltonian>& H_list, int id);
 
 #if !defined(REMOVE_TRACEMANAGER)
   ///traces variables

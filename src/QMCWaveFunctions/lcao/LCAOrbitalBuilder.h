@@ -57,9 +57,12 @@ private:
   std::string h5_path;
   ///Number of periodic Images for Orbital evaluation
   TinyVector<int, 3> PBCImages;
+  ///Coordinates Super Twist
+  PosType SuperTwist;
   ///Periodic Image Phase Factors. Correspond to the phase from the PBCImages. Computed only once.
   std::vector<ValueType> PeriodicImagePhaseFactors;
-
+  ///Store Lattice parameters from HDF5 to use in PeriodicImagePhaseFactors
+  Tensor<double, 3> Lattice;
 
   /// Enable cusp correction
   bool doCuspCorrection;
@@ -83,9 +86,15 @@ private:
   bool putFromXML(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr);
   bool putFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr);
   bool putPBCFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr);
-  void LoadFullCoefsFromH5(hdf_archive& hin, int setVal, PosType& SuperTwist, Matrix<std::complex<RealType>>& Ctemp);
-  void LoadFullCoefsFromH5(hdf_archive& hin, int setVal, PosType& SuperTwist, Matrix<RealType>& Creal);
-  void EvalPeriodicImagePhaseFactors(PosType SuperTwist);
+  void LoadFullCoefsFromH5(hdf_archive& hin,
+                           int setVal,
+                           PosType& SuperTwist,
+                           Matrix<std::complex<RealType>>& Ctemp,
+                           bool MultiDet);
+  void LoadFullCoefsFromH5(hdf_archive& hin, int setVal, PosType& SuperTwist, Matrix<RealType>& Creal, bool Multidet);
+  void EvalPeriodicImagePhaseFactors(PosType SuperTwist, std::vector<RealType>& LocPeriodicImagePhaseFactors);
+  void EvalPeriodicImagePhaseFactors(PosType SuperTwist,
+                                     std::vector<std::complex<RealType>>& LocPeriodicImagePhaseFactors);
 };
 } // namespace qmcplusplus
 #endif

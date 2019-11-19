@@ -7,7 +7,7 @@ first run the scf (scf.py) calculation followed by the integral generation scrip
 
 .. code-block:: bash
 
-    mpirun -n 1 $HOME/apps/qmcpack/qmcpack/utils/afqmctools/bin/pyscf_to_afqmc.py -i scf.chk -o hamil.h5 -t 1e-5 -v -a
+    mpirun -n 1 /path/to/qmcpack/utils/afqmctools/bin/pyscf_to_afqmc.py -i scf.chk -o afqmc.h5 -t 1e-5 -v -a
 
 Note the new flag `-a`/`--ao` which tells the script to transform the integrals to an
 orthogonalised atomic orbital basis, rather that the more typical MO basis. This is

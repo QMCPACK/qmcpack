@@ -69,7 +69,7 @@ inline T LegendrePlm(int l, int m, T x)
   {
     T Plm2m = pmm;
     T Plm1m = pmp1m;
-    T Pl;
+    T Pl = 0;
     for (int i = m + 2; i <= l; i++)
     {
       Pl    = (1.0 / static_cast<T>(i - m)) * (x * (2 * i - 1) * Plm1m - (i + m - 1) * Plm2m);
@@ -96,10 +96,6 @@ inline std::complex<T> Ylm(int l, int m, const TinyVector<T, 3>& r)
   T prefactor = std::sqrt(static_cast<T>(2 * l + 1) * mfact / (4.0 * M_PI * pfact));
   prefactor *= LegendrePlm(l, m, costheta);
   return std::complex<T>(prefactor * std::cos(m * phi), prefactor * std::sin(m * phi));
-  //T prefactor = std::sqrt (static_cast<T>(2*l+1)*mfact/(4.0*M_PI*pfact));
-  //T Plm = LegendrePlm (l, m, costheta);
-  //std::complex<T> e2imphi (std::cos(m*phi), std::sin(m*phi));
-  //return prefactor * Plm * e2imphi;
 }
 } // namespace qmcplusplus
 #endif

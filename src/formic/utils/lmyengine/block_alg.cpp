@@ -117,9 +117,6 @@ void cqmc::engine::LMBlocker::mpi_finalize(const double total_weight) {
 /////////////////////////////////////////////////////////////////////////////////////////////////
 void cqmc::engine::LMBlocker::prep_lm_block_plus_other_ou_dd_matrix(const int b, const int x, formic::Matrix<double> & dd) {
   
-  // beginning index of the block
-  const int ibeg = 1 + m_hdata.bb(b);
-
   // block length
   const int len = m_hdata.bl(b);
 
@@ -169,6 +166,13 @@ void cqmc::engine::LMBlocker::solve_for_block_dirs(const formic::VarDeps * dep_p
   // clear eigenvectors
   m_ou_dd.clear();
 
+//Use old updates from AD if doing hybrid method
+if(hybrid)
+{
+  overwriteOldUpates(m_ou);
+ 
+}
+
   // on root process
   if ( my_rank == 0 ) {
 
@@ -200,9 +204,6 @@ void cqmc::engine::LMBlocker::solve_for_block_dirs(const formic::VarDeps * dep_p
     // loop over shifts
     for (auto s = shift_scale.begin(); s != shift_scale.end(); s++) {
       
-      // beginning index of this block
-      const int ibeg = 1 + m_hdata.bb(b);
-
       // block length
       const int len = m_hdata.bl(b);
 
@@ -295,4 +296,38 @@ void cqmc::engine::LMBlocker::solve_for_block_dirs(const formic::VarDeps * dep_p
     }
   }
 }
+
+
+//Function uses vectors from from descent previously put in hybridBLM_Input and transfers them to the matrix of old updates m_ou
+void cqmc::engine::LMBlocker::overwriteOldUpates(formic::Matrix<double>& m_ou)
+{
+
+    //Column vector that will hold parameter directions from AD in hybrid method
+    formic::ColVec<double> dir_vec(hybridBLM_Input[0].size(),0.0);
+
+    int dirCount = 0;
+    
+   
+
+    //Copy over information into the Column Vector format and add to matrix of old updates.
+    for (std::vector<double> v : hybridBLM_Input)
+    {
+
+        for(int i = 0; i < v.size(); i++)
+        {
+            dir_vec.at(i) = v[i];
+        }
+    
+	m_ou.put_vec_in_col(dirCount,dir_vec);
+
+	dirCount++;
+    }
+
+
+
+}
+
+
+
+
 

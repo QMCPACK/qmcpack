@@ -70,8 +70,6 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
     int NAEA = AFinfo.NAEA;
     int NAEB = AFinfo.NAEB;
 
-    xmlNodePtr curRoot=cur;
-
     // defaults
     double cutoff1bar = 1e-8;
     std::string fileName = "";
@@ -90,7 +88,6 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
     TaskGroup_& TG = getTG(gTG,number_of_TGs);
 
     // processor info
-    int nnodes = TG.getTotalNodes(), nodeid = TG.getNodeID();
     int ncores = TG.getTotalCores(), coreid = TG.getCoreID();
     int nread = (n_reading_cores<=0)?(ncores):(std::min(n_reading_cores,ncores));
     int head = TG.getGlobalRank() == 0;
@@ -111,7 +108,7 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
       }
     }
 
-    HamiltonianTypes htype;
+    HamiltonianTypes htype = UNKNOWN;
     if(head) htype = peekHamType(dump);
     {
       int htype_ = int(htype);

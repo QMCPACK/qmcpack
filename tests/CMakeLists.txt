@@ -41,7 +41,12 @@ ELSE()
 ENDIF()
 
 IF(BUILD_AFQMC)
-  SUBDIRS("afqmc/workflow")
+  IF(PYSCF_BIN)
+    MESSAGE("PYSCF path specified as: ${PYSCF_BIN}.")
+    SUBDIRS("afqmc/workflow")
+  ELSE()
+    MESSAGE("PYSCF_BIN is not set. AFQMC workflow tests will not be performed.")
+  ENDIF()
 ENDIF()
 
 #

@@ -65,23 +65,24 @@ class BasisSets(DevBase):
             bsfiles = bsfiles[0]
         #end if
         bss = []
-        print
-        print '  Basissets'
+        self.log('')
+        self.log('  Basissets')
         for filepath in bsfiles:
-            print '    reading basis: ',filepath
+            self.log('    reading basis: '+filepath)
             ext = filepath.split('.')[-1].lower()
-            if ext=='gms_bas':
+            if ext=='gms_bas' or ext=='bas':
                 bs = gamessBasisFile(filepath)
             else:
                 bs = BasisFile(filepath)
             #end if
             bss.append(bs)
         #end for
-        print
+        self.log('')
         self.addbs(bss)
     #end def readbs
 
 
+    # test needed
     def bases_by_atom(self,*bsfiles):
         bss = obj()
         for bsfile in bsfiles:
@@ -213,7 +214,7 @@ def process_gaussian_text(text,format,pp=True,basis=True,preserve_spacing=False)
         last_empty = True
         for rline in rawlines:
             line = rline.strip()
-            if (not line.startswith('!')) and (not line.startswith('#')) and len(line)>0:
+            if (not line.startswith('!')) and (not line.startswith('#')) and (not line.startswith('*')) and len(line)>0 and line!='$DATA' and line!='$END':
                 if last_empty:
                     lines = []
                     sections.append(lines)
@@ -315,7 +316,7 @@ class GaussianBasisSet(DevBase):
         self.read_text(text,format)
     #end def read
 
-        
+
     def write(self,filepath=None,format=None):
         if format is None:
             self.error('format keyword must be specified to write file {0}\nvalid options are: {1}'.format(filepath,self.formats))
@@ -432,7 +433,7 @@ class GaussianBasisSet(DevBase):
                 text += line + '\n'
                 for it in xrange(len(b.terms)):
                     t = b.terms[it]
-                    text += '{0} {1:12.8f} {2: 12.8f}\n'.format(it+1,t.expon,t.coeff)
+                    text += '{0:<4} {1:12.8E} {2: 12.8E}\n'.format(it+1,t.expon,t.coeff)
                 #end for
             #end for
         elif format=='gaussian':
@@ -446,7 +447,7 @@ class GaussianBasisSet(DevBase):
                 text += line + '\n'
                 for it in xrange(len(b.terms)):
                     t = b.terms[it]
-                    text += '{0:12.8f}{1: 12.8f}\n'.format(t.expon,t.coeff)
+                    text += '{0:12.8E} {1: 12.8E}\n'.format(t.expon,t.coeff)
                 #end for
             #end for
         elif format=='crystal':
@@ -468,7 +469,7 @@ class GaussianBasisSet(DevBase):
                 text += line + '\n'
                 for it in xrange(len(b.terms)):
                     t = b.terms[it]
-                    text += '{0:12.8f}{1: 12.8f}\n'.format(t.expon,t.coeff)
+                    text += '{0:12.8E} {1: 12.8E}\n'.format(t.expon,t.coeff)
                 #end for
             #end for
         else:
@@ -478,11 +479,13 @@ class GaussianBasisSet(DevBase):
     #end def write_text
 
 
+    # test needed
     def size(self):
         return len(self.basis)
     #end def size
 
 
+    # test needed
     def lset(self):
         lset = set()
         for bf in self.basis:
@@ -492,11 +495,13 @@ class GaussianBasisSet(DevBase):
     #end def lset
 
 
+    # test needed
     def lcount(self):
         return len(self.lset())
     #end def lcount
 
 
+    # test needed
     def lbasis(self):
         lbasis = obj()
         for n in range(len(self.basis)):
@@ -511,6 +516,7 @@ class GaussianBasisSet(DevBase):
     #end def lbasis
 
     
+    # test needed
     def lsort(self):
         lbasis = self.lbasis()
         self.basis.clear()
@@ -526,6 +532,7 @@ class GaussianBasisSet(DevBase):
     #end def lsort
 
 
+    # test needed
     def uncontracted(self):
         all_uncon = True
         for bf in self.basis:
@@ -535,11 +542,13 @@ class GaussianBasisSet(DevBase):
     #end def uncontracted
 
 
+    # test needed
     def contracted(self):
         return not self.uncontracted()
     #end def contracted
 
 
+    # test needed
     def uncontract(self,tol=1e-3):
         if self.uncontracted():
             return
@@ -572,6 +581,7 @@ class GaussianBasisSet(DevBase):
     #end def uncontract
 
 
+    # test needed
     def contracted_basis_size(self):
         bcount = obj()
         for bf in self.basis:
@@ -591,6 +601,7 @@ class GaussianBasisSet(DevBase):
     #end def contracted_basis_size
 
 
+    # test needed
     def uncontracted_basis_size(self):
         if self.uncontracted():
             return self.contracted_basis_size()
@@ -601,6 +612,7 @@ class GaussianBasisSet(DevBase):
     #end def uncontracted_basis_size
 
 
+    # test needed
     def basis_size(self):
         us = self.uncontracted_basis_size()
         cs = self.contracted_basis_size()
@@ -608,6 +620,7 @@ class GaussianBasisSet(DevBase):
     #end def basis_size
 
 
+    # test needed
     def prim_expons(self):
         if self.contracted():
             self.error('cannot find primitive gaussian expons because basis is contracted')
@@ -625,6 +638,7 @@ class GaussianBasisSet(DevBase):
     #end def prim_expons
 
 
+    # test needed
     def prim_widths(self):
         if self.contracted():
             self.error('cannot find primitive gaussian widths because basis is contracted')
@@ -642,6 +656,7 @@ class GaussianBasisSet(DevBase):
     #end def prim_widths
 
     
+    # test needed
     def remove_prims(self,comp=None,keep=None,**lselectors):
         lbasis = self.lbasis()
         if comp!=None:
@@ -720,6 +735,7 @@ class GaussianBasisSet(DevBase):
     #end def remove_prims
 
 
+    # test needed
     def remove_small_prims(self,**keep):
         lsel = obj()
         for l,lbas in self.lbasis().iteritems():
@@ -731,6 +747,7 @@ class GaussianBasisSet(DevBase):
     #end def remove_small_prims
 
 
+    # test needed
     def remove_large_prims(self,**keep):
         lsel = obj()
         for l,lbas in self.lbasis().iteritems():
@@ -742,6 +759,7 @@ class GaussianBasisSet(DevBase):
     #end def remove_large_prims
 
 
+    # test needed
     def remove_small_prims_rel(self,other,**keep):
         gwidths = other.prim_widths()
         lsel = obj()
@@ -752,6 +770,7 @@ class GaussianBasisSet(DevBase):
     #end def remove_small_prims_rel
 
 
+    # test needed
     def remove_large_prims_rel(self,other,**keep):
         gwidths = other.prim_widths()
         lsel = obj()
@@ -762,6 +781,7 @@ class GaussianBasisSet(DevBase):
     #end def remove_large_prims_rel
 
 
+    # test needed
     def remove_channels(self,llist):
         lbasis = self.lbasis()
         for l in llist:
@@ -782,6 +802,7 @@ class GaussianBasisSet(DevBase):
     #end def remove_channels
                 
 
+    # test needed
     def incorporate(self,other,tol=1e-3,unique=False):
         uncontracted = self.uncontracted() and other.uncontracted()
         lbasis       = self.lbasis()

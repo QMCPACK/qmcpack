@@ -40,6 +40,7 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
   typedef typename BaseType::vgl_type vgl_type;
   typedef typename BaseType::vgh_type vgh_type;
   typedef typename BaseType::vghgh_type vghgh_type;
+  typedef typename ParticleSet::PosType PosType;
 
   using BaseType::BasisSetSize;
 
@@ -47,10 +48,13 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
   size_t NumCenters;
   ///number of quantum particles
   size_t NumTargets;
+  ///ion particle set
+  const ParticleSet& ions_;
   ///number of quantum particles
   const int myTableIndex;
-  ///Reference to the center
-  const ParticleSet::ParticleIndex_t& IonID;
+  ///Global Coordinate of Supertwist read from HDF5
+  PosType SuperTwist;
+
 
   /** container to store the offsets of the basis functions
    *
@@ -69,7 +73,7 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
    * @param els electronic system
    */
   SoaLocalizedBasisSet(ParticleSet& ions, ParticleSet& els)
-    : IonID(ions.GroupID), myTableIndex(els.addTable(ions, DT_SOA))
+    : ions_(ions), myTableIndex(els.addTable(ions, DT_SOA)), SuperTwist(0.0)
   {
     NumCenters   = ions.getTotalNum();
     NumTargets   = els.getTotalNum();
@@ -94,15 +98,18 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
       Set to 0 for non-PBC, and set manually in the input.
       Passes the pre-computed phase factor for evaluation of complex wavefunction. If WF is real Phase_factor is real and equals 1 if gamma or -1 if non-Gamma.  
   */
-  void setPBCParams(const TinyVector<int, 3>& PBCImages,const std::vector<QMCTraits::ValueType>& phase_factor)
+  void setPBCParams(const TinyVector<int, 3>& PBCImages,const TinyVector <double,3> Sup_Twist , const std::vector<QMCTraits::ValueType>& phase_factor)
   {
     for (int i = 0; i < LOBasisSet.size(); ++i)
-      LOBasisSet[i]->setPBCParams(PBCImages,phase_factor);
+      LOBasisSet[i]->setPBCParams(PBCImages,Sup_Twist, phase_factor);
+    
+    SuperTwist=Sup_Twist;
   }
   /** set BasisSetSize and allocate mVGL container
    */
   void setBasisSetSize(int nbs)
   {
+    const auto& IonID(ions_.GroupID);
     if (BasisSetSize > 0 && nbs == BasisSetSize)
       return;
 
@@ -119,6 +126,7 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
     */
   void queryOrbitalsForSType(const std::vector<bool>& corrCenter, std::vector<bool>& is_s_orbital) const
   {
+    const auto& IonID(ions_.GroupID);
     int idx = 0;
     for (int c = 0; c < NumCenters; c++)
     {
@@ -165,27 +173,21 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
    */
   inline void evaluateVGL(const ParticleSet& P, int iat, vgl_type& vgl)
   {
+    const auto& IonID(ions_.GroupID);
     const auto& d_table = P.getDistTable(myTableIndex);
     const RealType* restrict dist    = (P.activePtcl == iat) ? d_table.Temp_r.data() : d_table.Distances[iat];
     const auto& displ                = (P.activePtcl == iat) ? d_table.Temp_dr : d_table.Displacements[iat];
-    for (int c = 0; c < NumCenters; c++)
-    {
-      LOBasisSet[IonID[c]]->evaluateVGL(P.Lattice, dist[c], displ[c], BasisOffset[c], vgl);
-    }
-    /*std::vector<double> K {0.333,0.333,0.333};
-    RealType s,c;
-    RealType vec_scalar;
-    vec_scalar=(((P.activePtcl == iat) ? P.activePos : P.R[iat])[0]*K[0]+((P.activePtcl == iat) ? P.activePos : P.R[iat])[1]*K[1]+((P.activePtcl == iat) ? P.activePos : P.R[iat])[2]*K[2]);  
-    sincos(-2*M_PI*vec_scalar, &s,&c);
-    QMCTraits::ValueType PhaseFactor(c,s);
-    for (int i =0; i<BasisSetSize;i++)
-    {
-      vgl.data(0)[i]*=PhaseFactor;
-      vgl.data(1)[i]*=PhaseFactor;
-      vgl.data(2)[i]*=PhaseFactor;
-      vgl.data(3)[i]*=PhaseFactor;
-      vgl.data(4)[i]*=PhaseFactor;
-    }*/
+
+    const std::vector <double> coordR {((P.activePtcl == iat) ? P.activePos : P.R[iat])[0],((P.activePtcl == iat) ? P.activePos : P.R[iat])[1],((P.activePtcl == iat) ? P.activePos : P.R[iat])[2]};
+
+    PosType Tv;
+
+    for (int c = 0; c < NumCenters; c++){
+      Tv[0]=(ions_.R[c][0]-coordR[0])-displ[c][0];
+      Tv[1]=(ions_.R[c][1]-coordR[1])-displ[c][1]; 
+      Tv[2]=(ions_.R[c][2]-coordR[2])-displ[c][2]; 
+      LOBasisSet[IonID[c]]->evaluateVGL(P.Lattice, dist[c], displ[c], BasisOffset[c], vgl,Tv);
+   }
   }
 
 
@@ -197,6 +199,7 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
    */
   inline void evaluateVGH(const ParticleSet& P, int iat, vgh_type& vgh)
 {
+    const auto& IonID(ions_.GroupID);
     const auto& d_table = P.getDistTable(myTableIndex);
     const RealType* restrict dist    = (P.activePtcl == iat) ? d_table.Temp_r.data() : d_table.Distances[iat];
     const auto& displ                = (P.activePtcl == iat) ? d_table.Temp_dr : d_table.Displacements[iat];
@@ -217,6 +220,7 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
   {
    // APP_ABORT("SoaLocalizedBasisSet::evaluateVGH() not implemented\n");
     
+    const auto& IonID(ions_.GroupID);
     const auto& d_table = P.getDistTable(myTableIndex);
     const RealType* restrict dist    = (P.activePtcl == iat) ? d_table.Temp_r.data() : d_table.Distances[iat];
     const auto& displ                = (P.activePtcl == iat) ? d_table.Temp_dr : d_table.Displacements[iat];
@@ -230,26 +234,33 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
   /** compute values for the iat-paricle move
    *
    * Always uses Temp_r and Temp_dr
+   * Tv is a translation vector; In PBC, in order to reduce the number
+   * of images that need to be summed over when generating the AO the 
+   * nearest image displacement, dr, is used. Tv corresponds to the 
+   * translation that takes the 'general displacement' (displacement
+   * between ion position and electron position) to the nearest image 
+   * displacement. We need to keep track of Tv because it must be add
+   * as a phase factor, i.e., exp(i*k*Tv).
    */
   inline void evaluateV(const ParticleSet& P, int iat, ORBT* restrict vals)
   {
+    const auto& IonID(ions_.GroupID);
     const auto& d_table = P.getDistTable(myTableIndex);
     const RealType* restrict dist    = (P.activePtcl == iat) ? d_table.Temp_r.data() : d_table.Distances[iat];
     const auto& displ                = (P.activePtcl == iat) ? d_table.Temp_dr : d_table.Displacements[iat];
-    for (int c = 0; c < NumCenters; c++)
-    {
-      LOBasisSet[IonID[c]]->evaluateV(P.Lattice, dist[c], displ[c], vals + BasisOffset[c]);
-    }
-    /*std::vector<double> K {0.333,0.333,0.333};
-    RealType s,c;
-    RealType vec_scalar;
-    vec_scalar=(((P.activePtcl == iat) ? P.activePos : P.R[iat])[0]*K[0]+((P.activePtcl == iat) ? P.activePos : P.R[iat])[1]*K[1]+((P.activePtcl == iat) ? P.activePos : P.R[iat])[2]*K[2]);  
-    sincos(-2*M_PI*vec_scalar, &s,&c);
-    QMCTraits::ValueType PhaseFactor(c,s);
-    for (int i =0; i<BasisSetSize;i++)
-      vals[i]*=PhaseFactor;
-    */
+
+    const std::vector <double> coordR {((P.activePtcl == iat) ? P.activePos : P.R[iat])[0],((P.activePtcl == iat) ? P.activePos : P.R[iat])[1],((P.activePtcl == iat) ? P.activePos : P.R[iat])[2]};
+
+    PosType Tv;
+    for (int c = 0; c < NumCenters; c++){
+      Tv[0]=(ions_.R[c][0]-coordR[0])-displ[c][0];
+      Tv[1]=(ions_.R[c][1]-coordR[1])-displ[c][1]; 
+      Tv[2]=(ions_.R[c][2]-coordR[2])-displ[c][2]; 
+      LOBasisSet[IonID[c]]->evaluateV(P.Lattice, dist[c], displ[c], vals + BasisOffset[c],Tv);
+   }
+
   }
+
   inline void evaluateGradSourceV(const ParticleSet& P, int iat, const ParticleSet& ions, int jion, vgl_type& vgl)
   {
     //We need to zero out the temporary array vgl.  
@@ -264,14 +275,18 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
       gz[ib]=0;
     }
 
+    const auto& IonID(ions_.GroupID);
     const auto& d_table = P.getDistTable(myTableIndex);
     const RealType* restrict dist    = (P.activePtcl == iat) ? d_table.Temp_r.data() : d_table.Distances[iat];
     const auto& displ                = (P.activePtcl == iat) ? d_table.Temp_dr : d_table.Displacements[iat];
   
+     
+    PosType Tv; 
+    Tv[0]=Tv[1]=Tv[2]=0;
     //Since LCAO's are written only in terms of (r-R), ionic derivatives only exist for the atomic center
     //that we wish to take derivatives of.  Moreover, we can obtain an ion derivative by multiplying an electron
     //derivative by -1.0.  Handling this sign is left to LCAOrbitalSet.  For now, just note this is the electron VGL function.
-    LOBasisSet[IonID[jion]]->evaluateVGL(P.Lattice, dist[jion], displ[jion], BasisOffset[jion], vgl);
+    LOBasisSet[IonID[jion]]->evaluateVGL(P.Lattice, dist[jion], displ[jion], BasisOffset[jion], vgl,Tv);
 
   }
 
@@ -326,6 +341,7 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
       gzzz[ib]=0;
     }
 
+    const auto& IonID(ions_.GroupID);
     const auto& d_table = P.getDistTable(myTableIndex);
     const RealType* restrict dist    = (P.activePtcl == iat) ? d_table.Temp_r.data() : d_table.Distances[iat];
     const auto& displ                = (P.activePtcl == iat) ? d_table.Temp_dr : d_table.Displacements[iat];
@@ -344,3 +360,4 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
 };
 } // namespace qmcplusplus
 #endif
+

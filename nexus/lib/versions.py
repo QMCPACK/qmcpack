@@ -10,7 +10,6 @@ Track versions of dependencies supported by Nexus.
 import sys
 from platform import python_version
 import datetime
-from dateutil.relativedelta import relativedelta
 import importlib
 
 
@@ -30,7 +29,7 @@ years_supported = 2
 Policy for how many years back Nexus will extend support to dependencies.
 """
 
-support_cutoff_date = (datetime.datetime.now()-relativedelta(years=years_supported)).date()
+support_cutoff_date = (datetime.datetime.now()-datetime.timedelta(days=365*years_supported)).date()
 """
 Cutoff date for support.
 """
@@ -317,7 +316,7 @@ def version_error(msg):
 #end def version_error
 
 
-def time_ago(date,months=False):
+def time_ago(date):
     """
     (`Internal API`) Compute time in years from current date.
 
@@ -325,26 +324,15 @@ def time_ago(date,months=False):
     ----------
     date : `datetime.date`
         A date prior to today's date.
-    months : `bool, optional, default False`
-        Return months in addition to years.
 
     Returns
     -------
     years_ago : `float or int`
         Number of years separating today's date from date of interest.
-        Floating point value includes months as fraction if months are 
-        not requested for separate return.  Returns integer number of 
-        years otherwise.
-    months_ago : `int`
-        Number of months in addition to rounded down number of years. 
-        Returned only if `months=True`.
+        Floating point value includes months as fraction.
     """
-    rdelta = relativedelta(current_date,date)
-    if not months:
-        return float(rdelta.years)+float(rdelta.months)/12
-    else:
-        return rdelta.years,rdelta.months
-    #end if
+    delta = current_date-date
+    return float(delta.days)/365
 #end def time_ago
 
 

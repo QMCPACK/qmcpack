@@ -40,8 +40,6 @@ from pseudopotential import Pseudopotential,Pseudopotentials,ppset
 from basisset        import BasisSets
 from bundle          import bundle
 
-from opium   import Opium  , OpiumInput  , OpiumAnalyzer
-from sqd     import Sqd    , SqdInput    , SqdAnalyzer    , generate_sqd_input    , generate_sqd, hunds_rule_filling
 from pwscf   import Pwscf  , PwscfInput  , PwscfAnalyzer  , generate_pwscf_input  , generate_pwscf
 from gamess  import Gamess , GamessInput , GamessAnalyzer , generate_gamess_input , generate_gamess, FormattedGroup
 from vasp    import Vasp   , VaspInput   , VaspAnalyzer   , generate_vasp_input   , generate_vasp
@@ -50,9 +48,8 @@ from quantum_package import QuantumPackage,QuantumPackageInput,QuantumPackageAna
 from pyscf_sim import Pyscf, PyscfInput, PyscfAnalyzer, generate_pyscf_input, generate_pyscf
 
 from qmcpack_converters import Pw2qmcpack , Pw2qmcpackInput , Pw2qmcpackAnalyzer , generate_pw2qmcpack_input , generate_pw2qmcpack
-from qmcpack_converters import Wfconvert  , WfconvertInput  , WfconvertAnalyzer  , generate_wfconvert_input  , generate_wfconvert
 from qmcpack_converters import Convert4qmc, Convert4qmcInput, Convert4qmcAnalyzer, generate_convert4qmc_input, generate_convert4qmc
-from pw2casino          import Pw2casino  , Pw2casinoInput  , Pw2casinoAnalyzer  , generate_pw2casino_input  , generate_pw2casino
+from qmcpack_converters import PyscfToAfqmc, PyscfToAfqmcInput, PyscfToAfqmcAnalyzer, generate_pyscf_to_afqmc_input, generate_pyscf_to_afqmc
 
 from pwscf_postprocessors import PP      , PPInput      , PPAnalyzer      , generate_pp_input      , generate_pp
 from pwscf_postprocessors import Dos     , DosInput     , DosAnalyzer     , generate_dos_input     , generate_dos
@@ -64,8 +61,6 @@ from pwscf_postprocessors import Pwexport, PwexportInput, PwexportAnalyzer, gene
 from qmcpack import loop,linear,cslinear,vmc,dmc
 from qmcpack import generate_jastrows,generate_jastrow,generate_jastrow1,generate_jastrow2,generate_jastrow3,generate_opt,generate_opts
 from qmcpack import generate_cusp_correction
-
-from qmcpack_workflows import qmcpack_workflow
 
 from debug import *
 
@@ -548,6 +543,7 @@ class Settings(NexusCore):
 settings = Settings()
 
 
+# test needed
 def run_project(*args,**kwargs):
     if nexus_core.graph_sims:
         graph_sims()
@@ -564,7 +560,7 @@ def run_project(*args,**kwargs):
 
 
 
-
+# test needed
 # read input function
 #   place here for now as it depends on all other input functions
 def read_input(filepath,format=None):

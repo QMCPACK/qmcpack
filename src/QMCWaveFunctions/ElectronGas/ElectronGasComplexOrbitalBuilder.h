@@ -105,11 +105,11 @@ class ElectronGasComplexOrbitalBuilder : public WaveFunctionComponentBuilder
 {
 public:
   ///constructor
-  ElectronGasComplexOrbitalBuilder(ParticleSet& els, TrialWaveFunction& wfs);
+  ElectronGasComplexOrbitalBuilder(Communicate* comm, ParticleSet& els);
   //typedef VarRegistry<RealType> OptimizableSetType;
 
   ///implement vritual function
-  bool put(xmlNodePtr cur);
+  WaveFunctionComponent* buildComponent(xmlNodePtr cur) override;
 };
 
 /** OrbitalBuilder for Slater determinants of electron-gas

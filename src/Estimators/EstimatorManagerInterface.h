@@ -44,7 +44,7 @@ public:
    * @param accept acceptance rate of this block
    */
 
-  virtual void stopBlock(RealType accept, bool collectall) = 0;
+
 };
 }
 #endif

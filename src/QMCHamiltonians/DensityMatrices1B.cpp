@@ -28,14 +28,14 @@ using MatrixOperators::product_AtB;
 
 
 DensityMatrices1B::DensityMatrices1B(ParticleSet& P, TrialWaveFunction& psi, ParticleSet* Pcl)
-    : Lattice(P.Lattice), Pq(P), Psi(psi), Pc(Pcl)
+    : Lattice(P.Lattice), Psi(psi), Pq(P), Pc(Pcl)
 {
   reset();
 }
 
 
 DensityMatrices1B::DensityMatrices1B(DensityMatrices1B& master, ParticleSet& P, TrialWaveFunction& psi)
-    : OperatorBase(master), Lattice(P.Lattice), Pq(P), Psi(psi), Pc(master.Pc)
+    : OperatorBase(master), Lattice(P.Lattice), Psi(psi), Pq(P), Pc(master.Pc)
 {
   reset();
   set_state(master);

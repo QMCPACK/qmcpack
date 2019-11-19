@@ -21,9 +21,6 @@
 #include "QMCWaveFunctions/MolecularOrbitals/LocalizedBasisSet.h"
 #include "QMCWaveFunctions/MolecularOrbitals/AtomicBasisBuilder.h"
 #include "QMCWaveFunctions/MolecularOrbitals/LCOrbitalSet.h"
-#ifndef ENABLE_SOA
-#include "QMCWaveFunctions/MolecularOrbitals/LCOrbitalSetOpt.h"
-#endif
 #include "Utilities/ProgressReportEngine.h"
 #include "OhmmsData/AttributeSet.h"
 #include "io/hdf_archive.h"
@@ -265,16 +262,7 @@ public:
         {
           if (use_new_opt_class == "yes")
           {
-#ifndef ENABLE_SOA
-            app_log() << "Creating LCOrbitalSetOpt with the input coefficients" << std::endl;
-            lcos = new LCOrbitalSetOpt<ThisBasisSetType>(thisBasisSet, rank() == 0);
-            if (spo_name != "")
-              lcos->objectName = spo_name;
-            else
-              APP_ABORT("LCOrbitalSetOpt spo set must have a name");
-#else
-            APP_ABORT("Orbital Rotation is not supported by SoA builds yet!");
-#endif
+            APP_ABORT("MolecularSPOBuilder Orbital optimization via rotation has been removed in AoS builds.\n");
           }
           else
           {

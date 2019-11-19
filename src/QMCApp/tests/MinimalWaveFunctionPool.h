@@ -36,9 +36,10 @@ class MinimalWaveFunctionPool
   )";
 
 public:
-  MinimalWaveFunctionPool(Communicate* c) : comm_(c) {}
-  WaveFunctionPool operator()(ParticleSetPool* particle_pool)
+  MinimalWaveFunctionPool() : comm_(nullptr) {}
+  WaveFunctionPool operator()(Communicate* comm, ParticleSetPool* particle_pool)
   {
+    comm_ = comm;
     WaveFunctionPool wp(comm_);
     wp.setParticleSetPool(particle_pool);
 

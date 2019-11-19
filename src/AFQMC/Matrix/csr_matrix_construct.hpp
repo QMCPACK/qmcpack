@@ -316,7 +316,7 @@ CSR construct_distributed_csr_matrix_from_distributed_containers(Container & Q, 
   if(nr==0 || nc==0)
     return CSR(std::tuple<std::size_t,std::size_t>{nr,nc},std::tuple<std::size_t,std::size_t>{0,0},0,typename CSR::alloc_type(TG.Node()));
   int ncores = TG.getTotalCores(), coreid = TG.getCoreID();
-  int nnodes = TG.getTotalNodes(), nodeid = TG.getNodeID();
+  int nodeid = TG.getNodeID();
   int node_number = TG.getLocalGroupNumber();
   int nnodes_per_TG = TG.getNGroupsPerTG();  
 
@@ -381,10 +381,6 @@ CSR construct_distributed_csr_matrix_from_distributed_containers(Container & Q, 
   Timer.reset("G0");
   Timer.start("G0");
 
-  // load balance
-  long nterms_final = bounds[node_number+1]-bounds[node_number];
-  // nterms_node_before_loadbalance: # of terms in local node before final exchange 
-  // bounds[node_number+1]-bounds[node_number]: # of terms after load balance
   boost::multi::array<long,2> counts_per_core({nnodes_per_TG,ncores});
   std::fill_n(counts_per_core.origin(),ncores*nnodes_per_TG,long(0));
   counts_per_core[node_number][coreid] = nterms_in_local_core;

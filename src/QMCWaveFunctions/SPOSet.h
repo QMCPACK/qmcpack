@@ -32,10 +32,6 @@
 #include "type_traits/CUDATypes.h"
 #endif
 
-#if defined(ENABLE_SMARTPOINTER)
-#include <boost/shared_ptr.hpp>
-#endif
-
 namespace qmcplusplus
 {
 /** base class for Single-particle orbital sets
@@ -62,16 +58,6 @@ public:
   typedef ParticleSet::Walker_t Walker_t;
   typedef std::map<std::string, SPOSet*> SPOPool_t;
 
-  ///index in the builder list of sposets
-  int builder_index;
-  ///true if SPO is optimizable
-  bool Optimizable;
-  ///number of Single-particle orbitals
-  IndexType OrbitalSetSize;
-  /// Optimizable variables
-  opt_variables_type myVars;
-  ///name of the class
-  std::string className;
   /** name of the object
    *
    * Several user classes can own SPOSet and use objectName as counter
@@ -96,7 +82,7 @@ public:
 #endif
 
   /** constructor */
-  SPOSet();
+  SPOSet(bool ion_deriv = false, bool optimizable = false);
 
   /** destructor
    *
@@ -109,6 +95,9 @@ public:
       delete C;
 #endif
   }
+
+  // accessor function to Optimizable
+  inline bool isOptimizable() const { return Optimizable; }
 
   /** return the size of the orbital set
    * Ye: this needs to be replaced by getOrbitalSetSize();
@@ -148,8 +137,19 @@ public:
 #endif
 
   /// create optimizable orbital rotation parameters
+  // Single Slater creation
+  virtual void buildOptVariables(const size_t nel) {}
+  // For the MSD case rotations must be created in MultiSlaterFast class
   virtual void buildOptVariables(const std::vector<std::pair<int, int>>& rotations) {}
-
+  // store parameters before getting destroyed by rotation.
+  virtual void storeParamsBeforeRotation() {}
+  // apply rotation to all the orbitals
+  virtual void applyRotation(const ValueMatrix_t& rot_mat, bool use_stored_copy = false)
+  {
+    std::ostringstream o;
+    o << "SPOSet::applyRotation is not implemented by " << className << std::endl;
+    APP_ABORT(o.str());
+  }
   /// reset parameters to the values from optimizer
   virtual void resetParameters(const opt_variables_type& optVariables) = 0;
 
@@ -157,6 +157,12 @@ public:
   virtual void checkInVariables(opt_variables_type& active) {}
   virtual void checkOutVariables(const opt_variables_type& active) {}
 
+  virtual void evaluateDerivatives(ParticleSet& P,
+                                   const opt_variables_type& optvars,
+                                   std::vector<ValueType>& dlogpsi, 
+                                   std::vector<ValueType>& dhpsioverpsi,
+                                   const int& FirstIndex,
+                                   const int& LastIndex) {}
   /** Evaluate the derivative of the optimized orbitals with respect to the parameters
    *  this is used only for MSD, to be refined for better serving both single and multi SD
    */
@@ -311,12 +317,6 @@ public:
    */
   virtual void evaluateThirdDeriv(const ParticleSet& P, int first, int last, GGGMatrix_t& grad_grad_grad_logdet);
 
-  ///////////////////////////////////////////////////////////////////////////////////////////////////
-  /// \brief  returns whether this is an LCOrbitalSetOpt object
-  /// Ye: This should be removed as AoS. On the SoA side, LCAOrbitalSet replace LCOrbitalSet and LCOrbitalSetOpt
-  ///////////////////////////////////////////////////////////////////////////////////////////////////
-  virtual bool is_of_type_LCOrbitalSetOpt() const { return false; }
-
   /** evaluate the values, gradients and laplacians of this single-particle orbital for [first,last) particles
    * @param P current ParticleSet
    * @param first starting index of the particles
@@ -424,16 +424,6 @@ public:
    */
   virtual void finalizeConstruction() {}
 
-  // Routine to set up data for the LCOrbitalSetOpt child class specifically
-  // Should be left empty for other derived classes
-  // Ye: This interface should be removed with AoS.
-  virtual void init_LCOrbitalSetOpt(const double mix_factor = 0.0){};
-
-  // Routine to update internal data for the LCOrbitalSetOpt child class specifically
-  // Should be left empty for other derived classes
-  // Ye: This interface should be removed with AoS.
-  virtual void rotate_B(const std::vector<RealType>& rot_mat){};
-
 #ifdef QMC_CUDA
   using CTS = CUDAGlobalTypes;
 
@@ -472,15 +462,21 @@ protected:
   bool putFromXML(xmlNodePtr coeff_ptr);
   bool putFromH5(const std::string& fname, xmlNodePtr coeff_ptr);
 #endif
+
+protected:
   ///true, if the derived class has non-zero ionic derivatives.
-  bool ionDerivs;
+  const bool ionDerivs;
+  ///true if SPO is optimizable
+  const bool Optimizable;
+  ///number of Single-particle orbitals
+  IndexType OrbitalSetSize;
+  /// Optimizable variables
+  opt_variables_type myVars;
+  ///name of the class
+  std::string className;
 };
 
-#if defined(ENABLE_SMARTPOINTER)
-typedef boost::shared_ptr<SPOSet> SPOSetPtr;
-#else
 typedef SPOSet* SPOSetPtr;
-#endif
 
 } // namespace qmcplusplus
 #endif

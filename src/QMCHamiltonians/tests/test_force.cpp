@@ -24,6 +24,7 @@
 #include "QMCHamiltonians/ForceChiesaPBCAA.h"
 #include "QMCHamiltonians/ForceCeperley.h"
 #include "QMCHamiltonians/CoulombPotential.h"
+#include "QMCHamiltonians/CoulombPBCAA.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 
 
@@ -142,10 +143,6 @@ void check_force_copy(ForceChiesaPBCAA& force, ForceChiesaPBCAA& force2)
   REQUIRE(force2.NumSpeciesB == force.NumSpeciesB);
   REQUIRE(force2.NptclA == force.NptclA);
   REQUIRE(force2.NptclB == force.NptclB);
-  REQUIRE(force2.myRcut == Approx(force.myRcut));
-
-  REQUIRE(force2.NofSpeciesA.size() == force.NofSpeciesA.size());
-  REQUIRE(force2.NofSpeciesB.size() == force.NofSpeciesB.size());
   REQUIRE(force2.Zat.size() == force.Zat.size());
   REQUIRE(force2.Qat.size() == force.Qat.size());
   REQUIRE(force2.Zspec.size() == force.Zspec.size());
@@ -164,6 +161,7 @@ TEST_CASE("Chiesa Force", "[hamiltonian]")
   CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
   Lattice.BoxBConds = true; // periodic
   Lattice.R.diagonal(5.0);
+  Lattice.LR_dim_cutoff = 25;
   Lattice.reset();
 
 
@@ -171,10 +169,13 @@ TEST_CASE("Chiesa Force", "[hamiltonian]")
   ParticleSet elec;
 
   ions.setName("ion");
-  ions.create(1);
+  ions.create(2);
   ions.R[0][0] = 0.0;
   ions.R[0][1] = 0.0;
   ions.R[0][2] = 0.0;
+  ions.R[1][0] = 2.0;
+  ions.R[1][1] = 0.0;
+  ions.R[1][2] = 0.0;
 
   elec.setName("elec");
   elec.create(2);
@@ -223,12 +224,23 @@ TEST_CASE("Chiesa Force", "[hamiltonian]")
   elec.update();
   force.evaluate(elec);
   std::cout << " Force = " << force.forces << std::endl;
+  std::cout << " Forces_IonIon = " << force.forces_IonIon << std::endl;
 
   // Unvalidated externally
   REQUIRE(force.forces[0][0] == Approx(3.186559306));
   REQUIRE(force.forces[0][1] == Approx(3.352572459));
   REQUIRE(force.forces[0][2] == Approx(0.0));
+  REQUIRE(force.forces_IonIon[0][0] == Approx(-0.1478626893));
+  REQUIRE(force.forces_IonIon[0][1] == Approx(0.0));
+  REQUIRE(force.forces_IonIon[0][2] == Approx(0.0));
+  REQUIRE(force.forces_IonIon[1][0] == Approx(0.1478626893));
+  REQUIRE(force.forces_IonIon[1][1] == Approx(0.0));
+  REQUIRE(force.forces_IonIon[1][2] == Approx(0.0));
 
+  // Let's test CoulombPBCAA IonIon forces, too
+  CoulombPBCAA ionForce(ions, false, true);
+  REQUIRE(ionForce.forces[0][0] == Approx(-0.1478626893));
+  REQUIRE(ionForce.forces[1][0] == Approx(0.1478626893));
 
   // It seems a bit silly to test the makeClone method
   // but this class does not use the compiler's copy constructor and

@@ -217,7 +217,7 @@ struct VariableSet
   /** get the i-th parameter's type
   * @param i index
   */
-  inline int getType(int i) { return ParameterType[i].second; }
+  inline int getType(int i) const { return ParameterType[i].second; }
 
   inline bool recompute(int i) const { return (Recompute[i].second == 1); }
 

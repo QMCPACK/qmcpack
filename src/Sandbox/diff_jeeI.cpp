@@ -115,10 +115,11 @@ int main(int argc, char** argv)
     nptcl=nels;
 
     {//create up/down electrons
-      els.Lattice.BoxBConds=1;   els.Lattice.set(ions.Lattice);
+      els.Lattice.BoxBConds=1;
+      els.Lattice = ions.Lattice;
       vector<int> ud(2); ud[0]=nels/2; ud[1]=nels-ud[0];
       els.create(ud);
-      els.R.InUnit=1;
+      els.R.InUnit = PosUnit::Lattice;
       random_th.generate_uniform(&els.R[0][0],nels3);
       els.convert2Cart(els.R); // convert to Cartiesian
       els.RSoA=els.R;
@@ -163,7 +164,7 @@ int main(int argc, char** argv)
 
       cout << "Check values " << J.LogValue << " " << els.G[12] << " " << els.L[12] << endl;
       cout << "Check values aos " << J_aos.LogValue << " " << els_aos.G[12] << " " << els_aos.L[12] << endl;
-      cout << "evaluateLog::V Error = " << (J.LogValue-J_aos.LogValue)/nels<< endl;
+      cout << "evaluateLog::V Error = " << std::real(J.LogValue-J_aos.LogValue)/nels<< endl;
       {
         double g_err=0.0;
         for(int iel=0; iel<nels; ++iel)
@@ -279,11 +280,11 @@ int main(int argc, char** argv)
         random_th.generate_uniform(&delta[0][0],nknots*3);
         for(int k=0; k<nknots;++k)
         {
-          els.makeMoveOnSphere(iel,delta[k]);
+          els.makeMove(iel,delta[k]);
           RealType r_soa=J.ratio(els,iel);
           els.rejectMove(iel);
 
-          els_aos.makeMoveOnSphere(iel,delta[k]);
+          els_aos.makeMove(iel,delta[k]);
           RealType r_aos=J_aos.ratio(els_aos,iel);
           els_aos.rejectMove(iel);
           r_ratio += abs(r_soa/r_aos-1);

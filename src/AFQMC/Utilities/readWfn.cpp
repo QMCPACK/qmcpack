@@ -585,7 +585,6 @@ void read_ph_wavefunction_hdf(hdf_archive& dump, std::vector<ComplexType>& ci_co
 
   using Alloc = shared_allocator<ComplexType>;
   assert(walker_type!=UNDEFINED_WALKER_TYPE);
-  bool Cstyle = true;
   int wfn_type = 0;
   int NEL = NAEA;
   bool mixed=false;

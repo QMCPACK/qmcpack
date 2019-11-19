@@ -1,0 +1,61 @@
+<simulation>
+  <project id="mt" series="0"/>
+
+  <qmcsystem>
+    <simulationcell>
+      <parameter name="lattice" units="bohr">
+        10 0 0
+        0 10 0
+        0 0 10
+      </parameter>
+      <parameter name="bconds">
+        p p p
+      </parameter>
+    </simulationcell>
+
+    <particleset name="e">
+      <group name="m5" size="2">
+        <parameter name="mass">   5.0   </parameter>
+        <attrib name="position" datatype="posArray" condition="0">
+          1.0001 1.0001 1.0002
+          6.0001 6.0001 6.0002
+        </attrib>
+      </group>
+    </particleset>
+    <particleset name="trap_center">
+      <group name="center" size="2">
+        <attrib name="position" datatype="posArray" condition="0">
+          1 1 1
+          6 6 6
+        </attrib>
+      </group>
+    </particleset>
+    <particleset name="measure_center">
+      <group name="origin" size="2">
+        <attrib name="position" datatype="posArray" condition="0">
+          1 1 1
+          6 6 6
+        </attrib>
+      </group>
+    </particleset>
+
+    <wavefunction target="e" id="psi0">
+      <ionwf name="ionwf" source="trap_center" width="0.3 0.5"/>
+    </wavefunction>
+
+    <hamiltonian name="h0" type="generic" target="e">
+      <estimator name="skinetic" type="specieskinetic"/>
+      <estimator type="latticedeviation" name="latdev" hdf5="yes" per_xyz="yes" target="e" tgroup="m5" source="measure_center" sgroup="origin"/>
+      <!--
+      <estimator name="dens" type="density" delta="0.04 0.04 0.04" x_min="0" x_max="10" y_min="0" ymax="10" z_min="0" z_max="10"/>
+      -->
+    </hamiltonian>
+  </qmcsystem>
+
+  <qmc method="vmc" move="whatever">
+    <parameter name="blocks">    16  </parameter>
+    <parameter name="steps">   1024  </parameter>
+    <parameter name="substeps">   8  </parameter>
+    <parameter name="timestep"> 0.3  </parameter>
+  </qmc>
+</simulation>

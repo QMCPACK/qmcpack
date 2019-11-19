@@ -386,14 +386,13 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_shared(b
         int na = nocc_per_kp[nd][K];
         int nb = (nspins==2?nocc_per_kp[nd][nkpts+K]:na);
         int ni = nmo_per_kp[K];
-        int nk = ni; 
         if(type==COLLINEAR) {
           { // Alpha
             auto Psi = get_PsiK<boost::multi::array<ComplexType,2>>(nmo_per_kp,PsiT[2*nd],K);
             assert(Psi.size(0) == na);
             boost::multi::array_ref<ComplexType,2> haj_r(to_address(haj[nd*nkpts+K].origin()),
                                                          {na,ni});
-            ma::product(Psi,H1[K]({0,ni},{0,ni}),haj_r);
+            if(na>0) ma::product(Psi,H1[K]({0,ni},{0,ni}),haj_r);
           }
           { // Beta
             auto Psi = get_PsiK<boost::multi::array<ComplexType,2>>(nmo_per_kp,PsiT[2*nd+1],K);
@@ -401,14 +400,14 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_shared(b
             boost::multi::array_ref<ComplexType,2> haj_r(to_address(haj[nd*nkpts+K].origin())+
                                                                         na*ni,
                                                          {nb,ni});
-            ma::product(Psi,H1[K]({0,ni},{0,ni}),haj_r);
+            if(nb>0) ma::product(Psi,H1[K]({0,ni},{0,ni}),haj_r);
           }
         } else {
           auto Psi = get_PsiK<boost::multi::array<ComplexType,2>>(nmo_per_kp,PsiT[nd],K);
           assert(Psi.size(0) == na);
           boost::multi::array_ref<ComplexType,2> haj_r(to_address(haj[nd*nkpts+K].origin()),
                                                        {na,ni});
-          ma::product(ComplexType(2.0),Psi,H1[K]({0,ni},{0,ni}),
+          if(na>0) ma::product(ComplexType(2.0),Psi,H1[K]({0,ni},{0,ni}),
                       ComplexType(0.0),haj_r);
         }
       }
@@ -555,7 +554,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_shared(b
           using ma::H;
 #if MIXED_PRECISION
           boost::multi::array<SPComplexType,2> v1_({nmo_per_kp[K],nmo_per_kp[K]});
-          ma::product(SPComplexType(-0.5),Likn,H(Likn),SPComplexType(1.0),v1_);
+          ma::product(SPComplexType(-0.5),Likn,H(Likn),SPComplexType(0.0),v1_);
           boost::multi::array<ComplexType,2> v2_(v1_);
           ma::add(ComplexType(1.0),v2_,
                   ComplexType(1.0),vn0[K]({0,nmo_per_kp[K]},{0,nmo_per_kp[K]}),
@@ -578,7 +577,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_shared(b
           using ma::H;
 #if MIXED_PRECISION
           boost::multi::array<SPComplexType,2> v1_({nmo_per_kp[K],nmo_per_kp[K]});
-          ma::product(SPComplexType(-0.5),L_,H(L_),SPComplexType(1.0),v1_);
+          ma::product(SPComplexType(-0.5),L_,H(L_),SPComplexType(0.0),v1_);
           boost::multi::array<ComplexType,2> v2_(v1_);
           ma::add(ComplexType(1.0),v2_,
                   ComplexType(1.0),vn0[K]({0,nmo_per_kp[K]},{0,nmo_per_kp[K]}),
@@ -624,6 +623,8 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_shared(b
           int nb = nocc_per_kp[0][Kb];
           int nk = nmo_per_kp[Kk];
           int na = nocc_per_kp[0][Ka];
+
+          if(na==0 || nb == 0) continue;
 
           SpMatrix_ref Lank(to_address(LQKank[Q][Ka].origin()),
                                            {na*nchol,nk});
@@ -1064,7 +1065,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
             assert(Psi.size(0) == na);
             boost::multi::array_ref<ComplexType,2> haj_r(to_address(haj[nd*nkpts+K].origin()),
                                                          {nocc_max,nmo_max});
-            ma::product(Psi,H1[K]({0,ni},{0,ni}),haj_r({0,na},{0,ni}));
+            if(na > 0)  ma::product(Psi,H1[K]({0,ni},{0,ni}),haj_r({0,na},{0,ni}));
           }
           { // Beta
             auto Psi = get_PsiK<boost::multi::array<ComplexType,2>>(nmo_per_kp,PsiT[2*nd+1],K);
@@ -1072,14 +1073,14 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
             boost::multi::array_ref<ComplexType,2> haj_r(to_address(haj[nd*nkpts+K].origin())+
                                                                         nocc_max*nmo_max,
                                                          {nocc_max,nmo_max});
-            ma::product(Psi,H1[K]({0,ni},{0,ni}),haj_r({0,nb},{0,ni}));
+            if(nb > 0) ma::product(Psi,H1[K]({0,ni},{0,ni}),haj_r({0,nb},{0,ni}));
           }
         } else {
           auto Psi = get_PsiK<boost::multi::array<ComplexType,2>>(nmo_per_kp,PsiT[nd],K);
           assert(Psi.size(0) == na);
           boost::multi::array_ref<ComplexType,2> haj_r(to_address(haj[nd*nkpts+K].origin()),
                                                        {nocc_max,nmo_max});
-          ma::product(ComplexType(2.0),Psi,H1[K]({0,ni},{0,ni}),
+          if(na > 0) ma::product(ComplexType(2.0),Psi,H1[K]({0,ni},{0,ni}),
                       ComplexType(0.0),haj_r({0,na},{0,ni}));
         }
       }
@@ -1094,7 +1095,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
           int Qm = kminus[Q];
           int QK = QKtok2[Q][K];
           int na = nocc_per_kp[nd][K];
-          int nb = (nspins==2?nocc_per_kp[nd][nkpts+QK]:na);
+          int nb = (nspins==2?nocc_per_kp[nd][nkpts+K]:na);
           int ni = nmo_per_kp[K];
           int nk = nmo_per_kp[QK];
           if(type==COLLINEAR) {
@@ -1181,6 +1182,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
           if(type==COLLINEAR) {
             { // Alpha
               auto PsiQK = get_PsiK<boost::multi::array<SPComplexType,2>>(nmo_per_kp,PsiT[2*nd],QK);
+              assert(PsiQK.size(0) == na);
               Sp3Tensor_ref Lbnl(to_address(LQKbnl[nq0+Qmap[Q]-1][QK].origin()),
                                           {nocc_max,nchol_max,nmo_max});
               Sp3Tensor_ref Lbln(to_address(LQKbln[nq0+Qmap[Q]-1][QK].origin()),
@@ -1253,7 +1255,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
           using ma::H;
 #if MIXED_PRECISION
           boost::multi::array<SPComplexType,2> v1_({nmo_max,nmo_max});
-          ma::product(SPComplexType(-0.5),Likn,H(Likn),SPComplexType(1.0),v1_);
+          ma::product(SPComplexType(-0.5),Likn,H(Likn),SPComplexType(0.0),v1_);
           using std::copy_n;
           boost::multi::array<ComplexType,2> v2_(v1_); 
           ma::add(ComplexType(1.0),v2_,ComplexType(1.0),vn0_[K],vn0_[K]);
@@ -1276,7 +1278,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
 #if MIXED_PRECISION
           boost::multi::array<SPComplexType,2> v1_({nmo_max,nmo_max});
           ma::product(SPComplexType(-0.5),L_,H(L_),
-                      SPComplexType(1.0),v1_);
+                      SPComplexType(0.0),v1_);
           boost::multi::array<ComplexType,2> v2_(v1_); 
           ma::add(ComplexType(1.0),v2_,ComplexType(1.0),vn0_[K],vn0_[K]);
 #else
@@ -1322,6 +1324,8 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
           int nb = nocc_per_kp[0][Kb];
           int nk = nmo_per_kp[Kk];
           int na = nocc_per_kp[0][Ka];
+
+          if(na==0 || nb==0) continue;
 
           SpMatrix_ref Lank(to_address(LQKank[Q][Ka].origin()),
                                            {na*nchol_max,nmo_max});
@@ -1372,7 +1376,17 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
 //                            nmo_per_kp,nchol_per_kp,kminus,QKtok2,H1,LQKikn,
 //                            vn0,nsampleQ,gQ,E0,global_ncvecs);
 
-  return HamiltonianOperations(KP3IndexFactorization_batched(
+  if(ooc == "yes" || ooc == "true") {
+    return HamiltonianOperations(KP3IndexFactorization_batched_ooc(type, TG,
+            std::move(nmo_per_kp),std::move(nchol_per_kp),std::move(kminus),
+            std::move(nocc_per_kp),std::move(QKtok2),std::move(H1),std::move(haj),
+            std::move(LQKikn),std::move(LQKank),std::move(LQKakn),
+            std::move(LQKbnl),std::move(LQKbln),std::move(Qmap),
+            std::move(vn0),
+            std::move(gQ),nsampleQ,E0,device_allocator<ComplexType>{},
+            global_origin,global_ncvecs));
+  } else {
+    return HamiltonianOperations(KP3IndexFactorization_batched(
             type,std::move(nmo_per_kp),std::move(nchol_per_kp),std::move(kminus),
             std::move(nocc_per_kp),std::move(QKtok2),std::move(H1),std::move(haj),
             std::move(LQKikn),std::move(LQKank),std::move(LQKakn),
@@ -1380,6 +1394,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
             std::move(vn0),
             std::move(gQ),nsampleQ,E0,device_allocator<ComplexType>{},
             global_origin,global_ncvecs));
+  }
 
 }
 

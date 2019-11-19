@@ -1,4 +1,4 @@
-Example 4: CASSCF Trial
+Example 5: CASSCF Trial
 =======================
 
 In this example we will show how to format a casscf trial wavefunction.
