@@ -266,6 +266,8 @@ class Real3IndexFactorization_batched
       // NOTE: For CLOSED/NONCOLLINEAR, can do all walkers simultaneously to improve perf. of GEMM
       //       Not sure how to do it for COLLINEAR.
       if(addEXX) {
+AFQMCTimers[T1_t]->reset();
+AFQMCTimers[T2_t]->reset();
         SPRealType scl = (walker_type==CLOSED?2.0:1.0);
 
         for(int ispin=0, is0=0; ispin<nspin; ispin++) {
@@ -299,8 +301,10 @@ class Real3IndexFactorization_batched
 
           ma::product(GF,ma::T(Lan),Twban);
 
+AFQMCTimers[T1_t]->start();
           using ma::dot_wabn;
           dot_wabn(nwalk,nel[ispin],local_nCV,SPComplexType(-0.5*scl),Twban.origin(),to_address(E[0].origin())+1,E.stride(0));
+AFQMCTimers[T1_t]->stop();
 //          for(int n=0, an=0; n<nwalk; ++n) {
 //            ComplexType E_(0.0);
 //            for(int a=0; a<nel[ispin]; ++a, an++) {
@@ -310,6 +314,7 @@ class Real3IndexFactorization_batched
 //            E[n][1] -= 0.5*scl*E_;
 //          }
 
+AFQMCTimers[T2_t]->start();
           if(addEJ) {
 //            for(int n=0; n<nwalk; ++n) {
 //              for(int a=0; a<nel[ispin]; ++a) 
@@ -318,9 +323,13 @@ class Real3IndexFactorization_batched
             using ma::Tab_to_Kl;
             Tab_to_Kl(nwalk,nel[ispin],local_nCV,Twban.origin(),Kl.origin());
           }
+AFQMCTimers[T2_t]->stop();
           is0 += nel[ispin]*NMO; 
 
         } // if
+std::cout<<" Energy timers: " 
+<<AFQMCTimers[T1_t]->get_total() <<" "
+<<AFQMCTimers[T2_t]->get_total() <<std::endl;
       }   
 
       if(addEJ) {

@@ -27,6 +27,12 @@ void Tab_to_Kl(int nwalk, int nocc, int nchol, std::complex<float> const* Tab,
 void Tab_to_Kl(int nwalk, int nocc, int nchol, std::complex<double> const* Tab,
                     std::complex<double> * Kl);
 
+void Tanb_to_Kl(int nwalk, int nocc, int nchol, int nchol_tot, std::complex<float> const* Tab,
+                    std::complex<float> * Kl);
+
+void Tanb_to_Kl(int nwalk, int nocc, int nchol, int nchol_tot, std::complex<double> const* Tab,
+                    std::complex<double> * Kl);
+
 }
 
 #endif

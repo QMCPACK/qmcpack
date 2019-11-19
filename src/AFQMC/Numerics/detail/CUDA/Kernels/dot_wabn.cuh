@@ -31,6 +31,17 @@ void dot_wabn( int nwalk, int nocc, int nchol,
 void dot_wabn( int nwalk, int nocc, int nchol, 
                std::complex<float> const alpha, std::complex<float> const* Tab, 
                std::complex<double>* y, int incy);
+
+
+void dot_wanb( int nwalk, int nocc, int nchol,
+               std::complex<double> const alpha, std::complex<double> const* Tab,
+               std::complex<double>* y, int incy);
+void dot_wanb( int nwalk, int nocc, int nchol,
+               std::complex<float> const alpha, std::complex<float> const* Tab,
+               std::complex<float>* y, int incy);
+void dot_wanb( int nwalk, int nocc, int nchol, 
+               std::complex<float> const alpha, std::complex<float> const* Tab,
+               std::complex<double>* y, int incy);
 }
 
 #endif

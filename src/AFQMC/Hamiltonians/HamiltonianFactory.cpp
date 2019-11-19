@@ -33,6 +33,7 @@
 #include "AFQMC/Hamiltonians/FactorizedSparseHamiltonian.h"
 #include "AFQMC/Hamiltonians/KPFactorizedHamiltonian.h"
 #include "AFQMC/Hamiltonians/RealDenseHamiltonian.h"
+#include "AFQMC/Hamiltonians/RealDenseHamiltonian_v2.h"
 //#include "AFQMC/Hamiltonians/KPTHCHamiltonian.h"
 
 #include "AFQMC/Utilities/readHeader.h"
@@ -76,12 +77,14 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
     std::string fileName = "";
     int number_of_TGs = 1;
     int n_reading_cores = -1;
+    std::string alt = "";
 
     ParameterSet m_param;
     m_param.add(cutoff1bar,"cutoff_1bar","double");
     m_param.add(fileName,"filename","std::string");
     m_param.add(number_of_TGs,"nblocks","int");
     m_param.add(n_reading_cores,"num_io_cores","int");
+    m_param.add(alt,"alternate","std::string");
     m_param.put(cur);
 
     // make or get TG
@@ -266,7 +269,11 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
       TG.global_barrier();
       // KPFactorizedHamiltonian matrices are read by THCHamiltonian object when needed,
       // since their ownership is passed to the HamOps object.
-      return Hamiltonian(RealDenseHamiltonian(AFinfo,cur,std::move(H1),TG,
+      if(alt == "yes" || alt == "true")  
+        return Hamiltonian(RealDenseHamiltonian_v2(AFinfo,cur,std::move(H1),TG,
+                                        NuclearCoulombEnergy,FrozenCoreEnergy));
+      else  
+        return Hamiltonian(RealDenseHamiltonian(AFinfo,cur,std::move(H1),TG,
                                         NuclearCoulombEnergy,FrozenCoreEnergy));
 
     } else
