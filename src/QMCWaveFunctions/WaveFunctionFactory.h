@@ -22,7 +22,6 @@
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCWaveFunctions/WaveFunctionComponentBuilder.h"
 #include "QMCWaveFunctions/SPOSetBuilderFactory.h"
-#include "QMCWaveFunctions/SpinorSetBuilderFactory.h"
 #include "Message/MPIObjectBase.h"
 namespace qmcplusplus
 {

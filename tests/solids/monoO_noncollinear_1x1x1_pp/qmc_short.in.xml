@@ -63,11 +63,11 @@
          </group>
       </particleset>
       <wavefunction name="psi0" target="e">
-   <spinorset_builder name="A" type="bspline" href="eshdf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion0" size="12"> 
-     <spinorset name="myspo" size="12"> 
+   <sposet_builder name="A" type="spinorbspline" href="eshdf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion0" size="12"> 
+     <sposet name="myspo" size="12"> 
        <occupation mode="ground"/> 
-     </spinorset> 
-   </spinorset_builder> 
+     </sposet> 
+   </sposet_builder> 
          <determinantset>
             <slaterdeterminant>
                <determinant id="updetA" group="u" sposet="myspo" size="12"/>

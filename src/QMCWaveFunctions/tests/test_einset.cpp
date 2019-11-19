@@ -369,11 +369,11 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
 
 
   const char* particles = "<tmp> \
-   <spinorset_builder name=\"A\" type=\"bspline\" href=\"o2_45deg_spins.pwscf.h5\" tilematrix=\"1 0 0 0 1 0 0 0 1\" twistnum=\"0\" source=\"ion\" size=\"3\" precision=\"float\"> \
-     <spinorset name=\"myspo\" size=\"3\"> \
+   <sposet_builder name=\"A\" type=\"spinorbspline\" href=\"o2_45deg_spins.pwscf.h5\" tilematrix=\"1 0 0 0 1 0 0 0 1\" twistnum=\"0\" source=\"ion\" size=\"3\" precision=\"float\"> \
+     <sposet name=\"myspo\" size=\"3\"> \
        <occupation mode=\"ground\"/> \
-     </spinorset> \
-   </spinorset_builder> \
+     </sposet> \
+   </sposet_builder> \
    </tmp> \
 ";
 
