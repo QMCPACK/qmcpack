@@ -28,7 +28,6 @@ SET(WFBASE_SRCS
   SPOSetInfo.cpp
   SPOSetInputInfo.cpp
   SPOSet.cpp
-  SpinorSet.cpp
   CompositeSPOSet.cpp
   HarmonicOscillator/SHOSet.cpp
   HarmonicOscillator/SHOSetBuilder.cpp
@@ -43,7 +42,11 @@ IF(NOT QMC_COMPLEX)
     )
 ENDIF(NOT QMC_COMPLEX)
 
-
+IF(QMC_COMPLEX)
+  SET(WFBASE_SRCS ${WFBASE_SRCS}
+    SpinorSet.cpp
+  )
+ENDIF(QMC_COMPLEX)
 ########################
 # build jastrows
 ########################
@@ -149,9 +152,12 @@ IF(OHMMS_DIM MATCHES 3)
       BsplineFactory/createComplexSingle.cpp
       BandInfo.cpp
       BsplineFactory/BsplineReaderBase.cpp
-      EinsplineSpinorSetBuilder.cpp
       )
-
+    IF(QMC_COMPLEX)
+      SET(FERMION_SRCS ${FERMION_SRCS}
+       EinsplineSpinorSetBuilder.cpp
+      )
+    ENDIF(QMC_COMPLEX)
     IF(NOT QMC_COMPLEX)
       SET(FERMION_SRCS ${FERMION_SRCS}
         BsplineFactory/createRealSingle.cpp
