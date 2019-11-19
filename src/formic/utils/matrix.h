@@ -1762,8 +1762,18 @@ template<class S> inline formic::Matrix<S> operator*(const formic::ConstMatrix<S
   return m1.clone() *= x;
 }
 
+/// \brief  this binary * operator returns a new matrix that is equal to the input matrix with each element multiplied by x
+template<class S> inline formic::Matrix<std::complex<S> > operator*(const formic::ConstMatrix<std::complex<S> > & m1, const S x) {
+  return m1.clone() *= x;
+}
+
 /// \brief  this binary / operator returns a new matrix that is equal to the input matrix with each element divided by x
 template<class S> inline formic::Matrix<S> operator/(const formic::ConstMatrix<S> & m1, const S x) {
+  return m1.clone() /= x;
+}
+
+/// \brief  this binary / operator returns a new matrix that is equal to the input matrix with each element divided by x
+template<class S> inline formic::Matrix<std::complex<S> > operator/(const formic::ConstMatrix<std::complex<S> > & m1, const S x) {
   return m1.clone() /= x;
 }
 
@@ -1779,6 +1789,11 @@ template<class S> inline formic::Matrix<S> operator-(const S x, const formic::Co
 
 /// \brief  this binary * operator returns a new matrix that is equal to the input matrix with each element multiplied by x
 template<class S> inline formic::Matrix<S> operator*(const S x, const formic::ConstMatrix<S> & m1) {
+  return m1.clone() *= x;
+}
+
+/// \brief  this binary * operator returns a new matrix that is equal to the input matrix with each element multiplied by x
+template<class S> inline formic::Matrix<std::complex<S> > operator*(const S x, const formic::ConstMatrix<std::complex<S> > & m1) {
   return m1.clone() *= x;
 }
 
