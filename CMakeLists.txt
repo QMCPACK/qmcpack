@@ -495,7 +495,7 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
     # Search for Blas/Lapack
     find_package(LAPACK)
     IF("${LAPACK_LIBRARIES}" MATCHES "mkl")
-      MESSAGE(FATAL_ERROR "MKL found via LAPACK/BLAS. Please use -DENABLE_MKL=1 when invoking cmake for full Intel MKL detection.")
+      MESSAGE(FATAL_ERROR "MKL found via LAPACK/BLAS. Please use -DENABLE_MKL=1 when invoking cmake for full Intel MKL utilization. -DMKL_ROOT may also be needed for the include files to be found.")
     ENDIF()
   ENDIF()
   IF(LAPACK_FOUND)
