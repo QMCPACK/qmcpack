@@ -205,6 +205,12 @@ void cqmc::engine::SpamLMHD::solve_subspace_nonsymmetric(const bool outer)
     //Eigen::ArrayXcd eval_list = (es.eigenvalues()).array();
     std::complex<double> lowest_eval = e_evals.at(0);
 
+    double inner_eval = 0.0;
+    if ( !_ground ) 
+      inner_eval = 1.0 / (_hd_shift - _energy_inner);
+    else 
+      inner_eval = _energy_inner;
+
     // if it's outer iteration, we just make sure that we choose the lowest energy(target function)
     //if ( outer ) {
     for (int j = 1; j < truncate_index; j++) {
@@ -1174,11 +1180,11 @@ cqmc::engine::SpamLMHD::SpamLMHD(const formic::VarDeps* dep_ptr,
                                  const double lm_max_e_change,
                                  const double total_weight,
                                  const double vgsa,
-                                 formic::Matrix<double>& der_rat,
-                                 formic::Matrix<double>& le_der,
-                                 formic::Matrix<double>& der_rat_appro,
-                                 formic::Matrix<double>& le_der_appro)
-    : EigenSolver(dep_ptr,
+                                 formic::Matrix<double> & der_rat,
+                                 formic::Matrix<double> & le_der,
+                                 formic::Matrix<double> & der_rat_appro,
+                                 formic::Matrix<double> & le_der_appro)
+:EigenSolver<double>(dep_ptr,
                   nfds,
                   lm_eigen_thresh,
                   var_deps_use,
@@ -1260,6 +1266,9 @@ bool cqmc::engine::SpamLMHD::iterative_solve(double & eval, std::ostream & outpu
     output << boost::format("iteration solving starts here(engine) \n") << std::endl << std::endl;
 
   while(true) {
+    
+    // smallest singular value 
+    double smallest_sin_value_outer = 0.0;
 
     // solve subspace eigenvalue problem on root process
     if ( my_rank == 0 ) {
@@ -1393,6 +1402,9 @@ bool cqmc::engine::SpamLMHD::iterative_solve(double & eval, std::ostream & outpu
 
     // now enter inner loop
     while (true) {
+     
+      // average of smallest singular value
+      double smallest_sin_val_avg_inner = 0.0;
 
       // solve subspace eigenvalue problem on root process
       if ( my_rank == 0 ) {
