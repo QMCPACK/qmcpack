@@ -51,7 +51,7 @@ public:
 
   ~SPOSetBuilderFactory();
 
-  virtual SPOSetBuilder* createSPOSetBuilder(xmlNodePtr rootNode);
+  SPOSetBuilder* createSPOSetBuilder(xmlNodePtr rootNode);
 
   void loadBasisSetFromXML(xmlNodePtr cur) { last_builder->loadBasisSetFromXML(cur); }
 
@@ -59,7 +59,7 @@ public:
 
   void build_sposet_collection(xmlNodePtr cur);
 
-protected:
+private:
   ///store the last builder, use if type not provided
   static SPOSetBuilder* last_builder;
 

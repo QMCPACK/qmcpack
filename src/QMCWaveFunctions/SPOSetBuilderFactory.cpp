@@ -348,7 +348,7 @@ void SPOSetBuilderFactory::build_sposet_collection(xmlNodePtr cur)
   while (element != NULL)
   {
     std::string cname((const char*)(element->name));
-    if (cname == "sposet" || cname == "spinorset")
+    if (cname == "sposet")
     {
       std::string name("");
       OhmmsAttributeSet attrib;

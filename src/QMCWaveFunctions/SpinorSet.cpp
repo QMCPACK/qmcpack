@@ -18,11 +18,6 @@ SpinorSet::SpinorSet():SPOSet(),className("SpinorSet"),spo_up(nullptr),spo_dn(nu
 
 }
 
-SpinorSet::~SpinorSet()
-{
-
-}
-
 void SpinorSet::set_spos(std::shared_ptr<SPOSet> up, std::shared_ptr<SPOSet> dn)
 {
   //Sanity check for input SPO's.  They need to be the same size or 
