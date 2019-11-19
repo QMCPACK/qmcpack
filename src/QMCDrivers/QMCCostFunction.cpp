@@ -354,7 +354,7 @@ void QMCCostFunction::checkConfigurations()
 /** evaluate everything before optimization
  *In future, both the LM and descent engines should be children of some parent engine base class.
  * */
-void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine* EngineObj,
+void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine<Return_t>* EngineObj,
                                                  DescentEngine& descentEngineObj,
                                                  const std::string& MinMethod)
 {
@@ -418,33 +418,22 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine* Engine
         std::vector<Return_t> Dsaved(NumOptimizables, 0.0);
         std::vector<Return_t> HDsaved(NumOptimizables, 0.0);
 
-        std::vector<Return_rt> rDsaved(NumOptimizables, 0.0);
-        std::vector<Return_rt> rHDsaved(NumOptimizables, 0.0);
-
         psiClones[ip]->evaluateDerivatives(wRef, OptVariablesForPsi, Dsaved, HDsaved);
         etmp = hClones[ip]->evaluateValueAndDerivatives(wRef, OptVariablesForPsi, Dsaved, HDsaved, compute_nlpp);
 
-
-        //FIXME The ifdef should be removed after the optimizer is compatible with complex wave function parameters
-        for (int i = 0; i < NumOptimizables; i++)
-        {
-          rDsaved[i]  = std::real(Dsaved[i]);
-          rHDsaved[i] = std::real(HDsaved[i]);
-        }
-
         // add non-differentiated derivative vector
-        std::vector<Return_rt> der_rat_samp(NumOptimizables + 1, 0.0);
-        std::vector<Return_rt> le_der_samp(NumOptimizables + 1, 0.0);
+        std::vector<Return_t> der_rat_samp(NumOptimizables + 1, 0.0);
+        std::vector<Return_t> le_der_samp(NumOptimizables + 1, 0.0);
 
         // dervative vectors
         der_rat_samp.at(0) = 1.0;
-        for (int i = 0; i < rDsaved.size(); i++)
-          der_rat_samp.at(i + 1) = rDsaved.at(i);
+        for (int i = 0; i < Dsaved.size(); i++)
+          der_rat_samp.at(i + 1) = Dsaved.at(i);
 
         // energy dervivatives
         le_der_samp.at(0) = etmp;
-        for (int i = 0; i < rHDsaved.size(); i++)
-          le_der_samp.at(i + 1) = rHDsaved.at(i) + etmp * rDsaved.at(i);
+        for (int i = 0; i < HDsaved.size(); i++)
+          le_der_samp.at(i + 1) = HDsaved.at(i) + etmp * Dsaved.at(i);
 
 #ifdef HAVE_LMY_ENGINE
         if (MinMethod == "adaptive")

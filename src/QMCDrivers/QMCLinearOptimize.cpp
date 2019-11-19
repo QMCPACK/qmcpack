@@ -109,7 +109,7 @@ void QMCLinearOptimize::start()
 }
 
 #ifdef HAVE_LMY_ENGINE
-void QMCLinearOptimize::engine_start(cqmc::engine::LMYEngine* EngineObj,
+void QMCLinearOptimize::engine_start(cqmc::engine::LMYEngine<ValueType>* EngineObj,
                                      DescentEngine& descentEngineObj,
                                      std::string MinMethod)
 {
