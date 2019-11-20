@@ -20,7 +20,6 @@
 #ifndef QMCPLUSPLUS_HAMILTONIAN_H
 #define QMCPLUSPLUS_HAMILTONIAN_H
 #include "Configuration.h"
-#include "type_traits/TypeRequire.hpp"
 #include <QMCHamiltonians/OperatorBase.h>
 #include "QMCHamiltonians/NonLocalECPotential.h"
 #if !defined(REMOVE_TRACEMANAGER)
@@ -277,6 +276,17 @@ public:
       nlpp_ptr->setNonLocalMoves(cur);
   }
 
+  void setNonLocalMoves(const std::string& non_local_move_option,
+                                        const double tau,
+                                        const double alpha,
+                                        const double gamma)
+  {
+    if (nlpp_ptr != nullptr)
+      nlpp_ptr->setNonLocalMoves(non_local_move_option,
+                                        tau,
+                                        alpha,
+                                        gamma);
+  }
   /** make non local moves
    * @param P particle set
    * @return the number of accepted moves

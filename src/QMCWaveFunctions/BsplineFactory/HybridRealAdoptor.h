@@ -127,7 +127,6 @@ struct HybridRealSoA : public BaseAdoptor, public HybridAdoptorBase<typename Bas
           BaseAdoptor::evaluate_v(VP, iat, psi);
         else if (smooth_factor == cone)
         {
-          const PointType& r = VP.R[iat];
           Vector<ST, aligned_allocator<ST>> myV_one(multi_myV[iat], myV.size());
           BaseAdoptor::assign_v(bc_signs[iat], myV_one, psi, 0, myV.size());
         }

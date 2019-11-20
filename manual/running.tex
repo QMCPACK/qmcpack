@@ -112,9 +112,23 @@ Users do not need to control the threading behavior of the library.
 \label{sec:cpu:performance}
 As walkers are the basic units of workload in QMC algorithms, they are loosely coupled and distributed across all the threads. For this reason, the best strategy to run QMCPACK efficiently is to feed enough walkers to the available threads.
 
-In a VMC calculation, the code automatically raises the actual number of walkers per MPI rank to the number of available threads if the user-specified number of walkers is smaller, see ``walkers/mpi=XXX'' in the VMC output.  In a DMC calculation, the target number of walkers should be chosen to be slightly smaller than a multiple of the total number of available threads across all the MPI ranks belongs to this calculation. Since the number of walkers varies from generation to generation, its dynamical value should be slightly smaller or equal to that multiple most of the time.
+In a VMC calculation, the code automatically raises the actual number of walkers per MPI rank to the number of available threads
+if the user-specified number of walkers is smaller, see ``walkers/mpi=XXX'' in the VMC output.
 
-To achieve better performance, a mixed-precision version (experimental) has been introduced to the CPU code. The mixed-precision CPU code is more aggressive than the GPU version in using single precision (SP) operations. Current implementation uses SP on most calculations, except for matrix inversions and reductions where double precision is required to retain high accuracy. All the constant spline data in wavefunction, pseudopotentials, and Coulomb potentials are initialized in double precision and later stored in single precision. The mixed-precision code is as accurate as the double-precision code up to a certain system size. Cross checking and verification of accuracy is always required but is particularly important above approximately 1,500 electrons. The mixed precision code is currently tested on solids with real and complex wavefunctions with VMC, VMC using drift, and DMC runs with wavefunction including single Slater determinant and one- and two-body Jastrow factors. Wavefunction optimization is currently not supported.
+In DMC, for typical small to mid-sized calculations choose the total number of walkers to be a significant multiple of the total number of
+threads (MPI tasks * threads per task). This will ensure a good load balance. e.g. For a calculation on a few nodes with a total
+512 threads, using 5120 walkers may keep the load imbalance around 10\%. For the very largest calculations, the target number of
+walkers should be chosen to be slightly smaller than a multiple of the total number of available threads across all the MPI ranks.
+This will reduce occurrences worse-case load imbalance e.g. where one thread has two walkers while all the others have one.
+
+To achieve better performance, a mixed-precision version (experimental) has been developed in the CPU code. The mixed-precision
+CPU code uses a mixed of single precision (SP) and double precision (DP) operations, while the default code use DP exclusively.
+This mixed precision version is more aggressive than the GPU CUDA version in using single precision (SP) operations. The Current implementation uses SP on most
+calculations, except for matrix inversions and reductions where double precision is required to retain high accuracy. All the
+constant spline data in wavefunction, pseudopotentials, and Coulomb potentials are initialized in double precision and later
+stored in single precision. The mixed-precision code is as accurate as the double-precision code up to a certain system size, and
+may have double the throughput.
+Cross checking and verification of accuracy is always required but is particularly important above approximately 1,500 electrons. 
 
 \subsection{Memory considerations}
 When using threads, some memory objects are shared by all the threads. Usually these memory objects are read only when the walkers are evolving, for instance the ionic distance table and wavefunction coefficients.

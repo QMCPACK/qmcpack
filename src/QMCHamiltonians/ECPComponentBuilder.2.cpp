@@ -14,6 +14,7 @@
 
 
 #include "QMCHamiltonians/ECPComponentBuilder.h"
+#include "QMCHamiltonians/NonLocalECPComponent.h"
 #include "Numerics/OneDimCubicSpline.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Utilities/SimpleParser.h"

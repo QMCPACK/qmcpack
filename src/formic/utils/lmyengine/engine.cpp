@@ -11,11 +11,13 @@
 #include<string>
 #include<algorithm>
 #include<utility>
+#include<complex>
 
 #include<boost/shared_ptr.hpp>
 
 #include<formic/utils/openmp.h>
 
+#include <formic/utils/zero_one.h>
 #include <formic/utils/lmyengine/engine.h>
 #include <formic/utils/lmyengine/updater.h>
 #include <formic/utils/lmyengine/energy_target.h>
@@ -32,7 +34,8 @@
 ///
 ///
 /////////////////////////////////////////////////////////////////////////////////
-cqmc::engine::LMYEngine::LMYEngine(const formic::VarDeps* dep_ptr,
+template<typename S>
+cqmc::engine::LMYEngine<S>::LMYEngine(const formic::VarDeps* dep_ptr,
                                    const bool exact_sampling,
                                    const bool ground,
                                    const bool variance_correction,
@@ -71,6 +74,7 @@ cqmc::engine::LMYEngine::LMYEngine(const formic::VarDeps* dep_ptr,
     : _exact_sampling(exact_sampling),
       _ground(ground),
       _variance_correction(variance_correction),
+      _1rdm(false),
       _energy_print(energy_print),
       _matrix_print(matrix_print),
       _build_lm_matrix(build_lm_matrix),
@@ -120,7 +124,7 @@ cqmc::engine::LMYEngine::LMYEngine(const formic::VarDeps* dep_ptr,
       output(output)
 {
   // get the number of threads being used 
-  int NumThreads = omp_get_max_threads();
+  const int NumThreads = omp_get_max_threads();
 
   // check the size of lists, resize it if not correct
   if ( _le_list.size() != NumThreads ) 
@@ -167,41 +171,43 @@ cqmc::engine::LMYEngine::LMYEngine(const formic::VarDeps* dep_ptr,
 // 
 // 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
-void cqmc::engine::LMYEngine::get_param(const formic::VarDeps * dep_ptr,
-            const bool exact_sampling,
-            const bool ground, 
-            const bool var_deps_use,
-            const bool eom,
-            const bool ssquare,
-            const bool block_lm,
-            const int num_samp,
-            const int num_params,
-            const double hd_lm_shift,
-            const double lm_max_e_change,
-            const double lm_ham_shift_i,
-            const double lm_ham_shift_s,
-            const double lm_max_update_abs,
-            std::vector<double> shift_scale,
-            const bool variance_correction,
-            const bool energy_print,
-            const bool matrix_print,
-            const bool build_lm_matrix,
-            const bool spam,
-            const bool chase_lowest,
-            const bool chase_closest,
-            const bool pm_ortho_first,
-            const bool jas_fixed,
-            const int lm_krylov_iter,
-            const int lm_spam_inner_iter,
-            const int appro_degree,
-            const int n_sites,
-            const int n_pm,
-            const int n_jas,
-            const double var_weight,
-            const double lm_eigen_thresh, 
-            const double lm_min_S_eval,
-            const double init_cost,
-            const double init_var) {
+template<typename S>
+void cqmc::engine::LMYEngine<S>::get_param(const formic::VarDeps * dep_ptr,
+                                           const bool exact_sampling,
+                                           const bool ground, 
+                                           const bool var_deps_use,
+                                           const bool eom,
+                                           const bool ssquare,
+                                           const bool block_lm,
+                                           const int num_samp,
+                                           const int num_params,
+                                           const double hd_lm_shift,
+                                           const double lm_max_e_change,
+                                           const double lm_ham_shift_i,
+                                           const double lm_ham_shift_s,
+                                           const double lm_max_update_abs,
+                                           std::vector<double> shift_scale,
+                                           const bool one_rdm,
+                                           const bool chase_lowest,
+                                           const bool chase_closest,
+                                           const bool variance_correction,
+                                           const bool energy_print,
+                                           const bool matrix_print,
+                                           const bool build_lm_matrix,
+                                           const bool spam,
+                                           const bool pm_ortho_first,
+                                           const bool jas_fixed,
+                                           const int lm_krylov_iter,
+                                           const int lm_spam_inner_iter,
+                                           const int appro_degree,
+                                           const int n_sites,
+                                           const int n_pm,
+                                           const int n_jas,
+                                           const double var_weight,
+                                           const double lm_eigen_thresh, 
+                                           const double lm_min_S_eval,
+                                           const double init_cost,
+                                           const double init_var) {
   
   // set all parameters
   _exact_sampling=exact_sampling, _ground=ground, _variance_correction=variance_correction, _energy_print=energy_print, _matrix_print=matrix_print, _build_lm_matrix=build_lm_matrix;
@@ -210,6 +216,7 @@ void cqmc::engine::LMYEngine::get_param(const formic::VarDeps * dep_ptr,
   _appro_degree=appro_degree, _n_sites=n_sites, _n_pm=n_pm, _n_jas=n_jas, _hd_lm_shift=hd_lm_shift, _var_weight=var_weight, _lm_eigen_thresh=lm_eigen_thresh, _lm_min_S_eval=lm_min_S_eval;
   _init_cost=init_cost, _init_var=init_var, _lm_max_e_change=lm_max_e_change, _lm_ham_shift_i=lm_ham_shift_i, _lm_ham_shift_s=lm_ham_shift_s, _lm_max_update_abs=lm_max_update_abs;
   _wfn_update=false, _nblocks=1, _energy=0.0, _esdev=0.0, _eserr=0.0, _target=0.0, _tserr=0.0, _shift_scale=shift_scale, _dep_ptr=dep_ptr, _num_params=num_params;
+  _1rdm = one_rdm;
 
   // solve results
   _good_solve.resize(_shift_scale.size());
@@ -217,7 +224,7 @@ void cqmc::engine::LMYEngine::get_param(const formic::VarDeps * dep_ptr,
   std::fill(_good_solve.begin(), _good_solve.end(), false);
   std::fill(_solved_shifts.begin(), _solved_shifts.end(), false);
 
-  _mbuilder.get_param(hd_lm_shift, num_params, appro_degree, spam, ground, variance_correction, build_lm_matrix, eom, matrix_print);
+  _mbuilder.get_param(hd_lm_shift, num_params, appro_degree, spam, ground, variance_correction, build_lm_matrix, eom, matrix_print, one_rdm);
 
   _fully_initialized = true;
 
@@ -234,11 +241,12 @@ void cqmc::engine::LMYEngine::get_param(const formic::VarDeps * dep_ptr,
 /// \param[in]    nrand         Number of random vectors to add to the vector of old updates
 ///
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
-void cqmc::engine::LMYEngine::initialize(const int nblock,
-                                         const int nrand,
-                                         const int nkeps,
-                                         const std::vector<formic::ColVec<double> > & old_updates,
-                                         const bool iterative) {
+template<typename S>
+void cqmc::engine::LMYEngine<S>::initialize(const int nblock,
+                                            const int nrand,
+                                            const int nkeps,
+                                            const std::vector<formic::ColVec<double> > & old_updates,
+                                            const bool iterative) {
 
   // set the block first sample finish flag to be false
   _block_first_sample_finished = false;
@@ -331,18 +339,14 @@ void cqmc::engine::LMYEngine::initialize(const int nblock,
 /// \param[in]  weight_samp    weight for this sample
 ///
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
-void cqmc::engine::LMYEngine::take_sample(std::vector<double> & der_rat_samp,
-                                          std::vector<double> & le_der_samp,
-                                          std::vector<double> & ls_der_samp,
-                                          double vgs_samp,
-                                          double weight_samp) {
+template<typename S>
+void cqmc::engine::LMYEngine<S>::take_sample(std::vector<S> & der_rat_samp,
+                                             std::vector<S> & le_der_samp,
+                                             std::vector<S> & ls_der_samp,
+                                             double vgs_samp,
+                                             double weight_samp) {
 
     
-  // get the number of threads being used
-  int NumThreads = omp_get_num_threads();
-
-  //output << boost::format("entering take_sample function") << std::endl;
-
   // get the thread number 
   int myThread = omp_get_thread_num();
 
@@ -429,6 +433,12 @@ void cqmc::engine::LMYEngine::take_sample(std::vector<double> & der_rat_samp,
     // for block linear method
     else { 
 
+      std::vector<double> der_rat_samp_real;
+      std::vector<double> le_der_samp_real;
+      for (auto it = der_rat_samp.begin(); it != der_rat_samp.end(); it++) {
+        der_rat_samp_real.push_back(formic::real(*it));
+         le_der_samp_real.push_back(formic::real(*it));
+      }
       bool first_samp = !_block_first_sample_finished;
 
       // if it is the first sampling
@@ -439,17 +449,17 @@ void cqmc::engine::LMYEngine::take_sample(std::vector<double> & der_rat_samp,
         // accumulate data for the block algorithm object
         // for ground state calculation
         if ( _ground ) 
-          _lmb.acc(d, der_rat_samp, le_der_samp, true);
+          _lmb.acc(d, der_rat_samp_real, le_der_samp_real, true);
         // for excited state calculation
         else {
           // get <n|(w-H)|Psi_i>/<n|Psi>
-          std::vector<double> mle_der_samp(le_der_samp.size(), 0.0);
-          for (int i = 0; i < mle_der_samp.size(); i++) 
-            mle_der_samp.at(i) = _hd_lm_shift * der_rat_samp.at(i) - le_der_samp.at(i);
+          std::vector<double> mle_der_samp_real(le_der_samp_real.size(), 0.0);
+          for (int i = 0; i < mle_der_samp_real.size(); i++) 
+            mle_der_samp_real.at(i) = _hd_lm_shift * der_rat_samp_real.at(i) - le_der_samp_real.at(i);
 
           // accumulate data
           //_lmb.acc(d, mle_der_samp, der_rat_samp);
-          _lmb.acc(d, der_rat_samp, mle_der_samp, false);
+          _lmb.acc(d, der_rat_samp_real, mle_der_samp_real, false);
         }
       }
 
@@ -470,12 +480,12 @@ void cqmc::engine::LMYEngine::take_sample(std::vector<double> & der_rat_samp,
 
         // get compact der rat and der eng for the current wavefunction
         if ( _ground ) {
-          drat_cmpct[myThread].at(0) = der_rat_samp.at(0);
-          deng_cmpct[myThread].at(0) = le_der_samp.at(0);
+          drat_cmpct[myThread].at(0) = der_rat_samp_real.at(0);
+          deng_cmpct[myThread].at(0) = le_der_samp_real.at(0);
         }
         else {
-          drat_cmpct[myThread].at(0) = der_rat_samp.at(0);
-          deng_cmpct[myThread].at(0) = _hd_lm_shift * der_rat_samp.at(0) - le_der_samp.at(0);
+          drat_cmpct[myThread].at(0) = der_rat_samp_real.at(0);
+          deng_cmpct[myThread].at(0) = _hd_lm_shift * der_rat_samp_real.at(0) - le_der_samp_real.at(0);
         }
 
         // get compact der rat and der eng for old updates
@@ -484,12 +494,12 @@ void cqmc::engine::LMYEngine::take_sample(std::vector<double> & der_rat_samp,
           deng_cmpct[myThread].at(1+k) = 0.0;
           for (int i = 0; i < _dep_ptr->n_ind(); i++) {
             if ( _ground ) {
-              drat_cmpct[myThread].at(1+k) += _lmb.ou_mat().at(i, k) * der_rat_samp.at(1+i);
-              deng_cmpct[myThread].at(1+k) += _lmb.ou_mat().at(i, k) * le_der_samp.at(1+i);
+              drat_cmpct[myThread].at(1+k) += _lmb.ou_mat().at(i, k) * der_rat_samp_real.at(1+i);
+              deng_cmpct[myThread].at(1+k) += _lmb.ou_mat().at(i, k) * le_der_samp_real.at(1+i);
             }
             else {
-              drat_cmpct[myThread].at(1+k) += _lmb.ou_mat().at(i, k) * der_rat_samp.at(1+i);
-              deng_cmpct[myThread].at(1+k) += _lmb.ou_mat().at(i, k) * (_hd_lm_shift * der_rat_samp.at(1+i) - le_der_samp.at(1+i));
+              drat_cmpct[myThread].at(1+k) += _lmb.ou_mat().at(i, k) * der_rat_samp_real.at(1+i);
+              deng_cmpct[myThread].at(1+k) += _lmb.ou_mat().at(i, k) * (_hd_lm_shift * der_rat_samp_real.at(1+i) - le_der_samp_real.at(1+i));
             }
           }
         }
@@ -505,16 +515,16 @@ void cqmc::engine::LMYEngine::take_sample(std::vector<double> & der_rat_samp,
               // loop over the variables within this block
               for (int i = 0; i < _lmb.bl(b); i++) {
                 if ( _ground ) 
-                  drat_cmpct[myThread].at(nsv+q) += _block_ups.at(b).at(s).at(i, n) * der_rat_samp.at(1+(_lmb.bb(b)+i));
+                  drat_cmpct[myThread].at(nsv+q) += _block_ups.at(b).at(s).at(i, n) * der_rat_samp_real.at(1+(_lmb.bb(b)+i));
                 else 
-                  drat_cmpct[myThread].at(nsv+q) += _block_ups.at(b).at(s).at(i, n) * der_rat_samp.at(1+(_lmb.bb(b)+i));
+                  drat_cmpct[myThread].at(nsv+q) += _block_ups.at(b).at(s).at(i, n) * der_rat_samp_real.at(1+(_lmb.bb(b)+i));
               }
               deng_cmpct[myThread].at(nsv+q) = 0.0;
               for (int i = 0; i < _lmb.bl(b); i++) {
                 if ( _ground ) 
-                  deng_cmpct[myThread].at(nsv+q) += _block_ups.at(b).at(s).at(i, n) * le_der_samp.at(1+(_lmb.bb(b)+i));
+                  deng_cmpct[myThread].at(nsv+q) += _block_ups.at(b).at(s).at(i, n) * le_der_samp_real.at(1+(_lmb.bb(b)+i));
                 else 
-                  deng_cmpct[myThread].at(nsv+q) += _block_ups.at(b).at(s).at(i, n) * (_hd_lm_shift * der_rat_samp.at(1+(_lmb.bb(b)+i)) - le_der_samp.at(1+(_lmb.bb(b)+i)));
+                  deng_cmpct[myThread].at(nsv+q) += _block_ups.at(b).at(s).at(i, n) * (_hd_lm_shift * der_rat_samp_real.at(1+(_lmb.bb(b)+i)) - le_der_samp_real.at(1+(_lmb.bb(b)+i)));
               }
             }
           }
@@ -549,9 +559,10 @@ void cqmc::engine::LMYEngine::take_sample(std::vector<double> & der_rat_samp,
 /// \param[in]  weight_samp    weight for this sample
 ///
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
-void cqmc::engine::LMYEngine::take_sample(double local_en,
-                                          double vgs_samp,
-                                          double weight_samp) 
+template<typename S>
+void cqmc::engine::LMYEngine<S>::take_sample(S local_en,
+                                             double vgs_samp,
+                                             double weight_samp) 
 {
 
   // get thread number 
@@ -573,15 +584,34 @@ void cqmc::engine::LMYEngine::take_sample(double local_en,
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// \brief  Function that Take Sample Data from the Host Code
+/// 
+/// \param[in]  local_en       local energy
+/// \param[in]  vgs_samp       |<n|value_fn>/<n|guiding_fn>|^2
+/// \param[in]  weight_samp    weight for this sample
+///
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+template<typename S>
+void cqmc::engine::LMYEngine<S>::take_sample(int nbasis, std::vector<S> & one_rdm_samp)
+{
+
+  // get thread number 
+  int myThread = omp_get_thread_num();
+
+  // accumulate data for the matrix builder
+  _mbuilder.take_sample(nbasis, one_rdm_samp);
+
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// \brief  Function that reduces all block matrices information from all processors to the root
 ///         processor
 ///
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
-void cqmc::engine::LMYEngine::sample_finish() {
+template<typename S>
+void cqmc::engine::LMYEngine<S>::sample_finish() {
   
-  // get rank number and number of ranks
   int my_rank = formic::mpi::rank();
-  int num_rank = formic::mpi::size();
 
   // get total number of threads
   int NumThreads = omp_get_max_threads();
@@ -608,7 +638,6 @@ void cqmc::engine::LMYEngine::sample_finish() {
 
       // finish sample for the matrix builder 
       _mbuilder.finish_sample(total_weight);
-      return;
 
     }
 
@@ -692,7 +721,7 @@ void cqmc::engine::LMYEngine::sample_finish() {
 
       // compute average of matrices
       formic::mpi::reduce(&hh_block[0].at(0,0), &hh_block_tot.at(0,0), hh_block[0].size(), MPI_SUM);
-      formic::mpi::reduce(&ss_block[0].at(0,0), &ss_block_tot.at(0,0), ss_block[0].size(), MPI_SUM);
+      formic::mpi::reduce(&ss_block[0].at(0,0), &ss_block_tot.at(0,0), ss_block[0].size(), MPI_SUM); 
 
       // compute average on root process
       if ( my_rank == 0 ) {
@@ -712,7 +741,8 @@ void cqmc::engine::LMYEngine::sample_finish() {
 /// \brief  Function that updates variable dependency pointer 
 ///
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
-void cqmc::engine::LMYEngine::var_deps_ptr_update(const formic::VarDeps * new_dep_ptr) {
+template<typename S>
+void cqmc::engine::LMYEngine<S>::var_deps_ptr_update(const formic::VarDeps * new_dep_ptr) {
   
   // update pointer 
   _dep_ptr = new_dep_ptr;
@@ -726,7 +756,8 @@ void cqmc::engine::LMYEngine::var_deps_ptr_update(const formic::VarDeps * new_de
 /// \brief  Energy and Target Function Calculation
 ///
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
-void cqmc::engine::LMYEngine::energy_target_compute() { 
+template<typename S>
+void cqmc::engine::LMYEngine<S>::energy_target_compute() { 
 
   // get the number of threads 
   int NumThreads = omp_get_max_threads();
@@ -769,15 +800,9 @@ void cqmc::engine::LMYEngine::energy_target_compute() {
 /// \brief  Do necessary preparations for the wavefunction update 
 ///
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
-void cqmc::engine::LMYEngine::wfn_update_prep() {
+template<typename S>
+void cqmc::engine::LMYEngine<S>::wfn_update_prep() {
 
-   // get rank number and number of ranks
-  int my_rank = formic::mpi::rank();
-  int num_rank = formic::mpi::size();
-  //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-  //MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
-  //std::cout << "entering wfn_update_prep on rank " << my_rank << std::endl;
- 
   // if we are not doing block algorithm, do nothing
   if ( !_block_lm ) 
     return;
@@ -797,7 +822,8 @@ void cqmc::engine::LMYEngine::wfn_update_prep() {
 /// \brief  Wave Function Update Calculation
 ///
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
-void cqmc::engine::LMYEngine::wfn_update_compute() {
+template<typename S>
+void cqmc::engine::LMYEngine<S>::wfn_update_compute() {
 
   // if we are doing non-block, call the corresponding "call_engine" function
   if ( !_block_lm ) {
@@ -812,18 +838,22 @@ void cqmc::engine::LMYEngine::wfn_update_compute() {
 
   // if we are doing the block version
   else {
-  // call the second part of block algorithm, this assumes that the first part of the algorithm has beeb called 
-  this -> get_brlm_update_alg_part_two(_dep_ptr,
-                                       _lmb.iterative(),
-                                       _nkeps,
-                                       _lm_ham_shift_i,
-                                       _lm_ham_shift_s,
-                                       _shift_scale,
-                                       _lm_max_update_abs,
-                                       _vf_var,
-                                       _good_solve,
-                                       _solved_shifts,
-                                       output);
+    // call the second part of block algorithm, this assumes that the first part of the algorithm has beeb called 
+    std::vector<double> _vf_var_real(_vf_var.size(), 0.0);
+    this -> get_brlm_update_alg_part_two(_dep_ptr,
+                                         _lmb.iterative(),
+                                         _nkeps,
+                                         _lm_ham_shift_i,
+                                         _lm_ham_shift_s,
+                                         _shift_scale,
+                                         _lm_max_update_abs,
+                                         _vf_var_real,
+                                         _good_solve,
+                                         _solved_shifts,
+                                         output);
+    for (std::vector<double>::iterator it=_vf_var_real.begin(); it!=_vf_var_real.end(); it++) {
+      _vf_var.push_back(formic::unity(S()) * (*it));
+    }
   }
 }
 
@@ -831,7 +861,8 @@ void cqmc::engine::LMYEngine::wfn_update_compute() {
 /// \brief  Equation-of-Motion Calculation
 ///
 ////////////////////////////////////////////////////////////////////////////////////////////////////////           
-void cqmc::engine::LMYEngine::eom_compute() {
+template<typename S>
+void cqmc::engine::LMYEngine<S>::eom_compute() {
 
   // call the corresponding "call engine" function
   this->call_engine(_matrix_print,
@@ -858,7 +889,8 @@ void cqmc::engine::LMYEngine::eom_compute() {
 /// \brief  Reset the Object
 ///
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
-void cqmc::engine::LMYEngine::reset() {
+template<typename S>
+void cqmc::engine::LMYEngine<S>::reset() {
 
   // clear energy and target statistics
   //_energy = 0.0;
@@ -900,7 +932,8 @@ void cqmc::engine::LMYEngine::reset() {
 
 }
 
-void cqmc::engine::LMYEngine::shift_update(std::vector<double> & new_shift) {
+template<typename S>
+void cqmc::engine::LMYEngine<S>::shift_update(std::vector<double> & new_shift) {
 
   // update shift
   for (int i = 0; i < new_shift.size(); i++) 
@@ -912,7 +945,8 @@ void cqmc::engine::LMYEngine::shift_update(std::vector<double> & new_shift) {
 
 
 //Transfers the vectors from descent to the engine's LMBlocker object during the hybrid method.
-void cqmc::engine::LMYEngine::setHybridBLM_Input(std::vector< std::vector<double>>& from_descent) 
+template<typename S>
+void cqmc::engine::LMYEngine<S>::setHybridBLM_Input(std::vector< std::vector<double>>& from_descent) 
 {
 
     //Change the LMBlocker object's hybrid variable to true so input vectors will be used later on
@@ -936,25 +970,22 @@ void cqmc::engine::LMYEngine::setHybridBLM_Input(std::vector< std::vector<double
 ///
 ///
 /////////////////////////////////////////////////////////////////////////////////////////////
-void cqmc::engine::LMYEngine::call_engine(const bool exact_sampling,
-                                          const bool ground_state,
-                                          const bool variance_correct,
-                                          const bool print,
-                                          const double hd_lm_shift,
-                                          const double var_weight,
-                                          std::vector<double> & le_list,
-                                          std::vector<double> & vg,
-                                          std::vector<double> & weight,
-                                          double & energy,
-                                          double & esdev, 
-                                          double & eserr,
-                                          double & target, 
-                                          double & tserr,
-                                          std::ostream & output) {
-
-  // get rank number
-  int my_rank = formic::mpi::rank();
-  //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
+template<typename S>
+void cqmc::engine::LMYEngine<S>::call_engine(const bool exact_sampling,
+                                             const bool ground_state,
+                                             const bool variance_correct,
+                                             const bool print,
+                                             const double hd_lm_shift,
+                                             const double var_weight,
+                                             std::vector<S> & le_list,
+                                             std::vector<double> & vg,
+                                             std::vector<double> & weight,
+                                             double & energy,
+                                             double & esdev, 
+                                             double & eserr,
+                                             double & target, 
+                                             double & tserr,
+                                             std::ostream & output) {
 
   // simply, just call energy and target function calculation function
   cqmc::engine::et(exact_sampling,
@@ -984,37 +1015,38 @@ void cqmc::engine::LMYEngine::call_engine(const bool exact_sampling,
 //
 //
 ////////////////////////////////////////////////////////////////////////////////////////////
-void cqmc::engine::LMYEngine::call_engine(const formic::VarDeps * dep_ptr, 
-                                          const bool ground_state,
-                                          const bool build_lm_matrix,
-                                          const bool variance_correct,
-                                          const bool print_matrix,
-                                          const int lm_krylov_iter,
-                                          const int lm_spam_inner_iter,
-                                          const int appro_degree,
-                                          const double lm_eigen_thresh,
-                                          const double lm_min_S_eval,
-                                          const bool spam_use,
-                                          const bool var_deps_use,
-                                          const bool chase_lowest,
-                                          const bool chase_closest,
-                                          const double init_cost,
-                                          const double init_var,
-                                          const double lm_max_e_change,
-                                          const double lm_ham_shift_i,
-                                          const double lm_ham_shift_s,
-                                          const double omega,
-                                          const double var_weight,
-                                          const double lm_max_update_abs,
-                                          formic::Matrix<double> & der_rat,
-                                          formic::Matrix<double> & le_der,
-                                          std::vector<double> & vg, 
-                                          std::vector<double> & weight,
-                                          std::vector<double> & vf_var,
-                                          std::vector<bool> & good_solve,
-                                          std::vector<int> & shift_solved,
-                                          const std::vector<double> & shift_scale, 
-                                          std::ostream & output)
+template<typename S>
+void cqmc::engine::LMYEngine<S>::call_engine(const formic::VarDeps * dep_ptr, 
+                                             const bool ground_state,
+                                             const bool build_lm_matrix,
+                                             const bool variance_correct,
+                                             const bool print_matrix,
+                                             const int lm_krylov_iter,
+                                             const int lm_spam_inner_iter,
+                                             const int appro_degree,
+                                             const double lm_eigen_thresh,
+                                             const double lm_min_S_eval,
+                                             const bool spam_use,
+                                             const bool var_deps_use,
+                                             const bool chase_lowest,
+                                             const bool chase_closest,
+                                             const double init_cost,
+                                             const double init_var,
+                                             const double lm_max_e_change,
+                                             const double lm_ham_shift_i,
+                                             const double lm_ham_shift_s,
+                                             const double omega,
+                                             const double var_weight,
+                                             const double lm_max_update_abs,
+                                             formic::Matrix<S> & der_rat,
+                                             formic::Matrix<S> & le_der,
+                                             std::vector<double> & vg, 
+                                             std::vector<double> & weight,
+                                             std::vector<S> & vf_var,
+                                             std::vector<bool> & good_solve,
+                                             std::vector<int> & shift_solved,
+                                             const std::vector<double> & shift_scale, 
+                                             std::ostream & output)
 {
   // start timer 
   cqmc::start_timer("eigen solver");
@@ -1047,19 +1079,21 @@ void cqmc::engine::LMYEngine::call_engine(const formic::VarDeps * dep_ptr,
     good_solve.resize(num_shift);
 
   // create harmoinc davidson updater
-  boost::shared_ptr< cqmc::engine::HDLinMethodUpdater > hdupdater ( new cqmc::engine::HDLinMethodUpdater(der_rat, 
-                                                                                                         le_der,
-                                                                                                         vg, 
-                                                                                                         weight,
-                                                                                                         shift_scale,
-                                                                                                         omega,
-                                                                                                         var_weight,
-                                                                                                         ground_state,
-                                                                                                         variance_correct,
-                                                                                                         build_lm_matrix));
+  boost::shared_ptr< cqmc::engine::HDLinMethodUpdater<S> > hdupdater ( new cqmc::engine::HDLinMethodUpdater<S>(der_rat, 
+                                                                                                               le_der,
+                                                                                                               vg, 
+                                                                                                               weight,
+                                                                                                               shift_scale,
+                                                                                                               omega,
+                                                                                                               var_weight,
+                                                                                                               ground_state,
+                                                                                                               variance_correct,
+                                                                                                               build_lm_matrix));
 
 
    if ( !_store_der_vec ) {
+     
+     // if we don't use unbiased matrix builder 
      hdupdater -> engine_update_build_matrix(dep_ptr,
                                              lm_krylov_iter, 
                                              lm_spam_inner_iter,
@@ -1079,10 +1113,12 @@ void cqmc::engine::LMYEngine::call_engine(const formic::VarDeps * dep_ptr,
                                              lm_max_update_abs,
                                              _mbuilder.ham(),
                                              _mbuilder.ovl(),
+                                             _mbuilder.ssquare(),
                                              vf_var,
                                              good_solve,
                                              shift_solved,
                                              output); 
+
     // end timer 
     cqmc::stop_timer("eigen solver");
 
@@ -1139,7 +1175,8 @@ void cqmc::engine::LMYEngine::call_engine(const formic::VarDeps * dep_ptr,
                                          shift_solved,
                                          output);
 
-  else if ( !build_lm_matrix && spam_use ) 
+  else if ( !build_lm_matrix && spam_use ) {
+    std::vector<double> vf_var_real(vf_var.size(), 0.0);
     hdupdater -> engine_update_spam(dep_ptr, 
                                     lm_krylov_iter,
                                     lm_spam_inner_iter,
@@ -1157,10 +1194,14 @@ void cqmc::engine::LMYEngine::call_engine(const formic::VarDeps * dep_ptr,
                                     lm_ham_shift_s,
                                     omega,
                                     lm_max_update_abs,
-                                    vf_var,
+                                    vf_var_real,
                                     good_solve,
                                     shift_solved,
                                     output);
+    vf_var.clear();
+    for (auto it=vf_var_real.begin(); it != vf_var_real.end(); it++)
+      vf_var.push_back(formic::unity(S())*(*it));
+  }
 
 
 
@@ -1176,33 +1217,27 @@ void cqmc::engine::LMYEngine::call_engine(const formic::VarDeps * dep_ptr,
 //
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void cqmc::engine::LMYEngine::call_engine(const bool print_matrix, 
-                                          const bool ground_state,
-                                          const bool eom,
-                                          const bool ssquare,
-                                          const bool pm_ortho_first,
-                                          const bool jas_fixed,
-                                          const double eom_inv_thresh,
-                                          int n_sites,
-                                          int n_pm,
-                                          int n_jas,
-                                          formic::Matrix<double> & der_rat,
-                                          formic::Matrix<double> & le_der,
-                                          formic::Matrix<double> & spin_der,
-                                          formic::Matrix<std::complex<double> > & evecs,
-                                          std::vector<std::pair<std::complex<double>, int> > & energy_index,
-                                          std::vector<double> & vg,
-                                          std::vector<double> & weight,
-                                          std::ostream & output)
+template<typename S>
+void cqmc::engine::LMYEngine<S>::call_engine(const bool print_matrix, 
+                                             const bool ground_state,
+                                             const bool eom,
+                                             const bool ssquare,
+                                             const bool pm_ortho_first,
+                                             const bool jas_fixed,
+                                             const double eom_inv_thresh,
+                                             int n_sites,
+                                             int n_pm,
+                                             int n_jas,
+                                             formic::Matrix<S> & der_rat,
+                                             formic::Matrix<S> & le_der,
+                                             formic::Matrix<S> & spin_der,
+                                             formic::Matrix<std::complex<double> > & evecs,
+                                             std::vector<std::pair<std::complex<double>, int> > & energy_index,
+                                             std::vector<double> & vg,
+                                             std::vector<double> & weight,
+                                             std::ostream & output)
 {
   
-  
-  // get rank number and number of ranks 
-  int my_rank = formic::mpi::rank();
-  int num_rank = formic::mpi::size();
-  //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-  //MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
-
   // if this calculation is not ground state calculation, EOM will not be performed
   if ( !ground_state )
     return;
@@ -1212,20 +1247,20 @@ void cqmc::engine::LMYEngine::call_engine(const bool print_matrix,
     return;
 
   // creates matrix builder 
-  boost::shared_ptr< cqmc::engine::HamOvlpBuilderHD > mbuilder( new cqmc::engine::HamOvlpBuilderHD(der_rat, 
-                                                                                                   le_der, 
-                                                                                                   spin_der, 
-                                                                                                   vg, 
-                                                                                                   weight, 
-                                                                                                   0.0, 
-                                                                                                   _num_params,
-                                                                                                   100, 
-                                                                                                   false, 
-                                                                                                   true, 
-                                                                                                   false,
-                                                                                                   true,
-                                                                                                   ssquare, 
-                                                                                                   print_matrix));
+  boost::shared_ptr< cqmc::engine::HamOvlpBuilderHD<S> > mbuilder( new cqmc::engine::HamOvlpBuilderHD<S>(der_rat, 
+                                                                                                         le_der, 
+                                                                                                         spin_der, 
+                                                                                                         vg, 
+                                                                                                         weight, 
+                                                                                                         0.0, 
+                                                                                                         _num_params,
+                                                                                                         100, 
+                                                                                                         false, 
+                                                                                                         true, 
+                                                                                                         false,
+                                                                                                         true,
+                                                                                                         ssquare, 
+                                                                                                         print_matrix));
 
   // build the matrix 
   mbuilder -> MatrixBuild(output);
@@ -1237,7 +1272,17 @@ void cqmc::engine::LMYEngine::call_engine(const bool print_matrix,
   //mbuilder -> derivative_analyze(); 
 
   // creates eom calculator 
-  boost::shared_ptr< cqmc::engine::EOM > eom_calculator( new cqmc::engine::EOM(mbuilder -> ham(), mbuilder -> ovl(), mbuilder -> ssquare(), ssquare, print_matrix, pm_ortho_first, jas_fixed, n_sites, n_pm, n_jas, eom_inv_thresh));
+  boost::shared_ptr< cqmc::engine::EOM<S> > eom_calculator( new cqmc::engine::EOM<S>(mbuilder -> ham(), 
+                                                                                     mbuilder -> ovl(), 
+                                                                                     mbuilder -> ssquare(), 
+                                                                                     ssquare, 
+                                                                                     print_matrix, 
+                                                                                     pm_ortho_first, 
+                                                                                     jas_fixed, 
+                                                                                     n_sites, 
+                                                                                     n_pm, 
+                                                                                     n_jas, 
+                                                                                     eom_inv_thresh));
 
   // perform eom calculation 
   //eom_calculator -> eom_calculation(output);
@@ -1272,20 +1317,16 @@ void cqmc::engine::LMYEngine::call_engine(const bool print_matrix,
 /// \param[in]      max_update_abs     reject
 ///
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void cqmc::engine::LMYEngine::get_brlm_update_alg_part_one(const formic::VarDeps * deps,
-                                                           const int nkps,
-                                                           const double shift_i,
-                                                           const double shift_s,
-                                                           const std::vector<double> & shift_scale,
-                                                           const double max_update_abs,
-                                                           std::vector<bool> & good_solve,
-                                                           std::vector<int> & shift_solved, 
-                                                           std::ostream & output) {
-
-
-  // get rank number of number of ranks
-  int my_rank = formic::mpi::rank();
-  int num_rank = formic::mpi::size();
+template<typename S>
+void cqmc::engine::LMYEngine<S>::get_brlm_update_alg_part_one(const formic::VarDeps * deps,
+                                                              const int nkps,
+                                                              const double shift_i,
+                                                              const double shift_s,
+                                                              const std::vector<double> & shift_scale,
+                                                              const double max_update_abs,
+                                                              std::vector<bool> & good_solve,
+                                                              std::vector<int> & shift_solved, 
+                                                              std::ostream & output) {
 
   // get the number of threads
   int NumThreads = omp_get_max_threads();
@@ -1298,6 +1339,12 @@ void cqmc::engine::LMYEngine::get_brlm_update_alg_part_one(const formic::VarDeps
 
   // get a convenient variable for the number of special vectors (i.e. the initial wavefunction plus the number of old updates directions)
   const int nsv = 1 + _lmb.ou_mat().cols();
+
+  // choose how many updates to take from each block for each shift
+  const int n_up_per_shift = 1;
+
+  // choose whether to make use of previoud updates
+  const bool use_prev_ups = true;
 
   // prepare an object to hold update directions for each block
   // block_ups[i][j](p,q) refers to the pth element of the qth update vector for the jth shift for the ith block
@@ -1340,26 +1387,22 @@ void cqmc::engine::LMYEngine::get_brlm_update_alg_part_one(const formic::VarDeps
 /// \param[in]      max_update_abs     reject
 ///
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void cqmc::engine::LMYEngine::get_brlm_update_alg_part_two(const formic::VarDeps * deps,
-                                                           const bool iterative,
-                                                           const int nkps,
-                                                           const double shift_i,
-                                                           const double shift_s,
-                                                           const std::vector<double> & shift_scale,
-                                                           const double max_update_abs,
-                                                           std::vector<double> & updates,
-                                                           std::vector<bool> & good_solve,
-                                                           std::vector<int> & shift_solved, 
-                                                           std::ostream & output) {
+template<typename S>
+void cqmc::engine::LMYEngine<S>::get_brlm_update_alg_part_two(const formic::VarDeps * deps,
+                                                              const bool iterative,
+                                                              const int nkps,
+                                                              const double shift_i,
+                                                              const double shift_s,
+                                                              const std::vector<double> & shift_scale,
+                                                              const double max_update_abs,
+                                                              std::vector<double> & updates,
+                                                              std::vector<bool> & good_solve,
+                                                              std::vector<int> & shift_solved, 
+                                                              std::ostream & output) {
 
-  // get rank number and number of ranks
   int my_rank = formic::mpi::rank();
-  int num_rank = formic::mpi::size();
-  //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-  //MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
 
   // size update vector correctly
-  //std::cout << shift_scale.size() << "  " << 1 + _dep_ptr->n_tot() << std::endl;
   updates.assign(shift_scale.size() * ( 1 + _dep_ptr->n_tot()), 0.0);
 
   // get the number of special vectors(initial wfn + old updates)
@@ -1419,7 +1462,7 @@ void cqmc::engine::LMYEngine::get_brlm_update_alg_part_two(const formic::VarDeps
       formic::Matrix<double> update_dir;
       if ( !_lmb.iterative() ) 
         update_dir = cqmc::engine::get_important_brlm_dirs(1, 
-                                                           this->target_value(),
+                                                           formic::real(this->target_value()),
                                                            shift_i * shift_scale.at(shift_p),
                                                            shift_s * shift_scale.at(shift_p),
                                                            1.0e-4,
@@ -1431,7 +1474,7 @@ void cqmc::engine::LMYEngine::get_brlm_update_alg_part_two(const formic::VarDeps
         update_dir = cqmc::engine::get_important_brlm_dirs_davidson(_dep_ptr,
                                                                     1, 
                                                                     _hd_lm_shift,
-                                                                    _energy,
+                                                                    formic::real(_energy),
                                                                     shift_i * shift_scale.at(shift_p),
                                                                     shift_s * shift_scale.at(shift_p),
                                                                     1.0e-6,

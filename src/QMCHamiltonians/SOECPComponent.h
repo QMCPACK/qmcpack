@@ -23,10 +23,10 @@
 namespace qmcplusplus
 {
 /** class SOECPComponent
- **  brief Computes the nonlocal spin-orbit interaction $\Delta V_SO(r) |ljm_j><ljm_j|$.
+ **  brief Computes the nonlocal spin-orbit interaction \f$\Delta V_SO(r) |ljm_j><ljm_j|\f$.
  **  details This computes the nonlocal spin-orbit interaction between a single ion species and 
  **           a given electron.  
- **           Currently, this class does nothing other than generate and store $\Delta V_SO(r)$
+ **           Currently, this class does nothing other than generate and store \f$\Delta V_SO(r)\f$
  **           for different orbital angular momenta.  Implementation coming soon!  
  **/
 class SOECPComponent : public QMCTraits

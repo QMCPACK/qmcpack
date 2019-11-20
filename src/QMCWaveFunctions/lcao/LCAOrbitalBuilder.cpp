@@ -105,7 +105,13 @@ inline bool is_same(const xmlChar* a, const char* b) { return !strcmp((const cha
 
 
 LCAOrbitalBuilder::LCAOrbitalBuilder(ParticleSet& els, ParticleSet& ions, Communicate* comm, xmlNodePtr cur)
-    : SPOSetBuilder(comm), targetPtcl(els), sourcePtcl(ions), myBasisSet(nullptr), h5_path(""), doCuspCorrection(false)
+    : SPOSetBuilder(comm),
+      targetPtcl(els),
+      sourcePtcl(ions),
+      myBasisSet(nullptr),
+      h5_path(""),
+      SuperTwist(0.0),
+      doCuspCorrection(false)
 {
   ClassName = "LCAOrbitalBuilder";
   ReportEngine PRE(ClassName, "createBasisSet");
@@ -113,7 +119,6 @@ LCAOrbitalBuilder::LCAOrbitalBuilder(ParticleSet& els, ParticleSet& ions, Commun
   std::string keyOpt("NMO");       // Numerical Molecular Orbital
   std::string transformOpt("yes"); // Numerical Molecular Orbital
   std::string cuspC("no");         // cusp correction
-  PosType SuperTwist(0.0);         // Supertwist coordinates
   cuspInfo = "";                   // file with precalculated cusp correction info
   OhmmsAttributeSet aAttrib;
   aAttrib.add(keyOpt, "keyword");
@@ -128,15 +133,6 @@ LCAOrbitalBuilder::LCAOrbitalBuilder(ParticleSet& els, ParticleSet& ions, Commun
 
   if (cur != NULL)
     aAttrib.put(cur);
-
-  if (std::abs(SuperTwist[0] - 0.0) >= 1e-6 || std::abs(SuperTwist[1] - 0.0) >= 1e-6 ||
-      std::abs(SuperTwist[2] - 0.0) >= 1e-6)
-  {
-    std::string error_msg("You are attempting to use a Super Twist other than Gamma. "
-                          "This feature is being implemented but not supported yet. "
-                          "Please contact developers for more details !!! Aborting.");
-    APP_ABORT(error_msg.c_str());
-  }
 
   radialOrbType = -1;
   if (transformOpt == "yes")
@@ -155,7 +151,7 @@ LCAOrbitalBuilder::LCAOrbitalBuilder(ParticleSet& els, ParticleSet& ions, Commun
   if (cuspC == "yes")
     doCuspCorrection = true;
   //Evaluate the Phase factor. Equals 1 for OBC.
-  EvalPeriodicImagePhaseFactors(SuperTwist);
+  EvalPeriodicImagePhaseFactors(SuperTwist, PeriodicImagePhaseFactors);
   // no need to wait but load the basis set
   if (h5_path != "")
     loadBasisSetFromH5();
@@ -341,7 +337,7 @@ LCAOrbitalBuilder::BasisSet_t* LCAOrbitalBuilder::createBasisSet(xmlNodePtr cur)
     cur = cur->next;
   } // done with basis set
   mBasisSet->setBasisSetSize(-1);
-  mBasisSet->setPBCParams(PBCImages, PeriodicImagePhaseFactors);
+  mBasisSet->setPBCParams(PBCImages, SuperTwist, PeriodicImagePhaseFactors);
   return mBasisSet;
 }
 
@@ -423,9 +419,8 @@ LCAOrbitalBuilder::BasisSet_t* LCAOrbitalBuilder::createBasisSetH5()
     hin.pop();
     hin.close();
   }
-
   mBasisSet->setBasisSetSize(-1);
-  mBasisSet->setPBCParams(PBCImages, PeriodicImagePhaseFactors);
+  mBasisSet->setPBCParams(PBCImages, SuperTwist, PeriodicImagePhaseFactors);
   return mBasisSet;
 }
 
@@ -540,11 +535,6 @@ bool LCAOrbitalBuilder::loadMO(LCAOrbitalSet& spo, xmlNodePtr cur)
     {
       coeff_ptr = cur;
     }
-    else if (cname == "opt_vars")
-    {
-      spo.params_supplied = true;
-      putContent(spo.params, cur);
-    }
     cur = cur->next;
   }
   if (coeff_ptr == NULL)
@@ -592,8 +582,6 @@ bool LCAOrbitalBuilder::loadMO(LCAOrbitalSet& spo, xmlNodePtr cur)
               << std::endl;
     app_log() << *spo.C << std::endl;
   }
-
-  //init_LCOrbitalSetOpt(orbital_mix_magnitude);
 
   return success;
 }
@@ -706,6 +694,7 @@ bool LCAOrbitalBuilder::putPBCFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
   int neigs      = spo.getBasisSetSize();
   int setVal     = -1;
   bool IsComplex = false;
+  bool MultiDet  = false;
   PosType SuperTwist(0.0);
   PosType SuperTwistH5(0.0);
   OhmmsAttributeSet aAttrib;
@@ -716,7 +705,32 @@ bool LCAOrbitalBuilder::putPBCFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
   spo.setIdentity(false);
   hdf_archive hin(myComm);
 
-  xmlNodePtr curtemp = coeff_ptr->parent->parent->parent;
+  xmlNodePtr curtemp = coeff_ptr;
+
+  std::string xmlTag("determinantset");
+  std::string MSDTag("sposet");
+  std::string SDTag("determinant");
+  std::string EndTag("qmcsystem");
+  std::string curname;
+
+  do
+  {
+    std::stringstream ss;
+    curtemp = curtemp->parent;
+    ss << curtemp->name;
+    ss >> curname;
+    if (curname == MSDTag)
+      MultiDet = true; ///Used to know if running an MSD calculation - needed for order of Orbitals.
+    if (curname == SDTag)
+      MultiDet = false;
+
+  } while ((xmlTag != curname) && (curname != EndTag));
+  if (curname == EndTag)
+  {
+    APP_ABORT(
+        "Could not find in wf file the \"sposet\" or \"determinant\" tags. Please verify input or contact developers");
+  }
+
   aAttrib.add(SuperTwist, "twist");
   aAttrib.put(curtemp);
 
@@ -741,9 +755,9 @@ bool LCAOrbitalBuilder::putPBCFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
       app_log() << "                  z :" << std::abs(SuperTwistH5[2] - SuperTwist[2]) << std::endl;
       APP_ABORT("Requested Super Twist in XML and Super Twist in HDF5 do not Match!!! Aborting.");
     }
-
+    //SuperTwist=SuperTwistH5;
     Matrix<ValueType> Ctemp(neigs, spo.getBasisSetSize());
-    LoadFullCoefsFromH5(hin, setVal, SuperTwist, Ctemp);
+    LoadFullCoefsFromH5(hin, setVal, SuperTwist, Ctemp, MultiDet);
 
     int n = 0, i = 0;
     while (i < norbs)
@@ -824,36 +838,42 @@ void readRealMatrixFromH5(hdf_archive& hin, const std::string& setname, Matrix<L
 void LCAOrbitalBuilder::LoadFullCoefsFromH5(hdf_archive& hin,
                                             int setVal,
                                             PosType& SuperTwist,
-                                            Matrix<std::complex<RealType>>& Ctemp)
+                                            Matrix<std::complex<RealType>>& Ctemp,
+                                            bool MultiDet)
 {
   Matrix<RealType> Creal(Ctemp.rows(), Ctemp.cols());
   Matrix<RealType> Ccmplx(Ctemp.rows(), Ctemp.cols());
 
   char name[72];
   std::string setname;
-  sprintf(name, "%s%d", "/Super_Twist/eigenset_", setVal);
+  ///When running Single Determinant calculations, MO coeff loaded based on occupation and lowest eingenvalue.
+  ///However, for solids with multideterminants, orbitals are order by kpoints; first all MOs for kpoint 1, then 2 etc
+  /// The multideterminants occupation is specified in the input/HDF5 and theefore as long as there is consistency between
+  /// the order in which we read the orbitals and the occupation, we are safe. In the case of Multideterminants generated
+  /// by pyscf and Quantum Package, They are stored in the same order as generated for quantum package and one should use
+  /// the orbitals labled eigenset_unsorted.
+
+  if (MultiDet == false)
+    sprintf(name, "%s%d", "/Super_Twist/eigenset_", setVal);
+  else
+    sprintf(name, "%s%d", "/Super_Twist/eigenset_unsorted_", setVal);
+
   setname = name;
   readRealMatrixFromH5(hin, setname, Creal);
 
-  if (std::abs(SuperTwist[0] - 0.0) < 1e-6 && std::abs(SuperTwist[1] - 0.0) < 1e-6 &&
-      std::abs(SuperTwist[2] - 0.0) < 1e-6)
-  {
-    for (int i = 0; i < Ccmplx.rows(); i++)
-      for (int j = 0; j < Ccmplx.cols(); j++)
-        Ccmplx[i][j] = 0.0;
-  }
-  else
-  {
-    setname = std::string(name) + "_imag";
-    readRealMatrixFromH5(hin, setname, Ccmplx);
-  }
+  setname = std::string(name) + "_imag";
+  readRealMatrixFromH5(hin, setname, Ccmplx);
 
   for (int i = 0; i < Ctemp.rows(); i++)
     for (int j = 0; j < Ctemp.cols(); j++)
       Ctemp[i][j] = std::complex<RealType>(Creal[i][j], Ccmplx[i][j]);
 }
 
-void LCAOrbitalBuilder::LoadFullCoefsFromH5(hdf_archive& hin, int setVal, PosType& SuperTwist, Matrix<RealType>& Creal)
+void LCAOrbitalBuilder::LoadFullCoefsFromH5(hdf_archive& hin,
+                                            int setVal,
+                                            PosType& SuperTwist,
+                                            Matrix<RealType>& Creal,
+                                            bool MultiDet)
 {
   bool IsComplex = false;
   //FIXME: need to check the path to IsComplex in h5
@@ -871,19 +891,46 @@ void LCAOrbitalBuilder::LoadFullCoefsFromH5(hdf_archive& hin, int setVal, PosTyp
   readRealMatrixFromH5(hin, name, Creal);
 }
 
-///Function Not yet called. Periodic Image Phase Factors computation to be determined
-void LCAOrbitalBuilder::EvalPeriodicImagePhaseFactors(PosType SuperTwist)
+/// Periodic Image Phase Factors computation to be determined
+void LCAOrbitalBuilder::EvalPeriodicImagePhaseFactors(PosType SuperTwist,
+                                                      std::vector<RealType>& LocPeriodicImagePhaseFactors)
 {
-//NEED Specialization
-#if not defined(QMC_COMPLEX)
-  PeriodicImagePhaseFactors.resize(3);
-  PeriodicImagePhaseFactors[0] = 1.0;
-  PeriodicImagePhaseFactors[1] = 1.0;
-  PeriodicImagePhaseFactors[2] = 1.0;
-#else
+  const int NbImages = (PBCImages[0] + 1) * (PBCImages[1] + 1) * (PBCImages[2] + 1);
+  LocPeriodicImagePhaseFactors.resize(NbImages);
+  for (size_t i = 0; i < NbImages; i++)
+    LocPeriodicImagePhaseFactors[i] = 1.0;
+}
+
+void LCAOrbitalBuilder::EvalPeriodicImagePhaseFactors(PosType SuperTwist,
+                                                      std::vector<std::complex<RealType>>& LocPeriodicImagePhaseFactors)
+{
   ///Exp(ik.g) where i is imaginary, k is the supertwist and g is the translation vector PBCImage.
+  if (h5_path != "")
+  {
+    hdf_archive hin(myComm);
+    if (myComm->rank() == 0)
+    {
+      if (!hin.open(h5_path, H5F_ACC_RDONLY))
+        APP_ABORT("Could not open H5 file");
+      if (!hin.push("Cell"))
+        APP_ABORT("Could not open Cell group in H5; Probably Corrupt H5 file; accessed from LCAOrbitalBuilder");
+      if (!hin.readEntry(Lattice, "LatticeVectors"))
+        APP_ABORT("Could not open Lattice vectors in H5; Probably Corrupt H5 file; accessed from LCAOrbitalBuilder");
+      hin.close();
+    }
+    for (int i = 0; i < 3; i++)
+      for (int j = 0; j < 3; j++)
+        myComm->bcast(Lattice(i, j));
+  }
+  else
+  {
+    APP_ABORT("Attempting to run PBC LCAO with no HDF5 support. Behaviour is unknown. Safer to exit");
+  }
+
   int phase_idx = 0;
   int TransX, TransY, TransZ;
+  RealType phase;
+
   for (int i = 0; i <= PBCImages[0]; i++) //loop Translation over X
   {
     TransX = ((i % 2) * 2 - 1) * ((i + 1) / 2);
@@ -894,12 +941,17 @@ void LCAOrbitalBuilder::EvalPeriodicImagePhaseFactors(PosType SuperTwist)
       {
         TransZ = ((k % 2) * 2 - 1) * ((k + 1) / 2);
         RealType s, c;
-        RealType vec_scalar = (TransX * SuperTwist[0] + TransY * SuperTwist[1] + TransZ * SuperTwist[2]);
-        sincos(-2 * RealType(M_PI) * vec_scalar, &s, &c);
-        PeriodicImagePhaseFactors.emplace_back(c, s);
+        PosType Val;
+        Val[0] = TransX * Lattice(0, 0) + TransY * Lattice(1, 0) + TransZ * Lattice(2, 0);
+        Val[1] = TransX * Lattice(0, 1) + TransY * Lattice(1, 1) + TransZ * Lattice(2, 1);
+        Val[2] = TransX * Lattice(0, 2) + TransY * Lattice(1, 2) + TransZ * Lattice(2, 2);
+
+        phase = dot(SuperTwist, Val);
+        sincos(phase, &s, &c);
+
+        LocPeriodicImagePhaseFactors.emplace_back(c, s);
       }
     }
   }
-#endif
 }
 } // namespace qmcplusplus

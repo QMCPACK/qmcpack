@@ -95,7 +95,7 @@ private:
 
 #ifdef HAVE_LMY_ENGINE
   formic::VarDeps vdeps;
-  cqmc::engine::LMYEngine* EngineObj;
+  cqmc::engine::LMYEngine<ValueType>* EngineObj;
 #endif
 
   //engine for running various gradient descent based algorithms for optimization

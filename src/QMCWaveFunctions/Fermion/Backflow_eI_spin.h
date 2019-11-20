@@ -240,13 +240,13 @@ public:
    */
   inline void evaluate(const ParticleSet& P, ParticleSet& QP)
   {
+#ifndef ENABLE_SOA
     RealType du, d2u;
     const auto& myTable = P.getDistTable(myTableIndex_);
     for (int sg = 0; sg < RadFunc.rows(); ++sg)
     {
       for (int iat = s_offset[sg]; iat < s_offset[sg + 1]; ++iat)
       {
-#ifndef ENABLE_SOA
         int nn = myTable.M[iat]; //starting nn for the iat-th source
         for (int tg = 0; tg < RadFunc.cols(); ++tg)
         {
@@ -260,9 +260,9 @@ public:
           else
             nn += t_offset[tg + 1] - t_offset[tg]; //move forward by the number of particles in the group tg
         }
-#endif
       }
     }
+#endif
   }
 
 
@@ -308,11 +308,11 @@ public:
    */
   inline void evaluate(const ParticleSet& P, ParticleSet& QP, GradMatrix_t& Bmat_full, HessMatrix_t& Amat)
   {
+#ifndef ENABLE_SOA
     RealType du, d2u;
     const auto& myTable = P.getDistTable(myTableIndex_);
     for (int sg = 0; sg < RadFunc.rows(); ++sg)
     {
-#ifndef ENABLE_SOA
       for (int iat = s_offset[sg]; iat < s_offset[sg + 1]; ++iat)
       {
         int nn = myTable.M[iat]; //starting nn for the iat-th source
@@ -340,8 +340,8 @@ public:
             nn += t_offset[tg + 1] - t_offset[tg]; //move forward by the number of particles in the group tg
         }
       }
-#endif
     }
+#endif
   }
 
   /** calculate quasi-particle coordinates after pbyp move
@@ -356,6 +356,7 @@ public:
    */
   inline void evaluatePbyP(const ParticleSet& P, int iat, ParticleSet::ParticlePos_t& newQP)
   {
+#ifndef ENABLE_SOA
     RealType du, d2u;
     const auto& myTable = P.getDistTable(myTableIndex_);
     int tg = P.GroupID[iat]; //species of this particle
@@ -372,6 +373,7 @@ public:
         }
       }
     }
+#endif
   }
 
   inline void evaluatePbyP(const ParticleSet& P,
@@ -384,6 +386,7 @@ public:
 
   inline void evaluatePbyP(const ParticleSet& P, int iat, ParticleSet::ParticlePos_t& newQP, HessMatrix_t& Amat)
   {
+#ifndef ENABLE_SOA
     RealType du, d2u;
     const auto& myTable = P.getDistTable(myTableIndex_);
     int tg = P.GroupID[iat]; //species of this particle
@@ -407,6 +410,7 @@ public:
         }
       }
     }
+#endif
   }
 
   inline void evaluatePbyP(const ParticleSet& P,
@@ -424,6 +428,7 @@ public:
                            GradMatrix_t& Bmat_full,
                            HessMatrix_t& Amat)
   {
+#ifndef ENABLE_SOA
     RealType du, d2u;
     const auto& myTable = P.getDistTable(myTableIndex_);
     int tg = P.GroupID[iat]; //species of this particle
@@ -449,6 +454,7 @@ public:
         }
       }
     }
+#endif
   }
 
   /** calculate only Bmat
@@ -456,11 +462,11 @@ public:
    */
   inline void evaluateBmatOnly(const ParticleSet& P, GradMatrix_t& Bmat_full)
   {
+#ifndef ENABLE_SOA
     RealType du, d2u;
     const auto& myTable = P.getDistTable(myTableIndex_);
     for (int sg = 0; sg < RadFunc.rows(); ++sg)
     {
-#ifndef ENABLE_SOA
       for (int iat = s_offset[sg]; iat < s_offset[sg + 1]; ++iat)
       {
         int nn = myTable.M[iat]; //starting nn for the iat-th source
@@ -477,8 +483,8 @@ public:
             nn += t_offset[tg + 1] - t_offset[tg]; //move forward by the number of particles in the group tg
         }
       }
-#endif
     }
+#endif
   }
 
   /** calculate quasi-particle coordinates, Bmat and Amat
@@ -492,13 +498,13 @@ public:
                                       GradMatrix_t& Ymat,
                                       HessArray_t& Xmat)
   {
+#ifndef ENABLE_SOA
     RealType du, d2u;
     const auto& myTable = P.getDistTable(myTableIndex_);
     for (int sg = 0; sg < RadFunc.rows(); ++sg)
     {
       for (int iat = s_offset[sg]; iat < s_offset[sg + 1]; ++iat)
       {
-#ifndef ENABLE_SOA
         int nn = myTable.M[iat]; //starting nn for the iat-th source
         for (int tg = 0; tg < RadFunc.cols(); ++tg)
         {
@@ -538,9 +544,9 @@ public:
           else
             nn += t_offset[tg + 1] - t_offset[tg]; //move forward by the number of particles in the group tg
         }
-#endif
       }
     }
+#endif
   }
 };
 } // namespace qmcplusplus

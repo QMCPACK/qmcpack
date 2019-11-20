@@ -13,7 +13,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-/** @file LRJastrowSingleton.h
+/** @file
  * @brief Define a LRHandler with two template parameters
  */
 #ifndef QMCPLUSPLUS_LONGRANGEJASTROW_BREAKUPUTILITY_H
@@ -282,7 +282,6 @@ struct DerivYukawaBreakup
   {
     Rs                    = rs;
     NormFactor            = 4.0 * M_PI / ref.Lattice.Volume;
-    T Density             = ref.getTotalNum() / ref.Lattice.Volume;
     n2                    = ref.getTotalNum();
     SqrtRs                = std::sqrt(Rs);
     OneOverSqrtRs         = 1.0 / SqrtRs;
@@ -309,7 +308,6 @@ struct DerivYukawaBreakup
       return -0.5 * OneOverRs * (1.0 - r * OneOverSqrtRs);
     else
     {
-      T exponential = std::exp(-r * OneOverSqrtRs);
       return -0.5 * OneOverRs * std::exp(-r * OneOverSqrtRs);
     }
   }

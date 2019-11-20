@@ -633,7 +633,7 @@ struct HybridAdoptorBase
   template<typename VV>
   inline void interpolate_buffer_v(VV& psi, const VV& psi_AO) const
   {
-    const RealType cone(1), ctwo(2);
+    const RealType cone(1);
     for (size_t i = 0; i < psi.size(); i++)
       psi[i] = psi_AO[i] * f + psi[i] * (cone - f);
   }

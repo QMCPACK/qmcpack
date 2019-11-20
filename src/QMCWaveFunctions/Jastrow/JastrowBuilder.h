@@ -35,29 +35,29 @@ private:
   PtclPoolType& ptclPool;
   ///index for the jastrow type: 1, 2, 3
   int JastrowType;
-  ///jastrow/@name
+  /// \xmla{jastrow,name}
   std::string nameOpt;
-  ///jastrow/@type
+  /// \xmla{jastrow,type}
   std::string typeOpt;
-  ///jastrow/@function
+  /// \xmla{jastrow,function}
   std::string funcOpt;
-  ///jastrow/@spin
+  /// \xmla{jastrow,spin}
   std::string spinOpt;
-  ///jastrow/@transform
+  /// \xmla{jastrow,transform}
   std::string transformOpt;
-  ///jastrow/@source
+  /// \xmla{jastrow,source}
   std::string sourceOpt;
   ///reset the options
   void resetOptions();
-  ///build one-body term
+  /// build one-body term
   WaveFunctionComponent* buildOneBody(xmlNodePtr cur);
-  ///build two-body term
+  /// build two-body term
   WaveFunctionComponent* buildTwoBody(xmlNodePtr cur);
   /// build electron-electron ion term
   WaveFunctionComponent* build_eeI(xmlNodePtr cur);
-  ///build k-Space term
+  /// build k-Space term
   WaveFunctionComponent* buildkSpace(xmlNodePtr cur);
-  // build number-counting term
+  /// build number-counting term
   WaveFunctionComponent* buildCounting(xmlNodePtr cur);
 };
 

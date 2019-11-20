@@ -73,9 +73,7 @@ void halfRotateCholeskyMatrix(WALKER_TYPES type, task_group& TG, int k0, int kN,
   int NMO = Alpha->size(1);
   if(type==COLLINEAR)
     NAEB = Beta->size(0);
-  int NEL = (type==CLOSED)?(NAEA):(NAEA+NAEB);
   int nvec = CholMat.size(1);
-  int nnodes = TG.getTotalNodes(), nodeid = TG.getNodeID();
   int ncores = TG.getTotalCores(), coreid = TG.getCoreID();
 
   assert(CholMat.size(0)==NMO*NMO);
@@ -244,9 +242,7 @@ SpCType_shm_csr_matrix halfRotateCholeskyMatrixForBias(WALKER_TYPES type, task_g
   int NMO = Alpha->size(1);
   if(type!=CLOSED)
     NAEB = Beta->size(0);
-  int NEL = (type==CLOSED)?(NAEA):(NAEA+NAEB);
   int nvec = CholMat.size(1);
-  int nnodes = TG.getTotalNodes(), nodeid = TG.getNodeID();
   int ncores = TG.getTotalCores(), coreid = TG.getCoreID();
 
 // to speed up, generate new communicator for eqv_nodes and split full work among all
@@ -381,9 +377,7 @@ void halfRotateCholeskyMatrix(WALKER_TYPES type, task_group& TG, int k0, int kN,
   int NMO = Alpha->size(1);
   if(type==COLLINEAR)
     NAEB = Beta->size(0);
-  int NEL = (type==CLOSED)?(NAEA):(NAEA+NAEB);
   int nvec = CholMat.size(1);
-  int nnodes = TG.getTotalNodes(), nodeid = TG.getNodeID();
   int ncores = TG.getTotalCores(), coreid = TG.getCoreID();
 
   assert(CholMat.size(0)==NMO*NMO);
@@ -495,6 +489,7 @@ void getLank(MultiArray2DA&& Aai, MultiArray3DB&& Likn,
                                 MultiArray3DC&& Lank, MultiArray2D && buff)
 {
   int na = Aai.size(0);
+  if(na == 0) return;
   int ni = Aai.size(1);
   int nk = Likn.size(1);
   int nchol = Likn.size(2);
@@ -527,6 +522,7 @@ void getLank_from_Lkin(MultiArray2DA&& Aai, MultiArray3DB&& Lkin,
                                 MultiArray3DC&& Lank, MultiArray2D && buff)
 {
   int na = Aai.size(0);
+  if(na == 0) return;
   int ni = Aai.size(1);
   int nk = Lkin.size(0);
   int nchol = Lkin.size(2);
@@ -559,6 +555,7 @@ void getLakn_Lank(MultiArray2DA&& Aai, MultiArray3DB&& Likn,
                   MultiArray3DC&& Lakn, MultiArray3DC&& Lank)
 {
   int na = Aai.size(0);
+  if(na == 0) return;
   int ni = Aai.size(1);
 
   int nmo = Likn.size(0);
@@ -588,6 +585,7 @@ void getLakn_Lank_from_Lkin(MultiArray2DA&& Aai, MultiArray3DB&& Lkin,
                                 MultiArray3DC&& Lakn,  MultiArray3DC&& Lank, MultiArray2D && buff)
 {
   int na = Aai.size(0);
+  if(na == 0) return;
   int ni = Aai.size(1);
 
   int nmo =  Lkin.size(0);

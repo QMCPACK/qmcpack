@@ -158,8 +158,6 @@ class BasicEstimator: public EstimatorBase
     data[0] = enume.real()/ncalls;
     data[1] = edeno.real()/ncalls;
 
-    double max_exch_time=0;
-
     if(writer) {
       out<<std::setprecision(6) <<nwalk/ncalls <<" " <<weight/ncalls <<" " <<std::setprecision(16);
       if(nwfacts>0) {

@@ -1,5 +1,4 @@
-\chapter{Additional Tools}
-\label{chap:additional_tools}
+\chapter{Additional Tools}\label{chap:additional_tools}
 QMCPACK provides a set of lightweight executables that address certain
 common problems in QMC workflow and analysis.  These range from conversion utilities between 
 different file formats and QMCPACK (e.g., \ishell{ppconvert} and \ishell{convert4qmc}),  
@@ -16,6 +15,8 @@ different file formats and QMCPACK (e.g., \ishell{ppconvert} and \ishell{convert
   \subsection{qmc-fit}
     \ishell{qmc-fit} is a curve fitting tool used to obtain statistical error bars on fitted parameters.
     It is useful for DMC time step extrapolation.  For details, see Section~\ref{sec:qmcfit}.
+  \subsection{qdens}
+    \ishell{qdens} is a command line tool to produce density files from QMCPACK's \ishell{stat.h5} output files.  For details, see Section~\ref{sec:qdens}.
   \subsection{qmcfinitesize}
     \ishell{qmcfinitesize} is a utility to compute many-body finite-size corrections to the energy.  It
     is a C++ executable that is built alongside the QMCPACK executable.  It can be found in 
@@ -23,8 +24,7 @@ different file formats and QMCPACK (e.g., \ishell{ppconvert} and \ishell{convert
 
 \section{Converters} 
 \input{convert4qmc}    
-  \subsection{pw2qmcpack.x}
-\label{sec:pw2qmcpack}
+\subsection{pw2qmcpack.x}\label{sec:pw2qmcpack}
 \ishell{pw2qmcpack.x} is an executable that converts PWSCF wavefunctions to QMCPACK readable 
 HDF5 format.  This utility is built alongside the QE postprocessing utilities.
 This utility is written in Fortran90 and is distributed as a patch of the QE 
@@ -79,8 +79,7 @@ convertpw4qmc basename.sample -o qmcpackWavefunction.h5
 This reads the Qbox wavefunction and performs the Fourier transform before saving to a QMCPACK eshdf format wavefunction.  Currently multiple k-points are supported, but due to difficulties with the qbox wavefunction file format, the single particle orbitals do not have their proper energies associated with them.  This means that when tiling from a primitive cell to a supercell, the lowest n single particle orbitals from all necessary k-points will be used.  This can be problematic in the case of a metal and this feature should be used with EXTREME caution.
 
 
-\subsection{ppconvert}
-\label{sec:ppconvert}
+\subsection{ppconvert}\label{sec:ppconvert}
 \texttt{ppconvert} is a utility to convert PPs between different commonly used formats.
 It is a stand-alone C++ executable that is not built by default but that is accessible via adding
 \ishell{-DBUILD_PPCONVERT=1} to CMake and then typing \ishell{make ppconvert}.

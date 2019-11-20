@@ -24,10 +24,12 @@
 #include "Particle/Walker.h"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
-#include "QMCHamiltonians/QMCHamiltonian.h"
 
 namespace qmcplusplus
 {
+
+class QMCHamiltonian;
+
 class MCPopulation
 {
 public:
@@ -52,8 +54,11 @@ private:
   //Properties properties_;
   ParticleSet ions_;
   std::vector<IndexType> walker_offsets_;
+  std::vector<IndexType> num_local_walkers_per_node_;
+  
   // By making this a linked list and creating the crowds at the same time we could get first touch.
-  std::vector<std::unique_ptr<MCPWalker>> walkers_;
+  UPtrVector<MCPWalker> walkers_;
+  UPtrVector<MCPWalker> dead_walkers_;
   std::vector<std::pair<int, int>> particle_group_indexes_;
   SpeciesSet species_set_;
   std::vector<RealType> ptclgrp_mass_;
@@ -62,12 +67,11 @@ private:
   ///1/Mass per particle
   std::vector<RealType> ptcl_inv_mass_;
   size_t size_dataset_;
-  // Should be
+  // could be
   // std::shared_ptr<TrialWaveFunction> trial_wf_;
   // std::shared_ptr<ParticleSet> elec_particle_set_;
   // std::shared_ptr<QMCHamiltonian> hamiltonian_;
-  // Are raw pointers. This is necessary if MCPopulation is going to be moved by value into QMCDriverNew
-  // and possible moved out into the next driver later.
+
   // This is necessary MCPopulation is constructed in a simple call scope in QMCDriverFactory from the legacy MCWalkerConfiguration
   // MCPopulation should have QMCMain scope eventually and the driver will just have a refrence to it.
   TrialWaveFunction* trial_wf_;
@@ -82,7 +86,7 @@ private:
   int rank_;
 
 public:
-  MCPopulation() : trial_wf_(nullptr), elec_particle_set_(nullptr), hamiltonian_(nullptr) {}
+  MCPopulation();
   /** Temporary constructor to deal with MCWalkerConfiguration be the only source of some information
    *  in QMCDriverFactory.
    */
@@ -92,19 +96,12 @@ public:
                TrialWaveFunction* trial_wf,
                QMCHamiltonian* hamiltonian_,
                int this_rank = 0);
-  //MCPopulation(int num_ranks, int num_particles) : num_ranks_(num_ranks), num_particles_(num_particles) {}
+
   MCPopulation(int num_ranks,
                ParticleSet* elecs,
                TrialWaveFunction* trial_wf,
                QMCHamiltonian* hamiltonian,
-               int this_rank = 0)
-      : num_ranks_(num_ranks),
-        num_particles_(elecs->R.size()),
-        trial_wf_(trial_wf),
-        elec_particle_set_(elecs),
-        hamiltonian_(hamiltonian),
-        rank_(this_rank)
-  {}
+               int this_rank = 0);
 
   MCPopulation(MCPopulation&)  = default;
   MCPopulation(MCPopulation&&) = default;
@@ -118,6 +115,7 @@ public:
    */
   MCPWalker& spawnWalker();
   void killWalker(MCPWalker&);
+  void killLastWalker();
   void createWalkerInplace(UPtr<MCPWalker>& walker_ptr);
   void allocateWalkerStuffInplace(int walker_index);
   /** }@ */
@@ -172,10 +170,9 @@ public:
    *  is invalid. Ideally MCPopulation not process any calls in this state, next best would be to only
    *  process calls to become valid.
    */
-  IndexType get_active_walkers() const { return walkers_.size(); }
+  //IndexType get_active_walkers() const { return walkers_.size(); }
   int get_num_ranks() const { return num_ranks_; }
   IndexType get_num_global_walkers() const { return num_global_walkers_; }
-  IndexType update_num_global_walkers(Communicate* comm);
   IndexType get_num_local_walkers() const { return num_local_walkers_; }
   IndexType get_num_particles() const { return num_particles_; }
   IndexType get_max_samples() const { return max_samples_; }
@@ -185,7 +182,8 @@ public:
   const SpeciesSet& get_species_set() const { return species_set_; }
   const ParticleSet& get_ions() const { return ions_; }
   const std::vector<int>& get_walker_offsets() const { return walker_offsets_; }
-
+  std::vector<IndexType> get_num_local_walkers_per_node() const { return num_local_walkers_per_node_; }
+  void syncWalkersPerNode(Communicate* comm);
   void set_num_global_walkers(IndexType num_global_walkers) { num_global_walkers_ = num_global_walkers; }
   void set_num_local_walkers(IndexType num_local_walkers) { num_local_walkers_ = num_local_walkers; }
 
@@ -198,6 +196,7 @@ public:
   }
 
   UPtrVector<MCPWalker>& get_walkers() { return walkers_; }
+  UPtrVector<QMCHamiltonian>& get_hamiltonians() { return walker_hamiltonians_; }
   const std::vector<std::pair<int, int>>& get_particle_group_indexes() const { return particle_group_indexes_; }
   const std::vector<RealType>& get_ptclgrp_mass() const { return ptclgrp_mass_; }
   const std::vector<RealType>& get_ptclgrp_inv_mass() const { return ptclgrp_inv_mass_; }
@@ -205,6 +204,8 @@ public:
 
   void set_walker_offsets(std::vector<IndexType> walker_offsets) { walker_offsets_ = walker_offsets; }
 
+  // TODO: the fact this is needed is sad remove need for its existence.
+  QMCHamiltonian& get_golden_hamiltonian() { return *hamiltonian_; }
   /** }@ */
 };
 

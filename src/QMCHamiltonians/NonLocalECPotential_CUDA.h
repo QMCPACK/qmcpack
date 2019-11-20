@@ -16,7 +16,8 @@
 #ifndef QMCPLUSPLUS_NONLOCALECPOTENTIAL_CUDA_H
 #define QMCPLUSPLUS_NONLOCALECPOTENTIAL_CUDA_H
 
-#include "NonLocalECPotential.h"
+#include "QMCHamiltonians/NonLocalECPotential.h"
+#include "QMCWaveFunctions/WaveFunctionComponent.h"
 
 namespace qmcplusplus
 {

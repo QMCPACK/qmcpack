@@ -91,44 +91,20 @@ inline void TansposeSquare(const TIN* restrict in, TOUT* restrict out, size_t n,
 }
 
 
-template<typename T>
-inline T computeLogDet(const T* restrict diag, int n, const int* restrict pivot, T& phase)
+template<typename T, typename T_FP>
+inline void computeLogDet(const T* restrict diag, int n, const int* restrict pivot, std::complex<T_FP>& logdet)
 {
-  T logdet(0);
-  int sign_det = 1;
+  logdet = std::complex<T_FP>();
   for (size_t i = 0; i < n; i++)
-  {
-    sign_det *= (pivot[i] == i + 1) ? 1 : -1;
-    sign_det *= (diag[i] > 0) ? 1 : -1;
-    logdet += std::log(std::abs(diag[i]));
-  }
-  phase = (sign_det > 0) ? T(0) : M_PI;
-  return logdet;
+    logdet += std::log(std::complex<T_FP>((pivot[i] == i + 1) ? diag[i] : -diag[i]));
 }
 
-template<typename T>
-inline T computeLogDet(const std::complex<T>* restrict diag, int n, const int* restrict pivot, T& phase)
-{
-  T logdet(0);
-  phase = T(0);
-  for (size_t i = 0; i < n; i++)
-  {
-    phase += std::arg(diag[i]);
-    if (pivot[i] != i + 1)
-      phase += M_PI;
-    logdet += std::log(diag[i].real() * diag[i].real() + diag[i].imag() * diag[i].imag());
-    //slightly smaller error with the following
-    //        logdet+=2.0*std::log(std::abs(x[ii]);
-  }
-  constexpr T one_over_2pi = T(1) / TWOPI;
-  phase -= std::floor(phase * one_over_2pi) * TWOPI;
-  return 0.5 * logdet;
-}
-
-template<typename T_FP, typename T = T_FP>
+/** helper class to compute matrix inversion and the log value of determinant
+ * @tparam T_FP the datatype used in the actual computation of matrix inversion
+ */
+template<typename T_FP>
 class DiracMatrix
 {
-  typedef typename scalar_traits<T>::real_type real_type;
   typedef typename scalar_traits<T_FP>::real_type real_type_fp;
   aligned_vector<T_FP> m_work;
   aligned_vector<int> m_pivot;
@@ -152,43 +128,65 @@ class DiracMatrix
     LU_diag.resize(lda);
   }
 
+  /** compute the inverse of invMat (in place) and the log value of determinant
+   * @tparam TREAL real type
+   * @param n invMat is n x n matrix
+   * @param lda the first dimension of invMat
+   * @param LogDet log determinant value of invMat before inversion
+   */
+  template<typename TREAL>
+  inline void computeInvertAndLog(T_FP* invMat, const int n, const int lda, std::complex<TREAL>& LogDet)
+  {
+    BlasThreadingEnv knob(getNextLevelNumThreads());
+    if (Lwork < lda)
+      reset(invMat, lda);
+    Xgetrf(n, n, invMat, lda, m_pivot.data());
+    for(int i=0; i<n; i++)
+      LU_diag[i] = invMat[i*lda+i];
+    computeLogDet(LU_diag.data(), n, m_pivot.data(), LogDet);
+    Xgetri(n, invMat, lda, m_pivot.data(), m_work.data(), Lwork);
+  }
+
 public:
 
   DiracMatrix() : Lwork(0) {}
 
-  /** compute the inverse of the transpose of matrix A
-   * assume precision T_FP >= T, do the inversion always with T_FP
+  /** compute the inverse of the transpose of matrix A and its determinant value in log
+   * when T_FP and TMAT are the same
+   * @tparam TMAT matrix value type
+   * @tparam TREAL real type
    */
-  inline void invert_transpose(const Matrix<T>& amat,
-                               Matrix<T>& invMat,
-                               real_type& LogDet,
-                               real_type& Phase)
+  template<typename TMAT, typename TREAL>
+  inline std::enable_if_t<std::is_same<T_FP, TMAT>::value>
+  invert_transpose(const Matrix<TMAT>& amat,
+                   Matrix<TMAT>& invMat,
+                   std::complex<TREAL>& LogDet)
   {
-    BlasThreadingEnv knob(getNextLevelNumThreads());
     const int n   = invMat.rows();
     const int lda = invMat.cols();
-    T_FP* invMat_ptr(nullptr);
-#if !defined(MIXED_PRECISION)
-    simd::transpose(amat.data(), n, amat.cols(), invMat.data(), n, invMat.cols());
-    invMat_ptr = invMat.data();
-#else
-    psiM_fp.resize(n,lda);
-    simd::transpose(amat.data(), n, amat.cols(), psiM_fp.data(), n, psiM_fp.cols());
-    invMat_ptr = psiM_fp.data();
-#endif
-    if (Lwork < lda)
-      reset(invMat_ptr, lda);
-    Xgetrf(n, n, invMat_ptr, lda, m_pivot.data());
-    for(int i=0; i<n; i++)
-      LU_diag[i] = invMat_ptr[i*lda+i];
-    real_type_fp Phase_tmp;
-    LogDet = computeLogDet(LU_diag.data(), n, m_pivot.data(), Phase_tmp);
-    Phase = Phase_tmp;
-    Xgetri(n, invMat_ptr, lda, m_pivot.data(), m_work.data(), Lwork);
-#if defined(MIXED_PRECISION)
-    invMat = psiM_fp;
-#endif
+    simd::transpose(amat.data(), n, amat.cols(), invMat.data(), n, lda);
+    computeInvertAndLog(invMat.data(), n, lda, LogDet);
   }
+
+  /** compute the inverse of the transpose of matrix A and its determinant value in log
+   * when T_FP and TMAT are not the same and need scratch space psiM_fp
+   * @tparam TMAT matrix value type
+   * @tparam TREAL real type
+   */
+  template<typename TMAT, typename TREAL>
+  inline std::enable_if_t<!std::is_same<T_FP, TMAT>::value>
+  invert_transpose(const Matrix<TMAT>& amat,
+                   Matrix<TMAT>& invMat,
+                   std::complex<TREAL>& LogDet)
+  {
+    const int n   = invMat.rows();
+    const int lda = invMat.cols();
+    psiM_fp.resize(n,lda);
+    simd::transpose(amat.data(), n, amat.cols(), psiM_fp.data(), n, lda);
+    computeInvertAndLog(psiM_fp.data(), n, lda, LogDet);
+    invMat = psiM_fp;
+  }
+
 };
 } // namespace qmcplusplus
 

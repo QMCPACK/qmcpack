@@ -12,7 +12,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-/** @file ECPComponentBuilderBuilder.h
+/** @file
  * @brief Declaration of a builder class for an ECP component for an ionic type
  */
 #ifndef QMCPLUSPLUS_ECPCOMPONENT_BUILDER_H

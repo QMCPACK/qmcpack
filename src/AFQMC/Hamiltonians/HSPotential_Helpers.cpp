@@ -480,9 +480,6 @@ std::vector<std::size_t> count_nnz_per_cholvec(double cut, TaskGroup_& TG, SpVTy
   if(TG.getNumberOfTGs() > 1)
     APP_ABORT("Error: count_nnz_per_cholvec is not designed for distributed CholMat. \n");
 
-  int nnodes = TG.getTotalNodes(), nodeid = TG.getNodeID();
-  int ncores = TG.getTotalCores(), coreid = TG.getCoreID();
-
   if(V2.size(0) != NMO*NMO)
     APP_ABORT(" Error in count_nnz_per_cholvec: V2.size(0) ! NMO*NMO \n");
   int ik0, ikN;
@@ -513,7 +510,6 @@ std::vector<std::size_t> count_nnz_per_ik(double cut, TaskGroup_& TG, SpVType_sh
   if(TG.getNumberOfTGs() > 1)
     APP_ABORT("Error: count_nnz_per_ik is not designed for distributed CholMat. \n");
 
-  int nnodes = TG.getTotalNodes(), nodeid = TG.getNodeID();
   int ncores = TG.getTotalCores(), coreid = TG.getCoreID();
 
   if(V2.size(0) != NMO*NMO)
@@ -526,7 +522,6 @@ std::vector<std::size_t> count_nnz_per_ik(double cut, TaskGroup_& TG, SpVType_sh
   if(cut < 1e-12) cut=1e-12;
   std::vector<std::size_t> counts(V2.size(0));
 
-  std::size_t nik,nki;
   for(int i=0, cnt=0; i<NMO; i++)
     for(int k=i; k<NMO; k++, cnt++) {
       if(cnt < ik0) continue;
@@ -550,7 +545,6 @@ void generateHSPotential(SpVType_shm_csr_matrix& vn, std::vector<int> const& map
   if(TG.getNumberOfTGs() > 1)
     APP_ABORT("Error: generateHSPotential is not designed for distributed CholMat. \n");
 
-  int nnodes = TG.getTotalNodes(), nodeid = TG.getNodeID();
   int ncores = TG.getTotalCores(), coreid = TG.getCoreID();
 
   if(V2.size(0) != NMO*NMO)

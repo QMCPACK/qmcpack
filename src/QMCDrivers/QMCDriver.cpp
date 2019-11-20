@@ -580,4 +580,6 @@ xmlNodePtr QMCDriver::getQMCNode()
   return newqmc;
 }
 
+         
+
 } // namespace qmcplusplus

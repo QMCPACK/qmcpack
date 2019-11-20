@@ -280,8 +280,7 @@ TEST_CASE("BSpline builder Jastrow J2", "[wavefunction]")
   elec_.acceptMove(1);
 
   REQUIRE(std::real(ratio_1) == Approx(0.9871985577));
-  REQUIRE(j2->LogValue == Approx(0.0883791773));
-
+  REQUIRE(std::real(j2->LogValue) == Approx(0.0883791773));
 }
 
 TEST_CASE("BSpline builder Jastrow J1", "[wavefunction]")
@@ -369,7 +368,6 @@ TEST_CASE("BSpline builder Jastrow J1", "[wavefunction]")
   QMCTraits::GradType gsource(0.0);
   TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM> grad_grad_source;
   TinyVector<ParticleSet::ParticleLaplacian_t, OHMMS_DIM> lapl_grad_source;
-  int nions  = ions_.getTotalNum();
   int nelecs = elec_.getTotalNum();
 
   for (int dim = 0; dim < OHMMS_DIM; dim++)
@@ -558,8 +556,7 @@ TEST_CASE("BSpline builder Jastrow J1", "[wavefunction]")
   elec_.acceptMove(1);
 
   REQUIRE(std::real(ratio_1) == Approx(1.0040884258));
-  REQUIRE(j1->LogValue == Approx(0.32013531536));
-
+  REQUIRE(std::real(j1->LogValue) == Approx(0.32013531536));
 
   // test to make sure that setting cusp for J1 works properly
   const char* particles2 = "<tmp> \

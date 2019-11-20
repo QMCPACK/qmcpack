@@ -14,7 +14,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-/** @file QMCUpdateBase
+/** @file
  * @brief Declare QMCUpdateBase class
  */
 #ifndef QMCPLUSPLUS_QMCUPDATE_BASE_H

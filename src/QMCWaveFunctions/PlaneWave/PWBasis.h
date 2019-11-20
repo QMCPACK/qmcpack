@@ -199,7 +199,7 @@ public:
     //      for(int idim=0; idim<3; idim++){
     //        RealType phi=TWOPI*tau_red[idim];
     //        ComplexType Ctemp(std::cos(phi),std::sin(phi));
-    //        register int ng=maxg[idim];
+    //        int ng=maxg[idim];
     //        ComplexType* restrict cp_ptr=C[idim]+ng;
     //        ComplexType* restrict cn_ptr=C[idim]+ng-1;
     //        *cp_ptr=1.0;
@@ -221,7 +221,7 @@ public:
     //        //start the recursion with the 111 vector.
     //        RealType phi = pos[idim] * G111[idim];
     //        register ComplexType Ctemp(std::cos(phi), std::sin(phi));
-    //        register int ng=maxg[idim];
+    //        int ng=maxg[idim];
     //        ComplexType* restrict cp_ptr=C[idim]+ng;
     //        ComplexType* restrict cn_ptr=C[idim]+ng-1;
     //        *cp_ptr=1.0;

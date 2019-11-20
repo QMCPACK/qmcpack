@@ -41,8 +41,7 @@ struct ConvertPosUnit<ParticleAttrib<TinyVector<T, 3>>, Tensor<T, 3>, 3>
 
   inline static void apply(const Array_t& pin, const Transformer_t& X, Array_t& pout, int first, int last)
   {
-    register T x00 = X[0], x01 = X[1], x02 = X[2], x10 = X[3], x11 = X[4], x12 = X[5], x20 = X[6], x21 = X[7],
-               x22 = X[8];
+    T x00 = X[0], x01 = X[1], x02 = X[2], x10 = X[3], x11 = X[4], x12 = X[5], x20 = X[6], x21 = X[7], x22 = X[8];
 #pragma ivdep
     for (int i = first; i < last; i++)
     {
@@ -54,8 +53,7 @@ struct ConvertPosUnit<ParticleAttrib<TinyVector<T, 3>>, Tensor<T, 3>, 3>
 
   inline static void apply(const Transformer_t& X, const Array_t& pin, Array_t& pout, int first, int last)
   {
-    register T x00 = X[0], x01 = X[1], x02 = X[2], x10 = X[3], x11 = X[4], x12 = X[5], x20 = X[6], x21 = X[7],
-               x22 = X[8];
+    T x00 = X[0], x01 = X[1], x02 = X[2], x10 = X[3], x11 = X[4], x12 = X[5], x20 = X[6], x21 = X[7], x22 = X[8];
 #pragma ivdep
     for (int i = first; i < last; i++)
     {
@@ -67,8 +65,7 @@ struct ConvertPosUnit<ParticleAttrib<TinyVector<T, 3>>, Tensor<T, 3>, 3>
 
   inline static void apply(Array_t& pinout, const Transformer_t& X, int first, int last)
   {
-    register T x00 = X[0], x01 = X[1], x02 = X[2], x10 = X[3], x11 = X[4], x12 = X[5], x20 = X[6], x21 = X[7],
-               x22 = X[8];
+    T x00 = X[0], x01 = X[1], x02 = X[2], x10 = X[3], x11 = X[4], x12 = X[5], x20 = X[6], x21 = X[7], x22 = X[8];
 #pragma ivdep
     for (int i = first; i < last; i++)
     {
@@ -81,8 +78,7 @@ struct ConvertPosUnit<ParticleAttrib<TinyVector<T, 3>>, Tensor<T, 3>, 3>
 
   inline static void apply(const Transformer_t& X, Array_t& pinout, int first, int last)
   {
-    register T x00 = X[0], x01 = X[1], x02 = X[2], x10 = X[3], x11 = X[4], x12 = X[5], x20 = X[6], x21 = X[7],
-               x22 = X[8];
+    T x00 = X[0], x01 = X[1], x02 = X[2], x10 = X[3], x11 = X[4], x12 = X[5], x20 = X[6], x21 = X[7], x22 = X[8];
 #pragma ivdep
     for (int i = first; i < last; i++)
     {
@@ -105,7 +101,7 @@ struct ConvertPosUnit<ParticleAttrib<TinyVector<T, 2>>, Tensor<T, 2>, 2>
 
   inline static void apply(const Array_t& pin, const Transformer_t& X, Array_t& pout, int first, int last)
   {
-    register T x00 = X[0], x01 = X[1], x10 = X[2], x11 = X[3];
+    T x00 = X[0], x01 = X[1], x10 = X[2], x11 = X[3];
 #pragma ivdep
     for (int i = first; i < last; i++)
     {
@@ -116,7 +112,7 @@ struct ConvertPosUnit<ParticleAttrib<TinyVector<T, 2>>, Tensor<T, 2>, 2>
 
   inline static void apply(const Transformer_t& X, const Array_t& pin, Array_t& pout, int first, int last)
   {
-    register T x00 = X[0], x01 = X[1], x10 = X[2], x11 = X[3];
+    T x00 = X[0], x01 = X[1], x10 = X[2], x11 = X[3];
 #pragma ivdep
     for (int i = first; i < last; i++)
     {
@@ -127,7 +123,7 @@ struct ConvertPosUnit<ParticleAttrib<TinyVector<T, 2>>, Tensor<T, 2>, 2>
 
   inline static void apply(Array_t& pinout, const Transformer_t& X, int first, int last)
   {
-    register T x00 = X[0], x01 = X[1], x10 = X[2], x11 = X[3];
+    T x00 = X[0], x01 = X[1], x10 = X[2], x11 = X[3];
 #pragma ivdep
     for (int i = first; i < last; i++)
     {
@@ -139,7 +135,7 @@ struct ConvertPosUnit<ParticleAttrib<TinyVector<T, 2>>, Tensor<T, 2>, 2>
 
   inline static void apply(const Transformer_t& X, Array_t& pinout, int first, int last)
   {
-    register T x00 = X[0], x01 = X[1], x10 = X[2], x11 = X[3];
+    T x00 = X[0], x01 = X[1], x10 = X[2], x11 = X[3];
 #pragma ivdep
     for (int i = first; i < last; i++)
     {
@@ -200,10 +196,8 @@ struct ApplyBConds<ParticleAttrib<TinyVector<T, 3>>, Tensor<T, 3>, 3>
                                int last)
   {
     SUPERCELL_BOUNDARY_LIMITS(T);
-    register T g00 = G[0], g01 = G[1], g02 = G[2], g10 = G[3], g11 = G[4], g12 = G[5], g20 = G[6], g21 = G[7],
-               g22 = G[8];
-    register T r00 = R[0], r01 = R[1], r02 = R[2], r10 = R[3], r11 = R[4], r12 = R[5], r20 = R[6], r21 = R[7],
-               r22 = R[8];
+    T g00 = G[0], g01 = G[1], g02 = G[2], g10 = G[3], g11 = G[4], g12 = G[5], g20 = G[6], g21 = G[7], g22 = G[8];
+    T r00 = R[0], r01 = R[1], r02 = R[2], r10 = R[3], r11 = R[4], r12 = R[5], r20 = R[6], r21 = R[7], r22 = R[8];
 #pragma ivdep
     for (int i = first; i < last; i++)
     {
@@ -220,8 +214,7 @@ struct ApplyBConds<ParticleAttrib<TinyVector<T, 3>>, Tensor<T, 3>, 3>
   inline static void Cart2Unit(const Array_t& pin, const Transformer_t& G, Array_t& pout, int first, int last)
   {
     SUPERCELL_BOUNDARY_LIMITS(T);
-    register T g00 = G[0], g01 = G[1], g02 = G[2], g10 = G[3], g11 = G[4], g12 = G[5], g20 = G[6], g21 = G[7],
-               g22 = G[8];
+    T g00 = G[0], g01 = G[1], g02 = G[2], g10 = G[3], g11 = G[4], g12 = G[5], g20 = G[6], g21 = G[7], g22 = G[8];
 #pragma ivdep
     for (int i = first; i < last; i++)
     {
@@ -238,8 +231,7 @@ struct ApplyBConds<ParticleAttrib<TinyVector<T, 3>>, Tensor<T, 3>, 3>
   inline static void Unit2Cart(const Array_t& pin, const Transformer_t& R, Array_t& pout, int first, int last)
   {
     SUPERCELL_BOUNDARY_LIMITS(T);
-    register T r00 = R[0], r01 = R[1], r02 = R[2], r10 = R[3], r11 = R[4], r12 = R[5], r20 = R[6], r21 = R[7],
-               r22 = R[8];
+    T r00 = R[0], r01 = R[1], r02 = R[2], r10 = R[3], r11 = R[4], r12 = R[5], r20 = R[6], r21 = R[7], r22 = R[8];
 #pragma ivdep
     for (int i = first; i < last; i++)
     {
@@ -282,10 +274,8 @@ struct ApplyBConds<ParticleAttrib<TinyVector<T, 3>>, Tensor<T, 3>, 3>
   inline static void Cart2Cart(Array_t& pinout, const Transformer_t& G, const Transformer_t& R, int first, int last)
   {
     SUPERCELL_BOUNDARY_LIMITS(T);
-    register T g00 = G[0], g01 = G[1], g02 = G[2], g10 = G[3], g11 = G[4], g12 = G[5], g20 = G[6], g21 = G[7],
-               g22 = G[8];
-    register T r00 = R[0], r01 = R[1], r02 = R[2], r10 = R[3], r11 = R[4], r12 = R[5], r20 = R[6], r21 = R[7],
-               r22 = R[8];
+    T g00 = G[0], g01 = G[1], g02 = G[2], g10 = G[3], g11 = G[4], g12 = G[5], g20 = G[6], g21 = G[7], g22 = G[8];
+    T r00 = R[0], r01 = R[1], r02 = R[2], r10 = R[3], r11 = R[4], r12 = R[5], r20 = R[6], r21 = R[7], r22 = R[8];
 #pragma ivdep
     for (int i = first; i < last; i++)
     {
@@ -302,7 +292,7 @@ struct ApplyBConds<ParticleAttrib<TinyVector<T, 3>>, Tensor<T, 3>, 3>
   static inline Component_t Unit2Unit(const Component_t& pos)
   {
     SUPERCELL_BOUNDARY_LIMITS(T);
-    register T x(pos[0]), y(pos[1]), z(pos[2]);
+    T x(pos[0]), y(pos[1]), z(pos[2]);
     THREE_DIM_BOUNDARY_BLOCK(x, y, z, epsilon, plus_one);
     return TinyVector<T, 3>(x, y, z);
   }
@@ -310,7 +300,7 @@ struct ApplyBConds<ParticleAttrib<TinyVector<T, 3>>, Tensor<T, 3>, 3>
   static inline Component_t Cart2Unit(const Component_t& pos, const Transformer_t& G)
   {
     SUPERCELL_BOUNDARY_LIMITS(T);
-    register T x(pos[0] * G[0] + pos[1] * G[3] + pos[2] * G[6]), y(pos[0] * G[1] + pos[1] * G[4] + pos[2] * G[7]),
+    T x(pos[0] * G[0] + pos[1] * G[3] + pos[2] * G[6]), y(pos[0] * G[1] + pos[1] * G[4] + pos[2] * G[7]),
         z(pos[0] * G[2] + pos[1] * G[5] + pos[2] * G[8]);
     THREE_DIM_BOUNDARY_BLOCK(x, y, z, epsilon, plus_one);
     return Component_t(x, y, z);
@@ -319,7 +309,7 @@ struct ApplyBConds<ParticleAttrib<TinyVector<T, 3>>, Tensor<T, 3>, 3>
   static inline Component_t Unit2Cart(const Component_t& pos, const Transformer_t& R)
   {
     SUPERCELL_BOUNDARY_LIMITS(T);
-    register T x(pos[0]), y(pos[1]), z(pos[2]);
+    T x(pos[0]), y(pos[1]), z(pos[2]);
     THREE_DIM_BOUNDARY_BLOCK(x, y, z, epsilon, plus_one);
     return Component_t(x * R[0] + y * R[3] + z * R[6], x * R[1] + y * R[4] + z * R[7], x * R[2] + y * R[5] + z * R[8]);
   }
@@ -327,7 +317,7 @@ struct ApplyBConds<ParticleAttrib<TinyVector<T, 3>>, Tensor<T, 3>, 3>
   static inline Component_t Cart2Cart(const Component_t& pos, const Transformer_t& G, const Transformer_t& R)
   {
     SUPERCELL_BOUNDARY_LIMITS(T);
-    register T x(pos[0] * G[0] + pos[1] * G[3] + pos[2] * G[6]), y(pos[0] * G[1] + pos[1] * G[4] + pos[2] * G[7]),
+    T x(pos[0] * G[0] + pos[1] * G[3] + pos[2] * G[6]), y(pos[0] * G[1] + pos[1] * G[4] + pos[2] * G[7]),
         z(pos[0] * G[2] + pos[1] * G[5] + pos[2] * G[8]);
     THREE_DIM_BOUNDARY_BLOCK(x, y, z, epsilon, plus_one);
     return Component_t(x * R[0] + y * R[3] + z * R[6], x * R[1] + y * R[4] + z * R[7], x * R[2] + y * R[5] + z * R[8]);

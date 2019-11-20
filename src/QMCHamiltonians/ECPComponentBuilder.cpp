@@ -16,6 +16,7 @@
 #include "QMCHamiltonians/ECPComponentBuilder.h"
 #include "Numerics/GaussianTimesRN.h"
 #include "Numerics/Quadrature.h"
+#include "QMCHamiltonians/NonLocalECPComponent.h"
 #include "Numerics/Transform2GridFunctor.h"
 #include "Utilities/IteratorUtility.h"
 #include "Utilities/SimpleParser.h"

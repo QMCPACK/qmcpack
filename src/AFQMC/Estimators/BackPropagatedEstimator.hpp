@@ -140,13 +140,15 @@ class BackPropagatedEstimator: public EstimatorBase
     if(iav < 0) return;
 
     using std::fill_n;
-    // 0. skip if requested 
-    if(bp_step == max_nback_prop && iblock < nblocks_skip) {
-      if( iblock+1 == nblocks_skip )
-        for(auto it=wset.begin(); it<wset.end(); ++it)
-          it->setSlaterMatrixN(); 
-      iblock++;
-      wset.setBPPos(0);
+    // 0. skip if requested  
+    if(iblock < nblocks_skip) {
+      if(bp_step == max_nback_prop) {
+        if( iblock+1 == nblocks_skip )
+          for(auto it=wset.begin(); it<wset.end(); ++it)
+            it->setSlaterMatrixN(); 
+        iblock++;
+        wset.setBPPos(0);
+      }  
       return;
     }
 
@@ -161,11 +163,6 @@ class BackPropagatedEstimator: public EstimatorBase
       Refs = std::move(mpi3CTensor({wset.size(),nrefs,nrow*ncol},Refs.get_allocator()));
     if(detR.size(0) != wset.size() || detR.size(1) != nx*nrefs)
       detR.reextent({wset.size(),nrefs*nx}); 
-
-    // temporary!
-    int wpop = wset.GlobalPopulation();
-    int nw = wset.size();  // assuming all groups have the same size
-    int iw0 = wset.getTG().getTGNumber()*nw;
 
     int n0,n1;
     std::tie(n0,n1) = FairDivideBoundary(TG.getLocalTGRank(),int(Refs.size(2)),TG.getNCoresPerTG());
@@ -218,7 +215,6 @@ class BackPropagatedEstimator: public EstimatorBase
   void print(std::ofstream& out, hdf_archive& dump, WalkerSet& wset)
   {
     // I doubt we will ever collect a billion blocks of data.
-    int n_zero = 9;
     if(writer) {
       out<<std::setprecision(5)
                     <<AFQMCTimers[back_propagate_timer]->get_total() <<" ";

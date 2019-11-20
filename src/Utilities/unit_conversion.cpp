@@ -26,7 +26,10 @@ units count_unit(const std::string& su)
   else if (su == "mole")
     return mol;
   else
+  {
     APP_ABORT("units::count_unit\n  invalid count unit: " + su + "\n  valid options are: mol");
+    return mol;
+  }
 }
 
 
@@ -57,8 +60,11 @@ units distance_unit(const std::string& su)
   else if (su == "femtometer")
     return fm;
   else
+  {
     APP_ABORT("units::distance_unit\n  invalid distance unit: " + su +
               "\n  valid options are: m/meter, A/angstrom, B/bohr, nm/nanometer, pm/picometer, fm/femtometer");
+    return m;
+  }
 }
 
 
@@ -85,8 +91,11 @@ units time_unit(const std::string& su)
   else if (su == "femtosecond")
     return fs;
   else
+  {
     APP_ABORT("units::time_unit\n  invalid time unit: " + su +
               "\n  valid options are: s/second, ms/millisecond, ns/nanosecond, ps/picosecond, fs/femtosecond");
+    return s;
+  }
 }
 
 
@@ -113,8 +122,11 @@ units mass_unit(const std::string& su)
   else if (su == "dalton")
     return Da;
   else
+  {
     APP_ABORT("units::mass_unit\n  invalid mass unit: " + su +
               "\n  valid options are: kg/kilogram, me/electron_mass, mp/proton_mass, amu/atomic_mass_unit, Da/dalton");
+    return kg;
+  }
 }
 
 
@@ -145,9 +157,12 @@ units energy_unit(const std::string& su)
   else if (su == "kelvin")
     return K;
   else
+  {
     APP_ABORT("units::energy_unit\n  invalid energy unit: " + su +
               "\n  valid options are: J/joule, eV/electron_volt, Ry/rydberg, Ha/hartree, kJ/mol/kilo_joule_per_mole, "
               "K/kelvin");
+    return J;
+  }
 }
 
 
@@ -162,7 +177,10 @@ units charge_unit(const std::string& su)
   else if (su == "proton_charge")
     return e;
   else
+  {
     APP_ABORT("units::charge_unit\n  invalid charge unit: " + su + "\n  valid options are: C/coulomb, e/proton_charge");
+    return C;
+  }
 }
 
 
@@ -187,8 +205,11 @@ units pressure_unit(const std::string& su)
   else if (su == "atmosphere")
     return atm;
   else
+  {
     APP_ABORT("units::pressure_unit\n  invalid pressure unit: " + su +
               "\n  valid options are: Pa/pascal, bar/bar, Mbar/megabar, GPa/gigapascal, atm/atmosphere");
+    return Pa;
+  }
 }
 
 
@@ -203,7 +224,10 @@ units force_unit(const std::string& su)
   else if (su == "piconewton")
     return pN;
   else
+  {
     APP_ABORT("units::force_unit\n  invalid force unit: " + su + "\n  valid options are: N/newton, pN/piconewton");
+    return N;
+  }
 }
 
 } // namespace Units

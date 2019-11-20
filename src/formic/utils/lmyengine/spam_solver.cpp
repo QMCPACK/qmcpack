@@ -36,10 +36,6 @@
 void cqmc::engine::SpamLMHD::solve_subspace_nonsymmetric(const bool outer)
 {
 
-  // get rank number and number of rank
-  int my_rank = formic::mpi::rank();
-  int num_rank = formic::mpi::rank();
-
   // one in complex form
   const std::complex<double> complex_one(1.0, 0.0);
   const std::complex<double> complex_zero(0.0, 0.0);
@@ -209,6 +205,12 @@ void cqmc::engine::SpamLMHD::solve_subspace_nonsymmetric(const bool outer)
     //Eigen::ArrayXcd eval_list = (es.eigenvalues()).array();
     std::complex<double> lowest_eval = e_evals.at(0);
 
+    double inner_eval = 0.0;
+    if ( !_ground ) 
+      inner_eval = 1.0 / (_hd_shift - _energy_inner);
+    else 
+      inner_eval = _energy_inner;
+
     // if it's outer iteration, we just make sure that we choose the lowest energy(target function)
     //if ( outer ) {
     for (int j = 1; j < truncate_index; j++) {
@@ -319,11 +321,7 @@ void cqmc::engine::SpamLMHD::solve_subspace(const bool outer)
 void cqmc::engine::SpamLMHD::add_krylov_vector_inner(const formic::ColVec<double> & v)
 {
 
-  // get rank number and number of rank
   int my_rank = formic::mpi::rank();
-  int num_rank = formic::mpi::size();
-  //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-  //MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
 
   // check vector length
   if (my_rank == 0 && v.size() != _der_rat.cols())
@@ -469,9 +467,7 @@ void cqmc::engine::SpamLMHD::add_krylov_vector_inner(const formic::ColVec<double
 void cqmc::engine::SpamLMHD::add_krylov_vectors_outer(const formic::Matrix<double> & m)
 {
 
-  // get rank number and number of ranks
   int my_rank = formic::mpi::rank();
-  int num_rank = formic::mpi::size();
 
   // check matrix size
   if (my_rank == 0 && m.rows() != _der_rat.cols())
@@ -619,13 +615,6 @@ void cqmc::engine::SpamLMHD::add_krylov_vectors_outer(const formic::Matrix<doubl
 
 void cqmc::engine::SpamLMHD::HMatVecOp(const formic::ColVec<double> & x, formic::ColVec<double> & y, const bool transpose, const bool approximate)
 {
-
-
-  int my_rank = formic::mpi::rank();
-  int num_rank = formic::mpi::size();
-  //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-  //MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
-
   // size the resulting vector correctly
   y.reset(x.size());
 
@@ -831,13 +820,6 @@ void cqmc::engine::SpamLMHD::HMatVecOp(const formic::ColVec<double> & x, formic:
 
 void cqmc::engine::SpamLMHD::HMatMatOp(const formic::Matrix<double> & x, formic::Matrix<double> & y, const bool transpose, const bool approximate)
 {
-
-  int my_rank = formic::mpi::rank();
-  int num_rank = formic::mpi::size();
-  //int my_rank;
-  //int num_rank;
-  //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-  //MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
 
   // size the resulting matrix correctly
   y.reset(x.rows(), x.cols());
@@ -1102,14 +1084,6 @@ void cqmc::engine::SpamLMHD::SMatVecOp(const formic::ColVec<double> & x, formic:
 
 void cqmc::engine::SpamLMHD::SMatMatOp(const formic::Matrix<double> & x, formic::Matrix<double> & y, const bool approximate)
 {
-
-  int my_rank = formic::mpi::rank();
-  int num_rank = formic::mpi::size();
-  //int my_rank;
-  //int num_rank;
-  //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-  //MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
-
   // size the resulting matrix correctly
   y.reset(x.rows(), x.cols());
 
@@ -1206,11 +1180,11 @@ cqmc::engine::SpamLMHD::SpamLMHD(const formic::VarDeps* dep_ptr,
                                  const double lm_max_e_change,
                                  const double total_weight,
                                  const double vgsa,
-                                 formic::Matrix<double>& der_rat,
-                                 formic::Matrix<double>& le_der,
-                                 formic::Matrix<double>& der_rat_appro,
-                                 formic::Matrix<double>& le_der_appro)
-    : EigenSolver(dep_ptr,
+                                 formic::Matrix<double> & der_rat,
+                                 formic::Matrix<double> & le_der,
+                                 formic::Matrix<double> & der_rat_appro,
+                                 formic::Matrix<double> & le_der_appro)
+:EigenSolver<double>(dep_ptr,
                   nfds,
                   lm_eigen_thresh,
                   var_deps_use,
@@ -1244,14 +1218,6 @@ cqmc::engine::SpamLMHD::SpamLMHD(const formic::VarDeps* dep_ptr,
       _der_rat_appro(der_rat_appro),
       _le_der_appro(le_der_appro)
 {
-  // get rank number and number of ranks
-  int my_rank = formic::mpi::rank();
-  int num_rank = formic::mpi::size();
-  //int my_rank;
-  //int num_rank;
-  //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-  //MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
-
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -1264,13 +1230,7 @@ cqmc::engine::SpamLMHD::SpamLMHD(const formic::VarDeps* dep_ptr,
 bool cqmc::engine::SpamLMHD::iterative_solve(double & eval, std::ostream & output)
 {
 
-  // get rank number and number of rank
   int my_rank = formic::mpi::rank();
-  int num_rank = formic::mpi::size();
-  //int my_rank;
-  //int num_rank;
-  //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-  //MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
 
   // initialize the solution vector to the unit vector along the first direction
   _evecs.reset( ( _var_deps_use ? 1 + _dep_ptr->n_tot() : _nfds ), 0.0 );
@@ -1306,6 +1266,9 @@ bool cqmc::engine::SpamLMHD::iterative_solve(double & eval, std::ostream & outpu
     output << boost::format("iteration solving starts here(engine) \n") << std::endl << std::endl;
 
   while(true) {
+    
+    // smallest singular value 
+    double smallest_sin_value_outer = 0.0;
 
     // solve subspace eigenvalue problem on root process
     if ( my_rank == 0 ) {
@@ -1439,6 +1402,9 @@ bool cqmc::engine::SpamLMHD::iterative_solve(double & eval, std::ostream & outpu
 
     // now enter inner loop
     while (true) {
+     
+      // average of smallest singular value
+      double smallest_sin_val_avg_inner = 0.0;
 
       // solve subspace eigenvalue problem on root process
       if ( my_rank == 0 ) {
@@ -1594,12 +1560,7 @@ bool cqmc::engine::SpamLMHD::solve(double & eval, std::ostream & output)
 
 void cqmc::engine::SpamLMHD::update_hvecs_sub(const double new_i_shift, const double new_s_shift)
 {
-
-  // get rank number and number of ranks
   int my_rank = formic::mpi::rank();
-  int num_rank = formic::mpi::size();
-  //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-  //MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
 
   // get the different between new shift and old shift
   const double diff_shift_i = new_i_shift - _hshift_i;

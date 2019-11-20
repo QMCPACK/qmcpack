@@ -16,13 +16,10 @@
 
 #include "Particle/DistanceTableData.h"
 #include "QMCWaveFunctions/Jastrow/eeI_JastrowBuilder.h"
-#include "QMCWaveFunctions/Jastrow/eeI_JastrowOrbital.h"
-#include "QMCWaveFunctions/Jastrow/JeeIOrbitalSoA.h"
-#include "QMCWaveFunctions/Jastrow/DiffOneBodyJastrowOrbital.h"
 #ifndef ENABLE_SOA
-#include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbital.h"
+#include "QMCWaveFunctions/Jastrow/eeI_JastrowOrbital.h"
 #endif
-#include "QMCWaveFunctions/Jastrow/DiffTwoBodyJastrowOrbital.h"
+#include "QMCWaveFunctions/Jastrow/JeeIOrbitalSoA.h"
 #include "Utilities/ProgressReportEngine.h"
 #include "QMCWaveFunctions/Jastrow/PolynomialFunctor3D.h"
 
@@ -34,7 +31,6 @@ bool eeI_JastrowBuilder::putkids(xmlNodePtr kids, J3type& J3)
   std::string jname = "JeeI";
   SpeciesSet& iSet  = sourcePtcl->getSpeciesSet();
   SpeciesSet& eSet  = targetPtcl.getSpeciesSet();
-  int numiSpecies   = iSet.getTotalNum();
   //read in xml
   while (kids != NULL)
   {
@@ -128,8 +124,6 @@ WaveFunctionComponent* eeI_JastrowBuilder::buildComponent(xmlNodePtr cur)
     tAttrib.add(ftype, "function");
     tAttrib.put(cur);
     SpeciesSet& iSet = sourcePtcl->getSpeciesSet();
-    SpeciesSet& eSet = targetPtcl.getSpeciesSet();
-    int numiSpecies  = iSet.getTotalNum();
     if (ftype == "polynomial")
     {
 #ifdef ENABLE_SOA

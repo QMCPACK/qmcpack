@@ -272,12 +272,11 @@ WaveFunctionComponent::ValueType MultiSlaterDeterminantFast::evaluate(ParticleSe
   return psiCurrent;
 }
 
-WaveFunctionComponent::RealType MultiSlaterDeterminantFast::evaluateLog(ParticleSet& P,
+WaveFunctionComponent::LogValueType MultiSlaterDeterminantFast::evaluateLog(ParticleSet& P,
                                                                         ParticleSet::ParticleGradient_t& G,
                                                                         ParticleSet::ParticleLaplacian_t& L)
 {
-  ValueType psi   = evaluate(P, G, L);
-  return LogValue = evaluateLogAndPhase(psi, PhaseValue);
+  return LogValue = convertValueToLog(evaluate(P, G, L));
 }
 
 WaveFunctionComponent::ValueType MultiSlaterDeterminantFast::evalGrad_impl(ParticleSet& P,
@@ -427,7 +426,7 @@ void MultiSlaterDeterminantFast::registerData(ParticleSet& P, WFBufferType& buf)
 }
 
 // FIX FIX FIX
-WaveFunctionComponent::RealType MultiSlaterDeterminantFast::updateBuffer(ParticleSet& P,
+WaveFunctionComponent::LogValueType MultiSlaterDeterminantFast::updateBuffer(ParticleSet& P,
                                                                          WFBufferType& buf,
                                                                          bool fromscratch)
 {
@@ -445,7 +444,7 @@ WaveFunctionComponent::RealType MultiSlaterDeterminantFast::updateBuffer(Particl
   buf.put(psiCurrent);
 
   UpdateTimer.stop();
-  return LogValue = evaluateLogAndPhase(psiCurrent, PhaseValue);
+  return LogValue = convertValueToLog(psiCurrent);
 }
 
 void MultiSlaterDeterminantFast::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
@@ -689,7 +688,6 @@ void MultiSlaterDeterminantFast::evaluateDerivatives(ParticleSet& P,
         ValueType lapl_sum          = 0.0;
         ValueType gg = 0.0, ggP = 0.0;
         myG_temp = 0.0;
-        int num  = laplSum_up.size();
         ValueVector_t::iterator it(laplSum_up.begin());
         ValueVector_t::iterator last(laplSum_up.end());
         ValueType* ptr0 = lapls_up[0];

@@ -21,7 +21,6 @@ import os
 from numpy import array
 from generic import obj
 from physical_system import PhysicalSystem
-from qmcpack_converters import Pw2qmcpack
 from simulation import Simulation
 from pwscf_input import PwscfInput,generate_pwscf_input
 from pwscf_analyzer import PwscfAnalyzer
@@ -195,7 +194,11 @@ class Pwscf(Simulation):
             struct  = structs[len(structs)-1]
             pos   = struct.positions
             atoms = struct.atoms
-            scale = self.input.system['celldm(1)']
+            if 'celldm(1)' in self.input.system:
+                scale = self.input.system['celldm(1)']
+            else:
+                scale = 1.0
+            #end if
             pos   = scale*array(pos)
             
             structure = self.system.structure.copy()
@@ -206,12 +209,6 @@ class Pwscf(Simulation):
                 structure.axes = struct.axes.copy()
             #end if
             result.structure = structure
-
-            #atoms = array(atoms)
-            #result.structure = obj(
-            #    positions = pos,
-            #    atoms     = atoms
-            #    )
         else:
             self.error('ability to get result '+result_name+' has not been implemented')
         #end if
@@ -259,13 +256,6 @@ class Pwscf(Simulation):
             relstruct.change_units('B')
             self.system.structure = relstruct
             self.system.remove_folded()
-
-            #structure = self.system.structure
-            #structure.change_units('B')
-            #structure.set(
-            #    pos   = relstruct.positions,
-            #    atoms = relstruct.atoms
-            #    )
 
             input = self.input
             preserve_kp = 'k_points' in input and 'specifier' in input.k_points and (input.k_points.specifier=='automatic' or input.k_points.specifier=='gamma')
@@ -351,8 +341,7 @@ def generate_pwscf(**kwargs):
     sim_args,inp_args = Pwscf.separate_inputs(kwargs)
 
     if not 'input' in sim_args:
-        input_type = inp_args.input_type
-        del inp_args.input_type
+        input_type = inp_args.delete_optional('input_type','generic')
         sim_args.input = generate_pwscf_input(input_type,**inp_args)
     #end if
     pwscf = Pwscf(**sim_args)
