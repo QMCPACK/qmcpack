@@ -121,7 +121,7 @@ def read_qmcpack_hamiltonian(filename):
         Data read from file.
     """
     try:
-        hc, chol, enuc, nmo, nelec, nmok, qkk2 = (
+        hc, chol, enuc, nmo, nelec, nmok, qkk2, nchol_pk = (
                 read_qmcpack_cholesky_kpoint(filename)
                 )
         hamil = {
@@ -131,6 +131,7 @@ def read_qmcpack_hamiltonian(filename):
             'nelec': nelec,
             'nmo': nmo,
             'nmo_pk': nmok,
+            'nchol_pk': nchol_pk,
             'qk_k2': qkk2
             }
     except KeyError:
@@ -387,13 +388,15 @@ def read_qmcpack_cholesky_kpoint(filename):
             try:
                 Lk = fh5['Hamiltonian/KPFactorized/L{}'.format(i)][:]
                 nchol = nchol_pk[i]
+                Lk = Lk.view(numpy.complex128)[:,:,0]
             except KeyError:
-                Lk = fh5['Hamiltonian/KPFactorized/L{}'.format(minus_k[i])][:].conj()
+                Lk = fh5['Hamiltonian/KPFactorized/L{}'.format(minus_k[i])][:]
                 nchol = nchol_pk[minus_k[i]]
-            chol_vecs.append(Lk.view(numpy.complex128).reshape(nkp,-1,nchol))
+                Lk = Lk.view(numpy.complex128).conj()[:,:,0]
+            chol_vecs.append(Lk)
 
         return (hcore, chol_vecs, enuc, int(nmo_tot), (int(nalpha), int(nbeta)),
-                nmo_pk, qk_k2)
+                nmo_pk, qk_k2, nchol_pk)
 
 
 def fcidump_header(nel, norb, spin):
@@ -538,7 +541,7 @@ def kpoint_to_sparse(kp_file, sp_file, real_chol=False, verbose=False):
     hcore = scipy.linalg.block_diag(*hcore)
     # 2. Unpack chol
     dtype = numpy.float64 if real_chol else numpy.complex128
-    nchol_pk = [c.shape[-1] for c in chol]
+    nchol_pk = hamil['nchol_pk']
     nchol = sum(nchol_pk)
     L = numpy.zeros((nmo,nmo,nchol), dtype=dtype)
     nkp = chol[0].shape[0]
@@ -556,6 +559,7 @@ def kpoint_to_sparse(kp_file, sp_file, real_chol=False, verbose=False):
                 I = i + orb_offset[ki]
                 for k in range(0, nmo_pk[kk]):
                     K = k + orb_offset[kk]
-                    L[I,K,s:e] = lq[ki,i*nmo_pk[ki]+k,:]
+                    for nc in range(0,nchol_pk[iq]):
+                        L[I,K,s+nc] = lq[ki,(i*nmo_pk[ki]+k)*nchol_pk[iq]+nc]
     write_sparse(hcore, L.reshape((nmo*nmo,-1)), nelec, nmo, e0=enuc,
                  filename=sp_file, real_chol=real_chol, verbose=verbose)
