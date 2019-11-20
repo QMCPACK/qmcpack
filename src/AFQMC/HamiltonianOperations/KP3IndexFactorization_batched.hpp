@@ -303,7 +303,7 @@ class KP3IndexFactorization_batched
             P1[I][J] += H1[K][i][j] + vn0[K][i][j];
             P1[J][I] += H1[K][j][i] + vn0[K][j][i];
             // This is really cutoff dependent!!!
-#if AFQMC_MIXED_PRECISION
+#if MIXED_PRECISION
             if( std::abs(P1[I][J]-ma::conj(P1[J][I]))*2.0 > 1e-5 ) {
 #else
             if( std::abs(P1[I][J]-ma::conj(P1[J][I]))*2.0 > 1e-6 ) {
@@ -398,7 +398,7 @@ class KP3IndexFactorization_batched
       set_buffer(mem_needs);
 
       // messy
-      sp_pointer Krptr, Klptr; 
+      sp_pointer Krptr(nullptr), Klptr(nullptr); 
       long Knr=0, Knc=0;
       if(addEJ) {
         Knr=nwalk;
@@ -456,6 +456,7 @@ class KP3IndexFactorization_batched
       // components simultaneously
       Sp4Tensor_ref GKK(BTMats.origin()+cnt,
                         {nspin,nkpts,nkpts,nwalk*nmo_max*nocc_max});
+      fill_n(GKK.origin(),GKK.num_elements(),SPComplexType(0.0));
       cnt += GKK.num_elements();
       GKaKjw_to_GKKwaj(G3Da,GKK[0],nelpk[nd].sliced(0,nkpts),dev_nelpk[nd],dev_a0pk[nd]);
       if(walker_type==COLLINEAR)  
@@ -1442,6 +1443,7 @@ class KP3IndexFactorization_batched
       }
     }
 
+    // MAM: nocc_max should be spin dependent 
     template<class MatA, class MatB, class IVec, class IVec2>
     void GKaKjw_to_GKKwaj(MatA const& GKaKj, MatB && GKKaj,IVec && nocc, IVec2 && dev_no, IVec2 && dev_a0)
     {

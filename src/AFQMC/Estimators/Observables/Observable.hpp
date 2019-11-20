@@ -20,6 +20,8 @@
 #include "boost/variant.hpp"
 
 #include "AFQMC/Estimators/Observables/full1rdm.hpp"
+#include "AFQMC/Estimators/Observables/diagonal2rdm.hpp"
+#include "AFQMC/Estimators/Observables/n2r.hpp"
 
 namespace qmcplusplus
 {
@@ -58,7 +60,12 @@ class dummy_obs
  * Variant class for observables. 
  * Defines a common interface for all observable classes.
  */
-class Observable: public boost::variant<dummy::dummy_obs,full1rdm> 
+class Observable: public boost::variant<dummy::dummy_obs,full1rdm,diagonal2rdm,
+                                        n2r<shared_allocator<ComplexType>> 
+#if defined(ENABLE_CUDA)
+                                        ,n2r<device_allocator<ComplexType>> 
+#endif
+                                        > 
                                         //,full2rdm,contract1rdm,contract2rdm>
 {
 
@@ -70,6 +77,17 @@ class Observable: public boost::variant<dummy::dummy_obs,full1rdm>
 
     explicit Observable(full1rdm && other) : variant(std::move(other)) {}
     explicit Observable(full1rdm const& other) = delete;
+
+    explicit Observable(diagonal2rdm && other) : variant(std::move(other)) {}
+    explicit Observable(diagonal2rdm const& other) = delete;
+
+    explicit Observable(n2r<shared_allocator<ComplexType>> && other) : variant(std::move(other)) {}
+    explicit Observable(n2r<shared_allocator<ComplexType>> const& other) = delete;
+
+#if defined(ENABLE_CUDA)
+    explicit Observable(n2r<device_allocator<ComplexType>> && other) : variant(std::move(other)) {}
+    explicit Observable(n2r<device_allocator<ComplexType>> const& other) = delete;
+#endif
 
 /*
     explicit Observable( && other) : variant(std::move(other)) {}

@@ -239,6 +239,7 @@ IF(MIXED_PRECISION AND BUILD_LMYENGINE_INTERFACE)
   SET(BUILD_LMYENGINE_INTERFACE 0)
 ENDIF()
 SET(BUILD_AFQMC 0 CACHE BOOL "Build with AFQMC")
+SET(BUILD_AFQMC_WITH_NCCL 0 CACHE BOOL "Build AFQMC with NCCL library.")
 # AFQMC requires MPI.
 If (BUILD_AFQMC AND NOT QMC_MPI)
   MESSAGE(FATAL_ERROR "AFQMC requires building with MPI (QMC_MPI=1). Set BUILD_AFQMC=0 or configure MPI.")
@@ -493,12 +494,8 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
   ELSE()
     # Search for Blas/Lapack
     find_package(LAPACK)
-    # When cmake finds and sets up the MKL libraries with a non-Intel compiler, set the flag
-    # This should be tidied up when FindMKL.cmake supports non-Intel compilers.
     IF("${LAPACK_LIBRARIES}" MATCHES "mkl")
-      MESSAGE(STATUS "MKL found via LAPACK/BLAS")
-      SET( MKL_FOUND 1 )
-      SET( HAVE_MKL 1 )
+      MESSAGE(FATAL_ERROR "MKL found via LAPACK/BLAS. Please use -DENABLE_MKL=1 when invoking cmake for full Intel MKL utilization. -DMKL_ROOT may also be needed for the include files to be found.")
     ENDIF()
   ENDIF()
   IF(LAPACK_FOUND)

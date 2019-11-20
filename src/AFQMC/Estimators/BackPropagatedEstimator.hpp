@@ -140,13 +140,15 @@ class BackPropagatedEstimator: public EstimatorBase
     if(iav < 0) return;
 
     using std::fill_n;
-    // 0. skip if requested 
-    if(bp_step == max_nback_prop && iblock < nblocks_skip) {
-      if( iblock+1 == nblocks_skip )
-        for(auto it=wset.begin(); it<wset.end(); ++it)
-          it->setSlaterMatrixN(); 
-      iblock++;
-      wset.setBPPos(0);
+    // 0. skip if requested  
+    if(iblock < nblocks_skip) {
+      if(bp_step == max_nback_prop) {
+        if( iblock+1 == nblocks_skip )
+          for(auto it=wset.begin(); it<wset.end(); ++it)
+            it->setSlaterMatrixN(); 
+        iblock++;
+        wset.setBPPos(0);
+      }  
       return;
     }
 

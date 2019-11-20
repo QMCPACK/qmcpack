@@ -180,6 +180,9 @@ struct BsplineReaderBase
   /** create the spline set */
   SPOSet* create_spline_set(int spin, xmlNodePtr cur);
 
+  /** Set the checkNorm variable */
+  inline void setCheckNorm(bool new_checknorm){ checkNorm = new_checknorm;};
+
   void initialize_spo2band(int spin,
                            const std::vector<BandInfo>& bigspace,
                            SPOSetInfo& sposet,
