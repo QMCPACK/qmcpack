@@ -36,7 +36,7 @@
 
 namespace qmcplusplus
 {
-void EinsplineSetBuilder::set_metadata(int numOrbs, int TwistNum_inp)
+void EinsplineSetBuilder::set_metadata(int numOrbs, int TwistNum_inp, bool skipChecks)
 {
   // 1. set a lot of internal parameters in the EinsplineSetBuilder class
   //  e.g. TileMatrix, UseRealOrbitals, DistinctTwists, MakeTwoCopies.
@@ -80,7 +80,7 @@ void EinsplineSetBuilder::set_metadata(int numOrbs, int TwistNum_inp)
   // orbitals themselves.                                        //
   /////////////////////////////////////////////////////////////////
   if (myComm->rank() == 0)
-    if (!ReadOrbitalInfo())
+    if (!ReadOrbitalInfo(skipChecks))
     {
       app_error() << "Error reading orbital info from HDF5 file.  Aborting.\n";
       APP_ABORT("EinsplineSetBuilder::createSPOSet");
