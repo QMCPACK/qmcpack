@@ -518,15 +518,15 @@ def sparse_to_dense(sparse_file, dense_file, real_chol=False):
                                             dtype=dtype)
             s = 0
             for ic, bs in enumerate(block_sizes):
-                ixs, vchunk = get_chunk(sph5, ic, real_chol)
+                ixs, vchunk = get_chunk(sph5, ic, False)
                 row_ix, col_ix = ixs[::2], ixs[1::2]
-                nchol_block = col_ix[-1] - s
+                nchol_block = numpy.max(col_ix) - s + 1
                 buff = scipy.sparse.csr_matrix((vchunk, (row_ix, col_ix-s)))
                 if real_chol:
-                    chol_dset[:,s:s+nchol_block+1] = buff.toarray().real
+                    chol_dset[:,s:s+nchol_block] = buff.toarray().real
                 else:
-                    chol_dset[:,s:s+nchol_block+1] = buff.toarray()
-                s += nchol_block + 1
+                    chol_dset[:,s:s+nchol_block] = buff.toarray()
+                s += nchol_block
 
 def kpoint_to_sparse(kp_file, sp_file, real_chol=False, verbose=False):
     hamil = read_qmcpack_hamiltonian(kp_file)
