@@ -121,7 +121,7 @@ class Particles(Matter):
         for particle in particles:
             self[particle.name] = particle
         #end for
-        for name,particle in named_particles.iteritems():
+        for name,particle in named_particles.items():
             self[name] = particle
         #end for
     #end def add_particles
@@ -144,14 +144,14 @@ class Particles(Matter):
     # test needed
     def get(self,quantity):
         q = obj()
-        for name,particle in self.iteritems():
+        for name,particle in self.items():
             q[name] = particle[quantity]
         #end for
         return q
     #end def get
 
     def rename(self,**name_pairs):
-        for old,new in name_pairs.iteritems():
+        for old,new in name_pairs.items():
             if old in self:
                 o = self[old]
                 o.name = new
@@ -167,7 +167,7 @@ class Particles(Matter):
 
     def get_ions(self):
         ions = obj()
-        for name,particle in self.iteritems():
+        for name,particle in self.items():
             if self.is_element(name):
                 ions[name] = particle
             #end if
@@ -178,7 +178,7 @@ class Particles(Matter):
     def count_ions(self,species=False):
         nions = 0
         nspecies = 0
-        for name,particle in self.iteritems():
+        for name,particle in self.items():
             if self.is_element(name):
                 nspecies += 1
                 nions += particle.count
@@ -231,15 +231,15 @@ plist = [
     Particle('down_electron',1.0,-1,-1),
     ]
 from periodic_table import ptable
-for name,a in ptable.elements.iteritems():
+for name,a in ptable.elements.items():
     spin = 0 # don't have this data
     protons  = a.atomic_number
     neutrons = int(round(a.atomic_weight['amu']-a.atomic_number))
     p = Ion(a.symbol,a.atomic_weight['me'],a.atomic_number,spin,protons,neutrons)
     plist.append(p)
 #end for
-for name,iso in ptable.isotopes.iteritems():
-    for mass_number,a in iso.iteritems():
+for name,iso in ptable.isotopes.items():
+    for mass_number,a in iso.items():
         spin = 0 # don't have this data
         protons  = a.atomic_number
         neutrons = int(round(a.atomic_weight['amu']-a.atomic_number))
@@ -359,7 +359,7 @@ class PhysicalSystem(Matter):
     def add_particles(self,**particle_counts):
         pc = self.particle_collection # all known particles
         plist = []
-        for name,count in particle_counts.iteritems():
+        for name,count in particle_counts.items():
             particle = pc.get_particle(name)
             if particle is None:
                 self.error('particle {0} is unknown'.format(name))
@@ -392,7 +392,7 @@ class PhysicalSystem(Matter):
 
     def pseudize(self,**valency):
         errors = False
-        for ion,valence_charge in valency.iteritems():
+        for ion,valence_charge in valency.items():
             if ion in self.particles:
                 ionp = self.particles[ion]
                 if isinstance(ionp,Ion):
@@ -483,7 +483,7 @@ class PhysicalSystem(Matter):
         self.particles.rename(**name_pairs)
         self.structure.rename(folded=False,**name_pairs)
         if self.pseudized:
-            for old,new in name_pairs.iteritems():
+            for old,new in name_pairs.items():
                 if old in self.valency:
                     if new not in self.valency:
                         self.valency[new] = self.valency[old]
@@ -582,7 +582,7 @@ class PhysicalSystem(Matter):
     # test needed
     def large_Zeff_elem(self,Zmin):
         elem = []
-        for atom,Zeff in self.valency.iteritems():
+        for atom,Zeff in self.valency.items():
             if Zeff>Zmin:
                 elem.append(atom)
             #end if
@@ -630,7 +630,7 @@ ps_defaults = dict(
     extensive=True
     )
 def generate_physical_system(**kwargs):
-    for var,val in ps_defaults.iteritems():
+    for var,val in ps_defaults.items():
         if not var in kwargs:
             kwargs[var] = val
         #end if
@@ -719,7 +719,7 @@ def generate_physical_system(**kwargs):
                 PhysicalSystem.class_error('pretile does not divide evenly into tiling\n  tiling provided: {0}\n  pretile provided: {1}'.format(tiling,pretile),'generate_physical_system')
             #end if
         #end for
-        tiling = tuple(array(tiling)/array(pretile))
+        tiling = tuple(array(tiling)//array(pretile))
         kwargs['tiling'] = pretile
         pre = generate_structure(**kwargs)
         pre.remove_folded_structure()

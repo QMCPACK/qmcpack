@@ -168,7 +168,15 @@ class TextFile(DevBase):
 
     # unchanged mmap interface below
     def find(self,*a,**kw):
-        return self.mm.find(*a,**kw)
+        args = []
+        for v in a:
+            if isinstance(v,str):
+                args.append(v.encode('ASCII'))
+            else:
+                args.append(a)
+            #end if
+        #end for
+        return self.mm.find(*args,**kw)
     #end def find
 
     def flush(self,*a,**kw):
@@ -188,7 +196,15 @@ class TextFile(DevBase):
     #end def resize
 
     def rfind(self,*a,**kw):
-        return self.mm.rfind(*a,**kw)
+        args = []
+        for v in a:
+            if isinstance(v,str):
+                args.append(v.encode('ASCII'))
+            else:
+                args.append(a)
+            #end if
+        #end for
+        return self.mm.rfind(*args,**kw)
     #end def rfind
 
     def size(self):
