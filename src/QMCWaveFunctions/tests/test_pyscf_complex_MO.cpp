@@ -9,6 +9,13 @@
 // File created by: Mark Dewing, mdewing@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
+/*  Author: Chandler Bennett
+ *  This is a deterministic unit test that verifies the molecular orbital values from QMCPACK
+ *  match those from PySCF in the specific case of a complex periodic gaussian basis. 
+ *  For off gamma carbon diamond, the real and imaginary parts of all molecular orbitals along a 
+ *  real-space path that spans regions both inside and outside of the cell are required to agree with
+ *  the reference values obtained from PySCF. The reference values were generated from Carbon1x1x1-tw1_gen_mos.py.   
+*/
 
 #include "catch.hpp"
 
@@ -34,6 +41,7 @@ namespace qmcplusplus
 void test_C_diamond()
 {
   std::ostringstream section_name;
+  section_name << "Carbon diamond off gamma unit test: ";
 
   SECTION(section_name.str())
   {

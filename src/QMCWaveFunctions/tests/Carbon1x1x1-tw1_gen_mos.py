@@ -5,6 +5,12 @@ from pyscf.pbc import gto, scf, dft, df
 from pyscf import __version__ 
 import datetime
 
+# Author: Chandler Bennett
+# This file is modified from tests/solids/diamondC_1x1x1-Gaussian_pp_Tw_cplx/dft-inputs/Carbon1x1x1-tw1.py
+# to print (in C++ syntax) the real and imaginary parts of all molecule orbitals along a path that spans 
+# regions both inside and outside the primitive cell. This output was copied into test_pyscf_complex_MO.cpp,
+# a unit test that verifies the real/imag values of QMCPACK's molecular orbitals match along the same path.
+
 cell = gto.Cell()
 cell.a             = '''
          3.37316115       3.37316115       0.00000000
