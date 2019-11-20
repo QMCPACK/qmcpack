@@ -43,7 +43,7 @@ class DevBase(obj):
 
 
 
-class Void:
+class Void(object):
     void_items = dict()
 
     @classmethod
@@ -98,8 +98,8 @@ class Void:
     
 
     #member methods
-    def __new__(self,*args,**kwargs):
-        Void._unavailable(self)
+    #def __new__(self,*args,**kwargs):
+    #    Void._unavailable(self)
     def __eq__(self,*args,**kwargs):
         Void._unavailable(self)
     def __ne__(self,*args,**kwargs):
@@ -196,8 +196,6 @@ class Void:
         Void._unavailable(self)
     def __int__(self,*args,**kwargs):
         Void._unavailable(self)
-    def __long__(self,*args,**kwargs):
-        Void._unavailable(self)
     def __float__(self,*args,**kwargs):
         Void._unavailable(self)
     def __oct__(self,*args,**kwargs):
@@ -220,8 +218,8 @@ class Void:
         Void._unavailable(self)
     def __dict__(self,*args,**kwargs):
         Void._unavailable(self)
-    def __slots__(self,*args,**kwargs):
-        Void._unavailable(self)
+    #def __slots__(self,*args,**kwargs):
+    #    Void._unavailable(self)
     def __class__(self,*args,**kwargs):
         Void._unavailable(self)
     def __bases__(self,*args,**kwargs):

@@ -22,11 +22,11 @@ def execute(command,verbose=False,skip=False):
     returncode = 0
     if skip:
         if verbose:
-            print 'Would have executed:\n  '+command
+            print('Would have executed:\n  '+command)
         #end if
     else:
         if verbose:
-            print 'Executing:\n  '+command
+            print('Executing:\n  '+command)
         #end if
         process = Popen(command,shell=True,stdout=PIPE,stderr=PIPE,close_fds=True)
         out,err = process.communicate()

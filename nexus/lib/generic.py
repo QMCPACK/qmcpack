@@ -33,7 +33,7 @@
 import sys
 import traceback
 from copy import deepcopy
-import cPickle
+import pickle
 from random import randint
 
 
@@ -54,6 +54,117 @@ exit_call = sys.exit
 def nocopy(value):
     return value
 #end def nocopy
+
+
+
+# attempt to regain python 2 sorting
+# code below is from https://stackoverflow.com/questions/26575183/how-can-i-get-2-x-like-sorting-behaviour-in-python-3-x
+#===========================
+from numbers import Number
+
+
+# decorator for type to function mapping special cases
+def per_type_cmp(type_):
+    try:
+        mapping = per_type_cmp.mapping
+    except AttributeError:
+        mapping = per_type_cmp.mapping = {}
+    #end try
+    def decorator(cmpfunc):
+        mapping[type_] = cmpfunc
+        return cmpfunc
+    #end def decorator
+    return decorator
+#ned def per_type_cmp
+
+class python2_sort_key(object):
+    _unhandled_types = {complex}
+
+    def __init__(self, ob):
+       self._ob = ob
+    #end def __init__
+
+    def __lt__(self, other):
+        _unhandled_types = self._unhandled_types
+        self, other = self._ob, other._ob  # we don't care about the wrapper
+
+        # default_3way_compare is used only if direct comparison failed
+        try:
+            return self < other
+        except TypeError:
+            pass
+        #end try
+
+        # hooks to implement special casing for types, dict in Py2 has
+        # a dedicated __cmp__ method that is gone in Py3 for example.
+        for type_, special_cmp in per_type_cmp.mapping.items():
+            if isinstance(self, type_) and isinstance(other, type_):
+                return special_cmp(self, other)
+            #end if
+        #end for
+
+        # explicitly raise again for types that won't sort in Python 2 either
+        if type(self) in _unhandled_types:
+            raise TypeError('no ordering relation is defined for {}'.format(
+                type(self).__name__))
+        #end if
+        if type(other) in _unhandled_types:
+            raise TypeError('no ordering relation is defined for {}'.format(
+                type(other).__name__))
+        #end if
+
+        # default_3way_compare from Python 2 as Python code
+        # same type but no ordering defined, go by id
+        if type(self) is type(other):
+            return id(self) < id(other)
+        #end if
+
+        # None always comes first
+        if self is None:
+            return True
+        #end if
+        if other is None:
+            return False
+        #end if
+
+        # Sort by typename, but numbers are sorted before other types
+        self_tname = '' if isinstance(self, Number) else type(self).__name__
+        other_tname = '' if isinstance(other, Number) else type(other).__name__
+
+        if self_tname != other_tname:
+            return self_tname < other_tname
+        #end if
+
+        # same typename, or both numbers, but different type objects, order
+        # by the id of the type object
+        return id(type(self)) < id(type(other))
+    #end def __lt__
+#end class python2_sort_key
+
+@per_type_cmp(dict)
+def dict_cmp(a, b, _s=object()):
+    if len(a) != len(b):
+        return len(a) < len(b)
+    #end if
+    adiff = min((k for k in a if a[k] != b.get(k, _s)), key=python2_sort_key, default=_s)
+    if adiff is _s:
+        # All keys in a have a matching value in b, so the dicts are equal
+        return False
+    #end if
+    bdiff = min((k for k in b if b[k] != a.get(k, _s)), key=python2_sort_key)
+    if adiff != bdiff:
+        return python2_sort_key(adiff) < python2_sort_key(bdiff)
+    #end if
+    return python2_sort_key(a[adiff]) < python2_sort_key(b[bdiff])
+#end def dict_cmp
+
+def sorted_py2(iterable):
+    return sorted(iterable,key=python2_sort_key)
+#end def sorted_py2
+#===========================
+
+
+sorted_generic = sorted_py2
 
 
 
@@ -168,13 +279,13 @@ class object_interface(object):
 
     def __repr__(self):
         s=''
-        for k in sorted(self._keys()):
+        for k in sorted_generic(self._keys()):
             if not isinstance(k,str) or k[0]!='_':
                 v=self.__dict__[k]
                 if hasattr(v,'__class__'):
-                    s+='  {0:<20}  {1:<20}\n'.format(k,v.__class__.__name__)
+                    s+='  {0:<20}  {1:<20}\n'.format(str(k),v.__class__.__name__)
                 else:
-                    s+='  {0:<20}  {1:<20}\n'.format(k,type(v))
+                    s+='  {0:<20}  {1:<20}\n'.format(str(k),type(v))
                 #end if
             #end if
         #end for
@@ -187,7 +298,7 @@ class object_interface(object):
         s=''
         normal = []
         qable  = []
-        for k,v in self._iteritems():
+        for k,v in self._items():
             if not isinstance(k,str) or k[0]!='_':
                 if isinstance(v,object_interface):
                     qable.append(k)
@@ -196,13 +307,13 @@ class object_interface(object):
                 #end if
             #end if
         #end for
-        normal.sort()
-        qable.sort()
+        normal = sorted_generic(normal)
+        qable  = sorted_generic(qable)
         indent = npad+18*' '
         for k in normal:
             v = self[k]
             vstr = str(v).replace('\n','\n'+indent)
-            s+=npad+'{0:<15} = '.format(k)+vstr+'\n'
+            s+=npad+'{0:<15} = '.format(str(k))+vstr+'\n'
         #end for
         for k in qable:
             v = self[k]
@@ -254,7 +365,7 @@ class object_interface(object):
         s=''
         normal = []
         qable  = []
-        for k,v in self._iteritems():
+        for k,v in self._items():
             if not isinstance(k,str) or k[0]!='_':
                 if isinstance(v,object_interface):
                     qable.append(k)
@@ -325,18 +436,6 @@ class object_interface(object):
         return self.__dict__.items()
     #end def items
 
-    def iterkeys(self):
-        return self.__dict__.iterkeys()
-    #end def iterkeys
-
-    def itervalues(self):
-        return self.__dict__.itervalues()
-    #end def itervalues
-
-    def iteritems(self):
-        return self.__dict__.iteritems()
-    #end def iteritems
-
     def copy(self):
         return deepcopy(self)
     #end def copy
@@ -348,12 +447,12 @@ class object_interface(object):
 
     # save/load
     def save(self,fpath=None):
-        if fpath==None:
+        if fpath is None:
             fpath='./'+self.__class__.__name__+'.p'
         #end if
-        fobj = open(fpath,'w')
-        binary = cPickle.HIGHEST_PROTOCOL
-        cPickle.dump(self,fobj,binary)
+        fobj = open(fpath,'wb')
+        binary = pickle.HIGHEST_PROTOCOL
+        pickle.dump(self,fobj,binary)
         fobj.close()
         del fobj
         del binary
@@ -361,15 +460,15 @@ class object_interface(object):
     #end def save
 
     def load(self,fpath=None):
-        if fpath==None:
+        if fpath is None:
             fpath='./'+self.__class__.__name__+'.p'
         #end if
-        fobj = open(fpath,'r')
-        tmp = cPickle.load(fobj)
+        fobj = open(fpath,'rb')
+        tmp = pickle.load(fobj)
         fobj.close()
         d = self.__dict__
         d.clear()
-        for k,v in tmp.__dict__.iteritems():
+        for k,v in tmp.__dict__.items():
             d[k] = v
         #end for
         del fobj
@@ -445,9 +544,9 @@ class object_interface(object):
     #end def class_keys
 
     @classmethod
-    def class_iteritems(cls):
-        return cls.__dict__.iteritems()
-    #end def class_iteritems
+    def class_items(cls):
+        return cls.__dict__.items()
+    #end def class_items
 
     @classmethod
     def class_get(cls,k):
@@ -456,7 +555,7 @@ class object_interface(object):
 
     @classmethod
     def class_set(cls,**kwargs):
-        for k,v in kwargs.iteritems():
+        for k,v in kwargs.items():
             setattr(cls,k,v)
         #end for
     #end def class_set
@@ -468,7 +567,7 @@ class object_interface(object):
 
     @classmethod
     def class_set_optional(cls,**kwargs):
-        for k,v in kwargs.iteritems():
+        for k,v in kwargs.items():
             if not hasattr(cls,k):
                 setattr(cls,k,v)
             #end if
@@ -484,12 +583,6 @@ class object_interface(object):
         object_interface.values(self,*args,**kwargs)
     def _items(self,*args,**kwargs):         
         return object_interface.items(self,*args,**kwargs)         
-    def _iterkeys(self,*args,**kwargs):
-        return object_interface.iterkeys(self,*args,**kwargs)
-    def _itervalues(self,*args,**kwargs):
-        object_interface.itervalues(self,*args,**kwargs)
-    def _iteritems(self,*args,**kwargs):         
-        return object_interface.iteritems(self,*args,**kwargs)         
     def _copy(self,*args,**kwargs):              
         return object_interface.copy(self,*args,**kwargs)
     def _clear(self,*args,**kwargs):
@@ -522,14 +615,14 @@ class obj(object_interface):
     def __init__(self,*vars,**kwargs):
         for var in vars:
             if isinstance(var,(dict,object_interface)):
-                for k,v in var.iteritems():
+                for k,v in var.items():
                     self[k] = v
                 #end for
             else:
                 self[var] = None
             #end if
         #end for
-        for k,v in kwargs.iteritems():
+        for k,v in kwargs.items():
             self[k] = v
         #end for
     #end def __init__
@@ -545,7 +638,7 @@ class obj(object_interface):
     def list(self,*keys):
         nkeys = len(keys)
         if nkeys==0:
-            keys = sorted(self._keys())
+            keys = self._sorted_keys()
         elif nkeys==1 and isinstance(keys[0],(list,tuple)):
             keys = keys[0]
         #end if
@@ -559,7 +652,7 @@ class obj(object_interface):
     def list_optional(self,*keys):
         nkeys = len(keys)
         if nkeys==0:
-            keys = sorted(self._keys())
+            keys = self._sorted_keys()
         elif nkeys==1 and isinstance(keys[0],(list,tuple)):
             keys = keys[0]
         #end if
@@ -581,7 +674,7 @@ class obj(object_interface):
     def dict(self,*keys):
         nkeys = len(keys)
         if nkeys==0:
-            keys = sorted(self._keys())
+            keys = self._keys()
         elif nkeys==1 and isinstance(keys[0],(list,tuple)):
             keys = keys[0]
         #end if
@@ -594,7 +687,7 @@ class obj(object_interface):
 
     def to_dict(self):
         d = dict()
-        for k,v in self._iteritems():
+        for k,v in self._items():
             if isinstance(v,obj):
                 d[k] = v._to_dict()
             else:
@@ -607,7 +700,7 @@ class obj(object_interface):
     def obj(self,*keys):
         nkeys = len(keys)
         if nkeys==0:
-            keys = sorted(self._keys())
+            keys = self._keys()
         elif nkeys==1 and isinstance(keys[0],(list,tuple)):
             keys = keys[0]
         #end if
@@ -620,7 +713,7 @@ class obj(object_interface):
 
     def to_obj(self):
         o = obj()
-        for k,v in self._iteritems():
+        for k,v in self._items():
             if isinstance(v,obj):
                 o[k] = v._to_obj()
             else:
@@ -646,23 +739,28 @@ class obj(object_interface):
 
 
     # dict extensions
+    def sorted_keys(self):
+        return sorted_generic(self._keys())
+    #end def sorted_keys
+
+
     def random_key(self):
         key = None
         nkeys = len(self)
         if nkeys>0:
-            key = self._keys()[randint(0,nkeys-1)]
+            key = list(self._keys())[randint(0,nkeys-1)]
         #end if
         return key
     #end def random_key
 
 
     def set(self,*objs,**kwargs):
-        for key,value in kwargs.iteritems():
+        for key,value in kwargs.items():
             self[key]=value
         #end for
         if len(objs)>0:
             for o in objs:
-                for k,v in o.iteritems():
+                for k,v in o.items():
                     self[k] = v
                 #end for
             #end for
@@ -671,14 +769,14 @@ class obj(object_interface):
     #end def set
 
     def set_optional(self,*objs,**kwargs):
-        for key,value in kwargs.iteritems():
+        for key,value in kwargs.items():
             if key not in self:
                 self[key]=value
             #end if
         #end for
         if len(objs)>0:
             for o in objs:
-                for k,v in o.iteritems():
+                for k,v in o.items():
                     if k not in self:
                         self[k] = v
                     #end if
@@ -706,7 +804,7 @@ class obj(object_interface):
         if key in self:
             value = self[key]
         else:
-            obj.error(self,'a required key is not present\nkey required: {0}\nkeys present: {1}'.format(key,sorted(self._keys())))
+            obj.error(self,'a required key is not present\nkey required: {0}\nkeys present: {1}'.format(key,self._sorted_keys()))
         #end if
         return value
     #end def get_required
@@ -715,7 +813,7 @@ class obj(object_interface):
         nkeys = len(keys)
         single = False
         if nkeys==0:
-            keys = sorted(self._keys())
+            keys = self._sorted_keys()
         elif nkeys==1 and isinstance(keys[0],(list,tuple)):
             keys = keys[0]
         elif nkeys==1:
@@ -746,7 +844,7 @@ class obj(object_interface):
             value = self[key]
             del self[key]
         else:
-            obj.error(self,'a required key is not present\nkey required: {0}\nkeys present: {1}'.format(key,sorted(self._keys())))
+            obj.error(self,'a required key is not present\nkey required: {0}\nkeys present: {1}'.format(key,self._sorted_keys()))
         #end if
         return value
     #end def delete_required
@@ -812,9 +910,9 @@ class obj(object_interface):
     def move_from(self,other,keys=None,optional=False):
         if keys is None:
             if isinstance(other,object_interface):
-                keys = other._keys()
+                keys = list(other._keys())
             else:
-                keys = other.keys()
+                keys = list(other.keys())
             #end if
         #end if
         if not optional:
@@ -834,7 +932,7 @@ class obj(object_interface):
 
     def move_to(self,other,keys=None,optional=False):
         if keys is None:
-            keys = self._keys()
+            keys = list(self._keys())
         #end if
         if not optional:
             for k in keys:
@@ -883,7 +981,7 @@ class obj(object_interface):
         #end if
         missing = keys-set(self.keys())
         if exit and len(missing)>0:
-            self._error('required keys are missing\nmissing keys: {0}'.format(sorted(missing)))
+            self._error('required keys are missing\nmissing keys: {0}'.format(sorted_generic(missing)))
         #end if
         return missing
     #end def check_required
@@ -892,7 +990,7 @@ class obj(object_interface):
         kfail = None
         tfail = None
         if not optional:
-            for k,t in types.iteritems():
+            for k,t in types.items():
                 if not isinstance(self[k],t):
                     kfail = k
                     tfail = t
@@ -900,7 +998,7 @@ class obj(object_interface):
                 #end if
             #end for
         else:
-            for k,t in types.iteritems():
+            for k,t in types.items():
                 if k in self and not isinstance(self[k],t):
                     kfail = k
                     tfail = t
@@ -920,7 +1018,7 @@ class obj(object_interface):
 
     def shallow_copy(self):
         new = self.__class__()
-        for k,v in self._iteritems():
+        for k,v in self._items():
             new[k] = v
         #end for
         return new
@@ -928,7 +1026,7 @@ class obj(object_interface):
 
     def inverse(self):
         new = self.__class__()
-        for k,v in self._iteritems():
+        for k,v in self._items():
             new[v] = k
         #end for
         return new
@@ -988,7 +1086,7 @@ class obj(object_interface):
             s = obj()
             path = ''
         #end if
-        for k,v in self._iteritems():
+        for k,v in self._items():
             p = path+str(k)
             if isinstance(v,obj):
                 if len(v)==0:
@@ -1033,6 +1131,8 @@ class obj(object_interface):
     def _select_random(self,*args,**kwargs):
         return obj.select_random(self,*args,**kwargs)
     #  dict extensions
+    def _sorted_keys(self,*args,**kwargs):
+        return obj.sorted_keys(self,*args,**kwargs)
     def _random_key(self,*args,**kwargs):
         obj.random_key(self,*args,**kwargs)
     def _set(self,*args,**kwargs):
@@ -1142,10 +1242,6 @@ class hobj(obj):
         #end for
     #end def __iter__
 
-    def iteritems(self):
-        return self._dict.iteritems()
-    #end def iteritems
-
     def keys(self):
         return self._dict.keys()
     #end def keys
@@ -1154,18 +1250,22 @@ class hobj(obj):
         return self._dict.values()
     #end def keys
 
+    def items(self):
+        return self._dict.items()
+    #end def items
+
     def clear(self):
         self._dict.clear()
     #end def clear
 
     # access preserving functions
     #  dict interface
-    def _iteritems(self,*args,**kwargs):         
-        return hobj.iteritems(self,*args,**kwargs)         
     def _keys(self,*args,**kwargs):
         return hobj.keys(self,*args,**kwargs)
     def _values(self,*args,**kwargs):
         hobj.values(self,*args,**kwargs)
+    def _items(self,*args,**kwargs):         
+        return hobj.items(self,*args,**kwargs)         
     def _clear(self,*args,**kwargs):
         hobj.clear(self,*args,**kwargs)
 #end class hobj
@@ -1246,7 +1346,7 @@ class hidden(hobj):
 
     def __repr__(self):
         s=''
-        for k in sorted(self._keys()):
+        for k in self._sorted_keys():
             if not isinstance(k,str) or k[0]!='_':
                 v=self._dict[k]
                 if hasattr(v,'__class__'):
@@ -1270,75 +1370,3 @@ class hidden(hobj):
         hidden.log(self,*args,**kwargs)
 
 #end class hidden
-
-
-
-if __name__=='__main__':
-    o = obj(a=1,b=2,c=3)
-    o[0]='d'
-    o.o = obj('something','else')
-
-    print repr(o)
-    print o
-    print 'o' in o
-    del o.a
-    print 'a' not in o
-    print len(o)==4
-    o2 = o.copy()
-    print id(o2)!=id(o)
-    o2.clear()
-    print len(o2)==0
-    o.append(6)
-    print len(o)==5 and 4 in o
-    #o.save('obj.p')
-    #o.clear()
-    #o.load('obj.p')
-    #print o
-    o.write('True\n')
-    o.log('True')
-    del o.o
-    print o
-    print o.list()
-    print o.tuple()
-    print o.obj()
-    print o.first()
-    print o.last()
-    print o.shallow_copy()
-    print o.inverse()
-    o2 = obj()
-    o2.clear()
-    o.transfer_to(o2)
-    o2.clear()
-    o2.transfer_from(o)
-    o2.clear()
-    o.move_to(o2)
-    o.move_from(o2)
-    #print 'o'
-    #print o
-    #print 'o2'
-    #print o2
-    o2.clear()
-    o.copy_to(o2)
-    o2.clear()
-    o2.copy_from(o)
-    print o
-    o2.delete('b','c')
-    print o2
-    print o.get_optional('b')
-    print o.get_required('b')
-    o2 = o.copy()
-    print o2.delete_optional('b')
-    o2 = o.copy()
-    print o2.delete_required('b')
-    o2.set_path('one fine day is'.split(),'here')
-    print o2
-    o.warn('this is a warning')
-    o.warn('this is another warning')
-    o.warn('this\nis\na\nmultiline\nwarning')
-    o.warn('final warning')
-    print 'printing normally'
-    message('this is a message')
-    print 'printing normally'
-    log('this is log output')
-    print 'printing normally'
-#end if

@@ -17,7 +17,7 @@ def test_execute():
     assert(rc==0)
 
     out,err,rc = execute(command)
-    assert(out.strip()=='test')
-    assert(err.strip()=='')
+    assert(out.strip()==b'test')
+    assert(err.strip()==b'')
     assert(rc==0)
 #end def test_execute
