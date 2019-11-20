@@ -402,6 +402,14 @@ void ParticleSet::makeMove(Index_t iat, const SingleParticlePos_t& displ)
   computeNewPosDistTablesAndSK(iat, activePos);
 }
 
+void ParticleSet::makeMove(Index_t iat, const SingleParticlePos_t& displ, const RealType& sdispl)
+{
+  activePtcl = iat;
+  activePos  = R[iat] + displ;
+  activeSpin = spins[iat] + sdispl;
+  computeNewPosDistTablesAndSK(iat, activePos);
+}
+
 void ParticleSet::flex_makeMove(const RefVector<ParticleSet>& P_list, Index_t iat, const std::vector<SingleParticlePos_t>& displs)
 {
   if (P_list.size() > 1)
@@ -425,6 +433,26 @@ bool ParticleSet::makeMoveAndCheck(Index_t iat, const SingleParticlePos_t& displ
 {
   activePtcl = iat;
   activePos  = R[iat] + displ;
+  bool is_valid = true;
+  if (Lattice.explicitly_defined)
+  {
+    if (Lattice.outOfBound(Lattice.toUnit(displ)))
+      is_valid = false;
+    else
+    {
+      newRedPos = Lattice.toUnit(activePos);
+      if (!Lattice.isValid(newRedPos)) is_valid = false;
+    }
+  }
+  computeNewPosDistTablesAndSK(iat, activePos);
+  return is_valid;
+}
+
+bool ParticleSet::makeMoveAndCheck(Index_t iat, const SingleParticlePos_t& displ, const RealType& sdispl)
+{
+  activePtcl = iat;
+  activePos  = R[iat] + displ;
+  activeSpin = spins[iat] + sdispl;
   bool is_valid = true;
   if (Lattice.explicitly_defined)
   {
@@ -630,6 +658,7 @@ void ParticleSet::acceptMove(Index_t iat)
 
     R[iat]     = activePos;
     RSoA(iat)  = activePos;
+    spins[iat] = activeSpin;
     activePtcl = -1;
   }
   else

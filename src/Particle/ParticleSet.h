@@ -148,6 +148,8 @@ public:
   ///the proposed position of activePtcl during particle-by-particle moves
   SingleParticlePos_t activePos;
 
+  RealType activeSpin;
+
   ///the proposed position in the Lattice unit
   SingleParticlePos_t newRedPos;
 
@@ -320,6 +322,8 @@ public:
    * Evaluate the related distance table data DistanceTableData::Temp.
    */
   void makeMove(Index_t iat, const SingleParticlePos_t& displ);
+  void makeMove(Index_t iat, const SingleParticlePos_t& displ, const RealType& sdispl);
+
   /// batched version of makeMove
   static void flex_makeMove(const RefVector<ParticleSet>& P_list, int iat, const std::vector<SingleParticlePos_t>& displs);
 
@@ -337,6 +341,7 @@ public:
    * Note: activePos and distances tables are always evaluated no matter the move is valid or not.
    */
   bool makeMoveAndCheck(Index_t iat, const SingleParticlePos_t& displ);
+  bool makeMoveAndCheck(Index_t iat, const SingleParticlePos_t& displ, const RealType& sdispl);
 
   /** Handles virtual moves for all the particles to a single newpos.
    *
