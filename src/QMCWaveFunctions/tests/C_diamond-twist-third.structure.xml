@@ -1,5 +1,5 @@
-<!-- This file was copied from tests/solids/diamondC_1x1x1-Gaussian_pp_Tw_cplx/C_diamond-twist-third.structure.xml -->
 <?xml version="1.0"?>
+<!-- This file was copied from tests/solids/diamondC_1x1x1-Gaussian_pp_Tw_cplx/C_diamond-twist-third.structure.xml -->
 <qmcsystem>
   <simulationcell>
     <parameter name="lattice">
