@@ -1,0 +1,59 @@
+&CONTROL
+   calculation     = 'scf'
+   disk_io         = 'low'
+   outdir          = 'pwscf_output'
+   prefix          = 'pwscf'
+   pseudo_dir      = './'
+   restart_mode    = 'from_scratch'
+   tprnfor         = .false.
+   tstress         = .false.
+   verbosity       = 'high'
+   wf_collect      = .true.
+/
+
+&SYSTEM
+   celldm(1)       = 1.0
+   degauss         = 0.0001
+   ecutrho         = 160
+   ecutwfc         = 40
+   ibrav           = 0
+   input_dft       = 'lda'
+   nat             = 2
+   nosym           = .true.
+   noncolin        = .true.
+   starting_magnetization(1) = 0.5
+   angle1(1) = 45.0
+   angle2(1) =  0.0
+   starting_magnetization(2) = 0.5
+   angle1(2) = 45.0
+   angle2(2) =  0.0
+   ntyp            = 2
+   occupations     = 'smearing'
+   smearing        = 'fermi-dirac'
+   tot_charge      = 0
+/
+
+&ELECTRONS
+   conv_thr        = 1e-08
+   electron_maxstep = 1000
+   mixing_beta     = 0.7
+/
+
+
+ATOMIC_SPECIES 
+   O1  15.999 O.BFD.upf
+   O2  15.999 O.BFD.upf
+
+ATOMIC_POSITIONS alat
+   O1       -0.00000000      -0.00000000       1.08659253 
+   O2        0.00000000       0.00000000      -1.08659253 
+
+K_POINTS automatic
+   1 1 1  0 0 0 
+
+CELL_PARAMETERS cubic
+         5.10509515      -3.23993545      -0.00000000 
+         5.10509515       3.23993545       0.00000000 
+        -6.49690625      -0.00000000       7.08268015 
+
+
