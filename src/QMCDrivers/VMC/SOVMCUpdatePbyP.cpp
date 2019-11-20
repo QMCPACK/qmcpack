@@ -104,7 +104,7 @@ void SOVMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
           //logGf         += -mhalf * dot(deltaS[iat], deltaS[iat]);
           //ratio = Psi.ratioSpinGrad(W,iat,grad_new);
           //DriftModifer->getDrift(tauovermass/spinmass, grad_new, ds);
-          //ds = W.S[iat] - W.activeSpin - ds;
+          //ds = W.spin[iat] - W.activeSpin - ds;
           //logGb += -spinmass*oneover2tau*dot(ds,ds)l
         }
         else
