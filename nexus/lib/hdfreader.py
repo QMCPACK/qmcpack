@@ -257,7 +257,6 @@ class HDFgroup(DevBase):
         for name in names:
             if name in self and isinstance(self[name],ndarray) and name=='value':
                 s = self[name].mean(0).sum()
-                print '                sum = {0}'.format(s)
             #end if
         #end for
     #end def sum
@@ -276,11 +275,13 @@ class HDFreader(DevBase):
         HDFglobals.view = view
 
         if verbose:
-            print '  Initializing HDFreader'
+            print('  Initializing HDFreader')
+        #end if
 
         self.fpath=fpath
         if verbose:
-            print '    loading h5 file'
+            print('    loading h5 file')
+        #end if
 
         try:
             self.hdf = h5py.File(fpath,'r')
@@ -292,7 +293,9 @@ class HDFreader(DevBase):
         #end if
 
         if verbose:
-            print '    converting h5 file to dynamic object'
+            print('    converting h5 file to dynamic object')
+        #end if
+
         #convert the hdf 'dict' into a dynamic object
         self.nlevels=1
         self.ilevel=0
@@ -313,17 +316,17 @@ class HDFreader(DevBase):
                     elif vtype in HDFreader.groups:
                         self.add_group(hcur,cur,k,v)
                     else:
-                        print 'hdfreader error: encountered invalid type: '+vtype
-                        sys.exit()
+                        self.error('encountered invalid type: '+vtype)
                     #end if
                 else:
-                    print 'hdfreader warning: attribute '+k+' is not a valid variable name and has been ignored'                    
+                    self.warn('attribute '+k+' is not a valid variable name and has been ignored')
                 #end if
             #end for
         #end if
 
         if verbose:
-            print '  end HDFreader Initialization'
+            print('  end HDFreader Initialization')
+        #end if
 
         return
     #end def __init__
@@ -376,7 +379,7 @@ class HDFreader(DevBase):
                     self.add_group(hcur,cur,k,v)
                 #end if
             else:
-                print 'hdfreader warning: attribute '+k+' is not a valid variable name and has been ignored'                    
+                self.warn('attribute '+k+' is not a valid variable name and has been ignored')
             #end if
         #end for
 

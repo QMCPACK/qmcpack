@@ -343,3 +343,12 @@ def available(*items):
     #end for
     return True
 #end def available
+
+
+def to_str(s):
+    if isinstance(s,bytes):
+        return str(s,encoding='utf-8')
+    else:
+        return str(s)
+    #end if
+#end def to_str

@@ -75,19 +75,19 @@ class XMLelement(DevBase):
         s=''
         if len(self._attributes)>0:
             s+='  attributes:\n'
-            for k,v in self._attributes.iteritems():
+            for k,v in self._attributes.items():
                 s+= '    '+k+' = '+str(v)+'\n'
             #end for
         #end if
         if len(self._elements)>0:
             s+= '  elements:\n'
-            for k,v in self._elements.iteritems():
+            for k,v in self._elements.items():
                 s+= '    '+k+'\n'
             #end for
         #end if
         if len(self._texts)>0:
             s+= '  texts:\n'
-            for k,v in self._texts.iteritems():
+            for k,v in self._texts.items():
                 s+= '    '+k+'\n'
             #end for
         #end if
@@ -120,7 +120,7 @@ class XMLelement(DevBase):
 
     # test needed
     def condense(self):
-        for name,elem in self._elements.iteritems():
+        for name,elem in self._elements.items():
             if isinstance(elem,XMLelement):
                 elem.condense()
             #end if
@@ -133,7 +133,7 @@ class XMLelement(DevBase):
         #end if
         for cname in cnames:
             cmax = 1
-            for name,elem in self._elements.iteritems():
+            for name,elem in self._elements.items():
                 ns = name.split(cname)
                 if len(ns)==2 and ns[1].isdigit():
                     cmax = max(cmax,int(ns[1]))
@@ -162,7 +162,7 @@ class XMLelement(DevBase):
 
     # test needed
     def convert_numeric(self):
-        for name,attr in self._attributes.iteritems():
+        for name,attr in self._attributes.items():
             self[name] = string2val(attr)
         #end for
         if 'text' in self:
@@ -170,7 +170,7 @@ class XMLelement(DevBase):
             del self.text
         #end if
         texts = []
-        for name,elem in self._elements.iteritems():
+        for name,elem in self._elements.items():
             if isinstance(elem,XMLelement):
                 if 'text' in elem and len(elem._attributes)==0 and len(elem._elements)==0:
                     self[name] = string2val(elem.text)
@@ -187,7 +187,7 @@ class XMLelement(DevBase):
 
                     
     def remove_hidden(self):
-        for name,elem in self._elements.iteritems():
+        for name,elem in self._elements.items():
             if isinstance(elem,XMLelement):
                 elem.remove_hidden()
             elif isinstance(elem,list):
@@ -199,7 +199,7 @@ class XMLelement(DevBase):
             #end if
         #end for
         remove = []
-        for name,value in self.iteritems():
+        for name,value in self.items():
             if str(name)[0]=='_':
                 remove.append(name)
             #end if
@@ -242,7 +242,7 @@ class XMLreader(DevBase):
         self.parser.EndElementHandler    = self.found_element_end
         self.parser.CharacterDataHandler = self.found_text
         self.parser.AttlistDeclHandler   = self.found_attribute
-        self.parser.returns_unicode = 0
+        #self.parser.returns_unicode = 0
 
         #read in xml file
         if xml is None:
@@ -319,11 +319,11 @@ class XMLreader(DevBase):
     #end def decrement_level
 
     def found_element_start(self,ename,attributes):
-        #print self.pad,name,attributes
         cur = self.cur[self.ilevel]
         if ename in self.element_aliases.keys():
             if self.element_aliases[ename].find('attributes')!=-1:
-                exec 'name = '+self.element_aliases[ename]
+                self.error('an alternative to exec is needed')
+                #exec('name = '+self.element_aliases[ename])
             else:
                 name = self.element_aliases[ename]
             #end if
@@ -370,9 +370,7 @@ class XMLreader(DevBase):
                     del  cur._elements[name]
                     del cur[name]
                 else:
-                    print 'prior unjoinable element is not the first'
-                    print '  this should be impossible, stopping'
-                    sys.exit()
+                    self.error('prior unjoinable element is not the first\nthis should be impossible')
                 #end if
                 #add the joinable element as unnumbered
                 # later joinable elements will be joined to this one
@@ -406,7 +404,7 @@ class XMLreader(DevBase):
         self.increment_level()
         self.cur[self.ilevel] = cur._elements[name]
         cur = self.cur[self.ilevel]
-        for kraw,v in attributes.iteritems():
+        for kraw,v in attributes.items():
             if self.contract_names:
                 k = kraw.lower().replace('-','_')
             else:
@@ -418,7 +416,7 @@ class XMLreader(DevBase):
                 cur._add_xmlattribute(kname,cur[kname])
             else:
                 if self.warn:
-                    print 'xmlreader warning: attribute '+k+' is not a valid variable name and has been ignored'
+                    print('xmlreader warning: attribute '+k+' is not a valid variable name and has been ignored')
                 #end if
             #end if
         #end for
@@ -428,14 +426,12 @@ class XMLreader(DevBase):
     def found_element_end(self,name):
         self.cur[self.ilevel]=None
         self.decrement_level()
-        #print self.pad,'end',name
         return
     #end def found_element_end
 
     def found_text(self,rawtext):
         text = rawtext.strip()
         if text!='':
-            #print self.pad,text
             cur = self.cur[self.ilevel]
             if cur._ntexts>0:
                 cur.text+='\n'+text
