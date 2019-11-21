@@ -84,7 +84,7 @@ void SOVMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
           //ds = std::sqrt(tauovermass/spinmass)*deltaS[iat];
         }
         //CM: need new mover
-        //if (!W.makeMoveAndCheck(iat,dr,ds))
+        //if (!W.makeMoveAndCheckWithSpin(iat,dr,ds))
         //{
         //    ++nReject;
         //    continue;
@@ -97,14 +97,14 @@ void SOVMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
           prob           = ratio * ratio;
           logGf          = mhalf * dot(deltaR[iat], deltaR[iat]);
           DriftModifier->getDrift(tauovermass, grad_new, dr);
-          dr    = W.spins[iat] - W.activePos - dr;
+          dr    = W.R[iat] - W.activePos - dr;
           logGb = -oneover2tau * dot(dr, dr);
 
           //Need function calls
           //logGf         += -mhalf * dot(deltaS[iat], deltaS[iat]);
           //ratio = Psi.ratioSpinGrad(W,iat,grad_new);
           //DriftModifer->getDrift(tauovermass/spinmass, grad_new, ds);
-          //ds = W.spin[iat] - W.activeSpin - ds;
+          //ds = W.spins[iat] - W.activeSpin - ds;
           //logGb += -spinmass*oneover2tau*dot(ds,ds)l
         }
         else
