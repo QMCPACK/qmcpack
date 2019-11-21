@@ -241,7 +241,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
             read_kpoints  = False
             read_2pi_alat = False
             read_rel      = False
-            for i in xrange(len(lines)):
+            for i in range(len(lines)):
                 l = lines[i]
                 if 'End of self-consistent calculation' in l:
                     # Initialize each time in case a hybrid functional was used

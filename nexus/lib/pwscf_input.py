@@ -1624,7 +1624,7 @@ class PwscfInput(SimulationInput):
             else:
                 relax_directions = ones(s.pos.shape,dtype=int)
             #end if
-            for i in xrange(len(s.pos)):
+            for i in range(len(s.pos)):
                 relax_directions[i,0] = int(not frozen[i,0] and relax_directions[i,0])
                 relax_directions[i,1] = int(not frozen[i,1] and relax_directions[i,1])
                 relax_directions[i,2] = int(not frozen[i,2] and relax_directions[i,2])
@@ -1715,7 +1715,7 @@ class PwscfInput(SimulationInput):
             else:
                 relax_directions = ones(s.pos.shape,dtype=int)
             #end if
-            for i in xrange(len(s.pos)):
+            for i in range(len(s.pos)):
                 relax_directions[i,0] = int(not frozen[i,0] and relax_directions[i,0])
                 relax_directions[i,1] = int(not frozen[i,1] and relax_directions[i,1])
                 relax_directions[i,2] = int(not frozen[i,2] and relax_directions[i,2])
