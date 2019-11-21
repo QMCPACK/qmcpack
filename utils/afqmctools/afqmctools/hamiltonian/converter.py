@@ -4,7 +4,11 @@ import scipy.sparse
 import scipy.linalg
 import sys
 from afqmctools.utils.io import to_qmcpack_complex
-from afqmctools.hamiltonian.io import write_sparse
+from afqmctools.hamiltonian.io import (
+        write_sparse,
+        write_sparse_basic,
+        write_sparse_chol_chunk
+        )
 
 def read_fcidump(filename, symmetry=8, verbose=True):
     """Read in integrals from file.
@@ -107,7 +111,7 @@ def read_fcidump(filename, symmetry=8, verbose=True):
     nbeta = nalpha - ms2
     return h1e, h2e, ecore, (nalpha, nbeta)
 
-def read_qmcpack_hamiltonian(filename):
+def read_qmcpack_hamiltonian(filename, get_chol=True):
     """Read Hamiltonian from QMCPACK format.
 
     Parameters
@@ -121,8 +125,8 @@ def read_qmcpack_hamiltonian(filename):
         Data read from file.
     """
     try:
-        hc, chol, enuc, nmo, nelec, nmok, qkk2, nchol_pk = (
-                read_qmcpack_cholesky_kpoint(filename)
+        hc, chol, enuc, nmo, nelec, nmok, qkk2, nchol_pk, minus_k = (
+                read_qmcpack_cholesky_kpoint(filename, get_chol=get_chol)
                 )
         hamil = {
             'hcore': hc,
@@ -132,11 +136,13 @@ def read_qmcpack_hamiltonian(filename):
             'nmo': nmo,
             'nmo_pk': nmok,
             'nchol_pk': nchol_pk,
+            'minus_k': minus_k,
             'qk_k2': qkk2
             }
     except KeyError:
         try:
-            hc, chol, enuc, nmo, nelec = read_qmcpack_sparse(filename)
+            hc, chol, enuc, nmo, nelec = read_qmcpack_sparse(filename,
+                                                             get_chol=get_chol)
             hamil = {
                 'hcore': hc,
                 'chol': chol,
@@ -340,7 +346,7 @@ def write_fcidump(filename, hcore, chol, enuc, nmo, nelec, tol=1e-8,
         f.write(fmt_integral(enuc+0j,-1,-1,-1,-1, cplx, paren=paren))
 
 
-def read_qmcpack_cholesky_kpoint(filename):
+def read_qmcpack_cholesky_kpoint(filename, get_chol=True):
     """Read in integrals from qmcpack hdf5 format. kpoint dependent case.
 
     Parameters
@@ -384,19 +390,26 @@ def read_qmcpack_cholesky_kpoint(filename):
             hcore.append(hk.view(numpy.complex128).reshape(nmo,nmo))
         chol_vecs = []
         nmo_max = max(nmo_pk)
+    if get_chol:
         for i in range(0, nkp):
-            try:
-                Lk = fh5['Hamiltonian/KPFactorized/L{}'.format(i)][:]
-                nchol = nchol_pk[i]
-                Lk = Lk.view(numpy.complex128)[:,:,0]
-            except KeyError:
-                Lk = fh5['Hamiltonian/KPFactorized/L{}'.format(minus_k[i])][:]
-                nchol = nchol_pk[minus_k[i]]
-                Lk = Lk.view(numpy.complex128).conj()[:,:,0]
-            chol_vecs.append(Lk)
+            Lk.append(get_kpoint_chol(filename, nchol_pk, minus_k, i))
+    else:
+        chol_vecs = None
 
-        return (hcore, chol_vecs, enuc, int(nmo_tot), (int(nalpha), int(nbeta)),
-                nmo_pk, qk_k2, nchol_pk)
+    return (hcore, chol_vecs, enuc, int(nmo_tot), (int(nalpha), int(nbeta)),
+            nmo_pk, qk_k2, nchol_pk, minus_k)
+
+def get_kpoint_chol(filename, nchol_pk, minus_k, i):
+    with h5py.File(filename, 'r') as fh5:
+        try:
+            Lk = fh5['Hamiltonian/KPFactorized/L{}'.format(i)][:]
+            nchol = nchol_pk[i]
+            Lk = Lk.view(numpy.complex128)[:,:,0]
+        except KeyError:
+            Lk = fh5['Hamiltonian/KPFactorized/L{}'.format(minus_k[i])][:]
+            nchol = nchol_pk[minus_k[i]]
+            Lk = Lk.view(numpy.complex128).conj()[:,:,0]
+    return Lk
 
 
 def fcidump_header(nel, norb, spin):
@@ -528,31 +541,36 @@ def sparse_to_dense(sparse_file, dense_file, real_chol=False):
                     chol_dset[:,s:s+nchol_block] = buff.toarray()
                 s += nchol_block
 
-def kpoint_to_sparse(kp_file, sp_file, real_chol=False, verbose=False):
-    hamil = read_qmcpack_hamiltonian(kp_file)
+def kpoint_to_sparse(kp_file, sp_file, real_chol=False,
+                     verbose=False, thresh=1e-8):
+    hamil = read_qmcpack_hamiltonian(kp_file, get_chol=False)
     hcore = hamil['hcore']
-    chol = hamil['chol']
     enuc = hamil['enuc']
     nelec = hamil['nelec']
     nmo = hamil['nmo']
     nmo_pk = hamil['nmo_pk']
+    minus_k = hamil['minus_k']
     qk_k2 = hamil['qk_k2']
+    nkp = len(hcore)
     # 1. Extend hcore to block diagonal.
     hcore = scipy.linalg.block_diag(*hcore)
     # 2. Unpack chol
     dtype = numpy.float64 if real_chol else numpy.complex128
     nchol_pk = hamil['nchol_pk']
     nchol = sum(nchol_pk)
-    L = numpy.zeros((nmo,nmo,nchol), dtype=dtype)
-    nkp = chol[0].shape[0]
     orb_offset = numpy.zeros(nkp, dtype=numpy.int32)
     chol_offset = numpy.zeros(nkp, dtype=numpy.int32)
+    write_sparse_basic(sp_file, hcore, enuc, nelec, real_chol=real_chol)
     for i in range(1, nkp):
         orb_offset[i] = orb_offset[i-1] + nmo_pk[i-1]
         chol_offset[i] = chol_offset[i-1] + nchol_pk[i-1]
-    for iq, lq in enumerate(chol):
+    block_sizes = []
+    for iq in range(nkp):
         s = chol_offset[iq]
         e = s + nchol_pk[iq]
+        lq = get_kpoint_chol(kp_file, nchol_pk, minus_k, iq)
+        vals = []
+        ixs = []
         for ki in range(nkp):
             for i in range(0, nmo_pk[ki]):
                 kk = qk_k2[iq,ki]
@@ -560,6 +578,15 @@ def kpoint_to_sparse(kp_file, sp_file, real_chol=False, verbose=False):
                 for k in range(0, nmo_pk[kk]):
                     K = k + orb_offset[kk]
                     for nc in range(0,nchol_pk[iq]):
-                        L[I,K,s+nc] = lq[ki,(i*nmo_pk[ki]+k)*nchol_pk[iq]+nc]
-    write_sparse(hcore, L.reshape((nmo*nmo,-1)), nelec, nmo, e0=enuc,
-                 filename=sp_file, real_chol=real_chol, verbose=verbose)
+                        ll = lq[ki,(i*nmo_pk[ki]+k)*nchol_pk[iq]+nc]
+                        if abs(ll) > thresh:
+                            vals.append(ll)
+                            ixs.append([I*nmo+K,s+nc])
+        block_sizes.append(len(vals))
+        write_sparse_chol_chunk(numpy.array(ixs).ravel(), vals, iq, filename=sp_file)
+
+    with h5py.File(sp_file, 'a') as fh5:
+        fh5['Hamiltonian/Factorized/block_sizes'] = block_sizes
+        fh5['Hamiltonian/dims'] = numpy.array([0, sum(block_sizes),
+                                               nkp, nmo, nelec[0], nelec[1], 0,
+                                               nchol])
