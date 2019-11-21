@@ -729,9 +729,9 @@ public:
 };
 
 #ifndef QMC_COMPLEX
-template class LMYEngine<double>;
+extern template class LMYEngine<double>;
 #else
-template class LMYEngine<std::complex<double> >;
+extern template class LMYEngine<std::complex<double> >;
 #endif
 
   }
