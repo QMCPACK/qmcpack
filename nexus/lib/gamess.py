@@ -75,7 +75,7 @@ class Gamess(Simulation):
             self.error('you must set ericfmt with settings() or Gamess.settings()')
         #end if
         env = obj()
-        for file,unit in GamessInput.file_units.iteritems():
+        for file,unit in GamessInput.file_units.items():
             env[file] = '{0}.F{1}'.format(self.identifier,str(unit).zfill(2))
         #end for
         env.INPUT   = self.infile

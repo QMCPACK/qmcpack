@@ -200,7 +200,7 @@ class Qmcpack(Simulation):
                     #twistnum   = 0,
                     meshfactor = 1.0
                     )
-                for var,val in defs.iteritems():
+                for var,val in defs.items():
                     if not var in orb_elem:
                         orb_elem[var] = val
                     #end if
