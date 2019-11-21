@@ -1283,7 +1283,7 @@ class QIxml(Names):
     def move(self,**elemdests):        
         names = list(elemdests.keys())
         hosts = self.get_host(names)
-        dests = self.get(elemdests.values())
+        dests = self.get(list(elemdests.values()))
         if len(names)==1:
             hosts = [hosts]
             dests = [dests]

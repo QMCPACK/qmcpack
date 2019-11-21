@@ -275,7 +275,7 @@ class Qmcpack(Simulation):
                     if 'jastrow' in wf:
                         js = [wf.jastrow]
                     elif 'jastrows' in wf:
-                        js = wf.jastrows.values()
+                        js = list(wf.jastrows.values())
                     else:
                         js = []
                     #end if
