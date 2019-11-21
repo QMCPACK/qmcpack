@@ -484,7 +484,7 @@ TrialWaveFunction::ValueType TrialWaveFunction::calcRatioGrad(ParticleSet& P, in
   return r;
 }
 
-void TrialWaveFunction::flex_ratioGrad(const RefVector<TrialWaveFunction>& wf_list,
+void TrialWaveFunction::flex_calcRatioGrad(const RefVector<TrialWaveFunction>& wf_list,
                                        const RefVector<ParticleSet>& p_list,
                                        int iat,
                                        std::vector<PsiValueType>& ratios,
@@ -516,7 +516,7 @@ void TrialWaveFunction::flex_ratioGrad(const RefVector<TrialWaveFunction>& wf_li
       wf_list[iw].get().PhaseDiff = std::imag(std::arg(ratios[iw]));
   }
   else if (wf_list.size() == 1)
-    ratios[0] = wf_list[0].get().ratioGrad(p_list[0], iat, grad_new[0]);
+    ratios[0] = wf_list[0].get().calcRatioGrad(p_list[0], iat, grad_new[0]);
 }
 
 void TrialWaveFunction::printGL(ParticleSet::ParticleGradient_t& G,

@@ -292,7 +292,7 @@ TEST_CASE("TrialWaveFunction", "[wavefunction]")
   //Temporary as switch to std::reference_wrapper proceeds
   // testing batched interfaces
   
-  psi.flex_ratioGrad(wf_ref_list, p_ref_list, moved_elec_id, ratios, grad_new);
+  psi.flex_calcRatioGrad(wf_ref_list, p_ref_list, moved_elec_id, ratios, grad_new);
 #if defined(QMC_COMPLEX)
   REQUIRE(ratios[0] == ComplexApprox(ValueType(1, 0)));
   REQUIRE(grad_new[0][0] == ComplexApprox(ValueType(18.817970466022, -6.5837500306076)));

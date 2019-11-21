@@ -213,7 +213,7 @@ public:
    *
    *  all vector sizes must match
    */
-  static void flex_ratioGrad(const RefVector<TrialWaveFunction>& WF_list,
+  static void flex_calcRatioGrad(const RefVector<TrialWaveFunction>& WF_list,
                              const RefVector<ParticleSet>& P_list,
                              int iat,
                              std::vector<PsiValueType>& ratios,
