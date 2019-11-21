@@ -126,11 +126,9 @@ SOECPComponent::RealType SOECPComponent::evaluateOne(ParticleSet& W,
     for (int j = 0; j < nknot; j++)
     {
       deltaV[j] = r*rrotsgrid_m[j] - dr;
-      W.makeMove(iel,deltaV[j]);
-      //W.makeSpinMove(iel,sp);
+      W.makeMoveWithSpin(iel,deltaV[j],snew-sold);
       psiratio[j] = Psi.calcRatio(W,iel)*sgridweight_m[j];
       W.rejectMove(iel);
-      //W.rejectSpinMove(iep);
       Psi.resetPhaseDiff();
     }
 
