@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 
 from nexus import settings,job,run_project
 from nexus import generate_physical_system
@@ -30,7 +30,7 @@ dia = generate_physical_system(
 #Standardized Primitive cell -- run rest of the calculations on this cell
 dia2_structure   = get_primitive_cell(structure=dia.structure)['structure']
 dia2_kpath       = get_kpath(structure=dia2_structure)
-#get_band_tiling and get_kpath require "SeeK-path" python libraries
+#get_band_tiling and get_kpath require "SeeK-path" python3 libraries
 
 dia2 = generate_physical_system(
     structure    = dia2_structure,

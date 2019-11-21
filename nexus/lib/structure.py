@@ -179,9 +179,9 @@ except:
     CifFile = unavailable('CifFile','CifFile')
 #end try
 try:
-    from uctools import CellData
+    from cif2cell.uctools import CellData
 except:
-    CellData = unavailable('uctools','CellData')
+    CellData = unavailable('cif2cell.uctools','CellData')
 #end try
 
 
@@ -210,18 +210,18 @@ def read_cif_celldata(filepath,block=None,grammar='1.1'):
     #end if
 
     # repack H-M symbols as normal strings so CellData.getFromCIF won't choke on unicode
-    for k in ['_symmetry_space_group_name_H-M','_space_group_name_H-M_alt','_symmetry_space_group_name_h-m','_space_group_name_h-m_alt']:
-        if k in cb.block:
-            v = cb.block[k]
-            if isinstance(v,(list,tuple)):
-                for i in range(len(v)):
-                    if isinstance(v[i],unicode):
-                        v[i] = str(v[i])
-                    #end if
-                #end for
-            #end if
-        #end if
-    #end for
+    #for k in ['_symmetry_space_group_name_H-M','_space_group_name_H-M_alt','_symmetry_space_group_name_h-m','_space_group_name_h-m_alt']:
+    #    if k in cb.block:
+    #        v = cb.block[k]
+    #        if isinstance(v,(list,tuple)):
+    #            for i in range(len(v)):
+    #                if isinstance(v[i],unicode):
+    #                    v[i] = str(v[i])
+    #                #end if
+    #            #end for
+    #        #end if
+    #    #end if
+    ##end for
 
     # extract structure from CifFile with uctools CellData class
     cd = CellData()
@@ -268,7 +268,7 @@ def read_cif(filepath,block=None,grammar='1.1',cell='prim',args_only=False):
     pos   = []
     for wyckoff_atoms in cell.atomdata:
         for atom in wyckoff_atoms:
-            elem.append(str(atom.species.keys()[0]))
+            elem.append(str(list(atom.species.keys())[0]))
             pos.append(atom.position)
         #end for
     #end for

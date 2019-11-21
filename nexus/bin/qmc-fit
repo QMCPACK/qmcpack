@@ -196,7 +196,7 @@ def process_scalar_files(scalar_files,equils=None,reblock_factors=None,series_st
         #end for
     #end if
 
-    if isinstance(equils,int):
+    if isinstance(equils,(int,np.int_)):
         equils = len(scalar_files)*[equils]
     elif equils is not None and len(equils)!=len(scalar_files):
         error('must provide one equilibration length per scalar file\nnumber of equils provided: {0}\nnumber of scalar files provided: {1}\nequils provided: {2}\nscalar files provided: {3}'.format(len(equils),len(scalar_files),equils,scalar_files))

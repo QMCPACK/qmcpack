@@ -2815,7 +2815,7 @@ def test_generate_simulation():
 
 
 
-if versions.matplotlib_available:
+if versions.matplotlib_available and versions.pydot_available:
     def test_graph_sims():
         from simulation import Simulation,graph_sims
 

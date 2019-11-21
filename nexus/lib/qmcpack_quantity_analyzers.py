@@ -300,7 +300,7 @@ class ScalarsHDFAnalyzer(HDFAnalyzer):
         #end if
         exclude = self.info.exclude
         self.data = QAHDFdata()
-        for var in data.keys():
+        for var in list(data.keys()):
             if not var in exclude and not str(var)[0]=='_':
                 self.data[var] = data[var]
                 del data[var]

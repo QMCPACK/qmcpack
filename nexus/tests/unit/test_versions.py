@@ -16,7 +16,7 @@ def test_constants():
         assert(isinstance(n,int))
     #end for
 
-    assert(python_supported=='python2')
+    assert(python_supported=='python3')
 
     assert(isinstance(years_supported,int))
 #end def test_constants
@@ -70,7 +70,7 @@ def test_versions_object():
 
     # check integrity of raw version data
     deps = set('''
-        python2
+        python3
         numpy      
         scipy      
         h5py       
@@ -80,7 +80,7 @@ def test_versions_object():
         seekpath   
         pycifrw    
         '''.split())
-    assert(set(raw_version_data.keys())==deps|set(['python3']))
+    assert(set(raw_version_data.keys())==deps)
 
     # check integrity of object's internal data
     assert(versions.dependencies==deps)

@@ -1851,8 +1851,8 @@ def user_examples(label):
                 # then it is not a failure
                 check_pbc = False
                 if len(dgen)==1 and len(dref)==1:
-                    kgen = dgen.keys()[0].rsplit('/',1)[1]
-                    kref = dref.keys()[0].rsplit('/',1)[1]
+                    kgen = list(dgen.keys())[0].rsplit('/',1)[1]
+                    kref = list(dref.keys())[0].rsplit('/',1)[1]
                     check_pbc |= code=='qmcpack' and kgen==kref=='position'
                     check_pbc |= code=='pwscf'   and kgen==kref=='positions'
                 #end if

@@ -256,34 +256,35 @@ In addition to the standard Python installation, the \texttt{numpy} module must
 be installed for Nexus to function at a basic level.  To realize 
 the full range of functionality available, it is recommended that the 
 \texttt{scipy}, \texttt{matplotlib}, \texttt{h5py}, \texttt{pydot}, 
-\texttt{spglib}, \texttt{pycifrw}, and \texttt{seekpath} modules be installed as 
-well.  Many of these packages are already available in various supercomputing 
-environments.  
+\texttt{spglib}, \texttt{pycifrw}, \texttt{cif2cell} and \texttt{seekpath} 
+modules be installed as well.  Many of these packages are already available 
+in various supercomputing environments.  
 
 On a Debian-based Linux system, such as Ubuntu, installation of 
 these python modules is easily accomplished by invoking the following at the 
 command line:
 \begin{shaded}
 \begin{verbatim}
-sudo apt install python-numpy
-sudo apt install python-scipy python-matplotlib python-h5py 
-sudo apt install python-pydot
-sudo apt install python-pip
+sudo apt install python3-numpy
+sudo apt install python3-scipy python3-matplotlib python3-h5py 
+sudo apt install python3-pydot
+sudo apt install python3-pip
 \end{verbatim}
 \end{shaded}
 \noindent
 
-To install the Python modules on other platforms (as well as those not listed with \texttt{apt} above on Debian systems), try `pip`:
+To install the Python modules on other platforms (as well as those not listed with \texttt{apt} above on Debian systems), try `pip3`:
 \begin{shaded}
 \begin{verbatim}
-pip install --user numpy
-pip install --user scipy
-pip install --user matplotlib
-pip install --user h5py
-pip install --user pydot
-pip install --user spglib
-pip install --user PyCifRW
-pip install --user seekpath
+pip3 install --user numpy
+pip3 install --user scipy
+pip3 install --user matplotlib
+pip3 install --user h5py
+pip3 install --user pydot
+pip3 install --user spglib
+pip3 install --user PyCifRW
+pip3 install --user cif2cell
+pip3 install --user seekpath
 \end{verbatim}
 \end{shaded}
 

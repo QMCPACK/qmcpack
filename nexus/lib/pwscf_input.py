@@ -1602,6 +1602,7 @@ class PwscfInput(SimulationInput):
             #end if
             self.atomic_species.atoms = list(elem_order)
         #end if
+
         # set pseudopotentials for renamed atoms (e.g. Cu3 is same as Cu)
         pp = self.atomic_species.pseudopotentials
         for atom in self.atomic_species.atoms:
@@ -1691,7 +1692,7 @@ class PwscfInput(SimulationInput):
         for name,a in atoms.items():
             masses[name] = convert(a.mass,'me','amu')
         #end for
-        self.atomic_species.atoms  = list(atoms.keys())
+        self.atomic_species.atoms  = list(sorted(atoms.keys()))
         self.atomic_species.masses = masses
         # set pseudopotentials for renamed atoms (e.g. Cu3 is same as Cu)
         pp = self.atomic_species.pseudopotentials

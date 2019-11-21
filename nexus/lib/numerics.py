@@ -1306,7 +1306,7 @@ def convex_hull(points,dimension=None,tol=None):
             inds[i] = False
             v = tri.vertices[ni]
             if have_tol:
-                iv = range(d1)
+                iv = list(range(d1))
                 iv.pop(i)
                 c = points[v[iv[1]]]
                 a = points[v[i]]-c
