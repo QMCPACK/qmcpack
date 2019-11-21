@@ -324,7 +324,7 @@ public:
    */
   void makeMove(Index_t iat, const SingleParticlePos_t& displ);
   /// makeMove, but now includes an update to the spin variable
-  void makeMove(Index_t iat, const SingleParticlePos_t& displ, const RealType& sdispl);
+  void makeMoveWithSpin(Index_t iat, const SingleParticlePos_t& displ, const RealType& sdispl);
 
   /// batched version of makeMove
   static void flex_makeMove(const RefVector<ParticleSet>& P_list, int iat, const std::vector<SingleParticlePos_t>& displs);
@@ -344,7 +344,7 @@ public:
    */
   bool makeMoveAndCheck(Index_t iat, const SingleParticlePos_t& displ);
   /// makeMoveAndCheck, but now includes an update to the spin variable
-  bool makeMoveAndCheck(Index_t iat, const SingleParticlePos_t& displ, const RealType& sdispl);
+  bool makeMoveAndCheckWithSpin(Index_t iat, const SingleParticlePos_t& displ, const RealType& sdispl);
 
   /** Handles virtual moves for all the particles to a single newpos.
    *
