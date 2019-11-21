@@ -103,7 +103,7 @@ class MethodAnalyzer(QAanalyzer):
         self.info.transfer_from(method_info)
 
         self.vlog('requested sources = '+str(list(request.data_sources)),n=2)
-        self.vlog('files available   = '+str(files.keys()),n=2)
+        self.vlog('files available   = '+str(list(files.keys())),n=2)
         self.vlog('available sources = '+str(list(data_sources)),n=2)
 
         if not matched:

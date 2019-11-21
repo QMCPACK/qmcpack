@@ -112,7 +112,7 @@ def restore_nexus_core_defaults():
 
     nexus_core.set(**nexus_core_defaults.copy())
     nexus_noncore.set(**nexus_noncore_defaults.copy())
-    nexus_core_noncore.transfer_from(nexus_core,keys=nexus_core_noncore_defaults.keys())
+    nexus_core_noncore.transfer_from(nexus_core,keys=list(nexus_core_noncore_defaults.keys()))
 #end def restore_nexus_core_defaults
 
 restore_nexus_core_defaults()

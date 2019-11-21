@@ -348,7 +348,7 @@ class XMLreader(DevBase):
         # else if not in elements and joinable: add unnumbered
         # else if not in elements: add unnumbered
         # else: add numbered, if number==1: rename first element 
-        joinable = name in self.element_joins and len(attributes.keys())==0
+        joinable = name in self.element_joins and len(list(attributes.keys()))==0
         epattern = re.compile(name+'\d+')
         in_elements=False
         for k in cur._elements.keys():

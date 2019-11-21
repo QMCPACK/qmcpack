@@ -761,8 +761,7 @@ class Machine(NexusCore):
         if Machine.exists(machine_name):
             machine = Machine.machines[machine_name]
         else:
-            machs = Machine.machines.keys()
-            machs.sort()
+            machs = sorted(Machine.machines.keys())
             Machine.class_error('attempted to get machine '+machine_name+', but it is unknown\nknown options are '+str(machs))
         #end if
         return machine

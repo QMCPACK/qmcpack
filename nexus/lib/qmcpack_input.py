@@ -522,8 +522,8 @@ class Names(QIobj):
         print()
         print('Condensed Name Report:')
         print('----------------------')
-        keylist = array(self.condensed_names.keys())
-        order = array(self.condensed_names.values()).argsort()
+        keylist = array(list(self.condensed_names.keys()))
+        order = array(list(self.condensed_names.values())).argsort()
         keylist = keylist[order]
         for expanded in keylist: 
             condensed = self.condensed_names[expanded]
@@ -1281,7 +1281,7 @@ class QIxml(Names):
 
                     
     def move(self,**elemdests):        
-        names = elemdests.keys()
+        names = list(elemdests.keys())
         hosts = self.get_host(names)
         dests = self.get(elemdests.values())
         if len(names)==1:
@@ -3358,7 +3358,7 @@ class QmcpackInput(SimulationInput,Names):
                         del qs[name]
                     #end if
                 #end for
-                residue = qs.keys()
+                residue = list(qs.keys())
                 if len(residue)>0:
                     self.error('extra keys found in qmcsystem: {0}'.format(sorted(residue)))
                 #end if

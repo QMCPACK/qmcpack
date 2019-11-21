@@ -1524,7 +1524,7 @@ class DensityMatricesAnalyzer(HDFAnalyzer):
         self.info.nblocks_exclude = nbe
         has_nmat = 'number_matrix' in self.data
         has_emat = 'energy_matrix' in self.data
-        species = self.data.number_matrix.keys()
+        species = list(self.data.number_matrix.keys())
         species_sizes = obj()
         ps = self.run_info.input.get('particleset')
         for s in species:
