@@ -534,7 +534,8 @@ def sparse_to_dense(sparse_file, dense_file, real_chol=False):
                 ixs, vchunk = get_chunk(sph5, ic, False)
                 row_ix, col_ix = ixs[::2], ixs[1::2]
                 nchol_block = numpy.max(col_ix) - s + 1
-                buff = scipy.sparse.csr_matrix((vchunk, (row_ix, col_ix-s)))
+                buff = scipy.sparse.csr_matrix((vchunk, (row_ix, col_ix-s)),
+                                                shape=(nmo*nmo,nchol_block))
                 if real_chol:
                     chol_dset[:,s:s+nchol_block] = buff.toarray().real
                 else:
@@ -557,6 +558,9 @@ def kpoint_to_sparse(kp_file, sp_file, real_chol=False,
     # 2. Unpack chol
     dtype = numpy.float64 if real_chol else numpy.complex128
     nchol_pk = hamil['nchol_pk']
+    for i, nc in enumerate(nchol_pk):
+        if nc == 0:
+            nchol_pk[i] = nchol_pk[minus_k[i]]
     nchol = sum(nchol_pk)
     orb_offset = numpy.zeros(nkp, dtype=numpy.int32)
     chol_offset = numpy.zeros(nkp, dtype=numpy.int32)
