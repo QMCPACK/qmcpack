@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 
 import os
 import sys
@@ -160,7 +160,7 @@ def qmcfit(q,E,fname='linear',minimizer=least_squares):
     # obtain jackknife estimates of derived parameters
     if len(auxfuncs)>0:
         psamples = jcapture.jsamples
-        for auxname,auxfunc in auxfuncs.iteritems():
+        for auxname,auxfunc in auxfuncs.items():
             auxres[auxname] = jackknife_aux(psamples,auxfunc)
         #end for
     #end if
@@ -255,11 +255,11 @@ def process_scalar_files(scalar_files,equils=None,reblock_factors=None,series_st
     if reblock_factors is None:
         # find block targets based on autocorrelation time, if needed
         for n in range(len(Edata)):
-            block_targets.append(len(Edata[n])/Ekap[n])
+            block_targets.append(len(Edata[n])//Ekap[n])
         #end if
     else:
         for n in range(len(Edata)):
-            block_targets.append(len(Edata[n])/reblock_factors[n])
+            block_targets.append(len(Edata[n])//reblock_factors[n])
         #end if        
     #end if
 
@@ -268,7 +268,7 @@ def process_scalar_files(scalar_files,equils=None,reblock_factors=None,series_st
         E = Edata[n]
         nbe = len(E)%bt
         E = E[nbe:]
-        reblock = len(E)/bt
+        reblock = len(E)//bt
         E.shape = (bt,reblock)
         if reblock>1:
             E = E.sum(1)/reblock

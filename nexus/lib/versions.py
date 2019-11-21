@@ -23,7 +23,6 @@ python_supported = 'python2'
 Current Python family supported.
 """
 
-
 years_supported = 2
 """
 Policy for how many years back Nexus will extend support to dependencies.

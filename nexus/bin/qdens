@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 
 import gc
 import os
@@ -195,16 +195,16 @@ def reblock(data,eq,rb=None,filepath=None):
     eq+=(nd-eq)%rb
     d = data[eq:,...]
     # fail if reblocking results in a single data point
-    if len(d)/rb<2:
+    if len(d)//rb<2:
         msg = ''
         if filepath is not None:
             msg = '\nfor file: {0}'.format(filepath)
         #end if
-        error('reblocking data results in too few points{0}\npoint in file: {1}\npoints after equilibration: {2}\npoints after reblocking: {3}'.format(msg,nd,nd-eq,len(d)/rb),'reblock')
+        error('reblocking data results in too few points{0}\npoint in file: {1}\npoints after equilibration: {2}\npoints after reblocking: {3}'.format(msg,nd,nd-eq,len(d)//rb),'reblock')
     #end if
     # reblock the data
     s = list(d.shape)
-    snew = tuple([len(d)/rb,rb]+s[1:])
+    snew = tuple([len(d)//rb,rb]+s[1:])
     d.shape = snew
     d = d.mean(1)
     return d
@@ -520,9 +520,9 @@ class StatFile(QDBase):
 
     def write(self,filepath):
         h5 = h5py.File(filepath,'w')
-        for name,spin_density in self.spin_density_data.iteritems():
+        for name,spin_density in self.spin_density_data.items():
             h5_spin_density = h5.create_group(name)
-            for s,spin in spin_density.iteritems():
+            for s,spin in spin_density.items():
                 h5_spin = h5_spin_density.create_group(s)
                 h5_v  = h5_spin.create_dataset('value'        ,data=spin.value        )
                 #h5_v2 = h5_spin.create_dataset('value_squared',data=spin.value_squared)
@@ -546,9 +546,9 @@ class StatFile(QDBase):
                 #end for
             #end for
         else:
-            for name,spin_density in self.spin_density_data.iteritems():
+            for name,spin_density in self.spin_density_data.items():
                 sd = stat.spin_density_data[name]
-                for s,spin in spin_density.iteritems():
+                for s,spin in spin_density.items():
                     spin.value         += weight*sd[s].value
                     #spin.value_squared += weight*sd[s].value_squared
                 #end for
@@ -574,7 +574,7 @@ class StatFile(QDBase):
         #end if
         self.spin_density_results = obj()
         opt = self.options
-        for name,spin_density in self.spin_density_data.iteritems():
+        for name,spin_density in self.spin_density_data.items():
             g = None
             if opt.grids is not None and name in opt.grids:
                 g = opt.grids[name]
@@ -628,7 +628,7 @@ class StatFile(QDBase):
 
 
     def write_output_files(self,formats):
-        for name,spin_density in self.spin_density_results.iteritems():
+        for name,spin_density in self.spin_density_results.items():
             prefix = '{0}.{1}'.format(self.file_prefix,name)
             for format in formats:
                 for single_density in spin_density:
@@ -657,7 +657,7 @@ class StatFile(QDBase):
             permutation = tuple([0,dim+1]+r)
         #end if
         sdim = tuple('xyz')[dim]
-        for name,spin_density in self.spin_density_data.iteritems():
+        for name,spin_density in self.spin_density_data.items():
             prefix = '{0}.{1}_lineplot_{2}'.format(self.file_prefix,name,sdim)
             data = spin_density.u.value+spin_density.d.value
             if permute:
@@ -786,7 +786,7 @@ class QMCDensityProcessor(QDBase):
 
         # handle options
         #   options initialized to "None"
-        for k,v in opt.iteritems():
+        for k,v in opt.items():
             if isinstance(v,str) and v=='None':
                 opt[k] = None
             #end if
@@ -909,7 +909,7 @@ class QMCDensityProcessor(QDBase):
             #end if
             if est is not None:
                 opt.grids = obj()
-                for name,xml in est.iteritems():
+                for name,xml in est.items():
                     if isinstance(xml,spindensity_xml):
                         sd = xml
                         if 'grid' in sd:
@@ -975,7 +975,7 @@ class QMCDensityProcessor(QDBase):
 
         if opt.verbose and opt.grids is not None:
             self.log('grids found:')
-            for name,grid in opt.grids.iteritems():
+            for name,grid in opt.grids.items():
                 self.log('  {0} {1}'.format(name,grid))
             #end for
         #end if

@@ -331,7 +331,7 @@ def test_weighted_twist_average():
 
     out_ref = '''
               LocalEnergy                 Variance                   ratio 
-avg series 0 -11.24358831 +/- 0.00369603  0.67781391 +/- 0.00570751  0.0603 
+avg series 0 -11.44375840 +/- 0.00292164  0.44863011 +/- 0.00502859  0.0392 
         '''
 
     assert(text_eq(out,out_ref))

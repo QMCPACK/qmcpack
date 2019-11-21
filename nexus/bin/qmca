@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 
 import os
 import sys
@@ -277,7 +277,7 @@ class DatAnalyzer(QBase):
             else:
                 nbe = 0
             #end if
-        elif isinstance(eq,int):
+        elif isinstance(eq,(int,np.int_)):
             nbe = eq
         elif not self.info.series in eq:
             self.error('equilibration length was not provided for series {0}\nplease use the -e option to provide an equilibration length'.format(self.info.series),'QMCA')
@@ -339,7 +339,7 @@ class DatAnalyzer(QBase):
         nbe = self.get_equilibration()
         data  = self.data
         stats = self.stats
-        for varname,samples in data.iteritems():
+        for varname,samples in data.items():
             if nbe>=len(samples):
                 self.error('equilibration length for series {0} is greater than the amount of data in the file ({1} elements)\nyou requested an equilibration length of {2}'.format(self.info.series,len(samples),nbe),'QMCA')
             #end if
@@ -464,7 +464,7 @@ class DatAnalyzer(QBase):
 
     def accumulate(self,other,weight):
         self.info.weight += weight
-        for q,v in other.data.iteritems():
+        for q,v in other.data.items():
             d = self.data[q]
             minlen = min(len(d),len(v))
             self.data[q] = d[0:minlen] + weight*v[0:minlen]
@@ -684,7 +684,7 @@ class DatAnalyzer(QBase):
         #end if
         nbe = self.get_equilibration()
         q = self.data[quantity]
-        middle = int(len(q)/2)
+        middle = int(len(q)//2)
         qmean = q[middle:].mean()
         qmax = q[middle:].max()
         qmin = q[middle:].min()
@@ -1095,28 +1095,28 @@ QMCA examples:
                 self.error('file {0} does not exist'.format(file))
             #end if
             isdat = False
-            for filetype,ext in allowed_extensions.iteritems():
+            for filetype,ext in allowed_extensions.items():
                 if file.endswith(ext):
                     isdat = True
-                    try:
-                        d=DatAnalyzer(
-                            filepath = file,
-                            index    = ifile,
-                            type     = filetype,
-                            units    = opt.units
-                            )
-                        self.file_map[file] = d
-                        prefix = d.info.prefix
-                        series = d.info.series
-                        seriesset.add(series)
-                        if not prefix in data:
-                            data[prefix]=obj()
-                            self.prefix_list.append(prefix)
-                        #end if
-                        data[prefix][series] = d
-                    except:
-                        self.log('problem encountered for {0}, results unavailable '.format(file))
-                    #end try
+                    #try:
+                    d=DatAnalyzer(
+                        filepath = file,
+                        index    = ifile,
+                        type     = filetype,
+                        units    = opt.units
+                        )
+                    self.file_map[file] = d
+                    prefix = d.info.prefix
+                    series = d.info.series
+                    seriesset.add(series)
+                    if not prefix in data:
+                        data[prefix]=obj()
+                        self.prefix_list.append(prefix)
+                    #end if
+                    data[prefix][series] = d
+                    #except:
+                    #    self.log('problem encountered for {0}, results unavailable '.format(file))
+                    ##end try
                     break
                 #end if
             #end for
@@ -1126,7 +1126,7 @@ QMCA examples:
             ifile+=1
         #end for
         if opt.average:
-            for prefix,pdata in data.iteritems():
+            for prefix,pdata in data.items():
                 pset = set(pdata.keys())
                 missing = seriesset-pset
                 if len(missing)>1:
@@ -1136,7 +1136,7 @@ QMCA examples:
             serieslist = sorted(list(seriesset))
             for series in serieslist:
                 filetypes = set()
-                for prefix,pdata in data.iteritems():
+                for prefix,pdata in data.items():
                     filetypes.add(pdata[series].info.type)
                 #end for
                 if len(filetypes)>1:
@@ -1156,7 +1156,8 @@ QMCA examples:
             ns=0
             for series in serieslist:
                 np = 0
-                for prefix,pdata in data.iteritems():
+                for prefix in sorted(data.keys()):
+                    pdata = data[prefix]
                     w = weights[np]
                     d = pdata[series]
                     if np==0:
@@ -1190,7 +1191,7 @@ QMCA examples:
                 sjmin = series_join[0]
                 sjmax = series_join[-1]
                 ds    = sjmax-sjmin
-                for prefix,pdata in self.data.iteritems():
+                for prefix,pdata in self.data.items():
                     for s in series_join:
                         if s not in pdata:
                             self.error('cannot join series {0}\ndata for this series is missing for {1}'.format(s,prefix))
@@ -1233,12 +1234,12 @@ QMCA examples:
             for series in sorted(pdata.keys()):
                 d = pdata[series]
                 fail = False
-                try:
-                    d.analyze()
-                except:
-                    self.log('problem encountered for {0}, results unavailable '.format(d.info.filepath))
-                    fail = True
-                #end try
+                #try:
+                d.analyze()
+                #except:
+                #    self.log('problem encountered for {0}, results unavailable '.format(d.info.filepath))
+                #    fail = True
+                ##end try
                 if fail:
                     del pdata[series]
                 #end if

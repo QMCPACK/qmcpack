@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 
 import os
 from optparse import OptionParser
@@ -25,7 +25,7 @@ verbose = options.__dict__['verbose']
 dryrun  = options.__dict__['dryrun']
 
 if help:
-    print parser.format_help()
+    print(parser.format_help())
     exit()
 #end if
 
@@ -52,27 +52,27 @@ for path in paths_in:
 
 if len(paths)>0:
     if verbose:
-        print 'redo: backing up attempted sim runs'
+        print('redo: backing up attempted sim runs')
     #end if
 else:
-    print 'redo: no simulation directories found'
+    print('redo: no simulation directories found')
     exit()
 #end if
 cwd = os.getcwd()
 for path in sorted(paths.keys()):
     if verbose:
-        print '  Entering '+path
+        print('  Entering '+path)
     #end if
     os.chdir(path)
     attempts,contents = paths[path]
     attempt_dir = 'attempt'+str(len(attempts)+1)
     if verbose:
         if len(contents)==0:
-            print '    no contents to backup'
+            print('    no contents to backup')
         elif dryrun:
-            print '    would have created backup of {0} files in directory {1}'.format(len(contents),attempt_dir)
+            print('    would have created backup of {0} files in directory {1}'.format(len(contents),attempt_dir))
         else:
-            print '    creating backup of {0} files in directory {1}'.format(len(contents),attempt_dir)
+            print('    creating backup of {0} files in directory {1}'.format(len(contents),attempt_dir))
         #end if
     #end if
     if not dryrun and len(contents)>0:
@@ -82,12 +82,12 @@ for path in sorted(paths.keys()):
                 os.system('mv {0} {1}'.format(item,attempt_dir))
             #end for
         else:
-            print '  failed to create backup directory '+os.path.join(path,attempt_dir)
+            print('  failed to create backup directory '+os.path.join(path,attempt_dir))
         #end if
     #end if
     os.chdir(cwd)
 #end for
 
 if verbose:
-    print 'redo: backup complete'
+    print('redo: backup complete')
 #end if

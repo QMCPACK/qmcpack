@@ -77,13 +77,13 @@ class HDFgroup(DevBase):
         s=''
         if len(self._datasets)>0:
             s+='  datasets:\n'
-            for k,v in self._datasets.iteritems():
+            for k,v in self._datasets.items():
                 s+= '    '+k+'\n'
             #end for
         #end if
         if len(self._groups)>0:
             s+= '  groups:\n'
-            for k,v in self._groups.iteritems():
+            for k,v in self._groups.items():
                 s+= '    '+k+'\n'
             #end for
         #end if
@@ -116,7 +116,7 @@ class HDFgroup(DevBase):
             del self._parent
         #end if
         if deep:
-            for name,value in self.iteritems():
+            for name,value in self.items():
                 if isinstance(value,HDFgroup):
                     value._remove_hidden()
                 #end if
@@ -134,7 +134,7 @@ class HDFgroup(DevBase):
     #   useful for converting a single group read in view form to full arrays
     def read_arrays(self):
         self._remove_hidden()
-        for k,v in self.iteritems():
+        for k,v in self.items():
             if isinstance(v,HDFgroup):
                 v.read_arrays()
             else:
@@ -307,7 +307,7 @@ class HDFreader(DevBase):
         if self._success:
             cur   = self.cur[self.ilevel]
             hcur  = self.hcur[self.ilevel]
-            for kr,v in hcur.iteritems():
+            for kr,v in hcur.items():
                 k=cur._escape_name(kr)
                 if valid_variable_name(k):
                     vtype = str(type(v))
@@ -369,7 +369,7 @@ class HDFreader(DevBase):
 
         cur   = self.cur[self.ilevel]
         hcur  = self.hcur[self.ilevel]
-        for kr,v in hcur.iteritems():
+        for kr,v in hcur.items():
             k=cur._escape_name(kr)
             if valid_variable_name(k):
                 vtype = str(type(v))
