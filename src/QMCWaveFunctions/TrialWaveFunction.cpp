@@ -341,9 +341,9 @@ TrialWaveFunction::RealType TrialWaveFunction::ratio(ParticleSet& P, int iat)
     myTimers[ii]->stop();
   }
 
-  LogValueType logpsi = convertValueToLog(r);
-  PhaseDiff = std::imag(logpsi);
-  return std::exp(std::real(logpsi));
+  LogValueType logratio = convertValueToLog(r);
+  PhaseDiff = std::imag(logratio);
+  return std::exp(std::real(logratio));
 }
 
 TrialWaveFunction::ValueType TrialWaveFunction::calcRatio(ParticleSet& P, int iat, ComputeType ct)
@@ -480,9 +480,25 @@ TrialWaveFunction::RealType TrialWaveFunction::ratioGrad(ParticleSet& P, int iat
     myTimers[ii]->stop();
   }
 
-  LogValueType logpsi = convertValueToLog(r);
-  PhaseDiff = std::imag(logpsi);
-  return std::exp(std::real(logpsi));
+  LogValueType logratio = convertValueToLog(r);
+  PhaseDiff = std::imag(logratio);
+  return std::exp(std::real(logratio));
+}
+
+TrialWaveFunction::ValueType TrialWaveFunction::calcRatioGrad(ParticleSet& P, int iat, GradType& grad_iat)
+{
+  grad_iat = 0.0;
+  ValueType r(1.0);
+  for (int i = 0, ii = VGL_TIMER; i < Z.size(); ++i, ii += TIMER_SKIP)
+  {
+    myTimers[ii]->start();
+    r *= Z[i]->ratioGrad(P, iat, grad_iat);
+    myTimers[ii]->stop();
+  }
+
+  LogValueType logratio = convertValueToLog(r);
+  PhaseDiff = std::imag(logratio);
+  return r;
 }
 
 void TrialWaveFunction::flex_ratioGrad(const RefVector<TrialWaveFunction>& wf_list,
