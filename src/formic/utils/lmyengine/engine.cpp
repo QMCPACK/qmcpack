@@ -1523,3 +1523,9 @@ void cqmc::engine::LMYEngine<S>::get_brlm_update_alg_part_two(const formic::VarD
   //  output << boost::format("%12.6f ") % updates.at(i);
 
 }
+
+#ifndef QMC_COMPLEX
+template class cqmc::engine::LMYEngine<double>;
+#else
+template class cqmc::engine::LMYEngine<std::complex<double> >;
+#endif
