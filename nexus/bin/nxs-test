@@ -2058,7 +2058,7 @@ def regenerate_reference(update=False):
     #end if
 
     # execute all example scripts in generate_only mode
-    for label,einfo in example_information.iteritems():
+    for label,einfo in example_information.items():
         example_path = einfo['path']
         for script in einfo['scripts']:
             nlog('generating reference data for '+script,n=1)
@@ -2107,7 +2107,7 @@ def regenerate_reference(update=False):
         failed_examples = []
         all_examples = []
         ref_example_dir = os.path.join(reference_dir,exdir)
-        for label,einfo in example_information.iteritems():
+        for label,einfo in example_information.items():
             example_path = einfo['path']
             for code,filetype,filepath in einfo['files']:
                 ref_filepath = os.path.join(ref_example_dir,example_path,filepath)

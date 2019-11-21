@@ -513,7 +513,7 @@ class StatFile(QDBase):
         opt = self.options
         if len(self.spin_density_data)==1 and opt.grids is None and opt.grid is not None:
             opt.grids = obj()
-            opt.grids[self.spin_density_data.keys()[0]] = opt.grid
+            opt.grids[list(self.spin_density_data.keys())[0]] = opt.grid
         #end if
     #end def read
 
