@@ -627,7 +627,7 @@ class GaussianBasisSet(DevBase):
         #end if
         lbasis = self.lbasis()
         gexpon = obj()
-        for l,lbas in lbasis.iteritems():
+        for l,lbas in lbasis.items():
             e = []
             for n in range(len(lbas)):
                 e.append(lbas[n].terms[0].expon)
@@ -645,7 +645,7 @@ class GaussianBasisSet(DevBase):
         #end if
         lbasis = self.lbasis()
         gwidth = obj()
-        for l,lbas in lbasis.iteritems():
+        for l,lbas in lbasis.items():
             w = []
             for n in range(len(lbas)):
                 w.append(1./sqrt(2.*lbas[n].terms[0].expon))
@@ -662,7 +662,7 @@ class GaussianBasisSet(DevBase):
         if comp!=None:
             gwidths = self.prim_widths()
         #end if
-        for l,lsel in lselectors.iteritems():
+        for l,lsel in lselectors.items():
             if l not in lbasis:
                 self.error('cannot remove basis functions from channel {0}, channel not present'.format(l))
             #end if
@@ -738,7 +738,7 @@ class GaussianBasisSet(DevBase):
     # test needed
     def remove_small_prims(self,**keep):
         lsel = obj()
-        for l,lbas in self.lbasis().iteritems():
+        for l,lbas in self.lbasis().items():
             if l in keep:
                 lsel[l] = len(lbas)-keep[l]
             #end if
@@ -750,7 +750,7 @@ class GaussianBasisSet(DevBase):
     # test needed
     def remove_large_prims(self,**keep):
         lsel = obj()
-        for l,lbas in self.lbasis().iteritems():
+        for l,lbas in self.lbasis().items():
             if l in keep:
                 lsel[l] = len(lbas)-keep[l]
             #end if
@@ -763,7 +763,7 @@ class GaussianBasisSet(DevBase):
     def remove_small_prims_rel(self,other,**keep):
         gwidths = other.prim_widths()
         lsel = obj()
-        for l,gw in gwidths.iteritems():
+        for l,gw in gwidths.items():
             lsel[l] = gw.min()
         #end for
         self.remove_prims(comp='<',keep=keep,**lsel)
@@ -774,7 +774,7 @@ class GaussianBasisSet(DevBase):
     def remove_large_prims_rel(self,other,**keep):
         gwidths = other.prim_widths()
         lsel = obj()
-        for l,gw in gwidths.iteritems():
+        for l,gw in gwidths.items():
             lsel[l] = gw.max()
         #end for
         self.remove_prims(comp='>',keep=keep,**lsel)

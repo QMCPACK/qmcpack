@@ -62,7 +62,7 @@ class QEXML(DevBase):
                 #end if
             #end if
         #end for
-        for k,v in enums.iteritems():
+        for k,v in enums.items():
             self[k] = v
             v.finalize()
         #end for

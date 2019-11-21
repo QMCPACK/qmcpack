@@ -316,7 +316,7 @@ def morse_fit(r,E,p0=None,jackknife=False,cost=least_squares,auxfuncs=None,auxre
         # compute auxiliary jackknife quantities, if desired (e.g. morse_freq, etc)
         if calc_aux:
             psamples = jcapture.jsamples
-            for auxname,auxfunc in auxfuncs.iteritems():
+            for auxname,auxfunc in auxfuncs.items():
                 auxcap = None
                 if capture_results:
                     auxcap = obj()
@@ -1083,7 +1083,7 @@ def simple_surface(origin,axes,grid):
         #end for
         sys.exit()
     #end if
-    for k,v in grid.iteritems():
+    for k,v in grid.items():
         if min(v)<simple_surface_min[k]:
             print('Error in simple surface: '+k+' cannot be less than '+str(simple_surface_min[k]))
             print('   actual minimum: '+str(min(v)))

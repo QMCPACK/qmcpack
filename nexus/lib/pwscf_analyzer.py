@@ -651,13 +651,13 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 data = read_qexml(data_file)
                 kpdata = data.root.eigenvalues.k_point
                 kpoints = obj()
-                for ki,kpd in kpdata.iteritems():
+                for ki,kpd in kpdata.items():
                     kp = obj(
                         kpoint = kpd.k_point_coords,
                         weight = kpd.weight
                         )
                     kpoints[ki]=kp
-                    for si,dfile in kpd.datafile.iteritems():
+                    for si,dfile in kpd.datafile.items():
                         efilepath = os.path.join(datadir,dfile.iotk_link)
                         if os.path.exists(efilepath):
                             edata = read_qexml(efilepath)
@@ -719,7 +719,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
         tot = obj(up=0,down=0)
         for kp in kpoints:
             w = kp.weight
-            for s,sl in spins.iteritems():
+            for s,sl in spins.items():
                 tot[s] += w*kp[sl].occupations.sum()
             #end for
         #end for
@@ -735,7 +735,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
         for ik in sorted(kpoints.keys()):
             kp = kpoints[ik]
             kpt = obj()
-            for s,sl in spins.iteritems():
+            for s,sl in spins.items():
                 kpt[s] = w*kp[sl].occupations.sum()*mult
             #end for
             #text+='  {0:>3}  {1: 8.6f}    {2: 3.2f}  {3: 3.2f}  {4: 3.2f}    {5}\n'.format(ik,kp.weight,kpt.up+kpt.down,kpt.up,kpt.down,kp.kpoint[0])

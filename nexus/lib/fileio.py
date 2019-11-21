@@ -546,7 +546,7 @@ class XsfFile(StandardFile):
                                 i+=1
                                 line = lines[i].strip().lower()
                             #end while
-                            for bi,bv in bands.iteritems():
+                            for bi,bv in bands.items():
                                 bands[bi] = array(bv,dtype=float)
                                 bands[bi].shape = tuple(grid)
                             #end for

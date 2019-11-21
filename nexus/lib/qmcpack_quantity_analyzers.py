@@ -1030,7 +1030,7 @@ class TracesFileHDF(QAobject):
             #end if
             #recompute steps (can vary for vmc w/ samples/samples_per_thread)
             steps = st.max()+1
-            steps_per_block = steps/blocks
+            steps_per_block = steps//blocks
             # accumulate weights into steps and blocks
             ws   = zeros((steps,))
             wb   = zeros((blocks,))
@@ -1280,7 +1280,7 @@ class TracesAnalyzer(QAanalyzer):
         #end if
         #recompute steps (can vary for vmc w/ samples/samples_per_thread)
         steps = st.max()+1
-        steps_per_block = steps/blocks
+        steps_per_block = steps//blocks
         # accumulate weights into steps and blocks
         ws   = zeros((steps,))
         qs   = zeros((steps,))
