@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 
 import os
 import sys
@@ -87,42 +87,6 @@ def import_from_unit_test_module(module_name,test_name):
 
 # import core testing functions (shared between nxs-test and unit tests)
 from testing import *
-
-
-# tests
-#   versions code
-#   checks of dependency versions
-#   generic logging
-#   generic intrinsics
-#   generic extensions
-#   structure class
-#   physical system class
-#   simulation input base class
-#   simulation analyzer base class
-#   simulation base class
-#   job class
-#   machine base class
-#   workstation class
-#   supercomputer base class
-#   generic simulation
-#   
-#   settings operations
-#   job write correctness
-#   simulation input correctness
-#   simulation workflow generate only
-#   structure read/write, operations
-#   physical system functions
-#   simulation bundling
-#   project manager
-#   machines
-#   basisset operations
-#   pseudopotential operations
-#   fileio operations
-#   xmlreader
-#   hdfreader
-#   numerical operations (select)
-#   periodic table integrity
-#   simulation analyzers
 
 
 
@@ -519,7 +483,7 @@ class NexusTest(NexusTestBase):
             else:
                 raise NexusTestMisconstructed
             #end if
-            #check_final_state()  # jtk mark py3
+            check_final_state()
             self.status=NexusTest.status_options['passed']
         except Exception as e:
             t,v,tb = sys.exc_info()
@@ -2006,7 +1970,7 @@ NexusTest( qdens                           )
 #NexusTest( quantum_package_simulation      )
 #NexusTest( required_dependencies           )
 #NexusTest( settings_operation              , 'settings' )
-#NexusTest( simulation                      )
+#NexusTest( simulation                      , 'simulation_module' )
 #NexusTest( structure                       )
 #NexusTest( superstring                     )
 #NexusTest( testing                         )
