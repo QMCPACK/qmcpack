@@ -287,9 +287,9 @@ class PhysicalSystem(Matter):
                 elif net_spin%ncells!=0:
                     self.error('net_spin of system does not divide evenly into folded system')
                 else:
-                    net_spin_fold = net_spin/ncells 
+                    net_spin_fold = net_spin//ncells 
                 #end if
-                net_charge_fold = net_charge/ncells
+                net_charge_fold = net_charge//ncells
             elif not self.structure.has_axes(): # folded molecule
                 # net charge/spin are not physically meaningful
                 # for a point group folded molecule

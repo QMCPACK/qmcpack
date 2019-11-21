@@ -742,7 +742,7 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
             q.extend(qn)
             sdata[s] = obj(
                 mlab = method+' '+str(s),
-                mloc = soffset + len(qn)/2,
+                mloc = soffset + len(qn)//2,
                 line_loc = soffset + len(qn)-1
                 )
             soffset += len(qn)

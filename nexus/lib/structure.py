@@ -2712,7 +2712,7 @@ class Structure(Sobj):
     #   all vertices of a ring have degree two
     def ring_graphs(self,order,**kwargs):
         # get all half order connected graphs
-        line_order = order/2+order%2+1
+        line_order = order//2+order%2+1
         cgraphs = self.connected_graphs(line_order,degree=True,site_maps=False,**kwargs)
         # collect half order graphs that are lines
         lgraphs = obj()
@@ -5355,7 +5355,7 @@ def get_band_tiling(
                     g13    = np.gcd.reduce([n1,n3])
                     g23    = np.gcd.reduce([n2,n3])
                     g123   = np.gcd.reduce([n1, n2, n3])
-                    volfac = n1*n2*n3*g123/(g12*g13*g23)
+                    volfac = n1*n2*n3*g123//(g12*g13*g23)
                     if volfac < cur_volfac: #min_volfac <= volfac and  and volfac <= max_volfac:
                         vars = [[n1, n2, n3, g12, g13, g23, g123]]
                         cur_volfac = volfac
@@ -5395,9 +5395,12 @@ def get_band_tiling(
             n1, n2, n3, g12, g13, g23, g123 = v
             #New alphas exactly on the voxels thanks to ktol
             for p in range(0, g23):
-                for q in range(0, g12/g123):
-                    for r in range(g13*g23/g123):
-                        temp_mat = [[g123*n1/(g12*g13), q*g123*n2/(g12*g23), r*g123*n3/(g13*g23)], [0, n2/g23, p*n3/g23], [0,0,n3]]
+                for q in range(0, g12//g123):
+                    for r in range(g13*g23//g123):
+                        temp_mat = [
+                            [g123*n1//(g12*g13), q*g123*n2//(g12*g23), r*g123*n3//(g13*g23)], 
+                            [0, n2//g23, p*n3//g23], 
+                            [0,0,n3]]
                         comm = []
                         div = array([n1, n2, n3])
                         new_alphas = alphas_on_grid(alphas, div)
