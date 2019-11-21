@@ -207,10 +207,7 @@ public:
                           TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM>& grad_grad,
                           TinyVector<ParticleSet::ParticleLaplacian_t, OHMMS_DIM>& lapl_grad);
 
-  [[deprecated]]
-  RealType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
-
-  RealType calcRatioGrad(ParticleSet& P, int iat, GradType& grad_iat);
+  ValueType calcRatioGrad(ParticleSet& P, int iat, GradType& grad_iat);
 
   /** batched verison of ratioGrad 
    *

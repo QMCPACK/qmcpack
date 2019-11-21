@@ -468,23 +468,6 @@ TrialWaveFunction::GradType TrialWaveFunction::evalGradSource(
   return grad_iat;
 }
 
-
-TrialWaveFunction::RealType TrialWaveFunction::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
-{
-  grad_iat = 0.0;
-  ValueType r(1.0);
-  for (int i = 0, ii = VGL_TIMER; i < Z.size(); ++i, ii += TIMER_SKIP)
-  {
-    myTimers[ii]->start();
-    r *= Z[i]->ratioGrad(P, iat, grad_iat);
-    myTimers[ii]->stop();
-  }
-
-  LogValueType logratio = convertValueToLog(r);
-  PhaseDiff = std::imag(logratio);
-  return std::exp(std::real(logratio));
-}
-
 TrialWaveFunction::ValueType TrialWaveFunction::calcRatioGrad(ParticleSet& P, int iat, GradType& grad_iat)
 {
   grad_iat = 0.0;

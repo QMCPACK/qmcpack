@@ -280,10 +280,11 @@ TEST_CASE("TrialWaveFunction", "[wavefunction]")
   std::fill(ratios.begin(), ratios.end(), 0);
   std::vector<GradType> grad_new(2);
 
-  ratios[0] = WF_list[0]->ratioGrad(*P_list[0], moved_elec_id, grad_new[0]);
-  ratios[1] = WF_list[1]->ratioGrad(*P_list[1], moved_elec_id, grad_new[1]);
+  ratios[0] = WF_list[0]->calcRatioGrad(*P_list[0], moved_elec_id, grad_new[0]);
+  ratios[1] = WF_list[1]->calcRatioGrad(*P_list[1], moved_elec_id, grad_new[1]);
 
-  std::cout << "ratioGrad " << std::setprecision(14)
+  std::cout << "calcRatioGrad " << std::setprecision(14)
+            << ratios[0] << " " << ratios[1] << std::endl
             << grad_new[0][0] << " " << grad_new[0][1] << " " << grad_new[0][2] << " "
             << grad_new[1][0] << " " << grad_new[1][1] << " " << grad_new[1][2]
             << std::endl;

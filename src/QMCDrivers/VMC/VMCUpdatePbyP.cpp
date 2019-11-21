@@ -84,17 +84,15 @@ void VMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
         if (UseDrift)
         {
           GradType grad_new;
-          RealType ratio = Psi.ratioGrad(W, iat, grad_new);
-          prob           = ratio * ratio;
-          logGf          = mhalf * dot(deltaR[iat], deltaR[iat]);
+          prob  = std::norm(Psi.calcRatioGrad(W, iat, grad_new));
+          logGf = mhalf * dot(deltaR[iat], deltaR[iat]);
           DriftModifier->getDrift(tauovermass, grad_new, dr);
           dr    = W.R[iat] - W.activePos - dr;
           logGb = -oneover2tau * dot(dr, dr);
         }
         else
         {
-          RealType ratio = Psi.ratio(W, iat);
-          prob           = ratio * ratio;
+          prob = std::norm(Psi.calcRatio(W, iat));
         }
         if (prob >= std::numeric_limits<RealType>::epsilon() && RandomGen() < prob * std::exp(logGb - logGf))
         {
