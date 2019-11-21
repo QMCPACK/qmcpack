@@ -8,7 +8,7 @@ Track versions of dependencies supported by Nexus.
 """
 
 import sys
-from platform import python_version
+from platform import python_version,python_version_tuple
 import datetime
 import importlib
 
@@ -22,6 +22,12 @@ python_supported = 'python3'
 """
 Current Python family supported.
 """
+
+# Require Python 3
+if python_version_tuple()<('3','0','0'):
+    print('\nNexus is compatible only with Python 3.\n  You attempted to run with Python version {}.\n  Please rerun with Python 3.\n'.format(python_version()))
+    sys.exit(1)
+#end if
 
 years_supported = 2
 """
