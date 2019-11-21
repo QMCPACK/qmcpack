@@ -23,9 +23,6 @@
 #                                                                    #
 #====================================================================#
 
-
-#! /usr/bin/env python
-
 """
 The :py:mod:`structure` module provides support for atomic structure I/O,
 generation, and manipulation.  
@@ -202,7 +199,7 @@ def read_cif_celldata(filepath,block=None,grammar='1.1'):
         os.chdir(cwd)
     #end if
     if block is None:
-        block = cf.keys()[0]
+        block = list(cf.keys())[0]
     #end if
     cb = cf.get(block)
     if cb is None:
@@ -5311,7 +5308,7 @@ def get_band_tiling(
             #end if
         #end if
         alphas = array([x[0] - x[1] for x in itertools.combinations(kpts.values(),2)]) #Combinations of k_1 - k_2 in kpts list
-        kpt0 = kpts.values()[0]
+        kpt0 = list(kpts.values())[0]
         return alphas, kpt0
     #end def find_alphas
 
@@ -5336,7 +5333,7 @@ def get_band_tiling(
             #end if
         #end if
         
-        cur_volfac     = 1e6
+        cur_volfac = 1e6
         vars       = []
         for mvol in range(max_volfac, 0, -1):
             cuboids = cuboid_with_int_edges(mvol)
