@@ -55,6 +55,7 @@ currently_supported = [
     ('spglib'     , (1,  9,  9) ), # optional
     ('seekpath'   , (1,  4,  0) ), # optional
     ('pycifrw'    , (4,  3,  0) ), # optional
+    ('cif2cell'   , (1,  2, 10) ), # optional
     ]
 """
 Currently supported versions of Nexus dependencies.
@@ -240,6 +241,15 @@ raw_version_data = dict(
         4.3    2017-02-27
         4.4    2018-02-12
         4.4.1  2019-02-27
+        ''',
+    # cif2cell releases
+    #   https://pypi.org/project/cif2cell/#history
+    #   https://sourceforge.net/projects/cif2cell/files/
+    cif2cell = '''
+        1.2.2   2014-08-26
+        1.2.7   2015-05-18
+        1.2.10  2016-01-19
+        2.0.0   2019-10-07
         ''',
     # seekpath releases
     #   https://pypi.org/project/seekpath/#history

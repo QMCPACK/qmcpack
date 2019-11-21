@@ -79,6 +79,7 @@ def test_versions_object():
         spglib     
         seekpath   
         pycifrw    
+        cif2cell
         '''.split())
     assert(set(raw_version_data.keys())==deps)
 
