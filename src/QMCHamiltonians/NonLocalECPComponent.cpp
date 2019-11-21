@@ -449,7 +449,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
       //quadrature point...
       W.setActive(iel); // initialize distances for iel
       W.makeMove(iel, deltaV[j]);
-      psi.ratio(W, iel);
+      psi.calcRatio(W, iel);
       psi.acceptMove(W, iel);
       W.acceptMove(iel); // it only updates the jel-th row of e-e table
       W.update(true); // need this to update the full e-e table.
@@ -467,7 +467,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
       // mirror the above in reverse order
       W.setActive(iel);
       W.makeMove(iel, deltaV[j]);
-      psi.ratio(W, iel);
+      psi.calcRatio(W, iel);
       psi.acceptMove(W, iel);
       W.acceptMove(iel);
       W.update(true);
