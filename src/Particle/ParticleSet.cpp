@@ -448,8 +448,8 @@ bool ParticleSet::makeMoveAndCheck(Index_t iat, const SingleParticlePos_t& displ
 
 bool ParticleSet::makeMoveAndCheckWithSpin(Index_t iat, const SingleParticlePos_t& displ, const RealType& sdispl)
 {
-    makeMoveAndCheck(iat,displ);
     activeSpin = spins[iat]+sdispl;
+    return makeMoveAndCheck(iat,displ);
 }
 
 void ParticleSet::computeNewPosDistTablesAndSK(Index_t iat, const SingleParticlePos_t& newpos)
