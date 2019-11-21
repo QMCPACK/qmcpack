@@ -31,6 +31,7 @@
 #====================================================================#
 
 
+from utilities import to_str
 from generic import obj,object_interface,log,error,warn,message
 from debug import ci,interact
 
@@ -343,12 +344,3 @@ def available(*items):
     #end for
     return True
 #end def available
-
-
-def to_str(s):
-    if isinstance(s,bytes):
-        return str(s,encoding='utf-8')
-    else:
-        return str(s)
-    #end if
-#end def to_str

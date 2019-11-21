@@ -17,6 +17,8 @@
 
 from subprocess import Popen,PIPE
 
+from utilities import to_str
+
 def execute(command,verbose=False,skip=False):
     out,err = '',''
     returncode = 0
@@ -32,5 +34,5 @@ def execute(command,verbose=False,skip=False):
         out,err = process.communicate()
         returncode = process.returncode
     #end if
-    return out,err,returncode
+    return to_str(out),to_str(err),returncode
 #end def execute
