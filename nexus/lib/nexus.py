@@ -224,7 +224,7 @@ class Settings(NexusCore):
         self.process_noncore_settings(kw)
 
         # transfer select core data to the global namespace
-        nexus_core_noncore.transfer_from(nexus_core,nexus_core_noncore.keys())
+        nexus_core_noncore.transfer_from(nexus_core,list(nexus_core_noncore.keys()))
         nexus_noncore.set(**nexus_core_noncore.copy()) # prevent write to core namespace
 
         # copy final core and noncore settings

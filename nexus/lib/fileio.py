@@ -933,7 +933,7 @@ class XsfFile(StandardFile):
         ndim = 3
         permute = dim!=0
         if permute:
-            r = range(0,ndim)
+            r = list(range(0,ndim))
             r.pop(dim)
             permutation = tuple([dim]+r)
             data = data.transpose(permutation)
@@ -948,7 +948,7 @@ class XsfFile(StandardFile):
 
     def line_plot(self,dim,filepath):
         r,d = self.line_data(dim)
-        savetxt(filepath,array(zip(r,d)))
+        savetxt(filepath,array(list(zip(r,d))))
     #end def line_plot
 #end class XsfFile
 

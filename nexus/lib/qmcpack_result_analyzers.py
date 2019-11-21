@@ -294,7 +294,7 @@ class OptimizationAnalyzer(ResultAnalyzer):
 
         #plot energy and variance
         figure()
-        r = range(nopt)
+        r = list(range(nopt))
         subplot(3,1,1)
         errorbar(r,en,enerr,fmt='b')
         ylabel('Energy (Ha)')

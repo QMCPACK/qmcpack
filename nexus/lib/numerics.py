@@ -797,11 +797,11 @@ def simstats(x,dim=None):
     reshape = ndim>2
     nblocks = shape[dim]
     if permute:
-        r = range(ndim)
+        r = list(range(ndim))
         r.pop(dim)
         r.append(dim)
         permutation = tuple(r)
-        r = range(ndim)
+        r = list(range(ndim))
         r.pop(ndim-1)
         r.insert(dim,ndim-1)
         invperm     = tuple(r)

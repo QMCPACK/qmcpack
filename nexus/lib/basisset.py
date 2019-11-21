@@ -975,7 +975,7 @@ class GaussianBasisSet(DevBase):
                 else:
                     plotter = plot
                 #end if
-                plotter(range(len(lwidths)),lwidths,lstyle,label=l)
+                plotter(list(range(len(lwidths))),lwidths,lstyle,label=l)
             #end if
         #end for
         if label:

@@ -3104,7 +3104,7 @@ class RectilinearGrid(SpaceGridBase):
                     self.error('ndu is different than len(gmap)')
                 #end if
                 du = 1./self.odu[d]
-                fine_interval_centers[d] = self.umin + .5*du + du*array(range(ndu))
+                fine_interval_centers[d] = self.umin + .5*du + du*array(list(range(ndu)))
                 find_interval_domains[d] = zeros((ndu,))
             #end for
             #checks are done on each source spacegrid to determine interpolation compatibility 

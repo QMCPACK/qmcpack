@@ -120,7 +120,7 @@ class Qmcpack(Simulation):
         if self.system is None:
             self.should_twist_average = False
         elif nexus_core.generate_only:
-            twistnums = range(len(self.system.structure.kpoints))
+            twistnums = list(range(len(self.system.structure.kpoints)))
             if self.should_twist_average:
                 self.twist_average(twistnums)
             #end if
@@ -222,7 +222,7 @@ class Qmcpack(Simulation):
                     self.error('wavefunction file not found:\n'+h5file)
                 #end if
 
-                twistnums = range(len(structure.kpoints))
+                twistnums = list(range(len(structure.kpoints)))
                 if self.should_twist_average:
                     self.twist_average(twistnums)
                 elif not has_twist and orb_elem.twistnum is None:
@@ -446,7 +446,7 @@ class Qmcpack(Simulation):
             output_files = []
         else:
             if self.should_twist_average and not isinstance(self.input,TracedQmcpackInput):
-                self.twist_average(range(len(self.system.structure.kpoints)))
+                self.twist_average(list(range(len(self.system.structure.kpoints))))
                 br = self.bundle_request
                 input = self.input.trace(br.quantity,br.values)
                 input.generate_filenames(self.infile)

@@ -379,7 +379,7 @@ def reduce_tilematrix(tiling):
         tilematrix = T.copy()
         del t
         tbar = identity(dim) #basis for shearing
-        dr = range(dim)
+        dr = list(range(dim))
         #dr = [1,0,2]
         other = dim*[0] # other[d] = dimensions other than d
         for d in dr: 
@@ -1967,7 +1967,7 @@ class Structure(Sobj):
             return
         elif magnetization=='':
             magnetization = identifiers
-            indices = range(len(self.elem))
+            indices = list(range(len(self.elem)))
         else:
             indices = self.locate(identifiers)
         #end if
@@ -2040,14 +2040,14 @@ class Structure(Sobj):
         nrem = len(indices)
         nadd = len(pos)
         if nadd<nrem:
-            ar = array(range(0,nadd))
-            rr = array(range(nadd,nrem))
+            ar = array(list(range(0,nadd)))
+            rr = array(list(range(nadd,nrem)))
             self.elem[indices[ar]] = elem[:]
             self.pos[indices[ar]]  = pos[:]
             self.remove(indices[rr])
         elif nadd>nrem:
-            ar = array(range(0,nrem))
-            er = array(range(nrem,nadd))
+            ar = array(list(range(0,nrem)))
+            er = array(list(range(nrem,nadd)))
             self.elem[indices[ar]] = elem[ar]
             self.pos[indices[ar]]  = pos[ar]
             ii = indices[ar[-1]]
@@ -2072,7 +2072,7 @@ class Structure(Sobj):
         np = len(pos)
         nps= len(self.pos)
         d = empty((np,))
-        ip = array(range(np))
+        ip = array(list(range(np)))
         ips= nn.ravel()
         for i in ip:
             j = ips[i]
@@ -2951,7 +2951,7 @@ class Structure(Sobj):
         # get nearest neighbor index pairs in the large cell
         neigh_pairs = voronoi_neighbors(ss.pos)
         # create a mapping from large to small indices
-        large_to_small = 3**d*range(len(self.pos))
+        large_to_small = 3**d*list(range(len(self.pos)))
         # find the neighbor pairs in the small cell
         neighbors = obj()
         small_inds = set(ss.locate(sn.pos))
@@ -3262,7 +3262,7 @@ class Structure(Sobj):
             #end if
         #end for
         npos,dim = pos.shape
-        drange = range(dim)
+        drange = list(range(dim))
         n = len(surface)
         i=0
         while i<n:
@@ -3600,7 +3600,7 @@ class Structure(Sobj):
         kindices = []
         kpoints  = []
         shift = empty((ndim,))
-        kr = range(nkpoints)
+        kr = list(range(nkpoints))
         for k in range(imin[2],imax[2]+1):
             for j in range(imin[1],imax[1]+1):
                 for i in range(imin[0],imax[0]+1):
@@ -4164,7 +4164,7 @@ class Structure(Sobj):
         #end if
         ref = reference.tile((3,3,3))
         ref.recenter(reference.center)
-        rmap = array(3**3*range(len(reference.pos)),dtype=int)
+        rmap = array(3**3*list(range(len(reference.pos)),dtype=int))
         nn = nearest_neighbors(1,ref.pos,self.pos).ravel()
         displacement = self.pos - ref.pos[nn]
         if not map:
@@ -4203,8 +4203,8 @@ class Structure(Sobj):
             rbonds = rbv[ir]
             ib  = empty((neighbors,),dtype=int)
             ibr = empty((neighbors,),dtype=int)
-            r  = range(neighbors)
-            rr = range(neighbors)
+            r  = list(range(neighbors))
+            rr = list(range(neighbors))
             for n in range(neighbors):
                 mindist = 1e99
                 ibmin  = -1
@@ -4322,7 +4322,7 @@ class Structure(Sobj):
         ntile = ncells*natoms
         pos = empty((ntile,dim))
         ind = empty((ntile,),dtype=int)
-        oind = range(natoms)
+        oind = list(range(natoms))
         for nt in range(ncells):
             n=nt*natoms
             ind[n:n+natoms]=oind[:]
@@ -4695,7 +4695,7 @@ class Structure(Sobj):
         self.pos = pos
         if selective_dynamics or spos.shape[1]>3:
             move = array(spos[:,3:6],dtype=str)
-            self.freeze(range(self.size()),directions=move=='F')
+            self.freeze(list(range(self.size())),directions=move=='F')
         #end if
     #end def read_poscar
 
@@ -5631,7 +5631,7 @@ class DefectStructure(Structure):
         nn = nearest_neighbors(1,dlarge,dsmall)
         dist = dsmall.distances(dlarge[nn.ravel()])
         dmatch = dist<dist_cutoff
-        ismall = array(range(len(dsmall.pos)))
+        ismall = array(list(range(len(dsmall.pos))))
         ismall = ismall[dmatch]
         ilarge = nn[ismall]
         if natoms1<natoms2:
