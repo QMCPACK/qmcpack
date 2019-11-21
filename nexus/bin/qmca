@@ -1186,7 +1186,7 @@ QMCA examples:
             self.prefix_list = ['avg']
         #end if
         if opt.join is not None:
-            series_join = range(opt.join[0],opt.join[1]+1)
+            series_join = list(range(opt.join[0],opt.join[1]+1))
             if len(series_join)>1:
                 sjmin = series_join[0]
                 sjmax = series_join[-1]
@@ -1289,7 +1289,7 @@ QMCA examples:
             plotstyle   = color+marker+line
             tracestyle  = color+line
             histstyle   = color+line
-            iplot,itrace,ihist = range(3)
+            iplot,itrace,ihist = list(range(3))
             modes = [opt.plot,opt.trace,opt.histogram]
             quantities = []
             for q in opt.quantities:

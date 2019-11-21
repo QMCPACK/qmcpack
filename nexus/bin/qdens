@@ -652,7 +652,7 @@ class StatFile(QDBase):
             rmax = None
         #end if
         if permute:
-            r = range(1,ndim+1)
+            r = list(range(1,ndim+1))
             r.pop(dim)
             permutation = tuple([0,dim+1]+r)
         #end if
@@ -687,7 +687,7 @@ class StatFile(QDBase):
             self.vlog('        creating file {0}.pdf'.format(prefix))
             plt.savefig(prefix+'.pdf')
             self.vlog('        creating file {0}.dat'.format(prefix))
-            np.savetxt(prefix+'.dat',np.array(zip(r,lmean,lerror)))
+            np.savetxt(prefix+'.dat',np.array(list(zip(r,lmean,lerror))))
         #end for
     #end def line_plot
 #end class StatFile
