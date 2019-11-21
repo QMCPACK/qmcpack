@@ -26,16 +26,14 @@ typedef int TraceManager;
 
 namespace qmcplusplus
 {
-
 /// Constructor
 VMCUpdatePbyP::VMCUpdatePbyP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator_t& rg)
     : QMCUpdateBase(w, psi, h, rg),
-      buffer_timer_(*TimerManager.createTimer("VMCUpdatePbyP::Buffer",timer_level_medium)),
-      movepbyp_timer_(*TimerManager.createTimer("VMCUpdatePbyP::MovePbyP",timer_level_medium)),
-      hamiltonian_timer_(*TimerManager.createTimer("VMCUpdatePbyP::Hamiltonian",timer_level_medium)),
-      collectables_timer_(*TimerManager.createTimer("VMCUpdatePbyP::Collectables",timer_level_medium))
-{
-}
+      buffer_timer_(*TimerManager.createTimer("VMCUpdatePbyP::Buffer", timer_level_medium)),
+      movepbyp_timer_(*TimerManager.createTimer("VMCUpdatePbyP::MovePbyP", timer_level_medium)),
+      hamiltonian_timer_(*TimerManager.createTimer("VMCUpdatePbyP::Hamiltonian", timer_level_medium)),
+      collectables_timer_(*TimerManager.createTimer("VMCUpdatePbyP::Collectables", timer_level_medium))
+{}
 
 VMCUpdatePbyP::~VMCUpdatePbyP() {}
 
@@ -72,29 +70,29 @@ void VMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
           dr += sqrttau * deltaR[iat];
         }
         else
-        {
           dr = sqrttau * deltaR[iat];
-        }
+
         if (!W.makeMoveAndCheck(iat, dr))
         {
           ++nReject;
           continue;
         }
-        RealType logGf(1), logGb(1), prob;
+
+        RealType prob(0);
         if (UseDrift)
         {
           GradType grad_new;
-          prob  = std::norm(Psi.calcRatioGrad(W, iat, grad_new));
-          logGf = mhalf * dot(deltaR[iat], deltaR[iat]);
+          prob = std::norm(Psi.calcRatioGrad(W, iat, grad_new));
           DriftModifier->getDrift(tauovermass, grad_new, dr);
-          dr    = W.R[iat] - W.activePos - dr;
-          logGb = -oneover2tau * dot(dr, dr);
+          dr             = W.R[iat] - W.activePos - dr;
+          RealType logGb = -oneover2tau * dot(dr, dr);
+          RealType logGf = mhalf * dot(deltaR[iat], deltaR[iat]);
+          prob *= std::exp(logGb - logGf);
         }
         else
-        {
           prob = std::norm(Psi.calcRatio(W, iat));
-        }
-        if (prob >= std::numeric_limits<RealType>::epsilon() && RandomGen() < prob * std::exp(logGb - logGf))
+
+        if (prob >= std::numeric_limits<RealType>::epsilon() && RandomGen() < prob)
         {
           moved = true;
           ++nAccept;

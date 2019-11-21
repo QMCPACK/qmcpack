@@ -1022,7 +1022,7 @@ void WaveFunctionTester::runBasicTest()
     RealType phase_p = Psi.getPhase();
     W.makeMove(iat, deltaR[iat]);
     //W.update();
-    ValueType aratio    = Psi.calcRatio(W, iat);
+    ValueType aratio   = Psi.calcRatio(W, iat);
     RealType phaseDiff = Psi.getPhaseDiff();
     W.rejectMove(iat);
     Psi.rejectMove(iat);
