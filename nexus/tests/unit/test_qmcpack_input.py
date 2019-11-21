@@ -235,7 +235,7 @@ def generate_serial_references():
         'simulation/qmcsystem/wavefunctions/psi0/jastrows/J1/correlations/V/size' : 13,
         'simulation/qmcsystem/wavefunctions/psi0/jastrows/J1/function' : 'bspline',
         'simulation/qmcsystem/wavefunctions/psi0/jastrows/J1/name' : 'J1',
-        'simulation/qmcsystem/wavefunctions/psi0/jastrows/J1/print_' : True,
+        'simulation/qmcsystem/wavefunctions/psi0/jastrows/J1/print' : True,
         'simulation/qmcsystem/wavefunctions/psi0/jastrows/J1/source' : 'ion0',
         'simulation/qmcsystem/wavefunctions/psi0/jastrows/J1/type' : 'One-Body',
         'simulation/qmcsystem/wavefunctions/psi0/jastrows/J2/correlations/ud/coefficients/coeff' : np.array([
@@ -256,7 +256,7 @@ def generate_serial_references():
         'simulation/qmcsystem/wavefunctions/psi0/jastrows/J2/correlations/uu/speciesb' : 'u',
         'simulation/qmcsystem/wavefunctions/psi0/jastrows/J2/function' : 'bspline',
         'simulation/qmcsystem/wavefunctions/psi0/jastrows/J2/name' : 'J2',
-        'simulation/qmcsystem/wavefunctions/psi0/jastrows/J2/print_' : True,
+        'simulation/qmcsystem/wavefunctions/psi0/jastrows/J2/print' : True,
         'simulation/qmcsystem/wavefunctions/psi0/jastrows/J2/type' : 'Two-Body',
         'simulation/qmcsystem/wavefunctions/psi0/jastrows/J3/correlations/udO/coefficients/coeff' : np.array([
             -0.004166620907,0.0003869059334,0.01344638104,-7.5215692e-05,-0.006436299048,0.0008791813519,0.007681280497,-0.006673633544,0.0300621195,0.00157665002,-0.001657156134,-0.01142258435,-0.02006687607,0.005271171591,0.01511417522,0.0008942941789,-0.002018984988,0.01595864928,0.005244762096,0.01545262066,-0.006397246289,-0.0072233246,-0.0008063061353,0.00830708478,0.001242024926,-0.0003962016339]),
@@ -304,7 +304,7 @@ def generate_serial_references():
         'simulation/qmcsystem/wavefunctions/psi0/jastrows/J3/correlations/uuV/rcut' : 5.0,
         'simulation/qmcsystem/wavefunctions/psi0/jastrows/J3/function' : 'polynomial',
         'simulation/qmcsystem/wavefunctions/psi0/jastrows/J3/name' : 'J3',
-        'simulation/qmcsystem/wavefunctions/psi0/jastrows/J3/print_' : True,
+        'simulation/qmcsystem/wavefunctions/psi0/jastrows/J3/print' : True,
         'simulation/qmcsystem/wavefunctions/psi0/jastrows/J3/source' : 'ion0',
         'simulation/qmcsystem/wavefunctions/psi0/jastrows/J3/type' : 'eeI',
         'simulation/qmcsystem/wavefunctions/psi0/name' : 'psi0',
@@ -359,7 +359,7 @@ def generate_serial_references():
     ref['simulation/qmcsystem/wavefunctions/psi0/jastrows/J2/correlations/uu/speciesb'] = 'u'
     ref['simulation/qmcsystem/wavefunctions/psi0/jastrows/J2/function'] = 'bspline'
     ref['simulation/qmcsystem/wavefunctions/psi0/jastrows/J2/name'] = 'J2'
-    ref['simulation/qmcsystem/wavefunctions/psi0/jastrows/J2/print_'] = True
+    ref['simulation/qmcsystem/wavefunctions/psi0/jastrows/J2/print'] = True
     ref['simulation/qmcsystem/wavefunctions/psi0/jastrows/J2/type'] = 'Two-Body'
 
     serial_references['VO2_M1_afm.in.xml gen_read'] = ref
@@ -768,7 +768,7 @@ def test_compose():
                             name     = 'J1',
                             function = 'bspline',
                             source   = 'ion0',
-                            print_   = True,
+                            print    = True,
                             correlations = [
                                 section(
                                     elementType = 'O',
@@ -812,7 +812,7 @@ def test_compose():
                             type     = 'Two-Body',
                             name     = 'J2',
                             function = 'bspline',
-                            print_   = True,
+                            print    = True,
                             correlations = [
                                 section(
                                     speciesA    = 'u',
@@ -856,7 +856,7 @@ def test_compose():
                             type     = 'eeI',
                             name     = 'J3',
                             function = 'polynomial',
-                            print_   = True,
+                            print    = True,
                             source   = 'ion0',
                             correlations = [
                                 section(

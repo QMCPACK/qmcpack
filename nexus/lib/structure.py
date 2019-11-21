@@ -832,7 +832,7 @@ class Structure(Sobj):
         #end if
         if elem_pos is not None:
             ep = array(elem_pos.split(),dtype=str)
-            ep.shape = ep.size/(dim+1),(dim+1)
+            ep.shape = ep.size//(dim+1),(dim+1)
             elem = ep[:,0].ravel()
             pos  = ep[:,1:dim+1]
         #end if

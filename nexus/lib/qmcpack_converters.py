@@ -149,9 +149,9 @@ class Pw2qmcpackInput(SimulationInput):
 
     def write_text(self,filepath=None):
         contents = ''
-        for sname,section in self.iteritems():
+        for sname,section in self.items():
             contents+='&'+sname+'\n'
-            for name,value in section.iteritems():
+            for name,value in section.items():
                 vtype = type(value)
                 contents += '  '+name+' = '+writeval[vtype](value)+'\n'
             #end for
@@ -166,7 +166,7 @@ class Pw2qmcpackInput(SimulationInput):
             self.read(filepath)
         else:
             inputpp = obj()
-            for name,value in vars.iteritems():
+            for name,value in vars.items():
                 inputpp[name] = value
             #end for
             self.inputpp = inputpp
@@ -544,7 +544,7 @@ class Convert4qmcInput(SimulationInput):
     def check_valid(self,exit=True):
         valid = True
         # check that all inputs have valid types and assign them
-        for k,v in self.iteritems():
+        for k,v in self.items():
             if v is not None and not isinstance(v,self.input_types[k]):
                 valid = False
                 if exit:

@@ -18,6 +18,7 @@
 
 
 import os
+import numpy as np
 from numpy import array,fromstring,sqrt,dot,max,equal,zeros,min,where
 from generic import obj
 from unit_converter import convert
@@ -264,7 +265,8 @@ class PwscfAnalyzer(SimulationAnalyzer):
                     try:
                         num_kpoints      = int(l.strip().split()[4])
                     except:
-                        print "Number of k-points {0} is not an integer".format(num_kpoints)
+                        print("Number of k-points {0} is not an integer".format(num_kpoints))
+                    #end try
 
                     kpoints_2pi_alat = lines[i+2:i+2+num_kpoints]
                     kpoints_rel      = lines[i+4+num_kpoints:i+4+2*num_kpoints]
@@ -478,19 +480,18 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 if l.find('total   stress')!=-1:
                     for j in range(3):
                         i+=1
-                        tokens = lines[i].split()
-                        stress.append(map(float,tokens))
-                    # end for j
-                # end found
+                        stress.append(list(np.array(lines[i].split(),dtype=float)))
+                    #end for
+                #end if
                 i += 1
-            # end while
+            #end while
             self.stress=stress
         except:
             nx+=1
             if self.info.warn:
                 self.warn('stress read failed')
             #end if
-        #end
+        #end try
         #end added by Yubo "Paul" Yang
 
         try:
@@ -689,7 +690,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
                     data    = data,
                     kpoints = kpoints
                     )
-            except Exception,e:
+            except Exception as e:
                 if self.info.warn:
                     self.warn('encountered an exception during xml read, this data will not be available\nexception encountered: '+str(e))
                 #end if

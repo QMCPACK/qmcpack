@@ -505,7 +505,7 @@ class VKeywordFile(VFile):
             value = self[name]
             try:
                 svalue = self.write_value[name](value)
-            except Exception,e:
+            except Exception as e:
                 self.error('write failed for file {0} keyword {1}\nkeyword type: {2}\nvalue: {3}\nexception:\n{4}'.format(filepath,name,self.type[name],value,e))
             #end try
             text += valfmt.format(name.upper(),svalue)
@@ -515,10 +515,10 @@ class VKeywordFile(VFile):
 
 
     def assign(self,**values):
-        for name,value in values.iteritems():
+        for name,value in values.items():
             try:
                 self[name] = self.assign_value[name](value)
-            except Exception,e:
+            except Exception as e:
                 self.error('assign failed for keyword {0}\nkeyword type: {1}\nvalue: {2}\nexception:\n{3}'.format(name,self.type[name],value,e))
             #end try
         #end for
@@ -1326,7 +1326,7 @@ class VaspInput(SimulationInput,Vobj):
 
     def write(self,filepath,prefix='',postfix=''):
         path = self.get_path(filepath)
-        for name,vfile in self.iteritems():
+        for name,vfile in self.items():
             filepath = os.path.join(path,prefix+name.upper()+postfix)
             vfile.write(filepath)
         #end for
@@ -1610,7 +1610,7 @@ def generate_any_vasp_input(**kwargs):
 
     # remove keywords associated with kpoints, poscar, and any other formatted files
     vf = obj()
-    for name,default in generate_any_defaults.iteritems():
+    for name,default in generate_any_defaults.items():
         if name in kwargs:
             vf[name] = kwargs[name]
             del kwargs[name]
@@ -1625,7 +1625,7 @@ def generate_any_vasp_input(**kwargs):
 
     # assign values to incar and any other keyword files
     keywords = set(kwargs.keys())
-    for name,keyword_file in VaspInput.keyword_files.iteritems():
+    for name,keyword_file in VaspInput.keyword_files.items():
         keys = keywords & keyword_file.keywords
         if len(keys)>0:
             kw = obj()

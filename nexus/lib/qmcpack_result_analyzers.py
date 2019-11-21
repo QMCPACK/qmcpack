@@ -118,7 +118,7 @@ class OptimizationAnalyzer(ResultAnalyzer):
         all_complete = True
         unstable = False
         any_stable = False
-        for s,opt in opts.iteritems():
+        for s,opt in opts.items():
             complete = opt.info.complete
             any_complete |= complete
             all_complete &= complete
@@ -250,24 +250,24 @@ class OptimizationAnalyzer(ResultAnalyzer):
         emax = en.max()
         vmax = va.max()
         if header:
-            print 'Optimization summary:'
-            print '===================='
+            print('Optimization summary:')
+            print('====================')
         #end if
         if energy:
             if header:
-                print '  Energies ({0}):'.format(units)
+                print('  Energies ({0}):'.format(units))
             #end if
             for i in range(len(en)):
-                print '    {0:>2}    {1:9.6f} +/-{2:9.6f}'.format(i,en[i]-emax,enerr[i])
+                print('    {0:>2}    {1:9.6f} +/-{2:9.6f}'.format(i,en[i]-emax,enerr[i]))
             #end for
-            print '    ref {0:9.6f}'.format(emax)
+            print('    ref {0:9.6f}'.format(emax))
         #end if
         if variance:
             if header:
-                print '  Variances ({0}^2):'.format(units)
+                print('  Variances ({0}^2):'.format(units))
             #end if
             for i in range(len(en)):
-                print '    {0:>2}    {1:9.6f} +/- {2:9.6f}'.format(i,va[i],vaerr[i])
+                print('    {0:>2}    {1:9.6f} +/- {2:9.6f}'.format(i,va[i],vaerr[i]))
             #end for
         #end if
     #end def summarize
@@ -421,12 +421,12 @@ class TimestepStudyAnalyzer(ResultAnalyzer):
         errors    = convert(self.errors.copy(),'Ha',units)
         Esmall = energies[0]
         if header:
-            print 'Timestep study summary:'
-            print '======================'
+            print('Timestep study summary:')
+            print('======================')
         #end if
         for i in range(len(timesteps)):
             ts,E,Eerr = timesteps[i],energies[i],errors[i]
-            print '    {0:>6.4f}   {1:>6.4f} +/- {2:>6.4f}'.format(ts,E-Esmall,Eerr)
+            print('    {0:>6.4f}   {1:>6.4f} +/- {2:>6.4f}'.format(ts,E-Esmall,Eerr))
         #end for
     #end def summarize
 

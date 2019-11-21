@@ -190,7 +190,7 @@ class Namelist(DevBase):
 
     def assign_values(self,label,**vals):
         self.check_names(label,vals.keys())
-        for name,value in vals.iteritems():
+        for name,value in vals.items():
             self[name] = value
         #end for
     #end def assign_values
@@ -243,7 +243,7 @@ class Namelist(DevBase):
         #end if
         self.check_names('write',self.keys())
         text = '&'+namelist+'\n'
-        for name,value in self.iteritems():
+        for name,value in self.items():
             v = writeval(value)
             if v!=None:
                 text += '  {0} = {1}\n'.format(name,v)
@@ -270,7 +270,7 @@ class NamelistInput(SimulationInput):
             )
         cls.namelist_set = set(cls.namelists)
         cls.name_map     = obj()
-        for namelist_name,namelist_cls in cls.namelist_classes.iteritems():
+        for namelist_name,namelist_cls in cls.namelist_classes.items():
             for name in namelist_cls.names:
                 cls.name_map[name] = namelist_name
             #end for
@@ -287,7 +287,7 @@ class NamelistInput(SimulationInput):
         if len(cls.namelists)==0:
             self.error('cannot initialize this input class as no namelists have been assigned it')
         #end if
-        for name,value in vals.iteritems():
+        for name,value in vals.items():
             if name in cls.name_map:
                 namelist_name = cls.name_map[name]
                 if namelist_name not in self:
@@ -339,7 +339,7 @@ class NamelistInput(SimulationInput):
     def write_text(self,filepath=None):
         cls = self.__class__
         text = ''
-        for name,namelist in self.iteritems():
+        for name,namelist in self.items():
             if name not in cls.namelist_set:
                 msg = 'encountered invalid namelist during write\ninvalid namelist: {0}\nvalid namelists are: {1}'.format(name,cls.namelists)
                 if filepath!=None:
@@ -661,7 +661,7 @@ class ProjwfcAnalyzer(SimulationAnalyzer):
                 u = lc.up
                 d = lc.down
                 lc.pol = obj()
-                for k,uv in u.iteritems():
+                for k,uv in u.items():
                     dv = d[k]
                     lc.tot[k] = uv + dv
                     lc.pol[k] = uv - dv
@@ -900,7 +900,7 @@ if __name__=='__main__':
         prefix = 'pwscf',
         outdir = 'pwscf_output',
         )
-    print pi
-    print pi.write()
+    print(pi)
+    print(pi.write())
 
 #end if

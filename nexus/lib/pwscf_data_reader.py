@@ -129,8 +129,8 @@ def read_qexml(inp):
     elif isinstance(inp,str):# and os.path.exists(inp):
         rawlines = open(inp,'r').read().splitlines()
     else:
-        print 'read_qexml error: input can only be filename or list of lines'
-        print '  input received: ',inp
+        print('read_qexml error: input can only be filename or list of lines')
+        print('  input received: ',inp)
         return None
     #end if
 

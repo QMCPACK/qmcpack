@@ -140,7 +140,7 @@ def array_from_lines(lines):
     a = fromstring(s,sep=' ')
     nelem = len(a)
     nlines = len(lines)
-    dim = nelem/nlines
+    dim = nelem//nlines
     a.shape = nlines,dim
     return a
 #end def array_from_lines
@@ -659,7 +659,7 @@ class system(Section):
     def post_process_read(self,parent):
         if 'atomic_species' in parent:
             keys = self.keys()
-            for alias,name in self.atomic_variables.iteritems():
+            for alias,name in self.atomic_variables.items():
                 has_var = False
                 avals = obj()
                 akeys = []
@@ -1589,7 +1589,7 @@ class PwscfInput(SimulationInput):
         if 'masses' not in self.atomic_species:
             self.atomic_species.masses = obj()
         #end if
-        for name,a in atoms.iteritems():
+        for name,a in atoms.items():
             self.atomic_species.masses[name] = convert(a.mass,'me','amu')
         #end for
         if elem_order is None:
@@ -1688,7 +1688,7 @@ class PwscfInput(SimulationInput):
 
         atoms = p.get_ions()
         masses = obj()
-        for name,a in atoms.iteritems():
+        for name,a in atoms.items():
             masses[name] = convert(a.mass,'me','amu')
         #end for
         self.atomic_species.atoms  = list(atoms.keys())
@@ -1925,7 +1925,7 @@ def generate_any_pwscf_input(**kwargs):
     # enforce lowercase internally, but remain case insensitive to user input
     kw_in = kwargs
     kwargs = obj()
-    for name,value in kw_in.iteritems():
+    for name,value in kw_in.items():
         kwargs[name.lower()] = value
     #end for
 
@@ -1953,7 +1953,7 @@ def generate_any_pwscf_input(**kwargs):
     else:
         defaults = generate_any_defaults.standard
     #end if
-    for name,default in defaults.iteritems():
+    for name,default in defaults.items():
         if not name in kwargs:
             deftype = type(default)
             if inspect.isclass(default) or inspect.isfunction(default):
@@ -1979,7 +1979,7 @@ def generate_any_pwscf_input(**kwargs):
 
     #pull out section keywords
     section_keywords = obj()
-    for section_name,section_type in PwscfInput.section_types.iteritems():
+    for section_name,section_type in PwscfInput.section_types.items():
         keys = set(kwargs.keys()) & section_type.variables
         if len(keys)>0:
             kw = obj()
