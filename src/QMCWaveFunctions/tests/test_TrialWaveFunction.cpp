@@ -258,20 +258,23 @@ TEST_CASE("TrialWaveFunction", "[wavefunction]")
   REQUIRE(grad_old[1][2] == Approx(15.318325284049));
 #endif
 
-  PosType delta_zero(0, 0, 0);
-  p_ref_list[0].get().makeMove(moved_elec_id, delta_zero);
+  PosType delta_sign_changed(0.1, 0.1, -0.2);
+  p_ref_list[0].get().makeMove(moved_elec_id, delta_sign_changed);
   p_ref_list[1].get().makeMove(moved_elec_id, delta);
 
   std::vector<PsiValueType> ratios(2);
   psi.flex_calcRatio(wf_ref_list, p_ref_list, moved_elec_id, ratios);
   std::cout << "calcRatio " << std::setprecision(14) << ratios[0] << " " << ratios[1] << std::endl;
 #if defined(QMC_COMPLEX)
-  REQUIRE(ratios[0] == ComplexApprox(PsiValueType(1, 0)));
+  REQUIRE(ratios[0] == ComplexApprox(PsiValueType(-0.045474407700114,-0.59956233350555)));
   REQUIRE(ratios[1] == ComplexApprox(PsiValueType(1.6538214581548,0.54849918598717)));
 #else
-  REQUIRE(ratios[0] == Approx(1));
+  REQUIRE(ratios[0] == Approx(-0.4138835449));
   REQUIRE(ratios[1] == Approx(2.3055913093424));
 #endif
+
+  PosType delta_zero(0, 0, 0);
+  p_ref_list[0].get().makeMove(moved_elec_id, delta_zero);
 
   std::fill(ratios.begin(), ratios.end(), 0);
   std::vector<GradType> grad_new(2);
