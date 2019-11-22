@@ -260,21 +260,39 @@ TEST_CASE("TrialWaveFunction", "[wavefunction]")
 
   PosType delta_sign_changed(0.1, 0.1, -0.2);
   p_ref_list[0].get().makeMove(moved_elec_id, delta_sign_changed);
+  p_ref_list[1].get().makeMove(moved_elec_id, delta_sign_changed);
+
+  ValueType r_0 = wf_ref_list[0].get().calcRatio(p_ref_list[0].get(), moved_elec_id);
+  GradType grad_temp;
+  ValueType r_1 = wf_ref_list[1].get().calcRatioGrad(p_ref_list[1].get(), moved_elec_id, grad_temp);
+#if defined(QMC_COMPLEX)
+  REQUIRE(r_0 == ComplexApprox(ValueType(-0.045474407700114,-0.59956233350555)));
+  REQUIRE(r_1 == ComplexApprox(ValueType(-0.44602867091608,-1.8105588403509)));
+  REQUIRE(grad_temp[0] == ComplexApprox(ValueType(-6.6139971152489,22.82304260002)));
+  REQUIRE(grad_temp[1] == ComplexApprox(ValueType(8.3367501707711,-23.362154838104)));
+  REQUIRE(grad_temp[2] == ComplexApprox(ValueType(-2.6347597529645,0.67383144279783)));
+#else
+  REQUIRE(r_0 == Approx(-0.4138835449));
+  REQUIRE(r_1 == Approx(-2.5974770159));
+  REQUIRE(grad_temp[0] == Approx(-17.865723259764));
+  REQUIRE(grad_temp[1] == Approx(19.854257889369));
+  REQUIRE(grad_temp[2] == Approx(-2.9669578650441));
+#endif
+
+  PosType delta_zero(0, 0, 0);
+  p_ref_list[0].get().makeMove(moved_elec_id, delta_zero);
   p_ref_list[1].get().makeMove(moved_elec_id, delta);
 
   std::vector<PsiValueType> ratios(2);
   psi.flex_calcRatio(wf_ref_list, p_ref_list, moved_elec_id, ratios);
   std::cout << "calcRatio " << std::setprecision(14) << ratios[0] << " " << ratios[1] << std::endl;
 #if defined(QMC_COMPLEX)
-  REQUIRE(ratios[0] == ComplexApprox(PsiValueType(-0.045474407700114,-0.59956233350555)));
+  REQUIRE(ratios[0] == ComplexApprox(PsiValueType(1, 0)));
   REQUIRE(ratios[1] == ComplexApprox(PsiValueType(1.6538214581548,0.54849918598717)));
 #else
-  REQUIRE(ratios[0] == Approx(-0.4138835449));
+  REQUIRE(ratios[0] == Approx(1));
   REQUIRE(ratios[1] == Approx(2.3055913093424));
 #endif
-
-  PosType delta_zero(0, 0, 0);
-  p_ref_list[0].get().makeMove(moved_elec_id, delta_zero);
 
   std::fill(ratios.begin(), ratios.end(), 0);
   std::vector<GradType> grad_new(2);
