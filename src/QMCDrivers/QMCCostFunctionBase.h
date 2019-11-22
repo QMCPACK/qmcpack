@@ -151,7 +151,7 @@ public:
   virtual Return_rt fillOverlapHamiltonianMatrices(Matrix<Return_rt>& Left, Matrix<Return_rt>& Right) = 0;
 
 #ifdef HAVE_LMY_ENGINE
-  Return_rt LMYEngineCost(const bool needDeriv, cqmc::engine::LMYEngine* EngineObj);
+  Return_rt LMYEngineCost(const bool needDeriv, cqmc::engine::LMYEngine<Return_t>* EngineObj);
 #endif
 
   virtual void getConfigurations(const std::string& aroot) = 0;
@@ -159,7 +159,7 @@ public:
   virtual void checkConfigurations() = 0;
 
 #ifdef HAVE_LMY_ENGINE
-  virtual void engine_checkConfigurations(cqmc::engine::LMYEngine* EngineObj,
+  virtual void engine_checkConfigurations(cqmc::engine::LMYEngine<Return_t>* EngineObj,
                                           DescentEngine& descentEngineObj,
                                           const std::string& MinMethod) = 0;
 
@@ -329,7 +329,7 @@ protected:
   virtual Return_rt correlatedSampling(bool needGrad = true) = 0;
 
 #ifdef HAVE_LMY_ENGINE
-  virtual Return_rt LMYEngineCost_detail(cqmc::engine::LMYEngine* EngineObj)
+  virtual Return_rt LMYEngineCost_detail(cqmc::engine::LMYEngine<Return_t>* EngineObj)
   {
     APP_ABORT("NOT IMPLEMENTED");
     return 0;

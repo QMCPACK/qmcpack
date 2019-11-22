@@ -102,9 +102,6 @@ class OptimizationAnalyzer(ResultAnalyzer):
         opts  = obj(self.opts)
         ew    = self.energy_weight
         vw    = self.variance_weight
-        if 0 in opts:
-           del opts[0]
-        #end if
 
         Efail        = 1e6
         Vfail        = 1e3
@@ -119,6 +116,9 @@ class OptimizationAnalyzer(ResultAnalyzer):
         unstable = False
         any_stable = False
         for s,opt in opts.items():
+            if s==0:
+                continue
+            #end if
             complete = opt.info.complete
             any_complete |= complete
             all_complete &= complete

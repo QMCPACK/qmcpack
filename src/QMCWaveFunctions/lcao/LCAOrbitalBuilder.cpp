@@ -861,18 +861,8 @@ void LCAOrbitalBuilder::LoadFullCoefsFromH5(hdf_archive& hin,
   setname = name;
   readRealMatrixFromH5(hin, setname, Creal);
 
-  if (std::abs(SuperTwist[0] - 0.0) < 1e-6 && std::abs(SuperTwist[1] - 0.0) < 1e-6 &&
-      std::abs(SuperTwist[2] - 0.0) < 1e-6)
-  {
-    for (int i = 0; i < Ccmplx.rows(); i++)
-      for (int j = 0; j < Ccmplx.cols(); j++)
-        Ccmplx[i][j] = 0.0;
-  }
-  else
-  {
-    setname = std::string(name) + "_imag";
-    readRealMatrixFromH5(hin, setname, Ccmplx);
-  }
+  setname = std::string(name) + "_imag";
+  readRealMatrixFromH5(hin, setname, Ccmplx);
 
   for (int i = 0; i < Ctemp.rows(); i++)
     for (int j = 0; j < Ctemp.cols(); j++)
