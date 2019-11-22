@@ -329,23 +329,6 @@ void TrialWaveFunction::evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_
   // app_log()<<" TrialWavefunction::Hessian = "<<grad_grad_psi<< std::endl;
 }
 
-TrialWaveFunction::RealType TrialWaveFunction::ratio(ParticleSet& P, int iat)
-{
-  ValueType r(1.0);
-  std::vector<WaveFunctionComponent*>::iterator it(Z.begin());
-  std::vector<WaveFunctionComponent*>::iterator it_end(Z.end());
-  for (int ii = V_TIMER; it != it_end; ++it, ii += TIMER_SKIP)
-  {
-    myTimers[ii]->start();
-    r *= (*it)->ratio(P, iat);
-    myTimers[ii]->stop();
-  }
-
-  LogValueType logpsi = convertValueToLog(r);
-  PhaseDiff = std::imag(logpsi);
-  return std::exp(std::real(logpsi));
-}
-
 TrialWaveFunction::ValueType TrialWaveFunction::calcRatio(ParticleSet& P, int iat, ComputeType ct)
 {
   ValueType r(1.0);
@@ -468,8 +451,7 @@ TrialWaveFunction::GradType TrialWaveFunction::evalGradSource(
   return grad_iat;
 }
 
-
-TrialWaveFunction::RealType TrialWaveFunction::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
+TrialWaveFunction::ValueType TrialWaveFunction::calcRatioGrad(ParticleSet& P, int iat, GradType& grad_iat)
 {
   grad_iat = 0.0;
   ValueType r(1.0);
@@ -480,12 +462,12 @@ TrialWaveFunction::RealType TrialWaveFunction::ratioGrad(ParticleSet& P, int iat
     myTimers[ii]->stop();
   }
 
-  LogValueType logpsi = convertValueToLog(r);
-  PhaseDiff = std::imag(logpsi);
-  return std::exp(std::real(logpsi));
+  LogValueType logratio = convertValueToLog(r);
+  PhaseDiff = std::imag(logratio);
+  return r;
 }
 
-void TrialWaveFunction::flex_ratioGrad(const RefVector<TrialWaveFunction>& wf_list,
+void TrialWaveFunction::flex_calcRatioGrad(const RefVector<TrialWaveFunction>& wf_list,
                                        const RefVector<ParticleSet>& p_list,
                                        int iat,
                                        std::vector<PsiValueType>& ratios,
@@ -517,7 +499,7 @@ void TrialWaveFunction::flex_ratioGrad(const RefVector<TrialWaveFunction>& wf_li
       wf_list[iw].get().PhaseDiff = std::imag(std::arg(ratios[iw]));
   }
   else if (wf_list.size() == 1)
-    ratios[0] = wf_list[0].get().ratioGrad(p_list[0], iat, grad_new[0]);
+    ratios[0] = wf_list[0].get().calcRatioGrad(p_list[0], iat, grad_new[0]);
 }
 
 void TrialWaveFunction::printGL(ParticleSet::ParticleGradient_t& G,

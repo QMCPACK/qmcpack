@@ -47,7 +47,6 @@ void CSVMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
 
   //Now we compute sumratio and more importantly, ratioij.
   computeSumRatio(logpsi, avgNorm, RatioIJ, sumratio);
-  RealType r(1.0); //a temporary variable for storing ratio^2.
                    // myTimers[1]->start();
   for (int iter = 0; iter < nSubSteps; ++iter)
   {
@@ -64,10 +63,7 @@ void CSVMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
         if (W.makeMoveAndCheck(iat, dr))
         {
           for (int ipsi = 0; ipsi < nPsi; ipsi++)
-          {
-            r           = Psi1[ipsi]->ratio(W, iat);
-            ratio[ipsi] = r * r;
-          }
+            ratio[ipsi] = std::norm(Psi1[ipsi]->calcRatio(W, iat));
           //Compute the ratio and acceptance probability.
           RealType prob = 0;
           for (int ipsi = 0; ipsi < nPsi; ipsi++)

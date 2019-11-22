@@ -168,11 +168,6 @@ public:
                         ParticleSet::ParticleGradient_t& fixedG,
                         ParticleSet::ParticleLaplacian_t& fixedL);
 
-  /** functions to handle particle-by-particle update
-   * both ratio and full_ratio will be replaced by calcRatio which will handle ValueType.
-   */
-  RealType ratio(ParticleSet& P, int iat);
-
   /** function that computes psi(R_new) / psi(R_current). It returns a complex value if the wavefunction 
   *   is complex. It differs from the ratio(ParticleSet& P, int iat) function in the way that the ratio
   *   function takes the absolute value of psi(R_new) / psi(R_current). */
@@ -207,13 +202,13 @@ public:
                           TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM>& grad_grad,
                           TinyVector<ParticleSet::ParticleLaplacian_t, OHMMS_DIM>& lapl_grad);
 
-  RealType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
+  ValueType calcRatioGrad(ParticleSet& P, int iat, GradType& grad_iat);
 
   /** batched verison of ratioGrad 
    *
    *  all vector sizes must match
    */
-  static void flex_ratioGrad(const RefVector<TrialWaveFunction>& WF_list,
+  static void flex_calcRatioGrad(const RefVector<TrialWaveFunction>& WF_list,
                              const RefVector<ParticleSet>& P_list,
                              int iat,
                              std::vector<PsiValueType>& ratios,
