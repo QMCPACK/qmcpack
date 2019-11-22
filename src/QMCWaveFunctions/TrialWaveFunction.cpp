@@ -331,7 +331,7 @@ void TrialWaveFunction::evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_
 
 TrialWaveFunction::ValueType TrialWaveFunction::calcRatio(ParticleSet& P, int iat, ComputeType ct)
 {
-  ValueType r(1.0);
+  PsiValueType r(1.0);
   for (int i = 0, ii = V_TIMER; i < Z.size(); i++, ii += TIMER_SKIP)
   {
     myTimers[ii]->start();
@@ -340,7 +340,7 @@ TrialWaveFunction::ValueType TrialWaveFunction::calcRatio(ParticleSet& P, int ia
       r *= Z[i]->ratio(P, iat);
     myTimers[ii]->stop();
   }
-  return r;
+  return static_cast<ValueType>(r);
 }
 
 void TrialWaveFunction::flex_calcRatio(const RefVector<TrialWaveFunction>& wf_list,
@@ -454,7 +454,7 @@ TrialWaveFunction::GradType TrialWaveFunction::evalGradSource(
 TrialWaveFunction::ValueType TrialWaveFunction::calcRatioGrad(ParticleSet& P, int iat, GradType& grad_iat)
 {
   grad_iat = 0.0;
-  ValueType r(1.0);
+  PsiValueType r(1.0);
   for (int i = 0, ii = VGL_TIMER; i < Z.size(); ++i, ii += TIMER_SKIP)
   {
     myTimers[ii]->start();
@@ -464,7 +464,7 @@ TrialWaveFunction::ValueType TrialWaveFunction::calcRatioGrad(ParticleSet& P, in
 
   LogValueType logratio = convertValueToLog(r);
   PhaseDiff = std::imag(logratio);
-  return r;
+  return static_cast<ValueType>(r);
 }
 
 void TrialWaveFunction::flex_calcRatioGrad(const RefVector<TrialWaveFunction>& wf_list,

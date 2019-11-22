@@ -168,10 +168,15 @@ public:
                         ParticleSet::ParticleGradient_t& fixedG,
                         ParticleSet::ParticleLaplacian_t& fixedL);
 
-  /** function that computes psi(R_new) / psi(R_current). It returns a complex value if the wavefunction 
-  *   is complex. It differs from the ratio(ParticleSet& P, int iat) function in the way that the ratio
-  *   function takes the absolute value of psi(R_new) / psi(R_current). */
+  /** compute psi(R_new) / psi(R_current) ratio
+   * It returns a complex value if the wavefunction is complex.
+   * @param P the active ParticleSet
+   * @param iat the index of a particle moved to the new position.
+   * @param ct select ComputeType
+   * @return ratio value
+   */
   ValueType calcRatio(ParticleSet& P, int iat, ComputeType ct = ComputeType::ALL);
+
   /** batched verison of calcRatio */
   static void flex_calcRatio(const RefVector<TrialWaveFunction>& WF_list,
                              const RefVector<ParticleSet>& P_list,
@@ -202,6 +207,13 @@ public:
                           TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM>& grad_grad,
                           TinyVector<ParticleSet::ParticleLaplacian_t, OHMMS_DIM>& lapl_grad);
 
+  /** compute psi(R_new) / psi(R_current) ratio and \nabla ln(psi(R_new)) gradients
+   * It returns a complex value if the wavefunction is complex.
+   * @param P the active ParticleSet
+   * @param iat the index of a particle moved to the new position.
+   * @param grad_iat gradients
+   * @return ratio value
+   */
   ValueType calcRatioGrad(ParticleSet& P, int iat, GradType& grad_iat);
 
   /** batched verison of ratioGrad 
