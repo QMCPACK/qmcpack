@@ -64,10 +64,10 @@ public:
    *@param nel number of particles in the determinant
    *@param delay dummy argument
    */
-  void set(int first, int nel, int delay=1) final
+  void set(int first, int nel, int delay = 1) final
   {
     FirstIndex = first;
-    resize(nel,nel);
+    resize(nel, nel);
   }
 
   ///set BF pointers

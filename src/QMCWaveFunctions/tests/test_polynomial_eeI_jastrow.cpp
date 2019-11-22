@@ -36,7 +36,6 @@ using std::string;
 
 namespace qmcplusplus
 {
-
 using LogValueType = WaveFunctionComponent::LogValueType;
 using PsiValueType = WaveFunctionComponent::PsiValueType;
 

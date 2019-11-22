@@ -194,7 +194,7 @@ public:
   WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;
 
   WaveFunctionComponentPtr makeThrScope(PtclGrpIndexes& pgi) const;
-  
+
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& active,
                            std::vector<ValueType>& dlogpsi,

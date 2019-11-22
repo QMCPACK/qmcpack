@@ -62,8 +62,8 @@ bool ExampleHeComponent::put(xmlNodePtr cur)
 }
 
 ExampleHeComponent::LogValueType ExampleHeComponent::evaluateLog(ParticleSet& P,
-                                                             ParticleSet::ParticleGradient_t& G,
-                                                             ParticleSet::ParticleLaplacian_t& L)
+                                                                 ParticleSet::ParticleGradient_t& G,
+                                                                 ParticleSet::ParticleLaplacian_t& L)
 {
   const auto& ee_table = P.getDistTable(my_table_ee_idx_);
   // Only the lower triangle is up-to-date after particle-by-particle moves

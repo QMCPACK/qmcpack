@@ -33,9 +33,9 @@ DiracDeterminantWithBackflow::DiracDeterminantWithBackflow(ParticleSet& ptcl,
                                                            int first)
     : DiracDeterminantBase(spos, first)
 {
-  Optimizable = true;
+  Optimizable  = true;
   is_fermionic = true;
-  ClassName   = "DiracDeterminantWithBackflow";
+  ClassName    = "DiracDeterminantWithBackflow";
   registerTimers();
   BFTrans      = BF;
   NumParticles = ptcl.getTotalNum();
@@ -98,12 +98,7 @@ void DiracDeterminantWithBackflow::evaluate_SPO(ValueMatrix_t& logdet,
                                                 HessMatrix_t& grad_grad_logdet,
                                                 GGGMatrix_t& grad_grad_grad_logdet)
 {
-  Phi->evaluate_notranspose(BFTrans->QP,
-                            FirstIndex,
-                            LastIndex,
-                            psiM_temp,
-                            dlogdet,
-                            grad_grad_logdet,
+  Phi->evaluate_notranspose(BFTrans->QP, FirstIndex, LastIndex, psiM_temp, dlogdet, grad_grad_logdet,
                             grad_grad_grad_logdet);
   simd::transpose(psiM_temp.data(), NumOrbitals, psiM_temp.cols(), logdet.data(), NumOrbitals, logdet.cols());
 }
@@ -152,8 +147,8 @@ void DiracDeterminantWithBackflow::registerData(ParticleSet& P, WFBufferType& bu
 }
 
 DiracDeterminantWithBackflow::LogValueType DiracDeterminantWithBackflow::updateBuffer(ParticleSet& P,
-                                                                                  WFBufferType& buf,
-                                                                                  bool fromscratch)
+                                                                                      WFBufferType& buf,
+                                                                                      bool fromscratch)
 {
   // for now, always recalculate from scratch
   // enable from_scratch = true later
@@ -490,9 +485,10 @@ void DiracDeterminantWithBackflow::testL(ParticleSet& P)
  *contribution of the determinant to G(radient) and L(aplacian)
  *for local energy calculations.
  */
-DiracDeterminantWithBackflow::LogValueType DiracDeterminantWithBackflow::evaluateLog(ParticleSet& P,
-                                                                                 ParticleSet::ParticleGradient_t& G,
-                                                                                 ParticleSet::ParticleLaplacian_t& L)
+DiracDeterminantWithBackflow::LogValueType DiracDeterminantWithBackflow::evaluateLog(
+    ParticleSet& P,
+    ParticleSet::ParticleGradient_t& G,
+    ParticleSet::ParticleLaplacian_t& L)
 {
   //testGG(P);
   //testL(P);

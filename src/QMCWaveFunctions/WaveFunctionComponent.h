@@ -145,10 +145,7 @@ struct WaveFunctionComponent : public QMCTraits
   virtual void setDiffOrbital(DiffWaveFunctionComponentPtr d);
 
   ///assembles the full value
-  PsiValueType getValue() const
-  {
-    return LogToValue<PsiValueType>::convert(LogValue);
-  }
+  PsiValueType getValue() const { return LogToValue<PsiValueType>::convert(LogValue); }
 
   /** check in optimizable parameters
    * @param active a super set of optimizable variables
@@ -185,8 +182,8 @@ struct WaveFunctionComponent : public QMCTraits
    * move also uses this.
    */
   virtual LogValueType evaluateLog(ParticleSet& P,
-                               ParticleSet::ParticleGradient_t& G,
-                               ParticleSet::ParticleLaplacian_t& L) = 0;
+                                   ParticleSet::ParticleGradient_t& G,
+                                   ParticleSet::ParticleLaplacian_t& L) = 0;
 
   /** evaluate from scratch the same type WaveFunctionComponent of multiple walkers
    * @param WFC_list the list of WaveFunctionComponent pointers of the same component in a walker batch

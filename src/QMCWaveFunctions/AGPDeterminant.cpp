@@ -101,8 +101,8 @@ void AGPDeterminant::resetTargetParticleSet(ParticleSet& P) { GeminalBasis->rese
  *for local energy calculations.
  */
 AGPDeterminant::LogValueType AGPDeterminant::evaluateLog(ParticleSet& P,
-                                                      ParticleSet::ParticleGradient_t& G,
-                                                      ParticleSet::ParticleLaplacian_t& L)
+                                                         ParticleSet::ParticleGradient_t& G,
+                                                         ParticleSet::ParticleLaplacian_t& L)
 {
   evaluateLogAndStore(P);
   G += myG;

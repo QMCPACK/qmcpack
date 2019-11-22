@@ -61,8 +61,7 @@ struct J1OrbitalSoA : public WaveFunctionComponent
   ///Container for \f$F[ig*NumGroups+jg]\f$
   std::vector<FT*> F;
 
-  J1OrbitalSoA(const ParticleSet& ions, ParticleSet& els)
-    : myTableID(els.addTable(ions, DT_SOA)), Ions(ions)
+  J1OrbitalSoA(const ParticleSet& ions, ParticleSet& els) : myTableID(els.addTable(ions, DT_SOA)), Ions(ions)
   {
     initialize(els);
     ClassName = "J1OrbitalSoA";
@@ -141,13 +140,13 @@ struct J1OrbitalSoA : public WaveFunctionComponent
       {
         int gid    = Ions.GroupID[iat];
         auto* func = F[gid];
-        if( func != nullptr)
+        if (func != nullptr)
         {
-           RealType r    = dist[iat];
-           RealType rinv = 1.0 / r;
-           PosType dr    = displ[iat];
-           func->evaluate(r, dudr, d2udr2);
-           grad_grad_psi[iel] -= rinv * rinv * outerProduct(dr, dr) * (d2udr2 - dudr * rinv) + ident * dudr * rinv;
+          RealType r    = dist[iat];
+          RealType rinv = 1.0 / r;
+          PosType dr    = displ[iat];
+          func->evaluate(r, dudr, d2udr2);
+          grad_grad_psi[iel] -= rinv * rinv * outerProduct(dr, dr) * (d2udr2 - dudr * rinv) + ident * dudr * rinv;
         }
       }
     }
@@ -273,15 +272,8 @@ struct J1OrbitalSoA : public WaveFunctionComponent
       {
         if (F[jg] == nullptr)
           continue;
-        F[jg]->evaluateVGL(-1,
-                           Ions.first(jg),
-                           Ions.last(jg),
-                           dist,
-                           U.data(),
-                           dU.data(),
-                           d2U.data(),
-                           DistCompressed.data(),
-                           DistIndice.data());
+        F[jg]->evaluateVGL(-1, Ions.first(jg), Ions.last(jg), dist, U.data(), dU.data(), d2U.data(),
+                           DistCompressed.data(), DistIndice.data());
       }
     }
     else
@@ -501,7 +493,7 @@ struct J1OrbitalSoA : public WaveFunctionComponent
 
       for (int idim = 0; idim < OHMMS_DIM; idim++)
       {
-        grad_grad[idim][iat]       += dr[idim] * dr * rinv * rinv * grad_component;
+        grad_grad[idim][iat] += dr[idim] * dr * rinv * rinv * grad_component;
         grad_grad[idim][iat][idim] += rinv * dU[isrc];
 
         lapl_grad[idim][iat] -= lapl_component * rinv * dr[idim];

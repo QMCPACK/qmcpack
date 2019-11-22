@@ -122,7 +122,7 @@ TrialWaveFunction::RealType TrialWaveFunction::evaluateLog(ParticleSet& P)
     ScopedTimer local_timer(myTimers[ii]);
     logpsi += Z[i]->evaluateLog(P, P.G, P.L);
   }
-  LogValue = std::real(logpsi);
+  LogValue   = std::real(logpsi);
   PhaseValue = std::imag(logpsi);
   return LogValue;
 }
@@ -227,7 +227,7 @@ TrialWaveFunction::RealType TrialWaveFunction::evaluateDeltaLog(ParticleSet& P, 
     }
     myTimers[ii]->stop();
   }
-  LogValue = std::real(logpsi);
+  LogValue   = std::real(logpsi);
   PhaseValue = std::imag(logpsi);
 
   //In case we need to recompute orbitals, initialize dummy vectors for G and L.
@@ -463,15 +463,15 @@ TrialWaveFunction::ValueType TrialWaveFunction::calcRatioGrad(ParticleSet& P, in
   }
 
   LogValueType logratio = convertValueToLog(r);
-  PhaseDiff = std::imag(logratio);
+  PhaseDiff             = std::imag(logratio);
   return static_cast<ValueType>(r);
 }
 
 void TrialWaveFunction::flex_calcRatioGrad(const RefVector<TrialWaveFunction>& wf_list,
-                                       const RefVector<ParticleSet>& p_list,
-                                       int iat,
-                                       std::vector<PsiValueType>& ratios,
-                                       std::vector<GradType>& grad_new)
+                                           const RefVector<ParticleSet>& p_list,
+                                           int iat,
+                                           std::vector<PsiValueType>& ratios,
+                                           std::vector<GradType>& grad_new)
 {
   const int num_wf = wf_list.size();
   grad_new.resize(num_wf);
@@ -741,7 +741,7 @@ TrialWaveFunction::RealType TrialWaveFunction::updateBuffer(ParticleSet& P, WFBu
     myTimers[ii]->stop();
   }
 
-  LogValue = std::real(logpsi);
+  LogValue   = std::real(logpsi);
   PhaseValue = std::imag(logpsi);
   //printGL(P.G,P.L);
   buf.put(PhaseValue);
@@ -782,7 +782,7 @@ void TrialWaveFunction::flex_updateBuffer(const RefVector<TrialWaveFunction>& wf
     for (int iw = 0; iw < wf_list.size(); iw++)
     {
       wf_list[iw].get().LogValue += std::real(wfc_list[iw].get().LogValue);
-      wf_list[iw].get().PhaseValue +=  std::imag(wfc_list[iw].get().LogValue);
+      wf_list[iw].get().PhaseValue += std::imag(wfc_list[iw].get().LogValue);
     }
   }
 

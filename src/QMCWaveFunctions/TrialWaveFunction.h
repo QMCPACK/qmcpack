@@ -112,10 +112,7 @@ public:
   void getPhases(std::vector<RealType>& pvals);
 
   inline RealType getPhaseDiff() const { return PhaseDiff; }
-  inline void resetPhaseDiff()
-  {
-    PhaseDiff = 0.0;
-  }
+  inline void resetPhaseDiff() { PhaseDiff = 0.0; }
   inline RealType getLogPsi() const { return LogValue; }
   inline void setLogPsi(RealType LogPsi_new) { LogValue = LogPsi_new; }
 
@@ -221,10 +218,10 @@ public:
    *  all vector sizes must match
    */
   static void flex_calcRatioGrad(const RefVector<TrialWaveFunction>& WF_list,
-                             const RefVector<ParticleSet>& P_list,
-                             int iat,
-                             std::vector<PsiValueType>& ratios,
-                             std::vector<GradType>& grad_new);
+                                 const RefVector<ParticleSet>& P_list,
+                                 int iat,
+                                 std::vector<PsiValueType>& ratios,
+                                 std::vector<GradType>& grad_new);
 
   GradType evalGrad(ParticleSet& P, int iat);
   /** batched verison of evalGrad

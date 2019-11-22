@@ -42,8 +42,11 @@ class J2KECorrection
 
 public:
   J2KECorrection(const ParticleSet& targetPtcl, const std::vector<FT*>& F)
-      : num_groups_(targetPtcl.groups()), num_elecs_(targetPtcl.getTotalNum()),
-        vol(targetPtcl.Lattice.Volume), F_(F), SK_enabled(targetPtcl.SK != nullptr)
+      : num_groups_(targetPtcl.groups()),
+        num_elecs_(targetPtcl.getTotalNum()),
+        vol(targetPtcl.Lattice.Volume),
+        F_(F),
+        SK_enabled(targetPtcl.SK != nullptr)
   {
     // compute num_elec_in_groups_
     num_elec_in_groups_.reserve(3);
@@ -56,7 +59,8 @@ public:
 
   RT computeKEcorr()
   {
-    if (!SK_enabled) return 0;
+    if (!SK_enabled)
+      return 0;
 
     const int numPoints = 1000;
     RT uk               = 0.0;
@@ -643,8 +647,8 @@ void J2OrbitalSoA<FT>::recompute(ParticleSet& P)
 
 template<typename FT>
 typename J2OrbitalSoA<FT>::LogValueType J2OrbitalSoA<FT>::evaluateLog(ParticleSet& P,
-                                                                  ParticleSet::ParticleGradient_t& G,
-                                                                  ParticleSet::ParticleLaplacian_t& L)
+                                                                      ParticleSet::ParticleGradient_t& G,
+                                                                      ParticleSet::ParticleLaplacian_t& L)
 {
   evaluateGL(P, G, L, true);
   return LogValue;
@@ -666,7 +670,7 @@ void J2OrbitalSoA<FT>::evaluateGL(ParticleSet& P,
     L[iat] += d2Uat[iat];
   }
 
-  LogValue = - LogValue * 0.5;
+  LogValue = -LogValue * 0.5;
 }
 
 template<typename FT>

@@ -239,7 +239,7 @@ kSpaceJastrow::kSpaceJastrow(ParticleSet& ions,
   Optimizable   = true;
   Prefactor     = 1.0 / elecs.Lattice.Volume;
   NumIonSpecies = 0;
-  num_elecs      = elecs.getTotalNum();
+  num_elecs     = elecs.getTotalNum();
   for (int iat = 0; iat < ions.getTotalNum(); iat++)
     NumIonSpecies = std::max(NumIonSpecies, ions.GroupID[iat] + 1);
   if (oneBodyCutoff > 0.0)
@@ -376,8 +376,8 @@ void kSpaceJastrow::resetTargetParticleSet(ParticleSet& P)
 ///////////////////////////////////////////////////////////////
 
 kSpaceJastrow::LogValueType kSpaceJastrow::evaluateLog(ParticleSet& P,
-                                                   ParticleSet::ParticleGradient_t& G,
-                                                   ParticleSet::ParticleLaplacian_t& L)
+                                                       ParticleSet::ParticleGradient_t& G,
+                                                       ParticleSet::ParticleLaplacian_t& L)
 {
   RealType J1(0.0), J2(0.0);
   int N = P.getTotalNum();
@@ -392,7 +392,7 @@ kSpaceJastrow::LogValueType kSpaceJastrow::evaluateLog(ParticleSet& P,
     for (int i = 0; i < nOne; i++)
     {
       ComplexType z = OneBodyCoefs[i] * qmcplusplus::conj(OneBody_e2iGr[i]);
-      J1     += Prefactor * real(z);
+      J1 += Prefactor * real(z);
       G[iat] += -Prefactor * real(z * eye) * OneBodyGvecs[i];
       L[iat] += -Prefactor * dot(OneBodyGvecs[i], OneBodyGvecs[i]) * real(z);
     }
@@ -503,7 +503,7 @@ kSpaceJastrow::PsiValueType kSpaceJastrow::ratioGrad(ParticleSet& P, int iat, Gr
   for (int i = 0; i < nOne; i++)
   {
     ComplexType z = OneBodyCoefs[i] * qmcplusplus::conj(OneBody_e2iGr[i]);
-    J1new    += Prefactor * real(z);
+    J1new += Prefactor * real(z);
     grad_iat += -Prefactor * real(z * eye) * OneBodyGvecs[i];
   }
   for (int i = 0; i < nOne; i++)
@@ -900,15 +900,15 @@ void kSpaceJastrow::evaluateDerivatives(ParticleSet& P,
             dlogpsi[kk] += ValueType(Prefactor * real(z));
             //convert(dot(OneBodyGvecs[i],P.G[iat]),tmp_dot);
             convert(dot(P.G[iat], OneBodyGvecs[i]), tmp_dot);
-            dhpsioverpsi[kk] +=
-                ValueType(0.5 * Prefactor * dot(OneBodyGvecs[i], OneBodyGvecs[i]) * real(z) + Prefactor * real(z * eye) * tmp_dot);
+            dhpsioverpsi[kk] += ValueType(0.5 * Prefactor * dot(OneBodyGvecs[i], OneBodyGvecs[i]) * real(z) +
+                                          Prefactor * real(z * eye) * tmp_dot);
             //	+ Prefactor*real(z*eye)*real(dot(OneBodyGvecs[i],P.G[iat]));
             //imaginary part of coeff,
-            dlogpsi[kk + 1] += ValueType( Prefactor * real(eye * z) );
+            dlogpsi[kk + 1] += ValueType(Prefactor * real(eye * z));
             //mius here due to i*i term
             //dhpsioverpsi[kk+1] += 0.5*Prefactor*dot(OneBodyGvecs[i],OneBodyGvecs[i])*real(eye*z) - Prefactor*real(z)*real(dot(OneBodyGvecs[i],P.G[iat]));
-            dhpsioverpsi[kk + 1] +=
-                ValueType( 0.5 * Prefactor * dot(OneBodyGvecs[i], OneBodyGvecs[i]) * real(eye * z) - Prefactor * real(z) * tmp_dot);
+            dhpsioverpsi[kk + 1] += ValueType(0.5 * Prefactor * dot(OneBodyGvecs[i], OneBodyGvecs[i]) * real(eye * z) -
+                                              Prefactor * real(z) * tmp_dot);
           }
         }
       }
@@ -931,7 +931,7 @@ void kSpaceJastrow::evaluateDerivatives(ParticleSet& P,
       int kk = myVars.where(TwoBodyVarMap[i]);
       if (kk >= 0)
       {
-        dlogpsi[kk] += ValueType( Prefactor * norm(TwoBody_rhoG[i]) );
+        dlogpsi[kk] += ValueType(Prefactor * norm(TwoBody_rhoG[i]));
       }
     }
     for (int iat = 0; iat < N; iat++)
@@ -949,8 +949,9 @@ void kSpaceJastrow::evaluateDerivatives(ParticleSet& P,
         {
           convert(dot(P.G[iat], Gvec), tmp_dot);
           //dhpsioverpsi[kk] -= Prefactor*dot(Gvec,Gvec)*(-real(z*qmcplusplus::conj(TwoBody_rhoG[i])) + 1.0) - Prefactor*2.0*real(dot(P.G[iat],Gvec))*imag(qmcplusplus::conj(TwoBody_rhoG[i])*z);
-          dhpsioverpsi[kk] -= ValueType( Prefactor * dot(Gvec, Gvec) * (-real(z * qmcplusplus::conj(TwoBody_rhoG[i])) + 1.0) -
-              Prefactor * 2.0 * tmp_dot * imag(qmcplusplus::conj(TwoBody_rhoG[i]) * z) );
+          dhpsioverpsi[kk] -=
+              ValueType(Prefactor * dot(Gvec, Gvec) * (-real(z * qmcplusplus::conj(TwoBody_rhoG[i])) + 1.0) -
+                        Prefactor * 2.0 * tmp_dot * imag(qmcplusplus::conj(TwoBody_rhoG[i]) * z));
         }
       }
     }
@@ -959,33 +960,23 @@ void kSpaceJastrow::evaluateDerivatives(ParticleSet& P,
 
 void kSpaceJastrow::printOneBody(std::ostream& os)
 {
-  for (int i=0;i<OneBodyCoefs.size();i++)
+  for (int i = 0; i < OneBodyCoefs.size(); i++)
   {
-    PosType     gvec  = OneBodyGvecs[i];
+    PosType gvec      = OneBodyGvecs[i];
     ComplexType coeff = OneBodyCoefs[i];
-    os <<std::fixed << std::setprecision( 6 )
-       << std::setw( 12 ) << gvec[0]
-       << std::setw( 12 ) << gvec[1]
-       << std::setw( 12 ) << gvec[2]
-       << std::setw( 24 ) << coeff.real()
-       << std::setw( 24 ) << coeff.imag()
-       << std::endl;
+    os << std::fixed << std::setprecision(6) << std::setw(12) << gvec[0] << std::setw(12) << gvec[1] << std::setw(12)
+       << gvec[2] << std::setw(24) << coeff.real() << std::setw(24) << coeff.imag() << std::endl;
   }
 }
 
 void kSpaceJastrow::printTwoBody(std::ostream& os)
 {
-  for (int i=0;i<TwoBodyCoefs.size();i++)
+  for (int i = 0; i < TwoBodyCoefs.size(); i++)
   {
-    PosType     gvec  = TwoBodyGvecs[i];
+    PosType gvec      = TwoBodyGvecs[i];
     ComplexType coeff = TwoBodyCoefs[i];
-    os <<std::fixed << std::setprecision( 6 )
-       << std::setw( 12 ) << gvec[0]
-       << std::setw( 12 ) << gvec[1]
-       << std::setw( 12 ) << gvec[2]
-       << std::setw( 24 ) << coeff.real()
-       << std::setw( 24 ) << coeff.imag()
-       << std::endl;
+    os << std::fixed << std::setprecision(6) << std::setw(12) << gvec[0] << std::setw(12) << gvec[1] << std::setw(12)
+       << gvec[2] << std::setw(24) << coeff.real() << std::setw(24) << coeff.imag() << std::endl;
   }
 }
 

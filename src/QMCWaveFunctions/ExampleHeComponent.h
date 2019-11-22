@@ -26,15 +26,14 @@ namespace qmcplusplus
 class ExampleHeComponent : public WaveFunctionComponent
 {
 public:
-
   ExampleHeComponent(const ParticleSet& ions, ParticleSet& els)
-    : ions_(ions), my_table_ee_idx_(els.addTable(els, DT_SOA)), my_table_ei_idx_(els.addTable(ions, DT_SOA))
+      : ions_(ions), my_table_ee_idx_(els.addTable(els, DT_SOA)), my_table_ei_idx_(els.addTable(ions, DT_SOA))
   {
     ClassName = "ExampleHeComponent";
   };
 
   using OptVariablesType = optimize::VariableSet;
-  using PtclGrpIndexes = QMCTraits::PtclGrpIndexes;
+  using PtclGrpIndexes   = QMCTraits::PtclGrpIndexes;
 
   void checkInVariables(OptVariablesType& active) override { active.insertFrom(my_vars_); }
   void checkOutVariables(const OptVariablesType& active) override { my_vars_.getIndex(active); }
@@ -46,8 +45,8 @@ public:
   void resetTargetParticleSet(ParticleSet& P) override {}
 
   LogValueType evaluateLog(ParticleSet& P,
-                       ParticleSet::ParticleGradient_t& G,
-                       ParticleSet::ParticleLaplacian_t& L) override;
+                           ParticleSet::ParticleGradient_t& G,
+                           ParticleSet::ParticleLaplacian_t& L) override;
 
   void acceptMove(ParticleSet& P, int iat) override {}
 

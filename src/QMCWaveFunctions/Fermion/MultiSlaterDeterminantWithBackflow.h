@@ -58,9 +58,9 @@ public:
   ValueType evaluate(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
 
   LogValueType evaluateLog(ParticleSet& P //const DistanceTableData* dtable,
-                       ,
-                       ParticleSet::ParticleGradient_t& G,
-                       ParticleSet::ParticleLaplacian_t& L);
+                           ,
+                           ParticleSet::ParticleGradient_t& G,
+                           ParticleSet::ParticleLaplacian_t& L);
 
   GradType evalGrad(ParticleSet& P, int iat);
   PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);

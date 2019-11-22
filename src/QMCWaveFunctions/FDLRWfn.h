@@ -177,16 +177,16 @@ public:
   LogValueType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
 
   LogValueType evaluateLogFDLR(ParticleSet& P,
-                           ParticleSet::ParticleGradient_t& G,
-                           ParticleSet::ParticleLaplacian_t& L,
-                           const RealType& logpsi_plus,
-                           const RealType logpsi_minus,
-                           const RealType& phasevalue_plus,
-                           const RealType phasevalue_minus,
-                           const ParticleSet::ParticleGradient_t& G_plus,
-                           const ParticleSet::ParticleGradient_t& G_minus,
-                           const ParticleSet::ParticleLaplacian_t& L_plus,
-                           const ParticleSet::ParticleLaplacian_t& L_minus);
+                               ParticleSet::ParticleGradient_t& G,
+                               ParticleSet::ParticleLaplacian_t& L,
+                               const RealType& logpsi_plus,
+                               const RealType logpsi_minus,
+                               const RealType& phasevalue_plus,
+                               const RealType phasevalue_minus,
+                               const ParticleSet::ParticleGradient_t& G_plus,
+                               const ParticleSet::ParticleGradient_t& G_minus,
+                               const ParticleSet::ParticleLaplacian_t& L_plus,
+                               const ParticleSet::ParticleLaplacian_t& L_minus);
 
   GradType evalGrad(ParticleSet& P, int iat);
 

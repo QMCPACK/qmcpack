@@ -20,9 +20,8 @@
 
 namespace qmcplusplus
 {
-
-using RealType = WaveFunctionComponent::RealType;
-using ValueType = WaveFunctionComponent::ValueType;
+using RealType     = WaveFunctionComponent::RealType;
+using ValueType    = WaveFunctionComponent::ValueType;
 using LogValueType = WaveFunctionComponent::LogValueType;
 using PsiValueType = WaveFunctionComponent::PsiValueType;
 
@@ -169,7 +168,7 @@ TEST_CASE("ExampleHe", "[wavefunction]")
 
   // wavefunction value and derivatives at new position
   LogValueType new_logpsi = example_he->evaluateLog(*elec, new_grad, new_lap);
-  elec->R[0]          = oldpos;
+  elec->R[0]              = oldpos;
   elec->update();
 
   iat = 0;

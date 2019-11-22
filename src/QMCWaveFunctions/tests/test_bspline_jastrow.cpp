@@ -41,8 +41,7 @@ using std::string;
 
 namespace qmcplusplus
 {
-
-using RealType = WaveFunctionComponent::RealType;
+using RealType     = WaveFunctionComponent::RealType;
 using PsiValueType = WaveFunctionComponent::PsiValueType;
 
 TEST_CASE("BSpline functor zero", "[wavefunction]")
@@ -144,37 +143,20 @@ TEST_CASE("BSpline builder Jastrow J2", "[wavefunction]")
   WaveFunctionComponent::HessVector_t grad_grad_psi;
   grad_grad_psi.resize(elec_.getTotalNum());
   grad_grad_psi = 0.0;
-  
-  std::cout<<"eval hess"<<std::endl;
-  j2->evaluateHessian(elec_,grad_grad_psi);
+
+  std::cout << "eval hess" << std::endl;
+  j2->evaluateHessian(elec_, grad_grad_psi);
   std::vector<double> hess_values = {
-    -0.0627236,
-    0,
-    0,
-    0,
-    0.10652,
-    0,
-    0,
-    0,
-    0.10652,
-    -0.0627236,
-    0,
-    0,
-    0,
-    0.10652,
-    0,
-    0,
-    0,
-    0.10652,
+      -0.0627236, 0, 0, 0, 0.10652, 0, 0, 0, 0.10652, -0.0627236, 0, 0, 0, 0.10652, 0, 0, 0, 0.10652,
   };
 
-  int m=0;
-  for(int n=0; n<elec_.getTotalNum(); n++)
-    for(int i=0; i<OHMMS_DIM; i++)
-      for(int j=0; j<OHMMS_DIM; j++,m++)
-        {
-          REQUIRE(std::real(grad_grad_psi[n](i,j)) == Approx(hess_values[m]));
-        }
+  int m = 0;
+  for (int n = 0; n < elec_.getTotalNum(); n++)
+    for (int i = 0; i < OHMMS_DIM; i++)
+      for (int j = 0; j < OHMMS_DIM; j++, m++)
+      {
+        REQUIRE(std::real(grad_grad_psi[n](i, j)) == Approx(hess_values[m]));
+      }
 
 
   struct JValues
@@ -425,36 +407,19 @@ TEST_CASE("BSpline builder Jastrow J1", "[wavefunction]")
   grad_grad_psi.resize(elec_.getTotalNum());
   grad_grad_psi = 0.0;
 
-  psi.evaluateHessian(elec_,grad_grad_psi);
-  
+  psi.evaluateHessian(elec_, grad_grad_psi);
+
   std::vector<double> hess_values = {
-    0.00888367,
-    0,
-    0,
-    0,
-    -0.0284893,
-    0,
-    0,
-    0,
-    -0.0284893,
-    0.00211188,
-    0,
-    0,
-    0,
-    -0.00923137,
-    0,
-    0,
-    0,
-    -0.00923137,
+      0.00888367, 0, 0, 0, -0.0284893, 0, 0, 0, -0.0284893, 0.00211188, 0, 0, 0, -0.00923137, 0, 0, 0, -0.00923137,
   };
 
-  int m=0;
-  for(int n=0; n<elec_.getTotalNum(); n++)
-    for(int i=0; i<OHMMS_DIM; i++)
-      for(int j=0; j<OHMMS_DIM; j++,m++)
-        {
-          REQUIRE(std::real(grad_grad_psi[n](i,j)) == Approx(hess_values[m]));
-        }
+  int m = 0;
+  for (int n = 0; n < elec_.getTotalNum(); n++)
+    for (int i = 0; i < OHMMS_DIM; i++)
+      for (int j = 0; j < OHMMS_DIM; j++, m++)
+      {
+        REQUIRE(std::real(grad_grad_psi[n](i, j)) == Approx(hess_values[m]));
+      }
 
   psi.evaluateLog(elec_); // evaluateHessian has side effects
 

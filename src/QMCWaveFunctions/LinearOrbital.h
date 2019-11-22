@@ -39,7 +39,9 @@ public:
     coeff[2] = 3.0;
   }
 
-  virtual LogValueType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
+  virtual LogValueType evaluateLog(ParticleSet& P,
+                                   ParticleSet::ParticleGradient_t& G,
+                                   ParticleSet::ParticleLaplacian_t& L)
   {
     APP_ABORT("LinearOrbital. evaluateLog");
     ValueType v = 0.0;
