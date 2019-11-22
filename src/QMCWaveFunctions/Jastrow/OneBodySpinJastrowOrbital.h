@@ -243,7 +243,7 @@ public:
    * @param P active particle set
    * @param iat particle that has been moved.
    */
-  inline ValueType ratio(ParticleSet& P, int iat)
+  inline PsiValueType ratio(ParticleSet& P, int iat)
   {
     curVal                           = 0.0;
     const auto& d_table = P.getDistTable(myTableIndex);
@@ -256,7 +256,7 @@ public:
       for (int s = s_offset[sg]; s < s_offset[sg + 1]; ++s)
         curVal += func->evaluate(d_table.Temp[s].r1);
     }
-    return std::exp(U[iat] - curVal);
+    return std::exp(static_cast<PsiValueType>(U[iat] - curVal));
   }
 
   inline void evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios)
@@ -360,7 +360,7 @@ public:
     return GradType();
   }
 
-  inline ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
+  inline PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
   {
     const auto& d_table = P.getDistTable(myTableIndex);
     int tg                           = P.GroupID[iat]; //pick the target group
@@ -379,7 +379,7 @@ public:
         }
     }
     grad_iat += curGrad;
-    return std::exp(U[iat] - curVal);
+    return std::exp(static_cast<PsiValueType>(U[iat] - curVal));
   }
 
   inline void restore(int iat) {}

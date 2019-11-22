@@ -290,7 +290,7 @@ public:
     }
   }
 
-  ValueType ratio(ParticleSet& P, int iat)
+  PsiValueType ratio(ParticleSet& P, int iat)
   {
     const auto& d_table = P.getDistTable(my_table_ID_);
     DiffVal                          = 0.0;
@@ -308,7 +308,7 @@ public:
         //DiffVal += U[ij]-F[pairid[jat]]->evaluate(d_table.Temp[jat].r1);
       }
     }
-    return std::exp(DiffVal);
+    return std::exp(static_cast<PsiValueType>(DiffVal));
   }
 
   inline void evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios)
@@ -344,7 +344,7 @@ public:
     return gr;
   }
 
-  ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
+  PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
   {
     const auto& d_table = P.getDistTable(my_table_ID_);
     RealType dudr, d2udr2;
@@ -371,7 +371,7 @@ public:
     grad_iat += gr;
     //curGrad0-=curGrad;
     //cout << "RATIOGRAD " << curGrad0 << std::endl;
-    return std::exp(DiffVal);
+    return std::exp(static_cast<PsiValueType>(DiffVal));
   }
 
   inline void restore(int iat) {}

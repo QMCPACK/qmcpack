@@ -153,11 +153,11 @@ struct J1OrbitalSoA : public WaveFunctionComponent
     }
   }
 
-  ValueType ratio(ParticleSet& P, int iat)
+  PsiValueType ratio(ParticleSet& P, int iat)
   {
     UpdateMode = ORB_PBYP_RATIO;
     curAt      = computeU(P.getDistTable(myTableID).Temp_r.data());
-    return std::exp(Vat[iat] - curAt);
+    return std::exp(static_cast<PsiValueType>(Vat[iat] - curAt));
   }
 
   inline void evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios)
@@ -310,7 +310,7 @@ struct J1OrbitalSoA : public WaveFunctionComponent
    *
    * Using Temp_r. curAt, curGrad and curLap are computed.
    */
-  ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
+  PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
   {
     UpdateMode = ORB_PBYP_PARTIAL;
 
@@ -318,7 +318,7 @@ struct J1OrbitalSoA : public WaveFunctionComponent
     curLap = accumulateGL(dU.data(), d2U.data(), P.getDistTable(myTableID).Temp_dr, curGrad);
     curAt  = simd::accumulate_n(U.data(), Nions, valT());
     grad_iat += curGrad;
-    return std::exp(Vat[iat] - curAt);
+    return std::exp(static_cast<PsiValueType>(Vat[iat] - curAt));
   }
 
   /** Rejected move. Nothing to do */

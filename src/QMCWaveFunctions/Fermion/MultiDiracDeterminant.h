@@ -190,10 +190,10 @@ public:
    * These functions should not be called.
    ***************************************************************************/
 
-  ValueType ratio(ParticleSet& P, int iat)
+  PsiValueType ratio(ParticleSet& P, int iat)
   {
     APP_ABORT("  MultiDiracDeterminant: This should not be called. \n");
-    return ValueType();
+    return PsiValueType();
   }
 
   GradType evalGrad(ParticleSet& P, int iat)
@@ -202,10 +202,10 @@ public:
     return GradType();
   }
 
-  ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
+  PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
   {
     APP_ABORT("  MultiDiracDeterminant: This should not be called. \n");
-    return ValueType();
+    return PsiValueType();
   }
 
   LogValueType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)

@@ -200,7 +200,7 @@ void DiracDeterminantWithBackflow::copyFromBuffer(ParticleSet& P, WFBufferType& 
  * @param P current configuration
  * @param iat the particle thas is being moved
  */
-DiracDeterminantWithBackflow::ValueType DiracDeterminantWithBackflow::ratio(ParticleSet& P, int iat)
+DiracDeterminantWithBackflow::PsiValueType DiracDeterminantWithBackflow::ratio(ParticleSet& P, int iat)
 {
   // FIX FIX FIX : code Woodbury formula
   psiM_temp = psiM;
@@ -269,9 +269,9 @@ DiracDeterminantWithBackflow::GradType DiracDeterminantWithBackflow::evalGradSou
   return GradType();
 }
 
-DiracDeterminantWithBackflow::ValueType DiracDeterminantWithBackflow::ratioGrad(ParticleSet& P,
-                                                                                int iat,
-                                                                                GradType& grad_iat)
+DiracDeterminantWithBackflow::PsiValueType DiracDeterminantWithBackflow::ratioGrad(ParticleSet& P,
+                                                                                   int iat,
+                                                                                   GradType& grad_iat)
 {
   // FIX FIX FIX : code Woodbury formula
   psiM_temp                         = psiM;

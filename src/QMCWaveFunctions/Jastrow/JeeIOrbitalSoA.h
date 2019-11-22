@@ -409,7 +409,7 @@ public:
     return LogValue;
   }
 
-  ValueType ratio(ParticleSet& P, int iat)
+  PsiValueType ratio(ParticleSet& P, int iat)
   {
     UpdateMode = ORB_PBYP_RATIO;
 
@@ -417,7 +417,7 @@ public:
     const DistanceTableData& ee_table = P.getDistTable(ee_Table_ID_);
     cur_Uat = computeU(P, iat, P.GroupID[iat], eI_table.Temp_r.data(), ee_table.Temp_r.data(), ions_nearby_new);
     DiffVal = Uat[iat] - cur_Uat;
-    return std::exp(DiffVal);
+    return std::exp(static_cast<PsiValueType>(DiffVal));
   }
 
   void evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios)
@@ -462,7 +462,7 @@ public:
 
   GradType evalGrad(ParticleSet& P, int iat) { return GradType(dUat[iat]); }
 
-  ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
+  PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
   {
     UpdateMode = ORB_PBYP_PARTIAL;
 
@@ -483,7 +483,7 @@ public:
               ions_nearby_new);
     DiffVal = Uat[iat] - cur_Uat;
     grad_iat += cur_dUat;
-    return std::exp(DiffVal);
+    return std::exp(static_cast<PsiValueType>(DiffVal));
   }
 
   inline void restore(int iat) {}

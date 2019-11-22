@@ -490,7 +490,7 @@ kSpaceJastrow::GradType kSpaceJastrow::evalGrad(ParticleSet& P, int iat)
   return G;
 }
 
-kSpaceJastrow::ValueType kSpaceJastrow::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
+kSpaceJastrow::PsiValueType kSpaceJastrow::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
 {
   ComplexType eye(0.0, 1.0);
   RealType J1new(0.0), J1old(0.0), J2new(0.0), J2old(0.0);
@@ -536,13 +536,13 @@ kSpaceJastrow::ValueType kSpaceJastrow::ratioGrad(ParticleSet& P, int iat, GradT
     grad_iat += -Prefactor * 2.0 * TwoBodyGvecs[i] * TwoBodyCoefs[i] *
         imag(qmcplusplus::conj(TwoBody_rhoG[i]) * TwoBody_e2iGr_new[i]);
   }
-  return std::exp(J1new + J2new - (J1old + J2old));
+  return std::exp(static_cast<PsiValueType>(J1new + J2new - (J1old + J2old)));
 }
 
 /* evaluate the ratio with P.R[iat]
  *
  */
-kSpaceJastrow::ValueType kSpaceJastrow::ratio(ParticleSet& P, int iat)
+kSpaceJastrow::PsiValueType kSpaceJastrow::ratio(ParticleSet& P, int iat)
 {
   RealType J1new(0.0), J1old(0.0), J2new(0.0), J2old(0.0);
   const PosType &rnew(P.activePos), &rold(P.R[iat]);
@@ -576,7 +576,7 @@ kSpaceJastrow::ValueType kSpaceJastrow::ratio(ParticleSet& P, int iat)
     ComplexType rho_G = TwoBody_rhoG[i] + TwoBody_e2iGr_new[i] - TwoBody_e2iGr_old[i];
     J2new += Prefactor * TwoBodyCoefs[i] * std::norm(rho_G);
   }
-  return std::exp(J1new + J2new - (J1old + J2old));
+  return std::exp(static_cast<PsiValueType>(J1new + J2new - (J1old + J2old)));
 }
 
 /** evaluate the ratio

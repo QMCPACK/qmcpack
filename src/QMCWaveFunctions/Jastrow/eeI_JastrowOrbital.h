@@ -743,7 +743,7 @@ public:
       ratios[k] = std::exp(newval[k]);
   }
 
-  ValueType ratio(ParticleSet& P, int iat)
+  PsiValueType ratio(ParticleSet& P, int iat)
   {
     const auto& ee_table = P.getDistTable(ee_table_index_);
     const auto& eI_table = P.getDistTable(ei_table_index_);
@@ -779,7 +779,7 @@ public:
     for (int jat = 0; jat < Nelec; jat++)
       oldval -= U[iat * Nelec + jat];
     DiffVal = newval - oldval;
-    return std::exp(DiffVal);
+    return std::exp(static_cast<PsiValueType>(DiffVal));
     //return std::exp(U[iat]-curVal);
     // DiffVal=0.0;
     // const int* pairid(PairID[iat]);
@@ -803,7 +803,7 @@ public:
     return gr;
   }
 
-  ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
+  PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
   {
     curVal                            = 0.0;
     curGrad_i                         = PosType();
@@ -867,7 +867,7 @@ public:
         grad_iat -= curGrad_i[jat];
       }
     }
-    return std::exp(DiffVal);
+    return std::exp(static_cast<PsiValueType>(DiffVal));
   }
 
   inline void restore(int iat) {}

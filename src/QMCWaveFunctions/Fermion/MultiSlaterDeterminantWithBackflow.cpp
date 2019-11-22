@@ -224,7 +224,7 @@ WaveFunctionComponent::GradType MultiSlaterDeterminantWithBackflow::evalGrad(Par
   }
 }
 
-WaveFunctionComponent::ValueType MultiSlaterDeterminantWithBackflow::ratioGrad(ParticleSet& P,
+WaveFunctionComponent::PsiValueType MultiSlaterDeterminantWithBackflow::ratioGrad(ParticleSet& P,
                                                                                int iat,
                                                                                GradType& grad_iat)
 {
@@ -295,7 +295,7 @@ WaveFunctionComponent::ValueType MultiSlaterDeterminantWithBackflow::ratioGrad(P
 }
 
 // use ci_node for this routine only
-WaveFunctionComponent::ValueType MultiSlaterDeterminantWithBackflow::ratio(ParticleSet& P, int iat)
+WaveFunctionComponent::PsiValueType MultiSlaterDeterminantWithBackflow::ratio(ParticleSet& P, int iat)
 {
   APP_ABORT("MultiSlaterDeterminantWithBackflow:: pbyp routines not implemented ");
   UpdateMode = ORB_PBYP_RATIO;

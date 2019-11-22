@@ -26,7 +26,7 @@ public:
   virtual void reportStatus(std::ostream& os) override {}
   virtual void resetTargetParticleSet(ParticleSet& P) override {}
 
-  ValueType FakeGradRatio;
+  PsiValueType FakeGradRatio;
 
   ConstantOrbital() : FakeGradRatio(1.0) {}
 
@@ -43,11 +43,11 @@ public:
 
   virtual void restore(int iat) override {}
 
-  virtual ValueType ratio(ParticleSet& P, int iat) override { return 1.0; }
+  virtual PsiValueType ratio(ParticleSet& P, int iat) override { return 1.0; }
 
   virtual GradType evalGrad(ParticleSet& P, int iat) override { return GradType(0.0); }
 
-  virtual ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override { return FakeGradRatio; }
+  virtual PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override { return FakeGradRatio; }
 
   virtual void registerData(ParticleSet& P, WFBufferType& buf) override {}
 

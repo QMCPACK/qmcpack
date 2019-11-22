@@ -255,12 +255,12 @@ RPAJastrow::LogValueType RPAJastrow::evaluateLog(ParticleSet& P,
   return LogValue;
 }
 
-RPAJastrow::ValueType RPAJastrow::ratio(ParticleSet& P, int iat)
+RPAJastrow::PsiValueType RPAJastrow::ratio(ParticleSet& P, int iat)
 {
   ValueType r(1.0);
   for (int i = 0; i < Psi.size(); i++)
     r *= Psi[i]->ratio(P, iat);
-  return r;
+  return static_cast<PsiValueType>(r);
 }
 
 RPAJastrow::GradType RPAJastrow::evalGrad(ParticleSet& P, int iat)
@@ -271,14 +271,14 @@ RPAJastrow::GradType RPAJastrow::evalGrad(ParticleSet& P, int iat)
   return grad;
 }
 
-RPAJastrow::ValueType RPAJastrow::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
+RPAJastrow::PsiValueType RPAJastrow::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
 {
   ValueType r(1);
   for (int i = 0; i < Psi.size(); i++)
   {
     r *= Psi[i]->ratioGrad(P, iat, grad_iat);
   }
-  return r;
+  return static_cast<PsiValueType>(r);
 }
 
 

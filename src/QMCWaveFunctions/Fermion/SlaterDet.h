@@ -93,7 +93,7 @@ public:
     return Dets[getDetID(VP.refPtcl)]->evaluateRatios(VP, ratios);
   }
 
-  virtual inline ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override
+  virtual inline PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override
   {
     return Dets[getDetID(iat)]->ratioGrad(P, iat, grad_iat);
   }
@@ -190,7 +190,7 @@ public:
       Dets[i]->mw_completeUpdates(extract_Det_list(WFC_list, i));
   }
 
-  virtual inline ValueType ratio(ParticleSet& P, int iat) override { return Dets[getDetID(iat)]->ratio(P, iat); }
+  virtual inline PsiValueType ratio(ParticleSet& P, int iat) override { return Dets[getDetID(iat)]->ratio(P, iat); }
 
   virtual void mw_calcRatio(const std::vector<WaveFunctionComponent*>& WFC_list,
                         const std::vector<ParticleSet*>& P_list,

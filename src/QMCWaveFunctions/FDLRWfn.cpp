@@ -502,7 +502,7 @@ FDLRWfn::GradType FDLRWfn::evalGrad(ParticleSet& P, int iat)
 /// \return  the ratio of new and old FDLR wave function values.
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////
-FDLRWfn::ValueType FDLRWfn::ratioGrad(ParticleSet& P, int iat, FDLRWfn::GradType& grad_iat)
+FDLRWfn::PsiValueType FDLRWfn::ratioGrad(ParticleSet& P, int iat, FDLRWfn::GradType& grad_iat)
 {
   FDLRWfn::RealType logpsi_plus      = m_wfn_xpd->getLogPsi();
   FDLRWfn::RealType logpsi_minus     = m_wfn_xmd->getLogPsi();
@@ -628,7 +628,7 @@ void FDLRWfn::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
   buf.get(LogValue);
 }
 
-FDLRWfn::ValueType FDLRWfn::ratio(ParticleSet& P, int iat)
+FDLRWfn::PsiValueType FDLRWfn::ratio(ParticleSet& P, int iat)
 {
   FDLRWfn::RealType logpsi_plus      = m_wfn_xpd->getLogPsi();
   FDLRWfn::RealType logpsi_minus     = m_wfn_xmd->getLogPsi();

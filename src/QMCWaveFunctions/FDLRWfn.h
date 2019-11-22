@@ -119,7 +119,7 @@ private:
   std::vector<RealType> dlogpsi_fdlr_d;
   std::vector<RealType> dhpsioverpsi_fdlr_d;
 
-  ValueType curRatio;
+  PsiValueType curRatio;
 
   // gradients of FDLR wavefunction
   ParticleSet::ParticleGradient_t G_FDLR;
@@ -190,7 +190,7 @@ public:
 
   GradType evalGrad(ParticleSet& P, int iat);
 
-  ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
+  PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
 
   void registerData(ParticleSet& P, WFBufferType& buf);
 
@@ -198,7 +198,7 @@ public:
 
   void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
 
-  ValueType ratio(ParticleSet& P, int iat);
+  PsiValueType ratio(ParticleSet& P, int iat);
 
   void acceptMove(ParticleSet& P, int iat);
 

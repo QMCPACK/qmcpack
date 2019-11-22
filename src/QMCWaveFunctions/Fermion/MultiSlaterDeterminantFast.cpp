@@ -329,7 +329,7 @@ WaveFunctionComponent::GradType MultiSlaterDeterminantFast::evalGrad(ParticleSet
   return grad_iat;
 }
 
-WaveFunctionComponent::ValueType MultiSlaterDeterminantFast::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
+WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
 {
   if (usingBF)
   {
@@ -345,7 +345,7 @@ WaveFunctionComponent::ValueType MultiSlaterDeterminantFast::ratioGrad(ParticleS
   return curRatio;
 }
 
-WaveFunctionComponent::ValueType MultiSlaterDeterminantFast::ratio_impl(ParticleSet& P, int iat)
+WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::ratio_impl(ParticleSet& P, int iat)
 {
   const bool upspin = (iat < FirstIndex_dn);
   const int spin0   = (upspin) ? 0 : 1;
@@ -360,22 +360,22 @@ WaveFunctionComponent::ValueType MultiSlaterDeterminantFast::ratio_impl(Particle
   const ValueType* restrict cptr        = C->data();
   const size_t nc                      = C->size();
 
-  ValueType psi = 0;
+  PsiValueType psi = 0;
   for (size_t i = 0; i < nc; ++i)
     psi += cptr[i] * detValues0[det0[i]] * detValues1[det1[i]];
   return psi;
 }
 
 // use ci_node for this routine only
-WaveFunctionComponent::ValueType MultiSlaterDeterminantFast::ratio(ParticleSet& P, int iat)
+WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::ratio(ParticleSet& P, int iat)
 {
   if (usingBF)
   {
     APP_ABORT("Fast MSD+BF: ratio not implemented. \n");
   }
   UpdateMode       = ORB_PBYP_RATIO;
-  ValueType psiNew = ratio_impl(P, iat);
-  curRatio         = psiNew / psiCurrent;
+  PsiValueType psiNew = ratio_impl(P, iat);
+  curRatio         = psiNew / static_cast<PsiValueType>(psiCurrent);
   return curRatio;
 }
 

@@ -53,11 +53,11 @@ public:
 
   void restore(int iat) override {}
 
-  ValueType ratio(ParticleSet& P, int iat) override;
+  PsiValueType ratio(ParticleSet& P, int iat) override;
 
   GradType evalGrad(ParticleSet& P, int iat) override;
 
-  ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
+  PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
 
   void evaluateDerivatives(ParticleSet& P,
                            const OptVariablesType& optvars,

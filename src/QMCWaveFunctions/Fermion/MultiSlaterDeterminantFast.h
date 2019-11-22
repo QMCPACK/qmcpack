@@ -106,11 +106,11 @@ public:
                            ParticleSet::ParticleLaplacian_t& L) override;
 
   GradType evalGrad(ParticleSet& P, int iat) override;
-  ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
+  PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
   ValueType evalGrad_impl(ParticleSet& P, int iat, bool newpos, GradType& g_at);
 
-  ValueType ratio(ParticleSet& P, int iat) override;
-  ValueType ratio_impl(ParticleSet& P, int iat);
+  PsiValueType ratio(ParticleSet& P, int iat) override;
+  PsiValueType ratio_impl(ParticleSet& P, int iat);
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios) override
   {
     // the base class routine may probably work, just never tested.
@@ -149,7 +149,7 @@ public:
   size_t ActiveSpin;
   bool usingCSF;
   bool IsCloned;
-  ValueType curRatio;
+  PsiValueType curRatio;
   ValueType psiCurrent;
 
   // assume Dets[0]: up, Dets[1]:down

@@ -265,7 +265,7 @@ WaveFunctionComponent::GradType MultiSlaterDeterminant::evalGrad(ParticleSet& P,
   }
 }
 
-WaveFunctionComponent::ValueType MultiSlaterDeterminant::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
+WaveFunctionComponent::PsiValueType MultiSlaterDeterminant::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
 {
   UpdateMode = ORB_PBYP_PARTIAL;
   if (DetID[iat] == 0)
@@ -334,7 +334,7 @@ WaveFunctionComponent::ValueType MultiSlaterDeterminant::ratioGrad(ParticleSet& 
 
 
 // use ci_node for this routine only
-WaveFunctionComponent::ValueType MultiSlaterDeterminant::ratio(ParticleSet& P, int iat)
+WaveFunctionComponent::PsiValueType MultiSlaterDeterminant::ratio(ParticleSet& P, int iat)
 {
   UpdateMode = ORB_PBYP_RATIO;
   if (DetID[iat] == 0)

@@ -301,7 +301,7 @@ struct WaveFunctionComponent : public QMCTraits
    * @param iat the index of a particle
    * @param grad_iat Gradient for the active particle
    */
-  virtual ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
+  virtual PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
   {
     APP_ABORT("WaveFunctionComponent::ratioGrad is not implemented in " + ClassName + " class.");
     return ValueType();
@@ -406,7 +406,7 @@ struct WaveFunctionComponent : public QMCTraits
    *
    * Specialized for particle-by-particle move
    */
-  virtual ValueType ratio(ParticleSet& P, int iat) = 0;
+  virtual PsiValueType ratio(ParticleSet& P, int iat) = 0;
 
   /** compute the ratio of the new to old WaveFunctionComponent value of multiple walkers
    * @param WFC_list the list of WaveFunctionComponent pointers of the same component in a walker batch

@@ -377,11 +377,11 @@ public:
     return Jgrad[iat];
   }
 
-  ValueType ratioGrad(ParticleSet& P, int iat, PosType& grad_iat)
+  PsiValueType ratioGrad(ParticleSet& P, int iat, PosType& grad_iat)
   {
     evaluateTempExponents(P, iat);
     grad_iat += Jgrad_t[iat];
-    return std::exp(Jval_t - Jval);
+    return std::exp(static_cast<PsiValueType>(Jval_t - Jval));
   }
 
   void acceptMove(ParticleSet& P, int iat)
@@ -407,10 +407,10 @@ public:
 
   void restore(int iat) { C->restore(iat); }
 
-  ValueType ratio(ParticleSet& P, int iat)
+  PsiValueType ratio(ParticleSet& P, int iat)
   {
     evaluateTempExponents(P, iat);
-    return std::exp(Jval_t - Jval);
+    return std::exp(static_cast<PsiValueType>(Jval_t - Jval));
   }
 
   void registerData(ParticleSet& P, WFBufferType& buf)

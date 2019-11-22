@@ -98,9 +98,9 @@ typename DiracDeterminant<DU_TYPE>::GradType DiracDeterminant<DU_TYPE>::evalGrad
 }
 
 template<typename DU_TYPE>
-typename DiracDeterminant<DU_TYPE>::ValueType DiracDeterminant<DU_TYPE>::ratioGrad(ParticleSet& P,
-                                                                                   int iat,
-                                                                                   GradType& grad_iat)
+typename DiracDeterminant<DU_TYPE>::PsiValueType DiracDeterminant<DU_TYPE>::ratioGrad(ParticleSet& P,
+                                                                                      int iat,
+                                                                                      GradType& grad_iat)
 {
   SPOVGLTimer.start();
   Phi->evaluate(P, iat, psiV, dpsiV, d2psiV);
@@ -109,7 +109,7 @@ typename DiracDeterminant<DU_TYPE>::ValueType DiracDeterminant<DU_TYPE>::ratioGr
 }
 
 template<typename DU_TYPE>
-typename DiracDeterminant<DU_TYPE>::ValueType DiracDeterminant<DU_TYPE>::ratioGrad_compute(int iat,
+typename DiracDeterminant<DU_TYPE>::PsiValueType DiracDeterminant<DU_TYPE>::ratioGrad_compute(int iat,
                                                                                            GradType& grad_iat)
 {
   UpdateMode             = ORB_PBYP_PARTIAL;
@@ -126,7 +126,7 @@ typename DiracDeterminant<DU_TYPE>::ValueType DiracDeterminant<DU_TYPE>::ratioGr
     updateEng.getInvRow(psiM, WorkingIndex, invRow);
   }
   curRatio = simd::dot(invRow.data(), psiV.data(), invRow.size());
-  grad_iat += ((RealType)1.0 / curRatio) * simd::dot(invRow.data(), dpsiV.data(), invRow.size());
+  grad_iat += static_cast<ValueType>(static_cast<PsiValueType>(1.0) / curRatio) * simd::dot(invRow.data(), dpsiV.data(), invRow.size());
   RatioTimer.stop();
   return curRatio;
 }
@@ -293,7 +293,7 @@ void DiracDeterminant<DU_TYPE>::copyFromBuffer(ParticleSet& P, WFBufferType& buf
  * @param iat the particle thas is being moved
  */
 template<typename DU_TYPE>
-typename DiracDeterminant<DU_TYPE>::ValueType DiracDeterminant<DU_TYPE>::ratio(ParticleSet& P, int iat)
+typename DiracDeterminant<DU_TYPE>::PsiValueType DiracDeterminant<DU_TYPE>::ratio(ParticleSet& P, int iat)
 {
   UpdateMode             = ORB_PBYP_RATIO;
   const int WorkingIndex = iat - FirstIndex;

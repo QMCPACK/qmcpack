@@ -252,14 +252,14 @@ public:
    * @param P active particle set
    * @param iat particle that has been moved.
    */
-  inline ValueType ratio(ParticleSet& P, int iat)
+  inline PsiValueType ratio(ParticleSet& P, int iat)
   {
     const auto& d_table = P.getDistTable(myTableIndex);
     curVal                           = 0.0;
     for (int i = 0; i < d_table.sources(); ++i)
       if (Fs[i] != nullptr)
         curVal += Fs[i]->evaluate(d_table.Temp[i].r1);
-    return std::exp(U[iat] - curVal);
+    return std::exp(static_cast<PsiValueType>(U[iat] - curVal));
   }
 
   inline void evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios)
@@ -364,7 +364,7 @@ public:
     return G;
   }
 
-  inline ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
+  inline PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
   {
     const auto& d_table = P.getDistTable(myTableIndex);
     int n                            = d_table.targets();
@@ -381,7 +381,7 @@ public:
       }
     }
     grad_iat += curGrad;
-    return std::exp(U[iat] - curVal);
+    return std::exp(static_cast<PsiValueType>(U[iat] - curVal));
   }
 
   inline void restore(int iat) {}
