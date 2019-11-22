@@ -512,9 +512,9 @@ FDLRWfn::ValueType FDLRWfn::ratioGrad(ParticleSet& P, int iat, FDLRWfn::GradType
   FDLRWfn::GradType G_plus, G_minus;
 
   // On output G_plus holds the gradient of the log of \psi_+.
-  FDLRWfn::ValueType rat_plus = m_wfn_xpd->ratioGrad(P, iat, G_plus);
+  FDLRWfn::ValueType rat_plus = m_wfn_xpd->calcRatioGrad(P, iat, G_plus);
   // On output G_minus holds the gradient of the log of \psi_-.
-  FDLRWfn::ValueType rat_minus = m_wfn_xmd->ratioGrad(P, iat, G_minus);
+  FDLRWfn::ValueType rat_minus = m_wfn_xmd->calcRatioGrad(P, iat, G_minus);
 
   FDLRWfn::ValueType psi_plus  = std::exp(logpsi_plus) * std::cos(phasevalue_plus);
   FDLRWfn::ValueType psi_minus = std::exp(logpsi_minus) * std::cos(phasevalue_minus);
@@ -635,8 +635,8 @@ FDLRWfn::ValueType FDLRWfn::ratio(ParticleSet& P, int iat)
   FDLRWfn::RealType phasevalue_plus  = m_wfn_xpd->getPhase();
   FDLRWfn::RealType phasevalue_minus = m_wfn_xmd->getPhase();
 
-  FDLRWfn::ValueType rat_plus  = m_wfn_xpd->ratio(P, iat);
-  FDLRWfn::ValueType rat_minus = m_wfn_xmd->ratio(P, iat);
+  FDLRWfn::ValueType rat_plus  = m_wfn_xpd->calcRatio(P, iat);
+  FDLRWfn::ValueType rat_minus = m_wfn_xmd->calcRatio(P, iat);
 
   FDLRWfn::ValueType psi_plus  = std::exp(logpsi_plus) * std::cos(phasevalue_plus);
   FDLRWfn::ValueType psi_minus = std::exp(logpsi_minus) * std::cos(phasevalue_minus);
