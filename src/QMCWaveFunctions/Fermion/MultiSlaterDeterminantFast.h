@@ -95,11 +95,11 @@ public:
     Dets[1]->setBF(bf);
   }
 
-  ValueType evaluate_vgl_impl(ParticleSet& P,
-                              ParticleSet::ParticleGradient_t& g_tmp,
-                              ParticleSet::ParticleLaplacian_t& l_tmp);
+  PsiValueType evaluate_vgl_impl(ParticleSet& P,
+                                 ParticleSet::ParticleGradient_t& g_tmp,
+                                 ParticleSet::ParticleLaplacian_t& l_tmp);
 
-  ValueType evaluate(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
+  PsiValueType evaluate(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
 
   LogValueType evaluateLog(ParticleSet& P,
                            ParticleSet::ParticleGradient_t& G,
@@ -107,7 +107,7 @@ public:
 
   GradType evalGrad(ParticleSet& P, int iat) override;
   PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
-  ValueType evalGrad_impl(ParticleSet& P, int iat, bool newpos, GradType& g_at);
+  PsiValueType evalGrad_impl(ParticleSet& P, int iat, bool newpos, GradType& g_at);
 
   PsiValueType ratio(ParticleSet& P, int iat) override;
   PsiValueType ratio_impl(ParticleSet& P, int iat);
@@ -150,7 +150,7 @@ public:
   bool usingCSF;
   bool IsCloned;
   PsiValueType curRatio;
-  ValueType psiCurrent;
+  PsiValueType psiCurrent;
 
   // assume Dets[0]: up, Dets[1]:down
   std::vector<MultiDiracDeterminant*> Dets;
