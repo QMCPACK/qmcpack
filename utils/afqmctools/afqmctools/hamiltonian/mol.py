@@ -32,7 +32,7 @@ def write_hamil_mol(scf_data, hamil_file, chol_cut,
     chol_vecs = chol_vecs.T
     if dense:
         write_qmcpack_dense(hcore, chol_vecs, nelec,
-                            enuc, real_chol=real_chol,
+                            nbasis, enuc, real_chol=real_chol,
                             filename=hamil_file,
                             ortho=X)
     else:
