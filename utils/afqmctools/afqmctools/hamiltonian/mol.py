@@ -96,17 +96,17 @@ def to_sparse(vals, cutoff=1e-8):
 def write_qmcpack_dense(hcore, chol, nelec, nmo, enuc=0.0,
                         filename='hamiltonian.h5', real_chol=False,
                         verbose=False, ortho=None):
-    with h5py.File(dense_file, 'w') as fh5:
+    with h5py.File(filename, 'w') as fh5:
         fh5['Hamiltonian/Energies'] = numpy.array([enuc,0])
         if real_chol:
             fh5['Hamiltonian/hcore'] = hcore
-            fh5['Hamiltonian/L'] = chol
+            fh5['Hamiltonian/DenseFactorized/L'] = chol
         else:
             fh5['Hamiltonian/hcore'] = to_qmcpack_complex(hcore.astype(numpy.complex128))
-            fh5['Hamiltonian/L'] = to_qmcpack_complex(chol.astype(numpy.complex128))
+            fh5['Hamiltonian/DenseFactorized/L'] = to_qmcpack_complex(chol.astype(numpy.complex128))
         fh5['Hamiltonian/dims'] = numpy.array([0, 0, 0, nmo,
-                                               nalpha, nbeta, 0,
-                                               chol_vecs.shape[-1]])
+                                               nelec[0], nelec[1], 0,
+                                               chol.shape[-1]])
         if ortho is not None:
             fh5['Hamiltonian/X'] = ortho
 
