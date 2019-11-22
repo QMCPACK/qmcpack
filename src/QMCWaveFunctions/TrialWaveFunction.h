@@ -168,12 +168,6 @@ public:
                         ParticleSet::ParticleGradient_t& fixedG,
                         ParticleSet::ParticleLaplacian_t& fixedL);
 
-  /** functions to handle particle-by-particle update
-   * both ratio and full_ratio will be replaced by calcRatio which will handle ValueType.
-   */
-  [[deprecated]]
-  RealType ratio(ParticleSet& P, int iat);
-
   /** function that computes psi(R_new) / psi(R_current). It returns a complex value if the wavefunction 
   *   is complex. It differs from the ratio(ParticleSet& P, int iat) function in the way that the ratio
   *   function takes the absolute value of psi(R_new) / psi(R_current). */

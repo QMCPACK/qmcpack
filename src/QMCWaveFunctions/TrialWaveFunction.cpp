@@ -329,23 +329,6 @@ void TrialWaveFunction::evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_
   // app_log()<<" TrialWavefunction::Hessian = "<<grad_grad_psi<< std::endl;
 }
 
-TrialWaveFunction::RealType TrialWaveFunction::ratio(ParticleSet& P, int iat)
-{
-  ValueType r(1.0);
-  std::vector<WaveFunctionComponent*>::iterator it(Z.begin());
-  std::vector<WaveFunctionComponent*>::iterator it_end(Z.end());
-  for (int ii = V_TIMER; it != it_end; ++it, ii += TIMER_SKIP)
-  {
-    myTimers[ii]->start();
-    r *= (*it)->ratio(P, iat);
-    myTimers[ii]->stop();
-  }
-
-  LogValueType logratio = convertValueToLog(r);
-  PhaseDiff = std::imag(logratio);
-  return std::exp(std::real(logratio));
-}
-
 TrialWaveFunction::ValueType TrialWaveFunction::calcRatio(ParticleSet& P, int iat, ComputeType ct)
 {
   ValueType r(1.0);
