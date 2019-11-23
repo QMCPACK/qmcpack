@@ -169,7 +169,7 @@ HamiltonianOperations RealDenseHamiltonian_v2::getHamiltonianOperations(bool pur
       if(ndown>0) ma::product(PsiT[2*nd+1],H1C,hbj_r);
     } else {
       CMatrix_ref haj_r(to_address(haj[nd].origin()),{nup,NMO});
-      ma::product(PsiT[nd],H1C,haj_r);
+      ma::product(ComplexType(2.0),PsiT[nd],H1C,ComplexType(0.0),haj_r);
     }
   }
   // Generate Lnak 
