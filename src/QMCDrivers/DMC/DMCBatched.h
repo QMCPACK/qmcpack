@@ -48,12 +48,14 @@ public:
     IndexType step;
     int block;
     bool recomputing_blocks;
+    RealType max_disp_sq;
     StateForThread(QMCDriverInput& qmci,
                    DMCDriverInput& dmci,
                    DriftModifierBase& drift_mod,
                    BranchEngineType& branch_eng,
-                   MCPopulation& pop)
-        : qmcdrv_input(qmci), dmcdrv_input(dmci), drift_modifier(drift_mod), population(pop), branch_engine(branch_eng)
+                   MCPopulation& pop,
+                   RealType max_disp_sq_in)
+        : qmcdrv_input(qmci), dmcdrv_input(dmci), drift_modifier(drift_mod), population(pop), branch_engine(branch_eng), max_disp_sq(max_disp_sq_in)
     {}
   };
 

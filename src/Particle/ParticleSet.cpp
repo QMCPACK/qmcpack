@@ -352,6 +352,12 @@ int ParticleSet::addTable(const ParticleSet& psrc, int dt_type, bool need_full_t
   return tid;
 }
 
+void ParticleSet::flex_update(const RefVector<ParticleSet>& P_list, bool skipSK)
+{
+    for (int iw = 0; iw < P_list.size(); iw++)
+      P_list[iw].get().update(skipSK);
+}
+
 void ParticleSet::update(bool skipSK)
 {
   ScopedTimer update_scope(myTimers[PS_update]);

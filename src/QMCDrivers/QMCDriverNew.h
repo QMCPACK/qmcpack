@@ -322,7 +322,7 @@ protected:
    *  @{
    */
   int num_crowds_;
-
+  RealType max_disp_sq_;
   ///the number of saved samples
   IndexType target_samples_;
 

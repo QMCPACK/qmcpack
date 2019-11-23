@@ -185,6 +185,7 @@ public:
   //const Properties& get_properties() const { return properties_; }
   const SpeciesSet& get_species_set() const { return species_set_; }
   const ParticleSet& get_ions() const { return ions_; }
+  const ParticleSet* get_golden_electrons() const {return elec_particle_set_; }
   const std::vector<int>& get_walker_offsets() const { return walker_offsets_; }
   std::vector<IndexType> get_num_local_walkers_per_node() const { return num_local_walkers_per_node_; }
   void syncWalkersPerNode(Communicate* comm);

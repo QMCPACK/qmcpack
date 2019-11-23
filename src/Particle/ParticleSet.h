@@ -267,6 +267,8 @@ public:
    */
   void update(bool skipSK = false);
 
+  static void flex_update(const RefVector<ParticleSet>& P_list, bool skipSK = false);
+
   /** create Structure Factor with PBCs
    */
   void createSK();

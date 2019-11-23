@@ -111,9 +111,9 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
   crowd.loadWalkers();
 
   int nnode_crossing(0);
-  auto& walker_twfs      = crowd.get_walker_twfs();
-  auto& walkers          = crowd.get_walkers();
-  auto& walker_elecs     = crowd.get_walker_elecs();
+  auto& walker_twfs  = crowd.get_walker_twfs();
+  auto& walkers      = crowd.get_walkers();
+  auto& walker_elecs = crowd.get_walker_elecs();
 
   // Note this resets the identities of all the walker TWFs
   auto copyTWFFromBuffer = [](TrialWaveFunction& twf, ParticleSet& pset, MCPWalker& walker) {
@@ -188,12 +188,6 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
       std::transform(delta_r_start, delta_r_end, rr.begin(),
                      [tauovermass](auto& delta_r) { return tauovermass * dot(delta_r, delta_r); });
 
-      // in DMC this was done here, changed to match VMCBatched pending factoring to common source
-      // if (rr > m_r2max)
-      // {
-      //   ++nRejectTemp;
-      //   continue;
-      // }
       auto elecs = crowd.get_walker_elecs();
       ParticleSet::flex_makeMove(crowd.get_walker_elecs(), iat, drifts);
 
@@ -201,66 +195,94 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
 
       // This lambda is not nested thread safe due to the nreject, nnode_crossing updates
       auto checkPhaseChanged = [&sft, &iat, &crowd, &nnode_crossing](TrialWaveFunction& twf, ParticleSet& elec,
-                                                                     int& is_reject) {
+                                                                     int& is_reject) -> bool {
         if (sft.branch_engine.phaseChanged(twf.getPhaseDiff()))
         {
           crowd.incReject();
           ++nnode_crossing;
           elec.rejectMove(iat);
+          elec.update();
           twf.rejectMove(iat);
           is_reject = 1;
+          return true;
         }
         else
+        {
           is_reject = 0;
+          return false;
+        }
       };
 
-      // Hopefully a phase change doesn't make any of these transformations fail.
-      std::vector<int> rejects(num_walkers); // instead of std::vector<bool>
-      for (int iw = 0; iw < num_walkers; ++iw)
-      {
-        checkPhaseChanged(walker_twfs[iw], walker_elecs[iw], rejects[iw]);
-        //This is just convenient to do here
-        rr_proposed[iw] += rr[iw];
-      }
-      
-      std::transform(delta_r_start, delta_r_end, log_gf.begin(), [](auto& delta_r) {
-        constexpr RealType mhalf(-0.5);
-        return mhalf * dot(delta_r, delta_r);
-      });
-
-      sft.drift_modifier.getDrifts(tauovermass, grads_new, drifts);
-
-      std::transform(crowd.beginElectrons(), crowd.endElectrons(), drifts.begin(), drifts.begin(),
-                     [iat](auto& elecs, auto& drift) { return elecs.get().R[iat] - elecs.get().activePos - drift; });
-
-      std::transform(drifts.begin(), drifts.end(), log_gb.begin(),
-                     [oneover2tau](auto& drift) { return -oneover2tau * dot(drift, drift); });
-
-      for (int iw = 0; iw < num_walkers; ++iw)
-        prob[iw] = std::norm(ratios[iw]) * std::exp(log_gb[iw] - log_gf[iw]);
+      auto checkExceedsMaxRR = [&sft, &iat, &crowd](RealType rr, TrialWaveFunction& twf, ParticleSet& elec,
+                                                    int& is_reject) -> bool {
+        if (rr > sft.max_disp_sq)
+        {
+          crowd.incReject();
+          elec.rejectMove(iat);
+          elec.update();
+          twf.rejectMove(iat);
+          is_reject = 1;
+          return true;
+        }
+        else
+        {
+          is_reject = 0;
+          return false;
+        }
+      };
 
       twf_accept_list.clear();
       twf_reject_list.clear();
       elec_accept_list.clear();
       elec_reject_list.clear();
 
+      auto calcLogGF = [](auto& delta_r) {
+          constexpr RealType mhalf(-0.5);
+          return mhalf * dot(delta_r, delta_r);
+        };
+
+      auto moveElectrons = [iat](auto& elecs, auto& drift) { return elecs.get().R[iat] - elecs.get().activePos - drift; };
+
+      auto calcLogGB = [oneover2tau](auto& drift) { return -oneover2tau * dot(drift, drift); };
+
+      sft.drift_modifier.getDrifts(tauovermass, grads_new, drifts);
+
+      std::vector<int> rejects(num_walkers); // instead of std::vector<bool>
       for (int iw = 0; iw < num_walkers; ++iw)
       {
-        if ((!rejects[iw]) && prob[iw] >= std::numeric_limits<RealType>::epsilon() &&
-            step_context.get_random_gen()() < prob[iw])
-        {
-          did_walker_move[iw] += 1;
-          crowd.incAccept();
-          twf_accept_list.push_back(crowd.get_walker_twfs()[iw]);
-          elec_accept_list.push_back(crowd.get_walker_elecs()[iw]);
-          rr_accepted[iw] += rr[iw];
-          gf_acc[iw] *= prob[iw];
+        if ((checkPhaseChanged(walker_twfs[iw], walker_elecs[iw], rejects[iw]) == true) || (checkExceedsMaxRR(rr[iw], walker_twfs[iw], walker_elecs[iw], rejects[iw]) == true))
+        {        
+          twf_reject_list.push_back(crowd.get_walker_twfs()[iw]);
+          elec_reject_list.push_back(crowd.get_walker_elecs()[iw]);
         }
         else
         {
-          crowd.incReject();
-          twf_reject_list.push_back(crowd.get_walker_twfs()[iw]);
-          elec_reject_list.push_back(crowd.get_walker_elecs()[iw]);
+          rr_proposed[iw] += rr[iw];
+
+          log_gf[iw] = calcLogGF(*(delta_r_start + iw));
+
+  
+          drifts[iw] = moveElectrons(walker_elecs[iw], drifts[iw]);
+       
+          log_gb[iw] = calcLogGB(drifts[iw]);
+                       
+          prob[iw] = std::norm(ratios[iw]) * std::exp(log_gb[iw] - log_gf[iw]);
+
+          if (prob[iw] >= std::numeric_limits<RealType>::epsilon() && step_context.get_random_gen()() < prob[iw])
+          {
+            did_walker_move[iw] += 1;
+            crowd.incAccept();
+            twf_accept_list.push_back(crowd.get_walker_twfs()[iw]);
+            elec_accept_list.push_back(crowd.get_walker_elecs()[iw]);
+            rr_accepted[iw] += rr[iw];
+            gf_acc[iw] *= prob[iw];
+          }
+          else
+          {
+            crowd.incReject();
+            twf_reject_list.push_back(crowd.get_walker_twfs()[iw]);
+            elec_reject_list.push_back(crowd.get_walker_elecs()[iw]);
+          }
         }
       }
 
@@ -391,6 +413,7 @@ void DMCBatched::handleMovedWalkers(DMCPerWalkerRefs& moved, const StateForThrea
     TrialWaveFunction::flex_updateBuffer(moved.walker_twfs, moved.walker_elecs, moved.walker_mcp_wfbuffers);
     std::for_each(moved.walkers.begin(), moved.walkers.end(), [](MCPWalker& walker) { walker.Age = 0; });
     ParticleSet::flex_saveWalker(moved.walker_elecs, moved.walkers);
+    ParticleSet::flex_update(moved.walker_elecs);
     timers.buffer_timer.stop();
     timers.hamiltonian_timer.start();
     // std::vector<QMCHamiltonian::FullPrecRealType> local_energies(QMCHamiltonian::flex_evaluate(moved.walker_hamiltonians, moved.walker_elecs));
@@ -398,14 +421,16 @@ void DMCBatched::handleMovedWalkers(DMCPerWalkerRefs& moved, const StateForThrea
         QMCHamiltonian::flex_evaluateWithToperator(moved.walker_hamiltonians, moved.walker_elecs));
     timers.hamiltonian_timer.stop();
 
-    auto resetSigNLocalEnergy = [](MCPWalker& walker, TrialWaveFunction& twf, auto local_energy, auto rr_acc,
-                                   auto rr_prop) {
+    
+    auto resetSigNLocalEnergy = [](MCPWalker& walker, TrialWaveFunction& twf, ParticleSet& pset, auto local_energy, auto rr_acc,
+                                   auto rr_prop) {                                  
+                                  twf.evaluateLog(pset);
       walker.resetProperty(twf.getLogPsi(), twf.getPhase(), local_energy, rr_acc, rr_prop, 1.0);
     };
 
     for (int iw = 0; iw < moved.walkers.size(); ++iw)
     {
-      resetSigNLocalEnergy(moved.walkers[iw], moved.walker_twfs[iw], local_energies[iw], moved.rr_accepted[iw],
+      resetSigNLocalEnergy(moved.walkers[iw], moved.walker_twfs[iw], moved.walker_elecs[iw], local_energies[iw], moved.rr_accepted[iw],
                            moved.rr_proposed[iw]);
       // this might mean new_energies are actually unneeded which would be nice.
       moved.new_energies[iw] = local_energies[iw];
@@ -497,7 +522,7 @@ bool DMCBatched::run()
 
   estimator_manager_->setCollectionMode(true);
   estimator_manager_->start(num_blocks);
-  StateForThread dmc_state(qmcdriver_input_, dmcdriver_input_, *drift_modifier_, *branch_engine_, population_);
+  StateForThread dmc_state(qmcdriver_input_, dmcdriver_input_, *drift_modifier_, *branch_engine_, population_,max_disp_sq_);
 
   LoopTimer dmc_loop;
 
