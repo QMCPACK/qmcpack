@@ -53,8 +53,8 @@ namespace afqmc {
   /************* inplace_cast ****************/
   template<class T, class Q, class Size>
   void inplace_cast(T* A, Size n) {
-    Q *B(reinterpret_cast<Q*>(T));  
-    if( sizeof(T) >= sizeof(Q) )
+    Q *B(reinterpret_cast<Q*>(A));  
+    if( sizeof(T) >= sizeof(Q) ) {
       for(Size i=0; i<n; i++, ++A, ++B)
         *B = static_cast<Q>(*A);
     } else if(sizeof(T) < sizeof(Q)) {
