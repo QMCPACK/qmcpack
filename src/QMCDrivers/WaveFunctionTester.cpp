@@ -1022,7 +1022,7 @@ void WaveFunctionTester::runBasicTest()
     RealType phase_p = Psi.getPhase();
     W.makeMove(iat, deltaR[iat]);
     //W.update();
-    RealType aratio    = Psi.ratio(W, iat);
+    ValueType aratio   = Psi.calcRatio(W, iat);
     RealType phaseDiff = Psi.getPhaseDiff();
     W.rejectMove(iat);
     Psi.rejectMove(iat);
@@ -1045,10 +1045,8 @@ void WaveFunctionTester::runBasicTest()
       dphase -= 2.0 * M_PI;
     ValueType ratDiff = std::complex<OHMMS_PRECISION>(ratioMag * std::cos(dphase), ratioMag * std::sin(dphase));
     // TODO - test complex ratio against a tolerance
-    fout << iat << " " << aratio * std::complex<OHMMS_PRECISION>(std::cos(phaseDiff), std::sin(phaseDiff)) / ratDiff
-         << " " << ratDiff << " " << aratio * std::complex<OHMMS_PRECISION>(std::cos(phaseDiff), std::sin(phaseDiff))
-         << std::endl;
-    fout << "     ratioMag " << aratio / ratioMag << " " << ratioMag << std::endl;
+    fout << iat << " " << aratio / ratDiff << " " << ratDiff << " " << aratio << std::endl;
+    fout << "     ratioMag " << std::abs(aratio) / ratioMag << " " << ratioMag << std::endl;
     fout << "     PhaseDiff " << phaseDiff / dphase << " " << phaseDiff << " " << dphase << std::endl;
 #else
     RealType ratDiff = std::exp(psi_m - psi_p) * std::cos(phase_m - phase_p);
@@ -1315,11 +1313,11 @@ void WaveFunctionTester::runRatioTest2()
           fout << realGrad[iat][sds] - grad_now[sds] << " ";
         PosType dr(Tau * deltaR[iat]);
         W.makeMove(iat, dr);
-        RealType ratio2 = Psi.ratioGrad(W, iat, grad_new);
+        ValueType ratio2 = Psi.calcRatioGrad(W, iat, grad_new);
         W.rejectMove(iat);
         Psi.rejectMove(iat);
         W.makeMove(iat, dr);
-        RealType ratio1 = Psi.ratio(W, iat);
+        ValueType ratio1 = Psi.calcRatio(W, iat);
         //Psi.rejectMove(iat);
         W.rejectMove(iat);
         fout << "  ratio1 = " << ratio1 << " ration2 = " << ratio2 << std::endl;
@@ -2331,7 +2329,7 @@ void WaveFunctionTester::runNodePlot()
         W.convert2Cart(R_unit, R_cart);
         PosType dr(R_cart[0] - W.R[iat]);
         W.makeMove(iat, dr);
-        RealType aratio = Psi.ratio(W, iat);
+        ValueType aratio = Psi.calcRatio(W, iat);
         W.rejectMove(iat);
         Psi.rejectMove(iat);
         plot_out << aratio << ", ";

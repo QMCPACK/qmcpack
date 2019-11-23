@@ -68,7 +68,9 @@ public:
 
   virtual void resetTargetParticleSet(ParticleSet& P) override;
 
-  virtual LogValueType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L) override;
+  virtual LogValueType evaluateLog(ParticleSet& P,
+                                   ParticleSet::ParticleGradient_t& G,
+                                   ParticleSet::ParticleLaplacian_t& L) override;
 
   virtual void mw_evaluateLog(const std::vector<WaveFunctionComponent*>& WFC_list,
                               const std::vector<ParticleSet*>& P_list,
@@ -93,7 +95,7 @@ public:
     return Dets[getDetID(VP.refPtcl)]->evaluateRatios(VP, ratios);
   }
 
-  virtual inline ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override
+  virtual inline PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override
   {
     return Dets[getDetID(iat)]->ratioGrad(P, iat, grad_iat);
   }
@@ -141,8 +143,7 @@ public:
 
   virtual inline void restore(int iat) override { return Dets[getDetID(iat)]->restore(iat); }
 
-  virtual void mw_restore(const std::vector<WaveFunctionComponent*>& WFC_list,
-                          int iat) override
+  virtual void mw_restore(const std::vector<WaveFunctionComponent*>& WFC_list, int iat) override
   {
     const int det_id = getDetID(iat);
     Dets[det_id]->mw_restore(extract_Det_list(WFC_list, det_id), iat);
@@ -152,7 +153,7 @@ public:
   {
     Dets[getDetID(iat)]->acceptMove(P, iat);
 
-    LogValue   = 0.0;
+    LogValue = 0.0;
     for (int i = 0; i < Dets.size(); ++i)
       LogValue += Dets[i]->LogValue;
   }
@@ -164,7 +165,7 @@ public:
     constexpr RealType czero(0);
 
     for (int iw = 0; iw < WFC_list.size(); iw++)
-      WFC_list[iw]->LogValue   = czero;
+      WFC_list[iw]->LogValue = czero;
 
     for (int i = 0; i < Dets.size(); ++i)
     {
@@ -190,12 +191,12 @@ public:
       Dets[i]->mw_completeUpdates(extract_Det_list(WFC_list, i));
   }
 
-  virtual inline ValueType ratio(ParticleSet& P, int iat) override { return Dets[getDetID(iat)]->ratio(P, iat); }
+  virtual inline PsiValueType ratio(ParticleSet& P, int iat) override { return Dets[getDetID(iat)]->ratio(P, iat); }
 
   virtual void mw_calcRatio(const std::vector<WaveFunctionComponent*>& WFC_list,
-                        const std::vector<ParticleSet*>& P_list,
-                        int iat,
-                        std::vector<PsiValueType>& ratios) override
+                            const std::vector<ParticleSet*>& P_list,
+                            int iat,
+                            std::vector<PsiValueType>& ratios) override
   {
     const int det_id = getDetID(iat);
     Dets[det_id]->mw_calcRatio(extract_Det_list(WFC_list, det_id), P_list, iat, ratios);
@@ -226,7 +227,8 @@ public:
       Dets[i]->evaluateDerivatives(P, active, dlogpsi, dhpsioverpsi);
   }
 
-  void evaluateGradDerivatives(const ParticleSet::ParticleGradient_t& G_in, std::vector<ValueType>& dgradlogpsi) override
+  void evaluateGradDerivatives(const ParticleSet::ParticleGradient_t& G_in,
+                               std::vector<ValueType>& dgradlogpsi) override
   {
     for (int i = 0; i < Dets.size(); i++)
       Dets[i]->evaluateGradDerivatives(G_in, dgradlogpsi);
@@ -346,7 +348,8 @@ private:
   }
 
   // helper function for extracting a list of WaveFunctionComponent from a list of TrialWaveFunction
-  std::vector<WaveFunctionComponent*> extract_Det_list(const std::vector<WaveFunctionComponent*>& WFC_list, int det_id) const
+  std::vector<WaveFunctionComponent*> extract_Det_list(const std::vector<WaveFunctionComponent*>& WFC_list,
+                                                       int det_id) const
   {
     std::vector<WaveFunctionComponent*> Det_list;
     Det_list.reserve(WFC_list.size());
@@ -354,7 +357,6 @@ private:
       Det_list.push_back(dynamic_cast<SlaterDet*>(WFC)->Dets[det_id]);
     return Det_list;
   }
-
 };
 } // namespace qmcplusplus
 #endif
