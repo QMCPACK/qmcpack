@@ -352,8 +352,8 @@ void FDLRWfn::resetTargetParticleSet(ParticleSet& P)
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////
 FDLRWfn::LogValueType FDLRWfn::evaluateLog(ParticleSet& P,
-                                       ParticleSet::ParticleGradient_t& G,
-                                       ParticleSet::ParticleLaplacian_t& L)
+                                           ParticleSet::ParticleGradient_t& G,
+                                           ParticleSet::ParticleLaplacian_t& L)
 {
   // "x+d"
   m_wfn_xpd->evaluateLog(P);
@@ -397,16 +397,16 @@ FDLRWfn::LogValueType FDLRWfn::evaluateLog(ParticleSet& P,
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////
 FDLRWfn::LogValueType FDLRWfn::evaluateLogFDLR(ParticleSet& P,
-                                           ParticleSet::ParticleGradient_t& G,
-                                           ParticleSet::ParticleLaplacian_t& L,
-                                           const FDLRWfn::RealType& logpsi_plus,
-                                           const FDLRWfn::RealType logpsi_minus,
-                                           const FDLRWfn::RealType& phasevalue_plus,
-                                           const FDLRWfn::RealType phasevalue_minus,
-                                           const ParticleSet::ParticleGradient_t& G_plus,
-                                           const ParticleSet::ParticleGradient_t& G_minus,
-                                           const ParticleSet::ParticleLaplacian_t& L_plus,
-                                           const ParticleSet::ParticleLaplacian_t& L_minus)
+                                               ParticleSet::ParticleGradient_t& G,
+                                               ParticleSet::ParticleLaplacian_t& L,
+                                               const FDLRWfn::RealType& logpsi_plus,
+                                               const FDLRWfn::RealType logpsi_minus,
+                                               const FDLRWfn::RealType& phasevalue_plus,
+                                               const FDLRWfn::RealType phasevalue_minus,
+                                               const ParticleSet::ParticleGradient_t& G_plus,
+                                               const ParticleSet::ParticleGradient_t& G_minus,
+                                               const ParticleSet::ParticleLaplacian_t& L_plus,
+                                               const ParticleSet::ParticleLaplacian_t& L_minus)
 {
   PsiValueType psi(0.0), psi_plus(0.0), psi_minus(0.0);
   FDLRWfn::ValueType scaling_fac_1, scaling_fac_2;
@@ -502,7 +502,7 @@ FDLRWfn::GradType FDLRWfn::evalGrad(ParticleSet& P, int iat)
 /// \return  the ratio of new and old FDLR wave function values.
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////
-FDLRWfn::ValueType FDLRWfn::ratioGrad(ParticleSet& P, int iat, FDLRWfn::GradType& grad_iat)
+FDLRWfn::PsiValueType FDLRWfn::ratioGrad(ParticleSet& P, int iat, FDLRWfn::GradType& grad_iat)
 {
   FDLRWfn::RealType logpsi_plus      = m_wfn_xpd->getLogPsi();
   FDLRWfn::RealType logpsi_minus     = m_wfn_xmd->getLogPsi();
@@ -628,7 +628,7 @@ void FDLRWfn::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
   buf.get(LogValue);
 }
 
-FDLRWfn::ValueType FDLRWfn::ratio(ParticleSet& P, int iat)
+FDLRWfn::PsiValueType FDLRWfn::ratio(ParticleSet& P, int iat)
 {
   FDLRWfn::RealType logpsi_plus      = m_wfn_xpd->getLogPsi();
   FDLRWfn::RealType logpsi_minus     = m_wfn_xmd->getLogPsi();
