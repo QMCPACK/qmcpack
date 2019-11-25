@@ -66,7 +66,7 @@ public:
 
   LogValueType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
 
-  ValueType ratio(ParticleSet& P, int iat);
+  PsiValueType ratio(ParticleSet& P, int iat);
 
   void acceptMove(ParticleSet& P, int iat);
 
@@ -80,7 +80,7 @@ public:
 
   GradType evalGrad(ParticleSet& P, int iat);
 
-  ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
+  PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
 
 
   WaveFunctionComponent* makeClone(ParticleSet& tqp) const;

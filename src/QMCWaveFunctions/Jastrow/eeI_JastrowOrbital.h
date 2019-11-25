@@ -104,12 +104,14 @@ public:
   RealType ChiesaKEcorrection() { return 0.0; }
 
   eeI_JastrowOrbital(ParticleSet& ions, ParticleSet& elecs, bool is_master)
-      : Write_Chiesa_Correction(is_master), KEcorr(0.0),
-        ee_table_index_(elecs.addTable(elecs, DT_AOS)), ei_table_index_(elecs.addTable(ions, DT_AOS))
+      : Write_Chiesa_Correction(is_master),
+        KEcorr(0.0),
+        ee_table_index_(elecs.addTable(elecs, DT_AOS)),
+        ei_table_index_(elecs.addTable(ions, DT_AOS))
   {
-    ClassName    = "eeI_JastrowOrbital";
-    eRef         = &elecs;
-    IRef         = &ions;
+    ClassName = "eeI_JastrowOrbital";
+    eRef      = &elecs;
+    IRef      = &ions;
     init(elecs);
     FirstTime = true;
     NumVars   = 0;
@@ -415,7 +417,7 @@ public:
     {
       IonData& ion = IonDataList[i];
 #ifndef ENABLE_SOA
-      int nn0      = eI_table.M[i];
+      int nn0 = eI_table.M[i];
       for (int j = 0; j < ion.elecs_inside.size(); j++)
       {
         int jel = ion.elecs_inside[j];
@@ -526,7 +528,7 @@ public:
   {
     const auto& ee_table = P.getDistTable(ee_table_index_);
     const auto& eI_table = P.getDistTable(ei_table_index_);
-    IonData& ion                      = IonDataList[isrc];
+    IonData& ion         = IonDataList[isrc];
     ion.elecs_inside.clear();
     int iel = 0;
     GradType G;
@@ -743,15 +745,15 @@ public:
       ratios[k] = std::exp(newval[k]);
   }
 
-  ValueType ratio(ParticleSet& P, int iat)
+  PsiValueType ratio(ParticleSet& P, int iat)
   {
     const auto& ee_table = P.getDistTable(ee_table_index_);
     const auto& eI_table = P.getDistTable(ei_table_index_);
-    curVal                            = 0.0;
-    RealType newval                   = 0.0;
-    RealType oldval                   = 0.0;
+    curVal               = 0.0;
+    RealType newval      = 0.0;
+    RealType oldval      = 0.0;
 #ifndef ENABLE_SOA
-    int ee0                           = ee_table.M[iat] - (iat + 1);
+    int ee0 = ee_table.M[iat] - (iat + 1);
     for (int i = 0; i < Nion; i++)
     {
       IonData& ion  = IonDataList[i];
@@ -779,7 +781,7 @@ public:
     for (int jat = 0; jat < Nelec; jat++)
       oldval -= U[iat * Nelec + jat];
     DiffVal = newval - oldval;
-    return std::exp(DiffVal);
+    return std::exp(static_cast<PsiValueType>(DiffVal));
     //return std::exp(U[iat]-curVal);
     // DiffVal=0.0;
     // const int* pairid(PairID[iat]);
@@ -803,18 +805,18 @@ public:
     return gr;
   }
 
-  ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
+  PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
   {
-    curVal                            = 0.0;
-    curGrad_i                         = PosType();
-    curLap_i                          = 0.0;
-    curGrad_j                         = PosType();
-    curLap_j                          = 0.0;
+    curVal               = 0.0;
+    curGrad_i            = PosType();
+    curLap_i             = 0.0;
+    curGrad_j            = PosType();
+    curLap_j             = 0.0;
     const auto& ee_table = P.getDistTable(ee_table_index_);
     const auto& eI_table = P.getDistTable(ei_table_index_);
-    DiffVal                           = 0.0;
+    DiffVal              = 0.0;
 #ifndef ENABLE_SOA
-    int ee0                           = ee_table.M[iat] - (iat + 1);
+    int ee0 = ee_table.M[iat] - (iat + 1);
     for (int i = 0; i < Nion; i++)
     {
       IonData& ion      = IonDataList[i];
@@ -847,11 +849,11 @@ public:
             d2u_j = (hessF(0, 0) + 2.0 * r_ij_inv * gradF[0] -
                      2.0 * hessF(0, 2) * dot(ee_table.Temp[jat].dr1, eI_table.dr(nn0 + jat)) * r_ij_inv * r_Ij_inv +
                      hessF(2, 2) + 2.0 * r_Ij_inv * gradF[2]);
-            curVal[jat]    += u;
+            curVal[jat] += u;
             curGrad_j[jat] += du_j;
-            curLap_j[jat]  += d2u_j;
+            curLap_j[jat] += d2u_j;
             curGrad_i[jat] += du_i;
-            curLap_i[jat]  += d2u_i;
+            curLap_i[jat] += d2u_i;
             DiffVal -= u;
           }
         }
@@ -867,7 +869,7 @@ public:
         grad_iat -= curGrad_i[jat];
       }
     }
-    return std::exp(DiffVal);
+    return std::exp(static_cast<PsiValueType>(DiffVal));
   }
 
   inline void restore(int iat) {}
@@ -906,7 +908,7 @@ public:
                                   ParticleSet::ParticleLaplacian_t& L)
   {
     //      std::cerr << "evaluateLogAndStore called.\n";
-    LogValue                          = 0.0;
+    LogValue             = 0.0;
     const auto& ee_table = P.getDistTable(ee_table_index_);
     const auto& eI_table = P.getDistTable(ei_table_index_);
     // First, create lists of electrons within the sphere of each ion
@@ -971,10 +973,10 @@ public:
           L[kel] -= d2u_k;
           int jk = jel * Nelec + kel;
           int kj = kel * Nelec + jel;
-          U[jk]   += u;
-          U[kj]   += u;
-          dU[jk]  += du_j;
-          dU[kj]  += du_k;
+          U[jk] += u;
+          U[kj] += u;
+          dU[jk] += du_j;
+          dU[kj] += du_k;
           d2U[jk] += d2u_j;
           d2U[kj] += d2u_k;
           // G[jel] +=  gr_ee - gradF[1]*r_Ij_inv * eI_table.dr(nn0+jel);
@@ -1225,11 +1227,11 @@ public:
               d2u_k = (dh(0, 0) + 2.0 * r_jk_inv * dg[0] +
                        2.0 * dh(0, 2) * dot(ee_table.dr(ee0 + kel), eI_table.dr(nn0 + kel)) * r_jk_inv * r_Ik_inv +
                        dh(2, 2) + 2.0 * r_Ik_inv * dg[2]);
-              dLogPsi[p]         -= dval;
+              dLogPsi[p] -= dval;
               gradLogPsi(p, jel) -= du_j;
               gradLogPsi(p, kel) -= du_k;
-              lapLogPsi(p, jel)  -= d2u_j;
-              lapLogPsi(p, kel)  -= d2u_k;
+              lapLogPsi(p, jel) -= d2u_j;
+              lapLogPsi(p, kel) -= d2u_k;
             }
           }
         }

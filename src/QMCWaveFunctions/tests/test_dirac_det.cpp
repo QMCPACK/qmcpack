@@ -29,9 +29,8 @@ using std::string;
 
 namespace qmcplusplus
 {
-
-using RealType = QMCTraits::RealType;
-using ValueType = QMCTraits::ValueType;
+using RealType     = QMCTraits::RealType;
+using ValueType    = QMCTraits::ValueType;
 using LogValueType = std::complex<QMCTraits::QTFull::RealType>;
 using PsiValueType = QMCTraits::QTFull::ValueType;
 
@@ -240,8 +239,8 @@ TEST_CASE("DiracDeterminant_first", "[wavefunction][fermion]")
 
 
   ParticleSet::GradType grad;
-  ValueType det_ratio = ddb.ratioGrad(elec, 0, grad);
-  ValueType det_ratio1 = 0.178276269185;
+  PsiValueType det_ratio  = ddb.ratioGrad(elec, 0, grad);
+  PsiValueType det_ratio1 = 0.178276269185;
   REQUIRE(det_ratio1 == ValueApprox(det_ratio));
 
   ddb.acceptMove(elec, 0);
@@ -325,12 +324,13 @@ TEST_CASE("DiracDeterminant_second", "[wavefunction][fermion]")
   }
 
   ParticleSet::GradType grad;
-  ValueType det_ratio = ddb.ratioGrad(elec, 0, grad);
+  PsiValueType det_ratio = ddb.ratioGrad(elec, 0, grad);
 
-  simd::transpose(a_update1.data(), a_update1.rows(), a_update1.cols(), scratchT.data(), scratchT.rows(), scratchT.cols());
+  simd::transpose(a_update1.data(), a_update1.rows(), a_update1.cols(), scratchT.data(), scratchT.rows(),
+                  scratchT.cols());
   LogValueType det_update1;
   dm.invert_transpose(scratchT, a_update1, det_update1);
-  ValueType det_ratio1  = LogToValue<ValueType>::convert(det_update1 - ddb.LogValue);
+  PsiValueType det_ratio1 = LogToValue<ValueType>::convert(det_update1 - ddb.LogValue);
 #ifdef DUMP_INFO
   std::cout << "det 0 = " << std::exp(ddb.LogValue) << std::endl;
   std::cout << "det 1 = " << std::exp(det_update1) << std::endl;
@@ -343,11 +343,12 @@ TEST_CASE("DiracDeterminant_second", "[wavefunction][fermion]")
   ddb.acceptMove(elec, 0);
 
 
-  ValueType det_ratio2 = ddb.ratioGrad(elec, 1, grad);
+  PsiValueType det_ratio2 = ddb.ratioGrad(elec, 1, grad);
   LogValueType det_update2;
-  simd::transpose(a_update2.data(), a_update2.rows(), a_update2.cols(), scratchT.data(), scratchT.rows(), scratchT.cols());
+  simd::transpose(a_update2.data(), a_update2.rows(), a_update2.cols(), scratchT.data(), scratchT.rows(),
+                  scratchT.cols());
   dm.invert_transpose(scratchT, a_update2, det_update2);
-  ValueType det_ratio2_val = LogToValue<ValueType>::convert(det_update2 - det_update1);
+  PsiValueType det_ratio2_val = LogToValue<ValueType>::convert(det_update2 - det_update1);
 #ifdef DUMP_INFO
   std::cout << "det 1 = " << std::exp(ddb.LogValue) << std::endl;
   std::cout << "det 2 = " << std::exp(det_update2) << std::endl;
@@ -358,11 +359,12 @@ TEST_CASE("DiracDeterminant_second", "[wavefunction][fermion]")
 
   ddb.acceptMove(elec, 1);
 
-  ValueType det_ratio3 = ddb.ratioGrad(elec, 2, grad);
+  PsiValueType det_ratio3 = ddb.ratioGrad(elec, 2, grad);
   LogValueType det_update3;
-  simd::transpose(a_update3.data(), a_update3.rows(), a_update3.cols(), scratchT.data(), scratchT.rows(), scratchT.cols());
+  simd::transpose(a_update3.data(), a_update3.rows(), a_update3.cols(), scratchT.data(), scratchT.rows(),
+                  scratchT.cols());
   dm.invert_transpose(scratchT, a_update3, det_update3);
-  ValueType det_ratio3_val = LogToValue<ValueType>::convert(det_update3 - det_update2);
+  PsiValueType det_ratio3_val = LogToValue<ValueType>::convert(det_update3 - det_update2);
 #ifdef DUMP_INFO
   std::cout << "det 2 = " << std::exp(ddb.LogValue) << std::endl;
   std::cout << "det 3 = " << std::exp(det_update3) << std::endl;
@@ -452,12 +454,13 @@ TEST_CASE("DiracDeterminant_delayed_update", "[wavefunction][fermion]")
 
 
   ParticleSet::GradType grad;
-  ValueType det_ratio = ddc.ratioGrad(elec, 0, grad);
+  PsiValueType det_ratio = ddc.ratioGrad(elec, 0, grad);
 
-  simd::transpose(a_update1.data(), a_update1.rows(), a_update1.cols(), scratchT.data(), scratchT.rows(), scratchT.cols());
+  simd::transpose(a_update1.data(), a_update1.rows(), a_update1.cols(), scratchT.data(), scratchT.rows(),
+                  scratchT.cols());
   LogValueType det_update1;
   dm.invert_transpose(scratchT, a_update1, det_update1);
-  ValueType det_ratio1  = LogToValue<ValueType>::convert(det_update1 - ddc.LogValue);
+  PsiValueType det_ratio1 = LogToValue<ValueType>::convert(det_update1 - ddc.LogValue);
 #ifdef DUMP_INFO
   std::cout << "det 0 = " << std::exp(ddc.LogValue) << std::endl;
   std::cout << "det 1 = " << std::exp(det_update1) << std::endl;
@@ -472,12 +475,13 @@ TEST_CASE("DiracDeterminant_delayed_update", "[wavefunction][fermion]")
   // force update Ainv in ddc using SM-1 code path
   ddc.completeUpdates();
 
-  grad                 = ddc.evalGrad(elec, 1);
-  ValueType det_ratio2 = ddc.ratioGrad(elec, 1, grad);
-  simd::transpose(a_update2.data(), a_update2.rows(), a_update2.cols(), scratchT.data(), scratchT.rows(), scratchT.cols());
+  grad                    = ddc.evalGrad(elec, 1);
+  PsiValueType det_ratio2 = ddc.ratioGrad(elec, 1, grad);
+  simd::transpose(a_update2.data(), a_update2.rows(), a_update2.cols(), scratchT.data(), scratchT.rows(),
+                  scratchT.cols());
   LogValueType det_update2;
   dm.invert_transpose(scratchT, a_update2, det_update2);
-  ValueType det_ratio2_val = LogToValue<ValueType>::convert(det_update2 - det_update1);
+  PsiValueType det_ratio2_val = LogToValue<ValueType>::convert(det_update2 - det_update1);
 #ifdef DUMP_INFO
   std::cout << "det 1 = " << std::exp(ddc.LogValue) << std::endl;
   std::cout << "det 2 = " << std::exp(det_update2) << std::endl;
@@ -490,12 +494,13 @@ TEST_CASE("DiracDeterminant_delayed_update", "[wavefunction][fermion]")
   // update of Ainv in ddc is delayed
   ddc.acceptMove(elec, 1);
 
-  grad                 = ddc.evalGrad(elec, 2);
-  ValueType det_ratio3 = ddc.ratioGrad(elec, 2, grad);
-  simd::transpose(a_update3.data(), a_update3.rows(), a_update3.cols(), scratchT.data(), scratchT.rows(), scratchT.cols());
+  grad                    = ddc.evalGrad(elec, 2);
+  PsiValueType det_ratio3 = ddc.ratioGrad(elec, 2, grad);
+  simd::transpose(a_update3.data(), a_update3.rows(), a_update3.cols(), scratchT.data(), scratchT.rows(),
+                  scratchT.cols());
   LogValueType det_update3;
   dm.invert_transpose(scratchT, a_update3, det_update3);
-  ValueType det_ratio3_val = LogToValue<ValueType>::convert(det_update3 - det_update2);
+  PsiValueType det_ratio3_val = LogToValue<ValueType>::convert(det_update3 - det_update2);
 #ifdef DUMP_INFO
   std::cout << "det 2 = " << std::exp(ddc.LogValue) << std::endl;
   std::cout << "det 3 = " << std::exp(det_update3) << std::endl;
