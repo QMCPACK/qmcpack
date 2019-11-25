@@ -73,10 +73,10 @@ public:
 
     sfnb.setEstimatorManager(emb_.get());
 
+    createMyNode(sfnb, valid_dmc_input_sections[valid_dmc_input_dmc_index]);
+
     // WalkerController is created as a side effect.
     sfnb.initWalkerController(*mcwc_, false, false);
-
-    createMyNode(sfnb, valid_dmc_input_sections[valid_dmc_input_dmc_index]);
 
     sfnb.checkParameters(*mcwc_);
 
