@@ -48,6 +48,8 @@ public:
     OHMMS::Controller->initialize(0, NULL);
     comm_ = OHMMS::Controller;
     emb_ = std::make_unique<EstimatorManagerBase>(comm_);
+    FakeEstimator* fake_est = new FakeEstimator;
+    emb_->add(fake_est, "fake");
   }
 
   SimpleFixedNodeBranch operator()()
@@ -140,9 +142,12 @@ private:
 
 TEST_CASE("SimpleFixedNodeBranch::branch(MCWC...)", "[drivers][legacy]")
 {
-  testing::SetupSimpleFixedNodeBranch setup_sfnb;
+  using namespace testing;
+  SetupSimpleFixedNodeBranch setup_sfnb;
   SimpleFixedNodeBranch sfnb = setup_sfnb();  
 
+
+  
   // \todo: check walker ID's here. might need more walkers to make this significant.
 
 }
