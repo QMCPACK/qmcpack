@@ -64,11 +64,10 @@ public:
 
     MCPWalker w1(1);
     w1.R[0] = 1.0;
-    
     MCPWalker w2(1);
     w2.R[0] = 0.5;
 
-    mcwc_->copyWalkerRefs(&w1, &w2);
+    mcwc_->fakeWalkerList(&w1, &w2);
 
     SimpleFixedNodeBranch sfnb(tau_, num_global_walkers_);
 
@@ -145,8 +144,6 @@ TEST_CASE("SimpleFixedNodeBranch::branch(MCWC...)", "[drivers][legacy]")
   using namespace testing;
   SetupSimpleFixedNodeBranch setup_sfnb;
   SimpleFixedNodeBranch sfnb = setup_sfnb();  
-
-
   
   // \todo: check walker ID's here. might need more walkers to make this significant.
 

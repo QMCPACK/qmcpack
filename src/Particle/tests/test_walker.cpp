@@ -61,7 +61,7 @@ TEST_CASE("walker HDF read and write", "[particle]")
 
   // This method sets ownership to false so class does not attempt to
   // free the walker elements.
-  W.copyWalkerRefs(&w1, &w2);
+  W.fakeWalkerList(&w1, &w2);
 
   REQUIRE(W.getActiveWalkers() == 2);
 

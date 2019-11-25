@@ -273,23 +273,13 @@ void MCWalkerConfiguration::copyWalkers(iterator first, iterator last, iterator 
   }
 }
 
-
-void MCWalkerConfiguration::copyWalkerRefs(Walker_t* head, Walker_t* tail)
+void MCWalkerConfiguration::fakeWalkerList(Walker_t* first, Walker_t* second)
 {
-  if (OwnWalkers)
-  //destroy the current walkers
-  {
-    destroyWalkers(WalkerList.begin(), WalkerList.end());
-    WalkerList.clear();
-    OwnWalkers = false; //set to false to prevent deleting the Walkers
-  }
-  if (WalkerList.size() < 2)
-  {
-    WalkerList.push_back(0);
-    WalkerList.push_back(0);
-  }
-  WalkerList[0] = head;
-  WalkerList[1] = tail;
+  if (WalkerList.size() != 0)
+    throw std::runtime_error("This should only be called in tests and only with a fresh MCWC!");
+  OwnWalkers = false;
+  WalkerList.push_back(first);
+  WalkerList.push_back(second);
 }
 
 /** Make Metropolis move to the walkers and save in a temporary array.
