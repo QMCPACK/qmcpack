@@ -159,7 +159,7 @@ private:
     //create vectors and matrices used in svd routine
     formic::Matrix<S> u, v, vt;
     formic::ColVec<S> sin_vals;
-    int truncate_index;
+    int truncate_index = 0;
 
     // make sure the subspace matrix is not empty
     if ( _subS.rows() == 0 || _subH.rows() == 0 ) 
