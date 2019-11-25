@@ -17,7 +17,9 @@
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/SPOSet.h"
 #include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
+#include "QMCWaveFunctions/ElectronGas/ElectronGasComplexOrbitalBuilder.h"
 
+#include "QMCWaveFunctions/SpinorSet.h"
 
 #include <stdio.h>
 #include <string>
@@ -521,5 +523,115 @@ TEST_CASE("DiracDeterminant_delayed_update", "[wavefunction][fermion]")
   // compare all the elements of psiM in ddc and orig_a
   check_matrix(orig_a, ddc.psiM);
 }
+
+#ifdef QMC_COMPLEX
+TEST_CASE("DiracDeterminant_spinor_update", "[wavefunction][fermion]")
+{
+  std::cout << " i!!!!!!!!!!!!!WEEEEE OH MY GOD WE'RE GETTING TESTED!!!!!!!!!!!!!\n";
+  REQUIRE( 1==1);
+  typedef QMCTraits::PosType PosType;
+  typedef ParticleSet::ParticlePos_t ParticlePos_t;
+  
+  //Shamelessly stealing this from test_einset.cpp.  3 particles though.
+  ParticleSet ions_;
+  ParticleSet elec_;
+  ions_.setName("ion");
+  ions_.create(2);
+
+  ions_.R[0][0] = 0.00000000 ; 
+  ions_.R[0][1] = 0.00000000 ;    
+  ions_.R[0][2] = 1.08659253 ;  
+  ions_.R[1][0] = 0.00000000 ;   
+  ions_.R[1][1] = 0.00000000 ;  
+  ions_.R[1][2] =-1.08659253 ;
+
+  elec_.setName("elec");
+  elec_.create(3);
+  elec_.R[0][0] = 0.1;
+  elec_.R[0][1] = -0.3;
+  elec_.R[0][2] = 1.0;
+  elec_.R[1][0] = -0.1;
+  elec_.R[1][1] = 0.3;
+  elec_.R[1][2] = 1.0;
+  elec_.R[2][0] = 0.1;
+  elec_.R[2][1] = 0.2;
+  elec_.R[2][2] = 0.3;
+
+  elec_.spins[0] = 0.0 ;
+  elec_.spins[1] = 0.2 ;
+  elec_.spins[2] = 0.4 ;
+
+  // O2 test example from pwscf non-collinear calculation.
+  elec_.Lattice.R(0, 0) =  5.10509515 ;
+  elec_.Lattice.R(0, 1) = -3.23993545 ;
+  elec_.Lattice.R(0, 2) =  0.00000000 ;
+  elec_.Lattice.R(1, 0) = 5.10509515 ;
+  elec_.Lattice.R(1, 1) = 3.23993545 ;
+  elec_.Lattice.R(1, 2) = 0.00000000 ;
+  elec_.Lattice.R(2, 0) = -6.49690625 ;
+  elec_.Lattice.R(2, 1) =  0.00000000 ;
+  elec_.Lattice.R(2, 2) =  7.08268015 ; 
+
+  SpeciesSet& tspecies         = elec_.getSpeciesSet();
+  int upIdx                    = tspecies.addSpecies("u");
+  int chargeIdx                = tspecies.addAttribute("charge");
+  tspecies(chargeIdx, upIdx)   = -1;
+
+#ifdef ENABLE_SOA
+  elec_.addTable(ions_, DT_SOA);
+#else
+  elec_.addTable(ions_, DT_AOS);
+#endif
+  elec_.resetGroups();
+  elec_.update();
+  // </steal>
+
+  //Our test case is going to be three electron gas orbitals distinguished by 3 different kpoints.
+  //Independent SPO's for the up and down channels.
+  //
+  std::vector<PosType> kup,kdn;
+  std::vector<RealType> k2up,k2dn;  
+
+ 
+  kup.resize(3);
+  kup[0]=PosType(0,0,0);
+  kup[1]=PosType(0.1,0.2,0.3);
+  kup[2]=PosType(0.4,0.5,0.6);
+  
+  k2up.resize(3);
+  k2up[0]=dot(kup[0],kup[0]);
+  k2up[1]=dot(kup[1],kup[1]);
+  k2up[2]=dot(kup[2],kup[2]);
+ 
+  kdn.resize(3);
+  kdn[0]=PosType(0,0,0);
+  kdn[1]=PosType(-0.1,0.2,-0.3);
+  kdn[2]=PosType(0.4,-0.5,0.6);
+
+  k2dn.resize(3);
+  k2dn[0]=dot(kdn[0],kdn[0]);
+  k2dn[1]=dot(kdn[1],kdn[1]);
+  k2dn[2]=dot(kdn[2],kdn[2]);
+
+  std::shared_ptr<EGOSet> spo_up(new EGOSet(kup,k2up));
+  std::shared_ptr<EGOSet> spo_dn(new EGOSet(kdn,k2dn));
+
+  SpinorSet* spinor_set = new SpinorSet();
+  spinor_set->set_spos(spo_up,spo_dn);
+
+  DetType dd(spinor_set);
+
+
+  //So we need a ratio test.
+   //make a trial spin move.  
+
+  //a ratioGrad test.  
+  
+  //an evaluateLog with gradients and laplacians.  
+  
+
+
+}
+#endif
 
 } // namespace qmcplusplus
