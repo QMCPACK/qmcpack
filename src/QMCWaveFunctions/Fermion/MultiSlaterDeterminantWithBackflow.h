@@ -57,19 +57,19 @@ public:
 
   ValueType evaluate(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
 
-  RealType evaluateLog(ParticleSet& P //const DistanceTableData* dtable,
-                       ,
-                       ParticleSet::ParticleGradient_t& G,
-                       ParticleSet::ParticleLaplacian_t& L);
+  LogValueType evaluateLog(ParticleSet& P //const DistanceTableData* dtable,
+                           ,
+                           ParticleSet::ParticleGradient_t& G,
+                           ParticleSet::ParticleLaplacian_t& L);
 
   GradType evalGrad(ParticleSet& P, int iat);
-  ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
-  ValueType ratio(ParticleSet& P, int iat);
+  PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
+  PsiValueType ratio(ParticleSet& P, int iat);
   void acceptMove(ParticleSet& P, int iat);
   void restore(int iat);
 
   void registerData(ParticleSet& P, WFBufferType& buf);
-  RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false);
+  LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false);
   void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
 
   WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;

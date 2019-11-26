@@ -69,11 +69,11 @@ struct MCDataType
 class ParticleSet : public QMCTraits, public OhmmsElementBase, public PtclOnLatticeTraits
 {
 public:
-  ///@typedef walker type
+  /// walker type
   typedef Walker<QMCTraits, PtclOnLatticeTraits> Walker_t;
-  ///@typedef container type to store the property
+  /// container type to store the property
   typedef Walker_t::PropertyContainer_t PropertyContainer_t;
-  ///@typedef buffer type for a serialized buffer
+  /// buffer type for a serialized buffer
   typedef PooledData<RealType> Buffer_t;
 
   enum quantum_domains
@@ -147,6 +147,9 @@ public:
 
   ///the proposed position of activePtcl during particle-by-particle moves
   SingleParticlePos_t activePos;
+
+  ///the proposed spin of activePtcl during particle-by-particle moves
+  RealType activeSpin;
 
   ///the proposed position in the Lattice unit
   SingleParticlePos_t newRedPos;
@@ -320,6 +323,9 @@ public:
    * Evaluate the related distance table data DistanceTableData::Temp.
    */
   void makeMove(Index_t iat, const SingleParticlePos_t& displ);
+  /// makeMove, but now includes an update to the spin variable
+  void makeMoveWithSpin(Index_t iat, const SingleParticlePos_t& displ, const RealType& sdispl);
+
   /// batched version of makeMove
   static void flex_makeMove(const RefVector<ParticleSet>& P_list, int iat, const std::vector<SingleParticlePos_t>& displs);
 
@@ -337,6 +343,8 @@ public:
    * Note: activePos and distances tables are always evaluated no matter the move is valid or not.
    */
   bool makeMoveAndCheck(Index_t iat, const SingleParticlePos_t& displ);
+  /// makeMoveAndCheck, but now includes an update to the spin variable
+  bool makeMoveAndCheckWithSpin(Index_t iat, const SingleParticlePos_t& displ, const RealType& sdispl);
 
   /** Handles virtual moves for all the particles to a single newpos.
    *
@@ -442,12 +450,7 @@ public:
    */
   void donePbyP();
   /// batched version of donePbyP
-  static void flex_donePbyP(const RefVector<ParticleSet>& P_list)
-  {
-    #pragma omp parallel for
-    for (int iw = 0; iw < P_list.size(); iw++)
-      P_list[iw].get().donePbyP();
-  }
+  static void flex_donePbyP(const RefVector<ParticleSet>& P_list);
 
   ///return the address of the values of Hamiltonian terms
   inline FullPrecRealType* restrict getPropertyBase() { return Properties.data(); }

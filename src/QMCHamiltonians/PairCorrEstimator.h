@@ -49,6 +49,7 @@ public:
   bool get(std::ostream& os) const;
   OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 
+  void set_norm_factor();
   void report();
 
 private:

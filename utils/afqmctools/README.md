@@ -28,7 +28,8 @@ The tools work with the following:
 * pyscf >= 1.6.0
 * scipy >= 0.18.1
 * numpy >= 1.11.2
-* h5py >= 2.6.0 with parallel hdf5 support for k-point symmetric integral generation.
+* h5py >= 2.6.0 with parallel hdf5 support for k-point symmetric integral generation
+  (optional).
 * mpi4py >= 2.0.0
 
 # Tests

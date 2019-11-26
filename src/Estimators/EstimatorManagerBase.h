@@ -214,8 +214,16 @@ public:
   void getCurrentStatistics(MCWalkerConfiguration& W, RealType& eavg, RealType& var);
 
   /** Unified walker variant of this method
+   *
+   *  This only makes sense to call on the whole population with the current DMC algorithm
+   *
+   *  This is about to be refactored out of EstimatorManagerBase
+   *
+   *  I think it would probably be cleaner and remove alot of reset issues to have the eavg and var
+   *  from the previous section passed in
+   *  rather than retaining the estimator manager to get them.
    */
-  void getCurrentStatistics(const int global_walkers, RefVector<MCPWalker>& walkers, RealType& eavg, RealType& var);
+  static void getCurrentStatistics(const int global_walkers, RefVector<MCPWalker>& walkers, RealType& eavg, RealType& var, Communicate* comm);
   
   template<class CT>
   void write(CT& anything, bool doappend)

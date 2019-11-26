@@ -163,12 +163,12 @@ public:
   //evaluate the distance table with els
   void resetTargetParticleSet(ParticleSet& P);
 
-  RealType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
+  LogValueType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
 
-  ValueType ratio(ParticleSet& P, int iat);
+  PsiValueType ratio(ParticleSet& P, int iat);
 
   GradType evalGrad(ParticleSet& P, int iat);
-  ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
+  PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
 
   void restore(int iat);
   void acceptMove(ParticleSet& P, int iat);
@@ -176,7 +176,7 @@ public:
   // Allocate per-walker data in the PooledData buffer
   void registerData(ParticleSet& P, WFBufferType& buf);
   // Walker move has been accepted -- update the buffer
-  RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false);
+  LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false);
   // Pull data from the walker buffer at the beginning of a block of
   // single-particle moves
   void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
@@ -194,7 +194,7 @@ public:
   WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;
 
   WaveFunctionComponentPtr makeThrScope(PtclGrpIndexes& pgi) const;
-  
+
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& active,
                            std::vector<ValueType>& dlogpsi,

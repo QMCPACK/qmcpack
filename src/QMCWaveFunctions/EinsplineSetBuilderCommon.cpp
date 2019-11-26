@@ -14,7 +14,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-/** @file common.cpp
+/** @file
  *
  * Instantiates the static data
  * Implements member functions of EinsplineSetBuilder
@@ -787,12 +787,12 @@ EinsplineSetBuilder::AnalyzeTwists()
 */
 
 
-void EinsplineSetBuilder::OccupyBands(int spin, int sortBands, int numOrbs)
+void EinsplineSetBuilder::OccupyBands(int spin, int sortBands, int numOrbs, bool skipChecks)
 {
   update_token(__FILE__, __LINE__, "OccupyBands");
   if (myComm->rank() != 0)
     return;
-  if (spin >= NumSpins)
+  if (spin >= NumSpins && !skipChecks)
   {
     app_error() << "To developer: User is requesting for orbitals in an invalid spin group " << spin
                 << ". Current h5 file only contains spin groups "

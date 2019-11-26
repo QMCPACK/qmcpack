@@ -13,20 +13,86 @@
 // -*- C++ -*-
 #ifndef QMCPLUSPLUS_TWOBODYJASTROW_OPTIMIZED_SOA_H
 #define QMCPLUSPLUS_TWOBODYJASTROW_OPTIMIZED_SOA_H
+
+#include <map>
+#include <numeric>
 #include "Configuration.h"
 #if !defined(QMC_BUILD_SANDBOX_ONLY)
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/Jastrow/DiffTwoBodyJastrowOrbital.h"
-#include <qmc_common.h>
 #endif
 #include "Particle/DistanceTableData.h"
+#include "LongRange/StructFact.h"
 #include <simd/allocator.hpp>
 #include <simd/algorithm.hpp>
-#include <map>
-#include <numeric>
 
 namespace qmcplusplus
 {
+// helper class to activate KEcorr during optimizing Jastrow
+template<typename RT, class FT>
+class J2KECorrection
+{
+  size_t num_groups_;
+  std::vector<size_t> num_elec_in_groups_;
+  RT num_elecs_;
+  RT vol;
+  RT G0mag;
+  const std::vector<FT*>& F_;
+  bool SK_enabled;
+
+public:
+  J2KECorrection(const ParticleSet& targetPtcl, const std::vector<FT*>& F)
+      : num_groups_(targetPtcl.groups()),
+        num_elecs_(targetPtcl.getTotalNum()),
+        vol(targetPtcl.Lattice.Volume),
+        F_(F),
+        SK_enabled(targetPtcl.SK != nullptr)
+  {
+    // compute num_elec_in_groups_
+    num_elec_in_groups_.reserve(3);
+    for (int i = 0; i < num_groups_; i++)
+      num_elec_in_groups_.push_back(targetPtcl.last(i) - targetPtcl.first(i));
+
+    if (SK_enabled)
+      G0mag = std::sqrt(targetPtcl.SK->KLists.ksq[0]);
+  }
+
+  RT computeKEcorr()
+  {
+    if (!SK_enabled)
+      return 0;
+
+    const int numPoints = 1000;
+    RT uk               = 0.0;
+    RT a                = 1.0;
+
+    for (int i = 0; i < num_groups_; i++)
+    {
+      int Ni = num_elec_in_groups_[i];
+      for (int j = 0; j < num_groups_; j++)
+      {
+        int Nj = num_elec_in_groups_[j];
+        if (F_[i * num_groups_ + j])
+        {
+          FT& ufunc = *(F_[i * num_groups_ + j]);
+          RT radius = ufunc.cutoff_radius;
+          RT k      = G0mag;
+          RT dr     = radius / (RT)(numPoints - 1);
+          for (int ir = 0; ir < numPoints; ir++)
+          {
+            RT r = dr * (RT)ir;
+            RT u = ufunc.evaluate(r);
+            uk += 0.5 * 4.0 * M_PI * r * std::sin(k * r) / k * u * dr * (RT)Nj / (RT)(Ni + Nj);
+          }
+        }
+      }
+    }
+    for (int iter = 0; iter < 20; iter++)
+      a = uk / (4.0 * M_PI * (1.0 / (G0mag * G0mag) - 1.0 / (G0mag * G0mag + 1.0 / a)));
+    return 4.0 * M_PI * a / (4.0 * vol) * num_elecs_;
+  }
+};
+
 /** @ingroup WaveFunctionComponent
  *  @brief Specialization for two-body Jastrow function using multiple functors
  *
@@ -43,8 +109,9 @@ namespace qmcplusplus
  * - Memory use is O(N). 
  */
 template<class FT>
-struct J2OrbitalSoA : public WaveFunctionComponent
+class J2OrbitalSoA : public WaveFunctionComponent
 {
+public:
   ///alias FuncType
   using FuncType = FT;
   ///type of each component U, dU, d2U;
@@ -52,16 +119,20 @@ struct J2OrbitalSoA : public WaveFunctionComponent
   ///element position type
   using posT = TinyVector<valT, OHMMS_DIM>;
   ///use the same container
-  using RowContainer = DistanceTableData::RowContainer;
+  using RowContainer    = DistanceTableData::RowContainer;
+  using gContainer_type = VectorSoaContainer<valT, OHMMS_DIM>;
 
+  // Ye: leaving this public is bad but currently used by unit tests.
+  ///Container for \f$F[ig*NumGroups+jg]\f$.
+  std::vector<FT*> F;
+
+protected:
   ///number of particles
   size_t N;
   ///number of particles + padded
   size_t N_padded;
   ///number of groups of the target particleset
   size_t NumGroups;
-  ///Used to compute correction
-  bool FirstTime;
   ///diff value
   RealType DiffVal;
   ///Correction
@@ -69,7 +140,6 @@ struct J2OrbitalSoA : public WaveFunctionComponent
   ///\f$Uat[i] = sum_(j) u_{i,j}\f$
   Vector<valT> Uat;
   ///\f$dUat[i] = sum_(j) du_{i,j}\f$
-  using gContainer_type = VectorSoaContainer<valT, OHMMS_DIM>;
   gContainer_type dUat;
   ///\f$d2Uat[i] = sum_(j) d2u_{i,j}\f$
   Vector<valT> d2Uat;
@@ -78,13 +148,14 @@ struct J2OrbitalSoA : public WaveFunctionComponent
   aligned_vector<valT> old_u, old_du, old_d2u;
   aligned_vector<valT> DistCompressed;
   aligned_vector<int> DistIndice;
-  ///Container for \f$F[ig*NumGroups+jg]\f$
-  std::vector<FT*> F;
   ///Uniquue J2 set for cleanup
   std::map<std::string, FT*> J2Unique;
   /// e-e table ID
   const int my_table_ID_;
+  // helper for compute J2 Chiesa KE correction
+  J2KECorrection<RealType, FT> j2_ke_corr_helper;
 
+public:
   J2OrbitalSoA(ParticleSet& p, int tid);
   J2OrbitalSoA(const J2OrbitalSoA& rhs) = delete;
   ~J2OrbitalSoA();
@@ -154,6 +225,9 @@ struct J2OrbitalSoA : public WaveFunctionComponent
     }
   }
 
+
+  void finalizeOptimization() { KEcorr = j2_ke_corr_helper.computeKEcorr(); }
+
   /** print the state, e.g., optimizables */
   void reportStatus(std::ostream& os)
   {
@@ -163,30 +237,28 @@ struct J2OrbitalSoA : public WaveFunctionComponent
       (*it).second->myVars.print(os);
       ++it;
     }
-    ChiesaKEcorrection();
   }
-  RealType ChiesaKEcorrection() { return RealType(); }
-  /**@} */
 
   WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;
 
-  RealType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
+  LogValueType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
 
   void evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi);
 
   /** recompute internal data assuming distance table is fully ready */
   void recompute(ParticleSet& P);
 
-  ValueType ratio(ParticleSet& P, int iat);
+  PsiValueType ratio(ParticleSet& P, int iat);
   void evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios)
   {
     for (int k = 0; k < ratios.size(); ++k)
-      ratios[k] = std::exp(Uat[VP.refPtcl] - computeU(VP.refPS, VP.refPtcl, VP.getDistTable(my_table_ID_).Distances[k]));
+      ratios[k] =
+          std::exp(Uat[VP.refPtcl] - computeU(VP.refPS, VP.refPtcl, VP.getDistTable(my_table_ID_).Distances[k]));
   }
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios);
 
   GradType evalGrad(ParticleSet& P, int iat);
-  ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
+  PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
   void acceptMove(ParticleSet& P, int iat);
   inline void restore(int iat) {}
 
@@ -224,7 +296,7 @@ struct J2OrbitalSoA : public WaveFunctionComponent
     d2Uat.attachReference(buf.lendReference<valT>(N), N);
   }
 
-  RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false)
+  LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false)
   {
     evaluateGL(P, P.G, P.L, false);
     buf.forward(Bytes_in_WFBuffer);
@@ -272,14 +344,16 @@ struct J2OrbitalSoA : public WaveFunctionComponent
     return grad;
   }
   /**@} */
+
+  RealType ChiesaKEcorrection() { return KEcorr = j2_ke_corr_helper.computeKEcorr(); }
+
+  RealType KECorrection() { return KEcorr; }
 };
 
 template<typename FT>
-J2OrbitalSoA<FT>::J2OrbitalSoA(ParticleSet& p, int tid)
- : my_table_ID_(p.addTable(p, DT_SOA))
+J2OrbitalSoA<FT>::J2OrbitalSoA(ParticleSet& p, int tid) : my_table_ID_(p.addTable(p, DT_SOA)), j2_ke_corr_helper(p, F)
 {
   init(p);
-  FirstTime = true;
   KEcorr    = 0.0;
   ClassName = "J2OrbitalSoA";
 }
@@ -352,8 +426,6 @@ void J2OrbitalSoA<FT>::addFunc(int ia, int ib, FT* j)
   std::stringstream aname;
   aname << ia << ib;
   J2Unique[aname.str()] = j;
-  //ChiesaKEcorrection();
-  FirstTime = false;
 }
 
 template<typename FT>
@@ -419,18 +491,18 @@ inline void J2OrbitalSoA<FT>::computeU3(const ParticleSet& P,
 }
 
 template<typename FT>
-typename J2OrbitalSoA<FT>::ValueType J2OrbitalSoA<FT>::ratio(ParticleSet& P, int iat)
+typename J2OrbitalSoA<FT>::PsiValueType J2OrbitalSoA<FT>::ratio(ParticleSet& P, int iat)
 {
   //only ratio, ready to compute it again
   UpdateMode = ORB_PBYP_RATIO;
   cur_Uat    = computeU(P, iat, P.getDistTable(my_table_ID_).Temp_r.data());
-  return std::exp(Uat[iat] - cur_Uat);
+  return std::exp(static_cast<PsiValueType>(Uat[iat] - cur_Uat));
 }
 
 template<typename FT>
 inline void J2OrbitalSoA<FT>::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
 {
-  const auto& d_table = P.getDistTable(my_table_ID_);
+  const auto& d_table       = P.getDistTable(my_table_ID_);
   const auto* restrict dist = d_table.Temp_r.data();
 
   for (int ig = 0; ig < NumGroups; ++ig)
@@ -461,7 +533,7 @@ typename J2OrbitalSoA<FT>::GradType J2OrbitalSoA<FT>::evalGrad(ParticleSet& P, i
 }
 
 template<typename FT>
-typename J2OrbitalSoA<FT>::ValueType J2OrbitalSoA<FT>::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
+typename J2OrbitalSoA<FT>::PsiValueType J2OrbitalSoA<FT>::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
 {
   UpdateMode = ORB_PBYP_PARTIAL;
 
@@ -469,7 +541,7 @@ typename J2OrbitalSoA<FT>::ValueType J2OrbitalSoA<FT>::ratioGrad(ParticleSet& P,
   cur_Uat = simd::accumulate_n(cur_u.data(), N, valT());
   DiffVal = Uat[iat] - cur_Uat;
   grad_iat += accumulateG(cur_du.data(), P.getDistTable(my_table_ID_).Temp_dr);
-  return std::exp(DiffVal);
+  return std::exp(static_cast<PsiValueType>(DiffVal));
 }
 
 template<typename FT>
@@ -494,7 +566,7 @@ void J2OrbitalSoA<FT>::acceptMove(ParticleSet& P, int iat)
     const valT du   = cur_u[jat] - old_u[jat];
     const valT newl = cur_d2u[jat] + lapfac * cur_du[jat];
     const valT dl   = old_d2u[jat] + lapfac * old_du[jat] - newl;
-    Uat[jat]   += du;
+    Uat[jat] += du;
     d2Uat[jat] += dl;
     cur_d2Uat -= newl;
   }
@@ -574,9 +646,9 @@ void J2OrbitalSoA<FT>::recompute(ParticleSet& P)
 }
 
 template<typename FT>
-typename J2OrbitalSoA<FT>::RealType J2OrbitalSoA<FT>::evaluateLog(ParticleSet& P,
-                                                                  ParticleSet::ParticleGradient_t& G,
-                                                                  ParticleSet::ParticleLaplacian_t& L)
+typename J2OrbitalSoA<FT>::LogValueType J2OrbitalSoA<FT>::evaluateLog(ParticleSet& P,
+                                                                      ParticleSet::ParticleGradient_t& G,
+                                                                      ParticleSet::ParticleLaplacian_t& L)
 {
   evaluateGL(P, G, L, true);
   return LogValue;
@@ -594,17 +666,15 @@ void J2OrbitalSoA<FT>::evaluateGL(ParticleSet& P,
   for (int iat = 0; iat < N; ++iat)
   {
     LogValue += Uat[iat];
-    G[iat]   += dUat[iat];
-    L[iat]   += d2Uat[iat];
+    G[iat] += dUat[iat];
+    L[iat] += d2Uat[iat];
   }
 
-  constexpr valT mhalf(-0.5);
-  LogValue = mhalf * LogValue;
+  LogValue = -LogValue * 0.5;
 }
 
 template<typename FT>
-void J2OrbitalSoA<FT>::evaluateHessian(ParticleSet& P,
-                                       HessVector_t& grad_grad_psi)
+void J2OrbitalSoA<FT>::evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi)
 {
   LogValue = 0.0;
   const DistanceTableData& d_ee(P.getDistTable(my_table_ID_));
@@ -614,12 +684,12 @@ void J2OrbitalSoA<FT>::evaluateHessian(ParticleSet& P,
   grad_grad_psi = 0.0;
   ident.diagonal(1.0);
 
-  for (int i=1; i<N; ++i)
+  for (int i = 1; i < N; ++i)
   {
     const valT* dist          = d_ee.Distances[i];
     const RowContainer& displ = d_ee.Displacements[i];
-    auto ig = P.GroupID[i];
-    const int igt = ig * NumGroups;
+    auto ig                   = P.GroupID[i];
+    const int igt             = ig * NumGroups;
     for (int j = 0; j < i; ++j)
     {
       auto r    = dist[j];

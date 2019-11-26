@@ -143,20 +143,11 @@ void MultiDiracDeterminant::evaluateForWalkerMove(ParticleSet& P, bool fromScrat
         TpsiM(j, i) = psiM(i, j);
     }
 
-    RealType phaseValueRef;
-    RealType logValueRef =
-        InvertWithLog(psiMinv.data(), NumPtcls, NumPtcls, WorkSpace.data(), Pivot.data(), phaseValueRef);
+    std::complex<RealType> logValueRef;
+    InvertWithLog(psiMinv.data(), NumPtcls, NumPtcls, WorkSpace.data(), Pivot.data(), logValueRef);
     InverseTimer.stop();
     const RealType detsign = (*DetSigns)[ReferenceDeterminant];
-#if defined(QMC_COMPLEX)
-    const RealType ratioMag = detsign * std::exp(logValueRef);
-    //ValueType det0 = DetSigns[ReferenceDeterminant]*std::complex<OHMMS_PRECISION>(std::cos(phaseValueRef)*ratioMag,std::sin(phaseValueRef)*ratioMag);
-    const ValueType det0 =
-        std::complex<OHMMS_PRECISION>(std::cos(phaseValueRef) * ratioMag, std::sin(phaseValueRef) * ratioMag);
-#else
-    //ValueType det0 = DetSigns[ReferenceDeterminant]*std::exp(logValueRef)*std::cos(std::abs(phaseValueRef));
-    const ValueType det0 = detsign * std::exp(logValueRef) * std::cos(std::abs(phaseValueRef));
-#endif
+    const ValueType det0 = LogToValue<ValueType>::convert(logValueRef);
     detValues[ReferenceDeterminant] = det0;
     BuildDotProductsAndCalculateRatios(ReferenceDeterminant,
                                        0,
@@ -228,7 +219,7 @@ void MultiDiracDeterminant::evaluateForWalkerMove(ParticleSet& P, bool fromScrat
 }
 
 
-MultiDiracDeterminant::RealType MultiDiracDeterminant::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch)
+MultiDiracDeterminant::LogValueType MultiDiracDeterminant::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch)
 {
   evaluateForWalkerMove(P, (fromscratch || UpdateMode == ORB_PBYP_RATIO));
   buf.put(psiM.first_address(), psiM.last_address());
@@ -355,6 +346,7 @@ MultiDiracDeterminant::MultiDiracDeterminant(const MultiDiracDeterminant& s)
   detData              = s.detData;
   uniquePairs          = s.uniquePairs;
   DetSigns             = s.DetSigns;
+  Optimizable          = s.Optimizable;
 
   registerTimers();
   Phi = (s.Phi->makeClone());

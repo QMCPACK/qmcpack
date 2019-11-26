@@ -16,6 +16,9 @@
 #include <cmath>
 #include <type_traits>
 #include "config/stdlib/Constants.h"
+#if defined(HAVE_MASS)
+#include <mass.h>
+#endif
 
 #if __APPLE__
 
@@ -35,8 +38,8 @@ inline void sincos(float a, float* s, float* c)
 
 inline void sincos(float a, float* s, float* c)
 {
-#ifdef __bgq__
-  // BGQ has no sincosf in libmass
+#if defined(HAVE_MASS)
+  // there is no sincosf in libmass
   // libmass sincos is faster than libm sincosf
   double ds,dc;
   sincos((double)a,&ds,&dc);

@@ -14,7 +14,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-/** @file SplineC2RSoA.h
+/** @file
  *
  * Adoptor classes to handle complex-to-(real,complex) with arbitrary precision
  */

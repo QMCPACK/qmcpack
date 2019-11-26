@@ -153,7 +153,6 @@ endif()
     Message/MPIObjectBase.cpp
     Optimize/VariableSet.cpp
     io/hdf_archive.cpp
-    spline2/MultiBsplineData.cpp
     )
 IF (IS_GIT_PROJECT)
   SET(UTILITIES "${UTILITIES};${GITREV_TMP}")
@@ -294,6 +293,7 @@ ENDIF()
     SUBDIRS(OhmmsData/tests)
     SUBDIRS(io/tests)
     SUBDIRS(Lattice/tests)
+    SUBDIRS(LongRange/tests)
     SUBDIRS(Particle/tests)
     SUBDIRS(ParticleIO/tests)
     SUBDIRS(QMCWaveFunctions/tests)

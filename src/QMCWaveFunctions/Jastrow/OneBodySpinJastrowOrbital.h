@@ -205,10 +205,10 @@ public:
     }
   }
 
-  RealType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
+  LogValueType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
   {
-    LogValue                         = 0.0;
-    U                                = 0.0;
+    LogValue            = 0.0;
+    U                   = 0.0;
     const auto& d_table = P.getDistTable(myTableIndex);
     RealType dudr, d2udr2;
 #ifndef ENABLE_SOA
@@ -243,11 +243,11 @@ public:
    * @param P active particle set
    * @param iat particle that has been moved.
    */
-  inline ValueType ratio(ParticleSet& P, int iat)
+  inline PsiValueType ratio(ParticleSet& P, int iat)
   {
-    curVal                           = 0.0;
+    curVal              = 0.0;
     const auto& d_table = P.getDistTable(myTableIndex);
-    int tg                           = P.GroupID[iat];
+    int tg              = P.GroupID[iat];
     for (int sg = 0; sg < F.rows(); ++sg)
     {
       FT* func = F(sg, tg);
@@ -256,14 +256,14 @@ public:
       for (int s = s_offset[sg]; s < s_offset[sg + 1]; ++s)
         curVal += func->evaluate(d_table.Temp[s].r1);
     }
-    return std::exp(U[iat] - curVal);
+    return std::exp(static_cast<PsiValueType>(U[iat] - curVal));
   }
 
   inline void evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios)
   {
     std::vector<RealType> myr(ratios.size(), U[VP.refPtcl]);
     const auto& d_table = VP.getDistTable(myTableIndex);
-    int tg                           = VP.GroupID[VP.refPtcl];
+    int tg              = VP.GroupID[VP.refPtcl];
 #ifndef ENABLE_SOA
     for (int sg = 0; sg < F.rows(); ++sg)
     {
@@ -320,9 +320,9 @@ public:
   inline GradType evalGrad(ParticleSet& P, int iat)
   {
     const auto& d_table = P.getDistTable(myTableIndex);
-    int n                            = d_table.targets();
-    int tg                           = P.GroupID[iat];
-    curGrad                          = 0.0;
+    int n               = d_table.targets();
+    int tg              = P.GroupID[iat];
+    curGrad             = 0.0;
     RealType ur, dudr, d2udr2;
     int nn = iat;
 #ifndef ENABLE_SOA
@@ -360,12 +360,12 @@ public:
     return GradType();
   }
 
-  inline ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
+  inline PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
   {
     const auto& d_table = P.getDistTable(myTableIndex);
-    int tg                           = P.GroupID[iat]; //pick the target group
-    curVal                           = 0.0;
-    curGrad                          = 0.0;
+    int tg              = P.GroupID[iat]; //pick the target group
+    curVal              = 0.0;
+    curGrad             = 0.0;
     RealType dudr, d2udr2;
     for (int sg = 0; sg < F.rows(); ++sg)
     {
@@ -379,7 +379,7 @@ public:
         }
     }
     grad_iat += curGrad;
-    return std::exp(U[iat] - curVal);
+    return std::exp(static_cast<PsiValueType>(U[iat] - curVal));
   }
 
   inline void restore(int iat) {}
@@ -393,10 +393,10 @@ public:
 
   void evaluateLogAndStore(ParticleSet& P, ParticleSet::ParticleGradient_t& dG, ParticleSet::ParticleLaplacian_t& dL)
   {
-    LogValue                         = 0.0;
-    U                                = 0.0;
-    dU                               = 0.0;
-    d2U                              = 0.0;
+    LogValue            = 0.0;
+    U                   = 0.0;
+    dU                  = 0.0;
+    d2U                 = 0.0;
     const auto& d_table = P.getDistTable(myTableIndex);
     RealType uij, dudr, d2udr2;
 #ifndef ENABLE_SOA
@@ -415,10 +415,10 @@ public:
               LogValue -= uij;
               U[jat] += uij;
               dudr *= d_table.rinv(nn);
-              dU[jat]  -= dudr * d_table.dr(nn);
+              dU[jat] -= dudr * d_table.dr(nn);
               d2U[jat] -= d2udr2 + 2.0 * dudr;
-              dG[jat]  -= dudr * d_table.dr(nn);
-              dL[jat]  -= d2udr2 + 2.0 * dudr;
+              dG[jat] -= dudr * d_table.dr(nn);
+              dL[jat] -= d2udr2 + 2.0 * dudr;
             }
           else
             nn += t_offset[jg + 1] - t_offset[jg];
@@ -445,7 +445,7 @@ public:
     DEBUG_PSIBUFFER(" OneBodySpinJastrow::registerData ", buf.current());
   }
 
-  RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false)
+  LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false)
   {
     evaluateLogAndStore(P, P.G, P.L);
     DEBUG_PSIBUFFER(" OneBodySpinJastrow::updateBuffer ", buf.current());

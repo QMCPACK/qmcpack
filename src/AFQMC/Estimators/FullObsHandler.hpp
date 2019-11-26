@@ -62,6 +62,8 @@ class FullObsHandler: public AFQMCInfo
   using sharedCMatrix_ref = boost::multi::array_ref<ComplexType,2,shared_pointer>;
   using sharedC4Tensor_ref = boost::multi::array_ref<ComplexType,4,shared_pointer>;
 
+  using mpi3C4Tensor = boost::multi::array<ComplexType,4,shared_allocator<ComplexType>>;
+
   using stdCVector = boost::multi::array<ComplexType,1>;
   using stdCMatrix = boost::multi::array<ComplexType,2>;
   using stdCVector_ref = boost::multi::array_ref<ComplexType,1>;
@@ -74,7 +76,8 @@ class FullObsHandler: public AFQMCInfo
                                     AFQMCInfo(info),TG(tg_),walker_type(wlk),
                                     wfn0(wfn), writer(false), block_size(1), nave(1),name(name_),
                                     nspins((walker_type==COLLINEAR)?2:1),
-                                    Buff(iextensions<1u>{1},make_localTG_allocator<ComplexType>(TG))
+                                    Buff(iextensions<1u>{1},make_localTG_allocator<ComplexType>(TG)), 
+                                    G4D_host({0,0,0,0},shared_allocator<ComplexType>{TG.TG_local()})
   {
 
     using std::fill_n;
@@ -93,8 +96,29 @@ class FullObsHandler: public AFQMCInfo
     cur = curRoot->children;
     while (cur != NULL) {
       std::string cname((const char*)(cur->name));
-      if(cname =="OneRDM") {
-        properties.emplace_back(Observable(std::move(full1rdm(TG,info,cur,walker_type,nave,block_size))));
+      std::transform(cname.begin(),cname.end(),cname.begin(),(int (*)(int)) tolower);
+      if(cname =="onerdm") {
+        properties.emplace_back(Observable(std::move(full1rdm(TG,info,cur,walker_type,nave,block_size)))); 
+      } else if(cname =="diag2rdm") {
+        properties.emplace_back(Observable(std::move(diagonal2rdm(TG,info,cur,walker_type,nave,block_size)))); 
+      } else if(cname =="n2r" || cname =="ontop2rdm") {
+#if defined(ENABLE_CUDA)
+        std::string str("false");
+        ParameterSet m_param;
+        m_param.add(str, "use_host_memory", "std::string");
+        m_param.put(cur);
+        std::transform(str.begin(),str.end(),str.begin(),(int (*)(int)) tolower);
+        if(str == "false" || str == "no") { 
+          properties.emplace_back(Observable(std::move(n2r<device_allocator<ComplexType>>(
+                  TG,info,cur,walker_type,false,device_allocator<ComplexType>{},
+                  device_allocator<ComplexType>{},nave,block_size)))); 
+        } else 
+#endif
+        {
+          properties.emplace_back(Observable(std::move(n2r<shared_allocator<ComplexType>>(
+                  TG,info,cur,walker_type,true,shared_allocator<ComplexType>{TG.TG_local()},
+                  shared_allocator<ComplexType>{TG.Node()},nave,block_size)))); 
+        }
       }
       cur = cur->next;
     }
@@ -140,6 +164,12 @@ class FullObsHandler: public AFQMCInfo
     sharedC4Tensor_ref G4D(Buff.origin(), {nw, nspins, std::get<0>(Gdims),std::get<1>(Gdims)});
     sharedCMatrix_ref G2D(Buff.origin(), {nw, dm_size});
     sharedCVector_ref DevOv(G4D.origin()+G4D.num_elements(), {2*nw});
+
+    if(G4D_host.num_elements() != G4D.num_elements()) {
+      G4D_host = std::move(mpi3C4Tensor(G4D.extensions(),
+                                      shared_allocator<ComplexType>{TG.TG_local()}));
+      TG.TG_local().barrier();
+    }
 
     stdCVector Xw(iextensions<1u>{nw});
     stdCVector Ov(iextensions<1u>{2*nw});
@@ -221,8 +251,17 @@ class FullObsHandler: public AFQMCInfo
           Xw[iw] = CIcoeff * Ov[iw] * detR[iw][iref]; 
       } 
 
+      // MAM: Since most of the simpler estimators need G4D in host memory, 
+      //      I'm providing a copy of the structure there already
+      TG.TG_local().barrier();
+      int i0,iN;
+      std::tie(i0,iN) = FairDivideBoundary(TG.TG_local().rank(),int(G4D_host.num_elements()),
+                                         TG.TG_local().size());
+      copy_n( make_device_ptr(G4D.origin())+i0, iN-i0, to_address(G4D_host.origin())+i0);
+      TG.TG_local().barrier();
+
       //3. accumulate references 
-      for(auto& v: properties) v.accumulate_reference(iav,iref,G4D,wgt,Xw,Ov,impsamp);
+      for(auto& v: properties) v.accumulate_reference(iav,iref,G4D,G4D_host,wgt,Xw,Ov,impsamp);
 
     }
     //4. accumulate block (normalize and accumulate sum over references)
@@ -257,6 +296,9 @@ class FullObsHandler: public AFQMCInfo
 
   // buffer space
   sharedCVector Buff;
+
+  // space for G in host space
+  mpi3C4Tensor G4D_host; 
 
   void set_buffer(size_t N) {
     if(Buff.num_elements() < N)

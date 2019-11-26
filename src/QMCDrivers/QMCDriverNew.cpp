@@ -9,17 +9,6 @@
 // File refactored from: QMCDriver.cpp
 //////////////////////////////////////////////////////////////////////////////////////
 
-/** \file
- * Clean base class for Unified driver
- *  
- * This driver base class should be generic with respect to precision,
- * value type, device execution, and ...
- * It should contain no typdefs not related to compiler bugs or platform workarounds
- *
- * Some integer math is done in non performance critical areas in the clear and
- * not optimized way. Leave these alone.
- */
-
 #include <limits>
 #include <typeinfo>
 #include <cmath>
@@ -89,7 +78,11 @@ int QMCDriverNew::addObservable(const std::string& aname)
 QMCDriverNew::RealType QMCDriverNew::getObservable(int i) { return estimator_manager_->getObservable(i); }
 
 
-QMCDriverNew::~QMCDriverNew() {}
+QMCDriverNew::~QMCDriverNew()
+{
+  for(int i = 0; i < Rng.size(); ++i)
+    RandomNumberControl::Children[i] = Rng[i].release();
+}
 
 void QMCDriverNew::add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi)
 {
@@ -114,16 +107,6 @@ void QMCDriverNew::add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi)
  */
 void QMCDriverNew::process(xmlNodePtr cur)
 {
-  // if (qmcdriver_input_.get_reset_random() || RandomNumberControl)
-  // {
-
-  // if seeds are not made then neither are the children. So when MoveContexts are created a segfault occurs.
-  // For now it is unclear whether get_reset_random should always be true on the first run or what.
-  app_log() << "  Regenerate random seeds." << std::endl;
-  RandomNumberControl::make_seeds();
-  // }
-
-  
   setupWalkers();
 
   // If you really want to persist the MCPopulation it is not the business of QMCDriver to reset it.
@@ -141,6 +124,7 @@ void QMCDriverNew::process(xmlNodePtr cur)
   if (!estimator_manager_)
   {
     estimator_manager_ = new EstimatorManagerBase(myComm);
+    // TODO: remove this when branch engine no longer depends on estimator_mamanger_
     branch_engine_->setEstimatorManager(estimator_manager_);
     // This used to get updated as a side effect of setStatus
     branch_engine_->read(h5_file_root_);
@@ -149,6 +133,9 @@ void QMCDriverNew::process(xmlNodePtr cur)
   if (!drift_modifier_)
     drift_modifier_.reset(createDriftModifier(qmcdriver_input_));
 
+  // I don't think its at all good that the branch engine gets mutated here
+  // Carrying the population on is one thing but a branch engine seems like it
+  // should be fresh per section.
   branch_engine_->put(cur);
   estimator_manager_->put(H, cur);
 
@@ -321,27 +308,30 @@ void QMCDriverNew::setupWalkers()
   IndexType local_walkers = calc_default_local_walkers(qmcdriver_input_.get_walkers_per_rank());
   
   // side effect updates walkers_per_crowd_;
-  addWalkers(local_walkers, ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>(population_.get_num_particles()));
+  makeLocalWalkers(local_walkers, ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>(population_.get_num_particles()));
 }
 
-/** Add walkers to the end of the ensemble of walkers.
- * @param nwalkers number of walkers to add
- *
- */
-void QMCDriverNew::addWalkers(int nwalkers, const ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>& positions)
+void QMCDriverNew::makeLocalWalkers(int nwalkers, const ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>& positions)
 {
-  setNonLocalMoveHandler_(population_.get_golden_hamiltonian());
-  population_.createWalkers(nwalkers);
-  // else if (nwalkers < 0)
-  // {
-  //   W.destroyWalkers(-nwalkers);
-  //   app_log() << "  Removed " << -nwalkers << " walkers. Current number of walkers =" << W.getActiveWalkers()
-  //             << std::endl;
-  // }
-  // else
-  // {
-  //   app_log() << "  Using the current " << W.getActiveWalkers() << " walkers." << std::endl;
-  // }
+  if (population_.get_walkers().size() == 0)
+  {
+    population_.createWalkers(nwalkers);
+  }
+  else if(population_.get_walkers().size() < nwalkers)
+  {
+    IndexType num_additional_walkers = nwalkers - population_.get_walkers().size();
+    for(int i = 0; i < num_additional_walkers; ++i)
+      population_.spawnWalker();
+  }
+  else
+  {
+    IndexType num_walkers_to_kill = population_.get_walkers().size() - nwalkers;
+    for(int i = 0; i < num_walkers_to_kill; ++i)
+      population_.killLastWalker();
+  }
+  for(UPtr<QMCHamiltonian>& ham : population_.get_hamiltonians())
+    setNonLocalMoveHandler_(*ham);
+
   // setWalkerOffsets();
   // ////update the global number of walkers
   // ////int nw=W.getActiveWalkers();
@@ -362,11 +352,20 @@ void QMCDriverNew::createRngsStepContexts()
 
   Rng.resize(num_crowds_);
 
+  if (RandomNumberControl::Children.size() == 0)
+  {
+    app_warning() << "  Initializing global RandomNumberControl! "
+                  << "This message should not be seen in production code but only in unit tests." << std::endl;
+    RandomNumberControl::make_seeds();
+  }
+
   for(int i = 0; i < num_crowds_; ++i)
   {
-    Rng[i].reset(new RandomGenerator_t(*(RandomNumberControl::Children[i])));
-    step_contexts_[i].reset(new ContextForSteps(crowds_[i]->size(), population_.get_num_particles(),
-                                            population_.get_particle_group_indexes(), *(Rng[i])));
+    Rng[i].reset(RandomNumberControl::Children[i]);
+    // Ye: RandomNumberControl::Children needs to be replaced with unique_ptr and use Rng[i].swap()
+    RandomNumberControl::Children[i] = nullptr;
+    step_contexts_[i] = std::make_unique<ContextForSteps>(crowds_[i]->size(), population_.get_num_particles(),
+                                            population_.get_particle_group_indexes(), *(Rng[i]));
   }
 }
 

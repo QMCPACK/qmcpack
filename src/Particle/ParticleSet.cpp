@@ -100,8 +100,8 @@ ParticleSet::ParticleSet(const ParticleSet& p)
   myTwist = p.myTwist;
 
   RSoA = p.RSoA;
-  G = p.G;
-  L = p.L;
+  G    = p.G;
+  L    = p.L;
 }
 
 ParticleSet::~ParticleSet()
@@ -402,6 +402,12 @@ void ParticleSet::makeMove(Index_t iat, const SingleParticlePos_t& displ)
   computeNewPosDistTablesAndSK(iat, activePos);
 }
 
+void ParticleSet::makeMoveWithSpin(Index_t iat, const SingleParticlePos_t& displ, const RealType& sdispl)
+{
+  makeMove(iat,displ);
+  activeSpin = spins[iat] + sdispl;
+}
+
 void ParticleSet::flex_makeMove(const RefVector<ParticleSet>& P_list, Index_t iat, const std::vector<SingleParticlePos_t>& displs)
 {
   if (P_list.size() > 1)
@@ -438,6 +444,12 @@ bool ParticleSet::makeMoveAndCheck(Index_t iat, const SingleParticlePos_t& displ
   }
   computeNewPosDistTablesAndSK(iat, activePos);
   return is_valid;
+}
+
+bool ParticleSet::makeMoveAndCheckWithSpin(Index_t iat, const SingleParticlePos_t& displ, const RealType& sdispl)
+{
+    activeSpin = spins[iat]+sdispl;
+    return makeMoveAndCheck(iat,displ);
 }
 
 void ParticleSet::computeNewPosDistTablesAndSK(Index_t iat, const SingleParticlePos_t& newpos)
@@ -497,9 +509,7 @@ bool ParticleSet::makeMoveAllParticles(const Walker_t& awalker, const ParticlePo
     for (int iat = 0; iat < deltaR.size(); ++iat)
       R[iat] = awalker.R[iat] + dt * deltaR[iat];
   }
-#if defined(ENABLE_SOA)
   RSoA.copyIn(R);
-#endif
   for (int i = 0; i < DistTables.size(); i++)
     DistTables[i]->evaluate(*this);
   if (SK)
@@ -529,9 +539,7 @@ bool ParticleSet::makeMoveAllParticles(const Walker_t& awalker, const ParticlePo
     for (int iat = 0; iat < deltaR.size(); ++iat)
       R[iat] = awalker.R[iat] + dt[iat] * deltaR[iat];
   }
-#if defined(ENABLE_SOA)
   RSoA.copyIn(R);
-#endif
   for (int i = 0; i < DistTables.size(); i++)
     DistTables[i]->evaluate(*this);
   if (SK)
@@ -571,9 +579,7 @@ bool ParticleSet::makeMoveAllParticlesWithDrift(const Walker_t& awalker,
     for (int iat = 0; iat < deltaR.size(); ++iat)
       R[iat] = awalker.R[iat] + dt * deltaR[iat] + drift[iat];
   }
-#if defined(ENABLE_SOA)
   RSoA.copyIn(R);
-#endif
   for (int i = 0; i < DistTables.size(); i++)
     DistTables[i]->evaluate(*this);
   if (SK)
@@ -606,10 +612,7 @@ bool ParticleSet::makeMoveAllParticlesWithDrift(const Walker_t& awalker,
     for (int iat = 0; iat < deltaR.size(); ++iat)
       R[iat] = awalker.R[iat] + dt[iat] * deltaR[iat] + drift[iat];
   }
-
-#if defined(ENABLE_SOA)
   RSoA.copyIn(R);
-#endif
 
   for (int i = 0; i < DistTables.size(); i++)
     DistTables[i]->evaluate(*this);
@@ -639,6 +642,7 @@ void ParticleSet::acceptMove(Index_t iat)
 
     R[iat]     = activePos;
     RSoA(iat)  = activePos;
+    spins[iat] = activeSpin;
     activePtcl = -1;
   }
   else
@@ -647,6 +651,12 @@ void ParticleSet::acceptMove(Index_t iat)
     o << "  Illegal acceptMove " << iat << " != " << activePtcl;
     APP_ABORT(o.str());
   }
+}
+
+void ParticleSet::flex_donePbyP(const RefVector<ParticleSet>& P_list)
+{
+  for (int iw = 0; iw < P_list.size(); iw++)
+    P_list[iw].get().donePbyP();
 }
 
 void ParticleSet::donePbyP()
@@ -668,9 +678,7 @@ void ParticleSet::makeVirtualMoves(const SingleParticlePos_t& newpos)
 void ParticleSet::loadWalker(Walker_t& awalker, bool pbyp)
 {
   R = awalker.R;
-#if defined(ENABLE_SOA)
   RSoA.copyIn(R);
-#endif
 #if !defined(SOA_MEMORY_OPTIMIZED)
   G = awalker.G;
   L = awalker.L;
@@ -704,15 +712,15 @@ void ParticleSet::saveWalker(Walker_t& awalker)
 
 void ParticleSet::flex_saveWalker(RefVector<ParticleSet>& psets, RefVector<Walker_t>& walkers)
 {
-  int num_sets = psets.size();
-  auto saveWalker = [](ParticleSet& pset, Walker_t& walker){
-                      walker.R = pset.R;
+  int num_sets    = psets.size();
+  auto saveWalker = [](ParticleSet& pset, Walker_t& walker) {
+    walker.R = pset.R;
 #if !defined(SOA_MEMORY_OPTIMIZED)
-                      walker.G = pset.G;
-                      walker.L = pset.L;
+    walker.G = pset.G;
+    walker.L = pset.L;
 #endif
-                    };
-  for(int iw = 0; iw < num_sets; ++iw)
+  };
+  for (int iw = 0; iw < num_sets; ++iw)
     saveWalker(psets[iw], walkers[iw]);
 }
 

@@ -16,7 +16,13 @@
  *
  * This will replace QMCDriver once unified drivers are finished
  * the general documentation from QMCDriver.h must be moved before then
+ *  
+ * This driver base class should be generic with respect to precision,
+ * value type, device execution, and ...
+ * It should contain no typdefs not related to compiler bugs or platform workarounds
+ *
  */
+
 #ifndef QMCPLUSPLUS_QMCDRIVERNEW_H
 #define QMCPLUSPLUS_QMCDRIVERNEW_H
 
@@ -50,10 +56,10 @@ class TraceManager;
  * @{
  * @brief QMCDriverNew Base class for Unified Drivers
  *
- * General Principals
- * Parameters unchanged from input by driver are not copied into class state
- * The driver state machine should be simple.
- *
+ * # General Principals
+ * * Parameters used unchanged from input object are not copied into class state
+ * * The driver state machine should be as minimal as possible.
+ * * In non performance critical areas favor clarity over clever optimizations.
  */
 class QMCDriverNew : public QMCDriverInterface, public MPIObjectBase
 {
@@ -167,7 +173,7 @@ public:
   std::string getEngineName() { return QMCType; }
   unsigned long getDriverMode() { return qmc_driver_mode_.to_ulong(); }
   IndexType get_walkers_per_crowd() const { return walkers_per_crowd_; }
-  IndexType get_living_walkers() const { return population_.get_active_walkers(); }
+  IndexType get_living_walkers() const { return population_.get_walkers().size(); }
 
   /** @ingroup Legacy interface to be dropped
    *  @{
@@ -183,7 +189,7 @@ public:
 
   static void initialLogEvaluation(int crowd_id, UPtrVector<Crowd>& crowds, UPtrVector<ContextForSteps>& step_context);
 
-  
+
   /** should be set in input don't see a reason to set individually
    * @param pbyp if true, use particle-by-particle update
    */
@@ -349,12 +355,17 @@ public:
 
   bool putQMCInfo(xmlNodePtr cur);
 
-  void addWalkers(int nwalkers, const ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>& positions);
+  /** Adjust populations local walkers to this number
+  * @param nwalkers number of walkers to add
+  *
+  */
+  void makeLocalWalkers(int nwalkers, const ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>& positions);
 
   int get_num_crowds() { return num_crowds_; }
   void set_num_crowds(int num_crowds, const std::string& reason);
   void set_walkers_per_rank(int walkers_per_rank, const std::string& reason);
   DriftModifierBase& get_drift_modifier() const { return *drift_modifier_; }
+
   /** record the state of the block
    * @param block current block
    *

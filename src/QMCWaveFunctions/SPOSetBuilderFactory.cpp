@@ -31,6 +31,14 @@
 #endif
 #endif
 
+#if !defined(QMC_COMPLEX)
+#include "QMCWaveFunctions/RotatedSPOs.h"
+#endif
+
+#if defined(QMC_COMPLEX)
+#include "QMCWaveFunctions/EinsplineSpinorSetBuilder.h"
+#endif
+
 #if defined(HAVE_EINSPLINE)
 #include "QMCWaveFunctions/EinsplineSetBuilder.h"
 #endif
@@ -179,6 +187,15 @@ SPOSetBuilder* SPOSetBuilderFactory::createSPOSetBuilder(xmlNodePtr rootNode)
     bb = new SHOSetBuilder(targetPtcl, myComm);
   }
 #if OHMMS_DIM == 3
+  else if (type == "spinorbspline")
+  {
+    #ifdef QMC_COMPLEX
+    app_log() << "Einspline Spinor Set\n";
+    bb = new EinsplineSpinorSetBuilder(targetPtcl, ptclPool, myComm, rootNode);
+    #else
+    PRE.error("Use of einspline spinors requires QMC_COMPLEX=1.  Rebuild with this option");
+    #endif
+  }
   else if (type.find("spline") < type.size())
   {
     name = type_in;
@@ -246,10 +263,12 @@ SPOSet* SPOSetBuilderFactory::createSPOSet(xmlNodePtr cur)
   std::string bname("");
   std::string sname("");
   std::string type("");
+  std::string rotation("no");
   OhmmsAttributeSet aAttrib;
   aAttrib.add(bname, "basisset");
   aAttrib.add(sname, "name");
   aAttrib.add(type, "type");
+  aAttrib.add(rotation, "optimize");
   //aAttrib.put(rcur);
   aAttrib.put(cur);
 
@@ -279,7 +298,31 @@ SPOSet* SPOSetBuilderFactory::createSPOSet(xmlNodePtr cur)
   if (bb)
   {
     app_log() << "  Building SPOSet '" << sname << "' with '" << bname << "' basis set." << std::endl;
-    return bb->createSPOSet(cur);
+    SPOSet* spo     = bb->createSPOSet(cur);
+    spo->objectName = sname;
+    if (rotation == "yes")
+    {
+#ifdef QMC_COMPLEX
+      app_error() << "Orbital optimization via rotation doesn't support complex wavefunction yet.\n";
+      abort();
+#else
+      auto* rot_spo   = new RotatedSPOs(spo);
+      xmlNodePtr tcur = cur->xmlChildrenNode;
+      while (tcur != NULL)
+      {
+        std::string cname((const char*)(tcur->name));
+        if (cname == "opt_vars")
+        {
+          rot_spo->params_supplied = true;
+          putContent(rot_spo->params, tcur);
+        }
+        tcur = tcur->next;
+      }
+      spo = rot_spo;
+      spo->objectName = sname;
+#endif
+    }
+    return spo;
   }
   else
   {

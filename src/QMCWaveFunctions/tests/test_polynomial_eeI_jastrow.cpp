@@ -20,8 +20,11 @@
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCWaveFunctions/Jastrow/PolynomialFunctor3D.h"
-#include "QMCWaveFunctions/Jastrow/eeI_JastrowOrbital.h"
+#ifdef ENABLE_SOA
 #include "QMCWaveFunctions/Jastrow/JeeIOrbitalSoA.h"
+#else
+#include "QMCWaveFunctions/Jastrow/eeI_JastrowOrbital.h"
+#endif
 #include "QMCWaveFunctions/Jastrow/eeI_JastrowBuilder.h"
 #include "ParticleBase/ParticleAttribOps.h"
 
@@ -33,6 +36,9 @@ using std::string;
 
 namespace qmcplusplus
 {
+using LogValueType = WaveFunctionComponent::LogValueType;
+using PsiValueType = WaveFunctionComponent::PsiValueType;
+
 TEST_CASE("PolynomialFunctor3D functor zero", "[wavefunction]")
 {
   PolynomialFunctor3D functor;
@@ -147,19 +153,19 @@ TEST_CASE("PolynomialFunctor3D Jastrow", "[wavefunction]")
   REQUIRE(std::real(ratios[3]) == Approx(0.7987703724));
 
   elec_.makeMove(0, newpos - elec_.R[0]);
-  ValueType ratio_0 = j3->ratio(elec_, 0);
+  PsiValueType ratio_0 = j3->ratio(elec_, 0);
   elec_.rejectMove(0);
 
   elec_.makeMove(1, newpos - elec_.R[1]);
-  ValueType ratio_1 = j3->ratio(elec_, 1);
+  PsiValueType ratio_1 = j3->ratio(elec_, 1);
   elec_.rejectMove(1);
 
   elec_.makeMove(2, newpos - elec_.R[2]);
-  ValueType ratio_2 = j3->ratio(elec_, 2);
+  PsiValueType ratio_2 = j3->ratio(elec_, 2);
   elec_.rejectMove(2);
 
   elec_.makeMove(3, newpos - elec_.R[3]);
-  ValueType ratio_3 = j3->ratio(elec_, 3);
+  PsiValueType ratio_3 = j3->ratio(elec_, 3);
   elec_.rejectMove(3);
 
   REQUIRE(std::real(ratio_0) == Approx(0.8744938582));

@@ -110,7 +110,10 @@ public:
   using FuncType = FT;
 
   JeeIOrbitalSoA(const ParticleSet& ions, ParticleSet& elecs, bool is_master = false)
-    : ee_Table_ID_(elecs.addTable(elecs, DT_SOA)), ei_Table_ID_(elecs.addTable(ions, DT_SOA, true)), Ions(ions), NumVars(0)
+      : ee_Table_ID_(elecs.addTable(elecs, DT_SOA)),
+        ei_Table_ID_(elecs.addTable(ions, DT_SOA, true)),
+        Ions(ions),
+        NumVars(0)
   {
     ClassName = "JeeIOrbitalSoA";
     init(elecs);
@@ -403,13 +406,13 @@ public:
           }
   }
 
-  RealType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
+  LogValueType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
   {
     evaluateGL(P, G, L, true);
     return LogValue;
   }
 
-  ValueType ratio(ParticleSet& P, int iat)
+  PsiValueType ratio(ParticleSet& P, int iat)
   {
     UpdateMode = ORB_PBYP_RATIO;
 
@@ -417,19 +420,16 @@ public:
     const DistanceTableData& ee_table = P.getDistTable(ee_Table_ID_);
     cur_Uat = computeU(P, iat, P.GroupID[iat], eI_table.Temp_r.data(), ee_table.Temp_r.data(), ions_nearby_new);
     DiffVal = Uat[iat] - cur_Uat;
-    return std::exp(DiffVal);
+    return std::exp(static_cast<PsiValueType>(DiffVal));
   }
 
   void evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios)
   {
     for (int k = 0; k < ratios.size(); ++k)
       ratios[k] = std::exp(Uat[VP.refPtcl] -
-                           computeU(VP.refPS,
-                                    VP.refPtcl,
-                                    VP.refPS.GroupID[VP.refPtcl],
+                           computeU(VP.refPS, VP.refPtcl, VP.refPS.GroupID[VP.refPtcl],
                                     VP.getDistTable(ei_Table_ID_).Distances[k],
-                                    VP.getDistTable(ee_Table_ID_).Distances[k],
-                                    ions_nearby_old));
+                                    VP.getDistTable(ee_Table_ID_).Distances[k], ions_nearby_old));
   }
 
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
@@ -462,28 +462,17 @@ public:
 
   GradType evalGrad(ParticleSet& P, int iat) { return GradType(dUat[iat]); }
 
-  ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
+  PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
   {
     UpdateMode = ORB_PBYP_PARTIAL;
 
     const DistanceTableData& eI_table = P.getDistTable(ei_Table_ID_);
     const DistanceTableData& ee_table = P.getDistTable(ee_Table_ID_);
-    computeU3(P,
-              iat,
-              eI_table.Temp_r.data(),
-              eI_table.Temp_dr,
-              ee_table.Temp_r.data(),
-              ee_table.Temp_dr,
-              cur_Uat,
-              cur_dUat,
-              cur_d2Uat,
-              newUk,
-              newdUk,
-              newd2Uk,
-              ions_nearby_new);
+    computeU3(P, iat, eI_table.Temp_r.data(), eI_table.Temp_dr, ee_table.Temp_r.data(), ee_table.Temp_dr, cur_Uat,
+              cur_dUat, cur_d2Uat, newUk, newdUk, newd2Uk, ions_nearby_new);
     DiffVal = Uat[iat] - cur_Uat;
     grad_iat += cur_dUat;
-    return std::exp(DiffVal);
+    return std::exp(static_cast<PsiValueType>(DiffVal));
   }
 
   inline void restore(int iat) {}
@@ -493,40 +482,18 @@ public:
     const DistanceTableData& eI_table = P.getDistTable(ei_Table_ID_);
     const DistanceTableData& ee_table = P.getDistTable(ee_Table_ID_);
     // get the old value, grad, lapl
-    computeU3(P,
-              iat,
-              eI_table.Distances[iat],
-              eI_table.Displacements[iat],
-              ee_table.Distances[iat],
-              ee_table.Displacements[iat],
-              Uat[iat],
-              dUat_temp,
-              d2Uat[iat],
-              oldUk,
-              olddUk,
-              oldd2Uk,
-              ions_nearby_old);
+    computeU3(P, iat, eI_table.Distances[iat], eI_table.Displacements[iat], ee_table.Distances[iat],
+              ee_table.Displacements[iat], Uat[iat], dUat_temp, d2Uat[iat], oldUk, olddUk, oldd2Uk, ions_nearby_old);
     if (UpdateMode == ORB_PBYP_RATIO)
     { //ratio-only during the move; need to compute derivatives
-      computeU3(P,
-                iat,
-                eI_table.Temp_r.data(),
-                eI_table.Temp_dr,
-                ee_table.Temp_r.data(),
-                ee_table.Temp_dr,
-                cur_Uat,
-                cur_dUat,
-                cur_d2Uat,
-                newUk,
-                newdUk,
-                newd2Uk,
-                ions_nearby_new);
+      computeU3(P, iat, eI_table.Temp_r.data(), eI_table.Temp_dr, ee_table.Temp_r.data(), ee_table.Temp_dr, cur_Uat,
+                cur_dUat, cur_d2Uat, newUk, newdUk, newd2Uk, ions_nearby_new);
     }
 
 #pragma omp simd
     for (int jel = 0; jel < Nelec; jel++)
     {
-      Uat[jel]   += newUk[jel] - oldUk[jel];
+      Uat[jel] += newUk[jel] - oldUk[jel];
       d2Uat[jel] += newd2Uk[jel] - oldd2Uk[jel];
     }
     for (int idim = 0; idim < OHMMS_DIM; ++idim)
@@ -592,26 +559,15 @@ public:
 
     for (int jel = 0; jel < Nelec; ++jel)
     {
-      computeU3(P,
-                jel,
-                eI_table.Distances[jel],
-                eI_table.Displacements[jel],
-                ee_table.Distances[jel],
-                ee_table.Displacements[jel],
-                Uat[jel],
-                dUat_temp,
-                d2Uat[jel],
-                newUk,
-                newdUk,
-                newd2Uk,
-                ions_nearby_new,
+      computeU3(P, jel, eI_table.Distances[jel], eI_table.Displacements[jel], ee_table.Distances[jel],
+                ee_table.Displacements[jel], Uat[jel], dUat_temp, d2Uat[jel], newUk, newdUk, newd2Uk, ions_nearby_new,
                 true);
       dUat(jel) = dUat_temp;
 // add the contribution from the upper triangle
 #pragma omp simd
       for (int kel = 0; kel < jel; kel++)
       {
-        Uat[kel]   += newUk[kel];
+        Uat[kel] += newUk[kel];
         d2Uat[kel] += newd2Uk[kel];
       }
       for (int idim = 0; idim < OHMMS_DIM; ++idim)
@@ -658,9 +614,7 @@ public:
             if (kel_counter == Nbuffer)
             {
               const FT& feeI(*F(ig, jg, kg));
-              Uj += feeI.evaluateV(kel_counter,
-                                   Distjk_Compressed.data(),
-                                   DistjI_Compressed.data(),
+              Uj += feeI.evaluateV(kel_counter, Distjk_Compressed.data(), DistjI_Compressed.data(),
                                    DistkI_Compressed.data());
               kel_counter = 0;
             }
@@ -703,19 +657,8 @@ public:
     valT* restrict hessF01 = mVGL.data(7);
     valT* restrict hessF02 = mVGL.data(8);
 
-    feeI.evaluateVGL(kel_counter,
-                     Distjk_Compressed.data(),
-                     DistjI_Compressed.data(),
-                     DistkI_Compressed.data(),
-                     val,
-                     gradF0,
-                     gradF1,
-                     gradF2,
-                     hessF00,
-                     hessF11,
-                     hessF22,
-                     hessF01,
-                     hessF02);
+    feeI.evaluateVGL(kel_counter, Distjk_Compressed.data(), DistjI_Compressed.data(), DistkI_Compressed.data(), val,
+                     gradF0, gradF1, gradF2, hessF00, hessF11, hessF22, hessF01, hessF02);
 
     // compute the contribution to jel, kel
     Uj               = simd::accumulate_n(val, kel_counter, Uj);
@@ -736,7 +679,7 @@ public:
       {
         // recycle hessF11
         hessF11[kel_index] += kI[kel_index] * jk[kel_index];
-        dUj_x              += gradF1[kel_index] * jI[kel_index];
+        dUj_x += gradF1[kel_index] * jI[kel_index];
         // destroy jk, kI
         const valT temp = jk[kel_index] * gradF0[kel_index];
         dUj_x += temp;
@@ -871,7 +814,7 @@ public:
     }
   }
 
-  inline RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false)
+  inline LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false)
   {
     evaluateGL(P, P.G, P.L, false);
     buf.forward(Bytes_in_WFBuffer);
@@ -897,12 +840,11 @@ public:
     for (int iat = 0; iat < Nelec; ++iat)
     {
       LogValue += Uat[iat];
-      G[iat]   += dUat[iat];
-      L[iat]   += d2Uat[iat];
+      G[iat] += dUat[iat];
+      L[iat] += d2Uat[iat];
     }
 
-    constexpr valT mhalf(-0.5);
-    LogValue = mhalf * LogValue;
+    LogValue = -LogValue * 0.5;
   }
 
   void evaluateDerivatives(ParticleSet& P,

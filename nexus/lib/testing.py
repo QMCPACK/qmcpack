@@ -2,17 +2,38 @@
 import numpy as np
 
 
+def_atol =  0.0
+def_rtol = 1e-6
+
+# determine if two floats differ
+def float_diff(v1,v2,atol=def_atol,rtol=def_rtol):
+    return np.abs(v1-v2)>atol+rtol*np.abs(v2)
+#end def float_diff
+
+
 # determine if two values differ
-def value_diff(v1,v2,tol=1e-6,int_as_float=False):
+def value_diff(v1,v2,atol=def_atol,rtol=def_rtol,int_as_float=False):
     diff = False
-    if int_as_float and isinstance(v1,(int,float,np.float64)) and isinstance(v2,(int,float,np.float64)):
-        diff = np.abs(float(v1)-float(v2))>tol
-    elif isinstance(v1,(float,np.float64)) and isinstance(v2,(float,np.float64)):
-        diff = np.abs(v1-v2)>tol
+    v1_bool  = isinstance(v1,(bool,np.bool_))
+    v2_bool  = isinstance(v2,(bool,np.bool_))
+    v1_int   = isinstance(v1,(int,np.int_)) and not v1_bool
+    v2_int   = isinstance(v2,(int,np.int_)) and not v2_bool
+    v1_float = isinstance(v1,(float,np.float_))
+    v2_float = isinstance(v2,(float,np.float_))
+    v1_str   = isinstance(v1,(str,np.string_))
+    v2_str   = isinstance(v2,(str,np.string_))
+    if id(v1)==id(v2):
+        None
+    elif int_as_float and (v1_int or v1_float) and (v2_int or v2_float):
+        diff = float_diff(v1,v2,atol=atol,rtol=rtol)
+    elif v1_float and v2_float:
+        diff = float_diff(v1,v2,atol=atol,rtol=rtol)
+    elif v1_int and v2_int:
+        diff = v1!=v2
+    elif (v1_bool or v1_str) and (v2_bool or v2_str):
+        diff = v1!=v2
     elif not isinstance(v1,type(v2)) or not isinstance(v2,type(v1)):
         diff = True
-    elif isinstance(v1,(bool,int,str)):
-        diff = v1!=v2
     elif isinstance(v1,(list,tuple)):
         v1 = np.array(v1,dtype=object).ravel()
         v2 = np.array(v2,dtype=object).ravel()
@@ -20,7 +41,7 @@ def value_diff(v1,v2,tol=1e-6,int_as_float=False):
             diff = True
         else:
             for vv1,vv2 in zip(v1,v2):
-                diff |= value_diff(vv1,vv2,tol,int_as_float)
+                diff |= value_diff(vv1,vv2,atol,rtol,int_as_float)
             #end for
         #end if
     elif isinstance(v1,np.ndarray):
@@ -30,7 +51,7 @@ def value_diff(v1,v2,tol=1e-6,int_as_float=False):
             diff = True
         else:
             for vv1,vv2 in zip(v1,v2):
-                diff |= value_diff(vv1,vv2,tol,int_as_float)
+                diff |= value_diff(vv1,vv2,atol,rtol,int_as_float)
             #end for
         #end if
     elif isinstance(v1,dict):
@@ -40,7 +61,7 @@ def value_diff(v1,v2,tol=1e-6,int_as_float=False):
             diff = True
         else:
             for k in k1:
-                diff |= value_diff(v1[k],v2[k],tol,int_as_float)
+                diff |= value_diff(v1[k],v2[k],atol,rtol,int_as_float)
             #end for
         #end if
     elif isinstance(v1,set):
@@ -57,7 +78,7 @@ def value_diff(v1,v2,tol=1e-6,int_as_float=False):
 
 
 # determine if two objects differ
-def object_diff(o1,o2,tol=1e-6,full=False,int_as_float=False,bypass=False):
+def object_diff(o1,o2,atol=def_atol,rtol=def_rtol,int_as_float=False,full=False,bypass=False):
     diff1 = dict()
     diff2 = dict()
     if not bypass:
@@ -78,7 +99,7 @@ def object_diff(o1,o2,tol=1e-6,full=False,int_as_float=False,bypass=False):
     for k in km:
         v1 = o1[k]
         v2 = o2[k]
-        if value_diff(v1,v2,tol,int_as_float):
+        if value_diff(v1,v2,atol,rtol,int_as_float):
             diff1[k] = v1
             diff2[k] = v2
         #end if
@@ -92,20 +113,105 @@ def object_diff(o1,o2,tol=1e-6,full=False,int_as_float=False,bypass=False):
 #end def object_diff
 
 
+# determine if two text blocks differ
+def read_text_value(s):
+    v = s
+    try:
+        vi = int(s)
+    except:
+        try:
+            v = float(s)
+        except:
+            None
+        #end try
+    #end try
+    return v
+#end def read_text_value
+
+def read_text_tokens(t):
+    tokens = []
+    for v in t.split():
+        tokens.append(read_text_value(v))
+    #end for
+    return tokens
+#end def read_text_tokens
+
+def text_diff(t1,t2,atol=def_atol,rtol=def_rtol,int_as_float=False,full=False,by_line=False):
+    t1 = t1.replace(',',' , ')
+    t2 = t2.replace(',',' , ')
+    tokens1 = read_text_tokens(t1)
+    tokens2 = read_text_tokens(t2)
+    diff = value_diff(tokens1,tokens2,atol,rtol,int_as_float)
+    if not full:
+        return diff
+    elif not by_line:
+        diff1 = dict()
+        diff2 = dict()
+        nmin = min(len(tokens1),len(tokens2))
+        for n,(v1,v2) in enumerate(zip(tokens1[:nmin],tokens2[:nmin])):
+            if value_diff(v1,v2,atol,rtol,int_as_float):
+                diff1[n] = v1
+                diff2[n] = v2
+            #end if
+        #end for
+        if len(tokens1)>len(tokens2):
+            for n,v in enumerate(tokens1[nmin:]):
+                diff1[nmin+n] = v
+                diff2[nmin+n] = None
+            #end for
+        elif len(tokens2)>len(tokens1):
+            for n,v in enumerate(tokens2[nmin:]):
+                diff1[nmin+n] = None
+                diff2[nmin+n] = v
+            #end for
+        #end if
+        return diff,diff1,diff2
+    else:
+        lines1 = t1.splitlines()
+        lines2 = t2.splitlines()
+        nmin = min(len(lines1),len(lines2))
+        for n,(l1,l2) in enumerate(zip(lines1[:nmin],lines2[:nmin])):
+            tokens1 = read_text_tokens(l1)
+            tokens2 = read_text_tokens(l2)
+            if value_diff(tokens1,tokens2,atol,rtol,int_as_float):
+                diff1[n] = l1
+                diff2[n] = l2
+            #end if
+        #end for
+        if len(lines1)>len(lines2):
+            for n,l in enumerate(lines1[nmin:]):
+                diff1[nmin+n] = l
+                diff2[nmin+n] = None
+            #end for
+        elif len(lines2)>len(lines1):
+            for n,l in enumerate(lines2[nmin:]):
+                diff1[nmin+n] = None
+                diff2[nmin+n] = l
+            #end for
+        #end if
+        return diff,diff1,diff2
+    #end if
+#end def text_diff
+
+
 # print the difference between two objects
-def print_diff(o1,o2): # used in debugging, not actual tests
+def print_diff(o1,o2,atol=def_atol,rtol=def_rtol,int_as_float=False,text=False,by_line=False): # used in debugging, not actual tests
     from generic import obj
-    print 20*'='
-    print o1
-    print 20*'='
-    print o2
-    diff,diff1,diff2 = object_diff(o1,o2,full=True)
+    print(20*'=')
+    print(o1)
+    print(20*'=')
+    print(o2)
+    if not text:
+        diff,diff1,diff2 = object_diff(o1,o2,atol,rtol,int_as_float,full=True)
+    else:
+        diff,diff1,diff2 = text_diff(o1,o2,atol,rtol,int_as_float,full=True,by_line=by_line)
+    #end if
     d1 = obj(diff1)
     d2 = obj(diff2)
-    print 20*'='
-    print d1
-    print 20*'='
-    print d2
+    print(20*'=')
+    print(d1)
+    print(20*'=')
+    print(d2)
 #end def print_diff
 
 
@@ -121,6 +227,10 @@ def object_eq(*args,**kwargs):
     return not object_neq(*args,**kwargs)
 #end def object_eq
 
+text_neq = text_diff
+def text_eq(*args,**kwargs):
+    return not text_neq(*args,**kwargs)
+#end def text_eq
 
 
 # find the path to the Nexus directory and other internal paths
@@ -147,6 +257,8 @@ def nexus_path(append=None,location=None):
     if location is not None:
         if location=='unit':
             append = 'tests/unit'
+        elif location=='bin':
+            append = 'bin'
         else:
             print('nexus location "{}" is unknown'.format(location))
             raise ValueError
@@ -185,9 +297,11 @@ def collect_unit_test_file_paths(test,storage):
         test_files_dir = unit_test_file_path(test)
         files = os.listdir(test_files_dir)
         for file in files:
-            filepath = os.path.join(test_files_dir,file)
-            assert(os.path.exists(filepath))
-            storage[file] = filepath
+            if not file.startswith('.'):
+                filepath = os.path.join(test_files_dir,file)
+                assert(os.path.exists(filepath))
+                storage[file] = filepath
+            #end if
         #end for
     #end if
     return storage
@@ -210,9 +324,13 @@ def unit_test_output_path(test,subtest=None):
 
 
 # setup the output directory for a test
-def setup_unit_test_output_directory(test,subtest):
+def setup_unit_test_output_directory(test,subtest,divert=False,file_sets=None,pseudo_dir=None,pseudo_files=None,pseudo_files_create=None):
     import os
     import shutil
+    from subprocess import Popen,PIPE
+
+    divert |= pseudo_dir is not None
+
     path = unit_test_output_path(test,subtest)
     assert('nexus' in path)
     assert('unit' in path)
@@ -223,8 +341,103 @@ def setup_unit_test_output_directory(test,subtest):
     #end if
     os.makedirs(path)
     assert(os.path.exists(path))
+
+    # divert nexus paths and output, if requested
+    if divert:
+        from nexus_base import nexus_core
+        divert_nexus()
+        nexus_core.local_directory  = path
+        nexus_core.remote_directory = path
+        nexus_core.file_locations = nexus_core.file_locations + [path]
+    #end if
+
+    # transfer files into output directory, if requested
+    if file_sets is not None:
+        if isinstance(file_sets,list):
+            file_sets = {'':file_sets}
+        #end if
+        assert(isinstance(file_sets,dict))
+        filepaths = dict()
+        collect_unit_test_file_paths(test,filepaths)
+        for fpath,filenames in file_sets.items():
+            assert(len(set(filenames)-set(filepaths.keys()))==0)
+            dest_path = path
+            if fpath is not None:
+                dest_path = os.path.join(dest_path,fpath)
+                if not os.path.exists(dest_path):
+                    os.makedirs(dest_path)
+                #end if
+            #end if
+            assert(os.path.exists(dest_path))
+            for filename in filenames:
+                source_filepath = filepaths[filename]
+                if os.path.isdir(source_filepath):
+                    command = 'rsync -a {} {}'.format(source_filepath,dest_path)
+                    process = Popen(command,shell=True,stdout=PIPE,stderr=PIPE,close_fds=True)
+                    out,err = process.communicate()
+                else:
+                    shutil.copy2(source_filepath,dest_path)
+                #end if
+                assert(os.path.exists(dest_path))
+            #end for
+        #end for
+    #end if
+
+    # create pseudopotential directory and set internal nexus data structures
+    if pseudo_dir is not None:
+        from nexus_base import nexus_noncore
+        pseudo_path = os.path.join(path,pseudo_dir)
+        if not os.path.exists(pseudo_path):
+            os.makedirs(pseudo_path)
+        #end if
+        assert(os.path.exists(pseudo_path))
+        pseudo_filepaths = []
+        if pseudo_files is not None:
+            assert(isinstance(pseudo_files,list))
+            for src_file in pseudo_files:
+                assert(os.path.exists(src_file))
+                assert(os.path.isfile(src_file))
+                pp_filename = os.path.basename(src_file)
+                pp_file = os.path.join(pseudo_path,pp_filename)
+                shutil.copy2(src_file,pseudo_path)
+                assert(os.path.exists(pp_file))
+                assert(os.path.isfile(pp_file))
+                pseudo_filepaths.append(pp_file)
+            #end for
+        #end if
+        if pseudo_files_create is not None:
+            assert(isinstance(pseudo_files_create,list))
+            for pp_filename in pseudo_files_create:
+                pp_contents = ''
+                if isinstance(pp_filename,tuple):
+                    pp_filename,pp_contents = pp_filename
+                #end if
+                pp_file = os.path.join(pseudo_path,pp_filename)
+                f = open(pp_file,'w')
+                f.write(pp_contents)
+                f.close()
+                assert(os.path.exists(pp_file))
+                assert(os.path.isfile(pp_file))
+                pseudo_filepaths.append(pp_file)
+            #end for
+        #end if
+        if len(pseudo_filepaths)>0:
+            from pseudopotential import Pseudopotentials
+            for pp_file in pseudo_filepaths:
+                assert(os.path.exists(pp_file))
+                assert(os.path.isfile(pp_file))
+            #end for
+            pps = Pseudopotentials(pseudo_filepaths)
+            nexus_core.pseudopotentials    = pps
+            nexus_noncore.pseudopotentials = pps
+        #end if
+        nexus_core.pseudo_dir    = pseudo_path
+        nexus_noncore.pseudo_dir = pseudo_path
+    #end if
+
     return path
 #end def setup_unit_test_output_directory
+
 
 
 # class used to divert log output when desired
@@ -254,6 +467,9 @@ class FakeLog:
 # dict to temporarily store logger when log output is diverted
 logging_storage = dict()
 
+# dict to temporarily store nexus core attributes when diverted
+nexus_core_storage    = dict()
+nexus_noncore_storage = dict()
 
 
 # divert nexus log output
@@ -272,11 +488,84 @@ def divert_nexus_log():
 # restore nexus log output
 def restore_nexus_log():
     from generic import generic_settings,object_interface
-    generic_settings.devlog   = logging_storage['devlog']
-    object_interface._logfile = logging_storage['objlog']
-    logging_storage.clear()
+    assert(set(logging_storage.keys())==set(['devlog','objlog']))
+    generic_settings.devlog   = logging_storage.pop('devlog')
+    object_interface._logfile = logging_storage.pop('objlog')
     assert(len(logging_storage)==0)
 #end def restore_nexus_log
+
+
+core_keys = [
+    'local_directory',
+    'remote_directory',
+    'mode',
+    'stages',
+    'stages_set',
+    'status',
+    'sleep',
+    'file_locations',
+    'pseudo_dir',
+    'pseudopotentials',
+    'runs',
+    'results',
+    ]
+noncore_keys = [
+    'pseudo_dir',
+    'pseudopotentials',
+    ]
+
+# divert nexus core attributes
+def divert_nexus_core():
+    from nexus_base import nexus_core,nexus_noncore
+    assert(len(nexus_core_storage)==0)
+    for key in core_keys:
+        nexus_core_storage[key] = nexus_core[key]
+    #end for
+    assert(len(nexus_noncore_storage)==0)
+    for key in noncore_keys:
+        if key in nexus_noncore:
+            nexus_noncore_storage[key] = nexus_noncore[key]
+        #end if
+    #end for
+#end def divert_nexus_core
+
+
+# restore nexus core attributes
+def restore_nexus_core():
+    from nexus_base import nexus_core,nexus_noncore,nexus_core_noncore
+    from nexus_base import nexus_noncore_defaults
+    for key in core_keys:
+        nexus_core[key] = nexus_core_storage.pop(key)
+    #end for
+    assert(len(nexus_core_storage)==0)
+    for key in noncore_keys:
+        if key in nexus_noncore_storage:
+            nexus_noncore[key] = nexus_noncore_storage.pop(key)
+        elif key in nexus_noncore:
+            del nexus_noncore[key]
+        #end if
+    #end for
+    for key in list(nexus_noncore.keys()):
+        if key not in nexus_noncore_defaults:
+            del nexus_noncore[key]
+        #end if
+    #end for
+    nexus_core_noncore.pseudopotentials = None
+    assert(len(nexus_noncore_storage)==0)
+#end def restore_nexus_core
+
+
+def divert_nexus():
+    divert_nexus_log()
+    divert_nexus_core()
+#end def divert_nexus
+
+
+def restore_nexus():
+    restore_nexus_log()
+    restore_nexus_core()
+#end def restore_nexus
+
 
 
 # declare test failure
@@ -286,11 +575,85 @@ def failed(msg='Test failed.'):
 #end def failed
 
 
-class TestFailed(Exception):
+class FailedTest(Exception):
     None
-#end class TestFailed
+#end class FailedTest
 
 
 global_data = dict(
     job_ref_table = False,
     )
+
+
+def divert_nexus_errors():
+    from generic import generic_settings
+    generic_settings.raise_error = True
+#end def divert_nexus_errors
+
+
+def clear_all_sims():
+    from simulation import Simulation
+    Simulation.clear_all_sims()
+#end def clear_all_sims
+
+
+
+def check_final_state():
+    from nexus_base import nexus_core,nexus_core_defaults
+    from nexus_base import nexus_noncore,nexus_noncore_defaults
+    from nexus_base import nexus_core_noncore,nexus_core_noncore_defaults
+    
+    assert('runs' in nexus_core_defaults)
+    assert('basis_dir' in nexus_noncore_defaults)
+    assert('pseudo_dir' in nexus_core_noncore_defaults)
+
+    assert(object_eq(nexus_core,nexus_core_defaults))
+    assert(object_eq(nexus_noncore,nexus_noncore_defaults))
+    assert(object_eq(nexus_core_noncore,nexus_core_noncore_defaults))
+
+    from simulation import Simulation
+
+    assert(Simulation.sim_count==0)
+    assert(len(Simulation.all_sims)==0)
+    assert(len(Simulation.sim_directories)==0)
+#end def check_final_state
+
+
+
+def executable_path(exe_name):
+    import os
+    # nexus bin directory
+    nexus_bin = nexus_path(location='bin')
+    # path to exe
+    exe_path = os.path.join(nexus_bin,exe_name)
+    # exe file exists
+    assert(os.path.isfile(exe_path))
+    # exe file is executable
+    assert(os.access(exe_path,os.X_OK))
+    return exe_path
+#end def executable_path
+
+
+
+def create_file(filename,path,contents=''):
+    import os
+    filepath = os.path.join(path,filename)
+    f = open(filepath,'w')
+    f.write(contents)
+    f.close()
+    assert(os.path.isfile(filepath))
+    return filepath
+#end def create_file
+
+
+
+def create_path(path,basepath=None):
+    import os
+    if basepath is not None:
+        path = os.path.join(basepath,path)
+    #end if
+    if not os.path.exists(path):
+        os.makedirs(path)
+    #end if
+    assert(os.path.isdir(path))
+#end def create_path

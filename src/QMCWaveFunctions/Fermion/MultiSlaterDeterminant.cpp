@@ -213,12 +213,11 @@ WaveFunctionComponent::ValueType MultiSlaterDeterminant::evaluate(ParticleSet& P
   return psi;
 }
 
-WaveFunctionComponent::RealType MultiSlaterDeterminant::evaluateLog(ParticleSet& P,
-                                                                    ParticleSet::ParticleGradient_t& G,
-                                                                    ParticleSet::ParticleLaplacian_t& L)
+WaveFunctionComponent::LogValueType MultiSlaterDeterminant::evaluateLog(ParticleSet& P,
+                                                                        ParticleSet::ParticleGradient_t& G,
+                                                                        ParticleSet::ParticleLaplacian_t& L)
 {
-  ValueType psi   = evaluate(P, G, L);
-  return LogValue = evaluateLogAndPhase(psi, PhaseValue);
+  return LogValue = convertValueToLog(evaluate(P, G, L));
 }
 
 WaveFunctionComponent::GradType MultiSlaterDeterminant::evalGrad(ParticleSet& P, int iat)
@@ -266,7 +265,7 @@ WaveFunctionComponent::GradType MultiSlaterDeterminant::evalGrad(ParticleSet& P,
   }
 }
 
-WaveFunctionComponent::ValueType MultiSlaterDeterminant::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
+WaveFunctionComponent::PsiValueType MultiSlaterDeterminant::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
 {
   UpdateMode = ORB_PBYP_PARTIAL;
   if (DetID[iat] == 0)
@@ -335,7 +334,7 @@ WaveFunctionComponent::ValueType MultiSlaterDeterminant::ratioGrad(ParticleSet& 
 
 
 // use ci_node for this routine only
-WaveFunctionComponent::ValueType MultiSlaterDeterminant::ratio(ParticleSet& P, int iat)
+WaveFunctionComponent::PsiValueType MultiSlaterDeterminant::ratio(ParticleSet& P, int iat)
 {
   UpdateMode = ORB_PBYP_RATIO;
   if (DetID[iat] == 0)
@@ -409,8 +408,7 @@ void MultiSlaterDeterminant::acceptMove(ParticleSet& P, int iat)
       // ratio(P,iat)
       for (int i = 0; i < detValues_up.size(); i++)
         detValues_up[i] *= detsRatios[i];
-      PhaseValue += evaluatePhase(curRatio);
-      LogValue += std::log(std::abs(curRatio));
+      LogValue += convertValueToLog(curRatio);
       curRatio = 1.0;
       break;
     case ORB_PBYP_PARTIAL:
@@ -420,8 +418,7 @@ void MultiSlaterDeterminant::acceptMove(ParticleSet& P, int iat)
         detValues_up[i] *= detsRatios[i];
         grads_up[i][iat] = grad_temp[i];
       }
-      PhaseValue += evaluatePhase(curRatio);
-      LogValue += std::log(std::abs(curRatio));
+      LogValue += convertValueToLog(curRatio);
       curRatio = 1.0;
       break;
     case ORB_PBYP_ALL:
@@ -432,15 +429,13 @@ void MultiSlaterDeterminant::acceptMove(ParticleSet& P, int iat)
         grads_up[i] = tempgrad[i];
         lapls_up[i] = templapl[i];
       }
-      PhaseValue += evaluatePhase(curRatio);
-      LogValue += std::log(std::abs(curRatio));
+      LogValue += convertValueToLog(curRatio);
       curRatio = 1.0;
       break;
     default:
       for (int i = 0; i < detValues_up.size(); i++)
         detValues_up[i] *= detsRatios[i];
-      PhaseValue += evaluatePhase(curRatio);
-      LogValue += std::log(std::abs(curRatio));
+      LogValue += convertValueToLog(curRatio);
       curRatio = 1.0;
       break;
     }
@@ -455,8 +450,7 @@ void MultiSlaterDeterminant::acceptMove(ParticleSet& P, int iat)
       // ratio(P,iat)
       for (int i = 0; i < detValues_dn.size(); i++)
         detValues_dn[i] *= detsRatios[i];
-      PhaseValue += evaluatePhase(curRatio);
-      LogValue += std::log(std::abs(curRatio));
+      LogValue += convertValueToLog(curRatio);
       curRatio = 1.0;
       break;
     case ORB_PBYP_PARTIAL:
@@ -466,8 +460,7 @@ void MultiSlaterDeterminant::acceptMove(ParticleSet& P, int iat)
         detValues_dn[i] *= detsRatios[i];
         grads_dn[i][iat] = grad_temp[i];
       }
-      PhaseValue += evaluatePhase(curRatio);
-      LogValue += std::log(std::abs(curRatio));
+      LogValue += convertValueToLog(curRatio);
       curRatio = 1.0;
       break;
     case ORB_PBYP_ALL:
@@ -478,15 +471,13 @@ void MultiSlaterDeterminant::acceptMove(ParticleSet& P, int iat)
         grads_dn[i] = tempgrad[i];
         lapls_dn[i] = templapl[i];
       }
-      PhaseValue += evaluatePhase(curRatio);
-      LogValue += std::log(std::abs(curRatio));
+      LogValue += convertValueToLog(curRatio);
       curRatio = 1.0;
       break;
     default:
       for (int i = 0; i < detValues_dn.size(); i++)
         detValues_dn[i] *= detsRatios[i];
-      PhaseValue += evaluatePhase(curRatio);
-      LogValue += std::log(std::abs(curRatio));
+      LogValue += convertValueToLog(curRatio);
       curRatio = 1.0;
       break;
     }
@@ -534,9 +525,9 @@ void MultiSlaterDeterminant::registerData(ParticleSet& P, WFBufferType& buf)
 }
 
 // FIX FIX FIX
-WaveFunctionComponent::RealType MultiSlaterDeterminant::updateBuffer(ParticleSet& P,
-                                                                     WFBufferType& buf,
-                                                                     bool fromscratch)
+WaveFunctionComponent::LogValueType MultiSlaterDeterminant::updateBuffer(ParticleSet& P,
+                                                                         WFBufferType& buf,
+                                                                         bool fromscratch)
 {
   UpdateTimer.start();
   if (fromscratch || UpdateMode == ORB_PBYP_RATIO)
@@ -546,23 +537,16 @@ WaveFunctionComponent::RealType MultiSlaterDeterminant::updateBuffer(ParticleSet
   }
   myG = P.G;
   myL = P.L;
-  RealType logpsi(0.0);
-  PhaseValue = 0.0;
+  LogValueType logpsi(0.0);
   for (int i = 0; i < dets_up.size(); i++)
   {
     P.G = 0.0;
     P.L = 0.0;
     spo_up->prepareFor(i);
-    logpsi = dets_up[i]->updateBuffer(P, buf, fromscratch);
-#if defined(QMC_COMPLEX)
-    RealType ratioMag = std::exp(logpsi);
-    detValues_up[i]   = std::complex<OHMMS_PRECISION>(std::cos(dets_up[i]->PhaseValue) * ratioMag,
-                                                    std::sin(dets_up[i]->PhaseValue) * ratioMag);
-#else
-    detValues_up[i] = std::cos(dets_up[i]->PhaseValue) * std::exp(logpsi);
-#endif
-    grads_up[i] = P.G;
-    lapls_up[i] = P.L;
+    logpsi          = dets_up[i]->updateBuffer(P, buf, fromscratch);
+    detValues_up[i] = dets_up[i]->getValue();
+    grads_up[i]     = P.G;
+    lapls_up[i]     = P.L;
     for (int k = FirstIndex_up; k < LastIndex_up; k++)
       lapls_up[i][k] += dot(grads_up[i][k], grads_up[i][k]);
   }
@@ -571,16 +555,10 @@ WaveFunctionComponent::RealType MultiSlaterDeterminant::updateBuffer(ParticleSet
     P.G = 0.0;
     P.L = 0.0;
     spo_dn->prepareFor(i);
-    logpsi = dets_dn[i]->updateBuffer(P, buf, fromscratch);
-#if defined(QMC_COMPLEX)
-    RealType ratioMag = std::exp(logpsi);
-    detValues_dn[i]   = std::complex<OHMMS_PRECISION>(std::cos(dets_dn[i]->PhaseValue) * ratioMag,
-                                                    std::sin(dets_dn[i]->PhaseValue) * ratioMag);
-#else
-    detValues_dn[i] = std::cos(dets_dn[i]->PhaseValue) * std::exp(logpsi);
-#endif
-    grads_dn[i] = P.G;
-    lapls_dn[i] = P.L;
+    logpsi          = dets_dn[i]->updateBuffer(P, buf, fromscratch);
+    detValues_dn[i] = dets_dn[i]->getValue();
+    grads_dn[i]     = P.G;
+    lapls_dn[i]     = P.L;
     for (int k = FirstIndex_dn; k < LastIndex_dn; k++)
       lapls_dn[i][k] += dot(grads_dn[i][k], grads_dn[i][k]);
   }
@@ -628,7 +606,7 @@ WaveFunctionComponent::RealType MultiSlaterDeterminant::updateBuffer(ParticleSet
   for (int i = 0; i < P.L.size(); i++)
     P.L[i] += myL[i] - dot(myG[i], myG[i]);
   UpdateTimer.stop();
-  return LogValue = evaluateLogAndPhase(psi, PhaseValue);
+  return LogValue = convertValueToLog(psi);
   ;
 }
 
@@ -738,15 +716,9 @@ void MultiSlaterDeterminant::evaluateDerivatives(ParticleSet& P,
   {
     if (usingCSF)
     {
-      int n = P.getTotalNum();
-#if defined(QMC_COMPLEX)
-      RealType ratioMag = std::exp(LogValue);
-      ValueType psi = std::complex<OHMMS_PRECISION>(std::cos(PhaseValue) * ratioMag, std::sin(PhaseValue) * ratioMag);
-#else
-      ValueType psi = std::cos(PhaseValue) * std::exp(LogValue);
-#endif
-      ValueType psiinv = (RealType)1.0 / psi;
-      ;
+      int n            = P.getTotalNum();
+      ValueType psiinv = ValueType(1) / LogToValue<ValueType>::convert(LogValue);
+
       ValueType lapl_sum = 0.0;
       ParticleSet::ParticleGradient_t g(n), gmP(n);
       ValueType gg = 0.0;
@@ -808,15 +780,9 @@ void MultiSlaterDeterminant::evaluateDerivatives(ParticleSet& P,
     }
     else
     {
-      int n = P.getTotalNum();
-#if defined(QMC_COMPLEX)
-      RealType ratioMag = std::exp(LogValue);
-      ValueType psi = std::complex<OHMMS_PRECISION>(std::cos(PhaseValue) * ratioMag, std::sin(PhaseValue) * ratioMag);
-#else
-      ValueType psi = std::cos(PhaseValue) * std::exp(LogValue);
-#endif
-      ValueType psiinv = (RealType)1.0 / psi;
-      ;
+      int n            = P.getTotalNum();
+      ValueType psiinv = ValueType(1) / LogToValue<ValueType>::convert(LogValue);
+
       ValueType lapl_sum = 0.0;
       ParticleSet::ParticleGradient_t g(n), gmP(n);
       ValueType gg = 0.0;

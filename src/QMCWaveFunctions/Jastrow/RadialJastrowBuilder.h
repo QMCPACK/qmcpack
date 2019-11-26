@@ -41,13 +41,13 @@ public:
   WaveFunctionComponent* buildComponent(xmlNodePtr cur) override;
 
 private:
-  ///jastrow/@name
+  /// \xmla{jastrow,name}
   std::string NameOpt;
-  ///jastrow/@type
+  /// \xmla{jastrow,type}
   std::string TypeOpt;
-  ///jastrow/@function
+  /// \xmla{jastrow,function}
   std::string Jastfunction;
-  ///jastrow/@spin
+  /// \xmla{jastrow,spin}
   std::string SpinOpt;
   ///particle set for source particle
   ParticleSet* SourcePtcl;
@@ -61,6 +61,9 @@ private:
 
   template<class RadFuncType>
   void initTwoBodyFunctor(RadFuncType& functor, double fac);
+
+  template<class RadFuncType>
+  void computeJ2uk(const std::vector<RadFuncType*>& functors);
 
   void guardAgainstOBC();
   void guardAgainstPBC();

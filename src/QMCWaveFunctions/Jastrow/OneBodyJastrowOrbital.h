@@ -195,10 +195,10 @@ public:
    *such that \f[ G[i]+={\bf \nabla}_i J({\bf R}) \f]
    *and \f[ L[i]+=\nabla^2_i J({\bf R}). \f]
    */
-  RealType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
+  LogValueType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
   {
-    LogValue                         = 0.0;
-    U                                = 0.0;
+    LogValue            = 0.0;
+    U                   = 0.0;
     const auto& d_table = P.getDistTable(myTableIndex);
     RealType dudr, d2udr2;
     for (int i = 0; i < d_table.sources(); i++)
@@ -223,8 +223,8 @@ public:
 
   void evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi)
   {
-    LogValue                         = 0.0;
-    U                                = 0.0;
+    LogValue            = 0.0;
+    U                   = 0.0;
     const auto& d_table = P.getDistTable(myTableIndex);
     RealType dudr, d2udr2;
 
@@ -252,14 +252,14 @@ public:
    * @param P active particle set
    * @param iat particle that has been moved.
    */
-  inline ValueType ratio(ParticleSet& P, int iat)
+  inline PsiValueType ratio(ParticleSet& P, int iat)
   {
     const auto& d_table = P.getDistTable(myTableIndex);
-    curVal                           = 0.0;
+    curVal              = 0.0;
     for (int i = 0; i < d_table.sources(); ++i)
       if (Fs[i] != nullptr)
         curVal += Fs[i]->evaluate(d_table.Temp[i].r1);
-    return std::exp(U[iat] - curVal);
+    return std::exp(static_cast<PsiValueType>(U[iat] - curVal));
   }
 
   inline void evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios)
@@ -296,8 +296,8 @@ public:
   inline GradType evalGrad(ParticleSet& P, int iat)
   {
     const auto& d_table = P.getDistTable(myTableIndex);
-    int n                            = d_table.targets();
-    curGrad                          = 0.0;
+    int n               = d_table.targets();
+    curGrad             = 0.0;
     RealType ur, dudr, d2udr2;
     for (int i = 0, nn = iat; i < d_table.sources(); ++i, nn += n)
     {
@@ -349,7 +349,7 @@ public:
     {
       RealType rinv = d_table.rinv(nn);
       RealType uij  = func->evaluate(d_table.r(nn), dudr, d2udr2, d3udr3);
-      dudr   *= rinv;
+      dudr *= rinv;
       d2udr2 *= rinv * rinv;
       G += dudr * d_table.dr(nn);
       for (int dim_ion = 0; dim_ion < OHMMS_DIM; dim_ion++)
@@ -364,12 +364,12 @@ public:
     return G;
   }
 
-  inline ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
+  inline PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
   {
     const auto& d_table = P.getDistTable(myTableIndex);
-    int n                            = d_table.targets();
-    curVal                           = 0.0;
-    curGrad                          = 0.0;
+    int n               = d_table.targets();
+    curVal              = 0.0;
+    curGrad             = 0.0;
     RealType dudr, d2udr2;
     for (int i = 0; i < d_table.sources(); ++i)
     {
@@ -381,7 +381,7 @@ public:
       }
     }
     grad_iat += curGrad;
-    return std::exp(U[iat] - curVal);
+    return std::exp(static_cast<PsiValueType>(U[iat] - curVal));
   }
 
   inline void restore(int iat) {}
@@ -415,7 +415,7 @@ public:
         LogValue -= uij;
         U[j] += uij;
         dudr *= d_table.rinv(nn);
-        dU[j]  -= dudr * d_table.dr(nn);
+        dU[j] -= dudr * d_table.dr(nn);
         d2U[j] -= d2udr2 + 2.0 * dudr;
         //add gradient and laplacian contribution
         dG[j] -= dudr * d_table.dr(nn);
@@ -439,7 +439,7 @@ public:
 
   void evaluateGL(ParticleSet& P) { evaluateLogAndStore(P, P.G, P.L); }
 
-  RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false)
+  LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false)
   {
     evaluateLogAndStore(P, P.G, P.L);
     //LogValue = 0.0;

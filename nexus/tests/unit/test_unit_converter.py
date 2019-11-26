@@ -20,8 +20,8 @@ def test_convert():
     B = .52917720859e-10
     B_per_A = B*1e10
     assert(value_eq(meters_per_angstrom,1e-10))
-    assert(value_eq(meters_per_bohr,B,tol=1e-10))
-    assert(value_eq(angstrom_per_bohr,B_per_A,tol=1e-10))
+    assert(value_eq(meters_per_bohr,B,atol=1e-10))
+    assert(value_eq(angstrom_per_bohr,B_per_A,atol=1e-10))
 
     v  = 2.34
     vc = convert(v,'A','B')
@@ -43,9 +43,9 @@ def test_convert():
     kg_per_proton   = convert(1.0,'mp' ,'kg')
     kg_per_amu      = convert(1.0,'amu','kg')
 
-    assert(value_eq(kg_per_electron,9.10938291e-31 ,tol=1e-8))
-    assert(value_eq(kg_per_proton  ,1.672621777e-27,tol=1e-9))
-    assert(value_eq(kg_per_amu     ,1.660538921e-27,tol=1e-9))
+    assert(value_eq(kg_per_electron,9.10938291e-31 ,rtol=1e-8))
+    assert(value_eq(kg_per_proton  ,1.672621777e-27,rtol=1e-8))
+    assert(value_eq(kg_per_amu     ,1.660538921e-27,rtol=1e-8))
 
     electrons_per_proton = convert(1.0,'mp','me')
     assert(value_eq(electrons_per_proton,1836.15267195))
@@ -61,13 +61,13 @@ def test_convert():
     eV_per_kelvin   = convert(1.0,'K','eV')
     kelvin_per_eV   = convert(1.0,'eV','K')
 
-    assert(value_eq(joules_per_eV  ,1.60217646e-19   ,tol=1e-8))
-    assert(value_eq(eV_per_rydberg ,13.6056923       ,tol=1e-8))
-    assert(value_eq(eV_per_hartree ,27.2113846       ,tol=1e-8))
-    assert(value_eq(eV_per_kJ_mol  ,0.0103642695083  ,tol=1e-6))
-    assert(value_eq(eV_per_kcal_mol,0.04336411531    ,tol=1e-6))
-    assert(value_eq(eV_per_kelvin  ,8.61734231197e-05,tol=1e-6))
-    assert(value_eq(kelvin_per_eV  ,11604.5059346    ,tol=1e-6))
+    assert(value_eq(joules_per_eV  ,1.60217646e-19   ,rtol=1e-8))
+    assert(value_eq(eV_per_rydberg ,13.6056923       ,rtol=1e-8))
+    assert(value_eq(eV_per_hartree ,27.2113846       ,rtol=1e-8))
+    assert(value_eq(eV_per_kJ_mol  ,0.0103642695083  ,rtol=1e-8))
+    assert(value_eq(eV_per_kcal_mol,0.04336411531    ,rtol=1e-8))
+    assert(value_eq(eV_per_kelvin  ,8.61734231197e-05,rtol=1e-8))
+    assert(value_eq(kelvin_per_eV  ,11604.5059346    ,rtol=1e-8))
 
 
     # temperature
@@ -78,7 +78,7 @@ def test_convert():
     assert(value_eq(convert(100,'degC','degF'),212.0 ))
     assert(value_eq(convert(  0,'degC','degF'), 32.0 ))
     assert(value_eq(convert(212,'degF','degC'),100.0 ))
-    assert(value_eq(convert( 32,'degF','degC'),  0.0 ))
+    assert(value_eq(convert( 32,'degF','degC'),  0.0,atol=1e-8))
 
 #end def test_convert
 

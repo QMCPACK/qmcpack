@@ -586,7 +586,7 @@ def test_eos():
 
     Ef = eos_eval(pf,V,'vinet')
 
-    assert(value_eq(Ef,E,tol=4e-3))
+    assert(value_eq(Ef,E,atol=4e-3))
 
     assert(value_eq(float(eos_param(pf,'Einf','vinet')),Einf))
     assert(value_eq(float(eos_param(pf,'V','vinet')),V0))
@@ -638,6 +638,6 @@ if scipy_available:
         pf  = np.array(pf,dtype=float)
         pf2 = np.array(pf2,dtype=float)
 
-        assert(value_eq(pf,pf2,tol=1e-3))
+        assert(value_eq(pf,pf2,atol=1e-3))
     #end def test_eos_fit
 #end if

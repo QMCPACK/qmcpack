@@ -803,7 +803,7 @@ void QMCCostFunctionBase::addCJParams(xmlXPathContextPtr acontext, const char* c
 
       // count the total number of registered F matrix variables
       opt_variables_type::iterator oit(OptVariables.begin()), oit_end(OptVariables.end());
-      for (oit; oit != oit_end; ++oit)
+      for (; oit != oit_end; ++oit)
       {
         const std::string& oname((*oit).first);
         if (oname.find("F_") == 0)
@@ -1138,7 +1138,7 @@ bool QMCCostFunctionBase::lineoptimization(const std::vector<Return_rt>& x0,
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 #ifdef HAVE_LMY_ENGINE
 QMCCostFunctionBase::Return_rt QMCCostFunctionBase::LMYEngineCost(const bool needDeriv,
-                                                                  cqmc::engine::LMYEngine* EngineObj)
+                                                                  cqmc::engine::LMYEngine<Return_t>* EngineObj)
 {
   // prepare local energies, weights, and possibly derivative vectors, and compute standard cost
   const Return_rt standardCost = this->Cost(needDeriv);

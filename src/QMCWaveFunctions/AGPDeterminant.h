@@ -58,7 +58,7 @@ public:
 
   void registerData(ParticleSet& P, WFBufferType& buf);
 
-  ValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false);
+  LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false);
 
   void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
 
@@ -66,7 +66,7 @@ public:
    * @param P current configuration
    * @param iat the particle thas is being moved
    */
-  ValueType ratio(ParticleSet& P, int iat);
+  PsiValueType ratio(ParticleSet& P, int iat);
 
   void ratioUp(ParticleSet& P, int iat);
 
@@ -92,7 +92,7 @@ public:
    *contribution of the determinant to G(radient) and L(aplacian)
    *for local energy calculations.
    */
-  ValueType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
+  LogValueType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
 
   WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;
 
@@ -153,7 +153,7 @@ public:
   IndexVector_t Pivot;
 
   ///current ratio
-  RealType curRatio;
+  PsiValueType curRatio;
   ///cummulate ratio for particle-by-particle update
   RealType cumRatio;
   ///address of  dpsiU[0][0]

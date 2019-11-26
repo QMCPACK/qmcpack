@@ -64,9 +64,9 @@ public:
 
   void resetTargetParticleSet(ParticleSet& P);
 
-  RealType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
+  LogValueType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
 
-  ValueType ratio(ParticleSet& P, int iat);
+  PsiValueType ratio(ParticleSet& P, int iat);
 
   void acceptMove(ParticleSet& P, int iat);
 
@@ -74,13 +74,13 @@ public:
 
   void registerData(ParticleSet& P, WFBufferType& buf);
 
-  RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch);
+  LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch);
 
   void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
 
   GradType evalGrad(ParticleSet& P, int iat);
 
-  ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
+  PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
 
 
   WaveFunctionComponent* makeClone(ParticleSet& tqp) const;
