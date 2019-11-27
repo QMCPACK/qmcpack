@@ -14,6 +14,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
+#include "EwaldRef.h"
 #include "QMCHamiltonians/CoulombPBCAA.h"
 #include "Particle/DistanceTableData.h"
 #include "Utilities/ProgressReportEngine.h"
@@ -48,7 +49,32 @@ CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces)
     update_source(ref);
   }
   if (!is_active)
+  {
     update_source(ref);
+
+    RealMat A;
+    PosArray R;
+    ChargeArray Q;
+
+    A = Ps.Lattice.R;
+
+    R.resize(NumCenters);
+    Q.resize(NumCenters);
+    for(int i=0;i<NumCenters;++i)
+    {
+      R[i] = Ps.R[i];
+      Q[i] = Zat[i];
+    }
+
+    RealType Vii_ref = ewaldEnergy(A,R,Q);
+
+    app_log()<<std::setprecision(14);
+    app_log()<<"  Reference ion-ion energy: "<<Vii_ref<<std::endl;
+    app_log()<<"  QMCPACK   ion-ion energy: "<<Value<<std::endl;
+    app_log()<<"            ion-ion diff  : "<<Value-Vii_ref<<std::endl;
+
+    APP_ABORT("ion-ion check")
+  }
   prefix = "F_AA";
   app_log() << "  Maximum K shell " << AA->MaxKshell << std::endl;
   app_log() << "  Number of k vectors " << AA->Fk.size() << std::endl;
