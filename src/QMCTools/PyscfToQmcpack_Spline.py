@@ -57,7 +57,8 @@ def pyscf2qmcpackspline(cell,mf,title="Default", kpts=[], kmesh=[],  sp_twist=[]
         Gamma=True
 
   if len(kpts)!= 0:
-     loc_cell,kmesh=get_supercell(cell,kmesh)
+#     loc_cell,kmesh=get_supercell(cell,kmesh)
+     sys.exit("K-point scf not supported")
   else:
      loc_cell=cell
  
