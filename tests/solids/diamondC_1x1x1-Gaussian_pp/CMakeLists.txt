@@ -23,6 +23,15 @@ IF(ENABLE_SOA)
                     )
 
 
+  QMC_RUN_AND_CHECK(short-diamondC_1x1x1_pp-vmc_gaussian-bspline_sdj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1-Gaussian_pp"
+                    qmc_short-bspline
+                    qmc_short-bspline.in.xml
+                    1 16
+                    TRUE
+                    0 DIAMOND_SCALARS # VMC
+                    )
+
 
 #
 # Long tests
@@ -39,6 +48,15 @@ IF(ENABLE_SOA)
                     0 LONG_DIAMOND_SCALARS # VMC
                     )
 
+  QMC_RUN_AND_CHECK(long-diamondC_1x1x1_pp-vmc_gaussian-bspline_sdj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1-Gaussian_pp"
+                    qmc_long-bspline
+                    qmc_long-bspline.in.xml
+                    1 16
+                    TRUE
+                    0 LONG_DIAMOND_SCALARS # VMC
+                    )
+
 # Reference DMC run in qmc-ref "-10.532497 0.000470"
   LIST(APPEND LONG_DIAMOND_DMC_SCALARS "totenergy" "-10.532497 0.006127")
 
@@ -46,6 +64,15 @@ IF(ENABLE_SOA)
                     "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1-Gaussian_pp"
                     qmc_long_vmc_dmc
                     qmc_long_vmc_dmc.in.xml
+                    1 16
+                    TRUE
+                    1 LONG_DIAMOND_DMC_SCALARS # DMC
+                    )
+
+  QMC_RUN_AND_CHECK(long-diamondC_1x1x1_pp-dmc_gaussian-bspline_sdj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1-Gaussian_pp"
+                    qmc_long_vmc_dmc-bspline
+                    qmc_long_vmc_dmc-bspline.in.xml
                     1 16
                     TRUE
                     1 LONG_DIAMOND_DMC_SCALARS # DMC
