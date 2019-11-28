@@ -3287,6 +3287,19 @@ class Rhea(Supercomputer):
         c+='\n'
         c+='source $MODULESHOME/init/bash\n'
         c+='module purge\n'
+        c+='module load gcc/6.2.0\n'
+        c+='module load intel/19.0.0\n'
+        c+='module load openmpi/3.1.4\n'
+        c+='module load openblas/0.3.5\n'
+        c+='module load fftw/3.3.8\n'
+        c+='export FFTW_HOME=$OLCF_FFTW_ROOT\n'
+        c+='module load hdf5/1.10.4\n'
+        c+='module load boost/1.69.0\n'
+        c+='module load cmake/3.15.2\n'
+        c+='module load python/2.7.15-anaconda2-2018.12\n'
+        c+='echo "Loaded modules"\n'
+        c+='module list\n'
+        c+='\n'
         return c
     #end def write_job_header
 #end class Rhea
