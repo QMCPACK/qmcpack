@@ -3279,26 +3279,20 @@ class Rhea(Supercomputer):
         c+='#SBATCH --job-name '+str(job.name)+'\n'
         c+='#SBATCH --account='+str(job.account)+'\n'
         c+='#SBATCH -N '+str(job.nodes)+'\n'
-        c+='#SBATCH --ntasks-per-node={0}\n'.format(job.processes_per_node)
-        c+='#SBATCH --cpus-per-task={0}\n'.format(job.threads)
         c+='#SBATCH -t {0}:{1}:{2}\n'.format(str(job.hours+24*job.days).zfill(2),str(job.minutes).zfill(2),str(job.seconds).zfill(2))
         c+='#SBATCH -o {0}\n'.format(job.outfile)
         c+='#SBATCH -e {0}\n'.format(job.errfile)
+        if job.email is not None:
+            c+='#SBATCH --mail-user {}\n'.format(job.email)
+            c+='#SBATCH --mail-type ALL\n'
+            #c+='#SBATCH --mail-type FAIL\n'
+        #end if
         c+='\n'
-        c+='source $MODULESHOME/init/bash\n'
-        c+='module purge\n'
-        c+='module load gcc/6.2.0\n'
-        c+='module load intel/19.0.0\n'
-        c+='module load openmpi/3.1.4\n'
-        c+='module load openblas/0.3.5\n'
-        c+='module load fftw/3.3.8\n'
-        c+='export FFTW_HOME=$OLCF_FFTW_ROOT\n'
-        c+='module load hdf5/1.10.4\n'
-        c+='module load boost/1.69.0\n'
-        c+='module load cmake/3.15.2\n'
-        c+='module load python/2.7.15-anaconda2-2018.12\n'
-        c+='echo "Loaded modules"\n'
-        c+='module list\n'
+        c+='cd $SLURM_SUBMIT_DIR\n'
+        c+='\n'
+        c+='echo JobID : $SLURM_JOBID \n'
+        c+='echo Number of nodes requested: $SLURM_JOB_NUM_NODES \n'
+        c+='echo List of nodes assigned to the job: $SLURM_NODELIST \n'
         c+='\n'
         return c
     #end def write_job_header
@@ -3372,7 +3366,7 @@ SuperMUC(      512,   1,    28,  256,    8,'mpiexec', 'llsubmit',     'llq','llc
 Stampede2(    4200,   1,    68,   96,   50,  'ibrun',   'sbatch',  'squeue', 'scancel')
 Cades(         156,   2,    18,  128,  100, 'mpirun',     'qsub',   'qstat',    'qdel')
 Summit(       4608,   2,    21,  512,  100,  'jsrun',     'bsub',   'bjobs',   'bkill')
-Rhea(          512,   2,    32,  128, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
+Rhea(          512,   2,    16,  128, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
 Tomcat3(         8,   1,    64,  192, 1000, 'mpirun',   'sbatch',   'sacct', 'scancel')
 SuperMUC_NG(  6336,   1,    48,   96, 1000,'mpiexec',   'sbatch',   'sacct', 'scancel')
 
