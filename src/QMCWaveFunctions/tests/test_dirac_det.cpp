@@ -536,7 +536,8 @@ TEST_CASE("DiracDeterminant_spinor_update", "[wavefunction][fermion]")
   REQUIRE( 1==1);
   typedef QMCTraits::PosType PosType;
   typedef ParticleSet::ParticlePos_t ParticlePos_t;
-  
+  typedef ParticleSet::ParticleGradient_t ParticleGradient_t;
+  typedef ParticleSet::ParticleLaplacian_t ParticleLaplacian_t; 
   //Shamelessly stealing this from test_einset.cpp.  3 particles though.
   ParticleSet ions_;
   ParticleSet elec_;
@@ -591,6 +592,9 @@ TEST_CASE("DiracDeterminant_spinor_update", "[wavefunction][fermion]")
   elec_.update();
   // </steal>
 
+
+  QMCTraits::IndexType nelec = elec_.R.size();
+  QMCTraits::IndexType norb  = 3;
   //Our test case is going to be three electron gas orbitals distinguished by 3 different kpoints.
   //Independent SPO's for the up and down channels.
   //
@@ -598,22 +602,22 @@ TEST_CASE("DiracDeterminant_spinor_update", "[wavefunction][fermion]")
   std::vector<RealType> k2up,k2dn;  
 
  
-  kup.resize(3);
+  kup.resize(nelec);
   kup[0]=PosType(0,0,0);
   kup[1]=PosType(0.1,0.2,0.3);
   kup[2]=PosType(0.4,0.5,0.6);
   
-  k2up.resize(3);
+  k2up.resize(nelec);
   k2up[0]=dot(kup[0],kup[0]);
   k2up[1]=dot(kup[1],kup[1]);
   k2up[2]=dot(kup[2],kup[2]);
  
-  kdn.resize(3);
+  kdn.resize(nelec);
   kdn[0]=PosType(0,0,0);
   kdn[1]=PosType(-0.1,0.2,-0.3);
   kdn[2]=PosType(0.4,-0.5,0.6);
 
-  k2dn.resize(3);
+  k2dn.resize(nelec);
   k2dn[0]=dot(kdn[0],kdn[0]);
   k2dn[1]=dot(kdn[1],kdn[1]);
   k2dn[2]=dot(kdn[2],kdn[2]);
@@ -625,15 +629,93 @@ TEST_CASE("DiracDeterminant_spinor_update", "[wavefunction][fermion]")
   spinor_set->set_spos(spo_up,spo_dn);
 
   DetType dd(spinor_set);
+  dd.resize(nelec,norb);
+  app_log()<<" nelec="<<nelec<<" norb="<<norb<<std::endl;
+ // X=evaluateLog(elec_);
+ 
+  ParticleGradient_t G;
+  ParticleLaplacian_t L;
+  //This is a vector of ValueType, so we're using it..."
+  ParticleLaplacian_t SG;
 
+  G.resize(nelec);
+  L.resize(nelec);
+  SG.resize(nelec);
 
-  //So we need a ratio test.
-   //make a trial spin move.  
+  PosType dr(0.1,-0.05,0.2);
+  RealType ds=0.3;
 
-  //a ratioGrad test.  
+  app_log()<<" BEFORE\n";
+  app_log()<<" R = "<<elec_.R<<std::endl;
+  app_log()<<" s = "<<elec_.spins<<std::endl;
+
+  //In this section, we're going to test that values and various derivatives come out
+  //correctly at the reference configuration.  
+
+  //ValueType logref=dd.evaluateLog(elec_,G,L)<<std::endl;
+
+  REQUIRE( logref == ComplexApprox(ValueType());
+  REQUIRE( G[0][0] == ComplexApprox(ValueType());
+  REQUIRE( G[0][1] == ComplexApprox(ValueType());
+  REQUIRE( G[0][2] == ComplexApprox(ValueType());
+  REQUIRE( G[1][0] == ComplexApprox(ValueType());
+  REQUIRE( G[1][1] == ComplexApprox(ValueType());
+  REQUIRE( G[1][2] == ComplexApprox(ValueType());
+  REQUIRE( G[2][0] == ComplexApprox(ValueType());
+  REQUIRE( G[2][1] == ComplexApprox(ValueType());
+  REQUIRE( G[2][2] == ComplexApprox(ValueType());
+  REQUIRE( L[0] == ComplexApprox(ValueType());
+  REQUIRE( L[1] == ComplexApprox(ValueType());
+  REQUIRE( L[2] == ComplexApprox(ValueType());
+  REQUIRE( SG[0] == ComplexApprox(ValueType());
+  REQUIRE( SG[1] == ComplexApprox(ValueType());
+  REQUIRE( SG[2] == ComplexApprox(ValueType()));
+
+  GradType g_singleeval(0.0);
+  //evalGrad()
+  REQUIRE( g[0] == ComplexApprox(G[1][0]));
+  REQUIRE( g[1] == ComplexApprox(G[1][1]));
+  REQUIRE( g[2] == ComplexApprox(G[1][2]));
+
+  //ValueType spingrad_ref = evalSpinGrad()
   
-  //an evaluateLog with gradients and laplacians.  
+  REQUIRE( spingrad_ref == ComplexApprox(SG[1]));
+
+
+  //And now we're going to propose a trial spin+particle move and check the ratio and gradients at the
+  //new location.  
+  //
+  QMCTraits::IndexType iat=1;
+  elec_.makeMoveAndCheckWithSpin(iat,dr,ds);
+ 
+  //ValueType ratio_new
+  //ValueType spingrad_new;
+  //GradType grad_new;
   
+  //ratio_new = dd.ratio()
+  REQUIRE( ratio_new == ComplexApprox(ValueType()));
+  REQUIRE( grad_new[0] == ComplexApprox(ValueType()));
+  REQUIRE( grad_new[1] == ComplexApprox(ValueType()));
+  REQUIRE( grad_new[2] == ComplexApprox(ValueType()));
+  REQUIRE( spingrad_new == ComplexApprox(ValueType()));
+
+
+ //Cool.  Now we test the transition between rejecting a move and accepting a move.
+ //Reject the move first.  We want to see if everything stays the same.  evalGrad and evalSpinGrad for ease of use.
+ 
+  elec_.rejectMove(iat);
+ 
+  //evaluateLog.
+  //Test grad
+  //test spin grad 
+  
+  //Now we test what happens if we accept a move...
+  elec_.makeMoveAndCheckWithSpin(iat,dr,ds);
+  elec_.acceptMove(iat);
+   
+  //evaluateLog,
+  //Test Grad
+  //test Spin grad.
 
 
 }
