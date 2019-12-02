@@ -40,6 +40,7 @@ void SpinorSet::set_spos(std::shared_ptr<SPOSet> up, std::shared_ptr<SPOSet> dn)
 
   d2psi_work_up.resize(OrbitalSetSize);
   d2psi_work_down.resize(OrbitalSetSize);
+
 }
 
 void SpinorSet::resetParameters(const opt_variables_type& optVariables){};
@@ -57,7 +58,7 @@ void SpinorSet::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
   spo_up->evaluate(P,iat,psi_work_up);
   spo_dn->evaluate(P,iat,psi_work_down);
  
-  RealType s=P.spins[iat];
+  RealType s=P.activeSpin(iat);
 
   RealType coss(0.0),sins(0.0);
 
@@ -79,11 +80,15 @@ void SpinorSet::evaluate(const ParticleSet& P,
 
   psi_work_up=0.0;
   psi_work_down=0.0;
- 
+  dpsi_work_up=0.0; 
+  dpsi_work_down=0.0; 
+  d2psi_work_up=0.0; 
+  d2psi_work_down=0.0; 
+
   spo_up->evaluate(P,iat,psi_work_up,dpsi_work_up,d2psi_work_up);
   spo_dn->evaluate(P,iat,psi_work_down,dpsi_work_down,d2psi_work_down);
  
-  RealType s=P.spins[iat];
+  RealType s=P.activeSpin(iat);
 
   RealType coss(0.0),sins(0.0);
 
@@ -155,8 +160,8 @@ void SpinorSet::evaluate_spin(const ParticleSet& P,
  
   spo_up->evaluate(P,iat,psi_work_up);
   spo_dn->evaluate(P,iat,psi_work_down);
- 
-  RealType s=P.spins[iat];
+  
+  RealType s=P.activeSpin(iat);
 
   RealType coss(0.0),sins(0.0);
 
