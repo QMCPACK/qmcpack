@@ -145,6 +145,35 @@ typename DiracDeterminant<DU_TYPE>::PsiValueType DiracDeterminant<DU_TYPE>::rati
   return curRatio;
 }
 
+template<typename DU_TYPE>
+typename DiracDeterminant<DU_TYPE>::PsiValueType DiracDeterminant<DU_TYPE>::ratioSpinGrad(ParticleSet& P,
+ 											 	  int iat,
+                                                                                       ValueType& spingrad)
+{
+  
+  SPOVGLTimer.start();
+  Phi->evaluate_spin(P, iat, psiV, dspin_psiV);
+  SPOVGLTimer.stop();
+
+  UpdateMode = ORB_PBYP_PARTIAL;
+  RatioTimer.start();
+  const int WorkingIndex = iat - FirstIndex;
+
+  // This is an optimization.
+  // check invRow_id against WorkingIndex to see if getInvRow() has been called already
+  // Some code paths call evalGrad before calling ratioGrad.
+  if (invRow_id != WorkingIndex)
+  {
+    invRow_id = WorkingIndex;
+    updateEng.getInvRow(psiM, WorkingIndex, invRow);
+  }
+  curRatio = simd::dot(invRow.data(), psiV.data(), invRow.size());
+  spingrad += static_cast<ValueType>(static_cast<PsiValueType>(1.0) / curRatio) *
+      simd::dot(invRow.data(), dspin_psiV.data(), invRow.size());
+  RatioTimer.stop();
+  return curRatio;
+}
+
 
 template<typename DU_TYPE>
 void DiracDeterminant<DU_TYPE>::mw_ratioGrad(const std::vector<WaveFunctionComponent*>& WFC_list,
