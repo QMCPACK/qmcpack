@@ -149,7 +149,7 @@ public:
   SingleParticlePos_t activePos;
 
   ///the proposed spin of activePtcl during particle-by-particle moves
-  RealType activeSpin;
+  RealType activeSpinVal;
 
   ///the proposed position in the Lattice unit
   SingleParticlePos_t newRedPos;
@@ -314,7 +314,7 @@ public:
    * activePtcl=-1 is used to flag non-physical moves
    */
   inline const PosType& activeR(int iat) const { return (activePtcl == iat) ? activePos : R[iat]; }
-
+  inline const RealType& activeSpin(int iat) const { return (activePtcl == iat) ? activeSpinVal : spins[iat]; }
   /** move the iat-th particle to activePos
    * @param iat the index of the particle to be moved
    * @param displ the displacement of the iat-th particle position

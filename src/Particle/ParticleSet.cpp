@@ -405,7 +405,7 @@ void ParticleSet::makeMove(Index_t iat, const SingleParticlePos_t& displ)
 void ParticleSet::makeMoveWithSpin(Index_t iat, const SingleParticlePos_t& displ, const RealType& sdispl)
 {
   makeMove(iat,displ);
-  activeSpin = spins[iat] + sdispl;
+  activeSpinVal = spins[iat] + sdispl;
 }
 
 void ParticleSet::flex_makeMove(const RefVector<ParticleSet>& P_list, Index_t iat, const std::vector<SingleParticlePos_t>& displs)
@@ -448,7 +448,7 @@ bool ParticleSet::makeMoveAndCheck(Index_t iat, const SingleParticlePos_t& displ
 
 bool ParticleSet::makeMoveAndCheckWithSpin(Index_t iat, const SingleParticlePos_t& displ, const RealType& sdispl)
 {
-    activeSpin = spins[iat]+sdispl;
+    activeSpinVal = spins[iat]+sdispl;
     return makeMoveAndCheck(iat,displ);
 }
 
@@ -642,7 +642,7 @@ void ParticleSet::acceptMove(Index_t iat)
 
     R[iat]     = activePos;
     RSoA(iat)  = activePos;
-    spins[iat] = activeSpin;
+    spins[iat] = activeSpinVal;
     activePtcl = -1;
   }
   else
