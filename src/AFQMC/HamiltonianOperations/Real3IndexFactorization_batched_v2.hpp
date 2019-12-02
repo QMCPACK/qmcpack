@@ -421,7 +421,7 @@ class Real3IndexFactorization_batched_v2
           for(int ispin=0, is0=0; ispin<2; ispin++) {
             assert( Lnak[ispin].size(0) == v.size(0) );
             assert( Lnak[ispin].size(1) == G.size(0) );
-            SpCMatrix_ref Ln(Lnak[ispin].origin(), {local_nCV,nel[ispin]*NMO});
+            SpCMatrix_ref Ln(make_device_ptr(Lnak[ispin].origin()), {local_nCV,nel[ispin]*NMO});
 #if MIXED_PRECISION
             SpCVector_ref Gsp(vsp.origin()+vsp.num_elements(), {nel[ispin]*NMO});
             copy_n_cast(make_device_ptr(G.origin())+is0,Gsp.num_elements(),Gsp.origin());
@@ -438,7 +438,7 @@ class Real3IndexFactorization_batched_v2
           assert( G.size(0) == v.size(1) );
           assert( Lnak[0].size(1) == G.size(1) );
           assert( Lnak[0].size(0) == v.size(0) );
-          SpCMatrix_ref Ln(Lnak[0].origin(), {local_nCV,Lnak[0].size(1)*Lnak[0].size(2)});
+          SpCMatrix_ref Ln(make_device_ptr(Lnak[0].origin()), {local_nCV,Lnak[0].size(1)*Lnak[0].size(2)});
 #if MIXED_PRECISION
           size_t mem_needs = G.num_elements()+v.num_elements();
           set_buffer(mem_needs);
@@ -499,7 +499,7 @@ class Real3IndexFactorization_batched_v2
           for(int ispin=0, is0=0; ispin<2; ispin++) {
             assert( Lnak[ispin].size(0) == v.size(0) );
             assert( Lnak[ispin].size(1) == G.size(0) );
-            SpCMatrix_ref Ln(Lnak[ispin].origin(), {local_nCV,nel[ispin]*NMO});
+            SpCMatrix_ref Ln(make_device_ptr(Lnak[ispin].origin()), {local_nCV,nel[ispin]*NMO});
 #if MIXED_PRECISION
             SpCMatrix_ref Gsp(vsp.origin()+vsp.num_elements(), {nel[ispin]*NMO,nwalk});
             copy_n_cast(make_device_ptr(G.origin())+is0*nwalk,Gsp.num_elements(),Gsp.origin());
@@ -516,7 +516,7 @@ class Real3IndexFactorization_batched_v2
           assert( G.size(0) == v.size(1) );
           assert( Lnak[0].size(1) == G.size(1) );
           assert( Lnak[0].size(0) == v.size(0) );
-          SpCMatrix_ref Ln(Lnak[0].origin(), {local_nCV,Lnak[0].size(1)*Lnak[0].size(2)});
+          SpCMatrix_ref Ln(make_device_ptr(Lnak[0].origin()), {local_nCV,Lnak[0].size(1)*Lnak[0].size(2)});
 #if MIXED_PRECISION
           size_t mem_needs = G.num_elements()+v.num_elements();
           set_buffer(mem_needs);
