@@ -213,6 +213,15 @@ public:
    */
   ValueType calcRatioGrad(ParticleSet& P, int iat, GradType& grad_iat);
 
+  /** compute psi(R_new) / psi(R_current) ratio and d/ds ln(psi(R_new)) spin gradient
+   * It returns a complex value if the wavefunction is complex.
+   * @param P the active ParticleSet
+   * @param iat the index of a particle moved to the new position.
+   * @param spingrad_iat gradient for iat
+   * @return ratio value
+   */
+  ValueType calcRatioSpinGrad(ParticleSet& P, int iat, ValueType& spingrad_iat);
+
   /** batched verison of ratioGrad 
    *
    *  all vector sizes must match
@@ -224,6 +233,16 @@ public:
                                  std::vector<GradType>& grad_new);
 
   GradType evalGrad(ParticleSet& P, int iat);
+
+  /** compute d/ds ln(psi) spin gradient at current particle position for iat electron
+   *
+   * @param P active particle set.
+   * @param iat index of the particle moved to the new position.
+   * @return d/ds ln(psi) (complex)
+   *
+   */  
+  ValueType evalSpinGrad(ParticleSet& P, int iat);
+
   /** batched verison of evalGrad
     *
     * This is static because it should have no direct access

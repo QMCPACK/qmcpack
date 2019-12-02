@@ -391,6 +391,18 @@ TrialWaveFunction::GradType TrialWaveFunction::evalGrad(ParticleSet& P, int iat)
   return grad_iat;
 }
 
+TrialWaveFunction::ValueType TrialWaveFunction::evalSpinGrad(ParticleSet& P, int iat)
+{
+  ValueType spingrad_iat;
+  for (int i = 0, ii = VGL_TIMER; i < Z.size(); ++i, ii += TIMER_SKIP)
+  {
+    myTimers[ii]->start();
+    spingrad_iat += Z[i]->evalSpinGrad(P, iat);
+    myTimers[ii]->stop();
+  }
+  return spingrad_iat;
+}
+
 void TrialWaveFunction::flex_evalGrad(const std::vector<std::reference_wrapper<TrialWaveFunction>>& wf_list,
                                       const std::vector<std::reference_wrapper<ParticleSet>>& p_list,
                                       int iat,
@@ -459,6 +471,22 @@ TrialWaveFunction::ValueType TrialWaveFunction::calcRatioGrad(ParticleSet& P, in
   {
     myTimers[ii]->start();
     r *= Z[i]->ratioGrad(P, iat, grad_iat);
+    myTimers[ii]->stop();
+  }
+
+  LogValueType logratio = convertValueToLog(r);
+  PhaseDiff             = std::imag(logratio);
+  return static_cast<ValueType>(r);
+}
+
+TrialWaveFunction::ValueType TrialWaveFunction::calcRatioSpinGrad(ParticleSet& P, int iat, ValueType& spingrad_iat)
+{
+  spingrad_iat = 0.0;
+  PsiValueType r(1.0);
+  for (int i = 0, ii = VGL_TIMER; i < Z.size(); ++i, ii += TIMER_SKIP)
+  {
+    myTimers[ii]->start();
+    r *= Z[i]->ratioSpinGrad(P, iat, spingrad_iat);
     myTimers[ii]->stop();
   }
 
