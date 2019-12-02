@@ -79,6 +79,7 @@ void DiracDeterminant<DU_TYPE>::resize(int nel, int morb)
   NumOrbitals = norb;
 
   dpsiV.resize(NumOrbitals);
+  dspin_psiV.resize(NumOrbitals);
   d2psiV.resize(NumOrbitals);
   FirstAddressOfdV = &(dpsiM(0, 0)[0]); //(*dpsiM.begin())[0]);
   LastAddressOfdV  = FirstAddressOfdV + NumPtcls * NumOrbitals * DIM;
@@ -94,6 +95,19 @@ typename DiracDeterminant<DU_TYPE>::GradType DiracDeterminant<DU_TYPE>::evalGrad
   GradType g = simd::dot(invRow.data(), dpsiM[WorkingIndex], invRow.size());
   RatioTimer.stop();
   return g;
+}
+
+template<typename DU_TYPE>
+typename DiracDeterminant<DU_TYPE>::ValueType DiracDeterminant<DU_TYPE>::evalSpinGrad(ParticleSet& P, int iat)
+{
+  const int WorkingIndex = iat - FirstIndex;
+  Phi->evaluate_spin(P,iat,psiV,dspin_psiV);
+  RatioTimer.start();
+  invRow_id = WorkingIndex;
+  updateEng.getInvRow(psiM, WorkingIndex, invRow);
+  ValueType spin_g = simd::dot(invRow.data(), dspin_psiV.data(), invRow.size());
+  RatioTimer.stop();
+  return spin_g;
 }
 
 template<typename DU_TYPE>

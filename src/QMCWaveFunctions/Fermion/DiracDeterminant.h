@@ -108,6 +108,8 @@ public:
 
   GradType evalGrad(ParticleSet& P, int iat) override;
 
+  ValueType evalSpinGrad(ParticleSet& P, int iat) override;
+
   GradType evalGradSource(ParticleSet& P, ParticleSet& source, int iat) override;
 
   GradType evalGradSource(ParticleSet& P,
@@ -191,6 +193,7 @@ public:
 
   /// value of single-particle orbital for particle-by-particle update
   ValueVector_t psiV;
+  ValueVector_t dspin_psiV;
   GradVector_t dpsiV;
   ValueVector_t d2psiV;
 
