@@ -684,12 +684,12 @@ TEST_CASE("DiracDeterminant_spinor_update", "[wavefunction][fermion]")
   REQUIRE( L[1] == ComplexApprox(ValueType(-5.06340536,0.82126749)));
   REQUIRE( L[2] == ComplexApprox(ValueType(-4.82375261,-1.97943258)));
  
-//  for (int iat=0; iat<nelec; iat++)
-//    SG[iat]=dd.evalSpinGrad(elec_,iat);
+  for (int iat=0; iat<nelec; iat++)
+    SG[iat]=dd.evalSpinGrad(elec_,iat);
 
-//  REQUIRE( SG[0] == ComplexApprox(ValueType(-1.05686704,-2.01802154)));
-//  REQUIRE( SG[1] == ComplexApprox(ValueType(1.18922259,2.80414598)));
-//  REQUIRE( SG[2] == ComplexApprox(ValueType(-0.62617675,-0.51093984)));
+  REQUIRE( SG[0] == ComplexApprox(ValueType(-1.05686704,-2.01802154)));
+  REQUIRE( SG[1] == ComplexApprox(ValueType(1.18922259,2.80414598)));
+  REQUIRE( SG[2] == ComplexApprox(ValueType(-0.62617675,-0.51093984)));
 
   GradType g_singleeval(0.0);
   g_singleeval = dd.evalGrad(elec_,1);
@@ -718,9 +718,9 @@ TEST_CASE("DiracDeterminant_spinor_update", "[wavefunction][fermion]")
   REQUIRE( grad_new[1] == ComplexApprox(ValueType(0.4927399293808675,-0.29971549854643653)));
   REQUIRE( grad_new[2] == ComplexApprox(ValueType(1.2792642963632226,0.12110307514989149)));
 
- // ratio_new = dd.ratioSpinGrad(elec_,1,spingrad_new);
-//  REQUIRE( ratio_new == ComplexApprox(ValueType(1.7472917722050971,1.1900872950904169)));
- // REQUIRE( spingrad_new == ComplexApprox(ValueType(1.164708841479661,0.9576425115390172)));
+  ratio_new = dd.ratioSpinGrad(elec_,1,spingrad_new);
+  REQUIRE( ratio_new == ComplexApprox(ValueType(1.7472917722050971,1.1900872950904169)));
+  REQUIRE( spingrad_new == ComplexApprox(ValueType(1.164708841479661,0.9576425115390172)));
 
 
  //Cool.  Now we test the transition between rejecting a move and accepting a move.
@@ -733,9 +733,10 @@ TEST_CASE("DiracDeterminant_spinor_update", "[wavefunction][fermion]")
   REQUIRE( g_singleeval[1] == ComplexApprox(G[1][1]));
   REQUIRE( g_singleeval[2] == ComplexApprox(G[1][2]));
 
-  //spingrad_new = dd.evalSpinGrad(elec_,1);
+  ValueType spingrad_old_test;
+  spingrad_old_test = dd.evalSpinGrad(elec_,1);
   
-  REQUIRE( spingrad_new == ComplexApprox(SG[1]));
+  REQUIRE( spingrad_old_test == ComplexApprox(SG[1]));
 
   //Now we test what happens if we accept a move...
   elec_.makeMoveAndCheckWithSpin(1,dr,ds);
@@ -746,8 +747,8 @@ TEST_CASE("DiracDeterminant_spinor_update", "[wavefunction][fermion]")
   L=0.0;
 
   lognew = dd.evaluateLog(elec_,G,L);
- // for (int iat=0; iat<nelec; iat++)
- //   SG[iat]=dd.evalSpinGrad(elec_,iat);
+  for (int iat=0; iat<nelec; iat++)
+    SG[iat]=dd.evalSpinGrad(elec_,iat);
 
   //logval for the new configuration has been computed with python.  
   //The others reference values are computed earlier in this section.  New values equal the previous
@@ -756,7 +757,7 @@ TEST_CASE("DiracDeterminant_spinor_update", "[wavefunction][fermion]")
   REQUIRE( G[1][0] == ComplexApprox(grad_new[0]) );
   REQUIRE( G[1][1] == ComplexApprox(grad_new[1]) );
   REQUIRE( G[1][2] == ComplexApprox(grad_new[2]) );
-  //REQUIRE( SG[1] == ComplexApprox(spingrad_new) );
+  REQUIRE( SG[1] == ComplexApprox(spingrad_new) );
 
 
 
