@@ -17,7 +17,10 @@
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/SPOSet.h"
 #include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
+
+#ifdef QMC_COMPLEX  //This is for the spinor test.
 #include "QMCWaveFunctions/ElectronGas/ElectronGasComplexOrbitalBuilder.h"
+#endif
 
 #include "QMCWaveFunctions/SpinorSet.h"
 
