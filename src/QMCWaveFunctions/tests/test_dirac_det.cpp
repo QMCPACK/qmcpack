@@ -532,9 +532,9 @@ TEST_CASE("DiracDeterminant_delayed_update", "[wavefunction][fermion]")
 #ifdef QMC_COMPLEX
 TEST_CASE("DiracDeterminant_spinor_update", "[wavefunction][fermion]")
 {
-  std::cout << " i!!!!!!!!!!!!!WEEEEE OH MY GOD WE'RE GETTING TESTED!!!!!!!!!!!!!\n";
-  REQUIRE( 1==1);
+  typedef QMCTraits::ValueType ValueType;
   typedef QMCTraits::PosType PosType;
+  typedef QMCTraits::GradType GradType;
   typedef ParticleSet::ParticlePos_t ParticlePos_t;
   typedef ParticleSet::ParticleGradient_t ParticleGradient_t;
   typedef ParticleSet::ParticleLaplacian_t ParticleLaplacian_t; 
@@ -608,9 +608,12 @@ TEST_CASE("DiracDeterminant_spinor_update", "[wavefunction][fermion]")
   kup[2]=PosType(0.4,0.5,0.6);
   
   k2up.resize(nelec);
-  k2up[0]=dot(kup[0],kup[0]);
-  k2up[1]=dot(kup[1],kup[1]);
-  k2up[2]=dot(kup[2],kup[2]);
+  //For some goofy reason, EGOSet needs to be initialized with:
+  //1.) A k-vector list (fine).
+  //2.) A list of -|k|^2.  To save on expensive - sign multiplication apparently.  
+  k2up[0]=-dot(kup[0],kup[0]);
+  k2up[1]=-dot(kup[1],kup[1]);
+  k2up[2]=-dot(kup[2],kup[2]);
  
   kdn.resize(nelec);
   kdn[0]=PosType(0,0,0);
@@ -618,9 +621,9 @@ TEST_CASE("DiracDeterminant_spinor_update", "[wavefunction][fermion]")
   kdn[2]=PosType(0.4,-0.5,0.6);
 
   k2dn.resize(nelec);
-  k2dn[0]=dot(kdn[0],kdn[0]);
-  k2dn[1]=dot(kdn[1],kdn[1]);
-  k2dn[2]=dot(kdn[2],kdn[2]);
+  k2dn[0]=-dot(kdn[0],kdn[0]);
+  k2dn[1]=-dot(kdn[1],kdn[1]);
+  k2dn[2]=-dot(kdn[2],kdn[2]);
 
   std::shared_ptr<EGOSet> spo_up(new EGOSet(kup,k2up));
   std::shared_ptr<EGOSet> spo_dn(new EGOSet(kdn,k2dn));
@@ -631,7 +634,6 @@ TEST_CASE("DiracDeterminant_spinor_update", "[wavefunction][fermion]")
   DetType dd(spinor_set);
   dd.resize(nelec,norb);
   app_log()<<" nelec="<<nelec<<" norb="<<norb<<std::endl;
- // X=evaluateLog(elec_);
  
   ParticleGradient_t G;
   ParticleLaplacian_t L;
@@ -642,6 +644,10 @@ TEST_CASE("DiracDeterminant_spinor_update", "[wavefunction][fermion]")
   L.resize(nelec);
   SG.resize(nelec);
 
+  G=0.0;
+  L=0.0;
+  SG=0.0;
+
   PosType dr(0.1,-0.05,0.2);
   RealType ds=0.3;
 
@@ -651,71 +657,107 @@ TEST_CASE("DiracDeterminant_spinor_update", "[wavefunction][fermion]")
 
   //In this section, we're going to test that values and various derivatives come out
   //correctly at the reference configuration.  
+ 
+  SPOSet::ValueVector_t psi; 
+  SPOSet::GradVector_t dpsi;
+  SPOSet::ValueVector_t d2psi;
 
-  //ValueType logref=dd.evaluateLog(elec_,G,L)<<std::endl;
+  psi.resize(3);
+  dpsi.resize(3);
+  d2psi.resize(3);
 
-  REQUIRE( logref == ComplexApprox(ValueType());
-  REQUIRE( G[0][0] == ComplexApprox(ValueType());
-  REQUIRE( G[0][1] == ComplexApprox(ValueType());
-  REQUIRE( G[0][2] == ComplexApprox(ValueType());
-  REQUIRE( G[1][0] == ComplexApprox(ValueType());
-  REQUIRE( G[1][1] == ComplexApprox(ValueType());
-  REQUIRE( G[1][2] == ComplexApprox(ValueType());
-  REQUIRE( G[2][0] == ComplexApprox(ValueType());
-  REQUIRE( G[2][1] == ComplexApprox(ValueType());
-  REQUIRE( G[2][2] == ComplexApprox(ValueType());
-  REQUIRE( L[0] == ComplexApprox(ValueType());
-  REQUIRE( L[1] == ComplexApprox(ValueType());
-  REQUIRE( L[2] == ComplexApprox(ValueType());
-  REQUIRE( SG[0] == ComplexApprox(ValueType());
-  REQUIRE( SG[1] == ComplexApprox(ValueType());
-  REQUIRE( SG[2] == ComplexApprox(ValueType()));
+  spinor_set->evaluate(elec_,1,psi,dpsi,d2psi);
+
+  ValueType logref=dd.evaluateLog(elec_,G,L);
+
+  REQUIRE( logref == ComplexApprox(ValueType(-1.1619939279564413,0.8794794652468605)));
+  REQUIRE( G[0][0] == ComplexApprox(ValueType(0.13416635,0.2468612)));
+  REQUIRE( G[0][1] == ComplexApprox(ValueType(-1.1165475,0.71497753)));
+  REQUIRE( G[0][2] == ComplexApprox(ValueType(0.0178403,0.08212244)));
+  REQUIRE( G[1][0] == ComplexApprox(ValueType(1.00240841,0.12371593)));
+  REQUIRE( G[1][1] == ComplexApprox(ValueType(1.62679698,-0.41080777)));
+  REQUIRE( G[1][2] == ComplexApprox(ValueType(1.81324632,0.78589013)));
+  REQUIRE( G[2][0] == ComplexApprox(ValueType(-1.10994555,0.15525902)));
+  REQUIRE( G[2][1] == ComplexApprox(ValueType(-0.46335602,-0.50809713)));
+  REQUIRE( G[2][2] == ComplexApprox(ValueType(-1.751199,0.10949589)));
+  REQUIRE( L[0] == ComplexApprox(ValueType(-2.06554158,1.18145239)));
+  REQUIRE( L[1] == ComplexApprox(ValueType(-5.06340536,0.82126749)));
+  REQUIRE( L[2] == ComplexApprox(ValueType(-4.82375261,-1.97943258)));
+ 
+//  for (int iat=0; iat<nelec; iat++)
+//    SG[iat]=dd.evalSpinGrad(elec_,iat);
+
+//  REQUIRE( SG[0] == ComplexApprox(ValueType(-1.05686704,-2.01802154)));
+//  REQUIRE( SG[1] == ComplexApprox(ValueType(1.18922259,2.80414598)));
+//  REQUIRE( SG[2] == ComplexApprox(ValueType(-0.62617675,-0.51093984)));
 
   GradType g_singleeval(0.0);
-  //evalGrad()
-  REQUIRE( g[0] == ComplexApprox(G[1][0]));
-  REQUIRE( g[1] == ComplexApprox(G[1][1]));
-  REQUIRE( g[2] == ComplexApprox(G[1][2]));
+  g_singleeval = dd.evalGrad(elec_,1);
 
-  //ValueType spingrad_ref = evalSpinGrad()
-  
-  REQUIRE( spingrad_ref == ComplexApprox(SG[1]));
+  REQUIRE( g_singleeval[0] == ComplexApprox(G[1][0]));
+  REQUIRE( g_singleeval[1] == ComplexApprox(G[1][1]));
+  REQUIRE( g_singleeval[2] == ComplexApprox(G[1][2]));
 
 
   //And now we're going to propose a trial spin+particle move and check the ratio and gradients at the
   //new location.  
   //
-  QMCTraits::IndexType iat=1;
-  elec_.makeMoveAndCheckWithSpin(iat,dr,ds);
+  elec_.makeMoveAndCheckWithSpin(1,dr,ds);
  
-  //ValueType ratio_new
-  //ValueType spingrad_new;
-  //GradType grad_new;
-  
-  //ratio_new = dd.ratio()
-  REQUIRE( ratio_new == ComplexApprox(ValueType()));
-  REQUIRE( grad_new[0] == ComplexApprox(ValueType()));
-  REQUIRE( grad_new[1] == ComplexApprox(ValueType()));
-  REQUIRE( grad_new[2] == ComplexApprox(ValueType()));
-  REQUIRE( spingrad_new == ComplexApprox(ValueType()));
+  ValueType ratio_new;
+  ValueType spingrad_new;
+  GradType grad_new;
+ 
+  //This tests ratio only evaluation.  Indirectly a call to evaluate(P,iat) 
+  ratio_new = dd.ratio(elec_,1);
+  REQUIRE( ratio_new == ComplexApprox(ValueType(1.7472917722050971,1.1900872950904169)));
+ 
+  ratio_new = dd.ratioGrad(elec_,1,grad_new); 
+  REQUIRE( ratio_new == ComplexApprox(ValueType(1.7472917722050971,1.1900872950904169)));
+  REQUIRE( grad_new[0] == ComplexApprox(ValueType(0.5496675534224996,-0.07968022499097227)));
+  REQUIRE( grad_new[1] == ComplexApprox(ValueType(0.4927399293808675,-0.29971549854643653)));
+  REQUIRE( grad_new[2] == ComplexApprox(ValueType(1.2792642963632226,0.12110307514989149)));
+
+ // ratio_new = dd.ratioSpinGrad(elec_,1,spingrad_new);
+//  REQUIRE( ratio_new == ComplexApprox(ValueType(1.7472917722050971,1.1900872950904169)));
+ // REQUIRE( spingrad_new == ComplexApprox(ValueType(1.164708841479661,0.9576425115390172)));
 
 
  //Cool.  Now we test the transition between rejecting a move and accepting a move.
  //Reject the move first.  We want to see if everything stays the same.  evalGrad and evalSpinGrad for ease of use.
  
-  elec_.rejectMove(iat);
- 
-  //evaluateLog.
-  //Test grad
-  //test spin grad 
+  elec_.rejectMove(1);
+  //Going to check evalGrad and evalSpinGrad for simplicity. 
+  g_singleeval = dd.evalGrad(elec_,1);
+  REQUIRE( g_singleeval[0] == ComplexApprox(G[1][0]));
+  REQUIRE( g_singleeval[1] == ComplexApprox(G[1][1]));
+  REQUIRE( g_singleeval[2] == ComplexApprox(G[1][2]));
+
+  //spingrad_new = dd.evalSpinGrad(elec_,1);
   
+  REQUIRE( spingrad_new == ComplexApprox(SG[1]));
+
   //Now we test what happens if we accept a move...
-  elec_.makeMoveAndCheckWithSpin(iat,dr,ds);
-  elec_.acceptMove(iat);
-   
-  //evaluateLog,
-  //Test Grad
-  //test Spin grad.
+  elec_.makeMoveAndCheckWithSpin(1,dr,ds);
+  elec_.acceptMove(1);
+  
+  ValueType lognew(0.0);
+  G=0.0;  //evalauteLog += onto the G and L arguments.  So we zero them out.
+  L=0.0;
+
+  lognew = dd.evaluateLog(elec_,G,L);
+ // for (int iat=0; iat<nelec; iat++)
+ //   SG[iat]=dd.evalSpinGrad(elec_,iat);
+
+  //logval for the new configuration has been computed with python.  
+  //The others reference values are computed earlier in this section.  New values equal the previous
+  // "new values" associated with the previous trial moves.    
+  REQUIRE( lognew == ComplexApprox(ValueType(-0.41337396772929913,1.4774106123071726)) ); 
+  REQUIRE( G[1][0] == ComplexApprox(grad_new[0]) );
+  REQUIRE( G[1][1] == ComplexApprox(grad_new[1]) );
+  REQUIRE( G[1][2] == ComplexApprox(grad_new[2]) );
+  //REQUIRE( SG[1] == ComplexApprox(spingrad_new) );
+
 
 
 }
