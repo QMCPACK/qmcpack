@@ -309,6 +309,13 @@ public:
                         HessVector_t& grad_grad_psi,
                         GGGVector_t& grad_grad_grad_psi);
 
+  /** evaluate the values of this single-particle orbital set
+   * @param P current ParticleSet
+   * @param iat active particle
+   * @param psi values of the SPO
+   */
+  virtual void evaluate_spin(const ParticleSet& P, int iat, ValueVector_t& psi, ValueVector_t& dpsi);
+
   /** evaluate the third derivatives of this single-particle orbital set
    * @param P current ParticleSet
    * @param first first particle

@@ -88,14 +88,12 @@ public:
    *  @param iat electron index.
    *  @param spinor values.
    *  @param spin gradient values. d/ds phi(r,s).
-   *  @param spin laplacian values. d^2/ds^2 phi(r,s). 
    *
    */
   void evaluate_spin(const ParticleSet& P,
                         int iat,
                         ValueVector_t& psi,
-                        ValueVector_t& dpsi,
-                        ValueVector_t& d2psi);
+                        ValueVector_t& dpsi);
                    
 
 private:

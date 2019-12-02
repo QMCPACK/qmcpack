@@ -152,8 +152,7 @@ void SpinorSet::evaluate_notranspose(const ParticleSet& P,
 void SpinorSet::evaluate_spin(const ParticleSet& P,
                         int iat,
                         ValueVector_t& psi,
-                        ValueVector_t& dpsi,
-                        ValueVector_t& d2psi)
+                        ValueVector_t& dpsi)
 {
   psi_work_up=0.0;
   psi_work_down=0.0;
@@ -174,7 +173,6 @@ void SpinorSet::evaluate_spin(const ParticleSet& P,
 
   psi = eis*psi_work_up+emis*psi_work_down;
   dpsi = eye*(eis*psi_work_up - emis*psi_work_down);
-  d2psi = -psi;
   
 }
 

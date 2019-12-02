@@ -420,6 +420,14 @@ void SPOSet::evaluateGradSource(const ParticleSet& P,
   APP_ABORT("SPOSetBase::evalGradSource is not implemented");
 }
 
+void SPOSet::evaluate_spin(const ParticleSet& P,
+                      int iat,
+                      ValueVector_t& psi,
+                      ValueVector_t& dpsi)
+{
+  APP_ABORT("Need specialization of " + className + "::evaluate_spin(P,iat,psi,dpsi) (vector quantities)\n");
+}
+
 #ifdef QMC_CUDA
 
 void SPOSet::evaluate(std::vector<Walker_t*>& walkers, int iat, gpu::device_vector<CTS::ValueType*>& phi)
@@ -477,5 +485,6 @@ void SPOSet::evaluate(std::vector<PosType>& pos, gpu::device_vector<CTS::Complex
   app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
   abort();
 }
+
 #endif
 } // namespace qmcplusplus
