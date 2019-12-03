@@ -97,6 +97,7 @@ def generate_hamiltonian(scf_data, chol_cut=1e-5, verbose=False, cas=None,
             print(" # UHF integrals are not allowed. Use ortho AO option (-a/--ao).")
             sys.exit()
         X = scf_data['mo_coeff']
+    df_ints = scf_data['df_ints']
     C = scf_data['mo_coeff']
     # 3. Pyscf mol object.
     mol = scf_data['mol']
@@ -106,9 +107,15 @@ def generate_hamiltonian(scf_data, chol_cut=1e-5, verbose=False, cas=None,
     h1e = numpy.dot(X.T, numpy.dot(hcore, X))
     nbasis = h1e.shape[-1]
     # Step 2. Genrate Cholesky decomposed ERIs in non-orthogonal AO basis.
-    if verbose:
-        print (" # Performing modified Cholesky decomposition on ERI tensor.")
-    chol_vecs = chunked_cholesky(mol, max_error=chol_cut, verbose=verbose)
+    if df_ints is not None:
+        chol_vecs = df_ints
+        if verbose:
+            print(" # Using DF integrals from checkpoint file.")
+        assert chol_vecs.shape[1] == nbasis*nbasis
+    else:
+        if verbose:
+            print (" # Performing modified Cholesky decomposition on ERI tensor.")
+        chol_vecs = chunked_cholesky(mol, max_error=chol_cut, verbose=verbose)
     if verbose:
         print (" # Orthogonalising Cholesky vectors.")
     start = time.time()
