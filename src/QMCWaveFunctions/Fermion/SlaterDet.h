@@ -100,9 +100,9 @@ public:
     return Dets[getDetID(iat)]->ratioGrad(P, iat, grad_iat);
   }
 
-  virtual inline PsiValueType ratioSpinGrad(ParticleSet& P, int iat, ValueType& spingrad_iat) override
+  virtual inline PsiValueType ratioGradWithSpin(ParticleSet& P, int iat, GradType& grad_iat, LogValueType& spingrad_iat) override
   {
-    return Dets[getDetID(iat)]->ratioSpinGrad(P, iat, spingrad_iat);
+    return Dets[getDetID(iat)]->ratioGradWithSpin(P, iat, grad_iat, spingrad_iat);
   }
 
   virtual void mw_ratioGrad(const std::vector<WaveFunctionComponent*>& WFC_list,
@@ -117,7 +117,7 @@ public:
 
   virtual GradType evalGrad(ParticleSet& P, int iat) override { return Dets[getDetID(iat)]->evalGrad(P, iat); }
 
-  virtual ValueType evalSpinGrad(ParticleSet& P, int iat) override { return Dets[getDetID(iat)]->evalSpinGrad(P, iat); }
+  virtual GradType evalGradWithSpin(ParticleSet& P, int iat, LogValueType& spingrad) override { return Dets[getDetID(iat)]->evalGradWithSpin(P, iat, spingrad); }
 
   virtual void mw_evalGrad(const std::vector<WaveFunctionComponent*>& WFC_list,
                            const std::vector<ParticleSet*>& P_list,

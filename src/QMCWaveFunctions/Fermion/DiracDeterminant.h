@@ -100,7 +100,7 @@ public:
 
   PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
 
-  PsiValueType ratioSpinGrad(ParticleSet& P, int iat, ValueType& spingrad) override;
+  PsiValueType ratioGradWithSpin(ParticleSet& P, int iat, GradType& grad_iat, LogValueType& spingrad) override;
 
   void mw_ratioGrad(const std::vector<WaveFunctionComponent*>& WFC_list,
                     const std::vector<ParticleSet*>& P_list,
@@ -110,7 +110,7 @@ public:
 
   GradType evalGrad(ParticleSet& P, int iat) override;
 
-  ValueType evalSpinGrad(ParticleSet& P, int iat) override;
+  GradType evalGradWithSpin(ParticleSet& P, int iat, LogValueType& spingrad) override;
 
   GradType evalGradSource(ParticleSet& P, ParticleSet& source, int iat) override;
 
