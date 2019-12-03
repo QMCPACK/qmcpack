@@ -62,8 +62,8 @@ bool ExampleHeComponent::put(xmlNodePtr cur)
 }
 
 ExampleHeComponent::LogValueType ExampleHeComponent::evaluateLog(ParticleSet& P,
-                                                             ParticleSet::ParticleGradient_t& G,
-                                                             ParticleSet::ParticleLaplacian_t& L)
+                                                                 ParticleSet::ParticleGradient_t& G,
+                                                                 ParticleSet::ParticleLaplacian_t& L)
 {
   const auto& ee_table = P.getDistTable(my_table_ee_idx_);
   // Only the lower triangle is up-to-date after particle-by-particle moves
@@ -105,7 +105,7 @@ ExampleHeComponent::LogValueType ExampleHeComponent::evaluateLog(ParticleSet& P,
   return -Z * (r1 + r2) + std::log(norm * norm) - u;
 }
 
-ExampleHeComponent::ValueType ExampleHeComponent::ratio(ParticleSet& P, int iat)
+ExampleHeComponent::PsiValueType ExampleHeComponent::ratio(ParticleSet& P, int iat)
 {
   const int jat = (iat == 0 ? 1 : 0);
 
@@ -127,7 +127,7 @@ ExampleHeComponent::ValueType ExampleHeComponent::ratio(ParticleSet& P, int iat)
   double log_v_old = -Z * (r_old)-u_old;
   double log_v_new = -Z * (r_new)-u_new;
 
-  return std::exp((log_v_new - log_v_old));
+  return std::exp(static_cast<PsiValueType>(log_v_new - log_v_old));
 }
 
 ExampleHeComponent::GradType ExampleHeComponent::evalGrad(ParticleSet& P, int iat)
@@ -151,7 +151,7 @@ ExampleHeComponent::GradType ExampleHeComponent::evalGrad(ParticleSet& P, int ia
   return Z * rhat + rhat12 * du;
 }
 
-ExampleHeComponent::ValueType ExampleHeComponent::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
+ExampleHeComponent::PsiValueType ExampleHeComponent::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
 {
   const auto& ee_table = P.getDistTable(my_table_ee_idx_);
 
@@ -181,7 +181,7 @@ ExampleHeComponent::ValueType ExampleHeComponent::ratioGrad(ParticleSet& P, int 
   double log_v_old = -Z * (r_old)-u_old;
   double log_v_new = -Z * (r_new)-u_new;
 
-  return std::exp((log_v_new - log_v_old));
+  return std::exp(static_cast<PsiValueType>(log_v_new - log_v_old));
 }
 
 

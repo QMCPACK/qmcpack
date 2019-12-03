@@ -1,4 +1,26 @@
+;;; qmpack-style.el -- defines a c-style for QMCPACK
 
+;;; License:
+;; //////////////////////////////////////////////////////////////////////////////////////
+;; // This file is distributed under the University of Illinois/NCSA Open Source License.
+;; // See LICENSE file in top directory for details.
+;; //
+;; // Copyright (c) 2019 QMCPACK developers.
+;; //
+;; // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
+;; //
+;; // File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
+;; //////////////////////////////////////////////////////////////////////////////////////
+
+;;; Commentary:
+
+;;  This attempts to give on the fly c-style that is as close as possible to the
+;;  qmcpack coding standards and clang-format setup.
+;;  You should still run clang-format on each file before pushing.
+
+;;  customize C Default Style if you want this style by default.
+
+;;; Code:
 (defconst qmcpack-c-style
   '((c-basic-offset . 2)
     (c-offsets-alist
@@ -75,8 +97,8 @@
     (arglist-cont-nonempty . c-lineup-arglist)
     (arglist-close . c-lineup-close-paren)
     (cpp-macro . -1000)))
-  "QMCPACK C/C++ programming Style")
+  "QMCPACK C/C++ programming Style.")
 (c-add-style "qmcpack" qmcpack-c-style)
 
-(setq c-default-style '((c-mode . "qmcpack")
-                        (c++-mode . "qmcpack")))
+(provide 'qmcpack-style)
+;;; qmcpack-style.el ends here

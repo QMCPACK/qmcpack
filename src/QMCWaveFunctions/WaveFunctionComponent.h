@@ -145,10 +145,7 @@ struct WaveFunctionComponent : public QMCTraits
   virtual void setDiffOrbital(DiffWaveFunctionComponentPtr d);
 
   ///assembles the full value
-  PsiValueType getValue() const
-  {
-    return LogToValue<PsiValueType>::convert(LogValue);
-  }
+  PsiValueType getValue() const { return LogToValue<PsiValueType>::convert(LogValue); }
 
   /** check in optimizable parameters
    * @param active a super set of optimizable variables
@@ -185,8 +182,8 @@ struct WaveFunctionComponent : public QMCTraits
    * move also uses this.
    */
   virtual LogValueType evaluateLog(ParticleSet& P,
-                               ParticleSet::ParticleGradient_t& G,
-                               ParticleSet::ParticleLaplacian_t& L) = 0;
+                                   ParticleSet::ParticleGradient_t& G,
+                                   ParticleSet::ParticleLaplacian_t& L) = 0;
 
   /** evaluate from scratch the same type WaveFunctionComponent of multiple walkers
    * @param WFC_list the list of WaveFunctionComponent pointers of the same component in a walker batch
@@ -301,7 +298,7 @@ struct WaveFunctionComponent : public QMCTraits
    * @param iat the index of a particle
    * @param grad_iat Gradient for the active particle
    */
-  virtual ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
+  virtual PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
   {
     APP_ABORT("WaveFunctionComponent::ratioGrad is not implemented in " + ClassName + " class.");
     return ValueType();
@@ -406,7 +403,7 @@ struct WaveFunctionComponent : public QMCTraits
    *
    * Specialized for particle-by-particle move
    */
-  virtual ValueType ratio(ParticleSet& P, int iat) = 0;
+  virtual PsiValueType ratio(ParticleSet& P, int iat) = 0;
 
   /** compute the ratio of the new to old WaveFunctionComponent value of multiple walkers
    * @param WFC_list the list of WaveFunctionComponent pointers of the same component in a walker batch
