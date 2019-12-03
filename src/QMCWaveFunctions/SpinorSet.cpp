@@ -58,7 +58,7 @@ void SpinorSet::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
   spo_up->evaluate(P,iat,psi_work_up);
   spo_dn->evaluate(P,iat,psi_work_down);
  
-  RealType s=P.activeSpin(iat);
+  ParticleSet::Scalar_t s=P.activeSpin(iat);
 
   RealType coss(0.0),sins(0.0);
 
@@ -90,7 +90,7 @@ void SpinorSet::evaluate(const ParticleSet& P,
   spo_up->evaluate(P,iat,psi_work_up,dpsi_work_up,d2psi_work_up);
   spo_dn->evaluate(P,iat,psi_work_down,dpsi_work_down,d2psi_work_down);
  
-  RealType s=P.activeSpin(iat);
+  ParticleSet::Scalar_t s=P.activeSpin(iat);
 
   RealType coss(0.0),sins(0.0);
 
@@ -130,7 +130,7 @@ void SpinorSet::evaluate_notranspose(const ParticleSet& P,
 
   for(int iat=0; iat<nelec; iat++)
   {
-    RealType s=P.spins[iat];
+    ParticleSet::Scalar_t s=P.spins[iat];
 
     RealType coss(0.0),sins(0.0);
 
@@ -162,13 +162,13 @@ void SpinorSet::evaluate_spin(const ParticleSet& P,
   spo_up->evaluate(P,iat,psi_work_up);
   spo_dn->evaluate(P,iat,psi_work_down);
   
-  RealType s=P.activeSpin(iat);
+  ParticleSet::Scalar_t s=P.activeSpin(iat);
 
   RealType coss(0.0),sins(0.0);
 
   coss=std::cos(s);
   sins=std::sin(s);
- 
+  
   ValueType eis(coss,sins);
   ValueType emis(coss,-sins);
   ValueType eye(0,1.0);
