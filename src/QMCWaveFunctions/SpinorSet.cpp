@@ -65,8 +65,10 @@ void SpinorSet::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
   coss=std::cos(s);
   sins=std::sin(s);
 
-  std::complex<RealType> eis(coss,sins);
-  std::complex<RealType> emis(coss,-sins);
+  //This is only supported in the complex build, so ValueType is some complex number depending on the precision.
+  ValueType eis(coss,sins);
+  ValueType emis(coss,-sins);
+  
   psi = eis*psi_work_up+emis*psi_work_down;
   
 }
@@ -95,8 +97,8 @@ void SpinorSet::evaluate(const ParticleSet& P,
   coss=std::cos(s);
   sins=std::sin(s);
 
-  std::complex<RealType> eis(coss,sins);
-  std::complex<RealType> emis(coss,-sins);
+  ValueType eis(coss,sins);
+  ValueType emis(coss,-sins);
 
   psi = eis*psi_work_up+emis*psi_work_down;
   dpsi = eis*dpsi_work_up+emis*dpsi_work_down;
@@ -135,8 +137,8 @@ void SpinorSet::evaluate_notranspose(const ParticleSet& P,
     coss=std::cos(s);
     sins=std::sin(s);
 
-    std::complex<RealType> eis(coss,sins);
-    std::complex<RealType> emis(coss,-sins);
+    ValueType eis(coss,sins);
+    ValueType emis(coss,-sins);
 
     for(int no=0; no<OrbitalSetSize; no++)
     {
@@ -166,10 +168,10 @@ void SpinorSet::evaluate_spin(const ParticleSet& P,
 
   coss=std::cos(s);
   sins=std::sin(s);
-
-  std::complex<RealType> eis(coss,sins);
-  std::complex<RealType> emis(coss,-sins);
-  std::complex<RealType> eye(0,1.0);
+ 
+  ValueType eis(coss,sins);
+  ValueType emis(coss,-sins);
+  ValueType eye(0,1.0);
 
   psi = eis*psi_work_up+emis*psi_work_down;
   dpsi = eye*(eis*psi_work_up - emis*psi_work_down);
