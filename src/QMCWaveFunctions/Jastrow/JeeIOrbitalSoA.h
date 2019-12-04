@@ -462,9 +462,6 @@ public:
 
   GradType evalGrad(ParticleSet& P, int iat) { return GradType(dUat[iat]); }
 
-  //Assume no dynamical spin dependence in this jastrow.  So gradient is zero.
-  GradType evalGradWithSpin(ParticleSet& P, int iat, ValueType& spingrad) {return evalGrad(P,iat); }
-
   PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
   {
     UpdateMode = ORB_PBYP_PARTIAL;
@@ -476,13 +473,6 @@ public:
     DiffVal = Uat[iat] - cur_Uat;
     grad_iat += cur_dUat;
     return std::exp(static_cast<PsiValueType>(DiffVal));
-  }
-
-  //Assume no explicit spin dependence here.  Thus, spingrad_iat gets nothing added into it.  Ratio
-  //can be different from 1 if the realspace coordinate is moved.
-  PsiValueType ratioGradWithSpin(ParticleSet& P, int iat, GradType& grad_iat, ValueType& spingrad_iat)
-  {
-    return ratioGrad(P,iat,grad_iat);
   }
 
   inline void restore(int iat) {}

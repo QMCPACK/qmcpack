@@ -295,8 +295,6 @@ struct J1OrbitalSoA : public WaveFunctionComponent
    * @param iat particle index
    */
   GradType evalGrad(ParticleSet& P, int iat) { return GradType(Grad[iat]); }
-  //Assume no dynamical spin dependence in this jastrow.  So gradient is zero.
-  GradType evalGradWithSpin(ParticleSet& P, int iat, ValueType& spingrad) {return evalGrad(P,iat); }
 
   /** compute the gradient during particle-by-particle update
    * @param P quantum particleset
@@ -315,12 +313,6 @@ struct J1OrbitalSoA : public WaveFunctionComponent
     return std::exp(static_cast<PsiValueType>(Vat[iat] - curAt));
   }
 
-  //Assume no explicit spin dependence here.  Thus, spingrad_iat gets nothing added into it.  Ratio
-  //can be different from 1 if the realspace coordinate is moved.
-  PsiValueType ratioGradWithSpin(ParticleSet& P, int iat, GradType& grad_iat, ValueType& spingrad_iat)
-  {
-    return ratioGrad(P,iat,grad_iat);
-  }
   /** Rejected move. Nothing to do */
   inline void restore(int iat) {}
 

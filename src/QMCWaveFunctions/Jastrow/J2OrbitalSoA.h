@@ -258,16 +258,8 @@ public:
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios);
 
   GradType evalGrad(ParticleSet& P, int iat);
-  //Assume no dynamical spin dependence in this jastrow.  So gradient is zero.
-  GradType evalGradWithSpin(ParticleSet& P, int iat, ValueType& spingrad) {return evalGrad(P,iat); }
  
   PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
-  //Assume no explicit spin dependence here.  Thus, spingrad_iat gets nothing added into it.  Ratio
-  //can be different from 1 if the realspace coordinate is moved.
-  PsiValueType ratioGradWithSpin(ParticleSet& P, int iat, GradType& grad_iat, ValueType& spingrad_iat)
-  {
-    return ratioGrad(P,iat,grad_iat);
-  }
 
   void acceptMove(ParticleSet& P, int iat);
   inline void restore(int iat) {}
