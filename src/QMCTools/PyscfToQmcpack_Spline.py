@@ -4,18 +4,29 @@
 ##
 ## Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 ##
-## File developed by: Thomas Applencourt, applencourt@anl.gov,  Argonne National Laboratory
-##                    Hyeondeok Shin, hshin@anl.gov, Argonne National Laboratory
-##                    Yubo "Paul" Yang, yubo.paul.yang@gmail.com, University of Illinois Urbana-Champaign
+## File developed by: Yubo "Paul" Yang, yubo.paul.yang@gmail.com, University of Illinois Urbana-Champaign
+##                    Thomas Applencourt, applencourt@anl.gov,  Argonne National Laboratory
+##                    Hyeondeok Shin, hshin@anl.gov, Argonne National Laboratory          
 ##                    Anouar Benali, benali@anl.gov, Argonne National Laboratory
 ##                  
 ## File created by: Thomas Applencourt, applencourt@anl.gov, Argonne National Laboratory
 #######################################################################################
 
-from __future__ import print_function
 import numpy as np
 import h5py
 import os
+try:
+  from lxml import etree
+except:
+  import sys
+  sys.exit("Error: lxml module is needed for the generation of the XML file. Please install it using your favorite package manager")
+
+try:
+  import pandas as pd
+except:
+  import sys
+  sys.exit("Error: Panda module is needed for the save_eigensystem and eigensystem functions. Please install it using your package manager")
+
 
 def pyscf2qmcpackspline(cell,mf,title="Default", kpts=[], kmesh=[],  sp_twist=[]):
   import sys, re
@@ -25,8 +36,8 @@ def pyscf2qmcpackspline(cell,mf,title="Default", kpts=[], kmesh=[],  sp_twist=[]
   Gamma=False
 
   # Python version check
-  if sys.version_info < (3, 0):
-       sys.exit("Python 2.x not supported")
+  if sys.version_info < (3, 2):
+       sys.exit("Python < 3.2 not supported")
 
   # FFT mesh check
   if (cell.mesh.any() % 2) == 0:
@@ -53,11 +64,9 @@ def pyscf2qmcpackspline(cell,mf,title="Default", kpts=[], kmesh=[],  sp_twist=[]
         sys.exit("Open boundary condition without lattice vectors not supported")
      
   if PBC and len(kpts) == 0:
-        #sys.exit("You need to specify explicit the list of K-point (including gamma)")
         Gamma=True
 
   if len(kpts)!= 0:
-#     loc_cell,kmesh=get_supercell(cell,kmesh)
      sys.exit("K-point scf not supported")
   else:
      loc_cell=cell
@@ -79,11 +88,8 @@ def pyscf2qmcpackspline(cell,mf,title="Default", kpts=[], kmesh=[],  sp_twist=[]
   # ================================================
   generate_pwscf_h5(loc_cell,gvecs,eig_df,h5_fname)  
 
-
   # generate QMCPACK input file
-  # ================================================
-  from lxml import etree
- 
+  # ================================================ 
   h5_handle = h5py.File(h5_fname,'r')
   inp = InputXml()
   # build <simulationcell>
@@ -143,9 +149,8 @@ def get_supercell(cell,kmesh=[]):
 
 
 def save_eigensystem(mf,gvec_fname = 'gvectors.dat'
-   ,eigsys_fname = 'eigensystem.json',save=True):
+                     ,eigsys_fname = 'eigensystem.json',save=True):
   import os
-  import pandas as pd
   if os.path.isfile(eigsys_fname) and os.path.isfile(gvec_fname):
     gvecs = np.loadtxt(gvec_fname)
     eig_df = pd.read_json(eigsys_fname).set_index(
@@ -525,8 +530,6 @@ class PwscfH5:
 # =======================================================================
 # Class for xml generator
 # =======================================================================
-import lxml.etree as etree
-
 class InputXml:
   def __init__(self):
     pass
@@ -931,17 +934,3 @@ class InputXml:
   # ----------------
 
 # end class
-
-
-
-
-
-
-
-
-
-
-
-
-
-
