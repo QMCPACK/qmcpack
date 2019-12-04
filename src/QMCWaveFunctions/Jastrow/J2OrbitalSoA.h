@@ -258,7 +258,7 @@ public:
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios);
 
   GradType evalGrad(ParticleSet& P, int iat);
- 
+
   PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
 
   void acceptMove(ParticleSet& P, int iat);

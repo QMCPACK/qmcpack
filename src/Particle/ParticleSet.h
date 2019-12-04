@@ -327,7 +327,9 @@ public:
   void makeMoveWithSpin(Index_t iat, const SingleParticlePos_t& displ, const RealType& sdispl);
 
   /// batched version of makeMove
-  static void flex_makeMove(const RefVector<ParticleSet>& P_list, int iat, const std::vector<SingleParticlePos_t>& displs);
+  static void flex_makeMove(const RefVector<ParticleSet>& P_list,
+                            int iat,
+                            const std::vector<SingleParticlePos_t>& displs);
 
   /** move the iat-th particle to activePos
    * @param iat the index of the particle to be moved
@@ -370,12 +372,15 @@ public:
    *
    * Otherwise, everything is the same as makeMove for a walker
    */
-  bool makeMoveAllParticlesWithDrift(const Walker_t& awalker, const ParticlePos_t& drift, const ParticlePos_t& deltaR, RealType dt);
+  bool makeMoveAllParticlesWithDrift(const Walker_t& awalker,
+                                     const ParticlePos_t& drift,
+                                     const ParticlePos_t& deltaR,
+                                     RealType dt);
 
   bool makeMoveAllParticlesWithDrift(const Walker_t& awalker,
-                         const ParticlePos_t& drift,
-                         const ParticlePos_t& deltaR,
-                         const std::vector<RealType>& dt);
+                                     const ParticlePos_t& drift,
+                                     const ParticlePos_t& deltaR,
+                                     const std::vector<RealType>& dt);
   /** accept the move
    *@param iat the index of the particle whose position and other attributes to be updated
    */
@@ -686,8 +691,9 @@ protected:
    * @param iat the particle that is moved on a sphere
    * @param new_positions new particle positions
    */
-  static void mw_computeNewPosDistTablesAndSK(const RefVector<ParticleSet>& P_list, Index_t iat, const std::vector<SingleParticlePos_t>& new_positions);
-
+  static void mw_computeNewPosDistTablesAndSK(const RefVector<ParticleSet>& P_list,
+                                              Index_t iat,
+                                              const std::vector<SingleParticlePos_t>& new_positions);
 };
 
 } // namespace qmcplusplus

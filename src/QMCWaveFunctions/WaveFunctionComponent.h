@@ -234,10 +234,7 @@ struct WaveFunctionComponent : public QMCTraits
    * @param iat particle index
    * @return the spin gradient of the iat-th particle
    */
-  virtual GradType evalGradWithSpin(ParticleSet& P, int iat, LogValueType& spingrad)
-  {
-    return evalGrad(P,iat);
-  }
+  virtual GradType evalGradWithSpin(ParticleSet& P, int iat, LogValueType& spingrad) { return evalGrad(P, iat); }
 
   /** compute the current gradients for the iat-th particle of multiple walkers
    * @param WFC_list the list of WaveFunctionComponent pointers of the same component in a walker batch
@@ -324,7 +321,7 @@ struct WaveFunctionComponent : public QMCTraits
    */
   virtual PsiValueType ratioGradWithSpin(ParticleSet& P, int iat, GradType& grad_iat, LogValueType& spingrad_iat)
   {
-    return ratioGrad(P,iat,grad_iat);
+    return ratioGrad(P, iat, grad_iat);
   }
 
   /** compute the ratio of the new to old WaveFunctionComponent value and the new gradient of multiple walkers

@@ -242,7 +242,7 @@ public:
    * @param spingrad spingrad value.  Zeroed out first, then filled with d/ds ln(psi).
    * @return \nabla ln(psi) (complex)
    *
-   */  
+   */
   GradType evalGradWithSpin(ParticleSet& P, int iat, LogValueType& spingrad);
 
   /** batched verison of evalGrad

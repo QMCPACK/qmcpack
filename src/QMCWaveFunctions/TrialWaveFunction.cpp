@@ -394,7 +394,7 @@ TrialWaveFunction::GradType TrialWaveFunction::evalGrad(ParticleSet& P, int iat)
 TrialWaveFunction::GradType TrialWaveFunction::evalGradWithSpin(ParticleSet& P, int iat, LogValueType& spingrad)
 {
   GradType grad_iat;
-  spingrad=0;
+  spingrad = 0;
   for (int i = 0, ii = VGL_TIMER; i < Z.size(); ++i, ii += TIMER_SKIP)
   {
     myTimers[ii]->start();
@@ -480,7 +480,10 @@ TrialWaveFunction::ValueType TrialWaveFunction::calcRatioGrad(ParticleSet& P, in
   return static_cast<ValueType>(r);
 }
 
-TrialWaveFunction::ValueType TrialWaveFunction::calcRatioGradWithSpin(ParticleSet& P, int iat, GradType& grad_iat, LogValueType& spingrad_iat)
+TrialWaveFunction::ValueType TrialWaveFunction::calcRatioGradWithSpin(ParticleSet& P,
+                                                                      int iat,
+                                                                      GradType& grad_iat,
+                                                                      LogValueType& spingrad_iat)
 {
   spingrad_iat = 0.0;
   PsiValueType r(1.0);

@@ -1,50 +1,49 @@
 import numpy as np
 
-#This script computes all the reference values for a Slater determinant of spinors.  
-#electron gas orbitals are used for easy analytic treatments.  
+#This script computes all the reference values for a Slater determinant of spinors.
+#electron gas orbitals are used for easy analytic treatments.
 #
-#I compute the value, all gradients w.r.t. position and spin, and the laplacians. 
+#I compute the value, all gradients w.r.t.position and spin, and the laplacians.
 #
-# A trial spin+position move is generated, and the ratio, value, and gradients for the new configuration
-#  are computed.  
+#A trial spin + position move is generated, and the ratio, value, and gradients for the new configuration
+#are computed.
 #
-#  Ray Clay, rclay@sandia.gov, Dec 2 2019.
+#Ray Clay, rclay @sandia.gov, Dec 2 2019.
 
-def spinor_val(r,s,k1,k2):
-  kph1=complex(0,np.dot(k1,r))
-  kph2=complex(0,np.dot(k2,r))
-  spinph=complex(0,s);
+    def spinor_val(r, s, k1, k2) : kph1 = complex(0, np.dot(k1, r)) kph2 = complex(0, np.dot(k2, r)) spinph = complex(0, s);
 
-  return np.exp(spinph)*np.exp(kph1)+np.exp(-spinph)*np.exp(kph2)
+return np.exp(spinph) * np.exp(kph1) +
+    np.exp(-spinph) *
+        np.exp(kph2)
 
-def spinor_grad(r,s,k1,k2):
-  kph1=complex(0,np.dot(k1,r))
-  kph2=complex(0,np.dot(k2,r))
-  spinph=complex(0,s)
-  eye=complex(0,1)
+            def spinor_grad(r, s, k1, k2)
+    : kph1 = complex(0, np.dot(k1, r)) kph2 = complex(0, np.dot(k2, r)) spinph = complex(0, s) eye =
+           complex(0, 1)
 
-  return np.exp(spinph)*eye*k1*np.exp(kph1)+eye*k2*np.exp(-spinph)*np.exp(kph2)
+               return np.exp(spinph) *
+        eye * k1 * np.exp(kph1) +
+    eye * k2 * np.exp(-spinph) *
+        np.exp(kph2)
 
-def spinor_lapl(r,s,k1,k2):
-  kph1=complex(0,np.dot(k1,r))
-  kph2=complex(0,np.dot(k2,r))
-  spinph=complex(0,s)
-  eye=complex(0,1)
-  return -1.0*np.dot(k1,k1)*np.exp(spinph)*np.exp(kph1)+-1.0*np.dot(k2,k2)*np.exp(-spinph)*np.exp(kph2)
+            def spinor_lapl(r, s, k1, k2)
+    : kph1 = complex(0, np.dot(k1, r)) kph2 = complex(0, np.dot(k2, r)) spinph = complex(0, s) eye =
+               complex(0, 1) return -1.0 * np.dot(k1, k1) * np.exp(spinph) * np.exp(kph1) +
+    -1.0 * np.dot(k2, k2) * np.exp(-spinph) *
+        np.exp(kph2)
 
-def spinor_spingrad(r,s,k1,k2):
-  kph1=complex(0,np.dot(k1,r))
-  kph2=complex(0,np.dot(k2,r))
-  spinph=complex(0,s)
-  eye=complex(0,1)
+            def spinor_spingrad(r, s, k1, k2)
+    : kph1 = complex(0, np.dot(k1, r)) kph2 = complex(0, np.dot(k2, r)) spinph = complex(0, s) eye = complex(0, 1)
 
-  return eye*np.exp(spinph)*np.exp(kph1)-eye*np.exp(-spinph)*np.exp(kph2)
+                                                                                                         return eye *
+        np.exp(spinph) * np.exp(kph1) -
+    eye * np.exp(-spinph) *
+        np.exp(kph2)
 
 
-def spinor_matrix(R,s,kup,kdn):
-  M=np.zeros((len(R),len(kup)),dtype=complex);
+            def spinor_matrix(R, s, kup, kdn)
+    : M = np.zeros((len(R), len(kup)), dtype = complex);
 
- 
+
   for iat in xrange(0,len(R)):
     for norb in xrange(0,len(kup)):
       M[iat][norb]=spinor_val(R[iat],s[iat],kup[norb],kdn[norb])
@@ -94,12 +93,12 @@ kup=np.zeros((3,3))
 kdn=np.zeros((3,3))
 
 kup[0]=np.array([0,0,0]);
-kup[1]=np.array([0.1,0.2,0.3]);
-kup[2]=np.array([0.4,0.5,0.6]);
+  kup[1] = np.array([ 0.1, 0.2, 0.3 ]);
+  kup[2] = np.array([ 0.4, 0.5, 0.6 ]);
 
-kdn[0]=np.array([0,0,0]);
-kdn[1]=np.array([-0.1,0.2,-0.3]);
-kdn[2]=np.array([0.4,-0.5,0.6]);
+  kdn[0] = np.array([ 0, 0, 0 ]);
+  kdn[1] = np.array([ -0.1, 0.2, -0.3 ]);
+  kdn[2] = np.array([ 0.4, -0.5, 0.6 ]);
 
 Mref= spinor_matrix(R,spins,kup,kdn)
 Mtmp = np.copy(Mref)
@@ -163,41 +162,34 @@ print " "
 print "Now we make a particle/spin move for particle ",iel
 #### Now we're going to compute the ratio and gradients at a proposed move location.  
 dr=np.array([0.1,-0.05,0.2]);
-ds=0.3;
+ds = 0.3;
 
-print "  dr = ",dr
-print "  ds = ",ds
+print "  dr = ", dr print "  ds = ",
+    ds
 
-rnew=R[iel]+dr
-snew=spins[iel]+ds
+        rnew = R[iel] + dr snew = spins[iel] +
+    ds
 
-print " "
-print " r_old = ",R[iel]," r_new = ",rnew
-print " s_old = ",spins[iel]," s_new = ",snew
+        print " " print " r_old = ",
+        R[iel], " r_new = ", rnew print " s_old = ", spins[iel], " s_new = ",
+        snew
 
-Mtmp=np.copy(Mref)
-Mtmp[iel]=compute_row_spinor_val(rnew,snew,kup,kdn)
-det_new = np.linalg.det(Mtmp)
+            Mtmp = np.copy(Mref) Mtmp[iel] = compute_row_spinor_val(rnew, snew, kup, kdn)
+                det_new                    = np.linalg.det(Mtmp)
 
 
-##Now to compute the gradients
-gxr_new,gyr_new,gzr_new = compute_row_spinor_grad(rnew,snew,kup,kdn)
-Mtmp=np.copy(Mref)
-Mtmp[iel] = gxr_new
-gx_new=np.linalg.det(Mtmp)/det_new
-Mtmp[iel] = gyr_new
-gy_new=np.linalg.det(Mtmp)/det_new
-Mtmp[iel] = gzr_new
-gz_new=np.linalg.det(Mtmp)/det_new
+                              ##Now to compute the gradients gxr_new,
+        gyr_new,
+        gzr_new  = compute_row_spinor_grad(rnew, snew, kup, kdn)
+            Mtmp = np.copy(Mref) Mtmp[iel] = gxr_new gx_new = np.linalg.det(Mtmp) /
+    det_new Mtmp[iel] = gyr_new gy_new = np.linalg.det(Mtmp) /
+    det_new Mtmp[iel] = gzr_new gz_new = np.linalg.det(Mtmp) /
+    det_new
 
 #now to compute spin gradient at new position.
-Mtmp[iel]=compute_row_spinor_spingrad(rnew,snew,kup,kdn)
-sg_new=np.linalg.det(Mtmp)/det_new
+        Mtmp[iel] = compute_row_spinor_spingrad(rnew, snew, kup, kdn) sg_new = np.linalg.det(Mtmp) /
+    det_new
 
-print " NEW VALUE = ",det_new
-print " NEW LOG(VALUE) = ",np.log(det_new)
-print " RATIO  =  ", det_new/det_ref
-print "  GX = ", gx_new
-print "  GY = ", gy_new
-print "  GZ = ", gz_new
-print "  SG = ", sg_new
+        print " NEW VALUE = ",
+        det_new print " NEW LOG(VALUE) = ", np.log(det_new) print " RATIO  =  ", det_new / det_ref print "  GX = ",
+        gx_new print "  GY = ", gy_new print "  GZ = ", gz_new print "  SG = ", sg_new

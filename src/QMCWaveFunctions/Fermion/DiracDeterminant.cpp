@@ -98,18 +98,20 @@ typename DiracDeterminant<DU_TYPE>::GradType DiracDeterminant<DU_TYPE>::evalGrad
 }
 
 template<typename DU_TYPE>
-typename DiracDeterminant<DU_TYPE>::GradType DiracDeterminant<DU_TYPE>::evalGradWithSpin(ParticleSet& P, int iat, LogValueType& spingrad)
+typename DiracDeterminant<DU_TYPE>::GradType DiracDeterminant<DU_TYPE>::evalGradWithSpin(ParticleSet& P,
+                                                                                         int iat,
+                                                                                         LogValueType& spingrad)
 {
-  Phi->evaluate_spin(P,iat,psiV,dspin_psiV);
+  Phi->evaluate_spin(P, iat, psiV, dspin_psiV);
   const int WorkingIndex = iat - FirstIndex;
   RatioTimer.start();
   invRow_id = WorkingIndex;
   updateEng.getInvRow(psiM, WorkingIndex, invRow);
-  GradType g = simd::dot(invRow.data(), dpsiM[WorkingIndex], invRow.size());
+  GradType g          = simd::dot(invRow.data(), dpsiM[WorkingIndex], invRow.size());
   LogValueType spin_g = simd::dot(invRow.data(), dspin_psiV.data(), invRow.size());
   RatioTimer.stop();
 
-  spingrad+=spin_g;
+  spingrad += spin_g;
   return g;
 }
 
@@ -149,15 +151,17 @@ typename DiracDeterminant<DU_TYPE>::PsiValueType DiracDeterminant<DU_TYPE>::rati
 }
 
 template<typename DU_TYPE>
-typename DiracDeterminant<DU_TYPE>::PsiValueType DiracDeterminant<DU_TYPE>::ratioGradWithSpin(ParticleSet& P,
-                                                                                      int iat,
-                                                                                      GradType& grad_iat, LogValueType& spingrad_iat)
+typename DiracDeterminant<DU_TYPE>::PsiValueType DiracDeterminant<DU_TYPE>::ratioGradWithSpin(
+    ParticleSet& P,
+    int iat,
+    GradType& grad_iat,
+    LogValueType& spingrad_iat)
 {
   SPOVGLTimer.start();
   Phi->evaluate(P, iat, psiV, dpsiV, d2psiV);
   Phi->evaluate_spin(P, iat, psiV, dspin_psiV);
   SPOVGLTimer.stop();
-  
+
   UpdateMode = ORB_PBYP_PARTIAL;
   RatioTimer.start();
   const int WorkingIndex = iat - FirstIndex;
