@@ -180,7 +180,7 @@ RealType gridSum(T& function,bool zero=true,RealType tol=1e-11)
 }
 
 
-RealType madelungSum(RealMat a,RealType tol=1e-11)
+RealType madelungSum(RealMat a,RealType tol=1e-10)
 {
   RealType volume = std::abs(det(a));
   RealMat b       = 2*M_PI*transpose(inverse(a));
@@ -204,7 +204,7 @@ RealType madelungSum(RealMat a,RealType tol=1e-11)
 }
 
 
-RealType ewaldSum(RealVec r,RealMat a,RealType tol=1e-11)
+RealType ewaldSum(RealVec r,RealMat a,RealType tol=1e-10)
 {
   RealType volume = std::abs(det(a));
   RealMat b       = 2*M_PI*transpose(inverse(a));
@@ -228,11 +228,15 @@ RealType ewaldSum(RealVec r,RealMat a,RealType tol=1e-11)
 }
 
 
-RealType ewaldEnergy(RealMat a,PosArray R,ChargeArray Q,RealType tol=1e-11)
+RealType ewaldEnergy(RealMat a,PosArray R,ChargeArray Q,RealType tol=1e-10)
 {
   IntType N = R.size();
 
-  RealType vm = madelungSum(a,tol);
+  RealType qqmax=0.0;
+  for(size_t i=0; i<N; ++i)
+    qqmax = std::max(std::abs(Q[i]*Q[i]),qqmax);
+
+  RealType vm = madelungSum(a,tol*2./qqmax);
 
   RealType ve = 0.0;
   // Madelung terms
@@ -241,8 +245,10 @@ RealType ewaldEnergy(RealMat a,PosArray R,ChargeArray Q,RealType tol=1e-11)
   // Pair interaction terms
   for(size_t i=0; i<N; ++i)
     for(size_t j=0; j<i; ++j)
-      ve += Q[i]*Q[j]*ewaldSum(R[i]-R[j],a,tol);
-
+    {
+      RealType qq = Q[i]*Q[j];
+      ve += qq*ewaldSum(R[i]-R[j],a,tol/qq);
+    }
   return ve;
 }
 
