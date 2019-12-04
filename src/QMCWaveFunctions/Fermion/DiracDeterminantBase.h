@@ -112,10 +112,12 @@ public:
   using WaveFunctionComponent::completeUpdates;
   using WaveFunctionComponent::mw_completeUpdates;
   using WaveFunctionComponent::evalGrad;
+  using WaveFunctionComponent::evalGradWithSpin;
   using WaveFunctionComponent::mw_evalGrad;
   using WaveFunctionComponent::ratio;
   using WaveFunctionComponent::mw_calcRatio;
   using WaveFunctionComponent::ratioGrad;
+  using WaveFunctionComponent::ratioGradWithSpin;
   using WaveFunctionComponent::mw_ratioGrad;
   using WaveFunctionComponent::restore;
   using WaveFunctionComponent::mw_restore;
@@ -143,6 +145,16 @@ public:
     return 0;
   }
 
+  virtual PsiValueType ratioGradWithSpin(ParticleSet& P, int iat, GradType& grad_iat, LogValueType& spingrad) override
+  {
+    APP_ABORT("  DiracDeterminantBase::ratioGradWithSpins():  Implementation required\n");
+    return 0.0;
+  } 
+  virtual GradType evalGradWithSpin(ParticleSet& P, int iat, LogValueType& spingrad) override
+  {
+    APP_ABORT("  DiracDeterminantBase::evalGradWithSpins():  Implementation required\n");
+    return GradType();
+  }
   /** cloning function
    * @param tqp target particleset
    * @param spo spo set
