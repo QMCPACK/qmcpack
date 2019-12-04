@@ -2455,12 +2455,12 @@ class linear(QIxml):
     elements   = ['estimator']
     parameters = ['walkers','warmupsteps','blocks','steps','substeps','timestep',
                   'usedrift','stepsbetweensamples','samples','minmethod',
-                  'minwalkers','maxweight','nonlocalpp','usebuffer',
-                  'alloweddifference','gevmethod','beta','exp0','bigchange',
-                  'stepsize','stabilizerscale','nstabilizers','max_its',
-                  'cgsteps','eigcg','stabilizermethod','rnwarmupsteps',
-                  'walkersperthread','minke','gradtol','alpha','tries',
-                  'min_walkers','samplesperthread','use_nonlocalpp_deriv',
+                  'minwalkers','maxweight','nonlocalpp','use_nonlocalpp_deriv',
+                  'usebuffer','alloweddifference','gevmethod','beta','exp0',
+                  'bigchange','stepsize','stabilizerscale','nstabilizers',
+                  'max_its','cgsteps','eigcg','stabilizermethod',
+                  'rnwarmupsteps','walkersperthread','minke','gradtol','alpha',
+                  'tries','min_walkers','samplesperthread',
                   'shift_i','shift_s','max_relative_change','max_param_change',
                   'chase_lowest','chase_closest','block_lm','nblocks','nolds',
                   'nkept',
@@ -2480,9 +2480,9 @@ class cslinear(QIxml):
                   'alloweddifference','gevmethod','beta','exp0','bigchange',
                   'stepsize','stabilizerscale','nstabilizers','max_its',
                   'stabilizermethod','cswarmupsteps','alpha_error','gevsplit',
-                  'beta_error']
+                  'beta_error','use_nonlocalpp_deriv']
     costs      = ['energy','unreweightedvariance','reweightedvariance']
-    write_types = obj(gpu=yesno,usedrift=yesno,nonlocalpp=yesno,usebuffer=yesno)
+    write_types = obj(gpu=yesno,usedrift=yesno,nonlocalpp=yesno,use_nonlocalpp_deriv=yesno,usebuffer=yesno)
 #end class cslinear
 
 class vmc(QIxml):
@@ -5857,14 +5857,15 @@ opt_defaults = obj(
     )
 
 shared_opt_defaults = obj(
-    samples     = 204800,
-    nonlocalpp  = True,
-    warmupsteps = 300,                
-    blocks      = 100,                
-    steps       = 1,                  
-    substeps    = 10,                 
-    timestep    = 0.3,
-    usedrift    = False,  
+    samples              = 204800,
+    nonlocalpp           = True,
+    use_nonlocalpp_deriv = True,
+    warmupsteps          = 300,                
+    blocks               = 100,                
+    steps                = 1,                  
+    substeps             = 10,                 
+    timestep             = 0.3,
+    usedrift             = False,  
     )
 
 linear_quartic_defaults = obj(
@@ -6531,6 +6532,16 @@ def generate_basic_input(**kwargs):
     if kw.remove_cell:
         qi.remove_physical_system()
     #end if
+
+    for calc in sim.calculations:
+        if isinstance(calc,loop):
+            calc = calc.qmc
+        #end if
+        if isinstance(calc,(linear,cslinear)) and 'nonlocalpp' not in calc:
+            calc.nonlocalpp           = True
+            calc.use_nonlocalpp_deriv = True
+        #end if
+    #end for
 
     return qi
 #end def generate_basic_input
