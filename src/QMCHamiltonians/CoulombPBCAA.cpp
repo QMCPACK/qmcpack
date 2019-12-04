@@ -67,13 +67,28 @@ CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces)
     }
 
     RealType Vii_ref = ewaldEnergy(A,R,Q);
-
-    app_log()<<std::setprecision(14);
-    app_log()<<"  Reference ion-ion energy: "<<Vii_ref<<std::endl;
-    app_log()<<"  QMCPACK   ion-ion energy: "<<Value<<std::endl;
-    app_log()<<"            ion-ion diff  : "<<Value-Vii_ref<<std::endl;
-
-    APP_ABORT("ion-ion check")
+    RealType Vdiff_per_atom = std::abs(Value-Vii_ref)/NumCenters;
+    if(Vdiff_per_atom > Ps.Lattice.LR_tol)
+    {
+      app_log()<<std::setprecision(14);
+      app_log()<<std::endl;
+      app_log()<<"Error in ion-ion Ewald energy exceeds "<<Ps.Lattice.LR_tol<<" Ha/atom tolerance."<<std::endl;
+      app_log()<<std::endl;
+      app_log()<<"  Reference ion-ion energy: "<<Vii_ref<<std::endl;
+      app_log()<<"  QMCPACK   ion-ion energy: "<<Value<<std::endl;
+      app_log()<<"            ion-ion diff  : "<<Value-Vii_ref<<std::endl;
+      app_log()<<"            diff/atom     : "<<(Value-Vii_ref)/NumCenters<<std::endl;
+      app_log()<<"            tolerance     : "<<Ps.Lattice.LR_tol<<std::endl;
+      app_log()<<std::endl;
+      app_log()<<"Please try increasing the LR_dim_cutoff parameter in the <simulationcell/>"<<std::endl;
+      app_log()<<"input.  Alternatively, the tolerance can be increased by setting the"<<std::endl;
+      app_log()<<"LR_tol parameter in <simulationcell/> to a value greater than "<<Ps.Lattice.LR_tol<<". "<<std::endl;
+      app_log()<<"If you increase the tolerance, please perform careful checks of energy"<<std::endl;
+      app_log()<<"differences to ensure this error is controlled for your application."<<std::endl;
+      app_log()<<std::endl;
+      
+      APP_ABORT("ion-ion check failed")
+    }
   }
   prefix = "F_AA";
   app_log() << "  Maximum K shell " << AA->MaxKshell << std::endl;
