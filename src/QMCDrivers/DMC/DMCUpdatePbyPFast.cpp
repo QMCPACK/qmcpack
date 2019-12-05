@@ -89,7 +89,7 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool re
       }
       if (!W.makeMoveAndCheck(iat, dr))
         continue;
-      RealType ratio = Psi.ratioGrad(W, iat, grad_iat);
+      ValueType ratio = Psi.calcRatioGrad(W, iat, grad_iat);
       //node is crossed reject the move
       if (branchEngine->phaseChanged(Psi.getPhaseDiff()))
       {
@@ -105,7 +105,7 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool re
         DriftModifier->getDrift(tauovermass, grad_iat, dr);
         dr                     = W.R[iat] - W.activePos - dr;
         FullPrecRealType logGb = -oneover2tau * dot(dr, dr);
-        RealType prob          = ratio * ratio * std::exp(logGb - logGf);
+        RealType prob          = std::norm(ratio) * std::exp(logGb - logGf);
         if (RandomGen() < prob)
         {
           ++nAcceptTemp;

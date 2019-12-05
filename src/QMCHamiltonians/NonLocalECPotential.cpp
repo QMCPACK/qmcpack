@@ -351,7 +351,7 @@ int NonLocalECPotential::makeNonLocalMovesPbyP(ParticleSet& P)
       if (P.makeMoveAndCheck(iat, oneTMove->Delta))
       {
         GradType grad_iat;
-        Psi.ratioGrad(P, iat, grad_iat);
+        Psi.calcRatioGrad(P, iat, grad_iat);
         Psi.acceptMove(P, iat);
         P.acceptMove(iat);
         NonLocalMoveAccepted++;
@@ -372,7 +372,7 @@ int NonLocalECPotential::makeNonLocalMovesPbyP(ParticleSet& P)
           P.setActive(iat);
           if (P.makeMoveAndCheck(iat, oneTMove->Delta))
           {
-            Psi.ratioGrad(P, iat, grad_iat);
+            Psi.calcRatioGrad(P, iat, grad_iat);
             Psi.acceptMove(P, iat);
             P.acceptMove(iat);
             NonLocalMoveAccepted++;
@@ -403,7 +403,7 @@ int NonLocalECPotential::makeNonLocalMovesPbyP(ParticleSet& P)
           P.setActive(iat);
           if (P.makeMoveAndCheck(iat, oneTMove->Delta))
           {
-            Psi.ratioGrad(P, iat, grad_iat);
+            Psi.calcRatioGrad(P, iat, grad_iat);
             Psi.acceptMove(P, iat);
             // mark all affected electrons
             markAffectedElecs(P.getDistTable(myTableIndex), iat);

@@ -122,7 +122,7 @@ TrialWaveFunction::RealType TrialWaveFunction::evaluateLog(ParticleSet& P)
     ScopedTimer local_timer(myTimers[ii]);
     logpsi += Z[i]->evaluateLog(P, P.G, P.L);
   }
-  LogValue = std::real(logpsi);
+  LogValue   = std::real(logpsi);
   PhaseValue = std::imag(logpsi);
   return LogValue;
 }
@@ -227,7 +227,7 @@ TrialWaveFunction::RealType TrialWaveFunction::evaluateDeltaLog(ParticleSet& P, 
     }
     myTimers[ii]->stop();
   }
-  LogValue = std::real(logpsi);
+  LogValue   = std::real(logpsi);
   PhaseValue = std::imag(logpsi);
 
   //In case we need to recompute orbitals, initialize dummy vectors for G and L.
@@ -329,26 +329,9 @@ void TrialWaveFunction::evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_
   // app_log()<<" TrialWavefunction::Hessian = "<<grad_grad_psi<< std::endl;
 }
 
-TrialWaveFunction::RealType TrialWaveFunction::ratio(ParticleSet& P, int iat)
-{
-  ValueType r(1.0);
-  std::vector<WaveFunctionComponent*>::iterator it(Z.begin());
-  std::vector<WaveFunctionComponent*>::iterator it_end(Z.end());
-  for (int ii = V_TIMER; it != it_end; ++it, ii += TIMER_SKIP)
-  {
-    myTimers[ii]->start();
-    r *= (*it)->ratio(P, iat);
-    myTimers[ii]->stop();
-  }
-
-  LogValueType logpsi = convertValueToLog(r);
-  PhaseDiff = std::imag(logpsi);
-  return std::exp(std::real(logpsi));
-}
-
 TrialWaveFunction::ValueType TrialWaveFunction::calcRatio(ParticleSet& P, int iat, ComputeType ct)
 {
-  ValueType r(1.0);
+  PsiValueType r(1.0);
   for (int i = 0, ii = V_TIMER; i < Z.size(); i++, ii += TIMER_SKIP)
   {
     myTimers[ii]->start();
@@ -357,7 +340,7 @@ TrialWaveFunction::ValueType TrialWaveFunction::calcRatio(ParticleSet& P, int ia
       r *= Z[i]->ratio(P, iat);
     myTimers[ii]->stop();
   }
-  return r;
+  return static_cast<ValueType>(r);
 }
 
 void TrialWaveFunction::flex_calcRatio(const RefVector<TrialWaveFunction>& wf_list,
@@ -403,6 +386,19 @@ TrialWaveFunction::GradType TrialWaveFunction::evalGrad(ParticleSet& P, int iat)
   {
     myTimers[ii]->start();
     grad_iat += Z[i]->evalGrad(P, iat);
+    myTimers[ii]->stop();
+  }
+  return grad_iat;
+}
+
+TrialWaveFunction::GradType TrialWaveFunction::evalGradWithSpin(ParticleSet& P, int iat, LogValueType& spingrad)
+{
+  GradType grad_iat;
+  spingrad = 0;
+  for (int i = 0, ii = VGL_TIMER; i < Z.size(); ++i, ii += TIMER_SKIP)
+  {
+    myTimers[ii]->start();
+    grad_iat += Z[i]->evalGradWithSpin(P, iat, spingrad);
     myTimers[ii]->stop();
   }
   return grad_iat;
@@ -468,11 +464,10 @@ TrialWaveFunction::GradType TrialWaveFunction::evalGradSource(
   return grad_iat;
 }
 
-
-TrialWaveFunction::RealType TrialWaveFunction::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
+TrialWaveFunction::ValueType TrialWaveFunction::calcRatioGrad(ParticleSet& P, int iat, GradType& grad_iat)
 {
   grad_iat = 0.0;
-  ValueType r(1.0);
+  PsiValueType r(1.0);
   for (int i = 0, ii = VGL_TIMER; i < Z.size(); ++i, ii += TIMER_SKIP)
   {
     myTimers[ii]->start();
@@ -480,16 +475,35 @@ TrialWaveFunction::RealType TrialWaveFunction::ratioGrad(ParticleSet& P, int iat
     myTimers[ii]->stop();
   }
 
-  LogValueType logpsi = convertValueToLog(r);
-  PhaseDiff = std::imag(logpsi);
-  return std::exp(std::real(logpsi));
+  LogValueType logratio = convertValueToLog(r);
+  PhaseDiff             = std::imag(logratio);
+  return static_cast<ValueType>(r);
 }
 
-void TrialWaveFunction::flex_ratioGrad(const RefVector<TrialWaveFunction>& wf_list,
-                                       const RefVector<ParticleSet>& p_list,
-                                       int iat,
-                                       std::vector<PsiValueType>& ratios,
-                                       std::vector<GradType>& grad_new)
+TrialWaveFunction::ValueType TrialWaveFunction::calcRatioGradWithSpin(ParticleSet& P,
+                                                                      int iat,
+                                                                      GradType& grad_iat,
+                                                                      LogValueType& spingrad_iat)
+{
+  spingrad_iat = 0.0;
+  PsiValueType r(1.0);
+  for (int i = 0, ii = VGL_TIMER; i < Z.size(); ++i, ii += TIMER_SKIP)
+  {
+    myTimers[ii]->start();
+    r *= Z[i]->ratioGradWithSpin(P, iat, grad_iat, spingrad_iat);
+    myTimers[ii]->stop();
+  }
+
+  LogValueType logratio = convertValueToLog(r);
+  PhaseDiff             = std::imag(logratio);
+  return static_cast<ValueType>(r);
+}
+
+void TrialWaveFunction::flex_calcRatioGrad(const RefVector<TrialWaveFunction>& wf_list,
+                                           const RefVector<ParticleSet>& p_list,
+                                           int iat,
+                                           std::vector<PsiValueType>& ratios,
+                                           std::vector<GradType>& grad_new)
 {
   const int num_wf = wf_list.size();
   grad_new.resize(num_wf);
@@ -517,7 +531,7 @@ void TrialWaveFunction::flex_ratioGrad(const RefVector<TrialWaveFunction>& wf_li
       wf_list[iw].get().PhaseDiff = std::imag(std::arg(ratios[iw]));
   }
   else if (wf_list.size() == 1)
-    ratios[0] = wf_list[0].get().ratioGrad(p_list[0], iat, grad_new[0]);
+    ratios[0] = wf_list[0].get().calcRatioGrad(p_list[0], iat, grad_new[0]);
 }
 
 void TrialWaveFunction::printGL(ParticleSet::ParticleGradient_t& G,
@@ -759,7 +773,7 @@ TrialWaveFunction::RealType TrialWaveFunction::updateBuffer(ParticleSet& P, WFBu
     myTimers[ii]->stop();
   }
 
-  LogValue = std::real(logpsi);
+  LogValue   = std::real(logpsi);
   PhaseValue = std::imag(logpsi);
   //printGL(P.G,P.L);
   buf.put(PhaseValue);
@@ -800,7 +814,7 @@ void TrialWaveFunction::flex_updateBuffer(const RefVector<TrialWaveFunction>& wf
     for (int iw = 0; iw < wf_list.size(); iw++)
     {
       wf_list[iw].get().LogValue += std::real(wfc_list[iw].get().LogValue);
-      wf_list[iw].get().PhaseValue +=  std::imag(wfc_list[iw].get().LogValue);
+      wf_list[iw].get().PhaseValue += std::imag(wfc_list[iw].get().LogValue);
     }
   }
 

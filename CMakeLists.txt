@@ -494,12 +494,8 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
   ELSE()
     # Search for Blas/Lapack
     find_package(LAPACK)
-    # When cmake finds and sets up the MKL libraries with a non-Intel compiler, set the flag
-    # This should be tidied up when FindMKL.cmake supports non-Intel compilers.
     IF("${LAPACK_LIBRARIES}" MATCHES "mkl")
-      MESSAGE(STATUS "MKL found via LAPACK/BLAS")
-      SET( MKL_FOUND 1 )
-      SET( HAVE_MKL 1 )
+      MESSAGE(FATAL_ERROR "MKL found via LAPACK/BLAS. Please use -DENABLE_MKL=1 when invoking cmake for full Intel MKL utilization. -DMKL_ROOT may also be needed for the include files to be found.")
     ENDIF()
   ENDIF()
   IF(LAPACK_FOUND)
@@ -538,6 +534,10 @@ IF ( HAVE_MPI )
 
   IF ( NOT DEFINED MPIEXEC_NUMPROC_FLAG )
     SET( MPIEXEC_NUMPROC_FLAG "-np" )
+  ENDIF()
+
+  IF ( NOT DEFINED MPIEXEC_PREFLAGS )
+    SET( MPIEXEC_PREFLAGS "" )
   ENDIF()
 
   IF ( NOT TEST_MAX_PROCS )

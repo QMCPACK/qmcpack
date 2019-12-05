@@ -41,6 +41,9 @@ using std::string;
 
 namespace qmcplusplus
 {
+using RealType     = WaveFunctionComponent::RealType;
+using PsiValueType = WaveFunctionComponent::PsiValueType;
+
 TEST_CASE("BSpline functor zero", "[wavefunction]")
 {
   BsplineFunctor<double> bf;
@@ -119,9 +122,9 @@ TEST_CASE("BSpline builder Jastrow J2", "[wavefunction]")
   WaveFunctionComponent* orb = psi.getOrbitals()[0];
 
 #ifdef ENABLE_SOA
-  typedef J2OrbitalSoA<BsplineFunctor<WaveFunctionComponent::RealType>> J2Type;
+  typedef J2OrbitalSoA<BsplineFunctor<RealType>> J2Type;
 #else
-  typedef TwoBodyJastrowOrbital<BsplineFunctor<WaveFunctionComponent::RealType>> J2Type;
+  typedef TwoBodyJastrowOrbital<BsplineFunctor<RealType>> J2Type;
 #endif
   J2Type* j2 = dynamic_cast<J2Type*>(orb);
   REQUIRE(j2 != NULL);
@@ -140,37 +143,20 @@ TEST_CASE("BSpline builder Jastrow J2", "[wavefunction]")
   WaveFunctionComponent::HessVector_t grad_grad_psi;
   grad_grad_psi.resize(elec_.getTotalNum());
   grad_grad_psi = 0.0;
-  
-  std::cout<<"eval hess"<<std::endl;
-  j2->evaluateHessian(elec_,grad_grad_psi);
+
+  std::cout << "eval hess" << std::endl;
+  j2->evaluateHessian(elec_, grad_grad_psi);
   std::vector<double> hess_values = {
-    -0.0627236,
-    0,
-    0,
-    0,
-    0.10652,
-    0,
-    0,
-    0,
-    0.10652,
-    -0.0627236,
-    0,
-    0,
-    0,
-    0.10652,
-    0,
-    0,
-    0,
-    0.10652,
+      -0.0627236, 0, 0, 0, 0.10652, 0, 0, 0, 0.10652, -0.0627236, 0, 0, 0, 0.10652, 0, 0, 0, 0.10652,
   };
 
-  int m=0;
-  for(int n=0; n<elec_.getTotalNum(); n++)
-    for(int i=0; i<OHMMS_DIM; i++)
-      for(int j=0; j<OHMMS_DIM; j++,m++)
-        {
-          REQUIRE(std::real(grad_grad_psi[n](i,j)) == Approx(hess_values[m]));
-        }
+  int m = 0;
+  for (int n = 0; n < elec_.getTotalNum(); n++)
+    for (int i = 0; i < OHMMS_DIM; i++)
+      for (int j = 0; j < OHMMS_DIM; j++, m++)
+      {
+        REQUIRE(std::real(grad_grad_psi[n](i, j)) == Approx(hess_values[m]));
+      }
 
 
   struct JValues
@@ -205,13 +191,13 @@ TEST_CASE("BSpline builder Jastrow J2", "[wavefunction]")
                      {11.40, 0, 0, 0}};
 
 
-  BsplineFunctor<WaveFunctionComponent::RealType>* bf = j2->F[0];
+  BsplineFunctor<RealType>* bf = j2->F[0];
 
   for (int i = 0; i < N; i++)
   {
-    WaveFunctionComponent::RealType dv  = 0.0;
-    WaveFunctionComponent::RealType ddv = 0.0;
-    WaveFunctionComponent::RealType val = bf->evaluate(Vals[i].r, dv, ddv);
+    RealType dv  = 0.0;
+    RealType ddv = 0.0;
+    RealType val = bf->evaluate(Vals[i].r, dv, ddv);
     REQUIRE(Vals[i].u == Approx(val));
     REQUIRE(Vals[i].du == Approx(dv));
     REQUIRE(Vals[i].ddu == Approx(ddv));
@@ -258,7 +244,7 @@ TEST_CASE("BSpline builder Jastrow J2", "[wavefunction]")
   REQUIRE(std::real(ratios[1]) == Approx(0.9871985577));
 
   elec_.makeMove(0, newpos - elec_.R[0]);
-  ValueType ratio_0 = j2->ratio(elec_, 0);
+  PsiValueType ratio_0 = j2->ratio(elec_, 0);
   elec_.rejectMove(0);
 
   REQUIRE(std::real(ratio_0) == Approx(0.9522052017));
@@ -275,7 +261,7 @@ TEST_CASE("BSpline builder Jastrow J2", "[wavefunction]")
 
   //test acceptMove
   elec_.makeMove(1, newpos - elec_.R[1]);
-  ValueType ratio_1 = j2->ratio(elec_, 1);
+  PsiValueType ratio_1 = j2->ratio(elec_, 1);
   j2->acceptMove(elec_, 1);
   elec_.acceptMove(1);
 
@@ -351,9 +337,9 @@ TEST_CASE("BSpline builder Jastrow J1", "[wavefunction]")
   WaveFunctionComponent* orb = psi.getOrbitals()[0];
 
 #ifdef ENABLE_SOA
-  typedef J1OrbitalSoA<BsplineFunctor<WaveFunctionComponent::RealType>> J1Type;
+  typedef J1OrbitalSoA<BsplineFunctor<RealType>> J1Type;
 #else
-  typedef OneBodyJastrowOrbital<BsplineFunctor<WaveFunctionComponent::RealType>> J1Type;
+  typedef OneBodyJastrowOrbital<BsplineFunctor<RealType>> J1Type;
 #endif
   J1Type* j1 = dynamic_cast<J1Type*>(orb);
   REQUIRE(j1 != NULL);
@@ -421,36 +407,19 @@ TEST_CASE("BSpline builder Jastrow J1", "[wavefunction]")
   grad_grad_psi.resize(elec_.getTotalNum());
   grad_grad_psi = 0.0;
 
-  psi.evaluateHessian(elec_,grad_grad_psi);
-  
+  psi.evaluateHessian(elec_, grad_grad_psi);
+
   std::vector<double> hess_values = {
-    0.00888367,
-    0,
-    0,
-    0,
-    -0.0284893,
-    0,
-    0,
-    0,
-    -0.0284893,
-    0.00211188,
-    0,
-    0,
-    0,
-    -0.00923137,
-    0,
-    0,
-    0,
-    -0.00923137,
+      0.00888367, 0, 0, 0, -0.0284893, 0, 0, 0, -0.0284893, 0.00211188, 0, 0, 0, -0.00923137, 0, 0, 0, -0.00923137,
   };
 
-  int m=0;
-  for(int n=0; n<elec_.getTotalNum(); n++)
-    for(int i=0; i<OHMMS_DIM; i++)
-      for(int j=0; j<OHMMS_DIM; j++,m++)
-        {
-          REQUIRE(std::real(grad_grad_psi[n](i,j)) == Approx(hess_values[m]));
-        }
+  int m = 0;
+  for (int n = 0; n < elec_.getTotalNum(); n++)
+    for (int i = 0; i < OHMMS_DIM; i++)
+      for (int j = 0; j < OHMMS_DIM; j++, m++)
+      {
+        REQUIRE(std::real(grad_grad_psi[n](i, j)) == Approx(hess_values[m]));
+      }
 
   psi.evaluateLog(elec_); // evaluateHessian has side effects
 
@@ -488,16 +457,16 @@ TEST_CASE("BSpline builder Jastrow J1", "[wavefunction]")
 
 
 #ifdef ENABLE_SOA
-  BsplineFunctor<WaveFunctionComponent::RealType>* bf = j1->F[0];
+  BsplineFunctor<RealType>* bf = j1->F[0];
 #else
-  BsplineFunctor<WaveFunctionComponent::RealType>* bf  = j1->Fs[0];
+  BsplineFunctor<RealType>* bf  = j1->Fs[0];
 #endif
 
   for (int i = 0; i < N; i++)
   {
-    WaveFunctionComponent::RealType dv  = 0.0;
-    WaveFunctionComponent::RealType ddv = 0.0;
-    WaveFunctionComponent::RealType val = bf->evaluate(Vals[i].r, dv, ddv);
+    RealType dv  = 0.0;
+    RealType ddv = 0.0;
+    RealType val = bf->evaluate(Vals[i].r, dv, ddv);
     REQUIRE(Vals[i].u == Approx(val));
     REQUIRE(Vals[i].du == Approx(dv));
     REQUIRE(Vals[i].ddu == Approx(ddv));
@@ -544,14 +513,14 @@ TEST_CASE("BSpline builder Jastrow J1", "[wavefunction]")
   REQUIRE(std::real(ratios[1]) == Approx(1.0040884258));
 
   elec_.makeMove(0, newpos - elec_.R[0]);
-  ValueType ratio_0 = j1->ratio(elec_, 0);
+  PsiValueType ratio_0 = j1->ratio(elec_, 0);
   elec_.rejectMove(0);
 
   REQUIRE(std::real(ratio_0) == Approx(0.9819208747));
 
   // test acceptMove results
   elec_.makeMove(1, newpos - elec_.R[1]);
-  ValueType ratio_1 = j1->ratio(elec_, 1);
+  PsiValueType ratio_1 = j1->ratio(elec_, 1);
   j1->acceptMove(elec_, 1);
   elec_.acceptMove(1);
 
@@ -613,16 +582,16 @@ TEST_CASE("BSpline builder Jastrow J1", "[wavefunction]")
                        {11.40, 0, 0, 0}};
 
 #ifdef ENABLE_SOA
-  BsplineFunctor<WaveFunctionComponent::RealType>* bf2 = j12->F[0];
+  BsplineFunctor<RealType>* bf2 = j12->F[0];
 #else
-  BsplineFunctor<WaveFunctionComponent::RealType>* bf2 = j12->Fs[0];
+  BsplineFunctor<RealType>* bf2 = j12->Fs[0];
 #endif
 
   for (int i = 0; i < N2; i++)
   {
-    WaveFunctionComponent::RealType dv  = 0.0;
-    WaveFunctionComponent::RealType ddv = 0.0;
-    WaveFunctionComponent::RealType val = bf2->evaluate(Vals2[i].r, dv, ddv);
+    RealType dv  = 0.0;
+    RealType ddv = 0.0;
+    RealType val = bf2->evaluate(Vals2[i].r, dv, ddv);
     REQUIRE(Vals2[i].du == Approx(dv));
     REQUIRE(Vals2[i].u == Approx(val));
     REQUIRE(Vals2[i].ddu == Approx(ddv));

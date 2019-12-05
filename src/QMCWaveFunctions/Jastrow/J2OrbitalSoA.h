@@ -42,8 +42,11 @@ class J2KECorrection
 
 public:
   J2KECorrection(const ParticleSet& targetPtcl, const std::vector<FT*>& F)
-      : num_groups_(targetPtcl.groups()), num_elecs_(targetPtcl.getTotalNum()),
-        vol(targetPtcl.Lattice.Volume), F_(F), SK_enabled(targetPtcl.SK != nullptr)
+      : num_groups_(targetPtcl.groups()),
+        num_elecs_(targetPtcl.getTotalNum()),
+        vol(targetPtcl.Lattice.Volume),
+        F_(F),
+        SK_enabled(targetPtcl.SK != nullptr)
   {
     // compute num_elec_in_groups_
     num_elec_in_groups_.reserve(3);
@@ -56,7 +59,8 @@ public:
 
   RT computeKEcorr()
   {
-    if (!SK_enabled) return 0;
+    if (!SK_enabled)
+      return 0;
 
     const int numPoints = 1000;
     RT uk               = 0.0;
@@ -244,7 +248,7 @@ public:
   /** recompute internal data assuming distance table is fully ready */
   void recompute(ParticleSet& P);
 
-  ValueType ratio(ParticleSet& P, int iat);
+  PsiValueType ratio(ParticleSet& P, int iat);
   void evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios)
   {
     for (int k = 0; k < ratios.size(); ++k)
@@ -254,7 +258,9 @@ public:
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios);
 
   GradType evalGrad(ParticleSet& P, int iat);
-  ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
+
+  PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
+
   void acceptMove(ParticleSet& P, int iat);
   inline void restore(int iat) {}
 
@@ -487,12 +493,12 @@ inline void J2OrbitalSoA<FT>::computeU3(const ParticleSet& P,
 }
 
 template<typename FT>
-typename J2OrbitalSoA<FT>::ValueType J2OrbitalSoA<FT>::ratio(ParticleSet& P, int iat)
+typename J2OrbitalSoA<FT>::PsiValueType J2OrbitalSoA<FT>::ratio(ParticleSet& P, int iat)
 {
   //only ratio, ready to compute it again
   UpdateMode = ORB_PBYP_RATIO;
   cur_Uat    = computeU(P, iat, P.getDistTable(my_table_ID_).Temp_r.data());
-  return std::exp(Uat[iat] - cur_Uat);
+  return std::exp(static_cast<PsiValueType>(Uat[iat] - cur_Uat));
 }
 
 template<typename FT>
@@ -529,7 +535,7 @@ typename J2OrbitalSoA<FT>::GradType J2OrbitalSoA<FT>::evalGrad(ParticleSet& P, i
 }
 
 template<typename FT>
-typename J2OrbitalSoA<FT>::ValueType J2OrbitalSoA<FT>::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
+typename J2OrbitalSoA<FT>::PsiValueType J2OrbitalSoA<FT>::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
 {
   UpdateMode = ORB_PBYP_PARTIAL;
 
@@ -537,7 +543,7 @@ typename J2OrbitalSoA<FT>::ValueType J2OrbitalSoA<FT>::ratioGrad(ParticleSet& P,
   cur_Uat = simd::accumulate_n(cur_u.data(), N, valT());
   DiffVal = Uat[iat] - cur_Uat;
   grad_iat += accumulateG(cur_du.data(), P.getDistTable(my_table_ID_).Temp_dr);
-  return std::exp(DiffVal);
+  return std::exp(static_cast<PsiValueType>(DiffVal));
 }
 
 template<typename FT>
@@ -643,8 +649,8 @@ void J2OrbitalSoA<FT>::recompute(ParticleSet& P)
 
 template<typename FT>
 typename J2OrbitalSoA<FT>::LogValueType J2OrbitalSoA<FT>::evaluateLog(ParticleSet& P,
-                                                                  ParticleSet::ParticleGradient_t& G,
-                                                                  ParticleSet::ParticleLaplacian_t& L)
+                                                                      ParticleSet::ParticleGradient_t& G,
+                                                                      ParticleSet::ParticleLaplacian_t& L)
 {
   evaluateGL(P, G, L, true);
   return LogValue;
@@ -666,7 +672,7 @@ void J2OrbitalSoA<FT>::evaluateGL(ParticleSet& P,
     L[iat] += d2Uat[iat];
   }
 
-  LogValue = - LogValue * 0.5;
+  LogValue = -LogValue * 0.5;
 }
 
 template<typename FT>
