@@ -71,8 +71,7 @@ public:
   ///container for the Jastrow functions
   std::vector<FT*> F;
 
-  TwoBodyJastrowOrbital(ParticleSet& p, int tid)
-    : TaskID(tid), KEcorr(0.0), my_table_ID_(p.addTable(p, DT_AOS))
+  TwoBodyJastrowOrbital(ParticleSet& p, int tid) : TaskID(tid), KEcorr(0.0), my_table_ID_(p.addTable(p, DT_AOS))
   {
     PtclRef = &p;
     init(p);
@@ -257,7 +256,7 @@ public:
 
   void evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi)
   {
-    LogValue                         = 0.0;
+    LogValue            = 0.0;
     const auto& d_table = P.getDistTable(my_table_ID_);
     RealType dudr, d2udr2;
     PosType gr;
@@ -290,10 +289,10 @@ public:
     }
   }
 
-  ValueType ratio(ParticleSet& P, int iat)
+  PsiValueType ratio(ParticleSet& P, int iat)
   {
     const auto& d_table = P.getDistTable(my_table_ID_);
-    DiffVal                          = 0.0;
+    DiffVal             = 0.0;
     const int* pairid(PairID[iat]);
     for (int jat = 0, ij = iat * N; jat < N; jat++, ij++)
     {
@@ -308,7 +307,7 @@ public:
         //DiffVal += U[ij]-F[pairid[jat]]->evaluate(d_table.Temp[jat].r1);
       }
     }
-    return std::exp(DiffVal);
+    return std::exp(static_cast<PsiValueType>(DiffVal));
   }
 
   inline void evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios)
@@ -344,7 +343,7 @@ public:
     return gr;
   }
 
-  ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
+  PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
   {
     const auto& d_table = P.getDistTable(my_table_ID_);
     RealType dudr, d2udr2;
@@ -371,7 +370,7 @@ public:
     grad_iat += gr;
     //curGrad0-=curGrad;
     //cout << "RATIOGRAD " << curGrad0 << std::endl;
-    return std::exp(DiffVal);
+    return std::exp(static_cast<PsiValueType>(DiffVal));
   }
 
   inline void restore(int iat) {}
@@ -543,7 +542,7 @@ public:
               RealType u = ufunc.evaluate(r);
 #if (OHMMS_DIM == 3)
               aparam += (1.0 / 4.0) * k * k * 4.0 * M_PI * r * std::sin(k * r) / k * u * dr;
-              uk     += 0.5 * 4.0 * M_PI * r * std::sin(k * r) / k * u * dr * (RealType)Nj / (RealType)(Ni + Nj);
+              uk += 0.5 * 4.0 * M_PI * r * std::sin(k * r) / k * u * dr * (RealType)Nj / (RealType)(Ni + Nj);
 #endif
 #if (OHMMS_DIM == 2)
               uk += 0.5 * 2.0 * M_PI * std::sin(k * r) / k * u * dr * (RealType)Nj / (RealType)(Ni + Nj);

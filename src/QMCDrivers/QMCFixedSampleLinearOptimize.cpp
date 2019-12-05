@@ -126,7 +126,7 @@ QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(MCWalkerConfiguration
 #ifdef HAVE_LMY_ENGINE
   //app_log() << "construct QMCFixedSampleLinearOptimize" << endl;
   std::vector<double> shift_scales(3, 1.0);
-  EngineObj = new cqmc::engine::LMYEngine(&vdeps,
+  EngineObj = new cqmc::engine::LMYEngine<ValueType>(&vdeps,
                                           false, // exact sampling
                                           true,  // ground state?
                                           false, // variance correct,
@@ -980,7 +980,7 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
             << std::endl;
 
   // for each set of shifts, solve the linear method equations for the parameter update direction
-  std::vector<std::vector<RealType>> parameterDirections;
+  std::vector<std::vector<ValueType>> parameterDirections;
 #ifdef HAVE_LMY_ENGINE
   // call the engine to perform update
   EngineObj->wfn_update_compute();
@@ -1006,11 +1006,11 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
   optTarget->setneedGrads(false);
 
   // prepare vectors to hold the initial and current parameters
-  std::vector<RealType> currParams(numParams, 0.0);
+  std::vector<ValueType> currParams(numParams, 0.0);
 
   // initialize the initial and current parameter vectors
   for (int i = 0; i < numParams; i++)
-    currParams.at(i) = std::real(optTarget->Params(i));
+    currParams.at(i) = optTarget->Params(i);
 
   // create a vector telling which updates are within our constraints
   std::vector<bool> good_update(parameterDirections.size(), true);
@@ -1059,7 +1059,7 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
 
   // update the current parameters to those of the new guiding function
   for (int i = 0; i < numParams; i++)
-    currParams.at(i) = std::real(optTarget->Params(i));
+    currParams.at(i) = optTarget->Params(i);
 
   // compute cost function for the initial parameters (by subtracting the middle shift's update back off)
   for (int i = 0; i < numParams; i++)
@@ -1094,7 +1094,7 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
   }
 
   // find the best shift and the corresponding update direction
-  const std::vector<RealType>* bestDirection = 0;
+  const std::vector<ValueType>* bestDirection = 0;
   int best_shift                             = -1;
   for (int k = 0; k < costValues.size() && std::abs((initCost - initCost) / initCost) < max_relative_cost_change; k++)
     if (is_best_cost(k, costValues, shifts_i, initCost) && good_update.at(k))
@@ -1145,9 +1145,10 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
   if (block_lm && bestDirection)
   {
     // save the difference between the updated and old variables
-    formic::ColVec<double> update_dirs(numParams, 0.0);
+    formic::ColVec<RealType> update_dirs(numParams, 0.0);
     for (int i = 0; i < numParams; i++)
-      update_dirs.at(i) = bestDirection->at(i + 1) + parameterDirections.at(central_index).at(i + 1);
+      // take the real part since blocked LM currently does not support complex parameter optimization
+      update_dirs.at(i) = std::real( bestDirection->at(i + 1) + parameterDirections.at(central_index).at(i + 1) ); 
     previous_update.insert(previous_update.begin(), update_dirs);
 
     // eliminate the oldest saved update if necessary

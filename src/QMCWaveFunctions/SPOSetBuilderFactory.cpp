@@ -35,6 +35,10 @@
 #include "QMCWaveFunctions/RotatedSPOs.h"
 #endif
 
+#if defined(QMC_COMPLEX)
+#include "QMCWaveFunctions/EinsplineSpinorSetBuilder.h"
+#endif
+
 #if defined(HAVE_EINSPLINE)
 #include "QMCWaveFunctions/EinsplineSetBuilder.h"
 #endif
@@ -183,6 +187,15 @@ SPOSetBuilder* SPOSetBuilderFactory::createSPOSetBuilder(xmlNodePtr rootNode)
     bb = new SHOSetBuilder(targetPtcl, myComm);
   }
 #if OHMMS_DIM == 3
+  else if (type == "spinorbspline")
+  {
+    #ifdef QMC_COMPLEX
+    app_log() << "Einspline Spinor Set\n";
+    bb = new EinsplineSpinorSetBuilder(targetPtcl, ptclPool, myComm, rootNode);
+    #else
+    PRE.error("Use of einspline spinors requires QMC_COMPLEX=1.  Rebuild with this option");
+    #endif
+  }
   else if (type.find("spline") < type.size())
   {
     name = type_in;

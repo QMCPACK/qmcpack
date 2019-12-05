@@ -86,7 +86,7 @@ public:
    * @param P current configuration
    * @param iat the particle thas is being moved
    */
-  ValueType ratio(ParticleSet& P, int iat) override;
+  PsiValueType ratio(ParticleSet& P, int iat) override;
 
   //Ye: TODO, good performance needs batched SPO evaluation.
   //void mw_calcRatio(const std::vector<WaveFunctionComponent*>& WFC_list,
@@ -98,7 +98,9 @@ public:
    */
   void evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios) override;
 
-  ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
+  PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
+
+  PsiValueType ratioGradWithSpin(ParticleSet& P, int iat, GradType& grad_iat, LogValueType& spingrad) override final;
 
   void mw_ratioGrad(const std::vector<WaveFunctionComponent*>& WFC_list,
                     const std::vector<ParticleSet*>& P_list,
@@ -107,6 +109,8 @@ public:
                     std::vector<GradType>& grad_new) override;
 
   GradType evalGrad(ParticleSet& P, int iat) override;
+
+  GradType evalGradWithSpin(ParticleSet& P, int iat, LogValueType& spingrad) override final;
 
   GradType evalGradSource(ParticleSet& P, ParticleSet& source, int iat) override;
 
@@ -191,6 +195,7 @@ public:
 
   /// value of single-particle orbital for particle-by-particle update
   ValueVector_t psiV;
+  ValueVector_t dspin_psiV;
   GradVector_t dpsiV;
   ValueVector_t d2psiV;
 
@@ -207,7 +212,7 @@ public:
    */
   int invRow_id;
 
-  ValueType curRatio;
+  PsiValueType curRatio;
   ValueType* FirstAddressOfdV;
   ValueType* LastAddressOfdV;
 
@@ -219,7 +224,7 @@ private:
   void resizeScratchObjectsForIonDerivs();
 
   /// internal function computing ratio and gradients after computing the SPOs, used by ratioGrad.
-  ValueType ratioGrad_compute(int iat, GradType& grad_iat);
+  PsiValueType ratioGrad_compute(int iat, GradType& grad_iat);
 };
 
 
