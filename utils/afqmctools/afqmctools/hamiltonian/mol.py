@@ -129,7 +129,10 @@ def generate_hamiltonian(scf_data, chol_cut=1e-5, verbose=False, cas=None,
     mol = scf_data['mol']
     # Step 1. Rotate core Hamiltonian to orthogonal basis.
     if verbose:
-        print(" # Transforming hcore and eri to ortho AO basis.")
+        if ortho_ao:
+            print(" # Transforming hcore and eri to ortho AO basis.")
+        else:
+            print(" # Transforming hcore and eri to MO basis.")
     h1e = numpy.dot(X.T, numpy.dot(hcore, X))
     nbasis = h1e.shape[-1]
     # Step 2. Genrate Cholesky decomposed ERIs in non-orthogonal AO basis.
@@ -149,11 +152,14 @@ def generate_hamiltonian(scf_data, chol_cut=1e-5, verbose=False, cas=None,
     if cas is not None:
         nfzc = (sum(mol.nelec)-cas[0])//2
         ncas = cas[1]
+        if ncas == -1:
+            ncas = nbasis - nfzc
         nfzv = nbasis - ncas - nfzc
         h1e, chol_vecs, enuc = freeze_core(h1e, chol_vecs, enuc, nfzc, ncas,
                                            verbose)
         h1e = h1e[0]
         nelec = (mol.nelec[0]-nfzc, mol.nelec[1]-nfzc)
+        # TODO: Don't do this. Pass (N,M) to wavefunction.
         mol.nelec = nelec
         orbs = numpy.identity(h1e.shape[-1])
         orbs = orbs[nfzc:nbasis-nfzv,nfzc:nbasis-nfzv]
