@@ -82,18 +82,12 @@ inline void eval_e2iphi(int n, float* restrict phi, float* restrict c, float* re
 
 inline void eval_e2iphi(int n, double* restrict phi, std::complex<double>* restrict z)
 {
-  double s[n], c[n];
-  vsincos(s, c, phi, &n);
-  for (int i = 0; i < n; i++)
-    z[i] = std::complex<double>(c[i], s[i]);
+  vcosisin((double _Complex*)z, phi, &n);
 }
 
 inline void eval_e2iphi(int n, float* restrict phi, std::complex<float>* restrict z)
 {
-  float s[n], c[n];
-  vssincos(s, c, phi, &n);
-  for (int i = 0; i < n; i++)
-    z[i] = std::complex<float>(c[i], s[i]);
+  vscosisin((float _Complex*)z, phi, &n);
 }
 #elif defined(HAVE_MKL_VML)
 #include <mkl_vml_functions.h>

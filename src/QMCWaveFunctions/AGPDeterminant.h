@@ -66,7 +66,7 @@ public:
    * @param P current configuration
    * @param iat the particle thas is being moved
    */
-  ValueType ratio(ParticleSet& P, int iat);
+  PsiValueType ratio(ParticleSet& P, int iat);
 
   void ratioUp(ParticleSet& P, int iat);
 
@@ -153,7 +153,7 @@ public:
   IndexVector_t Pivot;
 
   ///current ratio
-  RealType curRatio;
+  PsiValueType curRatio;
   ///cummulate ratio for particle-by-particle update
   RealType cumRatio;
   ///address of  dpsiU[0][0]

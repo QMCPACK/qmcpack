@@ -109,7 +109,7 @@ void QMCLinearOptimize::start()
 }
 
 #ifdef HAVE_LMY_ENGINE
-void QMCLinearOptimize::engine_start(cqmc::engine::LMYEngine* EngineObj,
+void QMCLinearOptimize::engine_start(cqmc::engine::LMYEngine<ValueType>* EngineObj,
                                      DescentEngine& descentEngineObj,
                                      std::string MinMethod)
 {
@@ -628,121 +628,6 @@ void QMCLinearOptimize::orthoScale(std::vector<RealType>& dP, Matrix<RealType>& 
   //     rescale = 1.0/(1.0-rescale);
   //     app_log()<<rescale<< std::endl;
   //     for (int i=0; i<dP.size(); i++) dP[i] *= rescale;
-}
-
-QMCLinearOptimize::RealType QMCLinearOptimize::getSplitEigenvectors(int first,
-                                                                    int last,
-                                                                    Matrix<RealType>& FullLeft,
-                                                                    Matrix<RealType>& FullRight,
-                                                                    std::vector<RealType>& FullEV,
-                                                                    std::vector<RealType>& LocalEV,
-                                                                    std::string CSF_Option,
-                                                                    bool& CSF_scaled)
-{
-  std::vector<RealType> GEVSplitDirection(N, 0);
-  int N_nonlin = last - first;
-  int N_lin    = N - N_nonlin - 1;
-  //  matrices are one larger than parameter sets
-  int M_nonlin = N_nonlin + 1;
-  int M_lin    = N_lin + 1;
-  //  index mapping for the matrices
-  int J_begin(first + 1), J_end(last + 1);
-  int CSF_begin(1), CSF_end(first + 1);
-  if (first == 0)
-  {
-    CSF_begin = last + 1;
-    CSF_end   = N;
-  }
-  //the Mini matrix composed of just the Nonlinear terms
-  Matrix<RealType> LeftTJ(M_nonlin, M_nonlin), RightTJ(M_nonlin, M_nonlin);
-  //                     assume all jastrow parameters are together either first or last
-  LeftTJ(0, 0)  = FullLeft(0, 0);
-  RightTJ(0, 0) = FullRight(0, 0);
-  for (int i = J_begin; i < J_end; i++)
-  {
-    LeftTJ(i - J_begin + 1, 0)  = FullLeft(i, 0);
-    RightTJ(i - J_begin + 1, 0) = FullRight(i, 0);
-    LeftTJ(0, i - J_begin + 1)  = FullLeft(0, i);
-    RightTJ(0, i - J_begin + 1) = FullRight(0, i);
-    for (int j = J_begin; j < J_end; j++)
-    {
-      LeftTJ(i - J_begin + 1, j - J_begin + 1)  = FullLeft(i, j);
-      RightTJ(i - J_begin + 1, j - J_begin + 1) = FullRight(i, j);
-    }
-  }
-  std::vector<RealType> J_parms(M_nonlin);
-  eigenvalue_timer_.start();
-  RealType lowest_J_EV = getLowestEigenvector(LeftTJ, RightTJ, J_parms);
-  eigenvalue_timer_.stop();
-  //the Mini matrix composed of just the Linear terms
-  Matrix<RealType> LeftTCSF(M_lin, M_lin), RightTCSF(M_lin, M_lin);
-  LeftTCSF(0, 0)  = FullLeft(0, 0);
-  RightTCSF(0, 0) = FullRight(0, 0);
-  for (int i = CSF_begin; i < CSF_end; i++)
-  {
-    LeftTCSF(i - CSF_begin + 1, 0)  = FullLeft(i, 0);
-    RightTCSF(i - CSF_begin + 1, 0) = FullRight(i, 0);
-    LeftTCSF(0, i - CSF_begin + 1)  = FullLeft(0, i);
-    RightTCSF(0, i - CSF_begin + 1) = FullRight(0, i);
-    for (int j = CSF_begin; j < CSF_end; j++)
-    {
-      LeftTCSF(i - CSF_begin + 1, j - CSF_begin + 1)  = FullLeft(i, j);
-      RightTCSF(i - CSF_begin + 1, j - CSF_begin + 1) = FullRight(i, j);
-    }
-  }
-  std::vector<RealType> CSF_parms(M_lin);
-  eigenvalue_timer_.start();
-  RealType lowest_CSF_EV = getLowestEigenvector(LeftTCSF, RightTCSF, CSF_parms);
-  eigenvalue_timer_.stop();
-  // //                   Now we have both eigenvalues and eigenvectors
-  //                   app_log()<<" Jastrow eigenvalue: "<<lowest_J_EV<< std::endl;
-  //                   app_log()<<"     CSF eigenvalue: "<<lowest_CSF_EV<< std::endl;
-  //                We can rescale the matrix and re-solve the whole thing or take the CSF parameters
-  //                  as solved in the matrix and opt the Jastrow instead
-  if (CSF_Option == "freeze")
-  {
-    //                   Line minimize for the nonlinear components
-    for (int i = J_begin; i < J_end; i++)
-      GEVSplitDirection[i] = J_parms[i - J_begin + 1];
-    //                   freeze the CSF components at this minimum
-    for (int i = CSF_begin; i < CSF_end; i++)
-      LocalEV[i - 1] = CSF_parms[i - CSF_begin + 1];
-    FullEV[0] = 1.0;
-    for (int i = J_begin; i < J_end; i++)
-      FullEV[i] = GEVSplitDirection[i];
-    return std::min(lowest_J_EV, lowest_CSF_EV);
-  }
-  else if (CSF_Option == "rescale")
-  {
-    RealType matrixRescaler = std::sqrt(std::abs(lowest_CSF_EV / lowest_J_EV));
-    for (int i = 0; i < N; i++)
-      for (int j = 0; j < N; j++)
-      {
-        if ((i >= J_begin) && (i < J_end))
-        {
-          FullLeft(i, j) *= matrixRescaler;
-          FullRight(i, j) *= matrixRescaler;
-        }
-        if ((j >= J_begin) && (j < J_end))
-        {
-          FullLeft(i, j) *= matrixRescaler;
-          FullRight(i, j) *= matrixRescaler;
-        }
-      }
-    eigenvalue_timer_.start();
-    RealType returnValue = getLowestEigenvector(FullLeft, FullRight, FullEV);
-    eigenvalue_timer_.stop();
-    return returnValue;
-  }
-  else if (CSF_Option == "stability")
-  {
-    //       just return the value of the CSF part
-    if (lowest_J_EV > lowest_CSF_EV)
-      CSF_scaled = true;
-    else
-      CSF_scaled = false;
-    return std::min(lowest_J_EV, lowest_CSF_EV);
-  }
 }
 
 /** Parses the xml input file for parameter definitions for the wavefunction optimization.

@@ -32,7 +32,7 @@ int QMCCostFunction::total_samples()
 /// \brief  Computes the cost function using the LMYEngine
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-QMCCostFunction::Return_rt QMCCostFunction::LMYEngineCost_detail(cqmc::engine::LMYEngine* EngineObj)
+QMCCostFunction::Return_rt QMCCostFunction::LMYEngineCost_detail(cqmc::engine::LMYEngine<ValueType>* EngineObj)
 {
   // get total number of samples
   const int m = this->total_samples();
