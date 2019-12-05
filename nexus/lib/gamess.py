@@ -69,7 +69,10 @@ class Gamess(Simulation):
 
 
     def __init__(self,**kwargs):
-        self.mo_reorder = kwargs.pop('mo_reorder',None)
+        mo_reorder = kwargs.pop('mo_reorder',None)
+        if mo_reorder is not None:
+            self.mo_reorder = [s.lower() for s in mo_reorder]
+        #end if
         Simulation.__init__(self,**kwargs)
     #end def __init__
 
@@ -161,9 +164,13 @@ class Gamess(Simulation):
                 for spin,vname in order_map.items():
                     nelec = nelec_map[spin]
                     if len(self.mo_reorder)<nelec:
-                        self.error('Too few symmetries provided in "mo_reorder" for spin "{0}".\nNumber of electrons with spin "{0}": {1}\nNumber of entries in "mo_reorder": {2}\nContents of "mo_reorder": {3}'.format(spin,nelec,len(self.mo_reorder),self.mo_reorder))
+                        self.error('Too few symmetries provided in "mo_reorder" for spin "{0}".\nNumber of electrons with spin "{0}": {1}\nNumber of entries in "mo_reorder": {2}\nContents of "mo_reorder": {3}\nSimulation identifier: {4}\nSimulation location: {5}'.format(spin,nelec,len(self.mo_reorder),self.mo_reorder,self.identifier,self.locdir))
                     #end if
-                    symmetries = orbs[spin].symmetry
+                    symmetries = [s.lower() for s in orbs[spin].symmetry]
+                    missing = set(self.mo_reorder)-set(symmetries)
+                    if len(missing)>0:
+                        self.error('Symmetries provided by "mo_reorder" keyword are not found in the outputted MOs.\nSet of symmetries provided in "mo_reorder": {}\nSet of symmetries present in MOs: {}\nContents of "mo_reorder": {}\nSimulation identifier: {}\nSimulation location: {}'.format(sorted(set(self.mo_reorder)),sorted(set(symmetries)),self.mo_reorder,self.identifier,self.locdir))
+                    #end if
                     occ  = np.zeros(len(symmetries),dtype=bool)
                     for symm in self.mo_reorder[:nelec]:
                         for i,(s,o) in enumerate(zip(symmetries,occ)):
@@ -173,6 +180,9 @@ class Gamess(Simulation):
                             #end if
                         #end for
                     #end for
+                    if occ.sum()<nelec:
+                        self.error('Too few orbitals occupied based on "mo_reorder" request.\nNumber of orbitals occupied: {}\nNumber of spin "{}" electrons: {}\nContents of "mo_reorder": {}\nSimulation identifier: {}\nSimulation location: {}'.format(occ.sum(),spin,nelec,self.mo_reorder,self.identifier,self.locdir))
+                    #end if
                     indices = np.arange(len(symmetries),dtype=int)[occ]+1
                     start = 0
                     found = False
