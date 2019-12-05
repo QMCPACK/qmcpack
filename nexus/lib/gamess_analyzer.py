@@ -167,7 +167,7 @@ class GamessAnalyzer(SimulationAnalyzer):
         #end if
 
         # try to get the up/down orbitals
-        if 'counts' in self and False: # don't read orbitals, large
+        if 'counts' in self:
             orbitals = obj()
             try:
                 self.read_orbitals(log,orbitals,'up'  ,'-- ALPHA SET --')
@@ -264,39 +264,43 @@ class GamessAnalyzer(SimulationAnalyzer):
                 #end if
                 eigenvalue.extend(log.readtokens())
                 symmetry.extend(log.readtokens())
-                coeff = []
+                # skip large coefficient data
                 for icao in xrange(cao_tot):
-                    tokens = log.readtokens()
-                    if not have_basis:
-                        e = tokens[1]
-                        element.append(e[0].upper()+e[1:].lower())
-                        spec_index.append(tokens[2])
-                        angular.append(tokens[3])
-                    #end if
-                    coeff.append(tokens[4:])
+                    log.readline()
                 #end for
-                coefficients.extend(array(coeff,dtype=float).T)
-                if not have_basis:
-                    stype = []
-                    ptype = []
-                    dtype = []
-                    ftype = []
-                    for ia in xrange(len(angular)):
-                        a = angular[ia].lower()
-                        if a in GamessAnalyzer.stypes:
-                            stype.append(ia)
-                        elif a in GamessAnalyzer.ptypes:
-                            ptype.append(ia)
-                        elif a in GamessAnalyzer.dtypes:
-                            dtype.append(ia)
-                        elif a in GamessAnalyzer.ftypes:
-                            ftype.append(ia)
-                        elif self.info.exit:
-                            self.error('unrecognized angular type: {0}'.format(angular[ia]))
-                        #end if
-                    #end for
-                #end if
-                have_basis = True
+                #coeff = []
+                #for icao in xrange(cao_tot):
+                #    tokens = log.readtokens()
+                #    if not have_basis:
+                #        e = tokens[1]
+                #        element.append(e[0].upper()+e[1:].lower())
+                #        spec_index.append(tokens[2])
+                #        angular.append(tokens[3])
+                #    #end if
+                #    coeff.append(tokens[4:])
+                ##end for
+                #coefficients.extend(array(coeff,dtype=float).T)
+                #if not have_basis:
+                #    stype = []
+                #    ptype = []
+                #    dtype = []
+                #    ftype = []
+                #    for ia in xrange(len(angular)):
+                #        a = angular[ia].lower()
+                #        if a in GamessAnalyzer.stypes:
+                #            stype.append(ia)
+                #        elif a in GamessAnalyzer.ptypes:
+                #            ptype.append(ia)
+                #        elif a in GamessAnalyzer.dtypes:
+                #            dtype.append(ia)
+                #        elif a in GamessAnalyzer.ftypes:
+                #            ftype.append(ia)
+                #        elif self.info.exit:
+                #            self.error('unrecognized angular type: {0}'.format(angular[ia]))
+                #        #end if
+                #    #end for
+                ##end if
+                #have_basis = True
                 mos_found = len(eigenvalue)
                 i+=1
             #end while
@@ -309,16 +313,17 @@ class GamessAnalyzer(SimulationAnalyzer):
                 orbs[spec] = obj(
                     eigenvalue   = array(eigenvalue  ,dtype=float),
                     symmetry     = array(symmetry    ,dtype=str  ),
-                    coefficients = array(coefficients,dtype=float),
-                    basis = obj(
-                        element    = array(element   ,dtype=str),
-                        spec_index = array(spec_index,dtype=int),
-                        angular    = array(angular   ,dtype=str),
-                        stype      = array(stype     ,dtype=int),
-                        ptype      = array(ptype     ,dtype=int),
-                        dtype      = array(dtype     ,dtype=int),
-                        ftype      = array(ftype     ,dtype=int),
-                        )
+                    # skip large coefficient data
+                    #coefficients = array(coefficients,dtype=float),
+                    #basis = obj(
+                    #    element    = array(element   ,dtype=str),
+                    #    spec_index = array(spec_index,dtype=int),
+                    #    angular    = array(angular   ,dtype=str),
+                    #    stype      = array(stype     ,dtype=int),
+                    #    ptype      = array(ptype     ,dtype=int),
+                    #    dtype      = array(dtype     ,dtype=int),
+                    #    ftype      = array(ftype     ,dtype=int),
+                    #    )
                     )
             #end if
             return success
