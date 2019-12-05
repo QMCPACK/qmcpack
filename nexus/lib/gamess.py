@@ -69,6 +69,7 @@ class Gamess(Simulation):
 
 
     def __init__(self,**kwargs):
+        self.mo_reorder = None
         mo_reorder = kwargs.pop('mo_reorder',None)
         if mo_reorder is not None:
             self.mo_reorder = [s.lower() for s in mo_reorder]
