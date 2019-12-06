@@ -228,6 +228,14 @@ struct WaveFunctionComponent : public QMCTraits
     return GradType();
   }
 
+  /** return the current spin gradient for the iat-th particle
+   * Default implementation assumes that WaveFunctionComponent does not explicitly depend on Spin.
+   * @param P quantum particle set
+   * @param iat particle index
+   * @return the spin gradient of the iat-th particle
+   */
+  virtual GradType evalGradWithSpin(ParticleSet& P, int iat, LogValueType& spingrad) { return evalGrad(P, iat); }
+
   /** compute the current gradients for the iat-th particle of multiple walkers
    * @param WFC_list the list of WaveFunctionComponent pointers of the same component in a walker batch
    * @param P_list the list of ParticleSet pointers in a walker batch
@@ -302,6 +310,18 @@ struct WaveFunctionComponent : public QMCTraits
   {
     APP_ABORT("WaveFunctionComponent::ratioGrad is not implemented in " + ClassName + " class.");
     return ValueType();
+  }
+
+  /** evaluate the ratio of the new to old WaveFunctionComponent value and the new spin gradient
+   * Default implementation assumes that WaveFunctionComponent does not explicitly depend on Spin.
+   * @param P the active ParticleSet
+   * @param iat the index of a particle
+   * @param grad_iat realspace gradient for the active particle
+   * @param spingrad_iat spin gradient for the active particle
+   */
+  virtual PsiValueType ratioGradWithSpin(ParticleSet& P, int iat, GradType& grad_iat, LogValueType& spingrad_iat)
+  {
+    return ratioGrad(P, iat, grad_iat);
   }
 
   /** compute the ratio of the new to old WaveFunctionComponent value and the new gradient of multiple walkers

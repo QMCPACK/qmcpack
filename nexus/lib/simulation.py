@@ -284,14 +284,19 @@ class Simulation(NexusCore):
 
     # test needed
     @classmethod
-    def separate_inputs(cls,kwargs,overlapping_kw=-1,copy_pseudos=True):
+    def separate_inputs(cls,kwargs,overlapping_kw=-1,copy_pseudos=True,sim_kw=None):
         if overlapping_kw==-1:
             overlapping_kw = set(['system'])
         elif overlapping_kw is None:
             overlapping_kw = set()
         #end if
+        if sim_kw is None:
+            sim_kw = set()
+        else:
+            sim_kw = set(sim_kw)
+        #end if
         kw       = set(kwargs.keys())
-        sim_kw   = kw & Simulation.allowed_inputs
+        sim_kw   = kw & (Simulation.allowed_inputs | sim_kw)
         inp_kw   = (kw - sim_kw) | (kw & overlapping_kw)    
         sim_args = obj()
         inp_args = obj()
