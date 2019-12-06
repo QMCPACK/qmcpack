@@ -59,12 +59,14 @@ using ChargeArray = std::vector<RealType>;
 /// Functor for term within the real-space sum in Drummond 2008 formula 7
 class RspaceMadelungTerm
 {
-  public:
+  private:
 
   /// The real-space cell axes
   RealMat a;
   /// The constant \kappa in Drummond 2008 formula 7
   RealType rconst;
+
+  public:
 
   RspaceMadelungTerm(RealMat a_in,RealType rconst_in)
   {
@@ -85,7 +87,7 @@ class RspaceMadelungTerm
 /// Functor for term within the k-space sum in Drummond 2008 formula 7
 class KspaceMadelungTerm
 {
-  public:
+  private:
 
   /// The k-space cell axes
   RealMat b;
@@ -93,6 +95,8 @@ class KspaceMadelungTerm
   RealType kconst;
   /// The constant 4\pi/\Omega in Drummond 2008 formula 7
   RealType kfactor;
+
+  public:
 
   KspaceMadelungTerm(RealMat b_in,RealType kconst_in,RealType kfactor_in)
   {
@@ -114,7 +118,7 @@ class KspaceMadelungTerm
 /// Functor for term within the real-space sum in Drummond 2008 formula 6
 class RspaceEwaldTerm
 {
-  public:
+  private:
 
   /// The inter-particle separation vector
   RealVec r;
@@ -122,6 +126,8 @@ class RspaceEwaldTerm
   RealMat a;
   /// The constant 1/(\sqrt{2}kappa) in Drummond 2008 formula 6
   RealType rconst;
+
+  public:
 
   RspaceEwaldTerm(RealVec r_in,RealMat a_in,RealType rconst_in)
   {
@@ -145,7 +151,7 @@ class RspaceEwaldTerm
 /// Functor for term within the k-space sum in Drummond 2008 formula 6
 class KspaceEwaldTerm
 {
-  public:
+  private:
 
   /// The inter-particle separation vector
   RealVec r;
@@ -155,6 +161,8 @@ class KspaceEwaldTerm
   RealType kconst;
   /// The constant 4\pi/\Omega in Drummond 2008 formula 6
   RealType kfactor;
+
+  public:
 
   KspaceEwaldTerm(RealVec r_in,RealMat b_in,RealType kconst_in,RealType kfactor_in)
   {
