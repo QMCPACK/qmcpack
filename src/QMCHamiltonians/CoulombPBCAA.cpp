@@ -86,7 +86,7 @@ CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces)
       app_log()<<"If you increase the tolerance, please perform careful checks of energy"<<std::endl;
       app_log()<<"differences to ensure this error is controlled for your application."<<std::endl;
       app_log()<<std::endl;
-      
+
       APP_ABORT("ion-ion check failed")
     }
   }
