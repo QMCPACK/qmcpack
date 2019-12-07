@@ -32,6 +32,8 @@
 #include "AFQMC/Hamiltonians/THCHamiltonian.h"
 #include "AFQMC/Hamiltonians/FactorizedSparseHamiltonian.h"
 #include "AFQMC/Hamiltonians/KPFactorizedHamiltonian.h"
+#include "AFQMC/Hamiltonians/RealDenseHamiltonian.h"
+#include "AFQMC/Hamiltonians/RealDenseHamiltonian_v2.h"
 //#include "AFQMC/Hamiltonians/KPTHCHamiltonian.h"
 
 #include "AFQMC/Utilities/readHeader.h"
@@ -75,12 +77,14 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
     std::string fileName = "";
     int number_of_TGs = 1;
     int n_reading_cores = -1;
+    std::string alt = "";
 
     ParameterSet m_param;
     m_param.add(cutoff1bar,"cutoff_1bar","double");
     m_param.add(fileName,"filename","std::string");
     m_param.add(number_of_TGs,"nblocks","int");
     m_param.add(n_reading_cores,"num_io_cores","int");
+    m_param.add(alt,"alternate","std::string");
     m_param.put(cur);
 
     // make or get TG
@@ -171,39 +175,42 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
       using std::imag;
       bool foundH1=false;
 #ifdef QMC_COMPLEX
-      if(nkpts > 0) {
-        // nothing to do, H1 is read during construction of HamiltonianOperations object.
-      } else 
+      if(htype == KPFactorized || htype == KPTHC) {
+#else
+      if(htype == RealDenseFactorized) { 
 #endif
-      if(dump.readEntry(H1,"hcore")) {
-        foundH1 = true;
+        // nothing to do, H1 is read during construction of HamiltonianOperations object.
       } else {
+        if(dump.readEntry(H1,"hcore")) {
+          foundH1 = true;
+        } else {
 
-        H1.reextent({NMO,NMO});
-        if(Idata[0] < 1) {
-          app_error()<<" Error in HamiltonianFactory::fromHDF5(): Dimensions of H1 < 1.  \n";
-          APP_ABORT(" ");
-        }
+          H1.reextent({NMO,NMO});
+          if(Idata[0] < 1) {
+            app_error()<<" Error in HamiltonianFactory::fromHDF5(): Dimensions of H1 < 1.  \n";
+            APP_ABORT(" ");
+          }
 
-        std::vector<OrbitalType> ivec(2*Idata[0]);
-        if(!dump.readEntry(ivec,"H1_indx")) {
-          app_error()<<" Error in HamiltonianFactory::fromHDF5(): Problems reading H1_indx. \n";
-          APP_ABORT(" ");
-        }
-        std::vector<ValueType> vvec(Idata[0]);
-        if(!dump.readEntry(vvec,"H1")) {
-          app_error()<<" Error in HamiltonianFactory::fromHDF5(): Problems reading H1.  \n";
-          APP_ABORT(" ");
-        }
+          std::vector<OrbitalType> ivec(2*Idata[0]);
+          if(!dump.readEntry(ivec,"H1_indx")) {
+            app_error()<<" Error in HamiltonianFactory::fromHDF5(): Problems reading H1_indx. \n";
+            APP_ABORT(" ");
+          }
+          std::vector<ValueType> vvec(Idata[0]);
+          if(!dump.readEntry(vvec,"H1")) {
+            app_error()<<" Error in HamiltonianFactory::fromHDF5(): Problems reading H1.  \n";
+            APP_ABORT(" ");
+          }
 
-        for(int i=0; i<Idata[0]; i++) {
-          // keep i<=j by default
-          if(ivec[i] <= ivec[i]) {
-              H1[ivec[2*i]][ivec[2*i+1]] = vvec[i]; 
-              H1[ivec[2*i+1]][ivec[2*i]] = ma::conj(vvec[i]); 
-          } else {
-              H1[ivec[2*i]][ivec[2*i+1]] = ma::conj(vvec[i]); 
-              H1[ivec[2*i+1]][ivec[2*i]] = vvec[i]; 
+          for(int i=0; i<Idata[0]; i++) {
+            // keep i<=j by default
+            if(ivec[i] <= ivec[i]) {
+                H1[ivec[2*i]][ivec[2*i+1]] = vvec[i]; 
+                H1[ivec[2*i+1]][ivec[2*i]] = ma::conj(vvec[i]); 
+            } else {
+                H1[ivec[2*i]][ivec[2*i+1]] = ma::conj(vvec[i]); 
+                H1[ivec[2*i+1]][ivec[2*i]] = vvec[i]; 
+            }
           }
         }
       }
@@ -247,6 +254,29 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
                                         NuclearCoulombEnergy,FrozenCoreEnergy));
 
     } else 
+#else
+    if(htype == RealDenseFactorized) {
+
+      if(coreid < nread && !dump.push("DenseFactorized",false)) {
+        app_error()<<" Error in HamiltonianFactory::fromHDF5(): Group not DenseFactorized found. \n";
+        APP_ABORT("");
+      }
+      if( coreid < nread ) {
+        dump.pop();
+        dump.pop();
+        dump.close();
+      }
+      TG.global_barrier();
+      // KPFactorizedHamiltonian matrices are read by THCHamiltonian object when needed,
+      // since their ownership is passed to the HamOps object.
+      if(alt == "yes" || alt == "true")  
+        return Hamiltonian(RealDenseHamiltonian_v2(AFinfo,cur,std::move(H1),TG,
+                                        NuclearCoulombEnergy,FrozenCoreEnergy));
+      else  
+        return Hamiltonian(RealDenseHamiltonian(AFinfo,cur,std::move(H1),TG,
+                                        NuclearCoulombEnergy,FrozenCoreEnergy));
+
+    } else
 #endif
     if(htype == THC) {
 
