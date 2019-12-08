@@ -50,6 +50,22 @@ namespace afqmc {
     return B;
   }
 
+  /************* inplace_cast ****************/
+  template<class T, class Q, class Size>
+  void inplace_cast(T* A, Size n) {
+    Q *B(reinterpret_cast<Q*>(A));  
+    if( sizeof(T) >= sizeof(Q) ) {
+      for(Size i=0; i<n; i++, ++A, ++B)
+        *B = static_cast<Q>(*A);
+    } else if(sizeof(T) < sizeof(Q)) {
+      assert( sizeof(T)*2 <= sizeof(Q));
+      A += (n-1);
+      B += (n-1);  
+      for(; n>0; n--, --A, --B)
+        *B = static_cast<Q>(*A);
+    }
+  }
+
   /************* fill2D ****************/
   template<typename T, typename Size>
   void fill2D(Size N, Size M, T* y, Size lda, T const a)
