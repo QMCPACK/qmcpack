@@ -249,12 +249,12 @@ void KContainer::BuildKLists(ParticleLayout_t& lattice, bool useSphere)
 #endif
   //Update a record of the number of k vectors
   numk = kpts_tmp.size();
-  std::map<int, std::vector<int>*> kpts_sorted;
+  std::map<long long, std::vector<int>*> kpts_sorted;
   //create the map: use simple integer with resolution of 0.00000001 in ksq
   for (int ik = 0; ik < numk; ik++)
   {
-    int k_ind = static_cast<int>(ksq_tmp[ik] * 100000000);
-    std::map<int, std::vector<int>*>::iterator it(kpts_sorted.find(k_ind));
+    long long k_ind = static_cast<long long>(ksq_tmp[ik] * 100000000);
+    std::map<long long, std::vector<int>*>::iterator it(kpts_sorted.find(k_ind));
     if (it == kpts_sorted.end())
     {
       std::vector<int>* newSet = new std::vector<int>;
@@ -266,7 +266,7 @@ void KContainer::BuildKLists(ParticleLayout_t& lattice, bool useSphere)
       (*it).second->push_back(ik);
     }
   }
-  std::map<int, std::vector<int>*>::iterator it(kpts_sorted.begin());
+  std::map<long long, std::vector<int>*>::iterator it(kpts_sorted.begin());
   kpts.resize(numk);
   kpts_cart.resize(numk);
   ksq.resize(numk);
@@ -289,7 +289,7 @@ void KContainer::BuildKLists(ParticleLayout_t& lattice, bool useSphere)
     ++ish;
   }
   it = kpts_sorted.begin();
-  std::map<int, std::vector<int>*>::iterator e_it(kpts_sorted.end());
+  std::map<long long, std::vector<int>*>::iterator e_it(kpts_sorted.end());
   while (it != e_it)
   {
     delete it->second;
