@@ -9,9 +9,9 @@
 #include "../mpi3/dynamic_window.hpp"
 #include "../mpi3/group.hpp"
 
-#include <boost/interprocess/containers/vector.hpp>
-#include <boost/interprocess/allocators/allocator.hpp>
-#include <boost/interprocess/managed_shared_memory.hpp>
+//#include <boost/interprocess/containers/vector.hpp>
+//#include <boost/interprocess/allocators/allocator.hpp>
+//#include <boost/interprocess/managed_shared_memory.hpp>
 
 #include<mpi.h>
 
@@ -20,9 +20,9 @@ namespace mpi3{
 
 template<class T>
 struct shared_window : window<T>{
-//	shared_communicator& comm_;
-	shared_window(shared_communicator& comm, mpi3::size_t n, int disp_unit = alignof(T)) //: //sizeof(T)) : // here we assume that disp_unit is used for align
-		//window<T>()//, comm_{comm}
+	shared_communicator& comm_;
+	shared_window(shared_communicator& comm, mpi3::size_t n, int disp_unit = alignof(T)) : //sizeof(T)) : // here we assume that disp_unit is used for align
+		window<T>(), comm_{comm}
 	{
 		void* base_ptr = nullptr;
 		auto e = static_cast<enum error>(
@@ -37,12 +37,12 @@ struct shared_window : window<T>{
 		shared_window(comm, 0, disp_unit)
 	{}
 	shared_window(shared_window const&) = default;
-	shared_window(shared_window&& other) noexcept : window<T>{std::move(other)}//, comm_{other.comm_}
+	shared_window(shared_window&& other) noexcept : window<T>{std::move(other)}, comm_{other.comm_}
 	{}
 	group get_group() const{
 		group r; MPI3_CALL(MPI_Win_get_group)(this->impl_, &(&r)); return r;
 	}
-//	shared_communicator& get_communicator() const{return comm_;}
+	shared_communicator& get_communicator() const{return comm_;}
 	struct query_t{
 		mpi3::size_t size;
 		int disp_unit;

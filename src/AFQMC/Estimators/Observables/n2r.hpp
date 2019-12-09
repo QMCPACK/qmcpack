@@ -82,14 +82,16 @@ class n2r: public AFQMCInfo
 
   n2r(afqmc::TaskGroup_& tg_, AFQMCInfo& info, xmlNodePtr cur, WALKER_TYPES wlk, 
            bool host_mem, aux_Allocator alloc_, aux_Allocator orb_alloc_, int nave_=1, int bsize=1):
-                AFQMCInfo(info),aux_alloc(alloc_),TG(tg_),walker_type(wlk),writer(false),
-                block_size(bsize),nave(nave_),counter(0),use_host_memory(host_mem),
+                AFQMCInfo(info),aux_alloc(alloc_),block_size(bsize),nave(nave_),counter(0),TG(tg_),
+                walker_type(wlk),dm_size(0),writer(false),
+                use_host_memory(host_mem),
                 hdf_walker_output(""),
-                denom(iextensions<1u>{0},shared_allocator<ComplexType>{TG.TG_local()}),
-                DMWork({0,0},shared_allocator<ComplexType>{TG.TG_local()}),
                 Orbitals({0,0},orb_alloc_), 
-                Buff(iextensions<1u>{0},alloc_), 
-                DMAverage({0,0},shared_allocator<ComplexType>{TG.TG_local()})
+                DMAverage({0,0},shared_allocator<ComplexType>{TG.TG_local()}),
+                DMWork({0,0},shared_allocator<ComplexType>{TG.TG_local()}),
+                denom(iextensions<1u>{0},shared_allocator<ComplexType>{TG.TG_local()}),
+                Buff(iextensions<1u>{0},alloc_),
+                Buff2(iextensions<1u>{0})
   {
 
     app_log()<<"  --  Adding Back Propagated on-top pair density (N2R) estimator. -- \n ";

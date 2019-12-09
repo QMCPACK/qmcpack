@@ -141,6 +141,7 @@ class HamiltonianFactory
     if(dump.is_group( std::string("/Hamiltonian/KPTHC") )) return KPTHC;
     if(dump.is_group( std::string("/Hamiltonian/THC") )) return THC;
     if(dump.is_group( std::string("/Hamiltonian/KPFactorized") )) return KPFactorized;
+    if(dump.is_group( std::string("/Hamiltonian/DenseFactorized") )) return RealDenseFactorized;
     if(dump.is_group( std::string("/Hamiltonian/Factorized") )) return Factorized;
     APP_ABORT("  Error: Invalid hdf file format in peekHamType(hdf_archive). \n");
     return UNKNOWN;
