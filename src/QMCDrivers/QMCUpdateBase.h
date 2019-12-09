@@ -61,6 +61,8 @@ public:
   IndexType NonLocalMoveAccepted;
   ///timestep
   RealType Tau;
+  ///spin mass
+  RealType spinmass;
   ///use Drift
   bool UseDrift;
 
@@ -268,6 +270,8 @@ protected:
   ParticleSet::ParticlePos_t drift;
   ///temporary storage for random displacement
   ParticleSet::ParticlePos_t deltaR;
+  ///temporart storage for spin displacement
+  ParticleSet::ParticleScalar_t deltaS;
   ///storage for differential gradients for PbyP update
   ParticleSet::ParticleGradient_t G, dG;
   ///storage for differential laplacians for PbyP update

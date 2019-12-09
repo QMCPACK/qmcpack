@@ -55,7 +55,7 @@ void SOVMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
   {
     //create a 3N-Dimensional Gaussian with variance=1
     makeGaussRandomWithEngine(deltaR, RandomGen);
-    //makeGaussRandomWithEngine(deltaS, RandomGen);
+    makeGaussRandomWithEngine(deltaS, RandomGen);
     moved = false;
     for (int ig = 0; ig < W.groups(); ++ig) //loop over species
     {
@@ -66,53 +66,48 @@ void SOVMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
       {
         W.setActive(iat);
         PosType dr;
-        RealType ds;
+        ParticleSet::Scalar_t ds;
         if (UseDrift)
         {
-          GradType grad_now = Psi.evalGrad(W, iat);
+          TrialWaveFunction::LogValueType spingrad_now;
+          GradType grad_now = Psi.evalGradWithSpin(W, iat,spingrad_now);
           DriftModifier->getDrift(tauovermass, grad_now, dr);
           dr += sqrttau * deltaR[iat];
-
-          //CM: need evalSpinGrad
-          //grad_now = Psi.evalSpinGrad(W,iat);
-          //DriftModifier->getDrift(tauovermass/spinmass,grad_now, ds);
-          //ds += std::sqrt(tauovermass/spinmass)*deltaS[iat];
+          ds += tauovermass/spinmass*std::real(spingrad_now); //using raw spin grad, no UNR modifier
         }
         else
         {
           dr = sqrttau * deltaR[iat];
-          //ds = std::sqrt(tauovermass/spinmass)*deltaS[iat];
+          ds = std::sqrt(tauovermass/spinmass)*deltaS[iat];
         }
-        //CM: need new mover
-        //if (!W.makeMoveAndCheckWithSpin(iat,dr,ds))
-        //{
-        //    ++nReject;
-        //    continue;
-        //}
-        RealType logGf(1), logGb(1), prob;
+        if (!W.makeMoveAndCheckWithSpin(iat,dr,ds))
+        {
+            ++nReject;
+            continue;
+        }
+        RealType prob(0);
         if (UseDrift)
         {
           GradType grad_new;
-          RealType ratio = Psi.ratioGrad(W, iat, grad_new);
-          prob           = ratio * ratio;
-          logGf          = mhalf * dot(deltaR[iat], deltaR[iat]);
+          TrialWaveFunction::LogValueType spingrad_new;
+          prob = std::norm(Psi.calcRatioGradWithSpin(W, iat, grad_new,spingrad_new));
           DriftModifier->getDrift(tauovermass, grad_new, dr);
-          dr    = W.R[iat] - W.activePos - dr;
-          logGb = -oneover2tau * dot(dr, dr);
+          dr             = W.R[iat] - W.activePos - dr;
+          RealType logGb = -oneover2tau * dot(dr, dr);
+          RealType logGf = mhalf * dot(deltaR[iat], deltaR[iat]);
 
-          //Need function calls
-          //logGf         += -mhalf * dot(deltaS[iat], deltaS[iat]);
-          //ratio = Psi.ratioSpinGrad(W,iat,grad_new);
-          //DriftModifer->getDrift(tauovermass/spinmass, grad_new, ds);
-          //ds = W.spins[iat] - W.activeSpin - ds;
-          //logGb += -spinmass*oneover2tau*dot(ds,ds)l
+          ds = tauovermass/spinmass*std::real(spingrad_new);
+          ds = W.spins[iat] - W.activeSpinVal - ds;
+          logGb += -spinmass*oneover2tau*ds*ds;
+          logGf += mhalf*deltaS[iat]*deltaS[iat];
+
+          prob *= std::exp(logGb - logGf);
         }
         else
         {
-          RealType ratio = Psi.ratio(W, iat);
-          prob           = ratio * ratio;
+          prob = std::norm(Psi.calcRatio(W,iat));
         }
-        if (prob >= std::numeric_limits<RealType>::epsilon() && RandomGen() < prob * std::exp(logGb - logGf))
+        if (prob >= std::numeric_limits<RealType>::epsilon() && RandomGen() < prob)
         {
           moved = true;
           ++nAccept;

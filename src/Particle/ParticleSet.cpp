@@ -404,7 +404,7 @@ void ParticleSet::makeMove(Index_t iat, const SingleParticlePos_t& displ)
   computeNewPosDistTablesAndSK(iat, activePos);
 }
 
-void ParticleSet::makeMoveWithSpin(Index_t iat, const SingleParticlePos_t& displ, const RealType& sdispl)
+void ParticleSet::makeMoveWithSpin(Index_t iat, const SingleParticlePos_t& displ, const Scalar_t& sdispl)
 {
   makeMove(iat, displ);
   activeSpinVal = spins[iat] + sdispl;
@@ -452,7 +452,7 @@ bool ParticleSet::makeMoveAndCheck(Index_t iat, const SingleParticlePos_t& displ
   return is_valid;
 }
 
-bool ParticleSet::makeMoveAndCheckWithSpin(Index_t iat, const SingleParticlePos_t& displ, const RealType& sdispl)
+bool ParticleSet::makeMoveAndCheckWithSpin(Index_t iat, const SingleParticlePos_t& displ, const Scalar_t& sdispl)
 {
   activeSpinVal = spins[iat] + sdispl;
   return makeMoveAndCheck(iat, displ);
