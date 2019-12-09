@@ -250,10 +250,10 @@ void KContainer::BuildKLists(ParticleLayout_t& lattice, bool useSphere)
   //Update a record of the number of k vectors
   numk = kpts_tmp.size();
   std::map<int, std::vector<int>*> kpts_sorted;
-  //create the map: use simple integer with resolution of 0.000001 in ksq
+  //create the map: use simple integer with resolution of 0.00000001 in ksq
   for (int ik = 0; ik < numk; ik++)
   {
-    int k_ind = static_cast<int>(ksq_tmp[ik] * 1000000);
+    int k_ind = static_cast<int>(ksq_tmp[ik] * 100000000);
     std::map<int, std::vector<int>*>::iterator it(kpts_sorted.find(k_ind));
     if (it == kpts_sorted.end())
     {
