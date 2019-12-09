@@ -515,32 +515,40 @@ def sparse_to_dense(sparse_file, dense_file, real_chol=False):
                                                         get_chol=False)
     with h5py.File(dense_file, 'w') as fh5:
         fh5['Hamiltonian/Energies'] = numpy.array([enuc,0])
-        if real_chol:
-            fh5['Hamiltonian/hcore'] = hcore.real
-            dtype = numpy.float64
-        else:
-            fh5['Hamiltonian/hcore'] = to_qmcpack_complex(hcore.astype(numpy.complex128))
-            dtype = numpy.complex128
         with h5py.File(sparse_file, 'r') as sph5:
             block_sizes = sph5['Hamiltonian/Factorized/block_sizes'][:]
             dims = sph5['Hamiltonian/dims'][:]
             nchol = dims[-1]
+            if real_chol:
+                fh5['Hamiltonian/hcore'] = hcore.real
+                shape = (nmo*nmo,nchol)
+            else:
+                fh5['Hamiltonian/hcore'] = to_qmcpack_complex(hcore.astype(numpy.complex128))
+                shape = (nmo*nmo,nchol,2)
             fh5['Hamiltonian/dims'] = dims
             chol_dset = fh5.create_dataset('Hamiltonian/DenseFactorized/L',
-                                           (nmo*nmo,nchol),
-                                            dtype=dtype)
+                                           shape,
+                                           dtype=numpy.float64)
             s = 0
             for ic, bs in enumerate(block_sizes):
                 ixs, vchunk = get_chunk(sph5, ic, False)
                 row_ix, col_ix = ixs[::2], ixs[1::2]
-                nchol_block = numpy.max(col_ix) - s + 1
-                buff = scipy.sparse.csr_matrix((vchunk, (row_ix, col_ix-s)),
-                                                shape=(nmo*nmo,nchol_block))
-                if real_chol:
-                    chol_dset[:,s:s+nchol_block] = buff.toarray().real
-                else:
-                    chol_dset[:,s:s+nchol_block] = buff.toarray()
-                s += nchol_block
+                sort = numpy.argsort(row_ix)
+                row_ix = row_ix[sort]
+                col_ix = col_ix[sort]
+                vchunk = vchunk[sort]
+                rows = numpy.unique(row_ix)
+                for r in rows:
+                    # H5PY array slicing is restrictive.
+                    # index has to be in increasing order
+                    rix = row_ix == r
+                    cr = col_ix[rix]
+                    vr = vchunk[rix]
+                    sort = numpy.argsort(cr)
+                    if real_chol:
+                        chol_dset[r,cr[sort]] = numpy.real(vr[sort])
+                    else:
+                        chol_dset[r,cr[sort]] = to_qmcpack_complex(vr[sort])
 
 def kpoint_to_sparse(kp_file, sp_file, real_chol=False,
                      verbose=False, thresh=1e-8):
