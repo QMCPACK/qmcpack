@@ -4351,15 +4351,8 @@ def generate_particlesets(electrons   = 'e',
             if hybridrep:
                 rcut = hybrid_rcut[ion_spec]
                 lmax = hybrid_lmax[ion_spec]
-                # this code should be in qmcpack 
-                # it should not be required of the user
-                dr = 0.02
-                rspline = rcut + 2*dr
-                nspline = int(floor(rspline/dr)) + 1
                 g.lmax           = lmax
                 g.cutoff_radius  = rcut
-                g.spline_radius  = rspline
-                g.spline_npoints = nspline
             #end if
             groups.append(g)
         #end for
