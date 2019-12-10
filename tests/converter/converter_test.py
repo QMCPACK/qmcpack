@@ -64,6 +64,9 @@ def run_test(test_name, c4q_exe, h5diff_exe, conv_inp, gold_file, expect_fail, e
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stdout, stderr = p.communicate()
 
+    # For Python 3
+    stderr = stderr.decode()
+
     ret = p.returncode
 
     if expect_fail:
