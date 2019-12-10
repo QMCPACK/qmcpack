@@ -4349,10 +4349,8 @@ def generate_particlesets(electrons   = 'e',
                 size         = len(gpos)
                 )
             if hybridrep:
-                rcut = hybrid_rcut[ion_spec]
-                lmax = hybrid_lmax[ion_spec]
-                g.lmax           = lmax
-                g.cutoff_radius  = rcut
+                g.lmax           = hybrid_lmax[ion_spec]
+                g.cutoff_radius  = hybrid_rcut[ion_spec]
             #end if
             groups.append(g)
         #end for
