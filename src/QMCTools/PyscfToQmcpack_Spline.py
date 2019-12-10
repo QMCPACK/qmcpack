@@ -40,7 +40,7 @@ def pyscf2qmcpackspline(cell,mf,title="Default", kpts=[], kmesh=[],  sp_twist=[]
        sys.exit("Python < 3.2 not supported")
 
   # FFT mesh check
-  if (cell.mesh.any() % 2) == 0:
+  if np.any(cell.mesh % 2 == 0):
        sys.exit("Even number of FFT mesh not supported")	
     
   #Twists generation not yet implemented
