@@ -57,7 +57,7 @@ TEST_CASE("srcoul", "[lrhandler]")
   handler.initBreakup(ref);
   REQUIRE(handler.MaxKshell == 78);
   REQUIRE(handler.LR_rc == Approx(2.5));
-  REQUIRE(handler.LR_kc == 12);
+  REQUIRE(handler.LR_kc == Approx(12));
 
   mRealType r, dr, rinv;
   mRealType vsr;
@@ -100,7 +100,7 @@ TEST_CASE("srcoul df", "[lrhandler]")
   handler.initBreakup(ref);
   REQUIRE(handler.MaxKshell == 78);
   REQUIRE(handler.LR_rc == Approx(2.5));
-  REQUIRE(handler.LR_kc == 12);
+  REQUIRE(handler.LR_kc == Approx(12));
 
   EslerCoulomb3D fref;
   fref.reset(ref);
