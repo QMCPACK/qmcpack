@@ -43,7 +43,7 @@ enum
 /// Type for integers
 using IntType     = int;
 /// Type for floating point numbers
-using RealType    = QMCTraits::RealType;
+using RealType    = QMCTraits::FullPrecRealType;
 /// Type for integer vectors of length DIM
 using IntVec      = TinyVector<IntType, DIM>;
 /// Type for floating point vectors of length DIM
