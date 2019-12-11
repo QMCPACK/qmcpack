@@ -199,8 +199,8 @@ class KspaceEwaldTerm
 template<typename T>
 RealType gridSum(T& function,bool zero=true,RealType tol=1e-11)
 {
-  RealType dv  = 1e99;
-  RealType dva = 1e99;
+  RealType dv  = std::numeric_limits<RealType>::max();
+  RealType dva = std::numeric_limits<RealType>::max();
   RealType v   = 0.0;
   IntType im   = 0;
   IntType jm   = 0;
