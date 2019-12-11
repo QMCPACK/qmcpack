@@ -117,6 +117,10 @@ public:
     m_sqrttau     = std::sqrt(m_tauovermass);
   }
 
+  inline RealType getSpinMass() { return spinMass; }
+
+  inline void setSpinMass(RealType m) { spinMass = m; }
+
   inline void getLogs(std::vector<RealType>& logs) { Psi.getLogs(logs); }
 
   inline void set_step(int step) { W.current_step = step; }
