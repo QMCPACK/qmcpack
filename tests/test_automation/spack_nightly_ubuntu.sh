@@ -59,9 +59,13 @@ function test_variant {
 }
 
 # Here are all the variants that we test, plus dependencies
+# If you are testing with CUDA, you need to verify that your
+# CUDA version is compatible with your compiler
+# https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html
+
 # declare -a versions=("3.8.0" "3.7.0")
 declare -a versions=("3.8.0")
-declare -a compilers=("gcc@8.3.0" "intel@19.0.3.199" "pgi@19.7" "clang@9.0.0")
+declare -a compilers=("gcc@7.4.0" "intel@19.0.3.199" "pgi@19.7" "clang@9.0.0")
 # declare -a compilers=("intel@19.0.3.199")
 declare -a withqe=("+qe" "~qe")
 declare -a withmpi=("+mpi" "~mpi")
@@ -71,9 +75,10 @@ declare -a withmixed=("+mixed" "~mixed")
 declare -a withsoa=("+soa" "~soa")
 declare -a withcuda=("+cuda" "~cuda")
 declare -a blasproviders=("netlib-lapack" "intel-mkl" "openblas")
+# declare -a blasproviders=("intel-mkl")
 # cuda_arch value explicitly set to value of GPU card on naromero-desktop.cels.anl.gov
 gpu_card=61
-cuda_version=10.1.243
+cuda_version=10.2.89
 # hash for QE 6.4.1 patch
 qe_hash=57cb1b06ee2653a87c3acc0dd4f09032fcf6ce6b8cbb9677ae9ceeb6a78f85e2
 
