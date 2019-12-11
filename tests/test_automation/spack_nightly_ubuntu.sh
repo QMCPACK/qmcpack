@@ -5,7 +5,7 @@
 . /etc/profile.d/z00_lmod.sh
 
 # Uncomment below for VERY verbose output from BASH
-# set -x 
+set -x 
 
 # Script is run as a nightly cronjob on naromero-desktop.cels.anl.gov.
 # chronic from moreutils is needed to silence the script when everything
