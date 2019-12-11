@@ -18,7 +18,7 @@
 
 
 import os
-from numpy import array,fromstring,sqrt,dot,max,equal,zeros,min,where
+from numpy import array,fromstring,sqrt,dot,max,equal,zeros,min,where,empty
 from generic import obj
 from unit_converter import convert
 from periodic_table import PeriodicTable
@@ -33,6 +33,7 @@ import pdb
 pt = PeriodicTable()
 elements = set(pt.elements.keys())
 
+        
 
 
 
@@ -81,7 +82,7 @@ def pwscf_time(tsin):
 
 
 class PwscfAnalyzer(SimulationAnalyzer):
-    def __init__(self,arg0=None,infile_name=None,outfile_name=None,pw2c_outfile_name=None,analyze=False,xml=False,warn=False,md_only=False):
+    def __init__(self,arg0=None,infile_name=None,outfile_name=None,pw2c_outfile_name=None,analyze=False,xml=False,warn=False,md_only=True):
         if isinstance(arg0,Simulation):
             sim = arg0
             path = sim.locdir
@@ -147,26 +148,41 @@ class PwscfAnalyzer(SimulationAnalyzer):
         while f.seek('!',1)!=-1:
             E = float(f.readtokens()[-2])
             f.seek('P=',1)
-            P = float(f.readtokens()[-1])
+            P = float(f.readtokens()[-1])/10. #convert to GPa
+            # stress matrix S, note S00 is S11 in normal terms!
+            S11, S12, S13 = f.readtokens()[-3:]
+            S21, S22, S23 = f.readtokens()[-3:]
+            S31, S32, S33 = f.readtokens()[-3:]
+            S11=float(S11)/10.
+            S12=float(S12)/10.
+            S13=float(S13)/10.
+            S21=float(S21)/10.
+            S22=float(S22)/10.
+            S23=float(S23)/10.
+            S31=float(S31)/10.
+            S32=float(S32)/10.
+            S33=float(S33)/10.
             f.seek('time      =',1)
             t = float(f.readtokens()[-2])
             f.seek('kinetic energy',1)
             K = float(f.readtokens()[-2])
             f.seek('temperature',1)
             T = float(f.readtokens()[-2])
-            md_res.append((E,P,t,K,T))
+            md_res.append((E,P,t,K,T,S11,S12,S13,S21,S22,S23,S31,S32,S33))
             n+=1
         #end while
         md_res = array(md_res,dtype=float).T
-        quantities = ('total_energy','pressure','time','kinetic_energy',
-                      'temperature')
+        quantities = ('total_energyRyd','pressureGPa','timeps','kinetic_energyRyd',
+                      'temperatureK','S11','S12','S13','S21','S22','S23',
+                      'S31','S32','S33')
+
         md = obj()
         for i,q in enumerate(quantities):
             md[q] = md_res[i]
         #end for
-        md.potential_energy = md.total_energy - md.kinetic_energy
+        md.potential_energyRyd = md.total_energyRyd - md.kinetic_energyRyd
         self.md_data = md
-        self.md_stats = self.md_statistics()
+#        self.md_stats = self.md_statistics()
         if self.info.md_only:
             return
         #end if
@@ -656,6 +672,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
     #end def analyze
 
 
+
     def write_electron_counts(self,filepath=None,return_flag=False):
         if not return_flag:
             if not self.info.xml:
@@ -707,60 +724,6 @@ class PwscfAnalyzer(SimulationAnalyzer):
         #end if
     #end def write_electron_counts
 
-
-    def md_statistics(self,equil=None,autocorr=None):
-        import numpy as np
-        from numerics import simstats,simplestats
-        mds = obj()
-        for q,v in self.md_data.items():
-            if equil is not None:
-                v = v[equil:]
-            #end if
-            if autocorr is None:
-                mean,var,error,kappa = simstats(v)
-            else:
-                nv = len(v)
-                nb = int(np.floor(float(nv)/autocorr))
-                nexclude = nv-nb*autocorr
-                v = v[nexclude:]
-                v.shape = nb,autocorr
-                mean,error = simplestats(v.mean(axis=1))
-            #end if
-            mds[q] = mean,error
-        #end for
-        return mds
-    #end def md_statistics
-
-
-    def md_plots(self,show=True):
-
-        md = self.md_data
-
-        import matplotlib.pyplot as plt
-        fig = plt.figure()
-
-        plt.subplot(3,1,1)
-        plt.plot(md.time,md.total_energy-md.total_energy[0],label='Etot')
-        plt.plot(md.time,md.kinetic_energy-md.kinetic_energy[0],label='Ekin')
-        plt.plot(md.time,md.potential_energy-md.potential_energy[0],label='Epot')
-        plt.ylabel('E (Ryd)')
-        plt.legend()
-
-        plt.subplot(3,1,2)
-        plt.plot(md.time,md.temperature)
-        plt.ylabel('T (K)')
-
-        plt.subplot(3,1,3)
-        plt.plot(md.time,md.pressure)
-        plt.ylabel('P (kbar)')
-        plt.xlabel('time (ps)')
-
-        if show:
-            plt.show()
-        #end if
-
-        return fig
-    #end def md_plots
 
 
     def make_movie(self,filename,filepath=None):
@@ -887,6 +850,87 @@ class PwscfAnalyzer(SimulationAnalyzer):
             show()
         #end if
     #end def plot_bandstructure
+    def md_statistics(self,equil=None,autocorr=None):
+        import numpy as np
+        from numerics import simstats,simplestats
+        mds = obj()
+        for q,v in self.md_data.items():
+            if equil is not None:
+                v = v[equil:]
+            else:
+                equil=0
+            if autocorr is None:
+                mean,var,error,kappa = simstats(v)
+                mds[q] = mean,error,kappa,equil
+            else:
+                nv = len(v)
+                nb = int(np.floor(float(nv)/autocorr))
+                nexclude = nv-nb*autocorr
+                v = v[nexclude:]
+                v.shape = nb,autocorr
+                mean,error = simplestats(v.mean(axis=1))
+                mds[q] = mean,error,autocorr,nexclude
+        return mds
+    #end def md_statistics
+    def md_plots(self,filename,equil,show=True,removeskips=False,startfromone=False):
+        import numpy as np
+        import matplotlib.pyplot as plt
+        params = {'legend.fontsize':10,'figure.facecolor':'white','figure.subplot.hspace':0.,
+                  'axes.labelsize':12,'xtick.labelsize':12,'ytick.labelsize':12}
+        plt.rcParams.update(params)
+        md = self.md_data
+        plt.figure()
+        plt.subplots_adjust(left=0.2)
+        plt.subplots_adjust(bottom=0.15)
+        plt.suptitle(filename)
+        plt.axis([None, None, -.1, .1])
+        plt.subplot(5,1,1)
+        plt.ylim(-0.4,0.4)
+        e=equil
+        dt=md.timeps[1]-md.timeps[0]
+        dtl=md.timeps[-1]-md.timeps[-2]
+        lmd=len(md.timeps)
+        print(" dt (ps)= {0} {1} length= {2}".format(dt,dtl,lmd))
+        if(startfromone):
+            i=0
+            for ii in md.timeps:
+                md.timeps[i]=i*dt
+                i+=1
+        if(removeskips):
+            for i in range(2,lmd):
+                if (md.timeps[i]-md.timeps[i-1] > 2*dt ):
+                    md.timeps[i]=2.0*md.timeps[i-1]-md.timeps[i-2]
+        plt.plot(md.timeps[e:],md.total_energyRyd[e:]-np.mean(md.total_energyRyd[e:]),label='Etot(Ryd)')
+        plt.plot(md.timeps[e:],md.kinetic_energyRyd[e:]-np.mean(md.kinetic_energyRyd[e:]),label='Ekin(Ryd)')
+        plt.plot(md.timeps[e:],md.potential_energyRyd[e:]-np.mean(md.potential_energyRyd[e:]),label='Epot(Ryd)')
+        plt.ylabel('E (Ryd)')
+        plt.legend(ncol=2, mode="expand")
+        plt.axis([None, None, None,None])
+        plt.subplot(5,1,2)
+        plt.plot(md.timeps[e:],md.temperatureK[e:])
+        plt.ylabel('T (K)')
+        plt.subplot(5,1,3)
+        plt.plot(md.timeps[e:],md.pressureGPa[e:])
+        plt.ylabel('P (GPa)')
+        plt.xlabel('time (ps)')
+        plt.subplot(5,1,4)
+        plt.plot(md.timeps[e:],md.S23[e:],label='S23')
+        plt.plot(md.timeps[e:],md.S13[e:],label='S13')
+        plt.plot(md.timeps[e:],md.S12[e:],label='S12')
+        plt.legend(ncol=2, mode="expand")
+        plt.ylabel('Stress\n(GPa)',multialignment='center')
+        plt.xlabel('time (ps)')
+        plt.subplot(5,1,5)
+        plt.plot(md.timeps[e:],md.S11[e:]-md.pressureGPa[e:],label='dS11')
+        plt.plot(md.timeps[e:],md.S22[e:]-md.pressureGPa[e:],label='dS22')
+        plt.plot(md.timeps[e:],md.S33[e:]-md.pressureGPa[e:],label='dS33')
+        plt.legend(ncol=2, mode="expand")
+        plt.ylabel('Stress\n(GPa)',multialignment='center')
+        plt.xlabel('time (ps)')
+        if show:
+            plt.show()
+            return 
+
 
 #end class PwscfAnalyzer
         

@@ -3239,15 +3239,15 @@ class Summit(Supercomputer):
 
 
 
-class Tomcat3(Supercomputer):
-    name             = 'tomcat3'
+class Tomcat(Supercomputer):
+    name             = 'tomcat'
     requires_account = False
     batch_capable    = True
     redirect_output  = True
 
     def write_job_header(self,job):
         if job.queue is None:
-            job.queue = 'tomcat'
+            job.queue = 'batch'
         #end if
         c = '#!/bin/bash -l\n'
         c+='#SBATCH -J {}\n'.format(job.name) 
@@ -3260,12 +3260,14 @@ class Tomcat3(Supercomputer):
         #end if
         c+='#. /home/rcohen/.bashrc\n'
         if len(job.presub)==0:
-            c+='unalias cd; source /mnt/beegfs/intel/parallel_studio_xe_2019.3.062/bin/psxevars.sh\n'
+            c+='. /mnt/beegfs/intel/compilers_and_libraries_2019.4.243/linux/bin/compilervars.sh -arch intel64 -platform linux'
+            c+='. /mnt/beegfs/intel/compilers_and_libraries_2019.4.243/linux/mpi/intel64/bin/mpivars.sh'
+            c+='unalias cd; /mnt/beegfs/intel/parallel_studio_xe_2019.4.070/bin/psxevars.sh ; alias cd=pushd'
             c+='ulimit -a\n'
         #end if
         return c
     #end def write_job_header
-#end class Tomcat3
+#end class Tomcat
 
 
 
@@ -3307,7 +3309,7 @@ SuperMUC(      512,   1,    28,  256,    8,'mpiexec', 'llsubmit',     'llq','llc
 Stampede2(    4200,   1,    68,   96,   50,  'ibrun',   'sbatch',  'squeue', 'scancel')
 Cades(         156,   2,    18,  128,  100, 'mpirun',     'qsub',   'qstat',    'qdel')
 Summit(       4608,   2,    21,  512,  100,  'jsrun',     'bsub',   'bjobs',   'bkill')
-Tomcat3(         8,   1,    64,  192, 1000, 'mpirun',   'sbatch',   'sacct', 'scancel')
+Tomcat(          8,   1,    64,  192, 1000, 'mpirun',   'sbatch',   'sacct', 'scancel')
 SuperMUC_NG(  6336,   1,    48,   96, 1000,'mpiexec',   'sbatch',   'sacct', 'scancel')
 
 

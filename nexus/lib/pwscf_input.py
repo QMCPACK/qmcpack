@@ -906,7 +906,6 @@ for sec in section_classes:
 #end for
 
 
-exit_ = exit
 def check_new_variables(exit=True):
     sections = section_classes
     msg = ''
