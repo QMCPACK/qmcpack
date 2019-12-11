@@ -97,8 +97,10 @@ def load_from_pyscf_chk(chkfile,hcore=None,orthoAO=False):
         assert(nkpts==1)
         assert len(fock.shape) == 2
         assert fock.shape[0] == nao
-        fock = fock.reshape((1,-1))
+        fock = fock.reshape((1,1)+fock.shape)
         mo_energy = mo_energy.reshape((1,-1))
+    if len(fock.shape) == 3:
+        fock = fock.reshape((1,)+fock.shape)
     scf_data = {'cell': cell, 'kpts': kpts,
                 'Xocc': Xocc, 'isUHF': isUHF,
                 'hcore': hcore, 'X': X, 'nmo_pk': nmo_pk,
