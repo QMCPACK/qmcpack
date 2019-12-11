@@ -62,7 +62,7 @@ public:
   ///timestep
   RealType Tau;
   ///spin mass
-  RealType spinmass;
+  RealType spinMass;
   ///use Drift
   bool UseDrift;
 
