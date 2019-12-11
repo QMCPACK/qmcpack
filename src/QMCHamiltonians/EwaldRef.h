@@ -34,26 +34,26 @@
 namespace qmcplusplus
 {
 
-/// Rewrap the OHMMS_DIM constant as DIM
+/// Reference Ewald implemented for 3D only
 enum
 {
-  DIM = OHMMS_DIM
+  DIM = 3
 };
 
 /// Type for integers
-using IntType     = int;
+using int_t     = int;
 /// Type for floating point numbers
-using RealType    = QMCTraits::FullPrecRealType;
+using real_t    = double;
 /// Type for integer vectors of length DIM
-using IntVec      = TinyVector<IntType, DIM>;
+using IntVec      = TinyVector<int_t, DIM>;
 /// Type for floating point vectors of length DIM
-using RealVec     = TinyVector<RealType, DIM>;
+using RealVec     = TinyVector<real_t, DIM>;
 /// Type for floating point matrices of shape DIM,DIM
-using RealMat     = Tensor<RealType, DIM>;
+using RealMat     = Tensor<real_t, DIM>;
 /// Type for lists of particle positions
 using PosArray    = std::vector<RealVec>;
 /// Type for lists of particle charges
-using ChargeArray = std::vector<RealType>;
+using ChargeArray = std::vector<real_t>;
 
 
 /// Functor for term within the real-space sum in Drummond 2008 formula 7
@@ -64,21 +64,21 @@ class RspaceMadelungTerm
   /// The real-space cell axes
   RealMat a;
   /// The constant \kappa in Drummond 2008 formula 7
-  RealType rconst;
+  real_t rconst;
 
   public:
 
-  RspaceMadelungTerm(RealMat a_in,RealType rconst_in)
+  RspaceMadelungTerm(RealMat a_in,real_t rconst_in)
   {
     a      = a_in;
     rconst = rconst_in;
   }
 
-  RealType operator()(IntVec i)
+  real_t operator()(IntVec i)
   {
     RealVec Rv  = dot(i,a);
-    RealType R  = std::sqrt(dot(Rv,Rv));
-    RealType rm = std::erfc(rconst*R)/R;
+    real_t R  = std::sqrt(dot(Rv,Rv));
+    real_t rm = std::erfc(rconst*R)/R;
     return rm;
   }
 };
@@ -92,24 +92,24 @@ class KspaceMadelungTerm
   /// The k-space cell axes
   RealMat b;
   /// The constant 1/(4\kappa^2) in Drummond 2008 formula 7
-  RealType kconst;
+  real_t kconst;
   /// The constant 4\pi/\Omega in Drummond 2008 formula 7
-  RealType kfactor;
+  real_t kfactor;
 
   public:
 
-  KspaceMadelungTerm(RealMat b_in,RealType kconst_in,RealType kfactor_in)
+  KspaceMadelungTerm(RealMat b_in,real_t kconst_in,real_t kfactor_in)
   {
     b       = b_in;
     kconst  = kconst_in;
     kfactor = kfactor_in;
   }
 
-  RealType operator()(IntVec i)
+  real_t operator()(IntVec i)
   {
     RealVec  Kv = dot(i,b);
-    RealType K2 = dot(Kv,Kv);
-    RealType km = kfactor*std::exp(kconst*K2)/K2;
+    real_t K2 = dot(Kv,Kv);
+    real_t km = kfactor*std::exp(kconst*K2)/K2;
     return km;
   }
 };
@@ -125,24 +125,24 @@ class RspaceEwaldTerm
   /// The real-space cell axes
   RealMat a;
   /// The constant 1/(\sqrt{2}kappa) in Drummond 2008 formula 6
-  RealType rconst;
+  real_t rconst;
 
   public:
 
-  RspaceEwaldTerm(RealVec r_in,RealMat a_in,RealType rconst_in)
+  RspaceEwaldTerm(RealVec r_in,RealMat a_in,real_t rconst_in)
   {
     r      = r_in;
     a      = a_in;
     rconst = rconst_in;
   }
 
-  RealType operator()(IntVec i)
+  real_t operator()(IntVec i)
   {
     RealVec Rv = dot(i,a);
-    for(IntType d: {0,1,2})
+    for(int_t d: {0,1,2})
       Rv[d] -= r[d];
-    RealType R  = std::sqrt(dot(Rv,Rv));
-    RealType rm = std::erfc(rconst*R)/R;
+    real_t R  = std::sqrt(dot(Rv,Rv));
+    real_t rm = std::erfc(rconst*R)/R;
     return rm;
   }
 };
@@ -158,13 +158,13 @@ class KspaceEwaldTerm
   /// The k-space cell axes
   RealMat b;
   /// The constant -\kappa^2/2 in Drummond 2008 formula 6
-  RealType kconst;
+  real_t kconst;
   /// The constant 4\pi/\Omega in Drummond 2008 formula 6
-  RealType kfactor;
+  real_t kfactor;
 
   public:
 
-  KspaceEwaldTerm(RealVec r_in,RealMat b_in,RealType kconst_in,RealType kfactor_in)
+  KspaceEwaldTerm(RealVec r_in,RealMat b_in,real_t kconst_in,real_t kfactor_in)
   {
     r       = r_in;
     b       = b_in;
@@ -172,12 +172,12 @@ class KspaceEwaldTerm
     kfactor = kfactor_in;
   }
 
-  RealType operator()(IntVec i)
+  real_t operator()(IntVec i)
   {
      RealVec  Kv = dot(i,b);
-     RealType K2 = dot(Kv,Kv);
-     RealType Kr = dot(Kv,r);
-     RealType km = kfactor*std::exp(kconst*K2)*std::cos(Kr)/K2;
+     real_t K2 = dot(Kv,Kv);
+     real_t Kr = dot(Kv,r);
+     real_t km = kfactor*std::exp(kconst*K2)*std::cos(Kr)/K2;
      return km;
   }
 };
@@ -197,14 +197,14 @@ class KspaceEwaldTerm
  *    points is less than tol.
  */
 template<typename T>
-RealType gridSum(T& function,bool zero=true,RealType tol=1e-11)
+real_t gridSum(T& function,bool zero=true,real_t tol=1e-11)
 {
-  RealType dv  = std::numeric_limits<RealType>::max();
-  RealType dva = std::numeric_limits<RealType>::max();
-  RealType v   = 0.0;
-  IntType im   = 0;
-  IntType jm   = 0;
-  IntType km   = 0;
+  real_t dv  = std::numeric_limits<real_t>::max();
+  real_t dva = std::numeric_limits<real_t>::max();
+  real_t v   = 0.0;
+  int_t im   = 0;
+  int_t jm   = 0;
+  int_t km   = 0;
   IntVec  iv;
   // Add the value at the origin, if requested.
   if(zero)
@@ -219,40 +219,40 @@ RealType gridSum(T& function,bool zero=true,RealType tol=1e-11)
     dv  = 0.0; // Surface shell contribution.
     // Sum over new surface planes perpendicular to the x direction.
     im += 1;
-    for(IntType i: {-im,im})
-      for(IntType j=-jm; j<jm+1; ++j)
-        for(IntType k=-km; k<km+1; ++k)
+    for(int_t i: {-im,im})
+      for(int_t j=-jm; j<jm+1; ++j)
+        for(int_t k=-km; k<km+1; ++k)
         {
           iv[0] = i;
           iv[1] = j;
           iv[2] = k;
-          RealType f = function(iv);
+          real_t f = function(iv);
           dv  += f;
           dva += std::abs(f);
         }
     // Sum over new surface planes perpendicular to the y direction.
     jm += 1;
-    for(IntType j: {-jm,jm})
-      for(IntType k=-km; k<km+1; ++k)
-        for(IntType i=-im; i<im+1; ++i)
+    for(int_t j: {-jm,jm})
+      for(int_t k=-km; k<km+1; ++k)
+        for(int_t i=-im; i<im+1; ++i)
         {
           iv[0] = i;
           iv[1] = j;
           iv[2] = k;
-          RealType f = function(iv);
+          real_t f = function(iv);
           dv  += f;
           dva += std::abs(f);
         }
     // Sum over new surface planes perpendicular to the z direction.
     km += 1;
-    for(IntType k: {-km,km})
-      for(IntType i=-im; i<im+1; ++i)
-        for(IntType j=-jm; j<jm+1; ++j)
+    for(int_t k: {-km,km})
+      for(int_t i=-im; i<im+1; ++i)
+        for(int_t j=-jm; j<jm+1; ++j)
         {
           iv[0] = i;
           iv[1] = j;
           iv[2] = k;
-          RealType f = function(iv);
+          real_t f = function(iv);
           dv  += f;
           dva += std::abs(f);
         }
@@ -271,35 +271,35 @@ RealType gridSum(T& function,bool zero=true,RealType tol=1e-11)
  *
  *  @param tol: Tolerance for the Madelung constant in Ha.
  */
-RealType madelungSum(RealMat a,RealType tol=1e-10)
+real_t madelungSum(RealMat a,real_t tol=1e-10)
 {
   // Real-space cell volume
-  RealType volume = std::abs(det(a));
+  real_t volume = std::abs(det(a));
   // k-space cell axes
   RealMat b       = 2*M_PI*transpose(inverse(a));
   // real space cutoff
-  RealType rconv  = 8*std::pow(3.*volume/(4*M_PI),1./3);
+  real_t rconv  = 8*std::pow(3.*volume/(4*M_PI),1./3);
   // k-space cutoff (kappa)
-  RealType kconv  = 2*M_PI/rconv;
+  real_t kconv  = 2*M_PI/rconv;
 
   // Set constants for real-/k-space Madelung functors
-  RealType rconst  = kconv;
-  RealType kconst  = -1./(4*std::pow(kconv,2));
-  RealType kfactor = 4*M_PI/volume;
+  real_t rconst  = kconv;
+  real_t kconst  = -1./(4*std::pow(kconv,2));
+  real_t kfactor = 4*M_PI/volume;
 
   // Create real-/k-space fuctors for terms within the sums in formula 7
   RspaceMadelungTerm rfunc(a,rconst);
   KspaceMadelungTerm kfunc(b,kconst,kfactor);
 
   // Compute the constant term
-  RealType cval = -M_PI/(std::pow(kconv,2)*volume)-2*kconv/std::sqrt(M_PI);
+  real_t cval = -M_PI/(std::pow(kconv,2)*volume)-2*kconv/std::sqrt(M_PI);
   // Compute the real-space sum (excludes zero)
-  RealType rval = gridSum(rfunc,false,tol);
+  real_t rval = gridSum(rfunc,false,tol);
   // Compute the k-space sum (excludes zero)
-  RealType kval = gridSum(kfunc,false,tol);
+  real_t kval = gridSum(kfunc,false,tol);
 
   // Sum all contributions to get the Madelung constant
-  RealType ms = cval + rval + kval;
+  real_t ms = cval + rval + kval;
 
   return ms;
 }
@@ -315,35 +315,35 @@ RealType madelungSum(RealMat a,RealType tol=1e-10)
  *
  *  @param tol: Tolerance for the Ewald pair interaction in Ha.
  */
-RealType ewaldSum(RealVec r,RealMat a,RealType tol=1e-10)
+real_t ewaldSum(RealVec r,RealMat a,real_t tol=1e-10)
 {
   // Real-space cell volume
-  RealType volume = std::abs(det(a));
+  real_t volume = std::abs(det(a));
   // k-space cell axes
   RealMat b       = 2*M_PI*transpose(inverse(a));
   // real space cutoff
-  RealType rconv  = 8*std::pow(3.*volume/(4*M_PI),1./3);
+  real_t rconv  = 8*std::pow(3.*volume/(4*M_PI),1./3);
   // k-space cutoff (kappa)
-  RealType kconv  = 2*M_PI/rconv;
+  real_t kconv  = 2*M_PI/rconv;
 
   // Set constants for real-/k-space Ewald pair functors
-  RealType rconst  = 1./(std::sqrt(2.)*kconv);
-  RealType kconst  = -std::pow(kconv,2)/2;
-  RealType kfactor = 4*M_PI/volume;
+  real_t rconst  = 1./(std::sqrt(2.)*kconv);
+  real_t kconst  = -std::pow(kconv,2)/2;
+  real_t kfactor = 4*M_PI/volume;
 
   // Create real-/k-space fuctors for terms within the sums in formula 6
   RspaceEwaldTerm rfunc(r,a,rconst);
   KspaceEwaldTerm kfunc(r,b,kconst,kfactor);
 
   // Compute the constant term
-  RealType cval = -2*M_PI*std::pow(kconv,2)/volume;
+  real_t cval = -2*M_PI*std::pow(kconv,2)/volume;
   // Compute the real-space sum (includes zero)
-  RealType rval = gridSum(rfunc,true,tol);
+  real_t rval = gridSum(rfunc,true,tol);
   // Compute the k-space sum (excludes zero)
-  RealType kval = gridSum(kfunc,false,tol);
+  real_t kval = gridSum(kfunc,false,tol);
 
   // Sum all contributions to get the Ewald pair interaction
-  RealType es = cval + rval + kval;
+  real_t es = cval + rval + kval;
 
   return es;
 }
@@ -362,21 +362,21 @@ RealType ewaldSum(RealVec r,RealMat a,RealType tol=1e-10)
  *
  *  @param tol: Tolerance for the total potential energy in Ha.
  */
-RealType ewaldEnergy(RealMat a,PosArray R,ChargeArray Q,RealType tol=1e-10)
+real_t ewaldEnergy(RealMat a,PosArray R,ChargeArray Q,real_t tol=1e-10)
 {
   // Number of particles
-  IntType N = R.size();
+  int_t N = R.size();
 
   // Maximum self-interaction charge product
-  RealType qqmax=0.0;
+  real_t qqmax=0.0;
   for(size_t i=0; i<N; ++i)
     qqmax = std::max(std::abs(Q[i]*Q[i]),qqmax);
 
   // Compute the Madelung term (Drummond 2008 formula 7)
-  RealType vm = madelungSum(a,tol*2./qqmax);
+  real_t vm = madelungSum(a,tol*2./qqmax);
 
   // Total Ewald potential energy
-  RealType ve = 0.0;
+  real_t ve = 0.0;
 
   // Sum the Madelung self interaction for each particle
   for(size_t i=0; i<N; ++i)
@@ -386,7 +386,7 @@ RealType ewaldEnergy(RealMat a,PosArray R,ChargeArray Q,RealType tol=1e-10)
   for(size_t i=0; i<N; ++i)
     for(size_t j=0; j<i; ++j)
     {
-      RealType qq = Q[i]*Q[j];
+      real_t qq = Q[i]*Q[j];
       ve += qq*ewaldSum(R[i]-R[j],a,tol/qq);
     }
 
