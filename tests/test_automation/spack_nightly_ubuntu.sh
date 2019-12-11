@@ -87,14 +87,14 @@ qe_hash=57cb1b06ee2653a87c3acc0dd4f09032fcf6ce6b8cbb9677ae9ceeb6a78f85e2
 
 cd $SPACK_ROOT
 git checkout develop 
-if [ $? -ne 0 ]
+if [[ $? -ne 0 ]]
 then
     echo "Not a git repository"
     exit 1
 fi
 
 git pull upstream develop
-if [ $? -ne 0 ]
+if [[ $? -ne 0 ]]
 then
     echo "Not able to pull Spack upstream into local git repo"
     exit 1
@@ -190,7 +190,7 @@ for version in ${versions[@]}; do
 
 	    # test that QMCPACK patch was REALLY applied
 	    spack find quantum-espresso@6.4.1"%"${compiler} patches=${qe_hash}
-	    if $? -ne 0
+	    if [[ $? -ne 0 ]]
 	    then
 		echo "QMCPACK patch was not applied to QE." >> ${SPACK_FAILS}
 	    fi
