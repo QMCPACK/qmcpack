@@ -199,11 +199,12 @@ class KspaceEwaldTerm
 template<typename T>
 RealType gridSum(T& function,bool zero=true,RealType tol=1e-11)
 {
-  RealType dv = 1e99;
-  RealType v  = 0.0;
-  IntType im  = 0;
-  IntType jm  = 0;
-  IntType km  = 0;
+  RealType dv  = 1e99;
+  RealType dva = 1e99;
+  RealType v   = 0.0;
+  IntType im   = 0;
+  IntType jm   = 0;
+  IntType km   = 0;
   IntVec  iv;
   // Add the value at the origin, if requested.
   if(zero)
@@ -212,9 +213,10 @@ RealType gridSum(T& function,bool zero=true,RealType tol=1e-11)
     v += function(iv);
   }
   // Sum over cubic surface shells until the tolerance is reached.
-  while(std::abs(dv)>tol)
+  while(std::abs(dva)>tol)
   {
-    dv = 0.0; // Surface shell contribution.
+    dva = 0.0;
+    dv  = 0.0; // Surface shell contribution.
     // Sum over new surface planes perpendicular to the x direction.
     im += 1;
     for(IntType i: {-im,im})
@@ -224,7 +226,9 @@ RealType gridSum(T& function,bool zero=true,RealType tol=1e-11)
           iv[0] = i;
           iv[1] = j;
           iv[2] = k;
-          dv += function(iv);
+          RealType f = function(iv);
+          dv  += f;
+          dva += std::abs(f);
         }
     // Sum over new surface planes perpendicular to the y direction.
     jm += 1;
@@ -235,7 +239,9 @@ RealType gridSum(T& function,bool zero=true,RealType tol=1e-11)
           iv[0] = i;
           iv[1] = j;
           iv[2] = k;
-          dv += function(iv);
+          RealType f = function(iv);
+          dv  += f;
+          dva += std::abs(f);
         }
     // Sum over new surface planes perpendicular to the z direction.
     km += 1;
@@ -246,7 +252,9 @@ RealType gridSum(T& function,bool zero=true,RealType tol=1e-11)
           iv[0] = i;
           iv[1] = j;
           iv[2] = k;
-          dv += function(iv);
+          RealType f = function(iv);
+          dv  += f;
+          dva += std::abs(f);
         }
     v += dv;
   }
