@@ -73,12 +73,12 @@ void SOVMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
           GradType grad_now = Psi.evalGradWithSpin(W, iat,spingrad_now);
           DriftModifier->getDrift(tauovermass, grad_now, dr);
           dr += sqrttau * deltaR[iat];
-          ds += tauovermass/spinmass*std::real(spingrad_now); //using raw spin grad, no UNR modifier
+          ds += tauovermass/spinMass*std::real(spingrad_now); //using raw spin grad, no UNR modifier
         }
         else
         {
           dr = sqrttau * deltaR[iat];
-          ds = std::sqrt(tauovermass/spinmass)*deltaS[iat];
+          ds = std::sqrt(tauovermass/spinMass)*deltaS[iat];
         }
         if (!W.makeMoveAndCheckWithSpin(iat,dr,ds))
         {
@@ -96,9 +96,9 @@ void SOVMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
           RealType logGb = -oneover2tau * dot(dr, dr);
           RealType logGf = mhalf * dot(deltaR[iat], deltaR[iat]);
 
-          ds = tauovermass/spinmass*std::real(spingrad_new);
+          ds = tauovermass/spinMass*std::real(spingrad_new);
           ds = W.spins[iat] - W.activeSpinVal - ds;
-          logGb += -spinmass*oneover2tau*ds*ds;
+          logGb += -spinMass*oneover2tau*ds*ds;
           logGf += mhalf*deltaS[iat]*deltaS[iat];
 
           prob *= std::exp(logGb - logGf);
