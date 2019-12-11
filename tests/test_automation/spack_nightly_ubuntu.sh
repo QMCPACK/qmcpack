@@ -20,8 +20,43 @@ export SPACK_ROOT=/nfs/gce/projects/naromero-workspace/spack
 source $SPACK_ROOT/share/spack/setup-env.sh
 
 # Spack Failures
-# Contains conflicts and failures, anytime we don't get an exit 0
+# Contains failures, anytime we don't get an exit 0 from `spack install`
 export SPACK_FAILS=$HOME/qmcpack_spack_failures.out
+
+# Spack Conflicts
+# Contains conflicts, anytime we don't get an exit 0 from `spack spec'
+export SPACK_CONFLICTS=$HOME/qmcpack_spack_conflicts.out
+
+module load intel/19.0
+
+exit
+
+# Test Variant
+function test_variant {
+    echo "####################"
+    variant="$@"
+    spack spec $variant
+    RET_VAL=$?
+    if [[ ${RET_VAL} -ne 0 ]]
+    then
+        known_conflict=1
+	echo ${RET_VAL} ${known_conflict} $variant >> ${SPACK_CONFLICTS}
+
+    else
+        known_conflict=0
+    fi
+
+    if [[ ${known_conflict} -eq 0 ]]
+    then
+	echo "### Installing ###"
+        spack install $variant
+	RET_VAL=$?
+        if [[ ${RET_VAL} -ne 0 ]]
+        then
+	    echo ${RET_VAL} ${known_conflict} $variant >> ${SPACK_FAILS}
+        fi
+    fi
+}
 
 # Here are all the variants that we test, plus dependencies
 # declare -a versions=("3.8.0" "3.7.0")
