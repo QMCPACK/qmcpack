@@ -114,6 +114,8 @@ spack clean
 # File for logging conflicts and build failures
 rm -f ${SPACK_FAILS}
 touch ${SPACK_FAILS}
+rm -f ${SPACK_CONFLICTS}
+touch ${SPACK_CONFLICTS}
 
 # test QMCPACK variants
 # NOTES:
