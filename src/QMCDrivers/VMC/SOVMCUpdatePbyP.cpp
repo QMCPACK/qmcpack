@@ -72,8 +72,9 @@ void SOVMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
           TrialWaveFunction::LogValueType spingrad_now;
           GradType grad_now = Psi.evalGradWithSpin(W, iat,spingrad_now);
           DriftModifier->getDrift(tauovermass, grad_now, dr);
+          ds = tauovermass/spinMass*std::real(spingrad_now); //using raw spin grad, no UNR modifier
           dr += sqrttau * deltaR[iat];
-          ds += tauovermass/spinMass*std::real(spingrad_now); //using raw spin grad, no UNR modifier
+          ds += std::sqrt(tauovermass/spinMass)*deltaS[iat]; 
         }
         else
         {
