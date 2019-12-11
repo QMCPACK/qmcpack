@@ -128,8 +128,8 @@ touch ${SPACK_CONFLICTS}
 # - Union of packages that should get compiled with GCC are: ^boost%gcc
 #   ^pkgconf%gcc ^perl%gcc ^libpciaccess%gcc ^numactl%gcc ^cmake%gcc ^findutils%gcc ^m4%gcc
 #
-build_with_gcc="^boost%gcc ^pkgconf%gcc ^perl%gcc ^libpciaccess%gcc ^cmake%gcc ^findutils%gcc ^m4%gcc"
-build_with_gcc_nompi="^boost%gcc ^pkgconf%gcc ^perl%gcc ^cmake%gcc"
+build_with_gcc='^boost%gcc@7.4.0 ^pkgconf%gcc@7.4.0 ^perl%gcc@7.4.0 ^libpciaccess%gcc@7.4.0 ^cmake%gcc@7.4.0 ^findutils%gcc@7.4.0 ^m4%gcc@7.4.0'
+build_with_gcc_nompi='^boost%gcc@7.4.0 ^pkgconf%gcc@7.4.0 ^perl%gcc@7.4.0 ^cmake%gcc@7.4.0'
 
 echo "##### Compiling QMCPACK variants without QE ######"
 echo "##### 36 variants per compiler #####"
@@ -139,25 +139,13 @@ for version in ${versions[@]}; do
 	    for mixed in ${withmixed[@]}; do
 		for soa in ${withsoa[@]}; do
 		    for blas in ${blasproviders[@]}; do
-			echo "####################"
-			variant1="qmcpack~qe+mpi+timers~cuda${spotype}${mixed}${soa}"@"${version}"%"${compiler} ^${blas} ^mpich ${build_with_gcc}"
-			echo $variant1
-			spack install $variant1
-			if [ $? -ne 0 ]
-			then
-			    echo $variant1 >> ${SPACK_FAILS}
-			fi
+			variant1='qmcpack~qe+mpi+timers~cuda'${spotype}${mixed}${soa}'@'${version}'%'${compiler}' ^'${blas}' ^mpich '${build_with_gcc}
+			test_variant "${variant1}"
 
-			echo "####################"
-			variant2="qmcpack~qe+mpi+timers+cuda${spotype}${mixed}${soa}"@"${version}"%"${compiler} cuda_arch=${gpu_card} ^cuda"@"${cuda_version} ^${blas} ^mpich ${build_with_gcc}"
-			echo $variant2
-			spack install $variant2
-			if [ $? -ne 0 ]
-			then
-			    echo $variant2 >> ${SPACK_FAILS}
-			fi
-			
-			echo "####################"
+			# cuda version takes an extra arg
+			variant2='qmcpack~qe+mpi+timers+cuda'${spotype}${mixed}${soa}'@'${version}'%'${compiler}' cuda_arch='${gpu_card}' ^cuda@'${cuda_version}' ^'${blas}' ^mpich '${build_with_gcc}
+			# variant2='qmcpack~qe+mpi+timers+cuda'${spotype}${mixed}${soa}'@'${version}'%'${compiler}' ^cuda@'${cuda_version}' ^'${blas}' ^mpich '${build_with_gcc}
+			test_variant ${variant2}
 		    done
 		done
 	    done
@@ -172,23 +160,11 @@ echo "##### Test that QE patch is applied ####"
 for version in ${versions[@]}; do
     for compiler in ${compilers[@]}; do
 	for blas in ${blasproviders[@]}; do
-            echo "###############"
-	    variant3="qmcpack+qe+mpi~timers~cuda~complex~mixed~soa"@"${version}"%"${compiler} ^${blas} ^mpich ${build_with_gcc}"
-	    echo $variant3
-	    spack install $variant3
-	    if [ $? -ne 0 ]
-	    then
-		echo $variant3 >> ${SPACK_FAILS}
-	    fi
+	    variant3='qmcpack+qe+mpi~timers~cuda~complex~mixed~soa@'${version}'%'${compiler}' ^'${blas}' ^mpich '${build_with_gcc}
+	    test_variant $variant3
 	    
-	    echo "###############"
-	    variant4="qmcpack+qe~mpi~phdf5~timers~cuda~complex~mixed~soa"@"${version}"%"${compiler} ^${blas}"
-	    echo $variant4
-	    spack install $variant4
-	    if [ $? -ne 0 ]
-	    then
-		echo $variant4 >> ${SPACK_FAILS}
-	    fi	    
+	    variant4='qmcpack+qe~mpi~phdf5~timers~cuda~complex~mixed~soa@'${version}'%'${compiler}' ^'${blas}
+	    test_variant $variant4
 
 	    # test that QMCPACK patch was REALLY applied
 	    spack find quantum-espresso@6.4.1"%"${compiler} patches=${qe_hash}
