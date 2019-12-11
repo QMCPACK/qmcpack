@@ -1,4 +1,9 @@
 #!/bin/bash
+# Next line is specific to the Argonne CELS computing environment
+# it is needed in order to set-up modules and load the compilers
+# correctly, particular Intel and PGI.
+. /etc/profile.d/z00_lmod.sh
+
 # Uncomment below for VERY verbose output from BASH
 # set -x 
 
