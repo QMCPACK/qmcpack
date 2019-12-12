@@ -374,14 +374,16 @@ def read_qmcpack_cholesky_kpoint(filename):
 
 def fcidump_header(nel, norb, spin):
     header = (
-        "&FCI\n" +
-        "NORB={:d},\n".format(norb) +
-        "NELEC={:d},\n".format(nel) +
+        "&FCI " +
+        "NORB={:d}, ".format(norb) +
+        "NELEC={:d}, ".format(nel) +
         "MS2={:d},\n".format(spin) +
-        "ORBSYM=" + ",".join([str(1)]*norb) + ",\n" +
-        "ISYM=0\n" +
+        "ORBSYM=" +
+        ",".join([str(1)]*norb) +
+        ",\n" +
+        "ISYM=1\n" +
         "&END\n"
-    )
+        )
     return header
 
 
