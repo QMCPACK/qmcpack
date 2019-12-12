@@ -51,11 +51,11 @@ def average_one_rdm(filename, estimator='back_propagated', eqlb=1, skip=1, ix=No
         print('Unknown walker type {}'.format(wt))
 
     if walker == 'closed':
-        return 2*mean.reshape(nbasis,nbasis), err.reshape(nbasis, nbasis), ns
+        return 2*mean.reshape(1,nbasis,nbasis), err.reshape(1,nbasis, nbasis)
     elif walker == 'collinear':
         return mean.reshape((2,nbasis,nbasis)), err.reshape((2, nbasis, nbasis)), ns
     elif walker == 'non_collinear':
-        return mean.reshape((2*nbasis,2*nbasis)), err.reshape((2*nbasis, 2*nbasis)), ns
+        return mean.reshape((1,2*nbasis,2*nbasis)), err.reshape((1,2*nbasis, 2*nbasis))
     else:
         print('Unknown walker type.')
         return None
@@ -113,8 +113,16 @@ def average_diag_two_rdm(filename, estimator='back_propagated', eqlb=1, skip=1, 
         two_rdm_err[nbasis:,nbasis:] = two_rdm_err[:nbasis,:nbasis].copy()
     elif walker == 'collinear':
         dm_size = nbasis*(2*nbasis-1)
-        two_rdm[numpy.triu_indices] = mean
-        two_rdm_err[numpy.triu_indices] = err
+        two_rdm = numpy.zeros((2*nbasis, 2*nbasis), dtype=mean.dtype)
+        two_rdm_err = numpy.zeros((2*nbasis, 2*nbasis), dtype=mean.dtype)
+        ij = 0
+        for i in range(2*nbasis):
+            for j in range(i+1, 2*nbasis):
+                two_rdm[i,j] = mean[ij]
+                two_rdm_err[i,j] = err[ij]
+                ij += 1
+#        two_rdm[numpy.triu_indices] = mean
+#        two_rdm_err[numpy.triu_indices] = err
     elif walker == 'non_collinear':
         print("Non-collinear wavefunction not supported.")
         return None
