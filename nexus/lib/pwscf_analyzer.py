@@ -18,7 +18,7 @@
 
 
 import os
-from numpy import array,fromstring,sqrt,dot,max,equal,zeros,min,where
+from numpy import array,fromstring,sqrt,dot,max,equal,zeros,min,where,empty
 from generic import obj
 from unit_converter import convert
 from periodic_table import PeriodicTable
@@ -42,7 +42,6 @@ def is_number(s):
         return True
     except ValueError:
         return False
-    #end try
 #end def is_number
 
 
@@ -141,43 +140,51 @@ class PwscfAnalyzer(SimulationAnalyzer):
 
         outfile = os.path.join(path,outfile_name)
 
-        try:
-            # perform MD analysis
-            f = TextFile(outfile)
-            n = 0
-            md_res = []
-            while f.seek('!',1)!=-1:
-                E = float(f.readtokens()[-2])
-                f.seek('P=',1)
-                P = float(f.readtokens()[-1])
-                f.seek('time      =',1)
-                t = float(f.readtokens()[-2])
-                f.seek('kinetic energy',1)
-                K = float(f.readtokens()[-2])
-                f.seek('temperature',1)
-                T = float(f.readtokens()[-2])
-                md_res.append((E,P,t,K,T))
-                n+=1
-            #end while
-            md_res = array(md_res,dtype=float).T
-            quantities = ('total_energy','pressure','time','kinetic_energy',
-                          'temperature')
-            md = obj()
-            for i,q in enumerate(quantities):
-                md[q] = md_res[i]
-            #end for
-            md.potential_energy = md.total_energy - md.kinetic_energy
-            self.md_data = md
-            self.md_stats = self.md_statistics()
-            if self.info.md_only:
-                return
-            #end if
-        except:
-            nx+=1
-            if self.info.warn:
-                self.warn('MD analysis failed')
-            #end if
-        #end try
+        # perform MD analysis
+        f = TextFile(outfile)
+        n = 0
+        md_res = []
+        while f.seek('!',1)!=-1:
+            E = float(f.readtokens()[-2])
+            f.seek('P=',1)
+            P = float(f.readtokens()[-1])/10. #convert to GPa
+            # stress matrix S, note S00 is S11 in normal terms!
+            S11, S12, S13 = f.readtokens()[-3:]
+            S21, S22, S23 = f.readtokens()[-3:]
+            S31, S32, S33 = f.readtokens()[-3:]
+            S11=float(S11)/10.
+            S12=float(S12)/10.
+            S13=float(S13)/10.
+            S21=float(S21)/10.
+            S22=float(S22)/10.
+            S23=float(S23)/10.
+            S31=float(S31)/10.
+            S32=float(S32)/10.
+            S33=float(S33)/10.
+            f.seek('time      =',1)
+            t = float(f.readtokens()[-2])
+            f.seek('kinetic energy',1)
+            K = float(f.readtokens()[-2])
+            f.seek('temperature',1)
+            T = float(f.readtokens()[-2])
+            md_res.append((E,P,t,K,T,S11,S12,S13,S21,S22,S23,S31,S32,S33))
+            n+=1
+        #end while
+        md_res = array(md_res,dtype=float).T
+        quantities = ('total_energyRyd','pressureGPa','timeps','kinetic_energyRyd',
+                      'temperatureK','S11','S12','S13','S21','S22','S23',
+                      'S31','S32','S33')
+
+        md = obj()
+        for i,q in enumerate(quantities):
+            md[q] = md_res[i]
+        #end for
+        md.potential_energyRyd = md.total_energyRyd - md.kinetic_energyRyd
+        self.md_data = md
+#        self.md_stats = self.md_statistics()
+        if self.info.md_only:
+            return
+        #end if
 
         try:
             lines = open(outfile,'r').read().splitlines()
