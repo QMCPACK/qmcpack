@@ -88,7 +88,8 @@ def generate_orbitals(fock, X, nmo_pk, rediag, ortho_ao,
     bands = []
     full_mo_a = []
     full_mo_b = []
-    for k in range(fock.shape[1]):
+    nk = len(X)
+    for k in range(nk):
         if verbose:
             print(" # Generating trial wavefunction for kpoint: "
                   "{:d}".format(k))
