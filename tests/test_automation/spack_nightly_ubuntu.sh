@@ -27,10 +27,6 @@ export SPACK_FAILS=$HOME/qmcpack_spack_failures.out
 # Contains conflicts, anytime we don't get an exit 0 from `spack spec'
 export SPACK_CONFLICTS=$HOME/qmcpack_spack_conflicts.out
 
-module load intel/19.0
-
-exit
-
 # Test Variant
 function test_variant {
     echo "####################"
