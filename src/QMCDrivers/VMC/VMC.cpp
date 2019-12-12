@@ -51,11 +51,7 @@ VMC::VMC(MCWalkerConfiguration& w,
   m_param.add(UseDrift, "usedrift", "string");
   m_param.add(UseDrift, "use_drift", "string");
   m_param.add(SpinMoves, "spinMoves", "string");
-  m_param.add(SpinMoves, "spinmoves", "string");
-  m_param.add(SpinMoves, "spin_moves", "string");
-  m_param.add(spinMass, "spinMass", "double");
   m_param.add(spinMass, "spinmass", "double");
-  m_param.add(spinMass, "spin_mass", "double");
 
   prevSteps               = nSteps;
   prevStepsBetweenSamples = nStepsBetweenSamples;
