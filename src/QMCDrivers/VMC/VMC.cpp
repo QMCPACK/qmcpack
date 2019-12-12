@@ -41,7 +41,7 @@ VMC::VMC(MCWalkerConfiguration& w,
          QMCHamiltonian& h,
          WaveFunctionPool& ppool,
          Communicate* comm)
-    : QMCDriver(w, psi, h, ppool, comm), UseDrift("yes"), SpinMoves("no"), spinMass(1.0)
+    : QMCDriver(w, psi, h, ppool, comm), UseDrift("yes"), SpinMoves("no"), SpinMass(1.0)
 {
   RootName = "vmc";
   QMCType  = "VMC";
@@ -50,8 +50,8 @@ VMC::VMC(MCWalkerConfiguration& w,
   m_param.add(UseDrift, "useDrift", "string");
   m_param.add(UseDrift, "usedrift", "string");
   m_param.add(UseDrift, "use_drift", "string");
-  m_param.add(SpinMoves, "spinMoves", "string");
-  m_param.add(spinMass, "spinmass", "double");
+  m_param.add(SpinMoves, "SpinMoves", "string");
+  m_param.add(SpinMass, "SpinMass", "double");
 
   prevSteps               = nSteps;
   prevStepsBetweenSamples = nStepsBetweenSamples;
@@ -244,9 +244,9 @@ void VMC::resetRun()
 
   if (SpinMoves == "yes")
   {
-    app_log() << "  Spins treated as dynamic variable with spinMass: " << spinMass << std::endl;
+    app_log() << "  Spins treated as dynamic variable with SpinMass: " << SpinMass << std::endl;
     for (int i=0; i < Movers.size(); i++)
-      Movers[i]->setSpinMass(spinMass);
+      Movers[i]->setSpinMass(SpinMass);
   }
 
   app_log() << "  Total Sample Size   =" << nTargetSamples << std::endl;
@@ -395,7 +395,7 @@ bool VMC::put(xmlNodePtr q)
   app_log() << "  target samples = " << nTargetPopulation << std::endl;
   app_log() << "  walkers/mpi    = " << W.getActiveWalkers() << std::endl << std::endl;
   app_log() << "  stepsbetweensamples = " << nStepsBetweenSamples << std::endl;
-  app_log() << "  spinmoves      = " << SpinMoves << std::endl;
+  app_log() << "  SpinMoves      = " << SpinMoves << std::endl;
 
   m_param.get(app_log());
 

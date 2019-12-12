@@ -40,7 +40,7 @@ private:
   std::string UseDrift;
   ///turn on spin moves
   std::string SpinMoves;
-  RealType spinMass;
+  RealType SpinMass;
   ///check the run-time environments
   void resetRun();
   ///copy constructor

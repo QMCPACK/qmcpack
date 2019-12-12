@@ -214,8 +214,8 @@ TEST_CASE("SOVMC", "[drivers][vmc]")
    <parameter name=\"blocks\">1</parameter> \
    <parameter name=\"timestep\">0.1</parameter> \
    <parameter name=\"usedrift\">no</parameter> \
-   <parameter name=\"spinmoves\">yes</parameter> \
-   <parameter name=\"spinmass\">0.25</parameter> \
+   <parameter name=\"SpinMoves\">yes</parameter> \
+   <parameter name=\"SpinMass\">0.25</parameter> \
   </qmc> \
   ";
   Libxml2Document* doc  = new Libxml2Document;
