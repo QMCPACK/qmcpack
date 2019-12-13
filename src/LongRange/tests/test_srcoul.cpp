@@ -44,8 +44,8 @@ TEST_CASE("srcoul", "[lrhandler]")
   REQUIRE(Lattice.Volume == Approx(125));
   Lattice.SetLRCutoffs(Lattice.Rv);
   //Lattice.printCutoffs(app_log());
-  REQUIRE(Lattice.LR_rc == Approx(2.5));
-  REQUIRE(Lattice.LR_kc == Approx(12));
+  REQUIRE(Approx(Lattice.LR_rc) == 2.5);
+  REQUIRE(Approx(Lattice.LR_kc) == 12);
 
   ParticleSet ref; // handler needs ref.SK.KLists
   ref.Lattice = Lattice;  // !!!! crucial for access to Volume
@@ -56,8 +56,8 @@ TEST_CASE("srcoul", "[lrhandler]")
 
   handler.initBreakup(ref);
   REQUIRE(handler.MaxKshell == 78);
-  REQUIRE(handler.LR_rc == Approx(2.5));
-  REQUIRE(handler.LR_kc == 12);
+  REQUIRE(Approx(handler.LR_rc) == 2.5);
+  REQUIRE(Approx(handler.LR_kc) == 12);
 
   mRealType r, dr, rinv;
   mRealType vsr;
@@ -87,8 +87,8 @@ TEST_CASE("srcoul df", "[lrhandler]")
   REQUIRE(Lattice.Volume == Approx(125));
   Lattice.SetLRCutoffs(Lattice.Rv);
   //Lattice.printCutoffs(app_log());
-  REQUIRE(Lattice.LR_rc == Approx(2.5));
-  REQUIRE(Lattice.LR_kc == Approx(12));
+  REQUIRE(Approx(Lattice.LR_rc) == 2.5);
+  REQUIRE(Approx(Lattice.LR_kc) == 12);
 
   ParticleSet ref; // handler needs ref.SK.KLists
   ref.Lattice = Lattice;  // !!!! crucial for access to Volume
@@ -99,8 +99,8 @@ TEST_CASE("srcoul df", "[lrhandler]")
 
   handler.initBreakup(ref);
   REQUIRE(handler.MaxKshell == 78);
-  REQUIRE(handler.LR_rc == Approx(2.5));
-  REQUIRE(handler.LR_kc == 12);
+  REQUIRE(Approx(handler.LR_rc) == 2.5);
+  REQUIRE(Approx(handler.LR_kc) == 12);
 
   EslerCoulomb3D fref;
   fref.reset(ref);

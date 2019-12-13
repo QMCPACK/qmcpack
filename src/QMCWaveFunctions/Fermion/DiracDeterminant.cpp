@@ -79,6 +79,7 @@ void DiracDeterminant<DU_TYPE>::resize(int nel, int morb)
   NumOrbitals = norb;
 
   dpsiV.resize(NumOrbitals);
+  dspin_psiV.resize(NumOrbitals);
   d2psiV.resize(NumOrbitals);
   FirstAddressOfdV = &(dpsiM(0, 0)[0]); //(*dpsiM.begin())[0]);
   LastAddressOfdV  = FirstAddressOfdV + NumPtcls * NumOrbitals * DIM;
@@ -93,6 +94,24 @@ typename DiracDeterminant<DU_TYPE>::GradType DiracDeterminant<DU_TYPE>::evalGrad
   updateEng.getInvRow(psiM, WorkingIndex, invRow);
   GradType g = simd::dot(invRow.data(), dpsiM[WorkingIndex], invRow.size());
   RatioTimer.stop();
+  return g;
+}
+
+template<typename DU_TYPE>
+typename DiracDeterminant<DU_TYPE>::GradType DiracDeterminant<DU_TYPE>::evalGradWithSpin(ParticleSet& P,
+                                                                                         int iat,
+                                                                                         LogValueType& spingrad)
+{
+  Phi->evaluate_spin(P, iat, psiV, dspin_psiV);
+  const int WorkingIndex = iat - FirstIndex;
+  RatioTimer.start();
+  invRow_id = WorkingIndex;
+  updateEng.getInvRow(psiM, WorkingIndex, invRow);
+  GradType g          = simd::dot(invRow.data(), dpsiM[WorkingIndex], invRow.size());
+  LogValueType spin_g = simd::dot(invRow.data(), dspin_psiV.data(), invRow.size());
+  RatioTimer.stop();
+
+  spingrad += spin_g;
   return g;
 }
 
@@ -131,6 +150,41 @@ typename DiracDeterminant<DU_TYPE>::PsiValueType DiracDeterminant<DU_TYPE>::rati
   return curRatio;
 }
 
+template<typename DU_TYPE>
+typename DiracDeterminant<DU_TYPE>::PsiValueType DiracDeterminant<DU_TYPE>::ratioGradWithSpin(
+    ParticleSet& P,
+    int iat,
+    GradType& grad_iat,
+    LogValueType& spingrad_iat)
+{
+  SPOVGLTimer.start();
+  Phi->evaluate(P, iat, psiV, dpsiV, d2psiV);
+  Phi->evaluate_spin(P, iat, psiV, dspin_psiV);
+  SPOVGLTimer.stop();
+
+  UpdateMode = ORB_PBYP_PARTIAL;
+  RatioTimer.start();
+  const int WorkingIndex = iat - FirstIndex;
+  GradType rv;
+
+  // This is an optimization.
+  // check invRow_id against WorkingIndex to see if getInvRow() has been called already
+  // Some code paths call evalGrad before calling ratioGrad.
+  if (invRow_id != WorkingIndex)
+  {
+    invRow_id = WorkingIndex;
+    updateEng.getInvRow(psiM, WorkingIndex, invRow);
+  }
+  curRatio = simd::dot(invRow.data(), psiV.data(), invRow.size());
+  grad_iat += static_cast<ValueType>(static_cast<PsiValueType>(1.0) / curRatio) *
+      simd::dot(invRow.data(), dpsiV.data(), invRow.size());
+
+  spingrad_iat += static_cast<ValueType>(static_cast<PsiValueType>(1.0) / curRatio) *
+      simd::dot(invRow.data(), dspin_psiV.data(), invRow.size());
+  RatioTimer.stop();
+
+  return curRatio;
+}
 
 template<typename DU_TYPE>
 void DiracDeterminant<DU_TYPE>::mw_ratioGrad(const std::vector<WaveFunctionComponent*>& WFC_list,

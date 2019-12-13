@@ -1,6 +1,6 @@
 
-#ifndef QMCPLUSPLUS_AFQMC_KPFACTORIZEDHAMILTONIAN_H
-#define QMCPLUSPLUS_AFQMC_KPFACTORIZEDHAMILTONIAN_H
+#ifndef QMCPLUSPLUS_AFQMC_REALDENSEHAMILTONIAN_V2_H
+#define QMCPLUSPLUS_AFQMC_REALDENSEHAMILTONIAN_V2_H
 
 #include<iostream>
 #include<vector>
@@ -24,45 +24,47 @@ namespace qmcplusplus
 namespace afqmc
 {
 
-class KPFactorizedHamiltonian: public OneBodyHamiltonian
+class RealDenseHamiltonian_v2: public OneBodyHamiltonian
 {
 
   public:
 
-  using shmSpMatrix = boost::multi::array<SPComplexType,2,shared_allocator<SPComplexType>>;
-  using CMatrix = boost::multi::array<ComplexType,2>;
-
-  KPFactorizedHamiltonian(AFQMCInfo const& info, xmlNodePtr cur,
+  RealDenseHamiltonian_v2(AFQMCInfo const& info, xmlNodePtr cur,
                           boost::multi::array<ValueType,2>&& h,
                           TaskGroup_& tg_, ValueType nucE=0, ValueType fzcE=0):
                                     OneBodyHamiltonian(info,std::move(h),nucE,fzcE),
-                                    TG(tg_),fileName(""),batched("no"),ooc("no")
+                                    TG(tg_),fileName(""),batched("no"),ooc("no"),max_memory_MB(2000)
   {
 
     if(number_of_devices() > 0) batched="yes";
     std::string str("yes");
     ParameterSet m_param;
-    m_param.add(cutoff_cholesky,"cutoff_cholesky","double");
     m_param.add(fileName,"filename","std::string");
+    m_param.add(max_memory_MB,"max_memory","int");
     if(TG.TG_local().size() == 1)
       m_param.add(batched,"batched","std::string");
     if(TG.TG_local().size() == 1)
       m_param.add(ooc,"ooc","std::string");
-    m_param.add(nsampleQ,"nsampleQ","int");
     m_param.put(cur);
 
     if(omp_get_num_threads() > 1 && (batched != "yes" && batched != "true")) {
       app_log()<<" WARNING!!!: Found OMP_NUM_THREADS > 1 with batched=no.\n"
                <<"             This will lead to low performance. Set batched=yes. \n"; 
     }
+
+    if( TG.TG_local().size() > 1 || not (batched=="yes" || batched == "true" )) {
+      app_log()<<" alt_version = true only on GPU build with batched=true. " <<std::endl;
+      APP_ABORT("");
+    }  
+
   }
 
-  ~KPFactorizedHamiltonian() {}
+  ~RealDenseHamiltonian_v2() {}
 
-  KPFactorizedHamiltonian(KPFactorizedHamiltonian const& other) = delete;
-  KPFactorizedHamiltonian(KPFactorizedHamiltonian && other) = default;
-  KPFactorizedHamiltonian& operator=(KPFactorizedHamiltonian const& other) = delete;
-  KPFactorizedHamiltonian& operator=(KPFactorizedHamiltonian && other) = default;
+  RealDenseHamiltonian_v2(RealDenseHamiltonian_v2 const& other) = delete;
+  RealDenseHamiltonian_v2(RealDenseHamiltonian_v2 && other) = default;
+  RealDenseHamiltonian_v2& operator=(RealDenseHamiltonian_v2 const& other) = delete;
+  RealDenseHamiltonian_v2& operator=(RealDenseHamiltonian_v2 && other) = default;
 
   ValueType getNuclearCoulombEnergy() const { return OneBodyHamiltonian::NuclearCoulombEnergy; }
 
@@ -93,17 +95,7 @@ class KPFactorizedHamiltonian: public OneBodyHamiltonian
 
   std::string ooc;
 
-  double cutoff_cholesky;
-
-  int nsampleQ = -1;
-
-  HamiltonianOperations getHamiltonianOperations_shared(bool pureSD, bool addCoulomb, WALKER_TYPES type,
-            std::vector<PsiT_Matrix>& PsiT, double cutvn, double cutv2,
-            TaskGroup_& TGprop, TaskGroup_& TGwfn, hdf_archive& dump);
-
-  HamiltonianOperations getHamiltonianOperations_batched(bool pureSD, bool addCoulomb, WALKER_TYPES type,
-            std::vector<PsiT_Matrix>& PsiT, double cutvn, double cutv2,
-            TaskGroup_& TGprop, TaskGroup_& TGwfn, hdf_archive& dump);
+  int max_memory_MB;
 
 };
 
