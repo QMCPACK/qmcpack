@@ -41,7 +41,7 @@ def average_one_rdm(filename, estimator='back_propagated', eqlb=1, skip=1, ix=No
         Error bars for 1RDM elements.
     """
     md = get_metadata(filename)
-    mean, err = average_observable(filename, 'one_rdm', eqlb=eqlb, skip=skip,
+    mean, err, ns = average_observable(filename, 'one_rdm', eqlb=eqlb, skip=skip,
                                    estimator=estimator, ix=ix)
     nbasis = md['NMO']
     wt = md['WalkerType']
@@ -51,11 +51,11 @@ def average_one_rdm(filename, estimator='back_propagated', eqlb=1, skip=1, ix=No
         print('Unknown walker type {}'.format(wt))
 
     if walker == 'closed':
-        return mean.reshape(nbasis,nbasis), err.reshape(nbasis, nbasis)
+        return 2*mean.reshape(nbasis,nbasis), err.reshape(nbasis, nbasis), ns
     elif walker == 'collinear':
-        return mean.reshape((2,nbasis,nbasis)), err.reshape((2, nbasis, nbasis))
+        return mean.reshape((2,nbasis,nbasis)), err.reshape((2, nbasis, nbasis)), ns
     elif walker == 'non_collinear':
-        return mean.reshape((2*nbasis,2*nbasis)), err.reshape((2*nbasis, 2*nbasis))
+        return mean.reshape((2*nbasis,2*nbasis)), err.reshape((2*nbasis, 2*nbasis)), ns
     else:
         print('Unknown walker type.')
         return None
@@ -201,4 +201,58 @@ def average_observable(filename, name, eqlb=1, estimator='back_propagated',
         data = extract_observable(filename, name=name, estimator=estimator, ix=ix)
         mean = numpy.mean(data[eqlb:len(data):skip], axis=0)
         err = scipy.stats.sem(data[eqlb:len(data):skip].real, axis=0)
-    return mean, err
+    return mean, err, len(data[eqlb:len(data):skip])
+
+def get_noons(filename, estimator='back_propagated', eqlb=1, skip=1, ix=None,
+              nsamp=100, screen_factor=1):
+    """Get NOONs from averaged AFQMC RDM.
+
+    Parameters
+    ----------
+    filename : string
+        QMCPACK output containing density matrix (*.h5 file).
+    estimator : string
+        Estimator type to analyse. Options: back_propagated or mixed.
+        Default: back_propagated.
+    eqlb : int
+        Number of blocks for equilibration. Default 1.
+    skip : int
+        Number of blocks to skip in between measurements equilibration.
+        Default 1 (use all data).
+    ix : int
+        Back propagation path length to average. Optional.
+        Default: None (chooses longest path).
+
+    Returns
+    -------
+    one_rdm : :class:`numpy.ndarray`
+        Averaged 1RDM.
+    one_rdm_err : :class:`numpy.ndarray`
+        Error bars for 1RDM elements.
+    """
+    P, Perr, ns = average_one_rdm(filename, estimator='back_propagated', eqlb=1,
+                                  skip=1, ix=ix)
+    if len(P.shape) == 3:
+        P = P[0] + P[1]
+        Perr = Perr[0] + Perr[1]
+    P = 0.5 * (P + P.conj().T)
+    Perr = 0.5 * (Perr + Perr.T)
+    P[numpy.abs(P) < screen_factor*Perr] = 0.0
+    noons = numpy.zeros((nsamp, P.shape[-1]))
+    for s in range(nsamp):
+        # Dangerous. Discards imaginary part.
+        Ppert = [numpy.random.normal(loc=a, scale=err, size=1) for a, err in
+                 zip(P.ravel(), Perr.ravel())]
+        Ppert = numpy.array(Ppert).reshape(P.shape)
+        Ppert = 0.5*(Ppert + Ppert.conj().T)
+        e, ev = numpy.linalg.eigh(Ppert)
+        noons[s] = e[::-1]
+
+    e, ev = numpy.linalg.eigh(P)
+    # import matplotlib.pyplot as pl
+    # e, ev = numpy.linalg.eigh(P)
+    # pl.hist(noons[:,41], bins=10)
+    # pl.axvline(numpy.mean(noons[:,41]))
+    # pl.axvline(e[::-1][41], linestyle=':')
+    # pl.show()
+    return e[::-1], numpy.std(noons, axis=0, ddof=1)

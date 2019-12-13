@@ -1,5 +1,6 @@
 import h5py
 import numpy
+from afqmctools.utils.io import from_qmcpack_cplx
 
 # Map user names to QMCPACK names.
 MAP = {
