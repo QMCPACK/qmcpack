@@ -79,16 +79,15 @@ void QMCUpdateBase::setDefaults()
   myParams.add(m_r2max, "maxDisplSq", "double"); //maximum displacement
   //store 1/mass per species
   SpeciesSet tspecies(W.getSpeciesSet());
+  assert(W.getSpeciesSet() == W.groups());
   int massind = tspecies.addAttribute("mass");
   MassInvS.resize(tspecies.getTotalNum());
   for (int ig = 0; ig < tspecies.getTotalNum(); ++ig)
     MassInvS[ig] = 1.0 / tspecies(massind, ig);
   MassInvP.resize(W.getTotalNum());
   for (int ig = 0; ig < W.groups(); ++ig)
-  {
     for (int iat = W.first(ig); iat < W.last(ig); ++iat)
       MassInvP[iat] = MassInvS[ig];
-  }
 
   InitWalkersTimer = TimerManager.createTimer("QMCUpdateBase::WalkerInit", timer_level_medium);
 }
