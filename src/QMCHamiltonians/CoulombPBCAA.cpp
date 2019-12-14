@@ -68,6 +68,7 @@ CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces)
 
     RealType Vii_ref = ewaldEnergy(A,R,Q);
     RealType Vdiff_per_atom = std::abs(Value-Vii_ref)/NumCenters;
+    app_log()<<"Checking ion-ion Ewald energy against reference..."<<std::endl;
     if(Vdiff_per_atom > Ps.Lattice.LR_tol)
     {
       app_log()<<std::setprecision(14);
@@ -88,6 +89,10 @@ CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces)
       app_log()<<std::endl;
 
       APP_ABORT("ion-ion check failed")
+    }
+    else
+    {
+      app_log()<<"  Check passed."<<std::endl;
     }
   }
   prefix = "F_AA";
