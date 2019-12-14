@@ -112,7 +112,13 @@ ParticleSet::~ParticleSet()
     delete SK;
 }
 
-void ParticleSet::create(int numPtcl) { resize(numPtcl); }
+void ParticleSet::create(int numPtcl)
+{
+  resize(numPtcl);
+  SubPtcl.resize(2);
+  SubPtcl[0] = 0;
+  SubPtcl[1] = numPtcl;
+}
 
 void ParticleSet::create(const std::vector<int>& agroup)
 {
