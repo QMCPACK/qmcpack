@@ -91,7 +91,7 @@ public:
 
     targetPtcl->R[0] = sourcePtcl->R[curCenter];
     targetPtcl->makeMove(0, dr);
-    Psi1->evaluate(*targetPtcl, 0, val1);
+    Psi1->evaluateValue(*targetPtcl, 0, val1);
 
     return val1[curOrb];
   }
@@ -103,7 +103,7 @@ public:
 
     targetPtcl->R[0] = sourcePtcl->R[curCenter];
     targetPtcl->makeMove(0, dr);
-    Psi1->evaluate(*targetPtcl, 0, val1, grad1, lap1);
+    Psi1->evaluateVGL(*targetPtcl, 0, val1, grad1, lap1);
 
     val  = val1[curOrb];
     grad = grad1[curOrb];

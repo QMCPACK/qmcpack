@@ -73,35 +73,35 @@ public:
 
   SPOSet* makeClone() const;
 
-  void storeParamsBeforeRotation() { C_copy = *C; }
+  void storeParamsBeforeRotation() override { C_copy = *C; }
 
-  void applyRotation(const ValueMatrix_t& rot_mat, bool use_stored_copy);
+  void applyRotation(const ValueMatrix_t& rot_mat, bool use_stored_copy) override;
 
-  void checkInVariables(opt_variables_type& active)
+  void checkInVariables(opt_variables_type& active) override
   {
     APP_ABORT("LCAOrbitalSet should not call checkInVariables");
   }
 
-  void checkOutVariables(const opt_variables_type& active)
+  void checkOutVariables(const opt_variables_type& active) override
   {
     APP_ABORT("LCAOrbitalSet should not call checkOutVariables");
   }
 
   ///reset
-  void resetParameters(const opt_variables_type& active)
+  void resetParameters(const opt_variables_type& active) override
   {
     APP_ABORT("LCAOrbitalSet should not call resetParameters");
   }
 
   ///reset the target particleset
-  void resetTargetParticleSet(ParticleSet& P)
+  void resetTargetParticleSet(ParticleSet& P) override
   {
     //myBasisSet->resetTargetParticleSet(P);
   }
 
   /** set the OrbitalSetSize
     */
-  virtual void setOrbitalSetSize(int norbs)
+  virtual void setOrbitalSetSize(int norbs) override
   {
     OrbitalSetSize = norbs;
     Tempv.resize(OrbitalSetSize);
@@ -125,37 +125,37 @@ public:
       APP_ABORT("   LCAOrbitalSet::checkObject Linear coeffient for LCAOrbitalSet is not consistent with the input.");
   }
 
-  void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi);
+  void evaluateValue(const ParticleSet& P, int iat, ValueVector_t& psi) override;
 
-  void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi);
+  void evaluateVGL(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi) override;
 
   void evaluateDetRatios(const VirtualParticleSet& VP,
                          ValueVector_t& psi,
                          const ValueVector_t& psiinv,
-                         std::vector<ValueType>& ratios);
+                         std::vector<ValueType>& ratios) override;
 
-  void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, HessVector_t& grad_grad_psi);
+  void evaluateVGH(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, HessVector_t& grad_grad_psi) override;
 
-  void evaluate(const ParticleSet& P, 
-               int iat, 
-               ValueVector_t& psi, 
-               GradVector_t& dpsi, 
-               HessVector_t& grad_grad_psi,
-               GGGVector_t& grad_grad_grad_psi);
-
-  void evaluate_notranspose(const ParticleSet& P,
-                            int first,
-                            int last,
-                            ValueMatrix_t& logdet,
-                            GradMatrix_t& dlogdet,
-                            ValueMatrix_t& d2logdet);
+  void evaluateVGHGH(const ParticleSet& P, 
+                     int iat, 
+                     ValueVector_t& psi, 
+                     GradVector_t& dpsi, 
+                     HessVector_t& grad_grad_psi,
+                     GGGVector_t& grad_grad_grad_psi) override;
 
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
                             int last,
                             ValueMatrix_t& logdet,
                             GradMatrix_t& dlogdet,
-                            HessMatrix_t& grad_grad_logdet);
+                            ValueMatrix_t& d2logdet) override;
+
+  void evaluate_notranspose(const ParticleSet& P,
+                            int first,
+                            int last,
+                            ValueMatrix_t& logdet,
+                            GradMatrix_t& dlogdet,
+                            HessMatrix_t& grad_grad_logdet) override;
 
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
@@ -163,7 +163,7 @@ public:
                             ValueMatrix_t& logdet,
                             GradMatrix_t& dlogdet,
                             HessMatrix_t& grad_grad_logdet,
-                            GGGMatrix_t& grad_grad_grad_logdet);
+                            GGGMatrix_t& grad_grad_grad_logdet) override;
 
  //NOTE:  The data types get complicated here, so here's an overview of the 
  //       data types associated with ionic derivatives, and how to get their data.
@@ -207,7 +207,7 @@ public:
                           int last,
                           const ParticleSet& source,
                           int iat_src,
-                          GradMatrix_t& grad_phi);
+                          GradMatrix_t& grad_phi) override;
 
  /**
  * \brief Calculate ion derivatives of SPO's, their gradients, and their laplacians.
@@ -228,9 +228,9 @@ public:
                           int iat_src,
                           GradMatrix_t& grad_phi,
                           HessMatrix_t& grad_grad_phi,
-                          GradMatrix_t& grad_lapl_phi);
+                          GradMatrix_t& grad_lapl_phi) override;
 
-  void evaluateThirdDeriv(const ParticleSet& P, int first, int last, GGGMatrix_t& grad_grad_grad_logdet);
+  void evaluateThirdDeriv(const ParticleSet& P, int first, int last, GGGMatrix_t& grad_grad_grad_logdet) override;
 
 private:
   //helper functions to handl Identity

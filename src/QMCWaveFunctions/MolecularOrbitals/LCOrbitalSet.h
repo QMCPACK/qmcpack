@@ -89,14 +89,14 @@ public:
    */
   inline int getBasisSetSize() const { return (myBasisSet == 0) ? 0 : myBasisSet->getBasisSetSize(); }
 
-  inline void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
+  inline void evaluateValue(const ParticleSet& P, int iat, ValueVector_t& psi)
   {
     myBasisSet->evaluateForPtclMove(P, iat);
     for (int j = 0; j < OrbitalSetSize; j++)
       psi[j] = myBasisSet->Phi[j];
   }
 
-  inline void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
+  inline void evaluateVGL(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
   {
     myBasisSet->evaluateAllForPtclMove(P, iat);
     for (int j = 0; j < OrbitalSetSize; j++)
@@ -107,11 +107,11 @@ public:
       d2psi[j] = myBasisSet->d2Phi[j];
   }
 
-  inline void evaluate(const ParticleSet& P,
-                       int iat,
-                       ValueVector_t& psi,
-                       GradVector_t& dpsi,
-                       HessVector_t& grad_grad_psi)
+  inline void evaluateVGH(const ParticleSet& P,
+                          int iat,
+                          ValueVector_t& psi,
+                          GradVector_t& dpsi,
+                          HessVector_t& grad_grad_psi)
   {
     myBasisSet->evaluateForPtclMoveWithHessian(P, iat);
     for (int j = 0; j < OrbitalSetSize; j++)
@@ -248,13 +248,13 @@ public:
    */
   inline int getBasisSetSize() const { return (myBasisSet == 0) ? 0 : myBasisSet->getBasisSetSize(); }
 
-  inline void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
+  inline void evaluateValue(const ParticleSet& P, int iat, ValueVector_t& psi)
   {
     myBasisSet->evaluateForPtclMove(P, iat);
     simd::gemv(*C, myBasisSet->Phi.data(), psi.data());
   }
 
-  inline void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
+  inline void evaluateVGL(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
   {
     myBasisSet->evaluateAllForPtclMove(P, iat);
 
@@ -292,11 +292,11 @@ public:
     }
   }
 
-  inline void evaluate(const ParticleSet& P,
-                       int iat,
-                       ValueVector_t& psi,
-                       GradVector_t& dpsi,
-                       HessVector_t& grad_grad_psi)
+  inline void evaluateVGH(const ParticleSet& P,
+                          int iat,
+                          ValueVector_t& psi,
+                          GradVector_t& dpsi,
+                          HessVector_t& grad_grad_psi)
   {
     myBasisSet->evaluateForPtclMoveWithHessian(P, iat);
     simd::gemv(*C, myBasisSet->Phi.data(), psi.data());

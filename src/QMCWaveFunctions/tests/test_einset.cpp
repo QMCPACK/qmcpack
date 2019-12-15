@@ -149,7 +149,7 @@ TEST_CASE("Einspline SPO from HDF", "[wavefunction]")
   SPOSet::ValueVector_t psiV(psiM[1], spo->getOrbitalSetSize());
   SPOSet::GradVector_t dpsiV(dpsiM[1], spo->getOrbitalSetSize());
   SPOSet::HessVector_t ddpsiV(spo->getOrbitalSetSize());
-  spo->evaluate(elec_, 1, psiV, dpsiV, ddpsiV);
+  spo->evaluateVGH(elec_, 1, psiV, dpsiV, ddpsiV);
 
   // Catch default is 100*(float epsilson)
   double eps = 2000 * std::numeric_limits<float>::epsilon();

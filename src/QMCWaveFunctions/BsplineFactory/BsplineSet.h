@@ -57,7 +57,7 @@ struct BsplineSet : public SPOSet, public SplineAdoptor
 
   SPOSet* makeClone() const override { return new BsplineSet<SplineAdoptor>(*this); }
 
-  inline void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi) override { SplineAdoptor::evaluate_v(P, iat, psi); }
+  inline void evaluateValue(const ParticleSet& P, int iat, ValueVector_t& psi) override { SplineAdoptor::evaluate_v(P, iat, psi); }
 
   inline void evaluateDetRatios(const VirtualParticleSet& VP,
                                 ValueVector_t& psi,
@@ -81,7 +81,7 @@ struct BsplineSet : public SPOSet, public SplineAdoptor
     //SplineAdoptor::last_spo=norbs;
   }
 
-  inline void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi) override
+  inline void evaluateVGL(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi) override
   {
     SplineAdoptor::evaluate_vgl(P, iat, psi, dpsi, d2psi);
   }
@@ -96,21 +96,21 @@ struct BsplineSet : public SPOSet, public SplineAdoptor
     SplineAdoptor::mw_evaluate_vgl(downcast_spo_list(spo_list), P_list, iat, psi_v_list, dpsi_v_list, d2psi_v_list);
   }
 
-  inline void evaluate(const ParticleSet& P,
-                       int iat,
-                       ValueVector_t& psi,
-                       GradVector_t& dpsi,
-                       HessVector_t& grad_grad_psi) override
+  inline void evaluateVGH(const ParticleSet& P,
+                          int iat,
+                          ValueVector_t& psi,
+                          GradVector_t& dpsi,
+                          HessVector_t& grad_grad_psi) override
   {
     SplineAdoptor::evaluate_vgh(P, iat, psi, dpsi, grad_grad_psi);
   }
 
-  inline void evaluate(const ParticleSet& P,
-                       int iat,
-                       ValueVector_t& psi,
-                       GradVector_t& dpsi,
-                       HessVector_t& grad_grad_psi,
-                       GGGVector_t& grad_grad_grad_psi) override
+  inline void evaluateVGHGH(const ParticleSet& P,
+                            int iat,
+                            ValueVector_t& psi,
+                            GradVector_t& dpsi,
+                            HessVector_t& grad_grad_psi,
+                            GGGVector_t& grad_grad_grad_psi) override
   {
     SplineAdoptor::evaluate_vghgh(P, iat, psi, dpsi, grad_grad_psi, grad_grad_grad_psi);
   }

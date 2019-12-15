@@ -318,7 +318,7 @@ TEST_CASE("HCN MO with cusp", "[wavefunction]")
   ParticleSet::SingleParticlePos_t newpos;
   elec.makeMove(0, newpos);
 
-  sposet->evaluate(elec, 0, values);
+  sposet->evaluateValue(elec, 0, values);
 
   // Values from gen_cusp_corr.py
   REQUIRE(values[0] == Approx(0.00945227));
@@ -335,7 +335,7 @@ TEST_CASE("HCN MO with cusp", "[wavefunction]")
   elec.makeMove(0, newpos);
 
   values = 0.0;
-  sposet->evaluate(elec, 0, values);
+  sposet->evaluateValue(elec, 0, values);
   //std::cout << "values = " << values << std::endl;
   // Values from gen_cusp_corr.py
   REQUIRE(values[0] == Approx(9.5150713253));
@@ -348,7 +348,7 @@ TEST_CASE("HCN MO with cusp", "[wavefunction]")
 
 
   values = 0.0;
-  sposet->evaluate(elec, 0, values, dpsi, d2psi);
+  sposet->evaluateVGL(elec, 0, values, dpsi, d2psi);
 
   //std::cout << "values = " << values << std::endl;
   //std::cout << "dpsi = " << dpsi << std::endl;
@@ -503,7 +503,7 @@ TEST_CASE("Ethanol MO with cusp", "[wavefunction]")
   ParticleSet::SingleParticlePos_t newpos;
   elec.makeMove(0, newpos);
 
-  sposet->evaluate(elec, 0, values);
+  sposet->evaluateValue(elec, 0, values);
 
   // Values from gen_cusp_corr.py
   REQUIRE(values[0] == Approx(4.3617329704));
@@ -520,7 +520,7 @@ TEST_CASE("Ethanol MO with cusp", "[wavefunction]")
   REQUIRE(values[11] == Approx(0.4250074750));
   REQUIRE(values[12] == Approx(0.0767950823));
 
-  sposet->evaluate(elec, 0, values, dpsi, d2psi);
+  sposet->evaluateVGL(elec, 0, values, dpsi, d2psi);
 
   REQUIRE(values[0] == Approx(4.3617329704));
   REQUIRE(values[1] == Approx(0.0014119853));

@@ -220,7 +220,7 @@ public:
    * @param iat active particle
    * @param psi values of the SPO
    */
-  virtual void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi) = 0;
+  virtual void evaluateValue(const ParticleSet& P, int iat, ValueVector_t& psi) = 0;
 
   /** evaluate the values of this single-particle orbital sets of multiple walkers
    * @param spo_list the list of SPOSet pointers in a walker batch
@@ -235,7 +235,7 @@ public:
   {
 #pragma omp parallel for
     for (int iw = 0; iw < spo_list.size(); iw++)
-      spo_list[iw]->evaluate(*P_list[iw], iat, *psi_v_list[iw]);
+      spo_list[iw]->evaluateValue(*P_list[iw], iat, *psi_v_list[iw]);
   }
 
   /** evaluate determinant ratios for virtual moves, e.g., sphere move for nonlocalPP
@@ -256,11 +256,11 @@ public:
    * @param dpsi gradients of the SPO
    * @param d2psi laplacians of the SPO
    */
-  virtual void evaluate(const ParticleSet& P,
-                        int iat,
-                        ValueVector_t& psi,
-                        GradVector_t& dpsi,
-                        ValueVector_t& d2psi) = 0;
+  virtual void evaluateVGL(const ParticleSet& P,
+                           int iat,
+                           ValueVector_t& psi,
+                           GradVector_t& dpsi,
+                           ValueVector_t& d2psi) = 0;
 
   /** evaluate the values, gradients and laplacians of this single-particle orbital sets of multiple walkers
    * @param spo_list the list of SPOSet pointers in a walker batch
@@ -279,7 +279,7 @@ public:
   {
 #pragma omp parallel for
     for (int iw = 0; iw < spo_list.size(); iw++)
-      spo_list[iw]->evaluate(*P_list[iw], iat, *psi_v_list[iw], *dpsi_v_list[iw], *d2psi_v_list[iw]);
+      spo_list[iw]->evaluateVGL(*P_list[iw], iat, *psi_v_list[iw], *dpsi_v_list[iw], *d2psi_v_list[iw]);
   }
 
   /** evaluate the values, gradients and hessians of this single-particle orbital set
@@ -289,11 +289,11 @@ public:
    * @param dpsi gradients of the SPO
    * @param grad_grad_psi hessians of the SPO
    */
-  virtual void evaluate(const ParticleSet& P,
-                        int iat,
-                        ValueVector_t& psi,
-                        GradVector_t& dpsi,
-                        HessVector_t& grad_grad_psi);
+  virtual void evaluateVGH(const ParticleSet& P,
+                           int iat,
+                           ValueVector_t& psi,
+                           GradVector_t& dpsi,
+                           HessVector_t& grad_grad_psi);
 
   /** evaluate the values, gradients, hessians, and grad hessians of this single-particle orbital set
    * @param P current ParticleSet
@@ -303,7 +303,7 @@ public:
    * @param grad_grad_psi hessians of the SPO
    * @param grad_grad_grad_psi grad hessians of the SPO
    */
-  virtual void evaluate(const ParticleSet& P,
+  virtual void evaluateVGHGH(const ParticleSet& P,
                         int iat,
                         ValueVector_t& psi,
                         GradVector_t& dpsi,

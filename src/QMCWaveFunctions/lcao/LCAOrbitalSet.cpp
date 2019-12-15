@@ -60,7 +60,7 @@ SPOSet* LCAOrbitalSet::makeClone() const
   return myclone;
 }
 
-void LCAOrbitalSet::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
+void LCAOrbitalSet::evaluateValue(const ParticleSet& P, int iat, ValueVector_t& psi)
 {
   if (Identity)
   { //PAY ATTENTION TO COMPLEX
@@ -287,11 +287,11 @@ inline void LCAOrbitalSet::evaluate_vghgh_impl(const vghgh_type& temp,
 }
 
 
-void LCAOrbitalSet::evaluate(const ParticleSet& P,
-                             int iat,
-                             ValueVector_t& psi,
-                             GradVector_t& dpsi,
-                             ValueVector_t& d2psi)
+void LCAOrbitalSet::evaluateVGL(const ParticleSet& P,
+                                int iat,
+                                ValueVector_t& psi,
+                                GradVector_t& dpsi,
+                                ValueVector_t& d2psi)
 {
   //TAKE CARE OF IDENTITY
   myBasisSet->evaluateVGL(P, iat, Temp);
@@ -323,11 +323,11 @@ void LCAOrbitalSet::evaluateDetRatios(const VirtualParticleSet& VP,
   }
 }
 
-void LCAOrbitalSet::evaluate(const ParticleSet& P,
-                             int iat,
-                             ValueVector_t& psi,
-                             GradVector_t& dpsi,
-                             HessVector_t& dhpsi)
+void LCAOrbitalSet::evaluateVGH(const ParticleSet& P,
+                                int iat,
+                                ValueVector_t& psi,
+                                GradVector_t& dpsi,
+                                HessVector_t& dhpsi)
 {
   //TAKE CARE OF IDENTITY
   myBasisSet->evaluateVGH(P, iat, Temph);
@@ -342,12 +342,12 @@ void LCAOrbitalSet::evaluate(const ParticleSet& P,
   }
 }
 
-void LCAOrbitalSet::evaluate(const ParticleSet& P,
-                             int iat,
-                             ValueVector_t& psi,
-                             GradVector_t& dpsi,
-                             HessVector_t& dhpsi,
-                             GGGVector_t& dghpsi)
+void LCAOrbitalSet::evaluateVGHGH(const ParticleSet& P,
+                                  int iat,
+                                  ValueVector_t& psi,
+                                  GradVector_t& dpsi,
+                                  HessVector_t& dhpsi,
+                                  GGGVector_t& dghpsi)
 {
 // APP_ABORT("LCAORbitalSet::evaluate(psi,gpsi,hpsi,ghpsi) not implemented\n");
   
