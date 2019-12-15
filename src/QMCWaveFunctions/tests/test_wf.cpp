@@ -19,7 +19,6 @@
 #include "Particle/DistanceTableData.h"
 #include "QMCApp/ParticleSetPool.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
-#include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCWaveFunctions/Jastrow/PadeFunctors.h"
 #include "QMCWaveFunctions/Jastrow/RadialJastrowBuilder.h"
 
@@ -78,7 +77,6 @@ TEST_CASE("Pade Jastrow", "[wavefunction]")
   tspecies(chargeIdx, upIdx)   = -1;
   tspecies(chargeIdx, downIdx) = -1;
 
-  TrialWaveFunction psi(c);
   // Need 1 electron and 1 proton, somehow
   //ParticleSet target = ParticleSet();
   ParticleSetPool ptcl = ParticleSetPool(c);
@@ -102,12 +100,12 @@ TEST_CASE("Pade Jastrow", "[wavefunction]")
   // cusp = -0.25
   // r_ee = 3.42050023755
   RadialJastrowBuilder jastrow(c, elec_);
-  psi.addComponent(jastrow.buildComponent(jas1), "RadialJastrow");
+  auto* jas = jastrow.buildComponent(jas1);
 
   // update all distance tables
   elec_.update();
 
-  double logpsi = psi.evaluateLog(elec_);
-  REQUIRE(logpsi == Approx(-1.862821769493147));
+  double logpsi_real = std::real(jas->evaluateLog(elec_, elec_.G, elec_.L));
+  REQUIRE(logpsi_real == Approx(-1.862821769493147));
 }
 } // namespace qmcplusplus

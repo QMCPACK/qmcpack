@@ -18,7 +18,6 @@
 #include "Particle/ParticleSet.h"
 #include "Particle/DistanceTableData.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
-#include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCWaveFunctions/Jastrow/BsplineFunctor.h"
 #include "QMCWaveFunctions/Jastrow/RadialJastrowBuilder.h"
 #include "ParticleBase/ParticleAttribOps.h"
@@ -98,8 +97,6 @@ TEST_CASE("BSpline builder Jastrow J2", "[wavefunction]")
   tspecies(chargeIdx, downIdx) = -1;
   elec_.resetGroups();
 
-  TrialWaveFunction psi(c);
-
   const char* particles = "<tmp> \
 <jastrow name=\"J2\" type=\"Two-Body\" function=\"Bspline\" print=\"yes\"> \
    <correlation rcut=\"10\" size=\"10\" speciesA=\"u\" speciesB=\"d\"> \
@@ -117,23 +114,22 @@ TEST_CASE("BSpline builder Jastrow J2", "[wavefunction]")
   xmlNodePtr jas1 = xmlFirstElementChild(root);
 
   RadialJastrowBuilder jastrow(c, elec_);
-  psi.addComponent(jastrow.buildComponent(jas1), "RadialJastrow");
 
-  WaveFunctionComponent* orb = psi.getOrbitals()[0];
+  WaveFunctionComponent* jas = jastrow.buildComponent(jas1);
 
 #ifdef ENABLE_SOA
   typedef J2OrbitalSoA<BsplineFunctor<RealType>> J2Type;
 #else
   typedef TwoBodyJastrowOrbital<BsplineFunctor<RealType>> J2Type;
 #endif
-  J2Type* j2 = dynamic_cast<J2Type*>(orb);
+  J2Type* j2 = dynamic_cast<J2Type*>(jas);
   REQUIRE(j2 != NULL);
 
   // update all distance tables
   elec_.update();
 
-  double logpsi = psi.evaluateLog(elec_);
-  REQUIRE(logpsi == Approx(0.1012632641)); // note: number not validated
+  double logpsi_real = std::real(jas->evaluateLog(elec_, elec_.G, elec_.L));
+  REQUIRE(logpsi_real == Approx(0.1012632641)); // note: number not validated
 
   double KE = -0.5 * (Dot(elec_.G, elec_.G) + Sum(elec_.L));
   REQUIRE(KE == Approx(-0.1616624771)); // note: number not validated
@@ -221,12 +217,12 @@ TEST_CASE("BSpline builder Jastrow J2", "[wavefunction]")
     double r      = 0.6 * i;
     elec_.R[0][0] = r;
     elec_.update();
-    double logpsi = psi.evaluateLog(elec_);
+    double logpsi_real = std::real(jas->evaluateLog(elec_, elec_.G, elec_.L));
     //double alt_val = bf->evaluate(r);
     double dv      = 0.0;
     double ddv     = 0.0;
     double alt_val = bf->evaluate(r, dv, ddv);
-    printf("%g %g %g %g %g\n", r, logpsi, alt_val, dv, ddv);
+    printf("%g %g %g %g %g\n", r, logpsi_real, alt_val, dv, ddv);
   }
 #endif
 
@@ -310,8 +306,6 @@ TEST_CASE("BSpline builder Jastrow J1", "[wavefunction]")
   tspecies(chargeIdx, downIdx) = -1;
   elec_.resetGroups();
 
-  TrialWaveFunction psi(c);
-
   const char* particles = "<tmp> \
    <jastrow type=\"One-Body\" name=\"J1\" function=\"bspline\" source=\"ion\" print=\"yes\"> \
        <correlation elementType=\"C\" rcut=\"10\" size=\"8\" cusp=\"0.0\"> \
@@ -332,23 +326,22 @@ TEST_CASE("BSpline builder Jastrow J1", "[wavefunction]")
   xmlNodePtr jas1 = xmlFirstElementChild(root);
 
   RadialJastrowBuilder jastrow(c, elec_, ions_);
-  psi.addComponent(jastrow.buildComponent(jas1), "RadialJastrow");
 
-  WaveFunctionComponent* orb = psi.getOrbitals()[0];
+  WaveFunctionComponent* jas = jastrow.buildComponent(jas1);
 
 #ifdef ENABLE_SOA
   typedef J1OrbitalSoA<BsplineFunctor<RealType>> J1Type;
 #else
   typedef OneBodyJastrowOrbital<BsplineFunctor<RealType>> J1Type;
 #endif
-  J1Type* j1 = dynamic_cast<J1Type*>(orb);
+  J1Type* j1 = dynamic_cast<J1Type*>(jas);
   REQUIRE(j1 != NULL);
 
   // update all distance tables
   elec_.update();
 
-  double logpsi = psi.evaluateLog(elec_);
-  REQUIRE(logpsi == Approx(0.3160552244)); // note: number not validated
+  double logpsi_real = std::real(jas->evaluateLog(elec_, elec_.G, elec_.L));
+  REQUIRE(logpsi_real == Approx(0.3160552244)); // note: number not validated
 
   //Ionic Derivative Test.
   QMCTraits::GradType gsource(0.0);
@@ -407,7 +400,7 @@ TEST_CASE("BSpline builder Jastrow J1", "[wavefunction]")
   grad_grad_psi.resize(elec_.getTotalNum());
   grad_grad_psi = 0.0;
 
-  psi.evaluateHessian(elec_, grad_grad_psi);
+  jas->evaluateHessian(elec_, grad_grad_psi);
 
   std::vector<double> hess_values = {
       0.00888367, 0, 0, 0, -0.0284893, 0, 0, 0, -0.0284893, 0.00211188, 0, 0, 0, -0.00923137, 0, 0, 0, -0.00923137,
@@ -421,7 +414,7 @@ TEST_CASE("BSpline builder Jastrow J1", "[wavefunction]")
         REQUIRE(std::real(grad_grad_psi[n](i, j)) == Approx(hess_values[m]));
       }
 
-  psi.evaluateLog(elec_); // evaluateHessian has side effects
+  jas->evaluateLog(elec_, elec_.G, elec_.L); // evaluateHessian has side effects
 
 
   struct JValues
@@ -490,12 +483,12 @@ TEST_CASE("BSpline builder Jastrow J1", "[wavefunction]")
     double r      = 0.6 * i;
     elec_.R[0][0] = r;
     elec_.update();
-    double logpsi = psi.evaluateLog(elec_);
+    double logpsi_real = std::real(jas->evaluateLog(elec_, elec_.G, elec_.L));
     //double alt_val = bf->evaluate(r);
     double dv      = 0.0;
     double ddv     = 0.0;
     double alt_val = bf->evaluate(r, dv, ddv);
-    printf("%g %g %g %g %g\n", r, logpsi, alt_val, dv, ddv);
+    printf("%g %g %g %g %g\n", r, logpsi_real, alt_val, dv, ddv);
   }
 #endif
 
@@ -548,13 +541,11 @@ TEST_CASE("BSpline builder Jastrow J1", "[wavefunction]")
 
   xmlNodePtr jas2 = xmlFirstElementChild(root2);
 
-  TrialWaveFunction psi2(c);
   RadialJastrowBuilder jastrow2(c, elec_, ions_);
-  psi2.addComponent(jastrow2.buildComponent(jas2), "RadialJastrow");
 
-  WaveFunctionComponent* orb2 = psi2.getOrbitals()[0];
+  WaveFunctionComponent* jasc = jastrow2.buildComponent(jas2);
 
-  J1Type* j12 = dynamic_cast<J1Type*>(orb2);
+  J1Type* j12 = dynamic_cast<J1Type*>(jasc);
   REQUIRE(j12 != NULL);
 
   // Cut and paste from output of gen_bspline_jastrow.py

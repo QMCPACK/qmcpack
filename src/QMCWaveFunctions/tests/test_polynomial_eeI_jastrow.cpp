@@ -18,7 +18,6 @@
 #include "Particle/ParticleSet.h"
 #include "Particle/DistanceTableData.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
-#include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCWaveFunctions/Jastrow/PolynomialFunctor3D.h"
 #ifdef ENABLE_SOA
 #include "QMCWaveFunctions/Jastrow/JeeIOrbitalSoA.h"
@@ -95,8 +94,6 @@ TEST_CASE("PolynomialFunctor3D Jastrow", "[wavefunction]")
   target_species(chargeIdx, downIdx) = -1;
   //elec_.resetGroups();
 
-  TrialWaveFunction psi(c);
-
   const char* particles = "<tmp> \
     <jastrow name=\"J3\" type=\"eeI\" function=\"polynomial\" source=\"ion\" print=\"yes\"> \
       <correlation ispecies=\"O\" especies=\"u\" isize=\"3\" esize=\"3\" rcut=\"10\"> \
@@ -117,22 +114,21 @@ TEST_CASE("PolynomialFunctor3D Jastrow", "[wavefunction]")
   xmlNodePtr jas_eeI = xmlFirstElementChild(root);
 
   eeI_JastrowBuilder jastrow(c, elec_, ions_);
-  WaveFunctionComponent* orb = jastrow.buildComponent(jas_eeI);
-  psi.addComponent(orb, "eeI_Jastrow");
+  WaveFunctionComponent* jas = jastrow.buildComponent(jas_eeI);
 
 #ifdef ENABLE_SOA
   typedef JeeIOrbitalSoA<PolynomialFunctor3D> J3Type;
 #else
   typedef eeI_JastrowOrbital<PolynomialFunctor3D> J3Type;
 #endif
-  J3Type* j3 = dynamic_cast<J3Type*>(orb);
+  J3Type* j3 = dynamic_cast<J3Type*>(jas);
   REQUIRE(j3 != nullptr);
 
   // update all distance tables
   elec_.update();
 
-  double logpsi = psi.evaluateLog(elec_);
-  REQUIRE(logpsi == Approx(-1.193457749)); // note: number not validated
+  double logpsi_real = std::real(j3->evaluateLog(elec_, elec_.G, elec_.L));
+  REQUIRE(logpsi_real == Approx(-1.193457749)); // note: number not validated
 
   double KE = -0.5 * (Dot(elec_.G, elec_.G) + Sum(elec_.L));
   REQUIRE(KE == Approx(-0.058051245)); // note: number not validated
@@ -177,13 +173,13 @@ TEST_CASE("PolynomialFunctor3D Jastrow", "[wavefunction]")
   std::vector<WaveFunctionComponent::ValueType> dlogpsi;
   std::vector<WaveFunctionComponent::ValueType> dhpsioverpsi;
 
-  psi.checkInVariables(optvars);
+  j3->checkInVariables(optvars);
   optvars.resetIndex();
   const int NumOptimizables(optvars.size());
-  psi.checkOutVariables(optvars);
+  j3->checkOutVariables(optvars);
   dlogpsi.resize(NumOptimizables);
   dhpsioverpsi.resize(NumOptimizables);
-  psi.evaluateDerivatives(elec_, optvars, dlogpsi, dhpsioverpsi);
+  j3->evaluateDerivatives(elec_, optvars, dlogpsi, dhpsioverpsi);
 
   std::cout << std::endl << "reporting dlogpsi and dhpsioverpsi" << std::scientific << std::endl;
   for (int iparam = 0; iparam < NumOptimizables; iparam++)

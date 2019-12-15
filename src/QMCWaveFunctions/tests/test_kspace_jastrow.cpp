@@ -19,7 +19,6 @@
 #include "Particle/DistanceTableData.h"
 #include "QMCApp/ParticleSetPool.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
-#include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCWaveFunctions/Jastrow/kSpaceJastrow.h"
 #include "QMCWaveFunctions/Jastrow/kSpaceJastrowBuilder.h"
 #include "ParticleIO/ParticleLayoutIO.h"
@@ -96,8 +95,6 @@ TEST_CASE("kspace jastrow", "[wavefunction]")
   // initialize SK
   elec_.createSK();
 
-  TrialWaveFunction psi(c);
-
   const char* particles = "<tmp> \
 <jastrow name=\"Jk\" type=\"kSpace\" source=\"ion\"> \
   <correlation kc=\"1.5\" type=\"Two-Body\" symmetry=\"isotropic\"> \
@@ -115,12 +112,12 @@ TEST_CASE("kspace jastrow", "[wavefunction]")
   xmlNodePtr jas1 = xmlFirstElementChild(root);
 
   kSpaceJastrowBuilder jastrow(c, elec_, ions_);
-  psi.addComponent(jastrow.buildComponent(jas1), "kSpaceJastrow");
+  auto* jas = jastrow.buildComponent(jas1);
 
   // update all distance tables
   elec_.update();
 
-  double logpsi = psi.evaluateLog(elec_);
-  REQUIRE(logpsi == Approx(-4.4088303951)); // !!!! value not checked
+  double logpsi_real = std::real(jas->evaluateLog(elec_, elec_.G, elec_.L));
+  REQUIRE(logpsi_real == Approx(-4.4088303951)); // !!!! value not checked
 }
 } // namespace qmcplusplus
