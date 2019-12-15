@@ -111,6 +111,7 @@ void QMCUpdateBase::resetRun(BranchEngineType* brancher,
 
   NumPtcl = W.getTotalNum();
   deltaR.resize(NumPtcl);
+  deltaS.resize(NumPtcl);
   drift.resize(NumPtcl);
   G.resize(NumPtcl);
   dG.resize(NumPtcl);
