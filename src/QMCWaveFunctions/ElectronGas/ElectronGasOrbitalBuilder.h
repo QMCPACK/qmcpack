@@ -47,7 +47,7 @@ struct RealEGOSet : public SPOSet
 
   SPOSet* makeClone() const override { return new RealEGOSet(*this); }
 
-  PosType get_k(int i)
+  PosType get_k(int i) override
   {
     //Only used in the same_k part of the optimizable SPO set. we allow optimization to k points in the same direction
     if (i > 0)

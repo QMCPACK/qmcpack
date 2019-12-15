@@ -386,8 +386,8 @@ public:
 #pragma ivdep
       for (int j = 0; j < OrbitalSetSize; j++)
       {
-        register ValueType res = 0.0, d2res = 0.0;
-        register GradType dres;
+        ValueType res = 0.0, d2res = 0.0;
+        GradType dres;
         for (int b = 0; b < BasisSetSize; b++, cptr++)
         {
           res += *cptr * pptr[b];
@@ -436,9 +436,9 @@ public:
 #pragma ivdep
     for (int j = 0; j < OrbitalSetSize; j++)
     {
-      register ValueType res  = 0.0;
-      register HessType d2res = 0.0;
-      register GradType dres;
+      ValueType res  = 0.0;
+      HessType d2res = 0.0;
+      GradType dres;
       for (int b = 0; b < BasisSetSize; b++, cptr++)
       {
         res += *cptr * pptr[b];
@@ -474,8 +474,8 @@ public:
   //        const typename BS::ValueType* restrict d2ptr=myBasisSet->d2Phi.data();
   //        const typename BS::GradType* restrict dptr=myBasisSet->dPhi.data();
   //        for(int j=0; j<OrbitalSetSize; j++) {
-  //          register ValueType res=0.0, d2res=0.0;
-  //          register GradType dres;
+  //          ValueType res=0.0, d2res=0.0;
+  //          GradType dres;
   //          for(int b=0; b<BasisSetSize; b++,cptr++) {
   //            res += *cptr*pptr[b];
   //            d2res += *cptr*d2ptr[b];
@@ -544,7 +544,7 @@ public:
         const typename BS::GradType* restrict dptr = myBasisSet->dPhi.data();
         for (int j = 0, jk = 0; j < OrbitalSetSize; j++)
         {
-          register GradType dres;
+          GradType dres;
           for (int k = 0; k < numCenters; k++)
           {
             logdet(i, j) += corrBasisSet->Phi[k * OrbitalSetSize + j];
@@ -602,8 +602,8 @@ public:
       const typename BS::HessType* restrict d2ptr = myBasisSet->grad_grad_Phi.data();
       for (int j = 0, jk = 0; j < OrbitalSetSize; j++)
       {
-        register GradType dres;
-        register HessType d2res;
+        GradType dres;
+        HessType d2res;
         for (int k = 0; k < numCenters; k++)
         {
           logdet(i, j) += corrBasisSet->Phi[k * OrbitalSetSize + j];
@@ -643,9 +643,9 @@ public:
       const typename BS::GGGType* restrict gggptr = myBasisSet->grad_grad_grad_Phi.data();
       for (int j = 0, jk = 0; j < OrbitalSetSize; j++)
       {
-        register GradType dres;
-        register HessType d2res;
-        register GGGType gggres;
+        GradType dres;
+        HessType d2res;
+        GGGType gggres;
         for (int k = 0; k < numCenters; k++)
         {
           logdet(i, j) += corrBasisSet->Phi[k * OrbitalSetSize + j];
@@ -683,7 +683,7 @@ public:
       const typename BS::GGGType* restrict gggptr = myBasisSet->grad_grad_grad_Phi.data();
       for (int j = 0, jk = 0; j < OrbitalSetSize; j++)
       {
-        register GGGType gggres;
+        GGGType gggres;
         for (int k = 0; k < numCenters; k++)
         {
           gggres[0] += (corrBasisSet->grad_grad_grad_Phi[k * OrbitalSetSize + j])[0];

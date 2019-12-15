@@ -97,7 +97,7 @@ struct SPOSetProxy : public SPOSet
                             ValueMatrix_t& logdet,
                             GradMatrix_t& dlogdet,
                             HessMatrix_t& grad_grad_logdet,
-                            GGGMatrix_t& grad_grad_grad_logdet);
+                            GGGMatrix_t& grad_grad_grad_logdet) override;
 };
 } // namespace qmcplusplus
 #endif

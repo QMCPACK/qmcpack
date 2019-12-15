@@ -71,7 +71,7 @@ public:
 
   LCAOrbitalSet(const LCAOrbitalSet& in) = default;
 
-  SPOSet* makeClone() const;
+  SPOSet* makeClone() const override;
 
   void storeParamsBeforeRotation() override { C_copy = *C; }
 
@@ -115,11 +115,11 @@ public:
 
   /** return the size of the basis set
     */
-  int getBasisSetSize() const { return (myBasisSet == nullptr) ? 0 : myBasisSet->getBasisSetSize(); }
+  int getBasisSetSize() const override { return (myBasisSet == nullptr) ? 0 : myBasisSet->getBasisSetSize(); }
 
   bool setIdentity(bool useIdentity);
 
-  void checkObject() const
+  void checkObject() const override
   {
     if (!(OrbitalSetSize == C->rows() && BasisSetSize == C->cols()))
       APP_ABORT("   LCAOrbitalSet::checkObject Linear coeffient for LCAOrbitalSet is not consistent with the input.");

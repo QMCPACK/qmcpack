@@ -97,7 +97,7 @@ struct SPOSetProxyForMSD : public SPOSet
                             int last,
                             ValueMatrix_t& logdet,
                             GradMatrix_t& dlogdet,
-                            HessMatrix_t& grad_grad_logdet);
+                            HessMatrix_t& grad_grad_logdet) override;
 
   void evaluate_notranspose(const ParticleSet& P,
                             int first,

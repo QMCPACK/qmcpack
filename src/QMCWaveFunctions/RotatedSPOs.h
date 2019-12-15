@@ -48,7 +48,7 @@ public:
   /// the number of electrons of the majority spin
   size_t nel_major_;
 
-  SPOSet* makeClone() const;
+  SPOSet* makeClone() const override;
 
   // myG_temp (myL_temp) is the Gradient (Laplacian) value of of the Determinant part of the wfn
   // myG_J is the Gradient of the all other parts of the wavefunction (typically just the Jastrow).
@@ -66,9 +66,9 @@ public:
 
 
   // Single Slater creation
-  void buildOptVariables(const size_t nel);
+  void buildOptVariables(const size_t nel) override;
   // For the MSD case rotations must be created in MultiSlaterFast class
-  void buildOptVariables(const std::vector<std::pair<int, int>>& rotations);
+  void buildOptVariables(const std::vector<std::pair<int, int>>& rotations) override;
 
 
   void evaluateDerivatives(ParticleSet& P,

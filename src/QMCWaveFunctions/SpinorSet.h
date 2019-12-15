@@ -86,7 +86,7 @@ public:
    *  @param spin gradient values. d/ds phi(r,s).
    *
    */
-  void evaluate_spin(const ParticleSet& P, int iat, ValueVector_t& psi, ValueVector_t& dpsi);
+  void evaluate_spin(const ParticleSet& P, int iat, ValueVector_t& psi, ValueVector_t& dpsi) override;
 
 
 private:
