@@ -108,8 +108,8 @@ TEST_CASE("Einspline SPO from HDF diamond_1x1x1", "[wavefunction]")
   xmlNodePtr ein1 = xmlFirstElementChild(root);
 
   EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, ein1);
-  SPOSet* spo = einSet.createSPOSetFromXML(ein1);
-  REQUIRE(spo != NULL);
+  std::unique_ptr<SPOSet> spo(einSet.createSPOSetFromXML(ein1));
+  REQUIRE(spo);
 
 #if !defined(QMC_CUDA) || defined(QMC_COMPLEX)
   // due to the different ordering of bands skip the tests on CUDA+Real builds
@@ -310,8 +310,8 @@ TEST_CASE("Einspline SPO from HDF diamond_2x1x1", "[wavefunction]")
   xmlNodePtr ein1 = xmlFirstElementChild(root);
 
   EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, ein1);
-  SPOSet* spo = einSet.createSPOSetFromXML(ein1);
-  REQUIRE(spo != NULL);
+  std::unique_ptr<SPOSet> spo(einSet.createSPOSetFromXML(ein1));
+  REQUIRE(spo);
 
   // for vgl
   SPOSet::ValueMatrix_t psiM(elec_.R.size(), spo->getOrbitalSetSize());
@@ -354,6 +354,94 @@ TEST_CASE("Einspline SPO from HDF diamond_2x1x1", "[wavefunction]")
   REQUIRE(std::imag(d2psiM[1][0]) == Approx(-1.3757134676));
   REQUIRE(std::imag(d2psiM[1][1]) == Approx(-2.4919104576));
 #endif
+
+  // test batched interfaces
+
+  ParticleSet elec_2(elec_);
+  // interchange positions
+  elec_2.R[0] = elec_.R[1];
+  elec_2.R[1] = elec_.R[0];
+  std::vector<ParticleSet*> P_list;
+  P_list.push_back(&elec_);
+  P_list.push_back(&elec_2);
+
+  std::unique_ptr<SPOSet> spo_2(spo->makeClone());
+  std::vector<SPOSet*> spo_list;
+  spo_list.push_back(spo.get());
+  spo_list.push_back(spo_2.get());
+
+  SPOSet::ValueVector_t psi(spo->getOrbitalSetSize());
+  SPOSet::GradVector_t dpsi(spo->getOrbitalSetSize());
+  SPOSet::ValueVector_t d2psi(spo->getOrbitalSetSize());
+  SPOSet::ValueVector_t psi_2(spo->getOrbitalSetSize());
+  SPOSet::GradVector_t dpsi_2(spo->getOrbitalSetSize());
+  SPOSet::ValueVector_t d2psi_2(spo->getOrbitalSetSize());
+
+  std::vector<SPOSet::ValueVector_t*> psi_v_list;
+  std::vector<SPOSet::GradVector_t*> dpsi_v_list;
+  std::vector<SPOSet::ValueVector_t*> d2psi_v_list;
+
+  psi_v_list.push_back(&psi);
+  psi_v_list.push_back(&psi_2);
+  dpsi_v_list.push_back(&dpsi);
+  dpsi_v_list.push_back(&dpsi_2);
+  d2psi_v_list.push_back(&d2psi);
+  d2psi_v_list.push_back(&d2psi_2);
+
+  spo->mw_evaluateValue(spo_list, P_list, 1, psi_v_list);
+#if !defined(QMC_CUDA) || defined(QMC_COMPLEX)
+  // real part
+  // due to the different ordering of bands skip the tests on CUDA+Real builds
+  // checking evaluations, reference values are not independently generated.
+  // value
+  REQUIRE(std::real((*psi_v_list[0])[0]) == Approx(0.9008999467));
+  REQUIRE(std::real((*psi_v_list[0])[1]) == Approx(1.2383049726));
+#endif
+
+#if defined(QMC_COMPLEX)
+  // imaginary part
+  // value
+  REQUIRE(std::imag((*psi_v_list[0])[0]) == Approx(0.9008999467));
+  REQUIRE(std::imag((*psi_v_list[0])[1]) == Approx(1.2383049726));
+#endif
+
+  spo->mw_evaluateVGL(spo_list, P_list, 0, psi_v_list, dpsi_v_list, d2psi_v_list);
+#if !defined(QMC_CUDA) || defined(QMC_COMPLEX)
+  // real part
+  // due to the different ordering of bands skip the tests on CUDA+Real builds
+  // checking evaluations, reference values are not independently generated.
+  // value
+  REQUIRE(std::real((*psi_v_list[1])[0]) == Approx(0.9008999467));
+  REQUIRE(std::real((*psi_v_list[1])[1]) == Approx(1.2383049726));
+  // grad
+  REQUIRE(std::real((*dpsi_v_list[1])[0][0]) == Approx(0.0025820041));
+  REQUIRE(std::real((*dpsi_v_list[1])[0][1]) == Approx(-0.1880052537));
+  REQUIRE(std::real((*dpsi_v_list[1])[0][2]) == Approx(-0.0025404284));
+  REQUIRE(std::real((*dpsi_v_list[1])[1][0]) == Approx(0.1069662273));
+  REQUIRE(std::real((*dpsi_v_list[1])[1][1]) == Approx(-0.4364597797));
+  REQUIRE(std::real((*dpsi_v_list[1])[1][2]) == Approx(-0.106951952));
+  // lapl
+  REQUIRE(std::real((*d2psi_v_list[1])[0]) == Approx(-1.3757134676));
+  REQUIRE(std::real((*d2psi_v_list[1])[1]) == Approx(-2.4803137779));
+#endif
+
+#if defined(QMC_COMPLEX)
+  // imaginary part
+  // value
+  REQUIRE(std::imag((*psi_v_list[1])[0]) == Approx(0.9008999467));
+  REQUIRE(std::imag((*psi_v_list[1])[1]) == Approx(1.2383049726));
+  // grad
+  REQUIRE(std::imag((*dpsi_v_list[1])[0][0]) == Approx(0.0025820041));
+  REQUIRE(std::imag((*dpsi_v_list[1])[0][1]) == Approx(-0.1880052537));
+  REQUIRE(std::imag((*dpsi_v_list[1])[0][2]) == Approx(-0.0025404284));
+  REQUIRE(std::imag((*dpsi_v_list[1])[1][0]) == Approx(0.1069453433));
+  REQUIRE(std::imag((*dpsi_v_list[1])[1][1]) == Approx(-0.43649593));
+  REQUIRE(std::imag((*dpsi_v_list[1])[1][2]) == Approx(-0.1069145575));
+  // lapl
+  REQUIRE(std::imag((*d2psi_v_list[1])[0]) == Approx(-1.3757134676));
+  REQUIRE(std::imag((*d2psi_v_list[1])[1]) == Approx(-2.4919104576));
+#endif
+
 }
 
 TEST_CASE("EinsplineSetBuilder CheckLattice", "[wavefunction]")
@@ -480,8 +568,8 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
   xmlNodePtr ein1 = xmlFirstElementChild(root);
 
   EinsplineSpinorSetBuilder einSet(elec_,ptcl.getPool(), c, ein1);
-  SPOSet* spo = einSet.createSPOSetFromXML(ein1);
-  REQUIRE(spo != NULL);
+  std::unique_ptr<SPOSet> spo(einSet.createSPOSetFromXML(ein1));
+  REQUIRE(spo);
 
   SPOSet::ValueMatrix_t psiM(elec_.R.size(), spo->getOrbitalSetSize());
   SPOSet::GradMatrix_t dpsiM(elec_.R.size(), spo->getOrbitalSetSize());
