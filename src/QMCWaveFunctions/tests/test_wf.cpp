@@ -100,7 +100,7 @@ TEST_CASE("Pade Jastrow", "[wavefunction]")
   // cusp = -0.25
   // r_ee = 3.42050023755
   RadialJastrowBuilder jastrow(c, elec_);
-  auto* jas = jastrow.buildComponent(jas1);
+  std::unique_ptr<WaveFunctionComponent> jas(jastrow.buildComponent(jas1));
 
   // update all distance tables
   elec_.update();

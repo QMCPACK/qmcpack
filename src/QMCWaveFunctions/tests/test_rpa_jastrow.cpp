@@ -116,7 +116,7 @@ TEST_CASE("RPA Jastrow", "[wavefunction]")
 
   xmlNodePtr jas_node = xmlFirstElementChild(root);
   bool is_manager=false;
-  RPAJastrow* jas = new RPAJastrow(elec_, is_manager);
+  auto jas = std::make_unique<RPAJastrow>(elec_, is_manager);
   jas->put(root);
 
   // update all distance tables

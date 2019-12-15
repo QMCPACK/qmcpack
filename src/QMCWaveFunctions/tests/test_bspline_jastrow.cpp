@@ -115,20 +115,18 @@ TEST_CASE("BSpline builder Jastrow J2", "[wavefunction]")
 
   RadialJastrowBuilder jastrow(c, elec_);
 
-  WaveFunctionComponent* jas = jastrow.buildComponent(jas1);
-
 #ifdef ENABLE_SOA
   typedef J2OrbitalSoA<BsplineFunctor<RealType>> J2Type;
 #else
   typedef TwoBodyJastrowOrbital<BsplineFunctor<RealType>> J2Type;
 #endif
-  J2Type* j2 = dynamic_cast<J2Type*>(jas);
-  REQUIRE(j2 != NULL);
+  std::unique_ptr<J2Type> j2(dynamic_cast<J2Type*>(jastrow.buildComponent(jas1)));
+  REQUIRE(j2);
 
   // update all distance tables
   elec_.update();
 
-  double logpsi_real = std::real(jas->evaluateLog(elec_, elec_.G, elec_.L));
+  double logpsi_real = std::real(j2->evaluateLog(elec_, elec_.G, elec_.L));
   REQUIRE(logpsi_real == Approx(0.1012632641)); // note: number not validated
 
   double KE = -0.5 * (Dot(elec_.G, elec_.G) + Sum(elec_.L));
@@ -217,7 +215,7 @@ TEST_CASE("BSpline builder Jastrow J2", "[wavefunction]")
     double r      = 0.6 * i;
     elec_.R[0][0] = r;
     elec_.update();
-    double logpsi_real = std::real(jas->evaluateLog(elec_, elec_.G, elec_.L));
+    double logpsi_real = std::real(j2->evaluateLog(elec_, elec_.G, elec_.L));
     //double alt_val = bf->evaluate(r);
     double dv      = 0.0;
     double ddv     = 0.0;
@@ -327,20 +325,18 @@ TEST_CASE("BSpline builder Jastrow J1", "[wavefunction]")
 
   RadialJastrowBuilder jastrow(c, elec_, ions_);
 
-  WaveFunctionComponent* jas = jastrow.buildComponent(jas1);
-
 #ifdef ENABLE_SOA
   typedef J1OrbitalSoA<BsplineFunctor<RealType>> J1Type;
 #else
   typedef OneBodyJastrowOrbital<BsplineFunctor<RealType>> J1Type;
 #endif
-  J1Type* j1 = dynamic_cast<J1Type*>(jas);
-  REQUIRE(j1 != NULL);
+  std::unique_ptr<J1Type> j1(dynamic_cast<J1Type*>(jastrow.buildComponent(jas1)));
+  REQUIRE(j1);
 
   // update all distance tables
   elec_.update();
 
-  double logpsi_real = std::real(jas->evaluateLog(elec_, elec_.G, elec_.L));
+  double logpsi_real = std::real(j1->evaluateLog(elec_, elec_.G, elec_.L));
   REQUIRE(logpsi_real == Approx(0.3160552244)); // note: number not validated
 
   //Ionic Derivative Test.
@@ -400,7 +396,7 @@ TEST_CASE("BSpline builder Jastrow J1", "[wavefunction]")
   grad_grad_psi.resize(elec_.getTotalNum());
   grad_grad_psi = 0.0;
 
-  jas->evaluateHessian(elec_, grad_grad_psi);
+  j1->evaluateHessian(elec_, grad_grad_psi);
 
   std::vector<double> hess_values = {
       0.00888367, 0, 0, 0, -0.0284893, 0, 0, 0, -0.0284893, 0.00211188, 0, 0, 0, -0.00923137, 0, 0, 0, -0.00923137,
@@ -414,7 +410,7 @@ TEST_CASE("BSpline builder Jastrow J1", "[wavefunction]")
         REQUIRE(std::real(grad_grad_psi[n](i, j)) == Approx(hess_values[m]));
       }
 
-  jas->evaluateLog(elec_, elec_.G, elec_.L); // evaluateHessian has side effects
+  j1->evaluateLog(elec_, elec_.G, elec_.L); // evaluateHessian has side effects
 
 
   struct JValues
@@ -483,7 +479,7 @@ TEST_CASE("BSpline builder Jastrow J1", "[wavefunction]")
     double r      = 0.6 * i;
     elec_.R[0][0] = r;
     elec_.update();
-    double logpsi_real = std::real(jas->evaluateLog(elec_, elec_.G, elec_.L));
+    double logpsi_real = std::real(j1->evaluateLog(elec_, elec_.G, elec_.L));
     //double alt_val = bf->evaluate(r);
     double dv      = 0.0;
     double ddv     = 0.0;
@@ -543,10 +539,8 @@ TEST_CASE("BSpline builder Jastrow J1", "[wavefunction]")
 
   RadialJastrowBuilder jastrow2(c, elec_, ions_);
 
-  WaveFunctionComponent* jasc = jastrow2.buildComponent(jas2);
-
-  J1Type* j12 = dynamic_cast<J1Type*>(jasc);
-  REQUIRE(j12 != NULL);
+  std::unique_ptr<J1Type> j12(dynamic_cast<J1Type*>(jastrow2.buildComponent(jas2)));
+  REQUIRE(j12);
 
   // Cut and paste from output of gen_bspline_jastrow.py
   // note only the first two rows should change from above

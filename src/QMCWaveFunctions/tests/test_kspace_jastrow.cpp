@@ -112,7 +112,7 @@ TEST_CASE("kspace jastrow", "[wavefunction]")
   xmlNodePtr jas1 = xmlFirstElementChild(root);
 
   kSpaceJastrowBuilder jastrow(c, elec_, ions_);
-  auto* jas = jastrow.buildComponent(jas1);
+  std::unique_ptr<WaveFunctionComponent> jas(jastrow.buildComponent(jas1));
 
   // update all distance tables
   elec_.update();

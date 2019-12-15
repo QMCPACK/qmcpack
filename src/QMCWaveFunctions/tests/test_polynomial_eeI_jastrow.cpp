@@ -114,14 +114,14 @@ TEST_CASE("PolynomialFunctor3D Jastrow", "[wavefunction]")
   xmlNodePtr jas_eeI = xmlFirstElementChild(root);
 
   eeI_JastrowBuilder jastrow(c, elec_, ions_);
-  WaveFunctionComponent* jas = jastrow.buildComponent(jas_eeI);
+  std::unique_ptr<WaveFunctionComponent> jas(jastrow.buildComponent(jas_eeI));
 
 #ifdef ENABLE_SOA
   typedef JeeIOrbitalSoA<PolynomialFunctor3D> J3Type;
 #else
   typedef eeI_JastrowOrbital<PolynomialFunctor3D> J3Type;
 #endif
-  J3Type* j3 = dynamic_cast<J3Type*>(jas);
+  std::unique_ptr<WaveFunctionComponent> j3(dynamic_cast<J3Type*>(jastrow.buildComponent(jas_eeI)));
   REQUIRE(j3 != nullptr);
 
   // update all distance tables
