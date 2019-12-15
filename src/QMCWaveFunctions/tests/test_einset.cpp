@@ -19,7 +19,6 @@
 #include "Particle/DistanceTableData.h"
 #include "QMCApp/ParticleSetPool.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
-#include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCWaveFunctions/EinsplineSetBuilder.h"
 #include "QMCWaveFunctions/EinsplineSpinorSetBuilder.h"
 
@@ -88,7 +87,6 @@ TEST_CASE("Einspline SPO from HDF diamond_1x1x1", "[wavefunction]")
   int chargeIdx                = tspecies.addAttribute("charge");
   tspecies(chargeIdx, upIdx)   = -1;
 
-  TrialWaveFunction psi(c);
   // Need 1 electron and 1 proton, somehow
   //ParticleSet target = ParticleSet();
   ParticleSetPool ptcl = ParticleSetPool(c);
@@ -291,7 +289,6 @@ TEST_CASE("Einspline SPO from HDF diamond_2x1x1", "[wavefunction]")
   int chargeIdx                = tspecies.addAttribute("charge");
   tspecies(chargeIdx, upIdx)   = -1;
 
-  TrialWaveFunction psi(c);
   // Need 1 electron and 1 proton, somehow
   //ParticleSet target = ParticleSet();
   ParticleSetPool ptcl = ParticleSetPool(c);
@@ -460,7 +457,6 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
   int chargeIdx                = tspecies.addAttribute("charge");
   tspecies(chargeIdx, upIdx)   = -1;
 
-  TrialWaveFunction psi(c);
   ParticleSetPool ptcl = ParticleSetPool(c);
   ptcl.addParticleSet(&elec_);
   ptcl.addParticleSet(&ions_);
