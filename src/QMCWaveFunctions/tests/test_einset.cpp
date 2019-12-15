@@ -52,7 +52,7 @@ TEST_CASE("Einspline SPO from HDF", "[wavefunction]")
 
   elec_.setName("elec");
   elec_.create(2);
-  elec_.R[0][0] = 0.00;
+  elec_.R[0][0] = 0.0;
   elec_.R[0][1] = 0.0;
   elec_.R[0][2] = 0.0;
   elec_.R[1][0] = 0.0;
@@ -87,15 +87,6 @@ TEST_CASE("Einspline SPO from HDF", "[wavefunction]")
   int upIdx                    = tspecies.addSpecies("u");
   int chargeIdx                = tspecies.addAttribute("charge");
   tspecies(chargeIdx, upIdx)   = -1;
-
-#ifdef ENABLE_SOA
-  elec_.addTable(ions_, DT_SOA);
-#else
-  elec_.addTable(ions_, DT_AOS);
-#endif
-  elec_.resetGroups();
-  elec_.update();
-
 
   TrialWaveFunction psi(c);
   // Need 1 electron and 1 proton, somehow
@@ -350,15 +341,6 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
   int upIdx                    = tspecies.addSpecies("u");
   int chargeIdx                = tspecies.addAttribute("charge");
   tspecies(chargeIdx, upIdx)   = -1;
-
-#ifdef ENABLE_SOA
-  elec_.addTable(ions_, DT_SOA);
-#else
-  elec_.addTable(ions_, DT_AOS);
-#endif
-  elec_.resetGroups();
-  elec_.update();
-
 
   TrialWaveFunction psi(c);
   ParticleSetPool ptcl = ParticleSetPool(c);
