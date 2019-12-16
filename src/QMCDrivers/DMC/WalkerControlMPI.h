@@ -60,18 +60,30 @@ struct WalkerControlMPI : public WalkerControlBase
   int Cur_min;
   TimerList_t myTimers;
   ///Number of walkers sent during the exchange
+  // Is this persistent state for any reason other than we keep zeroing curData
+  // defensively?
   IndexType NumWalkersSent;
 
   /** default constructor
    *
    * Set the SwapMode to zero so that instantiation can be done
+   * comm can not be null it is not checked.
    */
-  WalkerControlMPI(Communicate* c = 0);
+  WalkerControlMPI(Communicate* comm);
 
   /** creates the distribution plan
    *
-   *  the minus and plus vectors contain 1 copy of a partition index for each adjustment
-   *  in population to the context.
+   *  populates the minus and plus vectors they contain 1 copy of a partition index 
+   *  for each adjustment in population to the context.
+   *  \todo fix this word salad
+   *
+   *  \param[in] Cur_pop current population
+   *  \param[in] NumContexts number of MPI processes
+   *  \param[in] MyContext my MPI rank
+   *  \param[in] NumPerNode current walkers per node
+   *  \param[out] FairOffSet running population count at each partition boundary
+   *  \param[out] minus list of partition indexes one occurance for each walker removed
+   *  \param[out] plus list of partition indexes one occurance for each walker added
    */
   static void determineNewWalkerPopulation(int Cur_pop,
                                            int NumContexts,

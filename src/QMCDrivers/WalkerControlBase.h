@@ -224,7 +224,7 @@ protected:
   IndexType SwapMode;
   ///any accumulated data over a block
   std::vector<FullPrecRealType> accumData;
-  ///any temporary data includes many ridiculous conversions of intergrals to and from fp
+  ///any temporary data includes many ridiculous conversions of integral types to and from fp
   std::vector<FullPrecRealType> curData;
   ///temporary storage for good and bad walkers
   std::vector<Walker_t*> good_w, bad_w;

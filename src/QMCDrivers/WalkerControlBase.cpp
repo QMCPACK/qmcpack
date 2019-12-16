@@ -21,7 +21,7 @@
 #include "Particle/HDFWalkerIO.h"
 #include "OhmmsData/ParameterSet.h"
 #include "type_traits/template_types.hpp"
-
+ 
 namespace qmcplusplus
 {
 WalkerControlBase::WalkerControlBase(Communicate* c, bool rn)
@@ -292,8 +292,7 @@ int WalkerControlBase::doNotBranch(int iter, MCPopulation& pop)
       ecum += e;
     }
   }
-  //temp is an array to perform reduction operations
-  std::fill(curData.begin(), curData.end(), 0);
+
   curData[ENERGY_INDEX]     = esum;
   curData[ENERGY_SQ_INDEX]  = e2sum;
   curData[WALKERSIZE_INDEX] = pop.get_num_global_walkers();
@@ -307,6 +306,12 @@ int WalkerControlBase::doNotBranch(int iter, MCPopulation& pop)
   curData[B_ENERGY_INDEX]   = besum;
   curData[B_WGT_INDEX]      = bwgtsum;
 
+  // SENTWALKERS and LEMAX should never be other than 0 here
+  // because in the unified driver we never reuse a WalkerControl
+  assert( curData[SENTWALKERS_INDEX] == 0.0 );
+  for (int i = LE_MAX; i < LE_MAX + num_contexts_; ++i)
+    assert( curData[i] == 0.0 );
+  
   myComm->allreduce(curData);
   measureProperties(iter);
   trialEnergy = ensemble_property_.Energy;
@@ -351,7 +356,7 @@ int WalkerControlBase::branch(int iter, MCWalkerConfiguration& W, FullPrecRealTy
 
 int WalkerControlBase::branch(int iter, MCPopulation& pop, FullPrecRealType trigger)
 {
-  // For measuring properties sortWalkers had important sideeffects
+  // For measuring properties sortWalkers had important side effects
   PopulationAdjustment adjust(calcPopulationAdjustment(pop));
   measureProperties(iter);
   pop.set_ensemble_property(ensemble_property_);
@@ -632,9 +637,9 @@ WalkerControlBase::PopulationAdjustment WalkerControlBase::calcPopulationAdjustm
       adjustment.bad_walkers.push_back(walker);
     }
   }
-  //temp is an array to perform reduction operations
-  std::fill(curData.begin(), curData.end(), 0);
-  //update curData
+
+  //update curData -- this is every field except for SENTWALKERS and LE_MAX (which is the beginning of the hack storing
+  // number_per_node entries
   curData[ENERGY_INDEX]     = esum;
   curData[ENERGY_SQ_INDEX]  = e2sum;
   curData[WALKERSIZE_INDEX] = pop.get_walkers().size();

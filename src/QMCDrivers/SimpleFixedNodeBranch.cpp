@@ -26,6 +26,7 @@
 #include "Estimators/EstimatorManagerBase.h"
 #include "QMCDrivers/BranchIO.h"
 #include "Particle/Reptile.h"
+#include "type_traits/template_types.hpp"
 
 namespace qmcplusplus
 {
