@@ -149,7 +149,7 @@ void EinsplineSetExtended<StorageType>::setOrbitalSetSize(int norbs)
 }
 
 template<typename StorageType>
-void EinsplineSetExtended<StorageType>::evaluate(const ParticleSet& P, int iat, RealValueVector_t& psi)
+void EinsplineSetExtended<StorageType>::evaluateValue(const ParticleSet& P, int iat, RealValueVector_t& psi)
 {
   ValueTimer.start();
   const PosType& r(P.activeR(iat));
@@ -261,7 +261,7 @@ void EinsplineSetExtended<StorageType>::evaluate(const ParticleSet& P, int iat, 
 
 
 template<typename StorageType>
-void EinsplineSetExtended<StorageType>::evaluate(const ParticleSet& P, int iat, ComplexValueVector_t& psi)
+void EinsplineSetExtended<StorageType>::evaluateValue(const ParticleSet& P, int iat, ComplexValueVector_t& psi)
 {
   ValueTimer.start();
   const PosType& r(P.activeR(iat));
@@ -288,7 +288,7 @@ void EinsplineSetExtended<StorageType>::evaluate(const ParticleSet& P, int iat, 
 // with a real return value, i.e. simulations at the gamma or L
 // point.
 template<>
-void EinsplineSetExtended<double>::evaluate(const ParticleSet& P, int iat, RealValueVector_t& psi)
+void EinsplineSetExtended<double>::evaluateValue(const ParticleSet& P, int iat, RealValueVector_t& psi)
 {
   ValueTimer.start();
   const PosType& r(P.activeR(iat));
@@ -323,11 +323,11 @@ void EinsplineSetExtended<double>::evaluate(const ParticleSet& P, int iat, RealV
 
 // Value, gradient, and laplacian
 template<typename StorageType>
-void EinsplineSetExtended<StorageType>::evaluate(const ParticleSet& P,
-                                                 int iat,
-                                                 RealValueVector_t& psi,
-                                                 RealGradVector_t& dpsi,
-                                                 RealValueVector_t& d2psi)
+void EinsplineSetExtended<StorageType>::evaluateVGL(const ParticleSet& P,
+                                                    int iat,
+                                                    RealValueVector_t& psi,
+                                                    RealGradVector_t& dpsi,
+                                                    RealValueVector_t& d2psi)
 {
   VGLTimer.start();
   const PosType& r(P.activeR(iat));
@@ -511,11 +511,11 @@ void EinsplineSetExtended<StorageType>::evaluate(const ParticleSet& P,
 
 // Value, gradient, and laplacian
 template<typename StorageType>
-void EinsplineSetExtended<StorageType>::evaluate(const ParticleSet& P,
-                                                 int iat,
-                                                 ComplexValueVector_t& psi,
-                                                 ComplexGradVector_t& dpsi,
-                                                 ComplexValueVector_t& d2psi)
+void EinsplineSetExtended<StorageType>::evaluateVGL(const ParticleSet& P,
+                                                    int iat,
+                                                    ComplexValueVector_t& psi,
+                                                    ComplexGradVector_t& dpsi,
+                                                    ComplexValueVector_t& d2psi)
 {
   VGLTimer.start();
   const PosType& r(P.activeR(iat));
@@ -552,11 +552,11 @@ void EinsplineSetExtended<StorageType>::evaluate(const ParticleSet& P,
 
 // Value, gradient, and laplacian
 template<typename StorageType>
-void EinsplineSetExtended<StorageType>::evaluate(const ParticleSet& P,
-                                                 int iat,
-                                                 ComplexValueVector_t& psi,
-                                                 ComplexGradVector_t& dpsi,
-                                                 ComplexHessVector_t& grad_grad_psi)
+void EinsplineSetExtended<StorageType>::evaluateVGH(const ParticleSet& P,
+                                                    int iat,
+                                                    ComplexValueVector_t& psi,
+                                                    ComplexGradVector_t& dpsi,
+                                                    ComplexHessVector_t& grad_grad_psi)
 {
   VGLTimer.start();
   const PosType& r(P.activeR(iat));
@@ -598,11 +598,11 @@ void EinsplineSetExtended<StorageType>::evaluate(const ParticleSet& P,
 }
 
 template<>
-void EinsplineSetExtended<double>::evaluate(const ParticleSet& P,
-                                            int iat,
-                                            RealValueVector_t& psi,
-                                            RealGradVector_t& dpsi,
-                                            RealValueVector_t& d2psi)
+void EinsplineSetExtended<double>::evaluateVGL(const ParticleSet& P,
+                                               int iat,
+                                               RealValueVector_t& psi,
+                                               RealGradVector_t& dpsi,
+                                               RealValueVector_t& d2psi)
 {
   VGLTimer.start();
   const PosType& r(P.activeR(iat));

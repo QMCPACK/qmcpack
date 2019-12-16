@@ -127,7 +127,7 @@ void test_C_diamond()
     //Move electron 0 to position [[-10. -10. -10.]] a.u.:
     elec.R[0] = { -10.0, -10.0, -10.0 };
     elec.update();
-    sposet->evaluate(elec, 0, values);
+    sposet->evaluateValue(elec, 0, values);
 
     // Position [[-10. -10. -10.]] a.u.
     // Verifying values of SPO 0
@@ -237,7 +237,7 @@ void test_C_diamond()
     //Move electron 0 to position [[-6.666667 -6.666667 -6.666667]] a.u.:
     elec.R[0] = { -6.666667, -6.666667, -6.666667 };
     elec.update();
-    sposet->evaluate(elec, 0, values);
+    sposet->evaluateValue(elec, 0, values);
 
     // Position [[-6.666667 -6.666667 -6.666667]] a.u.
     // Verifying values of SPO 0
@@ -347,7 +347,7 @@ void test_C_diamond()
     //Move electron 0 to position [[-3.333334 -3.333334 -3.333334]] a.u.:
     elec.R[0] = { -3.333334, -3.333334, -3.333334 };
     elec.update();
-    sposet->evaluate(elec, 0, values);
+    sposet->evaluateValue(elec, 0, values);
 
     // Position [[-3.333334 -3.333334 -3.333334]] a.u.
     // Verifying values of SPO 0
@@ -457,7 +457,7 @@ void test_C_diamond()
     //Move electron 0 to position [[-9.99999999e-07 -9.99999999e-07 -9.99999999e-07]] a.u.:
     elec.R[0] = { -9.999999992515995e-07, -9.999999992515995e-07, -9.999999992515995e-07 };
     elec.update();
-    sposet->evaluate(elec, 0, values);
+    sposet->evaluateValue(elec, 0, values);
 
     // Position [[-9.99999999e-07 -9.99999999e-07 -9.99999999e-07]] a.u.
     // Verifying values of SPO 0
@@ -567,7 +567,7 @@ void test_C_diamond()
     //Move electron 0 to position [[3.333332 3.333332 3.333332]] a.u.:
     elec.R[0] = { 3.3333320000000004, 3.3333320000000004, 3.3333320000000004 };
     elec.update();
-    sposet->evaluate(elec, 0, values);
+    sposet->evaluateValue(elec, 0, values);
 
     // Position [[3.333332 3.333332 3.333332]] a.u.
     // Verifying values of SPO 0
@@ -677,7 +677,7 @@ void test_C_diamond()
     //Move electron 0 to position [[6.666665 6.666665 6.666665]] a.u.:
     elec.R[0] = { 6.666665000000002, 6.666665000000002, 6.666665000000002 };
     elec.update();
-    sposet->evaluate(elec, 0, values);
+    sposet->evaluateValue(elec, 0, values);
 
     // Position [[6.666665 6.666665 6.666665]] a.u.
     // Verifying values of SPO 0
@@ -787,7 +787,7 @@ void test_C_diamond()
     //Move electron 0 to position [[9.999998 9.999998 9.999998]] a.u.:
     elec.R[0] = { 9.999998000000001, 9.999998000000001, 9.999998000000001 };
     elec.update();
-    sposet->evaluate(elec, 0, values);
+    sposet->evaluateValue(elec, 0, values);
 
     // Position [[9.999998 9.999998 9.999998]] a.u.
     // Verifying values of SPO 0
