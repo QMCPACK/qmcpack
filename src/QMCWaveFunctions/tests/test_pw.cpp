@@ -133,7 +133,7 @@ TEST_CASE("PlaneWave SPO from HDF for BCC H", "[wavefunction]")
   int orbSize = spo->getOrbitalSetSize();
   elec.update();
   SPOSet::ValueVector_t orbs(orbSize);
-  spo->evaluate(elec, 0, orbs);
+  spo->evaluateValue(elec, 0, orbs);
 
   REQUIRE(std::real(orbs[0]) == Approx(-1.2473558998));
 
@@ -156,7 +156,7 @@ TEST_CASE("PlaneWave SPO from HDF for BCC H", "[wavefunction]")
         elec.R[0][2] = z;
         elec.update();
         SPOSet::ValueVector_t orbs(orbSize);
-        spo->evaluate(elec, 0, orbs);
+        spo->evaluateValue(elec, 0, orbs);
         fprintf(fspo, "%g %g %g",x,y,z);
         for (int j = 0; j < orbSize; j++) {
 #ifdef QMC_COMPLEX
@@ -283,7 +283,7 @@ TEST_CASE("PlaneWave SPO from HDF for LiH arb", "[wavefunction]")
   int orbSize = spo->getOrbitalSetSize();
   elec.update();
   SPOSet::ValueVector_t orbs(orbSize);
-  spo->evaluate(elec, 0, orbs);
+  spo->evaluateValue(elec, 0, orbs);
 
   REQUIRE(std::real(orbs[0]) == Approx(-14.3744302974));
 
@@ -306,7 +306,7 @@ TEST_CASE("PlaneWave SPO from HDF for LiH arb", "[wavefunction]")
         elec.R[0][2] = z;
         elec.update();
         SPOSet::ValueVector_t orbs(orbSize);
-        spo->evaluate(elec, 0, orbs);
+        spo->evaluateValue(elec, 0, orbs);
         fprintf(fspo, "%g %g %g",x,y,z);
         for (int j = 0; j < orbSize; j++) {
 #ifdef QMC_COMPLEX

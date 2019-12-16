@@ -89,14 +89,14 @@ public:
    */
   inline int getBasisSetSize() const { return (myBasisSet == 0) ? 0 : myBasisSet->getBasisSetSize(); }
 
-  inline void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
+  inline void evaluateValue(const ParticleSet& P, int iat, ValueVector_t& psi)
   {
     myBasisSet->evaluateForPtclMove(P, iat);
     for (int j = 0; j < OrbitalSetSize; j++)
       psi[j] = myBasisSet->Phi[j];
   }
 
-  inline void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
+  inline void evaluateVGL(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
   {
     myBasisSet->evaluateAllForPtclMove(P, iat);
     for (int j = 0; j < OrbitalSetSize; j++)
@@ -107,11 +107,11 @@ public:
       d2psi[j] = myBasisSet->d2Phi[j];
   }
 
-  inline void evaluate(const ParticleSet& P,
-                       int iat,
-                       ValueVector_t& psi,
-                       GradVector_t& dpsi,
-                       HessVector_t& grad_grad_psi)
+  inline void evaluateVGH(const ParticleSet& P,
+                          int iat,
+                          ValueVector_t& psi,
+                          GradVector_t& dpsi,
+                          HessVector_t& grad_grad_psi)
   {
     myBasisSet->evaluateForPtclMoveWithHessian(P, iat);
     for (int j = 0; j < OrbitalSetSize; j++)
@@ -248,13 +248,13 @@ public:
    */
   inline int getBasisSetSize() const { return (myBasisSet == 0) ? 0 : myBasisSet->getBasisSetSize(); }
 
-  inline void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
+  inline void evaluateValue(const ParticleSet& P, int iat, ValueVector_t& psi)
   {
     myBasisSet->evaluateForPtclMove(P, iat);
     simd::gemv(*C, myBasisSet->Phi.data(), psi.data());
   }
 
-  inline void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
+  inline void evaluateVGL(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
   {
     myBasisSet->evaluateAllForPtclMove(P, iat);
 
@@ -292,11 +292,11 @@ public:
     }
   }
 
-  inline void evaluate(const ParticleSet& P,
-                       int iat,
-                       ValueVector_t& psi,
-                       GradVector_t& dpsi,
-                       HessVector_t& grad_grad_psi)
+  inline void evaluateVGH(const ParticleSet& P,
+                          int iat,
+                          ValueVector_t& psi,
+                          GradVector_t& dpsi,
+                          HessVector_t& grad_grad_psi)
   {
     myBasisSet->evaluateForPtclMoveWithHessian(P, iat);
     simd::gemv(*C, myBasisSet->Phi.data(), psi.data());
@@ -313,9 +313,9 @@ public:
     //      const typename BS::GradType* restrict dptr=myBasisSet->dPhi.data();
     //#pragma ivdep
     //      for(int j=0,kk=0; j<OrbitalSetSize; j++) {
-    //        register ValueType res=0.0;
-    //        register GradType dres;
-    //        register HessType hess;
+    //        ValueType res=0.0;
+    //        GradType dres;
+    //        HessType hess;
     //        for(int b=0; b<BasisSetSize; b++,kk++)
     //        {
     //          res += cptr[kk]*pptr[b];
@@ -372,7 +372,7 @@ public:
         const typename BS::GradType* restrict dptr = myBasisSet->dPhi.data();
         for (int j = 0, jk = 0; j < OrbitalSetSize; j++)
         {
-          register GradType dres;
+          GradType dres;
           for (int b = 0; b < BasisSetSize; ++b)
             dres += cptr[jk++] * dptr[b];
           dlogdet(ij) = dres;
@@ -399,8 +399,8 @@ public:
       const typename BS::HessType* restrict d2ptr = myBasisSet->grad_grad_Phi.data();
       for (int j = 0, jk = 0; j < OrbitalSetSize; j++)
       {
-        register GradType dres;
-        register HessType d2res;
+        GradType dres;
+        HessType d2res;
         for (int b = 0; b < BasisSetSize; ++b, ++jk)
         {
           dres += cptr[jk] * dptr[b];
@@ -432,9 +432,9 @@ public:
       const typename BS::GGGType* restrict gggptr = myBasisSet->grad_grad_grad_Phi.data();
       for (int j = 0, jk = 0; j < OrbitalSetSize; j++)
       {
-        register GradType dres;
-        register HessType d2res;
-        register GGGType gggres;
+        GradType dres;
+        HessType d2res;
+        GGGType gggres;
         for (int b = 0; b < BasisSetSize; ++b)
         {
           dres += cptr[jk] * dptr[b];
@@ -474,7 +474,7 @@ public:
       const typename BS::GGGType* restrict gggptr = myBasisSet->grad_grad_grad_Phi.data();
       for (int j = 0, jk = 0; j < OrbitalSetSize; j++)
       {
-        register GGGType gggres;
+        GGGType gggres;
         for (int b = 0; b < BasisSetSize; ++b)
         {
           gggres[0] += cptr[jk] * (gggptr[b])[0];

@@ -46,13 +46,13 @@ void SpinorSet::resetTargetParticleSet(ParticleSet& P){};
 void SpinorSet::setOrbitalSetSize(int norbs) { OrbitalSetSize = norbs; };
 
 
-void SpinorSet::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
+void SpinorSet::evaluateValue(const ParticleSet& P, int iat, ValueVector_t& psi)
 {
   psi_work_up   = 0.0;
   psi_work_down = 0.0;
 
-  spo_up->evaluate(P, iat, psi_work_up);
-  spo_dn->evaluate(P, iat, psi_work_down);
+  spo_up->evaluateValue(P, iat, psi_work_up);
+  spo_dn->evaluateValue(P, iat, psi_work_down);
 
   ParticleSet::Scalar_t s = P.activeSpin(iat);
 
@@ -68,7 +68,7 @@ void SpinorSet::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
   psi = eis * psi_work_up + emis * psi_work_down;
 }
 
-void SpinorSet::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
+void SpinorSet::evaluateVGL(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
 {
   psi_work_up     = 0.0;
   psi_work_down   = 0.0;
@@ -77,8 +77,8 @@ void SpinorSet::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, Grad
   d2psi_work_up   = 0.0;
   d2psi_work_down = 0.0;
 
-  spo_up->evaluate(P, iat, psi_work_up, dpsi_work_up, d2psi_work_up);
-  spo_dn->evaluate(P, iat, psi_work_down, dpsi_work_down, d2psi_work_down);
+  spo_up->evaluateVGL(P, iat, psi_work_up, dpsi_work_up, d2psi_work_up);
+  spo_dn->evaluateVGL(P, iat, psi_work_down, dpsi_work_down, d2psi_work_down);
 
   ParticleSet::Scalar_t s = P.activeSpin(iat);
 
@@ -144,8 +144,8 @@ void SpinorSet::evaluate_spin(const ParticleSet& P, int iat, ValueVector_t& psi,
   psi_work_up   = 0.0;
   psi_work_down = 0.0;
 
-  spo_up->evaluate(P, iat, psi_work_up);
-  spo_dn->evaluate(P, iat, psi_work_down);
+  spo_up->evaluateValue(P, iat, psi_work_up);
+  spo_dn->evaluateValue(P, iat, psi_work_down);
 
   ParticleSet::Scalar_t s = P.activeSpin(iat);
 
