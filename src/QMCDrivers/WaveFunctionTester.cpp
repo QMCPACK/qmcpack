@@ -1377,7 +1377,7 @@ void WaveFunctionTester::runRatioV()
     {
       for(int nn=dt_ie->M[iat],iel=0; nn<dt_ie->M[iat+1]; nn++,iel++)
       {
-        register RealType r(dt_ie->r(nn));
+        RealType r(dt_ie->r(nn));
         if(r>Rmax) continue;
         randomize(sphere,(RealType)0.5);
         

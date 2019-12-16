@@ -74,9 +74,9 @@ struct SHOSet : public SPOSet
   //SPOSet interface methods
   SPOSet* makeClone() const;
 
-  void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi);
+  void evaluateValue(const ParticleSet& P, int iat, ValueVector_t& psi);
 
-  void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi);
+  void evaluateVGL(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi);
 
   void evaluate_notranspose(const ParticleSet& P,
                             int first,

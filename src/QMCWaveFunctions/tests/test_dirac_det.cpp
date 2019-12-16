@@ -72,9 +72,9 @@ public:
   virtual void resetTargetParticleSet(ParticleSet& P) {}
   virtual void setOrbitalSetSize(int norbs);
 
-  virtual void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi);
+  virtual void evaluateValue(const ParticleSet& P, int iat, ValueVector_t& psi);
 
-  virtual void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi);
+  virtual void evaluateVGL(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi);
 
   virtual void evaluate_notranspose(const ParticleSet& P,
                                     int first,
@@ -141,7 +141,7 @@ FakeSPO::FakeSPO()
 
 void FakeSPO::setOrbitalSetSize(int norbs) { OrbitalSetSize = norbs; }
 
-void FakeSPO::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
+void FakeSPO::evaluateValue(const ParticleSet& P, int iat, ValueVector_t& psi)
 {
   if (OrbitalSetSize == 3)
   {
@@ -159,7 +159,7 @@ void FakeSPO::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
   }
 }
 
-void FakeSPO::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
+void FakeSPO::evaluateVGL(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
 {
   if (OrbitalSetSize == 3)
   {
