@@ -37,7 +37,7 @@ namespace qmcplusplus
  * Internal storage use double sized arrays of ST type, aligned and padded.
  */
 template<typename ST>
-struct SplineC2CSoA : public SplineAdoptorBase<ST, 3>, BsplineSet
+struct SplineC2CSoA : public SplineAdoptorBase<ST, 3>, public BsplineSet
 {
   static const int D     = 3;
   using Base             = SplineAdoptorBase<ST, 3>;

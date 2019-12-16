@@ -33,8 +33,8 @@ namespace qmcplusplus
  * Requires temporage storage and multiplication of the sign of the real part of the phase
  * Internal storage ST type arrays are aligned and padded.
  */
-template<typename ST, typename TT>
-struct SplineR2RSoA : public SplineAdoptorBase<ST, 3>
+template<typename ST>
+struct SplineR2RSoA : public SplineAdoptorBase<ST, 3>, public BsplineSet
 {
   static const int D = 3;
   bool IsGamma;
@@ -43,6 +43,12 @@ struct SplineR2RSoA : public SplineAdoptorBase<ST, 3>
   using BCType           = typename bspline_traits<ST, 3>::BCType;
   using PointType        = typename Base::PointType;
   using SingleSplineType = typename Base::SingleSplineType;
+  // types for evaluation results
+  using TT = typename BsplineSet::ValueType;
+  using BsplineSet::ValueVector_t;
+  using BsplineSet::GradVector_t;
+  using BsplineSet::HessVector_t;
+  using BsplineSet::GGGVector_t;
 
   using vContainer_type  = Vector<ST, aligned_allocator<ST>>;
   using gContainer_type  = VectorSoaContainer<ST, 3>;
@@ -76,6 +82,8 @@ struct SplineR2RSoA : public SplineAdoptorBase<ST, 3>
     this->AdoptorName  = "SplineR2RSoAAdoptor";
     this->KeyWord      = "SplineR2RSoA";
   }
+
+  SPOSet* makeClone() const override { return new SplineR2RSoA(*this); }
 
   inline void resizeStorage(size_t n, size_t nvals)
   {
@@ -166,8 +174,7 @@ struct SplineR2RSoA : public SplineAdoptorBase<ST, 3>
       psi[first_spo + j] = signed_one * myV[j];
   }
 
-  template<typename VV>
-  inline void evaluate_v(const ParticleSet& P, const int iat, VV& psi)
+  inline void evaluateValue(const ParticleSet& P, const int iat, ValueVector_t& psi) override
   {
     const PointType& r = P.activeR(iat);
     PointType ru;
@@ -183,8 +190,7 @@ struct SplineR2RSoA : public SplineAdoptorBase<ST, 3>
     }
   }
 
-  template<typename VV, typename RT>
-  inline void evaluateDetRatios(const VirtualParticleSet& VP, VV& psi, const VV& psiinv, std::vector<RT>& ratios)
+  inline void evaluateDetRatios(const VirtualParticleSet& VP, ValueVector_t& psi, const ValueVector_t& psiinv, std::vector<TT>& ratios) override
   {
     const bool need_resize = ratios_private.rows() < VP.getTotalNum();
 
@@ -279,8 +285,7 @@ struct SplineR2RSoA : public SplineAdoptorBase<ST, 3>
     }
   }
 
-  template<typename VV, typename GV>
-  inline void evaluate_vgl(const ParticleSet& P, const int iat, VV& psi, GV& dpsi, VV& d2psi)
+  inline void evaluateVGL(const ParticleSet& P, const int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi) override
   {
     const PointType& r = P.activeR(iat);
     PointType ru;
@@ -294,19 +299,6 @@ struct SplineR2RSoA : public SplineAdoptorBase<ST, 3>
       spline2::evaluate3d_vgh(SplineInst->getSplinePtr(), ru, myV, myG, myH, first, last);
       assign_vgl(bc_sign, psi, dpsi, d2psi, first, last);
     }
-  }
-
-  template<typename VV, typename GV>
-  inline void mw_evaluate_vgl(const std::vector<SplineR2RSoA*>& sa_list,
-                              const std::vector<ParticleSet*>& P_list,
-                              int iat,
-                              const std::vector<VV*>& psi_v_list,
-                              const std::vector<GV*>& dpsi_v_list,
-                              const std::vector<VV*>& d2psi_v_list)
-  {
-    #pragma omp parallel for
-    for (int iw = 0; iw < sa_list.size(); iw++)
-      sa_list[iw]->evaluate_vgl(*P_list[iw], iat, *psi_v_list[iw], *dpsi_v_list[iw], *d2psi_v_list[iw]);
   }
 
   template<typename VV, typename GV, typename GGV>
@@ -522,8 +514,7 @@ struct SplineR2RSoA : public SplineAdoptorBase<ST, 3>
     }
   }
 
-  template<typename VV, typename GV, typename GGV>
-  void evaluate_vgh(const ParticleSet& P, const int iat, VV& psi, GV& dpsi, GGV& grad_grad_psi)
+  void evaluateVGH(const ParticleSet& P, const int iat, ValueVector_t& psi, GradVector_t& dpsi, HessVector_t& grad_grad_psi) override
   {
     const PointType& r = P.activeR(iat);
     PointType ru;
@@ -538,13 +529,12 @@ struct SplineR2RSoA : public SplineAdoptorBase<ST, 3>
       assign_vgh(bc_sign, psi, dpsi, grad_grad_psi, first, last);
     }
   }
-  template<typename VV, typename GV, typename GGV, typename GGGV>
-  void evaluate_vghgh(const ParticleSet& P,
+  void evaluateVGHGH(const ParticleSet& P,
                       const int iat,
-                      VV& psi,
-                      GV& dpsi,
-                      GGV& grad_grad_psi,
-                      GGGV& grad_grad_grad_psi)
+                      ValueVector_t& psi,
+                      GradVector_t& dpsi,
+                      HessVector_t& grad_grad_psi,
+                      GGGVector_t& grad_grad_grad_psi) override
   {
     const PointType& r = P.activeR(iat);
     PointType ru;

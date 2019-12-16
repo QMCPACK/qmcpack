@@ -29,9 +29,9 @@ BsplineReaderBase* createBsplineRealSingle(EinsplineSetBuilder* e, bool hybrid_r
   BsplineReaderBase* aReader = nullptr;
 
   if (hybrid_rep)
-    aReader = new SplineHybridAdoptorReader<HybridRealSoA<SplineR2RSoA<float, OHMMS_PRECISION>>>(e);
+    {}//aReader = new SplineHybridAdoptorReader<HybridRealSoA<SplineR2RSoA<float, OHMMS_PRECISION>>>(e);
   else
-    aReader = new SplineAdoptorReader<SplineR2RSoA<float, OHMMS_PRECISION>>(e);
+    aReader = new SplineAdoptorReader<SplineR2RSoA<float>>(e);
   return aReader;
 }
 } // namespace qmcplusplus

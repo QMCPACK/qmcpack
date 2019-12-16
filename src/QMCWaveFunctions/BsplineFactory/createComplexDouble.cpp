@@ -52,7 +52,7 @@ BsplineReaderBase* createBsplineComplexDouble(EinsplineSetBuilder* e, bool hybri
     if (hybrid_rep)
       {}//aReader = new SplineHybridAdoptorReader<HybridCplxSoA<SplineC2RSoA<double, RealType>>>(e);
     else
-      aReader = new SplineAdoptorReader<SplineC2RSoA<double, RealType>>(e);
+      aReader = new SplineAdoptorReader<SplineC2RSoA<double>>(e);
   }
 #endif
 
