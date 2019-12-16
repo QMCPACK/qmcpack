@@ -168,7 +168,7 @@ shm_ptr_with_raw_ptr_dispatch<T> uninitialized_fill_n(shm_ptr_with_raw_ptr_dispa
         if(first.wSP_->get_group().root()) std::uninitialized_fill_n(to_address(first), n, val); // change to to_pointer
         first.wSP_->fence();
         first.wSP_->fence();
-        first.wSP_->comm_.barrier();
+        mpi3::communicator(first.wSP_->get_group(),0).barrier();
         return first + n;
 }
 
@@ -178,7 +178,7 @@ shm_ptr_with_raw_ptr_dispatch<T> uninitialized_fill_n(Alloc &a, shm_ptr_with_raw
         if(first.wSP_->get_group().root()) std::uninitialized_fill_n(to_address(first), n, val); // change to to_pointer
         first.wSP_->fence();
         first.wSP_->fence();
-        first.wSP_->comm_.barrier();
+        mpi3::communicator(first.wSP_->get_group(),0).barrier();
         return first + n;
 }
 
@@ -191,7 +191,7 @@ shm_ptr_with_raw_ptr_dispatch<T> destroy_n(shm_ptr_with_raw_ptr_dispatch<T> firs
         }
         first.wSP_->fence();
         first.wSP_->fence();
-        first.wSP_->comm_.barrier();
+        mpi3::communicator(first.wSP_->get_group(),0).barrier();
         return first + n;
 }
 
@@ -204,7 +204,7 @@ shm_ptr_with_raw_ptr_dispatch<T> destroy_n(Alloc &a, shm_ptr_with_raw_ptr_dispat
         }
         first.wSP_->fence();
         first.wSP_->fence();
-        first.wSP_->comm_.barrier();
+        mpi3::communicator(first.wSP_->get_group(),0).barrier();
         return first + n;
 }
 
@@ -214,7 +214,7 @@ shm_ptr_with_raw_ptr_dispatch<T> copy_n(It1 first, Size n, shm_ptr_with_raw_ptr_
         using std::copy_n;
         if(d_first.wSP_->get_group().root()) copy_n(first, n, to_address(d_first));
         d_first.wSP_->fence();
-        d_first.wSP_->comm_.barrier();
+        mpi3::communicator(d_first.wSP_->get_group(),0).barrier();
         return d_first + n;
 }
 
@@ -224,7 +224,7 @@ shm_ptr_with_raw_ptr_dispatch<T> copy(It1 first, It1 last, shm_ptr_with_raw_ptr_
         using std::copy;
         if(d_first.wSP_->get_group().root()) copy(first, last, to_address(d_first));
         first.wSP_->fence();
-        d_first.wSP_->comm_.barrier();
+        mpi3::communicator(d_first.wSP_->get_group(),0).barrier();
         using std::distance;
         return d_first + distance(first, last);
 }
@@ -235,7 +235,7 @@ shm_ptr_with_raw_ptr_dispatch<T> uninitialized_copy_n(It1 f, Size n, shm_ptr_wit
         using std::uninitialized_copy_n;
         if(d.wSP_->get_group().root()) uninitialized_copy_n(f, n, to_address(d));
         f.wSP_->fence();
-        d.wSP_->comm_.barrier();
+        mpi3::communicator(d.wSP_->get_group(),0).barrier();
         return d + n;
 }
 
@@ -245,7 +245,7 @@ shm_ptr_with_raw_ptr_dispatch<T> uninitialized_copy_n(Alloc &a, It1 f, Size n, s
         using std::uninitialized_copy_n;
         if(d.wSP_->get_group().root()) uninitialized_copy_n(f, n, to_address(d));
         f.wSP_->fence();
-        d.wSP_->comm_.barrier();
+        mpi3::communicator(d.wSP_->get_group(),0).barrier();
         return d + n;
 }
 
@@ -256,7 +256,7 @@ shm_ptr_with_raw_ptr_dispatch<T> uninitialized_copy(It1 f, It1 l, shm_ptr_with_r
         using std::uninitialized_copy;
         if(d.wSP_->get_group().root()) uninitialized_copy(f, l, to_address(d));
         d.wSP_->fence();
-        d.wSP_->comm_.barrier();
+        mpi3::communicator(d.wSP_->get_group(),0).barrier();
         using std::distance;
         return d + distance(f, l);
 }
@@ -271,7 +271,7 @@ shm_ptr_with_raw_ptr_dispatch<T> uninitialized_default_construct_n(shm_ptr_with_
             }catch(...) {throw;} // leak!
         }
         f.wSP_->fence();
-        f.wSP_->comm_.barrier();
+        mpi3::communicator(f.wSP_->get_group(),0).barrier();
         return f + n;
 }
 
@@ -285,7 +285,7 @@ shm_ptr_with_raw_ptr_dispatch<T> uninitialized_value_construct_n(shm_ptr_with_ra
             }catch(...){throw;} // leak !!
         }
         f.wSP_->fence();
-        f.wSP_->comm_.barrier();
+        mpi3::communicator(f.wSP_->get_group(),0).barrier();
         return f + n;
 }
 
@@ -300,7 +300,7 @@ shm_ptr_with_raw_ptr_dispatch<T> uninitialized_default_construct_n(Alloc &a, shm
             }catch(...) {throw;} // leak!
         }
         f.wSP_->fence();
-        f.wSP_->comm_.barrier();
+        mpi3::communicator(f.wSP_->get_group(),0).barrier();
         return f + n;
 }
 
@@ -315,7 +315,7 @@ shm_ptr_with_raw_ptr_dispatch<T> uninitialized_value_construct_n(Alloc &a, shm_p
             }catch(...){throw;} // leak !!
         }
         f.wSP_->fence();
-        f.wSP_->comm_.barrier();
+        mpi3::communicator(f.wSP_->get_group(),0).barrier();
         return f + n;
 }
 
@@ -340,7 +340,7 @@ multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> uninitialized
   }
   base(first).wSP_->fence();
   base(first).wSP_->fence();
-  base(first).wSP_->comm_.barrier();
+  mpi3::communicator(base(first).wSP_->get_group(),0).barrier();
   return first + n;
 }
 
@@ -371,7 +371,7 @@ multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> copy_n(
   }
   base(dest).wSP_->fence();
   base(dest).wSP_->fence();
-  base(dest).wSP_->comm_.barrier();
+  mpi3::communicator(base(dest).wSP_->get_group(),0).barrier();
   return dest + n;
 }
 
@@ -390,7 +390,7 @@ multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> copy_n(
   }
   base(dest).wSP_->fence();
   base(dest).wSP_->fence();
-  base(dest).wSP_->comm_.barrier();
+  mpi3::communicator(base(dest).wSP_->get_group(),0).barrier();
   return dest + n;
 }
 
@@ -463,7 +463,7 @@ multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> uninitialized
   }
   base(dest).wSP_->fence();
   base(dest).wSP_->fence();
-  base(dest).wSP_->comm_.barrier();
+  mpi3::communicator(base(dest).wSP_->get_group(),0).barrier();
   return dest + n;
 }
 
@@ -495,7 +495,7 @@ multi::array_iterator<T, 1, T*> uninitialized_copy(
         a.construct(addressof(*d), *first);
     }catch(...){throw;}
   }
-  base(first).wSP_->comm_.barrier();
+  mpi3::communicator(base(first).wSP_->get_group(),0).barrier();
   return dest + std::distance(first,last);
 }
 
