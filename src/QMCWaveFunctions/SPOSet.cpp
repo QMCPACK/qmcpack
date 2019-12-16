@@ -27,15 +27,15 @@
 namespace qmcplusplus
 {
 SPOSet::SPOSet(bool ion_deriv, bool optimizable)
-    : ionDerivs(ion_deriv),
-      Optimizable(optimizable),
-      OrbitalSetSize(0)
+    :
 #if !defined(ENABLE_SOA)
-      ,
       Identity(false),
       BasisSetSize(0),
-      C(nullptr)
+      C(nullptr),
 #endif
+      ionDerivs(ion_deriv),
+      Optimizable(optimizable),
+      OrbitalSetSize(0)
 {
   className = "invalid";
 #if !defined(ENABLE_SOA)
@@ -58,7 +58,7 @@ void SPOSet::evaluateDetRatios(const VirtualParticleSet& VP,
   assert(psi.size() == psiinv.size());
   for (int iat = 0; iat < VP.getTotalNum(); ++iat)
   {
-    evaluate(VP, iat, psi);
+    evaluateValue(VP, iat, psi);
     ratios[iat] = simd::dot(psi.data(), psiinv.data(), psi.size());
   }
 }
@@ -379,21 +379,21 @@ void SPOSet::basic_report(const std::string& pad)
   app_log().flush();
 }
 
-void SPOSet::evaluate(const ParticleSet& P,
-                      int iat,
-                      ValueVector_t& psi,
-                      GradVector_t& dpsi,
-                      HessVector_t& grad_grad_psi)
+void SPOSet::evaluateVGH(const ParticleSet& P,
+                         int iat,
+                         ValueVector_t& psi,
+                         GradVector_t& dpsi,
+                         HessVector_t& grad_grad_psi)
 {
   APP_ABORT("Need specialization of " + className + "::evaluate(P,iat,psi,dpsi,dhpsi) (vector quantities)\n");
 }
 
-void SPOSet::evaluate(const ParticleSet& P,
-                      int iat,
-                      ValueVector_t& psi,
-                      GradVector_t& dpsi,
-                      HessVector_t& grad_grad_psi,
-                      GGGVector_t& grad_grad_grad_psi)
+void SPOSet::evaluateVGHGH(const ParticleSet& P,
+                           int iat,
+                           ValueVector_t& psi,
+                           GradVector_t& dpsi,
+                           HessVector_t& grad_grad_psi,
+                           GGGVector_t& grad_grad_grad_psi)
 {
   APP_ABORT("Need specialization of " + className + "::evaluate(P,iat,psi,dpsi,dhpsi,dghpsi) (vector quantities)\n");
 }
