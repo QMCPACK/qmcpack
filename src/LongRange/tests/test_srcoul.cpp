@@ -126,7 +126,7 @@ TEST_CASE("srcoul df", "[lrhandler]")
     REQUIRE(handler.srDf(r, rinv) == Approx(dvsr));
     // test long-range piece
     dvlr = (vlrp-vlrm)/(2*dr);
-    REQUIRE(handler.lrDf(r) == Approx(dvlr).epsilon(0.003));
+    REQUIRE(handler.lrDf(r) == Approx(dvlr));
     // test total derivative
     REQUIRE(dvsr+dvlr == Approx(fref.df(r)));
   }
