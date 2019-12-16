@@ -65,17 +65,12 @@ struct BsplineReaderBase
 
     app_log() << "  Using meshsize=" << MeshSize << "\n  vs input meshsize=" << mybuilder->MeshSize << std::endl;
 
-    xyz_grid[0].start = 0.0;
-    xyz_grid[0].end   = 1.0;
-    xyz_grid[0].num   = MeshSize[0];
-    xyz_grid[1].start = 0.0;
-    xyz_grid[1].end   = 1.0;
-    xyz_grid[1].num   = MeshSize[1];
-    xyz_grid[2].start = 0.0;
-    xyz_grid[2].end   = 1.0;
-    xyz_grid[2].num   = MeshSize[2];
     for (int j = 0; j < 3; ++j)
     {
+      xyz_grid[j].start = 0.0;
+      xyz_grid[j].end   = 1.0;
+      xyz_grid[j].num   = MeshSize[j];
+
       if (halfg[j])
       {
         xyz_bc[j].lCode = ANTIPERIODIC;
@@ -86,6 +81,9 @@ struct BsplineReaderBase
         xyz_bc[j].lCode = PERIODIC;
         xyz_bc[j].rCode = PERIODIC;
       }
+
+      xyz_bc[j].lVal = 0.0;
+      xyz_bc[j].rVal = 0.0;
     }
     return havePsig;
   }

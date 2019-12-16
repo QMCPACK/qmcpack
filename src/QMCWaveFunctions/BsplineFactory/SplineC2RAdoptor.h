@@ -227,7 +227,7 @@ struct SplineC2RSoA : public SplineAdoptorBase<ST, 3>, public BsplineSet
     }
   }
 
-  inline void evaluateDetRatios(const VirtualParticleSet& VP, ValueVector_t& psi, const ValueVector_t& psiinv, std::vector<TT>& ratios)
+  inline void evaluateDetRatios(const VirtualParticleSet& VP, ValueVector_t& psi, const ValueVector_t& psiinv, std::vector<TT>& ratios) override
   {
     const bool need_resize = ratios_private.rows() < VP.getTotalNum();
 
