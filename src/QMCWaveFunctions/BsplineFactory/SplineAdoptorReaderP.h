@@ -45,7 +45,7 @@ struct SplineAdoptorReader : public BsplineReaderBase
   double rotate_phase_r, rotate_phase_i;
   UBspline_3d_d* spline_r;
   UBspline_3d_d* spline_i;
-  BsplineSet<adoptor_type>* bspline;
+  adoptor_type* bspline;
   fftw_plan FFTplan;
 
   SplineAdoptorReader(EinsplineSetBuilder* e)
@@ -133,7 +133,7 @@ struct SplineAdoptorReader : public BsplineReaderBase
     ReportEngine PRE("SplineC2XAdoptorReader", "create_spline_set(spin,SPE*)");
     //Timer c_prep, c_unpack,c_fft, c_phase, c_spline, c_newphase, c_h5, c_init;
     //double t_prep=0.0, t_unpack=0.0, t_fft=0.0, t_phase=0.0, t_spline=0.0, t_newphase=0.0, t_h5=0.0, t_init=0.0;
-    bspline = new BsplineSet<adoptor_type>;
+    bspline = new adoptor_type;
     app_log() << "  AdoptorName = " << bspline->AdoptorName << std::endl;
     if (bspline->is_complex)
       app_log() << "  Using complex einspline table" << std::endl;

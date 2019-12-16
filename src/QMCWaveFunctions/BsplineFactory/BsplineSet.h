@@ -36,39 +36,18 @@ namespace qmcplusplus
  * to make MultiBsplineSet (TBD) which has multiple SplineAdoptors for distributed
  * cases.
  */
-template<typename SplineAdoptor>
-struct BsplineSet : public SPOSet, public SplineAdoptor
+struct BsplineSet : public SPOSet
 {
-  typedef typename SplineAdoptor::SplineType SplineType;
-  typedef typename SplineAdoptor::PointType PointType;
-  typedef typename SplineAdoptor::DataType DataType;
+  // propagate SPOSet virtual functions
+  using SPOSet::finalizeConstruction;
+  using SPOSet::evaluateValue;
+  using SPOSet::evaluateDetRatios;
+  using SPOSet::evaluateVGL;
+  using SPOSet::mw_evaluateVGL;
+  using SPOSet::evaluateVGH;
+  using SPOSet::evaluateVGHGH;
 
-  ///** default constructor */
-  //BsplineSet() { }
-
-  std::vector<SplineAdoptor*>
-  downcast_spo_list(const std::vector<SPOSet*>& spo_list) const
-  {
-    std::vector<SplineAdoptor*> SA_list;
-    for (auto spo : spo_list)
-      SA_list.push_back(dynamic_cast<SplineAdoptor*>(spo));
-    return SA_list;
-  }
-
-  SPOSet* makeClone() const override { return new BsplineSet<SplineAdoptor>(*this); }
-
-  inline void evaluateValue(const ParticleSet& P, int iat, ValueVector_t& psi) override { SplineAdoptor::evaluate_v(P, iat, psi); }
-
-  inline void evaluateDetRatios(const VirtualParticleSet& VP,
-                                ValueVector_t& psi,
-                                const ValueVector_t& psiinv,
-                                std::vector<ValueType>& ratios) override
-  {
-    assert(psi.size() == psiinv.size());
-    SplineAdoptor::evaluateDetRatios(VP, psi, psiinv, ratios);
-  }
-
-  inline void finalizeConstruction() override { return SplineAdoptor::finalizeConstruction(); }
+  virtual SPOSet* makeClone() const override = 0;
 
   void resetParameters(const opt_variables_type& active) override {}
 
@@ -81,41 +60,7 @@ struct BsplineSet : public SPOSet, public SplineAdoptor
     //SplineAdoptor::last_spo=norbs;
   }
 
-  inline void evaluateVGL(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi) override
-  {
-    SplineAdoptor::evaluate_vgl(P, iat, psi, dpsi, d2psi);
-  }
-
-  inline void mw_evaluateVGL(const std::vector<SPOSet*>& spo_list,
-                              const std::vector<ParticleSet*>& P_list,
-                              int iat,
-                              const std::vector<ValueVector_t*>& psi_v_list,
-                              const std::vector<GradVector_t*>& dpsi_v_list,
-                              const std::vector<ValueVector_t*>& d2psi_v_list) override
-  {
-    SplineAdoptor::mw_evaluate_vgl(downcast_spo_list(spo_list), P_list, iat, psi_v_list, dpsi_v_list, d2psi_v_list);
-  }
-
-  inline void evaluateVGH(const ParticleSet& P,
-                          int iat,
-                          ValueVector_t& psi,
-                          GradVector_t& dpsi,
-                          HessVector_t& grad_grad_psi) override
-  {
-    SplineAdoptor::evaluate_vgh(P, iat, psi, dpsi, grad_grad_psi);
-  }
-
-  inline void evaluateVGHGH(const ParticleSet& P,
-                            int iat,
-                            ValueVector_t& psi,
-                            GradVector_t& dpsi,
-                            HessVector_t& grad_grad_psi,
-                            GGGVector_t& grad_grad_grad_psi) override
-  {
-    SplineAdoptor::evaluate_vghgh(P, iat, psi, dpsi, grad_grad_psi, grad_grad_grad_psi);
-  }
-
-  void evaluate_notranspose(const ParticleSet& P,
+  virtual void evaluate_notranspose(const ParticleSet& P,
                             int first,
                             int last,
                             ValueMatrix_t& logdet,
@@ -129,7 +74,7 @@ struct BsplineSet : public SPOSet, public SplineAdoptor
       ValueVector_t v(logdet[i], OrbitalSetSize);
       GradVector_t g(dlogdet[i], OrbitalSetSize);
       ValueVector_t l(d2logdet[i], OrbitalSetSize);
-      SplineAdoptor::evaluate_vgl(P, iat, v, g, l);
+      evaluateVGL(P, iat, v, g, l);
     }
   }
 
@@ -148,7 +93,7 @@ struct BsplineSet : public SPOSet, public SplineAdoptor
       ValueVector_t v(logdet[i], OrbitalSetSize);
       GradVector_t g(dlogdet[i], OrbitalSetSize);
       HessVector_t h(grad_grad_logdet[i], OrbitalSetSize);
-      SplineAdoptor::evaluate_vgh(P, iat, v, g, h);
+      evaluateVGH(P, iat, v, g, h);
     }
   }
 
@@ -170,7 +115,7 @@ struct BsplineSet : public SPOSet, public SplineAdoptor
       GradVector_t g(dlogdet[i], OrbitalSetSize);
       HessVector_t h(grad_grad_logdet[i], OrbitalSetSize);
       GGGVector_t gh(grad_grad_grad_logdet[i], OrbitalSetSize);
-      SplineAdoptor::evaluate_vghgh(P, iat, v, g, h, gh);
+      evaluateVGHGH(P, iat, v, g, h, gh);
     }
   }
 
