@@ -16,7 +16,6 @@
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
 
-#include <strstream>
 #include <stdexcept>
 
 #include "QMCWaveFunctions/TrialWaveFunction.h"
@@ -750,7 +749,7 @@ void TrialWaveFunction::debugOnlyCheckBuffer(WFBufferType& buffer)
 #ifndef NDEBUG
   if (buffer.size() < buffer.current() + buffer.current_scalar() * sizeof(FullPrecRealType))
   {
-    std::strstream assert_message;
+    std::ostringstream assert_message;
     assert_message << "On thread:" << Concurrency::getThreadId<>() << "  buf_list[iw].get().size():" << buffer.size()
                    << " < buf_list[iw].get().current():" << buffer.current()
                    << " + buf.current_scalar():" << buffer.current_scalar()

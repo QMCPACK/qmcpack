@@ -95,7 +95,7 @@ void PWOrbitalSet::addVector(const std::vector<RealType>& coefs, int jorb)
   }
 }
 
-void PWOrbitalSet::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
+void PWOrbitalSet::evaluateValue(const ParticleSet& P, int iat, ValueVector_t& psi)
 {
   //Evaluate every orbital for particle iat.
   //Evaluate the basis-set at these coordinates:
@@ -104,7 +104,7 @@ void PWOrbitalSet::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
   MatrixOperators::product(*C, myBasisSet->Zv, &psi[0]);
 }
 
-void PWOrbitalSet::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
+void PWOrbitalSet::evaluateVGL(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
 {
   //Evaluate the orbitals and derivatives for particle iat only.
   myBasisSet->evaluateAll(P, iat);

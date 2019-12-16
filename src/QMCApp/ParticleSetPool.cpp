@@ -196,7 +196,8 @@ bool ParticleSetPool::put(xmlNodePtr cur)
 
 void ParticleSetPool::randomize()
 {
-  app_log() << "ParticleSetPool::randomize " << std::endl;
+  app_log() << "ParticleSetPool::randomize " << randomize_nodes.size() << " ParticleSet"
+            << (randomize_nodes.size()==1?"":"s") << "." << std::endl;
   bool success = true;
   for (int i = 0; i < randomize_nodes.size(); ++i)
   {
