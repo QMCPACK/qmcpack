@@ -18,7 +18,6 @@
 #include "Particle/ParticleSet.h"
 #include "Particle/DistanceTableData.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
-#include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCWaveFunctions/LatticeGaussianProduct.h"
 #include "QMCWaveFunctions/LatticeGaussianProductBuilder.h"
 #include "ParticleIO/ParticleLayoutIO.h"
