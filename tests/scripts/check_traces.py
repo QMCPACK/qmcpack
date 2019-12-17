@@ -1,5 +1,18 @@
 #! /usr/bin/env python
 
+# Performs consistency checks between traces.h5 and scalar.dat/stat.h5/dmc.dat files
+# Jaron Krogel/ORNL
+
+# Type the following to view documentation for command line inputs:
+#   >check_traces.py -h
+
+# For usage examples, type:
+#   >check_traces.py -x
+
+# check_traces.py packages obj and HDFreader classes from Nexus.
+#   Note that h5py is required (which depends on numpy).
+#   This script is compatible with both Python 2 and 3.
+
 import os
 import sys
 from copy import deepcopy
@@ -7,20 +20,26 @@ import numpy as np
 import h5py
 from optparse import OptionParser
 
-
+# Returns failure error code to OS.
+# Explicitly prints 'fail' after an optional message.
 def test_fail():
-    print('\n\nTest failed!')
+    print('\n\nTest status: fail')
     sys.exit(1)
 #end def test_fail
 
 
+# Returns success error code to OS.
+# Explicitly prints 'pass' after an optional message.
 def test_pass():
-    print('\n\nTest passed!')
+    print('\n\nTest status: pass')
     sys.exit(0)
 #end def test_pass
 
 
 
+######################################################################
+# from generic.py
+######################################################################
 
 logfile = sys.stdout
 
@@ -188,16 +207,30 @@ class obj(object_interface):
     #end def first
 #end class obj
 
+######################################################################
+# end from generic.py
+######################################################################
 
+
+
+######################################################################
+# from developer.py
+######################################################################
 
 class DevBase(obj):
     None
 #end class DevBase
 
+######################################################################
+# end from developer.py
+######################################################################
 
 
 
 
+######################################################################
+# from hdfreader.py
+######################################################################
 import keyword
 from inspect import getmembers
 
@@ -409,10 +442,14 @@ class HDFreader(DevBase):
     #end def add_group
 #end class HDFreader
 
+######################################################################
+# end from hdfreader.py
+######################################################################
 
 
 
-
+# Represents QMCPACK data file.
+#   Used to read scalar.dat, stat.h5, dmc.dat, traces.h5
 class DataFile(DevBase):
 
     aliases = None
@@ -449,6 +486,7 @@ class DataFile(DevBase):
 #end class DataFile
 
 
+# Used to parse scalar.dat and dmc.dat files
 class DatFile(DataFile):
     def read(self,filepath):
         lt = np.loadtxt(filepath)
@@ -470,17 +508,20 @@ class DatFile(DataFile):
 #end class DatFile
 
 
+# Parses scalar.dat
 class ScalarDatFile(DatFile):
     aliases = obj(BlockWeight='Weight')
 #end class ScalarDat
 
 
+# Parses dmc.dat
 class DmcDatFile(DatFile):
     None
 #end class DmcDatFile
 
 
 
+# Parses scalar data from stat.h5
 class ScalarHDFFile(DataFile):
     def read(self,filepath):
         hr = HDFreader(filepath)
@@ -501,6 +542,9 @@ class ScalarHDFFile(DataFile):
 
 
 
+# Parses and organizes data from traces.h5.
+#   QMCPACK writes one traces.h5 for each MPI task.
+#   At every MC step, data from each walker is written to this file.
 class TracesFileHDF(DataFile):
     def __init__(self,filepath=None,blocks=None):
         self.info = obj(
@@ -512,32 +556,60 @@ class TracesFileHDF(DataFile):
 
 
     def read(self,filepath=None):
+        # Open the traces.h5 file
         hr = HDFreader(filepath)
         if not hr._success:
             self.error('hdf file read failed\nfile path: '+filepath)
         #end if
         hdf = hr.obj
         hdf._remove_hidden()
+
+        # Translate from flat table structure to nested data structure.
+        #   Do this for top level "int_data" and "real_data" HDF groups
         for name,buffer in hdf.items():
             self.init_trace(name,buffer)
         #end for
+
+        # Sum trace data over walkers into per-step and per-block totals
         self.accumulate_scalars()
     #end def read
 
 
+    # Translate from serialized traces table format to fully dimensioned 
+    #   data resolved by physical quantity.
     def init_trace(self,name,fbuffer):
         trace = obj()
         if 'traces' in fbuffer:
+            # Wide data table
+            #   Each row corresponds to a single step of a single walker.
+            #   Each row contains serialized scalar (e.g. LocalEnergy) 
+            #   and array (e.g. electron coordinates) data. 
             ftrace = fbuffer.traces
+
+            # Number of rows (walkers*steps for single mpi task)
             nrows = len(ftrace)
+
+            # Serialization layout of each row is stored in "layout".
+            #   Layout is separated into a few potential domains:
+            #     scalar domain  : scalar quantities such as LocalEnergy
+            #                      domain name is "scalars"
+            #     electron domain: array quantities dimensioned like number of electrons (e.g. electron positions)
+            #                      domain name follows particleset (often "e")
+            #     ion domain     : array quantities dimensioned like number of ions
+            #                      domain name follows particleset (often "ion0")
             for dname,fdomain in fbuffer.layout.items():
                 domain = obj()
+                # Get start and end row indices for each quantity
                 for qname,fquantity in fdomain.items():
                     q = obj()
                     for vname,value in fquantity.items():
                         q[vname] = value
                     #end for
+
+                    # extract per quantity data across all walkers and steps
                     quantity = ftrace[:,q.row_start:q.row_end]
+
+                    # reshape from serialized to multidimensional data for the quantity
                     if q.unit_size==1:
                         shape = [nrows]+list(fquantity.shape[0:q.dimension])
                     else:
@@ -554,12 +626,17 @@ class TracesFileHDF(DataFile):
         else:
             self.error('traces are missing in file "{}"'.format(self.filepath))
         #end if
+        # rename "int_data" and "real_data" as "int_traces" and "real_traces"
         self[name.replace('data','traces')] = trace
     #end def init_trace
 
 
+    # Perform internal consistency check between per-walker single 
+    #   particle energies and per-walker total energies.
     def check_particle_sums(self,tol=1e-8):
         t = self.real_traces
+
+        # Determine quantities present as "scalars" (total values) and also per-particle
         scalar_names = set(t.scalars.keys())
         other_names = []
         for dname,domain in t.items():
@@ -569,9 +646,14 @@ class TracesFileHDF(DataFile):
         #end for
         other_names = set(other_names)
         sum_names = scalar_names & other_names
+
+        # For each quantity, determine if the sum over particles matches the total
         same = True
         for qname in sum_names:
+            # Get total value for each quantity
             q = t.scalars[qname]
+
+            # Perform the sum over particles
             qs = 0*q
             for dname,domain in t.items():
                 if dname!='scalars' and qname in domain:
@@ -583,6 +665,8 @@ class TracesFileHDF(DataFile):
                     #end if
                 #end if
             #end for
+
+            # Compare total and summed quantities
             qsame = (abs(q-qs)<tol).all()
             if qsame:
                 log('{:<16} matches'.format(qname),n=3)
@@ -595,49 +679,59 @@ class TracesFileHDF(DataFile):
         return self.info.particle_sums_valid
     #end def check_particle_sums
 
-    
+
+    # Sum trace data over walkers into per-step and per-block totals
     def accumulate_scalars(self):
-        # get block and step information for the qmc method
+        # Get block and step information for the qmc method
         blocks = self.info.blocks
         if blocks is None:
             self.scalars_by_step  = None
             self.scalars_by_block = None
             return
         #end if
-        # real and int traces
+
+        # Get real and int valued trace data
         tr = self.real_traces
         ti = self.int_traces
-        # names shared by traces and scalar files
+
+        # Names shared by traces and scalar files
         scalar_names = set(tr.scalars.keys())
-        # step and weight traces
+
+        # Walker step and weight traces
         st = ti.scalars.step
         wt = tr.scalars.weight
         if len(st)!=len(wt):
             self.error('weight and steps traces have different lengths')
         #end if
-        #recompute steps (can vary for vmc w/ samples/samples_per_thread)
+
+        # Compute number of steps and steps per block
         steps = st.max()+1
         steps_per_block = steps//blocks
-        # accumulate weights into steps and blocks
+
+        # Accumulate weights into steps and blocks
         ws   = np.zeros((steps,))
         wb   = np.zeros((blocks,))
         #ws2  = np.zeros((steps,))
-        for t in range(len(wt)):
+        for t in range(len(wt)): # accumulate over walker population per step
             ws[st[t]] += wt[t]
             #ws2[st[t]] += 1.0 # scalar.dat/stat.h5 set weights to 1.0 in dmc
         #end for
         s = 0
-        for b in range(blocks):
+        for b in range(blocks): # accumulate over steps in a block
             wb[b] = ws[s:s+steps_per_block].sum()
             #wb[b] = ws2[s:s+steps_per_block].sum()
             s+=steps_per_block
-        #end for            
-        # accumulate walker population into steps
+        #end for
+
+        # Accumulate walker population into steps
         ps  = np.zeros((steps,))
         for t in range(len(wt)):
             ps[st[t]] += 1
         #end for
-        # accumulate quantities into steps and blocks
+
+        # Accumulate quantities into steps and blocks
+        #   These are the values directly comparable with data in 
+        #   scalar.dat, stat.h5, and dmc.dat.
         scalars_by_step  = obj(Weight=ws,NumOfWalkers=ps)
         scalars_by_block = obj(Weight=wb)
         qs   = np.zeros((steps,))
@@ -675,7 +769,12 @@ class TracesFileHDF(DataFile):
 
 
 
+# Aggregates data from the full collection of traces.h5 files for a 
+#   single series (e.g. VMC == series 0) and compares aggregated trace
+#   values to data in scalar.dat, stat.h5, and dmc.dat.
 class TracesAnalyzer(DevBase):
+
+    # Read data from scalar.dat, stat.h5, dmc.dat and all traces.h5 for the series
     def __init__(self,options):
 
         self.particle_sums_valid = None
@@ -694,7 +793,7 @@ class TracesAnalyzer(DevBase):
         pseudo = options.pseudo
         path   = options.path
 
-        # determine the quantities to check
+        # Determine the quantities to check
         dmc_dat_quants = ['Weight','LocalEnergy','NumOfWalkers']
         scalar_quants = ['LocalEnergy','Kinetic','LocalPotential',
                          'ElecElec','IonIon']
@@ -717,7 +816,7 @@ class TracesAnalyzer(DevBase):
             #end for
         #end if
 
-        # make paths to scalar, stat, dmc and traces files
+        # Make paths to scalar, stat, dmc and traces files
         prefix = prefix+'.s'+str(series).zfill(3)
 
         scalar_file = os.path.join(path,prefix+'.scalar.dat')
@@ -735,7 +834,7 @@ class TracesAnalyzer(DevBase):
             #end for
         #end if
 
-        # check that all output files exist
+        # Check that all output files exist
         files = [scalar_file,stat_file]
         if method=='dmc':
             files.append(dmc_file)
@@ -747,16 +846,21 @@ class TracesAnalyzer(DevBase):
             #end if
         #end for
 
-        # load scalar, stat, dmc, and traces files
+        # Load scalar, stat, dmc, and traces files
+
+        # Load scalar.dat
         self.scalar_dat = ScalarDatFile(scalar_file,scalar_dat_quants)
 
+        # Load stat.h5
         self.stat_h5 = ScalarHDFFile(stat_file,stat_h5_quants)
 
+        # Load dmc.dat
         self.dmc_dat = None
         if method=='dmc':
             self.dmc_dat = DmcDatFile(dmc_file,dmc_dat_quants)
         #end if
 
+        # Load all traces.h5
         self.data = obj()
         blocks = len(self.scalar_dat.data.first())
         for filepath in sorted(trace_files):
@@ -768,6 +872,8 @@ class TracesAnalyzer(DevBase):
     #end def __init__
 
 
+    # Check that per-particle quantities sum to total/scalar quantities 
+    #   in each traces.h5 file separately.
     def check_particle_sums(self,tol=1e-8):
         same = True
         for trace_file in self.data:
@@ -781,6 +887,7 @@ class TracesAnalyzer(DevBase):
     #end def check_particle_sums
 
 
+    # Check aggregated traces data against scalar.dat
     def check_scalar_dat(self,tol=1e-8):
         valid = self.check_scalar_file('scalar.dat',self.scalar_dat,tol)
         self.scalar_dat_valid = valid
@@ -789,6 +896,7 @@ class TracesAnalyzer(DevBase):
     #end def check_scalar_dat
 
 
+    # Check aggregated traces data against stat.h5
     def check_stat_h5(self,tol=1e-8):
         valid = self.check_scalar_file('stat.h5',self.stat_h5,tol)
         self.stat_h5_valid = valid
@@ -797,7 +905,10 @@ class TracesAnalyzer(DevBase):
     #end def check_stat_h5
 
 
+    # Shared checking implementation for scalar.dat and stat.h5
     def check_scalar_file(self,file_type,scalar_file,tol=1e-8):
+
+        # Check that expected quantities are present
         qnames = scalar_file.quantities
         trace_names = set(self.data[0].scalars_by_block.keys())
         missing = set(qnames)-trace_names
@@ -807,12 +918,15 @@ class TracesAnalyzer(DevBase):
 
         scalars_valid  = True
         scalars        = scalar_file.data
+
+        # Sum traces data for each quantity across all traces.h5 files
         summed_scalars = obj()
         for qname in qnames:
             summed_scalars[qname] = np.zeros(scalars[qname].shape)
         #end for
         wtot = np.zeros(summed_scalars.first().shape)
         for trace_file in self.data:
+            # scalar.dat/stat.h5 are resolved per block
             w = trace_file.scalars_by_block.Weight
             wtot += w
             for qname in qnames:
@@ -820,6 +934,8 @@ class TracesAnalyzer(DevBase):
                 summed_scalars[qname] += w*q
             #end for
         #end for
+
+        # Compare summed trace data against scalar.dat/stat.h5 values
         for qname in qnames:
             qscalar = scalars[qname]
             qb = summed_scalars[qname]/wtot
@@ -842,8 +958,13 @@ class TracesAnalyzer(DevBase):
     #end def check_scalar_file
 
 
+    # Check aggregated traces data against dmc.dat
     def check_dmc_dat(self,tol=1e-8):
+
+        # Some DMC steps are excluded due to a known bug in QMCPACK weights
         dmc_steps_exclude = self.options.dmc_steps_exclude
+
+        # Check that expected quantities are present
         dmc_file = self.dmc_dat
         qnames = dmc_file.quantities
         trace_names = set(self.data[0].scalars_by_step.keys())
@@ -855,12 +976,15 @@ class TracesAnalyzer(DevBase):
 
         dmc_valid = True
         dmc       = dmc_file.data
+
+        # Sum traces data for each quantity across all traces.h5 files
         summed_scalars = obj()
         for qname in qnames:
             summed_scalars[qname] = np.zeros(dmc[qname].shape)
         #end for
         wtot = np.zeros(summed_scalars.first().shape)
         for trace_file in self.data:
+            # dmc.dat is resolved per step
             w = trace_file.scalars_by_step.Weight
             wtot += w
             for qname in qnames:
@@ -872,6 +996,8 @@ class TracesAnalyzer(DevBase):
                 #end if
             #end for
         #end for
+
+        # Compare summed trace data against dmc.dat values
         for qname in qnames:
             qdmc = dmc[qname]
             if qname in weighted:
@@ -908,6 +1034,7 @@ class TracesAnalyzer(DevBase):
     #end def check_dmc_dat
 
 
+    # Print a brief message about pass/fail status of a subtest
     def pass_fail(self,passed,n):
         if passed:
             self.log('\nCheck passed!',n=n)
@@ -919,14 +1046,201 @@ class TracesAnalyzer(DevBase):
 
 
 
+examples = '''
+
+===================================================================
+Example 1: QMCPACK VMC/DMC with scalar-only traces, single mpi task
+===================================================================
+
+Contents of QMCPACK input file (qmc.in.xml):
+--------------------------------------------
+<simulation>
+   <project id="qmc" series="0">
+      ...
+   </project>
+
+   <qmcsystem>
+      ...
+   </qmcsystem>
+
+   # write traces files w/o array info (scalars only)
+   <traces array="no"/>  
+
+   # vmc run, scalars written to stat.h5 
+   <qmc method="vmc" move="pbyp">
+      <estimator name="LocalEnergy" hdf5="yes"/>
+      ...
+   </qmc>
+
+   # dmc run, scalars written to stat.h5 
+   <qmc method="dmc" move="pbyp" checkpoint="-1">
+     <estimator name="LocalEnergy" hdf5="yes"/>
+     ...
+   </qmc>
+
+</simulation>
+
+QMCPACK execution:
+------------------
+export OMP_NUM_THREADS=1
+mpirun -np qmcpack qmc.in.xml
+
+QMCPACK output files:
+---------------------
+qmc.s000.qmc.xml
+qmc.s000.scalar.dat
+qmc.s000.stat.h5
+qmc.s000.traces.h5
+qmc.s001.cont.xml
+qmc.s001.dmc.dat
+qmc.s001.qmc.xml
+qmc.s001.scalar.dat
+qmc.s001.stat.h5
+qmc.s001.traces.h5
+
+check_traces.py usage:
+----------------------
+check_traces.py -p qmc -s '0,1' -m 'vmc,dmc' --dmc_steps_exclude=1
+
+Either execute check_traces.py in /your/path/to/qmcpack/output as above, or do:
+
+check_traces.py -p qmc -s '0,1' -m 'vmc,dmc' --dmc_steps_exclude=1 /your/path/to/qmcpack/output
+
+
+====================================================================
+Example 2: QMCPACK VMC/DMC, selective scalar traces, single mpi task
+====================================================================
+
+Contents of QMCPACK input file (qmc.in.xml):
+--------------------------------------------
+<simulation>
+   <project id="qmc" series="0">
+      ...
+   </project>
+
+   <qmcsystem>
+      ...
+   </qmcsystem>
+
+   # write traces files w/o array info (scalars only)
+   <traces array="no">
+      <scalar_traces>
+         Kinetic ElecElec  # only write traces of Kinetic and ElecElec
+      </scalar_traces>
+   </traces>
+
+   # vmc run, scalars written to stat.h5 
+   <qmc method="vmc" move="pbyp">
+      <estimator name="LocalEnergy" hdf5="yes"/>
+      ...
+   </qmc>
+
+   # dmc run, scalars written to stat.h5 
+   <qmc method="dmc" move="pbyp" checkpoint="-1">
+     <estimator name="LocalEnergy" hdf5="yes"/>
+     ...
+   </qmc>
+
+</simulation>
+
+QMCPACK execution:
+------------------
+export OMP_NUM_THREADS=1
+mpirun -np qmcpack qmc.in.xml
+
+QMCPACK output files:
+---------------------
+qmc.s000.qmc.xml
+qmc.s000.scalar.dat
+qmc.s000.stat.h5
+qmc.s000.traces.h5
+qmc.s001.cont.xml
+qmc.s001.dmc.dat
+qmc.s001.qmc.xml
+qmc.s001.scalar.dat
+qmc.s001.stat.h5
+qmc.s001.traces.h5
+
+check_traces.py usage:
+----------------------
+check_traces.py -p qmc -s '0,1' -m 'vmc,dmc' -q 'Kinetic,ElecElec' --dmc_steps_exclude=1
+
+
+===================================================================
+Example 3: QMCPACK VMC/DMC, selective array traces, single mpi task
+===================================================================
+
+Contents of QMCPACK input file (qmc.in.xml):
+--------------------------------------------
+<simulation>
+   <project id="qmc" series="0">
+      ...
+   </project>
+
+   <qmcsystem>
+      ...
+   </qmcsystem>
+
+   # write traces files w/ all scalar info and select array info
+   <traces>
+      <array_traces>
+         position Kinetic  # write per-electron positions and kinetic energies
+      </array_traces>
+   </traces>
+
+   # vmc run, scalars written to stat.h5 
+   <qmc method="vmc" move="pbyp">
+      <estimator name="LocalEnergy" hdf5="yes"/>
+      ...
+   </qmc>
+
+   # dmc run, scalars written to stat.h5 
+   <qmc method="dmc" move="pbyp" checkpoint="-1">
+     <estimator name="LocalEnergy" hdf5="yes"/>
+     ...
+   </qmc>
+
+</simulation>
+
+QMCPACK execution:
+------------------
+export OMP_NUM_THREADS=1
+mpirun -np qmcpack qmc.in.xml
+
+QMCPACK output files:
+---------------------
+qmc.s000.qmc.xml
+qmc.s000.scalar.dat
+qmc.s000.stat.h5
+qmc.s000.traces.h5
+qmc.s001.cont.xml
+qmc.s001.dmc.dat
+qmc.s001.qmc.xml
+qmc.s001.scalar.dat
+qmc.s001.stat.h5
+qmc.s001.traces.h5
+
+check_traces.py usage:
+----------------------
+check_traces.py -p qmc -s '0,1' -m 'vmc,dmc' --psum --dmc_steps_exclude=1
+
+'''
+
+
+
 if __name__=='__main__':
 
+    # Define command line options
     usage = '''usage: %prog [options] [path]'''
     parser = OptionParser(usage=usage,add_help_option=False,version='%prog 0.1')
 
     parser.add_option('-h','--help',dest='help',
                       action='store_true',default=False,
                       help='Print help information and exit (default=%default).'
+                      )
+    parser.add_option('-x','--examples',dest='examples',
+                      action='store_true',default=False,
+                      help='Print usage examples and exit (default=%default).'
                       )
     parser.add_option('-p','--prefix',dest='prefix',
                       default='qmc',
@@ -946,7 +1260,7 @@ if __name__=='__main__':
                       )
     parser.add_option('-n','--mpi',dest='mpi',
                       default='1',
-                      help='Number of MPI tasks in the original QMCPACK run (default=%default).'
+                      help='Number of MPI tasks in the original QMCPACK run.  This is also the number of traces.h5 files produced by a single VMC or DMC section (default=%default).'
                       )
     parser.add_option('--psum',dest='particle_sum',
                       action='store_true',default=False,
@@ -965,8 +1279,14 @@ if __name__=='__main__':
 
     options = obj(**opt.__dict__)
 
+    # Process command line options
     if options.help:
         log('\n'+parser.format_help().strip()+'\n')
+        sys.exit(0)
+    #end if
+
+    if options.examples:
+        log(examples)
         sys.exit(0)
     #end if
 
@@ -1019,6 +1339,8 @@ if __name__=='__main__':
     #end if
 
 
+    # Parse all files across all requested series and compare traces vs scalar/stat/dmc
+
     log('\nChecking match between traces and scalar/stat/dmc files\n')
 
     log('\nOptions provided:\n'+str(options).rstrip())
@@ -1031,6 +1353,7 @@ if __name__=='__main__':
     del options.series
     del options.methods
 
+    # Loop over vmc/dmc series
     for series,method in zip(series_in,methods_in):
 
         options.series = series
@@ -1038,8 +1361,10 @@ if __name__=='__main__':
 
         log('\n\nChecking series {} method={}'.format(series,method))
 
+        # Read scalar.dat, stat.h5, dmc.dat, and *traces.h5 for the series
         ta = TracesAnalyzer(options)
 
+        # Check traces data against scalar/stat/dmc files
         if method=='vmc':
             if options.particle_sum:
                 log('\nChecking sums of single particle energies',n=1)
@@ -1071,6 +1396,7 @@ if __name__=='__main__':
         failed |= ta.failed
     #end for
 
+    # Print final pass/fail message
     if failed:
         test_fail()
     else:
