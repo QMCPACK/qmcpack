@@ -583,7 +583,13 @@ class TracesFileHDF(DataFile):
                     #end if
                 #end if
             #end for
-            same = same and (abs(q-qs)<tol).all()
+            qsame = (abs(q-qs)<tol).all()
+            if qsame:
+                log('{:<16} matches'.format(qname),n=3)
+            else:
+                log('{:<16} does not match'.format(qname),n=3)
+            #end if
+            same = same and qsame
         #end for
         self.info.particle_sums_valid = same
         return self.info.particle_sums_valid
@@ -765,10 +771,12 @@ class TracesAnalyzer(DevBase):
     def check_particle_sums(self,tol=1e-8):
         same = True
         for trace_file in self.data:
+            log('Checking traces file: {}'.format(os.path.basename(trace_file.filepath)),n=2)
             same &= trace_file.check_particle_sums(tol=tol)
         #end for
         self.particle_sums_valid = same
         self.failed |= not same
+        self.pass_fail(same,n=2)
         return same
     #end def check_particle_sums
 
@@ -940,6 +948,10 @@ if __name__=='__main__':
                       default='1',
                       help='Number of MPI tasks in the original QMCPACK run (default=%default).'
                       )
+    parser.add_option('--psum',dest='particle_sum',
+                      action='store_true',default=False,
+                      help='Check sums of single particle energies (default=%default).'
+                      )
     parser.add_option('--pseudo',dest='pseudo',
                       action='store_true',default=True,
                       help='QMC calculation used pseudopotentials (default=%default).'
@@ -1029,6 +1041,11 @@ if __name__=='__main__':
         ta = TracesAnalyzer(options)
 
         if method=='vmc':
+            if options.particle_sum:
+                log('\nChecking sums of single particle energies',n=1)
+                ta.check_particle_sums()
+            #end if
+
             log('\nChecking scalar.dat',n=1)
             ta.check_scalar_dat()
 
@@ -1036,6 +1053,11 @@ if __name__=='__main__':
             ta.check_stat_h5()
 
         elif method=='dmc':
+            if options.particle_sum:
+                log('\nChecking sums of single particle energies',n=1)
+                ta.check_particle_sums()
+            #end if
+
             log('\nSkipping checks of scalar.dat and stat.h5',n=1)
             log('Statistics for these files are currently computed\n'
                 'after branching. Since traces are written before \n'
