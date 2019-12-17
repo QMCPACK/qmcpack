@@ -21,7 +21,7 @@ namespace qmcplusplus
 
 using mRealType = LRHandlerBase::mRealType;
 
-struct EslerCoulomb3D
+struct EslerCoulomb3D_ForSRCOUL
 { // stripped down version of LRCoulombSingleton::CoulombFunctor for 3D
   double norm;
   inline double operator()(double r, double rinv) {return rinv;}
@@ -52,7 +52,7 @@ TEST_CASE("srcoul", "[lrhandler]")
   ref.LRBox = Lattice;  // !!!! crucial for S(k) update
   StructFact *SK = new StructFact(ref, Lattice.LR_kc);
   ref.SK = SK;
-  LRHandlerSRCoulomb<EslerCoulomb3D, LPQHISRCoulombBasis> handler(ref);
+  LRHandlerSRCoulomb<EslerCoulomb3D_ForSRCOUL, LPQHISRCoulombBasis> handler(ref);
 
   handler.initBreakup(ref);
   REQUIRE(handler.MaxKshell == 78);
@@ -95,14 +95,14 @@ TEST_CASE("srcoul df", "[lrhandler]")
   ref.LRBox = Lattice;  // !!!! crucial for S(k) update
   StructFact *SK = new StructFact(ref, Lattice.LR_kc);
   ref.SK = SK;
-  LRHandlerSRCoulomb<EslerCoulomb3D, LPQHISRCoulombBasis> handler(ref);
+  LRHandlerSRCoulomb<EslerCoulomb3D_ForSRCOUL, LPQHISRCoulombBasis> handler(ref);
 
   handler.initBreakup(ref);
   REQUIRE(handler.MaxKshell == 78);
   REQUIRE(Approx(handler.LR_rc) == 2.5);
   REQUIRE(Approx(handler.LR_kc) == 12);
 
-  EslerCoulomb3D fref;
+  EslerCoulomb3D_ForSRCOUL fref;
   fref.reset(ref);
   mRealType r, dr, rinv;
   mRealType rm, rp; // minus (m), plus (p)
