@@ -3715,7 +3715,7 @@ class Structure(Sobj):
     #end def become_primitive
             
 
-    def add_kpoints(self,kpoints,kweights=None,unique=False):
+    def add_kpoints(self,kpoints,kweights=None,unique=False,recenter=True):
         if kweights is None:
             kweights = ones((len(kpoints),))
         #end if
@@ -3724,7 +3724,9 @@ class Structure(Sobj):
         if unique:
             self.unique_kpoints()
         #end if
-        self.recenter_k() #added because qmcpack cannot handle kpoints outside the box
+        if recenter:
+            self.recenter_k() #added because qmcpack cannot handle kpoints outside the box
+        #end if
         if self.is_tiled():
             kp,kw = self.kfold(self.tmatrix,kpoints,kweights)
             self.folded_structure.add_kpoints(kp,kw,unique=unique)
