@@ -5,7 +5,6 @@ import scipy.linalg
 import sys
 from afqmctools.utils.io import to_qmcpack_complex
 from afqmctools.hamiltonian.io import (
-        write_sparse,
         write_sparse_basic,
         write_sparse_chol_chunk
         )

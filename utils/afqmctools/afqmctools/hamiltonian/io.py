@@ -2,7 +2,7 @@ import h5py
 import numpy
 from afqmctools.utils.io import to_qmcpack_complex
 
-def write_sparse(hcore, chol, nelec, nmo, e0=0.0, filename='hamiltonian.h5',
+def write_qmcpack_sparse(hcore, chol, nelec, nmo, e0=0.0, filename='hamiltonian.h5',
                  real_chol=False, verbose=False, cutoff=1e-16):
     with h5py.File(filename, 'w') as fh5:
         fh5['Hamiltonian/Energies'] = numpy.array([e0,0])
@@ -70,6 +70,24 @@ def write_sparse_basic(filename, hcore, e0, nelec, real_chol=False):
         occups = [i for i in range(0, nalpha)]
         occups += [i+nmo for i in range(0, nbeta)]
         fh5['Hamiltonian/occups'] = numpy.array(occups)
+
+def write_qmcpack_dense(hcore, chol, nelec, nmo, enuc=0.0,
+                        filename='hamiltonian.h5', real_chol=False,
+                        verbose=False, ortho=None):
+    with h5py.File(filename, 'w') as fh5:
+        fh5['Hamiltonian/Energies'] = numpy.array([enuc,0])
+        if real_chol:
+            fh5['Hamiltonian/hcore'] = hcore
+            fh5['Hamiltonian/DenseFactorized/L'] = chol
+        else:
+            fh5['Hamiltonian/hcore'] = to_qmcpack_complex(hcore.astype(numpy.complex128))
+            fh5['Hamiltonian/DenseFactorized/L'] = to_qmcpack_complex(chol.astype(numpy.complex128))
+        fh5['Hamiltonian/dims'] = numpy.array([0, 0, 0, nmo,
+                                               nelec[0], nelec[1], 0,
+                                               chol.shape[-1]])
+        if ortho is not None:
+            fh5['Hamiltonian/X'] = ortho
+
 
 def to_sparse(vals, cutoff=1e-8):
     nz = numpy.where(numpy.abs(vals) > cutoff)
