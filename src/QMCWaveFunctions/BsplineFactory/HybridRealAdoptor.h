@@ -33,11 +33,11 @@ struct HybridRealSoA : public BaseAdoptor, public HybridAdoptorBase<typename Bas
   using SingleSplineType = typename BaseAdoptor::SingleSplineType;
   using RealType         = typename BaseAdoptor::RealType;
   // types for evaluation results
-  using typename BaseAdoptor::ValueType;
-  using typename BaseAdoptor::ValueVector_t;
+  using typename BaseAdoptor::GGGVector_t;
   using typename BaseAdoptor::GradVector_t;
   using typename BaseAdoptor::HessVector_t;
-  using typename BaseAdoptor::GGGVector_t;
+  using typename BaseAdoptor::ValueType;
+  using typename BaseAdoptor::ValueVector_t;
 
   ValueVector_t psi_AO, d2psi_AO;
   GradVector_t dpsi_AO;
@@ -115,7 +115,10 @@ struct HybridRealSoA : public BaseAdoptor, public HybridAdoptorBase<typename Bas
     }
   }
 
-  void evaluateDetRatios(const VirtualParticleSet& VP, ValueVector_t& psi, const ValueVector_t& psiinv, std::vector<ValueType>& ratios) override
+  void evaluateDetRatios(const VirtualParticleSet& VP,
+                         ValueVector_t& psi,
+                         const ValueVector_t& psiinv,
+                         std::vector<ValueType>& ratios) override
   {
     if (VP.isOnSphere() && HybridBase::is_batched_safe(VP))
     {
@@ -155,7 +158,11 @@ struct HybridRealSoA : public BaseAdoptor, public HybridAdoptorBase<typename Bas
     }
   }
 
-  void evaluateVGL(const ParticleSet& P, const int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi) override
+  void evaluateVGL(const ParticleSet& P,
+                   const int iat,
+                   ValueVector_t& psi,
+                   GradVector_t& dpsi,
+                   ValueVector_t& d2psi) override
   {
     const RealType smooth_factor = HybridBase::evaluate_vgl(P, iat, myV, myG, myL);
     const RealType cone(1);
@@ -182,7 +189,11 @@ struct HybridRealSoA : public BaseAdoptor, public HybridAdoptorBase<typename Bas
     }
   }
 
-  void evaluateVGH(const ParticleSet& P, const int iat, ValueVector_t& psi, GradVector_t& dpsi, HessVector_t& grad_grad_psi) override
+  void evaluateVGH(const ParticleSet& P,
+                   const int iat,
+                   ValueVector_t& psi,
+                   GradVector_t& dpsi,
+                   HessVector_t& grad_grad_psi) override
   {
     APP_ABORT("HybridRealSoA::evaluateVGH not implemented!");
     if (HybridBase::evaluate_vgh(P, iat, myV, myG, myH))
@@ -204,7 +215,6 @@ struct HybridRealSoA : public BaseAdoptor, public HybridAdoptorBase<typename Bas
   {
     APP_ABORT("HybridCplxSoA::evaluateVGHGH not implemented!");
   }
-
 };
 
 } // namespace qmcplusplus

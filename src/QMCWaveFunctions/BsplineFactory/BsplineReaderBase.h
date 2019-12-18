@@ -94,8 +94,8 @@ struct BsplineReaderBase
   inline void check_twists(SPE* bspline, const BandInfoGroup& bandgroup)
   {
     //init(orbitalSet,bspline);
-    bspline->PrimLattice  = mybuilder->PrimCell;
-    bspline->GGt          = dot(transpose(bspline->PrimLattice.G), bspline->PrimLattice.G);
+    bspline->PrimLattice = mybuilder->PrimCell;
+    bspline->GGt         = dot(transpose(bspline->PrimLattice.G), bspline->PrimLattice.G);
 
     int N       = bandgroup.getNumDistinctOrbitals();
     int numOrbs = bandgroup.getNumSPOs();
@@ -177,7 +177,7 @@ struct BsplineReaderBase
   SPOSet* create_spline_set(int spin, xmlNodePtr cur);
 
   /** Set the checkNorm variable */
-  inline void setCheckNorm(bool new_checknorm){ checkNorm = new_checknorm;};
+  inline void setCheckNorm(bool new_checknorm) { checkNorm = new_checknorm; };
 
   void initialize_spo2band(int spin,
                            const std::vector<BandInfo>& bigspace,

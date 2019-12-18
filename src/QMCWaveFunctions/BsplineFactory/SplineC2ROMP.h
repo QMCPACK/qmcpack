@@ -104,9 +104,8 @@ inline void assign_vgl(ST x,
     last = orb_size;
 
   constexpr ST two(2);
-  const ST &g00 = G[0], &g01 = G[1], &g02 = G[2],
-           &g10 = G[3], &g11 = G[4], &g12 = G[5],
-           &g20 = G[6], &g21 = G[7], &g22 = G[8];
+  const ST &g00 = G[0], &g01 = G[1], &g02 = G[2], &g10 = G[3], &g11 = G[4], &g12 = G[5], &g20 = G[6], &g21 = G[7],
+           &g22 = G[8];
 
   const ST* restrict k0 = myKcart_ptr;
   const ST* restrict k1 = myKcart_ptr + myKcart_padded_size;
@@ -207,13 +206,14 @@ struct SplineC2ROMP : public BsplineSet
   using SplineType       = typename bspline_traits<ST, 3>::SplineType;
   using BCType           = typename bspline_traits<ST, 3>::BCType;
   using DataType         = ST;
-  using PointType        = TinyVector<ST, D>;
+  using PointType        = TinyVector<ST, 3>;
+  using SingleSplineType = UBspline_3d_d;
   // types for evaluation results
   using TT = typename BsplineSet::ValueType;
-  using BsplineSet::ValueVector_t;
+  using BsplineSet::GGGVector_t;
   using BsplineSet::GradVector_t;
   using BsplineSet::HessVector_t;
-  using BsplineSet::GGGVector_t;
+  using BsplineSet::ValueVector_t;
 
   using vContainer_type  = Vector<ST, aligned_allocator<ST>>;
   using gContainer_type  = VectorSoaContainer<ST, 3>;
@@ -221,9 +221,9 @@ struct SplineC2ROMP : public BsplineSet
   using ghContainer_type = VectorSoaContainer<ST, 10>;
 
   ///primitive cell
-  CrystalLattice<ST, D> PrimLattice;
+  CrystalLattice<ST, 3> PrimLattice;
   ///\f$GGt=G^t G \f$, transformation for tensor in LatticeUnit to CartesianUnit, e.g. Hessian
-  Tensor<ST, D> GGt;
+  Tensor<ST, 3> GGt;
   ///number of complex bands
   int nComplexBands;
   ///multi bspline set
@@ -495,10 +495,13 @@ struct SplineC2ROMP : public BsplineSet
     }
   }
 
-  virtual void evaluateDetRatios(const VirtualParticleSet& VP, ValueVector_t& psi, const ValueVector_t& psiinv, std::vector<ValueType>& ratios) override
+  virtual void evaluateDetRatios(const VirtualParticleSet& VP,
+                                 ValueVector_t& psi,
+                                 const ValueVector_t& psiinv,
+                                 std::vector<ValueType>& ratios) override
   {
     const int nVP = VP.getTotalNum();
-    if(psiinv_pos_copy.size() < psiinv.size() + nVP * 6)
+    if (psiinv_pos_copy.size() < psiinv.size() + nVP * 6)
       psiinv_pos_copy.resize(psiinv.size() + nVP * 6);
 
     // stage psiinv to psiinv_pos_copy
@@ -558,17 +561,13 @@ struct SplineC2ROMP : public BsplineSet
 
         int ix, iy, iz;
         ST a[4], b[4], c[4];
-        spline2::computeLocationAndFractional(spline_ptr,
-                                              ST(pos_scratch[iat * 6 + 3]),
-                                              ST(pos_scratch[iat * 6 + 4]),
-                                              ST(pos_scratch[iat * 6 + 5]),
-                                              ix, iy, iz, a, b, c);
+        spline2::computeLocationAndFractional(spline_ptr, ST(pos_scratch[iat * 6 + 3]), ST(pos_scratch[iat * 6 + 4]),
+                                              ST(pos_scratch[iat * 6 + 5]), ix, iy, iz, a, b, c);
 
         TT sum(0);
         PRAGMA_OFFLOAD("omp parallel")
         {
-          spline2offload::evaluate_v_impl_v2(spline_ptr, ix, iy, iz, a, b, c,
-                                             offload_scratch_iat_ptr + first, first,
+          spline2offload::evaluate_v_impl_v2(spline_ptr, ix, iy, iz, a, b, c, offload_scratch_iat_ptr + first, first,
                                              last);
           C2R::assign_v(ST(pos_scratch[iat * 6]), ST(pos_scratch[iat * 6 + 1]), ST(pos_scratch[iat * 6 + 2]),
                         psi_iat_ptr, orb_size, offload_scratch_iat_ptr, myKcart_ptr, myKcart_padded_size,
@@ -710,7 +709,11 @@ struct SplineC2ROMP : public BsplineSet
     }
   }
 
-  virtual void evaluateVGL(const ParticleSet& P, const int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi) override
+  virtual void evaluateVGL(const ParticleSet& P,
+                           const int iat,
+                           ValueVector_t& psi,
+                           GradVector_t& dpsi,
+                           ValueVector_t& d2psi) override
   {
     const PointType& r = P.activeR(iat);
     PointType ru(PrimLattice.toUnit_floor(r));
@@ -750,7 +753,7 @@ struct SplineC2ROMP : public BsplineSet
       ST a[4], b[4], c[4], da[4], db[4], dc[4], d2a[4], d2b[4], d2c[4];
       spline2::computeLocationAndFractional(spline_ptr, rux, ruy, ruz, ix, iy, iz, a, b, c, da, db, dc, d2a, d2b, d2c);
 
-      const ST G[9] = {PrimLattice_G_ptr[0], PrimLattice_G_ptr[1], PrimLattice_G_ptr[2],
+      const ST G[9]      = {PrimLattice_G_ptr[0], PrimLattice_G_ptr[1], PrimLattice_G_ptr[2],
                        PrimLattice_G_ptr[3], PrimLattice_G_ptr[4], PrimLattice_G_ptr[5],
                        PrimLattice_G_ptr[6], PrimLattice_G_ptr[7], PrimLattice_G_ptr[8]};
       const ST symGGt[6] = {GGt_ptr[0], GGt_ptr[1] + GGt_ptr[3], GGt_ptr[2] + GGt_ptr[6],
@@ -758,17 +761,11 @@ struct SplineC2ROMP : public BsplineSet
 
       PRAGMA_OFFLOAD("omp parallel")
       {
-        spline2offload::evaluate_vgh_impl_v2(spline_ptr,
-                                             ix, iy, iz,
-                                             a, b, c,
-                                             da, db, dc,
-                                             d2a, d2b, d2c,
-                                             offload_scratch_ptr + first,
-                                             offload_scratch_ptr + padded_size + first,
+        spline2offload::evaluate_vgh_impl_v2(spline_ptr, ix, iy, iz, a, b, c, da, db, dc, d2a, d2b, d2c,
+                                             offload_scratch_ptr + first, offload_scratch_ptr + padded_size + first,
                                              offload_scratch_ptr + padded_size * 4 + first, padded_size, first, last);
-        C2R::assign_vgl(x, y, z, results_scratch_ptr, mKK_ptr, orb_size, offload_scratch_ptr, padded_size, symGGt,
-                        G, myKcart_ptr, myKcart_padded_size, first_spo_local, nComplexBands_local,
-                        first / 2, last / 2);
+        C2R::assign_vgl(x, y, z, results_scratch_ptr, mKK_ptr, orb_size, offload_scratch_ptr, padded_size, symGGt, G,
+                        myKcart_ptr, myKcart_padded_size, first_spo_local, nComplexBands_local, first / 2, last / 2);
       }
     }
 
@@ -808,7 +805,7 @@ struct SplineC2ROMP : public BsplineSet
 
     const int ChunkSizePerTeam = 128;
     const int NumTeams         = (myV.size() + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
-    const auto padded_size = myV.size();
+    const auto padded_size     = myV.size();
     if (offload_scratch.size() < padded_size * nwalkers * 10)
       offload_scratch.resize(padded_size * nwalkers * 10);
     const auto orb_size = psi_v_list[0]->size();
@@ -828,7 +825,8 @@ struct SplineC2ROMP : public BsplineSet
     const size_t first_spo_local   = first_spo;
     const int nComplexBands_local  = nComplexBands;
 
-    PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(NumTeams*nwalkers) thread_limit(ChunkSizePerTeam) \
+    PRAGMA_OFFLOAD(
+        "omp target teams distribute collapse(2) num_teams(NumTeams*nwalkers) thread_limit(ChunkSizePerTeam) \
                     map(always, to: pos_copy_ptr[0:nwalkers*6]) \
                     map(always, from: results_scratch_ptr[0:orb_size*nwalkers*5])")
     for (int iw = 0; iw < nwalkers; iw++)
@@ -845,9 +843,10 @@ struct SplineC2ROMP : public BsplineSet
 
         int ix, iy, iz;
         ST a[4], b[4], c[4], da[4], db[4], dc[4], d2a[4], d2b[4], d2c[4];
-        spline2::computeLocationAndFractional(spline_ptr, pos_copy_ptr[iw * 6 + 3], pos_copy_ptr[iw * 6 + 4], pos_copy_ptr[iw * 6 + 5], ix, iy, iz, a, b, c, da, db, dc, d2a, d2b, d2c);
+        spline2::computeLocationAndFractional(spline_ptr, pos_copy_ptr[iw * 6 + 3], pos_copy_ptr[iw * 6 + 4],
+                                              pos_copy_ptr[iw * 6 + 5], ix, iy, iz, a, b, c, da, db, dc, d2a, d2b, d2c);
 
-        const ST G[9] = {PrimLattice_G_ptr[0], PrimLattice_G_ptr[1], PrimLattice_G_ptr[2],
+        const ST G[9]      = {PrimLattice_G_ptr[0], PrimLattice_G_ptr[1], PrimLattice_G_ptr[2],
                          PrimLattice_G_ptr[3], PrimLattice_G_ptr[4], PrimLattice_G_ptr[5],
                          PrimLattice_G_ptr[6], PrimLattice_G_ptr[7], PrimLattice_G_ptr[8]};
         const ST symGGt[6] = {GGt_ptr[0], GGt_ptr[1] + GGt_ptr[3], GGt_ptr[2] + GGt_ptr[6],
@@ -855,17 +854,14 @@ struct SplineC2ROMP : public BsplineSet
 
         PRAGMA_OFFLOAD("omp parallel")
         {
-          spline2offload::evaluate_vgh_impl_v2(spline_ptr,
-                                               ix, iy, iz,
-                                               a, b, c,
-                                               da, db, dc,
-                                               d2a, d2b, d2c,
+          spline2offload::evaluate_vgh_impl_v2(spline_ptr, ix, iy, iz, a, b, c, da, db, dc, d2a, d2b, d2c,
                                                offload_scratch_iw_ptr + first,
                                                offload_scratch_iw_ptr + padded_size + first,
-                                               offload_scratch_iw_ptr + padded_size * 4 + first, padded_size, first, last);
-          C2R::assign_vgl(pos_copy_ptr[iw * 6], pos_copy_ptr[iw * 6 + 1], pos_copy_ptr[iw * 6 + 2], psi_iw_ptr, mKK_ptr, orb_size, offload_scratch_iw_ptr, padded_size, symGGt,
-                          G, myKcart_ptr, myKcart_padded_size, first_spo_local, nComplexBands_local,
-                          first / 2, last / 2);
+                                               offload_scratch_iw_ptr + padded_size * 4 + first, padded_size, first,
+                                               last);
+          C2R::assign_vgl(pos_copy_ptr[iw * 6], pos_copy_ptr[iw * 6 + 1], pos_copy_ptr[iw * 6 + 2], psi_iw_ptr, mKK_ptr,
+                          orb_size, offload_scratch_iw_ptr, padded_size, symGGt, G, myKcart_ptr, myKcart_padded_size,
+                          first_spo_local, nComplexBands_local, first / 2, last / 2);
         }
       }
 
@@ -1106,7 +1102,11 @@ struct SplineC2ROMP : public BsplineSet
     }
   }
 
-  virtual void evaluateVGH(const ParticleSet& P, const int iat, ValueVector_t& psi, GradVector_t& dpsi, HessVector_t& grad_grad_psi) override
+  virtual void evaluateVGH(const ParticleSet& P,
+                           const int iat,
+                           ValueVector_t& psi,
+                           GradVector_t& dpsi,
+                           HessVector_t& grad_grad_psi) override
   {
     const PointType& r = P.activeR(iat);
     PointType ru(PrimLattice.toUnit_floor(r));
@@ -1589,11 +1589,11 @@ struct SplineC2ROMP : public BsplineSet
   }
 
   virtual void evaluateVGHGH(const ParticleSet& P,
-                      const int iat,
-                      ValueVector_t& psi,
-                      GradVector_t& dpsi,
-                      HessVector_t& grad_grad_psi,
-                      GGGVector_t& grad_grad_grad_psi) override
+                             const int iat,
+                             ValueVector_t& psi,
+                             GradVector_t& dpsi,
+                             HessVector_t& grad_grad_psi,
+                             GGGVector_t& grad_grad_grad_psi) override
   {
     const PointType& r = P.activeR(iat);
     PointType ru(PrimLattice.toUnit_floor(r));

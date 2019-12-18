@@ -43,14 +43,14 @@ struct SplineC2RSoA : public BsplineSet
   using SplineType       = typename bspline_traits<ST, 3>::SplineType;
   using BCType           = typename bspline_traits<ST, 3>::BCType;
   using DataType         = ST;
-  using PointType        = TinyVector<ST, D>;
+  using PointType        = TinyVector<ST, 3>;
   using SingleSplineType = UBspline_3d_d;
   // types for evaluation results
   using TT = typename BsplineSet::ValueType;
-  using BsplineSet::ValueVector_t;
+  using BsplineSet::GGGVector_t;
   using BsplineSet::GradVector_t;
   using BsplineSet::HessVector_t;
-  using BsplineSet::GGGVector_t;
+  using BsplineSet::ValueVector_t;
 
   using vContainer_type  = Vector<ST, aligned_allocator<ST>>;
   using gContainer_type  = VectorSoaContainer<ST, 3>;
@@ -58,9 +58,9 @@ struct SplineC2RSoA : public BsplineSet
   using ghContainer_type = VectorSoaContainer<ST, 10>;
 
   ///primitive cell
-  CrystalLattice<ST, D> PrimLattice;
+  CrystalLattice<ST, 3> PrimLattice;
   ///\f$GGt=G^t G \f$, transformation for tensor in LatticeUnit to CartesianUnit, e.g. Hessian
-  Tensor<ST, D> GGt;
+  Tensor<ST, 3> GGt;
   ///number of complex bands
   int nComplexBands;
   ///multi bspline set
@@ -218,7 +218,10 @@ struct SplineC2RSoA : public BsplineSet
     }
   }
 
-  virtual void evaluateDetRatios(const VirtualParticleSet& VP, ValueVector_t& psi, const ValueVector_t& psiinv, std::vector<TT>& ratios) override
+  virtual void evaluateDetRatios(const VirtualParticleSet& VP,
+                                 ValueVector_t& psi,
+                                 const ValueVector_t& psiinv,
+                                 std::vector<TT>& ratios) override
   {
     const bool need_resize = ratios_private.rows() < VP.getTotalNum();
 
@@ -523,7 +526,11 @@ struct SplineC2RSoA : public BsplineSet
     }
   }
 
-  virtual void evaluateVGL(const ParticleSet& P, const int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi) override
+  virtual void evaluateVGL(const ParticleSet& P,
+                           const int iat,
+                           ValueVector_t& psi,
+                           GradVector_t& dpsi,
+                           ValueVector_t& d2psi) override
   {
     const PointType& r = P.activeR(iat);
     PointType ru(PrimLattice.toUnit_floor(r));
@@ -757,7 +764,11 @@ struct SplineC2RSoA : public BsplineSet
     }
   }
 
-  void evaluateVGH(const ParticleSet& P, const int iat, ValueVector_t& psi, GradVector_t& dpsi, HessVector_t& grad_grad_psi) override
+  void evaluateVGH(const ParticleSet& P,
+                   const int iat,
+                   ValueVector_t& psi,
+                   GradVector_t& dpsi,
+                   HessVector_t& grad_grad_psi) override
   {
     const PointType& r = P.activeR(iat);
     PointType ru(PrimLattice.toUnit_floor(r));
@@ -1240,11 +1251,11 @@ struct SplineC2RSoA : public BsplineSet
   }
 
   void evaluateVGHGH(const ParticleSet& P,
-                      const int iat,
-                      ValueVector_t& psi,
-                      GradVector_t& dpsi,
-                      HessVector_t& grad_grad_psi,
-                      GGGVector_t& grad_grad_grad_psi) override
+                     const int iat,
+                     ValueVector_t& psi,
+                     GradVector_t& dpsi,
+                     HessVector_t& grad_grad_psi,
+                     GGGVector_t& grad_grad_grad_psi) override
   {
     const PointType& r = P.activeR(iat);
     PointType ru(PrimLattice.toUnit_floor(r));

@@ -163,25 +163,28 @@ struct SplineHybridAdoptorReader : public SplineAdoptorReader<SA>
     a.add(s_function_name, "smoothing_function");
     a.put(mybuilder->XMLRoot);
     // assign smooth_scheme
-    if ( scheme_name == "Consistent" )
+    if (scheme_name == "Consistent")
       bspline->smooth_scheme = SA::smoothing_schemes::CONSISTENT;
-    else if ( scheme_name == "SmoothAll" )
+    else if (scheme_name == "SmoothAll")
       bspline->smooth_scheme = SA::smoothing_schemes::SMOOTHALL;
-    else if ( scheme_name == "SmoothPartial" )
+    else if (scheme_name == "SmoothPartial")
       bspline->smooth_scheme = SA::smoothing_schemes::SMOOTHPARTIAL;
     else
-      APP_ABORT("initialize_hybridrep_atomic_centers wrong smoothing_scheme name! Only allows Consistent, SmoothAll or SmoothPartial.");
+      APP_ABORT("initialize_hybridrep_atomic_centers wrong smoothing_scheme name! Only allows Consistent, SmoothAll or "
+                "SmoothPartial.");
 
     // assign smooth_function
-    if ( s_function_name == "LEKS2018" )
+    if (s_function_name == "LEKS2018")
       bspline->smooth_func_id = smoothing_functions::LEKS2018;
-    else if ( s_function_name == "coscos" )
+    else if (s_function_name == "coscos")
       bspline->smooth_func_id = smoothing_functions::COSCOS;
-    else if ( s_function_name == "linear" )
+    else if (s_function_name == "linear")
       bspline->smooth_func_id = smoothing_functions::LINEAR;
     else
-      APP_ABORT("initialize_hybridrep_atomic_centers wrong smoothing_function name! Only allows LEKS2018, coscos or linear.");
-    app_log() << "Hybrid orbital representation uses " << scheme_name << " smoothing scheme and " << s_function_name << " smoothing function." << std::endl;
+      APP_ABORT(
+          "initialize_hybridrep_atomic_centers wrong smoothing_function name! Only allows LEKS2018, coscos or linear.");
+    app_log() << "Hybrid orbital representation uses " << scheme_name << " smoothing scheme and " << s_function_name
+              << " smoothing function." << std::endl;
 
     bspline->set_info(*(mybuilder->SourcePtcl), mybuilder->TargetPtcl, mybuilder->Super2Prim);
     auto& centers = bspline->AtomicCenters;
@@ -269,7 +272,6 @@ struct SplineHybridAdoptorReader : public SplineAdoptorReader<SA>
                         << std::endl;
             success = false;
           }
-
         }
         else
         {
@@ -280,7 +282,8 @@ struct SplineHybridAdoptorReader : public SplineAdoptorReader<SA>
         }
       }
       if (!success)
-        BaseReader::myComm->barrier_and_abort("initialize_hybridrep_atomic_centers Failed to initialize atomic centers in hybrid orbital representation!");
+        BaseReader::myComm->barrier_and_abort("initialize_hybridrep_atomic_centers Failed to initialize atomic centers "
+                                              "in hybrid orbital representation!");
 
       for (int center_idx = 0; center_idx < ACInfo.Ncenters; center_idx++)
       {

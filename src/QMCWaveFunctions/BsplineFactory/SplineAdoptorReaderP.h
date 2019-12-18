@@ -126,7 +126,10 @@ struct SplineAdoptorReader : public BsplineReaderBase
   /** for exporting data from multi_UBspline_3d_d to multi_UBspline_3d_z
    *  This is only used by the legacy EinsplineSet class. To be deleted together with EinsplineSet.
    */
-  void export_MultiSpline(multi_UBspline_3d_d** target) { *target = (multi_UBspline_3d_d*)bspline->SplineInst->getSplinePtr(); }
+  void export_MultiSpline(multi_UBspline_3d_d** target)
+  {
+    *target = (multi_UBspline_3d_d*)bspline->SplineInst->getSplinePtr();
+  }
 
   SPOSet* create_spline_set(int spin, const BandInfoGroup& bandgroup)
   {

@@ -38,10 +38,8 @@ namespace qmcplusplus
  */
 struct BsplineSet : public SPOSet
 {
-//protected:
+  //protected:
   static const int D = DIM;
-  using SingleSplineType = typename qmcplusplus::bspline_traits<double, 3>::SingleSplineType;
-
   ///true if the computed values are complex
   bool is_complex;
   ///Index of this adoptor, when multiple adoptors are used for NUMA or distributed cases
@@ -65,14 +63,9 @@ struct BsplineSet : public SPOSet
   ///keyword used to match hdf5
   std::string KeyWord;
 
-//public:
+  //public:
 
-  BsplineSet()
-      : is_complex(false),
-        MyIndex(0),
-        first_spo(0),
-        last_spo(0)
-  {}
+  BsplineSet() : is_complex(false), MyIndex(0), first_spo(0), last_spo(0) {}
 
   inline void init_base(int n)
   {
@@ -111,13 +104,13 @@ struct BsplineSet : public SPOSet
   }
 
   // propagate SPOSet virtual functions
-  using SPOSet::finalizeConstruction;
-  using SPOSet::evaluateValue;
   using SPOSet::evaluateDetRatios;
-  using SPOSet::evaluateVGL;
-  using SPOSet::mw_evaluateVGL;
+  using SPOSet::evaluateValue;
   using SPOSet::evaluateVGH;
   using SPOSet::evaluateVGHGH;
+  using SPOSet::evaluateVGL;
+  using SPOSet::finalizeConstruction;
+  using SPOSet::mw_evaluateVGL;
 
   virtual SPOSet* makeClone() const override = 0;
 
@@ -125,17 +118,14 @@ struct BsplineSet : public SPOSet
 
   void resetTargetParticleSet(ParticleSet& e) override {}
 
-  void setOrbitalSetSize(int norbs) override
-  {
-    OrbitalSetSize = norbs;
-  }
+  void setOrbitalSetSize(int norbs) override { OrbitalSetSize = norbs; }
 
   virtual void evaluate_notranspose(const ParticleSet& P,
-                            int first,
-                            int last,
-                            ValueMatrix_t& logdet,
-                            GradMatrix_t& dlogdet,
-                            ValueMatrix_t& d2logdet) override
+                                    int first,
+                                    int last,
+                                    ValueMatrix_t& logdet,
+                                    GradMatrix_t& dlogdet,
+                                    ValueMatrix_t& d2logdet) override
   {
     typedef ValueMatrix_t::value_type value_type;
     typedef GradMatrix_t::value_type grad_type;
