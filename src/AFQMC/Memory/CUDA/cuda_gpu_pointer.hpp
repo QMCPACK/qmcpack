@@ -394,6 +394,11 @@ cuda_gpu_ptr<Q> copy_n_cast(cuda_gpu_ptr<T> const A, Size n, cuda_gpu_ptr<Q> B) 
   return B+n;
 }
 
+template<typename T, typename Size>
+cuda_gpu_ptr<T> copy_n_cast(cuda_gpu_ptr<T> const A, Size n, cuda_gpu_ptr<T> B) {
+  return copy_n(A,n,B);
+}
+
 template<typename T, typename Q, typename Size>
 cuda_gpu_ptr<Q> copy_n_cast(T* const A, Size n, cuda_gpu_ptr<Q> B) {
   throw std::runtime_error(" Error: copy_n_cast(gpu_ptr,n,T*) is disabled.");

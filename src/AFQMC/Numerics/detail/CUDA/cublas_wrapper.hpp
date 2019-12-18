@@ -465,7 +465,7 @@ namespace cublas {
                           char Atrans, char Btrans, int M, int N, int K,
                           double alpha,
                           const std::complex<double> * A, int lda,
-                          double * B, int ldb,
+                          const double * B, int ldb,
                           double beta,
                           std::complex<double> * C, int ldc)
   {
