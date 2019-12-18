@@ -20,11 +20,10 @@
 
 namespace qmcplusplus
 {
-
-using RealType = QMCTraits::RealType;
-using ValueType = QMCTraits::ValueType;
-using LogValueType = std::complex<QMCTraits::QTFull::RealType>;
-using PsiValueType = QMCTraits::QTFull::ValueType;
+using RealType     = WaveFunctionComponent::RealType;
+using ValueType    = WaveFunctionComponent::ValueType;
+using LogValueType = WaveFunctionComponent::LogValueType;
+using PsiValueType = WaveFunctionComponent::PsiValueType;
 
 TEST_CASE("ExampleHe", "[wavefunction]")
 {
@@ -132,7 +131,7 @@ TEST_CASE("ExampleHe", "[wavefunction]")
   elec->makeMove(iat, zero_displ);
 
 
-  ValueType ratio = example_he->ratio(*elec, iat);
+  PsiValueType ratio = example_he->ratio(*elec, iat);
   REQUIRE(std::real(ratio) == Approx(1.0));
 
   ratio = example_he->ratioGrad(*elec, iat, grad0);
@@ -169,7 +168,7 @@ TEST_CASE("ExampleHe", "[wavefunction]")
 
   // wavefunction value and derivatives at new position
   LogValueType new_logpsi = example_he->evaluateLog(*elec, new_grad, new_lap);
-  elec->R[0]          = oldpos;
+  elec->R[0]              = oldpos;
   elec->update();
 
   iat = 0;

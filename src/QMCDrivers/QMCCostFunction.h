@@ -39,7 +39,7 @@ public:
   void getConfigurations(const std::string& aroot);
   void checkConfigurations();
 #ifdef HAVE_LMY_ENGINE
-  void engine_checkConfigurations(cqmc::engine::LMYEngine* EngineObj,
+  void engine_checkConfigurations(cqmc::engine::LMYEngine<Return_t>* EngineObj,
                                   DescentEngine& descentEngineObj,
                                   const std::string& MinMethod);
 #endif
@@ -63,7 +63,7 @@ protected:
 
 #ifdef HAVE_LMY_ENGINE
   int total_samples();
-  Return_rt LMYEngineCost_detail(cqmc::engine::LMYEngine* EngineObj);
+  Return_rt LMYEngineCost_detail(cqmc::engine::LMYEngine<Return_t>* EngineObj);
 #endif
 };
 } // namespace qmcplusplus

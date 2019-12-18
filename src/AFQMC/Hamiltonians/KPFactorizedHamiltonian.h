@@ -89,13 +89,13 @@ class KPFactorizedHamiltonian: public OneBodyHamiltonian
 
   std::string fileName;
 
+  std::string batched;
+
   std::string ooc;
 
   double cutoff_cholesky;
 
   int nsampleQ = -1;
-
-  std::string batched;
 
   HamiltonianOperations getHamiltonianOperations_shared(bool pureSD, bool addCoulomb, WALKER_TYPES type,
             std::vector<PsiT_Matrix>& PsiT, double cutvn, double cutv2,

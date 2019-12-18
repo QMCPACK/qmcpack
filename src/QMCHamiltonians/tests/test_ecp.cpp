@@ -216,7 +216,8 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
 
   elec.Lattice = Lattice;
   elec.setName("e");
-  elec.create(2);
+  std::vector<int> agroup(2, 1);
+  elec.create(agroup);
   elec.R[0][0] = 2.0;
   elec.R[0][1] = 0.0;
   elec.R[0][2] = 0.0;

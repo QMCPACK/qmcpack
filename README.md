@@ -176,7 +176,8 @@ make -j 8
 
 * HDF5 related
 ```
-     ENABLE_PHDF5        1(default)/0, enables/disable parallel collective IO.
+     HDF5_PREFER_PARALLEL 1(default for MPI build)/0, enables/disable parallel HDF5 library searching.
+     ENABLE_PHDF5         1(default for parallel HDF5 library)/0, enables/disable parallel collective I/O.
 
 ```
 

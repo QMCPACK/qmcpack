@@ -11,6 +11,7 @@
 
 #include<vector>
 #include<sstream>
+#include<complex>
 
 #include<formic/utils/matrix.h>
 #include<formic/utils/lmyengine/block_mat.h>
@@ -26,7 +27,7 @@ namespace cqmc {
   
   namespace engine {
 
-  class LMYEngine {
+template<typename S>  class LMYEngine {
 
 private:
   
@@ -38,6 +39,9 @@ private:
 
   /// \brief [in]flag to tell whether we are doing variance correction
   bool _variance_correction;
+
+  /// \brief [in]flag to tell whether to compute density matrix
+  bool _1rdm;
 
   /// \brief [in]flag to tell whether to print out energy statistics
   bool _energy_print;
@@ -169,7 +173,7 @@ private:
   double _tserr;
 
   /// \brief [in]vector that stores history of local energy
-  std::vector<std::vector<double> > _le_list;
+  std::vector<std::vector<S> > _le_list;
 
   /// \brief [in]vector that stores history of |value/guiding|^2
   std::vector<std::vector<double> > _vg;
@@ -184,7 +188,7 @@ private:
   std::vector<std::pair<std::complex<double>, int> >  _energy_index;
 
   /// \brief [out]vector that stores wavefunction updates
-  std::vector<double> _vf_var;
+  std::vector<S> _vf_var;
 
   /// \brief [out]vector that stores the solve results of each shift
   std::vector<bool> _good_solve;
@@ -193,22 +197,25 @@ private:
   std::vector<int> _solved_shifts;
 
   /// \brief [in]matrix that stores derivative ratio vectors
-  formic::Matrix<double> _der_rat;
+  formic::Matrix<S> _der_rat;
 
   /// \brief vector that stores derivative ratio vectors (only used in exact sampling)
-  std::vector<double> _der_rat_vec;
+  std::vector<S> _der_rat_vec;
 
   /// \brief [in]matrix that stores energy derivative vectors
-  formic::Matrix<double> _le_der;
+  formic::Matrix<S> _le_der;
 
   /// \brief vector that stores local energy derivatives (only used in exact sampling)
-  std::vector<double> _le_der_vec;
+  std::vector<S> _le_der_vec;
 
   /// \brief [in]matrix that stores local spin derivatives
-  formic::Matrix<double> _spin_der;
+  formic::Matrix<S> _spin_der;
 
   /// \brief vector that stores local spin derivatives (only used in exact sampling)
-  std::vector<double> _spin_der_vec;
+  std::vector<S> _spin_der_vec;
+
+  /// \brief matrix that stores one body reduced density matrix 
+  formic::Matrix<S> _one_rdm;
 
   /// \brief [out]matrix that stores eigenvectors from eom calculation
   formic::Matrix<std::complex<double> > _evecs;
@@ -227,8 +234,8 @@ private:
   cqmc::engine::LMBlocker _lmb;
 
   /// \brief object of matrix builder class 
-  cqmc::engine::HamOvlpBuilderHD _mbuilder;
-
+  cqmc::engine::HamOvlpBuilderHD<S> _mbuilder;
+  
   /// \brief [out]Hamiltonian matrix constructed by block linear method's final basis
   std::vector<formic::Matrix<double> > hh_block;
 
@@ -308,13 +315,14 @@ public:
             const double lm_ham_shift_s,
             const double lm_max_update_abs,
             std::vector<double> shift_scale,
+            const bool one_rdm=false,
+            const bool chase_lowest=true,
+            const bool chase_closest=false,
             const bool variance_correction=false,
             const bool energy_print=true,
             const bool matrix_print=false,
             const bool build_lm_matrix=true,
             const bool spam=false,
-            const bool chase_lowest=true,
-            const bool chase_closest=false,
             const bool pm_ortho_first=false,
             const bool jas_fixed=false,
             const int lm_krylov_iter=60,
@@ -355,11 +363,37 @@ public:
   /// \param[in]  weight_samp    weight for this sample
   ///
   ////////////////////////////////////////////////////////////////////////////////////////////////////////
-  void take_sample(std::vector<double> & der_rat_samp,
-                   std::vector<double> & le_der_samp,
-                   std::vector<double> & ls_der_samp,
+  void take_sample(std::vector<S> & der_rat_samp,
+                   std::vector<S> & le_der_samp,
+                   std::vector<S> & ls_der_samp,
                    double vgs_samp,
                    double weight_samp);
+
+  ////////////////////////////////////////////////////////////////////////////////////////////////////////
+  /// \brief  Function that Take Sample Data from the Host Code
+  /// 
+  /// \param[in]  vgs_samp       |<n|value_fn>/<n|guiding_fn>|^2
+  /// \param[in]  weight_samp    weight for this sample
+  ///
+  ////////////////////////////////////////////////////////////////////////////////////////////////////////
+  void take_sample(int nbasis, std::vector<S> & one_rdm_samp);
+
+  ////////////////////////////////////////////////////////////////////////////////////////////////////////
+  /// \brief  Function that Take Sample Data from the Host Code
+  /// 
+  /// \param[in]  der_rat_samp   <n|Psi_i>/<n|Psi> (i = 0 (|Psi>), 1, ... N_var )
+  /// \param[in]  le_der_samp    <n|H|Psi_i>/<n|Psi> (i = 0 (|Psi>), 1, ... N_var )
+  /// \param[in]  ls_der_samp    <|S^2|Psi_i>/<n|Psi> (i = 0 (|Psi>), 1, ... N_var )
+  /// \param[in]  vgs_samp       |<n|value_fn>/<n|guiding_fn>|^2
+  /// \param[in]  weight_samp    weight for this sample
+  ///
+  ////////////////////////////////////////////////////////////////////////////////////////////////////////
+  void take_sample(std::vector<S> & der_rat_samp,
+                   std::vector<S> & le_der_samp,
+                   std::vector<S> & theta_samp,
+                   double vgs_samp,
+                   double weight_samp,
+                   bool first_phase);
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////////
   /// \brief  Function that Take Sample Data from the Host Code
@@ -369,7 +403,7 @@ public:
   /// \param[in]  weight_samp    weight for this sample
   ///
   ////////////////////////////////////////////////////////////////////////////////////////////////////////
-  void take_sample(double local_en,
+  void take_sample(S local_en,
                    double vgs_samp,
                    double weight_samp);
 
@@ -385,6 +419,12 @@ public:
   ///
   ////////////////////////////////////////////////////////////////////////////////////////////////////////
   void var_deps_ptr_update(const formic::VarDeps * new_dep_ptr);
+
+  ////////////////////////////////////////////////////////////////////////////////////////////////////////
+  /// \brief  Whether or not we are doing a wave function update
+  ///
+  ////////////////////////////////////////////////////////////////////////////////////////////////////////
+  bool do_update() const { return _wfn_update; }
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////////
   /// \brief  Turn on wfn update
@@ -455,7 +495,7 @@ public:
   double target_statistical_err() { return _tserr; }
 
   /// \brief function that returns the wavefunction update vector
-  std::vector<double> wfn_update() { return _vf_var; }
+  std::vector<S> wfn_update() { return _vf_var; }
 
   /// \brief function that returns the eigenvectors coming out of eom calculation
   formic::Matrix<std::complex<double> > & eom_evecs() { return _evecs; } 
@@ -467,10 +507,10 @@ public:
   std::vector<bool> & good_solve() { return _good_solve; }
 
   /// \brief function that returns the derivative ratio matrix
-  formic::Matrix<double> & der_rat() { return _der_rat; }
+  formic::Matrix<S> & der_rat() { return _der_rat; }
 
   /// \brief function that returns the energy derivative matrix
-  formic::Matrix<double> & le_der() { return _le_der; }
+  formic::Matrix<S> & le_der() { return _le_der; }
 
   /// \brief function that returns the weight list 
   const std::vector<double> & weight_list() { return _weight[0]; }
@@ -512,7 +552,7 @@ public:
                    const bool print,
                    const double hd_lm_shift,
                    const double var_weight,
-                   std::vector<double> & le_list,
+                   std::vector<S> & le_list,
                    std::vector<double> & vg,
                    std::vector<double> & weight,
                    double & energy,
@@ -580,11 +620,11 @@ public:
                    const double omega,
                    const double var_weight,
                    const double lm_max_update_abs,
-                   formic::Matrix<double> & der_rat,
-                   formic::Matrix<double> & le_der,
+                   formic::Matrix<S> & der_rat,
+                   formic::Matrix<S> & le_der,
                    std::vector<double> & vg, 
                    std::vector<double> & weight,
-                   std::vector<double> & vf_var,
+                   std::vector<S> & vf_var,
                    std::vector<bool> & good_solve,
                    std::vector<int> & solved_shift,
                    const std::vector<double> & shift_scale,
@@ -621,9 +661,9 @@ public:
                    int n_sites,
                    int n_pm,
                    int n_jas,
-                   formic::Matrix<double> & der_rat,
-                   formic::Matrix<double> & le_der,
-                   formic::Matrix<double> & spin_der,
+                   formic::Matrix<S> & der_rat,
+                   formic::Matrix<S> & le_der,
+                   formic::Matrix<S> & spin_der,
                    formic::Matrix<std::complex<double> > & evecs,
                    std::vector<std::pair<std::complex<double>, int> > & energy_index,
                    std::vector<double> & vg,
@@ -687,6 +727,12 @@ public:
                                     std::ostream & output);
 
 };
+
+#ifndef QMC_COMPLEX
+extern template class LMYEngine<double>;
+#else
+extern template class LMYEngine<std::complex<double> >;
+#endif
 
   }
 

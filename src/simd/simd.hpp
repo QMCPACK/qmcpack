@@ -21,6 +21,5 @@
 #define QMCPLUSPLUS_MATH_SIMD_ADOPTORS_HPP
 
 #include <simd/inner_product.hpp>
-#include <simd/trace.hpp>
 #include <simd/vmath.hpp>
 #endif

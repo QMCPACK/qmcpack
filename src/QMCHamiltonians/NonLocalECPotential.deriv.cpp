@@ -121,12 +121,12 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateValueAndDerivatives
 #ifndef ENABLE_SOA
   for (int nn = myTable.M[iat], iel = 0; nn < myTable.M[iat + 1]; nn++, iel++)
   {
-    register RealType r(myTable.r(nn));
+    RealType r(myTable.r(nn));
     if (r > Rmax)
       continue;
 
-    register RealType rinv(myTable.rinv(nn));
-    register PosType dr(myTable.dr(nn));
+    RealType rinv(myTable.rinv(nn));
+    PosType dr(myTable.dr(nn));
 
     //displacements wrt W.R[iel]
     for (int j = 0; j < nknot; j++)
