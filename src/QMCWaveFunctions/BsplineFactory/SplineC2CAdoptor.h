@@ -22,30 +22,27 @@
 #include <OhmmsSoA/Container.h>
 #include <spline2/MultiBspline.hpp>
 #include <spline2/MultiBsplineEval.hpp>
-#include "QMCWaveFunctions/BsplineFactory/SplineAdoptorBase.h"
 #include "QMCWaveFunctions/BsplineFactory/contraction_helper.hpp"
 #include "Utilities/FairDivide.h"
 
 namespace qmcplusplus
 {
-/** adoptor class to match std::complex<ST> spline with std::complex<TT> SPOs
+/** adoptor class to match std::complex<ST> spline with BsplineSet::ValueType (complex) SPOs
  * @tparam ST precision of spline
- * @tparam TT precision of SPOs
- * @tparam D dimension
  *
  * Requires temporage storage and multiplication of phase vectors
  * Internal storage use double sized arrays of ST type, aligned and padded.
  */
 template<typename ST>
-struct SplineC2CSoA : public SplineAdoptorBase<ST, 3>, public BsplineSet
+struct SplineC2CSoA : public BsplineSet
 {
   static const int D     = 3;
-  using Base             = SplineAdoptorBase<ST, 3>;
   using SplineType       = typename bspline_traits<ST, 3>::SplineType;
   using BCType           = typename bspline_traits<ST, 3>::BCType;
   using DataType         = ST;
-  using PointType        = typename Base::PointType;
-  using SingleSplineType = typename Base::SingleSplineType;
+  using PointType        = TinyVector<ST, D>;
+  using SingleSplineType = UBspline_3d_d;
+
   // types for evaluation results
   using ComplexT = typename BsplineSet::ValueType;
   using BsplineSet::ValueVector_t;
@@ -58,8 +55,10 @@ struct SplineC2CSoA : public SplineAdoptorBase<ST, 3>, public BsplineSet
   using hContainer_type  = VectorSoaContainer<ST, 6>;
   using ghContainer_type = VectorSoaContainer<ST, 10>;
 
-  using Base::GGt;
-
+  ///primitive cell
+  CrystalLattice<SPOSet::RealType, D> PrimLattice;
+  ///\f$GGt=G^t G \f$, transformation for tensor in LatticeUnit to CartesianUnit, e.g. Hessian
+  Tensor<ST, D> GGt;
   ///multi bspline set
   std::shared_ptr<MultiBspline<ST>> SplineInst;
 
@@ -75,7 +74,7 @@ struct SplineC2CSoA : public SplineAdoptorBase<ST, 3>, public BsplineSet
   ///thread private ratios for reduction when using nested threading, numVP x numThread
   Matrix<ComplexT> ratios_private;
 
-  SplineC2CSoA() : Base()
+  SplineC2CSoA()
   {
     is_complex  = true;
     AdoptorName = "SplineC2CSoAAdoptor";
