@@ -130,8 +130,6 @@ def write_nomsd(fh5, wfn, uhf, nelec, thresh=1e-8, init=None):
     nmo = wfn.shape[1]
     wfn[abs(wfn) < thresh] = 0.0
     if init is not None:
-        # init = [numpy.eye(nmo,dtype=numpy.complex128)[:,:nalpha].copy(),
-                # numpy.eye(nmo,dtype=numpy.complex128)[:,:nbeta].copy()]
         add_dataset(fh5, 'Psi0_alpha', to_qmcpack_complex(init[0]))
         add_dataset(fh5, 'Psi0_beta', to_qmcpack_complex(init[1]))
     else:
