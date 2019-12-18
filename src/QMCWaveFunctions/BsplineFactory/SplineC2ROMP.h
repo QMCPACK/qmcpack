@@ -18,11 +18,11 @@
 #define QMCPLUSPLUS_EINSPLINE_C2R_OMP_H
 
 #include <memory>
+#include "QMCWaveFunctions/BsplineFactory/BsplineSet.h"
 #include <OhmmsSoA/Container.h>
 #include <spline2/MultiBspline.hpp>
 #include <spline2/MultiBsplineEval.hpp>
 #include <spline2/MultiBsplineEval_OMPoffload.hpp>
-#include "QMCWaveFunctions/BsplineFactory/SplineAdoptorBase.h"
 #include "OpenMP/OMPallocator.hpp"
 #include "Platforms/PinnedAllocator.h"
 #include "QMCWaveFunctions/BsplineFactory/contraction_helper.hpp"
@@ -197,8 +197,8 @@ inline void assign_vgl(ST x,
  * Requires temporage storage and multiplication of phase vectors
  * Internal storage use double sized arrays of ST type, aligned and padded.
  */
-template<typename ST, typename TT>
-struct SplineC2ROMP : public SplineAdoptorBase<ST, 3>
+template<typename ST>
+struct SplineC2ROMP : public BsplineSet
 {
   static const int ALIGN = QMC_CLINE;
   template<typename DT>
@@ -207,26 +207,27 @@ struct SplineC2ROMP : public SplineAdoptorBase<ST, 3>
   using OffloadPinnedAllocator = OMPallocator<DT, PinnedAlignedAllocator<DT>>;
 
   static const int D     = 3;
-  using Base             = SplineAdoptorBase<ST, 3>;
   using SplineType       = typename bspline_traits<ST, 3>::SplineType;
   using BCType           = typename bspline_traits<ST, 3>::BCType;
   using DataType         = ST;
-  using PointType        = typename Base::PointType;
-  using SingleSplineType = typename Base::SingleSplineType;
+  using PointType        = TinyVector<ST, D>;
+  using SingleSplineType = UBspline_3d_d;
+  // types for evaluation results
+  using TT = typename BsplineSet::ValueType;
+  using BsplineSet::ValueVector_t;
+  using BsplineSet::GradVector_t;
+  using BsplineSet::HessVector_t;
+  using BsplineSet::GGGVector_t;
 
   using vContainer_type  = Vector<ST, aligned_allocator<ST>>;
   using gContainer_type  = VectorSoaContainer<ST, 3>;
   using hContainer_type  = VectorSoaContainer<ST, 6>;
   using ghContainer_type = VectorSoaContainer<ST, 10>;
 
-  using Base::first_spo;
-  using Base::GGt;
-  using Base::kPoints;
-  using Base::last_spo;
-  using Base::MakeTwoCopies;
-  using Base::offset;
-  using Base::PrimLattice;
-
+  ///primitive cell
+  CrystalLattice<ST, D> PrimLattice;
+  ///\f$GGt=G^t G \f$, transformation for tensor in LatticeUnit to CartesianUnit, e.g. Hessian
+  Tensor<ST, D> GGt;
   ///number of complex bands
   int nComplexBands;
   ///multi bspline set
@@ -263,11 +264,11 @@ struct SplineC2ROMP : public SplineAdoptorBase<ST, 3>
   ///GGt data pointer
   const ST* master_GGt_ptr;
 
-  SplineC2ROMP() : Base(), nComplexBands(0)
+  SplineC2ROMP() : nComplexBands(0)
   {
-    this->is_complex   = true;
-    this->AdoptorName  = "SplineC2ROMPAdoptor";
-    this->KeyWord      = "SplineC2ROMP";
+    is_complex  = true;
+    AdoptorName = "SplineC2ROMPAdoptor";
+    KeyWord     = "SplineC2ROMP";
   }
 
   ~SplineC2ROMP()
@@ -284,9 +285,11 @@ struct SplineC2ROMP : public SplineAdoptorBase<ST, 3>
     }
   }
 
+  virtual SPOSet* makeClone() const override { return new SplineC2ROMP(*this); }
+
   inline void resizeStorage(size_t n, size_t nvals)
   {
-    Base::init_base(n);
+    init_base(n);
     size_t npad = getAlignedSize<ST>(2 * n);
     myV.resize(npad);
     myG.resize(npad);
@@ -323,7 +326,7 @@ struct SplineC2ROMP : public SplineAdoptorBase<ST, 3>
   }
 
   /// this routine can not be called from threaded region
-  void finalizeConstruction()
+  void finalizeConstruction() override
   {
     // map the SplineInst->getSplinePtr() structure to GPU
     auto* MultiSpline = SplineInst->getSplinePtr();
@@ -388,7 +391,7 @@ struct SplineC2ROMP : public SplineAdoptorBase<ST, 3>
   bool read_splines(hdf_archive& h5f)
   {
     std::ostringstream o;
-    o << "spline_" << SplineAdoptorBase<ST, D>::MyIndex;
+    o << "spline_" << MyIndex;
     einspline_engine<SplineType> bigtable(SplineInst->getSplinePtr());
     return h5f.readEntry(bigtable, o.str().c_str()); //"spline_0");
   }
@@ -396,7 +399,7 @@ struct SplineC2ROMP : public SplineAdoptorBase<ST, 3>
   bool write_splines(hdf_archive& h5f)
   {
     std::ostringstream o;
-    o << "spline_" << SplineAdoptorBase<ST, D>::MyIndex;
+    o << "spline_" << MyIndex;
     einspline_engine<SplineType> bigtable(SplineInst->getSplinePtr());
     return h5f.writeEntry(bigtable, o.str().c_str()); //"spline_0");
   }
@@ -438,8 +441,7 @@ struct SplineC2ROMP : public SplineAdoptorBase<ST, 3>
     }
   }
 
-  template<typename VV>
-  inline void evaluate_v(const ParticleSet& P, const int iat, VV& psi)
+  virtual void evaluateValue(const ParticleSet& P, const int iat, ValueVector_t& psi) override
   {
     const PointType& r = P.activeR(iat);
     PointType ru(PrimLattice.toUnit_floor(r));
@@ -497,8 +499,7 @@ struct SplineC2ROMP : public SplineAdoptorBase<ST, 3>
     }
   }
 
-  template<typename VV, typename RT>
-  inline void evaluateDetRatios(const VirtualParticleSet& VP, VV& psi, const VV& psiinv, std::vector<RT>& ratios)
+  virtual void evaluateDetRatios(const VirtualParticleSet& VP, ValueVector_t& psi, const ValueVector_t& psiinv, std::vector<ValueType>& ratios) override
   {
     const int nVP = VP.getTotalNum();
     if(psiinv_pos_copy.size() < psiinv.size() + nVP * 6)
@@ -713,8 +714,7 @@ struct SplineC2ROMP : public SplineAdoptorBase<ST, 3>
     }
   }
 
-  template<typename VV, typename GV>
-  inline void evaluate_vgl(const ParticleSet& P, const int iat, VV& psi, GV& dpsi, VV& d2psi)
+  virtual void evaluateVGL(const ParticleSet& P, const int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi) override
   {
     const PointType& r = P.activeR(iat);
     PointType ru(PrimLattice.toUnit_floor(r));
@@ -786,13 +786,12 @@ struct SplineC2ROMP : public SplineAdoptorBase<ST, 3>
     }
   }
 
-  template<typename VV, typename GV>
-  inline void mw_evaluate_vgl(const std::vector<SplineC2ROMP*>& sa_list,
+  virtual void mw_evaluateVGL(const std::vector<SPOSet*>& sa_list,
                               const std::vector<ParticleSet*>& P_list,
                               int iat,
-                              const std::vector<VV*>& psi_v_list,
-                              const std::vector<GV*>& dpsi_v_list,
-                              const std::vector<VV*>& d2psi_v_list)
+                              const std::vector<ValueVector_t*>& psi_v_list,
+                              const std::vector<GradVector_t*>& dpsi_v_list,
+                              const std::vector<ValueVector_t*>& d2psi_v_list) override
   {
     const int nwalkers = sa_list.size();
     if (mw_pos_copy.size() < nwalkers * 6)
@@ -1111,8 +1110,7 @@ struct SplineC2ROMP : public SplineAdoptorBase<ST, 3>
     }
   }
 
-  template<typename VV, typename GV, typename GGV>
-  void evaluate_vgh(const ParticleSet& P, const int iat, VV& psi, GV& dpsi, GGV& grad_grad_psi)
+  virtual void evaluateVGH(const ParticleSet& P, const int iat, ValueVector_t& psi, GradVector_t& dpsi, HessVector_t& grad_grad_psi) override
   {
     const PointType& r = P.activeR(iat);
     PointType ru(PrimLattice.toUnit_floor(r));
@@ -1594,13 +1592,12 @@ struct SplineC2ROMP : public SplineAdoptorBase<ST, 3>
     }
   }
 
-  template<typename VV, typename GV, typename GGV, typename GGGV>
-  void evaluate_vghgh(const ParticleSet& P,
+  virtual void evaluateVGHGH(const ParticleSet& P,
                       const int iat,
-                      VV& psi,
-                      GV& dpsi,
-                      GGV& grad_grad_psi,
-                      GGGV& grad_grad_grad_psi)
+                      ValueVector_t& psi,
+                      GradVector_t& dpsi,
+                      HessVector_t& grad_grad_psi,
+                      GGGVector_t& grad_grad_grad_psi) override
   {
     const PointType& r = P.activeR(iat);
     PointType ru(PrimLattice.toUnit_floor(r));

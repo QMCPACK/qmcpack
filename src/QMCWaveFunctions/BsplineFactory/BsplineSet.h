@@ -62,8 +62,6 @@ struct BsplineSet : public SPOSet
   std::string AdoptorName;
   ///keyword used to match hdf5
   std::string KeyWord;
-  ///primitive cell
-  CrystalLattice<SPOSet::RealType, D> PrimLattice;
 
 //public:
 

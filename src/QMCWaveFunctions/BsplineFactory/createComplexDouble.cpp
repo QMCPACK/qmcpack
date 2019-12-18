@@ -44,7 +44,7 @@ BsplineReaderBase* createBsplineComplexDouble(EinsplineSetBuilder* e, bool hybri
 #if defined(ENABLE_OFFLOAD)
   if (useGPU == "yes")
   {
-    aReader = new SplineAdoptorReader<SplineC2ROMP<double, RealType>>(e);
+    aReader = new SplineAdoptorReader<SplineC2ROMP<double>>(e);
   }
   else
 #endif

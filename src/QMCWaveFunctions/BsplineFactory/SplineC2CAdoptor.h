@@ -56,7 +56,7 @@ struct SplineC2CSoA : public BsplineSet
   using ghContainer_type = VectorSoaContainer<ST, 10>;
 
   ///primitive cell
-  CrystalLattice<SPOSet::RealType, D> PrimLattice;
+  CrystalLattice<ST, D> PrimLattice;
   ///\f$GGt=G^t G \f$, transformation for tensor in LatticeUnit to CartesianUnit, e.g. Hessian
   Tensor<ST, D> GGt;
   ///multi bspline set
