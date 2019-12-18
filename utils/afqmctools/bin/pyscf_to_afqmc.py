@@ -64,7 +64,7 @@ def parse_args(args, comm):
                             help='Set upper limit on number of determinants to '
                             'generate.')
         parser.add_argument('-r', '--real-ham', dest='real_chol',
-                            action='store_true', default=None,
+                            action='store_true', default=False,
                             help='Write integrals as real numbers')
         parser.add_argument('-p', '--phdf', dest='phdf',
                             action='store_true', default=False,
@@ -78,7 +78,7 @@ def parse_args(args, comm):
                             help='Upper threshold for non-integer occupancies'
                             'to include in multi-determinant exansion.')
         parser.add_argument('--dense', dest='dense',
-                            action='store_true',
+                            action='store_true', default=False,
                             help='Write dense Hamiltonian.')
         parser.add_argument('-v', '--verbose', action='count', default=0,
                             help='Verbose output.')
