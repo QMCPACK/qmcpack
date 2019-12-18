@@ -189,6 +189,8 @@ public:
   void set_method(IndexType method) { method_ = method; }
 
 protected:
+  static void onRankSpawnKill(MCPopulation& pop, PopulationAdjustment& adjust);
+  
   ///id for the method
   IndexType method_;
   ///minimum number of walkers

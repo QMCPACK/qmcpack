@@ -102,7 +102,8 @@ struct WalkerControlMPI : public WalkerControlBase
   //current implementations
   void swapWalkersSimple(MCWalkerConfiguration& W);
 
-  void swapWalkersSimple(MCPopulation& pop, PopulationAdjustment& adjust);
+  //Unified Driver Implementation
+  void swapWalkersSimple(MCPopulation& pop, PopulationAdjustment& adjust, std::vector<IndexType>& num_per_node);
 
   // Testing wrappers
   friend WalkerControlMPITest;

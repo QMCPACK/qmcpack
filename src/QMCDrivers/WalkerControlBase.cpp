@@ -354,17 +354,8 @@ int WalkerControlBase::branch(int iter, MCWalkerConfiguration& W, FullPrecRealTy
   return nw_tot;
 }
 
-int WalkerControlBase::branch(int iter, MCPopulation& pop, FullPrecRealType trigger)
+void WalkerControlBase::onRankSpawnKill(MCPopulation& pop, PopulationAdjustment& adjust)
 {
-  // For measuring properties sortWalkers had important side effects
-  PopulationAdjustment adjust(calcPopulationAdjustment(pop));
-  measureProperties(iter);
-  pop.set_ensemble_property(ensemble_property_);
-
-  // Warning adjustPopulation has many side effects
-  adjustPopulation(pop, adjust);
-  // We have not yet updated the local number of walkers
-  // This happens as a side effect of killing or spawning walkers
   while (!adjust.bad_walkers.empty())
   {
     pop.killWalker(adjust.bad_walkers.back());
@@ -379,11 +370,26 @@ int WalkerControlBase::branch(int iter, MCPopulation& pop, FullPrecRealType trig
       // IF these are really unique ID's they should be UUID's or something
       // old algorithm seems to reuse them in a way that I'm not sure avoids
       // duplicates even at a particular time.
-      walker.ID           = pop.get_num_local_walkers() * num_contexts_ + MyContext;
+      walker.ID           = pop.get_num_local_walkers() * pop.get_num_ranks() + pop.get_rank();
       walker.ParentID     = adjust.good_walkers[iw].get().ParentID;
     }
   }
+}
 
+int WalkerControlBase::branch(int iter, MCPopulation& pop, FullPrecRealType trigger)
+{
+  // For measuring properties sortWalkers had important side effects
+  PopulationAdjustment adjust(calcPopulationAdjustment(pop));
+  measureProperties(iter);
+  pop.set_ensemble_property(ensemble_property_);
+
+  // Warning adjustPopulation has many side effects
+  adjustPopulation(pop, adjust);
+  // We have not yet updated the local number of walkers
+  // This happens as a side effect of killing or spawning walkers
+
+  WalkerControlBase::onRankSpawnKill(pop, adjust);
+  
   std::for_each(pop.get_walkers().begin(), pop.get_walkers().end(), [](auto& walker) {
     walker->Weight       = 1.0;
     walker->Multiplicity = 1.0;

@@ -74,7 +74,7 @@ public:
                                                        RefVector<MCPWalker>{}};
 
     reportWalkersPerRank(dpools_.comm, *pop_);
-    wc_.swapWalkersSimple(*pop_, pop_adjust);
+    wc_.swapWalkersSimple(*pop_, pop_adjust, rank_counts_before);
     reportWalkersPerRank(dpools_.comm, *pop_);
     CHECK(pop_->get_num_local_walkers() == rank_counts_after[i]);
   }

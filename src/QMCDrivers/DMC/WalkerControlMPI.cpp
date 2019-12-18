@@ -151,6 +151,7 @@ int WalkerControlMPI::branch(int iter, MCPopulation& pop, FullPrecRealType trigg
   // i.e. it updates most of curData
   PopulationAdjustment adjust(calcPopulationAdjustment(pop));
 
+  
   //use NumWalkersSent from the previous exchange
   //You need another copy because curData is zeroed out defensively.
   curData[SENTWALKERS_INDEX] = NumWalkersSent;
@@ -165,22 +166,26 @@ int WalkerControlMPI::branch(int iter, MCPopulation& pop, FullPrecRealType trigg
 
   measureProperties(iter);
   pop.set_ensemble_property(ensemble_property_);
-  for (int i = 0, j = LE_MAX; i < num_contexts_; i++, j++)
-    NumPerNode[i] = static_cast<int>(curData[j]);
-  Cur_pop = applyNmaxNmin(pop.get_num_global_walkers());
+
+  //This applies minMax etc.
+  adjustPopulation(pop, adjust);
+  WalkerControlBase::onRankSpawnKill(pop, adjust);
+
+  auto num_per_node = WalkerControlBase::syncFutureWalkersPerRank(this->getCommunicator(), pop.get_num_local_walkers());
+
+  // for (int i = 0, j = LE_MAX; i < num_contexts_; i++, j++)
+  //   NumPerNode[i] = static_cast<int>(curData[j]);
+
   myTimers[DMC_MPI_prebalance]->stop();
   myTimers[DMC_MPI_loadbalance]->start();
-  swapWalkersSimple(pop, adjust);
+  swapWalkersSimple(pop, adjust, num_per_node);
   myTimers[DMC_MPI_loadbalance]->stop();
-  // myTimers[DMC_MPI_copyWalkers]->start();
-  // copyWalkers(pop);
-  // myTimers[DMC_MPI_copyWalkers]->stop();
-  // //set Weight and Multiplicity to default values
-  // for (UPtr<MCPWalker>& walker : pop.get_walkers())
-  // {
-  //   walker->Weight       = 1.0;
-  //   walker->Multiplicity = 1.0;
-  // }
+
+  for (UPtr<MCPWalker>& walker : pop.get_walkers())
+  {
+    walker->Weight       = 1.0;
+    walker->Multiplicity = 1.0;
+  }
   // //update the global number of walkers and offsets
   
   myComm->allreduce(curData);
@@ -459,21 +464,16 @@ void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W)
 
 /** swap Walkers between rank MCPopulations
  *
- *  2005 called and asked for its synchronous messaging back
- *  I think MPI async is more than two years old
- *
  *  MCPopulation is sufficiently different from MCWalkerConfiguration that this is 
- *  basically a rewrite.  I have not replicated some elements of the original.
- *  For example:
- *   * Sending duplicates to the same reciever rank but resorting good walkers if send-receive pair 
- *     changes.
- *   * Sending a tiny separate blocking message to tell the receiver how many copies
+ *  basically a rewrite.
+ *  \param[inout] pop
+ *  \param[inout] adjust
  *
  */
-void WalkerControlMPI::swapWalkersSimple(MCPopulation& pop, PopulationAdjustment& adjust)
+void WalkerControlMPI::swapWalkersSimple(MCPopulation& pop, PopulationAdjustment& adjust, std::vector<IndexType>& num_per_node)
 {
   std::vector<int> minus, plus;
-  determineNewWalkerPopulation(Cur_pop, num_contexts_, MyContext, NumPerNode, FairOffSet, plus, minus);
+  determineNewWalkerPopulation(Cur_pop, num_contexts_, MyContext, num_per_node, FairOffSet, plus, minus);
 
   if (adjust.good_walkers.empty() && adjust.bad_walkers.empty())
   {
@@ -642,7 +642,7 @@ void WalkerControlMPI::swapWalkersSimple(MCPopulation& pop, PopulationAdjustment
   }
   std::for_each(zombies.begin(), zombies.end(),
                 [&pop](MCPWalker& zombie){pop.killWalker(zombie);});
-  NumPerNode[MyContext] = pop.get_num_local_walkers();
+  
   NumWalkersSent = local_sends;
 }
 
