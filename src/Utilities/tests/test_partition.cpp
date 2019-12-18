@@ -87,6 +87,18 @@ TEST_CASE("FairDivideLow_four", "[utilities]")
   REQUIRE(out[2] == 4);
 }
 
+TEST_CASE("FairDivideLow_five", "[utilities]")
+{
+  std::vector<int> out;
+  FairDivideLow(5, 3, out);
+  REQUIRE(out.size() == 4);
+  REQUIRE(out[0] == 0);
+  REQUIRE(out[1] == 1);
+  REQUIRE(out[2] == 3);
+  REQUIRE(out[3] == 5);
+}
+
+
 TEST_CASE("FairDivideAligned", "[utilities]")
 {
   int first, last;

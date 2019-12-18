@@ -75,7 +75,7 @@ struct WalkerControlMPI : public WalkerControlBase
    *
    *  populates the minus and plus vectors they contain 1 copy of a partition index 
    *  for each adjustment in population to the context.
-   *  \todo fix this word salad
+   *  \todo fix this word snalad
    *
    *  \param[in] Cur_pop current population
    *  \param[in] NumContexts number of MPI processes

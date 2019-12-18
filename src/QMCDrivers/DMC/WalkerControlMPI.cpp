@@ -473,7 +473,7 @@ void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W)
 void WalkerControlMPI::swapWalkersSimple(MCPopulation& pop, PopulationAdjustment& adjust)
 {
   std::vector<int> minus, plus;
-  determineNewWalkerPopulation(Cur_pop, num_contexts_, MyContext, NumPerNode, FairOffSet, minus, plus);
+  determineNewWalkerPopulation(Cur_pop, num_contexts_, MyContext, NumPerNode, FairOffSet, plus, minus);
 
   if (adjust.good_walkers.empty() && adjust.bad_walkers.empty())
   {
@@ -506,9 +506,9 @@ void WalkerControlMPI::swapWalkersSimple(MCPopulation& pop, PopulationAdjustment
 
   for (int ic = 0; ic < nswap; ic++)
   {
-    if (plus[ic] == MyContext)
+    if (minus[ic] == MyContext)
       ++local_sends;
-    else if (minus[ic] == MyContext)
+    else if (plus[ic] == MyContext)
       ++local_recvs;
   }
 
@@ -523,12 +523,12 @@ void WalkerControlMPI::swapWalkersSimple(MCPopulation& pop, PopulationAdjustment
   RefVector<MCPWalker> zombies;
   for (int ic = 0; ic < nswap; ic++)
   {
-    if (plus[ic] == MyContext)
+    if (minus[ic] == MyContext)
     {
       // always send the last good walker
-      send_message_list.push_back(WalkerMessage{sorted_good_walkers.back().second, plus[ic], minus[ic]});
+      send_message_list.push_back(WalkerMessage{sorted_good_walkers.back().second, minus[ic], plus[ic]});
       --(sorted_good_walkers.back().first);
-      if (sorted_good_walkers.back().first <= 0)
+      if (sorted_good_walkers.back().first < 0)
       {
         // Danger possible race condition if this dead walker unders up back in the pool
         // so temporary refvector for those to be killed.
@@ -536,14 +536,15 @@ void WalkerControlMPI::swapWalkersSimple(MCPopulation& pop, PopulationAdjustment
         sorted_good_walkers.pop_back();
       }
     }
-    else if (minus[ic] == MyContext)
+    else if (plus[ic] == MyContext)
     {
       if (adjust.bad_walkers.size() > 0)
       {
         adjust.bad_walkers.pop_back();
       }
       new_walkers.push_back(pop.spawnWalker());
-      recv_message_list.push_back(WalkerMessage{new_walkers.back(), plus[ic], minus[ic]});
+      
+      recv_message_list.push_back(WalkerMessage{new_walkers.back(), minus[ic], plus[ic]});
     }
   }
 
