@@ -189,10 +189,8 @@ inline void assign_vgl(ST x,
 }
 } // namespace C2R
 
-/** adoptor class to match std::complex<ST> spline with TT real SPOs
+/** adoptor class to match std::complex<ST> spline with BsplineSet::ValueType (real) SPOs
  * @tparam ST precision of spline
- * @tparam TT precision of SPOs
- * @tparam D dimension
  *
  * Requires temporage storage and multiplication of phase vectors
  * Internal storage use double sized arrays of ST type, aligned and padded.
@@ -206,12 +204,10 @@ struct SplineC2ROMP : public BsplineSet
   template<typename DT>
   using OffloadPinnedAllocator = OMPallocator<DT, PinnedAlignedAllocator<DT>>;
 
-  static const int D     = 3;
   using SplineType       = typename bspline_traits<ST, 3>::SplineType;
   using BCType           = typename bspline_traits<ST, 3>::BCType;
   using DataType         = ST;
   using PointType        = TinyVector<ST, D>;
-  using SingleSplineType = UBspline_3d_d;
   // types for evaluation results
   using TT = typename BsplineSet::ValueType;
   using BsplineSet::ValueVector_t;

@@ -34,7 +34,6 @@ namespace qmcplusplus
 template<typename ST>
 struct SplineR2RSoA : public BsplineSet
 {
-  static const int D = 3;
   bool IsGamma;
   using SplineType       = typename bspline_traits<ST, 3>::SplineType;
   using BCType           = typename bspline_traits<ST, 3>::BCType;

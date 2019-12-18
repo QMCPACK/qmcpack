@@ -173,12 +173,12 @@ typename BsplineAllocator<T, ALIGN, ALLOC>::SingleSplineType* BsplineAllocator<T
     T* data)
 {
   // Create new spline
-  SingleSplineType* restrict spline = new SingleSplineType;
-  spline->spcode                    = bspline_traits<T, 3>::single_spcode;
-  spline->tcode                     = bspline_traits<T, 3>::tcode;
-  spline->xBC                       = xBC;
-  spline->yBC                       = yBC;
-  spline->zBC                       = zBC;
+  SingleSplineType* spline = new SingleSplineType;
+  spline->spcode           = bspline_traits<T, 3>::single_spcode;
+  spline->tcode            = bspline_traits<T, 3>::tcode;
+  spline->xBC              = xBC;
+  spline->yBC              = yBC;
+  spline->zBC              = zBC;
 
   // Setup internal variables
   int Mx = x_grid.num;

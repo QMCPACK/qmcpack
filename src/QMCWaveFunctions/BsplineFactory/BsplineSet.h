@@ -39,7 +39,9 @@ namespace qmcplusplus
 struct BsplineSet : public SPOSet
 {
 //protected:
-  static const int D = 3;
+  static const int D = DIM;
+  using SingleSplineType = typename qmcplusplus::bspline_traits<double, 3>::SingleSplineType;
+
   ///true if the computed values are complex
   bool is_complex;
   ///Index of this adoptor, when multiple adoptors are used for NUMA or distributed cases
@@ -126,8 +128,6 @@ struct BsplineSet : public SPOSet
   void setOrbitalSetSize(int norbs) override
   {
     OrbitalSetSize = norbs;
-    //SplineAdoptor::first_spo=0;
-    //SplineAdoptor::last_spo=norbs;
   }
 
   virtual void evaluate_notranspose(const ParticleSet& P,

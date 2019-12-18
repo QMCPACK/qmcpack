@@ -40,7 +40,6 @@ namespace qmcplusplus
 template<typename ST>
 struct SplineC2RSoA : public BsplineSet
 {
-  static const int D     = 3;
   using SplineType       = typename bspline_traits<ST, 3>::SplineType;
   using BCType           = typename bspline_traits<ST, 3>::BCType;
   using DataType         = ST;
