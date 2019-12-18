@@ -392,7 +392,7 @@ def read_qmcpack_cholesky_kpoint(filename, get_chol=True):
         nmo_max = max(nmo_pk)
     if get_chol:
         for i in range(0, nkp):
-            Lk.append(get_kpoint_chol(filename, nchol_pk, minus_k, i))
+            chol_vecs.append(get_kpoint_chol(filename, nchol_pk, minus_k, i))
     else:
         chol_vecs = None
 
