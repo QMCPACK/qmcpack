@@ -44,78 +44,9 @@ struct SplineAdoptorBase
   using PointType        = TinyVector<ST, D>;
   using SingleSplineType = UBspline_3d_d;
   using DataType         = ST;
-  ///true if the computed values are complex
-  bool is_complex;
-  ///Index of this adoptor, when multiple adoptors are used for NUMA or distributed cases
-  size_t MyIndex;
-  ///first index of the SPOs this Spline handles
-  size_t first_spo;
-  ///last index of the SPOs this Spline handles
-  size_t last_spo;
-  ///sign bits at the G/2 boundaries
-  TinyVector<int, D> HalfG;
+
   ///\f$GGt=G^t G \f$, transformation for tensor in LatticeUnit to CartesianUnit, e.g. Hessian
   Tensor<ST, D> GGt;
-  CrystalLattice<ST, D> SuperLattice;
-  CrystalLattice<ST, D> PrimLattice;
-  /// flags to unpack sin/cos
-  std::vector<bool> MakeTwoCopies;
-  ///kpoints for each unique orbitals
-  std::vector<TinyVector<ST, D>> kPoints;
-  ///remap splines to orbitals
-  aligned_vector<int> BandIndexMap;
-  /// band offsets used for communication
-  std::vector<int> offset;
-  ///name of the adoptor
-  std::string AdoptorName;
-  ///keyword used to match hdf5
-  std::string KeyWord;
-
-  SplineAdoptorBase()
-      : is_complex(false),
-        MyIndex(0),
-        first_spo(0),
-        last_spo(0)
-  {}
-
-  SplineAdoptorBase(const SplineAdoptorBase& rhs) = default;
-
-  inline void init_base(int n)
-  {
-    GGt = dot(transpose(PrimLattice.G), PrimLattice.G);
-    kPoints.resize(n);
-    MakeTwoCopies.resize(n);
-    BandIndexMap.resize(n);
-    for (int i = 0; i < n; i++)
-      BandIndexMap[i] = i;
-  }
-
-  ///remap kpoints to group general kpoints & special kpoints
-  int remap_kpoints()
-  {
-    std::vector<TinyVector<ST, D>> k_copy(kPoints);
-    const int nk = kPoints.size();
-    int nCB      = 0;
-    //two pass
-    for (int i = 0; i < nk; ++i)
-    {
-      if (MakeTwoCopies[i])
-      {
-        kPoints[nCB]        = k_copy[i];
-        BandIndexMap[nCB++] = i;
-      }
-    }
-    int nRealBands = nCB;
-    for (int i = 0; i < nk; ++i)
-    {
-      if (!MakeTwoCopies[i])
-      {
-        kPoints[nRealBands]        = k_copy[i];
-        BandIndexMap[nRealBands++] = i;
-      }
-    }
-    return nCB; //return the number of complex bands
-  }
 };
 
 } // namespace qmcplusplus

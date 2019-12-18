@@ -95,9 +95,7 @@ struct BsplineReaderBase
   {
     //init(orbitalSet,bspline);
     bspline->PrimLattice  = mybuilder->PrimCell;
-    bspline->SuperLattice = mybuilder->SuperCell;
-    bspline->GGt          = mybuilder->GGt;
-    //bspline->HalfG=mybuilder->HalfG;
+    bspline->GGt          = dot(transpose(bspline->PrimLattice.G), bspline->PrimLattice.G);
 
     int N       = bandgroup.getNumDistinctOrbitals();
     int numOrbs = bandgroup.getNumSPOs();

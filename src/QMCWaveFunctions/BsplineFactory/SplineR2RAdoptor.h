@@ -55,13 +55,7 @@ struct SplineR2RSoA : public SplineAdoptorBase<ST, 3>, public BsplineSet
   using hContainer_type  = VectorSoaContainer<ST, 6>;
   using ghContainer_type = VectorSoaContainer<ST, 10>;
 
-  using Base::first_spo;
-  using Base::last_spo;
-  using SplineAdoptorBase<ST, D>::HalfG;
   using Base::GGt;
-  using Base::kPoints;
-  using Base::offset;
-  using Base::PrimLattice;
 
   ///multi bspline set
   std::shared_ptr<MultiBspline<ST>> SplineInst;
@@ -77,16 +71,16 @@ struct SplineR2RSoA : public SplineAdoptorBase<ST, 3>, public BsplineSet
 
   SplineR2RSoA() : Base()
   {
-    this->is_complex   = false;
-    this->AdoptorName  = "SplineR2RSoAAdoptor";
-    this->KeyWord      = "SplineR2RSoA";
+    is_complex  = false;
+    AdoptorName = "SplineR2RSoAAdoptor";
+    KeyWord     = "SplineR2RSoA";
   }
 
   SPOSet* makeClone() const override { return new SplineR2RSoA(*this); }
 
   inline void resizeStorage(size_t n, size_t nvals)
   {
-    Base::init_base(n);
+    init_base(n);
     const size_t npad = getAlignedSize<ST>(n);
     myV.resize(npad);
     myG.resize(npad);
@@ -131,7 +125,7 @@ struct SplineR2RSoA : public SplineAdoptorBase<ST, 3>, public BsplineSet
   bool read_splines(hdf_archive& h5f)
   {
     std::ostringstream o;
-    o << "spline_" << SplineAdoptorBase<ST, D>::MyIndex;
+    o << "spline_" << MyIndex;
     einspline_engine<SplineType> bigtable(SplineInst->getSplinePtr());
     return h5f.readEntry(bigtable, o.str().c_str()); //"spline_0");
   }
@@ -139,7 +133,7 @@ struct SplineR2RSoA : public SplineAdoptorBase<ST, 3>, public BsplineSet
   bool write_splines(hdf_archive& h5f)
   {
     std::ostringstream o;
-    o << "spline_" << SplineAdoptorBase<ST, D>::MyIndex;
+    o << "spline_" << MyIndex;
     einspline_engine<SplineType> bigtable(SplineInst->getSplinePtr());
     return h5f.writeEntry(bigtable, o.str().c_str()); //"spline_0");
   }
