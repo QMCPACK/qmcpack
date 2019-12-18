@@ -76,9 +76,9 @@ struct SplineC2C : public BsplineSet
 
   SplineC2C()
   {
-    is_complex  = true;
-    className = "SplineC2C";
-    KeyWord     = "SplineC2C";
+    is_complex = true;
+    className  = "SplineC2C";
+    KeyWord    = "SplineC2C";
   }
 
   virtual SPOSet* makeClone() const override { return new SplineC2C(*this); }

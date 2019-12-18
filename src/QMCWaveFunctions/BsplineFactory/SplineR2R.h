@@ -71,9 +71,9 @@ struct SplineR2R : public BsplineSet
 
   SplineR2R()
   {
-    is_complex  = false;
-    className = "SplineR2R";
-    KeyWord     = "SplineR2R";
+    is_complex = false;
+    className  = "SplineR2R";
+    KeyWord    = "SplineR2R";
   }
 
   virtual SPOSet* makeClone() const override { return new SplineR2R(*this); }

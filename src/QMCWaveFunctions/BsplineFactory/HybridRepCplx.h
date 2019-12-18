@@ -45,19 +45,19 @@ struct HybridRepCplx : public SplineBase, public HybridRepCenterOrbitals<typenam
   GradVector_t dpsi_AO;
   Matrix<ST, aligned_allocator<ST>> multi_myV;
 
-  using SplineBase::myG;
-  using SplineBase::myH;
-  using SplineBase::myL;
-  using SplineBase::myV;
   using HybridBase::d2f_dr2;
   using HybridBase::df_dr;
   using HybridBase::dist_dr;
   using HybridBase::dist_r;
+  using SplineBase::myG;
+  using SplineBase::myH;
+  using SplineBase::myL;
+  using SplineBase::myV;
 
   HybridRepCplx()
   {
     this->className = "Hybrid" + this->className;
-    this->KeyWord     = "Hybrid" + this->KeyWord;
+    this->KeyWord   = "Hybrid" + this->KeyWord;
   }
 
   virtual SPOSet* makeClone() const override { return new HybridRepCplx(*this); }

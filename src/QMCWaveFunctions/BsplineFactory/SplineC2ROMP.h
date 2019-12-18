@@ -263,9 +263,9 @@ struct SplineC2ROMP : public BsplineSet
 
   SplineC2ROMP() : nComplexBands(0)
   {
-    is_complex  = true;
-    className = "SplineC2ROMP";
-    KeyWord     = "SplineC2R";
+    is_complex = true;
+    className  = "SplineC2ROMP";
+    KeyWord    = "SplineC2R";
   }
 
   ~SplineC2ROMP()

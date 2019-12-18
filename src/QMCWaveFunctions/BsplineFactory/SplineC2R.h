@@ -80,9 +80,9 @@ struct SplineC2R : public BsplineSet
 
   SplineC2R() : nComplexBands(0)
   {
-    is_complex  = true;
-    className = "SplineC2R";
-    KeyWord     = "SplineC2R";
+    is_complex = true;
+    className  = "SplineC2R";
+    KeyWord    = "SplineC2R";
   }
 
   virtual SPOSet* makeClone() const override { return new SplineC2R(*this); }
