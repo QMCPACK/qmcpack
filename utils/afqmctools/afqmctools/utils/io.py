@@ -10,6 +10,9 @@ def to_qmcpack_complex(array):
     shape = array.shape
     return array.view(numpy.float64).reshape(shape+(2,))
 
+def from_qmcpack_cplx(arr):
+    return arr.view(numpy.complex128).ravel()
+
 def add_dataset(fh5, name, value):
     try:
         fh5[name] = value
