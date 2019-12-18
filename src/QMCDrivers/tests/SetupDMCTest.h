@@ -32,7 +32,7 @@ public:
     if (Concurrency::maxThreads<>() < 8)
       num_crowds = Concurrency::maxThreads<>();
   }
-
+  
   DMCBatched operator()()
   {
     int num_ranks = comm->size();

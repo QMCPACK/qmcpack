@@ -607,7 +607,7 @@ void WalkerControlMPI::swapWalkersSimple(MCPopulation& pop, PopulationAdjustment
     for (int im = 0; im < send_requests.size(); im++)
     {
       myTimers[DMC_MPI_send]->start();
-      send_requests[im].start();
+      //send_requests[im].start();
       //send_requests[im].wait();
       myTimers[DMC_MPI_send]->stop();
     }
@@ -621,7 +621,7 @@ void WalkerControlMPI::swapWalkersSimple(MCPopulation& pop, PopulationAdjustment
   {
     for (int im = 0; im < recv_requests.size(); ++im)
     {
-      recv_requests[im].start();
+      //recv_requests[im].start();
       recv_requests[im].wait();
       if (done_with_message[im] != 1)
       {
