@@ -37,7 +37,7 @@ BsplineReaderBase* createBsplineComplexSingle(EinsplineSetBuilder* e, bool hybri
 
 #if defined(QMC_COMPLEX)
   if (hybrid_rep)
-    {}//aReader = new SplineHybridAdoptorReader<HybridCplxSoA<SplineC2CSoA<float, RealType>>>(e);
+    aReader = new SplineHybridAdoptorReader<HybridCplxSoA<SplineC2CSoA<float>>>(e);
   else
     aReader = new SplineAdoptorReader<SplineC2CSoA<float>>(e);
 #else //QMC_COMPLEX
@@ -50,7 +50,7 @@ BsplineReaderBase* createBsplineComplexSingle(EinsplineSetBuilder* e, bool hybri
 #endif
   {
     if (hybrid_rep)
-      {}//aReader = new SplineHybridAdoptorReader<HybridCplxSoA<SplineC2RSoA<float, RealType>>>(e);
+      aReader = new SplineHybridAdoptorReader<HybridCplxSoA<SplineC2RSoA<float>>>(e);
     else
       aReader = new SplineAdoptorReader<SplineC2RSoA<float>>(e);
   }

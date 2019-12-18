@@ -76,7 +76,7 @@ struct SplineR2RSoA : public SplineAdoptorBase<ST, 3>, public BsplineSet
     KeyWord     = "SplineR2RSoA";
   }
 
-  SPOSet* makeClone() const override { return new SplineR2RSoA(*this); }
+  virtual SPOSet* makeClone() const override { return new SplineR2RSoA(*this); }
 
   inline void resizeStorage(size_t n, size_t nvals)
   {
@@ -167,7 +167,7 @@ struct SplineR2RSoA : public SplineAdoptorBase<ST, 3>, public BsplineSet
       psi[first_spo + j] = signed_one * myV[j];
   }
 
-  inline void evaluateValue(const ParticleSet& P, const int iat, ValueVector_t& psi) override
+  virtual void evaluateValue(const ParticleSet& P, const int iat, ValueVector_t& psi) override
   {
     const PointType& r = P.activeR(iat);
     PointType ru;
@@ -183,7 +183,7 @@ struct SplineR2RSoA : public SplineAdoptorBase<ST, 3>, public BsplineSet
     }
   }
 
-  inline void evaluateDetRatios(const VirtualParticleSet& VP, ValueVector_t& psi, const ValueVector_t& psiinv, std::vector<TT>& ratios) override
+  virtual void evaluateDetRatios(const VirtualParticleSet& VP, ValueVector_t& psi, const ValueVector_t& psiinv, std::vector<TT>& ratios) override
   {
     const bool need_resize = ratios_private.rows() < VP.getTotalNum();
 
@@ -278,7 +278,7 @@ struct SplineR2RSoA : public SplineAdoptorBase<ST, 3>, public BsplineSet
     }
   }
 
-  inline void evaluateVGL(const ParticleSet& P, const int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi) override
+  virtual void evaluateVGL(const ParticleSet& P, const int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi) override
   {
     const PointType& r = P.activeR(iat);
     PointType ru;
