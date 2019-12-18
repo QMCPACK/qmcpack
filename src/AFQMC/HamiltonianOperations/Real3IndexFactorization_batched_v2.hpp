@@ -304,7 +304,7 @@ class Real3IndexFactorization_batched_v2
           while( nCV < local_nCV) {
 
             int nvecs = std::min(local_nCV-nCV,max_nCV);
-            SpCMatrix_ref Lna(make_device_ptr(Lnak[nd*nspin + ispin].origin()) + nCV*nel[ispin],
+            SpCMatrix_ref Lna(make_device_ptr(Lnak[nd*nspin + ispin][nCV].origin()),
                                                    {nvecs*nel[ispin],NMO});
             SpCMatrix_ref Twbna(TBuff.origin()+cnt_,{nwalk*nel[ispin],nvecs*nel[ispin]});
             SpC4Tensor_ref T4Dwbna(Twbna.origin(),{nwalk,nel[ispin],nvecs,nel[ispin]});

@@ -355,12 +355,12 @@ public:
   }
 
   // Real return values
-  void evaluate(const ParticleSet& P, int iat, RealValueVector_t& psi);
-  void evaluate(const ParticleSet& P,
-                int iat,
-                RealValueVector_t& psi,
-                RealGradVector_t& dpsi,
-                RealValueVector_t& d2psi);
+  void evaluateValue(const ParticleSet& P, int iat, RealValueVector_t& psi);
+  void evaluateVGL(const ParticleSet& P,
+                   int iat,
+                   RealValueVector_t& psi,
+                   RealGradVector_t& dpsi,
+                   RealValueVector_t& d2psi);
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
                             int last,
@@ -408,17 +408,17 @@ public:
                           ComplexGradMatrix_t& gradphi);
 #endif
   // Complex return values
-  void evaluate(const ParticleSet& P, int iat, ComplexValueVector_t& psi);
-  void evaluate(const ParticleSet& P,
-                int iat,
-                ComplexValueVector_t& psi,
-                ComplexGradVector_t& dpsi,
-                ComplexValueVector_t& d2psi);
-  void evaluate(const ParticleSet& P,
-                int iat,
-                ComplexValueVector_t& psi,
-                ComplexGradVector_t& dpsi,
-                ComplexHessVector_t& grad_grad_psi);
+  void evaluateValue(const ParticleSet& P, int iat, ComplexValueVector_t& psi);
+  void evaluateVGL(const ParticleSet& P,
+                   int iat,
+                   ComplexValueVector_t& psi,
+                   ComplexGradVector_t& dpsi,
+                   ComplexValueVector_t& d2psi);
+  void evaluateVGH(const ParticleSet& P,
+                   int iat,
+                   ComplexValueVector_t& psi,
+                   ComplexGradVector_t& dpsi,
+                   ComplexHessVector_t& grad_grad_psi);
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
                             int last,

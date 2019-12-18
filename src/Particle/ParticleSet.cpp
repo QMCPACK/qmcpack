@@ -112,7 +112,13 @@ ParticleSet::~ParticleSet()
     delete SK;
 }
 
-void ParticleSet::create(int numPtcl) { resize(numPtcl); }
+void ParticleSet::create(int numPtcl)
+{
+  resize(numPtcl);
+  SubPtcl.resize(2);
+  SubPtcl[0] = 0;
+  SubPtcl[1] = numPtcl;
+}
 
 void ParticleSet::create(const std::vector<int>& agroup)
 {
@@ -182,6 +188,16 @@ void ParticleSet::resetGroups()
     else
       APP_ABORT("ParticleSet::resetGroups() Failed. GroupID is out of bound.");
   }
+  // safety check if any group of particles has size 0, instruct users to fix the input.
+  for (int group_id = 0; group_id < nspecies; group_id++)
+    if (ng[group_id] == 0)
+    {
+      std::ostringstream err_msg;
+      err_msg << "ParticleSet::resetGroups() Failed. ParticleSet '" << myName << "' "
+              << "has group '" << mySpecies.speciesName[group_id] << "' containing 0 particles. "
+              << "Remove this group from input!" << std::endl;
+      APP_ABORT(err_msg.str());
+    }
   SubPtcl.resize(nspecies + 1);
   SubPtcl[0] = 0;
   for (int i = 0; i < nspecies; ++i)
@@ -404,7 +420,7 @@ void ParticleSet::makeMove(Index_t iat, const SingleParticlePos_t& displ)
   computeNewPosDistTablesAndSK(iat, activePos);
 }
 
-void ParticleSet::makeMoveWithSpin(Index_t iat, const SingleParticlePos_t& displ, const RealType& sdispl)
+void ParticleSet::makeMoveWithSpin(Index_t iat, const SingleParticlePos_t& displ, const Scalar_t& sdispl)
 {
   makeMove(iat, displ);
   activeSpinVal = spins[iat] + sdispl;
@@ -452,7 +468,7 @@ bool ParticleSet::makeMoveAndCheck(Index_t iat, const SingleParticlePos_t& displ
   return is_valid;
 }
 
-bool ParticleSet::makeMoveAndCheckWithSpin(Index_t iat, const SingleParticlePos_t& displ, const RealType& sdispl)
+bool ParticleSet::makeMoveAndCheckWithSpin(Index_t iat, const SingleParticlePos_t& displ, const Scalar_t& sdispl)
 {
   activeSpinVal = spins[iat] + sdispl;
   return makeMoveAndCheck(iat, displ);

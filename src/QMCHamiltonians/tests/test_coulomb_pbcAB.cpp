@@ -74,16 +74,12 @@ TEST_CASE("Coulomb PBC A-B", "[hamiltonian]")
 
   SpeciesSet& tspecies         = elec.getSpeciesSet();
   int upIdx                    = tspecies.addSpecies("u");
-  int downIdx                  = tspecies.addSpecies("d");
   int chargeIdx                = tspecies.addAttribute("charge");
   int massIdx                  = tspecies.addAttribute("mass");
   int MembersizeIdx            = tspecies.addAttribute("membersize");
   tspecies(MembersizeIdx, upIdx)   = 1;
-  tspecies(MembersizeIdx, downIdx) = 0;
   tspecies(chargeIdx, upIdx)   = -1;
-  tspecies(chargeIdx, downIdx) = -1;
   tspecies(massIdx, upIdx)     = 1.0;
-  tspecies(massIdx, downIdx)   = 1.0;
 
   elec.createSK();
 
@@ -92,6 +88,7 @@ TEST_CASE("Coulomb PBC A-B", "[hamiltonian]")
 #else
   elec.addTable(ions, DT_AOS);
 #endif
+  elec.resetGroups();
   elec.update();
 
 
@@ -164,16 +161,12 @@ TEST_CASE("Coulomb PBC A-B BCC H", "[hamiltonian]")
 
   SpeciesSet& tspecies         = elec.getSpeciesSet();
   int upIdx                    = tspecies.addSpecies("u");
-  int downIdx                  = tspecies.addSpecies("d");
   int chargeIdx                = tspecies.addAttribute("charge");
   int massIdx                  = tspecies.addAttribute("mass");
   int MembersizeIdx            = tspecies.addAttribute("membersize");
   tspecies(MembersizeIdx, upIdx)   = 1;
-  tspecies(MembersizeIdx, downIdx) = 1;
   tspecies(chargeIdx, upIdx)   = -1;
-  tspecies(chargeIdx, downIdx) = -1;
   tspecies(massIdx, upIdx)     = 1.0;
-  tspecies(massIdx, downIdx)   = 1.0;
 
   elec.createSK();
 
@@ -182,6 +175,7 @@ TEST_CASE("Coulomb PBC A-B BCC H", "[hamiltonian]")
 #else
   elec.addTable(ions, DT_AOS);
 #endif
+  elec.resetGroups();
   elec.update();
 
 

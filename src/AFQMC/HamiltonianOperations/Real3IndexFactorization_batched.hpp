@@ -409,7 +409,7 @@ class Real3IndexFactorization_batched
         copy_n_cast(vsp.origin(),vsp.num_elements(),make_device_ptr(v.origin()));
 #else
         if(walker_type==CLOSED) a*=2.0;
-        ma::product(SPValueType(a),ma::T(Lakn),G,SPValueType(c),v);
+        ma::product(SPComplexType(a),ma::T(Lakn),G,SPComplexType(c),v);
 #endif
       } else {
         // multideterminant is not half-rotated, so use Likn
