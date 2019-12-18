@@ -8,6 +8,7 @@
 //                    Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
 //                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+//                    Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
@@ -15,10 +16,10 @@
 
 /** @file BsplineSet.h
  *
- * BsplineSet<SplineAdoptor> is a SPOSet class to work with determinant classes
+ * BsplineSet is a SPOSet derived class and serves as a base class for B-spline SPO C2C/C2R/R2R implementation
  */
-#ifndef QMCPLUSPLUS_EINSPLINE_ADOPTOR_H
-#define QMCPLUSPLUS_EINSPLINE_ADOPTOR_H
+#ifndef QMCPLUSPLUS_BSPLINESET_H
+#define QMCPLUSPLUS_BSPLINESET_H
 
 #include <Lattice/CrystalLattice.h>
 #include <spline/einspline_engine.hpp>
@@ -27,14 +28,9 @@
 
 namespace qmcplusplus
 {
-/** BsplineSet<SplineAdoptor>, a SPOSet
- * @tparam SplineAdoptor implements evaluation functions that matched the storage requirements.
- *
- * Equivalent to EinsplineSetExtended<Storage>
- * Storage is now handled by SplineAdoptor class that is specialized for precision, storage etc.
- * @todo Make SplineAdoptor be a member not the base class. This is needed
- * to make MultiBsplineSet (TBD) which has multiple SplineAdoptors for distributed
- * cases.
+/** BsplineSet is the base class for SplineC2C, SplineC2R, SplineR2R.
+ * Its derived template classes manage the storage and evaluation at given precision.
+ * BsplineSet also implements a few fallback routines in case optimized implementation is not necessary in the derived class.
  */
 struct BsplineSet : public SPOSet
 {
@@ -58,8 +54,6 @@ struct BsplineSet : public SPOSet
   aligned_vector<int> BandIndexMap;
   ///band offsets used for communication
   std::vector<int> offset;
-  ///name of the adoptor
-  std::string AdoptorName;
   ///keyword used to match hdf5
   std::string KeyWord;
 

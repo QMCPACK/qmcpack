@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2019 QMCPACK developers.
 //
 // File developed by: Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeongnim Kim, jeongnim.kim@intel.com, University of Illinois at Urbana-Champaign
@@ -16,10 +16,10 @@
 
 /** @file
  *
- * Adoptor classes to handle complex-to-(real,complex) with arbitrary precision
+ * class to handle complex splines to real orbitals with splines of arbitrary precision
  */
-#ifndef QMCPLUSPLUS_EINSPLINE_C2R_ADOPTOR_H
-#define QMCPLUSPLUS_EINSPLINE_C2R_ADOPTOR_H
+#ifndef QMCPLUSPLUS_SPLINE_C2R_H
+#define QMCPLUSPLUS_SPLINE_C2R_H
 
 #include <memory>
 #include <QMCWaveFunctions/BsplineFactory/BsplineSet.h>
@@ -31,14 +31,14 @@
 
 namespace qmcplusplus
 {
-/** adoptor class to match std::complex<ST> spline with BsplineSet::ValueType (real) SPOs
+/** class to match std::complex<ST> spline with BsplineSet::ValueType (real) SPOs
  * @tparam ST precision of spline
  *
  * Requires temporage storage and multiplication of phase vectors
  * Internal storage use double sized arrays of ST type, aligned and padded.
  */
 template<typename ST>
-struct SplineC2RSoA : public BsplineSet
+struct SplineC2R : public BsplineSet
 {
   using SplineType       = typename bspline_traits<ST, 3>::SplineType;
   using BCType           = typename bspline_traits<ST, 3>::BCType;
@@ -78,14 +78,14 @@ struct SplineC2RSoA : public BsplineSet
   ///thread private ratios for reduction when using nested threading, numVP x numThread
   Matrix<TT> ratios_private;
 
-  SplineC2RSoA() : nComplexBands(0)
+  SplineC2R() : nComplexBands(0)
   {
     is_complex  = true;
-    AdoptorName = "SplineC2RSoAAdoptor";
-    KeyWord     = "SplineC2RSoA";
+    className = "SplineC2R";
+    KeyWord     = "SplineC2R";
   }
 
-  virtual SPOSet* makeClone() const override { return new SplineC2RSoA(*this); }
+  virtual SPOSet* makeClone() const override { return new SplineC2R(*this); }
 
   inline void resizeStorage(size_t n, size_t nvals)
   {

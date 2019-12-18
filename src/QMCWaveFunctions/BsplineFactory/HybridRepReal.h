@@ -11,84 +11,86 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-/** @file HybridRealAdoptor.h
+/** @file HybridRepReal.h
  *
- * Adoptor classes to handle real hybrid orbitals with arbitrary precision
+ * hold HybridRepReal
  */
-#ifndef QMCPLUSPLUS_HYBRID_REAL_SOA_ADOPTOR_H
-#define QMCPLUSPLUS_HYBRID_REAL_SOA_ADOPTOR_H
+#ifndef QMCPLUSPLUS_HYBRIDREP_REAL_H
+#define QMCPLUSPLUS_HYBRIDREP_REAL_H
 
-#include <QMCWaveFunctions/BsplineFactory/HybridAdoptorBase.h>
+#include <QMCWaveFunctions/BsplineFactory/HybridRepCenterOrbitals.h>
 namespace qmcplusplus
 {
-/** adoptor class to match
+/** hybrid representation orbitals combining B-spline orbitals on a grid and atomic centered orbitals.
+ * @tparam SplineBase B-spline orbital class.
  *
+ * Only works with SplineBase class containing real splines
  */
-template<typename BaseAdoptor>
-struct HybridRealSoA : public BaseAdoptor, public HybridAdoptorBase<typename BaseAdoptor::DataType>
+template<typename SplineBase>
+struct HybridRepReal : public SplineBase, public HybridRepCenterOrbitals<typename SplineBase::DataType>
 {
-  using HybridBase       = HybridAdoptorBase<typename BaseAdoptor::DataType>;
-  using ST               = typename BaseAdoptor::DataType;
-  using PointType        = typename BaseAdoptor::PointType;
-  using SingleSplineType = typename BaseAdoptor::SingleSplineType;
-  using RealType         = typename BaseAdoptor::RealType;
+  using HybridBase       = HybridRepCenterOrbitals<typename SplineBase::DataType>;
+  using ST               = typename SplineBase::DataType;
+  using PointType        = typename SplineBase::PointType;
+  using SingleSplineType = typename SplineBase::SingleSplineType;
+  using RealType         = typename SplineBase::RealType;
   // types for evaluation results
-  using typename BaseAdoptor::GGGVector_t;
-  using typename BaseAdoptor::GradVector_t;
-  using typename BaseAdoptor::HessVector_t;
-  using typename BaseAdoptor::ValueType;
-  using typename BaseAdoptor::ValueVector_t;
+  using typename SplineBase::GGGVector_t;
+  using typename SplineBase::GradVector_t;
+  using typename SplineBase::HessVector_t;
+  using typename SplineBase::ValueType;
+  using typename SplineBase::ValueVector_t;
 
   ValueVector_t psi_AO, d2psi_AO;
   GradVector_t dpsi_AO;
   Matrix<ST, aligned_allocator<ST>> multi_myV;
 
-  using BaseAdoptor::HalfG;
-  using BaseAdoptor::myG;
-  using BaseAdoptor::myH;
-  using BaseAdoptor::myL;
-  using BaseAdoptor::myV;
-  using BaseAdoptor::PrimLattice;
+  using SplineBase::HalfG;
+  using SplineBase::myG;
+  using SplineBase::myH;
+  using SplineBase::myL;
+  using SplineBase::myV;
+  using SplineBase::PrimLattice;
   using HybridBase::d2f_dr2;
   using HybridBase::df_dr;
   using HybridBase::dist_dr;
   using HybridBase::dist_r;
 
-  HybridRealSoA()
+  HybridRepReal()
   {
-    this->AdoptorName = "Hybrid" + this->AdoptorName;
+    this->className = "Hybrid" + this->className;
     this->KeyWord     = "Hybrid" + this->KeyWord;
   }
 
-  virtual SPOSet* makeClone() const override { return new HybridRealSoA(*this); }
+  virtual SPOSet* makeClone() const override { return new HybridRepReal(*this); }
 
   inline void resizeStorage(size_t n, size_t nvals)
   {
-    BaseAdoptor::resizeStorage(n, nvals);
+    SplineBase::resizeStorage(n, nvals);
     HybridBase::resizeStorage(myV.size());
   }
 
   void bcast_tables(Communicate* comm)
   {
-    BaseAdoptor::bcast_tables(comm);
+    SplineBase::bcast_tables(comm);
     HybridBase::bcast_tables(comm);
   }
 
   void gather_tables(Communicate* comm)
   {
-    BaseAdoptor::gather_tables(comm);
-    HybridBase::gather_atomic_tables(comm, BaseAdoptor::offset);
+    SplineBase::gather_tables(comm);
+    HybridBase::gather_atomic_tables(comm, SplineBase::offset);
   }
 
   inline void flush_zero()
   {
-    //BaseAdoptor::flush_zero();
+    //SplineBase::flush_zero();
     HybridBase::flush_zero();
   }
 
-  bool read_splines(hdf_archive& h5f) { return HybridBase::read_splines(h5f) && BaseAdoptor::read_splines(h5f); }
+  bool read_splines(hdf_archive& h5f) { return HybridBase::read_splines(h5f) && SplineBase::read_splines(h5f); }
 
-  bool write_splines(hdf_archive& h5f) { return HybridBase::write_splines(h5f) && BaseAdoptor::write_splines(h5f); }
+  bool write_splines(hdf_archive& h5f) { return HybridBase::write_splines(h5f) && SplineBase::write_splines(h5f); }
 
   void evaluateValue(const ParticleSet& P, const int iat, ValueVector_t& psi) override
   {
@@ -96,21 +98,21 @@ struct HybridRealSoA : public BaseAdoptor, public HybridAdoptorBase<typename Bas
     const RealType cone(1);
     if (smooth_factor < 0)
     {
-      BaseAdoptor::evaluateValue(P, iat, psi);
+      SplineBase::evaluateValue(P, iat, psi);
     }
     else if (smooth_factor == cone)
     {
       const PointType& r = P.activeR(iat);
       int bc_sign        = HybridBase::get_bc_sign(r, PrimLattice, HalfG);
-      BaseAdoptor::assign_v(bc_sign, myV, psi, 0, myV.size());
+      SplineBase::assign_v(bc_sign, myV, psi, 0, myV.size());
     }
     else
     {
       const PointType& r = P.activeR(iat);
       psi_AO.resize(psi.size());
       int bc_sign = HybridBase::get_bc_sign(r, PrimLattice, HalfG);
-      BaseAdoptor::assign_v(bc_sign, myV, psi_AO, 0, myV.size());
-      BaseAdoptor::evaluateValue(P, iat, psi);
+      SplineBase::assign_v(bc_sign, myV, psi_AO, 0, myV.size());
+      SplineBase::evaluateValue(P, iat, psi);
       HybridBase::interpolate_buffer_v(psi, psi_AO);
     }
   }
@@ -132,17 +134,17 @@ struct HybridRealSoA : public BaseAdoptor, public HybridAdoptorBase<typename Bas
       for (int iat = 0; iat < VP.getTotalNum(); ++iat)
       {
         if (smooth_factor < 0)
-          BaseAdoptor::evaluateValue(VP, iat, psi);
+          SplineBase::evaluateValue(VP, iat, psi);
         else if (smooth_factor == cone)
         {
           Vector<ST, aligned_allocator<ST>> myV_one(multi_myV[iat], myV.size());
-          BaseAdoptor::assign_v(bc_signs[iat], myV_one, psi, 0, myV.size());
+          SplineBase::assign_v(bc_signs[iat], myV_one, psi, 0, myV.size());
         }
         else
         {
           Vector<ST, aligned_allocator<ST>> myV_one(multi_myV[iat], myV.size());
-          BaseAdoptor::assign_v(bc_signs[iat], myV_one, psi_AO, 0, myV.size());
-          BaseAdoptor::evaluateValue(VP, iat, psi);
+          SplineBase::assign_v(bc_signs[iat], myV_one, psi_AO, 0, myV.size());
+          SplineBase::evaluateValue(VP, iat, psi);
           HybridBase::interpolate_buffer_v(psi, psi_AO);
         }
         ratios[iat] = simd::dot(psi.data(), psiinv.data(), psi.size());
@@ -168,13 +170,13 @@ struct HybridRealSoA : public BaseAdoptor, public HybridAdoptorBase<typename Bas
     const RealType cone(1);
     if (smooth_factor < 0)
     {
-      BaseAdoptor::evaluateVGL(P, iat, psi, dpsi, d2psi);
+      SplineBase::evaluateVGL(P, iat, psi, dpsi, d2psi);
     }
     else if (smooth_factor == cone)
     {
       const PointType& r = P.activeR(iat);
       int bc_sign        = HybridBase::get_bc_sign(r, PrimLattice, HalfG);
-      BaseAdoptor::assign_vgl_from_l(bc_sign, psi, dpsi, d2psi);
+      SplineBase::assign_vgl_from_l(bc_sign, psi, dpsi, d2psi);
     }
     else
     {
@@ -183,8 +185,8 @@ struct HybridRealSoA : public BaseAdoptor, public HybridAdoptorBase<typename Bas
       dpsi_AO.resize(psi.size());
       d2psi_AO.resize(psi.size());
       int bc_sign = HybridBase::get_bc_sign(r, PrimLattice, HalfG);
-      BaseAdoptor::assign_vgl_from_l(bc_sign, psi_AO, dpsi_AO, d2psi_AO);
-      BaseAdoptor::evaluateVGL(P, iat, psi, dpsi, d2psi);
+      SplineBase::assign_vgl_from_l(bc_sign, psi_AO, dpsi_AO, d2psi_AO);
+      SplineBase::evaluateVGL(P, iat, psi, dpsi, d2psi);
       HybridBase::interpolate_buffer_vgl(psi, dpsi, d2psi, psi_AO, dpsi_AO, d2psi_AO);
     }
   }
@@ -195,15 +197,15 @@ struct HybridRealSoA : public BaseAdoptor, public HybridAdoptorBase<typename Bas
                    GradVector_t& dpsi,
                    HessVector_t& grad_grad_psi) override
   {
-    APP_ABORT("HybridRealSoA::evaluateVGH not implemented!");
+    APP_ABORT("HybridRepReal::evaluateVGH not implemented!");
     if (HybridBase::evaluate_vgh(P, iat, myV, myG, myH))
     {
       const PointType& r = P.activeR(iat);
       int bc_sign        = HybridBase::get_bc_sign(r, PrimLattice, HalfG);
-      BaseAdoptor::assign_vgh(bc_sign, psi, dpsi, grad_grad_psi, 0, myV.size());
+      SplineBase::assign_vgh(bc_sign, psi, dpsi, grad_grad_psi, 0, myV.size());
     }
     else
-      BaseAdoptor::evaluateVGH(P, iat, psi, dpsi, grad_grad_psi);
+      SplineBase::evaluateVGH(P, iat, psi, dpsi, grad_grad_psi);
   }
 
   void evaluateVGHGH(const ParticleSet& P,
@@ -213,7 +215,7 @@ struct HybridRealSoA : public BaseAdoptor, public HybridAdoptorBase<typename Bas
                      HessVector_t& grad_grad_psi,
                      GGGVector_t& grad_grad_grad_psi) override
   {
-    APP_ABORT("HybridCplxSoA::evaluateVGHGH not implemented!");
+    APP_ABORT("HybridRepCplx::evaluateVGHGH not implemented!");
   }
 };
 

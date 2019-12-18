@@ -2,18 +2,19 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2019 QMCPACK developers.
 //
 // File developed by: Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+//                    Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#ifndef QMCPLUSPLUS_EINSPLINE_R2RSOA_ADOPTOR_H
-#define QMCPLUSPLUS_EINSPLINE_R2RSOA_ADOPTOR_H
+#ifndef QMCPLUSPLUS_SPLINE_R2R_H
+#define QMCPLUSPLUS_SPLINE_R2R_H
 
 #include <memory>
 #include <QMCWaveFunctions/BsplineFactory/BsplineSet.h>
@@ -25,14 +26,14 @@
 
 namespace qmcplusplus
 {
-/** adoptor class to match ST real spline with BsplineSet::ValueType (real) SPOs
+/** class to match ST real spline with BsplineSet::ValueType (real) SPOs
  * @tparam ST precision of spline
  *
  * Requires temporage storage and multiplication of the sign of the real part of the phase
  * Internal storage ST type arrays are aligned and padded.
  */
 template<typename ST>
-struct SplineR2RSoA : public BsplineSet
+struct SplineR2R : public BsplineSet
 {
   bool IsGamma;
   using SplineType       = typename bspline_traits<ST, 3>::SplineType;
@@ -68,14 +69,14 @@ struct SplineR2RSoA : public BsplineSet
   ///thread private ratios for reduction when using nested threading, numVP x numThread
   Matrix<TT> ratios_private;
 
-  SplineR2RSoA()
+  SplineR2R()
   {
     is_complex  = false;
-    AdoptorName = "SplineR2RSoAAdoptor";
-    KeyWord     = "SplineR2RSoA";
+    className = "SplineR2R";
+    KeyWord     = "SplineR2R";
   }
 
-  virtual SPOSet* makeClone() const override { return new SplineR2RSoA(*this); }
+  virtual SPOSet* makeClone() const override { return new SplineR2R(*this); }
 
   inline void resizeStorage(size_t n, size_t nvals)
   {

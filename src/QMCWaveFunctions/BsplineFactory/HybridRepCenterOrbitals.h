@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2019 QMCPACK developers.
 //
 // File developed by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //
@@ -10,12 +10,12 @@
 //
 //////////////////////////////////////////////////////////////////////////////////////
 
-/** @file HybridAdoptorBase.h
+/** @file HybridRepCenterOrbitals.h
  *
- * Hybrid adoptor base class
+ * Hybrid representation atomic centered orbitals
  */
-#ifndef QMCPLUSPLUS_HYBRID_ADOPTOR_BASE_H
-#define QMCPLUSPLUS_HYBRID_ADOPTOR_BASE_H
+#ifndef QMCPLUSPLUS_HYBRIDREP_CENTER_ORBITALS_H
+#define QMCPLUSPLUS_HYBRIDREP_CENTER_ORBITALS_H
 
 #include <Particle/DistanceTableData.h>
 #include <QMCWaveFunctions/lcao/SoaSphericalTensor.h>
@@ -25,7 +25,7 @@
 namespace qmcplusplus
 {
 template<typename ST>
-struct AtomicOrbitalSoA
+struct AtomicOrbitals
 {
   static const int D           = 3;
   using AtomicSplineType       = typename bspline_traits<ST, 1>::SplineType;
@@ -53,7 +53,7 @@ struct AtomicOrbitalSoA
 
   vContainer_type localV, localG, localL;
 
-  AtomicOrbitalSoA(int Lmax) : lmax(Lmax), lm_tot((Lmax + 1) * (Lmax + 1)), Ylm(Lmax)
+  AtomicOrbitals(int Lmax) : lmax(Lmax), lm_tot((Lmax + 1) * (Lmax + 1)), Ylm(Lmax)
   {
     r_power_minus_l.resize(lm_tot);
     l_vals.resize(lm_tot);
@@ -381,22 +381,19 @@ struct AtomicOrbitalSoA
   void evaluate_vgh(const ST& r, const PointType& dr, VV& myV, GV& myG, HT& myH)
   {
     //Needed to do tensor product here
-    APP_ABORT("AtomicOrbitalSoA::evaluate_vgh");
+    APP_ABORT("AtomicOrbitals::evaluate_vgh");
   }
 };
 
-/** adoptor class to match
- *
- */
 template<typename ST>
-struct HybridAdoptorBase
+struct HybridRepCenterOrbitals
 {
   static const int D = 3;
-  using PointType    = typename AtomicOrbitalSoA<ST>::PointType;
+  using PointType    = typename AtomicOrbitals<ST>::PointType;
   using RealType     = typename DistanceTableData::RealType;
 
   // atomic centers
-  std::vector<AtomicOrbitalSoA<ST>> AtomicCenters;
+  std::vector<AtomicOrbitals<ST>> AtomicCenters;
   ///table index
   int myTableID;
   //mapping supercell to primitive cell
@@ -418,7 +415,7 @@ struct HybridAdoptorBase
   /// smoothing function
   smoothing_functions smooth_func_id;
 
-  HybridAdoptorBase() {}
+  HybridRepCenterOrbitals() {}
 
   void set_info(const ParticleSet& ions, ParticleSet& els, const std::vector<int>& mapping)
   {

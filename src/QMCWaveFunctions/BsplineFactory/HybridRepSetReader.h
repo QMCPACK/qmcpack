@@ -2,29 +2,25 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2019 QMCPACK developers.
 //
-// File developed by: Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
-//                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
-//                    Ye Luo, yeluo@anl.gov, Argonne National Laboratory
-//                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
-//                    Jeongnim Kim, jeongnim.kim@inte.com, Intel Corp.
+// File developed by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //
-// File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
+// File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
 
 /** @file
  *
- * derived from SplineAdoptorReader
+ * derived from SplineSetReader
  */
 
-#ifndef QMCPLUSPLUS_EINSPLINE_HYBRID_ADOPTOR_READERP_H
-#define QMCPLUSPLUS_EINSPLINE_HYBRID_ADOPTOR_READERP_H
+#ifndef QMCPLUSPLUS_HYBRIDREP_READER_H
+#define QMCPLUSPLUS_HYBRIDREP_READER_H
 
 #include <Numerics/Quadrature.h>
 #include <Numerics/Bessel.h>
-#include <QMCWaveFunctions/BsplineFactory/HybridAdoptorBase.h>
+#include <QMCWaveFunctions/BsplineFactory/HybridRepCenterOrbitals.h>
 #include "OhmmsData/AttributeSet.h"
 
 //#include <QMCHamiltonians/Ylm.h>
@@ -138,12 +134,12 @@ struct Gvectors
 };
 
 
-/** General SplineHybridAdoptorReader to handle any unitcell
+/** General HybridRepSetReader to handle any unitcell
  */
 template<typename SA>
-struct SplineHybridAdoptorReader : public SplineAdoptorReader<SA>
+struct HybridRepSetReader : public SplineSetReader<SA>
 {
-  typedef SplineAdoptorReader<SA> BaseReader;
+  typedef SplineSetReader<SA> BaseReader;
 
   using BaseReader::bspline;
   using BaseReader::mybuilder;
@@ -151,7 +147,7 @@ struct SplineHybridAdoptorReader : public SplineAdoptorReader<SA>
   using BaseReader::rotate_phase_r;
   using typename BaseReader::DataType;
 
-  SplineHybridAdoptorReader(EinsplineSetBuilder* e) : BaseReader(e) {}
+  HybridRepSetReader(EinsplineSetBuilder* e) : BaseReader(e) {}
 
   /** initialize basic parameters of atomic orbitals */
   void initialize_hybridrep_atomic_centers() override
@@ -287,7 +283,7 @@ struct SplineHybridAdoptorReader : public SplineAdoptorReader<SA>
 
       for (int center_idx = 0; center_idx < ACInfo.Ncenters; center_idx++)
       {
-        AtomicOrbitalSoA<DataType> oneCenter(ACInfo.lmax[center_idx]);
+        AtomicOrbitals<DataType> oneCenter(ACInfo.lmax[center_idx]);
         oneCenter.set_info(ACInfo.ion_pos[center_idx], ACInfo.cutoff[center_idx], ACInfo.inner_cutoff[center_idx],
                            ACInfo.spline_radius[center_idx], ACInfo.non_overlapping_radius[center_idx],
                            ACInfo.spline_npoints[center_idx]);
@@ -320,7 +316,7 @@ struct SplineHybridAdoptorReader : public SplineAdoptorReader<SA>
                                          gvec_last);
     // if(band_group_comm.isGroupLeader()) std::cout << "print band=" << iorb << " KE=" << Gvecs.evaluate_KE(cG) << std::endl;
 
-    std::vector<AtomicOrbitalSoA<DataType>>& centers = bspline->AtomicCenters;
+    std::vector<AtomicOrbitals<DataType>>& centers = bspline->AtomicCenters;
     app_log() << "Transforming band " << iorb << " on Rank 0" << std::endl;
     // collect atomic centers by group
     std::vector<int> uniq_species;

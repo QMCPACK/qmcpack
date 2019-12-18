@@ -26,7 +26,7 @@ namespace qmcplusplus
 class SPOSetInputInfo;
 
 /**
- * Each SplineAdoptor needs a reader derived from BsplineReaderBase.
+ * Each SplineC2X needs a reader derived from BsplineReaderBase.
  * This base class handles common chores
  * - check_twists : read gvectors, set twists for folded bands if needed, and set the phase for the special K
  * - set_grid : create the basic grid and boundary conditions for einspline

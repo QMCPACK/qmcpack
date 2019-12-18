@@ -12,7 +12,8 @@
 
 /** @file SplineC2ROMP.h
  *
- * Adoptor classes to handle complex-to-(real,complex) with arbitrary precision
+ * class to handle complex splines to real orbitals with splines of arbitrary precision
+ * splines storage and computation is offloaded to accelerators using OpenMP target
  */
 #ifndef QMCPLUSPLUS_EINSPLINE_C2R_OMP_H
 #define QMCPLUSPLUS_EINSPLINE_C2R_OMP_H
@@ -188,7 +189,7 @@ inline void assign_vgl(ST x,
 }
 } // namespace C2R
 
-/** adoptor class to match std::complex<ST> spline with BsplineSet::ValueType (real) SPOs
+/** class to match std::complex<ST> spline with BsplineSet::ValueType (real) SPOs
  * @tparam ST precision of spline
  *
  * Requires temporage storage and multiplication of phase vectors
@@ -263,8 +264,8 @@ struct SplineC2ROMP : public BsplineSet
   SplineC2ROMP() : nComplexBands(0)
   {
     is_complex  = true;
-    AdoptorName = "SplineC2ROMPAdoptor";
-    KeyWord     = "SplineC2ROMP";
+    className = "SplineC2ROMP";
+    KeyWord     = "SplineC2R";
   }
 
   ~SplineC2ROMP()

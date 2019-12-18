@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2019 QMCPACK developers.
 //
 // File developed by: Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
@@ -16,43 +16,43 @@
 
 /** @file
  *
- * The most general reader class for SplineAdoptor using the full single grid for the supercell
- * - SplineR2RAdoptor
- * - SplineC2CAdoptor
- * - SplineC2RAdoptor
- * Each band is initialized with UBspline_3d_d and both real and imaginary parts are passed to the adoptor object
+ * The most general reader class for the following classes using the full single grid for the supercell
+ * - SplineR2R
+ * - SplineC2C
+ * - SplineC2R
+ * Each band is initialized with UBspline_3d_d and both real and imaginary parts are passed to the objects
  * which will convert the data type to their internal precision. 
  */
-#ifndef QMCPLUSPLUS_EINSPLINE_ADOPTOR_READERP_H
-#define QMCPLUSPLUS_EINSPLINE_ADOPTOR_READERP_H
+#ifndef QMCPLUSPLUS_SPLINESET_READER_H
+#define QMCPLUSPLUS_SPLINESET_READER_H
 #include <mpi/collectives.h>
 #include <mpi/point2point.h>
 #include "Utilities/FairDivide.h"
 
 namespace qmcplusplus
 {
-/** General SplineAdoptorReader to handle any unitcell
+/** General SplineSetReader to handle any unitcell
  */
 template<typename SA>
-struct SplineAdoptorReader : public BsplineReaderBase
+struct SplineSetReader : public BsplineReaderBase
 {
-  typedef SA adoptor_type;
-  typedef typename adoptor_type::DataType DataType;
-  typedef typename adoptor_type::SplineType SplineType;
+  typedef SA splineset_t;
+  typedef typename splineset_t::DataType DataType;
+  typedef typename splineset_t::SplineType SplineType;
 
   Array<std::complex<double>, 3> FFTbox;
   Array<double, 3> splineData_r, splineData_i;
   double rotate_phase_r, rotate_phase_i;
   UBspline_3d_d* spline_r;
   UBspline_3d_d* spline_i;
-  adoptor_type* bspline;
+  splineset_t* bspline;
   fftw_plan FFTplan;
 
-  SplineAdoptorReader(EinsplineSetBuilder* e)
+  SplineSetReader(EinsplineSetBuilder* e)
       : BsplineReaderBase(e), spline_r(NULL), spline_i(NULL), bspline(0), FFTplan(NULL)
   {}
 
-  ~SplineAdoptorReader() { clear(); }
+  ~SplineSetReader() { clear(); }
 
   void clear()
   {
@@ -133,11 +133,11 @@ struct SplineAdoptorReader : public BsplineReaderBase
 
   SPOSet* create_spline_set(int spin, const BandInfoGroup& bandgroup)
   {
-    ReportEngine PRE("SplineC2XAdoptorReader", "create_spline_set(spin,SPE*)");
+    ReportEngine PRE("SplineSetReader", "create_spline_set(spin,SPE*)");
     //Timer c_prep, c_unpack,c_fft, c_phase, c_spline, c_newphase, c_h5, c_init;
     //double t_prep=0.0, t_unpack=0.0, t_fft=0.0, t_phase=0.0, t_spline=0.0, t_newphase=0.0, t_h5=0.0, t_init=0.0;
-    bspline = new adoptor_type;
-    app_log() << "  AdoptorName = " << bspline->AdoptorName << std::endl;
+    bspline = new splineset_t;
+    app_log() << "  ClassName = " << bspline->getClassName() << std::endl;
     if (bspline->is_complex)
       app_log() << "  Using complex einspline table" << std::endl;
     else
@@ -151,11 +151,11 @@ struct SplineAdoptorReader : public BsplineReaderBase
 
     Ugrid xyz_grid[3];
 
-    typename adoptor_type::BCType xyz_bc[3];
+    typename splineset_t::BCType xyz_bc[3];
     bool havePsig = set_grid(bspline->HalfG, xyz_grid, xyz_bc);
     if (!havePsig)
     {
-      APP_ABORT("EinsplineAdoptorReader needs psi_g. Set precision=\"double\".");
+      APP_ABORT("SplineSetReader needs psi_g. Set precision=\"double\".");
     }
     bspline->create_spline(xyz_grid, xyz_bc);
     //    int TwistNum = mybuilder->TwistNum;
@@ -174,14 +174,14 @@ struct SplineAdoptorReader : public BsplineReaderBase
       if (foundspline)
       {
         std::string aname("none");
-        foundspline = h5f.readEntry(aname, "adoptor_name");
+        foundspline = h5f.readEntry(aname, "class_name");
         foundspline = (aname.find(bspline->KeyWord) != std::string::npos);
       }
       if (foundspline)
       {
         int sizeD   = 0;
         foundspline = h5f.readEntry(sizeD, "sizeof");
-        foundspline = (sizeD == sizeof(typename adoptor_type::DataType));
+        foundspline = (sizeD == sizeof(typename splineset_t::DataType));
       }
       if (foundspline)
       {
@@ -197,7 +197,7 @@ struct SplineAdoptorReader : public BsplineReaderBase
     {
       now.restart();
       bspline->bcast_tables(myComm);
-      app_log() << "  SplineAdoptorReader bcast the full table " << now.elapsed() << " sec." << std::endl;
+      app_log() << "  SplineSetReader bcast the full table " << now.elapsed() << " sec." << std::endl;
       app_log().flush();
     }
     else
@@ -224,7 +224,7 @@ struct SplineAdoptorReader : public BsplineReaderBase
 
         now.restart();
         initialize_spline_pio_gather(spin, bandgroup);
-        app_log() << "  SplineAdoptorReader initialize_spline_pio " << now.elapsed() << " sec" << std::endl;
+        app_log() << "  SplineSetReader initialize_spline_pio " << now.elapsed() << " sec" << std::endl;
 
         fftw_destroy_plan(FFTplan);
         FFTplan = NULL;
@@ -236,8 +236,9 @@ struct SplineAdoptorReader : public BsplineReaderBase
         now.restart();
         hdf_archive h5f;
         h5f.create(splinefile);
-        h5f.write(bspline->AdoptorName, "adoptor_name");
-        int sizeD = sizeof(typename adoptor_type::DataType);
+        std::string classname = bspline->getClassName();
+        h5f.write(classname, "class_name");
+        int sizeD = sizeof(typename splineset_t::DataType);
         h5f.write(sizeD, "sizeof");
         bspline->write_splines(h5f);
         h5f.close();
@@ -304,7 +305,7 @@ struct SplineAdoptorReader : public BsplineReaderBase
         int ti        = cur_bands[iorb_h5].TwistIndex;
         std::string s = psi_g_path(ti, spin, cur_bands[iorb_h5].BandIndex);
         if (!h5f.readEntry(cG, s))
-          APP_ABORT("SplineAdoptorReader Failed to read band(s) from h5!\n");
+          APP_ABORT("SplineSetReader Failed to read band(s) from h5!\n");
         double total_norm = compute_norm(cG);
         if ((checkNorm) && (std::abs(total_norm - 1.0) > PW_COEFF_NORM_TOLERANCE))
         {
@@ -312,7 +313,7 @@ struct SplineAdoptorReader : public BsplineReaderBase
                     << ", computed from plane wave coefficients!" << std::endl
                     << "This may indicate a problem with the HDF5 library versions used "
                     << "during wavefunction conversion or read." << std::endl;
-          APP_ABORT("SplineAdoptorReader Wrong orbital norm!");
+          APP_ABORT("SplineSetReader Wrong orbital norm!");
         }
         fft_spline(cG, ti);
         bspline->set_spline(spline_r, spline_i, cur_bands[iorb_h5].TwistIndex, iorb, 0);
@@ -336,7 +337,7 @@ struct SplineAdoptorReader : public BsplineReaderBase
   void initialize_spline_psi_r(int spin, const BandInfoGroup& bandgroup)
   {
     //not used by may be enabled later
-    APP_ABORT("SplineAdoptorReaderP initialize_spline_psi_r implementation not finished.");
+    APP_ABORT("SplineSetReaderP initialize_spline_psi_r implementation not finished.");
     int nx = MeshSize[0];
     int ny = MeshSize[1];
     int nz = MeshSize[2];
