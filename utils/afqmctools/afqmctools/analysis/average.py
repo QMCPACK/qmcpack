@@ -121,8 +121,6 @@ def average_diag_two_rdm(filename, estimator='back_propagated', eqlb=1, skip=1, 
                 two_rdm[i,j] = mean[ij]
                 two_rdm_err[i,j] = err[ij]
                 ij += 1
-#        two_rdm[numpy.triu_indices] = mean
-#        two_rdm_err[numpy.triu_indices] = err
     elif walker == 'non_collinear':
         print("Non-collinear wavefunction not supported.")
         return None
@@ -172,8 +170,6 @@ def average_observable(filename, name, eqlb=1, estimator='back_propagated',
                        ix=None, skip=1):
     """Compute mean and error bar for AFQMC HDF5 observable.
 
-    Returns n(r,r) for a given real space grid.
-
     Parameters
     ----------
     filename : string
@@ -212,7 +208,7 @@ def average_observable(filename, name, eqlb=1, estimator='back_propagated',
     return mean, err, len(data[eqlb:len(data):skip])
 
 def get_noons(filename, estimator='back_propagated', eqlb=1, skip=1, ix=None,
-              nsamp=100, screen_factor=1):
+              nsamp=20, screen_factor=1):
     """Get NOONs from averaged AFQMC RDM.
 
     Parameters
@@ -230,19 +226,30 @@ def get_noons(filename, estimator='back_propagated', eqlb=1, skip=1, ix=None,
     ix : int
         Back propagation path length to average. Optional.
         Default: None (chooses longest path).
+    nsamp : int
+        Number of perturbed RDMs to construct to estimate of error bar. Optional.
+        Default: 20.
+    screen_factor : int
+        Zero RDM elements with abs(P[i,j]) < screen_factor*Perr[i,j]. Optional
+        Default: 1.
 
     Returns
     -------
-    one_rdm : :class:`numpy.ndarray`
-        Averaged 1RDM.
-    one_rdm_err : :class:`numpy.ndarray`
-        Error bars for 1RDM elements.
+    noons : :class:`numpy.ndarray`
+        NOONS.
+    noons_err : :class:`numpy.ndarray`
+        Estimate of error bar on NOONs.
     """
-    P, Perr, ns = average_one_rdm(filename, estimator='back_propagated', eqlb=1,
-                                  skip=1, ix=ix)
-    if len(P.shape) == 3:
-        P = P[0] + P[1]
-        Perr = Perr[0] + Perr[1]
+    P, Perr = average_one_rdm(filename, estimator='back_propagated', eqlb=1,
+                              skip=1, ix=ix)
+    # Sum over spin.
+    P = numpy.sum(P, axis=0)
+    if len(Perr.shape[0]) == 2:
+        # Collinear
+        Perr = numpy.sqrt((Perr[0]**2 + Perr[1]**2))
+    else:
+        # Non-collinear / Closed
+        Perr = Perr[0]
     P = 0.5 * (P + P.conj().T)
     Perr = 0.5 * (Perr + Perr.T)
     P[numpy.abs(P) < screen_factor*Perr] = 0.0
@@ -257,10 +264,4 @@ def get_noons(filename, estimator='back_propagated', eqlb=1, skip=1, ix=None,
         noons[s] = e[::-1]
 
     e, ev = numpy.linalg.eigh(P)
-    # import matplotlib.pyplot as pl
-    # e, ev = numpy.linalg.eigh(P)
-    # pl.hist(noons[:,41], bins=10)
-    # pl.axvline(numpy.mean(noons[:,41]))
-    # pl.axvline(e[::-1][41], linestyle=':')
-    # pl.show()
     return e[::-1], numpy.std(noons, axis=0, ddof=1)
