@@ -22,6 +22,7 @@
 #include "AFQMC/Estimators/Observables/full1rdm.hpp"
 #include "AFQMC/Estimators/Observables/diagonal2rdm.hpp"
 #include "AFQMC/Estimators/Observables/n2r.hpp"
+#include "AFQMC/Estimators/Observables/generalizedFockMatrix.hpp"
 
 namespace qmcplusplus
 {
@@ -61,6 +62,7 @@ class dummy_obs
  * Defines a common interface for all observable classes.
  */
 class Observable: public boost::variant<dummy::dummy_obs,full1rdm,diagonal2rdm,
+                                        generalizedFockMatrix,
                                         n2r<shared_allocator<ComplexType>> 
 #if defined(ENABLE_CUDA)
                                         ,n2r<device_allocator<ComplexType>> 
@@ -77,6 +79,9 @@ class Observable: public boost::variant<dummy::dummy_obs,full1rdm,diagonal2rdm,
 
     explicit Observable(full1rdm && other) : variant(std::move(other)) {}
     explicit Observable(full1rdm const& other) = delete;
+
+    explicit Observable(generalizedFockMatrix && other) : variant(std::move(other)) {}
+    explicit Observable(generalizedFockMatrix const& other) = delete;
 
     explicit Observable(diagonal2rdm && other) : variant(std::move(other)) {}
     explicit Observable(diagonal2rdm const& other) = delete;

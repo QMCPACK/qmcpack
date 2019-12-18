@@ -554,6 +554,12 @@ class Real3IndexFactorization_batched_v2
       }
     }
 
+    template<class Mat, class MatB>
+    void generalizedFockMatrix(Mat&& G, MatB&& Fp, MatB&& Fm)
+    {
+      APP_ABORT(" Error: generalizedFockMatrix not implemented for this hamiltonian.\n"); 
+    }
+
     bool distribution_over_cholesky_vectors() const{ return true; }
     int number_of_ke_vectors() const{ return local_nCV; }
     int local_number_of_cholesky_vectors() const{ return local_nCV; }

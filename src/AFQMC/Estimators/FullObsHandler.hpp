@@ -99,6 +99,9 @@ class FullObsHandler: public AFQMCInfo
       std::transform(cname.begin(),cname.end(),cname.begin(),(int (*)(int)) tolower);
       if(cname =="onerdm") {
         properties.emplace_back(Observable(std::move(full1rdm(TG,info,cur,walker_type,nave,block_size)))); 
+      } else if(cname =="gfock" || cname=="genfock" || cname=="ekt") {
+        properties.emplace_back(Observable(std::move(generalizedFockMatrix(TG,info,cur,walker_type,
+                                            wfn0.getHamiltonianOperations(),nave,block_size)))); 
       } else if(cname =="diag2rdm") {
         properties.emplace_back(Observable(std::move(diagonal2rdm(TG,info,cur,walker_type,nave,block_size)))); 
       } else if(cname =="n2r" || cname =="ontop2rdm") {
