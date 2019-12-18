@@ -84,7 +84,6 @@ struct SplineC2CSoA : public SplineAdoptorBase<ST, 3>, public BsplineSet
   SplineC2CSoA() : Base()
   {
     this->is_complex   = true;
-    this->is_soa_ready = true;
     this->AdoptorName  = "SplineC2CSoAAdoptor";
     this->KeyWord      = "SplineC2CSoA";
   }

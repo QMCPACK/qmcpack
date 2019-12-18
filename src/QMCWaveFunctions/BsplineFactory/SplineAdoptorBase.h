@@ -46,14 +46,8 @@ struct SplineAdoptorBase
   using DataType         = ST;
   ///true if the computed values are complex
   bool is_complex;
-  ///true, if it has only one k point and Gamma
-  bool is_gamma_only;
-  ///true, if it has only one k point and Gamma
-  bool is_soa_ready;
   ///Index of this adoptor, when multiple adoptors are used for NUMA or distributed cases
   size_t MyIndex;
-  ///number of unique orbitals
-  size_t nunique_orbitals;
   ///first index of the SPOs this Spline handles
   size_t first_spo;
   ///last index of the SPOs this Spline handles
@@ -79,10 +73,7 @@ struct SplineAdoptorBase
 
   SplineAdoptorBase()
       : is_complex(false),
-        is_gamma_only(false),
-        is_soa_ready(false),
         MyIndex(0),
-        nunique_orbitals(0),
         first_spo(0),
         last_spo(0)
   {}
@@ -91,8 +82,7 @@ struct SplineAdoptorBase
 
   inline void init_base(int n)
   {
-    nunique_orbitals = n;
-    GGt              = dot(transpose(PrimLattice.G), PrimLattice.G);
+    GGt = dot(transpose(PrimLattice.G), PrimLattice.G);
     kPoints.resize(n);
     MakeTwoCopies.resize(n);
     BandIndexMap.resize(n);

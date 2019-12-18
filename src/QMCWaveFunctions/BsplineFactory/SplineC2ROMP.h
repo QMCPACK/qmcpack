@@ -266,7 +266,6 @@ struct SplineC2ROMP : public SplineAdoptorBase<ST, 3>
   SplineC2ROMP() : Base(), nComplexBands(0)
   {
     this->is_complex   = true;
-    this->is_soa_ready = true;
     this->AdoptorName  = "SplineC2ROMPAdoptor";
     this->KeyWord      = "SplineC2ROMP";
   }
