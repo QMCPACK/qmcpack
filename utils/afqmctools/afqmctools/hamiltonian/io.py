@@ -3,7 +3,7 @@ import numpy
 from afqmctools.utils.io import to_qmcpack_complex
 
 def write_qmcpack_sparse(hcore, chol, nelec, nmo, e0=0.0, filename='hamiltonian.h5',
-                 real_chol=False, verbose=False, cutoff=1e-16):
+                 real_chol=False, verbose=False, cutoff=1e-16, ortho=None):
     with h5py.File(filename, 'w') as fh5:
         fh5['Hamiltonian/Energies'] = numpy.array([e0,0])
         if real_chol:
@@ -13,6 +13,8 @@ def write_qmcpack_sparse(hcore, chol, nelec, nmo, e0=0.0, filename='hamiltonian.
             hcore = hcore.astype(numpy.complex128).view(numpy.float64)
             hcore = hcore.reshape(shape+(2,))
             fh5['Hamiltonian/hcore'] = hcore
+        if ortho is not None:
+            fh5['Hamiltonian/X'] = ortho
         # number of cholesky vectors
         nchol_vecs = chol.shape[-1]
         ix, vals = to_sparse(chol, cutoff=cutoff)

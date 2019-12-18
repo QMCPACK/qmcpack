@@ -200,16 +200,19 @@ def read_qmcpack_sparse(filename, get_chol=True):
             hcore = fh5['Hamiltonian/hcore'][:]
             real_ints = True
     if get_chol:
-        chol_vecs = read_cholesky(filename)
+        chol_vecs = read_cholesky(filename, real_ints=real_ints)
     else:
         chol_vecs = None
     return (hcore, chol_vecs, enuc, int(nmo), (int(nalpha), int(nbeta)))
 
-def read_cholesky(filename, full=True, ichunk=None):
+def read_cholesky(filename, full=True, ichunk=None, real_ints=False):
     with h5py.File(filename, 'r') as fh5:
         block_sizes = fh5['Hamiltonian/Factorized/block_sizes'][:]
         nval = sum(block_sizes)
         s = 0
+        dims = fh5['Hamiltonian/dims'][:]
+        nmo = dims[3]
+        nchol = dims[-1]
         if full:
             if real_ints:
                 vals = numpy.zeros(nval, dtype=numpy.float64)
@@ -218,7 +221,7 @@ def read_cholesky(filename, full=True, ichunk=None):
             row_ix = numpy.zeros(nval, dtype=numpy.int32)
             col_ix = numpy.zeros(nval, dtype=numpy.int32)
             for ic, bs in enumerate(block_sizes):
-                ixs, vchunk = get_chunk(fh5, ichunk, real_ints)
+                ixs, vchunk = get_chunk(fh5, ic, real_ints)
                 row_ix[s:s+bs] = ixs[::2]
                 col_ix[s:s+bs] = ixs[1::2]
                 vals[s:s+bs] = vchunk
