@@ -87,6 +87,22 @@ void dot_wabn( int nwalk, int nocc, int nchol,
 }
 
 template<typename T, typename Q>
+void dot_wpan_waqn_Fwpq( int nwalk, int nmo, int nchol,
+                    std::complex<Q> alpha, std::complex<Q> const* Tab,
+                    std::complex<T>* F)
+{
+  std::complex<T> alp(static_cast<std::complex<T>>(alpha));
+  for(int w=0; w<nwalk; ++w) {
+    auto A_(Tab + w*nmo*nmo*nchol);
+    using ma::dot;
+    for(int p=0; p<nmo; ++p)
+      for(int q=0; q<nmo; ++q, ++F) 
+        for(int a=0; a<nmo; ++a)
+          *F += alp*static_cast<std::complex<T>>(ma::dot(nchol,A_+(p*nmo+a)*nchol,1,A_+(a*nmo+q)*nchol,1));
+  }
+}
+
+template<typename T, typename Q>
 void dot_wanb( int nwalk, int nocc, int nchol,
                     std::complex<Q> alpha, std::complex<Q> const* Tab,
                     std::complex<T>* y, int incy)
@@ -364,6 +380,13 @@ void dot_wabn( int nwalk, int nocc, int nchol, R alpha, cuda_gpu_ptr<Q> Tab,
                     T* y , int incy)
 {
   kernels::dot_wabn(nwalk,nocc,nchol,alpha,to_address(Tab),y,incy);
+}
+
+template<typename T, typename Q, typename R>
+void dot_wpan_waqn_Fwpq( int nwalk, int nocc, int nchol, R alpha, cuda_gpu_ptr<Q> Tab,
+                    cuda_gpu_ptr<T> F)
+{
+  kernels::dot_wpan_waqn_Fwpq(nwalk,nocc,nchol,alpha,to_address(Tab),to_address(F));
 }
 
 template<typename T, typename Q, typename R>
