@@ -354,7 +354,7 @@ int WalkerControlBase::branch(int iter, MCWalkerConfiguration& W, FullPrecRealTy
   return nw_tot;
 }
 
-void WalkerControlBase::onRankSpawnKill(MCPopulation& pop, PopulationAdjustment& adjust)
+void WalkerControlBase::onRankSpawnKill(MCPopulation& pop, PopulationAdjustment&& adjust)
 {
   while (!adjust.bad_walkers.empty())
   {
@@ -388,7 +388,7 @@ int WalkerControlBase::branch(int iter, MCPopulation& pop, FullPrecRealType trig
   // We have not yet updated the local number of walkers
   // This happens as a side effect of killing or spawning walkers
 
-  WalkerControlBase::onRankSpawnKill(pop, adjust);
+  WalkerControlBase::onRankSpawnKill(pop, std::move(adjust));
   
   std::for_each(pop.get_walkers().begin(), pop.get_walkers().end(), [](auto& walker) {
     walker->Weight       = 1.0;

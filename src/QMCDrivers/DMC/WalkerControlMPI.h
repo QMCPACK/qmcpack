@@ -26,7 +26,7 @@ struct WalkerControlMPITest;
 
 namespace testing
 {
-struct UnifiedDriverWalkerControlMPITest;
+class UnifiedDriverWalkerControlMPITest;
 }
 
 struct WalkerMessage
@@ -77,10 +77,10 @@ struct WalkerControlMPI : public WalkerControlBase
    *  for each adjustment in population to the context.
    *  \todo fix this word snalad
    *
-   *  \param[in] Cur_pop current population
+   *  \param[in] Cur_pop population taking multiplicity into account
    *  \param[in] NumContexts number of MPI processes
    *  \param[in] MyContext my MPI rank
-   *  \param[in] NumPerNode current walkers per node
+   *  \param[in] NumPerNode as if all walkers were copied out to multiplicity
    *  \param[out] FairOffSet running population count at each partition boundary
    *  \param[out] minus list of partition indexes one occurance for each walker removed
    *  \param[out] plus list of partition indexes one occurance for each walker added
@@ -102,8 +102,13 @@ struct WalkerControlMPI : public WalkerControlBase
   //current implementations
   void swapWalkersSimple(MCWalkerConfiguration& W);
 
-  //Unified Driver Implementation
-  void swapWalkersSimple(MCPopulation& pop, PopulationAdjustment& adjust, std::vector<IndexType>& num_per_node);
+  /** Unified Driver Implementation
+   *
+   * \param[inout] local population
+   * \param[inout] adjust population adjustment, it's updated for so on node adjustments can occur
+   * \param[in]    number of walkers per node if expanded by multiplicity.
+   */
+  void swapWalkersSimple(MCPopulation& pop, PopulationAdjustment& adjust, std::vector<IndexType> num_per_node);
 
   // Testing wrappers
   friend WalkerControlMPITest;

@@ -167,19 +167,21 @@ int WalkerControlMPI::branch(int iter, MCPopulation& pop, FullPrecRealType trigg
   measureProperties(iter);
   pop.set_ensemble_property(ensemble_property_);
 
-  //This applies minMax etc.
-  adjustPopulation(pop, adjust);
-  WalkerControlBase::onRankSpawnKill(pop, adjust);
-
-  auto num_per_node = WalkerControlBase::syncFutureWalkersPerRank(this->getCommunicator(), pop.get_num_local_walkers());
-
   // for (int i = 0, j = LE_MAX; i < num_contexts_; i++, j++)
   //   NumPerNode[i] = static_cast<int>(curData[j]);
+
+  auto num_per_node = WalkerControlBase::syncFutureWalkersPerRank(this->getCommunicator(), adjust.num_walkers);
 
   myTimers[DMC_MPI_prebalance]->stop();
   myTimers[DMC_MPI_loadbalance]->start();
   swapWalkersSimple(pop, adjust, num_per_node);
   myTimers[DMC_MPI_loadbalance]->stop();
+
+  //This applies minMax etc.
+  adjustPopulation(pop, adjust);
+  WalkerControlBase::onRankSpawnKill(pop, std::move(adjust));
+
+  num_per_node = WalkerControlBase::syncFutureWalkersPerRank(this->getCommunicator(), pop.get_num_local_walkers());
 
   for (UPtr<MCPWalker>& walker : pop.get_walkers())
   {
@@ -469,11 +471,15 @@ void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W)
  *  \param[inout] pop
  *  \param[inout] adjust
  *
+ *  This method should not be dependent on legacy state variables of
+ *  Cur_pop, NumPernode
+ *
  */
-void WalkerControlMPI::swapWalkersSimple(MCPopulation& pop, PopulationAdjustment& adjust, std::vector<IndexType>& num_per_node)
+void WalkerControlMPI::swapWalkersSimple(MCPopulation& pop, PopulationAdjustment& adjust, std::vector<IndexType> num_per_node)
 {
+  int expanded_population = std::accumulate(num_per_node.begin(), num_per_node.end(), 0);
   std::vector<int> minus, plus;
-  determineNewWalkerPopulation(Cur_pop, num_contexts_, MyContext, num_per_node, FairOffSet, plus, minus);
+  determineNewWalkerPopulation(expanded_population, num_contexts_, MyContext, num_per_node, FairOffSet, plus, minus);
 
   if (adjust.good_walkers.empty() && adjust.bad_walkers.empty())
   {
@@ -642,7 +648,11 @@ void WalkerControlMPI::swapWalkersSimple(MCPopulation& pop, PopulationAdjustment
   }
   std::for_each(zombies.begin(), zombies.end(),
                 [&pop](MCPWalker& zombie){pop.killWalker(zombie);});
-  
+
+  adjust.num_walkers = 0;
+  for (int i = 0; i < adjust.copies_to_make.size(); ++i)
+    adjust.num_walkers += adjust.copies_to_make[i] + 1;
+      
   NumWalkersSent = local_sends;
 }
 

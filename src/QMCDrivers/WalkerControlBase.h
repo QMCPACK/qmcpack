@@ -22,12 +22,20 @@
 #include "QMCDrivers/MCPopulation.h"
 #include "Message/MPIObjectBase.h"
 #include "Message/CommOperators.h"
+
 // #include "QMCDrivers/ForwardWalking/ForwardWalkingStructure.h"
 
 //#include <boost/archive/binary_oarchive.hpp>
 
 namespace qmcplusplus
 {
+
+namespace testing
+{
+class UnifiedDriverWalkerControlMPITest;
+}
+
+
 /** Base class to control the walkers for DMC simulations.
  *
  * The virtual functions are implemented for a serial execution with a usual birth/death
@@ -189,7 +197,12 @@ public:
   void set_method(IndexType method) { method_ = method; }
 
 protected:
-  static void onRankSpawnKill(MCPopulation& pop, PopulationAdjustment& adjust);
+  /** makes adjustments to local population based on adjust
+   *
+   * \param[inout] pop the local population
+   * \param[in]    the population adjustment, it is not updated to reflect local state and is now invalid.
+   */
+  static void onRankSpawnKill(MCPopulation& pop, PopulationAdjustment&& adjust);
   
   ///id for the method
   IndexType method_;
@@ -240,6 +253,7 @@ protected:
   ///ensemble properties
   MCDataType<FullPrecRealType> ensemble_property_;
 
+  friend class qmcplusplus::testing::UnifiedDriverWalkerControlMPITest;
 };
 
 } // namespace qmcplusplus
