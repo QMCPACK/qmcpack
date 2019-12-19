@@ -38,11 +38,11 @@ public:
   UnifiedDriverWalkerControlMPITest() : wc_(dpools_.comm)
   {
     using namespace testing;
-    
+
     int num_ranks = dpools_.comm->size();
-    pop_ = std::make_unique<MCPopulation>(num_ranks, dpools_.particle_pool->getParticleSet("e"),
-                                         dpools_.wavefunction_pool->getPrimary(),
-                                         dpools_.hamiltonian_pool->getPrimary());
+    pop_ =
+        std::make_unique<MCPopulation>(num_ranks, dpools_.particle_pool->getParticleSet("e"),
+                                       dpools_.wavefunction_pool->getPrimary(), dpools_.hamiltonian_pool->getPrimary());
     pop_->createWalkers(1);
 
     wc_.use_nonblocking = true;
@@ -54,30 +54,59 @@ public:
       wc_.NumPerNode[i] = 1;
     }
   }
-                                        
+
   void testMultiplicity(std::vector<int>& rank_counts_before, std::vector<int>& rank_counts_after)
   {
     using MCPWalker = MCPopulation::MCPWalker;
 
-    int i = dpools_.comm->rank();
+    int rank = dpools_.comm->rank();
 
     // Currently some/all this duplicate state is necessary to have a a successful swap.
     // \todo remove duplicate state effecting population control
-    
-    pop_->get_walkers()[0]->Multiplicity = rank_counts_before[i];
-    wc_.Cur_pop = std::accumulate(rank_counts_before.begin(), rank_counts_before.end(),0);
-    wc_.NumPerNode = rank_counts_before;
-    
-    WalkerControlBase::PopulationAdjustment pop_adjust{wc_.NumPerNode[i],
+
+    pop_->get_walkers()[0]->Multiplicity = rank_counts_before[rank];
+    wc_.Cur_pop                          = std::accumulate(rank_counts_before.begin(), rank_counts_before.end(), 0);
+    wc_.NumPerNode                       = rank_counts_before;
+
+    WalkerControlBase::PopulationAdjustment pop_adjust{wc_.NumPerNode[rank],
                                                        convertUPtrToRefVector(pop_->get_walkers()),
-                                                       {rank_counts_before[i] - 1},
+                                                       {rank_counts_before[rank] - 1},
                                                        RefVector<MCPWalker>{}};
 
     reportWalkersPerRank(dpools_.comm, *pop_);
     wc_.swapWalkersSimple(*pop_, pop_adjust, rank_counts_before);
     reportWalkersPerRank(dpools_.comm, *pop_);
-    CHECK(pop_->get_num_local_walkers() == rank_counts_after[i]);
+    CHECK(pop_->get_num_local_walkers() == rank_counts_after[rank]);
   }
+
+  void testPopulationDiff(std::vector<int>& rank_counts_before, std::vector<int>& rank_counts_after)
+  {
+    using MCPWalker = MCPopulation::MCPWalker;
+
+    int rank = dpools_.comm->rank();
+
+    // Currently some/all this duplicate state is necessary to have a a successful swap.
+    // \todo remove duplicate state effecting population control
+
+    pop_->get_walkers()[0]->Multiplicity = rank_counts_before[rank];
+
+    WalkerControlBase::PopulationAdjustment pop_adjust{wc_.NumPerNode[rank],
+                                                       convertUPtrToRefVector(pop_->get_walkers()),
+                                                       {rank_counts_before[rank] - 1},
+                                                       RefVector<MCPWalker>{}};
+
+    wc_.adjustPopulation(*pop_, pop_adjust);
+
+    auto num_per_node = WalkerControlBase::syncFutureWalkersPerRank(dpools_.comm, pop_adjust.num_walkers);
+
+    wc_.Cur_pop = std::accumulate(rank_counts_before.begin(), rank_counts_before.end(), 0);
+
+    reportWalkersPerRank(dpools_.comm, *pop_);
+    wc_.swapWalkersSimple(*pop_, pop_adjust, rank_counts_before);
+    reportWalkersPerRank(dpools_.comm, *pop_);
+    CHECK(pop_->get_num_local_walkers() == rank_counts_after[rank]);
+  }
+
   //   // Now bump the multiplicity on rank 0 by 2
   //   if (dpools_.comm->rank() == 0)
   //   {
@@ -90,7 +119,7 @@ public:
   //   reportWalkersPerRank(dpools_.comm, *pop_, pop_adjust);
 
   // }
-  
+
   // void operator()()
   // {
 
@@ -148,7 +177,7 @@ public:
   //                                                        convertUPtrToRefVector(dtest.population.get_walkers()),
   //                                                        {0},
   //                                                        RefVector<MCPWalker>{}};
-    
+
   //   // And now the strange case
   //   // 6 walkers on rank0, 2 on rank1, 2 on rank2
   //   if (dtest.comm->size() > 2)
@@ -185,7 +214,7 @@ public:
   //     }
   //   }
   // }
-  
+
 private:
   void reportWalkersPerRank(Communicate* c, MCPopulation& pop)
   {
@@ -211,12 +240,12 @@ private:
 
 TEST_CASE("WalkerControlMPI::determineNewWalkerPopulation", "[drivers][walker_control]")
 {
-  int cur_pop = 5;
+  int cur_pop      = 5;
   int num_contexts = 3;
 
-  std::vector<int> num_per_node{1,1,1};
+  std::vector<int> num_per_node{1, 1, 1};
 
-  for( int i = 0; i < num_contexts; ++i)
+  for (int i = 0; i < num_contexts; ++i)
   {
     std::vector<int> fair_offset;
     std::vector<int> minus;
@@ -236,20 +265,39 @@ TEST_CASE("MPI WalkerControl multiplicity swap walkers", "[drivers][walker_contr
 
   SECTION("Simple")
   {
-    std::vector<int> simple_count{1,1,1};
-    std::vector<int> count_after{1,1,1};
+    std::vector<int> simple_count{1, 1, 1};
+    std::vector<int> count_after{1, 1, 1};
 
     // One walker on every node, should be no swapping
-    test.testMultiplicity(simple_count,count_after);
+    test.testMultiplicity(simple_count, count_after);
   }
 
   SECTION("LoadBalance")
   {
-    std::vector<int> simple_count{3,1,1};
-    std::vector<int> count_after{1,2,2};
+    std::vector<int> simple_count{3, 1, 1};
+    std::vector<int> count_after{1, 2, 2};
 
-    test.testMultiplicity(simple_count,count_after);
-    
+    test.testMultiplicity(simple_count, count_after);
+  }
+}
+
+TEST_CASE("MPI WalkerControl population swap walkers", "[drivers][walker_control]")
+{
+  testing::UnifiedDriverWalkerControlMPITest test;
+
+  SECTION("Simple")
+  {
+    std::vector<int> simple_count{1, 1, 1};
+    std::vector<int> count_after{1, 1, 1};
+    // One walker on every node, should be no swapping
+    test.testPopulationDiff(simple_count, count_after);
+  }
+
+  SECTION("LoadBalance")
+  {
+    std::vector<int> simple_count{3, 1, 1};
+    std::vector<int> count_after{1, 2, 2};
+    test.testPopulationDiff(simple_count, count_after);
   }
 }
 

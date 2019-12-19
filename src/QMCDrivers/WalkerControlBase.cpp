@@ -914,6 +914,8 @@ int WalkerControlBase::adjustPopulation(MCPopulation& pop, PopulationAdjustment&
   // check current population
   current_population = std::accumulate(num_per_node.begin(), num_per_node.end(), 0);
 
+  adjust.num_walkers = std::accumulate(adjust.copies_to_make.begin(), adjust.copies_to_make.end(), 0) + adjust.copies_to_make.size();
+
   // at least one walker after load-balancing
   if (current_population / num_contexts_ == 0)
   {
