@@ -103,6 +103,7 @@ class NOMSD: public AFQMCInfo
                 mutex(std::make_unique<shared_mutex>(TG.TG_local())),
                 walker_type(wlk),
                 nspins((walker_type==COLLINEAR)?(2):(1)),
+                number_of_references(-1),
                 NuclearCoulombEnergy(nce),
                 last_number_extra_tasks(-1),last_task_index(-1),
                 local_group_comm(),
@@ -128,6 +129,8 @@ class NOMSD: public AFQMCInfo
       if(NMO > 1024 || NAEA > 512) nbatch_qr=0;
 
       ParameterSet m_param;
+      m_param.add(number_of_references,"number_of_references","int");
+      m_param.add(number_of_references,"nrefs","int");
       m_param.add(excited_file,"excited","std::string");
       // generalize this to multi-particle excitations, how do I read a list of integers???
       m_param.add(i_,"i","int");
@@ -452,10 +455,13 @@ class NOMSD: public AFQMCInfo
      * Returns the number of reference Slater Matrices needed for back propagation.  
      */
     int number_of_references_for_back_propagation() const {
-      return ((walker_type==COLLINEAR)?OrbMats.size()/2:OrbMats.size());
+      if(number_of_references>0)   
+        return number_of_references; 
+      else  
+        return ((walker_type==COLLINEAR)?OrbMats.size()/2:OrbMats.size());
     }
 
-    ComplexType getReferenceWeight(int i) { return ci[i]; }
+    ComplexType getReferenceWeight(int i) const { return ci[i]; }
 
     /*
      * Returns the reference Slater Matrices needed for back propagation.  
@@ -528,6 +534,8 @@ class NOMSD: public AFQMCInfo
     // in both cases below: closed_shell=0, UHF/ROHF=1, GHF=2
     WALKER_TYPES walker_type;
     int nspins;
+
+    int number_of_references;
 
     int nbatch;
     int nbatch_qr;
