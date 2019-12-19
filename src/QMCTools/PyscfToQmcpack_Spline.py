@@ -71,8 +71,8 @@ def pyscf2qmcpackspline(cell,mf,title="Default", kpts=[], kmesh=[],  sp_twist=[]
   else:
      loc_cell=cell
  
-  h5_fname = f"{title}.h5"
-  xml_fname = f"{title}.xml"
+  h5_fname = "{}.h5".format(title)
+  xml_fname = "{}.xml".format(title)
 
   tile = [1, 1, 1]
   tilematrix = [0]*9
@@ -112,7 +112,7 @@ def pyscf2qmcpackspline(cell,mf,title="Default", kpts=[], kmesh=[],  sp_twist=[]
   root = etree.Element('simulation')
   doc = etree.ElementTree(root)
   #Change name!!!
-  root.append(etree.fromstring(f'<project id="{title}" series="0"/>'))
+  root.append(etree.fromstring('<project id="{}" series="0"/>'.format(title)))
   root.append(sys_node)
 
   for node in [pset_node,psedinit_node,wavefunction_node,hamiltonien_node]:
@@ -696,7 +696,7 @@ class InputXml:
     groups.append(pos_node)
 
     ionid_node = etree.Element('attrib',{'name':'ionid','datatype':'stringArray'})
-    ionid_node.text = self.arr2text(np.array([atom_grp.get(f'species_{id_}/name').value[0]  for id_ in species_ids]))
+    ionid_node.text = self.arr2text(np.array([atom_grp.get('species_{}/name'.format(id_)).value[0]  for id_ in species_ids]))
 
     groups.append(ionid_node)
 
@@ -714,7 +714,7 @@ class InputXml:
     elec_alpha_beta = h5_handle.get('electrons/number_of_electrons').value
     l_name = ("u","d")
     for name, electron in zip(l_name,elec_alpha_beta):
-      groupe_node = etree.Element('group',{'name':f"{name}",'size':f"{electron}"})
+      groupe_node = etree.Element('group',{'name':"{}".format(name),'size':"{}".format(electron)})
       param_node = etree.Element('parameter',{'name':'charge'})
       param_node.text=str(-1)
       groupe_node.append(param_node)
@@ -725,9 +725,9 @@ class InputXml:
     wf_node = etree.Element('wavefunction', {'name':"psi0", 'target':"e"})
 
     determinantset_node = etree.Element('determinantset', {"type":"einspline",
-                                                           "href":f"{h5_path}",
+                                                           "href":"{}".format(h5_path),
                                                            "source":"ion0",
-                                                           "tilematrix":f"{tilematrix}",
+                                                           "tilematrix":"{}".format(tilematrix),
                                                            "twistnum":"0",
                                                            "meshfactor":"1.0",
                                                            "check_orb_norm":"no"})
@@ -738,24 +738,24 @@ class InputXml:
     alpha, beta = atom_grp.get('number_of_electrons').value
 
     # Slaterdet,imamt
-    slaterdet_node = etree.fromstring(f'''
+    slaterdet_node = etree.fromstring('''
     <slaterdeterminant>
-        <determinant id="updet" size="{alpha}" ref="updet">
+        <determinant id="updet" size="{}" ref="updet">
           <occupation mode="ground" spindataset="0">
           </occupation>
         </determinant>
-        <determinant id="downdet" size="{beta}" ref="downdet">
+        <determinant id="downdet" size="{}" ref="downdet">
           <occupation mode="ground" spindataset="0">
           </occupation>
         </determinant>
       </slaterdeterminant>
-      ''')
+      '''.format(alpha, beta))
 
     determinantset_node.append(slaterdet_node)
 
     wf_node.append(determinantset_node)
     # Jastrow
-    jastrow_node = etree.fromstring(f'''
+    jastrow_node = etree.fromstring('''
     <jastrow name="J2" type="Two-Body" function="Bspline" print="yes">
       <correlation speciesA="u" speciesB="u" size="10">
         <coefficients id="uu" type="Array"> 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0</coefficients>
@@ -769,15 +769,15 @@ class InputXml:
     # Species_id
     atom_grp = h5_handle.get('atoms')
     species_ids = atom_grp.get('species_ids').value
-    list_atom = sorted(set(atom_grp.get(f'species_{id_}/name').value[0].decode()  for id_ in species_ids))
+    list_atom = sorted(set(atom_grp.get('species_{}/name'.format(id_)).value[0].decode()  for id_ in species_ids))
 
     jastrow_node =   etree.Element('jastrow', {'name':"J1", 'type':"One-Body", "function":"Bspline", "print":"yes", "source":"ion0"})
 
     for atom in list_atom:
-      jastrow_node.append(etree.fromstring(f'''
-      <correlation elementType="{atom}" cusp="0.0" size="10">
-        <coefficients id="{atom}" type="Array"> 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0</coefficients>
-      </correlation>'''))
+      jastrow_node.append(etree.fromstring('''
+      <correlation elementType="{}" cusp="0.0" size="10">
+        <coefficients id="{}" type="Array"> 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0</coefficients>
+      </correlation>'''.format(atom, atom)))
 
     wf_node.append(jastrow_node)
     return wf_node
@@ -786,10 +786,10 @@ class InputXml:
 
     atom_grp = h5_handle.get('atoms')
     species_ids = atom_grp.get('species_ids').value
-    list_atom = sorted(set(atom_grp.get(f'species_{id_}/name').value[0].decode()  for id_ in species_ids))
+    list_atom = sorted(set(atom_grp.get('species_{}/name'.format(id_)).value[0].decode()  for id_ in species_ids))
 
     if cell.has_ecp():
-      hamiltonian_node = etree.fromstring(f'''
+      hamiltonian_node = etree.fromstring('''
       <hamiltonian name="h0" type="generic" target="e">
         <pairpot name="ElecElec" type="coulomb" source="e" target="e" physical="true"/>
         <pairpot name="IonIon" type="coulomb" source="ion0" target="ion0"/>
@@ -798,10 +798,10 @@ class InputXml:
   </hamiltonian>''')
       # Add the list of ecp file for each atom.
       for element in list_atom:
-        pset_node = etree.Element('pseudo',{'elementType':element,'href':f"{element}.qmcpp.xml"})
+        pset_node = etree.Element('pseudo',{'elementType':element,'href':"{}.qmcpp.xml".format(element)})
         hamiltonian_node[-1].append(pset_node)
     else:
-      hamiltonian_node = etree.fromstring(f'''
+      hamiltonian_node = etree.fromstring('''
       <hamiltonian name="h0" type="generic" target="e">
         <pairpot name="ElecElec" type="coulomb" source="e" target="e" physical="true"/>
         <pairpot name="IonIon" type="coulomb" source="ion0" target="ion0"/>
