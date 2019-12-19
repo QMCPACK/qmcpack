@@ -23,7 +23,6 @@ SetupPools::SetupPools()
   //OHMMS::Controller->initialize(0, NULL);
   comm = OHMMS::Controller;
 
-  std::cout << "SetupPools::SetupPools()\n";
   Concurrency::OverrideMaxThreads<> override(8);
   
   particle_pool.reset(new ParticleSetPool(mpp(comm)));

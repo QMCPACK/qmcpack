@@ -108,6 +108,7 @@ void UnifiedDriverWalkerControlMPITest::testPopulationDiff(std::vector<int>& ran
 
 void UnifiedDriverWalkerControlMPITest::reportWalkersPerRank(Communicate* c, MCPopulation& pop)
 {
+#if !defined(NDEBUG)
   std::vector<int> rank_walker_count(c->size(), 0);
   rank_walker_count[c->rank()] = pop.get_num_local_walkers();
   c->allreduce(rank_walker_count);
@@ -120,6 +121,7 @@ void UnifiedDriverWalkerControlMPITest::reportWalkersPerRank(Communicate* c, MCP
       std::cout << " " << i << "  " << rank_walker_count[i] << '\n';
     }
   }
+#endif
 }
 
 } // namespace testing
