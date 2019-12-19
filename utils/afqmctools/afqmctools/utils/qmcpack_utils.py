@@ -99,7 +99,7 @@ def write_xml_input(qmc_in, hamil_file, wfn_file, id_name='qmc', series=0,
             'timestep': 0.005,
             'blocks': 10000,
             'steps': 10,
-            'nWalkers': 10
+            'nWalkers': 10,
             }
         }
     if options is not None:
