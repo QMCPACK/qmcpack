@@ -134,10 +134,14 @@ def load_from_pyscf_chk_mol(chkfile, base='scf'):
         except KeyError:
             s1e = mol.intor('int1e_ovlp_sph')
             X = get_ortho_ao_mol(s1e)
+        try:
+            df_ints = fh5['j3c'][:]
+        except KeyError:
+            df_ints = None
     mo_occ = numpy.array(lib.chkfile.load(chkfile, base+'/mo_occ'))
     mo_coeff = numpy.array(lib.chkfile.load(chkfile, base+'/mo_coeff'))
     uhf = len(mo_coeff.shape) == 3
     scf_data = {'mol': mol, 'mo_occ': mo_occ, 'hcore': hcore,
                 'X': X, 'mo_coeff': mo_coeff,
-                'isUHF': uhf}
+                'isUHF': uhf, 'df_ints': df_ints}
     return scf_data
