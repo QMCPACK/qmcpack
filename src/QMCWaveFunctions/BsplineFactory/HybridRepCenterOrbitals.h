@@ -25,8 +25,9 @@
 namespace qmcplusplus
 {
 template<typename ST>
-struct AtomicOrbitals
+class AtomicOrbitals
 {
+public:
   static const int D           = 3;
   using AtomicSplineType       = typename bspline_traits<ST, 1>::SplineType;
   using AtomicBCType           = typename bspline_traits<ST, 1>::BCType;
@@ -36,6 +37,7 @@ struct AtomicOrbitals
 
   using vContainer_type = aligned_vector<ST>;
 
+private:
   // near core cutoff
   ST rmin;
   // far from core cutoff, rmin_sqrt>=rmin
@@ -43,7 +45,7 @@ struct AtomicOrbitals
   ST cutoff, cutoff_buffer, spline_radius, non_overlapping_radius;
   int spline_npoints, BaseN;
   int NumBands, Npad;
-  PointType pos;
+  PointType center_pos;
   const int lmax, lm_tot;
   SoaSphericalTensor<ST> Ylm;
   vContainer_type l_vals;
@@ -53,6 +55,7 @@ struct AtomicOrbitals
 
   vContainer_type localV, localG, localL;
 
+public:
   AtomicOrbitals(int Lmax) : lmax(Lmax), lm_tot((Lmax + 1) * (Lmax + 1)), Ylm(Lmax)
   {
     r_power_minus_l.resize(lm_tot);
@@ -64,6 +67,15 @@ struct AtomicOrbitals
     rmin      = std::max(rmin, std::numeric_limits<ST>::epsilon());
     rmin_sqrt = std::max(rmin, std::sqrt(std::numeric_limits<ST>::epsilon()));
   }
+
+  // accessing functions, const only
+  ST getCutoff() const { return cutoff; }
+  ST getCutoffBuffer() const { return cutoff_buffer; }
+  ST getSplineRadius() const { return spline_radius; }
+  ST getNonOverlappingRadius() const { return non_overlapping_radius; }
+  int getSplineNpoints() const { return spline_npoints; }
+  int getLmax() const { return lmax; }
+  const PointType& getCenterPos() const { return center_pos; }
 
   inline void resizeStorage(size_t Nb)
   {
@@ -90,9 +102,9 @@ struct AtomicOrbitals
                        const VT& non_overlapping_radius_in,
                        const int spline_npoints_in)
   {
-    pos[0]                 = R[0];
-    pos[1]                 = R[1];
-    pos[2]                 = R[2];
+    center_pos[0]          = R[0];
+    center_pos[1]          = R[1];
+    center_pos[2]          = R[2];
     cutoff                 = cutoff_in;
     cutoff_buffer          = cutoff_buffer_in;
     spline_radius          = spline_radius_in;
@@ -113,6 +125,8 @@ struct AtomicOrbitals
     SplineInst = std::make_shared<MultiBspline1D<ST>>();
     SplineInst->create(grid, bc, lm_tot * Npad);
   }
+
+  inline size_t getSplineSizeInBytes() const { return SplineInst->sizeInByte(); }
 
   inline void flush_zero() { SplineInst->flush_zero(); }
 
@@ -145,7 +159,7 @@ struct AtomicOrbitals
     success      = success && h5f.writeEntry(spline_radius, "spline_radius");
     success      = success && h5f.writeEntry(spline_npoints, "spline_npoints");
     success      = success && h5f.writeEntry(lmax, "l_max");
-    success      = success && h5f.writeEntry(pos, "position");
+    success      = success && h5f.writeEntry(center_pos, "position");
     einspline_engine<AtomicSplineType> bigtable(SplineInst->getSplinePtr());
     success = success && h5f.writeEntry(bigtable, "radial_spline");
     return success;
@@ -430,7 +444,7 @@ struct HybridRepCenterOrbitals
     for (int ic = 0; ic < AtomicCenters.size(); ic++)
     {
       AtomicCenters[ic].resizeStorage(Nb);
-      SplineCoefsBytes += AtomicCenters[ic].SplineInst->sizeInByte();
+      SplineCoefsBytes += AtomicCenters[ic].getSplineSizeInBytes();
     }
 
     app_log() << "MEMORY " << SplineCoefsBytes / (1 << 20) << " MB allocated "
@@ -522,12 +536,12 @@ struct HybridRepCenterOrbitals
     if (center_idx < 0)
       abort();
     auto& myCenter = AtomicCenters[Super2Prim[center_idx]];
-    if (dist_r < myCenter.cutoff)
+    if (dist_r < myCenter.getCutoff())
     {
       PointType dr(-dist_dr[0], -dist_dr[1], -dist_dr[2]);
-      r_image = myCenter.pos + dr;
+      r_image = myCenter.getCenterPos() + dr;
       myCenter.evaluate_v(dist_r, dr, myV);
-      return smooth_function(myCenter.cutoff_buffer, myCenter.cutoff, dist_r);
+      return smooth_function(myCenter.getCutoffBuffer(), myCenter.getCutoff(), dist_r);
     }
     return RealType(-1);
   }
@@ -545,7 +559,7 @@ struct HybridRepCenterOrbitals
   {
     const int center_idx = VP.refSourcePtcl;
     auto& myCenter       = AtomicCenters[Super2Prim[center_idx]];
-    return VP.refPS.getDistTable(myTableID).Distances[VP.refPtcl][center_idx] < myCenter.non_overlapping_radius;
+    return VP.refPS.getDistTable(myTableID).Distances[VP.refPtcl][center_idx] < myCenter.getNonOverlappingRadius();
   }
 
   // C2C, C2R cases
@@ -555,10 +569,10 @@ struct HybridRepCenterOrbitals
     const int center_idx = VP.refSourcePtcl;
     dist_r               = VP.refPS.getDistTable(myTableID).Distances[VP.refPtcl][center_idx];
     auto& myCenter       = AtomicCenters[Super2Prim[center_idx]];
-    if (dist_r < myCenter.cutoff)
+    if (dist_r < myCenter.getCutoff())
     {
       myCenter.evaluateValues(VP.getDistTable(myTableID).Displacements, center_idx, dist_r, multi_myV);
-      return smooth_function(myCenter.cutoff_buffer, myCenter.cutoff, dist_r);
+      return smooth_function(myCenter.getCutoffBuffer(), myCenter.getCutoff(), dist_r);
     }
     return RealType(-1);
   }
@@ -574,17 +588,17 @@ struct HybridRepCenterOrbitals
     const int center_idx = VP.refSourcePtcl;
     dist_r               = VP.refPS.getDistTable(myTableID).Distances[VP.refPtcl][center_idx];
     auto& myCenter       = AtomicCenters[Super2Prim[center_idx]];
-    if (dist_r < myCenter.cutoff)
+    if (dist_r < myCenter.getCutoff())
     {
       const auto& displ = VP.getDistTable(myTableID).Displacements;
       for (int ivp = 0; ivp < VP.getTotalNum(); ivp++)
       {
-        r_image       = myCenter.pos - displ[ivp][center_idx];
+        r_image       = myCenter.getCenterPos() - displ[ivp][center_idx];
         bc_signs[ivp] = get_bc_sign(VP.R[ivp], PrimLattice, HalfG);
         ;
       }
       myCenter.evaluateValues(displ, center_idx, dist_r, multi_myV);
-      return smooth_function(myCenter.cutoff_buffer, myCenter.cutoff, dist_r);
+      return smooth_function(myCenter.getCutoffBuffer(), myCenter.getCutoff(), dist_r);
     }
     return RealType(-1);
   }
@@ -598,12 +612,12 @@ struct HybridRepCenterOrbitals
     if (center_idx < 0)
       abort();
     auto& myCenter = AtomicCenters[Super2Prim[center_idx]];
-    if (dist_r < myCenter.cutoff)
+    if (dist_r < myCenter.getCutoff())
     {
       PointType dr(-dist_dr[0], -dist_dr[1], -dist_dr[2]);
-      r_image = myCenter.pos + dr;
+      r_image = myCenter.getCenterPos() + dr;
       myCenter.evaluate_vgl(dist_r, dr, myV, myG, myL);
-      return smooth_function(myCenter.cutoff_buffer, myCenter.cutoff, dist_r);
+      return smooth_function(myCenter.getCutoffBuffer(), myCenter.getCutoff(), dist_r);
     }
     return RealType(-1);
   }
@@ -617,12 +631,12 @@ struct HybridRepCenterOrbitals
     if (center_idx < 0)
       abort();
     auto& myCenter = AtomicCenters[Super2Prim[center_idx]];
-    if (dist_r < myCenter.cutoff)
+    if (dist_r < myCenter.getCutoff())
     {
       PointType dr(-dist_dr[0], -dist_dr[1], -dist_dr[2]);
-      r_image = myCenter.pos + dr;
+      r_image = myCenter.getCenterPos() + dr;
       myCenter.evaluate_vgh(dist_r, dr, myV, myG, myH);
-      return smooth_function(myCenter.cutoff_buffer, myCenter.cutoff, dist_r);
+      return smooth_function(myCenter.getCutoffBuffer(), myCenter.getCutoff(), dist_r);
     }
     return RealType(-1);
   }

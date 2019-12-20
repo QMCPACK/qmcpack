@@ -351,9 +351,9 @@ struct HybridRepSetReader : public SplineSetReader<SA>
     for (int group_idx = 0; group_idx < group_list.size(); group_idx++)
     {
       const auto& mygroup        = group_list[group_idx];
-      const double spline_radius = centers[mygroup[0]].spline_radius;
-      const int spline_npoints   = centers[mygroup[0]].spline_npoints;
-      const int lmax             = centers[mygroup[0]].lmax;
+      const double spline_radius = centers[mygroup[0]].getSplineRadius();
+      const int spline_npoints   = centers[mygroup[0]].getSplineNpoints();
+      const int lmax             = centers[mygroup[0]].getLmax();
       const double delta         = spline_radius / static_cast<double>(spline_npoints - 1);
       const int lm_tot           = (lmax + 1) * (lmax + 1);
       const size_t natoms        = mygroup.size();
@@ -376,7 +376,7 @@ struct HybridRepSetReader : public SplineSetReader<SA>
       {
         all_vals[idx].resize(spline_npoints, lm_tot * 2);
         all_vals[idx] = 0.0;
-        myRSoA(idx)   = centers[mygroup[idx]].pos;
+        myRSoA(idx)   = centers[mygroup[idx]].getCenterPos();
       }
 
 #pragma omp parallel
