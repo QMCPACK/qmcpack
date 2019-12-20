@@ -178,10 +178,10 @@ int WalkerControlMPI::branch(int iter, MCPopulation& pop, FullPrecRealType trigg
   myTimers[DMC_MPI_loadbalance]->stop();
 
   //This applies minMax etc.
-  adjustPopulation(pop, adjust);
-  WalkerControlBase::onRankSpawnKill(pop, std::move(adjust));
+  //adjustPopulation(pop, adjust);
+  //WalkerControlBase::onRankSpawnKill(pop, std::move(adjust));
 
-  num_per_node = WalkerControlBase::syncFutureWalkersPerRank(this->getCommunicator(), pop.get_num_local_walkers());
+  //num_per_node = WalkerControlBase::syncFutureWalkersPerRank(this->getCommunicator(), pop.get_num_local_walkers());
 
   for (UPtr<MCPWalker>& walker : pop.get_walkers())
   {
@@ -607,18 +607,6 @@ void WalkerControlMPI::swapWalkersSimple(MCPopulation& pop,
                   });
   }
 
-  if (local_sends > 0)
-  {
-    // After we've got all our receives wait if we're not done sending.
-    for (int im = 0; im < send_requests.size(); im++)
-    {
-      myTimers[DMC_MPI_send]->start();
-      //send_requests[im].start();
-      //send_requests[im].wait();
-      myTimers[DMC_MPI_send]->stop();
-    }
-  }
-
   // Busy until all messages received
   std::vector<int> done_with_message(recv_requests.size(), 0);
   // while (std::any_of(done_with_message.begin(), done_with_message.end(), [](int i) { return i == 0; }))
@@ -646,6 +634,19 @@ void WalkerControlMPI::swapWalkersSimple(MCPopulation& pop,
       }
     }
   }
+
+  if (local_sends > 0)
+  {
+    // After we've got all our receives wait if we're not done sending.
+    for (int im = 0; im < send_requests.size(); im++)
+    {
+      myTimers[DMC_MPI_send]->start();
+      //send_requests[im].start();
+      send_requests[im].wait();
+      myTimers[DMC_MPI_send]->stop();
+    }
+  }
+
   std::for_each(zombies.begin(), zombies.end(), [&pop](MCPWalker& zombie) { pop.killWalker(zombie); });
 
   adjust.num_walkers = 0;

@@ -403,13 +403,19 @@ void ParticleSet::flex_setActive(const RefVector<ParticleSet>& P_list, int iat)
   {
     ScopedTimer local_timer(P_list[0].get().myTimers[PS_setActive]);
     int dist_tables_size = P_list[0].get().DistTables.size();
-#pragma omp parallel
+
     {
       for (size_t i = 0; i < dist_tables_size; i++)
       {
-#pragma omp for
+
         for (int iw = 0; iw < P_list.size(); iw++)
         {
+#if !defined(NDEBUG)
+          if(P_list[iw].get().DistTables[i] == nullptr)
+          {
+            app_warning() << iw << ' ' << i << '\n';
+          }
+#endif
           P_list[iw].get().DistTables[i]->evaluate(P_list[iw], iat);
         }
       }

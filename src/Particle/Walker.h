@@ -22,6 +22,7 @@
 #define QMCPLUSPLUS_WALKER_H
 
 #include "OhmmsPETE/OhmmsMatrix.h"
+#include "OhmmsPETE/ProtectedMatrix.h"
 #include "Utilities/PooledData.h"
 #include "Utilities/PooledMemory.h"
 #ifdef QMC_CUDA
@@ -95,7 +96,7 @@ struct Walker
   typedef typename p_traits::SingleParticleValue_t SingleParticleValue_t;
 
   ///typedef for the property container, fixed size
-  typedef Matrix<FullPrecRealType> PropertyContainer_t;
+  using PropertyContainer_t = ProtectedMatrix<FullPrecRealType> ;
 
   /** @{
    * Not really "buffers", "walker message" also used to serialize walker, rename
@@ -183,9 +184,9 @@ struct Walker
 #endif
 
   ///create a walker for n-particles
-  inline explicit Walker(int nptcl = 0)
+  inline explicit Walker(int nptcl = 0) : Properties(1, NUMPROPERTIES)
 #ifdef QMC_CUDA
-      : cuda_DataSet("Walker::walker_buffer"),
+        cuda_DataSet("Walker::walker_buffer"),
         R_GPU("Walker::R_GPU"),
         Grad_GPU("Walker::Grad_GPU"),
         Lap_GPU("Walker::Lap_GPU"),
@@ -200,10 +201,10 @@ struct Walker
     Multiplicity       = 1.0;
     ReleasedNodeWeight = 1.0;
     ReleasedNodeAge    = 0;
-    Properties.resize(1, NUMPROPERTIES);
+
     if (nptcl > 0)
       resize(nptcl);
-    Properties = 0.0;
+    static_cast<Matrix<FullPrecRealType>>(Properties) = 0.0;
   }
 
   inline int addPropertyHistory(int leng)

@@ -42,7 +42,6 @@ OperatorBase::OperatorBase() : myIndex(-1), Dependants(0), Value(0.0), tWalker(0
  */
 void OperatorBase::mw_evaluate(const RefVector<OperatorBase>& O_list, const RefVector<ParticleSet>& P_list)
 {
-#pragma omp parallel for
   for (int iw = 0; iw < O_list.size(); iw++)
     O_list[iw].get().evaluate(P_list[iw]);
 }

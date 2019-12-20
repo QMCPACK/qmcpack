@@ -605,6 +605,7 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalLR(ParticleSet& P)
       for (int spec2 = spec1; spec2 < NumSpecies; spec2++)
       {
 #if defined(USE_REAL_STRUCT_FACTOR)
+        assert(PtclRhoK.rhok_r[spec2] != nullptr);
         mRealType temp = AA->evaluate(PtclRhoK.KLists.kshell, PtclRhoK.rhok_r[spec1], PtclRhoK.rhok_i[spec1],
                                       PtclRhoK.rhok_r[spec2], PtclRhoK.rhok_i[spec2]);
 #else

@@ -38,7 +38,8 @@ public:
   using RealType   = QMCTraits::RealType;
   using Properties = MCPWalker::PropertyContainer_t;
   using IndexType  = QMCTraits::IndexType;
-
+  using FullPrecRealType = QMCTraits::FullPrecRealType;
+  
 private:
   // Potential thread safety issue
   MCDataType<QMCTraits::FullPrecRealType> ensemble_property_;

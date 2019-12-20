@@ -25,6 +25,7 @@
 #include <Utilities/SpeciesSet.h>
 #include <Utilities/PooledData.h>
 #include <OhmmsPETE/OhmmsArray.h>
+#include <OhmmsPETE/OhmmsMatrix.h>
 #include <Utilities/NewTimer.h>
 #include <OhmmsSoA/Container.h>
 #include "type_traits/template_types.hpp"
@@ -72,7 +73,7 @@ public:
   /// walker type
   typedef Walker<QMCTraits, PtclOnLatticeTraits> Walker_t;
   /// container type to store the property
-  typedef Walker_t::PropertyContainer_t PropertyContainer_t;
+  using PropertyContainer_t = Matrix<FullPrecRealType>;
   /// buffer type for a serialized buffer
   typedef PooledData<RealType> Buffer_t;
 

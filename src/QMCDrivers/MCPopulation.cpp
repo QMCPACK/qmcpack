@@ -100,8 +100,11 @@ void MCPopulation::createWalkers(IndexType num_walkers)
   auto createWalker = [this](UPtr<MCPWalker>& walker_ptr) {
     walker_ptr    = std::make_unique<MCPWalker>(num_particles_);
     walker_ptr->R = elec_particle_set_->R;
+    // Side effect of this changes size of walker_ptr->Properties if done after registerData() you end up with
+    // a bad buffer.
+    static_cast<Matrix<FullPrecRealType>>(walker_ptr->Properties) = elec_particle_set_->Properties;
     walker_ptr->registerData();
-    walker_ptr->Properties = elec_particle_set_->Properties;
+        
   };
   
   for (auto& walker_ptr : walkers_)
