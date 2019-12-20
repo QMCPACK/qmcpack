@@ -709,7 +709,8 @@ public:
     return f;
   }
 
-  template<class BSPLINESPO> friend class HybridRepSetReader;
+  template<class BSPLINESPO>
+  friend class HybridRepSetReader;
 };
 
 } // namespace qmcplusplus

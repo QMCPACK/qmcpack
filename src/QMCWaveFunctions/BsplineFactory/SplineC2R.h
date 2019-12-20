@@ -1274,7 +1274,8 @@ public:
     }
   }
 
-  template<class BSPLINESPO> friend class SplineSetReader;
+  template<class BSPLINESPO>
+  friend class SplineSetReader;
   friend class BsplineReaderBase;
 };
 

@@ -212,8 +212,10 @@ public:
     APP_ABORT("HybridRepCplx::evaluate_vghgh not implemented!");
   }
 
-  template<class BSPLINESPO> friend class HybridRepSetReader;
-  template<class BSPLINESPO> friend class SplineSetReader;
+  template<class BSPLINESPO>
+  friend class HybridRepSetReader;
+  template<class BSPLINESPO>
+  friend class SplineSetReader;
   friend class BsplineReaderBase;
 };
 

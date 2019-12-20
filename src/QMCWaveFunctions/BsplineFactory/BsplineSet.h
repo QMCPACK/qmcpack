@@ -58,7 +58,6 @@ protected:
   std::string KeyWord;
 
 public:
-
   BsplineSet() : is_complex(false), MyIndex(0), first_spo(0), last_spo(0) {}
 
   auto& getHalfG() const { return HalfG; }
@@ -197,7 +196,8 @@ public:
     //Do nothing, since Einsplines don't explicitly depend on ion positions.
   }
 
-  template<class BSPLINESPO> friend class SplineSetReader;
+  template<class BSPLINESPO>
+  friend class SplineSetReader;
   friend class BsplineReaderBase;
 };
 
