@@ -37,7 +37,6 @@ struct WalkerMessage
   const int source_rank;
   const int target_rank;
   int multiplicity = 1;
-  size_t byteSize = 0;
   WalkerMessage(WalkerControlBase::MCPWalker& walk, const int source, const int target) : source_rank(source), target_rank(target){ walker.push_back(walk); };
 };
 

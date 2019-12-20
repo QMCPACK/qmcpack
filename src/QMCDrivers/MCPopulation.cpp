@@ -183,6 +183,7 @@ MCPopulation::MCPWalker& MCPopulation::spawnWalker()
     walkers_.push_back(std::move(dead_walkers_.back()));
     dead_walkers_.pop_back();
     makeDependentObjects();
+    walkers_.back()->registerData();
   }
   else
   {

@@ -151,7 +151,7 @@ int WalkerControlMPI::branch(int iter, MCPopulation& pop, FullPrecRealType trigg
   // i.e. it updates most of curData
   PopulationAdjustment adjust(calcPopulationAdjustment(pop));
 
-  
+
   //use NumWalkersSent from the previous exchange
   //You need another copy because curData is zeroed out defensively.
   curData[SENTWALKERS_INDEX] = NumWalkersSent;
@@ -189,7 +189,7 @@ int WalkerControlMPI::branch(int iter, MCPopulation& pop, FullPrecRealType trigg
     walker->Multiplicity = 1.0;
   }
   // //update the global number of walkers and offsets
-  
+
   myComm->allreduce(curData);
   pop.set_num_global_walkers(Cur_pop);
   pop.set_walker_offsets(FairOffSet);
@@ -475,7 +475,9 @@ void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W)
  *  Cur_pop, NumPernode
  *
  */
-void WalkerControlMPI::swapWalkersSimple(MCPopulation& pop, PopulationAdjustment& adjust, std::vector<IndexType> num_per_node)
+void WalkerControlMPI::swapWalkersSimple(MCPopulation& pop,
+                                         PopulationAdjustment& adjust,
+                                         std::vector<IndexType> num_per_node)
 {
   int expanded_population = std::accumulate(num_per_node.begin(), num_per_node.end(), 0);
   std::vector<int> minus, plus;
@@ -500,7 +502,7 @@ void WalkerControlMPI::swapWalkersSimple(MCPopulation& pop, PopulationAdjustment
   // sort good walkers by the number of copies
   std::vector<std::pair<int, std::reference_wrapper<MCPWalker>>> sorted_good_walkers;
   for (int iw = 0; iw < adjust.copies_to_make.size(); iw++)
-      sorted_good_walkers.push_back(std::make_pair(adjust.copies_to_make[iw], adjust.good_walkers[iw]));
+    sorted_good_walkers.push_back(std::make_pair(adjust.copies_to_make[iw], adjust.good_walkers[iw]));
 
   // Sort only on the number of copies
   std::sort(sorted_good_walkers.begin(), sorted_good_walkers.end(), [](auto& a, auto& b) { return a.first > b.first; });
@@ -549,7 +551,7 @@ void WalkerControlMPI::swapWalkersSimple(MCPopulation& pop, PopulationAdjustment
         adjust.bad_walkers.pop_back();
       }
       new_walkers.push_back(pop.spawnWalker());
-      
+
       recv_message_list.push_back(WalkerMessage{new_walkers.back(), minus[ic], plus[ic]});
     }
   }
@@ -559,16 +561,14 @@ void WalkerControlMPI::swapWalkersSimple(MCPopulation& pop, PopulationAdjustment
   std::vector<WalkerMessage> send_messages_reduced;
   if (send_message_list.size() > 0)
   {
-    std::for_each(send_message_list.begin(), send_message_list.end(),
-                  [&send_requests, this](WalkerMessage& message) {
-                    MCPWalker& this_walker = message.walker[0];
-                    send_requests.emplace_back(myComm->comm.isend_n(message.walker[0].get().DataSet.data(),
-                                                                       message.walker[0].get().byteSize(),
-                                                                       message.target_rank));
-                  });
-      // if ((it_send_messages + 1 != send_message_list.end()) && (*(it_send_messages + 1) == *it_send_messages))
-      //   (it_send_messages + 1)->multiplicity++;
-      // else
+    std::for_each(send_message_list.begin(), send_message_list.end(), [&send_requests, this](WalkerMessage& message) {
+      MCPWalker& this_walker = message.walker[0];
+      send_requests.emplace_back(myComm->comm.isend_n(message.walker[0].get().DataSet.data(),
+                                                      message.walker[0].get().DataSet.byteSize(), message.target_rank));
+    });
+    // if ((it_send_messages + 1 != send_message_list.end()) && (*(it_send_messages + 1) == *it_send_messages))
+    //   (it_send_messages + 1)->multiplicity++;
+    // else
     //     send_message_queue.push(std::move(*it_send_messages));
     //   ++it_send_messages;
     // }
@@ -580,7 +580,6 @@ void WalkerControlMPI::swapWalkersSimple(MCPopulation& pop, PopulationAdjustment
     //   send_requests.emplace_back(
     //       myComm->comm.isend_n(message.walker[0].get().DataSet.data(), byteSize, message.target_rank));
     // }
-                  
   }
   //create recv requests
   std::vector<mpi3::request> recv_requests;
@@ -597,13 +596,13 @@ void WalkerControlMPI::swapWalkersSimple(MCPopulation& pop, PopulationAdjustment
       //   recv_messages_reduced.back().walker.push_back(std::move((*it_recv_messages).walker[0]));
       // }
       // else
-        recv_messages_reduced.push_back(std::move(*it_recv_messages));
+      recv_messages_reduced.push_back(std::move(*it_recv_messages));
       ++it_recv_messages;
     }
     std::for_each(recv_messages_reduced.begin(), recv_messages_reduced.end(),
                   [&recv_requests, this](WalkerMessage& message) {
                     recv_requests.emplace_back(myComm->comm.ireceive_n(message.walker[0].get().DataSet.data(),
-                                                                       message.walker[0].get().byteSize(),
+                                                                       message.walker[0].get().DataSet.byteSize(),
                                                                        message.source_rank));
                   });
   }
@@ -638,7 +637,8 @@ void WalkerControlMPI::swapWalkersSimple(MCPopulation& pop, PopulationAdjustment
           for (int iw = 1; iw < recv_messages_reduced[im].multiplicity; ++iw)
           {
             std::memcpy(recv_messages_reduced[im].walker[iw].get().DataSet.data(),
-                        recv_messages_reduced[im].walker[0].get().DataSet.data(), recv_messages_reduced[im].byteSize);
+                        recv_messages_reduced[im].walker[0].get().DataSet.data(),
+                        recv_messages_reduced[im].walker[0].get().DataSet.byteSize());
             recv_messages_reduced[im].walker[iw].get().copyFromBuffer();
           }
           done_with_message[im] = 1;
@@ -646,13 +646,12 @@ void WalkerControlMPI::swapWalkersSimple(MCPopulation& pop, PopulationAdjustment
       }
     }
   }
-  std::for_each(zombies.begin(), zombies.end(),
-                [&pop](MCPWalker& zombie){pop.killWalker(zombie);});
+  std::for_each(zombies.begin(), zombies.end(), [&pop](MCPWalker& zombie) { pop.killWalker(zombie); });
 
   adjust.num_walkers = 0;
   for (int i = 0; i < adjust.copies_to_make.size(); ++i)
     adjust.num_walkers += adjust.copies_to_make[i] + 1;
-      
+
   NumWalkersSent = local_sends;
 }
 
