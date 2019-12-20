@@ -34,7 +34,7 @@ namespace qmcplusplus
  */
 struct BsplineSet : public SPOSet
 {
-  //protected:
+protected:
   static const int D = DIM;
   ///true if the computed values are complex
   bool is_complex;
@@ -57,9 +57,11 @@ struct BsplineSet : public SPOSet
   ///keyword used to match hdf5
   std::string KeyWord;
 
-  //public:
+public:
 
   BsplineSet() : is_complex(false), MyIndex(0), first_spo(0), last_spo(0) {}
+
+  auto& getHalfG() const { return HalfG; }
 
   inline void init_base(int n)
   {
@@ -194,6 +196,9 @@ struct BsplineSet : public SPOSet
   {
     //Do nothing, since Einsplines don't explicitly depend on ion positions.
   }
+
+  template<class BSPLINESPO> friend class SplineSetReader;
+  friend class BsplineReaderBase;
 };
 
 } // namespace qmcplusplus
