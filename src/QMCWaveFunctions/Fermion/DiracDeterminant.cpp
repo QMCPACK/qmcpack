@@ -622,12 +622,9 @@ DiracDeterminant<DU_TYPE>* DiracDeterminant<DU_TYPE>::makeCopy(SPOSetPtr spo) co
   return dclone;
 }
 
-typedef QMCTraits::ValueType ValueType;
-typedef QMCTraits::QTFull::ValueType mValueType;
-
 template class DiracDeterminant<>;
 #if defined(ENABLE_CUDA)
-template class DiracDeterminant<DelayedUpdateCUDA<ValueType, mValueType>>;
+template class DiracDeterminant<DelayedUpdateCUDA<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
 #endif
 
 } // namespace qmcplusplus

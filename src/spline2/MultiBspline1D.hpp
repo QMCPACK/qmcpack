@@ -17,6 +17,8 @@
 #ifndef QMCPLUSPLUS_MULTIEINSPLINE_1D_HPP
 #define QMCPLUSPLUS_MULTIEINSPLINE_1D_HPP
 
+#include <spline2/MultiBsplineEval_helper.hpp>
+
 namespace qmcplusplus
 {
 /** container class to hold a 1D multi spline structure

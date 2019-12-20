@@ -2,12 +2,13 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2019 QMCPACK developers.
 //
 // File developed by: Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
 //                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+//                    Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
@@ -15,112 +16,110 @@
 
 /** @file BsplineSet.h
  *
- * BsplineSet<SplineAdoptor> is a SPOSet class to work with determinant classes
+ * BsplineSet is a SPOSet derived class and serves as a base class for B-spline SPO C2C/C2R/R2R implementation
  */
-#ifndef QMCPLUSPLUS_EINSPLINE_ADOPTOR_H
-#define QMCPLUSPLUS_EINSPLINE_ADOPTOR_H
+#ifndef QMCPLUSPLUS_BSPLINESET_H
+#define QMCPLUSPLUS_BSPLINESET_H
 
-#include <Lattice/CrystalLattice.h>
-#include <spline/einspline_engine.hpp>
-#include <spline/einspline_util.hpp>
-#include <simd/allocator.hpp>
+#include "QMCWaveFunctions/SPOSet.h"
+#include "spline/einspline_engine.hpp"
+#include "spline/einspline_util.hpp"
 
 namespace qmcplusplus
 {
-/** BsplineSet<SplineAdoptor>, a SPOSet
- * @tparam SplineAdoptor implements evaluation functions that matched the storage requirements.
- *
- * Equivalent to EinsplineSetExtended<Storage>
- * Storage is now handled by SplineAdoptor class that is specialized for precision, storage etc.
- * @todo Make SplineAdoptor be a member not the base class. This is needed
- * to make MultiBsplineSet (TBD) which has multiple SplineAdoptors for distributed
- * cases.
+/** BsplineSet is the base class for SplineC2C, SplineC2R, SplineR2R.
+ * Its derived template classes manage the storage and evaluation at given precision.
+ * BsplineSet also implements a few fallback routines in case optimized implementation is not necessary in the derived class.
  */
-template<typename SplineAdoptor>
-struct BsplineSet : public SPOSet, public SplineAdoptor
+class BsplineSet : public SPOSet
 {
-  typedef typename SplineAdoptor::SplineType SplineType;
-  typedef typename SplineAdoptor::PointType PointType;
-  typedef typename SplineAdoptor::DataType DataType;
+protected:
+  static const int D = DIM;
+  ///true if the computed values are complex
+  bool is_complex;
+  ///Index of this adoptor, when multiple adoptors are used for NUMA or distributed cases
+  size_t MyIndex;
+  ///first index of the SPOs this Spline handles
+  size_t first_spo;
+  ///last index of the SPOs this Spline handles
+  size_t last_spo;
+  ///sign bits at the G/2 boundaries
+  TinyVector<int, D> HalfG;
+  ///flags to unpack sin/cos
+  std::vector<bool> MakeTwoCopies;
+  ///kpoints for each unique orbitals
+  std::vector<SPOSet::PosType> kPoints;
+  ///remap splines to orbitals
+  aligned_vector<int> BandIndexMap;
+  ///band offsets used for communication
+  std::vector<int> offset;
+  ///keyword used to match hdf5
+  std::string KeyWord;
 
-  ///** default constructor */
-  //BsplineSet() { }
+public:
+  BsplineSet() : is_complex(false), MyIndex(0), first_spo(0), last_spo(0) {}
 
-  std::vector<SplineAdoptor*>
-  downcast_spo_list(const std::vector<SPOSet*>& spo_list) const
+  auto& getHalfG() const { return HalfG; }
+
+  inline void init_base(int n)
   {
-    std::vector<SplineAdoptor*> SA_list;
-    for (auto spo : spo_list)
-      SA_list.push_back(dynamic_cast<SplineAdoptor*>(spo));
-    return SA_list;
+    kPoints.resize(n);
+    MakeTwoCopies.resize(n);
+    BandIndexMap.resize(n);
+    for (int i = 0; i < n; i++)
+      BandIndexMap[i] = i;
   }
 
-  SPOSet* makeClone() const override { return new BsplineSet<SplineAdoptor>(*this); }
-
-  inline void evaluateValue(const ParticleSet& P, int iat, ValueVector_t& psi) override { SplineAdoptor::evaluate_v(P, iat, psi); }
-
-  inline void evaluateDetRatios(const VirtualParticleSet& VP,
-                                ValueVector_t& psi,
-                                const ValueVector_t& psiinv,
-                                std::vector<ValueType>& ratios) override
+  ///remap kpoints to group general kpoints & special kpoints
+  int remap_kpoints()
   {
-    assert(psi.size() == psiinv.size());
-    SplineAdoptor::evaluateDetRatios(VP, psi, psiinv, ratios);
+    std::vector<SPOSet::PosType> k_copy(kPoints);
+    const int nk = kPoints.size();
+    int nCB      = 0;
+    //two pass
+    for (int i = 0; i < nk; ++i)
+    {
+      if (MakeTwoCopies[i])
+      {
+        kPoints[nCB]        = k_copy[i];
+        BandIndexMap[nCB++] = i;
+      }
+    }
+    int nRealBands = nCB;
+    for (int i = 0; i < nk; ++i)
+    {
+      if (!MakeTwoCopies[i])
+      {
+        kPoints[nRealBands]        = k_copy[i];
+        BandIndexMap[nRealBands++] = i;
+      }
+    }
+    return nCB; //return the number of complex bands
   }
 
-  inline void finalizeConstruction() override { return SplineAdoptor::finalizeConstruction(); }
+  // propagate SPOSet virtual functions
+  using SPOSet::evaluateDetRatios;
+  using SPOSet::evaluateValue;
+  using SPOSet::evaluateVGH;
+  using SPOSet::evaluateVGHGH;
+  using SPOSet::evaluateVGL;
+  using SPOSet::finalizeConstruction;
+  using SPOSet::mw_evaluateVGL;
+
+  virtual SPOSet* makeClone() const override = 0;
 
   void resetParameters(const opt_variables_type& active) override {}
 
   void resetTargetParticleSet(ParticleSet& e) override {}
 
-  void setOrbitalSetSize(int norbs) override
-  {
-    OrbitalSetSize = norbs;
-    //SplineAdoptor::first_spo=0;
-    //SplineAdoptor::last_spo=norbs;
-  }
+  void setOrbitalSetSize(int norbs) override { OrbitalSetSize = norbs; }
 
-  inline void evaluateVGL(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi) override
-  {
-    SplineAdoptor::evaluate_vgl(P, iat, psi, dpsi, d2psi);
-  }
-
-  inline void mw_evaluateVGL(const std::vector<SPOSet*>& spo_list,
-                              const std::vector<ParticleSet*>& P_list,
-                              int iat,
-                              const std::vector<ValueVector_t*>& psi_v_list,
-                              const std::vector<GradVector_t*>& dpsi_v_list,
-                              const std::vector<ValueVector_t*>& d2psi_v_list) override
-  {
-    SplineAdoptor::mw_evaluate_vgl(downcast_spo_list(spo_list), P_list, iat, psi_v_list, dpsi_v_list, d2psi_v_list);
-  }
-
-  inline void evaluateVGH(const ParticleSet& P,
-                          int iat,
-                          ValueVector_t& psi,
-                          GradVector_t& dpsi,
-                          HessVector_t& grad_grad_psi) override
-  {
-    SplineAdoptor::evaluate_vgh(P, iat, psi, dpsi, grad_grad_psi);
-  }
-
-  inline void evaluateVGHGH(const ParticleSet& P,
-                            int iat,
-                            ValueVector_t& psi,
-                            GradVector_t& dpsi,
-                            HessVector_t& grad_grad_psi,
-                            GGGVector_t& grad_grad_grad_psi) override
-  {
-    SplineAdoptor::evaluate_vghgh(P, iat, psi, dpsi, grad_grad_psi, grad_grad_grad_psi);
-  }
-
-  void evaluate_notranspose(const ParticleSet& P,
-                            int first,
-                            int last,
-                            ValueMatrix_t& logdet,
-                            GradMatrix_t& dlogdet,
-                            ValueMatrix_t& d2logdet) override
+  virtual void evaluate_notranspose(const ParticleSet& P,
+                                    int first,
+                                    int last,
+                                    ValueMatrix_t& logdet,
+                                    GradMatrix_t& dlogdet,
+                                    ValueMatrix_t& d2logdet) override
   {
     typedef ValueMatrix_t::value_type value_type;
     typedef GradMatrix_t::value_type grad_type;
@@ -129,7 +128,7 @@ struct BsplineSet : public SPOSet, public SplineAdoptor
       ValueVector_t v(logdet[i], OrbitalSetSize);
       GradVector_t g(dlogdet[i], OrbitalSetSize);
       ValueVector_t l(d2logdet[i], OrbitalSetSize);
-      SplineAdoptor::evaluate_vgl(P, iat, v, g, l);
+      evaluateVGL(P, iat, v, g, l);
     }
   }
 
@@ -148,7 +147,7 @@ struct BsplineSet : public SPOSet, public SplineAdoptor
       ValueVector_t v(logdet[i], OrbitalSetSize);
       GradVector_t g(dlogdet[i], OrbitalSetSize);
       HessVector_t h(grad_grad_logdet[i], OrbitalSetSize);
-      SplineAdoptor::evaluate_vgh(P, iat, v, g, h);
+      evaluateVGH(P, iat, v, g, h);
     }
   }
 
@@ -170,7 +169,7 @@ struct BsplineSet : public SPOSet, public SplineAdoptor
       GradVector_t g(dlogdet[i], OrbitalSetSize);
       HessVector_t h(grad_grad_logdet[i], OrbitalSetSize);
       GGGVector_t gh(grad_grad_grad_logdet[i], OrbitalSetSize);
-      SplineAdoptor::evaluate_vghgh(P, iat, v, g, h, gh);
+      evaluateVGHGH(P, iat, v, g, h, gh);
     }
   }
 
@@ -195,6 +194,10 @@ struct BsplineSet : public SPOSet, public SplineAdoptor
   {
     //Do nothing, since Einsplines don't explicitly depend on ion positions.
   }
+
+  template<class BSPLINESPO>
+  friend class SplineSetReader;
+  friend class BsplineReaderBase;
 };
 
 } // namespace qmcplusplus
