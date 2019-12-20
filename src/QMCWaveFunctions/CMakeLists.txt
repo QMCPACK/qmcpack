@@ -156,13 +156,15 @@ IF(OHMMS_DIM MATCHES 3)
       )
     IF(QMC_COMPLEX)
       SET(FERMION_SRCS ${FERMION_SRCS}
-       EinsplineSpinorSetBuilder.cpp
+        EinsplineSpinorSetBuilder.cpp
+        BsplineFactory/SplineC2C.cpp
       )
     ENDIF(QMC_COMPLEX)
     IF(NOT QMC_COMPLEX)
       SET(FERMION_SRCS ${FERMION_SRCS}
         BsplineFactory/createRealSingle.cpp
         BsplineFactory/createRealDouble.cpp
+        BsplineFactory/SplineR2R.cpp
         )
     ENDIF()
 

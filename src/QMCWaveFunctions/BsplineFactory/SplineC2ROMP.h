@@ -887,7 +887,12 @@ public:
     }
   }
 
-  void assign_vgh(const PointType& r, ValueVector_t& psi, GradVector_t& dpsi, HessVector_t& grad_grad_psi, int first, int last) const
+  void assign_vgh(const PointType& r,
+                  ValueVector_t& psi,
+                  GradVector_t& dpsi,
+                  HessVector_t& grad_grad_psi,
+                  int first,
+                  int last) const
   {
     // protect last
     last = last > kPoints.size() ? kPoints.size() : last;

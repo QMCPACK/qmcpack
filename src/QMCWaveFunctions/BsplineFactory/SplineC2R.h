@@ -22,12 +22,9 @@
 #define QMCPLUSPLUS_SPLINE_C2R_H
 
 #include <memory>
-#include <vector>
 #include <QMCWaveFunctions/BsplineFactory/BsplineSet.h>
 #include <OhmmsSoA/Container.h>
 #include <spline2/MultiBspline.hpp>
-//#include <spline2/MultiBsplineEval.hpp>
-//#include "QMCWaveFunctions/BsplineFactory/contraction_helper.hpp"
 #include "Utilities/FairDivide.h"
 
 namespace qmcplusplus
@@ -167,7 +164,8 @@ public:
 
   /** assign_vgl
    */
-  void assign_vgl(const PointType& r, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi, int first, int last) const;
+  void assign_vgl(const PointType& r, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi, int first, int last)
+      const;
 
   /** assign_vgl_from_l can be used when myL is precomputed and myV,myG,myL in cartesian
    */
@@ -179,7 +177,12 @@ public:
                            GradVector_t& dpsi,
                            ValueVector_t& d2psi) override;
 
-  void assign_vgh(const PointType& r, ValueVector_t& psi, GradVector_t& dpsi, HessVector_t& grad_grad_psi, int first, int last) const;
+  void assign_vgh(const PointType& r,
+                  ValueVector_t& psi,
+                  GradVector_t& dpsi,
+                  HessVector_t& grad_grad_psi,
+                  int first,
+                  int last) const;
 
   void evaluateVGH(const ParticleSet& P,
                    const int iat,
