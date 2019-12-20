@@ -68,7 +68,7 @@ def write_hamil_supercell(comm, scf_data, hamil_file, chol_cut,
     tstart = time.clock()
 
     # Setup parallel partition of work.
-    maxvecs = maxvecs * nmo_tot
+    #maxvecs = maxvecs * nmo_tot
     part = Partition(comm, maxvecs, nmo_tot, nmo_max, nkpts)
     if comm.rank == 0 and verbose:
         print(" # Each kpoint is distributed accross {} mpi tasks."
