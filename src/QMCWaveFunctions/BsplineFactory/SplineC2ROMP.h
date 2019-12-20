@@ -406,8 +406,7 @@ public:
     return h5f.writeEntry(bigtable, o.str().c_str()); //"spline_0");
   }
 
-  template<typename VV>
-  inline void assign_v(const PointType& r, const vContainer_type& myV, VV& psi, int first, int last) const
+  inline void assign_v(const PointType& r, const vContainer_type& myV, ValueVector_t& psi, int first, int last) const
   {
     // protect last
     last = last > kPoints.size() ? kPoints.size() : last;
@@ -597,8 +596,7 @@ public:
 
   /** assign_vgl_from_l can be used when myL is precomputed and myV,myG,myL in cartesian
    */
-  template<typename VV, typename GV>
-  inline void assign_vgl_from_l(const PointType& r, VV& psi, GV& dpsi, VV& d2psi)
+  inline void assign_vgl_from_l(const PointType& r, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
   {
     constexpr ST two(2);
     const ST x = r[0], y = r[1], z = r[2];
@@ -889,8 +887,7 @@ public:
     }
   }
 
-  template<typename VV, typename GV, typename GGV>
-  void assign_vgh(const PointType& r, VV& psi, GV& dpsi, GGV& grad_grad_psi, int first, int last) const
+  void assign_vgh(const PointType& r, ValueVector_t& psi, GradVector_t& dpsi, HessVector_t& grad_grad_psi, int first, int last) const
   {
     // protect last
     last = last > kPoints.size() ? kPoints.size() : last;
@@ -1126,12 +1123,11 @@ public:
     }
   }
 
-  template<typename VV, typename GV, typename GGV, typename GGGV>
   void assign_vghgh(const PointType& r,
-                    VV& psi,
-                    GV& dpsi,
-                    GGV& grad_grad_psi,
-                    GGGV& grad_grad_grad_psi,
+                    ValueVector_t& psi,
+                    GradVector_t& dpsi,
+                    HessVector_t& grad_grad_psi,
+                    GGGVector_t& grad_grad_grad_psi,
                     int first = 0,
                     int last  = -1) const
   {

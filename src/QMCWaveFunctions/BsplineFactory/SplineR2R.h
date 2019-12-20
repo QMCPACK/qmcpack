@@ -160,8 +160,7 @@ public:
     return bc_sign;
   }
 
-  template<typename VV>
-  inline void assign_v(int bc_sign, const vContainer_type& myV, VV& psi, int first, int last) const
+  inline void assign_v(int bc_sign, const vContainer_type& myV, ValueVector_t& psi, int first, int last) const
   {
     // protect last
     last = last > kPoints.size() ? kPoints.size() : last;
@@ -230,8 +229,7 @@ public:
     }
   }
 
-  template<typename VV, typename GV>
-  inline void assign_vgl(int bc_sign, VV& psi, GV& dpsi, VV& d2psi, int first, int last) const
+  inline void assign_vgl(int bc_sign, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi, int first, int last) const
   {
     // protect last
     last = last > kPoints.size() ? kPoints.size() : last;
@@ -266,8 +264,7 @@ public:
 
   /** assign_vgl_from_l can be used when myL is precomputed and myV,myG,myL in cartesian
    */
-  template<typename VV, typename GV>
-  inline void assign_vgl_from_l(int bc_sign, VV& psi, GV& dpsi, VV& d2psi)
+  inline void assign_vgl_from_l(int bc_sign, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
   {
     const ST signed_one   = (bc_sign & 1) ? -1 : 1;
     const ST* restrict g0 = myG.data(0);
@@ -306,8 +303,7 @@ public:
     }
   }
 
-  template<typename VV, typename GV, typename GGV>
-  void assign_vgh(int bc_sign, VV& psi, GV& dpsi, GGV& grad_grad_psi, int first, int last) const
+  void assign_vgh(int bc_sign, ValueVector_t& psi, GradVector_t& dpsi, HessVector_t& grad_grad_psi, int first, int last) const
   {
     // protect last
     last = last > kPoints.size() ? kPoints.size() : last;
@@ -363,12 +359,11 @@ public:
     }
   }
 
-  template<typename VV, typename GV, typename GGV, typename GGGV>
   void assign_vghgh(int bc_sign,
-                    VV& psi,
-                    GV& dpsi,
-                    GGV& grad_grad_psi,
-                    GGGV& grad_grad_grad_psi,
+                    ValueVector_t& psi,
+                    GradVector_t& dpsi,
+                    HessVector_t& grad_grad_psi,
+                    GGGVector_t& grad_grad_grad_psi,
                     int first = 0,
                     int last  = -1) const
   {
