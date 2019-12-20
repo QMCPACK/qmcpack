@@ -212,5 +212,6 @@ public:
 
 extern template class SplineC2R<float>;
 extern template class SplineC2R<double>;
+
 } // namespace qmcplusplus
 #endif

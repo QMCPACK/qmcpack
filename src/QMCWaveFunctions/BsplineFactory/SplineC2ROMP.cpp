@@ -946,8 +946,8 @@ void SplineC2ROMP<ST>::assign_vghgh(const PointType& r,
                                     GradVector_t& dpsi,
                                     HessVector_t& grad_grad_psi,
                                     GGGVector_t& grad_grad_grad_psi,
-                                    int first = 0,
-                                    int last  = -1) const
+                                    int first,
+                                    int last) const
 {
   // protect last
   last = last < 0 ? kPoints.size() : (last > kPoints.size() ? kPoints.size() : last);
@@ -1427,5 +1427,8 @@ void SplineC2ROMP<ST>::evaluateVGHGH(const ParticleSet& P,
     assign_vghgh(r, psi, dpsi, grad_grad_psi, grad_grad_grad_psi, first / 2, last / 2);
   }
 }
+
+template class SplineC2ROMP<float>;
+template class SplineC2ROMP<double>;
 
 } // namespace qmcplusplus

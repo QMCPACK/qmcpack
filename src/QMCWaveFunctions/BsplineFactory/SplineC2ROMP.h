@@ -288,5 +288,8 @@ public:
   friend class BsplineReaderBase;
 };
 
+extern template class SplineC2ROMP<float>;
+extern template class SplineC2ROMP<double>;
+
 } // namespace qmcplusplus
 #endif

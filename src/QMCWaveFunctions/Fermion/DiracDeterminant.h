@@ -229,7 +229,7 @@ private:
 
 extern template class DiracDeterminant<>;
 #if defined(ENABLE_CUDA)
-extern template class DiracDeterminant<DelayedUpdateCUDA<ValueType, mValueType>>;
+extern template class DiracDeterminant<DelayedUpdateCUDA<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
 #endif
 
 } // namespace qmcplusplus
