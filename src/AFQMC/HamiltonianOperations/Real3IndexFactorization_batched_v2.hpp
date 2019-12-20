@@ -652,7 +652,7 @@ class Real3IndexFactorization_batched_v2
         // calculate Rwn
         for(int ispin=0; ispin<nspin; ispin++) {
           SpCMatrix_ref G_(GF[ispin].origin(),{nw,NMO*NMO});
-          ma::add(SPValueType(1.0),Gt,SPValueType(1.0),ma::T(G_),Gt);    
+          ma::add(SPComplexType(1.0),Gt,SPComplexType(1.0),ma::T(G_),Gt);    
         }
         ma::product(SPValueType(1.0),ma::T(Likn),Gt,SPValueType(0.0),Rnw);
         SpCMatrix_ref Rwn(TBuff.origin()+cnt_,{nw,local_nCV});
@@ -662,8 +662,8 @@ class Real3IndexFactorization_batched_v2
         // add coulomb contribution of <pr||qs>Grs term to Fp, reuse Gt for temporary storage 
         ma::product(SPValueType(1.0),Likn,Rnw,SPValueType(0.0),Gt);
         for(int ispin=0; ispin<nspin; ispin++) {
-          ma::add(SPValueType(1.0),Fp_({nw0,nw0+nw},{ispin*NMO*NMO,(ispin+1)*NMO*NMO}),
-                  SPValueType(1.0),ma::T(Gt),Fp_({nw0,nw0+nw},{ispin*NMO*NMO,(ispin+1)*NMO*NMO}));    
+          ma::add(SPComplexType(1.0),Fp_({nw0,nw0+nw},{ispin*NMO*NMO,(ispin+1)*NMO*NMO}),
+                  SPComplexType(1.0),ma::T(Gt),Fp_({nw0,nw0+nw},{ispin*NMO*NMO,(ispin+1)*NMO*NMO}));    
         }
 
         // Twpqn 
