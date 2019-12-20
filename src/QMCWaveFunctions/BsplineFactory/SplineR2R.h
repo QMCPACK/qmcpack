@@ -167,11 +167,11 @@ public:
   void assign_vgh(int bc_sign, ValueVector_t& psi, GradVector_t& dpsi, HessVector_t& grad_grad_psi, int first, int last)
       const;
 
-  void evaluateVGH(const ParticleSet& P,
-                   const int iat,
-                   ValueVector_t& psi,
-                   GradVector_t& dpsi,
-                   HessVector_t& grad_grad_psi) override;
+  virtual void evaluateVGH(const ParticleSet& P,
+                           const int iat,
+                           ValueVector_t& psi,
+                           GradVector_t& dpsi,
+                           HessVector_t& grad_grad_psi) override;
 
   void assign_vghgh(int bc_sign,
                     ValueVector_t& psi,
@@ -181,12 +181,12 @@ public:
                     int first = 0,
                     int last  = -1) const;
 
-  void evaluateVGHGH(const ParticleSet& P,
-                     const int iat,
-                     ValueVector_t& psi,
-                     GradVector_t& dpsi,
-                     HessVector_t& grad_grad_psi,
-                     GGGVector_t& grad_grad_grad_psi) override;
+  virtual void evaluateVGHGH(const ParticleSet& P,
+                             const int iat,
+                             ValueVector_t& psi,
+                             GradVector_t& dpsi,
+                             HessVector_t& grad_grad_psi,
+                             GGGVector_t& grad_grad_grad_psi) override;
 
   template<class BSPLINESPO>
   friend class SplineSetReader;

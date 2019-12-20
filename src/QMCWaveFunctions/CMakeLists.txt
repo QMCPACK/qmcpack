@@ -150,7 +150,6 @@ IF(OHMMS_DIM MATCHES 3)
       EinsplineSetBuilder_createSPOs.cpp
       BsplineFactory/createComplexDouble.cpp
       BsplineFactory/createComplexSingle.cpp
-      BsplineFactory/SplineC2R.cpp
       BandInfo.cpp
       BsplineFactory/BsplineReaderBase.cpp
       )
@@ -164,9 +163,13 @@ IF(OHMMS_DIM MATCHES 3)
       SET(FERMION_SRCS ${FERMION_SRCS}
         BsplineFactory/createRealSingle.cpp
         BsplineFactory/createRealDouble.cpp
+        BsplineFactory/SplineC2R.cpp
         BsplineFactory/SplineR2R.cpp
         )
-    ENDIF()
+      IF(ENABLE_OFFLOAD)
+        SET(FERMION_SRCS ${FERMION_SRCS} SplineC2ROMP.cpp)
+      ENDIF(ENABLE_OFFLOAD)
+    ENDIF(NOT QMC_COMPLEX)
 
   ENDIF(HAVE_EINSPLINE)
 
