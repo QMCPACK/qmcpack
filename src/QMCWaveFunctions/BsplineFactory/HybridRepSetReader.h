@@ -2,29 +2,25 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2019 QMCPACK developers.
 //
-// File developed by: Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
-//                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
-//                    Ye Luo, yeluo@anl.gov, Argonne National Laboratory
-//                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
-//                    Jeongnim Kim, jeongnim.kim@inte.com, Intel Corp.
+// File developed by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //
-// File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
+// File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
 
 /** @file
  *
- * derived from SplineAdoptorReader
+ * derived from SplineSetReader
  */
 
-#ifndef QMCPLUSPLUS_EINSPLINE_HYBRID_ADOPTOR_READERP_H
-#define QMCPLUSPLUS_EINSPLINE_HYBRID_ADOPTOR_READERP_H
+#ifndef QMCPLUSPLUS_HYBRIDREP_READER_H
+#define QMCPLUSPLUS_HYBRIDREP_READER_H
 
 #include <Numerics/Quadrature.h>
 #include <Numerics/Bessel.h>
-#include <QMCWaveFunctions/BsplineFactory/HybridAdoptorBase.h>
+#include <QMCWaveFunctions/BsplineFactory/HybridRepCenterOrbitals.h>
 #include "OhmmsData/AttributeSet.h"
 
 //#include <QMCHamiltonians/Ylm.h>
@@ -138,12 +134,12 @@ struct Gvectors
 };
 
 
-/** General SplineHybridAdoptorReader to handle any unitcell
+/** General HybridRepSetReader to handle any unitcell
  */
 template<typename SA>
-struct SplineHybridAdoptorReader : public SplineAdoptorReader<SA>
+struct HybridRepSetReader : public SplineSetReader<SA>
 {
-  typedef SplineAdoptorReader<SA> BaseReader;
+  typedef SplineSetReader<SA> BaseReader;
 
   using BaseReader::bspline;
   using BaseReader::mybuilder;
@@ -151,7 +147,7 @@ struct SplineHybridAdoptorReader : public SplineAdoptorReader<SA>
   using BaseReader::rotate_phase_r;
   using typename BaseReader::DataType;
 
-  SplineHybridAdoptorReader(EinsplineSetBuilder* e) : BaseReader(e) {}
+  HybridRepSetReader(EinsplineSetBuilder* e) : BaseReader(e) {}
 
   /** initialize basic parameters of atomic orbitals */
   void initialize_hybridrep_atomic_centers() override
@@ -163,25 +159,28 @@ struct SplineHybridAdoptorReader : public SplineAdoptorReader<SA>
     a.add(s_function_name, "smoothing_function");
     a.put(mybuilder->XMLRoot);
     // assign smooth_scheme
-    if ( scheme_name == "Consistent" )
+    if (scheme_name == "Consistent")
       bspline->smooth_scheme = SA::smoothing_schemes::CONSISTENT;
-    else if ( scheme_name == "SmoothAll" )
+    else if (scheme_name == "SmoothAll")
       bspline->smooth_scheme = SA::smoothing_schemes::SMOOTHALL;
-    else if ( scheme_name == "SmoothPartial" )
+    else if (scheme_name == "SmoothPartial")
       bspline->smooth_scheme = SA::smoothing_schemes::SMOOTHPARTIAL;
     else
-      APP_ABORT("initialize_hybridrep_atomic_centers wrong smoothing_scheme name! Only allows Consistent, SmoothAll or SmoothPartial.");
+      APP_ABORT("initialize_hybridrep_atomic_centers wrong smoothing_scheme name! Only allows Consistent, SmoothAll or "
+                "SmoothPartial.");
 
     // assign smooth_function
-    if ( s_function_name == "LEKS2018" )
+    if (s_function_name == "LEKS2018")
       bspline->smooth_func_id = smoothing_functions::LEKS2018;
-    else if ( s_function_name == "coscos" )
+    else if (s_function_name == "coscos")
       bspline->smooth_func_id = smoothing_functions::COSCOS;
-    else if ( s_function_name == "linear" )
+    else if (s_function_name == "linear")
       bspline->smooth_func_id = smoothing_functions::LINEAR;
     else
-      APP_ABORT("initialize_hybridrep_atomic_centers wrong smoothing_function name! Only allows LEKS2018, coscos or linear.");
-    app_log() << "Hybrid orbital representation uses " << scheme_name << " smoothing scheme and " << s_function_name << " smoothing function." << std::endl;
+      APP_ABORT(
+          "initialize_hybridrep_atomic_centers wrong smoothing_function name! Only allows LEKS2018, coscos or linear.");
+    app_log() << "Hybrid orbital representation uses " << scheme_name << " smoothing scheme and " << s_function_name
+              << " smoothing function." << std::endl;
 
     bspline->set_info(*(mybuilder->SourcePtcl), mybuilder->TargetPtcl, mybuilder->Super2Prim);
     auto& centers = bspline->AtomicCenters;
@@ -269,7 +268,6 @@ struct SplineHybridAdoptorReader : public SplineAdoptorReader<SA>
                         << std::endl;
             success = false;
           }
-
         }
         else
         {
@@ -280,11 +278,12 @@ struct SplineHybridAdoptorReader : public SplineAdoptorReader<SA>
         }
       }
       if (!success)
-        BaseReader::myComm->barrier_and_abort("initialize_hybridrep_atomic_centers Failed to initialize atomic centers in hybrid orbital representation!");
+        BaseReader::myComm->barrier_and_abort("initialize_hybridrep_atomic_centers Failed to initialize atomic centers "
+                                              "in hybrid orbital representation!");
 
       for (int center_idx = 0; center_idx < ACInfo.Ncenters; center_idx++)
       {
-        AtomicOrbitalSoA<DataType> oneCenter(ACInfo.lmax[center_idx]);
+        AtomicOrbitals<DataType> oneCenter(ACInfo.lmax[center_idx]);
         oneCenter.set_info(ACInfo.ion_pos[center_idx], ACInfo.cutoff[center_idx], ACInfo.inner_cutoff[center_idx],
                            ACInfo.spline_radius[center_idx], ACInfo.non_overlapping_radius[center_idx],
                            ACInfo.spline_npoints[center_idx]);
@@ -317,7 +316,7 @@ struct SplineHybridAdoptorReader : public SplineAdoptorReader<SA>
                                          gvec_last);
     // if(band_group_comm.isGroupLeader()) std::cout << "print band=" << iorb << " KE=" << Gvecs.evaluate_KE(cG) << std::endl;
 
-    std::vector<AtomicOrbitalSoA<DataType>>& centers = bspline->AtomicCenters;
+    std::vector<AtomicOrbitals<DataType>>& centers = bspline->AtomicCenters;
     app_log() << "Transforming band " << iorb << " on Rank 0" << std::endl;
     // collect atomic centers by group
     std::vector<int> uniq_species;
@@ -352,9 +351,9 @@ struct SplineHybridAdoptorReader : public SplineAdoptorReader<SA>
     for (int group_idx = 0; group_idx < group_list.size(); group_idx++)
     {
       const auto& mygroup        = group_list[group_idx];
-      const double spline_radius = centers[mygroup[0]].spline_radius;
-      const int spline_npoints   = centers[mygroup[0]].spline_npoints;
-      const int lmax             = centers[mygroup[0]].lmax;
+      const double spline_radius = centers[mygroup[0]].getSplineRadius();
+      const int spline_npoints   = centers[mygroup[0]].getSplineNpoints();
+      const int lmax             = centers[mygroup[0]].getLmax();
       const double delta         = spline_radius / static_cast<double>(spline_npoints - 1);
       const int lm_tot           = (lmax + 1) * (lmax + 1);
       const size_t natoms        = mygroup.size();
@@ -377,7 +376,7 @@ struct SplineHybridAdoptorReader : public SplineAdoptorReader<SA>
       {
         all_vals[idx].resize(spline_npoints, lm_tot * 2);
         all_vals[idx] = 0.0;
-        myRSoA(idx)   = centers[mygroup[idx]].pos;
+        myRSoA(idx)   = centers[mygroup[idx]].getCenterPos();
       }
 
 #pragma omp parallel
