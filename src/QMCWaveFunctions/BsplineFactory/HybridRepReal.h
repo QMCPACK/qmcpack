@@ -27,7 +27,7 @@ namespace qmcplusplus
  * Only works with SPLINEBASE class containing real splines
  */
 template<typename SPLINEBASE>
-struct HybridRepReal : public SPLINEBASE, public HybridRepCenterOrbitals<typename SPLINEBASE::DataType>
+struct HybridRepReal : public SPLINEBASE, private HybridRepCenterOrbitals<typename SPLINEBASE::DataType>
 {
   using HYBRIDBASE       = HybridRepCenterOrbitals<typename SPLINEBASE::DataType>;
   using ST               = typename SPLINEBASE::DataType;
@@ -45,10 +45,6 @@ struct HybridRepReal : public SPLINEBASE, public HybridRepCenterOrbitals<typenam
   GradVector_t dpsi_AO;
   Matrix<ST, aligned_allocator<ST>> multi_myV;
 
-  using HYBRIDBASE::d2f_dr2;
-  using HYBRIDBASE::df_dr;
-  using HYBRIDBASE::dist_dr;
-  using HYBRIDBASE::dist_r;
   using SPLINEBASE::HalfG;
   using SPLINEBASE::myG;
   using SPLINEBASE::myH;
@@ -217,6 +213,8 @@ struct HybridRepReal : public SPLINEBASE, public HybridRepCenterOrbitals<typenam
   {
     APP_ABORT("HybridRepCplx::evaluateVGHGH not implemented!");
   }
+
+  template<class BSPLINESPO> friend class HybridRepSetReader;
 };
 
 } // namespace qmcplusplus

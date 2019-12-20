@@ -400,26 +400,34 @@ public:
 };
 
 template<typename ST>
-struct HybridRepCenterOrbitals
+class HybridRepCenterOrbitals
 {
+public:
   static const int D = 3;
   using PointType    = typename AtomicOrbitals<ST>::PointType;
   using RealType     = typename DistanceTableData::RealType;
+  using PosType      = typename DistanceTableData::PosType;
 
-  // atomic centers
+private:
+  ///atomic centers
   std::vector<AtomicOrbitals<ST>> AtomicCenters;
   ///table index
   int myTableID;
-  //mapping supercell to primitive cell
+  ///mapping supercell to primitive cell
   std::vector<int> Super2Prim;
-  // r, dr for distance table
+  ///r from distance table
   RealType dist_r;
-  DistanceTableData::PosType dist_dr;
-  // for APBC
+  ///dr from distance table
+  PosType dist_dr;
+  ///for APBC
   PointType r_image;
-  // smooth function derivatives
-  RealType f, df_dr, d2f_dr2;
-  /// smoothing schemes
+  ///smooth function value
+  RealType f;
+  ///smooth function first derivative
+  RealType df_dr;
+  ///smooth function second derivative
+  RealType d2f_dr2;
+  ///smoothing schemes
   enum class smoothing_schemes
   {
     CONSISTENT = 0,
@@ -429,6 +437,7 @@ struct HybridRepCenterOrbitals
   /// smoothing function
   smoothing_functions smooth_func_id;
 
+public:
   HybridRepCenterOrbitals() {}
 
   void set_info(const ParticleSet& ions, ParticleSet& els, const std::vector<int>& mapping)
@@ -699,6 +708,8 @@ struct HybridRepCenterOrbitals
     d2f_dr2 *= scale * scale;
     return f;
   }
+
+  template<class BSPLINESPO> friend class HybridRepSetReader;
 };
 
 } // namespace qmcplusplus
