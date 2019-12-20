@@ -104,6 +104,10 @@ bool LatticeParser::put(xmlNodePtr cur)
       {
         putContent(ref_.LR_dim_cutoff, cur);
       }
+      else if (aname == "LR_tol")
+      {
+        putContent(ref_.LR_tol, cur);
+      }
       else if (aname == "rs")
       {
         lattice_defined = true;

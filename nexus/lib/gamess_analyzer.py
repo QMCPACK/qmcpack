@@ -167,7 +167,7 @@ class GamessAnalyzer(SimulationAnalyzer):
         #end if
 
         # try to get the up/down orbitals
-        if 'counts' in self and False: # don't read orbitals, large
+        if 'counts' in self:
             orbitals = obj()
             try:
                 self.read_orbitals(log,orbitals,'up'  ,'-- ALPHA SET --')
@@ -309,16 +309,17 @@ class GamessAnalyzer(SimulationAnalyzer):
                 orbs[spec] = obj(
                     eigenvalue   = array(eigenvalue  ,dtype=float),
                     symmetry     = array(symmetry    ,dtype=str  ),
-                    coefficients = array(coefficients,dtype=float),
-                    basis = obj(
-                        element    = array(element   ,dtype=str),
-                        spec_index = array(spec_index,dtype=int),
-                        angular    = array(angular   ,dtype=str),
-                        stype      = array(stype     ,dtype=int),
-                        ptype      = array(ptype     ,dtype=int),
-                        dtype      = array(dtype     ,dtype=int),
-                        ftype      = array(ftype     ,dtype=int),
-                        )
+                    # skip large coefficient data
+                    #coefficients = array(coefficients,dtype=float),
+                    #basis = obj(
+                    #    element    = array(element   ,dtype=str),
+                    #    spec_index = array(spec_index,dtype=int),
+                    #    angular    = array(angular   ,dtype=str),
+                    #    stype      = array(stype     ,dtype=int),
+                    #    ptype      = array(ptype     ,dtype=int),
+                    #    dtype      = array(dtype     ,dtype=int),
+                    #    ftype      = array(ftype     ,dtype=int),
+                    #    )
                     )
             #end if
             return success

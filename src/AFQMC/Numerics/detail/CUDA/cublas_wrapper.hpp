@@ -314,6 +314,60 @@ namespace cublas {
     return sucess;
   }
 
+  inline cublasStatus_t cublas_gemv(cublasHandle_t handle,
+                          char Atrans, int M, int N,
+                          const float alpha,
+                          const float * A, int lda,
+                          const std::complex<float> * x, int incx,
+                          const float beta,
+                          std::complex<float> *y, int incy)
+  {
+    cublasStatus_t sucess;
+    char Nt('N');
+    char Tt('T');
+    if(Atrans == 'n' || Atrans == 'N')
+      sucess = cublasSgemm(handle,cublasOperation(Nt),cublasOperation(Tt),2,M,N,&alpha,
+                           reinterpret_cast<float const*>(x),2*incx,
+                           A,lda,&beta,
+                           reinterpret_cast<float *>(y),2*incy);
+    else if(Atrans == 't' || Atrans == 'T')
+      sucess = cublasSgemm(handle,cublasOperation(Nt),cublasOperation(Nt),2,N,M,&alpha,
+                           reinterpret_cast<float const*>(x),2*incx,
+                           A,lda,&beta,
+                           reinterpret_cast<float *>(y),2*incy);
+    else
+      assert(0);
+    cudaDeviceSynchronize ();
+    return sucess;
+  }
+
+  inline cublasStatus_t cublas_gemv(cublasHandle_t handle,
+                          char Atrans, int M, int N,
+                          const double alpha,
+                          const double * A, int lda,
+                          const std::complex<double> * x, int incx,
+                          const double beta,
+                          std::complex<double> * y, int incy)
+  {
+    cublasStatus_t sucess;
+    char Nt('N');
+    char Tt('T');
+    if(Atrans == 'n' || Atrans == 'N')
+      sucess = cublasDgemm(handle,cublasOperation(Nt),cublasOperation(Tt),2,M,N,&alpha,
+                           reinterpret_cast<double const*>(x),2*incx,
+                           A,lda,&beta,
+                           reinterpret_cast<double *>(y),2*incy);
+    else if(Atrans == 't' || Atrans == 'T')
+      sucess = cublasDgemm(handle,cublasOperation(Nt),cublasOperation(Nt),2,N,M,&alpha,
+                           reinterpret_cast<double const*>(x),2*incx,
+                           A,lda,&beta,
+                           reinterpret_cast<double *>(y),2*incy);
+    else
+      assert(0);
+    cudaDeviceSynchronize ();
+    return sucess;
+  }
+
   
   // Level-3
   inline cublasStatus_t cublas_gemm(cublasHandle_t handle,
@@ -384,6 +438,44 @@ namespace cublas {
                            reinterpret_cast<cuDoubleComplex const*>(B),ldb,
                            reinterpret_cast<cuDoubleComplex const*>(&beta),
                            reinterpret_cast<cuDoubleComplex *>(C),ldc);
+    cudaDeviceSynchronize ();
+    return sucess;
+  }
+
+  inline cublasStatus_t cublas_gemm(cublasHandle_t handle,
+                          char Atrans, char Btrans, int M, int N, int K,
+                          const float alpha,
+                          const std::complex<float> * A, int lda,
+                          const float * B, int ldb,
+                          const float beta,
+                          std::complex<float> * C, int ldc)
+  {
+    assert(Atrans=='n' || Atrans=='N');
+    cublasStatus_t sucess =
+                cublasSgemm(handle,
+                           cublasOperation(Atrans),cublasOperation(Btrans),2*M,N,K,&alpha,
+                           reinterpret_cast<float const*>(A),2*lda,
+                           B,ldb,&beta,
+                           reinterpret_cast<float *>(C),2*ldc);
+    cudaDeviceSynchronize ();
+    return sucess;
+  }
+
+  inline cublasStatus_t cublas_gemm(cublasHandle_t handle,
+                          char Atrans, char Btrans, int M, int N, int K,
+                          double alpha,
+                          const std::complex<double> * A, int lda,
+                          const double * B, int ldb,
+                          double beta,
+                          std::complex<double> * C, int ldc)
+  {
+    assert(Atrans=='n' || Atrans=='N');
+    cublasStatus_t sucess =
+                cublasDgemm(handle,
+                           cublasOperation(Atrans),cublasOperation(Btrans),2*M,N,K,&alpha,
+                           reinterpret_cast<double const*>(A),2*lda,
+                           B,ldb,&beta, 
+                           reinterpret_cast<double *>(C),2*ldc);
     cudaDeviceSynchronize ();
     return sucess;
   }

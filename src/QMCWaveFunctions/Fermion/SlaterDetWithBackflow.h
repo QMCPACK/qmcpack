@@ -85,11 +85,11 @@ public:
   LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false);
   void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
 
-  inline ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
+  inline PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
   {
     BFTrans->evaluatePbyPWithGrad(P, iat);
     //BFTrans->evaluate(P);
-    ValueType psi = 1.0;
+    PsiValueType psi = 1.0;
     for (int i = 0; i < Dets.size(); ++i)
       psi *= Dets[i]->ratioGrad(P, iat, grad_iat);
     return psi;
@@ -134,11 +134,11 @@ public:
   }
 
 
-  inline ValueType ratio(ParticleSet& P, int iat)
+  inline PsiValueType ratio(ParticleSet& P, int iat)
   {
     BFTrans->evaluatePbyP(P, iat);
     //BFTrans->evaluate(P);
-    ValueType ratio = 1.0;
+    PsiValueType ratio = 1.0;
     for (int i = 0; i < Dets.size(); ++i)
       ratio *= Dets[i]->ratio(P, iat);
     return ratio;

@@ -30,9 +30,10 @@ public:
   T LR_dim_cutoff;
   T LR_rc;
   T LR_kc;
+  T LR_tol;
 
   ///default constructor
-  LRBreakupParameters() : LR_dim_cutoff(15.0), LR_rc(1e6), LR_kc(0.0) {}
+  LRBreakupParameters() : LR_dim_cutoff(15.0), LR_rc(1e6), LR_kc(0.0), LR_tol(3e-4) {}
 
   ///Set LR_rc = radius of smallest sphere inside box and kc=dim/rc
   void SetLRCutoffs(const TinyVector<TinyVector<T, 3>, 3>& a)
@@ -63,7 +64,7 @@ public:
   void printCutoffs(std::ostream& out)
   {
     out << "  Long-range breakup parameters:" << std::endl;
-    out << "    rc*kc = " << LR_dim_cutoff << "; rc = " << LR_rc << "; kc = " << LR_kc << std::endl;
+    out << "    rc*kc = " << LR_dim_cutoff << "; rc = " << LR_rc << "; kc = " << LR_kc <<  "; tol = " << LR_tol << std::endl;
   }
 };
 } // namespace qmcplusplus

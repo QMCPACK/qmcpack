@@ -48,7 +48,7 @@ import os
 import inspect
 from copy import deepcopy
 from superstring import string2val
-from numpy import fromstring,empty,array,float64,ones,pi,dot,ceil
+from numpy import fromstring,empty,array,float64,ones,pi,dot,ceil,ndarray
 from numpy.linalg import inv
 from unit_converter import convert
 from generic import obj
@@ -1974,7 +1974,8 @@ def generate_any_pwscf_input(**kwargs):
     nspin             = kwargs.get_optional('nspin',None)
     nbnd              = kwargs.get_optional('nbnd',None)
     hubbard_u         = kwargs.get_optional('hubbard_u',None)
-
+    occ               = kwargs.get_optional('occupations',None)
+    
     #make an empty input file
     pw = PwscfInput()
 
@@ -2185,6 +2186,14 @@ def generate_any_pwscf_input(**kwargs):
     #        )
     #end if
 
+    # occupations card
+    if isinstance(occ,(list,ndarray)):
+        pw.system.occupations = 'from_input'
+        occ_card = occupations()
+        occ_card.occupations = array(occ,dtype=float)
+        pw.occupations = occ_card
+    #end if
+    
     # adjust card options, if requested
     options = obj(
         atomic_positions = positions_option,
