@@ -27,8 +27,9 @@ namespace qmcplusplus
  * Only works with SPLINEBASE class containing real splines
  */
 template<typename SPLINEBASE>
-struct HybridRepReal : public SPLINEBASE, private HybridRepCenterOrbitals<typename SPLINEBASE::DataType>
+class HybridRepReal : public SPLINEBASE, private HybridRepCenterOrbitals<typename SPLINEBASE::DataType>
 {
+public:
   using HYBRIDBASE       = HybridRepCenterOrbitals<typename SPLINEBASE::DataType>;
   using ST               = typename SPLINEBASE::DataType;
   using PointType        = typename SPLINEBASE::PointType;
@@ -41,6 +42,7 @@ struct HybridRepReal : public SPLINEBASE, private HybridRepCenterOrbitals<typena
   using typename SPLINEBASE::ValueType;
   using typename SPLINEBASE::ValueVector_t;
 
+private:
   ValueVector_t psi_AO, d2psi_AO;
   GradVector_t dpsi_AO;
   Matrix<ST, aligned_allocator<ST>> multi_myV;
@@ -52,6 +54,7 @@ struct HybridRepReal : public SPLINEBASE, private HybridRepCenterOrbitals<typena
   using SPLINEBASE::myV;
   using SPLINEBASE::PrimLattice;
 
+public:
   HybridRepReal()
   {
     this->className = "Hybrid" + this->className;
@@ -215,6 +218,8 @@ struct HybridRepReal : public SPLINEBASE, private HybridRepCenterOrbitals<typena
   }
 
   template<class BSPLINESPO> friend class HybridRepSetReader;
+  template<class BSPLINESPO> friend class SplineSetReader;
+  friend class BsplineReaderBase;
 };
 
 } // namespace qmcplusplus

@@ -32,7 +32,7 @@ namespace qmcplusplus
  * Its derived template classes manage the storage and evaluation at given precision.
  * BsplineSet also implements a few fallback routines in case optimized implementation is not necessary in the derived class.
  */
-struct BsplineSet : public SPOSet
+class BsplineSet : public SPOSet
 {
 protected:
   static const int D = DIM;
