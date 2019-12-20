@@ -33,9 +33,9 @@ namespace qmcplusplus
  * Internal storage ST type arrays are aligned and padded.
  */
 template<typename ST>
-struct SplineR2R : public BsplineSet
+class SplineR2R : public BsplineSet
 {
-  bool IsGamma;
+public:
   using SplineType       = typename bspline_traits<ST, 3>::SplineType;
   using BCType           = typename bspline_traits<ST, 3>::BCType;
   using DataType         = ST;
@@ -53,22 +53,27 @@ struct SplineR2R : public BsplineSet
   using hContainer_type  = VectorSoaContainer<ST, 6>;
   using ghContainer_type = VectorSoaContainer<ST, 10>;
 
-  ///primitive cell
-  CrystalLattice<ST, 3> PrimLattice;
+private:
+  bool IsGamma;
   ///\f$GGt=G^t G \f$, transformation for tensor in LatticeUnit to CartesianUnit, e.g. Hessian
   Tensor<ST, 3> GGt;
   ///multi bspline set
   std::shared_ptr<MultiBspline<ST>> SplineInst;
 
+  ///thread private ratios for reduction when using nested threading, numVP x numThread
+  Matrix<TT> ratios_private;
+
+protected:
+  ///primitive cell
+  CrystalLattice<ST, 3> PrimLattice;
+  /// intermediate result vectors
   vContainer_type myV;
   vContainer_type myL;
   gContainer_type myG;
   hContainer_type myH;
   ghContainer_type mygH;
 
-  ///thread private ratios for reduction when using nested threading, numVP x numThread
-  Matrix<TT> ratios_private;
-
+public:
   SplineR2R()
   {
     is_complex = false;
@@ -553,6 +558,9 @@ struct SplineR2R : public BsplineSet
       assign_vghgh(bc_sign, psi, dpsi, grad_grad_psi, grad_grad_grad_psi, first, last);
     }
   }
+
+  template<class BSPLINESPO> friend class SplineSetReader;
+  friend class BsplineReaderBase;
 };
 
 

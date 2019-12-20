@@ -38,8 +38,9 @@ namespace qmcplusplus
  * Internal storage use double sized arrays of ST type, aligned and padded.
  */
 template<typename ST>
-struct SplineC2R : public BsplineSet
+class SplineC2R : public BsplineSet
 {
+public:
   using SplineType       = typename bspline_traits<ST, 3>::SplineType;
   using BCType           = typename bspline_traits<ST, 3>::BCType;
   using DataType         = ST;
@@ -57,6 +58,7 @@ struct SplineC2R : public BsplineSet
   using hContainer_type  = VectorSoaContainer<ST, 6>;
   using ghContainer_type = VectorSoaContainer<ST, 10>;
 
+private:
   ///primitive cell
   CrystalLattice<ST, 3> PrimLattice;
   ///\f$GGt=G^t G \f$, transformation for tensor in LatticeUnit to CartesianUnit, e.g. Hessian
@@ -69,15 +71,18 @@ struct SplineC2R : public BsplineSet
   vContainer_type mKK;
   VectorSoaContainer<ST, 3> myKcart;
 
+  ///thread private ratios for reduction when using nested threading, numVP x numThread
+  Matrix<TT> ratios_private;
+
+protected:
+  /// intermediate result vectors
   vContainer_type myV;
   vContainer_type myL;
   gContainer_type myG;
   hContainer_type myH;
   ghContainer_type mygH;
 
-  ///thread private ratios for reduction when using nested threading, numVP x numThread
-  Matrix<TT> ratios_private;
-
+public:
   SplineC2R() : nComplexBands(0)
   {
     is_complex = true;
@@ -1268,6 +1273,9 @@ struct SplineC2R : public BsplineSet
       assign_vghgh(r, psi, dpsi, grad_grad_psi, grad_grad_grad_psi, first / 2, last / 2);
     }
   }
+
+  template<class BSPLINESPO> friend class SplineSetReader;
+  friend class BsplineReaderBase;
 };
 
 } // namespace qmcplusplus

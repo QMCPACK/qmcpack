@@ -196,8 +196,9 @@ inline void assign_vgl(ST x,
  * Internal storage use double sized arrays of ST type, aligned and padded.
  */
 template<typename ST>
-struct SplineC2ROMP : public BsplineSet
+class SplineC2ROMP : public BsplineSet
 {
+public:
   static const int ALIGN = QMC_CLINE;
   template<typename DT>
   using OffloadAllocator = OMPallocator<DT, aligned_allocator<DT>>;
@@ -221,6 +222,7 @@ struct SplineC2ROMP : public BsplineSet
   using hContainer_type  = VectorSoaContainer<ST, 6>;
   using ghContainer_type = VectorSoaContainer<ST, 10>;
 
+private:
   ///primitive cell
   CrystalLattice<ST, 3> PrimLattice;
   ///\f$GGt=G^t G \f$, transformation for tensor in LatticeUnit to CartesianUnit, e.g. Hessian
@@ -232,12 +234,6 @@ struct SplineC2ROMP : public BsplineSet
 
   vContainer_type mKK;
   VectorSoaContainer<ST, 3> myKcart;
-
-  vContainer_type myV;
-  vContainer_type myL;
-  gContainer_type myG;
-  hContainer_type myH;
-  ghContainer_type mygH;
 
   ///thread private ratios for reduction when using nested threading, numVP x numThread
   Matrix<TT, OffloadPinnedAllocator<TT>> ratios_private;
@@ -261,6 +257,15 @@ struct SplineC2ROMP : public BsplineSet
   ///GGt data pointer
   const ST* master_GGt_ptr;
 
+protected:
+  /// intermediate result vectors
+  vContainer_type myV;
+  vContainer_type myL;
+  gContainer_type myG;
+  hContainer_type myH;
+  ghContainer_type mygH;
+
+public:
   SplineC2ROMP() : nComplexBands(0)
   {
     is_complex = true;
@@ -1607,6 +1612,9 @@ struct SplineC2ROMP : public BsplineSet
       assign_vghgh(r, psi, dpsi, grad_grad_psi, grad_grad_grad_psi, first / 2, last / 2);
     }
   }
+
+  template<class BSPLINESPO> friend class SplineSetReader;
+  friend class BsplineReaderBase;
 };
 
 } // namespace qmcplusplus
