@@ -6,7 +6,7 @@ import sys
 import time
 import numpy
 from afqmctools.hamiltonian.mol import (
-        write_qmcpack_cholesky
+        write_qmcpack_sparse
         )
 from afqmctools.hamiltonian.converter import read_fcidump
 from afqmctools.utils.linalg import modified_cholesky_direct
@@ -76,9 +76,9 @@ def main(args):
                                     options.thresh, options.verbose,
                                     cmax=20).T.copy()
     cplx_chol = options.write_complex or numpy.any(abs(eri.imag)>1e-14)
-    write_qmcpack_cholesky(hcore, chol, nelec, norb, e0=ecore,
-                           real_chol=(not cplx_chol),
-                           filename=options.output_file)
+    write_qmcpack_sparse(hcore, chol, nelec, norb, e0=ecore,
+                         real_chol=(not cplx_chol),
+                         filename=options.output_file)
 
 if __name__ == '__main__':
     main(sys.argv[1:])
