@@ -21,10 +21,9 @@
 #ifndef QMCPLUSPLUS_BSPLINESET_H
 #define QMCPLUSPLUS_BSPLINESET_H
 
-#include <Lattice/CrystalLattice.h>
-#include <spline/einspline_engine.hpp>
-#include <spline/einspline_util.hpp>
-#include <simd/allocator.hpp>
+#include "QMCWaveFunctions/SPOSet.h"
+#include "spline/einspline_engine.hpp"
+#include "spline/einspline_util.hpp"
 
 namespace qmcplusplus
 {

@@ -150,6 +150,7 @@ IF(OHMMS_DIM MATCHES 3)
       EinsplineSetBuilder_createSPOs.cpp
       BsplineFactory/createComplexDouble.cpp
       BsplineFactory/createComplexSingle.cpp
+      BsplineFactory/SplineC2R.cpp
       BandInfo.cpp
       BsplineFactory/BsplineReaderBase.cpp
       )
