@@ -48,28 +48,24 @@ TEST_CASE("Hybridrep SPO from HDF diamond_1x1x1", "[wavefunction]")
   ions_.R[1][1] = 1.68658058;
   ions_.R[1][2] = 1.68658058;
 
+  SpeciesSet& ion_species = ions_.getSpeciesSet();
+  int C_Idx               = ion_species.addSpecies("C");
+  int C_chargeIdx         = ion_species.addAttribute("charge");
+  int cutoffIdx           = ion_species.addAttribute("cutoff_radius");
+  int lmaxIdx             = ion_species.addAttribute("lmax");
+
+  ion_species(C_chargeIdx, C_Idx) = 4;
+  ion_species(cutoffIdx, C_Idx) = 0.9;
+  ion_species(lmaxIdx, C_Idx)   = 3;
 
   elec_.setName("elec");
   elec_.create(2);
-  elec_.R[0][0] = 0.0;
+  elec_.R[0][0] = 0.4;
   elec_.R[0][1] = 0.0;
   elec_.R[0][2] = 0.0;
   elec_.R[1][0] = 0.0;
   elec_.R[1][1] = 1.0;
   elec_.R[1][2] = 0.0;
-
-  // monoO
-  /*
-  elec_.Lattice.R(0,0) = 5.10509515;
-  elec_.Lattice.R(0,1) = -3.23993545;
-  elec_.Lattice.R(0,2) = 0.0;
-  elec_.Lattice.R(1,0) = 5.10509515;
-  elec_.Lattice.R(1,1) = 3.23993545;
-  elec_.Lattice.R(1,2) = 0.0;
-  elec_.Lattice.R(2,0) = -6.49690625;
-  elec_.Lattice.R(2,1) = 0.0;
-  elec_.Lattice.R(2,2) = 7.08268015;
- */
 
   // diamondC_1x1x1
   elec_.Lattice.R(0, 0) = 3.37316115;
@@ -82,10 +78,10 @@ TEST_CASE("Hybridrep SPO from HDF diamond_1x1x1", "[wavefunction]")
   elec_.Lattice.R(2, 1) = 0.0;
   elec_.Lattice.R(2, 2) = 3.37316115;
 
-  SpeciesSet& tspecies         = elec_.getSpeciesSet();
-  int upIdx                    = tspecies.addSpecies("u");
-  int chargeIdx                = tspecies.addAttribute("charge");
-  tspecies(chargeIdx, upIdx)   = -1;
+  SpeciesSet& tspecies       = elec_.getSpeciesSet();
+  int upIdx                  = tspecies.addSpecies("u");
+  int chargeIdx              = tspecies.addAttribute("charge");
+  tspecies(chargeIdx, upIdx) = -1;
 
   // Need 1 electron and 1 proton, somehow
   //ParticleSet target = ParticleSet();
@@ -95,7 +91,7 @@ TEST_CASE("Hybridrep SPO from HDF diamond_1x1x1", "[wavefunction]")
 
   //diamondC_1x1x1
   const char* particles = "<tmp> \
-<determinantset type=\"einspline\" href=\"diamondC_1x1x1.pwscf.h5\" tilematrix=\"1 0 0 0 1 0 0 0 1\" twistnum=\"0\" source=\"ion\" meshfactor=\"1.0\" precision=\"float\" size=\"4\"/> \
+<determinantset type=\"einspline\" href=\"diamondC_1x1x1.pwscf.h5\" tilematrix=\"1 0 0 0 1 0 0 0 1\" twistnum=\"0\" source=\"ion\" meshfactor=\"1.0\" precision=\"float\" size=\"4\" hybridrep=\"yes\"/> \
 </tmp> \
 ";
 
@@ -111,15 +107,34 @@ TEST_CASE("Hybridrep SPO from HDF diamond_1x1x1", "[wavefunction]")
   std::unique_ptr<SPOSet> spo(einSet.createSPOSetFromXML(ein1));
   REQUIRE(spo);
 
-#if !defined(QMC_CUDA) || defined(QMC_COMPLEX)
-  // due to the different ordering of bands skip the tests on CUDA+Real builds
-  // checking evaluations, reference values are not independently generated.
+  ions_.update();
+  elec_.update();
+
   // for vgl
   SPOSet::ValueMatrix_t psiM(elec_.R.size(), spo->getOrbitalSetSize());
   SPOSet::GradMatrix_t dpsiM(elec_.R.size(), spo->getOrbitalSetSize());
   SPOSet::ValueMatrix_t d2psiM(elec_.R.size(), spo->getOrbitalSetSize());
   spo->evaluate_notranspose(elec_, 0, elec_.R.size(), psiM, dpsiM, d2psiM);
 
+#if !defined(QMC_CUDA) || defined(QMC_COMPLEX)
+  // due to the different ordering of bands skip the tests on CUDA+Real builds
+  // checking evaluations, reference values are not independently generated.
+  // electron 0
+  // value
+  REQUIRE(std::real(psiM[0][0]) == Approx(-0.6594096422));
+  REQUIRE(std::real(psiM[0][1]) == Approx(-1.3352056742));
+  // grad
+  REQUIRE(std::real(dpsiM[0][0][0]) == Approx(-0.8762991428));
+  REQUIRE(std::real(dpsiM[0][0][1]) == Approx(0.0000000044));
+  REQUIRE(std::real(dpsiM[0][0][2]) == Approx(0.0000000044));
+  REQUIRE(std::real(dpsiM[0][1][0]) == Approx(-0.8603816628));
+  REQUIRE(std::real(dpsiM[0][1][1]) == Approx(4.3501935005));
+  REQUIRE(std::real(dpsiM[0][1][2]) == Approx(-0.6386129856));
+  // lapl
+  REQUIRE(std::real(d2psiM[0][0]) == Approx(-4.1090884209));
+  REQUIRE(std::real(d2psiM[0][1]) == Approx(22.3851032257));
+
+  // electron 1
   // value
   REQUIRE(std::real(psiM[1][0]) == Approx(-0.8886948824));
   REQUIRE(std::real(psiM[1][1]) == Approx(1.4194120169));
@@ -160,17 +175,26 @@ TEST_CASE("Hybridrep SPO from HDF diamond_2x1x1", "[wavefunction]")
   ions_.R[3][1] = 5.05974173;
   ions_.R[3][2] = 1.68658058;
 
+  SpeciesSet& ion_species = ions_.getSpeciesSet();
+  int C_Idx               = ion_species.addSpecies("C");
+  int C_chargeIdx         = ion_species.addAttribute("charge");
+  int cutoffIdx           = ion_species.addAttribute("cutoff_radius");
+  int lmaxIdx             = ion_species.addAttribute("lmax");
+
+  ion_species(C_chargeIdx, C_Idx) = 4;
+  ion_species(cutoffIdx, C_Idx) = 0.9;
+  ion_species(lmaxIdx, C_Idx)   = 3;
 
   elec_.setName("elec");
   elec_.create(2);
-  elec_.R[0][0] = 0.0;
+  elec_.R[0][0] = 0.4;
   elec_.R[0][1] = 0.0;
   elec_.R[0][2] = 0.0;
   elec_.R[1][0] = 0.0;
   elec_.R[1][1] = 1.0;
   elec_.R[1][2] = 0.0;
 
-  // diamondC_1x1x1
+  // diamondC_2x1x1
   elec_.Lattice.R(0, 0) = 6.7463223;
   elec_.Lattice.R(0, 1) = 6.7463223;
   elec_.Lattice.R(0, 2) = 0.0;
@@ -181,10 +205,10 @@ TEST_CASE("Hybridrep SPO from HDF diamond_2x1x1", "[wavefunction]")
   elec_.Lattice.R(2, 1) = 0.0;
   elec_.Lattice.R(2, 2) = 3.37316115;
 
-  SpeciesSet& tspecies         = elec_.getSpeciesSet();
-  int upIdx                    = tspecies.addSpecies("u");
-  int chargeIdx                = tspecies.addAttribute("charge");
-  tspecies(chargeIdx, upIdx)   = -1;
+  SpeciesSet& tspecies       = elec_.getSpeciesSet();
+  int upIdx                  = tspecies.addSpecies("u");
+  int chargeIdx              = tspecies.addAttribute("charge");
+  tspecies(chargeIdx, upIdx) = -1;
 
   // Need 1 electron and 1 proton, somehow
   //ParticleSet target = ParticleSet();
@@ -194,7 +218,7 @@ TEST_CASE("Hybridrep SPO from HDF diamond_2x1x1", "[wavefunction]")
 
   //diamondC_2x1x1
   const char* particles = "<tmp> \
-<determinantset type=\"einspline\" href=\"diamondC_2x1x1.pwscf.h5\" tilematrix=\"2 0 0 0 1 0 0 0 1\" twistnum=\"0\" source=\"ion\" meshfactor=\"1.0\" precision=\"float\" size=\"4\"/> \
+<determinantset type=\"einspline\" href=\"diamondC_2x1x1.pwscf.h5\" tilematrix=\"2 0 0 0 1 0 0 0 1\" twistnum=\"0\" source=\"ion\" meshfactor=\"1.0\" precision=\"float\" size=\"4\" hybridrep=\"yes\"/> \
 </tmp> \
 ";
 
@@ -210,6 +234,9 @@ TEST_CASE("Hybridrep SPO from HDF diamond_2x1x1", "[wavefunction]")
   std::unique_ptr<SPOSet> spo(einSet.createSPOSetFromXML(ein1));
   REQUIRE(spo);
 
+  ions_.update();
+  elec_.update();
+
   // for vgl
   SPOSet::ValueMatrix_t psiM(elec_.R.size(), spo->getOrbitalSetSize());
   SPOSet::GradMatrix_t dpsiM(elec_.R.size(), spo->getOrbitalSetSize());
@@ -220,6 +247,23 @@ TEST_CASE("Hybridrep SPO from HDF diamond_2x1x1", "[wavefunction]")
   // real part
   // due to the different ordering of bands skip the tests on CUDA+Real builds
   // checking evaluations, reference values are not independently generated.
+
+  // electron 0
+  // value
+  REQUIRE(std::real(psiM[0][0]) == Approx(0.6776432991));
+  REQUIRE(std::real(psiM[0][1]) == Approx(1.0759553909));
+  // grad
+  REQUIRE(std::real(dpsiM[0][0][0]) == Approx(0.8782411218));
+  REQUIRE(std::real(dpsiM[0][0][1]) == Approx(0.004904394));
+  REQUIRE(std::real(dpsiM[0][0][2]) == Approx(-0.0049044029));
+  REQUIRE(std::real(dpsiM[0][1][0]) == Approx(1.1041458845));
+  REQUIRE(std::real(dpsiM[0][1][1]) == Approx(0.6333346963));
+  REQUIRE(std::real(dpsiM[0][1][2]) == Approx(-0.6333346963));
+  // lapl
+  //REQUIRE(std::real(d2psiM[0][0]) == Approx(4.0779185295));
+  REQUIRE(std::real(d2psiM[0][1]) == Approx(-0.7860302329));
+
+  // electron 1
   // value
   REQUIRE(std::real(psiM[1][0]) == Approx(0.9008999467));
   REQUIRE(std::real(psiM[1][1]) == Approx(1.2383049726));
@@ -237,6 +281,21 @@ TEST_CASE("Hybridrep SPO from HDF diamond_2x1x1", "[wavefunction]")
 
 #if defined(QMC_COMPLEX)
   // imaginary part
+  // electron 0
+  // value
+  REQUIRE(std::imag(psiM[0][0]) == Approx(0.6776432991));
+  REQUIRE(std::imag(psiM[0][1]) == Approx(1.0762499571));
+  // grad
+  REQUIRE(std::imag(dpsiM[0][0][0]) == Approx(0.878241539));
+  REQUIRE(std::imag(dpsiM[0][0][1]) == Approx(0.0049043936));
+  REQUIRE(std::imag(dpsiM[0][0][2]) == Approx(-0.0049044029));
+  REQUIRE(std::imag(dpsiM[0][1][0]) == Approx(1.1067043543));
+  REQUIRE(std::imag(dpsiM[0][1][1]) == Approx(0.6384321451));
+  REQUIRE(std::imag(dpsiM[0][1][2]) == Approx(-0.6384321451));
+  // lapl
+  REQUIRE(std::imag(d2psiM[0][0]) == Approx(4.0779790878));
+  REQUIRE(std::imag(d2psiM[0][1]) == Approx(-0.7897151113));
+  // electron 1
   // value
   REQUIRE(std::imag(psiM[1][0]) == Approx(0.9008999467));
   REQUIRE(std::imag(psiM[1][1]) == Approx(1.2383049726));
@@ -258,6 +317,7 @@ TEST_CASE("Hybridrep SPO from HDF diamond_2x1x1", "[wavefunction]")
   // interchange positions
   elec_2.R[0] = elec_.R[1];
   elec_2.R[1] = elec_.R[0];
+  elec_2.update();
   std::vector<ParticleSet*> P_list;
   P_list.push_back(&elec_);
   P_list.push_back(&elec_2);
@@ -338,7 +398,6 @@ TEST_CASE("Hybridrep SPO from HDF diamond_2x1x1", "[wavefunction]")
   REQUIRE(std::imag((*d2psi_v_list[1])[0]) == Approx(-1.3757134676));
   REQUIRE(std::imag((*d2psi_v_list[1])[1]) == Approx(-2.4919104576));
 #endif
-
 }
 
 } // namespace qmcplusplus
