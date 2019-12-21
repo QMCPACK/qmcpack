@@ -386,14 +386,24 @@ real_t ewaldEnergy(RealMat a,PosArray R,ChargeArray Q,real_t tol=1e-10)
     ve += Q[i]*Q[i]*vm/2;
 
   // Sum the interaction terms for all particle pairs
-#pragma omp parallel for reduction(+:ve) schedule(dynamic,1) collapse(2)
-  for(size_t i=0; i<N; ++i)
-    for(size_t j=0; j<N; ++j)
-      if (i < j) {
-        real_t qq = Q[i]*Q[j];
-        ve += qq*ewaldSum(R[i]-R[j],a,tol/qq);
-      }
+  #pragma omp parallel for reduction(+:ve)
+  for(size_t i=1; i<N/2+1; ++i)
+  {
+    for (size_t j = 0; j < i; ++j)
+    {
+      const real_t qq=Q[i]* Q[j];
+      ve += qq*ewaldSum(R[i]-R[j],a,tol/qq);
+    }
 
+    const size_t i_reverse = N-i;
+    if (i==i_reverse) continue;
+
+    for (size_t j = 0; j < i_reverse; ++j)
+    {
+      const real_t qq = Q[i_reverse]* Q[j];
+      ve += qq*ewaldSum(R[i_reverse]-R[j],a,tol/qq);
+    }
+  }
   return ve;
 }
 
