@@ -15,6 +15,14 @@ MAP = {
         'on_top_pdm': {
             'group': 'N2R', 
             'numer': 'n2r'
+        },
+        'gen_fock_plus': {
+            'group': 'GenFockPlus',
+            'numer': 'gfockp'
+        },
+        'gen_fock_minus': {
+            'group': 'GenFockMinus',
+            'numer': 'gfockm'
         }
     }
 

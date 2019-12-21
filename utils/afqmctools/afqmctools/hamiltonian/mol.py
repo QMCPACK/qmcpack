@@ -29,6 +29,7 @@ def write_hamil_mol(scf_data, hamil_file, chol_cut,
                                                             cas=cas,
                                                             ortho_ao=ortho_ao,
                                                             nelec=nelec)
+    nbasis = hcore.shape[-1]
     # Want L_{(ik),n}
     chol_vecs = chol_vecs.T
     if dense:
