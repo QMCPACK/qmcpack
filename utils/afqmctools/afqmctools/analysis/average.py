@@ -348,20 +348,30 @@ def analyse_ekt(filename, estimator='back_propagated', eqlb=1, skip=1, ix=None,
     [eea, eea_err] : list
         Electron affinities and estimates of their errors.
     """
-    P, Perr = average_one_rdm(filename, estimator='back_propagated', eqlb=1,
-                              skip=1, ix=ix)
+    P, Perr = average_one_rdm(filename, estimator='back_propagated', eqlb=eqlb,
+                              skip=skip, ix=ix)
     Fp, Fperr = average_gen_fock(filename, fock_type='plus',
-                                 estimator='back_propagated', eqlb=1,
-                                 skip=1, ix=ix)
+                                 estimator='back_propagated', eqlb=eqlb,
+                                 skip=skip, ix=ix)
     Fm, Fmerr = average_gen_fock(filename, fock_type='minus',
-                                 estimator='back_propagated', eqlb=1,
-                                 skip=1, ix=ix)
+                                 estimator='back_propagated', eqlb=eqlb,
+                                 skip=skip, ix=ix)
     P[numpy.abs(P) < screen_factor*Perr] = 0.0
-    Fp[numpy.abs(Fp) < screen_factor*Fperr] = 0.0
     Fm[numpy.abs(Fm) < screen_factor*Fmerr] = 0.0
-    PT, X = regularised_ortho(P[0], cutoff=cutoff)
+    Fp[numpy.abs(Fp) < screen_factor*Fperr] = 0.0
+    # TODO : Not quite sure if this is the correct way to treat spin.
+    # Ionisation potential
+    P[0] = 0.5*(P[0]+P[0].conj().T)
+    gamma = P[0]
+    # Diagonalise gamma and discard problematic singular values.
+    gamma, X = regularised_ortho(gamma, cutoff=cutoff)
+    # Rotate to orthogonal basis wrt gamma
     FT = numpy.dot(X.conj().T, numpy.dot(Fm[0], X))
     eip, eip_vec = numpy.linalg.eigh(FT)
+    # Electron affinity.
+    I = numpy.eye(P.shape[-1])
+    gamma = I - P[0].T
+    gamma, X = regularised_ortho(gamma, cutoff=cutoff)
     FT = numpy.dot(X.conj().T, numpy.dot(Fp[0], X))
     eea, eea_vec = numpy.linalg.eigh(FT)
     eip_err, eea_err = (
@@ -372,9 +382,15 @@ def analyse_ekt(filename, estimator='back_propagated', eqlb=1, skip=1, ix=None,
             )
     if P.shape[0] == 2:
         # Collinear case.
-        PT, X = regularise_ortho(P[1], cutoff=cutoff)
+        # IP
+        P[1] = 0.5*(P[1]+P[1].conj().T)
+        gamma = P[1]
+        gamma, X = regularised_ortho(gamma, cutoff=cutoff)
         FT = numpy.dot(X.conj().T, numpy.dot(Fm[1], X))
         eip_b, eip_vec_b = numpy.linalg.eigh(FT)
+        # EA
+        gamma = I - P[1].T
+        gamma, X = regularised_ortho(gamma, cutoff=cutoff)
         FT = numpy.dot(X.conj().T, numpy.dot(Fp[1], X))
         eea_b, eea_vec_b = numpy.linalg.eigh(FT)
         eip_err_b, eea_err_b = (
@@ -386,7 +402,7 @@ def analyse_ekt(filename, estimator='back_propagated', eqlb=1, skip=1, ix=None,
         eip = [eip, eip_b]
         eip_err = [eip_err, eip_err_b]
         eea = [eea, eea_b]
-        eea_err = [eea_err, eea_err_bi]
+        eea_err = [eea_err, eea_err_b]
 
     return eip, eip_err, eea, eea_err
 
@@ -394,6 +410,7 @@ def estimate_error_fock(P, Perr, Fm, Fmerr, Fp, Fperr, nsamp, cutoff):
     """Bootstrap estimate of error in eigenvalues."""
     eip_tot = numpy.zeros((nsamp, P.shape[-1]))
     eea_tot = numpy.zeros((nsamp, P.shape[-1]))
+    # TODO FIX THIS
     # for s in range(nsamp):
         # Ppert = gen_sample_matrix(P, Perr)
         # Ppert, X = regularised_ortho(Ppert, cutoff=cutoff)
