@@ -857,7 +857,8 @@ void MultiSlaterDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
             ParticleSet::ParticleGradient_t& g2     = grads_dn[dnC];
             for (int k = 0; k < n; k++)
             {
-              dot1 -= dpsi1 * dot(gmP[k], g2[k]) + dpsi2 * dot(gmP[k], g1[k]);
+              dot1 -= static_cast<ParticleSet::SingleParticleValue_t>(dpsi1) * dot(gmP[k], g2[k]) +
+                  static_cast<ParticleSet::SingleParticleValue_t>(dpsi2) * dot(gmP[k], g1[k]);
               dot1 += dot((g2[k] - gmP[k]), dGa_up(upC, pa, k)) + dot((g1[k] - gmP[k]), dGa_dn(dnC, pa, k));
             }
             dlog += cdet * (dpsi1 + dpsi2);
