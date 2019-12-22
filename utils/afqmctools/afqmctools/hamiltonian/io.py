@@ -79,8 +79,8 @@ def write_qmcpack_dense(hcore, chol, nelec, nmo, enuc=0.0,
     with h5py.File(filename, 'w') as fh5:
         fh5['Hamiltonian/Energies'] = numpy.array([enuc,0])
         if real_chol:
-            fh5['Hamiltonian/hcore'] = hcore
-            fh5['Hamiltonian/DenseFactorized/L'] = chol
+            fh5['Hamiltonian/hcore'] = numpy.real(hcore)
+            fh5['Hamiltonian/DenseFactorized/L'] = numpy.real(chol)
         else:
             fh5['Hamiltonian/hcore'] = to_qmcpack_complex(hcore.astype(numpy.complex128))
             fh5['Hamiltonian/DenseFactorized/L'] = to_qmcpack_complex(chol.astype(numpy.complex128))
