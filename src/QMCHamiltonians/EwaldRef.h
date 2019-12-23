@@ -34,6 +34,8 @@
 
 namespace qmcplusplus
 {
+namespace ewardref
+{
 /// Reference Ewald implemented for 3D only
 enum
 {
@@ -61,16 +63,12 @@ class RspaceMadelungTerm
 {
 private:
   /// The real-space cell axes
-  RealMat a;
+  const RealMat a;
   /// The constant \kappa in Drummond 2008 formula 7
-  real_t rconst;
+  const real_t rconst;
 
 public:
-  RspaceMadelungTerm(RealMat a_in, real_t rconst_in)
-  {
-    a      = a_in;
-    rconst = rconst_in;
-  }
+  RspaceMadelungTerm(const RealMat& a_in, real_t rconst_in) : a(a_in), rconst(rconst_in) {}
 
   real_t operator()(const IntVec& i) const
   {
@@ -87,19 +85,16 @@ class KspaceMadelungTerm
 {
 private:
   /// The k-space cell axes
-  RealMat b;
+  const RealMat b;
   /// The constant 1/(4\kappa^2) in Drummond 2008 formula 7
-  real_t kconst;
+  const real_t kconst;
   /// The constant 4\pi/\Omega in Drummond 2008 formula 7
-  real_t kfactor;
+  const real_t kfactor;
 
 public:
-  KspaceMadelungTerm(RealMat b_in, real_t kconst_in, real_t kfactor_in)
-  {
-    b       = b_in;
-    kconst  = kconst_in;
-    kfactor = kfactor_in;
-  }
+  KspaceMadelungTerm(const RealMat& b_in, real_t kconst_in, real_t kfactor_in)
+      : b(b_in), kconst(kconst_in), kfactor(kfactor_in)
+  {}
 
   real_t operator()(const IntVec& i) const
   {
@@ -116,19 +111,14 @@ class RspaceEwaldTerm
 {
 private:
   /// The inter-particle separation vector
-  RealVec r;
+  const RealVec r;
   /// The real-space cell axes
-  RealMat a;
+  const RealMat a;
   /// The constant 1/(\sqrt{2}kappa) in Drummond 2008 formula 6
-  real_t rconst;
+  const real_t rconst;
 
 public:
-  RspaceEwaldTerm(RealVec r_in, RealMat a_in, real_t rconst_in)
-  {
-    r      = r_in;
-    a      = a_in;
-    rconst = rconst_in;
-  }
+  RspaceEwaldTerm(RealVec r_in, RealMat a_in, real_t rconst_in) : r(r_in), a(a_in), rconst(rconst_in) {}
 
   real_t operator()(const IntVec& i) const
   {
@@ -147,22 +137,18 @@ class KspaceEwaldTerm
 {
 private:
   /// The inter-particle separation vector
-  RealVec r;
+  const RealVec r;
   /// The k-space cell axes
-  RealMat b;
+  const RealMat b;
   /// The constant -\kappa^2/2 in Drummond 2008 formula 6
-  real_t kconst;
+  const real_t kconst;
   /// The constant 4\pi/\Omega in Drummond 2008 formula 6
-  real_t kfactor;
+  const real_t kfactor;
 
 public:
-  KspaceEwaldTerm(RealVec r_in, RealMat b_in, real_t kconst_in, real_t kfactor_in)
-  {
-    r       = r_in;
-    b       = b_in;
-    kconst  = kconst_in;
-    kfactor = kfactor_in;
-  }
+  KspaceEwaldTerm(const RealVec& r_in, const RealMat& b_in, real_t kconst_in, real_t kfactor_in)
+      : r(r_in), b(b_in), kconst(kconst_in), kfactor(kfactor_in)
+  {}
 
   real_t operator()(const IntVec& i) const
   {
@@ -307,7 +293,7 @@ real_t madelungSum(RealMat a, real_t tol = 1e-10)
  *
  *  @param tol: Tolerance for the Ewald pair interaction in Ha.
  */
-real_t ewaldSum(RealVec r, RealMat a, real_t tol = 1e-10)
+real_t ewaldSum(const RealVec& r, const RealMat& a, real_t tol = 1e-10)
 {
   // Real-space cell volume
   real_t volume = std::abs(det(a));
@@ -354,7 +340,7 @@ real_t ewaldSum(RealVec r, RealMat a, real_t tol = 1e-10)
  *
  *  @param tol: Tolerance for the total potential energy in Ha.
  */
-real_t ewaldEnergy(RealMat a, PosArray R, ChargeArray Q, real_t tol = 1e-10)
+real_t ewaldEnergy(const RealMat& a, const PosArray& R, const ChargeArray& Q, real_t tol = 1e-10)
 {
   NewTimer& EwaldTimer(*TimerManager.createTimer("EwaldRef"));
   ScopedTimer totalEwaldTimer(&EwaldTimer);
@@ -399,6 +385,7 @@ real_t ewaldEnergy(RealMat a, PosArray R, ChargeArray Q, real_t tol = 1e-10)
   return ve;
 }
 
+} // namespace ewardref
 } // namespace qmcplusplus
 
 #endif
