@@ -343,9 +343,9 @@ real_t gridSumTile(const PosArray& R,
           real_t K2prefactor = kfuncTile.computeK2Exponetial(iv, Kv);
 
           for (size_t i = 0; i < row_last - row_first; ++i)
-            sincos(dot(Kv, R[i]), &row_phase_sin[i], &row_phase_cos[i]);
+            sincos(dot(Kv, R[i + row_first]), &row_phase_sin[i], &row_phase_cos[i]);
           for (size_t j = 0; j < col_last - col_first; ++j)
-            sincos(-dot(Kv, R[j]), &col_phase_sin[j], &col_phase_cos[j]);
+            sincos(-dot(Kv, R[j + col_first]), &col_phase_sin[j], &col_phase_cos[j]);
 
           size_t icount = 0;
           for (size_t i = row_first; i < row_last; ++i)
@@ -371,9 +371,9 @@ real_t gridSumTile(const PosArray& R,
           real_t K2prefactor = kfuncTile.computeK2Exponetial(iv, Kv);
 
           for (size_t i = 0; i < row_last - row_first; ++i)
-            sincos(dot(Kv, R[i]), &row_phase_sin[i], &row_phase_cos[i]);
+            sincos(dot(Kv, R[i + row_first]), &row_phase_sin[i], &row_phase_cos[i]);
           for (size_t j = 0; j < col_last - col_first; ++j)
-            sincos(-dot(Kv, R[j]), &col_phase_sin[j], &col_phase_cos[j]);
+            sincos(-dot(Kv, R[j + col_first]), &col_phase_sin[j], &col_phase_cos[j]);
 
           size_t icount = 0;
           for (size_t i = row_first; i < row_last; ++i)
@@ -399,9 +399,9 @@ real_t gridSumTile(const PosArray& R,
           real_t K2prefactor = kfuncTile.computeK2Exponetial(iv, Kv);
 
           for (size_t i = 0; i < row_last - row_first; ++i)
-            sincos(dot(Kv, R[i]), &row_phase_sin[i], &row_phase_cos[i]);
+            sincos(dot(Kv, R[i + row_first]), &row_phase_sin[i], &row_phase_cos[i]);
           for (size_t j = 0; j < col_last - col_first; ++j)
-            sincos(-dot(Kv, R[j]), &col_phase_sin[j], &col_phase_cos[j]);
+            sincos(-dot(Kv, R[j + col_first]), &col_phase_sin[j], &col_phase_cos[j]);
 
           size_t icount = 0;
           for (size_t i = row_first; i < row_last; ++i)
