@@ -3255,6 +3255,28 @@ class Rhea(Supercomputer):
     outfile_extension  = '.output'
     errfile_extension  = '.error'
 
+    def post_process_job(self,job):
+        job.run_options.add(
+            N='-N {}'.format(job.nodes),
+            n='-n {}'.format(job.processes),
+            )
+        if job.threads>1:
+            job.run_options.add(
+                c = '-c {}'.format(job.threads),
+                )
+            if 'cpu_bind' not in job.run_options:
+                if job.processes_per_node==self.cores_per_node:
+                    cpu_bind = '--cpu-bind=threads'
+                else:
+                    cpu_bind = '--cpu-bind=cores'
+                #end if
+                job.run_options.add(
+                    cpu_bind = cpu_bind
+                    )
+            #end if
+        #end if
+    #end def post_process_job
+
     def write_job_header(self,job):
         if job.queue is None:
             job.queue='batch'
@@ -3366,7 +3388,7 @@ SuperMUC(      512,   1,    28,  256,    8,'mpiexec', 'llsubmit',     'llq','llc
 Stampede2(    4200,   1,    68,   96,   50,  'ibrun',   'sbatch',  'squeue', 'scancel')
 Cades(         156,   2,    18,  128,  100, 'mpirun',     'qsub',   'qstat',    'qdel')
 Summit(       4608,   2,    21,  512,  100,  'jsrun',     'bsub',   'bjobs',   'bkill')
-Rhea(          512,   2,    16,  128, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
+Rhea(          512,   2,     8,  128, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
 Tomcat3(         8,   1,    64,  192, 1000, 'mpirun',   'sbatch',   'sacct', 'scancel')
 SuperMUC_NG(  6336,   1,    48,   96, 1000,'mpiexec',   'sbatch',   'sacct', 'scancel')
 
