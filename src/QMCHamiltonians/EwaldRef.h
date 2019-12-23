@@ -266,8 +266,6 @@ real_t gridSum(T& function, bool zero = true, real_t tol = 1e-11)
     v += dv;
   }
 
-  //std::cout << "debug ref YYYY val = " << v << " iter " << iter_count << std::endl;
-
   return v;
 }
 
@@ -419,7 +417,7 @@ real_t gridSumTile(const PosArray& R,
         }
     indmax++;
   }
-  //std::cout << "debug  YYYY val = " << v / qqs[0] << " iter " << indmax << std::endl;
+
   return v;
 }
 
@@ -501,7 +499,6 @@ real_t ewaldSum(const RealVec& r, const RealMat& a, real_t tol = 1e-10)
   // Compute the real-space sum (includes zero)
   real_t rval = gridSum(rfunc, true, tol);
   // Compute the k-space sum (excludes zero)
-  //std::cout << "debug ref YYYY matters " << std::endl;
   real_t kval = gridSum(kfunc, false, tol);
 
   // Sum all contributions to get the Ewald pair interaction
@@ -594,34 +591,33 @@ real_t ewaldEnergy(const RealMat& a, const PosArray& R, const ChargeArray& Q, re
   for (size_t i = 0; i < N; ++i)
     ve += Q[i] * Q[i] * vm / 2;
 
-  real_t ve_ewald(0);
+  if (false)
+  {
+    real_t ve_ewald(0);
 // Sum the interaction terms for all particle pairs
 #pragma omp parallel for reduction(+ : ve_ewald)
-  for (size_t i = 1; i < N / 2 + 1; ++i)
-  {
-    for (size_t j = 0; j < i; ++j)
+    for (size_t i = 1; i < N / 2 + 1; ++i)
     {
-      const real_t qq = Q[i] * Q[j];
-      ve_ewald += qq * ewaldSum(R[i] - R[j], a, tol / qq);
-    }
+      for (size_t j = 0; j < i; ++j)
+      {
+        const real_t qq = Q[i] * Q[j];
+        ve_ewald += qq * ewaldSum(R[i] - R[j], a, tol / qq);
+      }
 
-    const size_t i_reverse = N - i;
-    if (i == i_reverse)
-      continue;
+      const size_t i_reverse = N - i;
+      if (i == i_reverse)
+        continue;
 
-    for (size_t j = 0; j < i_reverse; ++j)
-    {
-      const real_t qq = Q[i_reverse] * Q[j];
-      ve_ewald += qq * ewaldSum(R[i_reverse] - R[j], a, tol / qq);
+      for (size_t j = 0; j < i_reverse; ++j)
+      {
+        const real_t qq = Q[i_reverse] * Q[j];
+        ve_ewald += qq * ewaldSum(R[i_reverse] - R[j], a, tol / qq);
+      }
     }
+    ve += ve_ewald;
   }
-
-  real_t ewald_new = ewaldSumTile(a, R, Q, 0, N, 0, N, tol);
-
-  std::cout << "YYY debug N=" << N << " new " << ewald_new << " ref " << ve_ewald << " diff "
-            << (ewald_new - ve_ewald) / ve_ewald << std::endl;
-
-  ve += ve_ewald;
+  else
+    ve += ewaldSumTile(a, R, Q, 0, N, 0, N, tol);
 
   return ve;
 }
