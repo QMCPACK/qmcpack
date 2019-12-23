@@ -516,9 +516,6 @@ real_t ewaldSumTile(const RealMat& a,
                     size_t col_last,
                     real_t tol = 1e-10)
 {
-  NewTimer& EwaldTimer(*TimerManager.createTimer("EwaldRefTile"));
-  ScopedTimer totalEwaldTimer(&EwaldTimer);
-
   // Real-space cell volume
   const real_t volume = std::abs(det(a));
   // k-space cell axes
@@ -574,7 +571,10 @@ real_t ewaldEnergy(const RealMat& a, const PosArray& R, const ChargeArray& Q, re
   NewTimer& EwaldTimer(*TimerManager.createTimer("EwaldRef"));
   ScopedTimer totalEwaldTimer(&EwaldTimer);
   // Number of particles
-  const int_t N = R.size();
+  const size_t N = R.size();
+
+  // Total Ewald potential energy
+  real_t ve = 0.0;
 
   // Maximum self-interaction charge product
   real_t qqmax = 0.0;
@@ -584,15 +584,13 @@ real_t ewaldEnergy(const RealMat& a, const PosArray& R, const ChargeArray& Q, re
   // Compute the Madelung term (Drummond 2008 formula 7)
   real_t vm = madelungSum(a, tol * 2. / qqmax);
 
-  // Total Ewald potential energy
-  real_t ve = 0.0;
-
   // Sum the Madelung self interaction for each particle
   for (size_t i = 0; i < N; ++i)
     ve += Q[i] * Q[i] * vm / 2;
 
   if (false)
   {
+    ScopedTimer totalEwaldTimer(TimerManager.createTimer("EwaldSum"));
     real_t ve_ewald(0);
 // Sum the interaction terms for all particle pairs
 #pragma omp parallel for reduction(+ : ve_ewald)
@@ -617,7 +615,42 @@ real_t ewaldEnergy(const RealMat& a, const PosArray& R, const ChargeArray& Q, re
     ve += ve_ewald;
   }
   else
-    ve += ewaldSumTile(a, R, Q, 0, N, 0, N, tol);
+  {
+    ScopedTimer totalEwaldTimer(TimerManager.createTimer("EwaldSumOpt"));
+
+    size_t tile_size, max_n_tile_1d, n_tiles;
+    if (N <= 1)
+    {
+      // protect N-2 underflow
+      tile_size     = 1;
+      max_n_tile_1d = 0;
+      n_tiles       = 0;
+    }
+    else
+    {
+      const size_t n_threads = omp_get_max_threads();
+      // making a guess to obtain intial tile_size as large as possible.
+      tile_size = (N - 2) / static_cast<size_t>(std::ceil(std::sqrt(n_threads * 2 + 0.25) - 0.5));
+      // searching for the largest possible n_tiles <= n_threads
+      do
+      {
+        tile_size++;
+        max_n_tile_1d = (N - 2) / tile_size + 1;
+        n_tiles       = max_n_tile_1d * (max_n_tile_1d + 1) / 2;
+      } while (n_tiles > n_threads);
+    }
+    std::vector<TinyVector<size_t, 4>> work_list;
+    work_list.reserve(n_tiles);
+    for (size_t i = 1; i < N; i += tile_size)
+      for (size_t j = 0; j < i; j += tile_size)
+        work_list.emplace_back(i, std::min(i + tile_size, N), j, std::min(j + tile_size, N - 1));
+
+    real_t ve_ewald(0);
+#pragma omp parallel for reduction(+ : ve_ewald)
+    for (size_t i = 0; i < work_list.size(); i++)
+      ve_ewald += ewaldSumTile(a, R, Q, work_list[i][0], work_list[i][1], work_list[i][2], work_list[i][3], tol);
+    ve += ve_ewald;
+  }
 
   return ve;
 }
