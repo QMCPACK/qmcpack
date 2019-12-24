@@ -181,12 +181,6 @@ public:
     real_t K2 = dot(Kv, Kv);
     return kfactor * std::exp(kconst * K2) / K2;
   }
-
-  void computePhase(const RealVec& Kv, const RealVec& r, real_t& sin, real_t& cos) const
-  {
-    real_t Kr = dot(Kv, r);
-    sincos(Kr, &sin, &cos);
-  }
 };
 
 
@@ -300,7 +294,6 @@ real_t gridSumTile(const PosArray& R,
   std::vector<real_t> qqs(count);
 
   real_t v = 0.0;
-  IntVec iv(0);
   size_t icount = 0;
   for (size_t i = row_first; i < row_last; ++i)
     for (size_t j = col_first; j < std::min(col_last, i); ++j)
@@ -313,7 +306,7 @@ real_t gridSumTile(const PosArray& R,
       {
         RealVec r(R[i] - R[j]);
         KspaceEwaldTerm kfunc(r, b, kconst, kfactor);
-        iv = 0;
+        IntVec iv(0);
         v += qq * kfunc(iv);
       }
       icount++;
@@ -336,9 +329,7 @@ real_t gridSumTile(const PosArray& R,
       for (int_t j = -indmax; j < indmax + 1; ++j)
         for (int_t k = -indmax; k < indmax + 1; ++k)
         {
-          iv[0] = i;
-          iv[1] = j;
-          iv[2] = k;
+          IntVec iv(i, j, k);
           RealVec Kv;
           real_t K2prefactor = kfuncTile.computeK2Exponetial(iv, Kv);
 
@@ -364,9 +355,7 @@ real_t gridSumTile(const PosArray& R,
       for (int_t k = -indmax; k < indmax + 1; ++k)
         for (int_t i = -indmax - 1; i < indmax + 2; ++i)
         {
-          iv[0] = i;
-          iv[1] = j;
-          iv[2] = k;
+          IntVec iv(i, j, k);
           RealVec Kv;
           real_t K2prefactor = kfuncTile.computeK2Exponetial(iv, Kv);
 
@@ -392,9 +381,7 @@ real_t gridSumTile(const PosArray& R,
       for (int_t i = -indmax - 1; i < indmax + 2; ++i)
         for (int_t j = -indmax - 1; j < indmax + 2; ++j)
         {
-          iv[0] = i;
-          iv[1] = j;
-          iv[2] = k;
+          IntVec iv(i, j, k);
           RealVec Kv;
           real_t K2prefactor = kfuncTile.computeK2Exponetial(iv, Kv);
 
