@@ -289,9 +289,10 @@ real_t gridSumTile(const PosArray& R,
     for (size_t j = col_first; j < std::min(col_last, i); ++j)
       count++;
 
-  std::vector<real_t> dva(count, std::numeric_limits<real_t>::max());
   std::vector<real_t> tols(count);
+  std::vector<real_t> dva(count, std::numeric_limits<real_t>::max());
   std::vector<real_t> qqs(count);
+  std::vector<real_t> cosKvRij(count);
 
   real_t v = 0.0;
   size_t icount = 0;
@@ -342,13 +343,16 @@ real_t gridSumTile(const PosArray& R,
           for (size_t i = row_first; i < row_last; ++i)
             for (size_t j = col_first; j < std::min(col_last, i); ++j)
             {
-              real_t f = K2prefactor *
-                  (row_phase_cos[i - row_first] * col_phase_cos[j - col_first] -
-                   row_phase_sin[i - row_first] * col_phase_sin[j - col_first]);
-              v += f * qqs[icount];
-              dva[icount] += std::abs(f);
+              cosKvRij[icount] =
+                  row_phase_cos[i - row_first] * col_phase_cos[j - col_first] - row_phase_sin[i - row_first] * col_phase_sin[j - col_first];
               icount++;
             }
+          for (size_t icount = 0; icount < count; ++icount)
+          {
+            real_t f = K2prefactor * cosKvRij[icount];
+            v += f * qqs[icount];
+            dva[icount] += std::abs(f);
+          }
         }
     // Sum over new surface planes perpendicular to the y direction.
     for (int_t j : {-indmax - 1, indmax + 1})
@@ -368,13 +372,16 @@ real_t gridSumTile(const PosArray& R,
           for (size_t i = row_first; i < row_last; ++i)
             for (size_t j = col_first; j < std::min(col_last, i); ++j)
             {
-              real_t f = K2prefactor *
-                  (row_phase_cos[i - row_first] * col_phase_cos[j - col_first] -
-                   row_phase_sin[i - row_first] * col_phase_sin[j - col_first]);
-              v += f * qqs[icount];
-              dva[icount] += std::abs(f);
+              cosKvRij[icount] =
+                  row_phase_cos[i - row_first] * col_phase_cos[j - col_first] - row_phase_sin[i - row_first] * col_phase_sin[j - col_first];
               icount++;
             }
+          for (size_t icount = 0; icount < count; ++icount)
+          {
+            real_t f = K2prefactor * cosKvRij[icount];
+            v += f * qqs[icount];
+            dva[icount] += std::abs(f);
+          }
         }
     // Sum over new surface planes perpendicular to the z direction.
     for (int_t k : {-indmax - 1, indmax + 1})
@@ -394,13 +401,16 @@ real_t gridSumTile(const PosArray& R,
           for (size_t i = row_first; i < row_last; ++i)
             for (size_t j = col_first; j < std::min(col_last, i); ++j)
             {
-              real_t f = K2prefactor *
-                  (row_phase_cos[i - row_first] * col_phase_cos[j - col_first] -
-                   row_phase_sin[i - row_first] * col_phase_sin[j - col_first]);
-              v += f * qqs[icount];
-              dva[icount] += std::abs(f);
+              cosKvRij[icount] =
+                  row_phase_cos[i - row_first] * col_phase_cos[j - col_first] - row_phase_sin[i - row_first] * col_phase_sin[j - col_first];
               icount++;
             }
+          for (size_t icount = 0; icount < count; ++icount)
+          {
+            real_t f = K2prefactor * cosKvRij[icount];
+            v += f * qqs[icount];
+            dva[icount] += std::abs(f);
+          }
         }
     indmax++;
   }
