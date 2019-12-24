@@ -30,6 +30,7 @@
 #include "OhmmsPETE/TinyVector.h"
 #include "OhmmsPETE/Tensor.h"
 #include "Utilities/NewTimer.h"
+#include "simd/allocator.hpp"
 
 
 namespace qmcplusplus
@@ -264,7 +265,7 @@ real_t gridSum(T& function, bool zero = true, real_t tol = 1e-11)
 }
 
 template<typename T>
-bool isLargerThanTol(const std::vector<T>& vals, const std::vector<T>& tols)
+bool isLargerThanTol(const aligned_vector<T>& vals, const aligned_vector<T>& tols)
 {
   for (size_t i = 0; i < vals.size(); i++)
     if (vals[i] > tols[i])
@@ -289,12 +290,15 @@ real_t gridSumTile(const PosArray& R,
     for (size_t j = col_first; j < std::min(col_last, i); ++j)
       count++;
 
-  std::vector<real_t> tols(count);
-  std::vector<real_t> dva(count, std::numeric_limits<real_t>::max());
-  std::vector<real_t> qqs(count);
-  std::vector<real_t> cosKvRij(count);
+  aligned_vector<real_t> tols(count);
+  aligned_vector<real_t> dva(count, std::numeric_limits<real_t>::max());
+  aligned_vector<real_t> qqs(count);
+  aligned_vector<real_t> cosKvRij(count);
+  auto* restrict qqs_ptr      = qqs.data();
+  auto* restrict dva_ptr      = dva.data();
+  auto* restrict cosKvRij_ptr = cosKvRij.data();
 
-  real_t v = 0.0;
+  real_t v      = 0.0;
   size_t icount = 0;
   for (size_t i = row_first; i < row_last; ++i)
     for (size_t j = col_first; j < std::min(col_last, i); ++j)
@@ -321,8 +325,12 @@ real_t gridSumTile(const PosArray& R,
   {
     std::fill(dva.begin(), dva.end(), 0.0);
 
-    std::vector<real_t> row_phase_sin(row_last - row_first), row_phase_cos(row_last - row_first);
-    std::vector<real_t> col_phase_sin(col_last - col_first), col_phase_cos(col_last - col_first);
+    aligned_vector<real_t> row_phase_sin(row_last - row_first), row_phase_cos(row_last - row_first);
+    aligned_vector<real_t> col_phase_sin(col_last - col_first), col_phase_cos(col_last - col_first);
+    auto* restrict row_cos = row_phase_cos.data();
+    auto* restrict row_sin = row_phase_sin.data();
+    auto* restrict col_cos = col_phase_cos.data();
+    auto* restrict col_sin = col_phase_sin.data();
 
     // Surface shell contribution.
     // Sum over new surface planes perpendicular to the x direction.
@@ -334,24 +342,28 @@ real_t gridSumTile(const PosArray& R,
           RealVec Kv;
           real_t K2prefactor = kfuncTile.computeK2Exponetial(iv, Kv);
 
+#pragma omp simd aligned(row_cos, row_sin)
           for (size_t i = 0; i < row_last - row_first; ++i)
-            sincos(dot(Kv, R[i + row_first]), &row_phase_sin[i], &row_phase_cos[i]);
+            sincos(dot(Kv, R[i + row_first]), &row_sin[i], &row_cos[i]);
+#pragma omp simd aligned(col_cos, col_sin)
           for (size_t j = 0; j < col_last - col_first; ++j)
-            sincos(-dot(Kv, R[j + col_first]), &col_phase_sin[j], &col_phase_cos[j]);
+            sincos(-dot(Kv, R[j + col_first]), &col_sin[j], &col_cos[j]);
 
           size_t icount = 0;
           for (size_t i = row_first; i < row_last; ++i)
+#pragma omp simd aligned(row_cos, row_sin, col_cos, col_sin)
             for (size_t j = col_first; j < std::min(col_last, i); ++j)
             {
               cosKvRij[icount] =
-                  row_phase_cos[i - row_first] * col_phase_cos[j - col_first] - row_phase_sin[i - row_first] * col_phase_sin[j - col_first];
+                  row_cos[i - row_first] * col_cos[j - col_first] - row_sin[i - row_first] * col_sin[j - col_first];
               icount++;
             }
+#pragma omp simd aligned(cosKvRij_ptr, qqs_ptr, dva_ptr)
           for (size_t icount = 0; icount < count; ++icount)
           {
-            real_t f = K2prefactor * cosKvRij[icount];
-            v += f * qqs[icount];
-            dva[icount] += std::abs(f);
+            real_t f = K2prefactor * cosKvRij_ptr[icount];
+            v += f * qqs_ptr[icount];
+            dva_ptr[icount] += std::abs(f);
           }
         }
     // Sum over new surface planes perpendicular to the y direction.
@@ -363,24 +375,28 @@ real_t gridSumTile(const PosArray& R,
           RealVec Kv;
           real_t K2prefactor = kfuncTile.computeK2Exponetial(iv, Kv);
 
+#pragma omp simd aligned(row_cos, row_sin)
           for (size_t i = 0; i < row_last - row_first; ++i)
-            sincos(dot(Kv, R[i + row_first]), &row_phase_sin[i], &row_phase_cos[i]);
+            sincos(dot(Kv, R[i + row_first]), &row_sin[i], &row_cos[i]);
+#pragma omp simd aligned(col_cos, col_sin)
           for (size_t j = 0; j < col_last - col_first; ++j)
-            sincos(-dot(Kv, R[j + col_first]), &col_phase_sin[j], &col_phase_cos[j]);
+            sincos(-dot(Kv, R[j + col_first]), &col_sin[j], &col_cos[j]);
 
           size_t icount = 0;
           for (size_t i = row_first; i < row_last; ++i)
+#pragma omp simd aligned(row_cos, row_sin, col_cos, col_sin)
             for (size_t j = col_first; j < std::min(col_last, i); ++j)
             {
               cosKvRij[icount] =
-                  row_phase_cos[i - row_first] * col_phase_cos[j - col_first] - row_phase_sin[i - row_first] * col_phase_sin[j - col_first];
+                  row_cos[i - row_first] * col_cos[j - col_first] - row_sin[i - row_first] * col_sin[j - col_first];
               icount++;
             }
+#pragma omp simd aligned(cosKvRij_ptr, qqs_ptr, dva_ptr)
           for (size_t icount = 0; icount < count; ++icount)
           {
-            real_t f = K2prefactor * cosKvRij[icount];
-            v += f * qqs[icount];
-            dva[icount] += std::abs(f);
+            real_t f = K2prefactor * cosKvRij_ptr[icount];
+            v += f * qqs_ptr[icount];
+            dva_ptr[icount] += std::abs(f);
           }
         }
     // Sum over new surface planes perpendicular to the z direction.
@@ -392,24 +408,28 @@ real_t gridSumTile(const PosArray& R,
           RealVec Kv;
           real_t K2prefactor = kfuncTile.computeK2Exponetial(iv, Kv);
 
+#pragma omp simd aligned(row_cos, row_sin)
           for (size_t i = 0; i < row_last - row_first; ++i)
-            sincos(dot(Kv, R[i + row_first]), &row_phase_sin[i], &row_phase_cos[i]);
+            sincos(dot(Kv, R[i + row_first]), &row_sin[i], &row_cos[i]);
+#pragma omp simd aligned(col_cos, col_sin)
           for (size_t j = 0; j < col_last - col_first; ++j)
-            sincos(-dot(Kv, R[j + col_first]), &col_phase_sin[j], &col_phase_cos[j]);
+            sincos(-dot(Kv, R[j + col_first]), &col_sin[j], &col_cos[j]);
 
           size_t icount = 0;
           for (size_t i = row_first; i < row_last; ++i)
+#pragma omp simd aligned(row_cos, row_sin, col_cos, col_sin)
             for (size_t j = col_first; j < std::min(col_last, i); ++j)
             {
               cosKvRij[icount] =
-                  row_phase_cos[i - row_first] * col_phase_cos[j - col_first] - row_phase_sin[i - row_first] * col_phase_sin[j - col_first];
+                  row_cos[i - row_first] * col_cos[j - col_first] - row_sin[i - row_first] * col_sin[j - col_first];
               icount++;
             }
+#pragma omp simd aligned(cosKvRij_ptr, qqs_ptr, dva_ptr)
           for (size_t icount = 0; icount < count; ++icount)
           {
-            real_t f = K2prefactor * cosKvRij[icount];
-            v += f * qqs[icount];
-            dva[icount] += std::abs(f);
+            real_t f = K2prefactor * cosKvRij_ptr[icount];
+            v += f * qqs_ptr[icount];
+            dva_ptr[icount] += std::abs(f);
           }
         }
     indmax++;
