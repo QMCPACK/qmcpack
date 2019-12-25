@@ -114,6 +114,9 @@ struct DistanceTableData
   int N_walkers;
 
 #ifndef ENABLE_SOA
+  ///number of pairs
+  int npairs_m;
+
   /** @brief M.size() = N_sources+1
    *
    * M[i+i] - M[i] = the number of connected points to the i-th source
@@ -211,7 +214,6 @@ public:
 
   ///returns the reference the origin particleset
   const ParticleSet& origin() const { return *Origin; }
-  inline void reset(const ParticleSet* newcenter) { Origin = newcenter; }
 
   inline bool is_same_type(int dt_type) const { return DTType == dt_type; }
 
@@ -232,9 +234,9 @@ public:
   ///returns the number of source particles
   inline IndexType sources() const { return N_sources; }
 
+#ifndef ENABLE_SOA
   inline IndexType getTotNadj() const { return npairs_m; }
 
-#ifndef ENABLE_SOA
   /// return the distance |R[iadj(i,nj)]-R[i]|
   inline RealType distance(int i, int nj) const { return r_m[M[i] + nj]; }
 
@@ -417,9 +419,6 @@ public:
     os << std::endl;
 #endif
   }
-
-  ///number of pairs
-  int npairs_m;
 
 #ifndef ENABLE_SOA
   /**defgroup storage data for nearest-neighbor relations
