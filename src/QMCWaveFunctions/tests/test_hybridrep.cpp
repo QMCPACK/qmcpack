@@ -260,8 +260,8 @@ TEST_CASE("Hybridrep SPO from HDF diamond_2x1x1", "[wavefunction]")
   REQUIRE(std::real(dpsiM[0][1][1]) == Approx(0.6333346963));
   REQUIRE(std::real(dpsiM[0][1][2]) == Approx(-0.6333346963));
   // lapl
-  //REQUIRE(std::real(d2psiM[0][0]) == Approx(4.0779185295));
-  REQUIRE(std::real(d2psiM[0][1]) == Approx(-0.7860302329));
+  REQUIRE(std::real(d2psiM[0][0]) == Approx(4.0779185295).epsilon(1e-4));
+  REQUIRE(std::real(d2psiM[0][1]) == Approx(-0.7860302329).epsilon(1e-4));
 
   // electron 1
   // value
@@ -293,8 +293,8 @@ TEST_CASE("Hybridrep SPO from HDF diamond_2x1x1", "[wavefunction]")
   REQUIRE(std::imag(dpsiM[0][1][1]) == Approx(0.6384321451));
   REQUIRE(std::imag(dpsiM[0][1][2]) == Approx(-0.6384321451));
   // lapl
-  REQUIRE(std::imag(d2psiM[0][0]) == Approx(4.0779790878));
-  REQUIRE(std::imag(d2psiM[0][1]) == Approx(-0.7897151113));
+  REQUIRE(std::imag(d2psiM[0][0]) == Approx(4.0779790878).epsilon(1e-4));
+  REQUIRE(std::imag(d2psiM[0][1]) == Approx(-0.7897151113).epsilon(1e-4));
   // electron 1
   // value
   REQUIRE(std::imag(psiM[1][0]) == Approx(0.9008999467));
