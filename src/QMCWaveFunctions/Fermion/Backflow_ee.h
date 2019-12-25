@@ -418,16 +418,16 @@ public:
     for (int i = 0; i < iat; i++)
     {
       // Temp[j].dr1 = (ri - rj)
-      RealType uij = RadFun[PairID(iat, i)]->evaluate(myTable.Temp_r[i], du, d2u);
-      PosType u    = (UIJ_temp[i] = -uij * myTable.Temp_dr[i]) - UIJ(iat, i);
+      RealType uij = RadFun[PairID(iat, i)]->evaluate(myTable.getTemporalDists()[i], du, d2u);
+      PosType u    = (UIJ_temp[i] = -uij * myTable.getTemporalDispls()[i]) - UIJ(iat, i);
       newQP[iat] += u;
       newQP[i] -= u;
     }
     for (int i = iat + 1; i < NumTargets; i++)
     {
       // Temp[j].dr1 = (ri - rj)
-      RealType uij = RadFun[PairID(iat, i)]->evaluate(myTable.Temp_r[i], du, d2u);
-      PosType u    = (UIJ_temp[i] = -uij * myTable.Temp_dr[i]) - UIJ(iat, i);
+      RealType uij = RadFun[PairID(iat, i)]->evaluate(myTable.getTemporalDists()[i], du, d2u);
+      PosType u    = (UIJ_temp[i] = -uij * myTable.getTemporalDispls()[i]) - UIJ(iat, i);
       newQP[iat] += u;
       newQP[i] -= u;
     }
@@ -502,14 +502,14 @@ public:
 #ifdef ENABLE_SOA
     for (int j = 0; j < iat; j++)
     {
-      if (myTable.Temp_r[j] > 0)
+      if (myTable.getTemporalDists()[j] > 0)
       {
-        RealType uij = RadFun[PairID(iat, j)]->evaluate(myTable.Temp_r[j], du, d2u);
-        PosType u    = (UIJ_temp[j] = -uij * myTable.Temp_dr[j]) - UIJ(iat, j);
+        RealType uij = RadFun[PairID(iat, j)]->evaluate(myTable.getTemporalDists()[j], du, d2u);
+        PosType u    = (UIJ_temp[j] = -uij * myTable.getTemporalDispls()[j]) - UIJ(iat, j);
         newQP[iat] += u;
         newQP[j] -= u;
         HessType& hess = AIJ_temp[j];
-        hess           = (du / myTable.Temp_r[j]) * outerProduct(myTable.Temp_dr[j], myTable.Temp_dr[j]);
+        hess           = (du / myTable.getTemporalDists()[j]) * outerProduct(myTable.getTemporalDispls()[j], myTable.getTemporalDispls()[j]);
 #if OHMMS_DIM == 3
         hess[0] += uij;
         hess[4] += uij;
@@ -527,14 +527,14 @@ public:
     }
     for (int j = iat + 1; j < NumTargets; j++)
     {
-      if (myTable.Temp_r[j] > 0)
+      if (myTable.getTemporalDists()[j] > 0)
       {
-        RealType uij = RadFun[PairID(iat, j)]->evaluate(myTable.Temp_r[j], du, d2u);
-        PosType u    = (UIJ_temp[j] = -uij * myTable.Temp_dr[j]) - UIJ(iat, j);
+        RealType uij = RadFun[PairID(iat, j)]->evaluate(myTable.getTemporalDists()[j], du, d2u);
+        PosType u    = (UIJ_temp[j] = -uij * myTable.getTemporalDispls()[j]) - UIJ(iat, j);
         newQP[iat] += u;
         newQP[j] -= u;
         HessType& hess = AIJ_temp[j];
-        hess           = (du / myTable.Temp_r[j]) * outerProduct(myTable.Temp_dr[j], myTable.Temp_dr[j]);
+        hess           = (du / myTable.getTemporalDists()[j]) * outerProduct(myTable.getTemporalDispls()[j], myTable.getTemporalDispls()[j]);
 #if OHMMS_DIM == 3
         hess[0] += uij;
         hess[4] += uij;

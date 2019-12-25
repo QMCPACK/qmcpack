@@ -187,7 +187,7 @@ DistanceTableData* createDistanceTable(const ParticleSet& s, ParticleSet& t, int
   dt->DTType   = (useSoA) ? DT_SOA : DT_AOS;
   std::ostringstream p;
   p << s.getName() << "_" << t.getName();
-  dt->Name = p.str(); //assign the table name
+  dt->setName(p.str()); //assign the table name
 
   description << o.str() << std::endl;
 

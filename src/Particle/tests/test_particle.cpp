@@ -67,8 +67,8 @@ TEST_CASE("ParticleSet distance table management", "[particle]")
   ParticleSet elecs_copy(elecs);
   REQUIRE(elecs_copy.getDistTable(ei_table_id2).origin().getName() == "ions");
   REQUIRE(elecs_copy.getDistTable(ee_table_id2).origin().getName() == "electrons");
-  REQUIRE(elecs_copy.getDistTable(ei_table_id2).Need_full_table_loadWalker == true);
-  REQUIRE(elecs_copy.getDistTable(ee_table_id2).Need_full_table_loadWalker == true);
+  REQUIRE(elecs_copy.getDistTable(ei_table_id2).isFullTableNeededAtLoadWalker() == true);
+  REQUIRE(elecs_copy.getDistTable(ee_table_id2).isFullTableNeededAtLoadWalker() == true);
 }
 
 TEST_CASE("symmetric_distance_table OpenBC", "[particle]")

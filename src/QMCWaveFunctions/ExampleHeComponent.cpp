@@ -110,16 +110,18 @@ ExampleHeComponent::PsiValueType ExampleHeComponent::ratio(ParticleSet& P, int i
   const int jat = (iat == 0 ? 1 : 0);
 
   const auto& ee_table = P.getDistTable(my_table_ee_idx_);
+  const auto& ee_temp_r = ee_table.getTemporalDists();
 
   // during p-by-p move iat-th row of Distances and Displacements[iat] are up-to-date
   // because setActive is called before ratio
   double r12_old = ee_table.Distances[iat][jat];
-  double r12_new = ee_table.Temp_r[jat];
+  double r12_new = ee_temp_r[jat];
 
   const auto& ei_table = P.getDistTable(my_table_ei_idx_);
+  const auto& ei_temp_r = ei_table.getTemporalDists();
 
   double r_old = ei_table.Distances[iat][0];
-  double r_new = ei_table.Temp_r[0];
+  double r_new = ei_temp_r[0];
 
   double u_old = A * r12_old / (B * r12_old + 1);
   double u_new = A * r12_new / (B * r12_new + 1);
@@ -154,22 +156,26 @@ ExampleHeComponent::GradType ExampleHeComponent::evalGrad(ParticleSet& P, int ia
 ExampleHeComponent::PsiValueType ExampleHeComponent::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
 {
   const auto& ee_table = P.getDistTable(my_table_ee_idx_);
+  const auto& ee_temp_r = ee_table.getTemporalDists();
+  const auto& ee_temp_dr = ee_table.getTemporalDispls();
 
   const int jat = (iat == 0 ? 1 : 0);
 
   // during p-by-p move iat-th row of Distances and Displacements[iat] are up-to-date
   // because setActive is called before ratioGrad
   double r12_old = ee_table.Distances[iat][jat];
-  double r12_new = ee_table.Temp_r[jat];
+  double r12_new = ee_temp_r[jat];
 
-  auto rhat12 = ee_table.Temp_dr[jat] / r12_new;
+  auto rhat12 = ee_temp_dr[jat] / r12_new;
 
   const auto& ei_table = P.getDistTable(my_table_ei_idx_);
+  const auto& ei_temp_r = ei_table.getTemporalDists();
+  const auto& ei_temp_dr = ei_table.getTemporalDispls();
 
   double r_old = ei_table.Distances[iat][0];
-  double r_new = ei_table.Temp_r[0];
+  double r_new = ei_temp_r[0];
 
-  auto rhat = ei_table.Temp_dr[0] / r_new;
+  auto rhat = ei_temp_dr[0] / r_new;
 
   double du = A / ((B * r12_new + 1) * (B * r12_new + 1));
   double df = -Z;

@@ -155,7 +155,7 @@ struct J1OrbitalSoA : public WaveFunctionComponent
   PsiValueType ratio(ParticleSet& P, int iat)
   {
     UpdateMode = ORB_PBYP_RATIO;
-    curAt      = computeU(P.getDistTable(myTableID).Temp_r.data());
+    curAt      = computeU(P.getDistTable(myTableID).getTemporalDists().data());
     return std::exp(static_cast<PsiValueType>(Vat[iat] - curAt));
   }
 
@@ -190,7 +190,7 @@ struct J1OrbitalSoA : public WaveFunctionComponent
 
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
   {
-    const valT* restrict dist = P.getDistTable(myTableID).Temp_r.data();
+    const valT* restrict dist = P.getDistTable(myTableID).getTemporalDists().data();
     curAt                     = valT(0);
     if (NumGroups > 0)
     {
@@ -300,14 +300,14 @@ struct J1OrbitalSoA : public WaveFunctionComponent
    * @param P quantum particleset
    * @param iat particle index
    *
-   * Using Temp_r. curAt, curGrad and curLap are computed.
+   * Using getTemporalDists(). curAt, curGrad and curLap are computed.
    */
   PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
   {
     UpdateMode = ORB_PBYP_PARTIAL;
 
-    computeU3(P, iat, P.getDistTable(myTableID).Temp_r.data());
-    curLap = accumulateGL(dU.data(), d2U.data(), P.getDistTable(myTableID).Temp_dr, curGrad);
+    computeU3(P, iat, P.getDistTable(myTableID).getTemporalDists().data());
+    curLap = accumulateGL(dU.data(), d2U.data(), P.getDistTable(myTableID).getTemporalDispls(), curGrad);
     curAt  = simd::accumulate_n(U.data(), Nions, valT());
     grad_iat += curGrad;
     return std::exp(static_cast<PsiValueType>(Vat[iat] - curAt));
@@ -321,8 +321,8 @@ struct J1OrbitalSoA : public WaveFunctionComponent
   {
     if (UpdateMode == ORB_PBYP_RATIO)
     {
-      computeU3(P, iat, P.getDistTable(myTableID).Temp_r.data());
-      curLap = accumulateGL(dU.data(), d2U.data(), P.getDistTable(myTableID).Temp_dr, curGrad);
+      computeU3(P, iat, P.getDistTable(myTableID).getTemporalDists().data());
+      curLap = accumulateGL(dU.data(), d2U.data(), P.getDistTable(myTableID).getTemporalDispls(), curGrad);
     }
 
     LogValue += Vat[iat] - curAt;

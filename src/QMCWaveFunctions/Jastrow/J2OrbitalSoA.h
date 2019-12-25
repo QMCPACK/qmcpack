@@ -497,7 +497,7 @@ typename J2OrbitalSoA<FT>::PsiValueType J2OrbitalSoA<FT>::ratio(ParticleSet& P, 
 {
   //only ratio, ready to compute it again
   UpdateMode = ORB_PBYP_RATIO;
-  cur_Uat    = computeU(P, iat, P.getDistTable(my_table_ID_).Temp_r.data());
+  cur_Uat    = computeU(P, iat, P.getDistTable(my_table_ID_).getTemporalDists().data());
   return std::exp(static_cast<PsiValueType>(Uat[iat] - cur_Uat));
 }
 
@@ -505,7 +505,7 @@ template<typename FT>
 inline void J2OrbitalSoA<FT>::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
 {
   const auto& d_table       = P.getDistTable(my_table_ID_);
-  const auto* restrict dist = d_table.Temp_r.data();
+  const auto* restrict dist = d_table.getTemporalDists().data();
 
   for (int ig = 0; ig < NumGroups; ++ig)
   {
@@ -539,10 +539,10 @@ typename J2OrbitalSoA<FT>::PsiValueType J2OrbitalSoA<FT>::ratioGrad(ParticleSet&
 {
   UpdateMode = ORB_PBYP_PARTIAL;
 
-  computeU3(P, iat, P.getDistTable(my_table_ID_).Temp_r.data(), cur_u.data(), cur_du.data(), cur_d2u.data());
+  computeU3(P, iat, P.getDistTable(my_table_ID_).getTemporalDists().data(), cur_u.data(), cur_du.data(), cur_d2u.data());
   cur_Uat = simd::accumulate_n(cur_u.data(), N, valT());
   DiffVal = Uat[iat] - cur_Uat;
-  grad_iat += accumulateG(cur_du.data(), P.getDistTable(my_table_ID_).Temp_dr);
+  grad_iat += accumulateG(cur_du.data(), P.getDistTable(my_table_ID_).getTemporalDispls());
   return std::exp(static_cast<PsiValueType>(DiffVal));
 }
 
@@ -554,12 +554,12 @@ void J2OrbitalSoA<FT>::acceptMove(ParticleSet& P, int iat)
   computeU3(P, iat, d_table.Distances[iat], old_u.data(), old_du.data(), old_d2u.data());
   if (UpdateMode == ORB_PBYP_RATIO)
   { //ratio-only during the move; need to compute derivatives
-    const auto* restrict dist = d_table.Temp_r.data();
+    const auto* restrict dist = d_table.getTemporalDists().data();
     computeU3(P, iat, dist, cur_u.data(), cur_du.data(), cur_d2u.data());
   }
 
   valT cur_d2Uat(0);
-  const auto& new_dr    = d_table.Temp_dr;
+  const auto& new_dr    = d_table.getTemporalDispls();
   const auto& old_dr    = d_table.Displacements[iat];
   constexpr valT lapfac = OHMMS_DIM - RealType(1);
 #pragma omp simd reduction(+ : cur_d2Uat)

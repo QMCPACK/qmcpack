@@ -40,7 +40,7 @@ CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces)
   ReportEngine PRE("CoulombPBCAA", "CoulombPBCAA");
   set_energy_domain(potential);
   two_body_quantum_domain(ref);
-  PtclRefName = ref.getDistTable(d_aa_ID).Name;
+  PtclRefName = ref.getDistTable(d_aa_ID).getName();
   initBreakup(ref);
 
   if (ComputeForces)
@@ -132,7 +132,7 @@ void CoulombPBCAA::resetTargetParticleSet(ParticleSet& P)
 {
   if (is_active)
   {
-    PtclRefName = P.getDistTable(d_aa_ID).Name;
+    PtclRefName = P.getDistTable(d_aa_ID).getName();
     AA->resetTargetParticleSet(P);
   }
 }

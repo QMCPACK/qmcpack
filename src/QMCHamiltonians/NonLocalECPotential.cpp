@@ -432,7 +432,7 @@ void NonLocalECPotential::markAffectedElecs(const DistanceTableData& myTable, in
     if (myTable.DTType == DT_SOA)
     {
       old_distance = myTable.Distances[iel][iat];
-      new_distance = myTable.Temp_r[iat];
+      new_distance = myTable.getTemporalDists()[iat];
     }
     else
     {

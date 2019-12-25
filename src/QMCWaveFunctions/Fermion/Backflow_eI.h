@@ -328,8 +328,8 @@ public:
     int maxI = myTable.sources();
     for (int j = 0; j < maxI; j++)
     {
-      RealType uij = RadFun[j]->evaluate(myTable.Temp_r[j], du, d2u);
-      PosType u    = (UIJ_temp[j] = -uij * myTable.Temp_dr[j]) - UIJ(iat, j);
+      RealType uij = RadFun[j]->evaluate(myTable.getTemporalDists()[j], du, d2u);
+      PosType u    = (UIJ_temp[j] = -uij * myTable.getTemporalDispls()[j]) - UIJ(iat, j);
       newQP[iat] += u;
     }
 #else
@@ -380,13 +380,13 @@ public:
     int maxI = myTable.sources();
     for (int j = 0; j < maxI; j++)
     {
-      if (myTable.Temp_r[j] > 0)
+      if (myTable.getTemporalDists()[j] > 0)
       {
-        RealType uij = RadFun[j]->evaluate(myTable.Temp_r[j], du, d2u);
-        PosType u    = (UIJ_temp[j] = -uij * myTable.Temp_dr[j]) - UIJ(iat, j);
+        RealType uij = RadFun[j]->evaluate(myTable.getTemporalDists()[j], du, d2u);
+        PosType u    = (UIJ_temp[j] = -uij * myTable.getTemporalDispls()[j]) - UIJ(iat, j);
         newQP[iat] += u;
         HessType& hess = AIJ_temp[j];
-        hess           = (du / myTable.Temp_r[j]) * outerProduct(myTable.Temp_dr[j], myTable.Temp_dr[j]);
+        hess           = (du / myTable.getTemporalDists()[j]) * outerProduct(myTable.getTemporalDispls()[j], myTable.getTemporalDispls()[j]);
         hess[0] += uij;
         hess[4] += uij;
         hess[8] += uij;

@@ -354,7 +354,7 @@ public:
       oldQP[i] = newQP[i] = QP.R[i];
     const auto& myTable = P.getDistTable(myTableIndex_);
 #ifdef ENABLE_SOA
-    newQP[iat] -= myTable.Temp_dr[iat];
+    newQP[iat] -= myTable.getTemporalDispls()[iat];
 #else
     newQP[iat] += myTable.Temp[iat].dr1;
 #endif
@@ -405,7 +405,7 @@ public:
       oldQP[i] = newQP[i] = QP.R[i];
     const auto& myTable = P.getDistTable(myTableIndex_);
 #ifdef ENABLE_SOA
-    newQP[iat] -= myTable.Temp_dr[iat];
+    newQP[iat] -= myTable.getTemporalDispls()[iat];
 #else
     newQP[iat] += myTable.Temp[iat].dr1;
 #endif

@@ -170,6 +170,7 @@ struct DistanceTableData
   ///actual memory for Displacements
   aligned_vector<RealType> memoryPool;
 
+protected:
   /** current_r, probably only needed by AA */
   aligned_vector<RealType> current_r;
 
@@ -182,22 +183,29 @@ struct DistanceTableData
   /** temp_dr */
   RowContainer Temp_dr;
 
-  /** true, if full table is needed at loadWalker */
-  bool Need_full_table_loadWalker;
+  /** true, if a full table is needed at loadWalker */
+  bool need_full_table_loadWalker_;
   /*@}*/
 
   ///name of the table
   std::string Name;
+
+public:
   ///constructor using source and target ParticleSet
   DistanceTableData(const ParticleSet& source, const ParticleSet& target)
-      : Origin(&source), N_sources(0), N_targets(0), N_walkers(0), Need_full_table_loadWalker(false)
+      : Origin(&source), N_sources(0), N_targets(0), N_walkers(0), need_full_table_loadWalker_(false)
   {}
 
   ///virutal destructor
   virtual ~DistanceTableData() {}
 
+  ///return true if full a full table is needed at loadWalker
+  bool isFullTableNeededAtLoadWalker() const { return need_full_table_loadWalker_; }
+  void setFullTableNeededAtLoadWalker(bool is_needed) { need_full_table_loadWalker_ = is_needed; }
+
   ///return the name of table
-  inline std::string getName() const { return Name; }
+  inline const std::string& getName() const { return Name; }
+
   ///set the name of table
   inline void setName(const std::string& tname) { Name = tname; }
 
@@ -279,6 +287,12 @@ struct DistanceTableData
     return -1;
   }
 #endif
+
+  //getCurrentDists();
+  //getCurrentDispls();
+
+  const aligned_vector<RealType>& getTemporalDists() const { return Temp_r; }
+  const RowContainer& getTemporalDispls() const { return Temp_dr; }
 
   /** evaluate the full Distance Table
    * Ye: need a better name. evalauteAllPairs?

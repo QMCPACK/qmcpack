@@ -418,7 +418,7 @@ public:
 
     const DistanceTableData& eI_table = P.getDistTable(ei_Table_ID_);
     const DistanceTableData& ee_table = P.getDistTable(ee_Table_ID_);
-    cur_Uat = computeU(P, iat, P.GroupID[iat], eI_table.Temp_r.data(), ee_table.Temp_r.data(), ions_nearby_new);
+    cur_Uat = computeU(P, iat, P.GroupID[iat], eI_table.getTemporalDists().data(), ee_table.getTemporalDists().data(), ions_nearby_new);
     DiffVal = Uat[iat] - cur_Uat;
     return std::exp(static_cast<PsiValueType>(DiffVal));
   }
@@ -439,7 +439,7 @@ public:
 
     for (int jg = 0; jg < eGroups; ++jg)
     {
-      const valT sumU = computeU(P, -1, jg, eI_table.Temp_r.data(), ee_table.Temp_r.data(), ions_nearby_new);
+      const valT sumU = computeU(P, -1, jg, eI_table.getTemporalDists().data(), ee_table.getTemporalDists().data(), ions_nearby_new);
 
       for (int j = P.first(jg); j < P.last(jg); ++j)
       {
@@ -447,12 +447,12 @@ public:
         valT Uself(0);
         for (int iat = 0; iat < Nion; ++iat)
         {
-          const valT& r_Ij = eI_table.Temp_r[iat];
+          const valT& r_Ij = eI_table.getTemporalDists()[iat];
           const valT& r_Ik = eI_table.Distances[j][iat];
           if (r_Ij < Ion_cutoff[iat] && r_Ik < Ion_cutoff[iat])
           {
             const int ig = Ions.GroupID[iat];
-            Uself += F(ig, jg, jg)->evaluate(ee_table.Temp_r[j], r_Ij, r_Ik);
+            Uself += F(ig, jg, jg)->evaluate(ee_table.getTemporalDists()[j], r_Ij, r_Ik);
           }
         }
         ratios[j] = std::exp(Uat[j] + Uself - sumU);
@@ -468,7 +468,7 @@ public:
 
     const DistanceTableData& eI_table = P.getDistTable(ei_Table_ID_);
     const DistanceTableData& ee_table = P.getDistTable(ee_Table_ID_);
-    computeU3(P, iat, eI_table.Temp_r.data(), eI_table.Temp_dr, ee_table.Temp_r.data(), ee_table.Temp_dr, cur_Uat,
+    computeU3(P, iat, eI_table.getTemporalDists().data(), eI_table.getTemporalDispls(), ee_table.getTemporalDists().data(), ee_table.getTemporalDispls(), cur_Uat,
               cur_dUat, cur_d2Uat, newUk, newdUk, newd2Uk, ions_nearby_new);
     DiffVal = Uat[iat] - cur_Uat;
     grad_iat += cur_dUat;
@@ -486,7 +486,7 @@ public:
               ee_table.Displacements[iat], Uat[iat], dUat_temp, d2Uat[iat], oldUk, olddUk, oldd2Uk, ions_nearby_old);
     if (UpdateMode == ORB_PBYP_RATIO)
     { //ratio-only during the move; need to compute derivatives
-      computeU3(P, iat, eI_table.Temp_r.data(), eI_table.Temp_dr, ee_table.Temp_r.data(), ee_table.Temp_dr, cur_Uat,
+      computeU3(P, iat, eI_table.getTemporalDists().data(), eI_table.getTemporalDispls(), ee_table.getTemporalDists().data(), ee_table.getTemporalDispls(), cur_Uat,
                 cur_dUat, cur_d2Uat, newUk, newdUk, newd2Uk, ions_nearby_new);
     }
 
@@ -520,10 +520,10 @@ public:
       auto iter       = std::find(elecs_inside(ig, jat).begin(), elecs_inside(ig, jat).end(), iat);
       auto iter_dist  = elecs_inside_dist(ig, jat).begin() + std::distance(elecs_inside(ig, jat).begin(), iter);
       auto iter_displ = elecs_inside_displ(ig, jat).begin() + std::distance(elecs_inside(ig, jat).begin(), iter);
-      if (eI_table.Temp_r[jat] < Ion_cutoff[jat]) // the new position is still inside
+      if (eI_table.getTemporalDists()[jat] < Ion_cutoff[jat]) // the new position is still inside
       {
-        *iter_dist                                                      = eI_table.Temp_r[jat];
-        *iter_displ                                                     = eI_table.Temp_dr[jat];
+        *iter_dist                                                      = eI_table.getTemporalDists()[jat];
+        *iter_displ                                                     = eI_table.getTemporalDispls()[jat];
         *std::find(ions_nearby_new.begin(), ions_nearby_new.end(), jat) = -1;
       }
       else
@@ -544,8 +544,8 @@ public:
       if (jat >= 0)
       {
         elecs_inside(ig, jat).push_back(iat);
-        elecs_inside_dist(ig, jat).push_back(eI_table.Temp_r[jat]);
-        elecs_inside_displ(ig, jat).push_back(eI_table.Temp_dr[jat]);
+        elecs_inside_dist(ig, jat).push_back(eI_table.getTemporalDists()[jat]);
+        elecs_inside_displ(ig, jat).push_back(eI_table.getTemporalDispls()[jat]);
       }
     }
   }
