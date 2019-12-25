@@ -44,7 +44,7 @@ ph_excitations<int,ComplexType> build_ph_struct(std::vector<ComplexType> ci_coef
         boost::mpi3::shared_communicator& comm, int NMO, int NAEA, int NAEB);
 
 void getCommonInput(hdf_archive& dump, int NMO, int NAEA, int NAEB, int& ndets_to_read,
-                    std::vector<ComplexType>& ci, WALKER_TYPES walker_type, bool root);
+                    std::vector<ComplexType>& ci, WALKER_TYPES& walker_type, bool root);
 
 WALKER_TYPES getWalkerType(std::string filename);
 WALKER_TYPES getWalkerTypeHDF5(std::string filename, std::string type);

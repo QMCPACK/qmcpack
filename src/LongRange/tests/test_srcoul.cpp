@@ -21,7 +21,7 @@ namespace qmcplusplus
 
 using mRealType = LRHandlerBase::mRealType;
 
-struct EslerCoulomb3D
+struct EslerCoulomb3D_ForSRCOUL
 { // stripped down version of LRCoulombSingleton::CoulombFunctor for 3D
   double norm;
   inline double operator()(double r, double rinv) {return rinv;}
@@ -44,20 +44,20 @@ TEST_CASE("srcoul", "[lrhandler]")
   REQUIRE(Lattice.Volume == Approx(125));
   Lattice.SetLRCutoffs(Lattice.Rv);
   //Lattice.printCutoffs(app_log());
-  REQUIRE(Lattice.LR_rc == Approx(2.5));
-  REQUIRE(Lattice.LR_kc == Approx(12));
+  REQUIRE(Approx(Lattice.LR_rc) == 2.5);
+  REQUIRE(Approx(Lattice.LR_kc) == 12);
 
   ParticleSet ref; // handler needs ref.SK.KLists
   ref.Lattice = Lattice;  // !!!! crucial for access to Volume
   ref.LRBox = Lattice;  // !!!! crucial for S(k) update
   StructFact *SK = new StructFact(ref, Lattice.LR_kc);
   ref.SK = SK;
-  LRHandlerSRCoulomb<EslerCoulomb3D, LPQHISRCoulombBasis> handler(ref);
+  LRHandlerSRCoulomb<EslerCoulomb3D_ForSRCOUL, LPQHISRCoulombBasis> handler(ref);
 
   handler.initBreakup(ref);
   REQUIRE(handler.MaxKshell == 78);
-  REQUIRE(handler.LR_rc == Approx(2.5));
-  REQUIRE(handler.LR_kc == 12);
+  REQUIRE(Approx(handler.LR_rc) == 2.5);
+  REQUIRE(Approx(handler.LR_kc) == 12);
 
   mRealType r, dr, rinv;
   mRealType vsr;
@@ -87,22 +87,22 @@ TEST_CASE("srcoul df", "[lrhandler]")
   REQUIRE(Lattice.Volume == Approx(125));
   Lattice.SetLRCutoffs(Lattice.Rv);
   //Lattice.printCutoffs(app_log());
-  REQUIRE(Lattice.LR_rc == Approx(2.5));
-  REQUIRE(Lattice.LR_kc == Approx(12));
+  REQUIRE(Approx(Lattice.LR_rc) == 2.5);
+  REQUIRE(Approx(Lattice.LR_kc) == 12);
 
   ParticleSet ref; // handler needs ref.SK.KLists
   ref.Lattice = Lattice;  // !!!! crucial for access to Volume
   ref.LRBox = Lattice;  // !!!! crucial for S(k) update
   StructFact *SK = new StructFact(ref, Lattice.LR_kc);
   ref.SK = SK;
-  LRHandlerSRCoulomb<EslerCoulomb3D, LPQHISRCoulombBasis> handler(ref);
+  LRHandlerSRCoulomb<EslerCoulomb3D_ForSRCOUL, LPQHISRCoulombBasis> handler(ref);
 
   handler.initBreakup(ref);
   REQUIRE(handler.MaxKshell == 78);
-  REQUIRE(handler.LR_rc == Approx(2.5));
-  REQUIRE(handler.LR_kc == 12);
+  REQUIRE(Approx(handler.LR_rc) == 2.5);
+  REQUIRE(Approx(handler.LR_kc) == 12);
 
-  EslerCoulomb3D fref;
+  EslerCoulomb3D_ForSRCOUL fref;
   fref.reset(ref);
   mRealType r, dr, rinv;
   mRealType rm, rp; // minus (m), plus (p)

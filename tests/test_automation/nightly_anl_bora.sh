@@ -5,25 +5,32 @@
 # Run the "short" nightlies
 # 
 
+# load necessary modules
+source /etc/profile.d/z00_lmod.sh
+if [ -d /scratch/packages/modulefiles ]; then
+  module use /scratch/packages/modulefiles
+fi
+
+module load cmake
+module load intel-mkl intel/18.4
+module load openmpi/4.0.2-intel
+module load cuda/10.1
+
 export TEST_SITE_NAME=bora.alcf.anl.gov
-export N_PROCS_BUILD=16
 export N_PROCS=16
+export N_PROCS_BUILD=16
+export N_CONCURRENT_TESTS=16
 export CC=mpicc
 export CXX=mpicxx
-export BOOST_ROOT=/sandbox/opt/boost_1_61_0
 
 # run on socket 1
 NUMA_ID=1
 
-#CUDA
-export PATH=/sandbox/opt/NVIDIA/cuda-10.0/bin:$PATH
-export LD_LIBRARY_PATH=/sandbox/opt/NVIDIA/cuda-10.0/lib64:$LD_LIBRARY_PATH
-
-QE_BIN=/sandbox/opt/qe-stable/qe-6.4.1/bin
-QMC_DATA=/sandbox/opt/h5data
+QE_BIN=/scratch/opt/qe-stable/qe-6.4.1/bin
+QMC_DATA=/scratch/opt/h5data
 
 #Must be an absolute path
-place=/sandbox/QMCPACK_CI_BUILDS_DO_NOT_REMOVE
+place=/scratch/QMCPACK_CI_BUILDS_DO_NOT_REMOVE
 
 #define and load compiler
 compiler=Intel2018

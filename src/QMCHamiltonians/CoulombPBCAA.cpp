@@ -14,6 +14,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
+#include "EwaldRef.h"
 #include "QMCHamiltonians/CoulombPBCAA.h"
 #include "Particle/DistanceTableData.h"
 #include "Utilities/ProgressReportEngine.h"
@@ -48,7 +49,52 @@ CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces)
     update_source(ref);
   }
   if (!is_active)
+  {
     update_source(ref);
+
+    RealMat A;
+    PosArray R;
+    ChargeArray Q;
+
+    A = Ps.Lattice.R;
+
+    R.resize(NumCenters);
+    Q.resize(NumCenters);
+    for(int i=0;i<NumCenters;++i)
+    {
+      R[i] = Ps.R[i];
+      Q[i] = Zat[i];
+    }
+
+    RealType Vii_ref = ewaldEnergy(A,R,Q);
+    RealType Vdiff_per_atom = std::abs(Value-Vii_ref)/NumCenters;
+    app_log()<<"Checking ion-ion Ewald energy against reference..."<<std::endl;
+    if(Vdiff_per_atom > Ps.Lattice.LR_tol)
+    {
+      app_log()<<std::setprecision(14);
+      app_log()<<std::endl;
+      app_log()<<"Error in ion-ion Ewald energy exceeds "<<Ps.Lattice.LR_tol<<" Ha/atom tolerance."<<std::endl;
+      app_log()<<std::endl;
+      app_log()<<"  Reference ion-ion energy: "<<Vii_ref<<std::endl;
+      app_log()<<"  QMCPACK   ion-ion energy: "<<Value<<std::endl;
+      app_log()<<"            ion-ion diff  : "<<Value-Vii_ref<<std::endl;
+      app_log()<<"            diff/atom     : "<<(Value-Vii_ref)/NumCenters<<std::endl;
+      app_log()<<"            tolerance     : "<<Ps.Lattice.LR_tol<<std::endl;
+      app_log()<<std::endl;
+      app_log()<<"Please try increasing the LR_dim_cutoff parameter in the <simulationcell/>"<<std::endl;
+      app_log()<<"input.  Alternatively, the tolerance can be increased by setting the"<<std::endl;
+      app_log()<<"LR_tol parameter in <simulationcell/> to a value greater than "<<Ps.Lattice.LR_tol<<". "<<std::endl;
+      app_log()<<"If you increase the tolerance, please perform careful checks of energy"<<std::endl;
+      app_log()<<"differences to ensure this error is controlled for your application."<<std::endl;
+      app_log()<<std::endl;
+
+      APP_ABORT("ion-ion check failed")
+    }
+    else
+    {
+      app_log()<<"  Check passed."<<std::endl;
+    }
+  }
   prefix = "F_AA";
   app_log() << "  Maximum K shell " << AA->MaxKshell << std::endl;
   app_log() << "  Number of k vectors " << AA->Fk.size() << std::endl;

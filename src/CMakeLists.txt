@@ -153,7 +153,6 @@ endif()
     Message/MPIObjectBase.cpp
     Optimize/VariableSet.cpp
     io/hdf_archive.cpp
-    spline2/MultiBsplineData.cpp
     )
 IF (IS_GIT_PROJECT)
   SET(UTILITIES "${UTILITIES};${GITREV_TMP}")

@@ -155,7 +155,7 @@ public:
   /** a specific but clean code path in createSPOSetFromXML, for PBC, double, ESHDF
    * @param cur the current xml node
    */
-  void set_metadata(int numOrbs, int TwistNum_inp);
+  void set_metadata(int numOrbs, int TwistNum_inp, bool skipChecks=false);
 
   /** initialize with the existing SPOSet */
   SPOSet* createSPOSet(xmlNodePtr cur, SPOSetInputInfo& input_info);
@@ -176,8 +176,8 @@ public:
   std::string parameterGroup, ionsGroup, eigenstatesGroup;
   std::vector<int> Occ;
   bool HasCoreOrbs;
-  bool ReadOrbitalInfo();
-  bool ReadOrbitalInfo_ESHDF();
+  bool ReadOrbitalInfo(bool skipChecks=false);
+  bool ReadOrbitalInfo_ESHDF(bool skipChecks=false);
   void BroadcastOrbitalInfo();
   bool CheckLattice();
 
@@ -247,7 +247,7 @@ public:
   //void AnalyzeTwists();
   void AnalyzeTwists2();
   void TileIons();
-  void OccupyBands(int spin, int sortBands, int numOrbs);
+  void OccupyBands(int spin, int sortBands, int numOrbs, bool skipChecks=false);
   void OccupyBands_ESHDF(int spin, int sortBands, int numOrbs);
 
   void CopyBands(int numOrbs);

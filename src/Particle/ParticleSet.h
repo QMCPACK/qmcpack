@@ -148,6 +148,9 @@ public:
   ///the proposed position of activePtcl during particle-by-particle moves
   SingleParticlePos_t activePos;
 
+  ///the proposed spin of activePtcl during particle-by-particle moves
+  Scalar_t activeSpinVal;
+
   ///the proposed position in the Lattice unit
   SingleParticlePos_t newRedPos;
 
@@ -311,7 +314,7 @@ public:
    * activePtcl=-1 is used to flag non-physical moves
    */
   inline const PosType& activeR(int iat) const { return (activePtcl == iat) ? activePos : R[iat]; }
-
+  inline const Scalar_t& activeSpin(int iat) const { return (activePtcl == iat) ? activeSpinVal : spins[iat]; }
   /** move the iat-th particle to activePos
    * @param iat the index of the particle to be moved
    * @param displ the displacement of the iat-th particle position
@@ -320,8 +323,13 @@ public:
    * Evaluate the related distance table data DistanceTableData::Temp.
    */
   void makeMove(Index_t iat, const SingleParticlePos_t& displ);
+  /// makeMove, but now includes an update to the spin variable
+  void makeMoveWithSpin(Index_t iat, const SingleParticlePos_t& displ, const Scalar_t& sdispl);
+
   /// batched version of makeMove
-  static void flex_makeMove(const RefVector<ParticleSet>& P_list, int iat, const std::vector<SingleParticlePos_t>& displs);
+  static void flex_makeMove(const RefVector<ParticleSet>& P_list,
+                            int iat,
+                            const std::vector<SingleParticlePos_t>& displs);
 
   /** move the iat-th particle to activePos
    * @param iat the index of the particle to be moved
@@ -337,6 +345,8 @@ public:
    * Note: activePos and distances tables are always evaluated no matter the move is valid or not.
    */
   bool makeMoveAndCheck(Index_t iat, const SingleParticlePos_t& displ);
+  /// makeMoveAndCheck, but now includes an update to the spin variable
+  bool makeMoveAndCheckWithSpin(Index_t iat, const SingleParticlePos_t& displ, const Scalar_t& sdispl);
 
   /** Handles virtual moves for all the particles to a single newpos.
    *
@@ -362,12 +372,15 @@ public:
    *
    * Otherwise, everything is the same as makeMove for a walker
    */
-  bool makeMoveAllParticlesWithDrift(const Walker_t& awalker, const ParticlePos_t& drift, const ParticlePos_t& deltaR, RealType dt);
+  bool makeMoveAllParticlesWithDrift(const Walker_t& awalker,
+                                     const ParticlePos_t& drift,
+                                     const ParticlePos_t& deltaR,
+                                     RealType dt);
 
   bool makeMoveAllParticlesWithDrift(const Walker_t& awalker,
-                         const ParticlePos_t& drift,
-                         const ParticlePos_t& deltaR,
-                         const std::vector<RealType>& dt);
+                                     const ParticlePos_t& drift,
+                                     const ParticlePos_t& deltaR,
+                                     const std::vector<RealType>& dt);
   /** accept the move
    *@param iat the index of the particle whose position and other attributes to be updated
    */
@@ -678,8 +691,9 @@ protected:
    * @param iat the particle that is moved on a sphere
    * @param new_positions new particle positions
    */
-  static void mw_computeNewPosDistTablesAndSK(const RefVector<ParticleSet>& P_list, Index_t iat, const std::vector<SingleParticlePos_t>& new_positions);
-
+  static void mw_computeNewPosDistTablesAndSK(const RefVector<ParticleSet>& P_list,
+                                              Index_t iat,
+                                              const std::vector<SingleParticlePos_t>& new_positions);
 };
 
 } // namespace qmcplusplus

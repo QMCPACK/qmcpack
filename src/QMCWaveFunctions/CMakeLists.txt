@@ -42,7 +42,11 @@ IF(NOT QMC_COMPLEX)
     )
 ENDIF(NOT QMC_COMPLEX)
 
-
+IF(QMC_COMPLEX)
+  SET(WFBASE_SRCS ${WFBASE_SRCS}
+    SpinorSet.cpp
+  )
+ENDIF(QMC_COMPLEX)
 ########################
 # build jastrows
 ########################
@@ -149,13 +153,23 @@ IF(OHMMS_DIM MATCHES 3)
       BandInfo.cpp
       BsplineFactory/BsplineReaderBase.cpp
       )
-
+    IF(QMC_COMPLEX)
+      SET(FERMION_SRCS ${FERMION_SRCS}
+        EinsplineSpinorSetBuilder.cpp
+        BsplineFactory/SplineC2C.cpp
+      )
+    ENDIF(QMC_COMPLEX)
     IF(NOT QMC_COMPLEX)
       SET(FERMION_SRCS ${FERMION_SRCS}
         BsplineFactory/createRealSingle.cpp
         BsplineFactory/createRealDouble.cpp
+        BsplineFactory/SplineC2R.cpp
+        BsplineFactory/SplineR2R.cpp
         )
-    ENDIF()
+      IF(ENABLE_OFFLOAD)
+        SET(FERMION_SRCS ${FERMION_SRCS} BsplineFactory/SplineC2ROMP.cpp)
+      ENDIF(ENABLE_OFFLOAD)
+    ENDIF(NOT QMC_COMPLEX)
 
   ENDIF(HAVE_EINSPLINE)
 

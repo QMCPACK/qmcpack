@@ -116,12 +116,12 @@ void test_He(bool transform)
     ParticleSet::SingleParticlePos_t newpos(0.0001, 0.0, 0.0);
     elec.makeMove(0, newpos);
 
-    sposet->evaluate(elec, 0, values);
+    sposet->evaluateValue(elec, 0, values);
 
     // Generated from gen_mo.py for position [0.0001, 0.0, 0.0]
     REQUIRE(values[0] == Approx(0.9996037001));
 
-    sposet->evaluate(elec, 0, values, dpsi, d2psi);
+    sposet->evaluateVGL(elec, 0, values, dpsi, d2psi);
 
     // Generated from gen_mo.py for position [0.0001, 0.0, 0.0]
     REQUIRE(values[0] == Approx(0.9996037001));
@@ -134,7 +134,7 @@ void test_He(bool transform)
     ParticleSet::SingleParticlePos_t disp(1.0, 0.0, 0.0);
     elec.makeMove(0, disp);
 
-    sposet->evaluate(elec, 0, values, dpsi, d2psi);
+    sposet->evaluateVGL(elec, 0, values, dpsi, d2psi);
     // Generated from gen_mo.py for position [1.0, 0.0, 0.0]
     REQUIRE(values[0] == Approx(0.2315567641));
     REQUIRE(dpsi[0][0] == Approx(-0.3805431885));
@@ -240,14 +240,14 @@ void test_Ne(bool transform)
     ParticleSet::SingleParticlePos_t newpos(0.00001, 0.0, 0.0);
     elec.makeMove(0, newpos);
 
-    sposet->evaluate(elec, 0, values);
+    sposet->evaluateValue(elec, 0, values);
 
     std::cout << "values = " << values << std::endl;
 
     // Generated from gen_mo.py for position [1e-05, 0.0, 0.0]
     REQUIRE(values[0] == Approx(-16.11819042));
 
-    sposet->evaluate(elec, 0, values, dpsi, d2psi);
+    sposet->evaluateVGL(elec, 0, values, dpsi, d2psi);
     std::cout << "values = " << values << std::endl;
     std::cout << "dpsi = " << dpsi << std::endl;
     std::cout << "d2psi = " << d2psi << std::endl;
@@ -260,12 +260,12 @@ void test_Ne(bool transform)
 
     ParticleSet::SingleParticlePos_t disp(1.0, 0.0, 0.0);
     elec.makeMove(0, disp);
-    sposet->evaluate(elec, 0, values);
+    sposet->evaluateValue(elec, 0, values);
     // Generated from gen_mo.py for position [1.0, 0.0, 0.0]
     REQUIRE(values[0] == Approx(-0.005041631374));
 
 
-    sposet->evaluate(elec, 0, values, dpsi, d2psi);
+    sposet->evaluateVGL(elec, 0, values, dpsi, d2psi);
     // Generated from gen_mo.py for position [1.0, 0.0, 0.0]
     REQUIRE(values[0] == Approx(-0.005041631374));
     REQUIRE(dpsi[0][0] == Approx(0.01862216578));
@@ -373,7 +373,7 @@ void test_HCN(bool transform)
     ParticleSet::SingleParticlePos_t newpos;
     elec.makeMove(0, newpos);
 
-    sposet->evaluate(elec, 0, values);
+    sposet->evaluateValue(elec, 0, values);
 
     REQUIRE(values[0] == Approx(0.009452265234));
     REQUIRE(values[1] == Approx(0.02008357407));
@@ -383,7 +383,7 @@ void test_HCN(bool transform)
     REQUIRE(values[5] == Approx(0));
     REQUIRE(values[6] == Approx(0));
 
-    sposet->evaluate(elec, 0, values, dpsi, d2psi);
+    sposet->evaluateVGL(elec, 0, values, dpsi, d2psi);
 
 
     // Generated form gen_mo.py for position [0.0, 0.0, 0.0]
@@ -433,7 +433,7 @@ void test_HCN(bool transform)
     SPOSet::HessVector_t dhpsi;
     dhpsi.resize(7);
    
-    sposet->evaluate(elec, 0, values, dpsi, dhpsi);
+    sposet->evaluateVGH(elec, 0, values, dpsi, dhpsi);
     
     // Generated from gen_mo.py for position [0.0, 0.0, 0.0]
     REQUIRE(values[0] == Approx( 0.009452265234));

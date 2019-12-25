@@ -99,15 +99,15 @@ namespace qmc_cuda
   }
 
   // GEMV Specializations
-  template<typename T, typename Q1, typename Q2>
+  template<typename T, typename T2, typename Q1, typename Q2>
   inline static void gemv(char Atrans, int M, int N,
-                          T alpha,
+                          T2 alpha,
                           cuda_gpu_ptr<Q1> A, int lda,
                           cuda_gpu_ptr<Q2> x, int incx,
-                          T beta,
+                          T2 beta,
                           cuda_gpu_ptr<T> y, int incy)
   {
-    static_assert(std::is_same<typename std::decay<Q1>::type,T>::value,"Wrong dispatch.\n");
+    static_assert(std::is_same<typename std::decay<Q1>::type,T2>::value,"Wrong dispatch.\n");
     static_assert(std::is_same<typename std::decay<Q2>::type,T>::value,"Wrong dispatch.\n");
     if(CUBLAS_STATUS_SUCCESS != cublas::cublas_gemv(*A.handles.cublas_handle,Atrans,
                                             M,N,alpha,to_address(A),lda,to_address(x),incx,
@@ -117,16 +117,16 @@ namespace qmc_cuda
 
   // GEMM Specializations
 // why is this not working with T const????
-  template<typename T, typename Q1, typename Q2> 
+  template<typename T, typename T2, typename Q1, typename Q2> 
   inline static void gemm(char Atrans, char Btrans, int M, int N, int K,
-                          T alpha,
+                          T2 alpha,
                           cuda_gpu_ptr<Q1> A, int lda,
                           cuda_gpu_ptr<Q2> B, int ldb,
-                          T beta,
+                          T2 beta,
                           cuda_gpu_ptr<T> C, int ldc)
   {
     static_assert(std::is_same<typename std::decay<Q1>::type,T>::value,"Wrong dispatch.\n");
-    static_assert(std::is_same<typename std::decay<Q2>::type,T>::value,"Wrong dispatch.\n");
+    static_assert(std::is_same<typename std::decay<Q2>::type,T2>::value,"Wrong dispatch.\n");
     if(CUBLAS_STATUS_SUCCESS != cublas::cublas_gemm(*A.handles.cublas_handle,Atrans,Btrans,
                                             M,N,K,alpha,to_address(A),lda,to_address(B),ldb,beta,to_address(C),ldc)) 
       throw std::runtime_error("Error: cublas_gemm returned error code.");

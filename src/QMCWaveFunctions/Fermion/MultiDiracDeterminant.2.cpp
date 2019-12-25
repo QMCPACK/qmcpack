@@ -194,7 +194,7 @@ void MultiDiracDeterminant::evaluateDetsForPtclMove(ParticleSet& P, int iat)
   UpdateMode = ORB_PBYP_RATIO;
   RatioTimer.start();
   evalOrbTimer.start();
-  Phi->evaluate(P, iat, psiV);
+  Phi->evaluateValue(P, iat, psiV);
   evalOrbTimer.stop();
   WorkingIndex = iat - FirstIndex;
   if (NumPtcls == 1)
@@ -249,7 +249,7 @@ void MultiDiracDeterminant::evaluateDetsAndGradsForPtclMove(ParticleSet& P, int 
 {
   UpdateMode = ORB_PBYP_PARTIAL;
   evalOrb1Timer.start();
-  Phi->evaluate(P, iat, psiV, dpsiV, d2psiV);
+  Phi->evaluateVGL(P, iat, psiV, dpsiV, d2psiV);
   evalOrb1Timer.stop();
   WorkingIndex = iat - FirstIndex;
   if (NumPtcls == 1)
@@ -392,7 +392,7 @@ void MultiDiracDeterminant::evaluateGrads(ParticleSet& P, int iat)
 void MultiDiracDeterminant::evaluateAllForPtclMove(ParticleSet& P, int iat)
 {
   UpdateMode = ORB_PBYP_ALL;
-  Phi->evaluate(P, iat, psiV, dpsiV, d2psiV);
+  Phi->evaluateVGL(P, iat, psiV, dpsiV, d2psiV);
   WorkingIndex = iat - FirstIndex;
   if (NumPtcls == 1)
   {
