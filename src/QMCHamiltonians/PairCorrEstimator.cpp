@@ -124,7 +124,7 @@ PairCorrEstimator::Return_t PairCorrEstimator::evaluate(ParticleSet& P)
   {
     for (int iat = 1; iat < dii.centers(); ++iat)
     {
-      const RealType* restrict dist = dii.Distances[iat];
+      const auto& dist = dii.Distances[iat];
       const int ig                  = P.GroupID[iat];
       for (int j = 0; j < iat; ++j)
       {
@@ -146,7 +146,7 @@ PairCorrEstimator::Return_t PairCorrEstimator::evaluate(ParticleSet& P)
       RealType overNI = 1.0 / d1.centers();
       for (int iat = 0; iat < d1.targets(); ++iat)
       {
-        const RealType* restrict dist = d1.Distances[iat];
+        const auto& dist = d1.Distances[iat];
         for (int j = 0; j < d1.centers(); ++j)
         {
           const RealType r = dist[j];

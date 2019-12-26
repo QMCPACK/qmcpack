@@ -97,9 +97,10 @@ struct DistanceTableData
   using IndexType       = QMCTraits::IndexType;
   using RealType        = QMCTraits::RealType;
   using PosType         = QMCTraits::PosType;
-  using IndexVectorType = aligned_vector<IndexType>;
-  using RowContainer    = VectorSoaContainer<RealType, DIM>;
+  using DistRowType     = Vector<RealType, aligned_allocator<RealType>>;
+  using DisplRowType    = VectorSoaContainer<RealType, DIM>;
 #ifndef ENABLE_SOA
+  using IndexVectorType = aligned_vector<IndexType>;
   using TempDistType    = TempDisplacement<RealType, DIM>;
   using ripair          = std::pair<RealType, IndexType>;
 #endif
@@ -158,33 +159,36 @@ struct DistanceTableData
    *          Avoid using the upper triangle because we may change the code to only allocate the lower triangle part.
    *        For derived BA, the full table is up-to-date after pbyp move
    */
-  Matrix<RealType, aligned_allocator<RealType>> Distances;
+  std::vector<DistRowType> Distances;
 
   /** Displacements[N_targets]x[3][N_sources]
-   *  Note: This is a memory view using the memory space allocated in memoryPool
+   *  Note: This is a memory view using the memory space allocated in memoryPool_displs_
    *        Displacements[i][j] = r_A2[j] - r_A1[i], the opposite sign of AoS dr
-   *        For derived AA, A1=A2=A, only the lower triangle (j<i) is allocated in memoryPool
+   *        For derived AA, A1=A2=A, only the lower triangle (j<i) is allocated in memoryPool_displs_
    *          For this reason, Displacements[i] and Displacements[i+1] overlap in memory
    *          and they must be updated in order during PbyP move.
    *        For derived BA, A1=A, A2=B, the full table is allocated.
    */
-  std::vector<RowContainer> Displacements;
+  std::vector<DisplRowType> Displacements;
+
+  ///actual memory for Distances
+  aligned_vector<RealType> memoryPool_dists_;
 
   ///actual memory for Displacements
-  aligned_vector<RealType> memoryPool;
+  aligned_vector<RealType> memoryPool_displs_;
 
 protected:
   /** current_r, probably only needed by AA */
-  aligned_vector<RealType> current_r;
+  DistRowType current_r;
 
   /** current_dr, probably only needed by AA */
-  RowContainer current_dr;
+  DisplRowType current_dr;
 
   /** temp_r */
-  aligned_vector<RealType> Temp_r;
+  DistRowType Temp_r;
 
   /** temp_dr */
-  RowContainer Temp_dr;
+  DisplRowType Temp_dr;
 
   /** true, if a full table is needed at loadWalker */
   bool need_full_table_loadWalker_;
@@ -293,8 +297,8 @@ public:
   //getCurrentDists();
   //getCurrentDispls();
 
-  const aligned_vector<RealType>& getTemporalDists() const { return Temp_r; }
-  const RowContainer& getTemporalDispls() const { return Temp_dr; }
+  const DistRowType& getTemporalDists() const { return Temp_r; }
+  const DisplRowType& getTemporalDispls() const { return Temp_dr; }
 
   /** evaluate the full Distance Table
    * Ye: need a better name. evalauteAllPairs?

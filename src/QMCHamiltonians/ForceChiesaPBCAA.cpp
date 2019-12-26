@@ -122,7 +122,7 @@ void ForceChiesaPBCAA::evaluateSR(ParticleSet& P)
   {
     for (size_t jat = 0; jat < NptclB; ++jat)
     {
-      const RealType* restrict dist = d_ab.Distances[jat];
+      const auto& dist = d_ab.Distances[jat];
 
       for (size_t iat = 0; iat < NptclA; ++iat)
       {
@@ -160,7 +160,7 @@ void ForceChiesaPBCAA::evaluateSR_AA()
   {
     for (size_t ipart = 1; ipart < NptclA; ipart++)
     {
-      const RealType* restrict dist = d_aa.Distances[ipart];
+      const auto& dist = d_aa.Distances[ipart];
       for (size_t jpart = 0; jpart < ipart; ++jpart)
       {
         RealType V   = -dAB->srDf(dist[jpart], RealType(1) / dist[jpart]);

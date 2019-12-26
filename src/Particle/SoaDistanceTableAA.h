@@ -43,13 +43,19 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableDat
   void resize(int n)
   {
     N_sources = N_targets = n;
+
+    // initialize memory containers and views
     Ntargets_padded                             = getAlignedSize<T>(n);
-    Distances.resize(N_targets, Ntargets_padded);
     const size_t total_size = compute_size(N_targets);
-    memoryPool.resize(total_size * D);
+    memoryPool_dists_.resize(N_targets * Ntargets_padded);
+    memoryPool_displs_.resize(total_size * D);
+    Distances.resize(N_targets);
     Displacements.resize(N_targets);
     for (int i = 0; i < N_targets; ++i)
-      Displacements[i].attachReference(i, total_size, memoryPool.data() + compute_size(i));
+    {
+      Distances[i].attachReference(memoryPool_dists_.data() + i * Ntargets_padded, Ntargets_padded);
+      Displacements[i].attachReference(i, total_size, memoryPool_displs_.data() + compute_size(i));
+    }
 
     // The padding of Temp_r and Temp_dr is necessary for the memory copy in the update function
     // Temp_r is padded explicitly while Temp_dr is padded internally
@@ -63,14 +69,14 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableDat
     //P.RSoA.copyIn(P.R);
     for (int iat = 0; iat < N_targets; ++iat)
     {
-      DTD_BConds<T, D, SC>::computeDistances(P.R[iat], P.RSoA, Distances[iat], Displacements[iat], 0, N_targets, iat);
+      DTD_BConds<T, D, SC>::computeDistances(P.R[iat], P.RSoA, Distances[iat].data(), Displacements[iat], 0, N_targets, iat);
       Distances[iat][iat] = BigR; //assign big distance
     }
   }
 
   inline void evaluate(ParticleSet& P, IndexType jat)
   {
-    DTD_BConds<T, D, SC>::computeDistances(P.R[jat], P.RSoA, Distances[jat], Displacements[jat], 0, N_targets, jat);
+    DTD_BConds<T, D, SC>::computeDistances(P.R[jat], P.RSoA, Distances[jat].data(), Displacements[jat], 0, N_targets, jat);
     Distances[jat][jat] = std::numeric_limits<T>::max(); //assign a big number
   }
 
@@ -121,7 +127,7 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableDat
       return;
     //update by a cache line
     const int nupdate = getAlignedSize<T>(iat);
-    std::copy_n(Temp_r.data(), nupdate, Distances[iat]);
+    std::copy_n(Temp_r.data(), nupdate, Distances[iat].data());
     for (int idim = 0; idim < D; ++idim)
       std::copy_n(Temp_dr.data(idim), nupdate, Displacements[iat].data(idim));
   }

@@ -346,7 +346,7 @@ MPC::Return_t MPC::evalSR(ParticleSet& P) const
     for (size_t ipart = 0; ipart < NParticles; ipart++)
     {
       RealType esum(0);
-      const RealType* restrict dist = d_aa.Distances[ipart];
+      const auto& dist = d_aa.Distances[ipart];
       for (size_t j = 0; j < ipart; ++j)
         esum += cone / dist[j];
       SR += esum;

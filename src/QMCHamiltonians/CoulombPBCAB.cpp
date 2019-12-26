@@ -207,7 +207,7 @@ CoulombPBCAB::Return_t CoulombPBCAB::evaluate_sp(ParticleSet& P)
       for (size_t b = 0; b < NptclB; ++b)
       {
         z = 0.5*Qat[b];
-        const RealType* restrict dist = d_ab.Distances[b];
+        const auto& dist = d_ab.Distances[b];
         for (size_t a = 0; a < NptclA; ++a)
         {
           Return_t pairpot = z * Zat[a] * Vat[a]->splint(dist[a]) / dist[a];
@@ -412,7 +412,7 @@ CoulombPBCAB::Return_t CoulombPBCAB::evalSR(ParticleSet& P)
   { //can be optimized but not important enough
     for (size_t b = 0; b < NptclB; ++b)
     {
-      const RealType* restrict dist = d_ab.Distances[b];
+      const auto& dist = d_ab.Distances[b];
       mRealType esum                = czero;
       for (size_t a = 0; a < NptclA; ++a)
         esum += Zat[a] * Vat[a]->splint(dist[a]) / dist[a];
@@ -792,8 +792,8 @@ CoulombPBCAB::Return_t CoulombPBCAB::evalSRwithForces(ParticleSet& P)
   {
     for (size_t b = 0; b < NptclB; ++b)
     {
-      const RealType* restrict dist = d_ab.Distances[b];
-      const RowContainerType dr     = d_ab.Displacements[b];
+      const DistRowType& dist = d_ab.Distances[b];
+      const DisplRowType& dr     = d_ab.Displacements[b];
       mRealType esum                = czero;
       for (size_t a = 0; a < NptclA; ++a)
       {

@@ -157,7 +157,7 @@ struct CoulombPotential : public OperatorBase, public ForceBase
       {
         for (size_t iat = 1; iat < nCenters; ++iat)
         {
-          const RealType* restrict dist = d.Distances[iat];
+          const auto& dist = d.Distances[iat];
           T q                           = Z[iat];
           for (size_t j = 0; j < iat; ++j)
             res += q * Z[j] / dist[j];
@@ -189,7 +189,7 @@ struct CoulombPotential : public OperatorBase, public ForceBase
     {
       for (size_t iat = 1; iat < nCenters; ++iat)
       {
-        const RealType* restrict dist = d.Distances[iat];
+        const auto& dist = d.Distances[iat];
         T q                           = Z[iat];
         for (size_t j = 0; j < iat; ++j)
         {
@@ -235,7 +235,7 @@ struct CoulombPotential : public OperatorBase, public ForceBase
         const size_t nTargets = d.targets();
         for (size_t b = 0; b < nTargets; ++b)
         {
-          const RealType* restrict dist = d.Distances[b];
+          const auto& dist = d.Distances[b];
           T e                           = czero;
           for (size_t a = 0; a < nCenters; ++a)
             e += Za[a] / dist[a];
@@ -270,7 +270,7 @@ struct CoulombPotential : public OperatorBase, public ForceBase
     Va_samp                     = 0.0;
     for (size_t iat = 1; iat < nCenters; ++iat)
     {
-      const RealType* restrict dist = d.Distances[iat];
+      const auto& dist = d.Distances[iat];
       T q                           = Z[iat];
       for (size_t j = 0; j < iat; ++j)
       {
@@ -317,7 +317,7 @@ struct CoulombPotential : public OperatorBase, public ForceBase
     const size_t nTargets = d.targets();
     for (size_t b = 0; b < nTargets; ++b)
     {
-      const RealType* restrict dist = d.Distances[b];
+      const auto& dist = d.Distances[b];
       T z = 0.5*Zb[b];
       for (size_t a = 0; a < nCenters; ++a)
       {

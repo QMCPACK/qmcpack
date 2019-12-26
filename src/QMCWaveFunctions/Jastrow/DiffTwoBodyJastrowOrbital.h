@@ -246,7 +246,7 @@ public:
         for (size_t i = 1; i < n; ++i)
         {
           const size_t ig      = P.GroupID[i] * ng;
-          const RealType* dist = d_table.Distances[i];
+          const auto& dist = d_table.Distances[i];
           const auto& displ    = d_table.Displacements[i];
           for (size_t j = 0; j < i; ++j)
           {

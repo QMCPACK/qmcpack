@@ -168,7 +168,7 @@ BareForce::Return_t BareForce::evaluate(ParticleSet& P)
   for (int iat = 0; iat < d_ab.sources(); iat++)
   {
       for (int jat = 0; jat < d_ab.targets(); jat++) {
-        real_type rinv = 1.0/d_ab.Distances(jat,iat);
+        real_type rinv = 1.0/d_ab.Distances[jat][iat];
         real_type r3zz = Qat[jat] * Zat[iat] * rinv * rinv * rinv;
         forces[iat] += r3zz * d_ab.Displacements[jat][iat];
       }

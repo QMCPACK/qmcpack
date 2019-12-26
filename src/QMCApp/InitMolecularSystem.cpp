@@ -126,7 +126,7 @@ void InitMolecularSystem::initMolecule(ParticleSet* ions, ParticleSet* els)
     for (size_t iat = 0; iat < Centers; iat++)
     {
       cm += ions->R[iat];
-      const RealType* restrict dist = d_ii.Distances[iat];
+      const auto& dist = d_ii.Distances[iat];
       for (size_t jat = iat + 1; jat < Centers; ++jat)
       {
         rmin = std::min(rmin, dist[jat]);

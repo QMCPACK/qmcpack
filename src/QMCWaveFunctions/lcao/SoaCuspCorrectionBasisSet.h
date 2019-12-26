@@ -176,7 +176,7 @@ struct SoaCuspCorrection
     myVGL = 0.0;
 
     const auto& d_table = P.getDistTable(myTableIndex);
-    const auto* dist    = (P.activePtcl == iat) ? d_table.getTemporalDists().data() : d_table.Distances[iat];
+    const auto& dist    = (P.activePtcl == iat) ? d_table.getTemporalDists() : d_table.Distances[iat];
     const auto& displ   = (P.activePtcl == iat) ? d_table.getTemporalDispls() : d_table.Displacements[iat];
     for (int c = 0; c < NumCenters; c++)
     {
@@ -213,7 +213,7 @@ struct SoaCuspCorrection
     myVGL = 0.0;
 
     const auto& d_table = P.getDistTable(myTableIndex);
-    const auto* dist    = (P.activePtcl == iat) ? d_table.getTemporalDists().data() : d_table.Distances[iat];
+    const auto& dist    = (P.activePtcl == iat) ? d_table.getTemporalDists() : d_table.Distances[iat];
     const auto& displ   = (P.activePtcl == iat) ? d_table.getTemporalDispls() : d_table.Displacements[iat];
     for (int c = 0; c < NumCenters; c++)
     {
@@ -248,7 +248,7 @@ struct SoaCuspCorrection
     myVGL = 0.0;
 
     const auto& d_table = P.getDistTable(myTableIndex);
-    const auto* dist    = (P.activePtcl == iat) ? d_table.getTemporalDists().data() : d_table.Distances[iat];
+    const auto& dist    = (P.activePtcl == iat) ? d_table.getTemporalDists() : d_table.Distances[iat];
     const auto& displ   = (P.activePtcl == iat) ? d_table.getTemporalDispls() : d_table.Displacements[iat];
     for (int c = 0; c < NumCenters; c++)
     {
@@ -284,7 +284,7 @@ struct SoaCuspCorrection
     std::fill_n(tmp_vals, myVGL.size(), 0.0);
 
     const auto& d_table = P.getDistTable(myTableIndex);
-    const auto* dist    = (P.activePtcl == iat) ? d_table.getTemporalDists().data() : d_table.Distances[iat];
+    const auto& dist    = (P.activePtcl == iat) ? d_table.getTemporalDists() : d_table.Distances[iat];
 
     //THIS IS SERIAL, only way to avoid this is to use myVGL
     for (int c = 0; c < NumCenters; c++)

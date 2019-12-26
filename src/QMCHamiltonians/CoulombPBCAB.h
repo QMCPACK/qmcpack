@@ -39,7 +39,8 @@ struct CoulombPBCAB : public OperatorBase, public ForceBase
   typedef LRCoulombSingleton::RadFunctorType RadFunctorType;
   typedef LRHandlerType::mRealType mRealType;
 
-  typedef DistanceTableData::RowContainer RowContainerType;
+  using DistRowType  = DistanceTableData::DistRowType;
+  using DisplRowType = DistanceTableData::DisplRowType;
 
   ///source particle set
   ParticleSet& PtclA;

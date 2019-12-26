@@ -39,7 +39,8 @@ class JeeIOrbitalSoA : public WaveFunctionComponent
   ///element position type
   using posT = TinyVector<valT, OHMMS_DIM>;
   ///use the same container
-  using RowContainer = DistanceTableData::RowContainer;
+  using DistRowType  = DistanceTableData::DistRowType;
+  using DisplRowType = DistanceTableData::DisplRowType;
   ///table index for el-el
   const int ee_Table_ID_;
   ///table index for i-el
@@ -418,7 +419,7 @@ public:
 
     const DistanceTableData& eI_table = P.getDistTable(ei_Table_ID_);
     const DistanceTableData& ee_table = P.getDistTable(ee_Table_ID_);
-    cur_Uat = computeU(P, iat, P.GroupID[iat], eI_table.getTemporalDists().data(), ee_table.getTemporalDists().data(), ions_nearby_new);
+    cur_Uat = computeU(P, iat, P.GroupID[iat], eI_table.getTemporalDists(), ee_table.getTemporalDists(), ions_nearby_new);
     DiffVal = Uat[iat] - cur_Uat;
     return std::exp(static_cast<PsiValueType>(DiffVal));
   }
@@ -439,7 +440,7 @@ public:
 
     for (int jg = 0; jg < eGroups; ++jg)
     {
-      const valT sumU = computeU(P, -1, jg, eI_table.getTemporalDists().data(), ee_table.getTemporalDists().data(), ions_nearby_new);
+      const valT sumU = computeU(P, -1, jg, eI_table.getTemporalDists(), ee_table.getTemporalDists(), ions_nearby_new);
 
       for (int j = P.first(jg); j < P.last(jg); ++j)
       {
@@ -468,7 +469,7 @@ public:
 
     const DistanceTableData& eI_table = P.getDistTable(ei_Table_ID_);
     const DistanceTableData& ee_table = P.getDistTable(ee_Table_ID_);
-    computeU3(P, iat, eI_table.getTemporalDists().data(), eI_table.getTemporalDispls(), ee_table.getTemporalDists().data(), ee_table.getTemporalDispls(), cur_Uat,
+    computeU3(P, iat, eI_table.getTemporalDists(), eI_table.getTemporalDispls(), ee_table.getTemporalDists(), ee_table.getTemporalDispls(), cur_Uat,
               cur_dUat, cur_d2Uat, newUk, newdUk, newd2Uk, ions_nearby_new);
     DiffVal = Uat[iat] - cur_Uat;
     grad_iat += cur_dUat;
@@ -486,7 +487,7 @@ public:
               ee_table.Displacements[iat], Uat[iat], dUat_temp, d2Uat[iat], oldUk, olddUk, oldd2Uk, ions_nearby_old);
     if (UpdateMode == ORB_PBYP_RATIO)
     { //ratio-only during the move; need to compute derivatives
-      computeU3(P, iat, eI_table.getTemporalDists().data(), eI_table.getTemporalDispls(), ee_table.getTemporalDists().data(), ee_table.getTemporalDispls(), cur_Uat,
+      computeU3(P, iat, eI_table.getTemporalDists(), eI_table.getTemporalDispls(), ee_table.getTemporalDists(), ee_table.getTemporalDispls(), cur_Uat,
                 cur_dUat, cur_d2Uat, newUk, newdUk, newd2Uk, ions_nearby_new);
     }
 
@@ -584,8 +585,8 @@ public:
   inline valT computeU(const ParticleSet& P,
                        int jel,
                        int jg,
-                       const RealType* distjI,
-                       const RealType* distjk,
+                       const DistRowType& distjI,
+                       const DistRowType& distjk,
                        std::vector<int>& ions_nearby)
   {
     ions_nearby.clear();
@@ -722,10 +723,10 @@ public:
 
   inline void computeU3(const ParticleSet& P,
                         int jel,
-                        const RealType* distjI,
-                        const RowContainer& displjI,
-                        const RealType* distjk,
-                        const RowContainer& displjk,
+                        const DistRowType& distjI,
+                        const DisplRowType& displjI,
+                        const DistRowType& distjk,
+                        const DisplRowType& displjk,
                         valT& Uj,
                         posT& dUj,
                         valT& d2Uj,

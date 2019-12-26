@@ -177,7 +177,7 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
   {
     const auto& IonID(ions_.GroupID);
     const auto& d_table  = P.getDistTable(myTableIndex);
-    const RealType* dist = (P.activePtcl == iat) ? d_table.getTemporalDists().data() : d_table.Distances[iat];
+    const auto& dist = (P.activePtcl == iat) ? d_table.getTemporalDists() : d_table.Distances[iat];
     const auto& displ    = (P.activePtcl == iat) ? d_table.getTemporalDispls() : d_table.Displacements[iat];
 
     const std::vector<double> coordR{((P.activePtcl == iat) ? P.activePos : P.R[iat])[0],
@@ -206,7 +206,7 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
   {
     const auto& IonID(ions_.GroupID);
     const auto& d_table  = P.getDistTable(myTableIndex);
-    const RealType* dist = (P.activePtcl == iat) ? d_table.getTemporalDists().data() : d_table.Distances[iat];
+    const auto& dist = (P.activePtcl == iat) ? d_table.getTemporalDists() : d_table.Distances[iat];
     const auto& displ    = (P.activePtcl == iat) ? d_table.getTemporalDispls() : d_table.Displacements[iat];
     for (int c = 0; c < NumCenters; c++)
     {
@@ -226,7 +226,7 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
 
     const auto& IonID(ions_.GroupID);
     const auto& d_table  = P.getDistTable(myTableIndex);
-    const RealType* dist = (P.activePtcl == iat) ? d_table.getTemporalDists().data() : d_table.Distances[iat];
+    const auto& dist = (P.activePtcl == iat) ? d_table.getTemporalDists() : d_table.Distances[iat];
     const auto& displ    = (P.activePtcl == iat) ? d_table.getTemporalDispls() : d_table.Displacements[iat];
     for (int c = 0; c < NumCenters; c++)
     {
@@ -249,7 +249,7 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
   {
     const auto& IonID(ions_.GroupID);
     const auto& d_table  = P.getDistTable(myTableIndex);
-    const RealType* dist = (P.activePtcl == iat) ? d_table.getTemporalDists().data() : d_table.Distances[iat];
+    const auto& dist = (P.activePtcl == iat) ? d_table.getTemporalDists() : d_table.Distances[iat];
     const auto& displ    = (P.activePtcl == iat) ? d_table.getTemporalDispls() : d_table.Displacements[iat];
 
     const std::vector<double> coordR{((P.activePtcl == iat) ? P.activePos : P.R[iat])[0],
@@ -282,7 +282,7 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
 
     const auto& IonID(ions_.GroupID);
     const auto& d_table  = P.getDistTable(myTableIndex);
-    const RealType* dist = (P.activePtcl == iat) ? d_table.getTemporalDists().data() : d_table.Distances[iat];
+    const auto& dist = (P.activePtcl == iat) ? d_table.getTemporalDists() : d_table.Distances[iat];
     const auto& displ    = (P.activePtcl == iat) ? d_table.getTemporalDispls() : d_table.Displacements[iat];
 
 
@@ -347,7 +347,7 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
 
     const auto& IonID(ions_.GroupID);
     const auto& d_table  = P.getDistTable(myTableIndex);
-    const RealType* dist = (P.activePtcl == iat) ? d_table.getTemporalDists().data() : d_table.Distances[iat];
+    const auto& dist = (P.activePtcl == iat) ? d_table.getTemporalDists() : d_table.Distances[iat];
     const auto& displ    = (P.activePtcl == iat) ? d_table.getTemporalDispls() : d_table.Displacements[iat];
 
     //Since LCAO's are written only in terms of (r-R), ionic derivatives only exist for the atomic center

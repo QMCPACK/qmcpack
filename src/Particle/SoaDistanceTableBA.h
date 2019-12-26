@@ -38,15 +38,18 @@ struct SoaDistanceTableBA : public DTD_BConds<T, D, SC>, public DistanceTableDat
     if (N_sources * N_targets == 0)
       return;
 
-    int Nsources_padded = getAlignedSize<T>(N_sources);
-
-    Distances.resize(N_targets, Nsources_padded);
-
+    // initialize memory containers and views
+    const int Nsources_padded = getAlignedSize<T>(N_sources);
     BlockSize = Nsources_padded * D;
-    memoryPool.resize(N_targets * BlockSize);
+    memoryPool_dists_.resize(N_targets * Nsources_padded);
+    memoryPool_displs_.resize(N_targets * BlockSize);
+    Distances.resize(N_targets);
     Displacements.resize(N_targets);
     for (int i = 0; i < N_targets; ++i)
-      Displacements[i].attachReference(N_sources, Nsources_padded, memoryPool.data() + i * BlockSize);
+    {
+      Distances[i].attachReference(memoryPool_dists_.data() + i * Nsources_padded, Nsources_padded);
+      Displacements[i].attachReference(N_sources, Nsources_padded, memoryPool_displs_.data() + i * BlockSize);
+    }
 
     // The padding of Temp_r and Temp_dr is necessary for the memory copy in the update function
     // Temp_r is padded explicitly while Temp_dr is padded internally
@@ -68,7 +71,7 @@ struct SoaDistanceTableBA : public DTD_BConds<T, D, SC>, public DistanceTableDat
 
       //be aware of the sign of Displacement
       for (int iat = 0; iat < N_targets; ++iat)
-        DTD_BConds<T, D, SC>::computeDistances(P.R[iat], Origin->RSoA, Distances[iat], Displacements[iat], first, last);
+        DTD_BConds<T, D, SC>::computeDistances(P.R[iat], Origin->RSoA, Distances[iat].data(), Displacements[iat], first, last);
     }
   }
 
@@ -78,7 +81,7 @@ struct SoaDistanceTableBA : public DTD_BConds<T, D, SC>, public DistanceTableDat
    */
   inline void evaluate(ParticleSet& P, IndexType iat)
   {
-    DTD_BConds<T, D, SC>::computeDistances(P.R[iat], Origin->RSoA, Distances[iat], Displacements[iat], 0, N_sources);
+    DTD_BConds<T, D, SC>::computeDistances(P.R[iat], Origin->RSoA, Distances[iat].data(), Displacements[iat], 0, N_sources);
   }
 
   ///evaluate the temporary pair relations
@@ -90,7 +93,7 @@ struct SoaDistanceTableBA : public DTD_BConds<T, D, SC>, public DistanceTableDat
   ///update the stripe for jat-th particle
   inline void update(IndexType iat)
   {
-    std::copy_n(Temp_r.data(), N_sources, Distances[iat]);
+    std::copy_n(Temp_r.data(), N_sources, Distances[iat].data());
     for (int idim = 0; idim < D; ++idim)
       std::copy_n(Temp_dr.data(idim), N_sources, Displacements[iat].data(idim));
   }

@@ -76,7 +76,7 @@ L2Potential::Return_t L2Potential::evaluate(ParticleSet& P)
       const auto Le                 = P.L[iel];
       const auto& ge                = P.G[iel];
       const auto& D2e               = D2[iel];
-      const RealType* restrict dist = d_table.Distances[iel];
+      const auto& dist = d_table.Distances[iel];
       const auto& disp              = d_table.Displacements[iel];
       Return_t esum                 = 0.0;
       for (size_t iat = 0; iat < NumIons; ++iat)

@@ -202,7 +202,7 @@ CoulombPBCAA::Return_t CoulombPBCAA::evaluate_sp(ParticleSet& P)
       for (int ipart = 1; ipart < NumCenters; ipart++)
       {
         z                    = .5 * Zat[ipart];
-        const RealType* dist = d_aa.Distances[ipart];
+        const DistRowType& dist = d_aa.Distances[ipart];
         for (int jpart = 0; jpart < ipart; ++jpart)
         {
           RealType pairpot = z * Zat[jpart] * rVs->splint(dist[jpart]) / dist[jpart];
@@ -393,8 +393,8 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalSRwithForces(ParticleSet& P)
     for (size_t ipart = 1; ipart < (NumCenters / 2 + 1); ipart++)
     {
       mRealType esum                = 0.0;
-      const RealType* restrict dist = d_aa.Distances[ipart];
-      const RowContainerType dr     = d_aa.Displacements[ipart];
+      const DistRowType& dist = d_aa.Distances[ipart];
+      const DisplRowType& dr  = d_aa.Displacements[ipart];
       for (size_t j = 0; j < ipart; ++j)
       {
         RealType V, rV, d_rV_dr, d2_rV_dr2;
@@ -403,31 +403,33 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalSRwithForces(ParticleSet& P)
         V             = rV * rinv;
         esum += Zat[j] * rVs->splint(dist[j]) * rinv;
 
-        PosType grad = Zat[j] * Zat[ipart] * (d_rV_dr - V) * rinv * rinv * d_aa.Displacements[ipart][j];
+        PosType grad = Zat[j] * Zat[ipart] * (d_rV_dr - V) * rinv * rinv * dr[j];
         forces[ipart] += grad;
         forces[j] -= grad;
       }
       SR += Zat[ipart] * esum;
 
-      if (ipart == NumCenters - ipart)
+      const size_t ipart_reverse = NumCenters - ipart;
+      if (ipart == ipart_reverse)
         continue;
 
       esum = 0.0;
-      dist = d_aa.Distances[NumCenters - ipart];
-      for (size_t j = 0; j < NumCenters - ipart; ++j)
+      const DistRowType& dist2 = d_aa.Distances[ipart_reverse];
+      const DisplRowType& dr2  = d_aa.Displacements[ipart_reverse];
+      for (size_t j = 0; j < ipart_reverse; ++j)
       {
         RealType V, rV, d_rV_dr, d2_rV_dr2;
-        RealType rinv = 1.0 / dist[j];
-        rV            = rVsforce->splint(dist[j], d_rV_dr, d2_rV_dr2);
+        RealType rinv = 1.0 / dist2[j];
+        rV            = rVsforce->splint(dist2[j], d_rV_dr, d2_rV_dr2);
         V             = rV * rinv;
-        esum += Zat[j] * rVs->splint(dist[j]) * rinv;
+        esum += Zat[j] * rVs->splint(dist2[j]) * rinv;
 
-        PosType grad = Zat[j] * Zat[NumCenters - ipart] * (d_rV_dr - V)
-		       * rinv * rinv * d_aa.Displacements[NumCenters-ipart][j];
-        forces[NumCenters - ipart] += grad;
+        PosType grad = Zat[j] * Zat[ipart_reverse] * (d_rV_dr - V)
+		       * rinv * rinv * dr2[j];
+        forces[ipart_reverse] += grad;
         forces[j] -= grad;
       }
-      SR += Zat[NumCenters - ipart] * esum;
+      SR += Zat[ipart_reverse] * esum;
     }
   }
   else
@@ -519,23 +521,20 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalSR(ParticleSet& P)
     for (size_t ipart = 1; ipart < (NumCenters / 2 + 1); ipart++)
     {
       mRealType esum                = 0.0;
-      const RealType* restrict dist = d_aa.Distances[ipart];
+      const DistRowType& dist = d_aa.Distances[ipart];
       for (size_t j = 0; j < ipart; ++j)
-      {
         esum += Zat[j] * rVs->splint(dist[j]) / dist[j];
-      }
       SR += Zat[ipart] * esum;
 
-      if (ipart == NumCenters - ipart)
+      const size_t ipart_reverse = NumCenters - ipart;
+      if (ipart == ipart_reverse)
         continue;
 
       esum = 0.0;
-      dist = d_aa.Distances[NumCenters - ipart];
-      for (size_t j = 0; j < NumCenters - ipart; ++j)
-      {
-        esum += Zat[j] * rVs->splint(dist[j]) / dist[j];
-      }
-      SR += Zat[NumCenters - ipart] * esum;
+      const DistRowType& dist2 = d_aa.Distances[ipart_reverse];
+      for (size_t j = 0; j < ipart_reverse; ++j)
+        esum += Zat[j] * rVs->splint(dist2[j]) / dist2[j];
+      SR += Zat[ipart_reverse] * esum;
     }
   }
   else
