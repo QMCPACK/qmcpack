@@ -176,16 +176,12 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
   inline void evaluateVGL(const ParticleSet& P, int iat, vgl_type& vgl)
   {
     const auto& IonID(ions_.GroupID);
+    const auto& coordR = P.activeR(iat);
     const auto& d_table = P.getDistTable(myTableIndex);
     const auto& dist    = (P.activePtcl == iat) ? d_table.getTemporalDists() : d_table.getDistRow(iat);
     const auto& displ   = (P.activePtcl == iat) ? d_table.getTemporalDispls() : d_table.getDisplRow(iat);
 
-    const std::vector<double> coordR{((P.activePtcl == iat) ? P.activePos : P.R[iat])[0],
-                                     ((P.activePtcl == iat) ? P.activePos : P.R[iat])[1],
-                                     ((P.activePtcl == iat) ? P.activePos : P.R[iat])[2]};
-
     PosType Tv;
-
     for (int c = 0; c < NumCenters; c++)
     {
       Tv[0] = (ions_.R[c][0] - coordR[0]) - displ[c][0];
@@ -248,13 +244,10 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
   inline void evaluateV(const ParticleSet& P, int iat, ORBT* restrict vals)
   {
     const auto& IonID(ions_.GroupID);
+    const auto& coordR = P.activeR(iat);
     const auto& d_table = P.getDistTable(myTableIndex);
     const auto& dist    = (P.activePtcl == iat) ? d_table.getTemporalDists() : d_table.getDistRow(iat);
     const auto& displ   = (P.activePtcl == iat) ? d_table.getTemporalDispls() : d_table.getDisplRow(iat);
-
-    const std::vector<double> coordR{((P.activePtcl == iat) ? P.activePos : P.R[iat])[0],
-                                     ((P.activePtcl == iat) ? P.activePos : P.R[iat])[1],
-                                     ((P.activePtcl == iat) ? P.activePos : P.R[iat])[2]};
 
     PosType Tv;
     for (int c = 0; c < NumCenters; c++)

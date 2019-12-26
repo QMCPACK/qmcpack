@@ -155,7 +155,8 @@ protected:
   /**defgroup SoA data */
   /*@{*/
   /** Distances[i][j] , [N_targets][N_sources]
-   *  Note: For derived AA, only the lower triangle (j<i) is up-to-date after pbyp move
+   *  Note: Derived classes decide if it is a memory view or the actaully storage
+   *        For derived AA, only the lower triangle (j<i) is up-to-date after pbyp move
    *          The upper triangle is symmetric to the lower one only when the full table is evaluated from scratch.
    *          Avoid using the upper triangle because we may change the code to only allocate the lower triangle part.
    *        For derived BA, the full table is up-to-date after pbyp move
@@ -163,7 +164,7 @@ protected:
   std::vector<DistRowType> Distances;
 
   /** Displacements[N_targets]x[3][N_sources]
-   *  Note: This is a memory view using the memory space allocated in memoryPool_displs_
+   *  Note: Derived classes decide if it is a memory view or the actaully storage
    *        Displacements[i][j] = r_A2[j] - r_A1[i], the opposite sign of AoS dr
    *        For derived AA, A1=A2=A, only the lower triangle (j<i) is allocated in memoryPool_displs_
    *          For this reason, Displacements[i] and Displacements[i+1] overlap in memory
@@ -171,12 +172,6 @@ protected:
    *        For derived BA, A1=A, A2=B, the full table is allocated.
    */
   std::vector<DisplRowType> Displacements;
-
-  ///actual memory for Distances
-  aligned_vector<RealType> memoryPool_dists_;
-
-  ///actual memory for Displacements
-  aligned_vector<RealType> memoryPool_displs_;
 
   /** temp_r */
   DistRowType Temp_r;

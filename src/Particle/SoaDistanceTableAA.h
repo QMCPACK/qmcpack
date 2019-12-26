@@ -24,6 +24,9 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableDat
 {
   int Ntargets_padded;
 
+  ///actual memory for Displacements
+  aligned_vector<RealType> memoryPool_displs_;
+
   SoaDistanceTableAA(ParticleSet& target) : DTD_BConds<T, D, SC>(target.Lattice), DistanceTableData(target, target)
   {
     resize(target.getTotalNum());
@@ -47,13 +50,12 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableDat
     // initialize memory containers and views
     Ntargets_padded                             = getAlignedSize<T>(n);
     const size_t total_size = compute_size(N_targets);
-    memoryPool_dists_.resize(N_targets * Ntargets_padded);
     memoryPool_displs_.resize(total_size * D);
     Distances.resize(N_targets);
     Displacements.resize(N_targets);
     for (int i = 0; i < N_targets; ++i)
     {
-      Distances[i].attachReference(memoryPool_dists_.data() + i * Ntargets_padded, Ntargets_padded);
+      Distances[i].resize(Ntargets_padded);
       Displacements[i].attachReference(i, total_size, memoryPool_displs_.data() + compute_size(i));
     }
 

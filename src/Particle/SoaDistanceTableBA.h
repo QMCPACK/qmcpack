@@ -23,8 +23,6 @@ namespace qmcplusplus
 template<typename T, unsigned D, int SC>
 struct SoaDistanceTableBA : public DTD_BConds<T, D, SC>, public DistanceTableData
 {
-  int BlockSize;
-
   SoaDistanceTableBA(const ParticleSet& source, ParticleSet& target)
       : DTD_BConds<T, D, SC>(source.Lattice), DistanceTableData(source, target)
   {
@@ -40,15 +38,12 @@ struct SoaDistanceTableBA : public DTD_BConds<T, D, SC>, public DistanceTableDat
 
     // initialize memory containers and views
     const int Nsources_padded = getAlignedSize<T>(N_sources);
-    BlockSize = Nsources_padded * D;
-    memoryPool_dists_.resize(N_targets * Nsources_padded);
-    memoryPool_displs_.resize(N_targets * BlockSize);
     Distances.resize(N_targets);
     Displacements.resize(N_targets);
     for (int i = 0; i < N_targets; ++i)
     {
-      Distances[i].attachReference(memoryPool_dists_.data() + i * Nsources_padded, Nsources_padded);
-      Displacements[i].attachReference(N_sources, Nsources_padded, memoryPool_displs_.data() + i * BlockSize);
+      Distances[i].resize(Nsources_padded);
+      Displacements[i].resize(Nsources_padded);
     }
 
     // The padding of Temp_r and Temp_dr is necessary for the memory copy in the update function
