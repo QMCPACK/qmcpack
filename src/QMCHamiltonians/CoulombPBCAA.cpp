@@ -202,7 +202,7 @@ CoulombPBCAA::Return_t CoulombPBCAA::evaluate_sp(ParticleSet& P)
       for (int ipart = 1; ipart < NumCenters; ipart++)
       {
         z                    = .5 * Zat[ipart];
-        const DistRowType& dist = d_aa.Distances[ipart];
+        const DistRowType& dist = d_aa.getDistRow(ipart);
         for (int jpart = 0; jpart < ipart; ++jpart)
         {
           RealType pairpot = z * Zat[jpart] * rVs->splint(dist[jpart]) / dist[jpart];
@@ -393,8 +393,8 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalSRwithForces(ParticleSet& P)
     for (size_t ipart = 1; ipart < (NumCenters / 2 + 1); ipart++)
     {
       mRealType esum                = 0.0;
-      const DistRowType& dist = d_aa.Distances[ipart];
-      const DisplRowType& dr  = d_aa.Displacements[ipart];
+      const DistRowType& dist = d_aa.getDistRow(ipart);
+      const DisplRowType& dr  = d_aa.getDisplRow(ipart);
       for (size_t j = 0; j < ipart; ++j)
       {
         RealType V, rV, d_rV_dr, d2_rV_dr2;
@@ -414,8 +414,8 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalSRwithForces(ParticleSet& P)
         continue;
 
       esum = 0.0;
-      const DistRowType& dist2 = d_aa.Distances[ipart_reverse];
-      const DisplRowType& dr2  = d_aa.Displacements[ipart_reverse];
+      const DistRowType& dist2 = d_aa.getDistRow(ipart_reverse);
+      const DisplRowType& dr2  = d_aa.getDisplRow(ipart_reverse);
       for (size_t j = 0; j < ipart_reverse; ++j)
       {
         RealType V, rV, d_rV_dr, d2_rV_dr2;
@@ -521,7 +521,7 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalSR(ParticleSet& P)
     for (size_t ipart = 1; ipart < (NumCenters / 2 + 1); ipart++)
     {
       mRealType esum                = 0.0;
-      const DistRowType& dist = d_aa.Distances[ipart];
+      const DistRowType& dist = d_aa.getDistRow(ipart);
       for (size_t j = 0; j < ipart; ++j)
         esum += Zat[j] * rVs->splint(dist[j]) / dist[j];
       SR += Zat[ipart] * esum;
@@ -531,7 +531,7 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalSR(ParticleSet& P)
         continue;
 
       esum = 0.0;
-      const DistRowType& dist2 = d_aa.Distances[ipart_reverse];
+      const DistRowType& dist2 = d_aa.getDistRow(ipart_reverse);
       for (size_t j = 0; j < ipart_reverse; ++j)
         esum += Zat[j] * rVs->splint(dist2[j]) / dist2[j];
       SR += Zat[ipart_reverse] * esum;

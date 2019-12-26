@@ -250,8 +250,8 @@ public:
     //     APP_ABORT("Backflow_eI.h::evaluate(P,QP,Bmat_full,Amat) not implemented for SoA\n");
     for (int jel = 0; jel < P.getTotalNum(); jel++)
     {
-      const auto& dist  = myTable.Distances[jel];
-      const auto& displ = myTable.Displacements[jel];
+      const auto& dist  = myTable.getDistRow(jel);
+      const auto& displ = myTable.getDisplRow(jel);
       for (int iat = 0; iat < NumCenters; iat++)
       {
         if (dist[iat] > 0)
@@ -511,8 +511,8 @@ public:
     const auto& myTable = P.getDistTable(myTableIndex_);
     for (int jel = 0; jel < P.getTotalNum(); jel++)
     {
-      const auto& dist  = myTable.Distances[jel];
-      const auto& displ = myTable.Displacements[jel];
+      const auto& dist  = myTable.getDistRow(jel);
+      const auto& displ = myTable.getDisplRow(jel);
       for (int iat = 0; iat < NumCenters; iat++)
       {
         if (dist[iat] > 0)

@@ -112,9 +112,9 @@ struct J1OrbitalSoA : public WaveFunctionComponent
     const DistanceTableData& d_ie(P.getDistTable(myTableID));
     for (int iat = 0; iat < Nelec; ++iat)
     {
-      computeU3(P, iat, d_ie.Distances[iat]);
+      computeU3(P, iat, d_ie.getDistRow(iat));
       Vat[iat] = simd::accumulate_n(U.data(), Nions, valT());
-      Lap[iat] = accumulateGL(dU.data(), d2U.data(), d_ie.Displacements[iat], Grad[iat]);
+      Lap[iat] = accumulateGL(dU.data(), d2U.data(), d_ie.getDisplRow(iat), Grad[iat]);
     }
   }
 
@@ -135,8 +135,8 @@ struct J1OrbitalSoA : public WaveFunctionComponent
 
     for (int iel = 0; iel < Nelec; ++iel)
     {
-      const DistRowType& dist   = d_ie.Distances[iel];
-      const DisplRowType& displ = d_ie.Displacements[iel];
+      const DistRowType& dist   = d_ie.getDistRow(iel);
+      const DisplRowType& displ = d_ie.getDisplRow(iel);
       for (int iat = 0; iat < Nions; iat++)
       {
         int gid    = Ions.GroupID[iat];
@@ -163,7 +163,7 @@ struct J1OrbitalSoA : public WaveFunctionComponent
   inline void evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios)
   {
     for (int k = 0; k < ratios.size(); ++k)
-      ratios[k] = std::exp(Vat[VP.refPtcl] - computeU(VP.getDistTable(myTableID).Distances[k]));
+      ratios[k] = std::exp(Vat[VP.refPtcl] - computeU(VP.getDistTable(myTableID).getDistRow(k)));
   }
 
   inline valT computeU(const DistRowType& dist)
@@ -442,8 +442,8 @@ struct J1OrbitalSoA : public WaveFunctionComponent
     const DistanceTableData& d_ie(P.getDistTable(myTableID));
     for (int iat = 0; iat < Nelec; ++iat)
     {
-      const DistRowType& dist   = d_ie.Distances[iat];
-      const DisplRowType& displ = d_ie.Displacements[iat];
+      const DistRowType& dist   = d_ie.getDistRow(iat);
+      const DisplRowType& displ = d_ie.getDisplRow(iat);
       int gid                   = Ions.GroupID[isrc];
       RealType r                = dist[isrc];
       RealType rinv             = 1.0 / r;
@@ -468,8 +468,8 @@ struct J1OrbitalSoA : public WaveFunctionComponent
     const DistanceTableData& d_ie(P.getDistTable(myTableID));
     for (int iat = 0; iat < Nelec; ++iat)
     {
-      const DistRowType& dist   = d_ie.Distances[iat];
-      const DisplRowType& displ = d_ie.Displacements[iat];
+      const DistRowType& dist   = d_ie.getDistRow(iat);
+      const DisplRowType& displ = d_ie.getDisplRow(iat);
       int gid                   = Ions.GroupID[isrc];
       RealType r                = dist[isrc];
       RealType rinv             = 1.0 / r;

@@ -131,6 +131,10 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableDat
     for (int idim = 0; idim < D; ++idim)
       std::copy_n(Temp_dr.data(idim), nupdate, Displacements[iat].data(idim));
   }
+
+  inline void storeCurrent(IndexType iat)
+  {
+  }
 };
 } // namespace qmcplusplus
 #endif

@@ -568,7 +568,7 @@ public:
   {
     const int center_idx = VP.refSourcePtcl;
     auto& myCenter       = AtomicCenters[Super2Prim[center_idx]];
-    return VP.refPS.getDistTable(myTableID).Distances[VP.refPtcl][center_idx] < myCenter.getNonOverlappingRadius();
+    return VP.refPS.getDistTable(myTableID).getDistances()[VP.refPtcl][center_idx] < myCenter.getNonOverlappingRadius();
   }
 
   // C2C, C2R cases
@@ -576,11 +576,11 @@ public:
   inline RealType evaluateValuesC2X(const VirtualParticleSet& VP, VM& multi_myV)
   {
     const int center_idx = VP.refSourcePtcl;
-    dist_r               = VP.refPS.getDistTable(myTableID).Distances[VP.refPtcl][center_idx];
+    dist_r               = VP.refPS.getDistTable(myTableID).getDistances()[VP.refPtcl][center_idx];
     auto& myCenter       = AtomicCenters[Super2Prim[center_idx]];
     if (dist_r < myCenter.getCutoff())
     {
-      myCenter.evaluateValues(VP.getDistTable(myTableID).Displacements, center_idx, dist_r, multi_myV);
+      myCenter.evaluateValues(VP.getDistTable(myTableID).getDisplacements(), center_idx, dist_r, multi_myV);
       return smooth_function(myCenter.getCutoffBuffer(), myCenter.getCutoff(), dist_r);
     }
     return RealType(-1);
@@ -595,11 +595,11 @@ public:
                                     SV& bc_signs)
   {
     const int center_idx = VP.refSourcePtcl;
-    dist_r               = VP.refPS.getDistTable(myTableID).Distances[VP.refPtcl][center_idx];
+    dist_r               = VP.refPS.getDistTable(myTableID).getDistances()[VP.refPtcl][center_idx];
     auto& myCenter       = AtomicCenters[Super2Prim[center_idx]];
     if (dist_r < myCenter.getCutoff())
     {
-      const auto& displ = VP.getDistTable(myTableID).Displacements;
+      const auto& displ = VP.getDistTable(myTableID).getDisplacements();
       for (int ivp = 0; ivp < VP.getTotalNum(); ivp++)
       {
         r_image       = myCenter.getCenterPos() - displ[ivp][center_idx];

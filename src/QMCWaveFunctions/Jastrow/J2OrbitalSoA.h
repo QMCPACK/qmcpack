@@ -254,7 +254,7 @@ public:
   {
     for (int k = 0; k < ratios.size(); ++k)
       ratios[k] =
-          std::exp(Uat[VP.refPtcl] - computeU(VP.refPS, VP.refPtcl, VP.getDistTable(my_table_ID_).Distances[k]));
+          std::exp(Uat[VP.refPtcl] - computeU(VP.refPS, VP.refPtcl, VP.getDistTable(my_table_ID_).getDistRow(k)));
   }
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios);
 
@@ -552,7 +552,7 @@ void J2OrbitalSoA<FT>::acceptMove(ParticleSet& P, int iat)
 {
   // get the old u, du, d2u
   const auto& d_table = P.getDistTable(my_table_ID_);
-  computeU3(P, iat, d_table.Distances[iat], old_u.data(), old_du.data(), old_d2u.data());
+  computeU3(P, iat, d_table.getDistRow(iat), old_u.data(), old_du.data(), old_d2u.data());
   if (UpdateMode == ORB_PBYP_RATIO)
   { //ratio-only during the move; need to compute derivatives
     const DistRowType& dist = d_table.getTemporalDists();
@@ -561,7 +561,7 @@ void J2OrbitalSoA<FT>::acceptMove(ParticleSet& P, int iat)
 
   valT cur_d2Uat(0);
   const auto& new_dr    = d_table.getTemporalDispls();
-  const auto& old_dr    = d_table.Displacements[iat];
+  const auto& old_dr    = d_table.getDisplRow(iat);
   constexpr valT lapfac = OHMMS_DIM - RealType(1);
 #pragma omp simd reduction(+ : cur_d2Uat)
   for (int jat = 0; jat < N; jat++)
@@ -606,14 +606,14 @@ void J2OrbitalSoA<FT>::recompute(ParticleSet& P)
   {
     for (int iat = P.first(ig), last = P.last(ig); iat < last; ++iat)
     {
-      computeU3(P, iat, d_table.Distances[iat], cur_u.data(), cur_du.data(), cur_d2u.data(), true);
+      computeU3(P, iat, d_table.getDistRow(iat), cur_u.data(), cur_du.data(), cur_d2u.data(), true);
       Uat[iat] = simd::accumulate_n(cur_u.data(), iat, valT());
       posT grad;
       valT lap(0);
       const valT* restrict u    = cur_u.data();
       const valT* restrict du   = cur_du.data();
       const valT* restrict d2u  = cur_d2u.data();
-      const DisplRowType& displ = d_table.Displacements[iat];
+      const DisplRowType& displ = d_table.getDisplRow(iat);
       constexpr valT lapfac     = OHMMS_DIM - RealType(1);
 #pragma omp simd reduction(+ : lap) aligned(du, d2u)
       for (int jat = 0; jat < iat; ++jat)
@@ -689,8 +689,8 @@ void J2OrbitalSoA<FT>::evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_p
 
   for (int i = 1; i < N; ++i)
   {
-    const DistRowType& dist          = d_ee.Distances[i];
-    const DisplRowType& displ = d_ee.Displacements[i];
+    const DistRowType& dist          = d_ee.getDistRow(i);
+    const DisplRowType& displ = d_ee.getDisplRow(i);
     auto ig                   = P.GroupID[i];
     const int igt             = ig * NumGroups;
     for (int j = 0; j < i; ++j)

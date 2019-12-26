@@ -95,15 +95,17 @@ TEST_CASE("symmetric_distance_table OpenBC", "[particle]")
   const int TableID = source.addTable(source, DT_SOA);
   source.update();
   const auto& d_aa = source.getDistTable(TableID);
+  const auto& aa_dists = d_aa.getDistances();
+  const auto& aa_displs = d_aa.getDisplacements();
 
-  REQUIRE(d_aa.Distances[0][1] == Approx(1.62788206));
-  REQUIRE(d_aa.Distances[1][0] == Approx(1.62788206));
-  REQUIRE(d_aa.Displacements[0][1][0] == Approx(1.1));
-  REQUIRE(d_aa.Displacements[0][1][1] == Approx(0.0));
-  REQUIRE(d_aa.Displacements[0][1][2] == Approx(1.2));
-  REQUIRE(d_aa.Displacements[1][0][0] == Approx(-1.1));
-  REQUIRE(d_aa.Displacements[1][0][1] == Approx(0.0));
-  REQUIRE(d_aa.Displacements[1][0][2] == Approx(-1.2));
+  REQUIRE(aa_dists[0][1] == Approx(1.62788206));
+  REQUIRE(aa_dists[1][0] == Approx(1.62788206));
+  REQUIRE(aa_displs[0][1][0] == Approx(1.1));
+  REQUIRE(aa_displs[0][1][1] == Approx(0.0));
+  REQUIRE(aa_displs[0][1][2] == Approx(1.2));
+  REQUIRE(aa_displs[1][0][0] == Approx(-1.1));
+  REQUIRE(aa_displs[1][0][1] == Approx(0.0));
+  REQUIRE(aa_displs[1][0][2] == Approx(-1.2));
 }
 
 TEST_CASE("symmetric_distance_table PBC", "[particle]")
@@ -130,15 +132,17 @@ TEST_CASE("symmetric_distance_table PBC", "[particle]")
   const int TableID = source.addTable(source, DT_SOA);
   source.update();
   const auto& d_aa = source.getDistTable(TableID);
+  const auto& aa_dists = d_aa.getDistances();
+  const auto& aa_displs = d_aa.getDisplacements();
 
-  REQUIRE(d_aa.Distances[1][2] == Approx(2.9212432441));
-  REQUIRE(d_aa.Distances[2][1] == Approx(2.9212432441));
-  REQUIRE(d_aa.Displacements[1][2][0] == Approx(1.68658057));
-  REQUIRE(d_aa.Displacements[1][2][1] == Approx(1.68658057));
-  REQUIRE(d_aa.Displacements[1][2][2] == Approx(-1.68658058));
-  REQUIRE(d_aa.Displacements[2][1][0] == Approx(-1.68658057));
-  REQUIRE(d_aa.Displacements[2][1][1] == Approx(-1.68658057));
-  REQUIRE(d_aa.Displacements[2][1][2] == Approx(1.68658057));
+  REQUIRE(aa_dists[1][2] == Approx(2.9212432441));
+  REQUIRE(aa_dists[2][1] == Approx(2.9212432441));
+  REQUIRE(aa_displs[1][2][0] == Approx(1.68658057));
+  REQUIRE(aa_displs[1][2][1] == Approx(1.68658057));
+  REQUIRE(aa_displs[1][2][2] == Approx(-1.68658058));
+  REQUIRE(aa_displs[2][1][0] == Approx(-1.68658057));
+  REQUIRE(aa_displs[2][1][1] == Approx(-1.68658057));
+  REQUIRE(aa_displs[2][1][2] == Approx(1.68658057));
 }
 
 TEST_CASE("particle set lattice with vacuum", "[particle]")

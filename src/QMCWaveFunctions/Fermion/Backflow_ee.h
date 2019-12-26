@@ -307,8 +307,8 @@ public:
     {
       for (int iat = P.first(ig), last = P.last(ig); iat < last; ++iat)
       {
-        const auto& dist  = myTable.Distances[iat];
-        const auto& displ = myTable.Displacements[iat];
+        const auto& dist  = myTable.getDistRow(iat);
+        const auto& displ = myTable.getDisplRow(iat);
         for (int jat = 0; jat < iat; ++jat)
         {
           if (dist[jat] > 0)
@@ -769,8 +769,8 @@ public:
     {
       for (int iat = P.first(ig), last = P.last(ig); iat < last; ++iat)
       {
-        const auto& dist  = myTable.Distances[iat];
-        const auto& displ = myTable.Displacements[iat];
+        const auto& dist  = myTable.getDistRow(iat);
+        const auto& displ = myTable.getDisplRow(iat);
         for (int jat = 0; jat < iat; ++jat)
         {
           if (dist[jat] > 0)

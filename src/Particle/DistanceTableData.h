@@ -151,6 +151,7 @@ struct DistanceTableData
   std::vector<TempDistType> Temp;
 #endif
 
+protected:
   /**defgroup SoA data */
   /*@{*/
   /** Distances[i][j] , [N_targets][N_sources]
@@ -176,13 +177,6 @@ struct DistanceTableData
 
   ///actual memory for Displacements
   aligned_vector<RealType> memoryPool_displs_;
-
-protected:
-  /** current_r, probably only needed by AA */
-  DistRowType current_r;
-
-  /** current_dr, probably only needed by AA */
-  DisplRowType current_dr;
 
   /** temp_r */
   DistRowType Temp_r;
@@ -294,8 +288,11 @@ public:
   }
 #endif
 
-  //getCurrentDists();
-  //getCurrentDispls();
+  const std::vector<DistRowType>& getDistances() const { return Distances; }
+  const std::vector<DisplRowType>& getDisplacements() const { return Displacements; }
+
+  const DistRowType& getDistRow(int iel) const { return Distances[iel]; }
+  const DisplRowType& getDisplRow(int iel) const { return Displacements[iel]; }
 
   const DistRowType& getTemporalDists() const { return Temp_r; }
   const DisplRowType& getTemporalDispls() const { return Temp_dr; }
@@ -322,6 +319,8 @@ public:
    * Fast mode used during PbyP moves, only the row is updated in AA.
    */
   virtual void update(IndexType jat) = 0;
+
+  virtual void storeCurrent(IndexType jat) { }
 
   /** refresh the distance table based on the current value.
    * Ye: this operation overwrites the distance table by the current_ values.

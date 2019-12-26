@@ -332,8 +332,8 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
 
   for (int jel = 0; jel < elec.getTotalNum(); jel++)
   {
-    const auto& dist  = myTable.Distances[jel];
-    const auto& displ = myTable.Displacements[jel];
+    const auto& dist  = myTable.getDistRow(jel);
+    const auto& displ = myTable.getDisplRow(jel);
     for (int iat = 0; iat < ions.getTotalNum(); iat++)
       if (nlpp != nullptr && dist[iat] < nlpp->getRmax())
       {

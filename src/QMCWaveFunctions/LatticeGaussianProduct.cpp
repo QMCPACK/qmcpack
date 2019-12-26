@@ -80,8 +80,8 @@ LatticeGaussianProduct::LogValueType LatticeGaussianProduct::evaluateLog(Particl
     if (a > 0.0)
     {
 #ifdef ENABLE_SOA
-      dist = d_table.Distances[iat][icent];
-      disp = -1.0 * d_table.Displacements[iat][icent];
+      dist = d_table.getDistances()[iat][icent];
+      disp = -1.0 * d_table.getDisplacements()[iat][icent];
 #else
       int index = d_table.M[icent] + iat;
       dist      = d_table.r(index);
@@ -189,8 +189,8 @@ void LatticeGaussianProduct::evaluateLogAndStore(ParticleSet& P,
     if (a > 0.0)
     {
 #ifdef ENABLE_SOA
-      dist = d_table.Distances[iat][icent];
-      disp = -1.0 * d_table.Displacements[iat][icent];
+      dist = d_table.getDistances()[iat][icent];
+      disp = -1.0 * d_table.getDisplacements()[iat][icent];
 #else
       int index = d_table.M[icent] + iat;
       dist      = d_table.r(index);

@@ -118,7 +118,7 @@ TEST_CASE("distance_open_z", "[distance_table][xml]")
       // const auto& dtable = target_pset.getDistTable(tid);
       // dtable.loc(source_ptcl_idx,target_ptcl_idx) !! source first target second !?
 #ifdef ENABLE_SOA
-      double dist = dtable.Distances[jat][iat];
+      double dist = dtable.getDistances()[jat][iat];
 #else
       double dist = dtable.r(dtable.loc(iat, jat));
 #endif
@@ -127,7 +127,7 @@ TEST_CASE("distance_open_z", "[distance_table][xml]")
   }
 
 #ifdef ENABLE_SOA
-  TinyVector<double, 3> displ1 = dtable.Displacements[0][0];
+  TinyVector<double, 3> displ1 = dtable.getDisplacements()[0][0];
   REQUIRE(displ1[0] == Approx(0.0));
   REQUIRE(displ1[1] == Approx(0.0));
   REQUIRE(displ1[2] == Approx(-0.2));
@@ -139,7 +139,7 @@ TEST_CASE("distance_open_z", "[distance_table][xml]")
 #endif
 
 #ifdef ENABLE_SOA
-  TinyVector<double, 3> displ2 = dtable.Displacements[0][1];
+  TinyVector<double, 3> displ2 = dtable.getDisplacements()[0][1];
   REQUIRE(displ2[0] == Approx(0.0));
   REQUIRE(displ2[1] == Approx(0.0));
   REQUIRE(displ2[2] == Approx(0.3));
@@ -246,7 +246,7 @@ TEST_CASE("distance_open_xy", "[distance_table][xml]")
     for (int jat = 0; jat < dtable.targets(); jat++, idx++)
     {
 #ifdef ENABLE_SOA
-      double dist = dtable.Distances[jat][iat];
+      double dist = dtable.getDistances()[jat][iat];
 #else
       double dist = dtable.r(dtable.loc(iat, jat));
 #endif
@@ -357,7 +357,7 @@ TEST_CASE("distance_open_species_deviation", "[distance_table][xml]")
 
       // calculate distance from lattice site iat
 #ifdef ENABLE_SOA
-      double dist = dtable.Distances[jat][iat];
+      double dist = dtable.getDistances()[jat][iat];
 #else
       double dist = dtable.r(dtable.loc(iat, jat));
 #endif
@@ -496,7 +496,7 @@ TEST_CASE("distance_pbc_z", "[distance_table][xml]")
     for (int jat = 0; jat < num_tar; jat++, idx++)
     {
 #ifdef ENABLE_SOA
-      double dist = dtable.Distances[jat][iat];
+      double dist = dtable.getDistances()[jat][iat];
 #else
       double dist = dtable.r(dtable.loc(iat, jat));
 #endif
@@ -525,7 +525,7 @@ TEST_CASE("distance_pbc_z", "[distance_table][xml]")
     for (int jat = 0; jat < num_tar; jat++, idx++)
     {
 #ifdef ENABLE_SOA
-      double dist = dtable.Distances[jat][iat];
+      double dist = dtable.getDistances()[jat][iat];
 #else
       double dist = dtable.r(dtable.loc(iat, jat));
 #endif

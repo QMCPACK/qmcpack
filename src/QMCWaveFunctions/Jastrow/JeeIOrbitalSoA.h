@@ -386,7 +386,8 @@ public:
 
   void build_compact_list(ParticleSet& P)
   {
-    const DistanceTableData& eI_table = P.getDistTable(ei_Table_ID_);
+    const auto& eI_dists = P.getDistTable(ei_Table_ID_).getDistances();
+    const auto& eI_displs = P.getDistTable(ei_Table_ID_).getDisplacements();
 
     for (int iat = 0; iat < Nion; ++iat)
       for (int jg = 0; jg < eGroups; ++jg)
@@ -399,11 +400,11 @@ public:
     for (int jg = 0; jg < eGroups; ++jg)
       for (int jel = P.first(jg); jel < P.last(jg); jel++)
         for (int iat = 0; iat < Nion; ++iat)
-          if (eI_table.Distances[jel][iat] < Ion_cutoff[iat])
+          if (eI_dists[jel][iat] < Ion_cutoff[iat])
           {
             elecs_inside(jg, iat).push_back(jel);
-            elecs_inside_dist(jg, iat).push_back(eI_table.Distances[jel][iat]);
-            elecs_inside_displ(jg, iat).push_back(eI_table.Displacements[jel][iat]);
+            elecs_inside_dist(jg, iat).push_back(eI_dists[jel][iat]);
+            elecs_inside_displ(jg, iat).push_back(eI_displs[jel][iat]);
           }
   }
 
@@ -429,13 +430,14 @@ public:
     for (int k = 0; k < ratios.size(); ++k)
       ratios[k] = std::exp(Uat[VP.refPtcl] -
                            computeU(VP.refPS, VP.refPtcl, VP.refPS.GroupID[VP.refPtcl],
-                                    VP.getDistTable(ei_Table_ID_).Distances[k],
-                                    VP.getDistTable(ee_Table_ID_).Distances[k], ions_nearby_old));
+                                    VP.getDistTable(ei_Table_ID_).getDistRow(k),
+                                    VP.getDistTable(ee_Table_ID_).getDistRow(k), ions_nearby_old));
   }
 
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
   {
     const DistanceTableData& eI_table = P.getDistTable(ei_Table_ID_);
+    const auto& eI_dists = eI_table.getDistances();
     const DistanceTableData& ee_table = P.getDistTable(ee_Table_ID_);
 
     for (int jg = 0; jg < eGroups; ++jg)
@@ -449,7 +451,7 @@ public:
         for (int iat = 0; iat < Nion; ++iat)
         {
           const valT& r_Ij = eI_table.getTemporalDists()[iat];
-          const valT& r_Ik = eI_table.Distances[j][iat];
+          const valT& r_Ik = eI_dists[j][iat];
           if (r_Ij < Ion_cutoff[iat] && r_Ik < Ion_cutoff[iat])
           {
             const int ig = Ions.GroupID[iat];
@@ -483,8 +485,8 @@ public:
     const DistanceTableData& eI_table = P.getDistTable(ei_Table_ID_);
     const DistanceTableData& ee_table = P.getDistTable(ee_Table_ID_);
     // get the old value, grad, lapl
-    computeU3(P, iat, eI_table.Distances[iat], eI_table.Displacements[iat], ee_table.Distances[iat],
-              ee_table.Displacements[iat], Uat[iat], dUat_temp, d2Uat[iat], oldUk, olddUk, oldd2Uk, ions_nearby_old);
+    computeU3(P, iat, eI_table.getDistRow(iat), eI_table.getDisplRow(iat), ee_table.getDistRow(iat),
+              ee_table.getDisplRow(iat), Uat[iat], dUat_temp, d2Uat[iat], oldUk, olddUk, oldd2Uk, ions_nearby_old);
     if (UpdateMode == ORB_PBYP_RATIO)
     { //ratio-only during the move; need to compute derivatives
       computeU3(P, iat, eI_table.getTemporalDists(), eI_table.getTemporalDispls(), ee_table.getTemporalDists(), ee_table.getTemporalDispls(), cur_Uat,
@@ -560,8 +562,8 @@ public:
 
     for (int jel = 0; jel < Nelec; ++jel)
     {
-      computeU3(P, jel, eI_table.Distances[jel], eI_table.Displacements[jel], ee_table.Distances[jel],
-                ee_table.Displacements[jel], Uat[jel], dUat_temp, d2Uat[jel], newUk, newdUk, newd2Uk, ions_nearby_new,
+      computeU3(P, jel, eI_table.getDistRow(jel), eI_table.getDisplRow(jel), ee_table.getDistRow(jel),
+                ee_table.getDisplRow(jel), Uat[jel], dUat_temp, d2Uat[jel], newUk, newdUk, newd2Uk, ions_nearby_new,
                 true);
       dUat(jel) = dUat_temp;
 // add the contribution from the upper triangle
@@ -874,6 +876,8 @@ public:
       constexpr valT lapfac = OHMMS_DIM - cone;
 
       const DistanceTableData& ee_table = P.getDistTable(ee_Table_ID_);
+      const auto& ee_dists = ee_table.getDistances();
+      const auto& ee_displs = ee_table.getDisplacements();
 
       build_compact_list(P);
 
@@ -902,8 +906,8 @@ public:
                   const posT disp_Ik  = cminus * elecs_inside_displ(kg, iat)[kind];
                   const valT r_Ik_inv = cone / r_Ik;
 
-                  const valT r_jk     = ee_table.Distances[jel][kel];
-                  const posT disp_jk  = ee_table.Displacements[jel][kel];
+                  const valT r_jk     = ee_dists[jel][kel];
+                  const posT disp_jk  = ee_displs[jel][kel];
                   const valT r_jk_inv = cone / r_jk;
 
                   FT& func = *F(ig, jg, kg);

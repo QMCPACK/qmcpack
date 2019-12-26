@@ -246,8 +246,8 @@ public:
         for (size_t i = 1; i < n; ++i)
         {
           const size_t ig      = P.GroupID[i] * ng;
-          const auto& dist = d_table.Distances[i];
-          const auto& displ    = d_table.Displacements[i];
+          const auto& dist = d_table.getDistRow(i);
+          const auto& displ    = d_table.getDisplRow(i);
           for (size_t j = 0; j < i; ++j)
           {
             const size_t ptype = ig + P.GroupID[j];
