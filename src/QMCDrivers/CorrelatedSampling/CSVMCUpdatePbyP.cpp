@@ -57,7 +57,6 @@ void CSVMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
       RealType sqrttau = std::sqrt(Tau * MassInvS[ig]);
       for (int iat = W.first(ig); iat < W.last(ig); ++iat)
       {
-        W.setActive(iat);
         PosType dr = sqrttau * deltaR[iat];
         //The move proposal for particle iat.
         if (W.makeMoveAndCheck(iat, dr))

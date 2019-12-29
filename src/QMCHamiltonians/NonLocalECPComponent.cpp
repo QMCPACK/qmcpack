@@ -447,7 +447,6 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
       //This sequence is necessary to update the distance tables and make the 
       //inverse matrix available for force computation.  Move the particle to 
       //quadrature point...
-      W.setActive(iel); // initialize distances for iel
       W.makeMove(iel, deltaV[j]);
       psi.calcRatio(W, iel);
       psi.acceptMove(W, iel);
@@ -464,7 +463,6 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
       deltaV[j] = dr - r * rrotsgrid_m[j];
 
       // mirror the above in reverse order
-      W.setActive(iel);
       W.makeMove(iel, deltaV[j]);
       psi.calcRatio(W, iel);
       psi.acceptMove(W, iel);

@@ -70,15 +70,6 @@ struct SoaDistanceTableBA : public DTD_BConds<T, D, SC>, public DistanceTableDat
     }
   }
 
-  /** evaluate the iat-row with the current position
-   *
-   * Fill Temp_r and Temp_dr and copy them Distances & Displacements
-   */
-  inline void evaluate(ParticleSet& P, IndexType iat)
-  {
-    //DTD_BConds<T, D, SC>::computeDistances(P.R[iat], Origin->RSoA, Distances[iat].data(), Displacements[iat], 0, N_sources);
-  }
-
   ///evaluate the temporary pair relations
   inline void move(const ParticleSet& P, const PosType& rnew, const IndexType iat, bool prepare_old)
   {

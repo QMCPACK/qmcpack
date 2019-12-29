@@ -74,8 +74,8 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableDat
     Temp_dr.resize(N_targets);
   }
 
-  const DistRowType& getOldDists(int iel) const { return old_r_; }
-  const DisplRowType& getOldDispls(int iel) const { return old_dr_; }
+  const DistRowType& getOldDists() const { return old_r_; }
+  const DisplRowType& getOldDispls() const { return old_dr_; }
 
   inline void evaluate(ParticleSet& P)
   {
@@ -86,12 +86,6 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableDat
       DTD_BConds<T, D, SC>::computeDistances(P.R[iat], P.RSoA, Distances[iat].data(), Displacements[iat], 0, N_targets, iat);
       Distances[iat][iat] = BigR; //assign big distance
     }
-  }
-
-  inline void evaluate(ParticleSet& P, IndexType jat)
-  {
-    //DTD_BConds<T, D, SC>::computeDistances(P.R[jat], P.RSoA, Distances[jat].data(), Displacements[jat], 0, N_targets, jat);
-    //Distances[jat][jat] = std::numeric_limits<T>::max(); //assign a big number
   }
 
   ///evaluate the temporary pair relations

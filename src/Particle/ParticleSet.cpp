@@ -40,7 +40,6 @@ int ParticleSet::Walker_t::cuda_DataSize = 0;
 
 const TimerNameList_t<ParticleSet::PSTimers> ParticleSet::PSTimerNames = {{PS_newpos, "ParticleSet::computeNewPosDT"},
                                                                           {PS_donePbyP, "ParticleSet::donePbyP"},
-                                                                          {PS_setActive, "ParticleSet::setActive"},
                                                                           {PS_update, "ParticleSet::update"}};
 
 ParticleSet::ParticleSet()
@@ -375,37 +374,6 @@ void ParticleSet::update(bool skipSK)
     SK->UpdateAllPart(*this);
 
   activePtcl = -1;
-}
-
-void ParticleSet::setActive(int iat)
-{
-  ScopedTimer set_active_scope(myTimers[PS_setActive]);
-
-  for (size_t i = 0; i < DistTables.size(); i++)
-    if (DistTables[i]->DTType == DT_SOA)
-      DistTables[i]->evaluate(*this, iat);
-}
-
-void ParticleSet::flex_setActive(const RefVector<ParticleSet>& P_list, int iat)
-{
-  if (P_list.size() > 1)
-  {
-    ScopedTimer local_timer(P_list[0].get().myTimers[PS_setActive]);
-    int dist_tables_size = P_list[0].get().DistTables.size();
-#pragma omp parallel
-    {
-      for (size_t i = 0; i < dist_tables_size; i++)
-      {
-#pragma omp for
-        for (int iw = 0; iw < P_list.size(); iw++)
-        {
-          P_list[iw].get().DistTables[i]->evaluate(P_list[iw], iat);
-        }
-      }
-    }
-  }
-  else if (P_list.size() == 1)
-    P_list[0].get().setActive(iat);
 }
 
 void ParticleSet::makeMove(Index_t iat, const SingleParticlePos_t& displ, bool maybe_accept)

@@ -128,14 +128,6 @@ struct SymmetricDTD : public DTD_BConds<T, D, SC>, public DistanceTableData
     DTD_BConds<T, D, SC>::apply_bc(dr_m, r_m, rinv_m);
   }
 
-  inline void evaluate(ParticleSet& P, int jat)
-  {
-    APP_ABORT("  No need to call SymmetricDTD::evaluate(ParticleSet& P, int jat)");
-    //based on full evaluation. Only compute it if jat==0
-    if (jat == 0)
-      evaluate(P);
-  }
-
   ///evaluate the temporary pair relations
   inline void move(const ParticleSet& P, const PosType& rnew, const IndexType iat, bool prepare_old)
   {

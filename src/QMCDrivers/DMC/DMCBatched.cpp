@@ -171,7 +171,6 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
     int end_index        = step_context.getPtclGroupEnd(ig);
     for (int iat = start_index; iat < end_index; ++iat)
     {
-      ParticleSet::flex_setActive(crowd.get_walker_elecs(), iat);
       auto delta_r_start = it_delta_r + iat * num_walkers;
       auto delta_r_end   = delta_r_start + num_walkers;
 

@@ -65,15 +65,15 @@ ExampleHeComponent::LogValueType ExampleHeComponent::evaluateLog(ParticleSet& P,
                                                                  ParticleSet::ParticleGradient_t& G,
                                                                  ParticleSet::ParticleLaplacian_t& L)
 {
-  const auto& ee_table = P.getDistTable(my_table_ee_idx_);
-  const auto& ee_dists = ee_table.getDistances();
+  const auto& ee_table  = P.getDistTable(my_table_ee_idx_);
+  const auto& ee_dists  = ee_table.getDistances();
   const auto& ee_displs = ee_table.getDisplacements();
   // Only the lower triangle is up-to-date after particle-by-particle moves
   double r12  = ee_dists[1][0];
   auto rhat12 = ee_displs[1][0] / r12;
 
-  const auto& ei_table = P.getDistTable(my_table_ei_idx_);
-  const auto& ei_dists = ei_table.getDistances();
+  const auto& ei_table  = P.getDistTable(my_table_ei_idx_);
+  const auto& ei_dists  = ei_table.getDistances();
   const auto& ei_displs = ei_table.getDisplacements();
 
   // First index is electron, second index is ion
@@ -111,19 +111,16 @@ ExampleHeComponent::LogValueType ExampleHeComponent::evaluateLog(ParticleSet& P,
 
 ExampleHeComponent::PsiValueType ExampleHeComponent::ratio(ParticleSet& P, int iat)
 {
-  const int jat = (iat == 0 ? 1 : 0);
-
-  const auto& ee_table = P.getDistTable(my_table_ee_idx_);
-  const auto& ee_dists = ee_table.getDistances();
+  const auto& ee_table  = P.getDistTable(my_table_ee_idx_);
+  const auto& ee_dists  = ee_table.getDistances();
   const auto& ee_temp_r = ee_table.getTemporalDists();
 
-  // during p-by-p move iat-th row of Distances and Displacements[iat] are up-to-date
-  // because setActive is called before ratio
-  double r12_old = ee_dists[iat][jat];
-  double r12_new = ee_temp_r[jat];
+  // only the lower triangle of e-e Distances and Displacements can be used.
+  double r12_old = ee_dists[1][0];
+  double r12_new = ee_temp_r[iat == 0 ? 1 : 0];
 
-  const auto& ei_table = P.getDistTable(my_table_ei_idx_);
-  const auto& ei_dists = ei_table.getDistances();
+  const auto& ei_table  = P.getDistTable(my_table_ei_idx_);
+  const auto& ei_dists  = ei_table.getDistances();
   const auto& ei_temp_r = ei_table.getTemporalDists();
 
   double r_old = ei_dists[iat][0];
@@ -140,23 +137,20 @@ ExampleHeComponent::PsiValueType ExampleHeComponent::ratio(ParticleSet& P, int i
 
 ExampleHeComponent::GradType ExampleHeComponent::evalGrad(ParticleSet& P, int iat)
 {
-  const auto& ei_table = P.getDistTable(my_table_ei_idx_);
-  const auto& ei_dists = ei_table.getDistances();
+  const auto& ei_table  = P.getDistTable(my_table_ei_idx_);
+  const auto& ei_dists  = ei_table.getDistances();
   const auto& ei_displs = ei_table.getDisplacements();
 
   double r  = ei_dists[iat][0];
   auto rhat = ei_displs[iat][0] / r;
 
-  const auto& ee_table = P.getDistTable(my_table_ee_idx_);
-  const auto& ee_dists = ee_table.getDistances();
+  const auto& ee_table  = P.getDistTable(my_table_ee_idx_);
+  const auto& ee_dists  = ee_table.getDistances();
   const auto& ee_displs = ee_table.getDisplacements();
 
-  const int jat = (iat == 0 ? 1 : 0);
-
-  // during p-by-p move iat-th row of Distances and Displacements[iat] are up-to-date
-  // because setActive is called before evalGrad
-  double r12  = ee_dists[iat][jat];
-  auto rhat12 = ee_displs[iat][jat] / r12;
+  // only the lower triangle of e-e Distances and Displacements can be used.
+  double r12  = ee_dists[1][0];
+  auto rhat12 = (iat == 0 ? -ee_displs[1][0] : ee_displs[1][0]) / r12;
 
   double du = A / ((B * r12 + 1) * (B * r12 + 1));
 
@@ -165,25 +159,23 @@ ExampleHeComponent::GradType ExampleHeComponent::evalGrad(ParticleSet& P, int ia
 
 ExampleHeComponent::PsiValueType ExampleHeComponent::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
 {
-  const auto& ee_table = P.getDistTable(my_table_ee_idx_);
-  const auto& ee_dists = ee_table.getDistances();
-  const auto& ee_displs = ee_table.getDisplacements();
-  const auto& ee_temp_r = ee_table.getTemporalDists();
+  const auto& ee_table   = P.getDistTable(my_table_ee_idx_);
+  const auto& ee_dists   = ee_table.getDistances();
+  const auto& ee_displs  = ee_table.getDisplacements();
+  const auto& ee_temp_r  = ee_table.getTemporalDists();
   const auto& ee_temp_dr = ee_table.getTemporalDispls();
 
   const int jat = (iat == 0 ? 1 : 0);
-
-  // during p-by-p move iat-th row of Distances and Displacements[iat] are up-to-date
-  // because setActive is called before ratioGrad
-  double r12_old = ee_dists[iat][jat];
+  // only the lower triangle of e-e Distances and Displacements can be used.
+  double r12_old = ee_dists[1][0];
   double r12_new = ee_temp_r[jat];
 
   auto rhat12 = ee_temp_dr[jat] / r12_new;
 
-  const auto& ei_table = P.getDistTable(my_table_ei_idx_);
-  const auto& ei_dists = ei_table.getDistances();
-  const auto& ei_displs = ei_table.getDisplacements();
-  const auto& ei_temp_r = ei_table.getTemporalDists();
+  const auto& ei_table   = P.getDistTable(my_table_ei_idx_);
+  const auto& ei_dists   = ei_table.getDistances();
+  const auto& ei_displs  = ei_table.getDisplacements();
+  const auto& ei_temp_r  = ei_table.getTemporalDists();
   const auto& ei_temp_dr = ei_table.getTemporalDispls();
 
   double r_old = ei_dists[iat][0];
@@ -237,19 +229,19 @@ void ExampleHeComponent::evaluateDerivatives(ParticleSet& P,
 
   double tmpB = std::real(optvars[0]);
 
-  const auto& ee_table = P.getDistTable(my_table_ee_idx_);
-  const auto& ee_dists = ee_table.getDistances();
-  const auto& ee_displs = ee_table.getDisplacements();
-  const auto& ee_temp_r = ee_table.getTemporalDists();
+  const auto& ee_table   = P.getDistTable(my_table_ee_idx_);
+  const auto& ee_dists   = ee_table.getDistances();
+  const auto& ee_displs  = ee_table.getDisplacements();
+  const auto& ee_temp_r  = ee_table.getTemporalDists();
   const auto& ee_temp_dr = ee_table.getTemporalDispls();
 
-  double r12           = ee_dists[1][0];
-  auto rhat12          = ee_displs[1][0] / r12;
+  double r12  = ee_dists[1][0];
+  auto rhat12 = ee_displs[1][0] / r12;
 
-  const auto& ei_table = P.getDistTable(my_table_ei_idx_);
-  const auto& ei_dists = ei_table.getDistances();
-  const auto& ei_displs = ei_table.getDisplacements();
-  const auto& ei_temp_r = ei_table.getTemporalDists();
+  const auto& ei_table   = P.getDistTable(my_table_ei_idx_);
+  const auto& ei_dists   = ei_table.getDistances();
+  const auto& ei_displs  = ei_table.getDisplacements();
+  const auto& ei_temp_r  = ei_table.getTemporalDists();
   const auto& ei_temp_dr = ei_table.getTemporalDispls();
 
   double r1 = ei_dists[0][0];
