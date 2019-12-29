@@ -201,10 +201,8 @@ int main(int argc, char** argv)
 
       for(int iel=0; iel<nels; ++iel)
       {
-        els.setActive(iel);
         PosType grad_soa=J.evalGrad(els,iel);
 
-        els_aos.setActive(iel);
         PosType grad_aos=J_aos.evalGrad(els_aos,iel)-grad_soa;
         g_eval+=sqrt(dot(grad_aos,grad_aos));
 

@@ -112,7 +112,7 @@ public:
 
   JeeIOrbitalSoA(const ParticleSet& ions, ParticleSet& elecs, bool is_master = false)
       : ee_Table_ID_(elecs.addTable(elecs, DT_SOA)),
-        ei_Table_ID_(elecs.addTable(ions, DT_SOA, true)),
+        ei_Table_ID_(elecs.addTable(ions, DT_SOA)),
         Ions(ions),
         NumVars(0)
   {
@@ -485,8 +485,8 @@ public:
     const DistanceTableData& eI_table = P.getDistTable(ei_Table_ID_);
     const DistanceTableData& ee_table = P.getDistTable(ee_Table_ID_);
     // get the old value, grad, lapl
-    computeU3(P, iat, eI_table.getDistRow(iat), eI_table.getDisplRow(iat), ee_table.getDistRow(iat),
-              ee_table.getDisplRow(iat), Uat[iat], dUat_temp, d2Uat[iat], oldUk, olddUk, oldd2Uk, ions_nearby_old);
+    computeU3(P, iat, eI_table.getDistRow(iat), eI_table.getDisplRow(iat), ee_table.getOldDists(),
+              ee_table.getOldDispls(), Uat[iat], dUat_temp, d2Uat[iat], oldUk, olddUk, oldd2Uk, ions_nearby_old);
     if (UpdateMode == ORB_PBYP_RATIO)
     { //ratio-only during the move; need to compute derivatives
       computeU3(P, iat, eI_table.getTemporalDists(), eI_table.getTemporalDispls(), ee_table.getTemporalDists(), ee_table.getTemporalDispls(), cur_Uat,

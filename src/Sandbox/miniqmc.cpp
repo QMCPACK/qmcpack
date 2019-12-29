@@ -251,7 +251,6 @@ int main(int argc, char** argv)
         for(int iel=0; iel<nels; ++iel)
         {
           //compute G[iel] with the current position to make a move
-          els.setActive(iel);
           PosType grad_now=Jastrow->evalGrad(els,iel);
 
           //move iel el and compute the ratio

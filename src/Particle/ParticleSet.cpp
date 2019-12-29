@@ -40,7 +40,6 @@ int ParticleSet::Walker_t::cuda_DataSize = 0;
 
 const TimerNameList_t<ParticleSet::PSTimers> ParticleSet::PSTimerNames = {{PS_newpos, "ParticleSet::computeNewPosDT"},
                                                                           {PS_donePbyP, "ParticleSet::donePbyP"},
-                                                                          {PS_setActive, "ParticleSet::setActive"},
                                                                           {PS_update, "ParticleSet::update"}};
 
 ParticleSet::ParticleSet()
@@ -84,10 +83,7 @@ ParticleSet::ParticleSet(const ParticleSet& p)
   Collectables        = p.Collectables;
   //construct the distance tables with the same order
   for (int i = 0; i < p.DistTables.size(); ++i)
-  {
     addTable(p.DistTables[i]->origin(), p.DistTables[i]->DTType);
-    DistTables[i]->setFullTableNeededAtLoadWalker(p.DistTables[i]->isFullTableNeededAtLoadWalker());
-  }
   if (p.SK)
   {
     LRBox = p.LRBox;               //copy LRBox
@@ -335,7 +331,7 @@ void ParticleSet::reset() { app_log() << "<<<< going to set properties >>>> " <<
 ///read the particleset
 bool ParticleSet::put(xmlNodePtr cur) { return true; }
 
-int ParticleSet::addTable(const ParticleSet& psrc, int dt_type, bool need_full_table_loadWalker)
+int ParticleSet::addTable(const ParticleSet& psrc, int dt_type)
 {
   if (myName == "none" || psrc.getName() == "none")
     APP_ABORT("ParticleSet::addTable needs proper names for both source and target particle sets.");
@@ -363,7 +359,6 @@ int ParticleSet::addTable(const ParticleSet& psrc, int dt_type, bool need_full_t
     tid = (*tit).second;
     app_debug() << "  ... ParticleSet::addTable Reuse Table #" << tid << " " << DistTables[tid]->getName() << std::endl;
   }
-  DistTables[tid]->setFullTableNeededAtLoadWalker( DistTables[tid]->isFullTableNeededAtLoadWalker() || need_full_table_loadWalker);
   app_log().flush();
   return tid;
 }
@@ -381,42 +376,11 @@ void ParticleSet::update(bool skipSK)
   activePtcl = -1;
 }
 
-void ParticleSet::setActive(int iat)
-{
-  ScopedTimer set_active_scope(myTimers[PS_setActive]);
-
-  for (size_t i = 0; i < DistTables.size(); i++)
-    if (DistTables[i]->DTType == DT_SOA)
-      DistTables[i]->evaluate(*this, iat);
-}
-
-void ParticleSet::flex_setActive(const RefVector<ParticleSet>& P_list, int iat)
-{
-  if (P_list.size() > 1)
-  {
-    ScopedTimer local_timer(P_list[0].get().myTimers[PS_setActive]);
-    int dist_tables_size = P_list[0].get().DistTables.size();
-#pragma omp parallel
-    {
-      for (size_t i = 0; i < dist_tables_size; i++)
-      {
-#pragma omp for
-        for (int iw = 0; iw < P_list.size(); iw++)
-        {
-          P_list[iw].get().DistTables[i]->evaluate(P_list[iw], iat);
-        }
-      }
-    }
-  }
-  else if (P_list.size() == 1)
-    P_list[0].get().setActive(iat);
-}
-
-void ParticleSet::makeMove(Index_t iat, const SingleParticlePos_t& displ)
+void ParticleSet::makeMove(Index_t iat, const SingleParticlePos_t& displ, bool maybe_accept)
 {
   activePtcl = iat;
   activePos  = R[iat] + displ;
-  computeNewPosDistTablesAndSK(iat, activePos);
+  computeNewPosDistTablesAndSK(iat, activePos, maybe_accept);
 }
 
 void ParticleSet::makeMoveWithSpin(Index_t iat, const SingleParticlePos_t& displ, const Scalar_t& sdispl)
@@ -463,7 +427,7 @@ bool ParticleSet::makeMoveAndCheck(Index_t iat, const SingleParticlePos_t& displ
         is_valid = false;
     }
   }
-  computeNewPosDistTablesAndSK(iat, activePos);
+  computeNewPosDistTablesAndSK(iat, activePos, true);
   return is_valid;
 }
 
@@ -473,12 +437,12 @@ bool ParticleSet::makeMoveAndCheckWithSpin(Index_t iat, const SingleParticlePos_
   return makeMoveAndCheck(iat, displ);
 }
 
-void ParticleSet::computeNewPosDistTablesAndSK(Index_t iat, const SingleParticlePos_t& newpos)
+void ParticleSet::computeNewPosDistTablesAndSK(Index_t iat, const SingleParticlePos_t& newpos, bool maybe_accept)
 {
   ScopedTimer compute_newpos_scope(myTimers[PS_newpos]);
 
   for (int i = 0; i < DistTables.size(); ++i)
-    DistTables[i]->move(*this, newpos);
+    DistTables[i]->move(*this, newpos, iat, maybe_accept);
   //Do not change SK: 2007-05-18
   //Change SK only if DoUpdate is true: 2008-09-12
   if (SK && SK->DoUpdate)
@@ -487,7 +451,8 @@ void ParticleSet::computeNewPosDistTablesAndSK(Index_t iat, const SingleParticle
 
 void ParticleSet::mw_computeNewPosDistTablesAndSK(const RefVector<ParticleSet>& P_list,
                                                   Index_t iat,
-                                                  const std::vector<SingleParticlePos_t>& new_positions)
+                                                  const std::vector<SingleParticlePos_t>& new_positions,
+                                                  bool maybe_accept)
 {
   ScopedTimer compute_newpos_scope(P_list[0].get().myTimers[PS_newpos]);
   int dist_tables_size = P_list[0].get().DistTables.size();
@@ -497,7 +462,7 @@ void ParticleSet::mw_computeNewPosDistTablesAndSK(const RefVector<ParticleSet>& 
     {
 #pragma omp for
       for (int iw = 0; iw < P_list.size(); iw++)
-        P_list[iw].get().DistTables[i]->move(P_list[iw], new_positions[iw]);
+        P_list[iw].get().DistTables[i]->move(P_list[iw], new_positions[iw], iat, maybe_accept);
     }
 
     StructFact* SK = P_list[0].get().SK;
@@ -710,10 +675,9 @@ void ParticleSet::loadWalker(Walker_t& awalker, bool pbyp)
 #endif
   if (pbyp)
   {
-    // in certain cases, full tables must be ready
+    // full tables must be ready
     for (int i = 0; i < DistTables.size(); i++)
-      if (DistTables[i]->DTType == DT_AOS || DistTables[i]->isFullTableNeededAtLoadWalker())
-        DistTables[i]->evaluate(*this);
+      DistTables[i]->evaluate(*this);
     //computed so that other objects can use them, e.g., kSpaceJastrow
     if (SK && SK->DoUpdate)
       SK->UpdateAllPart(*this);

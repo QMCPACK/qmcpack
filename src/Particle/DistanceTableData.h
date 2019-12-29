@@ -178,9 +178,6 @@ protected:
 
   /** temp_dr */
   DisplRowType Temp_dr;
-
-  /** true, if a full table is needed at loadWalker */
-  bool need_full_table_loadWalker_;
   /*@}*/
 
   ///name of the table
@@ -189,15 +186,11 @@ protected:
 public:
   ///constructor using source and target ParticleSet
   DistanceTableData(const ParticleSet& source, const ParticleSet& target)
-      : Origin(&source), N_sources(0), N_targets(0), N_walkers(0), need_full_table_loadWalker_(false)
+      : Origin(&source), N_sources(0), N_targets(0), N_walkers(0)
   {}
 
   ///virutal destructor
   virtual ~DistanceTableData() {}
-
-  ///return true if full a full table is needed at loadWalker
-  bool isFullTableNeededAtLoadWalker() const { return need_full_table_loadWalker_; }
-  void setFullTableNeededAtLoadWalker(bool is_needed) { need_full_table_loadWalker_ = is_needed; }
 
   ///return the name of table
   inline const std::string& getName() const { return Name; }
@@ -283,55 +276,64 @@ public:
   }
 #endif
 
+  /** return full table distances
+   */
   const std::vector<DistRowType>& getDistances() const { return Distances; }
+
+  /** return full table displacements
+   */
   const std::vector<DisplRowType>& getDisplacements() const { return Displacements; }
 
+  /** return a row of distances for a given target particle
+   */
   const DistRowType& getDistRow(int iel) const { return Distances[iel]; }
+
+  /** return a row of displacements for a given target particle
+   */
   const DisplRowType& getDisplRow(int iel) const { return Displacements[iel]; }
 
+  /** return old distances set up by move() for optimized distance table consumers
+   */
+  virtual const DistRowType& getOldDists() const
+  {
+    APP_ABORT("DistanceTableData::getOldDists is used incorrectly! Contact developers on github.");
+  }
+
+  /** return old displacements set up by move() for optimized distance table consumers
+   */
+  virtual const DisplRowType& getOldDispls() const
+  {
+    APP_ABORT("DistanceTableData::getOldDispls is used incorrectly! Contact developers on github.");
+  }
+
+  /** return the temporary distances when a move is proposed
+   */
   const DistRowType& getTemporalDists() const { return Temp_r; }
+
+  /** return the temporary displacements when a move is proposed
+   */
   const DisplRowType& getTemporalDispls() const { return Temp_dr; }
 
   /** evaluate the full Distance Table
-   * Ye: need a better name. evalauteAllPairs?
+   * @param P the target particle set
    */
   virtual void evaluate(ParticleSet& P) = 0;
 
-  /** evaluate the Distance Table for a given electron in-place
-   * Ye: This is used by setActive. In-place evaluation makes AA evaluation very unsafe.
-   * Plan to rename it as evaluateCurrent and store values in current_r and current_dr
-   */
-  virtual void evaluate(ParticleSet& P, int jat) = 0;
-
   /** evaluate the temporary pair relations when a move is proposed
-   * Ye: This is used by makeMove. makeMove must be paired with setActive.
+   * @param P the target particle set
+   * @param rnew proposed new position
+   * @param iat the particle to be moved
+   * @param prepare_old if true, prepare old distances and displacements for using getOldDists and getOldDispls functions later.
+   *
+   * Note: some distance table consumers (WaveFunctionComponent) have optimized code paths which require prepare_old = true for accepting a move.
+   * Drivers/Hamiltonians know whether moves will be accepted or not and manager this flag when calling ParticleSet::makeMoveXXX functions.
    */
-  virtual void move(const ParticleSet& P, const PosType& rnew) = 0;
+  virtual void move(const ParticleSet& P, const PosType& rnew, const IndexType iat = 0, bool prepare_old = true) = 0;
 
   /** update the distance table by the pair relations if a move is accepted
-   * Ye: plan to have two modes controled by an extra argument or two functions (updateRow?).
-   * Default slow and safe mode, update both a row and a column in the lower triangle.
-   * Fast mode used during PbyP moves, only the row is updated in AA.
+   * upon accept a move, the full table should be up-to-date
    */
   virtual void update(IndexType jat) = 0;
-
-  virtual void storeCurrent(IndexType jat) { }
-
-  /** refresh the distance table based on the current value.
-   * Ye: this operation overwrites the distance table by the current_ values.
-   * This is will be used by rejectMove and only supports fast mode.
-   * A PbyP move in fast mode either call update or refreshRow.
-   * in a safe/slow mode, there is no need to call this function.
-   */
-  //virtual void refreshRow(IndexType jat) = 0;
-
-  /* access function to current_r/dr and Temp_r/dr
-   * Ye: they are safe to used only during the PbyP moves.
-   * Some safety mechanism may be needed to prevent
-   * 1. accessing current_ without calling update(setActive)
-   * 2. accessing Temp_ without calling move(makeMove)
-   * Where is a better place for safe guards? ParticleSet or invidual DTs?
-   */
 
   /** build a compact list of a neighbor for the iat source
    * @param iat source particle id

@@ -157,8 +157,6 @@ int main(int argc, char** argv)
     random_th.generate_normal(&delta[0][0],nels3);
     for(int iel=0; iel<nels; ++iel)
     {
-      els.setActive(iel);    
-      els_aos.setActive(iel);    
 
       PosType dr=sqrttau*delta[iel];
       bool valid_move=els.makeMoveAndCheck(iel,dr); 

@@ -347,7 +347,6 @@ int NonLocalECPotential::makeNonLocalMovesPbyP(ParticleSet& P)
     if (oneTMove)
     {
       int iat = oneTMove->PID;
-      P.setActive(iat);
       if (P.makeMoveAndCheck(iat, oneTMove->Delta))
       {
         GradType grad_iat;
@@ -369,7 +368,6 @@ int NonLocalECPotential::makeNonLocalMovesPbyP(ParticleSet& P)
         const NonLocalData* oneTMove = nonLocalOps.selectMove(RandomGen());
         if (oneTMove)
         {
-          P.setActive(iat);
           if (P.makeMoveAndCheck(iat, oneTMove->Delta))
           {
             Psi.calcRatioGrad(P, iat, grad_iat);
@@ -400,7 +398,6 @@ int NonLocalECPotential::makeNonLocalMovesPbyP(ParticleSet& P)
           oneTMove = nonLocalOps.selectMove(RandomGen(), iat);
         if (oneTMove)
         {
-          P.setActive(iat);
           if (P.makeMoveAndCheck(iat, oneTMove->Delta))
           {
             Psi.calcRatioGrad(P, iat, grad_iat);

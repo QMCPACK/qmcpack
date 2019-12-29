@@ -64,7 +64,6 @@ void SOVMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
       RealType sqrttau     = std::sqrt(tauovermass);
       for (int iat = W.first(ig); iat < W.last(ig); ++iat)
       {
-        W.setActive(iat);
         PosType dr;
         ParticleSet::Scalar_t ds;
         if (UseDrift)

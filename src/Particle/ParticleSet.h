@@ -255,7 +255,7 @@ public:
    *
    * if this->myName == psrc.getName(), AA type. Otherwise, AB type.
    */
-  int addTable(const ParticleSet& psrc, int dt_type, bool need_full_table_loadWalker = false);
+  int addTable(const ParticleSet& psrc, int dt_type);
 
   /** get a distance table by table_ID
    */
@@ -298,17 +298,6 @@ public:
 
   void resetGroups();
 
-  /** set active particle
-   * @param iat particle index
-   *
-   * Compute internal data based on current R[iat]
-   * Introduced to work with update-only methods.
-   */
-  void setActive(int iat);
-
-  /// batched version of setActive
-  static void flex_setActive(const RefVector<ParticleSet>& P_list, int iat);
-
   /** return the position of the active particle
    *
    * activePtcl=-1 is used to flag non-physical moves
@@ -318,11 +307,13 @@ public:
   /** move the iat-th particle to activePos
    * @param iat the index of the particle to be moved
    * @param displ the displacement of the iat-th particle position
+   * @param maybe_accept if false, the caller guarantees that the proposed move will not be accepted.
    *
    * Update activePtcl index and activePos position (R[iat]+displ) for a proposed move.
    * Evaluate the related distance table data DistanceTableData::Temp.
+   * If maybe_accept = false, certain operations for accepting moves will be skipped for optimal performance.
    */
-  void makeMove(Index_t iat, const SingleParticlePos_t& displ);
+  void makeMove(Index_t iat, const SingleParticlePos_t& displ, bool maybe_accept = true);
   /// makeMove, but now includes an update to the spin variable
   void makeMoveWithSpin(Index_t iat, const SingleParticlePos_t& displ, const Scalar_t& sdispl);
 
@@ -659,7 +650,6 @@ protected:
   {
     PS_newpos,
     PS_donePbyP,
-    PS_setActive,
     PS_update
   };
 
@@ -681,8 +671,9 @@ protected:
    *
    * @param iat the particle that is moved on a sphere
    * @param newpos a new particle position
+   * @param maybe_accept if false, the caller guarantees that the proposed move will not be accepted.
    */
-  void computeNewPosDistTablesAndSK(Index_t iat, const SingleParticlePos_t& newpos);
+  void computeNewPosDistTablesAndSK(Index_t iat, const SingleParticlePos_t& newpos, bool maybe_accept = true);
 
 
   /** compute temporal DistTables and SK for a new particle position for each walker in a batch
@@ -690,10 +681,12 @@ protected:
    * @param P_list the list of wrapped ParticleSet references in a walker batch
    * @param iat the particle that is moved on a sphere
    * @param new_positions new particle positions
+   * @param maybe_accept if false, the caller guarantees that the proposed move will not be accepted.
    */
   static void mw_computeNewPosDistTablesAndSK(const RefVector<ParticleSet>& P_list,
                                               Index_t iat,
-                                              const std::vector<SingleParticlePos_t>& new_positions);
+                                              const std::vector<SingleParticlePos_t>& new_positions,
+                                              bool maybe_accept = true);
 };
 
 } // namespace qmcplusplus

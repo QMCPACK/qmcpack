@@ -552,7 +552,7 @@ void J2OrbitalSoA<FT>::acceptMove(ParticleSet& P, int iat)
 {
   // get the old u, du, d2u
   const auto& d_table = P.getDistTable(my_table_ID_);
-  computeU3(P, iat, d_table.getDistRow(iat), old_u.data(), old_du.data(), old_d2u.data());
+  computeU3(P, iat, d_table.getOldDists(), old_u.data(), old_du.data(), old_d2u.data());
   if (UpdateMode == ORB_PBYP_RATIO)
   { //ratio-only during the move; need to compute derivatives
     const DistRowType& dist = d_table.getTemporalDists();
@@ -561,7 +561,7 @@ void J2OrbitalSoA<FT>::acceptMove(ParticleSet& P, int iat)
 
   valT cur_d2Uat(0);
   const auto& new_dr    = d_table.getTemporalDispls();
-  const auto& old_dr    = d_table.getDisplRow(iat);
+  const auto& old_dr    = d_table.getOldDispls();
   constexpr valT lapfac = OHMMS_DIM - RealType(1);
 #pragma omp simd reduction(+ : cur_d2Uat)
   for (int jat = 0; jat < N; jat++)
