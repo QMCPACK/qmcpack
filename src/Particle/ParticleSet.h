@@ -650,6 +650,7 @@ protected:
   {
     PS_newpos,
     PS_donePbyP,
+    PS_accept,
     PS_update
   };
 

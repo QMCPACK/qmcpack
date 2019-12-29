@@ -40,6 +40,7 @@ int ParticleSet::Walker_t::cuda_DataSize = 0;
 
 const TimerNameList_t<ParticleSet::PSTimers> ParticleSet::PSTimerNames = {{PS_newpos, "ParticleSet::computeNewPosDT"},
                                                                           {PS_donePbyP, "ParticleSet::donePbyP"},
+                                                                          {PS_accept, "ParticleSet::acceptMove"},
                                                                           {PS_update, "ParticleSet::update"}};
 
 ParticleSet::ParticleSet()
@@ -620,6 +621,7 @@ bool ParticleSet::makeMoveAllParticlesWithDrift(const Walker_t& awalker,
  */
 void ParticleSet::acceptMove(Index_t iat)
 {
+  ScopedTimer update_scope(myTimers[PS_accept]);
   if (iat == activePtcl)
   {
     //Update position + distance-table
@@ -675,6 +677,7 @@ void ParticleSet::loadWalker(Walker_t& awalker, bool pbyp)
 #endif
   if (pbyp)
   {
+    ScopedTimer update_scope(myTimers[PS_update]);
     // full tables must be ready
     for (int i = 0; i < DistTables.size(); i++)
       DistTables[i]->evaluate(*this);
