@@ -22,10 +22,17 @@ namespace qmcplusplus
 template<typename T, unsigned D, int SC>
 struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableData
 {
+  ///number of targets with padding
   int Ntargets_padded;
 
   ///actual memory for Displacements
   aligned_vector<RealType> memoryPool_displs_;
+
+  /// old distances
+  DistRowType old_r_;
+
+  /// old displacements
+  DisplRowType old_dr_;
 
   SoaDistanceTableAA(ParticleSet& target) : DTD_BConds<T, D, SC>(target.Lattice), DistanceTableData(target, target)
   {
@@ -59,11 +66,16 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableDat
       Displacements[i].attachReference(i, total_size, memoryPool_displs_.data() + compute_size(i));
     }
 
+    old_r_.resize(N_targets);
+    old_dr_.resize(N_targets);
     // The padding of Temp_r and Temp_dr is necessary for the memory copy in the update function
     // Temp_r is padded explicitly while Temp_dr is padded internally
     Temp_r.resize(Ntargets_padded);
     Temp_dr.resize(N_targets);
   }
+
+  const DistRowType& getOldDists(int iel) const { return old_r_; }
+  const DisplRowType& getOldDispls(int iel) const { return old_dr_; }
 
   inline void evaluate(ParticleSet& P)
   {
@@ -78,14 +90,32 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableDat
 
   inline void evaluate(ParticleSet& P, IndexType jat)
   {
-    DTD_BConds<T, D, SC>::computeDistances(P.R[jat], P.RSoA, Distances[jat].data(), Displacements[jat], 0, N_targets, jat);
-    Distances[jat][jat] = std::numeric_limits<T>::max(); //assign a big number
+    //DTD_BConds<T, D, SC>::computeDistances(P.R[jat], P.RSoA, Distances[jat].data(), Displacements[jat], 0, N_targets, jat);
+    //Distances[jat][jat] = std::numeric_limits<T>::max(); //assign a big number
   }
 
   ///evaluate the temporary pair relations
-  inline void move(const ParticleSet& P, const PosType& rnew)
+  inline void move(const ParticleSet& P, const PosType& rnew, const IndexType iat, bool prepare_old)
   {
     DTD_BConds<T, D, SC>::computeDistances(rnew, P.RSoA, Temp_r.data(), Temp_dr, 0, N_targets, P.activePtcl);
+
+    // set up old_r_ and old_dr_ for moves may get accepted.
+    if(prepare_old)
+    {
+      //copy row
+      std::copy_n(Distances[iat].data(), iat, old_r_.data());
+      for (int idim = 0; idim < D; ++idim)
+        std::copy_n(Displacements[iat].data(idim), iat, old_dr_.data(idim));
+      //cross point
+      old_r_[iat] = std::numeric_limits<T>::max(); //assign a big number
+      old_dr_(iat) = PosType(std::numeric_limits<T>::max()); //assign a big number
+      //copy column
+      for(size_t i = iat + 1; i < N_targets; ++i)
+      {
+        old_r_[i] = Distances[i][iat];
+        old_dr_(i) = - Displacements[i][iat];
+      }
+    }
   }
 
   int get_first_neighbor(IndexType iat, RealType& r, PosType& dr, bool newpos) const
@@ -125,18 +155,20 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableDat
    */
   inline void update(IndexType iat)
   {
-    if (iat == 0)
-      return;
     //update by a cache line
     const int nupdate = getAlignedSize<T>(iat);
+    //copy row
     std::copy_n(Temp_r.data(), nupdate, Distances[iat].data());
     for (int idim = 0; idim < D; ++idim)
       std::copy_n(Temp_dr.data(idim), nupdate, Displacements[iat].data(idim));
+    //copy column
+    for(size_t i = iat + 1; i < N_targets; ++i)
+    {
+      Distances[i][iat] = Temp_r[i];
+      Displacements[i](iat) = - Temp_dr[i];
+    }
   }
 
-  inline void storeCurrent(IndexType iat)
-  {
-  }
 };
 } // namespace qmcplusplus
 #endif

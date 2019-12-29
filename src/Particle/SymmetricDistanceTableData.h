@@ -137,7 +137,7 @@ struct SymmetricDTD : public DTD_BConds<T, D, SC>, public DistanceTableData
   }
 
   ///evaluate the temporary pair relations
-  inline void move(const ParticleSet& P, const PosType& rnew)
+  inline void move(const ParticleSet& P, const PosType& rnew, const IndexType iat, bool prepare_old)
   {
     for (int iat = 0; iat < N_sources; ++iat)
     {

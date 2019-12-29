@@ -255,7 +255,7 @@ public:
    *
    * if this->myName == psrc.getName(), AA type. Otherwise, AB type.
    */
-  int addTable(const ParticleSet& psrc, int dt_type, bool need_full_table_loadWalker = false);
+  int addTable(const ParticleSet& psrc, int dt_type);
 
   /** get a distance table by table_ID
    */
@@ -322,7 +322,7 @@ public:
    * Update activePtcl index and activePos position (R[iat]+displ) for a proposed move.
    * Evaluate the related distance table data DistanceTableData::Temp.
    */
-  void makeMove(Index_t iat, const SingleParticlePos_t& displ);
+  void makeMove(Index_t iat, const SingleParticlePos_t& displ, bool maybe_accept = true);
   /// makeMove, but now includes an update to the spin variable
   void makeMoveWithSpin(Index_t iat, const SingleParticlePos_t& displ, const Scalar_t& sdispl);
 
@@ -682,7 +682,7 @@ protected:
    * @param iat the particle that is moved on a sphere
    * @param newpos a new particle position
    */
-  void computeNewPosDistTablesAndSK(Index_t iat, const SingleParticlePos_t& newpos);
+  void computeNewPosDistTablesAndSK(Index_t iat, const SingleParticlePos_t& newpos, bool maybe_accept = true);
 
 
   /** compute temporal DistTables and SK for a new particle position for each walker in a batch
@@ -693,7 +693,8 @@ protected:
    */
   static void mw_computeNewPosDistTablesAndSK(const RefVector<ParticleSet>& P_list,
                                               Index_t iat,
-                                              const std::vector<SingleParticlePos_t>& new_positions);
+                                              const std::vector<SingleParticlePos_t>& new_positions,
+                                              bool maybe_accept = true);
 };
 
 } // namespace qmcplusplus

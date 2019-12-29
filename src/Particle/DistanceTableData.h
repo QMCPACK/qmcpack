@@ -178,9 +178,6 @@ protected:
 
   /** temp_dr */
   DisplRowType Temp_dr;
-
-  /** true, if a full table is needed at loadWalker */
-  bool need_full_table_loadWalker_;
   /*@}*/
 
   ///name of the table
@@ -189,15 +186,11 @@ protected:
 public:
   ///constructor using source and target ParticleSet
   DistanceTableData(const ParticleSet& source, const ParticleSet& target)
-      : Origin(&source), N_sources(0), N_targets(0), N_walkers(0), need_full_table_loadWalker_(false)
+      : Origin(&source), N_sources(0), N_targets(0), N_walkers(0)
   {}
 
   ///virutal destructor
   virtual ~DistanceTableData() {}
-
-  ///return true if full a full table is needed at loadWalker
-  bool isFullTableNeededAtLoadWalker() const { return need_full_table_loadWalker_; }
-  void setFullTableNeededAtLoadWalker(bool is_needed) { need_full_table_loadWalker_ = is_needed; }
 
   ///return the name of table
   inline const std::string& getName() const { return Name; }
@@ -289,6 +282,9 @@ public:
   const DistRowType& getDistRow(int iel) const { return Distances[iel]; }
   const DisplRowType& getDisplRow(int iel) const { return Displacements[iel]; }
 
+  virtual const DistRowType& getOldDists(int iel) const { std::cout << "wrong code" << std::endl; }
+  virtual const DisplRowType& getOldDispls(int iel) const { std::cout << "wrong code" << std::endl; }
+
   const DistRowType& getTemporalDists() const { return Temp_r; }
   const DisplRowType& getTemporalDispls() const { return Temp_dr; }
 
@@ -306,7 +302,7 @@ public:
   /** evaluate the temporary pair relations when a move is proposed
    * Ye: This is used by makeMove. makeMove must be paired with setActive.
    */
-  virtual void move(const ParticleSet& P, const PosType& rnew) = 0;
+  virtual void move(const ParticleSet& P, const PosType& rnew, const IndexType = 0, bool prepare_old = false) = 0;
 
   /** update the distance table by the pair relations if a move is accepted
    * Ye: plan to have two modes controled by an extra argument or two functions (updateRow?).
@@ -314,8 +310,6 @@ public:
    * Fast mode used during PbyP moves, only the row is updated in AA.
    */
   virtual void update(IndexType jat) = 0;
-
-  virtual void storeCurrent(IndexType jat) { }
 
   /** refresh the distance table based on the current value.
    * Ye: this operation overwrites the distance table by the current_ values.

@@ -316,6 +316,7 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
 
   //Need to set up temporary data for this configuration in trial wavefunction.  Needed for ratios.
   double logpsi = psi.evaluateLog(elec);
+  REQUIRE(logpsi == Approx(5.1497823982));
 
   double Value1(0.0);
 #ifdef ENABLE_SOA

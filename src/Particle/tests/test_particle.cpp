@@ -40,8 +40,8 @@ TEST_CASE("ParticleSet distance table management", "[particle]")
 
   const int ii_table_id = ions.addTable(ions, DT_SOA);
   const int ie_table_id = ions.addTable(elecs, DT_SOA);
-  const int ei_table_id = elecs.addTable(ions, DT_SOA, true);
-  const int ee_table_id = elecs.addTable(elecs, DT_SOA, false);
+  const int ei_table_id = elecs.addTable(ions, DT_SOA);
+  const int ee_table_id = elecs.addTable(elecs, DT_SOA);
 
   REQUIRE(ii_table_id == 0);
   REQUIRE(ie_table_id == 1);
@@ -51,8 +51,8 @@ TEST_CASE("ParticleSet distance table management", "[particle]")
   // second query
   const int ii_table_id2 = ions.addTable(ions, DT_SOA);
   const int ie_table_id2 = ions.addTable(elecs, DT_SOA);
-  const int ei_table_id2 = elecs.addTable(ions, DT_SOA, false);
-  const int ee_table_id2 = elecs.addTable(elecs, DT_SOA, true);
+  const int ei_table_id2 = elecs.addTable(ions, DT_SOA);
+  const int ee_table_id2 = elecs.addTable(elecs, DT_SOA);
 
   REQUIRE(ii_table_id2 == 0);
   REQUIRE(ie_table_id2 == 1);
@@ -67,8 +67,6 @@ TEST_CASE("ParticleSet distance table management", "[particle]")
   ParticleSet elecs_copy(elecs);
   REQUIRE(elecs_copy.getDistTable(ei_table_id2).origin().getName() == "ions");
   REQUIRE(elecs_copy.getDistTable(ee_table_id2).origin().getName() == "electrons");
-  REQUIRE(elecs_copy.getDistTable(ei_table_id2).isFullTableNeededAtLoadWalker() == true);
-  REQUIRE(elecs_copy.getDistTable(ee_table_id2).isFullTableNeededAtLoadWalker() == true);
 }
 
 TEST_CASE("symmetric_distance_table OpenBC", "[particle]")
