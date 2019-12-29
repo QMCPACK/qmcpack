@@ -30,6 +30,7 @@ using std::string;
 
 namespace qmcplusplus
 {
+#if !defined(QMC_CUDA)
 TEST_CASE("Hybridrep SPO from HDF diamond_1x1x1", "[wavefunction]")
 {
   Communicate* c;
@@ -399,5 +400,6 @@ TEST_CASE("Hybridrep SPO from HDF diamond_2x1x1", "[wavefunction]")
   REQUIRE(std::imag((*d2psi_v_list[1])[1]) == Approx(-2.4919104576));
 #endif
 }
+#endif
 
 } // namespace qmcplusplus
