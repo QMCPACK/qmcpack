@@ -160,8 +160,11 @@ int main(int argc, char** argv)
       els_aos.L=czero;
       J_aos.evaluateLogAndStore(els_aos,els_aos.G,els_aos.L);
 
-      cout << "Check values " << J.LogValue << " " << els.G[0] << " " << els.L[0] << endl;
-      cout << "evaluateLog::V Error = " << std::real(J.LogValue-J_aos.LogValue)/nels<< endl;
+      #pragma omp critical
+      {
+        cout << "Check values " << J.LogValue << " " << els.G[0] << " " << els.L[0] << endl;
+        cout << "evaluateLog::V Error = " << std::real(J.LogValue-J_aos.LogValue)/nels<< endl;
+      }
       {
         double g_err=0.0;
         for(int iel=0; iel<nels; ++iel)
@@ -170,6 +173,7 @@ int main(int argc, char** argv)
           RealType d=sqrt(dot(dr,dr));
           g_err += d;
         }
+        #pragma omp critical
         cout << "evaluateLog::G Error = " << g_err/nels << endl;
       }
       {
@@ -178,6 +182,7 @@ int main(int argc, char** argv)
         {
           l_err += abs(els.L[iel]-els_aos.L[iel]);
         }
+        #pragma omp critical
         cout << "evaluateLog::L Error = " << l_err/nels << endl;
       }
 
@@ -233,10 +238,13 @@ int main(int argc, char** argv)
           els_aos.rejectMove(iel);
         }
       }
-      cout << "Accepted " << naccepted << "/" << nels << endl;
-      cout << "evalGrad::G      Error = " << g_eval/nels << endl;
-      cout << "ratioGrad::G     Error = " << g_ratio/nels << endl;
-      cout << "ratioGrad::Ratio Error = " << r_ratio/nels << endl;
+      #pragma omp critical
+      {
+        cout << "Accepted " << naccepted << "/" << nels << endl;
+        cout << "evalGrad::G      Error = " << g_eval/nels << endl;
+        cout << "ratioGrad::G     Error = " << g_ratio/nels << endl;
+        cout << "ratioGrad::Ratio Error = " << r_ratio/nels << endl;
+      }
 
       //nothing to do with J2 but needs for general cases
       els.donePbyP();
@@ -250,6 +258,11 @@ int main(int argc, char** argv)
       els_aos.L=czero;
       J_aos.evaluateGL(els_aos);
 
+      #pragma omp critical
+      {
+        cout << "Check values " << J.LogValue << " " << els.G[0] << " " << els.L[0] << endl;
+        cout << "evaluateGL::V Error = " << std::real(J.LogValue-J_aos.LogValue)/nels<< endl;
+      }
       {
         double g_err=0.0;
         for(int iel=0; iel<nels; ++iel)
@@ -258,6 +271,7 @@ int main(int argc, char** argv)
           RealType d=sqrt(dot(dr,dr));
           g_err += d;
         }
+        #pragma omp critical
         cout << "evaluteGL::G Error = " << g_err/nels << endl;
       }
       {
@@ -266,6 +280,7 @@ int main(int argc, char** argv)
         {
           l_err += abs(els.L[iel]-els_aos.L[iel]);
         }
+        #pragma omp critical
         cout << "evaluteGL::L Error = " << l_err/nels << endl;
       }
 
@@ -287,7 +302,8 @@ int main(int argc, char** argv)
           r_ratio += abs(r_soa/r_aos-1);
         }
       }
-    cout << "ratio with SphereMove  Error = " << r_ratio/(nels*nknots) << endl;
+      #pragma omp critical
+      cout << "ratio with SphereMove  Error = " << r_ratio/(nels*nknots) << endl;
     }
   } //end of omp parallel
 

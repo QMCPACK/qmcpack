@@ -131,30 +131,22 @@ int main(int argc, char** argv)
   //SoA check symmetry
   double sym_err=0.0;
   double sym_all_err=0.0;
-  double sym_disp_err=0.0;
-  double sym_disp_all_err=0.0;
   int nn=0;
   for(int iel=0; iel<nels; ++iel)
     for(int jel=iel+1; jel<nels; ++jel)
     {
       RealType dref=d_ee_aos.r(nn);
-      RealType dsym=std::abs(d_ee.Distances[jel][iel]-d_ee.Distances[iel][jel]);
-      PosType dr= d_ee.Displacements[jel][iel]+d_ee.Displacements[iel][jel];
-      RealType d2=sqrt(dot(dr,dr));
+      RealType dsym=std::abs(d_ee.getDistances()[jel][iel]-d_ee.getDistances()[iel][jel]);
       sym_all_err += dsym;
-      sym_disp_all_err+=d2;
       if(dref<Rsim)
       {
         sym_err += dsym;
-        sym_disp_err+=d2;
       }
       ++nn;
     }
   cout << "---------------------------------" << endl;
   cout << "AA SoA(upper) - SoA(lower) (ALL) distances     = " << sym_all_err/nn << endl;
-  cout << "AA SoA(upper) + SoA(lower) (ALL) displacements = " << sym_disp_all_err/nn << endl;
   cout << "AA SoA(upper) - SoA(lower) distances     = " << sym_err/nn << endl;
-  cout << "AA SoA(upper) + SoA(lower) displacements = " << sym_disp_err/nn << endl;
   
   ParticlePos_t delta(nels);
   
@@ -221,8 +213,8 @@ int main(int argc, char** argv)
       for(int jel=iel+1; jel<nels; ++jel)
       {
         RealType dref=d_ee_aos.r(nn);
-        RealType d= std::abs(d_ee.Distances[jel][iel]-dref);
-        PosType dr= (d_ee.Displacements[jel][iel]+d_ee_aos.dr(nn));
+        RealType d= std::abs(d_ee.getDistances()[jel][iel]-dref);
+        PosType dr= (d_ee.getDisplacements()[jel][iel]+d_ee_aos.dr(nn));
         RealType d2=sqrt(dot(dr,dr));
         dist_all_err+=d;
         disp_all_err += d2;
@@ -251,8 +243,8 @@ int main(int argc, char** argv)
       for(int j=0; j<nels; ++j)
       {
         RealType dref=d_ie_aos.r(nn);
-        RealType d= std::abs(d_ie.Distances[j][i]-dref);
-        PosType dr= (d_ie.Displacements[j][i]+d_ie_aos.dr(nn));
+        RealType d= std::abs(d_ie.getDistances()[j][i]-dref);
+        PosType dr= (d_ie.getDisplacements()[j][i]+d_ie_aos.dr(nn));
         RealType d2=sqrt(dot(dr,dr));
         dist_all_err += d;
         disp_all_err += d2;

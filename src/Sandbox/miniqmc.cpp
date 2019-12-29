@@ -288,8 +288,8 @@ int main(int argc, char** argv)
       clock_mc.restart();
       for(int jel=0; jel<nels; ++jel)
       {
-        const auto* restrict dist = d_ie.Distances[jel];
-        const auto& displ = d_ie.Displacements[jel];
+        const auto& dist = d_ie.getDistRow(jel);
+        const auto& displ = d_ie.getDisplRow(jel);
         for(int iat=0; iat<nions; ++iat)
           if(dist[iat]<Rmax)
           {

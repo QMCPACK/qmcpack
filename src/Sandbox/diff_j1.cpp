@@ -273,7 +273,7 @@ int main(int argc, char** argv)
       int nsphere=0;
       for(int jel=0; jel<nels; ++jel)
       {
-        const auto* restrict dist = d_ie.Distances[jel];
+        const auto& dist = d_ie.getDistRow(jel);
         for(int iat=0; iat<nions; ++iat)
           if(dist[iat]<Rmax)
           {
