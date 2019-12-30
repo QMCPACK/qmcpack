@@ -162,8 +162,11 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableDat
     for(size_t i = iat + 1; i < N_targets; ++i)
     {
       Distances[i][iat] = Temp_r[i];
-      Displacements[i](iat) = - Temp_dr[i];
+      //Displacements[i](iat) = - Temp_dr[i];
     }
+    for (int idim = 0; idim < D; ++idim)
+      for(size_t i = iat + 1; i < N_targets; ++i)
+        Displacements[i].data(idim)[iat] = - Temp_dr.data(idim)[i];
   }
 
 };
