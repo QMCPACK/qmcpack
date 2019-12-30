@@ -180,17 +180,29 @@ protected:
   DisplRowType Temp_dr;
   /*@}*/
 
+  /** whether full table needs to be ready at anytime or not
+   * Optimization can be implemented during forward PbyP move when the full table is not needed all the time.
+   * DT consumers should know if full table is needed or not and request via addTable.
+   */
+  bool need_full_table_;
+
   ///name of the table
   std::string Name;
 
 public:
   ///constructor using source and target ParticleSet
   DistanceTableData(const ParticleSet& source, const ParticleSet& target)
-      : Origin(&source), N_sources(0), N_targets(0), N_walkers(0)
+      : Origin(&source), N_sources(0), N_targets(0), N_walkers(0), need_full_table_(false)
   {}
 
   ///virutal destructor
   virtual ~DistanceTableData() {}
+
+  ///get need_full_table_
+  inline bool getFullTableNeeds() const { return need_full_table_; }
+
+  ///set need_full_table_
+  inline void setFullTableNeeds(bool is_needed) { need_full_table_ = is_needed; }
 
   ///return the name of table
   inline const std::string& getName() const { return Name; }

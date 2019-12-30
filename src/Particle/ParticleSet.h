@@ -251,11 +251,11 @@ public:
   /** add a distance table
    * @param psrc source particle set
    * @param dt_type distance table type
-   * @param need_full_table_loadWalker if ture, fully computed in loadWalker()
+   * @param need_full_table if ture, DT fully computed in loadWalker() and maintained up-to-date during p-by-p moving
    *
    * if this->myName == psrc.getName(), AA type. Otherwise, AB type.
    */
-  int addTable(const ParticleSet& psrc, int dt_type);
+  int addTable(const ParticleSet& psrc, int dt_type, bool need_full_table = false);
 
   /** get a distance table by table_ID
    */

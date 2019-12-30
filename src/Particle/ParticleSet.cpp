@@ -84,7 +84,7 @@ ParticleSet::ParticleSet(const ParticleSet& p)
   Collectables        = p.Collectables;
   //construct the distance tables with the same order
   for (int i = 0; i < p.DistTables.size(); ++i)
-    addTable(p.DistTables[i]->origin(), p.DistTables[i]->DTType);
+    addTable(p.DistTables[i]->origin(), p.DistTables[i]->DTType, p.DistTables[i]->getFullTableNeeds());
   if (p.SK)
   {
     LRBox = p.LRBox;               //copy LRBox
@@ -332,7 +332,7 @@ void ParticleSet::reset() { app_log() << "<<<< going to set properties >>>> " <<
 ///read the particleset
 bool ParticleSet::put(xmlNodePtr cur) { return true; }
 
-int ParticleSet::addTable(const ParticleSet& psrc, int dt_type)
+int ParticleSet::addTable(const ParticleSet& psrc, int dt_type, bool need_full_table)
 {
   if (myName == "none" || psrc.getName() == "none")
     APP_ABORT("ParticleSet::addTable needs proper names for both source and target particle sets.");
@@ -360,6 +360,9 @@ int ParticleSet::addTable(const ParticleSet& psrc, int dt_type)
     tid = (*tit).second;
     app_debug() << "  ... ParticleSet::addTable Reuse Table #" << tid << " " << DistTables[tid]->getName() << std::endl;
   }
+
+  DistTables[tid]->setFullTableNeeds(DistTables[tid]->getFullTableNeeds() || need_full_table);
+
   app_log().flush();
   return tid;
 }
@@ -678,8 +681,10 @@ void ParticleSet::loadWalker(Walker_t& awalker, bool pbyp)
   if (pbyp)
   {
     ScopedTimer update_scope(myTimers[PS_update]);
-    // full tables must be ready
+
+    // in certain cases, full tables must be ready
     for (int i = 0; i < DistTables.size(); i++)
+      if (DistTables[i]->DTType == DT_AOS || DistTables[i]->getFullTableNeeds())
       DistTables[i]->evaluate(*this);
     //computed so that other objects can use them, e.g., kSpaceJastrow
     if (SK && SK->DoUpdate)

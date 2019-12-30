@@ -55,7 +55,7 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableDat
     N_sources = N_targets = n;
 
     // initialize memory containers and views
-    Ntargets_padded                             = getAlignedSize<T>(n);
+    Ntargets_padded         = getAlignedSize<T>(n);
     const size_t total_size = compute_size(N_targets);
     memoryPool_displs_.resize(total_size * D);
     Distances.resize(N_targets);
@@ -83,7 +83,8 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableDat
     //P.RSoA.copyIn(P.R);
     for (int iat = 0; iat < N_targets; ++iat)
     {
-      DTD_BConds<T, D, SC>::computeDistances(P.R[iat], P.RSoA, Distances[iat].data(), Displacements[iat], 0, N_targets, iat);
+      DTD_BConds<T, D, SC>::computeDistances(P.R[iat], P.RSoA, Distances[iat].data(), Displacements[iat], 0, N_targets,
+                                             iat);
       Distances[iat][iat] = BigR; //assign big distance
     }
   }
@@ -93,16 +94,21 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableDat
   {
     DTD_BConds<T, D, SC>::computeDistances(rnew, P.RSoA, Temp_r.data(), Temp_dr, 0, N_targets, P.activePtcl);
     // set up old_r_ and old_dr_ for moves may get accepted.
-    if(prepare_old)
+    if (prepare_old)
     {
       //recompute from scratch
       DTD_BConds<T, D, SC>::computeDistances(P.R[iat], P.RSoA, old_r_.data(), old_dr_, 0, N_targets, iat);
-      //cross point
       old_r_[iat] = std::numeric_limits<T>::max(); //assign a big number
-      //copy row
-      std::copy_n(old_r_.data(), iat, Distances[iat].data());
-      for (int idim = 0; idim < D; ++idim)
-        std::copy_n(old_dr_.data(idim), iat, Displacements[iat].data(idim));
+
+      // If the full table is not ready all the time, overwrite the current value.
+      // If this step is missing, DT values can be undefined in case a move is rejected.
+      if (!need_full_table_)
+      {
+        //copy row
+        std::copy_n(old_r_.data(), iat, Distances[iat].data());
+        for (int idim = 0; idim < D; ++idim)
+          std::copy_n(old_dr_.data(idim), iat, Displacements[iat].data(idim));
+      }
     }
   }
 
@@ -149,17 +155,17 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableDat
     std::copy_n(Temp_r.data(), nupdate, Distances[iat].data());
     for (int idim = 0; idim < D; ++idim)
       std::copy_n(Temp_dr.data(idim), nupdate, Displacements[iat].data(idim));
-    if (!forward)
+    // This is an optimization to reduce update >iat rows during p-by-p forward move when no consumer needs full table.
+    if (need_full_table_ || !forward)
     {
       //copy column
-      for(size_t i = iat + 1; i < N_targets; ++i)
+      for (size_t i = iat + 1; i < N_targets; ++i)
       {
-        Distances[i][iat] = Temp_r[i];
-        Displacements[i](iat) = - Temp_dr[i];
+        Distances[i][iat]     = Temp_r[i];
+        Displacements[i](iat) = -Temp_dr[i];
       }
     }
   }
-
 };
 } // namespace qmcplusplus
 #endif

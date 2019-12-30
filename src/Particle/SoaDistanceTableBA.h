@@ -66,7 +66,8 @@ struct SoaDistanceTableBA : public DTD_BConds<T, D, SC>, public DistanceTableDat
 
       //be aware of the sign of Displacement
       for (int iat = 0; iat < N_targets; ++iat)
-        DTD_BConds<T, D, SC>::computeDistances(P.R[iat], Origin->RSoA, Distances[iat].data(), Displacements[iat], first, last);
+        DTD_BConds<T, D, SC>::computeDistances(P.R[iat], Origin->RSoA, Distances[iat].data(), Displacements[iat], first,
+                                               last);
     }
   }
 
@@ -74,6 +75,10 @@ struct SoaDistanceTableBA : public DTD_BConds<T, D, SC>, public DistanceTableDat
   inline void move(const ParticleSet& P, const PosType& rnew, const IndexType iat, bool prepare_old)
   {
     DTD_BConds<T, D, SC>::computeDistances(rnew, Origin->RSoA, Temp_r.data(), Temp_dr, 0, N_sources);
+    // If the full table is not ready all the time, overwrite the current value.
+    // If this step is missing, DT values can be undefined in case a move is rejected.
+    if (!need_full_table_)
+      DTD_BConds<T, D, SC>::computeDistances(P.R[iat], Origin->RSoA, Distances[iat].data(), Displacements[iat], 0, N_sources);
   }
 
   ///update the stripe for jat-th particle
