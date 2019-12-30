@@ -134,7 +134,7 @@ void Communicate::finalize()
 
 void Communicate::cleanupMessage(void*) {}
 
-void Communicate::abort() const { comm.abort(); }
+void Communicate::abort() const { comm.abort(1); }
 
 void Communicate::barrier() const { comm.barrier(); }
 
