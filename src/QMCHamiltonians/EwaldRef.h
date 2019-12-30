@@ -35,7 +35,7 @@
 
 namespace qmcplusplus
 {
-namespace ewardref
+namespace ewaldref
 {
 /// Reference Ewald implemented for 3D only
 enum
@@ -161,6 +161,7 @@ public:
   }
 };
 
+/// Functor implements r independent part of KspaceEwaldTerm
 class KspaceEwaldTermForTile
 {
 private:
@@ -264,6 +265,8 @@ real_t gridSum(T& function, bool zero = true, real_t tol = 1e-11)
   return v;
 }
 
+/** vector check of individual tolerance
+ */
 template<typename T>
 bool isLargerThanTol(const aligned_vector<T>& vals, const aligned_vector<T>& tols)
 {
@@ -273,17 +276,28 @@ bool isLargerThanTol(const aligned_vector<T>& vals, const aligned_vector<T>& tol
   return false;
 }
 
+/** Similar to gridSum, perform a sum over successively larger cubic integer grid
+ *  @param R Arary of particle positions
+ *  @param Q Arary of particle charges
+ *  @param row_first the first row particle index of a given tile
+ *  @param row_last the last row particle index + 1 of a given tile
+ *  @param col_first the first column particle index of a given tile
+ *  @param col_last the last column particle index + 1 of a given tile
+ *  @param b k-space cell axes.
+ *  @param kconst The constant 1/(4\kappa^2) in Drummond 2008 formula 7
+ *  @param kfactor The constant 4\pi/\Omega in Drummond 2008 formula 7
+ *  @param tol: Tolerance for the Ewald pair interaction in Ha.
+ */
 real_t gridSumTile(const PosArray& R,
                    const ChargeArray& Q,
-                   size_t row_first,
-                   size_t row_last,
-                   size_t col_first,
-                   size_t col_last,
+                   const size_t row_first,
+                   const size_t row_last,
+                   const size_t col_first,
+                   const size_t col_last,
                    const RealMat& b,
-                   real_t kconst,
-                   real_t kfactor,
-                   bool zero  = true,
-                   real_t tol = 1e-11)
+                   const real_t kconst,
+                   const real_t kfactor,
+                   const real_t tol = 1e-11)
 {
   size_t count(0);
   for (size_t i = row_first; i < row_last; ++i)
@@ -306,14 +320,6 @@ real_t gridSumTile(const PosArray& R,
       real_t qq    = Q[i] * Q[j];
       qqs[icount]  = qq;
       tols[icount] = tol / qq;
-      // Add the value at the origin, if requested.
-      if (zero)
-      {
-        RealVec r(R[i] - R[j]);
-        KspaceEwaldTerm kfunc(r, b, kconst, kfactor);
-        IntVec iv(0);
-        v += qq * kfunc(iv);
-      }
       icount++;
     }
 
@@ -332,7 +338,7 @@ real_t gridSumTile(const PosArray& R,
     auto* restrict col_cos = col_phase_cos.data();
     auto* restrict col_sin = col_phase_sin.data();
 
-    // Surface shell contribution.
+    // Surface shell contribution. The i,j,k loop can be threaded if the outer level threading is replaced with MPI.
     // Sum over new surface planes perpendicular to the x direction.
     for (int_t i : {-indmax - 1, indmax + 1})
       for (int_t j = -indmax; j < indmax + 1; ++j)
@@ -524,14 +530,24 @@ real_t ewaldSum(const RealVec& r, const RealMat& a, real_t tol = 1e-10)
   return es;
 }
 
+/** Similar to ewaldSum, compute the Ewald interaction of particle pairs in a tile
+ *  @param a Real-space cell axes.
+ *  @param R Arary of particle positions
+ *  @param Q Arary of particle charges
+ *  @param row_first the first row particle index of a given tile
+ *  @param row_last the last row particle index + 1 of a given tile
+ *  @param col_first the first column particle index of a given tile
+ *  @param col_last the last column particle index + 1 of a given tile
+ *  @param tol: Tolerance for the Ewald pair interaction in Ha.
+ */
 real_t ewaldSumTile(const RealMat& a,
                     const PosArray& R,
                     const ChargeArray& Q,
-                    size_t row_first,
-                    size_t row_last,
-                    size_t col_first,
-                    size_t col_last,
-                    real_t tol = 1e-10)
+                    const size_t row_first,
+                    const size_t row_last,
+                    const size_t col_first,
+                    const size_t col_last,
+                    const real_t tol = 1e-10)
 {
   // Real-space cell volume
   const real_t volume = std::abs(det(a));
@@ -565,7 +581,7 @@ real_t ewaldSumTile(const RealMat& a,
       es += qq * (cval + rval);
     }
 
-  es += gridSumTile(R, Q, row_first, row_last, col_first, col_last, b, kconst, kfactor, false, tol);
+  es += gridSumTile(R, Q, row_first, row_last, col_first, col_last, b, kconst, kfactor, tol);
   return es;
 }
 
@@ -656,6 +672,14 @@ real_t ewaldEnergy(const RealMat& a, const PosArray& R, const ChargeArray& Q, re
         n_tiles       = max_n_tile_1d * (max_n_tile_1d + 1) / 2;
       } while (n_tiles > n_threads);
     }
+
+    /* The computation of the lower triangle of N^2 matrix ( actually N(N-1) pairs) are sliced into square tiles of tile_size^2.
+     * Larger tiles are preferred for maximizing data reuse but a limited number of tiles are bad for parallelization.
+     * The above code searches for the largest possible number of tiles to fulfill parallel execution unit
+     * and also make tile_size as large as possible.
+     * Currently tiles are distributed over threads. If needed, we can replace threads with MPI ranks at this level.
+     * Distributing tiles in the lower triangle may not be the optimal strategy for load balancing. It can be improved if needed.
+     */
     std::vector<TinyVector<size_t, 4>> work_list;
     work_list.reserve(n_tiles);
     for (size_t i = 1; i < N; i += tile_size)
@@ -672,7 +696,7 @@ real_t ewaldEnergy(const RealMat& a, const PosArray& R, const ChargeArray& Q, re
   return ve;
 }
 
-} // namespace ewardref
+} // namespace ewaldref
 } // namespace qmcplusplus
 
 #endif
