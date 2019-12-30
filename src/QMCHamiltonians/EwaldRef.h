@@ -388,33 +388,21 @@ real_t ewaldEnergy(RealMat a,PosArray R,ChargeArray Q,real_t tol=1e-10)
     ve += Q[i]*Q[i]*vm/2;
 
   // Sum the interaction terms for all particle pairs
-  if(false)
-  {
-    for(size_t i=0; i<N; ++i)
-      for(size_t j=0; j<i; ++j)
-      {
-        real_t qq = Q[i]*Q[j];
-        ve += qq*ewaldSum(R[i]-R[j],a,tol/qq);
-      }
-  }
-  else
-  {
-    int_t Npairs = (N*(N-1))/2;
+  int_t Npairs = (N*(N-1))/2;
 
-    std::vector<real_t>  qq(Npairs);
-    for(size_t i=0,n=0; i<N; ++i)
-      for(size_t j=0; j<i; ++j,++n)
-        qq[n] = Q[i]*Q[j];
+  std::vector<real_t>  qq(Npairs);
+  for(size_t i=0,n=0; i<N; ++i)
+    for(size_t j=0; j<i; ++j,++n)
+      qq[n] = Q[i]*Q[j];
 
-    std::vector<RealVec> rr(Npairs);
-    for(size_t i=0,n=0; i<N; ++i)
-      for(size_t j=0; j<i; ++j,++n)
-        rr[n] = R[i]-R[j];
+  std::vector<RealVec> rr(Npairs);
+  for(size_t i=0,n=0; i<N; ++i)
+    for(size_t j=0; j<i; ++j,++n)
+      rr[n] = R[i]-R[j];
 
-    #pragma omp parallel for reduction(+ : ve)
-    for(size_t n=0; n<Npairs; ++n)
-      ve += qq[n]*ewaldSum(rr[n],a,tol/qq[n]);
-  }
+#pragma omp parallel for reduction(+ : ve)
+  for(size_t n=0; n<Npairs; ++n)
+    ve += qq[n]*ewaldSum(rr[n],a,tol/qq[n]);
 
   return ve;
 }
