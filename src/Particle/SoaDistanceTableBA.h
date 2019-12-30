@@ -77,7 +77,7 @@ struct SoaDistanceTableBA : public DTD_BConds<T, D, SC>, public DistanceTableDat
   }
 
   ///update the stripe for jat-th particle
-  inline void update(IndexType iat)
+  inline void update(IndexType iat, bool forward)
   {
     std::copy_n(Temp_r.data(), N_sources, Distances[iat].data());
     for (int idim = 0; idim < D; ++idim)

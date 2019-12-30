@@ -92,26 +92,17 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableDat
   inline void move(const ParticleSet& P, const PosType& rnew, const IndexType iat, bool prepare_old)
   {
     DTD_BConds<T, D, SC>::computeDistances(rnew, P.RSoA, Temp_r.data(), Temp_dr, 0, N_targets, P.activePtcl);
-
     // set up old_r_ and old_dr_ for moves may get accepted.
     if(prepare_old)
     {
-      //copy row
-      std::copy_n(Distances[iat].data(), iat, old_r_.data());
-      for (int idim = 0; idim < D; ++idim)
-        std::copy_n(Displacements[iat].data(idim), iat, old_dr_.data(idim));
-      //recompute column
-      DTD_BConds<T, D, SC>::computeDistances(P.R[iat], P.RSoA, old_r_.data(), old_dr_, iat, N_targets, iat);
+      //recompute from scratch
+      DTD_BConds<T, D, SC>::computeDistances(P.R[iat], P.RSoA, old_r_.data(), old_dr_, 0, N_targets, iat);
       //cross point
       old_r_[iat] = std::numeric_limits<T>::max(); //assign a big number
-      /*
-      old_dr_(iat) = PosType(std::numeric_limits<T>::max()); //assign a big number
-      //copy column
-      for(size_t i = iat + 1; i < N_targets; ++i)
-      {
-        old_r_[i] = Distances[i][iat];
-        old_dr_(i) = - Displacements[i][iat];
-      }*/
+      //copy row
+      std::copy_n(old_r_.data(), iat, Distances[iat].data());
+      for (int idim = 0; idim < D; ++idim)
+        std::copy_n(old_dr_.data(idim), iat, Displacements[iat].data(idim));
     }
   }
 
@@ -150,7 +141,7 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableDat
    * only the [0,iat-1) columns need to save the new values.
    * The memory copy goes up to the padded size only for better performance.
    */
-  inline void update(IndexType iat)
+  inline void update(IndexType iat, bool forward)
   {
     //update by a cache line
     const int nupdate = getAlignedSize<T>(iat);
@@ -158,15 +149,15 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableDat
     std::copy_n(Temp_r.data(), nupdate, Distances[iat].data());
     for (int idim = 0; idim < D; ++idim)
       std::copy_n(Temp_dr.data(idim), nupdate, Displacements[iat].data(idim));
-    //copy column
-    for(size_t i = iat + 1; i < N_targets; ++i)
+    if (!forward)
     {
-      Distances[i][iat] = Temp_r[i];
-      //Displacements[i](iat) = - Temp_dr[i];
-    }
-    for (int idim = 0; idim < D; ++idim)
+      //copy column
       for(size_t i = iat + 1; i < N_targets; ++i)
-        Displacements[i].data(idim)[iat] = - Temp_dr.data(idim)[i];
+      {
+        Distances[i][iat] = Temp_r[i];
+        Displacements[i](iat) = - Temp_dr[i];
+      }
+    }
   }
 
 };

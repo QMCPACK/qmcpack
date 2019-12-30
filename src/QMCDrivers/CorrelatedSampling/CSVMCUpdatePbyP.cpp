@@ -75,7 +75,7 @@ void CSVMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
             for (int ipsi = 0; ipsi < nPsi; ipsi++)
               Psi1[ipsi]->acceptMove(W, iat);
 
-            W.acceptMove(iat);
+            W.acceptMove(iat, true);
             //Now we update ratioIJ.
             updateRatioMatrix(ratio, RatioIJ);
             computeSumRatio(RatioIJ, sumratio);

@@ -109,7 +109,7 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool re
         {
           ++nAcceptTemp;
           Psi.acceptMove(W, iat);
-          W.acceptMove(iat);
+          W.acceptMove(iat, true);
           rr_accepted += rr;
           gf_acc *= prob; //accumulate the ratio
         }

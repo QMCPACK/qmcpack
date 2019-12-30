@@ -180,7 +180,7 @@ void RMCUpdatePbyPWithDrift::advanceWalkersVMC()
         {
           ++nAcceptTemp;
           Psi.acceptMove(W, iat);
-          W.acceptMove(iat);
+          W.acceptMove(iat, true);
           rr_accepted += rr;
           gf_acc *= prob; //accumulate the ratio
         }
@@ -311,7 +311,7 @@ void RMCUpdatePbyPWithDrift::advanceWalkersRMC()
         {
           ++nAcceptTemp;
           Psi.acceptMove(W, iat);
-          W.acceptMove(iat);
+          W.acceptMove(iat, true);
           rr_accepted += rr;
           gf_acc *= prob; //accumulate the ratio
         }

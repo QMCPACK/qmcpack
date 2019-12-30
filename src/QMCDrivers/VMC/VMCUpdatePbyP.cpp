@@ -96,7 +96,7 @@ void VMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
           moved = true;
           ++nAccept;
           Psi.acceptMove(W, iat);
-          W.acceptMove(iat);
+          W.acceptMove(iat, true);
         }
         else
         {

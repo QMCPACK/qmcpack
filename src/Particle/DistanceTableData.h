@@ -331,9 +331,10 @@ public:
   virtual void move(const ParticleSet& P, const PosType& rnew, const IndexType iat = 0, bool prepare_old = true) = 0;
 
   /** update the distance table by the pair relations if a move is accepted
-   * upon accept a move, the full table should be up-to-date
+   * @param iat the particle with an accepted move
+   * @param forward If true, rows after iat will not be updated. If false, upon accept a move, the full table should be up-to-date
    */
-  virtual void update(IndexType jat) = 0;
+  virtual void update(IndexType jat, bool forward = false) = 0;
 
   /** build a compact list of a neighbor for the iat source
    * @param iat source particle id

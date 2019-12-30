@@ -192,7 +192,7 @@ struct AsymmetricDTD : public DTD_BConds<T, D, SC>, public DistanceTableData
     }
   }
 
-  inline void update(IndexType jat)
+  inline void update(IndexType jat, bool forward)
   {
     for (int iat = 0, loc = jat; iat < N_sources; iat++, loc += N_targets)
     {

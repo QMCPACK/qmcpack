@@ -375,7 +375,7 @@ public:
   /** accept the move
    *@param iat the index of the particle whose position and other attributes to be updated
    */
-  void acceptMove(Index_t iat);
+  void acceptMove(Index_t iat, bool forward = false);
   /// batched version of acceptMove
   static void flex_acceptMove(const RefVector<ParticleSet>& P_list, Index_t iat)
   {
