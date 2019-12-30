@@ -94,11 +94,11 @@ struct DistanceTableData
 {
   static constexpr unsigned DIM = OHMMS_DIM;
 
-  using IndexType       = QMCTraits::IndexType;
-  using RealType        = QMCTraits::RealType;
-  using PosType         = QMCTraits::PosType;
-  using DistRowType     = Vector<RealType, aligned_allocator<RealType>>;
-  using DisplRowType    = VectorSoaContainer<RealType, DIM>;
+  using IndexType    = QMCTraits::IndexType;
+  using RealType     = QMCTraits::RealType;
+  using PosType      = QMCTraits::PosType;
+  using DistRowType  = Vector<RealType, aligned_allocator<RealType>>;
+  using DisplRowType = VectorSoaContainer<RealType, DIM>;
 #ifndef ENABLE_SOA
   using IndexVectorType = aligned_vector<IndexType>;
   using TempDistType    = TempDisplacement<RealType, DIM>;
@@ -473,7 +473,6 @@ public:
 #endif
     }
   }
-
 };
 } // namespace qmcplusplus
 #endif

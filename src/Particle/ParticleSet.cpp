@@ -353,7 +353,8 @@ int ParticleSet::addTable(const ParticleSet& psrc, int dt_type, bool need_full_t
       DistTables.push_back(createDistanceTable(psrc, *this, dt_type_in_use, description));
     distTableDescriptions.push_back(description.str());
     myDistTableMap[psrc.getName()] = tid;
-    app_debug() << "  ... ParticleSet::addTable Create Table #" << tid << " " << DistTables[tid]->getName() << std::endl;
+    app_debug() << "  ... ParticleSet::addTable Create Table #" << tid << " " << DistTables[tid]->getName()
+                << std::endl;
   }
   else
   {
@@ -685,7 +686,7 @@ void ParticleSet::loadWalker(Walker_t& awalker, bool pbyp)
     // in certain cases, full tables must be ready
     for (int i = 0; i < DistTables.size(); i++)
       if (DistTables[i]->DTType == DT_AOS || DistTables[i]->getFullTableNeeds())
-      DistTables[i]->evaluate(*this);
+        DistTables[i]->evaluate(*this);
     //computed so that other objects can use them, e.g., kSpaceJastrow
     if (SK && SK->DoUpdate)
       SK->UpdateAllPart(*this);

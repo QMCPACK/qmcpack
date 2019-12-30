@@ -251,7 +251,7 @@ public:
   /** add a distance table
    * @param psrc source particle set
    * @param dt_type distance table type
-   * @param need_full_table if ture, DT fully computed in loadWalker() and maintained up-to-date during p-by-p moving
+   * @param need_full_table if ture, DT is fully computed in loadWalker() and maintained up-to-date during p-by-p moving
    *
    * if this->myName == psrc.getName(), AA type. Otherwise, AB type.
    */

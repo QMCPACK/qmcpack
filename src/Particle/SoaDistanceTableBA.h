@@ -78,7 +78,8 @@ struct SoaDistanceTableBA : public DTD_BConds<T, D, SC>, public DistanceTableDat
     // If the full table is not ready all the time, overwrite the current value.
     // If this step is missing, DT values can be undefined in case a move is rejected.
     if (!need_full_table_)
-      DTD_BConds<T, D, SC>::computeDistances(P.R[iat], Origin->RSoA, Distances[iat].data(), Displacements[iat], 0, N_sources);
+      DTD_BConds<T, D, SC>::computeDistances(P.R[iat], Origin->RSoA, Distances[iat].data(), Displacements[iat], 0,
+                                             N_sources);
   }
 
   ///update the stripe for jat-th particle
