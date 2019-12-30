@@ -100,15 +100,18 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableDat
       std::copy_n(Distances[iat].data(), iat, old_r_.data());
       for (int idim = 0; idim < D; ++idim)
         std::copy_n(Displacements[iat].data(idim), iat, old_dr_.data(idim));
+      //recompute column
+      DTD_BConds<T, D, SC>::computeDistances(P.R[iat], P.RSoA, old_r_.data(), old_dr_, iat, N_targets, iat);
       //cross point
       old_r_[iat] = std::numeric_limits<T>::max(); //assign a big number
+      /*
       old_dr_(iat) = PosType(std::numeric_limits<T>::max()); //assign a big number
       //copy column
       for(size_t i = iat + 1; i < N_targets; ++i)
       {
         old_r_[i] = Distances[i][iat];
         old_dr_(i) = - Displacements[i][iat];
-      }
+      }*/
     }
   }
 
