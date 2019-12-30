@@ -279,7 +279,7 @@ real_t madelungSum(RealMat a,real_t tol=1e-10)
   // k-space cell axes
   RealMat b       = 2*M_PI*transpose(inverse(a));
   // real space cutoff
-  real_t rconv  = 8*std::pow(3.*volume/(4*M_PI),1./3);
+  real_t rconv  = 2*M_PI;
   // k-space cutoff (kappa)
   real_t kconv  = 2*M_PI/rconv;
 
@@ -323,7 +323,7 @@ real_t ewaldSum(RealVec r,RealMat a,real_t tol=1e-10)
   // k-space cell axes
   RealMat b       = 2*M_PI*transpose(inverse(a));
   // real space cutoff
-  real_t rconv  = 8*std::pow(3.*volume/(4*M_PI),1./3);
+  real_t rconv  = 2*M_PI;
   // k-space cutoff (kappa)
   real_t kconv  = 2*M_PI/rconv;
 
