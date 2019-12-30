@@ -29,6 +29,7 @@
 #include "Configuration.h"
 #include "OhmmsPETE/TinyVector.h"
 #include "OhmmsPETE/Tensor.h"
+#include "Utilities/NewTimer.h"
 
 
 namespace qmcplusplus
@@ -364,6 +365,10 @@ real_t ewaldSum(RealVec r,RealMat a,real_t tol=1e-10)
  */
 real_t ewaldEnergy(RealMat a,PosArray R,ChargeArray Q,real_t tol=1e-10)
 {
+  // Timer for EwaldRef
+  NewTimer& EwaldTimer(*TimerManager.createTimer("EwaldRef"));
+  ScopedTimer totalEwaldTimer(&EwaldTimer);
+
   // Number of particles
   int_t N = R.size();
 
@@ -393,6 +398,6 @@ real_t ewaldEnergy(RealMat a,PosArray R,ChargeArray Q,real_t tol=1e-10)
   return ve;
 }
 
-}
+} // namespace qmcplusplus
 
 #endif
