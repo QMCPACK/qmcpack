@@ -171,6 +171,7 @@ public:
     real_t v(0);
     size_t icount(0);
     for (size_t i = row_first; i < row_last; ++i)
+      #pragma omp simd
       for (size_t j = col_first; j < std::min(col_last, i); ++j)
       {
         RealVec r(R[i] - R[j]);
@@ -188,6 +189,7 @@ public:
     size_t icount(0);
     RealVec Rv = dot(i, a);
     for (size_t i = row_first; i < row_last; ++i)
+      #pragma omp simd
       for (size_t j = col_first; j < std::min(col_last, i); ++j)
       {
         RealVec r(Rv - R[i] + R[j]);
