@@ -25,6 +25,7 @@
 #define EWALD_REF_H
 
 #include <cmath>
+#include <numeric>
 
 #include "Configuration.h"
 #include "OhmmsPETE/TinyVector.h"
@@ -644,7 +645,7 @@ real_t ewaldSumTile(const RealMat& a,
   }
   { // Compute the constant term
     const real_t cval = -2 * M_PI * kconv * kconv / volume;
-    es += cval * accumulate(qqs.begin(), qqs.end(), real_t(0));
+    es += cval * std::accumulate(qqs.begin(), qqs.end(), real_t(0));
   }
 
   return es;
