@@ -161,10 +161,28 @@ public:
   }
 };
 
+inline size_t countPairs(const size_t row_first, const size_t row_last, const size_t col_first, const size_t col_last)
+{
+  size_t count(0);
+  for (size_t i = row_first; i < row_last; ++i)
+  {
+    const size_t actual_col_last = std::min(col_last, i);
+    if (col_first < actual_col_last)
+      count += actual_col_last - col_first;
+  }
+  return count;
+}
+
 /// Functor implements r independent part of KspaceEwaldTerm
 class KspaceEwaldTermForTile
 {
 private:
+  const PosArray& R;
+  const aligned_vector<real_t>& qqs;
+  const size_t row_first;
+  const size_t row_last;
+  const size_t col_first;
+  const size_t col_last;
   /// The k-space cell axes
   const RealMat b;
   /// The constant -\kappa^2/2 in Drummond 2008 formula 6
@@ -172,16 +190,91 @@ private:
   /// The constant 4\pi/\Omega in Drummond 2008 formula 6
   const real_t kfactor;
 
-public:
-  KspaceEwaldTermForTile(const RealMat& b_in, real_t kconst_in, real_t kfactor_in)
-      : b(b_in), kconst(kconst_in), kfactor(kfactor_in)
-  {}
+  // scratch spaces
+  aligned_vector<real_t> row_phase_sin;
+  aligned_vector<real_t> row_phase_cos;
+  aligned_vector<real_t> col_phase_sin;
+  aligned_vector<real_t> col_phase_cos;
+  aligned_vector<real_t> cosKvRij;
 
-  real_t computeK2Exponetial(const IntVec& i, RealVec& Kv) const
+  real_t computeK2Exponetial(const IntVec& iv, RealVec& Kv) const
   {
-    Kv        = dot(i, b);
+    Kv        = dot(iv, b);
     real_t K2 = dot(Kv, Kv);
     return kfactor * std::exp(kconst * K2) / K2;
+  }
+
+public:
+  KspaceEwaldTermForTile(const PosArray& R_in,
+                         const aligned_vector<real_t>& qqs_in,
+                         const size_t row_first_in,
+                         const size_t row_last_in,
+                         const size_t col_first_in,
+                         const size_t col_last_in,
+                         const RealMat& b_in,
+                         real_t kconst_in,
+                         real_t kfactor_in)
+      : R(R_in),
+        qqs(qqs_in),
+        row_first(row_first_in),
+        row_last(row_last_in),
+        col_first(col_first_in),
+        col_last(col_last_in),
+        b(b_in),
+        kconst(kconst_in),
+        kfactor(kfactor_in)
+  {
+    assert(row_last >= row_first);
+    assert(col_last >= col_first);
+    row_phase_sin.resize(row_last - row_first);
+    row_phase_cos.resize(row_last - row_first);
+    col_phase_sin.resize(col_last - col_first);
+    col_phase_cos.resize(col_last - col_first);
+    cosKvRij.resize(countPairs(row_first_in, row_last_in, col_first_in, col_last_in));
+    assert(qqs.size() == cosKvRij.size());
+  }
+
+  real_t operator()(const IntVec& iv, aligned_vector<real_t>& dva)
+  {
+    assert(dva.size() == cosKvRij.size());
+    auto* restrict qqs_ptr      = qqs.data();
+    auto* restrict dva_ptr      = dva.data();
+    auto* restrict cosKvRij_ptr = cosKvRij.data();
+
+    auto* restrict row_cos = row_phase_cos.data();
+    auto* restrict row_sin = row_phase_sin.data();
+    auto* restrict col_cos = col_phase_cos.data();
+    auto* restrict col_sin = col_phase_sin.data();
+
+
+    RealVec Kv;
+    real_t K2prefactor = computeK2Exponetial(iv, Kv);
+
+#pragma omp simd aligned(row_cos, row_sin)
+    for (size_t i = 0; i < row_last - row_first; ++i)
+      sincos(dot(Kv, R[i + row_first]), &row_sin[i], &row_cos[i]);
+#pragma omp simd aligned(col_cos, col_sin)
+    for (size_t j = 0; j < col_last - col_first; ++j)
+      sincos(-dot(Kv, R[j + col_first]), &col_sin[j], &col_cos[j]);
+
+    real_t v(0);
+    size_t icount = 0;
+    for (size_t i = row_first; i < row_last; ++i)
+#pragma omp simd aligned(row_cos, row_sin, col_cos, col_sin)
+      for (size_t j = col_first; j < std::min(col_last, i); ++j)
+      {
+        cosKvRij[icount] =
+            row_cos[i - row_first] * col_cos[j - col_first] - row_sin[i - row_first] * col_sin[j - col_first];
+        icount++;
+      }
+#pragma omp simd aligned(cosKvRij_ptr, qqs_ptr, dva_ptr)
+    for (size_t icount = 0; icount < cosKvRij.size(); ++icount)
+    {
+      real_t f = K2prefactor * cosKvRij_ptr[icount];
+      v += f * qqs_ptr[icount];
+      dva_ptr[icount] += std::abs(f);
+    }
+    return v;
   }
 };
 
@@ -299,18 +392,11 @@ real_t gridSumTile(const PosArray& R,
                    const real_t kfactor,
                    const real_t tol = 1e-11)
 {
-  size_t count(0);
-  for (size_t i = row_first; i < row_last; ++i)
-    for (size_t j = col_first; j < std::min(col_last, i); ++j)
-      count++;
+  size_t count = countPairs(row_first, row_last, col_first, col_last);
 
   aligned_vector<real_t> tols(count);
   aligned_vector<real_t> dva(count, std::numeric_limits<real_t>::max());
   aligned_vector<real_t> qqs(count);
-  aligned_vector<real_t> cosKvRij(count);
-  auto* restrict qqs_ptr      = qqs.data();
-  auto* restrict dva_ptr      = dva.data();
-  auto* restrict cosKvRij_ptr = cosKvRij.data();
 
   real_t v      = 0.0;
   size_t icount = 0;
@@ -323,7 +409,7 @@ real_t gridSumTile(const PosArray& R,
       icount++;
     }
 
-  KspaceEwaldTermForTile kfuncTile(b, kconst, kfactor);
+  KspaceEwaldTermForTile kfuncTile(R, qqs, row_first, row_last, col_first, col_last, b, kconst, kfactor);
 
   int_t indmax = 0;
   // Sum over cubic surface shells until the tolerance is reached.
@@ -331,113 +417,22 @@ real_t gridSumTile(const PosArray& R,
   {
     std::fill(dva.begin(), dva.end(), 0.0);
 
-    aligned_vector<real_t> row_phase_sin(row_last - row_first), row_phase_cos(row_last - row_first);
-    aligned_vector<real_t> col_phase_sin(col_last - col_first), col_phase_cos(col_last - col_first);
-    auto* restrict row_cos = row_phase_cos.data();
-    auto* restrict row_sin = row_phase_sin.data();
-    auto* restrict col_cos = col_phase_cos.data();
-    auto* restrict col_sin = col_phase_sin.data();
-
     // Surface shell contribution. The i,j,k loop can be threaded if the outer level threading is replaced with MPI.
     // Sum over new surface planes perpendicular to the x direction.
     for (int_t i : {-indmax - 1, indmax + 1})
       for (int_t j = -indmax; j < indmax + 1; ++j)
         for (int_t k = -indmax; k < indmax + 1; ++k)
-        {
-          IntVec iv(i, j, k);
-          RealVec Kv;
-          real_t K2prefactor = kfuncTile.computeK2Exponetial(iv, Kv);
-
-#pragma omp simd aligned(row_cos, row_sin)
-          for (size_t i = 0; i < row_last - row_first; ++i)
-            sincos(dot(Kv, R[i + row_first]), &row_sin[i], &row_cos[i]);
-#pragma omp simd aligned(col_cos, col_sin)
-          for (size_t j = 0; j < col_last - col_first; ++j)
-            sincos(-dot(Kv, R[j + col_first]), &col_sin[j], &col_cos[j]);
-
-          size_t icount = 0;
-          for (size_t i = row_first; i < row_last; ++i)
-#pragma omp simd aligned(row_cos, row_sin, col_cos, col_sin)
-            for (size_t j = col_first; j < std::min(col_last, i); ++j)
-            {
-              cosKvRij[icount] =
-                  row_cos[i - row_first] * col_cos[j - col_first] - row_sin[i - row_first] * col_sin[j - col_first];
-              icount++;
-            }
-#pragma omp simd aligned(cosKvRij_ptr, qqs_ptr, dva_ptr)
-          for (size_t icount = 0; icount < count; ++icount)
-          {
-            real_t f = K2prefactor * cosKvRij_ptr[icount];
-            v += f * qqs_ptr[icount];
-            dva_ptr[icount] += std::abs(f);
-          }
-        }
+          v += kfuncTile(IntVec(i, j, k), dva);
     // Sum over new surface planes perpendicular to the y direction.
     for (int_t j : {-indmax - 1, indmax + 1})
       for (int_t k = -indmax; k < indmax + 1; ++k)
         for (int_t i = -indmax - 1; i < indmax + 2; ++i)
-        {
-          IntVec iv(i, j, k);
-          RealVec Kv;
-          real_t K2prefactor = kfuncTile.computeK2Exponetial(iv, Kv);
-
-#pragma omp simd aligned(row_cos, row_sin)
-          for (size_t i = 0; i < row_last - row_first; ++i)
-            sincos(dot(Kv, R[i + row_first]), &row_sin[i], &row_cos[i]);
-#pragma omp simd aligned(col_cos, col_sin)
-          for (size_t j = 0; j < col_last - col_first; ++j)
-            sincos(-dot(Kv, R[j + col_first]), &col_sin[j], &col_cos[j]);
-
-          size_t icount = 0;
-          for (size_t i = row_first; i < row_last; ++i)
-#pragma omp simd aligned(row_cos, row_sin, col_cos, col_sin)
-            for (size_t j = col_first; j < std::min(col_last, i); ++j)
-            {
-              cosKvRij[icount] =
-                  row_cos[i - row_first] * col_cos[j - col_first] - row_sin[i - row_first] * col_sin[j - col_first];
-              icount++;
-            }
-#pragma omp simd aligned(cosKvRij_ptr, qqs_ptr, dva_ptr)
-          for (size_t icount = 0; icount < count; ++icount)
-          {
-            real_t f = K2prefactor * cosKvRij_ptr[icount];
-            v += f * qqs_ptr[icount];
-            dva_ptr[icount] += std::abs(f);
-          }
-        }
+          v += kfuncTile(IntVec(i, j, k), dva);
     // Sum over new surface planes perpendicular to the z direction.
     for (int_t k : {-indmax - 1, indmax + 1})
       for (int_t i = -indmax - 1; i < indmax + 2; ++i)
         for (int_t j = -indmax - 1; j < indmax + 2; ++j)
-        {
-          IntVec iv(i, j, k);
-          RealVec Kv;
-          real_t K2prefactor = kfuncTile.computeK2Exponetial(iv, Kv);
-
-#pragma omp simd aligned(row_cos, row_sin)
-          for (size_t i = 0; i < row_last - row_first; ++i)
-            sincos(dot(Kv, R[i + row_first]), &row_sin[i], &row_cos[i]);
-#pragma omp simd aligned(col_cos, col_sin)
-          for (size_t j = 0; j < col_last - col_first; ++j)
-            sincos(-dot(Kv, R[j + col_first]), &col_sin[j], &col_cos[j]);
-
-          size_t icount = 0;
-          for (size_t i = row_first; i < row_last; ++i)
-#pragma omp simd aligned(row_cos, row_sin, col_cos, col_sin)
-            for (size_t j = col_first; j < std::min(col_last, i); ++j)
-            {
-              cosKvRij[icount] =
-                  row_cos[i - row_first] * col_cos[j - col_first] - row_sin[i - row_first] * col_sin[j - col_first];
-              icount++;
-            }
-#pragma omp simd aligned(cosKvRij_ptr, qqs_ptr, dva_ptr)
-          for (size_t icount = 0; icount < count; ++icount)
-          {
-            real_t f = K2prefactor * cosKvRij_ptr[icount];
-            v += f * qqs_ptr[icount];
-            dva_ptr[icount] += std::abs(f);
-          }
-        }
+          v += kfuncTile(IntVec(i, j, k), dva);
     indmax++;
   }
 
@@ -496,7 +491,7 @@ real_t getKappaEwald(real_t volume)
   real_t radius = std::pow(3. * volume / (4 * M_PI), 1. / 3);
   //return 2 * M_PI / ( 8 * radius );
   //return 1.0;
-  return radius / std::sqrt( 2 * M_PI );
+  return radius / std::sqrt(2 * M_PI);
 }
 
 /** Compute the Ewald interaction of a particle pair to a given tolerance
