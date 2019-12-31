@@ -58,7 +58,7 @@ public:
    */
   ~PWRealOrbitalSet();
 
-  SPOSet* makeClone() const;
+  SPOSet* makeClone() const override;
 
   /** resize  the orbital base
    * @param bset PWBasis
@@ -79,11 +79,11 @@ public:
    */
   void addVector(const std::vector<ComplexType>& coefs, int jorb);
 
-  void resetParameters(const opt_variables_type& optVariables);
+  void resetParameters(const opt_variables_type& optVariables) override;
 
-  void setOrbitalSetSize(int norbs);
+  void setOrbitalSetSize(int norbs) override;
 
-  void resetTargetParticleSet(ParticleSet& P);
+  void resetTargetParticleSet(ParticleSet& P) override;
 
   inline ValueType evaluate(int ib, const PosType& pos)
   {
@@ -91,23 +91,23 @@ public:
     return real(BLAS::dot(BasisSetSize, CC[ib], myBasisSet->Zv.data()));
   }
 
-  void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi);
+  void evaluateValue(const ParticleSet& P, int iat, ValueVector_t& psi) override;
 
-  void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi);
-
-  void evaluate_notranspose(const ParticleSet& P,
-                            int first,
-                            int last,
-                            ValueMatrix_t& logdet,
-                            GradMatrix_t& dlogdet,
-                            ValueMatrix_t& d2logdet);
+  void evaluateVGL(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi) override;
 
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
                             int last,
                             ValueMatrix_t& logdet,
                             GradMatrix_t& dlogdet,
-                            HessMatrix_t& grad_grad_logdet)
+                            ValueMatrix_t& d2logdet) override;
+
+  void evaluate_notranspose(const ParticleSet& P,
+                            int first,
+                            int last,
+                            ValueMatrix_t& logdet,
+                            GradMatrix_t& dlogdet,
+                            HessMatrix_t& grad_grad_logdet) override
   {
     APP_ABORT("Need specialization of evaluate_notranspose() for grad_grad_logdet. \n");
   }

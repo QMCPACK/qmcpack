@@ -111,8 +111,10 @@ void InitMolecularSystem::initMolecule(ParticleSet* ions, ParticleSet* els)
   ParticleSet::ParticlePos_t chi(els->getTotalNum());
   //makeGaussRandom(chi);
   makeSphereRandom(chi);
-  int numUp   = els->last(0);
-  int numDown = els->last(1) - els->first(0);
+  // the upper limit of the electron index with spin up
+  const int numUp   = els->last(0);
+  // the upper limit of the electron index with spin down. Pay attention to the no spin down electron case.
+  const int numDown = els->last(els->groups()>1?1:0) - els->first(0);
   int item    = 0;
   int nup_tot = 0, ndown_tot = numUp;
   std::vector<LoneElectron> loneQ;
@@ -138,6 +140,7 @@ void InitMolecularSystem::initMolecule(ParticleSet* ions, ParticleSet* els)
       }
       for (int k = 0; k < v2; k++)
       {
+        // initialize electron positions in pairs
         if (nup_tot < numUp)
           els->R[nup_tot++] = ions->R[iat] + sep * chi[item++];
         if (ndown_tot < numDown)

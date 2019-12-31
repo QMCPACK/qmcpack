@@ -213,7 +213,7 @@ DiracDeterminantWithBackflow::PsiValueType DiracDeterminantWithBackflow::ratio(P
     int jat    = *it - FirstIndex;
     PosType dr = BFTrans->newQP[*it] - BFTrans->QP.R[*it];
     BFTrans->QP.makeMove(*it, dr);
-    Phi->evaluate(BFTrans->QP, *it, psiV);
+    Phi->evaluateValue(BFTrans->QP, *it, psiV);
     for (int orb = 0; orb < psiV.size(); orb++)
       psiM_temp(orb, jat) = psiV[orb];
     BFTrans->QP.rejectMove(*it);
@@ -285,7 +285,7 @@ DiracDeterminantWithBackflow::PsiValueType DiracDeterminantWithBackflow::ratioGr
     int jat    = *it - FirstIndex;
     PosType dr = BFTrans->newQP[*it] - BFTrans->QP.R[*it];
     BFTrans->QP.makeMove(*it, dr);
-    Phi->evaluate(BFTrans->QP, *it, psiV, dpsiV, d2psiV);
+    Phi->evaluateVGL(BFTrans->QP, *it, psiV, dpsiV, d2psiV);
     for (int orb = 0; orb < psiV.size(); orb++)
       psiM_temp(orb, jat) = psiV[orb];
     std::copy(dpsiV.begin(), dpsiV.end(), dpsiM_temp.begin(jat));

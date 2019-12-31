@@ -127,6 +127,7 @@ def write_nomsd(fh5, wfn, uhf, nelec, thresh=1e-8, init=None):
         Threshold for writing wavefunction elements.
     """
     nalpha, nbeta = nelec
+    nmo = wfn.shape[1]
     wfn[abs(wfn) < thresh] = 0.0
     if init is not None:
         add_dataset(fh5, 'Psi0_alpha', to_qmcpack_complex(init[0]))

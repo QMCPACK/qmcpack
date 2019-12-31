@@ -121,7 +121,7 @@ typename DiracDeterminant<DU_TYPE>::PsiValueType DiracDeterminant<DU_TYPE>::rati
                                                                                       GradType& grad_iat)
 {
   SPOVGLTimer.start();
-  Phi->evaluate(P, iat, psiV, dpsiV, d2psiV);
+  Phi->evaluateVGL(P, iat, psiV, dpsiV, d2psiV);
   SPOVGLTimer.stop();
   return ratioGrad_compute(iat, grad_iat);
 }
@@ -158,7 +158,7 @@ typename DiracDeterminant<DU_TYPE>::PsiValueType DiracDeterminant<DU_TYPE>::rati
     LogValueType& spingrad_iat)
 {
   SPOVGLTimer.start();
-  Phi->evaluate(P, iat, psiV, dpsiV, d2psiV);
+  Phi->evaluateVGL(P, iat, psiV, dpsiV, d2psiV);
   Phi->evaluate_spin(P, iat, psiV, dspin_psiV);
   SPOVGLTimer.stop();
 
@@ -356,7 +356,7 @@ typename DiracDeterminant<DU_TYPE>::PsiValueType DiracDeterminant<DU_TYPE>::rati
   UpdateMode             = ORB_PBYP_RATIO;
   const int WorkingIndex = iat - FirstIndex;
   SPOVTimer.start();
-  Phi->evaluate(P, iat, psiV);
+  Phi->evaluateValue(P, iat, psiV);
   SPOVTimer.stop();
   RatioTimer.start();
   // This is an optimization.
@@ -387,7 +387,7 @@ template<typename DU_TYPE>
 void DiracDeterminant<DU_TYPE>::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
 {
   SPOVTimer.start();
-  Phi->evaluate(P, -1, psiV);
+  Phi->evaluateValue(P, -1, psiV);
   SPOVTimer.stop();
   MatrixOperators::product(psiM, psiV.data(), &ratios[FirstIndex]);
 }
@@ -462,7 +462,7 @@ typename DiracDeterminant<DU_TYPE>::GradType DiracDeterminant<DU_TYPE>::evalGrad
     Phi->evaluateGradSource(P, FirstIndex, LastIndex, source, iat, grad_source_psiM, grad_grad_source_psiM,
                             grad_lapl_source_psiM);
     // HACK HACK HACK
-    // Phi->evaluate(P, FirstIndex, LastIndex, psiM, dpsiM, d2psiM);
+    // Phi->evaluateVGL(P, FirstIndex, LastIndex, psiM, dpsiM, d2psiM);
     // psiM_temp = psiM;
     // LogValue=InvertWithLog(psiM.data(),NumPtcls,NumOrbitals,
     // 			   WorkSpace.data(),Pivot.data(),PhaseValue);
@@ -622,12 +622,9 @@ DiracDeterminant<DU_TYPE>* DiracDeterminant<DU_TYPE>::makeCopy(SPOSetPtr spo) co
   return dclone;
 }
 
-typedef QMCTraits::ValueType ValueType;
-typedef QMCTraits::QTFull::ValueType mValueType;
-
 template class DiracDeterminant<>;
 #if defined(ENABLE_CUDA)
-template class DiracDeterminant<DelayedUpdateCUDA<ValueType, mValueType>>;
+template class DiracDeterminant<DelayedUpdateCUDA<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
 #endif
 
 } // namespace qmcplusplus
