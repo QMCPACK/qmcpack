@@ -132,6 +132,75 @@ public:
   }
 };
 
+class RspaceEwaldTermForTile
+{
+private:
+  const PosArray& R;
+  const aligned_vector<real_t>& qqs;
+  const size_t row_first;
+  const size_t row_last;
+  const size_t col_first;
+  const size_t col_last;
+  /// The inter-particle separation vector
+  const RealVec r;
+  /// The real-space cell axes
+  const RealMat a;
+  /// The constant 1/(\sqrt{2}kappa) in Drummond 2008 formula 6
+  const real_t rconst;
+
+public:
+  RspaceEwaldTermForTile(const PosArray& R_in,
+                  const aligned_vector<real_t>& qqs_in,
+                  const size_t row_first_in,
+                  const size_t row_last_in,
+                  const size_t col_first_in,
+                  const size_t col_last_in,
+                  const RealMat& a_in,
+                  const real_t rconst_in)
+      : R(R_in),
+        qqs(qqs_in),
+        row_first(row_first_in),
+        row_last(row_last_in),
+        col_first(col_first_in),
+        col_last(col_last_in),
+        a(a_in),
+        rconst(rconst_in) {}
+
+  real_t getZeroContribution() const
+  {
+    real_t v(0);
+    size_t icount(0);
+    for (size_t i = row_first; i < row_last; ++i)
+      for (size_t j = col_first; j < std::min(col_last, i); ++j)
+      {
+        RealVec r(R[i] - R[j]);
+        real_t R  = std::sqrt(dot(r, r));
+        real_t f = std::erfc(rconst * R) / R;
+        v += f * qqs[icount];
+        icount++;
+      }
+    return v;
+  }
+
+  real_t operator()(const IntVec& i, aligned_vector<real_t>& dva) const
+  {
+    real_t v(0);
+    size_t icount(0);
+    RealVec Rv = dot(i, a);
+    for (size_t i = row_first; i < row_last; ++i)
+      for (size_t j = col_first; j < std::min(col_last, i); ++j)
+      {
+        RealVec r(Rv - R[i] + R[j]);
+        real_t R  = std::sqrt(dot(r, r));
+        real_t f = std::erfc(rconst * R) / R;
+        v += f * qqs[icount];
+        dva[icount] += std::abs(f);
+        icount++;
+      }
+    return v;
+  }
+};
+
 
 /// Functor for term within the k-space sum in Drummond 2008 formula 6
 class KspaceEwaldTerm
@@ -205,6 +274,17 @@ private:
   }
 
 public:
+  /** constructor
+   *  @param R Arary of particle positions
+   *  @param qqs charge products of pairs
+   *  @param row_first the first row particle index of a given tile
+   *  @param row_last the last row particle index + 1 of a given tile
+   *  @param col_first the first column particle index of a given tile
+   *  @param col_last the last column particle index + 1 of a given tile
+   *  @param b k-space cell axes.
+   *  @param kconst The constant 1/(4\kappa^2) in Drummond 2008 formula 7
+   *  @param kfactor The constant 4\pi/\Omega in Drummond 2008 formula 7
+   */
   KspaceEwaldTermForTile(const PosArray& R_in,
                          const aligned_vector<real_t>& qqs_in,
                          const size_t row_first_in,
@@ -234,6 +314,8 @@ public:
     assert(qqs.size() == cosKvRij.size());
   }
 
+  real_t getZeroContribution() const { return 0; }
+
   real_t operator()(const IntVec& iv, aligned_vector<real_t>& dva)
   {
     assert(dva.size() == cosKvRij.size());
@@ -245,7 +327,6 @@ public:
     auto* restrict row_sin = row_phase_sin.data();
     auto* restrict col_cos = col_phase_cos.data();
     auto* restrict col_sin = col_phase_sin.data();
-
 
     RealVec Kv;
     real_t K2prefactor = computeK2Exponetial(iv, Kv);
@@ -370,47 +451,14 @@ bool isLargerThanTol(const aligned_vector<T>& vals, const aligned_vector<T>& tol
 }
 
 /** Similar to gridSum, perform a sum over successively larger cubic integer grid
- *  @param R Arary of particle positions
- *  @param Q Arary of particle charges
- *  @param row_first the first row particle index of a given tile
- *  @param row_last the last row particle index + 1 of a given tile
- *  @param col_first the first column particle index of a given tile
- *  @param col_last the last column particle index + 1 of a given tile
- *  @param b k-space cell axes.
- *  @param kconst The constant 1/(4\kappa^2) in Drummond 2008 formula 7
- *  @param kfactor The constant 4\pi/\Omega in Drummond 2008 formula 7
  *  @param tol: Tolerance for the Ewald pair interaction in Ha.
  */
-real_t gridSumTile(const PosArray& R,
-                   const ChargeArray& Q,
-                   const size_t row_first,
-                   const size_t row_last,
-                   const size_t col_first,
-                   const size_t col_last,
-                   const RealMat& b,
-                   const real_t kconst,
-                   const real_t kfactor,
-                   const real_t tol = 1e-11)
+template<typename T>
+real_t gridSumTile(T& function, const aligned_vector<real_t>& tols)
 {
-  size_t count = countPairs(row_first, row_last, col_first, col_last);
+  aligned_vector<real_t> dva(tols.size(), std::numeric_limits<real_t>::max());
 
-  aligned_vector<real_t> tols(count);
-  aligned_vector<real_t> dva(count, std::numeric_limits<real_t>::max());
-  aligned_vector<real_t> qqs(count);
-
-  real_t v      = 0.0;
-  size_t icount = 0;
-  for (size_t i = row_first; i < row_last; ++i)
-    for (size_t j = col_first; j < std::min(col_last, i); ++j)
-    {
-      real_t qq    = Q[i] * Q[j];
-      qqs[icount]  = qq;
-      tols[icount] = tol / qq;
-      icount++;
-    }
-
-  KspaceEwaldTermForTile kfuncTile(R, qqs, row_first, row_last, col_first, col_last, b, kconst, kfactor);
-
+  real_t v = function.getZeroContribution();
   int_t indmax = 0;
   // Sum over cubic surface shells until the tolerance is reached.
   while (isLargerThanTol(dva, tols))
@@ -422,17 +470,17 @@ real_t gridSumTile(const PosArray& R,
     for (int_t i : {-indmax - 1, indmax + 1})
       for (int_t j = -indmax; j < indmax + 1; ++j)
         for (int_t k = -indmax; k < indmax + 1; ++k)
-          v += kfuncTile(IntVec(i, j, k), dva);
+          v += function(IntVec(i, j, k), dva);
     // Sum over new surface planes perpendicular to the y direction.
     for (int_t j : {-indmax - 1, indmax + 1})
       for (int_t k = -indmax; k < indmax + 1; ++k)
         for (int_t i = -indmax - 1; i < indmax + 2; ++i)
-          v += kfuncTile(IntVec(i, j, k), dva);
+          v += function(IntVec(i, j, k), dva);
     // Sum over new surface planes perpendicular to the z direction.
     for (int_t k : {-indmax - 1, indmax + 1})
       for (int_t i = -indmax - 1; i < indmax + 2; ++i)
         for (int_t j = -indmax - 1; j < indmax + 2; ++j)
-          v += kfuncTile(IntVec(i, j, k), dva);
+          v += function(IntVec(i, j, k), dva);
     indmax++;
   }
 
@@ -566,31 +614,37 @@ real_t ewaldSumTile(const RealMat& a,
   const real_t kconst  = -std::pow(kconv, 2) / 2;
   const real_t kfactor = 4 * M_PI / volume;
 
+  size_t count = countPairs(row_first, row_last, col_first, col_last);
+
+  aligned_vector<real_t> tols(count);
+  aligned_vector<real_t> qqs(count);
+
+  size_t icount = 0;
+  for (size_t i = row_first; i < row_last; ++i)
+    for (size_t j = col_first; j < std::min(col_last, i); ++j)
+    {
+      real_t qq    = Q[i] * Q[j];
+      qqs[icount]  = qq;
+      tols[icount] = tol / qq;
+      icount++;
+    }
+
   real_t es(0);
-  {
-    ScopedTimer RspaceTimer(TimerManager.createTimer("Rspace"));
-    for (size_t i = row_first; i < row_last; ++i)
-      for (size_t j = col_first; j < std::min(col_last, i); ++j)
-      {
-        RealVec r(R[i] - R[j]);
-        real_t qq = Q[i] * Q[j];
-        // Create real-/k-space fuctors for terms within the sums in formula 6
-        RspaceEwaldTerm rfunc(r, a, rconst);
-
-        // Compute the constant term
-        real_t cval = -2 * M_PI * std::pow(kconv, 2) / volume;
-        // Compute the real-space sum (includes zero)
-        real_t rval = gridSum(rfunc, true, tol / qq);
-
-        // Sum all contributions to get the Ewald pair interaction
-        es += qq * (cval + rval);
-      }
-  }
-
-  {
+  { // Create k-space fuctors for terms within the sums in formula 6
     ScopedTimer KspaceTimer(TimerManager.createTimer("Kspace"));
-    es += gridSumTile(R, Q, row_first, row_last, col_first, col_last, b, kconst, kfactor, tol);
+    KspaceEwaldTermForTile kfuncTile(R, qqs, row_first, row_last, col_first, col_last, b, kconst, kfactor);
+    es += gridSumTile(kfuncTile, tols);
   }
+  { // Create real-space fuctors for terms within the sums in formula 7
+    ScopedTimer RspaceTimer(TimerManager.createTimer("Rspace"));
+    RspaceEwaldTermForTile rfuncTile(R, qqs, row_first, row_last, col_first, col_last, a, rconst);
+    es += gridSumTile(rfuncTile, tols);
+  }
+  { // Compute the constant term
+    const real_t cval = -2 * M_PI * kconv * kconv / volume;
+    es += cval * accumulate(qqs.begin(), qqs.end(), real_t(0));
+  }
+
   return es;
 }
 
