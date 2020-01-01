@@ -59,59 +59,6 @@ NonLocalECPotential::Return_t NonLocalECPotential::evaluateValueAndDerivatives(P
 #endif
   }
   return Value;
-
-  //int Nvars=optvars.size();
-  //vector<RealType> dh_ana(Nvars,0.0);
-  //Return_t e=0.0;
-  //for(int iat=0; iat<NumIons; iat++)
-  //  if(PP[iat])
-  //  {
-  //    PP[iat]->randomize_grid(*(P.Sphere[iat]),false);
-  //    e += PP[iat]->evaluate(P,iat,Psi);
-  //  }
-
-  //vector<RealType> dh_diff(Nvars,0.0);
-  //opt_variables_type wfVars(optvars),wfvar_prime(optvars);
-  //RealType FiniteDiff = 1e-6;
-  //QMCTraits::RealType dh=1.0/(2.0*FiniteDiff);
-  //for (int i=0; i<Nvars ; i++)
-  //{
-  //  wfvar_prime[i] = wfVars[i]+ FiniteDiff;
-  //  //     Psi.checkOutVariables(wfvar_prime);
-  //  Psi.resetParameters(wfvar_prime);
-  //  Psi.reset();
-  //  RealType logpsiPlus = Psi.evaluateLog(P);
-  //  RealType elocPlus=0.0;
-  //  for(int iat=0; iat<NumIons; iat++)
-  //    if(PP[iat])
-  //    {
-  //      PP[iat]->randomize_grid(*(P.Sphere[iat]),false);
-  //      elocPlus += PP[iat]->evaluate(P,iat,Psi);
-  //    }
-
-  //  wfvar_prime[i] = wfVars[i]- FiniteDiff;
-  //  //     Psi.checkOutVariables(wfvar_prime);
-  //  Psi.resetParameters(wfvar_prime);
-  //  Psi.reset();
-  //  RealType logpsiMinus = Psi.evaluateLog(P);
-  //  RealType elocMinus=0.0;
-  //  for(int iat=0; iat<NumIons; iat++)
-  //    if(PP[iat])
-  //    {
-  //      PP[iat]->randomize_grid(*(P.Sphere[iat]),false);
-  //      elocMinus += PP[iat]->evaluate(P,iat,Psi);
-  //    }
-  //  dh_diff[i]= (elocPlus-elocMinus)*dh;
-  //}
-  //Psi.resetParameters(optvars);
-  //Psi.reset();
-
-  //app_log() << "DERIV " << std::endl;
-  //for(int v=0;v<Nvars; ++v)
-  //  app_log() << v << " " << dh_ana[v] << " " << dh_diff[v] << std::endl;
-
-  //APP_ABORT("DONE");
-  return Value;
 }
 
 /** evaluate the non-local potential of the iat-th ionic center
