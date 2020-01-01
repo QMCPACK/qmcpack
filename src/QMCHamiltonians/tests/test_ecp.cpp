@@ -320,6 +320,65 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
 
   double Value1(0.0);
 #ifdef ENABLE_SOA
+  //Using SoA distance tables, hence the guard.
+  for (int jel = 0; jel < elec.getTotalNum(); jel++)
+  {
+    const auto& dist  = myTable.getDistRow(jel);
+    const auto& displ = myTable.getDisplRow(jel);
+    for (int iat = 0; iat < ions.getTotalNum(); iat++)
+      if (nlpp != nullptr && dist[iat] < nlpp->getRmax())
+        Value1 += nlpp->evaluateOne(elec, iat, psi, jel, dist[iat], RealType(-1) * displ[iat], 0, Txy);
+  }
+#else
+  for (int iat = 0; iat < ions.getTotalNum(); iat++)
+  {
+    if (nlpp == nullptr)
+      continue;
+    for (int nn = myTable.M[iat], iel = 0; nn < myTable.M[iat + 1]; nn++, iel++)
+    {
+      const RealType r(myTable.r(nn));
+      if (r > nlpp->getRmax())
+        continue;
+      Value1 += nlpp->evaluateOne(elec, iat, psi, iel, r, myTable.dr(nn), 0, Txy);
+    }
+  }
+#endif
+  //These numbers are validated against an alternate code path via wavefunction tester.
+  REQUIRE(Value1 == Approx(6.9015710211e-02));
+
+  opt_variables_type optvars;
+  std::vector<ValueType> dlogpsi;
+  std::vector<ValueType> dhpsioverpsi;
+
+  psi.checkInVariables(optvars);
+  optvars.resetIndex();
+  const int NumOptimizables(optvars.size());
+  psi.checkOutVariables(optvars);
+  dlogpsi.resize(NumOptimizables, ValueType(0));
+  dhpsioverpsi.resize(NumOptimizables, ValueType(0));
+  psi.evaluateDerivatives(elec, optvars, dlogpsi, dhpsioverpsi);
+  REQUIRE(std::real(dlogpsi[0]) == Approx(-0.2211666667));
+  REQUIRE(std::real(dlogpsi[2]) == Approx(-0.1215));
+  REQUIRE(std::real(dlogpsi[3]) == Approx(0.0));
+  REQUIRE(std::real(dlogpsi[9]) == Approx(-0.0853333333));
+  REQUIRE(std::real(dlogpsi[10]) == Approx(-0.745));
+
+  REQUIRE(std::real(dhpsioverpsi[0]) == Approx(-0.6463306581));
+  REQUIRE(std::real(dhpsioverpsi[2]) == Approx(1.5689981479));
+  REQUIRE(std::real(dhpsioverpsi[3]) == Approx(0.0));
+  REQUIRE(std::real(dhpsioverpsi[9]) == Approx(0.279561213));
+  REQUIRE(std::real(dhpsioverpsi[10]) == Approx(-0.3968828778));
+
+  nlpp->evaluateValueAndDerivatives(elec, 0, psi, optvars, dlogpsi, dhpsioverpsi, myTableIndex);
+  nlpp->evaluateValueAndDerivatives(elec, 1, psi, optvars, dlogpsi, dhpsioverpsi, myTableIndex);
+
+  REQUIRE(std::real(dhpsioverpsi[0]) == Approx(-0.6379341942));
+  REQUIRE(std::real(dhpsioverpsi[2]) == Approx(1.5269279991));
+  REQUIRE(std::real(dhpsioverpsi[3]) == Approx(-0.0355730676));
+  REQUIRE(std::real(dhpsioverpsi[9]) == Approx(0.279561213));
+  REQUIRE(std::real(dhpsioverpsi[10]) == Approx(-0.3968763604));
+
+#ifdef ENABLE_SOA
   //Forces are only implemented in SOA version, hence the guard.
   double Value2(0.0);
   double Value3(0.0);
@@ -338,17 +397,12 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
     for (int iat = 0; iat < ions.getTotalNum(); iat++)
       if (nlpp != nullptr && dist[iat] < nlpp->getRmax())
       {
-        Value1 += nlpp->evaluateOne(elec, iat, psi, jel, dist[iat], RealType(-1) * displ[iat], 0, Txy);
-
         Value2 +=
             nlpp->evaluateOneWithForces(elec, iat, psi, jel, dist[iat], RealType(-1) * displ[iat], HFTerm[iat], 0, Txy);
         Value3 += nlpp->evaluateOneWithForces(elec, ions, iat, psi, jel, dist[iat], RealType(-1) * displ[iat],
                                               HFTerm2[iat], PulayTerm, 0, Txy);
       }
   }
-  //These numbers are validated against an alternate code path via wavefunction tester.
-  REQUIRE(Value1 == Approx(6.9015710211e-02));
-
   //These values are validated against print statements.
   //Two-body jastrow-only wave functions agree with finite difference of NLPP to machine precision.
   //  These numbers assume the Hellman Feynmann implementation is correct, and dump the values
@@ -394,24 +448,6 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
   //HFTerm[1][0]+PulayTerm[1][0] =  0.002734064
   //HFTerm[1][1]+PulayTerm[1][1] =  0.0
   //HFTerm[1][2]+PulayTerm[1][2] =  0.0
-
-
-#else
-
-  for (int iat = 0; iat < ions.getTotalNum(); iat++)
-  {
-    if (nlpp == nullptr)
-      continue;
-    for (int nn = myTable.M[iat], iel = 0; nn < myTable.M[iat + 1]; nn++, iel++)
-    {
-      const RealType r(myTable.r(nn));
-      if (r > nlpp->getRmax())
-        continue;
-      Value1 += nlpp->evaluateOne(elec, iat, psi, iel, r, myTable.dr(nn), 0, Txy);
-    }
-  }
-  REQUIRE(Value1 == Approx(6.9015710211e-02));
-
 #endif
 }
 } // namespace qmcplusplus
