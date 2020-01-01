@@ -309,6 +309,7 @@ public:
   virtual const DistRowType& getOldDists() const
   {
     APP_ABORT("DistanceTableData::getOldDists is used incorrectly! Contact developers on github.");
+    return Temp_r; // dummy return to avoid compiler warning.
   }
 
   /** return old displacements set up by move() for optimized distance table consumers
@@ -316,6 +317,7 @@ public:
   virtual const DisplRowType& getOldDispls() const
   {
     APP_ABORT("DistanceTableData::getOldDispls is used incorrectly! Contact developers on github.");
+    return Temp_dr; // dummy return to avoid compiler warning.
   }
 
   /** return the temporary distances when a move is proposed
