@@ -39,11 +39,7 @@
 
 namespace qmcplusplus
 {
-
-QMCTraits::RealType getSplinedSOPot(SOECPComponent* so_comp, int l, double r)
-{
-  return so_comp->sopp_m[l]->splint(r); 
-}
+QMCTraits::RealType getSplinedSOPot(SOECPComponent* so_comp, int l, double r) { return so_comp->sopp_m[l]->splint(r); }
 
 TEST_CASE("CheckSphericalIntegration", "[hamiltonian]")
 {
@@ -119,21 +115,21 @@ TEST_CASE("ReadFileBuffer_sorep", "[hamiltonian]")
 
   REQUIRE(ecp.Zeff == 20);
 
-  double rlist[5]={0.001, 0.500, 1.000, 2.000, 10.000};
-  double so_p[5]={0.0614288376917,  0.10399457248,4.85269969439e-06, 4.6722444395e-25,0.000};
-  double so_d[5]={0.0850898886265,0.0029447669325,6.35734161822e-08, 2.8386702794e-27,0.000};
-  double so_f[5]={-0.284560515732,0.0071131554209,6.79818097092e-05,1.64868282163e-15,0.000}; 
-  
-  for(int i=0; i<5; i++)
-  {
-    double r=rlist[i];
-    double so_p_ref=so_p[i];
-    double so_d_ref=so_d[i];
-    double so_f_ref=so_f[i];
+  double rlist[5] = {0.001, 0.500, 1.000, 2.000, 10.000};
+  double so_p[5]  = {0.0614288376917, 0.10399457248, 4.85269969439e-06, 4.6722444395e-25, 0.000};
+  double so_d[5]  = {0.0850898886265, 0.0029447669325, 6.35734161822e-08, 2.8386702794e-27, 0.000};
+  double so_f[5]  = {-0.284560515732, 0.0071131554209, 6.79818097092e-05, 1.64868282163e-15, 0.000};
 
-    double so_p_val = getSplinedSOPot(ecp.pp_so,0,r);
-    double so_d_val = getSplinedSOPot(ecp.pp_so,1,r);
-    double so_f_val = getSplinedSOPot(ecp.pp_so,2,r);
+  for (int i = 0; i < 5; i++)
+  {
+    double r        = rlist[i];
+    double so_p_ref = so_p[i];
+    double so_d_ref = so_d[i];
+    double so_f_ref = so_f[i];
+
+    double so_p_val = getSplinedSOPot(ecp.pp_so, 0, r);
+    double so_d_val = getSplinedSOPot(ecp.pp_so, 1, r);
+    double so_f_val = getSplinedSOPot(ecp.pp_so, 2, r);
 
     REQUIRE(so_p_val == Approx(so_p_ref));
     REQUIRE(so_d_val == Approx(so_d_ref));
@@ -142,9 +138,6 @@ TEST_CASE("ReadFileBuffer_sorep", "[hamiltonian]")
 
   // TODO: add more checks that pseudopotential file was read correctly
 }
-
-
-
 
 
 TEST_CASE("ReadFileBuffer_reopen", "[hamiltonian]")
@@ -168,10 +161,7 @@ TEST_CASE("ReadFileBuffer_reopen", "[hamiltonian]")
   REQUIRE(buf.length > 14);
 }
 
-void copyGridUnrotatedForTest(NonLocalECPComponent& nlpp)
-{
-  nlpp.rrotsgrid_m = nlpp.sgridxyz_m;
-}
+void copyGridUnrotatedForTest(NonLocalECPComponent& nlpp) { nlpp.rrotsgrid_m = nlpp.sgridxyz_m; }
 
 TEST_CASE("Evaluate_ecp", "[hamiltonian]")
 {
@@ -210,7 +200,7 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
   int iatnumber                 = ion_species.addAttribute("atomic_number");
   ion_species(pChargeIdx, pIdx) = 1;
   ion_species(iatnumber, pIdx)  = 11;
-  ions.Lattice = Lattice;
+  ions.Lattice                  = Lattice;
   ions.createSK();
 
 
@@ -327,7 +317,7 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
     const auto& displ = myTable.getDisplRow(jel);
     for (int iat = 0; iat < ions.getTotalNum(); iat++)
       if (nlpp != nullptr && dist[iat] < nlpp->getRmax())
-        Value1 += nlpp->evaluateOne(elec, iat, psi, jel, dist[iat], RealType(-1) * displ[iat], 0, Txy);
+        Value1 += nlpp->evaluateOne(elec, iat, psi, jel, dist[iat], -displ[iat], 0, Txy);
   }
 #else
   for (int iat = 0; iat < ions.getTotalNum(); iat++)
@@ -369,8 +359,34 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
   REQUIRE(std::real(dhpsioverpsi[9]) == Approx(0.279561213));
   REQUIRE(std::real(dhpsioverpsi[10]) == Approx(-0.3968828778));
 
-  nlpp->evaluateValueAndDerivatives(elec, 0, psi, optvars, dlogpsi, dhpsioverpsi, myTableIndex);
-  nlpp->evaluateValueAndDerivatives(elec, 1, psi, optvars, dlogpsi, dhpsioverpsi, myTableIndex);
+  Value1 = 0.0;
+#ifdef ENABLE_SOA
+  //Using SoA distance tables, hence the guard.
+  for (int jel = 0; jel < elec.getTotalNum(); jel++)
+  {
+    const auto& dist  = myTable.getDistRow(jel);
+    const auto& displ = myTable.getDisplRow(jel);
+    for (int iat = 0; iat < ions.getTotalNum(); iat++)
+      if (nlpp != nullptr && dist[iat] < nlpp->getRmax())
+        Value1 += nlpp->evaluateValueAndDerivatives(elec, iat, psi, jel, dist[iat], -displ[iat], optvars, dlogpsi,
+                                                    dhpsioverpsi);
+  }
+#else
+  for (int iat = 0; iat < ions.getTotalNum(); iat++)
+  {
+    if (nlpp == nullptr)
+      continue;
+    for (int nn = myTable.M[iat], iel = 0; nn < myTable.M[iat + 1]; nn++, iel++)
+    {
+      const RealType r(myTable.r(nn));
+      if (r > nlpp->getRmax())
+        continue;
+      Value1 +=
+          nlpp->evaluateValueAndDerivatives(elec, iat, psi, iel, r, myTable.dr(nn), optvars, dlogpsi, dhpsioverpsi);
+    }
+  }
+#endif
+  REQUIRE(Value1 == Approx(6.9015710211e-02));
 
   REQUIRE(std::real(dhpsioverpsi[0]) == Approx(-0.6379341942));
   REQUIRE(std::real(dhpsioverpsi[2]) == Approx(1.5269279991));
@@ -397,10 +413,9 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
     for (int iat = 0; iat < ions.getTotalNum(); iat++)
       if (nlpp != nullptr && dist[iat] < nlpp->getRmax())
       {
-        Value2 +=
-            nlpp->evaluateOneWithForces(elec, iat, psi, jel, dist[iat], RealType(-1) * displ[iat], HFTerm[iat], 0, Txy);
-        Value3 += nlpp->evaluateOneWithForces(elec, ions, iat, psi, jel, dist[iat], RealType(-1) * displ[iat],
-                                              HFTerm2[iat], PulayTerm, 0, Txy);
+        Value2 += nlpp->evaluateOneWithForces(elec, iat, psi, jel, dist[iat], -displ[iat], HFTerm[iat], 0, Txy);
+        Value3 += nlpp->evaluateOneWithForces(elec, ions, iat, psi, jel, dist[iat], -displ[iat], HFTerm2[iat],
+                                              PulayTerm, 0, Txy);
       }
   }
   //These values are validated against print statements.

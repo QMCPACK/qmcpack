@@ -216,10 +216,12 @@ public:
   RealType evaluateValueAndDerivatives(ParticleSet& P,
                                        int iat,
                                        TrialWaveFunction& psi,
+                                       int iel,
+                                       RealType r,
+                                       const PosType& dr,
                                        const opt_variables_type& optvars,
                                        const std::vector<ValueType>& dlogpsi,
-                                       std::vector<ValueType>& dhpsioverpsi,
-                                       const int myTableIndex);
+                                       std::vector<ValueType>& dhpsioverpsi);
 
   void print(std::ostream& os);
 
