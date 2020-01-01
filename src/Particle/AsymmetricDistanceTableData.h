@@ -46,9 +46,9 @@ struct AsymmetricDTD : public DTD_BConds<T, D, SC>, public DistanceTableData
   {
     if (n1 != N_sources || n2 != N_targets || nactive != N_walkers)
     {
-      N_sources  = n1;
+      N_sources = n1;
       N_targets = n2;
-      int m           = n1 * n2;
+      int m     = n1 * n2;
       if (m)
       {
         M.resize(n1 + 1);

@@ -71,24 +71,6 @@ enum DistTableType
  *
  * Each DistanceTableData object is fined by Source and Target of ParticleSet types.
  *
- * Ye: tests needs to be made correspond to call to ParticleSet
- *
- * case 1: during PbyP
- * intial value should be made irralevent.
- * do
- * setActive()
- * use current_ values
- * makeMove()
- * use Temp_ values
- * accept or reject (fast mode, only row operation)
- * loop
-
- * case 2: after PbyP during Hamiltonian or estimator.
- * full table up-to-date.
- * use current_ values, need to extract from stored values.
- * makeMove()
- * use Temp_ values
- * accept(slow mode)
  */
 struct DistanceTableData
 {

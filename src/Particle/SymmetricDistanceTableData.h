@@ -42,9 +42,9 @@ struct SymmetricDTD : public DTD_BConds<T, D, SC>, public DistanceTableData
   {
     if (m != N_sources || nactive != N_walkers)
     {
-      N_sources  = m;
+      N_sources = m;
       N_targets = m;
-      int nn          = m * (m - 1) / 2;
+      int nn    = m * (m - 1) / 2;
       M.resize(m + 1);
       J.resize(nn);
       IJ.resize(m * m);
