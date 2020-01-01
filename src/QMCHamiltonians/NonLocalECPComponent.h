@@ -84,6 +84,9 @@ private:
   //This stores grad psi/psi - dot(u,grad psi)
   std::vector<PosType> wfngrad;
 
+  /// scratch spaces used by evaluateValueAndDerivatives
+  Matrix<ValueType> dratio;
+  std::vector<ValueType> dlogpsi_vp;
 
   // For Pulay correction to the force
   std::vector<RealType> WarpNorm;

@@ -110,9 +110,8 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateValueAndDerivatives
 #if defined(ENABLE_SOA)
   APP_ABORT("NonLocalECPComponent::evaluateValueAndDerivatives(W,iat,psi.opt.dlogpsi,dhpsioverpsi) not implemented for SoA.\n");
 #endif
-  Matrix<ValueType> dratio(optvars.num_active_vars, nknot);
-  std::vector<ValueType> dlogpsi_t(dlogpsi.size(), 0.0);
-  std::vector<ValueType> dhlogpsi_t(dlogpsi.size(), 0.0);
+  dratio.resize(optvars.num_active_vars, nknot);
+  dlogpsi_vp.resize(dlogpsi.size());
 
   const auto& myTable = W.getDistTable(myTableIndex);
   RealType esum              = 0.0;
@@ -139,20 +138,17 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateValueAndDerivatives
       psiratio[j] = psi.calcRatio(W, iel);
       psi.acceptMove(W, iel);
       W.acceptMove(iel);
-      W.update(true);
 
       //use existing methods
-      std::fill(dlogpsi_t.begin(), dlogpsi_t.end(), 0.0);
-      psi.evaluateDerivativesWF(W, optvars, dlogpsi_t);
-      for (int v = 0; v < dlogpsi_t.size(); ++v)
-        dratio(v, j) = dlogpsi_t[v];
+      std::fill(dlogpsi_vp.begin(), dlogpsi_vp.end(), 0.0);
+      psi.evaluateDerivativesWF(W, optvars, dlogpsi_vp);
+      for (int v = 0; v < dlogpsi_vp.size(); ++v)
+        dratio(v, j) = dlogpsi_vp[v];
 
-      PosType md = -1.0 * deltarV[j];
-      W.makeMove(iel, md);
+      W.makeMove(iel, -deltarV[j]);
       psi.calcRatio(W, iel);
       psi.acceptMove(W, iel);
       W.acceptMove(iel);
-      W.update(true);
     }
 
     for (int j = 0; j < nknot; ++j)
