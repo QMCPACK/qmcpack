@@ -386,10 +386,10 @@ public:
    */
   void acceptMove(Index_t iat, bool forward = false);
   /// batched version of acceptMove
-  static void flex_acceptMove(const RefVector<ParticleSet>& P_list, Index_t iat)
+  static void flex_acceptMove(const RefVector<ParticleSet>& P_list, Index_t iat, bool forward = false)
   {
     for (int iw = 0; iw < P_list.size(); iw++)
-      P_list[iw].get().acceptMove(iat);
+      P_list[iw].get().acceptMove(iat, forward);
   }
 
   /** reject the move
