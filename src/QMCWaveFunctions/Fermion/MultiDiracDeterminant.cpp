@@ -255,7 +255,7 @@ void MultiDiracDeterminant::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 
 /** move was accepted, update the real container
 */
-void MultiDiracDeterminant::acceptMove(ParticleSet& P, int iat)
+void MultiDiracDeterminant::acceptMove(ParticleSet& P, int iat, bool safe_to_delay)
 {
   WorkingIndex = iat - FirstIndex;
   switch (UpdateMode)

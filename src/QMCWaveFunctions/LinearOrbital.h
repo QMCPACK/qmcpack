@@ -58,7 +58,7 @@ public:
     return LogValue;
   }
 
-  virtual void acceptMove(ParticleSet& P, int iat) {}
+  virtual void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false) {}
 
   virtual void restore(int iat) {}
 

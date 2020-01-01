@@ -80,7 +80,7 @@ struct RPAJastrow : public WaveFunctionComponent
   GradType evalGrad(ParticleSet& P, int iat);
   PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
 
-  void acceptMove(ParticleSet& P, int iat);
+  void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false);
 
   void restore(int iat);
 

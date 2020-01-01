@@ -874,7 +874,7 @@ public:
 
   inline void restore(int iat) {}
 
-  void acceptMove(ParticleSet& P, int iat)
+  void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false)
   {
     const auto& eI_table = P.getDistTable(ei_table_index_);
     //      std::cerr << "acceptMove called.\n";

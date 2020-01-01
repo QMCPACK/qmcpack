@@ -164,7 +164,7 @@ PsiValueType LatticeGaussianProduct::ratioGrad(ParticleSet& P, int iat, GradType
 
 void LatticeGaussianProduct::restore(int iat) {}
 
-void LatticeGaussianProduct::acceptMove(ParticleSet& P, int iat)
+void LatticeGaussianProduct::acceptMove(ParticleSet& P, int iat, bool safe_to_delay)
 {
   U[iat]   = curVal;
   dU[iat]  = curGrad;

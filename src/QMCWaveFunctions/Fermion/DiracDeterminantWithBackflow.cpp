@@ -567,7 +567,7 @@ DiracDeterminantWithBackflow::LogValueType DiracDeterminantWithBackflow::evaluat
 
 /** move was accepted, update the real container
 */
-void DiracDeterminantWithBackflow::acceptMove(ParticleSet& P, int iat)
+void DiracDeterminantWithBackflow::acceptMove(ParticleSet& P, int iat, bool safe_to_delay)
 {
   LogValue += convertValueToLog(curRatio);
   UpdateTimer.start();
