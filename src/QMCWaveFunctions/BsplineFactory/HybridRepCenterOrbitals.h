@@ -568,7 +568,7 @@ public:
   {
     const int center_idx = VP.refSourcePtcl;
     auto& myCenter       = AtomicCenters[Super2Prim[center_idx]];
-    return VP.refPS.getDistTable(myTableID).getDistances()[VP.refPtcl][center_idx] < myCenter.getNonOverlappingRadius();
+    return VP.refPS.getDistTable(myTableID).getDistRow(VP.refPtcl)[center_idx] < myCenter.getNonOverlappingRadius();
   }
 
   // C2C, C2R cases
@@ -576,7 +576,7 @@ public:
   inline RealType evaluateValuesC2X(const VirtualParticleSet& VP, VM& multi_myV)
   {
     const int center_idx = VP.refSourcePtcl;
-    dist_r               = VP.refPS.getDistTable(myTableID).getDistances()[VP.refPtcl][center_idx];
+    dist_r               = VP.refPS.getDistTable(myTableID).getDistRow(VP.refPtcl)[center_idx];
     auto& myCenter       = AtomicCenters[Super2Prim[center_idx]];
     if (dist_r < myCenter.getCutoff())
     {
@@ -595,7 +595,7 @@ public:
                                     SV& bc_signs)
   {
     const int center_idx = VP.refSourcePtcl;
-    dist_r               = VP.refPS.getDistTable(myTableID).getDistances()[VP.refPtcl][center_idx];
+    dist_r               = VP.refPS.getDistTable(myTableID).getDistRow(VP.refPtcl)[center_idx];
     auto& myCenter       = AtomicCenters[Super2Prim[center_idx]];
     if (dist_r < myCenter.getCutoff())
     {

@@ -118,7 +118,7 @@ TEST_CASE("distance_open_z", "[distance_table][xml]")
       // const auto& dtable = target_pset.getDistTable(tid);
       // dtable.loc(source_ptcl_idx,target_ptcl_idx) !! source first target second !?
 #ifdef ENABLE_SOA
-      double dist = dtable.getDistances()[jat][iat];
+      double dist = dtable.getDistRow(jat)[iat];
 #else
       double dist = dtable.r(dtable.loc(iat, jat));
 #endif
@@ -246,7 +246,7 @@ TEST_CASE("distance_open_xy", "[distance_table][xml]")
     for (int jat = 0; jat < dtable.targets(); jat++, idx++)
     {
 #ifdef ENABLE_SOA
-      double dist = dtable.getDistances()[jat][iat];
+      double dist = dtable.getDistRow(jat)[iat];
 #else
       double dist = dtable.r(dtable.loc(iat, jat));
 #endif
@@ -357,7 +357,7 @@ TEST_CASE("distance_open_species_deviation", "[distance_table][xml]")
 
       // calculate distance from lattice site iat
 #ifdef ENABLE_SOA
-      double dist = dtable.getDistances()[jat][iat];
+      double dist = dtable.getDistRow(jat)[iat];
 #else
       double dist = dtable.r(dtable.loc(iat, jat));
 #endif
@@ -496,7 +496,7 @@ TEST_CASE("distance_pbc_z", "[distance_table][xml]")
     for (int jat = 0; jat < num_tar; jat++, idx++)
     {
 #ifdef ENABLE_SOA
-      double dist = ei_dtable.getDistances()[jat][iat];
+      double dist = ei_dtable.getDistRow(jat)[iat];
 #else
       double dist = ei_dtable.r(ei_dtable.loc(iat, jat));
 #endif
@@ -525,7 +525,7 @@ TEST_CASE("distance_pbc_z", "[distance_table][xml]")
     for (int jat = 0; jat < num_tar; jat++, idx++)
     {
 #ifdef ENABLE_SOA
-      double dist = ei_dtable.getDistances()[jat][iat];
+      double dist = ei_dtable.getDistRow(jat)[iat];
 #else
       double dist = ei_dtable.r(ei_dtable.loc(iat, jat));
 #endif

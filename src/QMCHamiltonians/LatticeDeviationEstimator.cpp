@@ -121,7 +121,7 @@ LatticeDeviationEstimator::Return_t LatticeDeviationEstimator::evaluate(Particle
         {
           // distance between particle iat in source pset, and jat in target pset
 #ifdef ENABLE_SOA
-          r = d_table.getDistances()[jat][iat];
+          r = d_table.getDistRow(jat)[iat];
 #else
           int nn = d_table.loc(iat, jat); // location where distance is stored
           r = d_table.r(nn);
@@ -138,7 +138,7 @@ LatticeDeviationEstimator::Return_t LatticeDeviationEstimator::evaluate(Particle
           if (per_xyz)
           {
 #ifdef ENABLE_SOA
-            dr = d_table.getDisplacements()[jat][iat];
+            dr = d_table.getDisplRow(jat)[iat];
 #else
             dr = d_table.dr(nn);
 #endif

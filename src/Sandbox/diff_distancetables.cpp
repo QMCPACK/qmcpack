@@ -136,7 +136,7 @@ int main(int argc, char** argv)
     for(int jel=iel+1; jel<nels; ++jel)
     {
       RealType dref=d_ee_aos.r(nn);
-      RealType dsym=std::abs(d_ee.getDistances()[jel][iel]-d_ee.getDistances()[iel][jel]);
+      RealType dsym=std::abs(d_ee.getDistRow(jel)[iel]-d_ee.getDistRow(iel)[jel]);
       sym_all_err += dsym;
       if(dref<Rsim)
       {
@@ -211,8 +211,8 @@ int main(int argc, char** argv)
       for(int jel=iel+1; jel<nels; ++jel)
       {
         RealType dref=d_ee_aos.r(nn);
-        RealType d= std::abs(d_ee.getDistances()[jel][iel]-dref);
-        PosType dr= (d_ee.getDisplacements()[jel][iel]+d_ee_aos.dr(nn));
+        RealType d= std::abs(d_ee.getDistRow(jel)[iel]-dref);
+        PosType dr= (d_ee.getDisplRow(jel)[iel]+d_ee_aos.dr(nn));
         RealType d2=sqrt(dot(dr,dr));
         dist_all_err+=d;
         disp_all_err += d2;
@@ -241,8 +241,8 @@ int main(int argc, char** argv)
       for(int j=0; j<nels; ++j)
       {
         RealType dref=d_ie_aos.r(nn);
-        RealType d= std::abs(d_ie.getDistances()[j][i]-dref);
-        PosType dr= (d_ie.getDisplacements()[j][i]+d_ie_aos.dr(nn));
+        RealType d= std::abs(d_ie.getDistRow(j)[i]-dref);
+        PosType dr= (d_ie.getDisplRow(j)[i]+d_ie_aos.dr(nn));
         RealType d2=sqrt(dot(dr,dr));
         dist_all_err += d;
         disp_all_err += d2;
