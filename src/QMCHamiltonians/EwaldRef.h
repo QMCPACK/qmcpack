@@ -113,7 +113,7 @@ private:
   const RealVec r;
   /// The real-space cell axes
   const RealMat a;
-  /// The constant 1/(\sqrt{2}kappa) in Drummond 2008 formula 6
+  /// The constant 1/(\sqrt{2}\kappa) in Drummond 2008 formula 6
   const real_t rconst;
 
 public:
@@ -239,13 +239,24 @@ real_t gridSum(T& function, bool zero = true, real_t tol = 1e-11)
   return v;
 }
 
+
+/** Find the optimal kappa for Madelung sums
+ *
+ *  The optimal kappa balances the number of points within a given 
+ *  isosurface of the Gaussians (or limiting Gaussians from erfc)
+ *  in the real-space and k-space Madelung terms.  The balancing 
+ *  condition is made under isotropic assumptions, as reflected 
+ *  by the use of a sphere equal in volume to the simulation cell 
+ *  to determine the radius.
+ *
+ *  @param volume: Volume of the real space cell.
+ */ 
 real_t getKappaMadelung(real_t volume)
 {
   real_t radius = std::pow(3. * volume / (4 * M_PI), 1. / 3);
-  //return 2 * M_PI / ( 8 * radius );
-  //return 1.0;
   return std::sqrt(M_PI) / radius;
 }
+
 
 /** Compute the Madelung constant to a given tolerance
  *
@@ -286,13 +297,24 @@ real_t madelungSum(const RealMat& a, real_t tol = 1e-10)
   return ms;
 }
 
+
+/** Find the optimal kappa for Ewald pair sums
+ *
+ *  The optimal kappa balances the number of points within a given 
+ *  isosurface of the Gaussians (or limiting Gaussians from erfc)
+ *  in the real-space and k-space Ewald pair terms.  The balancing 
+ *  condition is made under isotropic assumptions, as reflected 
+ *  by the use of a sphere equal in volume to the simulation cell 
+ *  to determine the radius.
+ *
+ *  @param volume: Volume of the real space cell.
+ */ 
 real_t getKappaEwald(real_t volume)
 {
   real_t radius = std::pow(3. * volume / (4 * M_PI), 1. / 3);
-  //return 2 * M_PI / ( 8 * radius );
-  //return 1.0;
   return radius / std::sqrt(2 * M_PI);
 }
+
 
 /** Compute the Ewald interaction of a particle pair to a given tolerance
  *
@@ -361,6 +383,7 @@ real_t ewaldEnergy(const RealMat& a, const PosArray& R, const ChargeArray& Q, re
   real_t ve = 0.0;
 
   {
+    // Sum Madelung contributions
     ScopedTimer totalMadelungTimer(TimerManager.createTimer("MadelungSum"));
     // Maximum self-interaction charge product
     real_t qqmax = 0.0;
@@ -376,29 +399,24 @@ real_t ewaldEnergy(const RealMat& a, const PosArray& R, const ChargeArray& Q, re
   }
 
   {
+    // Sum the interaction terms for all particle pairs
     ScopedTimer EwaldSumTimer(TimerManager.createTimer("EwaldSum"));
-    real_t ve_ewald(0);
-// Sum the interaction terms for all particle pairs
-#pragma omp parallel for reduction(+ : ve_ewald)
-    for (size_t i = 1; i < N / 2 + 1; ++i)
-    {
-      for (size_t j = 0; j < i; ++j)
-      {
-        const real_t qq = Q[i] * Q[j];
-        ve_ewald += qq * ewaldSum(R[i] - R[j], a, tol / qq);
-      }
 
-      const size_t i_reverse = N - i;
-      if (i == i_reverse)
-        continue;
+    int_t Npairs = (N*(N-1))/2;
 
-      for (size_t j = 0; j < i_reverse; ++j)
-      {
-        const real_t qq = Q[i_reverse] * Q[j];
-        ve_ewald += qq * ewaldSum(R[i_reverse] - R[j], a, tol / qq);
-      }
-    }
-    ve += ve_ewald;
+    std::vector<real_t>  qq(Npairs);
+    for(size_t i=0,n=0; i<N; ++i)
+      for(size_t j=0; j<i; ++j,++n)
+        qq[n] = Q[i]*Q[j];
+
+    std::vector<RealVec> rr(Npairs);
+    for(size_t i=0,n=0; i<N; ++i)
+      for(size_t j=0; j<i; ++j,++n)
+        rr[n] = R[i]-R[j];
+
+#pragma omp parallel for reduction(+ : ve)
+    for(size_t n=0; n<Npairs; ++n)
+      ve += qq[n]*ewaldSum(rr[n],a,tol/qq[n]);
   }
 
   return ve;
