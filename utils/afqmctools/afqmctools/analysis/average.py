@@ -53,7 +53,7 @@ def average_one_rdm(filename, estimator='back_propagated', eqlb=1, skip=1, ix=No
     if walker == 'closed':
         return mean.reshape((1,nbasis,nbasis)), err.reshape((1,nbasis, nbasis))
     elif walker == 'collinear':
-        return mean.reshape((2,nbasis,nbasis)), err.reshape((2, nbasis, nbasis)), ns
+        return mean.reshape((2,nbasis,nbasis)), err.reshape((2, nbasis, nbasis))
     elif walker == 'non_collinear':
         return mean.reshape((1,2*nbasis,2*nbasis)), err.reshape((1,2*nbasis, 2*nbasis))
     else:
