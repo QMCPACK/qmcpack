@@ -21,8 +21,6 @@
 #include "QMCWaveFunctions/Jastrow/CountingJastrow.h"
 #include "QMCWaveFunctions/Jastrow/CountingJastrowBuilder.h"
 
-#include "QMCWaveFunctions/TrialWaveFunction.h"
-
 #include <stdio.h>
 
 namespace qmcplusplus

@@ -33,6 +33,18 @@ void batched_Tab_to_Klr(int nterms, int nwalk, int nocc, int nchol_max,
                     std::complex<double> * Kl,
                     std::complex<double> * Kr);
 
+void batched_Tanb_to_Klr(int nterms, int nwalk, int nocc, int nchol_max,
+                    int nchol_tot, int ncholQ, int ncholQ0, int* kdiag,
+                    std::complex<float> const* Tab,
+                    std::complex<float> * Kl,
+                    std::complex<float> * Kr);
+
+void batched_Tanb_to_Klr(int nterms, int nwalk, int nocc, int nchol_max,
+                    int nchol_tot, int ncholQ, int ncholQ0, int* kdiag,
+                    std::complex<double> const* Tab,
+                    std::complex<double> * Kl,
+                    std::complex<double> * Kr);
+
 }
 
 #endif

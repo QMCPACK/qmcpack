@@ -112,7 +112,13 @@ ParticleSet::~ParticleSet()
     delete SK;
 }
 
-void ParticleSet::create(int numPtcl) { resize(numPtcl); }
+void ParticleSet::create(int numPtcl)
+{
+  resize(numPtcl);
+  SubPtcl.resize(2);
+  SubPtcl[0] = 0;
+  SubPtcl[1] = numPtcl;
+}
 
 void ParticleSet::create(const std::vector<int>& agroup)
 {
@@ -182,6 +188,16 @@ void ParticleSet::resetGroups()
     else
       APP_ABORT("ParticleSet::resetGroups() Failed. GroupID is out of bound.");
   }
+  // safety check if any group of particles has size 0, instruct users to fix the input.
+  for (int group_id = 0; group_id < nspecies; group_id++)
+    if (ng[group_id] == 0)
+    {
+      std::ostringstream err_msg;
+      err_msg << "ParticleSet::resetGroups() Failed. ParticleSet '" << myName << "' "
+              << "has group '" << mySpecies.speciesName[group_id] << "' containing 0 particles. "
+              << "Remove this group from input!" << std::endl;
+      APP_ABORT(err_msg.str());
+    }
   SubPtcl.resize(nspecies + 1);
   SubPtcl[0] = 0;
   for (int i = 0; i < nspecies; ++i)
@@ -332,7 +348,7 @@ int ParticleSet::addTable(const ParticleSet& psrc, int dt_type, bool need_full_t
   if (tit == myDistTableMap.end())
   {
     std::ostringstream description;
-    tid = DistTables.size();
+    tid                = DistTables.size();
     int dt_type_in_use = (tid == 0 ? dt_type : DistTables[0]->DTType);
     if (myName == psrc.getName())
       DistTables.push_back(createDistanceTable(*this, dt_type_in_use, description));
@@ -347,7 +363,8 @@ int ParticleSet::addTable(const ParticleSet& psrc, int dt_type, bool need_full_t
     tid = (*tit).second;
     app_debug() << "  ... ParticleSet::addTable Reuse Table #" << tid << " " << DistTables[tid]->Name << std::endl;
   }
-  DistTables[tid]->Need_full_table_loadWalker = (DistTables[tid]->Need_full_table_loadWalker || need_full_table_loadWalker);
+  DistTables[tid]->Need_full_table_loadWalker =
+      (DistTables[tid]->Need_full_table_loadWalker || need_full_table_loadWalker);
   app_log().flush();
   return tid;
 }
@@ -380,18 +397,19 @@ void ParticleSet::flex_setActive(const RefVector<ParticleSet>& P_list, int iat)
   {
     ScopedTimer local_timer(P_list[0].get().myTimers[PS_setActive]);
     int dist_tables_size = P_list[0].get().DistTables.size();
-    #pragma omp parallel
+#pragma omp parallel
     {
       for (size_t i = 0; i < dist_tables_size; i++)
       {
-        #pragma omp for
+#pragma omp for
         for (int iw = 0; iw < P_list.size(); iw++)
         {
           P_list[iw].get().DistTables[i]->evaluate(P_list[iw], iat);
         }
       }
     }
-  } else if (P_list.size()==1)
+  }
+  else if (P_list.size() == 1)
     P_list[0].get().setActive(iat);
 }
 
@@ -402,7 +420,15 @@ void ParticleSet::makeMove(Index_t iat, const SingleParticlePos_t& displ)
   computeNewPosDistTablesAndSK(iat, activePos);
 }
 
-void ParticleSet::flex_makeMove(const RefVector<ParticleSet>& P_list, Index_t iat, const std::vector<SingleParticlePos_t>& displs)
+void ParticleSet::makeMoveWithSpin(Index_t iat, const SingleParticlePos_t& displ, const Scalar_t& sdispl)
+{
+  makeMove(iat, displ);
+  activeSpinVal = spins[iat] + sdispl;
+}
+
+void ParticleSet::flex_makeMove(const RefVector<ParticleSet>& P_list,
+                                Index_t iat,
+                                const std::vector<SingleParticlePos_t>& displs)
 {
   if (P_list.size() > 1)
   {
@@ -417,14 +443,15 @@ void ParticleSet::flex_makeMove(const RefVector<ParticleSet>& P_list, Index_t ia
     }
 
     mw_computeNewPosDistTablesAndSK(P_list, iat, new_positions);
-  } else if (P_list.size()==1)
+  }
+  else if (P_list.size() == 1)
     P_list[0].get().makeMove(iat, displs[0]);
 }
 
 bool ParticleSet::makeMoveAndCheck(Index_t iat, const SingleParticlePos_t& displ)
 {
-  activePtcl = iat;
-  activePos  = R[iat] + displ;
+  activePtcl    = iat;
+  activePos     = R[iat] + displ;
   bool is_valid = true;
   if (Lattice.explicitly_defined)
   {
@@ -433,11 +460,18 @@ bool ParticleSet::makeMoveAndCheck(Index_t iat, const SingleParticlePos_t& displ
     else
     {
       newRedPos = Lattice.toUnit(activePos);
-      if (!Lattice.isValid(newRedPos)) is_valid = false;
+      if (!Lattice.isValid(newRedPos))
+        is_valid = false;
     }
   }
   computeNewPosDistTablesAndSK(iat, activePos);
   return is_valid;
+}
+
+bool ParticleSet::makeMoveAndCheckWithSpin(Index_t iat, const SingleParticlePos_t& displ, const Scalar_t& sdispl)
+{
+  activeSpinVal = spins[iat] + sdispl;
+  return makeMoveAndCheck(iat, displ);
 }
 
 void ParticleSet::computeNewPosDistTablesAndSK(Index_t iat, const SingleParticlePos_t& newpos)
@@ -452,15 +486,17 @@ void ParticleSet::computeNewPosDistTablesAndSK(Index_t iat, const SingleParticle
     SK->makeMove(iat, newpos);
 }
 
-void ParticleSet::mw_computeNewPosDistTablesAndSK(const RefVector<ParticleSet>& P_list, Index_t iat, const std::vector<SingleParticlePos_t>& new_positions)
+void ParticleSet::mw_computeNewPosDistTablesAndSK(const RefVector<ParticleSet>& P_list,
+                                                  Index_t iat,
+                                                  const std::vector<SingleParticlePos_t>& new_positions)
 {
   ScopedTimer compute_newpos_scope(P_list[0].get().myTimers[PS_newpos]);
   int dist_tables_size = P_list[0].get().DistTables.size();
-  #pragma omp parallel
+#pragma omp parallel
   {
     for (int i = 0; i < dist_tables_size; ++i)
     {
-      #pragma omp for
+#pragma omp for
       for (int iw = 0; iw < P_list.size(); iw++)
         P_list[iw].get().DistTables[i]->move(P_list[iw], new_positions[iw]);
     }
@@ -468,7 +504,7 @@ void ParticleSet::mw_computeNewPosDistTablesAndSK(const RefVector<ParticleSet>& 
     StructFact* SK = P_list[0].get().SK;
     if (SK && SK->DoUpdate)
     {
-      #pragma omp for
+#pragma omp for
       for (int iw = 0; iw < P_list.size(); iw++)
         P_list[iw].get().SK->makeMove(iat, new_positions[iw]);
     }
@@ -506,7 +542,9 @@ bool ParticleSet::makeMoveAllParticles(const Walker_t& awalker, const ParticlePo
   return true;
 }
 
-bool ParticleSet::makeMoveAllParticles(const Walker_t& awalker, const ParticlePos_t& deltaR, const std::vector<RealType>& dt)
+bool ParticleSet::makeMoveAllParticles(const Walker_t& awalker,
+                                       const ParticlePos_t& deltaR,
+                                       const std::vector<RealType>& dt)
 {
   activePtcl = -1;
   if (Lattice.explicitly_defined)
@@ -544,9 +582,9 @@ bool ParticleSet::makeMoveAllParticles(const Walker_t& awalker, const ParticlePo
  * @return true, if all the particle moves are legal under the boundary conditions
  */
 bool ParticleSet::makeMoveAllParticlesWithDrift(const Walker_t& awalker,
-                                    const ParticlePos_t& drift,
-                                    const ParticlePos_t& deltaR,
-                                    RealType dt)
+                                                const ParticlePos_t& drift,
+                                                const ParticlePos_t& deltaR,
+                                                RealType dt)
 {
   activePtcl = -1;
   if (Lattice.explicitly_defined)
@@ -577,9 +615,9 @@ bool ParticleSet::makeMoveAllParticlesWithDrift(const Walker_t& awalker,
 }
 
 bool ParticleSet::makeMoveAllParticlesWithDrift(const Walker_t& awalker,
-                                    const ParticlePos_t& drift,
-                                    const ParticlePos_t& deltaR,
-                                    const std::vector<RealType>& dt)
+                                                const ParticlePos_t& drift,
+                                                const ParticlePos_t& deltaR,
+                                                const std::vector<RealType>& dt)
 {
   activePtcl = -1;
   if (Lattice.explicitly_defined)
@@ -630,6 +668,7 @@ void ParticleSet::acceptMove(Index_t iat)
 
     R[iat]     = activePos;
     RSoA(iat)  = activePos;
+    spins[iat] = activeSpinVal;
     activePtcl = -1;
   }
   else
@@ -744,7 +783,7 @@ void ParticleSet::clearDistanceTables()
 
 int ParticleSet::addPropertyHistory(int leng)
 {
-  int newL                                     = PropertyHistory.size();
+  int newL                                    = PropertyHistory.size();
   std::vector<FullPrecRealType> newVecHistory = std::vector<FullPrecRealType>(leng, 0.0);
   PropertyHistory.push_back(newVecHistory);
   PHindex.push_back(0);

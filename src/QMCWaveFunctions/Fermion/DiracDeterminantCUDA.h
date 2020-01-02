@@ -161,9 +161,9 @@ public:
 
   void restore(int iat) { APP_ABORT("Calling DiracDeterminantCUDA::restore is illegal!"); }
 
-  ValueType ratio(ParticleSet& P, int iat) { APP_ABORT("Calling DiracDeterminantCUDA::ratio is illegal!"); }
+  PsiValueType ratio(ParticleSet& P, int iat) { APP_ABORT("Calling DiracDeterminantCUDA::ratio is illegal!"); }
 
-  ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
+  PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
   {
     APP_ABORT("Calling DiracDeterminantCUDA::ratioGrad is illegal!");
   }

@@ -2,6 +2,8 @@
 # This needs a lot of work to make it robust
 INCLUDE( CheckCXXSourceCompiles )
 
+MESSAGE(STATUS "Looking for Intel MKL libraries")
+
 # Extremely Basic Support of common mkl module environment variables
 # or -DMKLROOT/-DMKL_HOME instead of preferred -DMKL_ROOT
 # Some Linux distributions (Ubuntu >= 18.10) provide MKL

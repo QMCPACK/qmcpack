@@ -18,13 +18,15 @@ SET(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 
 SET(UTEST_DIR ${qmcpack_BINARY_DIR}/tests/wavefunction)
 #SET(UTEST_HDF_INPUT ${qmcpack_SOURCE_DIR}/tests/solids/monoO_1x1x1_pp/pwscf.pwscf.h5)
-SET(UTEST_HDF_INPUT ${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp/pwscf.pwscf.h5)
+SET(UTEST_HDF_INPUT0 ${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp/pwscf.pwscf.h5)
+SET(UTEST_HDF_INPUT1 ${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp/pwscf.pwscf.h5)
 SET(UTEST_HDF_INPUT2 ${qmcpack_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae/pwscf.pwscf.h5)
 SET(UTEST_HDF_INPUT3 ${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp/LiH-arb.pwscf.h5)
 SET(UTEST_HDF_INPUT4 ${qmcpack_SOURCE_DIR}/tests/solids/monoO_noncollinear_1x1x1_pp/o2_45deg_spins.pwscf.h5)
 SET(UTEST_HDF_INPUT5 ${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1-Gaussian_pp_Tw_cplx/C_diamond-twist-third.h5)
 EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E make_directory "${UTEST_DIR}")
-MAYBE_SYMLINK(${UTEST_HDF_INPUT} ${UTEST_DIR}/pwscf.pwscf.h5)
+MAYBE_SYMLINK(${UTEST_HDF_INPUT0} ${UTEST_DIR}/diamondC_1x1x1.pwscf.h5)
+MAYBE_SYMLINK(${UTEST_HDF_INPUT1} ${UTEST_DIR}/diamondC_2x1x1.pwscf.h5)
 MAYBE_SYMLINK(${UTEST_HDF_INPUT2} ${UTEST_DIR}/bccH.pwscf.h5)
 MAYBE_SYMLINK(${UTEST_HDF_INPUT3} ${UTEST_DIR}/LiH-arb.pwscf.h5)
 MAYBE_SYMLINK(${UTEST_HDF_INPUT4} ${UTEST_DIR}/o2_45deg_spins.pwscf.h5)
@@ -52,11 +54,13 @@ IF ((NOT QMC_MIXED_PRECISION) AND (NOT QMC_CUDA))
   ENDIF()
 ENDIF()
 
-ADD_EXECUTABLE(${UTEST_EXE} test_wf.cpp test_bspline_jastrow.cpp test_counting_jastrow.cpp test_einset.cpp test_pw.cpp
-               test_polynomial_eeI_jastrow.cpp test_dirac_det.cpp test_multi_dirac_determinant.cpp test_dirac_matrix.cpp
-               test_wavefunction_factory.cpp test_rpa_jastrow.cpp test_example_he.cpp test_user_jastrow.cpp
+ADD_EXECUTABLE(${UTEST_EXE} test_wf.cpp test_TrialWaveFunction.cpp test_wavefunction_factory.cpp
+               test_bspline_jastrow.cpp test_counting_jastrow.cpp test_polynomial_eeI_jastrow.cpp
+               test_einset.cpp test_hybridrep.cpp test_pw.cpp
+               test_dirac_det.cpp test_multi_dirac_determinant.cpp test_dirac_matrix.cpp
+               test_rpa_jastrow.cpp test_example_he.cpp test_user_jastrow.cpp
                test_lattice_gaussian.cpp test_kspace_jastrow.cpp
-               test_short_range_cusp_jastrow.cpp test_TrialWaveFunction.cpp ${MO_SRCS})
+               test_short_range_cusp_jastrow.cpp ${MO_SRCS})
 TARGET_LINK_LIBRARIES(${UTEST_EXE} qmc qmcwfs qmcbase qmcutil ${QMC_UTIL_LIBS} ${MPI_LIBRARY})
 
 ADD_UNIT_TEST(${UTEST_NAME} "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")

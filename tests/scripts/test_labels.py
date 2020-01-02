@@ -555,6 +555,15 @@ except:
 #end try
 
 
+try:
+    if test.startswith('qe-'):
+        labels.append('converter')
+    #end if
+except:
+    error()
+#end try
+
+
 # make a ctest list of the labels
 try:
     ctest_labels = ''

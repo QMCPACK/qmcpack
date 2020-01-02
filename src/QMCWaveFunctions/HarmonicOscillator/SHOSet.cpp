@@ -83,7 +83,7 @@ void SHOSet::report(const std::string& pad)
 }
 
 
-void SHOSet::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
+void SHOSet::evaluateValue(const ParticleSet& P, int iat, ValueVector_t& psi)
 {
   const PosType& r(P.activeR(iat));
   ValueVector_t p(&psi[0], size());
@@ -91,7 +91,7 @@ void SHOSet::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
 }
 
 
-void SHOSet::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
+void SHOSet::evaluateVGL(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
 {
   const PosType& r(P.activeR(iat));
   ValueVector_t p(&psi[0], size());

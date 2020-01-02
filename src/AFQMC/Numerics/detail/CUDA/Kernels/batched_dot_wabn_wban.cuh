@@ -31,6 +31,17 @@ void batched_dot_wabn_wban( int nbatch, int nwalk, int nocc, int nchol,
 void batched_dot_wabn_wban( int nbatch, int nwalk, int nocc, int nchol, 
                     std::complex<float> const* alpha, std::complex<float> const* Tab,
                     std::complex<double>* y, int incy);
+
+void batched_dot_wanb_wbna( int nbatch, int nwalk, int nocc, int nchol,
+                    std::complex<double> const* alpha, std::complex<double> const* Tab,
+                    std::complex<double>* y, int incy);
+void batched_dot_wanb_wbna( int nbatch, int nwalk, int nocc, int nchol,
+                    std::complex<float> const* alpha, std::complex<float> const* Tab,
+                    std::complex<float>* y, int incy);
+void batched_dot_wanb_wbna( int nbatch, int nwalk, int nocc, int nchol,
+                    std::complex<float> const* alpha, std::complex<float> const* Tab,
+                    std::complex<double>* y, int incy);
+
 }
 
 #endif

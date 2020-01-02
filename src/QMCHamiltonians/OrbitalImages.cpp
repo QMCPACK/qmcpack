@@ -345,13 +345,13 @@ OrbitalImages::Return_t OrbitalImages::evaluate(ParticleSet& P)
           P.makeMove(0, rpoints[p] - P.R[0]);
           if (!derivatives)
           {
-            sposet.evaluate(P, 0, spo_vtmp); //note that ALL orbitals are evaluated each time
+            sposet.evaluateValue(P, 0, spo_vtmp); //note that ALL orbitals are evaluated each time
             for (int b = bstart, ib = 0; b < bend; ++b, ++ib)
               batch_values(p, ib) = spo_vtmp[sposet_inds[b]];
           }
           else
           {
-            sposet.evaluate(P, 0, spo_vtmp, spo_gtmp, spo_ltmp);
+            sposet.evaluateVGL(P, 0, spo_vtmp, spo_gtmp, spo_ltmp);
             for (int b = bstart, ib = 0; b < bend; ++b, ++ib)
               batch_values(p, ib) = spo_vtmp[sposet_inds[b]];
             for (int b = bstart, ib = 0; b < bend; ++b, ++ib)

@@ -449,7 +449,7 @@ void PWOrbitalBuilder::transform2GridData(PWBasis::GIndex_t& nG, int spinIndex, 
       for (int kg = 0; kg < nG[2]; kg++)
       {
         targetPtcl.R[0] = lattice.toCart(PosType(x, y, kg * dz));
-        pwFunc.evaluate(targetPtcl, 0, phi);
+        pwFunc.evaluateValue(targetPtcl, 0, phi);
         RealType x(dot(targetPtcl.R[0], tAngle));
         ValueType phase(std::cos(x), -std::sin(x));
         for (int ib = 0; ib < nb; ib++)
