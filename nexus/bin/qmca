@@ -1,5 +1,6 @@
 #! /usr/bin/env python
 
+import numpy as np
 import code
 import os
 from optparse import OptionParser
@@ -2448,6 +2449,11 @@ QMCA examples:
         units = obj(hartree='Ha',ha='Ha',ev='eV',rydberg='Ry',ry='Ry',kelvin='K',kj_mol='kJ_mol',joules='J')
 
         options,files_in = parser.parse_args()
+        files_tmp = np.array(files_in)
+        file_order = files_tmp.argsort()
+        if len(files_in)>0:
+            files_in = list(files_tmp[file_order])
+        #end if
         QBase.options.transfer_from(options.__dict__)
         self.verbose = self.options.verbose
         if self.verbose:
@@ -2498,6 +2504,9 @@ QMCA examples:
                 try:
                     w = comma_list(ws)
                     w = array(w,dtype=float)
+                    if len(w)==len(file_order):
+                        w = w[file_order]
+                    #end if
                     opt.weights = w
                     weight_failed = len(w.shape)!=1
                 except:
